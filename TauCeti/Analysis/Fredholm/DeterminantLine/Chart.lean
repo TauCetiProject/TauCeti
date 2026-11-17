@@ -72,6 +72,9 @@ frozen (`ContinuousLinearMap.eventually_detLineChartEquiv_eq_smul`).
   kernel charts.
 * `ContinuousLinearMap.detLineChartEquiv_detLineCongr`,
   `ContinuousLinearMap.detLineChartEquiv_detLineCongr_of_comp_eq`: naturality of kernel charts.
+* `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_coprod_comp_eq`: kernel charts of
+  the same operator related by automorphisms of `E × Λ` and of `G` differ by a ratio of
+  determinants.
 * `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul`,
   `ContinuousLinearMap.detLineChartEquiv_apply_eq_det_smul_of_comp_eq`: changing the kernel
   coordinate or the stabilizer of a kernel chart multiplies it by a determinant.
@@ -310,6 +313,27 @@ theorem detLineChartEquiv_detLineCongr
   | add a b ha hb => rw [LinearEquiv.map_add, LinearEquiv.map_add, ha, hb, LinearEquiv.map_add,
       LinearEquiv.map_add]
 
+/-- **Changing the data of a kernel chart.** Let `(D₂, q)` and `(D₃, q₁)` be kernel charts of the
+same operator `D₁`, related by an automorphism `Ψ₁` of `E × Λ` which fixes `E × 0`, acts on the
+stabilizing space by `eΛ₁` and intertwines `D₁.coprod D₂` with `D₁.coprod D₃`, and by an
+automorphism `eG` of `G` matching the kernel coordinates along `Ψ₁`. Then the two charts differ by
+`det eG * (det eΛ₁)⁻¹`. -/
+theorem detLineChartEquiv_apply_eq_det_smul_of_coprod_comp_eq {D₃ : Λ →L[𝕜] F}
+    {q₁ : E × Λ →L[𝕜] G} {eΛ₁ : Λ ≃ₗ[𝕜] Λ} {Ψ₁ : (E × Λ) ≃ₗ[𝕜] (E × Λ)}
+    (hΨ : (D₁.coprod D₃ : E × Λ →ₗ[𝕜] F) ∘ₗ Ψ₁.toLinearMap = (D₁.coprod D₂ : E × Λ →ₗ[𝕜] F))
+    (hΨ₁ : ∀ x, Ψ₁ (x, 0) = (x, 0)) (hΨ₂ : ∀ y, (Ψ₁ y).2 = eΛ₁ y.2) (eG : G ≃ₗ[𝕜] G)
+    (hq : ∀ y ∈ (D₁.coprod D₂).ker, q₁ (Ψ₁ y) = eG (q y))
+    (h : ((D₁.coprod D₂).prod q).IsInvertible) (h₁ : ((D₁.coprod D₃).prod q₁).IsInvertible)
+    (y : (D₁ : E →ₗ[𝕜] F).detLine) :
+    detLineChartEquiv D₁ D₃ q₁ h₁ y =
+      (LinearMap.det (eG : G →ₗ[𝕜] G) * (LinearMap.det (eΛ₁ : Λ →ₗ[𝕜] Λ))⁻¹) •
+        detLineChartEquiv D₁ D₂ q h y := by
+  have := detLineChartEquiv_detLineCongr (e₁ := LinearEquiv.refl 𝕜 E)
+    (e₂ := LinearEquiv.refl 𝕜 F) hΨ hΨ₁ hΨ₂ eG hq h h₁ y
+  simpa only [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply,
+    LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul, Units.smul_def, Units.val_mul,
+    Units.val_inv_eq_inv_val, LinearEquiv.coe_det] using this
+
 /-- **Changing the kernel coordinate.** Two kernel charts of `D₁` with the same stabilizer `D₂`
 differ by the determinant of the change of coordinate `q₁ ∘ kerSection q` of `G`. -/
 theorem detLineChartEquiv_apply_eq_det_smul (h : ((D₁.coprod D₂).prod q).IsInvertible)
@@ -322,13 +346,10 @@ theorem detLineChartEquiv_apply_eq_det_smul (h : ((D₁.coprod D₂).prod q).IsI
   have hdet : LinearMap.det (eG : G →ₗ[𝕜] G) = (q₁ ∘L (D₁.coprod D₂).kerSection q).det := by
     congr 1
     exact LinearMap.ext fun g ↦ by simp [heG]
-  have := detLineChartEquiv_detLineCongr (D₁' := D₁) (D₂' := D₂) (e₁ := LinearEquiv.refl 𝕜 E)
-    (e₂ := LinearEquiv.refl 𝕜 F) (eΛ := LinearEquiv.refl 𝕜 Λ) (Ψ := LinearEquiv.refl 𝕜 (E × Λ))
-    (LinearMap.ext fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) eG
-    (fun z hz ↦ by simp [heG, kerSection_apply_of_mem_ker h hz]) h h₁ y
-  rwa [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply,
-    LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul, LinearEquiv.det_refl, inv_one, mul_one,
-    Units.smul_def, LinearEquiv.coe_det, hdet] at this
+  rw [detLineChartEquiv_apply_eq_det_smul_of_coprod_comp_eq (eΛ₁ := LinearEquiv.refl 𝕜 Λ)
+    (Ψ₁ := LinearEquiv.refl 𝕜 (E × Λ)) (LinearMap.ext fun _ ↦ rfl) (fun _ ↦ rfl) (fun _ ↦ rfl) eG
+    (fun z hz ↦ by simp [heG, kerSection_apply_of_mem_ker h hz]) h h₁ y, hdet,
+    LinearEquiv.refl_toLinearMap, LinearMap.det_id, inv_one, mul_one]
 
 variable [ContinuousAdd Λ] in
 /-- **Changing the stabilizer.** Let `D₂' = D₂ + (D₁.coprod D₂) ∘ L` for a map `L : Λ → E × Λ`
@@ -365,17 +386,12 @@ theorem detLineChartEquiv_apply_eq_det_smul_of_comp_eq {D₂' : Λ →L[𝕜] F}
       (LinearEquiv.prodComm 𝕜 Λ E)) with hΨ_def
   have hΨ (z : E × Λ) : Ψ z = z + L z.2 := by
     ext <;> simp [hΨ_def, heΛ, hΦ_def]
-  have := detLineChartEquiv_detLineCongr (D₁' := D₁) (D₂' := D₂) (q' := q)
-    (e₁ := LinearEquiv.refl 𝕜 E) (e₂ := LinearEquiv.refl 𝕜 F) (eΛ := eΛ) (Ψ := Ψ)
-    (LinearMap.ext fun z ↦ by simpa [hΨ] using congrArg Prod.fst (hΨL z))
-    (fun u ↦ by simp [hΨ]) (fun z ↦ by simp [hΨ, heΛ, hΦ_def]) (LinearEquiv.refl 𝕜 G)
-    (fun z _ ↦ by simp [hΨ, hqL]) h' h y
-  rw [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply,
-    LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul, LinearEquiv.det_refl, one_mul,
-    Units.smul_def, Units.val_inv_eq_inv_val, LinearEquiv.coe_det] at this
   have hdet : LinearMap.det (eΛ : Λ →ₗ[𝕜] Λ) = Φ.det := by simp [heΛ]
-  rw [hdet] at this
-  exact (inv_smul_eq_iff₀ (hdet ▸ hΦ)).mp this.symm
+  rw [detLineChartEquiv_apply_eq_det_smul_of_coprod_comp_eq (q₁ := q) (eΛ₁ := eΛ)
+    (Ψ₁ := Ψ) (LinearMap.ext fun z ↦ by simpa [hΨ] using congrArg Prod.fst (hΨL z))
+    (fun u ↦ by simp [hΨ]) (fun z ↦ by simp [hΨ, heΛ, hΦ_def]) (LinearEquiv.refl 𝕜 G)
+    (fun z _ ↦ by simp [hΨ, hqL]) h' h y, hdet, LinearEquiv.refl_toLinearMap, LinearMap.det_id,
+    one_mul, smul_inv_smul₀ (hdet ▸ hΦ)]
 
 end ChartCongr
 

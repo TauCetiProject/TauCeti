@@ -7,10 +7,10 @@ module
 
 public import Mathlib.Topology.VectorBundle.Basic
 public import TauCeti.Analysis.Calculus.Morse.NormalForm
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
-import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
 
 /-!
 # The parametric Morse lemma in trivial and general vector bundles

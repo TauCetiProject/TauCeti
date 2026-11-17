@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.DeterminantLine.Transport
-import TauCeti.Analysis.Normed.Operator.ContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Naturality of Fredholm determinant lines and of their orientations
@@ -67,10 +67,11 @@ variable {E F E' F' X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Compl
 
 variable {S : X → E' →L[ℝ] F'} {e₁ : X → E ≃L[ℝ] E'} {e₂ : X → F ≃L[ℝ] F'}
 
-/-- **Naturality of coherence.** Let `S x ∘ e₁ x = e₂ x ∘ T x` for families of isomorphisms `e₁`
-of the sources and `e₂` of the targets, continuous within `s` at `x₀`. If `v` is coherent for `T`
-within `s` at `x₀`, then its transport along the squares, `LinearMap.detLineCongr`, is coherent
-for `S`. -/
+/-- **Naturality of coherence.** Let `T` be a family of operators continuous within `s` at `x₀`,
+with `T x₀` Fredholm, and let `S x ∘ e₁ x = e₂ x ∘ T x` for families of isomorphisms `e₁` of the
+sources and `e₂` of the targets, continuous within `s` at `x₀`. If `v` is coherent for `T` within
+`s` at `x₀`, then its transport along the squares, `LinearMap.detLineCongr`, is coherent for
+`S`. -/
 theorem IsDetLineCoherentWithinAt.detLineCongr (hv : IsDetLineCoherentWithinAt T v s x₀)
     (hT : ContinuousWithinAt T s x₀) (hF : IsFredholm (T x₀))
     (he₁ : ContinuousWithinAt (fun x ↦ (e₁ x : E →L[ℝ] E')) s x₀)
@@ -120,9 +121,10 @@ theorem IsDetLineCoherentWithinAt.detLineCongr (hv : IsDetLineCoherentWithinAt T
   rwa [detLineChartEquiv_detLineCongr_of_comp_eq (h x) hx,
     detLineChartEquiv_detLineCongr_of_comp_eq (h x₀) h₀]
 
-/-- **Naturality of continuous orientations.** Transporting a family coherent on `s` along
-squares `S x ∘ e₁ x = e₂ x ∘ T x` of families of isomorphisms continuous on `s` gives a family
-coherent on `s`. -/
+/-- **Naturality of continuous orientations.** Let `T` be a family of operators continuous on `s`
+and Fredholm at every point of `s`. Transporting a family coherent for `T` on `s` along squares
+`S x ∘ e₁ x = e₂ x ∘ T x` of families of isomorphisms continuous on `s` gives a family coherent
+for `S` on `s`. -/
 theorem IsDetLineCoherentOn.detLineCongr (hv : IsDetLineCoherentOn T v s) (hT : ContinuousOn T s)
     (hF : ∀ x ∈ s, IsFredholm (T x)) (he₁ : ContinuousOn (fun x ↦ (e₁ x : E →L[ℝ] E')) s)
     (he₂ : ContinuousOn (fun x ↦ (e₂ x : F →L[ℝ] F')) s)
@@ -168,8 +170,7 @@ theorem detLineOrientationTransport_map_detLineCongr (hT : ContinuousOn T (uIcc 
 
 /-- **Transport along a path of target isomorphisms.** For a Fredholm operator `T₀` and a path
 `A` of isomorphisms of its target, transporting an orientation along `t ↦ A t ∘ T₀` from `a` to
-`b` is the transport of determinant lines along `A b ∘ (A a)⁻¹`: both are read off from `T₀`
-through the transports along the squares `(A t ∘ T₀) ∘ 1 = A t ∘ T₀`. -/
+`b` is the transport of determinant lines along `A b ∘ (A a)⁻¹`. -/
 theorem detLineOrientationTransport_comp_left {T₀ : E →L[ℝ] F} (hT₀ : IsFredholm T₀)
     {A : ℝ → F ≃L[ℝ] F'} (hA : ContinuousOn (fun t ↦ (A t : F →L[ℝ] F')) (uIcc a b))
     (o : Module.Ray ℝ (T₀ : E →ₗ[ℝ] F).detLine) :
@@ -179,6 +180,7 @@ theorem detLineOrientationTransport_comp_left {T₀ : E →L[ℝ] F} (hT₀ : Is
           (A a).toLinearEquiv (LinearMap.ext fun _ ↦ rfl)) o) =
       Module.Ray.map ((T₀ : E →ₗ[ℝ] F).detLineCongr (LinearEquiv.refl ℝ E) (A b).toLinearEquiv
         (LinearMap.ext fun _ ↦ rfl)) o := by
+  -- Both sides are read off from `T₀` through the squares `(A t ∘ T₀) ∘ 1 = A t ∘ T₀`.
   have := detLineOrientationTransport_map_detLineCongr (T := fun _ ↦ T₀)
     (S := fun t ↦ (A t : F →L[ℝ] F') ∘L T₀) (e₁ := fun _ ↦ ContinuousLinearEquiv.refl ℝ E)
     (e₂ := A) continuousOn_const (fun _ _ ↦ hT₀) (hA.clm_comp continuousOn_const)
