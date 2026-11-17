@@ -71,16 +71,12 @@ theorem map_positiveRootProduct (l : List PositiveRoot)
   simp only [coe_positiveRootProduct, map_list_prod, List.map_map, Function.comp_def,
     D.map_rootSubgroupPoints, toAdd_ofAdd]
 
-attribute [local instance high] Algebra.toModule
-
 /-- Every positive point has coordinates in any enumeration of the positive roots.
 No field or reducedness hypothesis is required. -/
 theorem positiveRootProduct_surjective (l : List PositiveRoot)
     (hl : l.Nodup) (hcover : ∀ γ, γ ∈ l) (A : Type v) [CommRing A] :
     Function.Surjective (D.positiveRootProduct l A) := by
   intro g
-  have hg := (D.mem_positivePoints_iff).mp g.2
-  obtain ⟨q, hq, hmatrix⟩ := hg
   have hroots : ∀ γ, γ ∈ l.map Subtype.val ↔
       γ ∈ posRoots (t.rationalRootSystem ht) (t.rationalBase ht) := by
     intro γ
@@ -90,16 +86,10 @@ theorem positiveRootProduct_surjective (l : List PositiveRoot)
       exact γ.2
     · intro hγ
       exact List.mem_map.mpr ⟨⟨γ, hγ⟩, hcover _, rfl⟩
-  obtain ⟨u, hu⟩ := (D.mem_positiveSubgroup_iff_exists_prod
-    (l.map Subtype.val) (hl.map Subtype.val_injective) hroots (CommAlgCat.of ℤ A) q).mp hq
-  refine ⟨fun γ => (u γ.1).toAdd, ?_⟩
-  apply Subtype.ext
-  apply Subtype.ext
-  have h := congrArg
-    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) hu
-  simpa only [map_list_prod, List.map_map, Function.comp_def,
-    coe_positiveRootProduct, SubmonoidClass.coe_list_prod,
-    coe_rootSubgroupPoints, ofAdd_toAdd, MulEquiv.toMonoidHom_eq_coe, hmatrix] using h
+  obtain ⟨u, hu⟩ := (D.mem_positivePoints_iff_exists_prod
+    (l.map Subtype.val) (hl.map Subtype.val_injective) hroots A g).mp g.2
+  refine ⟨fun γ => (u γ.1).toAdd, Subtype.ext ?_⟩
+  simpa only [coe_positiveRootProduct, List.map_map, Function.comp_def, ofAdd_toAdd] using hu
 
 end TauCeti.DynkinType.ChevalleyDatum
 
