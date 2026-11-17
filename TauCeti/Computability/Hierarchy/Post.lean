@@ -80,49 +80,6 @@ variable {Z : Set ℕ} {m n : ℕ} {α : Type*} [Primcodable α] {p : α → Pro
 
 /-! ### Shifting levels across the Turing jump -/
 
-/-- Halting against a set oracle `A` is equivalent to the existence of a paired `(fuel, bitmask)`
-certificate whose bounded run succeeds and whose finite oracle agrees with `A` below the recorded
-stage use. -/
-private theorem dom_eval_oracle_iff_exists_certificate {A : Set ℕ} {c : Code} {x : ℕ} :
-    (Code.eval A.oracle c x).Dom ↔
-      ∃ w : ℕ,
-        (Code.evaln (Code.setAnswers (Finset.equivBitIndices w.unpair.2 : Set ℕ))
-          w.unpair.1 c x).isSome = true ∧
-        (∀ z < Code.stageUse (Code.setAnswers (Finset.equivBitIndices w.unpair.2 : Set ℕ))
-            w.unpair.1 c x,
-          z ∈ Finset.equivBitIndices w.unpair.2 → z ∈ A) ∧
-        (∀ z < Code.stageUse (Code.setAnswers (Finset.equivBitIndices w.unpair.2 : Set ℕ))
-            w.unpair.1 c x,
-          z ∉ Finset.equivBitIndices w.unpair.2 → z ∉ A) := by
-  classical
-  have hanswers : ∀ z y, Code.setAnswers A z = some y ↔ y ∈ A.oracle z := by
-    simp [eq_comm]
-  constructor
-  · intro hdom
-    obtain ⟨y, hy⟩ := Part.dom_iff_mem.1 hdom
-    obtain ⟨k, d, hd, -⟩ := (Code.mem_eval_iff_exists_evaln hanswers).1 hy
-    let S : Finset ℕ := (Finset.range d.use).filter (· ∈ A)
-    have hdS : Code.evaln (Code.setAnswers (S : Set ℕ)) k c x = some d :=
-      Code.evaln_eq_some_of_eqOn hd <| Code.eqOn_setAnswers_iff.2 fun z hz => by
-        simp [S, Set.mem_Iio.1 hz]
-    refine ⟨Nat.pair k (Finset.equivBitIndices.symm S), by simp [hdS], ?_, ?_⟩
-    · intro z _ hzS
-      simp only [Nat.unpair_pair, Finset.equivBitIndices.apply_symm_apply] at hzS
-      exact (Finset.mem_filter.1 hzS).2
-    · intro z hz hzS
-      simp only [Nat.unpair_pair, Finset.equivBitIndices.apply_symm_apply,
-        Code.stageUse_eq_of_evaln_eq_some hdS] at hz hzS
-      exact fun hzA => hzS (Finset.mem_filter.2 ⟨Finset.mem_range.2 hz, hzA⟩)
-  · rintro ⟨w, hsome, hposw, hnegw⟩
-    obtain ⟨d, hd⟩ := Option.isSome_iff_exists.1 hsome
-    have hduse := Code.stageUse_eq_of_evaln_eq_some hd
-    have hdA : Code.evaln (Code.setAnswers A) w.unpair.1 c x = some d :=
-      Code.evaln_eq_some_of_eqOn hd <| Code.eqOn_setAnswers_iff.2 fun z hz => by
-        have hz' : z < Code.stageUse (Code.setAnswers (Finset.equivBitIndices w.unpair.2 : Set ℕ))
-            w.unpair.1 c x := hduse ▸ Set.mem_Iio.1 hz
-        exact ⟨hposw z hz', fun hzA => by_contra fun hzF => hnegw z hz' hzF hzA⟩
-    exact Part.dom_iff_mem.2 ⟨d.output, Code.evaln_sound hdA fun z _ y hy => (hanswers z y).1 hy⟩
-
 /-- The domain of an oracle program evaluated relative to `Z'` is `Σ⁰₂` relative to `Z`. -/
 theorem isSigma_two_dom_eval_jump (c : Code) :
     IsSigma Z 2 (fun x => (Code.eval Z.jump.oracle c x).Dom) := by
@@ -134,7 +91,7 @@ theorem isSigma_two_dom_eval_jump (c : Code) :
         ((Primrec.const c).pair Primrec.fst))
   have hhalt : IsSigma Z 2 (fun p : ℕ × ℕ =>
       (Code.evaln (Code.setAnswers (Finset.equivBitIndices p.2.unpair.2 : Set ℕ))
-        p.2.unpair.1 c p.1).isSome = true) :=
+        p.2.unpair.1 c p.1).isSome) :=
     (isSigma_zero_iff.2 ⟨_,
       (Primrec.option_isSome.comp
         ((Code.primrec_evaln Code.primrec₂_setAnswers_equivBitIndices).comp hargs)).computableIn,
@@ -166,8 +123,16 @@ theorem isSigma_two_dom_eval_jump (c : Code) :
       IsPi.imp (isSigma_not_iff.2 (isPi_zero_iff.2 hmemF)).succ
         ((isPi_not_iff.2 isSigma_one_jump).preimage ComputableIn.snd)
     exact (himp.forall_lt huse).sigma_succ
-  exact ((hhalt.and (hpos.and hneg)).exists_nat).of_eq fun _ =>
-    dom_eval_oracle_iff_exists_certificate.symm
+  -- Pack `(fuel, finite set)` witnesses into `w : ℕ` via `Nat.pair` and `Finset.equivBitIndices`.
+  refine ((hhalt.and (hpos.and hneg)).exists_nat).of_eq fun x => ?_
+  rw [Code.dom_eval_oracle_iff_exists_evaln_finset]
+  refine ⟨fun ⟨w, hsome, hposw, hnegw⟩ =>
+      ⟨w.unpair.1, Finset.equivBitIndices w.unpair.2, hsome,
+        fun z hz => ⟨hposw z hz, fun hzA => by_contra fun hzF => hnegw z hz hzF hzA⟩⟩,
+    fun ⟨k, F, hsome, hagree⟩ => ⟨Nat.pair k (Finset.equivBitIndices.symm F), ?_⟩⟩
+  simp only [Nat.unpair_pair, Finset.equivBitIndices.apply_symm_apply]
+  exact ⟨hsome, fun z hz hzF => (hagree z hz).1 hzF,
+    fun z hz hzF hzA => hzF ((hagree z hz).2 hzA)⟩
 
 /-- A predicate is `Σ⁰₂` relative to `Z` if and only if it is `Σ⁰₁` relative to `Z'`. -/
 theorem isSigma_two_iff_isSigma_one_jump : IsSigma Z 2 p ↔ IsSigma Z.jump 1 p := by
