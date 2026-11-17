@@ -116,7 +116,6 @@ instance SmashProduct.instModule : Module R μ.SmashProduct :=
     (fun _ _ => rfl)
 
 /-- The canonical `R`-linear equivalence between `A # H` and `A ⊗[R] H`. -/
-@[expose]
 def tensorEquiv : μ.SmashProduct ≃ₗ[R] A ⊗[R] H where
   toFun := SmashProduct.toTensor
   invFun := SmashProduct.ofTensor
@@ -133,7 +132,6 @@ instance SmashProduct.instSubsingleton [Subsingleton A] : Subsingleton μ.SmashP
   μ.tensorEquiv.injective.subsingleton
 
 /-- The pure element `a # h` of the smash product `A # H`. -/
-@[expose]
 def smash (a : A) (h : H) : μ.SmashProduct := ⟨a ⊗ₜ[R] h⟩
 
 /-- The bilinear map sending `(a, h)` to the pure smash element `a # h`. -/
@@ -142,13 +140,20 @@ def smashBilinear : A →ₗ[R] H →ₗ[R] μ.SmashProduct :=
 
 variable {μ}
 
+theorem tensorEquiv_apply (x : μ.SmashProduct) : μ.tensorEquiv x = x.toTensor := (rfl)
+
+theorem tensorEquiv_symm_apply (t : A ⊗[R] H) : μ.tensorEquiv.symm t = .ofTensor t := (rfl)
+
+theorem smash_def (a : A) (h : H) : μ.smash a h = .ofTensor (a ⊗ₜ[R] h) := (rfl)
+
+@[simp] theorem toTensor_smash (a : A) (h : H) : (μ.smash a h).toTensor = a ⊗ₜ[R] h := (rfl)
+
 @[simp] theorem smashBilinear_apply (a : A) (h : H) : μ.smashBilinear a h = μ.smash a h := (rfl)
 
 @[simp] theorem tensorEquiv_smash (a : A) (h : H) : μ.tensorEquiv (μ.smash a h) = a ⊗ₜ[R] h := (rfl)
 
-@[simp]
-theorem tensorEquiv_symm_tmul (a : A) (h : H) : μ.tensorEquiv.symm (a ⊗ₜ[R] h) = μ.smash a h :=
-  (rfl)
+@[simp] theorem tensorEquiv_symm_tmul (a : A) (h : H) :
+    μ.tensorEquiv.symm (a ⊗ₜ[R] h) = μ.smash a h := (rfl)
 
 @[simp] theorem smash_zero (a : A) : μ.smash a 0 = 0 := map_zero (μ.smashBilinear a)
 
