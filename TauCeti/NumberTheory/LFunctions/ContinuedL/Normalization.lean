@@ -55,33 +55,16 @@ off the support of `polarOrder`. -/
 @[simp]
 theorem analytic_continuedL_apply (s : ℂ) :
     T.analytic.continuedL s = T.arithmetic.continuedL (s + (T.weight : ℂ) / 2) := by
-  have hN : ((T.arithmetic.conductor : ℕ) : ℂ) ≠ 0 :=
-    Nat.cast_ne_zero.mpr T.arithmetic.conductor.ne_zero
   have hraw_apply (z : ℂ) :
       ((T.analytic.conductor : ℕ) : ℂ) ^ (-z / 2) *
           T.analytic.completed z * T.analytic.invGammaFactor z =
         ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(z + (T.weight : ℂ) / 2) / 2) *
           T.arithmetic.completed (z + (T.weight : ℂ) / 2) *
             T.arithmetic.invGammaFactor (z + (T.weight : ℂ) / 2) := by
-    have hpow : ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-z / 2) *
-        ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(T.weight : ℂ) / 4) =
-        ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(z + (T.weight : ℂ) / 2) / 2) := by
-      rw [← cpow_add _ _ hN]
-      congr 1
-      ring
-    rw [T.conductor_eq, T.completed_eq, T.analytic_invGammaFactor]
-    calc
-      ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-z / 2) *
-          (((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(T.weight : ℂ) / 4) *
-            T.arithmetic.completed (z + (T.weight : ℂ) / 2)) *
-          T.arithmetic.invGammaFactor (z + (T.weight : ℂ) / 2) =
-        (((T.arithmetic.conductor : ℕ) : ℂ) ^ (-z / 2) *
-          ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(T.weight : ℂ) / 4)) *
-            T.arithmetic.completed (z + (T.weight : ℂ) / 2) *
-          T.arithmetic.invGammaFactor (z + (T.weight : ℂ) / 2) := by ring
-      _ = ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(z + (T.weight : ℂ) / 2) / 2) *
-            T.arithmetic.completed (z + (T.weight : ℂ) / 2) *
-          T.arithmetic.invGammaFactor (z + (T.weight : ℂ) / 2) := by rw [hpow]
+    rw [T.conductor_eq, T.completed_eq, T.analytic_invGammaFactor,
+      show -(z + (T.weight : ℂ) / 2) / 2 = -z / 2 + -(T.weight : ℂ) / 4 by ring,
+      cpow_add _ _ (Nat.cast_ne_zero.mpr T.arithmetic.conductor.ne_zero)]
+    ring
   have hraw : (fun z : ℂ ↦ ((T.analytic.conductor : ℕ) : ℂ) ^ (-z / 2) *
       T.analytic.completed z * T.analytic.invGammaFactor z) =
       (fun z : ℂ ↦ ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-z / 2) *

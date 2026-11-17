@@ -93,17 +93,6 @@ private theorem conductor_cpow_ne_zero (d : AnalyticLFunctionData) (w : ℂ) :
     ((d.conductor : ℕ) : ℂ) ^ w ≠ 0 :=
   cpow_ne_zero_iff.mpr (Or.inl d.conductor_cast_ne_zero)
 
-private theorem conductor_cpow_mul_neg_div_two (d : AnalyticLFunctionData) (s : ℂ) :
-    ((d.conductor : ℕ) : ℂ) ^ (s / 2) * ((d.conductor : ℕ) : ℂ) ^ (-s / 2) = 1 := by
-  rw [← cpow_add _ _ d.conductor_cast_ne_zero]
-  have hz : s / 2 + -s / 2 = 0 := by ring
-  rw [hz, cpow_zero]
-
-private theorem conductor_cpow_neg_mul_div_two (d : AnalyticLFunctionData) (s : ℂ) :
-    ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ (s / 2) = 1 := by
-  rw [mul_comm]
-  exact d.conductor_cpow_mul_neg_div_two s
-
 private theorem analyticAt_conductor_cpow_div_two (d : AnalyticLFunctionData) (s : ℂ) :
     AnalyticAt ℂ (fun z : ℂ ↦ ((d.conductor : ℕ) : ℂ) ^ (z / 2)) s :=
   ((differentiable_id.div_const (2 : ℂ)).const_cpow
@@ -213,13 +202,9 @@ theorem continuedL_eventuallyEq (s : ℂ) :
 `d.completed s = N^(s / 2) * d.gammaFactor s * d.continuedL s`. -/
 theorem completed_eq_mul_continuedL {s : ℂ} (hs : d.gammaFactor s ≠ 0) :
     d.completed s = ((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s * d.continuedL s := by
-  rw [d.continuedL_eq_of_gammaFactor_ne_zero hs]
-  calc
-    d.completed s = (((d.conductor : ℕ) : ℂ) ^ (s / 2) * ((d.conductor : ℕ) : ℂ) ^ (-s / 2)) *
-        (d.gammaFactor s * (d.gammaFactor s)⁻¹) * d.completed s := by
-      rw [d.conductor_cpow_mul_neg_div_two s, mul_inv_cancel₀ hs, one_mul, one_mul]
-    _ = ((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s *
-        (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s * (d.gammaFactor s)⁻¹) := by ring
+  rw [d.continuedL_eq_of_gammaFactor_ne_zero hs, neg_div, cpow_neg]
+  have hN := d.conductor_cpow_ne_zero (s / 2)
+  field_simp
 
 /-- On a punctured neighbourhood of every `s : ℂ`, `d.completed` agrees as a germ with
 `z ↦ N^(z / 2) * d.gammaFactor z * d.continuedL z`. -/
@@ -234,8 +219,9 @@ private theorem rawContinuedL_def :
 
 private theorem rawContinuedL_dual (s : ℂ) :
     rawContinuedL d.dual s = conj (rawContinuedL d (conj s)) := by
-  have hN := TauCeti.ofReal_cpow_conj (d.conductor : ℕ).cast_nonneg (-conj s / 2)
-  rw [Complex.ofReal_natCast, map_div₀, map_neg, Complex.conj_conj, map_ofNat] at hN
+  have hN : ((d.conductor : ℕ) : ℂ) ^ (-s / 2) =
+      conj (((d.conductor : ℕ) : ℂ) ^ (-conj s / 2)) := by
+    simpa [map_ofNat] using TauCeti.ofReal_cpow_conj (d.conductor : ℕ).cast_nonneg (-conj s / 2)
   have hinv : d.dual.invGammaFactor s = conj (d.invGammaFactor (conj s)) := by
     simpa only [Complex.star_def] using d.invGammaFactor_dual s
   simp only [rawContinuedL, dual_conductor, dual_completed_apply, hinv, map_mul, hN]
@@ -485,16 +471,9 @@ variable {d : AnalyticLFunctionData}
 with `LSeries d.coeff s`. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries_of_gammaFactor_ne_zero
     (hda : d.HasDirichletAgreement) {s : ℂ} (hs : 1 < s.re) (hγ : d.gammaFactor s ≠ 0) :
-    d.continuedL s = LSeries d.coeff s := by
-  rw [d.continuedL_eq_of_gammaFactor_ne_zero hγ, hda.completed_eq s hs]
-  calc
-    ((d.conductor : ℕ) : ℂ) ^ (-s / 2) *
-        (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s * LSeries d.coeff s) *
-        (d.gammaFactor s)⁻¹ =
-      (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ (s / 2)) *
-        (d.gammaFactor s * (d.gammaFactor s)⁻¹) * LSeries d.coeff s := by ring
-    _ = LSeries d.coeff s := by
-      rw [d.conductor_cpow_neg_mul_div_two s, mul_inv_cancel₀ hγ, one_mul, one_mul]
+    d.continuedL s = LSeries d.coeff s :=
+  mul_left_cancel₀ (mul_ne_zero (d.conductor_cpow_ne_zero (s / 2)) hγ)
+    ((d.completed_eq_mul_continuedL hγ).symm.trans (hda.completed_eq s hs))
 
 /-- At every point `s` with `1 < s.re`, `d.continuedL` agrees with `LSeries d.coeff` on a punctured
 neighbourhood of `s`. -/
@@ -550,26 +529,25 @@ private theorem abscissaOfAbsConv_le_one_or_eq_top
       · rw [ha] at htop
         exact (EReal.coe_ne_top r) htop
 
-private theorem continuousAt_LSeries_of_hasDirichletAgreement
+private theorem tendsto_continuedL_LSeries
     (hda : d.HasDirichletAgreement) (hm : Meromorphic d.completed) {s : ℂ}
-    (hs : 1 < s.re) : ContinuousAt (LSeries d.coeff) s := by
-  rcases abscissaOfAbsConv_le_one_or_eq_top hda hm with habs | ha
-  · exact (LSeries_analyticOnNhd d.coeff s
-      (habs.trans_lt (by exact_mod_cast hs))).continuousAt
-  · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top ha]
-    exact continuousAt_const
+    (hs : 1 < s.re) : Tendsto d.continuedL (𝓝[≠] s) (𝓝 (LSeries d.coeff s)) := by
+  have hcont : ContinuousAt (LSeries d.coeff) s := by
+    rcases abscissaOfAbsConv_le_one_or_eq_top hda hm with habs | ha
+    · exact (LSeries_analyticOnNhd d.coeff s
+        (habs.trans_lt (by exact_mod_cast hs))).continuousAt
+    · rw [LSeries_eq_zero_of_abscissaOfAbsConv_eq_top ha]
+      exact continuousAt_const
+  exact hcont.continuousWithinAt.tendsto.congr' (hda.continuedL_eventuallyEq_LSeries hs).symm
 
 /-- On `1 < s.re`, a card with Dirichlet agreement and meromorphic continuation has analytic
 `continuedL` at `s`, even if `d.gammaFactor` has a pole at `s`. -/
 theorem HasDirichletAgreement.analyticAt_continuedL (hda : d.HasDirichletAgreement)
     (hmc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
-    AnalyticAt ℂ d.continuedL s := by
-  have hcont := continuousAt_LSeries_of_hasDirichletAgreement hda hmc.meromorphic hs
-  have hlim : Tendsto d.continuedL (𝓝[≠] s) (𝓝 (LSeries d.coeff s)) :=
-    hcont.continuousWithinAt.tendsto.congr' (hda.continuedL_eventuallyEq_LSeries hs).symm
-  exact (hmc.meromorphicOrderAt_continuedL_nonneg_iff_analyticAt s).1 <|
+    AnalyticAt ℂ d.continuedL s :=
+  (hmc.meromorphicOrderAt_continuedL_nonneg_iff_analyticAt s).1 <|
     (tendsto_nhds_iff_meromorphicOrderAt_nonneg (hmc.meromorphic_continuedL s)).1
-      ⟨LSeries d.coeff s, hlim⟩
+      ⟨LSeries d.coeff s, tendsto_continuedL_LSeries hda hmc.meromorphic hs⟩
 
 /-- **Agreement with `LSeries` on `1 < s.re`.** Under Dirichlet agreement and meromorphic
 continuation, `d.continuedL s = LSeries d.coeff s` at every point of the half-plane `1 < s.re`,
@@ -577,9 +555,7 @@ including any poles of `d.gammaFactor` in that half-plane. -/
 theorem HasDirichletAgreement.continuedL_eq_LSeries (hda : d.HasDirichletAgreement)
     (hmc : d.HasMeromorphicContinuation) {s : ℂ} (hs : 1 < s.re) :
     d.continuedL s = LSeries d.coeff s :=
-  hmc.continuedL_eq_of_tendsto <|
-    ((continuousAt_LSeries_of_hasDirichletAgreement hda hmc.meromorphic hs).continuousWithinAt
-      |>.tendsto).congr' (hda.continuedL_eventuallyEq_LSeries hs).symm
+  hmc.continuedL_eq_of_tendsto (tendsto_continuedL_LSeries hda hmc.meromorphic hs)
 
 /-- Canonical normal-form continuation of `LSeries d.coeff` from `1 < s.re` equals
 `toMeromorphicNFOn d.continuedL univ`. -/
@@ -590,9 +566,7 @@ theorem HasDirichletAgreement.meromorphicContinuation_LSeries_eq_toMeromorphicNF
   refine meromorphicContinuation_eq (meromorphicNFOn_toMeromorphicNFOn d.continuedL univ)
     fun s hs ↦ ?_
   rw [toMeromorphicNFOn_eq_toMeromorphicNFAt hmL.meromorphicOn (mem_univ s)]
-  exact (hmL s).toMeromorphicNFAt_apply_eq_of_tendsto <|
-    (continuousAt_LSeries_of_hasDirichletAgreement hda hm hs).continuousWithinAt.tendsto.congr'
-      (hda.continuedL_eventuallyEq_LSeries hs).symm
+  exact (hmL s).toMeromorphicNFAt_apply_eq_of_tendsto (tendsto_continuedL_LSeries hda hm hs)
 
 end DirichletAgreement
 
@@ -611,31 +585,13 @@ theorem HasFunctionalEquation.gammaFactor_mul_continuedL_eq
     d.gammaFactor s * d.continuedL s =
       d.rootNumber * ((d.conductor : ℕ) : ℂ) ^ (1 / 2 - s) *
         d.dual.gammaFactor (1 - s) * d.dual.continuedL (1 - s) := by
-  have hp' : d.polarOrder (1 - conj s) = 0 := (h.polarOrder_one_sub_conj s).trans hp
-  have hfe := h.completed_eq s hp hp'
+  refine mul_left_cancel₀ (d.conductor_cpow_ne_zero (s / 2)) ?_
+  have hfe := h.completed_eq s hp ((h.polarOrder_one_sub_conj s).trans hp)
   have hc := d.completed_eq_mul_continuedL hγ
   have hc' := d.dual.completed_eq_mul_continuedL hγ'
-  rw [dual_conductor] at hc'
-  have hpow' : ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ ((1 - s) / 2) =
-      ((d.conductor : ℕ) : ℂ) ^ (1 / 2 - s) := by
-    rw [← cpow_add _ _ d.conductor_cast_ne_zero]
-    congr 1
-    ring
-  calc
-    d.gammaFactor s * d.continuedL s =
-        ((d.conductor : ℕ) : ℂ) ^ (-s / 2) *
-          (((d.conductor : ℕ) : ℂ) ^ (s / 2) * d.gammaFactor s * d.continuedL s) := by
-      rw [← mul_assoc, ← mul_assoc, d.conductor_cpow_neg_mul_div_two s, one_mul]
-    _ = ((d.conductor : ℕ) : ℂ) ^ (-s / 2) * d.completed s := by rw [← hc]
-    _ = ((d.conductor : ℕ) : ℂ) ^ (-s / 2) *
-          (d.rootNumber *
-            (((d.conductor : ℕ) : ℂ) ^ ((1 - s) / 2) *
-              d.dual.gammaFactor (1 - s) * d.dual.continuedL (1 - s))) := by rw [hfe, hc']
-    _ = d.rootNumber *
-          (((d.conductor : ℕ) : ℂ) ^ (-s / 2) * ((d.conductor : ℕ) : ℂ) ^ ((1 - s) / 2)) *
-          d.dual.gammaFactor (1 - s) * d.dual.continuedL (1 - s) := by ring
-    _ = d.rootNumber * ((d.conductor : ℕ) : ℂ) ^ (1 / 2 - s) *
-          d.dual.gammaFactor (1 - s) * d.dual.continuedL (1 - s) := by rw [hpow']
+  rw [dual_conductor, show (1 - s) / 2 = s / 2 + (1 / 2 - s) by ring,
+    cpow_add _ _ d.conductor_cast_ne_zero] at hc'
+  linear_combination -hc + hfe + d.rootNumber * hc'
 
 /-- **Asymmetric functional equation as germs.** For any card `d` satisfying
 `HasFunctionalEquation` (even without meromorphicity), `γ(z) * continuedL d z` agrees on a punctured

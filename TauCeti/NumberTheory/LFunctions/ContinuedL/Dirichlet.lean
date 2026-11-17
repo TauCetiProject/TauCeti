@@ -35,14 +35,10 @@ theorem dirichletData_continuedL {N : ℕ} [NeZero N] (χ : DirichletCharacter �
   · subst N
     rw [dirichletData_modOne, riemannZetaData_continuedL, DirichletCharacter.LFunction_modOne_eq]
   · ext s
-    have hN0 : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
-    have hpow : (N : ℂ) ^ (-s / 2) * (N : ℂ) ^ (s / 2) = 1 := by
-      rw [← cpow_add _ _ hN0]
-      have hz : -s / 2 + s / 2 = 0 := by ring
-      rw [hz, cpow_zero]
     rw [(dirichletData χ hχ).continuedL_eq_of_polarOrder_eq_zero (by simp [hN]),
       χ.LFunction_eq_completed_div_gammaFactor s (.inr hN)]
-    simp [AnalyticLFunctionData.invGammaFactor_def, ← mul_assoc, hpow, ← div_eq_mul_inv]
+    simp [AnalyticLFunctionData.invGammaFactor_def, ← mul_assoc,
+      ← cpow_add _ _ (Nat.cast_ne_zero.mpr (NeZero.ne N)), div_eq_mul_inv]
 
 /-! ### Checks -/
 
