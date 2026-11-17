@@ -82,6 +82,10 @@ spectrum from that of its orthogonal complement.
   `μ ∈ Ω`.
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace`: for symmetric `A` in finite dimension,
   `(A.pointSpectralSubspace Ω)ᗮ = A.pointSpectralSubspace Ωᶜ`.
+* `LinearMap.IsSymmetric.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl`:
+  the dimensions of the point-spectral subspaces selected by `Ω` and `Ωᶜ` add up to `dim E`; for
+  injective `A` the same holds for `Iio 0` and `Ioi 0`
+  (`IsSymmetric.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero`).
 * `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace_Iio_zero` and
   `LinearMap.IsSymmetric.orthogonal_pointSpectralSubspace_Ioi_zero`: for injective symmetric `A`,
   the negative and positive spectral subspaces are orthogonal complements.
@@ -448,6 +452,24 @@ theorem orthogonal_pointSpectralSubspace (hA : A.IsSymmetric) (Ω : Set ℝ) :
         rw [sup_comm, hA.pointSpectralSubspace_sup_compl_eq_top, top_inf_eq]
     _ = A.pointSpectralSubspace Ωᶜ := by
         rw [sup_inf_assoc_of_le _ hle, Submodule.inf_orthogonal_eq_bot, sup_bot_eq]
+
+/-- For a symmetric operator on a finite-dimensional space, the dimensions of the point-spectral
+subspaces selected by `Ω` and by its complement add up to the dimension of the space. -/
+theorem finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (hA : A.IsSymmetric)
+    (Ω : Set ℝ) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace Ω) + Module.finrank 𝕜 (A.pointSpectralSubspace Ωᶜ) =
+      Module.finrank 𝕜 E := by
+  rw [← hA.orthogonal_pointSpectralSubspace]
+  exact Submodule.finrank_add_finrank_orthogonal _
+
+/-- For an injective symmetric operator on a finite-dimensional space, the numbers of negative and
+of positive eigenvalues, counted with multiplicity, add up to the dimension of the space. -/
+theorem finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero
+    (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
+    Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Iio 0)) +
+        Module.finrank 𝕜 (A.pointSpectralSubspace (Set.Ioi 0)) =
+      Module.finrank 𝕜 E :=
+  Submodule.finrank_add_eq_of_isCompl (hA.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
 
 /-- For an injective symmetric operator on a finite-dimensional space, the orthogonal complement of
 the negative spectral subspace is the positive spectral subspace. -/
