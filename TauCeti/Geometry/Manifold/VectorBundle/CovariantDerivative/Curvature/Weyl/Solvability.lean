@@ -530,30 +530,6 @@ private theorem mgradient_and_hessian_eq_of_comp_opens
     exact (hιW.hessian_comp_eq_conformalFlatteningForm_iff (x := ⟨y, hy⟩)
       (hφM.contMDiffAt.of_le (by simp))).1 h₁ u v
 
-omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-    [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- Extending a smooth model-space family `Φ_E : E × P' → ℝ` to `M × P` via `Function.extend` and a
-smooth bump function supported inside an open coordinate domain `W₀`. -/
-private theorem contMDiff_mul_extend_family
-    {P P' : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup P'] [NormedSpace ℝ P']
-    {W₀ : Opens M} (Ψ : W₀ ≃ₘ^∞⟮I, 𝓘(ℝ, E)⟯ E) {x₀ : M} (β : SmoothBumpFunction I x₀)
-    (hβ : ∀ x ∈ tsupport β, x ∈ (W₀ : Set M)) (eQ : P →L[ℝ] P')
-    {Φ_E : E × P' → ℝ} (hΦ_E : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ, P')) 𝓘(ℝ) ∞ Φ_E) :
-    ContMDiff (I.prod 𝓘(ℝ, P)) 𝓘(ℝ) ∞
-      (fun p : M × P ↦ β p.1 * Φ_E (Function.extend Subtype.val Ψ 0 p.1, eQ p.2)) := by
-  refine contMDiff_of_tsupport fun p hp ↦ ?_
-  have hp_supp : p.1 ∈ tsupport β :=
-    (continuous_fst.closure_preimage_subset (Function.support β))
-      (closure_mono (fun r hr ↦ left_ne_zero_of_mul hr) hp)
-  have hψ_at : ContMDiffAt I 𝓘(ℝ, E) ∞ (Function.extend Subtype.val Ψ 0) p.1 :=
-    (ContMDiffMap.contMDiffOn_extend W₀ ⟨Ψ, Ψ.contMDiff⟩ 0).contMDiffAt
-      (W₀.isOpen.mem_nhds (hβ p.1 hp_supp))
-  exact (β.contMDiff.comp contMDiff_fst).contMDiffAt.mul
-    (hΦ_E.contMDiffAt.comp p
-      ((hψ_at.comp p contMDiff_fst.contMDiffAt).prodMk
-        (eQ.contDiff.contMDiff.comp contMDiff_snd).contMDiffAt))
-
 /-- **Smooth initial-value dependence for the conformal flattening equation at an interior point.**
 Let `x₀` be an interior point of a smooth Riemannian manifold `M` near which the Weyl and Cotton
 tensors vanish. Then around any `(c₀, ξ₀) : ℝ × TangentSpace I x₀` there exist open neighbourhoods
@@ -596,9 +572,17 @@ theorem exists_contMDiff_hessian_eq_family_of_isInteriorPoint {x₀ : M} (hx₀ 
   let ψM : M → E := Function.extend Subtype.val Ψ 0
   have hψ (y : W₀) : ψM y.1 = Ψ y := Subtype.val_injective.extend_apply Ψ 0 y
   let Φ (p : M × (ℝ × TangentSpace I x₀)) : ℝ := β p.1 * Φ_E (ψM p.1, eQ p.2)
-  have hΦ : ContMDiff (I.prod 𝓘(ℝ, ℝ × TangentSpace I x₀)) 𝓘(ℝ) ∞ Φ :=
-    contMDiff_mul_extend_family Ψ β (fun x hx ↦ by
-      obtain ⟨⟨_, hyW₀⟩, -, rfl⟩ := hβ_sub hx; exact hyW₀) eQ hΦ_E
+  have hΦ : ContMDiff (I.prod 𝓘(ℝ, ℝ × TangentSpace I x₀)) 𝓘(ℝ) ∞ Φ := by
+    have hψM : ContMDiffOn I 𝓘(ℝ, E) ∞ ψM W₀ :=
+      ContMDiffMap.contMDiffOn_extend W₀ ⟨Ψ, Ψ.contMDiff⟩ 0
+    have hfamily : ContMDiffOn (I.prod 𝓘(ℝ, ℝ × TangentSpace I x₀)) 𝓘(ℝ) ∞
+        (fun p : M × (ℝ × TangentSpace I x₀) ↦ Φ_E (ψM p.1, eQ p.2)) ((W₀ : Set M) ×ˢ univ) :=
+      hΦ_E.comp_contMDiffOn
+        ((hψM.comp contMDiff_fst.contMDiffOn mapsTo_fst_prod).prodMk
+          (eQ.contDiff.contMDiff.comp contMDiff_snd).contMDiffOn)
+    simpa only [Φ, smul_eq_mul] using
+      hfamily.contMDiff_smul_fst_of_tsupport_subset W₀.isOpen β.contMDiff.contMDiffOn
+        fun x hx ↦ by obtain ⟨⟨_, hyW₀⟩, -, rfl⟩ := hβ_sub hx; exact hyW₀
   have hW_W₀ : (⟨W, hW_open⟩ : Opens M) ≤ W₀ := fun y hy ↦ by
     obtain ⟨⟨_, hy₀⟩, -, rfl⟩ := (hW_sub y hy).2; exact hy₀
   refine ⟨W, eQ ⁻¹' Q_E, Φ, hW_open, hx₀W, hQE_open.preimage eQ.continuous, hq₀QE, hΦ,

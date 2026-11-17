@@ -23,7 +23,10 @@ The pointwise form needs only one bump function: a function that is smooth on a
 neighbourhood of a point has the germ there of a globally smooth map
 (`ContMDiffOn.exists_contMDiffMap_eventuallyEq`), with no paracompactness assumption.
 A smooth map on an open subset, extended arbitrarily outside it, stays smooth on that subset
-(`ContMDiffMap.contMDiffOn_extend`).
+(`ContMDiffMap.contMDiffOn_extend`), and multiplying a `C^n` map on an open subset (or a
+parameterized family on a product `s ×ˢ univ`) by a `C^n` cutoff supported inside `s` produces a
+globally `C^n` map (`ContMDiffOn.contMDiff_smul_of_tsupport_subset`,
+`ContMDiffOn.contMDiff_smul_fst_of_tsupport_subset`).
 A closed set inside an open set has a smooth `[0, 1]`-valued cutoff equal to one exactly on the
 closed set, with topological support in the open set
 (`IsClosed.exists_contMDiff_tsupport_subset_eq_one_iff`).
@@ -52,6 +55,42 @@ theorem contMDiffOn_extend (U : TopologicalSpace.Opens M) (f : C^n⟮I, U; I', M
   exact f.contMDiff _
 
 end ContMDiffMap
+
+section Cutoff
+
+variable {𝕜 E E' F H H' M P : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
+
+/-- A product `ψ • g` is `C^n` on the whole manifold when `ψ` and `g` are `C^n` on an open set `s`
+containing the topological support of `ψ`: multiplying by a cutoff `ψ` globalizes a vector-valued
+map defined on `s`. -/
+theorem ContMDiffOn.contMDiff_smul_of_tsupport_subset {ψ : M → 𝕜} {g : M → F} {s : Set M}
+    (hg : ContMDiffOn I 𝓘(𝕜, F) n g s) (hs : IsOpen s)
+    (hψ : ContMDiffOn I 𝓘(𝕜) n ψ s) (hψs : tsupport ψ ⊆ s) :
+    ContMDiff I 𝓘(𝕜, F) n (fun x ↦ ψ x • g x) := by
+  refine contMDiff_of_tsupport fun x hx ↦ ?_
+  have hxs : x ∈ s := hψs (tsupport_smul_subset_left ψ g hx)
+  exact (hψ.contMDiffAt (hs.mem_nhds hxs)).smul (hg.contMDiffAt (hs.mem_nhds hxs))
+
+/-- A product `(x, p) ↦ ψ x • g (x, p)` is `C^n` on the product manifold `M × P` when `ψ` is `C^n`
+on an open set `s ⊆ M` containing `tsupport ψ` and `g` is `C^n` on `s ×ˢ univ`: multiplying by a
+cutoff on the base globalizes a parameterized family defined on `s ×ˢ univ`. -/
+theorem ContMDiffOn.contMDiff_smul_fst_of_tsupport_subset
+    [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'}
+    [TopologicalSpace P] [ChartedSpace H' P]
+    {ψ : M → 𝕜} {g : M × P → F} {s : Set M}
+    (hg : ContMDiffOn (I.prod J) 𝓘(𝕜, F) n g (s ×ˢ univ)) (hs : IsOpen s)
+    (hψ : ContMDiffOn I 𝓘(𝕜) n ψ s) (hψs : tsupport ψ ⊆ s) :
+    ContMDiff (I.prod J) 𝓘(𝕜, F) n (fun p : M × P ↦ ψ p.1 • g p) := by
+  refine hg.contMDiff_smul_of_tsupport_subset (hs.prod isOpen_univ)
+    (hψ.comp contMDiff_fst.contMDiffOn mapsTo_fst_prod) ?_
+  exact (closure_minimal (t := tsupport ψ ×ˢ (univ : Set P))
+    (fun p hp ↦ ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
+    ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψs subset_rfl)
+
+end Cutoff
 
 variable {E F H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
