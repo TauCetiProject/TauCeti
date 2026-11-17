@@ -134,8 +134,8 @@ theorem exists_hasMFDerivAt_graph_isComplexLinearMap_iff {u : ℝ × ℝ → M} 
       IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z (u z))
         (ω.perturbedMFDeriv Ks Kt u z : ℝ × ℝ →ₗ[ℝ] TangentSpace I (u z)) := by
     rw [ContinuousLinearMap.coe_prod, ContinuousLinearMap.coe_id, floerGraphAlmostComplex_def,
-      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff, perturbedMFDeriv_eq_sub]
-    rfl
+      AlmostComplexStructure.isComplexLinearMap_id_prod_skewProd_iff,
+      ← ContinuousLinearMap.toLinearMap_sub, perturbedMFDeriv_eq_sub]
   constructor
   · rintro ⟨Γ', hΓ', hΓ'lin⟩
     -- `u` is the second component of its graph.

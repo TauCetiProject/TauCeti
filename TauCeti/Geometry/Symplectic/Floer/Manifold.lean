@@ -230,9 +230,8 @@ theorem perturbedMFDeriv_eq_sub (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ →
 theorem perturbedMFDeriv_apply_eq_sub (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
     (u : ℝ × ℝ → M) (z v : ℝ × ℝ) :
     ω.perturbedMFDeriv Ks Kt u z v =
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z v - ω.hamiltonianOneForm Ks Kt z (u z) v := by
-  rw [perturbedMFDeriv_eq_sub]
-  rfl
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z v - ω.hamiltonianOneForm Ks Kt z (u z) v :=
+  (perturbedMFDeriv_apply ω Ks Kt u z v).trans (sub_sub _ _ _)
 
 /-- The real-coordinate component is `∂s u - X_(Ks)`. -/
 @[simp]
