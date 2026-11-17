@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.SpectralObject.SpectralSequenceMap
-public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.SpectralObject
+public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Convergence
 
 /-!
-# Naturality of the spectral object of a filtered complex on graded pieces
+# Naturality of the spectral object and spectral sequence of a filtered complex
 
 A natural transformation `α : F ⟶ G` of functors `ι ⥤ CochainComplex C ℤ` induces a morphism of
 spectral objects `CochainComplex.spectralObjectMap α` (in
@@ -25,7 +25,10 @@ into the piece `G n` of an increasing filtration of `L` induces a morphism of th
 compatibly with identities and composition, and hence, through `spectralObjectMap`, a morphism of
 their spectral sequences. On the first page, whose objects are the cohomology of graded pieces,
 that morphism is the map in cohomology of the induced morphisms of graded pieces
-(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`).
+(`CochainComplex.spectralSequenceFirstPageXIsoCokernel_hom_naturality`). On the abutment,
+identified with the cohomology of the filtered complex by `filtrationAbutmentIso`, the morphism of
+spectral objects is the map in cohomology of the morphism of complexes
+(`CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`).
 
 ## Main definitions
 
@@ -41,6 +44,9 @@ that morphism is the map in cohomology of the induced morphisms of graded pieces
   of graded pieces.
 * `CochainComplex.filtrationFunctorMap_id`, `CochainComplex.filtrationFunctorMap_comp`:
   functoriality of `filtrationFunctorMap`.
+* `CochainComplex.spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom`:
+  on the abutment, the morphism of spectral objects is the map in cohomology of the morphism of
+  complexes.
 -/
 
 public section
@@ -137,6 +143,22 @@ lemma filtrationFunctorMap_comp (f : K ⟶ L) (g : L ⟶ N)
     filtrationFunctorMap_app_comp,
     NatTrans.comp_app, Category.assoc, filtrationFunctorMap_app_comp,
     filtrationFunctorMap_app_comp_assoc]
+
+/-- **The induced morphism on the abutment.** Through `filtrationAbutmentIso`, which identifies
+the abutment `H^n(⊥ ≤ ⊤)` with `H^n(K)`, the morphism of spectral objects induced by a morphism
+`f : K ⟶ L` of filtered complexes is the map `H^n(f)`. -/
+@[reassoc]
+lemma spectralObjectMap_filtrationFunctorMap_hom_app_comp_filtrationAbutmentIso_hom (f : K ⟶ L)
+    (hf : ∀ n, (G n).Factors ((F n).arrow ≫ f)) (n : ℤ) :
+    ((spectralObjectMap (filtrationFunctorMap hF hG f hf)).hom n).app
+        (mk₁ (homOfLE (bot_le : (⊥ : EInt) ≤ ⊤))) ≫ (filtrationAbutmentIso G hG n).hom =
+      (filtrationAbutmentIso F hF n).hom ≫ HomologicalComplex.homologyMap f n := by
+  rw [filtrationAbutmentIso_hom, filtrationAbutmentIso_hom, ← Category.assoc,
+    spectralObjectMap_hom_app_spectralObjectHIsoCokernel_hom, Category.assoc, Category.assoc,
+    ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp]
+  congr 2
+  refine coequalizer.hom_ext ?_
+  simp [filtrationFunctorArrow]
 
 end FiltrationMap
 
