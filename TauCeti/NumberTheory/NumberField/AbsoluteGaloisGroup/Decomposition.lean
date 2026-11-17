@@ -17,9 +17,9 @@ import Mathlib.GroupTheory.GroupAction.Basic
 Let `F` be a field, `F^alg = AlgebraicClosure F`, `G_F = Field.absoluteGaloisGroup F`, and let
 `O = integralClosure (𝓞 F) F^alg` be the integral closure of the ring of integers of `F` in `F^alg`.
 For a number field `F` this is the ring of all algebraic integers in `F^alg`, and its maximal ideals
-are the primes of `F^alg` above the finite places of `F`. Each `σ ∈ G_F` restricts to an `𝓞 F`-algebra
-automorphism `toIntegralClosure F σ` of `O`, which makes `O` a `G_F`-ring. For an ideal `Q` of `O`
-this file defines
+are the primes of `F^alg` above the finite places of `F`. Each `σ ∈ G_F` restricts to an
+`𝓞 F`-algebra automorphism `toIntegralClosure F σ` of `O`, which makes `O` a `G_F`-ring. For an
+ideal `Q` of `O` this file defines
 
 * the **decomposition group** `D_Q = {σ | σ • Q = Q}`, Mathlib's `MulAction.stabilizer`;
 * the **inertia group** `I_Q = {σ | ∀ x ∈ O, σ x - x ∈ Q}`, Mathlib's `Ideal.inertia`;
