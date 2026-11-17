@@ -27,6 +27,7 @@ of the conjugation formula in a complex Banach algebra.
   integrable.
 * `exp_add_sub_exp_eq_integral`: `exp (x + h) - exp x` is the integral of
   `exp ((1 - t) (x + h)) * h * exp (t x)` over the unit interval.
+* `TauCeti.mul_integral_exp_smul`: `x * ∫₀¹ exp (t x) dt = exp x - 1`.
 * `TauCeti.hasDerivAt_exp_mul_const_mul_exp_neg`: the derivative at zero of conjugation by an
   exponential is the associative commutator.
 * `TauCeti.expFDeriv_apply_eq_integral`: the Fréchet derivative is the corresponding Duhamel
@@ -92,6 +93,25 @@ theorem exp_add_sub_exp_eq_integral (x h : A) :
     intervalIntegral.integral_neg] at hFTC
   have hneg := congrArg Neg.neg hFTC
   simpa only [neg_neg, neg_sub] using hneg.symm
+
+/-- **`exp x - 1` through the average of the exponential along the segment**:
+`x * ∫₀¹ exp (t x) dt = exp x - 1`. For small `x` the average is close to `1`, so this factors
+`exp x - 1` as `x` times an invertible element. -/
+theorem mul_integral_exp_smul (x : A) :
+    x * ∫ t in (0 : ℝ)..1, exp (t • x) = exp x - 1 := by
+  have h := (ContinuousLinearMap.mul ℝ A x).intervalIntegral_comp_comm
+    (Continuous.intervalIntegrable (μ := MeasureTheory.volume)
+      (by fun_prop : Continuous fun t : ℝ => exp (t • x)) 0 1)
+  simp only [ContinuousLinearMap.mul_apply'] at h
+  rw [← h]
+  simpa using intervalIntegral.integral_eq_sub_of_hasDerivAt
+    (fun t _ => hasDerivAt_exp_smul_const' x t) (Continuous.intervalIntegrable (by fun_prop) 0 1)
+
+/-- The average `∫₀¹ exp (t x) dt` of the exponential along the segment depends continuously
+on `x`. -/
+theorem continuous_integral_exp_smul :
+    Continuous fun x : A => ∫ t in (0 : ℝ)..1, exp (t • x) :=
+  intervalIntegral.continuous_parametric_intervalIntegral_of_continuous' (by fun_prop) 0 1
 
 /-- The derivative at zero of conjugation by an exponential is the associative commutator. -/
 theorem hasDerivAt_exp_mul_const_mul_exp_neg (x c : A) :
