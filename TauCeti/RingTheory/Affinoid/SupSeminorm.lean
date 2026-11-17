@@ -387,6 +387,13 @@ theorem supSeminorm_map_of_ker_le_nilradical {φ : A →ₐ[K] B} (hφ : Functio
   rw [← hg.iSup_comp]
   exact iSup_congr fun y ↦ (pointNorm_comap φ y (Ideal.comap_isMaximal_of_surjective φ hφ) a).symm
 
+/-- A `K`-algebra isomorphism preserves the supremum seminorm. -/
+@[simp]
+theorem _root_.AlgEquiv.supSeminorm_eq (e : A ≃ₐ[K] B) (a : A) :
+    supSeminorm K (e a) = supSeminorm K a :=
+  supSeminorm_map_of_ker_le_nilradical (φ := e.toAlgHom) e.surjective
+    ((RingHom.injective_iff_ker_eq_bot _).mp e.injective ▸ bot_le) a
+
 /-- **The supremum seminorm is unchanged by reduction**: `|f|sup` is the same in `A` and in its
 reduction `A ⧸ nilradical A`. -/
 theorem supSeminorm_mk_nilradical (f : A) :
