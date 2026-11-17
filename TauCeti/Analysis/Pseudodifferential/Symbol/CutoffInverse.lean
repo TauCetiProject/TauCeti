@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The cut-off inverse of a symbol
@@ -85,12 +86,6 @@ private theorem length_freqLetters_append_singleton (w : List (Fin n ⊕ Fin n))
     ((freqLetters (w ++ [l])).length : ℝ) = letterOrder l + (freqLetters w).length := by
   cases l <;> simp [freqLetters, letterOrder, add_comm]
 
-private theorem weight_mul (ξ : CoordinateSpace n) (s t : ℝ) :
-    (1 + ‖ξ‖ ^ 2) ^ (s / 2) * (1 + ‖ξ‖ ^ 2) ^ (t / 2) = (1 + ‖ξ‖ ^ 2) ^ ((s + t) / 2) := by
-  rw [← Real.rpow_add (by positivity)]
-  congr 1
-  ring
-
 variable {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
 
 /-- The symbol estimates of order `μ` on a set `S`, for all iterated directional derivatives
@@ -144,7 +139,7 @@ private theorem norm_bilinear_le (B : A₁ →L[ℝ] A₂ →L[ℝ] A) {x : A₁
       mul_le_mul (mul_le_mul_of_nonneg_left hx B.opNorm_nonneg) hy (norm_nonneg _)
         (mul_nonneg B.opNorm_nonneg ((norm_nonneg _).trans hx))
     _ = ‖B‖ * C * D * (1 + ‖ξ‖ ^ 2) ^ ((s + t) / 2) := by
-      rw [← weight_mul]
+      rw [one_add_norm_sq_rpow_add]
       ring
 
 private theorem wordBounds_bilinear_nil (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
