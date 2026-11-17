@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 public import Mathlib.Algebra.MvPolynomial.Eval
+import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # Polynomial expansion of the partial-correlation Gram construction
@@ -79,7 +80,7 @@ theorem partialCorrelationCholeskyPolynomial_apply_of_lt {i j : Fin p} (h : i < 
 /-- The formal partial-correlation Cholesky factor is lower triangular. -/
 theorem isLowerTriangular_partialCorrelationCholeskyPolynomial (p : ℕ) :
     (partialCorrelationCholeskyPolynomial p).IsLowerTriangular :=
-  fun _ _ h ↦ partialCorrelationCholeskyPolynomial_apply_of_lt h
+  fun _ _ h ↦ partialCorrelationCholeskyPolynomial_apply_of_lt (OrderDual.toDual_lt_toDual.mp h)
 
 /-- Evaluating the formal Cholesky entries at coordinates and residual square roots recovers
 the partial-correlation factor, with the usual totalization of square root. -/
@@ -103,19 +104,14 @@ theorem partialCorrelationGramPolynomial_def (p : ℕ) :
     partialCorrelationGramPolynomial p =
       partialCorrelationCholeskyPolynomial p * (partialCorrelationCholeskyPolynomial p)ᵀ := (rfl)
 
-/-- A formal Gram entry sums triangular column contributions up to its second index. -/
+/-- A formal Gram entry sums triangular column contributions up to both entry indices. -/
 theorem partialCorrelationGramPolynomial_apply_eq_sum_Iic (p : ℕ) (i j : Fin p) :
     partialCorrelationGramPolynomial p i j =
-      ∑ k ∈ Finset.Iic j,
+      ∑ k ∈ Finset.Iic (min i j),
         partialCorrelationCholeskyPolynomial p i k *
           partialCorrelationCholeskyPolynomial p j k := by
-  rw [partialCorrelationGramPolynomial_def, Matrix.mul_apply]
-  simp only [Matrix.transpose_apply]
-  symm
-  apply Finset.sum_subset (Finset.subset_univ _)
-  intro k _ hk
-  simp only [Finset.mem_Iic, not_le] at hk
-  rw [partialCorrelationCholeskyPolynomial_apply_of_lt hk, mul_zero]
+  rw [partialCorrelationGramPolynomial_def,
+    (isLowerTriangular_partialCorrelationCholeskyPolynomial p).mul_transpose_apply_eq_sum_Iic]
 
 /-- The formal partial-correlation Gram matrix is symmetric. -/
 @[simp]

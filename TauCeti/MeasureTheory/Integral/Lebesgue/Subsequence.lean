@@ -44,6 +44,15 @@ open scoped ENNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
 
+/-- Nonnegative functions with summable Lebesgue integrals tend to zero almost everywhere. -/
+theorem ae_tendsto_zero_of_tsum_lintegral_ne_top {F : ℕ → α → ℝ≥0∞}
+    (hF : ∀ n, AEMeasurable (F n) μ) (hsum : (∑' n, ∫⁻ a, F n a ∂μ) ≠ ∞) :
+    ∀ᵐ a ∂μ, Tendsto (fun n ↦ F n a) atTop (𝓝 0) := by
+  have hfinite : ∫⁻ a, ∑' n, F n a ∂μ ≠ ∞ := by
+    rwa [lintegral_tsum hF]
+  filter_upwards [ae_lt_top' (AEMeasurable.tsum hF) hfinite] with a ha
+  exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top ha.ne
+
 /-- **A subsequence with summable integrals.** If `F n : α → ℝ≥0∞` are almost everywhere
 measurable and `∫⁻ F n ∂μ → 0`, then along a subsequence the sum `∑ⱼ F (φ j)` has finite
 integral. It dominates every `F (φ j)`, which makes it a common integrable bound for a dominated
