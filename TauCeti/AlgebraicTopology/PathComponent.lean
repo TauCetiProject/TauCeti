@@ -15,7 +15,8 @@ public import TauCeti.Topology.ConnectedComponents
 Loops and path homotopies based in `pathComponent x₀` remain there. Consequently, when the
 ambient space is semilocally simply connected, the path component inherits semilocal simple
 connectivity, and its inclusion into the ambient space induces an isomorphism on fundamental
-groups at every point of the component.
+groups at every point of the component. In particular the path component is simply connected
+exactly when the ambient fundamental group is trivial.
 
 ## Main declarations
 
@@ -24,6 +25,8 @@ groups at every point of the component.
   induces an isomorphism of fundamental groups at any point of the component.
 * `FundamentalGroup.pathComponentMulEquiv_symm_fromPath`: the inverse corestricts a loop
   to its path component.
+* `TauCeti.simplyConnectedSpace_pathComponent_iff`: a path component is simply connected exactly
+  when the ambient fundamental group at its points is trivial.
 -/
 
 public section
@@ -114,5 +117,14 @@ theorem _root_.FundamentalGroup.pathComponentMulEquiv_symm_fromPath (a : pathCom
   exact congrArg FundamentalGroup.fromPath <| congrArg Path.Homotopic.Quotient.mk <|
     (Path.map_codRestrict (s := pathComponent x₀) (x := a) (y := a) γ
       (γ.mem_pathComponent_of_mem a.2)).symm
+
+/-- **Simple connectivity of a path component.** The path component of `x₀` is simply connected
+exactly when the fundamental group of the ambient space at `x₀` is trivial. -/
+theorem simplyConnectedSpace_pathComponent_iff :
+    SimplyConnectedSpace (pathComponent x₀) ↔ Subsingleton (FundamentalGroup X x₀) := by
+  rw [← (FundamentalGroup.pathComponentMulEquiv x₀
+    (pathComponentSelf x₀)).toEquiv.subsingleton_congr]
+  exact ⟨fun _ ↦ inferInstance,
+    fun _ ↦ simplyConnectedSpace_of_subsingleton_fundamentalGroup (pathComponentSelf x₀)⟩
 
 end TauCeti
