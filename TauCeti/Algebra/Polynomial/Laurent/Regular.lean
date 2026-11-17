@@ -17,7 +17,8 @@ Multiplication by a monomial shifts the highest exponent without changing its co
 Mathlib's polynomial theorem for a unit leading coefficient gives a non-zero-divisor, whose
 regularity extends to Laurent polynomials by clearing denominator monomials. The coefficient
 ring need not be commutative and can have zero divisors. The result survives any coefficient
-homomorphism, including a quotient map.
+homomorphism, including a quotient map. In particular, the difference `T m - T n` of distinct
+Laurent monomials is regular over any ring.
 -/
 
 public section
@@ -69,5 +70,25 @@ theorem isRegular_mapRingHom_of_isUnit_leadingCoeff [Semiring R] [Ring S] (φ : 
     IsRegular (mapRingHom ℤ φ p) :=
   isRegular_of_isUnit_leadingCoeff
     (isUnit_leadingCoeff_mapRingHom WithBot.coe_injective φ hp)
+
+/-- The difference `T m - T n` of distinct Laurent monomials is regular over any ring. -/
+theorem isRegular_T_sub_T [Ring R] {m n : ℤ} (h : m ≠ n) :
+    IsRegular (T m - T n : LaurentPolynomial R) := by
+  have aux {a b : ℤ} (hab : b < a) : IsRegular (T a - T b : LaurentPolynomial R) := by
+    have hmonic : (Polynomial.X ^ (a - b).toNat - 1 : Polynomial R).Monic :=
+      Polynomial.monic_X_pow_sub_one (by omega)
+    have hreg : IsRegular (Polynomial.X ^ (a - b).toNat - 1 : Polynomial R).toLaurent :=
+      isRegular_toLaurent_of_isUnit_leadingCoeff (by rw [hmonic.leadingCoeff]; exact isUnit_one)
+    have heq : (T a - T b : LaurentPolynomial R) =
+        (Polynomial.X ^ (a - b).toNat - 1 : Polynomial R).toLaurent * T b := by
+      rw [map_sub, Polynomial.toLaurent_X_pow, map_one, sub_mul, one_mul, ← T_add]
+      congr 2
+      omega
+    rw [heq]
+    exact hreg.mul (isUnit_T b).isRegular
+  rcases h.lt_or_gt with hlt | hlt
+  · rw [← neg_sub, ← neg_one_mul]
+    exact isUnit_one.neg.isRegular.mul (aux hlt)
+  · exact aux hlt
 
 end LaurentPolynomial

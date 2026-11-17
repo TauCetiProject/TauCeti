@@ -8,6 +8,7 @@ module
 public import TauCeti.KnotTheory.Hecke.Ocneanu
 public import TauCeti.KnotTheory.Homfly.Alexander
 public import TauCeti.RingTheory.Localization.Away.Basic
+import TauCeti.Algebra.Polynomial.Laurent.Regular
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -144,24 +145,6 @@ end HomflyComparison
 
 section ZeroFactorRegularity
 
-private theorem isRegular_T_one_sub_T_neg_one (A : Type*) [CommRing A] :
-    IsRegular (T 1 - T (-1) : LaurentPolynomial A) := by
-  have hmonic : (Polynomial.X ^ 2 - 1 : Polynomial A).Monic :=
-    Polynomial.monic_X_pow_sub_C 1 two_ne_zero
-  have hsmul : IsSMulRegular (LaurentPolynomial A)
-      (algebraMap (Polynomial A) (LaurentPolynomial A) (Polynomial.X ^ 2 - 1)) :=
-    IsLocalization.Away.isSMulRegular_algebraMap (r := (Polynomial.X : Polynomial A))
-      (fun b hb ↦ by rw [hmonic.isRegular.left (hb.trans (mul_zero _).symm), mul_zero])
-  have hregP : IsRegular (algebraMap (Polynomial A) (LaurentPolynomial A) (Polynomial.X ^ 2 - 1)) :=
-    isRegular_iff.mpr ⟨hsmul, fun a b hab ↦ hsmul (by simpa only [smul_eq_mul, mul_comm] using hab)⟩
-  have heq : (T 1 - T (-1) : LaurentPolynomial A) =
-      T (-1) * algebraMap (Polynomial A) (LaurentPolynomial A) (Polynomial.X ^ 2 - 1) := by
-    have hX : algebraMap (Polynomial A) (LaurentPolynomial A) Polynomial.X = T 1 := by simp
-    rw [map_sub, map_pow, map_one, hX, mul_sub, mul_one, sq, ← mul_assoc, ← T_add, ← T_add]
-    norm_num
-  rw [heq]
-  exact (isUnit_T (-1)).isRegular.mul hregP
-
 /-! #### 1. Regularity across `l⁻¹ - l = 0` (`C = 0`, Alexander specialization) -/
 
 section AlexanderRegularity
@@ -234,7 +217,7 @@ of regular extensions across `a - a⁻¹ = 0`. -/
 theorem heckeAlexanderInclusion_injective :
     Function.Injective (heckeAlexanderInclusion K) :=
   IsLocalization.Away.awayToAwayRight_injective (heckeDeltaQ K) (heckeDeltaA K)
-    (isRegular_T_one_sub_T_neg_one (LaurentPolynomial K))
+    (by rw [heckeDeltaA_def]; exact isRegular_T_sub_T (by decide))
 
 /-- The unit `q - q⁻¹` inside `heckeAlexanderRegularRing K`. -/
 def heckeDeltaQUnit : (heckeAlexanderRegularRing K)ˣ :=
@@ -539,7 +522,7 @@ theorem heckeZeroFactorLift_algebraMap (C₀ a : LaurentPolynomial K) :
 theorem heckeZeroFactorLift_injective (C₀ : LaurentPolynomial K) :
     Function.Injective (heckeZeroFactorLift C₀) :=
   IsLocalization.Away.awayToAwayRight_injective C₀ (T 1 - T (-1))
-    (isRegular_T_one_sub_T_neg_one K)
+    (isRegular_T_sub_T (by decide))
 
 /-- The regular Ocneanu trace parameter `C₀⁻¹ * l₀⁻¹` inside `Localization.Away C₀`. -/
 def heckeZeroFactorZ (C₀ : LaurentPolynomial K) (l₀ : (LaurentPolynomial K)ˣ) :

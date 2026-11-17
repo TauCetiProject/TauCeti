@@ -111,10 +111,11 @@ theorem heckeTrace_hyperbolic_eq_eval₂_reducedHomfly {K : Type*} [Field K] (φ
 parameters `(exp α, exp (-α), 2 * I * sinh θ)`. -/
 theorem heckeTrace_hyperbolic_two_strand_unlink {α θ : ℂ}
     {τ : InfiniteTypeAHeckeAlgebra ℂ (hyperbolicHeckeParam θ) →ₗ[ℂ] ℂ}
-    (h₁ : τ 1 = 1) (hθ' : sinh θ ≠ 0) :
+    (h₁ : τ 1 = 1) :
     heckeTrace ⟨1, 1⟩ τ (I * cosh α / sinh θ) (hyperbolicWritheUnit α) =
       -(exp α + exp (-α)) / (2 * I * sinh θ) := by
-  rw [heckeTrace_one h₁, pow_one, Complex.cosh]
+  rw [heckeTrace_one h₁, pow_one, Complex.cosh, ← div_div]
+  congr 1
   have hI : I ≠ 0 := I_ne_zero
   field_simp
   linear_combination (exp α + exp (-α)) * I_mul_I
@@ -128,7 +129,7 @@ theorem heckeTrace_hyperbolic_two_strand_unlink_ne_neg_param {α θ : ℂ}
     (h₁ : τ 1 = 1) (hθ' : sinh θ ≠ 0) :
     heckeTrace ⟨1, 1⟩ τ (I * cosh α / sinh θ) (hyperbolicWritheUnit α) ≠
       -(exp α - exp (-α)) / (2 * I * sinh θ) := by
-  rw [heckeTrace_hyperbolic_two_strand_unlink h₁ hθ']
+  rw [heckeTrace_hyperbolic_two_strand_unlink h₁]
   intro h
   have hden : (2 * I * sinh θ : ℂ) ≠ 0 :=
     mul_ne_zero (mul_ne_zero two_ne_zero I_ne_zero) hθ'
