@@ -17,7 +17,7 @@ import TauCeti.Analysis.Analytic.Basic
 import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Analysis.Quaternion.Reflection
-import TauCeti.Topology.Frontier
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Real analyticity, harmonicity, and uniqueness of Fueter regular functions
@@ -95,30 +95,7 @@ open scoped Laplacian
 
 namespace TauCeti
 
-/-! ### Segment exit lemma and 8-face potential expansion -/
-
-/-- If `u₀` lies in the open box `∏ i, Ioo (a i) (b i)` and `u` does not, then some point on the
-closed segment `[u₀, u]` lies on the box boundary `Icc a b \ ∏ i, Ioo (a i) (b i)`. -/
-private theorem exists_segment_mem_Icc_notMem_pi_Ioo {a b u₀ u : Fin 4 → ℝ}
-    (ha : ∀ i, a i < u₀ i) (hb : ∀ i, u₀ i < b i)
-    (hu : u ∉ pi univ fun i ↦ Ioo (a i) (b i)) :
-    ∃ t ∈ Icc (0 : ℝ) 1,
-      (1 - t) • u₀ + t • u ∈ Icc a b ∧
-      (1 - t) • u₀ + t • u ∉ pi univ fun i ↦ Ioo (a i) (b i) := by
-  let V : Set (Fin 4 → ℝ) := pi univ fun i ↦ Ioo (a i) (b i)
-  have hV_open : IsOpen V := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
-  have hV_sub : V ⊆ Icc a b := fun x hx ↦
-    ⟨fun i ↦ (hx i (mem_univ i)).1.le, fun i ↦ (hx i (mem_univ i)).2.le⟩
-  let γ : ℝ → Fin 4 → ℝ := fun t ↦ (1 - t) • u₀ + t • u
-  have hS : IsPreconnected (γ '' Icc 0 1) :=
-    (convex_Icc (0 : ℝ) 1).isPreconnected.image γ (by fun_prop)
-  have h0 : (γ '' Icc 0 1 ∩ V).Nonempty :=
-    ⟨u₀, ⟨0, left_mem_Icc.2 zero_le_one, by simp [γ]⟩, fun i _ ↦ ⟨ha i, hb i⟩⟩
-  have h1 : (γ '' Icc 0 1 \ V).Nonempty :=
-    ⟨u, ⟨1, right_mem_Icc.2 zero_le_one, by simp [γ]⟩, hu⟩
-  obtain ⟨_, ⟨t, ht, rfl⟩, hcl, hint⟩ := hS.inter_frontier_nonempty h0 h1
-  exact ⟨t, ht, (isClosed_Icc.closure_subset_iff.2 hV_sub) hcl,
-    by rwa [hV_open.interior_eq] at hint⟩
+/-! ### Box membership and 8-face potential expansion -/
 
 /-- If `u₀` lies in the open box `∏ i, Ioo (a i) (b i)` and every facet image under
 `v ↦ dq (p + M v)` sits at distance at least `δ` from `dq (p + M u₀)`, then any `u` with
@@ -133,9 +110,18 @@ private theorem mem_pi_Ioo_of_norm_dq_sub_lt {a b p u₀ u : Fin 4 → ℝ}
     (hu_lt : ‖dq (p + M u) - dq (p + M u₀)‖ < δ) :
     u ∈ pi univ fun i ↦ Ioo (a i) (b i) := by
   by_contra hu
-  -- Find a boundary point `v` on the segment `[u₀, u]` and identify the facet coordinate `j`.
-  obtain ⟨t, ht, hv_icc, hv_not⟩ := exists_segment_mem_Icc_notMem_pi_Ioo ha hb hu
+  -- Apply `IsOpen.exists_first_exit` to the segment `[u₀, u]` leaving the open box `V`.
+  let V : Set (Fin 4 → ℝ) := pi univ fun i ↦ Ioo (a i) (b i)
+  have hV_open : IsOpen V := isOpen_set_pi finite_univ fun _ _ ↦ isOpen_Ioo
+  have hV_sub : V ⊆ Icc a b := fun x hx ↦
+    ⟨fun i ↦ (hx i (mem_univ i)).1.le, fun i ↦ (hx i (mem_univ i)).2.le⟩
+  obtain ⟨t, ht, -, hv_not, hv_cl, -⟩ :=
+    hV_open.exists_first_exit (γ := fun t : ℝ ↦ (1 - t) • u₀ + t • u) (a := 0) (b := 1)
+      (by fun_prop) (by simp [V, ha, hb])
+      ⟨1, right_mem_Icc.2 zero_le_one, by simpa [V] using hu⟩
   set v := (1 - t) • u₀ + t • u
+  have hv_icc : v ∈ Icc a b := isClosed_Icc.closure_subset_iff.2 hV_sub hv_cl
+  -- Identify the facet coordinate `j` where `v` meets `a j` or `b j`.
   have hv_ex : ∃ j : Fin 4, v j ∉ Ioo (a j) (b j) := by
     by_contra! hall
     exact hv_not fun j _ ↦ hall j
