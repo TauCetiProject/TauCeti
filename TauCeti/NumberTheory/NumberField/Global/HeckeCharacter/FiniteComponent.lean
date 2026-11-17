@@ -6,9 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Conductor
+public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 public import TauCeti.NumberTheory.NumberField.Global.Ideles.Congruence
 
 import TauCeti.Analysis.Normed.Algebra.NoSmallSubgroups
+import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.OpenSubgroup
 import TauCeti.RingTheory.DedekindDomain.Factorization
 import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
@@ -34,7 +36,9 @@ whose `v`-adic exponent is `a_v(χ)`. It is defined for every Hecke character, i
 of infinite order, and the primes dividing it are exactly the finite places at which `χ` is
 ramified. For a character of finite order it is the finite part of the conductor, the least modulus
 from which the character comes: the finite part of the conductor is determined place by place by
-the finite components.
+the finite components. Norm-power characters `‖·‖ ^ s` are unramified at every finite place, so
+passing to the unitary part `χ.unitaryPart` preserves every conductor exponent and the finite
+conductor.
 
 ## Main definitions
 
@@ -61,6 +65,12 @@ the finite components.
   order, the finite conductor is the finite part of the conductor
   `TauCeti.GlobalNumberFields.HeckeCharacter.conductor`, the least modulus from which the character
   comes.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.conductorExponent_normPow` and
+  `TauCeti.GlobalNumberFields.HeckeCharacter.finiteConductor_normPow`: norm-power characters are
+  unramified at every finite place.
+* `TauCeti.GlobalNumberFields.HeckeCharacter.conductorExponent_unitaryPart` and
+  `TauCeti.GlobalNumberFields.HeckeCharacter.finiteConductor_unitaryPart`: passing to the unitary
+  part preserves every finite conductor exponent and the finite conductor.
 
 ## References
 
@@ -487,6 +497,54 @@ theorem finitePart_conductor {χ : HeckeCharacter K} (hχ : χ.IsFiniteOrder) :
     finiteConductor_def]
   refine finprod_congr fun v ↦ ?_
   rw [HeightOneSpectrum.maxPowDividing, ← Modulus.exponent_def, exponent_conductor]
+
+/-! ### Finite conductor of norm powers and of the unitary part -/
+
+/-- At a finite place `v`, a local unit `u` of `v`-adic valuation `1` has idele norm `1`, so every
+norm character `‖·‖ ^ s` is trivial on `u`. -/
+theorem finiteComponent_normPow_of_valued_eq_one (s : ℂ) (v : HeightOneSpectrum (𝓞 K))
+    {u : (v.adicCompletion K)ˣ} (hu : Valued.v (u : v.adicCompletion K) = 1) :
+    (normPow K s).finiteComponent v u = 1 := by
+  apply Units.ext
+  simp [IdeleClassGroup.ofAdicCompletion_apply,
+    FinitePlace.norm_adicCompletion_eq_absNorm_zpow v u.ne_zero, hu]
+
+/-- **Every norm-power Hecke character is unramified at every finite place.** -/
+@[simp]
+theorem conductorExponent_normPow (s : ℂ) (v : HeightOneSpectrum (𝓞 K)) :
+    (normPow K s).conductorExponent v = 0 :=
+  Nat.eq_zero_of_le_zero <| ((normPow K s).conductorExponent_le_iff v 0).mpr fun _ hu ↦
+    finiteComponent_normPow_of_valued_eq_one s v
+      ((HeightOneSpectrum.mem_unitFiltration_zero_adicCompletion_iff v).mp hu)
+
+/-- **Every norm-power Hecke character has trivial finite conductor.** -/
+@[simp]
+theorem finiteConductor_normPow (s : ℂ) : (normPow K s).finiteConductor = ⊤ :=
+  (finiteConductor_eq_top_iff _).mpr (conductorExponent_normPow s)
+
+/-- **Passing to the unitary part preserves every finite conductor exponent**, since `χ` and
+`χ.unitaryPart` differ by a power of the idele class norm. -/
+@[simp]
+theorem conductorExponent_unitaryPart (χ : HeckeCharacter K) (v : HeightOneSpectrum (𝓞 K)) :
+    χ.unitaryPart.conductorExponent v = χ.conductorExponent v := by
+  refine le_antisymm ?_ ?_
+  · calc χ.unitaryPart.conductorExponent v
+      _ ≤ max (χ.conductorExponent v) ((normPow K (-χ.shift)).conductorExponent v) := by
+          rw [unitaryPart_def]
+          exact conductorExponent_mul_le _ _ v
+      _ = χ.conductorExponent v := by simp
+  · calc χ.conductorExponent v
+      _ = (χ.unitaryPart * normPow K χ.shift).conductorExponent v := by
+          rw [unitaryPart_mul_normPow_shift]
+      _ ≤ max (χ.unitaryPart.conductorExponent v) ((normPow K χ.shift).conductorExponent v) :=
+          conductorExponent_mul_le _ _ v
+      _ = χ.unitaryPart.conductorExponent v := by simp
+
+/-- **Passing to the unitary part preserves the finite conductor.** -/
+@[simp]
+theorem finiteConductor_unitaryPart (χ : HeckeCharacter K) :
+    χ.unitaryPart.finiteConductor = χ.finiteConductor := by
+  simp [finiteConductor_def]
 
 end HeckeCharacter
 
