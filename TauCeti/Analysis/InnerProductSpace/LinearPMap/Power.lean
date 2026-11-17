@@ -239,6 +239,22 @@ theorem posPow_domain_antitone (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u,
   simp only [ContinuousLinearMap.coe_coe]
   rw [← mul_apply_eq_comp, ← negPow_add hpos, add_tsub_cancel_of_le hst]
 
+/-- **The identity power.** `A^0` is defined everywhere and is the identity. -/
+theorem posPow_zero (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) :
+    A.posPow hA h 0 = (LinearMap.id : H →ₗ[ℂ] H).toPMap ⊤ := by
+  have hdom : (A.posPow hA h 0).domain = ⊤ := by
+    rw [posPow_domain, negPow_zero hpos, LinearMap.range_eq_top]
+    exact fun f ↦ ⟨f, by simp⟩
+  have hinj : Function.Injective (A.negPow hA h 0) := by
+    rw [negPow_zero hpos]
+    exact Function.injective_id
+  refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
+  -- `A^0 x = A^{-0} (A^0 x) = x`, as `A^{-0} = 1`.
+  calc A.posPow hA h 0 ⟨x, hx₁⟩ = A.negPow hA h 0 (A.posPow hA h 0 ⟨x, hx₁⟩) := by
+        rw [negPow_zero hpos, one_apply_eq_self]
+    _ = (LinearMap.id : H →ₗ[ℂ] H).toPMap ⊤ ⟨x, hx₂⟩ :=
+        ContinuousLinearMap.apply_inverse_toPMap_top _ hinj _
+
 variable (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) (hker : A.ker = ⊥)
 include hpos hker
 
@@ -286,15 +302,6 @@ theorem posPow_posPow (s t : ℝ≥0) (u : (A.posPow hA h (s + t)).domain) :
 theorem isSelfAdjoint_posPow (s : ℝ≥0) : IsSelfAdjoint (A.posPow hA h s) :=
   ContinuousLinearMap.isSelfAdjoint_inverse_toPMap_top _ (isSelfAdjoint_negPow s)
     (negPow_injective hpos hker s)
-
-/-- **The identity power.** `A^0` is defined everywhere and is the identity. -/
-theorem posPow_zero : A.posPow hA h 0 = (LinearMap.id : H →ₗ[ℂ] H).toPMap ⊤ := by
-  have hdom : (A.posPow hA h 0).domain = ⊤ := by
-    rw [posPow_domain, negPow_zero hpos, LinearMap.range_eq_top]
-    exact fun f ↦ ⟨f, by simp⟩
-  refine LinearPMap.ext hdom fun x hx₁ hx₂ ↦ ?_
-  rw [posPow_apply_eq_iff hpos hker, negPow_zero hpos, one_apply_eq_self]
-  exact (LinearMap.toPMap_apply LinearMap.id ⊤ ⟨x, hx₂⟩).symm
 
 /-- **`A^1 = A`.** -/
 theorem posPow_one : A.posPow hA h 1 = A := by
