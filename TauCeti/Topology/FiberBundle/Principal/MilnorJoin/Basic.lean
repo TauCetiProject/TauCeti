@@ -181,7 +181,7 @@ theorem weight_le_one (i : ℕ) (p : MilnorTotalSpace G) : weight i p ≤ 1 := b
   rw [← p.sum_weightFinsupp, Finsupp.sum]
   by_cases hi : i ∈ p.weightFinsupp.support
   · exact Finset.single_le_sum (fun j _ ↦ weight_nonneg j p) hi
-  · rw [show weight i p = 0 from Finsupp.notMem_support_iff.mp hi]
+  · rw [weight, Finsupp.notMem_support_iff.mp hi]
     exact Finset.sum_nonneg fun j _ ↦ weight_nonneg j p
 
 theorem exists_weight_pos (p : MilnorTotalSpace G) : ∃ i, 0 < weight i p := by
@@ -276,7 +276,6 @@ theorem val_relabel {X : Type u} {Y : Type v} (f : X → Y) (p : MilnorTotalSpac
 
 @[simp] theorem relabel_id (p : MilnorTotalSpace G) : relabel _root_.id p = p :=
   ext_val (by simp [val_relabel])
-@[simp] theorem relabel_id' (p : MilnorTotalSpace G) : relabel (fun a ↦ a) p = p := relabel_id p
 @[simp] theorem relabel_comp {X : Type u} {Y : Type v} {Z : Type w}
     (g : Y → Z) (f : X → Y) (p : MilnorTotalSpace X) :
     relabel g (relabel f p) = relabel (g ∘ f) p :=
@@ -358,6 +357,8 @@ instance instT2Space [T2Space G] : T2Space (MilnorTotalSpace G) :=
         hU.preimage (continuous_weight i), hV.preimage (continuous_weight i),
         hpU, hqV, hd.preimage _⟩⟩
 
+/-- The carrier identification from `universalGSpace G` (weak simplicial realization topology)
+to `MilnorTotalSpace G` (strong coordinate topology) is continuous. -/
 theorem continuous_ofRealization :
     Continuous (ofRealization : universalGSpace G → MilnorTotalSpace G) := by
   rw [continuous_iff_faceInclusion]; intro σ; rw [continuous_iff]
@@ -442,6 +443,9 @@ variable [Monoid G]
 
 instance instSMulOp : SMul Gᵐᵒᵖ (MilnorTotalSpace G) := ⟨fun g p ↦ relabel (· * g.unop) p⟩
 
+private theorem smul_def (g : Gᵐᵒᵖ) (p : MilnorTotalSpace G) :
+    g • p = relabel (· * g.unop) p := rfl
+
 theorem val_op_smul (g : G) (p : MilnorTotalSpace G) :
     (op g • p).val =
       Finsupp.mapDomain (fun v : Σ _ : ℕ, G ↦ (⟨v.1, v.2 * g⟩ : Σ _ : ℕ, G)) p.val :=
@@ -449,11 +453,13 @@ theorem val_op_smul (g : G) (p : MilnorTotalSpace G) :
 
 theorem op_smul_op_smul (g h : G) (p : MilnorTotalSpace G) :
     op h • (op g • p) = op (g * h) • p := by
-  change relabel (· * h) (relabel (· * g) p) = relabel (· * (g * h)) p
-  rw [relabel_comp]; congr 1; funext a; exact mul_assoc a g h
+  rw [smul_def, smul_def, smul_def, relabel_comp]
+  congr 1; funext a; exact mul_assoc a g h
 
 instance instMulActionOp : MulAction Gᵐᵒᵖ (MilnorTotalSpace G) where
-  one_smul p := by change relabel (· * 1) p = p; simp
+  one_smul p := by
+    have hid : (· * (1 : G)) = _root_.id := funext mul_one
+    rw [smul_def, unop_one, hid, relabel_id]
   mul_smul g h p := (op_smul_op_smul h.unop g.unop p).symm
 
 @[simp] theorem weight_smul (g : Gᵐᵒᵖ) (i : ℕ) (p : MilnorTotalSpace G) :
@@ -496,8 +502,14 @@ instance instIsCancelSMulOp : IsCancelSMul Gᵐᵒᵖ (MilnorTotalSpace G) :=
 def invEquiv (G : Type u) [Group G] : universalGSpace G ≃ MilnorTotalSpace G where
   toFun x := relabel Inv.inv (ofRealization x)
   invFun p := (relabel Inv.inv p).toRealization
-  left_inv x := congrArg toRealization (by rw [relabel_comp]; simp)
-  right_inv p := by change relabel Inv.inv (relabel Inv.inv p) = p; rw [relabel_comp]; simp
+  left_inv x := congrArg toRealization <| by
+    have hinv : (Inv.inv : G → G) ∘ Inv.inv = _root_.id := funext inv_inv
+    rw [relabel_comp, hinv, relabel_id]
+  right_inv p := by
+    have hinv : (Inv.inv : G → G) ∘ Inv.inv = _root_.id := funext inv_inv
+    dsimp only
+    rw [← equivRealization_apply, ← equivRealization_symm_apply, Equiv.symm_apply_apply,
+      relabel_comp, hinv, relabel_id]
 
 theorem val_invEquiv (x : universalGSpace G) :
     (invEquiv G x).val =

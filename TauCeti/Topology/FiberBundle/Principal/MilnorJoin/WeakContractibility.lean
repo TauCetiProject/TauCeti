@@ -67,7 +67,7 @@ private theorem ofFinsetCoordVal_apply [DecidableEq G] (S : Finset ℕ) (w : ℕ
   by_cases hi : i ∈ S
   · rw [Finset.sum_eq_single i (fun _ _ hji ↦ by simp [hji]) (fun hi' ↦ absurd hi hi')]
     simp [hi, eq_comm]
-  · rw [Finset.sum_eq_zero fun _ hj ↦ by simp [show _ ≠ i from fun h ↦ hi (h ▸ hj)]]; simp [hi]
+  · rw [Finset.sum_eq_zero fun _ hj ↦ by simp [ne_of_mem_of_not_mem hj hi]]; simp [hi]
 
 private def ofFinsetCoord (S : Finset ℕ) (w : ℕ → ℝ) (ℓ : ℕ → G)
     (hw_nonneg : ∀ i ∈ S, 0 ≤ w i) (hw_sum : ∑ i ∈ S, w i = 1) : MilnorTotalSpace G := by
@@ -225,13 +225,13 @@ private theorem sum_tailWeight {N : ℕ} {f : C(X, MilnorTotalSpace G)}
   unfold tailWeight; simp_rw [div_eq_mul_inv, ← Finset.sum_mul, ← div_eq_mul_inv]
   suffices ∑ i ∈ S, (if i < N then weight i (f z.2) else (1 - (z.1 : ℝ)) * weight i (f z.2)) =
       tailDenom N f z by rw [this, div_self (tailDenom_pos hf z).ne']
+  have htail_sum : ∑ i ∈ S.filter (fun i ↦ ¬i < N), weight i (f z.2) =
+      1 - partialWeightSum G N (f z.2) := eq_sub_of_add_eq' hsplit
   rw [← Finset.sum_filter_add_sum_filter_not S (· < N),
     Finset.sum_congr rfl fun i hi ↦ ite_eq_left (Finset.mem_filter.mp hi).2, hfilter,
     ← partialWeightSum_apply,
     Finset.sum_congr rfl fun i hi ↦ ite_eq_right (Finset.mem_filter.mp hi).2,
-    ← Finset.mul_sum, show ∑ i ∈ S.filter (fun i ↦ ¬i < N), weight i (f z.2) =
-      1 - partialWeightSum G N (f z.2) by linarith]
-  rfl
+    ← Finset.mul_sum, htail_sum, tailDenom]
 
 private def tailTruncationPt (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) (z : I × X) : MilnorTotalSpace G :=
@@ -271,17 +271,25 @@ private def tailTruncationHomotopyFun (N : ℕ) (f : C(X, MilnorTotalSpace G))
         fun _ hz ↦ mem_coordSet_iff.mpr (weight_pos_of_tailWeight_pos hz)).congr fun _ hz ↦
         label_tailTruncationPt N f hf hz
 
+private theorem tailTruncationHomotopyFun_apply (N : ℕ) (f : C(X, MilnorTotalSpace G))
+    (hf : ∀ x, 0 < partialWeightSum G N (f x)) (z : I × X) :
+    tailTruncationHomotopyFun N f hf z = tailTruncationPt N f hf z := rfl
+
 /-- Truncated map (`s = 1`): renormalizes weights `< N` by `S_N(f x)` and zeros weights `≥ N`. -/
 def tailTruncationMap (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) : C(X, MilnorTotalSpace G) :=
   (tailTruncationHomotopyFun N f hf).comp ⟨fun x ↦ (1, x), by fun_prop⟩
 
+private theorem tailTruncationMap_apply (N : ℕ) (f : C(X, MilnorTotalSpace G))
+    (hf : ∀ x, 0 < partialWeightSum G N (f x)) (x : X) :
+    tailTruncationMap N f hf x = tailTruncationPt N f hf (1, x) := rfl
+
 @[simp] theorem weight_tailTruncationMap (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) (i : ℕ) (x : X) :
     weight i (tailTruncationMap N f hf x) =
       if i < N then weight i (f x) / partialWeightSum G N (f x) else 0 := by
-  change weight i (tailTruncationPt N f hf (1, x)) = _
-  rw [weight_tailTruncationPt]; by_cases hi : i < N <;> simp [hi, tailWeight, tailDenom]
+  rw [tailTruncationMap_apply, weight_tailTruncationPt]
+  by_cases hi : i < N <;> simp [hi, tailWeight, tailDenom]
 
 theorem weight_tailTruncationMap_of_le (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) {i : ℕ} (hi : N ≤ i) (x : X) :
@@ -299,12 +307,12 @@ theorem weight_tailTruncationMap_of_le (N : ℕ) (f : C(X, MilnorTotalSpace G))
 def tailTruncationHomotopy (N : ℕ) (f : C(X, MilnorTotalSpace G))
     (hf : ∀ x, 0 < partialWeightSum G N (f x)) : f.Homotopy (tailTruncationMap N f hf) where
   toContinuousMap := tailTruncationHomotopyFun N f hf
-  map_zero_left x := (ext_coord
-    (fun i ↦ by
-      change weight i (f x) = weight i (tailTruncationPt N f hf (0, x))
-      rw [weight_tailTruncationPt]; simp [tailWeight, tailDenom])
-    (fun i hi ↦ (label_tailTruncationPt N f hf (z := (0, x)) (i := i)
-      (by simp [tailWeight, tailDenom, mem_coordSet_iff.mp hi])).symm)).symm
+  map_zero_left x := by
+    rw [ContinuousMap.toFun_eq_coe, tailTruncationHomotopyFun_apply]
+    exact ext_coord
+      (fun i ↦ by rw [weight_tailTruncationPt]; simp [tailWeight, tailDenom])
+      (fun i hi ↦ label_tailTruncationPt N f hf
+        (by simpa [weight_tailTruncationPt] using mem_coordSet_iff.mp hi))
   map_one_left _ := rfl
 
 private def coneWeight (N : ℕ) (g : C(X, MilnorTotalSpace G)) (z : I × X) (i : ℕ) : ℝ :=
@@ -371,25 +379,28 @@ def coneAtFreshIndexHomotopy (N : ℕ) (a : G) (g : C(X, MilnorTotalSpace G))
       · exact ((continuousOn_label i).comp (g.continuous.comp continuous_snd).continuousOn
           fun _ hz ↦ mem_coordSet_iff.mpr (weight_pos_of_coneWeight_pos hiN hz)).congr fun _ hz ↦
           label_conePt_of_ne N a g hg hiN hz⟩
-  map_zero_left x := (ext_coord
-    (fun i ↦ by
-      change weight i (g x) = weight i (conePt N a g hg (0, x)); rw [weight_conePt]
-      by_cases hiN : i = N; · subst hiN; simp [coneWeight, hg x]
-      · simp [coneWeight, hiN])
-    (fun i hi ↦ by
-      have hiN : i ≠ N := fun h ↦ (mem_coordSet_iff.mp hi).ne' (h ▸ hg x)
-      exact (label_conePt_of_ne N a g hg hiN (z := (0, x))
-        (by simpa [coneWeight, hiN] using mem_coordSet_iff.mp hi)).symm)).symm
-  map_one_left x := ext_coord
-    (fun i ↦ by
-      change weight i (conePt N a g hg (1, x)) = weight i (vertex N a)
-      rw [weight_conePt, weight_vertex]; by_cases hiN : i = N <;> simp [coneWeight, hiN])
-    (fun i hi ↦ by
-      have hi' : 0 < coneWeight N g (1, x) i :=
-        weight_conePt N a g hg (1, x) i ▸ mem_coordSet_iff.mp hi
-      by_cases hiN : i = N
-      · subst hiN; exact (label_conePt_self i a g hg zero_lt_one).trans (label_vertex i a).symm
-      · simp [coneWeight, hiN] at hi')
+  map_zero_left x := by
+    rw [ContinuousMap.coe_mk]
+    refine (ext_coord
+      (fun i ↦ by
+        rw [weight_conePt]; by_cases hiN : i = N
+        · subst hiN; simp [coneWeight, hg x]
+        · simp [coneWeight, hiN])
+      (fun i hi ↦ by
+        have hiN : i ≠ N := fun h ↦ (mem_coordSet_iff.mp hi).ne' (h ▸ hg x)
+        exact (label_conePt_of_ne N a g hg hiN (z := (0, x))
+          (by simpa [coneWeight, hiN] using mem_coordSet_iff.mp hi)).symm)).symm
+  map_one_left x := by
+    rw [ContinuousMap.coe_mk, ContinuousMap.toFun_eq_coe, ContinuousMap.const_apply]
+    refine ext_coord
+      (fun i ↦ by
+        rw [weight_conePt, weight_vertex]; by_cases hiN : i = N <;> simp [coneWeight, hiN])
+      (fun i hi ↦ by
+        have hi' : 0 < coneWeight N g (1, x) i :=
+          weight_conePt N a g hg (1, x) i ▸ mem_coordSet_iff.mp hi
+        by_cases hiN : i = N
+        · subst hiN; exact (label_conePt_self i a g hg zero_lt_one).trans (label_vertex i a).symm
+        · simp [coneWeight, hiN] at hi')
 
 end Homotopies
 
@@ -414,6 +425,8 @@ theorem nullhomotopic_to_milnorTotalSpace_of_isCompact_range [Nonempty G]
     (MilnorTotalSpace.coneAtFreshIndexHomotopy N a (MilnorTotalSpace.tailTruncationMap N f hN_pos)
       fun x ↦ MilnorTotalSpace.weight_tailTruncationMap_of_le N f hN_pos le_rfl x)⟩⟩
 
+/-- Every continuous map from a compact space `X` into `MilnorTotalSpace G` is null-homotopic
+when `G` is nonempty. -/
 theorem nullhomotopic_to_milnorTotalSpace [CompactSpace X] [Nonempty G]
     (f : C(X, MilnorTotalSpace G)) : f.Nullhomotopic :=
   nullhomotopic_to_milnorTotalSpace_of_isCompact_range (isCompact_range f.continuous)
@@ -488,12 +501,17 @@ section SphereExtension
 variable {E : Type v} [SeminormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
   {G : Type u} [TopologicalSpace G]
 
+/-- Every continuous map from the unit sphere of a proper real seminormed space `E` into
+`MilnorTotalSpace G` extends continuously over the closed unit ball when `G` is nonempty. -/
 theorem exists_extension_closedBall_milnorTotalSpace [Nonempty G]
     (g : C(sphere (0 : E) 1, MilnorTotalSpace G)) :
     ∃ G' : C(closedBall (0 : E) 1, MilnorTotalSpace G),
       ∀ y : sphere (0 : E) 1, G' ⟨y, sphere_subset_closedBall y.2⟩ = g y :=
   g.nullhomotopic_iff_exists_extension_closedBall.mp g.nullhomotopic_to_milnorTotalSpace
 
+/-- Every continuous map `g` from the unit sphere of a proper real seminormed space `E` into
+`MilnorTotalSpace G` is homotopic relative to a chosen base point `s₀` on the sphere to the
+constant map at `g s₀`. -/
 theorem homotopicRel_const_singleton_sphere_milnorTotalSpace
     (g : C(sphere (0 : E) 1, MilnorTotalSpace G)) (s₀ : sphere (0 : E) 1) :
     g.HomotopicRel (ContinuousMap.const _ (g s₀)) {s₀} :=
