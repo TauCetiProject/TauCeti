@@ -124,17 +124,14 @@ theorem homotopyGroupMap_forgetLast_eq_const {N : ℕ} (hN : Odd N) {M : Type*} 
     apply (HomotopyGroup.congrEquiv e).injective
     rw [← HomotopyGroup.map_congrEquiv, hu, HomotopyGroup.congrEquiv_const, HomotopyGroup.one_def]
   -- Forgetting the second vector is the first vector, read in `V₁` through `sphereHomeomorph`.
-  apply (HomotopyGroup.homeomorphEquiv (sphereHomeomorph _) _).injective
-  rw [HomotopyGroup.homeomorphEquiv_apply, HomotopyGroup.map_comp_apply]
-  exact hu'.trans (HomotopyGroup.homeomorphEquivOfEq_mk_const _ _).symm
-
-/-- The `(N - 1)`-th homotopy group of `V₁(ℝ^N) ≅ S^(N-1)` is nontrivial for `N ≥ 3`. -/
-private theorem nontrivial_homotopyGroup_one {k : ℕ} {M : Type*} [Finite M]
-    (hM : Nat.card M = k + 2) (b : finiteOrthonormalFrame ℝ 1 (k + 3)) :
-    Nontrivial (HomotopyGroup M (finiteOrthonormalFrame ℝ 1 (k + 3)) b) := by
-  have := nontrivial_homotopyGroup_sphere (n := k) (by simp) (sphereHomeomorph (k + 3) b)
-  exact ((HomotopyGroup.homeomorphEquiv (sphereHomeomorph (k + 3)) b).trans
-    (HomotopyGroup.congrEquiv (Finite.equivFinOfCardEq hM))).nontrivial
+  apply (HomotopyGroup.homeomorphEquiv (sphereHomeomorph _) (forgetLast f)).injective
+  -- `homeomorphEquiv` is by definition `homeomorphEquivOfEq` at `rfl`.
+  have hc : HomotopyGroup.homeomorphEquiv (sphereHomeomorph _) (forgetLast f)
+      (⟦GenLoop.const⟧ : HomotopyGroup M _ (forgetLast f)) = ⟦GenLoop.const⟧ :=
+    HomotopyGroup.homeomorphEquivOfEq_mk_const _ _
+  rw [hc, HomotopyGroup.homeomorphEquiv_apply, HomotopyGroup.map_comp_apply]
+  -- `firstVector` is by definition `sphereHomeomorph` composed with `forgetSecond`.
+  exact hu'
 
 /-- **The Stiefel manifold `V₂(ℝ^N)` has finite `π_(N-2)` for `N ≥ 5` odd.** In the exact homotopy
 sequence of the sphere bundle `S^(N-2) → V₂(ℝ^N) → V₁(ℝ^N) ≅ S^(N-1)`, the projection is trivial on

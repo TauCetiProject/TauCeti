@@ -11,12 +11,13 @@ import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 /-!
 # Maps into an even-dimensional sphere homotopic to their antipode
 
-The antipodal map of the unit sphere `Sᵈ` acts on `H_d(Sᵈ; ℤ) ≅ ℤ` by `(-1)^(d + 1)`, which is
-`-1` when `d` is even. So if a map `f : X → Sᵈ` into an even-dimensional sphere is homotopic to its
-antipode `-f`, then `f_* = -f_*` on `H_d(-; ℤ)`, and since `H_d(Sᵈ; ℤ)` is torsion-free, `f_*` is
-zero there (`ContinuousMap.singularHomologyMap_eq_zero_of_homotopic_neg`). The Hurewicz map of
-`Sᵈ` is injective in degree `d` for `d ≥ 2`, and the Hurewicz map is natural, so `f` is then also
-trivial on `π_d` (`ContinuousMap.homotopyGroupMap_eq_one_of_homotopic_neg`).
+The antipodal map of the unit sphere `Sᵈ` acts on `H_d(Sᵈ; ℤ) ≅ ℤ` by `(-1)^(d + 1)`
+(`TauCeti.singularHomologyMap_sphere_neg_apply`), which is `-1` when `d` is even. So if a map
+`f : X → Sᵈ` into an even-dimensional sphere is homotopic to its antipode `-f`, then `f_* = -f_*`
+on `H_d(-; ℤ)`, and since `H_d(Sᵈ; ℤ)` is torsion-free, `f_*` is zero there
+(`ContinuousMap.singularHomologyMap_eq_zero_of_homotopic_neg`). The Hurewicz map of `Sᵈ` is
+injective in degree `d` for `d ≥ 2`, and the Hurewicz map is natural, so `f` is then also trivial
+on `π_d` (`ContinuousMap.homotopyGroupMap_eq_one_of_homotopic_neg`).
 
 A map with a unit normal field `v`, that is `v x` orthogonal to `f x` for every `x`, is homotopic
 to its antipode (`ContinuousMap.homotopic_neg_of_inner_eq_zero`). This is the obstruction behind
@@ -55,26 +56,6 @@ open TauCeti
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {X : Type} [TopologicalSpace X]
   {n : ℕ}
 
-/-- The antipodal map acts by `-1` on `H_{n+2}(S; ℤ)` when `n` is even, for the unit sphere `S` of
-a real inner product space of dimension `n + 3`. -/
-private theorem singularHomologyMap_neg_apply (hE : finrank ℝ E = n + 3) (hn : Even n)
-    (y : ((singularChains ℤ).obj (TopCat.of (sphere (0 : E) 1))).homology (n + 2)) :
-    singularHomologyMap ℤ (n + 2) ⟨Neg.neg, continuous_neg⟩ y = -y := by
-  let R := ModuleCat.of ℤ ℤ
-  let ν : TopCat.of (sphere (0 : E) 1) ⟶ TopCat.of (sphere (0 : E) 1) :=
-    TopCat.ofHom ⟨Neg.neg, continuous_neg⟩
-  let ι := (reducedSingularHomologySuccIso R (n + 1)).hom.app (TopCat.of (sphere (0 : E) 1))
-  have hred := reducedSingularHomologyFunctor_map_sphere_neg R (n := n + 2) (by omega)
-  rw [(hn.add_odd (by decide : Odd 3)).neg_one_pow] at hred
-  -- Reduced and ordinary homology agree in positive degrees, naturally in the space.
-  have hnat := (reducedSingularHomologySuccIso R (n + 1)).hom.naturality ν
-  rw [hred] at hnat
-  have hmap : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj R).map ν =
-      -𝟙 _ := by
-    rw [← cancel_epi ι]
-    simpa [ι] using hnat.symm
-  exact congrArg (fun g ↦ (ModuleCat.Hom.hom g) y) hmap
-
 /-- **A map into an even-dimensional sphere homotopic to its antipode vanishes on top homology.**
 Let `S` be the unit sphere of a real inner product space of dimension `n + 3`, with `n` even, so
 that `S` has even dimension `n + 2`. If `f : X → S` is homotopic to `-f`, then `f` induces the zero
@@ -94,14 +75,14 @@ theorem singularHomologyMap_eq_zero_of_homotopic_neg (hE : finrank ℝ E = n + 3
   ext z
   -- Since `-f = ν ∘ f` is homotopic to `f` and `ν` acts by `-1`, the class `y = f_* z` is `-y`.
   have hy : singularHomologyMap ℤ (n + 2) f z = -singularHomologyMap ℤ (n + 2) f z := by
+    have hν := singularHomologyMap_sphere_neg_apply ℤ (n := n + 1) hE
+      (singularHomologyMap ℤ (n + 2) f z)
+    rw [(hn.add_one.add_even even_two).neg_one_pow, neg_one_zsmul] at hν
     -- The last rewrite closes the goal because `ν.comp f` and `-f` are equal by definition.
-    rw [← singularHomologyMap_neg_apply hE hn, ← singularHomologyMap_comp,
-      singularHomologyMap_eq_of_homotopic ℤ (n + 2) hf]
-  have h2 : (2 : ℤ) * φ (singularHomologyMap ℤ (n + 2) f z) = 0 := by
-    rw [two_mul]
-    nth_rw 2 [hy]
-    rw [map_neg, add_neg_cancel]
-  exact hφ ((mul_eq_zero.1 h2).resolve_left two_ne_zero |>.trans (map_zero φ).symm)
+    rw [← hν, ← singularHomologyMap_comp, singularHomologyMap_eq_of_homotopic ℤ (n + 2) hf]
+  have h := congrArg φ hy
+  rw [map_neg] at h
+  exact hφ (by rw [LinearMap.zero_apply, map_zero]; omega)
 
 /-- **A map into an even-dimensional sphere homotopic to its antipode is trivial on the top
 homotopy group.** Let `S` be the unit sphere of a real inner product space of dimension `n + 3`,
