@@ -8,7 +8,6 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.GroupTheory.Perm.Cycle.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-public import TauCeti.LinearAlgebra.RootSystem.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Analysis.SpecialFunctions.Complex.Arg
@@ -18,12 +17,9 @@ import TauCeti.GroupTheory.Coxeter.CoxeterElement
 import TauCeti.GroupTheory.Perm.Basic
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 import TauCeti.LinearAlgebra.Matrix.MulVec
-import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Plane
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.FixedPoints
 import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
-import TauCeti.LinearAlgebra.RootSystem.FiniteType.Dynkin
-import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
 import TauCeti.LinearAlgebra.RootSystem.LongestElement
 import TauCeti.LinearAlgebra.RootSystem.OrbitSum
 
@@ -43,12 +39,11 @@ root-orbit theorem and Bourbaki's root-count formula without assuming root spann
    `natCard_eq_card_support_mul_orderOf_wordProd`,
    `ncard_posRoots_eq_card_support_mul_orderOf_wordProd_div_two`): `⟨c⟩` partitions `ι` into `r`
    cyclic orbits, each containing a unique index in `inversions P b c`.
-3. **Exceptional root counts** (`RootPairing.natCard_eq_of_hasCartanType_E8`, etc., and
-   `ncard_posRoots_of_hasCartanType_*`): `E₈` (`240`/`120`), `E₇` (`126`/`63`), `E₆` (`72`/`36`),
-   `F₄` (`48`/`24`), and `G₂` (`12`/`6`).
 
 Every theorem is first proved in an `_of_isFiniteType` Cartan-matrix form (`IsFiniteType` and
-preconnected diagram), yielding counts directly from `HasCartanType` without `[P.IsIrreducible]`.
+preconnected diagram), allowing downstream applications (such as exceptional root counts in
+`TauCeti.LinearAlgebra.RootSystem.NumberOfRoots.Exceptional`) directly from `HasCartanType`
+without `[P.IsIrreducible]`.
 
 ## References
 * R. Steinberg, *Finite reflection groups*, Trans. Amer. Math. Soc. **91** (1959), 493–504.
@@ -441,82 +436,5 @@ end Irreducible
 end Orbits
 
 end RootPairing.Base
-
-/-! ### Root counts for the exceptional Cartan types -/
-
-namespace RootPairing
-
-section ExceptionalRootCounts
-
-variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
-  [Module R N] (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
-  [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
-
-private theorem natCard_eq_of_hasCartanType_aux {t : DynkinType} {h₀ n : ℕ}
-    (ht : t.Valid) (hft : IsFiniteType t.cartanMatrix) (h : HasCartanType P b t)
-    (hord : ∀ {l : List b.support}, l.Nodup → (∀ i, i ∈ l) → orderOf (wordProd P b l) = h₀)
-    (hn : t.rank * h₀ = n) : Nat.card ι = n := by
-  classical
-  obtain ⟨e, he⟩ := (hasCartanType_iff b t).mp h
-  have hnd := Finset.nodup_toList (Finset.univ : Finset b.support)
-  have hall : ∀ i, i ∈ (Finset.univ : Finset b.support).toList := fun _ ↦ by simp
-  rw [b.natCard_eq_card_support_mul_orderOf_wordProd_of_isFiniteType
-      ((Matrix.ext he) ▸ hft.submatrix e.injective)
-      (h.connected_diagramGraph_cartanMatrix ht).preconnected hnd hall,
-    h.card_support, hord hnd hall, hn]
-
-/-- **A root pairing with a base of Cartan type `E₆` has `72` roots.** -/
-theorem natCard_eq_of_hasCartanType_E6 (h : HasCartanType P b .E6) : Nat.card ι = 72 :=
-  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_E6 DynkinType.isFiniteType_cartanMatrix_E6 h
-    (Coxeter.orderOf_wordProd_of_hasCartanType_E6 h) rfl
-
-/-- **A base of Cartan type `E₆` has `36` positive roots.** -/
-theorem ncard_posRoots_of_hasCartanType_E6 (h : HasCartanType P b .E6) :
-    (posRoots P b).ncard = 36 :=
-  (ncard_posRoots_eq_natCard_div_two P b).trans (by rw [P.natCard_eq_of_hasCartanType_E6 b h])
-
-/-- **A root pairing with a base of Cartan type `E₇` has `126` roots.** -/
-theorem natCard_eq_of_hasCartanType_E7 (h : HasCartanType P b .E7) : Nat.card ι = 126 :=
-  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_E7 DynkinType.isFiniteType_cartanMatrix_E7 h
-    (Coxeter.orderOf_wordProd_of_hasCartanType_E7 h) rfl
-
-/-- **A base of Cartan type `E₇` has `63` positive roots.** -/
-theorem ncard_posRoots_of_hasCartanType_E7 (h : HasCartanType P b .E7) :
-    (posRoots P b).ncard = 63 :=
-  (ncard_posRoots_eq_natCard_div_two P b).trans (by rw [P.natCard_eq_of_hasCartanType_E7 b h])
-
-/-- **A root pairing with a base of Cartan type `E₈` has `240` roots.** -/
-theorem natCard_eq_of_hasCartanType_E8 (h : HasCartanType P b .E8) : Nat.card ι = 240 :=
-  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_E8 DynkinType.isFiniteType_cartanMatrix_E8 h
-    (Coxeter.orderOf_wordProd_of_hasCartanType_E8 h) rfl
-
-/-- **A base of Cartan type `E₈` has `120` positive roots.** -/
-theorem ncard_posRoots_of_hasCartanType_E8 (h : HasCartanType P b .E8) :
-    (posRoots P b).ncard = 120 :=
-  (ncard_posRoots_eq_natCard_div_two P b).trans (by rw [P.natCard_eq_of_hasCartanType_E8 b h])
-
-/-- **A root pairing with a base of Cartan type `F₄` has `48` roots.** -/
-theorem natCard_eq_of_hasCartanType_F4 (h : HasCartanType P b .F4) : Nat.card ι = 48 :=
-  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_F4 DynkinType.isFiniteType_cartanMatrix_F4 h
-    (Coxeter.orderOf_wordProd_of_hasCartanType_F4 h) rfl
-
-/-- **A base of Cartan type `F₄` has `24` positive roots.** -/
-theorem ncard_posRoots_of_hasCartanType_F4 (h : HasCartanType P b .F4) :
-    (posRoots P b).ncard = 24 :=
-  (ncard_posRoots_eq_natCard_div_two P b).trans (by rw [P.natCard_eq_of_hasCartanType_F4 b h])
-
-/-- **A root pairing with a base of Cartan type `G₂` has `12` roots.** -/
-theorem natCard_eq_of_hasCartanType_G2 (h : HasCartanType P b .G2) : Nat.card ι = 12 :=
-  P.natCard_eq_of_hasCartanType_aux b DynkinType.valid_G2 DynkinType.isFiniteType_cartanMatrix_G2 h
-    (Coxeter.orderOf_wordProd_of_hasCartanType_G2 h) rfl
-
-/-- **A base of Cartan type `G₂` has `6` positive roots.** -/
-theorem ncard_posRoots_of_hasCartanType_G2 (h : HasCartanType P b .G2) :
-    (posRoots P b).ncard = 6 :=
-  (ncard_posRoots_eq_natCard_div_two P b).trans (by rw [P.natCard_eq_of_hasCartanType_G2 b h])
-
-end ExceptionalRootCounts
-
-end RootPairing
 
 end
