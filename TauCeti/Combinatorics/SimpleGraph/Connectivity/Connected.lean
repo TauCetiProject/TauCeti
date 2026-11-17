@@ -20,6 +20,8 @@ Deleting any vertex leaves each connected component not containing it as a singl
 
 ## Main results
 
+* `SimpleGraph.Reachable.apply_eq_apply`: a function constant along the edges is constant along
+  reachability.
 * `SimpleGraph.connected_of_exists_adj_lt`: a graph on a type with a well-founded `<`, in which
   every vertex other than `v₀` has an adjacent vertex below it, is connected.
 * `SimpleGraph.ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one`: deleting a
@@ -96,6 +98,14 @@ theorem ConnectedComponent.natCard_fiber_map_induce_compl_singleton_eq_one
     refine ⟨⟨(G.induce ({v}ᶜ : Set V)).connectedComponentMk x', ?_⟩⟩
     rw [ConnectedComponent.map_mk]
     exact hxC
+
+/-- A function that is constant along the edges of a graph is constant along reachability. -/
+theorem Reachable.apply_eq_apply {V β : Type*} {G : SimpleGraph V} {f : V → β}
+    (hf : ∀ ⦃i j : V⦄, G.Adj i j → f i = f j) {i j : V} (h : G.Reachable i j) : f i = f j := by
+  obtain ⟨p⟩ := h
+  induction p with
+  | nil => rfl
+  | cons hadj _ ih => exact (hf hadj).trans ih
 
 variable {V : Type*} [LT V] [WellFoundedLT V] {G : SimpleGraph V}
 

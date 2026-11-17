@@ -180,6 +180,20 @@ theorem act_one_eq_self {p : ℕ} (c : NormalizedCubicalChain Y R p) :
 
 end MulAction
 
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by right multiplication, the action of chains is the
+Pontryagin product. -/
+theorem act_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : act G G R p q a b = mul G R p q a b := by
+  have h : actMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
+  rw [act_def, mul_def, h]
+
+end Self
+
 end NormalizedCubicalChain
 
 open NormalizedCubicalChain
@@ -273,6 +287,13 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
     rwa [map_zero] at h
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
+
+/-- A space without points has no nonzero chains. -/
+instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) :=
+  subsingleton_of_forall_eq 0 fun m ↦ by
+    induction m using cubicalChainModule.induction_on with
+    | lof n c => rw [Subsingleton.elim c 0, map_zero]
+    | add m m' hm hm' => rw [hm, hm', add_zero]
 
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
@@ -427,10 +448,7 @@ omit [ContinuousMul G] in
 /-- The unit acts trivially on the module. -/
 theorem cubicalChainActBilin_one (m : cubicalChainModule Y G R) :
     cubicalChainActBilin Y G R m 1 = m := by
-  have h1 : (1 : normalizedCubicalChainAlgebra G R) = cubicalChainLof G R 0 (one G R) := by
-    rw [DirectSum.lof_eq_of]
-    rfl
-  rw [h1]
+  rw [← cubicalChainLof_one]
   induction m using cubicalChainModule.induction_on with
   | lof n c =>
     rw [cubicalChainActBilin_lof_lof, act_one_eq_self]
