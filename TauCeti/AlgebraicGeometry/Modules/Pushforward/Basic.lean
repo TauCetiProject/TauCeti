@@ -88,7 +88,6 @@ def pushforwardIsoRestrictFunctor (e : X ≅ Y) : pushforward e.hom ≅ restrict
 
 /-- On sections, pushforward along an isomorphism is restriction along the equality
 between the image under its inverse and the preimage under the forward map. -/
-@[simp]
 theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
     (V : Y.Opens) (x : Γ((pushforward e.hom).obj M, V)) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
@@ -99,7 +98,6 @@ theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X
   rfl
 
 /-- The inverse pushforward--restriction comparison uses the inverse equality of opens. -/
-@[simp]
 theorem pushforwardIsoRestrictFunctor_inv_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
     (V : Y.Opens) (x : Γ(M.restrict e.inv, V)) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
@@ -136,7 +134,6 @@ def restrictPushforwardIso (f : X ⟶ Y) (U : Y.Opens) :
 -- `pushforwardCongr₂` with `eqToIso` is restriction along `eqToHom`, definitionally.
 /-- On sections, open restriction of pushforward is the restriction along the equality
 of the two inverse-image opens. -/
-@[simp]
 theorem restrictPushforwardIso_hom_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ(((pushforward f).obj M).restrict U.ι, V)) :
@@ -146,7 +143,6 @@ theorem restrictPushforwardIso_hom_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
   (rfl)
 
 /-- The inverse comparison restricts along the inverse equality of inverse-image opens. -/
-@[simp]
 theorem restrictPushforwardIso_inv_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ((pushforward (f ∣_ U)).obj (M.restrict (f ⁻¹ᵁ U).ι), V)) :
