@@ -6,11 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.PicardFunctor.BaseChange
-public import TauCeti.AlgebraicGeometry.PicardFunctor.Fppf
 public import Mathlib.AlgebraicGeometry.Pullbacks
 public import Mathlib.CategoryTheory.Monoidal.Cartesian.CommGrp_
-public import Mathlib.CategoryTheory.Sites.CoverLifting
-public import Mathlib.CategoryTheory.Sites.Over
 
 /-!
 # The Picard scheme
@@ -35,11 +32,9 @@ sections to the sum of their classes (`picardSchemeIso_hom_app_one`,
 
 For a morphism of bases `g : S' ⟶ S`, the relative Picard fppf sheaf of the base change
 `S' ×_S X ⟶ S'` is the relative Picard fppf sheaf of `f` restricted along `Over.map g`
-(`relativePicardFppfSheafBaseChangeIso`): this is the comparison of the presheaves
-`relativePicardPresheafBaseChangeIso` after sheafification, since restriction along `Over.map g`
-commutes with fppf sheafification. As `Over.map g` is left adjoint to `Over.pullback g`, the base
-change of a Picard scheme is the Picard scheme of the base change
-(`picardSchemeBaseChangeIso`).
+(`relativePicardFppfSheafBaseChangeIso`, in `PicardFunctor/BaseChange.lean`). As `Over.map g` is
+left adjoint to `Over.pullback g`, the base change of a Picard scheme is the Picard scheme of the
+base change (`picardSchemeBaseChangeIso`).
 
 ## Main declarations
 
@@ -50,8 +45,6 @@ change of a Picard scheme is the Picard scheme of the base change
 * `TauCeti.AlgebraicGeometry.picardSchemeIsoOfRepresentableBy`: uniqueness of the Picard scheme;
 * `TauCeti.AlgebraicGeometry.instGrpObjPicardScheme`,
   `TauCeti.AlgebraicGeometry.instIsCommMonObjPicardScheme`: the commutative group law;
-* `TauCeti.AlgebraicGeometry.relativePicardFppfSheafBaseChangeIso`: base change of the relative
-  Picard fppf sheaf;
 * `TauCeti.AlgebraicGeometry.instHasPicardSchemeFstPullback`,
   `TauCeti.AlgebraicGeometry.picardSchemeBaseChangeIso`: base change of the Picard scheme.
 
@@ -159,13 +152,38 @@ instance instGrpObjPicardScheme [HasPicardScheme f] : GrpObj (picardScheme f) :=
 instance instIsCommMonObjPicardScheme [HasPicardScheme f] : IsCommMonObj (picardScheme f) :=
   (picardSchemeCommGrpObj f).toIsCommMonObj
 
+/-- The representation `picardSchemeMulRepresentableBy f` is `picardSchemeRepresentableBy f`
+followed by `Multiplicative.ofAdd`. -/
+theorem picardSchemeMulRepresentableBy_homEquiv' [HasPicardScheme f] {T : Over S}
+    (φ : T ⟶ picardScheme f) :
+    (picardSchemeMulRepresentableBy f).homEquiv' φ =
+      Multiplicative.ofAdd ((picardSchemeRepresentableBy f).homEquiv φ) :=
+  (rfl)
+
+/-- The unit section of the Picard scheme is the morphism representing the unit of the sheaf,
+as defined by Mathlib's `MonObj.ofRepresentableBy`. -/
+theorem picardScheme_one_eq [HasPicardScheme f] (T : Over S) :
+    (1 : T ⟶ picardScheme f) = toUnit T ≫ (picardSchemeMulRepresentableBy f).homEquiv'.symm 1 :=
+  (rfl)
+
+/-- The product of two sections of the Picard scheme is their pairing composed with the morphism
+representing the product of the two projections, as defined by Mathlib's
+`MonObj.ofRepresentableBy`. -/
+theorem picardScheme_mul_eq [HasPicardScheme f] {T : Over S} (φ ψ : T ⟶ picardScheme f) :
+    φ * ψ = lift φ ψ ≫ (picardSchemeMulRepresentableBy f).homEquiv'.symm
+      ((picardSchemeMulRepresentableBy f).homEquiv' (fst (picardScheme f) (picardScheme f)) *
+        (picardSchemeMulRepresentableBy f).homEquiv' (snd (picardScheme f) (picardScheme f))) :=
+  (rfl)
+
 /-- The unit section of the Picard scheme corresponds to the trivial class. -/
 theorem picardSchemeRepresentableBy_homEquiv_one [HasPicardScheme f] (T : Over S) :
     (picardSchemeRepresentableBy f).homEquiv (1 : T ⟶ picardScheme f) = 0 := by
-  let α := picardSchemeMulRepresentableBy f
-  have h : α.homEquiv' (toUnit T ≫ α.homEquiv'.symm 1) = 1 := by
-    rw [α.homEquiv'_comp, Equiv.apply_symm_apply, map_one]
-  exact congrArg Multiplicative.toAdd h
+  apply Multiplicative.ofAdd.injective
+  rw [ofAdd_zero, ← picardSchemeMulRepresentableBy_homEquiv', picardScheme_one_eq,
+    Functor.RepresentableBy.homEquiv'_comp, Equiv.apply_symm_apply, map_one]
+  -- Both sides are `1` of `Multiplicative` of the sections over `T`, its carrier written once
+  -- through `AddCommGrpCat.toCommGrp` and once directly.
+  rfl
 
 /-- The product of two sections of the Picard scheme corresponds to the sum of their classes,
 that is, to the tensor product of line-bundle classes. -/
@@ -173,14 +191,15 @@ theorem picardSchemeRepresentableBy_homEquiv_mul [HasPicardScheme f] {T : Over S
     (φ ψ : T ⟶ picardScheme f) :
     (picardSchemeRepresentableBy f).homEquiv (φ * ψ) =
       (picardSchemeRepresentableBy f).homEquiv φ + (picardSchemeRepresentableBy f).homEquiv ψ := by
-  let α := picardSchemeMulRepresentableBy f
-  have h : α.homEquiv' (lift φ ψ ≫
-      α.homEquiv'.symm (α.homEquiv' (fst (picardScheme f) (picardScheme f)) *
-        α.homEquiv' (snd (picardScheme f) (picardScheme f)))) =
-      α.homEquiv' φ * α.homEquiv' ψ := by
-    simp only [α.homEquiv'_comp, Equiv.apply_symm_apply, map_mul]
-    simp only [← α.homEquiv'_comp, lift_fst, lift_snd]
-  exact congrArg Multiplicative.toAdd h
+  apply Multiplicative.ofAdd.injective
+  rw [ofAdd_add, ← picardSchemeMulRepresentableBy_homEquiv',
+    ← picardSchemeMulRepresentableBy_homEquiv', ← picardSchemeMulRepresentableBy_homEquiv',
+    picardScheme_mul_eq, Functor.RepresentableBy.homEquiv'_comp, Equiv.apply_symm_apply, map_mul,
+    ← Functor.RepresentableBy.homEquiv'_comp, ← Functor.RepresentableBy.homEquiv'_comp, lift_fst,
+    lift_snd]
+  -- As in `picardSchemeRepresentableBy_homEquiv_one`, the two products differ only in how the
+  -- carrier of `Multiplicative` of the sections over `T` is written.
+  rfl
 
 /-- Morphisms to the Picard scheme form a group isomorphic to the group of sections of the
 relative Picard fppf sheaf, written multiplicatively. -/
@@ -212,30 +231,6 @@ theorem picardSchemeIso_hom_app_mul [HasPicardScheme f] {T : Over S}
 /-! ### Base change -/
 
 variable {S' : Scheme.{u}} (g : S' ⟶ S)
-
-/-- **Base change of the relative Picard fppf sheaf.** For `f : X ⟶ S` and `g : S' ⟶ S`, the
-relative Picard fppf sheaf of the base change `S' ×_S X ⟶ S'` is the relative Picard fppf sheaf
-of `f` restricted to schemes over `S'` along `Over.map g`. It is the base change comparison of
-the relative Picard presheaves (`relativePicardPresheafBaseChangeIso`) after sheafification, as
-restriction along `Over.map g` commutes with fppf sheafification. -/
-def relativePicardFppfSheafBaseChangeIso :
-    relativePicardFppfSheaf (pullback.fst g f) ≅
-      (Over.map g).sheafPushforwardContinuous AddCommGrpCat.{u + 1}
-        (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S) |>.obj
-          (relativePicardFppfSheaf f) :=
-  eqToIso (relativePicardFppfSheaf_eq _) ≪≫
-    (presheafToSheaf _ _).mapIso
-      (eqToIso (relativePicardAddPresheaf_eq _) ≪≫
-        Functor.isoWhiskerRight (relativePicardPresheafBaseChangeIso f g)
-          CommGrpCat.toAddCommGrp ≪≫
-        Functor.associator _ _ _ ≪≫
-        Functor.isoWhiskerLeft (Over.map g).op (eqToIso (relativePicardAddPresheaf_eq f).symm)) ≪≫
-    ((Over.map g).pushforwardContinuousSheafificationCompatibility AddCommGrpCat.{u + 1}
-      (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S)).app
-        (relativePicardAddPresheaf f) ≪≫
-    ((Over.map g).sheafPushforwardContinuous AddCommGrpCat.{u + 1}
-      (Scheme.fppfTopology.over S') (Scheme.fppfTopology.over S)).mapIso
-        (eqToIso (relativePicardFppfSheaf_eq f).symm)
 
 /-- If `f` has a Picard scheme `P`, its base change `P ×_S S'` along `g : S' ⟶ S` represents the
 relative Picard fppf sheaf of the base change `S' ×_S X ⟶ S'`: a morphism `T ⟶ P ×_S S'` over
