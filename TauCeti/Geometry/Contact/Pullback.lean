@@ -124,14 +124,7 @@ theorem IsContactFormAt.mfderiv_reebVectorField_eq {α : SmoothForm I M ℝ 1}
     LinearEquiv.ofBijective (mfderiv I J f x).toLinearMap hdf
   set a_β := (SmoothForm.degreeOneEquiv β (f x) : TangentSpace J (f x) →ₗ[ℝ] ℝ)
   set B_β := (mextDerivₗ J 1 β).bilinFormAt (f x)
-  have hc_lin : Module.Dual.IsContact a_β B_β := by
-    rw [Module.Dual.isContact_iff_of_isRefl (SmoothForm.isAlt_bilinFormAt _ (f x)).isRefl]
-    refine ⟨fun h0 ↦ hc.ne_zero (ContinuousAlternatingMap.ext_fin_one fun v ↦ by
-      simpa [a_β, SmoothForm.degreeOneEquiv_coe_apply] using LinearMap.congr_fun h0 v),
-      fun v hv hvw ↦ hc.nondegenerate v (RoughForm.mem_ker.2 (by
-        simpa [a_β, SmoothForm.degreeOneEquiv_coe_apply] using hv)) fun w hw ↦ by
-          simpa [B_β] using hvw w (by
-            simpa [a_β, SmoothForm.degreeOneEquiv_coe_apply] using RoughForm.mem_ker.1 hw)⟩
+  have hc_lin : Module.Dual.IsContact a_β B_β := SmoothForm.isContactFormAt_iff_isContact.1 hc
   have ha : (SmoothForm.degreeOneEquiv α x : TangentSpace I x →ₗ[ℝ] ℝ) =
       a_β ∘ₗ (e : TangentSpace I x →ₗ[ℝ] TangentSpace J (f x)) := by
     ext u

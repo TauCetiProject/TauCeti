@@ -69,6 +69,7 @@ Legendrian immersions into `W × ℝ` are exactly the lifts of the exact Lagrang
 
 * `TauCeti.SmoothForm.mextDerivₗ_contactization`: `d(dz - θ) = -dθ`.
 * `TauCeti.SmoothForm.mpullback_prodMk_contactization`: `(ι, h)^* (dz - θ) = dh - ι^* θ`.
+* `TauCeti.SmoothForm.mpullback_prodMap_id_contactization`: `(f × id)^* (dz - θ) = dz - f^* θ`.
 * `TauCeti.SmoothForm.isContactForm_contactization_iff`: `dz - θ` is a contact form exactly when
   `-dθ` is nondegenerate.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
@@ -180,6 +181,20 @@ theorem mpullback_prodMk_contactization {E' H' L : Type*} [NormedAddCommGroup E'
   rw [contactization, map_sub, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
     ← mpullback_comp, ← mpullback_comp, Submodule.coe_sub, coe_mpullback]
   simp only [hfst, hsnd, SmoothForm.mpullback_realLineCoordForm]
+
+/-- For a smooth map `f : L → W`, the product map `Prod.map f id : L × ℝ → W × ℝ` pulls the
+contactization form `dz - θ` back to the contactization form `dz - f^* θ`. -/
+theorem mpullback_prodMap_id_contactization {E' H' L : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace L]
+    [ChartedSpace H' L] [IsManifold J ∞ L] (θ : SmoothForm I W ℝ 1) {f : L → W}
+    (hf : ContMDiff J I ∞ f) :
+    mpullback (Prod.map f id) (hf.prodMap contMDiff_id) θ.contactization =
+      (mpullback f hf θ).contactization := by
+  have hfst : Prod.fst ∘ Prod.map f (id : ℝ → ℝ) = f ∘ Prod.fst := rfl
+  have hsnd : Prod.snd ∘ Prod.map f (id : ℝ → ℝ) = Prod.snd := rfl
+  rw [contactization, contactization, map_sub, ← LinearMap.comp_apply, ← LinearMap.comp_apply,
+    ← mpullback_comp, ← mpullback_comp, ← LinearMap.comp_apply, ← mpullback_comp]
+  simp only [hfst, hsnd]
 
 /-- The tangent vector `(v, θ_w(v))` at `(w, z)` lies in the kernel of the contactization form. -/
 private theorem contactization_apply_graph (θ : SmoothForm I W ℝ 1) (p : W × ℝ)

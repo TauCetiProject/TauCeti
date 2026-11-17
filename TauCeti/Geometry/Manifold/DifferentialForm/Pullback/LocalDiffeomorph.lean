@@ -52,9 +52,9 @@ pulls `Θ^* ω₁` back to `Θ^* ω₀`, then `Θ ∘ Ψ ∘ Θ⁻¹` pulls `ω�
   injective.
 * `IsLocalDiffeomorphAt.mpullback_apply_eq_zero_iff`: a pullback along a local diffeomorphism
   vanishes at a point exactly when the form vanishes at its image.
-* `PartialDiffeomorph.mpullback_mpullback_symm`, `PartialDiffeomorph.mpullback_symm_mpullback`,
-  `PartialDiffeomorph.mpullback_mpullbackWithin_symm`: pullback along a `C^n` partial
-  diffeomorphism (`n ≠ 0`) and its inverse cancel on its source and target.
+* `PartialDiffeomorph.mpullback_mpullback_symm`, `PartialDiffeomorph.mpullback_symm_mpullback`:
+  pullback along a `C^n` partial diffeomorphism (`n ≠ 0`) and its inverse cancel on its source and
+  target.
 * `PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val`,
   `PartialDiffeomorph.mpullback_toDiffeomorphSourceTarget_mpullback_subtype_val_eq_iff`: pullback
   of restricted forms along `toDiffeomorphSourceTarget` corresponds to pointwise pullback on the
@@ -134,20 +134,6 @@ theorem mpullback_symm_mpullback (φ : PartialDiffeomorph I I' M M' n) (hn : n �
     (ω : RoughForm I' M' V k) {y : M'} (hy : y ∈ φ.target) :
     mpullback I' I φ.symm (mpullback I I' φ ω) y = ω y :=
   φ.symm.mpullback_mpullback_symm hn ω hy
-
-/-- Pulling a rough form back within `B` along `φ.symm` and then pulling back along `φ` at
-`x ∈ φ.source` recovers the form at `x` whenever `B` has unique differentials at `φ x`. No
-inclusion `B ⊆ φ.target` is needed since `φ x ∈ φ.target` holds automatically for `x ∈ φ.source`. -/
-theorem mpullback_mpullbackWithin_symm (φ : PartialDiffeomorph I I' M M' n) (hn : n ≠ 0)
-    {B : Set M'} {x : M} (hB : UniqueMDiffWithinAt I' B (φ x)) (ω : RoughForm I M V k)
-    (hx : x ∈ φ.source) :
-    mpullback I I' φ (mpullbackWithin I' I φ.symm B ω) x = ω x := by
-  have hB_eq : mpullback I I' φ (mpullbackWithin I' I φ.symm B ω) x =
-      mpullback I I' φ (mpullback I' I φ.symm ω) x := by
-    ext v
-    simp only [mpullback_apply,
-      mpullbackWithin_eq_mpullback hB (φ.symm.mdifferentiableAt hn (φ.map_source hx)) ω]
-  rw [hB_eq, φ.mpullback_mpullback_symm hn ω hx]
 
 /-- Pulling the restriction of a rough form to `φ.target` back along
 `φ.toDiffeomorphSourceTarget` equals restricting the pullback `φ^* β` to `φ.source`. -/
