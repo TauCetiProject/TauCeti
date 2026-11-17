@@ -94,38 +94,33 @@ theorem isPrimitiveElem_decompose_of_isCompletedPrimitive
       (degreeFiltration ℒ d hneg).projection (d n).toNat x) :
     Bialgebra.IsPrimitiveElem R (DirectSum.decompose 𝒰 u n : U) := by
   by_cases hn : d n < 0
-  · -- Negative-degree enveloping pieces vanish identically under `hneg`.
-    have hbot := homogeneousSubmodule_eq_bot_of_degree_neg ℒ d hneg hn
+  · have hbot := homogeneousSubmodule_eq_bot_of_degree_neg ℒ d hneg hn
     have hu0 : (DirectSum.decompose 𝒰 u n : U) = 0 := by
       simpa only [hbot, Submodule.mem_bot] using (DirectSum.decompose 𝒰 u n).property
     simp [hu0]
-  · -- For `0 ≤ d n`, compare bidegree projections at `(d n).toNat`.
-    let k := (d n).toNat
+  · let k := (d n).toNat
     have hk_eq : (k : ℤ) = d n := Int.toNat_of_nonneg (not_lt.mp hn)
     have hmem := hx.comul_sub_mem_tensorProduct_ideal hu
     rw [degreeFiltration_eq_gradedAlgebra_degreeFiltration ℒ d hneg] at hmem
     have hun_mem : (DirectSum.decompose 𝒰 u n : U) ∈ 𝒰 n := (DirectSum.decompose 𝒰 u n).property
     have hone : (1 : U) ∈ 𝒰 0 := SetLike.one_mem_graded 𝒰
     rw [Bialgebra.isPrimitiveElem_iff_comul_eq_tmul_add_tmul]
-    refine TauCeti.GradedAlgebra.tensorProduct_ext 𝒰 𝒰 fun i j => ?_
+    refine TauCeti.tensorProduct_ext_homogeneousComponent 𝒰 𝒰 fun i j => ?_
+    simp only [← TauCeti.GradedAlgebra.proj_eq_homogeneousComponent]
     by_cases hij : i + j = n
-    · have hdeg : d i + d j < ((k + 1 : ℕ) : ℤ) := by
-        have := congrArg d hij; simp only [map_add] at this; omega
-      have hzero := (TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff 𝒰 𝒰
-        d _ d _).mp hmem i j hdeg
+    · have hzero := (TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff 𝒰 𝒰
+        d _ d _).mp hmem i j (by have := congrArg d hij; simp only [map_add] at this; omega)
       rw [map_sub] at hzero
       rw [← hij, ← map_proj_comul ℒ u i j, sub_eq_zero.mp hzero, add_comm (u ⊗ₜ[R] (1 : U))]
       exact map_proj_tmul_one_add_one_tmul ℒ u rfl
-    · have h0n : (1 : U) ⊗ₜ[R] (DirectSum.decompose 𝒰 u n : U) ∈
-          Submodule.map₂ (TensorProduct.mk R U U) (𝒰 0) (𝒰 n) :=
-        Submodule.apply_mem_map₂ _ hone hun_mem
-      have hn0 : (DirectSum.decompose 𝒰 u n : U) ⊗ₜ[R] (1 : U) ∈
-          Submodule.map₂ (TensorProduct.mk R U U) (𝒰 n) (𝒰 0) :=
-        Submodule.apply_mem_map₂ _ hun_mem hone
-      rw [map_proj_comul_eq_zero_of_mem_ne ℒ hun_mem hij, map_add,
-        TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_ne 𝒰 𝒰 (p := (0, n)) h0n
+    · rw [map_proj_comul_eq_zero_of_mem_ne ℒ hun_mem hij, map_add,
+        TauCeti.GradedAlgebra.proj_eq_homogeneousComponent,
+        TauCeti.GradedAlgebra.proj_eq_homogeneousComponent,
+        TauCeti.map_homogeneousComponent_eq_zero_of_mem_ne 𝒰 𝒰 (p := (0, n)) (i := i) (j := j)
+          (Submodule.apply_mem_map₂ _ hone hun_mem : (1 : U) ⊗ₜ[R] _ ∈ _)
           (fun h => hij (by obtain ⟨rfl, rfl⟩ := Prod.mk.inj h.symm; exact zero_add _)),
-        TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_ne 𝒰 𝒰 (p := (n, 0)) hn0
+        TauCeti.map_homogeneousComponent_eq_zero_of_mem_ne 𝒰 𝒰 (p := (n, 0)) (i := i) (j := j)
+          (Submodule.apply_mem_map₂ _ hun_mem hone : _ ⊗ₜ[R] (1 : U) ∈ _)
           (fun h => hij (by obtain ⟨rfl, rfl⟩ := Prod.mk.inj h.symm; exact add_zero _)),
         add_zero]
 
@@ -209,11 +204,8 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU {x : (F).completion} 
       split_ifs with hnm
       · exact hnm ▸ _root_.DirectSum.decompose_of_mem_same 𝒰 (ι_mem_homogeneousSubmodule ℒ (y n).2)
       · exact _root_.DirectSum.decompose_of_mem_ne 𝒰 (ι_mem_homogeneousSubmodule ℒ (y n).2) hnm
-    have hsum : (DirectSum.decompose 𝒰 (∑ n ∈ (d.finite_cutoff k).toFinset, ι R (y n : L)) m : U) =
-        ι R (y m : L) := by
-      rw [_root_.DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
-      simp only [hterm, Finset.sum_ite_eq', hm_cut, ↓reduceIte]
-    rw [hsum, hy m]
+    rw [_root_.DirectSum.decompose_sum, DirectSum.sum_apply, Submodule.coe_sum]
+    simp only [hterm, Finset.sum_ite_eq', hm_cut, ↓reduceIte, hy m]
     have hm_nonneg := d.degree_nonneg hm_mon
     have hfac := (F).factor_projection (by omega : (d.degree m).toNat ≤ k) x
     rw [← hv, ← hu m, Ideal.Quotient.factor_mk, Ideal.Quotient.eq] at hfac
@@ -226,18 +218,15 @@ theorem isCompletedPrimitive_iff_mem_range_completedLieToU {x : (F).completion} 
       simpa only [hbot, Submodule.mem_bot] using (DirectSum.decompose 𝒰 z m).property
     rw [hz0, hz0]
 
-private theorem completedLieToPrimitives_bijective :
-    Function.Bijective (completedLieToPrimitives ℒ d) :=
-  ⟨fun _ _ hz => completedLieToU_injective_of_ratAlgebra R ℒ d (congrArg Subtype.val hz),
-   fun p => by
-    obtain ⟨z, hz⟩ := (isCompletedPrimitive_iff_mem_range_completedLieToU R ℒ d).mp
-      ((mem_completedPrimitives_iff ℒ d.degree _).mp p.property)
-    exact ⟨z, Subtype.ext hz⟩⟩
-
 /-- Over a commutative `ℚ`-algebra `R : Type`, `completedLieToPrimitives` identifies
 `d.completedLie ℒ` with the Lie subalgebra of completed primitive elements of `(F).completion`. -/
 noncomputable def completedPrimitiveLieEquiv : d.completedLie ℒ ≃ₗ⁅R⁆ P :=
-  LieEquiv.ofBijective (completedLieToPrimitives ℒ d) (completedLieToPrimitives_bijective R ℒ d)
+  LieEquiv.ofBijective (completedLieToPrimitives ℒ d)
+    ⟨fun _ _ hz => completedLieToU_injective_of_ratAlgebra R ℒ d (congrArg Subtype.val hz),
+     fun p => by
+       obtain ⟨z, hz⟩ := (isCompletedPrimitive_iff_mem_range_completedLieToU R ℒ d).mp
+         ((mem_completedPrimitives_iff ℒ d.degree _).mp p.property)
+       exact ⟨z, Subtype.ext hz⟩⟩
 
 /-- Applying `completedPrimitiveLieEquiv` and coercing to the ambient completion computes
 `completedLieToU`. -/

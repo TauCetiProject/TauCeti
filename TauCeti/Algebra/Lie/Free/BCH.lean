@@ -80,15 +80,13 @@ private theorem isCompletedGroupLike_completedGeneratorExp (w : F) :
 private theorem completedGeneratorExp_mul_sub_one_mem (x₀ y₀ : F) :
     completedGeneratorExp S x₀ * completedGeneratorExp S y₀ - 1 ∈
       (freeFiltration S).completionIdeal 1 :=
-  ((freeFiltration S).sub_one_mem_completionIdeal_one_iff_completedCounit_eq_one ℚ
+  ((isCompletedGroupLike_completedGeneratorExp S x₀).mul
+    (isCompletedGroupLike_completedGeneratorExp S y₀)).sub_one_mem
     (UniversalEnvelopingAlgebra.ker_counitAlgHom_le_degreeFiltration_one_of_isPositiveGrading ℒ δ)
-    _).mpr ((isCompletedGroupLike_completedGeneratorExp S x₀).mul
-      (isCompletedGroupLike_completedGeneratorExp S y₀)).completedCounit_eq_one
 
 private noncomputable def completedBCHOfElem (x₀ y₀ : F) : (δ).completedLie ℒ :=
   (UniversalEnvelopingAlgebra.completedPrimitiveLieEquiv ℚ ℒ δ).symm
-    ⟨(freeFiltration S).completedLog ⟨completedGeneratorExp S x₀ * completedGeneratorExp S y₀,
-        completedGeneratorExp_mul_sub_one_mem S x₀ y₀⟩,
+    ⟨(freeFiltration S).completedLog ⟨_, completedGeneratorExp_mul_sub_one_mem S x₀ y₀⟩,
      (UniversalEnvelopingAlgebra.mem_completedPrimitives_iff ℒ (δ).degree _).mpr <|
        ((freeFiltration S).isCompletedPrimitive_completedLog_iff ℚ _).mpr
          ((isCompletedGroupLike_completedGeneratorExp S x₀).mul
@@ -99,8 +97,7 @@ private theorem lowerCentralQuotientι_quotEquiv (c : ℕ) (z : (δ).truncatedLi
         (naturals_degreeIdeal_eq_lowerCentralSeries ℚ S c) z) =
       Ideal.quotEquivOfEq (naturals_degreeFiltration_eq_augmentation_pow ℚ S (c + 1))
         (UniversalEnvelopingAlgebra.truncatedLieToU ℒ δ c z) := by
-  obtain ⟨w, rfl⟩ := LieIdeal.surjective_mkQ ((δ).degreeIdeal ℒ c) z
-  simp [LieIdeal.mkQ_apply]
+  obtain ⟨w, rfl⟩ := LieIdeal.surjective_mkQ ((δ).degreeIdeal ℒ c) z; simp [LieIdeal.mkQ_apply]
 
 /-- The Baker–Campbell–Hausdorff product on `FreeLieAlgebra ℚ S ⧸ lowerCentralSeries ℚ _ _ c`,
 obtained by projecting the completed logarithm of `exp x * exp y` from the completed enveloping
@@ -129,9 +126,8 @@ theorem lowerCentralQuotientι_bchQuotient (c : ℕ) (x y : F ⧸ LCS c) :
   let y₀ := (LieIdeal.surjective_mkQ (LCS c) y).choose
   have hx₀ : (LCS c).mkQ x₀ = x := (LieIdeal.surjective_mkQ (LCS c) x).choose_spec
   have hy₀ : (LCS c).mkQ y₀ = y := (LieIdeal.surjective_mkQ (LCS c) y).choose_spec
-  have hnil_sub : IsNilpotent
-      ((freeFiltration S).projection c
-        (completedGeneratorExp S x₀ * completedGeneratorExp S y₀) - 1) := by
+  have hnil_sub : IsNilpotent ((freeFiltration S).projection c
+      (completedGeneratorExp S x₀ * completedGeneratorExp S y₀) - 1) := by
     simpa only [map_sub, map_one] using
       (freeFiltration S).isNilpotent_projection (completedGeneratorExp_mul_sub_one_mem S x₀ y₀) c
   have hgen (w : F) :
@@ -140,16 +136,13 @@ theorem lowerCentralQuotientι_bchQuotient (c : ℕ) (x y : F ⧸ LCS c) :
         IsNilpotent.exp (ι_c c ((LCS c).mkQ w)) := by
     rw [completedGeneratorExp, AlgFiltration.projection_completedExp, IsNilpotent.map_exp
       ((freeFiltration S).isNilpotent_projection
-        (UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one ℒ δ _) c)
-      (Ideal.quotEquivOfEq (naturals_degreeFiltration_eq_augmentation_pow ℚ S (c + 1)))]
+        (UniversalEnvelopingAlgebra.completedLieToU_mem_completionIdeal_one ℒ δ _) c) _]
     congr 1; simp [UniversalEnvelopingAlgebra.completedLieToU_toCompletion]
   rw [bchQuotient, lowerCentralQuotientι_quotEquiv,
     ← UniversalEnvelopingAlgebra.projection_completedLieToU, completedBCHOfElem,
-    UniversalEnvelopingAlgebra.completedLieToU_completedPrimitiveLieEquiv_symm,
-    Subtype.coe_mk, AlgFiltration.projection_completedLog,
-    IsNilpotent.map_log hnil_sub
-      (Ideal.quotEquivOfEq (naturals_degreeFiltration_eq_augmentation_pow ℚ S (c + 1))),
-    map_mul, map_mul, hgen x₀, hgen y₀, hx₀, hy₀]
+    UniversalEnvelopingAlgebra.completedLieToU_completedPrimitiveLieEquiv_symm, Subtype.coe_mk,
+    AlgFiltration.projection_completedLog, IsNilpotent.map_log hnil_sub _, map_mul, map_mul,
+    hgen x₀, hgen y₀, hx₀, hy₀]
 
 /-- **Exponential law for `bchQuotient`:** exponentiating the image of `bchQuotient S c x y` in
 `U(F) ⧸ J ^ (c + 1)` recovers `exp (ι_c x) * exp (ι_c y)`. -/
@@ -213,10 +206,8 @@ theorem bchQuotient_of_lie_eq_zero (c : ℕ) {x y : F ⧸ LCS c} (hxy : ⁅x, y�
   rw [← bchQuotient_unique]
   let f := Ideal.Quotient.factor (Ideal.pow_le_pow_right (I := (J)) (Nat.add_le_add_right h 1))
   have hnil := UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ F d
-  rw [UniversalEnvelopingAlgebra.lowerCentralQuotientι_factor ℚ F h,
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι_factor ℚ F h,
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι_factor ℚ F h,
-    ← IsNilpotent.map_exp (hnil _) f, ← IsNilpotent.map_exp (hnil x) f,
+  simp only [UniversalEnvelopingAlgebra.lowerCentralQuotientι_factor ℚ F h]
+  rw [← IsNilpotent.map_exp (hnil _) f, ← IsNilpotent.map_exp (hnil x) f,
     ← IsNilpotent.map_exp (hnil y) f, exp_lowerCentralQuotientι_bchQuotient, map_mul]
 
 /-- `bchQuotient` is natural along any Lie homomorphism between free Lie algebras over `ℚ`. -/
@@ -231,10 +222,8 @@ theorem mapQ_bchQuotient {T : Type*} (f : F →ₗ⁅ℚ⁆ _root_.FreeLieAlgebr
   let φ := Ideal.quotientMapₐ _ (UniversalEnvelopingAlgebra.map ℚ f)
     (UniversalEnvelopingAlgebra.augmentation_toIdeal_pow_le_comap_map ℚ f (c + 1))
   have hnil := UniversalEnvelopingAlgebra.isNilpotent_lowerCentralQuotientι ℚ F c
-  rw [UniversalEnvelopingAlgebra.lowerCentralQuotientι_mapQ ℚ f c hf,
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι_mapQ ℚ f c hf,
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι_mapQ ℚ f c hf,
-    ← IsNilpotent.map_exp (hnil _) φ, ← IsNilpotent.map_exp (hnil x) φ,
+  simp only [UniversalEnvelopingAlgebra.lowerCentralQuotientι_mapQ ℚ f c hf]
+  rw [← IsNilpotent.map_exp (hnil _) φ, ← IsNilpotent.map_exp (hnil x) φ,
     ← IsNilpotent.map_exp (hnil y) φ, exp_lowerCentralQuotientι_bchQuotient, map_mul]
 
 /-- At nilpotency class zero, `bchQuotient` vanishes. -/
@@ -255,24 +244,21 @@ theorem bchQuotient_one (x y : F ⧸ LCS 1) : bchQuotient S 1 x y = x + y := by
 theorem bchQuotient_two (x y : F ⧸ LCS 2) :
     bchQuotient S 2 x y = x + y + (1 / 2 : ℚ) • ⁅x, y⁆ := by
   apply lowerCentralQuotientι_injective_of_ratAlgebra ℚ S 2
-  rw [lowerCentralQuotientι_bchQuotient,
-    Ideal.log_exp_mul_exp_of_pow_three_eq_bot (Ideal.map (Ideal.Quotient.mk ((J) ^ 3)) (J))
-      (Ideal.map_quotient_mk_pow_eq_bot (J) 3)
-      (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 2 x)
-      (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 2 y)]
+  rw [lowerCentralQuotientι_bchQuotient, Ideal.log_exp_mul_exp_of_pow_three_eq_bot _
+    (Ideal.map_quotient_mk_pow_eq_bot (J) 3)
+    (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 2 x)
+    (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 2 y)]
   simp [map_add, map_smul, LieHom.map_lie]
 
 /-- At nilpotency class three, `bchQuotient` is
 `x + y + (1 / 2) • ⁅x, y⁆ + (1 / 12) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆)`. -/
-theorem bchQuotient_three (x y : F ⧸ LCS 3) :
-    bchQuotient S 3 x y =
-      x + y + (1 / 2 : ℚ) • ⁅x, y⁆ + (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆) := by
+theorem bchQuotient_three (x y : F ⧸ LCS 3) : bchQuotient S 3 x y =
+    x + y + (1 / 2 : ℚ) • ⁅x, y⁆ + (1 / 12 : ℚ) • (⁅x, ⁅x, y⁆⁆ + ⁅y, ⁅y, x⁆⁆) := by
   apply lowerCentralQuotientι_injective_of_ratAlgebra ℚ S 3
-  rw [lowerCentralQuotientι_bchQuotient,
-    Ideal.log_exp_mul_exp_of_pow_four_eq_bot (Ideal.map (Ideal.Quotient.mk ((J) ^ 4)) (J))
-      (Ideal.map_quotient_mk_pow_eq_bot (J) 4)
-      (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 3 x)
-      (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 3 y)]
+  rw [lowerCentralQuotientι_bchQuotient, Ideal.log_exp_mul_exp_of_pow_four_eq_bot _
+    (Ideal.map_quotient_mk_pow_eq_bot (J) 4)
+    (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 3 x)
+    (UniversalEnvelopingAlgebra.lowerCentralQuotientι_mem_map_augmentation ℚ F 3 y)]
   simp [map_add, map_smul, LieHom.map_lie]
 
 end BCHQuotient
@@ -286,6 +272,7 @@ local notation "LCS₂" => LieModule.lowerCentralSeries ℚ F₂ F₂
 local notation "X₀" => _root_.FreeLieAlgebra.of ℚ (0 : Fin 2)
 local notation "Y₀" => _root_.FreeLieAlgebra.of ℚ (1 : Fin 2)
 local notation "ι₂" => _root_.UniversalEnvelopingAlgebra.ι ℚ
+local notation "ι₂_c" => UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ F₂
 
 /-- The universal Baker–Campbell–Hausdorff element of nilpotency class `c`, evaluated at the two
 free generators `X = FreeLieAlgebra.of ℚ 0` and `Y = FreeLieAlgebra.of ℚ 1`. -/
@@ -293,9 +280,8 @@ noncomputable def bchElement (c : ℕ) : F₂ ⧸ LCS₂ c :=
   bchQuotient (Fin 2) c (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀)
 
 /-- Unfolded definition of `bchElement c` as `bchQuotient (Fin 2) c` on the two free generators. -/
-theorem bchElement_def (c : ℕ) :
-    bchElement c =
-      bchQuotient (Fin 2) c (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀) := (rfl)
+theorem bchElement_def (c : ℕ) : bchElement c =
+    bchQuotient (Fin 2) c (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀) := (rfl)
 
 /-- Evaluating `bchElement c` along `FreeLieAlgebra.lift ℚ ![x₀, y₀]` recovers `bchQuotient S c`
 on the classes of `x₀` and `y₀`. -/
@@ -309,10 +295,9 @@ theorem mapQ_lift_bchElement {S : Type*} (c : ℕ) (x₀ y₀ : _root_.FreeLieAl
   simp [bchElement_def, mapQ_bchQuotient, LieIdeal.mapQ_apply]
 
 /-- Mapping `bchElement c` into `U(F₂) ⧸ J₂ ^ (c + 1)` computes `log (exp (ι X) * exp (ι Y))`. -/
-theorem lowerCentralQuotientι_bchElement (c : ℕ) :
-    UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ F₂ c (bchElement c) =
-      IsNilpotent.log (IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
-        IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀))) := by
+theorem lowerCentralQuotientι_bchElement (c : ℕ) : ι₂_c c (bchElement c) =
+    IsNilpotent.log (IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
+      IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀))) := by
   simpa only [bchElement, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] using
     lowerCentralQuotientι_bchQuotient (Fin 2) c
       (LieSubmodule.Quotient.mk X₀) (LieSubmodule.Quotient.mk Y₀)
@@ -320,7 +305,7 @@ theorem lowerCentralQuotientι_bchElement (c : ℕ) :
 /-- Exponentiating the image of `bchElement c` in `U(F₂) ⧸ J₂ ^ (c + 1)` recovers
 `exp (ι X) * exp (ι Y)`. -/
 @[simp] theorem exp_lowerCentralQuotientι_bchElement (c : ℕ) :
-    IsNilpotent.exp (UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ F₂ c (bchElement c)) =
+    IsNilpotent.exp (ι₂_c c (bchElement c)) =
       IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
         IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀)) := by
   simpa only [bchElement, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] using
@@ -329,10 +314,8 @@ theorem lowerCentralQuotientι_bchElement (c : ℕ) :
 
 /-- Uniqueness of the universal Baker–Campbell–Hausdorff element of class `c`. -/
 theorem bchElement_unique (c : ℕ) {z : F₂ ⧸ LCS₂ c} :
-    IsNilpotent.exp (UniversalEnvelopingAlgebra.lowerCentralQuotientι ℚ F₂ c z) =
-        IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
-          IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀)) ↔
-      z = bchElement c := by
+    IsNilpotent.exp (ι₂_c c z) = IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ X₀)) *
+        IsNilpotent.exp (Ideal.Quotient.mk ((J₂) ^ (c + 1)) (ι₂ Y₀)) ↔ z = bchElement c := by
   simpa only [bchElement, UniversalEnvelopingAlgebra.lowerCentralQuotientι_mk] using
     bchQuotient_unique (Fin 2) c
       (x := LieSubmodule.Quotient.mk X₀) (y := LieSubmodule.Quotient.mk Y₀) (z := z)
@@ -361,19 +344,17 @@ theorem bchElement_one :
   bchQuotient_one (Fin 2) _ _
 
 /-- At nilpotency class two, `bchElement 2` is `X + Y + (1 / 2) • ⁅X, Y⁆`. -/
-theorem bchElement_two :
-    bchElement 2 =
-      let X : F₂ ⧸ LCS₂ 2 := LieSubmodule.Quotient.mk X₀
-      let Y : F₂ ⧸ LCS₂ 2 := LieSubmodule.Quotient.mk Y₀
-      X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ := bchQuotient_two (Fin 2) _ _
+theorem bchElement_two : bchElement 2 =
+    let X : F₂ ⧸ LCS₂ 2 := LieSubmodule.Quotient.mk X₀
+    let Y : F₂ ⧸ LCS₂ 2 := LieSubmodule.Quotient.mk Y₀
+    X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ := bchQuotient_two (Fin 2) _ _
 
 /-- At nilpotency class three, `bchElement 3` is
 `X + Y + (1 / 2) • ⁅X, Y⁆ + (1 / 12) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆)`. -/
-theorem bchElement_three :
-    bchElement 3 =
-      let X : F₂ ⧸ LCS₂ 3 := LieSubmodule.Quotient.mk X₀
-      let Y : F₂ ⧸ LCS₂ 3 := LieSubmodule.Quotient.mk Y₀
-      X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ + (1 / 12 : ℚ) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆) :=
+theorem bchElement_three : bchElement 3 =
+    let X : F₂ ⧸ LCS₂ 3 := LieSubmodule.Quotient.mk X₀
+    let Y : F₂ ⧸ LCS₂ 3 := LieSubmodule.Quotient.mk Y₀
+    X + Y + (1 / 2 : ℚ) • ⁅X, Y⁆ + (1 / 12 : ℚ) • (⁅X, ⁅X, Y⁆⁆ + ⁅Y, ⁅Y, X⁆⁆) :=
   bchQuotient_three (Fin 2) _ _
 
 end BCHElement

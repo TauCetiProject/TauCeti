@@ -51,47 +51,38 @@ variable {Γ R L : Type*} [AddCommMonoid Γ] [CommRing R] [LieRing L] [LieAlgebr
   (ℒ : Γ → Submodule R L)
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
+local notation "𝒰" => homogeneousSubmodule ℒ
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 private def bidegreePiece (p : Γ × Γ) : Submodule R (U ⊗[R] U) :=
-  Submodule.map₂ (TensorProduct.mk R U U)
-    (homogeneousSubmodule ℒ p.1) (homogeneousSubmodule ℒ p.2)
+  Submodule.map₂ (TensorProduct.mk R U U) (𝒰 p.1) (𝒰 p.2)
 
 private def comulHomogeneousSpan (n : Γ) : Submodule R (U ⊗[R] U) :=
   ⨆ p : {p : Γ × Γ // p.1 + p.2 = n}, bidegreePiece ℒ p.1
 
-private theorem mulLeft_ι_tmul_one_mem_bidegreePiece {m i j : Γ} {x : L} (hx : x ∈ ℒ m) :
-    bidegreePiece ℒ (i, j) ≤
-      (bidegreePiece ℒ (m + i, j)).comap (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U))) :=
-  Submodule.map₂_le.mpr fun _ hu _ hv => by
-    simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-    exact Submodule.apply_mem_map₂ _
-      (SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule ℒ hx) hu) hv
-
-private theorem mulLeft_one_tmul_ι_mem_bidegreePiece {m i j : Γ} {x : L} (hx : x ∈ ℒ m) :
-    bidegreePiece ℒ (i, j) ≤
-      (bidegreePiece ℒ (i, m + j)).comap (LinearMap.mulLeft R ((1 : U) ⊗ₜ[R] ι R x)) :=
-  Submodule.map₂_le.mpr fun _ hu _ hv => by
-    simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
-      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
-    exact Submodule.apply_mem_map₂ _ hu
-      (SetLike.mul_mem_graded (ι_mem_homogeneousSubmodule ℒ hx) hv)
-
 private theorem comulHomogeneousSpan_le_comap_mulLeft {m n : Γ} {x : L} (hx : x ∈ ℒ m) :
-    comulHomogeneousSpan ℒ n ≤
-      (comulHomogeneousSpan ℒ (m + n)).comap
-        (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U) + (1 : U) ⊗ₜ[R] ι R x)) := by
-  refine iSup_le fun p t ht => ?_
+    comulHomogeneousSpan ℒ n ≤ (comulHomogeneousSpan ℒ (m + n)).comap
+      (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U) + (1 : U) ⊗ₜ[R] ι R x)) := by
+  refine iSup_le fun p => ?_
+  have hx' := ι_mem_homogeneousSubmodule ℒ hx
+  have hL : bidegreePiece ℒ p.1 ≤ (bidegreePiece ℒ (m + p.1.1, p.1.2)).comap
+      (LinearMap.mulLeft R (ι R x ⊗ₜ[R] (1 : U))) := Submodule.map₂_le.mpr fun _ hu _ hv => by
+    simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
+      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+    exact Submodule.apply_mem_map₂ _ (SetLike.mul_mem_graded hx' hu) hv
+  have hR : bidegreePiece ℒ p.1 ≤ (bidegreePiece ℒ (p.1.1, m + p.1.2)).comap
+      (LinearMap.mulLeft R ((1 : U) ⊗ₜ[R] ι R x)) := Submodule.map₂_le.mpr fun _ hu _ hv => by
+    simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, TensorProduct.mk_apply,
+      Algebra.TensorProduct.tmul_mul_tmul, one_mul]
+    exact Submodule.apply_mem_map₂ _ hu (SetLike.mul_mem_graded hx' hv)
+  intro t ht
   simp only [Submodule.mem_comap, LinearMap.mulLeft_apply, add_mul]
   exact add_mem
     (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.1)
-      ⟨(m + p.1.1, p.1.2), by rw [add_assoc, p.2]⟩
-      (mulLeft_ι_tmul_one_mem_bidegreePiece ℒ hx ht))
+      ⟨(m + p.1.1, p.1.2), by rw [add_assoc, p.2]⟩ (hL ht))
     (le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = m + n} => bidegreePiece ℒ q.1)
-      ⟨(p.1.1, m + p.1.2), by rw [add_left_comm, p.2]⟩
-      (mulLeft_one_tmul_ι_mem_bidegreePiece ℒ hx ht))
+      ⟨(p.1.1, m + p.1.2), by rw [add_left_comm, p.2]⟩ (hR ht))
 
 private theorem comul_prod_mem_comulHomogeneousSpan (l : List (Σ i, ℒ i)) :
     Coalgebra.comul (R := R) (l.map fun x => ι R (x.2 : L)).prod ∈
@@ -100,20 +91,16 @@ private theorem comul_prod_mem_comulHomogeneousSpan (l : List (Σ i, ℒ i)) :
   | nil =>
     simp only [List.map_nil, List.prod_nil, List.sum_nil, Bialgebra.comul_one]
     exact le_iSup (fun q : {q : Γ × Γ // q.1 + q.2 = 0} => bidegreePiece ℒ q.1) ⟨(0, 0), add_zero 0⟩
-      (Submodule.apply_mem_map₂ _
-        (SetLike.one_mem_graded (homogeneousSubmodule ℒ))
-        (SetLike.one_mem_graded (homogeneousSubmodule ℒ)))
+      (Submodule.apply_mem_map₂ _ (SetLike.one_mem_graded 𝒰) (SetLike.one_mem_graded 𝒰))
   | cons a l ih =>
     simp only [List.map_cons, List.prod_cons, List.sum_cons, Bialgebra.comul_mul, comul_ι]
     exact comulHomogeneousSpan_le_comap_mulLeft ℒ a.2.property ih
 
-private theorem comul_mem_comulHomogeneousSpan {n : Γ} {u : U}
-    (hu : u ∈ homogeneousSubmodule ℒ n) :
-    Coalgebra.comul (R := R) u ∈ comulHomogeneousSpan ℒ n := by
-  have hle : homogeneousSubmodule ℒ n ≤
-      (comulHomogeneousSpan ℒ n).comap (Coalgebra.comul (R := R)) := by
-    rw [homogeneousSubmodule_le_iff]; rintro l rfl; exact comul_prod_mem_comulHomogeneousSpan ℒ l
-  exact hle hu
+private theorem comul_mem_comulHomogeneousSpan {n : Γ} {u : U} (hu : u ∈ 𝒰 n) :
+    Coalgebra.comul (R := R) u ∈ comulHomogeneousSpan ℒ n :=
+  ((homogeneousSubmodule_le_iff ℒ n
+    ((comulHomogeneousSpan ℒ n).comap (Coalgebra.comul (R := R)))).mpr
+    fun l hl => hl ▸ comul_prod_mem_comulHomogeneousSpan ℒ l) hu
 
 end Support
 
@@ -123,49 +110,45 @@ variable {Γ R L : Type*} [AddCommMonoid Γ] [CommRing R] [LieRing L] [LieAlgebr
   (ℒ : Γ → Submodule R L) [DecidableEq Γ] [GradedLieAlgebra ℒ]
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra R L
+local notation "𝒰" => homogeneousSubmodule ℒ
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- On an enveloping element of homogeneous degree `n`, every bidegree projection of `Δ(u)` with
 `i + j ≠ n` vanishes. -/
-theorem map_proj_comul_eq_zero_of_mem_ne {n : Γ} {u : U}
-    (hu : u ∈ homogeneousSubmodule ℒ n) {i j : Γ} (hij : i + j ≠ n) :
-    TensorProduct.map (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) i)
-      (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) j)
+theorem map_proj_comul_eq_zero_of_mem_ne {n : Γ} {u : U} (hu : u ∈ 𝒰 n) {i j : Γ}
+    (hij : i + j ≠ n) :
+    TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)
       (Coalgebra.comul (R := R) u) = 0 := by
-  have hker : comulHomogeneousSpan ℒ n ≤
-      LinearMap.ker (TensorProduct.map (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) i)
-        (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) j)) :=
-    iSup_le fun p _ ht => LinearMap.mem_ker.mpr <|
-      TauCeti.GradedAlgebra.map_proj_eq_zero_of_mem_ne (homogeneousSubmodule ℒ)
-        (homogeneousSubmodule ℒ) ht fun hp => hij (by simpa only [hp] using p.2)
+  have hker : comulHomogeneousSpan ℒ n ≤ LinearMap.ker
+      (TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)) :=
+    iSup_le fun p _ ht => LinearMap.mem_ker.mpr <| by
+      rw [TauCeti.GradedAlgebra.proj_eq_homogeneousComponent,
+        TauCeti.GradedAlgebra.proj_eq_homogeneousComponent]
+      exact TauCeti.map_homogeneousComponent_eq_zero_of_mem_ne 𝒰 𝒰 ht
+        fun hp => hij (by simpa only [hp] using p.2)
   exact LinearMap.mem_ker.mp (hker (comul_mem_comulHomogeneousSpan ℒ hu))
 
 /-- The `(i, j)`-bidegree projection of `Δ(u)` depends only on the `(i + j)`-homogeneous component
 of `u`. -/
 theorem map_proj_comul (u : U) (i j : Γ) :
-    TensorProduct.map (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) i)
-      (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) j) (Coalgebra.comul (R := R) u) =
-    TensorProduct.map (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) i)
-      (_root_.GradedAlgebra.proj (homogeneousSubmodule ℒ) j)
-      (Coalgebra.comul (R := R) (DirectSum.decompose (homogeneousSubmodule ℒ) u (i + j) : U)) := by
-  induction u using _root_.DirectSum.Decomposition.inductionOn (homogeneousSubmodule ℒ) with
+    TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)
+      (Coalgebra.comul (R := R) u) =
+    TensorProduct.map (_root_.GradedAlgebra.proj 𝒰 i) (_root_.GradedAlgebra.proj 𝒰 j)
+      (Coalgebra.comul (R := R) (DirectSum.decompose 𝒰 u (i + j) : U)) := by
+  induction u using _root_.DirectSum.Decomposition.inductionOn 𝒰 with
   | zero => simp
   | add x y hx hy => simp [hx, hy]
   | @homogeneous m x =>
     by_cases hm : m = i + j
-    · subst hm; rw [_root_.DirectSum.decompose_of_mem_same (homogeneousSubmodule ℒ) x.property]
+    · subst hm; rw [_root_.DirectSum.decompose_of_mem_same 𝒰 x.property]
     · rw [map_proj_comul_eq_zero_of_mem_ne ℒ x.property (Ne.symm hm),
-        _root_.DirectSum.decompose_of_mem_ne (homogeneousSubmodule ℒ) x.property hm]
-      simp
+        _root_.DirectSum.decompose_of_mem_ne 𝒰 x.property hm]; simp
 
-/-- Comultiplication preserves every nonnegative degree filtration on a graded enveloping algebra.
--/
-theorem degreeFiltration_ideal_le_comap_comul (d : Γ →+ ℤ)
-    (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (k : ℕ) :
-    (degreeFiltration ℒ d hneg).ideal k ≤
-      (((degreeFiltration ℒ d hneg).tensorProduct R
-        (degreeFiltration ℒ d hneg)).ideal k).comap (Bialgebra.comulAlgHom R U) := fun u hu => by
+/-- Comultiplication preserves nonnegative degree filtrations on a graded enveloping algebra. -/
+theorem degreeFiltration_ideal_le_comap_comul (d : Γ →+ ℤ) (hneg : ∀ n, d n < 0 → ℒ n = ⊥) (k : ℕ) :
+    (degreeFiltration ℒ d hneg).ideal k ≤ (((degreeFiltration ℒ d hneg).tensorProduct R
+      (degreeFiltration ℒ d hneg)).ideal k).comap (Bialgebra.comulAlgHom R U) := fun u hu => by
   rw [Ideal.mem_comap, Bialgebra.comulAlgHom_apply,
     degreeFiltration_eq_gradedAlgebra_degreeFiltration ℒ d hneg,
     TauCeti.GradedAlgebra.mem_tensorProduct_degreeFiltration_ideal_iff]
@@ -284,24 +267,19 @@ projection of `z`. -/
 /-- Every element in the image of `completedLieToU` is completed primitive. -/
 @[simp] theorem isCompletedPrimitive_completedLieToU (z : d.completedLie ℒ) :
     (F).IsCompletedPrimitive R (completedLieToU ℒ d z) := by
-  classical
   rw [AlgFiltration.isCompletedPrimitive_iff_includeCompletion]
   refine ((F).tensorProduct R (F)).completion_ext fun k => ?_
-  let s : L := ∑ n ∈ (d.finite_cutoff k).toFinset,
-    (d.completionComponent ℒ (fun m => (d.degreeIdeal ℒ m).toSubmodule)
-      (fun _ _ h => (LieSubmodule.toSubmodule_le_toSubmodule _ _).mpr (d.degreeIdeal_antitone ℒ h))
-      (fun m => d.degreeIdeal_toSubmodule ℒ m) n z : L)
+  obtain ⟨s, hs⟩ := (d.degreeIdeal ℒ k).surjective_mkQ
+    (LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k z)
   have hproj : (F).projection k (completedLieToU ℒ d z) =
       (F).projection k ((F).toCompletion (ι R s)) := by
-    rw [projection_completedLieToU, d.completionProjection_eq_sum_completionComponent ℒ k z,
-      truncatedLieToU_mkQ, AlgFiltration.projection_toCompletion]
-  have hs_prim : (F).IsCompletedPrimitive R ((F).toCompletion (ι R s)) :=
-    (F).isCompletedPrimitive_toCompletion (isPrimitiveElem_ι R L s)
-  rw [AlgFiltration.isCompletedPrimitive_iff_includeCompletion] at hs_prim
-  have hs := congrArg (((F).tensorProduct R (F)).projection k) hs_prim
+    rw [projection_completedLieToU, ← hs, truncatedLieToU_mkQ, (F).projection_toCompletion]
+  have hs_prim := congrArg (((F).tensorProduct R (F)).projection k) <|
+    ((F).isCompletedPrimitive_iff_includeCompletion R).mp <|
+      (F).isCompletedPrimitive_toCompletion (isPrimitiveElem_ι R L s)
   simpa only [AlgFiltration.projection_completedCoproduct, map_add,
     AlgFiltration.projection_includeLeftCompletion,
-    AlgFiltration.projection_includeRightCompletion, hproj] using hs
+    AlgFiltration.projection_includeRightCompletion, hproj] using hs_prim
 
 /-- Every element in the image of `completedLieToU` lies in `(F).completionIdeal 1`. -/
 theorem completedLieToU_mem_completionIdeal_one (z : d.completedLie ℒ) :
