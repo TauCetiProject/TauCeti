@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Quadratic
+public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Data.Set.Card
 
 /-!
 # The elliptic blocks
@@ -27,6 +30,12 @@ Let `(V, ω)` be a finite-dimensional real symplectic vector space with a Darbou
 `IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_snd`), and these rotations determine it
 (`IsDarbouxBasis.eq_sum_smul_elliptic_of_hamiltonianEnd_apply_eq`). For any basis the total
 oscillator `∑ₖ Iₖ` is positive definite (`TauCeti.SymplecticForm.posDef_sum_elliptic`).
+
+In the coordinates of `b` such a combination is a weighted sum of squares in which `cₖ / 2` is the
+weight of both `xₖ` and `yₖ` (`TauCeti.SymplecticForm.equivalent_sum_smul_elliptic`). By
+Sylvester's law of inertia its negative and positive indices of inertia are twice the numbers of
+negative and positive `cₖ` (`TauCeti.SymplecticForm.sigNeg_sum_smul_elliptic`,
+`TauCeti.SymplecticForm.sigPos_sum_smul_elliptic`); in particular both are even.
 
 These are the elliptic blocks of Williamson's normal forms of nondegenerate rank-zero singularities
 of integrable systems. That they form a nondegenerate family, in every dimension, is
@@ -86,6 +95,41 @@ theorem posDef_sum_elliptic (b : Basis (Fin n × Fin 2) ℝ V) : (∑ k, ellipti
   rw [elliptic_apply]
   obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
   all_goals positivity
+
+/-- **Combinations of elliptic blocks are doubled weighted sums of squares.** In the coordinates
+`(x₁, y₁, …, xₙ, yₙ)` of `b`, the combination `∑ₖ cₖ Iₖ` is the weighted sum of squares in which
+`cₖ / 2` is the weight of both `xₖ` and `yₖ`. -/
+theorem equivalent_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
+    (∑ k, c k • elliptic b k).Equivalent
+      (QuadraticMap.weightedSumSquares ℝ fun p : Fin n × Fin 2 ↦ c p.1 / 2) := by
+  have h : (∑ k, c k • elliptic b k).basisRepr b =
+      QuadraticMap.weightedSumSquares ℝ fun p : Fin n × Fin 2 ↦ c p.1 / 2 := by
+    ext w
+    rw [QuadraticMap.basisRepr_apply]
+    simp only [sum_apply, smul_apply, elliptic_apply, b.repr_sum_self]
+    simp only [QuadraticMap.weightedSumSquares_apply, smul_eq_mul, Fintype.sum_prod_type,
+      Fin.sum_univ_two]
+    exact Finset.sum_congr rfl fun k _ ↦ by ring
+  exact ⟨h ▸ QuadraticMap.isometryEquivBasisRepr _ b⟩
+
+/-- **The negative index of a combination of elliptic blocks.** The negative index of inertia of
+`∑ₖ cₖ Iₖ` is twice the number of `k` with `cₖ < 0`. -/
+theorem sigNeg_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
+    sigNeg (∑ k, c k • elliptic b k) = 2 * {k | c k < 0}.ncard := by
+  rw [QuadraticForm.sigNeg_of_equiv_weightedSumSquares (equivalent_sum_smul_elliptic b c),
+    Set.ncard_setOf_fst fun k ↦ c k / 2 < 0, Nat.card_eq_fintype_card, Fintype.card_fin]
+  congr 2
+  ext p
+  simp only [Set.mem_ofPred_eq]
+  constructor <;> intro h <;> linarith
+
+/-- **The positive index of a combination of elliptic blocks.** The positive index of inertia of
+`∑ₖ cₖ Iₖ` is twice the number of `k` with `0 < cₖ`. -/
+theorem sigPos_sum_smul_elliptic (b : Basis (Fin n × Fin 2) ℝ V) (c : Fin n → ℝ) :
+    sigPos (∑ k, c k • elliptic b k) = 2 * {k | 0 < c k}.ncard := by
+  rw [QuadraticForm.sigPos_of_equiv_weightedSumSquares (equivalent_sum_smul_elliptic b c),
+    Set.ncard_setOf_fst fun k ↦ 0 < c k / 2, Nat.card_eq_fintype_card, Fintype.card_fin]
+  simp
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V} {b : Basis (Fin n × Fin 2) ℝ V}
 
