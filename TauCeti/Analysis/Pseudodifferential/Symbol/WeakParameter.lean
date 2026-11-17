@@ -443,7 +443,7 @@ section Comp
 variable [CompleteSpace W] [CompleteSpace U]
 
 /-- The order of the term `∂_r^i b' ∘ ∂_r^(j - i) b` of Leibniz's rule is `m' + m + d j`. -/
-private theorem comp_order_le {j : ℕ} (i : Fin (j + 1)) :
+theorem comp_order_le {j : ℕ} (i : Fin (j + 1)) :
     m' + d * i + (m + d * ↑(j - i : ℕ)) ≤ m' + m + d * j := by
   have hi : (i : ℕ) ≤ j := Nat.lt_succ_iff.1 i.2
   exact le_of_eq (by rw [Nat.cast_sub hi]; ring)
@@ -469,10 +469,10 @@ def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       simp [Nat.cast_smul_eq_nsmul])
     (fun K α β j ↦ by
-      choose C hC using fun i : Fin (j + 1) ↦ Symbol.exists_seminorm_comp_le
+      choose C hC using fun i : Fin (j + 1) ↦ Symbol.exists_seminorm_comp_le K
         (b := fun r : R ↦ b.slice i r) (a := fun r ↦ a.slice (j - i) r)
-        (fun K α β ↦ b.exists_seminorm_slice_le K α β i)
-        (fun K α β ↦ a.exists_seminorm_slice_le K α β (j - i)) K α β
+        (fun α β ↦ b.exists_seminorm_slice_le K α β i)
+        (fun α β ↦ a.exists_seminorm_slice_le K α β (j - i)) α β
       refine ⟨∑ i : Fin (j + 1), ‖(j.choose i : ℂ)‖ * C i, fun r ↦ ?_⟩
       refine (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
         (Finset.sum_le_sum fun i _ ↦ ?_)
@@ -502,8 +502,7 @@ is the sum of the compositions `(j choose i) ∂_r^i b' ∘ ∂_r^(j - i) b` of 
 theorem slice_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m)
     (j : ℕ) (r : R) :
     (b.comp a).slice j r = ∑ i : Fin (j + 1), (j.choose i : ℂ) •
-      Symbol.inclusion (le_of_eq (by rw [Nat.cast_sub (Nat.lt_succ_iff.1 i.2)]; ring))
-        ((b.slice i r).comp (a.slice (j - i) r)) :=
+      Symbol.inclusion (comp_order_le i) ((b.slice i r).comp (a.slice (j - i) r)) :=
   slice_ofSlices ..
 
 theorem comp_add (b : WeakParameterSymbol n R W U d m') (a₁ a₂ : WeakParameterSymbol n R V W d m) :

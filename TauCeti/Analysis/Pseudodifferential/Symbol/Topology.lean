@@ -429,15 +429,14 @@ theorem seminorm_comp_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n
 
 /-- Seminorm bounds, uniform in the index, for the compositions `b i ∘ a i` of two families of
 symbols with uniformly bounded seminorms, by the Leibniz estimate `seminorm_comp_le`. -/
-theorem exists_seminorm_comp_le {ι : Type*} {b : ι → Symbol n W U m'} {a : ι → Symbol n V W m}
-    (hb : ∀ (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
-      ∃ C, ∀ i, Symbol.seminorm K α β (b i) ≤ C)
-    (ha : ∀ (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
-      ∃ C, ∀ i, Symbol.seminorm K α β (a i) ≤ C)
-    (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
+theorem exists_seminorm_comp_le {ι : Type*} (K : Compacts (CoordinateSpace n))
+    {b : ι → Symbol n W U m'} {a : ι → Symbol n V W m}
+    (hb : ∀ α β : List (Fin n), ∃ C, ∀ i, Symbol.seminorm K α β (b i) ≤ C)
+    (ha : ∀ α β : List (Fin n), ∃ C, ∀ i, Symbol.seminorm K α β (a i) ≤ C)
+    (α β : List (Fin n)) :
     ∃ C, ∀ i, Symbol.seminorm K α β ((b i).comp (a i)) ≤ C := by
-  choose Cb hCb using hb K
-  choose Ca hCa using ha K
+  choose Cb hCb using hb
+  choose Ca hCa using ha
   refine ⟨(β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
     Cb s.1 t.1 * Ca s.2 t.2).sum).sum, fun i => (seminorm_comp_le K α β _ _).trans ?_⟩
   refine List.sum_le_sum fun t _ => List.sum_le_sum fun s _ => ?_
