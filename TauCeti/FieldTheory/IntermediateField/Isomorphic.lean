@@ -39,6 +39,8 @@ of a local field inside a separable closure along their isomorphism classes.
   separable and `Ω` separably closed, the same product is `[E : K]`.
 * `IntermediateField.setOf_isomorphic_eq_singleton_of_normal`: a normal intermediate field
   is `K`-isomorphic to no other intermediate field.
+* `IntermediateField.exists_subset_existsUnique_algEquiv`: every set of intermediate fields has a
+  subset containing a unique `K`-isomorphic representative of each of its members.
 -/
 
 public section
@@ -119,5 +121,23 @@ theorem setOf_isomorphic_eq_singleton_of_normal (L : IntermediateField K Ω) [No
   refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨AlgEquiv.refl⟩⟩
   rw [Set.mem_singleton_iff, ← ((algHomFieldRangeEquiv M).symm e).2]
   exact AlgHom.fieldRange_of_normal _
+
+/-- Every set `S` of intermediate fields of `Ω / K` has a subset `R ⊆ S` containing a unique
+`K`-isomorphic representative of each member of `S`. -/
+theorem exists_subset_existsUnique_algEquiv (S : Set (IntermediateField K Ω)) :
+    ∃ R ⊆ S, ∀ L ∈ S, ∃! M, M ∈ R ∧ Nonempty (L ≃ₐ[K] M) := by
+  let s : Setoid S :=
+    { r := fun L M ↦ Nonempty (L.1 ≃ₐ[K] M.1)
+      iseqv := ⟨fun _ ↦ ⟨.refl⟩, fun ⟨e⟩ ↦ ⟨e.symm⟩, fun ⟨e⟩ ⟨e'⟩ ↦ ⟨e.trans e'⟩⟩ }
+  refine ⟨Set.range fun c : Quotient s ↦ (c.out : IntermediateField K Ω), ?_,
+    fun L hL ↦ ⟨(Quotient.mk s ⟨L, hL⟩).out,
+      ⟨⟨_, rfl⟩, Setoid.symm' s (Quotient.mk_out (s := s) ⟨L, hL⟩)⟩, ?_⟩⟩
+  · rintro _ ⟨c, rfl⟩
+    exact c.out.2
+  · rintro _ ⟨⟨c, rfl⟩, he⟩
+    have hc : c = Quotient.mk s ⟨L, hL⟩ := by
+      rw [← Quotient.out_eq c]
+      exact Quotient.sound (Setoid.symm' s he)
+    rw [hc]
 
 end IntermediateField
