@@ -147,6 +147,18 @@ theorem infinityType_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ
   AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
     (χ.agreesOnIdentityComponent.symm.trans (h ▸ ψ.agreesOnIdentityComponent))
 
+/-- A presentation of a finite-order Hecke character has the zero algebraic infinity type. -/
+theorem infinityType_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
+    (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.infinityType = 0 := by
+  obtain ⟨ε, hε⟩ := HeckeCharacter.exists_finiteOrderInfinityType h
+  have hagrees : χ.toHeckeCharacter.infinityType.AgreesOnIdentityComponent
+      (AlgebraicInfinityType.toContinuous 0) := by
+    rw [hε, map_zero,
+      ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType]
+    exact ⟨ε, (zero_add _).symm⟩
+  exact AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
+    (χ.agreesOnIdentityComponent.symm.trans hagrees)
+
 /-- **A presentation is determined by its Hecke character.** The infinity type is determined on
 the identity component (`AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff`), and
 the weight is determined at every prime: at the primes of `𝔪` it vanishes, and at the others it is
@@ -215,6 +227,11 @@ theorem idealShift_def (χ : Grossencharacter K 𝔪) :
 theorem idealShift_congr {𝔫 : Modulus K} {χ : Grossencharacter K 𝔪} {ψ : Grossencharacter K 𝔫}
     (h : χ.toHeckeCharacter = ψ.toHeckeCharacter) : χ.idealShift = ψ.idealShift := by
   rw [idealShift_def, idealShift_def, h]
+
+/-- A presentation of a finite-order Hecke character has ideal-side shift `0`. -/
+theorem idealShift_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
+    (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.idealShift = 0 := by
+  rw [idealShift_def, HeckeCharacter.shift_eq_zero_of_isOfFinOrder h, neg_zero]
 
 /-- **The value at a prime idele.** At a uniformizer `π_v` of `K_v`, `v ∤ 𝔪`, the presented Hecke
 character is the unitary weight times the norm to the ideal-side shift:
@@ -293,9 +310,8 @@ theorem infinityType_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
 /-- A ray class character has ideal-side shift `0`, as it has finite order. -/
 @[simp]
 theorem idealShift_ofRayClassCharacter (η : RayClassCharacter 𝔪) :
-    (ofRayClassCharacter η).idealShift = 0 := by
-  rw [idealShift_def, toHeckeCharacter_ofRayClassCharacter,
-    HeckeCharacter.shift_ofRayClassCharacter, neg_zero]
+    (ofRayClassCharacter η).idealShift = 0 :=
+  idealShift_eq_zero_of_isFiniteOrder _ (HeckeCharacter.isFiniteOrder_ofRayClassCharacter η)
 
 /-! ### The presented L-function -/
 

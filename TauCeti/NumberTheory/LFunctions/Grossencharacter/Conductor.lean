@@ -550,23 +550,6 @@ theorem lFunctionC_eventuallyEq_primitive (χ : Grossencharacter K 𝔪) (s : �
 
 /-! ### Finite-order Grossencharacters and ray class characters -/
 
-/-- A presentation of a finite-order Hecke character has the zero algebraic infinity type. -/
-theorem infinityType_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
-    (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.infinityType = 0 := by
-  obtain ⟨ε, hε⟩ := HeckeCharacter.exists_finiteOrderInfinityType h
-  have hagrees : χ.toHeckeCharacter.infinityType.AgreesOnIdentityComponent
-      (AlgebraicInfinityType.toContinuous 0) := by
-    rw [hε, map_zero,
-      ContinuousInfinityType.agreesOnIdentityComponent_iff_exists_finiteOrderInfinityType]
-    exact ⟨ε, (zero_add _).symm⟩
-  exact AlgebraicInfinityType.agreesOnIdentityComponent_toContinuous_iff.mp
-    (χ.agreesOnIdentityComponent.symm.trans hagrees)
-
-/-- A presentation of a finite-order Hecke character has ideal-side shift `0`. -/
-theorem idealShift_eq_zero_of_isFiniteOrder (χ : Grossencharacter K 𝔪)
-    (h : χ.toHeckeCharacter.IsFiniteOrder) : χ.idealShift = 0 := by
-  rw [idealShift_def, HeckeCharacter.shift_eq_zero_of_isOfFinOrder h, neg_zero]
-
 /-- **For a finite-order Hecke character, the presentation conductor agrees with
 `HeckeCharacter.conductor`.** -/
 theorem conductor_eq_heckeCharacter_conductor (χ : Grossencharacter K 𝔪)
