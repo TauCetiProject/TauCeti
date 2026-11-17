@@ -522,8 +522,8 @@ theorem IsMetricCompatible.inner_eq_of_alongCurve_eq_zero
       (V := fun x : M ↦ TangentSpace I x) cov)
     (hconn : IsPreconnected s)
     (hγ : ∀ t ∈ s, MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) {V W : ∀ r, TangentSpace I (γ r)}
-    (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ V (γ t)) t)
-    (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord (F := E) γ W (γ t)) t)
+    (hV : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ V (γ t)) t)
+    (hW : ∀ t ∈ s, DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ W (γ t)) t)
     (hV₀ : ∀ t ∈ s, alongCurve cov γ V t = 0)
     (hW₀ : ∀ t ∈ s, alongCurve cov γ W t = 0)
     {a b : ℝ} (ha : a ∈ s) (hb : b ∈ s) : inner ℝ (V a) (W a) = inner ℝ (V b) (W b) := by

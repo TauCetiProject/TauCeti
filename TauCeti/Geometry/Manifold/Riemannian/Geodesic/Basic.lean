@@ -247,7 +247,7 @@ set if they agree at one parameter. Only differentiability of the field's coordi
 theorem IsGeodesicCurveOn.eq_curveVelocityWithin_of_alongCurveWithin_eq_zero
     (hγ : IsGeodesicCurveOn I γ s) (hs : IsPreconnected s)
     {P : ∀ t, TangentSpace I (γ t)}
-    (hP : ∀ u ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ P (γ u)) s u)
+    (hP : ∀ u ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ P (γ u)) s u)
     (hP₀ : ∀ u ∈ s, alongCurveWithin (leviCivitaConnection I M) γ P s u = 0)
     {τ t : ℝ} (hτ : τ ∈ s) (ht : t ∈ s)
     (hPτ : P τ = curveVelocityWithin I γ s τ) : P t = curveVelocityWithin I γ s t :=

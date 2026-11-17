@@ -266,7 +266,7 @@ theorem IsGeodesicCurveOn.exists_parallel_inner_eq {γ : ℝ → M} {s : Set ℝ
   have hγd (u : ℝ) (hu : u ∈ Icc a b) : MDifferentiableAt 𝓘(ℝ) I γ u :=
     (hγ.contMDiffAt_infty (mem_interior_iff_mem_nhds.mp (hsub hu))).mdifferentiableAt (by simp)
   have hcoord (k : ι) (u : ℝ) (hu : u ∈ Icc a b) :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ (P k) (γ u)) u :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (P k) (γ u)) u :=
     differentiableAt_sectionCoord γ (P k) ((hP k u hu).1.mdifferentiableAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ u))
   rw [(isMetricCompatible_leviCivitaConnection I).inner_eq_of_alongCurve_eq_zero
@@ -353,7 +353,7 @@ theorem IsGeodesicCurve.exists_parallel_inner_eq {γ : ℝ → M} (hγ : IsGeode
   choose P hPa hP using fun i ↦ hγ.exists_parallel a (e i)
   refine ⟨P, hPa, hP, fun t i j ↦ ?_⟩
   have hcoord (k : ι) (u : ℝ) :
-      DifferentiableAt ℝ (sectionCoord (F := E) γ (P k) (γ u)) u :=
+      DifferentiableAt ℝ (sectionCoord ℝ (F := E) γ (P k) (γ u)) u :=
     differentiableAt_sectionCoord γ (P k) ((hP k u).1.mdifferentiableAt (by simp))
       (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ u))
   rw [(isMetricCompatible_leviCivitaConnection I).inner_eq_of_alongCurve_eq_zero
