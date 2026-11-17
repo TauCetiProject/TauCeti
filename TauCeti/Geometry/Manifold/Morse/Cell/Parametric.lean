@@ -185,8 +185,8 @@ private abbrev constAttachingMap :=
 private def constFamilyCurryIncl : C({x | f x ≤ c - ε},
     C(P, fiberwiseCellAttachment (constAttachingMap (P := P) φ k hk hε hball hf))) :=
   ((fiberwiseCellAttachmentIncl _).hom.comp
-    (ContinuousMap.prodSwap.comp ((sublevelInclusionCodRestrict f (c - ε) (c + ε)
-      (by linarith)).prodMap (ContinuousMap.id P)))).curry
+    (ContinuousMap.prodSwap.comp ((sublevelInclusionHomeomorph f (c - ε) (c + ε)
+      (by linarith) : C(_, _)).prodMap (ContinuousMap.id P)))).curry
 
 /-- On the cell of `φ i`, the map `TauCeti.constFamilyCurry` sends `w` to `p ↦ (p, w)`. -/
 private def constFamilyCurryCell (i : ι) : C(TopCat.disk.{u} (k i),
@@ -201,10 +201,10 @@ private theorem constFamilyCurry_compat (i : ι) :
         TopCat.ofHom (constFamilyCurryCell (P := P) φ k hk hε hball hf i) := by
   ext s p
   have ha : constAttachingMap (P := P) φ k hk hε hball hf i (p, s) =
-      sublevelInclusionCodRestrict f (c - ε) (c + ε) (by linarith)
+      sublevelInclusionHomeomorph f (c - ε) (c + ε) (by linarith)
         ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s) :=
     Subtype.ext (Subtype.ext ((coe_morseFamilyAttachingMap_apply _ _ _ _ _ _ _ i (p, s)).trans
-      (coe_coe_sublevelInclusionCodRestrict_apply f _ _).symm))
+      (coe_coe_sublevelInclusionHomeomorph_apply f _ _).symm))
   have h := fiberwiseCellAttachmentCell_diskBoundaryInclusion
     (constAttachingMap (P := P) φ k hk hε hball hf) i p s
   rw [ha] at h
@@ -223,7 +223,7 @@ private def constFamilyCurry :
 omit [T2Space M] in
 private theorem constFamilyCurry_morseCellAttachmentIncl (x : {x | f x ≤ c - ε}) (p : P) :
     constFamilyCurry φ k hk hε hball hf (morseCellAttachmentIncl φ k hk hε hball hf x) p =
-      fiberwiseCellAttachmentIncl _ (p, sublevelInclusionCodRestrict f (c - ε) (c + ε)
+      fiberwiseCellAttachmentIncl _ (p, sublevelInclusionHomeomorph f (c - ε) (c + ε)
         (by linarith) x) := by
   have h := ConcreteCategory.congr_hom (morseCellAttachmentIncl_desc φ k hk hball hf hε
     (TopCat.ofHom (constFamilyCurryIncl (P := P) φ k hk hε hball hf))
@@ -303,7 +303,7 @@ private theorem exists_leftInverse_fiberwiseCellComparison_const (hfs : ContMDif
       refine (constFamilyCurry_morseCellAttachmentIncl (P := P)
         (fun i ↦ (φ i).toOpenPartialHomeomorph) k hk hε.le hball' hf _ _).trans
           (congrArg _ (Prod.ext rfl (Subtype.ext (Subtype.ext ?_))))
-      exact coe_coe_sublevelInclusionCodRestrict_apply f _ _
+      exact coe_coe_sublevelInclusionHomeomorph_apply f _ _
     · -- A point of the cell over `p` is the image of the cell of the attachment.
       have hx : morseFamilyCharacteristicMap (fun _ : P ↦ fun i ↦ (φ i).toOpenPartialHomeomorph) k
           hk hε.le (fun _ ↦ hball') (fun _ ↦ hf)
