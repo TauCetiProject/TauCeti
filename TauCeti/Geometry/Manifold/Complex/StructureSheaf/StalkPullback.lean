@@ -19,8 +19,10 @@ through the injective comparison with function germs. The two pullbacks agree wh
 Pullback along a map with a local analytic inverse, such as a chart, is bijective
 (`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
 (`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
-(`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
-of its model.
+(`OpenPartialHomeomorph.holomorphicStalkPullback_comp_bijective`), which identifies a stalk of a
+manifold or chart domain with a stalk of its model
+(`OpenPartialHomeomorph.holomorphicStalkEquiv`,
+`OpenPartialHomeomorph.holomorphicStalkEquivModel`).
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -171,29 +173,6 @@ theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), Cont
   filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
   simpa [hy] using hy0
 
-variable [I.Boundaryless] [IsManifold I ω X] {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- Pullback along the extended chart at `x`, followed by a continuous linear equivalence `e` of
-the model onto a complex normed space `V`, is bijective on holomorphic stalks. The equivalence
-lets the model stalk live in `Type` even when the model space `E` does not. -/
-theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
-    Function.Bijective (stalkPullback (J := 𝓘(ℂ, V)) (f := e ∘ extChartAt I x) (a := x)
-      (((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
-        e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy))) := by
-  have hmem : ∀ᶠ z in 𝓝 (e (extChartAt I x x)), e.symm z ∈ (extChartAt I x).target := by
-    have h := e.symm.continuous.tendsto (e (extChartAt I x x))
-    rw [e.symm_apply_apply] at h
-    exact h.eventually (extChartAt_target_mem_nhds x)
-  refine stalkPullback_bijective _ (g := (extChartAt I x).symm ∘ e.symm) ?_ ?_ ?_
-  · filter_upwards [hmem] with z hz
-    exact ((contMDiffOn_extChartAt_symm (n := ω) x).contMDiffAt
-      (extChartAt_target_mem_nhds' hz)).comp z e.symm.contDiff.contMDiff.contMDiffAt
-  · filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
-    simpa using (extChartAt I x).left_inv hy
-  · filter_upwards [hmem] with z hz
-    simp only [Function.comp_apply, (extChartAt I x).right_inv hz,
-      ContinuousLinearEquiv.apply_symm_apply]
-
 end TauCeti.holomorphicStructureSheaf
 
 namespace ContinuousLinearEquiv
@@ -211,3 +190,88 @@ theorem holomorphicStalkPullback_bijective (e : V ≃L[ℂ] W) (x : V) :
     (Eventually.of_forall e.symm_apply_apply) (Eventually.of_forall e.apply_symm_apply)
 
 end ContinuousLinearEquiv
+
+namespace OpenPartialHomeomorph
+
+open IsManifold TauCeti TauCeti.holomorphicStructureSheaf
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+  {X : Type} [TopologicalSpace X] [ChartedSpace H X] {V : Type}
+  [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- Pullback along the extended chart `e.extend I` of a holomorphic chart `e` with respect to a
+boundaryless model `I`, followed by a continuous linear equivalence onto `V`, is bijective on
+holomorphic stalks without assuming a global manifold structure on `X`. The equivalence lets the
+target stalk live in `Type` even when `E` does not. -/
+theorem holomorphicStalkPullback_comp_bijective (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) (L : E ≃L[ℂ] V) :
+    Function.Bijective (stalkPullback (I := I) (J := 𝓘(ℂ, V)) (f := L ∘ e.extend I) (a := x)
+      ((e.open_source.eventually_mem hx).mono fun y hy ↦
+        L.contDiff.contMDiff.contMDiffAt.comp y (e.contMDiffAt_extend he hy))) := by
+  have hx' : e.extend I x ∈ (e.extend I).target :=
+    (e.extend I).map_source (by rwa [e.extend_source])
+  have hmem : ∀ᶠ z in 𝓝 (L (e.extend I x)), L.symm z ∈ (e.extend I).target := by
+    have h := L.symm.continuous.tendsto (L (e.extend I x))
+    rw [L.symm_apply_apply] at h
+    exact h.eventually (e.isOpen_extend_target.mem_nhds hx')
+  have hsymm : ContMDiffOn 𝓘(ℂ, E) I ω (e.extend I).symm (e.extend I).target := by
+    rw [e.extend_target']
+    exact contMDiffOn_extend_symm he
+  exact stalkPullback_bijective _ (g := (e.extend I).symm ∘ L.symm)
+    (hmem.mono fun z hz ↦
+      (hsymm.contMDiffAt (e.isOpen_extend_target.mem_nhds hz)).comp z
+        L.symm.contDiff.contMDiff.contMDiffAt)
+    ((e.open_source.eventually_mem hx).mono fun y hy ↦ by simp [e.left_inv hy])
+    (hmem.mono fun z hz ↦ by
+      simp only [Function.comp_apply, (e.extend I).right_inv hz,
+        ContinuousLinearEquiv.apply_symm_apply])
+
+/-- The contravariant ring equivalence on holomorphic stalks induced by the extended chart
+`e.extend I` of a holomorphic chart `e` with respect to a boundaryless model `I`, followed by a
+continuous linear equivalence `L : E ≃L[ℂ] V`. -/
+def holomorphicStalkEquiv (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) (L : E ≃L[ℂ] V) :
+    (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (L (I (e x))) ≃+*
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  -- `L (I (e x))` is definitionally `(L ∘ e.extend I) x` and avoids `@[simp]` unfolding `extend`.
+  RingEquiv.ofBijective _ (e.holomorphicStalkPullback_comp_bijective he hx L)
+
+/-- `OpenPartialHomeomorph.holomorphicStalkEquiv` acts by local analytic pullback along
+`L ∘ e.extend I`. -/
+@[simp]
+theorem holomorphicStalkEquiv_apply (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) (L : E ≃L[ℂ] V)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, V) V).presheaf.stalk (L (I (e x)))) :
+    e.holomorphicStalkEquiv he hx L s =
+      stalkPullback (I := I) (J := 𝓘(ℂ, V)) (f := L ∘ e.extend I) (a := x)
+        ((e.open_source.eventually_mem hx).mono fun y hy ↦
+          L.contDiff.contMDiff.contMDiffAt.comp y (e.contMDiffAt_extend he hy)) s :=
+  (rfl)
+
+/-- When the model space `E` is finite-dimensional, `OpenPartialHomeomorph.holomorphicStalkEquiv`
+applied to `ContinuousLinearEquiv.ofFinrankEq` identifies the holomorphic stalk at `x ∈ e.source`
+with a holomorphic stalk of `Fin (Module.finrank ℂ E) → ℂ`. -/
+def holomorphicStalkEquivModel [FiniteDimensional ℂ E] (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source) :
+    (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ)
+      (Fin (Module.finrank ℂ E) → ℂ)).presheaf.stalk
+        (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm (I (e x))) ≃+*
+      (holomorphicStructureSheaf I X).presheaf.stalk x :=
+  e.holomorphicStalkEquiv he hx
+    (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm)
+
+/-- `OpenPartialHomeomorph.holomorphicStalkEquivModel` is
+`OpenPartialHomeomorph.holomorphicStalkEquiv` along `ContinuousLinearEquiv.ofFinrankEq`. -/
+@[simp]
+theorem holomorphicStalkEquivModel_apply [FiniteDimensional ℂ E] (e : OpenPartialHomeomorph X H)
+    (he : e ∈ maximalAtlas I ω X) {x : X} (hx : x ∈ e.source)
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, Fin (Module.finrank ℂ E) → ℂ)
+      (Fin (Module.finrank ℂ E) → ℂ)).presheaf.stalk
+        (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm (I (e x)))) :
+    e.holomorphicStalkEquivModel he hx s =
+      e.holomorphicStalkEquiv he hx
+        (ContinuousLinearEquiv.ofFinrankEq (Module.finrank_fin_fun ℂ).symm) s :=
+  (rfl)
+
+end OpenPartialHomeomorph
