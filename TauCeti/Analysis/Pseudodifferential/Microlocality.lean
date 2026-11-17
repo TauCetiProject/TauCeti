@@ -212,7 +212,7 @@ theorem toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap (t : ℝ)
         (θ.fourierAtomMulSchwartzMap η) =
       ∫ ζ, 𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
         (v.toDistr (χ.fourierAtomMulSchwartzMap ζ)) := by
-  -- Both sides are continuous at `v` and agree on Schwartz functions.
+  -- Both sides are continuous in `v` and agree on Schwartz functions.
   have hLR (u : 𝓢(CoordinateSpace n, ℂ)) :=
     toDistr_quantizeSobolev_smulLeftCLM_toBesselPotentialSpaceCLM hb hbK hθ χ t u η
   have hL : Continuous fun w : H^{t}(CoordinateSpace n, ℂ) ↦
@@ -220,14 +220,15 @@ theorem toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap (t : ℝ)
         (θ.fourierAtomMulSchwartzMap η) :=
     ((continuous_eval_const _).comp BesselPotentialSpace.continuous_toDistr).comp
       ((b.quantizeSobolev hb t).continuous.comp (BesselPotentialSpace.smulLeftCLM t _).continuous)
-  -- The right side is continuous at `v`, by dominated convergence.
+  -- The right side is continuous, by dominated convergence.
   obtain ⟨D, hD0, hD⟩ := exists_norm_fourier_apply_toDistr_fourierAtomMulSchwartzMap_le hb χ t η
   have hk : Continuous fun ζ : CoordinateSpace n ↦
       𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ) :=
     hb.continuous_fourier_slice.comp (f := fun ζ ↦ (η - ζ, (2 * Real.pi) • ζ)) (by fun_prop)
-  have hR : ContinuousAt (fun w : H^{t}(CoordinateSpace n, ℂ) ↦ ∫ ζ,
+  have hR : Continuous fun w : H^{t}(CoordinateSpace n, ℂ) ↦ ∫ ζ,
       𝓕 (fun x ↦ b.coefficient (x, (2 * Real.pi) • ζ)) (η - ζ)
-        (w.toDistr (χ.fourierAtomMulSchwartzMap ζ))) v := by
+        (w.toDistr (χ.fourierAtomMulSchwartzMap ζ)) := by
+    refine continuous_iff_continuousAt.2 fun v ↦ ?_
     refine MeasureTheory.continuousAt_of_dominated (bound := fun ζ ↦ D * (‖v‖ + 1) *
         (1 + ‖ζ - η‖) ^ (-((Module.finrank ℝ (CoordinateSpace n) + 1 : ℕ) : ℝ)))
       (Eventually.of_forall fun w ↦ ?_) ?_ ?_ (ae_of_all _ fun ζ ↦ ?_)
@@ -247,17 +248,9 @@ theorem toDistr_quantizeSobolev_smulLeftCLM_fourierAtomMulSchwartzMap (t : ℝ)
     · exact ((ContinuousLinearMap.continuous _).comp ((continuous_eval_const
         (χ.fourierAtomMulSchwartzMap ζ)).comp (BesselPotentialSpace.continuous_toDistr
           (E := CoordinateSpace n) (G := ℂ) (s := t) (p := 2)))).continuousAt
-  -- Pass to the limit along Schwartz functions converging to `v`.
-  have hv : v ∈ closure (range (SchwartzMap.toBesselPotentialSpaceCLM
-      (E := CoordinateSpace n) (F := ℂ) t (2 : ENNReal))) :=
-    (SchwartzMap.denseRange_toBesselPotentialSpaceCLM (E := CoordinateSpace n) (F := ℂ)
-      (p := (2 : ENNReal)) t ENNReal.ofNat_ne_top).closure_range ▸ mem_univ v
-  obtain ⟨w, hw, hwv⟩ := mem_closure_iff_seq_limit.1 hv
-  choose u hu using hw
-  refine tendsto_nhds_unique ((hL.tendsto v).comp hwv) ?_
-  have := hR.tendsto.comp hwv
-  simp only [Function.comp_def, ← hu, ← hLR] at this ⊢
-  exact this
+  -- Both sides agree on the dense range of Schwartz functions.
+  exact congrFun ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM (p := (2 : ENNReal)) t
+    ENNReal.ofNat_ne_top).equalizer hL hR (funext hLR)) v
 
 include hbK hθ in
 /-- **Microlocal smoothness of `Op(b) (θ v)`.** If `b` vanishes outside `K`, the cutoff `θ` equals
