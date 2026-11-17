@@ -468,10 +468,8 @@ theorem coordSub_smul_coefficient_sharpTerm_succ (k : ℕ) :
       k).coefficient (x, ξ)
     have hk : (k : ℂ) + 1 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero k
     have hk' : ((k + 1 : ℕ) : ℂ) + 1 ≠ 0 := by exact_mod_cast Nat.succ_ne_zero (k + 1)
-    rw [smul_add, smul_add, smul_smul, smul_smul, smul_smul, add_assoc, ← add_smul]
-    congr 2
     push_cast at hk' ⊢
-    field_simp
+    match_scalars <;> field_simp
     ring
 
 end Term
@@ -527,9 +525,8 @@ private theorem forall_norm_fourier_spatialDeriv_le {ι : Type*} {c : ι → Sym
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
     rw [← Real.rpow_add (by positivity)]
     ring_nf
-  rw [(hcK i).fourier_spatialDeriv_slice, norm_smul, norm_mul, norm_mul, norm_mul,
-    Complex.norm_I, Complex.norm_real, Complex.norm_real, Complex.norm_ofNat, Real.norm_eq_abs,
-    Real.norm_eq_abs, abs_of_pos pi_pos, mul_one]
+  simp only [(hcK i).fourier_spatialDeriv_slice, norm_smul, norm_mul, Complex.norm_I,
+    Complex.norm_real, Complex.norm_ofNat, Real.norm_eq_abs, abs_of_pos pi_pos, mul_one]
   calc 2 * π * |⟪η, EuclideanSpace.single j (1 : ℝ)⟫| * ‖𝓕 (fun y ↦ (c i).coefficient (y, ξ)) η‖
       ≤ 2 * π * (1 + ‖η‖ ^ 2) ^ ((1 : ℝ) / 2) *
           (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + 1) / 2)) := by

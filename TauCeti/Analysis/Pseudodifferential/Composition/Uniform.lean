@@ -737,13 +737,25 @@ section Composition
 
 variable [CompleteSpace V] [CompleteSpace W] [CompleteSpace U]
 
+omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
+/-- The cut-off piece `χ(x - j) a(x, ξ)` of a symbol `a` at the lattice point `j`. -/
+private def latticeBumpComp (a : Symbol n V W m) (j : Fin n → ℤ) : Symbol n V W (0 + m) :=
+  (ofSpatial (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
+    ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a
+
+omit [CompleteSpace V] [CompleteSpace W] [CompleteSpace U] in
+/-- The coefficient of the cut-off piece `χ(· - j) a` is `χ(x - j) a(x, ξ)`. -/
+private theorem coefficient_latticeBumpComp (a : Symbol n V W m) (j : Fin n → ℤ)
+    (q : CoordinateSpace n × CoordinateSpace n) :
+    (latticeBumpComp a j).coefficient q = latticeBump n (q.1 - latticePoint j) • a.coefficient q
+    := by
+  simp [latticeBumpComp, coefficient_comp, ContinuousLinearMap.smul_comp]
+
 omit [CompleteSpace V] [CompleteSpace W] in
 /-- The cut-off pieces `χ(x - j) a(x, ξ)` of a uniform symbol `a` form a ball family centred at
 the lattice points, with radius `√n`. -/
-private theorem isBallFamily_latticeBump_comp {a : Symbol n V W m} (ha : a.IsUniform) :
-    IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n fun j ↦
-      (ofSpatial (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-        ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a :=
+private theorem isBallFamily_latticeBumpComp {a : Symbol n V W m} (ha : a.IsUniform) :
+    IsBallFamily (fun j : Fin n → ℤ ↦ latticePoint j) √n (latticeBumpComp a) :=
   isBallFamily_ofSpatial_comp _ _ (fun j y ↦ latticeBump n (y - latticePoint j))
     contDiff_latticeBump_sub exists_norm_iteratedFDeriv_latticeBump_sub_le
     (fun _ _ hx ↦ by_contra fun h ↦ (mem_closedBall.1
@@ -751,17 +763,18 @@ private theorem isBallFamily_latticeBump_comp {a : Symbol n V W m} (ha : a.IsUni
 
 omit [CompleteSpace V] in
 /-- The quantization of `p # (χ(· - j) a)` is `Op(p)` applied to `χ(· - j) Op(a) u`. -/
-private theorem quantizeSchwartzValue_sharp_latticeBump_comp (p : Symbol n W U m')
+private theorem quantizeSchwartzValue_sharp_latticeBumpComp (p : Symbol n W U m')
     {a : Symbol n V W m} (ha : a.IsUniform) (u : 𝓢(CoordinateSpace n, V))
     (x : CoordinateSpace n) (j : Fin n → ℤ) :
     quantizeSchwartzValue (p.sharp _
-      ((isBallFamily_latticeBump_comp ha).hasCompactSpatialSupport j)).coefficient u x =
+      ((isBallFamily_latticeBumpComp ha).hasCompactSpatialSupport j)).coefficient u x =
       quantizeSchwartzValue p.coefficient (SchwartzMap.smulLeftCLM W
         (fun y ↦ latticeBump n (y - latticePoint j)) (quantizeUniformCLM a ha u)) x := by
   rw [quantizeSchwartzValue_sharp_eq_quantizeSchwartzValue]
   congr 1
   ext y
-  rw [HasCompactSupport.toSchwartzMap_toFun, quantizeSchwartzValue_ofSpatial_smul_id_comp,
+  rw [HasCompactSupport.toSchwartzMap_toFun, latticeBumpComp,
+    quantizeSchwartzValue_ofSpatial_smul_id_comp,
     SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j), Complex.coe_smul,
     quantizeUniformCLM_apply]
 
@@ -790,23 +803,23 @@ private theorem exists_isUniform_hasSum_coefficient_latticePoint {μ : ℝ}
     tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le hF
 
 /-- The series `∑ⱼ (p # χ(· - j) a)` sums to the coefficient of a uniform symbol. -/
-private theorem exists_isUniform_hasSum_coefficient_sharp_latticeBump_comp {p : Symbol n W U m'}
+private theorem exists_isUniform_hasSum_coefficient_sharp_latticeBumpComp {p : Symbol n W U m'}
     (hp : p.IsUniform) {a : Symbol n V W m} (ha : a.IsUniform) :
     ∃ b : Symbol n V U (m' + (0 + m)), b.IsUniform ∧ ∀ q, HasSum (fun j ↦ (p.sharp _
-      ((isBallFamily_latticeBump_comp ha).hasCompactSpatialSupport j)).coefficient q)
+      ((isBallFamily_latticeBumpComp ha).hasCompactSpatialSupport j)).coefficient q)
         (b.coefficient q) :=
   exists_isUniform_hasSum_coefficient_latticePoint _
-    ((isBallFamily_latticeBump_comp ha).exists_norm_mixedDeriv_sharp_le hp)
+    ((isBallFamily_latticeBumpComp ha).exists_norm_mixedDeriv_sharp_le hp)
 
 /-- If the series `∑ⱼ (p # χ(· - j) a)` sums to the coefficient of a uniform symbol `b`, then
 `Op(p) ∘ Op(a) = Op(b)`. -/
 private theorem quantizeUniformCLM_comp_eq_of_hasSum {p : Symbol n W U m'} (hp : p.IsUniform)
     {a : Symbol n V W m} (ha : a.IsUniform) {μ : ℝ} {b : Symbol n V U μ} (hb : b.IsUniform)
     (hbsum : ∀ q, HasSum (fun j ↦ (p.sharp _
-      ((isBallFamily_latticeBump_comp ha).hasCompactSpatialSupport j)).coefficient q)
+      ((isBallFamily_latticeBumpComp ha).hasCompactSpatialSupport j)).coefficient q)
         (b.coefficient q)) :
     quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM b hb := by
-  have hfam := isBallFamily_latticeBump_comp ha
+  have hfam := isBallFamily_latticeBumpComp ha
   ext u x
   rw [ContinuousLinearMap.comp_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply]
   -- Both sides are the sum of the series `∑ⱼ Op(p # χⱼ a) u (x)`.
@@ -815,7 +828,7 @@ private theorem quantizeUniformCLM_comp_eq_of_hasSum {p : Symbol n W U m'} (hp :
   refine ((hasSum_quantizeSchwartzValue_of_hasSum_coefficient hbsum
     (summable_one_add_norm_sub_latticePoint_sq_pow_inv x) (hC · x) u).unique ?_).symm
   -- The lattice partition of unity converges in Schwartz space, on which `Op(p)` is continuous.
-  simp only [quantizeSchwartzValue_sharp_latticeBump_comp p ha u x]
+  simp only [quantizeSchwartzValue_sharp_latticeBumpComp p ha u x]
   have h := (SchwartzMap.hasSum_smulLeftCLM_latticeBump_sub (F := W)
     (quantizeUniformCLM a ha u)).mapL ((BoundedContinuousFunction.evalCLM ℂ x) ∘L
       (SchwartzMap.toBoundedContinuousFunctionCLM ℂ (CoordinateSpace n) U) ∘L
@@ -833,7 +846,7 @@ theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.I
     {a : Symbol n V W m} (ha : a.IsUniform) :
     ∃ (c : Symbol n V U (m' + m)) (hc : c.IsUniform),
       quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc := by
-  obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient_sharp_latticeBump_comp hp ha
+  obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient_sharp_latticeBumpComp hp ha
   have hord : m' + (0 + m) = m' + m := by ring
   exact ⟨Symbol.inclusion hord.le b, hb.inclusion hord.le,
     quantizeUniformCLM_comp_eq_of_hasSum hp ha _ fun q ↦ by simpa using hbsum q⟩
@@ -841,24 +854,20 @@ theorem IsUniform.exists_quantizeUniformCLM_comp {p : Symbol n W U m'} (hp : p.I
 omit [CompleteSpace V] [CompleteSpace U] in
 /-- The cut-off pieces `χ(x - j) a(x, ξ)` of a uniform symbol sum to it, with all their mixed
 derivatives. -/
-private theorem hasSum_mixedDeriv_latticeBump_comp {a : Symbol n V W m} (ha : a.IsUniform)
+private theorem hasSum_mixedDeriv_latticeBumpComp {a : Symbol n V W m} (ha : a.IsUniform)
     (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
-    HasSum (fun j : Fin n → ℤ ↦ mixedDeriv α β
-      ((ofSpatial (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-        ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a).coefficient x ξ)
+    HasSum (fun j : Fin n → ℤ ↦ mixedDeriv α β (latticeBumpComp a j).coefficient x ξ)
       (mixedDeriv α β a.coefficient x ξ) := by
-  have hfam := isBallFamily_latticeBump_comp ha
+  have hfam := isBallFamily_latticeBumpComp ha
   choose C hC0 hC using hfam.exists_norm_mixedDeriv_le
   set w : (Fin n → ℤ) → CoordinateSpace n → ℝ := fun j x ↦
     ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹
   have hloc := exists_locally_summable_iteratedFDeriv _ w (fun _ _ ↦ by positivity)
     exists_summable_one_add_norm_sub_latticePoint_sq_pow_inv_le hC0 hC
-  have hsum : (fun q ↦ ∑' j : Fin n → ℤ, ((ofSpatial
-      (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-      ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a).coefficient q) =
+  have hsum : (fun q ↦ ∑' j : Fin n → ℤ, (latticeBumpComp a j).coefficient q) =
       a.coefficient := by
     funext q
-    simpa [coefficient_comp, ContinuousLinearMap.smul_comp] using
+    simpa [coefficient_latticeBumpComp] using
       ((hasSum_latticeBump_sub q.1).smul_const (a.coefficient q)).tsum_eq
   rw [← hsum, mixedDeriv_tsum_coefficient _ hloc α β x ξ]
   exact (Summable.of_norm_bounded
@@ -868,17 +877,15 @@ private theorem hasSum_mixedDeriv_latticeBump_comp {a : Symbol n V W m} (ha : a.
 omit [CompleteSpace V] [CompleteSpace U] in
 /-- The terms of the composition expansion of `p # (χ(· - j) a)` sum to those of the expansion
 for `a`. -/
-private theorem hasSum_coefficient_sharpTerm_latticeBump_comp (p : Symbol n W U m')
+private theorem hasSum_coefficient_sharpTerm_latticeBumpComp (p : Symbol n W U m')
     {a : Symbol n V W m} (ha : a.IsUniform) (k : ℕ) (q : CoordinateSpace n × CoordinateSpace n) :
-    HasSum (fun j : Fin n → ℤ ↦ (p.sharpTerm ((ofSpatial
-      (fun x ↦ latticeBump n (x - latticePoint j) • ContinuousLinearMap.id ℂ W)
-      ((contDiff_latticeBump_sub j).smul contDiff_const)).comp a) k).coefficient q)
+    HasSum (fun j : Fin n → ℤ ↦ (p.sharpTerm (latticeBumpComp a j) k).coefficient q)
       ((p.sharpTerm a k).coefficient q) := by
   obtain ⟨x, ξ⟩ := q
   simp only [coefficient_sharpTerm]
   refine HasSum.const_smul _ (hasSum_sum fun w _ ↦ ?_)
   simpa only [ContinuousLinearMap.compL_apply] using
-    (hasSum_mixedDeriv_latticeBump_comp ha (List.ofFn w) [] x ξ).mapL
+    (hasSum_mixedDeriv_latticeBumpComp ha (List.ofFn w) [] x ξ).mapL
       (ContinuousLinearMap.compL ℂ V W U (mixedDeriv [] (List.ofFn w) p.coefficient x ξ))
 
 /-- **The composition expansion for uniform symbols.** If `p` and `a` are symbols of orders `m'`
@@ -893,8 +900,8 @@ theorem IsUniform.isUniformAsymptoticSum_sharpTerm_of_quantizeUniformCLM_comp_eq
     (h : quantizeUniformCLM p hp ∘L quantizeUniformCLM a ha = quantizeUniformCLM c hc) :
     IsUniformAsymptoticSum (m := fun k : ℕ ↦ m' + m - k) (Symbol.inclusion (by simp) c)
       (p.sharpTerm a) := by
-  have hfam := isBallFamily_latticeBump_comp ha
-  obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient_sharp_latticeBump_comp hp ha
+  have hfam := isBallFamily_latticeBumpComp ha
+  obtain ⟨b, hb, hbsum⟩ := exists_isUniform_hasSum_coefficient_sharp_latticeBumpComp hp ha
   -- `c` is the sum `b` of the series `∑ⱼ (p # χ(· - j) a)`, by uniqueness of symbols.
   have hcb : c.coefficient = b.coefficient := by
     have hT := h.symm.trans (quantizeUniformCLM_comp_eq_of_hasSum hp ha hb hbsum)
@@ -911,7 +918,7 @@ theorem IsUniform.isUniformAsymptoticSum_sharpTerm_of_quantizeUniformCLM_comp_eq
       (b.coefficient q - ∑ k ∈ Finset.range N, (p.sharpTerm a k).coefficient q) := by
     simp only [coefficient_sharpRemainder, Pi.sub_apply, Finset.sum_apply]
     exact (hbsum q).sub
-      (hasSum_sum fun k _ ↦ hasSum_coefficient_sharpTerm_latticeBump_comp p ha k q)
+      (hasSum_sum fun k _ ↦ hasSum_coefficient_sharpTerm_latticeBumpComp p ha k q)
   simp only [Pi.sub_apply, Finset.sum_apply, coefficient_inclusion, hcb]
   exact hR.unique (hrsum q)
 
