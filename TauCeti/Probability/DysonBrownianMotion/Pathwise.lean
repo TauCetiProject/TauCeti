@@ -7,18 +7,18 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Probability.DysonBrownianMotion.Drift
+import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Data.Fin.VecNotation
-import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Instances.NNReal.Lemmas
 import Mathlib.Topology.Order.OrderClosed
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
+import TauCeti.Algebra.Order.BigOperators.Ring.Finset
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
 # Pathwise solutions, contraction, and uniqueness for the Dyson system
@@ -42,14 +42,13 @@ measure-theoretic solution predicate `IsDysonSolution` for Brownian-scaled noise
   only assumes integrability of the signed sum `∑_{j ≠ i} (X_i - X_j)⁻¹`, every individual pairwise
   reciprocal `(X_i - X_j)⁻¹` (`i ≠ j`) is interval integrable on `0..t`, with a quantitative `L¹`
   staircase bound on `n⁻¹ ∑_{i < j} ∫₀ᵗ (X_i - X_j)⁻¹`.
-* **Pathwise `ℓ²`-dissipation, contraction, and uniqueness (AGZ Proposition 4.3.5):** for any two
-  integral-equation trajectories sharing the same additive driving path `w` (in particular, both
-  singular and truncated Dyson solutions), integration by parts gives the `ℓ²`-energy identity
-  `sum_sq_sub_eq_of_eq_add_integral`. For two solutions `X` and `Y` of the Dyson system driven by
-  the same path `w`, the squared Euclidean distance `t ↦ ∑ i, (X t i - Y t i) ^ 2` is antitone on
-  `ℝ≥0`, hence bounded by `∑ i, (x i - y i) ^ 2`. In particular,
-  `IsPathwiseDysonSolution.eq_of_init_eq` gives pathwise uniqueness and `IsDysonSolution.ae_eq`
-  gives almost-sure uniqueness with no adaptedness or Brownian hypotheses.
+* **Pathwise `ℓ²`-dissipation, contraction, and uniqueness (AGZ Proposition 4.3.5):** using the
+  general energy identity `TauCeti.intervalIntegral.sum_sq_sub_eq_of_eq_add_integral` and
+  dissipation bound `TauCeti.intervalIntegral.sum_sq_sub_le_of_eq_add_integral`, for two solutions
+  `X` and `Y` of the Dyson system driven by the same path `w`, the squared Euclidean distance
+  `t ↦ ∑ i, (X t i - Y t i) ^ 2` is antitone on `ℝ≥0`, hence bounded by `∑ i, (x i - y i) ^ 2`.
+  In particular, `IsPathwiseDysonSolution.eq_of_init_eq` gives pathwise uniqueness and
+  `IsDysonSolution.ae_eq` gives almost-sure uniqueness with no adaptedness or Brownian hypotheses.
 * **Explicit witnesses:** trivial existence for `n ≤ 1`, and the explicit `n = 2` square-root
   repulsion family `![a + 2⁻¹ * √(r₀² + 2t), a - 2⁻¹ * √(r₀² + 2t)]` for all `r₀ ≥ 0`, including
   coincident initial data `r₀ = 0` where the singular drift `(2√(2s))⁻¹` is genuinely nonzero.
@@ -63,11 +62,10 @@ measure-theoretic solution predicate `IsDysonSolution` for Brownian-scaled noise
 
 ## Main results
 
-* `TauCeti.Probability.sum_sq_sub_eq_of_eq_add_integral` and
-  `TauCeti.Probability.sum_sq_sub_le_of_eq_add_integral`: shared `ℓ²`-energy identity and
-  dissipation bound for two additive-noise integral equations driven by the same path.
 * `TauCeti.Probability.IsPathwiseDysonSolution.intervalIntegrable_inv_sub`: local integrability of
   each individual pairwise reciprocal `(X_i - X_j)⁻¹` (`i ≠ j`).
+* `TauCeti.Probability.IsPathwiseDysonSolution.sum_sq_sub_eq`: `ℓ²`-energy identity for two
+  pathwise Dyson solutions driven by the same path.
 * `TauCeti.Probability.IsPathwiseDysonSolution.antitone_sum_sq_sub` and
   `TauCeti.Probability.IsPathwiseDysonSolution.sum_sq_sub_le`: `ℓ²`-contraction in initial data.
 * `TauCeti.Probability.IsPathwiseDysonSolution.eq_of_init_eq` and
@@ -97,138 +95,6 @@ open Finset Filter MeasureTheory Set
 open scoped NNReal Topology Interval
 
 namespace TauCeti.Probability
-
-section EnergyIdentity
-
-/-- Integration by parts for the square of an indefinite integral `g u = c + ∫₀ᵘ f`. -/
-private theorem sq_add_integral_sub_sq {f : ℝ → ℝ} {c a b : ℝ}
-    (hf : IntervalIntegrable f volume 0 b) (ha : a ∈ uIcc 0 b) :
-    (c + ∫ s in (0 : ℝ)..b, f s) ^ 2 - (c + ∫ s in (0 : ℝ)..a, f s) ^ 2 =
-      2 * ∫ s in a..b, f s * (c + ∫ u in (0 : ℝ)..s, f u) := by
-  let g : ℝ → ℝ := fun u ↦ c + ∫ s in (0 : ℝ)..u, f s
-  have hsub : uIcc a b ⊆ uIcc 0 b := uIcc_subset_uIcc ha right_mem_uIcc
-  have hg_ac : AbsolutelyContinuousOnInterval g a b :=
-    (((LipschitzWith.const c).lipschitzOnWith.absolutelyContinuousOnInterval).add
-      (hf.absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)).mono hsub
-  have hg_deriv : ∀ᵐ u, u ∈ uIoc a b → HasDerivAt g (f u) u := by
-    filter_upwards [hf.ae_hasDerivAt_integral] with u hu hmem
-    exact (hu (hsub (uIoc_subset_uIcc hmem)) 0 left_mem_uIcc).const_add c
-  have hibp := hg_ac.integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt hg_ac hg_deriv hg_deriv
-  have hcomm : (∫ s in a..b, g s * f s) = ∫ s in a..b, f s * g s :=
-    intervalIntegral.integral_congr fun s _ ↦ mul_comm _ _
-  linarith [hibp, hcomm]
-
-/-- Under two additive-noise integral equations with the same driving path `w`, the shared noise
-cancels so `X t i - Y t i = (x i - y i) + ∫ s in 0..t, (F s i - G s i)` for `t ≤ t₂`. -/
-private theorem sub_eq_add_integral_sub {ι : Type*} {x y : ι → ℝ} {w X Y : ℝ≥0 → ι → ℝ}
-    {F G : ℝ → ι → ℝ} {t₂ : ℝ≥0}
-    (hF : ∀ i, IntervalIntegrable (fun s ↦ F s i) volume 0 t₂)
-    (hG : ∀ i, IntervalIntegrable (fun s ↦ G s i) volume 0 t₂)
-    (hX : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, X t i = x i + w t i + ∫ s in (0 : ℝ)..t, F s i)
-    (hY : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, Y t i = y i + w t i + ∫ s in (0 : ℝ)..t, G s i)
-    {t : ℝ≥0} (ht : t ≤ t₂) (i : ι) :
-    (x i - y i) + ∫ s in (0 : ℝ)..t, (F s i - G s i) = X t i - Y t i := by
-  have hsub : uIcc (0 : ℝ) (t : ℝ) ⊆ uIcc 0 (t₂ : ℝ) := by
-    rw [uIcc_of_le t.coe_nonneg, uIcc_of_le t₂.coe_nonneg]
-    exact Icc_subset_Icc le_rfl (NNReal.coe_le_coe.2 ht)
-  rw [intervalIntegral.integral_sub ((hF i).mono_set hsub) ((hG i).mono_set hsub)]
-  linarith [hX ht i, hY ht i]
-
-/-- On `uIoc t₁ t₂`, each coordinate integrand `(F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i)`
-is interval integrable because `X - Y` agrees with the continuous indefinite integral of `F - G`. -/
-private theorem intervalIntegrable_sub_mul_of_eq_add_integral {ι : Type*} {x y : ι → ℝ}
-    {w X Y : ℝ≥0 → ι → ℝ} {F G : ℝ → ι → ℝ} {t₁ t₂ : ℝ≥0} (ht : t₁ ≤ t₂)
-    (hF : ∀ i, IntervalIntegrable (fun s ↦ F s i) volume 0 t₂)
-    (hG : ∀ i, IntervalIntegrable (fun s ↦ G s i) volume 0 t₂)
-    (hX : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, X t i = x i + w t i + ∫ s in (0 : ℝ)..t, F s i)
-    (hY : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, Y t i = y i + w t i + ∫ s in (0 : ℝ)..t, G s i) (i : ι) :
-    IntervalIntegrable
-      (fun s : ℝ ↦ (F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i)) volume t₁ t₂ := by
-  let f : ℝ → ℝ := fun s ↦ F s i - G s i
-  have hf0 : IntervalIntegrable f volume 0 t₂ := (hF i).sub (hG i)
-  have hsub : uIcc (t₁ : ℝ) (t₂ : ℝ) ⊆ uIcc 0 (t₂ : ℝ) := by
-    rw [uIcc_of_le (NNReal.coe_le_coe.2 ht), uIcc_of_le t₂.coe_nonneg]
-    exact Icc_subset_Icc t₁.coe_nonneg le_rfl
-  have hcont_g : ContinuousOn (fun u : ℝ ↦ (x i - y i) + ∫ s in (0 : ℝ)..u, f s)
-      (uIcc (t₁ : ℝ) (t₂ : ℝ)) :=
-    continuousOn_const.add
-      ((intervalIntegral.continuousOn_primitive_interval' hf0 left_mem_uIcc).mono hsub)
-  refine ((hf0.mono_set hsub).mul_continuousOn hcont_g).congr ?_
-  rw [uIoc_of_le (NNReal.coe_le_coe.2 ht)]
-  intro s hs
-  have hgs : (x i - y i) + ∫ u in (0 : ℝ)..s, f u = X s.toNNReal i - Y s.toNNReal i := by
-    simpa [f, Real.coe_toNNReal s (t₁.coe_nonneg.trans hs.1.le)] using
-      sub_eq_add_integral_sub hF hG hX hY (Real.toNNReal_le_iff_le_coe.2 hs.2) i
-  dsimp only
-  rw [hgs]
-
-/-- **`ℓ²`-energy identity for two integral equations sharing an additive driving path.**
-If `X` and `Y` satisfy `X t i = x i + w t i + ∫ s in 0..t, F s i` and
-`Y t i = y i + w t i + ∫ s in 0..t, G s i` for all `t ≤ t₂` with `F · i` and `G · i` interval
-integrable on `0..t₂`, then the change in `∑ i, (X t i - Y t i) ^ 2` across `[t₁, t₂]` equals
-twice the integrated drift-difference pairing `∫ s in t₁..t₂, ∑ i, (F s i - G s i) * (X s - Y s)`.
-No continuity assumption on `X`, `Y`, or `w` is needed because the shared `w` cancels. -/
-theorem sum_sq_sub_eq_of_eq_add_integral {ι : Type*} [Fintype ι] {x y : ι → ℝ}
-    {w X Y : ℝ≥0 → ι → ℝ} {F G : ℝ → ι → ℝ} {t₁ t₂ : ℝ≥0} (ht : t₁ ≤ t₂)
-    (hF : ∀ i, IntervalIntegrable (fun s ↦ F s i) volume 0 t₂)
-    (hG : ∀ i, IntervalIntegrable (fun s ↦ G s i) volume 0 t₂)
-    (hX : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, X t i = x i + w t i + ∫ s in (0 : ℝ)..t, F s i)
-    (hY : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, Y t i = y i + w t i + ∫ s in (0 : ℝ)..t, G s i) :
-    ∑ i, (X t₂ i - Y t₂ i) ^ 2 - ∑ i, (X t₁ i - Y t₁ i) ^ 2 =
-      2 * ∫ s in (t₁ : ℝ)..(t₂ : ℝ),
-        ∑ i, (F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i) := by
-  -- Express each coordinate difference `X t i - Y t i` as an indefinite integral so `w` cancels,
-  -- apply scalar integration by parts `sq_add_integral_sub_sq`, and sum over `i`.
-  have ht1_mem : (t₁ : ℝ) ∈ uIcc (0 : ℝ) (t₂ : ℝ) := by
-    rw [uIcc_of_le t₂.coe_nonneg]
-    exact ⟨t₁.coe_nonneg, NNReal.coe_le_coe.2 ht⟩
-  have hcoord (i : ι) :
-      (X t₂ i - Y t₂ i) ^ 2 - (X t₁ i - Y t₁ i) ^ 2 =
-        2 * ∫ s in (t₁ : ℝ)..(t₂ : ℝ),
-          (F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i) := by
-    rw [← sub_eq_add_integral_sub hF hG hX hY le_rfl i,
-      ← sub_eq_add_integral_sub hF hG hX hY ht i,
-      sq_add_integral_sub_sq ((hF i).sub (hG i)) ht1_mem]
-    congr 1
-    refine intervalIntegral.integral_congr_ae ?_
-    rw [uIoc_of_le (NNReal.coe_le_coe.2 ht)]
-    refine Eventually.of_forall fun s hs ↦ ?_
-    have hgs : (x i - y i) + ∫ u in (0 : ℝ)..s, (F u i - G u i) =
-        X s.toNNReal i - Y s.toNNReal i := by
-      simpa [Real.coe_toNNReal s (t₁.coe_nonneg.trans hs.1.le)] using
-        sub_eq_add_integral_sub hF hG hX hY (Real.toNNReal_le_iff_le_coe.2 hs.2) i
-    rw [hgs]
-  rw [← sum_sub_distrib, sum_congr rfl fun i _ ↦ hcoord i, ← mul_sum,
-    ← intervalIntegral.integral_finsetSum fun i _ ↦
-      intervalIntegrable_sub_mul_of_eq_add_integral ht hF hG hX hY i]
-
-/-- **`ℓ²`-dissipation for two integral equations sharing an additive driving path.**
-Under the hypotheses of `sum_sq_sub_eq_of_eq_add_integral`, if the drift-difference pairing is
-nonpositive on `(t₁, t₂)`, then `∑ i, (X t₂ i - Y t₂ i) ^ 2 ≤ ∑ i, (X t₁ i - Y t₁ i) ^ 2`. -/
-theorem sum_sq_sub_le_of_eq_add_integral {ι : Type*} [Fintype ι] {x y : ι → ℝ}
-    {w X Y : ℝ≥0 → ι → ℝ} {F G : ℝ → ι → ℝ} {t₁ t₂ : ℝ≥0} (ht : t₁ ≤ t₂)
-    (hF : ∀ i, IntervalIntegrable (fun s ↦ F s i) volume 0 t₂)
-    (hG : ∀ i, IntervalIntegrable (fun s ↦ G s i) volume 0 t₂)
-    (hX : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, X t i = x i + w t i + ∫ s in (0 : ℝ)..t, F s i)
-    (hY : ∀ ⦃t : ℝ≥0⦄, t ≤ t₂ → ∀ i, Y t i = y i + w t i + ∫ s in (0 : ℝ)..t, G s i)
-    (hnonpos : ∀ s ∈ Ioo (t₁ : ℝ) (t₂ : ℝ),
-      ∑ i, (F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i) ≤ 0) :
-    ∑ i, (X t₂ i - Y t₂ i) ^ 2 ≤ ∑ i, (X t₁ i - Y t₁ i) ^ 2 := by
-  have hid := sum_sq_sub_eq_of_eq_add_integral ht hF hG hX hY
-  have hint : IntervalIntegrable
-      (fun s : ℝ ↦ ∑ i, (F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i)) volume t₁ t₂ :=
-    (IntervalIntegrable.sum univ fun i _ ↦
-      intervalIntegrable_sub_mul_of_eq_add_integral ht hF hG hX hY i).congr
-      fun u _ ↦ Finset.sum_apply u univ _
-  have hint_nonpos :
-      ∫ s in (t₁ : ℝ)..(t₂ : ℝ),
-        ∑ i, (F s i - G s i) * (X s.toNNReal i - Y s.toNNReal i) ≤ 0 := by
-    rw [← intervalIntegral.integral_zero (a := (t₁ : ℝ)) (b := (t₂ : ℝ))]
-    exact intervalIntegral.integral_mono_on_of_le_Ioo (NNReal.coe_le_coe.2 ht)
-      hint intervalIntegrable_const hnonpos
-  linarith
-
-end EnergyIdentity
 
 section Pathwise
 
@@ -390,9 +256,8 @@ theorem intervalIntegrable_inv_sub (hX : IsPathwiseDysonSolution x w X) (t : ℝ
   rw [← mul_assoc, mul_inv_cancel₀ hn_real.ne', one_mul] at hmul
   exact hle_sum.trans hmul
 
-/-- **Quantitative `L¹` staircase estimate on singular pairwise reciprocals.** On `[0, t]`, `n⁻¹`
-times the sum of all upper-triangular gap integrals `n⁻¹ ∑_{i < j} ∫₀ᵗ (X_i - X_j)⁻¹` is bounded
-by `∑ i, i * (x i + w t i - X t i)`. -/
+/-- **Quantitative `L¹` staircase estimate on singular pairwise reciprocals.** On `[0, t]`,
+`n⁻¹ ∑_{i < j} ∫₀ᵗ (X_i - X_j)⁻¹` is bounded by `∑ i, i * (x i + w t i - X t i)`. -/
 theorem sum_Ioi_integral_inv_sub_le (hX : IsPathwiseDysonSolution x w X) (t : ℝ≥0) :
     (n : ℝ)⁻¹ * ∑ i : Fin n, ∑ j ∈ Finset.Ioi i,
         ∫ s in (0 : ℝ)..t, (X s.toNNReal i - X s.toNNReal j)⁻¹ ≤
@@ -482,35 +347,60 @@ theorem shift (hX : IsPathwiseDysonSolution x w X) (t₀ : ℝ≥0) :
         add_zero, NNReal.coe_add]
     linarith
 
+/-- The Dyson integral equation evaluated at a nonnegative real time `s ≥ 0`. -/
+private theorem eq_add_integral_of_nonneg (hX : IsPathwiseDysonSolution x w X) {s : ℝ}
+    (hs : 0 ≤ s) (i : Fin n) :
+    X s.toNNReal i = x i + w s.toNNReal i +
+      ∫ u in (0 : ℝ)..s, dysonDrift (X u.toNNReal) i := by
+  simpa only [Real.coe_toNNReal s hs] using hX.eq_add_integral s.toNNReal i
+
 /-- **Pathwise `ℓ²`-energy identity.** For two pathwise Dyson solutions `X` and `Y` driven by the
-same path `w`, the change in `∑ i, (X t i - Y t i) ^ 2` across `[t₁, t₂]` equals twice the
+same path `w`, the change in `∑ i, (X t i - Y t i) ^ 2` from `t₁` to `t₂` equals twice the
 integrated drift-difference pairing. -/
 theorem sum_sq_sub_eq (hX : IsPathwiseDysonSolution x w X) (hY : IsPathwiseDysonSolution y w Y)
-    {t₁ t₂ : ℝ≥0} (ht : t₁ ≤ t₂) :
+    (t₁ t₂ : ℝ≥0) :
     ∑ i, (X t₂ i - Y t₂ i) ^ 2 - ∑ i, (X t₁ i - Y t₁ i) ^ 2 =
       2 * ∫ s in (t₁ : ℝ)..(t₂ : ℝ),
         ∑ i, (dysonDrift (X s.toNNReal) i - dysonDrift (Y s.toNNReal) i) *
-          (X s.toNNReal i - Y s.toNNReal i) :=
-  sum_sq_sub_eq_of_eq_add_integral ht
-    (fun i ↦ hX.intervalIntegrable_dysonDrift t₂ i)
-    (fun i ↦ hY.intervalIntegrable_dysonDrift t₂ i)
-    (fun t _ i ↦ hX.eq_add_integral t i)
-    (fun t _ i ↦ hY.eq_add_integral t i)
+          (X s.toNNReal i - Y s.toNNReal i) := by
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sq_sub_eq_of_eq_add_integral (univ : Finset (Fin n))
+      (x := x) (y := y) (w := fun s ↦ w s.toNNReal) (X := fun s ↦ X s.toNNReal)
+      (Y := fun s ↦ Y s.toNNReal)
+      (F := fun s ↦ dysonDrift (X s.toNNReal)) (G := fun s ↦ dysonDrift (Y s.toNNReal))
+      (t₀ := 0) (t₁ := (t₁ : ℝ)) (t₂ := (t₂ : ℝ))
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t₁ i)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t₂ i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t₁ i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t₂ i)
+      (fun _ ht i _ ↦ hX.eq_add_integral_of_nonneg
+        ((le_min t₁.coe_nonneg t₂.coe_nonneg).trans ht.1) i)
+      (fun _ ht i _ ↦ hY.eq_add_integral_of_nonneg
+        ((le_min t₁.coe_nonneg t₂.coe_nonneg).trans ht.1) i)
 
 /-- **Pathwise `ℓ²`-dissipation.** For any two pathwise Dyson solutions `X` and `Y` driven by the
 same path `w`, the squared Euclidean distance `t ↦ ∑ i, (X t i - Y t i) ^ 2` is antitone on
 `ℝ≥0`. -/
 theorem antitone_sum_sq_sub (hX : IsPathwiseDysonSolution x w X)
     (hY : IsPathwiseDysonSolution y w Y) :
-    Antitone (fun t ↦ ∑ i, (X t i - Y t i) ^ 2) := fun t₁ t₂ ht ↦
-  sum_sq_sub_le_of_eq_add_integral ht
-    (fun i ↦ hX.intervalIntegrable_dysonDrift t₂ i)
-    (fun i ↦ hY.intervalIntegrable_dysonDrift t₂ i)
-    (fun t _ i ↦ hX.eq_add_integral t i)
-    (fun t _ i ↦ hY.eq_add_integral t i)
-    fun s hs ↦
-      have hs_pos : 0 < s.toNNReal := Real.toNNReal_pos.2 (t₁.coe_nonneg.trans_lt hs.1)
-      sum_sub_mul_dysonDrift_sub_nonpos (hX.strictAnti hs_pos) (hY.strictAnti hs_pos)
+    Antitone (fun t ↦ ∑ i, (X t i - Y t i) ^ 2) := fun t₁ t₂ ht ↦ by
+  simpa only [Real.toNNReal_coe] using
+    TauCeti.intervalIntegral.sum_sq_sub_le_of_eq_add_integral (univ : Finset (Fin n))
+      (x := x) (y := y) (w := fun s ↦ w s.toNNReal) (X := fun s ↦ X s.toNNReal)
+      (Y := fun s ↦ Y s.toNNReal)
+      (F := fun s ↦ dysonDrift (X s.toNNReal)) (G := fun s ↦ dysonDrift (Y s.toNNReal))
+      (t₀ := 0) (NNReal.coe_le_coe.2 ht)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t₁ i)
+      (fun i _ ↦ hX.intervalIntegrable_dysonDrift t₂ i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t₁ i)
+      (fun i _ ↦ hY.intervalIntegrable_dysonDrift t₂ i)
+      (fun _ ht_mem i _ ↦ hX.eq_add_integral_of_nonneg
+        ((le_min t₁.coe_nonneg t₂.coe_nonneg).trans ht_mem.1) i)
+      (fun _ ht_mem i _ ↦ hY.eq_add_integral_of_nonneg
+        ((le_min t₁.coe_nonneg t₂.coe_nonneg).trans ht_mem.1) i)
+      fun s hs ↦
+        have hs_pos : 0 < s.toNNReal := Real.toNNReal_pos.2 (t₁.coe_nonneg.trans_lt hs.1)
+        sum_sub_mul_dysonDrift_sub_nonpos (hX.strictAnti hs_pos) (hY.strictAnti hs_pos)
 
 /-- **Pathwise `ℓ²`-contraction in initial data (AGZ Proposition 4.3.5).** Two pathwise Dyson
 solutions driven by the same path `w` satisfy `∑ i, (X t i - Y t i) ^ 2 ≤ ∑ i, (x i - y i) ^ 2`
@@ -526,10 +416,9 @@ and driving path `w` are identical. -/
 theorem eq_of_init_eq (hX : IsPathwiseDysonSolution x w X) (hY : IsPathwiseDysonSolution x w Y) :
     X = Y := by
   ext t i
-  have h0 : ∑ j, (X t j - Y t j) ^ 2 = 0 :=
-    le_antisymm (by simpa using hX.sum_sq_sub_le hY t) (sum_nonneg fun _ _ ↦ sq_nonneg _)
-  exact sub_eq_zero.1 (sq_eq_zero_iff.1
-    ((sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1 h0 i (mem_univ i)))
+  have hle : ∑ j, (X t j - Y t j) ^ 2 ≤ 0 := by
+    simpa only [sub_self, zero_pow two_ne_zero, sum_const_zero] using hX.sum_sq_sub_le hY t
+  exact sub_eq_zero.1 ((sum_sq_le_zero_iff univ fun j ↦ X t j - Y t j).1 hle i (mem_univ i))
 
 end IsPathwiseDysonSolution
 
@@ -607,10 +496,15 @@ theorem isPathwiseDysonSolution_fin_two_sqrt (a : ℝ) {r₀ : ℝ} (hr₀ : 0 �
         ![a + 2⁻¹ * Real.sqrt (r₀ ^ 2 + 2 * (t : ℝ)),
           a - 2⁻¹ * Real.sqrt (r₀ ^ 2 + 2 * (t : ℝ))]) := by
   -- Express both coordinates in terms of the shared gap profile `g t = √(r₀² + 2t)`.
+  set X : ℝ≥0 → Fin 2 → ℝ := fun t : ℝ≥0 ↦
+    ![a + 2⁻¹ * Real.sqrt (r₀ ^ 2 + 2 * (t : ℝ)),
+      a - 2⁻¹ * Real.sqrt (r₀ ^ 2 + 2 * (t : ℝ))]
   let g : ℝ≥0 → ℝ := fun t ↦ Real.sqrt (r₀ ^ 2 + 2 * (t : ℝ))
-  let X : ℝ≥0 → Fin 2 → ℝ := fun t ↦ ![a + 2⁻¹ * g t, a - 2⁻¹ * g t]
+  have hX0 (t : ℝ≥0) : X t 0 = a + 2⁻¹ * g t := by simp only [X, g, Matrix.cons_val_zero]
+  have hX1 (t : ℝ≥0) : X t 1 = a - 2⁻¹ * g t := by
+    simp only [X, g, Matrix.cons_val_one, Matrix.cons_val_fin_one]
   have hgap (t : ℝ≥0) : X t 0 - X t 1 = g t := by
-    simp only [X, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    rw [hX0, hX1]
     ring
   have hdrift0 (t : ℝ≥0) : dysonDrift (X t) 0 = 2⁻¹ * (g t)⁻¹ := by
     rw [dysonDrift_fin_two_zero, hgap]
@@ -622,7 +516,6 @@ theorem isPathwiseDysonSolution_fin_two_sqrt (a : ℝ) {r₀ : ℝ} (hr₀ : 0 �
   have hg_cont : Continuous g :=
     Real.continuous_sqrt.comp
       (continuous_const.add (continuous_const.mul NNReal.continuous_coe))
-  change IsPathwiseDysonSolution ![a + 2⁻¹ * r₀, a - 2⁻¹ * r₀] 0 X
   refine
     { continuous_path := ?_
       strictAnti := ?_
@@ -632,8 +525,10 @@ theorem isPathwiseDysonSolution_fin_two_sqrt (a : ℝ) {r₀ : ℝ} (hr₀ : 0 �
     rw [continuous_pi_iff]
     intro i
     fin_cases i
-    · exact continuous_const.add (continuous_const.mul hg_cont)
-    · exact continuous_const.sub (continuous_const.mul hg_cont)
+    · simp_rw [Fin.zero_eta, hX0]
+      exact continuous_const.add (continuous_const.mul hg_cont)
+    · simp_rw [Fin.mk_one, hX1]
+      exact continuous_const.sub (continuous_const.mul hg_cont)
   · -- 2. Strict decreasing order at `t > 0`: the unique pair `i < j` in `Fin 2` is `(0, 1)`.
     intro t ht i j hij
     have hi : i = 0 := Fin.ext (by rw [Fin.val_zero]; omega)
@@ -653,16 +548,15 @@ theorem isPathwiseDysonSolution_fin_two_sqrt (a : ℝ) {r₀ : ℝ} (hr₀ : 0 �
       exact (intervalIntegrable_inv_sqrt_sq_add_two_mul r₀ t).neg
   · -- 4. Integral equation via `dysonDrift_fin_two_zero`/`_one` and FTC for `g`.
     intro t i
-    have hint := integral_inv_sqrt_sq_add_two_mul hr₀ t
+    have hint : ∫ s in (0 : ℝ)..t, (g s.toNNReal)⁻¹ = g t - r₀ :=
+      integral_inv_sqrt_sq_add_two_mul hr₀ t
     fin_cases i
-    · simp only [Fin.zero_eta, hdrift0, X, Matrix.cons_val_zero, Pi.zero_apply, add_zero,
-        intervalIntegral.integral_const_mul]
-      rw [show ∫ s in (0 : ℝ)..t, (g s.toNNReal)⁻¹ = g t - r₀ from hint]
+    · simp only [Fin.zero_eta, hX0, hdrift0, Matrix.cons_val_zero, Pi.zero_apply, add_zero,
+        intervalIntegral.integral_const_mul, hint]
       ring
-    · simp only [Fin.mk_one, hdrift1, X, Matrix.cons_val_one, Matrix.cons_val_fin_one,
+    · simp only [Fin.mk_one, hX1, hdrift1, Matrix.cons_val_one, Matrix.cons_val_fin_one,
         Pi.zero_apply, add_zero, intervalIntegral.integral_neg,
-        intervalIntegral.integral_const_mul]
-      rw [show ∫ s in (0 : ℝ)..t, (g s.toNNReal)⁻¹ = g t - r₀ from hint]
+        intervalIntegral.integral_const_mul, hint]
       ring
 
 end Pathwise
