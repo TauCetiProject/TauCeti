@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.DirectSum.Finite
-public import TauCeti.Algebra.Homology.EulerCharacteristic.ChainComplex
+public import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
 public import TauCeti.AlgebraicTopology.Cellular.Projective
 
-import TauCeti.Algebra.Homology.EulerCharacteristic.HomologicalComplex
+import TauCeti.Algebra.Homology.ShortComplex.ModuleCat
 
 /-!
 # Euler--Poincaré for cellular chains
@@ -25,10 +25,16 @@ draws the numerical and finiteness consequences.
 * The cellular chain group is finitely generated when `M` is and there are finitely many `n`-cells
   (`TauCeti.finite_cellularChainGroup`). For free `M` it satisfies
   `finrank = #(n-cells) · finrank M` with no finiteness hypothesis
-  (`TauCeti.finrank_cellularChainGroup`); both sides are `0` in the infinite case.
-* For free coefficients over a ring with the strong rank condition, the Euler characteristic of
-  the cellular chain complex is `finrank M · cwEulerChar C`, with no finiteness hypothesis
-  (`TauCeti.eulerChar_cellularChainComplex`).
+  (`TauCeti.finrank_cellularChainGroup`, `TauCeti.finrank_cellularChainComplex_X`); both sides are
+  `0` in the infinite case. For finitely generated (not necessarily free) `M` over a ring
+  satisfying the strong rank condition and rank--nullity, the same formula holds in any degree
+  with finitely many cells (`TauCeti.finrank_cellularChainGroup_of_finite`,
+  `TauCeti.finrank_cellularChainComplex_X_of_finite`).
+* The Euler characteristic of the cellular chain complex is `finrank M · cwEulerChar C`, both for
+  free coefficients over a ring with the strong rank condition with no finiteness hypothesis
+  (`TauCeti.eulerChar_cellularChainComplex`), and for finitely generated coefficients over a ring
+  with the strong rank condition and rank--nullity on a relative CW complex of finite type
+  (`TauCeti.eulerChar_cellularChainComplex_of_finiteType`).
 * Over a noetherian ring, the cellular homology in degree `n` of a complex with finitely many
   `n`-cells is finitely generated when `M` is (`TauCeti.finite_cellularHomology`).
 * **Euler--Poincaré.**  Over any ring satisfying the strong rank condition and rank--nullity (such
@@ -159,11 +165,35 @@ variable {k : Type u} [Ring k] [StrongRankCondition k] [HasRankNullity.{w} k]
 /-- For finitely generated coefficients `M` over a ring satisfying the strong rank condition and
 rank--nullity, if there are finitely many `n`-cells then the cellular chain group in degree `n`
 satisfies `finrank = Nat.card (cell C n) * finrank k M`. -/
-private theorem finrank_cellularChainGroup_of_finite (n : ℕ) [Finite (cell C n)] :
+theorem finrank_cellularChainGroup_of_finite (n : ℕ) [Finite (cell C n)] :
     finrank k (cellularChainGroup C M n : ModuleCat k) = Nat.card (cell C n) * finrank k M := by
   let _ : Fintype (cell C n) := Fintype.ofFinite (cell C n)
   rw [(cellularChainGroupIso C M n).toLinearEquiv.finrank_eq, ModuleCat.finrank_sigma,
     Finset.sum_const, Finset.card_univ, smul_eq_mul, Nat.card_eq_fintype_card]
+
+/-- For finitely generated coefficients `M` over a ring satisfying the strong rank condition and
+rank--nullity, if there are finitely many `i`-cells then the degree-`i` term of the cellular chain
+complex satisfies `finrank = Nat.card (cell C i) * finrank k M`. -/
+theorem finrank_cellularChainComplex_X_of_finite (i : ℕ) [Finite (cell C i)] :
+    finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
+  rw [cellularChainComplex_X, finrank_cellularChainGroup_of_finite]
+
+/-- For finitely generated coefficients `M` over a ring satisfying the strong rank condition and
+rank--nullity, the Euler characteristic `∑ᶠ i, (-1)ⁱ · finrank k (Cᵢ)` of the cellular chain
+complex of a relative CW complex of finite type (`RelCWComplex.FiniteType C`) is
+`finrank k M · cwEulerChar C`. Both sides are `finsum`s over all degrees (an infinite support gives
+`0`). -/
+theorem eulerChar_cellularChainComplex_of_finiteType [RelCWComplex.FiniteType C] :
+    (cellularChainComplex C M).eulerChar =
+      finrank k M * cwEulerChar C := by
+  rw [HomologicalComplex.eulerChar, GradedObject.eulerChar, cwEulerChar, mul_finsum]
+  refine finsum_congr fun i ↦ ?_
+  have := FiniteType.finite_cell (C := C) (D := D) i
+  rw [finrank_cellularChainComplex_X_of_finite]
+  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
+    Units.val_one]
+  push_cast
+  ring
 
 /-- **Euler--Poincaré for cellular chains.**  For a relative CW complex with finitely many cells
 through degree `n` and a finitely generated coefficient module `M` over a ring satisfying the
@@ -202,7 +232,7 @@ theorem sum_range_finrank_cellularHomology {n : ℕ}
   rw [← hsum, Finset.mul_sum]
   refine Finset.sum_congr rfl fun i hi ↦ ?_
   have := hfinite i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))
-  rw [cellularChainComplex_X, finrank_cellularChainGroup_of_finite]
+  rw [finrank_cellularChainComplex_X_of_finite]
   push_cast
   ring
 
@@ -222,14 +252,7 @@ theorem homologyEulerChar_cellularChainComplex [RelCWComplex.Finite C] :
       by_contra h
       exact hi (by rw [cellularChainComplex_X]; exact hN i (by simpa using h))
   rw [← HomologicalComplex.eulerChar_eq_homologyEulerChar (cellularChainComplex C M) hsupp,
-    HomologicalComplex.eulerChar, GradedObject.eulerChar, cwEulerChar, mul_finsum]
-  refine finsum_congr fun i ↦ ?_
-  have := FiniteType.finite_cell (C := C) (D := D) i
-  rw [cellularChainComplex_X, finrank_cellularChainGroup_of_finite]
-  simp only [ComplexShape.eulerCharSignsDownNat_χ, Units.val_pow_eq_pow_val, Units.val_neg,
-    Units.val_one]
-  push_cast
-  ring
+    eulerChar_cellularChainComplex_of_finiteType]
 
 end RankNullity
 
