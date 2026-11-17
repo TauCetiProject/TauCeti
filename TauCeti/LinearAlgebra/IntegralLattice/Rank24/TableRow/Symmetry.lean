@@ -141,8 +141,8 @@ theorem mem_glueSymmetries_of_glueWords {g : Equiv.Perm (Fin r.components.length
     (hs := r.isSimplyLaced_componentType)
   refine ⟨hg, apply_mem_glueSubgroup_iff_of_mem_glueGenerators_iff φ.toAddEquiv.toAddMonoidHom
     φ.injective (fun y _ ↦ φ.surjective y) fun v ↦ ?_⟩
-  change φ v ∈ r.glueGenerators ↔ v ∈ r.glueGenerators
-  rw [mem_glueGenerators_iff, mem_glueGenerators_iff,
+  rw [AddEquiv.coe_toAddMonoidHom, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    QuadraticMap.IsometryEquiv.coe_toLinearEquiv, mem_glueGenerators_iff, mem_glueGenerators_iff,
     encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_def]
   exact hw fun i ↦ (((r.componentType i).glueLabelEquiv
     (r.isSimplyLaced_componentType i)).symm (v i)).val
@@ -285,20 +285,15 @@ private theorem ofFn_getD_a5FourthD4BlockRot (l : List ℕ) :
   have hi5 : i < 5 := by simpa [length_components_a5FourthD4] using hi
   simp only [List.getElem_ofFn]
   interval_cases i
-  · rw [show (⟨0, hi⟩ : Fin a5FourthD4.components.length) = 0 from Fin.ext (by simp),
-      a5FourthD4BlockRot_zero]; simp
-  · rw [show (⟨1, hi⟩ : Fin a5FourthD4.components.length) = 1 from
-      Fin.ext (by simp [length_components_a5FourthD4]),
-      a5FourthD4BlockRot_one]; simp [length_components_a5FourthD4]
-  · rw [show (⟨2, hi⟩ : Fin a5FourthD4.components.length) = 2 from
-      Fin.ext (by simp [length_components_a5FourthD4]),
-      a5FourthD4BlockRot_two]; simp [length_components_a5FourthD4]
-  · rw [show (⟨3, hi⟩ : Fin a5FourthD4.components.length) = 3 from
-      Fin.ext (by simp [length_components_a5FourthD4]),
-      a5FourthD4BlockRot_three]; simp [length_components_a5FourthD4]
-  · rw [show (⟨4, hi⟩ : Fin a5FourthD4.components.length) = 4 from
-      Fin.ext (by simp [length_components_a5FourthD4]),
-      a5FourthD4BlockRot_four]; simp [length_components_a5FourthD4]
+  · simp [a5FourthD4BlockRot_zero]
+  · rw [← Fin.one_eq_mk_of_lt]
+    simp [a5FourthD4BlockRot_one, length_components_a5FourthD4]
+  · rw [← Fin.natCast_eq_mk]
+    simp [a5FourthD4BlockRot_two, length_components_a5FourthD4]
+  · rw [← Fin.natCast_eq_mk]
+    simp [a5FourthD4BlockRot_three, length_components_a5FourthD4]
+  · rw [← Fin.natCast_eq_mk]
+    simp [a5FourthD4BlockRot_four, length_components_a5FourthD4]
 
 /-- `a5FourthD4BlockRot` is not a pure position glue symmetry of `A₅⁴ D₄`. -/
 theorem a5FourthD4BlockRot_notMem_glueSymmetries :
