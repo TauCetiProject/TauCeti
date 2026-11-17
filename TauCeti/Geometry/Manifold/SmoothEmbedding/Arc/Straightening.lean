@@ -44,7 +44,7 @@ cutoff `χ` which is `1` on `[-1, 1]` and vanishes off `(-2, 2)`, the spliced ma
   derivative of the cutoff is small, and on a fixed strip the derivative of every spliced map stays
   close to `A`, uniformly in `δ`. A left inverse `P` of `A` then makes `P` of the spliced map
   approximate the identity on the convex strip, so the spliced map is injective there, with
-  injective derivative (`Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le`, via Mathlib's
+  injective derivative (`Convex.injOn_and_injective_of_norm_hasFDerivWithin_sub_le`, via Mathlib's
   `ApproximatesLinearOn.injOn`).
 * The image under `F` of the complement of the arc is closed, since `F` is a closed embedding, and
   misses the compact segment `F ({z₀} × [0, 1])`; for small `δ` the modified stretch stays in a

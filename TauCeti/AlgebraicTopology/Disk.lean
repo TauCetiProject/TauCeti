@@ -53,7 +53,9 @@ with the affine homeomorphism `TauCeti.cubeHomeomorphClosedBall` of the cube ont
 identifies the disk pair with the pair `TauCeti.cubeBoundaryPair n = (Iⁿ, ∂Iⁿ)` formed by the cube
 and its boundary (`TauCeti.diskBoundaryPairIsoCube`).  A singular cube of a pair sending the
 boundary of the cube into the subspace is a map of pairs out of the cube pair
-(`TauCeti.cubeBoundaryPairHom`).
+(`TauCeti.cubeBoundaryPairHom`). The product `Y × (Iᵐ, ∂Iᵐ)` of a space with the cube pair is the
+pair of `Y × Iᵐ` over the preimage of the boundary of the cube
+(`TauCeti.cubeBoundaryPairProdLeftIso`).
 -/
 
 public section
@@ -103,6 +105,11 @@ instance t3Space_disk (n : ℕ) : T3Space (TopCat.disk.{u} n) :=
   -- The `TopCat` carrier of `TopCat.disk n` is, by definition, the lift of the metric closed
   -- ball; instance synthesis does not unfold the `TopCat.disk` wrapper on its own.
   inferInstanceAs (T3Space (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
+
+/-- The `n`-dimensional disk is compact, being homeomorphic to a closed ball in Euclidean space. -/
+instance compactSpace_disk (n : ℕ) : CompactSpace (TopCat.disk.{u} n) :=
+  -- As for `TauCeti.TopCat.t3Space_disk`, the carrier is the lift of the metric closed ball.
+  inferInstanceAs (CompactSpace (ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1)))
 
 /-- The inclusion `∂𝔻 n ⟶ 𝔻 n` of the boundary sphere of the disk is a closed embedding, being an
 injective map from a compact space to a Hausdorff one. -/
@@ -373,6 +380,37 @@ lemma cubeBoundaryPairHom_fst_apply {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m)
 lemma cubeBoundaryPairHom_fst_hom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))
     (hc : Set.MapsTo c (Cube.boundary (Fin m)) (Set.range P.map)) :
     (TopPair.Hom.fst (cubeBoundaryPairHom c hc)).hom = c.comp ⟨ULift.down, continuous_uliftDown⟩ :=
+  (rfl)
+
+/-- The pair `Y × (Iᵐ, ∂Iᵐ)`, whose cube is lifted to the universe of `Y`, is the pair of
+`Y × Iᵐ` over the boundary of the cube, the preimage of `∂Iᵐ` under the projection
+`Y × Iᵐ → Iᵐ`. This identifies the relative homology of `Y × (Iᵐ, ∂Iᵐ)` with the relative
+homology of a space over the cube restricted to the boundary. -/
+def cubeBoundaryPairProdLeftIso (Y : TopCat.{u}) (m : ℕ) :
+    (cubeBoundaryPair.{u} m).prodLeft Y ≅
+      TopPair.ofSubset (X := TopCat.of (Y × (Fin m → I)))
+        (ContinuousMap.snd ⁻¹' Cube.boundary (Fin m)) where
+  hom := TopPair.ofHom
+    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.down, continuous_uliftDown⟩))
+    (TopCat.ofHom ⟨fun x ↦ ⟨(x.1, x.2.1.down), x.2.2⟩, by fun_prop⟩) rfl
+  inv := TopPair.ofHom
+    (TopCat.ofHom ((ContinuousMap.id _).prodMap ⟨ULift.up, continuous_uliftUp⟩))
+    (TopCat.ofHom ⟨fun x ↦ (x.1.1, ⟨ULift.up x.1.2, x.2⟩), by fun_prop⟩) rfl
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+/-- `TauCeti.cubeBoundaryPairProdLeftIso` lowers the cube coordinate out of `ULift`. -/
+@[simp]
+theorem cubeBoundaryPairProdLeftIso_hom_fst_apply (Y : TopCat.{u}) (m : ℕ)
+    (z : Y × ULift.{u} (Fin m → I)) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).hom z = (z.1, z.2.down) :=
+  (rfl)
+
+/-- The inverse of `TauCeti.cubeBoundaryPairProdLeftIso` lifts the cube coordinate to `ULift`. -/
+@[simp]
+theorem cubeBoundaryPairProdLeftIso_inv_fst_apply (Y : TopCat.{u}) (m : ℕ)
+    (z : Y × (Fin m → I)) :
+    TopPair.Hom.fst (cubeBoundaryPairProdLeftIso Y m).inv z = (z.1, ULift.up z.2) :=
   (rfl)
 
 /-- The homeomorphism from the Euclidean disk `Dⁿ` onto the cube `Iⁿ`: the radial rescaling of the

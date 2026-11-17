@@ -42,8 +42,7 @@ same as `G₂(q)`, whatever endomorphism is later taken of their common carrier.
 determinant two, so the Geck carrier is not its simply connected form.
 
 Identifying the carrier itself with the pinned simply connected Chevalley--Demazure group, and
-proving it reductive, is the Layer 9 work of `TauCetiRoadmap/ReductiveGroups/README.md` that this
-roadmap consumes rather than performs; no declaration below asserts either, nor that a constructed
+proving it reductive, is not done here; no declaration below asserts either, nor that a constructed
 group is finite, perfect, or simple.
 
 ## Main definitions
@@ -116,7 +115,7 @@ is the lattice condition that separates the simply connected form of a Chevalley
 from the adjoint one, and it fails on every other diagram, which is why this subtype is the domain
 of the results here. It is a statement about characters only: that the carrier is reductive, and
 that it is the pinned simply connected group of `TauCeti.DynkinType.simplyConnectedRootDatum`, are
-Layer 9 statements that this file consumes when they arrive rather than proving. -/
+statements this file does not prove. -/
 theorem span_range_geckWeight_eq_top :
     Submodule.span ℤ (Set.range (d.dynkinType.geckWeight d.dynkinType_valid)) = ⊤ :=
   (DynkinType.span_range_geckWeight_eq_top_iff _ d.dynkinType_valid).mpr
@@ -203,8 +202,8 @@ theorem coe_steinberg_apply (g : d.AmbientGroup)
   exact d.1.1.coe_geckFrobenius_apply g r c
 
 /-- **The Steinberg map raises the parameter of every numbered root subgroup to the `q`-th
-power.** On a simple root subgroup this is the equation `Frob_q (x_α(t)) = x_α(t ^ q)` that
-milestone L1 asks of the untwisted families, proved here on the Geck carrier. -/
+power.** On a simple root subgroup this is the equation `Frob_q (x_α(t)) = x_α(t ^ q)` of the
+Steinberg map of the untwisted families, proved here on the Geck carrier. -/
 @[simp]
 theorem steinberg_geckRootSubgroup (i : Fin d.1.1.dynkinType.rank ⊕ Fin d.1.1.dynkinType.rank)
     (u : Multiplicative d.1.1.Closure) :

@@ -561,6 +561,18 @@ theorem IsPath.isTrail {p : G.Walk x y} (hp : p.IsPath) : p.IsTrail :=
 theorem IsPath.support_nodup {p : G.Walk x y} (hp : p.IsPath) : p.support.Nodup :=
   hp
 
+/-- The left part of a concatenated path is a path. -/
+theorem IsPath.of_append_left {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsPath) : p.IsPath := by
+  rw [isPath_def, support_append] at hpq
+  exact hpq.of_append_left
+
+/-- The right part of a concatenated path is a path. -/
+theorem IsPath.of_append_right {p : G.Walk x y} {q : G.Walk y z}
+    (hpq : (p.append q).IsPath) : q.IsPath := by
+  rw [isPath_def, support_append_eq_support_dropLast_append] at hpq
+  exact hpq.of_append_right
+
 @[simp]
 theorem _root_.Graph.IsLink.isPath_toWalk_iff {e : β} (h : G.IsLink e x y) :
     (IsLink.toWalk h).IsPath ↔ x ≠ y := by
@@ -584,6 +596,14 @@ theorem IsCycle.ne_nil {p : G.Walk x x} (hp : p.IsCycle) : p ≠ .nil := hp.1
 
 theorem IsCycle.not_nil {p : G.Walk x x} (hp : p.IsCycle) : ¬ p.Nil :=
   fun h => hp.ne_nil h.eq_nil
+
+/-- Every cycle has positive length. -/
+theorem IsCycle.length_pos {p : G.Walk x x} (hp : p.IsCycle) : 0 < p.length :=
+  Nat.pos_of_ne_zero fun h ↦ hp.not_nil (length_eq_zero_iff.mp h)
+
+/-- The base vertex of a cycle is an actual vertex of the graph. -/
+theorem IsCycle.start_mem {p : G.Walk x x} (hp : p.IsCycle) : x ∈ V(G) :=
+  p.support_subset_vertexSet_of_pos hp.length_pos x p.start_mem_support
 
 theorem IsCycle.support_tail_nodup {p : G.Walk x x} (hp : p.IsCycle) :
     p.support.tail.Nodup := hp.2.2

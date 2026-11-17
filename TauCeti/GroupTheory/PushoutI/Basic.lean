@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.PushoutI
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
-# Amalgamated products along non-injective maps
+# Amalgamated products along non-injective maps, and centralizers of the amalgamated subgroup
 
 Mathlib's `Monoid.PushoutI φ` is defined for an arbitrary family of homomorphisms
 `φ i : H →* G i`, and `Monoid.PushoutI.of_injective` shows that the factors `G i` embed in it when
@@ -21,12 +22,18 @@ This is the reason the boundary maps of a graph of groups are required to be inj
 data of an amalgam `A ∗_C B` with a non-injective map `C →* B` and an injective map `C →* A`, the
 vertex group `A` does not embed in the amalgam, and the normal form theorem fails.
 
+For a pushout of groups along `φ i : C →* G i`, an element of a factor `G i` that centralizes the
+image of `C` in `G i` commutes in the pushout with every element of the image `base φ c` of `C`,
+since that image is also the image of `φ i c` under the inclusion of `G i`.
+
 ## Main results
 
 * `Monoid.PushoutI.apply_eq_apply_of_injective_of`: if `G i` embeds in the pushout, then `φ i`
   identifies every pair of elements identified by some `φ j`.
 * `Monoid.PushoutI.not_injective_of`: if `φ i` is injective and `φ j` is not, then `G i` does not
   embed in the pushout.
+* `Monoid.PushoutI.commute_of_base_of_mem_centralizer`: an element of a factor centralizing the
+  image of `C` commutes with the image of `C` in the pushout.
 
 ## References
 
@@ -36,6 +43,8 @@ vertex group `A` does not embed in the amalgam, and the normal form theorem fail
 public section
 
 namespace Monoid.PushoutI
+
+section Monoid
 
 variable {ι : Type*} {G : ι → Type*} {H : Type*} [∀ i, Monoid (G i)] [Monoid H]
   {φ : ∀ i, H →* G i} {i : ι}
@@ -52,5 +61,22 @@ pushout of the maps `φ k : H →* G k`. -/
 theorem not_injective_of (hi : Function.Injective (φ i)) {j : ι}
     (hj : ¬ Function.Injective (φ j)) : ¬ Function.Injective (of (φ := φ) i) :=
   fun h => hj fun _ _ hxy => hi (apply_eq_apply_of_injective_of h hxy)
+
+end Monoid
+
+section Group
+
+variable {ι : Type*} {G : ι → Type*} {C : Type*} [∀ i, Group (G i)] [Group C]
+  {φ : ∀ i, C →* G i}
+
+/-- An element of a factor centralizing the image of the amalgamating group commutes in the
+pushout with every element of the image of the amalgamating group. -/
+theorem commute_of_base_of_mem_centralizer {i : ι} {z : G i}
+    (hz : z ∈ Subgroup.centralizer (Set.range (φ i))) (c : C) :
+    Commute (of (φ := φ) i z) (base φ c) := by
+  rw [← of_apply_eq_base φ i]
+  exact (Commute.map (Subgroup.mem_centralizer_iff.mp hz (φ i c) ⟨c, rfl⟩) (of i)).symm
+
+end Group
 
 end Monoid.PushoutI

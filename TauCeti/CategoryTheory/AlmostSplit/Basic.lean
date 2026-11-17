@@ -623,6 +623,12 @@ theorem IsRightAlmostSplit.mem_jacobsonRadical (hf : IsRightAlmostSplit f) :
   have := hf.isLocalRing_end
   mem_jacobsonRadical_iff_not_isSplitEpi.2 hf.not_isSplitEpi
 
+/-- A left almost split morphism is radical. -/
+theorem IsLeftAlmostSplit.mem_jacobsonRadical (hf : IsLeftAlmostSplit f) :
+    f ∈ jacobsonRadical X Y :=
+  have := hf.isLocalRing_end
+  mem_jacobsonRadical_iff_not_isSplitMono.2 hf.not_isSplitMono
+
 /-- If `End Y` is local, then `f : X ⟶ Y` is right almost split exactly when it is radical and every
 radical morphism into `Y` factors through it: the morphisms factoring through `f` are the radical
 morphisms into `Y`. -/

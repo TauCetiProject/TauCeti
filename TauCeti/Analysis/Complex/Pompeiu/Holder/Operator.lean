@@ -43,7 +43,7 @@ private def normalizedCauchy {α : ℝ≥0} {c : ℂ} {r : ℝ}
 omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] in
 private theorem source_bound {α : ℝ≥0} (f : HolderSpace α ℂ F) (z : ℂ) :
     ‖f z‖ ≤ ‖f.toBoundedContinuousFunction‖₊ := by
-  simpa only [HolderSpace.toBoundedContinuousFunction_apply, coe_nnnorm] using
+  simpa only [HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm] using
     f.toBoundedContinuousFunction.norm_coe_le_norm z
 
 private theorem source_gain [FiniteDimensional ℂ F]
@@ -184,7 +184,7 @@ private theorem exists_norm_cauchyDerivativeLinearMap_le [FiniteDimensional ℂ 
   have hsum : (H + M : ℝ≥0) = ‖f‖ := by
     rw [← Submodule.norm_coe]
     rw [HolderSpace.norm_def]
-    simp only [H, M, NNReal.coe_add, coe_nnnorm, HolderSpace.coe_toBoundedContinuousFunction]
+    simp only [H, M, NNReal.coe_add, coe_nnNorm, HolderSpace.coe_toBoundedContinuousFunction]
     ring
   -- The linear-map structure evaluates to the chosen derivative HolderSpace representative.
   change ‖u‖ ≤ (2 * C) * ‖f‖

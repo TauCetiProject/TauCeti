@@ -94,17 +94,15 @@ theorem existsUnique_localHomologyRestriction_eq_of_invariant {n : ℕ}
   exact ⟨U, mem_nhdsWithin_of_mem_nhds hU, β, fun y hy _ ↦ hβ y hy⟩
 
 /-- On a compact manifold, a parallel family of top-dimensional local classes is the family of
-local values of exactly one absolute singular homology class. The map to local homology is the
-ordinary-to-relative quotient map followed by restriction. -/
+local values of exactly one absolute singular homology class under
+`singularHomologyToLocalHomology`. -/
 theorem existsUnique_singularHomology_localHomologyRestriction_eq_of_invariant [CompactSpace M]
     {n : ℕ} (hn : finrank ℝ E = n)
     (α : ∀ x : M, (localHomology N {x} n : ModuleCat.{w} Λ))
     (hα : ∀ {x y : FundamentalGroupoid M} (f : x ⟶ y),
       localHomologyTransport N M E n f (α x.as) = α y.as) :
     ∃! γ : ((TopCat.toSSet.obj (TopCat.of M)).homology N n : ModuleCat.{w} Λ),
-      ∀ x : M, localHomologyRestriction N (subset_univ {x}) n
-        (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
-          (C := ModuleCat.{w} Λ) N n).hom γ) = α x := by
+      ∀ x : M, singularHomologyToLocalHomology N x n γ = α x := by
   obtain ⟨β, hβ, huniq⟩ :=
     existsUnique_localHomologyRestriction_eq_of_invariant N hn isCompact_univ α hα
   have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
@@ -112,12 +110,14 @@ theorem existsUnique_singularHomology_localHomologyRestriction_eq_of_invariant [
     exact inferInstanceAs (IsEmpty (∅ : Set M))
   let e := asIso ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
     (C := ModuleCat.{w} Λ) N n)
-  refine ⟨e.inv β, fun x ↦ ?_, fun δ hδ ↦ ?_⟩
+  refine ⟨e.inv β, fun x ↦ (singularHomologyToLocalHomology_apply N x _).trans ?_, fun δ hδ ↦ ?_⟩
   · have he : ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
         (C := ModuleCat.{w} Λ) N n).hom (e.inv β) = β := e.inv_hom_id_apply β
     rw [he]
     exact hβ x (mem_univ x)
   · apply (ModuleCat.mono_iff_injective e.hom).1 inferInstance
-    exact (huniq (e.hom δ) (fun x _ ↦ hδ x)).trans (e.inv_hom_id_apply β).symm
+    exact (huniq (e.hom δ)
+      (fun x _ ↦ (singularHomologyToLocalHomology_apply N x δ).symm.trans (hδ x))).trans
+      (e.inv_hom_id_apply β).symm
 
 end TauCeti

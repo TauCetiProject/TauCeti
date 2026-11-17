@@ -113,7 +113,7 @@ private theorem exists_isHermiteNormalForm_of_pos {L : Submodule ℤ (Fin (m + 1
   · intro j
     simp only [transpose_apply, of_apply, C, Fin.cons_succ, hw₀]
     exact ⟨Int.emod_nonneg _ hd₀'.ne', Int.emod_lt_of_pos _ hd₀'⟩
-  · rw [of_col]
+  · dsimp
     exact Fin.cases ((hd d).mpr dvd_rfl)
       (fun j ↦ sub_mem (hvL j) (Submodule.smul_mem _ _ ((hd d).mpr dvd_rfl))) j
   · obtain ⟨c, hc⟩ := htail x hx
@@ -123,8 +123,8 @@ private theorem exists_isHermiteNormalForm_of_pos {L : Submodule ℤ (Fin (m + 1
     refine ⟨Pi.single 0 t, ?_⟩
     ext i
     cases i using Fin.cases with
-    | zero => simp [C, mul_comm]
-    | succ i => simp [C]
+    | zero => simp [C, mul_comm, Function.swap]
+    | succ i => simp [C, Function.swap]
 
 /-- **Existence of Hermite bases.** Every sublattice `L` of `ℤ^m` is the column lattice of a
 matrix in Hermite normal form. -/
@@ -155,7 +155,7 @@ theorem exists_isHermiteNormalForm_range_mulVecLin_eq :
     rcases Nat.eq_zero_or_pos d with rfl | hd₀
     · -- If `d = 0`, the lifts of the columns of `H'` form a Hermite basis of `L`.
       refine ⟨k, (of v)ᵀ, (isHermitePivotedBy_of_succ hp fun i j ↦ hv j i).isHermiteNormalForm,
-        range_mulVecLin_eq_of_succ (fun j ↦ by rw [of_col]; exact hvL j) (fun x hx ↦ ?_)
+        range_mulVecLin_eq_of_succ (fun j ↦ by dsimp; exact hvL j) (fun x hx ↦ ?_)
           fun a ha ↦ ?_⟩
       · obtain ⟨c, hc⟩ := htail x hx
         exact ⟨c, fun i ↦ by simpa [mulVec, dotProduct, hv] using hc i⟩

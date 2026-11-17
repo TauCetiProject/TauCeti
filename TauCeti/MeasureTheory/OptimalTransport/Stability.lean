@@ -36,8 +36,7 @@ problems. It is a genuine assumption — for a fixed lower semicontinuous cost a
 marginals the optimal values can strictly drop in the limit: take `c` to be the indicator of the
 off-diagonal of `ℝ × ℝ`, which is lower semicontinuous, `μs n = δ (1 / (n + 1))` and `νs n = δ 0`;
 every moving problem then has value `1`, while the limiting problem has value `0`. The recovery
-family must converge weakly to the chosen limiting plan as well as satisfy the cost bound; this is
-the recovery-coupling condition from the roadmap.
+family must converge weakly to the chosen limiting plan as well as satisfy the cost bound.
 
 The two bounds are separated on purpose: `TauCeti.transportCost_le_liminf_transportCost` needs the
 liminf hypothesis and compactness, `TauCeti.limsup_transportCost_le_transportCost` needs the
@@ -46,7 +45,7 @@ recovery hypothesis and nothing else, and only `TauCeti.tendsto_transportCost` n
 Compactness enters through `TauCeti.exists_isCoupling_tendsto_of_isTightMeasureSet`, proved in
 `TauCeti.MeasureTheory.OptimalTransport.Compactness`: a family of plans whose (varying) marginals
 are tight on a filter tail is relatively compact, and every weak limit along a finer filter is a
-coupling of the limiting marginals. This is the "tightness of optimizer subsequences" step, and it
+coupling of the limiting marginals. This is the tightness step of the stability argument, and it
 is what lets the arguments run along a filter rather than a sequence: passing to a subsequence is
 replaced by passing to a finer filter.
 
@@ -78,10 +77,6 @@ replaced by passing to a finer filter.
   marginals and uniformly converging costs.
 * F. Santambrogio, *Optimal Transport for Applied Mathematicians*, Springer 2015, Section 1.2 —
   the same statement obtained by the direct method from tightness and lower semicontinuity.
-
-This is Layer 1, item 6 of the optimal-transport roadmap. Layer 10 is where these two hypotheses
-are packaged as the Γ-liminf, Γ-limsup and equicoercivity conditions of an abstract variational
-convergence; here they stay explicit.
 -/
 
 public section

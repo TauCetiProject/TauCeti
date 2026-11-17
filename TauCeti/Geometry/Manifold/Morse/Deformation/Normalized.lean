@@ -94,7 +94,7 @@ theorem exists_flow_apply_eq_sub_of_mvfderiv_lt_zero (hf : ContMDiff I 𝓘(ℝ)
       ∃ φ : Flow ℝ M, ContMDiff (𝓘(ℝ, ℝ).prod I) I ∞ (fun p : ℝ × M ↦ φ p.1 p.2) ∧
         (∀ x, IsMIntegralCurve (fun t ↦ φ t x) X) ∧ (∀ x, Antitone fun t ↦ f (φ t x)) ∧
         ∀ x t, 0 ≤ t → a ≤ f x - t → f x ≤ b → f (φ t x) = f x - t := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   obtain ⟨X, hX, hXY, hXle, ⟨U, hU, hKU, hXU⟩, C, hC, hXC⟩ :=
     exists_vectorField_eq_inv_smul_of_mvfderiv_lt_zero hf hY hcompact fun x hx ↦
       hbandY x hx.1 hx.2

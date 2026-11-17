@@ -27,11 +27,9 @@ there with the inverse of the target sheet composed with the source projection.
 
 ## References
 
-This is the fullness step in the alternative monodromy-functor classification requested by
-Stage 2, item 8 of `TauCetiRoadmap/UniversalCovers/README.md`. The mathematical argument is the
-standard local-sheet proof of fullness for the monodromy functor; see A. Hatcher, *Algebraic
-Topology*, Section 1.3. It uses Junyan Xu's path-lifting and monodromy API in
-`Mathlib/Topology/Homotopy/Lifting.lean`.
+The mathematical argument is the standard local-sheet proof of fullness for the monodromy
+functor; see A. Hatcher, *Algebraic Topology*, Section 1.3. It uses Junyan Xu's path-lifting
+and monodromy API in `Mathlib/Topology/Homotopy/Lifting.lean`.
 -/
 
 public section

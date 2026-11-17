@@ -216,7 +216,7 @@ theorem tateUniformization_injective (q : Kˣ) (hq : ‖(q : K)‖ < 1) :
   have : IsUltrametricDist L :=
     IsUltrametricDist.isUltrametricDist_of_isNonarchimedean_norm fun a b ↦
       isNonarchimedean_spectralNorm (K := K) (L := L) a b
-  have : CompleteSpace L := FiniteDimensional.complete K L
+  have : CompleteSpace L := FiniteDimensional.completeSpace K L
   have : RingHomIsometric (algebraMap K L) := ⟨norm_algebraMap' L _⟩
   obtain ⟨r, hr⟩ : ∃ r : L, ((X ^ 2 - C (q : K)).map (algebraMap K L)).eval r = 0 :=
     (SplittingField.splits _).exists_eval_eq_zero (by

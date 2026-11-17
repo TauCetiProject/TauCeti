@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.WaveFrontSet.Localization
 import TauCeti.Algebra.Module.ZLattice.Scaling
 import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
+import TauCeti.Analysis.Normed.Module.Cone
 import TauCeti.Analysis.PositiveDefinite.FourierAtom
 
 /-!
@@ -51,6 +52,8 @@ of the wave front set of a complex distribution onto the base is exactly its sin
   point of `Ω` exactly when it is microlocally smooth there in every nonzero direction.
 * `Distribution.fst_image_waveFrontSet`: the projection of the wave front set is the singular
   support.
+* `Distribution.singularSupport_eq_empty_iff_waveFrontSet_eq_empty`: a complex distribution has
+  empty singular support exactly when it has empty wave front set.
 * `Distribution.singularSupport_delta`: the singular support of the point mass at `x₀` is `{x₀}`.
 
 ## References
@@ -86,9 +89,8 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
   -- For each unit direction, a neighbourhood of `x` and an open cone with uniform decay.
   choose U hU Γ hΓ hξΓ hcone hdecay using fun ξ : sphere (0 : E) 1 ↦
     (h ξ (ne_zero_of_mem_unit_sphere ξ)).exists_nhds_cone
-  -- Finitely many of the cones cover the unit sphere.
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
-    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
+  -- Finitely many of the cones cover the nonzero vectors.
+  obtain ⟨t, ht⟩ := TauCeti.exists_finset_compl_singleton_subset_biUnion hΓ hξΓ hcone
   refine ⟨⋂ ξ ∈ t, U ξ, (biInter_finset_mem t).2 fun ξ _ ↦ hU ξ, fun ψ hψ N ↦ ?_⟩
   have hdecay' : ∀ ξ ∈ t, ∃ C, ∀ η ∈ Γ ξ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C :=
     fun ξ hξ ↦ hdecay ξ ψ (hψ.trans (biInter_subset_of_mem hξ)) N
@@ -97,12 +99,7 @@ theorem exists_nhds_forall_decay_of_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω,
   refine ⟨‖T.localFourier ψ 0‖ + ∑ ξ ∈ t, |C ξ|, fun η ↦ ?_⟩
   rcases eq_or_ne η 0 with rfl | hη
   · simpa using hsum
-  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
-  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
-  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
-    simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
-  have hηΓ : η ∈ Γ ξ := by
-    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ
+  obtain ⟨ξ, hξt, hηΓ⟩ := mem_iUnion₂.1 (ht hη)
   calc (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C ξ := hC ξ hξt η hηΓ
     _ ≤ |C ξ| := le_abs_self _
     _ ≤ ∑ ξ ∈ t, |C ξ| := Finset.single_le_sum (f := fun ξ ↦ |C ξ|) (fun _ _ ↦ abs_nonneg _) hξt
@@ -126,6 +123,9 @@ private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(
   have hKΩ : (K : Set E) ⊆ Ω := χ.tsupport_subset
   let χK : 𝓓_{K}(E, ℂ) := ContDiffMapSupportedIn.of_support_subset χ.contDiff (subset_tsupport _)
   have hχK (y : E) : χK y = χ y := by simp [χK, ContDiffMapSupportedIn.coe_of_support_subset]
+  have hχK' : ofSupportedIn hKΩ χK = χ := by
+    ext y
+    simp [hχK]
   have hφK : support (fun y ↦ (φ y : ℂ)) ⊆ K := fun y hy ↦ by
     have hy' : y ∈ support φ := by simpa using hy
     exact subset_tsupport _ (by simp [hφ hy'])
@@ -134,27 +134,15 @@ private theorem hasSum_fourier_mul_localFourier (T : 𝓓'(Ω, ℂ)) (χ : 𝓓(
   have hφK' : (φK : E → ℂ) = fun y ↦ (φ y : ℂ) := by
     ext y
     simp [φK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hexp := ContDiffMapSupportedIn.hasSum_fourier_smul_modulate L φK χK
-    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)) fun y hy ↦ by
-      rw [hχK]
-      exact hφ (by simpa [hφK'] using hy)
-  -- Pair the expansion with `T`.
-  let Λ : 𝓓_{K}(E, ℂ) →L[ℂ] ℂ := T.complexPairing ∘L ofSupportedInCLM ℂ hKΩ
-  have hΛφ : Λ φK = T φ := by
-    have h : ofSupportedIn hKΩ φK = postcompCLM (𝕜 := ℝ) ofRealCLM φ := by
-      ext y
-      simp [hφK']
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM, h,
+  -- `T φ` is the localized Fourier transform of `T` with cutoff `φ` at `0`.
+  have hTφ : T.localFourier (ofSupportedIn hKΩ φK) 0 = T φ := by
+    rw [localFourier_eq T _ (ψ := postcompCLM (𝕜 := ℝ) ofRealCLM φ) fun y ↦ by simp [hφK'],
       complexPairing_postcompCLM_ofRealCLM]
-  have hΛχ (m : ZLattice.dual L) (b : ℂ) :
-      Λ (b • χK.modulate m) = b * T.localFourier χ (-m) := by
-    rw [map_smul, smul_eq_mul]
-    congr 1
-    simp only [Λ, ContinuousLinearMap.comp_apply, coe_ofSupportedInCLM]
-    rw [localFourier_eq_complexPairing_modulate T hKΩ (f := χK) hχK, neg_neg]
-  have h := hexp.map Λ Λ.continuous
-  simp only [comp_def, hΛχ, hΛφ, hφK'] at h
-  exact h
+  have h := hasSum_localFourier_ofSupportedIn T hKΩ L
+    (fun y hy ℓ h ↦ Subtype.ext (hL y hy ℓ ℓ.2 h)) (φ := φK) (χ := χK) (fun y hy ↦ by
+      rw [hχK]
+      exact hφ (by simpa [hφK'] using hy)) 0
+  simpa only [zero_sub, hχK', hTφ, hφK', smul_eq_mul] using h
 
 /-- **Fourier inversion for a rapidly decreasing localized Fourier transform.** If the localized
 Fourier transform of `T` with cutoff `χ` decays rapidly on all of `E`, there is a smooth function
@@ -252,6 +240,12 @@ theorem fst_image_waveFrontSet (T : 𝓓'(Ω, ℂ)) :
     obtain ⟨ξ, hξ, hT⟩ := not_forall₂.1 fun hne ↦
       (notMem_singularSupport_iff_forall_isMicrolocallySmoothAt hx).2 hne h
     exact ⟨(x, ξ), mem_waveFrontSet_iff.2 ⟨hx, hξ, hT⟩, rfl⟩
+
+/-- A complex distribution has empty singular support exactly when it has empty wave front
+set. -/
+theorem singularSupport_eq_empty_iff_waveFrontSet_eq_empty {T : 𝓓'(Ω, ℂ)} :
+    T.singularSupport = ∅ ↔ T.waveFrontSet = ∅ := by
+  rw [← fst_image_waveFrontSet, image_eq_empty]
 
 /-- The singular support of the complex point mass at `x₀ ∈ Ω` is `{x₀}`, for `E` nontrivial. -/
 theorem singularSupport_delta [Nontrivial E] {x₀ : E} (hx₀ : x₀ ∈ Ω) :

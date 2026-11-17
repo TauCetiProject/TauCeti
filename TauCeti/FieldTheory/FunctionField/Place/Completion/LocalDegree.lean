@@ -78,7 +78,7 @@ variable {ι : Type*}
 
 /-- A completed function regular at `P'` and vanishing there to order `e(P' ∣ P)` is a multiple of
 a uniformizer of `P`: it lies in `𝔪̂_P • 𝒪̂_{P'}`. -/
-private theorem mem_maximalIdeal_smul_top_of_mem_filtration {z : P'.completionPlace.integers}
+theorem mem_maximalIdeal_smul_top_of_mem_filtration {z : P'.completionPlace.integers}
     (hz : (z : P'.Completion) ∈ P'.completionPlace.filtration (ramificationIdx F P')) :
     letI := P.completionIntegersExtensionAlgebra P' hP
     z ∈ (maximalIdeal P.completionPlace.integers • ⊤ :
@@ -124,10 +124,6 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   have := Fintype.ofFinite ι
   subst hP
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
-  have : IsLocalHom (algebraMap (P'.restrict k F).completionPlace.integers
-      P'.completionPlace.integers) := by
-    rw [algebraMap_completionIntegersExtensionAlgebra]
-    infer_instance
   have : IsHausdorff (maximalIdeal (P'.restrict k F).completionPlace.integers)
       P'.completionPlace.integers :=
     .of_map (map_maximalIdeal_le (algebraMap _ P'.completionPlace.integers))

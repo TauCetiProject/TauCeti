@@ -35,6 +35,8 @@ feeds the Grothendieck-group computation for finite-dimensional vector spaces.
   the analogue of Mathlib's `ModuleCat.biprodIsoProd`, with its projection lemmas
   `FGModuleCat.biprodIsoProd_inv_comp_fst` and `FGModuleCat.biprodIsoProd_inv_comp_snd`.
 * `FGModuleCat.finrank_biprod`: rank is additive on biproducts of finite free modules.
+* The finitely generated modules are closed under finite products and direct summands, and
+  `FGModuleCat R` has finite biproducts.
 * `TauCeti.FGModuleCat.homLinearEquivOfIsScalarTower`: for an algebra `R` over a field `k`,
   morphisms into `FGModuleCat.of R M` are the `R`-linear maps into `M`, `k`-linearly for the
   original `k`-action on `M` rather than the category's restricted scalar action.
@@ -214,6 +216,22 @@ instance : (ModuleCat.isFG.{v} R).IsClosedUnderBinaryProducts :=
     have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
     exact (ModuleCat.isFG_iff _).mpr
       (Module.Finite.equiv (ModuleCat.biprodIsoProd M N).toLinearEquiv.symm)
+
+instance : (ModuleCat.isFG.{v} R).IsClosedUnderFiniteProducts :=
+  ObjectProperty.IsClosedUnderFiniteProducts.mk'
+
+/-- A direct summand of a finitely generated module is finitely generated, as a quotient of it. -/
+instance : (ModuleCat.isFG.{v} R).IsStableUnderRetracts where
+  of_retract {M N} h hN := by
+    have : Module.Finite R N := (ModuleCat.isFG_iff N).mp hN
+    refine (ModuleCat.isFG_iff M).mpr (Module.Finite.of_surjective h.r.hom fun x ↦ ⟨h.i.hom x, ?_⟩)
+    simp [← ModuleCat.comp_apply]
+
+instance : HasFiniteBiproducts (FGModuleCat.{v} R) :=
+  .of_hasFiniteProducts
+
+instance : HasBinaryBiproducts (FGModuleCat.{v} R) :=
+  hasBinaryBiproducts_of_finite_biproducts _
 
 end TauCeti
 

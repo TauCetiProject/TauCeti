@@ -12,10 +12,12 @@ import Mathlib.Data.Finset.Sort
 /-!
 # Locally ordering the distinct values of a finite family
 
-A finite family of continuous functions into a linearly ordered space can be ordered near
-a parameter by selecting one fixed label for each distinct value at that parameter, provided
-labels coinciding there continue to coincide nearby. The selected labels enumerate all distinct
-values in strictly increasing order on one common neighborhood. Empty families are included.
+A finite family of functions into a linearly ordered space, each converging along a filter, can
+be ordered eventually along that filter by selecting one fixed label for each distinct limit,
+provided labels with equal limits eventually coincide. The selected labels then eventually
+enumerate all distinct values in strictly increasing order. For a family continuous at a
+parameter and the neighborhood filter there, this happens on one common neighborhood. Empty
+families are included.
 
 This keeps the original functions, rather than sorting their values independently at each
 parameter, so any additional regularity of the functions survives the selection. In particular,
@@ -33,53 +35,41 @@ open Filter Set Topology
 
 namespace TauCeti
 
-/-- A finite continuous family with persistent central collisions admits a fixed selection
-of labels whose values enumerate its range in strictly increasing order near the central
-parameter. Only pairs equal at the central parameter need an equality hypothesis. -/
-theorem exists_eventually_strictMono_range_eq {B Y ι : Type*} [TopologicalSpace B]
-    [LinearOrder Y] [TopologicalSpace Y] [OrderClosedTopology Y] [Finite ι]
-    {f : ι → B → Y} {x₀ : B} (hf : ∀ i, ContinuousAt (f i) x₀)
-    (heq : ∀ i j, f i x₀ = f j x₀ → f i =ᶠ[𝓝 x₀] f j) :
-    ∃ k : ℕ, ∃ e : Fin k ↪ ι, ∀ᶠ x in 𝓝 x₀,
+/-- A finite family converging along a filter `l`, whose members with equal limits eventually
+coincide along `l`, admits a fixed selection of labels whose values eventually enumerate its
+range in strictly increasing order. Only pairs with equal limits need an equality hypothesis.
+For `l = 𝓝 x₀` and a family continuous at `x₀`, the limits are the central values. -/
+theorem exists_eventually_strictMono_range_eq {B Y ι : Type*} [LinearOrder Y]
+    [TopologicalSpace Y] [OrderClosedTopology Y] [Finite ι] {f : ι → B → Y} {l : Filter B}
+    {a : ι → Y} (hf : ∀ i, Tendsto (f i) l (𝓝 (a i)))
+    (heq : ∀ i j, a i = a j → f i =ᶠ[l] f j) :
+    ∃ k : ℕ, ∃ e : Fin k ↪ ι, ∀ᶠ x in l,
       StrictMono (fun i ↦ f (e i) x) ∧
         range (fun i ↦ f (e i) x) = range (fun i ↦ f i x) := by
-  classical
   let := Fintype.ofFinite ι
-  let S := Finset.univ.image (fun i ↦ f i x₀)
+  -- Label the distinct limits in increasing order, each by one index attaining it.
+  let S := Finset.univ.image a
   let v := S.orderEmbOfFin rfl
-  have hlabel (i : Fin S.card) : ∃ j, f j x₀ = v i := by
+  have hlabel (i : Fin S.card) : ∃ j, a j = v i := by
     have hi := S.orderEmbOfFin_mem rfl i
     simpa only [S, Finset.mem_image, Finset.mem_univ, true_and] using hi
   choose e he using hlabel
-  have hinj : Function.Injective e := by
-    intro i j hij
-    apply v.injective
-    rw [← he i, ← he j, hij]
-  have hmono : StrictMono (fun i ↦ f (e i) x₀) := by
-    simpa only [he] using v.strictMono
-  have hcover (j : ι) : ∃ i, f (e i) x₀ = f j x₀ := by
-    have hj : f j x₀ ∈ (S : Set Y) := Finset.mem_image.2 ⟨j, Finset.mem_univ _, rfl⟩
-    have hrange : range v = (S : Set Y) := S.range_orderEmbOfFin rfl
-    obtain ⟨i, hi⟩ := hrange.symm ▸ hj
+  have hmono : StrictMono (a ∘ e) := by
+    simpa only [Function.comp_def, he] using v.strictMono
+  have hcover (j : ι) : ∃ i, a (e i) = a j := by
+    obtain ⟨i, hi⟩ : a j ∈ range v := by
+      rw [Finset.range_orderEmbOfFin]
+      exact Finset.mem_coe.2 (Finset.mem_image_of_mem a (Finset.mem_univ j))
     exact ⟨i, (he i).trans hi⟩
-  have hlt : ∀ᶠ x in 𝓝 x₀, ∀ i j, i < j → f (e i) x < f (e j) x := by
-    refine eventually_all.2 fun i ↦ eventually_all.2 fun j ↦ ?_
-    by_cases hij : i < j
-    · exact ((hf (e i)).eventually_lt (hf (e j)) (hmono hij)).mono fun _ h ↦ fun _ ↦ h
-    · exact Eventually.of_forall fun _ h ↦ (hij h).elim
-  have hmem : ∀ᶠ x in 𝓝 x₀, ∀ j, ∃ i, f (e i) x = f j x := by
-    refine eventually_all.2 fun j ↦ ?_
-    obtain ⟨i, hi⟩ := hcover j
-    exact (heq (e i) j hi).mono fun _ h ↦ ⟨i, h⟩
-  refine ⟨S.card, ⟨e, hinj⟩, ?_⟩
+  have hlt : ∀ᶠ x in l, ∀ i j, i < j → f (e i) x < f (e j) x :=
+    eventually_all.2 fun i ↦ eventually_all.2 fun j ↦ eventually_imp_distrib_left.2 fun hij ↦
+      (hf (e i)).eventually_lt (hf (e j)) (hmono hij)
+  have hmem : ∀ᶠ x in l, ∀ j, ∃ i, f (e i) x = f j x :=
+    eventually_all.2 fun j ↦ (hcover j).elim fun i hi ↦ (heq (e i) j hi).mono fun _ h ↦ ⟨i, h⟩
+  refine ⟨S.card, ⟨e, hmono.injective.of_comp⟩, ?_⟩
   filter_upwards [hlt, hmem] with x hx hm
-  refine ⟨fun _ _ hij ↦ hx _ _ hij, ?_⟩
-  ext y
-  constructor
-  · rintro ⟨i, rfl⟩
-    exact mem_range_self (e i)
-  · rintro ⟨j, rfl⟩
-    exact hm j
+  exact ⟨fun _ _ hij ↦ hx _ _ hij,
+    Subset.antisymm (range_subset_iff.2 fun i ↦ mem_range_self (e i)) (range_subset_iff.2 hm)⟩
 
 /-- On a preconnected space, a finite set `G` of continuous functions into a linear
 order, no two of which take the same value at any point, can be listed as `θ₀, θ₁, …, θₖ₋₁`
@@ -105,19 +95,16 @@ theorem exists_strictMono_range_eq {B Y : Type*} [TopologicalSpace B] [Preconnec
       (isOpen_lt (hc g hg) (hc f hf)) (disjoint_left.2 fun _ h₁ h₂ ↦ lt_asymm h₁ h₂)
       fun x _ ↦ (hne hf hg hfg x).lt_or_gt).resolve_right fun h' ↦ ?_) (mem_univ x)
     exact lt_asymm h (h' (mem_univ x₀))
-  -- List the members in increasing order of their values at `x₀`.
-  set V := hG.toFinset.image fun g ↦ g x₀
-  set v := V.orderEmbOfFin rfl
-  have hV (i : Fin V.card) : ∃ g ∈ G, g x₀ = v i := by
-    have h := V.orderEmbOfFin_mem rfl i
-    simpa only [V, Finset.mem_image, Set.Finite.mem_toFinset] using h
-  choose θ hθG hθv using hV
-  refine ⟨V.card, θ, Subset.antisymm (range_subset_iff.2 hθG) fun g hg ↦ ?_,
-    fun x i j hij ↦ hlt (hθG i) (hθG j) (by simpa only [hθv] using v.strictMono hij) x⟩
-  obtain ⟨i, hi⟩ : g x₀ ∈ range v := by
-    rw [Finset.range_orderEmbOfFin]
-    exact Finset.mem_image.2 ⟨g, hG.mem_toFinset.2 hg, rfl⟩
+  -- List the members in increasing order of their values at `x₀`: this is the local ordering
+  -- above along the principal filter `pure x₀`, where every pair with equal values coincides.
+  have := hG.to_subtype
+  obtain ⟨k, e, he⟩ := exists_eventually_strictMono_range_eq (f := fun g : G ↦ (g : B → Y))
+    (fun g ↦ tendsto_pure_nhds _ x₀) fun _ _ h ↦ eventually_pure.2 h
+  obtain ⟨hmono, hrange⟩ := eventually_pure.1 he
+  refine ⟨k, fun i ↦ e i, Subset.antisymm (range_subset_iff.2 fun i ↦ (e i).2) fun g hg ↦ ?_,
+    fun x i j hij ↦ hlt (e i).2 (e j).2 (hmono hij) x⟩
+  obtain ⟨i, hi⟩ : g x₀ ∈ range fun i ↦ (e i : B → Y) x₀ := hrange ▸ mem_range_self (⟨g, hg⟩ : G)
   by_contra hgi
-  exact hne (hθG i) hg (fun h ↦ hgi ⟨i, h⟩) x₀ ((hθv i).trans hi)
+  exact hne (e i).2 hg (fun h ↦ hgi ⟨i, h⟩) x₀ hi
 
 end TauCeti

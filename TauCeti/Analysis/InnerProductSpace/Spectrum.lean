@@ -13,6 +13,7 @@ public import TauCeti.Analysis.InnerProductSpace.BasisSpan
 public import TauCeti.Data.Fin.Tuple.Sort
 public import TauCeti.LinearAlgebra.Eigenspace.Anticommute
 import Mathlib.LinearAlgebra.Eigenspace.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.CourantFischer
 
 /-!
 # Spectral decompositions of self-adjoint operators
@@ -34,7 +35,9 @@ into a Hilbert basis of `E`.
 In finite dimensions, this file also packages Mathlib's ordered eigenbasis into the spans of
 any chosen set of its eigenvectors. In particular, the negative and positive spectral subspaces,
 spanned by the eigenvectors with negative and with positive eigenvalue, are disjoint, invariant
-under the operator, and together span the whole space when the operator is injective. Writing
+under the operator, and together span the whole space when the operator is injective; the
+quadratic form `re ⟪T v, v⟫` is coercive on the positive one and anticoercive on the negative one,
+with constant any lower bound for the absolute values of the nonzero eigenvalues. Writing
 the determinant as the product of the eigenvalues shows that a positive operator has nonnegative
 determinant, and its smallest eigenvalue, the infimum of the Rayleigh quotient, bounds an injective
 positive operator below. If an invertible operator anticommutes with the symmetric operator, as a
@@ -66,6 +69,10 @@ nonzero eigenvalue, which is the form the eigenvalue problem of an elliptic oper
 * `LinearMap.IsSymmetric.negativeSpectralSubspace` and
   `LinearMap.IsSymmetric.positiveSpectralSubspace`: the negative and positive halves of the
   finite-dimensional spectral splitting.
+* `LinearMap.IsSymmetric.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace` and
+  `LinearMap.IsSymmetric.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace`: the
+  quadratic form is coercive on the positive spectral subspace and anticoercive on the negative
+  one, with the constant of `LinearMap.IsSymmetric.exists_pos_forall_le_abs_eigenvalues`.
 * `LinearMap.IsSymmetric.eigenvalues_rev_of_anticommute`: if an invertible operator anticommutes
   with `T`, the `i`-th largest eigenvalue of `T` is minus its `i`-th smallest.
 * `finrank_positiveSpectralSubspace_eq_finrank_negativeSpectralSubspace_of_anticommute`, in the
@@ -429,6 +436,50 @@ theorem isCompl_negativeSpectralSubspace_positiveSpectralSubspace_of_ker_eq_bot
     simp only [Set.mem_union, Set.mem_ofPred, Set.mem_univ, iff_true]
     exact lt_or_gt_of_ne (hT.eigenvalues_ne_zero_of_ker_eq_bot hn hker i)
   rw [hindices, hT.eigenvectorSpan_univ hn]
+
+/-! ### The quadratic form on the spectral subspaces -/
+
+/-- **The quadratic form is coercive on the positive spectral subspace.** If `c` is at most every
+positive eigenvalue of a finite-dimensional symmetric operator `T`, then
+`c ‖v‖ ^ 2 ≤ re ⟪T v, v⟫` on the positive spectral subspace of `T`. -/
+theorem mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) {c : ℝ}
+    (hc : ∀ i, 0 < hT.eigenvalues hn i → c ≤ hT.eigenvalues hn i) {v : E}
+    (hv : v ∈ hT.positiveSpectralSubspace hn) :
+    c * ‖v‖ ^ 2 ≤ RCLike.re ⟪T v, v⟫_𝕜 := by
+  rw [positiveSpectralSubspace, eigenvectorSpan_eq_spanIndices] at hv
+  exact hT.le_re_inner_apply_self_of_mem_spanIndices hn hc hv
+
+/-- **The quadratic form is anticoercive on the negative spectral subspace.** If `c` is at most
+the absolute value of every negative eigenvalue of a finite-dimensional symmetric operator `T`,
+then `re ⟪T v, v⟫ ≤ -(c ‖v‖ ^ 2)` on the negative spectral subspace of `T`. -/
+theorem re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) {c : ℝ}
+    (hc : ∀ i, hT.eigenvalues hn i < 0 → c ≤ -hT.eigenvalues hn i) {v : E}
+    (hv : v ∈ hT.negativeSpectralSubspace hn) :
+    RCLike.re ⟪T v, v⟫_𝕜 ≤ -(c * ‖v‖ ^ 2) := by
+  rw [negativeSpectralSubspace, eigenvectorSpan_eq_spanIndices] at hv
+  rw [← neg_mul]
+  exact hT.re_inner_apply_self_le_of_mem_spanIndices hn
+    (fun i hi ↦ le_neg_of_le_neg (hc i hi)) hv
+
+/-- A finite-dimensional symmetric operator has a positive lower bound `c` for the absolute
+values of its nonzero eigenvalues. Such a `c` is a coercivity constant for the quadratic form on
+both strict spectral subspaces
+(`LinearMap.IsSymmetric.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace`,
+`LinearMap.IsSymmetric.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace`). -/
+theorem exists_pos_forall_le_abs_eigenvalues (hT : T.IsSymmetric)
+    (hn : Module.finrank 𝕜 E = n) :
+    ∃ c > 0, ∀ i, hT.eigenvalues hn i ≠ 0 → c ≤ |hT.eigenvalues hn i| := by
+  classical
+  let s := Finset.univ.filter fun i : Fin n ↦ hT.eigenvalues hn i ≠ 0
+  rcases s.eq_empty_or_nonempty with hs | hs
+  · refine ⟨1, one_pos, fun i hi ↦ ?_⟩
+    have : i ∈ s := Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩
+    simp [hs] at this
+  obtain ⟨j, hj, hjmin⟩ := s.exists_min_image (fun i ↦ |hT.eigenvalues hn i|) hs
+  exact ⟨|hT.eigenvalues hn j|, abs_pos.2 (Finset.mem_filter.1 hj).2, fun i hi ↦
+    hjmin i (Finset.mem_filter.2 ⟨Finset.mem_univ i, hi⟩)⟩
 
 /-! ### Operators anticommuting with an invertible operator -/
 

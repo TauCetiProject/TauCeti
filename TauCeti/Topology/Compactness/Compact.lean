@@ -15,8 +15,9 @@ import TauCeti.Topology.Separation.InvFunOn
 /-!
 # Compactness utilities
 
-General lemmas about compact and σ-compact subsets of topological spaces, and limits along
-ultrafilters of families eventually in a compact set.
+General lemmas about compact and σ-compact subsets of topological spaces, limits along
+ultrafilters of families eventually in a compact set, and families whose values tend to the
+cocompact filter, whose images therefore lie in no fixed compact set.
 -/
 
 public section
@@ -83,6 +84,16 @@ theorem _root_.IsCompact.exists_tendsto_of_eventually_mem {ι : Type*} {s : Set 
   obtain ⟨x, hx, h⟩ := hs.ultrafilter_le_nhds' (U.map u) (Ultrafilter.mem_map.2 hu)
   exact ⟨x, hx, by rwa [Ultrafilter.coe_map] at h⟩
 
+/-- If the values `u i z` at one point `z ∈ S` tend to the cocompact filter, then no compact set
+contains the images `u i '' S` for every `i`. -/
+theorem not_exists_isCompact_forall_mapsTo_of_tendsto_cocompact {ι α : Type*} {l : Filter ι}
+    [l.NeBot] {u : ι → α → X} {S : Set α} {z : α} (hz : z ∈ S)
+    (hu : Tendsto (fun i ↦ u i z) l (cocompact X)) :
+    ¬ ∃ K : Set X, IsCompact K ∧ ∀ i, MapsTo (u i) S K := by
+  rintro ⟨K, hK, huK⟩
+  obtain ⟨i, hi⟩ := (hu.eventually hK.compl_mem_cocompact).exists
+  exact hi (huK i hz)
+
 /-- A preconnected noncompact space has no compact connected component: its only component is the
 whole space. -/
 theorem not_isCompact_connectedComponent [PreconnectedSpace X] [NoncompactSpace X]
@@ -124,6 +135,22 @@ theorem isCompact_inter_preimage_comp_prodMk_left {Y Z : Type*} [TopologicalSpac
   rw [h]
   exact ((hHp K hK hKU).inter_right (isClosed_singleton.preimage continuous_snd)).image
     continuous_fst
+
+/-- **Coincidences of two maps form a compact set.** For maps `f`, `g` into a Hausdorff space,
+continuous on compact sets `s` and `t`, the pairs `(x, y) ∈ s ×ˢ t` with `f x = g y` form a
+compact set. -/
+theorem _root_.IsCompact.prod_inter_setOf_eq {Y Z : Type*} [TopologicalSpace Y]
+    [TopologicalSpace Z] [T2Space Z] {s : Set X} {t : Set Y} (hs : IsCompact s)
+    (ht : IsCompact t) {f : X → Z} {g : Y → Z} (hf : ContinuousOn f s) (hg : ContinuousOn g t) :
+    IsCompact (s ×ˢ t ∩ {z | f z.1 = g z.2}) := by
+  have : CompactSpace (s ×ˢ t) := isCompact_iff_compactSpace.1 (hs.prod ht)
+  have hf' : Continuous fun z : s ×ˢ t ↦ f z.1.1 :=
+    (hf.comp continuousOn_fst fun _ hz ↦ (mem_prod.1 hz).1).domRestrict
+  have hg' : Continuous fun z : s ×ˢ t ↦ g z.1.2 :=
+    (hg.comp continuousOn_snd fun _ hz ↦ (mem_prod.1 hz).2).domRestrict
+  convert (isClosed_eq hf' hg').isCompact.image continuous_subtype_val using 1
+  ext z
+  exact ⟨fun hz ↦ ⟨⟨z, hz.1⟩, hz.2, rfl⟩, by rintro ⟨z, hz, rfl⟩; exact ⟨z.2, hz⟩⟩
 
 /-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
 be closed, hence compact, and discrete. -/

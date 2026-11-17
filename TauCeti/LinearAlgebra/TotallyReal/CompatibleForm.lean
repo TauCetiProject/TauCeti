@@ -62,20 +62,19 @@ theorem compatibleForm_apply (hL : IsMaximalTotallyReal J L) (g : BilinForm R E)
         g (L.projection (L.map J) hL.isCompl (J v)) (L.projection (L.map J) hL.isCompl (J w)) := by
   simp [compatibleForm]
 
-/-- The compatible form of a symmetric form is symmetric. -/
+/-- The compatible form of a form symmetric on `L` is symmetric. -/
 theorem isSymm_compatibleForm (hL : IsMaximalTotallyReal J L) {g : BilinForm R E}
-    (hg : g.IsSymm) : (hL.compatibleForm g).IsSymm :=
+    (hg : ∀ a ∈ L, ∀ b ∈ L, g a b = g b a) : (hL.compatibleForm g).IsSymm :=
   LinearMap.BilinForm.isSymm_def.2 fun v w ↦ by
-    simp only [compatibleForm_apply,
-      LinearMap.BilinForm.isSymm_def.1 hg (L.projection (L.map J) hL.isCompl v),
-      LinearMap.BilinForm.isSymm_def.1 hg (L.projection (L.map J) hL.isCompl (J v))]
+    simp only [compatibleForm_apply]
+    rw [hg _ (L.projection_apply_mem hL.isCompl v) _ (L.projection_apply_mem hL.isCompl w),
+      hg _ (L.projection_apply_mem hL.isCompl (J v)) _ (L.projection_apply_mem hL.isCompl (J w))]
 
 /-- On `L`, the compatible form pairs a vector of `L` with `w` through the projection of `w`. -/
 theorem compatibleForm_apply_of_mem (hL : IsMaximalTotallyReal J L) (g : BilinForm R E)
     {a : E} (ha : a ∈ L) (w : E) :
     hL.compatibleForm g a w = g a (L.projection (L.map J) hL.isCompl w) := by
-  simp [Submodule.projection_apply_of_mem_left hL.isCompl ha,
-    Submodule.projection_apply_of_mem_right hL.isCompl ⟨a, ha, rfl⟩]
+  simp [Submodule.projection_apply_of_mem_left hL.isCompl ha, hL.projection_map_of_mem ha]
 
 /-- The compatible form agrees with `g` on `L`. -/
 theorem compatibleForm_apply_of_mem_of_mem (hL : IsMaximalTotallyReal J L) (g : BilinForm R E)
@@ -85,8 +84,7 @@ theorem compatibleForm_apply_of_mem_of_mem (hL : IsMaximalTotallyReal J L) (g : 
 /-- The compatible form makes `L` orthogonal to `J L`. -/
 theorem compatibleForm_apply_map (hL : IsMaximalTotallyReal J L) (g : BilinForm R E)
     {a b : E} (ha : a ∈ L) (hb : b ∈ L) : hL.compatibleForm g a (J b) = 0 := by
-  rw [hL.compatibleForm_apply_of_mem g ha,
-    Submodule.projection_apply_of_mem_right hL.isCompl ⟨b, hb, rfl⟩, map_zero]
+  rw [hL.compatibleForm_apply_of_mem g ha, hL.projection_map_of_mem hb, map_zero]
 
 variable (hJ : J ∘ₗ J = -LinearMap.id)
 
