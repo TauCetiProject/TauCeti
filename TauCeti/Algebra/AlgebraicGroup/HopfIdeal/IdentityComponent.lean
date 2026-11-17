@@ -122,7 +122,7 @@ theorem identityComponentHopfIdeal_le_identityComponent (I : HopfIdeal k H) :
     HopfAlgebra.identityComponentHopfIdeal (k := k) (H := H) ≤ I.identityComponent := by
   let _ : ConnectedSpace
       (PrimeSpectrum (FiniteTypeCommHopfAlgCat.quotient H I.identityComponent)) :=
-    geometricallyConnectedCommHopfAlgProperty.connectedSpace k _
+    geometricallyConnectedCommHopfAlgProperty.connectedSpace
       I.geometricallyConnected_identityComponent
   intro x hx
   apply (CommHopfAlgCat.mkQuotient_eq_zero_iff H.obj I.identityComponent x).mp
