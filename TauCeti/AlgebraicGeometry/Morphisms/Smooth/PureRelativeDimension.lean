@@ -24,6 +24,8 @@ Cartier divisor.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.exists_isStandardSmoothOfRelativeDimension_of_smooth`: a smooth
+  morphism has standard smooth charts of some relative dimension around every point.
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension`:
   smooth of relative dimension `n` means smooth and of pure relative dimension `n`.
 * `AlgebraicGeometry.Scheme.Hom.smoothOfRelativeDimension_smoothLocus_ι_comp`: a morphism of
@@ -38,6 +40,17 @@ namespace TauCeti.AlgebraicGeometry
 
 universe u
 
+/-- Around every point, a smooth morphism has an affine chart on which it is standard smooth of
+some relative dimension `m`. -/
+theorem exists_isStandardSmoothOfRelativeDimension_of_smooth {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [Smooth f] (x : X) :
+    ∃ (m : ℕ) (U : Y.Opens) (_ : IsAffineOpen U) (V : X.Opens) (_ : IsAffineOpen V) (_ : x ∈ V)
+      (e : V ≤ f ⁻¹ᵁ U), (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m := by
+  obtain ⟨U, hU, V, hV, hx, e, h⟩ := Smooth.exists_isStandardSmooth f x
+  let := (f.appLE U V e).hom.toAlgebra
+  obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
+  exact ⟨P.dimension, U, hU, V, hV, hx, e, _, _, _, ‹_›, P, rfl⟩
+
 /-- A morphism is smooth of relative dimension `n` if and only if it is smooth and has pure
 relative dimension `n`. -/
 theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
@@ -45,13 +58,9 @@ theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
     SmoothOfRelativeDimension n f ↔ Smooth f ∧ PureRelativeDimension n f := by
   refine ⟨fun _ ↦ ⟨SmoothOfRelativeDimension.smooth n f, inferInstance⟩, fun ⟨_, _⟩ ↦ ⟨?_⟩⟩
   intro x
-  obtain ⟨U, hU, V, hV, hx, e, h⟩ := Smooth.exists_isStandardSmooth f x
-  refine ⟨U, hU, V, hV, hx, e, ?_⟩
   -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, hm⟩ : ∃ m, (f.appLE U V e).hom.IsStandardSmoothOfRelativeDimension m := by
-    let := (f.appLE U V e).hom.toAlgebra
-    obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
-    exact ⟨P.dimension, _, _, _, ‹_›, P, rfl⟩
+  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_smooth f x
+  refine ⟨U, hU, V, hV, hx, e, ?_⟩
   -- The chart, viewed as a morphism `Spec Γ(X, V) ⟶ Y`, has pure relative dimensions `m` and `n`.
   have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
     rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
