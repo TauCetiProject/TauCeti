@@ -71,18 +71,11 @@ open scoped IntermediateField ENNReal
 
 namespace TauCeti
 
-open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff)
+open TauCeti.Polynomial (monicOfCoeff monic_monicOfCoeff natDegree_monicOfCoeff
+  natDegree_eq_of_map_eq_monicOfCoeff)
 
 variable {K : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K]
-
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] in
-/-- A polynomial over `𝒪[K]` with image `monicOfCoeff a` over `K`, for `a : Fin n → K`, has
-degree `n`. -/
-private theorem natDegree_eq_of_map_eq {n : ℕ} {a : Fin n → K} {f : 𝒪[K][X]}
-    (hf : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a) : f.natDegree = n := by
-  rw [← natDegree_map_eq_of_injective (FaithfulSMul.algebraMap_injective 𝒪[K] K), hf,
-    natDegree_monicOfCoeff]
 
 /-- A root, in the separable closure, of the monic polynomial with coefficient vector
 `a : Fin n → K` generates a member of `σ_K(n)` when that polynomial comes from an Eisenstein
@@ -91,7 +84,8 @@ private theorem adjoin_mem_totallyRamifiedOfDegree_of_mem_aroots {n : ℕ} {a : 
     {f : 𝒪[K][X]} (he : f.IsEisensteinAt 𝓂[K]) (hf : f.map (algebraMap 𝒪[K] K) = monicOfCoeff a)
     {x : SeparableClosure K} (hx : x ∈ (monicOfCoeff a).aroots (SeparableClosure K)) :
     K⟮x⟯ ∈ totallyRamifiedOfDegree K n :=
-  adjoin_mem_totallyRamifiedOfDegree_of_eisenstein he (natDegree_eq_of_map_eq hf)
+  adjoin_mem_totallyRamifiedOfDegree_of_eisenstein he
+    (natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf)
     (hf ▸ (mem_aroots.mp hx).2)
 
 /-- **The root counts over `σ_K(n)` sum to `n`.** Let `f` be an Eisenstein polynomial over `𝒪[K]`
@@ -183,7 +177,9 @@ theorem _root_.IntermediateField.rootCount_eq_sum_ite_of_eisenstein {n : ℕ}
     discriminantExponent_eq_inertiaDegree_mul_differentExponent, htr.inertiaDegree_eq_one,
     one_mul] at hr
   rw [L.rootCount_def, ← hf, aroots_eq_map_roots_integerRing L hmonic, Multiset.card_map]
-  exact card_roots_map_eq_sum_ite_of_eisenstein he ((natDegree_eq_of_map_eq hf).trans hL'.1.symm)
+  exact card_roots_map_eq_sum_ite_of_eisenstein he
+    ((natDegree_eq_of_map_eq_monicOfCoeff (FaithfulSMul.algebraMap_injective 𝒪[K] K) hf).trans
+      hL'.1.symm)
     hr C hcover hdisj
 
 /-- **The root counts are measurable on the Eisenstein region.** For `L ∈ σ_K(n)` and any measure
