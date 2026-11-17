@@ -35,13 +35,15 @@ is an equivalence relation (Stacks, Definition 39.3.1 (022P), for schemes).
   It relates `a` to `b` exactly when `p₁, p₂` relates `f a` to `f b`
   (`TauCeti.CategoryTheory.restrictRel.ofPairHom_iff`).
 * `CategoryTheory.IsEquivalenceRelation.restrictRel`: the restriction of an internal equivalence
-  relation is an internal equivalence relation, and
-  `TauCeti.CategoryTheory.restrictRel.isKernelPair`: restricting the kernel pair of `φ` along `f`
-  gives the kernel pair of `f ≫ φ`.
+  relation is an internal equivalence relation (Stacks, Lemma 39.3.2 (02V8), for schemes), and
+  `CategoryTheory.IsKernelPair.restrictRel`: restricting the kernel pair of `φ` along `f` gives
+  the kernel pair of `f ≫ φ`.
 
 ## References
 
 * [Stacks Project, Definition 39.3.1](https://stacks.math.columbia.edu/tag/022P)
+* [Stacks Project, Lemma 39.3.2](https://stacks.math.columbia.edu/tag/02V8)
+* [Stacks Project, Definition 39.3.3](https://stacks.math.columbia.edu/tag/02V9)
 -/
 
 public section
@@ -305,7 +307,8 @@ variable {C : Type*} [Category* C] {R X Y : C}
 `(Y ×_{f, X, p₁} R) ×_{p₂, X, f} Y`. Its points are triples `(a, r, b)` of points `a, b` of `Y`
 and `r` of `R` with `f a = p₁ r` and `p₂ r = f b`; it relates `a` to `b` exactly when `R` relates
 `f a` to `f b` (`TauCeti.CategoryTheory.restrictRel.ofPairHom_iff`), and is an equivalence relation
-when `p₁, p₂` is one (`CategoryTheory.IsEquivalenceRelation.restrictRel`). -/
+when `p₁, p₂` is one (`CategoryTheory.IsEquivalenceRelation.restrictRel`). This is the restriction,
+or pullback, of a relation (Stacks, Definition 39.3.3 (02V9), for schemes). -/
 noncomputable abbrev restrictRel (f : Y ⟶ X) (p₁ p₂ : R ⟶ X) [HasPullback f p₁]
     [HasPullback (pullback.snd f p₁ ≫ p₂) f] : C :=
   pullback (pullback.snd f p₁ ≫ p₂) f
@@ -367,6 +370,7 @@ theorem lift_proj {T : C} (a b : T ⟶ Y) (r : T ⟶ R) (h₁ : r ≫ p₁ = a �
 
 /-- Morphisms into the restriction of `p₁, p₂` along `f` agree when their composites with `fst`,
 `snd` and `proj` agree. -/
+@[ext high]
 theorem hom_ext {T : C} {g g' : T ⟶ restrictRel f p₁ p₂} (h₁ : g ≫ fst f p₁ p₂ = g' ≫ fst f p₁ p₂)
     (h₂ : g ≫ snd f p₁ p₂ = g' ≫ snd f p₁ p₂) (h : g ≫ proj f p₁ p₂ = g' ≫ proj f p₁ p₂) :
     g = g' := by
@@ -388,15 +392,6 @@ instance jointlyMono₂ [JointlyMono₂ p₁ p₂] : JointlyMono₂ (fst f p₁ 
     hom_ext h₁ h₂ <| JointlyMono₂.right_cancellation (p₁ := p₁) (p₂ := p₂) _ _
       (by simp [reassoc_of% h₁]) (by simp [reassoc_of% h₂])
 
-/-- Restricting the kernel pair `p₁, p₂` of `φ` along `f` gives the kernel pair of `f ≫ φ`. -/
-theorem isKernelPair {Z : C} {φ : X ⟶ Z} (hk : IsKernelPair φ p₁ p₂) :
-    IsKernelPair (f ≫ φ) (fst f p₁ p₂) (snd f p₁ p₂) := by
-  refine IsPullback.of_isLimit' ⟨by simp [← proj_p₁_assoc, ← proj_p₂_assoc, hk.w]⟩
-    (PullbackCone.IsLimit.mk _ (fun c ↦ lift c.fst c.snd
-      (hk.lift (c.fst ≫ f) (c.snd ≫ f) (by simpa using c.condition)) (by simp) (by simp))
-      (fun c ↦ by simp) (fun c ↦ by simp) (fun c m h₁ h₂ ↦ hom_ext (by simpa using h₁)
-        (by simpa using h₂) (hk.hom_ext (by simp [← h₁]) (by simp [← h₂]))))
-
 end restrictRel
 
 end TauCeti.CategoryTheory
@@ -408,7 +403,8 @@ open Limits TauCeti.CategoryTheory
 variable {C : Type*} [Category* C] {R X Y : C}
 
 /-- The restriction of an internal equivalence relation `p₁, p₂ : R ⟶ X` along `f : Y ⟶ X`, the
-relation `R ×_{X × X} (Y × Y)` on `Y`, is an internal equivalence relation. -/
+relation `R ×_{X × X} (Y × Y)` on `Y`, is an internal equivalence relation (Stacks, Lemma 39.3.2
+(02V8), for schemes). -/
 instance IsEquivalenceRelation.restrictRel (f : Y ⟶ X) (p₁ p₂ : R ⟶ X)
     [IsEquivalenceRelation p₁ p₂] [HasPullback f p₁] [HasPullback (pullback.snd f p₁ ≫ p₂) f]
     [HasPullback (restrictRel.snd f p₁ p₂) (restrictRel.fst f p₁ p₂)] :
@@ -419,5 +415,16 @@ instance IsEquivalenceRelation.restrictRel (f : Y ⟶ X) (p₁ p₂ : R ⟶ X)
     fun h ↦ restrictRel.ofPairHom_iff.2 ((he T).symm (restrictRel.ofPairHom_iff.1 h)),
     fun h h' ↦ restrictRel.ofPairHom_iff.2
       ((he T).trans (restrictRel.ofPairHom_iff.1 h) (restrictRel.ofPairHom_iff.1 h'))⟩
+
+/-- Restricting the kernel pair `p₁, p₂` of `φ` along `f` gives the kernel pair of `f ≫ φ`. -/
+theorem IsKernelPair.restrictRel {Z : C} {φ : X ⟶ Z} {f : Y ⟶ X} {p₁ p₂ : R ⟶ X}
+    [HasPullback f p₁] [HasPullback (pullback.snd f p₁ ≫ p₂) f] (hk : IsKernelPair φ p₁ p₂) :
+    IsKernelPair (f ≫ φ) (restrictRel.fst f p₁ p₂) (restrictRel.snd f p₁ p₂) := by
+  refine IsPullback.of_isLimit'
+    ⟨by simp [← restrictRel.proj_p₁_assoc, ← restrictRel.proj_p₂_assoc, hk.w]⟩
+    (PullbackCone.IsLimit.mk _ (fun c ↦ restrictRel.lift c.fst c.snd
+      (hk.lift (c.fst ≫ f) (c.snd ≫ f) (by simpa using c.condition)) (by simp) (by simp))
+      (fun c ↦ by simp) (fun c ↦ by simp) (fun c m h₁ h₂ ↦ restrictRel.hom_ext (by simpa using h₁)
+        (by simpa using h₂) (hk.hom_ext (by simp [← h₁]) (by simp [← h₂]))))
 
 end CategoryTheory
