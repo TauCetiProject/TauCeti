@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TemperleyLieb.Positivity
-public import TauCeti.Algebra.TemperleyLieb.Sign.Basic
+
+import TauCeti.Algebra.TemperleyLieb.Sign.Basic
 
 /-!
 # Positivity of the Markov trace at negative and nonzero real loop parameters
@@ -34,15 +35,14 @@ at negative loop parameters:
   (`IsMarkovTrace.forall_inv_pow_mul_map_star_mul_self_nonneg_iff`,
   `markovTrace_inv_pow_nonneg_iff`).
 * At `δ = 0`, both `tr n (x⋆ * x)` and `(-1) ^ n * tr n (x⋆ * x)` are nonnegative for every `n`
-  and `x` (`IsMarkovTrace.map_star_mul_self_nonneg_zero`,
+  and `x` (proved in `TauCeti.Algebra.TemperleyLieb.Trace.Positivity`:
+  `IsMarkovTrace.map_star_mul_self_nonneg_zero` and
   `IsMarkovTrace.neg_one_pow_mul_map_star_mul_self_nonneg_zero`), while
   `0 ∉ jonesLoopParameters` (`zero_notMem_jonesLoopParameters`), showing that `0 < δ`, `δ < 0`,
   and `δ ≠ 0` cannot be dropped.
 
 ## Main results
 
-* `TauCeti.TemperleyLieb.IsMarkovTrace.neg_one_pow_mul_map_star_mul_self_nonneg_zero`: automatic
-  positivity of the signed form at `δ = 0` over any commutative star-ordered ring.
 * `TauCeti.TemperleyLieb.IsMarkovTrace.exists_neg_one_pow_mul_map_star_mul_self_neg`,
   `TauCeti.TemperleyLieb.IsMarkovTrace.lt_floor_of_forall_neg_one_pow_nonneg`: failure of signed
   positivity from level `⌊π / arccos (-δ / 2)⌋₊` onward when `δ < 0` and `-δ` is inadmissible.
@@ -66,21 +66,6 @@ namespace TauCeti.TemperleyLieb
 open Real
 
 namespace IsMarkovTrace
-
-section Zero
-
-variable {R : Type*} [CommRing R] [PartialOrder R] [StarRing R] [StarOrderedRing R]
-  [Fact (IsSelfAdjoint (0 : R))]
-  {tr : ∀ n : ℕ, TemperleyLieb R 0 n →ₗ[R] R}
-
-/-- At loop parameter `δ = 0` over a commutative star-ordered ring, the signed form
-`(-1) ^ n * tr n (x⋆ * x)` of a Markov trace is also nonnegative on every number of strands. -/
-theorem neg_one_pow_mul_map_star_mul_self_nonneg_zero (htr : IsMarkovTrace R 0 tr) :
-    ∀ (n : ℕ) (x : TemperleyLieb R 0 n), 0 ≤ (-1 : R) ^ n * tr n (star x * x)
-  | 0, x => by simpa using htr.map_star_mul_self_nonneg_zero 0 x
-  | n + 1, x => by simp [htr.eq_zero_of_loop_zero n]
-
-end Zero
 
 open scoped ComplexOrder
 
