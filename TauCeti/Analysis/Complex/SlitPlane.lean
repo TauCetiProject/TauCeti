@@ -48,10 +48,12 @@ is a principal logarithm.
 * `TauCeti.mul_mem_slitPlane_of_re_pos`
 * `TauCeti.ofReal_mul_mem_slitPlane`, `TauCeti.div_ofReal_mem_slitPlane`
 * `TauCeti.sub_mem_slitPlane_of_im_le_zero`
-* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
+* `TauCeti.ofReal_add_mem_slitPlane`, `TauCeti.add_ofReal_mem_slitPlane`,
+  `TauCeti.ofReal_add_mem_slitPlane_of_mem_union`
 * `TauCeti.ofReal_mem_slitPlane_union_zero`, `TauCeti.mem_slitPlane_union_zero_iff`
 * `TauCeti.exists_pos_forall_mem_ball_mul_one_add_le_norm_add`
 * `TauCeti.exists_pos_mul_one_add_le_norm_ofReal_add`
+* `TauCeti.exists_pos_forall_mem_mul_one_add_le_norm_add`
 * `TauCeti.exists_norm_div_ofReal_add_mul_le`, `TauCeti.continuousOn_div_ofReal_add`
 * `TauCeti.exists_norm_inv_ofReal_add_le` -- `(t + p)⁻¹ = O((1 + t)⁻¹)` for `p ∈ slitPlane`
 -/
@@ -192,6 +194,12 @@ theorem ofReal_add_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht 
   rw [add_re, ofReal_re]
   positivity
 
+/-- Translating a point of the slit plane on the right by a nonnegative real number keeps it in
+the slit plane. -/
+theorem add_ofReal_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) {t : ℝ} (ht : 0 ≤ t) :
+    z + (t : ℂ) ∈ slitPlane := by
+  simpa only [add_comm] using ofReal_add_mem_slitPlane hz ht
+
 /-- Translating a point of `slitPlane ∪ {0}` by a positive real number lands in the slit
 plane. -/
 theorem ofReal_add_mem_slitPlane_of_mem_union {z : ℂ} (hz : z ∈ slitPlane ∪ {0}) {t : ℝ}
@@ -258,6 +266,25 @@ theorem exists_pos_mul_one_add_le_norm_ofReal_add {x : ℂ} (hx : x ∈ slitPlan
   refine ⟨c, hc, fun t ht => ?_⟩
   rw [add_comm (t : ℂ)]
   exact h x (Metric.mem_ball_self hc) ⟨t, ht⟩
+
+/-- On every compact subset of the slit plane, `‖z + t‖` is uniformly bounded below by a fixed
+positive multiple of `1 + t` for all `t ≥ 0`. -/
+theorem exists_pos_forall_mem_mul_one_add_le_norm_add {K : Set ℂ} (hK : IsCompact K)
+    (hKs : K ⊆ slitPlane) :
+    ∃ c > 0, ∀ z ∈ K, ∀ t : ℝ, 0 ≤ t → c * (1 + t) ≤ ‖z + (t : ℂ)‖ := by
+  choose r hr hball using fun p : K ↦
+    exists_pos_forall_mem_ball_mul_one_add_le_norm_add (hKs p.2)
+  obtain ⟨s, hs⟩ := hK.elim_finite_subcover (fun p : K ↦ Metric.ball p.1 (r p))
+    (fun _ ↦ Metric.isOpen_ball) fun z hz ↦
+      Set.mem_iUnion.mpr ⟨⟨z, hz⟩, Metric.mem_ball_self (hr ⟨z, hz⟩)⟩
+  rcases s.eq_empty_or_nonempty with rfl | hne
+  · refine ⟨1, one_pos, fun z hz ↦ ?_⟩
+    have := hs hz
+    simp at this
+  · refine ⟨s.inf' hne r, (Finset.lt_inf'_iff hne).mpr fun p _ ↦ hr p, fun z hz t ht ↦ ?_⟩
+    obtain ⟨p, hp, hzp⟩ := Set.mem_iUnion₂.mp (hs hz)
+    exact (mul_le_mul_of_nonneg_right (Finset.inf'_le r hp) (by positivity)).trans
+      (hball p z hzp ⟨t, ht⟩)
 
 /-- For `x ∈ slitPlane ∪ {0}`, the term `x / (t + x) · t` is bounded for `t > 0`. -/
 theorem exists_norm_div_ofReal_add_mul_le {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) :

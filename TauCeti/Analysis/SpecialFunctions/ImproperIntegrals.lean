@@ -40,6 +40,10 @@ zero and one.
   `t ↦ (t (1 + log t) ^ 2)⁻¹` is integrable at infinity.
 * `TauCeti.isLittleO_integral_rpow_sub_one_mul`: a remainder `E t = o(t)` has
   `∫ t in 1..x, t ^ (τ - 1) * E t = o(x ^ (τ + 1))`.
+* `TauCeti.integrableOn_Ioi_add_rpow`, `TauCeti.integral_Ioi_add_rpow`,
+  `TauCeti.integrableOn_Ioi_inv_add_pow`, `TauCeti.integral_Ioi_inv_add_pow`: integrability and
+  values of `∫ t in Ioi 0, (a + t) ^ r` (`r < -1`) and `∫ t in Ioi 0, ((a + t) ^ (n + 1))⁻¹`
+  (`1 ≤ n`) for `0 < a`.
 * `TauCeti.tendsto_smul_integral_Ioi_rpow_smul_nhdsGT_zero`: if `g t → L` as `t → ∞`, then
   `ε ∫_1^∞ t ^ (-ε - 1) g t → L` as `ε → 0⁺`. Through Mathlib's `LSeries_eq_mul_integral` this
   is the Abelian theorem for Dirichlet series.
@@ -345,5 +349,49 @@ theorem lintegral_Ioi_ofReal_exp_neg_mul {a : ℝ} (ha : 0 < a) :
   rw [← ofReal_integral_eq_lintegral_ofReal (integrableOn_exp_mul_Ioi (neg_neg_of_pos ha) 0)
     (ae_of_all _ fun _ => (Real.exp_pos _).le), integral_exp_mul_Ioi (neg_neg_of_pos ha)]
   simp
+
+/-- For `a > 0` and `r < -1`, the shifted power `t ↦ (a + t) ^ r` is integrable on `(0, ∞)`. -/
+theorem integrableOn_Ioi_add_rpow {a r : ℝ} (ha : 0 < a) (hr : r < -1) :
+    IntegrableOn (fun t : ℝ ↦ (a + t) ^ r) (Ioi 0) := by
+  have hpre : (a + ·) ⁻¹' Ioi a = Ioi (0 : ℝ) := by ext t; simp
+  have h := ((measurePreserving_add_left volume a).integrableOn_comp_preimage
+    (measurableEmbedding_addLeft a) (s := Ioi a) (f := fun x : ℝ ↦ x ^ r)).2
+    (integrableOn_Ioi_rpow_of_lt hr ha)
+  simpa [Function.comp_def, hpre] using h
+
+/-- For `a > 0` and `r < -1`, `∫ t in Ioi 0, (a + t) ^ r = -a ^ (r + 1) / (r + 1)`. -/
+theorem integral_Ioi_add_rpow {a r : ℝ} (ha : 0 < a) (hr : r < -1) :
+    ∫ t in Ioi (0 : ℝ), (a + t) ^ r = -a ^ (r + 1) / (r + 1) := by
+  have hpre : (a + ·) ⁻¹' Ioi a = Ioi (0 : ℝ) := by ext t; simp
+  have h := (measurePreserving_add_left volume a).setIntegral_preimage_emb
+    (measurableEmbedding_addLeft a) (fun x : ℝ ↦ x ^ r) (Ioi a)
+  rw [hpre] at h
+  rw [h, integral_Ioi_rpow_of_lt hr ha]
+
+/-- For `a > 0` and `1 ≤ n`, `t ↦ ((a + t) ^ (n + 1))⁻¹` is integrable on `(0, ∞)`. -/
+theorem integrableOn_Ioi_inv_add_pow {a : ℝ} (ha : 0 < a) {n : ℕ} (hn : 1 ≤ n) :
+    IntegrableOn (fun t : ℝ ↦ ((a + t) ^ (n + 1))⁻¹) (Ioi 0) := by
+  have hr : -((n + 1 : ℕ) : ℝ) < -1 := by
+    have : (1 : ℝ) ≤ n := by exact_mod_cast hn
+    push_cast; linarith
+  refine (integrableOn_Ioi_add_rpow ha hr).congr_fun (fun t ht ↦ ?_) measurableSet_Ioi
+  dsimp only
+  rw [Real.rpow_neg (by linarith [ht.out]), Real.rpow_natCast]
+
+/-- For `a > 0` and `1 ≤ n`, `∫ t in Ioi 0, ((a + t) ^ (n + 1))⁻¹ = (n * a ^ n)⁻¹`. -/
+theorem integral_Ioi_inv_add_pow {a : ℝ} (ha : 0 < a) {n : ℕ} (hn : 1 ≤ n) :
+    ∫ t in Ioi (0 : ℝ), ((a + t) ^ (n + 1))⁻¹ = ((n : ℝ) * a ^ n)⁻¹ := by
+  have hr : -((n + 1 : ℕ) : ℝ) < -1 := by
+    have : (1 : ℝ) ≤ n := by exact_mod_cast hn
+    push_cast; linarith
+  have hcongr : ∫ t in Ioi (0 : ℝ), ((a + t) ^ (n + 1))⁻¹ =
+      ∫ t in Ioi (0 : ℝ), (a + t) ^ (-((n + 1 : ℕ) : ℝ)) := by
+    refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    rw [Real.rpow_neg (by linarith [ht.out]), Real.rpow_natCast]
+  rw [hcongr, integral_Ioi_add_rpow ha hr]
+  have hexp : -((n + 1 : ℕ) : ℝ) + 1 = -(n : ℝ) := by push_cast; ring
+  rw [hexp, Real.rpow_neg ha.le, Real.rpow_natCast]
+  have hn0 : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  field_simp
 
 end TauCeti

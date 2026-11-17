@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
@@ -51,6 +52,11 @@ Interval integrals of elementary functions in closed form or as series, continui
 * `TauCeti.integral_sin_pow_even_eq_ascPochhammer`: the Wallis integral
   `∫ x in 0..π/2, sin²ⁿ x = (π/2) (1/2)ₙ / n!`, with the rising factorial `(1/2)ₙ`.
 * `TauCeti.integral_pow_mul_sub`: `∫ x in p..r, xⁿ (x - p)` as a binomial sum in powers of `r - p`.
+* `TauCeti.integral_log_add_ofReal`:
+  `∫ u in a..b, Complex.log (z + u)` in closed form when `z + u ∈ Complex.slitPlane` on `uIcc a b`.
+* `TauCeti.integral_inv_add_ofReal_pow`:
+  `∫ u in a..b, ((z + u) ^ (n + 1))⁻¹ = (n (z + a) ^ n)⁻¹ - (n (z + b) ^ n)⁻¹` for `1 ≤ n` when
+  `z + u ≠ 0` on `uIcc a b`.
 * `Real.integral_div_sub_sq_add_sq`: the integral of the Poisson kernel `η / ((t - x)² + η²)`
   over an interval is a difference of arctangents.
 * `Real.integral_one_div_add_sq`: `∫ t in 0..b, 1 / (a + t)² = a⁻¹ - (a + b)⁻¹` for `a > 0` and
@@ -432,6 +438,63 @@ theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S <
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring
+
+/-- For `z : ℂ` and `a, b : ℝ` with `z + u ∈ Complex.slitPlane` throughout `uIcc a b`,
+`∫ u in a..b, Complex.log (z + u) =`
+`((z + b) * log (z + b) - (z + b)) - ((z + a) * log (z + a) - (z + a))`. -/
+theorem integral_log_add_ofReal {z : ℂ} {a b : ℝ}
+    (hz : ∀ u ∈ Set.uIcc a b, z + (u : ℂ) ∈ Complex.slitPlane) :
+    ∫ u : ℝ in a..b, Complex.log (z + (u : ℂ)) =
+      ((z + b) * Complex.log (z + b) - (z + b)) -
+        ((z + a) * Complex.log (z + a) - (z + a)) := by
+  have hd (u : ℝ) (hu : u ∈ Set.uIcc a b) :
+      HasDerivAt (fun t : ℝ ↦ (z + (t : ℂ)) * Complex.log (z + (t : ℂ)) - (z + (t : ℂ)))
+        (Complex.log (z + (u : ℂ))) u := by
+    have hmem := hz u hu
+    have hlinC : HasDerivAt (fun w : ℂ ↦ z + w) 1 (u : ℂ) :=
+      (hasDerivAt_id (u : ℂ)).const_add z
+    have hlogC : HasDerivAt (fun w : ℂ ↦ Complex.log (z + w)) ((z + (u : ℂ))⁻¹) (u : ℂ) := by
+      simpa only [Function.comp_def, mul_one] using (Complex.hasDerivAt_log hmem).comp (u : ℂ) hlinC
+    have hC := ((hlinC.mul hlogC).sub hlinC).comp_ofReal
+    refine hC.congr_deriv ?_
+    have hne : z + (u : ℂ) ≠ 0 := Complex.slitPlane_ne_zero hmem
+    field_simp
+    ring
+  have hc : ContinuousOn (fun u : ℝ ↦ Complex.log (z + (u : ℂ))) (Set.uIcc a b) :=
+    fun u hu ↦ ((Complex.hasDerivAt_log (hz u hu)).continuousAt.comp
+      (f := fun t : ℝ ↦ z + (t : ℂ))
+      (continuousAt_const.add Complex.continuous_ofReal.continuousAt)).continuousWithinAt
+  exact intervalIntegral.integral_eq_sub_of_hasDerivAt hd hc.intervalIntegrable
+
+/-- For `z : ℂ`, `a, b : ℝ`, and `1 ≤ n` with `z + u ≠ 0` throughout `uIcc a b`,
+`∫ u in a..b, ((z + u) ^ (n + 1))⁻¹ = ((n : ℂ) * (z + a) ^ n)⁻¹ - ((n : ℂ) * (z + b) ^ n)⁻¹`. -/
+theorem integral_inv_add_ofReal_pow {z : ℂ} {a b : ℝ} {n : ℕ} (hn : 1 ≤ n)
+    (hz : ∀ u ∈ Set.uIcc a b, z + (u : ℂ) ≠ 0) :
+    ∫ u : ℝ in a..b, ((z + (u : ℂ)) ^ (n + 1))⁻¹ =
+      ((n : ℂ) * (z + a) ^ n)⁻¹ - ((n : ℂ) * (z + b) ^ n)⁻¹ := by
+  have hn0 : (n : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+  have hd (u : ℝ) (hu : u ∈ Set.uIcc a b) :
+      HasDerivAt (fun t : ℝ ↦ -((n : ℂ) * (z + (t : ℂ)) ^ n)⁻¹)
+        (((z + (u : ℂ)) ^ (n + 1))⁻¹) u := by
+    have hne : z + (u : ℂ) ≠ 0 := hz u hu
+    have hpow := (((hasDerivAt_id (u : ℂ)).const_add z).pow n)
+    have hinv :=
+      ((hpow.const_mul (n : ℂ)).inv (mul_ne_zero hn0 (pow_ne_zero _ hne))).neg.comp_ofReal
+    refine (hinv.congr_of_eventuallyEq (Filter.Eventually.of_forall fun t ↦ ?_)).congr_deriv ?_
+    · simp only [Pi.neg_apply, Pi.inv_apply, Pi.pow_apply, id]
+    · simp only [Pi.pow_apply, id, mul_one]
+      have hsub : (z + (u : ℂ)) ^ (n - 1) * (z + (u : ℂ)) ^ (n + 1) =
+          ((z + (u : ℂ)) ^ n) ^ 2 := by
+        rw [← pow_add, ← pow_mul]
+        congr 1
+        omega
+      rw [mul_pow, ← hsub]
+      field_simp [hn0, hne]
+  have hc : ContinuousOn (fun u : ℝ ↦ ((z + (u : ℂ)) ^ (n + 1))⁻¹) (Set.uIcc a b) :=
+    ((continuousOn_const.add Complex.continuous_ofReal.continuousOn).pow (n + 1)).inv₀
+      fun u hu ↦ pow_ne_zero _ (hz u hu)
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hd hc.intervalIntegrable]
+  ring
 
 end TauCeti
 
