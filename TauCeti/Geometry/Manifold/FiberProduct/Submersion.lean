@@ -11,6 +11,9 @@ public import TauCeti.Geometry.Manifold.Submersion.Split
 /-!
 # Submersions under transverse base change
 
+Any `C^n` submersion (`1 ≤ n`) is transverse to every map in either factor
+(`TauCeti.transverse_of_isSubmersion_right`, `TauCeti.transverse_of_isSubmersion_left`).
+
 For transverse maps `f : X → N` and `g : Y → N`, the projections from the equal-value
 subtype have tangent images `df⁻¹(range dg)` and `dg⁻¹(range df)`, respectively.
 Consequently the projection to `X` is a submersion when `g` is a submersion, and the
@@ -34,6 +37,47 @@ open Function Module Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
+
+section Transversality
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EX HX X EY HY Y EN HN N : Type*}
+  [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  [NormedAddCommGroup EY] [NormedSpace 𝕜 EY] [TopologicalSpace HY]
+  [NormedAddCommGroup EN] [NormedSpace 𝕜 EN] [TopologicalSpace HN]
+  {IX : ModelWithCorners 𝕜 EX HX} {IY : ModelWithCorners 𝕜 EY HY}
+  {IN : ModelWithCorners 𝕜 EN HN}
+  [TopologicalSpace X] [ChartedSpace HX X]
+  [TopologicalSpace Y] [ChartedSpace HY Y]
+  [TopologicalSpace N] [ChartedSpace HN N]
+  {n : ℕ∞ω}
+
+/-- Every map `f : X → N` is transverse to a `C^n` submersion `g : Y → N` (`1 ≤ n`) in the
+second factor. -/
+theorem transverse_of_isSubmersion_right {f : X → N} {g : Y → N}
+    (hn : 1 ≤ n) (hg : Manifold.IsSubmersion IY IN n g) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  have hs := (tangentSpaceCast IN (g p.2) (f p.1)).surjective.comp
+    (hg.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.2)
+  have hr : (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+      (mfderiv IY IN g p.2)).range = ⊤ := LinearMap.range_eq_top.2 hs
+  rw [hr, sup_top_eq]
+
+/-- Every `C^n` submersion `f : X → N` (`1 ≤ n`) is transverse to any map `g : Y → N` in the
+first factor. -/
+theorem transverse_of_isSubmersion_left {f : X → N} {g : Y → N}
+    (hn : 1 ≤ n) (hf : Manifold.IsSubmersion IX IN n f) (p : X × Y) :
+    (mfderiv IX IN f p.1).range ⊔
+      (((tangentSpaceCast IN (g p.2) (f p.1)).toContinuousLinearMap).comp
+        (mfderiv IY IN g p.2)).range = ⊤ := by
+  rw [LinearMap.range_eq_top.2 (hf.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.1),
+    top_sup_eq]
+
+end Transversality
+
+section BaseChange
 
 variable {EX HX X EY HY Y EN HN N : Type*}
   [NormedAddCommGroup EX] [NormedSpace ℝ EX] [TopologicalSpace HX]
@@ -155,5 +199,7 @@ theorem isSubmersion_snd_transverseFiberProduct (hfs : Manifold.IsSubmersion IX 
   rw [range_mfderiv_snd_transverseFiberProduct hn hf hg htrans,
     LinearMap.range_eq_top.2
       (hfs.surjective_mfderiv (ne_of_gt (zero_lt_one.trans_le hn)) p.1.1), Submodule.comap_top]
+
+end BaseChange
 
 end TauCeti
