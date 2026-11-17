@@ -37,7 +37,8 @@ added.
   analogue of `ofHom` for finite Lie modules.
 * `LieModuleEquiv.toLieModuleCatIso` and `CategoryTheory.Iso.toLieModuleEquiv`: conversion between
   equivalences of Lie modules and categorical isomorphisms; `LieModuleEquiv.toFGLieModuleCatIso`
-  and `CategoryTheory.Iso.toFGLieModuleEquiv` are their analogues for finite Lie modules.
+  and `CategoryTheory.Iso.fgLieModuleCatIsoToLieModuleEquiv` are their analogues for finite Lie
+  modules.
 * `TauCeti.LieModuleCat.binaryBicone`: the product bicone on `M × N`, a biproduct by
   `TauCeti.LieModuleCat.binaryBiconeIsBilimit`.
 * `TauCeti.LieModuleCat.biprodIsoProd` and `TauCeti.FGLieModuleCat.biprodLieModuleEquiv`: the
@@ -455,30 +456,32 @@ abbrev ofHom {X Y : Type w} [AddCommGroup X] [Module R X] [LieRingModule L X] [L
   ObjectProperty.homMk (LieModuleCat.ofHom f)
 
 /-- An isomorphism of finite Lie modules gives an equivalence of their carriers. -/
-def _root_.CategoryTheory.Iso.toFGLieModuleEquiv {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) :
-    M ≃ₗ⁅R,L⁆ N :=
+def _root_.CategoryTheory.Iso.fgLieModuleCatIsoToLieModuleEquiv {M N : FGLieModuleCat.{w} R L}
+    (e : M ≅ N) : M ≃ₗ⁅R,L⁆ N :=
   ((LieModuleCat.isFG R L).ι.mapIso e).toLieModuleEquiv
 
 /-- The equivalence attached to an isomorphism of finite Lie modules applies its forward
 morphism. -/
 @[simp]
-theorem _root_.CategoryTheory.Iso.toFGLieModuleEquiv_apply {M N : FGLieModuleCat.{w} R L}
-    (e : M ≅ N) (x : M.obj) : e.toFGLieModuleEquiv x = e.hom.hom.hom x := by
-  simp [Iso.toFGLieModuleEquiv]
+theorem _root_.CategoryTheory.Iso.fgLieModuleCatIsoToLieModuleEquiv_apply
+    {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) (x : M.obj) :
+    e.fgLieModuleCatIsoToLieModuleEquiv x = e.hom.hom.hom x := by
+  simp [Iso.fgLieModuleCatIsoToLieModuleEquiv]
 
 /-- The inverse of the equivalence attached to an isomorphism of finite Lie modules applies its
 inverse morphism. -/
 @[simp]
-theorem _root_.CategoryTheory.Iso.toFGLieModuleEquiv_symm_apply {M N : FGLieModuleCat.{w} R L}
-    (e : M ≅ N) (x : N.obj) : e.toFGLieModuleEquiv.symm x = e.inv.hom.hom x := by
-  simp [Iso.toFGLieModuleEquiv]
+theorem _root_.CategoryTheory.Iso.fgLieModuleCatIsoToLieModuleEquiv_symm_apply
+    {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) (x : N.obj) :
+    e.fgLieModuleCatIsoToLieModuleEquiv.symm x = e.inv.hom.hom x := by
+  simp [Iso.fgLieModuleCatIsoToLieModuleEquiv]
 
 /-- The morphism of Lie modules underlying the equivalence attached to an isomorphism of finite
 Lie modules is its forward morphism. -/
 @[simp]
-theorem _root_.CategoryTheory.Iso.toFGLieModuleEquiv_toLieModuleHom
+theorem _root_.CategoryTheory.Iso.fgLieModuleCatIsoToLieModuleEquiv_toLieModuleHom
     {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) :
-    (e.toFGLieModuleEquiv : M.obj →ₗ⁅R,L⁆ N.obj) = e.hom.hom.hom := by
+    (e.fgLieModuleCatIsoToLieModuleEquiv : M.obj →ₗ⁅R,L⁆ N.obj) = e.hom.hom.hom := by
   ext
   simp
 
@@ -496,24 +499,24 @@ def _root_.LieModuleEquiv.toFGLieModuleCatIso (e : X ≃ₗ⁅R,L⁆ Y) : of R L
 /-- The forward morphism of the isomorphism attached to an equivalence of finite Lie modules is
 the equivalence. -/
 @[simp]
-theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_hom_hom (e : X ≃ₗ⁅R,L⁆ Y) :
+theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_hom_hom_hom (e : X ≃ₗ⁅R,L⁆ Y) :
     e.toFGLieModuleCatIso.hom.hom.hom = e := by
   simp [LieModuleEquiv.toFGLieModuleCatIso]
 
 /-- The inverse morphism of the isomorphism attached to an equivalence of finite Lie modules is
 its inverse. -/
 @[simp]
-theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_inv_hom (e : X ≃ₗ⁅R,L⁆ Y) :
+theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_inv_hom_hom (e : X ≃ₗ⁅R,L⁆ Y) :
     e.toFGLieModuleCatIso.inv.hom.hom = e.symm := by
   simp [LieModuleEquiv.toFGLieModuleCatIso]
 
 /-- The equivalence attached to the isomorphism attached to an equivalence of finite Lie modules
 is that equivalence. -/
 @[simp]
-theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_toFGLieModuleEquiv (e : X ≃ₗ⁅R,L⁆ Y) :
-    e.toFGLieModuleCatIso.toFGLieModuleEquiv = e := by
+theorem _root_.LieModuleEquiv.toFGLieModuleCatIso_fgLieModuleCatIsoToLieModuleEquiv
+    (e : X ≃ₗ⁅R,L⁆ Y) : e.toFGLieModuleCatIso.fgLieModuleCatIsoToLieModuleEquiv = e := by
   ext x
-  rw [Iso.toFGLieModuleEquiv_apply, LieModuleEquiv.toFGLieModuleCatIso_hom_hom,
+  rw [Iso.fgLieModuleCatIsoToLieModuleEquiv_apply, LieModuleEquiv.toFGLieModuleCatIso_hom_hom_hom,
     LieModuleEquiv.coe_toLieModuleHom]
 
 end Equiv
@@ -521,8 +524,9 @@ end Equiv
 /-- The isomorphism attached to the equivalence attached to an isomorphism of finite Lie modules
 is that isomorphism. -/
 @[simp]
-theorem _root_.CategoryTheory.Iso.toFGLieModuleEquiv_toFGLieModuleCatIso
-    {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) : e.toFGLieModuleEquiv.toFGLieModuleCatIso = e :=
+theorem _root_.CategoryTheory.Iso.fgLieModuleCatIsoToLieModuleEquiv_toFGLieModuleCatIso
+    {M N : FGLieModuleCat.{w} R L} (e : M ≅ N) :
+    e.fgLieModuleCatIsoToLieModuleEquiv.toFGLieModuleCatIso = e :=
   Iso.ext <| hom_ext <| by simp
 
 instance : (LieModuleCat.isFG.{w} R L).IsClosedUnderIsomorphisms where
