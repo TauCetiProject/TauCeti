@@ -9,26 +9,19 @@ public import Mathlib.Topology.Metrizable.CompletelyMetrizable
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Topology
 import Mathlib.Topology.Baire.CompleteMetrizable
 import Mathlib.Topology.MetricSpace.Polish
-import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Complete
-import TauCeti.Geometry.Manifold.VectorBundle.Section.CountableSeminorms
+import TauCeti.Geometry.Manifold.VectorBundle.Section.CompletelyMetrizable
 
 /-!
 # Complete metrizability of spaces of smooth almost complex structures
 
-Let `M` be a manifold without boundary whose model space is locally compact, and let `V` be a
-smooth vector bundle over `M` with complete fibre model. For countably many covering frames on
-sigma-compact domains, the space of smooth sections of `V` with the compact derivative topology
-`ContMDiffSection.frameTopology` is complete and metrizable, hence completely metrizable. On a
-Lindelöf manifold over a second countable model this holds for every covering frame system, since
-the topology does not depend on the frames.
-
 The smooth almost complex structures on a Lindelöf manifold without boundary and with
 finite-dimensional model, with the `C^∞` topology
 `TauCeti.SmoothAlmostComplexStructure.frameTopology` of a covering frame system, are a closed
-subspace of the smooth sections of `End(TM)`, so they form a completely metrizable space and a
-Baire space. For a smooth two-form `ω`, tameness is a `G_δ` condition and invariance a closed
-condition in this topology (`TauCeti.SmoothTwoForm.isGδ_setOf_tames_frameTopology`,
+subspace of the smooth sections of `End(TM)`, which form a completely metrizable space
+(`ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`). So they form a completely
+metrizable space and a Baire space. For a smooth two-form `ω`, tameness is a `G_δ` condition and
+invariance a closed condition in this topology
+(`TauCeti.SmoothTwoForm.isGδ_setOf_tames_frameTopology`,
 `TauCeti.SmoothTwoForm.isClosed_setOf_invariant_frameTopology`), so the spaces of smooth `ω`-tame
 and of smooth `ω`-compatible almost complex structures are also completely metrizable and Baire
 spaces. These are the parameter spaces of the genericity theorems of pseudoholomorphic curve
@@ -36,9 +29,6 @@ theory.
 
 ## Main declarations
 
-* `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology_of_sigmaCompactDomains`,
-  `ContMDiffSection.isCompletelyMetrizableSpace_frameTopology`: smooth sections of a vector bundle
-  form a completely metrizable space.
 * `TauCeti.SmoothAlmostComplexStructure.isCompletelyMetrizableSpace_frameTopology`,
   `TauCeti.SmoothAlmostComplexStructure.baireSpace_frameTopology`: on a Lindelöf manifold without
   boundary and with finite-dimensional model, the smooth almost complex structures form a
@@ -58,66 +48,6 @@ noncomputable section
 
 open Bundle Set Filter Topology TopologicalSpace
 open scoped ContDiff Manifold
-
-namespace ContMDiffSection
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V] [VectorBundle 𝕜 F V]
-  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I] [IsManifold I n M]
-  {ι : Type*} (e : ι → Trivialization F (π F V))
-  [∀ i, MemTrivializationAtlas (e i)]
-  (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
-  [IsRCLikeNormedField 𝕜] [LocallyCompactSpace E] [I.Boundaryless] [CompleteSpace F]
-  [ENat.LEInfty n]
-
-/-- For countably many covering frames on sigma-compact domains, over a manifold without boundary
-with locally compact model, the smooth sections of a vector bundle with complete fibre model form
-a completely metrizable space for the compact derivative topology. -/
-theorem isCompletelyMetrizableSpace_frameTopology_of_sigmaCompactDomains [Countable ι]
-    [∀ i, SigmaCompactSpace (U i)] (hcover : ∀ x, ∃ i, x ∈ U i) :
-    let _ := frameTopology (I := I) (n := n) e U hU
-    IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
-  let _ := frameUniformSpace (I := I) (n := n) e U hU
-  have := isUniformAddGroup_frameUniformSpace (I := I) (n := n) e U hU
-  have := completeSpace_frameTopology (I := I) (n := n) e U hU hcover
-  have := metrizableSpace_frameTopology_of_sigmaCompactDomains (I := I) (n := n) e U hU hcover
-  have := IsUniformAddGroup.uniformity_countably_generated (α := Cₛ^n⟮I; F, V⟯)
-  infer_instance
-
-/-- On a locally compact Lindelöf manifold without boundary over a second countable model space,
-with locally compact model, the smooth sections of a vector bundle with complete fibre model form
-a completely metrizable space for the compact derivative topology of any covering frame
-system. -/
-theorem isCompletelyMetrizableSpace_frameTopology [SecondCountableTopology H]
-    [LocallyCompactSpace M] [LindelofSpace M] (hcover : ∀ x, ∃ i, x ∈ U i) :
-    let _ := frameTopology (I := I) (n := n) e U hU
-    IsCompletelyMetrizableSpace Cₛ^n⟮I; F, V⟯ := by
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_lindelof H M
-  let e' (x : M) := trivializationAt F V x
-  let U' (x : M) : Opens M := ⟨(e' x).baseSet, (e' x).open_baseSet⟩
-  obtain ⟨T, hT, hTU⟩ := isOpen_iUnion_countable (fun x ↦ (U' x : Set M)) fun x ↦ (U' x).isOpen
-  have := hT.to_subtype
-  have hcover' (x : M) : ∃ i : T, x ∈ U' i := by
-    have hx : x ∈ ⋃ y, (U' y : Set M) :=
-      mem_iUnion.2 ⟨x, FiberBundle.mem_baseSet_trivializationAt _ _ x⟩
-    rw [← hTU] at hx
-    obtain ⟨y, hy, hxy⟩ := mem_iUnion₂.1 hx
-    exact ⟨⟨y, hy⟩, hxy⟩
-  have (i : T) : SigmaCompactSpace (U' i) := by
-    have := (U' i).isOpen.isOpenEmbedding_subtypeVal.locallyCompactSpace
-    infer_instance
-  have h := isCompletelyMetrizableSpace_frameTopology_of_sigmaCompactDomains (I := I) (n := n)
-    (fun i : T ↦ e' i) (fun i ↦ U' i) (fun _ ↦ subset_rfl) hcover'
-  rwa [frameTopology_eq_of_covers e U hU hcover (fun i : T ↦ e' i) (fun i ↦ U' i)
-    (fun _ ↦ subset_rfl) hcover']
-
-end ContMDiffSection
 
 namespace TauCeti
 
@@ -141,8 +71,6 @@ metrizable space. -/
 theorem isCompletelyMetrizableSpace_frameTopology (hcover : ∀ x, ∃ i, x ∈ U i) :
     let _ := frameTopology e U hU
     IsCompletelyMetrizableSpace (SmoothAlmostComplexStructure I M) := by
-  have : SecondCountableTopology H := I.secondCountableTopology
-  have : LocallyCompactSpace M := Manifold.locallyCompact_of_finiteDimensional I
   let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
   let _ := frameTopology e U hU
   have := ContMDiffSection.isCompletelyMetrizableSpace_frameTopology (I := I) (n := ∞) e U hU
