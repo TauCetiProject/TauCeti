@@ -61,6 +61,8 @@ function by a function of temperate growth multiplies the function pointwise
   Schwartz function it is a real integral.
 * `SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply`: the same for the values of a
   Schwartz function.
+* `SchwartzMap.closure_range_toLp_eq`: the closure of the Schwartz functions in `Lᵖ` is the
+  topological closure of the range of `SchwartzMap.toLpCLM`, a closed subspace.
 * `MeasureTheory.Lp.fourier_toTemperedDistribution_apply`: the Fourier transform of the tempered
   distribution of an `Lᵖ` function `v` with an integrable representative `f` pairs with `φ` as
   `∫ φ • 𝓕 f`.
@@ -297,6 +299,19 @@ end MeasureTheory.Lp
 namespace SchwartzMap
 
 open MeasureTheory
+
+open scoped ENNReal in
+/-- The closure of the Schwartz functions in `Lᵖ` is the topological closure of the range of the
+inclusion `SchwartzMap.toLpCLM`. In particular it is a closed subspace: sums and scalar multiples
+of `Lᵖ` limits of Schwartz functions are again such limits. -/
+theorem closure_range_toLp_eq {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+    [SecondCountableTopologyEither E F] {μ : Measure E} [μ.HasTemperateGrowth] (p : ℝ≥0∞)
+    [Fact (1 ≤ p)] :
+    closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p μ) =
+      ((LinearMap.range (toLpCLM ℂ F p μ).toLinearMap).topologicalClosure : Set (Lp F p μ)) := by
+  have hcoe : ⇑(toLpCLM ℂ F p μ) = fun f ↦ f.toLp p μ := funext fun _ ↦ toLpCLM_apply
+  rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
 
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]

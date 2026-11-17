@@ -81,6 +81,8 @@ constants depend only on the bump function, the gap and the regularities.
   multiplier by `φ (2^{-m} ·)`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_succ`: `S_{m+1} u` has spectrum in the ball of
   radius `2^m φ.rOut`.
+* `TauCeti.BesovSpace.exists_littlewoodPaleyBlock_lowPass_eq_zero`: the blocks of `S_m u` vanish
+  from index `m + L` on, for an `L` depending only on the bump function.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_smul_block` and
   `TauCeti.BesovSpace.isVanishingOn_fourier_block_smul_lowPass`: the terms of the two paraproducts
   have spectra in dyadic annuli.
@@ -193,6 +195,18 @@ theorem isVanishingOn_fourier_lowPass_succ (u : BesovSpace F φ s p q) (m : ℕ)
   rw [coe_lowPass]
   exact isVanishingOn_fourier_sum_littlewoodPaleyBlock φ
     (fun k hk ↦ Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)) _
+
+/-- **The low-frequency cut-offs are band-limited.** There is `L`, depending only on `φ`, such
+that the blocks `Δₖ S_m u` vanish for `k ≥ m + L`. -/
+theorem exists_littlewoodPaleyBlock_lowPass_eq_zero :
+    ∃ L : ℕ, ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] (u : BesovSpace F φ s p q) (m k : ℕ),
+      m + L ≤ k → littlewoodPaleyBlock F φ k (u.lowPass m : 𝓢'(E, F)) = 0 := by
+  obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+  refine ⟨L, fun u m k hk ↦ ?_⟩
+  rcases m with _ | N
+  · simp
+  · rw [coe_lowPass]
+    exact (hL k N).2 (by omega) u.toDistr
 
 /-- **The low-frequency cut-offs of an `Lᵖ` function are uniformly bounded.** If the tempered
 distribution of `u` is an `Lᵖ` function `f`, then `‖S_m u‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p` for every `m`. -/

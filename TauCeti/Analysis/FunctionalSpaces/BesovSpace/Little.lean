@@ -59,6 +59,8 @@ constant, depending on `N`, times `‖S_N u - g‖_p`.
   `TauCeti.BesovSpace.mem_littleBesov_of_tendsto`.
 * `TauCeti.BesovSpace.mem_littleBesov_iff_tendsto`: for `p < ∞`, by the decay of the weighted
   blocks alone.
+* `TauCeti.BesovSpace.mem_littleBesov_of_toDistr_eq`: an `Lᵖ` limit of Schwartz functions whose
+  blocks vanish from some index on lies in `b^s_{p,∞}`.
 * `TauCeti.BesovSpace.map_mem_littleBesov`: the embeddings of the Besov scale preserve the little
   spaces; in particular `TauCeti.BesovSpace.bumpEquiv_mem_littleBesov_iff` (independence of the
   bump function), `TauCeti.BesovSpace.inclusion_mem_littleBesov`,
@@ -215,7 +217,7 @@ private theorem exists_toDistr_eq_sum_block_and_norm_sub_le {u : BesovSpace F φ
 some index `M` on, and which is an `Lᵖ` limit of Schwartz functions `g`, lies in `b^s_{p,∞}`: the
 truncations `S_M g` are Schwartz functions, `S_M w = w`, and `S_M (w - g)` has finitely many
 blocks, so its Besov norm is controlled by `‖w - g‖_p`. -/
-private theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
+theorem mem_littleBesov_of_toDistr_eq {v : BesovSpace F φ s p ∞}
     {w : Lp F p (volume : Measure E)} (hvw : v.toDistr = w)
     (hw : w ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p)) {M : ℕ}
     (hM : ∀ k, M ≤ k → littlewoodPaleyBlock F φ k (w : 𝓢'(E, F)) = 0) :
@@ -264,12 +266,7 @@ theorem mem_littleBesov_of_tendsto {u : BesovSpace F φ s p ∞}
     u ∈ littleBesov F φ s p := by
   obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
   -- The `Lᵖ` closure of the Schwartz functions is a subspace.
-  have hS : closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p (volume : Measure E)) =
-      ((LinearMap.range (SchwartzMap.toLpCLM ℂ F p (volume : Measure E)).toLinearMap
-        ).topologicalClosure : Set (Lp F p (volume : Measure E))) := by
-    have hcoe : ⇑(SchwartzMap.toLpCLM ℂ F p (volume : Measure E)) = fun f ↦ f.toLp p :=
-      funext fun _ ↦ SchwartzMap.toLpCLM_apply
-    rw [Submodule.topologicalClosure_coe, LinearMap.coe_range, ContinuousLinearMap.coe_coe, hcoe]
+  have hS := SchwartzMap.closure_range_toLp_eq (F := F) (μ := (volume : Measure E)) p
   rw [← SetLike.mem_coe, ← isClosed_littleBesov.closure_eq]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
   obtain ⟨N, v, hvw, huv⟩ := exists_toDistr_eq_sum_block_and_norm_sub_le hdecay (half_pos hε)
