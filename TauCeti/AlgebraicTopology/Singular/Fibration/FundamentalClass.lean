@@ -228,15 +228,17 @@ private def fiberPairIso (hK : Convex ℝ K) (h₀ : (0 : V) ∈ K) (x₀ : fibe
         continuous_toFun := by fun_prop
         map_zero_left e := by simp [retraction]
         map_one_left e := eq_of_snd_eq φ hφ (Subtype.ext (by simp [← hφ])) (by simp) }
+    -- `G q` is `φ.symm` applied to a pair whose coordinate in `Y` is that of `q.2`.
+    have hGY : ∀ q, (φ (G q)).2 = (φ q.2).2 := fun q ↦
+      (congrArg Prod.snd (φ.apply_symm_apply (_, (φ q.2).2)) :)
     rw [← TopPair.singularHomologyMap_comp, ← TopPair.ofSubsetMap_comp _ _ _ _
       ((mapsTo_fiber φ hφ x₀).comp (mapsTo_retraction φ hφ h₀ x₀)),
       ← TopPair.singularHomologyMap_id, ← TopPair.ofSubsetMap_id (B := offSlice φ x₀.1)
         fun e he ↦ he]
     refine TopPair.Homotopy.congr_singularHomologyMap (TopPair.ofSubsetHomotopy G ?_) _ n
     intro τ e he
-    -- The homotopy is `φ.symm` applied to a pair whose coordinate in `Y` is that of `e`.
-    change (φ (φ.symm (_, (φ e).2))).2 ≠ (φ x₀.1).2
-    rwa [Homeomorph.apply_symm_apply]
+    simp only [mem_ofPred_eq, hGY]
+    exact he
 
 omit [NormedSpace ℝ V] in
 /-- Away from the fibre over `0`, a point avoids every point of that fibre. -/
