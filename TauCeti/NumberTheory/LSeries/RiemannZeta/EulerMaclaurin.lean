@@ -18,6 +18,7 @@ import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.NumberTheory.ZetaValues
 
 /-!
@@ -62,22 +63,6 @@ open scoped Nat Real Topology
 namespace TauCeti
 
 /-! ### Holomorphy of the Euler–Maclaurin tail integral -/
-
-/-- Derivative of `x ↦ (descPochhammer ℂ i).eval (-s) * (x : ℂ) ^ (-s - i)` on `(0, ∞)`. -/
-private theorem hasDerivAt_descPochhammer_mul_ofReal_cpow (s : ℂ) (i : ℕ) {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (fun y : ℝ => (descPochhammer ℂ i).eval (-s) * (y : ℂ) ^ (-s - i))
-      ((descPochhammer ℂ (i + 1)).eval (-s) * (x : ℂ) ^ (-s - (i + 1 : ℕ))) x := by
-  rcases eq_or_ne (-s - i) 0 with h0 | h0
-  · have hfn : (fun y : ℝ => (descPochhammer ℂ i).eval (-s) * (y : ℂ) ^ (-s - i)) =
-        fun _ => (descPochhammer ℂ i).eval (-s) := by ext y; simp [h0]
-    rw [hfn, descPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_sub,
-      Polynomial.eval_X, Polynomial.eval_natCast, h0, mul_zero, zero_mul]
-    exact hasDerivAt_const x _
-  · have hd := (hasDerivAt_ofReal_cpow_const hx.ne' h0).const_mul ((descPochhammer ℂ i).eval (-s))
-    refine hd.congr_deriv ?_
-    rw [descPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_sub,
-      Polynomial.eval_X, Polynomial.eval_natCast, Nat.cast_add, Nat.cast_one]
-    ring_nf
 
 /-- Express the Euler–Maclaurin tail integral on `(1, ∞)` as a Mellin transform. -/
 private theorem tailIntegral_eq_mellin (m : ℕ) (s : ℂ) :
@@ -172,8 +157,8 @@ private theorem sum_Icc_one_div_cpow_eq_eulerMaclaurin {s : ℂ} (hs₁ : s ≠ 
       (Or.inr (by linarith)))).continuousWithinAt
   have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt_two_mul (g := g)
     (a := 1) (n := (N : ℤ)) (by exact_mod_cast hN1) hm (fun i _ => hcont i)
-    (fun i _ x hx => hasDerivAt_descPochhammer_mul_ofReal_cpow s i
-      (zero_lt_one.trans (by simpa using hx.1)))
+    (fun i _ x hx => hasDerivAt_descPochhammer_mul_ofReal_cpow (-s) i
+      (zero_lt_one.trans (by simpa using hx.1)).ne')
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hN1))
   have hsum_cast : ∑ j ∈ Icc 1 N, (1 / (j : ℂ) ^ s) = ∑ j ∈ Icc (1 : ℤ) N, g 0 j := by
     have himg : (Icc 1 N).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) N :=

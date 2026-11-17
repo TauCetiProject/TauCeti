@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Data.Nat.Cast.SetInterval
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
 import TauCeti.RingTheory.Binomial
@@ -56,17 +57,6 @@ open Filter Finset intervalIntegral MeasureTheory
 open scoped Nat Real Topology
 
 namespace TauCeti
-
-/-- Derivative of `x ↦ (descPochhammer ℝ i).eval α * x ^ (α - i)` on `(0, ∞)`. -/
-private theorem hasDerivAt_descPochhammer_mul_rpow (α : ℝ) (i : ℕ) {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (fun y : ℝ => (descPochhammer ℝ i).eval α * y ^ (α - i))
-      ((descPochhammer ℝ (i + 1)).eval α * x ^ (α - (i + 1 : ℕ))) x := by
-  have hd := (Real.hasDerivAt_rpow_const (p := α - i) (Or.inl hx.ne')).const_mul
-    ((descPochhammer ℝ i).eval α)
-  refine hd.congr_deriv ?_
-  rw [descPochhammer_succ_right, Polynomial.eval_mul, Polynomial.eval_sub,
-    Polynomial.eval_X, Polynomial.eval_natCast, Nat.cast_add, Nat.cast_one]
-  ring_nf
 
 /-- Rewrite the Euler–Maclaurin boundary polynomial in `n` as the DLMF 2.10.7 sum over
 `range (2 * m)` with `Ring.choose (α + 1) s`. -/
@@ -135,7 +125,7 @@ theorem sum_Ico_rpow_eq_eulerMaclaurin {α : ℝ} (hα : α ≠ -1) {m n : ℕ} 
   have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt_two_mul (g := g)
     (a := 1) (n := (n : ℤ)) (by exact_mod_cast hn) hm (fun i _ => hcont i)
     (fun i _ x hx => hasDerivAt_descPochhammer_mul_rpow α i
-      (zero_lt_one.trans (by simpa using hx.1)))
+      (Or.inl (zero_lt_one.trans (by simpa using hx.1)).ne'))
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hn))
   have hsum : ∑ j ∈ Ico 1 n, (j : ℝ) ^ α + (n : ℝ) ^ α = ∑ j ∈ Icc (1 : ℤ) n, g 0 j := by
     rw [← sum_Ico_succ_top hn, Finset.Ico_add_one_right_eq_Icc]
@@ -173,17 +163,18 @@ private theorem neg_one_pow_succ_mul_setIntegral_rpow_tail_pos {α : ℝ} {k n :
     0 < (-1 : ℝ) ^ (k + 1) * ∫ x in Set.Ioi (n : ℝ),
       ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) / (2 * k)! *
         x ^ (α - 2 * k) := by
-  have hn_pos : (0 : ℝ) < n := by positivity
-  have hw_int : IntegrableOn (fun x : ℝ => x ^ (α - 2 * k) / (2 * k)!) (Set.Ioi (n : ℝ)) :=
-    (integrableOn_Ioi_rpow_of_lt (a := α - 2 * (k : ℝ)) (by linarith) hn_pos).div_const _
-  have hw_cont : ContinuousOn (fun x : ℝ => x ^ (α - 2 * k) / (2 * k)!) (Set.Ioi (n : ℝ)) :=
-    fun x hx => ((Real.continuousAt_rpow_const x _
-      (Or.inl (hn_pos.trans hx).ne')).div_const _).continuousWithinAt
-  refine (neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos
-    (k := k) (by omega) hw_int hw_cont fun x hx =>
-      div_pos (Real.rpow_pos_of_pos (hn_pos.trans hx) _) (by positivity)).trans_eq ?_
-  congr 1
-  exact setIntegral_congr_fun measurableSet_Ioi fun x _ => by ring
+  have heq : ∫ x in Set.Ioi (n : ℝ),
+        ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) / (2 * k)! *
+          x ^ (α - 2 * k) =
+      ((2 * k)! : ℝ)⁻¹ * ∫ x in Set.Ioi (n : ℝ),
+        ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) *
+          x ^ (α - 2 * (k : ℝ)) := by
+    rw [← MeasureTheory.integral_const_mul]
+    exact setIntegral_congr_fun measurableSet_Ioi fun x _ => by ring
+  rw [heq, mul_left_comm]
+  exact mul_pos (by positivity)
+    (neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos
+      (k := k) (by omega) (by positivity) (by linarith))
 
 /-- Factorizations of `-(descPochhammer ℝ (2 * m)).eval α` and
 `-(descPochhammer ℝ (2 * (m + 1))).eval α` relative to `(descPochhammer ℝ (2 * m - 1)).eval α`. -/

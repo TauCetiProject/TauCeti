@@ -9,11 +9,12 @@ public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ZetaValues
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import Mathlib.Data.Nat.Cast.SetInterval
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.Calculus.Deriv.ZPow
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
@@ -74,12 +75,7 @@ private theorem hasDerivAt_mulLogIteratedDeriv (i : ℕ) {x : ℝ} (hx : 0 < x) 
   | 0 => exact Real.hasDerivAt_mul_log hx.ne'
   | 1 =>
     simpa [mulLogIteratedDeriv] using (Real.hasDerivAt_log hx.ne').add_const (1 : ℝ)
-  | k + 2 =>
-    have hd := (hasDerivAt_zpow (-(k + 1 : ℤ)) x (Or.inl hx.ne')).const_mul ((-1 : ℝ) ^ k * k !)
-    refine hd.congr_deriv ?_
-    simp only [mulLogIteratedDeriv, Nat.factorial_succ, pow_succ]
-    rw [show (-(k + 1 : ℤ) - 1 : ℤ) = -((k + 1 : ℕ) + 1 : ℤ) by omega]
-    push_cast; ring
+  | k + 2 => exact hasDerivAt_neg_one_pow_mul_factorial_mul_zpow k hx.ne'
 
 /-- Continuity of `mulLogIteratedDeriv i` on `[1, n]`. -/
 private theorem continuousOn_mulLogIteratedDeriv (i : ℕ) (n : ℕ) :
@@ -87,20 +83,6 @@ private theorem continuousOn_mulLogIteratedDeriv (i : ℕ) (n : ℕ) :
   intro x hx
   have hx0 : 0 < x := zero_lt_one.trans_le (by simpa using hx.1)
   exact (hasDerivAt_mulLogIteratedDeriv i hx0).continuousAt.continuousWithinAt
-
-/-- Integrability of `(B_{2m+2} - B_{2m+2}({x})) * x ^ (-(2m + 1 : ℤ))` on `(a, ∞)` for `a > 0`,
-`m ≥ 1`. -/
-private theorem integrableOn_bernoulli_sub_mul_zpow_tail {m : ℕ} (hm : 1 ≤ m) {a : ℝ}
-    (ha : 0 < a) :
-    IntegrableOn
-      (fun x : ℝ => ((bernoulli (2 * m + 2) : ℝ) - bernoulliFun (2 * m + 2) (Int.fract x)) *
-        x ^ (-(2 * m + 1 : ℤ))) (Set.Ioi a) := by
-  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
-  have hrpow : IntegrableOn (fun x : ℝ => x ^ (-(2 * (m : ℝ) + 1))) (Set.Ioi a) :=
-    integrableOn_Ioi_rpow_of_lt (by linarith) ha
-  have hzpow : IntegrableOn (fun x : ℝ => x ^ (-(2 * m + 1 : ℤ))) (Set.Ioi a) :=
-    hrpow.congr_fun (fun x _ => by rw [← Real.rpow_intCast]; push_cast; rfl) measurableSet_Ioi
-  exact hzpow.bernoulli_sub_bernoulliFun_fract_smul (2 * m + 2)
 
 /-- Simplification of the boundary Bernoulli sum at order `2 * (m + 1)` for
 `mulLogIteratedDeriv`. -/
@@ -209,7 +191,11 @@ private theorem tendsto_sum_mul_log_sub_eq_const {m : ℕ} (hm : 1 ≤ m) :
       filter_upwards [eventually_gt_atTop 0] with n _
       rw [← Real.rpow_intCast]; push_cast; rfl
     simpa using ht.const_mul _
-  have hint := integrableOn_bernoulli_sub_mul_zpow_tail hm zero_lt_one
+  have hint : IntegrableOn
+      (fun x : ℝ => ((bernoulli (2 * m + 2) : ℝ) - bernoulliFun (2 * m + 2) (Int.fract x)) *
+        x ^ (-(2 * m + 1 : ℤ))) (Set.Ioi (1 : ℝ)) :=
+    (integrableOn_Ioi_zpow_of_lt (m := -(2 * m + 1 : ℤ)) (by omega)
+      zero_lt_one).bernoulli_sub_bernoulliFun_fract_smul (2 * m + 2)
   set C₀ : ℝ := 1 / 4 +
     ∑ k ∈ Ico 1 m, (bernoulli (2 * k + 2) : ℝ) / (2 * k * (2 * k + 1) * (2 * k + 2))
   have hRHS := ((tendsto_const_nhds (x := C₀)).sub (tendsto_finsetSum _ hzpow0)).add
@@ -275,7 +261,10 @@ theorem sum_Icc_mul_log_eq_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤
           ((bernoulli (2 * m + 2) : ℝ) - bernoulliFun (2 * m + 2) (Int.fract x)) *
             x ^ (-(2 * m + 1 : ℤ)) := by
   have hsplit := intervalIntegral.integral_Ioi_sub_Ioi
-    (integrableOn_bernoulli_sub_mul_zpow_tail hm zero_lt_one) (b := (n : ℝ)) (by exact_mod_cast hn)
+    ((integrableOn_Ioi_zpow_of_lt (m := -(2 * m + 1 : ℤ)) (by omega)
+      zero_lt_one).bernoulli_sub_bernoulliFun_fract_smul (2 * m + 2))
+    (b := (n : ℝ)) (by exact_mod_cast hn)
+  simp only [smul_eq_mul] at hsplit
   have hfin := sum_Icc_mul_log_eq_finite_eulerMaclaurin hm hn
   rw [← hsplit, mul_sub] at hfin
   linarith [hfin, one_div_twelve_sub_deriv_riemannZeta_neg_one_re_eq_eulerMaclaurin hm]
@@ -303,16 +292,9 @@ private theorem neg_one_pow_succ_mul_mulLog_rem_pos {k n : ℕ} (hk : 1 ≤ k) (
       ∫ x in Set.Ioi (n : ℝ),
         ((bernoulli (2 * k + 2) : ℝ) - bernoulliFun (2 * k + 2) (Int.fract x)) *
           x ^ (-(2 * k + 1 : ℤ))) := by
-  have hn_pos : (0 : ℝ) < n := by positivity
-  have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-  have hw_int : IntegrableOn (fun x : ℝ => x ^ (-(2 * k + 1 : ℤ))) (Set.Ioi (n : ℝ)) :=
-    (integrableOn_Ioi_rpow_of_lt (a := -(2 * (k : ℝ) + 1)) (by linarith) hn_pos).congr_fun
-      (fun x _ => by rw [← Real.rpow_intCast]; push_cast; rfl) measurableSet_Ioi
-  have hw_cont : ContinuousOn (fun x : ℝ => x ^ (-(2 * k + 1 : ℤ))) (Set.Ioi (n : ℝ)) :=
-    fun x hx => ((hasDerivAt_zpow _ x (Or.inl (hn_pos.trans hx).ne')).continuousAt
-      ).continuousWithinAt
-  have hI := neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos
-    (k := k + 1) (by omega) hw_int hw_cont (fun x hx => zpow_pos (hn_pos.trans hx) _)
+  have hI := neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
+    (k := k + 1) (by omega) (by positivity : (0 : ℝ) < n)
+    (m := -(2 * k + 1 : ℤ)) (by omega)
   have heq : (-1 : ℝ) ^ (k + 1) * (-1 / ((2 * k + 1 : ℝ) * (2 * k + 2)) *
       ∫ x in Set.Ioi (n : ℝ),
         ((bernoulli (2 * k + 2) : ℝ) - bernoulliFun (2 * k + 2) (Int.fract x)) *

@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.IntegrationByParts
 import Mathlib.NumberTheory.AbelSummation
@@ -41,8 +42,11 @@ determines the sign of the tail remainder integral.
   `MeasureTheory.IntegrableOn.bernoulli_sub_bernoulliFun_fract_smul`, and
   `IntervalIntegrable.bernoulliFun_fract_smul`: the remainder integrands `Bₖ({x}) • u(x)` and
   `(Bₖ - Bₖ({x})) • u(x)` inherit integrability from `u`.
-* `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos`: for
-  `k ≠ 0` and positive continuous integrable `w` on `(a, ∞)`,
+* `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos`,
+  `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos`, and
+  `TauCeti.neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos`: for
+  `k ≠ 0` and positive continuous integrable `w` on `(a, ∞)` (in particular `x ↦ x ^ r` for
+  `r < -1` or `x ↦ x ^ m` for `m < -1` on `(a, ∞)` with `a > 0`),
   `(-1)^(k + 1) * ∫ x in Ioi a, (B_{2k} - B_{2k}({x})) * w x > 0`.
 * `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt` and
   `TauCeti.sum_Icc_eq_eulerMaclaurin_of_hasDerivAt_two_mul`: the formula of any order `k ≥ 1` (and
@@ -183,6 +187,31 @@ theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_po
       exact mul_nonneg (neg_one_pow_succ_mul_bernoulli_sub_bernoulliFun_fract_nonneg hk x)
         (hpos x hx).le)
     ((Set.Ioc_subset_Icc_self.trans hsub_Ioi).eventuallySubset))
+
+/-- For `k ≠ 0`, `a > 0`, and real exponent `r < -1`, the Euler–Maclaurin tail integral against
+`x ↦ x ^ r` has strict sign `(-1) ^ (k + 1)`. The kernel index `k` and exponent `r` are
+independent. -/
+theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos
+    {k : ℕ} (hk : k ≠ 0) {a r : ℝ} (ha : 0 < a) (hr : r < -1) :
+    0 < (-1 : ℝ) ^ (k + 1) *
+      ∫ x in Set.Ioi a,
+        ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * x ^ r :=
+  neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos hk
+    (integrableOn_Ioi_rpow_of_lt hr ha)
+    (fun x hx => (Real.continuousAt_rpow_const x r (Or.inl (ha.trans hx).ne')).continuousWithinAt)
+    (fun _ hx => Real.rpow_pos_of_pos (ha.trans hx) r)
+
+/-- For `k ≠ 0`, `a > 0`, and integer exponent `m < -1`, the Euler–Maclaurin tail integral against
+`x ↦ x ^ m` has strict sign `(-1) ^ (k + 1)`. The kernel index `k` and exponent `m` are
+independent. -/
+theorem neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
+    {k : ℕ} (hk : k ≠ 0) {a : ℝ} {m : ℤ} (ha : 0 < a) (hm : m < -1) :
+    0 < (-1 : ℝ) ^ (k + 1) *
+      ∫ x in Set.Ioi a,
+        ((bernoulli (2 * k) : ℝ) - bernoulliFun (2 * k) (Int.fract x)) * x ^ m := by
+  simpa [Real.rpow_intCast] using
+    neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_rpow_pos hk ha
+      (by exact_mod_cast hm : (m : ℝ) < -1)
 
 /-- One integration by parts against a shifted Bernoulli polynomial on `[t, t + 1]`. -/
 private theorem integral_bernoulliFun_sub_smul {u u' : ℝ → E} {t : ℝ} (k : ℕ)

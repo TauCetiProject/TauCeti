@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.Asymptotics.Defs
 public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.ZetaValues
-import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.NumberTheory.Harmonic.Bounds
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
+import TauCeti.Analysis.Calculus.Deriv.ZPow
+import TauCeti.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.NumberTheory.ZetaValues
 
 /-!
@@ -56,29 +57,6 @@ open scoped Nat Real Topology
 
 namespace TauCeti
 
-/-- Derivative of `x ↦ (-1)^i * i! * x ^ (-(i + 1 : ℤ))` on `(0, ∞)`. -/
-private theorem hasDerivAt_inv_iterated (i : ℕ) {x : ℝ} (hx : 0 < x) :
-    HasDerivAt (fun y : ℝ => (-1 : ℝ) ^ i * i ! * y ^ (-(i + 1 : ℤ)))
-      ((-1 : ℝ) ^ (i + 1) * (i + 1)! * x ^ (-((i + 1 : ℕ) + 1 : ℤ))) x := by
-  have hd := (hasDerivAt_zpow (-(i + 1 : ℤ)) x (Or.inl hx.ne')).const_mul ((-1 : ℝ) ^ i * i !)
-  refine hd.congr_deriv ?_
-  rw [Nat.factorial_succ, pow_succ, show (-(i + 1 : ℤ) - 1 : ℤ) = -((i + 1 : ℕ) + 1 : ℤ) by omega]
-  push_cast; ring
-
-/-- Integrability of `(B_{2m} - B_{2m}({x})) * x ^ (-(2m + 1 : ℤ))` on `(a, ∞)` for `a > 0`,
-`m ≥ 1`. -/
-private theorem integrableOn_bernoulli_sub_mul_zpow_neg {m : ℕ} (hm : 1 ≤ m) {a : ℝ}
-    (ha : 0 < a) :
-    IntegrableOn
-      (fun x : ℝ => ((bernoulli (2 * m) : ℝ) - bernoulliFun (2 * m) (Int.fract x)) *
-        x ^ (-(2 * m + 1 : ℤ))) (Set.Ioi a) := by
-  have hm' : (1 : ℝ) ≤ m := by exact_mod_cast hm
-  have hrpow : IntegrableOn (fun x : ℝ => x ^ (-(2 * (m : ℝ) + 1))) (Set.Ioi a) :=
-    integrableOn_Ioi_rpow_of_lt (by linarith) ha
-  have hzpow : IntegrableOn (fun x : ℝ => x ^ (-(2 * m + 1 : ℤ))) (Set.Ioi a) :=
-    hrpow.congr_fun (fun x _ => by rw [← Real.rpow_intCast]; push_cast; rfl) measurableSet_Ioi
-  exact hzpow.bernoulli_sub_bernoulliFun_fract_smul (2 * m)
-
 /-- Finite-interval Euler–Maclaurin identity on `[1, n]` for `(harmonic n : ℝ)`. -/
 private theorem harmonic_eq_finite_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n) :
     (harmonic n : ℝ) = Real.log n + 1 / 2 + 1 / (2 * (n : ℝ)) +
@@ -89,11 +67,12 @@ private theorem harmonic_eq_finite_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn
           x ^ (-(2 * m + 1 : ℤ)) := by
   set g : ℕ → ℝ → ℝ := fun i x => (-1 : ℝ) ^ i * i ! * x ^ (-(i + 1 : ℤ))
   have hcont : ∀ i, ContinuousOn (g i) (Set.Icc ((1 : ℤ) : ℝ) ((n : ℤ) : ℝ)) := fun i x hx =>
-    (continuousAt_const.mul ((hasDerivAt_zpow _ x
-      (Or.inl (zero_lt_one.trans_le (by simpa using hx.1)).ne')).continuousAt)).continuousWithinAt
+    (hasDerivAt_neg_one_pow_mul_factorial_mul_zpow i
+      (zero_lt_one.trans_le (by simpa using hx.1)).ne').continuousAt.continuousWithinAt
   have hEM := sum_Icc_eq_eulerMaclaurin_of_hasDerivAt_two_mul (g := g)
     (a := 1) (n := (n : ℤ)) (by exact_mod_cast hn) hm (fun i _ => hcont i)
-    (fun i _ x hx => hasDerivAt_inv_iterated i (zero_lt_one.trans (by simpa using hx.1)))
+    (fun i _ x hx => hasDerivAt_neg_one_pow_mul_factorial_mul_zpow i
+      (zero_lt_one.trans (by simpa using hx.1)).ne')
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hn))
   have hsum : (harmonic n : ℝ) = ∑ j ∈ Icc (1 : ℤ) n, g 0 j := by
     have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n :=
@@ -147,7 +126,11 @@ theorem eulerMascheroniConstant_eq_eulerMaclaurin {m : ℕ} (hm : 1 ≤ m) :
       simp [zpow_neg]
   have hinv0 : Tendsto (fun n : ℕ => 1 / (2 * (n : ℝ))) atTop (𝓝 0) := by
     simpa using (hzpow0 1 le_rfl).const_mul (1 / 2 : ℝ) |>.congr fun n => by simp; ring
-  have hint := integrableOn_bernoulli_sub_mul_zpow_neg hm zero_lt_one
+  have hint : IntegrableOn
+      (fun x : ℝ => ((bernoulli (2 * m) : ℝ) - bernoulliFun (2 * m) (Int.fract x)) *
+        x ^ (-(2 * m + 1 : ℤ))) (Set.Ioi (1 : ℝ)) :=
+    (integrableOn_Ioi_zpow_of_lt (m := -(2 * m + 1 : ℤ)) (by omega)
+      zero_lt_one).bernoulli_sub_bernoulliFun_fract_smul (2 * m)
   have hRHS : Tendsto (fun n : ℕ =>
       1 / 2 + 1 / (2 * (n : ℝ)) + ∑ s ∈ Ico 1 m, (bernoulli (2 * s) : ℝ) / (2 * s) -
         ∑ s ∈ Ico 1 m, (bernoulli (2 * s) : ℝ) / (2 * s) * (n : ℝ) ^ (-(2 * s : ℤ)) +
@@ -178,7 +161,10 @@ theorem harmonic_eq_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn : 1 ≤ n) :
         ((bernoulli (2 * m) : ℝ) - bernoulliFun (2 * m) (Int.fract x)) *
           x ^ (-(2 * m + 1 : ℤ)) := by
   have hsplit := intervalIntegral.integral_Ioi_sub_Ioi
-    (integrableOn_bernoulli_sub_mul_zpow_neg hm zero_lt_one) (b := (n : ℝ)) (by exact_mod_cast hn)
+    ((integrableOn_Ioi_zpow_of_lt (m := -(2 * m + 1 : ℤ)) (by omega)
+      zero_lt_one).bernoulli_sub_bernoulliFun_fract_smul (2 * m))
+    (b := (n : ℝ)) (by exact_mod_cast hn)
+  simp only [smul_eq_mul] at hsplit
   linarith [harmonic_eq_finite_eulerMaclaurin hm hn, eulerMascheroniConstant_eq_eulerMaclaurin hm,
     hsplit]
 
@@ -217,17 +203,10 @@ theorem exists_Ioo_harmonic_sub_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn : 
     dsimp [term]; ring
   have hstep : rem m = term + rem (m + 1) := by linarith [hm_eq, hm1_eq, hterm]
   have hsign : ∀ k : ℕ, 1 ≤ k → 0 < (-1 : ℝ) ^ k * rem k := fun k hk => by
-    have hn_pos : (0 : ℝ) < n := by positivity
-    have hk' : (1 : ℝ) ≤ k := by exact_mod_cast hk
-    have hw_int : IntegrableOn (fun x : ℝ => x ^ (-(2 * k + 1 : ℤ))) (Set.Ioi (n : ℝ)) :=
-      (integrableOn_Ioi_rpow_of_lt (a := -(2 * (k : ℝ) + 1)) (by linarith) hn_pos).congr_fun
-        (fun x _ => by rw [← Real.rpow_intCast]; push_cast; rfl) measurableSet_Ioi
-    have hw_cont : ContinuousOn (fun x : ℝ => x ^ (-(2 * k + 1 : ℤ))) (Set.Ioi (n : ℝ)) :=
-      fun x hx => ((hasDerivAt_zpow _ x (Or.inl (hn_pos.trans hx).ne')).continuousAt
-        ).continuousWithinAt
     simpa [rem, pow_succ] using
-      neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos
-        (k := k) (by omega) hw_int hw_cont (fun x hx => zpow_pos (hn_pos.trans hx) _)
+      neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_zpow_pos
+        (k := k) (by omega) (by positivity : (0 : ℝ) < n)
+        (m := -(2 * k + 1 : ℤ)) (by omega)
   have hsub : (harmonic n : ℝ) -
       (Real.log n + Real.eulerMascheroniConstant + 1 / (2 * (n : ℝ)) -
         ∑ s ∈ Ico 1 m, (bernoulli (2 * s) : ℝ) / (2 * s) * (n : ℝ) ^ (-(2 * s : ℤ))) =
