@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Measure.Haar.Quotient
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
-public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.MeasureTheory.Group.ProperlyDiscontinuous
+public import TauCeti.MeasureTheory.Measure.Haar.Quotient
+public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
 /-!
 # Lattices in locally compact groups
@@ -21,7 +21,10 @@ measure. The quotient `G ⧸ Γ` is the space of left cosets `g Γ`. A lattice i
 The theory is set in a unimodular group: `μ` is a left Haar measure which is also right
 invariant, so that the measure of a fundamental domain of the right action does not depend on the
 choice of domain. A discrete subgroup of a second countable, locally compact Hausdorff group has
-a measurable fundamental domain; the lattice condition asks that it have finite measure.
+a measurable fundamental domain (`Subgroup.exists_isFundamentalDomain_op`); the lattice condition
+asks that it have finite measure. Integrals over `G` unfold to integrals over `G ⧸ Γ` by Weil's
+formula (`QuotientGroup.lintegral_eq_lintegral_automorphize`), and `G ⧸ Γ` is compact exactly when
+`K * Γ = G` for a compact set `K` (`QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`).
 
 ## Main definitions
 
@@ -31,20 +34,13 @@ a measurable fundamental domain; the lattice condition asks that it have finite 
 
 ## Main results
 
-* `Subgroup.exists_isFundamentalDomain_op`: a discrete subgroup of a second countable, locally
-  compact Hausdorff group has a measurable fundamental domain for its right action.
 * `Subgroup.isLattice_iff_covolume_lt_top`: for discrete `Γ` in a unimodular group, `Γ` is a
   lattice exactly when `MeasureTheory.covolume Γ.op G μ` is finite.
 * `Subgroup.IsLattice.of_isHaarMeasure`: being a lattice does not depend on the Haar measure.
 * `Subgroup.IsLattice.isFiniteMeasure_quotient`: the quotient measure on `G ⧸ Γ` of a lattice is
   finite.
-* `QuotientGroup.lintegral_eq_lintegral_automorphize`: **Weil's formula** for nonnegative
-  measurable functions, `∫ f = ∫_{G ⧸ Γ} ∑_{γ ∈ Γ} f (g γ)`, for a right-invariant measure on `G`
-  and the quotient measure on `G ⧸ Γ`.
-* `QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ`: in a locally compact group,
-  `G ⧸ Γ` is compact exactly when `K * Γ = G` for a compact set `K`.
-* `Subgroup.isUniformLattice_iff_isLattice_and_compactSpace`: a lattice is uniform exactly when
-  `G ⧸ Γ` is compact.
+* `Subgroup.isUniformLattice_iff_isLattice_and_compactSpace`: in a weakly locally compact group,
+  a lattice is uniform exactly when `G ⧸ Γ` is compact.
 * `Subgroup.isUniformLattice_iff_discreteTopology_and_compactSpace`: in a unimodular second
   countable group, a discrete subgroup with compact quotient has finite covolume, so it is a
   uniform lattice.
@@ -89,12 +85,6 @@ structure IsUniformLattice [TopologicalSpace G] (Γ : Subgroup G) (μ : Measure 
 
 variable [TopologicalSpace G] {Γ : Subgroup G} {μ : Measure G}
 
-omit [MeasurableSpace G] in
-/-- A discrete subgroup of a second countable group is countable. -/
-theorem countable_of_discreteTopology [SecondCountableTopology G] [DiscreteTopology Γ] :
-    Countable Γ :=
-  separableSpace_iff_countable.mp inferInstance
-
 /-- A lattice in a second countable group is countable. -/
 theorem IsLattice.countable [SecondCountableTopology G] (h : Γ.IsLattice μ) : Countable Γ :=
   have := h.discreteTopology
@@ -105,33 +95,6 @@ theorem IsLattice.hasFundamentalDomain (h : Γ.IsLattice μ) : HasFundamentalDom
   ⟨h.exists_isFundamentalDomain_measure_lt_top.imp fun _ ↦ And.left⟩
 
 variable [IsTopologicalGroup G]
-
-/-- A discrete subgroup `Γ` of a second countable, locally compact Hausdorff group `G` has a
-measurable fundamental domain for its right action on `G`, for every measure. -/
-theorem exists_isFundamentalDomain_op [OpensMeasurableSpace G] [T2Space G] [LocallyCompactSpace G]
-    [SecondCountableTopology G] [DiscreteTopology Γ] (μ : Measure G) :
-    ∃ s : Set G, MeasurableSet s ∧ IsFundamentalDomain Γ.op s μ := by
-  have : Countable Γ := countable_of_discreteTopology
-  have : ProperlyDiscontinuousSMul Γ.op G :=
-    Γ.properlyDiscontinuousSMul_opposite_of_tendsto_cofinite
-      (Γ.tendsto_coe_cofinite_of_isDiscrete (isDiscrete_iff_discreteTopology.mpr ‹_›))
-  have hfree : (TauCeti.freeLocus Γ.op G : Set G) = univ := by
-    refine eq_univ_of_forall fun x ↦ ?_
-    rw [SetLike.mem_coe, TauCeti.mem_freeLocus, eq_bot_iff]
-    intro γ hγ
-    rw [MulAction.mem_stabilizer_iff] at hγ
-    rw [Subgroup.mem_bot]
-    exact Subtype.ext (MulOpposite.unop_injective (mul_eq_left.mp hγ))
-  obtain ⟨s, hs, -, h⟩ :=
-    μ.exists_isFundamentalDomain_of_properlyDiscontinuousSMul (G := Γ.op) (by simp [hfree])
-  exact ⟨s, hs, h⟩
-
-/-- In a second countable, locally compact Hausdorff group, a discrete subgroup has a
-fundamental domain for its right action. -/
-theorem hasFundamentalDomain_op [OpensMeasurableSpace G] [T2Space G] [LocallyCompactSpace G]
-    [SecondCountableTopology G] [DiscreteTopology Γ] (μ : Measure G) :
-    HasFundamentalDomain Γ.op G μ :=
-  ⟨(exists_isFundamentalDomain_op μ).imp fun _ ↦ And.right⟩
 
 /-- Being a lattice does not depend on the choice of Haar measure. -/
 theorem IsLattice.of_isHaarMeasure [BorelSpace G] [LocallyCompactSpace G]
@@ -147,9 +110,8 @@ section Unimodular
 variable [BorelSpace G] [μ.IsMulRightInvariant]
 
 /-- In a unimodular group, a lattice has finite covolume. -/
-theorem IsLattice.covolume_lt_top [SecondCountableTopology G] (h : Γ.IsLattice μ) :
+theorem IsLattice.covolume_lt_top [Countable Γ] (h : Γ.IsLattice μ) :
     covolume Γ.op G μ < ∞ := by
-  have := h.countable
   obtain ⟨s, hs, hμs⟩ := h.exists_isFundamentalDomain_measure_lt_top
   rwa [hs.covolume_eq_volume]
 
@@ -158,7 +120,8 @@ exactly when it is discrete and its right action has finite covolume. -/
 theorem isLattice_iff_covolume_lt_top [T2Space G] [LocallyCompactSpace G]
     [SecondCountableTopology G] :
     Γ.IsLattice μ ↔ DiscreteTopology Γ ∧ covolume Γ.op G μ < ∞ := by
-  refine ⟨fun h ↦ ⟨h.discreteTopology, h.covolume_lt_top⟩, fun ⟨hd, hcov⟩ ↦ ⟨hd, ?_⟩⟩
+  refine ⟨fun h ↦ ⟨h.discreteTopology, have := h.countable; h.covolume_lt_top⟩,
+    fun ⟨hd, hcov⟩ ↦ ⟨hd, ?_⟩⟩
   have : Countable Γ := countable_of_discreteTopology
   obtain ⟨s, -, hs⟩ := exists_isFundamentalDomain_op (Γ := Γ) μ
   exact ⟨s, hs, hs.covolume_eq_volume μ ▸ hcov⟩
@@ -176,62 +139,12 @@ theorem IsLattice.isFiniteMeasure_quotient (h : Γ.IsLattice μ) (ν : Measure (
 
 end Subgroup
 
-/-- **Weil's formula** for nonnegative measurable functions. Let `μ` be a right-invariant measure
-on `G`, let the right action of a countable subgroup `Γ` on `G` have a fundamental domain, and let
-`ν` be the quotient measure on `G ⧸ Γ`. Then `∫ f dμ = ∫_{G ⧸ Γ} ∑_{γ ∈ Γ} f (g γ) dν(g Γ)`; the
-inner sum is `QuotientGroup.automorphize f`, which is constant on each left coset `g Γ`. -/
-theorem QuotientGroup.lintegral_eq_lintegral_automorphize [MeasurableMul G] {Γ : Subgroup G}
-    [Countable Γ] {μ : Measure G} [μ.IsMulRightInvariant] [HasFundamentalDomain Γ.op G μ]
-    (ν : Measure (G ⧸ Γ)) [QuotientMeasureEqMeasurePreimage μ ν] {f : G → ℝ≥0∞}
-    (hf : Measurable f) :
-    ∫⁻ g, f g ∂μ = ∫⁻ x, automorphize f x ∂ν := by
-  obtain ⟨s, hs⟩ := ‹HasFundamentalDomain Γ.op G μ›.ExistsIsFundamentalDomain
-  have hmeas : Measurable (automorphize f : G ⧸ Γ → ℝ≥0∞) :=
-    measurable_from_quotient.mpr (Measurable.tsum fun γ ↦ hf.comp (measurable_const_smul _))
-  have hπ := measurePreserving_quotientGroup_mk_of_QuotientMeasureEqMeasurePreimage μ hs ν
-  rw [← hπ.lintegral_comp hmeas, hs.lintegral_eq_tsum'' f]
-  exact (lintegral_tsum fun γ ↦ (hf.comp (measurable_const_smul _)).aemeasurable).symm
-
-namespace QuotientGroup
-
-variable [TopologicalSpace G] [IsTopologicalGroup G] {Γ : Subgroup G}
-
-omit [MeasurableSpace G] [TopologicalSpace G] [IsTopologicalGroup G] in
-/-- A set `K` meets every left coset of `Γ` exactly when `K * Γ = G`. -/
-theorem image_mk_eq_univ_iff {K : Set G} :
-    ((↑) '' K : Set (G ⧸ Γ)) = univ ↔ K * (Γ : Set G) = univ := by
-  rw [← preimage_image_mk_eq_mul]
-  refine ⟨fun h ↦ by rw [h, preimage_univ], fun h ↦ eq_univ_of_forall fun x ↦ ?_⟩
-  obtain ⟨g, rfl⟩ := mk_surjective x
-  exact (h ▸ mem_univ g : g ∈ _)
-
-omit [MeasurableSpace G] in
-/-- In a locally compact group, `G ⧸ Γ` is compact exactly when `K * Γ = G` for some compact
-set `K`. -/
-theorem compactSpace_iff_exists_isCompact_mul_eq_univ [LocallyCompactSpace G] :
-    CompactSpace (G ⧸ Γ) ↔ ∃ K : Set G, IsCompact K ∧ K * (Γ : Set G) = univ := by
-  simp_rw [← image_mk_eq_univ_iff]
-  refine ⟨fun _ ↦ ?_, fun ⟨K, hK, hKΓ⟩ ↦ ⟨hKΓ ▸ hK.image continuous_mk⟩⟩
-  choose K hK hKg using fun g : G ↦ exists_compact_mem_nhds g
-  obtain ⟨t, ht⟩ := isCompact_univ.elim_finite_subcover
-    (fun g ↦ ((↑) '' interior (K g) : Set (G ⧸ Γ)))
-    (fun g ↦ isOpenMap_coe _ isOpen_interior)
-    fun x _ ↦ by
-      obtain ⟨g, rfl⟩ := mk_surjective x
-      exact mem_iUnion.mpr ⟨g, g, mem_interior_iff_mem_nhds.mpr (hKg g), rfl⟩
-  refine ⟨⋃ g ∈ t, K g, t.isCompact_biUnion fun g _ ↦ hK g,
-    eq_univ_of_forall fun x ↦ ?_⟩
-  obtain ⟨g, hg, y, hy, rfl⟩ := mem_iUnion₂.mp (ht (mem_univ x))
-  exact ⟨y, mem_iUnion₂.mpr ⟨g, hg, interior_subset hy⟩, rfl⟩
-
-end QuotientGroup
-
 namespace Subgroup
 
 variable [TopologicalSpace G] [IsTopologicalGroup G] {Γ : Subgroup G} {μ : Measure G}
 
-/-- In a locally compact group, a lattice is uniform exactly when `G ⧸ Γ` is compact. -/
-theorem isUniformLattice_iff_isLattice_and_compactSpace [LocallyCompactSpace G] :
+/-- In a weakly locally compact group, a lattice is uniform exactly when `G ⧸ Γ` is compact. -/
+theorem isUniformLattice_iff_isLattice_and_compactSpace [WeaklyLocallyCompactSpace G] :
     Γ.IsUniformLattice μ ↔ Γ.IsLattice μ ∧ CompactSpace (G ⧸ Γ) :=
   ⟨fun h ↦ ⟨h.toIsLattice, QuotientGroup.compactSpace_iff_exists_isCompact_mul_eq_univ.mpr
     h.exists_isCompact_mul_eq_univ⟩,
