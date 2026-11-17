@@ -53,6 +53,8 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨c • x⟩ ^ s ≤ c ^ |s| ⟨x⟩ ^ s`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`: rescaling by any `c ≠ 0` changes
   `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor.
+* `TauCeti.one_add_norm_add_smul_sq_rpow_le`: Peetre's inequality for the shift `ξ + c • θ`
+  with `c ≥ 1`, `⟨ξ + c • θ⟩ ^ s ≤ 2 ^ (|s| / 2) c ^ |s| ⟨ξ⟩ ^ s ⟨θ⟩ ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
@@ -253,6 +255,22 @@ theorem exists_one_add_norm_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSp
       _ ≤ max 1 (max |c| |c|⁻¹) * ‖c • x‖ := by
           gcongr
           exact (le_max_right _ _).trans (le_max_right _ _)
+
+omit [SeminormedAddGroup E] in
+/-- Peetre's inequality for the shift `ξ + c • θ` by a multiple of `θ` with `c ≥ 1`:
+`(1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤ 2 ^ (|m| / 2) c ^ |m| (1 + ‖ξ‖ ^ 2) ^ (m / 2)
+(1 + ‖θ‖ ^ 2) ^ (|m| / 2)` for every real `m`. -/
+theorem one_add_norm_add_smul_sq_rpow_le [SeminormedAddCommGroup E] [NormedSpace ℝ E] {c : ℝ}
+    (hc : 1 ≤ c) (m : ℝ) (ξ θ : E) :
+    (1 + ‖ξ + c • θ‖ ^ 2) ^ (m / 2) ≤
+      2 ^ (|m| / 2) * c ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
+  refine (one_add_norm_add_sq_rpow_le_mul m ξ (c • θ)).trans ?_
+  have := one_add_norm_smul_sq_rpow_le hc |m| θ
+  rw [abs_abs] at this
+  calc 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖c • θ‖ ^ 2) ^ (|m| / 2)
+      ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (c ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by
+        gcongr
+    _ = _ := by ring
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,

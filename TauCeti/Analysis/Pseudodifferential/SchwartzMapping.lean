@@ -83,8 +83,10 @@ where the profile is bounded by `‖u‖_{L¹}`.
 * `TauCeti.Symbol.quantizeRightUniformCLM`: the right quantization of a uniform symbol as a
   continuous linear map `𝓢(ℝⁿ, V) →L[ℂ] 𝓢(ℝⁿ, W)`, with its formula
   `TauCeti.Symbol.quantizeRightUniformCLM_apply`, its Fourier transform
-  `TauCeti.Symbol.fourier_quantizeRightUniformCLM` and its linearity in the symbol
-  (`TauCeti.Symbol.quantizeRightUniformCLM_add` and its companions).
+  `TauCeti.Symbol.fourier_quantizeRightUniformCLM`, its linearity in the symbol
+  (`TauCeti.Symbol.quantizeRightUniformCLM_add` and its companions) and its dependence only on
+  the integrand `c(y, ξ) (u y)`
+  (`TauCeti.Symbol.quantizeRightUniformCLM_eq_of_coefficient_apply_eq`).
 * `TauCeti.Symbol.IsUniform.integrable_coefficient_apply`: `y ↦ c(y, ξ) u(y)` is integrable for a
   uniform symbol `c` and a Schwartz function `u`.
 
@@ -999,6 +1001,15 @@ theorem quantizeRightUniformCLM_apply (c : Symbol n V W m) (hc : c.IsUniform)
   rw [quantizeRightUniformCLM, ContinuousLinearMap.comp_apply,
     FourierTransform.fourierInvCLM_apply, SchwartzMap.fourierInv_coe, Real.fourierInv_eq]
   simp_rw [profileCLM_apply]
+
+/-- Two right quantizations agree when their integrands `c(y, ξ) (u y)` agree pointwise. -/
+theorem quantizeRightUniformCLM_eq_of_coefficient_apply_eq {m' : ℝ} {c : Symbol n V W m}
+    {c' : Symbol n V W m'} (hc : c.IsUniform) (hc' : c'.IsUniform)
+    {u u' : 𝓢(CoordinateSpace n, V)}
+    (h : ∀ y ξ, c.coefficient (y, ξ) (u y) = c'.coefficient (y, ξ) (u' y)) :
+    quantizeRightUniformCLM c hc u = quantizeRightUniformCLM c' hc' u' := by
+  ext x
+  simp only [quantizeRightUniformCLM_apply, h]
 
 /-- The right quantization is additive in the symbol. -/
 theorem quantizeRightUniformCLM_add {c c' : Symbol n V W m} (hc : c.IsUniform)
