@@ -25,9 +25,7 @@ extension changes the operator norm (the continuous semilinear analogues of
 `e.completion` between the completions, and a linear isometry with dense range into a complete
 normed module extends surjectively (`LinearIsometry.fromCompletion_surjective_of_denseRange`).
 
-Descending a bounded semilinear map to `SeparationQuotient E` via `SeparationQuotient.liftCLM`
-likewise preserves the operator norm (`SeparationQuotient.norm_liftCLM`). Completing the
-norm-preserving quotient map `E →ₗᵢ[𝕜] SeparationQuotient E` yields the canonical
+Completing the norm-preserving quotient map `E →ₗᵢ[𝕜] SeparationQuotient E` yields the canonical
 `SMul`-equivariant linear isometric equivalence
 `UniformSpace.Completion.completionSeparationQuotientₗᵢ` between `Completion (SeparationQuotient E)`
 and `Completion E`, upgrading `UniformSpace.Completion.completionSeparationQuotientEquiv`.
@@ -57,8 +55,6 @@ extension to the completions has the same property.
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
-* `SeparationQuotient.norm_liftCLM`: lifting a bounded semilinear map to `SeparationQuotient E`
-  preserves its operator norm.
 * `UniformSpace.Completion.completionSeparationQuotientₗᵢ`: the canonical linear isometric
   equivalence `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E` for a seminormed `𝕜`-module.
 -/
@@ -254,25 +250,6 @@ theorem toLinearIsometry_completion (e : E ≃ₛₗᵢ[σ₁₂] F) :
 end NormedAddCommGroup
 
 end LinearIsometryEquiv
-
-namespace SeparationQuotient
-
-variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
-  {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
-
-/-- Lifting a bounded semilinear map to the separation quotient of its domain preserves its
-operator norm. -/
-@[simp]
-theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
-    ‖liftCLM f hf‖ = ‖f‖ := by
-  rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
-  congr 1; ext c
-  refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h ↦ surjective_mk.forall.2 fun x ↦ ?_⟩
-  · simpa only [liftCLM_mk, norm_mk] using h (mk x)
-  · simpa only [liftCLM_mk, norm_mk] using h x
-
-end SeparationQuotient
 
 namespace UniformSpace.Completion
 
