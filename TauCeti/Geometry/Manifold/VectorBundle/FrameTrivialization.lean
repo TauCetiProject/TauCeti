@@ -47,6 +47,8 @@ holomorphic section.
 * `IsLocalFrameOn.contMDiffOn_coeff`: a Cᵐ section has Cᵐ coefficients in a Cⁿ frame, for m ≤ n.
 * `IsLocalFrameOn.continuousOn_coeff_totalSpace`: the coefficients of a vector in a frame depend
   continuously on the vector, as a point of the total space.
+* `IsLocalFrameOn.coeff_sum_smul`: the coefficients of a combination of frame vectors are its
+  coefficients.
 * `IsLocalFrameOn.trivialization_mem_maximalAtlas`: the trivialization of a `C^n` local frame lies
   in the maximal atlas of `C^n` trivializations.
 * `Bundle.Trivialization.isLocalFrameOn_symm_of_mem_maximalAtlas`: a member of the maximal atlas
@@ -397,6 +399,20 @@ theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional
     simp [IsLocalFrameOn.coeff, mem_preimage.mp hq, Basis.coord_apply, Basis.equiv]
   exact (((b.coord i).toContinuousLinearMap.continuous.comp_continuousOn htriv) p hp).congr
     heq (heq p hp)
+
+omit [CompleteSpace 𝕜] in
+/-- The coefficient `i` of the frame vector `s j x` is `1` if `j = i` and `0` otherwise. -/
+theorem coeff_apply_self [DecidableEq ι] (hs : IsLocalFrameOn IB F n s U) {x : B} (hx : x ∈ U)
+    (i j : ι) : hs.coeff i x (s j x) = if j = i then 1 else 0 := by
+  rw [hs.coeff_apply_of_mem hx (s j), ← hs.toBasisAt_coe hx, Basis.repr_self, Finsupp.single_apply]
+
+omit [CompleteSpace 𝕜] in
+/-- The coefficients of a combination `∑ j, c j • s j x` of frame vectors are `c`. -/
+theorem coeff_sum_smul [Fintype ι] (hs : IsLocalFrameOn IB F n s U) {x : B} (hx : x ∈ U)
+    (c : ι → 𝕜) (i : ι) : hs.coeff i x (∑ j, c j • s j x) = c i := by
+  classical
+  simp only [map_sum, map_smul, hs.coeff_apply_self hx, smul_eq_mul, mul_ite, mul_one, mul_zero,
+    Finset.sum_ite_eq', Finset.mem_univ, ite_true]
 
 end IsLocalFrameOn
 
