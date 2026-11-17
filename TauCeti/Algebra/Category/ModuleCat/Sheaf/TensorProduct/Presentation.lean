@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Sheaf.Quasicoherent
 public import Mathlib.Basic.Finite.Sum
 public import Mathlib.CategoryTheory.Monoidal.Limits.Cokernels
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Closed
+public import TauCeti.CategoryTheory.Monoidal.Epi
 
 /-!
 # Tensor products of presentations of sheaves of modules
@@ -34,15 +35,14 @@ Joël Riou.
 ## Main declarations
 
 * `TauCeti.SheafOfModules.freeTensorFreeIso`: `free I ⊗ free I' ≅ free (I × I')`;
-* `SheafOfModules.GeneratingSections.tensor`: the generating sections of `M ⊗ N` built from
-  generating sections of `M` and `N`, indexed by pairs of generators; it is finite when both
-  families are finite (`SheafOfModules.GeneratingSections.isFiniteType_tensor`), and its generating
+* `SheafOfModules.GeneratingSections.tensor`: generating sections of a tensor product, indexed
+  by pairs of generating sections; they are finite when both factors are, and their generating
   morphism is an isomorphism when both generating morphisms are
   (`SheafOfModules.GeneratingSections.isIso_tensor_π`);
 * `SheafOfModules.Presentation.tensor`: the presentation of `M ⊗ N` built from presentations of
-  `M` and `N`; it is finite when both presentations are finite, and its generating morphism is
-  an isomorphism when both generating morphisms are
-  (`SheafOfModules.Presentation.isIso_tensor_generators_π`).
+  `M` and `N`, with generating sections `P.generators.tensor Q.generators`
+  (`SheafOfModules.Presentation.tensor_generators`); it is finite when both presentations are
+  finite.
 -/
 
 public section
@@ -89,60 +89,42 @@ theorem ιFree_freeTensorFreeIso_inv {I I' : Type u} (i : I) (i' : I') :
 
 variable {M N : SheafOfModules.{u} (ringCatSheaf R)}
 
-/-- The tensor product of generating sections of `M` and `N` gives generating sections of `M ⊗ N`,
-indexed by pairs of generators. -/
-def _root_.SheafOfModules.GeneratingSections.tensor
-    (σ : M.GeneratingSections) (τ : N.GeneratingSections) :
-    (M ⊗ N).GeneratingSections where
-  I := σ.I × τ.I
-  s := (M ⊗ N).freeHomEquiv ((freeTensorFreeIso (R := R) σ.I τ.I).inv ≫ (σ.π ⊗ₘ τ.π))
+/-- Generating sections of two sheaves of modules give generating sections of their tensor
+product, indexed by pairs of generators. -/
+-- Expose the index type so the generating morphism has source `free (G.I × H.I)`.
+@[expose, simps I]
+def _root_.SheafOfModules.GeneratingSections.tensor (G : M.GeneratingSections)
+    (H : N.GeneratingSections) : (M ⊗ N).GeneratingSections where
+  I := G.I × H.I
+  s := (M ⊗ N).freeHomEquiv ((freeTensorFreeIso (R := R) G.I H.I).inv ≫ (G.π ⊗ₘ H.π))
   epi := by
-    rw [Equiv.symm_apply_apply, tensorHom_def]
-    have : Epi (σ.π ▷ free τ.I) := (tensorRight (free τ.I)).map_epi σ.π
-    have : Epi (M ◁ τ.π) := (tensorLeft M).map_epi τ.π
-    exact epi_comp _ _
+    rw [Equiv.symm_apply_apply]
+    infer_instance
 
-/-- The tensor product of generating sections is indexed by pairs of generators. -/
+/-- The generating morphism of the tensor product is the tensor product of the generating
+morphisms, read through `freeTensorFreeIso`. -/
 @[simp]
-theorem _root_.SheafOfModules.GeneratingSections.tensor_I
-    (σ : M.GeneratingSections) (τ : N.GeneratingSections) :
-    (σ.tensor τ).I = (σ.I × τ.I) :=
-  (rfl)
+theorem _root_.SheafOfModules.GeneratingSections.tensor_π (G : M.GeneratingSections)
+    (H : N.GeneratingSections) :
+    (G.tensor H).π = (freeTensorFreeIso (R := R) G.I H.I).inv ≫ (G.π ⊗ₘ H.π) :=
+  (M ⊗ N).freeHomEquiv.symm_apply_apply _
 
-/-- The generating morphism of the tensor product of generating sections is the tensor product of
-the generating morphisms, read through `freeTensorFreeIso`. -/
-@[simp]
-theorem _root_.SheafOfModules.GeneratingSections.tensor_π
-    (σ : M.GeneratingSections) (τ : N.GeneratingSections) :
-    eqToHom (congrArg (free (R := ringCatSheaf R)) (σ.tensor_I τ).symm) ≫ (σ.tensor τ).π =
-      (freeTensorFreeIso (R := R) σ.I τ.I).inv ≫ (σ.π ⊗ₘ τ.π) :=
-  -- `tensor_I` is `rfl`, so the `eqToHom` is the identity, and `(σ.tensor τ).π` is
-  -- `freeHomEquiv.symm (freeHomEquiv _)`.
-  (Category.id_comp _).trans ((M ⊗ N).freeHomEquiv.symm_apply_apply _)
+/-- The tensor product of finite generating sections is finite. -/
+instance _root_.SheafOfModules.GeneratingSections.isFiniteType_tensor (G : M.GeneratingSections)
+    (H : N.GeneratingSections) [G.IsFiniteType] [H.IsFiniteType] : (G.tensor H).IsFiniteType where
+  finite := inferInstanceAs (Finite (G.I × H.I))
 
-/-- The tensor product of two bases of generating sections has an invertible generating morphism. -/
-instance _root_.SheafOfModules.GeneratingSections.isIso_tensor_π
-    (σ : M.GeneratingSections) (τ : N.GeneratingSections) [IsIso σ.π] [IsIso τ.π] :
-    IsIso (σ.tensor τ).π := by
-  have h : IsIso (eqToHom (congrArg (free (R := ringCatSheaf R)) (σ.tensor_I τ).symm) ≫
-      (σ.tensor τ).π) := by
-    rw [GeneratingSections.tensor_π]
-    exact IsIso.comp_isIso' (Iso.isIso_inv _) inferInstance
-  exact IsIso.of_isIso_comp_left
-    (eqToHom (congrArg (free (R := ringCatSheaf R)) (σ.tensor_I τ).symm)) (σ.tensor τ).π
-
-/-- The tensor product of two finite families of generating sections is finite. -/
-instance _root_.SheafOfModules.GeneratingSections.isFiniteType_tensor
-    (σ : M.GeneratingSections) (τ : N.GeneratingSections) [σ.IsFiniteType] [τ.IsFiniteType] :
-    (σ.tensor τ).IsFiniteType where
-  finite := by
-    rw [GeneratingSections.tensor_I]
-    exact inferInstanceAs (Finite (σ.I × τ.I))
+/-- If the generating morphisms of `G` and `H` are isomorphisms, that is, `G` and `H` exhibit
+`M` and `N` as free, then so is the generating morphism of `G.tensor H`. -/
+instance _root_.SheafOfModules.GeneratingSections.isIso_tensor_π (G : M.GeneratingSections)
+    (H : N.GeneratingSections) [IsIso G.π] [IsIso H.π] : IsIso (G.tensor H).π := by
+  rw [GeneratingSections.tensor_π]
+  exact IsIso.comp_isIso' (Iso.isIso_inv _) inferInstance
 
 /-- The tensor product of presentations of `M` and `N` is a presentation of `M ⊗ N`. Its
 generators are indexed by pairs of generators, and its relations by a relation of `M` paired
 with a generator of `N`, or a generator of `M` paired with a relation of `N`. -/
-@[expose, simps! generators_I relations_I relations_s]
+@[expose, simps! relations_I relations_s]
 def _root_.SheafOfModules.Presentation.tensor (P : M.Presentation) (Q : N.Presentation) :
     (M ⊗ N).Presentation :=
   presentationOfIsCokernelFree
@@ -165,31 +147,18 @@ def _root_.SheafOfModules.Presentation.tensor (P : M.Presentation) (Q : N.Presen
     (coprod.mapIso (freeTensorFreeIso _ _) (freeTensorFreeIso _ _) ≪≫ freeSumIso _ _)
     (freeTensorFreeIso _ _) (Iso.refl _) (by simp) (by simp)
 
-/-- The generating morphism of the tensor presentation is the tensor product of the generating
-morphisms, read through `freeTensorFreeIso`. -/
+/-- The generating sections of the tensor presentation are the tensor product of the generating
+sections. -/
 @[simp]
-theorem _root_.SheafOfModules.Presentation.tensor_generators_π (P : M.Presentation)
-    (Q : N.Presentation) :
-    (P.tensor Q).generators.π =
-      (freeTensorFreeIso _ _).inv ≫ (P.generators.π ⊗ₘ Q.generators.π) :=
-  -- As for Mathlib's `generatorsOfIsCokernelFree_π`: the generating sections of `P.tensor Q` are
-  -- by construction the image under `freeHomEquiv` of the generating morphism. Rewriting with
-  -- `presentationOfIsCokernelFree_generators` fails because the index type is dependent.
-  (M ⊗ N).freeHomEquiv.symm_apply_apply _
-
-/-- If the generating morphisms of `P` and `Q` are isomorphisms, that is, `P` and `Q` exhibit
-`M` and `N` as free, then so is the generating morphism of `P.tensor Q`. -/
-theorem _root_.SheafOfModules.Presentation.isIso_tensor_generators_π (P : M.Presentation)
-    (Q : N.Presentation) (hP : IsIso P.generators.π) (hQ : IsIso Q.generators.π) :
-    IsIso (P.tensor Q).generators.π := by
-  rw [Presentation.tensor_generators_π]
-  exact IsIso.comp_isIso' (Iso.isIso_inv _) inferInstance
+theorem _root_.SheafOfModules.Presentation.tensor_generators (P : M.Presentation)
+    (Q : N.Presentation) : (P.tensor Q).generators = P.generators.tensor Q.generators :=
+  rfl
 
 /-- The tensor product of two finite presentations is finite. -/
 instance _root_.SheafOfModules.Presentation.isFinite_tensor (P : M.Presentation)
     (Q : N.Presentation) [P.IsFinite] [Q.IsFinite] :
     (P.tensor Q).IsFinite where
-  isFiniteType_generators := ⟨by simp only [Presentation.tensor_generators_I]; infer_instance⟩
+  isFiniteType_generators := inferInstanceAs (P.generators.tensor Q.generators).IsFiniteType
   isFiniteType_relations := ⟨by simp only [Presentation.tensor_relations_I]; infer_instance⟩
 
 end SheafOfModules

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Quaternion.SplittingCriterion
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # The norm-equation Hilbert symbol
@@ -202,16 +203,7 @@ theorem hilbertSymbol_inv_right (a b : Kˣ) :
 theorem hilbertSymbol_units_map_ringEquiv {L : Type*} [Field L] (e : K ≃+* L) (a b : Kˣ) :
     hilbertSymbol (Units.map (e : K →* L) a) (Units.map (e : K →* L) b) = hilbertSymbol a b := by
   classical
-  have he : (∃ x y : L, ((Units.map (e : K →* L) b : Lˣ) : L) =
-      x ^ 2 - (Units.map (e : K →* L) a : Lˣ) * y ^ 2) ↔
-      ∃ x y : K, (b : K) = x ^ 2 - a * y ^ 2 := by
-    simp only [Units.coe_map, MonoidHom.coe_ofClass]
-    constructor
-    · rintro ⟨x, y, h⟩
-      exact ⟨e.symm x, e.symm y, e.injective (by simpa using h)⟩
-    · rintro ⟨x, y, h⟩
-      exact ⟨e x, e y, by simp [h]⟩
-  simp only [hilbertSymbol_def, he]
+  simp [hilbertSymbol_def, e.exists_eq_sq_sub_mul_sq_map_iff]
 
 -- The quotient-representative construction follows
 -- `TauCeti.BrauerGroup.quaternionClassOnSquareClasses`.
