@@ -18,19 +18,27 @@ shows that almost every point eventually stays inside the sets or eventually sta
 Membership in the sets therefore converges almost everywhere to membership in their `liminf`.
 This turns a sequence of approximate constructions whose corrections have summable mass into a
 limiting set, as in the allocation of disjoint sets of prescribed mass in a laminar family.
-For metric-valued functions, summable bounds on consecutive distances outside events of
-summable measure imply that almost every pointwise sequence is Cauchy.
+
+For functions into a pseudometric space, summable bounds on consecutive distances outside events of
+summable measure imply that almost every pointwise sequence is Cauchy, and summability of the outer
+measures of the sets `{x | ε ≤ dist (f n x) (g x)}` for every `ε > 0` implies `f n x → g x` almost
+everywhere.
 
 ## Main statements
 
-* `TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf`
-* `TauCeti.MeasureTheory.ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top`
+* `TauCeti.MeasureTheory.ae_eventually_mem_iff_mem_liminf`: almost-everywhere stabilization to
+  `liminf` under summable consecutive symmetric differences.
+* `TauCeti.MeasureTheory.ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top`:
+  almost-everywhere Cauchyness from summable consecutive distance bounds outside events of summable
+  measure.
+* `TauCeti.MeasureTheory.ae_tendsto_of_tsum_dist_ge_ne_top`: almost-everywhere convergence in a
+  pseudometric space from summable deviation outer measures.
 -/
 
 public section
 
 open Filter MeasureTheory Set
-open scoped ENNReal symmDiff
+open scoped ENNReal symmDiff Topology
 
 namespace TauCeti.MeasureTheory
 
@@ -66,5 +74,21 @@ theorem ae_cauchySeq_of_summable_of_tsum_measure_dist_gt_ne_top {E : Type*} [Pse
   refine hr.of_norm_bounded_eventually_nat ?_
   filter_upwards [hx] with n hn
   simpa only [Real.norm_eq_abs, abs_of_nonneg dist_nonneg] using not_lt.mp hn
+
+/-- **First Borel--Cantelli criterion for almost-everywhere convergence.** In a pseudometric space,
+if for every `ε > 0` the sets `{x | ε ≤ dist (f n x) (g x)}` have summable outer measure, then
+`f n x → g x` almost everywhere. -/
+theorem ae_tendsto_of_tsum_dist_ge_ne_top {E : Type*} [PseudoMetricSpace E]
+    {f : ℕ → α → E} {g : α → E}
+    (h : ∀ ⦃ε : ℝ⦄, 0 < ε → (∑' n, μ {x | ε ≤ dist (f n x) (g x)}) ≠ ∞) :
+    ∀ᵐ x ∂μ, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x)) := by
+  have hbc (m : ℕ) : ∀ᵐ x ∂μ, ∀ᶠ n in atTop, dist (f n x) (g x) < (m + 1 : ℝ)⁻¹ := by
+    simpa only [Set.mem_ofPred_eq, not_le] using
+      ae_eventually_notMem (h (inv_pos.mpr (by positivity)))
+  filter_upwards [ae_all_iff.2 hbc] with x hx
+  refine Metric.tendsto_nhds.2 fun ε hε ↦ ?_
+  obtain ⟨m, hm⟩ := exists_nat_one_div_lt hε
+  filter_upwards [hx m] with n hn
+  exact hn.trans (by simpa only [one_div] using hm)
 
 end TauCeti.MeasureTheory
