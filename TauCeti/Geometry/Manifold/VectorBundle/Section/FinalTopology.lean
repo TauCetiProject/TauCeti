@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupportTopology
-public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
+public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 import TauCeti.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.ContMDiff.OnSubset
 import TauCeti.Geometry.Manifold.PartitionOfUnity.Compact
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
 
@@ -35,21 +36,25 @@ continuous into any smooth frame topology (`ContMDiffSection.continuous_val_char
 and `chartTestTopology` is Hausdorff (`ContMDiffSection.t2Space_chartTestTopology`).
 
 In the converse direction, any chart `c` with `C^n` inverse subordinate to a smooth trivialization
-`t` reads sections supported in a compact subset `K ⊆ c.source` continuously back into
-`𝓓^{n}_{K'}(E, F)` and `𝓓^{n}(⟨c.target, c.open_target⟩, F)`
-(`Bundle.Trivialization.chartReadSupportedIn`, `Bundle.Trivialization.chartReadTestFunction`), and
-reads arbitrary sections localized by a compactly supported `C^n` cutoff `ρ` with
-`tsupport ρ ⊆ c.source` continuously into `𝓓^{n}(⟨c.target, c.open_target⟩, F)`
-(`Bundle.Trivialization.chartCutoffTestFunction`). When `c.source = univ`, extension by zero is a
-continuous linear equivalence `𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V`
-(`Bundle.Trivialization.chartTestSectionEquiv`).
+`t` reads sections supported in a compact subset `K ⊆ c.source` back into `𝓓^{n}_{c '' K}(E, F)`
+and `𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartReadSupportedIn`,
+`Bundle.Trivialization.chartReadTestFunction`), and reads arbitrary sections localized by a
+compactly supported `C^n` cutoff `ρ` with `tsupport ρ ⊆ c.source` into
+`𝓓^{n}(⟨c.target, c.open_target⟩, F)` (`Bundle.Trivialization.chartCutoffTestFunction`), all
+continuously from any covering smooth frame topology when `E` is locally compact and `M` is a `C^n`
+manifold. When `c` is a two-sided `C^n` chart with `c.source = univ` on a Hausdorff `C^n` manifold
+with locally compact model space, extension by zero is a continuous linear equivalence
+`𝓓^{n}(⟨c.target, c.open_target⟩, F) ≃L[ℝ] compactlySupported I F n V` for any covering
+`compactlySupportedTopology` (`Bundle.Trivialization.chartTestSectionEquiv`).
 
 When `E` is finite-dimensional and `M` is a Hausdorff `C^n` manifold covered by two-sided `C^n`
-charts (in particular, on every boundaryless Hausdorff finite-dimensional `C^n` manifold), a finite
-`C^n` partition of unity on each compact support identifies `chartTestTopology` with the
-fixed-compact inductive-limit topology `ContMDiffSection.compactlySupportedTopology` of any
-covering smooth frame system (`ContMDiffSection.chartTestTopology_eq_compactlySupportedTopology`),
-and with the final locally convex topology of the preferred chart extensions
+charts subordinate to atlas trivializations, a finite `C^n` partition of unity on each compact
+support identifies `chartTestTopology` with the fixed-compact inductive-limit topology
+`ContMDiffSection.compactlySupportedTopology` of any covering smooth frame system
+(`ContMDiffSection.compactlySupportedTopology_eq_chartTestTopology_of_chart_cover`). On every
+boundaryless Hausdorff finite-dimensional `C^n` manifold, this yields the unconditional equality
+`ContMDiffSection.chartTestTopology_eq_compactlySupportedTopology` and identifies
+`chartTestTopology` with the final locally convex topology of the preferred chart extensions
 (`TauCeti.preferredChartAt`) at points of `M`
 (`ContMDiffSection.chartTestTopology_eq_finalLocallyConvexTopology_preferredChartAt`).
 -/
@@ -274,8 +279,9 @@ variable [LocallyCompactSpace E] [IsManifold I n M]
   (hcover : ∀ x : M, ∃ i, x ∈ U i)
 
 include hcover in
-/-- Reading sections supported in a compact subset `K ⊆ c.source` in a smooth chart with `C^n`
-inverse is continuous from any covering smooth frame topology into `𝓓^{n}_{c '' K}(E, F)`. -/
+/-- Reading sections supported in a compact subset `K ⊆ c.source` in a chart `c` with `C^n`
+inverse subordinate to `t` is continuous from any covering smooth frame topology into
+`𝓓^{n}_{c '' K}(E, F)`. -/
 theorem continuous_chartReadSupportedIn {K : Compacts M} (hKc : (K : Set M) ⊆ c.source) :
     letI := frameTopology (I := I) (n := n) e U hU
     Continuous (t.chartReadSupportedIn c hc_symm hct hKc) := by
@@ -426,64 +432,6 @@ end Continuity
 end ChartRead
 
 end Bundle.Trivialization
-
-namespace TauCeti
-
-section PreferredChartAt
-
-variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
-  {E H M : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [TopologicalSpace H] (I : ModelWithCorners 𝕜 E H) [I.Boundaryless]
-  [TopologicalSpace M] [ChartedSpace H M]
-  (F : Type*) [TopologicalSpace F] (V : M → Type*)
-  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
-  [FiberBundle F V]
-
-/-- On a boundaryless manifold, the preferred chart at `x` restricted to the base set of
-`trivializationAt F V x` and read in the model vector space `E`. -/
-def preferredChartAt (x : M) : OpenPartialHomeomorph M E :=
-  ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E)
-
-variable {I F V}
-
-@[simp]
-theorem preferredChartAt_source (x : M) :
-    (preferredChartAt I F V x).source =
-      (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
-  rw [preferredChartAt, OpenPartialHomeomorph.extendTrans_source,
-    (chartAt H x).restr_source' _ (trivializationAt F V x).open_baseSet]
-
-/-- Each point `x` belongs to the source of `preferredChartAt I F V x`. -/
-theorem mem_preferredChartAt_source (x : M) : x ∈ (preferredChartAt I F V x).source := by
-  rw [preferredChartAt_source]
-  exact ⟨mem_chart_source H x, mem_baseSet_trivializationAt F V x⟩
-
-/-- The source of `preferredChartAt I F V x` lies inside the base set of
-`trivializationAt F V x`. -/
-theorem preferredChartAt_source_subset_baseSet (x : M) :
-    (preferredChartAt I F V x).source ⊆ (trivializationAt F V x).baseSet := by
-  rw [preferredChartAt_source]
-  exact inter_subset_right
-
-/-- Forward `C^n` regularity of `preferredChartAt I F V x` on its source. -/
-theorem contMDiffOn_preferredChartAt {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn I 𝓘(𝕜, E) n (preferredChartAt I F V x) (preferredChartAt I F V x).source :=
-  OpenPartialHomeomorph.contMDiffOn_extendTrans _
-    (restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
-      (trivializationAt F V x).open_baseSet)
-    contDiff_id
-
-/-- Inverse `C^n` regularity of `preferredChartAt I F V x` on its target. -/
-theorem contMDiffOn_preferredChartAt_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn 𝓘(𝕜, E) I n (preferredChartAt I F V x).symm (preferredChartAt I F V x).target :=
-  OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _
-    (restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
-      (trivializationAt F V x).open_baseSet)
-    contDiff_id
-
-end PreferredChartAt
-
-end TauCeti
 
 namespace ContMDiffSection
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Native test functions in bundle charts
@@ -212,17 +213,7 @@ section ExtensionScalars
 variable {𝕜' : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra ℝ 𝕜']
   [NormedSpace 𝕜' F] [IsScalarTower ℝ 𝕜' F]
   [∀ x, Module 𝕜' (V x)] [VectorBundle 𝕜' F V]
-
-omit [T2Space M] [VectorBundle ℝ F V] [NormedAlgebra ℝ 𝕜'] [IsScalarTower ℝ 𝕜' F]
-  [VectorBundle 𝕜' F V] in
-private theorem symmL_eq_of_isLinear (t : Trivialization F (π F V)) [t.IsLinear ℝ]
-    [t.IsLinear 𝕜'] (x : M) (v : F) :
-    t.symmL ℝ x v = t.symmL 𝕜' x v := by
-  by_cases hx : x ∈ t.baseSet
-  · rw [t.symmL_apply hx, t.symmL_apply hx]
-  · rw [t.symmL_apply_of_notMem hx, t.symmL_apply_of_notMem hx]
-
-variable (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
+  (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
   (c : OpenPartialHomeomorph M E)
   (hc : ContMDiffOn I 𝓘(ℝ, E) n c c.source) (hce : c.source ⊆ e.baseSet)
 
@@ -235,7 +226,7 @@ theorem chartTestSection_smul_ofNormedAlgebra (a : 𝕜')
   ext x
   by_cases hx : x ∈ c.source
   · simp [e.chartTestSection_apply_of_mem c hc hce _ hx,
-      symmL_eq_of_isLinear (𝕜' := 𝕜') e x]
+      e.coe_symmL_eq_coe_symmL ℝ 𝕜' x]
   · simp [e.chartTestSection_apply_of_notMem c hc hce _ hx]
 
 variable (𝕜') in

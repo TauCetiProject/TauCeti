@@ -111,12 +111,7 @@ theorem continuous_iff_toContMDiffMap {X : Type*} [TopologicalSpace X]
       exact iteratedFDeriv_sub_apply (((φ x).contDiff.of_le hi').contDiffAt)
         (((φ y).contDiff.of_le hi').contDiffAt)
     rw [dist_eq_norm (structureMapCLM ℝ n i (φ x)) (structureMapCLM ℝ n i (φ y)),
-      show structureMapCLM ℝ n i (φ x) - structureMapCLM ℝ n i (φ y) =
-          structureMapCLM ℝ n i (φ x - φ y) by
-        ext z : 1
-        simp only [structureMapCLM_apply, hi, ↓reduceIte, sub_apply, FunLike.coe_sub]
-        exact (iteratedFDeriv_sub_apply (((φ x).contDiff.of_le hi').contDiffAt)
-          (((φ y).contDiff.of_le hi').contDiffAt)).symm,
+      ← map_sub (structureMapCLM ℝ n i) (φ x) (φ y),
       ← ContDiffMapSupportedIn.seminorm_apply,
       seminorm_eq_norm_restrict hi, hsub, BoundedContinuousFunction.norm_toContinuousMap_eq,
       ← dist_eq_norm (ψ x) (ψ y)]
