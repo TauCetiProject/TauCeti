@@ -678,8 +678,9 @@ private theorem exists_complexCoordinate (hH : ContDiff ℝ 3 (uncurry H)) (hHpe
     fun z hz ↦ by simpa [heq hz, heapp] using huK _ hz z.im, fun z hz ↦ ?_, fun p hp ↦ ?_,
     fun A hA hAS ↦ ?_⟩
   · rw [hderiv z hz, heq hz]
-    simpa [Jc, heapp] using ω.fderiv_comp_equivRealProdCLM_I_sub (J := fun w x ↦ J w.2 x)
-      (hfloer' (e z) (hmaps hz))
+    simpa [Jc, heapp] using
+      (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub
+        (J := fun w x ↦ J w.2 x)).1 (hfloer' (e z) (hmaps hz))
   · rw [hderiv z hz, fderiv_comp_equivRealProdCLM_one, heapp, stdComplexLineReal_eq]
   · -- Near `p`, `u` is `v` read back through `e`.
     have hre (y : ℝ × ℝ) : (e.symm y).re = y.1 := by simp [he]
