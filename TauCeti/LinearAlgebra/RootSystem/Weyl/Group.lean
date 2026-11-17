@@ -37,7 +37,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
   automorphism, and in particular a Weyl-group element, carries the coroot functional of a root to
   the coroot functional of its image.
 * `RootPairing.weylGroupToPerm_ofIdx_apply` evaluates the action of a simple reflection.
-* `RootPairing.weylGroupToPerm_neg` says the action commutes with root negation.
+* `RootPairing.weylGroupToPerm_neg` and `RootPairing.weylGroupToPerm_reflectionPerm_self` say the
+  action commutes with root negation.
 * `RootPairing.reflection_indexNeg_neg` says the reflection in `-β` is the reflection in `β`.
 * `RootPairing.root_weylGroupToPerm_eq_add` says the action preserves decompositions of roots as
   sums of two roots.
@@ -217,6 +218,13 @@ lemma weylGroupToPerm_neg (w : P.weylGroup) (j : ι) :
     letI := P.indexNeg
     P.weylGroupToPerm w (-j) = -(P.weylGroupToPerm w j) :=
   by simp [indexNeg_neg]
+
+/-- The Weyl-group action on root indices commutes with self-reflection `s_j(j) = -j`. -/
+lemma weylGroupToPerm_reflectionPerm_self (w : P.weylGroup) (j : ι) :
+    P.weylGroupToPerm w (P.reflectionPerm j j) =
+      P.reflectionPerm (P.weylGroupToPerm w j) (P.weylGroupToPerm w j) := by
+  let := P.indexNeg
+  simpa only [← P.indexNeg_neg] using P.weylGroupToPerm_neg w j
 
 variable {P} in
 /-- The reflection in the negative `-β = s_β β` of a root is the reflection in `β`. -/
