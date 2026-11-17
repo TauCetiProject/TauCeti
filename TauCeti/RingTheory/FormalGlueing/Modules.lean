@@ -17,6 +17,7 @@ import TauCeti.Algebra.Module.Torsion.Localization
 import TauCeti.RingTheory.FormalGlueing.ExtensionComparison
 import TauCeti.RingTheory.FormalGlueing.Injectivity
 import TauCeti.RingTheory.FormalGlueing.Torsion
+import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
@@ -283,24 +284,17 @@ theorem exists_formalGlueing_module
       simp [hfk]
   · intro r₁ hr₁ r₂ hr₂ x
     let T₁₂ : Submonoid R := .powers r₁ ⊔ .powers r₂
-    have hnat {A B : Type u} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
-        {T : Submonoid R} (hT : T ≤ T₁₂) (u : A →ₗ[R] B) (w : LocalizedModule T A) :
-        LocalizedModule.liftOfLE T T₁₂ hT (LocalizedModule.map T u w) =
-          LocalizedModule.map T₁₂ u (LocalizedModule.liftOfLE T T₁₂ hT w) := by
-      induction w using LocalizedModule.induction_on with
-      | h a s =>
-        rw [LocalizedModule.map_mk]
-        simp only [IsLocalizedModule.mk_eq_mk', IsLocalizedModule.liftOfLE_mk']
-        simp only [← IsLocalizedModule.mk_eq_mk', LocalizedModule.map_mk]
     obtain ⟨w₁, hw₁⟩ := (hi_bij r₁ hr₁).2 (LocalizedModule.mk x 1)
     obtain ⟨w₂, hw₂⟩ := (hi_bij r₂ hr₂).2 (LocalizedModule.mk x 1)
     have hw_eq : LocalizedModule.liftOfLE (.powers r₁) T₁₂ le_sup_left w₁ =
         LocalizedModule.liftOfLE (.powers r₂) T₁₂ le_sup_right w₂ := by
       apply LocalizedModule.map_injective T₁₂ i hi_inj
-      rw [← hnat le_sup_left i w₁, ← hnat le_sup_right i w₂, hw₁, hw₂]
+      rw [← LocalizedModule.liftOfLE_map_apply _ T₁₂ le_sup_left i w₁,
+        ← LocalizedModule.liftOfLE_map_apply _ T₁₂ le_sup_right i w₂, hw₁, hw₂]
       simp only [← LocalizedModule.mkLinearMap_apply, IsLocalizedModule.liftOfLE_apply]
-    rw [← hw₁, he_map r₁ hr₁ w₁, ← hw₂, he_map r₂ hr₂ w₂, hnat le_sup_left b w₁,
-      hnat le_sup_right b w₂, hw_eq]
+    rw [← hw₁, he_map r₁ hr₁ w₁, ← hw₂, he_map r₂ hr₂ w₂,
+      LocalizedModule.liftOfLE_map_apply _ T₁₂ le_sup_left b w₁,
+      LocalizedModule.liftOfLE_map_apply _ T₁₂ le_sup_right b w₂, hw_eq]
 
 /-- **Formal gluing of modules for base-changed overlap (`IsBaseChange S f`).** When `f : M →ₗ[R] P`
 exhibits `P` as `S ⊗[R] M` and `g : N →ₗ[S] P` becomes bijective on each `D(algebraMap R S r)`

@@ -14,6 +14,7 @@ import TauCeti.RingTheory.FormalGlueing.Modules
 import TauCeti.RingTheory.FormalGlueing.Subalgebra
 import TauCeti.RingTheory.Localization.Module
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Reconstructing algebras by formal gluing
@@ -202,16 +203,6 @@ private theorem exists_local_algEquiv_of_extension
       IsLocalization.Away.liftAlgHom (S := Localization.Away r₂) r₂
         (f := Algebra.ofId R R₁₂)
         (IsLocalization.Away.isUnit_of_dvd (r₁ * r₂) (dvd_mul_left r₂ r₁))
-    have hcomm {B : Type u} [Ring B] [Algebra R B] {r : R} (φ_r : Localization.Away r →ₐ[R] R₁₂)
-        (π : K_alg →ₐ[R] B) (hπ : Bijective (LocalizedModule.map (.powers r) π.toLinearMap))
-        (z : Localization.Away r ⊗[R] K_alg) :
-        Algebra.TensorProduct.map φ_r (AlgHom.id R B)
-          (π.algEquivOfLocalizedBijective (.powers r) (Localization.Away r) hπ z) =
-        Algebra.TensorProduct.map (AlgHom.id R R₁₂) π
-          (Algebra.TensorProduct.map φ_r (AlgHom.id R K_alg) z) := by
-      induction z using TensorProduct.inductionOn with
-      | tmul s k => simp
-      | add x y hx hy => simp [map_add, hx, hy]
     obtain ⟨z₁, hz₁⟩ := (π₂.algEquivOfLocalizedBijective (.powers r₁) (Localization.Away r₁)
       (hπ₂ r₁ hr₁)).surjective (1 ⊗ₜ[R] a)
     obtain ⟨z₂, hz₂⟩ := (π₂.algEquivOfLocalizedBijective (.powers r₂) (Localization.Away r₂)
@@ -221,13 +212,22 @@ private theorem exists_local_algEquiv_of_extension
       exact eE.injective.comp (hi_inj.comp eK.injective)
     have hw_eq : Algebra.TensorProduct.map φ₁ (AlgHom.id R K_alg) z₁ =
         Algebra.TensorProduct.map φ₂ (AlgHom.id R K_alg) z₂ := by
-      apply (π₂.injective_tensorProduct_map_id_iff (S := R) (.powers (r₁ * r₂)) R₁₂).mpr
+      apply (π₂.injective_tensorProduct_map_id_iff (S := R₁₂) (.powers (r₁ * r₂)) R₁₂).mpr
         (LocalizedModule.map_injective (.powers (r₁ * r₂)) π₂.toLinearMap hπ₂_inj)
-      rw [← hcomm φ₁ π₂ (hπ₂ r₁ hr₁) z₁, ← hcomm φ₂ π₂ (hπ₂ r₂ hr₂) z₂, hz₁, hz₂]
+      rw [π₂.lTensor_rTensor_comm φ₁ z₁, π₂.lTensor_rTensor_comm φ₂ z₂]
+      simp only [Algebra.TensorProduct.lTensor, Algebra.TensorProduct.rTensor,
+        ← AlgHom.toAlgHom_algEquivOfLocalizedBijective (.powers r₁) (Localization.Away r₁) π₂
+          (hπ₂ r₁ hr₁),
+        ← AlgHom.toAlgHom_algEquivOfLocalizedBijective (.powers r₂) (Localization.Away r₂) π₂
+          (hπ₂ r₂ hr₂),
+        AlgEquiv.coe_toAlgHom, hz₁, hz₂]
       simp
     rw [← hz₁, ← hz₂]
     simp only [e_loc, AlgEquiv.trans_apply, AlgEquiv.symm_apply_apply]
-    rw [hcomm φ₁ π₁ (hπ₁ r₁ hr₁) z₁, hcomm φ₂ π₁ (hπ₁ r₂ hr₂) z₂, hw_eq]
+    simp only [← AlgEquiv.coe_toAlgHom, AlgHom.toAlgHom_algEquivOfLocalizedBijective]
+    exact (π₁.lTensor_rTensor_comm φ₁ z₁).symm.trans <|
+      (congrArg (Algebra.TensorProduct.map (AlgHom.id R₁₂ R₁₂) π₁) hw_eq).trans
+        (π₁.lTensor_rTensor_comm φ₂ z₂)
 
 variable [Module.FaithfullyFlat R S]
 

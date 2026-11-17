@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.LocalizedModule.BaseChange
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+public import TauCeti.RingTheory.TensorProduct.LiftEquiv
 public import Mathlib.RingTheory.TensorProduct.Maps
 import TauCeti.Algebra.TensorProduct.BaseChange
 
@@ -29,8 +30,6 @@ commutative semiring `S` between `R` and `R'`) coincide with the corresponding p
 
 ## Main declarations
 
-* `AlgHom.liftEquiv_comp_includeRight`: composing `f.liftEquiv R S A B` with
-  `Algebra.TensorProduct.includeRight` recovers `f`.
 * `IsBaseChange.iff_liftEquiv_bijective`: `IsBaseChange S f.toLinearMap` holds if and only if
   `f.liftEquiv R S A B` is bijective.
 * `IsBaseChange.algEquiv`: the `S`-algebra equivalence `S ⊗[R] A ≃ₐ[S] B` induced by an
@@ -52,12 +51,6 @@ section IsBaseChange
 
 variable {R S A B : Type*} [CommSemiring R] [CommSemiring S] [Algebra R S]
   [Semiring A] [Algebra R A] [Semiring B] [Algebra R B] [Algebra S B] [IsScalarTower R S B]
-
-/-- Composing `f.liftEquiv R S A B` with `Algebra.TensorProduct.includeRight` recovers `f`. -/
-@[simp]
-theorem AlgHom.liftEquiv_comp_includeRight (f : A →ₐ[R] B) :
-    ((f.liftEquiv R S A B).restrictScalars R).comp Algebra.TensorProduct.includeRight = f :=
-  (AlgHom.liftEquiv R S A B).left_inv f
 
 /-- An `R`-algebra map `f : A →ₐ[R] B` exhibits `B` as the module base change of `A` along
 `R → S` if and only if the induced `S`-algebra map `f.liftEquiv R S A B` is bijective. -/
@@ -116,16 +109,6 @@ namespace AlgHom
 variable {R : Type*} [CommSemiring R] (T : Submonoid R)
   (R' : Type*) [CommSemiring R'] [Algebra R R'] [IsLocalization T R']
   {A B : Type*} [Semiring A] [Algebra R A] [Semiring B] [Algebra R B]
-
-private theorem coe_tensorProduct_map_id {S : Type*} [CommSemiring S] [Algebra R S]
-    [Algebra S R'] [IsScalarTower R S R'] (f : A →ₐ[R] B) :
-    ⇑(Algebra.TensorProduct.map (AlgHom.id S R') f) = ⇑(f.toLinearMap.baseChange R') := by
-  have h : (Algebra.TensorProduct.map (AlgHom.id S R') f).toLinearMap.restrictScalars R =
-      (f.toLinearMap.baseChange R').restrictScalars R := by
-    ext r' a
-    simp
-  simpa only [AlgHom.coe_toLinearMap, LinearMap.coe_restrictScalars] using
-    congrArg DFunLike.coe h
 
 /-- Extending an `R`-algebra map `f : A →ₐ[R] B` to a localization `R'` of `R` at `T` is injective
 if and only if `LocalizedModule.map T f.toLinearMap` is injective. -/
