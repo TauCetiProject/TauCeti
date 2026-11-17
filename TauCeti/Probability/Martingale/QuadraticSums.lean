@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Martingale.Basic
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
