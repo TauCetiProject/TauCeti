@@ -39,9 +39,9 @@ lies in an interval of length `N` for almost every `t`, then
 (`TauCeti.PDE.abs_intervalRepresentativeL_sub_le_min_mul_div_of_forall_setIntegral_eq`). For the
 coefficient `A(y) = 1 + y² / (1 + y²)`, which lies between `1` and `2`, and `f = 1` on `(0, 1)`
 with zero boundary values, this gives a solution with `|ū y| ≤ min y (1 - y) ≤ 1 / 2`
-(`TauCeti.PDE.exists_intervalTraceL_eq_zero_and_forall_setIntegral_eq_and_abs_le_min`), and the
-same bound shows that the frozen-coefficient map sends all of `C([0, 1])` into the closed ball of
-radius `1 / 2` (`TauCeti.PDE.norm_intervalDirichletSolution_one_add_sq_div_le`).
+(`TauCeti.PDE.exists_intervalTraceL_eq_zero_and_forall_setIntegral_one_add_sq_div_and_abs_le_min`),
+and the same bound shows that the frozen-coefficient map sends all of `C([0, 1])` into the closed
+ball of radius `1 / 2` (`TauCeti.PDE.norm_intervalDirichletSolution_one_add_sq_div_le`).
 
 ## The argument
 
@@ -223,7 +223,7 @@ private theorem ae_intervalIntegral_one_add_zero_mem_Icc :
 `|ū y| ≤ min y (1 - y)`, in particular `|ū| ≤ 1 / 2`; by
 `abs_intervalRepresentativeL_sub_le_min_mul_div_of_forall_setIntegral_eq` the same bound holds
 for every solution. -/
-theorem exists_intervalTraceL_eq_zero_and_forall_setIntegral_eq_and_abs_le_min :
+theorem exists_intervalTraceL_eq_zero_and_forall_setIntegral_one_add_sq_div_and_abs_le_min :
     ∃ u : W1p volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ p,
       W1p.intervalTraceL zero_lt_one u = (0, 0) ∧
       (∀ φ : 𝓓(⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩, ℝ),
@@ -266,13 +266,22 @@ theorem norm_intervalDirichletSolution_one_add_sq_div_le (v : C(Icc (0 : ℝ) 1,
   have ha : Continuous fun t : ℝ =>
       1 + v (projIcc 0 1 zero_le_one t) ^ 2 / (1 + v (projIcc 0 1 zero_le_one t) ^ 2) :=
     continuous_const.add ((hv.pow 2).div (continuous_const.add (hv.pow 2)) fun t => by positivity)
+  -- The decay bound is stated for `G t = ∫_0^t 1 + 0`; rewrite the solution to that form of `G`.
+  obtain ⟨hs', hsol⟩ : ∃ hs' : IntegrableOn
+      (intervalDirichletSlope 0 1 0 0 (fun t => (∫ _ in (0 : ℝ)..t, (1 : ℝ)) + 0) fun t =>
+        1 + v (projIcc 0 1 zero_le_one t) ^ 2 / (1 + v (projIcc 0 1 zero_le_one t) ^ 2))
+      (Ioo 0 1),
+      intervalDirichletSolution zero_le_one 0 0 hs =
+        intervalDirichletSolution zero_le_one 0 0 hs' := by
+    rw [intervalIntegral_one_add_zero]
+    exact ⟨hs, rfl⟩
   refine (ContinuousMap.norm_le _ (by norm_num)).2 fun y => ?_
   have h := abs_intervalDirichletSolution_sub_le_min_mul_div zero_lt_one one_pos
     ha.aestronglyMeasurable (ae_of_all _ fun t => one_le_one_add_sq_div_and_le_two _)
     (integrableOn_const (C := (1 : ℝ)) measure_Ioo_lt_top.ne) integrableOn_zero 0
-    ae_intervalIntegral_one_add_zero_mem_Icc (intervalIntegral_one_add_zero ▸ hs) y
-  simp only [intervalDirichletSolution_apply, sub_zero, mul_one, div_one,
-    intervalIntegral_one_add_zero] at h ⊢
+    ae_intervalIntegral_one_add_zero_mem_Icc hs' y
+  rw [← hsol] at h
+  simp only [sub_zero, mul_one, div_one] at h
   have hmin : min (y : ℝ) (1 - y) ≤ 1 / 2 := by
     rcases le_or_gt (y : ℝ) (1 / 2) with hy | hy
     · exact (min_le_left _ _).trans hy
