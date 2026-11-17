@@ -13,6 +13,9 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
+import TauCeti.Algebra.Group.Subgroup.Pointwise
+import TauCeti.Algebra.Group.Subsemigroup.Pointwise
+import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
 # Quadratic energies, weak Euler--Lagrange equations, and coercive minimization
@@ -85,18 +88,6 @@ open Filter Set Bornology NormedSpace
 open scoped Topology Pointwise
 
 namespace TauCeti
-
-private theorem sub_mem_of_mem_vadd_submodule {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
-    {W : Submodule R V} {g x y : V} (hx : x ∈ g +ᵥ (W : Set V)) (hy : y ∈ g +ᵥ (W : Set V)) :
-    x - y ∈ W := by
-  rw [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub] at hx hy
-  simpa only [sub_sub_sub_cancel_right] using W.sub_mem hx hy
-
-private theorem add_smul_mem_vadd_submodule {R V : Type*} [Ring R] [AddCommGroup V] [Module R V]
-    {W : Submodule R V} {g u w : V} (hu : u ∈ g +ᵥ (W : Set V)) (hw : w ∈ W) (r : R) :
-    u + r • w ∈ g +ᵥ (W : Set V) := by
-  rw [mem_vadd_set_iff_neg_vadd_mem, vadd_eq_add, neg_add_eq_sub] at hu ⊢
-  simpa only [SetLike.mem_coe, add_sub_right_comm] using W.add_mem hu (W.smul_mem r hw)
 
 section Basic
 
@@ -509,7 +500,7 @@ theorem re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_vadd_real
   refine re_apply_eq_re_of_isLocalMinOn_quadraticEnergy_line ha hmin
     (Eventually.of_forall fun t ↦ ?_)
   rw [← RCLike.algebraMap_eq_ofReal, algebraMap_smul]
-  exact add_smul_mem_vadd_submodule hu hw t
+  exact add_mem_vadd_set hu (W.smul_mem t hw)
 
 /-- **Weak Euler--Lagrange equation** on an affine subspace `g +ᵥ W` for a Hermitian form `a`: if
 `u ∈ g +ᵥ W` is a local minimizer of `quadraticEnergy a ℓ` on `g +ᵥ W` (`W : Submodule 𝕜 V`), then
@@ -621,7 +612,7 @@ theorem isMinOn_quadraticEnergy_vadd_iff {a : V →L⋆[𝕜] V →L[𝕜] 𝕜}
     IsMinOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) u ↔ ∀ w ∈ W, a u w = ℓ w := by
   refine ⟨fun hmin w hw ↦ apply_eq_of_isMinOn_quadraticEnergy_vadd ha hu hmin hw,
     fun hsol ↦ isMinOn_iff.mpr fun v hv ↦ ?_⟩
-  have hvu : v - u ∈ W := sub_mem_of_mem_vadd_submodule hv hu
+  have hvu : v - u ∈ W := sub_mem_of_mem_vadd_set hv hu
   have hgap := quadraticEnergy_sub_eq_re_of_forall_apply_eq ha hvu hsol
   linarith [hpos (v - u) hvu]
 
@@ -732,7 +723,7 @@ theorem norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd {a : V →L�
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
   exact norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex
     ((W.restrictScalars ℝ).convex.vadd g) hc
-    (fun _ hx _ hy ↦ hcoer _ (sub_mem_of_mem_vadd_submodule hy hx)) hu hv hmin
+    (fun _ hx _ hy ↦ hcoer _ (sub_mem_of_mem_vadd_set hy hx)) hu hv hmin
 
 /-- **Unconstrained near-minimizer distance rate**: for `c > 0` and `∀ w, c * ‖w‖² ≤ Re(a w w)`,
 every `v : V` satisfies `‖v - u‖² ≤ (E(v) - E(u)) / c` around a local minimizer `u`. No symmetry of
@@ -746,19 +737,6 @@ theorem norm_sub_sq_le_quadraticEnergy_sub_div {a : V →L⋆[𝕜] V →L[𝕜]
     (fun w _ ↦ hcoer w) (by simp) (by simp)
     (by simpa using hmin.isLocalMinOn Set.univ)
 
-private theorem tendsto_of_norm_sub_sq_le_of_tendsto {E_space ι : Type*}
-    [SeminormedAddCommGroup E_space] {l : Filter ι} {E : E_space → ℝ} {c : ℝ} {u : E_space}
-    {x : ι → E_space} (hrate : ∀ᶠ i in l, ‖x i - u‖ ^ 2 ≤ (E (x i) - E u) / c)
-    (hE : Tendsto (fun i ↦ E (x i)) l (𝓝 (E u))) :
-    Tendsto x l (𝓝 u) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero]
-  have hsq : Tendsto (fun i ↦ ‖x i - u‖ ^ 2) l (𝓝 0) := by
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ sq_nonneg _) hrate ?_
-    simpa only [sub_self, zero_div] using (hE.sub_const (E u)).div_const c
-  simpa only [Real.sqrt_zero] using
-    (Real.continuous_sqrt.tendsto 0).comp hsq |>.congr'
-      (Eventually.of_forall fun i ↦ Real.sqrt_sq (norm_nonneg (x i - u)))
-
 /-- **Norm convergence of near-minimizers on a convex set** `C`: if `a` is `c`-coercive on
 differences in `C` (`c > 0`), `u ∈ C` locally minimizes `quadraticEnergy a ℓ` on `C`, and
 `x i ∈ C` satisfies `E(x i) → E(u)`, then `x i → u` in norm. No symmetry of `a` is required. -/
@@ -770,9 +748,11 @@ theorem tendsto_of_tendsto_quadraticEnergy_convex [Module ℝ V] [IsScalarTower 
     {x : ι → V} (hx : ∀ᶠ i in l, x i ∈ C)
     (hE : Tendsto (fun i ↦ quadraticEnergy a ℓ (x i)) l (𝓝 (quadraticEnergy a ℓ u))) :
     Tendsto x l (𝓝 u) :=
-  tendsto_of_norm_sub_sq_le_of_tendsto
-    (hx.mono fun _ hi ↦ norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex hC hc
-      hcoer hu hi hmin) hE
+  tendsto_of_dist_pow_le_of_tendsto_zero
+    (hx.mono fun _ hi ↦ by
+      simpa only [← dist_eq_norm] using
+        norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_convex hC hc hcoer hu hi hmin)
+    (by simpa only [sub_self, zero_div] using (hE.sub_const (quadraticEnergy a ℓ u)).div_const c)
 
 /-- **Norm convergence of near-minimizers on `g +ᵥ W`**: if `a` is `c`-coercive on `W` (`c > 0`),
 `u ∈ g +ᵥ W` locally minimizes `quadraticEnergy a ℓ` on `g +ᵥ W`, and `x i ∈ g +ᵥ W` satisfies
@@ -785,9 +765,11 @@ theorem tendsto_of_tendsto_quadraticEnergy_vadd {ι : Type*} {l : Filter ι}
     {x : ι → V} (hx : ∀ᶠ i in l, x i ∈ g +ᵥ (W : Set V))
     (hE : Tendsto (fun i ↦ quadraticEnergy a ℓ (x i)) l (𝓝 (quadraticEnergy a ℓ u))) :
     Tendsto x l (𝓝 u) :=
-  tendsto_of_norm_sub_sq_le_of_tendsto
-    (hx.mono fun _ hi ↦ norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd hc hcoer hu hi
-      hmin) hE
+  tendsto_of_dist_pow_le_of_tendsto_zero
+    (hx.mono fun _ hi ↦ by
+      simpa only [← dist_eq_norm] using
+        norm_sub_sq_le_quadraticEnergy_sub_div_of_isLocalMinOn_vadd hc hcoer hu hi hmin)
+    (by simpa only [sub_self, zero_div] using (hE.sub_const (quadraticEnergy a ℓ u)).div_const c)
 
 /-- **Unconstrained norm convergence of near-minimizers**: if `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`),
 `u` locally minimizes `quadraticEnergy a ℓ`, and `E(x i) → E(u)`, then `x i → u` in norm. No
@@ -867,7 +849,7 @@ theorem hasBoundedSublevelsOn_quadraticEnergy_vadd {a : V →L⋆[𝕜] V →L[�
     {c : ℝ} (hc : 0 < c) (hcoer : ∀ w ∈ W, c * ‖w‖ ^ 2 ≤ RCLike.re (a w w)) :
     HasBoundedSublevelsOn (quadraticEnergy a ℓ) (g +ᵥ (W : Set V)) :=
   hasBoundedSublevelsOn_quadraticEnergy_of_sub_coercive ℓ hc fun _ hx _ hy ↦
-    hcoer _ (sub_mem_of_mem_vadd_submodule hy hx)
+    hcoer _ (sub_mem_of_mem_vadd_set hy hx)
 
 end Coercive
 
@@ -903,7 +885,7 @@ theorem eq_of_isLocalMinOn_quadraticEnergy_vadd {a : V →L⋆[𝕜] V →L[𝕜
   let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
   have : IsScalarTower ℝ 𝕜 V := IsScalarTower.restrictScalars ℝ 𝕜 V
   exact eq_of_isLocalMinOn_quadraticEnergy_convex ((W.restrictScalars ℝ).convex.vadd g) hc
-    (fun _ hx _ hy ↦ hcoer _ (sub_mem_of_mem_vadd_submodule hy hx)) hu₁ hu₂ hmin₁ hmin₂
+    (fun _ hx _ hy ↦ hcoer _ (sub_mem_of_mem_vadd_set hy hx)) hu₁ hu₂ hmin₁ hmin₂
 
 /-- **Uniqueness of unconstrained local minimizers** when `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`). No
 symmetry of `a` is required. -/
@@ -980,7 +962,7 @@ theorem existsUnique_vadd_forall_apply_eq_of_isClosed_of_coercive
     TauCeti.isMinOn_quadraticEnergy_vadd_iff ha hpos hu).mp ?_
   exact TauCeti.existsUnique_isMinOn_quadraticEnergy_of_isClosed_convex hV
     ⟨g + 0, vadd_mem_vadd_set W.zero_mem⟩ ((W.restrictScalars ℝ).convex.vadd g) (hW.vadd g) hc
-    (fun _ hx _ hy ↦ hcoer _ (TauCeti.sub_mem_of_mem_vadd_submodule hy hx)) ℓ
+    (fun _ hx _ hy ↦ hcoer _ (TauCeti.sub_mem_of_mem_vadd_set hy hx)) ℓ
 
 /-- **Global direct-method existence and uniqueness of weak solutions** in a reflexive normed space
 over `𝕜` for a Hermitian form satisfying `∀ w, c * ‖w‖² ≤ Re(a w w)` (`c > 0`). -/

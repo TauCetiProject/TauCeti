@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Defs
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Analysis.Calculus.Bilinear
 public import TauCeti.Analysis.RCLike.Basic
+import Mathlib.Analysis.Normed.Module.RCLike.Extend
 
 /-!
 # Real quadratic forms, Cauchy--Schwarz inequalities, and coercive stability for sesquilinear forms
@@ -429,23 +430,8 @@ theorem reBilin_bilinearComp {E' F' : Type*}
 /-- Taking the real part of the functional `a x` preserves its operator norm. -/
 @[simp]
 theorem norm_reBilin_apply (a : E →L⋆[𝕜] F →L[𝕜] 𝕜) (x : E) : ‖a.reBilin x‖ = ‖a x‖ := by
-  refine le_antisymm ?_ ?_
-  · refine opNorm_le_bound _ (norm_nonneg (a x)) fun y ↦ ?_
-    rw [Real.norm_eq_abs, reBilin_apply_apply]
-    exact (RCLike.abs_re_le_norm (a x y)).trans ((a x).le_opNorm y)
-  · refine opNorm_le_bound _ (norm_nonneg (a.reBilin x)) fun y ↦ ?_
-    obtain h0 | hpos := (norm_nonneg (a x y)).eq_or_lt
-    · rw [← h0]
-      positivity
-    · have hre : ‖a x y‖ ^ 2 = a.reBilin x (star (a x y) • y) := by
-        rw [reBilin_apply_apply, map_smul, smul_eq_mul, mul_comm, ← starRingEnd_apply,
-          RCLike.mul_conj, ← RCLike.ofReal_pow, RCLike.ofReal_re]
-      have hle : a.reBilin x (star (a x y) • y) ≤ ‖a.reBilin x‖ * (‖a x y‖ * ‖y‖) := by
-        calc a.reBilin x (star (a x y) • y) ≤ ‖a.reBilin x (star (a x y) • y)‖ :=
-              le_abs_self _
-          _ ≤ ‖a.reBilin x‖ * ‖star (a x y) • y‖ := (a.reBilin x).le_opNorm _
-          _ = ‖a.reBilin x‖ * (‖a x y‖ * ‖y‖) := by rw [norm_smul, norm_star]
-      nlinarith
+  rw [reBilin_apply, ← StrongDual.extendRCLikeₗᵢ_symm_apply (𝕜 := 𝕜) (F := F)]
+  exact (StrongDual.extendRCLikeₗᵢ (𝕜 := 𝕜) (F := F)).symm.norm_map (a x)
 
 /-- Taking the real-part bilinear form preserves the operator norm: `‖a.reBilin‖ = ‖a‖`. -/
 @[simp]
