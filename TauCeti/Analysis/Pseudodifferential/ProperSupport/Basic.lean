@@ -56,7 +56,8 @@ spatial support, and they are the pieces that are patched together on manifolds.
   operator `Op(c)` preserves compact supports.
 * `TauCeti.Symbol.HasNearDiagonalKernel a R`: the kernel of `Op(a)` is supported within distance
   `R` of the diagonal, that is, `Op(a) u (x) = 0` whenever `u` vanishes on the ball of radius `R`
-  about `x`. The kernel cutoff by a `χ` supported in that ball has this property
+  about `x`. It persists for larger `R` (`TauCeti.Symbol.HasNearDiagonalKernel.mono`). The kernel
+  cutoff by a `χ` supported in that ball has this property
   (`TauCeti.Symbol.hasNearDiagonalKernel_kernelCutoff`).
 * `TauCeti.Symbol.isSmoothing_kernelCutoff_sub`: if `χ = 1` near `0`, then `c - b` is smoothing.
 * `TauCeti.Symbol.exists_isSmoothing_sub_and_hasNearDiagonalKernel`: for every `ε > 0`, every
@@ -415,6 +416,12 @@ theorem hasNearDiagonalKernel_iff {a : Symbol n V W m} {R : ℝ} :
     a.HasNearDiagonalKernel R ↔ ∀ (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n),
       (∀ y ∈ Metric.ball x R, u y = 0) → quantizeSchwartzValue a.coefficient u x = 0 :=
   Iff.rfl
+
+/-- A kernel supported within distance `R` of the diagonal is supported within any larger
+distance `R'`. -/
+theorem HasNearDiagonalKernel.mono {a : Symbol n V W m} {R R' : ℝ}
+    (ha : a.HasNearDiagonalKernel R) (h : R ≤ R') : a.HasNearDiagonalKernel R' :=
+  fun u x hu ↦ ha u x fun y hy ↦ hu y (Metric.ball_subset_ball h hy)
 
 /-! ### The quantization of the kernel cutoff -/
 

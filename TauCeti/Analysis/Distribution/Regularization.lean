@@ -26,6 +26,7 @@ import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 import TauCeti.Topology.Algebra.Monoid
 import TauCeti.Topology.Algebra.Support
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Regularization of distributions
@@ -215,7 +216,7 @@ private theorem exists_hasFDerivAt_translatePairing (T : 𝓓'(Ω, F)) (ρ : �
   let φ₀ : 𝓓(Ω, ℝ) := translateOfMapsTo ρ hx
   have hφ₀ : ∀ y, φ₀ y = ρ (y - x) := translateOfMapsTo_apply ρ hx
   obtain ⟨δ, hδ, hδΩ, hδx⟩ := exists_cthickening_tsupport_translateOfMapsTo_subset ρ hx
-  let K : Compacts E := ⟨cthickening δ (tsupport φ₀), φ₀.hasCompactSupport.isCompact.cthickening⟩
+  let K : Compacts E := (⟨tsupport φ₀, φ₀.hasCompactSupport.isCompact⟩ : Compacts E).cthickening δ
   obtain ⟨N, C, hC, hT⟩ := T.exists_norm_apply_le (K := K) hδΩ
   -- For `‖h‖ ≤ δ`, the Taylor remainder of the translates of `ρ`, as a test function on `Ω`.
   let R (h : E) : 𝓓(Ω, ℝ) :=

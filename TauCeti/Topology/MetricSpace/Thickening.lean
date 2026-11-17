@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Thickening
+public import Mathlib.Topology.Sets.Compacts
 
 import Mathlib.Topology.Compactness.LocallyFinite
 import Mathlib.Topology.Order.AtTopBotIxx
@@ -29,7 +30,8 @@ closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and desc
 thickenings as sublevel sets of the distance function, and their complements as strict
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`). If a compact set does not meet
 the closed `δ`-thickening of a set `t`, its own closed `δ`-thickening does not meet `t`
-(`IsCompact.disjoint_cthickening_left`).
+(`IsCompact.disjoint_cthickening_left`). In a proper space, the closed `δ`-thickening of a compact
+set is compact (`TopologicalSpace.Compacts.cthickening`).
 
 A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
 inside any set whose interior contains it, namely the intersections of that interior with
@@ -99,6 +101,18 @@ theorem _root_.IsCompact.disjoint_cthickening_left {X : Type*} [PseudoMetricSpac
   rw [hs.cthickening_eq_biUnion_closedBall (le_max_left 0 δ), Set.disjoint_iUnion₂_left]
   refine fun x hx ↦ Set.disjoint_left.2 fun y hy hyt ↦ Set.disjoint_left.1 h hx ?_
   exact mem_cthickening_of_dist_le x y _ t hyt (by rw [dist_comm]; exact mem_closedBall.1 hy)
+
+/-- The closed `δ`-thickening of a compact set in a proper pseudometric space, as a compact set. -/
+@[expose]
+def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
+    (δ : ℝ) (K : TopologicalSpace.Compacts X) : TopologicalSpace.Compacts X :=
+  ⟨Metric.cthickening δ K, K.isCompact.cthickening⟩
+
+@[simp]
+theorem _root_.TopologicalSpace.Compacts.coe_cthickening {X : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] (δ : ℝ) (K : TopologicalSpace.Compacts X) :
+    (K.cthickening δ : Set X) = Metric.cthickening δ K :=
+  rfl
 
 /-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening. -/

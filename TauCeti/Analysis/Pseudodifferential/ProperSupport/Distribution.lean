@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Pseudodifferential.Adjoint.Basic
 public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
+import TauCeti.Analysis.Distribution.SchwartzSpace.SupportedIn
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -152,11 +153,6 @@ section TestFunction
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
 
-/-- The closed `R`-neighbourhood of a compact set, as a compact set. -/
-private def cthickeningCompacts (R : ℝ) (K : Compacts (CoordinateSpace n)) :
-    Compacts (CoordinateSpace n) :=
-  ⟨Metric.cthickening R K, K.isCompact.cthickening⟩
-
 /-- **Estimates on smooth functions supported in `K`.** For a symbol `b` with estimates uniform in
 the position and a compact set `K`, every seminorm `sup ‖D^i Op(b) f‖` of the quantization of
 smooth functions `f` supported in `K` is bounded by finitely many of the seminorms `N_j` of
@@ -166,39 +162,55 @@ private theorem IsUniform.exists_norm_iteratedFDeriv_quantize_le {m' : ℝ} {V' 
     {b : Symbol n V' W' m'} (hb : b.IsUniform) (K : Compacts (CoordinateSpace n)) (i : ℕ) :
     ∃ (s : Finset ℕ) (C : ℝ), 0 ≤ C ∧ ∀ (f : 𝓓_{K}(CoordinateSpace n, V')) (x : CoordinateSpace n),
       ‖iteratedFDeriv ℝ i
-          (quantizeSchwartzValue b.coefficient (f.hasCompactSupport.toSchwartzMap f.contDiff)) x‖ ≤
+          (quantizeSchwartzValue b.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f)) x‖ ≤
         C * (s.sup fun j ↦ N[ℂ]_{K, j}) f := by
-  -- The inclusion of the functions supported in `K` into Schwartz space is continuous.
-  obtain ⟨r, hr⟩ := K.isCompact.isBounded.exists_norm_le
-  let L : 𝓓_{K}(CoordinateSpace n, V') →ₗ[ℂ] 𝓢(CoordinateSpace n, V') :=
-    { toFun f := f.hasCompactSupport.toSchwartzMap f.contDiff
-      map_add' _ _ := SchwartzMap.ext fun _ ↦ rfl
-      map_smul' _ _ := SchwartzMap.ext fun _ ↦ rfl }
-  have hL : Continuous L := by
-    refine WithSeminorms.continuous_of_isBounded (ContDiffMapSupportedIn.withSeminorms ℂ _ _ ⊤ K)
-      (schwartz_withSeminorms ℂ _ _) L (.of_real fun ⟨k, j⟩ ↦ ⟨{j}, max r 0 ^ k, fun f ↦ ?_⟩)
-    rw [Finset.sup_singleton]
-    refine SchwartzMap.seminorm_le_bound ℂ k j _ (by positivity) fun x ↦ ?_
-    -- `L f` is `f`, read as a Schwartz function.
-    have hLf : (L f : CoordinateSpace n → V') = f := rfl
-    rw [hLf]
-    by_cases hx : x ∈ K
-    · exact mul_le_mul (pow_le_pow_left₀ (norm_nonneg x) ((hr x hx).trans (le_max_left r 0)) k)
-        (ContDiffMapSupportedIn.norm_iteratedFDeriv_apply_le_seminorm_top ℂ) (norm_nonneg _)
-        (by positivity)
-    · rw [f.iteratedFDeriv_zero_on_compl hx, Pi.zero_apply, norm_zero, mul_zero]
-      positivity
   -- The seminorm `sup ‖D^i Op(b) f‖` is continuous on the functions supported in `K`.
+  set L := quantizeUniformCLM b hb ∘L ContDiffMapSupportedIn.toSchwartzMapCLM ℂ
   set q : Seminorm ℂ 𝓓_{K}(CoordinateSpace n, V') :=
-    (SchwartzMap.seminorm ℂ 0 i).comp ((quantizeUniformCLM b hb).toLinearMap ∘ₗ L)
+    (SchwartzMap.seminorm ℂ 0 i).comp L.toLinearMap
   have hq : Continuous q :=
-    ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (0, i)).comp
-      ((quantizeUniformCLM b hb).continuous.comp hL)
+    ((schwartz_withSeminorms ℂ _ _).continuous_seminorm (0, i)).comp L.continuous
   obtain ⟨s, C, -, hC⟩ :=
     Seminorm.bound_of_continuous (ContDiffMapSupportedIn.withSeminorms ℂ _ _ ⊤ K) q hq
   refine ⟨s, C, C.2, fun f x ↦ ?_⟩
   rw [← coe_quantizeUniformCLM b hb]
   exact (SchwartzMap.norm_iteratedFDeriv_le_seminorm ℂ _ i x).trans (hC f)
+
+/-- The quantization of a symbol `b` on smooth functions supported in a compact set `K`, with
+values in the smooth functions supported in `K'`, given that it vanishes outside `K'` and is
+bounded in each seminorm by finitely many of the seminorms on `K`. -/
+private def supportedInCLM {m' : ℝ} {V' W' : Type*}
+    [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W'] [NormedSpace ℂ W']
+    (b : Symbol n V' W' m') {K K' : Compacts (CoordinateSpace n)}
+    (hsupp : ∀ f : 𝓓_{K}(CoordinateSpace n, V'),
+      EqOn (quantizeSchwartzValue b.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f)) 0
+        (K' : Set (CoordinateSpace n))ᶜ)
+    (hest : ∀ i : ℕ, ∃ (s : Finset ℕ) (C : ℝ), 0 ≤ C ∧
+      ∀ (f : 𝓓_{K}(CoordinateSpace n, V')) (x : CoordinateSpace n),
+        ‖iteratedFDeriv ℝ i
+            (quantizeSchwartzValue b.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f)) x‖ ≤
+          C * (s.sup fun j ↦ N[ℂ]_{K, j}) f) :
+    𝓓_{K}(CoordinateSpace n, V') →L[ℂ] 𝓓_{K'}(CoordinateSpace n, W') :=
+  ContDiffMapSupportedIn.mkCLM ℂ
+    (fun f ↦ quantizeSchwartzValue b.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f))
+    (fun f g x ↦ by
+      obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice x
+      rw [map_add, quantizeSchwartzValue_add_right
+        (b.continuous_coefficient_slice x).aestronglyMeasurable hC])
+    (fun c f x ↦ by rw [map_smul, quantizeSchwartzValue_smul_right])
+    (fun f ↦ b.contDiff_quantizeSchwartzValue _) hsupp
+    (fun i _ ↦ (hest i).imp fun _ ⟨C, hC0, h⟩ ↦ ⟨C, hC0, fun f x _ ↦ h f x⟩)
+
+/-- A function supported in `K`, read as a test function on `ℝⁿ` and then as a Schwartz function,
+is its image under `ContDiffMapSupportedIn.toSchwartzMapCLM`. -/
+private theorem toSchwartzMap_ofSupportedIn {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {K : Compacts (CoordinateSpace n)}
+    (hK : (K : Set (CoordinateSpace n)) ⊆ (⊤ : Opens (CoordinateSpace n)))
+    (f : 𝓓_{K}(CoordinateSpace n, E)) :
+    (TestFunction.ofSupportedIn hK f).hasCompactSupport.toSchwartzMap
+        (TestFunction.ofSupportedIn hK f).contDiff =
+      ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f :=
+  SchwartzMap.ext fun x ↦ (ContDiffMapSupportedIn.toSchwartzMapCLM_apply ℂ f x).symm
 
 /-- **Estimates on test functions supported in `K`.** On smooth functions supported in a compact
 set `K`, the operator `Op(a)` agrees with the quantization of the symbol `ψ a` with compact
@@ -208,34 +220,28 @@ private theorem HasNearDiagonalKernel.exists_norm_iteratedFDeriv_le
     (ha : a.HasNearDiagonalKernel R) (K : Compacts (CoordinateSpace n)) (i : ℕ) :
     ∃ (s : Finset ℕ) (C : ℝ), 0 ≤ C ∧ ∀ (f : 𝓓_{K}(CoordinateSpace n, V)) (x : CoordinateSpace n),
       ‖iteratedFDeriv ℝ i
-          (quantizeSchwartzValue a.coefficient (f.hasCompactSupport.toSchwartzMap f.contDiff)) x‖ ≤
+          (quantizeSchwartzValue a.coefficient (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f)) x‖ ≤
         C * (s.sup fun j ↦ N[ℂ]_{K, j}) f := by
-  obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ (cthickeningCompacts R K).isCompact
+  obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ (K.cthickening R).isCompact
   obtain ⟨s, C, hC0, hC⟩ := (hasCompactSpatialSupport_spatialCutoff hψ hψc a).isUniform
     |>.exists_norm_iteratedFDeriv_quantize_le K i
   refine ⟨s, C, hC0, fun f x ↦ ?_⟩
-  rw [← ha.quantizeSchwartzValue_spatialCutoff_eq hψ
-    (hψ1.mono (Metric.cthickening_subset_of_subset R f.tsupport_subset))]
-  exact hC f x
+  rw [← ha.quantizeSchwartzValue_spatialCutoff_eq hψ (hψ1.mono ?_)]
+  · exact hC f x
+  · rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM, Compacts.coe_cthickening]
+    exact Metric.cthickening_subset_of_subset R f.tsupport_subset
 
 /-- `Op(a)` on smooth functions supported in a compact set `K`, with values in the smooth functions
 supported in the closed `R`-neighbourhood of `K`. -/
 private def quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
-    𝓓_{K}(CoordinateSpace n, V) →L[ℂ] 𝓓_{cthickeningCompacts R K}(CoordinateSpace n, W) :=
-  ContDiffMapSupportedIn.mkCLM ℂ
-    (fun f ↦ quantizeSchwartzValue a.coefficient (f.hasCompactSupport.toSchwartzMap f.contDiff))
-    (fun f g x ↦ by
-      obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
-      rw [← quantizeSchwartzValue_add_right
-        (a.continuous_coefficient_slice x).aestronglyMeasurable hC]
-      rfl)
-    (fun c f x ↦ by rw [← quantizeSchwartzValue_smul_right]; rfl)
-    (fun f ↦ a.contDiff_quantizeSchwartzValue _)
-    (fun f x hx ↦ ha.quantizeSchwartzValue_eq_zero_of_notMem fun h ↦
-      hx (Metric.cthickening_subset_of_subset R f.tsupport_subset h))
-    (fun i _ ↦ (ha.exists_norm_iteratedFDeriv_le K i).imp fun _ ⟨C, hC0, h⟩ ↦
-      ⟨C, hC0, fun f x _ ↦ h f x⟩)
+    𝓓_{K}(CoordinateSpace n, V) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, W) :=
+  supportedInCLM a
+    (fun f x hx ↦ ha.quantizeSchwartzValue_eq_zero_of_notMem fun h ↦ hx <| by
+      rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM] at h
+      rw [Compacts.coe_cthickening]
+      exact Metric.cthickening_subset_of_subset R f.tsupport_subset h)
+    (ha.exists_norm_iteratedFDeriv_le K)
 
 /-- **A properly supported operator on test functions.** For a symbol `a` whose quantization has
 kernel supported within distance `R` of the diagonal, `u ↦ Op(a) u` as a continuous linear map on
@@ -249,7 +255,8 @@ def quantizeTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
       u.hasCompactSupport.isCompact.cthickening.of_isClosed_subset (isClosed_tsupport _)
         (ha.tsupport_quantizeSchwartzValue_subset _), subset_univ _⟩)
     (fun K _ ↦ TestFunction.ofSupportedInCLM ℂ (subset_univ _) ∘L quantizeSupportedInCLM ha K)
-    (fun _ _ _ ↦ rfl)
+    (fun _ hK f ↦ TestFunction.ext fun x ↦
+      congrArg (quantizeSchwartzValue a.coefficient · x) (toSchwartzMap_ofSupportedIn hK f))
 
 /-- The values of `Op(a) u` are the quantization of `u`, read as a Schwartz function. -/
 @[simp]
@@ -274,6 +281,18 @@ section Adjoint
 variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W] {a : Symbol n V W m}
 
+/-- The values `x ↦ ∫ exp(2πi ⟪ζ, x⟫) 𝓕 (y ↦ a(y, 2πζ)† φ(y)) (ζ) dζ` of the formal adjoint of
+`Op(a)` on `φ`. -/
+private def adjointValue (a : Symbol n V W m) (φ : CoordinateSpace n → W) (x : CoordinateSpace n) :
+    V :=
+  ∫ ζ, 𝐞 ⟪ζ, x⟫ • 𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ
+
+private theorem adjointValue_apply (a : Symbol n V W m) (φ : CoordinateSpace n → W)
+    (x : CoordinateSpace n) :
+    adjointValue a φ x = ∫ ζ, 𝐞 ⟪ζ, x⟫ •
+      𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ :=
+  rfl
+
 /-- On a Schwartz function `φ` supported where `ψ = 1`, the quantization of the adjoint symbol of
 the cutoff `ψ a` is the right quantization of the pointwise adjoint `a(y, ξ)†`. -/
 private theorem quantizeSchwartzValue_adjoint_spatialCutoff {ψ : CoordinateSpace n → ℝ}
@@ -281,10 +300,9 @@ private theorem quantizeSchwartzValue_adjoint_spatialCutoff {ψ : CoordinateSpac
     (hψφ : EqOn ψ 1 (tsupport φ)) (x : CoordinateSpace n) :
     quantizeSchwartzValue (adjoint (spatialCutoff hψ a)
         (hasCompactSpatialSupport_spatialCutoff hψ hψc a)).coefficient φ x =
-      ∫ ζ, 𝐞 ⟪ζ, x⟫ •
-        𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ := by
-  rw [← quantizeUniformCLM_apply _ (isUniform_adjoint _ _), quantizeUniformCLM_adjoint,
-    quantizeRightUniformCLM_apply]
+      adjointValue a φ x := by
+  rw [adjointValue_apply, ← quantizeUniformCLM_apply _ (isUniform_adjoint _ _),
+    quantizeUniformCLM_adjoint, quantizeRightUniformCLM_apply]
   refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
   have h : (fun y ↦ ((spatialCutoff hψ a).map ContinuousLinearMap.adjointRealCLM).coefficient
       (y, (2 * π) • ζ) (φ y)) =
@@ -303,8 +321,7 @@ to `φ`. -/
 private theorem integral_inner_quantizeSchwartzValue (u : 𝓢(CoordinateSpace n, V))
     {φ : 𝓢(CoordinateSpace n, W)} (hφ : HasCompactSupport φ) :
     ∫ x, inner ℂ (quantizeSchwartzValue a.coefficient u x) (φ x) =
-      ∫ x, inner ℂ (u x) (∫ ζ, 𝐞 ⟪ζ, x⟫ •
-        𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ) := by
+      ∫ x, inner ℂ (u x) (adjointValue a φ x) := by
   obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ hφ
   -- Where `φ ≠ 0`, the cutoff `ψ` is `1`, so `Op(a) u` may be replaced by `Op(ψ a) u = ψ Op(a) u`.
   have h (x : CoordinateSpace n) : inner ℂ (quantizeSchwartzValue a.coefficient u x) (φ x) =
@@ -319,10 +336,9 @@ private theorem integral_inner_quantizeSchwartzValue (u : 𝓢(CoordinateSpace n
 
 /-- The formal adjoint of `Op(a)` on a compactly supported Schwartz function `φ` is smooth. -/
 private theorem contDiff_adjointValue {φ : 𝓢(CoordinateSpace n, W)} (hφ : HasCompactSupport φ) :
-    ContDiff ℝ ∞ fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ •
-      𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ := by
+    ContDiff ℝ ∞ (adjointValue a φ) := by
   obtain ⟨ψ, hψ, hψc, hψ1⟩ := exists_cutoff _ hφ
-  simp_rw [← quantizeSchwartzValue_adjoint_spatialCutoff hψ hψc hψ1]
+  rw [← funext (quantizeSchwartzValue_adjoint_spatialCutoff hψ hψc hψ1)]
   exact contDiff_quantizeSchwartzValue _ _
 
 /-- **Proper support of the formal adjoint.** If the kernel of `Op(a)` is supported within distance
@@ -331,22 +347,19 @@ the support of `φ`. The proof is by duality: `Op(a) u` vanishes on the support 
 `u` supported outside that neighbourhood. -/
 private theorem HasNearDiagonalKernel.adjointValue_eq_zero (ha : a.HasNearDiagonalKernel R)
     {φ : 𝓢(CoordinateSpace n, W)} (hφ : HasCompactSupport φ) {x₀ : CoordinateSpace n}
-    (hx₀ : x₀ ∉ Metric.cthickening R (tsupport φ)) :
-    ∫ ζ, 𝐞 ⟪ζ, x₀⟫ •
-      𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ = 0 := by
-  set g : CoordinateSpace n → V := fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ •
-    𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ
-  have hgc : Continuous g := (contDiff_adjointValue hφ).continuous
+    (hx₀ : x₀ ∉ Metric.cthickening R (tsupport φ)) : adjointValue a φ x₀ = 0 := by
+  have hgc : Continuous (adjointValue a φ) := (contDiff_adjointValue hφ).continuous
   set U := (Metric.cthickening R (tsupport φ))ᶜ
   have hU : IsOpen U := Metric.isClosed_cthickening.isOpen_compl
-  set f : CoordinateSpace n → ℂ := fun x ↦ inner ℂ (g x₀) (g x)
+  set f : CoordinateSpace n → ℂ := fun x ↦ inner ℂ (adjointValue a φ x₀) (adjointValue a φ x)
   have hfc : Continuous f := continuous_const.inner hgc
   -- `f` integrates to zero against every test function supported in `U`.
   have hzero (χ : CoordinateSpace n → ℝ) (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
       (hχU : tsupport χ ⊆ U) : ∫ x, χ x • f x = 0 := by
     let u : 𝓢(CoordinateSpace n, V) := ((hχc.comp_left Complex.ofReal_zero).smul_right
-      (f' := fun _ ↦ g x₀)).toSchwartzMap ((Complex.ofRealCLM.contDiff.comp hχ).smul contDiff_const)
-    have hu (x : CoordinateSpace n) : u x = (χ x : ℂ) • g x₀ := rfl
+      (f' := fun _ ↦ adjointValue a φ x₀)).toSchwartzMap
+        ((Complex.ofRealCLM.contDiff.comp hχ).smul contDiff_const)
+    have hu (x : CoordinateSpace n) : u x = (χ x : ℂ) • adjointValue a φ x₀ := rfl
     -- `Op(a) u` vanishes on the support of `φ`, since `u` vanishes near it.
     have hOp (x : CoordinateSpace n) :
         inner ℂ (quantizeSchwartzValue a.coefficient u x) (φ x) = 0 := by
@@ -359,6 +372,7 @@ private theorem HasNearDiagonalKernel.adjointValue_eq_zero (ha : a.HasNearDiagon
     have h := integral_inner_quantizeSchwartzValue (a := a) u hφ
     simp only [hOp, integral_zero] at h
     refine Eq.trans (integral_congr_ae (.of_forall fun x ↦ ?_)) h.symm
+    -- The integrand `χ x • f x` is a `fun` applied to `x`; reduce it to expose the inner product.
     beta_reduce
     rw [Complex.real_smul, hu, inner_smul_left, Complex.conj_ofReal]
   have hae := hU.ae_eq_zero_of_integral_contDiff_smul_eq_zero
@@ -371,9 +385,7 @@ private theorem HasNearDiagonalKernel.adjointValue_eq_zero (ha : a.HasNearDiagon
 /-- The formal adjoint of `Op(a)` does not enlarge supports by more than `R`. -/
 private theorem HasNearDiagonalKernel.tsupport_adjointValue_subset (ha : a.HasNearDiagonalKernel R)
     {φ : 𝓢(CoordinateSpace n, W)} (hφ : HasCompactSupport φ) :
-    tsupport (fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ •
-        𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ) ⊆
-      Metric.cthickening R (tsupport φ) :=
+    tsupport (adjointValue a φ) ⊆ Metric.cthickening R (tsupport φ) :=
   closure_minimal (fun _ hx ↦ by_contra fun h ↦ hx (ha.adjointValue_eq_zero hφ h))
     Metric.isClosed_cthickening
 
@@ -381,24 +393,20 @@ private theorem HasNearDiagonalKernel.tsupport_adjointValue_subset (ha : a.HasNe
 the cutoff `ψ a` for a `ψ` equal to `1` on `K`. -/
 private def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
-    𝓓_{K}(CoordinateSpace n, W) →L[ℂ] 𝓓_{cthickeningCompacts R K}(CoordinateSpace n, V) :=
+    𝓓_{K}(CoordinateSpace n, W) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, V) :=
   have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
-  let b := adjoint (spatialCutoff hψ.1 a) (hasCompactSpatialSupport_spatialCutoff hψ.1 hψ.2.1 a)
-  ContDiffMapSupportedIn.mkCLM ℂ
-    (fun f ↦ quantizeSchwartzValue b.coefficient (f.hasCompactSupport.toSchwartzMap f.contDiff))
-    (fun f g x ↦ by
-      obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice x
-      rw [← quantizeSchwartzValue_add_right
-        (b.continuous_coefficient_slice x).aestronglyMeasurable hC]
-      rfl)
-    (fun c f x ↦ by rw [← quantizeSchwartzValue_smul_right]; rfl)
-    (fun f ↦ b.contDiff_quantizeSchwartzValue _)
+  supportedInCLM
+    (adjoint (spatialCutoff hψ.1 a) (hasCompactSpatialSupport_spatialCutoff hψ.1 hψ.2.1 a))
     (fun f x hx ↦ by
-      rw [quantizeSchwartzValue_adjoint_spatialCutoff hψ.1 hψ.2.1 (hψ.2.2.mono f.tsupport_subset)]
-      exact ha.adjointValue_eq_zero f.hasCompactSupport fun h ↦
-        hx (Metric.cthickening_subset_of_subset R f.tsupport_subset h))
-    (fun i _ ↦ ((isUniform_adjoint _ _).exists_norm_iteratedFDeriv_quantize_le K i).imp
-      fun _ ⟨C, hC0, h⟩ ↦ ⟨C, hC0, fun f x _ ↦ h f x⟩)
+      have hf : tsupport (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f) ⊆ K := by
+        rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM]
+        exact f.tsupport_subset
+      rw [quantizeSchwartzValue_adjoint_spatialCutoff hψ.1 hψ.2.1 (hψ.2.2.mono hf)]
+      refine ha.adjointValue_eq_zero (K.isCompact.of_isClosed_subset (isClosed_tsupport _) hf)
+        fun h ↦ hx ?_
+      rw [Compacts.coe_cthickening]
+      exact Metric.cthickening_subset_of_subset R hf h)
+    ((isUniform_adjoint _ _).exists_norm_iteratedFDeriv_quantize_le K)
 
 /-- **The formal adjoint of a properly supported operator on test functions.** For a symbol `a`
 whose quantization has kernel supported within distance `R` of the diagonal, the formal adjoint
@@ -413,8 +421,7 @@ than `R` (`TauCeti.Symbol.tsupport_adjointTestFunctionCLM_subset`). -/
 def adjointTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
     𝓓((⊤ : Opens (CoordinateSpace n)), W) →L[ℂ] 𝓓((⊤ : Opens (CoordinateSpace n)), V) :=
   TestFunction.limitCLM ℂ
-    (fun φ ↦ ⟨fun x ↦ ∫ ζ, 𝐞 ⟪ζ, x⟫ •
-        𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ,
+    (fun φ ↦ ⟨adjointValue a φ,
       contDiff_adjointValue (φ := φ.hasCompactSupport.toSchwartzMap φ.contDiff) φ.hasCompactSupport,
       φ.hasCompactSupport.isCompact.cthickening.of_isClosed_subset (isClosed_tsupport _)
         (ha.tsupport_adjointValue_subset (φ := φ.hasCompactSupport.toSchwartzMap φ.contDiff)
@@ -423,15 +430,21 @@ def adjointTestFunctionCLM (ha : a.HasNearDiagonalKernel R) :
     (fun K _ ↦ TestFunction.ofSupportedInCLM ℂ (subset_univ _) ∘L adjointSupportedInCLM ha K)
     (fun K _ f ↦ TestFunction.ext fun x ↦ by
       have hψ := (exists_cutoff (n := n) K K.isCompact).choose_spec
-      exact (quantizeSchwartzValue_adjoint_spatialCutoff hψ.1 hψ.2.1
-        (φ := f.hasCompactSupport.toSchwartzMap f.contDiff) (hψ.2.2.mono f.tsupport_subset) x).symm)
+      have hf : tsupport (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f) ⊆ K := by
+        rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM]
+        exact f.tsupport_subset
+      have h := quantizeSchwartzValue_adjoint_spatialCutoff (a := a) hψ.1 hψ.2.1 (hψ.2.2.mono hf) x
+      rw [ContDiffMapSupportedIn.coe_toSchwartzMapCLM] at h
+      -- Both sides are `Op(a)* f (x)`: `ofSupportedIn` does not change the function.
+      exact h.symm)
 
 /-- The values of the formal adjoint `Op(a)* φ`. -/
+@[simp]
 theorem adjointTestFunctionCLM_apply (ha : a.HasNearDiagonalKernel R)
     (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), W)) (x : CoordinateSpace n) :
     adjointTestFunctionCLM ha φ x = ∫ ζ, 𝐞 ⟪ζ, x⟫ •
       𝓕 (fun y ↦ ContinuousLinearMap.adjoint (a.coefficient (y, (2 * π) • ζ)) (φ y)) ζ :=
-  (rfl)
+  adjointValue_apply a φ x
 
 /-- `Op(a)* φ` is supported in the closed `R`-neighbourhood of the support of `φ`. -/
 theorem tsupport_adjointTestFunctionCLM_subset (ha : a.HasNearDiagonalKernel R)
@@ -481,13 +494,16 @@ def quantizeDistribution (ha : a.HasNearDiagonalKernel R) :
 
 /-- `Op(a) T` pairs with a real test function `φ` as `T` with the transpose
 `conj (Op(a)* φ)`. -/
+@[simp]
 theorem quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (φ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
     quantizeDistribution ha T φ = T.complexPairing
       (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
         (adjointTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ))) := by
-  -- By definition, `Op(a) T` applies `T` to the real and imaginary parts of the transpose.
   rw [Distribution.complexPairing_apply]
+  -- By definition, `Op(a) T` applies `T` to the real and imaginary parts of the transpose. The
+  -- evaluation is by unfolding: `precompCompactConvergenceCLM_apply` produces a sum in the type
+  -- synonym `UniformConvergenceCLM`, whose evaluation the lemma `add_apply` does not match.
   rfl
 
 /-- `Op(a)` is complex linear on distributions. -/
@@ -495,9 +511,8 @@ theorem quantizeDistribution_smul (ha : a.HasNearDiagonalKernel R) (c : ℂ)
     (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) :
     quantizeDistribution ha (c • T) = c • quantizeDistribution ha T := by
   ext φ
-  rw [quantizeDistribution_apply, Distribution.complexPairing_smul, ← quantizeDistribution_apply]
-  -- Scalar multiples of distributions are evaluated pointwise.
-  rfl
+  rw [quantizeDistribution_apply, Distribution.complexPairing_smul, ← quantizeDistribution_apply,
+    smul_apply, smul_eq_mul]
 
 /-- **`Op(a)` on distributions extends `Op(a)` on test functions**: on the distribution of a test
 function `u`, it is the distribution of `Op(a) u`. -/
