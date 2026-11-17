@@ -265,8 +265,7 @@ theorem countable [TopologicalSpace.SeparableSpace E] {v : ι → E} (hv : Ortho
   intro i j hij
   refine Metric.ball_disjoint_ball ?_
   have hsq : dist (v i) (v j) ^ 2 = 2 := by
-    rw [dist_eq_norm, norm_sub_sq (𝕜 := 𝕜)]
-    simp [hv.1, hv.2 hij]
+    rw [dist_eq_norm, norm_sub_sq (𝕜 := 𝕜), hv.1 i, hv.1 j, hv.2 hij, map_zero]
     norm_num
   nlinarith [dist_nonneg (x := v i) (y := v j)]
 

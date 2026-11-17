@@ -113,14 +113,18 @@ theorem spectralCutoff_mem_twoSidedIdeal (a : H →L[ℂ] H) [IsStarNormal a]
     BoundedBorelFunction.ofContinuousMap ((ContinuousMap.id ℂ).restrict (spectrum ℂ a))
   have hprod : idSym * g = BoundedBorelFunction.indicator B hB 1 := by
     ext z
+    simp only [idSym, g, BoundedBorelFunction.mul_apply, BoundedBorelFunction.indicator_apply,
+      BoundedBorelFunction.ofContinuousMap_apply, ContinuousMap.restrict_apply,
+      ContinuousMap.id_apply]
     by_cases hz : z ∈ B
     · have hle : ε ^ 2 ≤ ‖(z : ℂ)‖ ^ 2 := pow_le_pow_left₀ hε.le hz 2
       have hne : ((‖(z : ℂ)‖ : ℂ) ^ 2) ≠ 0 :=
         pow_ne_zero 2 (Complex.ofReal_ne_zero.mpr (hε.trans_le hz).ne')
-      suffices (z : ℂ) * (conj (z : ℂ) * ((‖(z : ℂ)‖ : ℂ) ^ 2)⁻¹) = 1 by
-        simpa [idSym, g, invMap, hz, max_eq_right hle]
+      rw [Set.indicator_of_mem hz, Set.indicator_of_mem hz,
+        BoundedBorelFunction.ofContinuousMap_apply, BoundedBorelFunction.one_apply]
+      simp only [invMap, ContinuousMap.coe_mk, max_eq_right hle, Complex.ofReal_pow]
       rw [← mul_assoc, Complex.mul_conj', mul_inv_cancel₀ hne]
-    · simp [idSym, g, hz]
+    · rw [Set.indicator_of_notMem hz, Set.indicator_of_notMem hz, mul_zero]
   have heq : a.spectralCutoff ε = a * a.borelCalculus g := by
     rw [spectralCutoff_eq_spectralPVM_proj a ε hB, ← a.borelCalculus_indicator hB, ← hprod, map_mul,
       a.borelCalculus_restrict_id]

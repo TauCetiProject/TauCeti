@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Analysis.InnerProductSpace.RankOne
 import Mathlib.Analysis.Normed.Module.HahnBanach
-import Mathlib.RingTheory.TwoSidedIdeal.Operations
+import Mathlib.RingTheory.TwoSidedIdeal.Lattice
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
 import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
@@ -312,23 +312,6 @@ end ContinuousLinearMap
 
 section RankOneAndSimplicity
 
-/-- Every rank-one operator is compact. -/
-theorem InnerProductSpace.isCompactOperator_rankOne {𝕜 E F : Type*} [RCLike 𝕜]
-    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup F] [InnerProductSpace 𝕜 F] (x : E) (y : F) :
-    IsCompactOperator (rankOne 𝕜 x y) := by
-  rw [rankOne_def']
-  exact (isCompactOperator_of_locallyCompactSpace_rng
-    (ContinuousLinearMap.toSpanSingleton 𝕜 x)).comp_clm _
-
-/-- Every normalized rank-one operator `TauCeti.rankOneDivNormSq 𝕜 y x` is compact. -/
-theorem TauCeti.isCompactOperator_rankOneDivNormSq {𝕜 E F : Type*} [RCLike 𝕜]
-    [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (y : F) (x : E) :
-    IsCompactOperator (TauCeti.rankOneDivNormSq 𝕜 y x) := by
-  rw [TauCeti.rankOneDivNormSq_def]
-  exact (InnerProductSpace.isCompactOperator_rankOne y x).smul _
-
 namespace ContinuousLinearMap
 
 variable {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
@@ -392,31 +375,11 @@ operators. -/
 theorem compactIdeal_le_of_isClosed_of_ne_bot {I : TwoSidedIdeal (H →L[𝕜] H)}
     (hI : IsClosed (I : Set (H →L[𝕜] H))) (hne : I ≠ ⊥) :
     compactIdeal 𝕜 H ≤ I := by
-  let ι : ↥(compactIdeal 𝕜 H) →ₙ+* (H →L[𝕜] H) :=
-    NonUnitalSubsemiringClass.subtype (compactIdeal 𝕜 H)
-  let J : TwoSidedIdeal ↥(compactIdeal 𝕜 H) := I.comap ι
-  have hJ_set : (J : Set ↥(compactIdeal 𝕜 H)) = Subtype.val ⁻¹' (I : Set (H →L[𝕜] H)) := by
-    ext K
-    exact TwoSidedIdeal.mem_comap ι
-  have hJ_closed : IsClosed (J : Set ↥(compactIdeal 𝕜 H)) :=
-    hJ_set ▸ hI.preimage continuous_subtype_val
-  have hJ_ne_bot : J ≠ ⊥ := by
-    obtain ⟨T, hTI, hT0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hne)
-    rw [TwoSidedIdeal.mem_bot] at hT0
-    obtain ⟨x, hx⟩ := DFunLike.ne_iff.mp hT0
-    have hx0 : x ≠ 0 := fun hx0 ↦ hx (by simp [hx0])
-    intro hbot
-    have hmem :
-        (⟨rankOne 𝕜 x x, mem_compactIdeal.mpr (InnerProductSpace.isCompactOperator_rankOne x x)⟩ :
-          ↥(compactIdeal 𝕜 H)) ∈ J :=
-      (TwoSidedIdeal.mem_comap ι).mpr (rankOne_mem_of_ne_zero hTI hT0 x x)
-    rw [hbot, TwoSidedIdeal.mem_bot] at hmem
-    exact hx0 (by simpa [Subtype.ext_iff] using hmem)
-  have hJ_top : J = ⊤ :=
-    (twoSidedIdeal_compactIdeal_eq_bot_or_eq_top_of_isClosed J hJ_closed).resolve_left hJ_ne_bot
-  intro K hK
-  have hmem : (⟨K, hK⟩ : ↥(compactIdeal 𝕜 H)) ∈ J := hJ_top ▸ TwoSidedIdeal.mem_top _
-  exact (TwoSidedIdeal.mem_comap ι).mp hmem
+  obtain ⟨T, hTI, hT0⟩ := IsConcreteLE.exists_of_lt (bot_lt_iff_ne_bot.mpr hne)
+  rw [TwoSidedIdeal.mem_bot] at hT0
+  exact fun K hK ↦
+    mem_of_isCompactOperator_of_forall_rankOne_mem hI (rankOne_mem_of_ne_zero hTI hT0)
+      (mem_compactIdeal.mp hK)
 
 /-- Every closed two-sided ideal of `H →L[𝕜] H` is either `⊥` or contains `compactIdeal 𝕜 H`. -/
 theorem eq_bot_or_compactIdeal_le_of_isClosed {I : TwoSidedIdeal (H →L[𝕜] H)}

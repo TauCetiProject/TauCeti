@@ -53,25 +53,27 @@ public section
 
 namespace TwoSidedIdeal
 
+private theorem asIdeal_eq_top_iff {R : Type*} [Ring R] (I : TwoSidedIdeal R) :
+    I.asIdeal = ⊤ ↔ I = ⊤ := by
+  rw [Ideal.eq_top_iff_one, I.mem_asIdeal, TwoSidedIdeal.one_mem_iff]
+
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
 
 /-- A two-sided ideal containing an element within distance `1` of `1` is the whole ring. -/
 theorem eq_top_of_norm_lt_one (I : TwoSidedIdeal R) {x : R} (hxI : x ∈ I) (hx : ‖1 - x‖ < 1) :
-    I = ⊤ := by
-  have htop : I.asIdeal = ⊤ := I.asIdeal.eq_top_of_norm_lt_one (I.mem_asIdeal.mpr hxI) hx
-  exact I.eq_top (I.mem_asIdeal.mp (htop ▸ Submodule.mem_top))
+    I = ⊤ :=
+  (asIdeal_eq_top_iff I).mp <| I.asIdeal.eq_top_of_norm_lt_one (I.mem_asIdeal.mpr hxI) hx
 
 /-- The topological closure of a proper two-sided ideal in a normed ring with summable geometric
 series is proper. -/
 theorem topologicalClosure_ne_top {I : TwoSidedIdeal R} (hI : I ≠ ⊤) :
     I.topologicalClosure ≠ ⊤ := by
-  have hproper : I.asIdeal ≠ ⊤ := fun htop ↦
-    hI (I.eq_top (I.mem_asIdeal.mp (htop ▸ Submodule.mem_top)))
-  have hcl : I.asIdeal.closure ≠ ⊤ := I.asIdeal.closure_ne_top hproper
-  intro htop
-  apply hcl
-  simp [Ideal.eq_top_iff_one, ← SetLike.mem_coe, Ideal.coe_closure, I.coe_asIdeal,
-    ← I.coe_topologicalClosure, htop]
+  have hset : (I.asIdeal.closure : Set R) = I.topologicalClosure := by
+    rw [Ideal.coe_closure, I.coe_asIdeal, I.coe_topologicalClosure]
+  have hcl : I.asIdeal.closure = I.topologicalClosure.asIdeal :=
+    SetLike.coe_injective (hset.trans I.topologicalClosure.coe_asIdeal.symm)
+  rw [ne_eq, ← asIdeal_eq_top_iff, ← hcl]
+  exact I.asIdeal.closure_ne_top ((asIdeal_eq_top_iff I).not.mpr hI)
 
 /-- A maximal two-sided ideal in a normed ring with summable geometric series equals its
 topological closure. -/

@@ -26,14 +26,18 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`lp.norm_le_of_norm_le_geometric`). Membership in `ℓᵖ` is unchanged by a unit scalar factor
 (`IsUnit.memℓp_smul_iff`), and conversely, for `p ≠ 0` the geometric sequence `rⁱ`, or a nonzero
 multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r‖ = 1` and `p = ∞`
-(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
-linearly independent, and
-vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
-to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
-most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+(`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). Linearly independent families in the
+fibers assemble via `lp.single` into linearly independent families in `lp`
+(`lp.linearIndependent_single`); in particular, the scalar coordinate vectors are linearly
+independent (`lp.linearIndependent_single_one`), and vectors in their span vanish outside the
+corresponding indices. These algebraic facts hold over normed rings at every exponent. Over a normed
+division ring, `lp E p` is infinite-dimensional whenever `ι` is infinite and every fiber is
+nontrivial (`lp.not_finiteDimensional`). In `ℓ²`, the squared norm of a finite sum of
+single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
+many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
+`lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
 operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
@@ -175,16 +179,25 @@ section Single
 
 variable [DecidableEq ι]
 
+/-- Linearly independent families in the fibers `E i` assemble via `lp.single` into a linearly
+independent family in `lp E p`. -/
+theorem linearIndependent_single {κ : ι → Type*} (v : ∀ i, κ i → E i)
+    (hv : ∀ i, LinearIndependent 𝕜 (v i)) :
+    LinearIndependent 𝕜 fun ij : Σ i, κ i ↦ lp.single p ij.1 (v ij.1 ij.2) := by
+  apply LinearIndependent.of_comp (lpSubmodule 𝕜 E p).subtype
+  have hcoe : (lpSubmodule 𝕜 E p).subtype ∘ (fun ij : Σ i, κ i ↦ lp.single p ij.1 (v ij.1 ij.2)) =
+      fun ij : Σ i, κ i ↦ Pi.single ij.1 (v ij.1 ij.2) :=
+    funext fun ij ↦ lp.coeFn_single p ij.1 (v ij.1 ij.2)
+  rw [hcoe]
+  exact Pi.linearIndependent_single v hv
+
 /-- The scalar coordinate vectors in `lp` are linearly independent. -/
 theorem linearIndependent_single_one :
     LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (1 : 𝕜)) := by
-  apply LinearIndependent.of_comp (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype
-  have hcoe : (lpSubmodule 𝕜 (fun _ : ι ↦ 𝕜) p).subtype ∘
-      (fun i : ι ↦ lp.single p i (1 : 𝕜)) = fun i ↦ Pi.single i (1 : 𝕜) := by
-    funext i
-    exact lp.coeFn_single p i 1
-  rw [hcoe]
-  exact Pi.linearIndependent_single_one ι 𝕜
+  rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
+  exact linearIndependent_single (fun (_ : ι) (_ : Unit) ↦ (1 : 𝕜)) fun _ ↦
+    Fintype.linearIndependent_iff.mpr fun g hg _ ↦ by
+      simpa only [Fintype.sum_unique, smul_eq_mul, mul_one] using hg
 
 /-- A vector in the span of a family of coordinate vectors vanishes outside their indices. -/
 theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p(ι, 𝕜)}
@@ -210,18 +223,10 @@ theorem not_finiteDimensional {𝕜 ι : Type*} {E : ι → Type*} [NormedDivisi
     ¬ FiniteDimensional 𝕜 (lp E p) := fun _ ↦ by
   classical
   choose v hv using fun i ↦ exists_ne (0 : E i)
-  have hpi : LinearIndependent 𝕜 (fun i : ι ↦ Pi.single i (v i)) := by
+  have hli : LinearIndependent 𝕜 fun i : ι ↦ lp.single p i (v i) := by
     rw [← linearIndependent_equiv (Equiv.sigmaPUnit ι)]
-    exact Pi.linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
+    exact linearIndependent_single (fun i (_ : Unit) ↦ v i) fun i ↦
       linearIndependent_unique_iff.mpr (hv i)
-  have hli : LinearIndependent 𝕜 (fun i : ι ↦ lp.single p i (v i)) := by
-    apply LinearIndependent.of_comp (lpSubmodule 𝕜 E p).subtype
-    have hcoe : (lpSubmodule 𝕜 E p).subtype ∘ (fun i : ι ↦ lp.single p i (v i)) =
-        fun i ↦ Pi.single i (v i) := by
-      funext i
-      exact lp.coeFn_single p i (v i)
-    rw [hcoe]
-    exact hpi
   have : Finite ι := hli.finite_of_isNoetherian
   exact not_finite ι
 

@@ -37,6 +37,11 @@ Davidson, *C*-Algebras by Example*, Theorem I.5.4 and Corollary I.5.5).
 * `TwoSidedIdeal.Quotient.mkStarAlgHom`, `TwoSidedIdeal.Quotient.liftStarAlgHom`,
   `TwoSidedIdeal.Quotient.factorStarAlgHom`, and `TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq`:
   universal `⋆`-homomorphisms and `⋆`-equivalences on C⋆-quotients, plus unital counterparts.
+* `TwoSidedIdeal.star_mul_self_mem_iff_of_isClosed`,
+  `TwoSidedIdeal.mul_star_self_mem_iff_of_isClosed`, and
+  `TwoSidedIdeal.exists_isSelfAdjoint_mem_notMem`: closed-ideal membership criterion
+  `star a * a ∈ I ↔ a ∈ I` (and `a * star a ∈ I ↔ a ∈ I`), and its corollary producing a
+  self-adjoint element of `J` outside a closed ideal `I` whenever `¬ J ≤ I`.
 * `NonUnitalStarAlgHom.isClosed_range` and `StarAlgHom.isClosed_range`: the range of any
   `⋆`-algebra homomorphism between C⋆-algebras is closed.
 * `NonUnitalStarAlgHom.quotientKerEquivRange`, `NonUnitalStarAlgHom.quotientKerEquivOfSurjective`,
