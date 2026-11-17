@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fourier.RieszTransform.Basic
-public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
+public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Operator
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
@@ -28,7 +28,8 @@ of its argument it is the singular integral operator with kernel
 `R_v f (x) = ∫ K_v(x - y) f(y) dy` for almost every `x ∉ s`
 (`TauCeti.ae_rieszTransform_eq_integral`). The kernel satisfies the standard size and smoothness
 estimates `|K_v(z)| ≤ c_n ‖v‖ ‖z‖⁻ⁿ` and `|K_v(a) - K_v(b)| ≤ C ‖v‖ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` for
-`2 ‖a - b‖ < ‖b‖`, so the Calderón–Zygmund theorem makes `R_v` of weak type `(1, 1)`
+`2 ‖a - b‖ < ‖b‖`, so `R_v` is a Calderón–Zygmund operator
+(`TauCeti.hasStandardKernel_rieszTransform`) and in particular of weak type `(1, 1)`
 (`TauCeti.exists_mul_volume_lt_enorm_rieszTransform_le`). In dimension one, `K_1(z) = 1 / (π z)`
 is the kernel of the Hilbert transform.
 
@@ -716,54 +717,58 @@ theorem ae_rieszTransform_eq_integral (v : E) (f : Lp F 2 (volume : Measure E)) 
     integral_congr_ae (hff'.mono fun y hy ↦ by simp only [hy])]
   exact hx k ⟨mem_closedBall_zero_iff.2 hk₁, fun h ↦ hxδ (thickening_mono hk₂ s h)⟩
 
+/-- **The Riesz transforms are Calderón–Zygmund operators**, with the kernel `K_v(x - y)` and the
+smoothness exponent `1`. The size estimate is `abs_rieszKernel_le` and the smoothness estimate,
+in each variable, is `abs_rieszKernel_sub_le`. -/
+theorem hasStandardKernel_rieszTransform (v : E) :
+    HasStandardKernel (rieszTransform F v) (fun x y ↦ (rieszKernel v (x - y) : ℂ))
+      (2 * ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * rieszConst E * ‖v‖).toNNReal 1 where
+  exponent_pos := one_pos
+  norm_le x y _ := by
+    have hc := rieszConst_nonneg E
+    rw [Complex.norm_real, Real.norm_eq_abs, Real.coe_toNNReal _ (by positivity), dist_eq_norm]
+    refine (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_right ?_ (by positivity))
+    rw [mul_assoc]
+    refine le_mul_of_one_le_left (by positivity) ?_
+    have : (1 : ℝ) ≤ 4 ^ (finrank ℝ E + 1) := one_le_pow₀ (by norm_num)
+    nlinarith
+  norm_sub_add_norm_sub_le x y y' hy := by
+    rw [← Complex.ofReal_sub, ← Complex.ofReal_sub, Complex.norm_real, Complex.norm_real,
+      Real.norm_eq_abs, Real.norm_eq_abs,
+      Real.coe_toNNReal _ (by positivity [rieszConst_nonneg E]), Real.rpow_one,
+      show (finrank ℝ E : ℝ) + 1 = ((finrank ℝ E + 1 : ℕ) : ℝ) by push_cast; ring,
+      Real.rpow_natCast]
+    simp only [dist_eq_norm] at hy ⊢
+    have h₁ : 2 * ‖(x - y') - (x - y)‖ < ‖x - y‖ := by
+      rwa [show (x - y') - (x - y) = y - y' by abel]
+    have h₂ : 2 * ‖(y' - x) - (y - x)‖ < ‖y - x‖ := by
+      rwa [show (y' - x) - (y - x) = -(y - y') by abel, norm_neg, norm_sub_rev y x]
+    have b₁ := abs_rieszKernel_sub_le v h₁
+    have b₂ := abs_rieszKernel_sub_le v h₂
+    rw [show (x - y') - (x - y) = y - y' by abel] at b₁
+    rw [show (y' - x) - (y - x) = -(y - y') by abel, norm_neg, norm_sub_rev y x] at b₂
+    rw [abs_sub_comm] at b₁ b₂
+    calc |rieszKernel v (x - y) - rieszKernel v (x - y')| +
+          |rieszKernel v (y - x) - rieszKernel v (y' - x)|
+        ≤ 2 * (rieszConst E * ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * ‖v‖ *
+          ‖y - y'‖ / ‖x - y‖ ^ (finrank ℝ E + 1)) := by linarith
+      _ = _ := by ring
+  ae_apply_eq_integral f s hs hf := by
+    filter_upwards [ae_rieszTransform_eq_integral v f hs hf] with x hx hxs
+    rw [hx hxs]
+    simp_rw [Complex.coe_smul]
+
 /-- **The Riesz transforms are of weak type `(1, 1)`.** There is a constant `A` with
 `t · |{x | ‖R_v f x‖ > t}| ≤ A ‖f‖₁` for every `f ∈ L²` and every `t`. For `v ≠ 0` and
 nonzero `F`, the Riesz transform is not bounded on `L¹`; this is the endpoint substitute. It
-follows from the Calderón–Zygmund theorem, since `R_v` is bounded on `L²` and its kernel
-`K_v(x - y)` satisfies the size and smoothness estimates `abs_rieszKernel_le` and
-`abs_rieszKernel_sub_le`. -/
+is the weak type `(1, 1)` of Calderón–Zygmund operators
+(`TauCeti.HasStandardKernel.exists_mul_volume_lt_enorm_le`) for the kernel
+`K_v(x - y)` (`TauCeti.hasStandardKernel_rieszTransform`). -/
 theorem exists_mul_volume_lt_enorm_rieszTransform_le (v : E) :
     ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure E)) (t : ℝ≥0∞),
       t * volume {x | t < ‖rieszTransform F v f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
-  set n := finrank ℝ E
-  set c := rieszConst E
-  have hc : 0 ≤ c := rieszConst_nonneg E
-  set k : E → E → F →L[ℝ] F := fun x y ↦ rieszKernel v (x - y) • ContinuousLinearMap.id ℝ F
-  have hkm : StronglyMeasurable (Function.uncurry k) :=
-    ((measurable_rieszKernel v).comp
-      (measurable_fst.sub measurable_snd)).stronglyMeasurable.smul_const _
-  have hk : ∀ x y, ‖k x y‖ ≤ |rieszKernel v (x - y)| := fun x y ↦ by
-    simp only [k]
-    rw [norm_smul, Real.norm_eq_abs]
-    exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
-  have hsize : ∀ x y, x ≠ y → ‖k x y‖ ≤ (c * ‖v‖).toNNReal * dist x y ^ (-(n : ℝ)) :=
-    fun x y _ ↦ by
-      rw [Real.coe_toNNReal _ (by positivity), Real.rpow_neg dist_nonneg, Real.rpow_natCast,
-        dist_eq_norm, ← div_eq_mul_inv]
-      exact (hk x y).trans (abs_rieszKernel_le v _)
-  have hsmooth : ∀ x y y', 2 * dist y y' < dist x y' → ‖k x y - k x y'‖ ≤
-      (c * ((n + 2) * 4 ^ (n + 1)) * ‖v‖).toNNReal *
-        (dist y y' ^ (1 : ℝ) * dist x y' ^ (-((n : ℝ) + 1))) := fun x y y' h ↦ by
-    rw [Real.coe_toNNReal _ (by positivity), Real.rpow_one, Real.rpow_neg dist_nonneg,
-      show (n : ℝ) + 1 = ((n + 1 : ℕ) : ℝ) by push_cast; ring, Real.rpow_natCast,
-      dist_eq_norm, dist_eq_norm]
-    have hab : (x - y) - (x - y') = y' - y := by abel
-    have h' : 2 * ‖(x - y) - (x - y')‖ < ‖x - y'‖ := by
-      rwa [hab, norm_sub_rev, ← dist_eq_norm, ← dist_eq_norm]
-    calc ‖k x y - k x y'‖ ≤ |rieszKernel v (x - y) - rieszKernel v (x - y')| := by
-          simp only [k, ← sub_smul]
-          rw [norm_smul, Real.norm_eq_abs]
-          exact mul_le_of_le_one_right (abs_nonneg _) ContinuousLinearMap.norm_id_le
-      _ ≤ _ := abs_rieszKernel_sub_le v h'
-      _ = _ := by
-          rw [hab, norm_sub_rev, div_eq_mul_inv]
-          ring
-  have hrep : ∀ (f : Lp F 2 (volume : Measure E)) (s : Set E), IsCompact s →
-      (∀ᵐ x, x ∉ s → f x = 0) → ∀ᵐ x, x ∉ s →
-        (rieszTransform F v).restrictScalars ℝ f x = ∫ z, k x z (f z) := fun f s hs hf ↦ by
-    filter_upwards [ae_rieszTransform_eq_integral v f hs hf] with x hx hxs
-    simp [k, hx hxs]
-  exact ContinuousLinearMap.exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
-    ((rieszTransform F v).restrictScalars ℝ) hkm one_pos hsize hsmooth hrep
+  obtain ⟨A, hA⟩ := (hasStandardKernel_rieszTransform (F := F) v).exists_mul_volume_lt_enorm_le
+  exact ⟨A, fun f t ↦
+    (eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)) ▸ hA f t⟩
 
 end TauCeti
