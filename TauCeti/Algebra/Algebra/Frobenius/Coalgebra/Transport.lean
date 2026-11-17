@@ -106,7 +106,7 @@ theorem Coalgebra.map_handleElem {R A B F : Type*} [CommSemiring R]
 /-- Pulling a functional back along an algebra equivalence preserves perfectness of the associated
 multiplication pairing. -/
 theorem LinearMap.isPerfPair_mul_compr₂_comp_iff {R A B : Type*} [CommSemiring R]
-    [Semiring A] [Semiring B] [Algebra R A] [Algebra R B] (e : A ≃ₐ[R] B) (εB : B →ₗ[R] R) :
+    [Semiring A] [Semiring B] [Algebra R A] [Algebra R B] (εB : B →ₗ[R] R) (e : A ≃ₐ[R] B) :
     ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair ↔ ((mul R B).compr₂ εB).IsPerfPair := by
   have hAB : ((mul R B).compr₂ εB).compl₁₂ e.toLinearEquiv.toLinearMap
       e.toLinearEquiv.toLinearMap = (mul R A).compr₂ (εB ∘ₗ e.toLinearMap) := by ext; simp
@@ -182,15 +182,15 @@ end AlgEquiv
 namespace LinearMap
 
 variable {R A B : Type*} [CommSemiring R] [CommSemiring A] [CommSemiring B]
-  [Algebra R A] [Algebra R B] (e : A ≃ₐ[R] B) (εB : B →ₗ[R] R) [((mul R B).compr₂ εB).IsPerfPair]
+  [Algebra R A] [Algebra R B] (εB : B →ₗ[R] R) [((mul R B).compr₂ εB).IsPerfPair] (e : A ≃ₐ[R] B)
 
 /-- Transporting a basis along an algebra equivalence commutes with taking the trace-dual basis. -/
 theorem traceDualBasis_map {ι : Type*} [Finite ι] (b : Module.Basis ι R A) (i : ι) :
     letI : ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair :=
-      (isPerfPair_mul_compr₂_comp_iff e εB).mpr inferInstance
+      (εB.isPerfPair_mul_compr₂_comp_iff e).mpr inferInstance
     traceDualBasis εB (b.map e.toLinearEquiv) i = e (traceDualBasis (εB ∘ₗ e.toLinearMap) b i) := by
   let : ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair :=
-    (isPerfPair_mul_compr₂_comp_iff e εB).mpr inferInstance
+    (εB.isPerfPair_mul_compr₂_comp_iff e).mpr inferInstance
   refine ((mul R B).compr₂ εB).toPerfPair.injective <| ext fun y => ?_
   simp only [toPerfPair_apply, compr₂_apply, mul_apply_apply, traceDualBasis_mul,
     Module.Basis.map_repr, LinearEquiv.trans_apply]
@@ -208,31 +208,31 @@ def frobeniusCoalgEquivOfAlgEquiv :
     letI : Module.Finite R A := .equiv e.symm.toLinearEquiv
     letI : Module.Projective R A := .of_equiv e.symm.toLinearEquiv
     letI : ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair :=
-      (isPerfPair_mul_compr₂_comp_iff e εB).mpr inferInstance
+      (εB.isPerfPair_mul_compr₂_comp_iff e).mpr inferInstance
     letI := (εB ∘ₗ e.toLinearMap).frobeniusCoalgebra; letI := εB.frobeniusCoalgebra
     A ≃ₗc[R] B := by
   letI : Module.Finite R A := .equiv e.symm.toLinearEquiv
   letI : Module.Projective R A := .of_equiv e.symm.toLinearEquiv
   letI : ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair :=
-    (isPerfPair_mul_compr₂_comp_iff e εB).mpr inferInstance
+    (εB.isPerfPair_mul_compr₂_comp_iff e).mpr inferInstance
   letI := frobeniusCoalgebra (εB ∘ₗ e.toLinearMap); letI := frobeniusCoalgebra εB
   haveI := frobeniusCoalgebra_isFrobenius (εB ∘ₗ e.toLinearMap)
   haveI := frobeniusCoalgebra_isFrobenius εB
   exact e.toFrobeniusCoalgEquiv fun a => by simp +zetaDelta
 
 @[simp] theorem coe_frobeniusCoalgEquivOfAlgEquiv :
-    ⇑(frobeniusCoalgEquivOfAlgEquiv e εB) = e := (rfl)
+    ⇑(frobeniusCoalgEquivOfAlgEquiv εB e) = e := (rfl)
 
 @[simp] theorem frobeniusCoalgEquivOfAlgEquiv_apply (a : A) :
-    frobeniusCoalgEquivOfAlgEquiv e εB a = e a := (rfl)
+    frobeniusCoalgEquivOfAlgEquiv εB e a = e a := (rfl)
 
 @[simp] theorem frobeniusCoalgEquivOfAlgEquiv_symm_apply (b : B) :
     letI : Module.Finite R A := .equiv e.symm.toLinearEquiv
     letI : Module.Projective R A := .of_equiv e.symm.toLinearEquiv
     letI : ((mul R A).compr₂ (εB ∘ₗ e.toLinearMap)).IsPerfPair :=
-      (isPerfPair_mul_compr₂_comp_iff e εB).mpr inferInstance
+      (εB.isPerfPair_mul_compr₂_comp_iff e).mpr inferInstance
     letI := (εB ∘ₗ e.toLinearMap).frobeniusCoalgebra; letI := εB.frobeniusCoalgebra
-    (frobeniusCoalgEquivOfAlgEquiv e εB).symm b = e.symm b := (rfl)
+    (frobeniusCoalgEquivOfAlgEquiv εB e).symm b = e.symm b := (rfl)
 
 end FiniteProjective
 

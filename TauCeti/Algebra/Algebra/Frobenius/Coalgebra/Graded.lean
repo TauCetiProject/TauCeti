@@ -16,10 +16,13 @@ Develops the degree theory of `ℤ`-graded Frobenius coalgebras on top of
 `TauCeti.Algebra.Coalgebra.Graded`. On a `ℤ`-graded Frobenius coalgebra `A` over a commutative
 semiring `R` (without commutativity or projectivity), the counit has degree `-d` into
 `TauCeti.trivialGrading R R` iff the coproduct has degree `d` into the total-degree tensor grading;
-hence `Coalgebra.handleOp R A` has degree `d`, `Coalgebra.handleElem R A ∈ 𝒜 d`, and trace-dual
-basis elements lie in `𝒜 (d - deg i)`. With `TauCeti.Algebra.Coalgebra.Graded`, this gives closure
-under counit-preserving degree-zero algebra equivalences, tensor products, and trivially graded
-scalar extensions, plus total degree of the scalar-extended handle element over `ℤ`-graded bases.
+whenever the coproduct has degree `d` (even without associativity), `Coalgebra.handleOp R A` has
+degree `d` and (in the unital graded setting) `Coalgebra.handleElem R A ∈ 𝒜 d`. On a commutative
+`ℤ`-graded `R`-algebra with a homogeneous perfect trace of degree `-d` and a homogeneous finite
+basis `b` (`b i ∈ 𝒜 (deg i)`), the trace-dual basis elements lie in `𝒜 (d - deg i)`. With
+`TauCeti.Algebra.Coalgebra.Graded`, this gives closure under counit-preserving degree-zero algebra
+equivalences, tensor products, and trivially graded scalar extensions, plus total degree of the
+scalar-extended handle element over `ℤ`-graded bases.
 
 ## Main results
 
@@ -140,11 +143,16 @@ theorem Coalgebra.IsFrobenius.isHomogeneous_counit_neg_two_mul_iff_isHomogeneous
           (InternalGrading.ofDecomposition 𝒜)).piece (2 * c) := by
   simpa [neg_mul] using isHomogeneous_counit_iff_isHomogeneous_comul 𝒜 (2 * c)
 
+end Semiring
+
 /-! ### Degrees of the handle operator, handle element, and trace-dual basis -/
 
-/-- When the coproduct of a `ℤ`-graded `R`-algebra `A` is homogeneous of degree `d`, the handle
-operator `Coalgebra.handleOp R A` is homogeneous of degree `d`. -/
-theorem Coalgebra.isHomogeneous_handleOp [CoalgebraStruct R A] {d : ℤ}
+/-- When the coproduct of an internally `ℤ`-graded multiplicative `R`-module `A` is homogeneous
+of degree `d`, the handle operator `Coalgebra.handleOp R A` is homogeneous of degree `d`. -/
+theorem Coalgebra.isHomogeneous_handleOp {R A : Type*} [CommSemiring R]
+    [NonUnitalNonAssocSemiring A] [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+    [CoalgebraStruct R A] (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜]
+    [SetLike.GradedMul 𝒜] {d : ℤ}
     (hΔ : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece d) :
@@ -152,9 +160,12 @@ theorem Coalgebra.isHomogeneous_handleOp [CoalgebraStruct R A] {d : ℤ}
   TauCeti.LinearMap.isHomogeneous_def.mpr fun _ _ ha => by
     simpa [Coalgebra.handleOp_apply] using (TauCeti.isHomogeneous_mul' 𝒜).map_mem (hΔ.map_mem ha)
 
-/-- When the coproduct of a `ℤ`-graded `R`-algebra `A` is homogeneous of degree `d`, the handle
-element `Coalgebra.handleElem R A` lies in `𝒜 d`. -/
-theorem Coalgebra.handleElem_mem_graded [CoalgebraStruct R A] {d : ℤ}
+/-- When the coproduct of a unital internally `ℤ`-graded multiplicative `R`-module `A` is
+homogeneous of degree `d`, the handle element `Coalgebra.handleElem R A` lies in `𝒜 d`. -/
+theorem Coalgebra.handleElem_mem_graded {R A : Type*} [CommSemiring R] [NonAssocSemiring A]
+    [Module R A] [SMulCommClass R A A] [IsScalarTower R A A] [CoalgebraStruct R A]
+    (𝒜 : ℤ → Submodule R A) [DirectSum.Decomposition 𝒜] [SetLike.GradedOne 𝒜]
+    [SetLike.GradedMul 𝒜] {d : ℤ}
     (hΔ : TauCeti.LinearMap.IsHomogeneous (Coalgebra.comul (R := R) (A := A)) 𝒜
       ((InternalGrading.ofDecomposition 𝒜).tensorProduct
         (InternalGrading.ofDecomposition 𝒜)).piece d) : Coalgebra.handleElem R A ∈ 𝒜 d := by
@@ -163,14 +174,13 @@ theorem Coalgebra.handleElem_mem_graded [CoalgebraStruct R A] {d : ℤ}
 
 /-- On a `ℤ`-graded Frobenius coalgebra whose counit has degree `-d`, the handle element lies in
 `𝒜 d`, and its `g`-th power lies in `𝒜 (g • d)`. -/
-theorem Coalgebra.IsFrobenius.handleElem_pow_mem_graded
+theorem Coalgebra.IsFrobenius.handleElem_pow_mem_graded {R A : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] (𝒜 : ℤ → Submodule R A) [GradedAlgebra 𝒜]
     [Coalgebra R A] [Coalgebra.IsFrobenius R A] {d : ℤ}
     (hε : TauCeti.LinearMap.IsHomogeneous (Coalgebra.counit (R := R) (A := A)) 𝒜
       (trivialGrading R R) (-d)) (g : ℕ) : Coalgebra.handleElem R A ^ g ∈ 𝒜 (g • d) :=
   SetLike.pow_mem_graded g
     (Coalgebra.handleElem_mem_graded 𝒜 ((isHomogeneous_counit_iff_isHomogeneous_comul 𝒜 d).mp hε))
-
-end Semiring
 
 /-- `InternalGrading` form of `Coalgebra.IsFrobenius.isHomogeneous_counit_iff_isHomogeneous_comul`,
 stated directly with `(G.tensorProduct G).piece`. -/

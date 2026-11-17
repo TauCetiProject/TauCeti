@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Algebra.Frobenius.Coalgebra.Basic
+import Mathlib.LinearAlgebra.Contraction
 
 /-!
 # Converse perfectness, dual-basis expansions, and the handle element
@@ -137,24 +138,14 @@ theorem tensor_eq_of_forall_lid_rTensor_counit_mulLeft {z₁ z₂ : A ⊗[R] A}
       (_root_.TensorProduct.lid R A)
         (((Coalgebra.counit (R := R) ∘ₗ LinearMap.mulLeft R b).rTensor A) z₂)) :
     z₁ = z₂ := by
-  let ε : Module.Dual R A := Coalgebra.counit
-  obtain ⟨S, hS⟩ := TensorProduct.exists_finset (R := R) (Coalgebra.comul (R := R) (1 : A))
-  have hid : (LinearMap.id : A →ₗ[R] A) =
-      ∑ x ∈ S, LinearMap.smulRight (ε ∘ₗ LinearMap.mulLeft R x.2) x.1 := LinearMap.ext fun u => by
-    simpa [ε, hS, sum_tmul] using congrArg ((_root_.TensorProduct.rid R A).toLinearMap ∘ₗ
-      ε.lTensor A) (comul_eq_lTensor_mulRight_comul_one (R := R) u)
-  have hrsum (g : A × A → A →ₗ[R] A) : (∑ x ∈ S, g x).rTensor A = ∑ x ∈ S, (g x).rTensor A :=
-    TensorProduct.ext' fun _ _ => by simp [LinearMap.sum_apply, sum_tmul]
-  have hsmul (φ : A →ₗ[R] R) (w : A) : (LinearMap.smulRight φ w).rTensor A =
-      TensorProduct.mk R A A w ∘ₗ (_root_.TensorProduct.lid R A).toLinearMap ∘ₗ φ.rTensor A :=
-    TensorProduct.ext' fun _ _ => by simp [smul_tmul]
-  have hexpand (z : A ⊗[R] A) : z = ∑ x ∈ S, x.1 ⊗ₜ[R]
-      (_root_.TensorProduct.lid R A) (((ε ∘ₗ LinearMap.mulLeft R x.2).rTensor A) z) := by
-    have hz0 : z = (LinearMap.id : A →ₗ[R] A).rTensor A z := by simp
-    conv_lhs => rw [hz0, hid, hrsum, LinearMap.sum_apply]
-    exact Finset.sum_congr rfl fun x _ => by rw [hsmul]; rfl
-  rw [hexpand z₁, hexpand z₂]
-  exact Finset.sum_congr rfl fun x _ => by rw [hz x.2]
+  let p := (LinearMap.mul R A).compr₂ (Coalgebra.counit (R := R) (A := A))
+  let e := (TensorProduct.congr p.flip.toPerfPair (LinearEquiv.refl R A)).trans
+    (dualTensorHomEquiv R A A)
+  have he (z : A ⊗[R] A) (b : A) : e z b =
+      (_root_.TensorProduct.lid R A)
+        (((Coalgebra.counit (R := R) ∘ₗ LinearMap.mulLeft R b).rTensor A) z) := by
+    induction z using TensorProduct.inductionOn <;> simp_all [e, p]
+  exact e.injective (LinearMap.ext fun b => by rw [he, he, hz b])
 
 end NonAssocSemiring
 
@@ -191,26 +182,6 @@ theorem frobeniusCoalgebra_isCocomm [Module.Finite R A] [Module.Projective R A]
     (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair] :
     letI := ε.frobeniusCoalgebra; Coalgebra.IsCocomm R A := by
   let := ε.frobeniusCoalgebra; have := ε.frobeniusCoalgebra_isFrobenius; infer_instance
-
-variable (ε : A →ₗ[R] R) [((mul R A).compr₂ ε).IsPerfPair]
-
-/-- Taking the trace-dual basis twice on a commutative algebra recovers the original basis. -/
-@[simp] theorem traceDualBasis_traceDualBasis {ι : Type*} [Finite ι] (b : Module.Basis ι R A) :
-    traceDualBasis ε (traceDualBasis ε b) = b := by
-  ext i : 1; apply (traceDualBasis ε b).repr.injective; ext j
-  rw [traceDualBasis_repr, traceDualBasis_mul, traceDualBasis_repr, mul_comm, traceDualBasis_repr]
-
-/-- Expansion of an algebra element in the trace-dual basis, with coefficients given by trace
-pairings against the primal basis. -/
-theorem sum_apply_mul_smul_traceDualBasis {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R A) (a : A) : ∑ i, ε (a * b i) • traceDualBasis ε b i = a := by
-  simpa only [traceDualBasis_repr] using (traceDualBasis ε b).sum_repr a
-
-/-- Expansion of an algebra element in the primal basis, with coefficients given by trace pairings
-against the trace-dual basis. -/
-theorem sum_traceDualBasis_mul_smul {ι : Type*} [Fintype ι]
-    (b : Module.Basis ι R A) (a : A) : ∑ i, ε (traceDualBasis ε b i * a) • b i = a := by
-  simpa only [traceDualBasis_mul] using b.sum_repr a
 
 end LinearMap
 
