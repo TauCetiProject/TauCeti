@@ -105,6 +105,15 @@ theorem adjoinBaseChange_gen (α : Ω) :
     adjoinBaseChange K L α (AdjoinSimple.gen K α) = AdjoinSimple.gen L α :=
   (rfl)
 
+/-- The `K(α)`-algebra structure on `L(α)` induced by `adjoinBaseChange` is compatible with the
+inclusions into `Ω`. -/
+theorem isScalarTower_adjoinBaseChange (α : Ω) :
+    letI := (adjoinBaseChange K L α).toAlgebra
+    IsScalarTower K⟮α⟯ L⟮α⟯ Ω :=
+  letI := (adjoinBaseChange K L α).toAlgebra
+  .of_algebraMap_eq fun _ ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+
 /-- Multiplication into the compositum, with its `K(α)`-algebra structure induced by the
 canonical inclusion. -/
 def adjoinBaseChangeTensorLift (α : Ω) :

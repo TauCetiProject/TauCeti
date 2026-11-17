@@ -19,6 +19,7 @@ import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Characterization
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer.Unit
 import TauCeti.RingTheory.IntegralClosure.TensorProduct
 import TauCeti.RingTheory.Localization.Integral
+import TauCeti.RingTheory.TensorProduct.Maps
 
 /-!
 # Base change of tamely ramified extensions of a discrete valuation ring
@@ -144,29 +145,6 @@ private theorem surjective_compositum_lift
           Subtype.ext (by dsimp only; rw [Set.mem_singleton_iff.mp h, hιK'₂, AdjoinSimple.coe_gen])
         exact hγ_eq ▸ hγ'_R) z
 
-/-- Assembles the `K'₁`-algebra map `K'₁ ⊗[A'₁] (A'₂ ⊗[A₁] B₁) →ₐ[K'₁] E''` from compatible ring
-homomorphisms out of `A'₂` and `B₁`. -/
-private def lift_compositum_tensor
-    {A₁ A'₁ K'₁ A'₂ B₁ E'' : Type*} [CommRing A₁] [CommRing A'₁] [CommRing K'₁]
-    [CommRing A'₂] [CommRing B₁] [CommRing E'']
-    [Algebra A'₁ K'₁] [Algebra A'₁ A'₂] [Algebra A₁ A'₂] [Algebra A₁ B₁] [Algebra K'₁ E'']
-    (fA'₂ : A'₂ →+* E'') (fB₁ : B₁ →+* E'')
-    (hA₁ : ∀ a : A₁, fB₁ (algebraMap A₁ B₁ a) = fA'₂ (algebraMap A₁ A'₂ a))
-    (hA'₁ : ∀ y : A'₁, fA'₂ (algebraMap A'₁ A'₂ y) = algebraMap K'₁ E'' (algebraMap A'₁ K'₁ y)) :
-    K'₁ ⊗[A'₁] (A'₂ ⊗[A₁] B₁) →ₐ[K'₁] E'' :=
-  letI : Algebra A₁ E'' := (fA'₂.comp (algebraMap A₁ A'₂)).toAlgebra
-  letI : Algebra A'₁ E'' := ((algebraMap K'₁ E'').comp (algebraMap A'₁ K'₁)).toAlgebra
-  haveI : IsScalarTower A'₁ K'₁ E'' := .of_algebraMap_eq fun _ ↦ rfl
-  let fA'₂_a : A'₂ →ₐ[A₁] E'' := { fA'₂ with commutes' := fun _ ↦ rfl }
-  let fB₁_a : B₁ →ₐ[A₁] E'' := { fB₁ with commutes' := hA₁ }
-  let ψ₀ : A'₂ ⊗[A₁] B₁ →ₐ[A₁] E'' := Algebra.TensorProduct.lift fA'₂_a fB₁_a fun _ _ ↦ .all _ _
-  let ψ : A'₂ ⊗[A₁] B₁ →ₐ[A'₁] E'' :=
-    { ψ₀.toRingHom with
-      commutes' := fun y ↦ by
-        simp [ψ₀, fA'₂_a, Algebra.TensorProduct.algebraMap_apply, RingHom.algebraMap_toAlgebra,
-          hA'₁] }
-  Algebra.TensorProduct.lift (Algebra.ofId K'₁ E'') ψ fun _ _ ↦ .all _ _
-
 /-- Over abstract fields `K'₁` and `E''` and finite étale algebras `A'₂ / A'₁` and `B₁ / A₁`, if
 the induced `K'₁`-algebra map `K'₁ ⊗[A'₁] (A'₂ ⊗[A₁] B₁) →ₐ[K'₁] E''` is surjective whenever its
 range contains `algebraMap K'₁ E''`, `fA'₂ γ'₀`, and `fB₁`, then `E''` is unramified over `A'₁`. -/
@@ -178,9 +156,8 @@ private theorem isUnramifiedWRT_of_compositum_closures
     [CommRing A'₂] [Algebra A'₁ A'₂] [Algebra A₁ A'₂] [Algebra.Etale A'₁ A'₂]
     [Module.Finite A'₁ A'₂]
     [Field E''] [Algebra A'₁ E''] [Algebra K'₁ E''] [IsScalarTower A'₁ K'₁ E'']
-    (fA'₂ : A'₂ →+* E'') (fB₁ : B₁ →+* E'')
-    (hA₁ : ∀ a : A₁, fB₁ (algebraMap A₁ B₁ a) = fA'₂ (algebraMap A₁ A'₂ a))
-    (hA'₁ : ∀ y : A'₁, fA'₂ (algebraMap A'₁ A'₂ y) = algebraMap K'₁ E'' (algebraMap A'₁ K'₁ y))
+    (fA'₂ : A'₂ →ₐ[A'₁] E'') (fB₁ : B₁ →+* E'')
+    (hA₁ : fA'₂.toRingHom.comp (algebraMap A₁ A'₂) = fB₁.comp (algebraMap A₁ B₁))
     (γ'₀ : A'₂)
     (hsurj : ∀ {T : Type v} [CommRing T] (χ : T →+* E''),
       (∀ x : K'₁, algebraMap K'₁ E'' x ∈ χ.range) →
@@ -188,15 +165,21 @@ private theorem isUnramifiedWRT_of_compositum_closures
       (∀ b : B₁, fB₁ b ∈ χ.range) →
       Function.Surjective χ) :
     IsUnramifiedWRT A'₁ E'' := by
-  let S' := A'₂ ⊗[A₁] B₁
-  have : Algebra.Etale A'₁ S' := .comp A'₁ A'₂ S'
-  have : Module.Finite A'₁ S' := .trans A'₂ S'
-  let χ : K'₁ ⊗[A'₁] S' →ₐ[K'₁] E'' := lift_compositum_tensor fA'₂ fB₁ hA₁ hA'₁
+  have : Algebra.Etale A'₁ (A'₂ ⊗[A₁] B₁) := .comp A'₁ A'₂ (A'₂ ⊗[A₁] B₁)
+  have : Module.Finite A'₁ (A'₂ ⊗[A₁] B₁) := .trans A'₂ (A'₂ ⊗[A₁] B₁)
+  let ψ : A'₂ ⊗[A₁] B₁ →ₐ[A'₁] E'' :=
+    { Algebra.TensorProduct.liftRingHom fA'₂.toRingHom fB₁ hA₁ with
+      commutes' := fun y ↦ by
+        simp [Algebra.TensorProduct.algebraMap_apply, Algebra.TensorProduct.liftRingHom_tmul] }
+  let χ : K'₁ ⊗[A'₁] (A'₂ ⊗[A₁] B₁) →ₐ[K'₁] E'' :=
+    Algebra.TensorProduct.productLeftAlgHom (Algebra.ofId K'₁ E'') ψ
   have hχ : Function.Surjective χ :=
     hsurj χ.toRingHom
-      (fun x ↦ ⟨x ⊗ₜ[A'₁] (1 : S'), by simp [χ, lift_compositum_tensor]⟩)
-      ⟨(1 : K'₁) ⊗ₜ[A'₁] (γ'₀ ⊗ₜ[A₁] (1 : B₁)), by simp [χ, lift_compositum_tensor]⟩
-      (fun b ↦ ⟨(1 : K'₁) ⊗ₜ[A'₁] ((1 : A'₂) ⊗ₜ[A₁] b), by simp [χ, lift_compositum_tensor]⟩)
+      (fun x ↦ ⟨x ⊗ₜ[A'₁] 1, by simp [χ]⟩)
+      ⟨(1 : K'₁) ⊗ₜ[A'₁] (γ'₀ ⊗ₜ[A₁] (1 : B₁)), by
+        simp [χ, ψ, Algebra.TensorProduct.liftRingHom_tmul]⟩
+      (fun b ↦ ⟨(1 : K'₁) ⊗ₜ[A'₁] ((1 : A'₂) ⊗ₜ[A₁] b), by
+        simp [χ, ψ, Algebra.TensorProduct.liftRingHom_tmul]⟩)
   exact χ.isUnramifiedWRT_of_surjective hχ
 
 variable {A K L A' K' L' : Type*}
@@ -293,7 +276,6 @@ private theorem isUnramifiedWRT_adjoin_roots_in_overfield
     [Algebra L Ω'] [Algebra K Ω'] [Algebra A Ω']
     [IsScalarTower K' L' Ω'] [IsScalarTower A' K' Ω']
     [IsScalarTower L L' Ω'] [IsScalarTower K L Ω'] [IsScalarTower A K Ω']
-    [IsScalarTower K K' Ω']
     (h : IsTamelyRamifiedWRT A L) (φ : K' ⊗[K] L →ₐ[K'] L') (hφ : Function.Surjective φ)
     (hφL : ∀ l : L, φ (1 ⊗ₜ[K] l) = algebraMap L L' l)
     {π : A} (hπ : Irreducible π) {ϖ' : A'} {u' : A'ˣ} {m e₀ : ℕ} (he₀_pos : 0 < e₀)
@@ -311,14 +293,15 @@ private theorem isUnramifiedWRT_adjoin_roots_in_overfield
     [IsScalarTower (integralClosure A' K'⟮β'⟯) K'⟮β'⟯
       (IntermediateField.adjoin L' ({β', γ'} : Set Ω'))]
     [IsScalarTower K'⟮β'⟯ (IntermediateField.adjoin L' ({β', γ'} : Set Ω')) Ω']
+    [Algebra K⟮γ' * β' ^ m⟯ (K'⟮β'⟯)⟮γ'⟯]
+    [IsScalarTower K⟮γ' * β' ^ m⟯ (K'⟮β'⟯)⟮γ'⟯ Ω']
     [Algebra (integralClosure A K⟮γ' * β' ^ m⟯)
       (integralClosure (integralClosure A' K'⟮β'⟯) (K'⟮β'⟯)⟮γ'⟯)]
-    (ιK : K⟮γ' * β' ^ m⟯ →ₐ[K] (K'⟮β'⟯)⟮γ'⟯)
-    (hιK_coe : ∀ z : K⟮γ' * β' ^ m⟯, (ιK z : Ω') = z)
     (hA₁_coe : ∀ a : integralClosure A K⟮γ' * β' ^ m⟯,
       ((algebraMap (integralClosure A K⟮γ' * β' ^ m⟯)
         (integralClosure (integralClosure A' K'⟮β'⟯) (K'⟮β'⟯)⟮γ'⟯) a :
-        integralClosure (integralClosure A' K'⟮β'⟯) (K'⟮β'⟯)⟮γ'⟯) : (K'⟮β'⟯)⟮γ'⟯) = ιK a) :
+        integralClosure (integralClosure A' K'⟮β'⟯) (K'⟮β'⟯)⟮γ'⟯) : (K'⟮β'⟯)⟮γ'⟯) =
+        algebraMap K⟮γ' * β' ^ m⟯ (K'⟮β'⟯)⟮γ'⟯ a) :
     IsUnramifiedWRT (integralClosure A' K'⟮β'⟯)
       (IntermediateField.adjoin L' ({β', γ'} : Set Ω')) := by
   -- Step 1: Identify `γ'` as integral over `A'₁ := integralClosure A' K'(β')`, and apply
@@ -339,6 +322,8 @@ private theorem isUnramifiedWRT_adjoin_roots_in_overfield
   let A₁ := integralClosure A K⟮α'⟯
   let B₁ := integralClosure A₁ L⟮α'⟯
   let A'₂ := integralClosure A'₁ (K'⟮β'⟯)⟮γ'⟯
+  let : Algebra A₁ B₁ := Subalgebra.algebra B₁
+  let : Algebra A'₁ A'₂ := Subalgebra.algebra A'₂
   -- Step 2: Construct canonical embeddings of `K'(β')(γ')` and `L(α')` into `E'' := L'(β', γ')`.
   let E'' : IntermediateField L' Ω' := IntermediateField.adjoin L' ({β', γ'} : Set Ω')
   have hβ'_mem : β' ∈ E'' := IntermediateField.subset_adjoin L' _ (Set.mem_insert β' {γ'})
@@ -352,49 +337,44 @@ private theorem isUnramifiedWRT_adjoin_roots_in_overfield
     TauCeti.IntermediateField.coe_adjoinAlgHom K'⟮β'⟯ _ z
   have hιL₁_coe (z : L⟮α'⟯) : (ιL₁ z : Ω') = z :=
     TauCeti.IntermediateField.coe_adjoinAlgHom L _ z
-  -- Step 3: Verify compatibility of the maps `B₁ → E''` and `A'₂ → E''` over `A₁` and `A'₁`,
+  -- Step 3: Verify compatibility of `A'₂ →ₐ[A'₁] E''` and `B₁ →+* E''` over `A₁`,
   -- then conclude unramifiedness from the surjective generic-fibre map of `A'₂ ⊗[A₁] B₁`.
-  have hA₁ (a : A₁) : (ιL₁.toRingHom.comp (algebraMap B₁ L⟮α'⟯)) (algebraMap A₁ B₁ a) =
-      (ιK'₂.toRingHom.comp (algebraMap A'₂ (K'⟮β'⟯)⟮γ'⟯)) (algebraMap A₁ A'₂ a) :=
-    Subtype.ext <| by
-      have hlhs : ((ιL₁ (algebraMap B₁ L⟮α'⟯ (algebraMap A₁ B₁ a)) : E'') : Ω') =
-          ((a : K⟮α'⟯) : Ω') := by
-        rw [hιL₁_coe, Subalgebra.algebraMap_apply, Subalgebra.coe_algebraMap,
-          Subalgebra.algebraMap_def, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-          RingHom.coe_coe, TauCeti.IntermediateField.coe_adjoinBaseChange]
-      have hrhs : ((ιK'₂ (algebraMap A'₂ (K'⟮β'⟯)⟮γ'⟯ (algebraMap A₁ A'₂ a)) : E'') : Ω') =
-          ((a : K⟮α'⟯) : Ω') := by
-        rw [hιK'₂_coe, Subalgebra.algebraMap_apply, hA₁_coe, hιK_coe]
-      exact hlhs.trans hrhs.symm
-  have hA'₁ (y : A'₁) : (ιK'₂.toRingHom.comp (algebraMap A'₂ (K'⟮β'⟯)⟮γ'⟯)) (algebraMap A'₁ A'₂ y) =
-      algebraMap K'⟮β'⟯ E'' (algebraMap A'₁ K'⟮β'⟯ y) :=
-    Subtype.ext <| by
-      have hlhs : ((ιK'₂ (algebraMap A'₂ (K'⟮β'⟯)⟮γ'⟯ (algebraMap A'₁ A'₂ y)) : E'') : Ω') =
-          ((algebraMap A'₁ K'⟮β'⟯ y : K'⟮β'⟯) : Ω') := by
-        rw [hιK'₂_coe, Subalgebra.algebraMap_apply, Subalgebra.coe_algebraMap,
-          Subalgebra.algebraMap_def, IntermediateField.coe_algebraMap_apply,
-          IntermediateField.algebraMap_apply, Subalgebra.algebraMap_apply]
-      have hrhs : ((algebraMap K'⟮β'⟯ E'' (algebraMap A'₁ K'⟮β'⟯ y) : E'') : Ω') =
-          ((algebraMap A'₁ K'⟮β'⟯ y : K'⟮β'⟯) : Ω') := by
-        rw [← IntermediateField.algebraMap_apply E'',
-          ← IsScalarTower.algebraMap_apply K'⟮β'⟯ E'' Ω', IntermediateField.algebraMap_apply]
-      exact hlhs.trans hrhs.symm
+  let fA'₂ : A'₂ →ₐ[A'₁] E'' :=
+    have : IsScalarTower A'₁ K'⟮β'⟯ (K'⟮β'⟯)⟮γ'⟯ :=
+      IsScalarTower.subalgebra A' K'⟮β'⟯ (K'⟮β'⟯)⟮γ'⟯ A'₁
+    (ιK'₂.restrictScalars A'₁).comp A'₂.val
+  let fB₁ : B₁ →+* E'' := ιL₁.toRingHom.comp (algebraMap B₁ L⟮α'⟯)
+  have hfA'₂_coe (x : A'₂) : (fA'₂ x : Ω') = ((x : (K'⟮β'⟯)⟮γ'⟯) : Ω') := hιK'₂_coe x
+  have hfB₁_coe (x : B₁) : (fB₁ x : Ω') = ((x : L⟮α'⟯) : Ω') := hιL₁_coe x
+  have hKα_coe (z : K⟮α'⟯) : (algebraMap K⟮α'⟯ (K'⟮β'⟯)⟮γ'⟯ z : Ω') = z :=
+    (IsScalarTower.algebraMap_apply K⟮α'⟯ (K'⟮β'⟯)⟮γ'⟯ Ω' z).symm
+  have hLα_coe (z : K⟮α'⟯) : (algebraMap K⟮α'⟯ L⟮α'⟯ z : Ω') = z :=
+    have : IsScalarTower K⟮α'⟯ L⟮α'⟯ Ω' :=
+      TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L α'
+    (IsScalarTower.algebraMap_apply K⟮α'⟯ L⟮α'⟯ Ω' z).symm
+  have hA₁ : fA'₂.toRingHom.comp (algebraMap A₁ A'₂) = fB₁.comp (algebraMap A₁ B₁) := by
+    have : IsScalarTower A₁ K⟮α'⟯ L⟮α'⟯ := IsScalarTower.subalgebra A K⟮α'⟯ L⟮α'⟯ A₁
+    refine RingHom.ext fun a ↦ Subtype.ext ?_
+    have hlhs : (fA'₂ (algebraMap A₁ A'₂ a) : Ω') = ((a : K⟮α'⟯) : Ω') := by
+      rw [hfA'₂_coe, hA₁_coe, hKα_coe]
+    have hrhs : (fB₁ (algebraMap A₁ B₁ a) : Ω') = ((a : K⟮α'⟯) : Ω') := by
+      simp only [hfB₁_coe, Subalgebra.coe_algebraMap,
+        IsScalarTower.algebraMap_apply A₁ K⟮α'⟯ L⟮α'⟯, Subalgebra.algebraMap_apply, hLα_coe]
+    exact hlhs.trans hrhs.symm
   have hβ'_intK' : IsIntegral K' β' :=
     (IsIntegral.of_pow he₀_pos (hβ' ▸ isIntegral_algebraMap (R := A'))).tower_top
   have hγ'_intK' : IsIntegral K' γ' := hγ'_intA'.tower_top
   exact isUnramifiedWRT_of_compositum_closures A₁ B₁ A'₁ K'⟮β'⟯ A'₂ E''
-    (ιK'₂.toRingHom.comp (algebraMap A'₂ (K'⟮β'⟯)⟮γ'⟯)) (ιL₁.toRingHom.comp (algebraMap B₁ L⟮α'⟯))
-    hA₁ hA'₁ ⟨AdjoinSimple.gen K'⟮β'⟯ γ', hγ'_gen_int⟩
+    fA'₂ fB₁ hA₁ ⟨AdjoinSimple.gen K'⟮β'⟯ γ', hγ'_gen_int⟩
     (fun χ h1 h2 h3 ↦ surjective_compositum_lift (K := K) (L := L) (K' := K') (L' := L')
       (Ω' := Ω') (K₁ := K⟮α'⟯) (L₁ := L⟮α'⟯) (A₁ := A₁) φ hφ hφL hβ'_intK' hγ'_intK'
-      ιK.toRingHom ιL₁.toRingHom
+      (algebraMap K⟮α'⟯ (K'⟮β'⟯)⟮γ'⟯) ιL₁.toRingHom
       (fun l ↦ by
         rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, hιL₁_coe,
           IntermediateField.coe_algebraMap_apply])
       (fun c x ↦ by
         simp only [Algebra.smul_def, map_mul, MulMemClass.coe_mul, AlgHom.toRingHom_eq_coe,
-          RingHom.coe_coe, hιL₁_coe, hιK_coe, RingHom.algebraMap_toAlgebra,
-          TauCeti.IntermediateField.coe_adjoinBaseChange])
+          RingHom.coe_coe, hιL₁_coe, hKα_coe, hLα_coe])
       (fun x ↦ (IsScalarTower.algebraMap_apply K'⟮β'⟯ E'' Ω' x).symm)
       ιK'₂ hιK'₂_coe χ h1 h2 h3)
 
@@ -431,8 +411,8 @@ private theorem isTamelyRamifiedWRT_of_roots_in_overfield
   let ιK'₁ : K'⟮β'⟯ →ₐ[K'] E'' :=
     TauCeti.IntermediateField.adjoinAlgHom K' (Set.singleton_subset_iff.mpr hβ'_mem)
   let : Algebra K'⟮β'⟯ E'' := ιK'₁.toAlgebra
-  have : IsScalarTower K'⟮β'⟯ E'' Ω' := .of_algebraMap_eq fun x ↦ by
-    simp [ιK'₁, RingHom.algebraMap_toAlgebra]
+  have : IsScalarTower K'⟮β'⟯ E'' Ω' :=
+    TauCeti.IntermediateField.isScalarTower_adjoinAlgHom K' _
   have : IsScalarTower A' K'⟮β'⟯ E'' := .of_algebraMap_eq fun a ↦
     (algebraMap E'' Ω').injective (by simp only [← IsScalarTower.algebraMap_apply])
   let A'₁ := integralClosure A' K'⟮β'⟯
@@ -442,30 +422,22 @@ private theorem isTamelyRamifiedWRT_of_roots_in_overfield
     TauCeti.IntermediateField.adjoinAlgHom K
       (Set.singleton_subset_iff.mpr (mul_mem (mem_adjoin_simple_self K'⟮β'⟯ γ')
         (pow_mem (((K'⟮β'⟯)⟮γ'⟯).algebraMap_mem (AdjoinSimple.gen K' β')) m)))
-  have hιK_coe (z : K⟮γ' * β' ^ m⟯) : (ιK z : Ω') = z :=
-    TauCeti.IntermediateField.coe_adjoinAlgHom K _ z
   let : Algebra A A'₁ := ((algebraMap A' A'₁).comp (algebraMap A A')).toAlgebra
+  have : IsScalarTower A A' A'₁ := .of_algebraMap_eq fun _ ↦ rfl
   let : Algebra K⟮γ' * β' ^ m⟯ (K'⟮β'⟯)⟮γ'⟯ := ιK.toAlgebra
+  have : IsScalarTower K⟮γ' * β' ^ m⟯ (K'⟮β'⟯)⟮γ'⟯ Ω' :=
+    TauCeti.IntermediateField.isScalarTower_adjoinAlgHom K _
   let : Algebra A (K'⟮β'⟯)⟮γ'⟯ :=
     ((algebraMap A'₁ (K'⟮β'⟯)⟮γ'⟯).comp (algebraMap A A'₁)).toAlgebra
   have : IsScalarTower A A'₁ (K'⟮β'⟯)⟮γ'⟯ := .of_algebraMap_eq fun _ ↦ rfl
+  have : IsScalarTower A A' (K'⟮β'⟯)⟮γ'⟯ := .to₁₂₄ A A' A'₁ (K'⟮β'⟯)⟮γ'⟯
+  have : IsScalarTower A (K'⟮β'⟯)⟮γ'⟯ Ω' := .to₁₃₄ A A' (K'⟮β'⟯)⟮γ'⟯ Ω'
   have : IsScalarTower A K⟮γ' * β' ^ m⟯ (K'⟮β'⟯)⟮γ'⟯ := .of_algebraMap_eq fun a ↦
-    Subtype.ext <| by
-      rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply, RingHom.algebraMap_toAlgebra,
-        RingHom.comp_apply, RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe,
-        RingHom.coe_coe, hιK_coe,
-        ← IsScalarTower.algebraMap_apply A' A'₁ (K'⟮β'⟯)⟮γ'⟯,
-        ← IntermediateField.algebraMap_apply (K'⟮β'⟯)⟮γ'⟯,
-        ← IsScalarTower.algebraMap_apply A' (K'⟮β'⟯)⟮γ'⟯ Ω',
-        ← IsScalarTower.algebraMap_apply A A' Ω',
-        ← IntermediateField.algebraMap_apply K⟮γ' * β' ^ m⟯,
-        ← IsScalarTower.algebraMap_apply A K⟮γ' * β' ^ m⟯ Ω']
+    (algebraMap (K'⟮β'⟯)⟮γ'⟯ Ω').injective (by simp only [← IsScalarTower.algebraMap_apply])
   let := integralClosureMapAlgebra A K⟮γ' * β' ^ m⟯ A'₁ (K'⟮β'⟯)⟮γ'⟯
   have hunr : IsUnramifiedWRT (integralClosure A' K'⟮β'⟯) E'' :=
-    isUnramifiedWRT_adjoin_roots_in_overfield h φ hφ hφL hπ he₀_pos hdvd hβ' hγ' hα' ιK hιK_coe
-      fun a ↦ by
-        simpa only [RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using
-          coe_algebraMap_integralClosureMapAlgebra A K⟮γ' * β' ^ m⟯ A'₁ (K'⟮β'⟯)⟮γ'⟯ a
+    isUnramifiedWRT_adjoin_roots_in_overfield h φ hφ hφL hπ he₀_pos hdvd hβ' hγ' hα'
+      (coe_algebraMap_integralClosureMapAlgebra A K⟮γ' * β' ^ m⟯ A'₁ (K'⟮β'⟯)⟮γ'⟯)
   exact (hK'₁_tame.trans hunr.isTamelyRamifiedWRT).tower_bot K'
 
 /-- Tamely ramified extensions of a discrete valuation ring are stable under base change: if `L` is

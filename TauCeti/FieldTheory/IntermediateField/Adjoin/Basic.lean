@@ -108,6 +108,17 @@ theorem adjoinAlgHom_gen (F : Type*) {L Ω : Type*} [Field F] [Field L] [Field �
     adjoinAlgHom F hs (AdjoinSimple.gen F x) = ⟨x, hs rfl⟩ :=
   (rfl)
 
+/-- The `adjoin F s`-algebra structure on `E` induced by `adjoinAlgHom` is compatible with the
+inclusions into `Ω`. -/
+theorem isScalarTower_adjoinAlgHom (F : Type*) {L Ω : Type*} [Field F] [Field L] [Field Ω]
+    [Algebra F Ω] [Algebra L Ω] {E : IntermediateField L Ω} [Algebra F E]
+    [IsScalarTower F E Ω] {s : Set Ω} (hs : s ⊆ E) :
+    letI := (adjoinAlgHom F hs).toAlgebra
+    IsScalarTower (adjoin F s) E Ω :=
+  letI := (adjoinAlgHom F hs).toAlgebra
+  .of_algebraMap_eq fun _ ↦ by
+    simp [RingHom.algebraMap_toAlgebra]
+
 end TauCeti.IntermediateField
 
 namespace IntermediateField
