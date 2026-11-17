@@ -19,7 +19,7 @@ field. This file shows that for commutative `G` this map is holomorphic.
 
 Read in the chart at the identity, the real derivative of `exp` at `0` is the identity of `E`,
 which is complex linear; so `exp` is complex differentiable at `0`, for every complex Lie group
-(`hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`). When `G` is commutative, `exp`
+(`TauCeti.hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`). When `G` is commutative, `exp`
 is a homomorphism (`TauCeti.mulInvariantExp_add`), so near any `v` it is
 `w ↦ exp v * exp (w - v)`, a left translate of its germ at `0`, and left translations of `G` are
 holomorphic.

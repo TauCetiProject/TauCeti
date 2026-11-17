@@ -25,8 +25,8 @@ calculation supplies reusable chain rules for functions along translated exponen
 
 * `hasFDerivAt_extChartAt_mulInvariantExp_zero`: in model-space identity coordinates, the
   tangent-space exponential has derivative the identity at zero.
-* `hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`: on complex charts, that derivative is
-  the complex identity.
+* `TauCeti.hasFDerivAt_extChartAt_mulInvariantExp_zero_complex`: on complex charts, the derivative
+  is the complex identity.
 * `hasFDerivAt_extChartAt_lieExp_zero`: the identity-chart derivative of the derivation-based
   exponential is the canonical linear isometry to the model space.
 * `hasFDerivAt_extChartAt_mulInvariantExp_smul_mul_mulInvariantExp_smul_zero`: two exponential
@@ -274,6 +274,8 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_zero
     exact hasDerivAt_extChartAt_mulInvariantIntegralCurve_zero (I := I) (G := G) v
   exact hline.unique hlineCurve
 
+namespace TauCeti
+
 /-- **The derivative of the exponential at `0` is complex linear on complex charts**: for a real
 Lie group charted by a complex space `E`, read in the complex chart at the identity, the
 tangent-space exponential has complex derivative the identity at `0`. -/
@@ -289,6 +291,8 @@ theorem hasFDerivAt_extChartAt_mulInvariantExp_zero_complex [NormedSpace ℂ E]
   exact hasFDerivAt_of_restrictScalars ℝ
     (hasFDerivAt_extChartAt_mulInvariantExp_zero (I := 𝓘(ℝ, E)))
     (ContinuousLinearMap.ext fun _ ↦ rfl)
+
+end TauCeti
 
 /-- In identity-chart coordinates, the derivative of the derivation-based Lie exponential at zero
 is the canonical linear isometry from left-invariant derivations to the model space. -/

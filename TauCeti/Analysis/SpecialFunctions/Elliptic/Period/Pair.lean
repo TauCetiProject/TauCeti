@@ -10,7 +10,7 @@ import Mathlib.Tactic.FinCases
 import Mathlib.Topology.Algebra.Module.Cardinality
 
 /-!
-# Removable singularities along a period lattice
+# Period pairs and removable singularities along a period lattice
 
 Every full lattice in `ℂ` is the lattice of a period pair
 (`PeriodPair.exists_lattice_eq_of_isZLattice`).
