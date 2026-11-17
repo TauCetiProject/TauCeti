@@ -25,6 +25,9 @@ without either being an algebra over the other.
 
 ## Main results
 
+* `RingHom.isIntegralElem_of_isUnit_leadingCoeff` and `IsIntegral.of_isUnit_leadingCoeff`:
+  a root of a polynomial with unit leading coefficient is integral, by normalizing to a monic
+  polynomial.
 * `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
   is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
   `P` after multiplication by a power of `r`.
@@ -46,6 +49,28 @@ without either being an algebra over the other.
 -/
 
 public section
+
+section
+
+open Polynomial
+
+/-- An element annihilated by a polynomial `p : R[X]` with unit leading coefficient is integral
+along a ring homomorphism `f : R →+* A`, since scaling `p` by the inverse of its leading
+coefficient gives a monic polynomial annihilating the same element. -/
+theorem RingHom.isIntegralElem_of_isUnit_leadingCoeff {R A : Type*} [CommRing R] [Ring A]
+    (f : R →+* A) {p : R[X]} (hlc : IsUnit p.leadingCoeff) {x : A}
+    (hx : p.eval₂ f x = 0) : f.IsIntegralElem x :=
+  ⟨hlc.unit⁻¹ • p, monic_of_isUnit_leadingCoeff_inv_smul hlc, by
+    rw [Units.smul_def, eval₂_smul, hx, mul_zero]⟩
+
+/-- An element of an `R`-algebra annihilated by a polynomial `p : R[X]` with unit leading
+coefficient is integral over `R`. -/
+theorem IsIntegral.of_isUnit_leadingCoeff {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
+    {p : R[X]} (hlc : IsUnit p.leadingCoeff) {x : A} (hx : aeval x p = 0) :
+    IsIntegral R x :=
+  (algebraMap R A).isIntegralElem_of_isUnit_leadingCoeff hlc hx
+
+end
 
 section
 

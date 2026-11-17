@@ -17,12 +17,33 @@ Eisenstein at `𝓟` when moreover `a ∈ 𝓟` and `2 ≤ n`.
 
 ## Main results
 
+* `Polynomial.IsEisensteinAt.coeff_zero_ne_zero`: the constant coefficient of an Eisenstein
+  polynomial is nonzero.
+* `Polynomial.IsEisensteinAt.ne_zero_of_isRoot_map`: any root of an Eisenstein polynomial along
+  an injective ring homomorphism is nonzero.
 * `TauCeti.isEisensteinAt_X_pow_sub_C` constructs Eisenstein binomials from ideal membership.
 * `TauCeti.isEisensteinAt_X_pow_add_C_mul_X_add_C` constructs Eisenstein trinomials from ideal
   membership.
 -/
 
 public section
+
+namespace Polynomial.IsEisensteinAt
+
+/-- The constant coefficient of an Eisenstein polynomial is nonzero, since `0 ∈ 𝓟 ^ 2`. -/
+theorem coeff_zero_ne_zero {R : Type*} [CommSemiring R] {𝓟 : Ideal R} {f : R[X]}
+    (hf : f.IsEisensteinAt 𝓟) : f.coeff 0 ≠ 0 :=
+  fun h ↦ hf.notMem (h ▸ Ideal.zero_mem _)
+
+/-- Any root of an Eisenstein polynomial along an injective ring homomorphism is nonzero. -/
+theorem ne_zero_of_isRoot_map {R S : Type*} [CommSemiring R] [Semiring S] {𝓟 : Ideal R}
+    {f : R[X]} (hf : f.IsEisensteinAt 𝓟) {g : R →+* S} (hg : Function.Injective g) {x : S}
+    (hroot : (f.map g).IsRoot x) : x ≠ 0 := by
+  rintro rfl
+  rw [IsRoot.def, ← coeff_zero_eq_eval_zero, coeff_map] at hroot
+  exact hf.coeff_zero_ne_zero (hg (hroot.trans (map_zero g).symm))
+
+end Polynomial.IsEisensteinAt
 
 namespace TauCeti
 
