@@ -15,6 +15,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+import TauCeti.MeasureTheory.Function.ZeroAtInftyRepresentative
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Lp
 
 /-!
@@ -617,38 +618,20 @@ private theorem exists_zeroAtInftyContinuousMap_ae_eq (hk : finrank ℝ E < 2 * 
   rw [← hw]
   simp [← hgx, hx]
 
-/-- Two continuous representatives of the same Sobolev function coincide. -/
-private theorem eq_of_value_ae_eq {u : Wkp (volume : Measure E) ⊤ 2 k} {g g' : C₀(E, ℝ)}
-    (hg : value k u =ᵐ[volume] g) (hg' : value k u =ᵐ[volume] g') : g = g' :=
-  ZeroAtInftyContinuousMap.ext <| congrFun <|
-    (Continuous.ae_eq_iff_eq (volume : Measure E) g.continuous g'.continuous).mp
-      (hg.symm.trans hg')
-
 /-- The continuous representative of a Sobolev function, as a linear map. -/
 private def toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k) :
-    Wkp (volume : Measure E) ⊤ 2 k →ₗ[ℝ] C₀(E, ℝ) where
-  toFun u := (exists_zeroAtInftyContinuousMap_ae_eq hk u).choose
-  map_add' u v := by
-    refine eq_of_value_ae_eq (u := u + v)
-      (exists_zeroAtInftyContinuousMap_ae_eq hk (u + v)).choose_spec ?_
-    have hadd : ⇑(value k u + value k v) =ᵐ[volume] ⇑(value k u) + ⇑(value k v) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_add (value k u) (value k v)
-    filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec,
-      (exists_zeroAtInftyContinuousMap_ae_eq hk v).choose_spec, hadd] with x hu hv hadd
-    rw [value_add, hadd, Pi.add_apply, hu, hv, _root_.add_apply]
-  map_smul' c u := by
-    refine eq_of_value_ae_eq (u := c • u)
-      (exists_zeroAtInftyContinuousMap_ae_eq hk (c • u)).choose_spec ?_
-    have hsmul : ⇑(c • value k u) =ᵐ[volume] c • ⇑(value k u) := by
-      simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.coeFn_smul c (value k u)
-    filter_upwards [(exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec, hsmul]
-      with x hu hsmul
-    rw [value_smul, hsmul, Pi.smul_apply, hu, RingHom.id_apply,
-      _root_.smul_apply]
+    Wkp (volume : Measure E) ⊤ 2 k →ₗ[ℝ] C₀(E, ℝ) :=
+  zeroAtInftyRepresentativeₗ (exists_zeroAtInftyContinuousMap_ae_eq hk)
+    (fun u v => by
+      simpa only [value_add, Opens.coe_top, Measure.restrict_univ] using
+        Lp.coeFn_add (value k u) (value k v))
+    (fun c u => by
+      simpa only [value_smul, Opens.coe_top, Measure.restrict_univ] using
+        Lp.coeFn_smul c (value k u))
 
 private theorem value_ae_eq_toZeroAtInftyₗ (hk : finrank ℝ E < 2 * k)
     (u : Wkp (volume : Measure E) ⊤ 2 k) : value k u =ᵐ[volume] toZeroAtInftyₗ hk u :=
-  (exists_zeroAtInftyContinuousMap_ae_eq hk u).choose_spec
+  ae_eq_zeroAtInftyRepresentativeₗ (exists_zeroAtInftyContinuousMap_ae_eq hk) _ _ u
 
 /-- The graph of the continuous representative is sequentially closed: along a sequence
 converging in `W^{k,2}`, the values converge almost everywhere along a subsequence, while the
@@ -658,7 +641,8 @@ private theorem toZeroAtInftyₗ_closedGraph (hk : finrank ℝ E < 2 * k)
     (g : C₀(E, ℝ))
     (hu : Tendsto u atTop (𝓝 w)) (hg : Tendsto (toZeroAtInftyₗ hk ∘ u) atTop (𝓝 g)) :
     g = toZeroAtInftyₗ hk w := by
-  refine eq_of_value_ae_eq (u := w) ?_ (value_ae_eq_toZeroAtInftyₗ hk w)
+  refine ((zeroAtInftyRepresentativeₗ_eq_iff (exists_zeroAtInftyContinuousMap_ae_eq hk) _ _ w
+    g).2 ?_).symm
   have hval : Tendsto (fun n => value k (u n)) atTop (𝓝 (value k w)) := by
     simpa only [Function.comp_def, valueL_apply] using ((valueL k).continuous.tendsto w).comp hu
   obtain ⟨ns, hmono, hns⟩ := (tendstoInMeasure_of_tendsto_Lp hval).exists_seq_tendsto_ae
@@ -693,8 +677,7 @@ theorem value_ae_eq_toZeroAtInfty (hk : finrank ℝ E < 2 * k)
 theorem toZeroAtInfty_eq_iff (hk : finrank ℝ E < 2 * k) (u : Wkp (volume : Measure E) ⊤ 2 k)
     (g : C₀(E, ℝ)) :
     toZeroAtInfty hk u = g ↔ value k u =ᵐ[volume] g :=
-  ⟨fun h => h ▸ value_ae_eq_toZeroAtInfty hk u,
-    fun h => eq_of_value_ae_eq (value_ae_eq_toZeroAtInfty hk u) h⟩
+  zeroAtInftyRepresentativeₗ_eq_iff (exists_zeroAtInftyContinuousMap_ae_eq hk) _ _ u g
 
 /-- The Sobolev embedding is injective: the continuous representative determines the Sobolev
 function. -/

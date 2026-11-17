@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
+public import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Normed.Operator.Banach
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
@@ -65,6 +66,8 @@ common compact support, are statements about this map.
   (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`).
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `Lᵖ` function of
   the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function `g` is `g`.
+* `BesselPotentialSpace.inclusionLp_smulLeftCLM_ae_eq`: for `p = 2`, the `L²` function of `φ u`,
+  for a Schwartz function `φ`, is `φ` times the `L²` function of `u`.
 * `BesselPotentialSpace.norm_inclusion_le`, `BesselPotentialSpace.norm_inclusionLp_le`: for `p = 2`
   the operator norms of `inclusion` and `inclusionLp` are at most `1`, and
   `BesselPotentialSpace.norm_le_of_toDistr_eq`: an element of `H^r` with the tempered distribution
@@ -140,6 +143,12 @@ theorem inclusion_toBesselPotentialSpaceCLM (h : r ≤ s) (u : 𝓢(E, G)) :
     inclusion h (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
       SchwartzMap.toBesselPotentialSpaceCLM r p u :=
   ext (by simp)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Fact (1 ≤ p)] in
+/-- An order `s` above half the dimension of `E` is nonnegative, so that `H^{s,p}(E, G)` embeds
+in `Lᵖ` (`BesselPotentialSpace.inclusionLp`). -/
+theorem nonneg_of_finrank_lt (hs : Module.finrank ℝ E < 2 * s) : 0 ≤ s := by
+  linarith [(Module.finrank ℝ E).cast_nonneg (α := ℝ)]
 
 /-- The continuous inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`. It sends `u`
 to the `Lᵖ` function whose tempered distribution is `u.toDistr`
@@ -247,8 +256,8 @@ section Hilbert
 representative of norm at most `‖u‖`. -/
 private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{s}(E, F)) :
     ∃ G : Lp F 2 (volume : Measure E),
-      smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) = G ∧
-        ‖G‖ ≤ ‖u‖ := by
+      TemperedDistribution.smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (r / 2) : ℝ) : ℂ))
+        (𝓕 u.toDistr) = G ∧ ‖G‖ ≤ ‖u‖ := by
   set w : E → ℂ := fun x ↦ (((1 + ‖x‖ ^ 2) ^ ((r - s) / 2) : ℝ) : ℂ)
   have hw : w.HasTemperateGrowth := by fun_prop
   have hw_le (x : E) : ‖w x‖ ≤ 1 := by
@@ -257,8 +266,8 @@ private theorem exists_smulLeftCLM_fourier_eq_and_norm_le (h : r ≤ s) (u : H^{
       (div_nonpos_of_nonpos_of_nonneg (by linarith) zero_le_two)
   -- The weighted Fourier transform at order `s` is `𝓕 u.toLp`.
   set G₀ : Lp F 2 (volume : Measure E) := 𝓕 u.toLp
-  have hG₀ : smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u.toDistr) =
-      G₀ := by
+  have hG₀ : TemperedDistribution.smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))
+      (𝓕 u.toDistr) = G₀ := by
     rw [← fourier_besselPotential_eq_smulLeftCLM_fourier_apply, u.bessel_toDistr_eq_toLp,
       Lp.fourier_toTemperedDistribution_eq]
   have hmem : MemLp (fun x ↦ w x • G₀ x) 2 (volume : Measure E) :=
@@ -307,6 +316,20 @@ theorem norm_inclusionLp_le (hs : 0 ≤ s) :
     ‖(inclusionLp hs : H^{s}(E, F) →L[ℂ] Lp F 2 (volume : Measure E))‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun u ↦ by
     simpa only [one_mul] using norm_inclusionLp_apply_le hs u
+
+/-- The `L²` function of `φ u`, for a Schwartz function `φ` and `u ∈ H^s`, `0 ≤ s`, is almost
+everywhere `φ` times the `L²` function of `u`. -/
+theorem inclusionLp_smulLeftCLM_ae_eq (hs : 0 ≤ s) (φ : 𝓢(E, ℂ)) (u : H^{s}(E, F)) :
+    inclusionLp hs (smulLeftCLM s φ u) =ᵐ[volume]
+      fun x ↦ φ x • inclusionLp hs u x := by
+  have hloc : LocallyIntegrable (fun x ↦ φ x • inclusionLp hs u x) volume :=
+    locallyIntegrable_iff.2 fun K hK ↦
+      (((Lp.memLp (inclusionLp hs u)).locallyIntegrable one_le_two).integrableOn_isCompact
+        hK).continuousOn_smul φ.continuous.continuousOn hK
+  refine Lp.ae_eq_of_toTemperedDistribution_apply_eq _ hloc fun ψ ↦ ?_
+  rw [toTemperedDistribution_inclusionLp, toDistr_smulLeftCLM,
+    ← toTemperedDistribution_inclusionLp hs u,
+    Lp.smulLeftCLM_toTemperedDistribution_apply φ.hasTemperateGrowth]
 
 /-- An element of `H^r` with the tempered distribution of `u ∈ H^s`, `r ≤ s`, is the image of `u`
 under the inclusion, so its norm is at most `‖u‖`. -/

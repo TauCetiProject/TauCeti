@@ -342,12 +342,6 @@ open TemperedDistribution
 
 variable {s : ℝ}
 
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- `0 ≤ s` when `dim E < 2 s`. -/
-private theorem nonneg_of_finrank_lt (hs : finrank ℝ E < 2 * s) : 0 ≤ s := by
-  have := (finrank ℝ E).cast_nonneg (α := ℝ)
-  linarith
-
 /-- The product of `u, v ∈ H^s(E)` as an element of `H^s(E)`. -/
 private def mulAux (hs : finrank ℝ E < 2 * s) (u v : H^{s}(E)) : H^{s}(E) :=
   ((memSobolev_toLp_inclusion (nonneg_of_finrank_lt hs) u).mul hs
