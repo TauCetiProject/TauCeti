@@ -171,6 +171,26 @@ theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 �
     rw [covariancePseudoInverse_of_not_posSemidef hC, covariancePseudoInverse_of_not_posSemidef hcC,
       smul_zero]
 
+/-- The covariance pseudoinverse of a rank-one covariance `c cᵀ` is `c cᵀ / (c ⬝ c)²`. This
+includes `c = 0`, where both sides vanish. -/
+theorem covariancePseudoInverse_vecMulVec_self (c : ι → ℝ) :
+    (vecMulVec c c).covariancePseudoInverse = ((c ⬝ᵥ c) ^ 2)⁻¹ • vecMulVec c c := by
+  by_cases h0 : c ⬝ᵥ c = 0
+  · obtain rfl : c = 0 := dotProduct_self_eq_zero.mp h0
+    simp
+  have hsq : vecMulVec c c * vecMulVec c c = (c ⬝ᵥ c) • vecMulVec c c := by
+    rw [vecMulVec_mul_vecMulVec, vecMulVec_smul]
+  have hherm : (vecMulVec c c).IsHermitian := by
+    simpa using (posSemidef_vecMulVec_self_star c).isHermitian
+  refine (eq_covariancePseudoInverse_of_penrose
+    (by simpa using posSemidef_vecMulVec_self_star c) ?_ ?_ ?_ ?_).symm <;>
+    simp only [Matrix.mul_smul, Matrix.smul_mul, hsq, smul_smul]
+  · rw [show ((c ⬝ᵥ c) ^ 2)⁻¹ * c ⬝ᵥ c * c ⬝ᵥ c = 1 by field_simp, one_smul]
+  · congr 1
+    field_simp
+  · exact hherm.smul (IsSelfAdjoint.all _)
+  · exact hherm.smul (IsSelfAdjoint.all _)
+
 /-- The covariance construction agrees with the existing Moore–Penrose inverse of the
 Euclidean operator. -/
 theorem toEuclideanLin_covariancePseudoInverse {C : Matrix ι ι ℝ} (hC : C.PosSemidef) :
