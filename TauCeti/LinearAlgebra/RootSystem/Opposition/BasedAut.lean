@@ -226,13 +226,10 @@ variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommG
 equivalence `e` of root pairings is the conjugate of that of `b` by `e`. -/
 theorem oppositionAut_map (e : P.Equiv Q) :
     oppositionAut Q (b.map e) = e.autCongr (oppositionAut P b) := by
-  refine ((eq_oppositionAut_iff_neg_mul_mem_weylGroup Q (b.map e) ?_).mpr ?_).symm
-  · classical
-    rw [Base.mem_basedAut_iff, Base.support_map_eq, Finset.coe_image, Set.image_image]
-    simp only [Equiv.indexEquiv_autCongr_apply, _root_.Equiv.symm_apply_apply]
-    rw [← Set.image_image, Base.mem_basedAut_iff.mp (oppositionAut_mem_basedAut P b)]
-  · rw [← Equiv.autCongr_neg e, ← map_mul, neg_mul_oppositionAut]
-    simpa using (e.weylGroupEquiv (longestElement P b)).2
+  refine ((eq_oppositionAut_iff_neg_mul_mem_weylGroup Q (b.map e)
+    ((Base.autCongr_mem_basedAut_map_iff e).mpr (oppositionAut_mem_basedAut P b))).mpr ?_).symm
+  rw [← Equiv.autCongr_neg e, ← map_mul, neg_mul_oppositionAut]
+  simpa using (e.weylGroupEquiv (longestElement P b)).2
 
 /-- **Change of base for the opposition involution**: the opposition involution of `b.map e` is
 that of `b`, transported along the action of the equivalence `e` on root indices. -/
