@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.Fiber
+public import TauCeti.Geometry.Manifold.Instances.Stiefel.Homogeneous
 public import TauCeti.Topology.Homotopy.HurewiczFibration.LocallyTrivial
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
@@ -77,6 +78,13 @@ private theorem pairRotation_apply_sphere (p₀ p : sphere (0 : E) 1) :
     pairRotation (p₀ : E) p p₀ = p :=
   pairRotation_apply_self (by rw [norm_eq_of_mem_sphere, norm_eq_of_mem_sphere])
 
+omit [InnerProductSpace ℝ E] in
+/-- A point of the unit sphere other than the antipode of `p₀` does not cancel `p₀`, so the
+rotation carrying `p₀` to it depends continuously on it. -/
+private theorem add_ne_zero_of_ne_neg_sphere {p₀ p : sphere (0 : E) 1} (h : p ≠ -p₀) :
+    (p₀ : E) + p ≠ 0 :=
+  fun h' => h (Subtype.ext (by simpa using eq_neg_of_add_eq_zero_right h'))
+
 /-- The vectors after the first of an orthonormal frame `(p, u₁, …, u_k)`, rotated back from `p` to
 `p₀`, lie in `p₀^⊥`. -/
 private theorem pairRotation_symm_apply_mem (p₀ : sphere (0 : E) 1) (v : stiefel E (k + 1))
@@ -103,25 +111,23 @@ frame `w` of `F`, read in `p₀^⊥` through `φ` and rotated from `p₀` to `p`
 frame `(p, R_p (φ w₁), …, R_p (φ w_k))`. -/
 private def baseFrame (p₀ : sphere (0 : E) 1) (φ : F ≃ₗᵢ[ℝ] (ℝ ∙ (p₀ : E))ᗮ)
     (q : sphere (0 : E) 1 × stiefel F k) : stiefel E (k + 1) :=
-  ⟨Matrix.vecCons (q.1 : E) fun i => pairRotation (p₀ : E) q.1 (φ (q.2.1 i)), by
-    refine mem_stiefel_iff.2 (orthonormal_vecCons_iff.2
-      ⟨norm_eq_of_mem_sphere q.1, fun i => ?_, ?_⟩)
-    · have h := (pairRotation (p₀ : E) q.1).inner_map_map (p₀ : E) (φ (q.2.1 i))
-      rw [pairRotation_apply_sphere] at h
-      rw [h]
-      exact Submodule.mem_orthogonal_singleton_iff_inner_right.1 (φ (q.2.1 i)).2
-    · exact (((mem_stiefel_iff.1 q.2.2).comp_linearIsometryEquiv φ).comp_linearIsometry
-        (ℝ ∙ (p₀ : E))ᗮ.subtypeₗᵢ).comp_linearIsometryEquiv (pairRotation (p₀ : E) q.1)⟩
+  pairRotation (p₀ : E) q.1 • stiefelFrameIncl p₀ k
+    ⟨fun i => φ (q.2.1 i), mem_stiefel_iff.2 ((mem_stiefel_iff.1 q.2.2).comp_linearIsometryEquiv φ)⟩
 
 private theorem coe_baseFrame (p₀ : sphere (0 : E) 1) (φ : F ≃ₗᵢ[ℝ] (ℝ ∙ (p₀ : E))ᗮ)
     (q : sphere (0 : E) 1 × stiefel F k) :
     (baseFrame p₀ φ q : Fin (k + 1) → E) =
-      Matrix.vecCons (q.1 : E) fun i => pairRotation (p₀ : E) q.1 (φ (q.2.1 i)) :=
-  (rfl)
+      Matrix.vecCons (q.1 : E) fun i => pairRotation (p₀ : E) q.1 (φ (q.2.1 i)) := by
+  refine funext (Fin.cases ?_ fun i => ?_)
+  · simp [baseFrame, pairRotation_apply_sphere]
+  · simp [baseFrame]
 
 private theorem stiefelProj_baseFrame (p₀ : sphere (0 : E) 1) (φ : F ≃ₗᵢ[ℝ] (ℝ ∙ (p₀ : E))ᗮ)
-    (q : sphere (0 : E) 1 × stiefel F k) : stiefelProj E (k + 1) 0 (baseFrame p₀ φ q) = q.1 :=
-  Subtype.ext (by simp [coe_baseFrame])
+    (q : sphere (0 : E) 1 × stiefel F k) :
+    stiefelProj E (k + 1) 0 (baseFrame p₀ φ q) = q.1 := by
+  rw [baseFrame, stiefelProj_smul, stiefelProj_zero_stiefelFrameIncl]
+  exact Subtype.ext ((LinearIsometryEquiv.coe_smul_unitSphere _ _).trans
+    (pairRotation_apply_sphere p₀ q.1))
 
 private theorem baseFrame_fiberFrame (p₀ : sphere (0 : E) 1) (φ : F ≃ₗᵢ[ℝ] (ℝ ∙ (p₀ : E))ᗮ)
     (v : stiefel E (k + 1)) :
@@ -163,15 +169,16 @@ def stiefelProjTrivialization (p₀ : sphere (0 : E) 1) (φ : F ≃ₗᵢ[ℝ] (
     exact ContinuousOn.pairRotation_symm_apply
       (continuous_subtype_val.comp (continuous_stiefelProj 0)).continuousOn
       ((continuous_apply i.succ).comp continuous_subtype_val).continuousOn
-      fun _ hv h => hv (Subtype.ext (by simpa using eq_neg_of_add_eq_zero_right h))
+      fun _ hv => add_ne_zero_of_ne_neg_sphere hv
   continuousOn_invFun := by
     refine IsInducing.subtypeVal.continuousOn_iff.2 ?_
+    simp only [Function.comp_def, coe_baseFrame]
     refine (continuous_subtype_val.comp continuous_fst).continuousOn.matrixVecCons
       (continuousOn_pi.2 fun i => ?_)
     exact ContinuousOn.pairRotation_apply (continuous_subtype_val.comp continuous_fst).continuousOn
       ((continuous_subtype_val.comp φ.continuous).comp
         ((continuous_apply i).comp (continuous_subtype_val.comp continuous_snd))).continuousOn
-      fun _ hq h => hq.1 (Subtype.ext (by simpa using eq_neg_of_add_eq_zero_right h))
+      fun _ hq => add_ne_zero_of_ne_neg_sphere hq.1
   baseSet := {-p₀}ᶜ
   open_baseSet := isOpen_compl_singleton
   source_eq := rfl
@@ -203,7 +210,7 @@ of `F` to the frame `(p, R_p (φ w₁), …, R_p (φ w_k))`. -/
 theorem coe_stiefelProjTrivialization_symm_apply (q : sphere (0 : E) 1 × stiefel F k) :
     ((stiefelProjTrivialization p₀ φ k).toOpenPartialHomeomorph.symm q : Fin (k + 1) → E) =
       Matrix.vecCons (q.1 : E) fun i => pairRotation (p₀ : E) q.1 (φ (q.2.1 i)) :=
-  (rfl)
+  coe_baseFrame p₀ φ q
 
 /-- **The inverse chart over the base point is the inclusion of the fibre.** With fibre `p₀^⊥`
 itself, the inverse of the chart around `p₀` sends `(p₀, w)` to the frame `(p₀, w)`
@@ -236,7 +243,7 @@ private theorem exists_trivialization_euclidean (p : sphere (0 : E) 1) :
     ∃ e : Trivialization (stiefel (EuclideanSpace ℝ (Fin (finrank ℝ E - 1))) k)
       (stiefelProj E (k + 1) 0), p ∈ e.baseSet := by
   have h : 0 < finrank ℝ E := finrank_pos_iff_exists_ne_zero.2 ⟨p, ne_zero_of_mem_unit_sphere p⟩
-  exact exists_trivialization_stiefelProj_zero p (by simp; omega)
+  exact exists_trivialization_stiefelProj_zero p (by rw [finrank_euclideanSpace_fin]; omega)
 
 /-- **The projection of a Stiefel manifold to the first vector is a Serre fibration.** -/
 theorem TopCat.mem_serreFibrations_stiefelProj_zero :
