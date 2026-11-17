@@ -10,6 +10,7 @@ public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.Normed.Ring.Completion
 public import TauCeti.MeasureTheory.Function.Lp.GroupConvolution
 import TauCeti.Analysis.Normed.Operator.Completion
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Star
 import TauCeti.MeasureTheory.Group.Convolution.Support
@@ -324,56 +325,6 @@ theorem norm_bochnerInvolution_apply (α : CStarAction G A) (f : G → A) (s : G
 
 end BochnerInvolutionDef
 
-/-! ### Dominated `L¹` convergence for `C_c` approximations -/
-
-section DominatedL1
-
-variable [MeasurableSpace G] [BorelSpace G] {μ : Measure G} [IsLocallyFiniteMeasure μ]
-
-/-- Dominated `L¹` convergence for a sequence `k : ℕ → C_c(G, A)` converging `μ`-almost everywhere
-to `h : G → A` with an `L¹` majorant `W : G → ℝ≥0∞`. -/
-private theorem integrable_and_tendsto_toL1_of_ae_tendsto {α : CStarAction G A}
-    {k : ℕ → C_c(G, A)} {h : G → A} {W : G → ℝ≥0∞} (hW_fin : ∫⁻ s, W s ∂μ ≠ ∞)
-    (hk_le : ∀ n s, ‖k n s‖ₑ ≤ W s)
-    (hlim : ∀ᵐ s ∂μ, Tendsto (fun n => k n s) atTop (𝓝 (h s))) :
-    ∃ hh : Integrable h μ,
-      Tendsto (fun n => ConvolutionAlgebra.toL1 (α := α) (ConvolutionAlgebra.toConv (k n)))
-        atTop (𝓝 (hh.toL1 h)) := by
-  have hh_meas : AEStronglyMeasurable h μ :=
-    aestronglyMeasurable_of_tendsto_ae atTop (fun n => (k n).integrable.aestronglyMeasurable) hlim
-  have hh_le : ∀ᵐ s ∂μ, ‖h s‖ₑ ≤ W s := by
-    filter_upwards [hlim] with s hs
-    exact le_of_tendsto' hs.eNorm fun n => hk_le n s
-  have hh : Integrable h μ :=
-    ⟨hh_meas, lt_of_le_of_lt (lintegral_mono_ae hh_le) hW_fin.lt_top⟩
-  have hh_memLp : MemLp h 1 μ := memLp_one_iff_integrable.2 hh
-  refine ⟨hh, ?_⟩
-  rw [Lp.ext (hh.coeFn_toL1.trans hh_memLp.coeFn_toLp.symm)]
-  refine Lp.tendsto_Lp_of_tendsto_eLpNorm h hh_memLp ?_
-  have hcongr (n : ℕ) :
-      eLpNorm (⇑(ConvolutionAlgebra.toL1 (α := α) (μ := μ) (ConvolutionAlgebra.toConv (k n))) - h)
-        1 μ = ∫⁻ s, ‖k n s - h s‖ₑ ∂μ := by
-    have hcoe := ConvolutionAlgebra.coeFn_toL1 (α := α) (μ := μ) (ConvolutionAlgebra.toConv (k n))
-    rw [eLpNorm_congr_ae (hcoe.sub EventuallyEq.rfl),
-      eLpNorm_one_eq_lintegral_eNorm ((k n).integrable.sub hh).aestronglyMeasurable]
-    rfl
-  simp_rw [hcongr]
-  have hzero : (0 : ℝ≥0∞) = ∫⁻ _ : G, 0 ∂μ := by simp
-  rw [hzero]
-  refine tendsto_lintegral_of_dominated_convergence' (fun s => 2 * W s)
-    (fun n => ((k n).integrable.sub hh).aestronglyMeasurable.eNorm)
-    (fun n => ?_) ?_ ?_
-  · filter_upwards [hh_le] with s hs
-    calc ‖k n s - h s‖ₑ ≤ ‖k n s‖ₑ + ‖h s‖ₑ := eNorm_sub_le
-      _ ≤ W s + W s := add_le_add (hk_le n s) hs
-      _ = 2 * W s := (two_mul (W s)).symm
-  · rw [lintegral_const_mul' 2 _ (by simp)]
-    exact (ENNReal.mul_lt_top (by simp) hW_fin.lt_top).ne
-  · filter_upwards [hlim] with s hs
-    simpa using (hs.sub (tendsto_const_nhds (x := h s))).eNorm
-
-end DominatedL1
-
 /-! ### Bochner twisted convolution and involution for left-invariant measures with `μ.inv ≪ μ` -/
 
 /-- Pointwise `ℝ≥0∞`-norm bound `‖a * α r b‖ₑ ≤ ‖a‖ₑ * ‖b‖ₑ` for a C⋆-action. -/
@@ -498,8 +449,22 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
   -- 2. Apply dominated convergence in `r` for a.e. `s`, then dominated `L¹` convergence in `s`.
   have hconv_ae :=
     α.ae_integrable_and_tendsto_convolution hinv hW_meas hW_fin hW_eq hφ_le hψ_le hφ_ae hψ_ae
-  obtain ⟨hh, hh_tendsto⟩ := integrable_and_tendsto_toL1_of_ae_tendsto (α := α) hW_fin hconv_le
-    (hconv_ae.mono fun _ h => h.2)
+  have hW_memLp : MemLp W 1 μ :=
+    (eLpNorm_one_eq_lintegral_eNorm hW_meas.aestronglyMeasurable).trans_lt hW_fin.lt_top
+  have hh_memLp : MemLp (α.bochnerConvolution μ f g) 1 μ :=
+    memLp_of_ae_tendsto
+      (.of_forall fun n => (α.convolution μ (φ n) (ψ n)).integrable.aestronglyMeasurable)
+      hW_memLp (.of_forall fun n => .of_forall fun s => hconv_le n s)
+      (hconv_ae.mono fun _ h => h.2)
+  have hh : Integrable (α.bochnerConvolution μ f g) μ := memLp_one_iff_integrable.1 hh_memLp
+  have hh_tendsto :
+      Tendsto (fun n => (α.convolution μ (φ n) (ψ n)).integrable.toL1
+          (α.convolution μ (φ n) (ψ n)))
+        atTop (𝓝 (hh.toL1 (α.bochnerConvolution μ f g))) := by
+    simpa only [Integrable.toL1] using tendsto_toLp_of_ae_tendsto ENNReal.one_ne_top
+      (fun n => memLp_one_iff_integrable.2 (α.convolution μ (φ n) (ψ n)).integrable)
+      hh_memLp hW_memLp (.of_forall fun n => .of_forall fun s => hconv_le n s)
+      (hconv_ae.mono fun _ h => h.2)
   refine ⟨hconv_ae.mono fun _ h => h.1, hh, ?_⟩
   -- 3. Identify the `L¹` limit with the completion product by continuity of `toL1Equiv` and `*`.
   let e := ConvolutionAlgebra.toL1Equiv α μ
@@ -511,13 +476,12 @@ private theorem bochnerConvolution_core (hinv : μ.inv ≪ μ) {f g : G → A}
       (((e.symm.continuous.tendsto _).comp hφ_L1).mul ((e.symm.continuous.tendsto _).comp hψ_L1))
   have hmul_eq (n : ℕ) :
       e ((e.symm ((φ n).integrable.toL1 (φ n))) * (e.symm ((ψ n).integrable.toL1 (ψ n)))) =
-        ConvolutionAlgebra.toL1 (α := α)
-          (ConvolutionAlgebra.toConv (α.convolution μ (φ n) (ψ n))) := by
+        (α.convolution μ (φ n) (ψ n)).integrable.toL1 (α.convolution μ (φ n) (ψ n)) := by
     dsimp only [e]
     rw [ConvolutionAlgebra.toL1Equiv_symm_integrable_toL1,
       ConvolutionAlgebra.toL1Equiv_symm_integrable_toL1,
       ← Completion.coe_mul', ConvolutionAlgebra.toL1Equiv_coe,
-      ← ConvolutionAlgebra.toConv_convolution]
+      ← ConvolutionAlgebra.toConv_convolution, ConvolutionAlgebra.toL1_toConv]
   simp_rw [hmul_eq] at hmul_tendsto
   exact tendsto_nhds_unique hmul_tendsto hh_tendsto
 
@@ -576,9 +540,13 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
       (ConvolutionAlgebra.toConv (u k))
     simp only [ConvolutionAlgebra.norm_eq_integral_norm, ConvolutionAlgebra.ofConv_star] at hnorm
     exact congrArg ENNReal.ofReal hnorm
+  have hW_meas : AEMeasurable W μ :=
+    AEMeasurable.tsum fun k => (w k).integrable.aestronglyMeasurable.eNorm
   have hW_fin : ∫⁻ s, W s ∂μ ≠ ∞ := by
     rw [lintegral_tsum fun k => (w k).integrable.aestronglyMeasurable.eNorm]
     simpa only [hw_int] using hu_fin
+  have hW_memLp : MemLp W 1 μ :=
+    (eLpNorm_one_eq_lintegral_eNorm hW_meas.aestronglyMeasurable).trans_lt hW_fin.lt_top
   have hk_le (n : ℕ) (s : G) : ‖α.twistedInvolution (φ n) s‖ₑ ≤ W s := by
     have hsum_s : α.twistedInvolution (φ n) s = ∑ i ∈ Finset.range (n + 1), w i s := by
       rw [← hsum_u n, map_sum, CompactlySupportedContinuousMap.coe_sum, Finset.sum_apply]
@@ -592,7 +560,17 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
       continuous_const.smul ((StarAlgEquiv.isometry (α s)).continuous.comp continuous_star)
     simpa only [Function.comp_def, twistedInvolution_apply, bochnerInvolution_apply] using
       (hcont.tendsto (f s⁻¹)).comp hs
-  obtain ⟨hh, hh_tendsto⟩ := integrable_and_tendsto_toL1_of_ae_tendsto (α := α) hW_fin hk_le hlim
+  have hh_memLp : MemLp (α.bochnerInvolution f) 1 μ :=
+    memLp_of_ae_tendsto
+      (.of_forall fun n => (α.twistedInvolution (φ n)).integrable.aestronglyMeasurable)
+      hW_memLp (.of_forall fun n => .of_forall fun s => hk_le n s) hlim
+  have hh : Integrable (α.bochnerInvolution f) μ := memLp_one_iff_integrable.1 hh_memLp
+  have hh_tendsto :
+      Tendsto (fun n => (α.twistedInvolution (φ n)).integrable.toL1 (α.twistedInvolution (φ n)))
+        atTop (𝓝 (hh.toL1 (α.bochnerInvolution f))) := by
+    simpa only [Integrable.toL1] using tendsto_toLp_of_ae_tendsto ENNReal.one_ne_top
+      (fun n => memLp_one_iff_integrable.2 (α.twistedInvolution (φ n)).integrable)
+      hh_memLp hW_memLp (.of_forall fun n => .of_forall fun s => hk_le n s) hlim
   refine ⟨hh, ?_⟩
   let e := ConvolutionAlgebra.toL1Equiv α μ
   have hstar_tendsto :
@@ -602,11 +580,11 @@ private theorem bochnerInvolution_core (hinv : μ.inv ≪ μ) {f : G → A} (hf 
       ((e.symm.continuous.tendsto _).comp hφ_L1))
   have hstar_eq (n : ℕ) :
       e (star (e.symm ((φ n).integrable.toL1 (φ n)))) =
-        ConvolutionAlgebra.toL1 (α := α)
-          (ConvolutionAlgebra.toConv (α.twistedInvolution (φ n))) := by
+        (α.twistedInvolution (φ n)).integrable.toL1 (α.twistedInvolution (φ n)) := by
     dsimp only [e]
     rw [ConvolutionAlgebra.toL1Equiv_symm_integrable_toL1, ← Completion.coe_star,
-      ConvolutionAlgebra.toL1Equiv_coe, ← ConvolutionAlgebra.toConv_twistedInvolution]
+      ConvolutionAlgebra.toL1Equiv_coe, ← ConvolutionAlgebra.toConv_twistedInvolution,
+      ConvolutionAlgebra.toL1_toConv]
   simp_rw [hstar_eq] at hstar_tendsto
   exact tendsto_nhds_unique hstar_tendsto hh_tendsto
 

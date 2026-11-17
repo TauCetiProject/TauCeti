@@ -141,12 +141,7 @@ theorem ContinuousLinearMap.aestronglyMeasurable_comp₂_continuous {𝕜 E F G 
     [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] (L : E →L[𝕜] F →L[𝕜] G)
     {f : α → E} (hf : AEFinStronglyMeasurable f μ) {g : α → F} (hg : Continuous g) :
     AEStronglyMeasurable (fun x ↦ L (f x) (g x)) μ :=
-  hf.aestronglyMeasurable_of_restrict
-    (L.aestronglyMeasurable_comp₂
-      (AEStronglyMeasurable.restrict ⟨hf.mk f, hf.finStronglyMeasurable_mk.stronglyMeasurable,
-        hf.ae_eq_mk⟩)
-      hg.aestronglyMeasurable_of_sigmaFinite)
-    fun x hx ↦ by simp [hx]
+  hf.aestronglyMeasurable_clm_apply (L.flip.continuous.comp hg)
 
 /-- An a.e. finitely strongly measurable family `f` of continuous linear maps applied to a
 continuous function `g` is a.e. strongly measurable, for a measure that is inner regular with

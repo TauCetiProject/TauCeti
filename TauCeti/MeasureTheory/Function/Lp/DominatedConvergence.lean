@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
@@ -16,8 +17,12 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 For a finite exponent `q`, if the functions `f n` converge to `g` almost everywhere
 and the errors `‖f n - g‖ₑ` are eventually dominated by a fixed nonnegative multiple of the
-enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
-when truncating a function by cutoffs that are eventually `1` on every bounded set.
+enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. Likewise, if the terms `f n`
+themselves are eventually dominated almost everywhere by a `MemLp` function, then for any exponent
+`q` along a `NeBot` filter the limit `g` lies in `L^q` (`TauCeti.memLp_of_ae_tendsto`), and for
+`1 ≤ q < ∞` the classes `(hf n).toLp (f n)` converge to `hg.toLp g` in `Lp F q m`
+(`TauCeti.tendsto_toLp_of_ae_tendsto`). In particular, this applies when truncating a function by
+cutoffs that are eventually `1` on every bounded set.
 The dominating function's codomain only needs a topology and an extended norm.
 
 The file also records the reverse Fatou lemma for `Lᵖ` seminorms over sets: the `Lᵖ` seminorms of
@@ -27,6 +32,9 @@ a function over measurable sets `s n` have limit superior at most its `Lᵖ` sem
 ## Main declarations
 
 * `TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`: the convergence `eLpNorm (f n - g) q m → 0`.
+* `TauCeti.memLp_of_ae_tendsto`: a dominated almost-everywhere limit along a countably generated
+  `NeBot` filter lies in `L^q`.
+* `TauCeti.tendsto_toLp_of_ae_tendsto`: dominated convergence in `Lp F q m` for `1 ≤ q < ∞`.
 * `TauCeti.tendsto_eLpNorm_restrict_Ioo`: for a finite exponent, the `Lᵖ` norm of a function on
   the unit interval `(t, t + 1)` tends to zero as `t` tends to infinity in either direction.
 * `TauCeti.limsup_eLpNorm_restrict_le`: `limsup ‖g‖_{Lᵖ(s n)} ≤ ‖g‖_{Lᵖ(limsup s n)}` for
@@ -84,6 +92,57 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
         simpa [hr] using (hx.sub (tendsto_const_nhds (x := g x))).eNorm.ennrpow_const q.toReal)
   simpa only [ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)] using
     hlint.ennrpow_const (1 / q.toReal)
+
+/-- If functions `f n` are eventually a.e. strongly measurable, converge almost everywhere along a
+countably generated `NeBot` filter `l` to `g`, and have enorms eventually bounded almost everywhere
+by the enorm of a `MemLp` function `bound`, then `g` is in `L^q`. -/
+theorem memLp_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace α]
+    {m : Measure α} [TopologicalSpace F] [TopologicalSpace.PseudoMetrizableSpace F]
+    [ContinuousENorm F] [TopologicalSpace G] [ENorm G]
+    {l : Filter ι} [l.IsCountablyGenerated] [l.NeBot] {q : ℝ≥0∞}
+    {f : ι → α → F} {g : α → F}
+    (hf : ∀ᶠ n in l, AEStronglyMeasurable (f n) m)
+    {bound : α → G} (hb : MemLp bound q m)
+    (hbound : ∀ᶠ n in l, ∀ᵐ x ∂m, ‖f n x‖ₑ ≤ ‖bound x‖ₑ)
+    (hlim : ∀ᵐ x ∂m, Tendsto (fun n => f n x) l (𝓝 (g x))) :
+    MemLp g q m := by
+  obtain ⟨u, hu, huf⟩ := exists_seq_forall_of_frequently (hf.and hbound).frequently
+  have hlim' : ∀ᵐ x ∂m, Tendsto (fun k => f (u k) x) atTop (𝓝 (g x)) :=
+    hlim.mono fun x hx => hx.comp hu
+  have hg_le : ∀ᵐ x ∂m, ‖g x‖ₑ ≤ ‖bound x‖ₑ := by
+    filter_upwards [hlim', ae_all_iff.2 fun k => (huf k).2] with x hx hbx
+    exact le_of_tendsto' ((continuous_eNorm.tendsto (g x)).comp hx) hbx
+  exact hb.of_le_eNorm
+    (aestronglyMeasurable_of_tendsto_ae atTop (fun k => (huf k).1) hlim') hg_le
+
+/-- **Dominated convergence in `Lp`.** For `1 ≤ q < ∞`, if `MemLp` functions `f n` converge almost
+everywhere along a countably generated filter `l` to a `MemLp` function `g` and have enorms
+eventually dominated almost everywhere by a fixed `MemLp` function `bound`, then
+`(hf n).toLp (f n)` converges to `hg.toLp g` in `Lp F q m`. -/
+theorem tendsto_toLp_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace α]
+    {m : Measure α} [NormedAddCommGroup F]
+    [TopologicalSpace G] [ENorm G]
+    {l : Filter ι} [l.IsCountablyGenerated] {q : ℝ≥0∞} [Fact (1 ≤ q)] (hq : q ≠ ∞)
+    {f : ι → α → F} {g : α → F}
+    (hf : ∀ n, MemLp (f n) q m) (hg : MemLp g q m)
+    {bound : α → G} (hb : MemLp bound q m)
+    (hbound : ∀ᶠ n in l, ∀ᵐ x ∂m, ‖f n x‖ₑ ≤ ‖bound x‖ₑ)
+    (hlim : ∀ᵐ x ∂m, Tendsto (fun n => f n x) l (𝓝 (g x))) :
+    Tendsto (fun n => (hf n).toLp (f n)) l (𝓝 (hg.toLp g)) := by
+  rcases l.eq_or_neBot with rfl | _
+  · exact tendsto_bot
+  obtain ⟨u, hu, hub⟩ := exists_seq_forall_of_frequently hbound.frequently
+  have hg_le : ∀ᵐ x ∂m, ‖g x‖ₑ ≤ ‖bound x‖ₑ := by
+    filter_upwards [hlim, ae_all_iff.2 hub] with x hx hbx
+    exact le_of_tendsto' (hx.comp hu).eNorm hbx
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'' f hf g hg]
+  refine tendsto_eLpNorm_sub_of_ae_tendsto hq
+    (.of_forall fun n => (hf n).aestronglyMeasurable) hb (C := 2) ?_ hlim
+  filter_upwards [hbound] with n hn
+  filter_upwards [hn, hg_le] with x hnx hgx
+  calc ‖f n x - g x‖ₑ ≤ ‖f n x‖ₑ + ‖g x‖ₑ := eNorm_sub_le
+    _ ≤ ‖bound x‖ₑ + ‖bound x‖ₑ := add_le_add hnx hgx
+    _ = ((2 : ℝ≥0) : ℝ≥0∞) * ‖bound x‖ₑ := by rw [ENNReal.coe_ofNat, two_mul]
 
 /-- For a finite exponent `q`, the `Lᵖ` norm of a function on the unit interval `(t, t + 1)`
 tends to zero as `t` tends to infinity in either direction. -/
