@@ -94,6 +94,16 @@ lemma induction_on {motive : ReducedFreeModule R a → Prop} (v : ReducedFreeMod
     have h := smul_mk r x
     rwa [mk, ← Submodule.Quotient.mk_smul, smul_single_one] at h
 
+/-- The point generators span the reduced free module. -/
+lemma span_range_mk : Submodule.span R (Set.range (mk R (a := a))) = ⊤ := by
+  apply top_unique
+  intro v hv
+  clear hv
+  induction v using induction_on with
+  | zero => exact Submodule.zero_mem _
+  | add v w hv hw => exact Submodule.add_mem _ hv hw
+  | smul_mk r x => exact Submodule.smul_mem _ r (Submodule.subset_span ⟨x, rfl⟩)
+
 variable {R}
 
 /-- Linear maps out of a reduced free module are determined by their values on generators. -/
