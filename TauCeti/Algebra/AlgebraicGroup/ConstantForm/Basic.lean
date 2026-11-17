@@ -380,7 +380,6 @@ theorem finiteTypeCoordinateHopfAlgebra_obj :
     (finiteTypeCoordinateHopfAlgebra R n C).obj = coordinateHopfAlgebra R n C := by
   rw [finiteTypeCoordinateHopfAlgebra]
 
-
 /-! ### Algebra-valued points -/
 
 section Points

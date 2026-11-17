@@ -59,8 +59,8 @@ domain.
   `TauCeti.Floer.differentiableAt_target_of_differentiableAt`: a datum on `ℂ` that is
   differentiable jointly in the domain and target points is differentiable in each of them, in
   real coordinates.
-* `TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_perturbationPullback`: the target
-  derivative of the Hamiltonian vector field of `φ^*K` is the combination of those of `K_s`, `K_t`.
+* `TauCeti.SymplecticForm.fderiv_hamiltonianVectorField_perturbationPullback`: the derivative of the
+  Hamiltonian vector field of a component of `φ^*K` in the target point.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
   reparametrized map is the original one precomposed with `dφ`.
 * `TauCeti.SymplecticForm.floerEnergyDensity_perturbationPullback`: the energy density scales by
@@ -88,7 +88,8 @@ domain.
 
 public section
 
-open Function MeasureTheory Set
+open Filter Function MeasureTheory Set
+open scoped Topology
 open TauCeti.Complex (realChart realChart_apply fderiv_realChart_apply)
 
 namespace TauCeti
@@ -280,31 +281,25 @@ theorem hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
   rw [h]
   exact ω.hamiltonianVectorField_const_mul_add_const_mul hKs hKt _ _
 
-/-- The target derivative of the Hamiltonian vector field of a component of the pullback `φ^*K` is
-the corresponding combination of the target derivatives for `K_s` and `K_t` at `φ w`, for
-Hamiltonians that are `C²` at the target point. -/
+/-- **The derivative of the Hamiltonian vector field of a pulled-back component.** If the
+Hamiltonians `K_s` and `K_t` at `φ w` are differentiable near `x` and their Hamiltonian vector
+fields are differentiable at `x`, then the derivative at `x` of the Hamiltonian vector field of
+the component `(φ^*K)(v)` at `w` is the corresponding combination of the derivatives of `X_{K_s}`
+and `X_{K_t}`. -/
 theorem fderiv_hamiltonianVectorField_perturbationPullback (ω : SymplecticForm V)
-    (hKs : ContDiffAt ℝ 2 (Ks (φ w)) x) (hKt : ContDiffAt ℝ 2 (Kt (φ w)) x) (v : ℝ × ℝ) :
+    (hKs : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Ks (φ w)) y)
+    (hKt : ∀ᶠ y in 𝓝 x, DifferentiableAt ℝ (Kt (φ w)) y)
+    (hXs : DifferentiableAt ℝ (ω.hamiltonianVectorField (Ks (φ w))) x)
+    (hXt : DifferentiableAt ℝ (ω.hamiltonianVectorField (Kt (φ w))) x) (v : ℝ × ℝ) :
     fderiv ℝ (ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w)) x =
       (fderiv ℝ φ w v).1 • fderiv ℝ (ω.hamiltonianVectorField (Ks (φ w))) x +
         (fderiv ℝ φ w v).2 • fderiv ℝ (ω.hamiltonianVectorField (Kt (φ w))) x := by
-  -- A `C²` Hamiltonian has a Hamiltonian vector field differentiable at `x`.
-  have hX {H : V → ℝ} (hH : ContDiffAt ℝ 2 H x) :
-      DifferentiableAt ℝ (ω.hamiltonianVectorField H) x := by
-    have hd := (hH.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
-    rw [show ω.hamiltonianVectorField H =
-        ω.toBilinForm.toContinuousBilinearMap.inverse ∘ fderiv ℝ H from
-      funext (ω.hamiltonianVectorField_def H)]
-    exact ω.toBilinForm.toContinuousBilinearMap.inverse.differentiableAt.comp x hd
-  -- Near `x` both Hamiltonians are differentiable, so `X_{φ^*K}` is the combination there.
-  have hev : ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w) =ᶠ[nhds x]
+  have hX : ω.hamiltonianVectorField (perturbationPullback φ Ks Kt v w) =ᶠ[𝓝 x]
       fun y ↦ (fderiv ℝ φ w v).1 • ω.hamiltonianVectorField (Ks (φ w)) y +
-        (fderiv ℝ φ w v).2 • ω.hamiltonianVectorField (Kt (φ w)) y := by
-    filter_upwards [hKs.eventually (by simp), hKt.eventually (by simp)] with y hs ht
-    exact ω.hamiltonianVectorField_perturbationPullback (hs.differentiableAt (by norm_num))
-      (ht.differentiableAt (by norm_num)) v
-  rw [hev.fderiv_eq]
-  exact (((hX hKs).hasFDerivAt.const_smul _).add ((hX hKt).hasFDerivAt.const_smul _)).fderiv
+        (fderiv ℝ φ w v).2 • ω.hamiltonianVectorField (Kt (φ w)) y :=
+    (hKs.and hKt).mono fun y hy ↦ ω.hamiltonianVectorField_perturbationPullback hy.1 hy.2 v
+  rw [hX.fderiv_eq]
+  exact ((hXs.hasFDerivAt.const_smul _).add (hXt.hasFDerivAt.const_smul _)).fderiv
 
 /-- **Naturality of the perturbed derivative.** The perturbed derivative of the reparametrized
 map `u ∘ φ` for the pulled-back datum `φ^*K` is `(du - X_K) ∘ dφ`. -/
