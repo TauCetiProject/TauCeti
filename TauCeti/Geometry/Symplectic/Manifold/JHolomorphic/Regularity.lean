@@ -8,7 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Geometry.Manifold.Complex.Isothermal
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
-import TauCeti.Analysis.Complex.CauchyRiemann.Bootstrap
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.Geometry.Symplectic.JHolomorphic.Regularity
 import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 
 /-!
@@ -21,7 +22,7 @@ finite-dimensional smooth manifold without boundary equipped with a smooth almos
 `M` is `C^n` for every `n : ℕ∞`, and in particular smooth (`ContMDiffOn 𝓘(ℝ, ℂ) I' ∞`).
 
 The proof reduces manifold regularity to the planar nonlinear elliptic bootstrap
-(`TauCeti.IsJHolomorphicOn.contDiffOn` in `TauCeti.Analysis.Complex.CauchyRiemann.Bootstrap`) in
+(`TauCeti.IsJHolomorphicOn.contDiffOn` in `TauCeti.Geometry.Symplectic.JHolomorphic.Regularity`) in
 two steps:
 
 1. For curves from `(ℂ, SmoothAlmostComplexStructure.ofComplexManifold ℂ ℂ)` into `M'`, composing
@@ -29,8 +30,9 @@ two steps:
    varying-structure normed-space Cauchy–Riemann equation for `J.inChart (u z₀)` on `φ.target`,
    which bootstraps to `C^∞`.
 2. For an isothermal chart `e : OpenPartialHomeomorph M ℂ` of `(M, j)`, the inverse `e.symm` is
-   `C¹` and pseudoholomorphic from `ℂ`, hence `C^∞` by step 1. Applying the inverse function
-   theorem (`OpenPartialHomeomorph.contDiffAt_symm`) to `e.symm ≫ₕ chartAt ℂ x₀` shows that `e`
+   `C¹` and pseudoholomorphic from `ℂ`, hence `C^∞` by step 1. Applying
+   `OpenPartialHomeomorph.isInvertible_fderiv` and the inverse function theorem
+   (`OpenPartialHomeomorph.contDiffAt_symm`) to `e.symm ≫ₕ chartAt ℂ x₀` shows that `e`
    itself is `C^∞`, so `u = (u ∘ e.symm) ∘ e` is `C^∞` near every point of the open domain.
 
 ## Main results
@@ -167,31 +169,10 @@ private theorem contMDiffAt_of_isIsothermalChart
       (contMDiffOn_chart_symm (I := 𝓘(ℝ, ℂ)) (n := ∞) (x := x₀)).contMDiffAt
         (ψ.open_target.mem_nhds hw₀ψ) |>.mdifferentiableAt (by simp)
     exact mdifferentiableAt_iff_differentiableAt.1 (he_diff.comp w₀ hψ_symm_diff)
-  have hleft_inv : (fderiv ℝ f.symm w₀).comp (fderiv ℝ f z₀) = ContinuousLinearMap.id ℝ ℂ := by
-    have hfd_symm : HasFDerivAt f.symm (fderiv ℝ f.symm w₀) (f z₀) := by
-      rw [hf_z₀]
-      exact hf_symm_diff.hasFDerivAt
-    have hcomp : HasFDerivAt (f.symm ∘ f) ((fderiv ℝ f.symm w₀).comp (fderiv ℝ f z₀)) z₀ :=
-      hfd_symm.comp z₀ hf_diff.hasFDerivAt
-    have heq : id =ᶠ[nhds z₀] f.symm ∘ f := by
-      filter_upwards [f.open_source.mem_nhds hz₀f] with z hz
-      exact (f.left_inv hz).symm
-    exact (hcomp.congr_of_eventuallyEq heq).unique (hasFDerivAt_id z₀)
-  have hright_inv : (fderiv ℝ f z₀).comp (fderiv ℝ f.symm w₀) = ContinuousLinearMap.id ℝ ℂ := by
-    have hfd : HasFDerivAt f (fderiv ℝ f z₀) (f.symm w₀) := by
-      rw [hfsymm_w₀]
-      exact hf_diff.hasFDerivAt
-    have hcomp : HasFDerivAt (f ∘ f.symm) ((fderiv ℝ f z₀).comp (fderiv ℝ f.symm w₀)) w₀ :=
-      hfd.comp w₀ hf_symm_diff.hasFDerivAt
-    have heq : id =ᶠ[nhds w₀] f ∘ f.symm := by
-      filter_upwards [f.open_target.mem_nhds hw₀f] with w hw
-      exact (f.right_inv hw).symm
-    exact (hcomp.congr_of_eventuallyEq heq).unique (hasFDerivAt_id w₀)
-  let f₀' : ℂ ≃L[ℝ] ℂ :=
-    ContinuousLinearEquiv.equivOfInverse (fderiv ℝ f z₀) (fderiv ℝ f.symm w₀)
-      (fun v => DFunLike.congr_fun hleft_inv v) (fun v => DFunLike.congr_fun hright_inv v)
+  obtain ⟨f₀', hf₀'⟩ := f.isInvertible_fderiv hz₀f hf_diff (by rwa [hf_z₀])
   have hf_symm_smooth : ContDiffAt ℝ ∞ f.symm w₀ :=
-    f.contDiffAt_symm (f₀' := f₀') hw₀f (hfsymm_w₀ ▸ hf_diff.hasFDerivAt) (hfsymm_w₀ ▸ hf_smooth)
+    f.contDiffAt_symm (f₀' := f₀') hw₀f
+      (by rw [hfsymm_w₀, hf₀']; exact hf_diff.hasFDerivAt) (by rwa [hfsymm_w₀])
   have he_eq : e =ᶠ[nhds x₀] f.symm ∘ ψ := by
     filter_upwards [ψ.open_source.mem_nhds hx₀ψ] with x hx
     simp [f, ψ.left_inv hx]

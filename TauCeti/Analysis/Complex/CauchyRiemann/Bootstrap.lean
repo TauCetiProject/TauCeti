@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Regularity
 public import TauCeti.Analysis.Complex.CauchyRiemann.Weak
-public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
+import TauCeti.Analysis.Complex.CauchyRiemann.RoughCoefficients.Regularity
 import TauCeti.Analysis.Sobolev.Local.ChainRule.Higher
 import TauCeti.Analysis.Sobolev.Local.Morrey.Higher
 
@@ -45,8 +43,9 @@ homogeneous equation for a `C¹` almost complex structure with `p = ∞`, yet fa
 endpoint `p = ∞` is allowed because a `W^{1,∞}_loc` solution is `W^{1,3}_loc` by local
 monotonicity in the exponent, and `W^{ℓ+1,3}_loc ⊂ C^ℓ`.
 
-Applying local `C^n` bootstrapping to `J`-holomorphic maps into a finite-dimensional real normed
-space yields `C^n` regularity under local `C^n` regularity of `J`. The manifold-level smoothness
+The geometric corollaries for `C¹` `J`-holomorphic maps into finite-dimensional real normed spaces
+(`TauCeti.IsJHolomorphicOn.contDiffOn`, `TauCeti.IsJHolomorphic.contDiff`) live in
+`TauCeti.Geometry.Symplectic.JHolomorphic.Regularity`, and the manifold-level smoothness
 corollaries for `TauCeti.IsPseudoholomorphicOn` and `TauCeti.IsPseudoholomorphic` live in
 `TauCeti.Geometry.Symplectic.Manifold.JHolomorphic.Regularity`.
 
@@ -58,9 +57,6 @@ corollaries for `TauCeti.IsPseudoholomorphicOn` and `TauCeti.IsPseudoholomorphic
   `ContDiffOn ℝ n u Ω` for every `2 < p ≤ ∞`.
 * `TauCeti.memWkpLoc_of_isWeakCauchyRiemannOn`,
   `TauCeti.contDiffOn_of_isWeakCauchyRiemannOn`: the global-data planar forms.
-* `TauCeti.IsJHolomorphicOn.contDiffOn`, `TauCeti.IsJHolomorphic.contDiff`: a `C¹` map from an open
-  subset `s ⊆ ℂ` (or all of `ℂ`) into a finite-dimensional real normed space that is
-  `J`-holomorphic for a locally (or globally) `C^n` almost complex structure `J` is `C^n`.
 
 ## References
 
@@ -169,54 +165,5 @@ theorem contDiffOn_of_isWeakCauchyRiemannOn [FiniteDimensional ℝ V] {p : ENNRe
     ContDiffOn ℝ n u Ω :=
   hu.contDiffOn hp isOpen_univ hJ.contDiffOn (fun z _ => hJsq z (u z)) hη.contDiffOn
     (fun _ _ => trivial)
-
-/-! ### Local `C^n` regularity of `C¹` `J`-holomorphic maps on normed spaces -/
-
-/-- **Local `C^n` regularity of `C¹` `J`-holomorphic maps on planar open sets.** Let `V` be a
-finite-dimensional real normed space, let `W ⊆ V` be an open set on which
-`x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap` is `C^n`, and let `u : ℂ → V` be a `C¹` map
-on an open set `s ⊆ ℂ` mapping `s` into `W` and satisfying
-`IsJHolomorphicOn (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u s`. Then `u` is `C^n` on
-`s` (McDuff–Salamon, Theorem B.4.1 and Remark B.4.3). -/
-theorem IsJHolomorphicOn.contDiffOn [FiniteDimensional ℝ V] {n : ℕ∞} {s : Set ℂ} {W : Set V}
-    {J : V → AlmostComplexStructure V} {u : ℂ → V}
-    (h : IsJHolomorphicOn (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u s)
-    (hs : IsOpen s) (hW : IsOpen W)
-    (hJ : ContDiffOn ℝ n (fun x => LinearMap.toContinuousLinearMap (J x).toLinearMap) W)
-    (hu : ContDiffOn ℝ 1 u s) (huW : MapsTo u s W) :
-    ContDiffOn ℝ n u s := by
-  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  let Ω : Opens ℂ := ⟨s, hs⟩
-  let J₀ : ℂ → V → V →L[ℝ] V := fun _ x => LinearMap.toContinuousLinearMap (J x).toLinearMap
-  have hw : IsWeakCauchyRiemannOn 3 Ω J₀ (fun _ _ => 0) u := by
-    refine isWeakCauchyRiemannOn_of_contDiffOn (Ω := Ω) hu fun z hz => ?_
-    have hz_hol := (h.isJHolomorphicWithinAt hz).isJHolomorphicAt_of_mem_nhds (hs.mem_nhds hz)
-    have hcomm : fderiv ℝ u z I = (J (u z)).toLinearMap (fderiv ℝ u z 1) := by
-      have h1 := LinearMap.congr_fun hz_hol.fderiv_isComplexLinear 1
-      simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
-        AlmostComplexStructure.ofComplexModule_apply, smul_eq_mul, mul_one] using h1
-    have hsq :
-        (J (u z)).toLinearMap ((J (u z)).toLinearMap (fderiv ℝ u z 1)) = -fderiv ℝ u z 1 := by
-      simpa only [LinearMap.comp_apply, LinearMap.neg_apply, LinearMap.id_apply] using
-        LinearMap.congr_fun (J (u z)).square_neg (fderiv ℝ u z 1)
-    simp only [J₀, LinearMap.coe_toContinuousLinearMap', hcomm, hsq, add_neg_cancel]
-  have hJ_cd : ContDiffOn ℝ n (Function.uncurry J₀) (univ ×ˢ W) :=
-    hJ.comp contDiffOn_snd fun _ hp => hp.2
-  have hJsq : ∀ z ∈ (Ω : Set ℂ), (J₀ z (u z)).comp (J₀ z (u z)) = -ContinuousLinearMap.id ℝ V :=
-    fun z _ => ContinuousLinearMap.ext fun v => (J (u z)).apply_apply v
-  exact hw.contDiffOn (by exact_mod_cast (by norm_num : 2 < 3)) (isOpen_univ.prod hW) hJ_cd hJsq
-    contDiffOn_const fun z hz => ⟨trivial, huW hz⟩
-
-/-- **Global `C^n` regularity of `C¹` `J`-holomorphic maps from `ℂ`.** If `V` is a
-finite-dimensional real normed space, `x ↦ LinearMap.toContinuousLinearMap (J x).toLinearMap` is
-`C^n`, and `u : ℂ → V` is `C¹` and `J`-holomorphic, then `u` is `C^n`. -/
-theorem IsJHolomorphic.contDiff [FiniteDimensional ℝ V] {n : ℕ∞}
-    {J : V → AlmostComplexStructure V} {u : ℂ → V}
-    (h : IsJHolomorphic (fun _ => AlmostComplexStructure.ofComplexModule ℂ) J u)
-    (hJ : ContDiff ℝ n (fun x => LinearMap.toContinuousLinearMap (J x).toLinearMap))
-    (hu : ContDiff ℝ 1 u) :
-    ContDiff ℝ n u :=
-  contDiffOn_univ.1 <| (h.isJHolomorphicOn univ).contDiffOn isOpen_univ isOpen_univ
-    hJ.contDiffOn hu.contDiffOn (mapsTo_univ u univ)
 
 end TauCeti
