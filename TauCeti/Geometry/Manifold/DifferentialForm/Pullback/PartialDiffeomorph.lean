@@ -79,7 +79,9 @@ theorem extDeriv_mpullbackWithin_symm_eq_zero [IsManifold I 2 M]
     ((extDerivWithin_mpullbackWithin ((Φ.contMDiffOn_invFun p hp).of_le (by simp))
       Φ.open_target.uniqueDiffOn (subset_closure (by rwa [Φ.open_target.interior_eq])) hp
       ((φ.contMDiff _).mdifferentiableAt (by simp))).trans ?_)
-  rw [(SmoothForm.isClosed_def φ).1 hφ, mpullbackWithin_zero]
+  rw [(SmoothForm.isClosed_def φ).1 hφ, mpullbackWithin_zero, Pi.zero_apply]
+  -- The two zeros are alternating maps on `TangentSpace 𝓘(ℝ, V) p` and on `V`, which Mathlib
+  -- identifies definitionally.
   rfl
 
 end PartialDiffeomorph

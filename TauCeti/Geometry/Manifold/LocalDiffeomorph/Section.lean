@@ -7,7 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Topology.MetricSpace.InjectiveNeighborhood
-import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import all Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 /-!
 # Assembling local diffeomorphisms near a section
@@ -54,18 +55,15 @@ contains `x` and lies inside any prescribed open set containing `x`. -/
 theorem exists_partialDiffeomorph_eqOn (hf : IsLocalDiffeomorphAt I J n f x) {s : Set M}
     (hs : IsOpen s) (hxs : x ∈ s) :
     ∃ Φ : PartialDiffeomorph I J M N n, x ∈ Φ.source ∧ Φ.source ⊆ s ∧ EqOn f Φ Φ.source := by
-  have : Nonempty M := ⟨x⟩
-  obtain ⟨t, ht, hinj⟩ := hf.exists_mem_nhds_injOn
-  obtain ⟨U, hUsub, hUo, hxU⟩ :=
-    mem_nhds_iff.1 (Filter.inter_mem (Filter.inter_mem (hs.mem_nhds hxs) ht) hf.eventually)
-  have hloc : IsLocalDiffeomorphOn I J n f U := fun y ↦ (hUsub y.2).2
-  have hinjU : InjOn f U := hinj.mono fun y hy ↦ (hUsub hy).1.2
-  refine ⟨hloc.partialDiffeomorphOfInjOn hUo hinjU, ?_, ?_, ?_⟩
-  · rwa [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source]
-  · rw [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source]
-    exact fun y hy ↦ (hUsub hy).1.1
-  · intro y _
-    rw [IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn]
+  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
+  refine ⟨Φ.restrOpen s hs, ?_, ?_, fun y hy ↦ ?_⟩
+  · rw [PartialDiffeomorph.restrOpen_source]
+    exact ⟨hxΦ, hxs⟩
+  · rw [PartialDiffeomorph.restrOpen_source]
+    exact inter_subset_right
+  · rw [PartialDiffeomorph.restrOpen_source] at hy
+    rw [PartialDiffeomorph.coe_restrOpen]
+    exact hfΦ hy.1
 
 end IsLocalDiffeomorphAt
 

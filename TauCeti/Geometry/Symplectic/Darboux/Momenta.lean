@@ -62,7 +62,8 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The coordinate vector `∂_{tᵢ} = (eᵢ, 0)` of `(ι → ℝ) × (ι → ℝ)`. -/
+/-- A vector `(τ, 0)` is the combination `∑ᵢ τᵢ ∂_{tᵢ}` of the coordinate vectors
+`∂_{tᵢ} = (eᵢ, 0)` of `(ι → ℝ) × (ι → ℝ)`. -/
 private theorem prod_mk_zero_eq_sum (τ : ι → ℝ) :
     ((τ, 0) : (ι → ℝ) × (ι → ℝ)) = ∑ i, τ i • ((Pi.single i 1, 0) : (ι → ℝ) × (ι → ℝ)) := by
   ext j
@@ -100,20 +101,9 @@ theorem fderiv_apply_inl_eq_zero_of_apply_inl_single_eq_snd (hO : IsOpen O)
     rw [← fderiv_continuousAlternatingMap_apply_const_apply hdp, heq.fderiv_eq]
     simp
   ext v
-  have hr0 : (0 : Fin 3).removeNth ![((τ, 0) : (ι → ℝ) × (ι → ℝ)), v 0, v 1] = ![v 0, v 1] := by
-    simp [Fin.removeNth_zero]
-  have hr1 : (1 : Fin 3).removeNth ![((τ, 0) : (ι → ℝ) × (ι → ℝ)), v 0, v 1] = ![(τ, 0), v 1] := by
-    simp [funext_iff, Fin.forall_fin_two, Fin.removeNth_apply, Fin.succAbove_ne_zero_zero,
-      Fin.one_succAbove_one]
-  have hr2 : (2 : Fin 3).removeNth ![((τ, 0) : (ι → ℝ) × (ι → ℝ)), v 0, v 1] = ![(τ, 0), v 0] := by
-    rw [show (2 : Fin 3) = Fin.last 2 from rfl, Fin.removeNth_last]
-    simp [funext_iff, Fin.forall_fin_two, Fin.init]
   -- Expand `dμ_p((τ, 0), v₀, v₁) = 0`: only the derivative of `μ` along `(τ, 0)` survives.
   have h3 := congrArg (fun A ↦ A ![(τ, 0), v 0, v 1]) (hcl p hp)
-  simp only [extDeriv_apply hdp] at h3
-  rw [Fin.sum_univ_three, hr0, hr1, hr2] at h3
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    fderiv_continuousAlternatingMap_apply_const_apply hdp, hconst] at h3
+  simp only [extDeriv_apply_triple, hconst] at h3
   have hv : ![v 0, v 1] = v := by simp [funext_iff, Fin.forall_fin_two]
   simpa [hv] using h3
 
@@ -213,8 +203,8 @@ theorem exists_apply_eq_sum_of_apply_inl_single_eq_snd (hO : IsOpen O)
   -- The `c`-part of `μ_p` is `β_{p.2} = dα_{p.2}`, by `t`-invariance of `μ`.
   have hvv : μ p ![(0, v.2), (0, w.2)] = extDeriv α p.2 ![v.2, w.2] := by
     rw [apply_eq_apply_fst_of_mem_ball hO hμd hcl hham hrO hp, hdα _ hp2, hβ,
-      ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two]
-    rfl
+      ContinuousAlternatingMap.compContinuousLinearMap_apply_vecCons_two,
+      ContinuousLinearMap.inr_apply, ContinuousLinearMap.inr_apply]
   rw [apply_eq_sum_add_apply_inr hham (hrO hp), hvv, extDeriv_apply_pair_eq_sum hdα',
     ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_

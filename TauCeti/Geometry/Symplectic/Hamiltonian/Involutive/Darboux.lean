@@ -71,24 +71,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] {σ : SmoothTwoForm I M} {ι : Type*} [Fintype ι] {F : M → ι → ℝ} {x : M}
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- The differential of `y ↦ (T (g y), F y)` has components `T ∘ dg` and `dF`. -/
-private theorem mvfderiv_prodMk_apply {g : M → E} {T : E →L[ℝ] ι → ℝ} {y : M}
-    (hg : MDifferentiableAt I 𝓘(ℝ, E) g y) (hFy : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F y)
-    (v : TangentSpace I y) :
-    mvfderiv I (fun z ↦ ((T ∘ g) z, F z)) y v =
-      (T (mfderiv I 𝓘(ℝ, E) g y v), mvfderiv I F y v) := by
-  have hd : MDifferentiableAt I 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) (fun z ↦ ((T ∘ g) z, F z)) y :=
-    (T.mdifferentiableAt.comp y hg).prodMk_space hFy
-  have h1 := (ContinuousLinearMap.fst ℝ (ι → ℝ) (ι → ℝ)).mvfderiv_comp_apply hd v
-  have h2 := (ContinuousLinearMap.snd ℝ (ι → ℝ) (ι → ℝ)).mvfderiv_comp_apply hd v
-  simp only [ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd'] at h1 h2
-  -- The components of the map are `T ∘ g` and `F`.
-  ext1
-  · rw [← h1, ← mvfderiv_apply_eq_mfderiv_apply]
-    exact T.mvfderiv_comp_apply hg v
-  · exact h2.symm
-
 omit [Fintype ι] in
 /-- The derivative of the shear `(t, c) ↦ (t - t₀ + a(c), c)` of `(ι → ℝ) × (ι → ℝ)`. -/
 private theorem fderiv_shear_apply [Finite ι] {a : (ι → ℝ) → ι → ℝ} {t₀ : ι → ℝ}
@@ -103,7 +85,8 @@ private theorem fderiv_shear_apply [Finite ι] {a : (ι → ℝ) → ι → ℝ}
     ((hasFDerivAt_fst.sub_const _).add (ha.hasFDerivAt.comp q hasFDerivAt_snd)).prodMk
       hasFDerivAt_snd
   rw [h.fderiv]
-  rfl
+  simp only [ContinuousLinearMap.prod_apply, add_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd']
 
 variable (hσ : σ.IsSymplectic) (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
   (hcomm : ∀ i j, ∀ᶠ y in 𝓝 x, σ.poissonBracket (F · i) (F · j) y = 0)
@@ -121,7 +104,8 @@ private theorem injective_mvfderiv_prodMk [DecidableEq ι]
     Injective (mvfderiv I (fun z ↦ ((T ∘ g) z, F z)) x) := by
   rw [injective_iff_map_eq_zero]
   intro v hv
-  rw [mvfderiv_prodMk_apply hg hreg.mdifferentiableAt, Prod.mk_eq_zero] at hv
+  rw [(T.mdifferentiableAt.comp x hg).mvfderiv_prodMk_apply hreg.mdifferentiableAt,
+    T.mvfderiv_comp_apply hg, mvfderiv_apply_eq_mfderiv_apply, Prod.mk_eq_zero] at hv
   have hker : v ∈ (mfderiv I 𝓘(ℝ, ι → ℝ) F x).ker := by
     rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ← mvfderiv_apply_eq_mfderiv_apply]
     exact hv.2
@@ -191,12 +175,11 @@ theorem exists_partialDiffeomorph_mvfderiv_hamiltonianVectorField_eq_of_isInteri
   refine ⟨Φ, hxΦ, fun y hy ↦ ⟨(hΦκ hy).symm ▸ rfl, fun i ↦ ?_⟩⟩
   have hyU := hΦU hy
   rw [(eventuallyEq_of_mem (Φ.open_source.mem_nhds hy) fun z hz ↦ (hΦκ hz).symm).mvfderiv_eq,
-    mvfderiv_prodMk_apply (hed hyU.1) (hFd y), heu y hyU.1, hT]
+    (T.mdifferentiableAt.comp y (hed hyU.1)).mvfderiv_prodMk_apply (hFd y),
+    T.mvfderiv_comp_apply (hed hyU.1), mvfderiv_apply_eq_mfderiv_apply, heu y hyU.1, hT]
   congr 1
   funext k
-  have hk := congrArg (fun L ↦ L (σ.hamiltonianVectorField (F · i) y)) (mvfderiv_apply (hFd y) k)
-  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] at hk
-  rw [← hk, ← hσ.isNondegenerate.poissonBracket_eq_mvfderiv]
+  rw [mvfderiv_apply_apply (hFd y), ← hσ.isNondegenerate.poissonBracket_eq_mvfderiv]
   exact interior_subset hyU.2 k i
 
 include hσ in
@@ -310,9 +293,8 @@ theorem exists_darbouxChart_snd_eq_of_isInteriorPoint (hx : I.IsInteriorPoint x)
     obtain ⟨y, hy, rfl⟩ : ∃ y ∈ Φ.source, Φ y = p := ⟨_, Φ.map_target hp, Φ.right_inv hp⟩
     obtain ⟨w, rfl⟩ := (Φ.bijective_mvfderiv (by simp) hy).2 v
     rw [← (hΦ y hy).2 i, hpull hy,
-      hσ.isNondegenerate.eval₂_hamiltonianVectorField (F · i) y w, hsnd hy]
-    have hk := congrArg (fun L ↦ L w) (mvfderiv_apply (hF.mdifferentiableAt (by simp) (x := y)) i)
-    simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] using hk
+      hσ.isNondegenerate.eval₂_hamiltonianVectorField (F · i) y w, hsnd hy,
+      mvfderiv_apply_apply (hF.mdifferentiableAt (by simp))]
   -- There, `σ` is `∑ᵢ d(tᵢ + aᵢ(c)) ∧ dcᵢ`; a shear gives the Darboux chart.
   obtain ⟨r, hr, -, a, ha0, ha, hμa⟩ :=
     exists_apply_eq_sum_of_apply_inl_single_eq_snd Φ.open_target (Φ.map_source hxΦ) hμs hμc hμh

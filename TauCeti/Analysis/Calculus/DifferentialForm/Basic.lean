@@ -69,6 +69,21 @@ theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :
       (fderiv 𝕜 ω x w) (fun _ ↦ v) := by
   rw [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair]
 
+/-- The exterior derivative of a two-form on an ordered triple is the alternating sum of its
+Fréchet derivatives. This formula also respects the derivative's junk-value convention. -/
+theorem extDeriv_apply_triple {ω : E → E [⋀^Fin 2]→L[𝕜] F} (x u v w : E) :
+    extDeriv ω x ![u, v, w] =
+      fderiv 𝕜 ω x u ![v, w] - fderiv 𝕜 ω x v ![u, w] + fderiv 𝕜 ω x w ![u, v] := by
+  have h1 : (1 : Fin 3).removeNth ![u, v, w] = ![u, w] := by
+    simp [funext_iff, Fin.forall_fin_two, Fin.removeNth_apply, Fin.succAbove_ne_zero_zero,
+      Fin.one_succAbove_one]
+  have h2 : (2 : Fin 3).removeNth ![u, v, w] = ![u, v] := by
+    rw [show (2 : Fin 3) = Fin.last 2 from rfl, Fin.removeNth_last]
+    simp [funext_iff, Fin.forall_fin_two, Fin.init]
+  rw [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply, Fin.sum_univ_three, h1, h2,
+    Fin.removeNth_zero]
+  simp [sub_eq_add_neg]
+
 /-- The exterior derivative of a zero-form on a single vector is its Fréchet derivative in that
 direction. This formula also respects the derivative's junk-value convention. -/
 theorem extDeriv_apply_fin_one {ω : E → E [⋀^Fin 0]→L[𝕜] F} (x v : E) :

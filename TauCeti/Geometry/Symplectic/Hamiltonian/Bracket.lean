@@ -38,9 +38,9 @@ For a nondegenerate closed form on a finite-dimensional manifold, where the Pois
 `{f, {g, k}} = {{f, g}, k} - {{f, k}, g}` and the **Jacobi identity**
 `{f, {g, k}} + {g, {k, f}} + {k, {f, g}} = 0` for `C²` functions
 (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_poissonBracket` and
-`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`). The same identity shows that
-the Hamiltonian vector fields of two functions commute at every point near which the functions
-Poisson-commute
+`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_jacobi`). The formula
+`X_{{f, g}} = -[X_f, X_g]` also shows that the Hamiltonian vector fields of two functions commute
+at every point near which the functions Poisson-commute
 (`TauCeti.SmoothTwoForm.IsNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero`).
 
 ## References
