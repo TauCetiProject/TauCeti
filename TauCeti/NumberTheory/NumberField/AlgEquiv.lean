@@ -18,6 +18,7 @@ of field extensions.
 
 * `AlgEquiv.forall_isUnramifiedAt_iff`: unramifiedness above a base prime is invariant under an
   isomorphism of extensions.
+* `AlgEquiv.isUnramifiedIn_iff`: the same, stated with `Algebra.IsUnramifiedIn`.
 -/
 
 public section
@@ -40,5 +41,11 @@ theorem forall_isUnramifiedAt_iff (e : L ≃ₐ[K] L') (𝔭 : Ideal (𝓞 K)) :
   · intro h Q _ _
     exact (ψ.isUnramifiedAt_iff_of_eq_comap (q := Q.comap ψ.symm)
       (Ideal.comap_of_equiv ψ.toRingEquiv).symm).2 (h _)
+
+/-- **Unramifiedness of `𝔭` does not depend on the model of the extension**, stated with Mathlib's
+`Algebra.IsUnramifiedIn`. -/
+theorem isUnramifiedIn_iff (e : L ≃ₐ[K] L') (𝔭 : Ideal (𝓞 K)) :
+    Algebra.IsUnramifiedIn (𝓞 L) 𝔭 ↔ Algebra.IsUnramifiedIn (𝓞 L') 𝔭 :=
+  e.forall_isUnramifiedAt_iff 𝔭
 
 end AlgEquiv
