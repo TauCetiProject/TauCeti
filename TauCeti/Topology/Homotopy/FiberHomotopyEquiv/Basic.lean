@@ -124,27 +124,6 @@ section
 
 variable {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q)
 
-/-- A fibre homotopy equivalence restricts to a **homotopy equivalence of the fibres** over each
-point of the base. -/
-def fiber (b : B) : HomotopyEquiv {e // p e = b} {e' // q e' = b} where
-  toFun := fiberMap Φ.toFun Φ.comp_toFun b
-  invFun := fiberMap Φ.invFun Φ.comp_invFun b
-  left_inv := by
-    rw [fiberMap_comp, ← fiberMap_id b]
-    exact Φ.left_inv.map fun H ↦ fiberHomotopy H _ _ b
-  right_inv := by
-    rw [fiberMap_comp, ← fiberMap_id b]
-    exact Φ.right_inv.map fun H ↦ fiberHomotopy H _ _ b
-
-@[simp]
-theorem coe_fiber_apply (b : B) (e : {e // p e = b}) : (Φ.fiber b e : E') = Φ.toFun e :=
-  coe_fiberMap _ _ b e
-
-@[simp]
-theorem coe_fiber_symm_apply (b : B) (e' : {e' // q e' = b}) :
-    ((Φ.fiber b).symm e' : E) = Φ.invFun e' :=
-  coe_fiberMap _ _ b e'
-
 /-- Forgetting that the maps and homotopies lie over `B`, a fibre homotopy equivalence is a
 **homotopy equivalence of the total spaces**. -/
 def toHomotopyEquiv : HomotopyEquiv E E' where
@@ -329,6 +308,22 @@ theorem coe_restrictPreimage_invFun_apply {p : C(E, B)} {q : C(E', B)}
     (Φ : FiberHomotopyEquiv p q) (S : Set B) (e' : q ⁻¹' S) :
     ((Φ.restrictPreimage S).invFun e' : E) = Φ.invFun e' :=
   coe_restrictPreimageMap S Φ.comp_invFun e'
+
+/-- A fibre homotopy equivalence restricts to a **homotopy equivalence of the fibres** over each
+point of the base: the case `S = {b}` of `restrictPreimage`. -/
+def fiber {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) (b : B) :
+    HomotopyEquiv {e // p e = b} {e' // q e' = b} :=
+  (Φ.restrictPreimage {b}).toHomotopyEquiv
+
+@[simp]
+theorem coe_fiber_apply {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) (b : B)
+    (e : {e // p e = b}) : (Φ.fiber b e : E') = Φ.toFun e :=
+  coe_restrictPreimage_toFun_apply Φ {b} e
+
+@[simp]
+theorem coe_fiber_symm_apply {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) (b : B)
+    (e' : {e' // q e' = b}) : ((Φ.fiber b).symm e' : E) = Φ.invFun e' :=
+  coe_restrictPreimage_invFun_apply Φ {b} e'
 
 end RestrictPreimage
 
