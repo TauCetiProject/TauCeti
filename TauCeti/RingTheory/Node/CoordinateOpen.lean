@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Node.Basic
-public import Mathlib.RingTheory.RingHom.Etale
+public import TauCeti.RingTheory.RingHom.Etale
 import Mathlib.RingTheory.RingHom.StandardSmooth
 
 /-!
@@ -33,76 +33,111 @@ namespace TauCeti.NodeAlgebra
 
 open Polynomial
 
-universe u
+variable {R : Type*} [CommRing R] (a : R)
 
-variable {R : Type u} [CommRing R] (a : R)
+private def toPuncturedLine (i : Fin 2) :
+    NodeAlgebra R a →ₐ[R] Localization.Away (X : R[X]) :=
+  lift a (if i = 0 then algebraMap R[X] _ X else
+      algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X]))
+    (if i = 0 then algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X]) else
+      algebraMap R[X] _ X) (by
+      fin_cases i
+      · simp [mul_left_comm, IsLocalization.Away.mul_invSelf]
+      · simp only [Fin.mk_one, Fin.isValue, one_ne_zero, ↓reduceIte]
+        rw [mul_comm, mul_left_comm, IsLocalization.Away.mul_invSelf, mul_one])
 
-private def toPuncturedLine : NodeAlgebra R a →ₐ[R] Localization.Away (X : R[X]) :=
-  lift a (algebraMap R[X] _ X)
-    (algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X])) (by
-      rw [mul_left_comm, IsLocalization.Away.mul_invSelf, mul_one])
+private lemma toPuncturedLine_coord (i : Fin 2) :
+    toPuncturedLine a i (coord a i) = algebraMap R[X] _ X := by
+  fin_cases i <;> simp [toPuncturedLine]
 
-private def fromPuncturedLine : Localization.Away (X : R[X]) →ₐ[R]
-    Localization.Away (coord a 0) :=
+private lemma toPuncturedLine_coord_one_sub (i : Fin 2) :
+    toPuncturedLine a i (coord a (1 - i)) =
+      algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X]) := by
+  fin_cases i <;> simp [toPuncturedLine]
+
+private def fromPuncturedLine (i : Fin 2) : Localization.Away (X : R[X]) →ₐ[R]
+    Localization.Away (coord a i) :=
   IsLocalization.Away.liftAlgHom (X : R[X])
-    (f := aeval (algebraMap (NodeAlgebra R a) _ (coord a 0)))
-    (by simpa using IsLocalization.Away.algebraMap_isUnit (coord a 0))
+    (f := aeval (algebraMap (NodeAlgebra R a) _ (coord a i)))
+    (by simpa using IsLocalization.Away.algebraMap_isUnit (coord a i))
 
-/-- Inverting the first coordinate of `uv = a` identifies it with the punctured affine line. -/
-def coordinateOpenEquiv : Localization.Away (coord a 0) ≃ₐ[R]
+/-- Inverting either coordinate of `uv = a` identifies it with the punctured affine line. -/
+def localizationAwayCoordEquiv (i : Fin 2) : Localization.Away (coord a i) ≃ₐ[R]
     Localization.Away (X : R[X]) := by
-  let f : Localization.Away (coord a 0) →ₐ[R] Localization.Away (X : R[X]) :=
-    IsLocalization.Away.liftAlgHom (coord a 0) (f := toPuncturedLine a)
-      (by simpa [toPuncturedLine] using IsLocalization.Away.algebraMap_isUnit (X : R[X]))
-  let g := fromPuncturedLine a
+  let f : Localization.Away (coord a i) →ₐ[R] Localization.Away (X : R[X]) :=
+    IsLocalization.Away.liftAlgHom (coord a i) (f := toPuncturedLine a i)
+      (by simpa [toPuncturedLine_coord] using IsLocalization.Away.algebraMap_isUnit (X : R[X]))
+  let g := fromPuncturedLine a i
   refine AlgEquiv.ofAlgHom f g ?_ ?_
   · apply IsLocalization.algHom_ext (Submonoid.powers (X : R[X]))
     ext
-    simp [f, g, fromPuncturedLine, toPuncturedLine, Algebra.algHom]
-  · apply IsLocalization.algHom_ext (Submonoid.powers (coord a 0))
-    apply hom_ext
-    · simp [f, g, fromPuncturedLine, toPuncturedLine, Algebra.algHom]
-    · have hf₁ : f (algebraMap _ _ (coord a 1)) =
-          algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X]) := by
-        simp [f, toPuncturedLine]
-      simp only [AlgHom.comp_apply, AlgHom.id_apply, Algebra.algHom,
-        IsScalarTower.toAlgHom_apply]
-      rw [hf₁, map_mul, AlgHom.commutes]
-      apply (IsLocalization.Away.algebraMap_isUnit (coord a 0)
-        (S := Localization.Away (coord a 0))).mul_left_cancel
-      rw [mul_left_comm, ← map_mul, coord_zero_mul_coord_one]
-      rw [← IsScalarTower.algebraMap_apply]
-      have hgX : g (algebraMap R[X] _ X) = algebraMap _ _ (coord a 0) := by
-        simp [g, fromPuncturedLine]
-      have h := congrArg g (IsLocalization.Away.mul_invSelf (S := Localization.Away (X : R[X]))
-        (X : R[X]))
-      rw [map_mul, map_one, hgX] at h
-      rw [h, mul_one]
+    simp [f, g, fromPuncturedLine, toPuncturedLine_coord, Algebra.algHom]
+  · apply IsLocalization.algHom_ext (Submonoid.powers (coord a i))
+    -- Check the inverted coordinate first, then recover the other from their product.
+    have hcoord (j : Fin 2) :
+        g (f (algebraMap _ _ (coord a j))) = algebraMap _ _ (coord a j) := by
+      by_cases hj : j = i
+      · subst j
+        simp [f, g, fromPuncturedLine, toPuncturedLine_coord]
+      · have hj' : j = 1 - i := by fin_cases i <;> fin_cases j <;> simp_all
+        subst j
+        have hf₁ : f (algebraMap _ _ (coord a (1 - i))) =
+            algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X]) := by
+          simp [f, toPuncturedLine_coord_one_sub]
+        rw [hf₁, map_mul, AlgHom.commutes]
+        apply (IsLocalization.Away.algebraMap_isUnit (coord a i)
+          (S := Localization.Away (coord a i))).mul_left_cancel
+        rw [mul_left_comm, ← map_mul, coord_mul_coord_one_sub]
+        rw [← IsScalarTower.algebraMap_apply]
+        have hgX : g (algebraMap R[X] _ X) = algebraMap _ _ (coord a i) := by
+          simp [g, fromPuncturedLine]
+        have h := congrArg g (IsLocalization.Away.mul_invSelf
+          (S := Localization.Away (X : R[X])) (X : R[X]))
+        rw [map_mul, map_one, hgX] at h
+        rw [h, mul_one]
+    exact hom_ext a (hcoord 0) (hcoord 1)
 
-/-- The coordinate-open comparison sends the first coordinate to the Laurent variable. -/
+/-- The comparison sends the inverted coordinate to the Laurent variable. -/
 @[simp]
-theorem coordinateOpenEquiv_algebraMap_coord_zero :
-    coordinateOpenEquiv a (algebraMap _ _ (coord a 0)) = algebraMap R[X] _ X := by
-  simp [coordinateOpenEquiv, toPuncturedLine]
+theorem localizationAwayCoordEquiv_algebraMap_coord (i : Fin 2) :
+    localizationAwayCoordEquiv a i (algebraMap _ _ (coord a i)) = algebraMap R[X] _ X := by
+  simp [localizationAwayCoordEquiv, toPuncturedLine_coord]
 
-/-- The coordinate-open comparison sends the second coordinate to `a/t`. -/
+/-- The comparison sends the other coordinate to `a/t`. -/
 @[simp]
-theorem coordinateOpenEquiv_algebraMap_coord_one :
-    coordinateOpenEquiv a (algebraMap _ _ (coord a 1)) =
+theorem localizationAwayCoordEquiv_algebraMap_coord_one_sub (i : Fin 2) :
+    localizationAwayCoordEquiv a i (algebraMap _ _ (coord a (1 - i))) =
       algebraMap R _ a * IsLocalization.Away.invSelf (X : R[X]) := by
-  simp [coordinateOpenEquiv, toPuncturedLine]
+  simp [localizationAwayCoordEquiv, toPuncturedLine_coord_one_sub]
 
-/-- The inverse coordinate-open comparison sends the Laurent variable to the first
-coordinate of the node. -/
+/-- The comparison sends the inverse of the inverted coordinate to the inverse variable. -/
 @[simp]
-theorem coordinateOpenEquiv_symm_algebraMap_X :
-    (coordinateOpenEquiv a).symm (algebraMap R[X] _ X) = algebraMap _ _ (coord a 0) := by
-  apply (coordinateOpenEquiv a).injective
+theorem localizationAwayCoordEquiv_invSelf (i : Fin 2) :
+    localizationAwayCoordEquiv a i (IsLocalization.Away.invSelf (coord a i)) =
+      IsLocalization.Away.invSelf (X : R[X]) := by
+  apply (IsLocalization.Away.algebraMap_isUnit (X : R[X])
+    (S := Localization.Away (X : R[X]))).mul_left_cancel
+  rw [IsLocalization.Away.mul_invSelf, ← localizationAwayCoordEquiv_algebraMap_coord a i,
+    ← map_mul, IsLocalization.Away.mul_invSelf, map_one]
+
+/-- The inverse comparison sends the inverse variable to the inverse node coordinate. -/
+@[simp]
+theorem localizationAwayCoordEquiv_symm_invSelf (i : Fin 2) :
+    (localizationAwayCoordEquiv a i).symm (IsLocalization.Away.invSelf (X : R[X])) =
+      IsLocalization.Away.invSelf (coord a i) := by
+  apply (localizationAwayCoordEquiv a i).injective
   simp
+
+/-- On a polynomial, the inverse comparison is evaluation at the inverted coordinate. -/
+@[simp]
+theorem localizationAwayCoordEquiv_symm_algebraMap (i : Fin 2) (p : R[X]) :
+    (localizationAwayCoordEquiv a i).symm (algebraMap R[X] _ p) =
+      aeval (algebraMap (NodeAlgebra R a) _ (coord a i)) p := by
+  simp [localizationAwayCoordEquiv, fromPuncturedLine]
 
 /-- An invertible étale coordinate `x` on an `R`-algebra gives an étale node chart
 `u ↦ x`, `v ↦ y` whenever `xy = a`. -/
-theorem etale_lift_of_isUnit_of_etale_aeval {T : Type u} [CommRing T] [Algebra R T]
+theorem etale_lift_of_isUnit_of_etale_aeval {T : Type*} [CommRing T] [Algebra R T]
     (x y : T) (hxy : x * y = algebraMap R T a) (hx : IsUnit x)
     (he : (aeval (R := R) x).toRingHom.Etale) :
     (lift a x y hxy).toRingHom.Etale := by
@@ -119,11 +154,11 @@ theorem etale_lift_of_isUnit_of_etale_aeval {T : Type u} [CommRing T] [Algebra R
         (by simpa using hx) p).symm
     have : Algebra.Etale P L := .of_isLocalizationAway X
     exact RingHom.etale_algebraMap.mpr (Algebra.Etale.of_restrictScalars P L T)
-  let f := (g.comp (coordinateOpenEquiv a).toAlgHom).comp
+  let f := (g.comp (localizationAwayCoordEquiv a 0).toAlgHom).comp
     (IsScalarTower.toAlgHom R (NodeAlgebra R a) (Localization.Away (coord a 0)))
   have hf₀ : f (coord a 0) = x := by
     simp only [f, AlgHom.comp_apply, IsScalarTower.toAlgHom_apply, AlgEquiv.coe_toAlgHom,
-      coordinateOpenEquiv_algebraMap_coord_zero]
+      localizationAwayCoordEquiv_algebraMap_coord]
     exact (IsLocalization.Away.lift_eq (X : P) (g := (aeval x).toRingHom)
       (by simpa using hx) X).trans (aeval_X x)
   have hf : f = lift a x y hxy := by
@@ -132,36 +167,32 @@ theorem etale_lift_of_isUnit_of_etale_aeval {T : Type u} [CommRing T] [Algebra R
     apply hx.mul_left_cancel
     rw [lift_coord_one, ← hf₀, ← map_mul, coord_zero_mul_coord_one, AlgHom.commutes, hf₀, hxy]
   rw [← hf]
-  exact RingHom.Etale.stableUnderComposition
-    (algebraMap (NodeAlgebra R a) (Localization.Away (coord a 0)))
-    (g.toRingHom.comp (coordinateOpenEquiv a).toRingHom)
+  exact (hg.comp (RingHom.Etale.of_bijective
+    (localizationAwayCoordEquiv a 0).bijective)).comp
     (RingHom.etale_algebraMap.mpr (Algebra.Etale.of_isLocalizationAway (coord a 0)))
-    (RingHom.Etale.stableUnderComposition (coordinateOpenEquiv a).toRingHom g.toRingHom
-      (RingHom.Etale.of_bijective (coordinateOpenEquiv a).bijective)
-      hg)
 
-/-- Every point of a standard smooth relative curve has a principal open neighbourhood
-mapping étale to `uv = 0`, with the first node coordinate invertible. -/
-theorem _root_.Ideal.exists_notMem_etale_nodeAlgebra_hom_of_isStandardSmooth
-    {S : Type u} [CommRing S] [Algebra R S]
-    [Algebra.IsStandardSmoothOfRelativeDimension 1 R S] (q : Ideal S) [q.IsPrime] :
+variable (R) in
+/-- Given a proper ideal of a standard smooth relative curve, some element outside the ideal
+defines a principal open mapping étale to `uv = 0`, with the first node coordinate invertible. -/
+theorem _root_.Ideal.exists_notMem_etale_nodeAlgebra_hom_of_isStandardSmoothOfRelativeDimension_one
+    {S : Type*} [CommRing S] [Algebra R S]
+    [Algebra.IsStandardSmoothOfRelativeDimension 1 R S] (q : Ideal S) (hq : q ≠ ⊤) :
     ∃ t ∉ q, ∃ φ : NodeAlgebra R 0 →ₐ[R] Localization.Away t,
       φ.toRingHom.Etale ∧ IsUnit (φ (coord 0 0)) ∧ φ (coord 0 1) = 0 := by
   obtain ⟨g, hg⟩ := Algebra.IsStandardSmoothOfRelativeDimension.exists_etale_mvPolynomial 1 R S
   let e := MvPolynomial.uniqueAlgEquiv R (Fin 1)
   let p := g.comp e.symm.toAlgHom
-  have hp : p.toRingHom.Etale := RingHom.Etale.stableUnderComposition _ _
-    (RingHom.Etale.of_bijective e.symm.bijective) hg
+  have hp : p.toRingHom.Etale := hg.comp (RingHom.Etale.of_bijective e.symm.bijective)
   -- Translate the coordinate by either zero or one so that it does not vanish at `q`.
   obtain ⟨c, hc⟩ : ∃ c : R, p X + algebraMap R S c ∉ q := by
     by_cases h : p X ∈ q
     · refine ⟨1, fun h' ↦ ?_⟩
       have h1 : (1 : S) ∈ q := by simpa using q.sub_mem h' h
-      exact Ideal.IsPrime.ne_top' ((Ideal.eq_top_iff_one q).mpr h1)
+      exact hq ((Ideal.eq_top_iff_one q).mpr h1)
     · exact ⟨0, by simpa using h⟩
   let p' := p.comp (algEquivAevalXAddC c).toAlgHom
-  have hp' : p'.toRingHom.Etale := RingHom.Etale.stableUnderComposition _ _
-    (RingHom.Etale.of_bijective (algEquivAevalXAddC c).bijective) hp
+  have hp' : p'.toRingHom.Etale := hp.comp
+    (RingHom.Etale.of_bijective (algEquivAevalXAddC c).bijective)
   let t := p' X
   have ht : t ∉ q := by simpa [t, p', Polynomial.C_eq_algebraMap] using hc
   let x : Localization.Away t := algebraMap S _ t
@@ -174,8 +205,7 @@ theorem _root_.Ideal.exists_notMem_etale_nodeAlgebra_hom_of_isStandardSmooth
         simp [Polynomial.C_eq_algebraMap, IsScalarTower.algebraMap_apply R S (Localization.Away t)]
       · simp [x, t]
     rw [heq]
-    exact RingHom.Etale.stableUnderComposition _ _ hp'
-      (RingHom.etale_algebraMap.mpr (Algebra.Etale.of_isLocalizationAway t))
+    exact (RingHom.etale_algebraMap.mpr (Algebra.Etale.of_isLocalizationAway t)).comp hp'
   refine ⟨t, ht, lift 0 x 0 (by simp),
     etale_lift_of_isUnit_of_etale_aeval 0 x 0 (by simp) hx he, ?_, ?_⟩
   · simpa using hx
