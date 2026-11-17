@@ -144,7 +144,7 @@ theorem continuousFunctionalCalculus : ContinuousFunctionalCalculus 𝕜 S (fun 
 /-- The continuous functional calculus that a closed star subalgebra inherits is computed in the
 ambient algebra. -/
 @[simp]
-theorem coe_cfc [ContinuousMap.UniqueHom 𝕜 B] (f : 𝕜 → 𝕜) (x : S) :
+theorem coe_cfc (f : 𝕜 → 𝕜) (x : S) :
     letI := S.continuousFunctionalCalculus
     ((cfc f x : S) : B) = cfc f (x : B) := by
   let := S.continuousFunctionalCalculus
