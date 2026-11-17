@@ -113,11 +113,6 @@ theorem quadraticHandleMap_apply (z : Eᵤ × Eₛ) :
       (√(‖z.1‖ ^ 2 + μ (‖z.1‖ ^ 2 + 2 * ‖z.2‖ ^ 2) - ε))⁻¹ • z.2) :=
   (rfl)
 
-/-- The squared norm of a vector scaled by the inverse square root of `a ≥ 0` is divided by `a`. -/
-private theorem norm_inv_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {a : ℝ} (ha : 0 ≤ a) (x : F) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
-  simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
-
 /-! ### The handle in the coordinates `s = ‖u‖²`, `t = ‖v‖²`
 
 The handle and the rescaling only depend on `s = ‖u‖²` and `t = ‖v‖²`. In these coordinates the
