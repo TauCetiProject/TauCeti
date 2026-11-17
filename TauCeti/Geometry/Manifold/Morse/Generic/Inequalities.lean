@@ -9,21 +9,22 @@ public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # The band inequalities of a smooth function
 
-Let `f` be a smooth function on a compact boundaryless manifold `M`, with no assumption on its
+Let `f` be a smooth proper function on a boundaryless manifold `M`, with no assumption on its
 critical points, and write `M_a = {f ≤ a}`. This file shows that the relative homology of the
 sublevels at two regular values behaves as if `f` were a Morse function.
 
-A Morse function `g` can be chosen within any distance `δ > 0` of `f` and equal to `f` near the
-levels `f⁻¹[c - δ, c + δ]` of finitely many regular values `c`
-(`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). When `δ` is so small that these bands contain
-no critical point of `f`, the values `c` are regular for `g` and `g` has the same sublevels
-`{g ≤ c} = {f ≤ c}` (`TauCeti.exists_isMorse_isRegularValue_sublevel_eq`). The Morse inequalities
-for `g` then give, for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a
-division ring:
+Let `c` range over finitely many regular values of `f`. Since `f` is proper, its critical values
+form a closed set, so there is `δ > 0` such that the bands `f⁻¹[c - δ, c + δ]` contain no critical
+point of `f`. Then there is a Morse function `g` within `δ` of `f` that equals `f` near these
+bands (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). The values `c` are regular for `g` and
+`g` has the same sublevels `{g ≤ c} = {f ≤ c}`
+(`TauCeti.exists_isMorse_isRegularValue_sublevel_eq`). The Morse inequalities for `g` then give,
+for regular values `a ≤ b` of `f` and a finite-dimensional module `V` over a division ring:
 
 * `Hₙ(M_b, M_a; V)` is finite-dimensional
   (`TauCeti.finite_singularHomology_sublevelPair_of_contMDiff`);
@@ -32,7 +33,8 @@ division ring:
   critical point of `g` is at most that dimension.
 
 These are the hypotheses of the Morse inequalities of a filtration
-(`TauCeti.AlgebraicTopology.Singular.Sublevel`). Cut the values of `f` at regular values
+(`TauCeti.AlgebraicTopology.Singular.Sublevel`). Let `M` be compact, so that every smooth `f` is
+proper and bounded. Cut the values of `f` at regular values
 `s 0 ≤ s 1 ≤ ⋯ ≤ s (N + 1)` with `s 0 < f ≤ s (N + 1)`, write `bᵢ = dim Hᵢ(M; V)` and let
 `cᵢ = ∑ⱼ dim Hᵢ(M_{s (j + 1)}, M_{s j}; V)` collect the homology of the bands. Then `b` and `c`
 satisfy the weak and strong Morse inequalities, Euler's equality, the Morse polynomial identity
@@ -40,18 +42,18 @@ satisfy the weak and strong Morse inequalities, Euler's equality, the Morse poly
 lacunary principle.
 
 For a Morse–Bott function the critical values are finite in number
-(`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`), so the cut can be chosen with one
-critical level in each band (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`).
-Bott's attachment theorem identifies the homology of such a band with the homology of the
-negative disc bundles of the critical submanifolds of its level, which the Thom isomorphism turns
-into the homology of these submanifolds shifted by their indices, with coefficients twisted by
-the orientations of their negative normal bundles. With these contributions the statements here
-are the Morse–Bott inequalities.
+(`TauCeti.IsMorseBottFamily.finite_image_criticalPoints`), so there is a `ℤ`-indexed cut with one
+critical level in each band (`TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints`);
+reindexed to the `ℕ`-indexed cut used here, it is a cut as above. Once the homology of each band is
+identified with the homology of the critical submanifolds of its level shifted by their indices,
+with coefficients twisted by the orientations of their negative normal bundles (Bott's attachment
+theorem with the Thom isomorphism, not formalized here), the statements here give the Morse–Bott
+inequalities.
 
 ## Main results
 
-* `TauCeti.exists_isMorse_isRegularValue_sublevel_eq`: a Morse function with the same sublevels
-  as `f` at finitely many regular values of `f`.
+* `TauCeti.exists_isMorse_isRegularValue_sublevel_eq`: a Morse function close to a proper `f`,
+  with the same sublevels as `f` at finitely many regular values of `f`.
 * `TauCeti.finite_singularHomology_sublevelPair_of_contMDiff` and
   `TauCeti.isZero_singularHomology_sublevelPair_of_contMDiff`: finiteness of the relative
   homology of regular sublevels, and its vanishing above the dimension.
@@ -84,9 +86,9 @@ namespace TauCeti
 
 variable {E H : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [FiniteDimensional ℝ E]
-  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] {f : M → ℝ}
+  [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] {f : M → ℝ}
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] [CompactSpace M] in
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] [T2Space M] in
 /-- If `g` stays within `δ` of a continuous `f` and agrees with `f` on the band
 `f⁻¹[c - δ, c + δ]`, which contains no critical point of `f`, then `c` is a regular value of `g`
 and `{g ≤ c} = {f ≤ c}`. -/
@@ -112,19 +114,26 @@ private theorem isRegularValue_and_sublevel_eq_of_eqOn {g : M → ℝ} {c δ : �
     · -- Outside the band, `f` is more than `δ` away from `c`, so `g` stays on the same side.
       rcases not_and_or.1 hx with h | h <;> constructor <;> intro <;> push Not at h <;> linarith
 
-/-- **A Morse function with the sublevels of `f` at regular values.** Let `f` be a smooth function
-on a compact boundaryless manifold and `S` a finite set of regular values of `f`. There is a Morse
-function `g` for which every `c ∈ S` is again a regular value, with the same sublevel
-`{g ≤ c} = {f ≤ c}`. -/
-theorem exists_isMorse_isRegularValue_sublevel_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f) (S : Finset ℝ)
+/-- **A Morse function with the sublevels of `f` at regular values.** Let `f` be a smooth proper
+function on a boundaryless manifold, `δ > 0` and `S` a finite set of regular values of `f`. There
+is a Morse function `g` within `δ` of `f` for which every `c ∈ S` is again a regular value, with
+the same sublevel `{g ≤ c} = {f ≤ c}`. -/
+theorem exists_isMorse_isRegularValue_sublevel_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hp : IsProperMap f) {δ : ℝ} (hδ : 0 < δ) (S : Finset ℝ)
     (hS : ∀ c ∈ S, IsRegularValue I 𝓘(ℝ) f c) :
-    ∃ g : M → ℝ, IsMorse I g ∧
+    ∃ g : M → ℝ, IsMorse I g ∧ (∀ x, |g x - f x| < δ) ∧
       ∀ c ∈ S, IsRegularValue I 𝓘(ℝ) g c ∧ {x | g x ≤ c} = {x | f x ≤ c} := by
-  -- The critical values form a compact set missing `S`, so it misses an `ε`-thickening of `S`.
+  have : SigmaCompactSpace M := hp.sigmaCompactSpace
+  -- The critical values form a closed set missing `S`, so it misses an `ε`-thickening of `S`,
+  -- and we may take `ε ≤ δ`.
   have hT : IsClosed (f '' criticalPoints I f) :=
-    (((isClosed_criticalPoints (hf.of_le (by simp))).isCompact).image hf.continuous).isClosed
-  obtain ⟨ε, hε, hεS⟩ := S.finite_toSet.isCompact.exists_thickening_subset_open
+    hp.isClosedMap _ (isClosed_criticalPoints (hf.of_le (by simp)))
+  obtain ⟨ε₀, hε₀, hε₀S⟩ := S.finite_toSet.isCompact.exists_thickening_subset_open
     hT.isOpen_compl fun c hc ↦ isRegularValue_iff_notMem_image_criticalPoints.1 (hS c hc)
+  obtain ⟨ε, hε, hεδ, hεS⟩ : ∃ ε > 0, ε ≤ δ ∧ Metric.thickening ε (S : Set ℝ) ⊆
+      (f '' criticalPoints I f)ᶜ :=
+    ⟨min ε₀ δ, lt_min hε₀ hδ, min_le_right _ _,
+      (Metric.thickening_mono (min_le_left _ _) _).trans hε₀S⟩
   have hnotcrit : ∀ c ∈ S, ∀ x, |f x - c| ≤ ε / 2 → x ∉ criticalPoints I f :=
     fun c hc x hx hcrit ↦ hεS (Metric.mem_thickening_iff.2 ⟨c, hc,
       by rw [Real.dist_eq]; linarith⟩) ⟨x, hcrit, rfl⟩
@@ -140,54 +149,60 @@ theorem exists_isMorse_isRegularValue_sublevel_eq (hf : ContMDiff I 𝓘(ℝ) �
     (isClosed_biUnion_finset fun c _ ↦ isClosed_Icc.preimage hf.continuous) hfC
   have hgC : EqOn g f C := fun x hx ↦
     sub_eq_zero.1 (image_eq_zero_of_notMem_tsupport (f := fun y ↦ g y - f y) fun h ↦ hgs h hx)
-  exact ⟨g, hg, fun c hc ↦ isRegularValue_and_sublevel_eq_of_eqOn hf.continuous hgf
+  exact ⟨g, hg, fun x ↦ (hgf x).trans_le (by linarith),
+    fun c hc ↦ isRegularValue_and_sublevel_eq_of_eqOn hf.continuous hgf
     (hgC.mono (subset_biUnion_of_mem (u := fun c ↦ f ⁻¹' Icc (c - ε / 2) (c + ε / 2)) hc))
     (hnotcrit c hc)⟩
 
-/-- A Morse function with the sublevels of `f` at two regular values `a ≤ b`. -/
-private theorem exists_isMorse_sublevelPair_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
-    (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) :
-    ∃ g : M → ℝ, IsMorse I g ∧ IsRegularValue I 𝓘(ℝ) g a ∧ IsRegularValue I 𝓘(ℝ) g b ∧
-      sublevelPair g hab = sublevelPair f hab := by
+/-- A Morse function with compact band `g⁻¹[a, b]` and the sublevels of a proper `f` at two
+regular values `a ≤ b`. -/
+private theorem exists_isMorse_sublevelPair_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    {a b : ℝ} (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    ∃ g : M → ℝ, IsMorse I g ∧ IsCompact (g ⁻¹' Icc a b) ∧ IsRegularValue I 𝓘(ℝ) g a ∧
+      IsRegularValue I 𝓘(ℝ) g b ∧ sublevelPair g hab = sublevelPair f hab := by
   classical
-  obtain ⟨g, hg, hgS⟩ := exists_isMorse_isRegularValue_sublevel_eq hf {a, b}
+  obtain ⟨g, hg, hgf, hgS⟩ := exists_isMorse_isRegularValue_sublevel_eq hf hp one_pos {a, b}
     (by simp [ha, hb])
   obtain ⟨hga, hla⟩ := hgS a (by simp)
   obtain ⟨hgb, hlb⟩ := hgS b (by simp)
-  exact ⟨g, hg, hga, hgb, TopPair.ofInclusion_congr (X := TopCat.of M) _ _ hla hlb⟩
+  -- The band of `g` lies in the compact band `f⁻¹[a - 1, b + 1]`.
+  have hcompact : IsCompact (g ⁻¹' Icc a b) :=
+    (hp.isCompact_preimage (isCompact_Icc (a := a - 1) (b := b + 1))).of_isClosed_subset
+      (isClosed_Icc.preimage hg.contMDiff.continuous) fun x hx ↦ by
+        obtain ⟨h₁, h₂⟩ := abs_sub_lt_iff.1 (hgf x)
+        exact ⟨by linarith [hx.1], by linarith [hx.2]⟩
+  exact ⟨g, hg, hcompact, hga, hgb, TopPair.ofInclusion_congr (X := TopCat.of M) _ _ hla hlb⟩
 
-/-- **Finiteness of the homology of regular sublevels.** Let `f` be a smooth function on a compact
+/-- **Finiteness of the homology of regular sublevels.** Let `f` be a smooth proper function on a
 boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative singular homology
 `Hₙ({f ≤ b}, {f ≤ a}; V)` with coefficients in a finite-dimensional module `V` is
 finite-dimensional. -/
 theorem finite_singularHomology_sublevelPair_of_contMDiff {k : Type u} [DivisionRing k]
-    (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ}
-    (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) (n : ℕ) :
-    Module.Finite k ((sublevelPair f hab).singularHomology V n : ModuleCat k) := by
-  obtain ⟨g, hg, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hab ha hb
+    (V : ModuleCat.{u} k) [Module.Finite k V] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f)
+    {a b : ℝ} (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
+    (n : ℕ) : Module.Finite k ((sublevelPair f hab).singularHomology V n : ModuleCat k) := by
+  obtain ⟨g, hg, hcompact, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hp hab ha hb
   rw [← hgf]
-  exact hg.finite_singularHomology_sublevelPair V hab
-    (isClosed_Icc.preimage hg.contMDiff.continuous).isCompact hga hgb n
+  exact hg.finite_singularHomology_sublevelPair V hab hcompact hga hgb n
 
 /-- **Vanishing of the homology of regular sublevels above the dimension.** Let `f` be a smooth
-function on a compact boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative
+proper function on a boundaryless manifold and `a ≤ b` regular values of `f`. Then the relative
 singular homology `Hₙ({f ≤ b}, {f ≤ a}; R)` vanishes for `n > dim M`, for every coefficient object
 `R` of an abelian category with coproducts. -/
 theorem isZero_singularHomology_sublevelPair_of_contMDiff {C : Type v} [Category.{w} C]
-    [HasCoproducts.{u} C] [Abelian C] (hf : ContMDiff I 𝓘(ℝ) ∞ f) {a b : ℝ} (hab : a ≤ b)
-    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) (R : C) {n : ℕ}
-    (hn : finrank ℝ E < n) : IsZero ((sublevelPair f hab).singularHomology R n) := by
-  obtain ⟨g, hg, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hab ha hb
+    [HasCoproducts.{u} C] [Abelian C] (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hp : IsProperMap f) {a b : ℝ}
+    (hab : a ≤ b) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) (R : C)
+    {n : ℕ} (hn : finrank ℝ E < n) : IsZero ((sublevelPair f hab).singularHomology R n) := by
+  obtain ⟨g, hg, hcompact, hga, hgb, hgf⟩ := exists_isMorse_sublevelPair_eq hf hp hab ha hb
   rw [← hgf]
-  exact hg.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab
-    (isClosed_Icc.preimage hg.contMDiff.continuous).isCompact hga hgb
+  exact hg.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact hga hgb
     (fun _ _ ↦ manifoldMorseIndex_le_finrank) R hn
 
 /-! ### The inequalities for the bands of a smooth function -/
 
 section Filtration
 
-variable {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V]
+variable [CompactSpace M] {k : Type u} [DivisionRing k] (V : ModuleCat.{u} k) [Module.Finite k V]
   (hf : ContMDiff I 𝓘(ℝ) ∞ f) {s : ℕ → ℝ} (hs : Monotone s) {N : ℕ}
   (hs₀ : ∀ x, s 0 < f x) (hsN : ∀ x, f x ≤ s (N + 1))
   (hreg : ∀ j ≤ N, IsRegularValue I 𝓘(ℝ) f (s (j + 1)))
@@ -197,15 +212,15 @@ include hs₀ hreg in
 /-- Every cut value `s j` is regular: `s 0` is below all values of `f`. -/
 private theorem isRegularValue_cut {j : ℕ} (hj : j ≤ N + 1) : IsRegularValue I 𝓘(ℝ) f (s j) := by
   rcases j with _ | j
-  · exact isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨x, _, hx⟩ ↦ (hs₀ x).ne' hx
+  · exact isRegularValue_of_notMem_range fun ⟨x, hx⟩ ↦ (hs₀ x).ne' hx
   · exact hreg j (by lia)
 
 include hf hs₀ hreg in
 /-- The bands of `f` cut at regular values have finite-dimensional homology. -/
 private theorem finite_band (j : ℕ) (hj : j ≤ N) (i : ℕ) :
     Module.Finite k ((sublevelPair f (hs j.le_succ)).singularHomology V i : ModuleCat k) :=
-  finite_singularHomology_sublevelPair_of_contMDiff V hf (hs j.le_succ)
-    (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia)) i
+  finite_singularHomology_sublevelPair_of_contMDiff V hf hf.continuous.isProperMap
+    (hs j.le_succ) (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia)) i
 
 include hf hs₀ hsN hreg
 
@@ -252,8 +267,9 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair_o
           ℤ) :=
   sum_range_neg_one_pow_mul_finrank_singularHomology_eq_sum_sublevelPair hs hs₀ hsN V
     (fun j hj ↦ finite_band V hf hs hs₀ hreg j hj) fun j hj ↦
-      isZero_singularHomology_sublevelPair_of_contMDiff hf (hs j.le_succ)
-        (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia)) V (by lia)
+      isZero_singularHomology_sublevelPair_of_contMDiff hf hf.continuous.isProperMap
+        (hs j.le_succ) (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia))
+        V (by lia)
 
 /-- **The Morse polynomial identity for the bands of a smooth function.** Let `f` be a smooth
 function on a compact boundaryless manifold, and cut its values at regular values
@@ -276,8 +292,9 @@ theorem exists_sum_range_monomial_sum_sublevelPair_eq_add_mul_of_contMDiff {n : 
       ∀ i, n ≤ i → Q.coeff i = 0 :=
   exists_sum_range_monomial_sum_sublevelPair_eq_add_mul hs hs₀ hsN V
     (fun j hj ↦ finite_band V hf hs hs₀ hreg j hj) fun j hj ↦
-      isZero_singularHomology_sublevelPair_of_contMDiff hf (hs j.le_succ)
-        (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia)) V (by lia)
+      isZero_singularHomology_sublevelPair_of_contMDiff hf hf.continuous.isProperMap
+        (hs j.le_succ) (isRegularValue_cut hs₀ hreg (by lia)) (isRegularValue_cut hs₀ hreg (by lia))
+        V (by lia)
 
 /-- **The lacunary principle for the bands of a smooth function.** Let `f` be a smooth function on
 a compact boundaryless manifold, and cut its values at regular values
