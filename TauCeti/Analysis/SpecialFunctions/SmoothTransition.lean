@@ -6,7 +6,6 @@ Authors: Giada Franz, The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Analysis.Calculus.LocalExtr.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
@@ -58,6 +57,12 @@ The derivative supremum bounds are adapted from Giada Franz’s formalization in
   `x⁻² expNegInvGlue x`.
 * `expNegInvGlue.hasFDerivAt_norm_sq`: on a real inner product space, the derivative of
   `x ↦ expNegInvGlue (‖x‖²)` at `x` is `‖x‖⁻⁴ expNegInvGlue (‖x‖²) · 2 ⟪x, ·⟫`.
+* `Real.smoothTransition.one_sub`: reflection exchanges the two plateaus.
+* `Real.smoothTransition.deriv_nonneg`: the derivative is nonnegative.
+* `Real.smoothTransition.bddAbove_range_deriv`, `Real.smoothTransition.deriv_le_iSup` and
+  `Real.smoothTransition.iSup_deriv_nonneg`: the derivative has a nonnegative finite supremum.
+* `Real.smoothTransition.mul_deriv_nonneg` and `Real.smoothTransition.mul_deriv_le_deriv`:
+  multiplying the derivative by its argument gives a value between zero and the derivative.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
 * `Real.smoothTransition.deriv_of_nonpos`: `deriv Real.smoothTransition x = 0` for `x ≤ 0`.
 * `Real.smoothTransition.deriv_of_one_le`: `deriv Real.smoothTransition x = 0` for `1 ≤ x`.
@@ -137,6 +142,13 @@ end expNegInvGlue
 
 namespace Real.smoothTransition
 
+/-- Reflection about `1 / 2` exchanges the two plateaus of the smooth transition. -/
+theorem one_sub (x : ℝ) : smoothTransition (1 - x) = 1 - smoothTransition x := by
+  simp only [smoothTransition, sub_sub_cancel]
+  rw [add_comm (expNegInvGlue (1 - x))]
+  field_simp [(pos_denom x).ne']
+  ring
+
 /-- The smooth transition function takes values of absolute value at most one. -/
 theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
   (abs_of_nonneg (nonneg x)).trans_le (le_one x)
@@ -196,19 +208,12 @@ theorem mul_deriv_nonneg (t : ℝ) : 0 ≤ t * deriv smoothTransition t := by
   · rw [deriv_of_nonpos ht, mul_zero]
   · exact mul_nonneg ht.le (deriv_nonneg t)
 
-/-- Multiplying the derivative by its argument is at most the supremum of the derivative. -/
-theorem mul_deriv_le_iSup (t : ℝ) :
-    t * deriv smoothTransition t ≤ ⨆ s, deriv smoothTransition s := by
-  rcases le_or_gt t 0 with ht | _ht
-  · rw [deriv_of_nonpos ht, mul_zero]
-    exact iSup_deriv_nonneg
-  rcases le_or_gt 1 t with ht1 | ht1
-  · rw [deriv_of_one_le ht1, mul_zero]
-    exact iSup_deriv_nonneg
-  calc t * deriv smoothTransition t ≤ 1 * deriv smoothTransition t :=
-        mul_le_mul_of_nonneg_right ht1.le (deriv_nonneg t)
-    _ = deriv smoothTransition t := one_mul _
-    _ ≤ _ := deriv_le_iSup t
+/-- Multiplying the derivative by its argument is at most the derivative itself. -/
+theorem mul_deriv_le_deriv (t : ℝ) :
+    t * deriv smoothTransition t ≤ deriv smoothTransition t := by
+  rcases le_or_gt 1 t with ht | ht
+  · rw [deriv_of_one_le ht, mul_zero]
+  · exact mul_le_of_le_one_left (deriv_nonneg t) ht.le
 
 /-- The second derivative of the smooth transition function is bounded. -/
 theorem exists_forall_norm_deriv_deriv_le :
@@ -449,14 +454,10 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
     Tendsto (fun n : ℕ => d + smoothTransition ((n + 1) * t) * e +
       deriv smoothTransition ((n + 1) * t) * ((n + 1) * k)) atTop
       (𝓝 (if t ≤ 0 then d else d + e)) := by
-  rcases lt_trichotomy t 0 with ht | ht | ht
-  · have ht' (n : ℕ) : ((n : ℝ) + 1) * t < 0 := mul_neg_of_pos_of_neg (by positivity) ht
-    simp [zero_of_nonpos (ht' _).le, deriv_of_nonpos (ht' _).le, ht.le]
-  · -- `smoothTransition` is nonnegative and vanishes at `0`, so `0` is a local minimum.
-    have hmin : IsLocalMin smoothTransition 0 :=
-      Eventually.of_forall fun x => by simpa using nonneg x
-    have hd : deriv smoothTransition 0 = 0 := hmin.deriv_eq_zero
-    simp [ht, hd]
+  rcases le_or_gt t 0 with ht | ht
+  · have ht' (n : ℕ) : ((n : ℝ) + 1) * t ≤ 0 :=
+      mul_nonpos_of_nonneg_of_nonpos (by positivity) ht
+    simp [zero_of_nonpos (ht' _), deriv_of_nonpos (ht' _), ht]
   · have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * t :=
       (Tendsto.atTop_mul_const ht (tendsto_natCast_atTop_atTop.atTop_add
         tendsto_const_nhds)).eventually_gt_atTop 1
