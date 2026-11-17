@@ -107,6 +107,10 @@ theorem smul_vertex_def (g : G) (v : T.V) : g • v = T.action g • v := (rfl)
 
 theorem smul_dart_def (g : G) (e : T.E) : g • e = T.action g • e := (rfl)
 
+theorem action_toHom_mapV (g : G) (v : T.V) : (T.action g).toHom.mapV v = g • v := (rfl)
+
+theorem action_toHom_mapE (g : G) (e : T.E) : (T.action g).toHom.mapE e = g • e := (rfl)
+
 @[simp] theorem src_smul (g : G) (e : T.E) : T.src (g • e) = g • T.src e :=
   Aut.src_smul (T.action g) e
 

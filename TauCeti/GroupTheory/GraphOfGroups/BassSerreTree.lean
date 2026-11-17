@@ -628,9 +628,11 @@ variable {𝔸 a}
 theorem bassSerreProjection_comp_toHom (g : π₁ 𝔸 a) :
     (bassSerreProjection 𝔸 a).comp ((bassSerreTree 𝔸 a).action g).toHom =
       bassSerreProjection 𝔸 a :=
-  SerreGraph.Hom.ext _ (funext fun y ↦ by simp [← SerreGraph.Aut.smul_vertex_def,
-    ← GTree.smul_vertex_def]) (funext fun d ↦ by simp [← SerreGraph.Aut.smul_dart_def,
-    ← GTree.smul_dart_def])
+  SerreGraph.Hom.ext _
+    (funext fun y ↦ by rw [SerreGraph.Hom.comp_mapV, Function.comp_apply,
+      GTree.action_toHom_mapV, bassSerreProjection_mapV_smul])
+    (funext fun d ↦ by rw [SerreGraph.Hom.comp_mapE, Function.comp_apply,
+      GTree.action_toHom_mapE, bassSerreProjection_mapE_smul])
 
 variable (𝔸 a)
 
