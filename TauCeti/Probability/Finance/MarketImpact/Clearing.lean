@@ -101,17 +101,17 @@ theorem _root_.HasDerivAt.clearingMap {h : ℝ} (hH : HasDerivAt H h x) :
   · simp only [id_eq]
     ring
 
-/-- If the program-trader demand `H` is differentiable on the positive half-line, the clearing
-map has derivative `1 - H(x) - x H'(x)` at every positive price `x`. -/
-theorem hasDerivAt_clearingMap_of_differentiableOn (hH : DifferentiableOn ℝ H (Ioi 0))
-    (hx : 0 < x) : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x) x :=
-  ((hH x hx).differentiableAt (Ioi_mem_nhds hx)).hasDerivAt.clearingMap
+/-- If the program-trader demand `H` is differentiable at `x`, the clearing map has derivative
+`1 - H(x) - x H'(x)` there. -/
+theorem hasDerivAt_clearingMap (hH : DifferentiableAt ℝ H x) :
+    HasDerivAt (clearingMap H) (1 - H x - x * deriv H x) x :=
+  hH.hasDerivAt.clearingMap
 
-/-- If the program-trader demand `H` is differentiable on the positive half-line, the derivative
-of the clearing map at every positive price `x` is `1 - H(x) - x H'(x)`. -/
-theorem deriv_clearingMap_of_differentiableOn (hH : DifferentiableOn ℝ H (Ioi 0)) (hx : 0 < x) :
+/-- If the program-trader demand `H` is differentiable at `x`, the derivative of the clearing map
+there is `1 - H(x) - x H'(x)`. -/
+theorem deriv_clearingMap (hH : DifferentiableAt ℝ H x) :
     deriv (clearingMap H) x = 1 - H x - x * deriv H x :=
-  (hasDerivAt_clearingMap_of_differentiableOn hH hx).deriv
+  (hasDerivAt_clearingMap hH).deriv
 
 /-- The clearing map is continuous wherever the program-trader demand is. -/
 theorem continuousOn_clearingMap {s : Set ℝ} (hH : ContinuousOn H s) :
@@ -129,7 +129,7 @@ theorem strictMonoOn_clearingMap : StrictMonoOn (clearingMap H) (Ioi 0) := by
   refine strictMonoOn_of_deriv_pos (convex_Ioi 0) (continuousOn_clearingMap hH.continuousOn)
     fun x hx ↦ ?_
   rw [interior_Ioi] at hx
-  exact (deriv_clearingMap_of_differentiableOn hH hx).symm ▸ hpos x hx
+  exact (deriv_clearingMap ((hH x hx).differentiableAt (Ioi_mem_nhds hx))).symm ▸ hpos x hx
 
 /-- Under a positive clearing derivative, the equilibrium price recovers every positive price
 from its clearing value. -/
@@ -151,7 +151,7 @@ theorem hasDerivAt_invFunOn_clearingMap (hx : 0 < x) :
       (clearingMap H x) :=
   (strictMonoOn_clearingMap hH hpos).hasDerivAt_invFunOn
     (continuousOn_clearingMap hH.continuousOn) (Ioi_mem_nhds hx)
-    (hasDerivAt_clearingMap_of_differentiableOn hH hx) (hpos x hx).ne'
+    (hasDerivAt_clearingMap ((hH x hx).differentiableAt (Ioi_mem_nhds hx))) (hpos x hx).ne'
 
 end Pos
 
@@ -165,11 +165,11 @@ grow at rate at least `δ` on the positive half-line. -/
 theorem mul_sub_le_clearingMap_sub {x₁ x₂ : ℝ} (hx₁ : 0 < x₁) (hx : x₁ ≤ x₂) :
     δ * (x₂ - x₁) ≤ clearingMap H x₂ - clearingMap H x₁ := by
   refine (convex_Ioi 0).mul_sub_le_image_sub_of_le_deriv (continuousOn_clearingMap hH.continuousOn)
-    (fun x hx ↦ (hasDerivAt_clearingMap_of_differentiableOn hH
-      (interior_subset hx)).differentiableAt.differentiableWithinAt)
+    (fun x hx ↦ (hasDerivAt_clearingMap ((hH x (interior_subset hx)).differentiableAt
+      (mem_interior_iff_mem_nhds.1 hx))).differentiableAt.differentiableWithinAt)
     (fun x hx ↦ ?_) x₁ hx₁ x₂ (hx₁.trans_le hx) hx
   rw [interior_Ioi] at hx
-  exact (deriv_clearingMap_of_differentiableOn hH hx).symm ▸ hmargin x hx
+  exact (deriv_clearingMap ((hH x hx).differentiableAt (Ioi_mem_nhds hx))).symm ▸ hmargin x hx
 
 /-- Under a lower bound `δ` on the clearing derivative, positive prices at distance `d` have
 clearing values at distance at least `δ d`. -/
