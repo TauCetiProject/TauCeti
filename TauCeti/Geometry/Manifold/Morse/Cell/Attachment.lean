@@ -480,19 +480,20 @@ end MilnorFunction
 /-- In a normal-form chart `φ` of `f`, every critical point lies on the level `c`: along the
 curve `t ↦ φ⁻¹(t • φ x)` the function is `c + t² (f x - c)`, with derivative `2 (f x - c)` at
 `t = 1`. -/
-theorem mfderiv_ne_zero_of_mem_source_of_ne_level (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
-    (φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
-    {k : ℕ} (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
-    {x : M} (hx : x ∈ φ.source) (hxc : f x ≠ c) : mfderiv I 𝓘(ℝ) f x ≠ 0 := by
+theorem mfderiv_ne_zero_of_mem_source_of_ne_level {m : WithTop ℕ∞}
+    (φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) m)
+    (hm : m ≠ 0) {k : ℕ}
+    (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
+    {x : M} (hfx : MDifferentiableAt I 𝓘(ℝ) f x) (hx : x ∈ φ.source) (hxc : f x ≠ c) :
+    mfderiv I 𝓘(ℝ) f x ≠ 0 := by
   intro h0
   set y := φ x
   have hy : y ∈ φ.target := φ.map_source hx
   set γ : ℝ → M := fun t ↦ φ.symm (t • y)
   have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
-  rw [← hγ1] at h0
-  have hd := φ.hasDerivAt_comp_symm_of_mfderiv_eq_zero (by simp)
-    (differentiableAt_id.smul_const y)
-    (by simpa using hy) (hfs.mdifferentiableAt (by simp)) h0
+  rw [← hγ1] at h0 hfx
+  have hd := φ.hasDerivAt_comp_symm_of_mfderiv_eq_zero hm
+    (differentiableAt_id.smul_const y) (by simpa using hy) hfx h0
   have hsum (t : ℝ) : ∑ j, (if j.val < k then -1 else 1) * (t • y) j ^ 2 =
       t ^ 2 * ∑ j, (if j.val < k then (-1 : ℝ) else 1) * y j ^ 2 := by
     rw [Finset.mul_sum]
