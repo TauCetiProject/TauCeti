@@ -5,13 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Sobolev.Cylinder
+public import TauCeti.Analysis.Sobolev.Strip.Jet
 public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Sobolev.Trace.Estimate
 import TauCeti.MeasureTheory.Function.Lp.AeMem
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -23,7 +25,8 @@ sections `ξ` of a trivial bundle with fibre `V` over the strip `ℝ × [0, 1]` 
 lie in two subspaces `F₀` and `F₁` of `V`, the tangent spaces of the Lagrangians along the
 boundary, in a trivialization along the strip. This file sets up the Sobolev space
 `W^{1,2}_F(ℝ × [0, 1], V)` of such sections, with the same conventions as the Sobolev space of the
-cylinder in `TauCeti.Analysis.Sobolev.Cylinder`, whose jets and strip measure it reuses.
+cylinder in `TauCeti.Analysis.Sobolev.Cylinder`, sharing its jets and strip measure from
+`TauCeti.Analysis.Sobolev.Strip.Jet`.
 
 * **Test sections** (`TauCeti.StripSobolev.testSection F₀ F₁`) are the `C²` maps
   `ξ : ℝ × ℝ → V` that vanish for `|s|` large, with `ξ (s, 0) ∈ F₀` and `ξ (s, 1) ∈ F₁` for every
@@ -74,9 +77,6 @@ open MeasureTheory Set Filter Topology
 open scoped ENNReal
 
 namespace TauCeti.StripSobolev
-
-open CylinderSobolev (jet jet_apply jet_smul jet_add continuous_jet jet_eq_zero_of_lt_abs
-  memLp_jet_of_contDiff stripMeasure stripMeasure_eq_prod)
 
 section NormedSpace
 
@@ -304,10 +304,12 @@ theorem jet_comp_add (a : ℝ) (z : ℝ × ℝ) :
     jet (fun w ↦ ξ (w + (a, 0))) z = jet ξ (z + (a, 0)) := by
   simp only [jet_apply, fderiv_comp_add_right]
 
-/-- Translation by `a` in the `s` direction, on `L²` of the strip. -/
+/-- Translation by `a` in the `s` direction, on `L²` of the strip, as a linear isometric
+equivalence with inverse the translation by `-a`. -/
 def translateLp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (a : ℝ) :
-    Lp E 2 stripMeasure →ₗᵢ[ℝ] Lp E 2 stripMeasure :=
-  Lp.compMeasurePreservingₗᵢ ℝ _ (measurePreserving_add_strip a)
+    Lp E 2 stripMeasure ≃ₗᵢ[ℝ] Lp E 2 stripMeasure :=
+  Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_add_strip a)
+    (measurePreserving_add_strip (-a)) (EventuallyEq.of_eq (funext fun z ↦ by ext <;> simp))
 
 section
 
@@ -316,7 +318,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 /-- `translateLp a` is the composition with the translation by `a`. -/
 theorem translateLp_apply (a : ℝ) (x : Lp E 2 stripMeasure) :
     translateLp a x = Lp.compMeasurePreserving _ (measurePreserving_add_strip a) x :=
-  (rfl)
+  Lp.compMeasurePreservingₗᵢEquiv_apply ℝ _ _ _ x
 
 /-- The translate of an `L²` class is represented by the translate of its representative. -/
 theorem coeFn_translateLp (a : ℝ) (x : Lp E 2 stripMeasure) :
@@ -324,28 +326,30 @@ theorem coeFn_translateLp (a : ℝ) (x : Lp E 2 stripMeasure) :
   rw [translateLp_apply]
   exact Lp.coeFn_compMeasurePreserving _ _
 
-omit [NormedSpace ℝ E] in
-/-- Composition with two equal measure-preserving maps of the strip agrees. -/
-private theorem compMeasurePreserving_congr {f f' : ℝ × ℝ → ℝ × ℝ} (h : f = f')
-    (hf : MeasurePreserving f stripMeasure stripMeasure)
-    (hf' : MeasurePreserving f' stripMeasure stripMeasure) (x : Lp E 2 stripMeasure) :
-    Lp.compMeasurePreserving f hf x = Lp.compMeasurePreserving f' hf' x := by
-  subst h
-  rfl
-
 /-- Translation by `a`, then by `b`, is translation by `a + b`. -/
+@[simp]
 theorem translateLp_translateLp (a b : ℝ) (x : Lp E 2 stripMeasure) :
     translateLp a (translateLp b x) = translateLp (a + b) x := by
-  rw [translateLp_apply, translateLp_apply, translateLp_apply,
-    ← Lp.compMeasurePreserving_comp_apply]
-  exact compMeasurePreserving_congr (by ext z <;> simp [add_assoc]) _ _ x
+  refine Lp.ext ?_
+  filter_upwards [coeFn_translateLp a (translateLp b x), coeFn_translateLp (a + b) x,
+    (measurePreserving_add_strip a).quasiMeasurePreserving.ae_eq_comp
+      (coeFn_translateLp b x)] with z h₁ h₂ h₃
+  simp only [Function.comp_apply] at h₃
+  rw [h₁, h₂, h₃, add_assoc]
+  simp
 
 /-- Translation by `0` is the identity. -/
 @[simp]
 theorem translateLp_zero (x : Lp E 2 stripMeasure) : translateLp 0 x = x := by
-  rw [translateLp_apply]
-  exact (compMeasurePreserving_congr (by ext z <;> simp) _ (MeasurePreserving.id _) x).trans
-    (Lp.compMeasurePreserving_id_apply x)
+  refine Lp.ext ?_
+  filter_upwards [coeFn_translateLp 0 x] with z hz
+  rwa [Prod.mk_zero_zero, add_zero] at hz
+
+/-- The inverse of translation by `a` is translation by `-a`. -/
+@[simp]
+theorem translateLp_symm (a : ℝ) : (translateLp (E := E) a).symm = translateLp (-a) :=
+  LinearIsometryEquiv.ext fun x ↦ (LinearIsometryEquiv.symm_apply_eq _).2 <| by
+    rw [translateLp_translateLp, add_neg_cancel, translateLp_zero]
 
 end
 
@@ -364,32 +368,15 @@ theorem translateLp_mem_H1 (a : ℝ) {x : Lp (V × V × V) 2 stripMeasure} (hx :
   simpa [jetₗ_comp_add] using jetₗ_mem_H1 (⟨_, comp_add_mem_testSection ξ.2 a⟩ :
     testSection F₀ F₁)
 
-/-- Translation by `a` in the `s` direction, as a linear isometry of `H1`. -/
-private def translateₗᵢ (a : ℝ) : H1 F₀ F₁ →ₗᵢ[ℝ] H1 F₀ F₁ where
-  toLinearMap := ((translateLp a).toLinearMap.comp (H1 F₀ F₁).subtype).codRestrict _
-    fun x ↦ translateLp_mem_H1 a x.2
-  norm_map' x := (translateLp a).norm_map (x : Lp (V × V × V) 2 stripMeasure)
-
-private theorem coe_translateₗᵢ (a : ℝ) (x : H1 F₀ F₁) :
-    (translateₗᵢ a x : Lp (V × V × V) 2 stripMeasure) = translateLp a x :=
-  (rfl)
-
 variable (F₀ F₁) in
 /-- **Translation invariance of `H1`.** Translation by `a` in the `s` direction,
 `ξ ↦ ξ (· + a, ·)`, is a linear isometric equivalence of `H1 F₀ F₁`, with inverse the
-translation by `-a`. -/
+translation by `-a`: the restriction of `translateLp a` to `H1 F₀ F₁`. -/
 def translate (a : ℝ) : H1 F₀ F₁ ≃ₗᵢ[ℝ] H1 F₀ F₁ where
-  toLinearEquiv := LinearEquiv.ofLinearMap (translateₗᵢ a).toLinearMap
-    (translateₗᵢ (-a)).toLinearMap
-    (LinearMap.ext fun x ↦ Subtype.ext <| by
-      simp only [LinearMap.comp_apply, LinearIsometry.coe_toLinearMap, LinearMap.id_apply]
-      rw [coe_translateₗᵢ, coe_translateₗᵢ, translateLp_translateLp, add_neg_cancel,
-        translateLp_zero])
-    (LinearMap.ext fun x ↦ Subtype.ext <| by
-      simp only [LinearMap.comp_apply, LinearIsometry.coe_toLinearMap, LinearMap.id_apply]
-      rw [coe_translateₗᵢ, coe_translateₗᵢ, translateLp_translateLp, neg_add_cancel,
-        translateLp_zero])
-  norm_map' := (translateₗᵢ a).norm_map
+  toLinearEquiv := (translateLp a).toLinearEquiv.ofSubmodules _ _ <|
+    le_antisymm (Submodule.map_le_iff_le_comap.2 fun _ ↦ translateLp_mem_H1 a) fun x hx ↦
+      ⟨translateLp (-a) x, translateLp_mem_H1 (-a) hx, by simp⟩
+  norm_map' x := (translateLp a).norm_map (x : Lp (V × V × V) 2 stripMeasure)
 
 /-- The translate of an element of `H1` is the translate of its jet. -/
 @[simp]
@@ -407,27 +394,21 @@ theorem translate_jetH1 (a : ℝ) (ξ : testSection F₀ F₁) :
 theorem translate_zero (x : H1 F₀ F₁) : translate F₀ F₁ 0 x = x :=
   Subtype.ext (translateLp_zero (x : Lp (V × V × V) 2 stripMeasure))
 
-/-- The inverse of translation by `a` is translation by `-a`. -/
-@[simp]
-theorem translate_symm (a : ℝ) : (translate F₀ F₁ a).symm = translate F₀ F₁ (-a) :=
-  LinearIsometryEquiv.ext fun _ ↦ rfl
-
 /-- Translations compose by adding the translation lengths. -/
 @[simp]
 theorem translate_translate (a b : ℝ) (x : H1 F₀ F₁) :
     translate F₀ F₁ a (translate F₀ F₁ b x) = translate F₀ F₁ (a + b) x :=
   Subtype.ext (translateLp_translateLp a b (x : Lp (V × V × V) 2 stripMeasure))
 
+/-- The inverse of translation by `a` is translation by `-a`. -/
+@[simp]
+theorem translate_symm (a : ℝ) : (translate F₀ F₁ a).symm = translate F₀ F₁ (-a) :=
+  LinearIsometryEquiv.ext fun x ↦ (LinearIsometryEquiv.symm_apply_eq _).2 <| by
+    rw [translate_translate, add_neg_cancel, translate_zero]
+
 end Translate
 
-end NormedSpace
-
 /-! ### Boundary traces -/
-
-section Trace
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {F₀ F₁ : Submodule ℝ V}
-  {ξ : ℝ × ℝ → V}
 
 /-- The restriction of a test section to a horizontal line `ℝ × {t}` is square integrable. -/
 theorem memLp_slice (hξ : ξ ∈ testSection F₀ F₁) (t : ℝ) :
@@ -438,14 +419,51 @@ theorem memLp_slice (hξ : ξ ∈ testSection F₀ F₁) (t : ℝ) :
   rw [mem_Icc, ← abs_le, not_le] at hs
   exact hs.le
 
+variable (F₀ F₁) in
+/-- The boundary values `(ξ (·, 0), ξ (·, 1))` of a test section, in `L²(ℝ, V) × L²(ℝ, V)`. -/
+def traceₗ : testSection F₀ F₁ →ₗ[ℝ] Lp V 2 (volume : Measure ℝ) × Lp V 2 (volume : Measure ℝ)
+    where
+  toFun ξ := ((memLp_slice ξ.2 0).toLp _, (memLp_slice ξ.2 1).toLp _)
+  map_add' ξ η := by
+    refine Prod.ext ?_ ?_ <;>
+    · simp only [Submodule.coe_add, Prod.fst_add, Prod.snd_add, ← MemLp.toLp_add]
+      exact MemLp.toLp_congr _ _ (Eventually.of_forall fun s ↦ rfl)
+  map_smul' c ξ := by
+    refine Prod.ext ?_ ?_ <;>
+    · simp only [SetLike.val_smul, RingHom.id_apply, Prod.smul_fst, Prod.smul_snd,
+        ← MemLp.toLp_const_smul]
+      exact MemLp.toLp_congr _ _ (Eventually.of_forall fun s ↦ rfl)
+
+/-- The boundary values of a test section are the classes of its restrictions to the boundary
+lines `ℝ × {0}` and `ℝ × {1}`. -/
+theorem traceₗ_apply (ξ : testSection F₀ F₁) :
+    traceₗ F₀ F₁ ξ = ((memLp_slice ξ.2 0).toLp _, (memLp_slice ξ.2 1).toLp _) :=
+  (rfl)
+
+/-- The first boundary value of a test section is represented by `s ↦ ξ (s, 0)`. -/
+theorem coeFn_traceₗ_fst (ξ : testSection F₀ F₁) :
+    (traceₗ F₀ F₁ ξ).1 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 0) :=
+  MemLp.coeFn_toLp (memLp_slice ξ.2 0)
+
+/-- The second boundary value of a test section is represented by `s ↦ ξ (s, 1)`. -/
+theorem coeFn_traceₗ_snd (ξ : testSection F₀ F₁) :
+    (traceₗ F₀ F₁ ξ).2 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 1) :=
+  MemLp.coeFn_toLp (memLp_slice ξ.2 1)
+
+end NormedSpace
+
+section Trace
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] {F₀ F₁ : Submodule ℝ V}
+  {ξ : ℝ × ℝ → V}
+
 /-- **The trace estimate on a segment.** For a `C¹` map `ξ` and every `s`, the values of `ξ` at
 the two ends of the segment `{s} × [0, 1]` are controlled by the jet of `ξ` along the segment:
 `‖ξ (s, 0)‖² + ‖ξ (s, 1)‖² ≤ 4 ∫₀¹ ‖jet ξ (s, t)‖² dt`. -/
 theorem norm_sq_add_norm_sq_le_integral_jet (hξ : ContDiff ℝ 1 ξ) (s : ℝ) :
     ‖ξ (s, 0)‖ ^ 2 + ‖ξ (s, 1)‖ ^ 2 ≤ ∫ t in Icc (0 : ℝ) 1, 4 * ‖jet ξ (s, t)‖ ^ 2 := by
   have hderiv : ∀ t, deriv (fun t ↦ ξ (s, t)) t = fderiv ℝ ξ (s, t) (0, 1) := fun t ↦
-    (((hξ.differentiable one_ne_zero) (s, t)).hasFDerivAt.comp_hasDerivAt t
-      (HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t))).deriv
+    (hasDerivAt_slice_right ((hξ.differentiable one_ne_zero) (s, t))).deriv
   have h := norm_sq_add_norm_sq_le_integral_norm_sq_add_norm_deriv_sq
     (g := fun t ↦ ξ (s, t)) (fun t _ ↦ (hξ.comp (contDiff_const.prodMk contDiff_id)).contDiffAt)
     zero_lt_one
@@ -464,33 +482,7 @@ theorem norm_sq_add_norm_sq_le_integral_jet (hξ : ContDiff ℝ 1 ξ) (s : ℝ) 
       rw [jet_apply]
       exact (norm_snd_le (fderiv ℝ ξ (s, t) (1, 0), fderiv ℝ ξ (s, t) (0, 1))).trans
         (norm_snd_le (ξ (s, t), fderiv ℝ ξ (s, t) (1, 0), fderiv ℝ ξ (s, t) (0, 1)))
-    norm_num
     nlinarith [norm_nonneg (ξ (s, t)), norm_nonneg (fderiv ℝ ξ (s, t) (0, 1))]
-
-variable (F₀ F₁) in
-/-- The boundary values `(ξ (·, 0), ξ (·, 1))` of a test section, in `L²(ℝ, V) × L²(ℝ, V)`. -/
-def traceₗ : testSection F₀ F₁ →ₗ[ℝ] Lp V 2 (volume : Measure ℝ) × Lp V 2 (volume : Measure ℝ)
-    where
-  toFun ξ := ((memLp_slice ξ.2 0).toLp _, (memLp_slice ξ.2 1).toLp _)
-  map_add' ξ η := by
-    refine Prod.ext ?_ ?_ <;>
-    · simp only [Submodule.coe_add, Prod.fst_add, Prod.snd_add, ← MemLp.toLp_add]
-      exact MemLp.toLp_congr _ _ (Eventually.of_forall fun s ↦ rfl)
-  map_smul' c ξ := by
-    refine Prod.ext ?_ ?_ <;>
-    · simp only [SetLike.val_smul, RingHom.id_apply, Prod.smul_fst, Prod.smul_snd,
-        ← MemLp.toLp_const_smul]
-      exact MemLp.toLp_congr _ _ (Eventually.of_forall fun s ↦ rfl)
-
-/-- The first boundary value of a test section is represented by `s ↦ ξ (s, 0)`. -/
-theorem coeFn_traceₗ_fst (ξ : testSection F₀ F₁) :
-    (traceₗ F₀ F₁ ξ).1 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 0) :=
-  MemLp.coeFn_toLp (memLp_slice ξ.2 0)
-
-/-- The second boundary value of a test section is represented by `s ↦ ξ (s, 1)`. -/
-theorem coeFn_traceₗ_snd (ξ : testSection F₀ F₁) :
-    (traceₗ F₀ F₁ ξ).2 =ᵐ[volume] fun s ↦ (ξ : ℝ × ℝ → V) (s, 1) :=
-  MemLp.coeFn_toLp (memLp_slice ξ.2 1)
 
 /-- **The trace estimate on the strip.** The boundary values of a test section are bounded in
 `L²` by twice its `W^{1,2}` norm. -/
@@ -514,8 +506,7 @@ theorem norm_traceₗ_le (ξ : testSection F₀ F₁) :
       fun s ↦ norm_sq_add_norm_sq_le_integral_jet (contDiff_one_of_mem_testSection ξ.2) s
   have hle : ∀ a : ℝ, 0 ≤ a → a ^ 2 ≤ 4 * ‖jetH1 F₀ F₁ ξ‖ ^ 2 → a ≤ 2 * ‖jetH1 F₀ F₁ ξ‖ :=
     fun a ha h ↦ (pow_le_pow_iff_left₀ ha (by positivity) two_ne_zero).1 (by nlinarith)
-  have e : traceₗ F₀ F₁ ξ = (h0.toLp _, h1.toLp _) := rfl
-  rw [e, Prod.norm_def]
+  rw [traceₗ_apply, Prod.norm_def]
   exact max_le (hle _ (norm_nonneg _) (by nlinarith [sq_nonneg ‖h1.toLp _‖]))
     (hle _ (norm_nonneg _) (by nlinarith [sq_nonneg ‖h0.toLp _‖]))
 
@@ -580,17 +571,12 @@ theorem integral_inner_fderiv_add_inner_fderiv (hξ : ContDiff ℝ 1 ξ) (hη : 
     ∫ t in Icc (0 : ℝ) 1, (⟪fderiv ℝ ξ (s, t) (0, 1), η (s, t)⟫_ℝ +
         ⟪ξ (s, t), fderiv ℝ η (s, t) (0, 1)⟫_ℝ) =
       ⟪ξ (s, 1), η (s, 1)⟫_ℝ - ⟪ξ (s, 0), η (s, 0)⟫_ℝ := by
-  have hp : ∀ t, HasDerivAt (fun t : ℝ ↦ ((s, t) : ℝ × ℝ)) (0, 1) t := fun t ↦
-    HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
   have hd : ∀ t, HasDerivAt (fun t ↦ ⟪ξ (s, t), η (s, t)⟫_ℝ)
       (⟪fderiv ℝ ξ (s, t) (0, 1), η (s, t)⟫_ℝ + ⟪ξ (s, t), fderiv ℝ η (s, t) (0, 1)⟫_ℝ) t :=
     fun t ↦ by
-      have h₁ : HasDerivAt (fun t ↦ ξ (s, t)) (fderiv ℝ ξ (s, t) (0, 1)) t :=
-        ((hξ.differentiable one_ne_zero) (s, t)).hasFDerivAt.comp_hasDerivAt t (hp t)
-      have h₂ : HasDerivAt (fun t ↦ η (s, t)) (fderiv ℝ η (s, t) (0, 1)) t :=
-        ((hη.differentiable one_ne_zero) (s, t)).hasFDerivAt.comp_hasDerivAt t (hp t)
       rw [add_comm]
-      exact HasDerivAt.inner ℝ h₁ h₂
+      exact (hasDerivAt_slice_right (hξ.differentiable one_ne_zero (s, t))).inner ℝ
+        (hasDerivAt_slice_right (hη.differentiable one_ne_zero (s, t)))
   have := hξ.continuous_fderiv one_ne_zero
   have := hη.continuous_fderiv one_ne_zero
   have := hξ.continuous
@@ -605,17 +591,12 @@ theorem integral_inner_fderiv_add_inner_fderiv_eq_zero (hξ : ContDiff ℝ 1 ξ)
     (hη : ContDiff ℝ 1 η) {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) (t : ℝ) :
     ∫ s, (⟪fderiv ℝ ξ (s, t) (1, 0), η (s, t)⟫_ℝ + ⟪ξ (s, t), fderiv ℝ η (s, t) (1, 0)⟫_ℝ) =
       0 := by
-  have hp : ∀ s, HasDerivAt (fun s : ℝ ↦ ((s, t) : ℝ × ℝ)) (1, 0) s := fun s ↦
-    HasDerivAt.prodMk (hasDerivAt_id' s) (hasDerivAt_const s t)
   have hd : ∀ s, HasDerivAt (fun s ↦ ⟪ξ (s, t), η (s, t)⟫_ℝ)
       (⟪fderiv ℝ ξ (s, t) (1, 0), η (s, t)⟫_ℝ + ⟪ξ (s, t), fderiv ℝ η (s, t) (1, 0)⟫_ℝ) s :=
     fun s ↦ by
-      have h₁ : HasDerivAt (fun s ↦ ξ (s, t)) (fderiv ℝ ξ (s, t) (1, 0)) s :=
-        ((hξ.differentiable one_ne_zero) (s, t)).hasFDerivAt.comp_hasDerivAt s (hp s)
-      have h₂ : HasDerivAt (fun s ↦ η (s, t)) (fderiv ℝ η (s, t) (1, 0)) s :=
-        ((hη.differentiable one_ne_zero) (s, t)).hasFDerivAt.comp_hasDerivAt s (hp s)
       rw [add_comm]
-      exact HasDerivAt.inner ℝ h₁ h₂
+      exact (hasDerivAt_slice_left (hξ.differentiable one_ne_zero (s, t))).inner ℝ
+        (hasDerivAt_slice_left (hη.differentiable one_ne_zero (s, t)))
   -- Outside `[-R, R]` the section `ξ` and its `s`-derivative vanish.
   have hK : ∀ s, s ∉ Icc (-R) R → ξ (s, t) = 0 ∧ fderiv ℝ ξ (s, t) (1, 0) = 0 := by
     intro s hs

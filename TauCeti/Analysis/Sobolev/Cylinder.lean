@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.Analysis.Normed.Operator.Compact.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+public import TauCeti.Analysis.Sobolev.Strip.Jet
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.LineDeriv.Basic
 import Mathlib.Analysis.Normed.Operator.Mul
@@ -30,7 +31,7 @@ import TauCeti.MeasureTheory.Measure.Haar.Prod
 Let `V` be a finite-dimensional real normed space. Sections of the trivial bundle with fibre `V`
 over the cylinder `ℝ × S¹` are maps `ξ : ℝ × ℝ → V` of period one in the second variable `t`, and
 the fundamental domain of the cylinder is the strip `ℝ × [0, 1]` with its Lebesgue measure
-`TauCeti.CylinderSobolev.stripMeasure`. This file sets up the Sobolev space `W^{1,2}(ℝ × S¹, V)`
+`TauCeti.StripSobolev.stripMeasure`. This file sets up the Sobolev space `W^{1,2}(ℝ × S¹, V)`
 and the functional analysis that turns an elliptic estimate for a first-order operator with
 bounded coefficients on the cylinder into finite-dimensional kernel and closed range. It is the
 setting of the linearized operators of Floer theory along Floer cylinders.
@@ -92,18 +93,10 @@ open scoped ENNReal NNReal
 
 namespace TauCeti.CylinderSobolev
 
+open StripSobolev (stripMeasure jet jet_apply continuous_jet jet_add jet_smul
+  jet_eq_zero_of_lt_abs memLp_jet_of_contDiff)
+
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-- Lebesgue measure on the strip `ℝ × [0, 1]`, the fundamental domain of the cylinder
-`ℝ × S¹`. -/
-abbrev stripMeasure : Measure (ℝ × ℝ) := volume.restrict (univ ×ˢ Icc 0 1)
-
-/-- The strip measure is the product of Lebesgue measure on `ℝ` and on `[0, 1]`, so that
-integrals over the strip are iterated integrals over the segments `{s} × [0, 1]`. -/
-theorem stripMeasure_eq_prod :
-    stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
-  unfold stripMeasure
-  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
 
 variable (V) in
 /-- The test sections of the trivial bundle with fibre `V` over the cylinder: `C²` maps
@@ -125,34 +118,7 @@ theorem mem_testSection_iff {ξ : ℝ × ℝ → V} : ξ ∈ testSection V ↔ C
     (∀ s t, ξ (s, t + 1) = ξ (s, t)) ∧ ∃ R, ∀ s t, R ≤ |s| → ξ (s, t) = 0 :=
   Iff.rfl
 
-/-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
-def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
-  (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
-
-/-- The components of the jet. -/
-theorem jet_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    jet ξ z = (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)) :=
-  (rfl)
-
 variable {ξ η : ℝ × ℝ → V}
-
-/-- The jet of a `C¹` map is continuous. -/
-theorem continuous_jet (hξ : ContDiff ℝ 1 ξ) : Continuous (jet ξ) := by
-  have := hξ.continuous_fderiv (by norm_num)
-  have := hξ.continuous
-  unfold jet
-  fun_prop
-
-/-- The jet is additive on differentiable maps. -/
-theorem jet_add (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
-    jet (ξ + η) = jet ξ + jet η := by
-  funext z
-  simp [jet, fderiv_add (hξ z) (hη z)]
-
-/-- The jet commutes with scalar multiplication. -/
-theorem jet_smul (c : ℝ) (ξ : ℝ × ℝ → V) : jet (c • ξ) = c • jet ξ := by
-  funext z
-  simp [jet, fderiv_const_smul_field]
 
 /-- The jet of a test section has period one in `t`. -/
 theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1) = jet ξ (s, t) := by
@@ -164,16 +130,6 @@ theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1)
   simp only [Prod.mk_add_mk, add_zero] at h
   simp [jet, ← h, hξp]
 
-/-- The jet of a section vanishing for `|s| ≥ R` vanishes for `|s| > R`. -/
-theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) {z : ℝ × ℝ}
-    (hz : R < |z.1|) : jet ξ z = 0 := by
-  have : ∀ᶠ w : ℝ × ℝ in 𝓝 z, R < |w.1| :=
-    (continuous_abs.comp continuous_fst).continuousAt.eventually (lt_mem_nhds hz)
-  have h : ξ =ᶠ[𝓝 z] 0 := by
-    filter_upwards [this] with w hw
-    exact hR w.1 w.2 hw.le
-  simp [jet, h.fderiv_eq, h.eq_of_nhds]
-
 /-- For a section vanishing for `|s| ≥ R`, the integral over the strip of a function vanishing
 wherever the jet of the section vanishes is its integral over `[-R, R] × [0, 1]`. -/
 private theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [NormedAddCommGroup E]
@@ -184,28 +140,6 @@ private theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [Normed
     (prod_mono (subset_univ _) subset_rfl) fun z hz ↦ hF z (jet_eq_zero_of_lt_abs hR (by
       have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
       rwa [mem_Icc, ← abs_le, not_le] at h))
-
-/-- The jet of a `C¹` map vanishing for `|s|` large is square integrable on the strip. -/
-theorem memLp_jet_of_contDiff (hξ : ContDiff ℝ 1 ξ) {R : ℝ}
-    (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) : MemLp (jet ξ) 2 stripMeasure := by
-  set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
-  have hK : IsCompact K := isCompact_Icc.prod isCompact_Icc
-  have hae : jet ξ =ᵐ[stripMeasure] K.indicator (jet ξ) := by
-    filter_upwards [ae_restrict_mem (MeasurableSet.univ.prod measurableSet_Icc)] with z hz
-    by_cases hzK : z ∈ K
-    · rw [indicator_of_mem hzK]
-    · rw [indicator_of_notMem hzK]
-      refine jet_eq_zero_of_lt_abs hR ?_
-      by_contra h
-      exact hzK ⟨abs_le.1 (not_lt.1 h), hz.2⟩
-  refine (memLp_congr_ae hae).2 ?_
-  rw [memLp_indicator_iff_restrict hK.measurableSet.nullMeasurableSet]
-  have : IsFiniteMeasure (stripMeasure.restrict K) :=
-    isFiniteMeasure_restrict.2 ((Measure.restrict_apply_le _ K).trans_lt
-      hK.measure_lt_top).ne
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn (continuous_jet hξ).continuousOn
-  exact MemLp.of_bound (continuous_jet hξ).aestronglyMeasurable C
-    ((ae_restrict_mem hK.measurableSet).mono hC)
 
 /-- The jet of a test section is square integrable on the strip. -/
 theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
