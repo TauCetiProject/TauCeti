@@ -8,14 +8,11 @@ module
 public import Mathlib.Topology.Defs.Filter
 public import TauCeti.Probability.DysonBrownianMotion.Pathwise
 import Mathlib.Analysis.ODE.ExistUnique
-import Mathlib.MeasureTheory.Function.AbsolutelyContinuous
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import Mathlib.Topology.Instances.NNReal.Lemmas
 import Mathlib.Topology.Separation.Hausdorff
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
 
 /-!
 # Globally Lipschitz truncated Dyson trajectories and pasting to the Dyson system
@@ -45,8 +42,9 @@ pass from truncated trajectories to `IsPathwiseDysonSolution` and `IsDysonSoluti
   (the open-chamber step of AGZ Lemma 4.3.3), if every horizon `T : ℝ≥0` admits `ε > 0` for which
   `truncatedDysonPath ε x w` stays `ε`-separated on `[0, T]`, then the sequence
   `m ↦ truncatedDysonPath ((m + 1 : ℝ)⁻¹) x w t` stabilizes at every `t` and its `limUnder` solves
-  `IsPathwiseDysonSolution` (and almost surely solves `IsDysonSolution`). Boundary initial data
-  `Antitone x` then connect via the `ℓ²`-contraction `IsPathwiseDysonSolution.sum_sq_sub_le`.
+  `IsPathwiseDysonSolution` (and almost surely solves `IsDysonSolution`). Extending existence to
+  boundary initial data `Antitone x` requires an additional limiting argument and is not proved
+  here.
 
 ## Main definitions
 
@@ -61,8 +59,8 @@ pass from truncated trajectories to `IsPathwiseDysonSolution` and `IsDysonSoluti
   uniqueness on `[0, T]`.
 * `TauCeti.Probability.truncatedDysonPath_congr_Iic`: causality on `[0, T]`.
 * `TauCeti.Probability.sum_sq_truncatedDysonPath_sub_le`: global `ℓ²`-contraction in initial data.
-* `TauCeti.Probability.truncatedDysonPath_eq_of_le_sub`: consistency across truncation levels
-  `0 < ε' ≤ ε` before the `ε`-separation exit.
+* `TauCeti.Probability.eqOn_truncatedDysonPath_of_forall_le_sub`: consistency across truncation
+  levels `0 < ε' ≤ ε` before the `ε`-separation exit.
 * `TauCeti.Probability.isPathwiseDysonSolution_limUnder_truncatedDysonPath` and
   `TauCeti.Probability.isDysonSolution_limUnder_truncatedDysonPath`: global pasting into
   `IsPathwiseDysonSolution` and `IsDysonSolution`.
@@ -108,21 +106,24 @@ theorem apply_zero (hX : IsTruncatedDysonOn ε x w X T) : X 0 = x + w 0 := by
   ext i
   simpa using hX.eq_add_integral (zero_le : (0 : ℝ≥0) ≤ T) i
 
+/-- `Real.toNNReal` maps `uIcc 0 t` into `Iic T` whenever `t ≤ T`. -/
+private theorem mapsTo_toNNReal_uIcc {t T : ℝ≥0} (ht : t ≤ T) :
+    MapsTo Real.toNNReal (uIcc (0 : ℝ) (t : ℝ)) (Iic T) := by
+  rw [uIcc_of_le t.coe_nonneg]
+  exact fun _ hs ↦ Real.toNNReal_le_iff_le_coe.2 (hs.2.trans (NNReal.coe_le_coe.2 ht))
+
 /-- For `ε > 0`, the truncated drift along a local solution on `Iic T` is interval integrable on
 `0..t` for every `t ≤ T`. -/
 theorem intervalIntegrable_truncatedDysonDrift (hX : IsTruncatedDysonOn ε x w X T) (hε : 0 < ε)
     {t : ℝ≥0} (ht : t ≤ T) (i : Fin n) :
-    IntervalIntegrable (fun s : ℝ ↦ truncatedDysonDrift ε (X s.toNNReal) i) volume 0 t := by
-  refine ContinuousOn.intervalIntegrable ?_
-  rw [uIcc_of_le t.coe_nonneg]
-  have htoNN : MapsTo Real.toNNReal (Icc 0 (t : ℝ)) (Iic T) := by
-    intro s hs
-    exact (Real.toNNReal_le_iff_le_coe.2 (hs.2.trans (NNReal.coe_le_coe.2 ht)))
-  exact (((continuous_apply i).comp (continuous_truncatedDysonDrift hε)).continuousOn.comp
-    (hX.continuousOn_Iic.comp continuous_real_toNNReal.continuousOn htoNN) (mapsTo_univ _ _))
+    IntervalIntegrable (fun s : ℝ ↦ truncatedDysonDrift ε (X s.toNNReal) i) volume 0 t :=
+  (((continuous_apply i).comp (continuous_truncatedDysonDrift hε)).continuousOn.comp
+    (hX.continuousOn_Iic.comp continuous_real_toNNReal.continuousOn (mapsTo_toNNReal_uIcc ht))
+    (mapsTo_univ _ _)).intervalIntegrable
 
 /-- Coordinate sum conservation for a local truncated Dyson solution on `[0, T]`. -/
-theorem sum_apply (hX : IsTruncatedDysonOn ε x w X T) (hε : 0 < ε) {t : ℝ≥0} (ht : t ≤ T) :
+theorem sum_eq_sum_add_sum (hX : IsTruncatedDysonOn ε x w X T) (hε : 0 < ε) {t : ℝ≥0}
+    (ht : t ≤ T) :
     ∑ i, X t i = ∑ i, x i + ∑ i, w t i := by
   simp_rw [hX.eq_add_integral ht, sum_add_distrib]
   rw [← intervalIntegral.integral_finsetSum fun i _ ↦
@@ -138,61 +139,13 @@ theorem sum_sq_sub_eq (hX : IsTruncatedDysonOn ε x w X T) (hY : IsTruncatedDyso
       2 * ∫ s in (0 : ℝ)..t,
         ∑ i, (truncatedDysonDrift ε (X s.toNNReal) i - truncatedDysonDrift ε (Y s.toNNReal) i) *
           (X s.toNNReal i - Y s.toNNReal i) := by
-  let f : Fin n → ℝ → ℝ := fun i s ↦
-    truncatedDysonDrift ε (X s.toNNReal) i - truncatedDysonDrift ε (Y s.toNNReal) i
-  let g : Fin n → ℝ → ℝ := fun i u ↦ (x i - y i) + ∫ s in (0 : ℝ)..u, f i s
-  have hf_int (i : Fin n) : IntervalIntegrable (f i) volume 0 t :=
-    (hX.intervalIntegrable_truncatedDysonDrift hε ht i).sub
-      (hY.intervalIntegrable_truncatedDysonDrift hε ht i)
-  have hg_val (i : Fin n) {u : ℝ≥0} (hu : u ≤ t) : g i u = X u i - Y u i := by
-    simp only [g, f]
-    rw [intervalIntegral.integral_sub
-      (hX.intervalIntegrable_truncatedDysonDrift hε (hu.trans ht) i)
-      (hY.intervalIntegrable_truncatedDysonDrift hε (hu.trans ht) i)]
-    linarith [hX.eq_add_integral (hu.trans ht) i, hY.eq_add_integral (hu.trans ht) i]
-  have hg_ac (i : Fin n) : AbsolutelyContinuousOnInterval (g i) 0 t :=
-    ((LipschitzWith.const (x i - y i)).lipschitzOnWith.absolutelyContinuousOnInterval).add
-      ((hf_int i).absolutelyContinuousOnInterval_intervalIntegral left_mem_uIcc)
-  have hg_deriv (i : Fin n) : ∀ᵐ u, u ∈ uIoc (0 : ℝ) (t : ℝ) → HasDerivAt (g i) (f i u) u := by
-    filter_upwards [(hf_int i).ae_hasDerivAt_integral] with u hu hmem
-    exact (hu (uIoc_subset_uIcc hmem) 0 left_mem_uIcc).const_add (x i - y i)
-  have htoNN : MapsTo Real.toNNReal (uIcc (0 : ℝ) (t : ℝ)) (Iic T) := by
-    rw [uIcc_of_le t.coe_nonneg]
-    intro s hs
-    exact Real.toNNReal_le_iff_le_coe.2 (hs.2.trans (NNReal.coe_le_coe.2 ht))
-  have hcont_diff (i : Fin n) :
-      ContinuousOn (fun s : ℝ ↦ X s.toNNReal i - Y s.toNNReal i) (uIcc 0 (t : ℝ)) := by
-    have hXi : ContinuousOn (fun s : ℝ ↦ X s.toNNReal i) (uIcc 0 (t : ℝ)) :=
-      (continuous_apply i).continuousOn.comp
-        (hX.continuousOn_Iic.comp continuous_real_toNNReal.continuousOn htoNN) (mapsTo_univ _ _)
-    have hYi : ContinuousOn (fun s : ℝ ↦ Y s.toNNReal i) (uIcc 0 (t : ℝ)) :=
-      (continuous_apply i).continuousOn.comp
-        (hY.continuousOn_Iic.comp continuous_real_toNNReal.continuousOn htoNN) (mapsTo_univ _ _)
-    exact hXi.sub hYi
-  have hcoord (i : Fin n) :
-      (X t i - Y t i) ^ 2 - (x i - y i) ^ 2 =
-        2 * ∫ s in (0 : ℝ)..t, f i s * (X s.toNNReal i - Y s.toNNReal i) := by
-    have hibp := (hg_ac i).integral_mul_deriv_eq_deriv_mul_of_ae_hasDerivAt (hg_ac i)
-      (hg_deriv i) (hg_deriv i)
-    have hcomm : (∫ s in (0 : ℝ)..t, g i s * f i s) = ∫ s in (0 : ℝ)..t, f i s * g i s :=
-      intervalIntegral.integral_congr fun s _ ↦ mul_comm _ _
-    have hcongr : (∫ s in (0 : ℝ)..t, f i s * g i s) =
-        ∫ s in (0 : ℝ)..t, f i s * (X s.toNNReal i - Y s.toNNReal i) := by
-      refine intervalIntegral.integral_congr_ae ?_
-      rw [uIoc_of_le t.coe_nonneg]
-      refine Eventually.of_forall fun s hs ↦ ?_
-      have hle : s.toNNReal ≤ t := Real.toNNReal_le_iff_le_coe.2 hs.2
-      have hgs : g i s = X s.toNNReal i - Y s.toNNReal i := by
-        simpa [Real.coe_toNNReal s hs.1.le] using hg_val i hle
-      rw [hgs]
-    have hg0 : g i 0 = x i - y i := by simp [g]
-    rw [← hg_val i le_rfl, ← hg0]
-    linarith [hibp, hcomm, hcongr]
-  have hint_prod (i : Fin n) :
-      IntervalIntegrable (fun s : ℝ ↦ f i s * (X s.toNNReal i - Y s.toNNReal i)) volume 0 t :=
-    (hf_int i).mul_continuousOn (hcont_diff i)
-  rw [← sum_sub_distrib, sum_congr rfl fun i _ ↦ hcoord i, ← mul_sum,
-    ← intervalIntegral.integral_finsetSum fun i _ ↦ hint_prod i]
+  simpa only [hX.apply_zero, hY.apply_zero, Pi.add_apply, add_sub_add_right_eq_sub,
+      NNReal.coe_zero] using
+    sum_sq_sub_eq_of_eq_add_integral (zero_le : (0 : ℝ≥0) ≤ t)
+      (fun i ↦ hX.intervalIntegrable_truncatedDysonDrift hε ht i)
+      (fun i ↦ hY.intervalIntegrable_truncatedDysonDrift hε ht i)
+      (fun u hu i ↦ hX.eq_add_integral (hu.trans ht) i)
+      (fun u hu i ↦ hY.eq_add_integral (hu.trans ht) i)
 
 /-- **`ℓ²`-contraction for local solutions of the truncated Dyson system.** Any two solutions on
 `Iic T` with the same driving path `w` satisfy `∑ i, (X t i - Y t i) ^ 2 ≤ ∑ i, (x i - y i) ^ 2` for
@@ -200,42 +153,13 @@ theorem sum_sq_sub_eq (hX : IsTruncatedDysonOn ε x w X T) (hY : IsTruncatedDyso
 theorem sum_sq_sub_le (hX : IsTruncatedDysonOn ε x w X T) (hY : IsTruncatedDysonOn ε y w Y T)
     (hε : 0 < ε) {t : ℝ≥0} (ht : t ≤ T) :
     ∑ i, (X t i - Y t i) ^ 2 ≤ ∑ i, (x i - y i) ^ 2 := by
-  have hid := hX.sum_sq_sub_eq hY hε ht
-  have htoNN : MapsTo Real.toNNReal (uIcc (0 : ℝ) (t : ℝ)) (Iic T) := by
-    rw [uIcc_of_le t.coe_nonneg]
-    intro s hs
-    exact Real.toNNReal_le_iff_le_coe.2 (hs.2.trans (NNReal.coe_le_coe.2 ht))
-  have hint_prod (i : Fin n) :
-      IntervalIntegrable
-        (fun s : ℝ ↦
-          (truncatedDysonDrift ε (X s.toNNReal) i - truncatedDysonDrift ε (Y s.toNNReal) i) *
-            (X s.toNNReal i - Y s.toNNReal i)) volume 0 t := by
-    refine ((hX.intervalIntegrable_truncatedDysonDrift hε ht i).sub
-      (hY.intervalIntegrable_truncatedDysonDrift hε ht i)).mul_continuousOn ?_
-    exact ((continuous_apply i).continuousOn.comp
-      (hX.continuousOn_Iic.comp continuous_real_toNNReal.continuousOn htoNN)
-      (mapsTo_univ _ _)).sub
-      ((continuous_apply i).continuousOn.comp
-        (hY.continuousOn_Iic.comp continuous_real_toNNReal.continuousOn htoNN) (mapsTo_univ _ _))
-  have hint_sum : IntervalIntegrable
-      (fun s : ℝ ↦ ∑ i,
-        (truncatedDysonDrift ε (X s.toNNReal) i - truncatedDysonDrift ε (Y s.toNNReal) i) *
-          (X s.toNNReal i - Y s.toNNReal i)) volume 0 t :=
-    (IntervalIntegrable.sum univ fun i _ ↦ hint_prod i).congr fun u _ ↦ Finset.sum_apply u univ _
-  have hint_nonpos :
-      ∫ s in (0 : ℝ)..t, ∑ i,
-        (truncatedDysonDrift ε (X s.toNNReal) i - truncatedDysonDrift ε (Y s.toNNReal) i) *
-          (X s.toNNReal i - Y s.toNNReal i) ≤ 0 := by
-    calc
-      ∫ s in (0 : ℝ)..t, ∑ i,
-          (truncatedDysonDrift ε (X s.toNNReal) i - truncatedDysonDrift ε (Y s.toNNReal) i) *
-            (X s.toNNReal i - Y s.toNNReal i)
-        ≤ ∫ _s in (0 : ℝ)..t, (0 : ℝ) :=
-          intervalIntegral.integral_mono_on_of_le_Ioo t.coe_nonneg
-            hint_sum intervalIntegrable_const
-            fun s _ ↦ sum_sub_mul_truncatedDysonDrift_sub_nonpos hε (X s.toNNReal) (Y s.toNNReal)
-      _ = 0 := intervalIntegral.integral_zero
-  linarith
+  simpa only [hX.apply_zero, hY.apply_zero, Pi.add_apply, add_sub_add_right_eq_sub] using
+    sum_sq_sub_le_of_eq_add_integral (zero_le : (0 : ℝ≥0) ≤ t)
+      (fun i ↦ hX.intervalIntegrable_truncatedDysonDrift hε ht i)
+      (fun i ↦ hY.intervalIntegrable_truncatedDysonDrift hε ht i)
+      (fun u hu i ↦ hX.eq_add_integral (hu.trans ht) i)
+      (fun u hu i ↦ hY.eq_add_integral (hu.trans ht) i)
+      fun s _ ↦ sum_sub_mul_truncatedDysonDrift_sub_nonpos hε (X s.toNNReal) (Y s.toNNReal)
 
 /-- Local uniqueness on `Iic T` for the `ε`-truncated Dyson integral equation. -/
 theorem eqOn_Iic (hX : IsTruncatedDysonOn ε x w X T) (hY : IsTruncatedDysonOn ε x w Y T)
@@ -243,11 +167,10 @@ theorem eqOn_Iic (hX : IsTruncatedDysonOn ε x w X T) (hY : IsTruncatedDysonOn �
     EqOn X Y (Iic T) := by
   intro t ht
   ext i
-  have hle : ∑ j, (X t j - Y t j) ^ 2 ≤ 0 := by
-    simpa using hX.sum_sq_sub_le hY hε ht
-  have hsingle : (X t i - Y t i) ^ 2 ≤ ∑ j, (X t j - Y t j) ^ 2 :=
-    single_le_sum (f := fun j ↦ (X t j - Y t j) ^ 2) (fun _ _ ↦ sq_nonneg _) (mem_univ i)
-  exact sub_eq_zero.1 (sq_eq_zero_iff.1 (le_antisymm (hsingle.trans hle) (sq_nonneg _)))
+  have h0 : ∑ j, (X t j - Y t j) ^ 2 = 0 :=
+    le_antisymm (by simpa using hX.sum_sq_sub_le hY hε ht) (sum_nonneg fun _ _ ↦ sq_nonneg _)
+  exact sub_eq_zero.1 (sq_eq_zero_iff.1
+    ((sum_eq_zero_iff_of_nonneg fun _ _ ↦ sq_nonneg _).1 h0 i (mem_univ i)))
 
 end IsTruncatedDysonOn
 
@@ -403,7 +326,7 @@ theorem truncatedDysonPath_of_subsingleton [Subsingleton (Fin n)] (ε : ℝ) (x 
 theorem sum_truncatedDysonPath (ε : ℝ) (x : Fin n → ℝ) (w : ℝ≥0 → Fin n → ℝ) (t : ℝ≥0) :
     ∑ i, truncatedDysonPath ε x w t i = ∑ i, x i + ∑ i, w t i := by
   by_cases h : 0 < ε ∧ Continuous w
-  · exact (isTruncatedDysonOn_truncatedDysonPath h.1 x h.2 t).sum_apply h.1 le_rfl
+  · exact (isTruncatedDysonOn_truncatedDysonPath h.1 x h.2 t).sum_eq_sum_add_sum h.1 le_rfl
   · simp [truncatedDysonPath, h, sum_add_distrib]
 
 /-- Any local solution of `IsTruncatedDysonOn ε x w X T` coincides with `truncatedDysonPath ε x w`
@@ -442,7 +365,7 @@ theorem sum_sq_truncatedDysonPath_sub_le (ε : ℝ) (x y : Fin n → ℝ) (w : �
 /-- **Truncation consistency across thresholds `0 < ε' ≤ ε`.** While `truncatedDysonPath ε x w`
 remains `ε`-separated on `[0, T]`, lowering the truncation threshold from `ε` to any `ε' ∈ (0, ε]`
 does not change the trajectory on `[0, T]`. -/
-theorem truncatedDysonPath_eq_of_le_sub {ε ε' : ℝ} (hε' : 0 < ε') (hε'ε : ε' ≤ ε)
+theorem eqOn_truncatedDysonPath_of_forall_le_sub {ε ε' : ℝ} (hε' : 0 < ε') (hε'ε : ε' ≤ ε)
     {x : Fin n → ℝ} {w : ℝ≥0 → Fin n → ℝ} (hw : Continuous w) {T : ℝ≥0}
     (hsep : ∀ ⦃t : ℝ≥0⦄, t ≤ T → ∀ ⦃i j : Fin n⦄, i < j →
       ε ≤ truncatedDysonPath ε x w t i - truncatedDysonPath ε x w t j) :
@@ -472,11 +395,13 @@ theorem exists_pos_forall_le_sub_truncatedDysonPath {x : Fin n → ℝ} (hx : St
   let S : Finset (Fin n × Fin n) := {p ∈ (univ : Finset (Fin n)) ×ˢ (univ : Finset (Fin n)) |
     p.1 < p.2}
   rcases S.eq_empty_or_nonempty with hS | hS
-  · refine ⟨1, zero_lt_one, 1, zero_lt_one, fun _ _ i j hij ↦ ?_⟩
+  · -- When `n ≤ 1`, `S` is empty and the separation condition holds vacuously.
+    refine ⟨1, zero_lt_one, 1, zero_lt_one, fun _ _ i j hij ↦ ?_⟩
     have hmem : (i, j) ∈ S := by simp [S, hij]
     rw [hS] at hmem
     exact False.elim (notMem_empty _ hmem)
-  · set δ : ℝ := S.inf' hS (fun p ↦ x p.1 - x p.2)
+  · -- Set `ε` to half the initial minimum gap `δ` over all strictly increasing pairs `p ∈ S`.
+    set δ : ℝ := S.inf' hS (fun p ↦ x p.1 - x p.2)
     have hδ : 0 < δ := by
       rw [lt_inf'_iff]
       intro p hp
@@ -484,6 +409,7 @@ theorem exists_pos_forall_le_sub_truncatedDysonPath {x : Fin n → ℝ} (hx : St
       exact sub_pos.2 (hx hlt)
     let ε : ℝ := 2⁻¹ * δ
     have hε : 0 < ε := by positivity
+    -- By continuity at `t = 0`, strict `ε`-separation holds on an open ball around `0`.
     let U : Set ℝ≥0 :=
       ⋂ p ∈ S, {t : ℝ≥0 | ε < truncatedDysonPath ε x w t p.1 - truncatedDysonPath ε x w t p.2}
     have hU_open : IsOpen U := by
@@ -530,7 +456,7 @@ theorem eqOn_limUnder_truncatedDysonPath {ε : ℝ} (hε : 0 < ε) {x : Fin n �
       rw [inv_le_comm₀ hm_pos hε]
       have hM' : ε⁻¹ < (m : ℝ) := hM.trans_le (by exact_mod_cast hm)
       linarith
-    exact (truncatedDysonPath_eq_of_le_sub hinv_pos hinv_le hw hT ht).symm
+    exact (eqOn_truncatedDysonPath_of_forall_le_sub hinv_pos hinv_le hw hT ht).symm
   exact (tendsto_const_nhds.congr' hev).limUnder_eq
 
 /-- **Global deterministic pasting of truncated Dyson paths (AGZ Lemma 4.3.3).** If `w` is
@@ -545,56 +471,48 @@ theorem isPathwiseDysonSolution_limUnder_truncatedDysonPath {x : Fin n → ℝ}
       (fun t ↦ limUnder atTop fun m : ℕ ↦ truncatedDysonPath (((m : ℝ) + 1)⁻¹) x w t) := by
   set X : ℝ≥0 → Fin n → ℝ :=
     fun t ↦ limUnder atTop fun m : ℕ ↦ truncatedDysonPath (((m : ℝ) + 1)⁻¹) x w t
+  -- On each horizon `Iic T`, `X` coincides with an `ε`-separated truncated Dyson path.
+  have hstage (T : ℝ≥0) :
+      ∃ ε > 0, (∀ ⦃t : ℝ≥0⦄, t ≤ T → ∀ ⦃i j : Fin n⦄, i < j →
+        ε ≤ truncatedDysonPath ε x w t i - truncatedDysonPath ε x w t j) ∧
+      EqOn X (truncatedDysonPath ε x w) (Iic T) := by
+    obtain ⟨ε, hε, hT⟩ := hsep T
+    exact ⟨ε, hε, hT, eqOn_limUnder_truncatedDysonPath hε hw hT⟩
   refine
     { continuous_path := ?_
       strictAnti := ?_
       intervalIntegrable_sum_inv_sub := ?_
       eq_add_integral := ?_ }
-  · rw [continuous_iff_continuousAt]
+  · -- 1. Continuity at `t₀`, inherited from the truncated solution on `[0, t₀ + 1]`.
+    rw [continuous_iff_continuousAt]
     intro t₀
-    obtain ⟨ε, hε, hT⟩ := hsep (t₀ + 1)
-    have hEq : EqOn X (truncatedDysonPath ε x w) (Iic (t₀ + 1)) :=
-      eqOn_limUnder_truncatedDysonPath hε hw hT
+    obtain ⟨ε, hε, _, hEq⟩ := hstage (t₀ + 1)
     have hcont : ContinuousOn X (Iic (t₀ + 1)) :=
       (continuous_truncatedDysonPath hε x hw).continuousOn.congr hEq
     exact hcont.continuousAt (Iic_mem_nhds (lt_add_of_pos_right t₀ zero_lt_one))
-  · intro t _ i j hij
-    obtain ⟨ε, hε, hT⟩ := hsep t
-    have hEq : X t = truncatedDysonPath ε x w t :=
-      eqOn_limUnder_truncatedDysonPath hε hw hT le_rfl
+  · -- 2. Strict decreasing order from `ε`-separation at `t`.
+    intro t _ i j hij
+    obtain ⟨ε, hε, hT, hEq⟩ := hstage t
     have hle := hT le_rfl hij
-    rw [← hEq] at hle
+    rw [← hEq (le_rfl : t ≤ t)] at hle
     linarith
-  · intro t i
-    obtain ⟨ε, hε, hT⟩ := hsep t
-    have hEq : EqOn X (truncatedDysonPath ε x w) (Iic t) :=
-      eqOn_limUnder_truncatedDysonPath hε hw hT
-    have hcont_sum : ContinuousOn
-        (fun s : ℝ ↦ ∑ j ∈ univ.erase i,
-          (truncatedDysonPath ε x w s.toNNReal i - truncatedDysonPath ε x w s.toNNReal j)⁻¹)
-        (uIcc 0 (t : ℝ)) := by
-      refine continuousOn_finsetSum _ fun j hj ↦ ?_
-      have hdiff : Continuous (fun s : ℝ ↦
-          truncatedDysonPath ε x w s.toNNReal i - truncatedDysonPath ε x w s.toNNReal j) :=
-        (((continuous_apply i).comp (continuous_truncatedDysonPath hε x hw)).comp
-          continuous_real_toNNReal).sub
-          (((continuous_apply j).comp (continuous_truncatedDysonPath hε x hw)).comp
-            continuous_real_toNNReal)
-      refine hdiff.continuousOn.inv₀ fun s hs ↦ sub_ne_zero.2 ?_
-      rw [uIcc_of_le t.coe_nonneg] at hs
-      have hs_le : s.toNNReal ≤ t := Real.toNNReal_le_iff_le_coe.2 hs.2
-      rcases lt_or_gt_of_ne (mem_erase.1 hj).1.symm with hij | hji
-      · linarith [hT hs_le hij]
-      · linarith [hT hs_le hji]
-    refine hcont_sum.intervalIntegrable.congr ?_
+  · -- 3. Local integrability of the reciprocal sum, inherited from `n * truncatedDysonDrift`.
+    intro t i
+    obtain ⟨ε, hε, hT, hEq⟩ := hstage t
+    have hloc :=
+      (isTruncatedDysonOn_truncatedDysonPath hε x hw t).intervalIntegrable_truncatedDysonDrift
+        hε le_rfl i
+    refine (hloc.const_mul (n : ℝ)).congr ?_
     rw [uIoc_of_le t.coe_nonneg]
     intro s hs
     have hs_le : s.toNNReal ≤ t := Real.toNNReal_le_iff_le_coe.2 hs.2
-    simp only [hEq hs_le]
-  · intro t i
-    obtain ⟨ε, hε, hT⟩ := hsep t
-    have hEq : EqOn X (truncatedDysonPath ε x w) (Iic t) :=
-      eqOn_limUnder_truncatedDysonPath hε hw hT
+    have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 i.pos.ne'
+    dsimp only
+    rw [truncatedDysonDrift_eq_dysonDrift (fun a b hab ↦ hT hs_le hab), dysonDrift_apply,
+      ← mul_assoc, mul_inv_cancel₀ hn, one_mul, hEq hs_le]
+  · -- 4. Integral equation via `truncatedDysonDrift_eq_dysonDrift` on `[0, t]`.
+    intro t i
+    obtain ⟨ε, hε, hT, hEq⟩ := hstage t
     rw [hEq (le_rfl : t ≤ t), truncatedDysonPath_eq_add_integral hε x hw t i]
     congr 1
     refine intervalIntegral.integral_congr_ae ?_

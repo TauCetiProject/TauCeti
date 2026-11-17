@@ -9,9 +9,11 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
+public import Mathlib.Algebra.Ring.Defs
 public import Mathlib.Data.Fintype.Prod
 public import Mathlib.Data.Finset.NatAntidiagonal
 public import Mathlib.Order.Interval.Finset.Defs
+import Mathlib.Algebra.BigOperators.Ring.Finset
 
 /-!
 # Sums and products over pairs
@@ -39,6 +41,8 @@ sign of the permutation.
   over strictly increasing pairs.
 * `TauCeti.sum_univ_prod_eq_sum_lt_add_swap`: a sum over all ordered pairs of a function vanishing
   on the diagonal, as a sum over the increasing pairs of the term plus its transpose.
+* `TauCeti.sum_mul_sum_erase_eq_sum_Ioi`: pairing a vector with the off-diagonal sum of an
+  antisymmetric kernel folds onto strictly increasing pairs.
 * `TauCeti.prod_prod_Ioi_comp_perm`: a product of a symmetric function over the increasing pairs is
   invariant under permuting the indices.
 * `Finset.prod_prod_Ici_eq_prod_prod_Ioi_mul_prod_diag`: a product over weakly increasing
@@ -279,6 +283,37 @@ theorem sum_univ_prod_eq_sum_lt_add_swap {l : Type*} [Fintype l] [LinearOrder l]
     exact hdiag a
   rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun ij : l × l => ij.1 < ij.2) F,
     ← hnot, hswap, Finset.sum_add_distrib]
+
+/-- **Antisymmetric pair-folding identity.** Pairing a vector `c` with the off-diagonal sum of an
+antisymmetric kernel `g` folds onto strictly increasing index pairs:
+`∑ i, c i * ∑ j ∈ univ.erase i, g i j = ∑ i, ∑ j ∈ Ioi i, (c i - c j) * g i j`.
+Only off-diagonal antisymmetry `g j i = -g i j` for `i < j` is required; diagonal values `g i i`
+are ignored. -/
+theorem sum_mul_sum_erase_eq_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrder ι]
+    [LocallyFiniteOrderTop ι] [NonUnitalNonAssocRing R] (c : ι → R) {g : ι → ι → R}
+    (hg : ∀ ⦃i j : ι⦄, i < j → g j i = -g i j) :
+    ∑ i, c i * ∑ j ∈ univ.erase i, g i j =
+      ∑ i, ∑ j ∈ Ioi i, (c i - c j) * g i j := by
+  let F : ι × ι → R := fun p ↦ if p.1 = p.2 then 0 else c p.1 * g p.1 p.2
+  have hfold : (∑ i, c i * ∑ j ∈ univ.erase i, g i j) = ∑ p : ι × ι, F p := by
+    rw [Fintype.sum_prod_type]
+    refine sum_congr rfl fun i _ ↦ ?_
+    rw [mul_sum, ← add_sum_erase univ (fun j ↦ F (i, j)) (mem_univ i)]
+    simp only [F, ↓reduceIte, zero_add]
+    exact sum_congr rfl fun j hj ↦ by simp [(mem_erase.1 hj).1.symm]
+  rw [hfold, sum_univ_prod_eq_sum_lt_add_swap F (fun a ↦ by simp [F])]
+  have hcombine : ∀ p ∈ ({p : ι × ι | p.1 < p.2} : Finset (ι × ι)),
+      F p + F p.swap = (c p.1 - c p.2) * g p.1 p.2 := by
+    intro p hp
+    have hlt : p.1 < p.2 := by simpa using hp
+    simp only [F, Prod.fst_swap, Prod.snd_swap, hlt.ne, hlt.ne', ↓reduceIte,
+      hg hlt, mul_neg, ← sub_eq_add_neg, ← sub_mul]
+  rw [sum_congr rfl hcombine, ← univ_product_univ, sum_filter, sum_product]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [← sum_filter]
+  congr 1
+  ext j
+  simp
 
 /-- A symmetric double sum is its diagonal plus twice the sum over increasing pairs. -/
 theorem sum_symmetric_pairs {α G : Type*} [Fintype α] [LinearOrder α] [AddCommMonoid G]

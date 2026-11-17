@@ -22,7 +22,6 @@ import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 import Mathlib.Topology.Algebra.Monoid
-import TauCeti.Algebra.BigOperators.Finset.OffDiagonal
 import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Analysis.Normed.Field.Lipschitz
 
@@ -72,7 +71,12 @@ constant `2 * ε⁻¹ ^ 2` for `ε > 0`.
 ## References
 
 * G. W. Anderson, A. Guionnet, O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
-  University Press (2010), §4.3.1, Lemma 4.3.3 and Proposition 4.3.5.
+  University Press (2010), §4.3.1, Lemma 4.3.3 and Proposition 4.3.5 (drift scaling, truncated
+  drift, and monotonicity bounds).
+* L. C. G. Rogers, Z. Shi, *Interacting Brownian particles and the Wigner law*, Probab. Theory
+  Related Fields 95 (1993) (`n⁻¹`-rescaled Dyson repulsive drift and monotonicity).
+* E. Cépa, D. Lépingle, *Diffusing particles with electrostatic repulsion*, Probab. Theory Related
+  Fields 107 (1997) (repulsive drift monotonicity and reciprocal-gap domination).
 -/
 
 public section
@@ -175,45 +179,29 @@ theorem dysonDrift_comp_equiv (σ : Fin n ≃ Fin n) (x : Fin n → ℝ) (i : Fi
     refine mem_erase.2 ⟨fun h ↦ (mem_erase.1 hj).1 ?_, mem_univ _⟩
     simpa using congrArg σ h
 
-/-- The sum of all coordinates of the Dyson drift vanishes for every configuration. -/
-@[simp]
-theorem sum_dysonDrift (x : Fin n → ℝ) : ∑ i, dysonDrift x i = 0 := by
-  simp only [dysonDrift_apply, ← mul_sum]
-  rw [univ.sum_sum_erase_eq_zero]
-  · simp
-  · intro i _ j _ _
-    rw [← neg_sub (x i) (x j), inv_neg, add_neg_cancel]
+/-- Expand the inner product `∑ (u i - v i) * (x i - y i)` as the difference of pairings with
+`x - y`. -/
+private theorem sum_sub_mul_sub {n : ℕ} (u v x y : Fin n → ℝ) :
+    ∑ i, (u i - v i) * (x i - y i) =
+      (∑ i, (x - y) i * u i) - ∑ i, (x - y) i * v i := by
+  rw [← sum_sub_distrib]
+  exact sum_congr rfl fun i _ ↦ by simp only [Pi.sub_apply]; ring
 
 /-- Pairing `dysonDrift x` with any vector `c` folds onto strictly increasing index pairs, with no
 distinctness or ordering hypothesis on `x`. -/
 theorem sum_mul_dysonDrift (c x : Fin n → ℝ) :
     ∑ i, c i * dysonDrift x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (c i - c j) / (x i - x j) := by
-  have herase (i : Fin n) :
-      ∑ j ∈ univ.erase i, (x i - x j)⁻¹ = ∑ j, (x i - x j)⁻¹ := by
-    rw [← add_sum_erase univ (fun j ↦ (x i - x j)⁻¹) (mem_univ i)]
-    simp
-  simp_rw [dysonDrift_apply, herase, ← mul_assoc, mul_comm (c _) (n : ℝ)⁻¹, mul_assoc, ← mul_sum]
-  congr 1
-  let F : Fin n × Fin n → ℝ := fun p ↦ c p.1 * (x p.1 - x p.2)⁻¹
-  have hprod : (∑ i, c i * ∑ j, (x i - x j)⁻¹) = ∑ p : Fin n × Fin n, F p := by
-    simp_rw [mul_sum]
-    exact (Fintype.sum_prod_type F).symm
-  rw [hprod, TauCeti.sum_univ_prod_eq_sum_lt_add_swap F (fun a ↦ by simp [F])]
-  have hcombine : ∀ p ∈ ({p : Fin n × Fin n | p.1 < p.2} : Finset (Fin n × Fin n)),
-      F p + F p.swap = (c p.1 - c p.2) / (x p.1 - x p.2) := by
-    intro p _
-    simp only [F, Prod.fst_swap, Prod.snd_swap]
-    rw [← neg_sub (x p.1) (x p.2), inv_neg, mul_neg, div_eq_mul_inv]
-    ring
-  have hfilter : ({p : Fin n × Fin n | p.1 < p.2} : Finset (Fin n × Fin n)) =
-      {p ∈ (univ : Finset (Fin n)) ×ˢ (univ : Finset (Fin n)) | p.1 < p.2} := rfl
-  rw [sum_congr rfl hcombine, hfilter, sum_filter, sum_product]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [← sum_filter]
-  congr 1
-  ext j
-  simp
+  simp_rw [dysonDrift_apply, ← mul_assoc, mul_comm (c _) (n : ℝ)⁻¹, mul_assoc, ← mul_sum]
+  rw [TauCeti.sum_mul_sum_erase_eq_sum_Ioi c (g := fun i j ↦ (x i - x j)⁻¹)]
+  · simp only [div_eq_mul_inv]
+  · intro i j _
+    rw [← neg_sub (x i) (x j), inv_neg]
+
+/-- The sum of all coordinates of the Dyson drift vanishes for every configuration. -/
+@[simp]
+theorem sum_dysonDrift (x : Fin n → ℝ) : ∑ i, dysonDrift x i = 0 := by
+  simpa using sum_mul_dysonDrift (fun _ ↦ 1) x
 
 /-- **Virial identity for the Dyson drift.** For any configuration `x` with distinct coordinates,
 `∑ i, x i * dysonDrift x i = n⁻¹ * n.choose 2`. -/
@@ -227,6 +215,7 @@ theorem sum_self_mul_dysonDrift {x : Fin n → ℝ} (hx : Function.Injective x) 
     simp
   simp_rw [hterm, ← Nat.cast_sum]
   congr 1
+  -- Count strictly increasing pairs `(i, j)` in `Fin n × Fin n`.
   have hcard : (∑ i : Fin n, #(Ioi i)) = #{p ∈ (univ : Finset (Fin n)) ×ˢ univ | p.1 < p.2} := by
     rw [card_filter, sum_product]
     refine sum_congr rfl fun i _ ↦ ?_
@@ -251,12 +240,8 @@ theorem sum_sub_mul_dysonDrift_sub {x y : Fin n → ℝ} (hx : Function.Injectiv
     ∑ i, (dysonDrift x i - dysonDrift y i) * (x i - y i) =
       -(n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i,
         ((x i - x j) - (y i - y j)) ^ 2 / ((x i - x j) * (y i - y j)) := by
-  have hsplit : ∑ i, (dysonDrift x i - dysonDrift y i) * (x i - y i) =
-      (∑ i, (x - y) i * dysonDrift x i) - ∑ i, (x - y) i * dysonDrift y i := by
-    rw [← sum_sub_distrib]
-    exact sum_congr rfl fun i _ ↦ by simp only [Pi.sub_apply]; ring
-  rw [hsplit, sum_mul_dysonDrift (x - y) x, sum_mul_dysonDrift (x - y) y, ← mul_sub, neg_mul,
-    ← mul_neg]
+  rw [sum_sub_mul_sub, sum_mul_dysonDrift (x - y) x, sum_mul_dysonDrift (x - y) y, ← mul_sub,
+    neg_mul, ← mul_neg]
   congr 1
   rw [← sum_sub_distrib, ← sum_neg_distrib]
   refine sum_congr rfl fun i _ ↦ ?_
@@ -369,67 +354,31 @@ theorem truncatedDysonDrift_eq_dysonDrift {ε : ℝ} {x : Fin n → ℝ}
   · simp only [hji.not_gt, ↓reduceIte, max_eq_left (hx hji)]
     rw [← neg_sub (x j) (x i), inv_neg]
 
-/-- The sum of all coordinates of the truncated Dyson drift vanishes for every configuration. -/
-@[simp]
-theorem sum_truncatedDysonDrift (ε : ℝ) (x : Fin n → ℝ) :
-    ∑ i, truncatedDysonDrift ε x i = 0 := by
-  simp only [truncatedDysonDrift_apply, ← mul_sum]
-  rw [univ.sum_sum_erase_eq_zero]
-  · simp
-  · intro i _ j _ hij
-    rcases lt_or_gt_of_ne hij with h | h
-    · simp [h, h.not_gt]
-    · simp [h, h.not_gt]
-
 /-- Pairing `truncatedDysonDrift ε x` with any vector `c` folds onto strictly increasing index
 pairs. -/
 theorem sum_mul_truncatedDysonDrift (ε : ℝ) (c x : Fin n → ℝ) :
     ∑ i, c i * truncatedDysonDrift ε x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (c i - c j) * (max (x i - x j) ε)⁻¹ := by
-  let g : Fin n × Fin n → ℝ := fun p ↦
-    if p.1 = p.2 then 0
-    else if p.1 < p.2 then (max (x p.1 - x p.2) ε)⁻¹
-    else -(max (x p.2 - x p.1) ε)⁻¹
-  have herase (i : Fin n) :
-      (∑ j ∈ univ.erase i,
-        if i < j then (max (x i - x j) ε)⁻¹ else -(max (x j - x i) ε)⁻¹) =
-        ∑ j, g (i, j) := by
-    rw [← add_sum_erase univ (fun j ↦ g (i, j)) (mem_univ i)]
-    simp only [g, ↓reduceIte, zero_add]
-    exact sum_congr rfl fun j hj ↦ by simp [(mem_erase.1 hj).1.symm]
-  simp_rw [truncatedDysonDrift_apply, herase, ← mul_assoc, mul_comm (c _) (n : ℝ)⁻¹, mul_assoc,
-    ← mul_sum]
-  congr 1
-  let F : Fin n × Fin n → ℝ := fun p ↦ c p.1 * g p
-  have hprod : (∑ i, c i * ∑ j, g (i, j)) = ∑ p : Fin n × Fin n, F p := by
-    simp_rw [mul_sum]
-    exact (Fintype.sum_prod_type F).symm
-  rw [hprod, TauCeti.sum_univ_prod_eq_sum_lt_add_swap F (fun a ↦ by simp [F, g])]
-  have hcombine : ∀ p ∈ ({p : Fin n × Fin n | p.1 < p.2} : Finset (Fin n × Fin n)),
-      F p + F p.swap = (c p.1 - c p.2) * (max (x p.1 - x p.2) ε)⁻¹ := by
-    intro p hp
-    have hlt : p.1 < p.2 := by simpa using hp
-    simp only [F, g, Prod.fst_swap, Prod.snd_swap, hlt.ne, hlt.ne', hlt, hlt.not_gt, ↓reduceIte]
-    ring
-  have hfilter : ({p : Fin n × Fin n | p.1 < p.2} : Finset (Fin n × Fin n)) =
-      {p ∈ (univ : Finset (Fin n)) ×ˢ (univ : Finset (Fin n)) | p.1 < p.2} := rfl
-  rw [sum_congr rfl hcombine, hfilter, sum_filter, sum_product]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [← sum_filter]
-  congr 1
-  ext j
-  simp
+  simp_rw [truncatedDysonDrift_apply, ← mul_assoc, mul_comm (c _) (n : ℝ)⁻¹, mul_assoc, ← mul_sum]
+  rw [TauCeti.sum_mul_sum_erase_eq_sum_Ioi c
+    (g := fun i j ↦ if i < j then (max (x i - x j) ε)⁻¹ else -(max (x j - x i) ε)⁻¹)]
+  · congr 1
+    exact sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ by simp [mem_Ioi.1 hj]
+  · intro i j hij
+    simp [hij, hij.not_gt]
+
+/-- The sum of all coordinates of the truncated Dyson drift vanishes for every configuration. -/
+@[simp]
+theorem sum_truncatedDysonDrift (ε : ℝ) (x : Fin n → ℝ) :
+    ∑ i, truncatedDysonDrift ε x i = 0 := by
+  simpa using sum_mul_truncatedDysonDrift ε (fun _ ↦ 1) x
 
 /-- For `ε > 0`, `truncatedDysonDrift ε` is globally dissipative on all of `Fin n → ℝ`, with no
 chamber restriction on `x` or `y`. -/
 theorem sum_sub_mul_truncatedDysonDrift_sub_nonpos {ε : ℝ} (hε : 0 < ε) (x y : Fin n → ℝ) :
     ∑ i, (truncatedDysonDrift ε x i - truncatedDysonDrift ε y i) * (x i - y i) ≤ 0 := by
-  have hsplit : ∑ i, (truncatedDysonDrift ε x i - truncatedDysonDrift ε y i) * (x i - y i) =
-      (∑ i, (x - y) i * truncatedDysonDrift ε x i) -
-        ∑ i, (x - y) i * truncatedDysonDrift ε y i := by
-    rw [← sum_sub_distrib]
-    exact sum_congr rfl fun i _ ↦ by simp only [Pi.sub_apply]; ring
-  rw [hsplit, sum_mul_truncatedDysonDrift ε (x - y) x, sum_mul_truncatedDysonDrift ε (x - y) y]
+  rw [sum_sub_mul_sub, sum_mul_truncatedDysonDrift ε (x - y) x,
+    sum_mul_truncatedDysonDrift ε (x - y) y]
   simp only [Pi.sub_apply, ← mul_sub, ← sum_sub_distrib]
   refine mul_nonpos_of_nonneg_of_nonpos (by positivity)
     (sum_nonpos fun i _ ↦ sum_nonpos fun j _ ↦ ?_)
@@ -445,34 +394,36 @@ theorem sum_sub_mul_truncatedDysonDrift_sub_nonpos {ε : ℝ} (hε : 0 < ε) (x 
   · exact mul_nonpos_of_nonneg_of_nonpos (sub_nonneg.2 hba)
       (sub_nonpos.2 (inv_anti₀ hb (max_le_max_right ε hba)))
 
+/-- Normalized off-diagonal sum bound: if `|a j| ≤ C` for all `j ≠ i`, then
+`n⁻¹ * |∑_{j ≠ i} a j| ≤ C`. -/
+private theorem inv_natCast_mul_abs_sum_erase_le (i : Fin n) {a : Fin n → ℝ} {C : ℝ}
+    (hC : 0 ≤ C) (ha : ∀ j ∈ univ.erase i, |a j| ≤ C) :
+    (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i, a j| ≤ C := by
+  have hcard : (n : ℝ)⁻¹ * (#(univ.erase i) : ℝ) ≤ 1 := by
+    have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.2 i.pos.ne'
+    calc (n : ℝ)⁻¹ * (#(univ.erase i) : ℝ)
+      _ ≤ (n : ℝ)⁻¹ * (n : ℝ) := by gcongr; simp
+      _ = 1 := inv_mul_cancel₀ hn
+  calc (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i, a j|
+    _ ≤ (n : ℝ)⁻¹ * ∑ j ∈ univ.erase i, |a j| := by
+        gcongr
+        exact abs_sum_le_sum_abs _ _
+    _ ≤ (n : ℝ)⁻¹ * ∑ _j ∈ univ.erase i, C := by gcongr; exact ha _ ‹_›
+    _ = ((n : ℝ)⁻¹ * (#(univ.erase i) : ℝ)) * C := by simp [mul_assoc]
+    _ ≤ 1 * C := by gcongr
+    _ = C := one_mul _
+
 /-- Each coordinate of `truncatedDysonDrift ε x` is bounded in absolute value by `ε⁻¹` when
 `ε > 0`. -/
 theorem abs_truncatedDysonDrift_le {ε : ℝ} (hε : 0 < ε) (x : Fin n → ℝ) (i : Fin n) :
     |truncatedDysonDrift ε x i| ≤ ε⁻¹ := by
   rw [truncatedDysonDrift_apply, abs_mul, abs_of_nonneg (by positivity)]
-  refine (mul_le_mul_of_nonneg_left (abs_sum_le_sum_abs _ _) (by positivity)).trans ?_
-  have hterm : ∀ j ∈ univ.erase i,
-      |if i < j then (max (x i - x j) ε)⁻¹ else -(max (x j - x i) ε)⁻¹| ≤ ε⁻¹ := by
-    intro j _
-    split_ifs with h
-    · rw [abs_of_pos (inv_pos.2 (hε.trans_le (le_max_right _ _)))]
-      exact inv_anti₀ hε (le_max_right _ _)
-    · rw [abs_neg, abs_of_pos (inv_pos.2 (hε.trans_le (le_max_right _ _)))]
-      exact inv_anti₀ hε (le_max_right _ _)
-  have hcard : (n : ℝ)⁻¹ * (#(univ.erase i) : ℝ) ≤ 1 := by
-    calc (n : ℝ)⁻¹ * (#(univ.erase i) : ℝ)
-      _ ≤ (n : ℝ)⁻¹ * (n : ℝ) := by gcongr; simp
-      _ ≤ 1 := by
-          rcases eq_or_ne n 0 with rfl | hn
-          · simp
-          · rw [inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn)]
-  calc
-    (n : ℝ)⁻¹ * ∑ j ∈ univ.erase i,
-        |if i < j then (max (x i - x j) ε)⁻¹ else -(max (x j - x i) ε)⁻¹|
-      ≤ (n : ℝ)⁻¹ * ∑ _j ∈ univ.erase i, ε⁻¹ := by gcongr; exact hterm _ ‹_›
-    _ = ((n : ℝ)⁻¹ * (#(univ.erase i) : ℝ)) * ε⁻¹ := by simp [mul_assoc]
-    _ ≤ 1 * ε⁻¹ := by gcongr
-    _ = ε⁻¹ := one_mul _
+  refine inv_natCast_mul_abs_sum_erase_le i (inv_nonneg.2 hε.le) fun j _ ↦ ?_
+  split_ifs with h
+  · rw [abs_of_pos (inv_pos.2 (hε.trans_le (le_max_right _ _)))]
+    exact inv_anti₀ hε (le_max_right _ _)
+  · rw [abs_neg, abs_of_pos (inv_pos.2 (hε.trans_le (le_max_right _ _)))]
+    exact inv_anti₀ hε (le_max_right _ _)
 
 /-- In the `Pi` supremum norm on `Fin n → ℝ`, `‖truncatedDysonDrift ε x‖ ≤ ε⁻¹` for `ε > 0`. -/
 theorem norm_truncatedDysonDrift_le {ε : ℝ} (hε : 0 < ε) (x : Fin n → ℝ) :
@@ -486,6 +437,7 @@ theorem lipschitzWith_truncatedDysonDrift {ε : ℝ≥0} (hε : 0 < ε) :
     LipschitzWith (2 * ε⁻¹ ^ 2) (truncatedDysonDrift (ε : ℝ) (n := n)) := by
   set K : ℝ≥0 := 2 * ε⁻¹ ^ 2
   have htwo : (1 + 1 : ℝ≥0) = 2 := one_add_one_eq_two
+  -- 1. Show each pairwise truncated kernel `(max (x i - x j) ε)⁻¹` is `K`-Lipschitz.
   have hpair (i j : Fin n) :
       LipschitzWith K (fun x : Fin n → ℝ ↦ (max (x i - x j) (ε : ℝ))⁻¹) := by
     have hdiff : LipschitzWith 2 (fun x : Fin n → ℝ ↦ x i - x j) := by
@@ -499,37 +451,16 @@ theorem lipschitzWith_truncatedDysonDrift {ε : ℝ≥0} (hε : 0 < ε) :
       rw [Real.norm_of_nonneg ((NNReal.coe_pos.2 hε).le.trans (le_max_right _ _))]
       exact le_max_right _ _
     simpa only [lipschitzOnWith_univ, div_eq_mul_inv, inv_pow, K] using hinv
+  -- 2. Combine the off-diagonal pairwise Lipschitz bounds via `inv_natCast_mul_abs_sum_erase_le`.
   refine LipschitzWith.of_dist_le_mul fun x y ↦ ?_
   rw [dist_pi_le_iff (by positivity)]
   intro i
   rw [Real.dist_eq, truncatedDysonDrift_apply, truncatedDysonDrift_apply, ← mul_sub, abs_mul,
     abs_of_nonneg (by positivity), ← sum_sub_distrib]
-  have hterm : ∀ j ∈ univ.erase i,
-      |(if i < j then (max (x i - x j) (ε : ℝ))⁻¹ else -(max (x j - x i) (ε : ℝ))⁻¹) -
-        (if i < j then (max (y i - y j) (ε : ℝ))⁻¹ else -(max (y j - y i) (ε : ℝ))⁻¹)| ≤
-        (K : ℝ) * dist x y := by
-    intro j _
-    split_ifs with h
-    · simpa only [Real.dist_eq] using (hpair i j).dist_le_mul x y
-    · simpa only [Real.dist_eq, neg_sub_neg, abs_sub_comm] using (hpair j i).dist_le_mul x y
-  have hcard : (n : ℝ)⁻¹ * (#(univ.erase i) : ℝ) ≤ 1 := by
-    calc (n : ℝ)⁻¹ * (#(univ.erase i) : ℝ)
-      _ ≤ (n : ℝ)⁻¹ * (n : ℝ) := by gcongr; simp
-      _ ≤ 1 := by
-          rcases eq_or_ne n 0 with rfl | hn
-          · simp
-          · rw [inv_mul_cancel₀ (Nat.cast_ne_zero.2 hn)]
-  calc
-    (n : ℝ)⁻¹ * |∑ j ∈ univ.erase i,
-        ((if i < j then (max (x i - x j) (ε : ℝ))⁻¹ else -(max (x j - x i) (ε : ℝ))⁻¹) -
-          (if i < j then (max (y i - y j) (ε : ℝ))⁻¹ else -(max (y j - y i) (ε : ℝ))⁻¹))|
-      ≤ (n : ℝ)⁻¹ * ∑ _j ∈ univ.erase i, ((K : ℝ) * dist x y) := by
-          refine (mul_le_mul_of_nonneg_left (abs_sum_le_sum_abs _ _) (by positivity)).trans ?_
-          gcongr
-          exact hterm _ ‹_›
-    _ = ((n : ℝ)⁻¹ * (#(univ.erase i) : ℝ)) * ((K : ℝ) * dist x y) := by simp [mul_assoc]
-    _ ≤ 1 * ((K : ℝ) * dist x y) := by gcongr
-    _ = (K : ℝ) * dist x y := one_mul _
+  refine inv_natCast_mul_abs_sum_erase_le i (by positivity) fun j _ ↦ ?_
+  split_ifs with h
+  · simpa only [Real.dist_eq] using (hpair i j).dist_le_mul x y
+  · simpa only [Real.dist_eq, neg_sub_neg, abs_sub_comm] using (hpair j i).dist_le_mul x y
 
 /-- For `ε > 0`, `truncatedDysonDrift ε` is continuous on `Fin n → ℝ`. -/
 theorem continuous_truncatedDysonDrift {ε : ℝ} (hε : 0 < ε) :
