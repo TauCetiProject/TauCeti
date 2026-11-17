@@ -93,7 +93,8 @@ linear on fibres. -/
 private theorem normalize_cotangent_normalize (h : M ≃ₘ⟮I, J⟯ N) {q : CotangentBundle I M}
     (hq : q.2 ≠ 0) : normalize (h.cotangent (normalize q)) = normalize (h.cotangent q) := by
   rw [normalize_eq_mk_smul q, cotangent_mk_smul,
-    normalize_mk_smul (h.cotangent q) (c := ‖q.2‖⁻¹) (inv_pos.2 ((norm_pos_iff (a := q.2)).2 hq))]
+    normalize_mk_smul_of_pos (h.cotangent q) (c := ‖q.2‖⁻¹)
+      (inv_pos.2 ((norm_pos_iff (a := q.2)).2 hq))]
 
 /-- The cotangent lift of a covector of norm one, normalized to norm one. -/
 private def cosphereRadialMap (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) : cosphereBundle J N :=
@@ -111,7 +112,7 @@ private theorem cosphereRadialMap_symm_cosphereRadialMap (h : M ≃ₘ⟮I, J⟯
   apply Subtype.ext
   -- Lifting back the normalized covector gives a positive multiple of `z`, by fibre linearity.
   rw [coe_cosphereRadialMap, coe_cosphereRadialMap, normalize_cotangent_normalize _ hz,
-    ← cotangent_symm, symm_apply_apply, normalize_of_norm_eq_one z.2]
+    ← cotangent_symm, symm_apply_apply, normalize_eq_self_of_norm_eq_one z.2]
 
 /-- The scale `‖T*h(z)‖⁻¹` of the radial identification is positive. -/
 private theorem inv_norm_cotangent_snd_pos (h : M ≃ₘ⟮I, J⟯ N) (z : cosphereBundle I M) :
@@ -177,7 +178,7 @@ theorem cosphereRadial_refl :
     (Diffeomorph.refl I M ∞).cosphereRadial =
       Diffeomorph.refl 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (cosphereBundle I M) ∞ :=
   Diffeomorph.ext fun z ↦ Subtype.ext <| by
-    simpa [coe_cosphereRadial_eq_normalize] using normalize_of_norm_eq_one z.2
+    simpa [coe_cosphereRadial_eq_normalize] using normalize_eq_self_of_norm_eq_one z.2
 
 /-- Radial identification is functorial: along a composite it is the composite of the radial
 identifications. -/

@@ -161,10 +161,9 @@ private theorem unradial_radial (p : ℝ × cosphereBundle I M) :
   ext1
   · simp only [unradial, norm_snd_radial, Real.log_exp]
   · apply Subtype.ext
-    -- `radial (t, z)` is the covector `eᵗ z` over the base point of `z`.
-    change normalize (radial (t, z)) = z.1
-    rw [radial, expSMul_apply]
-    exact (normalize_mk_smul z.1 (Real.exp_pos t)).trans (normalize_of_norm_eq_one z.2)
+    simp only [unradial, radial, expSMul_apply]
+    exact (normalize_mk_smul_of_pos z.1 (Real.exp_pos t)).trans
+      (normalize_eq_self_of_norm_eq_one z.2)
 
 omit [FiniteDimensional ℝ E] [I.Boundaryless]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
@@ -243,8 +242,10 @@ private theorem mpullback_cosphereSymplectizationDiffeomorph_mpullback_subtypeVa
           contMDiff_subtype_val φ) =
       SmoothForm.mpullback radial contMDiff_radial φ := by
   -- The composite of the inclusion with the radial diffeomorphism is the radial map.
-  rw [SmoothForm.mpullback_mpullback]
-  rfl
+  have hcomp : Subtype.val ∘ ⇑(cosphereSymplectizationDiffeomorph I M) = radial :=
+    funext fun p ↦ (coe_cosphereSymplectizationDiffeomorph_apply p).trans
+      (expSMul_apply Subtype.val p).symm
+  simp only [SmoothForm.mpullback_mpullback, hcomp]
 
 /-- **The radial diffeomorphism pulls the Liouville form back to the symplectization form of
 `α_g = λ|S*M`**: `Φ^* λ = eᵗ α_g`. -/

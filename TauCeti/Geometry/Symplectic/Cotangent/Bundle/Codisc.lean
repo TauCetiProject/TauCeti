@@ -145,12 +145,12 @@ theorem normalize_mem_cosphereBundle {q : CotangentBundle I M} (hq : q.2 ≠ 0) 
   norm_snd_normalize hq
 
 /-- Normalization only depends on the ray of a covector. -/
-theorem normalize_mk_smul (q : CotangentBundle I M) {c : ℝ} (hc : 0 < c) :
+theorem normalize_mk_smul_of_pos (q : CotangentBundle I M) {c : ℝ} (hc : 0 < c) :
     normalize (TotalSpace.mk' (E →L[ℝ] ℝ) q.proj (c • q.2)) = normalize q := by
   simp only [normalize, NormedSpace.normalize_smul_of_pos hc]
 
 /-- A covector of norm one is its own normalization. -/
-theorem normalize_of_norm_eq_one {q : CotangentBundle I M} (hq : ‖q.2‖ = 1) :
+theorem normalize_eq_self_of_norm_eq_one {q : CotangentBundle I M} (hq : ‖q.2‖ = 1) :
     normalize q = q := by
   rw [normalize, NormedSpace.normalize_eq_self_of_norm_eq_one hq]
 
