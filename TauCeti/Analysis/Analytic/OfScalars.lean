@@ -28,7 +28,9 @@ In any normed `𝕜`-algebra `A` with summable geometric series (not necessarily
 higher geometric series `∑ₙ C(n + k, k) xⁿ` has convergence radius at least `1`
 (`TauCeti.one_le_ofScalars_choose_radius`) and represents `(1 - x)⁻¹ʳ ^ (k + 1)` on the open unit
 ball (`TauCeti.hasFPowerSeriesOnBall_inverse_one_sub_pow`), extending Mathlib's
-`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`).
+`hasFPowerSeriesOnBall_inverse_one_sub` (`k = 0`). Every one-variable scalar-valued formal
+multilinear series is `ofScalars` of its `coeff` sequence
+(`FormalMultilinearSeries.ofScalars_coeff`).
 -/
 
 public section
@@ -36,6 +38,14 @@ public section
 open scoped BigOperators ENNReal
 
 namespace FormalMultilinearSeries
+
+/-- Every one-variable scalar-valued formal multilinear series equals `ofScalars` applied to its
+scalar coefficient sequence. -/
+@[simp]
+theorem ofScalars_coeff {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    (p : FormalMultilinearSeries 𝕜 𝕜 𝕜) : ofScalars 𝕜 p.coeff = p := by
+  ext n
+  simp [ofScalars, mul_comm]
 
 variable {𝕜 E : Type*} [Field 𝕜] [Ring E] [Algebra 𝕜 E] [TopologicalSpace E] [IsTopologicalRing E]
 
