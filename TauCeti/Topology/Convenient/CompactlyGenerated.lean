@@ -22,7 +22,7 @@ and establish the point-set inputs for `CompactlyGenerated.{u, w}`:
 
 * `TopologicalSpace.generatedBy_compHaus`, `Topology.isGeneratedBy_compHaus_iff`, and idempotence
   `TopologicalSpace.compactlyGenerated_compactlyGenerated`.
-* Compact subsets as `CompHaus.{u}` images (`TauCeti.exists_compHaus_range_eq_of_isCompact`), giving
+* Compact subsets as `CompHaus.{u}` images (`IsCompact.exists_compHaus_range_eq`), giving
   `TauCeti.instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2` and the compact-open comparison
   `Topology.ContinuousMapGeneratedBy.homeomorphContinuousMapCompHaus`.
 * Locally compact Hausdorff product preservation (`UCompactlyGeneratedSpace.prod_right`,
@@ -108,11 +108,11 @@ instance (Y : Type v) [TopologicalSpace Y] [UCompactlyGeneratedSpace.{u} Y] :
 
 end Topology
 
-namespace TauCeti
+namespace IsCompact
 
 /-- Every `u`-small compact Hausdorff subset of a topological space is the range of a continuous map
 from a compact Hausdorff space in universe `u`. -/
-theorem exists_compHaus_range_eq_of_isCompact {Y : Type v} [TopologicalSpace Y]
+theorem exists_compHaus_range_eq {Y : Type v} [TopologicalSpace Y]
     {K : Set Y} [T2Space K] [Small.{u} K] (hK : IsCompact K) :
     ∃ (S : CompHaus.{u}) (p : C(S, Y)), range p = K := by
   have : CompactSpace ↑K := isCompact_iff_compactSpace.1 hK
@@ -124,6 +124,10 @@ theorem exists_compHaus_range_eq_of_isCompact {Y : Type v} [TopologicalSpace Y]
   simp only [ContinuousMap.coe_mk, range_comp, EquivLike.range_eq_univ, image_univ,
     Subtype.range_coe]
 
+end IsCompact
+
+namespace TauCeti
+
 /-- Every `u`-small Hausdorff compactly coherent space is `u`-compactly generated. In particular,
 this applies to every `u`-small Hausdorff weakly locally compact space. -/
 instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceOfT2
@@ -131,7 +135,7 @@ instance (priority := 100) instUCompactlyGeneratedSpaceOfCompactlyCoherentSpaceO
     UCompactlyGeneratedSpace.{u} Y := by
   refine uCompactlyGeneratedSpace_of_isClosed fun s hs ↦
     (CompactlyCoherentSpace.isClosed_iff s).2 fun K hK ↦ ?_
-  obtain ⟨S, p, rfl⟩ := exists_compHaus_range_eq_of_isCompact.{u} hK
+  obtain ⟨S, p, rfl⟩ := hK.exists_compHaus_range_eq.{u}
   have hclosed : IsClosed (s ∩ range p) := by
     rw [← Set.image_preimage_eq_inter_range]
     exact p.continuous.isClosedMap _ (hs S p)
@@ -177,7 +181,7 @@ noncomputable def homeomorphContinuousMapCompHaus
     [UCompactlyGeneratedSpace.{u} Y] [T2Space Y] [Small.{u} Y] :
     ContinuousMapGeneratedBy (fun K : CompHaus.{u} ↦ K) Y Z ≃ₜ C(Y, Z) :=
   homeomorphContinuousMap fun _ hK ↦ by
-    obtain ⟨S, p, hp⟩ := TauCeti.exists_compHaus_range_eq_of_isCompact.{u} hK
+    obtain ⟨S, p, hp⟩ := hK.exists_compHaus_range_eq.{u}
     exact ⟨S, univ, p, isCompact_univ, by simpa only [image_univ] using hp⟩
 
 @[simp]
