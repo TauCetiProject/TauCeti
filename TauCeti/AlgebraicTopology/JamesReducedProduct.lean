@@ -73,6 +73,11 @@ established here; each left and right translation is continuous.
   `TauCeti.JamesReducedProduct.isCompact_filtration`: closedness and compactness of `J_r X`.
 * `TauCeti.JamesReducedProduct.hom_ext`: monoid homomorphisms out of `J X` agreeing on letters
   are equal.
+* `TauCeti.JamesReducedProduct.mk_insertNth_basepoint`,
+  `TauCeti.JamesReducedProduct.mk_removeNth_of_eq_basepoint`: inserting or deleting a basepoint
+  letter does not change the reduced word.
+* `TauCeti.JamesReducedProduct.mk_injOn`: words with no basepoint letter are determined by their
+  reduced words.
 
 ## References
 
@@ -215,17 +220,38 @@ theorem mk_comp_cast {m n : ℕ} (h : m = n) (v : Fin n → X) :
   subst h
   rfl
 
-/-- The reduced word given by a list of points different from the basepoint is the reduced word of
-the word of the same length formed by these points. -/
-private theorem exists_mk_eq_ofList (l : List {x : X // x ≠ x₀}) :
-    ∃ v : Fin l.length → X,
-      (mk v : JamesReducedProduct X x₀) = (freeMonoidEquiv X x₀).symm (FreeMonoid.ofList l) := by
-  induction l with
-  | nil => exact ⟨Fin.elim0, by simp⟩
-  | cons a l ih =>
-    obtain ⟨v, hmk⟩ := ih
-    refine ⟨Fin.cons a.1 v, ?_⟩
-    rw [FreeMonoid.ofList_cons, map_mul, ← hmk, mk_cons, freeMonoidEquiv_symm_of]
+/-- Inserting the basepoint anywhere in a word does not change its reduced word. -/
+@[simp]
+theorem mk_insertNth_basepoint {n : ℕ} (i : Fin (n + 1)) (v : Fin n → X) :
+    (mk (Fin.insertNth i x₀ v) : JamesReducedProduct X x₀) = mk v := by
+  induction n with
+  | zero => rw [Fin.fin_one_eq_zero i, Fin.insertNth_zero', mk_cons, letter_basepoint, one_mul]
+  | succ n ih =>
+    induction i using Fin.cases with
+    | zero => rw [Fin.insertNth_zero', mk_cons, letter_basepoint, one_mul]
+    | succ i => rw [← Fin.cons_self_tail v, Fin.insertNth_succ_cons, mk_cons, mk_cons, ih]
+
+/-- Appending the basepoint to a word does not change its reduced word. -/
+@[simp]
+theorem mk_snoc_basepoint {n : ℕ} (v : Fin n → X) :
+    (mk (Fin.snoc v x₀ : Fin (n + 1) → X) : JamesReducedProduct X x₀) = mk v := by
+  rw [← Fin.insertNth_last', mk_insertNth_basepoint]
+
+/-- Deleting a letter equal to the basepoint from a word does not change its reduced word. -/
+theorem mk_removeNth_of_eq_basepoint {n : ℕ} {v : Fin (n + 1) → X} {i : Fin (n + 1)}
+    (h : v i = x₀) : (mk (i.removeNth v) : JamesReducedProduct X x₀) = mk v := by
+  conv_rhs => rw [← Fin.insertNth_self_removeNth i v, h, mk_insertNth_basepoint]
+
+/-- The reduced word of a word none of whose letters is the basepoint is that word itself. -/
+theorem freeMonoidEquiv_mk_coe {n : ℕ} (v : Fin n → {x : X // x ≠ x₀}) :
+    freeMonoidEquiv X x₀ (mk fun i => (v i : X)) = FreeMonoid.ofList (List.ofFn v) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have := Fin.comp_cons Subtype.val (v 0) (Fin.tail v)
+    simp only [Function.comp_def] at this
+    rw [← Fin.cons_self_tail v, List.ofFn_cons, FreeMonoid.ofList_cons, this, mk_cons, map_mul, ih,
+      freeMonoidEquiv_letter_coe]
 
 /-! ### Length -/
 
@@ -284,8 +310,10 @@ theorem length_mk_le {n : ℕ} (v : Fin n → X) : length (mk v : JamesReducedPr
 /-- Every reduced word is the reduced word of a word of each length at least its own. -/
 theorem exists_mk_eq_of_length_le {w : JamesReducedProduct X x₀} {n : ℕ} (h : length w ≤ n) :
     ∃ v : Fin n → X, mk v = w := by
-  obtain ⟨u, hu⟩ := exists_mk_eq_ofList (FreeMonoid.toList (freeMonoidEquiv X x₀ w))
-  rw [FreeMonoid.ofList_toList, MulEquiv.symm_apply_apply] at hu
+  let l := FreeMonoid.toList (freeMonoidEquiv X x₀ w)
+  let u : Fin l.length → X := fun i => (l.get i : X)
+  have hu : mk u = w := (freeMonoidEquiv X x₀).injective <| by
+    rw [freeMonoidEquiv_mk_coe, List.ofFn_get, FreeMonoid.ofList_toList]
   have hn : (FreeMonoid.toList (freeMonoidEquiv X x₀ w)).length + (n - length w) = n := by
     rw [length] at h ⊢
     omega
@@ -308,6 +336,19 @@ theorem mem_toList_freeMonoidEquiv_mk {n : ℕ} (v : Fin n → X) (a : {x : X //
     · simp [h, a.2.symm]
     · rw [letter_of_ne h, MulEquiv.apply_symm_apply, FreeMonoid.toList_of, List.mem_singleton,
         Subtype.ext_iff, eq_comm]
+
+/-- Two words none of whose letters is the basepoint have the same reduced word only if they are
+equal. -/
+theorem mk_injOn {n : ℕ} :
+    Set.InjOn (mk : (Fin n → X) → JamesReducedProduct X x₀) {v | ∀ i, v i ≠ x₀} := by
+  intro v hv w hw h
+  -- `v` and `w` are the coercions of the words `fun i => ⟨v i, hv i⟩` and `fun i => ⟨w i, hw i⟩`.
+  have h' : FreeMonoid.ofList (List.ofFn fun i => (⟨v i, hv i⟩ : {x : X // x ≠ x₀})) =
+      FreeMonoid.ofList (List.ofFn fun i => ⟨w i, hw i⟩) :=
+    (freeMonoidEquiv_mk_coe fun i => ⟨v i, hv i⟩).symm.trans
+      ((congrArg (freeMonoidEquiv X x₀) h).trans (freeMonoidEquiv_mk_coe fun i => ⟨w i, hw i⟩))
+  have h'' := List.ofFn_inj.1 (FreeMonoid.ofList.inj h')
+  exact funext fun i => congrArg Subtype.val (congrFun h'' i)
 
 /-! ### The universal property among monoids -/
 
