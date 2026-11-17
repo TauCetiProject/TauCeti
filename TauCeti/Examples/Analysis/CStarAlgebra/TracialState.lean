@@ -62,9 +62,8 @@ def evalState (i : Fin 2) : (Fin 2 → ℂ) →P[ℂ] ℂ :=
 
 /-- Coordinate evaluation acts by `evalState i x = x i`. -/
 @[simp]
-theorem evalState_apply (i : Fin 2) (x : Fin 2 → ℂ) : evalState i x = x i := by
-  simp [evalState]
-  rfl
+theorem evalState_apply (i : Fin 2) (x : Fin 2 → ℂ) : evalState i x = x i :=
+  (rfl)
 
 /-- Every coordinate evaluation on `Fin 2 → ℂ` is a tracial state. -/
 theorem isTracialState_evalState (i : Fin 2) : (evalState i).IsTracialState := by
@@ -102,9 +101,8 @@ def midpointState : (Fin 2 → ℂ) →P[ℂ] ℂ :=
 
 /-- `midpointState` evaluates as `(x 0 + x 1) / 2`. -/
 @[simp]
-theorem midpointState_apply (x : Fin 2 → ℂ) : midpointState x = (x 0 + x 1) / 2 := by
-  simp [midpointState]
-  rfl
+theorem midpointState_apply (x : Fin 2 → ℂ) : midpointState x = (x 0 + x 1) / 2 :=
+  (rfl)
 
 /-- `midpointState` is a tracial state on `Fin 2 → ℂ`. -/
 theorem isTracialState_midpointState : midpointState.IsTracialState := by
@@ -153,9 +151,8 @@ def diagFunctional (i : Fin 2) : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :
 /-- `diagFunctional i` reads the `(i, i)` entry. -/
 @[simp]
 theorem diagFunctional_apply (i : Fin 2) (M : CStarMatrix (Fin 2) (Fin 2) ℂ) :
-    diagFunctional i M = M i i := by
-  simp [diagFunctional]
-  rfl
+    diagFunctional i M = M i i :=
+  (rfl)
 
 /-- The top-left corner state `M ↦ M 0 0` on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
 abbrev cornerState : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ := diagFunctional 0
@@ -243,9 +240,8 @@ def normalizedTrace₂ : CStarMatrix (Fin 2) (Fin 2) ℂ →P[ℂ] ℂ :=
 /-- `normalizedTrace₂` evaluates as `(M 0 0 + M 1 1) / 2`. -/
 @[simp]
 theorem normalizedTrace₂_apply (M : CStarMatrix (Fin 2) (Fin 2) ℂ) :
-    normalizedTrace₂ M = (M 0 0 + M 1 1) / 2 := by
-  simp [normalizedTrace₂]
-  rfl
+    normalizedTrace₂ M = (M 0 0 + M 1 1) / 2 :=
+  (rfl)
 
 /-- `normalizedTrace₂` is a tracial state on `CStarMatrix (Fin 2) (Fin 2) ℂ`. -/
 theorem isTracialState_normalizedTrace₂ : normalizedTrace₂.IsTracialState := by
@@ -284,11 +280,11 @@ theorem ker_normalizedTrace₂_not_mul_closed :
     e01 ∈ LinearMap.ker normalizedTrace₂.toLinearMap ∧
       e01 * e10 ∉ LinearMap.ker normalizedTrace₂.toLinearMap := by
   constructor
-  · rw [LinearMap.mem_ker]
-    change normalizedTrace₂ e01 = 0
+  · rw [LinearMap.mem_ker, PositiveLinearMap.coe_toLinearMap,
+      PositiveContinuousLinearMap.coe_toPositiveLinearMap]
     norm_num [e01, normalizedTrace₂_apply]
-  · rw [LinearMap.mem_ker]
-    change normalizedTrace₂ (e01 * e10) ≠ 0
+  · rw [LinearMap.mem_ker, PositiveLinearMap.coe_toLinearMap,
+      PositiveContinuousLinearMap.coe_toPositiveLinearMap]
     norm_num [e01, e10, normalizedTrace₂_apply, CStarMatrix.mul_apply, Fin.sum_univ_two]
 
 /-- Nonunital corner `⋆`-homomorphism `z ↦ z • e₀₀` from `ℂ` into
@@ -322,9 +318,7 @@ theorem not_isTracialState_comp_cornerHom :
 def scalarHom : ℂ →⋆ₐ[ℂ] CStarMatrix (Fin 2) (Fin 2) ℂ :=
   { Algebra.ofId ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ) with
     map_star' := fun z => by
-      change algebraMap ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ) (star z) =
-        star (algebraMap ℂ (CStarMatrix (Fin 2) (Fin 2) ℂ) z)
-      rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one, star_smul, star_one] }
+      simp [Algebra.algebraMap_eq_smul_one] }
 
 /-- Pulling `normalizedTrace₂` back along the unital scalar embedding `scalarHom` yields the unique
 tracial state on `ℂ`. -/

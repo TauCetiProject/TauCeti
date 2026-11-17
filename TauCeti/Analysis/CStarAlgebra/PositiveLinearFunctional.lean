@@ -10,11 +10,12 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
+import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
 # Norms of positive functionals on C⋆-algebras
 
-## Pullback and descent along star homomorphisms
+## Pullback and lifting along star homomorphisms
 
 The norm of a positive functional on a possibly nonunital C⋆-algebra is its limit along any
 increasing approximate unit, Mathlib's `PositiveContinuousLinearMap.tendsto_nhds_opNorm`. A
@@ -26,9 +27,13 @@ On unital C⋆-algebras, `‖ω‖ = ω 1`, so pulling back along any star homom
 also preserves the norm (`PositiveContinuousLinearMap.opNorm_comp_ofClass_of_map_one`,
 `PositiveContinuousLinearMap.opNorm_comp_ofClass`).
 
+By the approximate-unit Cauchy–Schwarz inequality, any element `a` with `ω (star a * a) = 0` also
+satisfies `ω a = 0` (`PositiveContinuousLinearMap.apply_eq_zero_of_map_star_mul_self_eq_zero`).
+
 Conversely, any positive functional `ω : A →P[ℂ] ℂ` vanishing on the kernel of a surjective star
-homomorphism `f : A → B` descends to a positive continuous linear functional `ω.descend f hf hker`
-on `B` of the same operator norm (`PositiveContinuousLinearMap.opNorm_descend`).
+homomorphism `f : A → B` lifts uniquely (`PositiveContinuousLinearMap.eq_liftOfSurjective_iff`) to
+a positive continuous linear functional `ω.liftOfSurjective f hf hker` on `B` of the same operator
+norm (`PositiveContinuousLinearMap.opNorm_liftOfSurjective`).
 
 ## Positive functionals in the weak-* dual
 
@@ -57,8 +62,18 @@ namespace PositiveContinuousLinearMap
 
 section NonUnital
 
-variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- If a positive continuous linear functional `ω : A →P[ℂ] ℂ` vanishes on `star a * a`, then
+`ω a = 0`, even when `A` has no unit. -/
+theorem apply_eq_zero_of_map_star_mul_self_eq_zero (ω : A →P[ℂ] ℂ) {a : A}
+    (ha : ω (star a * a) = 0) : ω a = 0 := by
+  -- Use the approximate-unit Cauchy–Schwarz bound `‖ω a‖ ^ 2 ≤ ‖ω‖ * ‖ω (star a * a)‖`.
+  have hsq := ω.norm_map_sq_le_opNorm_mul a
+  rw [ha, norm_zero, mul_zero] at hsq
+  exact norm_eq_zero.mp (sq_eq_zero_iff.mp (le_antisymm hsq (sq_nonneg _)))
+
+variable {B F : Type*} [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
 /-- Pulling a positive functional back along a surjective star-algebra homomorphism of
@@ -70,22 +85,15 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
     ((ω.comp (.ofClass f)).tendsto_nhds_opNorm hl)
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
 
-/-- Descend a positive continuous linear functional `ω : A →P[ℂ] ℂ` along a surjective star
+/-- Lift a positive continuous linear functional `ω : A →P[ℂ] ℂ` along a surjective star
 homomorphism `f : A → B` on whose kernel `ω` vanishes. -/
-noncomputable def descend (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+noncomputable def liftOfSurjective (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
     (hker : ∀ a : A, f a = 0 → ω a = 0) : B →P[ℂ] ℂ :=
   -- Positive linear maps between C⋆-algebras are automatically continuous (`ofClass`).
   let fL : A →ₗ[ℂ] B := LinearMap.ofClass f
-  let L : B →ₗ[ℂ] ℂ :=
-    (Submodule.liftQ (LinearMap.ker fL) ω.toLinearMap fun a ha => hker a ha).comp
-      (fL.quotKerEquivOfSurjective hf).symm.toLinearMap
-  have hL (a : A) : L (f a) = ω a := by
-    have hmk : (fL.quotKerEquivOfSurjective hf).symm (f a) = Submodule.Quotient.mk a :=
-      (fL.quotKerEquivOfSurjective hf).symm_apply_eq.mpr rfl
-    change (Submodule.liftQ (LinearMap.ker fL) ω.toLinearMap fun x hx => hker x hx)
-        ((fL.quotKerEquivOfSurjective hf).symm (f a)) = ω a
-    rw [hmk]
-    rfl
+  let hkerL : LinearMap.ker fL ≤ LinearMap.ker ω.toLinearMap := fun a ha =>
+    LinearMap.mem_ker.mpr (hker a (LinearMap.mem_ker.mp ha))
+  let L : B →ₗ[ℂ] ℂ := fL.liftOfSurjective hf ⟨ω.toLinearMap, hkerL⟩
   have hpos : ∀ b : B, 0 ≤ b → 0 ≤ L b := fun b hb => by
     rw [StarOrderedRing.nonneg_iff] at hb
     refine AddSubmonoid.closure_induction (fun y hy => ?_) (by simp)
@@ -93,37 +101,47 @@ noncomputable def descend (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjecti
     obtain ⟨c, rfl⟩ := hy
     obtain ⟨a, rfl⟩ := hf c
     dsimp only
+    have hL : L (f (star a * a)) = ω (star a * a) :=
+      LinearMap.equivOfSurjective_apply (f := fL) hf hkerL (m := star a * a)
     rw [← map_star f, ← map_mul f, hL]
     exact ω.map_nonneg (star_mul_self_nonneg a)
   .ofClass (PositiveLinearMap.mk₀ L hpos)
 
-/-- `ω.descend f hf hker` evaluates at `f a` as `ω a`. -/
+/-- `ω.liftOfSurjective f hf hker` evaluates at `f a` as `ω a`. -/
 @[simp]
-theorem descend_apply (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+theorem liftOfSurjective_apply (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
     (hker : ∀ a : A, f a = 0 → ω a = 0) (a : A) :
-    ω.descend f hf hker (f a) = ω a := by
-  let fL : A →ₗ[ℂ] B := LinearMap.ofClass f
-  have hmk : (fL.quotKerEquivOfSurjective hf).symm (f a) = Submodule.Quotient.mk a :=
-    (fL.quotKerEquivOfSurjective hf).symm_apply_eq.mpr rfl
-  change (Submodule.liftQ (LinearMap.ker fL) ω.toLinearMap fun x hx => hker x hx)
-      ((fL.quotKerEquivOfSurjective hf).symm (f a)) = ω a
-  rw [hmk]
-  rfl
+    ω.liftOfSurjective f hf hker (f a) = ω a :=
+  -- `PositiveContinuousLinearMap.ofClass` and `PositiveLinearMap.mk₀` preserve the underlying
+  -- function definitionally.
+  LinearMap.equivOfSurjective_apply (f := LinearMap.ofClass f) hf
+    (fun x hx => LinearMap.mem_ker.mpr (hker x (LinearMap.mem_ker.mp hx))) (m := a)
 
-/-- Pulling `ω.descend f hf hker` back along `f` recovers `ω`. -/
+/-- Pulling `ω.liftOfSurjective f hf hker` back along `f` recovers `ω`. -/
 @[simp]
-theorem descend_comp_ofClass (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+theorem liftOfSurjective_comp_ofClass (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
     (hker : ∀ a : A, f a = 0 → ω a = 0) :
-    (ω.descend f hf hker).comp (.ofClass f) = ω := by
+    (ω.liftOfSurjective f hf hker).comp (.ofClass f) = ω := by
   ext a
-  exact ω.descend_apply f hf hker a
+  exact ω.liftOfSurjective_apply f hf hker a
 
-/-- Descending a positive functional along a surjective star homomorphism preserves its norm. -/
+/-- **Uniqueness of `liftOfSurjective`.** A positive continuous linear functional `ψ` on `B` equals
+`ω.liftOfSurjective f hf hker` if and only if its pullback along `f` equals `ω`. -/
+theorem eq_liftOfSurjective_iff (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+    (hker : ∀ a : A, f a = 0 → ω a = 0) {ψ : B →P[ℂ] ℂ} :
+    ψ = ω.liftOfSurjective f hf hker ↔ ψ.comp (.ofClass f) = ω := by
+  refine ⟨fun h => h ▸ ω.liftOfSurjective_comp_ofClass f hf hker, fun h => ?_⟩
+  ext b
+  obtain ⟨a, rfl⟩ := hf b
+  rw [ω.liftOfSurjective_apply f hf hker a, ← h, comp_apply, coe_ofClass]
+
+/-- Lifting a positive functional along a surjective star homomorphism preserves its norm. -/
 @[simp]
-theorem opNorm_descend (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+theorem opNorm_liftOfSurjective (ω : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
     (hker : ∀ a : A, f a = 0 → ω a = 0) :
-    ‖(ω.descend f hf hker : B →L[ℂ] ℂ)‖ = ‖(ω : A →L[ℂ] ℂ)‖ := by
-  rw [← opNorm_comp_ofClass_of_surjective (ω.descend f hf hker) f hf, descend_comp_ofClass]
+    ‖(ω.liftOfSurjective f hf hker : B →L[ℂ] ℂ)‖ = ‖(ω : A →L[ℂ] ℂ)‖ := by
+  rw [← opNorm_comp_ofClass_of_surjective (ω.liftOfSurjective f hf hker) f hf,
+    liftOfSurjective_comp_ofClass]
 
 end NonUnital
 

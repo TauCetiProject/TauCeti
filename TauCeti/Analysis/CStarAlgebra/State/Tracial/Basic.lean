@@ -187,13 +187,11 @@ end Pullback
 
 /-- Restricting a tracial state `τ` to a closed nonunital star subalgebra `S` gives a tracial state
 whenever the restriction still has norm one. -/
-theorem IsTracialState.restrict_nonUnital (hτ : τ.IsTracialState) (S : NonUnitalStarSubalgebra ℂ A)
-    [IsClosed (S : Set A)]
-    (hnorm :
-      ‖((τ.comp (.ofClass (NonUnitalStarSubalgebraClass.subtype S)) : S →P[ℂ] ℂ) : S →L[ℂ] ℂ)‖ =
-        1) :
-    (τ.comp (.ofClass (NonUnitalStarSubalgebraClass.subtype S))).IsTracialState :=
-  hτ.comp (NonUnitalStarSubalgebraClass.subtype S) hnorm
+theorem IsTracialState.domRestrict_of_norm_eq_one (hτ : τ.IsTracialState)
+    (S : NonUnitalStarSubalgebra ℂ A) [IsClosed (S : Set A)]
+    (hnorm : ‖(τ.domRestrict S : S →L[ℂ] ℂ)‖ = 1) :
+    (τ.domRestrict S).IsTracialState := by
+  simp [isTracialState_iff, hnorm, hτ.mul_comm]
 
 end NonUnital
 
@@ -316,12 +314,8 @@ theorem mem_tracialStateSpace_iff :
   · subst hφ
     exact ⟨tracialStateSpace_subset_stateSpace (τ.toWeakDual_mem_tracialStateSpace_iff.mpr hτ),
       hτ.mul_comm⟩
-  · let τ : A →P[ℂ] ℂ := .mk₀ (toStrongDual φ) fun a ha =>
-      (map_nonneg_of_mem_stateSpace hstate ha).trans_eq (toStrongDual_apply φ a).symm
-    have hcoe : (τ : A →L[ℂ] ℂ) = toStrongDual φ := by ext; rfl
-    refine ⟨τ, PositiveContinuousLinearMap.isTracialState_iff.mpr
-      ⟨hcoe.symm ▸ norm_toStrongDual_of_mem_stateSpace hstate, htr⟩, ?_⟩
-    rw [hcoe, toWeakDual_toStrongDual]
+  · obtain ⟨ω, hω, rfl⟩ := mem_stateSpace_iff_exists_positiveLinearMap.mp hstate
+    exact ⟨.ofClass ω, PositiveContinuousLinearMap.isTracialState_iff.mpr ⟨hω, htr⟩, rfl⟩
 
 /-- Every functional in `tracialStateSpace A` satisfies `φ (a * b) = φ (b * a)`. -/
 theorem mul_comm_of_mem_tracialStateSpace (hφ : φ ∈ tracialStateSpace A) (a b : A) :

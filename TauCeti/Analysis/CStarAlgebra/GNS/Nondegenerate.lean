@@ -90,8 +90,10 @@ theorem map_star_mul_self_eq_zero_of_gnsNonUnitalStarAlgHom_eq_zero (f : A →�
       (𝓝 (f.toGNS a)) :=
     (f.toGNS.continuous.tendsto a).comp (hl.tendsto_mul_left a)
   refine tendsto_nhds_unique hlim (tendsto_const_nhds.congr fun e => ?_)
-  have he : f.gnsNonUnitalStarAlgHom a (f.toGNS e) = 0 := by rw [ha]; rfl
-  simpa [toGNS_apply] using he.symm
+  calc
+    (0 : f.GNS) = f.gnsNonUnitalStarAlgHom a (f.toGNS e) := by
+      rw [ha, zero_apply]
+    _ = f.toGNS (a * e) := by simp [toGNS_apply]
 
 /-- A faithful positive functional has an injective GNS representation. No unit or
 normalization is needed. -/

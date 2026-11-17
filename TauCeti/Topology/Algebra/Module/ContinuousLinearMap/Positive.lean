@@ -22,7 +22,7 @@ A positive continuous linear map `f : A →P[R] B` out of a star ring with a par
 * `PositiveContinuousLinearMap.IsFaithful`: `∀ a : A, f (star a * a) = 0 → a = 0`.
 * `PositiveContinuousLinearMap.isFaithful_iff_pos_star_mul_self`: over a `StarOrderedRing`, `f` is
   faithful if and only if `0 < f (star a * a)` for every nonzero `a`.
-* `PositiveContinuousLinearMap.isFaithful_iff_of_nonneg` and
+* `PositiveContinuousLinearMap.isFaithful_iff_eq_zero_of_nonneg_of_map_eq_zero` and
   `PositiveContinuousLinearMap.isFaithful_iff_pos_of_pos`: over a proper `StarOrderedRing`, `f` is
   faithful if and only if no nonzero nonnegative element maps to `0`, equivalently `0 < a` implies
   `0 < f a`.
@@ -65,8 +65,8 @@ variable {R A B : Type*} [Semiring R]
   [NonUnitalSemiring A] [PartialOrder A] [StarRing A] [Module R A] [TopologicalSpace A]
   [AddCommMonoid B] [PartialOrder B] [Module R B] [TopologicalSpace B]
 
-/-- A positive continuous linear map `f : A →P[R] B` out of a star-ordered ring is **faithful** if
-`f (star a * a) = 0` implies `a = 0`. -/
+/-- A positive continuous linear map `f : A →P[R] B` out of a star ring with a partial order is
+**faithful** if `f (star a * a) = 0` implies `a = 0`. -/
 def IsFaithful (f : A →P[R] B) : Prop :=
   ∀ a : A, f (star a * a) = 0 → a = 0
 
@@ -127,7 +127,7 @@ variable {R A B : Type*} [Semiring R]
 
 /-- Over a proper `StarOrderedRing`, a positive continuous linear map is faithful if and only if no
 nonzero nonnegative element lies in its kernel. -/
-theorem isFaithful_iff_of_nonneg :
+theorem isFaithful_iff_eq_zero_of_nonneg_of_map_eq_zero :
     f.IsFaithful ↔ ∀ a : A, 0 ≤ a → f a = 0 → a = 0 := by
   refine ⟨fun hf a ha => ?_,
     fun h a ha => star_mul_self_eq_zero.mp (h _ (star_mul_self_nonneg a) ha)⟩
@@ -144,7 +144,7 @@ theorem isFaithful_iff_of_nonneg :
 maps strictly positive elements to strictly positive elements. -/
 theorem isFaithful_iff_pos_of_pos :
     f.IsFaithful ↔ ∀ a : A, 0 < a → 0 < f a := by
-  rw [isFaithful_iff_of_nonneg]
+  rw [isFaithful_iff_eq_zero_of_nonneg_of_map_eq_zero]
   refine ⟨fun h a ha => ?_, fun h a ha hfa => ?_⟩
   · exact lt_of_le_of_ne (f.map_nonneg ha.le) fun h0 => ha.ne' (h a ha.le h0.symm)
   · by_contra hne

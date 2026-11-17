@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
-public import Mathlib.Analysis.InnerProductSpace.Positive
 public import TauCeti.Algebra.Star.Subalgebra
 public import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.CStarAlgebra.State.Tracial.Basic
 public import TauCeti.RingTheory.TraceFunctional.Radical
-import Mathlib.Analysis.InnerProductSpace.StarOrder
 import TauCeti.RingTheory.TraceFunctional.Positive
 
 /-!
-# The trace kernel, faithfulness, quotient descent, and simplicity
+# The trace kernel, faithfulness, quotient lifting, and simplicity
 
 Let `A` be a possibly nonunital C⋆-algebra and let `τ : A →P[ℂ] ℂ` be a positive continuous linear
 functional satisfying the trace identity `hτ : ∀ a b : A, τ (a * b) = τ (b * a)`.
@@ -38,13 +36,14 @@ kernel of a tracial state is a proper closed two-sided ideal, every tracial stat
 C⋆-algebra (unital or nonunital) is faithful
 (`PositiveContinuousLinearMap.IsTracialState.isFaithful_of_isSimple`).
 
-Finally, descending a tracial positive functional along a surjective star homomorphism via
-`PositiveContinuousLinearMap.descend` preserves traciality and tracial states, and produces a
-faithful functional whenever the homomorphism's kernel is `τ.traceKernel hτ`. Specializing to the
-range restriction of the GNS representation and to the quotient map `A →⋆ₙₐ[ℂ] A ⧸ τ.traceKernel hτ`
-produces the faithful descended traces `PositiveContinuousLinearMap.gnsRangeTrace` (on `π_τ(A)`)
-and `PositiveContinuousLinearMap.quotientTrace`, which are faithful tracial states whenever `τ` is
-a tracial state.
+Finally, lifting a tracial positive functional along a surjective star homomorphism via
+`PositiveContinuousLinearMap.liftOfSurjective` preserves traciality and tracial states, and produces
+a faithful functional whenever the homomorphism vanishes on `{a : A | τ (star a * a) = 0}`.
+Specializing to the range restriction of the GNS representation and to the quotient map
+`A →⋆ₙₐ[ℂ] A ⧸ τ.traceKernel hτ` produces the faithful lifted traces
+`PositiveContinuousLinearMap.gnsRangeTrace` (on `π_τ(A)`) and
+`PositiveContinuousLinearMap.quotientTrace`, which are faithful tracial states whenever `τ` is a
+tracial state.
 
 ## References
 
@@ -89,12 +88,6 @@ theorem gnsNonUnitalStarAlgHom_apply_eq_zero_iff (f : A →ₚ[ℂ] ℂ)
   refine f.denseRange_toGNS.induction_on ξ ?_ hmul
   exact isClosed_eq (by fun_prop) continuous_const
 
-/-- The closed C⋆-subalgebra image `f.gnsNonUnitalStarAlgHom.range` inherits `StarOrderedRing` from
-`f.GNS →L[ℂ] f.GNS`. -/
-instance instStarOrderedRingRangeGNSNonUnitalStarAlgHom (f : A →ₚ[ℂ] ℂ) :
-    StarOrderedRing f.gnsNonUnitalStarAlgHom.range :=
-  Subtype.starOrderedRing (𝕜 := ℂ) f.gnsNonUnitalStarAlgHom.range
-
 end PositiveLinearMap
 
 namespace PositiveContinuousLinearMap
@@ -126,25 +119,21 @@ def traceKernel (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * 
   TwoSidedIdeal.mk' {a : A | τ (star a * a) = 0}
     (by simp)
     (fun {x y} hx hy => by
-      change τ _ = 0 at hx hy ⊢
-      rw [hker] at hx hy ⊢
+      simp only [Set.mem_ofPred_eq, hker] at hx hy ⊢
       rw [map_add, hx, hy, add_zero])
     (fun {x} hx => by simpa using hx)
     (fun {x y} hy => by
-      change τ _ = 0 at hy ⊢
-      rw [hker] at hy ⊢
+      simp only [Set.mem_ofPred_eq, hker] at hy ⊢
       rw [map_mul, hy, mul_zero])
     (fun {x y} hx => by
-      change τ _ = 0 at hx ⊢
-      rw [hker] at hx ⊢
+      simp only [Set.mem_ofPred_eq, hker] at hx ⊢
       rw [map_mul, hx, zero_mul])
 
 /-- Membership in `τ.traceKernel hτ` is `τ (star a * a) = 0`. -/
 @[simp]
 theorem mem_traceKernel (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) {a : A} :
     a ∈ τ.traceKernel hτ ↔ τ (star a * a) = 0 := by
-  unfold traceKernel
-  exact TwoSidedIdeal.mem_mk' _ _ _ _ _ _ a
+  simp only [traceKernel, TwoSidedIdeal.mem_mk', Set.mem_ofPred_eq]
 
 /-- The trace kernel of a tracial positive continuous linear functional is norm-closed. -/
 instance isClosed_traceKernel (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) :
@@ -161,17 +150,12 @@ theorem traceKernel_eq_ker_gnsNonUnitalStarAlgHom (τ : A →P[ℂ] ℂ)
     τ.traceKernel hτ = TwoSidedIdeal.ker τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom := by
   ext a
   rw [mem_traceKernel, TwoSidedIdeal.mem_ker,
-    τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ]
-  rfl
+    τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ, coe_toPositiveLinearMap]
 
 /-- Every element in `τ.traceKernel hτ` is annihilated by `τ` itself, even when `A` has no unit. -/
 theorem apply_eq_zero_of_mem_traceKernel {τ : A →P[ℂ] ℂ} {hτ : ∀ a b : A, τ (a * b) = τ (b * a)}
-    {a : A} (ha : a ∈ τ.traceKernel hτ) : τ a = 0 := by
-  -- Use the approximate-unit Cauchy–Schwarz bound `‖τ a‖ ^ 2 ≤ ‖τ‖ * ‖τ (star a * a)‖`.
-  have hsq := τ.norm_map_sq_le_opNorm_mul a
-  rw [τ.mem_traceKernel hτ] at ha
-  rw [ha, norm_zero, mul_zero] at hsq
-  exact norm_eq_zero.mp (sq_eq_zero_iff.mp (le_antisymm hsq (sq_nonneg _)))
+    {a : A} (ha : a ∈ τ.traceKernel hτ) : τ a = 0 :=
+  τ.apply_eq_zero_of_map_star_mul_self_eq_zero ((τ.mem_traceKernel hτ).mp ha)
 
 /-- `τ.traceKernel hτ = ⊥` if and only if `τ` is faithful. -/
 @[simp]
@@ -239,120 +223,95 @@ theorem toTwoSided_traceRadical_eq_traceKernel (τ : A →P[ℂ] ℂ)
 
 end UnitalTraceRadical
 
-/-! ### Descent along surjective star homomorphisms and faithful quotient traces -/
+/-! ### Lifting along surjective star homomorphisms and faithful quotient traces -/
 
-section Descend
+section LiftOfSurjective
 
 variable {A B F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
-/-- Descending a tracial positive functional along a surjective star homomorphism preserves the
+/-- Lifting a tracial positive functional along a surjective star homomorphism preserves the
 trace identity. -/
-theorem descend_mul_comm (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+theorem liftOfSurjective_mul_comm (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
     (hker : ∀ a : A, f a = 0 → τ a = 0) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) (x y : B) :
-    τ.descend f hf hker (x * y) = τ.descend f hf hker (y * x) := by
+    τ.liftOfSurjective f hf hker (x * y) = τ.liftOfSurjective f hf hker (y * x) := by
   obtain ⟨a, rfl⟩ := hf x
   obtain ⟨b, rfl⟩ := hf y
-  rw [← map_mul, ← map_mul, descend_apply, descend_apply, hτ]
+  rw [← map_mul, ← map_mul, liftOfSurjective_apply, liftOfSurjective_apply, hτ]
 
-/-- `τ.descend f hf hker` is a tracial state if and only if `τ` is a tracial state. -/
+/-- `τ.liftOfSurjective f hf hker` is a tracial state if and only if `τ` is a tracial state. -/
 @[simp]
-theorem isTracialState_descend_iff (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+theorem isTracialState_liftOfSurjective_iff (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
     (hker : ∀ a : A, f a = 0 → τ a = 0) :
-    (τ.descend f hf hker).IsTracialState ↔ τ.IsTracialState := by
-  rw [← isTracialState_comp_iff_of_surjective f hf, descend_comp_ofClass]
+    (τ.liftOfSurjective f hf hker).IsTracialState ↔ τ.IsTracialState := by
+  rw [← isTracialState_comp_iff_of_surjective f hf, liftOfSurjective_comp_ofClass]
 
-/-- When the kernel of `f` is `{a : A | τ (star a * a) = 0}`, the descended positive functional
-`τ.descend f hf hker` is faithful. -/
-theorem isFaithful_descend (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
-    (hker : ∀ a : A, f a = 0 → τ a = 0) (hiff : ∀ a : A, f a = 0 ↔ τ (star a * a) = 0) :
-    (τ.descend f hf hker).IsFaithful := by
+/-- When `f` annihilates `{a : A | τ (star a * a) = 0}`, the lifted positive functional
+`τ.liftOfSurjective f hf hker` is faithful. -/
+theorem isFaithful_liftOfSurjective (τ : A →P[ℂ] ℂ) (f : F) (hf : Function.Surjective f)
+    (hker : ∀ a : A, f a = 0 → τ a = 0) (hnull : ∀ a : A, τ (star a * a) = 0 → f a = 0) :
+    (τ.liftOfSurjective f hf hker).IsFaithful := by
   rw [isFaithful_iff]
   intro y hy
   obtain ⟨a, rfl⟩ := hf y
-  rw [← map_star, ← map_mul, descend_apply] at hy
-  exact (hiff a).mpr hy
+  rw [← map_star, ← map_mul, liftOfSurjective_apply] at hy
+  exact hnull a hy
 
-end Descend
+end LiftOfSurjective
 
 section GNSRangeAndQuotient
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-/-- **The faithful descended trace on the GNS image `π_τ(A)`.** For a tracial positive continuous
+/-- **The faithful lifted trace on the GNS image `π_τ(A)`.** For a tracial positive continuous
 linear functional `τ : A →P[ℂ] ℂ`, `τ.gnsRangeTrace hτ` is the positive continuous linear
 functional on `τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range` sending `π_τ a` to `τ a`. -/
 noncomputable def gnsRangeTrace (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) :
     τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range →P[ℂ] ℂ :=
-  τ.descend τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict
-    τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict_surjective fun a ha => by
-      have ha' : τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom a = 0 := congrArg Subtype.val ha
-      exact apply_eq_zero_of_mem_traceKernel
-        ((τ.mem_traceKernel hτ).mpr
-          ((τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ a).mp ha'))
+  τ.liftOfSurjective τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict
+    τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict_surjective fun a ha =>
+      τ.apply_eq_zero_of_map_star_mul_self_eq_zero
+        ((τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ a).mp
+          (congrArg Subtype.val ha))
 
 /-- `τ.gnsRangeTrace hτ` evaluates on `π_τ(a)` as `τ a`. -/
 @[simp]
 theorem gnsRangeTrace_rangeRestrict (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     (a : A) :
     τ.gnsRangeTrace hτ (τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict a) = τ a :=
-  τ.descend_apply τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict _ _ a
+  τ.liftOfSurjective_apply τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict _ _ a
 
 /-- Pulling `τ.gnsRangeTrace hτ` back along `π_τ.rangeRestrict` recovers `τ`. -/
 @[simp]
 theorem gnsRangeTrace_comp_rangeRestrict (τ : A →P[ℂ] ℂ)
     (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) :
     (τ.gnsRangeTrace hτ).comp
-      (.ofClass τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict) = τ := by
-  ext a
-  exact τ.gnsRangeTrace_rangeRestrict hτ a
+      (.ofClass τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict) = τ :=
+  τ.liftOfSurjective_comp_ofClass τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict _ _
 
 /-- `τ.gnsRangeTrace hτ` is tracial. -/
 theorem gnsRangeTrace_mul_comm (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     (x y : τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range) :
-    τ.gnsRangeTrace hτ (x * y) = τ.gnsRangeTrace hτ (y * x) := by
-  have aux {ω : τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range → ℂ}
-      {f : A → τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range}
-      (hf : Function.Surjective f) (hmul : ∀ a b : A, f (a * b) = f a * f b)
-      (hω : ∀ a b : A, ω (f (a * b)) = ω (f (b * a))) : ω (x * y) = ω (y * x) := by
-    obtain ⟨a, rfl⟩ := hf x
-    obtain ⟨b, rfl⟩ := hf y
-    rw [← hmul, ← hmul, hω]
-  exact aux τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict_surjective
-    (fun a b => Subtype.ext (map_mul τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom a b))
-    fun a b => by rw [gnsRangeTrace_rangeRestrict, gnsRangeTrace_rangeRestrict, hτ]
+    τ.gnsRangeTrace hτ (x * y) = τ.gnsRangeTrace hτ (y * x) :=
+  τ.liftOfSurjective_mul_comm τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict _ _ hτ x y
 
 /-- **Faithfulness on `π_τ(A)`.** `τ.gnsRangeTrace hτ` is always faithful. -/
 theorem isFaithful_gnsRangeTrace (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) :
     IsFaithful (A := τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range)
-      (τ.gnsRangeTrace hτ) := by
-  rw [isFaithful_iff]
-  intro y hy
-  obtain ⟨a, ha⟩ := τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict_surjective y
-  have hstar_mul : star y * y =
-      τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict (star a * a) := by
-    apply Subtype.ext
-    rw [MulMemClass.coe_mul, StarMemClass.coe_star, ← ha]
-    change star (τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom a) *
-        τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom a =
-      τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom (star a * a)
-    rw [← map_star, ← map_mul]
-  rw [hstar_mul, gnsRangeTrace_rangeRestrict] at hy
-  rw [← ha]
-  exact Subtype.ext
-    ((τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ a).mpr hy)
+      (τ.gnsRangeTrace hτ) :=
+  τ.isFaithful_liftOfSurjective τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict _ _
+    fun a ha => Subtype.ext
+      ((τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom_apply_eq_zero_iff hτ a).mpr ha)
 
 /-- `τ.gnsRangeTrace hτ` is a tracial state if and only if `τ` is a tracial state. -/
 @[simp]
 theorem isTracialState_gnsRangeTrace_iff (τ : A →P[ℂ] ℂ)
     (hτ : ∀ a b : A, τ (a * b) = τ (b * a)) :
     IsTracialState (A := τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.range)
-      (τ.gnsRangeTrace hτ) ↔ τ.IsTracialState := by
-  rw [← isTracialState_comp_iff_of_surjective
-      τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict
-      τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict_surjective,
-    gnsRangeTrace_comp_rangeRestrict]
+      (τ.gnsRangeTrace hτ) ↔ τ.IsTracialState :=
+  τ.isTracialState_liftOfSurjective_iff
+    τ.toPositiveLinearMap.gnsNonUnitalStarAlgHom.rangeRestrict _ _
 
 /-- If `τ` is a tracial state, then `τ.gnsRangeTrace hτ.mul_comm` is a tracial state on `π_τ(A)`. -/
 theorem IsTracialState.gnsRangeTrace {τ : A →P[ℂ] ℂ} (hτ : τ.IsTracialState) :
@@ -360,16 +319,17 @@ theorem IsTracialState.gnsRangeTrace {τ : A →P[ℂ] ℂ} (hτ : τ.IsTracialS
       (τ.gnsRangeTrace hτ.mul_comm) :=
   (τ.isTracialState_gnsRangeTrace_iff hτ.mul_comm).mpr hτ
 
-/-- **The faithful descended trace on `A ⧸ τ.traceKernel hτ`.** Equipped with its C⋆-algebra order,
-the quotient C⋆-algebra `A ⧸ τ.traceKernel hτ` carries the descended positive continuous linear
+/-- **The faithful lifted trace on `A ⧸ τ.traceKernel hτ`.** Equipped with its C⋆-algebra order,
+the quotient C⋆-algebra `A ⧸ τ.traceKernel hτ` carries the lifted positive continuous linear
 functional `τ.quotientTrace hτ` satisfying `τ.quotientTrace hτ (mk a) = τ a`. -/
 noncomputable def quotientTrace (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)] :
     (A ⧸ τ.traceKernel hτ) →P[ℂ] ℂ :=
-  τ.descend (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ))
+  τ.liftOfSurjective (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ))
     (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective (τ.traceKernel hτ)) fun _ ha => by
-      rw [TwoSidedIdeal.Quotient.mkStarAlgHom_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem] at ha
-      exact apply_eq_zero_of_mem_traceKernel ha
+      rw [TwoSidedIdeal.Quotient.mkStarAlgHom_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem,
+        mem_traceKernel] at ha
+      exact τ.apply_eq_zero_of_map_star_mul_self_eq_zero ha
 
 /-- `τ.quotientTrace hτ` evaluates on a quotient class `mk a` as `τ a`. -/
 @[simp]
@@ -377,56 +337,46 @@ theorem quotientTrace_mk (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) =
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)] (a : A) :
     τ.quotientTrace hτ (TwoSidedIdeal.Quotient.mk (τ.traceKernel hτ) a) = τ a := by
   rw [← TwoSidedIdeal.Quotient.mkStarAlgHom_apply]
-  exact τ.descend_apply (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _ a
+  exact τ.liftOfSurjective_apply (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _ a
 
 /-- Pulling `τ.quotientTrace hτ` back along `mkStarAlgHom` recovers `τ`. -/
 @[simp]
 theorem quotientTrace_comp_mkStarAlgHom (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)] :
     (τ.quotientTrace hτ).comp (.ofClass (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ))) =
-      τ := by
-  ext a
-  simp
+      τ :=
+  τ.liftOfSurjective_comp_ofClass (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _
 
 /-- `τ.quotientTrace hτ` has the same operator norm as `τ`. -/
 @[simp]
 theorem opNorm_quotientTrace (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)] :
-    ‖(τ.quotientTrace hτ : (A ⧸ τ.traceKernel hτ) →L[ℂ] ℂ)‖ = ‖(τ : A →L[ℂ] ℂ)‖ := by
-  rw [← opNorm_comp_ofClass_of_surjective (τ.quotientTrace hτ)
-      (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ))
-      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective (τ.traceKernel hτ)),
-    quotientTrace_comp_mkStarAlgHom]
+    ‖(τ.quotientTrace hτ : (A ⧸ τ.traceKernel hτ) →L[ℂ] ℂ)‖ = ‖(τ : A →L[ℂ] ℂ)‖ :=
+  τ.opNorm_liftOfSurjective (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _
 
 /-- `τ.quotientTrace hτ` is tracial. -/
 theorem quotientTrace_mul_comm (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)]
     (x y : A ⧸ τ.traceKernel hτ) :
-    τ.quotientTrace hτ (x * y) = τ.quotientTrace hτ (y * x) := by
-  obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (τ.traceKernel hτ) x
-  obtain ⟨b, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (τ.traceKernel hτ) y
-  rw [← map_mul, ← map_mul, quotientTrace_mk, quotientTrace_mk, hτ]
+    τ.quotientTrace hτ (x * y) = τ.quotientTrace hτ (y * x) :=
+  τ.liftOfSurjective_mul_comm (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _ hτ x y
 
 /-- `τ.quotientTrace hτ` is faithful on `A ⧸ τ.traceKernel hτ`. -/
 theorem isFaithful_quotientTrace (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)] :
-    (τ.quotientTrace hτ).IsFaithful := by
-  rw [isFaithful_iff]
-  intro y hy
-  obtain ⟨a, rfl⟩ := TwoSidedIdeal.Quotient.mk_surjective (τ.traceKernel hτ) y
-  rw [← TwoSidedIdeal.Quotient.mk_star, ← map_mul, quotientTrace_mk, ← mem_traceKernel τ hτ,
-    ← TwoSidedIdeal.Quotient.eq_zero_iff_mem] at hy
-  exact hy
+    (τ.quotientTrace hτ).IsFaithful :=
+  τ.isFaithful_liftOfSurjective (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _
+    fun a ha => by
+      rw [TwoSidedIdeal.Quotient.mkStarAlgHom_apply, TwoSidedIdeal.Quotient.eq_zero_iff_mem,
+        mem_traceKernel]
+      exact ha
 
 /-- `τ.quotientTrace hτ` is a tracial state if and only if `τ` is a tracial state. -/
 @[simp]
 theorem isTracialState_quotientTrace_iff (τ : A →P[ℂ] ℂ) (hτ : ∀ a b : A, τ (a * b) = τ (b * a))
     [PartialOrder (A ⧸ τ.traceKernel hτ)] [StarOrderedRing (A ⧸ τ.traceKernel hτ)] :
-    (τ.quotientTrace hτ).IsTracialState ↔ τ.IsTracialState := by
-  rw [← isTracialState_comp_iff_of_surjective
-      (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ))
-      (TwoSidedIdeal.Quotient.mkStarAlgHom_surjective (τ.traceKernel hτ)),
-    quotientTrace_comp_mkStarAlgHom]
+    (τ.quotientTrace hτ).IsTracialState ↔ τ.IsTracialState :=
+  τ.isTracialState_liftOfSurjective_iff (TwoSidedIdeal.Quotient.mkStarAlgHom (τ.traceKernel hτ)) _ _
 
 /-- If `τ` is a tracial state, then `τ.quotientTrace hτ.mul_comm` is a tracial state on
 `A ⧸ τ.traceKernel hτ.mul_comm`. -/
