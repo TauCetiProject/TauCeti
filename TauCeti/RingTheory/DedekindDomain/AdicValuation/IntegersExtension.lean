@@ -201,7 +201,7 @@ theorem map_maximalIdeal_adicCompletionIntegers_eq_pow :
   rw [← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)]
   exact v.valued_algebraMap_adicCompletion_of_irreducible (L := L) w hπ
 
-/-- An element of `𝒪_w` is an `𝒪_v`-multiple of a uniformizer `π` of `𝒪_v` if and only if its
+/-- An element of `𝒪_w` is an `𝒪_w`-multiple of a uniformizer `π` of `𝒪_v` if and only if its
 `w`-adic valuation in `L_w` is at most `exp (-e(w ∣ v))`. -/
 theorem exists_smul_eq_adicCompletionIntegers_iff_valued_le {π : v.adicCompletionIntegers K}
     (hπ : Irreducible π) {z : w.adicCompletionIntegers L} :

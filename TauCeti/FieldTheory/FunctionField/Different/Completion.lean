@@ -98,7 +98,7 @@ private theorem mem_traceDual_completionIntegers_iff_adic (P' : Place k' F') (z 
   let _ := (P'.restrict k F).completionExtensionAlgebra P' rfl
   let _ := (P'.restrict k F).completionIntegersExtensionAlgebra P' rfl
   have := centerIntegralClosure_liesOver_centerBase (k := k) (F := F) P'
-  exact TauCeti.mem_traceDual_one_iff_of_equiv
+  exact RingEquiv.mem_traceDual_one_iff_of_equiv
     (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F _ _
       (valuation_eq_centerBase P'))
     (completionEquivAdicCompletionOfValuationEq k F _ _
@@ -190,7 +190,7 @@ theorem differentIdeal_completionIntegers_eq_maximalIdeal_pow (P : Place k F) (P
       maximalIdeal (w.adicCompletionIntegers F') :=
     IsLocalRing.map_maximalIdeal_of_surjective eB.toRingHom (by simpa using eB.surjective)
   ext x
-  rw [TauCeti.mem_differentIdeal_iff_of_equiv
+  rw [RingEquiv.mem_differentIdeal_iff_of_equiv
       (completionIntegersRingEquivAdicCompletionIntegersOfValuationEq k F v _ hv)
       (completionEquivAdicCompletionOfValuationEq k F v _ hv).toAlgEquiv.toRingEquiv eB
       (completionEquivAdicCompletionOfValuationEq k' F' w P' hw).toAlgEquiv.toRingEquiv
