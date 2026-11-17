@@ -88,8 +88,6 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.mul_le_one_of_le_inv_one_add`: `a * b ≤ 1` for `0 ≤ b` and `a ≤ (1 + b)⁻¹`.
 * `TauCeti.pow_five_lt_of_mul_div_le`: `ε ^ 5 < g` from `0 < ε`, `ε * n ^ 2 < M`,
   `0 < D ≤ n ^ 2` and `ε ^ 2 * ε ^ 2 * (M / D) ≤ g`.
-* `TauCeti.mul_le_of_le_div_mul`: `x * (C₀ * (Lam / lam)) ≤ A` from
-  `x ≤ A / (C₀ + 1) * (lam / Lam)`, for `0 ≤ A`, `0 ≤ C₀`, `0 ≤ lam` and `0 ≤ Lam`.
 * `TauCeti.sub_mul_mul_one_add_sq_neg_of_lt`: the strict inequality
   `r - ε * (c * (1 + n ^ 2)) < 0` for `r ≤ M`, `0 < ε`, `1 ≤ c` and `M / ε < n`.
 * `TauCeti.sub_div_sub_mem_Icc`: `(c - a) / (b - a) ∈ [0, 1]` for `c ∈ [a, b]`.
@@ -316,24 +314,6 @@ theorem div_sub_mul_le_two_mul_div_sq {α : Type*} [Field α] [LinearOrder α]
   have hb : 0 < b := by linarith
   rw [div_le_div_iff₀ (mul_pos (by linarith) hb) (by positivity)]
   nlinarith [mul_nonneg (mul_nonneg ha hb.le) (sub_nonneg.mpr h.le)]
-
-/-- If `x ≤ A / (C₀ + 1) * (lam / Lam)` for `A ≥ 0`, `C₀ ≥ 0`, `lam ≥ 0` and `Lam ≥ 0`, then
-`x * (C₀ * (Lam / lam)) ≤ A`. -/
-theorem mul_le_of_le_div_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
-    {A C₀ lam Lam x : α} (hA : 0 ≤ A) (hC₀ : 0 ≤ C₀) (hlam : 0 ≤ lam) (hLam : 0 ≤ Lam)
-    (hx : x ≤ A / (C₀ + 1) * (lam / Lam)) :
-    x * (C₀ * (Lam / lam)) ≤ A := by
-  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
-    rw [div_mul_div_comm, mul_comm lam]
-    exact div_self_le_one _
-  calc x * (C₀ * (Lam / lam))
-      ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
-    _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
-    _ ≤ A * 1 * 1 :=
-        mul_le_mul (mul_le_mul_of_nonneg_left
-          (div_le_one_of_le₀ (by linarith) (by linarith)) hA) hratio (by positivity)
-          (by positivity)
-    _ = A := by rw [mul_one, mul_one]
 
 /-- The inequality behind the volume bound for a convex set containing a ball and a point: if
 `L / (2 r) < m + 1` then `L * r ^ (n - 1) ≤ 2 ^ (n + 1) * ((m + 1) * (r / 2) ^ n)`. -/

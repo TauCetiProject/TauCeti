@@ -8,7 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import Mathlib.CategoryTheory.Monoidal.CoherenceLemmas
 public import Mathlib.CategoryTheory.Monoidal.Linear
-public import TauCeti.CategoryTheory.Preadditive.Schur
+public import TauCeti.CategoryTheory.Linear.Endomorphism
 
 /-!
 # Scalars in a monoidal category
@@ -23,10 +23,11 @@ particular scalars commute with each other (`TauCeti.scalar_comm`).
 A scalar `a` acts on every object `Y` in two ways, from the left as
 `(λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom` and from the right as `(ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom`. The two
 actions need not agree in a general monoidal category, but they do in a braided one
-(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`). They also agree in a linear one
-over an algebraically closed field whose unit is simple with finite-dimensional endomorphisms,
-where every scalar is a multiple of the identity
-(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple`).
+(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom`). They also agree in an `R`-linear
+one, for a commutative semiring `R`, in which every scalar is a multiple of the identity
+(`TauCeti.leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective`); by Schur's lemma
+(`TauCeti.bijective_algebraMap_end_of_simple`) this holds over an algebraically closed field when
+the unit is simple with finite-dimensional endomorphisms.
 
 `TauCeti.CirclesCommuteAt d X` records agreement of the two actions of a particular scalar `d`
 on a particular object `X`. These objects form a replete monoidal full subcategory: agreement
@@ -89,14 +90,14 @@ theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom [BraidedCategory C]
   rw [← braiding_rightUnitor, BraidedCategory.braiding_naturality_left_assoc,
     leftUnitor_inv_braiding_assoc]
 
-/-- If the tensor unit is simple with finite-dimensional endomorphisms over an algebraically
-closed field, a scalar acts on every object in the same way from the left and from the right. -/
-theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_simple (k : Type w) [Field k]
-    [IsAlgClosed k] [Preadditive C] [MonoidalPreadditive C] [Linear k C] [MonoidalLinear k C]
-    [Limits.HasKernels C] [Simple (𝟙_ C)] [FiniteDimensional k (𝟙_ C ⟶ 𝟙_ C)]
-    (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
+/-- If every scalar is a multiple of the identity, that is if the structure map
+`R → End (𝟙_ C)` of an `R`-linear monoidal category is surjective, a scalar acts on every object
+in the same way from the left and from the right. -/
+theorem leftUnitor_inv_scalar_whiskerRight_leftUnitor_hom_of_surjective {R : Type w}
+    [CommSemiring R] [Preadditive C] [MonoidalPreadditive C] [Linear R C] [MonoidalLinear R C]
+    (h : Function.Surjective (algebraMap R (End (𝟙_ C)))) (a : 𝟙_ C ⟶ 𝟙_ C) (Y : C) :
     (λ_ Y).inv ≫ a ▷ Y ≫ (λ_ Y).hom = (ρ_ Y).inv ≫ Y ◁ a ≫ (ρ_ Y).hom := by
-  obtain ⟨c, rfl⟩ := endomorphism_simple_eq_smul_id k a
+  obtain ⟨c, rfl⟩ := End.exists_smul_id_eq_of_surjective h a
   simp
 
 /-! ### Centrality at an object -/

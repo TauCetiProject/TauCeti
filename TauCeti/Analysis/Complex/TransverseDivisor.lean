@@ -82,11 +82,11 @@ private theorem exists_forall_analyticOrderAt_eq_count_of_analyticOnNhd {f : E �
     hK x ζ (by rw [mem_sphere_zero_iff_norm.1 hζ]; exact hKR.le)
   set Z : E → Multiset ℂ := fun x ↦ AnalyticOnNhd.zeroMultiset (fun w ↦ f (x, w)) (ball 0 R)
   have hdiff (k : ℕ) : Differentiable ℂ fun x ↦ ((Z x).map (· ^ k)).sum := fun x ↦
-    Contour.differentiableAt_sum_map_pow_zeroMultiset hR (hf' x) (hsphere x) k
+    Contour.differentiableAt_sum_map_pow_zeroMultiset (hf' x) (hsphere x) k
   -- The number of zeros is the zeroth power sum: it is continuous and integer valued, hence
   -- constant on the connected base.
   have hcard (x : E) : (Z x).card = (Z 0).card :=
-    Contour.card_zeroMultiset_eq_of_isPreconnected isPreconnected_univ hR (fun x _ ↦ hf' x)
+    Contour.card_zeroMultiset_eq_of_isPreconnected isPreconnected_univ (fun x _ ↦ hf' x)
       (fun x _ ↦ hsphere x) trivial trivial
   -- Every zero lies in `ball 0 R`, so the `k`-th power sum is bounded by `card (Z 0) * R ^ k`,
   -- and Liouville's theorem makes it constant.

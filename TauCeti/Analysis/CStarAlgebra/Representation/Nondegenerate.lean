@@ -29,6 +29,10 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 
 * `NonUnitalStarAlgHom.IsNondegenerate`: density of the span of the vectors `π a ξ`, unfolded by
   `isNondegenerate_iff_dense`.
+* `NonUnitalStarAlgHom.IsNondegenerate.map_one`, `NonUnitalStarAlgHom.isNondegenerate_of_map_one`,
+  `NonUnitalStarAlgHom.isNondegenerate_iff_map_one`, and
+  `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: a representation of a unital C⋆-algebra is
+  nondegenerate iff it sends `1` to `1`, and therefore promotes to a unital `⋆`-homomorphism.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_forall_apply_eq_zero`: nondegeneracy means that no
   nonzero vector is killed by the whole representation.
 * `NonUnitalStarAlgHom.isNondegenerate_iff_tendsto`: nondegeneracy means that the representation
@@ -36,9 +40,6 @@ with unitary multipliers `U_s` are obtained from nondegenerate representations o
 * `NonUnitalStarAlgHom.topologicalClosure_span_range_comp_eq`,
   `NonUnitalStarAlgHom.isNondegenerate_iff_dense_span_comp`: nondegeneracy can be checked on any
   dense subset of `A`.
-* `NonUnitalStarAlgHom.isNondegenerate_iff_map_one`, `NonUnitalStarAlgHom.IsNondegenerate.map_one`,
-  and `NonUnitalStarAlgHom.IsNondegenerate.toStarAlgHom`: a representation of a unital C⋆-algebra is
-  nondegenerate iff it sends `1` to `1`, and therefore promotes to a unital `⋆`-homomorphism.
 * `NonUnitalStarAlgHom.multiplierExtension`: the extension to the multiplier algebra, with its
   characterizing identities `multiplierExtension_mul_eq_fst` and
   `mul_multiplierExtension_eq_snd`, the uniqueness statement
