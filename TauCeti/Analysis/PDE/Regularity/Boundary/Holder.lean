@@ -191,36 +191,21 @@ private theorem mul_add_div_le_two_mul_mul_add_div {k A X Y lam : ℝ} (hk : 0 �
     _ = 2 * k * (A + Y / lam) := by ring
 
 omit [DecidableEq ι] in
-/-- The odd reflection `1_H f - 1_H f ∘ ρ` of `f ∈ Lʳ(U ∩ H)`, `r ≥ 1`, has `Lʳ(U)` norm at most
-twice that of `f`. -/
-private theorem toReal_eLpNorm_indicator_sub_indicator_comp_le
-    {U H : Opens (EuclideanSpace ℝ ι)} {ν : EuclideanSpace ℝ ι} {c₀ : ℝ}
-    (hU : MapsTo (hyperplaneReflection ν c₀) U U) {r : ℝ≥0} (hr : 1 ≤ (r : ℝ))
-    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f r (mu.restrict (U ⊓ H))) :
+/-- The odd reflection `1_H f - L (1_H f ∘ ρ)` of `f ∈ Lʳ(U ∩ H)`, `r ≥ 1`, twisted by a continuous
+norm-preserving map `L`, has `Lʳ(U)` norm at most twice that of `f`. It is used with `L = id` for a
+scalar datum and with the linear part `L = (ℝ ∙ ν)ᗮ.reflection` of `ρ` for a vector field. -/
+private theorem toReal_eLpNorm_indicator_sub_comp_indicator_comp_le {E : Type*}
+    [NormedAddCommGroup E] {U H : Opens (EuclideanSpace ℝ ι)} {ν : EuclideanSpace ℝ ι} {c₀ : ℝ}
+    (hU : MapsTo (hyperplaneReflection ν c₀) U U) {L : E → E} (hLc : Continuous L)
+    (hL : ∀ y, ‖L y‖ = ‖y‖) {r : ℝ≥0} (hr : 1 ≤ (r : ℝ)) {f : EuclideanSpace ℝ ι → E}
+    (hf : MemLp f r (mu.restrict (U ⊓ H))) :
     (eLpNorm (fun x => (H : Set (EuclideanSpace ℝ ι)).indicator f x -
-      (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) r
+      L ((H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x))) r
         (mu.restrict U)).toReal ≤ 2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal := by
   rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hf.eLpNorm_ne_top)
-    (eLpNorm_indicator_sub_indicator_comp_hyperplaneReflection_le (by exact_mod_cast hr)
-      H.isOpen.measurableSet U.isOpen.measurableSet hU)
-
-omit [DecidableEq ι] in
-/-- The odd reflection `1_H F - R (1_H F ∘ ρ)` of a vector field `F ∈ L^q(U ∩ H)`, `q ≥ 1`, where
-`R` is the linear part of `ρ`, has `L^q(U)` norm at most twice that of `F`. -/
-private theorem toReal_eLpNorm_indicator_sub_reflection_indicator_comp_le
-    {U H : Opens (EuclideanSpace ℝ ι)} {ν : EuclideanSpace ℝ ι} {c₀ : ℝ}
-    (hU : MapsTo (hyperplaneReflection ν c₀) U U) {q : ℝ≥0} (hq : 1 ≤ (q : ℝ))
-    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hF : MemLp F q (mu.restrict (U ⊓ H))) :
-    (eLpNorm (fun x => (H : Set (EuclideanSpace ℝ ι)).indicator F x -
-      (ℝ ∙ ν)ᗮ.reflection ((H : Set (EuclideanSpace ℝ ι)).indicator F
-        (hyperplaneReflection ν c₀ x))) q (mu.restrict U)).toReal ≤
-      2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal := by
-  rw [← ENNReal.toReal_ofNat, ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hF.eLpNorm_ne_top)
-    (eLpNorm_indicator_sub_comp_indicator_comp_hyperplaneReflection_le
-      (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map (by exact_mod_cast hq)
-      H.isOpen.measurableSet U.isOpen.measurableSet hU)
+    (eLpNorm_indicator_sub_comp_indicator_comp_hyperplaneReflection_le hLc hL
+      (by exact_mod_cast hr) H.isOpen.measurableSet U.isOpen.measurableSet hU)
 
 /-- **De Giorgi's theorem with a right-hand side up to a flat boundary.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
@@ -274,7 +259,8 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
       U.isOpen.measurableSet hU hfr
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
       2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
-    toReal_eLpNorm_indicator_sub_indicator_comp_le hU (by exact_mod_cast hr.le) hfr
+    toReal_eLpNorm_indicator_sub_comp_indicator_comp_le hU continuous_id (fun _ => rfl)
+      (by exact_mod_cast hr.le) hfr
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu := fun v => by
@@ -345,7 +331,8 @@ theorem exists_holderOnWith_preciseRepresentative_sub_compHyperplaneReflectionL_
       (ℝ ∙ ν)ᗮ.reflection.norm_map H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
-    toReal_eLpNorm_indicator_sub_reflection_indicator_comp_le hU (one_lt_two.trans hq).le hFq
+    toReal_eLpNorm_indicator_sub_comp_indicator_comp_le hU (ℝ ∙ ν)ᗮ.reflection.continuous
+      (ℝ ∙ ν)ᗮ.reflection.norm_map (one_lt_two.trans hq).le hFq
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         -∫ x in U, ⟪G x, W1p.gradient (v : W1p mu U 2) x⟫_ℝ ∂mu := fun v => by
@@ -428,13 +415,15 @@ theorem
       U.isOpen.measurableSet hU hfr
   have hgf : (eLpNorm g r (mu.restrict U)).toReal ≤
       2 * (eLpNorm f r (mu.restrict (U ⊓ H))).toReal :=
-    toReal_eLpNorm_indicator_sub_indicator_comp_le hU (by exact_mod_cast hr.le) hfr
+    toReal_eLpNorm_indicator_sub_comp_indicator_comp_le hU continuous_id (fun _ => rfl)
+      (by exact_mod_cast hr.le) hfr
   have hG : MemLp G q (mu.restrict U) :=
     memLp_indicator_sub_comp_indicator_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.continuous
       (ℝ ∙ ν)ᗮ.reflection.norm_map H.isOpen.measurableSet U.isOpen.measurableSet hU hFq
   have hGF : (eLpNorm G q (mu.restrict U)).toReal ≤
       2 * (eLpNorm F q (mu.restrict (U ⊓ H))).toReal :=
-    toReal_eLpNorm_indicator_sub_reflection_indicator_comp_le hU (one_lt_two.trans hq).le hFq
+    toReal_eLpNorm_indicator_sub_comp_indicator_comp_le hU (ℝ ∙ ν)ᗮ.reflection.continuous
+      (ℝ ∙ ν)ᗮ.reflection.norm_map (one_lt_two.trans hq).le hFq
   have hw : ∀ v : W1p0 mu U 2, energyFormH1 (reflectPrincipal ν c₀ a) 0 0
       (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (v : W1p mu U 2) =
         ∫ x in U, g x * W1p.value (v : W1p mu U 2) x ∂mu -

@@ -417,16 +417,16 @@ theorem W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL (hp
     _ = ∫ x in U, ⟪g x, w x⟫_ℝ ∂mu -
           ∫ x in U, ⟪(ℝ ∙ ν)ᗮ.reflection (g (hyperplaneReflection ν c x)), w x⟫_ℝ ∂mu := by
         rw [← setIntegral_inner_reflection_comp_hyperplaneReflection hU U.isOpen.measurableSet,
-          ← integral_sub (hg.integrable_inner_of_holderTriple hw)
-          (hg.integrable_inner_of_holderTriple (memLp_comp_comp_hyperplaneReflection
+          ← integral_sub (hg.integrable_inner hw)
+          (hg.integrable_inner (memLp_comp_comp_hyperplaneReflection
             (ℝ ∙ ν)ᗮ.reflection.continuous (ℝ ∙ ν)ᗮ.reflection.norm_map U.isOpen.measurableSet
             hU hw))]
         simp_rw [inner_sub_right]
     _ = ∫ x in U, ⟪g x - (ℝ ∙ ν)ᗮ.reflection (g (hyperplaneReflection ν c x)), w x⟫_ℝ ∂mu := by
-        rw [← integral_sub (hg.integrable_inner_of_holderTriple hw)
+        rw [← integral_sub (hg.integrable_inner hw)
           ((memLp_comp_comp_hyperplaneReflection (ℝ ∙ ν)ᗮ.reflection.continuous
             (ℝ ∙ ν)ᗮ.reflection.norm_map U.isOpen.measurableSet hU
-              hg).integrable_inner_of_holderTriple hw)]
+              hg).integrable_inner hw)]
         simp_rw [inner_sub_left]
 
 end TauCeti
