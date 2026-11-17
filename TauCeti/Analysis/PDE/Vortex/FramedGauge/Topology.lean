@@ -361,13 +361,12 @@ theorem continuous_imPart :
 theorem coeFn_inclusionLp_reSubOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusionLp h (reSubOne u)) =ᵐ[volume]
       fun z ↦ ((((toSubgroup hs u : ℂ → Circle) z : ℂ).re - 1 : ℝ) : ℂ) := by
-  simp only [reSubOne, map_smul, map_add]
-  filter_upwards
-    [Lp.coeFn_smul (2 : ℂ)⁻¹ (inclusionLp h (subOne u) + inclusionLp h (subOne u⁻¹)),
-    Lp.coeFn_add (inclusionLp h (subOne u)) (inclusionLp h (subOne u⁻¹)),
-    coeFn_toLp_inclusion_subOne h u, coeFn_toLp_inclusion_subOne_inv h u] with z h₁ h₂ h₃ h₄
-  rw [toLp_inclusion] at h₃ h₄
-  simp only [h₁, h₂, h₃, h₄, Pi.smul_apply, Pi.add_apply]
+  have h₁ := coeFn_toLp_inclusion_subOne h u
+  have h₂ := coeFn_toLp_inclusion_subOne_inv h u
+  rw [toLp_inclusion] at h₁ h₂
+  filter_upwards [coeFn_inclusionLp_smul_ae_eq h (2 : ℂ)⁻¹
+    (coeFn_inclusionLp_add_ae_eq h h₁ h₂)] with z hz
+  rw [reSubOne_def, hz]
   apply Complex.ext
   · simp
     ring
@@ -377,13 +376,12 @@ theorem coeFn_inclusionLp_reSubOne (h : 0 ≤ s) (u : SobolevTopologicalGaugeGro
 theorem coeFn_inclusionLp_imPart (h : 0 ≤ s) (u : SobolevTopologicalGaugeGroup hs) :
     ⇑(inclusionLp h (imPart u)) =ᵐ[volume]
       fun z ↦ ((((toSubgroup hs u : ℂ → Circle) z : ℂ).im : ℝ) : ℂ) := by
-  simp only [imPart, map_smul, map_sub]
-  filter_upwards
-    [Lp.coeFn_smul (-(Complex.I / 2)) (inclusionLp h (subOne u) - inclusionLp h (subOne u⁻¹)),
-    Lp.coeFn_sub (inclusionLp h (subOne u)) (inclusionLp h (subOne u⁻¹)),
-    coeFn_toLp_inclusion_subOne h u, coeFn_toLp_inclusion_subOne_inv h u] with z h₁ h₂ h₃ h₄
-  rw [toLp_inclusion] at h₃ h₄
-  simp only [h₁, h₂, h₃, h₄, Pi.smul_apply, Pi.sub_apply]
+  have h₁ := coeFn_toLp_inclusion_subOne h u
+  have h₂ := coeFn_toLp_inclusion_subOne_inv h u
+  rw [toLp_inclusion] at h₁ h₂
+  filter_upwards [coeFn_inclusionLp_smul_ae_eq h (-(Complex.I / 2))
+    (coeFn_inclusionLp_sub_ae_eq h h₁ h₂)] with z hz
+  rw [imPart_def, hz]
   apply Complex.ext
   · simp
     ring

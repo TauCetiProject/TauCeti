@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.EquationMap
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.FieldTopology
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Topology
+import TauCeti.Analysis.Complex.Circle
 
 /-!
 # The continuous gauge action on the framed vortex fields and its Hausdorff quotient
@@ -259,25 +260,19 @@ private theorem coeFn_inclusionLp_gaugeFormCoord (u : SobolevTopologicalGaugeGro
         mulCLM finrank_lt (inclusion (lt_add_one (k : ℝ)).le (imPart u))
           (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v (reSubOne u)))) =ᵐ[volume]
       fun z ↦ ((gaugeForm (toSubgroup hs u) z v : ℝ) : ℂ) := by
-  simp only [map_add, map_sub]
-  refine (Lp.coeFn_sub _ _).trans <| ((Lp.coeFn_add _ _).sub .rfl).trans ?_
-  filter_upwards [coeFn_toLp_inclusion_mulCLM finrank_lt k.cast_nonneg
-      (inclusion (lt_add_one (k : ℝ)).le (reSubOne u))
-      (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v (imPart u)),
-    coeFn_toLp_inclusion_mulCLM finrank_lt k.cast_nonneg
-      (inclusion (lt_add_one (k : ℝ)).le (imPart u))
-      (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v (reSubOne u)),
+  have hM (a b : H^{(k : ℝ)}(ℂ)) := coeFn_toLp_inclusion_mulCLM finrank_lt k.cast_nonneg a b
+  simp only [toLp_inclusion] at hM
+  filter_upwards [coeFn_inclusionLp_sub_ae_eq k.cast_nonneg
+      (coeFn_inclusionLp_add_ae_eq k.cast_nonneg .rfl (hM _ _)) (hM _ _),
     coeFn_inclusionLp_inclusion_reSubOne u, coeFn_inclusionLp_inclusion_imPart u,
     coeFn_inclusionLp_lineDerivCLM_reSubOne u v, coeFn_inclusionLp_lineDerivCLM_imPart u v]
-    with z h₁ h₂ h₃ h₄ h₅ h₆
-  simp only [toLp_inclusion] at h₁ h₂
-  simp only [h₁, h₂, h₃, h₄, h₅, h₆, Pi.sub_apply, Pi.add_apply]
+    with z h₁ h₂ h₃ h₄ h₅
+  rw [h₁, h₂, h₃, h₄, h₅]
   -- With `ω = Im (u⁻¹ du)`, the derivatives are `∂_v Re u = -Im u · ω(v)` and
   -- `∂_v Im u = Re u · ω(v)`, so the sum is `(Re u² + Im u²) ω(v) = ω(v)` as `|u| = 1`.
   have hn : ((((toSubgroup hs u : ℂ → Circle) z : ℂ).re : ℝ) : ℂ) ^ 2 +
       ((((toSubgroup hs u : ℂ → Circle) z : ℂ).im : ℝ) : ℂ) ^ 2 = 1 := by
-    exact_mod_cast (by simpa [Complex.normSq_apply, sq] using
-      Circle.normSq_coe ((toSubgroup hs u : ℂ → Circle) z))
+    exact_mod_cast Circle.re_sq_add_im_sq ((toSubgroup hs u : ℂ → Circle) z)
   push_cast
   linear_combination ((gaugeForm (toSubgroup hs u) z v : ℝ) : ℂ) * hn
 
@@ -294,33 +289,13 @@ private theorem coeFn_inclusionLp_connectionCoord (u : SobolevTopologicalGaugeGr
         mulCLM finrank_lt (inclusion (lt_add_one (k : ℝ)).le (imPart u))
           (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v (reSubOne u))))) =ᵐ[volume]
       fun z ↦ (((u • x) z j - referenceField f m z j : ℝ) : ℂ) := by
-  rw [map_sub]
-  refine (Lp.coeFn_sub _ _).trans ?_
-  filter_upwards [coeFn_toLp_inclusion_subRef k.cast_nonneg x j,
-    coeFn_inclusionLp_gaugeFormCoord u v] with z h₁ h₂
-  rw [toLp_inclusion] at h₁
-  simp only [h₁, h₂, hj, Pi.sub_apply]
+  have hy := coeFn_toLp_inclusion_subRef k.cast_nonneg x j
+  rw [toLp_inclusion] at hy
+  filter_upwards [coeFn_inclusionLp_sub_ae_eq k.cast_nonneg hy
+    (coeFn_inclusionLp_gaugeFormCoord u v)] with z hz
+  rw [hz, hj]
   push_cast
   ring
-
-omit [Fact (1 < k)] in
-/-- The `L²` function of a sum in `H^k(ℂ)` is almost everywhere the sum of the `L²` functions. -/
-private theorem coeFn_inclusionLp_add_ae_eq {a b : H^{(k : ℝ)}(ℂ)} {F G : ℂ → ℂ}
-    (ha : ⇑(inclusionLp k.cast_nonneg a) =ᵐ[volume] F)
-    (hb : ⇑(inclusionLp k.cast_nonneg b) =ᵐ[volume] G) :
-    ⇑(inclusionLp k.cast_nonneg (a + b)) =ᵐ[volume] fun z ↦ F z + G z := by
-  rw [map_add]
-  exact (Lp.coeFn_add _ _).trans (ha.add hb)
-
-omit [Fact (1 < k)] in
-/-- The `L²` function of a difference in `H^k(ℂ)` is almost everywhere the difference of the `L²`
-functions. -/
-private theorem coeFn_inclusionLp_sub_ae_eq {a b : H^{(k : ℝ)}(ℂ)} {F G : ℂ → ℂ}
-    (ha : ⇑(inclusionLp k.cast_nonneg a) =ᵐ[volume] F)
-    (hb : ⇑(inclusionLp k.cast_nonneg b) =ᵐ[volume] G) :
-    ⇑(inclusionLp k.cast_nonneg (a - b)) =ᵐ[volume] fun z ↦ F z - G z := by
-  rw [map_sub]
-  exact (Lp.coeFn_sub _ _).trans (ha.sub hb)
 
 /-- **The section coordinates of the transformed field.** With `R = Re u - 1`, `J = Im u` and
 `y = x - x_m`, the `L²` functions of `y_p + R y_p - J y_q + p_m R - q_m J` and of
