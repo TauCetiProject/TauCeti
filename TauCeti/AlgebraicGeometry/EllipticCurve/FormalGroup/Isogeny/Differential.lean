@@ -311,7 +311,7 @@ theorem order_formalSeries : φ.formalSeries.order = φ.inseparableDegree := by
     rw [← formalSeries_iterateRelativeFrobeniusIsogeny p W₁ r, ← formalSeries_comp, hχ]
   have hconst : PowerSeries.constantCoeff (PowerSeries.X ^ p ^ r : K⟦X⟧) = 0 := by
     rw [map_pow, PowerSeries.constantCoeff_X, zero_pow (expChar_pow_pos K p r).ne']
-  rw [hcomp, PowerSeries.order_subst hconst, hordχ, mul_one, PowerSeries.order_pow,
+  rw [hcomp, PowerSeries.order_subst' hconst, hordχ, mul_one, PowerSeries.order_pow,
     PowerSeries.order_X, nsmul_eq_mul, mul_one, hinsep, Nat.cast_pow]
 
 end Differential

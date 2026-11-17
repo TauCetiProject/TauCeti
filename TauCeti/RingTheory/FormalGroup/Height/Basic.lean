@@ -342,8 +342,8 @@ substitution. -/
 theorem order_nsmulSeries_eq (f : FormalGroupHom F G) (hf : f.toPowerSeries ≠ 0) (n : ℕ) :
     (F.nsmulSeries n).order = (G.nsmulSeries n).order := by
   have h := congrArg PowerSeries.order (f.subst_nsmulSeries n)
-  rw [PowerSeries.order_subst (F.constantCoeff_nsmulSeries n),
-    PowerSeries.order_subst f.zero_constantCoeff, mul_comm] at h
+  rw [PowerSeries.order_subst' (F.constantCoeff_nsmulSeries n),
+    PowerSeries.order_subst' f.zero_constantCoeff, mul_comm] at h
   -- `ord f` is a positive natural number, so it can be cancelled
   have h0 : f.toPowerSeries.order ≠ 0 :=
     PowerSeries.order_ne_zero_iff_constCoeff_eq_zero.mpr f.zero_constantCoeff
