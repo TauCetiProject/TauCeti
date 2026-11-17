@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.QuadraticForm.Signature
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 
 /-!
 # Vectors orthogonal to a maximal positive-definite subspace, and the light cone
@@ -94,10 +95,8 @@ theorem apply_nonpos_of_mem_orthogonal {P : Submodule K M} (hP : (Q.restrict P).
       horth p hp, smul_zero, add_zero, smul_eq_mul]
     by_cases hp0 : p = 0
     · subst hp0
-      have hc : c ≠ 0 := by
-        rintro rfl
-        exact hw0 (by simp)
-      simpa using mul_pos (mul_self_pos.mpr hc) hpos
+      simpa [QuadraticMap.map_smul] using
+        posDef_restrict_span_singleton hpos ⟨c • x, hy⟩ (by simpa using hw0)
     · exact add_pos_of_pos_of_nonneg (hP ⟨p, hp⟩ (by simpa using hp0))
         (mul_nonneg (mul_self_nonneg c) hpos.le)
   have hdim := Submodule.finrank_sup_add_finrank_inf_eq P (K ∙ x)
@@ -143,14 +142,8 @@ theorem eq_zero_of_polar_eq_zero_of_nonneg (hQ : Q.Nondegenerate) (hsig : sigPos
   have hy0 : y ≠ 0 := by
     rintro rfl
     simp at hy
-  refine eq_zero_of_mem_orthogonal_of_nonneg hQ (P := K ∙ y) ?_ ?_ ?_ hx
-  · rintro ⟨w, hw⟩ hw0
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
-    have hc : c ≠ 0 := by
-      rintro rfl
-      exact hw0 (by simp)
-    rw [restrict_apply, QuadraticMap.map_smul, smul_eq_mul]
-    exact mul_pos (mul_self_pos.mpr hc) hy
+  refine eq_zero_of_mem_orthogonal_of_nonneg hQ (P := K ∙ y)
+    (posDef_restrict_span_singleton hy) ?_ ?_ hx
   · rwa [finrank_span_singleton hy0]
   · refine LinearMap.BilinForm.mem_orthogonal_iff.mpr fun w hw ↦ ?_
     obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
