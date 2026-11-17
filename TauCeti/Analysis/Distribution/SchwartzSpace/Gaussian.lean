@@ -41,6 +41,7 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
 * `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`, `SchwartzMap.coe_gaussian_ofReal`:
   its values.
+* `SchwartzMap.norm_gaussian_apply`: its modulus `exp (-b.re ‖x‖²)`.
 * `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
   `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
 * `SchwartzMap.eLpNorm_gaussian`, `SchwartzMap.eLpNorm_gaussian_top`: its `Lᵖ` norms
@@ -116,6 +117,12 @@ theorem gaussian_apply {b : ℂ} (hb : 0 < b.re) (x : V) :
     gaussian hb x = cexp (-b * ‖x‖ ^ 2) :=
   (rfl)
 
+/-- The modulus of the Schwartz Gaussian at `x` is the real Gaussian `exp (-b.re ‖x‖²)`. -/
+theorem norm_gaussian_apply {b : ℂ} (hb : 0 < b.re) (x : V) :
+    ‖gaussian hb x‖ = Real.exp (-b.re * ‖x‖ ^ 2) := by
+  rw [gaussian_apply]
+  exact norm_cexp_neg_mul_sq b ‖x‖
+
 /-- The Schwartz Gaussian, as a function, is `x ↦ exp (-b ‖x‖²)`. -/
 theorem coe_gaussian {b : ℂ} (hb : 0 < b.re) :
     ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun x ↦ cexp (-b * ‖x‖ ^ 2) :=
@@ -155,17 +162,14 @@ theorem eLpNorm_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpa
     (gaussian hb).continuous.aestronglyMeasurable]
   have hpow (x : V) : ‖gaussian hb x‖ₑ ^ p.toReal =
       ENNReal.ofReal (Real.exp (-(b.re * p.toReal) * ‖x‖ ^ 2)) := by
-    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp'.le]
-    simp only [gaussian_apply, norm_exp, ← Real.exp_mul]
+    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hp'.le,
+      norm_gaussian_apply, ← Real.exp_mul]
     congr 2
-    simp only [mul_re, neg_re, neg_im, ← ofReal_pow, ofReal_re, ofReal_im, mul_zero, sub_zero]
     ring
   have hint : Integrable (fun x : V ↦ Real.exp (-(b.re * p.toReal) * ‖x‖ ^ 2)) := by
-    refine (GaussianFourier.integrable_cexp_neg_mul_sq_norm_add (V := V)
-      (show 0 < ((b.re * p.toReal : ℝ) : ℂ).re by simpa using hbp) 0 0).norm.congr
-      (Eventually.of_forall fun x ↦ ?_)
-    simp only [zero_mul, add_zero, norm_exp]
-    norm_cast
+    have hb' : 0 < ((b.re * p.toReal : ℝ) : ℂ).re := by simpa using hbp
+    refine (gaussian (V := V) hb').integrable.norm.congr (Eventually.of_forall fun x ↦ ?_)
+    simp only [norm_gaussian_apply, ofReal_re]
   simp_rw [hpow]
   rw [← ofReal_integral_eq_lintegral_ofReal hint
       (Eventually.of_forall fun x ↦ (Real.exp_pos _).le),
@@ -177,14 +181,14 @@ theorem eLpNorm_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpa
 open MeasureTheory Filter in
 open scoped ENNReal in
 /-- **The supremum of the Gaussian.** For `0 < b.re`, the Gaussian `exp (-b ‖x‖²)` has `L^∞`
-norm `1`, its modulus at the origin. -/
-theorem eLpNorm_gaussian_top [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
-    (hb : 0 < b.re) : eLpNorm (gaussian hb : 𝓢(V, ℂ)) ∞ volume = 1 := by
+norm `1`, its modulus at the origin, for every measure positive on open sets. -/
+theorem eLpNorm_gaussian_top [MeasurableSpace V] [OpensMeasurableSpace V] {b : ℂ}
+    (hb : 0 < b.re) (μ : Measure V) [μ.IsOpenPosMeasure] :
+    eLpNorm (gaussian hb : 𝓢(V, ℂ)) ∞ μ = 1 := by
   have hbound (x : V) : ‖gaussian hb x‖ ≤ 1 := by
-    rw [gaussian_apply, norm_exp, Real.exp_le_one_iff]
-    simp only [mul_re, neg_re, neg_im, ← ofReal_pow, ofReal_re, ofReal_im, mul_zero, sub_zero]
+    rw [norm_gaussian_apply, Real.exp_le_one_iff]
     nlinarith [sq_nonneg ‖x‖]
-  have hm : MemLp (gaussian hb : 𝓢(V, ℂ)) ∞ volume :=
+  have hm : MemLp (gaussian hb : 𝓢(V, ℂ)) ∞ μ :=
     memLp_top_of_bound (gaussian hb).continuous.aestronglyMeasurable 1
       (Eventually.of_forall hbound)
   rw [eLpNorm_exponent_top (gaussian hb).continuous.aestronglyMeasurable]
