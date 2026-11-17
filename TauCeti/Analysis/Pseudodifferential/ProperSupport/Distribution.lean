@@ -212,6 +212,15 @@ private theorem toSchwartzMap_ofSupportedIn {E : Type*} [NormedAddCommGroup E] [
       ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f :=
   SchwartzMap.ext fun x ↦ (ContDiffMapSupportedIn.toSchwartzMapCLM_apply ℂ f x).symm
 
+/-- The closed `R`-neighbourhood of the support of a function supported in `K`, read as a Schwartz
+function, lies in the closed `R`-neighbourhood of `K`. -/
+private theorem cthickening_tsupport_toSchwartzMapCLM_subset {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] {K : Compacts (CoordinateSpace n)} (f : 𝓓_{K}(CoordinateSpace n, E)) :
+    Metric.cthickening R (tsupport (ContDiffMapSupportedIn.toSchwartzMapCLM ℂ f)) ⊆
+      K.cthickening R := by
+  rw [Compacts.coe_cthickening]
+  exact Metric.cthickening_subset_of_subset R (f.tsupport_toSchwartzMapCLM_subset ℂ)
+
 /-- **Estimates on test functions supported in `K`.** On smooth functions supported in a compact
 set `K`, the operator `Op(a)` agrees with the quantization of the symbol `ψ a` with compact
 spatial support, for a cutoff `ψ` equal to `1` on the `R`-neighbourhood of `K`, so it satisfies
@@ -228,8 +237,7 @@ private theorem HasNearDiagonalKernel.exists_norm_iteratedFDeriv_le
   refine ⟨s, C, hC0, fun f x ↦ ?_⟩
   rw [← ha.quantizeSchwartzValue_spatialCutoff_eq hψ (hψ1.mono ?_)]
   · exact hC f x
-  · rw [Compacts.coe_cthickening]
-    exact Metric.cthickening_subset_of_subset R (f.tsupport_toSchwartzMapCLM_subset ℂ)
+  · exact cthickening_tsupport_toSchwartzMapCLM_subset f
 
 /-- `Op(a)` on smooth functions supported in a compact set `K`, with values in the smooth functions
 supported in the closed `R`-neighbourhood of `K`. -/
@@ -237,9 +245,8 @@ private def quantizeSupportedInCLM (ha : a.HasNearDiagonalKernel R)
     (K : Compacts (CoordinateSpace n)) :
     𝓓_{K}(CoordinateSpace n, V) →L[ℂ] 𝓓_{K.cthickening R}(CoordinateSpace n, W) :=
   supportedInCLM a
-    (fun f x hx ↦ ha.quantizeSchwartzValue_eq_zero_of_notMem fun h ↦ hx <| by
-      rw [Compacts.coe_cthickening]
-      exact Metric.cthickening_subset_of_subset R (f.tsupport_toSchwartzMapCLM_subset ℂ) h)
+    (fun f _ hx ↦ ha.quantizeSchwartzValue_eq_zero_of_notMem fun h ↦
+      hx (cthickening_tsupport_toSchwartzMapCLM_subset f h))
     (ha.exists_norm_iteratedFDeriv_le K)
 
 /-- **A properly supported operator on test functions.** For a symbol `a` whose quantization has
@@ -400,9 +407,7 @@ private def adjointSupportedInCLM (ha : a.HasNearDiagonalKernel R)
       have hf := f.tsupport_toSchwartzMapCLM_subset ℂ
       rw [quantizeSchwartzValue_adjoint_spatialCutoff hψ.1 hψ.2.1 (hψ.2.2.mono hf)]
       refine ha.adjointValue_eq_zero (K.isCompact.of_isClosed_subset (isClosed_tsupport _) hf)
-        fun h ↦ hx ?_
-      rw [Compacts.coe_cthickening]
-      exact Metric.cthickening_subset_of_subset R hf h)
+        fun h ↦ hx (cthickening_tsupport_toSchwartzMapCLM_subset f h))
     ((isUniform_adjoint _ _).exists_norm_iteratedFDeriv_quantize_le K)
 
 /-- **The formal adjoint of a properly supported operator on test functions.** For a symbol `a`

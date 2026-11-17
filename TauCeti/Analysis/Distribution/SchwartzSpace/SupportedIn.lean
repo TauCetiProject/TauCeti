@@ -34,14 +34,13 @@ variable (𝕜 : Type*) {E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddC
 
 /-- The inclusion of the smooth functions supported in a compact set `K` into Schwartz space, as a
 continuous `𝕜`-linear map. -/
-@[expose]
 def toSchwartzMapCLM : 𝓓_{K}(E, F) →L[𝕜] 𝓢(E, F) :=
   letI L : 𝓓_{K}(E, F) →ₗ[𝕜] 𝓢(E, F) :=
     { toFun f := f.hasCompactSupport.toSchwartzMap f.contDiff
       map_add' _ _ := SchwartzMap.ext fun _ ↦ rfl
       map_smul' _ _ := SchwartzMap.ext fun _ ↦ rfl }
   { toLinearMap := L
-    cont := show Continuous L by
+    cont := by
       obtain ⟨r, hr⟩ := K.isCompact.isBounded.exists_norm_le
       refine WithSeminorms.continuous_of_isBounded
         (ContDiffMapSupportedIn.withSeminorms 𝕜 E F ⊤ K) (schwartz_withSeminorms 𝕜 E F) L
@@ -59,11 +58,11 @@ def toSchwartzMapCLM : 𝓓_{K}(E, F) →L[𝕜] 𝓢(E, F) :=
 /-- A smooth function supported in `K`, read as a Schwartz function, is the same function. -/
 @[simp]
 theorem coe_toSchwartzMapCLM (f : 𝓓_{K}(E, F)) : ⇑(toSchwartzMapCLM 𝕜 f) = f :=
-  rfl
+  (rfl)
 
 /-- A smooth function supported in `K`, read as a Schwartz function, has the same values. -/
 theorem toSchwartzMapCLM_apply (f : 𝓓_{K}(E, F)) (x : E) : toSchwartzMapCLM 𝕜 f x = f x :=
-  rfl
+  (rfl)
 
 /-- A smooth function supported in `K`, read as a Schwartz function, is still supported in `K`. -/
 theorem tsupport_toSchwartzMapCLM_subset (f : 𝓓_{K}(E, F)) :

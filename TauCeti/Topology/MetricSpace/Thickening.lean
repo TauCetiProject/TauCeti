@@ -103,7 +103,6 @@ theorem _root_.IsCompact.disjoint_cthickening_left {X : Type*} [PseudoMetricSpac
   exact mem_cthickening_of_dist_le x y _ t hyt (by rw [dist_comm]; exact mem_closedBall.1 hy)
 
 /-- The closed `δ`-thickening of a compact set in a proper pseudometric space, as a compact set. -/
-@[expose]
 def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace X] [ProperSpace X]
     (δ : ℝ) (K : TopologicalSpace.Compacts X) : TopologicalSpace.Compacts X :=
   ⟨Metric.cthickening δ K, K.isCompact.cthickening⟩
@@ -112,7 +111,7 @@ def _root_.TopologicalSpace.Compacts.cthickening {X : Type*} [PseudoMetricSpace 
 theorem _root_.TopologicalSpace.Compacts.coe_cthickening {X : Type*} [PseudoMetricSpace X]
     [ProperSpace X] (δ : ℝ) (K : TopologicalSpace.Compacts X) :
     (K.cthickening δ : Set X) = Metric.cthickening δ K :=
-  rfl
+  (rfl)
 
 /-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
 `R`-thickening. -/
