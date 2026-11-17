@@ -48,6 +48,9 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
 * `TauCeti.uniformIntegrable_of_lintegral_iSup_eNorm_rpow_lt_top` — a countable family with
   integrable supremum of its `p`-th powers of norms is uniformly integrable with a uniform
   `Lᵖ` bound;
+* `MeasureTheory.UniformIntegrable.comp` — uniform integrability passes to reindexed families;
+* `TauCeti.norm_integral_le_of_eLpNorm_one_le` — an integral is bounded in norm by a real bound
+  on the `L¹` norm of the integrand;
 * `TauCeti.uniformIntegrable_of_setIntegral_le` — over a finite measure, a family of
   nonnegative integrable real functions with uniformly small upper-tail integrals is uniformly
   integrable;
@@ -92,6 +95,13 @@ theorem MeasureTheory.UniformIntegrable.ae_mono {α β γ ι : Type*}
   · exact lt_of_le_of_lt (iSup_le fun i ↦ (eLpNorm_mono_eNorm_ae (hV i) (hle i)).trans
       (le_iSup (fun i ↦ eLpNorm (D i) p μ) i)) hUI.iSup_eLpNorm_lt
 
+/-- Uniform integrability, including a uniform `Lᵖ` bound, passes to a reindexed family. -/
+protected theorem MeasureTheory.UniformIntegrable.comp {α β ι ι' : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup β] {μ : Measure α} {p : ℝ≥0∞} {f : ι → α → β} (g : ι' → ι)
+    (hf : UniformIntegrable f p μ) : UniformIntegrable (f ∘ g) p μ :=
+  ⟨hf.unifIntegrable.comp g,
+    (iSup_comp_le (fun i ↦ eLpNorm (f i) p μ) g).trans_lt hf.iSup_eLpNorm_lt⟩
+
 /-- A family dominated almost everywhere in norm by one `Lᵖ` function is uniformly integrable
 in `Lᵖ`, including a uniform bound on its `Lᵖ` norms, for `1 ≤ p < ∞`. -/
 theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
@@ -103,6 +113,14 @@ theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
   (uniformIntegrable_const hp hp_top hD).ae_mono hV hle
 
 namespace TauCeti
+
+/-- An integral is bounded in norm by any real bound on the `L¹` norm of the integrand. -/
+theorem norm_integral_le_of_eLpNorm_one_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} (hf : AEStronglyMeasurable f μ) {ε : ℝ}
+    (hε : 0 ≤ ε) (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
+  have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ) f
+  rw [← eLpNorm_one_eq_lintegral_eNorm hf, ← ofReal_norm] at h1
+  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans h)
 
 /-- A family of almost everywhere nonnegative integrable real functions on a finite measure
 space is uniformly integrable when its integrals over the upper tails `{C ≤ f i}` are uniformly
@@ -129,7 +147,8 @@ theorem uniformIntegrable_of_setIntegral_le {α ι : Type*} [MeasurableSpace α]
         refine lintegral_mono_ae ((hnn i).mono fun x hx ↦ ?_)
         by_cases hxS : x ∈ {x | C.toNNReal ≤ ‖f i x‖₊}
         · have hxT : x ∈ T := by
-            have hle : (C.toNNReal : ℝ) ≤ ‖f i x‖ := hxS
+            have hle : (C.toNNReal : ℝ) ≤ ‖f i x‖ := by
+              simpa [← NNReal.coe_le_coe, coe_nnNorm] using hxS
             rw [Real.norm_of_nonneg hx] at hle
             exact (Real.le_coe_toNNReal C).trans hle
           rw [indicator_of_mem hxS, indicator_of_mem hxT, Real.eNorm_eq_ofReal hx]

@@ -17,6 +17,8 @@ the martingale `martingalePart f ℱ μ` and the predictable process `A = predic
 the compensator of `f`. This file controls the upper tail of the compensator of a submartingale at
 a fixed index `N` by increments of `f` itself between stopping times and `N`.
 
+* `MeasureTheory.predictablePart_eq_sub`: the compensator is the process minus its martingale
+  part.
 * `MeasureTheory.integrable_predictablePart`, `MeasureTheory.integral_predictablePart`: the
   compensator of an integrable process is integrable, with expectation `E[f_N] - E[f_0]`.
 * `MeasureTheory.setIntegral_predictablePart_sub_stoppedValue`: on an event known at a stopping
@@ -51,7 +53,7 @@ variable {Ω : Type*} {m0 : MeasurableSpace Ω} {μ : Measure Ω} {ℱ : Filtrat
   {f : ℕ → Ω → ℝ}
 
 /-- The compensator is the process minus its martingale part. -/
-private theorem predictablePart_eq_sub (n : ℕ) :
+theorem predictablePart_eq_sub (n : ℕ) :
     predictablePart f ℱ μ n = f n - martingalePart f ℱ μ n :=
   eq_sub_of_add_eq' (congrFun (martingalePart_add_predictablePart ℱ μ f) n)
 
@@ -171,8 +173,8 @@ private theorem setIntegral_predictablePart_sub_le [IsFiniteMeasure μ]
         (compensatorHit_le c N))).integrableOn fun ω ↦ ?_
   exact sub_le_sub_left (stoppedValue_compensatorHit_lt hc N ω).le _
 
-/-- The compensator is almost everywhere nonnegative on the event that it reaches a nonnegative
-level before `N`. -/
+/-- On the event that the compensator reaches `c` before `N`, its value at `N` is almost
+everywhere at least `c`. -/
 private theorem ae_restrict_sub_nonneg (hf : Submartingale f ℱ μ) (c : ℝ) (N : ℕ) :
     0 ≤ᵐ[μ.restrict {ω | compensatorHit f ℱ μ c N ω < N}]
       fun ω ↦ predictablePart f ℱ μ N ω - c := by
@@ -241,7 +243,6 @@ theorem Submartingale.exists_setIntegral_predictablePart_le [IsFiniteMeasure μ]
           (ae_restrict_sub_nonneg hf (c / 2) N) (ae_of_all _ fun _ h ↦ hSρ h)
   have h1 := setIntegral_predictablePart_sub_le hf hc N
   have h2 := setIntegral_predictablePart_sub_le hf hc2 N
-  rw [hsplit]
-  nlinarith
+  linarith [hsplit, hlevel, hhalf, h1, h2]
 
 end MeasureTheory

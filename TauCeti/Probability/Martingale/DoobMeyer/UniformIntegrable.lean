@@ -46,14 +46,6 @@ namespace TauCeti
 variable {Ω ι : Type*} {mΩ : MeasurableSpace Ω} {μ : Measure Ω} [Preorder ι] [Nonempty ι]
   {ℱ : Filtration ι mΩ} {X : ι → Ω → ℝ} {T : ι}
 
-/-- Stopping times bounded by `T`, the index set of the class DL family at horizon `T`. -/
-private abbrev BoundedStoppingTime (ℱ : Filtration ι mΩ) (T : ι) :=
-  {τ : Ω → WithTop ι // IsStoppingTime ℱ τ ∧ ∀ ω, τ ω ≤ T}
-
-/-- A deterministic time bounded by `T`, as a bounded stopping time. -/
-private def BoundedStoppingTime.const {t : ι} (ht : t ≤ T) : BoundedStoppingTime ℱ T :=
-  ⟨fun _ ↦ t, isStoppingTime_const ℱ t, fun _ ↦ WithTop.coe_le_coe.2 ht⟩
-
 /-- A stopping time `σ ≤ N` of a grid filtration, read through a grid ending below `T`. -/
 private def BoundedStoppingTime.ofComp {g : ℕ → ι} (hg : Monotone g) {N : ℕ} (hgN : g N ≤ T)
     {σ : Ω → WithTop ℕ} (hσ : IsStoppingTime (ℱ.comp hg) σ) (hσN : ∀ ω, σ ω ≤ N) :
@@ -70,14 +62,6 @@ private theorem stoppedValue_eq_ofComp {g : ℕ → ι} (hg : Monotone g) {N : �
   funext ω
   exact stoppedValue_comp_of_ne_top (ne_top_of_le_ne_top WithTop.coe_ne_top (hσN ω))
 
-/-- An integral over `s` is bounded in absolute value by the `L¹` norm over `s`. -/
-private theorem abs_setIntegral_le {Y : Ω → ℝ} (hY : AEStronglyMeasurable Y μ) {s : Set Ω}
-    {ε : ℝ} (hε : 0 ≤ ε) (h : eLpNorm Y 1 (μ.restrict s) ≤ ENNReal.ofReal ε) :
-    |∫ ω in s, Y ω ∂μ| ≤ ε := by
-  have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ.restrict s) Y
-  rw [← eLpNorm_one_eq_lintegral_eNorm hY.restrict, Real.eNorm_eq_ofReal_abs] at h1
-  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans h)
-
 /-- On events of small probability, increments of a class DL process between a grid stopping time
 and the end of the grid have small integrals. -/
 private theorem setIntegral_sub_stoppedValue_le
@@ -91,9 +75,12 @@ private theorem setIntegral_sub_stoppedValue_le
     ∫ ω in {ω | σ ω < N}, (X (g N) ω - stoppedValue (fun k ↦ X (g k)) σ ω) ∂μ ≤ 2 * ε' := by
   subst hε
   set τ := BoundedStoppingTime.ofComp hg hgN hσ hσN
-  have hN := abs_setIntegral_le (hX (g N)).aestronglyMeasurable hε'
-    (hδ (BoundedStoppingTime.const hgN) _ hs)
-  have hτ := abs_setIntegral_le (hU.memLp τ).aestronglyMeasurable hε' (hδ τ _ hs)
+  have hδN := hδ (BoundedStoppingTime.const hgN) _ hs
+  rw [BoundedStoppingTime.stoppedValue_const] at hδN
+  have hN := norm_integral_le_of_eLpNorm_one_le (hX (g N)).aestronglyMeasurable.restrict hε' hδN
+  have hτ := norm_integral_le_of_eLpNorm_one_le (hU.memLp τ).aestronglyMeasurable.restrict hε'
+    (hδ τ _ hs)
+  rw [Real.norm_eq_abs] at hN hτ
   rw [stoppedValue_eq_ofComp hg hgN hσ hσN, integral_sub (hX (g N)).integrableOn
     (memLp_one_iff_integrable.1 (hU.memLp τ)).integrableOn]
   linarith [le_abs_self (∫ ω in {ω | σ ω < N}, X (g N) ω ∂μ),
@@ -113,10 +100,11 @@ theorem IsClassDL.uniformIntegrable_predictablePart [IsFiniteMeasure μ]
   set K := (⨆ τ : BoundedStoppingTime ℱ T, eLpNorm (stoppedValue X τ.1) 1 μ).toReal
   have hK0 : 0 ≤ K := ENNReal.toReal_nonneg
   have hK (t : ι) (ht : t ≤ T) : |∫ ω, X t ω ∂μ| ≤ K := by
-    have h := abs_setIntegral_le (s := univ) (hX.integrable t).aestronglyMeasurable
+    have h := norm_integral_le_of_eLpNorm_one_le (hX.integrable t).aestronglyMeasurable
       ENNReal.toReal_nonneg (ε := K) ?_
     · simpa using h
-    rw [Measure.restrict_univ, ENNReal.ofReal_toReal hU.iSup_eLpNorm_lt.ne]
+    rw [ENNReal.ofReal_toReal hU.iSup_eLpNorm_lt.ne,
+      ← BoundedStoppingTime.stoppedValue_const (ℱ := ℱ) (X := X) ht]
     exact le_iSup (fun τ : BoundedStoppingTime ℱ T ↦ eLpNorm (stoppedValue X τ.1) 1 μ)
       (BoundedStoppingTime.const ht)
   refine uniformIntegrable_of_setIntegral_le
