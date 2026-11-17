@@ -360,28 +360,23 @@ variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
 
 private def homotopyConj {K L K' L' : ChainComplex C ℕ} {f g : K ⟶ L} {f' g' : K' ⟶ L'}
     (u : K ⟶ K') (v : L' ⟶ L) (H : _root_.Homotopy f' g')
-    (hf : f = (u ≫ f') ≫ v) (hg : g = (u ≫ g') ≫ v) :
+    (hf : f = u ≫ f' ≫ v) (hg : g = u ≫ g' ≫ v) :
     _root_.Homotopy f g :=
   (_root_.Homotopy.ofEq hf).trans
-    (((H.compLeft u).compRight v).trans (_root_.Homotopy.ofEq hg.symm))
-
-private lemma natIso_map_conj {J D : Type*} [Category* J] [Category* D]
-    {F G : J ⥤ D} (e : F ≅ G) {X Y : J} (f : X ⟶ Y) :
-    F.map f = (e.hom.app X ≫ G.map f) ≫ e.inv.app Y := by
-  rw [← e.hom.naturality, Category.assoc, Iso.hom_inv_id_app, Category.comp_id]
+    (((H.compRight v).compLeft u).trans (_root_.Homotopy.ofEq hg.symm))
 
 private lemma N_map_eq_inclusionN_comp_PInftyToN {X Y : SimplicialObject C} (f : X ⟶ Y) :
     Idempotents.DoldKan.N.map f =
-      (Idempotents.DoldKan.inclusionN.app X ≫ (alternatingFaceMapComplex C).map f) ≫
+      Idempotents.DoldKan.inclusionN.app X ≫ (alternatingFaceMapComplex C).map f ≫
         Idempotents.DoldKan.PInftyToN.app Y := by
-  rw [Category.assoc, Idempotents.DoldKan.PInftyToN.naturality,
+  rw [Idempotents.DoldKan.PInftyToN.naturality,
     Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app_assoc]
 
 private lemma PInfty_comp_map_eq {X Y : SimplicialObject C} (f : X ⟶ Y) :
     PInfty ≫ (alternatingFaceMapComplex C).map f =
-      (Idempotents.DoldKan.PInftyToN.app X ≫ Idempotents.DoldKan.N.map f) ≫
+      Idempotents.DoldKan.PInftyToN.app X ≫ Idempotents.DoldKan.N.map f ≫
         Idempotents.DoldKan.inclusionN.app Y := by
-  rw [Category.assoc, Idempotents.DoldKan.inclusionN.naturality,
+  rw [Idempotents.DoldKan.inclusionN.naturality,
     Idempotents.DoldKan.PInftyToN_app_comp_inclusionN_app_assoc]
 
 namespace Homotopy
@@ -491,13 +486,13 @@ def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X �
           e.homotopyInvHomId ?_ ?_ }
   · rw [Functor.map_comp, hg]
     dsimp [gN]
-    rw [Idempotents.DoldKan.inclusionN.naturality_assoc, ← he, Category.assoc, Category.assoc]
-  · rw [Category.comp_id, Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app, Functor.map_id]
+    rw [Idempotents.DoldKan.inclusionN.naturality_assoc, ← he, Category.assoc]
+  · rw [Category.id_comp, Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app, Functor.map_id]
   · rw [Functor.map_comp, hg]
     dsimp [gN]
     rw [Category.assoc, Category.assoc, ← Idempotents.DoldKan.PInftyToN.naturality, ← he,
-      Category.assoc, Category.assoc]
-  · rw [Category.comp_id, Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app, Functor.map_id]
+      Category.assoc]
+  · rw [Category.id_comp, Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app, Functor.map_id]
 
 @[simp]
 lemma ofAlternatingFaceMapComplexHomotopyEquiv_hom {X Y : SimplicialObject C} (f : X ⟶ Y)
@@ -545,8 +540,8 @@ normalized Moore complexes. -/
 def toNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y} (h : Homotopy f g) :
     _root_.Homotopy ((normalizedMooreComplex A).map f) ((normalizedMooreComplex A).map g) :=
   homotopyConj (Abelian.DoldKan.comparisonN.hom.app X) (Abelian.DoldKan.comparisonN.inv.app Y)
-    h.toNHomotopy (natIso_map_conj Abelian.DoldKan.comparisonN f)
-    (natIso_map_conj Abelian.DoldKan.comparisonN g)
+    h.toNHomotopy (NatIso.naturality_2 Abelian.DoldKan.comparisonN f).symm
+    (NatIso.naturality_2 Abelian.DoldKan.comparisonN g).symm
 
 /-- A chain homotopy on normalized Moore complexes lifts to a simplicial homotopy `Homotopy f g`. -/
 def ofNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y}
@@ -554,8 +549,8 @@ def ofNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y}
     Homotopy f g :=
   ofNHomotopy <|
     homotopyConj (Abelian.DoldKan.comparisonN.inv.app X) (Abelian.DoldKan.comparisonN.hom.app Y)
-      H (natIso_map_conj Abelian.DoldKan.comparisonN.symm f)
-      (natIso_map_conj Abelian.DoldKan.comparisonN.symm g)
+      H (NatIso.naturality_1 Abelian.DoldKan.comparisonN f).symm
+      (NatIso.naturality_1 Abelian.DoldKan.comparisonN g).symm
 
 end Homotopy
 
@@ -584,16 +579,16 @@ def Γ.mapHomotopy {K L : ChainComplex C ℕ} {φ ψ : K ⟶ L} (H : Homotopy φ
     SimplicialObject.Homotopy (Γ.map φ) (Γ.map ψ) :=
   SimplicialObject.Homotopy.ofNHomotopy <|
     SimplicialObject.homotopyConj ((η (C := C)).hom.app K) ((η (C := C)).inv.app L) H
-      (SimplicialObject.natIso_map_conj (η (C := C)) φ)
-      (SimplicialObject.natIso_map_conj (η (C := C)) ψ)
+      (NatIso.naturality_2 (η (C := C)) φ).symm
+      (NatIso.naturality_2 (η (C := C)) ψ).symm
 
 /-- Two chain maps `φ, ψ : K ⟶ L` are chain homotopic if and only if `Γ.map φ` and `Γ.map ψ` are
 simplicially homotopic. -/
 theorem nonempty_homotopy_Γ_map_iff {K L : ChainComplex C ℕ} (φ ψ : K ⟶ L) :
     Nonempty (SimplicialObject.Homotopy (Γ.map φ) (Γ.map ψ)) ↔ Nonempty (Homotopy φ ψ) :=
   ⟨fun ⟨h⟩ ↦ ⟨SimplicialObject.homotopyConj ((η (C := C)).inv.app K) ((η (C := C)).hom.app L)
-      h.toNHomotopy (SimplicialObject.natIso_map_conj (η (C := C)).symm φ)
-      (SimplicialObject.natIso_map_conj (η (C := C)).symm ψ)⟩,
+      h.toNHomotopy (NatIso.naturality_1 (η (C := C)) φ).symm
+      (NatIso.naturality_1 (η (C := C)) ψ).symm⟩,
     fun ⟨H⟩ ↦ ⟨Γ.mapHomotopy H⟩⟩
 
 /-- The inverse Dold–Kan functor `Γ` carries chain homotopy equivalences to simplicial homotopy
