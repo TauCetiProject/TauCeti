@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Contact.Isotropic
+public import TauCeti.Geometry.Contact.Reeb
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Geometry.Symplectic.Cotangent.Bundle.Liouville
@@ -27,9 +28,10 @@ with real coordinate `z`, carrying the one-form
 
 where `θ` is pulled back along the projection to `W`. Then `dα = ω`, pulled back along the same
 projection (`TauCeti.SmoothForm.mextDerivₗ_contactization`), and `α` is a contact form exactly when
-`ω` is nondegenerate (`TauCeti.SmoothForm.isContactForm_contactization_iff`). The proof is linear
-algebra on each tangent space `T_w W × ℝ`: the kernel of `α` is the graph `{(v, θ v)}` of `θ`
-(`TauCeti.SmoothForm.mem_kerDistribution_contactization`), which the projection identifies with
+`ω` is nondegenerate (`TauCeti.SmoothForm.isContactForm_contactization_iff`); in finite dimensions
+its Reeb vector field is `∂_z` (`TauCeti.SmoothForm.reebVectorField_contactization`). The proof is
+linear algebra on each tangent space `T_w W × ℝ`: the kernel of `α` is the graph `{(v, θ v)}` of
+`θ` (`TauCeti.SmoothForm.mem_kerDistribution_contactization`), which the projection identifies with
 `T_w W`, and on it `dα` is `ω`.
 
 For the cotangent bundle `W = T*Q` with its Liouville form `λ_Q`, this is the standard contact
@@ -71,6 +73,7 @@ Legendrian immersions into `W × ℝ` are exactly the lifts of the exact Lagrang
 * `TauCeti.SmoothForm.mpullback_prodMk_contactization`: `(ι, h)^* (dz - θ) = dh - ι^* θ`.
 * `TauCeti.SmoothForm.isContactForm_contactization_iff`: `dz - θ` is a contact form exactly when
   `-dθ` is nondegenerate.
+* `TauCeti.SmoothForm.reebVectorField_contactization`: the Reeb vector field of `dz - θ` is `∂_z`.
 * `TauCeti.mpullback_contactizationShift_contactization`: change of primitive.
 * `TauCeti.SmoothForm.isHorizontalMap_contactization_iff`: `(ι, h)` is horizontal exactly when
   `ι^* θ = dh`.
@@ -224,6 +227,18 @@ theorem isContactForm_contactization_iff {θ : SmoothForm I W ℝ 1} :
       rw [h₁, (θ.1 p.1).map_coord_zero 0 rfl] at hv
       exact (NormedSpace.fromTangentSpace p.2).map_eq_zero_iff.1 hv
     exact e.injective (by rw [map_zero]; exact Prod.ext h₁ h₂)
+
+/-- The Reeb vector field of a contactization form `dz - θ` on `W × ℝ` is `∂_z`. -/
+theorem reebVectorField_contactization [FiniteDimensional ℝ E] {θ : SmoothForm I W ℝ 1}
+    (hθ : θ.contactization.IsContactForm) (p : W × ℝ) :
+    θ.contactization.reebVectorField p =
+      (Manifold.tangentSpaceProdEquiv p).symm (0, (NormedSpace.fromTangentSpace p.2).symm 1) :=
+  (hθ.eq_reebVectorField_iff.2 ⟨by
+    simp only [contactization_apply, ContinuousLinearEquiv.apply_symm_apply]
+    rw [(θ.1 p.1).map_coord_zero 0 rfl, sub_zero], fun w ↦ by
+    rw [mextDeriv_contactization_apply, ContinuousLinearEquiv.apply_symm_apply,
+      SmoothBundleForm.eval₂_apply]
+    exact ((-mextDerivₗ I 1 θ).1 p.1).map_coord_zero 0 rfl⟩).symm
 
 end SmoothForm
 
