@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.SplitTorus.RootDatum.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.TypeA.Presentation
 import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic

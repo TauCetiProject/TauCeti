@@ -7,8 +7,8 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.CoefficientReflection
 public import TauCeti.LinearAlgebra.RootSystem.HighestRoot.Basic
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
-import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
+import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic
 
 /-!
 # Simple-root coefficients and the highest root of type A
@@ -69,12 +69,15 @@ private lemma typeACoweight_vecMul_cartanMatrix {a : ℕ} (ha : a ≤ n) :
   induction hd : n - a generalizing a with
   | zero =>
     obtain rfl : a = n := by omega
-    have h : typeACoweight a a = 0 := funext fun k ↦ ite_eq_right_iff.mpr fun h ↦ by omega
+    have h : typeACoweight a a = 0 := by
+      funext k
+      simp only [typeACoweight, Pi.zero_apply]
+      split_ifs <;> omega
     rw [h, Matrix.zero_vecMul, sub_self]
   | succ d ih =>
     have hrow : (CartanMatrix.A n).row ⟨a, by omega⟩ =
-        typeAWeight n a - typeAWeight n (a + 1) :=
-      (root_typeASimpleIndex ⟨a, by omega⟩).symm.trans (root_typeASimpleIndex_eq _)
+        typeAWeight n a - typeAWeight n (a + 1) := by
+      rw [Matrix.row_apply', ← root_typeASimpleIndex_eq ⟨a, by omega⟩, root_typeASimpleIndex]
     rw [eq_add_of_sub_eq' (typeACoweight_sub_succ ⟨a, by omega⟩), Matrix.add_vecMul,
       Matrix.single_one_vecMul, hrow, ih (a := a + 1) (by omega) (by omega)]
     abel

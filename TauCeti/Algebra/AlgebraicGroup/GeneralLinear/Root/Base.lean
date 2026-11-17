@@ -43,8 +43,8 @@ to the standard maximal torus of `GL_(n+1)` carries the expected Bourbaki-number
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, Section 12.1.
 
 The support and telescoping organization follows
-`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A`, adapted here to the character and
-cocharacter lattices of the diagonal torus in `GL_(n+1)`.
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.A.Basic`, adapted here to the character
+and cocharacter lattices of the diagonal torus in `GL_(n+1)`.
 -/
 
 public section
