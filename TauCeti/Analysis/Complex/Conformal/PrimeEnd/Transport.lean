@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.PrimeEnd.Basic
+import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Topology.Compactness.Compact

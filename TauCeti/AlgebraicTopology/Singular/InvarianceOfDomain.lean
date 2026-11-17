@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
-public import Mathlib.Topology.Compactification.OnePoint.Sphere
+public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Geometry.Manifold.ChartedSpace
+import Mathlib.Topology.Compactification.OnePoint.Sphere
+import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.Connected.PathConnected
 
