@@ -141,13 +141,16 @@ private theorem eventually_ker_eq_bot_and_sigNeg_eq_of_forall_mul_norm_le
 
 namespace WeakDerivStep
 
-/-- **The index of the trajectory operator is the spectral flow.** Let `A` be a differentiable
-family of symmetric operators on a finite-dimensional real inner product space with invertible
-limits `A±` at `±∞`. Suppose that every crossing `t` of `A`,
+/-- **The index of the trajectory operator is the sum of the crossing signatures.** Let `A` be a
+differentiable family of symmetric operators on a finite-dimensional real inner product space with
+invertible limits `A±` at `±∞`. Suppose that every crossing `t` of `A`,
 where `A t` is not injective, is regular: the crossing form `Γₜ : v ↦ ⟪A' t v, v⟫` on the kernel of
 `A t` is nondegenerate. Then the index of the trajectory operator `u ↦ u' + A u` from
-`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the sum over the (finitely many) crossings of the signatures
-`sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is invertible contribute zero to the sum. -/
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the sum over the crossings of the signatures
+`sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is invertible contribute zero to the sum. For the
+same sum as the spectral flow `TauCeti.spectralFlow`, see
+`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm` and
+`index_trajectoryOperator_eq_spectralFlow`. -/
 theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
     (hA : Differentiable ℝ A) (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric)
     {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
