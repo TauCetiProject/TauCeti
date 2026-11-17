@@ -33,7 +33,7 @@ size and normalized by the degree: `ωᵪ(K_C) = |C| · χ(g) / χ(1)`, when `χ
   endomorphism, as a homomorphism of `k`-algebras `Z(A) →ₐ[k] End_A M`. No simplicity or
   finiteness hypothesis is needed.
 * `TauCeti.centerToCenterEnd`: the same homomorphism, landing in the centre of `End_A M`. When
-  `M` is simple that centre is a field (`TauCeti.instFieldSubalgebraCenter`).
+  `M` is simple that centre is a field (`TauCeti.isField_center`).
 * `TauCeti.centralCharacterOfBijective`: the central character `Z(A) →ₐ[k] k` of a module whose
   commutant is `k`.
 * `TauCeti.centralCharacter`: the central character `Z(A) →ₐ[k] k` of a finite-dimensional simple
@@ -98,7 +98,7 @@ theorem centerToEnd_mem_center (z : Subalgebra.center k A) :
 
 /-- The action of the centre of `A` on an `A`-module lands in the centre of the commutant
 `End_A M`, as a homomorphism of `k`-algebras. For a simple module `End_A M` is a division algebra,
-so the target is a field (`TauCeti.instFieldSubalgebraCenter`); it need not be `k`. -/
+so the target is a field (`TauCeti.isField_center`); it need not be `k`. -/
 def centerToCenterEnd : Subalgebra.center k A →ₐ[k] Subalgebra.center k (Module.End A M) :=
   (centerToEnd k A M).codRestrict _ (centerToEnd_mem_center k A M)
 
@@ -113,10 +113,14 @@ end CenterToEnd
 
 /-- The centre of a division algebra is a field. Applied to the commutant `End_A M` of a simple
 module (Mathlib's `Module.End.instDivisionRing`), this is the field through which the centre of
-`A` acts (`TauCeti.centerToCenterEnd`). -/
-instance instFieldSubalgebraCenter {k D : Type*} [CommSemiring k] [DivisionRing D]
-    [Algebra k D] : Field (Subalgebra.center k D) :=
-  inferInstanceAs (Field (Subring.center D))
+`A` acts (`TauCeti.centerToCenterEnd`).
+
+This is stated with `IsField`, like Mathlib's `IsSimpleRing.isField_center`, rather than as a
+`Field` instance: a global instance transported from `Subring.center D` would carry rational
+scalar actions not definitionally equal to those `Subalgebra.center k D` already has. -/
+theorem isField_center {k D : Type*} [CommSemiring k] [DivisionRing D] [Algebra k D] :
+    IsField (Subalgebra.center k D) :=
+  Field.toIsField (Subring.center D)
 
 /-! ### The central character of a module with scalar commutant -/
 
