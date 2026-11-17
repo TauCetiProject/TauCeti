@@ -23,7 +23,8 @@ The degree only sees `Γ` on the boundary (`TauCeti.squareBoundaryDegree_congr`)
 laws of a winding number:
 
 * **products:** for `Γ` and `Γ'` continuous on the boundary,
-  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`);
+  `deg (Γ * Γ') = deg Γ + deg Γ'` (`TauCeti.squareBoundaryDegree_mul`), and so
+  `deg Γ⁻¹ = -deg Γ` (`TauCeti.squareBoundaryDegree_inv`);
 * **maps defined on the whole square:** if `Γ` is continuous on all of `I²`, its boundary loop is
   null-homotopic, so `deg Γ = 0` (`TauCeti.squareBoundaryDegree_eq_zero_of_continuous`);
 * **homotopy:** a family `H (τ, ·)`, `τ ∈ I`, continuous on `I × ∂I²`, has constant degree
@@ -47,7 +48,7 @@ direction and cancels.
 
 * `TauCeti.squareBoundaryDegree_eq_degree`: the degree is that of the loop `Γ ∘ ∂I²`.
 * `TauCeti.squareBoundaryDegree_congr`, `TauCeti.squareBoundaryDegree_mul`,
-  `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
+  `TauCeti.squareBoundaryDegree_inv`, `TauCeti.squareBoundaryDegree_eq_zero_of_continuous`,
   `TauCeti.squareBoundaryDegree_eq_of_homotopy`, `TauCeti.squareBoundaryDegree_eq_add`: the laws
   above.
 
@@ -173,6 +174,15 @@ theorem squareBoundaryDegree_mul (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2)))
   rw [squareBoundaryDegree_eq_degree (hΓ.mul hΓ'), squareBoundaryDegree_eq_degree hΓ,
     squareBoundaryDegree_eq_degree hΓ', ← Circle.degree_mul]
   exact Circle.degree_congr _ _ fun _ ↦ rfl
+
+/-- **Inverses.** The degree around the boundary of the square of the pointwise inverse of a map
+continuous on the boundary is the negative of its degree. -/
+theorem squareBoundaryDegree_inv (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) :
+    squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
+  have h := squareBoundaryDegree_mul hΓ hΓ.inv
+  rw [mul_inv_cancel, show (1 : (Fin 2 → I) → Circle) = fun _ ↦ 1 from rfl,
+    squareBoundaryDegree_const] at h
+  omega
 
 /-- **Homotopy invariance.** If `H` is continuous on `I × ∂I²`, the maps `H (0, ·)` and
 `H (1, ·)` have the same degree around the boundary of the square. -/

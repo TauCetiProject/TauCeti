@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -346,6 +347,13 @@ theorem equivProd_symm_apply (p : X × X) : (equivProd X).symm p = ⟨p.1, p.2�
 instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X) :=
   ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
     (equivProd X).surjective).2 inferInstance
+
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℂ`. -/
+instance instFiniteDimensional [FiniteDimensional ℝ X] :
+    FiniteDimensional ℂ (Complexification X) :=
+  have : FiniteDimensional ℝ (Complexification X) :=
+    Module.Finite.equiv (equivProd X).symm.toLinearEquiv
+  Module.Finite.of_restrictScalars_finite ℝ ℂ _
 
 end Norm
 

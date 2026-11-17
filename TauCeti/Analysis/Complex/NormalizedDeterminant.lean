@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import TauCeti.LinearAlgebra.Determinant.Semilinear
 
 /-!
 # The normalized determinant of a complex-linear automorphism
@@ -23,6 +24,8 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_conjₛₗ`: conjugating by a conjugate-linear automorphism
+  inverts the normalized determinant.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
 -/
@@ -79,6 +82,19 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 @[simp]
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
+
+/-- **Conjugation by a conjugate-linear automorphism.** Conjugating `A` by a conjugate-linear
+automorphism `K` conjugates its determinant, so it inverts its normalized determinant. -/
+@[simp]
+theorem normalizedDet_conjₛₗ (A : E ≃L[ℂ] E) (K : E ≃L⋆[ℂ] E) :
+    ((K.symm.trans A).trans K : E ≃L[ℂ] E).normalizedDet = A.normalizedDet⁻¹ := by
+  have h : (((K.symm.trans A).trans K : E ≃L[ℂ] E).toLinearEquiv : E →ₗ[ℂ] E) =
+      (K.toLinearEquiv : E →ₗ⋆[ℂ] E) ∘ₛₗ (A.toLinearEquiv : E →ₗ[ℂ] E) ∘ₛₗ
+        (K.toLinearEquiv.symm : E →ₗ⋆[ℂ] E) :=
+    LinearMap.ext fun _ ↦ rfl
+  ext1
+  rw [coe_normalizedDet, h, LinearMap.det_conjₛₗ, Circle.coe_inv_eq_conj, coe_normalizedDet,
+    map_div₀, Complex.conj_ofReal, RCLike.star_def, Complex.norm_conj]
 
 end ContinuousLinearEquiv
 
