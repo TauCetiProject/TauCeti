@@ -26,6 +26,8 @@ coordinates adapted to a totally real submanifold.
 * `normalExtension`: a parametrization extended by a prescribed normal frame.
 * `contDiffOn_normalExtension`: regularity on coordinate domains.
 * `hasFDerivAt_normalExtension_zero`: its first jet for merely continuous normal frames.
+* `hasFDerivAt_normalExtension`: its first jet off the zero section, for differentiable frames.
+* `norm_fderiv_normalExtension_sub_le`: that jet differs from the zero-section one by `O(‖y‖)`.
 * `adaptedNormalExtension`: the frame obtained by applying `J` to the tangential derivative.
 * `contDiffOn_adaptedNormalExtension`: finite regularity on open coordinate domains.
 * `fderiv_adaptedNormalExtension_intertwines`: complex linearity of the adapted first jet.
@@ -96,6 +98,35 @@ theorem hasFDerivAt_normalExtension_zero {γ : V → W} {A : V → E →L[𝕜] 
     (hasFDerivAt_snd.hasFDerivWithinAt) rfl).hasFDerivAt_of_univ
   exact ((hγ.comp (x, 0) hasFDerivAt_fst).add hnormal).congr_fderiv
     (ContinuousLinearMap.ext fun p ↦ by simp [ContinuousLinearMap.coprod_apply])
+
+/-- Off the zero section the derivative of a normal extension also differentiates the frame:
+at `(x, y)` it is `(v, w) ↦ Dγ v + A x w + (DA v) y`. -/
+theorem hasFDerivAt_normalExtension {γ : V → W} {A : V → E →L[𝕜] W} {x : V} {y : E}
+    {D : V →L[𝕜] W} {DA : V →L[𝕜] E →L[𝕜] W} (hγ : HasFDerivAt γ D x) (hA : HasFDerivAt A DA x) :
+    HasFDerivAt (normalExtension γ A)
+      (D.coprod (A x) + (DA.flip y).comp (ContinuousLinearMap.fst 𝕜 V E)) (x, y) :=
+  ((hγ.comp (x, y) hasFDerivAt_fst).add
+    ((hA.comp (x, y) hasFDerivAt_fst).clm_apply hasFDerivAt_snd)).congr_fderiv
+      (ContinuousLinearMap.ext fun p ↦ by simp [ContinuousLinearMap.coprod_apply, add_assoc])
+
+/-- The derivatives of a normal extension at `(x, y)` and at `(x, 0)` differ by `(DA ·) y`, so
+by at most `‖DA‖ ‖y‖`. -/
+theorem norm_fderiv_normalExtension_sub_le {γ : V → W} {A : V → E →L[𝕜] W} {x : V} {y : E}
+    (hγ : DifferentiableAt 𝕜 γ x) (hA : DifferentiableAt 𝕜 A x) :
+    ‖fderiv 𝕜 (normalExtension γ A) (x, y) - fderiv 𝕜 (normalExtension γ A) (x, 0)‖ ≤
+      ‖fderiv 𝕜 A x‖ * ‖y‖ := by
+  rw [(hasFDerivAt_normalExtension hγ.hasFDerivAt hA.hasFDerivAt (y := y)).fderiv,
+    (hasFDerivAt_normalExtension hγ.hasFDerivAt hA.hasFDerivAt (y := 0)).fderiv]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun p ↦ ?_
+  simp only [sub_apply, add_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.flip_apply, map_zero, zero_apply, add_zero, add_sub_cancel_left,
+    ContinuousLinearMap.coe_fst']
+  calc ‖fderiv 𝕜 A x p.1 y‖ ≤ ‖fderiv 𝕜 A x‖ * ‖p.1‖ * ‖y‖ :=
+        ContinuousLinearMap.le_opNorm₂ _ _ _
+    _ ≤ ‖fderiv 𝕜 A x‖ * ‖y‖ * ‖p‖ := by
+        rw [mul_right_comm]
+        gcongr
+        exact norm_fst_le p
 
 /-- The derivative of a normal extension along the zero section is its doubled frame. -/
 theorem fderiv_normalExtension_zero {γ : V → W} {A : V → E →L[𝕜] W} {x : V}
