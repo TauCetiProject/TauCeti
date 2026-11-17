@@ -103,8 +103,9 @@ private theorem pointSeven_double :
   (add_self_eq_twoTorsionPoint_iff (by decide) nonsingular_one_three_mod7).mpr (by decide)
 
 private theorem four_pointSeven : (4 : ℕ) • pointSeven = 0 := by
-  rw [show (4 : ℕ) = 2 * 2 from rfl]
-  simp only [mul_nsmul, two_nsmul, pointSeven_double, twoTorsionPoint_add_self]
+  have hfour : (4 : ℕ) • pointSeven =
+      (pointSeven + pointSeven) + (pointSeven + pointSeven) := by abel
+  rw [hfour, pointSeven_double, twoTorsionPoint_add_self]
 
 private theorem addOrderOf_pointSeven : addOrderOf pointSeven = 4 := by
   refine addOrderOf_eq_prime_pow (p := 2) (n := 1) ?_ four_pointSeven
@@ -246,8 +247,7 @@ private theorem four_stageTwoPointSeven : (4 : ℕ) • stageTwoPointSeven = 0 :
   rw [heval] at hd2
   have hfour : (4 : ℕ) • stageTwoPointSeven =
       (stageTwoPointSeven + stageTwoPointSeven) + (stageTwoPointSeven + stageTwoPointSeven) := by
-    rw [show (4 : ℕ) = 2 * 2 from rfl]
-    simp only [mul_nsmul, two_nsmul]
+    abel
   rw [hfour]
   have hz : (coordinates 1 1
       ((stageTwoPointSeven + stageTwoPointSeven) +
