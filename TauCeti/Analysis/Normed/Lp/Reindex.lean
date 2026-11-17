@@ -18,7 +18,8 @@ value of `f` at most once, so it again lies in `ℓᵖ`, with no larger norm
 (`Memℓp.indicator_comp`, `lp.norm_le_of_forall_eq_indicator_comp`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`).
+(`TauCeti.memℓp_nat_add_iff`). Precomposing or extending by zero along an injective map also
+preserves `ℓᵖ` membership (`Memℓp.comp_injective`, `Memℓp.extend_zero`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -70,6 +71,36 @@ theorem Memℓp.indicator_comp {f : ι → G} (hf : Memℓp f p) {g : ι' → ι
     exact (Finset.sum_apply_indicator_comp_eq_sum_image (h := fun x : G ↦ ‖x‖ ^ p.toReal)
       (by simp [Real.zero_rpow hp.ne']) hg t).trans_le
       ((hf.summable hp).sum_le_tsum _ fun k _ ↦ by positivity)
+
+/-- Precomposing an `ℓᵖ` sequence with an injective map stays in `ℓᵖ`. -/
+theorem Memℓp.comp_injective {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] {f : ∀ i, E i}
+    (hf : Memℓp f p) {g : ι' → ι} (hg : Function.Injective g) : Memℓp (fun j ↦ f (g j)) p := by
+  rcases p.trichotomy with rfl | rfl | hp
+  · exact memℓp_zero <| hf.finite_dsupport.preimage hg.injOn
+  · obtain ⟨C, hC⟩ := hf.bddAbove
+    exact memℓp_infty ⟨C, by rintro _ ⟨j, rfl⟩; exact hC ⟨g j, rfl⟩⟩
+  · exact memℓp_gen <| (hf.summable hp).comp_injective hg
+
+/-- Extending an `ℓᵖ` sequence by zero along an injective map stays in `ℓᵖ`. -/
+theorem Memℓp.extend_zero {f : ι → G} (hf : Memℓp f p) {e : ι → ι'}
+    (he : Function.Injective e) : Memℓp (Function.extend e f 0) p := by
+  classical
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have h0 : Function.extend e f 0 = 0 := funext fun j ↦ Function.extend_apply' _ _ _ (by simp)
+    rw [h0]; exact zero_memℓp
+  · have hinv : (Set.range e).InjOn (Function.invFun e) := by
+      rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩ h
+      rw [Function.leftInverse_invFun he, Function.leftInverse_invFun he] at h; rw [h]
+    have heq : Function.extend e f 0 = (Set.range e).indicator (f ∘ Function.invFun e) := by
+      ext j; by_cases h : j ∈ Set.range e
+      · obtain ⟨i, rfl⟩ := h; simp [he.extend_apply, Function.leftInverse_invFun he i]
+      · simp [h, Function.extend_apply' _ _ _ h]
+    rw [heq]; exact hf.indicator_comp hinv
+
+/-- Extending a sequence by zero along an injective map lies in `ℓᵖ` iff the original does. -/
+@[simp] theorem Function.Injective.memℓp_extend_zero_iff {f : ι → G} {e : ι → ι'}
+    (he : Function.Injective e) : Memℓp (Function.extend e f 0) p ↔ Memℓp f p :=
+  ⟨fun h ↦ by simpa [he.extend_apply] using h.comp_injective he, fun h ↦ h.extend_zero he⟩
 
 /-- **Reindexing in `ℓᵖ` does not increase the norm.** If `g` is injective on `s` and `f'` reads
 `f` along `g` on `s` and vanishes off `s`, then `‖f'‖ ≤ ‖f‖`. -/

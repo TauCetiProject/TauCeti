@@ -39,7 +39,8 @@ dense subsets are dense.
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
-(`lp.tendsto_apply_of_tendsto_apply_single`); for iterated `ℓᵖ` spaces (`1 ≤ p < ∞`), the `p`-th
+(`lp.tendsto_apply_of_tendsto_apply_single`); for iterated `ℓᵖ` spaces (`1 ≤ p`), the uncurried
+sequence lies in `ℓᵖ` on the product index type (`lp.memℓp_prod`), and for `1 ≤ p < ∞` the `p`-th
 powers of the doubly indexed coordinate norms are summable (`lp.summable_norm_rpow_prod`).
 -/
 
@@ -258,6 +259,18 @@ theorem summable_norm_rpow_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → T
   (summable_prod_of_nonneg fun _ ↦ by positivity).2
     ⟨fun i ↦ (lp.memℓp (ζ i)).summable hp, ((lp.memℓp ζ).summable hp).congr fun i ↦ by
       simpa using (lp.hasSum_norm hp (ζ i)).tsum_eq.symm⟩
+
+/-- An element `ζ` of an iterated `ℓᵖ` space (`1 ≤ p`) lies in `ℓᵖ` on `ι₁ × ι₂`. -/
+theorem memℓp_prod {ι₁ ι₂ : Type*} {G : ι₁ → ι₂ → Type*} [∀ i j, NormedAddCommGroup (G i j)]
+    {p : ℝ≥0∞} [Fact (1 ≤ p)] (ζ : lp (fun i ↦ lp (G i) p) p) :
+    Memℓp (fun x : ι₁ × ι₂ ↦ ζ x.1 x.2) p := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · refine memℓp_infty ⟨‖ζ‖, ?_⟩
+    rintro _ ⟨⟨i, j⟩, rfl⟩
+    exact (lp.norm_apply_le_norm ENNReal.top_ne_zero (ζ i) j).trans
+      (lp.norm_apply_le_norm ENNReal.top_ne_zero ζ i)
+  · exact memℓp_gen <| lp.summable_norm_rpow_prod
+      (ENNReal.toReal_pos (zero_lt_one.trans_le Fact.out).ne' hp) ζ
 
 end lp
 

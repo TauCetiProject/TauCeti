@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.InnerProductSpace.HilbertSum
 public import TauCeti.Analysis.LocallyConvex.UltrastrongTopology
+import TauCeti.Analysis.Normed.Lp.Reindex
 
 /-!
 # The ultraweak operator topology
@@ -307,9 +308,8 @@ end Hilbert
 section Functoriality
 
 /-- Precomposition by a bounded operator is ultraweakly continuous. -/
-@[fun_prop]
-theorem continuous_comp_right {E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
-    (Q : E' →L[𝕜] E) :
+@[fun_prop] theorem continuous_comp_right {E' : Type*} [NormedAddCommGroup E']
+    [InnerProductSpace 𝕜 E'] (Q : E' →L[𝕜] E) :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (A.toCLM ∘L Q) :=
   continuous_of_continuous_inner_ampliation_apply fun ξ η ↦
     (continuous_inner_ampliation_apply (lp.ampliation ℕ 2 Q ξ) η).congr fun A ↦ by
@@ -333,35 +333,6 @@ completeness assumptions. -/
     (continuous_inner_ampliation_apply ξ
       (lp.ampliation ℕ 2 U.symm.toLinearIsometry.toContinuousLinearMap η)).congr fun A ↦ by
       simp [lp.inner_ampliation_apply, LinearIsometryEquiv.inner_map_eq_flip]
-private theorem memℓp_extend_of_lp_lp {ι G : Type*} [NormedAddCommGroup G]
-    (ζ : ℓ²(ℕ, ℓ²(ι, G))) {S : Set (ℕ × ι)} {e : S → ℕ} (he : Function.Injective e) :
-    Memℓp (Function.extend e (fun p : S ↦ ζ p.1.1 p.1.2) 0) 2 :=
-  memℓp_gen <| (he.summable_iff fun _ hk ↦ by simp [Function.extend_apply' _ _ _ hk]).1 <|
-    ((lp.summable_norm_rpow_prod (by simp) ζ).comp_injective Subtype.val_injective).congr fun _ ↦ by
-      simp [he.extend_apply]
-private theorem summable_inner_apply_prod {ι : Type*} (ξ : ℓ²(ℕ, ℓ²(ι, E))) (η : ℓ²(ℕ, ℓ²(ι, F)))
-    (T : E →L[𝕜] F) : Summable fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜 := by
-  have hp2 : 0 < (2 : ℝ≥0∞).toReal := by simp
-  refine Summable.of_norm_bounded (((lp.summable_norm_rpow_prod hp2 η).add
-    (lp.summable_norm_rpow_prod hp2 ξ)).mul_left (max ‖T‖ 1 / 2)) fun p ↦ ?_
-  have hcs : ‖⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜‖ ≤ ‖η p.1 p.2‖ * (‖T‖ * ‖ξ p.1 p.2‖) :=
-    (norm_inner_le_norm _ _).trans (by gcongr; exact T.le_opNorm _)
-  have hsq : 2 * (‖η p.1 p.2‖ * ‖ξ p.1 p.2‖) ≤
-      ‖η p.1 p.2‖ ^ (2 : ℝ≥0∞).toReal + ‖ξ p.1 p.2‖ ^ (2 : ℝ≥0∞).toReal := by
-    simp only [ENNReal.toReal_ofNat, Real.rpow_two]
-    nlinarith [sq_nonneg (‖η p.1 p.2‖ - ‖ξ p.1 p.2‖)]
-  nlinarith [le_max_left ‖T‖ 1, mul_nonneg (norm_nonneg (η p.1 p.2)) (norm_nonneg (ξ p.1 p.2)),
-    zero_le_one.trans (le_max_right ‖T‖ 1)]
-private theorem tsum_prod_eq_tsum_of_injective {ι : Type*} {f : ℕ × ι → 𝕜} {g : ℕ → 𝕜}
-    (hf : Summable f) {S : Set (ℕ × ι)} {e : S → ℕ} (he : Function.Injective e)
-    (hS : ∀ p, f p ≠ 0 → p ∈ S) (hfg : ∀ p : S, f p.1 = g (e p))
-    (hg : ∀ k, k ∉ Set.range e → g k = 0) :
-    ∑' n : ℕ, ∑' i : ι, f (n, i) = ∑' k : ℕ, g k :=
-  calc ∑' n : ℕ, ∑' i : ι, f (n, i)
-      = ∑' p : ℕ × ι, f p := hf.tsum_prod.symm
-    _ = ∑' p : S, f p.1 := (Subtype.val_injective.tsum_eq fun p hp ↦ ⟨⟨p, hS p hp⟩, rfl⟩).symm
-    _ = ∑' p : S, g (e p) := tsum_congr hfg
-    _ = ∑' k : ℕ, g k := he.tsum_eq fun k hk ↦ by by_contra hk'; exact hk (hg k hk')
 open scoped Classical in private theorem exists_nat_lp_inner_ampliation_eq {ι : Type*}
     (ξ : ℓ²(ℕ, ℓ²(ι, E))) (η : ℓ²(ℕ, ℓ²(ι, F))) :
     ∃ (ξ' : ℓ²(ℕ, E)) (η' : ℓ²(ℕ, F)), ∀ T : E →L[𝕜] F,
@@ -373,12 +344,23 @@ open scoped Classical in private theorem exists_nat_lp_inner_ampliation_eq {ι :
   obtain ⟨e, he⟩ := Countable.exists_injective_nat S
   let ξf : ℕ → E := Function.extend e (fun p : S ↦ ξ p.1.1 p.1.2) 0
   let ηf : ℕ → F := Function.extend e (fun p : S ↦ η p.1.1 p.1.2) 0
-  refine ⟨⟨ξf, memℓp_extend_of_lp_lp ξ he⟩, ⟨ηf, memℓp_extend_of_lp_lp η he⟩, fun T ↦ ?_⟩
-  simp only [lp.inner_ampliation_apply]
-  exact tsum_prod_eq_tsum_of_injective (summable_inner_apply_prod ξ η T) he
-    (fun p hp ↦ Set.mem_iUnion.2 ⟨p.1, ⟨p.2, fun h0 ↦ hp (by simp [h0]), rfl⟩⟩)
-    (fun p ↦ by simp [ξf, ηf, he.extend_apply])
-    (fun k hk ↦ by simp [ξf, Function.extend_apply' _ _ _ hk])
+  let ξ' : ℓ²(ℕ, E) := ⟨ξf, ((lp.memℓp_prod ξ).comp_injective Subtype.val_injective).extend_zero he⟩
+  let η' : ℓ²(ℕ, F) := ⟨ηf, ((lp.memℓp_prod η).comp_injective Subtype.val_injective).extend_zero he⟩
+  refine ⟨ξ', η', fun T ↦ ?_⟩
+  have hsupp : Function.support (fun p : ℕ × ι ↦ ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜) ⊆ S :=
+    fun p hp ↦ Set.mem_iUnion.2 ⟨p.1, ⟨p.2, fun h0 ↦ hp (by simp [h0]), rfl⟩⟩
+  -- Collapse the iterated `ℓ²` sum to `ℕ × ι`, restrict to `S`, and reindex along `e : S → ℕ`.
+  calc ⟪η, lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ⟫_𝕜
+      = ∑' p : ℕ × ι, ⟪η p.1 p.2, T (ξ p.1 p.2)⟫_𝕜 := by
+          simpa using lp.inner_eq_tsum_prod η (lp.ampliation ℕ 2 (lp.ampliation ι 2 T) ξ)
+    _ = ∑' p : S, ⟪η p.1.1 p.1.2, T (ξ p.1.1 p.1.2)⟫_𝕜 :=
+          (tsum_subtype_eq_of_support_subset hsupp).symm
+    _ = ∑' k : ℕ, ⟪ηf k, T (ξf k)⟫_𝕜 := by
+          rw [← tsum_extend_zero he]; refine tsum_congr fun k ↦ ?_
+          by_cases hk : k ∈ Set.range e
+          · obtain ⟨p, rfl⟩ := hk; simp [ξf, ηf, he.extend_apply]
+          · simp [ξf, Function.extend_apply' _ _ _ hk]
+    _ = ⟪η', lp.ampliation ℕ 2 T ξ'⟫_𝕜 := (lp.inner_ampliation_apply T ξ' η').symm
 /-- Ampliation to `ℓ²(ι, ·)` is ultraweakly continuous for any index type `ι`. -/
 @[fun_prop] theorem continuous_ampliation (ι : Type*) :
     Continuous fun A : ContinuousLinearMapUltraweak 𝕜 E F ↦ ofCLM (lp.ampliation ι 2 A.toCLM) :=

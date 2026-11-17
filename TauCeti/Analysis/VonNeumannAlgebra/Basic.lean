@@ -92,31 +92,26 @@ noncomputable def mapLinearIsometryEquiv (U : H₁ ≃ₗᵢ[ℂ] H₂) :
     VonNeumannAlgebra H₁ ≃o VonNeumannAlgebra H₂ where
   toFun := mapLinearIsometryEquivAux U
   invFun := mapLinearIsometryEquivAux U.symm
-  left_inv M := ext fun x ↦ by
-    rw [mem_mapLinearIsometryEquivAux, mem_mapLinearIsometryEquivAux, LinearIsometryEquiv.symm_symm]
-    simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
-  right_inv N := ext fun y ↦ by
-    rw [mem_mapLinearIsometryEquivAux, mem_mapLinearIsometryEquivAux, LinearIsometryEquiv.symm_symm]
-    simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
+  left_inv M := ext fun _ ↦ by
+    simp [mem_mapLinearIsometryEquivAux, ← LinearIsometryEquiv.symm_conjStarAlgEquiv]
+  right_inv N := ext fun _ ↦ by
+    simp [mem_mapLinearIsometryEquivAux, ← LinearIsometryEquiv.symm_conjStarAlgEquiv]
   map_rel_iff' {a b} := by
     simp only [Equiv.coe_fn_mk, ← SetLike.coe_subset_coe, coe_mapLinearIsometryEquivAux]
     exact Set.image_subset_image_iff U.conjStarAlgEquiv.injective
 @[simp, norm_cast] theorem coe_mapLinearIsometryEquiv (U : H₁ ≃ₗᵢ[ℂ] H₂)
     (M : VonNeumannAlgebra H₁) :
-    (mapLinearIsometryEquiv U M : Set (H₂ →L[ℂ] H₂)) = U.conjStarAlgEquiv '' (M : Set _) := by
-  simp [mapLinearIsometryEquiv, coe_mapLinearIsometryEquivAux]
+    (mapLinearIsometryEquiv U M : Set (H₂ →L[ℂ] H₂)) = U.conjStarAlgEquiv '' (M : Set _) :=
+  coe_mapLinearIsometryEquivAux U M
 @[simp] theorem mem_mapLinearIsometryEquiv {U : H₁ ≃ₗᵢ[ℂ] H₂} {M : VonNeumannAlgebra H₁}
-    {y : H₂ →L[ℂ] H₂} : y ∈ mapLinearIsometryEquiv U M ↔ U.symm.conjStarAlgEquiv y ∈ M := by
-  simp [mapLinearIsometryEquiv, mem_mapLinearIsometryEquivAux]
+    {y : H₂ →L[ℂ] H₂} : y ∈ mapLinearIsometryEquiv U M ↔ U.symm.conjStarAlgEquiv y ∈ M :=
+  mem_mapLinearIsometryEquivAux
 theorem conjStarAlgEquiv_mem_mapLinearIsometryEquiv {U : H₁ ≃ₗᵢ[ℂ] H₂}
     {M : VonNeumannAlgebra H₁} {x : H₁ →L[ℂ] H₁} :
     U.conjStarAlgEquiv x ∈ mapLinearIsometryEquiv U M ↔ x ∈ M := by
   simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
 @[simp] theorem mapLinearIsometryEquiv_symm (U : H₁ ≃ₗᵢ[ℂ] H₂) :
-    (mapLinearIsometryEquiv U).symm = mapLinearIsometryEquiv U.symm := by
-  ext N x
-  rw [← (conjStarAlgEquiv_mem_mapLinearIsometryEquiv (U := U)), OrderIso.apply_symm_apply,
-    mem_mapLinearIsometryEquiv, LinearIsometryEquiv.symm_symm]
+    (mapLinearIsometryEquiv U).symm = mapLinearIsometryEquiv U.symm := DFunLike.ext _ _ fun _ ↦ rfl
 @[simp] theorem mapLinearIsometryEquiv_refl :
     mapLinearIsometryEquiv (.refl ℂ H₁) = OrderIso.refl (VonNeumannAlgebra H₁) := by
   ext M x; simp [← LinearIsometryEquiv.symm_conjStarAlgEquiv]
