@@ -27,6 +27,8 @@ This is the compactness behind fixed-point arguments on sets of matrices such as
 ## Main statements
 
 * `Matrix.instCompactIccSpace`: the Loewner order on `Matrix n n 𝕜` has compact closed intervals.
+* `Matrix.PosDef.of_le`: a matrix Loewner-dominating a positive definite matrix is positive
+  definite.
 * `Matrix.IsHermitian.le_smul_one_of_l2_opNorm_le`,
   `Matrix.IsHermitian.neg_smul_one_le_of_l2_opNorm_le`,
   `Matrix.PosSemidef.le_l2_opNorm_smul_one`,
@@ -68,6 +70,10 @@ instance instCompactIccSpace [Finite n] : CompactIccSpace (Matrix n n 𝕜) wher
     have h₂ := (le_algebraMap_iff_spectrum_le (ha := hy.isSelfAdjoint)).1 hyr t ht
     rw [Real.norm_eq_abs, abs_of_nonneg h₁]
     exact h₂.trans (le_max_left _ _)
+
+/-- If `A` is positive definite and `A ≤ B` in the Loewner order, then `B` is positive definite. -/
+theorem PosDef.of_le {A B : Matrix n n 𝕜} (hA : A.PosDef) (hle : A ≤ B) : B.PosDef := by
+  simpa only [add_sub_cancel] using hA.add_posSemidef (le_iff.1 hle)
 
 section L2OpNorm
 

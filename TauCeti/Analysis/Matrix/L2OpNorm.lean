@@ -32,7 +32,7 @@ rather than restricting scalars, so that no algebra diamond arises.
 * `Matrix.sum_sum_norm_sq_le_card_mul_l2_opNorm_sq`: a Frobenius bound by the operator norm.
 * `Matrix.l2_opNorm_sub_diagonal_diag_le`: zeroing the diagonal of a square matrix at most doubles
   its `ℓ²` operator norm.
-* `Matrix.l2_opNorm_fromBlocks_diagonal`: the `ℓ²` operator norm of a block-diagonal matrix
+* `Matrix.l2_opNorm_fromBlocks_zero₁₂_zero₂₁`: the `ℓ²` operator norm of a block-diagonal matrix
   `fromBlocks A 0 0 B` is `max ‖A‖ ‖B‖`.
 * `Matrix.l2_opNorm_fromBlocks_zero_conjTranspose`: the Hermitian dilation `fromBlocks 0 A Aᴴ 0`
   has the same `ℓ²` operator norm as `A`.
@@ -120,7 +120,7 @@ theorem l2_opNorm_sub_diagonal_diag_le (A : Matrix n n 𝕜) :
 
 /-- The `ℓ²` operator norm of a block-diagonal rectangular matrix is the maximum of the `ℓ²`
 operator norms of its diagonal blocks. -/
-theorem l2_opNorm_fromBlocks_diagonal {m₁ m₂ n₁ n₂ : Type*}
+theorem l2_opNorm_fromBlocks_zero₁₂_zero₂₁ {m₁ m₂ n₁ n₂ : Type*}
     [Fintype m₁] [Fintype m₂] [Fintype n₁] [Fintype n₂] [DecidableEq n₁] [DecidableEq n₂]
     (A : Matrix m₁ n₁ 𝕜) (B : Matrix m₂ n₂ 𝕜) :
     ‖fromBlocks A 0 0 B‖ = max ‖A‖ ‖B‖ := by
@@ -132,46 +132,28 @@ theorem l2_opNorm_fromBlocks_diagonal {m₁ m₂ n₁ n₂ : Type*}
     have hmul : (fromBlocks A 0 0 B) *ᵥ x.ofLp = Sum.elim (A *ᵥ u.ofLp) (B *ᵥ v.ofLp) := by
       have hx : x.ofLp = Sum.elim u.ofLp v.ofLp := by ext k; cases k <;> rfl
       rw [hx, fromBlocks_mulVec]; simp [u, v]
+    have hnn := le_max_of_le_left (c := ‖B‖) (norm_nonneg A)
     have hA := (A.l2_opNorm_mulVec u).trans
       (mul_le_mul_of_nonneg_right (le_max_left ‖A‖ ‖B‖) (norm_nonneg _))
     have hB := (B.l2_opNorm_mulVec v).trans
       (mul_le_mul_of_nonneg_right (le_max_right ‖A‖ ‖B‖) (norm_nonneg _))
-    have hnn := le_max_of_le_left (c := ‖B‖) (norm_nonneg A)
     refine (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg _))).1 ?_
-    have hout : ‖((toEuclideanLin.trans LinearMap.toContinuousLinearMap)
-        (fromBlocks A 0 0 B)) x‖ ^ 2 =
-        ‖(EuclideanSpace.equiv m₁ 𝕜).symm (A *ᵥ u.ofLp)‖ ^ 2 +
-          ‖(EuclideanSpace.equiv m₂ 𝕜).symm (B *ᵥ v.ofLp)‖ ^ 2 := by
-      simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, toLpLin_apply, hmul,
-        EuclideanSpace.equiv]
-    have hin : ‖x‖ ^ 2 = ‖u‖ ^ 2 + ‖v‖ ^ 2 := by
-      simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, u, v]
-    rw [hout, mul_pow, hin]
-    nlinarith [(sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg u))).2 hA,
-      (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg v))).2 hB,
-      mul_pow (max ‖A‖ ‖B‖) ‖u‖ 2, mul_pow (max ‖A‖ ‖B‖) ‖v‖ 2]
+    have hA2 := (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg u))).2 hA
+    have hB2 := (sq_le_sq₀ (norm_nonneg _) (mul_nonneg hnn (norm_nonneg v))).2 hB
+    simp [EuclideanSpace.norm_sq_eq, mul_pow, EuclideanSpace.equiv, u, v] at hA2 hB2
+    simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, toLpLin_apply, hmul, mul_pow, u, v]
+    linarith
   · refine max_le ?_ ?_ <;> rw [l2_opNorm_def] <;>
-      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦ ?_
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun w ↦
+        (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).1 ?_
     · let x : EuclideanSpace 𝕜 (n₁ ⊕ n₂) := WithLp.toLp 2 (Sum.elim w.ofLp 0)
-      have hx : ‖x‖ = ‖w‖ := (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 <| by
-        simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x]
-      have hout : ‖(EuclideanSpace.equiv (m₁ ⊕ m₂) 𝕜).symm ((fromBlocks A 0 0 B) *ᵥ x.ofLp)‖ =
-          ‖(EuclideanSpace.equiv m₁ 𝕜).symm (A *ᵥ w.ofLp)‖ :=
-        (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 <| by
-          simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x, fromBlocks_mulVec,
-            EuclideanSpace.equiv]
-      have hle := (fromBlocks A 0 0 B).l2_opNorm_mulVec x
-      rwa [hout, hx] at hle
+      simpa [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x, fromBlocks_mulVec,
+        EuclideanSpace.equiv, mul_pow] using (sq_le_sq₀ (norm_nonneg _)
+          (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 ((fromBlocks A 0 0 B).l2_opNorm_mulVec x)
     · let x : EuclideanSpace 𝕜 (n₁ ⊕ n₂) := WithLp.toLp 2 (Sum.elim 0 w.ofLp)
-      have hx : ‖x‖ = ‖w‖ := (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 <| by
-        simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x]
-      have hout : ‖(EuclideanSpace.equiv (m₁ ⊕ m₂) 𝕜).symm ((fromBlocks A 0 0 B) *ᵥ x.ofLp)‖ =
-          ‖(EuclideanSpace.equiv m₂ 𝕜).symm (B *ᵥ w.ofLp)‖ :=
-        (sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _)).1 <| by
-          simp [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x, fromBlocks_mulVec,
-            EuclideanSpace.equiv]
-      have hle := (fromBlocks A 0 0 B).l2_opNorm_mulVec x
-      rwa [hout, hx] at hle
+      simpa [EuclideanSpace.norm_sq_eq, Fintype.sum_sum_type, x, fromBlocks_mulVec,
+        EuclideanSpace.equiv, mul_pow] using (sq_le_sq₀ (norm_nonneg _)
+          (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 ((fromBlocks A 0 0 B).l2_opNorm_mulVec x)
 
 /-- The Hermitian dilation `fromBlocks 0 A Aᴴ 0` of a rectangular matrix `A` has the same `ℓ²`
 operator norm as `A`. -/
@@ -184,7 +166,7 @@ theorem l2_opNorm_fromBlocks_zero_conjTranspose {m p : Type*} [Fintype m] [Finty
     simp [fromBlocks_conjTranspose, fromBlocks_multiply]
   have hAA : ‖A * Aᴴ‖ = ‖A‖ * ‖A‖ := by
     simpa [l2_opNorm_conjTranspose] using l2_opNorm_conjTranspose_mul_self Aᴴ
-  rw [sq, ← l2_opNorm_conjTranspose_mul_self, hmul, l2_opNorm_fromBlocks_diagonal,
+  rw [sq, ← l2_opNorm_conjTranspose_mul_self, hmul, l2_opNorm_fromBlocks_zero₁₂_zero₂₁,
     l2_opNorm_conjTranspose_mul_self, hAA, max_self, sq]
 
 end Matrix

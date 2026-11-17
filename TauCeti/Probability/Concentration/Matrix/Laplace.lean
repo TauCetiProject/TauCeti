@@ -11,8 +11,10 @@ public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Probability.Independence.Basic
 public import TauCeti.Analysis.Matrix.Exponential.TraceInequalities
 import TauCeti.Analysis.Matrix.Eigenvalues.OperatorNorm
+import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.Analysis.Matrix.Order
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Probability.Independence.Basic
 
 /-!
 # Matrix Laplace transform method
@@ -26,12 +28,17 @@ master upper and lower eigenvalue tail inequalities.
 
 ## Main results
 
-* `Matrix.isHermitian_of_integral`, `Matrix.posSemidef_of_integral`,
-  `Matrix.of_integral_le_of_integral_of_ae_le`: preservation of Hermitianness, positive
-  semidefiniteness, and the Loewner order under entrywise expectation.
+* `Matrix.isHermitian_integral_of_ae_isHermitian`, `Matrix.posSemidef_integral_of_ae_posSemidef`,
+  `Matrix.integral_le_integral_of_ae_le`: preservation of Hermitianness, positive semidefiniteness,
+  and the Loewner order under entrywise expectation.
+* `Matrix.integral_add_eq_add_integral`, `Matrix.integral_smul_eq_smul_integral`,
+  `Matrix.integral_const_add_smul`: linearity of entrywise expectation.
+* `Matrix.posDef_integral_exp`: positive definiteness of `E[exp X]`.
 * `Matrix.integral_re_trace_exp_add_le`: the single-step Lieb–Jensen inequality.
+* `ProbabilityTheory.ae_isHermitian_finsetSum`, `ProbabilityTheory.ae_posSemidef_finsetSum`:
+  finite sums of a.e. Hermitian or positive semidefinite random matrices preserve those properties.
 * `ProbabilityTheory.iIndepFun.integral_re_trace_exp_add_sum_le`: subadditivity of the matrix CGF
-  for independent random Hermitian matrices (Tropp 2012, Theorem 3.6).
+  for independent random Hermitian matrices (Tropp 2012, Lemma 3.4).
 * `ProbabilityTheory.iIndepFun.measureReal_sSup_spectrum_sum_ge_le` and
   `ProbabilityTheory.iIndepFun.measureReal_sInf_spectrum_sum_le_le`: master Laplace-transform upper
   and lower eigenvalue tail bounds (Tropp 2012, Theorem 3.6).
@@ -56,7 +63,7 @@ variable {Ω 𝕜 n : Type*} [MeasurableSpace Ω] {P : Measure Ω} [RCLike 𝕜]
 /-! ### Entrywise expectation and the Loewner order -/
 
 /-- Entrywise expectation preserves the Hermitian property. -/
-theorem isHermitian_of_integral {F : Ω → Matrix n n 𝕜}
+theorem isHermitian_integral_of_ae_isHermitian {F : Ω → Matrix n n 𝕜}
     (hF : ∀ᵐ ω ∂P, (F ω).IsHermitian) :
     (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P).IsHermitian := by
   ext i j
@@ -65,13 +72,13 @@ theorem isHermitian_of_integral {F : Ω → Matrix n n 𝕜}
   simpa [conjTranspose_apply, RCLike.star_def] using congrFun (congrFun hω i) j
 
 /-- Entrywise expectation preserves positive semidefiniteness. -/
-theorem posSemidef_of_integral [Finite n] {F : Ω → Matrix n n 𝕜}
+theorem posSemidef_integral_of_ae_posSemidef [Finite n] {F : Ω → Matrix n n 𝕜}
     (hF : ∀ᵐ ω ∂P, (F ω).PosSemidef)
     (hint : ∀ i j, Integrable (fun ω ↦ F ω i j) P) :
     (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P).PosSemidef := by
   have := Fintype.ofFinite n
   refine posSemidef_iff_dotProduct_mulVec.2
-    ⟨isHermitian_of_integral (hF.mono fun _ h ↦ h.1), fun x ↦ ?_⟩
+    ⟨isHermitian_integral_of_ae_isHermitian (hF.mono fun _ h ↦ h.1), fun x ↦ ?_⟩
   have hterm (i j : n) : Integrable (fun ω ↦ star x i * (F ω i j * x j)) P :=
     ((hint i j).mul_const (x j)).const_mul (star x i)
   have hquad_int : Integrable (fun ω ↦ star x ⬝ᵥ F ω *ᵥ x) P := by
@@ -92,7 +99,7 @@ theorem posSemidef_of_integral [Finite n] {F : Ω → Matrix n n 𝕜}
             exact (integral_congr_ae (hnonneg.mono fun _ h ↦ h.2)).trans (integral_zero _ _)⟩
 
 /-- Entrywise expectation is monotone in the Loewner order. -/
-theorem of_integral_le_of_integral_of_ae_le [Finite n] {F G : Ω → Matrix n n 𝕜}
+theorem integral_le_integral_of_ae_le [Finite n] {F G : Ω → Matrix n n 𝕜}
     (hle : ∀ᵐ ω ∂P, F ω ≤ G ω)
     (hF : ∀ i j, Integrable (fun ω ↦ F ω i j) P)
     (hG : ∀ i j, Integrable (fun ω ↦ G ω i j) P) :
@@ -100,7 +107,36 @@ theorem of_integral_le_of_integral_of_ae_le [Finite n] {F G : Ω → Matrix n n 
   rw [le_iff, show (Matrix.of fun i j ↦ ∫ ω, G ω i j ∂P) -
       (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P) = Matrix.of fun i j ↦ ∫ ω, (G ω - F ω) i j ∂P by
     ext i j; simp [integral_sub (hG i j) (hF i j)]]
-  exact posSemidef_of_integral (hle.mono fun _ h ↦ le_iff.1 h) fun i j ↦ (hG i j).sub (hF i j)
+  exact posSemidef_integral_of_ae_posSemidef (hle.mono fun _ h ↦ le_iff.1 h)
+    fun i j ↦ (hG i j).sub (hF i j)
+
+/-- Entrywise expectation of a pointwise sum of random matrices is the sum of their entrywise
+expectations. -/
+theorem integral_add_eq_add_integral {m E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {F G : Ω → Matrix m n E} (hF : ∀ i j, Integrable (fun ω ↦ F ω i j) P)
+    (hG : ∀ i j, Integrable (fun ω ↦ G ω i j) P) :
+    (Matrix.of fun i j ↦ ∫ ω, (F ω + G ω) i j ∂P) =
+      (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P) + (Matrix.of fun i j ↦ ∫ ω, G ω i j ∂P) := by
+  ext i j; simp only [of_apply, Matrix.add_apply, integral_add (hF i j) (hG i j)]
+
+/-- Entrywise expectation commutes with real scalar multiplication. -/
+theorem integral_smul_eq_smul_integral {m E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (c : ℝ) (F : Ω → Matrix m n E) :
+    (Matrix.of fun i j ↦ ∫ ω, (c • F ω) i j ∂P) =
+      c • (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P) := by
+  ext i j; simp only [of_apply, Matrix.smul_apply, integral_smul]
+
+/-- Under a probability measure, the entrywise expectation of `A + c • F` is `A + c • E[F]`. -/
+theorem integral_const_add_smul [IsProbabilityMeasure P] {m E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    (A : Matrix m n E) (c : ℝ) {F : Ω → Matrix m n E}
+    (hF : ∀ i j, Integrable (fun ω ↦ F ω i j) P) :
+    (Matrix.of fun i j ↦ ∫ ω, (A + c • F ω) i j ∂P) =
+      A + c • (Matrix.of fun i j ↦ ∫ ω, F ω i j ∂P) := by
+  rw [integral_add_eq_add_integral (F := fun _ ↦ A) (G := fun ω ↦ c • F ω)
+      (fun _ _ ↦ integrable_const _) (fun i j ↦ (hF i j).smul c),
+    integral_smul_eq_smul_integral]
+  congr 1; ext i j; simp only [of_apply, integral_const, probReal_univ, one_smul]
 
 /-- Entrywise integrability of an a.e. operator-norm bounded measurable random matrix. -/
 theorem integrable_apply_of_ae_l2_opNorm_le [IsFiniteMeasure P]
@@ -116,17 +152,7 @@ end Expectation
 section LiebJensen
 
 variable {Ω 𝕜 n : Type*} [MeasurableSpace Ω] {P : Measure Ω} [RCLike 𝕜]
-
-private theorem posDef_of_smul_one_le [DecidableEq n] {A : Matrix n n 𝕜} {c : ℝ} (hc : 0 < c)
-    (hle : c • (1 : Matrix n n 𝕜) ≤ A) : A.PosDef := by
-  rw [show A = c • (1 : Matrix n n 𝕜) + (A - c • (1 : Matrix n n 𝕜)) by abel]
-  exact ((PosDef.one (n := n) (R := 𝕜)).smul hc).add_posSemidef (le_iff.1 hle)
-
-private theorem continuous_re_trace [Fintype n] :
-    Continuous fun Z : Matrix n n 𝕜 ↦ RCLike.re Z.trace :=
-  (RCLike.reCLM.comp ((traceLinearMap n 𝕜 𝕜).restrictScalars ℝ).toContinuousLinearMap).continuous
-
-variable [MeasurableSpace 𝕜] [BorelSpace 𝕜] [Fintype n] [DecidableEq n]
+  [MeasurableSpace 𝕜] [BorelSpace 𝕜] [Fintype n] [DecidableEq n]
 
 private theorem integrable_re_trace_exp [IsFiniteMeasure P] {Z : Ω → Matrix n n 𝕜}
     (hmeas : AEMeasurable Z P) (hherm : ∀ᵐ ω ∂P, (Z ω).IsHermitian)
@@ -142,21 +168,21 @@ private theorem integrable_re_trace_exp [IsFiniteMeasure P] {Z : Ω → Matrix n
 
 /-- The entrywise expectation of `exp X` for an a.e. bounded random Hermitian matrix `X` is
 positive definite. -/
-theorem posDef_of_integral_exp [IsProbabilityMeasure P] {X : Ω → Matrix n n 𝕜}
+theorem posDef_integral_exp [IsProbabilityMeasure P] {X : Ω → Matrix n n 𝕜}
     (hmeas : AEMeasurable X P) (hherm : ∀ᵐ ω ∂P, (X ω).IsHermitian)
     {M : ℝ} (hbdd : ∀ᵐ ω ∂P, ‖X ω‖ ≤ M) :
     (Matrix.of fun i j ↦ ∫ ω, (NormedSpace.exp (X ω)) i j ∂P).PosDef := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   let : NormedAlgebra ℚ (Matrix n n 𝕜) := TauCeti.normedAlgebraRatOfReal
-  refine posDef_of_smul_one_le (Real.exp_pos (-M)) ?_
+  refine ((PosDef.one (n := n) (R := 𝕜)).smul (Real.exp_pos (-M))).of_le ?_
   rw [show Real.exp (-M) • (1 : Matrix n n 𝕜) =
       Matrix.of fun i j ↦ ∫ _ω, (Real.exp (-M) • (1 : Matrix n n 𝕜)) i j ∂P by ext i j; simp]
-  exact of_integral_le_of_integral_of_ae_le
+  exact integral_le_integral_of_ae_le
     ((hherm.and hbdd).mono fun _ ⟨h1, h2⟩ ↦ (h1.smul_one_le_exp_and_le_smul_one h2).1)
     (fun _ _ ↦ integrable_const _)
     (integrable_apply_of_ae_l2_opNorm_le
       ((NormedSpace.exp_continuous (𝔸 := Matrix n n 𝕜)).measurable.comp_aemeasurable hmeas)
-      ((hherm.and hbdd).mono fun _ ⟨h1, h2⟩ ↦ h1.l2_opNorm_exp_le h2))
+      (hbdd.mono fun _ h ↦ Matrix.l2_opNorm_exp_le h))
 
 /-! ### Single-step Lieb–Jensen inequality -/
 
@@ -176,7 +202,7 @@ theorem integral_re_trace_exp_add_le [IsProbabilityMeasure P]
   let g : Matrix n n 𝕜 → ℝ := fun A ↦ RCLike.re (NormedSpace.exp (H + cfc Real.log A)).trace
   let Y : Ω → Matrix n n 𝕜 := fun ω ↦ NormedSpace.exp (X ω)
   have hS_sub : S ⊆ {A : Matrix n n 𝕜 | A.PosDef} :=
-    fun _ hA ↦ posDef_of_smul_one_le (Real.exp_pos (-M)) hA
+    fun _ hA ↦ ((PosDef.one (n := n) (R := 𝕜)).smul (Real.exp_pos (-M))).of_le hA
   have hS_conv : Convex ℝ S := fun _ h₁ _ h₂ _ _ ha hb hab ↦ by
     simpa [S, ← add_smul, hab] using add_le_add
       (smul_le_smul_of_nonneg_left (Set.mem_Ici.1 h₁) ha)
@@ -189,7 +215,7 @@ theorem integral_re_trace_exp_add_le [IsProbabilityMeasure P]
   have hY_int : Integrable Y P := Integrable.of_bound
     ((NormedSpace.exp_continuous (𝔸 := Matrix n n 𝕜)).measurable.comp_aemeasurable
       hmeas).aestronglyMeasurable
-    (Real.exp M) ((hherm.and hbdd).mono fun _ ⟨h1, h2⟩ ↦ h1.l2_opNorm_exp_le h2)
+    (Real.exp M) (hbdd.mono fun _ h ↦ Matrix.l2_opNorm_exp_le h)
   have hfg_eq : (fun ω ↦ g (Y ω)) =ᵐ[P] fun ω ↦ RCLike.re (NormedSpace.exp (H + X ω)).trace :=
     hherm.mono fun ω hω ↦ by simp only [g, Y, hω.cfc_log_exp]
   have hHX_int := integrable_re_trace_exp
@@ -215,62 +241,29 @@ end Matrix
 
 namespace ProbabilityTheory
 
-section IndepSum
+section FinsetSum
 
-variable {Ω 𝕜 n ι : Type*} [MeasurableSpace Ω] {P : Measure Ω} [RCLike 𝕜]
+variable {Ω n ι R : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
-private theorem ae_isHermitian_finsetSum {s : Finset ι} {X : ι → Ω → Matrix n n 𝕜}
+/-- A finite sum of a.e. Hermitian random matrices is a.e. Hermitian. -/
+theorem ae_isHermitian_finsetSum [AddCommMonoid R] [StarAddMonoid R]
+    {s : Finset ι} {X : ι → Ω → Matrix n n R}
     (hherm : ∀ k ∈ s, ∀ᵐ ω ∂P, (X k ω).IsHermitian) :
     ∀ᵐ ω ∂P, (∑ k ∈ s, X k ω).IsHermitian :=
-  ((ae_ball_iff s.countable_toSet).2 hherm).mono fun _ hω ↦
-    Finset.sum_induction _ _ (fun _ _ h₁ h₂ ↦ h₁.add h₂) isHermitian_zero hω
+  (Filter.eventually_all_finset s).2 hherm |>.mono fun _ hω ↦
+    (isSelfAdjoint_sum s fun k hk ↦ (hω k hk).isSelfAdjoint).isHermitian
 
-variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+/-- A finite sum of a.e. positive semidefinite random matrices is a.e. positive semidefinite. -/
+theorem ae_posSemidef_finsetSum [Ring R] [PartialOrder R] [StarRing R] [AddLeftMono R]
+    {s : Finset ι} {X : ι → Ω → Matrix n n R}
+    (hpsd : ∀ k ∈ s, ∀ᵐ ω ∂P, (X k ω).PosSemidef) :
+    ∀ᵐ ω ∂P, (∑ k ∈ s, X k ω).PosSemidef :=
+  (Filter.eventually_all_finset s).2 hpsd |>.mono fun _ hω ↦ Matrix.posSemidef_sum s hω
 
-private theorem measurableAdd₂_matrix : MeasurableAdd₂ (Matrix n n 𝕜) :=
-  ⟨Matrix.measurable_iff.2 fun _ _ ↦
-    (Matrix.measurable_apply.comp measurable_fst).add
-      (Matrix.measurable_apply.comp measurable_snd)⟩
-
-private theorem measurableSet_isHermitian [Countable n] :
-    MeasurableSet {A : Matrix n n 𝕜 | A.IsHermitian} :=
-  (isClosed_eq (show Continuous fun A : Matrix n n 𝕜 ↦ Aᴴ from
-    continuous_pi fun i ↦ continuous_pi fun j ↦
-      continuous_star.comp ((continuous_apply i).comp (continuous_apply j)))
-    continuous_id).measurableSet
-
-private theorem iIndepFun.indepFun_finsetSum_of_notMem_on [DecidableEq ι] {s : Finset ι} {a : ι}
-    {X : ι → Ω → Matrix n n 𝕜} (hindep : iIndepFun X P) (ha : a ∉ s)
-    (hmeas : ∀ k ∈ insert a s, AEMeasurable (X k) P) :
-    IndepFun (fun ω ↦ ∑ k ∈ s, X k ω) (X a) P := by
-  have : MeasurableAdd₂ (Matrix n n 𝕜) := measurableAdd₂_matrix
-  let t : Finset ↥(insert a s) := s.attach.map
-    ⟨fun k ↦ ⟨k.1, Finset.mem_insert_of_mem k.2⟩,
-      fun _ _ h ↦ Subtype.ext (by simpa using congrArg Subtype.val h)⟩
-  have ha' : (⟨a, Finset.mem_insert_self a s⟩ : ↥(insert a s)) ∉ t := by
-    simp only [t, Finset.mem_map, Finset.mem_attach, true_and, Subtype.ext_iff, not_exists]
-    exact fun k hk ↦ ha (hk ▸ k.2)
-  have h := (hindep.precomp Subtype.val_injective).indepFun_finsetSum_of_notMem₀
-    (fun k : ↥(insert a s) ↦ hmeas k.1 k.2) ha'
-  rwa [show (∑ k ∈ t, fun ω ↦ X k.1 ω) = fun ω ↦ ∑ k ∈ s, X k ω by
-    funext ω; simp only [Finset.sum_apply, t, Finset.sum_map]
-    exact Finset.sum_attach s fun k ↦ X k ω] at h
-
-end IndepSum
+end FinsetSum
 
 variable {Ω 𝕜 n ι : Type*} [MeasurableSpace Ω] {P : Measure Ω}
-  [RCLike 𝕜] [Fintype n] [DecidableEq n]
-
-private theorem exists_ae_norm_finsetSum_le {s : Finset ι} {X : ι → Ω → Matrix n n 𝕜}
-    (hbdd : ∀ k ∈ s, ∃ M : ℝ, ∀ᵐ ω ∂P, ‖X k ω‖ ≤ M) :
-    ∃ M : ℝ, ∀ᵐ ω ∂P, ‖∑ k ∈ s, X k ω‖ ≤ M := by
-  choose M hM using hbdd
-  refine ⟨∑ k ∈ s.attach, M k.1 k.2, (ae_all_iff.2 fun k : ↥s ↦ hM k.1 k.2).mono fun ω hω ↦ ?_⟩
-  refine (norm_sum_le s fun k ↦ X k ω).trans ?_
-  rw [← Finset.sum_attach s (fun k ↦ ‖X k ω‖)]
-  exact Finset.sum_le_sum fun k _ ↦ hω k
-
-variable [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+  [RCLike 𝕜] [Fintype n] [DecidableEq n] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
 
 /-- One conditioning step of Tropp's subadditivity argument for two independent bounded random
 Hermitian matrices `S` and `X`. -/
@@ -299,7 +292,8 @@ private theorem IndepFun.integral_re_trace_exp_add_add_le [IsProbabilityMeasure 
         ((hS_herm.and hX_herm).mono fun _ ⟨h1, h2⟩ ↦ (hH.add h1).add h2)
         ((hS_bdd.and hX_bdd).mono fun _ ⟨h3, h4⟩ ↦
           (norm_add_le _ _).trans <| add_le_add ((norm_add_le _ _).trans (add_le_add le_rfl h3)) h4)
-  have hS_herm_map := (ae_map_iff hS_meas measurableSet_isHermitian).2 hS_herm
+  have hS_herm_map :=
+    (ae_map_iff hS_meas Matrix.isClosed_setOfPred_isHermitian.measurableSet).2 hS_herm
   have hS_bdd_map :=
     (ae_map_iff hS_meas (isClosed_le continuous_norm continuous_const).measurableSet).2 hS_bdd
   have hexp_map : (Matrix.of fun i j ↦ ∫ B, (NormedSpace.exp B) i j ∂(P.map X)) =
@@ -312,30 +306,23 @@ private theorem IndepFun.integral_re_trace_exp_add_add_le [IsProbabilityMeasure 
       (∫ B, φ (A, B) ∂(P.map X)) ≤ RCLike.re (NormedSpace.exp ((H + L) + A)).trace :=
     hS_herm_map.mono fun A hA ↦ by
       have hstep := Matrix.integral_re_trace_exp_add_le (P := P.map X) (hH.add hA) aemeasurable_id
-        ((ae_map_iff hX_meas measurableSet_isHermitian).2 hX_herm)
+        ((ae_map_iff hX_meas Matrix.isClosed_setOfPred_isHermitian.measurableSet).2 hX_herm)
         ((ae_map_iff hX_meas (isClosed_le continuous_norm continuous_const).measurableSet).2 hX_bdd)
-      simp only [id_eq] at hstep
-      rwa [hexp_map, add_right_comm H A L] at hstep
+      simp only [id_eq] at hstep; rwa [hexp_map, add_right_comm H A L] at hstep
   have hrhs_cont : Continuous fun A : Matrix n n 𝕜 ↦
       RCLike.re (NormedSpace.exp ((H + L) + A)).trace :=
     Matrix.continuous_re_trace.comp <| (NormedSpace.exp_continuous (𝔸 := Matrix n n 𝕜)).comp <|
       continuous_const.add continuous_id
-  have hL_herm : L.IsHermitian := IsSelfAdjoint.isHermitian (cfc_predicate Real.log _)
-  have hrhs_int : Integrable (fun A ↦ RCLike.re (NormedSpace.exp ((H + L) + A)).trace) (P.map S) :=
-    Matrix.integrable_re_trace_exp (continuous_const.add continuous_id).measurable.aemeasurable
-      (hS_herm_map.mono fun _ h ↦ (hH.add hL_herm).add h)
-      (hS_bdd_map.mono fun _ h ↦ (norm_add_le _ _).trans (add_le_add le_rfl h))
-  calc
-    ∫ ω, RCLike.re (NormedSpace.exp (H + S ω + X ω)).trace ∂P
-        = ∫ A, (∫ B, φ (A, B) ∂(P.map X)) ∂(P.map S) := by
-          rw [← integral_map (hS_meas.prodMk hX_meas) hφ_cont.aestronglyMeasurable,
-            hmap_prod, integral_prod φ hφ_int_prod]
-    _ ≤ ∫ A, RCLike.re (NormedSpace.exp ((H + L) + A)).trace ∂(P.map S) :=
-        integral_mono_ae hφ_int_prod.integral_prod_left hrhs_int hinner
-    _ = ∫ ω, RCLike.re (NormedSpace.exp ((H + L) + S ω)).trace ∂P :=
-        integral_map hS_meas hrhs_cont.aestronglyMeasurable
+  have hL : L.IsHermitian := IsSelfAdjoint.isHermitian (cfc_predicate Real.log _)
+  have hrhs_int := Matrix.integrable_re_trace_exp (P := P.map S) (Z := fun A ↦ (H + L) + A)
+    (continuous_const.add continuous_id).measurable.aemeasurable
+    (hS_herm_map.mono fun _ h ↦ (hH.add hL).add h)
+    (hS_bdd_map.mono fun _ h ↦ (norm_add_le _ _).trans (add_le_add le_rfl h))
+  rw [← integral_map (hS_meas.prodMk hX_meas) hφ_cont.aestronglyMeasurable, hmap_prod,
+    integral_prod φ hφ_int_prod, ← integral_map hS_meas hrhs_cont.aestronglyMeasurable]
+  exact integral_mono_ae hφ_int_prod.integral_prod_left hrhs_int hinner
 
-/-- **Subadditivity of the matrix cumulant generating function** (Tropp 2012, Theorem 3.6). For
+/-- **Subadditivity of the matrix cumulant generating function** (Tropp 2012, Lemma 3.4). For
 independent a.e. bounded random Hermitian matrices `X k` (`k ∈ s`) and a fixed Hermitian matrix
 `H`,
 `E[Re Tr exp (H + ∑ k ∈ s, X k)] ≤ Re Tr exp (H + ∑ k ∈ s, log E[exp (X k)])`. -/
@@ -350,7 +337,6 @@ theorem iIndepFun.integral_re_trace_exp_add_sum_le [IsProbabilityMeasure P]
       RCLike.re (NormedSpace.exp (H + ∑ k ∈ s, cfc Real.log
         (Matrix.of fun i j ↦ ∫ ω, (NormedSpace.exp (X k ω)) i j ∂P))).trace := by
   classical
-  have : MeasurableAdd₂ (Matrix n n 𝕜) := measurableAdd₂_matrix
   induction s using Finset.induction_on generalizing H with
   | empty => simp
   | insert a t ha ih =>
@@ -358,15 +344,19 @@ theorem iIndepFun.integral_re_trace_exp_add_sum_le [IsProbabilityMeasure P]
     have hherm_t := fun k hk ↦ hherm k (Finset.mem_insert_of_mem hk)
     have hbdd_t := fun k hk ↦ hbdd k (Finset.mem_insert_of_mem hk)
     obtain ⟨Ma, hMa⟩ := hbdd a (Finset.mem_insert_self a t)
-    obtain ⟨MS, hMS⟩ := exists_ae_norm_finsetSum_le hbdd_t
+    obtain ⟨MS, hMS⟩ := Filter.isBoundedUnder_le_sum (f := ae P) (u := fun k ω ↦ ‖X k ω‖) t
+      fun k hk ↦ let ⟨M, hM⟩ := hbdd_t k hk; ⟨M, Filter.eventually_map.2 hM⟩
     simp_rw [Finset.sum_insert ha, ← add_assoc, add_right_comm H (X a _)]
-    have h1 := (hindep.indepFun_finsetSum_of_notMem_on ha hmeas).integral_re_trace_exp_add_add_le
+    have hind : IndepFun (fun ω ↦ ∑ k ∈ t, X k ω) (X a) P :=
+      (funext fun ω ↦ Finset.sum_apply ω t X) ▸
+        hindep.indepFun_finsetSum_of_notMem₀_on ha hmeas_t (hmeas a (Finset.mem_insert_self a t))
+    refine (hind.integral_re_trace_exp_add_add_le
       (Finset.aemeasurable_fun_sum t hmeas_t) (hmeas a (Finset.mem_insert_self a t))
-      (ae_isHermitian_finsetSum hherm_t) (hherm a (Finset.mem_insert_self a t)) hMS hMa hH
-    have h2 := ih hmeas_t hherm_t hbdd_t
-      (hH.add (IsSelfAdjoint.isHermitian (cfc_predicate Real.log
-        (Matrix.of fun i j ↦ ∫ ω, (NormedSpace.exp (X a ω)) i j ∂P))))
-    exact h1.trans h2
+      (ae_isHermitian_finsetSum hherm_t) (hherm a (Finset.mem_insert_self a t))
+      ((Filter.eventually_map.1 hMS).mono fun _ hω ↦
+        (norm_sum_le t _).trans (by simpa only [Finset.sum_apply] using hω)) hMa hH).trans ?_
+    exact ih hmeas_t hherm_t hbdd_t
+      (hH.add <| IsSelfAdjoint.isHermitian (cfc_predicate Real.log _))
 
 /-- **Master matrix Laplace-transform upper tail bound** (Tropp 2012, Theorem 3.6). For independent
 a.e. bounded random Hermitian matrices `X k` (`k ∈ s`) on a nonempty index type `n` and any `θ > 0`,
@@ -383,17 +373,17 @@ theorem iIndepFun.measureReal_sSup_spectrum_sum_ge_le [IsProbabilityMeasure P] [
         (Matrix.of fun i j ↦ ∫ ω, (NormedSpace.exp (θ • X k ω)) i j ∂P))).trace := by
   let : NormedAlgebra ℝ (Matrix n n 𝕜) := Matrix.l2OpNormedAlgebraReal
   let : NormedAlgebra ℚ (Matrix n n 𝕜) := TauCeti.normedAlgebraRatOfReal
-  have : MeasurableAdd₂ (Matrix n n 𝕜) := measurableAdd₂_matrix
   let Y : ι → Ω → Matrix n n 𝕜 := fun k ω ↦ θ • X k ω
   have hY_meas := fun k hk ↦ (continuous_const_smul θ).measurable.comp_aemeasurable (hmeas k hk)
   have hY_herm : ∀ k ∈ s, ∀ᵐ ω ∂P, (Y k ω).IsHermitian :=
     fun k hk ↦ (hherm k hk).mono fun _ h ↦ h.smul (IsSelfAdjoint.all θ)
-  have hY_bdd : ∀ k ∈ s, ∃ M : ℝ, ∀ᵐ ω ∂P, ‖Y k ω‖ ≤ M := fun k hk ↦ by
-    obtain ⟨M, hM⟩ := hbdd k hk
-    exact ⟨θ * M, hM.mono fun _ h ↦ by
+  have hY_bdd : ∀ k ∈ s, ∃ M : ℝ, ∀ᵐ ω ∂P, ‖Y k ω‖ ≤ M := fun k hk ↦
+    let ⟨M, hM⟩ := hbdd k hk
+    ⟨θ * M, hM.mono fun _ h ↦ by
       simpa only [Y, norm_smul, Real.norm_of_nonneg hθ.le] using mul_le_mul_of_nonneg_left h hθ.le⟩
   have hsum_herm := ae_isHermitian_finsetSum hY_herm
-  obtain ⟨MY, hMY⟩ := exists_ae_norm_finsetSum_le hY_bdd
+  obtain ⟨MY, hMY⟩ := Filter.isBoundedUnder_le_sum (f := ae P) (u := fun k ω ↦ ‖Y k ω‖) s
+    fun k hk ↦ let ⟨M, hM⟩ := hY_bdd k hk; ⟨M, Filter.eventually_map.2 hM⟩
   have hsub : {ω | t ≤ sSup (spectrum ℝ (∑ k ∈ s, X k ω))} ≤ᵐ[P]
       {ω | Real.exp (θ * t) ≤ RCLike.re (NormedSpace.exp (∑ k ∈ s, Y k ω)).trace} :=
     hsum_herm.mono fun ω hω hge ↦ by
@@ -409,7 +399,9 @@ theorem iIndepFun.measureReal_sSup_spectrum_sum_ge_le [IsProbabilityMeasure P] [
   exact (mul_le_mul_of_nonneg_left (ENNReal.toReal_mono (measure_ne_top P _) (measure_mono_ae hsub))
     (Real.exp_pos _).le).trans <|
       (mul_meas_ge_le_integral_of_nonneg (hsum_herm.mono fun _ h ↦ h.re_trace_exp_nonneg)
-        (Matrix.integrable_re_trace_exp (Finset.aemeasurable_fun_sum s hY_meas) hsum_herm hMY)
+        (Matrix.integrable_re_trace_exp (Finset.aemeasurable_fun_sum s hY_meas) hsum_herm
+          ((Filter.eventually_map.1 hMY).mono fun _ hω ↦
+            (norm_sum_le s _).trans (by simpa only [Finset.sum_apply] using hω)))
         (Real.exp (θ * t))).trans hcgf
 
 /-- **Master matrix Laplace-transform lower tail bound** (Tropp 2012, Theorem 3.6). For independent

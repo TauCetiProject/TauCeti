@@ -27,8 +27,8 @@ of scalars is measurable even at zero.
 
 * `TauCeti.measurable_matrix_vec` — vectorization is measurable.
 * `TauCeti.matrixVecMeasurableEquiv` — vectorization as a measurable equivalence.
-* `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, and the
-  `MeasurableMul₂` instance it supplies for square matrices.
+* `TauCeti.measurable_matrix_mul` — matrix multiplication is measurable, alongside the
+  `MeasurableAdd₂` and `MeasurableMul₂` instances for matrices.
 * `TauCeti.measurable_matrix_mul_conjTranspose` — the Gram matrix `X * Xᴴ` is measurable.
 * `TauCeti.measurable_matrix_blockSucc` — the upper-left block extension `Matrix.blockSucc` is
   measurable.
@@ -72,6 +72,12 @@ theorem matrixVecMeasurableEquiv_symm_apply {m n α : Type*} [MeasurableSpace α
     (x : WithLp p (n × m → α)) :
     (matrixVecMeasurableEquiv p).symm x = Matrix.of fun i j => x.ofLp (j, i) :=
   (rfl)
+
+/-- Matrices inherit `MeasurableAdd₂` from the entrywise measurable space structure on
+`m → n → R`. -/
+instance {m n R : Type*} [MeasurableSpace R] [Add R] [MeasurableAdd₂ R] :
+    MeasurableAdd₂ (Matrix m n R) :=
+  inferInstanceAs (MeasurableAdd₂ (m → n → R))
 
 /-- Matrix multiplication is measurable: each entry of a product is a finite sum of products of
 entries. -/

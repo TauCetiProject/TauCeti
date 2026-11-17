@@ -12,6 +12,7 @@ public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Exp
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog.Order
+import TauCeti.Analysis.Matrix.FunctionalCalculus
 
 /-!
 # The logarithm and real powers of positive definite matrices
@@ -106,47 +107,6 @@ theorem PosDef.cfc_log_inv {P : Matrix n n 𝕜} (hP : P.PosDef) :
       ((P.finite_real_spectrum.image _).continuousOn _) (P.finite_real_spectrum.continuousOn _)
       hP.1.isSelfAdjoint, ← cfc_neg]
   exact cfc_congr fun x _ ↦ Real.log_inv x
-
-/-- The canonical entrywise embedding `Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ` induced by
-`RCLike.map 𝕜 ℂ`. -/
-def mapToComplexStarAlgHom : Matrix n n 𝕜 →⋆ₐ[ℝ] Matrix n n ℂ where
-  toFun A := A.map (RCLike.map 𝕜 ℂ)
-  map_one' := by ext i j; by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
-  map_mul' A B := by
-    ext i j; simp only [map_apply, Matrix.mul_apply, map_sum]
-    exact Finset.sum_congr rfl fun _ _ ↦ Complex.ext (by simp) (by simp)
-  map_zero' := by ext; simp
-  map_add' A B := by ext i j; exact Complex.ext (by simp) (by simp)
-  commutes' r := by ext i j; by_cases hij : i = j <;> simp [Algebra.algebraMap_eq_smul_one, hij]
-  map_star' A := by
-    ext i j
-    exact Complex.ext (by simp [star_eq_conjTranspose]) (by simp [star_eq_conjTranspose])
-
-/-- Evaluating `Matrix.mapToComplexStarAlgHom` entrywise applies `RCLike.map 𝕜 ℂ`. -/
-@[simp]
-theorem mapToComplexStarAlgHom_apply (A : Matrix n n 𝕜) (i j : n) :
-    mapToComplexStarAlgHom A i j = RCLike.map 𝕜 ℂ (A i j) := by rfl
-
-/-- The entrywise embedding `Matrix.mapToComplexStarAlgHom` is continuous. -/
-theorem continuous_mapToComplexStarAlgHom :
-    Continuous (mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)) :=
-  continuous_pi fun _ ↦ continuous_pi fun _ ↦
-    (RCLike.map 𝕜 ℂ).continuous.comp ((continuous_apply _).comp (continuous_apply _))
-
-/-- Entrywise embedding into `ℂ` preserves positive semidefiniteness. -/
-theorem PosSemidef.mapToComplexStarAlgHom {A : Matrix n n 𝕜} (hA : A.PosSemidef) :
-    (Matrix.mapToComplexStarAlgHom A).PosSemidef := by
-  let Φ := Matrix.mapToComplexStarAlgHom (n := n) (𝕜 := 𝕜)
-  have hmul : Φ A = (Φ (CFC.sqrt A))ᴴ * Φ (CFC.sqrt A) := by
-    rw [← star_eq_conjTranspose, ← map_star, (CFC.sqrt_nonneg A).isSelfAdjoint.star_eq, ← map_mul,
-      CFC.sqrt_mul_sqrt_self A hA.nonneg]
-  exact hmul ▸ posSemidef_conjTranspose_mul_self _
-
-/-- Entrywise embedding into `ℂ` preserves positive definiteness. -/
-theorem PosDef.mapToComplexStarAlgHom {A : Matrix n n 𝕜} (hA : A.PosDef) :
-    (Matrix.mapToComplexStarAlgHom A).PosDef :=
-  isStrictlyPositive_iff_posDef.1 ⟨hA.posSemidef.mapToComplexStarAlgHom.nonneg,
-    hA.isUnit.map Matrix.mapToComplexStarAlgHom.toRingHom⟩
 
 /-- **Operator monotonicity of the matrix logarithm.** For positive definite matrices `A ≤ B` over
 any `RCLike` field `𝕜`, `cfc Real.log A ≤ cfc Real.log B` in the Loewner order. -/

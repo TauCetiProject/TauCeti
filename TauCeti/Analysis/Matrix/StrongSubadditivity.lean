@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Vec
 public import TauCeti.Analysis.Matrix.Entropy
 import TauCeti.Analysis.Matrix.Exponential.Log
+import TauCeti.Analysis.Matrix.FunctionalCalculus
 import TauCeti.Analysis.Matrix.Kronecker
 import TauCeti.Analysis.Matrix.L2OpNorm
 import TauCeti.Analysis.Matrix.OperatorJensen
@@ -354,24 +355,6 @@ theorem PosSemidef.vonNeumannEntropy_strong_subadditivity
 
 /-! ### Joint convexity of the relative entropy -/
 
-private theorem cfc_blockDiagonal_of_isHermitian {o : Type*} [Fintype o] [DecidableEq o]
-    (f : ℝ → ℝ) {M : o → Matrix m m 𝕜} (hM : ∀ k, (M k).IsHermitian) :
-    cfc f (blockDiagonal M) = blockDiagonal fun k ↦ cfc f (M k) := by
-  have hBM : (blockDiagonal M).IsHermitian := by
-    rw [IsHermitian, blockDiagonal_conjTranspose]
-    exact congrArg blockDiagonal (funext fun k ↦ (hM k).eq)
-  let V (k : o) : Matrix (m × o) m 𝕜 := of fun p j ↦ if p = (j, k) then 1 else 0
-  have hint (k : o) : blockDiagonal M * V k = V k * M k := by
-    ext ⟨i, l⟩ j
-    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
-  ext ⟨i, l⟩ ⟨j, k⟩
-  have hcfc := congrFun (congrFun (hBM.cfc_mul_eq_mul_cfc (hM k) (hint k) f) (i, l)) j
-  have hL : (cfc f (blockDiagonal M) * V k) (i, l) j = cfc f (blockDiagonal M) (i, l) (j, k) := by
-    simp [V, Matrix.mul_apply]
-  have hR : (V k * cfc f (M k)) (i, l) j = (blockDiagonal fun r ↦ cfc f (M r)) (i, l) (j, k) := by
-    by_cases hlk : l = k <;> simp [V, Matrix.mul_apply, blockDiagonal_apply, hlk]
-  rw [← hL, hcfc, hR]
-
 /-- **Positive homogeneity of the relative entropy.** Scaling both positive definite arguments by a
 positive real factor `c` scales `D(ρ ‖ σ)` by `c`. -/
 theorem PosDef.relativeEntropy_smul {ρ σ : Matrix m m 𝕜} (hρ : ρ.PosDef) (hσ : σ.PosDef)
@@ -391,39 +374,31 @@ private theorem PosDef.relativeEntropy_add_le_complex {ρ₁ ρ₂ σ₁ σ₂ :
     relativeEntropy (ρ₁ + ρ₂) (σ₁ + σ₂) ≤ relativeEntropy ρ₁ σ₁ + relativeEntropy ρ₂ σ₂ := by
   have hBD (A₁ A₂ : Matrix m m ℂ) (h₁ : A₁.PosDef) (h₂ : A₂.PosDef) :
       (blockDiagonal ![A₁, A₂]).PosDef := by
-    let S := blockDiagonal ![CFC.sqrt A₁, CFC.sqrt A₂]
-    have hmul : Sᴴ * S = blockDiagonal ![A₁, A₂] := by
+    have hmul : (blockDiagonal ![CFC.sqrt A₁, CFC.sqrt A₂])ᴴ *
+        blockDiagonal ![CFC.sqrt A₁, CFC.sqrt A₂] = blockDiagonal ![A₁, A₂] := by
       rw [blockDiagonal_conjTranspose, ← blockDiagonal_mul]
       refine congrArg blockDiagonal (funext (Fin.forall_fin_two.2 ⟨?_, ?_⟩))
       · simp [(CFC.sqrt_nonneg A₁).isSelfAdjoint.isHermitian.eq,
           CFC.sqrt_mul_sqrt_self A₁ h₁.posSemidef.nonneg]
       · simp [(CFC.sqrt_nonneg A₂).isSelfAdjoint.isHermitian.eq,
           CFC.sqrt_mul_sqrt_self A₂ h₂.posSemidef.nonneg]
-    have hu : IsUnit (blockDiagonal ![A₁, A₂]) :=
-      (isUnit_iff_isUnit_det _).2 (by
-        rw [det_blockDiagonal, Fin.prod_univ_two]
-        exact ((isUnit_iff_isUnit_det _).1 h₁.isUnit).mul ((isUnit_iff_isUnit_det _).1 h₂.isUnit))
-    exact isStrictlyPositive_iff_posDef.1 ⟨(hmul ▸ posSemidef_conjTranspose_mul_self S).nonneg, hu⟩
-  let P : Matrix (m × Fin 2) (m × Fin 2) ℂ := blockDiagonal ![ρ₁, ρ₂]
-  let Q : Matrix (m × Fin 2) (m × Fin 2) ℂ := blockDiagonal ![σ₁, σ₂]
-  have hP : P.PosDef := hBD ρ₁ ρ₂ hρ₁ hρ₂
-  have hQ : Q.PosDef := hBD σ₁ σ₂ hσ₁ hσ₂
+    refine isStrictlyPositive_iff_posDef.1 ⟨(hmul ▸ posSemidef_conjTranspose_mul_self _).nonneg,
+      (isUnit_iff_isUnit_det _).2 ?_⟩
+    rw [det_blockDiagonal, Fin.prod_univ_two]
+    exact ((isUnit_iff_isUnit_det _).1 h₁.isUnit).mul ((isUnit_iff_isUnit_det _).1 h₂.isUnit)
   have htr (A₁ A₂ : Matrix m m ℂ) : (blockDiagonal ![A₁, A₂]).partialTraceRight = A₁ + A₂ := by
     ext i j; simp [partialTraceRight_apply, blockDiagonal_apply, Fin.sum_univ_two]
-  have hmono := hP.relativeEntropy_partialTraceRight_le hQ
+  have hQ := hBD σ₁ σ₂ hσ₁ hσ₂
+  have hmono := (hBD ρ₁ ρ₂ hρ₁ hρ₂).relativeEntropy_partialTraceRight_le hQ
   rw [htr ρ₁ ρ₂, htr σ₁ σ₂] at hmono
   refine hmono.trans_eq ?_
   rw [relativeEntropy_of_posDef hQ, relativeEntropy_of_posDef hσ₁, relativeEntropy_of_posDef hσ₂,
     ← EReal.coe_add]
   congr 1
-  have hlogP := cfc_blockDiagonal_of_isHermitian Real.log (M := ![ρ₁, ρ₂])
-    (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩)
-  have hlogQ := cfc_blockDiagonal_of_isHermitian Real.log (M := ![σ₁, σ₂])
-    (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩)
-  have hP_eq : P = blockDiagonal ![ρ₁, ρ₂] := rfl
-  rw [hlogP, hlogQ, ← blockDiagonal_sub, hP_eq, ← blockDiagonal_mul, trace_blockDiagonal,
-    Fin.sum_univ_two, map_add]
-  rfl
+  rw [cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hρ₁.1, hρ₂.1⟩),
+    cfc_blockDiagonal_of_isHermitian Real.log (Fin.forall_fin_two.2 ⟨hσ₁.1, hσ₂.1⟩),
+    ← blockDiagonal_sub, ← blockDiagonal_mul, trace_blockDiagonal, Fin.sum_univ_two, map_add]
+  simp only [Pi.sub_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- **Subadditivity of the relative entropy.** For positive definite matrices over any `RCLike`
 field, `D(ρ₁ + ρ₂ ‖ σ₁ + σ₂) ≤ D(ρ₁ ‖ σ₁) + D(ρ₂ ‖ σ₂)`. -/

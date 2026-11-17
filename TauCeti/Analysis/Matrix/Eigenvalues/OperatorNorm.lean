@@ -160,15 +160,29 @@ theorem sSup_spectrum_real_neg (A : Matrix n n 𝕜) :
     sSup (spectrum ℝ (-A)) = -sInf (spectrum ℝ A) := by
   rw [← spectrum.neg_eq, Real.sSup_neg]
 
+/-- The supremum of the real spectrum of the zero matrix is `0`, including on an empty index
+type. -/
+@[simp]
+theorem sSup_spectrum_real_zero : sSup (spectrum ℝ (0 : Matrix n n 𝕜)) = 0 := by
+  by_cases hn : Nonempty n
+  · have : Nontrivial (Matrix n n 𝕜) := inferInstance
+    simp [spectrum.zero_eq]
+  · have : Subsingleton (Matrix n n 𝕜) := by have := not_nonempty_iff.1 hn; infer_instance
+    simp [spectrum.of_subsingleton]
+
+/-- The infimum of the real spectrum of the zero matrix is `0`, including on an empty index
+type. -/
+@[simp]
+theorem sInf_spectrum_real_zero : sInf (spectrum ℝ (0 : Matrix n n 𝕜)) = 0 := by
+  have h := sSup_spectrum_real_neg (0 : Matrix n n 𝕜)
+  rw [neg_zero, sSup_spectrum_real_zero] at h
+  linarith
+
 /-- Scaling a matrix by a nonnegative real scalar scales the supremum of its real spectrum. -/
 theorem sSup_spectrum_real_smul_of_nonneg (A : Matrix n n 𝕜) {θ : ℝ} (hθ : 0 ≤ θ) :
     sSup (spectrum ℝ (θ • A)) = θ * sSup (spectrum ℝ A) := by
   rcases hθ.eq_or_lt with rfl | hθ
-  · by_cases hn : Nonempty n
-    · have : Nontrivial (Matrix n n 𝕜) := inferInstance
-      simp [spectrum.zero_eq]
-    · have : Subsingleton (Matrix n n 𝕜) := by have := not_nonempty_iff.1 hn; infer_instance
-      simp [spectrum.of_subsingleton]
+  · simp
   · simpa [Units.smul_def] using
       (congrArg sSup (spectrum.unit_smul_eq_smul A (Units.mk0 θ hθ.ne'))).trans
         (Real.sSup_smul_of_nonneg hθ.le _)
