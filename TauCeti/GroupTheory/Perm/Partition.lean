@@ -193,7 +193,6 @@ theorem parts_partition_of_isEmpty [IsEmpty α] (σ : Equiv.Perm α) :
 
 /-- The parts of `Equiv.Perm.partition` are empty exactly on an empty type; in particular they do
 not vanish on the identity of a nonempty type, unlike `Equiv.Perm.cycleType`. -/
-@[simp]
 theorem parts_partition_eq_zero_iff {σ : Equiv.Perm α} :
     σ.partition.parts = 0 ↔ Fintype.card α = 0 := by
   refine ⟨fun h => by rw [← σ.partition.parts_sum, h, Multiset.sum_zero], fun h => ?_⟩

@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
 public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
+import TauCeti.FieldTheory.Galois.FixedField
 
 /-!
 # The unramified part of a finite subextension
@@ -25,9 +26,14 @@ the infinite case, so residue degree can be used as a weight on isomorphism clas
 
 ## Main results
 
-* `IntermediateField.inertiaDegree_eq_of_algEquiv`: residue degree is an isomorphism invariant.
+* `IntermediateField.inertiaDegree_eq_of_algEquiv` and
+  `IntermediateField.inertiaDegree_fixedField_stabilizer_smul`: residue degree is an isomorphism
+  invariant, hence constant along Galois orbits of point stabilizers.
 * `IntermediateField.isTotallyRamified_iff_inertiaDegree_eq_one`: a subextension is totally
   ramified exactly when its residue degree is one.
+* `IntermediateField.inertiaDegree_dvd_finrank` and
+  `IntermediateField.finrank_div_inertiaDegree_pos`: residue degree divides `[L : K]`, with
+  positive quotient on finite subextensions.
 * `IntermediateField.unramifiedExtension_inertiaDegree_le`: `K_{f(L/K)} ≤ L` for finite `L`.
 * `IntermediateField.inf_maximalUnramifiedExtension`: `L ∩ K^{ur} = K_{f(L/K)}` for finite `L`.
 
@@ -113,6 +119,15 @@ theorem inertiaDegree_eq_of_algEquiv {L M : IntermediateField K (SeparableClosur
   · rw [inertiaDegree_of_not_finite hL, inertiaDegree_of_not_finite
       fun h ↦ hL (Module.Finite.equiv e.symm.toLinearEquiv)]
 
+/-- Translating a point along a Galois action preserves the residue degree of its stabilizer's
+fixed field. -/
+@[simp]
+theorem inertiaDegree_fixedField_stabilizer_smul {X : Type*}
+    [MulAction Gal(SeparableClosure K/K) X] (σ : Gal(SeparableClosure K/K)) (x : X) :
+    (fixedField (MulAction.stabilizer Gal(SeparableClosure K/K) (σ • x))).inertiaDegree =
+      (fixedField (MulAction.stabilizer Gal(SeparableClosure K/K) x)).inertiaDegree :=
+  apply_fixedField_stabilizer_smul inertiaDegree_eq_of_algEquiv σ x
+
 /-- A subextension is totally ramified exactly when its totalized residue degree is one; no
 finiteness hypothesis is needed, since an infinite subextension has residue degree zero. -/
 theorem isTotallyRamified_iff_inertiaDegree_eq_one (L : IntermediateField K (SeparableClosure K)) :
@@ -139,6 +154,30 @@ theorem inertiaDegree_bot :
   have h := ramificationIndex_mul_inertiaDegree K (⊥ : IntermediateField K (SeparableClosure K))
   rw [IntermediateField.finrank_bot] at h
   exact Nat.eq_one_of_mul_eq_one_left h
+
+/-- The totalized residue degree divides the degree over the base field, including on infinite
+subextensions where both vanish. -/
+theorem inertiaDegree_dvd_finrank (L : IntermediateField K (SeparableClosure K)) :
+    L.inertiaDegree ∣ Module.finrank K L := by
+  by_cases h : Module.Finite K L
+  · rw [inertiaDegree_eq]
+    let _ := finiteIntermediateFieldValuativeRel K (SeparableClosure K) L
+    let _ := finiteIntermediateFieldTopology K (SeparableClosure K) L
+    have := finiteIntermediateField_isNonarchimedeanLocalField K (SeparableClosure K) L
+    have := finiteIntermediateField_valuativeExtension K (SeparableClosure K) L
+    exact ⟨ramificationIndex K L,
+      (ramificationIndex_mul_inertiaDegree K L).symm.trans (mul_comm _ _)⟩
+  · rw [inertiaDegree_of_not_finite h, Module.finrank_of_not_finite h]
+
+/-- On a finite subextension, the quotient `[L : K] / f(L/K)` (its ramification index) is
+positive. -/
+theorem finrank_div_inertiaDegree_pos (L : IntermediateField K (SeparableClosure K))
+    [Module.Finite K L] : 0 < Module.finrank K L / L.inertiaDegree := by
+  have hmul := Nat.mul_div_cancel' L.inertiaDegree_dvd_finrank
+  have hpos : 0 < Module.finrank K L := Module.finrank_pos
+  by_contra! hle
+  rw [Nat.le_zero.mp hle, mul_zero] at hmul
+  omega
 
 /-- The canonical unramified extension of degree `f(L/K)` is contained in every finite
 subextension `L`. -/
