@@ -29,12 +29,15 @@ by its value at the finite endpoint and its limit at infinity.  The endpoint at 
 when the limit is finite.
 A continuous strictly increasing function on a compact interval has a continuous inverse on
 its range, extended to the whole codomain by clamping.
+A function continuous on every closed interval `[a, b]` with `b ≥ a` is continuous on `[a, ∞)`.
 A path that starts in an open set and leaves it has a first exit time.
 
 ## Main results
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `TauCeti.continuousOn_Ici_of_forall_Icc` — continuity on `Ici a` from continuity on `Icc a b`
+  for every `b ≥ a`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
@@ -76,6 +79,16 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- A function into a topological space that is continuous on `[a, b]` for every `b ≥ a` is
+continuous on `[a, ∞)`. -/
+theorem continuousOn_Ici_of_forall_Icc {α X : Type*} [LinearOrder α] [TopologicalSpace α]
+    [OrderClosedTopology α] [NoMaxOrder α] [TopologicalSpace X] {f : α → X} {a : α}
+    (h : ∀ b ≥ a, ContinuousOn f (Icc a b)) : ContinuousOn f (Ici a) :=
+  continuousOn_of_locally_continuousOn fun t ht ↦
+    let ⟨b, htb⟩ := exists_gt t
+    ⟨Iio b, isOpen_Iio, htb,
+      (h b (mem_Ici.1 ht |>.trans htb.le)).mono fun _ hr ↦ ⟨hr.1, hr.2.le⟩⟩
 
 /-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
 is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/
