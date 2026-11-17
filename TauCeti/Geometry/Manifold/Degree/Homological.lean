@@ -47,10 +47,11 @@ For a map between compact manifolds, with `N` preconnected, this reads
 computed by counting preimages with signs computes the image of the fundamental class.
 
 The same holds for compact connected boundaryless manifolds modelled on any finite-dimensional real
-normed spaces, such as products, read through copies charted in `ℝⁿ⁺¹`
-(`TauCeti.BoundarylessModel`) with the orientations pulled back along the identities. Without a
-common chart there is no preferred fundamental class, and the formula holds up to sign for any
-integral fundamental classes (`TauCeti.IsFundamentalClass`) of `M` and `N`
+normed spaces, such as products, read through copies charted in `ℝᵏ⁺¹`
+(`TauCeti.BoundarylessModel`) with the orientations pulled back along the identities. Since
+`TauCeti.Manifold.Orientation.toHomologicalOrientation` needs a manifold charted in an inner
+product space, `o` and `o'` do not name fundamental classes here, and the formula is stated up to
+sign for any integral fundamental classes (`TauCeti.IsFundamentalClass`) of `M` and `N`
 (`TauCeti.Manifold.Orientation.exists_singularHomologyMap_eq_degreeAtRegularValue_smul`).
 
 When `N` is moreover σ-compact, a proper `C¹` map has a regular value by Sard's theorem, so its
