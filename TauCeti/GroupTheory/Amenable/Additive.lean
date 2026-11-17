@@ -13,6 +13,7 @@ public import TauCeti.GroupTheory.Amenable.Extension
 public import TauCeti.GroupTheory.Amenable.Linfty
 public import TauCeti.GroupTheory.Amenable.Prod
 public import TauCeti.Topology.Algebra.Group.UCB.Additive
+import TauCeti.Topology.Algebra.ContinuousMulEquiv
 
 /-!
 # Amenable topological additive groups
@@ -43,9 +44,8 @@ characterizations transfer between `Amenable` and `AddAmenable`.
 
 ## Main results
 
-* `TauCeti.amenable_multiplicative_iff`, `TauCeti.addAmenable_additive_iff`,
-  `TauCeti.hasFoelnerSets_multiplicative_iff`, `TauCeti.hasAddFoelnerSets_additive_iff`:
-  transport of amenability and Følner sets across `Multiplicative` and `Additive`.
+* `TauCeti.amenable_multiplicative_iff`, `TauCeti.addAmenable_additive_iff`:
+  transport of amenability across `Multiplicative` and `Additive`.
 * Permanence of `AddAmenable` under dense-range homomorphisms, coarser topologies, subgroups,
   extensions, products, directed suprema, and local finite generation (`AddAmenable.of_forall_fg`).
 * Instances `AddAmenable.of_finite` and `AddAmenable.of_compactSpace`, and discrete equivalences
@@ -115,10 +115,12 @@ variable (m : AddMean G)
   simp [Algebra.algebraMap_eq_smul_one]
 
 theorem apply_le_of_forall_le {f : AddUCB G} {c : ℝ} (h : ∀ x, (f : G →ᵇ ℝ) x ≤ c) : m f ≤ c := by
-  simpa using OrderHomClass.mono m (show f ≤ algebraMap ℝ _ c from AddUCB.le_def.2 (by simpa))
+  have hf : f ≤ algebraMap ℝ (AddUCB G) c := AddUCB.le_def.2 (by simpa using h)
+  simpa using OrderHomClass.mono m hf
 
 theorem le_apply_of_forall_le {f : AddUCB G} {c : ℝ} (h : ∀ x, c ≤ (f : G →ᵇ ℝ) x) : c ≤ m f := by
-  simpa using OrderHomClass.mono m (show algebraMap ℝ _ c ≤ f from AddUCB.le_def.2 (by simpa))
+  have hf : algebraMap ℝ (AddUCB G) c ≤ f := AddUCB.le_def.2 (by simpa using h)
+  simpa using OrderHomClass.mono m hf
 
 theorem abs_apply_le_norm (f : AddUCB G) : |m f| ≤ ‖f‖ := by
   simpa using PositiveLinearMap.abs_apply_le_mul_norm m (AddUCB.le_norm_smul_one (G := G)) f
@@ -432,40 +434,6 @@ def AddMean.additiveHomeomorph : AddMean (Additive H) ≃ₜ Mean H where
   rw [addAmenable_iff, amenable_iff, ← (AddMean.additiveEquiv H).exists_congr_right]; simp
 
 end AdditiveTag
-
-section FoelnerTags
-
-/-- `Multiplicative B` has Følner sets if and only if `B` has additive Følner sets. -/
-@[simp] theorem hasFoelnerSets_multiplicative_iff {B : Type*} [AddGroup B] :
-    HasFoelnerSets (Multiplicative B) ↔ HasAddFoelnerSets B := by
-  classical
-  rw [hasFoelnerSets_iff, hasAddFoelnerSets_iff]
-  refine ⟨fun h K ε hε => ?_, fun h K ε hε => ?_⟩
-  · obtain ⟨F, hFne, hF⟩ := h (K.image Multiplicative.ofAdd) ε hε
-    refine ⟨F.image Multiplicative.toAdd, hFne.image _, fun g hg => ?_⟩
-    have hsmul : g +ᵥ F.image Multiplicative.toAdd =
-        (Multiplicative.ofAdd g • F).image Multiplicative.toAdd := by
-      rw [vadd_finset_def, smul_finset_def, Finset.image_image, Finset.image_image]; congr 1
-    rw [hsmul, ← Finset.image_symmDiff _ _ Multiplicative.toAdd.injective,
-      Finset.card_image_of_injective _ Multiplicative.toAdd.injective,
-      Finset.card_image_of_injective _ Multiplicative.toAdd.injective]
-    exact hF (Multiplicative.ofAdd g) (Finset.mem_image_of_mem _ hg)
-  · obtain ⟨F, hFne, hF⟩ := h (K.image Multiplicative.toAdd) ε hε
-    refine ⟨F.image Multiplicative.ofAdd, hFne.image _, fun g hg => ?_⟩
-    have hsmul : g • F.image Multiplicative.ofAdd = (g.toAdd +ᵥ F).image Multiplicative.ofAdd := by
-      rw [smul_finset_def, vadd_finset_def, Finset.image_image, Finset.image_image]; congr 1
-    rw [hsmul, ← Finset.image_symmDiff _ _ Multiplicative.ofAdd.injective,
-      Finset.card_image_of_injective _ Multiplicative.ofAdd.injective,
-      Finset.card_image_of_injective _ Multiplicative.ofAdd.injective]
-    exact hF g.toAdd (Finset.mem_image_of_mem _ hg)
-
-/-- `Additive H` has additive Følner sets if and only if `H` has Følner sets. -/
-@[simp] theorem hasAddFoelnerSets_additive_iff {H : Type*} [Group H] :
-    HasAddFoelnerSets (Additive H) ↔ HasFoelnerSets H :=
-  (hasFoelnerSets_multiplicative_iff (B := Additive H)).symm.trans
-    (MulEquiv.multiplicativeAdditive H).hasFoelnerSets_iff
-
-end FoelnerTags
 
 end TypeTags
 

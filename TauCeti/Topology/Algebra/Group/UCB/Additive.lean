@@ -64,21 +64,6 @@ section AddUCB
 
 variable {𝕜 G : Type*} [NormedField 𝕜] [AddGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
 
-/-- A function on a topological additive group is uniformly continuous for the right uniformity
-exactly when `f (u + x)` is uniformly close to `f x` for all `u` near `0`. -/
-theorem uniformContinuous_addRightUniformSpace_iff {β : Type*} [PseudoMetricSpace β] (f : G → β) :
-    (letI : UniformSpace G := IsTopologicalAddGroup.rightUniformSpace G
-     UniformContinuous f) ↔
-      ∀ ε > 0, ∀ᶠ u in 𝓝 (0 : G), ∀ x, dist (f (u + x)) (f x) < ε := by
-  let : UniformSpace G := IsTopologicalAddGroup.rightUniformSpace G
-  rw [UniformContinuous, uniformity_eq_comap_nhds_zero',
-    ((𝓝 (0 : G)).basis_sets.comap _).tendsto_iff Metric.uniformity_basis_dist]
-  refine forall₂_congr fun ε _ => ⟨fun ⟨U, hU, h⟩ => ?_, fun h => ⟨_, h, fun p hp => ?_⟩⟩
-  · filter_upwards [hU] with u hu x
-    rw [dist_comm]
-    exact h (x, u + x) (by simpa using hu)
-  · simpa [dist_comm] using hp p.1
-
 private theorem addUcb_tendsto {f : G →ᵇ 𝕜} :
     (∀ ε > 0, ∀ᶠ u in 𝓝 (0 : G), ∀ x, ‖f (u + x) - f x‖ < ε) ↔
       Tendsto (fun u => f.compContinuous (ContinuousMap.addLeft u)) (𝓝 0) (𝓝 f) := by

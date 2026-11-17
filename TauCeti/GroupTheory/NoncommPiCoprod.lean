@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Pi
 public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Algebra.Group.Subgroup.ZPowers.Lemmas
 public import Mathlib.GroupTheory.NoncommPiCoprod
+import TauCeti.Algebra.Group.Equiv.TypeTags
 
 /-!
 # Homomorphisms out of `ℤ^ι`
@@ -215,18 +217,14 @@ variable (ι) in
 /-- Universal property of `ι → Multiplicative ℤ` for a commutative group `G`, bundled as a
 multiplicative isomorphism `(ι → G) ≃* ((ι → Multiplicative ℤ) →* G)`. -/
 def zpowersPiMulEquiv (G : Type*) [DecidableEq ι] [CommGroup G] :
-    (ι → G) ≃* ((ι → Multiplicative ℤ) →* G) where
-  toFun τ := zpowersPiHom τ fun _ _ => Commute.all _ _
-  invFun f i := f (Pi.mulSingle i (.ofAdd 1))
-  left_inv τ := funext fun i => zpowersPiHom_mulSingle τ _ i
-  right_inv f := MonoidHom.pi_ext_mint fun i => zpowersPiHom_mulSingle _ _ i
-  map_mul' σ τ := MonoidHom.ext fun _ => by
-    simp [zpowersPiHom_apply, mul_zpow, Finset.prod_mul_distrib]
+    (ι → G) ≃* ((ι → Multiplicative ℤ) →* G) :=
+  (MulEquiv.piCongrRight fun _ => zpowersMulHom G).trans
+    (Pi.monoidHomMulEquiv (fun _ => Multiplicative ℤ) G).symm
 
 @[simp] theorem zpowersPiMulEquiv_apply {G : Type*} [DecidableEq ι] [CommGroup G]
     (τ : ι → G) (v : ι → Multiplicative ℤ) :
-    zpowersPiMulEquiv ι G τ v = ∏ i, τ i ^ (v i).toAdd :=
-  zpowersPiHom_apply τ (fun _ _ => Commute.all _ _) v
+    zpowersPiMulEquiv ι G τ v = ∏ i, τ i ^ (v i).toAdd := by
+  simp [zpowersPiMulEquiv, Pi.monoidHomMulEquiv]
 
 @[simp] theorem zpowersPiMulEquiv_symm_apply {G : Type*} [DecidableEq ι] [CommGroup G]
     (f : (ι → Multiplicative ℤ) →* G) (i : ι) :
@@ -236,18 +234,14 @@ variable (ι) in
 /-- Universal property of `ι → ℤ` for an additive commutative group `A`, bundled as an additive
 isomorphism `(ι → A) ≃+ ((ι → ℤ) →+ A)`. -/
 def zmultiplesPiAddEquiv (A : Type*) [DecidableEq ι] [AddCommGroup A] :
-    (ι → A) ≃+ ((ι → ℤ) →+ A) where
-  toFun τ := zmultiplesPiHom τ fun _ _ => AddCommute.all _ _
-  invFun f i := f (Pi.single i 1)
-  left_inv τ := funext fun i => zmultiplesPiHom_single τ _ i
-  right_inv f := AddMonoidHom.pi_ext_int fun i => zmultiplesPiHom_single _ _ i
-  map_add' σ τ := AddMonoidHom.ext fun _ => by
-    simp [zmultiplesPiHom_apply, Finset.sum_add_distrib]
+    (ι → A) ≃+ ((ι → ℤ) →+ A) :=
+  (AddEquiv.piCongrRight fun _ => zmultiplesAddHom A).trans
+    (Pi.addMonoidHomAddEquiv (fun _ => ℤ) A).symm
 
 @[simp] theorem zmultiplesPiAddEquiv_apply {A : Type*} [DecidableEq ι] [AddCommGroup A]
     (τ : ι → A) (v : ι → ℤ) :
-    zmultiplesPiAddEquiv ι A τ v = ∑ i, v i • τ i :=
-  zmultiplesPiHom_apply τ (fun _ _ => AddCommute.all _ _) v
+    zmultiplesPiAddEquiv ι A τ v = ∑ i, v i • τ i := by
+  simp [zmultiplesPiAddEquiv, Pi.addMonoidHomAddEquiv]
 
 @[simp] theorem zmultiplesPiAddEquiv_symm_apply {A : Type*} [DecidableEq ι] [AddCommGroup A]
     (f : (ι → ℤ) →+ A) (i : ι) :
@@ -256,13 +250,6 @@ def zmultiplesPiAddEquiv (A : Type*) [DecidableEq ι] [AddCommGroup A] :
 end Commutative
 
 section TypeTags
-
-private theorem piMultiplicative_ofAdd_single [DecidableEq ι] (i : ι) :
-    (MulEquiv.piMultiplicative fun _ : ι => ℤ)
-        (Multiplicative.ofAdd (Pi.single (M := fun _ : ι => ℤ) i 1)) =
-      Pi.mulSingle (M := fun _ : ι => Multiplicative ℤ) i (.ofAdd 1) := by
-  ext j
-  by_cases hij : j = i <;> simp [hij]
 
 variable [Fintype ι]
 
@@ -277,8 +264,9 @@ theorem zpowersPiHom_ofAdd {A : Type*} [AddGroup A] (τ : ι → A)
         (MulEquiv.piMultiplicative fun _ : ι => ℤ).symm.toMonoidHom := by
   classical
   refine MonoidHom.pi_ext_mint fun i => ?_
-  rw [zpowersPiHom_mulSingle]
-  simp [← piMultiplicative_ofAdd_single]
+  rw [zpowersPiHom_mulSingle, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    MulEquiv.piMultiplicative_symm_mulSingle]
+  simp
 
 /-- Transporting `zpowersPiHom τ` to `Additive K` agrees with `zmultiplesPiHom` on
 `Additive.ofMul ∘ τ` along `MulEquiv.piMultiplicative`. -/
@@ -291,7 +279,7 @@ theorem zmultiplesPiHom_ofMul {K : Type*} [Group K] (τ : ι → K)
         (MulEquiv.piMultiplicative fun _ : ι => ℤ).toMonoidHom).toAdditiveRight := by
   classical
   refine AddMonoidHom.pi_ext_int fun i => ?_
-  simp [piMultiplicative_ofAdd_single]
+  simp
 
 end TypeTags
 

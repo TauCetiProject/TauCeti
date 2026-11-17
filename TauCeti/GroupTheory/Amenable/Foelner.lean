@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Group.Action.Pointwise.Finset
 public import Mathlib.Data.Finset.SymmDiff
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
 public import Mathlib.MeasureTheory.Measure.Count
+import Mathlib.Algebra.Group.Equiv.TypeTags
 import TauCeti.Data.ENNReal.NatCastDiv
 
 /-!
@@ -57,6 +58,8 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
   relative translation boundaries along a nontrivial filter give Følner sets.
 * `MulEquiv.hasFoelnerSets_iff`, `AddEquiv.hasAddFoelnerSets_iff`: having Følner sets is invariant
   under group isomorphisms.
+* `TauCeti.hasFoelnerSets_multiplicative_iff`, `TauCeti.hasAddFoelnerSets_additive_iff`:
+  transport of Følner sets across `Multiplicative` and `Additive`.
 
 ## References
 
@@ -257,3 +260,37 @@ theorem hasFoelnerSets_iff (e : G ≃* H) : HasFoelnerSets G ↔ HasFoelnerSets 
   ⟨hasFoelnerSets_of_mulEquiv e, hasFoelnerSets_of_mulEquiv e.symm⟩
 
 end MulEquiv
+
+namespace TauCeti
+
+/-- `Multiplicative B` has Følner sets if and only if `B` has additive Følner sets. -/
+@[simp] theorem hasFoelnerSets_multiplicative_iff {B : Type*} [AddGroup B] :
+    HasFoelnerSets (Multiplicative B) ↔ HasAddFoelnerSets B := by
+  classical
+  rw [hasFoelnerSets_iff, hasAddFoelnerSets_iff]
+  refine ⟨fun h K ε hε => ?_, fun h K ε hε => ?_⟩
+  · obtain ⟨F, hFne, hF⟩ := h (K.image Multiplicative.ofAdd) ε hε
+    refine ⟨F.image Multiplicative.toAdd, hFne.image _, fun g hg => ?_⟩
+    have hsmul : g +ᵥ F.image Multiplicative.toAdd =
+        (Multiplicative.ofAdd g • F).image Multiplicative.toAdd := by
+      rw [vadd_finset_def, smul_finset_def, Finset.image_image, Finset.image_image]; congr 1
+    rw [hsmul, ← Finset.image_symmDiff _ _ Multiplicative.toAdd.injective,
+      Finset.card_image_of_injective _ Multiplicative.toAdd.injective,
+      Finset.card_image_of_injective _ Multiplicative.toAdd.injective]
+    exact hF (Multiplicative.ofAdd g) (Finset.mem_image_of_mem _ hg)
+  · obtain ⟨F, hFne, hF⟩ := h (K.image Multiplicative.toAdd) ε hε
+    refine ⟨F.image Multiplicative.ofAdd, hFne.image _, fun g hg => ?_⟩
+    have hsmul : g • F.image Multiplicative.ofAdd = (g.toAdd +ᵥ F).image Multiplicative.ofAdd := by
+      rw [smul_finset_def, vadd_finset_def, Finset.image_image, Finset.image_image]; congr 1
+    rw [hsmul, ← Finset.image_symmDiff _ _ Multiplicative.ofAdd.injective,
+      Finset.card_image_of_injective _ Multiplicative.ofAdd.injective,
+      Finset.card_image_of_injective _ Multiplicative.ofAdd.injective]
+    exact hF g.toAdd (Finset.mem_image_of_mem _ hg)
+
+/-- `Additive H` has additive Følner sets if and only if `H` has Følner sets. -/
+@[simp] theorem hasAddFoelnerSets_additive_iff {H : Type*} [Group H] :
+    HasAddFoelnerSets (Additive H) ↔ HasFoelnerSets H :=
+  (hasFoelnerSets_multiplicative_iff (B := Additive H)).symm.trans
+    (MulEquiv.multiplicativeAdditive H).hasFoelnerSets_iff
+
+end TauCeti
