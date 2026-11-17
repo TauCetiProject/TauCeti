@@ -74,6 +74,8 @@ hypothesis in the intended applications.
   module over the corner ring `eAe` (`IsIdempotentElem.Corner`), which acts by restricting the
   action of `A`, as recorded by `IsIdempotentElem.Corner.coe_smul`. This is the module structure the
   corner functor `M ↦ eM` of Morita theory is built on.
+* `TauCeti.isIdempotentElem_of_smul_eq_self`: an element `e ∈ A` that fixes `S` pointwise and
+  annihilates the kernel of `Algebra.lsmul` is automatically idempotent.
 
 ## References
 
@@ -312,6 +314,20 @@ theorem projectionFamilyOverlap_injective (hPsum : ∑ i, P i = 1)
   exact Finset.sum_congr rfl fun i _ ↦ hcomponents i
 
 end ProjectionFamily
+
+/-! ### Idempotence from an algebra action -/
+
+/-- An element `e ∈ A` that fixes `S` pointwise and kills the kernel of `lsmul` is automatically
+idempotent: `e` and `1` have the same image in `End_k S`, so `e * e = e * 1 = e`. -/
+theorem isIdempotentElem_of_smul_eq_self {k A S : Type*} [CommSemiring k] [Semiring A] [Algebra k A]
+    [AddCommMonoid S] [Module k S] [Module A S] [IsScalarTower k A S] {e : A}
+    (heS : ∀ s : S, e • s = s)
+    (hker : ∀ a b : A, Algebra.lsmul k k S a = Algebra.lsmul k k S b → e * a = e * b) :
+    IsIdempotentElem e := by
+  have he1 : Algebra.lsmul k k S e = Algebra.lsmul k k S (1 : A) := by
+    ext s
+    simp [heS s]
+  simpa only [IsIdempotentElem, mul_one] using hker e 1 he1
 
 end TauCeti
 
