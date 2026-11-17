@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Ring.Semireal.Defs
 public import TauCeti.Algebra.BrauerGroup.Group
 public import TauCeti.Algebra.Quaternion.CentralSimple
 public import TauCeti.FieldTheory.SquareClassGroup.Basic
@@ -41,7 +42,9 @@ The symbol satisfies the classical relations (Lam III.2.11, Gille–Szamuely 1.5
 Equality of two symbols is exactly an isomorphism of the underlying quaternion algebras, and a
 symbol is trivial exactly when its algebra is split, which the four-fold splitting criterion
 translates into the solvability of the norm equation `b = x² - ay²` and into the isotropy of
-`⟨1, -a, -b⟩`.
+`⟨1, -a, -b⟩`. Over any semireal field `K`, `-1` is not a sum of squares, so `-1 = x² + y²` has no
+solution; hence Hamilton's quaternion symbol `[(-1, -1)]` is nontrivial of order `2`, and its powers
+depend only on the parity of the exponent.
 
 ## Main results
 
@@ -65,13 +68,19 @@ translates into the solvability of the norm equation `b = x² - ay²` and into t
   `2`-torsion values (`quaternionClassOnSquareClasses_sq`).
 * `TauCeti.BrauerGroup.quaternionClass_congr`: isometric binary forms `⟨a,b⟩ ≅ ⟨c,d⟩`
   have equal symbols `[(a,b)] = [(c,d)]`.
+* `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_ne_one`,
+  `TauCeti.BrauerGroup.orderOf_quaternionClass_neg_one_neg_one`,
+  `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_one_iff`,
+  `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_self_iff`,
+  `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_pow_eq_pow_iff`: over any semireal field,
+  `[(-1, -1)]` is nontrivial of order `2` and its powers satisfy parity rules.
 
 ## References
 
 The classical central-simple background is in T. Y. Lam, *Introduction to Quadratic Forms over
-Fields* (2005), Chapter III, §2, in particular Theorem 2.11 for the symbol relations, and
-P. Gille and T. Szamuely, *Central Simple Algebras and Galois Cohomology* (2006), §1.1 and
-Lemma 1.5.2.
+Fields* (2005), Chapter III, §2, in particular Theorem 2.11 for the symbol relations and
+Example 2.13 for Hamilton's symbol, and P. Gille and T. Szamuely, *Central Simple Algebras and
+Galois Cohomology* (2006), §1.1 and Lemma 1.5.2.
 -/
 
 public section
@@ -419,6 +428,53 @@ theorem quaternionClass_congr {a b c d : Kˣ}
     quaternionClass a b = quaternionClass c d :=
   let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary h
   quaternionClass_eq_of_algEquiv e
+
+/-! ### Hamilton's quaternion symbol over semireal fields -/
+
+section Semireal
+
+variable [IsSemireal K]
+
+/-- **Hamilton's quaternion symbol is nontrivial over any semireal field**: `-1` is not a sum of
+two squares, so `ℍ[K, -1, -1]` is not split. -/
+theorem quaternionClass_neg_one_neg_one_ne_one :
+    quaternionClass (-1 : Kˣ) (-1) ≠ 1 := by
+  rw [Ne, quaternionClass_eq_one_iff_exists_eq_sq_sub_mul_sq]
+  rintro ⟨x, y, h⟩
+  have hsum : (-1 : K) = x * x + y * y := by
+    simpa only [Units.val_neg, Units.val_one, neg_mul, one_mul, sub_neg_eq_add, pow_two] using h
+  exact IsSemireal.not_isSumSq_neg_one K
+    (hsum ▸ (IsSumSq.mul_self x).add (IsSumSq.mul_self y))
+
+/-- Over a semireal field, the Brauer class `[(-1, -1)]` has order `2`. -/
+@[simp]
+theorem orderOf_quaternionClass_neg_one_neg_one :
+    orderOf (quaternionClass (-1 : Kˣ) (-1)) = 2 :=
+  orderOf_eq_prime (quaternionClass_sq (-1) (-1)) quaternionClass_neg_one_neg_one_ne_one
+
+/-- A power of `[(-1, -1)]` over a semireal field is trivial if and only if its exponent is even.
+Not `@[simp]`: `quaternionClass_sq` already simplifies the `n = 2` instance of the left-hand
+side. -/
+theorem quaternionClass_neg_one_neg_one_pow_eq_one_iff (n : ℕ) :
+    quaternionClass (-1 : Kˣ) (-1) ^ n = 1 ↔ Even n := by
+  rw [← orderOf_dvd_iff_pow_eq_one, orderOf_quaternionClass_neg_one_neg_one, even_iff_two_dvd]
+
+/-- A power of `[(-1, -1)]` over a semireal field equals `[(-1, -1)]` if and only if its exponent
+is odd. -/
+theorem quaternionClass_neg_one_neg_one_pow_eq_self_iff (n : ℕ) :
+    quaternionClass (-1 : Kˣ) (-1) ^ n = quaternionClass (-1 : Kˣ) (-1) ↔ Odd n := by
+  rw [quaternionClass_pow]
+  split_ifs with h
+  · simp [Nat.not_odd_iff_even.mpr h, quaternionClass_neg_one_neg_one_ne_one.symm]
+  · simp [Nat.not_even_iff_odd.mp h]
+
+/-- Two powers of `[(-1, -1)]` over a semireal field agree if and only if their exponents have the
+same parity. -/
+theorem quaternionClass_neg_one_neg_one_pow_eq_pow_iff (m n : ℕ) :
+    quaternionClass (-1 : Kˣ) (-1) ^ m = quaternionClass (-1 : Kˣ) (-1) ^ n ↔ m ≡ n [MOD 2] := by
+  rw [pow_eq_pow_iff_modEq, orderOf_quaternionClass_neg_one_neg_one]
+
+end Semireal
 
 end BrauerGroup
 

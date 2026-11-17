@@ -41,6 +41,9 @@ the subgroup `TauCeti.fundamentalI3InI2`.
 * `TauCeti.WittRing.cliffordInvariant_natCast` and `TauCeti.WittRing.cliffordInvariant_intCast`:
   the value of `c` on natural-number casts and its eightfold periodicity on integer casts
   (`8 ∈ I(K)³`).
+* `TauCeti.WittRing.cliffordInvariant_two_add_one_ne` and
+  `TauCeti.WittRing.not_forall_cliffordInvariant_add_eq_mul`: over any semireal field, `c` is not
+  additive on `W(K)` (`c(2 + 1) ≠ c(2) · c(1)`).
 * `TauCeti.cliffordHomI2_pfisterClass`: `c⟨⟨a, b⟩⟩ = [(a, b)]`.
 * `TauCeti.cliffordHomI2_two_torsion`: the values of `c` on `I(K)²` are `2`-torsion.
 * `TauCeti.cliffordHomI2Bar_mk`: the induced map on `I(K)²/I(K)³` computes `c` on
@@ -165,6 +168,31 @@ theorem cliffordInvariant_intCast (m : ℤ) :
     omega
   conv_lhs => rw [hm, Int.cast_add, Int.cast_natCast]
   rw [cliffordInvariant_add_eight_mul_intCast, cliffordInvariant_natCast]
+
+section Semireal
+
+variable [IsSemireal K]
+
+/-- **Failure of additivity outside `I(K)²`**: over any semireal field, on `2 = ⟨1, 1⟩` and
+`1 = ⟨1⟩` in `W(K)` (neither of which lies in `I(K)²`), `c(2 + 1) = c(3) = [(-1, -1)]`, whereas
+`c(2) · c(1) = 1`. -/
+theorem cliffordInvariant_two_add_one_ne :
+    cliffordInvariant ((2 : WittRing K) + 1) ≠
+      cliffordInvariant (2 : WittRing K) * cliffordInvariant (1 : WittRing K) := by
+  have h3 : ((2 : WittRing K) + 1) = ((3 : ℕ) : WittRing K) := by norm_num
+  have h2 : (2 : WittRing K) = ((2 : ℕ) : WittRing K) := by norm_num
+  have h1 : (1 : WittRing K) = ((1 : ℕ) : WittRing K) := by norm_num
+  rw [h3, cliffordInvariant_natCast, h2, cliffordInvariant_natCast, h1, cliffordInvariant_natCast]
+  norm_num
+  exact BrauerGroup.quaternionClass_neg_one_neg_one_ne_one
+
+/-- The Clifford invariant is not a homomorphism from the additive group of `W(K)` to
+`BrauerGroup K` over any semireal field. -/
+theorem not_forall_cliffordInvariant_add_eq_mul :
+    ¬∀ x y : WittRing K, cliffordInvariant (x + y) = cliffordInvariant x * cliffordInvariant y :=
+  fun h => cliffordInvariant_two_add_one_ne (h 2 1)
+
+end Semireal
 
 end WittRing
 

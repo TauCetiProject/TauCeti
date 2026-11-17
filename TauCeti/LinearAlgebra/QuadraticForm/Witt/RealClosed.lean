@@ -28,11 +28,11 @@ of Lam's comparison (Lam V.3.20). On `⟨-1, -1, -1⟩` (`σ = -3`, `(-3) % 8 = 
 `s = [ℍ]` and both correction factors in Lam V.3.20 equal `[ℍ]`, confirming that the discriminant
 correction `[(-1, d)]^C(n - 1, 2)` cannot be omitted.
 
-The formula also witnesses two sharp boundaries of the general theory:
+The formula also illustrates two boundaries of the general theory (for general semireal
+non-additivity `c(2 + 1) ≠ c(2) · c(1)`, see `TauCeti.LinearAlgebra.QuadraticForm.Witt.Clifford`):
 
-* `c` is **not** additive on `W(K)`: `c(⟨1, 1⟩ + ⟨1⟩) = c(⟨1, 1, 1⟩) = [(-1, -1)]`, whereas
-  `c(⟨1, 1⟩) · c(⟨1⟩) = 1`, while `4 ∈ I(K)²` and `3 ∉ I(K)²` still satisfy
-  `c(4 + 3) = 1 = [(-1, -1)] · [(-1, -1)]` with only one summand in `I(K)²`;
+* over `ℝ`, only one summand needs to lie in `I(ℝ)²` for additivity: `4 ∈ I(ℝ)²` and `3 ∉ I(ℝ)²`
+  still satisfy `c(4 + 3) = 1 = [ℍ] · [ℍ]`;
 * even adjoining the Clifford invariant to `(rank, discr, hasseInvariant)` does **not** classify
   regular forms over `K`, since `⟨1, 1, 1, 1⟩` (`σ = 4`) and `⟨-1, -1, -1, -1⟩` (`σ = -4`) share
   all four invariants `(4, 0, 1, [(-1, -1)])`.
@@ -43,8 +43,6 @@ The formula also witnesses two sharp boundaries of the general theory:
   `TauCeti.RegularFormClass.cliffordInvariant_eq_ite_signature`, and
   `QuadraticForm.cliffordInvariant_formClass_eq_ite_signature`: eightfold-periodic formula for the
   Clifford invariant over an ordered real closed field.
-* `TauCeti.WittRing.not_forall_cliffordInvariant_add_eq_mul`: the Clifford invariant is not a
-  homomorphism on `W(K)` over any semireal field.
 * `TauCeti.RegularFormClass.four_nsmul_one_invariants_eq_and_ne`: `⟨1, 1, 1, 1⟩` and
   `⟨-1, -1, -1, -1⟩` share rank, discriminant, Hasse invariant, and Clifford invariant while
   remaining non-isometric over any ordered field.
@@ -62,35 +60,6 @@ public section
 open QuadraticMap QuadraticForm TauCeti
 
 namespace TauCeti
-
-section Semireal
-
-variable {K : Type*} [Field K] [IsSemireal K] [Invertible (2 : K)]
-
-namespace WittRing
-
-/-- **Failure of additivity outside `I(K)²`**: over any semireal field, on `2 = ⟨1, 1⟩` and
-`1 = ⟨1⟩` in `W(K)` (neither of which lies in `I(K)²`), `c(2 + 1) = c(3) = [(-1, -1)]`, whereas
-`c(2) · c(1) = 1`. -/
-theorem cliffordInvariant_two_add_one_ne :
-    cliffordInvariant ((2 : WittRing K) + 1) ≠
-      cliffordInvariant (2 : WittRing K) * cliffordInvariant (1 : WittRing K) := by
-  have h3 : ((2 : WittRing K) + 1) = ((3 : ℕ) : WittRing K) := by norm_num
-  have h2 : (2 : WittRing K) = ((2 : ℕ) : WittRing K) := by norm_num
-  have h1 : (1 : WittRing K) = ((1 : ℕ) : WittRing K) := by norm_num
-  rw [h3, cliffordInvariant_natCast, h2, cliffordInvariant_natCast, h1, cliffordInvariant_natCast]
-  norm_num
-  exact BrauerGroup.quaternionClass_neg_one_neg_one_ne_one
-
-/-- The Clifford invariant is not a homomorphism from the additive group of `W(K)` to
-`BrauerGroup K` over any semireal field. -/
-theorem not_forall_cliffordInvariant_add_eq_mul :
-    ¬∀ x y : WittRing K, cliffordInvariant (x + y) = cliffordInvariant x * cliffordInvariant y :=
-  fun h => cliffordInvariant_two_add_one_ne (h 2 1)
-
-end WittRing
-
-end Semireal
 
 section IsRealClosed
 
