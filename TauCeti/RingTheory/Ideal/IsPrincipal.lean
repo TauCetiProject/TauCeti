@@ -63,6 +63,7 @@ theorem exists_ne_zero_finsetInf_eq_span_singleton
   simp only [Submodule.mem_finsetInf, id_eq, Ideal.mem_span_singleton]
   constructor
   · intro hx
+    rw [Finset.prod_eq_multiset_prod]
     apply Multiset.prod_primes_dvd x
     · intro p hp
       obtain ⟨P, _, rfl⟩ := Multiset.mem_map.mp hp
@@ -72,9 +73,7 @@ theorem exists_ne_zero_finsetInf_eq_span_singleton
       have := hx P P.2
       rwa [hgen P, Ideal.mem_span_singleton] at this
     · intro p
-      rw [Multiset.countP_map]
-      apply (Finset.card_le_one (s := Finset.univ.filter
-        (fun P : b ↦ Associated p (π P)))).mpr
+      rw [Multiset.countP_map, ← Finset.filter_val, Finset.card_val, Finset.card_le_one]
       intro P hP Q hQ
       exact hsame P Q ((Finset.mem_filter.mp hP).2.symm.trans (Finset.mem_filter.mp hQ).2)
   · intro hx P hP
