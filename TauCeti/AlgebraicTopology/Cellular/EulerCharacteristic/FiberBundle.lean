@@ -9,14 +9,16 @@ public import Mathlib.RingTheory.Noetherian.Basic
 public import Mathlib.Topology.FiberBundle.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 public import TauCeti.AlgebraicTopology.Cellular.EulerCharacteristic.FiniteCWType
-public import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
+public import TauCeti.AlgebraicTopology.Singular.Fibration.Convergence
 public import TauCeti.Topology.Category.TopCat.Fiber
 import TauCeti.Algebra.Category.ModuleCat.Colimits
 import TauCeti.Algebra.Category.ModuleCat.Finrank
 import TauCeti.Algebra.Homology.SpectralObject.ModuleCat
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
 import TauCeti.Algebra.Homology.SpectralSequence.EulerCharacteristic
+import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
 import TauCeti.AlgebraicTopology.Singular.Fibration.ArbitraryBase
+import TauCeti.AlgebraicTopology.Singular.Fibration.FirstPage
 import TauCeti.Topology.CWComplex.Comparison
 import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 

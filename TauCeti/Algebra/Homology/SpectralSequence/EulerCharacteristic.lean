@@ -6,22 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.SpectralSequence.Basic
-public import Mathlib.RingTheory.Noetherian.Basic
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ComplexShape
 public import TauCeti.Algebra.Homology.SpectralObject.Abutment
 import Mathlib.Order.SuccPred.Int
-import TauCeti.Algebra.Category.FGModuleCat.Exact
 import TauCeti.Algebra.Homology.SpectralObject.ModuleCat
 import TauCeti.Algebra.Homology.SpectralSequence.Degeneration
+import TauCeti.Algebra.Homology.SpectralSequence.ModuleCat
 
 /-!
 # Euler characteristic of spectral sequences and filtered abutments
 
 Let `E` be a spectral sequence of `R`-modules. Because each page `E_{r+1}` is isomorphic to the
-homology of `E_r`, subquotients preserve finite cardinal rank (`Module.rank R _ < ℵ₀`) over any
-ring `R` (`CategoryTheory.SpectralSequence.rank_page_X_lt_aleph0_of_le`), and over a Noetherian
-ring subquotients also preserve finite generation
-(`CategoryTheory.SpectralSequence.finite_page_X_of_le`).
+homology of `E_r`, cardinal rank does not increase across pages
+(`TauCeti.Algebra.Homology.SpectralSequence.ModuleCat`,
+`CategoryTheory.SpectralSequence.rank_page_X_le_of_le`).
 
 When `R` satisfies `HasRankNullity` (for instance a division ring or a commutative domain such as
 `ℤ`, with no Noetherianity hypothesis) and the alternating signs `(c s).χ` are independent of the
@@ -43,10 +41,6 @@ equates `(E.page r).eulerChar` with the alternating sum of the ranks of `X.abutm
 
 ## Main results
 
-* `CategoryTheory.SpectralSequence.rank_page_X_lt_aleph0_of_le`: over any ring, finite cardinal
-  rank on page `r` is preserved on every page `r' ≥ r`.
-* `CategoryTheory.SpectralSequence.finite_page_X_of_le`: over a Noetherian ring, finitely generated
-  objects on page `r` stay finitely generated on every page `r' ≥ r`.
 * `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0`,
   `CategoryTheory.SpectralSequence.eulerChar_page_eq_of_le`,
   `CategoryTheory.CohomologicalSpectralSequence.eulerChar_page_eq_of_le_of_rank_lt_aleph0`, and
@@ -70,52 +64,6 @@ open CategoryTheory Limits Module Cardinal
 universe u v
 
 namespace CategoryTheory.SpectralSequence
-
-section Rank
-
-variable {R : Type u} [Ring R]
-  {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
-  (E : SpectralSequence (ModuleCat.{v} R) c r₀)
-
-/-- The property of having finite cardinal rank (`Module.rank R M < ℵ₀`). -/
-private def rankLtAleph0 (R : Type u) [Ring R] : ObjectProperty (ModuleCat.{v} R) :=
-  fun M ↦ Module.rank R M < ℵ₀
-
-private instance (R : Type u) [Ring R] : (rankLtAleph0.{u, v} R).IsClosedUnderSubobjects where
-  prop_of_mono f _ hN :=
-    (LinearMap.rank_le_of_injective f.hom
-      ((ModuleCat.mono_iff_injective f).mp inferInstance)).trans_lt hN
-
-private instance (R : Type u) [Ring R] : (rankLtAleph0.{u, v} R).IsClosedUnderQuotients where
-  prop_of_epi f _ hM :=
-    (LinearMap.rank_le_of_surjective f.hom
-      ((ModuleCat.epi_iff_surjective f).mp inferInstance)).trans_lt hM
-
-/-- Over any ring `R`, if the object at `pq` on page `r` of a spectral sequence of modules has
-finite cardinal rank (`Module.rank R _ < ℵ₀`), then the object at `pq` on every later page
-`r' ≥ r` also has finite cardinal rank. -/
-theorem rank_page_X_lt_aleph0_of_le {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
-    (h : Module.rank R ((E.page r).X pq) < ℵ₀) (r' : ℤ) (hrr' : r ≤ r') :
-    Module.rank R ((E.page r' (hr.trans hrr')).X pq) < ℵ₀ :=
-  E.prop_page_X_of_le (rankLtAleph0 R) hr h r' hrr'
-
-end Rank
-
-section Finite
-
-variable {R : Type u} [Ring R] [IsNoetherianRing R]
-  {κ : Type*} {c : ℤ → ComplexShape κ} {r₀ : ℤ}
-  (E : SpectralSequence (ModuleCat.{v} R) c r₀)
-
-/-- Over a Noetherian ring, if the object at `pq` on page `r` of a spectral sequence of modules is
-finitely generated, then the object at `pq` on every later page `r' ≥ r` is finitely generated. -/
-theorem finite_page_X_of_le {r : ℤ} (hr : r₀ ≤ r) {pq : κ}
-    (h : Module.Finite R ((E.page r).X pq)) (r' : ℤ) (hrr' : r ≤ r') :
-    Module.Finite R ((E.page r' (hr.trans hrr')).X pq) :=
-  (ModuleCat.isFG_iff _).1
-    (E.prop_page_X_of_le (ModuleCat.isFG R) hr ((ModuleCat.isFG_iff _).2 h) r' hrr')
-
-end Finite
 
 section EulerChar
 
@@ -143,7 +91,7 @@ theorem sum_eulerCharSigns_finrank_page_X_eq_of_le_of_rank_lt_aleph0 {r : ℤ} (
       HomologicalComplex.sum_eulerCharSigns_finrank_X_eq_sum_finrank_homology_of_rank_lt_aleph0
         (E.page t (hr.trans hrt))
         (fun pq hpq ↦ E.isZero_page_X_of_le hr (hs pq hpq) t hrt)
-        (fun pq hpq ↦ E.rank_page_X_lt_aleph0_of_le hr (hrank pq hpq) t hrt)
+        (fun pq hpq ↦ (E.rank_page_X_le_of_le hr t hrt).trans_lt (hrank pq hpq))
     rw [← ih (fun u hru hut ↦ hχ u hru (hut.trans (Int.le_add_one le_rfl))), hstep]
     refine Finset.sum_congr rfl fun pq hpq ↦ ?_
     rw [hχ (t + 1) (Int.le_add_one hrt) le_rfl pq hpq,
