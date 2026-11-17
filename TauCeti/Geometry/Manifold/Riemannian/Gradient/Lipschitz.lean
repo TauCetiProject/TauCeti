@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import Mathlib.Analysis.Calculus.Deriv.Basic
