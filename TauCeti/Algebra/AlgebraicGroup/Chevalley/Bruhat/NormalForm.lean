@@ -10,6 +10,7 @@ import Mathlib.Tactic.Group
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
+import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Uniqueness
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
@@ -85,20 +86,13 @@ theorem eq_and_eq_of_mul_mul_eq_of_mem_map_negativePoints_conj
     (hb₁ : b₁ ∈ D.borelSubgroup A) (hb₂ : b₂ ∈ D.borelSubgroup A)
     (heq : u₁ * g * b₁ = u₂ * g * b₂) :
     u₁ = u₂ ∧ b₁ = b₂ := by
-  obtain ⟨v, hv, hgv⟩ : u₂⁻¹ * u₁ ∈ (D.negativePoints A).map (MulAut.conj g).toMonoidHom :=
-    mul_mem (inv_mem hu₂) hu₁
-  have hv_eq : v = b₂ * b₁⁻¹ := mul_left_cancel (a := g) <| by
-    calc
-      g * v = (g * v * g⁻¹) * g := by group
-      _ = (u₂⁻¹ * u₁) * g := by rw [← MulAut.conj_apply, ← MulEquiv.coe_toMonoidHom, hgv]
-      _ = u₂⁻¹ * (u₁ * g * b₁) * b₁⁻¹ := by group
-      _ = u₂⁻¹ * (u₂ * g * b₂) * b₁⁻¹ := by rw [heq]
-      _ = g * (b₂ * b₁⁻¹) := by group
-  have hv1 : v = 1 := Subgroup.mem_bot.mp <| by
-    rw [← D.negativePoints_inf_borelSubgroup_eq_bot A]
-    exact ⟨hv, hv_eq ▸ (mul_mem hb₂ (inv_mem hb₁) : b₂ * b₁⁻¹ ∈ D.borelSubgroup A)⟩
-  rw [hv1, map_one] at hgv
-  exact ⟨(eq_of_inv_mul_eq_one hgv.symm).symm, (eq_of_mul_inv_eq_one (hv_eq.symm.trans hv1)).symm⟩
+  have hdisj : Disjoint ((D.negativePoints A).map (MulAut.conj g).toMonoidHom)
+      ((D.borelSubgroup A).map (MulAut.conj g).toMonoidHom) := by
+    rw [disjoint_iff, ← Subgroup.map_inf_eq _ _ _ (MulAut.conj g).injective,
+      D.negativePoints_inf_borelSubgroup_eq_bot A, Subgroup.map_bot]
+  simpa only [Prod.ext_iff, Subtype.ext_iff] using
+    Subgroup.mul_mul_injective_of_disjoint _ _ hdisj
+      (a₁ := (⟨u₁, hu₁⟩, ⟨b₁, hb₁⟩)) (a₂ := (⟨u₂, hu₂⟩, ⟨b₂, hb₂⟩)) heq
 
 end CommRing
 

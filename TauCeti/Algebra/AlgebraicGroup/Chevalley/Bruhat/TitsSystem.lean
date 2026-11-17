@@ -17,6 +17,7 @@ import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Root
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.TitsSystem.Comap
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
@@ -306,10 +307,10 @@ private theorem doubleCoset_extElemB_coe {x z : D.extendedElementarySubgroup k} 
     z ∈ DoubleCoset.doubleCoset x (D.ExtElemB k) (D.ExtElemB k) ↔
       (z : D.points k) ∈
         DoubleCoset.doubleCoset (x : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) := by
-  simp only [DoubleCoset.mem_doubleCoset, SetLike.mem_coe]
-  exact ⟨fun ⟨b₁, hb₁, b₂, hb₂, h⟩ ↦ ⟨b₁, hb₁, b₂, hb₂, congrArg Subtype.val h⟩,
-    fun ⟨b₁, hb₁, b₂, hb₂, hz⟩ ↦ ⟨⟨b₁, D.borelSubgroup_le_extendedElementarySubgroup k hb₁⟩, hb₁,
-      ⟨b₂, D.borelSubgroup_le_extendedElementarySubgroup k hb₂⟩, hb₂, Subtype.ext hz⟩⟩
+  rw [← Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup k),
+    Subgroup.coe_map]
+  exact (DoubleCoset.mem_doubleCoset_image_iff
+    (D.extendedElementarySubgroup k).subtype_injective x (D.ExtElemB k) (D.ExtElemB k) z).symm
 
 /-- The **Tits system of a Chevalley datum** over any field `k`, inside its extended elementary
 subgroup `D.extendedElementarySubgroup k`: `B` is `D.borelSubgroup k`, `N` is `D.weylSubgroup k`,
@@ -411,12 +412,6 @@ theorem titsSystem_simple :
         (QuotientGroup.mk (D.titsSystemSimpleRep k i) : (D.titsSystem k).WeylGroup) :=
   (rfl)
 
-private theorem doubleCoset_titsSystem_subgroupB_coe {x z : D.extendedElementarySubgroup k} :
-    z ∈ DoubleCoset.doubleCoset x (D.titsSystem k).subgroupB (D.titsSystem k).subgroupB ↔
-      (z : D.points k) ∈
-        DoubleCoset.doubleCoset (x : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) :=
-  D.doubleCoset_extElemB_coe k
-
 /-- Membership in the Bruhat cell of `D.toTitsSystemSubgroupN k n` inside
 `D.extendedElementarySubgroup k` coincides with membership in the `B(k)`-double coset of `n`
 inside `D.points k`. -/
@@ -425,8 +420,8 @@ theorem mem_bruhatCell_titsSystem_mk_toTitsSystemSubgroupN_iff
     x ∈ (D.titsSystem k).bruhatCell (QuotientGroup.mk (D.toTitsSystemSubgroupN k n)) ↔
       (x : D.points k) ∈
         DoubleCoset.doubleCoset (n : D.points k) (D.borelSubgroup k) (D.borelSubgroup k) := by
-  rw [(D.titsSystem k).bruhatCell_mk]
-  exact D.doubleCoset_titsSystem_subgroupB_coe k
+  rw [(D.titsSystem k).bruhatCell_mk, D.titsSystem_subgroupB, D.doubleCoset_extElemB_coe k,
+    D.coe_toTitsSystemSubgroupN]
 
 private def titsSystemWeylGroupHom :
     (D.titsSystem k).WeylGroup →* (t.simplyConnectedRootDatum ht).weylGroup :=
@@ -469,7 +464,7 @@ private theorem wordLength_lt_of_notMem_inversions_titsSystemWeylGroupHom
       T.bruhatCell s * T.bruhatCell (QuotientGroup.mk n) :=
     T.bruhatCell_mul_eq_union_of_wordLength_lt hs hlt ▸ Or.inr hn_cell
   obtain ⟨z₁, hz₁, z₂, hz₂, hzn⟩ := Set.mem_mul.mp hn_prod
-  rw [T.bruhatCell_mk, D.doubleCoset_titsSystem_subgroupB_coe k] at hz₁ hz₂
+  rw [T.bruhatCell_mk, D.titsSystem_subgroupB, D.doubleCoset_extElemB_coe k] at hz₁ hz₂
   rw [D.coe_titsSystemSimpleRep] at hz₁
   have hsub := D.doubleCoset_weylElement_mul_subset_of_notMem_inversions k i
     ⟨((n : D.extendedElementarySubgroup k) : D.points k), D.titsSystem_subgroupN_coe_mem k n⟩
@@ -484,10 +479,11 @@ private theorem wordLength_lt_of_notMem_inversions_titsSystemWeylGroupHom
           ((n : D.extendedElementarySubgroup k) : D.points k) := by
     rw [Subgroup.coe_mul, Subgroup.coe_mul, D.coe_titsSystemSimpleRep]
   rw [hcoe, ← hrep_mul,
-    ← D.doubleCoset_titsSystem_subgroupB_coe k (x := (D.titsSystemSimpleRep k i * n : T.subgroupN))]
+    ← D.doubleCoset_extElemB_coe k (x := (D.titsSystemSimpleRep k i * n : T.subgroupN))]
     at hsub
   have hn_sw : (n : D.extendedElementarySubgroup k) ∈ T.bruhatCell (s * QuotientGroup.mk n) := by
-    simpa only [s, ← QuotientGroup.mk_mul, T.bruhatCell_mk] using hsub
+    rw [← QuotientGroup.mk_mul, T.bruhatCell_mk, D.titsSystem_subgroupB]
+    exact hsub
   exact T.simple_ne_one hs
     (mul_right_cancel ((T.eq_of_mem_bruhatCell_of_mem hn_sw hn_cell).trans (one_mul _).symm))
 
