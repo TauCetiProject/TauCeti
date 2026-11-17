@@ -40,6 +40,11 @@ simply connected space with the mod-two homology of a point are uniquely two-div
 
 ## Main results
 
+* `TauCeti.IsEilenbergMacLaneSpace.isIso_singularHomologyMap_of_fiber`: a Serre fibration whose
+  fibres are `k`-acyclic `K(G, n)` spaces is a `k`-homology isomorphism, for any commutative ring
+  `k`.
+* `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne`:
+  `K(A, n)` spaces are `k`-acyclic as soon as `K(A, 1)` spaces are, for any commutative ring `k`.
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul`: a `K(A, n)`
   space of a uniquely `m`-divisible abelian group is acyclic modulo `m`.
 * `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isUniquelyTwoDivisible`: a
@@ -70,7 +75,7 @@ variable (k : Type) [CommRing k] [IsSemisimpleRing k] {m : ℤ}
 omit [IsSemisimpleRing k] in
 /-- A Serre fibration whose fibres are `K(G, n)` spaces induces isomorphisms on `k`-homology, as
 soon as `K(G, n)` spaces have no positive-degree `k`-homology. -/
-private theorem isIso_singularHomologyMap_of_fiber {G : Type} [Group G] {n : ℕ} [NeZero n]
+theorem isIso_singularHomologyMap_of_fiber {G : Type} [Group G] {n : ℕ} [NeZero n]
     {E B : _root_.TopCat.{0}} {p : E ⟶ B} (hp : TauCeti.TopCat.serreFibrations p)
     (hfib : ∀ b, ∃ y, IsEilenbergMacLaneSpace G n (p.fiber b) y)
     (hK : ∀ {X : Type} [TopologicalSpace X] {x : X}, IsEilenbergMacLaneSpace G n X x →
@@ -83,18 +88,21 @@ private theorem isIso_singularHomologyMap_of_fiber {G : Type} [Group G] {n : ℕ
       rw [singularHomologyFunctor_obj_obj]
       exact ModuleCat.isZero_iff_subsingleton.2 (hK (hfib b).choose_spec q)
 
+omit [IsSemisimpleRing k] in
 /-- The induction on the degree, through the based path fibration. The degree is written `j + 1`
 so that the induction does not have to carry a `NeZero` instance. -/
-private theorem subsingleton_singularHomology_of_bijective_zsmul_succ (hmk : (m : k) = 0)
-    {A : Type} [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) (j : ℕ) :
+private theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ {A : Type}
+    [AddCommGroup A]
+    (hA : ∀ {X : Type} [TopologicalSpace X] {x : X},
+      IsEilenbergMacLaneSpaceOne (Multiplicative A) X x →
+        ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1))) (j : ℕ) :
     ∀ {X : Type} [TopologicalSpace X] {x : X},
       IsEilenbergMacLaneSpace (Multiplicative A) (j + 1) X x →
         ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
   induction j with
   | zero =>
     intro X _ x hX i
-    exact IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul k hmk hA
-      (isEilenbergMacLaneSpace_one_iff.1 hX) i
+    exact hA (isEilenbergMacLaneSpace_one_iff.1 hX) i
   | succ j ih =>
     intro X _ x hX i
     have := hX.pathConnectedSpace
@@ -112,6 +120,21 @@ private theorem subsingleton_singularHomology_of_bijective_zsmul_succ (hmk : (m 
       ← singularHomologyFunctor_obj_obj]
     infer_instance
 
+omit [IsSemisimpleRing k] in
+/-- **`K(A, n)` spaces are acyclic as soon as `K(A, 1)` spaces are.** If every `K(A, 1)` space
+has no homology in positive degrees with coefficients in a commutative ring `k`, then neither has
+any `K(A, n)` space, `n ≥ 1`. The induction goes through the based path fibration of a
+`K(A, n + 1)` space, whose total space is contractible and whose fibres are `K(A, n)` spaces. -/
+theorem subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne {A : Type} [AddCommGroup A]
+    (hA : ∀ {X : Type} [TopologicalSpace X] {x : X},
+      IsEilenbergMacLaneSpaceOne (Multiplicative A) X x →
+        ∀ i, Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)))
+    {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
+    (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
+    Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
+  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne n)
+  exact subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne_succ k hA j hX i
+
 /-- **`K(A, n)` spaces of uniquely `m`-divisible groups are acyclic modulo `m`.** If
 multiplication by the integer `m` is a bijection of the abelian group `A`, then every `K(A, n)`
 space, for every `n ≥ 1`, has no homology in positive degrees with coefficients in a commutative
@@ -119,9 +142,9 @@ semisimple ring `k` in which `m = 0`. -/
 theorem subsingleton_singularHomology_of_bijective_zsmul (hmk : (m : k) = 0) {A : Type}
     [AddCommGroup A] (hA : Function.Bijective fun a : A ↦ m • a) {n : ℕ} [NeZero n] {X : Type}
     [TopologicalSpace X] {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x)
-    (i : ℕ) : Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne n)
-  exact subsingleton_singularHomology_of_bijective_zsmul_succ k hmk hA j hX i
+    (i : ℕ) : Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
+  subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne k
+    (IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_bijective_zsmul k hmk hA) hX i
 
 /-- **Mod-two acyclicity of `K(A, n)` spaces.** For a uniquely two-divisible abelian group `A`
 and every `n ≥ 1`, every `K(A, n)` space has the mod-two homology of a point: `Hᵢ(X; 𝔽₂) = 0` for

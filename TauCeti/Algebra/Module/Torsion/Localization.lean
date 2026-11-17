@@ -36,6 +36,8 @@ localization at every generator is zero. This identifies modules supported on th
   and only if `ℚ ⊗[ℤ] G` is trivial.
 * `Module.IsTorsion.of_isLocalizedModule`, `Module.IsTorsion.localizedModule`: the localization of
   a torsion module is torsion.
+* `Module.IsTorsion'.isUnit_addOrderOf`: in an abelian group which is `S`-torsion for a submonoid
+  `S` of `ℤ`, the order of every element is a unit of the localization of `ℤ` at `S`.
 * `Ideal.primaryComponent_span_eq_top_iff_subsingleton_localized`: ideal-power torsion is detected
   by vanishing on the complementary principal opens.
 -/
@@ -100,6 +102,22 @@ theorem localizedModule (hM : Module.IsTorsion R M) (S : Submonoid R) :
   hM.of_isLocalizedModule S (LocalizedModule.mkLinearMap S M)
 
 end Module.IsTorsion
+
+namespace Module.IsTorsion'
+
+/-- In an abelian group in which every element is killed by an element of a submonoid `S` of `ℤ`,
+the order of every element is a unit of any localization `k` of `ℤ` at `S`: it divides an element
+of `S`, which becomes a unit in `k`. -/
+theorem isUnit_addOrderOf {S : Submonoid ℤ} (k : Type*) [CommRing k] [Algebra ℤ k]
+    [IsLocalization S k] {A : Type*} [AddCommGroup A] (h : Module.IsTorsion' A S) (a : A) :
+    IsUnit (addOrderOf a : k) := by
+  obtain ⟨s, hs⟩ := @h a
+  rw [Submonoid.smul_def] at hs
+  have hdvd : (addOrderOf a : ℤ) ∣ s := addOrderOf_dvd_iff_zsmul_eq_zero.2 hs
+  have hu : IsUnit ((s : ℤ) : k) := by simpa using IsLocalization.map_units k s
+  simpa using isUnit_of_dvd_unit (map_dvd (Int.castRingHom k) hdvd) hu
+
+end Module.IsTorsion'
 
 namespace Ideal
 

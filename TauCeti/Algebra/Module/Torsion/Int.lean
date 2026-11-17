@@ -26,6 +26,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 * `TauCeti.subsingleton_quotSMulTop_of_surjective_zsmul`,
   `TauCeti.subsingleton_torsionBy_of_injective_zsmul`: if multiplication by `ℓ` on `V` is
   surjective, respectively injective, then `V ⧸ ℓV`, respectively `V[ℓ]`, is zero.
+* `AddEquiv.isTorsion'_iff`: for a submonoid `S` of `ℤ`, being `S`-torsion is invariant under
+  additive equivalences.
 * `TauCeti.span_range_mk_ofMul_eq_top_iff`: a family generates a commutative group modulo torsion
   exactly when its classes span the torsion-free quotient of the associated `ℤ`-module.
 -/
@@ -112,5 +114,13 @@ theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι →
   rw [hspan, Submodule.map_mkQ_eq_top, sup_comm, ← Subgroup.toAddSubgroup.injective.eq_iff,
     map_sup, map_top, hclosure, htors, ← Submodule.toAddSubgroup_inj, Submodule.sup_toAddSubgroup,
     Submodule.top_toAddSubgroup]
+
+/-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
+invariant under additive equivalences of abelian groups. -/
+theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGroup H]
+    (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
+  ⟨fun h x ↦ (@h (e.symm x)).imp fun _ ha ↦
+      e.symm.injective (by rw [map_zero, ← ha]; exact map_zsmul _ _ _),
+    fun h x ↦ (@h (e x)).imp fun _ ha ↦ e.injective (by rw [map_zero, ← ha]; exact map_zsmul _ _ _)⟩
 
 end TauCeti
