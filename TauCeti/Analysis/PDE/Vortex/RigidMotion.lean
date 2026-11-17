@@ -13,8 +13,7 @@ import Mathlib.Analysis.Complex.Isometry
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.Complex.RigidMotion
 import TauCeti.Analysis.Sobolev.W1p.MeasurePreserving
-import TauCeti.MeasureTheory.Function.Lp.Basic
-import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingEquiv
+import TauCeti.MeasureTheory.Function.Lp.CompMeasurePreservingCompLp
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
@@ -94,7 +93,10 @@ private theorem comp_symm_ae_eq_id (g : ℂ ≃ᵃⁱ[ℝ] ℂ) : g ∘ g.symm =
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Precomposition with an affine isometry `g` followed by the pointwise isometry `R`, on `Lᵖ`. -/
+/-- Precomposition with an affine isometry `g` followed by the pointwise isometry `R`, on `Lᵖ`
+for the measure `μ⊤` that `sobolevGaugeFixedOperator` uses. Its laws below are instances of the
+identity, composition, inverse and commutation laws of `Lp.compMeasurePreservingₗᵢEquiv` and
+`LinearIsometryEquiv.compLpₗᵢEquiv`. -/
 private def lpMotion (p : ℝ≥0∞) [Fact (1 ≤ p)] (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
     Lp E p μ⊤ ≃ₗᵢ[ℝ] Lp E p μ⊤ :=
   (Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_top g) (measurePreserving_top g.symm)
@@ -108,27 +110,29 @@ private theorem coeFn_lpMotion (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] 
       (measurePreserving_top g.symm) (comp_symm_ae_eq_id g) f] with z h₁ h₂
   rw [lpMotion, LinearIsometryEquiv.trans_apply, h₁, h₂, Function.comp_apply]
 
-private theorem lpMotion_refl (f : Lp E p μ⊤) :
-    lpMotion p (.refl ℝ E) (.refl ℝ ℂ) f = f := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_lpMotion (.refl ℝ E) (.refl ℝ ℂ) f] with z hz
-  simp [hz]
+private theorem lpMotion_refl :
+    lpMotion (E := E) p (.refl ℝ E) (.refl ℝ ℂ) = .refl ℝ _ := by
+  rw [lpMotion, LinearIsometryEquiv.compLpₗᵢEquiv_refl, LinearIsometryEquiv.trans_refl,
+    Lp.compMeasurePreservingₗᵢEquiv_eq_refl ℝ _ _ _ (.of_eq AffineIsometryEquiv.coe_refl)]
 
 /-- Successive motions compose. -/
-private theorem lpMotion_lpMotion (R R' : E ≃ₗᵢ[ℝ] E) (g g' : ℂ ≃ᵃⁱ[ℝ] ℂ) (f : Lp E p μ⊤) :
-    lpMotion p R g (lpMotion p R' g' f) = lpMotion p (R'.trans R) (g.trans g') f := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_lpMotion R g (lpMotion p R' g' f),
-    (measurePreserving_top g).quasiMeasurePreserving.ae (coeFn_lpMotion R' g' f),
-    coeFn_lpMotion (R'.trans R) (g.trans g') f] with z h₁ h₂ h₃
-  rw [h₁, h₂, h₃, LinearIsometryEquiv.trans_apply, AffineIsometryEquiv.coe_trans,
-    Function.comp_apply]
+private theorem lpMotion_lpMotion (R R' : E ≃ₗᵢ[ℝ] E) (g g' : ℂ ≃ᵃⁱ[ℝ] ℂ) :
+    (lpMotion p R' g').trans (lpMotion p R g) = lpMotion p (R'.trans R) (g.trans g') := by
+  rw [lpMotion, lpMotion, lpMotion, ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢEquiv p μ⊤),
+    LinearIsometryEquiv.trans_assoc (R'.compLpₗᵢEquiv p μ⊤),
+    ← Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢEquiv,
+    ← LinearIsometryEquiv.trans_assoc _ (R'.compLpₗᵢEquiv p μ⊤), LinearIsometryEquiv.trans_assoc,
+    Lp.compMeasurePreservingₗᵢEquiv_trans ℝ _ _ _ _ _ _ (measurePreserving_top (g.trans g'))
+      (measurePreserving_top (g.trans g').symm) (comp_symm_ae_eq_id (g.trans g'))
+      (.of_eq (AffineIsometryEquiv.coe_trans g g')),
+    ← LinearIsometryEquiv.compLpₗᵢEquiv_trans]
 
 private theorem lpMotion_symm (R : E ≃ₗᵢ[ℝ] E) (g : ℂ ≃ᵃⁱ[ℝ] ℂ) :
     (lpMotion p R g).symm = lpMotion p R.symm g.symm := by
-  refine LinearIsometryEquiv.ext fun f ↦ (LinearIsometryEquiv.symm_apply_eq _).2 ?_
-  rw [lpMotion_lpMotion, LinearIsometryEquiv.symm_trans_self, AffineIsometryEquiv.self_trans_symm,
-    lpMotion_refl]
+  rw [lpMotion, lpMotion, LinearIsometryEquiv.symm_trans, LinearIsometryEquiv.compLpₗᵢEquiv_symm,
+    Lp.compMeasurePreservingₗᵢEquiv_symm ℝ _ _ _ (measurePreserving_top g.symm)
+      (measurePreserving_top g.symm.symm) (comp_symm_ae_eq_id g.symm) .rfl,
+    Lp.compMeasurePreservingₗᵢEquiv_trans_compLpₗᵢEquiv]
 
 /-- Precomposition of the four coordinates with an affine isometry `g` followed by the pointwise
 isometry `R`, on `H¹(ℂ)⁴`. -/
@@ -235,7 +239,12 @@ private theorem gaugeFixedFirstOrder_fieldRotation (u : Circle) (G : Fin 4 → �
       (conj (u : ℂ) * G k)) = targetRotation u (gaugeFixedFirstOrder G) := by
   have hn := Circle.re_sq_add_im_sq u
   ext i
-  fin_cases i <;> simp [Fin.sum_univ_four, Complex.inner]
+  fin_cases i <;>
+    simp only [gaugeFixedFirstOrder_apply, targetRotation_apply, fieldRotation_apply,
+      Fin.sum_univ_four, PiLp.single_apply, Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, Fin.reduceEq, ↓reduceIte,
+      Complex.inner, real_smul, add_re, add_im, mul_re, mul_im, conj_re, conj_im, ofReal_re,
+      ofReal_im, one_re, one_im, I_re, I_im]
   · linear_combination ((G 0).re + (G 1).im) * hn
   · linear_combination ((G 0).im - (G 1).re) * hn
   · ring
@@ -316,15 +325,11 @@ theorem gradient_variationMotion_ae (u : Circle) (a : ℂ)
 
 @[simp]
 theorem coefficientMotion_one_zero : coefficientMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext fun c ↦ by
-    rw [coefficientMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl,
-      LinearIsometryEquiv.coe_refl, id_eq]
+  by rw [coefficientMotion, fieldRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
 
 @[simp]
 theorem targetMotion_one_zero : targetMotion 1 0 = LinearIsometryEquiv.refl ℝ _ :=
-  LinearIsometryEquiv.ext fun f ↦ by
-    rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl,
-      LinearIsometryEquiv.coe_refl, id_eq]
+  by rw [targetMotion, targetRotation_one, Circle.rigidMotion_one_zero, lpMotion_refl]
 
 @[simp]
 theorem variationMotion_one_zero : variationMotion 1 0 = ContinuousLinearEquiv.refl ℝ _ :=
@@ -338,8 +343,8 @@ theorem variationMotion_one_zero : variationMotion 1 0 = ContinuousLinearEquiv.r
 theorem coefficientMotion_coefficientMotion (u v : Circle) (a b : ℂ)
     (c : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
     coefficientMotion u a (coefficientMotion v b c) = coefficientMotion (u * v) (v * a + b) c := by
-  rw [coefficientMotion, coefficientMotion, coefficientMotion, lpMotion_lpMotion,
-    Circle.rigidMotion_trans_rigidMotion, fieldRotation_trans_fieldRotation]
+  rw [coefficientMotion, coefficientMotion, coefficientMotion, ← LinearIsometryEquiv.trans_apply,
+    lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, fieldRotation_trans_fieldRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
 `z ↦ v (u z + a) + b`. Not a simp lemma: the type of the classes mentions the measure
@@ -347,8 +352,8 @@ theorem coefficientMotion_coefficientMotion (u v : Circle) (a b : ℂ)
 theorem targetMotion_targetMotion (u v : Circle) (a b : ℂ)
     (f : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤) :
     targetMotion u a (targetMotion v b f) = targetMotion (u * v) (v * a + b) f := by
-  rw [targetMotion, targetMotion, targetMotion, lpMotion_lpMotion,
-    Circle.rigidMotion_trans_rigidMotion, targetRotation_trans_targetRotation]
+  rw [targetMotion, targetMotion, targetMotion, ← LinearIsometryEquiv.trans_apply,
+    lpMotion_lpMotion, Circle.rigidMotion_trans_rigidMotion, targetRotation_trans_targetRotation]
 
 /-- Moving by `z ↦ v z + b` and then by `z ↦ u z + a` is moving by the composite
 `z ↦ v (u z + a) + b`. -/

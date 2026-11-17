@@ -242,19 +242,24 @@ def fieldRotation (u : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] Eucli
   map_smul' c v := by ext i; fin_cases i <;> simp <;> ring
   left_inv v := by
     have hn := Circle.re_sq_add_im_sq u
-    ext i; fin_cases i <;> simp
+    ext i
+    fin_cases i <;> simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
     · linear_combination v 0 * hn
     · linear_combination v 1 * hn
   right_inv v := by
     have hn := Circle.re_sq_add_im_sq u
-    ext i; fin_cases i <;> simp
+    ext i
+    fin_cases i <;> simp only [Fin.isValue, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val]
     · linear_combination v 0 * hn
     · linear_combination v 1 * hn
   norm_map' v := by
     have hn := Circle.re_sq_add_im_sq u
     simp only [EuclideanSpace.norm_eq, Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
     congr 1
-    simp
+    simp only [Fin.isValue, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
+      Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, add_left_inj]
     linear_combination (v 0 ^ 2 + v 1 ^ 2) * hn
 
 @[simp]
@@ -353,6 +358,10 @@ def rotateField (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) 
     EuclideanSpace ℝ (Fin 4) :=
   fieldRotation u (x (u * z))
 
+/-- A rotated field is the rotation of the values of the field at the rotated point. -/
+theorem rotateField_apply_eq_fieldRotation (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : rotateField u x z = fieldRotation u (x (u * z)) := (rfl)
+
 @[simp]
 theorem rotateField_apply_zero (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     rotateField u x z 0 = (u : ℂ).re * x (u * z) 0 + (u : ℂ).im * x (u * z) 1 := by
@@ -382,8 +391,10 @@ theorem rotateField_one (x : ℂ → EuclideanSpace ℝ (Fin 4)) : rotateField 1
 @[simp]
 theorem rotateField_rotateField (u v : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     rotateField u (rotateField v x) = rotateField (u * v) x := by
-  ext z i
-  fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
+  funext z
+  rw [rotateField_apply_eq_fieldRotation, rotateField_apply_eq_fieldRotation,
+    rotateField_apply_eq_fieldRotation, fieldRotation_fieldRotation, Circle.coe_mul, mul_assoc,
+    mul_left_comm]
 
 /-- The semidirect product law of the orientation-preserving isometries of the plane: rotating
 by `u` a field translated by `a` is translating the rotated field by `u⁻¹ a`. -/
@@ -400,6 +411,10 @@ and multiplied by `u⁻¹`. -/
 def rotateTarget (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
     EuclideanSpace ℝ (Fin 4) :=
   targetRotation u (η (u * z))
+
+/-- A rotated target field is the rotation of the values of the target at the rotated point. -/
+theorem rotateTarget_apply_eq_targetRotation (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : rotateTarget u η z = targetRotation u (η (u * z)) := (rfl)
 
 @[simp]
 theorem rotateTarget_apply_zero (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
@@ -430,16 +445,10 @@ theorem rotateTarget_one (η : ℂ → EuclideanSpace ℝ (Fin 4)) : rotateTarge
 @[simp]
 theorem rotateTarget_rotateTarget (u v : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4)) :
     rotateTarget u (rotateTarget v η) = rotateTarget (u * v) η := by
-  ext z i
-  fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
-
-/-- A rotated field is the rotation of the values of the field at the rotated point. -/
-theorem rotateField_apply_eq_fieldRotation (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4))
-    (z : ℂ) : rotateField u x z = fieldRotation u (x (u * z)) := (rfl)
-
-/-- A rotated target field is the rotation of the values of the target at the rotated point. -/
-theorem rotateTarget_apply_eq_targetRotation (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4))
-    (z : ℂ) : rotateTarget u η z = targetRotation u (η (u * z)) := (rfl)
+  funext z
+  rw [rotateTarget_apply_eq_targetRotation, rotateTarget_apply_eq_targetRotation,
+    rotateTarget_apply_eq_targetRotation, targetRotation_targetRotation, Circle.coe_mul, mul_assoc,
+    mul_left_comm]
 
 /-- The zeroth-order part of `L_x` intertwines the rotation of the values of the field and of the
 variation with the rotation of target values. -/
