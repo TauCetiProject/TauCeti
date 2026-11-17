@@ -67,6 +67,20 @@ theorem stoppedValue_preimage_eq (t : Set β) :
   | top => simp
   | coe i => simp
 
+/-- The level-set partition used to glue stopped values. -/
+private noncomputable def stoppedValuePartition (τ : Ω → WithTop ι) :
+    IndexedPartition (fun v : Set.range τ => {ω | τ ω = v.val}) where
+  eq_of_mem := fun hv hw => Subtype.ext (hv.symm.trans hw)
+  some := fun v => v.property.choose
+  some_mem := fun v => v.property.choose_spec
+  index := fun ω => ⟨τ ω, ω, rfl⟩
+  mem_index := fun _ => rfl
+
+private theorem stoppedValue_eq_partition (ω : Ω) :
+    stoppedValue u τ ω = u ((stoppedValuePartition τ).index ω).val.untopA ω := by
+  have h := Set.mem_ofPred_eq.mp ((stoppedValuePartition τ).mem_index ω)
+  simp only [stoppedValue, h]
+
 variable [MeasurableSpace β]
 
 /-- In countable time, a stopped value of a measurable process at a measurable random time is
@@ -111,21 +125,14 @@ theorem IsStoppingTime.measurable_stoppedValue_of_countable_range [PartialOrder 
     (hu : ∀ i, Measurable (u i)) : Measurable (stoppedValue u τ) := by
   classical
   have := hc.to_subtype
-  let s : Set.range τ → Set Ω := fun v => {ω | τ ω = v.val}
-  let hs : IndexedPartition s :=
-    { eq_of_mem := fun hv hw => Subtype.ext (hv.symm.trans hw)
-      some := fun v => v.property.choose
-      some_mem := fun v => v.property.choose_spec
-      index := fun ω => ⟨τ ω, ω, rfl⟩
-      mem_index := fun _ => rfl }
+  let hs := stoppedValuePartition τ
   convert hs.measurable_piecewise
     (fun v => hτ.measurableSpace_le _
       (hτ.measurableSet_stopping_eq_of_countable_range hc v.val))
     (fun v => hu v.val.untopA) using 1
   ext ω
   rw [IndexedPartition.piecewise_apply]
-  simp only [stoppedValue]
-  rw [(hs.mem_index ω : τ ω = _)]
+  exact stoppedValue_eq_partition ω
 
 section CountableTime
 
@@ -182,11 +189,7 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
   let : Zero E := ⟨X (Classical.arbitrary ι) ω₀⟩
   have := hc.to_subtype
   let s : Set.range τ → Set Ω := fun v ↦ {ω | τ ω = v.val}
-  have hs : IndexedPartition s := IndexedPartition.mk' s
-    (fun v w hvw ↦ Set.disjoint_left.2 fun ω hv hw ↦
-      hvw (Subtype.ext (hv.symm.trans hw)))
-    (fun v ↦ by obtain ⟨ω, hω⟩ := v.property; exact ⟨ω, hω⟩)
-    (fun ω ↦ ⟨⟨τ ω, ⟨ω, rfl⟩⟩, rfl⟩)
+  let hs := stoppedValuePartition τ
   have htop := hτ.measurableSet_stopping_eq_of_countable_range hc ⊤
   have hind (v : Set.range τ) :
       StronglyMeasurable[hτ.measurableSpace] ((s v).indicator (X v.val.untopA)) := by
@@ -216,8 +219,7 @@ theorem StronglyAdapted.stronglyMeasurable_stoppedValue_of_countable_range
   convert hs.stronglyMeasurable_piecewise hm hind using 1
   ext ω
   rw [IndexedPartition.piecewise_apply, Set.indicator_of_mem (hs.mem_index ω)]
-  simp only [stoppedValue]
-  rw [(hs.mem_index ω : τ ω = _)]
+  exact stoppedValue_eq_partition ω
 
 /-- Stopping a strongly adapted process at a countable-range stopping time preserves literal
 strong adaptation on a raw filtration, with no path regularity or finiteness assumption on
