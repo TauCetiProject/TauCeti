@@ -308,8 +308,6 @@ end TauCeti.Isogeny.Hom
 
 namespace TauCeti.Isogeny
 
-section FormalLevels
-
 open WeierstrassCurve WithZero Filter
 
 variable {A : Type*} [CommRing A] [IsDedekindDomain A]
@@ -317,6 +315,8 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
 
 local notation "O_u" => u.adicCompletionIntegers F
 local notation "F_u" => u.adicCompletion F
+
+section FormalLevels
 
 variable {C₁ C₂ : WeierstrassCurve (u.adicCompletionIntegers F)}
   [(C₁.baseChange (u.adicCompletion F)).IsElliptic]
@@ -452,7 +452,8 @@ theorem eventually_index_range_pointMapHom_mul_index_formalPointFiltration {c : 
     (C₁.formalPointFiltration u k)
   rwa [hker, AddSubgroup.card_bot, mul_one, hmap j hjk] at h
 
-open scoped Classical in
+end FormalLevels
+
 /-- **The local cokernel/kernel ratio of an isogeny at a finite place**: let `E₁` and `E₂` be
 given by minimal equations over `O_u`, with finite residue field of order `q`, and let `φ` pull the
 invariant differential back as `φ^*ω₂ = c ω₁`, with `2 ≠ 0` in `F_u` and `deg φ` nonzero in `A`.
@@ -464,15 +465,20 @@ where `ord(c) = -log (v c)` and `c_u` is the local Tamagawa number, so that `q ^
 inverse `|c|_u⁻¹` of the normalised absolute value of `c`. This holds at every finite place,
 including those dividing `deg φ`. -/
 theorem index_range_pointMapHom_div_card_ker_eq_zpow_mul_tamagawaNumber_div
-    [Finite (A ⧸ u.asIdeal)] [IsMinimal O_u (C₁.baseChange F_u)]
-    [IsMinimal O_u (C₂.baseChange F_u)] {c : F_u}
+    [DecidableEq F_u] [Finite (A ⧸ u.asIdeal)]
+    {W₁ W₂ : WeierstrassCurve F_u} [W₁.IsElliptic] [W₂.IsElliptic]
+    [IsMinimal O_u W₁] [IsMinimal O_u W₂]
+    {φ : Isogeny W₁.toAffine W₂.toAffine} {c : F_u}
     (hc : φ.pullbackDifferential (Affine.invariantDifferential _) =
       c • Affine.invariantDifferential _)
     (h2 : (2 : F_u) ≠ 0) (hn : (φ.degree : A) ≠ 0) :
     ((Hom.ofIsogeny φ).pointMapHom.range.index : ℚ) / Nat.card (Hom.ofIsogeny φ).pointMapHom.ker =
       (Nat.card (ResidueField O_u) : ℚ) ^ (-log (Valued.v c)) *
-        (C₂.baseChange F_u).tamagawaNumber Valued.v /
-          (C₁.baseChange F_u).tamagawaNumber Valued.v := by
+        W₂.tamagawaNumber Valued.v / W₁.tamagawaNumber Valued.v := by
+  cases Subsingleton.elim ‹DecidableEq F_u› (fun a b ↦ Classical.propDecidable (a = b))
+  classical
+  obtain ⟨C₁, rfl⟩ := (inferInstance : IsIntegral O_u W₁).integral
+  obtain ⟨C₂, rfl⟩ := (inferInstance : IsIntegral O_u W₂).integral
   -- `c ≠ 0`, as `c c' = deg φ` for the constant `c'` of the dual, and `deg φ ≠ 0` in `F_u`
   obtain ⟨c', hc', -⟩ := φ.dual.existsUnique_pullbackDifferential_invariantDifferential_eq_smul
   have hdeg : (φ.degree : F_u) ≠ 0 := by
@@ -513,7 +519,5 @@ theorem index_range_pointMapHom_div_card_ker_eq_zpow_mul_tamagawaNumber_div
   have h' := congrArg (Nat.cast : ℕ → ℚ) h
   push_cast at h'
   linear_combination h'
-
-end FormalLevels
 
 end TauCeti.Isogeny
