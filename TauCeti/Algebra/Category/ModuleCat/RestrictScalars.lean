@@ -60,6 +60,8 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring isomorphism.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
+* `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
+  of any shape that exist in `AddCommGrpCat`, with independent ring and module universes.
 -/
 
 public section
@@ -218,6 +220,15 @@ end Function.Exact
 
 namespace ModuleCat
 
+/-- Restriction of scalars preserves colimits of any shape that exist in `AddCommGrpCat.{v}`,
+with no constraint between the ring universes and the module universe `v`. -/
+instance preservesColimitsOfShape_restrictScalars
+    {J : Type*} [Category* J] [Limits.HasColimitsOfShape J AddCommGrpCat.{v}] (f : R →+* S) :
+    Limits.PreservesColimitsOfShape J (restrictScalars.{v} f) :=
+  ⟨fun {_} ↦ inferInstance⟩
+
+section Algebra
+
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
 
 /-- For an `S`-module `M` whose `R`-module structure factors through `algebraMap R S`,
@@ -253,6 +264,8 @@ theorem restrictScalarsAlgebraMapIso_inv_apply (M : Type v) [AddCommGroup M] [Mo
     [Module S M] [IsScalarTower R S M] (m : M) :
     (restrictScalarsAlgebraMapIso (R := R) (S := S) M).inv m = m :=
   (rfl)
+
+end Algebra
 
 section OpOp
 
