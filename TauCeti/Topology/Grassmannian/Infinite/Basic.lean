@@ -230,13 +230,13 @@ theorem continuous_iff {X : Type*} [TopologicalSpace X] {f : infiniteGrassmannia
 theorem continuousOn_iff_of_isOpen {X : Type*} [TopologicalSpace X]
     {U : Set (infiniteGrassmannian 𝕜 k)} (hU : IsOpen U) {f : infiniteGrassmannian 𝕜 k → X} :
     ContinuousOn f U ↔
-      ∀ n, ContinuousOn (f ∘ (toInfinite : finiteGrassmannian 𝕜 k n → _)) (toInfinite ⁻¹' U) := by
-  refine ⟨fun h n ↦ (continuousOn_open_iff (hU.preimage continuous_toInfinite)).2 fun t ht ↦ ?_,
-    fun h ↦ (continuousOn_open_iff hU).2 fun t ht ↦ isOpen_iff.2 fun n ↦ ?_⟩
-  · rw [preimage_comp, ← preimage_inter]
-    exact (isOpen_iff.1 ((continuousOn_open_iff hU).1 h t ht)) n
-  · rw [preimage_inter, ← preimage_comp]
-    exact (continuousOn_open_iff (hU.preimage continuous_toInfinite)).1 (h n) t ht
+      ∀ n, ContinuousOn (f ∘ (toInfinite : finiteGrassmannian 𝕜 k n → _)) (toInfinite ⁻¹' U) :=
+  ⟨fun h n ↦ (continuousOn_open_iff (hU.preimage continuous_toInfinite)).2 fun t ht ↦ by
+      rw [preimage_comp, ← preimage_inter]
+      exact (isOpen_iff.1 ((continuousOn_open_iff hU).1 h t ht)) n,
+   fun h ↦ (continuousOn_open_iff hU).2 fun t ht ↦ isOpen_iff.2 fun n ↦ by
+      rw [preimage_inter, ← preimage_comp]
+      exact (continuousOn_open_iff (hU.preimage continuous_toInfinite)).1 (h n) t ht⟩
 
 end Topology
 
@@ -341,26 +341,27 @@ end RCLike
 
 section Map
 variable {𝕜 : Type*} [Field 𝕜] {k : ℕ}
+section MapAlg
+variable (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
 /-- An injective linear endomorphism of `ℕ →₀ 𝕜` acts on `infiniteGrassmannian 𝕜 k` by image. -/
-noncomputable def map (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
-    (W : infiniteGrassmannian 𝕜 k) : infiniteGrassmannian 𝕜 k :=
+noncomputable def map (W : infiniteGrassmannian 𝕜 k) : infiniteGrassmannian 𝕜 k :=
   ⟨W.1.map φ, by rw [rank_map_eq hφ, W.2]⟩
-@[simp] theorem coe_map (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
-    (W : infiniteGrassmannian 𝕜 k) : (map φ hφ W).1 = W.1.map φ := (rfl)
+@[simp] theorem coe_map (W : infiniteGrassmannian 𝕜 k) : (map φ hφ W).1 = W.1.map φ := (rfl)
 @[simp] theorem map_id (W : infiniteGrassmannian 𝕜 k) : map LinearMap.id injective_id W = W :=
   Subtype.ext (Submodule.map_id W.1)
-@[simp] theorem map_comp (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
-    (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hψ : Injective ψ) (W : infiniteGrassmannian 𝕜 k) :
-    map (ψ.comp φ) (hψ.comp hφ) W = map ψ hψ (map φ hφ W) :=
+@[simp] theorem map_comp (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hψ : Injective ψ)
+    (W : infiniteGrassmannian 𝕜 k) : map (ψ.comp φ) (hψ.comp hφ) W = map ψ hψ (map φ hφ W) :=
   Subtype.ext (Submodule.map_comp φ ψ W.1)
 /-- An injective ambient linear map induces an injective map on the infinite Grassmannian. -/
-theorem map_injective (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Function.Injective φ) :
-    Function.Injective (map (k := k) φ hφ) := fun _ _ h ↦
+theorem map_injective : Function.Injective (map (k := k) φ hφ) := fun _ _ h ↦
   Subtype.ext (Submodule.map_injective_of_injective hφ (congrArg Subtype.val h))
+end MapAlg
 
+section MapTopology
+variable [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+  (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
 /-- Any injective `𝕜`-linear endomorphism of `ℕ →₀ 𝕜` induces a continuous self-map. -/
-@[fun_prop] theorem continuous_map [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) : Continuous (map (k := k) φ hφ) := by
+@[fun_prop] theorem continuous_map : Continuous (map (k := k) φ hφ) := by
   refine continuous_iff.2 fun n ↦ ?_
   obtain ⟨m, hm⟩ := Finsupp.exists_support_map_subset_range φ n
   let g := (LinearMap.pi fun j : Fin m ↦ Finsupp.lapply j.1).comp (φ.comp (coordinateInclusion n))
@@ -372,23 +373,19 @@ theorem map_injective (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (h
   refine (continuous_toInfinite.comp
     (finiteGrassmannian.continuous_map _ hinj g.continuous_on_pi)).congr fun V ↦ Subtype.ext ?_
   simp [coe_toInfinite, ← Submodule.map_comp, hcomp]
-
 /-- `infiniteGrassmannian.map` as a `ContinuousMap` (exposed for pullback fibre reduction). -/
-@[expose] noncomputable def mapContinuousMap [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) :
+@[expose] noncomputable def mapContinuousMap :
     C(infiniteGrassmannian 𝕜 k, infiniteGrassmannian 𝕜 k) := ⟨map φ hφ, continuous_map φ hφ⟩
-@[simp] theorem mapContinuousMap_apply [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ) (W : infiniteGrassmannian 𝕜 k) :
+@[simp] theorem mapContinuousMap_apply (W : infiniteGrassmannian 𝕜 k) :
     mapContinuousMap φ hφ W = map φ hφ W := (rfl)
-@[simp] theorem mapContinuousMap_id [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜] :
+@[simp] theorem mapContinuousMap_id :
     mapContinuousMap (k := k) (LinearMap.id : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) injective_id =
       ContinuousMap.id (infiniteGrassmannian 𝕜 k) := ContinuousMap.ext map_id
-@[simp] theorem mapContinuousMap_comp [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
-    (φ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hφ : Injective φ)
-    (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hψ : Injective ψ) :
+@[simp] theorem mapContinuousMap_comp (ψ : (ℕ →₀ 𝕜) →ₗ[𝕜] (ℕ →₀ 𝕜)) (hψ : Injective ψ) :
     mapContinuousMap (k := k) (ψ.comp φ) (hψ.comp hφ) =
       (mapContinuousMap ψ hψ).comp (mapContinuousMap φ hφ) :=
   ContinuousMap.ext (map_comp φ hφ ψ hψ)
+end MapTopology
 end Map
 end infiniteGrassmannian
 end TauCeti

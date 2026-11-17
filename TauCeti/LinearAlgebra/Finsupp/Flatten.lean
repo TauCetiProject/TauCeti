@@ -34,10 +34,9 @@ def flattenFinsupp (𝕜 : Type*) [Semiring 𝕜] (k : ℕ) : (ℕ →₀ (Fin k
       (Finsupp.mapRange.linearEquiv (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin k)).symm).toLinearMap
 theorem flattenFinsupp_apply_pair {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : ℕ →₀ (Fin k → 𝕜))
     (n : ℕ) (i : Fin k) : flattenFinsupp 𝕜 k f (Nat.pair n i.1) = f n i := by
-  simpa [flattenFinsupp] using
-    Finsupp.mapDomain_apply_of_injective (pair_fin_injective k)
-      ((Finsupp.curryLinearEquiv 𝕜).symm
-        (Finsupp.mapRange.linearEquiv (Finsupp.linearEquivFunOnFinite 𝕜 𝕜 (Fin k)).symm f)) (n, i)
+  simp only [flattenFinsupp, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
+    Finsupp.lmapDomain_apply]
+  exact (Finsupp.mapDomain_apply_of_injective (pair_fin_injective k) _ (n, i)).trans (by simp)
 @[simp] theorem flattenFinsupp_apply {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : ℕ →₀ (Fin k → 𝕜))
     (m : ℕ) :
     flattenFinsupp 𝕜 k f m = if h : m.unpair.2 < k then f m.unpair.1 ⟨m.unpair.2, h⟩ else 0 := by
@@ -46,7 +45,7 @@ theorem flattenFinsupp_apply_pair {𝕜 : Type*} [Semiring 𝕜] (k : ℕ) (f : 
     exact flattenFinsupp_apply_pair k f m.unpair.1 ⟨m.unpair.2, hk⟩
   · simp only [flattenFinsupp, LinearMap.coe_comp, LinearEquiv.coe_coe, Function.comp_apply,
       Finsupp.lmapDomain_apply]
-    refine Finsupp.mapDomain_of_notMem_range _ _ fun ⟨⟨n, i⟩, hm⟩ ↦ hk ?_
+    refine Finsupp.mapDomain_of_notMem_range _ _ fun ⟨⟨_, i⟩, hm⟩ ↦ hk ?_
     simpa only [← hm, Nat.unpair_pair] using i.2
 /-- Flattening `ℕ →₀ (Fin k → 𝕜)` into `ℕ →₀ 𝕜` is injective for every `k : ℕ`. -/
 theorem flattenFinsupp_injective (𝕜 : Type*) [Semiring 𝕜] (k : ℕ) :
