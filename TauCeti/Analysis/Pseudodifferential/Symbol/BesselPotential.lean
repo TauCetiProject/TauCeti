@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 public import Mathlib.RingTheory.Binomial
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Expansion
 
 /-!
@@ -55,20 +56,6 @@ open HomogeneousSymbol
 namespace ClassicalSymbol
 
 variable {n : ℕ} {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
-
-/-- The sum of the terms of even index `2k`, `k < (N + 1) / 2`, among the first `N`. -/
-private theorem sum_range_ite_even {M : Type*} [AddCommMonoid M] (g : ℕ → M) (N : ℕ) :
-    ∑ j ∈ Finset.range N, (if Even j then g (j / 2) else 0) =
-      ∑ k ∈ Finset.range ((N + 1) / 2), g k := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    rw [Finset.sum_range_succ, ih]
-    rcases Nat.even_or_odd N with ⟨k, rfl⟩ | ⟨k, rfl⟩
-    · rw [ite_eq_left ⟨k, rfl⟩, show (k + k + 1 + 1) / 2 = (k + k + 1) / 2 + 1 by omega,
-        Finset.sum_range_succ, show (k + k) / 2 = (k + k + 1) / 2 by omega]
-    · rw [ite_eq_right (Nat.not_even_iff_odd.2 ⟨k, rfl⟩), add_zero,
-        show (2 * k + 1 + 1 + 1) / 2 = (2 * k + 1 + 1) / 2 by omega]
 
 /-- The power `(‖ξ / 2π‖ ^ 2) ^ (μ / 2) = ‖ξ / 2π‖ ^ μ` is `(2π)⁻¹ ^ μ ‖ξ‖ ^ μ`. -/
 private theorem norm_smul_rpow_eq (ξ : CoordinateSpace n) (μ : ℝ) :
@@ -120,11 +107,9 @@ private theorem sum_smul_coefficient_besselPotentialTerm (χ : FrequencyCutoff (
     · rw [besselPotentialTerm, ite_eq_right he, HomogeneousSymbol.coefficient_zero, Pi.zero_apply,
         smul_zero]
   simp_rw [hj]
-  rw [sum_range_ite_even (fun k ↦ ((χ ξ * (Ring.choose (s / 2) k *
+  rw [Finset.sum_range_ite_even (fun k ↦ ((χ ξ * (Ring.choose (s / 2) k *
     (‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2 - k)) : ℝ) : ℂ) • ContinuousLinearMap.id ℂ V), ← Finset.sum_smul,
-    Finset.mul_sum]
-  push_cast
-  rfl
+    Finset.mul_sum, Complex.ofReal_sum]
 
 /-- The remainder `⟨ξ / 2π⟩ ^ s - χ(ξ) ∑_{k < K} (s / 2 choose k) ‖ξ / 2π‖ ^ (s - 2k)` of the
 binomial expansion of the Bessel weight after `K` terms. -/
@@ -133,9 +118,15 @@ private def besselRemainder (χ : FrequencyCutoff (CoordinateSpace n)) (s : ℝ)
   (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) -
     χ ξ * ∑ k ∈ Finset.range K, Ring.choose (s / 2) k * (‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2 - k)
 
+private theorem besselRemainder_eq (χ : FrequencyCutoff (CoordinateSpace n)) (s : ℝ) (K : ℕ) :
+    besselRemainder χ s K = fun ξ ↦ (1 + ‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2) -
+      χ ξ * ∑ k ∈ Finset.range K, Ring.choose (s / 2) k * (‖(2 * π)⁻¹ • ξ‖ ^ 2) ^ (s / 2 - k) :=
+  rfl
+
 private theorem contDiff_besselRemainder (χ : FrequencyCutoff (CoordinateSpace n)) (s : ℝ)
-    (K : ℕ) : ContDiff ℝ ∞ (besselRemainder χ s K) :=
-  contDiff_one_add_norm_smul_sq_rpow_sub_sum (by positivity) χ.contDiff
+    (K : ℕ) : ContDiff ℝ ∞ (besselRemainder χ s K) := by
+  rw [besselRemainder_eq]
+  exact contDiff_one_add_norm_smul_sq_rpow_sub_sum (by positivity) χ.contDiff
     (χ.eventuallyEq_zero_of_norm_lt_one (by simp)) _ _
 
 /-- The remainder after `(N + 1) / 2 ≥ N / 2` binomial terms satisfies the symbol estimates of
@@ -148,6 +139,7 @@ private theorem exists_norm_iteratedFDeriv_besselRemainder_le
     (E := CoordinateSpace n) (c := (2 * π)⁻¹) (by positivity) χ.contDiff
     (χ.eventuallyEq_zero_of_norm_lt_one (by simp)) ⟨2, fun ξ ↦ χ.apply_eq_one_of_two_le_norm⟩
     (s / 2) ((N + 1) / 2) k
+  rw [← besselRemainder_eq] at hC
   have hN : (N : ℝ) ≤ 2 * ((N + 1) / 2 : ℕ) := by
     exact_mod_cast (by omega : N ≤ 2 * ((N + 1) / 2))
   refine ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow
@@ -181,9 +173,7 @@ def besselPotential (s : ℝ) : ClassicalSymbol n V V s where
   exists_remainder' := ⟨default, fun N ↦ ⟨besselPotentialRemainder default s N, fun p ↦ by
     rw [besselPotentialRemainder, Symbol.coefficient_ofFrequency,
       Symbol.coefficient_besselPotential, sum_smul_coefficient_besselPotentialTerm, ← sub_smul,
-      besselRemainder]
-    push_cast
-    rfl⟩⟩
+      besselRemainder, Complex.ofReal_sub]⟩⟩
 
 @[simp]
 theorem toSymbol_besselPotential (s : ℝ) :

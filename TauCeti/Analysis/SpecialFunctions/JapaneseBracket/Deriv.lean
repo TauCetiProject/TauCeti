@@ -54,6 +54,9 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
   `TauCeti.exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_le`: the bracket power of a
   rescaled argument `c x` and its derivative bounds.
+* `TauCeti.norm_smul_sq_rpow_le`: for `1 ≤ ‖ξ‖`, the power `(‖c ξ‖ ^ 2) ^ μ` is at most a
+  constant times `(1 + ‖ξ‖ ^ 2) ^ μ`.
+* `TauCeti.hasFDerivAt_norm_smul_sq_rpow`: the derivative of `(‖c ξ‖ ^ 2) ^ μ` away from `0`.
 * `TauCeti.one_add_norm_smul_sq_rpow_half_le`: on an annulus `0 < c ≤ ‖ζ‖ ≤ d`, the bracket power
   `(1 + ‖t ζ‖ ^ 2) ^ (u / 2)` is `O(t ^ u)` for `t ≥ 1`.
 * `ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le_one_add_norm_sq_rpow`: composing
@@ -266,6 +269,29 @@ theorem exists_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (r : ℝ) :
           Real.mul_rpow (lt_min one_pos hc2).le hx.le
       _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_right _ _) (by positivity)
 
+/-- Away from the unit ball, a power of the rescaled norm `‖c ξ‖ ^ 2` is at most a constant times
+the same power of `1 + ‖ξ‖ ^ 2`: for `1 ≤ ‖ξ‖`,
+`(‖c ξ‖ ^ 2) ^ μ ≤ ((c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ) (1 + ‖ξ‖ ^ 2) ^ μ`. -/
+theorem norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (μ : ℝ) {ξ : E} (h1 : 1 ≤ ‖ξ‖) :
+    (‖c • ξ‖ ^ 2) ^ μ ≤ ((c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ) * (1 + ‖ξ‖ ^ 2) ^ μ := by
+  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
+  have hc2 : 0 < c ^ 2 := by positivity
+  -- The ratio `‖c ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)` lies between `c ^ 2 / 2` and `c ^ 2`.
+  have hratio : c ^ 2 / 2 ≤ ‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2) ∧
+      ‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2) ≤ c ^ 2 := by
+    have h1sq : 1 ≤ ‖ξ‖ ^ 2 := one_le_pow₀ h1
+    rw [norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, le_div_iff₀ hw, div_le_iff₀ hw]
+    constructor <;> nlinarith [mul_nonneg hc2.le (sub_nonneg.2 h1sq)]
+  have hpow : (‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)) ^ μ ≤ (c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ := by
+    rcases le_total 0 μ with hμ | hμ
+    · exact (Real.rpow_le_rpow (by positivity) hratio.2 hμ).trans
+        (le_add_of_nonneg_left (by positivity))
+    · exact (Real.rpow_le_rpow_of_nonpos (by positivity) hratio.1 hμ).trans
+        (le_add_of_nonneg_right (by positivity))
+  calc (‖c • ξ‖ ^ 2) ^ μ = (‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)) ^ μ * (1 + ‖ξ‖ ^ 2) ^ μ := by
+        rw [← Real.mul_rpow (by positivity) hw.le, div_mul_cancel₀ _ hw.ne']
+    _ ≤ _ := by gcongr
+
 /-- On the annulus `0 < c ≤ ‖ζ‖ ≤ d`, every power of the Japanese bracket of `t ζ` with `t ≥ 1` is
 at most a multiple of `t ^ u`: `(1 + ‖t ζ‖ ^ 2) ^ (u / 2) ≤ max ((c ^ 2) ^ (u / 2))
 ((1 + d ^ 2) ^ (u / 2)) t ^ u`. -/
@@ -302,6 +328,21 @@ theorem hasFDerivAt_one_add_norm_sq_rpow (r : ℝ) (x : E) :
   convert h using 1
   ext v
   simp only [smul_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul]
+  ring
+
+/-- The derivative of the power `(‖c ξ‖ ^ 2) ^ μ` of the rescaled norm, away from `c ξ = 0`, is
+`μ (‖c ξ‖ ^ 2) ^ (μ - 1)` times `2 c² ⟪ξ, ·⟫`. -/
+theorem hasFDerivAt_norm_smul_sq_rpow {c : ℝ} {ξ : E} (hcξ : c • ξ ≠ 0) (μ : ℝ) :
+    HasFDerivAt (fun ξ : E ↦ (‖c • ξ‖ ^ 2) ^ μ)
+      ((μ * (‖c • ξ‖ ^ 2) ^ (μ - 1)) • ((2 * c ^ 2) • innerSL ℝ ξ)) ξ := by
+  have h := ((hasStrictFDerivAt_norm_sq (c • ξ)).hasFDerivAt.comp ξ
+    ((hasFDerivAt_id ξ).const_smul c)).rpow_const (p := μ)
+      (Or.inl (pow_ne_zero 2 (norm_ne_zero_iff.2 hcξ)))
+  refine h.congr_fderiv ?_
+  ext v
+  simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.id_apply, innerSL_apply_apply, inner_smul_left, inner_smul_right,
+    smul_eq_mul, nsmul_eq_mul, RCLike.conj_to_real]
   ring
 
 /-- **Derivative bounds for powers of the Japanese bracket.** For every real `r` and every `k`,

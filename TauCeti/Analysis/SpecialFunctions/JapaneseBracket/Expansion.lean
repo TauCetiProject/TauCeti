@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Analytic.Binomial
 public import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
-import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
+import TauCeti.Analysis.Analytic.Binomial
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.RingTheory.Binomial
 
 /-!
 # The binomial expansion of a power of the Japanese bracket
@@ -33,10 +35,11 @@ of order `s`.
 
 Write `R_r` for the remainder. The size estimate (`j = 0`) is the remainder estimate of the
 binomial series `(1 + u) ^ r = ∑ₖ (r choose k) uᵏ` at `u = ‖c ξ‖⁻²`
-(`Real.one_add_rpow_hasFPowerSeriesAt_zero`). For the derivatives, the identity
-`(r - k) (r choose k) = r (r - 1 choose k)` (`Ring.choose_mul_add_one_eq`) shows that
-differentiating the terms of the expansion of exponent `r` gives `2 r c² ⟪ξ, ·⟫` times the terms of
-exponent `r - 1`, exactly as for `(1 + ‖c ξ‖ ^ 2) ^ r` itself. Hence
+(`TauCeti.exists_abs_one_add_rpow_sub_sum_le`, from `Real.one_add_rpow_hasFPowerSeriesAt_zero`).
+For the derivatives, the identity `(r - k) (r choose k) = r (r - 1 choose k)`
+(`TauCeti.Ring.choose_mul_add_one_eq`) shows that differentiating the terms of the expansion of
+exponent `r` gives `2 r c² ⟪ξ, ·⟫` times the terms of exponent `r - 1`, exactly as for
+`(1 + ‖c ξ‖ ^ 2) ^ r` itself. Hence
 
 `D R_r(ξ) = 2 r c² R_{r - 1}(ξ) ⟪ξ, ·⟫ - ∑_{k < K} (r choose k) (‖c ξ‖ ^ 2) ^ (r - k) Dψ(ξ)`,
 
@@ -57,61 +60,7 @@ public section
 open Filter Topology Metric
 open scoped ContDiff
 
-namespace Ring
-
-/-- The analogue of `Nat.choose_mul_succ_eq` for generalized binomial coefficients:
-`(r choose k) (r + 1) = (r + 1 choose k) (r + 1 - k)`. -/
-theorem choose_mul_add_one_eq {R : Type*} [CommRing R] [BinomialRing R] (r : R) (k : ℕ) :
-    choose r k * (r + 1) = choose (r + 1) k * (r + 1 - k) := by
-  have h := choose_smul_choose (r + 1) (n := k + 1) (k := 1) (by omega)
-  simp only [Nat.choose_one_right, choose_one_right, Nat.cast_one, Nat.add_sub_cancel,
-    add_sub_cancel_right] at h
-  -- Multiply by `k!` and use `(r + 1)_(k + 1) = (r + 1)_k (r + 1 - k)` for the Pochhammer
-  -- evaluations.
-  have := BinomialRing.toHasUniqueDiv (R := R)
-  rw [mul_comm, ← h, ← nsmul_right_inj (Nat.factorial_ne_zero k), smul_smul, mul_comm,
-    ← Nat.factorial_succ, ← descPochhammer_eq_factorial_smul_choose, ← smul_mul_assoc,
-    ← descPochhammer_eq_factorial_smul_choose, descPochhammer_succ_right, Polynomial.smeval_mul,
-    Polynomial.smeval_sub, Polynomial.smeval_X, Polynomial.smeval_natCast]
-  simp
-
-end Ring
-
 namespace TauCeti
-
-section Bounds
-
-/-- On a closed ball a continuous function is bounded by any power of the Japanese bracket. -/
-private theorem exists_norm_le_one_add_norm_sq_rpow_of_norm_le {E F : Type*}
-    [NormedAddCommGroup E] [ProperSpace E] [NormedAddCommGroup F] {f : E → F} (hf : Continuous f)
-    (R ρ : ℝ) : ∃ C, 0 ≤ C ∧ ∀ ξ, ‖ξ‖ ≤ R → ‖f ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ρ := by
-  obtain ⟨M, hM⟩ := (isCompact_closedBall (0 : E) R).exists_bound_of_continuousOn hf.continuousOn
-  refine ⟨max M 0 / (1 + R ^ 2) ^ (-|2 * ρ| / 2), by positivity, fun ξ hξ ↦ ?_⟩
-  have hw := one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ (2 * ρ)
-  rw [mul_div_cancel_left₀ _ two_ne_zero] at hw
-  calc ‖f ξ‖ ≤ max M 0 := (hM ξ (mem_closedBall_zero_iff.2 hξ)).trans (le_max_left _ _)
-    _ = max M 0 / (1 + R ^ 2) ^ (-|2 * ρ| / 2) * (1 + R ^ 2) ^ (-|2 * ρ| / 2) := by field_simp
-    _ ≤ _ := by gcongr
-
-/-- A `C^j` function vanishing outside a ball has its `j`-th derivative bounded by any power of
-the Japanese bracket. -/
-private theorem exists_norm_iteratedFDeriv_le_of_eq_zero_of_lt_norm {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E] [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {j : ℕ} {f : E → F}
-    (hf : ContDiff ℝ j f) {R : ℝ} (hf0 : ∀ ξ, R < ‖ξ‖ → f ξ = 0) (ρ : ℝ) :
-    ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ j f ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ρ := by
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_norm_le_one_add_norm_sq_rpow_of_norm_le (hf.continuous_iteratedFDeriv le_rfl) R ρ
-  refine ⟨C, fun ξ ↦ ?_⟩
-  rcases le_or_gt ‖ξ‖ R with hξ | hξ
-  · exact hC ξ hξ
-  · have h0 : f =ᶠ[𝓝 ξ] 0 := by
-      filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds hξ] with η hη
-      exact hf0 η hη
-    rw [(h0.iteratedFDeriv ℝ j).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply, norm_zero]
-    positivity
-
-end Bounds
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {c : ℝ} {ψ : E → ℝ}
 
@@ -119,6 +68,20 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {c : ℝ} 
 being cut off by `ψ`. -/
 private noncomputable def bracketRemainder (c : ℝ) (ψ : E → ℝ) (r : ℝ) (K : ℕ) (ξ : E) : ℝ :=
   (1 + ‖c • ξ‖ ^ 2) ^ r - ψ ξ * ∑ k ∈ Finset.range K, Ring.choose r k * (‖c • ξ‖ ^ 2) ^ (r - k)
+
+private theorem bracketRemainder_def (c : ℝ) (ψ : E → ℝ) (r : ℝ) (K : ℕ) :
+    bracketRemainder c ψ r K = fun ξ ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
+      ψ ξ * ∑ k ∈ Finset.range K, Ring.choose r k * (‖c • ξ‖ ^ 2) ^ (r - k) :=
+  rfl
+
+/-- The remainder with the cutoff distributed over the terms of the expansion. -/
+private theorem bracketRemainder_eq_sub_sum (c : ℝ) (ψ : E → ℝ) (r : ℝ) (K : ℕ) :
+    bracketRemainder c ψ r K = fun ξ ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
+      ∑ k ∈ Finset.range K, Ring.choose r k * (ψ ξ * (‖c • ξ‖ ^ 2) ^ (r - k)) := by
+  funext ξ
+  simp only [bracketRemainder, Finset.mul_sum]
+  congr 1
+  exact Finset.sum_congr rfl fun k _ ↦ by ring
 
 /-- A homogeneous power `(‖c ξ‖ ^ 2) ^ μ` times a smooth function vanishing near `0` is smooth. -/
 private theorem contDiff_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -135,30 +98,10 @@ private theorem contDiff_rpow_smul {F : Type*} [NormedAddCommGroup F] [NormedSpa
 
 private theorem contDiff_bracketRemainder (hc : c ≠ 0) (hψ : ContDiff ℝ ∞ ψ)
     (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) : ContDiff ℝ ∞ (bracketRemainder c ψ r K) := by
-  have hfun : bracketRemainder c ψ r K = fun ξ ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
-      ∑ k ∈ Finset.range K, Ring.choose r k • ((‖c • ξ‖ ^ 2) ^ (r - k) • ψ ξ) := by
-    funext ξ
-    simp only [bracketRemainder, Finset.mul_sum, smul_eq_mul]
-    congr 1
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
-  rw [hfun]
+  rw [bracketRemainder_eq_sub_sum]
   exact ((contDiff_one_add_norm_sq_rpow r).comp (contDiff_const_smul c)).sub
-    (ContDiff.sum fun k _ ↦ (contDiff_rpow_smul hc hψ hψ0 _).const_smul _)
-
-/-- The derivative of `(‖c ξ‖ ^ 2) ^ μ` is `μ (‖c ξ‖ ^ 2) ^ (μ - 1)` times `2 c² ⟪ξ, ·⟫`, away
-from `0`. -/
-private theorem hasFDerivAt_norm_smul_sq_rpow {ξ : E} (hcξ : c • ξ ≠ 0) (μ : ℝ) :
-    HasFDerivAt (fun ξ : E ↦ (‖c • ξ‖ ^ 2) ^ μ)
-      ((μ * (‖c • ξ‖ ^ 2) ^ (μ - 1)) • ((2 * c ^ 2) • innerSL ℝ ξ)) ξ := by
-  have h := ((hasStrictFDerivAt_norm_sq (c • ξ)).hasFDerivAt.comp ξ
-    ((hasFDerivAt_id ξ).const_smul c)).rpow_const (p := μ)
-      (Or.inl (pow_ne_zero 2 (norm_ne_zero_iff.2 hcξ)))
-  refine h.congr_fderiv ?_
-  ext v
-  simp only [Function.comp_apply, smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply, innerSL_apply_apply, inner_smul_left, inner_smul_right,
-    smul_eq_mul, nsmul_eq_mul, RCLike.conj_to_real]
-  ring
+    (ContDiff.sum fun k _ ↦ contDiff_const.mul <| by
+      simpa only [smul_eq_mul, mul_comm] using contDiff_rpow_smul hc hψ hψ0 (r - k))
 
 /-- The derivative of the expanded bracket power `(1 + ‖c ξ‖ ^ 2) ^ r`. -/
 private theorem hasFDerivAt_one_add_norm_smul_sq_rpow (r : ℝ) (ξ : E) :
@@ -207,13 +150,7 @@ private theorem fderiv_bracketRemainder (hc : c ≠ 0) (hψ : ContDiff ℝ ∞ �
   have hsum := HasFDerivAt.fun_sum (u := Finset.range K) fun k _ ↦
     (hasFDerivAt_mul_norm_smul_sq_rpow hc hψ hψ0 (r - k) ξ).const_mul (Ring.choose r k)
   have h := (hasFDerivAt_one_add_norm_smul_sq_rpow (c := c) r ξ).fun_sub hsum
-  have hfun : bracketRemainder c ψ r K = fun ξ ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
-      ∑ k ∈ Finset.range K, Ring.choose r k * (ψ ξ * (‖c • ξ‖ ^ 2) ^ (r - k)) := by
-    funext ξ
-    simp only [bracketRemainder, Finset.mul_sum]
-    congr 1
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
-  rw [hfun, h.fderiv]
+  rw [bracketRemainder_eq_sub_sum, h.fderiv]
   -- Termwise, `(r - k) (r choose k) = r (r - 1 choose k)` turns the derivative of a cut-off term
   -- of exponent `r` into `2 r c² ⟪ξ, ·⟫` times the cut-off term of exponent `r - 1`.
   have hterm : ∀ k ∈ Finset.range K, Ring.choose r k •
@@ -257,19 +194,6 @@ private theorem bracketRemainderError_eq_zero {R : ℝ} (hψ1 : ∀ ξ, R ≤ �
     exact hψ1 η hη.le
   simp [bracketRemainderError, h1.fderiv_eq]
 
-/-- The remainder of the binomial series of `(1 + u) ^ r` after `K` terms is `O(u ^ K)` for small
-`u > 0`. -/
-private theorem exists_abs_one_add_rpow_sub_sum_le (r : ℝ) (K : ℕ) :
-    ∃ A ε, 0 < ε ∧ ∀ u : ℝ, 0 < u → u < ε →
-      |(1 + u) ^ r - ∑ k ∈ Finset.range K, Ring.choose r k * u ^ k| ≤ A * u ^ K := by
-  obtain ⟨A, hA⟩ := (Real.one_add_rpow_hasFPowerSeriesAt_zero (a := r)).isBigO_sub_partialSum_pow
-    K |>.bound
-  obtain ⟨ε, hε, hεA⟩ := Metric.eventually_nhds_iff.1 hA
-  refine ⟨A, ε, hε, fun u hu huε ↦ ?_⟩
-  have hbound := hεA (y := u) (by simpa [abs_of_pos hu] using huε)
-  simpa only [zero_add, FormalMultilinearSeries.partialSum, binomialSeries_apply, List.ofFn_const,
-    List.prod_replicate, smul_eq_mul, Real.norm_eq_abs, abs_pow, abs_of_pos hu] using hbound
-
 /-- Where the cutoff is `1`, the remainder is `G ^ r` times the remainder of the binomial series of
 `(1 + u) ^ r` at `u = G⁻¹`, with `G = ‖c ξ‖ ^ 2`. -/
 private theorem bracketRemainder_eq_mul {ξ : E} (hψ : ψ ξ = 1) (hG : 0 < ‖c • ξ‖ ^ 2) (r : ℝ)
@@ -285,29 +209,6 @@ private theorem bracketRemainder_eq_mul {ξ : E} (hψ : ψ ξ = 1) (hG : 0 < ‖
   rw [Real.rpow_sub hG, Real.rpow_natCast, inv_pow]
   ring
 
-/-- For `‖ξ‖ ≥ 1`, the power `(‖c ξ‖ ^ 2) ^ μ` is at most a constant times `(1 + ‖ξ‖ ^ 2) ^ μ`. -/
-private theorem norm_smul_sq_rpow_le (hc : c ≠ 0) (μ : ℝ) {ξ : E} (h1 : 1 ≤ ‖ξ‖) :
-    (‖c • ξ‖ ^ 2) ^ μ ≤ ((c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ) * (1 + ‖ξ‖ ^ 2) ^ μ := by
-  have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-  have hc2 : 0 < c ^ 2 := by positivity
-  have hGeq : ‖c • ξ‖ ^ 2 = c ^ 2 * ‖ξ‖ ^ 2 := by
-    rw [norm_smul, mul_pow, Real.norm_eq_abs, sq_abs]
-  -- The ratio `‖c ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)` lies between `c ^ 2 / 2` and `c ^ 2`.
-  have hratio : c ^ 2 / 2 ≤ ‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2) ∧
-      ‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2) ≤ c ^ 2 := by
-    have h1sq : 1 ≤ ‖ξ‖ ^ 2 := one_le_pow₀ h1
-    rw [hGeq, le_div_iff₀ hw, div_le_iff₀ hw]
-    constructor <;> nlinarith [mul_nonneg hc2.le (sub_nonneg.2 h1sq)]
-  have hpow : (‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)) ^ μ ≤ (c ^ 2 / 2) ^ μ + (c ^ 2) ^ μ := by
-    rcases le_total 0 μ with hμ | hμ
-    · exact (Real.rpow_le_rpow (by positivity) hratio.2 hμ).trans
-        (le_add_of_nonneg_left (by positivity))
-    · exact (Real.rpow_le_rpow_of_nonpos (by positivity) hratio.1 hμ).trans
-        (le_add_of_nonneg_right (by positivity))
-  calc (‖c • ξ‖ ^ 2) ^ μ = (‖c • ξ‖ ^ 2 / (1 + ‖ξ‖ ^ 2)) ^ μ * (1 + ‖ξ‖ ^ 2) ^ μ := by
-        rw [← Real.mul_rpow (by positivity) hw.le, div_mul_cancel₀ _ hw.ne']
-    _ ≤ _ := by gcongr
-
 /-- **The size of the remainder.** At large frequencies it is `(‖c ξ‖ ^ 2) ^ r` times the
 remainder of the binomial series of `(1 + u) ^ r` at `u = ‖c ξ‖⁻²`, hence
 `O((‖c ξ‖ ^ 2) ^ (r - K))`; on a ball it is bounded. -/
@@ -317,8 +218,9 @@ private theorem exists_abs_bracketRemainder_le [ProperSpace E] (hc : c ≠ 0)
   obtain ⟨A, ε, hε, hA⟩ := exists_abs_one_add_rpow_sub_sum_le r K
   -- Beyond `R₁`, the cutoff is `1`, `‖ξ‖ ≥ 1` and `u = ‖c ξ‖⁻² < ε`.
   set R₁ := max (max R 1) (Real.sqrt (2 / (ε * c ^ 2)))
-  obtain ⟨B, -, hB⟩ := exists_norm_le_one_add_norm_sq_rpow_of_norm_le
-    ((contDiff_bracketRemainder hc hψ hψ0 r K).continuous) R₁ (r - K)
+  obtain ⟨B, -, hB⟩ := (contDiff_bracketRemainder hc hψ hψ0 r K).continuous
+    |>.exists_norm_le_one_add_norm_sq_rpow_of_norm_le R₁ (2 * (r - K))
+  rw [mul_div_cancel_left₀ _ two_ne_zero] at hB
   refine ⟨max B (|A| * ((c ^ 2 / 2) ^ (r - K) + (c ^ 2) ^ (r - K))), fun ξ ↦ ?_⟩
   rcases le_or_gt ‖ξ‖ R₁ with hξ | hξ
   · exact (hB ξ hξ).trans (by gcongr; exact le_max_left _ _)
@@ -355,8 +257,9 @@ a smooth `ψ` vanishing near `0` is smooth. -/
 theorem contDiff_one_add_norm_smul_sq_rpow_sub_sum (hc : c ≠ 0) (hψ : ContDiff ℝ ∞ ψ)
     (hψ0 : ψ =ᶠ[𝓝 0] 0) (r : ℝ) (K : ℕ) :
     ContDiff ℝ ∞ fun ξ : E ↦ (1 + ‖c • ξ‖ ^ 2) ^ r -
-      ψ ξ * ∑ k ∈ Finset.range K, Ring.choose r k * (‖c • ξ‖ ^ 2) ^ (r - k) :=
-  contDiff_bracketRemainder hc hψ hψ0 r K
+      ψ ξ * ∑ k ∈ Finset.range K, Ring.choose r k * (‖c • ξ‖ ^ 2) ^ (r - k) := by
+  rw [← bracketRemainder_def]
+  exact contDiff_bracketRemainder hc hψ hψ0 r K
 
 /-- **The binomial expansion of a power of the Japanese bracket.** Let `c ≠ 0` and let `ψ` be a
 smooth function vanishing near `0` and equal to `1` outside some ball. For every real `r` and all
@@ -373,7 +276,7 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_sub_sum_le [ProperS
         ψ ξ * ∑ k ∈ Finset.range K, Ring.choose r k * (‖c • ξ‖ ^ 2) ^ (r - k)) ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ (r - K - j / 2) := by
   obtain ⟨R, hR⟩ := hψ1
-  change ∃ C, ∀ ξ : E, ‖iteratedFDeriv ℝ j (bracketRemainder c ψ r K) ξ‖ ≤ _
+  rw [← bracketRemainder_def]
   induction j using Nat.strong_induction_on generalizing r with
   | _ j ih =>
   rcases j with _ | j
@@ -387,9 +290,10 @@ theorem exists_norm_iteratedFDeriv_one_add_norm_smul_sq_rpow_sub_sum_le [ProperS
     obtain ⟨C₁, hC₁⟩ := ContinuousLinearMap.exists_norm_iteratedFDeriv_smul_le_one_add_norm_sq_rpow
       ((2 * r * c ^ 2) • innerSL ℝ) (hrem.of_le (mod_cast le_top)) (ρ := r - 1 - K) fun i hi ↦
         (ih i (Nat.lt_succ_of_le hi) (r - 1)).imp fun C hC ξ ↦ (hC ξ).trans_eq (by ring_nf)
-    obtain ⟨C₂, hC₂⟩ := exists_norm_iteratedFDeriv_le_of_eq_zero_of_lt_norm
-      (herr.of_le (mod_cast le_top)) (j := j)
-      (fun ξ hξ ↦ bracketRemainderError_eq_zero hR r K hξ) (r - K - (j + 1 : ℕ) / 2)
+    obtain ⟨C₂, hC₂⟩ := (herr.of_le (mod_cast le_top) (m := j))
+      |>.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_eq_zero_of_lt_norm
+        (fun ξ hξ ↦ bracketRemainderError_eq_zero hR r K hξ) (2 * (r - K - (j + 1 : ℕ) / 2))
+    rw [mul_div_cancel_left₀ _ two_ne_zero] at hC₂
     have hsmul : ContDiff ℝ ∞ fun ξ ↦
         bracketRemainder c ψ (r - 1) K ξ • ((2 * r * c ^ 2) • innerSL ℝ) ξ :=
       hrem.smul ((2 * r * c ^ 2) • innerSL ℝ).contDiff
