@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors, Chris Birkbeck
+Authors: The Tau Ceti contributors, Chris Birkbeck, David Kurniadi Angdinata
 -/
 module
 
@@ -75,8 +75,9 @@ file names them accordingly.
 `lutz_nagell_integrality_short` (`:155`) is where the order-two collapse is carried out; with no
 header to go on it is credited to the project, as the sibling ports in this chain are.
 
-**`LutzNagellTheorem/PIDMain.lean` — no author header.** With no header to go on it is credited
-to the project, as `GeneralMain.lean` is. Its `lutz_nagell_cubicDisc_discriminant` (`:438`) is the
+**`LutzNagellTheorem/PIDMain.lean` — Chris Birkbeck and David Kurniadi Angdinata.** The file
+carries no author header; these are its authors, and the header of this file names them. Its
+`lutz_nagell_cubicDisc_discriminant` (`:438`) is the
 discriminant half `y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`, stated there over the fraction
 field of a principal ideal domain, under a squarefreeness hypothesis on the order and with the
 curve equation over the ring as a hypothesis, and with the cubic's discriminant written out in
