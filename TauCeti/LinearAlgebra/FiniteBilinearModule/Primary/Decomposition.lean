@@ -250,24 +250,34 @@ theorem primaryComponents_quadratic (x : A.primaryComponents) :
     A.primaryComponents.quadratic x = ∑ p, A.quadratic (x p).1 :=
   (pi_quadratic _ x).trans (Finset.sum_congr rfl fun p _ ↦ A.restrict_quadratic _ (x p))
 
+/-- `AddCommGroup.primaryDecomposition` typed with the bundled carrier `A.primaryComponents`, so
+that `toIntLinearEquiv` receives matching `ℤ`-module instances and `AddEquiv.coe_toIntLinearEquiv`
+rewrites cleanly. -/
+private noncomputable def primaryDecompositionAddEquiv : A.primaryComponents ≃+ A :=
+  AddCommGroup.primaryDecomposition A
+
+/-- The bundled-carrier primary-decomposition additive equivalence maps a tuple to its component
+sum. -/
+private theorem primaryDecompositionAddEquiv_apply (x : A.primaryComponents) :
+    A.primaryDecompositionAddEquiv x = ∑ p, (x p).1 :=
+  AddCommGroup.primaryDecomposition_apply A x
+
 /-- The canonical primary decomposition is a quadratic isometry. -/
 noncomputable def primaryDecomposition : Isometry A.primaryComponents A where
-  toLinearEquiv := (AddCommGroup.primaryDecomposition A).toIntLinearEquiv
+  toLinearEquiv := A.primaryDecompositionAddEquiv.toIntLinearEquiv
   map_app' x := by
-    let x' : ∀ p : (Nat.card A).primeFactors, primaryComponent A p.1 := x
-    rw [primaryComponents_quadratic]
-    change A.quadratic (AddCommGroup.primaryDecomposition A x') = ∑ p, A.quadratic (x' p).1
-    rw [AddCommGroup.primaryDecomposition_apply]
-    exact A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val (fun p ↦ (x' p).1)
+    rw [primaryComponents_quadratic, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
+      AddEquiv.coe_toIntLinearEquiv, primaryDecompositionAddEquiv_apply]
+    exact A.quadratic_sum_of_mem_primaryComponent Finset.univ Subtype.val (fun p ↦ (x p).1)
       (fun p _ ↦ Nat.prime_of_mem_primeFactors p.2)
       (fun p _ q _ hpq ↦ by simpa using hpq)
-      (fun p _ ↦ (x' p).2)
+      (fun p _ ↦ (x p).2)
 
 /-- The quadratic primary-decomposition isometry maps a tuple to its component sum. -/
 @[simp]
 theorem primaryDecomposition_apply (x : A.primaryComponents) :
     A.primaryDecomposition x = ∑ p, (x p).1 :=
-  AddCommGroup.primaryDecomposition_apply A x
+  A.primaryDecompositionAddEquiv_apply x
 
 /-- The orthogonal product of primary components is nondegenerate exactly when the original
 finite quadratic module is nondegenerate. -/

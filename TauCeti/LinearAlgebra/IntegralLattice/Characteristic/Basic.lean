@@ -9,8 +9,6 @@ public import Mathlib.Data.Int.ModEq
 public import TauCeti.LinearAlgebra.BilinearForm.Characteristic
 public import TauCeti.LinearAlgebra.IntegralLattice.Orthogonal.Sum
 public import TauCeti.LinearAlgebra.IntegralLattice.Norm
-import Mathlib.Algebra.Field.ZMod
-import Mathlib.LinearAlgebra.Dual.Lemmas
 import TauCeti.Data.Int.MulPred
 
 /-!
@@ -175,71 +173,14 @@ theorem IsCharacteristicVector.integralNorm_add_two_smul_modEq {L : IntegralLatt
   exact L.isSymm_integralForm.eight_dvd_apply_add_two_smul_sub
     ((L.isCharacteristicVector_iff_isCharacteristic w).1 hw) v
 
-/-- **Every integral lattice has a characteristic vector.** Over `ℤ/2ℤ`, the diagonal of the
-mod-two Gram pairing vanishes on the coannihilator of the pairing's image in the dual space, hence
-lies in that image. -/
+/-- **Every integral lattice has a characteristic vector.** This specializes
+`LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite` to the integral bilinear form
+of `L`. -/
 theorem exists_isCharacteristicVector (L : IntegralLattice V) :
     ∃ w : L, L.IsCharacteristicVector w := by
-  -- Step 1: Set up the mod-two norm functional `ℓ` and Gram pairing `φ` on `(ℤ/2ℤ)^n`.
-  let b := Module.finBasis ℤ L
-  let U := Fin (Module.finrank ℤ L) → ZMod 2
-  let e := Pi.basisFun (ZMod 2) (Fin (Module.finrank ℤ L))
-  let ℓ : Module.Dual (ZMod 2) U := e.constr (ZMod 2) fun i ↦ L.normParity (b i)
-  let φ : U →ₗ[ZMod 2] Module.Dual (ZMod 2) U :=
-    e.constr (ZMod 2) fun i ↦ e.constr (ZMod 2) fun j ↦ (L.integralForm (b i) (b j) : ZMod 2)
-  have hsymm : φ.flip = φ :=
-    e.ext fun i ↦ e.ext fun j ↦ by simp [φ, L.isSymm_integralForm.eq (b j) (b i)]
-  -- Step 2: Over `ZMod 2`, `φ u u = ℓ u` for all `u`, so `ℓ` vanishes on `(range φ)⁰` and lies in
-  -- `range φ`.
-  have hdiag (u : U) : φ u u = ℓ u := by
-    induction e.mem_span u using Submodule.span_induction with
-    | mem x hx =>
-      obtain ⟨i, rfl⟩ := hx
-      simp [φ, ℓ, L.integralNorm_apply]
-    | zero => simp
-    | add x y _ _ hx hy =>
-      have hyx : φ y x = φ x y := by simpa using LinearMap.congr_fun₂ hsymm x y
-      have h2z (z : ZMod 2) : z + z = 0 := by
-        rw [← two_mul, show (2 : ZMod 2) = 0 by decide, zero_mul]
-      simp only [map_add, LinearMap.add_apply, hyx, hx, hy]
-      rw [add_assoc (ℓ x), ← add_assoc (φ x y), h2z, zero_add]
-    | smul c x _ hx =>
-      have hc : c.val = 0 ∨ c.val = 1 := by
-        have := c.val_lt
-        omega
-      rcases hc with hc | hc
-      · have hc0 : c = 0 := by rw [← ZMod.natCast_zmod_val c, hc, Nat.cast_zero]
-        subst hc0
-        simp
-      · have hc1 : c = 1 := by rw [← ZMod.natCast_zmod_val c, hc, Nat.cast_one]
-        subst hc1
-        simp [hx]
-  have hℓ : ℓ ∈ LinearMap.range φ := by
-    rw [← Subspace.dualCoannihilator_dualAnnihilator_eq (W := LinearMap.range φ),
-      Submodule.mem_dualAnnihilator]
-    intro u hu
-    rw [← hdiag u]
-    exact (Submodule.mem_dualCoannihilator u).mp hu (φ u) (LinearMap.mem_range_self φ u)
-  -- Step 3: Lift a preimage `u₀` of `ℓ` along the `ℤ`-basis `b` and check the parity condition.
-  obtain ⟨u₀, hu₀⟩ := hℓ
-  let w : L := ∑ i, ((u₀ i).val : ℤ) • b i
-  refine ⟨w, (L.isCharacteristicVector_iff_isCharacteristic w).mpr <|
-    (L.isSymm_integralForm.isCharacteristic_iff_forall_basis Int.two_dvd_sq_sub_self b).mpr
-      fun j ↦ ?_⟩
-  rw [← dvd_neg, neg_sub, ← Int.modEq_iff_dvd]
-  apply (ZMod.intCast_eq_intCast_iff _ _ 2).mp
-  have hφ : φ u₀ (e j) = ∑ i, u₀ i * (L.integralForm (b i) (b j) : ZMod 2) := by
-    conv_lhs => rw [← e.sum_repr u₀]
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, φ,
-      Module.Basis.constr_basis]
-    exact Finset.sum_congr rfl fun i _ ↦ by rw [Pi.basisFun_repr]
-  have hw : (L.integralForm w (b j) : ZMod 2) =
-      ∑ i, u₀ i * (L.integralForm (b i) (b j) : ZMod 2) := by
-    simp only [w, map_sum, map_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul,
-      Int.cast_sum, Int.cast_mul, Int.cast_natCast, ZMod.natCast_zmod_val]
-  have hℓj : ℓ (e j) = (L.integralForm (b j) (b j) : ZMod 2) := by
-    simp [ℓ, L.integralNorm_apply]
-  rw [hw, ← hφ, hu₀, hℓj]
+  obtain ⟨w, hw⟩ :=
+    L.isSymm_integralForm.exists_isCharacteristic_of_finite Int.two_dvd_sq_sub_self
+  exact ⟨w, (L.isCharacteristicVector_iff_isCharacteristic w).mpr hw⟩
 
 end IntegralLattice
 
