@@ -138,8 +138,7 @@ private theorem spinVectorAction_negBasis_zero_eq_smul {t : realCliffordSpinGrou
       {k : Fin (0 + 7)} (hk : k ∉ s) : negBasis.repr w k = 0 := by
     obtain ⟨x, hxE, hx⟩ := exists_mem_actsBySign hs
     have hxw : spinVectorAction (realCliffordForm 7 0) x w = -w := by
-      rw [hw, ← mul_apply_eq_comp, ← spinVectorAction_mul, ← (ht x hxE).eq,
-        spinVectorAction_mul, mul_apply_eq_comp, hx 0]
+      rw [hw, spinVectorAction_apply_comm _ (ht x hxE).symm, hx 0]
       simp [h0]
     have := hx.repr_apply w k
     simp only [hxw, hk, ↓reduceIte, one_mul, map_neg, Finsupp.coe_neg, Pi.neg_apply] at this
