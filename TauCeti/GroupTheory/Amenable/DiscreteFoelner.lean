@@ -35,9 +35,9 @@ The proof is by Hahn–Banach separation in the finite product `K → ℓ¹(G)`.
 is the convex hull of the unit vectors `δ_x`, its image under the linear map
 `u ↦ (L_g u - u)_{g ∈ K}` is the convex hull of the vectors `(δ_{g x} - δ_x)_{g ∈ K}`. If `0`
 were not in the closure of this convex set, a continuous functional `Λ` would separate them, so
-that `Λ (δ_{g x} - δ_x)_{g ∈ K} ≥ u > 0` for every `x`. Writing `f_g y = Λ (ι_g δ_y)`, these
+that `Λ (δ_{g x} - δ_x)_{g ∈ K} ≥ c > 0` for every `x`. Writing `f_g y = Λ (ι_g δ_y)`, these
 functions are bounded by `‖Λ‖`, and the bounded function `x ↦ ∑_{g ∈ K} (f_g (g x) - f_g x)` is
-at least `u` everywhere; but a left-invariant mean assigns it the value `0`. Reiter's condition
+at least `c` everywhere; but a left-invariant mean assigns it the value `0`. Reiter's condition
 then yields Følner sets among the superlevel sets of `p`, by
 `TauCeti.hasFoelnerSets_of_forall_exists_sum_tsum_abs_sub_lt`.
 
@@ -134,6 +134,19 @@ theorem Amenable.exists_mem_stdSimplex_sum_norm_leftTranslation_sub_lt [Discrete
       rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith
 
+omit [TopologicalSpace G] [IsTopologicalGroup G] in
+/-- A finitely supported probability vector `u ∈ ℓ¹(G)` with `∑_{g ∈ K} ‖L_g u - u‖ < ε` is a
+finitely supported probability density with `∑_{g ∈ K} ∑_x |u (g⁻¹ x) - u x| < ε`. -/
+private theorem exists_sum_tsum_abs_sub_lt_of_mem_stdSimplex {K : Finset G} {ε : ℝ}
+    {u : lp (fun _ : G ↦ ℝ) 1} (hmem : u ∈ lp.stdSimplex G)
+    (hu : ∑ g ∈ K, ‖lp.leftTranslation 1 ℝ g u - u‖ < ε) :
+    ∃ p : G → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
+      ∑ g ∈ K, ∑' x, |p (g⁻¹ * x) - p x| < ε := by
+  obtain ⟨hu0, hufin, hu1⟩ := lp.mem_stdSimplex_iff.1 hmem
+  refine ⟨u, hu0, hufin, hu1, ?_⟩
+  simp_rw [lp.norm_leftTranslation_sub_eq_tsum_norm, smul_eq_mul, Real.norm_eq_abs] at hu
+  exact hu
+
 /-- **Reiter's condition.** In an amenable discrete group, for every finite `K` and `ε > 0` there
 is a finitely supported probability density `p` with `∑_{g ∈ K} ∑_x |p (g⁻¹ x) - p x| < ε`. -/
 theorem Amenable.exists_sum_tsum_abs_sub_lt [DiscreteTopology G] [Amenable G] (K : Finset G)
@@ -141,9 +154,7 @@ theorem Amenable.exists_sum_tsum_abs_sub_lt [DiscreteTopology G] [Amenable G] (K
     ∃ p : G → ℝ, 0 ≤ p ∧ p.HasFiniteSupport ∧ ∑' x, p x = 1 ∧
       ∑ g ∈ K, ∑' x, |p (g⁻¹ * x) - p x| < ε := by
   obtain ⟨u, hmem, hu⟩ := Amenable.exists_mem_stdSimplex_sum_norm_leftTranslation_sub_lt K hε
-  obtain ⟨hu0, hufin, hu1⟩ := lp.mem_stdSimplex_iff.1 hmem
-  refine ⟨u, hu0, hufin, hu1, ?_⟩
-  simpa [← (lp.hasSum_norm_one _).tsum_eq] using hu
+  exact exists_sum_tsum_abs_sub_lt_of_mem_stdSimplex hmem hu
 
 /-- A discrete group is amenable exactly when it satisfies **Reiter's condition**: for every
 finite `K` and `ε > 0` there is a finitely supported probability density `p` with
@@ -164,9 +175,7 @@ theorem amenable_iff_exists_mem_stdSimplex_sum_norm_leftTranslation_sub_lt [Disc
   refine ⟨fun _ K _ hε ↦ Amenable.exists_mem_stdSimplex_sum_norm_leftTranslation_sub_lt K hε,
     fun h ↦ amenable_iff_exists_sum_tsum_abs_sub_lt.2 fun K ε hε ↦ ?_⟩
   obtain ⟨u, hmem, hu⟩ := h K ε hε
-  obtain ⟨hu0, hufin, hu1⟩ := lp.mem_stdSimplex_iff.1 hmem
-  refine ⟨u, hu0, hufin, hu1, ?_⟩
-  simpa [← (lp.hasSum_norm_one _).tsum_eq] using hu
+  exact exists_sum_tsum_abs_sub_lt_of_mem_stdSimplex hmem hu
 
 /-- An amenable discrete group has Følner sets. -/
 theorem Amenable.hasFoelnerSets [DiscreteTopology G] [Amenable G] : HasFoelnerSets G :=

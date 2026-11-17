@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Convex.Hull
 public import TauCeti.Analysis.Normed.Lp.LeftTranslation
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Analysis.Convex.Combination
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Finitely supported probability vectors in `ℓ¹`
@@ -33,6 +34,7 @@ Hahn–Banach separation argument in `ℓ¹(G)` produce such a density from an i
 
 * `lp.convexHull_range_single_eq_stdSimplex`: `lp.stdSimplex α` is the convex hull of the unit
   vectors.
+* `lp.norm_eq_one_of_mem_stdSimplex`: its elements have `ℓ¹` norm one.
 * `lp.convex_stdSimplex`: it is convex.
 * `lp.lpCongrLeft_mem_stdSimplex_iff`, `lp.leftTranslation_mem_stdSimplex_iff`: it is preserved
   by reindexing, and in particular by left translation.
@@ -69,6 +71,12 @@ theorem single_mem_stdSimplex [DecidableEq α] (a : α) :
     exact (finite_singleton a).subset (Pi.support_single_subset)
   · rw [lp.coeFn_single, tsum_pi_single]
 
+/-- A finitely supported probability vector has `ℓ¹` norm one. -/
+theorem norm_eq_one_of_mem_stdSimplex {u : lp (fun _ : α ↦ ℝ) 1} (hu : u ∈ stdSimplex α) :
+    ‖u‖ = 1 := by
+  rw [← (hasSum_norm_one u).tsum_eq, ← hu.2.2]
+  exact tsum_congr fun a ↦ Real.norm_of_nonneg (hu.1 a)
+
 /-- The finitely supported probability vectors form a convex set. -/
 theorem convex_stdSimplex : Convex ℝ (stdSimplex α) := by
   rintro u ⟨hu0, hufin, hu1⟩ v ⟨hv0, hvfin, hv1⟩ a b ha hb hab
@@ -83,8 +91,7 @@ theorem convex_stdSimplex : Convex ℝ (stdSimplex α) := by
     exact hau.add hbv
   · rw [hcoe, Pi.add_def, Summable.tsum_add (summable_of_hasFiniteSupport hau)
       (summable_of_hasFiniteSupport hbv)]
-    simp only [Pi.smul_apply, smul_eq_mul]
-    rw [tsum_mul_left, tsum_mul_left, hu1, hv1, mul_one, mul_one, hab]
+    simp [tsum_mul_left, hu1, hv1, hab]
 
 /-- The finitely supported probability vectors in `ℓ¹(α)` are the convex combinations of the unit
 vectors `δ_a`. -/

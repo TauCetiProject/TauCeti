@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Left translation on `ℓᵖ`
@@ -23,7 +24,7 @@ to the unit vector at `g • a`.
 
 For the left regular action of `G` on itself, `ℓ¹(G)` with these translations is the space in
 which Reiter's condition for amenable discrete groups is stated: there are finitely supported
-probability densities `p` with `‖L_g p - p‖` small for the finitely many `g` in any given finite
+probability densities `u` with `‖L_g u - u‖` small for the finitely many `g` in any given finite
 set.
 
 ## Main definitions
@@ -36,6 +37,7 @@ set.
 * `lp.leftTranslation_def`: `L_g` is reindexing along `a ↦ g • a`.
 * `lp.leftTranslation_apply`: `(L_g f)(a) = f (g⁻¹ • a)`.
 * `lp.leftTranslation_single`: `L_g δ_a = δ_(g • a)`.
+* `lp.norm_leftTranslation_sub_eq_tsum_norm`: in `ℓ¹`, `‖L_g f - f‖ = ∑_a ‖f (g⁻¹ • a) - f a‖`.
 -/
 
 public section
@@ -75,15 +77,27 @@ theorem leftTranslation_apply (g : G) (f : lp (fun _ : α ↦ E) p) (a : α) :
   simp [leftTranslation]
 
 /-- The inverse of left translation by `g` is left translation by `g⁻¹`. -/
-@[simp]
 theorem leftTranslation_symm (g : G) :
     (leftTranslation p 𝕜 g).symm = leftTranslation p 𝕜 (α := α) (E := E) g⁻¹ := by
   rw [map_inv, LinearIsometryEquiv.inv_def]
+
+/-- The inverse of left translation by `g` is the sequence `a ↦ f (g • a)`. -/
+@[simp]
+theorem leftTranslation_symm_apply (g : G) (f : lp (fun _ : α ↦ E) p) (a : α) :
+    (leftTranslation p 𝕜 g).symm f a = f (g • a) := by
+  rw [leftTranslation_symm, leftTranslation_apply, inv_inv]
 
 /-- Left translation by `g` moves the unit vector at `a` to the unit vector at `g • a`. -/
 @[simp]
 theorem leftTranslation_single [DecidableEq α] (g : G) (a : α) (x : E) :
     leftTranslation p 𝕜 g (lp.single p a x) = lp.single p (g • a) x :=
   LinearIsometryEquiv.lpCongrLeft_single _ a x
+
+/-- In `ℓ¹`, the distance from `f` to its left translate `L_g f` is
+`∑_a ‖f (g⁻¹ • a) - f a‖`. -/
+theorem norm_leftTranslation_sub_eq_tsum_norm (g : G) (f : lp (fun _ : α ↦ E) 1) :
+    ‖leftTranslation 1 𝕜 g f - f‖ = ∑' a, ‖f (g⁻¹ • a) - f a‖ := by
+  rw [← (hasSum_norm_one _).tsum_eq]
+  simp
 
 end lp
