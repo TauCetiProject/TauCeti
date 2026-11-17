@@ -79,8 +79,8 @@ in charts and trivializations they reduce to this Euclidean form.
 * `LinearMap.jetCoeff`: the coefficient of order `k` of an operator at a point, characterized by
   `LinearMap.jetCoeff_apply`.
 * `LinearMap.apply_eq_sum_jetCoeff`, `LinearMap.jetCoeff_eq_of_forall_apply_eq_sum`: an operator of
-  finite order at a point is the sum of its coefficients on the derivatives there, and these are the
-  only coefficients that represent it.
+  finite order at a point is the sum of its coefficients on the derivatives there, and on symmetric
+  multilinear maps these are the only coefficients that represent it.
 * `LinearMap.contDiffOn_jetCoeff_apply`: the coefficients are as regular as the values of `P`.
 * `LinearMap.exists_forall_apply_eq_sum_jetCoeff`: **Peetre's theorem**, coefficient form.
 

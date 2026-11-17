@@ -206,6 +206,7 @@ theorem iteratedFDeriv_taylorMonomial_self [CharZero 𝕜] (k : ℕ) (A : E [×k
     (Fin.last k) (by simpa using hA)
 
 /-- The derivatives of orders other than `k` at the center of a Taylor monomial vanish. -/
+@[simp]
 theorem iteratedFDeriv_taylorMonomial_of_ne [CharZero 𝕜] (k : ℕ) (A : E [×k]→L[𝕜] F) (x : E)
     {j : ℕ} (hj : j ≠ k) :
     iteratedFDeriv 𝕜 j (taylorMonomial k A x) x = 0 := by
