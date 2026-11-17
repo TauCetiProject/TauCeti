@@ -36,7 +36,8 @@ homogeneous in `f`. Smoothness is preserved, also jointly in an additional param
 variables, iterated coordinate derivatives in the two variables commute
 (`TauCeti.coordinateDeriv_coordinateDeriv_comm`), and so do two coordinate derivatives of a `C²`
 function of one variable (`TauCeti.coordinateDeriv_pair_comm`), by the symmetry of second
-derivatives.
+derivatives. The derivative `∂ₗ` of the displaced coordinate `y ↦ (y - z)ⱼ • c` is the
+constant `δⱼₗ • c` (`TauCeti.coordinateDeriv_coordSub_smul`).
 
 For a function `a(x, ξ)` of a position and a frequency, `TauCeti.mixedDeriv α β a x ξ` is the
 mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives first. It is linear in
@@ -356,6 +357,25 @@ theorem coordinateDeriv_const (c : A) {α : List (Fin n)} (hα : α ≠ []) :
   rw [coordinateDeriv_eq_iteratedFDeriv _ contDiff_const,
     iteratedFDeriv_const_of_ne (n := (j :: js).length) (List.length_pos_of_ne_nil hα).ne',
     Pi.zero_apply, Pi.zero_apply, zero_apply]
+
+/-- The derivative of `y ↦ (y - z)ⱼ • c` is `v ↦ vⱼ • c`. -/
+theorem hasFDerivAt_coordSub_smul (z : CoordinateSpace n) (j : Fin n) (c : A)
+    (y : CoordinateSpace n) :
+    HasFDerivAt (fun y' : CoordinateSpace n ↦ (y' - z) j • c)
+      ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight c) y := by
+  have h := ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasFDerivAt (x := y)).sub_const
+    (z j)
+  convert h.smul_const c using 1
+  funext y'
+  simp [sub_smul]
+
+/-- The coordinate derivative `∂ₗ` of `y ↦ (y - z)ⱼ • c` is the constant `δⱼₗ • c`. -/
+theorem coordinateDeriv_coordSub_smul (z : CoordinateSpace n) (j l : Fin n) (c : A) :
+    coordinateDeriv [l] (fun y : CoordinateSpace n ↦ (y - z) j • c) =
+      fun _ ↦ (EuclideanSpace.single l (1 : ℝ)) j • c := by
+  funext y
+  rw [coordinateDeriv_cons, coordinateDeriv_nil, (hasFDerivAt_coordSub_smul z j c y).fderiv]
+  simp
 
 /-- Two coordinate derivatives of a `C²` function commute, by the symmetry of its second
 derivative. -/

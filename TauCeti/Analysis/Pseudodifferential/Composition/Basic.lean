@@ -1121,31 +1121,13 @@ theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
     (coordSubSymbol (W := W) z j).coefficient q = (q.1 - z) j • ContinuousLinearMap.id ℂ W :=
   coefficient_ofSpatial _ _ q
 
-private theorem hasFDerivAt_coordSub (z : CoordinateSpace n) (j : Fin n) (y : CoordinateSpace n) :
-    HasFDerivAt (fun y' : CoordinateSpace n ↦ (y' - z) j • ContinuousLinearMap.id ℂ W)
-      ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
-        (ContinuousLinearMap.id ℂ W)) y := by
-  have h := ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasFDerivAt (x := y)).sub_const
-    (z j)
-  convert h.smul_const (ContinuousLinearMap.id ℂ W) using 1
-  funext y'
-  simp [sub_smul]
-
-/-- The coordinate derivative `∂ₗ` of `y ↦ (y - z)ⱼ` is the constant `δⱼₗ`. -/
-theorem coordinateDeriv_coordSub (z : CoordinateSpace n) (j l : Fin n) :
-    coordinateDeriv [l] (fun y : CoordinateSpace n ↦ (y - z) j • ContinuousLinearMap.id ℂ W) =
-      fun _ ↦ (EuclideanSpace.single l (1 : ℝ)) j • ContinuousLinearMap.id ℂ W := by
-  funext y
-  rw [coordinateDeriv_cons, coordinateDeriv_nil, (hasFDerivAt_coordSub z j y).fderiv]
-  simp
-
 /-- The position derivative `∂_{xₗ}` of the symbol of multiplication by `(y - z)ⱼ` is the constant
 `δⱼₗ`. -/
 theorem coefficient_spatialDeriv_coordSubSymbol (z : CoordinateSpace n) (j l : Fin n)
     (x ξ : CoordinateSpace n) :
     (spatialDeriv l (coordSubSymbol (W := W) z j)).coefficient (x, ξ) =
       (EuclideanSpace.single l (1 : ℝ)) j • ContinuousLinearMap.id ℂ W := by
-  simp only [coefficient_spatialDeriv, coefficient_coordSubSymbol, coordinateDeriv_coordSub]
+  simp only [coefficient_spatialDeriv, coefficient_coordSubSymbol, coordinateDeriv_coordSub_smul]
 
 /-- Multiplying a symbol by `(y - z)ⱼ` before quantizing multiplies the quantization by
 `(x - z)ⱼ`. -/

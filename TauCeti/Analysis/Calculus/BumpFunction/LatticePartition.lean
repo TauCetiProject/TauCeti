@@ -47,7 +47,9 @@ The construction is a product of one-dimensional bumps
   lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` uniformly in `x`
   (`TauCeti.tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le`). Moving `x` by at most one
   changes these weights by at most the factor `4ⁿ`
-  (`TauCeti.one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one`).
+  (`TauCeti.one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one`), so on unit balls they
+  are dominated by a summable family
+  (`TauCeti.exists_summable_one_add_norm_sub_latticePoint_sq_pow_inv_le`).
 * `TauCeti.contDiff_latticeBump_sub`, `TauCeti.hasTemperateGrowth_latticeBump_sub`: the
   translates `χ(· - j)` are smooth and of temperate growth, and
   `TauCeti.exists_norm_iteratedFDeriv_latticeBump_sub_le` bounds their derivatives independently
@@ -368,6 +370,16 @@ theorem summable_one_add_norm_sub_latticePoint_sq_pow_inv (x : EuclideanSpace �
   Summable.of_nonneg_of_le (fun _ ↦ by positivity)
     (one_add_norm_sub_latticePoint_sq_pow_inv_le x)
     (((Equiv.subLeft fun i ↦ ⌊x i⌋).summable_iff.2 summable_latticeWeight).mul_left _)
+
+/-- On the unit ball around each point, the lattice weights `(1 + ‖y - j‖²)⁻ⁿ` are bounded by a
+summable family. -/
+theorem exists_summable_one_add_norm_sub_latticePoint_sq_pow_inv_le
+    (x : EuclideanSpace ℝ (Fin n)) : ∃ v : (Fin n → ℤ) → ℝ, Summable v ∧
+      ∀ j, ∀ y ∈ Metric.ball x 1, ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤ v j :=
+  ⟨fun j ↦ 4 ^ n * ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹,
+    (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
+    fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one
+      (Metric.mem_ball.1 hy).le j⟩
 
 /-- The lattice sums of `(1 + ‖x - j‖²)⁻ⁿ` are bounded independently of `x`. -/
 theorem tsum_one_add_norm_sub_latticePoint_sq_pow_inv_le (x : EuclideanSpace ℝ (Fin n)) :

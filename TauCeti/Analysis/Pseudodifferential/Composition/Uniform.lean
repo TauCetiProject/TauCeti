@@ -314,7 +314,7 @@ private theorem norm_coordinateDeriv_coordSub_le {z x : CoordinateSpace n} {r : 
     calc ‖(x - z) j‖ * ‖ContinuousLinearMap.id ℂ W‖ ≤ ‖x - z‖ * 1 :=
           mul_le_mul (PiLp.norm_apply_le (x - z) j) hid (norm_nonneg _) (norm_nonneg _)
       _ ≤ r := by rw [mul_one, ← dist_eq_norm]; exact hx
-  · rw [coordinateDeriv_append, coordinateDeriv_coordSub]
+  · rw [coordinateDeriv_append, coordinateDeriv_coordSub_smul]
     rcases eq_or_ne s [] with rfl | hs
     · refine le_max_of_le_right ?_
       rw [coordinateDeriv_nil, norm_smul]
@@ -777,15 +777,6 @@ private theorem quantizeSchwartzValue_sharp_latticeBumpComp (p : Symbol n W U m'
     quantizeSchwartzValue_ofSpatial_smul_id_comp,
     SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j), Complex.coe_smul,
     quantizeUniformCLM_apply]
-
-/-- On the unit ball around each point, the lattice weights `(1 + ‖y - j‖²)⁻ⁿ` are bounded by a
-summable family. -/
-private theorem exists_summable_one_add_norm_sub_latticePoint_sq_pow_inv_le
-    (x : CoordinateSpace n) : ∃ v : (Fin n → ℤ) → ℝ, Summable v ∧
-      ∀ j, ∀ y ∈ ball x 1, ((1 + ‖y - latticePoint j‖ ^ 2) ^ n)⁻¹ ≤ v j :=
-  ⟨fun j ↦ 4 ^ n * ((1 + ‖x - latticePoint j‖ ^ 2) ^ n)⁻¹,
-    (summable_one_add_norm_sub_latticePoint_sq_pow_inv x).mul_left _,
-    fun j _ hy ↦ one_add_norm_sub_latticePoint_sq_pow_inv_le_of_dist_le_one (mem_ball.1 hy).le j⟩
 
 omit [CompleteSpace V] [CompleteSpace U] in
 /-- **A lattice series of symbols is a uniform symbol.** If the mixed derivatives of symbols
