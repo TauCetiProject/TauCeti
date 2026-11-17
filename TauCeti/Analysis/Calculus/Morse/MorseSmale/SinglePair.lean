@@ -38,9 +38,9 @@ for `ν`-almost every small parameter `s`, where `ν` is an additive Haar measur
 space, the unstable set of `p` and the stable set of `q` for `f_s` are transverse at every point
 `y = φ^{f_s}_T x` (`x ∈ C`) with `f y < c₁` lying on a trajectory of `f_s` to `q`
 (`exists_pos_ae_span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_perturb_eq_top`).
-Applied to every pair of critical points, on a slab below each critical value, this gives the
-Morse–Smale condition `TauCeti.IsMorseSmale` through
-`TauCeti.IsMorseSmale.of_forall_exists_negativeGradientFlow`.
+This is the single-pair step toward the Morse–Smale condition `TauCeti.IsMorseSmale`. To reach it
+through `TauCeti.IsMorseSmale.of_forall_exists_negativeGradientFlow`, one also needs every
+trajectory from `p` to `q` to pass through `C` and to end below `c₁`.
 
 The proof applies the parametric transversality theorem
 `TauCeti.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top` to the universal map
@@ -189,7 +189,8 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
             (x, s)).comp
             (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι)))) :
             EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
-        (ℝ ∙ ∇ (perturb f h s) (perturbedFlow f h hf hh hc T (x, s)).1) = ⊤)
+        (ℝ ∙ ∇ (perturb f h s)
+          (perturbedFlow f h hf (fun i ↦ (hhs i).of_le le_add_self) hc T (x, s)).1) = ⊤)
     {e : OpenPartialHomeomorph E E} (he : ∀ z ∈ e.source, ContDiffAt ℝ (m + 1 : ℕ) e z)
     (hes : ∀ z ∈ e.target, ContDiffAt ℝ (m + 1 : ℕ) e.symm z)
     (heS : ∀ z ∈ e.source, z ∈ Flow.unstableSet (negativeGradientFlow f hf) p ↔
@@ -243,10 +244,8 @@ private theorem ae_span_tangentConeAt_sup_span_tangentConeAt_perturb_eq_top_of_u
     refine eq_top_iff.2 ((range_sup_span_tangentConeAt_stableSet_eq_top hf hc₁ hlt hGS
       (hspan s hs _ hxC)).symm.le.trans (sup_le_sup_right ?_ _))
     rw [← hD]
-    exact LinearMap.range_comp_le_range
-      (ContinuousLinearMap.inr ℝ Lu (EuclideanSpace ℝ ι) :
-        EuclideanSpace ℝ ι →ₗ[ℝ] Lu × EuclideanSpace ℝ ι)
-      (fderiv ℝ G (v, s) : Lu × EuclideanSpace ℝ ι →ₗ[ℝ] E)
+    simp only [ContinuousLinearMap.toLinearMap_comp]
+    exact LinearMap.range_comp_le_range _ _
   have hn : ((finrank ℝ Lu - (finrank ℝ E - finrank ℝ Ls) + 1 : ℕ) : WithTop ℕ∞) ≤
       ((m + 1 : ℕ) : WithTop ℕ∞) := by
     rw [hp.finrank_unstableLinearSubspace_sub_codim_stableLinearSubspace hq]
