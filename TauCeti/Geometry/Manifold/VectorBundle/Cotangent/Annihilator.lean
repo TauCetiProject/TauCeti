@@ -9,6 +9,7 @@ public import Mathlib.Analysis.LocallyConvex.Polar
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.Distribution.VectorBundle
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
+import TauCeti.Analysis.LocallyConvex.Polar
 import TauCeti.Analysis.Normed.Module.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.QuotientRange
 
@@ -103,6 +104,14 @@ theorem mem_annihilatorSpace_iff_le_ker {x : M} {p : TangentSpace I x →L[𝕜]
   rw [mem_annihilatorSpace_iff]
   exact ⟨fun h v hv ↦ LinearMap.mem_ker.mpr (h v hv), fun h v hv ↦ LinearMap.mem_ker.mp (h hv)⟩
 
+/-- **The annihilator of a hyperplane.** If a covector `α` at `x` has kernel `D x`, then the
+annihilator of `D` at `x` is the line spanned by `α`. -/
+theorem annihilatorSpace_eq_span_singleton {x : M} {α : TangentSpace I x →L[𝕜] 𝕜}
+    (hker : LinearMap.ker α.toLinearMap = D x) :
+    annihilatorSpace I D x = 𝕜 ∙ α := by
+  rw [annihilatorSpace_def, ← hker]
+  exact StrongDual.polarSubmodule_ker_eq_span_singleton α
+
 section FiniteDimensional
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
@@ -110,22 +119,16 @@ variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E]
 /-- **The dimension of the annihilator.** On a finite-dimensional manifold, `D x` and its
 annihilator have complementary dimensions: `dim D x + dim D⁰_x = dim M`. -/
 theorem finrank_add_finrank_annihilatorSpace (x : M) :
-    finrank 𝕜 (D x) + finrank 𝕜 (annihilatorSpace I D x) = finrank 𝕜 E :=
-  StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) (D x)
+    finrank 𝕜 (D x) + finrank 𝕜 (annihilatorSpace I D x) = finrank 𝕜 E := by
+  rw [annihilatorSpace_def]
+  exact StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) (D x)
 
 /-- On a finite-dimensional manifold a tangent vector lies in `D x` exactly when every covector
 of the annihilator `D⁰_x` vanishes on it: `D x` is the common kernel of its annihilator. -/
 theorem mem_iff_forall_mem_annihilatorSpace {x : M} {v : TangentSpace I x} :
-    v ∈ D x ↔ ∀ p ∈ annihilatorSpace I D x, p v = 0 :=
-  StrongDual.mem_iff_forall_mem_polarSubmodule (E := E) (D x)
-
-/-- **The annihilator of a hyperplane.** If a nonzero covector `α` at `x` has kernel `D x`, then
-the annihilator of `D` at `x` is the line spanned by `α`. -/
-theorem annihilatorSpace_eq_span_singleton {x : M} {α : TangentSpace I x →L[𝕜] 𝕜} (hα : α ≠ 0)
-    (hker : LinearMap.ker α.toLinearMap = D x) :
-    annihilatorSpace I D x = 𝕜 ∙ α := by
-  rw [annihilatorSpace_def, ← hker]
-  exact StrongDual.polarSubmodule_ker_eq_span_singleton (E := E) hα
+    v ∈ D x ↔ ∀ p ∈ annihilatorSpace I D x, p v = 0 := by
+  rw [annihilatorSpace_def]
+  exact StrongDual.mem_iff_forall_mem_polarSubmodule (E := E) (D x)
 
 end FiniteDimensional
 

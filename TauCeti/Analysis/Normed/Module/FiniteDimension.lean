@@ -48,8 +48,6 @@ vectors span those subspaces.
   dual have complementary dimensions.
 * `StrongDual.mem_iff_forall_mem_polarSubmodule`: a subspace is the common kernel of its
   annihilator in the continuous dual.
-* `StrongDual.polarSubmodule_ker_eq_span_singleton`: the annihilator of the kernel of a nonzero
-  functional is the line it spans.
 * `TauCeti.finiteDimensional_of_finite_sphere`: a real normed space with a finite unit sphere is
   finite-dimensional.
 * `TauCeti.nonempty_continuousLinearEquiv_of_prod_continuousLinearEquiv`: complements of
@@ -125,21 +123,6 @@ theorem _root_.StrongDual.mem_iff_forall_mem_polarSubmodule (S : Submodule 𝕜 
   obtain ⟨a, ha, haS⟩ := Submodule.exists_le_ker_of_notMem hv
   exact ha (h (LinearMap.toContinuousLinearMap a)
     ((StrongDual.mem_polarSubmodule 𝕜 S _).mpr fun w hw ↦ LinearMap.mem_ker.mp (haS hw)))
-
-/-- In finite dimensions the annihilator in the continuous dual of the kernel of a nonzero
-functional `α` is the line spanned by `α`. -/
-theorem _root_.StrongDual.polarSubmodule_ker_eq_span_singleton {α : E →L[𝕜] 𝕜} (hα : α ≠ 0) :
-    StrongDual.polarSubmodule 𝕜 (LinearMap.ker α.toLinearMap) = 𝕜 ∙ α := by
-  have hα' : α.toLinearMap ≠ 0 := fun h ↦ hα (ContinuousLinearMap.coe_injective h)
-  -- The kernel of a nonzero functional has codimension one.
-  have hker := LinearMap.finrank_range_add_finrank_ker α.toLinearMap
-  rw [LinearMap.range_eq_top.mpr (α.toLinearMap.surjective_of_ne_zero hα'), finrank_top,
-    Module.finrank_self] at hker
-  refine (Submodule.eq_of_le_of_finrank_eq ((Submodule.span_singleton_le_iff_mem _ _).mpr
-    ((StrongDual.mem_polarSubmodule 𝕜 _ α).mpr fun v hv ↦ LinearMap.mem_ker.mp hv)) ?_).symm
-  have := StrongDual.finrank_add_finrank_polarSubmodule (LinearMap.ker α.toLinearMap)
-  rw [finrank_span_singleton hα]
-  omega
 
 /-- Over a complete field, two complements of the same space `V` in a finite-dimensional space `W`
 are continuously linearly isomorphic: both have dimension `finrank W - finrank V`. -/

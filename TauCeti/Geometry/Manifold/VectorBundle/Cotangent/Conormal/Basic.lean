@@ -88,7 +88,8 @@ theorem finrank_add_finrank_conormalSpace [CompleteSpace 𝕜] [FiniteDimensiona
   let L : F →L[𝕜] E := mfderiv J I i q
   have : FiniteDimensional 𝕜 F := FiniteDimensional.of_injective L.toLinearMap hi
   -- The conormal space is the annihilator of the range of `L`, which has dimension `dim F`.
-  rw [← LinearMap.finrank_range_of_inj (f := L.toLinearMap) hi]
+  rw [← LinearMap.finrank_range_of_inj (f := L.toLinearMap) hi, conormalSpace]
+  -- `TangentSpace I (i q)` is `E` and `TangentSpace J q` is `F` by definition.
   exact StrongDual.finrank_add_finrank_polarSubmodule (𝕜 := 𝕜) (E := E) _
 
 /-! ### The conormal set -/
