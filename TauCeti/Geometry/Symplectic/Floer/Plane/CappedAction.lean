@@ -63,7 +63,8 @@ capped actions converge to `a` as `R → ∞`, then the energy of the solution o
 results following it). These are the energy and action bounds of PSS planes in a manifold whose
 asymptotic orbits carry the cap given by the plane itself: the capped output orbits of negative
 planes have action at most `B`, and the energy of a plane is bounded by its capped end action. The
-convergence of the capped actions is a hypothesis here; it is not derived from finite energy.
+convergence of the capped actions is a hypothesis here; for a solution of finite energy it is
+proved in `TauCeti.Geometry.Symplectic.Floer.Plane.Manifold`.
 
 ## References
 

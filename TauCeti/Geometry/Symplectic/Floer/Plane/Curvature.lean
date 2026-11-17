@@ -172,6 +172,54 @@ theorem det_fderiv_realChart_cylindricalEndLift_pos (p : PSSPlane) (z : ℝ × �
   rw [TauCeti.Complex.det_fderiv_realChart (p.hasDerivAt_cylindricalEndLift _)]
   simp [Complex.normSq_pos, Real.pi_ne_zero, p.cylindricalEndLift_ne_zero]
 
+/-- The end lift of the positive plane in real coordinates, at a point `(s, t)`, is the image of
+`s + i t`. -/
+theorem realChart_positive_mk (s t : ℝ) :
+    realChart positive.cylindricalEndLift (s, t) =
+      Complex.equivRealProdCLM
+        (positive.cylindricalEndLift (↑(positive.endSign * s) + ↑t * Complex.I)) := by
+  rw [realChart_apply, Complex.equivRealProdCLM_symm_apply, endSign_positive, one_mul]
+
+/-- The half-cylinder `s > a` of the positive plane lies in the part `‖w‖ > exp (2πa)` of the
+plane. -/
+theorem exp_lt_norm_realChart_positive {a : ℝ} {z : ℝ × ℝ} (hz : a < z.1) :
+    Real.exp (2 * π * a) <
+      ‖Complex.equivRealProdCLM.symm (realChart positive.cylindricalEndLift z)‖ := by
+  rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, norm_cylindricalEndLift,
+    endSign_positive, one_mul, Complex.equivRealProdCLM_symm_apply_re, Real.exp_lt_exp]
+  nlinarith [Real.pi_pos]
+
+/-- Every part `‖w‖ > r` of the plane contains a part `‖w‖ > exp (2πa)` with `a ≥ 2`, on which the
+perturbation of a PSS plane is cylindrical in the end coordinates. -/
+theorem exists_two_le_exp_lt_norm_subset (r : ℝ) :
+    ∃ a : ℝ, 2 ≤ a ∧ {z : ℝ × ℝ | Real.exp (2 * π * a) < ‖Complex.equivRealProdCLM.symm z‖} ⊆
+      {z | r < ‖Complex.equivRealProdCLM.symm z‖} := by
+  refine ⟨max 2 r, le_max_left _ _, fun z (hz : Real.exp _ < _) ↦ lt_of_le_of_lt ?_ hz⟩
+  have h₁ := Real.add_one_le_exp (2 * π * max 2 r)
+  have h₂ : 0 ≤ (2 * π - 1) * max 2 r :=
+    mul_nonneg (by linarith [Real.two_le_pi]) (by linarith [le_max_left 2 r])
+  linarith [le_max_right 2 r]
+
+/-- The end lift of the positive plane is injective on the half-strip `s > a`, `0 ≤ t < 1`. -/
+theorem injOn_realChart_positive (a : ℝ) :
+    InjOn (realChart positive.cylindricalEndLift) (Ioi a ×ˢ Ico 0 1) := by
+  intro a ha b hb hab
+  rw [realChart_apply, realChart_apply] at hab
+  have ha' : Complex.equivRealProdCLM.symm a ∈ {z : ℂ | z.im ∈ Ico 0 (0 + 1)} := by
+    simpa using ha.2
+  have hb' : Complex.equivRealProdCLM.symm b ∈ {z : ℂ | z.im ∈ Ico 0 (0 + 1)} := by
+    simpa using hb.2
+  have h := positive.injOn_cylindricalEndLift 0 ha' hb' (Complex.equivRealProdCLM.injective hab)
+  exact Complex.equivRealProdCLM.symm.injective h
+
+/-- The loops `ℓ_R(t) = u(φ(ε R + i t))` of a map `u` of a PSS plane along its end, where `φ` is
+the end lift and `ε` the end sign, are periodic. -/
+theorem periodic_comp_cylindricalEndLift {X : Type*} (p : PSSPlane) (u : ℝ × ℝ → X) (R : ℝ) :
+    Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM
+      (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) 1 := fun t ↦
+  congrArg (fun w ↦ u (Complex.equivRealProdCLM w))
+    (p.periodic_cylindricalEndLift (p.endSign * R) t)
+
 end Floer.PSSPlane
 
 namespace SmoothTwoForm

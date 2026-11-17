@@ -121,6 +121,25 @@ theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ perio
     Continuous γ :=
   continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
 
+/-- **Reversing time.** If `γ` is a `T`-periodic solution of `X`, then `t ↦ γ (-t)` is a
+`T`-periodic solution of the reversed field `t ↦ -X (-t)`. -/
+theorem comp_neg_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
+    (fun t ↦ γ (-t)) ∈ periodicSolutions (fun t x ↦ -X (-t) x) T := by
+  refine ⟨fun t ↦ ?_, fun t ↦ ?_⟩
+  · have hneg : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun t : ℝ ↦ -t) t
+        ((1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ)) :=
+      (hasDerivAt_neg t).hasFDerivAt.hasMFDerivAt
+    refine ((hγ.1 (-t)).comp t hneg).congr_mfderiv (ContinuousLinearMap.ext_ring ?_)
+    -- The composite is a map out of the tangent space `TangentSpace 𝓘(ℝ, ℝ) t`, which is `ℝ` by
+    -- definition; `simp` does not see through it, so evaluate at `1` as a map out of `ℝ`.
+    change (1 : ℝ →L[ℝ] ℝ).smulRight (X (-t) (γ (-t))) ((1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ) 1) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (-X (-t) (γ (-t))) 1
+    simp
+  · have h := hγ.2 (-t - T)
+    rw [sub_add_cancel] at h
+    dsimp only
+    rw [neg_add', h]
+
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/
 def contractiblePeriodicSolutions (X : ℝ → (x : M) → TangentSpace I x) (T : ℝ) : Set (ℝ → M) :=
