@@ -84,7 +84,7 @@ theorem exists_rnDeriv_eq_exp_add_of_isCoupling_of_forall_klDiv_le
     exact ⟨0, 0, measurable_const, measurable_const, by simp [EventuallyEq],
       fun _ _ _ _ _ ↦ ⟨0, by simp [EventuallyEq]⟩⟩
   have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   have hν : ν ≠ 0 := hγ.left_eq_zero_iff.not.1 hμ
   have hP : μ.prod ν ≠ 0 := by
     rw [Ne, ← Measure.measure_univ_eq_zero, ← univ_prod_univ, Measure.prod_prod, mul_eq_zero]
@@ -138,7 +138,7 @@ theorem IsCoupling.integrable_of_eq_withDensity_exp_add
     (hπR : π = R.withDensity fun z ↦ ENNReal.ofReal (exp (φ z.1 + ψ z.2))) :
     Integrable φ μ ∧ Integrable ψ ν := by
   have := hπ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
+  have := hπ.isFiniteMeasure_right
   set P := μ.prod ν
   obtain ⟨hπR_ac, hllr_πR⟩ := klDiv_ne_top_iff.1 hKL
   have hllr_eq : llr π R =ᵐ[π] fun z ↦ φ z.1 + ψ z.2 := by

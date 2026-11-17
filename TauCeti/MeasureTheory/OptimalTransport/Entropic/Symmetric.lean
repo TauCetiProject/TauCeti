@@ -12,10 +12,11 @@ public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Duality
 
 For a bounded measurable symmetric cost, a positive temperature and a probability law `μ`, the
 entropic transport problem from `μ` to itself has a Gibbs representation with the same potential
-in both coordinates. This symmetric potential is unique `μ`-almost everywhere: unlike a pair of
-potentials, it has no additive-constant ambiguity. Its integral gives half of the self-transport
-value. This is the self-potential representation used to study the debiased entropic transport
-cost and Sinkhorn negentropy.
+in both coordinates. Its symmetric dual maximiser is unique `μ`-almost everywhere whenever the
+cost is almost everywhere measurable and finite with finite regularised self-transport cost: unlike
+a pair of potentials, it has no additive-constant ambiguity. Its integral gives half of the
+self-transport value. This is the self-potential representation used to study the debiased entropic
+transport cost and Sinkhorn negentropy.
 
 The results require no topology. They use strong entropic duality and uniqueness of potential
 pairs from `TauCeti.MeasureTheory.OptimalTransport.Entropic.Duality`: exchanging the two
@@ -43,8 +44,10 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X} [IsProbabilityMeasure 
   {c : X × X → ℝ≥0∞} {ε B : ℝ≥0} {f g : X → ℝ}
 
 /-- Symmetric entropic dual maximisers have no additive-constant ambiguity: they agree almost
-everywhere. The cost need not be symmetric for this uniqueness statement. -/
-theorem ae_eq_of_entropicDualValue_self_eq (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
+everywhere. The cost need not be symmetric or bounded; it suffices that it is almost everywhere
+measurable and finite with finite regularised self-transport cost. -/
+theorem ae_eq_of_entropicDualValue_self_eq (hc : AEMeasurable c (μ.prod μ))
+    (hc_top : ∀ᵐ z ∂μ.prod μ, c z ≠ ∞) (hfin : entropicTransportCost c ε μ μ ≠ ∞)
     (hε : ε ≠ 0) (hf : Integrable f μ) (hg : Integrable g μ)
     (hexf : Integrable (entropicGibbsFactor c ε f f) (μ.prod μ))
     (hexg : Integrable (entropicGibbsFactor c ε g g) (μ.prod μ))
@@ -52,8 +55,8 @@ theorem ae_eq_of_entropicDualValue_self_eq (hc : Measurable c) (hcB : ∀ z, c z
     (hgval : entropicDualValue c ε μ μ g g = (entropicTransportCost c ε μ μ).toReal) :
     f =ᵐ[μ] g := by
   obtain ⟨a, ha, ha'⟩ :=
-    exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost
-      hc hcB hε hf hf hexf hfval hg hg hexg hgval
+    exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost_of_ne_top
+      hc hc_top hfin hε hf hf hexf hfval hg hg hexg hgval
   filter_upwards [ha, ha'] with x hx hx'
   linarith
 
@@ -72,7 +75,9 @@ theorem exists_entropicDualValue_self_eq (hc : Measurable c) (hcB : ∀ z, c z �
     conv_lhs => rw [← hcs, entropicDualValue_comp_swap]
     exact hval
   obtain ⟨a, ha, -⟩ :=
-    exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost hc hcB hε
+    exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost_of_ne_top
+      hc.aemeasurable (ae_of_all _ fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z))
+      (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hε
       hφi hψi (integrable_entropicGibbsFactor_of_le hc hφ hψ
         (fun x ↦ le_of_abs_le (hφC x)) (fun x ↦ le_of_abs_le (hψC x))) hval
       hψi hφi (integrable_entropicGibbsFactor_of_le hc hψ hφ

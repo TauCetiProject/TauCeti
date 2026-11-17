@@ -73,11 +73,8 @@ uniformly bounded potentials.
 * `TauCeti.exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost_of_ne_top`:
   when `c < ∞` `μ ⊗ ν`-almost everywhere and `entropicTransportCost c ε μ ν ≠ ∞`, integrable dual
   maximisers are unique up to one additive constant.
-* `TauCeti.exists_entropicDualValue_eq_toReal_entropicTransportCost`,
-  `TauCeti.isGreatest_entropicDualValue_integrable`, and
-  `TauCeti.exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost`: strong
-  duality, attainment by bounded measurable potentials, and uniqueness up to a constant for a
-  bounded measurable cost.
+* `TauCeti.exists_entropicDualValue_eq_toReal_entropicTransportCost`: strong duality with
+  attainment by uniformly bounded measurable potentials for a bounded measurable cost.
 
 ## Implementation notes
 
@@ -716,34 +713,6 @@ theorem exists_entropicDualValue_eq_toReal_entropicTransportCost (hc : Measurabl
     (hopt ▸ entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε)).2 ?_
   rwa [entropicGibbsFactor_eq_exp_of_forall_ne_top fun z ↦
     ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z)]
-
-/-- **Strong entropic duality for a bounded cost.** For probability measures, a bounded
-measurable cost and a positive temperature, the regularised transport cost is the greatest
-entropic dual value of integrable potentials with integrable Gibbs factor. -/
-theorem isGreatest_entropicDualValue_integrable (hc : Measurable c) (hcB : ∀ z, c z ≤ B)
-    (hε : ε ≠ 0) :
-    IsGreatest {r : ℝ | ∃ (φ : X → ℝ) (ψ : Y → ℝ), Integrable φ μ ∧ Integrable ψ ν ∧
-        Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν) ∧
-        entropicDualValue c ε μ ν φ ψ = r}
-      (entropicTransportCost c ε μ ν).toReal :=
-  isGreatest_entropicDualValue_integrable_of_lintegral_ne_top hc.aemeasurable
-    (ne_top_of_le_ne_top ENNReal.coe_ne_top (lintegral_le_const (ae_of_all _ hcB))) hε
-
-/-- **Uniqueness of the entropic dual maximisers for a bounded cost.** For probability measures,
-a bounded measurable cost and a positive temperature, two pairs of integrable potentials whose
-entropic dual values both equal the regularised transport cost differ by one additive constant,
-`μ`- and `ν`-almost everywhere. -/
-theorem exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost
-    (hc : Measurable c) (hcB : ∀ z, c z ≤ B) (hε : ε ≠ 0) (hφ : Integrable φ μ)
-    (hψ : Integrable ψ ν) (hexp : Integrable (entropicGibbsFactor c ε φ ψ) (μ.prod ν))
-    (h : entropicDualValue c ε μ ν φ ψ = (entropicTransportCost c ε μ ν).toReal)
-    (hφ' : Integrable φ' μ) (hψ' : Integrable ψ' ν)
-    (hexp' : Integrable (entropicGibbsFactor c ε φ' ψ') (μ.prod ν))
-    (h' : entropicDualValue c ε μ ν φ' ψ' = (entropicTransportCost c ε μ ν).toReal) :
-    ∃ a, φ =ᵐ[μ] (fun x ↦ φ' x + a) ∧ ψ =ᵐ[ν] (fun y ↦ ψ' y - a) :=
-  exists_ae_eq_add_const_of_entropicDualValue_eq_toReal_entropicTransportCost_of_ne_top
-    hc.aemeasurable (ae_of_all _ fun z ↦ ne_top_of_le_ne_top ENNReal.coe_ne_top (hcB z))
-    (entropicTransportCost_ne_top_of_ae_le (ae_of_all _ hcB) ε) hε hφ hψ hexp h hφ' hψ' hexp' h'
 
 end Bounded
 

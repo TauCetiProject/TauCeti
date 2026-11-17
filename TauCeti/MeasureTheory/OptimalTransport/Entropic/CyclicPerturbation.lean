@@ -247,10 +247,7 @@ private theorem withDensity_add_mul_eq_withDensity_fourPointDelta
   rw [← withDensity_mul _ (by fun_prop) (by fun_prop)]
   congr 1; funext z
   rw [Pi.mul_apply, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg]
-  congr 1
-  calc (R.rnDeriv P z).toReal * (Z z + t * δZ z)
-      = Z z * (R.rnDeriv P z).toReal + t * (δZ z * (R.rnDeriv P z).toReal) := by ring
-    _ = Z z * (R.rnDeriv P z).toReal + t * fourPointDelta μ ν W z := by rw [hδZr z]
+  congr 1; rw [← hδZr z]; ring
 
 private theorem integral_mul_eq_integral_mul_fourPointDelta
     [IsFiniteMeasure μ] [IsFiniteMeasure ν] [IsFiniteMeasure R]
@@ -261,11 +258,7 @@ private theorem integral_mul_eq_integral_mul_fourPointDelta
   rw [← Measure.withDensity_rnDeriv_eq R P hRμν,
     integral_withDensity_eq_integral_toReal_smul (Measure.measurable_rnDeriv R P)
       (Measure.rnDeriv_lt_top R P)]
-  refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
-  dsimp only
-  calc (R.rnDeriv P z).toReal • (g z * δZ z)
-      = g z * (δZ z * (R.rnDeriv P z).toReal) := by rw [smul_eq_mul]; ring
-    _ = g z * fourPointDelta μ ν W z := by rw [hδZr z]
+  exact integral_congr_ae <| ae_of_all _ fun z ↦ by simp only [smul_eq_mul, ← hδZr z]; ring
 
 private theorem isCoupling_withDensity_add_mul_fourPointDelta
     [IsFiniteMeasure μ] [IsFiniteMeasure R]
@@ -276,7 +269,7 @@ private theorem isCoupling_withDensity_add_mul_fourPointDelta
     {t : ℝ} (hpos : ∀ z, 0 ≤ (γ.rnDeriv R z).toReal + t * δZ z) :
     IsCoupling (R.withDensity fun z ↦ ENNReal.ofReal ((γ.rnDeriv R z).toReal + t * δZ z)) μ ν := by
   have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   set P := μ.prod ν
   set p : X × Y → ℝ := fun z ↦ (γ.rnDeriv R z).toReal * (R.rnDeriv P z).toReal
   -- Express `γ` and its perturbation as integrable nonnegative densities against `P = μ ⊗ ν`.
@@ -369,7 +362,7 @@ private theorem integrable_and_integral_klFun_scaledFourPointDelta_nonneg
           s * scaledFourPointDelta μ ν R K (M.indicator 1) z) -
         klFun (γ.rnDeriv R z).toReal) ∂R := by
   have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   obtain ⟨hγR, hllr⟩ := klDiv_ne_top_iff.1 hKL
   set W : (X × Y) × (X × Y) → ℝ := M.indicator 1
   set δZ : X × Y → ℝ := scaledFourPointDelta μ ν R K W
@@ -515,12 +508,20 @@ private theorem measurableSet_fourPointZeroConfig (n : ℕ) :
       ((measurable_fst.comp prodProdSndComm.measurable) (measurableSet_jointAnnulus n)).inter
         ((measurable_snd.comp prodProdSndComm.measurable) (measurableSet_jointAnnulus n))
 
+private theorem fourPointZeroConfig_subset_quad (n : ℕ) :
+    ∀ q ∈ fourPointZeroConfig μ ν R γ n,
+      q.1 ∈ rnZeroSet μ ν R γ n ∪ jointAnnulus μ ν R γ n ∧
+        q.2 ∈ rnZeroSet μ ν R γ n ∪ jointAnnulus μ ν R γ n ∧
+        (prodProdSndComm q).1 ∈ rnZeroSet μ ν R γ n ∪ jointAnnulus μ ν R γ n ∧
+        (prodProdSndComm q).2 ∈ rnZeroSet μ ν R γ n ∪ jointAnnulus μ ν R γ n :=
+  fun _ hq ↦ ⟨.inl hq.1, hq.2.1, .inr hq.2.2.1, .inr hq.2.2.2⟩
+
 private theorem IsCoupling.ae_section_pos_of_ac [IsFiniteMeasure μ] [IsFiniteMeasure R]
     (hγ : IsCoupling γ μ ν) (hRμν : R ≪ μ.prod ν) (hμνR : μ.prod ν ≪ R) (hγR : γ ≪ R) :
     (∀ᵐ x ∂μ, ν (Prod.mk x ⁻¹' posDensitySet μ ν R γ) ≠ 0) ∧
       (∀ᵐ y ∂ν, μ {x | (x, y) ∈ posDensitySet μ ν R γ} ≠ 0) := by
   have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   set P := μ.prod ν
   have hγP : γ ≪ P := hγR.trans hRμν
   have hrn_zero : ∀ᵐ z ∂P, z ∉ posDensitySet μ ν R γ → γ.rnDeriv P z = 0 := by
@@ -554,8 +555,7 @@ private theorem measure_untruncatedFourPointZeroSet_ne_zero [IsFiniteMeasure μ]
         (prodProdSndComm q).1 ∈ posDensitySet μ ν R γ ∧
         (prodProdSndComm q).2 ∈ posDensitySet μ ν R γ} ≠ 0 := by
   intro hQU
-  have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   set P := μ.prod ν
   set r : X × Y → ℝ := fun z ↦ (R.rnDeriv P z).toReal
   set Z : X × Y → ℝ := fun z ↦ (γ.rnDeriv R z).toReal
@@ -631,6 +631,7 @@ private theorem nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet
   set δZ := scaledFourPointDelta μ ν R (GN ∪ H) W
   have hGN_meas : MeasurableSet GN := measurableSet_rnZeroSet n
   have hW_meas : Measurable W := measurable_one.indicator (measurableSet_fourPointZeroConfig n)
+  -- Pointwise lower bound on `GN`: disjoint from `H`, so cross-terms vanish and `∫ W(w, z) ≥ 0`.
   have hGN_le {z : X × Y} (hz : z ∈ GN) : ∫ w, W (z, w) ∂P ≤ fourPointDelta μ ν W z := by
     have hzH : z ∉ H := Set.disjoint_left.1 (disjoint_rnZeroSet_jointAnnulus n) hz
     have h3 (w : X × Y) : W (prodProdSndComm (z, w)) = 0 :=
@@ -640,20 +641,22 @@ private theorem nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet
     have h2 : 0 ≤ ∫ w, W (w, z) ∂P :=
       integral_nonneg fun _ ↦ indicator_nonneg (fun _ _ ↦ zero_le_one) _
     simp only [fourPointDelta, h3, h4, integral_zero, add_zero, sub_zero]; linarith
+  -- Nonnegativity of `δZ` on `GN` follows immediately from `hGN_le`.
   have hδZ_nn (z : X × Y) (hz : z ∈ GN) : 0 ≤ δZ z := by
     dsimp only [δZ, scaledFourPointDelta]; rw [indicator_of_mem (mem_union_left H hz)]
     exact div_nonneg ((integral_nonneg fun _ ↦ indicator_nonneg (fun _ _ ↦ zero_le_one) _).trans
       (hGN_le hz)) ENNReal.toReal_nonneg
+  -- Change of measure from `R` to `P = μ ⊗ ν` using `δZ * dR/dP = fourPointDelta`.
   have hδZr (z : X × Y) : δZ z * (R.rnDeriv P z).toReal = fourPointDelta μ ν W z :=
     scaledFourPointDelta_mul_rnDeriv (fun _ (hw : _ ∈ GN ∪ H) ↦
       (by positivity : (0 : ℝ) < ((n : ℝ) + 1)⁻¹).trans_le (hw.elim And.left And.left).1)
-      (indicator_one_eq_zero_of_notMem_quad M
-        fun _ hm ↦ ⟨.inl hm.1, hm.2.1, .inr hm.2.2.1, .inr hm.2.2.2⟩) z
+      (indicator_one_eq_zero_of_notMem_quad M (fourPointZeroConfig_subset_quad n)) z
   have hα_eq : ∫ z in GN, δZ z ∂R = ∫ z in GN, fourPointDelta μ ν W z ∂P := by
     have hmul (f : X × Y → ℝ) : GN.indicator f = fun z ↦ GN.indicator 1 z * f z :=
       funext fun z ↦ by by_cases hz : z ∈ GN <;> simp [hz]
     rw [← integral_indicator hGN_meas, ← integral_indicator hGN_meas, hmul δZ,
       hmul (fourPointDelta μ ν W), integral_mul_eq_integral_mul_fourPointDelta hRμν hδZr]
+  -- Fubini on `P ⊗ P`: `W(z, w) = 0` for `z ∉ GN`, so the outer integral restricts to `GN`.
   have hW_int : Integrable W (P.prod P) := Integrable.of_bound hW_meas.aestronglyMeasurable 1
     (ae_of_all _ fun q ↦ by simpa [Real.norm_eq_abs] using abs_indicator_one_le M q)
   have hQ_eq : (P.prod P).real M = ∫ z in GN, (∫ w, W (z, w) ∂P) ∂P := by
@@ -665,6 +668,7 @@ private theorem nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet
     · simp [hz]
     · have hw (w : X × Y) : W (z, w) = 0 := indicator_of_notMem (fun hm : (z, w) ∈ M ↦ hz hm.1) _
       simp [hz, hw]
+  -- Combine `0 < (P ⊗ P).real M`, `hQ_eq`, `hα_eq`, and `hGN_le`.
   refine ⟨hδZ_nn, (ENNReal.toReal_pos hQM (measure_ne_top (P.prod P) M)).trans_le ?_⟩
   rw [← measureReal_def, hQ_eq, hα_eq]
   exact setIntegral_mono_on hW_int.integral_prod_left.integrableOn
@@ -721,20 +725,18 @@ private theorem integral_klFun_rnZeroSet_union_le [IsFiniteMeasure R] {n : ℕ}
     ∫ z, (klFun ((γ.rnDeriv R z).toReal + t * δZ z) - klFun (γ.rnDeriv R z).toReal) ∂R ≤
       t * (∫ z in rnZeroSet μ ν R γ n, δZ z ∂R) * (log (t * (B + 1)) - 1) +
         t * ((B * log ((n : ℝ) + 1) + ((n : ℝ) + 1) * B ^ 2) * R.real univ) := by
-  have htot : ∫ z, (klFun ((γ.rnDeriv R z).toReal + t * δZ z) - klFun (γ.rnDeriv R z).toReal) ∂R =
-      (∫ z in rnZeroSet μ ν R γ n,
-        (klFun ((γ.rnDeriv R z).toReal + t * δZ z) - klFun (γ.rnDeriv R z).toReal) ∂R) +
-      ∫ z in jointAnnulus μ ν R γ n,
-        (klFun ((γ.rnDeriv R z).toReal + t * δZ z) - klFun (γ.rnDeriv R z).toReal) ∂R := by
+  set f : X × Y → ℝ := fun z ↦
+    klFun ((γ.rnDeriv R z).toReal + t * δZ z) - klFun (γ.rnDeriv R z).toReal
+  have htot : ∫ z, f z ∂R =
+      (∫ z in rnZeroSet μ ν R γ n, f z ∂R) + ∫ z in jointAnnulus μ ν R γ n, f z ∂R := by
     rw [← setIntegral_union (disjoint_rnZeroSet_jointAnnulus n) (measurableSet_jointAnnulus n)
       hdiff_int.integrableOn hdiff_int.integrableOn, ← integral_indicator
       ((measurableSet_rnZeroSet n).union (measurableSet_jointAnnulus n))]
     refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
     by_cases hz : z ∈ rnZeroSet μ ν R γ n ∪ jointAnnulus μ ν R γ n
     · simp [hz]
-    · simp [hz, hδZ_supp z hz]
-  have hbH : ∫ z in jointAnnulus μ ν R γ n,
-      (klFun ((γ.rnDeriv R z).toReal + t * δZ z) - klFun (γ.rnDeriv R z).toReal) ∂R ≤
+    · simp [f, hz, hδZ_supp z hz]
+  have hbH : ∫ z in jointAnnulus μ ν R γ n, f z ∂R ≤
       t * ((B * log ((n : ℝ) + 1) + ((n : ℝ) + 1) * B ^ 2) * R.real univ) := by
     refine (setIntegral_mono_on hdiff_int.integrableOn (integrable_const _).integrableOn
       (measurableSet_jointAnnulus n) fun z hz ↦ klFun_add_mul_sub_klFun_le_on_annulus hz ht0
@@ -757,13 +759,15 @@ theorem IsCoupling.absolutelyContinuous_of_forall_klDiv_le
     (hmin : ∀ γ', IsCoupling γ' μ ν → klDiv γ R ≤ klDiv γ' R) :
     R ≪ γ := by
   have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   obtain ⟨hγR, _⟩ := klDiv_ne_top_iff.1 hKL
+  -- Reduce `R ≪ γ` to showing the zero-density set `{z | (dγ/dR z).toReal = 0}` is `μ ⊗ ν`-null.
   suffices hPN : μ.prod ν {z | (γ.rnDeriv R z).toReal = 0} = 0 by
     rw [← Measure.withDensity_rnDeriv_eq γ R hγR]
     refine withDensity_absolutelyContinuous' (Measure.measurable_rnDeriv γ R).aemeasurable ?_
     filter_upwards [hRμν.ae_le (measure_eq_zero_iff_ae_notMem.1 hPN)] with z hz h0
     exact hz (by simp [h0])
+  -- By contradiction, pick a positive-measure config and build `δZ` on `rnZeroSet ∪ jointAnnulus`.
   by_contra hPN
   obtain ⟨n, hQM⟩ := exists_measure_pos_fourPointZeroConfig hRμν hμνR hγ hγR hPN
   obtain ⟨hδZ_GN_nn, hα_pos⟩ := nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet hRμν hQM
@@ -780,6 +784,7 @@ theorem IsCoupling.absolutelyContinuous_of_forall_klDiv_le
   have hδZ_int : Integrable δZ R := Integrable.of_bound (measurable_scaledFourPointDelta hK_meas
     (measurable_one.indicator (measurableSet_fourPointZeroConfig n))).aestronglyMeasurable B
     (ae_of_all _ fun z ↦ by simpa [Real.norm_eq_abs] using hδZ_abs z)
+  -- Pick `t ∈ (0, 1]` keeping `dγ/dR + t * δZ ≥ 0` so the `O(t log t)` gain beats `t * C`.
   set C := (B * log ((n : ℝ) + 1) + ((n : ℝ) + 1) * B ^ 2) * R.real univ
   set t := min 1 (min (((n : ℝ) + 1) * (B + 1))⁻¹ (exp (-(C / α)) / (B + 1)))
   have ht0 : 0 < t := lt_min zero_lt_one
@@ -790,9 +795,10 @@ theorem IsCoupling.absolutelyContinuous_of_forall_klDiv_le
         fun h ↦ add_mul_nonneg_of_mem_jointAnnulus h hB0 (hδZ_abs z)
           ((abs_of_pos ht0).trans_le ((min_le_right _ _).trans (min_le_left _ _)))
     · simp [δZ, scaledFourPointDelta, indicator_of_notMem hz]
+  -- Optimality of `γ` gives a nonnegative entropy change, contradicting the upper bound at `t`.
   obtain ⟨hdiff_int, hge⟩ := integrable_and_integral_klFun_scaledFourPointDelta_nonneg
     hRμν hγ hKL hmin hK_meas (measurableSet_fourPointZeroConfig n)
-    (fun _ hm ↦ ⟨.inl hm.1, hm.2.1, .inr hm.2.2.1, .inr hm.2.2.2⟩) (by positivity) hrK
+    (fourPointZeroConfig_subset_quad n) (by positivity) hrK
     (M₀ := (n : ℝ) + 1) (fun _ hz ↦ hz.elim (fun h ↦ by rw [h.2]; positivity) fun h ↦ h.2.2) hZt0
   have hlog_t : log (t * (B + 1)) ≤ -(C / α) := (log_le_log (mul_pos ht0 (by positivity))
     ((le_div_iff₀ (by positivity)).1 ((min_le_right _ _).trans (min_le_right _ _)))).trans_eq
@@ -896,8 +902,7 @@ private theorem setIntegral_llrCrossDiff_posDefectConfig_nonpos
     (hRμν : R ≪ μ.prod ν) (hγ : IsCoupling γ μ ν) (hKL : klDiv γ R ≠ ∞)
     (hmin : ∀ γ', IsCoupling γ' μ ν → klDiv γ R ≤ klDiv γ' R) (n : ℕ) :
     ∫ q in posDefectConfig μ ν R γ n, llrCrossDiff γ R q ∂((μ.prod ν).prod (μ.prod ν)) ≤ 0 := by
-  have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   by_contra! hpos_int
   set B := 4 * ((n : ℝ) + 1) * (μ.prod ν).real univ
   set I := ∫ q in posDefectConfig μ ν R γ n, llrCrossDiff γ R q ∂((μ.prod ν).prod (μ.prod ν))
@@ -915,8 +920,7 @@ private theorem measure_posDefectConfig_eq_zero [IsFiniteMeasure μ] [IsFiniteMe
     (hRμν : R ≪ μ.prod ν) (hγ : IsCoupling γ μ ν) (hKL : klDiv γ R ≠ ∞)
     (hmin : ∀ γ', IsCoupling γ' μ ν → klDiv γ R ≤ klDiv γ' R) (n : ℕ) :
     ((μ.prod ν).prod (μ.prod ν)) (posDefectConfig μ ν R γ n) = 0 := by
-  have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   set Q := (μ.prod ν).prod (μ.prod ν)
   set A := posDefectConfig μ ν R γ n
   set g : X × Y → ℝ := (jointAnnulus μ ν R γ n).indicator (llr γ R)
@@ -951,7 +955,7 @@ private theorem ae_llrCrossDiff_nonpos_of_forall_klDiv_le [IsFiniteMeasure μ] [
     (hmin : ∀ γ', IsCoupling γ' μ ν → klDiv γ R ≤ klDiv γ' R) :
     ∀ᵐ q ∂(μ.prod ν).prod (μ.prod ν), llrCrossDiff γ R q ≤ 0 := by
   have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   set P := μ.prod ν
   have hRγ : R ≪ γ := hγ.absolutelyContinuous_of_forall_klDiv_le hRμν hμνR hKL hmin
   have hex_H : ∀ᵐ z ∂P, ∃ n, z ∈ jointAnnulus μ ν R γ n := by
@@ -980,8 +984,7 @@ theorem IsCoupling.ae_llr_add_llr_eq_of_forall_klDiv_le [IsFiniteMeasure μ] [Is
     (hmin : ∀ γ', IsCoupling γ' μ ν → klDiv γ R ≤ klDiv γ' R) :
     ∀ᵐ q ∂(μ.prod ν).prod (μ.prod ν),
       llr γ R q.1 + llr γ R q.2 = llr γ R (q.1.1, q.2.2) + llr γ R (q.2.1, q.1.2) := by
-  have := hγ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
+  have := hγ.isFiniteMeasure_right
   have hle := ae_llrCrossDiff_nonpos_of_forall_klDiv_le hγ hRμν hμνR hKL hmin
   have hswap := measurePreserving_prodProdSndComm (μ := μ) (ν := ν) (μ' := μ) (ν' := ν)
   filter_upwards [hle, hswap.quasiMeasurePreserving.ae hle] with q h1 h2

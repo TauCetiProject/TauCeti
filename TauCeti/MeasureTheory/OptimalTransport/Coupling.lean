@@ -244,6 +244,11 @@ theorem isProbabilityMeasure_of_right [IsProbabilityMeasure ν] (hπ : IsCouplin
     IsProbabilityMeasure π :=
   ⟨by rw [← hπ.measure_univ_right, measure_univ]⟩
 
+/-- The target of a coupling of a finite measure is finite. -/
+theorem isFiniteMeasure_right [IsFiniteMeasure μ] (hπ : IsCoupling π μ ν) :
+    IsFiniteMeasure ν :=
+  ⟨by rw [← hπ.measure_univ_eq]; exact measure_lt_top μ univ⟩
+
 /-- The target of a coupling of a probability measure is a probability measure. -/
 theorem isProbabilityMeasure_right [IsProbabilityMeasure μ] (hπ : IsCoupling π μ ν) :
     IsProbabilityMeasure ν :=
@@ -349,7 +354,7 @@ theorem integrable_of_integrable_add_of_integrable_max [IsFiniteMeasure μ]
   · obtain rfl : ν = 0 := hπ.left_eq_zero_iff.1 hμ
     subst hμ
     exact ⟨integrable_zero_measure, integrable_zero_measure⟩
-  have : IsFiniteMeasure ν := ⟨hπ.measure_univ_eq ▸ measure_lt_top μ univ⟩
+  have := hπ.isFiniteMeasure_right
   have hν : ν ≠ 0 := hπ.left_eq_zero_iff.not.1 hμ
   have : (ae μ).NeBot := ae_neBot.2 hμ
   have : (ae ν).NeBot := ae_neBot.2 hν
