@@ -12,6 +12,7 @@ import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Dynamics.Flow.Variational
+import TauCeti.Geometry.Symplectic.Liouville.Plane
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!

@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.Calculus.DifferentialForm.Plane
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
-public import Mathlib.LinearAlgebra.Basis.Fin
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -80,8 +79,6 @@ field then has zero second component everywhere.
   field is tangent to both boundary lines.
 * `TauCeti.compContinuousLinearMap_fderiv_eq_of_stripMoserVectorField`: the Moser flow pulls
   `ρ dx ∧ dy` back to `dx ∧ dy`.
-* `Prod.realPlaneDx_wedge_realPlaneDy_finTwoProd`: `dx ∧ dy` takes the value `1` on the standard
-  basis of the plane.
 
 ## References
 
@@ -97,21 +94,6 @@ noncomputable section
 
 open MeasureTheory Set Filter intervalIntegral Real
 open scoped Topology
-
-namespace Prod
-
-/-- The area form `dx ∧ dy` takes the value `1` on the standard basis of the plane, so its
-pullback by a linear map evaluates there to the determinant. -/
-@[simp]
-theorem realPlaneDx_wedge_realPlaneDy_finTwoProd (q : ℝ × ℝ) :
-    ((Prod.realPlaneDx q).wedge (Prod.realPlaneDy q)) (Module.Basis.finTwoProd ℝ) = 1 := by
-  have hbasis : ⇑(Module.Basis.finTwoProd ℝ) = ![((1 : ℝ), (0 : ℝ)), (0, 1)] := by
-    funext i
-    fin_cases i <;> simp
-  rw [hbasis, ContinuousAlternatingMap.wedge_apply_one_one]
-  simp [Prod.realPlaneDx_apply, Prod.realPlaneDy_apply]
-
-end Prod
 
 namespace TauCeti
 
