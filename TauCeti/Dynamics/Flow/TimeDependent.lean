@@ -38,7 +38,7 @@ law of an ordinary `Flow`.
 * `TauCeti.timeDependentFlow_snd_eq_of_snd_eq`: the flow of a field on the plane tangent to a
   horizontal line `y = c` preserves that line.
 * `TauCeti.timeDependentFlow_snd_mem_Icc`: the flow of a field on the plane tangent to the lines
-  `y = 0` and `y = 1` preserves the strip `ℝ × [0, 1]`.
+  `y = a` and `y = b` preserves the band `ℝ × [a, b]`.
 
 The construction uses the global autonomous Picard--Lindelöf solution from
 `TauCeti.Analysis.ODE.GlobalSolution`.
@@ -253,11 +253,11 @@ theorem timeDependentFlow_snd_eq_of_snd_eq
   exact congrFun h t
 
 /-- The time-dependent flow of a field on the plane whose second component vanishes on the lines
-`y = 0` and `y = 1` preserves the strip `ℝ × [0, 1]`. -/
+`y = a` and `y = b` preserves the band `ℝ × [a, b]`. -/
 theorem timeDependentFlow_snd_mem_Icc (hv : LipschitzWith K (timeDependentSuspension v))
-    (h₀ : ∀ t x, (v t (x, 0)).2 = 0) (h₁ : ∀ t x, (v t (x, 1)).2 = 0) (s t : ℝ) {p : ℝ × ℝ}
-    (hp : p.2 ∈ Icc (0 : ℝ) 1) :
-    (timeDependentFlow v hv s t p).2 ∈ Icc (0 : ℝ) 1 := by
+    {a b : ℝ} (ha : ∀ t x, (v t (x, a)).2 = 0) (hb : ∀ t x, (v t (x, b)).2 = 0) (s t : ℝ)
+    {p : ℝ × ℝ} (hp : p.2 ∈ Icc a b) :
+    (timeDependentFlow v hv s t p).2 ∈ Icc a b := by
   -- If the orbit meets a boundary line at some time, it stays on it at every time.
   have hline (c : ℝ) (hc : ∀ t x, (v t (x, c)).2 = 0) (u : ℝ)
       (hu : (timeDependentFlow v hv s u p).2 = c) : (timeDependentFlow v hv s t p).2 = c := by
@@ -270,10 +270,10 @@ theorem timeDependentFlow_snd_mem_Icc (hv : LipschitzWith K (timeDependentSuspen
   refine ⟨le_of_not_gt fun hlt ↦ ?_, le_of_not_gt fun hlt ↦ ?_⟩
   · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
       (mem_uIcc.2 (Or.inr ⟨hlt.le, hs ▸ hp.1⟩))
-    exact hlt.ne (hline 0 h₀ u hu)
+    exact hlt.ne (hline a ha u hu)
   · obtain ⟨u, -, hu⟩ := intermediate_value_uIcc hz
       (mem_uIcc.2 (Or.inl ⟨hs ▸ hp.2, hlt.le⟩))
-    exact hlt.ne' (hline 1 h₁ u hu)
+    exact hlt.ne' (hline b hb u hu)
 
 end Plane
 
