@@ -134,6 +134,14 @@ noncomputable def unstableOrientation (𝔬 : MorseOrientation f X) {p : critica
   Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame (𝔬.chart p) p).toLinearMap
     (bijective_unstableFrame_self 𝔬 hp)) ((𝔬.orientation p).reindex ℝ _ (finCongr hp))
 
+/-- The defining formula of the unstable orientation. -/
+theorem unstableOrientation_def (𝔬 : MorseOrientation f X) {p : criticalPoints 𝓘(ℝ, E) f}
+    (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
+    hX.unstableOrientation 𝔬 hp =
+      Orientation.map _ (LinearEquiv.ofBijective (hX.unstableFrame (𝔬.chart p) p).toLinearMap
+        (bijective_unstableFrame_self 𝔬 hp)) ((𝔬.orientation p).reindex ℝ _ (finCongr hp)) :=
+  (rfl)
+
 /-- **Reversing orientations reverses the unstable orientations** at the critical points of the
 reversed set. -/
 theorem unstableOrientation_reverse (𝔬 : MorseOrientation f X)
@@ -141,7 +149,7 @@ theorem unstableOrientation_reverse (𝔬 : MorseOrientation f X)
     (hp : manifoldMorseIndex 𝓘(ℝ, E) f p = finrank ℝ E) :
     hX.unstableOrientation (𝔬.reverse S) hp =
       if p ∈ S then -hX.unstableOrientation 𝔬 hp else hX.unstableOrientation 𝔬 hp := by
-  rw [unstableOrientation, unstableOrientation, MorseOrientation.reverse_orientation]
+  rw [unstableOrientation_def, unstableOrientation_def, MorseOrientation.reverse_orientation]
   split_ifs
   · exact (congrArg _ (Orientation.reindex_neg _ _)).trans (Orientation.map_neg _ _)
   -- The reversed data has the same charts by definition (`reverse_chart`), so the two unstable
@@ -549,7 +557,7 @@ private theorem fundamentalSign_mul_trajectorySign (hMS : hX.IsMorseSmale)
         ((Module.Basis.singleton (Fin 1) ℝ).orientation.prod (𝔬.orientation q)
           (Module.finrank_self ℝ) (𝔬.chart q).finrank_negativeWeight_fun).reindex ℝ _
           (finCongr (by omega)) then 1 else -1 := by
-  rw [fundamentalSign_of_morseIndex_eq hp, unstableOrientation]
+  rw [fundamentalSign_of_morseIndex_eq hp, unstableOrientation_def]
   obtain ⟨T, hT⟩ := (hX.eventually_mem_linearBackwardTimes (𝔬.coord_mfderiv_chart p) hf hz.1).exists
   have hF := bijective_unstableFrame (𝔬.coord_mfderiv_chart p) hp hT
   have hC := bijective_trajectoryComparison (𝔬.coord_mfderiv_chart p) (𝔬.coord_mfderiv_chart q)
