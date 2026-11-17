@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Torsor.Quotient
+public import TauCeti.Algebra.Torsor.Sigma
 public import TauCeti.Geometry.Symplectic.Floer.PeriodGroup
 public import Mathlib.Tactic.Abel
 public import Mathlib.Tactic.Linarith
@@ -152,6 +153,27 @@ theorem eq_iff_action_eq_and_index_eq {a : C → ℝ} {m : C → ℤ}
     linarith
   · rw [map_zero]
     omega
+
+/-- **Caps are determined by their action when area is injective on the period group**, as on a
+target where every spherical class with zero area is trivial: two caps in a torsor `C` under the
+period group are equal exactly when they have the same value under a function `a` obeying the
+recapping law for area. -/
+theorem eq_iff_action_eq_of_area_injective (hinj : Function.Injective (PeriodGroup.area ω c))
+    {a : C → ℝ} (ha : ∀ (γ : PeriodGroup ω c) (D : C), a (γ +ᵥ D) = PeriodGroup.area ω c γ + a D)
+    {D D' : C} : D = D' ↔ a D = a D' :=
+  (AddTorsor.injective_of_forall_vadd_eq_add ha hinj).eq_iff.symm
+
+/-- **Caps are determined by their grading when the first Chern number is injective on the period
+group**, as on a spherically monotone target with nonzero Chern class: two caps in a torsor `C`
+under the period group are equal exactly when they have the same value under a function `m`
+obeying the recapping law for twice the first Chern number. -/
+theorem eq_iff_index_eq_of_chern_injective (hinj : Function.Injective (PeriodGroup.chern ω c))
+    {m : C → ℤ}
+    (hm : ∀ (γ : PeriodGroup ω c) (D : C), m (γ +ᵥ D) = 2 * PeriodGroup.chern ω c γ + m D)
+    {D D' : C} : D = D' ↔ m D = m D' :=
+  (AddTorsor.injective_of_forall_vadd_eq_add (δ := PeriodGroup.degree ω c)
+    (fun γ D => by rw [hm, PeriodGroup.degree_apply])
+    (PeriodGroup.degree_injective_iff.2 hinj)).eq_iff.symm
 
 end Torsor
 
