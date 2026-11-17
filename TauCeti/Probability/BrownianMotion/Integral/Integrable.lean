@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Probability.Process.Predictable.Basic
+public import TauCeti.Probability.Process.Predictable.Measure
 public import TauCeti.MeasureTheory.Function.Lp.Iterated
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.Prod
@@ -31,6 +31,10 @@ Time measure on `(0,T]` is written as the pullback of restricted real Lebesgue m
 of the pullback Lebesgue measure to `(0,T]`. Pathwise membership uses native `MemLp`, so square
 energy means a finite nonnegative lower integral, never the default value of a divergent
 Bochner integral.
+
+Both domains are also closed under subtraction, and `BrownianIntegrable.memLp_timeMeasure`,
+`BrownianIntegrable.memLp_predictableMeasure`, and `brownianIntegrable_iff_memLp_predictableMeasure`
+bridge the expected-energy domain with `timeMeasure` and `ℱ.predictableMeasure`.
 
 ## References
 
@@ -101,12 +105,37 @@ theorem BrownianIntegrable.locallyBrownianIntegrable [SFinite P]
   exact ((h.memLp n).comp_measurePreserving
     (Measure.measurePreserving_swap (μ := P) (ν := _))).ae_memLp_prod_right
 
+/-- A Brownian-integrable process belongs to `L²` of `(timeMeasure T).prod P`. -/
+theorem BrownianIntegrable.memLp_timeMeasure (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 ((Probability.timeMeasure T).prod P) := by
+  simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using hH.memLp T
+
+/-- A Brownian-integrable process belongs to `L²` of the finite-horizon predictable measure. -/
+theorem BrownianIntegrable.memLp_predictableMeasure (hH : BrownianIntegrable ℱ P H) (T : ℝ≥0) :
+    MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  (ℱ.memLp_predictableMeasure_iff P hH.isStronglyPredictable T 2).mpr (hH.memLp_timeMeasure T)
+
+/-- Characterization of `BrownianIntegrable` via `L²(ℱ.predictableMeasure P T)`. -/
+theorem brownianIntegrable_iff_memLp_predictableMeasure :
+    BrownianIntegrable ℱ P H ↔
+      IsStronglyPredictable ℱ H ∧
+        ∀ T : ℝ≥0, MemLp (Function.uncurry H) 2 (ℱ.predictableMeasure P T) :=
+  ⟨fun hH ↦ ⟨hH.isStronglyPredictable, hH.memLp_predictableMeasure⟩,
+    fun ⟨hp, hm⟩ ↦ ⟨hp, fun T ↦ by
+      simpa only [NNReal.comap_volume_restrict_Ioc, ← Probability.timeMeasure_def] using
+        (ℱ.memLp_predictableMeasure_iff P hp T 2).mp (hm T)⟩⟩
+
 /-- The expected-energy domain is closed under addition. -/
 theorem BrownianIntegrable.add (hH : BrownianIntegrable ℱ P H)
     (hK : BrownianIntegrable ℱ P K) :
     BrownianIntegrable ℱ P (fun t ω ↦ H t ω + K t ω) :=
   ⟨hH.isStronglyPredictable.add hK.isStronglyPredictable,
     fun T ↦ (hH.memLp T).add (hK.memLp T)⟩
+
+/-- The expected-energy domain is closed under subtraction. -/
+theorem BrownianIntegrable.sub (hH : BrownianIntegrable ℱ P H) (hK : BrownianIntegrable ℱ P K) :
+    BrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) :=
+  ⟨hH.isStronglyPredictable.sub hK.isStronglyPredictable, fun T ↦ (hH.memLp T).sub (hK.memLp T)⟩
 
 /-- The pathwise-energy domain is closed under addition. -/
 theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
@@ -115,6 +144,13 @@ theorem LocallyBrownianIntegrable.add (hH : LocallyBrownianIntegrable ℱ P H)
   refine ⟨hH.isStronglyPredictable.add hK.isStronglyPredictable, ?_⟩
   filter_upwards [hH.ae_memLp, hK.ae_memLp] with ω hω kω
   exact fun T ↦ (hω T).add (kω T)
+
+/-- The pathwise-energy domain is closed under subtraction. -/
+theorem LocallyBrownianIntegrable.sub (hH : LocallyBrownianIntegrable ℱ P H)
+    (hK : LocallyBrownianIntegrable ℱ P K) :
+    LocallyBrownianIntegrable ℱ P (fun t ω ↦ H t ω - K t ω) :=
+  ⟨hH.isStronglyPredictable.sub hK.isStronglyPredictable,
+    hH.ae_memLp.mp (hK.ae_memLp.mono fun _ kω hω T ↦ (hω T).sub (kω T))⟩
 
 /-- Scaling preserves finite expected square energy. -/
 theorem BrownianIntegrable.const_mul (h : BrownianIntegrable ℱ P H) (c : ℝ) :

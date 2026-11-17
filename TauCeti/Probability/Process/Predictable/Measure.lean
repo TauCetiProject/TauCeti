@@ -27,6 +27,9 @@ integrands' energies and norms with their ambient time-product counterparts; the
 lemmas below retain the predictable measurability hypothesis, since trimming does not preserve
 integrals of arbitrary ambient-product-measurable functions.
 
+This file also records predictability, predictable-measure a.e. congruence, and `MemLp`
+membership for left-open interval indicators weighted by `ℱ s`-measurable heights.
+
 ## References
 
 * I. Karatzas, S. E. Shreve, *Brownian Motion and Stochastic Calculus*, second edition,
@@ -181,5 +184,51 @@ theorem memLp_predictableMeasure_iff {E : Type*} [NormedAddCommGroup E]
   simp only [MemLp, predictableMeasure_def, eLpNorm_trim ℱ.predictable_le_prod hf]
 
 end Dictionary
+
+/-- A left-open interval indicator weighted by an `ℱ s`-measurable height is predictable.
+Proved directly from `measurableSet_predictable_Ioc_prod`. -/
+theorem stronglyMeasurable_predictable_indicator_Ioc_mul {ι E : Type*}
+    [LinearOrder ι] [OrderBot ι] [TopologicalSpace E] [TopologicalSpace.PseudoMetrizableSpace E]
+    [Zero E] (ℱ : Filtration ι m) (s t : ι) {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) :
+    StronglyMeasurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1) := by
+  borelize E
+  have hmeas : Measurable[ℱ.predictable]
+      (fun p : ι × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ p.2) p.1) := fun B hB ↦ by
+    by_cases h0 : (0 : E) ∈ B
+    · convert (measurableSet_predictable_Ioc_prod s t (hξ.measurable hB)).union
+        (measurableSet_predictable_Ioc_prod s t MeasurableSet.univ).compl using 1
+      ext ⟨u, ω⟩; by_cases hu : u ∈ Ioc s t <;> simp [hu, h0]
+    · convert measurableSet_predictable_Ioc_prod s t (hξ.measurable hB) using 1
+      ext ⟨u, ω⟩; by_cases hu : u ∈ Ioc s t <;> simp [hu, h0]
+  refine stronglyMeasurable_iff_measurable_separable.mpr ⟨hmeas,
+    (hξ.isSeparable_range.union (Set.countable_singleton (0 : E)).isSeparable).mono ?_⟩
+  rintro _ ⟨⟨u, ω⟩, rfl⟩; by_cases hu : u ∈ Ioc s t <;> simp [hu]
+
+/-- Replacing the height of a left-open interval indicator by a `P`-a.e. equal `ℱ s`-measurable
+height preserves the predictable-measure a.e. equivalence class. -/
+theorem ae_eq_predictableMeasure_indicator_Ioc_mul {E : Type*} [TopologicalSpace E]
+    [TopologicalSpace.MetrizableSpace E] [Zero E] (ℱ : Filtration ℝ≥0 m) {P : Measure Ω}
+    (T s t : ℝ≥0) {u v : Ω → E} (hu : StronglyMeasurable[ℱ s] u)
+    (hv : StronglyMeasurable[ℱ s] v) (h : u =ᵐ[P] v) :
+    (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ u p.2) p.1) =ᵐ[ℱ.predictableMeasure P T]
+      (fun p : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ v p.2) p.1) := by
+  rw [predictableMeasure_def]
+  exact (ℱ.stronglyMeasurable_predictable_indicator_Ioc_mul s t hu).ae_eq_trim_of_stronglyMeasurable
+    ℱ.predictable_le_prod (ℱ.stronglyMeasurable_predictable_indicator_Ioc_mul s t hv) <|
+    ((Measure.quasiMeasurePreserving_snd (μ := timeMeasure T) (ν := P)).ae h).mono
+      fun _ hp ↦ by simp [hp]
+
+/-- A left-open interval indicator weighted by an `Lᵖ(P)` `ℱ s`-measurable height belongs to
+`Lᵖ` of the finite-horizon predictable measure. -/
+theorem memLp_predictableMeasure_indicator_Ioc_mul {E : Type*} [NormedAddCommGroup E]
+    (ℱ : Filtration ℝ≥0 m) {P : Measure Ω} [SFinite P] (T s t : ℝ≥0) {p : ℝ≥0∞}
+    {ξ : Ω → E} (hξ : StronglyMeasurable[ℱ s] ξ) (hξp : MemLp ξ p P) :
+    MemLp (fun q : ℝ≥0 × Ω ↦ (Ioc s t).indicator (fun _ ↦ ξ q.2) q.1) p
+      (ℱ.predictableMeasure P T) := by
+  rw [ℱ.memLp_predictableMeasure_iff P (ℱ.stronglyMeasurable_predictable_indicator_Ioc_mul s t hξ)]
+  convert (hξp.comp_snd (timeMeasure T)).indicator
+    ((measurableSet_Ioc (a := s) (b := t)).prod MeasurableSet.univ).nullMeasurableSet using 1
+  ext ⟨u, ω⟩; by_cases hu : u ∈ Ioc s t <;> simp [hu]
 
 end MeasureTheory.Filtration
