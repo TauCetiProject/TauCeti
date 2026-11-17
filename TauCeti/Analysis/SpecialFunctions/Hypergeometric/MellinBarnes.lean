@@ -20,6 +20,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.Topology.Algebra.Binomial
 
 /-!
 # Mellin–Barnes integrals for the Gauss hypergeometric function
@@ -76,7 +77,7 @@ from `‖w‖ < 1 / 2` to `‖w‖ < 1` by analytic continuation.
   evaluation of the `n`-th multichoose moment of the DLMF 15.6.7 four-Gamma kernel.
 * `Complex.regularizedGaussHGFun_eq_mellinBarnes_one_sub`,
   `Complex.ordinaryHypergeometric_eq_mellinBarnes_one_sub`: DLMF 15.6.7 on the open unit disk
-  `‖z‖ < 1` for `Complex.regularizedGaussHGFun` and `Complex.ordinaryHypergeometric`.
+  `‖z‖ < 1` for `Complex.regularizedGaussHGFun` and `ordinaryHypergeometric`.
 
 ## References
 

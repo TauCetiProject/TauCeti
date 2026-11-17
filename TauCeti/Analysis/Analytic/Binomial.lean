@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Analytic.Binomial
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
-import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Convergence of binomial and multichoose power series
@@ -36,8 +35,6 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
 * `TauCeti.norm_ascPochhammer_eval_le`, `TauCeti.norm_multichoose_le` — triangle-inequality
   comparison `‖(w)_n‖ ≤ (‖w‖)_n` and `‖multichoose w n‖ ≤ multichoose ‖w‖ n`.
-* `TauCeti.continuous_multichoose` — continuity of `x ↦ Ring.multichoose x n` in any
-  characteristic-zero topological division semiring with a `BinomialRing` structure.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
   `1` in every normed algebra over `ℝ` or `ℂ`.
 * `TauCeti.binomialSeries_sum_mul_binomialSeries_sum` — on the open unit ball of a Banach algebra,
@@ -133,21 +130,6 @@ theorem norm_multichoose_le {R : Type*} [SeminormedRing R] [NormOneClass R] [Nor
       abs_of_nonneg (Nat.cast_nonneg _)]
   rw [hnorm, hr]
   exact norm_ascPochhammer_eval_le w n
-
-/-- In any characteristic-zero topological division semiring with a `BinomialRing` structure,
-`x ↦ Ring.multichoose x n` is continuous for every `n : ℕ`. -/
-theorem continuous_multichoose {R : Type*} [DivisionSemiring R] [CharZero R]
-    [TopologicalSpace R] [IsTopologicalSemiring R] [BinomialRing R] (n : ℕ) :
-    Continuous fun x : R ↦ Ring.multichoose x n := by
-  have h : (fun x : R ↦ Ring.multichoose x n) =
-      fun x : R ↦ (n.factorial : R)⁻¹ * (ascPochhammer R n).eval x := by
-    ext x
-    have hfac : (n.factorial : R) ≠ 0 := Nat.cast_ne_zero.2 (Nat.factorial_ne_zero n)
-    have hx := Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
-    rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_eq_eval] at hx
-    rw [← hx, inv_mul_cancel_left₀ hfac]
-  rw [h]
-  exact continuous_const.mul (ascPochhammer R n).continuous
 
 section NormedAlgebra
 
