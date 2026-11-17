@@ -152,7 +152,7 @@ private theorem isBigO_sum_Ico_forwardDiff_err_smul {𝕜 : Type*} [NormedDivisi
       rw [Real.norm_of_nonneg (sum_nonneg fun _ _ ↦ by positivity), mul_sum]
       refine (norm_sum_le _ _).trans (sum_le_sum fun j hj ↦ ?_)
       have hj₁ : (1 : ℝ) ≤ j := Nat.one_le_cast.mpr (mem_Ico.mp hj).1
-      have herr := abs_rpow_sub_add_one_rpow_add_mul_le α hj₁
+      have herr := Real.abs_rpow_sub_add_one_rpow_add_mul_le α hj₁
       rw [← Nat.cast_add_one] at herr
       have hzpow : ‖z ^ (j + 1) / (z - 1)‖ ≤ ‖(z - 1)⁻¹‖ := by
         rw [div_eq_mul_inv, norm_mul, norm_pow]

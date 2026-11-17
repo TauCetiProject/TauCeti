@@ -33,15 +33,15 @@ the second-order remainder at `α = 1` in summation by parts.
 
 ## Main results
 
-* `TauCeti.abs_add_rpow_sub_rpow_le`: explicit first-order increment bound for `0 ≤ h ≤ x`.
-* `TauCeti.abs_add_rpow_sub_rpow_sub_mul_le`: explicit second-order Taylor remainder bound with the
+* `Real.abs_add_rpow_sub_rpow_le`: explicit first-order increment bound for `0 ≤ h ≤ x`.
+* `Real.abs_add_rpow_sub_rpow_sub_mul_le`: explicit second-order Taylor remainder bound with the
   sharp constant `1 / 2` for `0 ≤ h ≤ x`.
-* `TauCeti.abs_rpow_sub_add_one_rpow_le` and `TauCeti.abs_rpow_sub_add_one_rpow_add_mul_le`:
+* `Real.abs_rpow_sub_add_one_rpow_le` and `Real.abs_rpow_sub_add_one_rpow_add_mul_le`:
   unit-step specializations for `1 ≤ x`.
-* `TauCeti.isBigO_rpow_sub_add_one_rpow_atTop`: `x ^ α - (x + 1) ^ α = O(α * x ^ (α - 1))`.
-* `TauCeti.isBigO_rpow_sub_add_one_rpow_add_mul_principal_Ici`,
-  `TauCeti.isBigO_rpow_sub_add_one_rpow_add_mul_atTop`, and
-  `TauCeti.isBigO_natCast_rpow_sub_add_one_rpow_add_mul_atTop`: uniform and asymptotic forms of
+* `Real.isBigO_rpow_sub_add_one_rpow_atTop`: `x ^ α - (x + 1) ^ α = O(α * x ^ (α - 1))`.
+* `Real.isBigO_rpow_sub_add_one_rpow_add_mul_principal_Ici`,
+  `Real.isBigO_rpow_sub_add_one_rpow_add_mul_atTop`, and
+  `Real.isBigO_natCast_rpow_sub_add_one_rpow_add_mul_atTop`: uniform and asymptotic forms of
   `(x ^ α - (x + 1) ^ α) + α * x ^ (α - 1) = O(α * (α - 1) * x ^ (α - 2))`.
 
 ## References
@@ -54,7 +54,7 @@ public section
 
 open Asymptotics Filter Set
 
-namespace TauCeti
+namespace Real
 
 /-- **First-order forward difference of a real power.** For every real `α` and `0 ≤ h ≤ x`,
 `|(x + h) ^ α - x ^ α| ≤ max 1 (2 ^ (α - 1)) * |α| * x ^ (α - 1) * h`. -/
@@ -93,7 +93,7 @@ theorem abs_add_rpow_sub_rpow_sub_mul_le (α : ℝ) {x h : ℝ} (hh₀ : 0 ≤ h
   · simp
   have hx : 0 < x := hh.trans_le hhx
   let M : ℝ := max 1 (2 ^ (α - 2)) * |α * (α - 1)| * x ^ (α - 2)
-  have htaylor := abs_sub_taylorWithinEval_le (f := fun s : ℝ ↦ s ^ α) (n := 1) (M := M)
+  have htaylor := TauCeti.abs_sub_taylorWithinEval_le (f := fun s : ℝ ↦ s ^ α) (n := 1) (M := M)
     (x₀ := x) (x := x + h)
     (by
       rw [uIcc_of_le (by linarith)]
@@ -189,4 +189,4 @@ theorem isBigO_natCast_rpow_sub_add_one_rpow_add_mul_atTop (α : ℝ) :
       fun j : ℕ ↦ α * (α - 1) * (j : ℝ) ^ (α - 2) :=
   (isBigO_rpow_sub_add_one_rpow_add_mul_atTop α).comp_tendsto tendsto_natCast_atTop_atTop
 
-end TauCeti
+end Real
