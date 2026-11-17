@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.FiniteRank.Biproduct
 public import Mathlib.CategoryTheory.IsomorphismClasses
 public import Mathlib.Topology.VectorBundle.Constructions
 import TauCeti.Topology.FiberBundle.Pullback
+import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
 # Pullback of point-indexed finite-rank bundle cores
@@ -503,19 +504,16 @@ end WhitneySum
     simp only [htriv]
     set eᵢ := trivializationAt (Fin n → 𝕜) E (f i)
     set eⱼ := trivializationAt (Fin n → 𝕜) E (f j)
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    simp only [ContinuousLinearEquiv.coe_coe]
     by_cases hx : x ∈ (eᵢ.pullback f).baseSet ∩ (eⱼ.pullback f).baseSet
     · have hfx : f x ∈ eᵢ.baseSet ∩ eⱼ.baseSet := hx
+      refine ContinuousLinearMap.ext fun v ↦ ?_
+      simp only [ContinuousLinearEquiv.coe_coe]
       rw [Trivialization.coordChangeL_apply' eᵢ eⱼ hfx,
         Trivialization.coordChangeL_apply' (eᵢ.pullback f) (eⱼ.pullback f) hx]
       exact (eᵢ.coordChange_pullback eⱼ f hfx.1 v).symm
     · have hfx : f x ∉ eᵢ.baseSet ∩ eⱼ.baseSet := hx
-      have h₁ : eᵢ.coordChangeL 𝕜 eⱼ (f x) v = v :=
-        congrArg (fun g : (Fin n → 𝕜) ≃ₗ[𝕜] (Fin n → 𝕜) ↦ g v) (dite_eq_right hfx)
-      have h₂ : (eᵢ.pullback f).coordChangeL 𝕜 (eⱼ.pullback f) x v = v :=
-        congrArg (fun g : (Fin n → 𝕜) ≃ₗ[𝕜] (Fin n → 𝕜) ↦ g v) (dite_eq_right hx)
-      exact h₁.trans h₂.symm
+      rw [eᵢ.coordChangeL_of_notMem 𝕜 eⱼ hfx,
+        (eᵢ.pullback f).coordChangeL_of_notMem 𝕜 (eⱼ.pullback f) hx]
 
 /-- Reconstruction of `(ofBundle 𝕜 n E).pullback f` is homeomorphic to Mathlib's pullback bundle
 `TotalSpace (Fin n → 𝕜) ((⇑f) *ᵖ E)`, acting on each fibre via `pointIndexedCoreFiberEquiv` at
