@@ -17,10 +17,7 @@ A uniform bound `|C(s,t)| ≤ A (1 + s^p)` gives a finite square-maximal moment 
 positive geometric Brownian stock on a finite horizon. The exponent `p` may be any real
 number: negative moments are available too. The same estimate gives square integrability
 at arbitrary random times in the horizon, provided the sampled value is measurable, and
-square integrability for the time-product measure. At deterministic times, a polynomial
-stock bound gives every finite `Lᵖ` moment without path regularity or a filtration, even
-for nonpositive initial spot. In that case the bound uses signed/zero `Real.rpow`
-conventions, rather than powers of the absolute spot.
+square integrability for the time-product measure.
 
 Apply these results to a candidate price `C` and to `s * ∂C/∂s` to obtain the moment
 and expected-energy bounds used in verifying a delta hedge. Measurability is stated
@@ -41,32 +38,6 @@ noncomputable section
 
 open MeasureTheory ProbabilityTheory Real Set
 open scoped NNReal ENNReal
-
-namespace ProbabilityTheory.IsPreBrownianReal
-
-open TauCeti.Probability
-
-/-- At a deterministic time, a measurable random variable bounded by a polynomial in a
-geometric Brownian stock belongs to every finite `Lᵖ` space. No positivity of the initial
-stock, path regularity, or filtration is required; the growth exponent may be any real.
-For nonpositive initial stock `s ≤ 0`, `hbound` uses Mathlib's signed/zero `Real.rpow`
-conventions, not `|S_t| ^ p`, so it can degenerate rather than express polynomial growth
-in the absolute spot. -/
-theorem memLp_of_geometricBrownianMotion_bound
-    {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
-    (hB : IsPreBrownianReal B P) {s μ σ p A : ℝ} {t : ℝ≥0} {f : Ω → ℝ}
-    {q : ℝ≥0∞} (hq : q ≠ ∞) (hm : AEStronglyMeasurable f P)
-    (hbound : ∀ᵐ ω ∂P, |f ω| ≤ A * (1 + geometricBrownianMotion s μ σ B t ω ^ p)) :
-    MemLp f q P := by
-  have := (hB.hasLaw_eval 0).isProbabilityMeasure
-  have hpow : MemLp (fun ω ↦ geometricBrownianMotion s μ σ B t ω ^ p) q P := by
-    simp_rw [rpow_geometricBrownianMotion]
-    exact (hB.memLp_exponentialMartingale (p * σ) t hq).const_mul _
-  refine ((memLp_const (1 : ℝ)).add hpow |>.const_mul A).mono' hm ?_
-  filter_upwards [hbound] with ω hω
-  exact hω
-
-end ProbabilityTheory.IsPreBrownianReal
 
 namespace TauCeti.Probability.IsFilteredPreBrownianReal
 
