@@ -27,6 +27,8 @@ Hölder inequality is iterated.
   there is `M > 0` with `s / r ^ M < p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
 * `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
   with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
+* `TauCeti.exists_int_mul_gt`: in an Archimedean ordered field, the integer multiples of a nonzero
+  element are unbounded above.
 -/
 
 public section
@@ -69,5 +71,15 @@ theorem exists_nat_ge_and_div_le {δ : K} (hδ : 0 < δ) (n₀ : ℕ) :
         one_div_le_one_div_of_le (Nat.cast_pos.2 hNpos) (le_add_of_nonneg_right zero_le_one)
     _ ≤ 2 * ((n₀ + 1 : ℕ) : K) / N := by gcongr; norm_cast; omega
     _ ≤ δ := h2.le
+
+/-- In an Archimedean ordered field, some integer multiple of a nonzero element `ℓ` exceeds any
+given `r`, whatever the sign of `ℓ`. -/
+theorem exists_int_mul_gt {F : Type*} [Field F] [LinearOrder F] [IsStrictOrderedRing F]
+    [Archimedean F] {ℓ : F} (hℓ : ℓ ≠ 0) (r : F) : ∃ k : ℤ, r < k * ℓ := by
+  rcases hℓ.lt_or_gt with h | h
+  · obtain ⟨k, hk⟩ := exists_int_lt (r / ℓ)
+    exact ⟨k, (lt_div_iff_of_neg h).1 hk⟩
+  · obtain ⟨k, hk⟩ := exists_int_gt (r / ℓ)
+    exact ⟨k, (div_lt_iff₀ h).1 hk⟩
 
 end TauCeti
