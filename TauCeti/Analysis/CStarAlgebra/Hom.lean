@@ -17,11 +17,11 @@ class, so it covers unital `⋆`-homomorphisms and `⋆`-equivalences as well).
 A `⋆`-algebra equivalence of complex C⋆-algebras is isometric (`StarAlgEquiv.isometry`), so it
 bundles as a continuous linear equivalence `StarAlgEquiv.toContinuousLinearEquiv`.
 
-Since `⋆`-homomorphisms of C⋆-algebras are contractive, a sequence of them that is pointwise
-Cauchy on a dense set converges pointwise to a `⋆`-homomorphism
-(`NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq`), and pointwise convergence passes to
-convergent arguments (`NonUnitalStarAlgHom.tendsto_apply_of_tendsto`). These are the limit
-steps of approximate intertwining arguments.
+Since `⋆`-homomorphisms of C⋆-algebras are contractive (`NonUnitalStarAlgHom.dist_apply_le`),
+a sequence of them that is pointwise Cauchy on a dense set converges pointwise to a
+`⋆`-homomorphism (`NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq`), and pointwise
+convergence passes to convergent arguments (`NonUnitalStarAlgHom.tendsto_apply_of_tendsto`).
+These are the limit steps of approximate intertwining arguments.
 -/
 
 public section
@@ -73,6 +73,10 @@ open Filter Topology
 variable {F A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   [FunLike F A B] [NonUnitalAlgHomClass F ℂ A B] [StarHomClass F A B]
 
+/-- A `⋆`-homomorphism between C⋆-algebras is `1`-Lipschitz: it does not increase distances. -/
+theorem dist_apply_le (φ : F) (x y : A) : dist (φ x) (φ y) ≤ dist x y := by
+  simpa only [dist_eq_norm, ← map_sub] using norm_apply_le φ (x - y)
+
 /-- A sequence of `⋆`-homomorphisms between C⋆-algebras that is pointwise Cauchy on a dense set
 converges pointwise on the whole source, and the pointwise limit is a `⋆`-homomorphism. -/
 theorem exists_tendsto_of_cauchySeq {f : ℕ → F} {S : Set A} (hS : Dense S)
@@ -83,8 +87,6 @@ theorem exists_tendsto_of_cauchySeq {f : ℕ → F} {S : Set A} (hS : Dense S)
     intro ε hε
     obtain ⟨a, ha, hxa⟩ := hS.exists_dist_lt x (by positivity : 0 < ε / 3)
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff'.mp (hf a ha) (ε / 3) (by positivity)
-    have hle (n : ℕ) : dist (f n x) (f n a) ≤ dist x a := by
-      simpa only [dist_eq_norm, ← map_sub] using norm_apply_le (f n) (x - a)
     refine ⟨N, fun n hn ↦ ?_⟩
     calc dist (f n x) (f N x)
         ≤ dist (f n x) (f n a) + dist (f n a) (f N a) + dist (f N a) (f N x) :=
@@ -92,9 +94,9 @@ theorem exists_tendsto_of_cauchySeq {f : ℕ → F} {S : Set A} (hS : Dense S)
       _ < ε / 3 + ε / 3 + ε / 3 := by
         rw [dist_comm (f N a)]
         gcongr
-        · exact (hle n).trans_lt hxa
+        · exact (dist_apply_le (f n) x a).trans_lt hxa
         · exact hN n hn
-        · exact (hle N).trans_lt hxa
+        · exact (dist_apply_le (f N) x a).trans_lt hxa
       _ = ε := by ring
   choose g hg using fun x ↦ cauchySeq_tendsto_of_complete (hc x)
   refine ⟨{
@@ -115,13 +117,13 @@ arguments: if `f i` tends to `g` pointwise and `x i` tends to `a`, then `f i (x 
 theorem tendsto_apply_of_tendsto {ι : Type*} {l : Filter ι} {f : ι → F} {g : A → B}
     (hf : ∀ a, Tendsto (fun i ↦ f i a) l (𝓝 (g a))) {x : ι → A} {a : A}
     (hx : Tendsto x l (𝓝 a)) : Tendsto (fun i ↦ f i (x i)) l (𝓝 (g a)) := by
-  rw [tendsto_iff_norm_sub_tendsto_zero] at hx ⊢
-  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun i ↦ ?_)
-    (by simpa using hx.add (tendsto_iff_norm_sub_tendsto_zero.mp (hf a)))
-  calc ‖f i (x i) - g a‖ ≤ ‖f i (x i) - f i a‖ + ‖f i a - g a‖ :=
-        norm_sub_le_norm_sub_add_norm_sub _ _ _
-    _ ≤ ‖x i - a‖ + ‖f i a - g a‖ := by
+  rw [tendsto_iff_dist_tendsto_zero] at hx ⊢
+  refine squeeze_zero (fun _ ↦ dist_nonneg) (fun i ↦ ?_)
+    (by simpa using hx.add (tendsto_iff_dist_tendsto_zero.mp (hf a)))
+  calc dist (f i (x i)) (g a) ≤ dist (f i (x i)) (f i a) + dist (f i a) (g a) :=
+        dist_triangle _ _ _
+    _ ≤ dist (x i) a + dist (f i a) (g a) := by
         gcongr
-        simpa only [← map_sub] using norm_apply_le (f i) (x i - a)
+        exact dist_apply_le (f i) (x i) a
 
 end NonUnitalStarAlgHom

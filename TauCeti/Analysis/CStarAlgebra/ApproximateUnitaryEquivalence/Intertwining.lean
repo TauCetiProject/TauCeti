@@ -51,12 +51,43 @@ variable {A B : Type*} [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
 `f` at `a` and `f'` almost inverts `g` at `f a`. -/
 private theorem norm_sub_le_of_intertwining (f f' : A →⋆ₙₐ[ℂ] B) (g : B →⋆ₙₐ[ℂ] A) (a : A) :
     ‖f' a - f a‖ ≤ ‖g (f a) - a‖ + ‖f' (g (f a)) - f a‖ := by
-  have heq : f' a - f a = f' (a - g (f a)) + (f' (g (f a)) - f a) := by
-    rw [map_sub]
-    abel
-  rw [heq]
-  refine (norm_add_le _ _).trans (add_le_add_left ?_ _)
-  simpa only [norm_sub_rev a] using NonUnitalStarAlgHom.norm_apply_le f' (a - g (f a))
+  simp only [← dist_eq_norm]
+  calc dist (f' a) (f a) ≤ dist (f' a) (f' (g (f a))) + dist (f' (g (f a))) (f a) :=
+        dist_triangle _ _ _
+    _ ≤ dist (g (f a)) a + dist (f' (g (f a))) (f a) := by
+        gcongr
+        exact (NonUnitalStarAlgHom.dist_apply_le f' _ _).trans_eq (dist_comm _ _)
+
+/-- The Cauchy step of an approximate intertwining: if `ψ n ∘ φ n` is within `ε n` of the
+identity on `F n` and `φ (n + 1) ∘ ψ n` is within `ε' n` of the identity on `G n`, for summable
+`ε` and `ε'`, then `φ n` is pointwise Cauchy on `⋃ n, F n`. -/
+private theorem cauchySeq_of_intertwining {φ : ℕ → A →⋆ₙₐ[ℂ] B} {ψ : ℕ → B →⋆ₙₐ[ℂ] A}
+    {F : ℕ → Set A} {G : ℕ → Set B} {ε ε' : ℕ → ℝ} (hF : Monotone F)
+    (hφ : ∀ n, MapsTo (φ n) (F n) (G n)) (hε : Summable ε) (hε' : Summable ε')
+    (hψφ : ∀ n, ∀ a ∈ F n, ‖ψ n (φ n a) - a‖ ≤ ε n)
+    (hφψ : ∀ n, ∀ b ∈ G n, ‖φ (n + 1) (ψ n b) - b‖ ≤ ε' n) :
+    ∀ a ∈ ⋃ n, F n, CauchySeq fun m ↦ φ m a := by
+  simp only [mem_iUnion]
+  rintro a ⟨n, ha⟩
+  refine cauchySeq_of_eventually_dist_le_of_summable (hε.add hε')
+    (eventually_atTop.mpr ⟨n, fun m hm ↦ ?_⟩)
+  rw [dist_comm, dist_eq_norm]
+  exact (norm_sub_le_of_intertwining (φ m) (φ (m + 1)) (ψ m) a).trans
+    (add_le_add (hψφ m a (hF hm ha)) (hφψ m _ (hφ m (hF hm ha))))
+
+/-- The limit step of an approximate intertwining: if `θ` and `η` are the pointwise limits of
+`φ n` and `ψ n`, and at each point `a` of a dense set `ψ n ∘ φ n` is eventually within `ε n` of
+the identity, for `ε` tending to `0`, then `η ∘ θ` is the identity. -/
+private theorem comp_eq_id_of_tendsto {φ : ℕ → A →⋆ₙₐ[ℂ] B} {ψ : ℕ → B →⋆ₙₐ[ℂ] A}
+    {θ : A →⋆ₙₐ[ℂ] B} {η : B →⋆ₙₐ[ℂ] A} (hθ : ∀ a, Tendsto (fun n ↦ φ n a) atTop (𝓝 (θ a)))
+    (hη : ∀ b, Tendsto (fun n ↦ ψ n b) atTop (𝓝 (η b))) {S : Set A} (hS : Dense S)
+    {ε : ℕ → ℝ} (hε : Tendsto ε atTop (𝓝 0))
+    (hψφ : ∀ a ∈ S, ∀ᶠ n in atTop, ‖ψ n (φ n a) - a‖ ≤ ε n) :
+    η.comp θ = NonUnitalStarAlgHom.id ℂ A :=
+  NonUnitalStarAlgHom.ext <| congrFun <|
+    Continuous.ext_on hS (map_continuous (η.comp θ)) continuous_id fun a ha ↦
+      tendsto_nhds_unique (NonUnitalStarAlgHom.tendsto_apply_of_tendsto hη (hθ a))
+        (tendsto_sub_nhds_zero_iff.mp <| squeeze_zero_norm' (hψφ a ha) hε)
 
 /-- **Approximate intertwining.** Let `φ n : A → B` and `ψ n : B → A` be `⋆`-homomorphisms
 and `F n ⊆ A`, `G n ⊆ B` increasing sets with dense unions, such that `φ n` maps `F n` into
@@ -73,46 +104,22 @@ theorem exists_starAlgEquiv_of_intertwining (φ : ℕ → A →⋆ₙₐ[ℂ] B)
     ∃ θ : A ≃⋆ₐ[ℂ] B, (∀ a, Tendsto (fun n ↦ φ n a) atTop (𝓝 (θ a))) ∧
       ∀ b, Tendsto (fun n ↦ ψ n b) atTop (𝓝 (θ.symm b)) := by
   have hε0 := hε.tendsto_atTop_zero
-  -- The forward maps are pointwise Cauchy on `⋃ n, F n`, with steps at most `2 ε m`.
-  have hφc : ∀ a ∈ ⋃ n, F n, CauchySeq fun m ↦ φ m a := by
-    simp only [mem_iUnion]
-    rintro a ⟨n, ha⟩
-    refine cauchySeq_of_eventually_dist_le_of_summable (hε.add hε)
-      (eventually_atTop.mpr ⟨n, fun m hm ↦ ?_⟩)
-    rw [dist_comm, dist_eq_norm]
-    exact (norm_sub_le_of_intertwining (φ m) (φ (m + 1)) (ψ m) a).trans
-      (add_le_add (hψφ m a (hF hm ha)) (hφψ m _ (hφ m (hF hm ha))))
-  -- The backward maps are pointwise Cauchy on `⋃ n, G n`, with steps at most
-  -- `ε m + ε (m + 1)`.
-  have hψc : ∀ b ∈ ⋃ n, G n, CauchySeq fun m ↦ ψ m b := by
-    simp only [mem_iUnion]
-    rintro b ⟨n, hb⟩
-    refine cauchySeq_of_eventually_dist_le_of_summable
-      (hε.add ((summable_nat_add_iff 1).mpr hε)) (eventually_atTop.mpr ⟨n, fun m hm ↦ ?_⟩)
-    rw [dist_comm, dist_eq_norm]
-    exact (norm_sub_le_of_intertwining (ψ m) (ψ (m + 1)) (φ (m + 1)) b).trans
-      (add_le_add (hφψ m b (hG hm hb)) (hψφ (m + 1) _ (hψ m (hG hm hb))))
-  obtain ⟨θ, hθ⟩ := NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq hFd hφc
-  obtain ⟨η, hη⟩ := NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq hGd hψc
-  -- `η ∘ θ` is the identity on the dense set `⋃ n, F n`, hence everywhere.
+  -- The backward maps form the same kind of intertwining, with `F` and `ε` shifted by one.
+  obtain ⟨θ, hθ⟩ := NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq hFd
+    (cauchySeq_of_intertwining hF hφ hε hε hψφ hφψ)
+  obtain ⟨η, hη⟩ := NonUnitalStarAlgHom.exists_tendsto_of_cauchySeq hGd
+    (cauchySeq_of_intertwining (ψ := fun n ↦ φ (n + 1)) hG hψ hε
+      ((summable_nat_add_iff 1).mpr hε) hφψ fun n ↦ hψφ (n + 1))
+  -- Each point of `⋃ n, F n` (resp. `⋃ n, G n`) lies in `F n` (resp. `G n`) for all large `n`.
   have hηθ : η.comp θ = NonUnitalStarAlgHom.id ℂ A := by
-    refine NonUnitalStarAlgHom.ext <| congrFun <|
-      Continuous.ext_on hFd (map_continuous (η.comp θ)) continuous_id ?_
-    simp only [EqOn, mem_iUnion]
-    rintro a ⟨n, ha⟩
-    exact tendsto_nhds_unique (NonUnitalStarAlgHom.tendsto_apply_of_tendsto hη (hθ a))
-      (tendsto_sub_nhds_zero_iff.mp <| squeeze_zero_norm'
-        (eventually_atTop.mpr ⟨n, fun m hm ↦ hψφ m a (hF hm ha)⟩) hε0)
-  -- `θ ∘ η` is the identity on the dense set `⋃ n, G n`, hence everywhere.
+    refine comp_eq_id_of_tendsto hθ hη hFd hε0 fun a ha ↦ ?_
+    obtain ⟨n, ha⟩ := mem_iUnion.mp ha
+    exact eventually_atTop.mpr ⟨n, fun m hm ↦ hψφ m a (hF hm ha)⟩
   have hθη : θ.comp η = NonUnitalStarAlgHom.id ℂ B := by
-    refine NonUnitalStarAlgHom.ext <| congrFun <|
-      Continuous.ext_on hGd (map_continuous (θ.comp η)) continuous_id ?_
-    simp only [EqOn, mem_iUnion]
-    rintro b ⟨n, hb⟩
-    exact tendsto_nhds_unique (NonUnitalStarAlgHom.tendsto_apply_of_tendsto
-        (fun x ↦ (hθ x).comp (tendsto_add_atTop_nat 1)) (hη b))
-      (tendsto_sub_nhds_zero_iff.mp <| squeeze_zero_norm'
-        (eventually_atTop.mpr ⟨n, fun m hm ↦ hφψ m b (hG hm hb)⟩) hε0)
+    refine comp_eq_id_of_tendsto (ψ := fun n ↦ φ (n + 1)) hη
+      (fun x ↦ (hθ x).comp (tendsto_add_atTop_nat 1)) hGd hε0 fun b hb ↦ ?_
+    obtain ⟨n, hb⟩ := mem_iUnion.mp hb
+    exact eventually_atTop.mpr ⟨n, fun m hm ↦ hφψ m b (hG hm hb)⟩
   exact ⟨StarAlgEquiv.ofNonUnitalStarAlgHom θ η hηθ hθη, hθ, hη⟩
 
 /-- **Approximate intertwining from almost inverse families.** Let `A` and `B` be separable,
