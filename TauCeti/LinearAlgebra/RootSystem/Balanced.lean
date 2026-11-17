@@ -6,27 +6,23 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Projection
-public import Mathlib.LinearAlgebra.RootSystem.Base
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
-import TauCeti.Algebra.Group.Submonoid.Closure
-import TauCeti.LinearAlgebra.LinearIndependent.Basic
+public import Mathlib.LinearAlgebra.RootSystem.Hom
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
-# Balanced root pairings, coroot-kernel projection, and base restriction
+# Balanced root pairings and coroot-kernel projection
 
 In a balanced root pairing `P : RootPairing ι R M N`, `P.rootSpan R` and the common coroot kernel
 `⨅ i, LinearMap.ker (P.coroot' i)` are complementary
 (`RootPairing.isCompl_rootSpan_iInf_ker_coroot'`), giving a `P.Aut`-equivariant linear projection
-`RootPairing.rootSpanProj : M →ₗ[R] P.rootSpan R`. It also upgrades balancedness to `[Finite ι]`
-and provides pullback and scalar restriction of bases
-(`RootPairing.Base.comapOfInjective`, `RootPairing.Base.restrictScalars'`).
+`RootPairing.rootSpanProj : M →ₗ[R] P.rootSpan R`. This file also establishes balancedness for
+finite crystallographic root pairings over characteristic-zero fields
+(`RootPairing.instIsBalancedOfIsCrystallographic`).
 
 ## Main definitions
 
 * `RootPairing.rootSpanProj`: linear projection `M →ₗ[R] P.rootSpan R` along the coroot kernel.
-* `RootPairing.Base.comapOfInjective` and `RootPairing.Base.restrictScalars'`: pullback of a base
-  along injective `R`-linear maps and restriction along `RootPairing.restrictScalars'`.
 
 ## Main results
 
@@ -44,7 +40,7 @@ and provides pullback and scalar restriction of bases
 
 public section
 
-open Function Set
+open Set
 
 namespace RootPairing
 
@@ -136,65 +132,5 @@ theorem restrictScalars'_coroot'_rootSpanProj (i : ι) (x : M) :
   exact h.trans (P.coroot'_coe_rootSpanProj i x)
 
 end RestrictScalars
-
-section BaseComap
-
-variable {ι R S M₀ N₀ M N : Type*} [CommRing R] [CommRing S] [Algebra R S] [FaithfulSMul R S]
-  [AddCommGroup M₀] [Module R M₀] [AddCommGroup N₀] [Module R N₀]
-  [AddCommGroup M] [Module S M] [Module R M] [IsScalarTower R S M]
-  [AddCommGroup N] [Module S N] [Module R N] [IsScalarTower R S N]
-
-private theorem mem_closure_or_neg_mem_of_injective {s : Set ι} {v₀ : ι → M₀} {v : ι → M}
-    {i : ι} (hv : v i ∈ AddSubmonoid.closure (v '' s) ∨ -v i ∈ AddSubmonoid.closure (v '' s))
-    (f : M₀ →+ M) (hf : Injective f) (hcomp : ∀ j, f (v₀ j) = v j) :
-    v₀ i ∈ AddSubmonoid.closure (v₀ '' s) ∨
-      -v₀ i ∈ AddSubmonoid.closure (v₀ '' s) := by
-  have himg : v '' s = f '' (v₀ '' s) := by
-    rw [← image_comp]; exact congrArg (· '' s) (funext hcomp).symm
-  rwa [himg, ← hcomp i, ← map_neg, f.mem_closure_image_iff hf, f.mem_closure_image_iff hf] at hv
-
-variable {P₀ : RootPairing ι R M₀ N₀} {P : RootPairing ι S M N} (b : P.Base)
-  (fM : M₀ →ₗ[R] M) (fN : N₀ →ₗ[R] N) (hfM : Injective fM) (hfN : Injective fN)
-  (hroot : ∀ i, fM (P₀.root i) = P.root i) (hcoroot : ∀ i, fN (P₀.coroot i) = P.coroot i)
-
-/-- **Pullback of a base `b : P.Base`** along injective `R`-linear maps `fM : M₀ →ₗ[R] M` and
-`fN : N₀ →ₗ[R] N` over a faithful `R`-algebra `S` compatible with roots and coroots. -/
-noncomputable def Base.comapOfInjective : P₀.Base where
-  support := b.support
-  linearIndepOn_root :=
-    (((funext hroot : fM ∘ P₀.root = P.root).symm ▸
-      b.linearIndepOn_root).restrict_scalars' R).of_comp fM
-  linearIndepOn_coroot :=
-    (((funext hcoroot : fN ∘ P₀.coroot = P.coroot).symm ▸
-      b.linearIndepOn_coroot).restrict_scalars' R).of_comp fN
-  root_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_of_injective (b.root_mem_or_neg_mem i) fM.toAddMonoidHom hfM hroot
-  coroot_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_of_injective (b.coroot_mem_or_neg_mem i) fN.toAddMonoidHom hfN hcoroot
-
-/-- `Base.comapOfInjective` leaves `support` unchanged. -/
-@[simp] theorem Base.support_comapOfInjective :
-    (b.comapOfInjective fM fN hfM hfN hroot hcoroot).support = b.support := (rfl)
-
-end BaseComap
-
-section RestrictScalarsBase
-
-variable {ι L M N : Type*} [Field L] [AddCommGroup M] [Module L M] [AddCommGroup N] [Module L N]
-  {P : RootPairing ι L M N} (b : P.Base) (K : Type*) [Field K] [Algebra K L]
-  [Module K M] [Module K N] [IsScalarTower K L M] [IsScalarTower K L N]
-  [P.IsBalanced] [P.IsValuedIn K]
-
-/-- **Restriction of scalars of a base** along `RootPairing.restrictScalars'`, keeping the same
-simple indices `b.support`. -/
-noncomputable def Base.restrictScalars' : (P.restrictScalars' K).Base :=
-  b.comapOfInjective (Submodule.span K (range P.root)).subtype
-    (Submodule.span K (range P.coroot)).subtype Subtype.val_injective Subtype.val_injective
-    (P.restrictScalars_coe_root K) (P.restrictScalars_coe_coroot K)
-
-/-- `Base.restrictScalars'` leaves `support` unchanged. -/
-@[simp] theorem Base.support_restrictScalars' : (b.restrictScalars' K).support = b.support := (rfl)
-
-end RestrictScalarsBase
 
 end RootPairing

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Balanced
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Base
 public import TauCeti.LinearAlgebra.RootSystem.Positive
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 import Mathlib.LinearAlgebra.Basis.VectorSpace

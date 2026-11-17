@@ -5,19 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Balanced
+public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Base
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Lattice
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut
-import TauCeti.Algebra.Group.Submonoid.Closure
 import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
-# Bases, based automorphisms, and dual isogeny lattices under base change
+# Based automorphisms and dual isogeny lattices under base change
 
 This file connects `TauCeti.LinearAlgebra.RootSystem.Weyl.BasedAut` with scalar extension
-(`RootPairing.baseChange`) and dual-lattice restriction (`RootPairing.IsDualLatticePair.restrict`):
-base change and lattice restriction of bases (`Base.baseChange`, `IsDualLatticePair.restrictBase`),
+(`RootPairing.baseChange`, `RootPairing.Base.baseChange`) and dual-lattice restriction
+(`RootPairing.IsDualLatticePair.restrict`): lattice restriction of bases
+(`IsDualLatticePair.restrictBase`), compatibility of based automorphisms with scalar extension and
 the open-chamber criterion over an ordered field
 (`Base.mem_basedAut_iff_smul_openDominantChamber_baseChange`), the restricted semidirect product
 `P.weylGroup ⋊ ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀`
@@ -26,9 +26,10 @@ ambient pairings (`Base.exists_mem_basedAut_inf_latticeAut_iff`).
 
 ## Main definitions
 
-* `RootPairing.Base.baseChange`, `RootPairing.IsDualLatticePair.restrictBase`, and
-  `RootPairing.IsDualLatticePair.basedAutMulEquiv`: base change and lattice restriction of bases
-  and `(hXY.restrictBase b).basedAut ≃* ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)`.
+* `RootPairing.IsDualLatticePair.restrictBase` and `RootPairing.IsDualLatticePair.basedAutMulEquiv`:
+  lattice restriction of bases and
+  `(hXY.restrictBase b).basedAut ≃* ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀)` when `Y₀` is finite free
+  over `R` and `X₀.subtype`, `Y₀.subtype` satisfy `IsBaseChange S`.
 * `RootPairing.Base.latticeAutSemidirectProductMulEquiv`: the restricted semidirect product
   `P.weylGroup ⋊ ↥(b.basedAut ⊓ P.latticeAut X₀ Y₀) ≃* P.latticeAut X₀ Y₀`.
 
@@ -51,52 +52,21 @@ ambient pairings (`Base.exists_mem_basedAut_inf_latticeAut_iff`).
 
 public section
 
-open Function Module Pointwise Set TensorProduct
+open Module Pointwise Set
 
 namespace RootPairing
 
-/-! ### Scalar extension of a base -/
+/-! ### Based automorphisms under scalar extension -/
 
 section BaseBaseChange
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N}
 
-private theorem mem_closure_or_neg_mem_map {M₀ M₁ : Type*} [AddCommGroup M₀]
-    [AddCommGroup M₁] {s : Set ι} {v₀ : ι → M₀} {v : ι → M₁} {i : ι}
-    (hv : v₀ i ∈ AddSubmonoid.closure (v₀ '' s) ∨
-      -v₀ i ∈ AddSubmonoid.closure (v₀ '' s))
-    (f : M₀ →+ M₁) (hcomp : ∀ j, f (v₀ j) = v j) :
-    v i ∈ AddSubmonoid.closure (v '' s) ∨ -v i ∈ AddSubmonoid.closure (v '' s) := by
-  have himg : v '' s = f '' (v₀ '' s) := by
-    rw [← image_comp]; exact congrArg (· '' s) (funext hcomp).symm
-  rw [himg, ← hcomp i, ← map_neg]
-  exact hv.imp f.map_mem_closure_image f.map_mem_closure_image
-
 namespace Base
 
 variable (b : P.Base) (S : Type*) [CommRing S] [Algebra R S] [FaithfulSMul R S] [Flat R S]
   [Free R N] [Module.Finite R N]
-
-/-- **Extension of scalars of a base**: the base of `P.baseChange S` with the same simple root
-indices `b.support`. -/
-noncomputable def baseChange : (P.baseChange S).Base where
-  support := b.support
-  linearIndepOn_root := by
-    simpa only [LinearIndepOn, Function.comp_def, P.baseChange_root S] using
-      Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_root
-  linearIndepOn_coroot := by
-    simpa only [LinearIndepOn, Function.comp_def, P.baseChange_coroot S] using
-      Module.Flat.linearIndependent_one_tmul (S := S) b.linearIndepOn_coroot
-  root_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_map (b.root_mem_or_neg_mem i) (TensorProduct.mk R S M 1).toAddMonoidHom
-      fun j ↦ (P.baseChange_root S j).symm
-  coroot_mem_or_neg_mem i :=
-    mem_closure_or_neg_mem_map (b.coroot_mem_or_neg_mem i) (TensorProduct.mk R S N 1).toAddMonoidHom
-      fun j ↦ (P.baseChange_coroot S j).symm
-
-/-- Scalar extension of a base leaves `support` unchanged. -/
-@[simp] theorem support_baseChange : (b.baseChange S).support = b.support := (rfl)
 
 /-- Transporting `b.baseChange S` by `P.autBaseChangeHom S g` is `(b.map g).baseChange S`. -/
 @[simp] theorem map_autBaseChangeHom (g : P.Aut) :
@@ -107,24 +77,6 @@ noncomputable def baseChange : (P.baseChange S).Base where
 theorem autBaseChangeHom_mem_basedAut_iff {g : P.Aut} :
     P.autBaseChangeHom S g ∈ (b.baseChange S).basedAut ↔ g ∈ b.basedAut := by
   simp [Base.mem_basedAut_iff]
-
-/-- Scalar extension preserves every entry of the `T`-valued Cartan matrix of a base. -/
-@[simp] theorem cartanMatrixIn_baseChange_apply (T : Type*) [CommRing T] [Algebra T R]
-    [Algebra T S] [IsScalarTower T R S] [FaithfulSMul T S] [P.IsValuedIn T]
-    (i j : (b.baseChange S).support) :
-    (b.baseChange S).cartanMatrixIn T i j =
-      b.cartanMatrixIn T ⟨i, (b.support_baseChange S).le i.2⟩
-        ⟨j, (b.support_baseChange S).le j.2⟩ :=
-  P.baseChange_pairingIn S T i j
-
-/-- Scalar extension preserves every entry of the integral Cartan matrix of a crystallographic
-root pairing. -/
-theorem cartanMatrix_baseChange_apply [CharZero S] [P.IsCrystallographic]
-    (i j : (b.baseChange S).support) :
-    (b.baseChange S).cartanMatrix i j =
-      b.cartanMatrix ⟨i, (b.support_baseChange S).le i.2⟩
-        ⟨j, (b.support_baseChange S).le j.2⟩ :=
-  b.cartanMatrixIn_baseChange_apply S ℤ i j
 
 end Base
 
