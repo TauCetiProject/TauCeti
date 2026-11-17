@@ -67,6 +67,8 @@ characteristic is the absolute ramification index of `K`.
   condition of the deep-unit power lemmas holds at depth `v_K(p) + 1` for every prime.
 * `TauCeti.normalizedAbsoluteValue_natCast`: the normalized absolute value of `n` is
   `q ^ (-natCastValuation K n hn)`.
+* `TauCeti.natCard_integerRing_quotient_span_natCast`: the index of `n 𝒪[K]` is
+  `q ^ natCastValuation K n hn`, where `q` is the residue-field cardinality.
 * `TauCeti.IsDiscreteValuationRing.addVal_natCast`: the same valuation in the
   discrete-valuation-ring convention.
 
@@ -338,6 +340,15 @@ theorem span_natCast_eq_maximalIdeal_pow (n : ℕ) (hn : (n : K) ≠ 0) :
       Subring.coe_mul, Subring.coe_pow, Subring.coe_natCast] using hu
   rw [← hu', Ideal.span_singleton_mul_left_unit u.isUnit, hπ.maximalIdeal_eq,
     Ideal.span_singleton_pow]
+
+variable (K) in
+/-- The index of `n 𝒪[K]` in `𝒪[K]` is the residue-field cardinality raised to the
+normalized valuation of `n`, provided `n` is nonzero in `K`. -/
+theorem natCard_integerRing_quotient_span_natCast (n : ℕ) (hn : (n : K) ≠ 0) :
+    Nat.card (𝒪[K] ⧸ Ideal.span {(n : 𝒪[K])}) =
+      Nat.card 𝓀[K] ^ natCastValuation K n hn := by
+  rw [span_natCast_eq_maximalIdeal_pow K n hn,
+    IsDiscreteValuationRing.natCard_quotient_maximalIdeal_pow]
 
 namespace IsDiscreteValuationRing
 
