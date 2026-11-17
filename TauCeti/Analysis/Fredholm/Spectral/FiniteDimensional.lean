@@ -36,8 +36,8 @@ lies in `(-c, c)`, so the eigenvalues in `[0, c]` are exactly the nonnegative on
 `spectralCount c T + n⁻(T) = dim H`
 (`TauCeti.spectralCount_add_finrank_pointSpectralSubspace`).
 A continuous path is bounded on the compact interval `[a, b]`, so any `c` above that bound is a
-single spectral cut along the whole interval, and Phillips' formula with this one cut gives the
-spectral flow.
+single spectral cut along the whole interval (`TauCeti.isSpectralCutOn_of_norm_lt`), and
+Phillips' formula with this one cut gives the spectral flow.
 
 Over `ℝ`, this gives the **regular-crossing formula** of Robbin and Salamon for the spectral flow
 (`TauCeti.spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm`). A *crossing* of `A` is a time
@@ -124,20 +124,9 @@ theorem spectralFlow_eq_finrank_sub_finrank {A : ℝ → H →L[𝕜] H} {a b : 
   -- A bound `C` for the path on the compact interval gives one spectral cut `c = C + 1`.
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn hA
   have hlt {t : ℝ} (ht : t ∈ Icc a b) : ‖A t‖ < C + 1 := (hC t ht).trans_lt (lt_add_one C)
-  have hnotMem {t r : ℝ} (ht : t ∈ Icc a b) (hr : C + 1 ≤ |r|) :
-      r ∉ spectrum ℝ (A t) := by
-    intro hr'
-    rcases subsingleton_or_nontrivial H with _ | _
-    · rw [spectrum.of_subsingleton] at hr'
-      exact hr'
-    · have := spectrum.norm_le_norm_of_mem hr'
-      rw [Real.norm_eq_abs] at this
-      linarith [hlt ht]
-  have hcut : IsSpectralCutOn A (C + 1) (Icc a b) := by
-    refine isSpectralCutOn_iff.2 ⟨(norm_nonneg _).trans_lt (hlt ⟨le_rfl, hab⟩),
-      fun u hu ↦ ⟨hnotMem hu ?_, hnotMem hu ?_, inferInstance⟩⟩
-    · rw [abs_neg, abs_of_pos ((norm_nonneg _).trans_lt (hlt hu))]
-    · rw [abs_of_pos ((norm_nonneg _).trans_lt (hlt hu))]
+  have hcut : IsSpectralCutOn A (C + 1) (Icc a b) :=
+    isSpectralCutOn_of_norm_lt ((norm_nonneg _).trans_lt (hlt ⟨le_rfl, hab⟩)) (fun _ ↦ hlt)
+      fun _ _ ↦ inferInstance
   have ha := spectralCount_add_finrank_pointSpectralSubspace (hsa a ⟨le_rfl, hab⟩)
     (hlt ⟨le_rfl, hab⟩)
   have hb := spectralCount_add_finrank_pointSpectralSubspace (hsa b ⟨hab, le_rfl⟩)
