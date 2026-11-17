@@ -39,6 +39,10 @@ deleted total space `E₀` in the long exact sequence of the Thom pair is that o
 as in the Gysin sequence. No orientation, finite-dimensionality or condition on the base is
 needed. The rank zero case is included: there `S(E)` and `E₀` are empty and `D(E) = E`.
 
+The disc bundle also contracts radially onto the zero section, so its projection to the base is a
+homotopy equivalence with homotopy inverse the zero section
+(`TauCeti.discBundleProjHomotopyEquiv`).
+
 ## References
 
 * J. W. Milnor, J. D. Stasheff, *Characteristic Classes*, Annals of Mathematics Studies 76,
@@ -259,5 +263,58 @@ theorem isIso_singularHomologyMap_discSpherePairMap
     IsIso (TopPair.singularHomologyMap (discSpherePairMap F E) R n) :=
   TopPair.isIso_singularHomologyMap_of_homotopyEquiv _ _ _ (discSpherePairMap_fst F E hnorm)
     (discSpherePairMap_snd F E hnorm) R n
+
+/-! ### The disc bundle and the base -/
+
+/-- The zero section, as a map into the disc bundle. -/
+private def zeroSectionDisc : C(B, discBundle F E) :=
+  ⟨fun b ↦ ⟨zeroSection F E b, mem_discBundle.2 ((norm_zero (E := E b)).trans_le zero_le_one)⟩,
+    (Trivialization.continuous_zeroSection ℝ).subtype_mk _⟩
+
+/-- The projection of the disc bundle. -/
+private def discProjMap : C(discBundle F E, B) :=
+  ⟨fun v ↦ (v : TotalSpace F E).proj, (FiberBundle.continuous_proj F E).comp continuous_subtype_val⟩
+
+/-- The radial contraction `(t, v) ↦ t • v` of the disc bundle onto the zero section. -/
+private def discBundleContraction :
+    ContinuousMap.Homotopy ((zeroSectionDisc F E).comp (discProjMap F E))
+      (ContinuousMap.id (discBundle F E)) where
+  toFun p := ⟨TotalSpace.mk' F (p.2 : TotalSpace F E).proj ((p.1 : ℝ) • (p.2 : TotalSpace F E).2),
+    by
+      rw [mem_discBundle, norm_smul, Real.norm_of_nonneg p.1.2.1, ← one_mul (1 : ℝ)]
+      exact mul_le_mul p.1.2.2 (mem_discBundle.1 p.2.2) (norm_nonneg _) zero_le_one⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    exact (continuous_subtype_val.comp continuous_fst).smul_totalSpace
+      (continuous_subtype_val.comp continuous_snd)
+  map_zero_left v := by
+    ext : 1
+    simp [zeroSectionDisc, discProjMap, zeroSection]
+  map_one_left v := by
+    ext : 1
+    simp
+
+/-- **The disc bundle is homotopy equivalent to the base**: its projection is a homotopy
+equivalence, with homotopy inverse the zero section. -/
+def discBundleProjHomotopyEquiv : discBundle F E ≃ₕ B where
+  toFun := discProjMap F E
+  invFun := zeroSectionDisc F E
+  left_inv := ⟨discBundleContraction F E⟩
+  right_inv := by
+    have h : (discProjMap F E).comp (zeroSectionDisc F E) = ContinuousMap.id B := by
+      ext
+      rfl
+    rw [h]
+
+@[simp]
+theorem discBundleProjHomotopyEquiv_apply (v : discBundle F E) :
+    discBundleProjHomotopyEquiv F E v = (v : TotalSpace F E).proj :=
+  (rfl)
+
+/-- The homotopy inverse of `D(E) ≃ₕ B` is the zero section. -/
+@[simp]
+theorem coe_discBundleProjHomotopyEquiv_symm_apply (b : B) :
+    ((discBundleProjHomotopyEquiv F E).symm b : TotalSpace F E) = zeroSection F E b :=
+  (rfl)
 
 end TauCeti
