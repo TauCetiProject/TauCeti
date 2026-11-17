@@ -128,7 +128,14 @@ def quotientPathAlgebraEquiv (n : ℕ) : htr.Quotient n ≃⋆ₐ[ℂ] PathAlgeb
 theorem quotientPathAlgebraEquiv_quotientStrandIncl {n : ℕ} (x : htr.Quotient (n + 1)) :
     htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 2) (htr.quotientStrandIncl n x) =
       walkExtend G v₀ (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 1) x) := by
-  obtain ⟨_, rfl⟩ := Ideal.Quotient.mk_surjective x; simp [htr.quotientStrandIncl_mk_traceRadical]
+  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+  -- `htr.quotientStrandIncl_mk` is stated using `(tr _).traceRadical (htr.map_mul_comm _)`,
+  -- which is definitionally equal to `htr.traceRadical _`, so `rw` does not match syntactically.
+  rw [quotientPathAlgebraEquiv_mk]
+  exact (congrArg (htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 2))
+    (htr.quotientStrandIncl_mk n a)).trans <|
+    (htr.quotientPathAlgebraEquiv_mk G v₀ hr hrs hδ hf hf₀ hadj (strandIncl a)).trans
+      (walkRep_strandIncl hr hδ a)
 /-- `quotientPathAlgebraEquiv` intertwines `quotientStrandStarAlgHom` with `walkExtend`. -/
 theorem quotientPathAlgebraEquiv_quotientStrandStarAlgHom (hδu : IsUnit δ) (n : ℕ)
     (x : htr.Quotient n) : htr.quotientPathAlgebraEquiv G v₀ hr hrs hδ hf hf₀ hadj (n + 1)

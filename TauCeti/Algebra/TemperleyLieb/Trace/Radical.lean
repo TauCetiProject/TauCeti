@@ -21,8 +21,10 @@ dimension vanishes, provided the quantum integers used in its construction are u
 These are the negligible projections killed in the positive Jones quotients.
 
 The radical and quotient trace are the general constructions `LinearMap.traceRadical`
-and `LinearMap.quotientTrace`; this file supplies their tower-specific properties.
-The strand maps here start at one strand, as does `TemperleyLieb.strandIncl`.
+and `LinearMap.quotientTrace`; this file supplies the `IsMarkovTrace.traceRadical` and
+`IsMarkovTrace.Quotient` shorthands together with their tower-specific properties.
+The strand maps `quotientStrandIncl` start at one strand, as does `TemperleyLieb.strandIncl`,
+while `comap_traceRadical_strandInclAll` extends the radical pullback to `n = 0` for unit `δ`.
 
 ## References
 
@@ -116,12 +118,6 @@ theorem quotientStrandIncl_mk (n : ℕ) (x : TemperleyLieb R δ (n + 1)) :
         Ideal.Quotient.mk ((tr (n + 2)).traceRadical (htr.map_mul_comm (n + 2)))
           (strandIncl x) := by
   exact Ideal.quotient_map_mkₐ _ _ _
-
-/-- Evaluation of `quotientStrandIncl` on classes written with `htr.traceRadical`. -/
-theorem quotientStrandIncl_mk_traceRadical (n : ℕ) (x : TemperleyLieb R δ (n + 1)) :
-    htr.quotientStrandIncl n (Ideal.Quotient.mk (htr.traceRadical (n + 1)) x) =
-      Ideal.Quotient.mk (htr.traceRadical (n + 2)) (strandIncl x) :=
-  htr.quotientStrandIncl_mk n x
 
 /-- All strand maps between trace-radical quotients are injective. -/
 theorem quotientStrandIncl_injective (n : ℕ) :
