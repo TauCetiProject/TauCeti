@@ -18,8 +18,9 @@ For a nonarchimedean local field `K` containing the `n`-th roots of unity, the s
 moves an `n`-th root of `b`. Its value lies in `rootsOfUnity n K`, without choosing a primitive
 root as a coordinate. The first argument enters the Artin map; the second supplies the radical.
 
-The characterization `normResidueSymbol_spec` works with every radical and every representative
-of the absolute Artin symbol in the absolute Galois group. The symbol is bimultiplicative and
+The characterization `normResidueSymbol_spec` (and `normResidueSymbol_spec_separableClosure` for
+radicals in `SeparableClosure K`) works with every radical and every representative of the
+absolute Artin symbol in the absolute Galois group. The symbol is bimultiplicative and
 is trivial on `n`-th powers in either argument. `normResidueSymbolPairing` is the resulting
 bimultiplicative pairing on the existing power-class quotient `Kˣ ⧸ (Kˣ)ⁿ`.
 
@@ -138,6 +139,21 @@ theorem normResidueSymbol_spec (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
   rw [algebraMap_normResidueSymbol a b σ hσ hβ,
     div_mul_cancel₀ _ (ne_zero_of_pow_eq_algebraMap hβ)]
 
+/-- **The Artin characterization of the norm-residue symbol in the separable closure.** Every
+representative `σ` of `Art_K(a)` acts on any `n`-th root `β ∈ SeparableClosure K` of `b` by
+multiplication by `(a, b)_{K, n}`. -/
+theorem normResidueSymbol_spec_separableClosure (a b : Kˣ) (σ : Gal(AlgebraicClosure K/K))
+    (hσ : (σ : TopologicalAbelianization Gal(AlgebraicClosure K/K)) = artinMap K a)
+    {β : SeparableClosure K} (hβ : β ^ n = algebraMap K (SeparableClosure K) (b : K)) :
+    absoluteGaloisGroupRestrictEquiv K σ β =
+      algebraMap K (SeparableClosure K) ((normResidueSymbol K n a b : Kˣ) : K) * β := by
+  apply Subtype.ext
+  rw [coe_absoluteGaloisGroupRestrictEquiv_apply K σ β,
+    normResidueSymbol_spec a b σ hσ (by
+      rw [← IntermediateField.algebraMap_apply, ← map_pow, hβ,
+        ← IsScalarTower.algebraMap_apply]),
+    IntermediateField.coe_mul, IntermediateField.coe_algebraMap_apply]
+
 /-- The norm-residue symbol is multiplicative in the Artin argument. -/
 theorem normResidueSymbol_mul_left (a a' b : Kˣ) :
     normResidueSymbol K n (a * a') b =
@@ -186,6 +202,36 @@ theorem normResidueSymbol_pow_right (a b : Kˣ) (k : ℕ) :
   induction k with
   | zero => simp
   | succ k ih => rw [pow_succ, normResidueSymbol_mul_right, ih, pow_succ]
+
+/-- Inversion in the Artin argument inverts the symbol. -/
+@[simp]
+theorem normResidueSymbol_inv_left (a b : Kˣ) :
+    normResidueSymbol K n a⁻¹ b = (normResidueSymbol K n a b)⁻¹ := by
+  rw [normResidueSymbol, map_inv]
+  exact map_inv (symbolCharacterAb K n b) _
+
+/-- Inversion in the radical argument inverts the symbol. -/
+@[simp]
+theorem normResidueSymbol_inv_right (a b : Kˣ) :
+    normResidueSymbol K n a b⁻¹ = (normResidueSymbol K n a b)⁻¹ := by
+  refine eq_inv_of_mul_eq_one_left ?_
+  rw [← normResidueSymbol_mul_right, inv_mul_cancel, normResidueSymbol_one_right]
+
+/-- Integer powers in the Artin argument become integer powers of the symbol. -/
+theorem normResidueSymbol_zpow_left (a b : Kˣ) (k : ℤ) :
+    normResidueSymbol K n (a ^ k) b = normResidueSymbol K n a b ^ k := by
+  rw [normResidueSymbol, map_zpow]
+  exact map_zpow (symbolCharacterAb K n b) _ _
+
+/-- Integer powers in the radical argument become integer powers of the symbol. -/
+theorem normResidueSymbol_zpow_right (a b : Kˣ) (k : ℤ) :
+    normResidueSymbol K n a (b ^ k) = normResidueSymbol K n a b ^ k := by
+  cases k with
+  | ofNat k =>
+    simp only [Int.ofNat_eq_natCast, zpow_natCast]
+    exact normResidueSymbol_pow_right a b k
+  | negSucc k =>
+    simp only [zpow_negSucc, normResidueSymbol_inv_right, normResidueSymbol_pow_right]
 
 /-- An `n`-th power in the Artin argument pairs trivially with every radical. -/
 @[simp]
