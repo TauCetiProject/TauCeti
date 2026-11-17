@@ -35,8 +35,8 @@ when `Hᵖ⁺ᵈ⁺¹(Y)` and `Hᵖ(Y)` are finite dimensional both of its indic
 
 * `TopCat.sigPos_singularCupPairing_sphere`, `TopCat.sigNeg_singularCupPairing_sphere`:
   both indices of inertia of the cup pairing against `z` are the rank of `ψ_z`;
-* `TopCat.sigPos_singularCupPairing_sphere_of_injective`,
-  `TopCat.sigNeg_singularCupPairing_sphere_of_injective`: if every nonzero `c ∈ Hᵖ(Y)` pairs
+* `TopCat.sigPos_singularCupPairing_sphere_of_injective_flip`,
+  `TopCat.sigNeg_singularCupPairing_sphere_of_injective_flip`: if every nonzero `c ∈ Hᵖ(Y)` pairs
   nontrivially with some `b` under `ψ_z`, both indices are `dim Hᵖ(Y)`.
 
 For a closed oriented three-manifold `Y`, `d = 0`, `p = 1`, `k = ℝ` and `z` the fundamental class
@@ -72,7 +72,8 @@ variable [CommRing k]
 /-- **The pairing of `Hᵖ⁺ᵈ⁺¹(Y)` with `Hᵖ(Y)` cut out by a class of `Sᵈ⁺¹ × Y`**: for a homology
 class `z` of `Sᵈ⁺¹ × Y` of degree `2 (p + d + 1)`, the pairing
 `(b, c) ↦ ⟨pr₁^* θ ⌣ pr₂^* (b ⌣ c), z⟩`, where `θ ∈ Hᵈ⁺¹(Sᵈ⁺¹; k)` is dual to the standard
-generator. Twice its value at the slant components `(b, c)` of a class `x` is `⟨x ⌣ x, z⟩`
+generator. When `Y` is a compact manifold of dimension below `2 (p + d + 1)` and `p + d + 1` is
+even, twice its value at the slant components `(b, c)` of a class `x` is `⟨x ⌣ x, z⟩`
 (`TopCat.singularCupPairing_apply_self_sphere`). -/
 def sphereProdCupPairing (Y : TopCat.{w}) (d p : ℕ)
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
@@ -119,9 +120,8 @@ theorem singularCupPairing_apply_self_sphere
         (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).1
         (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).2 := by
   rw [singularCupPairing_apply, singularCup_self_eq_two_smul_of_compactSpace x₀ hn hnp hp x,
-    singularCohomologySphereProdSlantEquiv_symm_apply, map_zero, zero_add, map_smul,
-    ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, sphereProdCupPairing_apply,
-    singularCupPairing_apply]
+    singularCohomologySphereProdSlantEquiv_symm_apply]
+  simp [sphereProdCupPairing_apply, singularCupPairing_apply]
 
 end CommRing
 
@@ -150,7 +150,7 @@ private theorem equivalent_toQuadraticMap_singularCupPairing_sphere {d n p : ℕ
   rw [smul_apply, QuadraticMap.comp_apply, LinearMap.prodMap_apply,
     QuadraticForm.dualProd_apply, LinearMap.BilinMap.toQuadraticMap_apply,
     singularCupPairing_apply_self_sphere x₀ hn hnp hp z x, LinearMap.id_apply, smul_eq_mul]
-  rfl
+  simp only [LinearEquiv.coe_toLinearMap, LinearMap.toFun_eq_coe, e]
 
 /-- **The positive index of inertia of the cup pairing on `Sᵈ⁺¹ × Y`**: if `Y` is a compact
 manifold of dimension below `2 (p + d + 1)`, `p + d + 1` is even and `Hᵖ⁺ᵈ⁺¹(Y)` and `Hᵖ(Y)` are
@@ -195,7 +195,7 @@ with some `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` under `ψ_z`, as Poincaré duality gives fo
 `S¹ × Y` with `Y` a closed oriented three-manifold, `d = 0` and `p = 1`, then the cup pairing on
 `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has positive index of inertia `dim Hᵖ(Y)`; for `S¹ × Y` this is
 `b₂⁺(S¹ × Y) = b₁(Y)`. -/
-theorem sigPos_singularCupPairing_sphere_of_injective {d n p : ℕ} (hn : finrank ℝ E = n)
+theorem sigPos_singularCupPairing_sphere_of_injective_flip {d n p : ℕ} (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
@@ -209,13 +209,13 @@ theorem sigPos_singularCupPairing_sphere_of_injective {d n p : ℕ} (hn : finran
         (q := p + (d + 1)) (by omega) z)) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) p) := by
-  rw [sigPos_singularCupPairing_sphere hn hnp hp z, ← TauCeti.sigPos_dualProd_comp_prodMap,
-    TauCeti.sigPos_dualProd_comp_prodMap_eq_finrank_range_flip, LinearMap.finrank_range_of_inj hz]
+  rw [sigPos_singularCupPairing_sphere hn hnp hp z, ← LinearMap.finrank_range_flip,
+    LinearMap.finrank_range_of_inj hz]
 
 /-- **Negative index `dim Hᵖ(Y)` for a nondegenerate pairing**: under the hypotheses of
-`TopCat.sigPos_singularCupPairing_sphere_of_injective`, the cup pairing on
+`TopCat.sigPos_singularCupPairing_sphere_of_injective_flip`, the cup pairing on
 `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has negative index of inertia `dim Hᵖ(Y)`. -/
-theorem sigNeg_singularCupPairing_sphere_of_injective {d n p : ℕ} (hn : finrank ℝ E = n)
+theorem sigNeg_singularCupPairing_sphere_of_injective_flip {d n p : ℕ} (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
@@ -229,8 +229,8 @@ theorem sigNeg_singularCupPairing_sphere_of_injective {d n p : ℕ} (hn : finran
         (q := p + (d + 1)) (by omega) z)) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) p) := by
-  rw [sigNeg_singularCupPairing_sphere hn hnp hp z, ← TauCeti.sigPos_dualProd_comp_prodMap,
-    TauCeti.sigPos_dualProd_comp_prodMap_eq_finrank_range_flip, LinearMap.finrank_range_of_inj hz]
+  rw [sigNeg_singularCupPairing_sphere hn hnp hp z, ← LinearMap.finrank_range_flip,
+    LinearMap.finrank_range_of_inj hz]
 
 end Signature
 

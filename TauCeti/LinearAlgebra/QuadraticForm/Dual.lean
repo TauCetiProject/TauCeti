@@ -19,21 +19,38 @@ on the characteristic of `K` or the dimension of `M`.
 More generally, a pairing `ψ : A →ₗ[K] Module.Dual K C` defines the quadratic form
 `(a, c) ↦ ψ a c` on `A × C`, the pullback of the hyperbolic form along `ψ × id`. Over a linearly
 ordered field, with `A` and `C` finite dimensional, both of its indices of inertia are the rank of
-`ψ` (`TauCeti.sigPos_dualProd_comp_prodMap`, `TauCeti.sigNeg_dualProd_comp_prodMap`), which is also
-the rank of the transposed pairing `ψ.flip : C →ₗ[K] Module.Dual K A`
-(`TauCeti.sigPos_dualProd_comp_prodMap_eq_finrank_range_flip`). The form vanishes on `ker ψ × C`
-and on `A × ker ψ.flip`, which bounds the positive index above by both ranks, and its radical lies
-in `ker ψ × ker ψ.flip`, which bounds the sum of the two indices below by the sum of the ranks. The
-automorphism `(a, c) ↦ (a, -c)` negates the form, so the two indices agree. For `ψ = id` this is
-the hyperbolic form on `Module.Dual K C × C`, whose indices are both `dim C`
-(`TauCeti.sigPos_dualProd`, `TauCeti.sigNeg_dualProd`).
+`ψ` (`TauCeti.sigPos_dualProd_comp_prodMap`, `TauCeti.sigNeg_dualProd_comp_prodMap`). The form
+vanishes on `ker ψ × C`, which bounds the positive index above by the rank of `ψ`, and its radical
+lies in `ker ψ × ker ψ.flip`, which bounds the sum of the two indices below by the sum of the ranks
+of `ψ` and of the transposed pairing `ψ.flip : C →ₗ[K] Module.Dual K A`. These two ranks agree
+(`LinearMap.finrank_range_flip`), and the automorphism `(a, c) ↦ (a, -c)` negates the form, so the
+two indices agree. For `ψ = id` this is the hyperbolic form on `Module.Dual K C × C`, whose indices
+are both `dim C` (`TauCeti.sigPos_dualProd`, `TauCeti.sigNeg_dualProd`).
 
 The intersection form of `S¹ × Y`, for a closed three-manifold `Y`, has this shape: in the
-decomposition `H²(S¹ × Y) ≅ H²(Y) × H¹(Y)` its quadratic form is `(b, c) ↦ 2 ⟨b ⌣ c, -⟩`
+decomposition `H²(S¹ × Y) ≅ H²(Y) × H¹(Y)` its quadratic form is `(b, c) ↦ 2 ψ_z(b, c)`, where
+`ψ_z(b, c) = ⟨pr₁^* θ ⌣ pr₂^* (b ⌣ c), z⟩` (`TopCat.sphereProdCupPairing`) for a homology class `z`
+of `S¹ × Y` and `θ ∈ H¹(S¹)` dual to the standard generator
 (`TopCat.sigPos_singularCupPairing_sphere`).
 -/
 
 public section
+
+namespace LinearMap
+
+variable {K V₁ V₂ : Type*} [Field K] [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂]
+  [Module K V₂] [Module.IsReflexive K V₂]
+
+/-- **A pairing and its transpose have the same rank**: for `B : V₁ →ₗ[K] V₂ →ₗ[K] K` with `V₂`
+reflexive, the transposed pairing `B.flip : V₂ →ₗ[K] Module.Dual K V₁` is `B.dualMap` composed
+with the evaluation isomorphism of `V₂`, so its rank is that of `B`
+(`LinearMap.finrank_range_dualMap_eq_finrank_range`). -/
+theorem finrank_range_flip (B : V₁ →ₗ[K] V₂ →ₗ[K] K) :
+    Module.finrank K (range B.flip) = Module.finrank K (range B) := by
+  change Module.finrank K (range (B.dualMap ∘ₗ (Module.evalEquiv K V₂).toLinearMap)) = _
+  rw [range_comp_of_range_eq_top _ (LinearEquiv.range _), finrank_range_dualMap_eq_finrank_range]
+
+end LinearMap
 
 namespace TauCeti
 
@@ -82,28 +99,22 @@ theorem sigNeg_dualProd_comp_prodMap_eq_sigPos (ψ : A →ₗ[K] Module.Dual K C
 
 variable [FiniteDimensional K A] [FiniteDimensional K C]
 
-/-- The positive index of inertia of the quadratic form of a pairing is at most the rank of the
-pairing, at most the rank of the transposed pairing, and at least their average. -/
-private theorem sigPos_dualProd_comp_prodMap_bounds (ψ : A →ₗ[K] Module.Dual K C) :
-    sigPos ((QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)) ≤
-        finrank K (LinearMap.range ψ) ∧
-      sigPos ((QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)) ≤
-        finrank K (LinearMap.range ψ.flip) ∧
-      finrank K (LinearMap.range ψ) + finrank K (LinearMap.range ψ.flip) ≤
-        2 * sigPos ((QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)) := by
+/-- **The positive index of inertia of a pairing is its rank**: the quadratic form
+`(a, c) ↦ ψ a c` of a pairing `ψ : A →ₗ[K] Module.Dual K C` of finite-dimensional spaces has
+positive index of inertia the rank of `ψ`. -/
+theorem sigPos_dualProd_comp_prodMap (ψ : A →ₗ[K] Module.Dual K C) :
+    sigPos ((QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)) =
+      finrank K (LinearMap.range ψ) := by
   set Q := (QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)
   have hA := LinearMap.finrank_range_add_finrank_ker ψ
   have hC := LinearMap.finrank_range_add_finrank_ker ψ.flip
+  have hψ : finrank K (LinearMap.range ψ.flip) = finrank K (LinearMap.range ψ) :=
+    LinearMap.finrank_range_flip ψ
   have hAC : finrank K (A × C) = finrank K A + finrank K C := Module.finrank_prod
-  -- `Q` vanishes on `ker ψ × C` and on `A × ker ψ.flip`
+  -- `Q` vanishes on `ker ψ × C`
   have h₁ := QuadraticForm.sigPos_add_finrank_le_of_nonpos (Q := Q)
     (V := (LinearMap.ker ψ).prod ⊤) fun x hx ↦ by
       simp [Q, LinearMap.mem_ker.mp (Submodule.mem_prod.mp hx).1]
-  have h₂ := QuadraticForm.sigPos_add_finrank_le_of_nonpos (Q := Q)
-    (V := (⊤ : Submodule K A).prod (LinearMap.ker ψ.flip)) fun x hx ↦ by
-      have h := LinearMap.congr_fun (LinearMap.mem_ker.mp (Submodule.mem_prod.mp hx).2) x.1
-      simp only [LinearMap.flip_apply, LinearMap.zero_apply] at h
-      simp [Q, h]
   -- the radical of `Q` lies in `ker ψ × ker ψ.flip`
   have hrad : Q.radical ≤ (LinearMap.ker ψ).prod (LinearMap.ker ψ.flip) := by
     intro x hx
@@ -117,25 +128,8 @@ private theorem sigPos_dualProd_comp_prodMap_bounds (ψ : A →ₗ[K] Module.Dua
   have h₃ := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := Q)
   have h₄ := Submodule.finrank_mono hrad
   rw [show sigNeg Q = sigPos Q from sigNeg_dualProd_comp_prodMap_eq_sigPos ψ] at h₃
-  rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_top] at h₁ h₂
+  rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod, finrank_top] at h₁
   rw [(Submodule.prodEquiv _ _).finrank_eq, Module.finrank_prod] at h₄
-  refine ⟨by omega, by omega, by omega⟩
-
-/-- **The positive index of inertia of a pairing is its rank**: the quadratic form
-`(a, c) ↦ ψ a c` of a pairing `ψ : A →ₗ[K] Module.Dual K C` of finite-dimensional spaces has
-positive index of inertia the rank of `ψ`. -/
-theorem sigPos_dualProd_comp_prodMap (ψ : A →ₗ[K] Module.Dual K C) :
-    sigPos ((QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)) =
-      finrank K (LinearMap.range ψ) := by
-  obtain ⟨h₁, h₂, h₃⟩ := sigPos_dualProd_comp_prodMap_bounds ψ
-  omega
-
-/-- The positive index of inertia of the quadratic form `(a, c) ↦ ψ a c` of a pairing is also the
-rank of the transposed pairing `ψ.flip : C →ₗ[K] Module.Dual K A`. -/
-theorem sigPos_dualProd_comp_prodMap_eq_finrank_range_flip (ψ : A →ₗ[K] Module.Dual K C) :
-    sigPos ((QuadraticForm.dualProd K C).comp (ψ.prodMap LinearMap.id)) =
-      finrank K (LinearMap.range ψ.flip) := by
-  obtain ⟨h₁, h₂, h₃⟩ := sigPos_dualProd_comp_prodMap_bounds ψ
   omega
 
 /-- **The negative index of inertia of a pairing is its rank**: the quadratic form
