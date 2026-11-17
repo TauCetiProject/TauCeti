@@ -41,8 +41,9 @@ variation distance.
   `2 ^ r`;
 * `natCard_embedding_update_id_comp_eq_update_id_comp`: the number of embeddings with the same
   word is `1` if `r = 0` and `2` otherwise;
-* `sampleWithoutReplacement_dirac_update_id_card_eq_two`: under without-replacement sampling of the
-  one-pair population, the probability of seeing `a` twice is `t`;
+* `sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two`: under
+  without-replacement sampling of the one-pair population, the probability of seeing `a` twice
+  is `t`;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_eq`: the exact largest
   event excess `1 - p - t * min p (1 - p)`;
 * `etvDist_sampleWithoutReplacement_sampleWithReplacement_dirac_update_id_eq`,
@@ -212,8 +213,8 @@ variable [Fintype ι] [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClas
 /-- Under without-replacement sampling of the one-pair population `Function.update id b a` with
 `a ≠ b` and `|ι| ≤ |κ|`, the event of sampling `a` twice has probability
 `|ι|.descFactorial 2 / |κ|.descFactorial 2`. -/
-theorem sampleWithoutReplacement_dirac_update_id_card_eq_two (hab : a ≠ b)
-    (hmn : Fintype.card ι ≤ Fintype.card κ) :
+theorem sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two
+    (hab : a ≠ b) (hmn : Fintype.card ι ≤ Fintype.card κ) :
     sampleWithoutReplacement (ι := ι) (Measure.dirac (update id b a))
       {y : ι → κ | #{i | y i = a} = 2} =
       (Fintype.card ι).descFactorial 2 / (Fintype.card κ).descFactorial 2 := by
@@ -331,7 +332,8 @@ theorem iSup_sampleWithoutReplacement_sub_sampleWithReplacement_dirac_update_id_
   have ht0 : 0 ≤ t := onePairT_nonneg _ _
   have hPE₂ : P E₂ = ENNReal.ofReal t := by
     rw [← ENNReal.toReal_eq_toReal_iff' (measure_ne_top P _) ENNReal.ofReal_ne_top,
-      sampleWithoutReplacement_dirac_update_id_card_eq_two hab hmn, ENNReal.toReal_ofReal ht0]
+      sampleWithoutReplacement_dirac_update_id_apply_setOf_card_filter_eq_two hab hmn,
+      ENNReal.toReal_ofReal ht0]
     simp only [t, onePairT, ENNReal.toReal_div, ENNReal.toReal_natCast]
   have hPE₂c : P E₂ᶜ = ENNReal.ofReal (1 - t) := by
     rw [prob_compl_eq_one_sub .of_discrete, hPE₂, ← ENNReal.ofReal_one, ← ENNReal.ofReal_sub _ ht0]
