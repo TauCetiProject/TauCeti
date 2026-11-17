@@ -302,7 +302,6 @@ end QuantizedEnvelopingAlgebra
 /-- The Drinfeld–Jimbo quantized enveloping algebra `U_q(D)` associated to a symmetrizable Cartan
 datum `D : CartanDatum ι X Y` and parameter `q : K`, defined as `RingQuot` of the free algebra by
 `QuantizedEnvelopingAlgebra.Rel D q`. -/
-@[expose]
 def QuantizedEnvelopingAlgebra {ι X Y K : Type*} [AddCommGroup X] [AddCommGroup Y] [Field K]
     (D : CartanDatum ι X Y) (q : K) : Type _ :=
   RingQuot (QuantizedEnvelopingAlgebra.Rel D q)

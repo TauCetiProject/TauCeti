@@ -82,13 +82,19 @@ private theorem antipode_commutator_self (i : ι) :
   apply MulOpposite.unop_injective
   simp only [MulOpposite.unop_sub, MulOpposite.unop_mul, MulOpposite.unop_op,
     MulOpposite.unop_smul, neg_mul_neg, neg_neg, ← simpleK_def, ← simpleKInv_def]
+  have hleft : f D q i * simpleK D q i * (simpleKInv D q i * e D q i) = f D q i * e D q i := by
+    simp [mul_assoc]
   have hconj : simpleKInv D q i * e D q i * (f D q i * simpleK D q i) = e D q i * f D q i := by
-    rw [simpleKInv_mul_e, smul_mul_assoc, mul_assoc, ← mul_assoc (simpleKInv D q i),
-      simpleKInv_mul_f, smul_mul_assoc, mul_smul_comm, smul_smul, mul_assoc (f D q i),
-      simpleKInv_mul_simpleK, mul_one, ← zpow_add₀ (pow_ne_zero _ hq), neg_add_cancel, zpow_zero,
-      one_smul]
-  rw [mul_assoc (f D q i), simpleK_mul_simpleKInv_assoc, hconj, ← neg_sub (e D q i * f D q i),
-    e_mul_f_sub_f_mul_e_self, ← smul_neg, neg_sub]
+    have hkf : simpleKInv D q i * (f D q i * simpleK D q i) =
+        (q ^ D.symmetrizer i) ^ D.cartan i i • f D q i := by
+      rw [← mul_assoc, simpleKInv_mul_f]; simp [mul_assoc]
+    calc simpleKInv D q i * e D q i * (f D q i * simpleK D q i)
+        = (q ^ D.symmetrizer i) ^ (-D.cartan i i) •
+            (e D q i * (simpleKInv D q i * (f D q i * simpleK D q i))) := by
+          rw [simpleKInv_mul_e]; simp [mul_assoc]
+      _ = e D q i * f D q i := by
+          rw [hkf]; simp [smul_smul, hq]
+  rw [hleft, hconj, ← neg_sub (e D q i * f D q i), e_mul_f_sub_f_mul_e_self, ← smul_neg, neg_sub]
 
 private theorem antipode_commutator_ne {i j : ι} (hij : i ≠ j) :
     MulOpposite.op (-(simpleKInv D q i * e D q i)) *
@@ -99,22 +105,21 @@ private theorem antipode_commutator_ne {i j : ι} (hij : i ≠ j) :
   · simp
   apply MulOpposite.unop_injective
   simp only [MulOpposite.unop_sub, MulOpposite.unop_mul, MulOpposite.unop_op,
-    MulOpposite.unop_zero, neg_mul_neg]
+    MulOpposite.unop_zero, neg_mul_neg, sub_eq_zero]
   have hkj_ei : simpleK D q j * e D q i =
       (q ^ D.symmetrizer i) ^ D.cartan i j • (e D q i * simpleK D q j) := by
     rw [simpleK_mul_e, zpow_symmetrizer_cartan_comm]
-  calc f D q j * simpleK D q j * (simpleKInv D q i * e D q i) -
-        simpleKInv D q i * e D q i * (f D q j * simpleK D q j)
-      = (f D q j * simpleKInv D q i) * (simpleK D q j * e D q i) -
-          simpleKInv D q i * (e D q i * f D q j) * simpleK D q j := by
-        rw [mul_assoc (f D q j), ← mul_assoc (simpleK D q j),
-          (commute_simpleK_simpleKInv D q j i).eq, mul_assoc (simpleKInv D q i),
-          ← mul_assoc (f D q j), mul_assoc (simpleKInv D q i) (e D q i), ← mul_assoc (e D q i),
-          ← mul_assoc (simpleKInv D q i)]
-    _ = 0 := by
-        rw [f_mul_simpleKInv, hkj_ei, smul_mul_smul_comm, ← zpow_add₀ (pow_ne_zero _ hq),
-          neg_add_cancel, zpow_zero, one_smul, mul_assoc (simpleKInv D q i), ← mul_assoc (f D q j),
-          ← mul_assoc (simpleKInv D q i), (commute_e_f D q hij).eq, sub_self]
+  have hkk : simpleK D q j * (simpleKInv D q i * e D q i) =
+      simpleKInv D q i * (simpleK D q j * e D q i) := by
+    rw [← mul_assoc, (commute_simpleK_simpleKInv D q j i).eq, mul_assoc]
+  calc f D q j * simpleK D q j * (simpleKInv D q i * e D q i)
+      = (f D q j * simpleKInv D q i) * (simpleK D q j * e D q i) := by
+        rw [mul_assoc, hkk, ← mul_assoc]
+    _ = simpleKInv D q i * (f D q j * e D q i) * simpleK D q j := by
+        rw [f_mul_simpleKInv, hkj_ei]
+        simp [smul_smul, mul_inv_cancel₀ (zpow_ne_zero _ (pow_ne_zero _ hq)), mul_assoc]
+    _ = simpleKInv D q i * e D q i * (f D q j * simpleK D q j) := by
+        rw [← (commute_e_f D q hij).eq]; simp only [mul_assoc]
 
 private theorem serreNormalizedE_term {i j : ι} (hij : i ≠ j) (hq : q ≠ 0) {r : ℕ}
     (hrm : r ≤ D.serreLength i j) :
