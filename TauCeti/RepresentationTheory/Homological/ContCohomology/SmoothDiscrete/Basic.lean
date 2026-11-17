@@ -238,6 +238,17 @@ reducible transparency, so instance search cannot find the discreteness of `M` t
 projection on its own. -/
 instance : DiscreteTopology (ofDiscreteModule R G M).V := inferInstanceAs (DiscreteTopology M)
 
+/-- The underlying module of `ofDiscreteModule R G M` inherits a `Monoid` structure on `M` at
+instance transparency. -/
+instance instMonoidOfDiscreteModuleV [Monoid M] : Monoid (ofDiscreteModule R G M).V :=
+  inferInstanceAs (Monoid M)
+
+/-- The underlying module of `ofDiscreteModule R G M` inherits a `CommMonoid` structure on `M` at
+instance transparency. -/
+instance instCommMonoidOfDiscreteModuleV [CommMonoid M] :
+    CommMonoid (ofDiscreteModule R G M).V :=
+  inferInstanceAs (CommMonoid M)
+
 variable {R G M}
 
 /-- In `ofDiscreteModule R G M`, the operator of `g` is the given action `m ↦ g • m`. -/
@@ -758,14 +769,31 @@ variable {R G} in
 lemma toSmoothDiscrete_obj_obj_ρ_apply (X : DiscreteRep.{u, v, w} R G) (g : G) (x : X.V) :
     ((toSmoothDiscrete R G).obj X).obj.ρ g x = X.ρ g x := (rfl)
 
+variable {R G} in
+/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `Monoid` structure on
+`X.V` at instance transparency; in particular this covers
+`(TauCeti.SmoothDiscreteTopRep.of R G M).obj.V`. -/
+instance instMonoidToSmoothDiscreteObjV (X : DiscreteRep.{u, v, w} R G) [Monoid X.V] :
+    Monoid ((toSmoothDiscrete R G).obj X).obj.V :=
+  inferInstanceAs (Monoid X.V)
+
+variable {R G} in
+/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `CommMonoid` structure
+on `X.V` at instance transparency; in particular this covers
+`(TauCeti.SmoothDiscreteTopRep.of R G M).obj.V`. -/
+instance instCommMonoidToSmoothDiscreteObjV (X : DiscreteRep.{u, v, w} R G) [CommMonoid X.V] :
+    CommMonoid ((toSmoothDiscrete R G).obj X).obj.V :=
+  inferInstanceAs (CommMonoid X.V)
+
 section Of
 
 variable (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
   [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] [ContinuousSMul G M]
 
 /-- A discrete `R`-module `M` with continuous `R`- and `G`-actions, bundled as an object of
-`TauCeti.DiscreteRep R G`. When `R` carries the discrete topology, `ContinuousSMul R M` is
-supplied automatically by `TauCeti.continuousSMul_of_discreteTopology`. -/
+`TauCeti.DiscreteRep R G`. When `R` carries the discrete topology and
+`TauCeti.Topology.Algebra.MulAction.Discrete` is imported, `ContinuousSMul R M` is supplied
+automatically by `TauCeti.continuousSMul_of_discreteTopology`. -/
 abbrev DiscreteRep.of : DiscreteRep.{u, v, w} R G where
   V := M
 

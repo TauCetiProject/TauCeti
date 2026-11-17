@@ -20,8 +20,7 @@ and the `G`-action is continuous, on `TauCeti.SmoothDiscreteTopRep.of R G A`
 
 No commutativity of `A` is needed for the pairing itself; when `A` is commutative, the pairing is
 symmetric (`TauCeti.ofDiscreteModuleMulPairing_flip`,
-`TauCeti.SmoothDiscreteTopRep.ofMulPairing_flip`) and the carrier projections inherit `CommMonoid`
-instances alongside their `Monoid` instances. Over `R = ℤ`, both pairings agree
+`TauCeti.SmoothDiscreteTopRep.ofMulPairing_flip`). Over `R = ℤ`, both pairings agree
 (`TauCeti.ofDiscreteModuleMulPairing_int`, `TauCeti.SmoothDiscreteTopRep.ofMulPairing_int`) with
 `TauCeti.ofDiscreteModulePairing` at `AddMonoidHom.mul`.
 
@@ -48,45 +47,6 @@ public section
 universe u v w
 
 namespace TauCeti
-
-section CarrierInstances
-
-variable {R : Type u} [Ring R] [TopologicalSpace R]
-  {G : Type v} [Monoid G]
-
-/-- The underlying module of `ofDiscreteModule R G M` inherits a `Monoid` structure on `M` at
-instance transparency. -/
-instance instMonoidOfDiscreteModuleV
-    (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] [Monoid M] :
-    Monoid (ofDiscreteModule R G M).V :=
-  inferInstanceAs (Monoid M)
-
-/-- The underlying module of `ofDiscreteModule R G M` inherits a `CommMonoid` structure on `M` at
-instance transparency. -/
-instance instCommMonoidOfDiscreteModuleV
-    (M : Type w) [AddCommGroup M] [Module R M] [TopologicalSpace M] [DiscreteTopology M]
-    [DistribMulAction G M] [SMulCommClass G R M] [ContinuousSMul R M] [CommMonoid M] :
-    CommMonoid (ofDiscreteModule R G M).V :=
-  inferInstanceAs (CommMonoid M)
-
-/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `Monoid` structure on
-`X.V` at instance transparency; in particular this covers `(SmoothDiscreteTopRep.of R G A).obj.V`.
--/
-instance instMonoidToSmoothDiscreteObjV [TopologicalSpace G]
-    (X : DiscreteRep.{u, v, w} R G) [Monoid X.V] :
-    Monoid ((toSmoothDiscrete R G).obj X).obj.V :=
-  inferInstanceAs (Monoid X.V)
-
-/-- The underlying module of `((toSmoothDiscrete R G).obj X).obj` inherits a `CommMonoid` structure
-on `X.V` at instance transparency; in particular this covers
-`(SmoothDiscreteTopRep.of R G A).obj.V`. -/
-instance instCommMonoidToSmoothDiscreteObjV [TopologicalSpace G]
-    (X : DiscreteRep.{u, v, w} R G) [CommMonoid X.V] :
-    CommMonoid ((toSmoothDiscrete R G).obj X).obj.V :=
-  inferInstanceAs (CommMonoid X.V)
-
-end CarrierInstances
 
 section GeneralRing
 

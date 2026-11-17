@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Algebr
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Cup.Functoriality
 public import TauCeti.RepresentationTheory.Tensor.Induction.Algebra.Basic
 public import TauCeti.RepresentationTheory.Tensor.Induction.ChangeTransversal.Discrete
+import TauCeti.RingTheory.PiTensorProduct.Basic
 
 /-!
 # Discrete and smooth tensor-induced algebras and cup-product compatibility
