@@ -83,6 +83,8 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `trajectorySign_flow`: the sign is constant along each trajectory.
 * `trajectorySign_neg_left`, `trajectorySign_neg_right`: reversing an orientation reverses the
   signs.
+* `signBasis_mul_trajectorySign`: changing the orientation at the target to that of a basis
+  multiplies the sign by their relative sign.
 * `intCast_signedTrajectoryCount`,
   `IsMorseSmale.morseBoundaryCoeff_eq_intCast_signedTrajectoryCount`: the signed count reduces
   modulo two to the number of trajectories, the coefficient of the mod-two Morse boundary.
@@ -115,6 +117,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 namespace MorseChart
 
 variable {x : M} (φ : MorseChart E f x)
+
+/-- An orientation of the space of coordinates of negative weight of a Morse chart, indexed by the
+Morse index: the orientation of a basis. It serves wherever some orientation is needed and the
+result does not depend on which. -/
+noncomputable def negativeOrientation :
+    Orientation ℝ ({i // φ.weight i < 0} → ℝ) (Fin (manifoldMorseIndex 𝓘(ℝ, E) f x)) :=
+  (Module.finBasisOfFinrankEq ℝ _ φ.finrank_negativeWeight_fun).orientation
 
 /-- The orientation of `ℝ × V`, for `V` the space of coordinates of negative weight of a Morse
 chart at `q`, against which the signs of the trajectories from a critical point `p` of index
@@ -278,6 +287,16 @@ theorem trajectorySign_neg_right (y : M) :
     · simp [Module.Ray.ne_neg_self]
     · simp [(Module.Ray.ne_neg_self _).symm]
   · rw [trajectorySign_of_not_bijective h, trajectorySign_of_not_bijective h, neg_zero]
+
+/-- **Measuring signs against a basis at the target.** The sign of a trajectory for the
+orientation of a basis `b` of the coordinates of negative weight at the target is its sign for
+`oq`, multiplied by the sign of `oq` relative to `b`. -/
+theorem signBasis_mul_trajectorySign
+    (b : Module.Basis (Fin (manifoldMorseIndex 𝓘(ℝ, E) f q)) ℝ ({i // φq.weight i < 0} → ℝ))
+    (y : M) :
+    (oq.signBasis b : ℤ) * hX.trajectorySign φp φq op oq hpq y =
+      hX.trajectorySign φp φq op b.orientation hpq y := by
+  rcases b.orientation_eq_or_eq_neg oq with rfl | rfl <;> simp
 
 /-- Reversing the orientation at the source reverses the signed count. -/
 @[simp]
