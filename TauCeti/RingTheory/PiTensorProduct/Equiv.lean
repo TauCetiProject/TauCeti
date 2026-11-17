@@ -16,14 +16,14 @@ import Mathlib.LinearAlgebra.PiTensorProduct.Finsupp
 /-!
 # Algebra equivalences for indexed tensor products
 
-The linear equivalences for reindexing, removing an empty index set, and splitting off one
-factor preserve the algebra structures on indexed tensor products. Their algebra versions
-allow algebraic properties stable under binary tensor products to be proved by induction on a
-finite index type.
+The linear equivalences for reindexing, removing an empty index set, collapsing a singleton index
+type, and splitting off one factor preserve the algebra structures on indexed tensor products.
+Their algebra versions allow algebraic properties stable under binary tensor products to be proved
+by induction on a finite index type.
 
-These constructions upgrade Mathlib's `PiTensorProduct.reindex` and
-`PiTensorProduct.isEmptyEquiv`, and `PiTensorProduct.optionEquiv`. Reindexing along permutations
-gives the action of `Equiv.Perm ι` on a tensor power by algebra automorphisms
+These constructions upgrade Mathlib's `PiTensorProduct.reindex`, `PiTensorProduct.isEmptyEquiv`,
+and `PiTensorProduct.subsingletonEquiv`, as well as `PiTensorProduct.optionEquiv`. Reindexing along
+permutations gives the action of `Equiv.Perm ι` on a tensor power by algebra automorphisms
 (`PiTensorProduct.permAlgEquiv`).
 
 Applying algebra equivalences factorwise gives `PiTensorProduct.congrAlgEquiv`, the algebra
@@ -208,6 +208,59 @@ theorem isEmptyAlgEquiv_symm_apply (ι : Type*) [IsEmpty ι] (A : ι → Type*)
     (isEmptyAlgEquiv (R := R) ι A).symm r = r • 1 := by
   apply (isEmptyAlgEquiv (R := R) ι A).injective
   simp
+
+/-- The tensor product over a subsingleton index type with element `i₀` is isomorphic as an
+algebra to `A i₀`. -/
+noncomputable def subsingletonAlgEquiv {ι : Type*} [Subsingleton ι] (i₀ : ι) (A : ι → Type*)
+    [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] : (⨂[R] i, A i) ≃ₐ[R] A i₀ :=
+  AlgEquiv.ofLinearEquiv (subsingletonEquiv i₀)
+    (by simp [one_def, subsingletonEquiv_apply_tprod, Pi.one_def]) <|
+    LinearMap.map_mul_iff _ |>.mpr <| by
+      ext a b
+      simp [tprod_mul_tprod, subsingletonEquiv_apply_tprod, Pi.mul_def]
+
+/-- The subsingleton algebra equivalence has `PiTensorProduct.subsingletonEquiv` as its underlying
+linear equivalence. -/
+@[simp]
+theorem subsingletonAlgEquiv_toLinearEquiv {ι : Type*} [Subsingleton ι] (i₀ : ι) (A : ι → Type*)
+    [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] :
+    (subsingletonAlgEquiv (R := R) i₀ A).toLinearEquiv = subsingletonEquiv i₀ := (rfl)
+
+/-- Evaluating `PiTensorProduct.subsingletonAlgEquiv` on a pure tensor reads off its entry at
+`i₀`. -/
+@[simp]
+theorem subsingletonAlgEquiv_tprod {ι : Type*} [Subsingleton ι] (i₀ : ι) (A : ι → Type*)
+    [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] (a : ∀ i, A i) :
+    subsingletonAlgEquiv (R := R) i₀ A (tprod R a) = a i₀ := by
+  simp [subsingletonAlgEquiv, subsingletonEquiv_apply_tprod]
+
+/-- `PiTensorProduct.subsingletonAlgEquiv` is left inverse to the factor inclusion at `i₀`. It is
+a pre-simp lemma since `singleAlgHom_apply` would otherwise rewrite the factor inclusion first. -/
+@[simp↓]
+theorem subsingletonAlgEquiv_singleAlgHom {ι : Type*} [Subsingleton ι] [DecidableEq ι] (i₀ : ι)
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] (a : A i₀) :
+    subsingletonAlgEquiv (R := R) i₀ A (singleAlgHom i₀ a) = a := by
+  rw [singleAlgHom_apply, subsingletonAlgEquiv_tprod, MonoidHom.mulSingle_apply,
+    Pi.mulSingle_eq_same]
+
+/-- The inverse of `PiTensorProduct.subsingletonAlgEquiv` is the factor inclusion
+`PiTensorProduct.singleAlgHom i₀`, sending `a` to the pure tensor `tprod R (Pi.mulSingle i₀ a)`.
+
+This is an explicit rewrite rule rather than a `simp` lemma because
+`subsingletonAlgEquiv_symm_apply'` is the `simp` normal form for constant families, mirroring
+`PiTensorProduct.subsingletonEquiv_symm_apply`. -/
+theorem subsingletonAlgEquiv_symm_apply {ι : Type*} [Subsingleton ι] [DecidableEq ι] (i₀ : ι)
+    (A : ι → Type*) [∀ i, Semiring (A i)] [∀ i, Algebra R (A i)] (a : A i₀) :
+    (subsingletonAlgEquiv (R := R) i₀ A).symm a = singleAlgHom i₀ a := by
+  rw [AlgEquiv.symm_apply_eq, subsingletonAlgEquiv_singleAlgHom]
+
+/-- For a constant family, the inverse of `PiTensorProduct.subsingletonAlgEquiv` sends `b` to the
+constant pure tensor with entry `b`. -/
+@[simp]
+theorem subsingletonAlgEquiv_symm_apply' {ι : Type*} [Subsingleton ι] (i₀ : ι) {B : Type*}
+    [Semiring B] [Algebra R B] (b : B) :
+    (subsingletonAlgEquiv (R := R) i₀ (fun _ ↦ B)).symm b = tprod R fun _ ↦ b := by
+  rw [AlgEquiv.symm_apply_eq, subsingletonAlgEquiv_tprod]
 
 /-- Splitting off the factor at `none` of an indexed tensor product of algebras. -/
 noncomputable def optionAlgEquiv {ι : Type*} (A : Option ι → Type*)
