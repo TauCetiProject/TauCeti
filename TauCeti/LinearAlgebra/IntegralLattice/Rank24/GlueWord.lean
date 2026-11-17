@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.CosetMinimum
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Representatives
 public import Mathlib.Data.List.GetD
 import Mathlib.Data.List.OfFn
 
@@ -35,12 +35,17 @@ list along `σ` (`encodeGlueWord_piGlueAlphabetCongr_eq_ofFn`); in particular, r
 positions of a list of components as an explicitly given family does not change digit lists
 (`encodeGlueWord_piGlueAlphabetCongr`).
 
-Sums and shortest norms of glue words can be computed on their digit words: `glueWordAdd` adds
-two digit words label by label (`encodeGlueWord_add`), and `glueWordMinimum` sums the shortest
-norms of the printed labels, giving the shortest norm `μ(w)` of the coset named by the word
-(`glueWordMinimum_encodeGlueWord`). Finite checks on printed glue words therefore evaluate by
-`decide`. Like digit lists, shortest norms are unchanged by passing to an equal family of
-components (`TauCeti.DynkinType.sum_glueMinimum_piGlueAlphabetCongr`).
+Sums, shortest norms, and canonical dual-lattice representatives of glue words can be computed
+directly on their digit words: `glueWordAdd` adds two digit words label by label
+(`encodeGlueWord_add`), `glueWordMinimum` sums the shortest norms of the printed labels to give
+the coset minimum `μ(w)` (`glueWordMinimum_encodeGlueWord`), and `glueDigitsVector` assembles the
+simple-root coordinate vector `TauCeti.DynkinType.glueLabelVector` of each label to give the
+canonical shortest representative `TauCeti.DynkinType.glueWordVector`
+(`glueDigitsVector_encodeGlueWord`, `pi_rootLattice_form_glueDigitsVector_self`). Finite checks on
+printed glue words therefore evaluate by `decide`. Like digit lists, shortest norms and digit-word
+representatives are preserved by passing to an equal family of components
+(`TauCeti.DynkinType.sum_glueMinimum_piGlueAlphabetCongr`,
+`gluedLatticeIsometryOfEq_glueDigitsVector`).
 
 For a constant type-`A` family, `typeAGlueWordOfDigits` reads digits modulo the alphabet size.
 `encodeGlueWord_typeA_eq` gives the encoder's residue formula, and
@@ -284,6 +289,110 @@ theorem glueWordMinimum_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
     glueWordMinimum t (encodeGlueWord t ht w) = ∑ i, (t i).glueMinimum (ht i) (w i) := by
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [getD_encodeGlueWord, ← DynkinType.glueMinimum_glueLabelEquiv, Equiv.apply_symm_apply]
+
+/-- **The canonical coordinate vector of a digit word**, assembling
+`TauCeti.DynkinType.glueLabelVector` componentwise from its printed labels
+(`glueDigitsVector_encodeGlueWord`); a missing label reads as `0`. -/
+@[expose] def glueDigitsVector (l : List ℕ) : ∀ i : Fin n, Fin (t i).rank → ℚ :=
+  fun i ↦ (t i).glueLabelVector (l.getD i 0)
+
+/-- Expanding `glueDigitsVector` in terms of `glueLabelVector` and `List.getD`. -/
+theorem glueDigitsVector_def (l : List ℕ) :
+    glueDigitsVector t l = fun i ↦ (t i).glueLabelVector (l.getD i 0) :=
+  (rfl)
+
+/-- Evaluating `glueDigitsVector` at component `i` gives `(t i).glueLabelVector` of the `i`-th
+digit. -/
+@[simp]
+theorem glueDigitsVector_apply (l : List ℕ) (i : Fin n) :
+    glueDigitsVector t l i = (t i).glueLabelVector (l.getD i 0) :=
+  (rfl)
+
+/-- Evaluating `glueDigitsVector` on `List.ofFn d` reads the representative of `d i` at each
+component `i`. -/
+@[simp]
+theorem glueDigitsVector_ofFn (d : Fin n → ℕ) :
+    glueDigitsVector t (List.ofFn d) = fun i ↦ (t i).glueLabelVector (d i) := by
+  funext i
+  rw [glueDigitsVector_apply, List.getD_eq_getElem _ _ (by simp), List.getElem_ofFn]
+
+/-- The empty digit list evaluates to the zero vector. -/
+@[simp]
+theorem glueDigitsVector_nil : glueDigitsVector t [] = 0 := by
+  funext i
+  simp
+
+/-- Any all-zero digit list evaluates to the zero vector. -/
+@[simp]
+theorem glueDigitsVector_replicate_zero (m : ℕ) : glueDigitsVector t (List.replicate m 0) = 0 := by
+  funext i
+  simp [List.getD_eq_getElem?_getD]
+
+/-- **Evaluating `glueDigitsVector` on the encoded digits of `w` gives `glueWordVector t ht w`.** -/
+@[simp]
+theorem glueDigitsVector_encodeGlueWord (w : ∀ i, (t i).glueAlphabet (ht i)) :
+    glueDigitsVector t (encodeGlueWord t ht w) = DynkinType.glueWordVector t ht w := by
+  funext i
+  rw [glueDigitsVector_apply, getD_encodeGlueWord, DynkinType.glueWordVector_apply,
+    DynkinType.glueVector_def]
+
+/-- If a digit list `l` decodes to a glue word `w`, its coordinate vector is
+`glueWordVector t ht w`. -/
+theorem glueDigitsVector_of_decodeGlueWord_eq_some {l : List ℕ}
+    {w : ∀ i, (t i).glueAlphabet (ht i)} (h : decodeGlueWord t ht l = some w) :
+    glueDigitsVector t l = DynkinType.glueWordVector t ht w := by
+  rw [(decodeGlueWord_eq_some_iff t ht l w).mp h, glueDigitsVector_encodeGlueWord]
+
+/-- **The coordinate vector of every digit word lies in the dual of the orthogonal sum of
+root lattices.** -/
+theorem glueDigitsVector_mem_dualCarrier (hv : ∀ i, (t i).Valid) (l : List ℕ) :
+    glueDigitsVector t l ∈ (IntegralLattice.pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier := by
+  rw [IntegralLattice.mem_dualCarrier_pi_iff]
+  exact fun i ↦ (t i).glueLabelVector_mem_dualCarrier (hv i) (ht i) (l.getD i 0)
+
+/-- **The coordinate vector of a decoded digit word projects to `glueWordIsometry t ht hv w`.** -/
+theorem mk_glueDigitsVector (hv : ∀ i, (t i).Valid) {l : List ℕ}
+    {w : ∀ i, (t i).glueAlphabet (ht i)} (h : decodeGlueWord t ht l = some w)
+    (hx : glueDigitsVector t l ∈
+      (IntegralLattice.pi fun i ↦ (t i).rootLattice (ht i)).dualCarrier :=
+        glueDigitsVector_mem_dualCarrier t ht hv l) :
+    Submodule.Quotient.mk ⟨glueDigitsVector t l, hx⟩ =
+      DynkinType.glueWordIsometry t ht hv w := by
+  have heq := glueDigitsVector_of_decodeGlueWord_eq_some t ht h
+  simpa only [heq] using DynkinType.mk_glueWordVector t ht hv w (heq ▸ hx)
+
+/-- **Every digit word whose `n` component labels lie in range has coordinate vector of squared
+norm `glueWordMinimum t l`.** -/
+theorem pi_rootLattice_form_glueDigitsVector_self (hv : ∀ i, (t i).Valid) {l : List ℕ}
+    (hl : ∀ i : Fin n, l.getD i 0 < (t i).glueLabelCount) :
+    (IntegralLattice.pi fun i ↦ (t i).rootLattice (ht i)).form
+        (glueDigitsVector t l) (glueDigitsVector t l) =
+      glueWordMinimum t l := by
+  rw [IntegralLattice.pi_form, IntegralLattice.piForm_apply, glueWordMinimum_def]
+  exact Finset.sum_congr rfl fun i _ ↦
+    (t i).rootLattice_form_glueLabelVector_self (hv i) (ht i) (hl i)
+
+/-- **Naturality of `glueDigitsVector` under `gluedLatticeIsometryOfEq`**: identifying two equal
+families of components on `Fin n` and `Fin m` (`m = n`) preserves `glueDigitsVector`. -/
+@[simp]
+theorem gluedLatticeIsometryOfEq_glueDigitsVector (hv : ∀ i, (t i).Valid)
+    {H : AddSubgroup (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i))}
+    (hH : (FiniteQuadraticModule.pi fun i ↦ (t i).glueAlphabet (ht i)).IsIsotropic H)
+    {m : ℕ} {s : Fin m → DynkinType} {hs : ∀ k, (s k).IsSimplyLaced} (hvs : ∀ k, (s k).Valid)
+    {H' : AddSubgroup (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k))}
+    (hH' : (FiniteQuadraticModule.pi fun k ↦ (s k).glueAlphabet (hs k)).IsIsotropic H')
+    (hmn : m = n) (h : ∀ k, t (finCongr hmn k) = s k)
+    (hHH' : ∀ w, DynkinType.piGlueAlphabetCongr t ht (finCongr hmn) h w ∈ H' ↔ w ∈ H)
+    (l : List ℕ) :
+    DynkinType.gluedLatticeIsometryOfEq t ht hv H hH hvs hH' (finCongr hmn) h hHH'
+        (glueDigitsVector t l) =
+      glueDigitsVector s l := by
+  funext k j
+  have hval : ((finCongr hmn) k).val = k.val := by simp
+  rw [DynkinType.gluedLatticeIsometryOfEq_apply, glueDigitsVector_apply, glueDigitsVector_apply,
+    hval,
+    ← DynkinType.rootLatticeIsometryOfEq_glueLabelVector (ht (finCongr hmn k)) (h k) (hs k),
+    DynkinType.rootLatticeIsometryOfEq_apply]
 
 /-! ### Constant type-`A` families -/
 
