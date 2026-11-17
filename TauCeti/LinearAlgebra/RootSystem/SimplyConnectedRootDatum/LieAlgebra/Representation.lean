@@ -122,8 +122,6 @@ theorem serreRepresentation_kostantForm_mem
     (TauCeti.serreLift (H := serreH ℚ CM) (E := serreE ℚ CM) (F := serreF ℚ CM)
       (by rw [← hCM]; exact TauCeti.isSerreSystem_serre ℚ CM)).comp
         (t.serreLiftEquiv ht).symm.toLieHom
-  -- Name the Lie map in the composed action, identifying its RingHom and AlgHom coercions.
-  change UniversalEnvelopingAlgebra.map ℚ f u ∈ serreKostantForm CM
   have he : (fun k => f ((t.lieBasis ht).rootGenerator k)) = serreRootGenerator CM := by
     funext k
     cases k <;> simp [f, LieAlgebra.Basis.rootGenerator_inl,
@@ -137,8 +135,7 @@ theorem serreRepresentation_kostantForm_mem
         (t.lieBasis ht).rootGenerator (t.lieBasis ht).h).map
           (UniversalEnvelopingAlgebra.map ℚ f).toRingHom :=
     Subring.mem_map.mpr ⟨u, hu, rfl⟩
-  simpa only [UniversalEnvelopingAlgebra.map_kostantForm, he, hh, serreKostantForm_def]
-    using hmem
+  rwa [UniversalEnvelopingAlgebra.map_kostantForm, he, hh, ← serreKostantForm_def] at hmem
 
 end Serre
 

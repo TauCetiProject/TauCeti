@@ -49,8 +49,9 @@ def pinnedRepresentation :
     simpa only [cartanMatrix_E6, rank] using weightTable_cartanMatrix)
 
 /-- The pinned minuscule action specializes the general table action. -/
-theorem pinnedRepresentation_def (hCM : weightTable.cartanMatrix = E6.cartanMatrixᵀ) :
-    pinnedRepresentation = weightTable.pinnedRepresentation (t := E6) valid_E6 hCM := (rfl)
+theorem pinnedRepresentation_def :
+    pinnedRepresentation = weightTable.pinnedRepresentation (t := E6) valid_E6
+      (weightTable_cartanMatrix.trans (congrArg Matrix.transpose cartanMatrix_E6.symm)) := (rfl)
 
 /-- The numbered Cartan generator acts by the diagonal minuscule weight matrix. -/
 @[simp↓]
@@ -118,9 +119,10 @@ Its admissible lattice and basis are the existing integral coordinate lattice an
     (by rw [weightTable_weight]; exact span_range_e6MinusculeWeight_eq_top)
 
 /-- The minuscule datum specializes the general full-weight table datum. -/
-theorem chevalleyDatum_def (hCM : weightTable.cartanMatrix = E6.cartanMatrixᵀ)
-    (hspan : Submodule.span ℤ (Set.range weightTable.weight) = ⊤) :
-    chevalleyDatum = weightTable.chevalleyDatum (t := E6) valid_E6 hCM hspan := (rfl)
+theorem chevalleyDatum_def :
+    chevalleyDatum = weightTable.chevalleyDatum (t := E6) valid_E6
+      (weightTable_cartanMatrix.trans (congrArg Matrix.transpose cartanMatrix_E6.symm))
+      (weightTable_weight ▸ span_range_e6MinusculeWeight_eq_top) := (rfl)
 
 /-- The datum has dimension twenty-seven. -/
 @[simp] theorem chevalleyDatum_dim : chevalleyDatum.dim = 27 := rfl
@@ -180,6 +182,14 @@ theorem chevalleyDatum_coordinateWeight_apply (a : Fin 27) (i : Fin E6.rank) :
 theorem chevalleyDatum_coordinateRoot : chevalleyDatum.coordinateRoot = e6Root := by
   rw [chevalleyDatum.coordinateRoot_eq_root coe_chevalleyDatum_weightLatticeBasis,
     simplyConnectedRootDatum_E6, e6SimplyConnectedRootDatum_root]
+  rfl
+
+/-- Evaluating a coordinate root uses the table's seventy-two-root and rank-six indices. -/
+@[simp↓]
+theorem chevalleyDatum_coordinateRoot_apply (γ : Fin E6.numRoots) (i : Fin E6.rank) :
+    chevalleyDatum.coordinateRoot γ i =
+      e6Root (Fin.cast numRoots_E6 γ) (Fin.cast rank_E6 i) := by
+  rw [chevalleyDatum_coordinateRoot]
   rfl
 
 end
