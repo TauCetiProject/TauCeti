@@ -28,7 +28,9 @@ read forms and vector fields on a product, such as the coordinate time forms of 
 the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_update`.
 
 A map into the product has derivative the product of the derivatives of its components
-(`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`).
+(`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`). In particular the reindexing
+`x ↦ (j ↦ x (σ j))` along `σ : ι' → ι`, such as a cyclic shift of the coordinates, has derivative
+the same reindexing `Pi.compRightL` of the model spaces (`TauCeti.mfderiv_precomp`).
 
 ## Main declarations
 
@@ -37,6 +39,8 @@ A map into the product has derivative the product of the derivatives of its comp
 * `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: the derivative of a coordinate
   insertion.
 * `TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`: the derivative of a map into a product.
+* `TauCeti.hasMFDerivAt_precomp`, `TauCeti.mfderiv_precomp`: the derivative of a
+  reindexing of the factors.
 
 ## References
 
@@ -118,6 +122,21 @@ theorem mfderiv_pi {f : N → ∀ i, M i} {y : N}
   (hasMFDerivAt_pi fun i ↦ (hf i).hasMFDerivAt).mfderiv
 
 end Pi
+
+/-- The reindexing `x ↦ (j ↦ x (σ j))` of a finite product of manifolds along `σ : ι' → ι` has
+derivative the same reindexing `Pi.compRightL` of the product of the model spaces. -/
+theorem hasMFDerivAt_precomp {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
+    HasMFDerivAt (ModelWithCorners.pi I) (ModelWithCorners.pi fun j ↦ I (σ j))
+      (fun x : ∀ i, M i ↦ fun j ↦ x (σ j)) x (Pi.compRightL 𝕜 E σ) :=
+  hasMFDerivAt_pi fun j ↦ hasMFDerivAt_apply (σ j) x
+
+/-- The derivative of the reindexing `x ↦ (j ↦ x (σ j))` of a finite product of manifolds along
+`σ : ι' → ι` is the same reindexing `Pi.compRightL` of the product of the model spaces. -/
+@[simp]
+theorem mfderiv_precomp {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
+    mfderiv (ModelWithCorners.pi I) (ModelWithCorners.pi fun j ↦ I (σ j))
+      (fun x : ∀ i, M i ↦ fun j ↦ x (σ j)) x = Pi.compRightL 𝕜 E σ :=
+  (hasMFDerivAt_precomp σ x).mfderiv
 
 variable [DecidableEq ι]
 
