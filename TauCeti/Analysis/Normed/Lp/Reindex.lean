@@ -22,8 +22,9 @@ reindexing yields a norm-preserving additive equivalence between `ℓᵖ(ι, G)`
 (`LinearIsometryEquiv.lpCongrLeft`). Shifts of a sequence indexed
 by `ℕ` are the basic examples: `j ↦ f (j + d)` and, on `{j | d ≤ j}`, `j ↦ f (j - d)`. In
 particular a sequence indexed by `ℕ` lies in `ℓᵖ` exactly when its tail `j ↦ f (j + d)` does
-(`TauCeti.memℓp_nat_add_iff`). Two sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a
-single one, `f 0, g 0, f 1, g 1, …` (`Memℓp.interleave`).
+(`TauCeti.memℓp_nat_add_iff`), with no larger norm (`lp.norm_le_of_forall_eq_nat_add`). Two
+sequences indexed by `ℕ` in `ℓᵖ` can be interleaved into a single one, `f 0, g 0, f 1, g 1, …`
+(`Memℓp.interleave`).
 
 Consequently the **window sums** `j ↦ ∑_{j - L ≤ k < j + L} f k` of a sequence indexed by `ℕ`,
 a sum of `2 L` shifts, lie in `ℓᵖ`, and for `1 ≤ p` their norm is at most `2 L ‖f‖`
@@ -149,6 +150,13 @@ theorem memℓp_nat_add_iff {f : ℕ → G} (d : ℕ) : Memℓp (fun j ↦ f (j 
       fun a _ b _ h ↦ add_right_cancel h
 
 end TauCeti
+
+/-- **Dropping the first terms does not increase the norm.** A sequence in `ℓᵖ` that reads `f`
+shifted by `d` has norm at most `‖f‖`. -/
+theorem lp.norm_le_of_forall_eq_nat_add {f f' : lp (fun _ : ℕ ↦ G) p} (d : ℕ)
+    (h : ∀ j, f' j = f (j + d)) : ‖f'‖ ≤ ‖f‖ :=
+  lp.norm_le_of_forall_eq_indicator_comp (g := fun j ↦ j + d) (s := Set.univ)
+    (fun _ _ _ _ hab ↦ Nat.add_right_cancel hab) fun j ↦ by simp [h j]
 
 /-- **Window sums in `ℓᵖ`.** If `f ∈ ℓᵖ`, then so is `j ↦ ∑_{j - L ≤ k < j + L} f k`. -/
 theorem Memℓp.sum_Ico_sub_add {f : ℕ → G} (hf : Memℓp f p) (L : ℕ) :

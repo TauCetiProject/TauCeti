@@ -16,13 +16,15 @@ import TauCeti.Analysis.Normed.Operator.Dense
 /-!
 # Coordinates on `lp`
 
-The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute with
-`lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is the sum
-of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for extended
-norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q` the `ℓ^q`
-norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm form of
-Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are bounded by a
-geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
+The characteristic equation and single-coordinate retraction identities for Mathlib's bundled
+coordinate evaluation (`lp.evalCLM_apply`, `lp.evalCLM_comp_singleContinuousLinearMap`,
+`lp.leftInverse_evalCLM_singleContinuousLinearMap`, `lp.evalCLM_surjective`) let users compute
+with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
+the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
+extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q`
+the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
+form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
+bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
 (`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
 (`lp.norm_le_of_norm_le_geometric`). Rescaling an infinite linearly independent sequence, an
 infinite-dimensional normed space therefore contains, for each `p ≠ 0`, a linearly independent
@@ -33,13 +35,17 @@ nonzero multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or
 linearly independent, and vectors in their span vanish outside the corresponding indices. These
 algebraic facts hold over normed rings at every exponent; over a ring with the strong rank
 condition, for instance a field, `lp` over an infinite index type is therefore not a finite module
-(`lp.not_finite`). Subtracting a finite sum of coordinate vectors zeroes out those coordinates
-(`lp.sub_sum_single_apply`) and, for `p ≠ 0`, does not increase the `ℓᵖ` norm
-(`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
-to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
-most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+(`lp.not_finite`). Finite sums of single-coordinate vectors over a finset `s` along a map `g`
+evaluate to the corresponding entry at `g j` (`j ∈ s`) when `g` is injective on `s`
+(`lp.sum_single_apply_of_injOn_of_mem`) and vanish at coordinates not equal to any `g i` (`i ∈ s`)
+(`lp.sum_single_apply_eq_zero_of_forall_ne`). Subtracting a finite sum of coordinate vectors
+zeroes out those coordinates (`lp.sub_sum_single_apply`) and, for `p ≠ 0`, does not increase the
+`ℓᵖ` norm (`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of
+single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
+many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
+`lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 A uniformly bounded family of operators with a common domain assembles into an `ℓ∞`-valued
 operator (`ContinuousLinearMap.piLpInfty`), with the same norm bound.
@@ -225,6 +231,23 @@ theorem apply_eq_zero_of_mem_span_single {κ : Type*} (f : κ → ι) {x : ℓ^p
       (fun hij ↦ hi ⟨j, hij.symm⟩)
   simpa only [evalₗ_apply] using LinearMap.mem_ker.mp (hle hx)
 
+/-- Evaluating a finite sum of single-coordinate vectors `∑ i ∈ s, lp.single p (g i) (v i)` at
+`g j` for `j ∈ s` recovers `v j`, provided `g` is injective on `s`. -/
+theorem sum_single_apply_of_injOn_of_mem {κ : Type*} {s : Finset κ} {g : κ → ι}
+    {v : ∀ i, E (g i)} {j : κ} (hg : Set.InjOn g s) (hj : j ∈ s) :
+    (∑ i ∈ s, lp.single p (g i) (v i)) (g j) = v j := by
+  rw [lp.coeFn_sum, Finset.sum_apply, Finset.sum_eq_single j
+    (fun i hi hne ↦ lp.single_apply_ne p (g i) (v i) fun h ↦ hne (hg hi hj h.symm))
+    (fun h ↦ absurd hj h), lp.single_apply_self]
+
+/-- Evaluating a finite sum of single-coordinate vectors `∑ i ∈ s, lp.single p (g i) (v i)` at a
+coordinate `k` not equal to `g i` for any `i ∈ s` returns `0`. -/
+theorem sum_single_apply_eq_zero_of_forall_ne {κ : Type*} {s : Finset κ} {g : κ → ι}
+    {v : ∀ i, E (g i)} {k : ι} (hk : ∀ i ∈ s, k ≠ g i) :
+    (∑ i ∈ s, lp.single p (g i) (v i)) k = 0 := by
+  rw [lp.coeFn_sum, Finset.sum_apply]
+  exact Finset.sum_eq_zero fun i hi ↦ lp.single_apply_ne p (g i) (v i) (hk i hi)
+
 omit [DecidableEq ι] in
 /-- For an infinite index type, the scalar sequence space `lp` is not a finite module. -/
 theorem not_finite [Infinite ι] [StrongRankCondition 𝕜] :
@@ -234,6 +257,26 @@ theorem not_finite [Infinite ι] [StrongRankCondition 𝕜] :
     (linearIndependent_single_one (ι := ι) (𝕜 := 𝕜) (p := p))
 
 end Single
+
+/-- Evaluating a single-coordinate vector at its own coordinate is the identity continuous linear
+map. -/
+@[simp]
+theorem evalCLM_comp_singleContinuousLinearMap [Fact (1 ≤ p)] [DecidableEq ι] (i : ι) :
+    (evalCLM 𝕜 E p i).comp (singleContinuousLinearMap 𝕜 E p i) = .id 𝕜 (E i) := by
+  ext x
+  simp
+
+/-- Bundled coordinate evaluation at `i` is a left inverse to the single-coordinate inclusion at
+`i`. -/
+theorem leftInverse_evalCLM_singleContinuousLinearMap [Fact (1 ≤ p)] [DecidableEq ι] (i : ι) :
+    Function.LeftInverse (evalCLM 𝕜 E p i) (singleContinuousLinearMap 𝕜 E p i) :=
+  fun x ↦ by simp
+
+/-- Bundled coordinate evaluation on `lp E p` is surjective at every coordinate. -/
+theorem evalCLM_surjective [Fact (1 ≤ p)] (i : ι) :
+    Function.Surjective (evalCLM 𝕜 E p i) := by
+  classical
+  exact fun x ↦ ⟨lp.single p i x, by simp⟩
 
 /-- The square of the `ℓ²` norm of a finite sum of single-coordinate vectors is the sum of the
 squared norms of the coordinates. -/
