@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.Spin.Polarization.Fock.Metric
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Dimension
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Hermitian.Geometric
 import TauCeti.Geometry.Symplectic.Finrank
 
 /-!
@@ -32,7 +33,8 @@ The vacuum has norm one, pure wedges in every degree `p` (including degree zero 
 degree) satisfy the Gram-determinant formula `⟪x₁ ∧ … ∧ x_p, y₁ ∧ … ∧ y_p⟫ = det (h (xᵢ, yⱼ))`
 with distinct exterior powers orthogonal, and the normalized real Clifford action has native
 adjoint `c(a)* = c(star a)`. Thus `c(v)* = -c(v)` for real vectors, with the normalization already
-built into the Fock action. These identities supply the Hermitian hypothesis of the half-spin
+built into the Fock action, so the real Fock action satisfies the geometric convention
+`AlgHom.IsGeometricClifford`. These identities supply the Hermitian hypothesis of the half-spin
 representation and its restriction to either chirality eigenspace.
 
 ## Main definitions
@@ -53,6 +55,8 @@ representation and its restriction to either chirality eigenspace.
   `TauCeti.AlmostComplexStructure.adjoint_realFockAction`, and
   `TauCeti.AlmostComplexStructure.adjoint_realFockAction_ι`: native adjoints of the complexified and
   real Fock actions.
+* `TauCeti.AlmostComplexStructure.isGeometricClifford_realFockAction`: the real Fock action
+  satisfies `AlgHom.IsGeometricClifford`.
 
 ## References
 
@@ -256,5 +260,15 @@ theorem adjoint_realFockAction_ι (v : V) :
   let := J.fockNormedAddCommGroup hQJ hQnd hQ
   let := J.fockInnerProductSpace hQJ hQnd hQ
   rw [J.adjoint_realFockAction hQJ hQnd hQ, star_ι, map_neg]
+
+/-- The native Hermitian Fock module satisfies the geometric convention: `Q v = -‖v‖²`, and real
+vectors act skew-Hermitianly. -/
+theorem isGeometricClifford_realFockAction :
+    letI := J.fockNormedAddCommGroup hQJ hQnd hQ
+    letI := J.fockInnerProductSpace hQJ hQnd hQ
+    (J.realFockAction hQJ hQnd).IsGeometricClifford := by
+  let := J.fockNormedAddCommGroup hQJ hQnd hQ
+  let := J.fockInnerProductSpace hQJ hQnd hQ
+  exact AlgHom.isGeometricClifford_iff_adjoint.2 ⟨hQ, J.adjoint_realFockAction_ι hQJ hQnd hQ⟩
 
 end TauCeti.AlmostComplexStructure

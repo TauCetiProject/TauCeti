@@ -10,10 +10,6 @@ public import Mathlib.LinearAlgebra.ExteriorPower.Basis
 public import Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
--- The Gram-determinant formula `LinearMap.BilinForm.bilinForm_ιMulti_ιMulti` for the induced
--- bilinear form on an exterior power is private to its file, and the body of
--- `LinearMap.BilinForm.exteriorPower` is not exposed, so bridging to it needs this import.
-import all Mathlib.LinearAlgebra.ExteriorPower.BilinForm
 
 /-!
 # Sesquilinear Gram forms on exterior powers
