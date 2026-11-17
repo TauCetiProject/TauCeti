@@ -19,8 +19,9 @@ restriction along `j`,
 
 is bijective (Bosch–Lütkebohmert–Raynaud, *Néron Models*, §1.2, Definition 1, p. 12).
 The test objects are all smooth `S`-schemes, not only sections of `S` or étale `S`-schemes.
-For `j = 𝟙 S` every object has the property (`NeronMappingProperty.of_id`), so the predicate
-carries arithmetic content only when `j` is the generic point of a Dedekind base.
+For `j = 𝟙 S` every object has the property (`NeronMappingProperty.of_id`). The intended classical
+application is `j` the inclusion of the generic point of a Dedekind base, where the property
+characterizes Néron models.
 
 ## Main declarations
 
@@ -128,7 +129,7 @@ theorem not_of_restriction_not_surjective (Y : Over S) [Smooth Y.hom]
   fun h ↦ hY (h.surjective Y)
 
 /-- Relative to the identity of `S`, every object of `Over S` has the Néron mapping property:
-the predicate alone carries no arithmetic content. -/
+relative to the identity the predicate carries no arithmetic content. -/
 theorem of_id (X : Over S) : NeronMappingProperty (𝟙 S) X :=
   fun Y _ ↦ ((Functor.FullyFaithful.id _).ofIso Over.pullbackId.symm).map_bijective Y X
 
