@@ -119,7 +119,7 @@ instance [ConnectedSpace S] : GaloisCategory (FiniteEtaleScheme S) where
 /-- **Any two geometric points of a connected scheme are joined by an étale path**: their
 geometric fibre functors on finite étale schemes are isomorphic. The geometric points may have
 different separably closed fields. Instance search finds this through
-`CategoryTheory.PreGaloisCategory.FiberFunctor.instNonemptyIso`. -/
+`CategoryTheory.PreGaloisCategory.FiberFunctor.nonempty_iso`. -/
 theorem nonempty_fiber_iso [PreconnectedSpace S] {Ω' : Type u} [Field Ω'] [IsSepClosed Ω']
     (x : Spec (.of Ω) ⟶ S) (y : Spec (.of Ω') ⟶ S) : Nonempty (fiber x ≅ fiber y) :=
   inferInstance
