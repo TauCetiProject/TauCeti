@@ -27,6 +27,9 @@ symmetric 2-cocycles.
   for `c < p`.
 * `Choose.choose_sub_one_sub_one_modEq_one`: `choose (n - 1) (p - 1) ≡ 1 [MOD p]` when `p ∣ n`
   and `n ≠ 0`.
+* `Choose.choose_pow_modEq_div_nat`: `choose n (p ^ k) ≡ n / p ^ k [MOD p]`.
+* `Nat.even_choose_two_pow_iff` and `Nat.even_choose_four_iff`: `C(m, 2 ^ k)` has the same parity
+  as `⌊m / 2 ^ k⌋`, and in particular `C(m, 4)` has the same parity as `⌊m / 4⌋`.
 * `TauCeti.Choose.choose_mul_choose_add_choose_modEq`: the parity identity
   `C(2m, 2) C(2m - 1, 2) + C(2m + 1, 4) ≡ C(m, 2) [MOD 2]`.
 -/
@@ -62,7 +65,38 @@ theorem choose_sub_one_sub_one_modEq_one {n : ℕ} (hpn : p ∣ n) (hn : n ≠ 0
   refine choose_modEq_choose_mod_mul_choose_div_nat.trans ?_
   rw [hmod, h₁, h₂, Nat.choose_self, Nat.choose_zero_right]
 
+/-- For a prime `p`, `choose n (p ^ k)` is congruent modulo `p` to `⌊n / p ^ k⌋`, since every
+lower base-`p` digit of `p ^ k` vanishes and the `k`-th digit is `1`. -/
+theorem choose_pow_modEq_div_nat (n k : ℕ) :
+    Nat.choose n (p ^ k) ≡ n / p ^ k [MOD p] := by
+  have hp : 0 < p := (Fact.out : p.Prime).pos
+  rw [← Int.natCast_modEq_iff]
+  refine (choose_modEq_choose_mul_prod_range_choose (p := p) k).trans ?_
+  have hprod : ∏ i ∈ Finset.range k,
+      Nat.choose (n / p ^ i % p) (p ^ k / p ^ i % p) = 1 := by
+    refine Finset.prod_eq_one fun i hi => ?_
+    have hik : i < k := Finset.mem_range.mp hi
+    rw [Nat.pow_div hik.le hp,
+      Nat.mod_eq_zero_of_dvd (dvd_pow_self p (Nat.sub_ne_zero_of_lt hik)),
+      Nat.choose_zero_right]
+  rw [Nat.div_self (pow_pos hp k), Nat.choose_one_right, hprod, Nat.cast_one, mul_one]
+
 end Choose
+
+namespace Nat
+
+/-- `C(m, 2 ^ k)` and `⌊m / 2 ^ k⌋` have the same parity, by Lucas' theorem at `p = 2`. -/
+theorem even_choose_two_pow_iff (m k : ℕ) :
+    Even (m.choose (2 ^ k)) ↔ Even (m / 2 ^ k) := by
+  have h : m.choose (2 ^ k) % 2 = m / 2 ^ k % 2 :=
+    Choose.choose_pow_modEq_div_nat (p := 2) m k
+  rw [Nat.even_iff, Nat.even_iff, h]
+
+/-- `C(m, 4)` and `⌊m / 4⌋` have the same parity. -/
+theorem even_choose_four_iff (m : ℕ) : Even (m.choose 4) ↔ Even (m / 4) :=
+  even_choose_two_pow_iff m 2
+
+end Nat
 
 namespace TauCeti.Choose
 

@@ -19,11 +19,14 @@ public import TauCeti.Algebra.BrauerGroup.Splitting
 -- quaternion conjugation `Quaternion.starAe`, and `TauCeti.Quaternion.instIsCentral`, which is what
 -- puts `ℍ[ℝ]` in the scope of the Brauer-group API at all.
 public import TauCeti.Algebra.CentralSimple.Quaternion
+-- `TauCeti.Algebra.Quaternion.BrauerClass` is imported publicly because
+-- `BrauerGroup.quaternionClass` occurs in
+-- `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_real`.
+public import TauCeti.Algebra.Quaternion.BrauerClass
 -- Non-public: the base-change homomorphism and the fundamental theorem of algebra are used only by
 -- the worked examples closing the file, so downstream importers do not pay for them.
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.Algebra.BrauerGroup.BaseChange
-import TauCeti.Algebra.Quaternion.BrauerClass
 
 /-!
 # The Brauer class of the real quaternions has order two
@@ -46,6 +49,8 @@ classification of the finite-dimensional real division algebras with centre `ℝ
 * `TauCeti.Quaternion.mk_ne_one`: the Brauer class of `ℍ[ℝ]` is not the identity.
 * `TauCeti.Quaternion.orderOf_mk_eq_two`: **that class has order exactly `2`**, so `BrauerGroup ℝ`
   contains a copy of `ℤ/2`; `TauCeti.Quaternion.nontrivial_brauerGroup` is the qualitative form.
+* `TauCeti.BrauerGroup.quaternionClass_neg_one_neg_one_real`: the quaternion symbol `[(-1, -1)]`
+  over `ℝ` is the Brauer class of `ℍ[ℝ]`.
 
 ## References
 
@@ -93,13 +98,20 @@ theorem nontrivial_brauerGroup : Nontrivial (BrauerGroup.{0, 0} ℝ) :=
 
 end Quaternion
 
+/-- Over `ℝ`, the quaternion symbol `[(-1, -1)]` is the Brauer class of Hamilton's quaternions
+`ℍ[ℝ]`. -/
+theorem BrauerGroup.quaternionClass_neg_one_neg_one_real :
+    BrauerGroup.quaternionClass (-1 : ℝˣ) (-1) = BrauerGroup.mk (CSA.of ℝ ℍ[ℝ]) := by
+  simp [BrauerGroup.quaternionClass_def]
+
 /-! ### Worked examples -/
 
 section Examples
 
 /-- Hamilton's quaternions have nontrivial Brauer class over `ℝ`. -/
 example : BrauerGroup.quaternionClass (-1 : ℝˣ) (-1) ≠ 1 := by
-  simpa [BrauerGroup.quaternionClass_def] using Quaternion.mk_ne_one
+  rw [BrauerGroup.quaternionClass_neg_one_neg_one_real]
+  exact Quaternion.mk_ne_one
 
 /-- **The Brauer class of the real quaternions is its own inverse.** Quaternion conjugation is an
 `ℝ`-algebra isomorphism `ℍ[ℝ] ≃ₐ[ℝ] ℍ[ℝ]ᵐᵒᵖ` (Mathlib's `Quaternion.starAe`), so this is

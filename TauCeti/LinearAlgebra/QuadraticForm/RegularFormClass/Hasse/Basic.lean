@@ -58,6 +58,9 @@ group. It is a genuine invariant beyond rank and discriminant: over `ℝ` the fo
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul_mk`: the same scaling formula for
   multiplication by the rank-one class.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_rankOne_mul`: the scaling formula for any class.
+* `TauCeti.RegularFormClass.hasseInvariant_nsmul_mk_rankOne` and
+  `TauCeti.RegularFormClass.hasseInvariant_nsmul_one`: the Hasse invariant of `n • ⟨a⟩`
+  and `n • ⟨1⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_mk_neg_neg_mul`: the Hasse invariant of the pure
   quaternion norm form `⟨-a, -b, ab⟩`.
 * `TauCeti.RegularFormClass.hasseInvariant_hyperbolicClass`: the hyperbolic plane has trivial
@@ -300,6 +303,26 @@ theorem hasseInvariant_mk_neg_neg_mul (a b : Kˣ) :
           simp only [pow_two]
           ac_rfl
     _ = _ := by simp
+
+/-- The orthogonal sum of `n` copies of a rank-one class `⟨a⟩` has Hasse invariant
+`[(a, -1)]^C(n, 2)`. -/
+theorem hasseInvariant_nsmul_mk_rankOne (n : ℕ) (a : Kˣ) :
+    hasseInvariant (n • Quotient.mk (regularFormSetoid K) ⟨1, fun _ => a⟩) =
+      quaternionClass a (-1) ^ n.choose 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    rw [succ_nsmul, hasseInvariant_add, ih, hasseInvariant_mk_rankOne, mul_one,
+      discr_nsmul, discr_mk, Fin.prod_univ_one, quaternionClassOnSquareClasses_nsmul_left,
+      quaternionClassOnSquareClasses_squareClass, quaternionClass_self, ← pow_add,
+      Nat.choose_succ_succ, Nat.choose_one_right, add_comm]
+
+-- Not @[simp]: `RegularFormClass K` is a semiring in downstream modules, where `nsmul_eq_mul`
+-- and `mul_one` rewrite the left-hand side to `↑n` and make this declaration fail `simpNF`.
+/-- The orthogonal sum of `n` positive unit lines `⟨1, …, 1⟩` has trivial Hasse invariant. -/
+theorem hasseInvariant_nsmul_one (n : ℕ) :
+    hasseInvariant (n • (1 : RegularFormClass K)) = 1 := by
+  rw [← mk_rankOne_one, hasseInvariant_nsmul_mk_rankOne, quaternionClass_one_left, one_pow]
 
 end RegularFormClass
 
