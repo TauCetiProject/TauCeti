@@ -9,6 +9,7 @@ public import Mathlib.LinearAlgebra.UnitaryGroup
 public import TauCeti.Analysis.InnerProductSpace.Orientation
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Family
+import TauCeti.LinearAlgebra.Matrix.Module
 
 /-!
 # Calibrated frames of alternating forms
@@ -25,21 +26,19 @@ This file develops the linear-algebraic properties of calibrated frames:
 * **Comass lower bound and nonexistence**: a calibrated frame implies `1 ≤ ‖φ‖`
   (`TauCeti.IsCalibratedFrame.one_le_norm`), so a form with `‖φ‖ < 1` admits no calibrated frames
   (`TauCeti.not_isCalibratedFrame_of_norm_lt_one`).
-* **Orthogonal and special orthogonal frame changes**: combining `v` on the right with a `k × k`
-  matrix `A` scales `φ` by `A.det` (`ContinuousAlternatingMap.apply_sum_smul_col_eq_det_mul`).
-  Consequently `TauCeti.IsCalibratedFrame φ` is invariant under right multiplication by
-  `Matrix.specialOrthogonalGroup (Fin k) ℝ`
+* **Orthogonal and special orthogonal frame changes**: `TauCeti.IsCalibratedFrame φ` is invariant
+  under right multiplication by `Matrix.specialOrthogonalGroup (Fin k) ℝ`
   (`TauCeti.isCalibratedFrame_sum_smul_specialOrthogonalGroup_iff`), while an orthogonal matrix of
-  determinant `-1` (or a odd permutation, swap, or single-slot negation in positive degree) carries
+  determinant `-1` (or an odd permutation, swap, or single-slot negation in positive degree) carries
   calibrated frames of `φ` to calibrated frames of `-φ`.
 * **Isometric invariance**: pulling `φ` back along a linear isometry `f : E →ₗᵢ[ℝ] F` pulls back
   its calibrated frames (`TauCeti.isCalibratedFrame_comp_linearIsometry_iff`).
 * **Volume forms and simple calibrations**: on an oriented `k`-dimensional space, `o.volumeFormL`
-  has comass `1` (`Orientation.norm_volumeFormL`) and calibrates an orthonormal basis `b` if and
-  only if `b` is positively oriented (`TauCeti.isCalibratedFrame_volumeFormL_orthonormalBasis_iff`).
-  More generally, for any orthonormal frame `u : Fin k → E` in a finite-dimensional space, the
-  simple form `alternatingFormEquiv E k (ιMulti ℝ k u)` has comass `1` and calibrates `v` if and
-  only if `v` is orthonormal with `ιMulti ℝ k v = ιMulti ℝ k u`
+  calibrates an orthonormal basis `b` if and only if `b` is positively oriented
+  (`TauCeti.isCalibratedFrame_volumeFormL_orthonormalBasis_iff`). More generally, for any
+  orthonormal frame `u : Fin k → E` in a finite-dimensional space, the simple form
+  `alternatingFormEquiv E k (ιMulti ℝ k u)` has comass `1` and calibrates `v` if and only if `v` is
+  orthonormal with `ιMulti ℝ k v = ιMulti ℝ k u`
   (`TauCeti.isCalibratedFrame_alternatingFormEquiv_ιMulti_iff`).
 
 ## References
@@ -54,91 +53,6 @@ noncomputable section
 
 open Module exteriorPower
 open scoped RealInnerProductSpace Matrix
-
-namespace ContinuousAlternatingMap
-
-section MatrixCombinations
-
-variable {R E ι : Type*} [CommRing R] [TopologicalSpace R]
-  [AddCommGroup E] [Module R E] [TopologicalSpace E] [Fintype ι] [DecidableEq ι]
-
-/-- Evaluating an alternating form on column-combinations `j ↦ ∑ i, A i j • v i` of a family `v`
-multiplies `φ v` by `A.det`. -/
-theorem apply_sum_smul_col_eq_det_mul (φ : E [⋀^ι]→L[R] R) (v : ι → E) (A : Matrix ι ι R) :
-    φ (fun j ↦ ∑ i, A i j • v i) = A.det * φ v := by
-  let e : Module.Basis ι R (ι → R) := Pi.basisFun R ι
-  let ψ : (ι → R) [⋀^ι]→ₗ[R] R := φ.toAlternatingMap.compLinearMap (Fintype.linearCombination R v)
-  have hψ := DFunLike.congr_fun (ψ.eq_smul_basis_det e) (fun j i ↦ A i j)
-  have he : ψ e = φ v := by simp [ψ, e]
-  have hL : ψ (fun j i ↦ A i j) = φ (fun j ↦ ∑ i, A i j • v i) := by
-    simp [ψ, Fintype.linearCombination_apply]
-  have hdet : e.det (fun j i ↦ A i j) = A.det := (Pi.basisFun_det_apply _).trans A.det_transpose
-  rw [← hL, hψ, _root_.smul_apply, he, hdet, smul_eq_mul, mul_comm]
-
-/-- Evaluating an alternating form on row-combinations `j ↦ ∑ i, A j i • v i` of a family `v`
-multiplies `φ v` by `A.det`. -/
-theorem apply_sum_smul_row_eq_det_mul (φ : E [⋀^ι]→L[R] R) (v : ι → E) (A : Matrix ι ι R) :
-    φ (fun j ↦ ∑ i, A j i • v i) = A.det * φ v := by
-  simpa only [Matrix.transpose_apply, Matrix.det_transpose] using
-    φ.apply_sum_smul_col_eq_det_mul v Aᵀ
-
-end MatrixCombinations
-
-section General
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {k : ℕ}
-
-/-- Negating one vector of an orthonormal family preserves orthonormality. -/
-protected theorem orthonormal_update_neg {ι : Type*} [DecidableEq ι] {v : ι → E}
-    (hv : Orthonormal ℝ v) (i : ι) : Orthonormal ℝ (Function.update v i (-v i)) := by
-  rw [orthonormal_iff_ite]; intro a b
-  obtain rfl | ha := eq_or_ne i a <;> obtain rfl | hb := eq_or_ne i b
-  · simp [hv.1 i]
-  · simp [hb, hb.symm, hv.2 hb]
-  · simp [ha.symm, hv.2 ha.symm]
-  · simp [ha.symm, hb.symm, orthonormal_iff_ite.1 hv a b]
-
-/-- In positive degree, a nonnegative comass bound `‖φ‖ ≤ C` on a real alternating `k`-form is
-equivalent to the one-sided bound `φ v ≤ C` on all orthonormal frames `v`, since negating the
-first vector of an orthonormal frame preserves orthonormality and negates `φ v`. -/
-theorem opNorm_le_iff_apply_le_orthonormal {φ : E [⋀^Fin k]→L[ℝ] ℝ} (hk : 1 ≤ k) {C : ℝ}
-    (hC : 0 ≤ C) : ‖φ‖ ≤ C ↔ ∀ v : Fin k → E, Orthonormal ℝ v → φ v ≤ C := by
-  rw [φ.opNorm_le_iff_le_orthonormal hC]
-  refine ⟨fun h v hv ↦ (le_abs_self _).trans (by simpa only [Real.norm_eq_abs] using h v hv),
-    fun h v hv ↦ (Real.norm_eq_abs _).trans_le (abs_le.2 ⟨?_, h v hv⟩)⟩
-  let i₀ : Fin k := ⟨0, hk⟩
-  have hneg : φ (Function.update v i₀ (-v i₀)) = -φ v := by
-    simpa [neg_one_smul] using φ.map_update_smul v i₀ (-1 : ℝ) (v i₀)
-  linarith [h _ (ContinuousAlternatingMap.orthonormal_update_neg hv i₀)]
-
-end General
-
-end ContinuousAlternatingMap
-
-namespace Orientation
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
-  [Fact (Module.finrank ℝ E = n)]
-
-/-- The continuous oriented volume form on an `n`-dimensional real inner product space has comass
-`1` in every dimension `n`, including `n = 0`. -/
-@[simp]
-theorem norm_volumeFormL (o : Orientation ℝ E (Fin n)) : ‖o.volumeFormL‖ = 1 := by
-  rcases n with _ | m
-  · refine le_antisymm ((o.volumeFormL.opNorm_le_iff_le_orthonormal zero_le_one).2 fun v hv ↦ ?_) ?_
-    · rw [Real.norm_eq_abs, volumeFormL_apply, o.abs_volumeForm_apply_eq_sqrt_det_gram,
-        Matrix.gram_eq_one_iff_orthonormal.2 hv, Matrix.det_one, Real.sqrt_one]
-    · simpa [Real.norm_eq_abs, volumeFormL_apply, o.abs_volumeForm_apply_eq_sqrt_det_gram] using
-        (o.volumeFormL.opNorm_le_iff_le_orthonormal (norm_nonneg _)).1 le_rfl ![]
-          (orthonormal_iff_ite.2 fun i ↦ i.elim0)
-  · have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ m
-    let b : OrthonormalBasis (Fin (m + 1)) ℝ E :=
-      (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
-    rw [o.volumeFormL.norm_eq_norm_apply_orthonormalBasis b, Real.norm_eq_abs, volumeFormL_apply,
-      o.abs_volumeForm_apply_eq_sqrt_det_gram, Matrix.gram_eq_one_iff_orthonormal.2 b.orthonormal,
-      Matrix.det_one, Real.sqrt_one]
-
-end Orientation
 
 namespace TauCeti
 
@@ -263,18 +177,10 @@ theorem isCalibratedFrame_neg_update_neg_iff (φ : E [⋀^Fin k]→L[ℝ] ℝ) (
       v := by ext j; by_cases hj : j = i <;> simp [hj]
   have hneg : φ (Function.update v i (-v i)) = -φ v := by
     simpa [neg_one_smul] using φ.map_update_smul v i (-1 : ℝ) (v i)
-  refine ⟨fun ⟨hw, hval⟩ ↦ ⟨by
-      simpa only [hinv] using ContinuousAlternatingMap.orthonormal_update_neg hw i, ?_⟩,
-    fun ⟨hv, hval⟩ ↦ ⟨ContinuousAlternatingMap.orthonormal_update_neg hv i, ?_⟩⟩
+  refine ⟨fun ⟨hw, hval⟩ ↦ ⟨by simpa only [hinv] using hw.update_neg i, ?_⟩,
+    fun ⟨hv, hval⟩ ↦ ⟨hv.update_neg i, ?_⟩⟩
   · rwa [ContinuousAlternatingMap.neg_apply, hneg, neg_neg] at hval
   · rw [ContinuousAlternatingMap.neg_apply, hneg, neg_neg, hval]
-
-private theorem sum_smul_sum_smul_of_mul_eq_one (v : Fin k → E) {A B : Matrix (Fin k) (Fin k) ℝ}
-    (hAB : A * B = 1) : (fun j ↦ ∑ l, B l j • ∑ i, A i l • v i) = v := by
-  ext j; simp_rw [Finset.smul_sum, smul_smul]; rw [Finset.sum_comm]
-  have hcoeff (i : Fin k) : ∑ l, B l j * A i l = (1 : Matrix (Fin k) (Fin k) ℝ) i j := by
-    rw [← hAB, Matrix.mul_apply]; exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-  simp_rw [← Finset.sum_smul, hcoeff, Matrix.one_apply]; simp
 
 /-- Right multiplication of a frame `v` by an orthogonal matrix `A ∈ O(k)` of determinant `1`
 preserves `IsCalibratedFrame`. -/
@@ -298,7 +204,8 @@ theorem isCalibratedFrame_sum_smul_specialOrthogonalGroup_iff (φ : E [⋀^Fin k
   refine ⟨fun h ↦ ?_, fun h ↦ h.sum_smul_of_mem_specialOrthogonalGroup g.2⟩
   have hmul : (g : Matrix (Fin k) (Fin k) ℝ) *
       (g⁻¹ : Matrix.specialOrthogonalGroup (Fin k) ℝ) = 1 := by
-    change (↑(g * g⁻¹) : Matrix (Fin k) (Fin k) ℝ) = 1; rw [mul_inv_cancel, Submonoid.coe_one]
+    simpa only [Submonoid.coe_mul, Submonoid.coe_one] using
+      congrArg (Subtype.val : Matrix.specialOrthogonalGroup (Fin k) ℝ → _) (mul_inv_cancel g)
   simpa only [sum_smul_sum_smul_of_mul_eq_one v hmul] using
     h.sum_smul_of_mem_specialOrthogonalGroup (g⁻¹).2
 

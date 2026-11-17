@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.Riemannian.Calibration.Immersion
 public import TauCeti.Geometry.Manifold.DeRham.Basic
 public import Mathlib.Geometry.Manifold.Instances.Real
@@ -32,8 +33,9 @@ Combining this with calibration of `(f, o)` (`immersionVolume g f hf hinj o = �
 * `TauCeti.immersionVolume_le_of_isCalibratedImmersion`: if `(f, o)` is calibrated by `φ` and a
   second immersion `(f', o')` of a compact oriented `k`-manifold `N'` has the same periods as
   `(f, o)` on every smooth closed `k`-form on `M` (for instance when `(f, o)` and `(f', o')`
-  represent the same real homology class on closed manifolds, or share a common boundary cancelled
-  by Stokes' theorem), then `immersionVolume g f hf hinj o ≤ immersionVolume g f' hf' hinj' o'`.
+  represent the same real homology class on closed manifolds, or more generally when the difference
+  of the immersed chains bounds a suitable `(k + 1)`-chain so Stokes' theorem establishes period
+  equality), then `immersionVolume g f hf hinj o ≤ immersionVolume g f' hf' hinj' o'`.
 * `TauCeti.immersionVolume_eq_iff_isCalibratedImmersion`: under the same hypotheses, the competing
   immersion `(f', o')` achieves equal volume if and only if `(f', o')` is also calibrated by `φ`.
 * `TauCeti.IsCalibratedImmersion.mextDeriv_ne` and
@@ -370,14 +372,6 @@ theorem _root_.Orthonormal.isCalibration_const_alternatingFormEquiv_ιMulti
       (SmoothForm.const (alternatingFormEquiv V k (ιMulti ℝ k u))).1 := by
   rw [isCalibration_const_iff, hu.norm_alternatingFormEquiv_ιMulti]
 
-/-- Every linear isometry between real normed spaces is a smooth immersion: its manifold derivative
-at every point is injective. -/
-theorem _root_.LinearIsometry.injective_mfderiv {F V : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [NormedAddCommGroup V] [NormedSpace ℝ V] (L : F →ₗᵢ[ℝ] V) (x : F) :
-    Function.Injective (mfderiv 𝓘(ℝ, F) 𝓘(ℝ, V) L x) := by
-  have hfderiv : fderiv ℝ (L : F → V) x = L.toContinuousLinearMap := L.toContinuousLinearMap.fderiv
-  rw [mfderiv_eq_fderiv, hfderiv]; exact L.injective
-
 /-- **Every oriented linear isometric subspace is calibrated**: for any linear isometry
 `L : F →ₗᵢ[ℝ] V` from an oriented `k`-dimensional real inner product space `(F, oF)` into a
 finite-dimensional real inner product space `V` and any positively oriented orthonormal basis `b` of
@@ -418,9 +412,10 @@ theorem isCalibratedImmersion_linearIsometry_const
   let A : F [⋀^Fin k]→L[ℝ] ℝ :=
     (alternatingFormEquiv V k (ιMulti ℝ k (L ∘ b))).compContinuousLinearMap L.toContinuousLinearMap
   have hAb : A b = 1 := by
-    change alternatingFormEquiv V k (ιMulti ℝ k (L ∘ b)) (L ∘ b) = 1
-    rw [alternatingFormEquiv_apply, real_inner_self_eq_norm_sq,
-      (L.orthonormal_comp_iff.2 b.orthonormal).norm_ιMulti, one_pow]
+    dsimp only [A]
+    rw [ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      LinearIsometry.coe_toContinuousLinearMap, alternatingFormEquiv_apply,
+      real_inner_self_eq_norm_sq, (L.orthonormal_comp_iff.2 b.orthonormal).norm_ιMulti, one_pow]
   have hAvol : A = oF.volumeFormL := oF.eq_volumeFormL_of_apply_orthonormal A b hb hAb
   rw [isCalibratedImmersion_def]; funext x
   let := oM.fact_finrank_tangentSpace x

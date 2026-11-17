@@ -15,12 +15,16 @@ Top-degree scalar-valued continuous alternating forms over a commutative ring ar
 by their basis coefficient, which vanishes only for the zero form. Pullback by a continuous
 linear endomorphism multiplies that coefficient by its determinant. Pullback along a continuous
 linear map `A : E → F` multiplies it by the determinant of `C⁻¹ ∘ A` for any continuous linear
-equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. Above the
-top degree, continuous alternating maps on a finite-dimensional space over a division ring vanish.
-No compatibility between the topology and the module structure is required for those statements.
+equivalence `C : E ≃ F`, the target coefficient being taken in the transported basis. Evaluating a
+scalar-valued continuous alternating form on column- or row-combinations of a family by a square
+matrix `A` scales its value by `A.det`. Above the top degree, continuous alternating maps on a
+finite-dimensional space over a division ring vanish. No compatibility between the topology and the
+module structure is required for those statements.
 -/
 
 public section
+
+open scoped Matrix
 
 namespace ContinuousAlternatingMap
 
@@ -32,6 +36,26 @@ theorem apply_eq_det_mul (ω : E [⋀^ι]→L[R] R) (b : Module.Basis ι R E) (v
     ω v = b.det v * ω b := by
   have h := congrArg (fun f : E [⋀^ι]→ₗ[R] R ↦ f v) (ω.toAlternatingMap.eq_smul_basis_det b)
   simpa only [coe_toAlternatingMap, _root_.smul_apply, smul_eq_mul, mul_comm] using h
+
+/-- Evaluating an alternating form on column-combinations `j ↦ ∑ i, A i j • v i` of a family `v`
+multiplies `φ v` by `A.det`. -/
+theorem apply_sum_smul_col_eq_det_mul (φ : E [⋀^ι]→L[R] R) (v : ι → E) (A : Matrix ι ι R) :
+    φ (fun j ↦ ∑ i, A i j • v i) = A.det * φ v := by
+  let e : Module.Basis ι R (ι → R) := Pi.basisFun R ι
+  let ψ : (ι → R) [⋀^ι]→ₗ[R] R := φ.toAlternatingMap.compLinearMap (Fintype.linearCombination R v)
+  have hψ := DFunLike.congr_fun (ψ.eq_smul_basis_det e) (fun j i ↦ A i j)
+  have he : ψ e = φ v := by simp [ψ, e]
+  have hL : ψ (fun j i ↦ A i j) = φ (fun j ↦ ∑ i, A i j • v i) := by
+    simp [ψ, Fintype.linearCombination_apply]
+  have hdet : e.det (fun j i ↦ A i j) = A.det := (Pi.basisFun_det_apply _).trans A.det_transpose
+  rw [← hL, hψ, _root_.smul_apply, he, hdet, smul_eq_mul, mul_comm]
+
+/-- Evaluating an alternating form on row-combinations `j ↦ ∑ i, A j i • v i` of a family `v`
+multiplies `φ v` by `A.det`. -/
+theorem apply_sum_smul_row_eq_det_mul (φ : E [⋀^ι]→L[R] R) (v : ι → E) (A : Matrix ι ι R) :
+    φ (fun j ↦ ∑ i, A j i • v i) = A.det * φ v := by
+  simpa only [Matrix.transpose_apply, Matrix.det_transpose] using
+    φ.apply_sum_smul_col_eq_det_mul v Aᵀ
 
 omit [Fintype ι] [DecidableEq ι] in
 /-- Pullback of a top-degree coefficient multiplies by the determinant. -/

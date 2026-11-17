@@ -28,6 +28,8 @@ on a compact manifold it is additive and monotone on continuous functions, with 
 
 * `TauCeti.integralTopForm_smul_riemannianVolumeForm_nonneg`: `0 ≤ f` gives `0 ≤ ∫_M f vol`.
 * `TauCeti.integralTopForm_mul_smul_riemannianVolumeForm`: `∫_M c f vol = c ∫_M f vol`.
+* `TauCeti.integralTopForm_riemannianVolumeForm_eq_zero_of_not_compactSpace`: on a noncompact
+  manifold, `∫_M vol = 0`.
 * `TauCeti.isSmoothForm_smul_riemannianVolumeForm`: `f vol` is a continuous top form when `f`
   is continuous.
 * `TauCeti.integralTopForm_add_smul_riemannianVolumeForm`: on a compact manifold,
@@ -120,6 +122,17 @@ theorem integralTopForm_mul_smul_riemannianVolumeForm (c : ℝ) (f : M → ℝ) 
   funext x
   rw [Pi.smul_apply, mul_smul]
 
+/-- On a noncompact oriented Riemannian manifold, the Riemannian volume form has zero top-form
+integral because it is nowhere zero and therefore does not have compact support. -/
+theorem integralTopForm_riemannianVolumeForm_eq_zero_of_not_compactSpace (hM : ¬CompactSpace M) :
+    integralTopForm o (riemannianVolumeForm o) = 0 := by
+  refine integralTopForm_eq_zero_of_not_isCompact o (riemannianVolumeForm o) ?_
+  have htsupp : _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) (riemannianVolumeForm o) = Set.univ :=
+    Set.eq_univ_of_forall fun x ↦
+      _root_.subset_tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) (riemannianVolumeForm o)
+        (riemannianVolumeForm_ne_zero o x)
+  rw [htsupp, isCompact_univ_iff]; exact hM
+
 section Continuous
 
 variable [IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x)]
@@ -165,12 +178,9 @@ theorem integralTopForm_smul_riemannianVolumeForm_pos_iff {f : M → ℝ}
   refine ⟨fun h ↦ ?_, fun hpos ↦ ?_⟩
   · by_contra! hle
     have hzero : (fun x ↦ f x • riemannianVolumeForm o x) = 0 := by
-      funext x
-      simp [le_antisymm (hle x) (hnn x)]
-    rw [hzero, integralTopForm_zero] at h
-    exact lt_irrefl 0 h
-  · let : MeasurableSpace M := borel M
-    have : BorelSpace M := ⟨rfl⟩
+      funext x; simp [le_antisymm (hle x) (hnn x)]
+    rw [hzero, integralTopForm_zero] at h; exact lt_irrefl 0 h
+  · let : MeasurableSpace M := borel M; have : BorelSpace M := ⟨rfl⟩
     have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 0)
     have hc : HasCompactSupport f := .of_compactSpace f
@@ -195,8 +205,7 @@ theorem integralTopForm_smul_riemannianVolumeForm_eq_iff_of_le {f g : M → ℝ}
     integralTopForm o (fun x ↦ f x • riemannianVolumeForm o x) =
         integralTopForm o (fun x ↦ g x • riemannianVolumeForm o x) ↔
       ∀ x, f x = g x := by
-  have h :=
-    integralTopForm_add_smul_riemannianVolumeForm o (g := fun x ↦ g x - f x) hf (hg.sub hf)
+  have h := integralTopForm_add_smul_riemannianVolumeForm o (g := fun x ↦ g x - f x) hf (hg.sub hf)
   simp only [add_sub_cancel] at h
   rw [h, left_eq_add,
     integralTopForm_smul_riemannianVolumeForm_eq_zero_iff o (f := fun x ↦ g x - f x) (hg.sub hf)
@@ -206,4 +215,3 @@ theorem integralTopForm_smul_riemannianVolumeForm_eq_iff_of_le {f g : M → ℝ}
 end Continuous
 
 end TauCeti
-

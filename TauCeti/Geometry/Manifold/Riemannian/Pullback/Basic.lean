@@ -44,8 +44,10 @@ the metric that a manifold with a geometric structure receives through its chart
   metric.
 * `Bundle.ContMDiffRiemannianMetric.pullback`: the `C^n` Riemannian metric obtained from an
   immersion by pulling back the target metric.
-* `Bundle.ContMDiffRiemannianMetric.pullback_id` and
-  `Bundle.ContMDiffRiemannianMetric.pullback_comp`: the functoriality laws for pullback metrics.
+* `Bundle.ContMDiffRiemannianMetric.pullback_id`, `Bundle.ContMDiffRiemannianMetric.pullback_comp`,
+  `Bundle.ContMDiffRiemannianMetric.orthonormal_mfderiv_comp_iff`, and
+  `Bundle.ContMDiffRiemannianMetric.inner_mfderiv_pullback_comp`: functoriality, orthonormality
+  preservation, and composite inner-product preservation for pullback metrics.
 * `Bundle.ContMDiffRiemannianMetric.pullback_rescale`: pulling back commutes with conformal
   rescaling, `f^* (h g) = (h ∘ f) f^* g`.
 * `Bundle.ContMDiffRiemannianMetric.conformalClass_pullback`: along a map with a `C^n` left
@@ -278,6 +280,25 @@ theorem pullback_inner
       g.inner (f x) (mfderiv I J f x v) (mfderiv I J f x w) :=
   (rfl)
 
+/-- A family of tangent vectors at `x` is orthonormal for the pullback metric `f*g` if and only if
+its image under `df_x` is orthonormal for `g` at `f x`. -/
+theorem orthonormal_mfderiv_comp_iff
+    (g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)) (f : M → N)
+    (hf : ContMDiff I J (n + 1) f) (hinj : ∀ x, Function.Injective (mfderiv I J f x))
+    {ι : Type*} (x : M) (v : ι → TangentSpace I x) :
+    (letI : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g.toRiemannianMetric⟩;
+      Orthonormal ℝ (mfderiv I J f x ∘ v)) ↔
+      (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+        ⟨(g.pullback f hf hinj).toRiemannianMetric⟩; Orthonormal ℝ v) := by
+  classical
+  let : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨g.toRiemannianMetric⟩
+  let gM := g.pullback f hf hinj
+  let : RiemannianBundle (fun z : M ↦ TangentSpace I z) := ⟨gM.toRiemannianMetric⟩
+  rw [orthonormal_iff_ite, orthonormal_iff_ite]
+  refine forall₂_congr fun i j ↦ ?_
+  rw [inner_riemannianBundle g, inner_riemannianBundle gM, pullback_inner, Function.comp_apply,
+    Function.comp_apply]
+
 /-- Pulling back along equal maps gives equal metrics, whatever the regularity and injectivity
 proofs supplied. -/
 theorem pullback_congr
@@ -325,6 +346,30 @@ theorem pullback_comp
   rw [mfderiv_comp x (hh.mdifferentiableAt (by simp)) (hf.mdifferentiableAt (by simp))]
   simp only [ContinuousLinearMap.comp_apply]
   rw [Function.comp_apply]
+
+/-- For the pullback metrics `(h ∘ f)*g` on `M` and `h*g` on `N`, the differential `df_x` preserves
+tangent inner products. -/
+theorem inner_mfderiv_pullback_comp
+    [FiniteDimensional ℝ F]
+    (g : ContMDiffRiemannianMetric K n G (fun z : P ↦ TangentSpace K z))
+    {h : N → P} {f : M → N} (hh : ContMDiff J K (n + 1) h) (hf : ContMDiff I J (n + 1) f)
+    (hinjh : ∀ y, Function.Injective (mfderiv J K h y))
+    (hinjhf : ∀ x, Function.Injective (mfderiv I K (h ∘ f) x))
+    (x : M) (v w : TangentSpace I x) :
+    (letI : RiemannianBundle (fun y : N ↦ TangentSpace J y) :=
+       ⟨(g.pullback h hh hinjh).toRiemannianMetric⟩;
+     Inner.inner ℝ (mfderiv I J f x v) (mfderiv I J f x w)) =
+      (letI : RiemannianBundle (fun z : M ↦ TangentSpace I z) :=
+         ⟨(g.pullback (h ∘ f) (hh.comp hf) hinjhf).toRiemannianMetric⟩;
+       Inner.inner ℝ v w) := by
+  let gN := g.pullback h hh hinjh
+  let gM := g.pullback (h ∘ f) (hh.comp hf) hinjhf
+  let : RiemannianBundle (fun y : N ↦ TangentSpace J y) := ⟨gN.toRiemannianMetric⟩
+  let : RiemannianBundle (fun z : M ↦ TangentSpace I z) := ⟨gM.toRiemannianMetric⟩
+  rw [inner_riemannianBundle gN, inner_riemannianBundle gM, pullback_inner, pullback_inner,
+    Function.comp_apply,
+    mfderiv_comp x (hh.mdifferentiableAt (by simp)) (hf.mdifferentiableAt (by simp)),
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply]
 
 variable {g : ContMDiffRiemannianMetric J n F (fun y : N ↦ TangentSpace J y)} {f : M → N}
   {hf : ContMDiff I J (n + 1) f} {hinj : ∀ x, Function.Injective (mfderiv I J f x)}

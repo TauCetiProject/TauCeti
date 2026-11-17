@@ -18,8 +18,9 @@ The differentials of a diffeomorphism and its inverse undo each other, and the d
 diffeomorphism undoes the pullback of vector fields along it.
 Differentiability at a point is also preserved by precomposition and postcomposition with a
 diffeomorphism, so the chain rule for such compositions holds without differentiability
-assumptions, and the tangent images of a map, the ranges of its differentials, are unchanged by
-precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
+assumptions, and the tangent images (ranges of differentials) and differential injectivity are
+preserved by precomposition with a diffeomorphism, while ranges are mapped by the differential
+under postcomposition.
 These facts support inverse isometries and transport of curve differentiability through
 diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
 diffeomorphism is also characterized, for composition with partial coordinates.
@@ -200,6 +201,14 @@ theorem range_mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 
   rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top]
   exact LinearMap.range_eq_top.mpr (h.isInvertible_mfderiv hn).surjective
+
+/-- Precomposition with a diffeomorphism preserves injectivity of the differential: `d(f ∘ h)_x` is
+injective if and only if `df_{h x}` is injective. No differentiability of `f` is assumed. -/
+theorem injective_mfderiv_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0)
+    (f : N → P) (x : M) :
+    Function.Injective (mfderiv I K (f ∘ h) x) ↔ Function.Injective (mfderiv J K f (h x)) := by
+  rw [h.mfderiv_comp_diffeomorph hn, ContinuousLinearMap.coe_comp]
+  exact Function.Injective.of_comp_iff' _ (h.isInvertible_mfderiv hn (x := x)).bijective
 
 end TangentImage
 
