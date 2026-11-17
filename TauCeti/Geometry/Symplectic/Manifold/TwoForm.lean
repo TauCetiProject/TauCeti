@@ -311,6 +311,16 @@ lemma Tames.isNondegenerate (h : form.Tames J) : form.IsNondegenerate := by
   by_contra hv0
   exact (h x v hv0).ne' (hv (J x v))
 
+/-- **Structures tamed by a common form are nowhere opposite.** If a smooth two-form tames `J₀`
+and `J₁`, then `v ↦ J₀ v + J₁ v` is injective on every tangent space. -/
+lemma Tames.injective_add {J₀ J₁ : SmoothAlmostComplexStructure I M} (h₀ : form.Tames J₀)
+    (h₁ : form.Tames J₁) (x : M) :
+    Function.Injective fun v : TangentSpace I x ↦ J₀ x v + J₁ x v := by
+  have h := SymplecticForm.Tames.injective_add (h₀.isNondegenerate.tames_iff.1 h₀ x)
+    (h₀.isNondegenerate.tames_iff.1 h₁ x)
+  simpa only [LinearMap.coe_add, SmoothAlmostComplexStructure.almostComplexStructureAt_toLinearMap,
+    ContinuousLinearMap.coe_coe, Pi.add_def] using h
+
 /-- A smooth two-form is invariant under a smooth almost complex structure when applying the
 structure in both tangent arguments leaves the form unchanged. -/
 def Invariant (form : SmoothTwoForm I M) (J : SmoothAlmostComplexStructure I M) : Prop :=
