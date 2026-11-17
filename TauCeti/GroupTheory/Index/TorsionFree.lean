@@ -51,15 +51,14 @@ theorem isCancelSMul_quotient_iff {H K : Subgroup G} :
   rw [isCancelSMul_iff_eq_one_of_smul_eq]
   refine ⟨fun hfree k hk g hmem ↦ ?_, fun hconj k q hkq ↦ ?_⟩
   · have hfix : (⟨k⁻¹, inv_mem hk⟩ : K) • (g : G ⧸ H) = (g : G ⧸ H) := by
-      change ((k⁻¹ * g : G) : G ⧸ H) = (g : G ⧸ H)
-      rw [QuotientGroup.eq]
+      rw [Subgroup.smul_def, MulAction.Quotient.smul_coe, smul_eq_mul, QuotientGroup.eq]
       simpa [mul_assoc] using hmem
     have hk1 : (⟨k⁻¹, inv_mem hk⟩ : K) = 1 := hfree ⟨k⁻¹, inv_mem hk⟩ (g : G ⧸ H) hfix
     exact inv_eq_one.mp (congrArg Subtype.val hk1)
   · obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+    rw [Subgroup.smul_def, MulAction.Quotient.smul_mk, smul_eq_mul, QuotientGroup.eq] at hkq
     have hmem : g⁻¹ * (k : G)⁻¹ * g ∈ H := by
-      have heq : (((k : G) * g : G) : G ⧸ H) = (g : G ⧸ H) := hkq
-      simpa [mul_assoc] using QuotientGroup.eq.mp heq
+      simpa [mul_assoc] using hkq
     exact Subtype.ext (inv_eq_one.mp (hconj (k : G)⁻¹ (inv_mem k.2) g hmem))
 
 /-- If a subgroup `K` meets every conjugate of `H` trivially, then `Nat.card K` divides `H.index`.

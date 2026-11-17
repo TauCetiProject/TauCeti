@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.Coprod.Abelianization
 public import TauCeti.GroupTheory.Coprod.Torsion
 public import TauCeti.GroupTheory.Index.TorsionFree
 public import TauCeti.GroupTheory.TriangleGroup.Basic
+import TauCeti.Data.ZMod.MonoidHomEquiv
 
 /-!
 # Free-product presentation of triangle groups `Δ(a, b, 0)`
@@ -61,26 +62,6 @@ namespace TauCeti
 
 namespace TriangleGroup
 
-/-! ### Auxiliary cyclic lift for unrestricted `n : ℕ` -/
-
-private def cyclicLift {n : ℕ} {G : Type*} [Group G] (g : G) (hg : g ^ n = 1) :
-    Multiplicative (ZMod n) →* G :=
-  (ZMod.lift n ⟨zmultiplesHom (Additive G) (.ofMul g), by
-    rw [zmultiplesHom_apply, natCast_zsmul, ← ofMul_pow, hg, ofMul_one]⟩).toMultiplicativeLeft
-
-private theorem cyclicLift_ofAdd_intCast {n : ℕ} {G : Type*} [Group G] (g : G) (hg : g ^ n = 1)
-    (k : ℤ) : cyclicLift g hg (.ofAdd (k : ZMod n)) = g ^ k := by
-  rw [cyclicLift, AddMonoidHom.coe_toMultiplicativeLeft, Function.comp_apply, Function.comp_apply,
-    toAdd_ofAdd, ZMod.lift_coe, zmultiplesHom_apply, toMul_zsmul, toMul_ofMul]
-
-private theorem cyclicLift_ofAdd_natCast {n : ℕ} {G : Type*} [Group G] (g : G) (hg : g ^ n = 1)
-    (k : ℕ) : cyclicLift g hg (.ofAdd (k : ZMod n)) = g ^ k := by
-  rw [← Int.cast_natCast, cyclicLift_ofAdd_intCast, zpow_natCast]
-
-private theorem cyclicLift_ofAdd_one {n : ℕ} {G : Type*} [Group G] (g : G) (hg : g ^ n = 1) :
-    cyclicLift g hg (.ofAdd 1) = g := by
-  simpa using cyclicLift_ofAdd_intCast g hg 1
-
 /-! ### Isomorphism with `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)` -/
 
 private def toCoprodHom (a b : ℕ) :
@@ -94,7 +75,7 @@ private def toCoprodHom (a b : ℕ) :
 
 private def fromCoprodHom (a b : ℕ) :
     Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) →* TriangleGroup a b 0 :=
-  Monoid.Coprod.lift (cyclicLift (x a b 0) (x_pow a b 0)) (cyclicLift (y a b 0) (y_pow a b 0))
+  Monoid.Coprod.lift (zmodLift (x a b 0) (x_pow a b 0)) (zmodLift (y a b 0) (y_pow a b 0))
 
 /-- **Free-product presentation of `Δ(a, b, 0)`.** For all `a b : ℕ`, `TriangleGroup a b 0` is
 isomorphic to the free product `Multiplicative (ZMod a) ∗ Multiplicative (ZMod b)`, sending `x` to
@@ -103,20 +84,20 @@ def equivCoprod (a b : ℕ) :
     TriangleGroup a b 0 ≃* Multiplicative (ZMod a) ∗ Multiplicative (ZMod b) :=
   MonoidHom.toMulEquiv (toCoprodHom a b) (fromCoprodHom a b)
     (hom_ext a b 0
-      (by simp [toCoprodHom, fromCoprodHom, cyclicLift_ofAdd_one])
-      (by simp [toCoprodHom, fromCoprodHom, cyclicLift_ofAdd_one]))
+      (by simp [toCoprodHom, fromCoprodHom])
+      (by simp [toCoprodHom, fromCoprodHom]))
     (Monoid.Coprod.hom_ext
       (MonoidHom.ext fun u ↦ by
         obtain ⟨k, hk⟩ := ZMod.intCast_surjective u.toAdd
         have hu : u = .ofAdd (k : ZMod a) := by rw [hk, ofAdd_toAdd]
         simp only [hu, MonoidHom.comp_apply, MonoidHom.id_apply, fromCoprodHom,
-          Monoid.Coprod.lift_apply_inl, cyclicLift_ofAdd_intCast, toCoprodHom, map_zpow, lift_x]
+          Monoid.Coprod.lift_apply_inl, zmodLift_ofAdd_intCast, toCoprodHom, map_zpow, lift_x]
         rw [← map_zpow, ← ofAdd_zsmul, zsmul_one])
       (MonoidHom.ext fun v ↦ by
         obtain ⟨k, hk⟩ := ZMod.intCast_surjective v.toAdd
         have hv : v = .ofAdd (k : ZMod b) := by rw [hk, ofAdd_toAdd]
         simp only [hv, MonoidHom.comp_apply, MonoidHom.id_apply, fromCoprodHom,
-          Monoid.Coprod.lift_apply_inr, cyclicLift_ofAdd_intCast, toCoprodHom, map_zpow, lift_y]
+          Monoid.Coprod.lift_apply_inr, zmodLift_ofAdd_intCast, toCoprodHom, map_zpow, lift_y]
         rw [← map_zpow, ← ofAdd_zsmul, zsmul_one]))
 
 @[simp]
@@ -138,32 +119,32 @@ theorem equivCoprod_z (a b : ℕ) :
 @[simp]
 theorem equivCoprod_symm_inl_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (Monoid.Coprod.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
-  simp [equivCoprod, fromCoprodHom, cyclicLift_ofAdd_intCast]
+  simp [equivCoprod, fromCoprodHom]
 
 @[simp]
 theorem equivCoprod_symm_inr_ofAdd_intCast (a b : ℕ) (k : ℤ) :
     (equivCoprod a b).symm (Monoid.Coprod.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
-  simp [equivCoprod, fromCoprodHom, cyclicLift_ofAdd_intCast]
+  simp [equivCoprod, fromCoprodHom]
 
 @[simp]
 theorem equivCoprod_symm_inl_ofAdd_natCast (a b : ℕ) (k : ℕ) :
     (equivCoprod a b).symm (Monoid.Coprod.inl (.ofAdd (k : ZMod a))) = x a b 0 ^ k := by
-  simp [equivCoprod, fromCoprodHom, cyclicLift_ofAdd_natCast]
+  simp [equivCoprod, fromCoprodHom]
 
 @[simp]
 theorem equivCoprod_symm_inr_ofAdd_natCast (a b : ℕ) (k : ℕ) :
     (equivCoprod a b).symm (Monoid.Coprod.inr (.ofAdd (k : ZMod b))) = y a b 0 ^ k := by
-  simp [equivCoprod, fromCoprodHom, cyclicLift_ofAdd_natCast]
+  simp [equivCoprod, fromCoprodHom]
 
 @[simp]
 theorem equivCoprod_symm_inl_ofAdd_one (a b : ℕ) :
     (equivCoprod a b).symm (Monoid.Coprod.inl (.ofAdd 1)) = x a b 0 := by
-  simp [equivCoprod, fromCoprodHom, cyclicLift_ofAdd_one]
+  simp [equivCoprod, fromCoprodHom]
 
 @[simp]
 theorem equivCoprod_symm_inr_ofAdd_one (a b : ℕ) :
     (equivCoprod a b).symm (Monoid.Coprod.inr (.ofAdd 1)) = y a b 0 := by
-  simp [equivCoprod, fromCoprodHom, cyclicLift_ofAdd_one]
+  simp [equivCoprod, fromCoprodHom]
 
 /-! ### Exact orders of the generators -/
 

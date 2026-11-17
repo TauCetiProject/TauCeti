@@ -34,6 +34,8 @@ factor, of the same order.
   of an indexed free product are conjugate only when both are `1`.
 * `Monoid.CoprodI.NeWord.not_isOfFinOrder_prod_of_ne`: a nonempty reduced word whose endpoints lie
   in distinct factors has infinite order.
+* `Monoid.CoprodI.NeWord.exists_isConj_length_lt`: a nonempty reduced word of length at least `2`
+  whose endpoints lie in the same factor is conjugate to a strictly shorter reduced word.
 * `Monoid.CoprodI.eq_one_or_exists_isConj_of_of_isOfFinOrder`, `Monoid.CoprodI.isOfFinOrder_iff`,
   `Monoid.CoprodI.orderOf_eq_iff`: classification of finite-order elements and elements of given
   finite order `n > 1` in an indexed free product of groups.
@@ -149,89 +151,83 @@ section Group
 
 variable {ι : Type*} {G : ι → Type*} [∀ i, Group (G i)]
 
+/-- **Cyclic reduction step.** If a nonempty reduced word `u : NeWord G i i` has length at least
+`2` and starts and ends in the same factor `G i`, then conjugating by its last letter merges the
+endpoints into a strictly shorter reduced word `w`. -/
+theorem NeWord.exists_isConj_length_lt {i : ι} (u : NeWord G i i) (hu : 1 < u.toList.length) :
+    ∃ w : Word G, IsConj u.prod w.prod ∧ w.toList.length < u.toList.length := by
+  classical
+  rcases hu_cons : u.toList with _ | ⟨a, rest⟩
+  · exact absurd hu_cons u.toList_ne_nil
+  · have hrest : rest ≠ [] := by
+      rintro rfl
+      simp [hu_cons] at hu
+    set b := rest.getLast hrest
+    set mid := rest.dropLast
+    have hlist : u.toList = a :: (mid ++ [b]) := by
+      rw [hu_cons, List.dropLast_append_getLast hrest]
+    have ha : a = ⟨i, u.head⟩ := by
+      simpa [hlist] using u.toList_head?
+    have hb : b = ⟨i, u.last⟩ := by
+      have hlast : (a :: (mid ++ [b])).getLast? = some b := by
+        rw [← List.cons_append, List.getLast?_append_of_ne_nil _ (by simp : [b] ≠ []),
+          List.getLast?_singleton]
+      simpa [hlist, hlast] using u.toList_getLast?
+    rw [ha, hb] at hlist
+    have hchain :
+        List.IsChain (fun p q ↦ p.1 ≠ q.1) (⟨i, u.head⟩ :: (mid ++ [⟨i, u.last⟩])) := by
+      simpa [NeWord.toWord, hlist] using u.toWord.chain_ne
+    have hmid_ne : mid ≠ [] := by
+      intro hmid0
+      simp [hmid0] at hchain
+    let midWord : Word G :=
+      { toList := mid
+        ne_one := fun l hl ↦ u.toWord.ne_one l (by simp [NeWord.toWord, hlist, hl])
+        chain_ne := hchain.tail.left_of_append }
+    have hfst : midWord.fstIdx ≠ some i := by
+      rcases hmid_cons : mid with _ | ⟨c, midTail⟩
+      · exact False.elim (hmid_ne hmid_cons)
+      · rw [hmid_cons] at hchain
+        have hic : i ≠ c.1 := (List.isChain_cons_cons.mp hchain).1
+        simp [midWord, Word.fstIdx, hmid_cons, hic.symm]
+    let w : Word G := Word.rcons ⟨u.last * u.head, midWord, hfst⟩
+    have hu_prod : u.prod = of u.head * (midWord.prod * of u.last) := by
+      simp [NeWord.prod, Word.prod, NeWord.toWord, hlist, midWord]
+    have hw_prod : w.prod = of u.last * of u.head * midWord.prod := by
+      simp [w, Word.prod_rcons, map_mul]
+    refine ⟨w, isConj_iff.mpr ⟨of u.last, by simp [hu_prod, hw_prod, mul_assoc]⟩, ?_⟩
+    have hlen : u.toList.length = mid.length + 2 := by
+      simp [hlist]
+    rw [← hu_cons, hlen]
+    dsimp only [w, Word.rcons]
+    split_ifs <;> simp [midWord]
+
 private theorem word_prod_eq_one_or_exists_isConj_of :
     ∀ (n : ℕ) (w : Word G), w.toList.length = n → IsOfFinOrder w.prod →
       w.prod = 1 ∨ ∃ (i : ι) (x : G i), x ≠ 1 ∧ IsOfFinOrder x ∧ IsConj w.prod (of x) := by
-  classical
   intro n
   refine Nat.strongRecOn n fun n ih w hn hfin ↦ ?_
-  rcases hw : w.toList with _ | ⟨a, rest⟩
-  · left
-    have hw0 : w = Word.empty := Word.ext hw
-    simp [hw0]
-  · rcases eq_or_ne rest [] with rfl | hrest
+  by_cases hw : w = Word.empty
+  · exact Or.inl (by simp [hw])
+  · obtain ⟨i, j, u, rfl⟩ := NeWord.of_word w hw
+    have hlen : u.toList.length = n := by simpa [NeWord.toWord] using hn
+    have hpos : 0 < u.toList.length := List.length_pos_iff.mpr u.toList_ne_nil
+    by_cases h1 : u.toList.length = 1
     · right
-      have ha1 : a.2 ≠ 1 := w.ne_one a (by simp [hw])
-      have hprod : w.prod = of a.2 := by simp [Word.prod, hw]
-      have hafin : IsOfFinOrder a.2 :=
-        (of_injective a.1).isOfFinOrder_iff.mp (hprod ▸ hfin)
+      obtain ⟨a, ha⟩ := List.length_eq_one_iff.mp h1
+      have ha1 : a.2 ≠ 1 := u.toWord.ne_one a (by simp [NeWord.toWord, ha])
+      have hprod : u.toWord.prod = of a.2 := by simp [Word.prod, NeWord.toWord, ha]
+      have hafin : IsOfFinOrder a.2 := (of_injective a.1).isOfFinOrder_iff.mp (hprod ▸ hfin)
       exact ⟨a.1, a.2, ha1, hafin, hprod ▸ IsConj.refl _⟩
-    · set b := rest.getLast hrest
-      set mid := rest.dropLast
-      have hrest_eq : rest = mid ++ [b] := (List.dropLast_append_getLast hrest).symm
-      have hw' : w.toList = a :: (mid ++ [b]) := by rw [hw, hrest_eq]
-      by_cases hab : a.1 = b.1
-      · rcases a with ⟨i, x⟩
-        rcases b with ⟨j, y⟩
-        dsimp only at hab
-        subst hab
-        -- `mid` cannot be empty, else `w.toList = [⟨i, x⟩, ⟨i, y⟩]` violates `chain_ne`.
-        have hmid_ne : mid ≠ [] := by
-          intro hmid0
-          have hc := w.chain_ne
-          simp [hw', hmid0] at hc
-        let midWord : Word G :=
-          { toList := mid
-            ne_one := fun l hl ↦ w.ne_one l (by simp [hw', hl])
-            chain_ne := by
-              have hc := w.chain_ne
-              rw [hw'] at hc
-              exact hc.tail.left_of_append }
-        have hfst : midWord.fstIdx ≠ some i := by
-          rcases hmid_cons : mid with _ | ⟨c, midTail⟩
-          · exact False.elim (hmid_ne hmid_cons)
-          · have hc := w.chain_ne
-            rw [hw', hmid_cons] at hc
-            have hic : i ≠ c.1 := (List.isChain_cons_cons.mp hc).1
-            simp [midWord, Word.fstIdx, hmid_cons, hic.symm]
-        let w' : Word G := Word.rcons ⟨y * x, midWord, hfst⟩
-        have hw_prod : w.prod = of x * (midWord.prod * of y) := by
-          simp [Word.prod, hw', midWord]
-        have hw'_prod : w'.prod = of y * of x * midWord.prod := by
-          simp [w', Word.prod_rcons, map_mul]
-        have hconj : IsConj w.prod w'.prod := by
-          rw [isConj_iff]
-          exact ⟨of y, by simp [hw_prod, hw'_prod, mul_assoc]⟩
-        have hlen_w : n = mid.length + 2 := by
-          have hlen := congrArg List.length hw'
-          simp only [hn, List.length_cons, List.length_append, List.length_nil, zero_add] at hlen
-          omega
-        have hlen_w' : w'.toList.length < n := by
-          dsimp only [w', Word.rcons]
-          split_ifs <;> simp [midWord, hlen_w]
-        rcases ih w'.toList.length hlen_w' w' rfl (hconj.isOfFinOrder hfin) with
+    · by_cases hij : i = j
+      · subst hij
+        obtain ⟨w', hconj, hlt⟩ := u.exists_isConj_length_lt (by omega)
+        rw [NeWord.prod] at hconj
+        rcases ih w'.toList.length (hlen ▸ hlt) w' rfl (hconj.isOfFinOrder hfin) with
           hw'1 | ⟨k, z, hz1, hzfin, hconj_z⟩
         · exact Or.inl (isConj_one_left.mp (hw'1 ▸ hconj))
         · exact Or.inr ⟨k, z, hz1, hzfin, hconj.trans hconj_z⟩
-      · have hw_ne : w ≠ Word.empty := by
-          intro he
-          simp [he, Word.empty] at hw
-        obtain ⟨i, j, u, hu⟩ := NeWord.of_word w hw_ne
-        have h2 : u.toList = a :: (mid ++ [b]) := (congrArg Word.toList hu).trans hw'
-        have hi : i = a.1 := by
-          have h1 := u.toList_head?
-          simp only [h2, List.head?_cons, Option.some.injEq] at h1
-          exact (congrArg Sigma.fst h1).symm
-        have hj : j = b.1 := by
-          have h1 := u.toList_getLast?
-          have hlast : (a :: (mid ++ [b])).getLast? = some b := by
-            rw [← List.cons_append, List.getLast?_append_of_ne_nil _ (by simp : [b] ≠ []),
-              List.getLast?_singleton]
-          rw [h2, hlast, Option.some.injEq] at h1
-          exact (congrArg Sigma.fst h1).symm
-        have hij : i ≠ j := by rwa [hi, hj]
-        have hup : u.prod = w.prod := congrArg Word.prod hu
-        exact False.elim (u.not_isOfFinOrder_prod_of_ne hij (hup.symm ▸ hfin))
+      · exact False.elim (u.not_isOfFinOrder_prod_of_ne hij hfin)
 
 /-- **Torsion in an indexed free product of groups.** Every element of finite order in `CoprodI G`
 is either `1` or conjugate to `of x` for a nonidentity element `x` of finite order in some factor

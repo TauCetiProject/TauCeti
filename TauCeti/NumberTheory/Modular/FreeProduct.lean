@@ -83,25 +83,7 @@ namespace TauCeti.ModularGroup
 
 open _root_.ModularGroup
 
-/-! ### Auxiliary projective generator identities -/
-
-private theorem coe_R_eq_coe_S_mul_coe_T : (R : PSL(2, ℤ)) = (S : PSL(2, ℤ)) * T := by
-  rw [R_def, QuotientGroup.mk_mul]
-
-private theorem coe_U_eq_coe_S_mul_coe_T_inv :
-    (U : PSL(2, ℤ)) = (S : PSL(2, ℤ)) * (T : PSL(2, ℤ))⁻¹ := by
-  rw [U_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv]
-
-private theorem coe_S_mul_coe_R : (S : PSL(2, ℤ)) * (R : PSL(2, ℤ)) = T := by
-  rw [coe_R_eq_coe_S_mul_coe_T, ← mul_assoc, ← sq, coe_S_sq, one_mul]
-
-/-- In `PSL(2, ℤ)`, the inverse of the order-three generator `R = S T` is `R²`. -/
-theorem coe_R_inv : (R : PSL(2, ℤ))⁻¹ = (R : PSL(2, ℤ)) ^ 2 :=
-  inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_R_pow_three])
-
-/-- In `PSL(2, ℤ)`, the inverse of the order-three generator `U = S T⁻¹` is `U²`. -/
-theorem coe_U_inv : (U : PSL(2, ℤ))⁻¹ = (U : PSL(2, ℤ)) ^ 2 :=
-  inv_eq_of_mul_eq_one_right (by rw [← pow_succ', coe_U_pow_three])
+/-! ### Auxiliary images under `triangleGroupEquiv.symm` -/
 
 private theorem triangleGroupEquiv_symm_coe_R :
     triangleGroupEquiv.symm (R : PSL(2, ℤ)) = TriangleGroup.x 3 2 0 := by
@@ -191,8 +173,9 @@ theorem coprodIEquiv_coe_S :
     coprodIEquiv (S : PSL(2, ℤ)) =
       Monoid.CoprodI.of (M := fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))) (i := 0)
         ((Multiplicative.ofAdd (α := ZMod 2)) 1) := by
-  change (Monoid.CoprodI.finTwoEquivCoprod
-      fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm (coprodEquiv (S : PSL(2, ℤ))) = _
+  refine (MulEquiv.trans_apply coprodEquiv
+    (Monoid.CoprodI.finTwoEquivCoprod fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm
+    (S : PSL(2, ℤ))).trans ?_
   rw [coprodEquiv_coe_S]
   exact Monoid.CoprodI.finTwoEquivCoprod_symm_inl
     (M := fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i)))
@@ -203,8 +186,9 @@ theorem coprodIEquiv_coe_R :
     coprodIEquiv (R : PSL(2, ℤ)) =
       Monoid.CoprodI.of (M := fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))) (i := 1)
         ((Multiplicative.ofAdd (α := ZMod 3)) 1) := by
-  change (Monoid.CoprodI.finTwoEquivCoprod
-      fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm (coprodEquiv (R : PSL(2, ℤ))) = _
+  refine (MulEquiv.trans_apply coprodEquiv
+    (Monoid.CoprodI.finTwoEquivCoprod fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i))).symm
+    (R : PSL(2, ℤ))).trans ?_
   rw [coprodEquiv_coe_R]
   exact Monoid.CoprodI.finTwoEquivCoprod_symm_inr
     (M := fun i : Fin 2 ↦ Multiplicative (ZMod (![2, 3] i)))
@@ -318,18 +302,6 @@ theorem index_commutator : (commutator PSL(2, ℤ)).index = 6 :=
   natCard_abelianization
 
 /-! ### Conjugacy of order-three generators and torsion classification -/
-
-/-- In `PSL(2, ℤ)`, `U = S T⁻¹` is conjugate to `R² = (S T)⁻¹` (namely by `S`). -/
-theorem isConj_coe_U_coe_R_sq : IsConj (U : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
-  rw [← coe_R_inv]
-  exact (isConj_iff.mpr ⟨(S : PSL(2, ℤ)), coe_S_mul_coe_R_inv_mul_coe_S_inv⟩).symm
-
-/-- In `PSL(2, ℤ)`, `R = S T` is conjugate to `U² = (S T⁻¹)⁻¹` (namely by `S`). -/
-theorem isConj_coe_R_coe_U_sq : IsConj (R : PSL(2, ℤ)) ((U : PSL(2, ℤ)) ^ 2) := by
-  rw [← coe_U_inv]
-  refine isConj_iff.mpr ⟨(S : PSL(2, ℤ)), ?_⟩
-  rw [coe_U_eq_coe_S_mul_coe_T_inv, mul_inv_rev, inv_inv, coe_S_inv, coe_R_eq_coe_S_mul_coe_T,
-    ← mul_assoc, ← sq, coe_S_sq, one_mul]
 
 /-- In `PSL(2, ℤ)`, `R` is not conjugate to `R²`, since their images in `ZMod 6` are `4` and `2`. -/
 theorem not_isConj_coe_R_sq : ¬ IsConj (R : PSL(2, ℤ)) ((R : PSL(2, ℤ)) ^ 2) := by
