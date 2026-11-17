@@ -173,6 +173,7 @@ theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 �
 
 /-- The covariance pseudoinverse of a rank-one covariance `c cᵀ` is `c cᵀ / (c ⬝ c)²`. This
 includes `c = 0`, where both sides vanish. -/
+@[simp]
 theorem covariancePseudoInverse_vecMulVec_self (c : ι → ℝ) :
     (vecMulVec c c).covariancePseudoInverse = ((c ⬝ᵥ c) ^ 2)⁻¹ • vecMulVec c c := by
   by_cases h0 : c ⬝ᵥ c = 0

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
+import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Data.Matrix.Mul
 import TauCeti.Probability.Distributions.Gaussian.Density
 
@@ -35,8 +36,6 @@ gives the point mass at the retained means shifted by one observed deviation.
   observed loading is nonzero;
 * `EuclideanSpace.gaussianCondMean_vecMulVec_self_apply`: the regression mean;
 * `EuclideanSpace.gaussianCondKernel_vecMulVec_self`: the conditional kernel is a point mass;
-* `TauCeti.Probability.ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self`: the vector lies
-  almost surely on the line through its mean in the direction of the loadings;
 * `TauCeti.Probability.condDistrib_multivariateGaussian_vecMulVec_self`: the regular conditional
   law is the point mass determined by one observed coordinate;
 * `TauCeti.Probability.condDistrib_multivariateGaussian_const`: the case of identical
@@ -90,10 +89,8 @@ theorem gaussianCondMean_vecMulVec_self_apply (m : EuclideanSpace ℝ (ι ⊕ κ
   rw [covariancePseudoInverse_vecMulVec_self, Matrix.mul_smul, vecMulVec_mul_vecMulVec,
     vecMulVec_smul, smul_smul]
   -- Read the Euclidean operator and the block-coordinate equivalence on coordinates.
-  simp only [EuclideanSpace.sumEquivProd, ContinuousLinearEquiv.trans_apply,
-    LinearIsometryEquiv.coe_toContinuousLinearEquiv, WithLp.prodContinuousLinearEquiv_apply,
-    PiLp.sumPiLpEquivProdLpPiLp_apply_ofLp, map_smul, LinearMap.smul_apply, map_sub,
-    toLpLin_toLp, toLin'_apply, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, ofLp_toLpLin,
+  simp only [EuclideanSpace.sumEquivProd_apply_fst, map_smul, LinearMap.smul_apply, map_sub,
+    toLin'_apply, PiLp.add_apply, PiLp.smul_apply, PiLp.sub_apply, ofLp_toLpLin,
     smul_eq_mul, add_right_inj]
   have hmulVec (w : κ → ℝ) : (vecMulVec (c ∘ Sum.inl) (c ∘ Sum.inr) *ᵥ w) i =
       c (Sum.inl i) * ∑ k, c (Sum.inr k) * w k := by
@@ -101,7 +98,7 @@ theorem gaussianCondMean_vecMulVec_self_apply (m : EuclideanSpace ℝ (ι ⊕ κ
   have hnorm : (c ∘ Sum.inr) ⬝ᵥ (c ∘ Sum.inr) = ∑ k, c (Sum.inr k) ^ 2 := by
     simp [dotProduct, pow_two]
   rw [hmulVec, hmulVec, hnorm, ← mul_sub, ← mul_sub, ← Finset.sum_sub_distrib]
-  simp only [← mul_sub]
+  simp only [← mul_sub, EuclideanSpace.sumEquivProd_apply_snd]
   rcases eq_or_ne (∑ k, c (Sum.inr k) ^ 2) 0 with h | h
   · simp [h]
   · field_simp
@@ -122,21 +119,6 @@ end EuclideanSpace
 namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
-
-/-- A Gaussian vector with rank-one covariance `c cᵀ` lies almost surely on the line through
-its mean in the direction `c`. -/
-theorem ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self {α : Type*} [Fintype α]
-    [DecidableEq α] (m : EuclideanSpace ℝ α) (c : α → ℝ) :
-    ∀ᵐ x ∂multivariateGaussian m (vecMulVec c c), ∃ t : ℝ, ∀ j, x j - m j = t * c j := by
-  filter_upwards [ae_mem_affineRange_multivariateGaussian
-    (by simpa using posSemidef_vecMulVec_self_star c) m] with x hx
-  simp only [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, LinearMap.mem_range] at hx
-  obtain ⟨y, hy⟩ := hx
-  refine ⟨c ⬝ᵥ y, fun j ↦ ?_⟩
-  have hj := congrArg (fun z : EuclideanSpace ℝ α ↦ z j) hy
-  simp only [Matrix.toLpLin_apply, vecMulVec_mulVec, PiLp.sub_apply] at hj
-  rw [← hj]
-  simp [MulOpposite.smul_eq_mul_unop, mul_comm]
 
 /-- **Conditioning a rank-one Gaussian vector.** If the joint covariance is `c cᵀ` and the
 observed loading `c k` is nonzero, the regular conditional law of the retained block is almost
@@ -163,9 +145,7 @@ theorem condDistrib_multivariateGaussian_vecMulVec_self {Ω : Type*} [Measurable
     · filter_upwards [hline] with ω ⟨t, ht⟩ j
       have h₁ := ht (Sum.inr j)
       have h₂ := ht (Sum.inr k)
-      simp only [EuclideanSpace.sumEquivProd, ContinuousLinearEquiv.trans_apply,
-        LinearIsometryEquiv.coe_toContinuousLinearEquiv, WithLp.prodContinuousLinearEquiv_apply,
-        PiLp.sumPiLpEquivProdLpPiLp_apply_ofLp]
+      simp only [EuclideanSpace.sumEquivProd_apply_snd]
       linear_combination c (Sum.inr k) * h₁ - c (Sum.inr j) * h₂
     · simp only [Set.ofPred_forall]
       exact MeasurableSet.iInter fun j ↦ measurableSet_eq_fun (by fun_prop) (by fun_prop)
@@ -237,6 +217,7 @@ theorem condDistrib_multivariateGaussian_const {Ω : Type*} [MeasurableSpace Ω]
   rw [hx₂, hm, Kernel.deterministic_apply]
   congr 1
   ext i
-  simp [EuclideanSpace.sumEquivProd]
+  simp only [EuclideanSpace.sumEquivProd_apply_fst, EuclideanSpace.sumEquivProd_apply_snd,
+    sub_self, add_zero]
 
 end TauCeti.Probability
