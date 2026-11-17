@@ -151,6 +151,26 @@ theorem positiveReachable_assignmentEquiv_iff {R : Type w'} [Zero R] [LT R]
     rw [arrows_mapPath, List.forall_mem_map]
     simpa only [assignmentEquiv_apply_totalHomEquiv] using hp
 
+/-- Acyclicity of positive support is unchanged when both the network and its assignment are
+transported. -/
+@[simp]
+theorem isAcyclic_assignmentEquiv_iff {R : Type w'} [Zero R] [LT R]
+    (e : N ≃ₙ N') (f : N.Assignment R) :
+    (e.assignmentEquiv R f).IsAcyclic ↔ f.IsAcyclic := by
+  simp only [Assignment.isAcyclic_def]
+  refine ⟨fun hf v p hp hpos ↦ hf (e.mapPath p) ((e.isCycle_mapPath p).2 hp) ?_,
+    fun hf w q hq hpos ↦ ?_⟩
+  · rw [e.arrows_mapPath, List.forall_mem_map]
+    simpa only [assignmentEquiv_apply_totalHomEquiv] using hpos
+  · obtain ⟨v, rfl⟩ := e.vertexEquiv.surjective w
+    obtain ⟨p, rfl⟩ := (e.pathEquiv v v).surjective q
+    rw [pathEquiv_apply] at hq hpos
+    refine hf p ((e.isCycle_mapPath p).1 hq) fun a ha ↦ ?_
+    have hmem : e.totalHomEquiv a ∈ (e.mapPath p).arrows := by
+      rw [e.arrows_mapPath]
+      exact List.mem_map_of_mem ha
+    simpa only [assignmentEquiv_apply_totalHomEquiv] using hpos (e.totalHomEquiv a) hmem
+
 /-- Deleting corresponding arrow identities preserves and reflects reachability.
 Use explicitly: simplification expands the total-arrow equivalence inside the image. -/
 theorem reachableWithout_image_iff (e : N ≃ₙ N') (F : Set (Σ x y, N.Hom x y)) {x y : V} :
