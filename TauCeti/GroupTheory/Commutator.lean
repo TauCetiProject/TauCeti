@@ -54,8 +54,12 @@ which quantifies over both subgroups. Neither reduces a comparison to generators
   splits into the product of their same-position commutators when the cross terms commute and
   `c * a` commutes with `⁅b, d⁆`; `TauCeti.commutatorElement_mul_mul_of_mem_center` is the case of
   central right factors, which do not change the commutator.
+* `TauCeti.commute_mul_inv_of_commutatorElement_eq`: if `b₀` and `b` have the same commutator with
+  `a`, and that commutator commutes with `b₀` and `b`, then `a` commutes with `b * b₀⁻¹`.
 * `Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_two`: the binomial formula
   `(a * b) ^ n = a ^ n * b ^ n * ⁅b, a⁆ ^ (n choose 2)` when `⁅b, a⁆` commutes with `a` and `b`.
+* `Commute.pow_mul_mul_inv_pow_eq_commutatorElement_pow_mul`: conjugating `a` by `b ^ m`
+  multiplies it on the left by `⁅b, a⁆ ^ m` when `b` commutes with `⁅b, a⁆`.
 * `Commute.inv_pow_mul_pow_mul_pow_eq_commutatorElement_pow_mul_pow`: conjugating `b ^ n` by
   `a ^ k` multiplies it by `⁅b, a⁆ ^ (k * n)` when `⁅b, a⁆` commutes with `a` and `b`.
 * `Commute.mul_pow_two_mul_add_one_eq_pow_mul_inv_pow_mul_pow_mul_pow`: under the same
@@ -114,6 +118,27 @@ theorem commutatorElement_mul_mul_of_mem_center {a b c d : G} (hb : b ∈ center
   rw [commutatorElement_mul_mul_eq_mul_of_commute (mem_center_iff.mp hb c).symm
     (mem_center_iff.mp hd a) (hbd ▸ Commute.one_right _), hbd, mul_one]
 
+/-- If `b₀` and `b` have the same commutator with `a`, and that commutator commutes with both `b₀`
+and `b` (for instance when it is central), then `a` commutes with `b * b₀⁻¹`. -/
+theorem commute_mul_inv_of_commutatorElement_eq {a b₀ b : G}
+    (h : ⁅a, b⁆ = ⁅a, b₀⁆) (hb₀ : Commute b₀ ⁅a, b₀⁆) (hb : Commute b ⁅a, b₀⁆) :
+    Commute a (b * b₀⁻¹) := by
+  have hmul₀ : a * b₀ = ⁅a, b₀⁆ * (b₀ * a) := by rw [commutatorElement_def]; group
+  have hmul : a * b = ⁅a, b₀⁆ * (b * a) := by rw [← h, commutatorElement_def]; group
+  have hinv : ⁅a, b₀⁆ * a * b₀⁻¹ = b₀⁻¹ * a := by
+    apply mul_left_cancel (a := b₀)
+    calc b₀ * (⁅a, b₀⁆ * a * b₀⁻¹)
+        = (⁅a, b₀⁆ * (b₀ * a)) * b₀⁻¹ := by
+          rw [← mul_assoc, ← mul_assoc, hb₀.eq]; simp only [mul_assoc]
+      _ = a := by rw [← hmul₀, mul_inv_cancel_right]
+      _ = b₀ * (b₀⁻¹ * a) := by rw [mul_inv_cancel_left]
+  rw [commute_iff_eq]
+  calc a * (b * b₀⁻¹)
+      = (⁅a, b₀⁆ * (b * a)) * b₀⁻¹ := by rw [← mul_assoc, hmul]
+    _ = b * (⁅a, b₀⁆ * a * b₀⁻¹) := by
+        rw [← mul_assoc, ← mul_assoc, ← hb.eq]; simp only [mul_assoc]
+    _ = b * b₀⁻¹ * a := by rw [hinv, mul_assoc]
+
 /-- **The binomial formula of nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central,
 `(a * b) ^ n = a ^ n * b ^ n * ⁅b, a⁆ ^ (n choose 2)`. -/
@@ -140,6 +165,23 @@ theorem _root_.Commute.mul_pow_eq_pow_mul_pow_mul_commutatorElement_pow_choose_t
           rw [(hc n (n + 1) n).symm.eq]
       _ = a ^ (n + 1) * b ^ (n + 1) * ⁅b, a⁆ ^ (n + 1).choose 2 := by
           rw [h2, pow_succ' a, pow_add ⁅b, a⁆]; simp only [mul_assoc]
+
+/-- **Conjugating by a power when `b` commutes with `⁅b, a⁆`**: conjugating `a` by `b ^ m`
+multiplies `a` on the left by `⁅b, a⁆ ^ m`, for instance when `⁅b, a⁆` is central. -/
+theorem _root_.Commute.pow_mul_mul_inv_pow_eq_commutatorElement_pow_mul {a b : G}
+    (hb : Commute b ⁅b, a⁆) (m : ℕ) :
+    b ^ m * a * (b ^ m)⁻¹ = ⁅b, a⁆ ^ m * a := by
+  have hstep : b * a * b⁻¹ = ⁅b, a⁆ * a := by
+    rw [commutatorElement_def]; group
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    calc b ^ (m + 1) * a * (b ^ (m + 1))⁻¹
+        = b * (b ^ m * a * (b ^ m)⁻¹) * b⁻¹ := by rw [pow_succ', mul_inv_rev]; group
+      _ = b * (⁅b, a⁆ ^ m * a) * b⁻¹ := by rw [ih]
+      _ = ⁅b, a⁆ ^ m * (b * a * b⁻¹) := by
+          rw [← mul_assoc b, (hb.pow_right m).eq, mul_assoc, mul_assoc, ← mul_assoc b]
+      _ = ⁅b, a⁆ ^ (m + 1) * a := by rw [hstep, ← mul_assoc, ← pow_succ]
 
 /-- **Conjugating a power in nilpotency class two**: when the commutator `⁅b, a⁆` commutes with
 `a` and with `b`, for instance when it is central, conjugating `b ^ n` by `a ^ k` multiplies it

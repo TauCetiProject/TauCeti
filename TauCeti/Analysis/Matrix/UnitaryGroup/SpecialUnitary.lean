@@ -5,15 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Logic.Equiv.Fin.Rotate
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
-import Mathlib.LinearAlgebra.Matrix.Permutation
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import TauCeti.Algebra.Star.Unitary
 import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
+import TauCeti.Logic.Equiv.Fin.Basic
 
 /-!
-# Center and diagonalization in the complex special unitary group
+# Center, diagonalization, and clock-and-shift matrices in `SU(n)`
 
 Over `ℂ`, the center of the special unitary group `SU(n) = Matrix.specialUnitaryGroup n ℂ`
 consists of the scalar matrices `scalar n c` with `c ^ card n = 1`
@@ -32,12 +34,20 @@ Every element of `SU(n)` is also diagonalized by conjugation inside `SU(n)`
 point of the unit circle (`Matrix.exists_circle_smul_mem_specialUnitaryGroup`) gives a conjugator
 of determinant one without changing the conjugate.
 
+For any `r`-th root of unity `ζ`, rescaling the diagonal clock matrix `diag(1, ζ, …, ζ^(r - 1))`
+and the cyclic-shift permutation matrix into `SU(r)` yields the Weyl clock-and-shift pair
+(`Matrix.specialUnitaryGroup.clock`, `Matrix.specialUnitaryGroup.shift`) satisfying the twisted
+commutator relation `⁅clock hζ, shift r⁆ = ζ • 1`
+(`Matrix.specialUnitaryGroup.commutator_clock_shift`).
+
 ## Main definitions
 
 * `Matrix.specialUnitaryGroup.centerMulEquivCenterSL`: the isomorphism between the centers of
   `SU(n)` and `SL(n, ℂ)` induced by `toSL`.
 * `Matrix.specialUnitaryGroup.centerMulEquivRootsOfUnityFin`: for `0 < r`, the isomorphism
   `Subgroup.center (specialUnitaryGroup (Fin r) ℂ) ≃* rootsOfUnity r ℂ`.
+* `Matrix.specialUnitaryGroup.clock`, `Matrix.specialUnitaryGroup.shift`: the rescaled Weyl clock
+  and cyclic-shift matrices in `SU(r)`.
 
 ## Main results
 
@@ -51,6 +61,9 @@ of determinant one without changing the conjugate.
   center of `SL(n, ℂ)` and equals the kernel of `toPSL`.
 * `Matrix.specialUnitaryGroup.exists_conj_eq_diagonal`: every element of `SU(n)` is conjugate in
   `SU(n)` to a diagonal matrix with entries on the unit circle.
+* `Matrix.specialUnitaryGroup.exists_coe_clock`, `Matrix.specialUnitaryGroup.exists_coe_shift`,
+  `Matrix.specialUnitaryGroup.commutator_clock_shift`: matrix descriptions of `clock` and `shift`
+  and their Weyl commutation relation `⁅clock hζ, shift r⁆ = ζ • 1`.
 
 ## References
 
@@ -101,9 +114,7 @@ private theorem isDiag_of_mem_center {g : specialUnitaryGroup n ℂ}
   have hprod : ∏ k, z k = 1 := by
     simp only [z, Pi.mul_apply, Finset.prod_mul_distrib, Fintype.prod_pi_mulSingle', mul_inv_cancel]
   have hdet : (TauCeti.unitaryTorusHom n z : Matrix n n ℂ).det = 1 := by
-    have hcoe_prod : ∏ k, (z k : ℂ) = ((∏ k, z k : Circle) : ℂ) :=
-      (map_prod (Submonoid.unitSphere ℂ).subtype z Finset.univ).symm
-    rw [TauCeti.coe_unitaryTorusHom, det_diagonal, hcoe_prod, hprod, Circle.coe_one]
+    rw [TauCeti.det_unitaryTorusHom, hprod, Circle.coe_one]
   let u : specialUnitaryGroup n ℂ :=
     ⟨TauCeti.unitaryTorusHom n z,
       mem_specialUnitaryGroup_iff.mpr ⟨(TauCeti.unitaryTorusHom n z).2, hdet⟩⟩
@@ -137,10 +148,8 @@ private theorem diag_eq_of_mem_center {g : specialUnitaryGroup n ℂ}
   have hprod : ∏ k, z k = -1 := by
     simp only [z, Fintype.prod_pi_mulSingle']
   have hdet : (U : Matrix n n ℂ).det = 1 := by
-    have hcoe_prod : ∏ k, (z k : ℂ) = ((∏ k, z k : Circle) : ℂ) :=
-      (map_prod (Submonoid.unitSphere ℂ).subtype z Finset.univ).symm
-    rw [Submonoid.coe_mul, det_mul, TauCeti.coe_unitaryTorusHom, det_diagonal, hcoe_prod,
-      hprod, coe_permutationUnitary, Equiv.swap_inv, det_permutation, Equiv.Perm.sign_swap hij]
+    rw [Submonoid.coe_mul, det_mul, TauCeti.det_unitaryTorusHom, hprod,
+      coe_permutationUnitary, Equiv.swap_inv, det_permutation, Equiv.Perm.sign_swap hij]
     norm_num
   let u : specialUnitaryGroup n ℂ := ⟨U, mem_specialUnitaryGroup_iff.mpr ⟨U.2, hdet⟩⟩
   have hdiag := (isDiag_of_mem_center hg).diagonal_diag
@@ -263,16 +272,91 @@ theorem exists_conj_eq_diagonal (g : specialUnitaryGroup n ℂ) :
   obtain ⟨z, hz⟩ := TauCeti.mem_unitaryTorus_iff_exists_unitaryTorusHom.mp hU
   obtain ⟨c, hc⟩ := exists_circle_smul_mem_specialUnitaryGroup U
   refine ⟨⟨(c : ℂ) • (U : Matrix n n ℂ), hc⟩, z, ?_⟩
-  have hcmul : (c : ℂ) * star (c : ℂ) = 1 :=
-    Unitary.mem_iff_self_mul_star.mp c.coe_mem_unitary
   have hcoe : (((⟨(c : ℂ) • (U : Matrix n n ℂ), hc⟩ * g *
       (⟨(c : ℂ) • (U : Matrix n n ℂ), hc⟩)⁻¹ : specialUnitaryGroup n ℂ)) : Matrix n n ℂ) =
       ((U * gU * U⁻¹ : unitaryGroup n ℂ) : Matrix n n ℂ) := by
-    rw [Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul,
-      ← star_eq_inv, coe_star, ← Unitary.star_eq_inv, Unitary.coe_star]
-    dsimp only [gU]
-    rw [star_smul, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul, hcmul, one_smul]
+    rw [Submonoid.coe_mul, Submonoid.coe_mul, coe_inv, Submonoid.coe_mul, Submonoid.coe_mul,
+      ← Unitary.star_eq_inv, Unitary.coe_star]
+    exact Unitary.smul_mul_mul_star_smul c.coe_mem_unitary (U : Matrix n n ℂ) (g : Matrix n n ℂ)
   rw [hcoe, ← hz, TauCeti.coe_unitaryTorusHom]
+
+/-! ### Clock-and-shift matrices in `SU(r)` -/
+
+/-- The diagonal unitary clock matrix `diag(1, ζ, …, ζ^(r - 1))` in `U(r)` for an `r`-th root of
+unity `ζ`. -/
+private noncomputable def clockUnitary {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
+    unitaryGroup (Fin r) ℂ :=
+  TauCeti.unitaryTorusHom (Fin r) fun k =>
+    ⟨ζ ^ (k : ℕ), mem_sphere_zero_iff_norm.mpr <| by
+      rw [norm_pow, Complex.norm_eq_one_of_pow_eq_one hζ (Nat.ne_zero_of_lt k.isLt), one_pow]⟩
+
+/-- A special unitary clock matrix in `SU(r)` associated to an `r`-th root of unity `ζ`: a
+unit-circle rescaling of `diag(1, ζ, …, ζ^(r - 1))` into `SU(r)`. Together with
+`Matrix.specialUnitaryGroup.shift`, it satisfies `⁅clock hζ, shift r⁆ = ζ • 1`
+(`Matrix.specialUnitaryGroup.commutator_clock_shift`). -/
+noncomputable def clock {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) : specialUnitaryGroup (Fin r) ℂ :=
+  ⟨((exists_circle_smul_mem_specialUnitaryGroup (clockUnitary hζ)).choose : ℂ) •
+      (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ),
+    (exists_circle_smul_mem_specialUnitaryGroup (clockUnitary hζ)).choose_spec⟩
+
+/-- A special unitary cyclic-shift matrix in `SU(r)`: a unit-circle rescaling of the permutation
+matrix `permutationUnitary (finRotate r)` into `SU(r)`. Together with
+`Matrix.specialUnitaryGroup.clock`, it satisfies `⁅clock hζ, shift r⁆ = ζ • 1`
+(`Matrix.specialUnitaryGroup.commutator_clock_shift`). -/
+noncomputable def shift (r : ℕ) : specialUnitaryGroup (Fin r) ℂ :=
+  ⟨((exists_circle_smul_mem_specialUnitaryGroup
+        (permutationUnitary (R := ℂ) (finRotate r))).choose : ℂ) •
+      ((permutationUnitary (R := ℂ) (finRotate r) : unitaryGroup (Fin r) ℂ) :
+        Matrix (Fin r) (Fin r) ℂ),
+    (exists_circle_smul_mem_specialUnitaryGroup
+      (permutationUnitary (R := ℂ) (finRotate r))).choose_spec⟩
+
+/-- As a matrix, `clock hζ` is a unit-circle scalar multiple of `diag(1, ζ, …, ζ^(r - 1))`. -/
+theorem exists_coe_clock {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
+    ∃ c : Circle,
+      (clock hζ : Matrix (Fin r) (Fin r) ℂ) =
+        (c : ℂ) • diagonal (fun k : Fin r => ζ ^ (k : ℕ)) :=
+  ⟨(exists_circle_smul_mem_specialUnitaryGroup (clockUnitary hζ)).choose,
+    congrArg (((exists_circle_smul_mem_specialUnitaryGroup (clockUnitary hζ)).choose : ℂ) • ·)
+      (TauCeti.coe_unitaryTorusHom _)⟩
+
+/-- As a matrix, `shift r` is a unit-circle scalar multiple of the cyclic-shift permutation matrix
+`permutationUnitary (finRotate r)`. -/
+theorem exists_coe_shift (r : ℕ) :
+    ∃ c : Circle,
+      (shift r : Matrix (Fin r) (Fin r) ℂ) =
+        (c : ℂ) • ((permutationUnitary (R := ℂ) (finRotate r) : unitaryGroup (Fin r) ℂ) :
+          Matrix (Fin r) (Fin r) ℂ) :=
+  ⟨(exists_circle_smul_mem_specialUnitaryGroup
+    (permutationUnitary (R := ℂ) (finRotate r))).choose, rfl⟩
+
+open scoped commutatorElement in
+/-- **Weyl clock-and-shift commutation relation in `SU(r)`.** For any `r`-th root of unity `ζ`,
+the special unitary clock and shift matrices satisfy `⁅clock hζ, shift r⁆ = ζ • 1`. -/
+theorem commutator_clock_shift {r : ℕ} {ζ : ℂ} (hζ : ζ ^ r = 1) :
+    (↑⁅clock hζ, shift r⁆ : Matrix (Fin r) (Fin r) ℂ) = ζ • 1 := by
+  let DU : unitaryGroup (Fin r) ℂ := clockUnitary hζ
+  let QU : unitaryGroup (Fin r) ℂ := permutationUnitary (finRotate r)
+  have hrel : (DU : Matrix (Fin r) (Fin r) ℂ) * QU =
+      ζ • ((QU : Matrix (Fin r) (Fin r) ℂ) * DU) := by
+    have hDU : (DU : Matrix (Fin r) (Fin r) ℂ) = diagonal fun k : Fin r => ζ ^ (k : ℕ) :=
+      TauCeti.coe_unitaryTorusHom _
+    rw [hDU, coe_permutationUnitary]
+    ext i j
+    simp only [diagonal_mul, Matrix.smul_apply, mul_diagonal, smul_eq_mul,
+      Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, Equiv.toPEquiv_apply,
+      Option.mem_def, Option.some.injEq]
+    by_cases h : (finRotate r)⁻¹ i = j
+    · have hi : i = finRotate r j := by rw [← h, Equiv.Perm.inv_def, Equiv.apply_symm_apply]
+      simp only [h, ↓reduceIte, mul_one, one_mul]
+      rw [hi, TauCeti.pow_val_finRotate hζ]
+    · simp only [h, ↓reduceIte, mul_zero, zero_mul]
+  rw [coe_commutatorElement_of_eq_smul
+        (exists_circle_smul_mem_specialUnitaryGroup DU).choose.coe_mem_unitary
+        (exists_circle_smul_mem_specialUnitaryGroup QU).choose.coe_mem_unitary
+        (A := clock hζ) (B := shift r) rfl rfl,
+      hrel, smul_mul_assoc, smul_mul_assoc, Matrix.mul_assoc (QU : Matrix (Fin r) (Fin r) ℂ),
+      (Unitary.mem_iff.mp DU.2).2, Matrix.mul_one, (Unitary.mem_iff.mp QU.2).2]
 
 end Complex
 

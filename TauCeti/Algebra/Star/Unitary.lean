@@ -22,6 +22,8 @@ unitary exactly when its adjoint is its inverse.
 
 * `Unitary.prodEquiv`: `unitary (A × B)` is multiplicatively equivalent to
   `unitary A × unitary B`.
+* `Unitary.smul_mul_mul_star_smul`: rescaling `u` by a unitary scalar leaves `u * x * star u`
+  unchanged.
 * `Units.mem_unitary_iff_star_eq_inv`: a unit `u` is unitary if and only if `star u = u⁻¹`
   in `R`.
 -/
@@ -50,6 +52,14 @@ unitary elements. -/
 theorem coe_prodEquiv_symm_apply (u : unitary A × unitary B) :
     ((prodEquiv A B).symm u : A × B) = ((u.1 : A), (u.2 : B)) :=
   (rfl)
+
+/-- Conjugation `u * x * star u` is invariant under rescaling `u` by a unitary scalar `r`. -/
+theorem smul_mul_mul_star_smul {R M : Type*} [Monoid R] [Monoid M] [MulAction R M]
+    [SMulCommClass R M M] [IsScalarTower R M M] [StarMul R] [Star M] [StarModule R M]
+    {r : R} (hr : r ∈ unitary R) (u x : M) :
+    (r • u) * x * star (r • u) = u * x * star u := by
+  rw [star_smul, smul_mul_assoc, smul_mul_assoc, mul_smul_comm, smul_smul,
+    (Unitary.mem_iff.mp hr).2, one_smul]
 
 end Unitary
 

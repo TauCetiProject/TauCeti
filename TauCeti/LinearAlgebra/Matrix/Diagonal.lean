@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.Data.Matrix.Basis
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import Mathlib.LinearAlgebra.Matrix.IsDiag
 public import Mathlib.LinearAlgebra.Matrix.ToLin
 import Mathlib.Algebra.Group.Pi.Units
@@ -41,8 +43,12 @@ basis vector maps to the corresponding scalar multiple of the target basis vecto
   vanishing `(i, j)` entry wherever that diagonal matrix separates `i` from `j`.
 * `TauCeti.isDiag_of_commute_diagonal`: a matrix commuting with a diagonal matrix of pairwise
   distinct entries is itself diagonal.
-* `TauCeti.submatrix_mul_of_commute_diagonal`: restricting to an eigenspace `{i // t i = c}` of a
-  diagonal matrix commutes with left multiplication by any matrix commuting with `diagonal t`.
+* `TauCeti.submatrix_mul_of_commute_diagonal`, `TauCeti.submatrix_list_prod_of_commute_diagonal`,
+  `TauCeti.det_submatrix_list_prod_of_commute_diagonal`,
+  `TauCeti.det_submatrix_commutatorElement_of_commute_diagonal`: restricting to an eigenspace
+  `{i // t i = c}` of a diagonal matrix commutes with multiplication and list products of matrices
+  commuting with `diagonal t`, and gives determinant `1` on commutators of invertible matrices
+  commuting with `diagonal t`.
 * `Module.Basis.toMatrix_eq_diagonal_iff`: a linear map has a specified diagonal matrix in two
   bases exactly when it scales the corresponding basis vectors by the diagonal entries.
 -/
@@ -144,6 +150,67 @@ theorem submatrix_mul_of_commute_diagonal {t : ι → k} {c : k} [DecidablePred 
   exact hi (by rw [apply_eq_zero_of_commute_diagonal hM (a.2.trans_ne (Ne.symm hne)), zero_mul])
 
 end Commute
+
+/-- If every matrix in a list `L` commutes with `diagonal t`, restricting to an eigenspace
+`{i : ι // t i = c}` commutes with taking the list product `L.prod`. -/
+theorem submatrix_list_prod_of_commute_diagonal {ι k : Type*} [Fintype ι] [DecidableEq ι]
+    [CommSemiring k] [IsLeftCancelMulZero k] {t : ι → k} {c : k}
+    [DecidablePred fun i => t i = c] (L : List (Matrix ι ι k))
+    (hL : ∀ M ∈ L, Commute (Matrix.diagonal t) M) :
+    L.prod.submatrix (Subtype.val : {i : ι // t i = c} → ι)
+        (Subtype.val : {i : ι // t i = c} → ι) =
+      (L.map fun M => M.submatrix (Subtype.val : {i : ι // t i = c} → ι)
+        (Subtype.val : {i : ι // t i = c} → ι)).prod := by
+  induction L with
+  | nil => simp [Matrix.submatrix_one _ Subtype.val_injective]
+  | cons M L ih =>
+    rw [List.prod_cons, List.map_cons, List.prod_cons,
+      submatrix_mul_of_commute_diagonal (hL M List.mem_cons_self),
+      ih fun N hN => hL N (List.mem_cons_of_mem M hN)]
+
+/-- If every matrix in a list `L` commutes with `diagonal t`, the determinant of the restriction of
+`L.prod` to an eigenspace `{i : ι // t i = c}` is the product of the determinants of the restricted
+factors. -/
+theorem det_submatrix_list_prod_of_commute_diagonal {ι k : Type*} [Fintype ι] [DecidableEq ι]
+    [CommRing k] [IsLeftCancelMulZero k] {t : ι → k} {c : k}
+    [DecidablePred fun i => t i = c] (L : List (Matrix ι ι k))
+    (hL : ∀ M ∈ L, Commute (Matrix.diagonal t) M) :
+    (L.prod.submatrix (Subtype.val : {i : ι // t i = c} → ι)
+        (Subtype.val : {i : ι // t i = c} → ι)).det =
+      (L.map fun M => (M.submatrix (Subtype.val : {i : ι // t i = c} → ι)
+        (Subtype.val : {i : ι // t i = c} → ι)).det).prod := by
+  rw [submatrix_list_prod_of_commute_diagonal L hL]
+  simpa only [coe_detMonoidHom, List.map_map, Function.comp_def] using
+    (detMonoidHom : Matrix {i : ι // t i = c} {i : ι // t i = c} k →* k).map_list_prod
+      (L.map fun M => M.submatrix Subtype.val Subtype.val)
+
+open scoped commutatorElement in
+/-- On any eigenspace `{i : ι // t i = c}` of `diagonal t`, the block restriction of a commutator
+of two invertible matrices commuting with `diagonal t` has determinant `1`. -/
+theorem det_submatrix_commutatorElement_of_commute_diagonal {ι k : Type*} [Fintype ι]
+    [DecidableEq ι] [CommRing k] [IsLeftCancelMulZero k] {t : ι → k} {c : k}
+    [DecidablePred fun i => t i = c] {A B : (Matrix ι ι k)ˣ}
+    (hA : Commute (Matrix.diagonal t) (A : Matrix ι ι k))
+    (hB : Commute (Matrix.diagonal t) (B : Matrix ι ι k)) :
+    ((((⁅A, B⁆ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix
+      (Subtype.val : {i : ι // t i = c} → ι)
+      (Subtype.val : {i : ι // t i = c} → ι))).det = 1 := by
+  have hdet_inv : ∀ {G : (Matrix ι ι k)ˣ}, Commute (Matrix.diagonal t) (G : Matrix ι ι k) →
+      ((G : Matrix ι ι k).submatrix (Subtype.val : {i : ι // t i = c} → ι)
+          (Subtype.val : {i : ι // t i = c} → ι)).det *
+        (((G⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix
+          (Subtype.val : {i : ι // t i = c} → ι)
+          (Subtype.val : {i : ι // t i = c} → ι)).det = 1 := fun {G} hG => by
+    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hG, ← Units.val_mul, mul_inv_cancel,
+      Units.val_one, submatrix_one _ Subtype.val_injective, det_one]
+  rw [commutatorElement_def, Units.val_mul, Units.val_mul, Units.val_mul,
+    Matrix.mul_assoc, Matrix.mul_assoc,
+    submatrix_mul_of_commute_diagonal hA,
+    submatrix_mul_of_commute_diagonal hB,
+    submatrix_mul_of_commute_diagonal hA.units_inv_right,
+    det_mul, det_mul, det_mul,
+    mul_left_comm _ _ (((B⁻¹ : (Matrix ι ι k)ˣ) : Matrix ι ι k).submatrix _ _).det,
+    ← mul_assoc, hdet_inv hA, hdet_inv hB, mul_one]
 
 end TauCeti
 

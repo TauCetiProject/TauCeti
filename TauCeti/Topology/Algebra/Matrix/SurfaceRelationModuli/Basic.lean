@@ -16,8 +16,9 @@ public import Mathlib.Topology.Homeomorph.Quotient
 public import TauCeti.Analysis.Matrix.UnitaryGroup.SpecialUnitary
 public import TauCeti.Topology.Algebra.UnitaryGroup
 import Mathlib.Topology.Algebra.MulAction
+import TauCeti.GroupTheory.Commutator
+import TauCeti.GroupTheory.GroupAction.ConjAct
 import TauCeti.LinearAlgebra.Matrix.Diagonal
-import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
 /-!
 # Twisted `SU(r)` surface commutator relation moduli
@@ -46,11 +47,12 @@ established in `TauCeti.Topology.Algebra.Matrix.SurfaceRelationModuli.GenusOne`.
 * `TauCeti.SpecialUnitary.relationModuli`: the quotient of `relationSet r ζ g` by simultaneous
   `SU(r)`-conjugation, with the quotient topology.
 * `TauCeti.SpecialUnitary.relationModuliMk`: the open quotient projection
-  `relationSet r ζ g → relationModuli r ζ g`.
+  `relationSet r ζ g → relationModuli r ζ g`, invariant under `ConjAct (SU(r))`
+  (`TauCeti.SpecialUnitary.relationModuliMk_conjAct_smul`).
 * `TauCeti.SpecialUnitary.instMulActionQuotientCenterRelationSet`: the descended conjugation action
   of `SU(r) ⧸ Subgroup.center (SU(r))` on `relationSet r ζ g`, with homeomorphism
   `TauCeti.SpecialUnitary.relationModuliHomeomorphQuotientCenter` identifying `relationModuli` with
-  its orbit space.
+  its orbit space (`TauCeti.SpecialUnitary.relationModuliHomeomorphQuotientCenter_mk`).
 * `TauCeti.SpecialUnitary.instMulActionCenterTwistRelationSet` and
   `TauCeti.SpecialUnitary.instMulActionCenterTwistRelationModuli`: the continuous entrywise central
   root-of-unity twist action of `Fin g → center(SU(r)) × center(SU(r))` on `relationSet` and its
@@ -139,10 +141,12 @@ theorem conjAct_smul_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
   have hlist : (List.ofFn fun j => ⁅((u • x) j).1, ((u • x) j).2⁆) =
       (List.ofFn fun j => ⁅(x j).1, (x j).2⁆).map φ := by
     rw [List.map_ofFn]
-    exact congrArg List.ofFn (funext fun j => (map_commutatorElement φ (x j).1 (x j).2).symm)
-  have hφ : ∀ a, φ a = v * a * v⁻¹ := fun _ => rfl
-  rw [hlist, ← map_list_prod, hφ, Submonoid.coe_mul, Submonoid.coe_mul, hx, Matrix.mul_smul,
-    Matrix.smul_mul, Matrix.mul_one, ← Submonoid.coe_mul, mul_inv_cancel, OneMemClass.coe_one]
+    refine congrArg List.ofFn (funext fun j => ?_)
+    simp only [Function.comp_def, Pi.smul_apply, Prod.smul_fst, Prod.smul_snd,
+      ConjAct.smul_eq_mulAut_conj, φ, v, MulEquiv.coe_toMonoidHom, map_commutatorElement]
+  rw [hlist, ← map_list_prod]
+  simp only [φ, MulEquiv.coe_toMonoidHom, MulAut.conj_apply, Submonoid.coe_mul, hx,
+    Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_one, Matrix.specialUnitaryGroup.coe_mul_coe_inv]
 
 /-- `relationSet r ζ g` as an invariant subset (`SubMulAction`) under simultaneous conjugation by
 `ConjAct (SU(r))`. -/
@@ -219,6 +223,13 @@ theorem relationModuliMk_eq_iff {r : ℕ} {ζ : ℂ} {g : ℕ} (x y : relationSe
     MulAction.orbitRel_apply, MulAction.mem_orbit_iff]
   exact ConjAct.toConjAct.toEquiv.exists_congr_left
 
+/-- Simultaneous conjugation by `ConjAct (SU(r))` acts trivially on `relationModuli r ζ g`. -/
+@[simp]
+theorem relationModuliMk_conjAct_smul {r : ℕ} {ζ : ℂ} {g : ℕ}
+    (u : ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ)) (x : relationSet r ζ g) :
+    relationModuliMk (u • x) = relationModuliMk x :=
+  (relationModuliMk_eq_iff (u • x) x).mpr ⟨ConjAct.ofConjAct u, by simp⟩
+
 /-- Homeomorphism identifying `relationModuli r ζ g` with the `MulAction.orbitRel.Quotient` of
 `ConjAct (SU(r))` acting directly on `relationSet r ζ g`. -/
 noncomputable def relationModuliHomeomorphOrbitQuotient (r : ℕ) (ζ : ℂ) (g : ℕ) :
@@ -243,8 +254,9 @@ theorem isOpenQuotientMap_relationModuliMk (r : ℕ) (ζ : ℂ) (g : ℕ) :
       (Quotient.mk _ : relationSet r ζ g →
         MulAction.orbitRel.Quotient (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
           (relationSet r ζ g)) = @relationModuliMk r ζ g :=
-    funext fun x => (relationModuliHomeomorphOrbitQuotient r ζ g).symm_apply_apply
-      (relationModuliMk x)
+    funext fun x => by
+      rw [Function.comp_apply, ← relationModuliHomeomorphOrbitQuotient_mk,
+        Homeomorph.symm_apply_apply]
   rw [← hcomp]
   exact (relationModuliHomeomorphOrbitQuotient r ζ g).symm.isOpenQuotientMap.comp
     MulAction.isOpenQuotientMap_quotientMk
@@ -300,17 +312,22 @@ relation is the image of the compact space `SU(r) × relationSet r ζ g`, hence 
 instance instT2SpaceRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
     T2Space (relationModuli r ζ g) := by
   rw [t2Space_iff_of_isOpenQuotientMap (isOpenQuotientMap_relationModuliMk r ζ g)]
-  let S := relationSet r ζ g
-  let Φ : Matrix.specialUnitaryGroup (Fin r) ℂ × S → S × S :=
+  let Φ : Matrix.specialUnitaryGroup (Fin r) ℂ × relationSet r ζ g →
+      relationSet r ζ g × relationSet r ζ g :=
     fun p => (ConjAct.toConjAct p.1 • p.2, p.2)
   have hcont : Continuous Φ := by
-    refine Continuous.prodMk (Continuous.subtype_mk (continuous_pi fun j => ?_) _) continuous_snd
-    have hj : Continuous fun p : Matrix.specialUnitaryGroup (Fin r) ℂ × S => p.2.1 j :=
-      (continuous_apply j).comp (continuous_subtype_val.comp continuous_snd)
-    exact Continuous.prodMk
-      ((continuous_fst.mul (continuous_fst.comp hj)).mul continuous_fst.inv)
-      ((continuous_fst.mul (continuous_snd.comp hj)).mul continuous_fst.inv)
-  have hrange : {q : S × S | relationModuliMk q.1 = relationModuliMk q.2} = Set.range Φ := by
+    refine Continuous.prodMk (continuous_induced_rng.2 ?_) continuous_snd
+    have hact : Continuous fun p : Matrix.specialUnitaryGroup (Fin r) ℂ ×
+        (Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) =>
+        ConjAct.toConjAct p.1 • p.2 :=
+      continuous_pi fun j => by
+        simp only [Pi.smul_apply, Prod.smul_def, ConjAct.toConjAct_smul]
+        fun_prop
+    simpa only [Function.comp_def, Prod.map_fst, Prod.map_snd, id_eq,
+      conjAct_smul_relationSet_coe] using
+      hact.comp (continuous_id.prodMap continuous_subtype_val)
+  have hrange : {q : relationSet r ζ g × relationSet r ζ g |
+      relationModuliMk q.1 = relationModuliMk q.2} = Set.range Φ := by
     ext ⟨a, b⟩
     simp only [Set.mem_ofPred_eq, relationModuliMk_eq_iff, Set.mem_range, Prod.ext_iff, Φ]
     refine ⟨fun ⟨u, hu⟩ => ⟨(u, b), Subtype.ext hu, rfl⟩,
@@ -321,66 +338,6 @@ instance instT2SpaceRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :
   exact (isCompact_range hcont).isClosed
 
 /-! ### Centrality of stabilizers and the free `PSU(r)` action -/
-
-/-- On any eigenspace `{i // d i = c}` of `diagonal d`, the block restriction of a commutator of
-two special unitary matrices commuting with `diagonal d` has determinant `1`. -/
-private theorem det_submatrix_commutator_eq_one {r : ℕ} {d : Fin r → ℂ} {c : ℂ}
-    {A B : Matrix.specialUnitaryGroup (Fin r) ℂ}
-    (hA : Commute (diagonal d) (A : Matrix (Fin r) (Fin r) ℂ))
-    (hB : Commute (diagonal d) (B : Matrix (Fin r) (Fin r) ℂ)) :
-    (((⁅A, B⁆ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ).submatrix
-      (Subtype.val : {i : Fin r // d i = c} → Fin r)
-      (Subtype.val : {i : Fin r // d i = c} → Fin r)).det = 1 := by
-  let sub : Matrix (Fin r) (Fin r) ℂ → Matrix {i : Fin r // d i = c} {i : Fin r // d i = c} ℂ :=
-    fun M => M.submatrix Subtype.val Subtype.val
-  have hinv_comm : ∀ {G : Matrix.specialUnitaryGroup (Fin r) ℂ},
-      Commute (diagonal d) (G : Matrix (Fin r) (Fin r) ℂ) →
-      Commute (diagonal d) ((G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
-        Matrix (Fin r) (Fin r) ℂ) ∧ (sub G).det * (sub (G⁻¹ : _)).det = 1 := by
-    intro G hG
-    have h1 : (G : Matrix (Fin r) (Fin r) ℂ) * (G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) = 1 :=
-      by rw [← Submonoid.coe_mul, mul_inv_cancel, OneMemClass.coe_one]
-    have h2 : ((G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * G = 1 :=
-      by rw [← Submonoid.coe_mul, inv_mul_cancel, OneMemClass.coe_one]
-    have hGinv : Commute (diagonal d)
-        ((G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
-      calc diagonal d * (G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ)
-          = (((G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) * G) *
-              (diagonal d * (G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ)) := by
-            rw [h2, Matrix.one_mul]
-        _ = ((G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-              (G * diagonal d) * (G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) := by
-            simp only [Matrix.mul_assoc]
-        _ = (G⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) * diagonal d := by
-            rw [← hG.eq, Matrix.mul_assoc, Matrix.mul_assoc, h1, Matrix.mul_one]
-    refine ⟨hGinv, ?_⟩
-    rw [← det_mul, ← submatrix_mul_of_commute_diagonal hG, h1,
-      submatrix_one _ Subtype.val_injective, det_one]
-  obtain ⟨hAinv, hAdet⟩ := hinv_comm hA
-  obtain ⟨_, hBdet⟩ := hinv_comm hB
-  rw [commutatorElement_def, Submonoid.coe_mul, Submonoid.coe_mul, Submonoid.coe_mul,
-    Matrix.mul_assoc, Matrix.mul_assoc, submatrix_mul_of_commute_diagonal hA,
-    submatrix_mul_of_commute_diagonal hB, submatrix_mul_of_commute_diagonal hAinv,
-    det_mul, det_mul, det_mul]
-  linear_combination (sub A).det * (sub (A⁻¹ : _)).det * hBdet + hAdet
-
-/-- On `{i // d i = c}`, the block restriction of a list product of matrices commuting with
-`diagonal d` whose block restrictions each have determinant `1` also has determinant `1`. -/
-private theorem det_submatrix_list_prod_eq_one {r : ℕ} {d : Fin r → ℂ} {c : ℂ} :
-    ∀ L : List (Matrix.specialUnitaryGroup (Fin r) ℂ),
-      (∀ M ∈ L, Commute (diagonal d) (M : Matrix (Fin r) (Fin r) ℂ) ∧
-        ((M : Matrix (Fin r) (Fin r) ℂ).submatrix
-          (Subtype.val : {i : Fin r // d i = c} → Fin r)
-          (Subtype.val : {i : Fin r // d i = c} → Fin r)).det = 1) →
-      (((L.prod : Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ).submatrix
-        (Subtype.val : {i : Fin r // d i = c} → Fin r)
-        (Subtype.val : {i : Fin r // d i = c} → Fin r)).det = 1
-  | [], _ => by simp [submatrix_one _ Subtype.val_injective]
-  | M :: L, hL => by
-    obtain ⟨hM_comm, hM_det⟩ := hL M List.mem_cons_self
-    have ih := det_submatrix_list_prod_eq_one L fun N hN => hL N (List.mem_cons_of_mem M hN)
-    rw [List.prod_cons, Submonoid.coe_mul, submatrix_mul_of_commute_diagonal hM_comm,
-      det_mul, hM_det, ih, mul_one]
 
 /-- If `ζ ^ card {i : Fin r // d i = d i₀} = 1` for a primitive `r`-th root of unity `ζ`, then `d`
 is constant on `Fin r`. -/
@@ -420,7 +377,9 @@ theorem relationSet_stabilizer_central {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
       Commute (diagonal d) ((w * y * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) :
         Matrix (Fin r) (Fin r) ℂ) := by
     intro y hy
-    have hc : Commute u' (w * y * w⁻¹) := hy.map (MulAut.conj w).toMonoidHom
+    have hc : Commute u' (w * y * w⁻¹) := by
+      simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+        hy.map (MulAut.conj w).toMonoidHom
     dsimp only [Commute, SemiconjBy]
     rw [← hw, ← Submonoid.coe_mul, ← Submonoid.coe_mul]
     exact congrArg Subtype.val hc.eq
@@ -429,15 +388,46 @@ theorem relationSet_stabilizer_central {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
         Matrix.specialUnitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ).submatrix
       (Subtype.val : {i : Fin r // d i = d i₀} → Fin r)
       (Subtype.val : {i : Fin r // d i = d i₀} → Fin r)).det = 1 := by
-    refine det_submatrix_list_prod_eq_one _ fun M hM => ?_
-    obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hM
-    have hc : Commute u ⁅(x j).1, (x j).2⁆ := by
-      rw [commutatorElement_def]
-      exact (((hu j).1.mul_right (hu j).2).mul_right (hu j).1.inv_right).mul_right
-        (hu j).2.inv_right
-    have hcj : (w * ⁅(x j).1, (x j).2⁆ * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) =
-        ⁅(x' j).1, (x' j).2⁆ := map_commutatorElement (MulAut.conj w).toMonoidHom _ _
-    exact ⟨hcj ▸ hcomm_d hc, det_submatrix_commutator_eq_one (hcomm_d (hu j).1) (hcomm_d (hu j).2)⟩
+    let toMat : Matrix.specialUnitaryGroup (Fin r) ℂ →* Matrix (Fin r) (Fin r) ℂ :=
+      (Matrix.specialUnitaryGroup (Fin r) ℂ).subtype
+    have hx'1 : ∀ j, (x' j).1 = w * (x j).1 * w⁻¹ := fun j => by
+      simp only [x', Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul]
+    have hx'2 : ∀ j, (x' j).2 = w * (x j).2 * w⁻¹ := fun j => by
+      simp only [x', Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul]
+    have hcomm_list : ∀ M ∈ (List.ofFn fun j => ⁅(x' j).1, (x' j).2⁆).map toMat,
+        Commute (diagonal d) M := by
+      rintro M hM
+      obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hM
+      obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+      have hc : Commute u ⁅(x j).1, (x j).2⁆ := by
+        rw [commutatorElement_def]
+        exact (((hu j).1.mul_right (hu j).2).mul_right (hu j).1.inv_right).mul_right
+          (hu j).2.inv_right
+      have hcj : (w * ⁅(x j).1, (x j).2⁆ * w⁻¹ : Matrix.specialUnitaryGroup (Fin r) ℂ) =
+          ⁅(x' j).1, (x' j).2⁆ := by
+        rw [hx'1, hx'2, ← MulAut.conj_apply w (x j).1, ← MulAut.conj_apply w (x j).2,
+          ← MulAut.conj_apply w ⁅(x j).1, (x j).2⁆, map_commutatorElement]
+      exact hcj ▸ hcomm_d hc
+    rw [← Submonoid.coe_subtype (Matrix.specialUnitaryGroup (Fin r) ℂ), map_list_prod,
+      det_submatrix_list_prod_of_commute_diagonal _ hcomm_list]
+    refine List.prod_eq_one fun a ha => ?_
+    obtain ⟨M, hM, rfl⟩ := List.mem_map.mp ha
+    obtain ⟨y, hy, rfl⟩ := List.mem_map.mp hM
+    obtain ⟨j, rfl⟩ := List.mem_ofFn.mp hy
+    have h1 : Commute (diagonal d) ((toMat.toHomUnits (x' j).1 : (Matrix (Fin r) (Fin r) ℂ)ˣ) :
+        Matrix (Fin r) (Fin r) ℂ) := by
+      rw [MonoidHom.coe_toHomUnits, Submonoid.coe_subtype, hx'1]
+      exact hcomm_d (hu j).1
+    have h2 : Commute (diagonal d) ((toMat.toHomUnits (x' j).2 : (Matrix (Fin r) (Fin r) ℂ)ˣ) :
+        Matrix (Fin r) (Fin r) ℂ) := by
+      rw [MonoidHom.coe_toHomUnits, Submonoid.coe_subtype, hx'2]
+      exact hcomm_d (hu j).2
+    have hmap : toMat ⁅(x' j).1, (x' j).2⁆ =
+        ((⁅toMat.toHomUnits (x' j).1, toMat.toHomUnits (x' j).2⁆ :
+          (Matrix (Fin r) (Fin r) ℂ)ˣ) : Matrix (Fin r) (Fin r) ℂ) := by
+      rw [← map_commutatorElement, MonoidHom.coe_toHomUnits]
+    rw [hmap]
+    exact det_submatrix_commutatorElement_of_commute_diagonal h1 h2
   have hx' : x' ∈ relationSet r ζ g := conjAct_smul_mem_relationSet (ConjAct.toConjAct w) hx
   rw [mem_relationSet_iff.mp hx', submatrix_smul, Pi.smul_apply, Pi.smul_apply,
     submatrix_one _ Subtype.val_injective, det_smul, det_one, mul_one] at hdet1
@@ -449,19 +439,6 @@ theorem relationSet_stabilizer_central {r : ℕ} {ζ : ℂ} (hζ : IsPrimitiveRo
   rw [hu_eq, Subgroup.mem_center_iff.mp hu'_center w⁻¹, inv_mul_cancel_right]
   exact hu'_center
 
-/-- Central elements of `SU(r)` act trivially under simultaneous conjugation. -/
-theorem conjAct_toConjAct_smul_eq_self_of_mem_center {r g : ℕ}
-    {u : Matrix.specialUnitaryGroup (Fin r) ℂ}
-    (hu : u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
-    (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) :
-    ConjAct.toConjAct u • x = x := by
-  funext j
-  exact Prod.ext
-    (by simp only [Pi.smul_apply, Prod.smul_fst, ConjAct.smul_def, ConjAct.ofConjAct_toConjAct]
-        rw [← Subgroup.mem_center_iff.mp hu (x j).1, mul_inv_cancel_right])
-    (by simp only [Pi.smul_apply, Prod.smul_snd, ConjAct.smul_def, ConjAct.ofConjAct_toConjAct]
-        rw [← Subgroup.mem_center_iff.mp hu (x j).2, mul_inv_cancel_right])
-
 /-- **Exact conjugation stabilizers on `relationSet`.** When `IsPrimitiveRoot ζ r`, an element of
 `SU(r)` fixes `x ∈ relationSet r ζ g` under simultaneous conjugation if and only if it lies in the
 center of `SU(r)`. -/
@@ -471,12 +448,14 @@ theorem conjAct_toConjAct_smul_eq_self_iff_mem_center {r : ℕ} {ζ : ℂ}
     (hx : x ∈ relationSet r ζ g) (u : Matrix.specialUnitaryGroup (Fin r) ℂ) :
     ConjAct.toConjAct u • x = x ↔
       u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
-  refine ⟨fun h => relationSet_stabilizer_central hζ hx fun j => ?_,
-    fun hu => conjAct_toConjAct_smul_eq_self_of_mem_center hu x⟩
+  refine ⟨fun h => relationSet_stabilizer_central hζ hx fun j => ?_, fun hu => funext fun j =>
+    Prod.ext
+      (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+      (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])⟩
   have hj1 := congrArg Prod.fst (congrFun h j)
   have hj2 := congrArg Prod.snd (congrFun h j)
-  simp only [Pi.smul_apply, Prod.smul_fst, Prod.smul_snd, ConjAct.smul_def,
-    ConjAct.ofConjAct_toConjAct, mul_inv_eq_iff_eq_mul] at hj1 hj2
+  simp only [Pi.smul_apply, Prod.smul_fst, Prod.smul_snd, ConjAct.toConjAct_smul,
+    mul_inv_eq_iff_eq_mul] at hj1 hj2
   exact ⟨hj1, hj2⟩
 
 /-- Simultaneous conjugation by `SU(r)` descends to an action of the projective quotient
@@ -490,7 +469,11 @@ noncomputable instance instMulActionQuotientCenterRelationSet (r : ℕ) (ζ : �
   MulAction.compHom (relationSet r ζ g) <|
     QuotientGroup.lift (Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) φ fun u hu => by
       ext x : 2
-      exact conjAct_toConjAct_smul_eq_self_of_mem_center hu x.1
+      simp only [φ, MonoidHom.comp_apply, MulAction.toPermHom_apply, MulAction.toPerm_apply,
+        MulEquiv.coe_toMonoidHom, Equiv.Perm.coe_one, id_eq, conjAct_smul_relationSet_coe]
+      exact funext fun j => Prod.ext
+        (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
+        (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.toConjAct_smul_eq_self_of_mem_center hu])
 
 /-- A coset `QuotientGroup.mk u` in `SU(r) ⧸ center(SU(r))` acts on `relationSet r ζ g` by
 simultaneous conjugation by `u`. -/
@@ -533,6 +516,13 @@ noncomputable def relationModuliHomeomorphQuotientCenter (r : ℕ) (ζ : ℂ) (g
       QuotientGroup.mk_surjective.exists, Subtype.ext_iff, quotientCenter_mk_smul_coe]
     exact ConjAct.toConjAct.toEquiv.exists_congr_left
 
+/-- `relationModuliHomeomorphQuotientCenter` sends `relationModuliMk x` to `Quotient.mk _ x`. -/
+@[simp]
+theorem relationModuliHomeomorphQuotientCenter_mk {r : ℕ} {ζ : ℂ} {g : ℕ}
+    (x : relationSet r ζ g) :
+    relationModuliHomeomorphQuotientCenter r ζ g (relationModuliMk x) = Quotient.mk _ x :=
+  (rfl)
+
 /-! ### Sphere emptiness, low rank, and central holonomy twists -/
 
 /-- On the sphere (`g = 0`), `relationSet r ζ 0` is empty whenever `1 ≤ r` and `ζ ≠ 1`. -/
@@ -558,17 +548,7 @@ theorem isEmpty_relationModuli_zero_of_isPrimitiveRoot {r : ℕ} (hr : 2 ≤ r) 
 `ζ` and every genus `g`. -/
 theorem subsingleton_relationModuli_of_le_one {r : ℕ} (hr : r ≤ 1) (ζ : ℂ) (g : ℕ) :
     Subsingleton (relationModuli r ζ g) := by
-  have hsubSU : Subsingleton (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
-    refine ⟨fun A B => Subtype.ext ?_⟩
-    rcases Nat.le_one_iff_eq_zero_or_eq_one.mp hr with rfl | rfl
-    · exact Subsingleton.elim _ _
-    · have hA := (mem_specialUnitaryGroup_iff.mp A.2).2
-      have hB := (mem_specialUnitaryGroup_iff.mp B.2).2
-      rw [det_fin_one] at hA hB
-      ext i j
-      rw [Fin.eq_zero i, Fin.eq_zero j, hA, hB]
-  have : Subsingleton (relationSet r ζ g) :=
-    ⟨fun _ _ => Subtype.ext (funext fun _ => Prod.ext (hsubSU.elim _ _) (hsubSU.elim _ _))⟩
+  have : Subsingleton (Fin r) := ⟨fun a b => Fin.ext (by omega)⟩
   infer_instance
 
 /-- At `ζ = 1`, the trivial tuple `(1, 1, …, 1, 1)` lies in `relationSet r 1 g` for all `r` and
@@ -602,23 +582,9 @@ theorem centerTwist_mem_relationSet {r : ℕ} {ζ : ℂ} {g : ℕ}
       ⁅((ε j).1 : Matrix.specialUnitaryGroup (Fin r) ℂ) * (x j).1,
         ((ε j).2 : Matrix.specialUnitaryGroup (Fin r) ℂ) * (x j).2⁆ =
       ⁅(x j).1, (x j).2⁆ := fun j => by
-    let c₁ : Matrix.specialUnitaryGroup (Fin r) ℂ := (ε j).1
-    let c₂ : Matrix.specialUnitaryGroup (Fin r) ℂ := (ε j).2
-    have hc₂ := Subgroup.mem_center_iff.mp (ε j).2.2
-    have hc₁_inv := Subgroup.mem_center_iff.mp (Subgroup.inv_mem _ (ε j).1.2)
-    have hcomm1 : (x j).1 * (x j).2 * (x j).1⁻¹ * c₁⁻¹ =
-        c₁⁻¹ * ((x j).1 * (x j).2 * (x j).1⁻¹) :=
-      hc₁_inv ((x j).1 * (x j).2 * (x j).1⁻¹)
-    rw [commutatorElement_def, commutatorElement_def, _root_.mul_inv_rev, _root_.mul_inv_rev]
-    calc c₁ * (x j).1 * (c₂ * (x j).2) * ((x j).1⁻¹ * c₁⁻¹) * ((x j).2⁻¹ * c₂⁻¹)
-        = c₂ * (c₁ * ((x j).1 * (x j).2 * (x j).1⁻¹ * c₁⁻¹)) * (x j).2⁻¹ * c₂⁻¹ := by
-          simp only [← mul_assoc]
-          rw [hc₂ (c₁ * (x j).1), ← mul_assoc]
-      _ = c₂ * ((x j).1 * (x j).2 * (x j).1⁻¹) * (x j).2⁻¹ * c₂⁻¹ := by
-          rw [hcomm1, ← mul_assoc c₁, mul_inv_cancel, one_mul]
-      _ = (x j).1 * (x j).2 * (x j).1⁻¹ * (x j).2⁻¹ := by
-          rw [mul_assoc c₂, ← hc₂ ((x j).1 * (x j).2 * (x j).1⁻¹ * (x j).2⁻¹),
-            mul_assoc, mul_inv_cancel, mul_one]
+    rw [← Subgroup.mem_center_iff.mp (ε j).1.2 (x j).1,
+      ← Subgroup.mem_center_iff.mp (ε j).2.2 (x j).2]
+    exact TauCeti.commutatorElement_mul_mul_of_mem_center (ε j).1.2 (ε j).2.2
   simpa only [hcomm_eq] using hx
 
 /-- Scalar multiplication of central holonomy twists `Fin g → center(SU(r)) × center(SU(r))` on
@@ -656,13 +622,14 @@ instance instContinuousSMulCenterTwistRelationSet (r : ℕ) (ζ : ℂ) (g : ℕ)
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationSet r ζ g) where
   continuous_smul := continuous_induced_rng.2 <| by
     simp only [Function.comp_def, centerTwist_smul_relationSet_coe]
-    refine continuous_pi fun j => Continuous.prodMk ?_ ?_
-    · exact ((continuous_subtype_val.comp (continuous_fst.comp ((continuous_apply j).comp
-        continuous_fst))).mul (continuous_fst.comp ((continuous_apply j).comp
-        (continuous_subtype_val.comp continuous_snd))))
-    · exact ((continuous_subtype_val.comp (continuous_snd.comp ((continuous_apply j).comp
-        continuous_fst))).mul (continuous_snd.comp ((continuous_apply j).comp
-        (continuous_subtype_val.comp continuous_snd))))
+    have hact : Continuous fun p : (Fin g →
+        Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
+        Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) ×
+        (Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ × Matrix.specialUnitaryGroup (Fin r) ℂ) =>
+        fun j => (((p.1 j).1 : Matrix.specialUnitaryGroup (Fin r) ℂ) * (p.2 j).1,
+          ((p.1 j).2 : Matrix.specialUnitaryGroup (Fin r) ℂ) * (p.2 j).2) :=
+      continuous_pi fun j => by fun_prop
+    exact hact.comp (continuous_id.prodMap continuous_subtype_val)
 
 /-- Entrywise central twisting commutes with simultaneous `SU(r)`-conjugation, so it descends to a
 group action on `relationModuli r ζ g`. -/
@@ -670,23 +637,16 @@ noncomputable instance instMulActionCenterTwistRelationModuli (r : ℕ) (ζ : �
     MulAction (Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
       Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) (relationModuli r ζ g) where
   smul ε := Quotient.map' (ε • ·) fun x y ⟨u, hu⟩ => ⟨u, by
-    let v := ConjAct.ofConjAct u
+    dsimp only at hu ⊢
+    rw [centerTwist_smul_relationSet_coe, centerTwist_smul_relationSet_coe]
     funext j
-    apply Prod.ext
-    · have hj : v * (y.1 j).1 * v⁻¹ = (x.1 j).1 := congrArg Prod.fst (congrFun hu j)
-      simp only [centerTwist_smul_relationSet_coe, Pi.smul_apply, Prod.smul_fst, ConjAct.smul_def]
-      calc v * ((ε j).1.1 * (y.1 j).1) * v⁻¹
-          = ((ε j).1.1 * v) * (y.1 j).1 * v⁻¹ := by
-            rw [← mul_assoc v, (Subgroup.mem_center_iff.mp (ε j).1.2 v).symm]
-        _ = (ε j).1.1 * (v * (y.1 j).1 * v⁻¹) := by simp only [mul_assoc]
-        _ = (ε j).1.1 * (x.1 j).1 := by rw [hj]
-    · have hj : v * (y.1 j).2 * v⁻¹ = (x.1 j).2 := congrArg Prod.snd (congrFun hu j)
-      simp only [centerTwist_smul_relationSet_coe, Pi.smul_apply, Prod.smul_snd, ConjAct.smul_def]
-      calc v * ((ε j).2.1 * (y.1 j).2) * v⁻¹
-          = ((ε j).2.1 * v) * (y.1 j).2 * v⁻¹ := by
-            rw [← mul_assoc v, (Subgroup.mem_center_iff.mp (ε j).2.2 v).symm]
-        _ = (ε j).2.1 * (v * (y.1 j).2 * v⁻¹) := by simp only [mul_assoc]
-        _ = (ε j).2.1 * (x.1 j).2 := by rw [hj]⟩
+    have hj1 : u • (y.1 j).1 = (x.1 j).1 := by
+      simpa only [Pi.smul_apply, Prod.smul_fst] using congrArg Prod.fst (congrFun hu j)
+    have hj2 : u • (y.1 j).2 = (x.1 j).2 := by
+      simpa only [Pi.smul_apply, Prod.smul_snd] using congrArg Prod.snd (congrFun hu j)
+    exact Prod.ext
+      (by rw [Pi.smul_apply, Prod.smul_fst, ConjAct.smul_mul_of_mem_center u (ε j).1.2, hj1])
+      (by rw [Pi.smul_apply, Prod.smul_snd, ConjAct.smul_mul_of_mem_center u (ε j).2.2, hj2])⟩
   one_smul q := Quotient.inductionOn' q fun x => congrArg Quotient.mk'' (one_smul _ x)
   mul_smul ε₁ ε₂ q :=
     Quotient.inductionOn' q fun x => congrArg Quotient.mk'' (mul_smul ε₁ ε₂ x)
@@ -710,6 +670,13 @@ instance instContinuousSMulCenterTwistRelationModuli (r : ℕ) (ζ : ℂ) (g : �
         (@relationModuliMk r ζ g)) :=
       (IsOpenQuotientMap.id.prodMap (isOpenQuotientMap_relationModuliMk r ζ g)).isQuotientMap
     rw [hq.continuous_iff]
+    have hcomp : (fun p => p.1 • p.2) ∘ Prod.map
+          (id : (Fin g → Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) ×
+            Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ)) → _)
+          (@relationModuliMk r ζ g) =
+        (@relationModuliMk r ζ g) ∘ (fun p => p.1 • p.2) :=
+      funext fun ⟨ε, x⟩ => centerTwist_smul_relationModuliMk ε x
+    rw [hcomp]
     exact (continuous_relationModuliMk r ζ g).comp continuous_smul
 
 end TauCeti.SpecialUnitary
