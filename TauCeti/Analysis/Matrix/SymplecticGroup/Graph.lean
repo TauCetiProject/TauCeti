@@ -83,6 +83,16 @@ noncomputable def graphFrame (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n �
     (A.toBlocks₁₁.map (↑) + Complex.I • A.toBlocks₂₁.map (↑))
     (A.toBlocks₁₂.map (↑) + Complex.I • A.toBlocks₂₂.map (↑))
 
+omit [Fintype n] in
+/-- The graph frame of a symplectic direct sum is the symplectic direct sum of the graph frames:
+the graph of `A ⊕ B` is the product of the graphs of `A` and `B`, in regrouped coordinates. -/
+theorem graphFrame_symplecticSum {m : Type*} [DecidableEq m]
+    (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (B : Matrix (m ⊕ m) (m ⊕ m) ℝ) :
+    graphFrame (symplecticSum A B) = symplecticSum (graphFrame A) (graphFrame B) := by
+  ext ((i | i) | (i | i)) ((j | j) | (j | j)) <;>
+    simp [graphFrame, symplecticSum_def, Equiv.sumSumSumComm, toBlocks₁₁, toBlocks₁₂, toBlocks₂₁,
+      toBlocks₂₂, ← fromBlocks_one]
+
 /-- The graph frame sends the real point `x` to `(conj (φ x), φ (A x))`, where `φ (x, y) = x + i y`.
 -/
 theorem graphFrame_mulVec (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x : n ⊕ n → ℝ) :

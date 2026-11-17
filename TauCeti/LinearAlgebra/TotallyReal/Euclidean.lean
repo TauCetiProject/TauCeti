@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.EuclideanLin
+public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Sum
 public import TauCeti.LinearAlgebra.Matrix.OfReal
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
 
@@ -32,6 +33,8 @@ symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`, hence Lagrangian.
   invertible `M` up to right multiplication by an invertible real matrix.
 * `Matrix.exists_mem_orthogonalGroup_eq_mul_map_ofReal`: for frames orthonormal for `Re ⟪·, ·⟫`,
   that real matrix is orthogonal.
+* `Matrix.realImage_symplecticSum_congr`: the image of the real points under a symplectic direct
+  sum of invertible matrices only depends on their images under the blocks.
 * `Matrix.GeneralLinearGroup.realImage_ofEuclideanCLE`: the image of `ℝⁿ` under the matrix of a
   continuous linear automorphism of `ℂⁿ` is its image under the automorphism.
 * `TauCeti.im_inner_eq_zero_of_mem_realImage`: the subspace `U ℝⁿ` is isotropic for
@@ -214,6 +217,35 @@ theorem exists_mem_orthogonalGroup_eq_mul_map_ofReal {M M' : GL n ℂ}
   refine ⟨O, (mem_orthogonalGroup_iff' n ℝ).2 ?_, hO⟩
   have := map_re_conjTranspose_mul_self_mul_map_ofReal (M : Matrix n n ℂ) O
   rwa [← hO, hM', hM, mul_one, eq_comm] at this
+
+/-- The image of `ℝ^{(n ⊕ m) ⊕ (n ⊕ m)}` under a symplectic direct sum of invertible matrices only
+depends on the images of the real points under the two blocks. -/
+theorem realImage_symplecticSum_congr {m : Type*} [Fintype m] [DecidableEq m]
+    {M M' : GL (n ⊕ n) ℂ} {N N' : GL (m ⊕ m) ℂ}
+    (hM : (M : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
+      (M' : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage)
+    (hN : (N : Matrix (m ⊕ m) (m ⊕ m) ℂ).realImage =
+      (N' : Matrix (m ⊕ m) (m ⊕ m) ℂ).realImage) :
+    (symplecticSum (M : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (N : Matrix (m ⊕ m) (m ⊕ m) ℂ)).realImage =
+      (symplecticSum (M' : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (N' : Matrix (m ⊕ m) (m ⊕ m) ℂ)).realImage := by
+  -- The primed frames are the unprimed ones times a real matrix, which maps `ℝⁿ` into itself;
+  -- this gives one inclusion, and the other follows by symmetry.
+  have key {M M' : GL (n ⊕ n) ℂ} {N N' : GL (m ⊕ m) ℂ}
+      (hM : (M : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
+        (M' : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage)
+      (hN : (N : Matrix (m ⊕ m) (m ⊕ m) ℂ).realImage =
+        (N' : Matrix (m ⊕ m) (m ⊕ m) ℂ).realImage) :
+      (symplecticSum (M' : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (N' : Matrix (m ⊕ m) (m ⊕ m) ℂ)).realImage ≤
+        (symplecticSum (M : Matrix (n ⊕ n) (n ⊕ n) ℂ)
+        (N : Matrix (m ⊕ m) (m ⊕ m) ℂ)).realImage := by
+    obtain ⟨O, hO⟩ := exists_eq_mul_map_ofReal hM
+    obtain ⟨O', hO'⟩ := exists_eq_mul_map_ofReal hN
+    rw [hO, hO', symplecticSum_mul, ← symplecticSum_map _ Complex.ofReal_zero, realImage_mul]
+    exact Submodule.map_mono (realImage_map_ofReal_le _)
+  exact le_antisymm (key hM.symm hN.symm) (key hM hN)
 
 /-- The image of `ℝⁿ` under the matrix of a continuous linear automorphism of `ℂⁿ` is its image
 under the automorphism. -/

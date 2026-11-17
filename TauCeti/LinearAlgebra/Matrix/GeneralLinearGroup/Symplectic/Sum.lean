@@ -44,6 +44,8 @@ matrices.
   semidefinite matrices.
 * `Matrix.realify_fromBlocks_zero`: realification turns block-diagonal complex matrices into
   symplectic direct sums.
+* `Matrix.det_symplecticSum` and `Matrix.symplecticSum_map`: the determinant of a direct sum is
+  the product of the determinants, and entrywise maps fixing `0` commute with direct sums.
 
 ## References
 
@@ -99,6 +101,21 @@ theorem symplecticSum_conjTranspose [AddMonoid R] [StarAddMonoid R]
     (A : Matrix (n ⊕ n) (n ⊕ n) R) (B : Matrix (m ⊕ m) (m ⊕ m) R) :
     (symplecticSum A B)ᴴ = symplecticSum Aᴴ Bᴴ := by
   simp only [symplecticSum, conjTranspose_submatrix, fromBlocks_conjTranspose, conjTranspose_zero]
+
+/-- Applying an entrywise map that fixes `0` to a direct sum gives the direct sum of the mapped
+matrices. -/
+theorem symplecticSum_map {S : Type*} [Zero R] [Zero S] (f : R → S) (hf : f 0 = 0)
+    (A : Matrix (n ⊕ n) (n ⊕ n) R) (B : Matrix (m ⊕ m) (m ⊕ m) R) :
+    (symplecticSum A B).map f = symplecticSum (A.map f) (B.map f) := by
+  rw [symplecticSum, symplecticSum, ← submatrix_map, fromBlocks_map, Matrix.map_zero f hf,
+    Matrix.map_zero f hf]
+
+/-- The determinant of a direct sum is the product of the determinants. -/
+@[simp]
+theorem det_symplecticSum [Fintype n] [Fintype m] [DecidableEq n] [DecidableEq m] [CommRing R]
+    (A : Matrix (n ⊕ n) (n ⊕ n) R) (B : Matrix (m ⊕ m) (m ⊕ m) R) :
+    (symplecticSum A B).det = A.det * B.det := by
+  rw [symplecticSum, det_submatrix_equiv_self, det_fromBlocks_zero₂₁]
 
 /-- The standard symplectic form on `R^{2(n + m)}` is the direct sum of the standard symplectic
 forms on `R^{2n}` and `R^{2m}`. -/
