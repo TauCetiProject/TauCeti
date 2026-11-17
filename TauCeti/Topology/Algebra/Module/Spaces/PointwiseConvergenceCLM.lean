@@ -11,14 +11,26 @@ public import Mathlib.Topology.Algebra.Module.Spaces.PointwiseConvergenceCLM
 # Basic facts on the topology of pointwise convergence
 
 Scalar multiplication on `E →SLₚₜ[σ] F` is jointly continuous whenever it is on `F`, since it is
-computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Passing from `E →SL[σ] F` to its
-pointwise-convergence copy is injective
+computed pointwise (`PointwiseConvergenceCLM.continuousSMul`). Post-composition evaluates as
+`postcomp E L f x = L (f x)` (`PointwiseConvergenceCLM.postcomp_apply_apply`). Passing from
+`E →SL[σ] F` to its pointwise-convergence copy is injective
 (`ContinuousLinearMap.toPointwiseConvergenceCLM_injective`).
 -/
 
 public section
 
 namespace PointwiseConvergenceCLM
+
+/-- Evaluating `PointwiseConvergenceCLM.postcomp` on a map and a vector applies the outer map to
+the value. -/
+theorem postcomp_apply_apply {𝕜₁ 𝕜₂ 𝕜₃ E F G : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂]
+    [NormedField 𝕜₃] {σ : 𝕜₁ →+* 𝕜₂} {τ : 𝕜₂ →+* 𝕜₃} {ρ : 𝕜₁ →+* 𝕜₃} [RingHomCompTriple σ τ ρ]
+    [AddCommGroup E] [TopologicalSpace E] [AddCommGroup F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [AddCommGroup G] [TopologicalSpace G] [IsTopologicalAddGroup G]
+    [Module 𝕜₁ E] [Module 𝕜₂ F] [Module 𝕜₃ G] [ContinuousConstSMul 𝕜₂ F]
+    [ContinuousConstSMul 𝕜₃ G] (L : F →SL[τ] G) (f : E →SLₚₜ[σ] F) (x : E) :
+    postcomp E L f x = L (f x) :=
+  DFunLike.congr_fun (postcomp_apply E L f) x
 
 variable {𝕜₁ 𝕜₂ M E F : Type*} [NormedField 𝕜₁] [NormedField 𝕜₂] {σ : 𝕜₁ →+* 𝕜₂}
     [AddCommGroup E] [TopologicalSpace E] [Module 𝕜₁ E] [AddCommGroup F] [TopologicalSpace F]

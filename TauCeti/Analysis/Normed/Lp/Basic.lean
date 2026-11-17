@@ -27,7 +27,9 @@ multiple `C rⁱ` of it, lies in `ℓᵖ` exactly when `‖r‖ < 1`, or `‖r�
 (`TauCeti.memℓp_pow_iff`, `TauCeti.memℓp_const_mul_pow_iff`). The scalar coordinate vectors are
 linearly independent, and
 vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
+normed rings at every exponent. Subtracting a finite sum of coordinate vectors zeroes out those
+coordinates (`lp.sub_sum_single_apply`) and, for `p ≠ 0`, does not increase the `ℓᵖ` norm
+(`lp.norm_sub_sum_single_le`). In `ℓ²`, the squared norm of a finite sum of single-coordinate
 vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
 `lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
 to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
@@ -228,6 +230,24 @@ theorem enorm_sum_single {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [D
       (Finset.sum_nonneg fun _ _ ↦ by positivity) (by norm_num),
     ENNReal.ofReal_sum_of_nonneg fun _ _ ↦ by positivity]
   simp_rw [ENNReal.ofReal_pow (norm_nonneg _), ofReal_norm]
+
+/-- Evaluating `v - ∑ i ∈ s, lp.single p i (v i)` at coordinate `j` gives `0` on `s` and `v j`
+outside `s`. -/
+theorem sub_sum_single_apply {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [DecidableEq ι]
+    (v : lp E p) (s : Finset ι) (j : ι) :
+    (v - ∑ i ∈ s, lp.single p i (v i)) j = if j ∈ s then 0 else v j := by
+  simp only [lp.coeFn_sub, lp.coeFn_sum, lp.coeFn_single, Pi.sub_apply, Finset.sum_apply,
+    Finset.sum_pi_single]
+  split_ifs <;> simp
+
+/-- Subtracting the partial sum of coordinate vectors over a finite set `s` does not increase the
+`ℓᵖ` norm (for every `p ≠ 0`, including `p = ∞`). -/
+theorem norm_sub_sum_single_le {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [DecidableEq ι]
+    (hp : p ≠ 0) (v : lp E p) (s : Finset ι) :
+    ‖v - ∑ i ∈ s, lp.single p i (v i)‖ ≤ ‖v‖ := by
+  refine lp.norm_mono hp fun j ↦ ?_
+  rw [sub_sum_single_apply]
+  split_ifs <;> simp
 
 section Operator
 
