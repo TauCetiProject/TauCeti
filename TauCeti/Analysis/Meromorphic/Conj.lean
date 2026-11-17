@@ -7,27 +7,33 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Star
 public import Mathlib.Analysis.Complex.CauchyIntegral
-public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
+import TauCeti.Analysis.Meromorphic.NormalForm
 
 /-!
 # Reflecting a function across the real axis
 
-For `f : ℂ → ℂ`, the reflected function `conj ∘ f ∘ conj` is again holomorphic, meromorphic, and
-has the same order, at the reflected point. Mathlib records the differentiable case as
-`DifferentiableAt.conj_conj`; this file supplies the analytic and meromorphic versions together
-with the invariance of `meromorphicOrderAt`.
+For `f : ℂ → ℂ`, the reflected function `conj ∘ f ∘ conj` is again holomorphic, meromorphic, in
+meromorphic normal form, and has the same order, at the reflected point. Mathlib records the
+differentiable case as `DifferentiableAt.conj_conj`; this file supplies the analytic, meromorphic,
+and normal-form versions together with the invariance of `meromorphicOrderAt` and the commutation
+of `toMeromorphicNFAt` with reflection.
 
-These are the statements needed to transport the analytic properties of a completed L-function to
-its dual, whose completed function is the reflection of the original one.
+These are the statements needed to transport the analytic properties of a completed L-function and
+its continued L-function to its dual, whose completed function is the reflection of the original
+one.
 
 ## Main results
 
 * `AnalyticAt.conj_conj`, `TauCeti.analyticAt_conj_conj_iff`: reflection preserves analyticity.
-* `MeromorphicAt.conj_conj`, `TauCeti.meromorphicAt_conj_conj_iff`, `Meromorphic.conj_conj`:
-  reflection preserves meromorphy.
+* `MeromorphicAt.conj_conj`, `TauCeti.meromorphicAt_conj_conj_iff`, `Meromorphic.conj_conj`,
+  `TauCeti.meromorphic_conj_conj_iff`: reflection preserves meromorphy.
 * `TauCeti.meromorphicOrderAt_conj_conj`: reflection preserves the order of a meromorphic
   function.
+* `MeromorphicNFAt.conj_conj`, `TauCeti.meromorphicNFAt_conj_conj_iff`,
+  `TauCeti.toMeromorphicNFAt_conj_conj`: reflection preserves meromorphic normal form and commutes
+  with conversion to normal form.
 -/
 
 public section
@@ -67,6 +73,12 @@ theorem TauCeti.meromorphicAt_conj_conj_iff :
 theorem Meromorphic.conj_conj (hf : Meromorphic f) : Meromorphic (conj ∘ f ∘ conj) :=
   fun _ ↦ TauCeti.meromorphicAt_conj_conj_iff.2 (hf _)
 
+/-- A function `f` is meromorphic on `ℂ` iff `conj ∘ f ∘ conj` is meromorphic on `ℂ`. -/
+@[simp]
+theorem TauCeti.meromorphic_conj_conj_iff :
+    Meromorphic (conj ∘ f ∘ conj) ↔ Meromorphic f :=
+  ⟨fun hf ↦ by simpa [Function.comp_def] using hf.conj_conj, Meromorphic.conj_conj⟩
+
 /-- Reflection across the real axis preserves the order of a meromorphic function:
 the order of `conj ∘ f ∘ conj` at `x` is the order of `f` at `conj x`. -/
 @[simp]
@@ -91,3 +103,35 @@ theorem TauCeti.meromorphicOrderAt_conj_conj :
       ⟨conj ∘ g ∘ conj, analyticAt_conj_conj_iff.2 hg, by simpa using hg0, ?_⟩
     filter_upwards [hconj.eventually hfg] with z hz
     simp [hz]
+
+/-- A function `f` is in meromorphic normal form at `conj x` iff `conj ∘ f ∘ conj` is in
+meromorphic normal form at `x`. -/
+@[simp]
+theorem TauCeti.meromorphicNFAt_conj_conj_iff :
+    MeromorphicNFAt (conj ∘ f ∘ conj) x ↔ MeromorphicNFAt f (conj x) := by
+  simp [meromorphicNFAt_iff_analyticAt_or]
+
+/-- If `f` is in meromorphic normal form at `x`, then `conj ∘ f ∘ conj` is in meromorphic normal
+form at `conj x`. -/
+theorem MeromorphicNFAt.conj_conj (hf : MeromorphicNFAt f x) :
+    MeromorphicNFAt (conj ∘ f ∘ conj) (conj x) := by
+  simpa using hf
+
+/-- Conversion to meromorphic normal form commutes with reflection across the real axis. -/
+theorem TauCeti.toMeromorphicNFAt_conj_conj (f : ℂ → ℂ) (x : ℂ) :
+    toMeromorphicNFAt (conj ∘ f ∘ conj) x = conj ∘ toMeromorphicNFAt f (conj x) ∘ conj := by
+  by_cases hf : MeromorphicAt f (conj x)
+  · refine (meromorphicNFAt_conj_conj_iff.2
+      meromorphicNFAt_toMeromorphicNFAt).toMeromorphicNFAt_eq_of_eqOn_compl_singleton
+      fun z hz ↦ ?_
+    exact congrArg conj
+      (hf.eqOn_compl_singleton_toMeromorphicNFAt ((starRingEnd ℂ).injective.ne hz))
+  · ext z
+    simp [hf]
+
+/-- Pointwise form of `TauCeti.toMeromorphicNFAt_conj_conj`. -/
+@[simp]
+theorem TauCeti.toMeromorphicNFAt_conj_conj_apply (f : ℂ → ℂ) (x z : ℂ) :
+    toMeromorphicNFAt (conj ∘ f ∘ conj) x z = conj (toMeromorphicNFAt f (conj x) (conj z)) :=
+  congrFun (TauCeti.toMeromorphicNFAt_conj_conj f x) z
+
