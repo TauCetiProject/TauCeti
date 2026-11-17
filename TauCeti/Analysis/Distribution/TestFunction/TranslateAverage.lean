@@ -248,18 +248,27 @@ private theorem tsupport_subset_of_apply_eq (hv : Continuous v) (φ : 𝓓((⊤ 
     rw [hf, image_eq_zero_of_notMem_tsupport fun h' ↦ h ⟨(x + v p, p), ⟨h', mem_univ p⟩, by simp⟩,
       map_zero]
 
+omit [CompactSpace Y] [MeasurableSpace Y] [OpensMeasurableSpace Y] in
+/-- The derivatives of the test functions `f p = L p (φ (· + v p))` are jointly continuous in the
+parameter and the point. -/
+private theorem continuous_iteratedFDeriv_of_apply_eq (hL : Continuous L) (hv : Continuous v)
+    (φ : 𝓓((⊤ : Opens E), F)) {f : Y → 𝓓((⊤ : Opens E), G)}
+    (hf : ∀ p x, f p x = L p (φ (x + v p))) (k : ℕ) :
+    Continuous fun q : Y × E ↦ iteratedFDeriv ℝ k (f q.1) q.2 := by
+  have hfun (p : Y) : ⇑(f p) = fun x ↦ L p (φ (x + v p)) := funext (hf p)
+  simp only [hfun]
+  exact continuous_iteratedFDeriv_clm_comp_add φ.contDiff hL hv k
+
 omit [MeasurableSpace Y] [OpensMeasurableSpace Y] in
 /-- **Continuity of a family of translates**: the test functions `f p = L p (φ (· + v p))`
 depend continuously on `p` for the LF topology. -/
 theorem continuous_of_apply_eq_apply_add (hL : Continuous L) (hv : Continuous v)
     (φ : 𝓓((⊤ : Opens E), F)) {f : Y → 𝓓((⊤ : Opens E), G)}
-    (hf : ∀ p x, f p x = L p (φ (x + v p))) : Continuous f := by
-  have hfun (p : Y) : ⇑(f p) = fun x ↦ L p (φ (x + v p)) := funext (hf p)
-  refine continuous_of_continuous_iteratedFDeriv
+    (hf : ∀ p x, f p x = L p (φ (x + v p))) : Continuous f :=
+  continuous_of_continuous_iteratedFDeriv
     (averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩).isCompact (subset_univ _)
-    (tsupport_subset_of_apply_eq hv φ hf) fun k _ ↦ ?_
-  simp only [hfun]
-  exact continuous_iteratedFDeriv_clm_comp_add φ.contDiff hL hv k
+    (tsupport_subset_of_apply_eq hv φ hf) fun k _ ↦
+      continuous_iteratedFDeriv_of_apply_eq hL hv φ hf k
 
 end TestFunction
 
@@ -281,13 +290,10 @@ theorem apply_eq_integral_of_apply_eq_apply_add (T : 𝓓((⊤ : Opens E), G) �
     (hL : Continuous L) (hv : Continuous v) (φ : 𝓓((⊤ : Opens E), F))
     {f : Y → 𝓓((⊤ : Opens E), G)} (hf : ∀ p x, f p x = L p (φ (x + v p)))
     {ψ : 𝓓((⊤ : Opens E), G)} (hψ : ∀ x, ψ x = ∫ p, f p x ∂ν) :
-    T ψ = ∫ p, T (f p) ∂ν := by
-  have hfun (p : Y) : ⇑(f p) = fun x ↦ L p (φ (x + v p)) := funext (hf p)
-  refine T.apply_eq_integral_of_continuous_iteratedFDeriv
+    T ψ = ∫ p, T (f p) ∂ν :=
+  T.apply_eq_integral_of_continuous_iteratedFDeriv
     (K := averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩) (subset_univ _)
-    (tsupport_subset_of_apply_eq hv φ hf) (fun k ↦ ?_) hψ
-  simp only [hfun]
-  exact continuous_iteratedFDeriv_clm_comp_add φ.contDiff hL hv k
+    (tsupport_subset_of_apply_eq hv φ hf) (continuous_iteratedFDeriv_of_apply_eq hL hv φ hf) hψ
 
 /-- **A continuous linear map passes under an average of translates**: if the test functions
 `f p` are the translates `x ↦ L p (φ (x + v p))`, then `T (A φ) = ∫ T (f p) ∂ν`. -/

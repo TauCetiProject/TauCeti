@@ -14,6 +14,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.TranslateAverage
 public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.MeasureTheory.Measure.Comap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
+import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -47,6 +48,7 @@ it to evaluations at points gives the identity of test forms.
 
 * `TestFunction.mollifyCLM`: mollification of test functions on `E`, with
   `TestFunction.mollifyCLM_apply` identifying it with the convolution `ρ̂ ⋆ ω`.
+* `TestFunction.tsupport_mollifyCLM_subset`: the support of `M φ`.
 * `TestFunction.extDerivCLM_comp_mollifyCLM`: `d ∘ M = M ∘ d`.
 * `TestFunction.mollifyHomotopyCLM`: the averaged straight-line homotopy operator `K`.
 * `TestFunction.tsupport_mollifyHomotopyCLM_subset`: the support of `K ω`.
@@ -83,11 +85,6 @@ variable [FiniteDimensional ℝ E]
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   (ρ : ContDiffBump (0 : E))
 
-/-- The normalized bump vanishes off the closed ball of radius `rOut`. -/
-private theorem normed_eq_zero_of_notMem {y : E} (hy : y ∉ closedBall (0 : E) ρ.rOut) :
-    ρ.normed μ y = 0 :=
-  notMem_support.1 fun h ↦ hy (ball_subset_closedBall (ρ.support_normed_eq (μ := μ) ▸ h))
-
 /-- Integrals against the normalized bump over its closed ball are integrals over `E`. -/
 private theorem integral_closedBall_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     (g : E → G) :
@@ -95,7 +92,8 @@ private theorem integral_closedBall_eq {G : Type*} [NormedAddCommGroup G] [Norme
       ∫ y, ρ.normed μ y • g y ∂μ := by
   rw [integral_subtype_comap measurableSet_closedBall (fun y ↦ ρ.normed μ y • g y)]
   exact setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-    rw [normed_eq_zero_of_notMem μ ρ hy, zero_smul]
+    rw [image_eq_zero_of_notMem_tsupport (f := ρ.normed μ) (by rwa [ρ.tsupport_normed_eq]),
+      zero_smul]
 
 /-- The normalized bump has integral one over its closed ball. -/
 private theorem integral_closedBall_normed :
@@ -116,6 +114,12 @@ private theorem integrable_closedBall_normed_smul_const {V : Type*} [NormedAddCo
     Integrable (fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y • c) (μ.comap (↑)) :=
   ((ρ.continuous_normed.comp continuous_subtype_val).smul continuous_const)
     |>.integrable_of_hasCompactSupport (.of_compactSpace _)
+
+/-- Bump-weighted continuous functions are integrable. -/
+private theorem integrable_normed_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {g : E → G} (hg : Continuous g) : Integrable (fun t ↦ ρ.normed μ t • g t) μ :=
+  (ρ.continuous_normed.smul hg).integrable_of_hasCompactSupport
+    ρ.hasCompactSupport_normed.smul_right
 
 omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- The weights of the mollification. -/
@@ -284,6 +288,15 @@ theorem norm_mollifyCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : ℝ} (hC :
         exact mul_le_of_le_one_right (ρ.nonneg_normed _) ContinuousLinearMap.norm_id_le
     _ = C := by rw [integral_closedBall_normed, one_mul]
 
+/-- Mollification enlarges supports by at most `r = ρ.rOut`. -/
+theorem tsupport_mollifyCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :
+    tsupport (mollifyCLM μ ρ φ) ⊆ tsupport φ + closedBall (0 : E) ρ.rOut := by
+  refine (tsupport_translateAverageCLM_subset φ).trans ?_
+  rintro _ ⟨⟨x, y⟩, ⟨hx, -⟩, rfl⟩
+  refine ⟨x, hx, -(y : E), ?_, (sub_eq_add_neg _ _).symm⟩
+  rw [mem_closedBall_zero_iff, norm_neg]
+  exact mem_closedBall_zero_iff.1 y.2
+
 /-- As the bumps shrink, the mollifications of a test function converge to it in the LF
 topology. -/
 theorem tendsto_mollifyCLM {ι : Type*} {l : Filter ι} [CompleteSpace F]
@@ -292,14 +305,6 @@ theorem tendsto_mollifyCLM {ι : Type*} {l : Filter ι} [CompleteSpace F]
   simp only [mollifyCLM_eq_mollify]
   exact tendsto_mollify φ μ hρ fun _ ↦ subset_univ _
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- Evaluation of continuous alternating maps passes under the integral. -/
-private theorem integral_apply_alternating [CompleteSpace F] {n : ℕ}
-    {g : E → E [⋀^Fin n]→L[ℝ] F} (hg : Integrable g μ) (u : Fin n → E) :
-    (∫ t, g t ∂μ) u = ∫ t, g t u ∂μ :=
-  (((ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ E) F u).comp
-    (toContinuousMultilinearMapCLM ℝ)).integral_comp_comm hg).symm
-
 /-- **Mollification commutes with the exterior derivative**: `d ∘ M = M ∘ d`. -/
 theorem extDerivCLM_comp_mollifyCLM [CompleteSpace F] {m : ℕ} :
     (extDerivCLM ∘L mollifyCLM μ ρ : 𝓓((⊤ : Opens E), E [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
@@ -307,10 +312,9 @@ theorem extDerivCLM_comp_mollifyCLM [CompleteSpace F] {m : ℕ} :
   ext ω x : 2
   ext v
   -- Differentiate `ρ̂ ⋆ ω` in each direction under the integral, and evaluate under it.
-  have hint (w : E) := ((ρ.continuous_normed (μ := μ)).smul
+  have hint (w : E) := integrable_normed_smul μ ρ
     ((ω.contDiff.continuous_fderiv_apply (by simp)).comp
-      ((continuous_const (y := x)).sub continuous_id |>.prodMk (continuous_const (y := w)))))
-    |>.integrable_of_hasCompactSupport (μ := μ) ρ.hasCompactSupport_normed.smul_right
+      ((continuous_const (y := x)).sub continuous_id |>.prodMk (continuous_const (y := w))))
   have hM : ⇑(mollifyCLM μ ρ ω) = ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ⇑ω :=
     funext (mollifyCLM_apply μ ρ ω)
   have hD (w : E) (u : Fin m → E) :
@@ -318,25 +322,24 @@ theorem extDerivCLM_comp_mollifyCLM [CompleteSpace F] {m : ℕ} :
     rw [hM, ω.hasCompactSupport.fderiv_convolution_right_apply _
       ρ.continuous_normed.locallyIntegrable (ω.contDiff.of_le (by simp)), convolution_def]
     simp only [ContinuousLinearMap.lsmul_apply]
-    rw [integral_apply_alternating μ (g := fun t ↦ ρ.normed μ t • fderiv ℝ ω (x - t) w) (hint w)]
+    rw [ContinuousAlternatingMap.integral_apply
+      (φ := fun t ↦ ρ.normed μ t • fderiv ℝ ω (x - t) w) (hint w)]
     simp
-  have hR := (ρ.continuous_normed (μ := μ)).smul
+  have hR := integrable_normed_smul μ ρ
     ((extDerivCLM ω).continuous.comp ((continuous_const (y := x)).sub continuous_id))
-    |>.integrable_of_hasCompactSupport (μ := μ) ρ.hasCompactSupport_normed.smul_right
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, extDerivCLM_apply, extDeriv,
     alternatizeUncurryFin_apply, mollifyCLM_apply, convolution_def]
   simp only [ContinuousLinearMap.lsmul_apply, hD]
-  rw [integral_apply_alternating μ (g := fun t ↦ ρ.normed μ t • extDerivCLM ω (x - t)) hR]
+  rw [ContinuousAlternatingMap.integral_apply
+    (φ := fun t ↦ ρ.normed μ t • extDerivCLM ω (x - t)) hR]
   simp only [ContinuousAlternatingMap.smul_apply, extDerivCLM_apply, extDeriv,
     alternatizeUncurryFin_apply, Finset.smul_sum]
   rw [integral_finsetSum _ fun i _ ↦ ?_]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     rcases neg_one_pow_eq_or ℤ (i : ℕ) with h | h <;> simp [h, integral_neg]
-  · have hc : Continuous fun t ↦ ρ.normed μ t • fderiv ℝ ω (x - t) (v i) (i.removeNth v) :=
-      (ρ.continuous_normed.smul ((continuous_eval_const _).comp
-        ((ω.contDiff.continuous_fderiv_apply (by simp)).comp
-          ((continuous_const (y := x)).sub continuous_id |>.prodMk continuous_const))))
-    have hi := hc.integrable_of_hasCompactSupport (μ := μ) ρ.hasCompactSupport_normed.smul_right
+  · have hi := integrable_normed_smul μ ρ ((continuous_eval_const (i.removeNth v)).comp
+      ((ω.contDiff.continuous_fderiv_apply (by simp)).comp
+        ((continuous_const (y := x)).sub continuous_id |>.prodMk (continuous_const (y := v i)))))
     rcases neg_one_pow_eq_or ℤ (i : ℕ) with h | h <;> simpa [h] using hi
 
 /-- The **averaged homotopy operator** between mollification and the identity on test
