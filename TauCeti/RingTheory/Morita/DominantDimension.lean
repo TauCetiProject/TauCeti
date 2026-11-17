@@ -5,25 +5,30 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Finiteness.Projective
 public import Mathlib.RingTheory.Morita.Matrix
-public import TauCeti.Algebra.Category.ModuleCat.Equivalence
+public import TauCeti.Algebra.Category.ModuleCat.Generator
 public import TauCeti.RingTheory.DominantDimension
 
 /-!
 # Morita invariance of the dominant dimension
 
+A **progenerator** `P` of a ring `Γ`, a finitely generated projective generator, has the dominant
+dimension of `Γ` (`ModuleCat.dominantDimension_eq_of_isGenerator`). Indeed each of `P` and `Γ` is a
+retract of a finite power of the other (`ModuleCat.exists_retract_pi_of_isGenerator_of_projective`),
+a finite power has the dominant dimension of its factor (`ModuleCat.dominantDimension_pi`), and a
+retract has at least the dominant dimension of the ambient object
+(`CategoryTheory.Retract.dominantDimension_le`).
+
 An equivalence `e : ModuleCat A ≌ ModuleCat B` preserves the dominant dimension of objects
-(`CategoryTheory.Functor.dominantDimension_obj`), but it carries the regular module `A` to a
-progenerator of `B`, not to `B` itself. The regular module `B` corresponds to a finitely
-generated projective `A`-module, a retract of a finite power `Aᵏ`; so `B` is a retract of the
-image of `Aᵏ`, whose dominant dimension is that of `Aᵏ`, at least that of `A`
-(`ModuleCat.dominantDimension_pi`). By symmetry the two rings have the same dominant dimension
-(`CategoryTheory.Equivalence.dominantDimension_eq`). No finiteness of the rings is needed, and the
-equivalence need not be linear.
+(`CategoryTheory.Functor.dominantDimension_obj`) and carries the regular module `A` to a
+progenerator of `B` (`CategoryTheory.Equivalence.isGenerator_functor_obj_self`). So the two rings
+have the same dominant dimension (`CategoryTheory.Equivalence.dominantDimension_eq`). No finiteness
+of the rings is needed, and the equivalence need not be linear.
 
 ## Main results
 
+* `ModuleCat.dominantDimension_eq_of_isGenerator`: a progenerator of `Γ` has the dominant dimension
+  of `Γ`.
 * `CategoryTheory.Equivalence.dominantDimension_eq`: rings with equivalent module categories have
   the same dominant dimension.
 * `RingEquiv.dominantDimension_eq`: isomorphic rings have the same dominant dimension.
@@ -43,36 +48,34 @@ universe u u'
 
 open CategoryTheory TauCeti
 
+/-- **The dominant dimension of a progenerator.** A finitely generated projective generator `P` of
+`Γ` has the dominant dimension of `Γ`: each of `P` and `Γ` is a retract of a finite power of the
+other, and a finite power has the dominant dimension of its factor. -/
+theorem ModuleCat.dominantDimension_eq_of_isGenerator {Γ : Type u} [Ring Γ] (P : ModuleCat.{u} Γ)
+    [Module.Finite Γ P] [Module.Projective Γ P] [Module.IsGenerator Γ P] :
+    CategoryTheory.dominantDimension P = dominantDimension Γ := by
+  have key (X : ModuleCat.{u} Γ) (n : ℕ) : CategoryTheory.dominantDimension X ≤
+      CategoryTheory.dominantDimension (ModuleCat.of Γ (Fin n → X)) := by
+    rw [ModuleCat.dominantDimension_pi]
+    exact le_iInf fun _ ↦ le_rfl
+  obtain ⟨m, ⟨r⟩⟩ := ModuleCat.exists_retract_pi_of_projective P
+  obtain ⟨n, ⟨r'⟩⟩ :=
+    ModuleCat.exists_retract_pi_of_isGenerator_of_projective P (ModuleCat.of Γ Γ)
+  rw [dominantDimension_eq_dominantDimension_of]
+  exact le_antisymm ((key P n).trans r'.dominantDimension_le)
+    ((key (ModuleCat.of Γ Γ) m).trans r.dominantDimension_le)
+
 namespace TauCeti
 
-/-- One inequality of `CategoryTheory.Equivalence.dominantDimension_eq`. -/
-private theorem dominantDimension_le_of_equivalence {A : Type u} [Ring A] {B : Type u'} [Ring B]
-    (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B) : dominantDimension A ≤ dominantDimension B := by
-  -- The `A`-module `Q` corresponding to `B` is a retract of a finite power `Aᵏ`.
-  let Q := e.inverse.obj (ModuleCat.of B B)
-  have : Module.Finite A Q := (e.symm.finite_functor_obj_iff _).2 inferInstance
-  have : Module.Projective A Q := (e.symm.projective_functor_obj_iff _).2 inferInstance
-  obtain ⟨k, f, s, -, -, hs⟩ := Module.Finite.exists_comp_eq_id_of_projective A Q
-  let r : Retract Q (ModuleCat.of A (Fin k → A)) :=
-    ⟨ModuleCat.ofHom s, ModuleCat.ofHom f, by ext x; exact congr($hs x)⟩
-  rw [dominantDimension_eq_dominantDimension_of, dominantDimension_eq_dominantDimension_of]
-  calc CategoryTheory.dominantDimension (ModuleCat.of A A)
-      ≤ CategoryTheory.dominantDimension (ModuleCat.of A (Fin k → ModuleCat.of A A)) := by
-        rw [ModuleCat.dominantDimension_pi]
-        exact le_iInf fun _ ↦ le_rfl
-    _ = CategoryTheory.dominantDimension (e.functor.obj (ModuleCat.of A (Fin k → A))) :=
-        (e.functor.dominantDimension_obj _).symm
-    _ ≤ CategoryTheory.dominantDimension (e.functor.obj Q) := (r.map e.functor).dominantDimension_le
-    _ = CategoryTheory.dominantDimension (ModuleCat.of B B) :=
-        dominantDimension_eq_of_iso (e.counitIso.app _)
-
-/-- **Rings with equivalent module categories have the same dominant dimension.** The regular
-module of each ring corresponds to a retract of a finite power of the regular module of the
-other. The two module categories may live in different universes. -/
+/-- **Rings with equivalent module categories have the same dominant dimension.** The equivalence
+carries the regular module of `A` to a progenerator of `B`, which has the dominant dimension of `B`.
+The two module categories may live in different universes. -/
 theorem _root_.CategoryTheory.Equivalence.dominantDimension_eq {A : Type u} [Ring A] {B : Type u'}
     [Ring B] (e : ModuleCat.{u} A ≌ ModuleCat.{u'} B) :
     dominantDimension A = dominantDimension B :=
-  le_antisymm (dominantDimension_le_of_equivalence e) (dominantDimension_le_of_equivalence e.symm)
+  ((dominantDimension_eq_dominantDimension_of A).trans
+    (e.functor.dominantDimension_obj (ModuleCat.of A A)).symm).trans
+    (ModuleCat.dominantDimension_eq_of_isGenerator _)
 
 /-- **Isomorphic rings have the same dominant dimension.** -/
 theorem _root_.RingEquiv.dominantDimension_eq {A B : Type u} [Ring A] [Ring B] (e : A ≃+* B) :
