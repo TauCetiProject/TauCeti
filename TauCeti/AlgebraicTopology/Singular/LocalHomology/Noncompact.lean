@@ -29,7 +29,7 @@ have compact support, so `Hₖ(M)` is the filtered colimit of `Hₖ(U)` over the
 with compact closure (`TauCeti.exists_isOpen_isCompact_closure_singularHomologyMap_eq`). For any
 open subset `U` of a topological space `M`, `(M ∖ frontier U)` is covered by the two disjoint open
 sets `U` and `M ∖ closure U`, so excision identifies `Hₖ(U)` with
-`Hₖ(M ∖ frontier U, M ∖ closure U)` (`TauCeti.isIso_singularHomologyMap_openToFrontierComplPair`).
+`Hₖ(M ∖ frontier U, M ∖ closure U)` (`TopPair.isIso_singularHomologyMap_openToFrontierComplPair`).
 In the long exact sequence of the triple `(M, M ∖ frontier U, M ∖ closure U)`, vanishing of the
 local homology `Hₖ₊₁(M, M ∖ frontier U)` therefore makes the composite
 `Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)`, and hence the inclusion map `Hₖ(U) ⟶ Hₖ(M)`, a monomorphism
@@ -54,15 +54,8 @@ Both the coefficient ring `Λ` and the model normed space `E` may live in univer
 module coefficients are restricted along `ULift ℤ →+* Λ`, which preserves singular homology
 (`CategoryTheory.Functor.singularHomologyFunctorObjCompIso`).
 
-## Main definitions and results
+## Main results
 
-* `TauCeti.openToFrontierComplPair` and `TauCeti.isIso_singularHomologyMap_openToFrontierComplPair`:
-  for an open set `U ⊆ M`, the inclusion `(U, ∅) ⟶ (M ∖ frontier U, M ∖ closure U)` induces
-  isomorphisms on relative singular homology in every degree.
-* `TauCeti.mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier`
-  and `TauCeti.mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier`: if
-  `Hₖ₊₁(M, M ∖ frontier U) = 0` for open `U`, then `Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)` and
-  `Hₖ(U) ⟶ Hₖ(M)` are monomorphisms.
 * `TauCeti.mono_singularHomologyMap_subtype_of_isCompact_closure`: on a Hausdorff `n`-manifold, the
   inclusion of an open subset with compact closure induces a monomorphism on `Hₖ` for `k ≥ n`.
 * `TauCeti.isZero_singularHomology_of_finrank_lt`: on any Hausdorff `n`-manifold without boundary,
@@ -87,114 +80,11 @@ public section
 
 noncomputable section
 
-open AlgebraicTopology CategoryTheory Limits Module Set Topology
+open AlgebraicTopology CategoryTheory Limits Module Set
 
-universe w v u
+universe w
 
 namespace TauCeti
-
-/-! ### Excision and the frontier triple of an open subset -/
-
-section FrontierExcision
-
-variable {A : Type u} [Category.{v} A] [HasCoproducts.{w} A] [Abelian A] (R : A)
-  {M : Type w} [TopologicalSpace M] {U : Set M}
-
-/-- For an open subset `U ⊆ M`, the inclusion of topological pairs
-`(U, ∅) ⟶ (M ∖ frontier U, M ∖ closure U)`, the inner pair of the triple
-`(M, M ∖ frontier U, M ∖ closure U)`. -/
-def openToFrontierComplPair (hU : IsOpen U) :
-    TopPair.ofSubset (∅ : Set (TopCat.of U)) ⟶
-      TopPair.ofInclusion (X := TopCat.of M)
-        (compl_subset_compl.2 (frontier_subset_closure (s := U))) :=
-  TopPair.ofHom
-    (TopCat.ofHom (ContinuousMap.inclusion (disjoint_frontier_iff_isOpen.2 hU).subset_compl_left))
-    (TopCat.ofHom ⟨fun x ↦ x.2.elim, by fun_prop⟩)
-    (by ext x; exact x.2.elim)
-
-@[simp]
-lemma openToFrontierComplPair_fst_apply (hU : IsOpen U) (x : U) :
-    (TopPair.Hom.fst (openToFrontierComplPair hU) x).1 = x.1 :=
-  (rfl)
-
-/-- **Excision of the complement of the closure from the complement of the frontier.** For an open
-subset `U ⊆ M`, the space `M ∖ frontier U` is covered by the two disjoint open subsets `U` and
-`M ∖ closure U`, so `(U, ∅) ⟶ (M ∖ frontier U, M ∖ closure U)` induces isomorphisms on relative
-singular homology in every degree. -/
-theorem isIso_singularHomologyMap_openToFrontierComplPair (hU : IsOpen U) (k : ℕ) :
-    IsIso (TopPair.singularHomologyMap (openToFrontierComplPair hU) R k) := by
-  refine TopPair.isIso_singularHomologyMap_of_open_cover R (openToFrontierComplPair hU)
-    (IsEmbedding.inclusion (disjoint_frontier_iff_isOpen.2 hU).subset_compl_left)
-    (fun x hx ↦ ?_)
-    (fun b : Bool ↦ bif b then Subtype.val ⁻¹' U else Subtype.val ⁻¹' (closure U)ᶜ)
-    (fun b ↦ by
-      cases b
-      · exact isClosed_closure.isOpen_compl.preimage continuous_subtype_val
-      · exact hU.preimage continuous_subtype_val)
-    (eq_univ_of_forall fun y ↦ by
-      by_cases hy : y.1 ∈ closure U
-      · refine mem_iUnion.2 ⟨true, ?_⟩
-        by_contra hyU
-        exact y.2 ⟨hy, by rwa [hU.interior_eq]⟩
-      · exact mem_iUnion.2 ⟨false, hy⟩)
-    (fun b ↦ by
-      cases b
-      · exact Or.inl fun y hy ↦ ⟨⟨y.1, hy⟩, rfl⟩
-      · exact Or.inr fun y hy ↦ ⟨⟨y.1, hy⟩, rfl⟩)
-    k
-  obtain ⟨y, hy⟩ := hx
-  exact (y.2 (subset_closure (congrArg Subtype.val hy ▸ x.2))).elim
-
-/-- **Injectivity into local homology along the closure of an open subset.** Let `U ⊆ M` be open.
-If the local homology `Hₖ₊₁(M, M ∖ frontier U)` along the frontier vanishes, then the composite
-`Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)` is a monomorphism. -/
-theorem mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier
-    (hU : IsOpen U) {k : ℕ} (hfr : IsZero (localHomology R (frontier U) (k + 1))) :
-    Mono (((singularHomologyFunctor A k).obj R).map
-        (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))) ≫
-      (TopPair.ofSubset ((closure U)ᶜ : Set (TopCat.of M))).singularHomologyπ R k) := by
-  let T := TopTriple.ofSubset (X := TopCat.of M)
-    (compl_subset_compl.2 (frontier_subset_closure (s := U)))
-  have hmono_inner : Mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R k) :=
-    (T.singularHomology_exact_inner R (k + 1) k rfl).mono_g (hfr.eq_of_src _ _)
-  have : IsEmpty (TopPair.ofSubset (∅ : Set (TopCat.of U))).snd :=
-    inferInstanceAs (IsEmpty (∅ : Set U))
-  have := isIso_singularHomologyMap_openToFrontierComplPair R hU k
-  have hmono_comp : Mono ((TopPair.ofSubset (∅ : Set (TopCat.of U))).singularHomologyπ R k ≫
-      TopPair.singularHomologyMap (openToFrontierComplPair hU ≫ TopTriple.innerToTotal.app T)
-        R k) := by
-    have hcomp := TopPair.singularHomologyMap_comp (openToFrontierComplPair hU) R
-      (TopTriple.innerToTotal.app T) k
-    let f₂ : (TopPair.ofInclusion (X := TopCat.of M)
-        (compl_subset_compl.2 (frontier_subset_closure (s := U)))).singularHomology R k ⟶
-        (TopTriple.totalPair.obj T).singularHomology R k :=
-      TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R k
-    have : Mono f₂ := hmono_inner
-    have : Mono ((TopPair.ofSubset (∅ : Set (TopCat.of U))).singularHomologyπ R k ≫
-        (TopPair.singularHomologyMap (openToFrontierComplPair hU) R k ≫ f₂)) := by
-      have := mono_comp (TopPair.singularHomologyMap (openToFrontierComplPair hU) R k) f₂
-      exact mono_comp _ _
-    rwa [hcomp]
-  have hfst : TopPair.Hom.fst (openToFrontierComplPair hU ≫ TopTriple.innerToTotal.app T) =
-      TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) := by
-    ext x
-    rfl
-  rw [singularHomologyFunctor_obj_map, ← hfst]
-  rwa [← TopPair.singularHomologyπ_naturality] at hmono_comp
-
-/-- **Injectivity of open-subset homology when frontier local homology vanishes.** If `U ⊆ M` is
-open and `Hₖ₊₁(M, M ∖ frontier U) = 0`, then the inclusion `U ↪ M` induces a monomorphism
-`Hₖ(U; R) ⟶ Hₖ(M; R)`. -/
-theorem mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier
-    (hU : IsOpen U) {k : ℕ} (hfr : IsZero (localHomology R (frontier U) (k + 1))) :
-    Mono (((singularHomologyFunctor A k).obj R).map
-      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)))) :=
-  have :=
-    mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier R hU
-      hfr
-  mono_of_mono _ ((TopPair.ofSubset ((closure U)ᶜ : Set (TopCat.of M))).singularHomologyπ R k)
-
-end FrontierExcision
 
 /-! ### Vanishing on topological manifolds (Hatcher's Proposition 3.29) -/
 
