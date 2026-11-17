@@ -51,6 +51,8 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
   the Fourier coefficients of `f`.
 * `TauCeti.CircleSobolev.ofContinuousMap_toContinuousMap`: for `s > 1/2`, the continuous
   representative of `a ∈ H^s(E)` is sent back to `a`, regarded as an element of `H⁰(E)`.
+* `TauCeti.CircleSobolev.ofContinuousMap_injective`: a continuous loop is determined by its
+  class in `H⁰(E)`.
 * `TauCeti.CircleSobolev.toContinuousMap_eq_iff`: for `s > 1/2`, the continuous representative of
   `a ∈ H^s(E)` is the continuous loop with the Fourier coefficients of `a`.
 * `TauCeti.CircleSobolev.hasDerivAt_toContinuousMap_of_derivative_eq` and
@@ -185,6 +187,14 @@ theorem ofContinuousMap_toContinuousMap (hs : 1 / 2 < s) (a : CircleSobolev s E)
     ofContinuousMap T (toContinuousMap T hs a) = inclusion (by linarith) a :=
   CircleSobolev.ext (funext fun n ↦ by
     rw [coeff_ofContinuousMap, fourierCoeff_toContinuousMap, coeff_inclusion])
+
+/-- A continuous loop is determined by its class in `H⁰(E)`. -/
+theorem ofContinuousMap_injective : Function.Injective (ofContinuousMap (E := E) T) := by
+  intro F G h
+  have hae := (F.integrable AddCircle.haarAddCircle).ae_eq_of_forall_fourierCoeff_eq
+    (G.integrable AddCircle.haarAddCircle) fun n ↦ by
+      rw [← coeff_ofContinuousMap, h, coeff_ofContinuousMap]
+  exact ContinuousMap.ext (congrFun ((map_continuous _).ae_eq_iff_eq _ G.continuous |>.1 hae))
 
 /-- **Continuous weak derivatives are classical derivatives.** If the derivative in `H⁰(E)` of
 `a ∈ H¹(E)` is the class of a continuous loop `g`, then the continuous representative of `a` is
