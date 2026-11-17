@@ -313,7 +313,6 @@ variable {α β α' β' : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
 /-- The measurable equivalence exchanging the second coordinates of two pairs:
 `((a, b), (a', b')) ↦ ((a, b'), (a', b))`. -/
-@[expose]
 def prodProdSndComm : (α × β) × (α' × β') ≃ᵐ (α × β') × (α' × β) where
   toFun q := ((q.1.1, q.2.2), (q.2.1, q.1.2))
   invFun q := ((q.1.1, q.2.2), (q.2.1, q.1.2))
@@ -325,13 +324,13 @@ def prodProdSndComm : (α × β) × (α' × β') ≃ᵐ (α × β') × (α' × �
 /-- `prodProdSndComm` exchanges the second coordinates of two pairs. -/
 @[simp]
 theorem prodProdSndComm_apply (q : (α × β) × (α' × β')) :
-    prodProdSndComm q = ((q.1.1, q.2.2), (q.2.1, q.1.2)) := rfl
+    prodProdSndComm q = ((q.1.1, q.2.2), (q.2.1, q.1.2)) := (rfl)
 
 /-- The inverse of `prodProdSndComm` is `prodProdSndComm` with the second-coordinate types
 exchanged. -/
 @[simp]
 theorem prodProdSndComm_symm :
-    (prodProdSndComm (α := α) (β := β) (α' := α') (β' := β')).symm = prodProdSndComm := rfl
+    (prodProdSndComm (α := α) (β := β) (α' := α') (β' := β')).symm = prodProdSndComm := (rfl)
 
 /-- Exchanging the second coordinates of two pairs preserves the product of two product measures;
 only the three factors moved across a product must be s-finite. -/

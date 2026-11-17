@@ -114,9 +114,9 @@ private theorem fourPointDelta_eq_zero_of_notMem {S : Set (X × Y)}
   have h1 (w : X × Y) : W (z, w) = 0 := hWS (z, w) (.inl hz)
   have h2 (w : X × Y) : W (w, z) = 0 := hWS (w, z) (.inr (.inl hz))
   have h3 (w : X × Y) : W (prodProdSndComm (z, w)) = 0 :=
-    hWS (prodProdSndComm (z, w)) (.inr (.inr (.inl hz)))
+    hWS (prodProdSndComm (z, w)) (.inr (.inr (.inl (by simpa using hz))))
   have h4 (w : X × Y) : W (prodProdSndComm (w, z)) = 0 :=
-    hWS (prodProdSndComm (w, z)) (.inr (.inr (.inr hz)))
+    hWS (prodProdSndComm (w, z)) (.inr (.inr (.inr (by simpa using hz))))
   simp [fourPointDelta, -prodProdSndComm_apply, h1, h2, h3, h4]
 
 private theorem abs_indicator_one_le {α : Type*} (M : Set α) (q : α) :
@@ -182,15 +182,18 @@ private theorem integral_mul_fourPointDelta [IsFiniteMeasure μ] [IsFiniteMeasur
     integral_mul_integral_add_integral_swap (μ := μ) (ν := ν) hW hWB hg hgM
   obtain ⟨hp34, hi34', ht34⟩ := integral_mul_integral_add_integral_swap (μ := μ) (ν := ν)
     (V := fun q ↦ W (prodProdSndComm q)) (by fun_prop) (fun q ↦ hWB (prodProdSndComm q)) hg hgM
+  have hinv (q : (X × Y) × (X × Y)) : prodProdSndComm (prodProdSndComm q) = q := by
+    simp [prodProdSndComm_apply]
   have hi34 : Integrable (fun q ↦ (g (prodProdSndComm q).1 + g (prodProdSndComm q).2) * W q)
       ((μ.prod ν).prod (μ.prod ν)) :=
     ((measurePreserving_prodProdSndComm (μ := μ) (ν := ν) (μ' := μ) (ν' := ν)).integrable_comp_emb
-      prodProdSndComm.measurableEmbedding).1 hi34'
+      prodProdSndComm.measurableEmbedding).1 (by simpa only [Function.comp_def, hinv] using hi34')
   have ht34' : ∫ q, (g q.1 + g q.2) * W (prodProdSndComm q) ∂((μ.prod ν).prod (μ.prod ν)) =
       ∫ q, (g (prodProdSndComm q).1 + g (prodProdSndComm q).2) * W q
-        ∂((μ.prod ν).prod (μ.prod ν)) :=
-    (measurePreserving_prodProdSndComm (μ := μ) (ν := ν) (μ' := μ) (ν' := ν)).integral_comp'
-      (fun r ↦ (g (prodProdSndComm r).1 + g (prodProdSndComm r).2) * W r)
+        ∂((μ.prod ν).prod (μ.prod ν)) := by
+    simpa only [Function.comp_def, hinv] using
+      (measurePreserving_prodProdSndComm (μ := μ) (ν := ν) (μ' := μ) (ν' := ν)).integral_comp'
+        (fun r ↦ (g (prodProdSndComm r).1 + g (prodProdSndComm r).2) * W r)
   simp_rw [fourPointDelta, mul_sub]
   rw [integral_sub hp12 hp34, ht12, ht34, ht34', ← integral_sub hi12 hi34]
   exact integral_congr_ae (ae_of_all _ fun _ ↦ by ring)
@@ -278,12 +281,14 @@ private theorem isCoupling_withDensity_add_mul_fourPointDelta
   set p : X × Y → ℝ := fun z ↦ (γ.rnDeriv R z).toReal * (R.rnDeriv P z).toReal
   -- Express `γ` and its perturbation as integrable nonnegative densities against `P = μ ⊗ ν`.
   have hγ_P : P.withDensity (fun z ↦ ENNReal.ofReal (p z)) = γ := by
-    have h0 := withDensity_add_mul_eq_withDensity_fourPointDelta hRμν
-      (Measure.measurable_rnDeriv γ R).ennreal_toReal measurable_zero (W := 0)
-      (fun _ ↦ by simp [fourPointDelta]) 0
-    simp only [Pi.zero_apply, zero_mul, add_zero] at h0
-    exact h0.symm.trans <| (withDensity_congr_ae <| (Measure.rnDeriv_lt_top γ R).mono fun _ hz ↦
-      ENNReal.ofReal_toReal hz.ne).trans (Measure.withDensity_rnDeriv_eq γ R hγR)
+    have hmul : (fun z ↦ ENNReal.ofReal (p z)) = (fun z ↦ ENNReal.ofReal (R.rnDeriv P z).toReal) *
+        (fun z ↦ ENNReal.ofReal (γ.rnDeriv R z).toReal) := funext fun z ↦ by
+      rw [Pi.mul_apply, ← ENNReal.ofReal_mul ENNReal.toReal_nonneg, mul_comm]
+    rw [hmul, withDensity_mul _ (by fun_prop) (by fun_prop),
+      withDensity_congr_ae ((Measure.rnDeriv_lt_top R P).mono fun _ h ↦ ENNReal.ofReal_toReal h.ne),
+      Measure.withDensity_rnDeriv_eq R P hRμν,
+      withDensity_congr_ae ((Measure.rnDeriv_lt_top γ R).mono fun _ h ↦ ENNReal.ofReal_toReal h.ne),
+      Measure.withDensity_rnDeriv_eq γ R hγR]
   have hp_int : Integrable p P := Probability.integrable_of_eq_withDensity hγ_P.symm
     (by fun_prop) (ae_of_all _ fun _ ↦ mul_nonneg ENNReal.toReal_nonneg ENNReal.toReal_nonneg)
   have hΔ_int : Integrable (fourPointDelta μ ν W) P := integrable_fourPointDelta hW hWB
@@ -580,7 +585,8 @@ private theorem measure_untruncatedFourPointZeroSet_ne_zero [IsFiniteMeasure μ]
       refine nonpos_iff_eq_zero.1 <| (measure_mono fun z₂ hz₂ ↦ ?_).trans <|
         (measure_union_le (Prod.mk z₁ ⁻¹' U) {z₂ | ¬ 0 < r z₂}).trans_eq <| by
           rw [hz₁, Pi.zero_apply, ae_iff.1 hr_pos, add_zero]
-      exact if hrz₂ : 0 < r z₂ then .inl ⟨hmem, hrz₂, hz₂.2, hz₂.1⟩ else .inr hrz₂
+      exact if hrz₂ : 0 < r z₂ then
+        .inl ⟨hmem, hrz₂, by simpa using hz₂.2, by simpa using hz₂.1⟩ else .inr hrz₂
     rw [Measure.prod_prod, mul_eq_zero] at hrect; exact hrect.elim hcol hrow
   exact hN <| measure_mono_null (fun z hz ↦ if hrz : 0 < r z then Or.inl ⟨hrz, hz⟩ else Or.inr hrz)
     (measure_union_null (measure_eq_zero_iff_ae_notMem.2 hae) (ae_iff.1 hr_pos))
@@ -628,9 +634,9 @@ private theorem nonneg_and_pos_setIntegral_scaledFourPointDelta_rnZeroSet
   have hGN_le {z : X × Y} (hz : z ∈ GN) : ∫ w, W (z, w) ∂P ≤ fourPointDelta μ ν W z := by
     have hzH : z ∉ H := Set.disjoint_left.1 (disjoint_rnZeroSet_jointAnnulus n) hz
     have h3 (w : X × Y) : W (prodProdSndComm (z, w)) = 0 :=
-      indicator_of_notMem (fun hm : prodProdSndComm (z, w) ∈ M ↦ hzH hm.2.2.1) _
+      indicator_of_notMem (fun hm : prodProdSndComm (z, w) ∈ M ↦ hzH (by simpa using hm.2.2.1)) _
     have h4 (w : X × Y) : W (prodProdSndComm (w, z)) = 0 :=
-      indicator_of_notMem (fun hm : prodProdSndComm (w, z) ∈ M ↦ hzH hm.2.2.2) _
+      indicator_of_notMem (fun hm : prodProdSndComm (w, z) ∈ M ↦ hzH (by simpa using hm.2.2.2)) _
     have h2 : 0 ≤ ∫ w, W (w, z) ∂P :=
       integral_nonneg fun _ ↦ indicator_nonneg (fun _ _ ↦ zero_le_one) _
     simp only [fourPointDelta, h3, h4, integral_zero, add_zero, sub_zero]; linarith

@@ -78,16 +78,14 @@ theorem exists_rnDeriv_eq_exp_add_of_isCoupling_of_forall_klDiv_le
         γ.rnDeriv R =ᵐ[R] (fun z ↦ ENNReal.ofReal (exp (φ' z.1 + ψ' z.2))) →
         ∃ a : ℝ, φ' =ᵐ[μ] (fun x ↦ φ x + a) ∧ ψ' =ᵐ[ν] (fun y ↦ ψ y - a) := by
   by_cases hμ : μ = 0
-  · have hν : ν = 0 := by
-      rw [← Measure.measure_univ_eq_zero, ← hγ.measure_univ_eq, hμ]; simp
-    subst hμ hν
+  · obtain rfl : ν = 0 := hγ.left_eq_zero_iff.1 hμ
+    subst hμ
     obtain rfl : R = 0 := Measure.absolutelyContinuous_zero_iff.1 (by simpa using hRμν)
     exact ⟨0, 0, measurable_const, measurable_const, by simp [EventuallyEq],
       fun _ _ _ _ _ ↦ ⟨0, by simp [EventuallyEq]⟩⟩
   have := hγ.isFiniteMeasure
   have : IsFiniteMeasure ν := hγ.snd_eq ▸ inferInstance
-  have hν : ν ≠ 0 := by
-    rwa [Ne, ← Measure.measure_univ_eq_zero, ← hγ.measure_univ_eq, Measure.measure_univ_eq_zero]
+  have hν : ν ≠ 0 := hγ.left_eq_zero_iff.not.1 hμ
   have hP : μ.prod ν ≠ 0 := by
     rw [Ne, ← Measure.measure_univ_eq_zero, ← univ_prod_univ, Measure.prod_prod, mul_eq_zero]
     exact not_or.2 ⟨Measure.measure_univ_ne_zero.2 hμ, Measure.measure_univ_ne_zero.2 hν⟩
@@ -128,46 +126,6 @@ theorem exists_isCoupling_eq_withDensity_exp_add_of_schroedingerValue_ne_top
   exact (Measure.withDensity_rnDeriv_eq π R (klDiv_ne_top_iff.1 hKL).1).symm.trans
     (withDensity_congr_ae hrn)
 
-/-- Fubini slices of an integrable positive part `max (φ ⊕ ψ) 0` on `μ ⊗ ν` combine with
-`φ ⊕ ψ ∈ L¹(π)` on a coupling `π` to yield `φ ∈ L¹(μ)` and `ψ ∈ L¹(ν)`. -/
-private theorem IsCoupling.integrable_of_integrable_add_of_integrable_max [IsFiniteMeasure μ]
-    (hπ : IsCoupling π μ ν) (hφ : Measurable φ) (hψ : Measurable ψ)
-    (hsum : Integrable (fun z ↦ φ z.1 + ψ z.2) π)
-    (hpos : Integrable (fun z ↦ max (φ z.1 + ψ z.2) 0) (μ.prod ν)) :
-    Integrable φ μ ∧ Integrable ψ ν := by
-  by_cases hμ : μ = 0
-  · have hν : ν = 0 := by
-      rw [← Measure.measure_univ_eq_zero, ← hπ.measure_univ_eq, hμ]; simp
-    subst hμ hν
-    exact ⟨integrable_zero_measure, integrable_zero_measure⟩
-  have := hπ.isFiniteMeasure
-  have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
-  have hν : ν ≠ 0 := by
-    rwa [Ne, ← Measure.measure_univ_eq_zero, ← hπ.measure_univ_eq, Measure.measure_univ_eq_zero]
-  have : (ae μ).NeBot := ae_neBot.2 hμ
-  have : (ae ν).NeBot := ae_neBot.2 hν
-  obtain ⟨y₀, hy₀⟩ := hpos.prod_left_ae.exists
-  obtain ⟨x₀, hx₀⟩ := hpos.prod_right_ae.exists
-  set U : X → ℝ := fun x ↦ max (φ x + ψ y₀) 0 - ψ y₀
-  set V : Y → ℝ := fun y ↦ max (φ x₀ + ψ y) 0 - φ x₀
-  have hφU (x : X) : φ x ≤ U x := by simp only [U]; linarith [le_max_left (φ x + ψ y₀) 0]
-  have hψV (y : Y) : ψ y ≤ V y := by simp only [V]; linarith [le_max_left (φ x₀ + ψ y) 0]
-  have hdom : Integrable (fun z : X × Y ↦ |U z.1| + |V z.2| + |φ z.1 + ψ z.2|) π :=
-    (hπ.integrable_add_split (hy₀.sub (integrable_const _)).abs
-      (hx₀.sub (integrable_const _)).abs).add hsum.abs
-  refine ⟨(hπ.measurePreserving_fst.integrable_comp hφ.aestronglyMeasurable).1 <|
-      hdom.mono' (hφ.comp measurable_fst).aestronglyMeasurable <| ae_of_all _ fun z ↦ ?_,
-    (hπ.measurePreserving_snd.integrable_comp hψ.aestronglyMeasurable).1 <|
-      hdom.mono' (hψ.comp measurable_snd).aestronglyMeasurable <| ae_of_all _ fun z ↦ ?_⟩
-  · simp only [Function.comp_apply, Real.norm_eq_abs, abs_le]
-    exact ⟨by linarith [hψV z.2, le_abs_self (V z.2), abs_nonneg (U z.1),
-        neg_abs_le (φ z.1 + ψ z.2)],
-      by linarith [hφU z.1, le_abs_self (U z.1), abs_nonneg (V z.2), abs_nonneg (φ z.1 + ψ z.2)]⟩
-  · simp only [Function.comp_apply, Real.norm_eq_abs, abs_le]
-    exact ⟨by linarith [hφU z.1, le_abs_self (U z.1), abs_nonneg (V z.2),
-        neg_abs_le (φ z.1 + ψ z.2)],
-      by linarith [hψV z.2, le_abs_self (V z.2), abs_nonneg (U z.1), abs_nonneg (φ z.1 + ψ z.2)]⟩
-
 /-- **Integrability of the Schrödinger potentials.** Let `π` be a coupling of `μ` and `ν` of finite
 relative entropy against `R` whose density against `R` is `exp (φ(x) + ψ(y))`, where `R ∼ μ ⊗ ν`
 has integrable log-density `llr R (μ.prod ν)` against `μ.prod ν`. Then `φ ∈ L¹(μ)` and
@@ -201,8 +159,8 @@ theorem IsCoupling.integrable_of_eq_withDensity_exp_add
       (ae_of_all _ fun _ ↦ (exp_pos _).le)).1 ?_
     rw [← setLIntegral_univ, ← withDensity_apply _ MeasurableSet.univ, hπ_P]
     exact measure_ne_top π univ
-  refine hπ.integrable_of_integrable_add_of_integrable_max hφ hψ
-    ((integrable_congr hllr_eq).1 hllr_πR) ?_
+  refine hπ.integrable_of_integrable_add_of_integrable_max
+    hφ.aestronglyMeasurable hψ.aestronglyMeasurable ((integrable_congr hllr_eq).1 hllr_πR) ?_
   refine (hexp_int.add hllr.abs).mono' (by fun_prop) (ae_of_all _ fun z ↦ ?_)
   simp only [Pi.add_apply, Real.norm_eq_abs, abs_of_nonneg (le_max_right (φ z.1 + ψ z.2) 0)]
   rcases le_total (φ z.1 + ψ z.2) 0 with hle | hge
