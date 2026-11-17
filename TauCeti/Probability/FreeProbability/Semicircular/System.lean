@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Matrix.Order
 public import TauCeti.Combinatorics.NoncrossingPartition.Pairing
 public import TauCeti.Probability.FreeProbability.Distribution.Basic
 public import TauCeti.Probability.FreeProbability.Semicircular.Basic
+import TauCeti.Analysis.StarAlgebra.GNS.Basic
 import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
@@ -373,27 +374,11 @@ theorem IsSemicircularSystem.posSemidef_of_isSelfAdjoint {A ι : Type*} [Ring A]
     (h : IsSemicircularSystem φ.toLinearMap s (C.map Complex.ofReal))
     (hs : ∀ i, IsSelfAdjoint (s i)) :
     C.PosSemidef := by
+  have hmul (i j : ι) : φ (s i * s j) = C i j := by simpa using h.apply_mul i j
   refine posSemidef_iff_finite_sum.{0, _, 0}.2 ⟨fun i j => ?_, fun {κ} _ v x => ?_⟩
-  · let b : A := s i + Complex.I • s j
-    have hb_star : star b = s i - Complex.I • s j := by
-      simp [b, star_add, star_smul, (hs i).star_eq, (hs j).star_eq, sub_eq_add_neg]
-    have hmul : star b * b =
-        s i * s i + s j * s j + Complex.I • (s i * s j - s j * s i) := by
-      have hII : (Complex.I • s j) * (Complex.I • s j) = -(s j * s j) := by
-        rw [smul_mul_smul_comm, Complex.I_mul_I, neg_one_smul]
-      rw [hb_star, sub_mul, mul_add, mul_add, mul_smul_comm, smul_mul_assoc, hII, smul_sub]
-      abel
-    have him : (φ (star b * b)).im = 0 :=
-      (φ.map_nonneg (star_mul_self_nonneg b)).2.symm
-    have hmul_im : (φ (star b * b)).im = C i j - C j i := by
-      have h_ii : φ (s i * s i) = C i i := by simpa using h.apply_mul i i
-      have h_jj : φ (s j * s j) = C j j := by simpa using h.apply_mul j j
-      have h_ij : φ (s i * s j) = C i j := by simpa using h.apply_mul i j
-      have h_ji : φ (s j * s i) = C j i := by simpa using h.apply_mul j i
-      rw [hmul, map_add, map_add, LinearMapClass.map_smul, map_sub, h_ii, h_jj, h_ij, h_ji]
-      simp
-    simp only [star_trivial]
-    linarith [him, hmul_im]
+  · have hsymm := (StarPositiveFunctional.ofPositiveLinearMap φ).star_apply_star_mul (s i) (s j)
+    simp only [StarPositiveFunctional.ofPositiveLinearMap_apply, (hs _).star_eq, hmul] at hsymm
+    simpa [star_trivial] using congrArg Complex.re hsymm
   · let b : A := ∑ p : κ, (x p : ℂ) • s (v p)
     have hb_star : star b = b := by
       simp [b, star_sum, star_smul, (hs _).star_eq]
@@ -403,8 +388,6 @@ theorem IsSemicircularSystem.posSemidef_of_isSelfAdjoint {A ι : Type*} [Ring A]
       simp only [b, sum_mul_sum, smul_mul_smul_comm]
     have hφ : φ (star b * b) =
         ((∑ p : κ, ∑ q : κ, star (x p) * C (v p) (v q) * x q : ℝ) : ℂ) := by
-      have hmul (p q : κ) : φ (s (v p) * s (v q)) = C (v p) (v q) := by
-        simpa using h.apply_mul (v p) (v q)
       rw [hbb, map_sum]
       simp only [map_sum, LinearMapClass.map_smul, hmul, smul_eq_mul, star_trivial,
         Complex.ofReal_sum, Complex.ofReal_mul]
