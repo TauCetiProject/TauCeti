@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Presentation
-public import TauCeti.CategoryTheory.Quotient.Braided
+public import Mathlib.CategoryTheory.Monoidal.Braided.Basic
 
 /-!
 # The free braided category on a tensor signature
@@ -23,30 +23,31 @@ It is built as a monoidal category presented by generators and relations
 `TensorSignature.crossingInv X Y` for all words `X` and `Y`, and `TensorSignature.braidingRel S`
 consists of the equations saying that these are inverse to each other, natural in both variables
 and subject to the two hexagon identities. The classes of the crossings form a braiding of the
-presented category.
+presented category. Further equations are imposed in the same quotient, giving the braided
+categories presented by `S` and equations.
 
 ## Main definitions and results
 
 * `TauCeti.TensorSignature.withCrossings S` and `TauCeti.TensorSignature.braidingRel S`: the
   presentation of the free braided category.
-* `TauCeti.TensorSignature.FreeBraided S`: the free braided category on `S`, with its instance
-  `BraidedCategory`, and `FreeBraided.of` and `FreeBraided.coupon` for the generators.
-* `FreeBraided.lift fo fc`: the braided functor into an arbitrary (not necessarily strict) braided
-  category determined by images `fo` of the generating objects and `fc` of the coupons, with
-  computation rules `FreeBraided.lift_obj_of` and `FreeBraided.lift_map_coupon`.
-* `FreeBraided.monoidalNatIso`: two braided functors out of `FreeBraided S` that agree up to
-  isomorphism on the generating objects, compatibly with the coupons of `S`, are monoidally
-  naturally isomorphic. Compatibility with the crossings is automatic. Taking one of the functors
-  to be `lift fo fc`, this is the uniqueness of the lift.
-
 * `TauCeti.TensorSignature.BraidedPresented S R`: the braided category presented by `S` and
-  typed equations `R` between morphisms of `FreeBraided S`, the quotient by the least monoidal
-  congruence containing `R`, with the universal property `BraidedPresented.lift`,
-  `BraidedPresented.monoidalNatIso` and `BraidedPresented.natTrans_ext` for braided functors
-  satisfying the equations.
+  equations `R` between morphisms of the free monoidal category on `S.withCrossings`, the monoidal
+  category presented by `S.withCrossings` and the relations `braidingRel S` together with `R`. It
+  has the instance `BraidedCategory`, and `BraidedPresented.of` and `BraidedPresented.coupon` for
+  the generators.
+* `TauCeti.TensorSignature.FreeBraided S`: the free braided category on `S`, the case where the
+  only equations are the braided-category axioms themselves.
+* `BraidedPresented.lift fo fc h`: the braided functor into an arbitrary (not necessarily strict)
+  braided category determined by images `fo` of the generating objects and `fc` of the coupons
+  satisfying the equations `R`, with computation rules `BraidedPresented.lift_obj_of` and
+  `BraidedPresented.lift_map_coupon`. For the free braided category it is `FreeBraided.lift fo fc`.
+* `BraidedPresented.monoidalNatIso`: two braided functors out of `S.BraidedPresented R` that agree
+  up to isomorphism on the generating objects, compatibly with the coupons of `S`, are monoidally
+  naturally isomorphic. Compatibility with the crossings is automatic. Taking one of the functors
+  to be `lift fo fc h`, this is the uniqueness of the lift.
 
-Monoidal natural transformations out of `FreeBraided S` are determined by their components at the
-generating objects by `TauCeti.TensorSignature.Presented.natTrans_ext`, since `FreeBraided S` is a
+Monoidal natural transformations out of `S.BraidedPresented R` are determined by their components
+at the generating objects by `TauCeti.TensorSignature.Presented.natTrans_ext`, since it is a
 presented monoidal category. Together these give the universal property of the free braided
 category on a tensor scheme (Joyal–Street, *The geometry of tensor calculus I*), for strong
 braided functors into arbitrary braided categories.
@@ -129,59 +130,84 @@ inductive braidingRel : HomRel S.withCrossings.FreeMonoidal
         (X ◁ crossing Y Z ≫ (α_ X Z Y).inv ≫ crossing X Z ▷ Y)
 
 variable (S) in
-/-- The free braided category on a tensor signature `S`: the monoidal category presented by the
-signature `S.withCrossings` and the braided-category axioms `braidingRel S` for its crossings.
-Its objects are the tensor words in the generating objects of `S`. -/
+/-- The relations presenting the braided category presented by `S` and the equations `R`: the
+braided-category axioms `braidingRel S` of the crossings together with `R`. -/
+inductive braidedRel (R : HomRel S.withCrossings.FreeMonoidal) :
+    HomRel S.withCrossings.FreeMonoidal
+  /-- An axiom of the braiding. -/
+  | braiding {X Y : S.withCrossings.FreeMonoidal} {f g : X ⟶ Y} : braidingRel S f g →
+      braidedRel R f g
+  /-- An equation of `R`. -/
+  | of {X Y : S.withCrossings.FreeMonoidal} {f g : X ⟶ Y} : R f g → braidedRel R f g
+
+variable (S) in
+/-- The braided category presented by the tensor signature `S` and the equations `R` between
+morphisms of the free monoidal category on `S.withCrossings`: the monoidal category presented by
+`S.withCrossings` and the braided-category axioms `braidingRel S` of its crossings together with
+`R`. Only the equations `R` are imposed beyond the axioms of a braided monoidal category. Its
+objects are the tensor words in the generating objects of `S`. -/
+abbrev BraidedPresented (R : HomRel S.withCrossings.FreeMonoidal) : Type u :=
+  S.withCrossings.Presented (braidedRel S R)
+
+variable (S) in
+/-- The free braided category on a tensor signature `S`: the braided category presented by `S`
+whose only equations are the braided-category axioms `braidingRel S` themselves, so that nothing
+beyond the axioms of a braided monoidal category is imposed. Its objects are the tensor words in
+the generating objects of `S`. -/
+-- Taking `braidingRel S` as the equations, rather than a lambda for the empty relation, keeps the
+-- relation a constant, so that instance search finds the structure of the quotient.
 abbrev FreeBraided : Type u :=
-  S.withCrossings.Presented (braidingRel S)
+  S.BraidedPresented (braidingRel S)
 
-namespace FreeBraided
+namespace BraidedPresented
 
-open Presented
+variable {R : HomRel S.withCrossings.FreeMonoidal}
 
-/-- The braiding of the free braided category: the classes of the formal crossing and reverse
-crossing. -/
-instance : BraidedCategory S.FreeBraided where
+/-- The braiding of the presented braided category: the classes of the formal crossing and
+reverse crossing. -/
+instance : BraidedCategory (S.BraidedPresented R) where
   braiding X Y :=
-    { hom := (quotientFunctor _).map (crossing X.as Y.as)
-      inv := (quotientFunctor _).map (crossingInv X.as Y.as)
-      hom_inv_id := sound (.hom_inv_id X.as Y.as)
-      inv_hom_id := sound (.inv_hom_id X.as Y.as) }
+    { hom := (Presented.quotientFunctor _).map (crossing X.as Y.as)
+      inv := (Presented.quotientFunctor _).map (crossingInv X.as Y.as)
+      hom_inv_id := Presented.sound (.braiding (.hom_inv_id X.as Y.as))
+      inv_hom_id := Presented.sound (.braiding (.inv_hom_id X.as Y.as)) }
   braiding_naturality_right := by
     rintro ⟨X⟩ ⟨Y⟩ ⟨Z⟩ f
-    obtain ⟨f, rfl⟩ := (quotientFunctor _).map_surjective f
-    exact sound (.naturality_right X f)
+    obtain ⟨f, rfl⟩ := (Presented.quotientFunctor _).map_surjective f
+    exact Presented.sound (.braiding (.naturality_right X f))
   braiding_naturality_left := by
     rintro ⟨X⟩ ⟨Y⟩ f ⟨Z⟩
-    obtain ⟨f, rfl⟩ := (quotientFunctor _).map_surjective f
-    exact sound (.naturality_left f Z)
+    obtain ⟨f, rfl⟩ := (Presented.quotientFunctor _).map_surjective f
+    exact Presented.sound (.braiding (.naturality_left f Z))
   hexagon_forward := by
     rintro ⟨X⟩ ⟨Y⟩ ⟨Z⟩
-    exact sound (.hexagon_forward X Y Z)
+    exact Presented.sound (.braiding (.hexagon_forward X Y Z))
   hexagon_reverse := by
     rintro ⟨X⟩ ⟨Y⟩ ⟨Z⟩
-    exact sound (.hexagon_reverse X Y Z)
+    exact Presented.sound (.braiding (.hexagon_reverse X Y Z))
 
 /-- The braiding of two classes is the class of the formal crossing. -/
 theorem braiding_hom_obj (X Y : S.withCrossings.FreeMonoidal) :
-    (β_ ((quotientFunctor (braidingRel S)).obj X) ((quotientFunctor _).obj Y)).hom =
-      (quotientFunctor _).map (crossing X Y) :=
+    (β_ ((Presented.quotientFunctor _).obj X : S.BraidedPresented R)
+      ((Presented.quotientFunctor _).obj Y)).hom =
+      (Presented.quotientFunctor _).map (crossing X Y) :=
   (rfl)
 
 /-- The inverse braiding of two classes is the class of the formal reverse crossing. -/
 theorem braiding_inv_obj (X Y : S.withCrossings.FreeMonoidal) :
-    (β_ ((quotientFunctor (braidingRel S)).obj X) ((quotientFunctor _).obj Y)).inv =
-      (quotientFunctor _).map (crossingInv X Y) :=
+    (β_ ((Presented.quotientFunctor _).obj X : S.BraidedPresented R)
+      ((Presented.quotientFunctor _).obj Y)).inv =
+      (Presented.quotientFunctor _).map (crossingInv X Y) :=
   (rfl)
 
-/-- The object of the free braided category given by a single generating object. -/
-abbrev of (a : S.Obj) : S.FreeBraided :=
-  (quotientFunctor _).obj (FreeMonoidal.of (S := S.withCrossings) a)
+/-- The object of the presented braided category given by a single generating object. -/
+abbrev of (a : S.Obj) : S.BraidedPresented R :=
+  (Presented.quotientFunctor _).obj (FreeMonoidal.of (S := S.withCrossings) a)
 
-/-- The generating morphism of the free braided category given by a coupon of `S`, from its
+/-- The generating morphism of the presented braided category given by a coupon of `S`, from its
 source word to its target word. -/
-def coupon (g : S.Coupon) : (⟨⟨S.src g⟩⟩ : S.FreeBraided) ⟶ ⟨⟨S.tgt g⟩⟩ :=
-  (quotientFunctor _).map (FreeMonoidal.coupon (S := S.withCrossings) (.coupon g))
+def coupon (g : S.Coupon) : (⟨⟨S.src g⟩⟩ : S.BraidedPresented R) ⟶ ⟨⟨S.tgt g⟩⟩ :=
+  (Presented.quotientFunctor _).map (FreeMonoidal.coupon (S := S.withCrossings) (.coupon g))
 
 section Lift
 
@@ -199,7 +225,7 @@ def liftCoupon : ∀ g : S.withCrossings.Coupon,
 
 /-- The interpretation `liftCoupon fo fc` sends a formal crossing to the braiding. -/
 @[simp]
-theorem lift_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
+theorem lift_liftCoupon_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map (crossing X Y) =
       (β_ (projectObj fo X.as) (projectObj fo Y.as)).hom :=
   FreeMonoidal.lift_map_coupon _ _ _
@@ -207,7 +233,7 @@ theorem lift_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
 /-- The interpretation `liftCoupon fo fc` sends a formal reverse crossing to the inverse
 braiding. -/
 @[simp]
-theorem lift_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
+theorem lift_liftCoupon_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map (crossingInv X Y) =
       (β_ (projectObj fo X.as) (projectObj fo Y.as)).inv :=
   FreeMonoidal.lift_map_coupon _ _ _
@@ -223,79 +249,104 @@ theorem lift_liftCoupon_map_eq ⦃X Y : S.withCrossings.FreeMonoidal⦄ ⦃f g :
   -- `(FreeMonoidal.lift fo _).obj X` and `projectObj fo X.as`.
   induction h with
   | hom_inv_id X Y =>
-    rw [Functor.map_comp, lift_map_crossing, lift_map_crossingInv, Functor.map_id]
+    rw [Functor.map_comp, lift_liftCoupon_map_crossing, lift_liftCoupon_map_crossingInv,
+      Functor.map_id]
     exact Iso.hom_inv_id _
   | inv_hom_id X Y =>
-    rw [Functor.map_comp, lift_map_crossing, lift_map_crossingInv, Functor.map_id]
+    rw [Functor.map_comp, lift_liftCoupon_map_crossing, lift_liftCoupon_map_crossingInv,
+      Functor.map_id]
     exact Iso.inv_hom_id _
   | naturality_right X f =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, lift_liftCoupon_map_crossing]
     exact BraidedCategory.braiding_naturality_right _ _
   | naturality_left f Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, lift_liftCoupon_map_crossing]
     exact BraidedCategory.braiding_naturality_left _ _
   | hexagon_forward X Y Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, FreeMonoidal.lift_map_associator_hom, lift_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, FreeMonoidal.lift_map_associator_hom,
+      lift_liftCoupon_map_crossing]
     exact BraidedCategory.hexagon_forward _ _ _
   | hexagon_reverse X Y Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, FreeMonoidal.lift_map_associator_inv, lift_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, FreeMonoidal.lift_map_associator_inv,
+      lift_liftCoupon_map_crossing]
     exact BraidedCategory.hexagon_reverse _ _ _
 
-/-- The functor out of the free braided category on `S` determined by the images `fo` of the
-generating objects and `fc` of the coupons in a braided category `D`. It is braided, with identity
-tensorator and unit comparison, and sends the braiding of two words to the braiding of their
-images. -/
--- The body is exposed so that the object part reduces, as for `Presented.lift`.
-@[expose] def lift : S.FreeBraided ⥤ D :=
-  Presented.lift (S := S.withCrossings) fo (liftCoupon fo fc) (lift_liftCoupon_map_eq fo fc)
+variable (h : ∀ ⦃X Y : S.withCrossings.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
+    (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map f =
+      (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map g)
 
-instance : (lift fo fc).Monoidal :=
-  inferInstanceAs (Presented.lift (S := S.withCrossings) fo (liftCoupon fo fc)
-    (lift_liftCoupon_map_eq fo fc)).Monoidal
+/-- The functor out of the braided category presented by `S` and `R` determined by the images
+`fo` of the generating objects and `fc` of the coupons in a braided category `D`, provided the
+induced interpretation `liftCoupon fo fc` satisfies the equations `R`. It is braided, with
+identity tensorator and unit comparison, and sends the braiding of two words to the braiding of
+their images. -/
+-- The body is exposed so that the object part reduces, as for `Presented.lift`.
+@[expose] def lift : S.BraidedPresented R ⥤ D :=
+  Presented.lift (S := S.withCrossings) fo (liftCoupon fo fc) fun _ _ _ _ hfg ↦
+    match hfg with
+    | .braiding hfg => lift_liftCoupon_map_eq fo fc hfg
+    | .of hfg => h hfg
+
+instance : (lift fo fc h).Monoidal :=
+  inferInstanceAs (Presented.lift (S := S.withCrossings) fo (liftCoupon fo fc) _).Monoidal
+
+/-- The functor `lift fo fc h` restricts along the quotient functor to the interpretation
+`FreeMonoidal.lift fo (liftCoupon fo fc)` of the free monoidal category on `S.withCrossings`. -/
+theorem quotientFunctor_comp_lift :
+    Presented.quotientFunctor _ ⋙ lift fo fc h =
+      FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc) :=
+  Presented.quotientFunctor_comp_lift (S := S.withCrossings) _ _ _
 
 @[simp]
-theorem lift_ε : Functor.LaxMonoidal.ε (lift fo fc) = 𝟙 _ :=
+theorem lift_ε : Functor.LaxMonoidal.ε (lift fo fc h) = 𝟙 _ :=
   Presented.lift_ε (S := S.withCrossings) _ _ _
 
 @[simp]
-theorem lift_η : Functor.OplaxMonoidal.η (lift fo fc) = 𝟙 _ :=
+theorem lift_η : Functor.OplaxMonoidal.η (lift fo fc h) = 𝟙 _ :=
   Presented.lift_η (S := S.withCrossings) _ _ _
 
 @[simp]
-theorem lift_μ (X Y : S.FreeBraided) : Functor.LaxMonoidal.μ (lift fo fc) X Y = 𝟙 _ :=
+theorem lift_μ (X Y : S.BraidedPresented R) : Functor.LaxMonoidal.μ (lift fo fc h) X Y = 𝟙 _ :=
   Presented.lift_μ (S := S.withCrossings) _ _ _ X Y
 
 @[simp]
-theorem lift_δ (X Y : S.FreeBraided) : Functor.OplaxMonoidal.δ (lift fo fc) X Y = 𝟙 _ :=
+theorem lift_δ (X Y : S.BraidedPresented R) :
+    Functor.OplaxMonoidal.δ (lift fo fc h) X Y = 𝟙 _ :=
   Presented.lift_δ (S := S.withCrossings) _ _ _ X Y
 
-theorem lift_obj (X : S.FreeBraided) : (lift fo fc).obj X = projectObj fo X.as.as :=
+theorem lift_obj (X : S.BraidedPresented R) : (lift fo fc h).obj X = projectObj fo X.as.as :=
   (rfl)
 
 @[simp]
-theorem lift_obj_of (a : S.Obj) : (lift fo fc).obj (of a) = fo a :=
+theorem lift_obj_of (a : S.Obj) : (lift fo fc h).obj (of a) = fo a :=
   (rfl)
 
 @[simp]
-theorem lift_map_coupon (g : S.Coupon) : (lift fo fc).map (coupon g) = fc g :=
+theorem lift_map {X Y : S.withCrossings.FreeMonoidal} (f : X ⟶ Y) :
+    (lift fo fc h).map ((Presented.quotientFunctor _).map f) =
+      (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map f :=
+  (rfl)
+
+@[simp]
+theorem lift_map_coupon (g : S.Coupon) : (lift fo fc h).map (coupon g) = fc g :=
   FreeMonoidal.lift_map_coupon _ _ _
 
 /-- The braiding of two words goes to the braiding of their images. -/
-theorem lift_map_braiding_hom (X Y : S.FreeBraided) :
-    (lift fo fc).map (β_ X Y).hom = (β_ ((lift fo fc).obj X) ((lift fo fc).obj Y)).hom :=
-  lift_map_crossing fo fc X.as Y.as
+theorem lift_map_braiding_hom (X Y : S.BraidedPresented R) :
+    (lift fo fc h).map (β_ X Y).hom = (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).hom :=
+  lift_liftCoupon_map_crossing fo fc X.as Y.as
 
-instance : (lift fo fc).Braided where
+instance : (lift fo fc h).Braided where
   braided X Y := by
     -- The tensorators are identities; `Category.id_comp` is applied up to the definitional
-    -- equality `(lift fo fc).obj (X ⊗ Y) = (lift fo fc).obj X ⊗ (lift fo fc).obj Y`.
+    -- equality `(lift fo fc h).obj (X ⊗ Y) = (lift fo fc h).obj X ⊗ (lift fo fc h).obj Y`.
     simp only [lift_μ]
     exact (Category.id_comp _).trans
-      ((lift_map_braiding_hom fo fc X Y).trans (Category.comp_id _).symm)
+      ((lift_map_braiding_hom fo fc h X Y).trans (Category.comp_id _).symm)
 
 end Lift
 
@@ -303,40 +354,49 @@ section Uniqueness
 
 variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D]
 
-variable {F G : S.FreeBraided ⥤ D} [F.Braided] [G.Braided]
+variable {F G : S.BraidedPresented R ⥤ D} [F.Braided] [G.Braided]
   {e : ∀ a, F.obj (of a) ≅ G.obj (of a)}
 
 /-- The isomorphisms which isomorphisms `e` at the generating objects induce on all tensor words
 are natural with respect to the braiding, for any two braided functors. -/
 theorem map_braiding_hom_comp_wordIso_hom (X Y : S.withCrossings.FreeMonoidal) :
-    F.map (β_ ((quotientFunctor _).obj X) ((quotientFunctor _).obj Y)).hom ≫
-        (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (Y ⊗ X).as).hom =
-      (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (X ⊗ Y).as).hom ≫
-        G.map (β_ ((quotientFunctor _).obj X) ((quotientFunctor _).obj Y)).hom := by
+    F.map (β_ ((Presented.quotientFunctor _).obj X) ((Presented.quotientFunctor _).obj Y)).hom ≫
+        (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+          e (Y ⊗ X).as).hom =
+      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+          e (X ⊗ Y).as).hom ≫
+        G.map (β_ ((Presented.quotientFunctor _).obj X)
+          ((Presented.quotientFunctor _).obj Y)).hom := by
   simp
 
 /-- The isomorphisms which isomorphisms `e` at the generating objects induce on all tensor words
 are natural with respect to the inverse braiding, for any two braided functors. -/
 theorem map_braiding_inv_comp_wordIso_hom (X Y : S.withCrossings.FreeMonoidal) :
-    F.map (β_ ((quotientFunctor _).obj X) ((quotientFunctor _).obj Y)).inv ≫
-        (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (X ⊗ Y).as).hom =
-      (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (Y ⊗ X).as).hom ≫
-        G.map (β_ ((quotientFunctor _).obj X) ((quotientFunctor _).obj Y)).inv := by
+    F.map (β_ ((Presented.quotientFunctor _).obj X) ((Presented.quotientFunctor _).obj Y)).inv ≫
+        (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+          e (X ⊗ Y).as).hom =
+      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+          e (Y ⊗ X).as).hom ≫
+        G.map (β_ ((Presented.quotientFunctor _).obj X)
+          ((Presented.quotientFunctor _).obj Y)).inv := by
   rw [← cancel_epi (F.map (β_ _ _).hom), ← Functor.map_comp_assoc, Iso.hom_inv_id,
     Functor.map_id, Category.id_comp, reassoc_of% map_braiding_hom_comp_wordIso_hom,
     ← Functor.map_comp, Iso.hom_inv_id, Functor.map_id, Category.comp_id]
 
 variable (F G e)
 
-/-- Two braided functors out of the free braided category on `S` that agree up to isomorphisms
-`e` on the generating objects, compatibly with every coupon of `S`, are isomorphic by a monoidal
-natural isomorphism extending `e`. The compatibility is stated with the isomorphisms
+/-- Two braided functors out of the braided category presented by `S` and `R` that agree up to
+isomorphisms `e` on the generating objects, compatibly with every coupon of `S`, are isomorphic by
+a monoidal natural isomorphism extending `e`. The compatibility is stated with the isomorphisms
 `FreeMonoidal.wordIso` which `e` induces on all tensor words; compatibility with the crossings
-holds automatically. -/
+holds automatically. Taking one of the functors to be `lift fo fc h`, this is the uniqueness of
+the lift. -/
 def monoidalNatIso
     (he : ∀ g, F.map (coupon g) ≫
-        (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (S.tgt g)).hom =
-      (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (S.src g)).hom ≫
+        (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+          e (S.tgt g)).hom =
+      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+          e (S.src g)).hom ≫
         G.map (coupon g)) :
     F ≅ G :=
   Presented.monoidalNatIso F G e fun
@@ -346,14 +406,17 @@ def monoidalNatIso
 
 variable {F G e}
   (he : ∀ g, F.map (coupon g) ≫
-      (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (S.tgt g)).hom =
-    (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e (S.src g)).hom ≫
+      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+        e (S.tgt g)).hom =
+    (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+        e (S.src g)).hom ≫
       G.map (coupon g))
 
 @[simp]
 theorem monoidalNatIso_hom_app (X : S.withCrossings.FreeMonoidal) :
-    (monoidalNatIso F G e he).hom.app ((quotientFunctor _).obj X) =
-      (FreeMonoidal.wordIso (quotientFunctor _ ⋙ F) (quotientFunctor _ ⋙ G) e X.as).hom :=
+    (monoidalNatIso F G e he).hom.app ((Presented.quotientFunctor _).obj X) =
+      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
+        e X.as).hom :=
   Presented.monoidalNatIso_hom_app _ X
 
 theorem monoidalNatIso_hom_app_of (a : S.Obj) :
@@ -365,135 +428,20 @@ instance : NatTrans.IsMonoidal (monoidalNatIso F G e he).hom :=
 
 end Uniqueness
 
-end FreeBraided
+end BraidedPresented
 
-variable (S) in
-/-- The braided category presented by the tensor signature `S` and the equations `R` between
-morphisms of the free braided category on `S`: the quotient of `S.FreeBraided` by the least
-monoidal congruence containing `R`, with the descended braiding. Only the equations `R` are
-imposed beyond the axioms of a braided monoidal category. -/
-abbrev BraidedPresented (R : HomRel S.FreeBraided) : Type u :=
-  CategoryTheory.Quotient (HomRel.MonoidalClosure R)
-
-namespace BraidedPresented
-
-variable (R : HomRel S.FreeBraided)
-
-/-- The quotient functor from the free braided category on `S` onto the braided category
-presented by `S` and `R`. It is braided, with identity tensorator and unit comparison. -/
-abbrev quotientFunctor : S.FreeBraided ⥤ S.BraidedPresented R :=
-  CategoryTheory.Quotient.functor _
-
-variable {R}
-
-/-- The equations `R` hold in the presented braided category. -/
-theorem sound {X Y : S.FreeBraided} {f g : X ⟶ Y} (h : R f g) :
-    (quotientFunctor R).map f = (quotientFunctor R).map g :=
-  CategoryTheory.Quotient.sound _ (.of h)
-
-section Lift
+namespace FreeBraided
 
 variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D]
-  (fo : S.Obj → D) (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g))
-  (h : ∀ ⦃X Y : S.FreeBraided⦄ ⦃f g : X ⟶ Y⦄, R f g →
-    (FreeBraided.lift fo fc).map f = (FreeBraided.lift fo fc).map g)
 
-/-- The functor out of the braided category presented by `S` and `R` determined by the images
-`fo` of the generating objects and `fc` of the coupons, provided the induced braided functor
-`FreeBraided.lift fo fc` satisfies the equations `R`. It is braided, with identity tensorator and
-unit comparison. -/
--- The body is exposed so that the object part reduces, as for `Presented.lift`.
-@[expose] def lift : S.BraidedPresented R ⥤ D :=
-  CategoryTheory.Quotient.lift _ (FreeBraided.lift fo fc) fun _ _ _ _ hfg ↦
-    HomRel.MonoidalClosure.map_eq h hfg
+/-- The braided functor out of the free braided category on `S` determined by the images `fo` of
+the generating objects and `fc` of the coupons in a braided category `D`: the functor
+`BraidedPresented.lift`, whose hypothesis holds by `BraidedPresented.lift_liftCoupon_map_eq`. -/
+abbrev lift (fo : S.Obj → D)
+    (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g)) :
+    S.FreeBraided ⥤ D :=
+  BraidedPresented.lift fo fc (BraidedPresented.lift_liftCoupon_map_eq fo fc)
 
-noncomputable instance : (lift fo fc h).Braided :=
-  CategoryTheory.Quotient.liftBraided _ _ _
-
-/-- The functor `lift fo fc h` restricts along the quotient functor to the braided functor
-`FreeBraided.lift fo fc`. -/
-theorem quotientFunctor_comp_lift : quotientFunctor R ⋙ lift fo fc h = FreeBraided.lift fo fc :=
-  CategoryTheory.Quotient.lift_spec _ _ _
-
-@[simp]
-theorem lift_obj (X : S.FreeBraided) :
-    (lift fo fc h).obj ((quotientFunctor R).obj X) = (FreeBraided.lift fo fc).obj X :=
-  (rfl)
-
-@[simp]
-theorem lift_map {X Y : S.FreeBraided} (f : X ⟶ Y) :
-    (lift fo fc h).map ((quotientFunctor R).map f) = (FreeBraided.lift fo fc).map f :=
-  (rfl)
-
-@[simp]
-theorem lift_ε : Functor.LaxMonoidal.ε (lift fo fc h) = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_ε _ _).trans (FreeBraided.lift_ε fo fc)
-
-@[simp]
-theorem lift_η : Functor.OplaxMonoidal.η (lift fo fc h) = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_η _ _).trans (FreeBraided.lift_η fo fc)
-
-@[simp]
-theorem lift_μ (X Y : S.BraidedPresented R) : Functor.LaxMonoidal.μ (lift fo fc h) X Y = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_μ _ _ X.as Y.as).trans (FreeBraided.lift_μ fo fc X.as Y.as)
-
-@[simp]
-theorem lift_δ (X Y : S.BraidedPresented R) : Functor.OplaxMonoidal.δ (lift fo fc h) X Y = 𝟙 _ :=
-  (CategoryTheory.Quotient.lift_δ _ _ X.as Y.as).trans (FreeBraided.lift_δ fo fc X.as Y.as)
-
-end Lift
-
-section Uniqueness
-
-variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
-
-/-- A monoidal natural transformation from a strong monoidal functor out of the presented braided
-category to a lax monoidal one is determined by its components at the generating objects. -/
-theorem natTrans_ext {F G : S.BraidedPresented R ⥤ D} [F.Monoidal] [G.LaxMonoidal] {α β : F ⟶ G}
-    [NatTrans.IsMonoidal α] [NatTrans.IsMonoidal β]
-    (h : ∀ a, α.app ((quotientFunctor R).obj (FreeBraided.of a)) =
-      β.app ((quotientFunctor R).obj (FreeBraided.of a))) :
-    α = β :=
-  CategoryTheory.Quotient.natTrans_ext _ _ (Presented.natTrans_ext (α := Functor.whiskerLeft _ α)
-    (β := Functor.whiskerLeft _ β) h)
-
-variable [BraidedCategory D] (F G : S.BraidedPresented R ⥤ D) [F.Braided] [G.Braided]
-  (e : ∀ a, F.obj ((quotientFunctor R).obj (FreeBraided.of a)) ≅
-    G.obj ((quotientFunctor R).obj (FreeBraided.of a)))
-
-/-- Two braided functors out of the braided category presented by `S` and `R` that agree up to
-isomorphisms `e` on the generating objects, compatibly with every coupon of `S`, are isomorphic by
-a monoidal natural isomorphism extending `e`. The compatibility is stated with the isomorphisms
-`FreeMonoidal.wordIso` which `e` induces on all tensor words. -/
-noncomputable def monoidalNatIso
-    (he : ∀ g, F.map ((quotientFunctor R).map (FreeBraided.coupon g)) ≫
-        (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ F)
-          (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ G) e (S.tgt g)).hom =
-      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ F)
-          (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ G) e (S.src g)).hom ≫
-        G.map ((quotientFunctor R).map (FreeBraided.coupon g))) :
-    F ≅ G :=
-  CategoryTheory.Quotient.natIsoLift _
-    (FreeBraided.monoidalNatIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e he)
-
-variable {F G e}
-  (he : ∀ g, F.map ((quotientFunctor R).map (FreeBraided.coupon g)) ≫
-      (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ F)
-        (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ G) e (S.tgt g)).hom =
-    (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ F)
-        (Presented.quotientFunctor _ ⋙ quotientFunctor R ⋙ G) e (S.src g)).hom ≫
-      G.map ((quotientFunctor R).map (FreeBraided.coupon g)))
-
-theorem monoidalNatIso_hom_app_of (a : S.Obj) :
-    (monoidalNatIso F G e he).hom.app ((quotientFunctor R).obj (FreeBraided.of a)) = (e a).hom :=
-  FreeBraided.monoidalNatIso_hom_app_of he a
-
-instance : NatTrans.IsMonoidal (monoidalNatIso F G e he).hom :=
-  inferInstanceAs (NatTrans.IsMonoidal (CategoryTheory.Quotient.natTransLift _
-    (FreeBraided.monoidalNatIso (quotientFunctor R ⋙ F) (quotientFunctor R ⋙ G) e he).hom))
-
-end Uniqueness
-
-end BraidedPresented
+end FreeBraided
 
 end TauCeti.TensorSignature
