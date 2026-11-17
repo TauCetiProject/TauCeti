@@ -582,6 +582,11 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
     ‖compLipschitzL (α := α) (Y := Y) g hg‖ ≤ 1 := by
   simpa using norm_compLipschitzL_le (α := α) (Y := Y) hg
 
+/-- Precomposing a Hölder function with a `1`-Lipschitz map does not increase its norm. -/
+theorem norm_compLipschitzL_apply_le (hg : LipschitzWith 1 g) (f : HolderSpace α X Y) :
+    ‖compLipschitzL g hg f‖ ≤ ‖f‖ := by
+  simpa using (compLipschitzL g hg).le_of_opNorm_le (norm_compLipschitzL_le_one hg) f
+
 end compLipschitz
 
 section compLeft
