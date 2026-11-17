@@ -13,7 +13,7 @@ public import Mathlib.Topology.Irreducible
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
 public import Mathlib.Topology.Order.OrderClosed
-public import Mathlib.Topology.Sets.Opens
+public import Mathlib.Topology.Sets.Closeds
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
@@ -31,6 +31,8 @@ space by them.
   to connected components.
 * `ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq`: points of a set lie in the same
   connected component of the subspace exactly when they have the same component in the set.
+* `ConnectedComponents.clopensEquiv`: the clopen subsets of the space of connected components
+  correspond to the clopen subsets of the space, by taking preimages.
 * `ConnectedComponents.opens`: in a locally connected space, the connected component indexed by a
   point of the quotient, as an open set; these open sets partition the space.
 * `Homeomorph.image_connectedComponent`: a homeomorphism maps a connected component onto
@@ -134,6 +136,32 @@ theorem coe_eq_coe_iff_connectedComponentIn_eq {F : Set X} {a b : X} (ha : a ∈
       connectedComponentIn F a = connectedComponentIn F b := by
   rw [connectedComponentIn_eq_image ha, connectedComponentIn_eq_image hb,
     Subtype.val_injective.image_injective.eq_iff, coe_eq_coe]
+
+open TopologicalSpace in
+/-- The clopen subsets of `ConnectedComponents X` are in order-preserving bijection with the clopen
+subsets of `X`, by taking preimages under the quotient map `ConnectedComponents.mk`. Its inverse
+sends a clopen set to its image, a clopen set being a union of connected components. -/
+def clopensEquiv : Clopens (ConnectedComponents X) ≃o Clopens X where
+  toFun U := ⟨mk ⁻¹' U, U.isClopen.preimage continuous_coe⟩
+  invFun V := ⟨mk '' V, isQuotientMap_coe.isClopen_preimage.mp <| by
+    rw [connectedComponents_preimage_image, V.isClopen.biUnion_connectedComponent_eq]
+    exact V.isClopen⟩
+  left_inv U := Clopens.ext <| image_preimage_eq _ surjective_coe
+  right_inv V := Clopens.ext <| (connectedComponents_preimage_image (V : Set X)).trans
+    V.isClopen.biUnion_connectedComponent_eq
+  map_rel_iff' := surjective_coe.preimage_subset_preimage_iff
+
+open TopologicalSpace in
+@[simp]
+theorem coe_clopensEquiv (U : Clopens (ConnectedComponents X)) :
+    (clopensEquiv U : Set X) = mk ⁻¹' U :=
+  (rfl)
+
+open TopologicalSpace in
+@[simp]
+theorem coe_clopensEquiv_symm (V : Clopens X) :
+    (clopensEquiv.symm V : Set (ConnectedComponents X)) = mk '' V :=
+  (rfl)
 
 section Opens
 
