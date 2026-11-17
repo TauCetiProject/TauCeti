@@ -54,32 +54,36 @@ noncomputable def reesLaurentEquiv :
 
 variable {R L}
 
-/-- The comparison multiplies the Laurent expansion of the Rees factor by the scalar factor. -/
+/-- The comparison multiplies the image of the Rees factor under `toLaurentTensor` by the scalar
+factor. -/
 @[simp]
 theorem reesLaurentEquiv_tmul (f : R[T;T⁻¹]) (p : reesAlgebra R L) :
-    reesLaurentEquiv R L (f ⊗ₜ[R[X]] p) = f • laurentExpansion R U p :=
+    reesLaurentEquiv R L (f ⊗ₜ[R[X]] p) = f • toLaurentTensor R U p :=
   coeffSubalgebra.baseChangeLaurentEquiv_tmul _ _ _ f p
 
 /-- The comparison sends the Rees generator `j(x)` to `t ⊗ ι(x)`. -/
 theorem reesLaurentEquiv_one_tmul_reesGenerator (x : L) :
     reesLaurentEquiv R L (1 ⊗ₜ[R[X]] reesGenerator R L x) =
       T 1 ⊗ₜ _root_.UniversalEnvelopingAlgebra.ι R x := by
-  rw [reesLaurentEquiv_tmul, coe_reesGenerator, laurentExpansion_monomial, one_smul,
+  rw [reesLaurentEquiv_tmul, coe_reesGenerator, toLaurentTensor_monomial, one_smul,
     Nat.cast_one]
 
-/-- The comparison sends the deformation parameter to `t ⊗ 1`. -/
-theorem reesLaurentEquiv_one_tmul_reesParameter :
-    reesLaurentEquiv R L (1 ⊗ₜ[R[X]] reesParameter R L) = T 1 ⊗ₜ 1 := by
-  rw [reesLaurentEquiv_tmul, coeffSubalgebra.coe_X, laurentExpansion_X, one_smul]
+/-- The inverse comparison sends the image `toLaurentTensor p` to `1 ⊗ p`. -/
+@[simp]
+theorem reesLaurentEquiv_symm_toLaurentTensor (p : reesAlgebra R L) :
+    (reesLaurentEquiv R L).symm (toLaurentTensor R U p) = 1 ⊗ₜ[R[X]] p :=
+  coeffSubalgebra.baseChangeLaurentEquiv_symm_toLaurentTensor _ _ _ p
 
-/-- The inverse comparison sends `1 ⊗ ι(x)` to `t⁻¹ ⊗ j(x)`. -/
+/-- The inverse comparison sends `f ⊗ ι(x)` to `f t⁻¹ ⊗ j(x)`. -/
 -- Rewrite before the simplifier expands the canonical enveloping generator.
 @[simp↓]
-theorem reesLaurentEquiv_symm_one_tmul_ι (x : L) :
-    (reesLaurentEquiv R L).symm (1 ⊗ₜ _root_.UniversalEnvelopingAlgebra.ι R x) =
-      T (-1) ⊗ₜ[R[X]] reesGenerator R L x := by
-  rw [AlgEquiv.symm_apply_eq, reesLaurentEquiv_tmul, coe_reesGenerator,
-    laurentExpansion_monomial, TensorProduct.smul_tmul', smul_eq_mul, Nat.cast_one, ← T_add,
-    neg_add_cancel, T_zero]
+theorem reesLaurentEquiv_symm_tmul_ι (f : R[T;T⁻¹]) (x : L) :
+    (reesLaurentEquiv R L).symm (f ⊗ₜ _root_.UniversalEnvelopingAlgebra.ι R x) =
+      (f * T (-1)) ⊗ₜ[R[X]] reesGenerator R L x := by
+  have hx := ι_mem_pbwFiltration_one R L x
+  have h : reesGenerator R L x = coeffSubalgebra.monomial (pbwFiltration R L) 1 _ hx :=
+    Subtype.ext (by rw [coe_reesGenerator, coeffSubalgebra.coe_monomial])
+  rw [h, reesLaurentEquiv, coeffSubalgebra.baseChangeLaurentEquiv_symm_tmul_of_mem _ _ _ f hx,
+    Nat.cast_one]
 
 end TauCeti.UniversalEnvelopingAlgebra
