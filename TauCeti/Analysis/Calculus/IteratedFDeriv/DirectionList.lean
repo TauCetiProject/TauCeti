@@ -33,8 +33,8 @@ evaluated on the directions.
 * `TauCeti.tsupport_iteratedFDerivAlong_subset`, `HasCompactSupport.iteratedFDerivAlong`:
   differentiating along a list of directions shrinks the topological support and preserves compact
   support.
-* `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map along `k` directions gives a map
-  which is `C^m` whenever `m + k ≤ n`.
+* `ContDiffAt.iteratedFDerivAlong`, `ContDiff.iteratedFDerivAlong`: differentiating a `C^n` map
+  along `k` directions gives a map which is `C^m` whenever `m + k ≤ n`.
 * `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
 * `TauCeti.iteratedFDerivAlong_comp_of_hasFDerivAt`: the chain rule for an affine change of
@@ -138,16 +138,23 @@ theorem _root_.HasCompactSupport.iteratedFDerivAlong {f : E → F} (hf : HasComp
 
 variable {n : ℕ∞ω}
 
+/-- Differentiating a map which is `C^n` at `x` along `k` directions gives a map which is `C^m`
+at `x` whenever `m + k ≤ n`. -/
+theorem _root_.ContDiffAt.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {x : E}
+    (hf : ContDiffAt 𝕜 n f x) (vs : List E) (hvs : m + vs.length ≤ n) :
+    ContDiffAt 𝕜 m (iteratedFDerivAlong 𝕜 vs f) x := by
+  induction vs generalizing m with
+  | nil => exact hf.of_le (by simpa using hvs)
+  | cons v vs ih =>
+    refine ((ih (m := m + 1) ?_).fderiv_right le_rfl).clm_apply contDiffAt_const
+    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
+
 /-- Differentiating a map which is `C^n` on an open set `s` along `k` directions gives a map which
 is `C^m` on `s` whenever `m + k ≤ n`. -/
 theorem _root_.ContDiffOn.iteratedFDerivAlong {m : ℕ∞ω} {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : m + vs.length ≤ n) :
-    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s := by
-  induction vs generalizing m with
-  | nil => exact hf.of_le (by simpa using hvs)
-  | cons v vs ih =>
-    refine ((ih (m := m + 1) ?_).fderiv_of_isOpen hs le_rfl).clm_apply contDiffOn_const
-    rwa [List.length_cons, Nat.cast_succ, add_comm (vs.length : ℕ∞ω), ← add_assoc] at hvs
+    ContDiffOn 𝕜 m (iteratedFDerivAlong 𝕜 vs f) s :=
+  fun _ hx => ((hf.contDiffAt (hs.mem_nhds hx)).iteratedFDerivAlong vs hvs).contDiffWithinAt
 
 theorem _root_.ContDiffOn.differentiableOn_iteratedFDerivAlong {f : E → F} {s : Set E}
     (hf : ContDiffOn 𝕜 n f s) (hs : IsOpen s) (vs : List E) (hvs : vs.length < n) :
@@ -305,13 +312,9 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_cons_cons_apply {f : E → F} {x :
     (v w : E) (vs : List E) (hf : ContDiffAt 𝕜 (v :: w :: vs).length f x) :
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f x =
       fderiv 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x v w := by
-  rcases hf.contDiffOn' le_rfl (by simp) with ⟨u, hu, hxu, hfu⟩
-  rw [Set.insert_eq_of_mem (Set.mem_univ x), Set.univ_inter] at hfu
-  have h2 : ContDiffOn 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) u :=
-    hfu.iteratedFDerivAlong hu vs
-      (by simp only [List.length_cons]; push_cast; ring_nf; exact le_rfl)
   have h2x : ContDiffAt 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) x :=
-    (h2 x hxu).contDiffAt (hu.mem_nhds hxu)
+    hf.iteratedFDerivAlong vs (by exact_mod_cast (by simp; omega :
+      2 + vs.length ≤ (v :: w :: vs).length))
   have hd : DifferentiableAt 𝕜 (fderiv 𝕜 (iteratedFDerivAlong 𝕜 vs f)) x :=
     (h2x.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
   rw [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_cons,
@@ -333,12 +336,10 @@ theorem _root_.ContDiffAt.iteratedFDerivAlong_swap [IsRCLikeNormedField 𝕜] {f
     iteratedFDerivAlong 𝕜 (v :: w :: vs) f x = iteratedFDerivAlong 𝕜 (w :: v :: vs) f x := by
   rw [hf.iteratedFDerivAlong_cons_cons_apply v w vs,
     hf.iteratedFDerivAlong_cons_cons_apply w v vs]
-  rcases hf.contDiffOn' le_rfl (by simp) with ⟨u, hu, hxu, hfu⟩
-  rw [Set.insert_eq_of_mem (Set.mem_univ x), Set.univ_inter] at hfu
-  have h2 : ContDiffOn 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) u :=
-    hfu.iteratedFDerivAlong hu vs
-      (by simp only [List.length_cons]; push_cast; ring_nf; exact le_rfl)
-  exact (((h2 x hxu).contDiffAt (hu.mem_nhds hxu)).isSymmSndFDerivAt (by simp)) v w
+  have h2x : ContDiffAt 𝕜 2 (iteratedFDerivAlong 𝕜 vs f) x :=
+    hf.iteratedFDerivAlong vs (by exact_mod_cast (by simp; omega :
+      2 + vs.length ≤ (v :: w :: vs).length))
+  exact (h2x.isSymmSndFDerivAt (by simp)) v w
 
 /-- Over `ℝ` or `ℂ`, the first two directions of a `C^k` map, for a list of `k` directions, can
 be exchanged. See `List.Perm.iteratedFDerivAlong_eq` for arbitrary reorderings. -/

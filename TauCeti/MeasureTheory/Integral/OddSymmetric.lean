@@ -25,12 +25,11 @@ integral of `t ↦ g (-t)`; oddness turns that into the negative of the original
 vector space an element equal to its own negative is zero. In particular the statement is also
 true (vacuously, both sides being `0`) when `g` fails to be integrable.
 
-Dually, for an integrable even function against a negation-invariant measure, the integral over
-the nonnegative set `{y | 0 ≤ g y}` of any measurable odd real-valued function `g` with null zero
-locus equals half the full-space integral (`MeasureTheory.setIntegral_setOf_nonneg_of_even`). On a
-finite-dimensional real normed space with an additive Haar measure, every nonzero continuous linear
-functional has null kernel, yielding the half-space formula
-`MeasureTheory.setIntegral_halfSpace_of_even`.
+Dually, for a negation-invariant measure `μ`, the integral of an integrable even function `φ` over
+`{y | 0 ≤ g y}`, for any measurable odd `g : G → ℝ` with null zero locus, equals half of
+`∫ y, φ y ∂μ` (`MeasureTheory.setIntegral_setOf_nonneg_of_even`). On a finite-dimensional real
+normed space with an additive Haar measure, every nonzero continuous linear functional has null
+kernel, yielding the half-space formula `MeasureTheory.setIntegral_halfSpace_of_even`.
 
 ## Main results
 

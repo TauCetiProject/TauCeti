@@ -348,6 +348,19 @@ theorem integral_mul_averagedTaylorKernel_mem_polynomialsDegLE
           simpa using Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)))
         (prod_coord_mem_polynomialsDegLE S I)
 
+/-- Since `y ↦ averagedTaylorKernel φ m x y` is supported in `tsupport φ`, integrating
+`f y * averagedTaylorKernel φ m x y` over any superset `s` of `tsupport φ` equals the
+full-space integral. -/
+theorem setIntegral_mul_averagedTaylorKernel_eq_integral
+    {μ : Measure (EuclideanSpace ℝ ι)} {s : Set (EuclideanSpace ℝ ι)}
+    {m : ℕ} {φ f : EuclideanSpace ℝ ι → ℝ} {x : EuclideanSpace ℝ ι}
+    (hs : tsupport φ ⊆ s) :
+    ∫ y in s, f y * averagedTaylorKernel φ m x y ∂μ =
+      ∫ y, f y * averagedTaylorKernel φ m x y ∂μ :=
+  setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
+    simp [image_eq_zero_of_notMem_tsupport
+      fun h ↦ hy (hs (tsupport_averagedTaylorKernel_subset φ m x h))]
+
 /-- Pointwise evaluation `f ↦ ∫ y, f y * averagedTaylorKernel φ m x y ∂μ` expressed as Mathlib's
 `L¹`–`L^∞` Hölder pairing `ContinuousLinearMap.lpPairing`. -/
 private theorem averagedTaylorEval_eq_lpPairing (μ : Measure (EuclideanSpace ℝ ι)) (m : ℕ)
@@ -581,9 +594,7 @@ theorem averagedTaylorPolynomial_restrict_eq_integral_taylorPolynomial
     (averagedTaylorPolynomial (μ.restrict B) m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
       ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
   rw [averagedTaylorPolynomial_apply, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy]),
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hyB ↦ by
-      simp [image_eq_zero_of_notMem_tsupport
-        fun h ↦ hyB (hB (tsupport_averagedTaylorKernel_subset φ m x h))]]
+    setIntegral_mul_averagedTaylorKernel_eq_integral hB]
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
 
 /-- **Polynomial reproduction on `L¹`.** If `tsupport φ ⊆ B` and `∫ y, φ y ∂μ = 1` for an additive
@@ -636,9 +647,7 @@ theorem averagedTaylorPolynomialLp_apply (μ : Measure (EuclideanSpace ℝ ι))
     averagedTaylorPolynomial_apply]
   rw [integral_congr_ae ((Set.LpToL1RestrictCLM_coeFn (𝕜 := ℝ) (tsupport φ)
       hsupp.measure_lt_top f).mono fun y hy ↦ by rw [hy]),
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-      simp [image_eq_zero_of_notMem_tsupport
-        fun h ↦ hy (tsupport_averagedTaylorKernel_subset φ m x h)]]
+    setIntegral_mul_averagedTaylorKernel_eq_integral Subset.rfl]
 
 /-- **Integration-by-parts identity for `averagedTaylorPolynomialLp` on `Lᵖ(μ)`.** If `u` is `C^m`
 at every point of `tsupport φ` and `f ∈ Lp ℝ p μ` agrees with `u` almost everywhere, then
@@ -670,17 +679,14 @@ theorem averagedTaylorPolynomialLp_restrict_eq_integral_taylorPolynomial
     (averagedTaylorPolynomialLp (μ.restrict Ω) p m φ hφ hsupp f : EuclideanSpace ℝ ι → ℝ) x =
       ∫ y, taylorPolynomial ℝ m u y x * φ y ∂μ := by
   rw [averagedTaylorPolynomialLp_apply, integral_congr_ae (hf.mono fun y hy ↦ by rw [hy]),
-    setIntegral_eq_integral_of_forall_compl_eq_zero fun y hyΩ ↦ by
-      simp [image_eq_zero_of_notMem_tsupport
-        fun h ↦ hyΩ (hΩ (tsupport_averagedTaylorKernel_subset φ m x h))]]
+    setIntegral_mul_averagedTaylorKernel_eq_integral hΩ]
   exact integral_mul_averagedTaylorKernel_eq_integral_taylorPolynomial hφ hsupp hu x
 
 /-- **Polynomial reproduction on `Lᵖ(Ω)`.** If `tsupport φ ⊆ Ω` and `∫ y, φ y ∂μ = 1` for an
 additive Haar measure `μ`, then `averagedTaylorPolynomialLp (μ.restrict Ω)` reproduces every
 `q ∈ polynomialsDegLE ι m` belonging to `Lᵖ(μ.restrict Ω)`. In particular, when `Ω` is nonempty and
 star-shaped with respect to `Metric.ball x₀ ρ` (`0 < ρ`), `Metric.ball x₀ ρ ⊆ Ω` holds by
-`Set.Nonempty.subset_of_forall_starConvex` and `φ = (ballBump x₀ hρ).normed μ` satisfies all cutoff
-hypotheses. -/
+`StarConvex.mem` and `φ = (ballBump x₀ hρ).normed μ` satisfies all cutoff hypotheses. -/
 theorem averagedTaylorPolynomialLp_toLp_eq_self
     {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
     (p : ℝ≥0∞) [Fact (1 ≤ p)] {Ω : Set (EuclideanSpace ℝ ι)}

@@ -25,14 +25,10 @@ that translated closed ball either lies in `interior s` or is disjoint from `K`
 (`TauCeti.closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex`). For a
 convex set containing `ball x r`, this yields `Convex.ball_add_smul_sub_subset`.
 
-Similarly, if a set `Ω` is star-convex about every point of `Metric.ball x₀ ρ`, then for every
-strictly smaller radius `r < ρ` and every `x ∈ Ω`, segments from `Metric.closedBall x₀ r` to `x`
-stay in `Ω` (`TauCeti.add_smul_sub_mem_of_mem_closedBall_of_forall_starConvex`), and in a proper
-real normed space the closed convex hulls
-`closure (convexHull ℝ (insert x (Metric.closedBall x₀ r)))` and
-`closure (convexHull ℝ (insert x (Metric.ball x₀ r)))` are contained in `Ω`
-(`TauCeti.closure_convexHull_insert_closedBall_subset_of_forall_starConvex`,
-`TauCeti.closure_convexHull_insert_ball_subset_of_forall_starConvex`).
+Similarly, in a proper real normed space, if a set `Ω` is star-convex about every point of
+`Metric.ball x₀ ρ`, then for every strictly smaller radius `r < ρ` and every `x ∈ Ω`, the closed
+convex hull `closure (convexHull ℝ (insert x (Metric.closedBall x₀ r)))` is contained in `Ω`
+(`TauCeti.closure_convexHull_insert_closedBall_subset_of_forall_starConvex`).
 -/
 
 public section
@@ -137,16 +133,6 @@ theorem closedBall_add_smul_sub_subset_interior_or_disjoint_of_forall_starConvex
   have hyz : dist y z < r / 2 := mem_ball.1 (hKB (mem_cthickening_of_dist_le y q δ K hqK hyq))
   exact closedBall_add_smul_sub_subset_interior_of_forall_starConvex hs hy hyz ht₀ ht₁
 
-/-- If `Ω` is star-convex about every point of `Metric.ball x₀ ρ`, then for any `r < ρ`,
-any `x ∈ Ω`, and any `y ∈ Metric.closedBall x₀ r`, the closed segment from `y` to `x` lies in
-`Ω`. -/
-theorem add_smul_sub_mem_of_mem_closedBall_of_forall_starConvex
-    {Ω : Set E} {x y x₀ : E} {r ρ t : ℝ} (hr : r < ρ) (hx : x ∈ Ω)
-    (hy : y ∈ closedBall x₀ r) (ht : t ∈ Icc (0 : ℝ) 1)
-    (hstar : ∀ z ∈ ball x₀ ρ, StarConvex ℝ z Ω) :
-    y + t • (x - y) ∈ Ω :=
-  (hstar y (closedBall_subset_ball hr hy)).add_smul_sub_mem hx ht.1 ht.2
-
 /-- In a proper real normed space, if `Ω` is star-convex about every point of `Metric.ball x₀ ρ`,
 then for every `x ∈ Ω` and `r < ρ` the closed convex hull of
 `insert x (Metric.closedBall x₀ r)` is contained in `Ω`. -/
@@ -157,18 +143,6 @@ theorem closure_convexHull_insert_closedBall_subset_of_forall_starConvex
     closure (convexHull ℝ (insert x (closedBall x₀ r))) ⊆ Ω :=
   (isCompact_closedBall x₀ r).closure_convexHull_insert_subset_of_forall_starConvex
     (convex_closedBall x₀ r) Subset.rfl hx fun y hy ↦ hstar y (closedBall_subset_ball hr hy)
-
-/-- In a proper real normed space, if `Ω` is star-convex about every point of `Metric.ball x₀ ρ`,
-then for every `x ∈ Ω` and `r < ρ` the closed convex hull of `insert x (Metric.ball x₀ r)` is
-contained in `Ω`. -/
-theorem closure_convexHull_insert_ball_subset_of_forall_starConvex
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [ProperSpace E]
-    {Ω : Set E} {x x₀ : E} {r ρ : ℝ} (hr : r < ρ) (hx : x ∈ Ω)
-    (hstar : ∀ y ∈ ball x₀ ρ, StarConvex ℝ y Ω) :
-    closure (convexHull ℝ (insert x (ball x₀ r))) ⊆ Ω :=
-  (isCompact_closedBall x₀ r).closure_convexHull_insert_subset_of_forall_starConvex
-    (convex_closedBall x₀ r) ball_subset_closedBall hx
-    fun y hy ↦ hstar y (closedBall_subset_ball hr hy)
 
 end TauCeti
 
