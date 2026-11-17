@@ -8,10 +8,10 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Homotopy.Basic
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Star
+public import TauCeti.Topology.Homeomorph.Interval
+public import TauCeti.Topology.UnitInterval.Basic
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 import Mathlib.Topology.Covering.FundamentalGroupCircle
-import Mathlib.Tactic.FieldSimp
 
 /-!
 # Cone and suspension C⋆-algebras
@@ -138,87 +138,6 @@ end KerEval
 end ZeroAtInftyContinuousMap
 
 namespace TauCeti
-
-section IntervalTopology
-
-/-- Canonical inclusion `(0, 1] → [0, 1]`. -/
-def iocToUnitInterval (x : Ioc (0 : ℝ) 1) : I := ⟨x.1, Ioc_subset_Icc_self x.2⟩
-
-@[simp]
-theorem coe_iocToUnitInterval (x : Ioc (0 : ℝ) 1) : (iocToUnitInterval x : ℝ) = x.1 := (rfl)
-
-theorem continuous_iocToUnitInterval : Continuous iocToUnitInterval :=
-  continuous_subtype_val.subtype_mk _
-
-theorem range_iocToUnitInterval : range iocToUnitInterval = {(0 : I)}ᶜ :=
-  Set.ext fun t => by
-    simp only [mem_range, mem_compl_iff, mem_singleton_iff]
-    exact ⟨fun ⟨x, hx⟩ h0 => x.2.1.ne' (congrArg Subtype.val (hx.trans h0)),
-      fun ht0 => ⟨⟨t.1, lt_of_le_of_ne t.2.1 fun h => ht0 (Subtype.ext h.symm), t.2.2⟩, rfl⟩⟩
-
-theorem notMem_range_iocToUnitInterval_iff (t : I) :
-    t ∉ range iocToUnitInterval ↔ t = 0 := by
-  rw [range_iocToUnitInterval, mem_compl_iff, mem_singleton_iff, not_not]
-
-theorem isOpenEmbedding_iocToUnitInterval : IsOpenEmbedding iocToUnitInterval :=
-  ⟨IsEmbedding.of_comp continuous_iocToUnitInterval continuous_subtype_val IsEmbedding.subtypeVal,
-    range_iocToUnitInterval ▸ isOpen_compl_singleton⟩
-
-/-- The endpoint `1` of `Set.Ioc (0 : ℝ) 1`. -/
-def iocOne : Ioc (0 : ℝ) 1 := ⟨1, right_mem_Ioc.mpr zero_lt_one⟩
-
-@[simp]
-theorem coe_iocOne : (iocOne : ℝ) = 1 := (rfl)
-
-@[simp]
-theorem iocToUnitInterval_iocOne : iocToUnitInterval iocOne = 1 := (rfl)
-
-/-- Canonical inclusion `(0, 1) → (0, 1]`. -/
-def iooToIoc (x : Ioo (0 : ℝ) 1) : Ioc (0 : ℝ) 1 := ⟨x.1, Ioo_subset_Ioc_self x.2⟩
-
-@[simp]
-theorem coe_iooToIoc (x : Ioo (0 : ℝ) 1) : (iooToIoc x : ℝ) = x.1 := (rfl)
-
-theorem continuous_iooToIoc : Continuous iooToIoc :=
-  continuous_subtype_val.subtype_mk _
-
-theorem range_iooToIoc : range iooToIoc = {iocOne}ᶜ :=
-  Set.ext fun t => by
-    simp only [mem_range, mem_compl_iff, mem_singleton_iff]
-    exact ⟨fun ⟨x, hx⟩ h1 => x.2.2.ne (congrArg Subtype.val (hx.trans h1)),
-      fun ht1 => ⟨⟨t.1, t.2.1, lt_of_le_of_ne t.2.2 fun h => ht1 (Subtype.ext h)⟩, rfl⟩⟩
-
-theorem notMem_range_iooToIoc_iff (t : Ioc (0 : ℝ) 1) :
-    t ∉ range iooToIoc ↔ t = iocOne := by
-  rw [range_iooToIoc, mem_compl_iff, mem_singleton_iff, not_not]
-
-theorem isOpenEmbedding_iooToIoc : IsOpenEmbedding iooToIoc :=
-  ⟨IsEmbedding.of_comp continuous_iooToIoc continuous_subtype_val IsEmbedding.subtypeVal,
-    range_iooToIoc ▸ isOpen_compl_singleton⟩
-
-/-- Orientation-preserving order isomorphism `(0, 1) ≃o (-π/2, π/2)` given by `t ↦ π(t - 1/2)`. -/
-noncomputable def iooZeroOneOrderIsoPiHalf :
-    Ioo (0 : ℝ) 1 ≃o Ioo (-(Real.pi / 2)) (Real.pi / 2) where
-  toFun x := ⟨Real.pi * ((x : ℝ) - 2⁻¹), by constructor <;> nlinarith [Real.pi_pos, x.2.1, x.2.2]⟩
-  invFun y := ⟨(y : ℝ) / Real.pi + 2⁻¹, by
-    have hpi := Real.pi_pos
-    exact ⟨by rw [div_add' _ _ _ hpi.ne', lt_div_iff₀ hpi]; linarith [y.2.1],
-      by rw [div_add' _ _ _ hpi.ne', div_lt_iff₀ hpi]; linarith [y.2.2]⟩⟩
-  left_inv x := by ext; have := Real.pi_ne_zero; field_simp; ring
-  right_inv y := by ext; have := Real.pi_ne_zero; field_simp; ring
-  map_rel_iff' := by
-    simp only [Equiv.coe_fn_mk, ← Subtype.coe_le_coe]
-    exact ⟨fun _ => by nlinarith [Real.pi_pos], fun _ => by nlinarith [Real.pi_pos]⟩
-
-/-- Orientation-preserving homeomorphism `(0, 1) ≃ₜ ℝ` given by `t ↦ tan(π(t - 1/2))`. -/
-noncomputable def iooZeroOneHomeomorphReal : Ioo (0 : ℝ) 1 ≃ₜ ℝ :=
-  (iooZeroOneOrderIsoPiHalf.trans Real.tanOrderIso).toHomeomorph
-
-@[simp]
-theorem iooZeroOneHomeomorphReal_apply (x : Ioo (0 : ℝ) 1) :
-    iooZeroOneHomeomorphReal x = Real.tan (Real.pi * ((x : ℝ) - 2⁻¹)) := (rfl)
-
-end IntervalTopology
 
 /-- The cone `C₀((0, 1], A)` of a topological space with zero (in particular, a C⋆-algebra). -/
 abbrev CStarCone (A : Type*) [TopologicalSpace A] [Zero A] : Type _ :=

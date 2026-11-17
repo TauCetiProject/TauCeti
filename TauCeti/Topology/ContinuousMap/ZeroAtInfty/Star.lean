@@ -83,14 +83,18 @@ local notation α " →co " β => CocompactMap α β
 section Precomp
 
 variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z]
-variable (𝕜 A : Type*) [Semiring 𝕜] [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
-  [IsTopologicalSemiring A] [Module 𝕜 A] [ContinuousConstSMul 𝕜 A]
+variable (𝕜 A : Type*) [Monoid 𝕜] [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
+  [IsTopologicalSemiring A] [DistribMulAction 𝕜 A] [ContinuousConstSMul 𝕜 A]
   [StarAddMonoid A] [ContinuousStar A]
 
 /-- Precomposition with a cocompact map `g : X →co Y` as a non-unital `⋆`-algebra homomorphism
 `C₀(Y, A) →⋆ₙₐ[𝕜] C₀(X, A)`. -/
 def compNonUnitalStarAlgHom (g : X →co Y) : C₀(Y, A) →⋆ₙₐ[𝕜] C₀(X, A) where
-  __ := compNonUnitalAlgHom g
+  toFun f := f.comp g
+  map_smul' _ _ := rfl
+  map_zero' := rfl
+  map_add' _ _ := rfl
+  map_mul' _ _ := rfl
   map_star' _ := rfl
 
 @[simp]
@@ -111,8 +115,8 @@ end Precomp
 section Eval
 
 variable {X : Type*} [TopologicalSpace X]
-variable (𝕜 A : Type*) [Semiring 𝕜] [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
-  [IsTopologicalSemiring A] [Module 𝕜 A] [ContinuousConstSMul 𝕜 A]
+variable (𝕜 A : Type*) [Monoid 𝕜] [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
+  [IsTopologicalSemiring A] [DistribMulAction 𝕜 A] [ContinuousConstSMul 𝕜 A]
   [StarAddMonoid A] [ContinuousStar A]
 
 /-- Evaluation at `x : X` as a non-unital `⋆`-algebra homomorphism `C₀(X, A) →⋆ₙₐ[𝕜] A`. -/
@@ -132,11 +136,11 @@ end Eval
 
 section Postcomp
 
-variable (X : Type*) {𝕜 A B : Type*} [TopologicalSpace X] [Semiring 𝕜]
+variable (X : Type*) {𝕜 A B : Type*} [TopologicalSpace X] [Monoid 𝕜]
 variable [TopologicalSpace A] [NonUnitalNonAssocSemiring A] [IsTopologicalSemiring A]
-  [Module 𝕜 A] [ContinuousConstSMul 𝕜 A] [StarAddMonoid A] [ContinuousStar A]
+  [DistribMulAction 𝕜 A] [ContinuousConstSMul 𝕜 A] [StarAddMonoid A] [ContinuousStar A]
 variable [TopologicalSpace B] [NonUnitalNonAssocSemiring B] [IsTopologicalSemiring B]
-  [Module 𝕜 B] [ContinuousConstSMul 𝕜 B] [StarAddMonoid B] [ContinuousStar B]
+  [DistribMulAction 𝕜 B] [ContinuousConstSMul 𝕜 B] [StarAddMonoid B] [ContinuousStar B]
 
 /-- Postcomposition with a continuous `φ : A →⋆ₙₐ[𝕜] B` as a non-unital `⋆`-algebra homomorphism
 `C₀(X, A) →⋆ₙₐ[𝕜] C₀(X, B)`. Vanishing at infinity is preserved because `φ 0 = 0` and `φ` is
@@ -164,7 +168,7 @@ theorem compLeftNonUnitalStarAlgHom_id :
   NonUnitalStarAlgHom.ext fun _ => ext fun _ => rfl
 
 theorem compLeftNonUnitalStarAlgHom_comp {C : Type*} [TopologicalSpace C]
-    [NonUnitalNonAssocSemiring C] [IsTopologicalSemiring C] [Module 𝕜 C]
+    [NonUnitalNonAssocSemiring C] [IsTopologicalSemiring C] [DistribMulAction 𝕜 C]
     [ContinuousConstSMul 𝕜 C] [StarAddMonoid C] [ContinuousStar C]
     (φ : A →⋆ₙₐ[𝕜] B) (ψ : B →⋆ₙₐ[𝕜] C) (hφ : Continuous φ) (hψ : Continuous ψ) :
     compLeftNonUnitalStarAlgHom X (ψ.comp φ) (hψ.comp hφ) =
@@ -213,8 +217,8 @@ end CongrLeft
 section ExtendByZero
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] [R1Space Y] {e : X → Y}
-variable (𝕜 A : Type*) [Semiring 𝕜] [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
-  [IsTopologicalSemiring A] [Module 𝕜 A] [ContinuousConstSMul 𝕜 A]
+variable (𝕜 A : Type*) [Monoid 𝕜] [TopologicalSpace A] [NonUnitalNonAssocSemiring A]
+  [IsTopologicalSemiring A] [DistribMulAction 𝕜 A] [ContinuousConstSMul 𝕜 A]
   [StarAddMonoid A] [ContinuousStar A]
 
 /-- Extension by `0` outside `Set.range e` along an open embedding `e : X → Y` into an `R₁` space

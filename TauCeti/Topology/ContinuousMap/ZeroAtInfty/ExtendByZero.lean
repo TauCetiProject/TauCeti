@@ -63,9 +63,9 @@ noncomputable def extendByZero (he : IsOpenEmbedding e) (f : C₀(X, R)) : C₀(
   continuous_toFun := continuous_iff_continuousAt.mpr fun y => by
     by_cases hy : y ∈ range e
     · obtain ⟨x, rfl⟩ := hy
-      rw [ContinuousAt, he.injective.extend_apply, ← he.map_nhds_eq x, tendsto_map'_iff,
-        show Function.extend e f (0 : Y → R) ∘ e = f from
-          funext (he.injective.extend_apply f (0 : Y → R))]
+      have hcomp : Function.extend e f (0 : Y → R) ∘ e = f :=
+        funext (he.injective.extend_apply f (0 : Y → R))
+      rw [ContinuousAt, he.injective.extend_apply, ← he.map_nhds_eq x, tendsto_map'_iff, hcomp]
       exact f.continuous.tendsto x
     · rw [ContinuousAt, Function.extend_apply' f (0 : Y → R) y hy, Pi.zero_apply, tendsto_def]
       intro V hV

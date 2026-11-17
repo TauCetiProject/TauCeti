@@ -7,9 +7,10 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousMap
 public import Mathlib.Analysis.CStarAlgebra.Hom
-public import TauCeti.Topology.ContinuousMap.GlueHalves
+public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.ContinuousMap.Star
 import Mathlib.Topology.Order.IntermediateValue
+import Mathlib.Topology.Path
 
 /-!
 # Path algebras, homotopies of `⋆`-homomorphisms, and contractible C⋆-algebras
@@ -108,37 +109,34 @@ theorem symm_toHom_apply (H : Homotopy φ₀ φ₁) (a : A) (t : I) :
     H.symm.toHom a t = H.toHom a (σ t) := by
   simp [symm]
 
-private theorem concatPath_ext {Y : Type*} [TopologicalSpace Y] {f₁ g₁ p : C(I, Y)}
-    {h₁ : f₁ 1 = g₁ 0}
-    (hl : ∀ t : I, (t : ℝ) ≤ 2⁻¹ → f₁ (ContinuousMap.pathLeftHalf t) = p t)
-    (hr : ∀ t : I, ¬(t : ℝ) ≤ 2⁻¹ → g₁ (ContinuousMap.pathRightHalf t) = p t) :
-    ContinuousMap.concatPath f₁ g₁ h₁ = p := by
-  ext t
-  by_cases ht : (t : ℝ) ≤ 2⁻¹
-  · rw [ContinuousMap.concatPath_of_le _ _ _ ht, hl t ht]
-  · rw [ContinuousMap.concatPath_of_not_le _ _ _ ht, hr t ht]
-
 /-- Concatenate two homotopies `H₀ : Homotopy φ₀ φ₁` and `H₁ : Homotopy φ₁ φ₂`. -/
 noncomputable def trans (H₀ : Homotopy φ₀ φ₁) (H₁ : Homotopy φ₁ φ₂) : Homotopy φ₀ φ₂ where
   toHom :=
-    { toFun a := ContinuousMap.concatPath (H₀.toHom a) (H₁.toHom a)
-        ((H₀.eval_one a).trans (H₁.eval_zero a).symm)
-      map_smul' r a := concatPath_ext
-        (fun t ht => by simp [ContinuousMap.concatPath_of_le _ _ _ ht, map_smul])
-        (fun t ht => by simp [ContinuousMap.concatPath_of_not_le _ _ _ ht, map_smul])
-      map_zero' := concatPath_ext
-        (fun _ _ => by simp) (fun _ _ => by simp)
-      map_add' a b := concatPath_ext
-        (fun t ht => by simp [ContinuousMap.concatPath_of_le _ _ _ ht, map_add])
-        (fun t ht => by simp [ContinuousMap.concatPath_of_not_le _ _ _ ht, map_add])
-      map_mul' a b := concatPath_ext
-        (fun t ht => by simp [ContinuousMap.concatPath_of_le _ _ _ ht, map_mul])
-        (fun t ht => by simp [ContinuousMap.concatPath_of_not_le _ _ _ ht, map_mul])
-      map_star' a := concatPath_ext
-        (fun t ht => by simp [ContinuousMap.concatPath_of_le _ _ _ ht, map_star])
-        (fun t ht => by simp [ContinuousMap.concatPath_of_not_le _ _ _ ht, map_star]) }
-  eval_zero _ := by simp
-  eval_one _ := by simp
+    { toFun a :=
+        ((Path.mk (H₀.toHom a) (H₀.eval_zero a) (H₀.eval_one a)).trans
+          (Path.mk (H₁.toHom a) (H₁.eval_zero a) (H₁.eval_one a))).toContinuousMap
+      map_smul' r a := by
+        ext t
+        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.smul_apply]
+        split_ifs <;> simp [map_smul]
+      map_zero' := by
+        ext t
+        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.zero_apply]
+        split_ifs <;> simp
+      map_add' a b := by
+        ext t
+        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.add_apply]
+        split_ifs <;> simp [map_add]
+      map_mul' a b := by
+        ext t
+        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.mul_apply]
+        split_ifs <;> simp [map_mul]
+      map_star' a := by
+        ext t
+        simp only [Path.coe_toContinuousMap, Path.trans_apply, ContinuousMap.star_apply]
+        split_ifs <;> simp [map_star] }
+  eval_zero a := Path.source _
+  eval_one a := Path.target _
 
 /-- Precompose a homotopy `H : Homotopy φ₀ φ₁` on the right with `ψ : C →⋆ₙₐ[𝕜] A`. -/
 def compRight {C : Type*} [NonUnitalNonAssocSemiring C] [DistribMulAction 𝕜 C] [Star C]
