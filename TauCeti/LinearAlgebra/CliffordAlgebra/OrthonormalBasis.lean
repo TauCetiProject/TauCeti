@@ -38,9 +38,9 @@ oriented bivector `c(e₁) c(e₂)` of an orthonormal pair is invariant under pl
 * `OrthonormalBasis.map_apply_mul_map_apply`: `Q (bᵢ) Q (bⱼ) = 1` for orthonormal basis vectors.
 * `OrthonormalBasis.prod_map_map_eq_neg_one_pow`: `Q` takes the value `-1` on orthonormal basis
   vectors.
-* `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`,
-  `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫` in
-  the Clifford algebra and its even subalgebra.
+* `CliffordAlgebra.ι_mul_ι_add_swap_eq_neg_two_inner`, and in the even subalgebra
+  `CliffordAlgebra.even_ι_bilin_add_swap_eq_neg_two_inner`: the polarized Clifford relation
+  `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`.
 * `CliffordAlgebra.basis_mul_self_of_orthonormal`: `e_s * e_s = (-1) ^ ((|s| + 1).choose 2)`.
 * `AlgHom.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner`,
   `AlgHom.map_cliffordAlgebraι_cos_smul_add_sin_smul_mul_neg_sin_smul_add_cos_smul`:
@@ -105,10 +105,10 @@ end OrthonormalBasis
 
 namespace CliffordAlgebra
 
-/-- For `Q v = -‖v‖²`, generators of `CliffordAlgebra Q` satisfy the polarized Clifford relation
-`ι Q v * ι Q w + ι Q w * ι Q v = algebraMap ℝ _ (-2 * ⟪v, w⟫_ℝ)`. -/
-theorem ι_mul_ι_add_swap_eq_neg_two_inner (v w : V) :
-    ι Q v * ι Q w + ι Q w * ι Q v = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪v, w⟫) := by
+/-- **The polarized Clifford relation**: for `Q v = -‖v‖²`,
+`c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
+theorem ι_mul_ι_add_swap_eq_neg_two_inner (u v : V) :
+    ι Q u * ι Q v + ι Q v * ι Q u = algebraMap ℝ (CliffordAlgebra Q) (-2 * ⟪u, v⟫) := by
   rw [ι_mul_ι_add_swap, QuadraticMap.polar_eq_neg_two_inner hQ]
 
 /-- For `Q v = -‖v‖²`, the even Clifford relation is `c(u) c(v) + c(v) c(u) = -2 ⟪u, v⟫`. -/
@@ -145,8 +145,8 @@ variable {B : Type*} [Semiring B] [Algebra ℝ B] (ρ : CliffordAlgebra Q →ₐ
 theorem map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap_eq_neg_two_inner
     (hQ : ∀ v, Q v = -‖v‖ ^ 2) (v w : V) :
     ρ (ι Q v) * ρ (ι Q w) + ρ (ι Q w) * ρ (ι Q v) = (-2 * ⟪v, w⟫) • 1 := by
-  rw [ρ.map_cliffordAlgebraι_mul_map_cliffordAlgebraι_add_swap,
-    QuadraticMap.polar_eq_neg_two_inner hQ]
+  rw [← map_mul ρ, ← map_mul ρ, ← map_add ρ, ι_mul_ι_add_swap_eq_neg_two_inner hQ,
+    AlgHom.commutes, Algebra.algebraMap_eq_smul_one]
 
 /-- **2-plane rotation invariance**: rotating an orthonormal pair `(e₁, e₂)` by angle `θ` preserves
 the oriented Clifford product `c(e₁) c(e₂)` when `Q v = -‖v‖²`. -/

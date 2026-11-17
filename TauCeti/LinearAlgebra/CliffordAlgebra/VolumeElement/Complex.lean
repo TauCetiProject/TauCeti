@@ -57,30 +57,23 @@ the positive orientation and `-1` for the negative one.
   `CliffordAlgebra.complexVolume_mul_self_of_forall_eq_zero`: `Γ² = 0` for the zero form in
   positive dimension.
 * `CliffordAlgebra.complexVolume_smul_complexVolume_smul`,
-  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module.
+  `CliffordAlgebra.lsmul_complexVolume_involutive`: `Γ` acts as an involution on every module, and
+  `CliffordAlgebra.map_complexVolume_mul_self`: in every representation.
 * `CliffordAlgebra.conjStar_complexVolume`: `Γ` is fixed by the conjugate-linear Clifford
   involution, while `CliffordAlgebra.star_complexVolume` computes the complex-linear Clifford
   conjugation `star Γ = (-1) ^ ⌊(n + 1) / 2⌋ Γ`; in dimension `2ℓ` this is `(-1) ^ ℓ Γ`.
 * `CliffordAlgebra.complexVolume_mul_eq_involute_mul`: in even dimension, `Γ x = involute x Γ`;
   hence `Γ` anticommutes with odd elements (`CliffordAlgebra.complexVolume_mul_of_mem_odd`), in
-  particular with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`). For `Q v = -‖v‖²`,
+  particular with vectors (`CliffordAlgebra.complexVolume_mul_ι_of_even`), also in every
+  representation (`CliffordAlgebra.map_complexVolume_mul_map_ι`). For `Q v = -‖v‖²`,
   conjugation by `Γ` is the grade involution
   (`CliffordAlgebra.complexVolume_mul_mul_complexVolume`).
 * `CliffordAlgebra.complexVolume_mem_center`: in odd dimension, `Γ` is central.
 * `CliffordAlgebra.commute_complexVolume_of_mem_even`: in every dimension, `Γ` commutes with even
   elements.
-* `AlgHom.map_complexVolume_mul_self`, `AlgHom.map_complexVolume_mul_map_ι_of_even`: square and
-  vector anticommutation of `σ (complexVolume Q o)` under any `ℂ`-algebra homomorphism `σ`.
-* `AlgHom.cliffordLiftBaseChange_complexVolume`,
-  `AlgHom.cliffordLiftBaseChange_complexVolume_of_eq_two_mul`,
-  `AlgHom.cliffordLiftBaseChange_complexVolume_eq`,
-  `AlgHom.cliffordLiftBaseChange_complexVolume_eq_of_eq_two_mul`,
-  `AlgHom.cliffordLiftBaseChange_complexVolume_mul_map_ι_of_even`: evaluation and real-vector
-  anticommutation of `ρ.cliffordLiftBaseChange ℂ` on `complexVolume Q o`.
 
-Only `Γ² = 1` and the statements built on it assume `Q v = -‖v‖²`; the frame formulas assume only
-that `Q` is orthogonal on the chosen frame, the zero-form square assumes `Q = 0`, and the others
-hold for every `Q`.
+Only `Γ² = 1` and the statements built on it assume `Q v = -‖v‖²`; the zero-form square assumes
+`Q = 0`, and the others hold for every `Q`.
 
 ## References
 
@@ -256,6 +249,16 @@ theorem complexVolume_mul_ι_of_even (hn : Even n) (w : ℂ ⊗[ℝ] V) :
   rw [neg_one_smul, ← ofBaseChangeAux_ι, ← map_mul, volumeElement_mul_ι_of_even o hn, map_neg,
     map_mul]
 
+/-- **In even dimension `Γ` anticommutes with Clifford multiplication** in every representation
+`f`: `f(Γ) f(c(w)) = -f(c(w)) f(Γ)`. -/
+theorem map_complexVolume_mul_map_ι {F B : Type*} [Ring B]
+    [FunLike F (CliffordAlgebra (Q.baseChange ℂ)) B]
+    [RingHomClass F (CliffordAlgebra (Q.baseChange ℂ)) B]
+    (hn : Even n) (f : F) (w : ℂ ⊗[ℝ] V) :
+    f (complexVolume Q o) * f (ι (Q.baseChange ℂ) w) =
+      -(f (ι (Q.baseChange ℂ) w) * f (complexVolume Q o)) := by
+  rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o hn, map_neg]
+
 /-- **In even dimension `Γ` intertwines the grade involution**: `Γ x = involute x Γ`. -/
 theorem complexVolume_mul_eq_involute_mul (hn : Even n) (x : CliffordAlgebra (Q.baseChange ℂ)) :
     complexVolume Q o * x = involute x * complexVolume Q o := by
@@ -315,6 +318,13 @@ theorem complexVolume_mul_self : complexVolume Q o * complexVolume Q o = 1 := by
     Complex.I_mul_I]
   simp [Algebra.smul_def, ← pow_add, ← two_mul]
 
+/-- **`Γ` is an involution in every representation** `f`: `f(Γ) f(Γ) = 1`. -/
+theorem map_complexVolume_mul_self {F B : Type*} [MulOneClass B]
+    [FunLike F (CliffordAlgebra (Q.baseChange ℂ)) B]
+    [MonoidHomClass F (CliffordAlgebra (Q.baseChange ℂ)) B] (f : F) :
+    f (complexVolume Q o) * f (complexVolume Q o) = 1 := by
+  rw [← map_mul, complexVolume_mul_self o hQ, map_one]
+
 /-- **`Γ` acts as an involution** on every module: `Γ • Γ • ψ = ψ`. -/
 theorem complexVolume_smul_complexVolume_smul {M : Type*}
     [MulAction (CliffordAlgebra (Q.baseChange ℂ)) M] (ψ : M) :
@@ -336,90 +346,3 @@ theorem complexVolume_mul_mul_complexVolume (hn : Even n) (x : CliffordAlgebra (
 end Form
 
 end CliffordAlgebra
-
-namespace AlgHom
-
-open CliffordAlgebra
-
-variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
-  {Q : QuadraticForm ℝ V}
-
-section AnyDim
-
-variable {n : ℕ} [Fact (finrank ℝ V = n)]
-
-/-- For `Q v = -‖v‖²`, `σ (complexVolume Q o)` squares to `1` under any `ℂ`-algebra homomorphism
-`σ`. -/
-@[simp]
-theorem map_complexVolume_mul_self {B : Type*} [Semiring B] [Algebra ℂ B]
-    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] B) (o : Orientation ℝ V (Fin n))
-    (hQ : ∀ v, Q v = -‖v‖ ^ 2) :
-    σ (complexVolume Q o) * σ (complexVolume Q o) = 1 := by
-  rw [← map_mul, complexVolume_mul_self o hQ, map_one]
-
-/-- In even dimension, `σ (complexVolume Q o)` anticommutes with every generator
-`σ (ι (Q.baseChange ℂ) w)`. -/
-theorem map_complexVolume_mul_map_ι_of_even {B : Type*} [Ring B] [Algebra ℂ B]
-    (σ : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] B) (o : Orientation ℝ V (Fin n))
-    (hn : Even n) (w : ℂ ⊗[ℝ] V) :
-    σ (complexVolume Q o) * σ (ι (Q.baseChange ℂ) w) =
-      -(σ (ι (Q.baseChange ℂ) w) * σ (complexVolume Q o)) := by
-  rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o hn, map_neg]
-
-/-- Under the complexified action `ρ.cliffordLiftBaseChange ℂ` of a real algebra map `ρ` into a
-complex algebra `B`, the normalized complex volume element `complexVolume Q o` acts as
-`i ^ ⌊(n + 1) / 2⌋ • ρ (volumeElement Q o)`. -/
-theorem cliffordLiftBaseChange_complexVolume {B : Type*} [Semiring B] [Algebra ℝ B] [Algebra ℂ B]
-    [IsScalarTower ℝ ℂ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B) (o : Orientation ℝ V (Fin n)) :
-    ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) =
-      Complex.I ^ ((n + 1) / 2) • ρ (volumeElement Q o) := by
-  rw [complexVolume_def, map_smul, cliffordLiftBaseChange_ofBaseChangeAux]
-
-/-- For every positively oriented orthonormal basis `b` orthogonal for `Q`,
-`ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) = i ^ ⌊(n + 1) / 2⌋ • ∏ᵢ ρ (ι Q (b i))`. -/
-theorem cliffordLiftBaseChange_complexVolume_eq {B : Type*} [Semiring B] [Algebra ℝ B]
-    [Algebra ℂ B] [IsScalarTower ℝ ℂ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
-    (o : Orientation ℝ V (Fin n)) (b : OrthonormalBasis (Fin n) ℝ V)
-    (hb : b.toBasis.orientation = o) (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis) :
-    ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) =
-      Complex.I ^ ((n + 1) / 2) • ((List.finRange n).map fun i ↦ ρ (ι Q (b i))).prod := by
-  rw [ρ.cliffordLiftBaseChange_complexVolume o, volumeElement_eq o b hb hQb, map_list_prod,
-    List.map_map, List.map_map]
-  rfl
-
-/-- **Even-dimensional chirality formula**: on an oriented `n`-dimensional real inner product
-space with `n = 2ℓ`,
-`ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) = i ^ ℓ • ρ (volumeElement Q o)`. -/
-theorem cliffordLiftBaseChange_complexVolume_of_eq_two_mul {B : Type*} [Semiring B] [Algebra ℝ B]
-    [Algebra ℂ B] [IsScalarTower ℝ ℂ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
-    (o : Orientation ℝ V (Fin n)) {ℓ : ℕ} (hn : n = 2 * ℓ) :
-    ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) = Complex.I ^ ℓ • ρ (volumeElement Q o) := by
-  have hℓ : (n + 1) / 2 = ℓ := by omega
-  rw [ρ.cliffordLiftBaseChange_complexVolume o, hℓ]
-
-/-- **Frame formula for the chirality operator**: for an `n`-dimensional real inner product space
-with `n = 2ℓ` and any positively oriented orthonormal basis `b` orthogonal for `Q`,
-`ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) = i ^ ℓ • ∏ᵢ ρ (ι Q (b i))`. -/
-theorem cliffordLiftBaseChange_complexVolume_eq_of_eq_two_mul {B : Type*} [Semiring B]
-    [Algebra ℝ B] [Algebra ℂ B] [IsScalarTower ℝ ℂ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
-    (o : Orientation ℝ V (Fin n)) (b : OrthonormalBasis (Fin n) ℝ V)
-    (hb : b.toBasis.orientation = o) (hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis)
-    {ℓ : ℕ} (hn : n = 2 * ℓ) :
-    ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) =
-      Complex.I ^ ℓ • ((List.finRange n).map fun i ↦ ρ (ι Q (b i))).prod := by
-  have hℓ : (n + 1) / 2 = ℓ := by omega
-  rw [ρ.cliffordLiftBaseChange_complexVolume_eq o b hb hQb, hℓ]
-
-/-- In even dimension, `ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)` anticommutes with every
-real generator `ρ (ι Q v)`. -/
-theorem cliffordLiftBaseChange_complexVolume_mul_map_ι_of_even {B : Type*} [Ring B] [Algebra ℝ B]
-    [Algebra ℂ B] [IsScalarTower ℝ ℂ B] (ρ : CliffordAlgebra Q →ₐ[ℝ] B)
-    (o : Orientation ℝ V (Fin n)) (hn : Even n) (v : V) :
-    ρ.cliffordLiftBaseChange ℂ (complexVolume Q o) * ρ (ι Q v) =
-      -(ρ (ι Q v) * ρ.cliffordLiftBaseChange ℂ (complexVolume Q o)) := by
-  simpa only [ρ.cliffordLiftBaseChange_ι_one_tmul (A := ℂ) v] using
-    (ρ.cliffordLiftBaseChange ℂ).map_complexVolume_mul_map_ι_of_even o hn (1 ⊗ₜ v)
-
-end AnyDim
-
-end AlgHom

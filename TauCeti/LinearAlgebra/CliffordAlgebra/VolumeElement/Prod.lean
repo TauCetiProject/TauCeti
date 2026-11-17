@@ -119,7 +119,7 @@ include hQ₁ in
 private theorem map_complexVolume_pow_of_even {k : ℕ} (hk : Even k) :
     ρ₁ (complexVolume Q₁ o₁) ^ k = 1 := by
   obtain ⟨j, rfl⟩ := hk
-  rw [← two_mul, pow_mul, sq, ρ₁.map_complexVolume_mul_self o₁ hQ₁, one_pow]
+  rw [← two_mul, pow_mul, sq, map_complexVolume_mul_self o₁ hQ₁ ρ₁, one_pow]
 
 include hQ in
 /-- **The graded tensor product of Clifford modules of `V` and `W`.** For `V` of even dimension
@@ -128,13 +128,13 @@ of `V ⊕ W` acts on `E ⊗ F` by `c(v, w) = c_V(v) ⊗ 1 + Γ_V ⊗ c_W(w)`
 (`CliffordAlgebra.complexProdTensor_ι_one_tmul_toLp`). -/
 def complexProdTensor : CliffordAlgebra (Q.baseChange ℂ) →ₐ[ℂ] Module.End ℂ (E ⊗[ℂ] F) :=
   (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (ρ₁.map_complexVolume_mul_self o₁ hQ₁) (ρ₁.map_complexVolume_mul_map_ι_of_even o₁ hn) ρ₂).comp
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
     (equivOfIsometry (complexWithLpProd hQ)).toAlgHom
 
 private theorem complexProdTensor_apply (x : CliffordAlgebra (Q.baseChange ℂ)) :
     complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ x =
       AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (ρ₁.map_complexVolume_mul_self o₁ hQ₁) (ρ₁.map_complexVolume_mul_map_ι_of_even o₁ hn) ρ₂
+        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
         (equivOfIsometry (complexWithLpProd hQ) x) :=
   (rfl)
 

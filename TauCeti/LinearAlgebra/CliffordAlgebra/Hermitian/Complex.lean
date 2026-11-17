@@ -15,10 +15,12 @@ On the complexification of a real Clifford algebra, the adjoint relevant to Herm
 representations is `CliffordAlgebra.conjStar`, not Mathlib's complex-linear Clifford `star`.
 Skew-adjointness on the real vectors is equivalent to compatibility with this conjugate-linear
 adjoint on the whole algebra (`CliffordAlgebra.sesqForm_map_eq_map_conjStar_iff` and
-`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`, and for scalar extensions
-`ρ.cliffordLiftBaseChange ℂ` of real Clifford algebra maps,
-`AlgHom.inner_cliffordLiftBaseChange_eq_conjStar_iff` and
-`AlgHom.adjoint_cliffordLiftBaseChange_eq_conjStar_iff`).
+`CliffordAlgebra.adjoint_map_eq_map_conjStar_iff`). For a real Clifford action `ρ`, this says that
+its complex-linear extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is compatible with `conjStar`
+for the inner product (without finite-dimensionality,
+`CliffordAlgebra.inner_liftBaseChange_eq_liftBaseChange_conjStar_iff`) and is a `*`-representation
+in finite dimension (`CliffordAlgebra.adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff`)
+exactly when Clifford multiplication by every real vector is skew-Hermitian / skew-adjoint.
 
 If the action surjects onto the full complex endomorphism algebra, every positive definite
 compatible Hermitian form is a unique positive real multiple of any given compatible inner
@@ -143,6 +145,36 @@ theorem existsUnique_pos_mul_inner_of_surjective [Nontrivial S]
 
 end Hermitian
 
+section RealAction
+
+variable [NormedAddCommGroup S] [InnerProductSpace ℂ S]
+
+/-- For a real Clifford action `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S`, its complex-linear
+extension `CliffordAlgebra.liftBaseChange ℂ Q ρ` is compatible with `CliffordAlgebra.conjStar` for
+the inner product if and only if every real generator `ρ (ι Q v)` is skew-Hermitian, without
+assuming finite-dimensionality. -/
+theorem inner_liftBaseChange_eq_liftBaseChange_conjStar_iff
+    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
+    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
+        inner ℂ (liftBaseChange ℂ Q ρ a x) y =
+          inner ℂ x (liftBaseChange ℂ Q ρ (conjStar Q a) y)) ↔
+      ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
+  simpa only [innerₛₗ_apply_apply, liftBaseChange_ι_tmul, one_smul] using
+    sesqForm_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ) (innerₛₗ ℂ)
+
+/-- **`*`-representations of the complexified Clifford algebra**: on a finite-dimensional
+Hermitian module, the complex-linear extension `ρ_ℂ` of a real Clifford action satisfies
+`ρ_ℂ(a)* = ρ_ℂ(conjStar a)` for every `a` exactly when Clifford multiplication by every real
+vector is skew-adjoint. -/
+theorem adjoint_liftBaseChange_eq_liftBaseChange_conjStar_iff [FiniteDimensional ℂ S]
+    {ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S} :
+    (∀ a, LinearMap.adjoint (liftBaseChange ℂ Q ρ a) = liftBaseChange ℂ Q ρ (conjStar Q a)) ↔
+      ∀ v, LinearMap.adjoint (ρ (ι Q v)) = -ρ (ι Q v) := by
+  simpa only [liftBaseChange_ι_tmul, one_smul] using
+    adjoint_map_eq_map_conjStar_iff (liftBaseChange ℂ Q ρ)
+
+end RealAction
+
 section Uniqueness
 
 variable [AddCommGroup S] [Module ℂ S] [FiniteDimensional ℂ S]
@@ -182,37 +214,3 @@ theorem existsUnique_pos_mul_of_surjective [Nontrivial S] (hsurj : Function.Surj
 end Uniqueness
 
 end CliffordAlgebra
-
-namespace AlgHom
-
-open CliffordAlgebra
-
-variable {V S : Type*} [AddCommGroup V] [Module ℝ V] {Q : QuadraticForm ℝ V}
-  [NormedAddCommGroup S] [InnerProductSpace ℂ S]
-
-/-- For a real Clifford algebra map `ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S`, its
-complex-linear extension `ρ.cliffordLiftBaseChange ℂ` is compatible with
-`CliffordAlgebra.conjStar` for the inner product if and only if every real generator `ρ (ι Q v)` is
-skew-Hermitian. -/
-theorem inner_cliffordLiftBaseChange_eq_conjStar_iff
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
-    (∀ (a : CliffordAlgebra (Q.baseChange ℂ)) (x y : S),
-        inner ℂ (ρ.cliffordLiftBaseChange ℂ a x) y =
-          inner ℂ x (ρ.cliffordLiftBaseChange ℂ (conjStar Q a) y)) ↔
-      ∀ (v : V) (x y : S), inner ℂ (ρ (ι Q v) x) y = -inner ℂ x (ρ (ι Q v) y) := by
-  simpa [innerₛₗ_apply_apply] using
-    CliffordAlgebra.sesqForm_map_eq_map_conjStar_iff (ρ.cliffordLiftBaseChange ℂ) (innerₛₗ ℂ)
-
-/-- On a finite-dimensional complex inner product space, `ρ.cliffordLiftBaseChange ℂ` is a
-`*`-representation for `CliffordAlgebra.conjStar` if and only if every real generator `ρ (ι Q v)`
-is skew-adjoint. -/
-theorem adjoint_cliffordLiftBaseChange_eq_conjStar_iff [FiniteDimensional ℂ S]
-    (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ S) :
-    (∀ a : CliffordAlgebra (Q.baseChange ℂ),
-        (ρ.cliffordLiftBaseChange ℂ a).adjoint =
-          ρ.cliffordLiftBaseChange ℂ (conjStar Q a)) ↔
-      ∀ v : V, (ρ (ι Q v)).adjoint = -ρ (ι Q v) := by
-  rw [CliffordAlgebra.adjoint_map_eq_map_conjStar_iff]
-  simp
-
-end AlgHom
