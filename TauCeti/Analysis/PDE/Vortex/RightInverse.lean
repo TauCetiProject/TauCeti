@@ -80,21 +80,24 @@ namespace TauCeti.Vortex
 open MeasureTheory Filter
 open scoped RealInnerProductSpace Topology NNReal ENNReal
 
+/-- For a continuous field `x`, `L_x*` maps compactly supported `C¹` fields into `L^p`. -/
+theorem memLp_gaugeFixedAdjoint {μ : Measure ℂ} [IsFiniteMeasureOnCompacts μ] {p : ℝ≥0∞}
+    {x η : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : Continuous x) (hη : ContDiff ℝ 1 η)
+    (hηc : HasCompactSupport η) : MemLp (gaugeFixedAdjoint x η) p μ :=
+  (continuous_gaugeFixedAdjoint hx hη).memLp_of_hasCompactSupport
+    (hasCompactSupport_gaugeFixedAdjoint hηc)
+
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- The compactly supported `C²` test fields. -/
-abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
-
-/-- For a continuous field `x`, `L_x*` sends compactly supported `C²` test fields into `L²`. -/
-theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
-    MemLp (gaugeFixedAdjoint x η) 2 μ :=
-  (continuous_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast))).memLp_of_hasCompactSupport
-    (hasCompactSupport_gaugeFixedAdjoint η.hasCompactSupport)
+private abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
 
 /-- The formal adjoint `L_x*` on test fields, with values in `L²`. -/
-noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
+private noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     (hx : Continuous x) : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η)
+  toFun η :=
+    (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast)) η.hasCompactSupport).toLp
+      (gaugeFixedAdjoint x η)
   map_add' η ν := by
     rw [← MemLp.toLp_add]
     refine MemLp.toLp_congr _ _ (ae_of_all _ fun z ↦ ?_)
@@ -107,17 +110,18 @@ noncomputable def gaugeFixedAdjointToLp (μ : Measure ℂ) [μ.IsAddHaarMeasure]
     rw [FunLike.coe_smul, Pi.smul_apply]
     exact gaugeFixedAdjoint_smul x η t z
 
-/-- Evaluation of `gaugeFixedAdjointToLp` as the `L²` class of `gaugeFixedAdjoint x η`. -/
-@[simp] theorem gaugeFixedAdjointToLp_apply (hx : Continuous x) (η : TestField) :
-    gaugeFixedAdjointToLp μ hx η = (memLp_gaugeFixedAdjoint hx η).toLp (gaugeFixedAdjoint x η) :=
-  (rfl)
+private theorem gaugeFixedAdjointToLp_apply (hx : Continuous x) (η : TestField) :
+    gaugeFixedAdjointToLp μ hx η =
+      (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast)) η.hasCompactSupport).toLp
+        (gaugeFixedAdjoint x η) :=
+  rfl
 
-/-- The `L²` pairing against `gaugeFixedAdjointToLp μ hx η` is the integral against `L_x* η`. -/
-theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
+private theorem inner_gaugeFixedAdjointToLp (hx : Continuous x)
     (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
     ⟪u, gaugeFixedAdjointToLp μ hx η⟫ = ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ := by
   rw [gaugeFixedAdjointToLp_apply]
-  exact L2.inner_toLp u (memLp_gaugeFixedAdjoint hx η)
+  exact L2.inner_toLp u
+    (memLp_gaugeFixedAdjoint hx (η.contDiff.of_le (by norm_cast)) η.hasCompactSupport)
 
 /-- **The weak `L²` kernel `K_x` of `gaugeFixedOperator x`**, the orthogonal complement of the range
 of `L_x*` on compactly supported `C²` test fields. -/
@@ -141,6 +145,13 @@ theorem mem_weakGaugeFixedKernel_iff (hx : Continuous x) (u : Lp (EuclideanSpace
     rwa [real_inner_comm, inner_gaugeFixedAdjointToLp hx] at h0
   · rintro h _ ⟨η, rfl⟩
     rw [real_inner_comm, inner_gaugeFixedAdjointToLp hx]; exact h η η.contDiff η.hasCompactSupport
+/-- An `L²` field `v` is orthogonal to `weakGaugeFixedKernel μ hx` iff `∫ ⟪v, u⟫ = 0` for every
+`u ∈ weakGaugeFixedKernel μ hx`. -/
+theorem mem_orthogonal_weakGaugeFixedKernel_iff (hx : Continuous x)
+    (v : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) :
+    v ∈ (weakGaugeFixedKernel μ hx)ᗮ ↔
+      ∀ u ∈ weakGaugeFixedKernel μ hx, ∫ z, ⟪v z, u z⟫ ∂μ = 0 := by
+  simp only [Submodule.mem_orthogonal, real_inner_comm, L2.inner_def]
 /-- Every `C¹` `L²` solution of `L_x y = 0` represents an element of `weakGaugeFixedKernel μ hx`. -/
 theorem toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero (hx : Continuous x)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : ContDiff ℝ 1 y) (hy_lp : MemLp y 2 μ)
@@ -171,8 +182,7 @@ theorem apply_toLp_gaugeFixedOperator_eq_sub_starProjection (hx : Continuous x)
       hψ_lp.toLp ψ - (weakGaugeFixedKernel μ hx).starProjection (hψ_lp.toLp ψ) := by
   intro hψ_lp hLψ_lp; set S := gaugeFixedAdjointToLp μ hx
   have hQmem : Q (hLψ_lp.toLp (gaugeFixedOperator x ψ)) ∈ (LinearMap.range S)ᗮᗮ :=
-    (Submodule.mem_orthogonal _ _).2 fun u hu ↦ by
-      rw [real_inner_comm, L2.inner_def]; exact hQorth _ u hu
+    (mem_orthogonal_weakGaugeFixedKernel_iff hx _).2 (hQorth _)
   refine LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal S hQmem
     (Submodule.sub_starProjection_mem_orthogonal _) fun η ↦ ?_
   have hPK_zero : ⟪(weakGaugeFixedKernel μ hx).starProjection (hψ_lp.toLp ψ), S η⟫ = 0 := by
@@ -260,8 +270,9 @@ private theorem exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt (hx : Continuou
     ∃ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η ∧ HasCompactSupport η ∧
       ∫ z, ‖y z - gaugeFixedAdjoint x η z‖ ^ 2 ∂μ < ε := by
   set S := gaugeFixedAdjointToLp μ hx
-  have hmem : y ∈ (LinearMap.range S)ᗮᗮ := (Submodule.mem_orthogonal _ _).2 fun u hu ↦ by
-    rw [real_inner_comm, L2.inner_def]; exact hy u ((mem_weakGaugeFixedKernel_iff hx u).1 hu)
+  have hmem : y ∈ (LinearMap.range S)ᗮᗮ :=
+    (mem_orthogonal_weakGaugeFixedKernel_iff hx y).2 fun u hu ↦
+      hy u ((mem_weakGaugeFixedKernel_iff hx u).1 hu)
   rw [Submodule.orthogonal_orthogonal_eq_closure, ← SetLike.mem_coe,
     Submodule.topologicalClosure_coe, Metric.mem_closure_iff] at hmem
   obtain ⟨_, ⟨η, rfl⟩, hd⟩ := hmem (√ε) (Real.sqrt_pos.2 hε)
@@ -270,7 +281,8 @@ private theorem exists_integral_norm_sub_gaugeFixedAdjoint_sq_lt (hx : Continuou
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ?_
     filter_upwards [Lp.coeFn_sub y (S η),
-      (memLp_gaugeFixedAdjoint (μ := μ) hx η).coeFn_toLp] with z h₁ h₂
+      (memLp_gaugeFixedAdjoint (μ := μ) hx (η.contDiff.of_le (by norm_cast))
+        η.hasCompactSupport).coeFn_toLp] with z h₁ h₂
     rw [h₁, Pi.sub_apply, gaugeFixedAdjointToLp_apply, h₂]
   rw [hn]
   rw [dist_eq_norm] at hd

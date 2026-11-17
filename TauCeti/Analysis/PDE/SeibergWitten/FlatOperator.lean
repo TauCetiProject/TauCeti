@@ -9,8 +9,6 @@ public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.CanonicalLine
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
 public import TauCeti.LinearAlgebra.CliffordAlgebra.HalfSpinor
-import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 
 /-!
@@ -19,12 +17,11 @@ import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 On an oriented four-dimensional real inner product space `V` with Clifford module `W = W⁺ ⊕ W⁻`
 and compatible almost complex structure `J`, this file defines the flat chiral Dirac operator
 `flatDirac` (`D_b χ = ∑ₖ c(eₖ) ∇_{b, eₖ} χ`) built from `spinorCovariantDeriv`, the unit-symbol
-self-dual curvature defect `flatCurvatureDefect`, their Fréchet/directional linearizations
-`linearizedFlatCurvature` and `linearizedFlatDirac` (`hasDerivAt_flatCurvatureDefect`,
+self-dual curvature defect `flatCurvatureDefect`, their pointwise directional linearizations (first
+variations) `linearizedFlatCurvature` and `linearizedFlatDirac` (`hasDerivAt_flatCurvatureDefect`,
 `hasDerivAt_flatDirac`), the formal infinitesimal gauge-fixing adjoint `flatGaugeAdjoint`
 (`mul_flatGaugeAdjoint_eq`), and the combined eight-real-component linearized gauge-fixed operator
-`gaugeFixedFlatOperator`, together with orthonormal-frame independence and `ℂ`-linearity of
-`flatDirac`.
+`gaugeFixedFlatOperator`, together with orthonormal-frame independence and linearity properties.
 
 ## References
 
@@ -99,16 +96,18 @@ theorem spinorCovariantDeriv_smul (b : V → OneForm(V)) (c : ℂ) (χ : V → P
     simp only [smul_apply, spinorCovariantDeriv_apply, fderiv_const_smul_field, Pi.smul_apply,
       ← Complex.coe_smul]; module
 omit [FiniteDimensional ℂ W] in
+/-- `spinorCovariantDeriv` sends the zero spinor field to zero. -/
+@[simp] theorem spinorCovariantDeriv_zero (b : V → OneForm(V)) (p : V) :
+    spinorCovariantDeriv b (0 : V → PosSpin(o, ρ)) p = 0 :=
+  ContinuousLinearMap.ext fun v ↦ by simp [spinorCovariantDeriv_apply]
+omit [FiniteDimensional ℂ W] in
 /-- Along a constant spinor direction `ψ₀`, `spinorCovariantDeriv` acts via `covariantDeriv b`. -/
 theorem spinorCovariantDeriv_smul_const (b : V → OneForm(V)) {α : V → ℂ} {p : V}
     (hα : DifferentiableAt ℝ α p) (ψ₀ : PosSpin(o, ρ)) (v : V) :
     spinorCovariantDeriv b (fun q ↦ α q • ψ₀) p v = covariantDeriv b α p v • ψ₀ := by
-  let L : ℂ →L[ℝ] PosSpin(o, ρ) := ((ContinuousLinearMap.id ℂ ℂ).smulRight ψ₀).restrictScalars ℝ
-  have hf : fderiv ℝ (fun q ↦ α q • ψ₀) p v = fderiv ℝ α p v • ψ₀ := by
-    rw [show (fun q ↦ α q • ψ₀) = L ∘ α from funext fun _ ↦ by simp [L],
-      (L.hasFDerivAt.comp p hα.hasFDerivAt).fderiv]; simp [L]
-  rw [spinorCovariantDeriv_apply, hf, covariantDeriv_apply, add_smul, ← Complex.coe_smul,
-    smul_smul, smul_smul]; congr 2; ring
+  rw [spinorCovariantDeriv_apply, fderiv_smul_const hα ψ₀, ContinuousLinearMap.smulRight_apply,
+    covariantDeriv_apply, add_smul, ← Complex.coe_smul, smul_smul, smul_smul]
+  congr 2; ring
 omit [FiniteDimensional ℂ W] in variable (o ρ e) in
 /-- **The flat chiral Dirac operator** `D_b χ = ∑ₖ c(eₖ) ∇_{b, eₖ} χ : W⁺ → W⁻`. -/
 def flatDirac (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ)) (p : V) : NegSpin(Q, o, ρ) :=
@@ -134,6 +133,11 @@ omit [FiniteDimensional ℂ W] in
 theorem flatDirac_smul (b : V → OneForm(V)) (c : ℂ) (χ : V → PosSpin(o, ρ)) (p : V) :
     flatDirac o ρ e b (c • χ) p = c • flatDirac o ρ e b χ p := by
   simp [flatDirac, spinorCovariantDeriv_smul, Finset.smul_sum]
+omit [FiniteDimensional ℂ W] in
+/-- `flatDirac` sends the zero spinor field to zero. -/
+@[simp] theorem flatDirac_zero (b : V → OneForm(V)) (p : V) :
+    flatDirac o ρ e b 0 p = 0 := by
+  simp [flatDirac]
 omit [FiniteDimensional ℂ W] in
 /-- Action of `flatDirac` on a scalar multiple `α • ψ₀` of a constant positive half-spinor. -/
 theorem coe_flatDirac_smul_const (b : V → OneForm(V)) {α : V → ℂ} {p : V}
@@ -175,12 +179,13 @@ theorem flatCurvatureDefect_eq_zero_iff (hkl : 2 + 2 = finrank ℝ V)
       F + o.hodgeStar hkl F =
         (8⁻¹ : ℝ) • J.kahlerForm - (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (χ p) : ⋀[ℝ]^2 V) := by
   set F := (alternatingFormEquiv V 2).symm (-extDeriv b p)
-  rw [← Submodule.coe_eq_zero, show (flatCurvatureDefect o ρ J hkl he h₀ h₂₃ b χ p : ⋀[ℝ]^2 V) =
+  have hcoe : (flatCurvatureDefect o ρ J hkl he h₀ h₂₃ b χ p : ⋀[ℝ]^2 V) =
       (√2 / 2 : ℝ) • ((F + o.hodgeStar hkl F) - ((8⁻¹ : ℝ) • J.kahlerForm -
-        (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (χ p) : ⋀[ℝ]^2 V))) by
+        (2⁻¹ : ℝ) • (quadraticTwoForm o ρ hkl (χ p) : ⋀[ℝ]^2 V))) := by
     simp only [flatCurvatureDefect, Submodule.coe_add, Submodule.coe_sub, Submodule.coe_smul,
-      coe_selfDualTwoVector, coe_kahlerSelfDual, F]; module,
-    smul_eq_zero_iff_right (by positivity), sub_eq_zero]
+      coe_selfDualTwoVector, coe_kahlerSelfDual, F]
+    module
+  rw [← Submodule.coe_eq_zero, hcoe, smul_eq_zero_iff_right (by positivity), sub_eq_zero]
 variable (o ρ) in
 /-- **Linearized self-dual curvature operator** `(√2 / 2) (δF + ⋆δF) + (√2 / 4) q'(χ, ζ)`. -/
 def linearizedFlatCurvature (hkl : 2 + 2 = finrank ℝ V) (χ : V → PosSpin(o, ρ))
@@ -192,6 +197,30 @@ theorem linearizedFlatCurvature_apply (hkl : 2 + 2 = finrank ℝ V) (χ : V → 
     linearizedFlatCurvature o ρ hkl χ δb ζ p =
       selfDualTwoVector o hkl ((alternatingFormEquiv V 2).symm (-extDeriv δb p)) +
         (√2 / 4 : ℝ) • quadraticTwoFormPolar o ρ hkl (χ p) (ζ p) := (rfl)
+/-- `linearizedFlatCurvature` is additive in the perturbation `(δb, ζ)` at a point of
+differentiability of the connection perturbations. -/
+theorem linearizedFlatCurvature_add (hkl : 2 + 2 = finrank ℝ V) (χ : V → PosSpin(o, ρ))
+    {δb₁ δb₂ : V → OneForm(V)} (ζ₁ ζ₂ : V → PosSpin(o, ρ)) {p : V}
+    (h₁ : DifferentiableAt ℝ δb₁ p) (h₂ : DifferentiableAt ℝ δb₂ p) :
+    linearizedFlatCurvature o ρ hkl χ (δb₁ + δb₂) (ζ₁ + ζ₂) p =
+      linearizedFlatCurvature o ρ hkl χ δb₁ ζ₁ p +
+        linearizedFlatCurvature o ρ hkl χ δb₂ ζ₂ p := by
+  simp only [linearizedFlatCurvature_apply, Pi.add_apply, extDeriv_add h₁ h₂, neg_add, map_add,
+    smul_add]
+  abel
+/-- `linearizedFlatCurvature` commutes with real scalar multiplication of `(δb, ζ)`. -/
+theorem linearizedFlatCurvature_smul (hkl : 2 + 2 = finrank ℝ V) (χ : V → PosSpin(o, ρ))
+    (r : ℝ) (δb : V → OneForm(V)) (ζ : V → PosSpin(o, ρ)) (p : V) :
+    linearizedFlatCurvature o ρ hkl χ (r • δb) (r • ζ) p =
+      r • linearizedFlatCurvature o ρ hkl χ δb ζ p := by
+  simp only [linearizedFlatCurvature_apply, Pi.smul_apply, extDeriv_smul, ← smul_neg, map_smul,
+    smul_add]
+  rw [smul_comm]
+/-- `linearizedFlatCurvature` sends the zero perturbation to zero. -/
+@[simp] theorem linearizedFlatCurvature_zero (hkl : 2 + 2 = finrank ℝ V)
+    (χ : V → PosSpin(o, ρ)) (p : V) :
+    linearizedFlatCurvature o ρ hkl χ 0 0 p = 0 := by
+  simpa using linearizedFlatCurvature_smul hkl χ 0 0 0 p
 omit [FiniteDimensional ℂ W] in variable (o ρ e) in
 /-- **Linearized chiral Dirac operator** `D_b ζ + ∑ₖ c(eₖ) (i δb(eₖ) χ)`. -/
 def linearizedFlatDirac (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ))
@@ -212,6 +241,35 @@ theorem linearizedFlatDirac_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4
   exact congrArg₂ (· + ·) (flatDirac_congr_orthonormalBasis e' b ζ p) <| by
     simpa [T, cliffordMulRightBilin, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply] using
       e.sum_apply_self_eq e' (cliffordMulRightBilin T)
+omit [FiniteDimensional ℂ W] in
+/-- `linearizedFlatDirac` is additive in the perturbation `(δb, ζ)` at a point of
+differentiability of the spinor perturbations. -/
+theorem linearizedFlatDirac_add (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ))
+    (δb₁ δb₂ : V → OneForm(V)) {ζ₁ ζ₂ : V → PosSpin(o, ρ)} {p : V}
+    (h₁ : DifferentiableAt ℝ ζ₁ p) (h₂ : DifferentiableAt ℝ ζ₂ p) :
+    linearizedFlatDirac o ρ e b χ (δb₁ + δb₂) (ζ₁ + ζ₂) p =
+      linearizedFlatDirac o ρ e b χ δb₁ ζ₁ p + linearizedFlatDirac o ρ e b χ δb₂ ζ₂ p := by
+  simp only [linearizedFlatDirac_apply, flatDirac_add b h₁ h₂, Pi.add_apply,
+    ContinuousAlternatingMap.add_apply, add_smul, map_add, Finset.sum_add_distrib]
+  abel
+omit [FiniteDimensional ℂ W] in
+/-- `linearizedFlatDirac` commutes with real scalar multiplication of `(δb, ζ)`. -/
+theorem linearizedFlatDirac_smul (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ))
+    (r : ℝ) (δb : V → OneForm(V)) (ζ : V → PosSpin(o, ρ)) (p : V) :
+    linearizedFlatDirac o ρ e b χ (r • δb) (r • ζ) p =
+      r • linearizedFlatDirac o ρ e b χ δb ζ p := by
+  have hζ : r • ζ = (r : ℂ) • ζ := funext fun q ↦ (Complex.coe_smul (r : ℝ) (ζ q)).symm
+  rw [linearizedFlatDirac_apply, linearizedFlatDirac_apply, hζ, flatDirac_smul, Complex.coe_smul,
+    smul_add, Finset.smul_sum]
+  congr 1
+  refine Finset.sum_congr rfl fun k _ ↦ ?_
+  simp only [Pi.smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    ← mul_smul, ← Complex.coe_smul, map_smul, ofReal_mul, mul_assoc]
+omit [FiniteDimensional ℂ W] in
+/-- `linearizedFlatDirac` sends the zero perturbation to zero. -/
+@[simp] theorem linearizedFlatDirac_zero (b : V → OneForm(V)) (χ : V → PosSpin(o, ρ)) (p : V) :
+    linearizedFlatDirac o ρ e b χ 0 0 p = 0 := by
+  simp [linearizedFlatDirac_apply]
 /-- `linearizedFlatCurvature` is the directional derivative of `flatCurvatureDefect` along
 `(b + t • δb, χ + t • ζ)` at `t = 0`. -/
 theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
@@ -225,9 +283,9 @@ theorem hasDerivAt_flatCurvatureDefect (hkl : 2 + 2 = finrank ℝ V)
   have hcurv (t : ℝ) : selfDualTwoVector o hkl
       ((alternatingFormEquiv V 2).symm (-extDeriv (b + t • δb) p)) =
       L (-extDeriv b p) + t • L (-extDeriv δb p) := by
-    change L (-extDeriv (b + t • δb) p) = L (-extDeriv b p) + t • L (-extDeriv δb p)
-    rw [show -extDeriv (b + t • δb) p = -extDeriv b p + t • (-extDeriv δb p) by
-      rw [extDeriv_add hb (hδb.const_smul t), extDeriv_smul]; module, map_add, map_smul]
+    have hd : -extDeriv (b + t • δb) p = -extDeriv b p + t • (-extDeriv δb p) := by
+      rw [extDeriv_add hb (hδb.const_smul t), extDeriv_smul]; module
+    simp [L, hd, map_add, map_smul]
   have hF : HasFDerivAt (quadraticTwoForm o ρ hkl) (quadraticTwoFormPolar o ρ hkl (χ p))
       (χ p + (0 : ℝ) • ζ p) := by simpa using hasFDerivAt_quadraticTwoForm o ρ hkl (χ p)
   exact ((((((hasDerivAt_id (0 : ℝ)).smul_const (L (-extDeriv δb p))).const_add
@@ -264,12 +322,15 @@ theorem hasDerivAt_flatDirac (b δb : V → OneForm(V)) {χ ζ : V → PosSpin(o
       (((hasDerivAt_id (0 : ℝ)).mul (hasDerivAt_id (0 : ℝ))).smul_const (d₂ k))).congr_deriv
         (by simp))).congr_of_eventuallyEq <| Filter.Eventually.of_forall fun t ↦
           congrArg (C k) (hcov t k)
-  rw [show linearizedFlatDirac o ρ e b χ δb ζ p = ∑ k : Fin 4, C k (d₁ k) by
-    simp only [d₁, map_add, Finset.sum_add_distrib]; rfl]
-  exact HasDerivAt.fun_sum fun k (_ : k ∈ Finset.univ) ↦ hterm k
+  have hlin : linearizedFlatDirac o ρ e b χ δb ζ p = ∑ k : Fin 4, C k (d₁ k) := by
+    simp [C, d₁, linearizedFlatDirac_apply, flatDirac, Finset.sum_add_distrib]
+  rw [hlin]
+  exact (HasDerivAt.fun_sum fun k (_ : k ∈ Finset.univ) ↦ hterm k).congr_of_eventuallyEq <|
+    Filter.Eventually.of_forall fun t ↦ by simp [C, flatDirac]
 
 omit [FiniteDimensional ℂ W] in variable (e) in
-/-- **Formal adjoint of the 4D infinitesimal gauge action**: `∑ₖ ∂_{eₖ}(δb(eₖ)) + Im⟪χ, ζ⟫ / 4`. -/
+/-- **Formal adjoint of the 4D infinitesimal gauge action** `f ↦ (-df, i f χ)` with respect to the
+spinor-weighted metric `‖δb‖² + ‖ζ‖² / 4`: `∑ₖ ∂_{eₖ}(δb(eₖ)) + Im⟪χ, ζ⟫ / 4`. -/
 def flatGaugeAdjoint (χ : V → PosSpin(o, ρ)) (δb : V → OneForm(V))
     (ζ : V → PosSpin(o, ρ)) (p : V) : ℝ :=
   (∑ k, (fderiv ℝ δb p (e k)) (fun _ ↦ e k)) + (⟪χ p, ζ p⟫_ℂ).im / 4
@@ -286,8 +347,36 @@ theorem flatGaugeAdjoint_congr_orthonormalBasis (e' : OrthonormalBasis (Fin 4) �
       (fderiv ℝ δb p).toLinearMap)
   exact congrArg (· + _) (e.sum_apply_self_eq e' B)
 omit [FiniteDimensional ℂ W] in
+/-- `flatGaugeAdjoint` is additive in the perturbation `(δb, ζ)` at a point of differentiability
+of the connection perturbations. -/
+theorem flatGaugeAdjoint_add (χ : V → PosSpin(o, ρ)) {δb₁ δb₂ : V → OneForm(V)}
+    (ζ₁ ζ₂ : V → PosSpin(o, ρ)) {p : V}
+    (h₁ : DifferentiableAt ℝ δb₁ p) (h₂ : DifferentiableAt ℝ δb₂ p) :
+    flatGaugeAdjoint e χ (δb₁ + δb₂) (ζ₁ + ζ₂) p =
+      flatGaugeAdjoint e χ δb₁ ζ₁ p + flatGaugeAdjoint e χ δb₂ ζ₂ p := by
+  simp only [flatGaugeAdjoint_def, fderiv_add h₁ h₂, add_apply, ContinuousAlternatingMap.add_apply,
+    Finset.sum_add_distrib, Pi.add_apply, inner_add_right, add_im]
+  ring
+omit [FiniteDimensional ℂ W] in
+/-- `flatGaugeAdjoint` commutes with real scalar multiplication of `(δb, ζ)`. -/
+theorem flatGaugeAdjoint_smul (χ : V → PosSpin(o, ρ)) (r : ℝ)
+    (δb : V → OneForm(V)) (ζ : V → PosSpin(o, ρ)) (p : V) :
+    flatGaugeAdjoint e χ (r • δb) (r • ζ) p = r * flatGaugeAdjoint e χ δb ζ p := by
+  have hf : fderiv ℝ (r • δb) p = r • fderiv ℝ δb p :=
+    congrFun (fderiv_const_smul_field (𝕜 := ℝ) (f := δb) r) p
+  simp only [flatGaugeAdjoint_def, hf, smul_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    ← Finset.mul_sum, Pi.smul_apply, ← Complex.coe_smul, inner_smul_right, mul_im, ofReal_re,
+    ofReal_im]
+  ring
+omit [FiniteDimensional ℂ W] in
+/-- `flatGaugeAdjoint` sends the zero perturbation to zero. -/
+@[simp] theorem flatGaugeAdjoint_zero (χ : V → PosSpin(o, ρ)) (p : V) :
+    flatGaugeAdjoint e χ 0 0 p = 0 := by
+  simp [flatGaugeAdjoint_def]
+omit [FiniteDimensional ℂ W] in
 /-- Pointwise divergence identity pairing a real gauge generator `f` against `flatGaugeAdjoint`
-with the infinitesimal gauge action `(-df, i f χ / 4)`. -/
+with the 4D infinitesimal gauge action `(-df, i f χ)` in the spinor-weighted pairing
+`⟪δb₁, δb₂⟫ + Re⟪ζ₁, ζ₂⟫_ℂ / 4`. -/
 theorem mul_flatGaugeAdjoint_eq {f : V → ℝ} (χ : V → PosSpin(o, ρ))
     {δb : V → OneForm(V)} (ζ : V → PosSpin(o, ρ)) {p : V}
     (hf : DifferentiableAt ℝ f p) (hδb : DifferentiableAt ℝ δb p) :
@@ -326,5 +415,30 @@ theorem gaugeFixedFlatOperator_congr_orthonormalBasis (e' : OrthonormalBasis (Fi
     gaugeFixedFlatOperator o ρ e hkl b χ δb ζ p = gaugeFixedFlatOperator o ρ e' hkl b χ δb ζ p := by
   rw [gaugeFixedFlatOperator, gaugeFixedFlatOperator, flatGaugeAdjoint_congr_orthonormalBasis e',
     linearizedFlatDirac_congr_orthonormalBasis e']
+/-- `gaugeFixedFlatOperator` is additive in the perturbation `(δb, ζ)` at a point of
+differentiability. -/
+theorem gaugeFixedFlatOperator_add (hkl : 2 + 2 = finrank ℝ V) (b : V → OneForm(V))
+    (χ : V → PosSpin(o, ρ)) {δb₁ δb₂ : V → OneForm(V)} {ζ₁ ζ₂ : V → PosSpin(o, ρ)} {p : V}
+    (hb₁ : DifferentiableAt ℝ δb₁ p) (hb₂ : DifferentiableAt ℝ δb₂ p)
+    (hζ₁ : DifferentiableAt ℝ ζ₁ p) (hζ₂ : DifferentiableAt ℝ ζ₂ p) :
+    gaugeFixedFlatOperator o ρ e hkl b χ (δb₁ + δb₂) (ζ₁ + ζ₂) p =
+      gaugeFixedFlatOperator o ρ e hkl b χ δb₁ ζ₁ p +
+        gaugeFixedFlatOperator o ρ e hkl b χ δb₂ ζ₂ p :=
+  Prod.ext (flatGaugeAdjoint_add χ ζ₁ ζ₂ hb₁ hb₂) <|
+    Prod.ext (linearizedFlatCurvature_add hkl χ ζ₁ ζ₂ hb₁ hb₂)
+      (linearizedFlatDirac_add b χ δb₁ δb₂ hζ₁ hζ₂)
+/-- `gaugeFixedFlatOperator` commutes with real scalar multiplication of `(δb, ζ)`. -/
+theorem gaugeFixedFlatOperator_smul (hkl : 2 + 2 = finrank ℝ V) (b : V → OneForm(V))
+    (χ : V → PosSpin(o, ρ)) (r : ℝ) (δb : V → OneForm(V)) (ζ : V → PosSpin(o, ρ)) (p : V) :
+    gaugeFixedFlatOperator o ρ e hkl b χ (r • δb) (r • ζ) p =
+      r • gaugeFixedFlatOperator o ρ e hkl b χ δb ζ p :=
+  Prod.ext (flatGaugeAdjoint_smul χ r δb ζ p) <|
+    Prod.ext (linearizedFlatCurvature_smul hkl χ r δb ζ p)
+      (linearizedFlatDirac_smul b χ r δb ζ p)
+/-- `gaugeFixedFlatOperator` sends the zero perturbation to zero. -/
+@[simp] theorem gaugeFixedFlatOperator_zero (hkl : 2 + 2 = finrank ℝ V) (b : V → OneForm(V))
+    (χ : V → PosSpin(o, ρ)) (p : V) :
+    gaugeFixedFlatOperator o ρ e hkl b χ 0 0 p = 0 := by
+  simp [gaugeFixedFlatOperator_apply]
 
 end TauCeti.SeibergWitten

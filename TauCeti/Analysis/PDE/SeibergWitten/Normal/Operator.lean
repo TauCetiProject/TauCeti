@@ -163,11 +163,13 @@ variable (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
   {u₀ : PosSpin(o, ρ)} (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) (hu₀₁ : ‖u₀‖ = 1)
 include hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁
 
-@[simp] theorem normalDomainEquiv_normalPerturbation (y η : ℂ → E4) (p : V) :
+/-- Pointwise evaluation of `normalDomainEquiv` on `(y ∘ normalCoord e, η ∘ normalCoord e)`
+recovers `(normalPerturbationForm e y η, normalPerturbationSpinor o ρ e u₀ y η)`. -/
+theorem normalDomainEquiv_normalPerturbation (y η : ℂ → E4) (p : V) :
     normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁
         (y (normalCoord e p), η (normalCoord e p)) =
-      (normalPerturbationForm e y η p, normalPerturbationSpinor o ρ e u₀ y η p) :=
-  Prod.ext (normalDomainEquiv_apply_fst ..) (normalDomainEquiv_apply_snd ..)
+      (normalPerturbationForm e y η p, normalPerturbationSpinor o ρ e u₀ y η p) := by
+  rw [normalDomainEquiv_apply, normalPerturbationForm_apply, normalPerturbationSpinor_apply]
 /-- At the pulled-back canonical-line background `(normalConnection e x, normalSpinor o ρ e u₀ x)`,
 the flat Seiberg–Witten equations hold iff `Vortex.equation x = 0` at `normalCoord e p`. -/
 theorem flatDirac_eq_zero_and_flatCurvatureDefect_eq_zero_iff {x : ℂ → E4} {p : V}
@@ -177,7 +179,8 @@ theorem flatDirac_eq_zero_and_flatCurvatureDefect_eq_zero_iff {x : ℂ → E4} {
         (normalSpinor o ρ e u₀ x) p = 0) ↔ Vortex.equation x (normalCoord e p) = 0 := by
   have hα := (Vortex.differentiableAt_sectionValue_of_differentiableAt hx).comp p
     (normalCoord e).differentiableAt
-  have hns : normalSpinor o ρ e u₀ x = fun q ↦ (Vortex.sectionValue x ∘ normalCoord e) q • u₀ := rfl
+  have hns : normalSpinor o ρ e u₀ x = fun q ↦ (Vortex.sectionValue x ∘ normalCoord e) q • u₀ :=
+    funext fun q ↦ normalSpinor_apply u₀ x q
   rw [← Submodule.coe_eq_zero, hns, coe_flatDirac_smul_const (normalConnection e x) hα u₀,
     flatCurvatureDefect_eq_zero_iff]
   exact sum_covariantDeriv_smul_ι_apply_eq_zero_and_add_hodgeStar_eq_iff
@@ -193,11 +196,12 @@ theorem smul_quadraticTwoFormPolar_smul_smul_of_cliffordProjection_apply_eq_self
     rw [coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self o hQ hkl hω h₂ hρ
       (by rw [map_smul, hu₀]), norm_smul, hu₀₁, mul_one, coe_kahlerSelfDual, smul_smul, smul_smul]
     congr 1; ring
-  apply Subtype.ext
-  rw [show quadraticTwoFormPolar o ρ hkl (α • u₀) (δα • u₀) =
+  have hpol : quadraticTwoFormPolar o ρ hkl (α • u₀) (δα • u₀) =
       quadraticTwoForm o ρ hkl ((α + δα) • u₀) -
-        quadraticTwoForm o ρ hkl (α • u₀) - quadraticTwoForm o ρ hkl (δα • u₀) by
-      rw [add_smul, quadraticTwoForm_add]; abel]
+        quadraticTwoForm o ρ hkl (α • u₀) - quadraticTwoForm o ρ hkl (δα • u₀) := by
+    rw [add_smul, quadraticTwoForm_add]; abel
+  apply Subtype.ext
+  rw [hpol]
   simp only [smul_sub, Submodule.coe_sub, Submodule.coe_smul, hq, ← sub_smul]; congr 1
   simp [← normSq_eq_norm_sq, normSq_apply]; ring
 omit h₂ in
@@ -231,11 +235,7 @@ theorem linearizedFlatCurvature_normalPerturbation (x : ℂ → E4) {y η : ℂ 
       Vortex.linearizedEquation x y z 0 • kahlerSelfDual o J hkl he h₀ h₂₃ +
         Vortex.gaugeFixedAdjoint x η z 0 • antiInvariantSelfDual₁ o e hkl he +
         Vortex.gaugeFixedAdjoint x η z 1 • antiInvariantSelfDual₂ o e hkl he := by
-  intro z; have h12 : o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 2]) = ιMulti ℝ 2 ![e 0, e 3] := by
-    rw [← o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_hodgeStar_of_even even_two hkl]
-  have h13 : o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 3]) = -ιMulti ℝ 2 ![e 0, e 2] := by
-    rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he, map_neg,
-      o.hodgeStar_hodgeStar_of_even even_two hkl]
+  intro z
   have hdiff : selfDualTwoVector o hkl
         ((alternatingFormEquiv V 2).symm (-extDeriv (normalPerturbationForm e y η) p)) =
       (fderiv ℝ (fun w ↦ y w 0) z I - fderiv ℝ (fun w ↦ y w 1) z 1) •
@@ -249,7 +249,8 @@ theorem linearizedFlatCurvature_normalPerturbation (x : ℂ → E4) {y η : ℂ 
       coe_antiInvariantSelfDual₁, coe_antiInvariantSelfDual₂,
       AlmostComplexStructure.kahlerForm_eq_ιMulti_add_ιMulti h₀ h₂₃, map_add, map_smul,
       o.hodgeStar_ιMulti_zero_two hkl he, o.hodgeStar_ιMulti_zero_three hkl he,
-      o.hodgeStar_ιMulti_two_three hkl he, h12, h13]; module
+      o.hodgeStar_ιMulti_two_three hkl he, o.hodgeStar_ιMulti_one_two hkl he,
+      o.hodgeStar_ιMulti_one_three hkl he]; module
   have hzeroth : (√2 / 4 : ℝ) • quadraticTwoFormPolar o ρ hkl (normalSpinor o ρ e u₀ x p)
         (normalPerturbationSpinor o ρ e u₀ y η p) =
       (x z 2 * y z 2 + x z 3 * y z 3) • kahlerSelfDual o J hkl he h₀ h₂₃ +
@@ -282,17 +283,18 @@ omit h₂ hρ hu₀₁ in private theorem coe_flatDirac_normalPerturbationSpinor
       (normalCoord e).differentiableAt
   have hsmul_d {g : ℂ → E4} (hg : DifferentiableAt ℝ g z) (ψ : PosSpin(o, ρ)) :
       DifferentiableAt ℝ (fun q ↦ (Vortex.sectionValue g ∘ normalCoord e) q • ψ) p :=
-    (((ContinuousLinearMap.id ℂ ℂ).smulRight ψ).restrictScalars ℝ).differentiableAt.comp p (hsec hg)
-  have h3u := h₂₃ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 2)
-  rw [show normalPerturbationSpinor o ρ e u₀ y η =
+    (hsec hg).smul_const ψ
+  have hsplit : normalPerturbationSpinor o ρ e u₀ y η =
       (fun q ↦ (Vortex.sectionValue y ∘ normalCoord e) q • u₀) +
-        (fun q ↦ (Vortex.sectionValue η ∘ normalCoord e) q • v₀) from funext fun q ↦ by
-      simp [normalPerturbationSpinor, normalFrameSpinor_eq, Vortex.sectionValue_apply, v₀],
-    flatDirac_add (normalConnection e x) (hsmul_d hy u₀) (hsmul_d hη v₀), Submodule.coe_add,
-    coe_flatDirac_smul_const _ (hsec hy), coe_flatDirac_smul_const _ (hsec hη),
+        (fun q ↦ (Vortex.sectionValue η ∘ normalCoord e) q • v₀) :=
+    funext fun q ↦ by
+      simp [normalPerturbationSpinor, normalFrameSpinor_eq, Vortex.sectionValue_apply, v₀]
+  rw [hsplit, flatDirac_add (normalConnection e x) (hsmul_d hy u₀) (hsmul_d hη v₀),
+    Submodule.coe_add, coe_flatDirac_smul_const _ (hsec hy), coe_flatDirac_smul_const _ (hsec hη),
     sum_covariantDeriv_normalConnection_smul_ι x hy u₀,
     sum_covariantDeriv_normalConnection_smul_ι x hη v₀, ι_apply_two_antiCanonicalSpinor hQ u₀,
-    h3u, ι_apply_three_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hu₀]
+    ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀,
+    ι_apply_three_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hu₀]
   simp only [z, smul_smul, mul_neg]; module
 omit h₂ hρ hu₀₁ in private theorem coe_sum_normalPerturbationForm_smul_normalSpinor (x y η : ℂ → E4)
     (p : V) :
@@ -303,8 +305,6 @@ omit h₂ hρ hu₀₁ in private theorem coe_sum_normalPerturbationForm_smul_no
         (((-(η z 0 : ℂ)) * I + (η z 1 : ℂ) * I * I) * Vortex.sectionValue x z) •
           ρ (ι Q (e 0)) u₀ := by
   intro z
-  have h1u := h₀ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 0)
-  have h3u := h₂₃ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 2)
   have hδb (k : Fin 4) : (cMul(o, ρ, e k,
       normalPerturbationForm e y η p (fun _ ↦ e k) • (I • normalSpinor o ρ e u₀ x p)) : W) =
       ((normalFrameForm e (y z) (η z) (fun _ ↦ e k) : ℂ) * I * Vortex.sectionValue x z) •
@@ -313,8 +313,10 @@ omit h₂ hρ hu₀₁ in private theorem coe_sum_normalPerturbationForm_smul_no
       smul_smul, map_smul, Submodule.coe_smul, coe_halfSpinCliffordMul_apply_apply,
       LinearEquiv.coe_ofEq_apply, ← mul_assoc]
   rw [Fin.sum_univ_four, Submodule.coe_add, Submodule.coe_add, Submodule.coe_add, hδb 0, hδb 1,
-    hδb 2, hδb 3, h1u, h3u]; simp only [normalFrameForm_apply, orthonormal_iff_ite.1 e.orthonormal,
-    smul_smul]; norm_num; module
+    hδb 2, hδb 3, ι_apply_one_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀,
+    ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀]
+  simp only [normalFrameForm_apply, orthonormal_iff_ite.1 e.orthonormal, smul_smul]
+  norm_num; module
 omit h₂ hρ hu₀₁ in
 /-- Intertwining of `linearizedFlatDirac` on normal perturbations along `(c(e₂) u₀, -c(e₀) u₀)`. -/
 theorem linearizedFlatDirac_normalPerturbation (x : ℂ → E4) {y η : ℂ → E4} {p : V}

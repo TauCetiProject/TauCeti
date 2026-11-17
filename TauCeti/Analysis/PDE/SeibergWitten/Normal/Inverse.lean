@@ -71,6 +71,32 @@ def normalModelAdjoint (ξ : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpac
 /-- `normalModelAdjoint x` sends the zero field to zero. -/
 @[simp] theorem normalModelAdjoint_zero : normalModelAdjoint x 0 = 0 := by
   funext z; simp [normalModelAdjoint_apply]
+/-- `normalModelOperator x` is additive at points where both input fields are differentiable. -/
+theorem normalModelOperator_add
+    {w v : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hw : DifferentiableAt ℝ w z) (hv : DifferentiableAt ℝ v z) :
+    normalModelOperator x (w + v) z = normalModelOperator x w z + normalModelOperator x v z :=
+  Prod.ext (Vortex.gaugeFixedOperator_add x hw.fst hv.fst)
+    (Vortex.gaugeFixedAdjoint_add x hw.snd hv.snd)
+/-- `normalModelOperator x` is `ℝ`-homogeneous. -/
+theorem normalModelOperator_smul (r : ℝ)
+    (w : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    normalModelOperator x (r • w) z = r • normalModelOperator x w z :=
+  Prod.ext (Vortex.gaugeFixedOperator_smul x (Prod.fst ∘ w) r z)
+    (Vortex.gaugeFixedAdjoint_smul x (Prod.snd ∘ w) r z)
+/-- `normalModelAdjoint x` is additive at points where both input fields are differentiable. -/
+theorem normalModelAdjoint_add
+    {ξ ν : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hξ : DifferentiableAt ℝ ξ z) (hν : DifferentiableAt ℝ ν z) :
+    normalModelAdjoint x (ξ + ν) z = normalModelAdjoint x ξ z + normalModelAdjoint x ν z :=
+  Prod.ext (Vortex.gaugeFixedAdjoint_add x hξ.fst hν.fst)
+    (Vortex.gaugeFixedOperator_add x hξ.snd hν.snd)
+/-- `normalModelAdjoint x` is `ℝ`-homogeneous. -/
+theorem normalModelAdjoint_smul (r : ℝ)
+    (ξ : ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) (z : ℂ) :
+    normalModelAdjoint x (r • ξ) z = r • normalModelAdjoint x ξ z :=
+  Prod.ext (Vortex.gaugeFixedAdjoint_smul x (Prod.fst ∘ ξ) r z)
+    (Vortex.gaugeFixedOperator_smul x (Prod.snd ∘ ξ) r z)
 end Defs
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
@@ -78,29 +104,36 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
 /-- **Formal `L²` adjointness of `normalModelOperator` and `normalModelAdjoint`**. -/
 theorem integral_inner_normalModelOperator {μ : Measure ℂ} [μ.IsAddHaarMeasure]
-    (hx : Continuous x) (hw : ContDiff ℝ 1 w) (hwc : HasCompactSupport w) (hξ : ContDiff ℝ 1 ξ) :
+    (hx : Continuous x) (hw : ContDiff ℝ 1 w) (hξ : ContDiff ℝ 1 ξ)
+    (hc : HasCompactSupport w ∨ HasCompactSupport ξ) :
     ∫ z, (⟪(normalModelOperator x w z).1, (ξ z).1⟫ + ⟪(normalModelOperator x w z).2, (ξ z).2⟫) ∂μ =
       ∫ z, (⟪(w z).1, (normalModelAdjoint x ξ z).1⟫ +
         ⟪(w z).2, (normalModelAdjoint x ξ z).2⟫) ∂μ := by
   have hw₁ := contDiff_fst.comp hw; have hw₂ := contDiff_snd.comp hw
-  have hw₁c : HasCompactSupport (Prod.fst ∘ w) := hwc.comp_left rfl
-  have hw₂c : HasCompactSupport (Prod.snd ∘ w) := hwc.comp_left rfl
   have hξ₁ := contDiff_fst.comp hξ; have hξ₂ := contDiff_snd.comp hξ
+  have hc₁ : HasCompactSupport (Prod.fst ∘ w) ∨ HasCompactSupport (Prod.fst ∘ ξ) :=
+    hc.imp (·.comp_left rfl) (·.comp_left rfl)
+  have hc₂ : HasCompactSupport (Prod.snd ∘ w) ∨ HasCompactSupport (Prod.snd ∘ ξ) :=
+    hc.imp (·.comp_left rfl) (·.comp_left rfl)
   have hint {u v : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : Continuous u) (hv : Continuous v)
-      (huc : HasCompactSupport u) : Integrable (fun z ↦ ⟪u z, v z⟫) μ :=
-    (hu.inner hv).integrable_of_hasCompactSupport (huc.mono fun _ hz h0 ↦ hz (by simp [h0]))
+      (huv : HasCompactSupport u ∨ HasCompactSupport v) : Integrable (fun z ↦ ⟪u z, v z⟫) μ :=
+    (hu.inner hv).integrable_of_hasCompactSupport <| huv.elim
+      (fun h ↦ h.mono fun _ hz h0 ↦ hz (by simp [h0]))
+      (fun h ↦ h.mono fun _ hz h0 ↦ hz (by simp [h0]))
   simp only [normalModelOperator_apply, normalModelAdjoint_apply]
-  rw [integral_add (hint (v := fun z ↦ (ξ z).1) (Vortex.continuous_gaugeFixedOperator hx hw₁)
-          hξ₁.continuous (Vortex.hasCompactSupport_gaugeFixedOperator hw₁c))
-        (hint (v := fun z ↦ (ξ z).2) (Vortex.continuous_gaugeFixedAdjoint hx hw₂)
-          hξ₂.continuous (Vortex.hasCompactSupport_gaugeFixedAdjoint hw₂c)),
-    integral_add (hint (u := fun z ↦ (w z).1) hw₁.continuous
-          (Vortex.continuous_gaugeFixedAdjoint hx hξ₁) hw₁c)
-        (hint (u := fun z ↦ (w z).2) hw₂.continuous
-          (Vortex.continuous_gaugeFixedOperator hx hξ₂) hw₂c)]
-  refine congrArg₂ (· + ·) (Vortex.integral_inner_gaugeFixedOperator hx hw₁ hξ₁ (.inl hw₁c)) ?_
+  rw [integral_add
+        (hint (v := fun z ↦ (ξ z).1) (Vortex.continuous_gaugeFixedOperator hx hw₁) hξ₁.continuous
+          (hc₁.imp Vortex.hasCompactSupport_gaugeFixedOperator id))
+        (hint (v := fun z ↦ (ξ z).2) (Vortex.continuous_gaugeFixedAdjoint hx hw₂) hξ₂.continuous
+          (hc₂.imp Vortex.hasCompactSupport_gaugeFixedAdjoint id)),
+    integral_add
+        (hint (u := fun z ↦ (w z).1) hw₁.continuous (Vortex.continuous_gaugeFixedAdjoint hx hξ₁)
+          (hc₁.imp id Vortex.hasCompactSupport_gaugeFixedAdjoint))
+        (hint (u := fun z ↦ (w z).2) hw₂.continuous (Vortex.continuous_gaugeFixedOperator hx hξ₂)
+          (hc₂.imp id Vortex.hasCompactSupport_gaugeFixedOperator))]
+  refine congrArg₂ (· + ·) (Vortex.integral_inner_gaugeFixedOperator hx hw₁ hξ₁ hc₁) ?_
   exact (integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)).trans <|
-    (Vortex.integral_inner_gaugeFixedOperator hx hξ₂ hw₂ (.inr hw₂c)).symm.trans <|
+    (Vortex.integral_inner_gaugeFixedOperator hx hξ₂ hw₂ hc₂.symm).symm.trans <|
       integral_congr_ae (ae_of_all _ fun _ ↦ real_inner_comm _ _)
 
 private def mkPairKernel
@@ -123,10 +156,7 @@ private def mkPairKernel
 def normalModelKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :=
   mkPairKernel (normalModelOperator x) (normalModelOperator_zero x)
-    (fun hw hv ↦ Prod.ext (Vortex.gaugeFixedOperator_add x hw.fst hv.fst)
-      (Vortex.gaugeFixedAdjoint_add x hw.snd hv.snd))
-    (fun r w z ↦ Prod.ext (Vortex.gaugeFixedOperator_smul x (Prod.fst ∘ w) r z)
-      (Vortex.gaugeFixedAdjoint_smul x (Prod.snd ∘ w) r z))
+    (normalModelOperator_add x) (normalModelOperator_smul x)
 @[simp] theorem mem_normalModelKernel :
     w ∈ normalModelKernel x ↔ ContDiff ℝ 2 w ∧ MemLp (Prod.fst ∘ w) 2 volume ∧
       MemLp (Prod.snd ∘ w) 2 volume ∧ ∀ z, normalModelOperator x w z = 0 := (Iff.rfl)
@@ -134,10 +164,7 @@ def normalModelKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
 def normalModelAdjointKernel (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4) × EuclideanSpace ℝ (Fin 4)) :=
   mkPairKernel (normalModelAdjoint x) (normalModelAdjoint_zero x)
-    (fun hξ hν ↦ Prod.ext (Vortex.gaugeFixedAdjoint_add x hξ.fst hν.fst)
-      (Vortex.gaugeFixedOperator_add x hξ.snd hν.snd))
-    (fun r ξ z ↦ Prod.ext (Vortex.gaugeFixedAdjoint_smul x (Prod.fst ∘ ξ) r z)
-      (Vortex.gaugeFixedOperator_smul x (Prod.snd ∘ ξ) r z))
+    (normalModelAdjoint_add x) (normalModelAdjoint_smul x)
 @[simp] theorem mem_normalModelAdjointKernel :
     ξ ∈ normalModelAdjointKernel x ↔ ContDiff ℝ 2 ξ ∧ MemLp (Prod.fst ∘ ξ) 2 volume ∧
       MemLp (Prod.snd ∘ ξ) 2 volume ∧ ∀ z, normalModelAdjoint x ξ z = 0 := (Iff.rfl)
@@ -168,7 +195,7 @@ def normalModelKernelEquiv : Vortex.gaugeFixedKernel x ≃ₗ[ℝ] normalModelKe
   map_smul' _ _ := by ext z <;> simp
   invFun w := ⟨Prod.fst ∘ w.1, Vortex.mem_gaugeFixedKernel.2
     ⟨contDiff_fst.comp w.2.1, w.2.2.1, fun z ↦ (Prod.mk.inj (w.2.2.2.2 z)).1⟩⟩
-  left_inv _ := by ext; rfl
+  left_inv _ := by ext z; simp
   right_inv w := Subtype.ext <| funext fun z ↦ Prod.ext rfl
     (congrFun (snd_eq_zero_of_mem_normalModelKernel hx hsol w.2) z).symm
 /-- **Cokernel (adjoint kernel) identification at a plane vortex**: `g ↦ (0, g)`. -/
@@ -180,7 +207,7 @@ def normalModelAdjointKernelEquiv : Vortex.gaugeFixedKernel x ≃ₗ[ℝ] normal
   map_smul' _ _ := by ext z <;> simp
   invFun ξ := ⟨Prod.snd ∘ ξ.1, Vortex.mem_gaugeFixedKernel.2
     ⟨contDiff_snd.comp ξ.2.1, ξ.2.2.2.1, fun z ↦ (Prod.mk.inj (ξ.2.2.2.2 z)).2⟩⟩
-  left_inv _ := by ext; rfl
+  left_inv _ := by ext z; simp
   right_inv ξ := Subtype.ext <| funext fun z ↦ Prod.ext
     (congrFun (fst_eq_zero_of_mem_normalModelAdjointKernel hx hsol ξ.2) z).symm rfl
 @[simp] theorem coe_normalModelKernelEquiv_apply (y : Vortex.gaugeFixedKernel x) (z : ℂ) :
@@ -248,13 +275,12 @@ def normalTargetSlowProj (μ : Measure ℂ) [μ.IsAddHaarMeasure] (hx : Continuo
     Submodule.starProjection_comp_starProjection_of_le (le_refl _)]
 /-- `normalDomainSlowProj` is self-adjoint on `NormalL2 μ`. -/
 theorem isSelfAdjoint_normalDomainSlowProj : IsSelfAdjoint (normalDomainSlowProj μ hx) :=
-  (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2
-    (Vortex.weakGaugeFixedKernel μ hx).starProjection_isSymmetric).withLpProdMap
+  (isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel μ hx)).withLpProdMap
     (IsSelfAdjoint.zero _)
 /-- `normalTargetSlowProj` is self-adjoint on `NormalL2 μ`. -/
 theorem isSelfAdjoint_normalTargetSlowProj : IsSelfAdjoint (normalTargetSlowProj μ hx) :=
-  (IsSelfAdjoint.zero _).withLpProdMap (ContinuousLinearMap.isSelfAdjoint_iff_isSymmetric.2
-    (Vortex.weakGaugeFixedKernel μ hx).starProjection_isSymmetric)
+  (IsSelfAdjoint.zero _).withLpProdMap
+    (isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel μ hx))
 /-- `normalDomainSlowProj` is a contraction (`‖Π₊‖ ≤ 1`). -/
 theorem norm_normalDomainSlowProj_le : ‖normalDomainSlowProj μ hx‖ ≤ 1 := by
   rw [normalDomainSlowProj, ContinuousLinearMap.norm_withLpProdMap, norm_zero, max_le_iff]
@@ -290,42 +316,46 @@ end ComplementaryInverse
 
 variable {Q : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ}
 
+private theorem starProjection_weakGaugeFixedKernel_comp_eq_zero (hx : Continuous x)
+    (hQorth : ∀ f u, u ∈ Vortex.weakGaugeFixedKernel μ hx → ∫ z, ⟪Q f z, u z⟫ ∂μ = 0) :
+    (Vortex.weakGaugeFixedKernel μ hx).starProjection ∘L Q = 0 := by
+  ext f : 1
+  rw [ContinuousLinearMap.comp_apply, zero_apply, Submodule.starProjection_apply_eq_zero_iff]
+  exact (Vortex.mem_orthogonal_weakGaugeFixedKernel_iff hx (Q f)).2 (hQorth f)
 /-- If the range of `Q` is orthogonal to `Vortex.weakGaugeFixedKernel μ hx`, then
 `normalDomainSlowProj μ hx ∘L normalComplementaryInverse Q = 0`. -/
 theorem normalDomainSlowProj_comp_normalComplementaryInverse (hx : Continuous x)
     (hQorth : ∀ f u, u ∈ Vortex.weakGaugeFixedKernel μ hx → ∫ z, ⟪Q f z, u z⟫ ∂μ = 0) :
     normalDomainSlowProj μ hx ∘L normalComplementaryInverse Q = 0 := by
-  ext w : 1; apply WithLp.ofLp_injective 2
-  rw [ContinuousLinearMap.comp_apply, ofLp_normalDomainSlowProj, ofLp_normalComplementaryInverse,
-    (Submodule.starProjection_apply_eq_zero_iff (K := Vortex.weakGaugeFixedKernel μ hx)).2
-      ((Submodule.mem_orthogonal _ _).2 fun u hu ↦ by
-        rw [real_inner_comm, L2.inner_def]; exact hQorth _ u hu)]; rfl
+  rw [normalDomainSlowProj, normalComplementaryInverse, ContinuousLinearMap.withLpProdMap_comp,
+    starProjection_weakGaugeFixedKernel_comp_eq_zero hx hQorth, ContinuousLinearMap.zero_comp,
+    ContinuousLinearMap.withLpProdMap_zero]
 /-- If the range of `Q` is orthogonal to `Vortex.weakGaugeFixedKernel μ hx`, then
 `normalComplementaryInverse Q ∘L normalTargetSlowProj μ hx = 0`. -/
 theorem normalComplementaryInverse_comp_normalTargetSlowProj (hx : Continuous x)
     (hQorth : ∀ f u, u ∈ Vortex.weakGaugeFixedKernel μ hx → ∫ z, ⟪Q f z, u z⟫ ∂μ = 0) :
     normalComplementaryInverse Q ∘L normalTargetSlowProj μ hx = 0 := by
-  ext w : 1; apply WithLp.ofLp_injective 2
-  rw [ContinuousLinearMap.comp_apply, ofLp_normalComplementaryInverse, ofLp_normalTargetSlowProj,
-    map_zero, show ContinuousLinearMap.adjoint Q
-      ((Vortex.weakGaugeFixedKernel μ hx).starProjection (WithLp.ofLp w).2) = 0 from
-      ext_inner_right ℝ fun h ↦ by
-        rw [ContinuousLinearMap.adjoint_inner_left, inner_zero_left, real_inner_comm, L2.inner_def]
-        exact hQorth h _ (Submodule.starProjection_apply_mem _ _)]; rfl
-/-- **Exact `L²` left-inverse identity**: `𝒬 (L_x y, L_x* η) = (1 - Π₊) (y, η)` on `C²_c`. -/
+  have hadj : ContinuousLinearMap.adjoint Q ∘L (Vortex.weakGaugeFixedKernel μ hx).starProjection =
+      0 := by
+    rw [← (isSelfAdjoint_starProjection (Vortex.weakGaugeFixedKernel μ hx)).adjoint_eq,
+      ← ContinuousLinearMap.adjoint_comp,
+      starProjection_weakGaugeFixedKernel_comp_eq_zero hx hQorth, map_zero]
+  rw [normalComplementaryInverse, normalTargetSlowProj, ContinuousLinearMap.withLpProdMap_comp,
+    ContinuousLinearMap.comp_zero, hadj, ContinuousLinearMap.withLpProdMap_zero]
+/-- **Exact `L²` left-inverse identity**: `𝒬 (L_x y, L_x* η) = (1 - Π₊) (y, η)` for `y ∈ C¹_c`
+and `η ∈ C²_c`. -/
 theorem normalComplementaryInverse_toLp_normalModelOperator (hx : Continuous x)
     (hQsol : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z, ⟪Q f z, Vortex.gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
     (hQorth : ∀ f u, u ∈ Vortex.weakGaugeFixedKernel μ hx → ∫ z, ⟪Q f z, u z⟫ ∂μ = 0)
-    {y η : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : ContDiff ℝ 2 y) (hyc : HasCompactSupport y)
+    {y η : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y)
     (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η) :
     let hy_lp : MemLp y 2 μ := hy.continuous.memLp_of_hasCompactSupport hyc
     let hη_lp : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
-    let hLy_lp := (Vortex.continuous_gaugeFixedOperator hx
-      (hy.of_le (by norm_num))).memLp_of_hasCompactSupport (μ := μ) (p := 2)
-        (Vortex.hasCompactSupport_gaugeFixedOperator hyc)
+    let hLy_lp := (Vortex.continuous_gaugeFixedOperator hx hy).memLp_of_hasCompactSupport
+      (μ := μ) (p := 2) (Vortex.hasCompactSupport_gaugeFixedOperator hyc)
     let hAη_lp : MemLp (Vortex.gaugeFixedAdjoint x η) 2 μ :=
-      Vortex.memLp_gaugeFixedAdjoint hx ⟨η, hη, hηc, by simp⟩
+      Vortex.memLp_gaugeFixedAdjoint hx (hη.of_le (by norm_num)) hηc
     normalComplementaryInverse Q (WithLp.toLp 2 (hLy_lp.toLp (Vortex.gaugeFixedOperator x y),
         hAη_lp.toLp (Vortex.gaugeFixedAdjoint x η))) =
       (1 - normalDomainSlowProj μ hx) (WithLp.toLp 2 (hy_lp.toLp y, hη_lp.toLp η)) := by
@@ -333,18 +363,19 @@ theorem normalComplementaryInverse_toLp_normalModelOperator (hx : Continuous x)
   rw [ofLp_normalComplementaryInverse, sub_apply, one_apply_eq_self, WithLp.ofLp_sub,
     ofLp_normalDomainSlowProj]
   refine Prod.ext (Vortex.apply_toLp_gaugeFixedOperator_eq_sub_starProjection hx hQsol hQorth
-    (hy.of_le (by norm_num)) hyc) ?_
+    hy hyc) ?_
   dsimp only [Prod.snd_sub]; rw [sub_zero]; exact ext_inner_right ℝ fun h ↦ by
     rw [ContinuousLinearMap.adjoint_inner_left, real_inner_comm, L2.inner_toLp (Q h) hAη_lp,
       hQsol h η hη hηc, ← L2.inner_toLp h hη_lp, real_inner_comm]
-/-- **Weak right-inverse identity**: `𝓜_x (𝒬 w) = (1 - Π₋) w` weakly against `(ϕ, ψ) ∈ C²_c`. -/
+/-- **Weak right-inverse identity**: `𝓜_x (𝒬 w) = (1 - Π₋) w` weakly against `ϕ ∈ C²_c` and
+`ψ ∈ C¹_c`. -/
 theorem integral_inner_normalComplementaryInverse_normalModelAdjoint (hx : Continuous x)
     (hQsol : ∀ f η, ContDiff ℝ 2 η → HasCompactSupport η →
       ∫ z, ⟪Q f z, Vortex.gaugeFixedAdjoint x η z⟫ ∂μ = ∫ z, ⟪f z, η z⟫ ∂μ)
     (hQorth : ∀ f u, u ∈ Vortex.weakGaugeFixedKernel μ hx → ∫ z, ⟪Q f z, u z⟫ ∂μ = 0)
     (w : NormalL2 μ) {ϕ ψ : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hϕ : ContDiff ℝ 2 ϕ) (hϕc : HasCompactSupport ϕ)
-    (hψ : ContDiff ℝ 2 ψ) (hψc : HasCompactSupport ψ) :
+    (hψ : ContDiff ℝ 1 ψ) (hψc : HasCompactSupport ψ) :
     let q := WithLp.ofLp (normalComplementaryInverse Q w)
     let r := WithLp.ofLp ((1 - normalTargetSlowProj μ hx) w)
     (∫ z, ⟪q.1 z, Vortex.gaugeFixedAdjoint x ϕ z⟫ ∂μ) +
@@ -355,15 +386,13 @@ theorem integral_inner_normalComplementaryInverse_normalModelAdjoint (hx : Conti
   have hr2 : r.2 = (WithLp.ofLp w).2 -
       (Vortex.weakGaugeFixedKernel μ hx).starProjection (WithLp.ofLp w).2 := by
     simp [r, WithLp.ofLp_sub]
+  have hq2 : q.2 = ContinuousLinearMap.adjoint Q (WithLp.ofLp w).2 := by simp [q]
   refine congrArg₂ (· + ·) (by simpa [q, hr1] using hQsol _ ϕ hϕ hϕc) ?_
   have hψ_lp : MemLp ψ 2 μ := hψ.continuous.memLp_of_hasCompactSupport hψc
-  have hLψ_lp := (Vortex.continuous_gaugeFixedOperator hx
-    (hψ.of_le (by norm_num))).memLp_of_hasCompactSupport (μ := μ) (p := 2)
-      (Vortex.hasCompactSupport_gaugeFixedOperator hψc)
-  rw [show q.2 = ContinuousLinearMap.adjoint Q (WithLp.ofLp w).2 by simp [q],
-    ← L2.inner_toLp _ hLψ_lp, ContinuousLinearMap.adjoint_inner_left,
-    Vortex.apply_toLp_gaugeFixedOperator_eq_sub_starProjection hx hQsol hQorth
-      (hψ.of_le (by norm_num)) hψc,
+  have hLψ_lp := (Vortex.continuous_gaugeFixedOperator hx hψ).memLp_of_hasCompactSupport
+    (μ := μ) (p := 2) (Vortex.hasCompactSupport_gaugeFixedOperator hψc)
+  rw [hq2, ← L2.inner_toLp _ hLψ_lp, ContinuousLinearMap.adjoint_inner_left,
+    Vortex.apply_toLp_gaugeFixedOperator_eq_sub_starProjection hx hQsol hQorth hψ hψc,
     inner_sub_right, ← (Vortex.weakGaugeFixedKernel μ hx).inner_starProjection_left_eq_right,
     ← inner_sub_left, ← hr2, L2.inner_toLp r.2 hψ_lp]
 /-- **Existence of the complementary normal weak `L²` inverse at a plane vortex.** -/
@@ -373,21 +402,21 @@ theorem exists_normalComplementaryInverse (hx : ContDiff ℝ 1 x)
     ∃ 𝒬 : NormalL2 μ →L[ℝ] NormalL2 μ,
       normalDomainSlowProj μ hx.continuous ∘L 𝒬 = 0 ∧
       𝒬 ∘L normalTargetSlowProj μ hx.continuous = 0 ∧
-      (∀ (y η : ℂ → EuclideanSpace ℝ (Fin 4)) (hy : ContDiff ℝ 2 y) (hyc : HasCompactSupport y)
+      (∀ (y η : ℂ → EuclideanSpace ℝ (Fin 4)) (hy : ContDiff ℝ 1 y) (hyc : HasCompactSupport y)
           (hη : ContDiff ℝ 2 η) (hηc : HasCompactSupport η),
         let hy_lp : MemLp y 2 μ := hy.continuous.memLp_of_hasCompactSupport hyc
         let hη_lp : MemLp η 2 μ := hη.continuous.memLp_of_hasCompactSupport hηc
-        let hLy_lp := (Vortex.continuous_gaugeFixedOperator hx.continuous
-          (hy.of_le (by norm_num))).memLp_of_hasCompactSupport (μ := μ) (p := 2)
-            (Vortex.hasCompactSupport_gaugeFixedOperator hyc)
+        let hLy_lp :=
+          (Vortex.continuous_gaugeFixedOperator hx.continuous hy).memLp_of_hasCompactSupport
+            (μ := μ) (p := 2) (Vortex.hasCompactSupport_gaugeFixedOperator hyc)
         let hAη_lp : MemLp _ 2 μ :=
-          Vortex.memLp_gaugeFixedAdjoint hx.continuous ⟨η, hη, hηc, by simp⟩
+          Vortex.memLp_gaugeFixedAdjoint hx.continuous (hη.of_le (by norm_num)) hηc
         𝒬 (WithLp.toLp 2 (hLy_lp.toLp (Vortex.gaugeFixedOperator x y),
             hAη_lp.toLp (Vortex.gaugeFixedAdjoint x η))) =
           (1 - normalDomainSlowProj μ hx.continuous)
             (WithLp.toLp 2 (hy_lp.toLp y, hη_lp.toLp η))) ∧
       ∀ w (ϕ ψ : ℂ → EuclideanSpace ℝ (Fin 4)),
-        ContDiff ℝ 2 ϕ → HasCompactSupport ϕ → ContDiff ℝ 2 ψ → HasCompactSupport ψ →
+        ContDiff ℝ 2 ϕ → HasCompactSupport ϕ → ContDiff ℝ 1 ψ → HasCompactSupport ψ →
         let q := WithLp.ofLp (𝒬 w)
         let r := WithLp.ofLp ((1 - normalTargetSlowProj μ hx.continuous) w)
         (∫ z, ⟪q.1 z, Vortex.gaugeFixedAdjoint x ϕ z⟫ ∂μ) +

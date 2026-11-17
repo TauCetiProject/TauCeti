@@ -288,7 +288,7 @@ theorem withLpProdMap_comp {α'' β'' : Type*}
     (f' : α' →L[𝕜] α'') (g' : β' →L[𝕜] β'') (f : α →L[𝕜] α') (g : β →L[𝕜] β') :
     f'.withLpProdMap p g' ∘L f.withLpProdMap p g = (f' ∘L f).withLpProdMap p (g' ∘L g) := by
   ext x
-  rfl
+  simp
 
 end Topological
 

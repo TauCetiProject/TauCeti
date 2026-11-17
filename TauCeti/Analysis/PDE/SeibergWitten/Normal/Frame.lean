@@ -71,11 +71,8 @@ def antiInvariantSelfDual₁ (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orien
     SD(V, o, hkl) :=
   ⟨(√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3]),
     Module.End.mem_eigenspace_iff.2 <| by
-      have h13 : o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 3]) = -ιMulti ℝ 2 ![e 0, e 2] := by
-        rw [← neg_neg (ιMulti ℝ 2 ![e 1, e 3]), ← o.hodgeStar_ιMulti_zero_two hkl he,
-          map_neg, o.hodgeStar_hodgeStar_of_even even_two hkl]
-      simp only [LinearEquiv.coe_coe, map_smul, map_sub, o.hodgeStar_ιMulti_zero_two hkl he, h13,
-        one_smul]; module⟩
+      simp only [LinearEquiv.coe_coe, map_smul, map_sub, o.hodgeStar_ιMulti_zero_two hkl he,
+        o.hodgeStar_ιMulti_one_three hkl he, one_smul]; module⟩
 @[simp] theorem coe_antiInvariantSelfDual₁ (hkl : 2 + 2 = finrank ℝ V)
     (he : e.toBasis.orientation = o) : (antiInvariantSelfDual₁ o e hkl he : ⋀[ℝ]^2 V) =
       (√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3]) := (rfl)
@@ -85,9 +82,7 @@ def antiInvariantSelfDual₂ (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orien
     SD(V, o, hkl) :=
   ⟨(√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2]),
     Module.End.mem_eigenspace_iff.2 <| by
-      have h12 : o.hodgeStar hkl (ιMulti ℝ 2 ![e 1, e 2]) = ιMulti ℝ 2 ![e 0, e 3] := by
-        rw [← o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_hodgeStar_of_even even_two hkl]
-      simp [o.hodgeStar_ιMulti_zero_three hkl he, h12, add_comm]⟩
+      simp [o.hodgeStar_ιMulti_zero_three hkl he, o.hodgeStar_ιMulti_one_two hkl he, add_comm]⟩
 @[simp] theorem coe_antiInvariantSelfDual₂ (hkl : 2 + 2 = finrank ℝ V)
     (he : e.toBasis.orientation = o) : (antiInvariantSelfDual₂ o e hkl he : ⋀[ℝ]^2 V) =
       (√2 / 2 : ℝ) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2]) := (rfl)
@@ -169,7 +164,8 @@ def selfDualOrthonormalBasis (o : Orientation ℝ V (Fin 4)) (e : OrthonormalBas
     OrthonormalBasis (Fin 3) ℝ SD(V, o, hkl) :=
   have hcard : Fintype.card (Fin 3) = finrank ℝ SD(V, o, hkl) := by
     have hsd := o.two_mul_finrank_eigenspace_hodgeStar_one even_two two_pos hkl
-    rw [show Nat.choose 4 2 = 6 by decide] at hsd; rw [Fintype.card_fin]; omega
+    have hchoose : Nat.choose 4 2 = 6 := by decide
+    rw [hchoose] at hsd; rw [Fintype.card_fin]; omega
   (basisOfOrthonormalOfCardEqFinrank (orthonormal_selfDualTuple o e J hkl he h₀ h₂₃) hcard)
     |>.toOrthonormalBasis (by rw [coe_basisOfOrthonormalOfCardEqFinrank]; exact
       orthonormal_selfDualTuple o e J hkl he h₀ h₂₃)
@@ -244,11 +240,13 @@ variable (hkl : 2 + 2 = finrank ℝ V) (he : e.toBasis.orientation = o)
   (h₀ : J (e 0) = e 1) (h₂₃ : J (e 2) = e 3)
 include hkl he h₀ h₂₃
 
-private theorem ι_apply_one_canonical {u₀ : PosSpin(o, ρ)}
+/-- Clifford action of `e₁` on a canonical spinor `u₀`: `c(e₁) u₀ = i c(e₀) u₀`. -/
+theorem ι_apply_one_of_cliffordProjection_apply_eq_self {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     ρ (ι Q (e 1)) u₀ = I • ρ (ι Q (e 0)) u₀ :=
   h₀ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 0)
-private theorem ι_apply_three_canonical {u₀ : PosSpin(o, ρ)}
+/-- Clifford action of `e₃` on a canonical spinor `u₀`: `c(e₃) u₀ = i c(e₂) u₀`. -/
+theorem ι_apply_three_of_cliffordProjection_apply_eq_self {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     ρ (ι Q (e 3)) u₀ = I • ρ (ι Q (e 2)) u₀ :=
   h₂₃ ▸ ι_apply_apply_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀ (e 2)
@@ -256,13 +254,13 @@ private theorem ι_one_ι_two_canonical {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     ρ (ι Q (e 1)) (ρ (ι Q (e 2)) u₀) = I • (antiSpin(o, ρ, e) u₀ : W) := by
   rw [ι_apply_comm_basis hQ (by decide : (1 : Fin 4) ≠ 2),
-    ι_apply_one_canonical hQ hkl he h₀ h₂₃ hu₀, map_smul,
+    ι_apply_one_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
     ι_apply_comm_basis hQ (by decide : (2 : Fin 4) ≠ 0)]
   simp [coe_antiCanonicalSpinor]
 private theorem ι_one_ι_three_canonical {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     ρ (ι Q (e 1)) (ρ (ι Q (e 3)) u₀) = -(antiSpin(o, ρ, e) u₀ : W) := by
-  rw [ι_apply_three_canonical hQ hkl he h₀ h₂₃ hu₀, map_smul,
+  rw [ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
     ι_one_ι_two_canonical hQ hkl he h₀ h₂₃ hu₀]
   simp [smul_smul]
 /-- The Kähler bivector acts on the anti-canonical spinor `v₀` with eigenvalue `2i`. -/
@@ -281,7 +279,7 @@ theorem bivectorExterior_kahlerForm_antiCanonicalSpinor {u₀ : PosSpin(o, ρ)}
     simp only [map_neg]
     rw [ι_apply_conj_basis hQ (by decide : (2 : Fin 4) ≠ 3),
       ι_apply_comm_basis hQ (by decide : (3 : Fin 4) ≠ 0),
-      ι_apply_three_canonical hQ hkl he h₀ h₂₃ hu₀]
+      ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀]
     simp [coe_antiCanonicalSpinor]
   rw [AlmostComplexStructure.bivectorExterior_kahlerForm hQ h₀ h₂₃]
   simp only [map_add, map_mul, LinearMap.add_apply, mul_apply_eq_comp, ha, hb]
@@ -321,7 +319,8 @@ theorem inner_antiCanonicalSpinor_eq_zero (hρ : ∀ v, LinearMap.adjoint (ρ (�
     _ = ⟪u₀, cliffordProjection o ρ J.kahlerForm (antiSpin(o, ρ, e) u₀)⟫_ℂ :=
         (isSelfAdjoint_cliffordProjection o J.kahlerForm hρ).isSymmetric _ _
     _ = 0 := by rw [cliffordProjection_antiCanonicalSpinor hQ hkl he h₀ h₂₃ hu₀, inner_zero_right]
-/-- Action of `cliffordRestriction` at `ρ₁` on a canonical spinor `u₀`: `c(ρ₁) u₀ = i √2 v₀`. -/
+/-- Action of `cliffordRestriction` at `ρ₁` on a canonical spinor `u₀`:
+`C(i ρ₁) u₀ = i √2 v₀`. -/
 theorem cliffordRestriction_antiInvariantSelfDual₁_apply {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     cliffordRestriction o ρ (antiInvariantSelfDual₁ o e hkl he) u₀ =
@@ -335,7 +334,8 @@ theorem cliffordRestriction_antiInvariantSelfDual₁_apply {u₀ : PosSpin(o, ρ
   simp only [map_mul, mul_apply_eq_comp, ι_one_ι_three_canonical hQ hkl he h₀ h₂₃ hu₀,
     ← coe_antiCanonicalSpinor, Submodule.coe_smul, ← Complex.coe_smul]
   push_cast; module
-/-- Action of `cliffordRestriction` at `ρ₂` on a canonical spinor `u₀`: `c(ρ₂) u₀ = -√2 v₀`. -/
+/-- Action of `cliffordRestriction` at `ρ₂` on a canonical spinor `u₀`:
+`C(i ρ₂) u₀ = -√2 v₀`. -/
 theorem cliffordRestriction_antiInvariantSelfDual₂_apply {u₀ : PosSpin(o, ρ)}
     (hu₀ : cliffordProjection o ρ J.kahlerForm u₀ = u₀) :
     cliffordRestriction o ρ (antiInvariantSelfDual₂ o e hkl he) u₀ =
@@ -346,7 +346,8 @@ theorem cliffordRestriction_antiInvariantSelfDual₂_apply {u₀ : PosSpin(o, ρ
       (e.orthonormal.2 (by decide : (0 : Fin 4) ≠ 3)),
     coe_cliffordRestriction_ιMulti_apply_of_inner_eq_zero o ρ hQ
       (e.orthonormal.2 (by decide : (1 : Fin 4) ≠ 2))]
-  simp only [map_mul, mul_apply_eq_comp, ι_apply_three_canonical hQ hkl he h₀ h₂₃ hu₀, map_smul,
+  simp only [map_mul, mul_apply_eq_comp,
+    ι_apply_three_of_cliffordProjection_apply_eq_self hQ hkl he h₀ h₂₃ hu₀, map_smul,
     ι_one_ι_two_canonical hQ hkl he h₀ h₂₃ hu₀, ← coe_antiCanonicalSpinor, Submodule.coe_smul,
     ← Complex.coe_smul, smul_smul, I_mul_I]
   push_cast; module
@@ -403,13 +404,12 @@ theorem smul_quadraticTwoFormPolar_smul_antiCanonicalSpinor
   conv_lhs =>
     rw [eq_inner_kahlerSelfDual_add_antiInvariantSelfDual (he := he) (h₀ := h₀) (h₂₃ := h₂₃)
       (quadraticTwoFormPolar o ρ hkl (α • u₀) (β • antiSpin(o, ρ, e) u₀))]
-  rw [hω, hρ₁, hρ₂, zero_smul, zero_add, smul_add, smul_smul, smul_smul, ← mul_assoc,
-    show (√2 / 4 : ℝ) * (-(√2 / 2) * (conj α * β).re) = -((√2 / 4 * (√2 / 2)) * (conj α * β).re)
-      by ring, hs]; module
+  rw [hω, hρ₁, hρ₂, zero_smul, zero_add, smul_add, smul_smul, smul_smul]
+  simp only [neg_mul, mul_neg, ← mul_assoc, hs]; module
 end CliffordRelations
 end SpinorFrame
 
-/-! ### Eight-real-component isometric domain and target intertwiners -/
+/-! ### Eight-real-component weighted-isometric domain and target intertwiners -/
 
 section Intertwiners
 omit [Fact (finrank ℝ V = 4)] in
@@ -433,6 +433,11 @@ omit [Fact (finrank ℝ V = 4)] in theorem normalFrameForm_add (e : OrthonormalB
 omit [Fact (finrank ℝ V = 4)] in theorem normalFrameForm_smul (e : OrthonormalBasis (Fin 4) ℝ V)
     (r : ℝ) (y η : E4) : normalFrameForm e (r • y) (r • η) = r • normalFrameForm e y η := by
   ext v; simp [normalFrameForm]; ring
+omit [Fact (finrank ℝ V = 4)] in
+/-- `normalFrameForm e` maps `(0, 0)` to `0`. -/
+@[simp] theorem normalFrameForm_zero (e : OrthonormalBasis (Fin 4) ℝ V) :
+    normalFrameForm e 0 0 = 0 := by
+  ext v; simp [normalFrameForm]
 omit [FiniteDimensional ℂ W] in variable (o ρ) in
 /-- The positive half-spinor `2(y₂ + i y₃) u₀ + 2(η₂ + i η₃) v₀` in `(u₀, v₀)`. -/
 def normalFrameSpinor (e : OrthonormalBasis (Fin 4) ℝ V) (u₀ : PosSpin(o, ρ))
@@ -443,6 +448,25 @@ omit [FiniteDimensional ℂ W] in theorem normalFrameSpinor_eq (e : OrthonormalB
     (u₀ : PosSpin(o, ρ)) (y η : E4) : normalFrameSpinor o ρ e u₀ y η =
       ((2 : ℂ) * ((y 2 : ℂ) + (y 3 : ℂ) * I)) • u₀ +
         ((2 : ℂ) * ((η 2 : ℂ) + (η 3 : ℂ) * I)) • antiCanonicalSpinor o ρ e u₀ := (rfl)
+omit [FiniteDimensional ℂ W] in variable (o ρ) in
+/-- `normalFrameSpinor` is additive in `(y, η)`. -/
+theorem normalFrameSpinor_add (e : OrthonormalBasis (Fin 4) ℝ V) (u₀ : PosSpin(o, ρ))
+    (y₁ y₂ η₁ η₂ : E4) :
+    normalFrameSpinor o ρ e u₀ (y₁ + y₂) (η₁ + η₂) =
+      normalFrameSpinor o ρ e u₀ y₁ η₁ + normalFrameSpinor o ρ e u₀ y₂ η₂ := by
+  simp only [normalFrameSpinor, PiLp.add_apply, ofReal_add]; module
+omit [FiniteDimensional ℂ W] in variable (o ρ) in
+/-- `normalFrameSpinor` is `ℝ`-homogeneous in `(y, η)`. -/
+theorem normalFrameSpinor_smul (e : OrthonormalBasis (Fin 4) ℝ V) (u₀ : PosSpin(o, ρ))
+    (r : ℝ) (y η : E4) :
+    normalFrameSpinor o ρ e u₀ (r • y) (r • η) = r • normalFrameSpinor o ρ e u₀ y η := by
+  simp only [normalFrameSpinor, PiLp.smul_apply, smul_eq_mul, ofReal_mul]
+  rw [← Complex.coe_smul]; module
+omit [FiniteDimensional ℂ W] in variable (o ρ) in
+/-- `normalFrameSpinor` maps `(0, 0)` to `0`. -/
+@[simp] theorem normalFrameSpinor_zero (e : OrthonormalBasis (Fin 4) ℝ V) (u₀ : PosSpin(o, ρ)) :
+    normalFrameSpinor o ρ e u₀ 0 0 = 0 := by
+  simp [normalFrameSpinor]
 
 section Equivs
 variable (o ρ) (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
@@ -488,12 +512,10 @@ private theorem eq_inner_halfSpinCliffordMul (ν : NegSpin(Q, o, ρ)) :
 def normalDomainEquiv : (E4 × E4) ≃L[ℝ] OneForm(V) × PosSpin(o, ρ) :=
   LinearEquiv.toContinuousLinearEquiv
     { toFun p := (normalFrameForm e p.1 p.2, normalFrameSpinor o ρ e u₀ p.1 p.2)
-      map_add' p q := Prod.ext (normalFrameForm_add e p.1 q.1 p.2 q.2) <| by
-        simp only [normalFrameSpinor, Prod.fst_add, Prod.snd_add, PiLp.add_apply, ofReal_add]
-        module
-      map_smul' r p := Prod.ext (normalFrameForm_smul e r p.1 p.2) <| by
-        simp only [normalFrameSpinor, Prod.smul_fst, Prod.smul_snd, PiLp.smul_apply,
-          smul_eq_mul, ofReal_mul, RingHom.id_apply]; rw [← Complex.coe_smul]; module
+      map_add' p q := Prod.ext (normalFrameForm_add e p.1 q.1 p.2 q.2)
+        (normalFrameSpinor_add o ρ e u₀ p.1 q.1 p.2 q.2)
+      map_smul' r p := Prod.ext (normalFrameForm_smul e r p.1 p.2)
+        (normalFrameSpinor_smul o ρ e u₀ r p.1 p.2)
       invFun q :=
         (!₂[q.1 (fun _ ↦ e 2), q.1 (fun _ ↦ e 3), (⟪u₀, q.2⟫_ℂ).re / 2, (⟪u₀, q.2⟫_ℂ).im / 2],
          !₂[-q.1 (fun _ ↦ e 0), q.1 (fun _ ↦ e 1),
@@ -511,11 +533,10 @@ def normalDomainEquiv : (E4 × E4) ≃L[ℝ] OneForm(V) × PosSpin(o, ρ) :=
           (by ext i; fin_cases i <;> simp [normalFrameForm_apply, normalFrameSpinor, he_ite, hvv])
       right_inv q := Prod.ext
         (by apply (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm.injective; ext w
-            let L := (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm q.1
+            set L := (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm q.1
             have hL (v : V) : q.1 (fun _ ↦ v) = L v := by
               simp [L, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply]
-            conv_rhs => rw [show (ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm
-              q.1 w = L w from rfl, ← e.sum_repr' w]
+            conv_rhs => rw [← e.sum_repr' w]
             simp [normalFrameForm, Fin.sum_univ_four, hL]; ring)
         (by conv_rhs =>
               rw [eq_inner_smul_add_inner_antiCanonicalSpinor_smul hQ hkl he h₀ h₂₃ h₂ hρ
@@ -523,12 +544,10 @@ def normalDomainEquiv : (E4 × E4) ≃L[ℝ] OneForm(V) × PosSpin(o, ρ) :=
             simp only [normalFrameSpinor, Matrix.cons_val_two, Matrix.cons_val_three,
               Matrix.head_cons, Matrix.tail_cons]
             congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring)) }
-@[simp] theorem normalDomainEquiv_apply_fst (y η : E4) :
-    (normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (y, η)).1 =
-      normalFrameForm e y η := (rfl)
-@[simp] theorem normalDomainEquiv_apply_snd (y η : E4) :
-    (normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (y, η)).2 =
-      normalFrameSpinor o ρ e u₀ y η := (rfl)
+/-- Pointwise formula for `normalDomainEquiv`. -/
+@[simp] theorem normalDomainEquiv_apply (p : E4 × E4) :
+    normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ p =
+      (normalFrameForm e p.1 p.2, normalFrameSpinor o ρ e u₀ p.1 p.2) := (rfl)
 @[simp] theorem normalDomainEquiv_symm_apply (q : OneForm(V) × PosSpin(o, ρ)) :
     (normalDomainEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁).symm q =
       (!₂[q.1 (fun _ ↦ e 2), q.1 (fun _ ↦ e 3), (⟪u₀, q.2⟫_ℂ).re / 2, (⟪u₀, q.2⟫_ℂ).im / 2],
@@ -600,16 +619,14 @@ def normalTargetEquiv : (E4 × E4) ≃L[ℝ] ℝ × SD(V, o, hkl) × NegSpin(Q, 
             simp only [Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons,
               Matrix.tail_cons, sub_eq_add_neg, ← neg_smul]
             congr 1 <;> congr 1 <;> (apply Complex.ext <;> simp <;> ring)) }
-@[simp] theorem normalTargetEquiv_apply_fst (L A : E4) :
-    (normalTargetEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (L, A)).1 = L 0 := (rfl)
-@[simp] theorem normalTargetEquiv_apply_snd_fst (L A : E4) :
-    (normalTargetEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (L, A)).2.1 =
-      L 1 • kahlerSelfDual o J hkl he h₀ h₂₃ + A 0 • antiInvariantSelfDual₁ o e hkl he +
-        A 1 • antiInvariantSelfDual₂ o e hkl he := (rfl)
-@[simp] theorem normalTargetEquiv_apply_snd_snd (L A : E4) :
-    (normalTargetEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (L, A)).2.2 =
-      ((2 : ℂ) * ((L 2 : ℂ) + (L 3 : ℂ) * I)) • cMul(o, ρ, e 2, u₀) -
-        ((2 : ℂ) * ((A 2 : ℂ) + (A 3 : ℂ) * I)) • cMul(o, ρ, e 0, u₀) := (rfl)
+/-- Pointwise formula for `normalTargetEquiv`. -/
+@[simp] theorem normalTargetEquiv_apply (p : E4 × E4) :
+    normalTargetEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ p =
+      (p.1 0,
+       p.1 1 • kahlerSelfDual o J hkl he h₀ h₂₃ + p.2 0 • antiInvariantSelfDual₁ o e hkl he +
+         p.2 1 • antiInvariantSelfDual₂ o e hkl he,
+       ((2 : ℂ) * ((p.1 2 : ℂ) + (p.1 3 : ℂ) * I)) • cMul(o, ρ, e 2, u₀) -
+         ((2 : ℂ) * ((p.2 2 : ℂ) + (p.2 3 : ℂ) * I)) • cMul(o, ρ, e 0, u₀)) := (rfl)
 @[simp] theorem normalTargetEquiv_symm_apply (q : ℝ × SD(V, o, hkl) × NegSpin(Q, o, ρ)) :
     (normalTargetEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁).symm q =
       (!₂[q.1, ⟪kahlerSelfDual o J hkl he h₀ h₂₃, q.2.1⟫,
@@ -623,18 +640,22 @@ theorem sq_add_norm_sq_add_norm_sq_div_four_normalTargetEquiv (L A : E4) :
     let q := normalTargetEquiv o ρ hQ hkl he h₀ h₂₃ h₂ hρ hu₀ hu₀₁ (L, A)
     q.1 ^ 2 + ‖q.2.1‖ ^ 2 + ‖q.2.2‖ ^ 2 / 4 = ‖L‖ ^ 2 + ‖A‖ ^ 2 := by
   intro q
+  have hq0 : q.1 = L 0 := by simp only [q, normalTargetEquiv_apply]
+  have hq1_eq : q.2.1 = L 1 • kahlerSelfDual o J hkl he h₀ h₂₃ +
+      A 0 • antiInvariantSelfDual₁ o e hkl he + A 1 • antiInvariantSelfDual₂ o e hkl he := by
+    simp only [q, normalTargetEquiv_apply]
+  have hq1 : ‖q.2.1‖ ^ 2 = L 1 ^ 2 + A 0 ^ 2 + A 1 ^ 2 :=
+    hq1_eq ▸ (selfDual_coords_and_norm (he := he) (h₀ := h₀) (h₂₃ := h₂₃) (L 1) (A 0) (A 1)).2.2.2
   have hq2 : q.2.2 = ((2 : ℂ) * (L 2 + L 3 * I)) • cMul(o, ρ, e 2, u₀) +
       ((-2 : ℂ) * (A 2 + A 3 * I)) • cMul(o, ρ, e 0, u₀) := by
-    simp only [q, normalTargetEquiv_apply_snd_snd]; module
-  rw [show ‖q.2.1‖ ^ 2 = L 1 ^ 2 + A 0 ^ 2 + A 1 ^ 2 from
-      (selfDual_coords_and_norm (he := he) (h₀ := h₀) (h₂₃ := h₂₃) (L 1) (A 0) (A 1)).2.2.2,
-    hq2, norm_smul_add_smul_sq_of_inner_eq_zero
+    simp only [q, normalTargetEquiv_apply]; module
+  rw [hq0, hq1, hq2, norm_smul_add_smul_sq_of_inner_eq_zero
       (norm_halfSpinCliffordMul_basis o ρ hQ hρ hu₀₁ 2)
       (norm_halfSpinCliffordMul_basis o ρ hQ hρ hu₀₁ 0)
       (inner_halfSpinCliffordMul_two_zero o ρ hQ hkl he h₀ h₂₃ hρ hu₀),
     ← normSq_eq_norm_sq, ← normSq_eq_norm_sq, EuclideanSpace.real_norm_sq_eq L,
     EuclideanSpace.real_norm_sq_eq A, Fin.sum_univ_four, Fin.sum_univ_four]
-  simp [q, normSq_apply]; ring
+  simp [normSq_apply]; ring
 end Equivs
 end Intertwiners
 end TauCeti.SeibergWitten
