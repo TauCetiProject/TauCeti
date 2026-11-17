@@ -47,8 +47,8 @@ formal group law exist over every ring surjecting onto its coefficient ring.
 * `TauCeti.LazardRing.adjoin_range_generator`: the generators `xₙ` generate `L` as a ring.
 * `TauCeti.LazardRing.augmentation_mvPolynomialEquiv` and
   `TauCeti.LazardRing.augmentationIdeal_eq_span_generator`: under `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L`, the
-  augmentation is `constantCoeff`, `L` is a domain of characteristic zero, and the augmentation
-  ideal is spanned by the generators `xₙ`.
+  augmentation is `constantCoeff`, `L` is an integral domain, and the augmentation ideal is
+  spanned by the generators `xₙ`.
 * `TauCeti.LazardRing.hurewicz_injective`: the Hurewicz homomorphism `L →+* ℤ[b₁, b₂, …]` is
   injective.
 * `TauCeti.LazardRing.mvPolynomialEquiv_mem_grading_iff`: the isomorphism carries the polynomials
@@ -136,12 +136,6 @@ theorem mvPolynomialEquiv_symm_generator (n : ℕ+) :
 presentation (`TauCeti.LazardRing.mvPolynomialEquiv`). -/
 instance : IsDomain LazardRing :=
   mvPolynomialEquiv.symm.toMulEquiv.isDomain
-
-/-- The Lazard ring has characteristic zero, since the augmentation
-`TauCeti.LazardRing.augmentation` (corresponding to `MvPolynomial.constantCoeff` under Lazard's
-polynomial presentation `TauCeti.LazardRing.mvPolynomialEquiv`) splits `ℤ →+* LazardRing`. -/
-instance : CharZero LazardRing :=
-  ⟨fun m n h ↦ Nat.cast_injective (R := ℤ) (by simpa using congrArg augmentation h)⟩
 
 /-- Under `ℤ[x₁, x₂, …] ≃ₐ[ℤ] L`, the augmentation of `L` is the constant coefficient. -/
 @[simp]
