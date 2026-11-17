@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Projective
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 public import Mathlib.LinearAlgebra.Matrix.ToLin
-public import Mathlib.RingTheory.Finiteness.Projective
+
+import Mathlib.LinearAlgebra.Dual.Lemmas
 
 /-!
 # The contragredient dual along a ring isomorphism
@@ -423,23 +425,18 @@ instance free [Module.Finite R M] [Module.Free R M] :
     Module.Free S (ContragredientDual σ M) :=
   .of_basis ((Module.Free.chooseBasis R M).contragredientDual σ)
 
-private theorem exists_retract (σ : S ≃+* R) [Module.Finite R M] [Module.Projective R M] :
-    ∃ (n : ℕ) (i : ContragredientDual σ M →ₗ[S] ContragredientDual σ (Fin n → R))
-      (s : ContragredientDual σ (Fin n → R) →ₗ[S] ContragredientDual σ M), s ∘ₗ i = .id := by
-  obtain ⟨n, f, g, -, -, hfg⟩ := Module.Finite.exists_comp_eq_id_of_projective R M
-  exact ⟨n, map σ f, map σ g, by rw [← map_comp, hfg, map_id]⟩
-
 instance projective [Module.Finite R M] [Module.Projective R M] :
-    Module.Projective S (ContragredientDual σ M) := by
-  obtain ⟨_, i, s, hsi⟩ := exists_retract σ (M := M)
-  exact .of_split i s hsi
+    Module.Projective S (ContragredientDual σ M) :=
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  Module.Projective.of_equiv (toDualLinearEquiv σ M).symm
 
 instance finite [Module.Finite R M] [Module.Projective R M] :
-    Module.Finite S (ContragredientDual σ M) := by
-  obtain ⟨n, i, s, hsi⟩ := exists_retract σ (M := M)
-  have : Module.Finite S (ContragredientDual σ (Fin n → R)) :=
-    .of_basis ((Pi.basisFun R (Fin n)).contragredientDual σ)
-  exact .of_surjective s (LinearMap.surjective_of_comp_eq_id i s hsi)
+    Module.Finite S (ContragredientDual σ M) :=
+  haveI := RingHomInvPair.of_ringEquiv σ
+  haveI := RingHomInvPair.of_ringEquiv_symm σ
+  Module.Finite.of_surjective (toDualLinearEquiv σ M).symm.toLinearMap
+    (toDualLinearEquiv σ M).symm.surjective
 
 end MatrixAndProjective
 

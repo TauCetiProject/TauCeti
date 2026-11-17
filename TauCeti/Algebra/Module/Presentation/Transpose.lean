@@ -63,7 +63,9 @@ Dasgupta–Kakde equation (171)).
   presenting arrows.
 * `TauCeti.PresentationTranspose.fstEquiv` and `TauCeti.PresentationTranspose.mulLeftEquiv`:
   explicit identifications `PresentationTranspose σ (LinearMap.fst R R R) ≃ₗ[S] S` and
-  `PresentationTranspose σ (LinearMap.mulLeft R a) ≃ₗ[S] S ⧸ Ideal.span {σ.symm a}`.
+  `PresentationTranspose σ (LinearMap.mulLeft R a) ≃ₗ[S] S ⧸ Ideal.span {σ.symm a}`, characterized
+  on representatives by `fstEquiv_mk`, `fstEquiv_symm_apply`, `mulLeftEquiv_mk`, and
+  `mulLeftEquiv_symm_mk`.
 * `TauCeti.PresentationTranspose.quadraticPresentation`: the quadratic presentation over `S`
   attached to a quadratic presentation `P` over `R`, characterized by `quadraticPresentation_size`,
   `quadraticPresentation_rel`, and `quadraticPresentation_gen_apply`.
@@ -188,6 +190,18 @@ def toARTransposeLinearEquivRefl (f : P₁ →ₗ[R] P₀) :
     rw [toARTranspose_smul, RingEquiv.refl_apply, RingHom.id_apply]
   left_inv := toARTranspose.left_inv
   right_inv := toARTranspose.right_inv
+
+@[simp]
+theorem toARTransposeLinearEquivRefl_apply {f : P₁ →ₗ[R] P₀}
+    (x : PresentationTranspose (RingEquiv.refl R) f) :
+    toARTransposeLinearEquivRefl f x = toARTranspose x :=
+  (rfl)
+
+@[simp]
+theorem toARTransposeLinearEquivRefl_symm_apply {f : P₁ →ₗ[R] P₀}
+    (y : AuslanderReitenTranspose f) :
+    (toARTransposeLinearEquivRefl f).symm y = toARTranspose.symm y :=
+  (rfl)
 
 /-- The `S`-linear quotient map `P₁^* →ₗ[S] PresentationTranspose σ f` from the contragredient dual
 of `P₁` onto the transpose. -/
@@ -347,6 +361,17 @@ theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] 
   ext x
   simp [LinearMap.lcomp_apply]
 
+@[simp]
+theorem congr_symm_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
+    (e₁ : P₁ ≃ₗ[R] Q₁) (e₀ : P₀ ≃ₗ[R] Q₀)
+    (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) (ψ : ContragredientDual σ Q₁) :
+    (congr σ e₁ e₀ hfg).symm (mk σ g ψ) = mk σ f (ContragredientDual.congr σ e₁ ψ) := by
+  apply (congr σ e₁ e₀ hfg).injective
+  simp only [LinearEquiv.apply_symm_apply, congr_mk]
+  congr 1
+  ext x
+  simp
+
 /-- A split monomorphism has vanishing transpose. -/
 theorem subsingleton_of_comp_eq_id (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {r : P₀ →ₗ[R] P₁}
     (hr : r ∘ₗ f = LinearMap.id) : Subsingleton (PresentationTranspose σ f) :=
@@ -399,6 +424,19 @@ def fstEquiv (σ : S ≃+* R) : PresentationTranspose σ (LinearMap.fst R R R) �
   change -φ (1, 0) * a = φ (0, 1) * b - (a * φ (1, 0) + b * φ (0, 1))
   ring
 
+/-- `fstEquiv` sends the class of `φ` to `σ⁻¹(φ (0, 1))`. -/
+@[simp]
+theorem fstEquiv_mk (σ : S ≃+* R) (φ : ContragredientDual σ (R × R)) :
+    fstEquiv σ (mk σ (LinearMap.fst R R R) φ) = σ.symm (φ (0, 1)) := by
+  simp [fstEquiv]
+
+/-- The inverse of `fstEquiv` sends `s : S` to `s • [snd]`. -/
+@[simp]
+theorem fstEquiv_symm_apply (σ : S ≃+* R) (s : S) :
+    (fstEquiv σ).symm s =
+      s • mk σ (LinearMap.fst R R R) (ContragredientDual.ofDual (LinearMap.snd R R R)) := by
+  simp [fstEquiv]
+
 /-- The transpose of multiplication by `a : R` (`R →(a) R`) is `S`-linearly isomorphic to
 `S ⧸ Ideal.span {σ.symm a}` via `[φ] ↦ [σ⁻¹(φ 1)]`. -/
 def mulLeftEquiv (σ : S ≃+* R) (a : R) :
@@ -445,6 +483,23 @@ def mulLeftEquiv (σ : S ≃+* R) (a : R) :
   have hx : φ x = x * φ 1 := by
     simpa only [smul_eq_mul, mul_one] using φ.map_smul_of_tower x 1
   simp [hx, hidDual, mul_comm]
+
+/-- `mulLeftEquiv` sends the class of `φ` to the quotient class of `σ⁻¹(φ 1)` modulo
+`Ideal.span {σ.symm a}`. -/
+@[simp]
+theorem mulLeftEquiv_mk (σ : S ≃+* R) (a : R) (φ : ContragredientDual σ R) :
+    mulLeftEquiv σ a (mk σ (LinearMap.mulLeft R a) φ) =
+      Ideal.Quotient.mk (Ideal.span {σ.symm a}) (σ.symm (φ 1)) := by
+  simp [mulLeftEquiv]
+
+/-- The inverse of `mulLeftEquiv` sends `[s]` to `s • [id]`. -/
+@[simp]
+theorem mulLeftEquiv_symm_mk (σ : S ≃+* R) (a : R) (s : S) :
+    (mulLeftEquiv σ a).symm (Ideal.Quotient.mk (Ideal.span {σ.symm a}) s) =
+      s • mk σ (LinearMap.mulLeft R a) (ContragredientDual.ofDual LinearMap.id) := by
+  apply (mulLeftEquiv σ a).injective
+  rw [LinearEquiv.apply_symm_apply, map_smul, mulLeftEquiv_mk]
+  simp [← Ideal.Quotient.algebraMap_eq, Algebra.smul_def]
 
 instance finite {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀} [Module.Finite R P₁] [Module.Projective R P₁] :
     Module.Finite S (PresentationTranspose σ f) :=
