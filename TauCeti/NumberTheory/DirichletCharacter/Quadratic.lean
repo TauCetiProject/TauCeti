@@ -39,6 +39,8 @@ have absolute value one.
   quadratic.
 * `MulChar.IsQuadratic.primitiveCharacter`: at a nonzero level, the primitive character of a
   quadratic character is quadratic.
+* `DirichletCharacter.isQuadratic_of_forall_isCoprime_apply_eq`: a character agreeing with a
+  quadratic character at every integer coprime to its level is quadratic.
 * `DirichletCharacter.isQuadratic_iff_eq_one_or_eq_quadraticChar`: at a prime level, the quadratic
   characters are the principal one and the Legendre character.
 * `DirichletCharacter.conductor_changeLevel_quadraticChar`: for odd `p`, with values in a
@@ -97,6 +99,20 @@ theorem _root_.MulChar.IsQuadratic.primitiveCharacter {R : Type*} [CommRing R] {
     χ.primitiveCharacter.IsQuadratic := by
   rw [← isQuadratic_changeLevel_iff χ.conductor_dvd_level, changeLevel_primitiveCharacter]
   exact hχ
+
+/-- A Dirichlet character agreeing with a quadratic character (of any level) at every integer
+coprime to its level is quadratic. -/
+theorem isQuadratic_of_forall_isCoprime_apply_eq {R : Type*} [CommRing R] {N M : ℕ}
+    {χ : DirichletCharacter R N} {ψ : DirichletCharacter R M} (hψ : ψ.IsQuadratic)
+    (hval : ∀ n : ℤ, IsCoprime n N → χ n = ψ n) : χ.IsQuadratic := by
+  intro a
+  by_cases ha : IsUnit a
+  · obtain ⟨n, rfl⟩ := ZMod.intCast_surjective a
+    have hn : IsCoprime n N := by
+      rwa [isCoprime_comm, ← ZMod.isUnit_intCast_iff_isCoprime]
+    rw [hval n hn]
+    exact hψ _
+  · exact Or.inl (MulChar.map_nonunit χ ha)
 
 section Prime
 

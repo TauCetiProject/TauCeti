@@ -39,6 +39,12 @@ noncomputable def fundamentalDiscriminantCharCast (R : Type*) [CommRing R]
     fundamentalDiscriminantCharCast R D hD a = (fundamentalDiscriminantChar D hD a : R) :=
   (rfl)
 
+/-- Scalar realization into `ℤ` recovers the integer-valued fundamental-discriminant character. -/
+@[simp] theorem fundamentalDiscriminantCharCast_int (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminantCharCast ℤ D hD = fundamentalDiscriminantChar D hD := by
+  ext a
+  simp
+
 /-- Realizations commute with scalar maps, including the embedding of real into complex values. -/
 @[simp] theorem fundamentalDiscriminantCharCast_ringHomComp {R S : Type*}
     [CommRing R] [CommRing S] (hD : Int.IsFundamentalDiscr D) (f : R →+* S) :

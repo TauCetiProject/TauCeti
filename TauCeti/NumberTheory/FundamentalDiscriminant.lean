@@ -20,6 +20,8 @@ prime-discriminant theory.
 
 * `Int.decidablePredIsFundamentalDiscr`: being a fundamental discriminant is decidable, through
   congruences mod `4` and squarefreeness of natural numbers, so the kernel can check it.
+* `Int.isFundamentalDiscr_one`, `Int.IsFundamentalDiscr.natAbs_eq_one_iff`: `1` is the unique
+  fundamental discriminant of absolute value `1`.
 * `Int.IsFundamentalDiscr.not_sixteen_dvd`: a fundamental discriminant is not divisible by `16`.
 * `Int.IsFundamentalDiscr.mul`: coprime fundamental discriminants have fundamental product.
 * `Int.IsFundamentalDiscr.not_isSquare_rat`: a fundamental discriminant other than `1` is not a
@@ -41,6 +43,19 @@ instance decidablePredIsFundamentalDiscr : DecidablePred IsFundamentalDiscr := f
 theorem IsFundamentalDiscr.neZero_natAbs {D : ℤ} (hD : IsFundamentalDiscr D) :
     NeZero D.natAbs :=
   ⟨Int.natAbs_ne_zero.mpr hD.ne_zero⟩
+
+/-- `1` is a fundamental discriminant (the discriminant of `ℚ`). -/
+@[simp]
+theorem isFundamentalDiscr_one : IsFundamentalDiscr 1 :=
+  isFundamentalDiscr_iff_squarefree.mpr (Or.inl ⟨by norm_num, squarefree_one⟩)
+
+/-- The only fundamental discriminant of absolute value `1` is `1`, since `-1 ≡ 3 (mod 4)` is not
+a fundamental discriminant. -/
+@[simp]
+theorem IsFundamentalDiscr.natAbs_eq_one_iff {D : ℤ} (hD : IsFundamentalDiscr D) :
+    D.natAbs = 1 ↔ D = 1 := by
+  have := hD.emod_four_eq_zero_or_one
+  omega
 
 /-- A fundamental discriminant is not divisible by `16`: it is odd, or `4 * x` with `4 ∤ x`. -/
 theorem IsFundamentalDiscr.not_sixteen_dvd {D : ℤ} (hD : IsFundamentalDiscr D) :

@@ -28,11 +28,18 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 ## Main definitions and results
 
 * `TauCeti.Multiquadratic.fundamentalDiscriminant`: `d` if `d ≡ 1 (mod 4)`, else `4 * d`, with its
-  defining equation `fundamentalDiscriminant_def`.
-* `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant`: for squarefree `d`,
-  its fundamental discriminant is a fundamental discriminant.
+  defining equation `fundamentalDiscriminant_def` and injectivity
+  `fundamentalDiscriminant_injective`.
+* `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant`,
+  `TauCeti.Multiquadratic.isFundamentalDiscr_fundamentalDiscriminant_iff`:
+  `fundamentalDiscriminant d` is a fundamental discriminant if and only if `d` is squarefree.
+* `TauCeti.Multiquadratic.existsUnique_squarefree_fundamentalDiscriminant_eq`: every fundamental
+  discriminant is `fundamentalDiscriminant d` for a unique squarefree `d`, namely
+  `if D % 4 = 1 then D else D / 4` (`fundamentalDiscriminant_ite_emod_four`,
+  `squarefree_ite_emod_four`).
 * `TauCeti.Multiquadratic.exists_sq_mul_eq_fundamentalDiscriminant`: it equals `c² * d` for some
-  `c ∈ {1, 2}`, so it lies in the square class of `d`.
+  `c ∈ {1, 2}`, so it lies in the square class of `d`, and in any commutative ring where `2` is a
+  unit it is a square iff `d` is (`isSquare_intCast_fundamentalDiscriminant_iff`).
 * `TauCeti.Multiquadratic.dvd_fundamentalDiscriminant_iff`: for `p` coprime to `2`,
   `p ∣ fundamentalDiscriminant d ↔ p ∣ d` (the ramified odd primes are the divisors of `d`).
 * `TauCeti.Multiquadratic.two_not_dvd_fundamentalDiscriminant_iff_mod_four_eq_one`:
@@ -137,5 +144,92 @@ theorem fundamentalDiscriminant_primeDiscriminantRadicand {D : ℤ} (hD : IsPrim
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
       fundamentalDiscriminant_of_mod_four_eq_one
         (oddPrimeDiscriminant_mod_four_eq_one_iff.mpr hodd)]
+
+/-- The fundamental discriminant of `1` is `1`. -/
+@[simp]
+theorem fundamentalDiscriminant_one : fundamentalDiscriminant 1 = 1 :=
+  fundamentalDiscriminant_of_mod_four_eq_one (by norm_num)
+
+/-- `fundamentalDiscriminant d ≡ 1 (mod 4)` if and only if `d ≡ 1 (mod 4)`. -/
+@[simp]
+theorem fundamentalDiscriminant_emod_four_eq_one_iff (d : ℤ) :
+    fundamentalDiscriminant d % 4 = 1 ↔ d % 4 = 1 := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant` is injective on `ℤ`. -/
+theorem fundamentalDiscriminant_injective : Function.Injective fundamentalDiscriminant := by
+  intro d₁ d₂ h
+  rw [fundamentalDiscriminant_def, fundamentalDiscriminant_def] at h
+  split_ifs at h <;> omega
+
+/-- Two integers have the same fundamental discriminant if and only if they are equal. -/
+@[simp]
+theorem fundamentalDiscriminant_eq_iff {d₁ d₂ : ℤ} :
+    fundamentalDiscriminant d₁ = fundamentalDiscriminant d₂ ↔ d₁ = d₂ :=
+  fundamentalDiscriminant_injective.eq_iff
+
+/-- `fundamentalDiscriminant d = 1` if and only if `d = 1`. -/
+@[simp]
+theorem fundamentalDiscriminant_eq_one_iff {d : ℤ} : fundamentalDiscriminant d = 1 ↔ d = 1 := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs <;> omega
+
+/-- `fundamentalDiscriminant d` is a fundamental discriminant if and only if `d` is squarefree. -/
+@[simp]
+theorem isFundamentalDiscr_fundamentalDiscriminant_iff {d : ℤ} :
+    Int.IsFundamentalDiscr (fundamentalDiscriminant d) ↔ Squarefree d := by
+  refine ⟨fun h ↦ ?_, isFundamentalDiscr_fundamentalDiscriminant⟩
+  by_cases hmod : d % 4 = 1
+  · rw [fundamentalDiscriminant_of_mod_four_eq_one hmod,
+      Int.isFundamentalDiscr_iff_squarefree] at h
+    exact (h.resolve_right (by omega)).2
+  · rw [fundamentalDiscriminant_of_mod_four_ne_one hmod, Int.isFundamentalDiscr_four_mul] at h
+    exact h.1
+
+/-- Recovering a fundamental discriminant from its squarefree radicand
+`if D % 4 = 1 then D else D / 4`. -/
+theorem fundamentalDiscriminant_ite_emod_four {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    fundamentalDiscriminant (if D % 4 = 1 then D else D / 4) = D := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, _⟩ | ⟨h0, _, h4⟩
+  · rw [ite_eq_left h1, fundamentalDiscriminant_of_mod_four_eq_one h1]
+  · rw [ite_eq_right (by omega), fundamentalDiscriminant_of_mod_four_ne_one (by omega)]
+    omega
+
+/-- The radicand `if D % 4 = 1 then D else D / 4` of a fundamental discriminant is squarefree. -/
+theorem squarefree_ite_emod_four {D : ℤ} (hD : Int.IsFundamentalDiscr D) :
+    Squarefree (if D % 4 = 1 then D else D / 4) := by
+  rcases Int.isFundamentalDiscr_iff_squarefree.mp hD with ⟨h1, hsf⟩ | ⟨h0, hsf, _⟩
+  · rwa [ite_eq_left h1]
+  · rwa [ite_eq_right (by omega)]
+
+/-- **Bijection between squarefree integers and fundamental discriminants.** Every fundamental
+discriminant `D` is `fundamentalDiscriminant d` for a unique squarefree integer `d`, namely
+`D` when `D ≡ 1 (mod 4)` and `D / 4` otherwise. -/
+theorem existsUnique_squarefree_fundamentalDiscriminant_eq {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) :
+    ∃! d : ℤ, Squarefree d ∧ fundamentalDiscriminant d = D :=
+  ⟨if D % 4 = 1 then D else D / 4,
+    ⟨squarefree_ite_emod_four hD, fundamentalDiscriminant_ite_emod_four hD⟩,
+    fun _ ⟨_, hd⟩ ↦ fundamentalDiscriminant_injective
+      (hd.trans (fundamentalDiscriminant_ite_emod_four hD).symm)⟩
+
+/-- In any commutative ring where `2` is a unit (for instance `ZMod m` for odd `m`, or any field
+of characteristic other than `2`), `fundamentalDiscriminant d` is a square if and only if `d` is
+a square, since the two differ at most by the unit square `4 = 2 ^ 2`. -/
+theorem isSquare_intCast_fundamentalDiscriminant_iff {R : Type*} [CommRing R]
+    (h2 : IsUnit (2 : R)) (d : ℤ) :
+    IsSquare ((fundamentalDiscriminant d : ℤ) : R) ↔ IsSquare (d : R) := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs
+  · exact Iff.rfl
+  · obtain ⟨u, hu⟩ := h2
+    have h4 : ((4 * d : ℤ) : R) = (u : R) ^ 2 * (d : R) := by
+      push_cast
+      rw [hu]
+      ring
+    rw [h4]
+    refine ⟨fun h ↦ ?_, (IsSquare.sq (u : R)).mul⟩
+    simpa [← mul_assoc, ← mul_pow] using (IsSquare.sq ((u⁻¹ : Rˣ) : R)).mul h
 
 end TauCeti.Multiquadratic

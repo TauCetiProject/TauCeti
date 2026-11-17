@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.Character
+public import TauCeti.NumberTheory.Multiquadratic.FundamentalDiscriminant.OfSquarefree
 import Mathlib.Tactic.NormNum.LegendreSymbol
 
 /-!
@@ -14,7 +15,9 @@ import Mathlib.Tactic.NormNum.LegendreSymbol
 The primitive character `fundamentalDiscriminantChar D hD` is the Kronecker character
 `TauCeti.kroneckerChar` of `D`. At an odd natural number `n` its value is `jacobiSym D n`, including
 zero when `n` is not coprime to `D`. At even arguments the Jacobi symbol need not agree with the
-character.
+character. When `D = fundamentalDiscriminant d` comes from a radicand `d`, the two differ at most
+by the factor `4`, so `jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n` at every odd `n`
+and `legendreSym p (fundamentalDiscriminant d) = legendreSym p d` at every odd prime `p`.
 
 This file also identifies the characters of prime discriminants, including `-4`, `-3`, `8`,
 and `-8`, and proves multiplicativity in coprime fundamental discriminants.
@@ -33,6 +36,24 @@ theorem fundamentalDiscriminantChar_natCast_eq_jacobiSym {D : ℤ}
     (hD : Int.IsFundamentalDiscr D) {n : ℕ} (hn : Odd n) :
     fundamentalDiscriminantChar D hD (n : ℤ) = jacobiSym D n := by
   rw [fundamentalDiscriminantChar_intCast, kroneckerSym_eq_jacobiSym D hn]
+
+/-- For every odd natural number `n`, the Jacobi symbol `(fundamentalDiscriminant d / n)` equals
+`(d / n)`: the two numerators differ at most by the odd-coprime square factor `4`. -/
+@[simp]
+theorem jacobiSym_fundamentalDiscriminant (d : ℤ) {n : ℕ} (hn : Odd n) :
+    jacobiSym (fundamentalDiscriminant d) n = jacobiSym d n := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs
+  · rfl
+  · rw [jacobiSym.mul_left, jacobiSym.at_four hn, one_mul]
+
+/-- For every odd prime `p`, the Legendre symbol `(fundamentalDiscriminant d / p)` equals
+`(d / p)`, including the value `0` when `p ∣ d`. -/
+@[simp]
+theorem legendreSym_fundamentalDiscriminant (d : ℤ) {p : ℕ} [Fact p.Prime] (hp2 : p ≠ 2) :
+    legendreSym p (fundamentalDiscriminant d) = legendreSym p d := by
+  rw [jacobiSym.legendreSym.to_jacobiSym, jacobiSym.legendreSym.to_jacobiSym,
+    jacobiSym_fundamentalDiscriminant d ((Fact.out : p.Prime).odd_of_ne_two hp2)]
 
 -- Simplify these integer evaluations before reducing their casts.
 /-- A prime discriminant gives its previously defined prime-discriminant character. -/
