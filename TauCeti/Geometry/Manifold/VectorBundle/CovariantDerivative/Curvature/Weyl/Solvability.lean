@@ -16,6 +16,7 @@ import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.Isometry
 import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.ConformalCurvature
+import TauCeti.Geometry.Manifold.Riemannian.Isometry.Pullback
 import TauCeti.Geometry.Manifold.Riemannian.Isometry.Restriction
 import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -419,18 +420,19 @@ private theorem exists_pullback_parametrization_of_isInteriorPoint {x₀ : M}
       simpa using Φ.symm.continuous.tendsto (Φ ⟨x₀, hx₀U⟩)
     exact (hΦ_tendsto.eventually hG_eq).mono fun z hz ↦ by
       simpa [f] using hz
-  · let _ : RiemannianBundle (fun z : E ↦ TangentSpace 𝓘(ℝ, E) z) := ⟨gE.toRiemannianMetric⟩
-    refine
-      { contMDiff := hf_smooth.of_le le_self_add
-        isInvertible_mfderiv := hinv
-        inner_mfderiv := fun z v w ↦ ?_ }
-    -- `RiemannianBundle` installs `RiemannianBundle.g.inner` (on `M`) and `gE.inner` (on `E`)
-    -- as the fibre `Inner.inner`.
-    change RiemannianBundle.g.inner (f z) (mfderiv 𝓘(ℝ, E) I f z v) (mfderiv 𝓘(ℝ, E) I f z w) =
-      gE.inner z v w
-    rw [← ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner
-      (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x)]
-    exact (gM.pullback_inner f hf_smooth _ z v w).symm
+  · have hgM : (⟨gM.toRiemannianMetric⟩ : RiemannianBundle (fun x : M ↦ TangentSpace I x)) =
+        ‹RiemannianBundle (fun x : M ↦ TangentSpace I x)› := by
+      have hinner : gM.toRiemannianMetric.inner = RiemannianBundle.g.inner := by
+        ext x v w
+        exact ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner
+          (IB := I) (n := ∞) (F := E) (V := fun x : M ↦ TangentSpace I x) x v w
+      refine congrArg RiemannianBundle.mk ?_
+      cases h₁ : gM.toRiemannianMetric
+      cases h₂ : RiemannianBundle.g (E := fun x : M ↦ TangentSpace I x)
+      rw [h₁, h₂] at hinner
+      cases hinner
+      rfl
+    exact hgM ▸ gM.isLocalRiemannianIsometry_pullback_of_isInvertible hf_smooth hinv
 
 /-- **Local solutions of the conformal flattening equation on a manifold.** Near an interior point
 `x₀` of a smooth Riemannian manifold `M` where the Weyl and Cotton tensors vanish in a
