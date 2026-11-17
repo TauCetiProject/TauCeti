@@ -523,29 +523,31 @@ theorem exists_norm_le_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m :
 
 /-- **Derivatives of continuous framed fields are bounded.** For `s > n + 1`, the `n`-th derivative
 of each coordinate of a continuous field in `A_m^s` is bounded on the whole plane: the `n`-th
-derivative of its Sobolev tail vanishes at infinity, and the reference field has bounded
-derivatives of every order. -/
+derivative of its Sobolev tail is bounded by the Sobolev embedding, and the reference field has
+bounded derivatives of every order. -/
 theorem exists_norm_iteratedFDeriv_apply_le_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
     {m : ℕ} {s : ℝ} {n : ℕ} (hs : (n : ℝ) + 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hx : x ∈ framedFieldSpace f m s) (hcont : Continuous x) (i : Fin 4) :
     ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ x z i) z‖ ≤ C := by
   set y := x - referenceField f m
-  have hy : y ∈ sobolevFields s := mem_framedFieldSpace.1 hx
-  have hycont : Continuous y := hcont.sub (contDiff_referenceField f m).continuous
-  have hyc : ContDiff ℝ n fun z ↦ y z i :=
-    contDiff_euclidean.1 (contDiff_of_mem_sobolevFields hs hy hycont) i
+  have hyi : (fun z ↦ y z i) ∈ realSobolevFunctions ℂ s 2 :=
+    mem_sobolevFields.1 (mem_framedFieldSpace.1 hx) i
+  have hyic : Continuous fun z ↦ y z i :=
+    (PiLp.continuous_apply 2 _ i).comp (hcont.sub (contDiff_referenceField f m).continuous)
+  have hs' : (finrank ℝ ℂ : ℝ) + 2 * n < 2 * s := by
+    have := finrank_real_complex_lt_two_mul (s := s - n) (by linarith)
+    linarith
+  have hyc : ContDiff ℝ n fun z ↦ y z i := contDiff_of_mem_realSobolevFunctions hs' hyi hyic
   have hrc : ContDiff ℝ n fun z ↦ referenceField f m z i :=
     (contDiff_euclidean.1 (contDiff_referenceField f m) i).of_le (by simp)
-  let d : ZeroAtInftyContinuousMap ℂ (ContinuousMultilinearMap ℝ (fun _ : Fin n ↦ ℂ) ℝ) :=
-    ⟨⟨iteratedFDeriv ℝ n fun z ↦ y z i, hyc.continuous_iteratedFDeriv le_rfl⟩,
-      tendsto_iteratedFDeriv_cocompact_of_mem_sobolevFields_apply hs hy hycont i⟩
-  obtain ⟨D, hD⟩ := isBounded_iff_forall_norm_le.1 d.isBounded_range
+  obtain ⟨D, hD⟩ :=
+    exists_norm_iteratedFDeriv_le_of_mem_realSobolevFunctions (k := n) hs' hyi hyic le_rfl
   obtain ⟨B, hB⟩ := exists_norm_iteratedFDeriv_referenceField_apply_le f m i n
   refine ⟨D + B, fun z ↦ ?_⟩
   have heq : (fun w ↦ x w i) = (fun w ↦ y w i) + fun w ↦ referenceField f m w i := by
     ext w; simp [y]
   rw [heq, iteratedFDeriv_add_apply hyc.contDiffAt hrc.contDiffAt]
-  exact (norm_add_le _ _).trans (add_le_add (hD _ ⟨z, rfl⟩) (hB z))
+  exact (norm_add_le _ _).trans (add_le_add (hD z) (hB z))
 
 /-! ### Fields in every `A_m^k` -/
 
