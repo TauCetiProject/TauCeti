@@ -59,6 +59,10 @@ vector representation in `TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Sev
   monomials `±e_s` with `s ∈ spinSevenSupports`.
 * `TauCeti.isSignedBasisSpinZeroSeven_iff`: `IsSignedBasisSpinZeroSeven g s` holds exactly when
   `g = e_s` or `g = -e_s`.
+* `TauCeti.IsSignedBasisSpinZeroSeven.mul`, `TauCeti.IsSignedBasisSpinZeroSeven.mul_self` and
+  `TauCeti.IsSignedBasisSpinZeroSeven.eq_or_eq_negOne_mul`: the product of `±e_s` and `±e_t` is
+  `±e_{s ∆ t}`, `±e_s` squares to `1` for `s ∈ spinSevenSupports`, and two signed basis monomials
+  of the same support agree up to `-1`.
 * `TauCeti.exists_isSignedBasisSpinZeroSeven_mem_realSpinZeroSevenElementaryAbelian`: for every
   `s ∈ spinSevenSupports`, the subgroup contains a signed basis monomial `±e_s`.
 * `TauCeti.mul_self_eq_one_of_mem_realSpinZeroSevenElementaryAbelian`,
@@ -163,7 +167,7 @@ theorem isSignedBasisSpinZeroSeven_iff {g : realCliffordSpinGroup 0 7}
   Iff.rfl
 
 /-- The product of `±e_s` and `±e_t` is `±e_{s ∆ t}`. -/
-private theorem IsSignedBasisSpinZeroSeven.mul {g h : realCliffordSpinGroup 0 7}
+theorem IsSignedBasisSpinZeroSeven.mul {g h : realCliffordSpinGroup 0 7}
     {s t : Finset (Fin (0 + 7))} (hg : IsSignedBasisSpinZeroSeven g s)
     (hh : IsSignedBasisSpinZeroSeven h t) : IsSignedBasisSpinZeroSeven (g * h) (s ∆ t) := by
   unfold IsSignedBasisSpinZeroSeven at *
@@ -173,7 +177,7 @@ private theorem IsSignedBasisSpinZeroSeven.mul {g h : realCliffordSpinGroup 0 7}
       rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _)]) hg hh
 
 /-- A signed basis monomial `±e_s` with `s` a support squares to `1`. -/
-private theorem IsSignedBasisSpinZeroSeven.mul_self {g : realCliffordSpinGroup 0 7}
+theorem IsSignedBasisSpinZeroSeven.mul_self {g : realCliffordSpinGroup 0 7}
     {s : Finset (Fin (0 + 7))} (hg : IsSignedBasisSpinZeroSeven g s) (hs : s ∈ spinSevenSupports) :
     g * g = 1 := by
   have hss : basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s *
@@ -187,12 +191,12 @@ private theorem IsSignedBasisSpinZeroSeven.mul_self {g : realCliffordSpinGroup 0
   rcases hg with hg | hg <;> simp only [hg, neg_mul_neg, hss]
 
 /-- Two Spin elements that are signed basis monomials of the same support agree up to `-1`. -/
-private theorem IsSignedBasisSpinZeroSeven.eq_or_eq_negOne_mul {g h : realCliffordSpinGroup 0 7}
+theorem IsSignedBasisSpinZeroSeven.eq_or_eq_negOne_mul {g h : realCliffordSpinGroup 0 7}
     {s : Finset (Fin (0 + 7))} (hg : IsSignedBasisSpinZeroSeven g s)
     (hh : IsSignedBasisSpinZeroSeven h s) :
-    g = h ∨ g = spinNegOne * h := by
+    g = h ∨ g = spinGroup.negOne _ (nondegenerate_realCliffordForm 0 7).ne_zero * h := by
   unfold IsSignedBasisSpinZeroSeven at hg hh
-  simp only [spinNegOne, Subtype.ext_iff, Submonoid.coe_mul, spinGroup.coe_negOne, neg_one_mul]
+  simp only [Subtype.ext_iff, Submonoid.coe_mul, spinGroup.coe_negOne, neg_one_mul]
   rcases hg with hg | hg <;> rcases hh with hh | hh <;> simp [hg, hh]
 
 /-! ### The elementary abelian subgroup -/
@@ -282,7 +286,7 @@ theorem mem_realSpinZeroSevenElementaryAbelian_iff {g : realCliffordSpinGroup 0 
       exists_isSignedBasisSpinZeroSeven_mem_realSpinZeroSevenElementaryAbelian hs
     rcases IsSignedBasisSpinZeroSeven.eq_or_eq_negOne_mul hgs hhs with rfl | rfl
     · exact hh
-    · exact mul_mem (Subgroup.subset_closure (by simp)) hh
+    · exact mul_mem (Subgroup.subset_closure (by simp [spinNegOne])) hh
 
 /-- The central element `-1` lies in the elementary abelian subgroup. -/
 theorem negOne_mem_realSpinZeroSevenElementaryAbelian :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.Subgroup.Torus
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Seven
+import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.OrthogonalBasis
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Basic
 
 /-!
@@ -22,13 +23,13 @@ subgroup of `Spin(7)` that centralizes it
 The argument uses the vector representation of `Spin(7)` on `ℝ⁷` rather than the rank of the
 maximal tori. A basis monomial `e_s` of an even support `s` commutes with the generator `e_k` for
 `k ∉ s` and anticommutes with it for `k ∈ s`, so it acts on the coordinate vector of index `k` by
-`1` or `-1` respectively. The three supports `{0, 1, 2, 3}`, `{0, 1, 4, 5}`, `{0, 2, 4, 6}` all
-contain `0` and have no other common index. Hence the joint `-1`-eigenspace of the three
-generators is the coordinate line `ℓ` of index `0`. Every Spin element `t` commuting with `E`
-preserves this joint eigenspace, so it acts on `ℓ` by a nonzero scalar `c(t)`, which depends
-continuously on `t`. On a preconnected subgroup `T` containing `1` the scalar therefore never
-changes sign, so `c(t) > 0` on `T`; but the generator `e₀e₁e₂e₃` acts on `ℓ` by `-1`. So `E` is
-not contained in `T`.
+`1` or `-1` respectively (`CliffordAlgebra.spinVectorAction_basis_of_coe_eq`). The three
+supports `{0, 1, 2, 3}`, `{0, 1, 4, 5}`, `{0, 2, 4, 6}` all contain `0` and have no other common
+index. Hence the joint `-1`-eigenspace of the three generators is the coordinate line `ℓ` of
+index `0`. Every Spin element `t` commuting with `E` preserves this joint eigenspace, so it acts
+on `ℓ` by a nonzero scalar `c(t)`, which depends continuously on `t`. On a preconnected subgroup
+`T` containing `1` the scalar therefore never changes sign, so `c(t) > 0` on `T`; but the
+generator `e₀e₁e₂e₃` acts on `ℓ` by `-1`. So `E` is not contained in `T`.
 
 A torus is a compact connected commutative subgroup (`TauCeti.Lie.IsTorus`), and a commutative
 subgroup containing `E` centralizes `E`, so `E` lies in no torus
@@ -59,23 +60,6 @@ public section
 open CliffordAlgebra Function Set
 
 namespace TauCeti
-
-/-! ### The vector action of signed basis monomials -/
-
-/-- A Spin element `±e_s` of the negative-definite model, for an even support `s`, acts on the
-coordinate vector of index `k` by `-1` when `k ∈ s` and by `1` otherwise. -/
-private theorem spinVectorAction_single_of_isSignedBasisSpinZeroSeven
-    {g : realCliffordSpinGroup 0 7} {s : Finset (Fin (0 + 7))} (hs : Even s.card)
-    (hg : IsSignedBasisSpinZeroSeven g s) (k : Fin (0 + 7)) :
-    spinVectorAction (realCliffordForm 0 7) g (Pi.single k 1) =
-      (if k ∈ s then -1 else 1 : ℝ) • Pi.single k 1 := by
-  refine spinVectorAction_eq_of_mul_ι_eq _ g ?_
-  rw [map_smul, smul_mul_assoc]
-  have hb := basis_mul_ι_of_even_card (isOrthoᵢ_associated_realCliffordForm 0 7) hs k
-  rw [Pi.basisFun_apply] at hb
-  rcases isSignedBasisSpinZeroSeven_iff.1 hg with hg | hg <;> rw [hg]
-  · exact hb
-  · rw [neg_mul, mul_neg, hb, smul_neg]
 
 /-! ### The vector action of the compact model -/
 
@@ -114,8 +98,9 @@ private theorem actsBySign_realCliffordSpinGroupEquivNeg {g : realCliffordSpinGr
     {s : Finset (Fin (0 + 7))} (hs : Even s.card)
     (hg : IsSignedBasisSpinZeroSeven g s) :
     ActsBySign (realCliffordSpinGroupEquivNeg 0 7 g) s := fun k ↦ by
-  rw [negBasis_apply, spinVectorAction_realCliffordSpinGroupEquivNeg,
-    spinVectorAction_single_of_isSignedBasisSpinZeroSeven hs hg, map_smul]
+  rw [negBasis_apply, spinVectorAction_realCliffordSpinGroupEquivNeg, ← Pi.basisFun_apply ℝ,
+    spinVectorAction_basis_of_coe_eq (isOrthoᵢ_associated_realCliffordForm 0 7) hs
+      (isSignedBasisSpinZeroSeven_iff.1 hg), map_smul]
 
 /-- For every support `s`, the elementary abelian subgroup of `Spin(7)` contains an element acting
 by the sign character of `s`. -/
