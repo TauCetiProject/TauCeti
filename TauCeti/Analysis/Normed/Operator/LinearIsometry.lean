@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.NormedSpace
+public import TauCeti.Topology.Algebra.SeparationQuotient.Basic
 
 /-!
-# Linear independence and postcomposition for linear isometries
+# Linear independence, postcomposition, and separation-quotient lifts of linear isometries
 
 A linear isometry is injective, so composing an indexed family or a pair of vectors with a linear
 isometry preserves linear independence (`LinearIsometry.linearIndependent_iff` and
@@ -25,6 +26,10 @@ Dually, precomposition with a linear isometric equivalence `e : E ≃ₗᵢ[𝕜
 equivalence `LinearIsometryEquiv.precomp G e : (F →L[𝕜] G) ≃ₗᵢ[𝕜] (E →L[𝕜] G)` for any seminormed
 target `G`. Taking `G = 𝕜` gives contravariant functoriality of the continuous dual on linear
 isometric equivalences, used to pass between duals and biduals of submodules and quotients.
+
+Also defines `SeparationQuotient.liftₗᵢ`, descending any semilinear isometry `E →ₛₗᵢ[σ₁₂] F`
+into a separated normed module `F` to `SeparationQuotient E →ₛₗᵢ[σ₁₂] F`, together with its
+characteristic, uniqueness, and auxiliary scalar-equivariance lemmas.
 -/
 
 public section
@@ -158,3 +163,31 @@ theorem precomp_trans (e₁ : E ≃ₗᵢ[𝕜] F) (e₂ : F ≃ₗᵢ[𝕜] H) 
   simp
 
 end LinearIsometryEquiv
+
+namespace SeparationQuotient
+
+variable {R R₂ E F : Type*} [Semiring R] [Semiring R₂] {σ₁₂ : R →+* R₂}
+  [SeminormedAddCommGroup E] [Module R E] [ContinuousConstSMul R E]
+  [NormedAddCommGroup F] [Module R₂ F]
+
+/-- Descend a semilinear isometry `f : E →ₛₗᵢ[σ₁₂] F` into a separated normed module `F` to
+`SeparationQuotient E →ₛₗᵢ[σ₁₂] F`. -/
+noncomputable def liftₗᵢ (f : E →ₛₗᵢ[σ₁₂] F) : SeparationQuotient E →ₛₗᵢ[σ₁₂] F :=
+  { liftCLM f.toContinuousLinearMap fun _ _ h ↦ (h.map f.toContinuousLinearMap.continuous).eq with
+    norm_map' := surjective_mk.forall.2 fun x ↦ by simp [norm_mk] }
+
+@[simp] theorem liftₗᵢ_mk (f : E →ₛₗᵢ[σ₁₂] F) (x : E) : liftₗᵢ f (mk x) = f x := (rfl)
+@[simp] theorem toContinuousLinearMap_liftₗᵢ (f : E →ₛₗᵢ[σ₁₂] F) :
+    (liftₗᵢ f).toContinuousLinearMap = liftCLM f.toContinuousLinearMap
+      fun _ _ h ↦ (h.map f.toContinuousLinearMap.continuous).eq := (rfl)
+
+theorem eq_liftₗᵢ_iff (f : E →ₛₗᵢ[σ₁₂] F) (g : SeparationQuotient E →ₛₗᵢ[σ₁₂] F) :
+    g = liftₗᵢ f ↔ ∀ x : E, g (mk x) = f x := by
+  rw [← LinearIsometry.toContinuousLinearMap_inj, toContinuousLinearMap_liftₗᵢ, eq_liftCLM_iff]; rfl
+
+theorem liftₗᵢ_smul {A B : Type*} [SMul A E] [ContinuousConstSMul A E] [SMul B F]
+    (f : E →ₛₗᵢ[σ₁₂] F) {a : A} {b : B} (hf : ∀ x : E, f (a • x) = b • f x)
+    (u : SeparationQuotient E) : liftₗᵢ f (a • u) = b • liftₗᵢ f u :=
+  liftCLM_smul f.toContinuousLinearMap _ hf u
+
+end SeparationQuotient

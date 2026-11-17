@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
-public import Mathlib.Analysis.CStarAlgebra.Module.Defs
-public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+public import TauCeti.Analysis.CStarAlgebra.Module.Semidef
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
 
 /-!
@@ -199,42 +197,29 @@ theorem isGreatest_norm_inner (x : E) :
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a : A) (x : E) :
     inner A (a • x) (a • x) =
-      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  rw [inner_op_smul_left, inner_op_smul_right, star_mul, hs', ← hs]
-  noncomm_ring
+      a * CFC.sqrt (inner A x x) * star (a * CFC.sqrt (inner A x x)) :=
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The inner product of `a x - x` with itself is `(a |x| - |x|) (a |x| - |x|)⋆`, where
 `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_sub_self (a : A) (x : E) :
     inner A (a • x - x) (a • x - x) =
       (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) *
-        star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) := by
-  set s := CFC.sqrt (inner A x x)
-  have hs : s * s = inner A x x := CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-  have hs' : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-  simp only [inner_sub_left, inner_sub_right, inner_op_smul_left, inner_op_smul_right, star_sub,
-    star_mul, hs', ← hs]
-  noncomm_ring
+        star (a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)) :=
+  TauCeti.IsPosSemidefCStarModuleAlong.inner_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x` is the norm of `a |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
-protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_smul, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The norm of `a x - x` is the norm of `a |x| - |x|` in `A`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 theorem norm_smul_sub_self (a : A) (x : E) :
-    ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ := by
-  rw [norm_eq_sqrt_norm_inner_self (A := A), inner_smul_sub_self, CStarRing.norm_self_mul_star,
-    Real.sqrt_mul_self (norm_nonneg _)]
+    ‖a • x - x‖ = ‖a * CFC.sqrt (inner A x x) - CFC.sqrt (inner A x x)‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_sub_self (NonUnitalStarAlgHom.id ℂ A) a x
 
 /-- The action of a C⋆-algebra on a Hilbert C⋆-module is bounded: `‖a x‖ ≤ ‖a‖ ‖x‖`. -/
-protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ := by
-  rw [CStarModule.norm_smul]
-  refine (norm_mul_le _ _).trans_eq ?_
-  rw [CFC.norm_sqrt _ inner_self_nonneg, ← norm_eq_sqrt_norm_inner_self]
+protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
+  TauCeti.IsPosSemidefCStarModuleAlong.norm_smul_le (NonUnitalStarAlgHom.id ℂ A) a x
 
 end Norm
 

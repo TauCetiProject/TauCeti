@@ -5,30 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Completion
-public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
+public import Mathlib.Analysis.Normed.Module.Completion
+public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
+public import TauCeti.Topology.Algebra.LinearMapCompletion
+public import TauCeti.Topology.Algebra.SeparationQuotient.Basic
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
-# Operator norms and finite-rank approximation of bounded maps extended to completions
+# Operator norms, finite-rank approximation, and linear isometries on completions
 
-A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to the bounded
-map `f.completion` between the completions, and, when `F` is complete and Hausdorff, to the
-bounded map `f.fromCompletion` from the completion of `E` to `F`. Since `E` has dense image in
-its completion and the canonical map preserves norms, neither extension changes the operator norm.
+A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to `f.completion`
+between the completions and, when `F` is complete and Hausdorff, to `f.fromCompletion` from
+`Completion E` to `F`. Because `E` has dense norm-preserving image in `Completion E`, neither
+extension changes the operator norm (the continuous semilinear analogues of
+`NormedAddGroupHom.norm_completion`). Likewise, a linear isometric equivalence extends to
+`e.completion` between the completions, and a linear isometry with dense range into a complete
+normed module extends surjectively (`LinearIsometry.fromCompletion_surjective_of_denseRange`).
 
-These are the continuous semilinear analogues of Mathlib's `NormedAddGroupHom.norm_completion`.
-They make extension to completions an isometric operation, as needed for the norm-preserving
-universal properties of completed normed constructions. Likewise, a linear isometric equivalence
-extends to the linear isometric equivalence `e.completion` between the completions, the analogue
-for equivalences of Mathlib's `LinearIsometry.completion`. More generally, a linear isometry whose
-range is dense extends to a linear isometric equivalence of the completions: the extension is an
-isometry of complete spaces, so its range is closed as well as dense.
+This makes extension to completions an isometric operation, as needed for the norm-preserving
+universal properties of completed normed constructions. More generally, a linear isometry whose
+range is dense extends to a linear isometric equivalence of the completions
+(`LinearIsometry.completionEquivOfDenseRange`): the extension is an isometry of complete spaces,
+so its range is closed as well as dense.
+
+Completing the norm-preserving quotient map `E →ₗᵢ[𝕜] SeparationQuotient E` yields the canonical
+`SMul`-equivariant linear isometric equivalence
+`UniformSpace.Completion.completionSeparationQuotientₗᵢ` between `Completion (SeparationQuotient E)`
+and `Completion E`, upgrading `UniformSpace.Completion.completionSeparationQuotientEquiv`.
 
 Extension to completions also preserves metric quotient maps. If `f` lifts every vector of norm
 less than `r` to a vector of norm less than `r`, so does `f.completion`; the lifts in the
@@ -58,6 +66,8 @@ norm by `R.completion` with `R.rank ≤ n`.
 * `ContinuousLinearMap.exists_rank_le_norm_completion_sub_lt`: over a complete scalar field,
   operators `R.completion` with `R.rank ≤ n` are operator-norm dense in operators of rank at most
   `n` between the completions.
+* `LinearIsometry.fromCompletion_surjective_of_denseRange`: extending a linear isometry with dense
+  range from a completion is surjective.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -67,6 +77,8 @@ norm by `R.completion` with `R.rank ≤ n`.
 * `LinearIsometryEquiv.completion_symm`, `LinearIsometryEquiv.completion_refl`,
   `LinearIsometryEquiv.completion_trans`: extension to completions is compatible with inverses,
   identities and composites.
+* `UniformSpace.Completion.completionSeparationQuotientₗᵢ`: the canonical linear isometric
+  equivalence `Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E` for a seminormed `𝕜`-module.
 -/
 
 public section
@@ -223,6 +235,21 @@ theorem exists_rank_le_norm_completion_sub_lt
 
 end ContinuousLinearMap
 
+namespace LinearIsometry
+
+/-- If a linear isometry `f : E →ₛₗᵢ[σ₁₂] F` into a complete normed module has dense range, then its
+extension `f.fromCompletion : Completion E →ₛₗᵢ[σ₁₂] F` is surjective. -/
+theorem fromCompletion_surjective_of_denseRange {R R₂ E F : Type*}
+    [Semiring R] [Semiring R₂] [SeminormedAddCommGroup E] [Module R E]
+    [UniformContinuousConstSMul R E] [NormedAddCommGroup F] [Module R₂ F]
+    [PseudoMetricSpace R₂] [CompleteSpace F] [IsBoundedSMul R₂ F] {σ₁₂ : R →+* R₂}
+    (f : E →ₛₗᵢ[σ₁₂] F) (hf : DenseRange f) : Function.Surjective f.fromCompletion := by
+  rw [← Set.range_eq_univ, ← Set.univ_subset_iff, ← hf.closure_eq]
+  exact closure_minimal (by rintro _ ⟨x, rfl⟩; exact ⟨x, f.fromCompletion_apply_coe x⟩)
+    f.fromCompletion.isometry.isUniformInducing.isComplete_range.isClosed
+
+end LinearIsometry
+
 namespace LinearIsometryEquiv
 
 variable {𝕜 𝕜₂ E F : Type*} [NormedField 𝕜] [NormedField 𝕜₂] {σ₁₂ : 𝕜 →+* 𝕜₂}
@@ -343,3 +370,62 @@ theorem toLinearIsometry_completionEquivOfDenseRange (f : E →ₛₗᵢ[σ₁�
   (rfl)
 
 end LinearIsometry
+
+namespace UniformSpace.Completion
+
+variable (𝕜 E : Type*) [Semiring 𝕜] [SeminormedAddCommGroup E] [Module 𝕜 E]
+  [UniformContinuousConstSMul 𝕜 E]
+
+/-- The canonical linear isometric equivalence between the completion of the separation quotient
+of a seminormed module and the completion of the module itself, upgrading
+`UniformSpace.Completion.completionSeparationQuotientEquiv`. -/
+noncomputable def completionSeparationQuotientₗᵢ :
+    Completion (SeparationQuotient E) ≃ₗᵢ[𝕜] Completion E :=
+  -- `LinearIsometry.fromCompletion` assumes `[PseudoMetricSpace 𝕜]`; complete `mkCLM` instead.
+  (LinearIsometryEquiv.ofSurjective
+    (⟨(SeparationQuotient.mkCLM 𝕜 E).toLinearMap, fun x ↦ by simp [SeparationQuotient.norm_mk]⟩ :
+      E →ₗᵢ[𝕜] SeparationQuotient E).completion <| by
+    rw [LinearIsometry.coe_completion, LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe,
+      funext (SeparationQuotient.mkCLM_apply 𝕜 E)]
+    have h := (completionSeparationQuotientEquiv E).symm.surjective
+    rwa [completionSeparationQuotientEquiv, Equiv.coe_fn_symm_mk] at h).symm
+
+variable {𝕜 E}
+
+@[simp] theorem completionSeparationQuotientₗᵢ_symm_coe (x : E) :
+    (completionSeparationQuotientₗᵢ 𝕜 E).symm (x : Completion E) =
+      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) := by
+  rw [completionSeparationQuotientₗᵢ, LinearIsometryEquiv.symm_symm,
+    LinearIsometryEquiv.coe_ofSurjective, LinearIsometry.completion_apply_coe,
+    LinearIsometry.coe_mk, ContinuousLinearMap.coe_coe, SeparationQuotient.mkCLM_apply]
+
+@[simp] theorem completionSeparationQuotientₗᵢ_coe_mk (x : E) :
+    completionSeparationQuotientₗᵢ 𝕜 E
+      ((SeparationQuotient.mk x : SeparationQuotient E) : Completion (SeparationQuotient E)) =
+      (x : Completion E) :=
+  (completionSeparationQuotientₗᵢ 𝕜 E).symm.injective <| by simp
+
+@[simp] theorem toEquiv_completionSeparationQuotientₗᵢ :
+    (completionSeparationQuotientₗᵢ 𝕜 E).toEquiv = completionSeparationQuotientEquiv E :=
+  Equiv.ext <| congr_fun <| Completion.ext (completionSeparationQuotientₗᵢ 𝕜 E).continuous
+    uniformContinuous_completionSeparationQuotientEquiv.continuous <|
+    SeparationQuotient.surjective_mk.forall.2 fun _ ↦ by
+      simp [completionSeparationQuotientEquiv,
+        extension_coe (SeparationQuotient.uniformContinuous_lift' _),
+        SeparationQuotient.lift'_mk (uniformContinuous_coe E)]
+
+@[simp] theorem completionSeparationQuotientₗᵢ_symm_smul {A : Type*} [SMul A E]
+    [UniformContinuousConstSMul A E] (a : A) (u : Completion E) :
+    (completionSeparationQuotientₗᵢ 𝕜 E).symm (a • u) =
+      a • (completionSeparationQuotientₗᵢ 𝕜 E).symm u := by
+  rw [completionSeparationQuotientₗᵢ, LinearIsometryEquiv.symm_symm,
+    LinearIsometryEquiv.coe_ofSurjective, ← LinearIsometry.coe_toContinuousLinearMap,
+    LinearIsometry.toContinuousLinearMap_completion]
+  exact ContinuousLinearMap.completion_smul _ (fun x ↦ by simp [SeparationQuotient.mk_smul]) u
+
+@[simp] theorem completionSeparationQuotientₗᵢ_smul {A : Type*} [SMul A E]
+    [UniformContinuousConstSMul A E] (a : A) (u : Completion (SeparationQuotient E)) :
+    completionSeparationQuotientₗᵢ 𝕜 E (a • u) = a • completionSeparationQuotientₗᵢ 𝕜 E u :=
+  (completionSeparationQuotientₗᵢ 𝕜 E).symm.injective <| by simp
+
+end UniformSpace.Completion
