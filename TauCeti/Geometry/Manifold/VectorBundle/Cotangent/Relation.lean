@@ -91,6 +91,16 @@ theorem cotangentRel_snd_apply {f : M → N} {z : CotangentBundle I M}
     z.2 v = w.2 (mfderiv I J f z.proj v) :=
   DFunLike.congr_fun h.2 v
 
+/-- Two covectors at the same point that are related to the same covector are equal. -/
+theorem eq_of_cotangentRel_of_proj_eq {f : M → N} {z z' : CotangentBundle I M}
+    {w : CotangentBundle J N} (h : cotangentRel I J f z w) (h' : cotangentRel I J f z' w)
+    (hproj : z.proj = z'.proj) : z = z' := by
+  obtain ⟨x, p⟩ := z
+  obtain ⟨x', p'⟩ := z'
+  obtain rfl : x = x' := hproj
+  exact congrArg (TotalSpace.mk' (E →L[𝕜] 𝕜) x) (ContinuousLinearMap.ext fun v ↦
+    (cotangentRel_snd_apply h v).trans (cotangentRel_snd_apply h' v).symm)
+
 variable (I)
 
 /-- The cotangent relation of the identity map is the diagonal. -/
