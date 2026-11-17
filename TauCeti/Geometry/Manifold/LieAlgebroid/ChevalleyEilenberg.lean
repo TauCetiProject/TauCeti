@@ -645,7 +645,8 @@ private theorem extDeriv_congr_deg {k₁ k₂ : ℕ} (h : k₁ = k₂) (φ₁ : 
   subst h; obtain rfl : φ₁ = φ₂ := by ext y u; exact hφ y u
   rfl
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [ContMDiffVectorBundle ∞ F V I] in
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M] [FiniteDimensional ℝ F]
+  [ContMDiffVectorBundle ∞ F V I] in
 /-- Evaluating a section at `x` on `v : Fin (m + 1) → V x` equals contracting first with a global
 section `a` satisfying `a x = v 0` and evaluating on `Fin.tail v`. -/
 private theorem apply_eq_interiorProd_tail {m : ℕ} (θ : Ω[m + 1])
@@ -654,18 +655,71 @@ private theorem apply_eq_interiorProd_tail {m : ℕ} (θ : Ω[m + 1])
   rw [ContMDiffSection.interiorProd_apply]
   exact congrArg (θ x) (funext fun i ↦ Fin.cases ha.symm (fun _ ↦ rfl) i)
 
+/-- Pointwise Cartan expansion of `d_A η` in positive degree along a section `a` with
+`a x = v 0`. -/
+private theorem extDeriv_succ_apply_eq_sub {m : ℕ} (η : Ω[m + 1])
+    {a : Cₛ^∞⟮I; F, V⟯} {x : M} {v : Fin (m + 2) → V x} (ha : a x = v 0) :
+    A.extDeriv (m + 1) η x v =
+      A.lieDeriv (m + 1) a η x (Fin.tail v) -
+        A.extDeriv m (η.interiorProd a) x (Fin.tail v) := by
+  rw [apply_eq_interiorProd_tail _ ha, A.interiorProd_extDeriv_succ]
+  simp
+
+/-- Pointwise expansion of the derivation law `L_a (φ ∧ ψ) = L_a φ ∧ ψ + φ ∧ L_a ψ`. -/
+private theorem lieDeriv_wedge_apply {k l : ℕ} (a : Cₛ^∞⟮I; F, V⟯) (φ : Ω[k]) (ψ : Ω[l])
+    (x : M) (u : Fin (k + l) → V x) :
+    A.lieDeriv (k + l) a (φ.wedge ψ) x u =
+      (A.lieDeriv k a φ).wedge ψ x u + φ.wedge (A.lieDeriv l a ψ) x u := by
+  rw [A.lieDeriv_wedge]
+  simp
+
+/-- Pointwise Cartan expansion of `d_A (φ ∧ ψ)` when the right factor has positive degree. -/
+private theorem extDeriv_wedge_succ_right_apply {k l : ℕ} (φ : Ω[k]) (ψ : Ω[l + 1])
+    {a : Cₛ^∞⟮I; F, V⟯} {x : M} {v : Fin (k + (l + 1) + 1) → V x} (ha : a x = v 0) :
+    A.extDeriv (k + (l + 1)) (φ.wedge ψ) x v =
+      (A.lieDeriv k a φ).wedge ψ x (Fin.tail v) +
+        φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) -
+        A.extDeriv (k + l) ((φ.wedge ψ).interiorProd a) x (Fin.tail v) :=
+  (A.extDeriv_succ_apply_eq_sub (m := k + l) (φ.wedge ψ) ha).trans <|
+    congrArg (· - _) (A.lieDeriv_wedge_apply a φ ψ x (Fin.tail v))
+
+/-- Pointwise Cartan expansion of `(ι_a (d_A φ)) ∧ ψ` in positive degree `k + 1`. -/
+private theorem interiorProd_extDeriv_succ_wedge_left {k l : ℕ}
+    (φ : Ω[k + 1]) (ψ : Ω[l]) (a : Cₛ^∞⟮I; F, V⟯) (x : M) (u : Fin (k + 1 + l) → V x) :
+    ((A.extDeriv (k + 1) φ).interiorProd a).wedge ψ x u =
+      (A.lieDeriv (k + 1) a φ).wedge ψ x u -
+        (A.extDeriv k (φ.interiorProd a)).wedge ψ x u := by
+  rw [A.interiorProd_extDeriv_succ, ContMDiffSection.wedge_sub_left]
+  simp
+
+/-- Pointwise Cartan expansion of `φ ∧ (ι_a (d_A ψ))` in positive degree `l + 1`. -/
+private theorem wedge_interiorProd_extDeriv_succ_right {k l : ℕ}
+    (φ : Ω[k]) (ψ : Ω[l + 1]) (a : Cₛ^∞⟮I; F, V⟯) (x : M) (u : Fin (k + (l + 1)) → V x) :
+    φ.wedge ((A.extDeriv (l + 1) ψ).interiorProd a) x u =
+      φ.wedge (A.lieDeriv (l + 1) a ψ) x u -
+        φ.wedge (A.extDeriv l (ψ.interiorProd a)) x u := by
+  rw [A.interiorProd_extDeriv_succ, ContMDiffSection.wedge_sub_right]
+  simp
+
 private theorem extDeriv_wedge_zero_zero (φ ψ : Ω[0]) (x : M) (v : Fin 1 → V x) :
     A.extDeriv 0 (φ.wedge ψ) x v =
       (A.extDeriv 0 φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add 0 0)) +
         (-1 : ℝ) ^ 0 • (φ.wedge (A.extDeriv 0 ψ)) x v := by
   obtain ⟨a, ha⟩ := exists_section_apply_eq (I := I) (F := F) (V := V) x (v 0)
-  rw [Fin.cast_refl, Function.comp_id, pow_zero, one_smul,
-    apply_eq_interiorProd_tail _ ha, apply_eq_interiorProd_tail _ ha,
-    apply_eq_interiorProd_tail _ ha, A.interiorProd_extDeriv_zero,
-    A.lieDeriv_wedge (k := 0) (l := 0), ContMDiffSection.interiorProd_wedge_zero_right,
-    ContMDiffSection.interiorProd_wedge_zero_left, A.interiorProd_extDeriv_zero,
-    A.interiorProd_extDeriv_zero, ContMDiffSection.coe_add, Pi.add_apply,
-    ContinuousAlternatingMap.add_apply]
+  have h₁ : A.extDeriv 0 (φ.wedge ψ) x v =
+      (A.lieDeriv 0 a φ).wedge ψ x (Fin.tail v) +
+        φ.wedge (A.lieDeriv 0 a ψ) x (Fin.tail v) := by
+    rw [apply_eq_interiorProd_tail _ ha, A.interiorProd_extDeriv_zero]
+    exact A.lieDeriv_wedge_apply (k := 0) (l := 0) a φ ψ x (Fin.tail v)
+  have h₂ : (A.extDeriv 0 φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add 0 0)) =
+      (A.lieDeriv 0 a φ).wedge ψ x (Fin.tail v) := by
+    rw [Fin.cast_refl, Function.comp_id, apply_eq_interiorProd_tail _ ha,
+      ContMDiffSection.interiorProd_wedge_zero_right, A.interiorProd_extDeriv_zero]
+  have h₃ : (φ.wedge (A.extDeriv 0 ψ)) x v = φ.wedge (A.lieDeriv 0 a ψ) x (Fin.tail v) := by
+    rw [apply_eq_interiorProd_tail _ ha, ContMDiffSection.interiorProd_wedge_zero_left,
+      A.interiorProd_extDeriv_zero]
+  rw [h₁, h₂, h₃]
+  simp
 
 private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
     (x : M) (v : Fin (k + 1 + 1) → V x)
@@ -677,18 +731,27 @@ private theorem extDeriv_wedge_succ_zero {k : ℕ} (φ : Ω[k + 1]) (ψ : Ω[0])
       (A.extDeriv (k + 1) φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add (k + 1) 0)) +
         (-1 : ℝ) ^ (k + 1) • (φ.wedge (A.extDeriv 0 ψ)) x v := by
   obtain ⟨a, ha⟩ := exists_section_apply_eq (I := I) (F := F) (V := V) x (v 0)
-  rw [Fin.cast_refl, Function.comp_id,
-    apply_eq_interiorProd_tail _ ha, apply_eq_interiorProd_tail _ ha,
-    apply_eq_interiorProd_tail _ ha, A.interiorProd_extDeriv_succ,
-    ContMDiffSection.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
-    A.lieDeriv_wedge (k := k + 1) (l := 0), ContMDiffSection.coe_add, Pi.add_apply,
-    ContinuousAlternatingMap.add_apply, ContMDiffSection.interiorProd_wedge_zero_right,
-    ih (φ.interiorProd a) (Fin.tail v), Fin.cast_refl, Function.comp_id,
-    ContMDiffSection.interiorProd_wedge_zero_right, A.interiorProd_extDeriv_succ,
-    ContMDiffSection.wedge_sub_left, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, ContMDiffSection.interiorProd_wedge_succ,
-    Fin.cast_refl, Function.comp_id, A.interiorProd_extDeriv_zero]
+  have h₁ : A.extDeriv (k + 1) (φ.wedge ψ) x v =
+      (A.lieDeriv (k + 1) a φ).wedge ψ x (Fin.tail v) +
+        φ.wedge (A.lieDeriv 0 a ψ) x (Fin.tail v) -
+        ((A.extDeriv k (φ.interiorProd a)).wedge ψ x (Fin.tail v) +
+          (-1 : ℝ) ^ k • (φ.interiorProd a).wedge (A.extDeriv 0 ψ) x (Fin.tail v)) := by
+    refine (A.extDeriv_succ_apply_eq_sub (m := k) (φ.wedge ψ) ha).trans ?_
+    rw [A.lieDeriv_wedge_apply (k := k + 1) (l := 0),
+      ContMDiffSection.interiorProd_wedge_zero_right, ih (φ.interiorProd a) (Fin.tail v)]
+    simp
+  have h₂ : (A.extDeriv (k + 1) φ).wedge ψ x (v ∘ Fin.cast (Nat.succ_add (k + 1) 0)) =
+      (A.lieDeriv (k + 1) a φ).wedge ψ x (Fin.tail v) -
+        (A.extDeriv k (φ.interiorProd a)).wedge ψ x (Fin.tail v) := by
+    rw [Fin.cast_refl, Function.comp_id, apply_eq_interiorProd_tail _ ha,
+      ContMDiffSection.interiorProd_wedge_zero_right, A.interiorProd_extDeriv_succ_wedge_left]
+  have h₃ : (φ.wedge (A.extDeriv 0 ψ)) x v =
+      (φ.interiorProd a).wedge (A.extDeriv 0 ψ) x (Fin.tail v) +
+        (-1 : ℝ) ^ (k + 1) • φ.wedge (A.lieDeriv 0 a ψ) x (Fin.tail v) := by
+    rw [apply_eq_interiorProd_tail _ ha, ContMDiffSection.interiorProd_wedge_succ,
+      Fin.cast_refl, Function.comp_id, A.interiorProd_extDeriv_zero]
   have hsq : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
+  rw [h₁, h₂, h₃]
   simp only [smul_eq_mul, pow_succ (-1 : ℝ)]
   linear_combination φ.wedge (A.lieDeriv 0 a ψ) x (Fin.tail v) * hsq.symm
 
@@ -708,23 +771,27 @@ private theorem extDeriv_wedge_zero_succ {l : ℕ} (φ : Ω[0]) (ψ : Ω[l + 1])
     ext i; simp [v₀, Fin.tail]
   have htail₂ : Fin.tail v₀ = Fin.tail v ∘ Fin.cast (Nat.succ_add 0 l) := by
     ext i; simp [v₀, Fin.tail]
-  have hlie : A.lieDeriv (0 + l + 1) a (φ.wedge ψ) =
-      (A.lieDeriv 0 a φ).wedge ψ + φ.wedge (A.lieDeriv (l + 1) a ψ) := A.lieDeriv_wedge a φ ψ
-  have hd : A.extDeriv (0 + (l + 1)) (φ.wedge ψ) x v =
-      A.extDeriv (0 + l + 1) (φ.wedge ψ) x v := rfl
-  have h₁ := apply_eq_interiorProd_tail (m := 0 + l + 1) (A.extDeriv (0 + l + 1) (φ.wedge ψ)) ha
-  rw [A.interiorProd_extDeriv_succ, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply, hlie, ContMDiffSection.coe_add, Pi.add_apply,
-    ContinuousAlternatingMap.add_apply, ContMDiffSection.interiorProd_wedge_zero_left,
-    ih (ψ.interiorProd a) (Fin.tail v)] at h₁
-  have h₂ := apply_eq_interiorProd_tail (m := (0 + 1) + l) ((A.extDeriv 0 φ).wedge ψ) ha₀
-  rw [ContMDiffSection.interiorProd_wedge_succ, htail₁, htail₂, A.interiorProd_extDeriv_zero] at h₂
-  have h₃ := apply_eq_interiorProd_tail (m := 0 + (l + 1)) (φ.wedge (A.extDeriv (l + 1) ψ)) ha
-  rw [ContMDiffSection.interiorProd_wedge_zero_left, A.interiorProd_extDeriv_succ,
-    ContMDiffSection.wedge_sub_right, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply] at h₃
-  rw [hd, h₁, h₂, h₃]
-  simp only [pow_zero, smul_eq_mul]; ring
+  have h₁ : A.extDeriv (0 + (l + 1)) (φ.wedge ψ) x v =
+      (A.lieDeriv 0 a φ).wedge ψ x (Fin.tail v) +
+        φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) -
+        ((A.extDeriv 0 φ).wedge (ψ.interiorProd a) x (Fin.tail v ∘ Fin.cast (Nat.succ_add 0 l)) +
+          (-1 : ℝ) ^ 0 • φ.wedge (A.extDeriv l (ψ.interiorProd a)) x (Fin.tail v)) := by
+    rw [A.extDeriv_wedge_succ_right_apply φ ψ ha,
+      ContMDiffSection.interiorProd_wedge_zero_left, ih (ψ.interiorProd a) (Fin.tail v)]
+  have h₂ : (A.extDeriv 0 φ).wedge ψ x v₀ =
+      (A.lieDeriv 0 a φ).wedge ψ x (Fin.tail v) +
+        (-1 : ℝ) ^ 1 • (A.extDeriv 0 φ).wedge (ψ.interiorProd a) x
+          (Fin.tail v ∘ Fin.cast (Nat.succ_add 0 l)) := by
+    rw [apply_eq_interiorProd_tail (m := (0 + 1) + l) ((A.extDeriv 0 φ).wedge ψ) ha₀,
+      ContMDiffSection.interiorProd_wedge_succ, htail₁, htail₂, A.interiorProd_extDeriv_zero]
+  have h₃ : φ.wedge (A.extDeriv (l + 1) ψ) x v =
+      φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) -
+        φ.wedge (A.extDeriv l (ψ.interiorProd a)) x (Fin.tail v) := by
+    rw [apply_eq_interiorProd_tail (m := 0 + (l + 1)) (φ.wedge (A.extDeriv (l + 1) ψ)) ha,
+      ContMDiffSection.interiorProd_wedge_zero_left, A.wedge_interiorProd_extDeriv_succ_right]
+  rw [h₁, h₂, h₃]
+  simp only [pow_zero, pow_one, smul_eq_mul]
+  ring
 
 private theorem extDeriv_interiorProd_wedge_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l + 1])
     (a : Cₛ^∞⟮I; F, V⟯) (x : M) (u : Fin (k + 1 + l + 1) → V x) :
@@ -766,31 +833,32 @@ private theorem extDeriv_wedge_succ_succ {k l : ℕ} (φ : Ω[k + 1]) (ψ : Ω[l
   have ht₂ : Fin.tail v₀ ∘ Fin.cast (Nat.add_right_comm (k + 1) 1 l).symm = Fin.tail v := by
     ext i; simp [v₀, Fin.tail]
   have ht₃ : Fin.tail v₀ = w₃ := by ext i; simp [v₀, w₃, Fin.tail]
-  have hw₂ : Fin.tail v ∘ Fin.cast (Nat.add_right_comm k 1 (l + 1)).symm = w₂ := rfl
-  have hw₃ : Fin.tail v ∘ Fin.cast (Nat.succ_add (k + 1) l) = w₃ := rfl
-  have hd : A.extDeriv ((k + 1) + (l + 1)) (φ.wedge ψ) x v =
-      A.extDeriv (k + 1 + l + 1) (φ.wedge ψ) x v := rfl
-  have hlie : A.lieDeriv (k + 1 + l + 1) a (φ.wedge ψ) =
-      (A.lieDeriv (k + 1) a φ).wedge ψ + φ.wedge (A.lieDeriv (l + 1) a ψ) :=
-    A.lieDeriv_wedge a φ ψ
-  have h₁ :=
-    apply_eq_interiorProd_tail (m := k + 1 + l + 1) (A.extDeriv (k + 1 + l + 1) (φ.wedge ψ)) ha
-  rw [A.interiorProd_extDeriv_succ, hlie,
-    ContMDiffSection.coe_sub, Pi.sub_apply, ContinuousAlternatingMap.sub_apply,
-    ContMDiffSection.coe_add, Pi.add_apply, ContinuousAlternatingMap.add_apply,
-    A.extDeriv_interiorProd_wedge_succ, ih₁ (φ.interiorProd a) w₂, ht₁,
-    ih₂ (ψ.interiorProd a) (Fin.tail v), hw₃] at h₁
-  have h₂ := apply_eq_interiorProd_tail (m := k + 1 + 1 + l) ((A.extDeriv (k + 1) φ).wedge ψ) ha₀
-  rw [ContMDiffSection.interiorProd_wedge_succ, ht₂, ht₃, A.interiorProd_extDeriv_succ,
-    ContMDiffSection.wedge_sub_left, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply] at h₂
-  have h₃ :=
-    apply_eq_interiorProd_tail (m := (k + 1) + (l + 1)) (φ.wedge (A.extDeriv (l + 1) ψ)) ha
-  rw [ContMDiffSection.interiorProd_wedge_succ, hw₂, A.interiorProd_extDeriv_succ,
-    ContMDiffSection.wedge_sub_right, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContinuousAlternatingMap.sub_apply] at h₃
+  have h₁ : A.extDeriv ((k + 1) + (l + 1)) (φ.wedge ψ) x v =
+      (A.lieDeriv (k + 1) a φ).wedge ψ x (Fin.tail v) +
+        φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) -
+        (((A.extDeriv k (φ.interiorProd a)).wedge ψ x (Fin.tail v) +
+          (-1 : ℝ) ^ k • (φ.interiorProd a).wedge (A.extDeriv (l + 1) ψ) x w₂) +
+          (-1 : ℝ) ^ (k + 1) •
+            ((A.extDeriv (k + 1) φ).wedge (ψ.interiorProd a) x w₃ +
+              (-1 : ℝ) ^ (k + 1) • φ.wedge (A.extDeriv l (ψ.interiorProd a)) x (Fin.tail v))) := by
+    rw [A.extDeriv_wedge_succ_right_apply φ ψ ha,
+      A.extDeriv_interiorProd_wedge_succ, ih₁ (φ.interiorProd a) w₂, ht₁,
+      ih₂ (ψ.interiorProd a) (Fin.tail v)]
+  have h₂ : (A.extDeriv (k + 1) φ).wedge ψ x v₀ =
+      (A.lieDeriv (k + 1) a φ).wedge ψ x (Fin.tail v) -
+        (A.extDeriv k (φ.interiorProd a)).wedge ψ x (Fin.tail v) +
+        (-1 : ℝ) ^ (k + 2) • (A.extDeriv (k + 1) φ).wedge (ψ.interiorProd a) x w₃ := by
+    rw [apply_eq_interiorProd_tail (m := k + 1 + 1 + l) ((A.extDeriv (k + 1) φ).wedge ψ) ha₀,
+      ContMDiffSection.interiorProd_wedge_succ, ht₂, ht₃, A.interiorProd_extDeriv_succ_wedge_left]
+  have h₃ : φ.wedge (A.extDeriv (l + 1) ψ) x v =
+      (φ.interiorProd a).wedge (A.extDeriv (l + 1) ψ) x w₂ +
+        (-1 : ℝ) ^ (k + 1) •
+          (φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) -
+            φ.wedge (A.extDeriv l (ψ.interiorProd a)) x (Fin.tail v)) := by
+    rw [apply_eq_interiorProd_tail (m := (k + 1) + (l + 1)) (φ.wedge (A.extDeriv (l + 1) ψ)) ha,
+      ContMDiffSection.interiorProd_wedge_succ, A.wedge_interiorProd_extDeriv_succ_right]
   have hsq : (-1 : ℝ) ^ k * (-1 : ℝ) ^ k = 1 := by rw [← mul_pow]; norm_num
-  rw [hd, h₁, h₂, h₃]
+  rw [h₁, h₂, h₃]
   simp only [smul_eq_mul, pow_succ (-1 : ℝ)]
   linear_combination φ.wedge (A.lieDeriv (l + 1) a ψ) x (Fin.tail v) * hsq.symm
 

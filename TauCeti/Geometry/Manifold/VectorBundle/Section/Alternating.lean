@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Basic
+import Mathlib.Analysis.Normed.Module.Alternating.Curry
 import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
@@ -153,17 +154,6 @@ noncomputable section DegreeZero
 
 variable (I F n V)
 
-/-- Degree-zero continuous alternating maps on a normed space as a continuous linear map from the
-field of scalars. -/
-private def constOfIsEmptyCLM (ι : Type*) [Fintype ι] [IsEmpty ι] : 𝕜 →L[𝕜] F [⋀^ι]→L[𝕜] 𝕜 :=
-  LinearMap.mkContinuous
-    { toFun c := ContinuousAlternatingMap.constOfIsEmpty 𝕜 F ι c
-      map_add' c₁ c₂ := by ext v; simp
-      map_smul' r c := by ext v; simp }
-    1 fun c ↦ by
-      rw [one_mul]
-      exact ContinuousAlternatingMap.opNorm_le_bound _ (norm_nonneg c) fun _ ↦ by simp
-
 /-- Package `x ↦ constOfIsEmpty 𝕜 (V x) ι (f x)` as a `C^n` section. -/
 private def constOfIsEmptySection (ι : Type*) [Fintype ι] [IsEmpty ι]
     (f : C^n⟮I, M; 𝕜⟯) : Ω[ι] where
@@ -171,14 +161,17 @@ private def constOfIsEmptySection (ι : Type*) [Fintype ι] [IsEmpty ι]
   contMDiff_toFun x₀ := by
     rw [contMDiffAt_continuousAlternatingMap_bundle]
     refine ⟨contMDiffAt_id, ?_⟩
+    let e : 𝕜 →L[𝕜] F [⋀^ι]→L[𝕜] 𝕜 :=
+      (ContinuousAlternatingMap.constOfIsEmptyLIE 𝕜 F 𝕜 ι).toContinuousLinearEquiv
+        |>.toContinuousLinearMap
     have hcoord :
         (fun y ↦ ContinuousAlternatingMap.inCoordinates F 𝕜
           (E₁ := V) (E₂ := Bundle.Trivial M 𝕜) x₀ y x₀ y
           (ContinuousAlternatingMap.constOfIsEmpty 𝕜 (V y) ι (f y))) =
-          fun y ↦ constOfIsEmptyCLM F ι (f y) := by
-      ext y w; simp [constOfIsEmptyCLM, ContinuousAlternatingMap.inCoordinates]
+          fun y ↦ e (f y) := by
+      ext y w; simp [e, ContinuousAlternatingMap.inCoordinates]
     rw [hcoord]
-    exact (constOfIsEmptyCLM F ι).contMDiffAt.comp x₀ f.contMDiff.contMDiffAt
+    exact e.contMDiffAt.comp x₀ f.contMDiff.contMDiffAt
 
 @[simp]
 private theorem constOfIsEmptySection_apply {ι : Type*} [Fintype ι] [IsEmpty ι]
@@ -223,10 +216,10 @@ end General
 
 noncomputable section InteriorProd
 
-variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+variable {𝕜 E H M : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
   {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M]
-  {F F₂ : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {F F₂ : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
   {n : ℕ∞ω} {V V₂ : M → Type*}
   [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
@@ -242,35 +235,25 @@ with a `C^n` section `a` of `V`. -/
 def interiorProd {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) : Ω₂[k] where
   toFun x := (φ x).curryLeftTopological (a x)
   contMDiff_toFun x₀ := by
+    have hφ := (contMDiffAt_continuousAlternatingMap_bundle
+      (E₁ := V) (E₂ := V₂) _).1 (φ.contMDiff x₀)
+    have ha := (contMDiffAt_section_iff x₀).1 (a.contMDiff x₀)
     rw [contMDiffAt_continuousAlternatingMap_bundle]
-    refine ⟨contMDiffAt_id, TauCeti.contMDiffAt_continuousAlternatingMap_apply.2 fun w ↦ ?_⟩
+    refine ⟨contMDiffAt_id, ?_⟩
+    refine (((ContinuousAlternatingMap.curryLeftLI (𝕜 := 𝕜) (E := F) (F := F₂)
+      (n := k)).toContinuousLinearMap.contDiff.comp_contMDiffAt hφ.2).clm_apply
+        ha).congr_of_eventuallyEq ?_
     let e₁ := FiberBundle.trivializationAt F V x₀
-    let e₂ := FiberBundle.trivializationAt F₂ V₂ x₀
-    have he₁ : x₀ ∈ e₁.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x₀
-    have he₂ : x₀ ∈ e₂.baseSet := FiberBundle.mem_baseSet_trivializationAt F₂ V₂ x₀
-    -- Assemble `(a, e₁⁻¹ (w 0), …, e₁⁻¹ (w (k - 1)))` as a tuple of sections smooth at `x₀`.
-    let u : Fin (k + 1) → Π y : M, V y :=
-      Fin.cons (fun y ↦ a y) (fun j y ↦ e₁.symm y (w j))
-    have hu (i : Fin (k + 1)) :
-        ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun y ↦ TotalSpace.mk' F y (u i y)) x₀ := by
-      refine Fin.cases a.contMDiff.contMDiffAt (fun j ↦ ?_) i
-      simp only [u, Fin.cons_succ, contMDiffAt_section_iff]
-      refine (contMDiffAt_const (c := w j)).congr_of_eventuallyEq ?_
-      filter_upwards [e₁.open_baseSet.mem_nhds he₁] with y hy
-      exact congrArg Prod.snd (e₁.apply_mk_symm hy (w j))
-    have happ := (contMDiffAt_section_iff x₀).1
-      (φ.contMDiff.contMDiffAt.continuousAlternatingMap_bundle_apply hu)
-    refine happ.congr_of_eventuallyEq ?_
-    filter_upwards [e₁.open_baseSet.mem_nhds he₁, e₂.open_baseSet.mem_nhds he₂] with y hy₁ hy₂
+    filter_upwards [e₁.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt F V x₀)]
+      with y hy
+    ext w
     have hcons :
-        (Matrix.vecCons (a y) fun j ↦ (FiberBundle.trivializationAt F V x₀).symmL 𝕜 y (w j)) =
-          fun i ↦ u i y := by
-      ext i; exact Fin.cases rfl (fun j ↦ by simp [u, e₁, Trivialization.symmL_apply _ hy₁]) i
-    simp only [ContinuousAlternatingMap.inCoordinates,
-      ContinuousLinearMap.compContinuousAlternatingMap_coe,
-      ContinuousAlternatingMap.compContinuousLinearMap_apply, Function.comp_def,
-      ContinuousAlternatingMap.curryLeftTopological_apply_apply, hcons]
-    exact (FiberBundle.trivializationAt F₂ V₂ x₀).continuousLinearMapAt_apply_of_mem 𝕜 hy₂ _
+        (fun i : Fin (k + 1) ↦ e₁.symmL 𝕜 y (Matrix.vecCons (e₁ ⟨y, a y⟩).2 w i)) =
+          Matrix.vecCons (a y) (fun j ↦ e₁.symmL 𝕜 y (w j)) := by
+      ext i
+      refine Fin.cases ?_ (fun _ ↦ rfl) i
+      simp [e₁, Trivialization.symmL_apply e₁ hy, e₁.symm_apply_apply_mk hy]
+    simp [ContinuousAlternatingMap.inCoordinates, Function.comp_def, e₁, hcons]
 
 @[simp]
 theorem interiorProd_apply {k : ℕ} (φ : Ω₂[k + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) (v : Fin k → V x) :
@@ -527,7 +510,7 @@ theorem wedge_assoc {k l m : ℕ} (φ : Ω[k]) (ψ : Ω[l]) (θ : Ω[m])
 
 /-- Contracting a wedge whose left factor has degree zero multiplies by that scalar function:
 `ι_a (φ ∧ ψ) = φ ∧ (ι_a ψ)`. -/
-theorem interiorProd_wedge_zero_left [FiniteDimensional ℝ F] {l : ℕ}
+theorem interiorProd_wedge_zero_left {l : ℕ}
     (φ : Ω[0]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) :
     (φ.wedge ψ).interiorProd a = φ.wedge (ψ.interiorProd a) := by
   ext x w
@@ -536,7 +519,7 @@ theorem interiorProd_wedge_zero_left [FiniteDimensional ℝ F] {l : ℕ}
 
 /-- Contracting a wedge whose right factor has degree zero multiplies by that scalar function:
 `ι_a (φ ∧ ψ) = (ι_a φ) ∧ ψ`. -/
-theorem interiorProd_wedge_zero_right [FiniteDimensional ℝ F] {k : ℕ}
+theorem interiorProd_wedge_zero_right {k : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[0]) (a : Cₛ^n⟮I; F, V⟯) :
     (φ.wedge ψ).interiorProd a = (φ.interiorProd a).wedge ψ := by
   rw [wedge_apply_zero_right, wedge_apply_zero_right, interiorProd_smul_left]
@@ -545,7 +528,7 @@ theorem interiorProd_wedge_zero_right [FiniteDimensional ℝ F] {k : ℕ}
 sections of positive degree:
 `ι_a (φ ∧ ψ) = ι_a φ ∧ ψ + (-1)^(k + 1) φ ∧ ι_a ψ` up to the degree cast
 `k + (l + 1) = k + 1 + l`. -/
-theorem interiorProd_wedge_succ [FiniteDimensional ℝ F] {k l : ℕ}
+theorem interiorProd_wedge_succ {k l : ℕ}
     (φ : Ω[k + 1]) (ψ : Ω[l + 1]) (a : Cₛ^n⟮I; F, V⟯) (x : M) (w : Fin (k + 1 + l) → V x) :
     (φ.wedge ψ).interiorProd a x w =
       (φ.interiorProd a).wedge ψ x (w ∘ Fin.cast (Nat.add_right_comm k 1 l).symm) +
