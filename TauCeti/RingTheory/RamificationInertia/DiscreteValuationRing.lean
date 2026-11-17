@@ -22,8 +22,7 @@ exponent `e` with `π_S = u π_T ^ e` for uniformizers `π_S`, `π_T` and a unit
 
 ## Main results
 
-* `TauCeti.IsLocalRing.quotientMaximalIdealEquivResidueField` and
-  `TauCeti.IsLocalRing.inertiaDeg_maximalIdeal`: `R ⧸ maximalIdeal R ≃+* ResidueField R` and
+* `TauCeti.IsLocalRing.inertiaDeg_maximalIdeal`:
   `(maximalIdeal B).inertiaDeg A = Module.finrank (ResidueField A) (ResidueField B)`.
 * `TauCeti.IsDiscreteValuationRing.asIdeal_maximalIdeal` and `maximalIdeal_liesOver`: bridge from
   `IsDiscreteValuationRing.maximalIdeal` to `IsLocalRing.maximalIdeal`.
@@ -50,31 +49,18 @@ open IsDiscreteValuationRing hiding maximalIdeal
 
 namespace TauCeti.IsLocalRing
 
-/-- The canonical ring equivalence `R ⧸ maximalIdeal R ≃+* ResidueField R`. -/
-noncomputable def quotientMaximalIdealEquivResidueField (R : Type*) [CommRing R] [IsLocalRing R] :
-    R ⧸ maximalIdeal R ≃+* ResidueField R :=
-  (Ideal.quotEquivOfEq (ker_residue (R := R)).symm).trans
-    (RingHom.quotientKerEquivOfSurjective (residue_surjective (R := R)))
-
-/-- `quotientMaximalIdealEquivResidueField` maps a quotient class to `IsLocalRing.residue`. -/
-@[simp]
-theorem quotientMaximalIdealEquivResidueField_mk {R : Type*} [CommRing R] [IsLocalRing R] (a : R) :
-    quotientMaximalIdealEquivResidueField R (Ideal.Quotient.mk (maximalIdeal R) a) =
-      residue R a := by
-  simp [quotientMaximalIdealEquivResidueField]
-
 /-- For a local homomorphism `A → B` of local rings, `(maximalIdeal B).inertiaDeg A` equals the
 residue-field extension degree. -/
 theorem inertiaDeg_maximalIdeal {A B : Type*} [CommRing A] [IsLocalRing A] [CommRing B]
     [IsLocalRing B] [Algebra A B] [IsLocalHom (algebraMap A B)] :
     (maximalIdeal B).inertiaDeg A = Module.finrank (ResidueField A) (ResidueField B) := by
   rw [Ideal.inertiaDeg_eq_of_isMaximal (maximalIdeal A) (maximalIdeal B)]
-  refine Algebra.finrank_eq_of_equiv_equiv (quotientMaximalIdealEquivResidueField A)
-    (quotientMaximalIdealEquivResidueField B) (RingHom.ext fun x ↦ ?_)
-  obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
-  simp only [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingHom.coe_coe,
-    Ideal.Quotient.algebraMap_mk_of_liesOver, quotientMaximalIdealEquivResidueField_mk,
-    ResidueField.algebraMap_residue]
+  -- `ResidueField R` is defined as `R ⧸ maximalIdeal R` and its `Algebra` structure is
+  -- `Ideal.Quotient.algebraOfLiesOver`, so `RingEquiv.refl` identifies both sides definitionally.
+  exact Algebra.finrank_eq_of_equiv_equiv (RingEquiv.refl (ResidueField A))
+    (RingEquiv.refl (ResidueField B)) (RingHom.ext fun x ↦ by
+      obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+      rfl)
 
 end TauCeti.IsLocalRing
 

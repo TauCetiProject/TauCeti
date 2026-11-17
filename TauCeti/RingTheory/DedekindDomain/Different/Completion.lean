@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Multiplicity
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Semilocal
 public import TauCeti.RingTheory.DedekindDomain.Different.Discriminant
+public import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 import Mathlib.RingTheory.Flat.EquationalCriterion
 import TauCeti.RingTheory.DedekindDomain.Different.DualFamily
 import TauCeti.RingTheory.NormTrace.BaseChange
@@ -198,22 +199,25 @@ theorem differentIdeal_adicCompletionIntegersSemilocal :
       u.1.adicCompletionIntegers L :=
     (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom.comp
       (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
-  let eval (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :=
-    Pi.evalRingHom (fun u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
-      u.1.adicCompletionIntegers L) u
-  have hcomp (u) : ((differentIdeal R B).map f).map (eval u) =
-      differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
+  have hcomp (u : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal}) :
+      ((differentIdeal R B).map f).map (Pi.evalRingHom _ u) =
+        differentIdeal (v.adicCompletionIntegers K) (u.1.adicCompletionIntegers L) := by
     rw [Ideal.map_map, differentIdeal_adicCompletionIntegers_eq_map (K := K) (L := L) v u.1]
-    congr 1; ext x; simp [f, eval]
+    congr 1; ext x; simp [f]
   have hf : ((differentIdeal R B).map
       (Algebra.TensorProduct.includeRight : B →ₐ[R] v.adicCompletionIntegers K ⊗[R] B)).map
       (v.adicCompletionIntegersSemilocalEquiv K B L) = (differentIdeal R B).map f :=
     Ideal.map_map (Algebra.TensorProduct.includeRight : B →ₐ[R] _).toRingHom
       (v.adicCompletionIntegersSemilocalEquiv K B L).toRingEquiv.toRingHom
-  rw [hf]
-  refine Ideal.piOrderIso.injective (funext fun u ↦ ?_)
-  change ((differentIdeal R B).map f).map (eval u) = (Ideal.pi _).map (eval u)
-  rw [hcomp u, Ideal.map_evalRingHom_pi]
+  have hI : (differentIdeal R B).map f =
+      Ideal.pi (Ideal.piOrderIso ((differentIdeal R B).map f)) :=
+    SetLike.coe_injective <| by
+      conv_lhs => rw [← Ideal.piOrderIso.symm_apply_apply ((differentIdeal R B).map f)]
+      exact (Ideal.coe_piOrderIso_symm_apply _).trans (Set.ext fun _ ↦ by simp [Ideal.mem_pi])
+  rw [hf, hI]
+  refine congrArg Ideal.pi (funext fun u ↦ ?_)
+  rw [← Ideal.map_evalRingHom_pi (I := Ideal.piOrderIso ((differentIdeal R B).map f)) u, ← hI,
+    hcomp u]
 
 include K L in
 /-- **Completion preserves the different exponent**: the multiplicity of the maximal ideal of `𝒪_w`

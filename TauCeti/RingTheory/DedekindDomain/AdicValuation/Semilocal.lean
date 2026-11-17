@@ -19,6 +19,7 @@ import TauCeti.RingTheory.AdicCompletion.Pi
 import TauCeti.RingTheory.Localization.FiniteDimensional
 import TauCeti.RingTheory.NormTrace.BaseChange
 import TauCeti.RingTheory.NormTrace.Pi
+import TauCeti.RingTheory.RamificationInertia.DiscreteValuationRing
 
 /-!
 # The semilocal decomposition of a finite extension of Dedekind domains
@@ -57,7 +58,7 @@ and separability instances below.
 public section
 noncomputable section
 
-open TauCeti IsDedekindDomain WithZero TensorProduct
+open TauCeti IsDedekindDomain TensorProduct
 open scoped AdicCompletionExtension nonZeroDivisors
 
 namespace IsDedekindDomain.HeightOneSpectrum
@@ -137,22 +138,6 @@ variable {R : Type*} [CommRing R] [IsDedekindDomain R] (v : HeightOneSpectrum R)
   {L : Type*} [Field L] [Algebra K L] [Algebra R L] [IsScalarTower R K L]
   [Algebra B L] [IsFractionRing B L] [IsScalarTower R B L]
 
-omit [Module.Finite R B] in
-private theorem exists_smul_eq_of_valued_le (w : HeightOneSpectrum B) [w.asIdeal.LiesOver v.asIdeal]
-    {π : v.adicCompletionIntegers K} (hπ : Irreducible π) {z : w.adicCompletionIntegers L}
-    (hz : Valued.v (z : w.adicCompletion L) ≤ exp (-(w.asIdeal.ramificationIdx R : ℤ))) :
-    ∃ q : w.adicCompletionIntegers L, π • q = z := by
-  let E : w.adicCompletion L := algebraMap (v.adicCompletionIntegers K) (w.adicCompletion L) π
-  have hEval : Valued.v E = exp (-(w.asIdeal.ramificationIdx R : ℤ)) :=
-    v.valued_algebraMap_adicCompletion_of_irreducible (L := L) w hπ
-  have hE0 : E ≠ 0 := fun h0 ↦ exp_ne_zero ((h0 ▸ hEval).symm.trans (map_zero _))
-  refine ⟨⟨(z : w.adicCompletion L) / E, by
-      rw [mem_adicCompletionIntegers, map_div₀, hEval]; exact div_le_one_of_le₀ hz zero_le⟩,
-    Subtype.ext ?_⟩
-  rw [Algebra.smul_def, Subring.coe_mul, ← ValuationSubring.algebraMap_apply,
-    ← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (w.adicCompletionIntegers L)]
-  exact mul_div_cancel₀ _ hE0
-
 /-- **Surjectivity of the integral semilocal map** (with arbitrary residue fields). -/
 theorem adicCompletionIntegersSemilocalHom_surjective :
     Function.Surjective (v.adicCompletionIntegersSemilocalHom K B L) := by
@@ -183,7 +168,7 @@ theorem adicCompletionIntegersSemilocalHom_surjective :
         π • q = (v.adicCompletionIntegersSemilocalHom K B L (1 ⊗ₜ b) - y) w := by
     have hbw := hb w.1 (Finset.mem_image.mpr ⟨w, Finset.mem_univ w, rfl⟩)
     simp only [dite_eq_left w.2] at hbw
-    refine exists_smul_eq_of_valued_le v w.1 hπ ?_
+    refine (v.exists_smul_eq_adicCompletionIntegers_iff_valued_le w.1 hπ).mpr ?_
     rw [Pi.sub_apply, AddSubgroupClass.coe_sub, adicCompletionIntegersSemilocalHom_tmul, map_one,
       one_mul, Valuation.map_sub_swap,
       ← ValuationSubring.algebraMap_apply (a := algebraMap B (w.1.adicCompletionIntegers L) b),
@@ -274,31 +259,6 @@ private theorem adicCompletionSemilocalHom_toField (z : v.adicCompletionIntegers
       algebraMap_adicCompletionIntegersExtensionAlgebra, algebraMap_adicCompletionExtensionAlgebra,
       coe_adicCompletionIntegersExtension]; rfl
 
-omit [Module.Finite R B] in
-private theorem exists_pow_irreducible_mul_mem_adicCompletionIntegers (w : HeightOneSpectrum B)
-    [w.asIdeal.LiesOver v.asIdeal] {π : v.adicCompletionIntegers K} (hπ : Irreducible π)
-    (z : w.adicCompletion L) :
-    ∃ N : ℕ, ∀ m ≥ N,
-      algebraMap (v.adicCompletion K) (w.adicCompletion L) ((π : v.adicCompletion K) ^ m) * z ∈
-        w.adicCompletionIntegers L := by
-  have : FaithfulSMul R B := FaithfulSMul.of_field_isFractionRing R B K L
-  rcases eq_or_ne z 0 with rfl | hz0
-  · exact ⟨0, fun _ _ ↦ by simp⟩
-  have hπv : Valued.v (algebraMap (v.adicCompletion K) (w.adicCompletion L)
-      (π : v.adicCompletion K)) = exp (-(v.asIdeal.ramificationIdx' w.asIdeal : ℤ)) := by
-    rw [← ValuationSubring.algebraMap_apply,
-      ← IsScalarTower.algebraMap_apply (v.adicCompletionIntegers K) (v.adicCompletion K),
-      Ideal.ramificationIdx'_eq_ramificationIdx v.asIdeal w.asIdeal v.ne_bot]
-    exact v.valued_algebraMap_adicCompletion_of_irreducible (L := L) w hπ
-  have he : (1 : ℤ) ≤ v.asIdeal.ramificationIdx' w.asIdeal := Nat.one_le_cast.mpr
-    (Nat.pos_of_ne_zero (Ideal.IsDedekindDomain.ramificationIdx'_ne_zero_of_liesOver _ v.ne_bot))
-  refine ⟨(log (Valued.v z)).natAbs, fun m hm ↦ ?_⟩
-  rw [mem_adicCompletionIntegers, map_mul, map_pow, map_pow, hπv, ← exp_nsmul,
-    ← exp_log ((Valuation.ne_zero_iff Valued.v).mpr hz0), ← exp_add, ← exp_zero, exp_le_exp]
-  have : ((log (Valued.v z)).natAbs : ℤ) ≤ m := Nat.cast_le.mpr hm
-  have : log (Valued.v z) ≤ ((log (Valued.v z)).natAbs : ℤ) := Int.natCast_natAbs _ ▸ le_abs_self _
-  simp only [nsmul_eq_mul, mul_neg]; nlinarith
-
 /-- **Surjectivity of the field semilocal map** (with arbitrary residue fields). -/
 theorem adicCompletionSemilocalHom_surjective :
     Function.Surjective (v.adicCompletionSemilocalHom K B L) := by
@@ -309,17 +269,15 @@ theorem adicCompletionSemilocalHom_surjective :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
   have hπ0 : (π : v.adicCompletion K) ≠ 0 := ZeroMemClass.coe_eq_zero.not.mpr hπ.ne_zero
   choose N hN using fun w : {w : HeightOneSpectrum B // w.asIdeal.LiesOver v.asIdeal} ↦
-    exists_pow_irreducible_mul_mem_adicCompletionIntegers v w.1 hπ (y w)
+    v.exists_forall_pow_smul_mem_adicCompletionIntegers w.1
+      ((adicCompletionIntegers.integers K v).valuation_irreducible_lt_one hπ) (y w)
   let M : ℕ := Finset.univ.sup N
   obtain ⟨t, ht⟩ := v.adicCompletionIntegersSemilocalHom_surjective (K := K) (L := L)
     fun w ↦ ⟨_, hN w M (Finset.le_sup (Finset.mem_univ w))⟩
   refine ⟨((π : v.adicCompletion K) ^ M)⁻¹ • v.adicCompletionIntegersSemilocalToField K B L t,
     funext fun w ↦ ?_⟩
-  rw [map_smul, Pi.smul_apply, v.adicCompletionSemilocalHom_toField t, ht, Algebra.smul_def,
-    map_inv₀]
-  exact inv_mul_cancel_left₀
-    (map_pow (algebraMap (v.adicCompletion K) (w.1.adicCompletion L)) _ M ▸
-      pow_ne_zero M ((map_ne_zero _).mpr hπ0)) (y w)
+  rw [map_smul, Pi.smul_apply, v.adicCompletionSemilocalHom_toField t, ht]
+  exact inv_smul_smul₀ (pow_ne_zero M hπ0) (y w)
 
 /-- **The rank of `𝒪_w` over `𝒪_v` is `e(w ∣ v) · f(w ∣ v)`** (with arbitrary residue fields). -/
 theorem finrank_adicCompletionIntegers_of_finite (w : HeightOneSpectrum B)
