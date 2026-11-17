@@ -242,17 +242,16 @@ theorem mk_removeNth_of_eq_basepoint {n : ℕ} {v : Fin (n + 1) → X} {i : Fin 
     (h : v i = x₀) : (mk (i.removeNth v) : JamesReducedProduct X x₀) = mk v := by
   conv_rhs => rw [← Fin.insertNth_self_removeNth i v, h, mk_insertNth_basepoint]
 
-/-- The reduced word given by a list of points different from the basepoint is the reduced word of
-the word of the same length formed by these points. -/
-private theorem exists_mk_eq_ofList (l : List {x : X // x ≠ x₀}) :
-    ∃ v : Fin l.length → X,
-      (mk v : JamesReducedProduct X x₀) = (freeMonoidEquiv X x₀).symm (FreeMonoid.ofList l) := by
-  induction l with
-  | nil => exact ⟨Fin.elim0, by simp⟩
-  | cons a l ih =>
-    obtain ⟨v, hmk⟩ := ih
-    refine ⟨Fin.cons a.1 v, ?_⟩
-    rw [FreeMonoid.ofList_cons, map_mul, ← hmk, mk_cons, freeMonoidEquiv_symm_of]
+/-- The reduced word of a word none of whose letters is the basepoint is that word itself. -/
+theorem freeMonoidEquiv_mk_coe {n : ℕ} (v : Fin n → {x : X // x ≠ x₀}) :
+    freeMonoidEquiv X x₀ (mk fun i => (v i : X)) = FreeMonoid.ofList (List.ofFn v) := by
+  induction n with
+  | zero => simp
+  | succ n ih =>
+    have := Fin.comp_cons Subtype.val (v 0) (Fin.tail v)
+    simp only [Function.comp_def] at this
+    rw [← Fin.cons_self_tail v, List.ofFn_cons, FreeMonoid.ofList_cons, this, mk_cons, map_mul, ih,
+      freeMonoidEquiv_letter_coe]
 
 /-! ### Length -/
 
@@ -311,8 +310,10 @@ theorem length_mk_le {n : ℕ} (v : Fin n → X) : length (mk v : JamesReducedPr
 /-- Every reduced word is the reduced word of a word of each length at least its own. -/
 theorem exists_mk_eq_of_length_le {w : JamesReducedProduct X x₀} {n : ℕ} (h : length w ≤ n) :
     ∃ v : Fin n → X, mk v = w := by
-  obtain ⟨u, hu⟩ := exists_mk_eq_ofList (FreeMonoid.toList (freeMonoidEquiv X x₀ w))
-  rw [FreeMonoid.ofList_toList, MulEquiv.symm_apply_apply] at hu
+  let l := FreeMonoid.toList (freeMonoidEquiv X x₀ w)
+  let u : Fin l.length → X := fun i => (l.get i : X)
+  have hu : mk u = w := (freeMonoidEquiv X x₀).injective <| by
+    rw [freeMonoidEquiv_mk_coe, List.ofFn_get, FreeMonoid.ofList_toList]
   have hn : (FreeMonoid.toList (freeMonoidEquiv X x₀ w)).length + (n - length w) = n := by
     rw [length] at h ⊢
     omega
@@ -336,29 +337,17 @@ theorem mem_toList_freeMonoidEquiv_mk {n : ℕ} (v : Fin n → X) (a : {x : X //
     · rw [letter_of_ne h, MulEquiv.apply_symm_apply, FreeMonoid.toList_of, List.mem_singleton,
         Subtype.ext_iff, eq_comm]
 
-/-- The reduced word of a word none of whose letters is the basepoint is that word itself. -/
-theorem freeMonoidEquiv_mk_coe {n : ℕ} (v : Fin n → {x : X // x ≠ x₀}) :
-    freeMonoidEquiv X x₀ (mk fun i => (v i : X)) = FreeMonoid.ofList (List.ofFn v) := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [← Fin.cons_self_tail v, List.ofFn_cons, FreeMonoid.ofList_cons]
-    have : (fun i => ((Fin.cons (v 0) (Fin.tail v) : Fin (n + 1) → {x : X // x ≠ x₀}) i : X)) =
-        Fin.cons (v 0 : X) fun i => (Fin.tail v i : X) := by
-      ext i
-      induction i using Fin.cases <;> simp
-    rw [this, mk_cons, map_mul, ih, freeMonoidEquiv_letter_coe]
-
 /-- Two words none of whose letters is the basepoint have the same reduced word only if they are
 equal. -/
 theorem mk_injOn {n : ℕ} :
     Set.InjOn (mk : (Fin n → X) → JamesReducedProduct X x₀) {v | ∀ i, v i ≠ x₀} := by
   intro v hv w hw h
-  have h' := congrArg (freeMonoidEquiv X x₀) h
-  rw [show v = fun i => ((⟨v i, hv i⟩ : {x : X // x ≠ x₀}) : X) from rfl,
-    show w = fun i => ((⟨w i, hw i⟩ : {x : X // x ≠ x₀}) : X) from rfl, freeMonoidEquiv_mk_coe,
-    freeMonoidEquiv_mk_coe] at h'
-  have h'' := List.ofFn_inj.1 (by simpa using congrArg FreeMonoid.toList h')
+  -- `v` and `w` are the coercions of the words `fun i => ⟨v i, hv i⟩` and `fun i => ⟨w i, hw i⟩`.
+  have h' : FreeMonoid.ofList (List.ofFn fun i => (⟨v i, hv i⟩ : {x : X // x ≠ x₀})) =
+      FreeMonoid.ofList (List.ofFn fun i => ⟨w i, hw i⟩) :=
+    (freeMonoidEquiv_mk_coe fun i => ⟨v i, hv i⟩).symm.trans
+      ((congrArg (freeMonoidEquiv X x₀) h).trans (freeMonoidEquiv_mk_coe fun i => ⟨w i, hw i⟩))
+  have h'' := List.ofFn_inj.1 (FreeMonoid.ofList.inj h')
   exact funext fun i => congrArg Subtype.val (congrFun h'' i)
 
 /-! ### The universal property among monoids -/

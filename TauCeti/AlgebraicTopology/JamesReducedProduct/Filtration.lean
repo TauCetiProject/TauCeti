@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.JamesReducedProduct
+public import TauCeti.Topology.Category.TopPair.FatWedge
 public import TauCeti.Topology.Category.TopPair.Quotient
 
 /-!
@@ -16,7 +17,7 @@ length at most `r` in the James reduced product `J X`
 (`TauCeti.JamesReducedProduct.filtration`). This file identifies each quotient
 `J_(r+1) X / J_r X` of consecutive stages with the `(r + 1)`-fold smash power of `X`, the quotient
 of `Xʳ⁺¹` by its **fat wedge**, the words some letter of which is the basepoint
-(`TauCeti.JamesReducedProduct.fatWedge`). These quotients compute the homology of `J X` stage by
+(`TauCeti.fatWedge`). These quotients compute the homology of `J X` stage by
 stage, which is how the James model computes the homology of the loop space `ΩΣX`.
 
 The identification rests on two facts.
@@ -33,16 +34,13 @@ The identification rests on two facts.
   (`TauCeti.JamesReducedProduct.isQuotientMap_filtrationMk`).
 
 Both quotients are formed with `TopPair.ordinaryPairQuotient`, for the pairs
-`(Xʳ⁺¹, fat wedge)` (`TauCeti.JamesReducedProduct.fatWedgePair`) and `(J_(r+1) X, J_r X)`
+`(Xʳ⁺¹, fat wedge)` (`TauCeti.fatWedgePair`) and `(J_(r+1) X, J_r X)`
 (`TauCeti.JamesReducedProduct.filtrationPair`).
 
 ## Main definitions
 
-* `TauCeti.JamesReducedProduct.fatWedge`: the words of length `n` with a letter equal to the
-  basepoint.
 * `TauCeti.JamesReducedProduct.filtrationMk`: the reduction of words `Xʳ → J_r X`.
-* `TauCeti.JamesReducedProduct.fatWedgePair`, `TauCeti.JamesReducedProduct.filtrationPair`: the
-  pairs `(Xⁿ, fat wedge)` and `(J_(r+1) X, J_r X)`.
+* `TauCeti.JamesReducedProduct.filtrationPair`: the pair `(J_(r+1) X, J_r X)`.
 * `TauCeti.JamesReducedProduct.filtrationQuotientHomeomorph`: the homeomorphism
   `Xʳ⁺¹ / fat wedge ≃ₜ J_(r+1) X / J_r X` induced by the reduction of words.
 
@@ -74,33 +72,19 @@ namespace JamesReducedProduct
 
 variable {X : Type u} {x₀ : X}
 
-/-! ### The fat wedge -/
-
-variable (X x₀) in
-/-- The **fat wedge** of `Xⁿ`: the words of length `n` some letter of which is the basepoint. The
-quotient of `Xⁿ` by the fat wedge is the `n`-fold smash power of `(X, x₀)`. -/
-def fatWedge (n : ℕ) : Set (Fin n → X) :=
-  {v | ∃ i, v i = x₀}
-
-@[simp]
-theorem mem_fatWedge_iff {n : ℕ} {v : Fin n → X} : v ∈ fatWedge X x₀ n ↔ ∃ i, v i = x₀ :=
-  Iff.rfl
-
-theorem notMem_fatWedge_iff {n : ℕ} {v : Fin n → X} : v ∉ fatWedge X x₀ n ↔ ∀ i, v i ≠ x₀ := by
-  simp
-
 /-- A word of length `r + 1` reduces into the stage `J_r X` of the word-length filtration exactly
 when one of its letters is the basepoint. -/
 theorem mk_mem_filtration_iff_mem_fatWedge {r : ℕ} {v : Fin (r + 1) → X} :
     mk v ∈ filtration X x₀ r ↔ v ∈ fatWedge X x₀ (r + 1) := by
   classical
-  refine ⟨fun h => ?_, fun ⟨i, hi⟩ => ?_⟩
+  refine ⟨fun h => ?_, fun hv => ?_⟩
   · by_contra hv
     rw [notMem_fatWedge_iff] at hv
     rw [mem_filtration_iff, length_mk, Finset.filter_true_of_mem fun i _ => hv i,
       Finset.card_univ, Fintype.card_fin] at h
     omega
-  · rw [← mk_removeNth_of_eq_basepoint hi]
+  · obtain ⟨i, hi⟩ := mem_fatWedge_iff.1 hv
+    rw [← mk_removeNth_of_eq_basepoint hi]
     exact mk_mem_filtration _
 
 variable (x₀) in
@@ -115,7 +99,7 @@ theorem coe_filtrationMk {r : ℕ} (v : Fin r → X) :
   (rfl)
 
 /-- Every reduced word of length at most `r` is the reduced word of a word of length `r`. -/
-theorem surjective_filtrationMk {r : ℕ} :
+theorem filtrationMk_surjective {r : ℕ} :
     Function.Surjective (filtrationMk x₀ : (Fin r → X) → filtration X x₀ r) := fun w => by
   obtain ⟨v, hv⟩ : (w : JamesReducedProduct X x₀) ∈ range (mk : (Fin r → X) → _) := by
     rw [range_mk]
@@ -153,7 +137,8 @@ theorem isClosed_iff_of_subset_filtration (h : IsClosed ({x₀} : Set X)) {r : �
       ext t
       simp only [mem_preimage, mem_iUnion, mem_inter_iff, mem_ofPred_eq]
       refine ⟨fun ht => ?_, fun ⟨i, hi, ht⟩ => ?_⟩
-      · obtain ⟨i, hi⟩ := mk_mem_filtration_iff_mem_fatWedge.1 (filtration_monotone hrn (hs ht))
+      · obtain ⟨i, hi⟩ := mem_fatWedge_iff.1 <|
+          mk_mem_filtration_iff_mem_fatWedge.1 (filtration_monotone hrn (hs ht))
         exact ⟨i, hi, by rwa [mk_removeNth_of_eq_basepoint hi]⟩
       · rwa [← mk_removeNth_of_eq_basepoint hi]
     rw [hpre]
@@ -176,7 +161,7 @@ theorem continuous_filtrationMk {r : ℕ} [UCompactlyGeneratedSpace.{u} (Fin r �
 theorem isQuotientMap_filtrationMk (h : IsClosed ({x₀} : Set X)) {r : ℕ}
     [UCompactlyGeneratedSpace.{u} (Fin r → X)] :
     IsQuotientMap (filtrationMk x₀ : (Fin r → X) → filtration X x₀ r) := by
-  refine isQuotientMap_iff_isClosed.2 ⟨surjective_filtrationMk, fun s =>
+  refine isQuotientMap_iff_isClosed.2 ⟨filtrationMk_surjective, fun s =>
     ⟨fun hs => hs.preimage continuous_filtrationMk, fun hs => ?_⟩⟩
   rw [(isClosed_filtration h r).isClosedEmbedding_subtypeVal.isClosed_iff_image_isClosed,
     isClosed_iff_of_subset_filtration h (image_subset_iff.2 fun w _ => w.2)]
@@ -192,18 +177,10 @@ theorem isQuotientMap_filtrationMk (h : IsClosed ({x₀} : Set X)) {r : ℕ}
 /-! ### The filtration quotients -/
 
 variable (X x₀) in
-/-- The pair `(Xⁿ, fat wedge)`. Its pointed quotient is the `n`-fold smash power of `(X, x₀)`. -/
-abbrev fatWedgePair (n : ℕ) : TopPair.{u} :=
-  TopPair.ofSubset (X := TopCat.of (Fin n → X)) (fatWedge X x₀ n)
-
-variable (X x₀) in
 /-- The pair `(J_(r+1) X, J_r X)` of consecutive stages of the word-length filtration. -/
 abbrev filtrationPair (r : ℕ) : TopPair.{u} :=
   TopPair.ofSubset (X := TopCat.of (filtration X x₀ (r + 1)))
     {w | (w : JamesReducedProduct X x₀) ∈ filtration X x₀ r}
-
-instance (n : ℕ) : Nonempty (fatWedgePair X x₀ (n + 1)).snd :=
-  ⟨⟨fun _ => x₀, 0, rfl⟩⟩
 
 instance (r : ℕ) : Nonempty (filtrationPair X x₀ r).snd :=
   ⟨⟨⟨1, one_mem_filtration _⟩, one_mem_filtration _⟩⟩
@@ -252,29 +229,20 @@ private theorem isHomeomorph_filtrationQuotientMap :
     replace hz := ((filtrationPair X x₀ r).ordinaryPairQuotientπ_eq_iff
       (filtrationMk x₀ v) (filtrationMk x₀ w)).1 hz
     refine ((fatWedgePair X x₀ (r + 1)).ordinaryPairQuotientπ_eq_iff v w).2 ?_
-    -- The ranges of the subspace inclusions are the subspaces themselves.
-    have hP (u : Fin (r + 1) → X) :
-        u ∈ range (fatWedgePair X x₀ (r + 1)).map ↔ u ∈ fatWedge X x₀ (r + 1) :=
-      ⟨fun ⟨b, hb⟩ => hb ▸ b.2, fun hu => ⟨⟨u, hu⟩, rfl⟩⟩
-    have hQ (u : Fin (r + 1) → X) :
-        filtrationMk x₀ u ∈ range (filtrationPair X x₀ r).map ↔
-          u ∈ fatWedge X x₀ (r + 1) :=
-      ⟨fun ⟨⟨⟨w', _⟩, hw'⟩, hb⟩ => mk_mem_filtration_iff_mem_fatWedge.1 <| by
-          have hb' : w' = mk u := congrArg Subtype.val hb
-          exact hb' ▸ hw',
-        fun hu => ⟨⟨_, mk_mem_filtration_iff_mem_fatWedge.2 hu⟩, rfl⟩⟩
+    rw [TopPair.range_ofSubset_map] at hz ⊢
     rcases hz with hz | ⟨hv, hw⟩
     · have hmk : (mk v : JamesReducedProduct X x₀) = mk w := congrArg Subtype.val hz
       by_cases hv : v ∈ fatWedge X x₀ (r + 1)
       · have hw : w ∈ fatWedge X x₀ (r + 1) := by
           rw [← mk_mem_filtration_iff_mem_fatWedge, ← hmk]
           exact mk_mem_filtration_iff_mem_fatWedge.2 hv
-        exact Or.inr ⟨(hP v).2 hv, (hP w).2 hw⟩
+        exact Or.inr ⟨hv, hw⟩
       · have hw : w ∉ fatWedge X x₀ (r + 1) := fun hw => hv <| by
           rw [← mk_mem_filtration_iff_mem_fatWedge, hmk]
           exact mk_mem_filtration_iff_mem_fatWedge.2 hw
         exact Or.inl (mk_injOn (notMem_fatWedge_iff.1 hv) (notMem_fatWedge_iff.1 hw) hmk)
-    · exact Or.inr ⟨(hP v).2 ((hQ v).1 hv), (hP w).2 ((hQ w).1 hw)⟩
+    · exact Or.inr
+        ⟨mk_mem_filtration_iff_mem_fatWedge.1 hv, mk_mem_filtration_iff_mem_fatWedge.1 hw⟩
 
 /-- **The filtration quotients of the James reduced product are smash powers.** For a pointed
 space with closed basepoint whose power `Xʳ⁺¹` is compactly generated, the reduction of words
