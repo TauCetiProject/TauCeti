@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Monoidal.Rigid.SquaredNorm
+public import TauCeti.CategoryTheory.Preadditive.Schur
 public import TauCeti.CategoryTheory.Simple.Classes
 
 /-!

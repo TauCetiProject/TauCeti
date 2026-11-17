@@ -18,6 +18,8 @@ constructor `End.of : (X ⟶ X) → End X`: it sends `𝟙 X` to `1`, a composit
 corresponding operations in `End X`. As `simp` lemmas they push `End.of` inside expressions built
 from morphisms `X ⟶ X`, so that algebra maps out of `End X` can then be applied termwise. We also
 compute the structure map of an `R`-linear category, `(algebraMap R (End X) r).asHom = r • 𝟙 X`.
+When that structure map is surjective, every endomorphism is a scalar multiple of the identity
+(`CategoryTheory.End.exists_smul_id_eq_of_surjective`).
 
 The native precomposition action of `(End X)ᵐᵒᵖ` on `X ⟶ Y` respects the ground
 scalar tower.
@@ -32,11 +34,9 @@ An additive linear functor induces an algebra homomorphism on endomorphisms,
 when the functor is bijective on the object's endomorphisms.
 
 When the structure map `algebraMap R (End X)` of an object `X` over a commutative semiring `R`
-is surjective, every endomorphism is a scalar multiple of `𝟙 X`
-(`TauCeti.exists_smul_id_eq_of_surjective`). When it is bijective, its inverse
-`TauCeti.endAlgEquivOfBijective` identifies `End X` as an `R`-algebra with `R`, so every
-endomorphism is its scalar times `𝟙 X` and the scalars of an automorphism and its inverse multiply
-to `1`.
+is bijective, its inverse `TauCeti.endAlgEquivOfBijective` identifies `End X` as an `R`-algebra
+with `R`, so every endomorphism is its scalar times `𝟙 X` and the scalars of an automorphism and
+its inverse multiply to `1`.
 -/
 
 public section
@@ -93,6 +93,13 @@ theorem of_smul {R : Type w} [Semiring R] [Linear R C] (r : R) (f : X ⟶ X) :
 theorem algebraMap_asHom {R : Type w} [CommSemiring R] [Linear R C] (r : R) :
     (algebraMap R (End X) r).asHom = r • 𝟙 X := by
   rw [Algebra.algebraMap_eq_smul_one, smul_asHom, one_asHom]
+
+/-- If the structure map `R → End X` is surjective, every endomorphism of `X` is a scalar
+multiple `r • 𝟙 X` of the identity. -/
+theorem exists_smul_id_eq_of_surjective {R : Type w} [CommSemiring R] [Linear R C]
+    (h : Function.Surjective (algebraMap R (End X))) (f : X ⟶ X) : ∃ r : R, r • 𝟙 X = f := by
+  obtain ⟨r, hr⟩ := h (End.of f)
+  exact ⟨r, by rw [← algebraMap_asHom, hr]⟩
 
 /-- The native precomposition action on morphisms respects ground-semiring scalars. -/
 instance hom_isScalarTower_opEnd {R : Type w} [Semiring R] [Linear R C] (Y : C) :
@@ -180,13 +187,6 @@ section ScalarEnd
 
 variable {R : Type w} [CommSemiring R] {C : Type u} [Category.{v} C] [Preadditive C] [Linear R C]
   {X : C}
-
-/-- If `algebraMap R (End X)` is surjective, every endomorphism `f : X ⟶ X` is a scalar multiple
-`r • 𝟙 X` of the identity. -/
-theorem exists_smul_id_eq_of_surjective (hX : Function.Surjective (algebraMap R (End X)))
-    (f : X ⟶ X) : ∃ r : R, r • 𝟙 X = f := by
-  obtain ⟨r, hr⟩ := hX (End.of f)
-  exact ⟨r, by simpa only [End.algebraMap_asHom] using congrArg End.asHom hr⟩
 
 /-- When the structure map `algebraMap R (End X)` of an object `X` over a commutative semiring `R`
 is bijective, its inverse identifies `End X` as an `R`-algebra with `R`. -/

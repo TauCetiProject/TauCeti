@@ -106,7 +106,8 @@ theorem globalDim_pivotalCategory_eq_of_bijective (R : Type w) [CommSemiring R]
     @globalDim C _ _ _ _ _ P = @globalDim C _ _ _ _ _ Q := by
   rw [@globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ P,
     @globalDim_eq_sum_leftDim_comp_rightDim C _ _ _ _ _ Q]
-  exact Finset.sum_congr rfl fun S _ ↦ leftDim_comp_rightDim_eq_of_bijective R P Q (hS S)
+  exact Finset.sum_congr rfl fun S _ ↦
+    leftDim_comp_rightDim_eq_of_surjective P Q (hS S).surjective
 
 end GlobalDim
 

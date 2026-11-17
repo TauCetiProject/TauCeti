@@ -28,7 +28,8 @@ endomorphism algebra is `k(t)`.
 ## Main declarations
 
 * `TauCeti.endAlgEquivOfSimple`: the isomorphism `End X ≃ₐ[k] k`, whose inverse is
-  `algebraMap k (End X)` by `TauCeti.endAlgEquivOfSimple_symm_apply`;
+  `algebraMap k (End X)` by `TauCeti.endAlgEquivOfSimple_symm_apply` and
+  `TauCeti.algebraMap_endAlgEquivOfSimple`;
 * `TauCeti.endAlgEquivOfSimple_smul_id`: every endomorphism `f` is `endAlgEquivOfSimple k X f`
   times the identity, and `TauCeti.endAlgEquivOfSimple_apply_eq_iff` characterizes the scalar;
 * `CategoryTheory.End.of_id`, `CategoryTheory.End.of_comp`, … of
@@ -86,10 +87,16 @@ theorem endAlgEquivOfSimple_symm_apply (c : k) :
     (endAlgEquivOfSimple k X).symm c = algebraMap k (End X) c :=
   endAlgEquivOfBijective_symm_apply (bijective_algebraMap_end_of_simple k X) c
 
+/-- The structure map `algebraMap k (End X)` sends the scalar of an endomorphism `f` back to
+`f`. -/
+theorem algebraMap_endAlgEquivOfSimple (f : End X) :
+    algebraMap k (End X) (endAlgEquivOfSimple k X f) = f := by
+  rw [← endAlgEquivOfSimple_symm_apply, AlgEquiv.symm_apply_apply]
+
 /-- Every endomorphism of a simple object is its scalar times the identity. -/
 @[simp]
-theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom :=
-  endAlgEquivOfBijective_smul_id (bijective_algebraMap_end_of_simple k X) f
+theorem endAlgEquivOfSimple_smul_id (f : End X) : endAlgEquivOfSimple k X f • 𝟙 X = f.asHom := by
+  rw [← End.algebraMap_asHom, algebraMap_endAlgEquivOfSimple]
 
 /-- The scalar of an endomorphism `f` is the unique `c` with `f = c • 𝟙 X`. -/
 theorem endAlgEquivOfSimple_apply_eq_iff (f : End X) (c : k) :

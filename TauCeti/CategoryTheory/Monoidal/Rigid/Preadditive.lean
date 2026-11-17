@@ -104,7 +104,7 @@ theorem surjective_algebraMap_end_rightDual
     (hX : Function.Surjective (algebraMap R (End X))) :
     Function.Surjective (algebraMap R (End Xᘁ)) := by
   intro g
-  obtain ⟨r, hr⟩ := exists_smul_id_eq_of_surjective hX (leftAdjointMate g.asHom)
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX (leftAdjointMate g.asHom)
   refine ⟨r, End.ext ?_⟩
   have h : (r • 𝟙 (ᘁ(Xᘁ)))ᘁ = (leftAdjointMate g.asHom)ᘁ := congrArg rightAdjointMate hr
   rw [rightAdjointMate_smul, rightAdjointMate_id, rightAdjointMate_leftAdjointMate] at h
@@ -216,7 +216,7 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_right {X Y : C} [ExactPa
     ∃ r : R, f = r • ε_ X Y := by
   let e := (tensorRightHomLinearEquiv R Y X Y (𝟙_ C)).trans
     (Linear.homCongr R (Iso.refl Y) (λ_ Y))
-  obtain ⟨r, hr⟩ := exists_smul_id_eq_of_surjective hY (e f)
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hY (e f)
   refine ⟨r, e.injective ?_⟩
   rw [map_smul, ← hr]
   congr 1
@@ -232,7 +232,7 @@ theorem hom_tensorUnit_eq_smul_evaluation_of_surjective_left {X Y : C} [ExactPai
     ∃ r : R, f = r • ε_ X Y := by
   let e := (tensorLeftHomLinearEquiv R X X Y (𝟙_ C)).trans
     (Linear.homCongr R (Iso.refl X) (ρ_ X))
-  obtain ⟨r, hr⟩ := exists_smul_id_eq_of_surjective hX (e f)
+  obtain ⟨r, hr⟩ := End.exists_smul_id_eq_of_surjective hX (e f)
   refine ⟨r, e.injective ?_⟩
   rw [map_smul, ← hr]
   congr 1
