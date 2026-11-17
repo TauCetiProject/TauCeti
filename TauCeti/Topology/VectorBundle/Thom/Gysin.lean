@@ -48,8 +48,9 @@ above apply directly.
 
 When the fibre norm is continuous on the total space, for instance for a continuous Riemannian
 bundle, the inclusion `S(E) → E₀` of the sphere bundle (`TauCeti.sphereBundleInclusion`) is a
-homotopy equivalence (`TauCeti.sphereBundleHomotopyEquiv`), and the sequence is the Gysin sequence
-of the sphere bundle `S(E) → B`, with the pullback along `S(E) → B` and the connecting map
+homotopy equivalence (`TauCeti.gaugeSphereBundleHomotopyEquiv` for the fibre norm), and the
+sequence is the Gysin sequence of the sphere bundle `S(E) → B`, with the pullback along `S(E) → B`
+and the connecting map
 `TauCeti.sphereGysinδ`
 (`TauCeti.exact_singularCup_eulerClass_singularCohomologyMap_sphereBundleProj`,
 `TauCeti.exact_singularCohomologyMap_sphereBundleProj_sphereGysinδ`,

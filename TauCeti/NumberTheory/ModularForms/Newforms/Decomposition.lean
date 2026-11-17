@@ -39,6 +39,8 @@ one, and the others lie in nebentypus spaces meeting `S_k(N, χ_f)` only in `0`.
 ## Main results
 
 * `HeckeRing.GL2.Newform.span_levelRaise_eq_top`: the level-raised newforms span `S_k(Γ₁(N))`.
+* `HeckeRing.GL2.Newform.iSup_range_levelRaise_le_span_levelRaise`: every cusp form raised to level
+  `N` from `S_k(Γ₁(M))` lies in the span of the level-raised newforms of levels dividing `M`.
 * `HeckeRing.GL2.Newform.mem_span_levelRaise_of_forall_heckeTCuspNat_eq_smul`: a simultaneous
   eigenvector of the good `Tₚ` lies in the span of the level-raised newforms with its
   eigenvalues.
@@ -112,6 +114,31 @@ theorem span_levelRaise_eq_top (N : ℕ) [NeZero N] (k : ℤ) :
     -- a form of level `N` is its own level-raise `V₁`
     have hf' := hnew N 1 h (Submodule.mem_map_of_mem hf)
     rwa [CuspForm.levelRaiseₗ_apply, _root_.CuspForm.levelRaise_one_self] at hf'
+
+/-- **Every cusp form raised along `d * M ∣ N` from `S_k(Γ₁(M))` is a linear combination of
+level-raised newforms of levels dividing `M`**: `∑_{d * M ∣ N} V_d S_k(Γ₁(M))` lies in the span of
+`V_c g'` with `c * M' ∣ N` and `M' ∣ M`, refining `span_levelRaise_eq_top` by applying it at level
+`M` and composing `V_d ∘ V_e = V_{e * d}`. -/
+theorem iSup_range_levelRaise_le_span_levelRaise {M : ℕ} [NeZero N] [NeZero M] :
+    (⨆ (d : ℕ) (hd : d * M ∣ N),
+      haveI : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hd)
+      LinearMap.range
+        (CuspForm.levelRaiseₗ (k := k) d (Gamma1_map_le_conjAct_scaleGL_of_dvd hd))) ≤
+    Submodule.span ℂ {G : CuspForm ((Gamma1 N).map (mapGL ℝ)) k |
+      ∃ (M' c : ℕ) (_ : NeZero M') (_ : NeZero c) (hc : c * M' ∣ N),
+        M' ∣ M ∧ ∃ g' : Newform M' k,
+          CuspForm.levelRaise c (Gamma1_map_le_conjAct_scaleGL_of_dvd hc) g'.toCuspForm = G} := by
+  refine iSup_le fun d ↦ iSup_le fun hd ↦ ?_
+  have : NeZero d := NeZero.of_dvd (dvd_of_mul_right_dvd hd)
+  rw [← Submodule.map_top, ← span_levelRaise_eq_top M k, Submodule.map_span, Submodule.span_le]
+  rintro _ ⟨_, ⟨M', e, _, _, he, g', rfl⟩, rfl⟩
+  have hed : (e * d) * M' ∣ N := by
+    rw [mul_comm e d, mul_assoc]
+    exact (mul_dvd_mul_left d he).trans hd
+  have : NeZero (e * d) := ⟨mul_ne_zero (NeZero.ne e) (NeZero.ne d)⟩
+  rw [CuspForm.levelRaiseₗ_apply, CuspForm.levelRaise_levelRaise]
+  exact Submodule.subset_span ⟨M', e * d, inferInstance, inferInstance, hed,
+    dvd_of_mul_left_dvd he, g', rfl⟩
 
 /-- **A simultaneous eigenvector of the good Hecke operators lies in the span of the level-raised
 newforms with its eigenvalues.** If a cusp form `F` of level `Γ₁(N)` satisfies `Tₚ F = aₚ F` at

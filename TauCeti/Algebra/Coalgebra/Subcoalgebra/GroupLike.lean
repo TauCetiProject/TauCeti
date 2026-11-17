@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Coalgebra.Subcoalgebra.Basic
 public import Mathlib.LinearAlgebra.Basis.Basic
 
 import Mathlib.LinearAlgebra.Span.Basic
+import TauCeti.Algebra.Coalgebra.Finsupp.Coderivation
 
 /-!
 # Subcoalgebras spanned by group-like elements
@@ -22,8 +23,11 @@ singleton span, a finite-generation theorem for finite sets of group-like elemen
 The subcoalgebra spanned by all group-like elements is the full subcoalgebra exactly when the
 group-like elements span the carrier as a module, a condition invariant under coalgebra
 equivalence and preserved by surjective coalgebra morphisms
-(`CoalgHom.groupLikeSetSpan_eq_top_of_surjective`). Over a domain the group-like elements are
-linearly independent, so they then form a basis, `groupLikeBasis`.
+(`CoalgHom.groupLikeSetSpan_eq_top_of_surjective`). Over a domain the group-like elements of a
+torsion-free coalgebra are linearly independent, so they then form a basis, `groupLikeBasis`. Its
+coordinates identify the coalgebra with the diagonal coalgebra on its group-like elements
+(`groupLikeBasisCoalgEquiv`), so an element primitive relative to a group-like element is zero
+(`eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul`).
 
 ## References
 
@@ -212,6 +216,51 @@ noncomputable def groupLikeBasis (h : groupLikeSetSpan (R := S) (C := D) Set.uni
 theorem groupLikeBasis_apply (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤)
     (g : GroupLike S D) : groupLikeBasis h g = g.val :=
   Module.Basis.mk_apply _ _ g
+
+/-- The coordinate of a group-like element in `groupLikeBasis` is the indicator of itself. -/
+@[simp]
+theorem groupLikeBasis_repr_val (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤)
+    (g : GroupLike S D) : (groupLikeBasis h).repr g.val = Finsupp.single g 1 := by
+  rw [← groupLikeBasis_apply h g, Module.Basis.repr_self]
+
+/-- Over a domain, a torsion-free coalgebra spanned by its group-like elements is isomorphic to
+the diagonal coalgebra `GroupLike S D →₀ S` through its coordinates in `groupLikeBasis`. -/
+noncomputable def groupLikeBasisCoalgEquiv
+    (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) : D ≃ₗc[S] (GroupLike S D →₀ S) :=
+  { (groupLikeBasis h).repr with
+    counit_comp := (groupLikeBasis h).ext fun g ↦ by
+      simp [g.isGroupLikeElem_val.counit_eq_one]
+    map_comp_comul := (groupLikeBasis h).ext fun g ↦ by
+      simp [g.isGroupLikeElem_val.comul_eq_tmul_self] }
+
+/-- The underlying map of `groupLikeBasisCoalgEquiv` is the coordinate map of
+`groupLikeBasis`. -/
+@[simp]
+theorem groupLikeBasisCoalgEquiv_apply (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤)
+    (x : D) : groupLikeBasisCoalgEquiv h x = (groupLikeBasis h).repr x :=
+  (rfl)
+
+/-- The inverse of `groupLikeBasisCoalgEquiv` takes a coordinate vector to the corresponding
+linear combination of group-like elements. -/
+@[simp]
+theorem groupLikeBasisCoalgEquiv_symm_apply
+    (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) (f : GroupLike S D →₀ S) :
+    (groupLikeBasisCoalgEquiv h).symm f = Finsupp.linearCombination S (groupLikeBasis h) f :=
+  (groupLikeBasis h).repr_symm_apply f
+
+/-- **A coalgebra spanned by its group-like elements has no nonzero skew-primitive elements at a
+single group-like element.** Over a domain, if the group-like elements span a torsion-free
+coalgebra `D`, `Δ g = g ⊗ g`, and `Δ x = x ⊗ g + g ⊗ x`, then `x = 0`. -/
+theorem eq_zero_of_groupLikeSetSpan_eq_top_of_comul_eq_tmul_add_tmul
+    (h : groupLikeSetSpan (R := S) (C := D) Set.univ = ⊤) {g x : D}
+    (hg : Coalgebra.comul (R := S) g = g ⊗ₜ[S] g)
+    (hx : Coalgebra.comul (R := S) x = x ⊗ₜ[S] g + g ⊗ₜ[S] x) : x = 0 := by
+  -- Transport both equations to the diagonal coalgebra, where the claim is already known.
+  let e := groupLikeBasisCoalgEquiv h
+  refine (map_eq_zero_iff e e.injective).mp
+    (Finsupp.eq_zero_of_comul_eq_tmul_add_tmul (g := e g) ?_ ?_)
+  · simpa [hg] using (CoalgHomClass.map_comp_comul_apply e g).symm
+  · simpa [hx] using (CoalgHomClass.map_comp_comul_apply e x).symm
 
 end Domain
 

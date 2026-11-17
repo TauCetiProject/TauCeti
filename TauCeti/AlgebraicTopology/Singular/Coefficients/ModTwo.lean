@@ -24,7 +24,8 @@ long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0`, or with the field `�
 `𝔽₂`-vector spaces. The two agree: restriction of scalars along `ℤ → 𝔽₂` preserves coproducts and
 homology, so the integer-module homology is the mod-two homology with its scalars restricted
 (`TopCat.singularHomologyModTwoIso`). In particular one vanishes exactly when the other does
-(`TopCat.isZero_singularHomology_modTwo_iff`).
+(`TopCat.isZero_singularHomology_modTwo_iff`, and `TopCat.isZero_singularHomology_modTwo_iff'` for
+spaces in the lowest universe, with the coefficients `ℤ/2` and `𝔽₂` themselves rather than lifted).
 
 The coefficient long exact sequence of `0 ⟶ ℤ ⟶ ℤ ⟶ ℤ/2 ⟶ 0` relates integral homology to mod-two
 homology. Its first map induces multiplication by two on `Hₙ(X; ℤ)` (the case `m = 2` of
@@ -118,6 +119,19 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
     ModuleCat.isZero_iff_subsingleton]
   -- restriction of scalars does not change the underlying abelian group
   rfl
+
+/-- For a space in the lowest universe, singular homology with coefficients in the integer module
+`ℤ/2` vanishes exactly when singular homology with coefficients in the field `𝔽₂` does, with the
+coefficients `ℤ/2` and `𝔽₂` themselves rather than their universe lifts. -/
+theorem isZero_singularHomology_modTwo_iff' (X : TopCat.{0}) (n : ℕ) :
+    IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ZMod 2))).obj X) ↔
+      IsZero (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).obj
+        (ModuleCat.of (ZMod 2) (ZMod 2))).obj X) := by
+  rw [Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).mapIso
+      (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ℤ] ZMod 2).toModuleIso.symm).app X),
+    isZero_singularHomology_modTwo_iff]
+  exact Iso.isZero_iff (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).mapIso
+    (ULift.moduleEquiv : ULift.{0} (ZMod 2) ≃ₗ[ZMod 2] ZMod 2).toModuleIso).app X)
 
 /-! ### The reduction modulo two -/
 

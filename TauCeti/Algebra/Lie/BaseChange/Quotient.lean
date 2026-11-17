@@ -56,7 +56,7 @@ noncomputable def quotientBaseChangeEquiv :
     ((A ⊗[R] L) ⧸ I.baseChange A) ≃ₗ⁅A⁆ A ⊗[R] (L ⧸ I) :=
   LieEquiv.ofBijective (liftQ (I.baseChange A) (LieHom.baseChange A I.mkQ) (by simp))
     ⟨(liftQ_injective_iff _ _ _).2 (by simp),
-      liftQ_surjective _ _ _ (LieHom.baseChange_surjective A I.mkQ I.surjective_mkQ)⟩
+      (liftQ_surjective_iff _ _ _).2 (LieHom.baseChange_surjective A I.mkQ I.surjective_mkQ)⟩
 
 @[simp]
 theorem quotientBaseChangeEquiv_mk (x : A ⊗[R] L) :
