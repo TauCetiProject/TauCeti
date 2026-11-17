@@ -107,8 +107,9 @@ theorem sum_branchMap (a : ℕ × Fin d) (x : Fin d → ℝ) :
 theorem simplexPoint_branchMap_last (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : branchDenom a x ≠ 0) :
     simplexPoint (branchMap a x) (Fin.last d) = (1 + a.1 * (1 - x a.2)) / branchDenom a x := by
-  rw [simplexPoint_last, sum_branchMap, eq_div_iff hx, sub_mul, div_mul_cancel₀ _ hx,
-    branchDenom_def]
+  rw [simplexPoint_last, sum_branchMap]
+  field_simp
+  rw [branchDenom_def]
   ring
 
 /-- The denominator `q_a (w)` is at least `1` whenever `w_j ≤ 1`. -/
@@ -290,14 +291,15 @@ theorem linearMove_last_snoc_snoc (u : Fin d → ℝ) (p q : ℝ) :
     | last => simp
     | cast i => simp
 
-/-- On vectors whose last two coordinates differ by the sum `S` of the first `d`, `γ_{n-1}` acts
-on the last two coordinates as the translation by `S`: its `A`-th power sends
-`(u, q - S, q)` to `(u, q + (A - 1) S, q + A S)`. -/
-theorem linearMove_last_pow_snoc_snoc (u : Fin d → ℝ) (q : ℝ) (A : ℕ) :
-    (linearMove (Fin.last d) ^ A)
-        (Fin.snoc (Fin.snoc u (q - ∑ i, u i) : Fin (d + 1) → ℝ) q) =
+/-- On vectors `(u, p, q)` whose last two coordinates differ by the sum `S` of the first `d`,
+`p = q - S`, `γ_{n-1}` acts on the last two coordinates as the translation by `S`: its `A`-th power
+sends `(u, p, q)` to `(u, q + (A - 1) S, q + A S)`. -/
+theorem linearMove_last_pow_snoc_snoc (u : Fin d → ℝ) {p : ℝ} (q : ℝ) (hp : p = q - ∑ i, u i)
+    (A : ℕ) :
+    (linearMove (Fin.last d) ^ A) (Fin.snoc (Fin.snoc u p : Fin (d + 1) → ℝ) q) =
       Fin.snoc (Fin.snoc u (q + ((A : ℝ) - 1) * ∑ i, u i) : Fin (d + 1) → ℝ)
         (q + A * ∑ i, u i) := by
+  subst hp
   induction A with
   | zero => simp [sub_eq_add_neg]
   | succ A ih =>
@@ -335,9 +337,9 @@ theorem linearMove_last_pow_linearMove_simplexLift (a : ℕ × Fin d) {x : Fin d
     (linearMove (Fin.last d) ^ a.1) (linearMove a.2.castSucc (simplexLift x)) =
       branchDenom a x • simplexLift (branchMap a x) := by
   have hsum := sum_simplexPoint_succAbove x a.2
-  have h1 : (1 : ℝ) = 2 - x a.2 - ∑ i, simplexPoint x (a.2.castSucc.succAbove i) := by
+  have hp : (1 : ℝ) = 2 - x a.2 - ∑ i, simplexPoint x (a.2.castSucc.succAbove i) := by
     rw [hsum]; ring
-  rw [linearMove_castSucc_simplexLift, h1, linearMove_last_pow_snoc_snoc, hsum]
+  rw [linearMove_castSucc_simplexLift, linearMove_last_pow_snoc_snoc _ _ hp, hsum]
   ext i
   induction i using Fin.lastCases with
   | last =>

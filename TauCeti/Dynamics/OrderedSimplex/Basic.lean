@@ -202,11 +202,14 @@ theorem interior_orderedSimplex_nonempty (d : ℕ) : (interior (orderedSimplex d
   have hpos : (0 : ℝ) < (d + 1) * (d + 2) := by positivity
   set x : Fin d → ℝ := fun i => 2 * ((i : ℝ) + 1) / ((d + 1) * (d + 2)) with hx
   have hsum : 1 - ∑ k, x k = 2 * ((d : ℝ) + 1) / ((d + 1) * (d + 2)) := by
-    have h := Finset.sum_range_id_mul_two (d + 1)
-    rw [Finset.sum_range_succ', add_zero, Nat.add_sub_cancel] at h
-    have hgauss : ∑ i : Fin d, 2 * ((i : ℝ) + 1) = d * (d + 1) := by
-      rw [Fin.sum_univ_eq_sum_range (fun i => 2 * ((i : ℝ) + 1)), ← Finset.mul_sum]
-      exact_mod_cast (mul_comm _ _).trans (h.trans (mul_comm _ _))
+    have hgauss (n : ℕ) : ∑ i : Fin n, 2 * ((i : ℝ) + 1) = n * (n + 1) := by
+      induction n with
+      | zero => simp
+      | succ n ih =>
+        rw [Fin.sum_univ_castSucc]
+        simp only [Fin.val_castSucc, Fin.val_last, ih]
+        push_cast
+        ring
     rw [hx, ← Finset.sum_div, hgauss]
     field_simp
     ring
