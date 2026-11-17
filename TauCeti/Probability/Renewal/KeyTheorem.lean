@@ -14,11 +14,10 @@ public import TauCeti.Probability.Renewal.IntervalLimit
 For a nonlattice probability law `F` on the nonnegative half-line and a nonnegative,
 decreasing, Lebesgue-integrable real forcing function `h`, convolution against the
 renewal measure converges to the integral of `h` times the reciprocal extended mean
-of `F`. The same limit holds after removing the artificial arrival at zero (equivalently,
-integrating against the positive-arrival measure `F ∗ U`), and transfers by uniqueness to
-every measurable locally bounded solution of the renewal equation `g = h + g ∗ F`.
-Bounded-age monotone forcing `(Iio A).indicator h` needs neither nonnegativity nor global
-integrability.
+of `F`. The same limit holds after removing the artificial arrival at zero, and transfers
+by uniqueness to every measurable locally bounded solution of the renewal equation
+`g = h + g ∗ F`. Bounded-age monotone forcing `(Iio A).indicator h` needs neither
+nonnegativity nor global integrability.
 
 The inverse is taken in `ℝ≥0∞` before conversion to `ℝ`, so infinite mean gives
 limit zero. An atom of `F` at zero is allowed: removing `dirac 0` removes only the
@@ -75,16 +74,6 @@ theorem tendsto_renewalConv_sub_dirac (hNL : ¬ F.IsLattice)
   exact F.tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
     (measure_singleton_zero_lt_one_of_not_isLattice hNL)
     (F.tendsto_renewalMeasure_real_Ioc hNL) hh h₀ hint
-
-/-- **Key renewal theorem for `F ∗ U`.** Integrating against the positive-arrival measure
-`F ∗ F.renewalMeasure` yields the same key renewal limit as `F.renewalMeasure - dirac 0`. -/
-theorem tendsto_renewalConv_conv_renewalMeasure (hNL : ¬ F.IsLattice)
-    {h : ℝ≥0 → ℝ} (hh : Antitone h) (h₀ : ∀ x, 0 ≤ h x)
-    (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) :
-    Tendsto (renewalConv h (F ∗ F.renewalMeasure)) atTop
-      (𝓝 (((∫⁻ x, (x : ℝ≥0∞) ∂F)⁻¹).toReal *
-        ∫ x in Ioi (0 : ℝ), h x.toNNReal)) :=
-  renewalMeasure_sub_dirac F ▸ F.tendsto_renewalConv_sub_dirac hNL hh h₀ hint
 
 /-- **Key renewal theorem.** For nonnegative decreasing integrable forcing and a
 nonlattice interarrival law, convolution against the full renewal measure converges
