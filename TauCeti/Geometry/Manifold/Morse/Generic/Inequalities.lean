@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 public import TauCeti.Geometry.Manifold.Morse.Inequalities
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Topology.Maps.Proper.Basic
+import TauCeti.Topology.Maps.Proper.Metric
 
 /-!
 # The band inequalities of a smooth function
@@ -165,12 +166,10 @@ private theorem exists_isMorse_sublevelPair_eq (hf : ContMDiff I 𝓘(ℝ) ∞ f
     (by simp [ha, hb])
   obtain ⟨hga, hla⟩ := hgS a (by simp)
   obtain ⟨hgb, hlb⟩ := hgS b (by simp)
-  -- The band of `g` lies in the compact band `f⁻¹[a - 1, b + 1]`.
+  -- `g` is proper, being within distance `1` of `f`.
   have hcompact : IsCompact (g ⁻¹' Icc a b) :=
-    (hp.isCompact_preimage (isCompact_Icc (a := a - 1) (b := b + 1))).of_isClosed_subset
-      (isClosed_Icc.preimage hg.contMDiff.continuous) fun x hx ↦ by
-        obtain ⟨h₁, h₂⟩ := abs_sub_lt_iff.1 (hgf x)
-        exact ⟨by linarith [hx.1], by linarith [hx.2]⟩
+    (hp.of_dist_le hg.contMDiff.continuous (C := 1) fun x ↦ by
+      rw [Real.dist_eq, abs_sub_comm]; exact (hgf x).le).isCompact_preimage isCompact_Icc
   exact ⟨g, hg, hcompact, hga, hgb, TopPair.ofInclusion_congr (X := TopCat.of M) _ _ hla hlb⟩
 
 /-- **Finiteness of the homology of regular sublevels.** Let `f` be a smooth proper function on a
