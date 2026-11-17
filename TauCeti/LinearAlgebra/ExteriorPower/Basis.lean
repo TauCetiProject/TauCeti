@@ -18,7 +18,9 @@ indices. An endomorphism diagonal in the original basis acts diagonally in this 
 basis, with eigenvalues given by products over the indexing subsets. Their sum is the trace.
 
 A basis indexed by `Fin n` identifies the degree-`n` exterior power with the scalars by sending an
-exterior product to its determinant against that basis. The induced endomorphism acts by its
+exterior product to its determinant against that basis. More generally, any finite linearly ordered
+basis induces a trivialisation `Module.Basis.exteriorPowerFinrankEquiv` of the degree-`finrank`
+exterior power sending its exterior-power basis vector to `1`. The induced endomorphism acts by its
 determinant in this degree. These formulas hold over every commutative ring, including the zero
 ring. When the ring is nontrivial, `n` is the module's rank and this is its top exterior power.
 
@@ -26,6 +28,8 @@ ring. When the ring is nontrivial, `n` is the module's rank and this is its top 
 
 * `Module.Basis.exteriorPowerTopEquiv` identifies the degree-`n` exterior power with the scalars
   for a basis indexed by `Fin n`.
+* `Module.Basis.exteriorPowerFinrankEquiv` identifies the degree-`Module.finrank R M` exterior
+  power with the scalars for any finite linearly ordered basis.
 
 ## Main results
 
@@ -200,6 +204,47 @@ theorem _root_.Module.Basis.trace_map_exteriorPower_top
     have := Module.Finite.of_basis b
     -- The top exterior power is one-dimensional, the diagonal case `Nat.choose n n = 1`.
     simp [b.map_exteriorPower_top_eq_det_smul f, Module.finrank_eq_card_basis b]
+
+/-- For a finite linearly ordered basis `b` of `M`, the induced trivialisation of the
+degree-`Module.finrank R M` exterior power sending its exterior-power basis vector to `1`. -/
+noncomputable def _root_.Module.Basis.exteriorPowerFinrankEquiv
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M) :
+    ⋀[R]^(Module.finrank R M) M ≃ₗ[R] R :=
+  open Classical in
+  if h : Nontrivial R then
+    haveI : Subsingleton (Set.powersetCard ι (Module.finrank R M)) :=
+      Set.powersetCard.subsingleton_of_card_eq (Module.finrank_eq_card_basis b)
+    (b.exteriorPower (Module.finrank R M)).repr.trans
+      (Finsupp.uniqueLinearEquiv R R ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩)
+  else
+    haveI : Subsingleton R := not_nontrivial_iff_subsingleton.mp h
+    haveI : Subsingleton (⋀[R]^(Module.finrank R M) M) := Module.subsingleton R _
+    LinearEquiv.ofSubsingleton (⋀[R]^(Module.finrank R M) M) R
+
+/-- `b.exteriorPowerFinrankEquiv` sends every exterior-power basis vector in degree
+`Module.finrank R M` to `1`. -/
+@[simp]
+theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_apply_ιMulti_family
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M)
+    (s : Set.powersetCard ι (Module.finrank R M)) :
+    b.exteriorPowerFinrankEquiv (ιMulti_family R (Module.finrank R M) b s) = 1 := by
+  rcases subsingleton_or_nontrivial R with _ | h
+  · exact Subsingleton.elim _ _
+  · have : Subsingleton (Set.powersetCard ι (Module.finrank R M)) :=
+      Set.powersetCard.subsingleton_of_card_eq (Module.finrank_eq_card_basis b)
+    rw [Module.Basis.exteriorPowerFinrankEquiv, dite_eq_left h, LinearEquiv.trans_apply,
+      Finsupp.uniqueLinearEquiv_apply,
+      Subsingleton.elim ⟨Finset.univ, by simp [Module.finrank_eq_card_basis b]⟩ s,
+      ← basis_apply, Module.Basis.repr_self, Finsupp.single_eq_same]
+
+/-- The inverse of `b.exteriorPowerFinrankEquiv` sends a scalar to that multiple of any
+exterior-power basis vector in degree `Module.finrank R M`. -/
+theorem _root_.Module.Basis.exteriorPowerFinrankEquiv_symm_apply_eq_smul
+    {ι : Type*} [LinearOrder ι] [Fintype ι] (b : Module.Basis ι R M)
+    (s : Set.powersetCard ι (Module.finrank R M)) (r : R) :
+    b.exteriorPowerFinrankEquiv.symm r = r • b.exteriorPower (Module.finrank R M) s := by
+  apply b.exteriorPowerFinrankEquiv.injective
+  simp
 
 end Top
 

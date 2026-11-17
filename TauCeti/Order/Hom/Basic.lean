@@ -8,12 +8,15 @@ module
 public import Mathlib.Order.Hom.Basic
 
 /-!
-# Order embeddings out of a linear order as strictly monotone maps
+# Order embeddings and order isomorphisms
 
 A strictly monotone map out of a linear order is an order embedding
 (`OrderEmbedding.ofStrictMono`), and every order embedding is strictly monotone. Together these
 identify the order embeddings `α ↪o β` with the subtype of strictly monotone maps `α → β`
 (`OrderEmbedding.equivSubtypeStrictMono`).
+
+`OrderIso.toOrderEmbedding_toEmbedding` records that viewing an order isomorphism `e : α ≃o β`
+as an order embedding preserves its underlying `Function.Embedding`.
 -/
 
 public section
@@ -32,3 +35,15 @@ def equivSubtypeStrictMono : (α ↪o β) ≃ {f : α → β // StrictMono f} wh
   right_inv _ := Subtype.ext (coe_ofStrictMono _)
 
 end OrderEmbedding
+
+namespace OrderIso
+
+/-- Viewing an order isomorphism as an order embedding preserves the underlying
+`Function.Embedding`. -/
+@[simp]
+theorem toOrderEmbedding_toEmbedding {α β : Type*} [LE α] [LE β] (e : α ≃o β) :
+    e.toOrderEmbedding.toEmbedding = e.toEmbedding := by
+  ext x
+  rw [RelEmbedding.coe_toEmbedding, coe_toOrderEmbedding, ← RelIso.coe_toEmbedding]
+
+end OrderIso
