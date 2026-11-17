@@ -13,6 +13,7 @@ import TauCeti.GroupTheory.Perm.FinThree.Basic
 import TauCeti.GroupTheory.QuotientGroup.Basic
 public import TauCeti.NumberTheory.Padics.QuotientTower
 public import TauCeti.RepresentationTheory.Smooth.Basic
+import TauCeti.Topology.Compactness.Compact
 
 /-!
 # Examples of smooth representations and smooth vectors
@@ -41,15 +42,10 @@ section PadicGroup
 
 variable (p : ℕ) [Fact p.Prime]
 
-private theorem not_discreteTopology_multiplicative_padicInt :
-    ¬ DiscreteTopology (Multiplicative ℤ_[p]) := fun _ ↦
-  have : Finite (Multiplicative ℤ_[p]) := finite_of_compact_of_discrete
-  _root_.not_finite (Multiplicative ℤ_[p])
-
 example : ¬ (leftRegular ℤ (Multiplicative ℤ_[p])).IsSmooth ∧
     (leftRegular ℤ (Multiplicative ℤ_[p])).smoothVectors = ⊥ :=
-  ⟨by simpa using not_discreteTopology_multiplicative_padicInt p,
-    smoothVectors_leftRegular_eq_bot (not_discreteTopology_multiplicative_padicInt p)⟩
+  ⟨by simpa using not_discreteTopology_of_compactSpace_of_infinite (Multiplicative ℤ_[p]),
+    smoothVectors_leftRegular_eq_bot (not_discreteTopology_of_compactSpace_of_infinite _)⟩
 
 example (n : ℕ) :
     let U := ((TauCeti.FiniteQuotientTower.padicTower p).ker n).toOpenSubgroup
@@ -75,7 +71,8 @@ example :
       Set (Multiplicative ℤ_[p]))) := by
     rw [(TauCeti.FiniteQuotientTower.padicTower p).iInf_ker_eq_bot]
     exact fun h1 ↦
-      not_discreteTopology_multiplicative_padicInt p (discreteTopology_of_isOpen_singleton_one h1)
+      not_discreteTopology_of_compactSpace_of_infinite (Multiplicative ℤ_[p])
+        (discreteTopology_of_isOpen_singleton_one h1)
   exact ⟨not_isSmooth_pi_ofMulAction_quotient hnotOpen,
     notMem_smoothVectors_pi_ofMulAction_quotient hnotOpen⟩
 

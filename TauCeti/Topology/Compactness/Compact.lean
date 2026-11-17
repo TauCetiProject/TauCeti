@@ -150,6 +150,12 @@ theorem _root_.IsCompact.finite_of_forall_isClosed {K S : Set X}
       ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
   exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
 
+variable (X) in
+/-- An infinite compact space does not carry the discrete topology. -/
+theorem not_discreteTopology_of_compactSpace_of_infinite [CompactSpace X] [Infinite X] :
+    ¬ DiscreteTopology X := fun _ ↦
+  (finite_of_compact_of_discrete (X := X)).false
+
 section TubeLemma
 
 variable {α E P : Type*} [TopologicalSpace α] [CompactSpace α] [TopologicalSpace E]
