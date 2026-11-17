@@ -26,6 +26,8 @@ It also concatenates two finite blocks with the second block read in reverse ord
 blocks of equal length, laid out as the bottom and the top row of a rectangle and read
 counterclockwise around it, exchanging the two blocks reverses the concatenated order, and
 reversing each block is reversing the concatenated order followed by a rotation by one block.
+`TauCeti.homotopyIndexEquiv` splits `Fin (n + 1) × Fin (n + 2)` into off-diagonal, diagonal, and
+superdiagonal pairs.
 -/
 
 public section
@@ -163,6 +165,45 @@ theorem finSubSumEquiv_apply_of_le {r n : ℕ} (h : r ≤ n) {i : Fin n} (hi : r
   ext
   simp only [coe_finSubSumEquiv_symm_inl]
   omega
+
+/-- Reindexing equivalence splitting `Fin (n + 1) × Fin (n + 2)` into off-diagonal pairs
+`(m, k') ∈ Fin (n + 1) × Fin n` and the diagonal and superdiagonal copies of `Fin (n + 1)`. -/
+def homotopyIndexEquiv (n : ℕ) :
+    (Fin (n + 1) × Fin n) ⊕ (Fin (n + 1) ⊕ Fin (n + 1)) ≃ Fin (n + 1) × Fin (n + 2) where
+  toFun
+    | .inl (m, k') => if (m : ℕ) ≤ (k' : ℕ) then (k'.succ, m.castSucc) else (k'.castSucc, m.succ)
+    | .inr (.inl k) => (k, k.castSucc)
+    | .inr (.inr k) => (k, k.succ)
+  invFun x :=
+    if _ : (x.2 : ℕ) < (x.1 : ℕ) then .inl (⟨x.2, by omega⟩, ⟨x.1 - 1, by omega⟩)
+    else if _ : (x.2 : ℕ) = (x.1 : ℕ) then .inr (.inl x.1)
+    else if _ : (x.2 : ℕ) = (x.1 : ℕ) + 1 then .inr (.inr x.1)
+    else .inl (⟨x.2 - 1, by omega⟩, ⟨x.1, by omega⟩)
+  left_inv := by
+    rintro (⟨m, k'⟩ | k | k)
+    · by_cases hmk : (m : ℕ) ≤ (k' : ℕ)
+      · simp [hmk, show (m : ℕ) < (k' : ℕ) + 1 by omega]
+      · simp [hmk, show ¬(m : ℕ) + 1 < k' by omega, show ¬(m : ℕ) + 1 = k' by omega,
+          show ¬(m : ℕ) = k' by omega]
+    · simp
+    · simp [show ¬(k : ℕ) + 1 < k by omega]
+  right_inv := by
+    rintro ⟨k, i⟩; simp only; split_ifs with h1 h2 h3
+    · simp [show (i : ℕ) ≤ (k : ℕ) - 1 by omega, Fin.ext_iff]; omega
+    · ext <;> simp [h2]
+    · ext <;> simp [h3]
+    · simp [show ¬(i : ℕ) - 1 ≤ k by omega, Fin.ext_iff]; omega
+
+/-- Off-diagonal action of `homotopyIndexEquiv`. -/
+@[simp] theorem homotopyIndexEquiv_inl (n : ℕ) (m : Fin (n + 1)) (k' : Fin n) :
+    homotopyIndexEquiv n (.inl (m, k')) =
+      if (m : ℕ) ≤ (k' : ℕ) then (k'.succ, m.castSucc) else (k'.castSucc, m.succ) := (rfl)
+/-- Diagonal action of `homotopyIndexEquiv`. -/
+@[simp] theorem homotopyIndexEquiv_inr_inl (n : ℕ) (k : Fin (n + 1)) :
+    homotopyIndexEquiv n (.inr (.inl k)) = (k, k.castSucc) := (rfl)
+/-- Superdiagonal action of `homotopyIndexEquiv`. -/
+@[simp] theorem homotopyIndexEquiv_inr_inr (n : ℕ) (k : Fin (n + 1)) :
+    homotopyIndexEquiv n (.inr (.inr k)) = (k, k.succ) := (rfl)
 
 end TauCeti
 
