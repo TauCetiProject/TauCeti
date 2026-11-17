@@ -258,42 +258,12 @@ theorem unitPeriodMatrixSubgroup_neg_three_three_two_eq_top :
   have hn : IsUnit (u.val.re ^ 2 + u.val.re * u.val.im + u.val.im ^ 2) := by
     simpa [norm_def, sq, h3, sub_eq_add_neg, ZMod.neg_eq_self_mod_two] using hu
   rcases key _ _ hn with h | h | h
-  · refine ⟨1, Units.ext ?_⟩
-    ext <;> simp [h.1, h.2]
-  · refine ⟨hζ.unit, Units.ext ?_⟩
-    ext <;> simp [mapRingHom, h.1, h.2]
-  · refine ⟨hζ.unit ^ 2, Units.ext ?_⟩
-    ext <;> simp [mapRingHom, sq, h.1, h.2, h3, CharTwo.add_self_eq_zero]
+  · exact ⟨1, Units.ext (by ext <;> simp [h.1, h.2])⟩
+  · exact ⟨hζ.unit, Units.ext (by ext <;> simp [mapRingHom, h.1, h.2])⟩
+  · exact ⟨hζ.unit ^ 2, Units.ext (by ext <;> simp [mapRingHom, sq, h.1, h.2, h3,
+      CharTwo.add_self_eq_zero])⟩
 
 /-! ### Unipotent coset representatives over `(0, 0)` at level `3` -/
-
-/-- Over `(a, b) = (0, 0)` (where `ω² = 0`), the unipotent unit `1 + sω` has multiplication
-matrix `!![1, 0; s, 1]`, giving `Multiplicative R →* periodMatrixGroup (0 : R) (0 : R)`. -/
-def unipotentPeriodMatrixHom (R : Type*) [CommRing R] :
-    Multiplicative R →* periodMatrixGroup (0 : R) (0 : R) where
-  toFun s := periodUnitMatrixEquiv
-    { val := ⟨1, s.toAdd⟩
-      inv := ⟨1, -s.toAdd⟩
-      val_inv := by ext <;> simp
-      inv_val := by ext <;> simp }
-  map_one' := by rw [← map_one periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp
-  map_mul' s t := by
-    rw [← map_mul periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp [add_comm]
-
-/-- Underlying `2 × 2` matrix of `unipotentPeriodMatrixHom R s`. -/
-@[simp]
-theorem coe_unipotentPeriodMatrixHom {R : Type*} [CommRing R] (s : Multiplicative R) :
-    (((unipotentPeriodMatrixHom R s :
-        periodMatrixGroup (0 : R) (0 : R)) : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) =
-      !![1, 0; s.toAdd, 1] := by
-  simp [unipotentPeriodMatrixHom, periodMulMatrix_eq]
-
-/-- `periodUnitMatrixEquiv.symm` sends `unipotentPeriodMatrixHom R s` to the unit `1 + sω`. -/
-theorem val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom {R : Type*} [CommRing R]
-    (s : Multiplicative R) :
-    ((periodUnitMatrixEquiv.symm (unipotentPeriodMatrixHom R s) :
-      (QuadraticAlgebra R 0 0)ˣ) : QuadraticAlgebra R 0 0) = ⟨1, s.toAdd⟩ := by
-  simp
 
 /-- Injectivity of the composite `Multiplicative (ZMod 3) →* periodMatrixGroup 0 0 ⧸ {±I}`. -/
 private theorem unipotentPeriodMatrixHom_mk_injective :
@@ -333,24 +303,19 @@ private theorem unipotentPeriodMatrixHom_mk_surjective :
   rcases (show ∀ t : ZMod 3, IsUnit t → t = 1 ∨ t = -1 by decide) u.val.re hu with h1 | h1
   · refine ⟨Multiplicative.ofAdd u.val.im, ?_⟩
     simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply]
-    congr 1
-    apply periodUnitMatrixEquiv.symm.injective
-    apply Units.ext
+    congr 1; apply periodUnitMatrixEquiv.symm.injective; apply Units.ext
     rw [val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom, MulEquiv.symm_apply_apply]
     ext <;> simp [h1]
   · refine ⟨Multiplicative.ofAdd (-u.val.im), ?_⟩
     have hneg : unipotentPeriodMatrixHom (ZMod 3) (Multiplicative.ofAdd (-u.val.im)) =
         -periodUnitMatrixEquiv u := by
-      apply periodUnitMatrixEquiv.symm.injective
-      apply Units.ext
+      apply periodUnitMatrixEquiv.symm.injective; apply Units.ext
       rw [val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom, ← periodUnitMatrixEquiv_neg,
         MulEquiv.symm_apply_apply]
       ext <;> simp [h1]
     simp only [MonoidHom.comp_apply, QuotientGroup.mk'_apply, hneg, QuotientGroup.eq,
       Subgroup.mem_zpowers_iff]
-    refine ⟨1, ?_⟩
-    rw [zpow_one, eq_inv_mul_iff_mul_eq]
-    simp
+    exact ⟨1, by rw [zpow_one, eq_inv_mul_iff_mul_eq]; simp⟩
 
 /-- Over `ZMod 3` with `(a, b) = (0, 0)`, the three lower-triangular unipotent matrices
 `!![1, 0; s, 1]` (`s : ZMod 3`) form a complete, irredundant set of coset representatives for

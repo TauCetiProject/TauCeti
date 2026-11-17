@@ -82,6 +82,9 @@ Artin symbol of `M/K` (`globalArtinMap_comp`).
   `TauCeti.ClassFieldTheory.ker_ideleClassArtinMap`,
   `TauCeti.ClassFieldTheory.ideleClassArtinMap_surjective`: the global Artin map of an abelian
   extension is `globalArtinMap`, has kernel `N_{L/K}(C_L)`, and is surjective.
+* `TauCeti.ClassFieldTheory.algHom_restrictNormalHom_ideleClassArtinMap`,
+  `TauCeti.ClassFieldTheory.restrictNormalHom_ideleClassArtinMap`: tower compatibility of
+  `ideleClassArtinMap`.
 
 * `TauCeti.ClassFieldTheory.mem_range_ideleClassNormMap_fixedField_iff`: an idele class is a norm
   from the fixed field of a subgroup exactly when its Artin symbol belongs to that subgroup.
@@ -345,6 +348,29 @@ theorem mem_range_ideleClassNormMap_iff_forall_fixedField_ker
   simpa only [map_one] using
     (CommGroup.forall_apply_eq_apply_iff Gal(L/K) (M := M)
       (g := ideleClassArtinMap K L c) (g' := 1)).symm
+
+variable {K} {L} in
+/-- **Tower compatibility of the global Artin map of abelian extensions**: for any `K`-embedding
+`f : M →ₐ[K] L` of finite abelian extensions of `K`, restricting the Artin symbol in `Gal(L/K)`
+along `f` yields the Artin symbol in `Gal(M/K)`. -/
+theorem algHom_restrictNormalHom_ideleClassArtinMap
+    {M : Type*} [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
+    (f : M →ₐ[K] L) (c : IdeleClassGroup (𝓞 K) K) :
+    f.restrictNormalHom (ideleClassArtinMap K L c) = ideleClassArtinMap K M c := by
+  refine Group.Abelianization.of_injective ?_
+  rw [← Group.Abelianization.map_of, of_ideleClassArtinMap K L IsSepClosed.lift,
+    of_ideleClassArtinMap K M (IsSepClosed.lift.comp f)]
+  simpa using congrArg Additive.toMul <|
+    DFunLike.congr_fun (globalArtinMap_comp K L f IsSepClosed.lift) (.ofMul c)
+
+variable {K} {L} in
+/-- Scalar-tower form of `algHom_restrictNormalHom_ideleClassArtinMap`. -/
+@[simp]
+theorem restrictNormalHom_ideleClassArtinMap
+    (M : Type*) [Field M] [NumberField M] [Algebra K M] [IsAbelianGalois K M]
+    [Algebra M L] [IsScalarTower K M L] (c : IdeleClassGroup (𝓞 K) K) :
+    AlgEquiv.restrictNormalHom M (ideleClassArtinMap K L c) = ideleClassArtinMap K M c := by
+  rw [← AlgHom.restrictNormalHom_toAlgHom (F := K), algHom_restrictNormalHom_ideleClassArtinMap]
 
 end Abelian
 

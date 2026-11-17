@@ -21,7 +21,8 @@ ramified primes are included.
 For the monic polynomial `X² + BX + C`, take `a = -C` and `b = -B`. Over `R = ZMod N`, this is
 the finite matrix group used to act on quadratic division points. The coefficient-change law
 for `periodUnitMatrix` identifies reduction of actual integral units inside this group; it does
-not replace their image by the scalar signs.
+not replace their image by the scalar signs. Over `(a, b) = (0, 0)`, `unipotentPeriodMatrixHom`
+embeds `Multiplicative R` as the lower-triangular unipotent matrices `!![1, 0; s, 1]`.
 
 ## References
 
@@ -161,5 +162,32 @@ theorem card_periodMatrixGroup_eq_card_norm_units :
     (Equiv.subtypeEquiv (equivProd a b) ?_))
   intro z
   exact isUnit_iff_norm_isUnit.trans (by simp [norm_def, equivProd, sq, mul_assoc])
+
+variable (R) in
+/-- Over `(a, b) = (0, 0)` (where `ω² = 0`), the unipotent unit `1 + sω` has multiplication
+matrix `!![1, 0; s, 1]`, giving `Multiplicative R →* periodMatrixGroup (0 : R) (0 : R)`. -/
+def unipotentPeriodMatrixHom : Multiplicative R →* periodMatrixGroup (0 : R) (0 : R) where
+  toFun s := periodUnitMatrixEquiv
+    { val := ⟨1, s.toAdd⟩
+      inv := ⟨1, -s.toAdd⟩
+      val_inv := by ext <;> simp
+      inv_val := by ext <;> simp }
+  map_one' := by rw [← map_one periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp
+  map_mul' s t := by
+    rw [← map_mul periodUnitMatrixEquiv]; congr 1; apply Units.ext; ext <;> simp [add_comm]
+
+/-- Underlying `2 × 2` matrix of `unipotentPeriodMatrixHom R s`. -/
+@[simp]
+theorem coe_unipotentPeriodMatrixHom (s : Multiplicative R) :
+    (((unipotentPeriodMatrixHom R s :
+        periodMatrixGroup (0 : R) (0 : R)) : GL (Fin 2) R) : Matrix (Fin 2) (Fin 2) R) =
+      !![1, 0; s.toAdd, 1] := by
+  simp [unipotentPeriodMatrixHom, periodMulMatrix_eq]
+
+/-- `periodUnitMatrixEquiv.symm` sends `unipotentPeriodMatrixHom R s` to the unit `1 + sω`. -/
+theorem val_periodUnitMatrixEquiv_symm_unipotentPeriodMatrixHom (s : Multiplicative R) :
+    ((periodUnitMatrixEquiv.symm (unipotentPeriodMatrixHom R s) :
+      (QuadraticAlgebra R 0 0)ˣ) : QuadraticAlgebra R 0 0) = ⟨1, s.toAdd⟩ := by
+  simp
 
 end QuadraticAlgebra

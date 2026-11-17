@@ -70,7 +70,8 @@ setting `periodCoeffB D = 0`, `periodCoeffC D = -D / 4` for `D ≡ 0 (mod 4)` an
   `p ≡ 3 (mod 4)` divides `d` (so some prime factor of `p` is `≡ 3 (mod 4)`), no algebraic
   integer has norm `-1`.
 * `TauCeti.NumberField.ringOfIntegersAlgEquivOfAdjoin`: presentation
-  `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b` from any non-rational generator of `𝓞 K`.
+  `𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b` from any non-rational generator of `𝓞 K` (with
+  `ringOfIntegersAlgEquivOfAdjoin_symm_apply` and `ringOfIntegersAlgEquivOfAdjoin_apply_gen`).
 * `TauCeti.NumberField.exists_ringOfIntegers_periodAlgEquiv`: `𝓞 K` admits a `ℤ`-algebra
   isomorphism onto `QuadraticAlgebra ℤ (-periodCoeffC (discr K)) (-periodCoeffB (discr K))`.
 -/
@@ -597,27 +598,49 @@ theorem intCast_neg_periodCoeffC_zmod_three_eq_zero_of_three_dvd {D : ℤ}
   rw [ZMod.intCast_zmod_eq_zero_iff_dvd, periodCoeffC_def]
   rcases hD with h0 | h1 <;> split_ifs <;> omega
 
+private theorem bijective_lift_of_adjoin {g : 𝓞 K} {a b : ℤ}
+    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
+    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
+    Function.Bijective (QuadraticAlgebra.lift ⟨g, hg_sq⟩) := by
+  refine ⟨?_, (QuadraticAlgebra.lift_surjective_iff _).mpr hg_top⟩
+  rw [RingHom.injective_iff_ker_eq_bot, RingHom.ker_eq_bot_iff_eq_zero]
+  intro z hz
+  have hzK : (z.re : K) + (z.im : K) * (g : K) = 0 := by
+    simpa [zsmul_eq_mul] using congrArg (algebraMap (𝓞 K) K) hz
+  have him : z.im = 0 := by
+    by_contra hne
+    refine hg_notMem ⟨-(z.re : ℚ) / (z.im : ℚ), ?_⟩
+    rw [show algebraMap ℚ K (-(z.re : ℚ) / (z.im : ℚ)) = -(z.re : K) / (z.im : K) by simp,
+      div_eq_iff (by exact_mod_cast hne)]
+    linear_combination -hzK
+  exact QuadraticAlgebra.ext (by simpa [him] using hzK) him
+
 /-- An algebraic integer generating `𝓞 K` over `ℤ` and not lying in `ℚ` presents `𝓞 K` as an
 integral quadratic algebra. -/
 noncomputable def ringOfIntegersAlgEquivOfAdjoin {g : 𝓞 K} {a b : ℤ}
     (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
     (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
-    𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b := by
-  let f : QuadraticAlgebra ℤ a b →ₐ[ℤ] 𝓞 K := QuadraticAlgebra.lift ⟨g, hg_sq⟩
-  have hsurj : Function.Surjective f := (QuadraticAlgebra.lift_surjective_iff _).mpr hg_top
-  have hinj : Function.Injective f := by
-    rw [RingHom.injective_iff_ker_eq_bot, RingHom.ker_eq_bot_iff_eq_zero]
-    intro z hz
-    have hzK : (z.re : K) + (z.im : K) * (g : K) = 0 := by
-      simpa [f, zsmul_eq_mul] using congrArg (algebraMap (𝓞 K) K) hz
-    have him : z.im = 0 := by
-      by_contra hne
-      refine hg_notMem ⟨-(z.re : ℚ) / (z.im : ℚ), ?_⟩
-      rw [show algebraMap ℚ K (-(z.re : ℚ) / (z.im : ℚ)) = -(z.re : K) / (z.im : K) by simp,
-        div_eq_iff (by exact_mod_cast hne)]
-      linear_combination -hzK
-    exact QuadraticAlgebra.ext (by simpa [him] using hzK) him
-  exact (AlgEquiv.ofBijective f ⟨hinj, hsurj⟩).symm
+    𝓞 K ≃ₐ[ℤ] QuadraticAlgebra ℤ a b :=
+  (AlgEquiv.ofBijective (QuadraticAlgebra.lift ⟨g, hg_sq⟩)
+    (bijective_lift_of_adjoin hg_sq hg_top hg_notMem)).symm
+
+/-- The inverse of `ringOfIntegersAlgEquivOfAdjoin` sends `z` to `z.re • 1 + z.im • g`. -/
+@[simp]
+theorem ringOfIntegersAlgEquivOfAdjoin_symm_apply {g : 𝓞 K} {a b : ℤ}
+    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
+    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) (z : QuadraticAlgebra ℤ a b) :
+    (ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem).symm z = z.re • 1 + z.im • g := by
+  rw [ringOfIntegersAlgEquivOfAdjoin, AlgEquiv.symm_symm, AlgEquiv.ofBijective_apply,
+    QuadraticAlgebra.lift_apply_apply]
+
+/-- `ringOfIntegersAlgEquivOfAdjoin` sends the generator `g` to `QuadraticAlgebra.omega`
+(`⟨0, 1⟩`). -/
+@[simp]
+theorem ringOfIntegersAlgEquivOfAdjoin_apply_gen {g : 𝓞 K} {a b : ℤ}
+    (hg_sq : g * g = a • 1 + b • g) (hg_top : Algebra.adjoin ℤ {g} = ⊤)
+    (hg_notMem : (g : K) ∉ (algebraMap ℚ K).range) :
+    ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem g = QuadraticAlgebra.omega :=
+  (ringOfIntegersAlgEquivOfAdjoin hg_sq hg_top hg_notMem).symm.injective (by simp)
 
 /-- **Period-algebra presentation of `𝓞 K`**: for any quadratic number field `K` of discriminant
 `D = discr K`, `𝓞 K` admits a `ℤ`-algebra isomorphism onto the period algebra
@@ -632,23 +655,18 @@ theorem exists_ringOfIntegers_periodAlgEquiv (hK : finrank ℚ K = 2) :
     have hD4 : discr K % 4 = 0 ∨ discr K % 4 = 1 := Or.inr (hdisc.symm ▸ hd4)
     have hω_sq : ω₀ * ω₀ = ((d - 1) / 4) • (1 : 𝓞 K) + (1 : ℤ) • ω₀ := by
       have haeval := minpoly.aeval ℤ ω₀
-      have hc : (1 - d) / 4 = -((d - 1) / 4) := by omega
-      rw [minpoly_halfGen hmin hd4, hc] at haeval
+      rw [minpoly_halfGen hmin hd4, show (1 - d) / 4 = -((d - 1) / 4) by omega] at haeval
       simp only [map_add, map_sub, map_pow, map_neg, map_intCast, aeval_X, zsmul_eq_mul,
         eq_intCast, Int.cast_one, one_mul] at haeval ⊢
       linear_combination haeval
-    have hω_notMem : (ω₀ : K) ∉ (algebraMap ℚ K).range := by
-      rintro ⟨q, hq⟩
-      exact gen_notMem_range hmin ⟨2 * q - 1, by
-        rw [coe_halfGen] at hq
-        rw [map_sub, map_mul, map_one, map_ofNat, hq]
-        ring⟩
+    have hω_notMem : (ω₀ : K) ∉ (algebraMap ℚ K).range := fun ⟨q, hq⟩ ↦
+      gen_notMem_range hmin ⟨2 * q - 1, by
+        rw [coe_halfGen] at hq; rw [map_sub, map_mul, map_one, map_ofNat, hq]; ring⟩
     let e₁ := ringOfIntegersAlgEquivOfAdjoin hω_sq
       (adjoin_halfGen_eq_top_of_mod_four_eq_one hmin hgen hsf hd4) hω_notMem
     obtain ⟨e₂⟩ := (QuadraticAlgebra.nonempty_algEquiv_int_iff (a := (d - 1) / 4) (b := 1)
       (a' := -periodCoeffC (discr K)) (b' := -periodCoeffB (discr K))).mpr <| by
-        rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]
-        omega
+        rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]; omega
     exact ⟨e₁.trans e₂⟩
   · have hdisc : discr K = 4 * d := discr_eq_four_mul_of_mod_four_ne_one hmin hgen hsf hd4
     have hD4 : discr K % 4 = 0 ∨ discr K % 4 = 1 := Or.inl (by rw [hdisc]; omega)
@@ -659,8 +677,7 @@ theorem exists_ringOfIntegers_periodAlgEquiv (hK : finrank ℚ K = 2) :
       (adjoin_gen_eq_top_of_mod_four_ne_one hmin hgen hsf hd4) (gen_notMem_range hmin)
     obtain ⟨e₂⟩ := (QuadraticAlgebra.nonempty_algEquiv_int_iff (a := d) (b := 0)
       (a' := -periodCoeffC (discr K)) (b' := -periodCoeffB (discr K))).mpr <| by
-        rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]
-        ring
+        rw [discr_neg_periodCoeff (discr K) hD4, hdisc, QuadraticAlgebra.discr_def]; ring
     exact ⟨e₁.trans e₂⟩
 
 end TauCeti.NumberField
