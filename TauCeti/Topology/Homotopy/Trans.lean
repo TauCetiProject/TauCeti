@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Homotopy.Basic
+public import TauCeti.Topology.UnitInterval.Basic
 
 /-!
 # Concatenation of homotopies: range and retracing
@@ -26,8 +27,6 @@ the concatenation `F.trans G` at `x` is `F` reparametrised by the unit-interval 
 
 * `ContinuousMap.Homotopy.range_trans_subset` and `ContinuousMap.Homotopy.trans_apply_mem`: the
   range of `F.trans G` lies in the union of the ranges of `F` and `G`.
-* `TauCeti.tent`, `TauCeti.coe_tent`, `TauCeti.continuous_tent`, `TauCeti.tent_zero`,
-  `TauCeti.tent_one`: the tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval.
 * `ContinuousMap.Homotopy.trans_apply_of_retracing`: at a point where `G` runs backwards along
   `F`, `F.trans G (t, x) = F (TauCeti.tent t, x)`.
 -/
@@ -35,38 +34,6 @@ the concatenation `F.trans G` at `x` is `F` reparametrised by the unit-interval 
 public section
 
 open Set unitInterval
-
-namespace TauCeti
-
-/-- The tent map `t ↦ min (2 t) (2 - 2 t)` on the unit interval, which rises from `0` to `1` on
-`[0, 1/2]` and falls back to `0` on `[1/2, 1]`. -/
-noncomputable def tent (t : I) : I :=
-  ⟨min (2 * t) (2 - 2 * t), le_min (by linarith [t.2.1]) (by linarith [t.2.2]),
-    min_le_iff.2 <| (le_total (t : ℝ) (1 / 2)).imp (fun h ↦ by linarith) fun h ↦ by linarith⟩
-
-/-- The real value of `TauCeti.tent t` is `min (2 t) (2 - 2 t)`. -/
-@[simp]
-theorem coe_tent (t : I) : (tent t : ℝ) = min (2 * (t : ℝ)) (2 - 2 * t) := (rfl)
-
-/-- The tent map on the unit interval is continuous. -/
-@[fun_prop]
-theorem continuous_tent : Continuous tent := by
-  unfold tent
-  fun_prop
-
-/-- The tent map vanishes at `0`. -/
-@[simp]
-theorem tent_zero : tent 0 = 0 := by
-  ext
-  simp
-
-/-- The tent map vanishes at `1`. -/
-@[simp]
-theorem tent_one : tent 1 = 0 := by
-  ext
-  norm_num
-
-end TauCeti
 
 namespace ContinuousMap.Homotopy
 
