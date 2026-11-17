@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
-public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # Bounded bilinear maps and bounded scalar actions over a normed ring
@@ -19,17 +18,11 @@ scalar action with `‖r • m‖ ≤ C * ‖r‖ * ‖m‖` (`TauCeti.continuou
 
 A fibrewise linear change of coordinates `(x, v) ↦ (x, e x v)`, with `e` continuous at `a`, tends
 to `(a, 0)` at `(a, 0)` (`ContinuousAt.tendsto_prodMk_clm_apply`).
-
-Since the invertible operators from a complete space form an open set, a continuous family `G` of
-operators has a continuous margin of invertibility `ε`, positive wherever `G z` is invertible:
-every operator within `ε z` of `G z` is invertible
-(`Continuous.exists_continuous_isInvertible_of_dist_lt`). It is the distance to the closed set of
-non-invertible operators.
 -/
 
 public section
 
-open Filter Topology Metric
+open Filter Topology
 open scoped NNReal
 
 variable {R : Type*} [SeminormedCommRing R]
@@ -70,33 +63,5 @@ theorem ContinuousAt.tendsto_prodMk_clm_apply {𝕜 X E F : Type*} [Nontrivially
   have h : ContinuousAt (fun z : X × E ↦ e z.1 z.2) (a, 0) :=
     (he.comp (f := Prod.fst) (x := (a, (0 : E))) continuousAt_fst).clm_apply continuousAt_snd
   simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
-
-/-- A continuous family `G` of operators from a complete space has a continuous margin of
-invertibility: a continuous `ε ≥ 0`, positive wherever `G z` is invertible, such that every
-operator within `ε z` of `G z` is invertible. -/
-theorem Continuous.exists_continuous_isInvertible_of_dist_lt {𝕜 Z E F : Type*}
-    [NontriviallyNormedField 𝕜] [TopologicalSpace Z] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [CompleteSpace E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] {G : Z → E →L[𝕜] F}
-    (hG : Continuous G) :
-    ∃ ε : Z → ℝ, Continuous ε ∧ (∀ z, 0 ≤ ε z) ∧ (∀ z, (G z).IsInvertible → 0 < ε z) ∧
-      ∀ z (T : E →L[𝕜] F), dist T (G z) < ε z → T.IsInvertible := by
-  classical
-  -- The distance to the closed set of non-invertible operators, or `1` if there are none.
-  set N : Set (E →L[𝕜] F) := {T | ¬T.IsInvertible}
-  have hN : IsClosed N := ContinuousLinearMap.isOpen_setOfPred_isInvertible.isClosed_compl
-  refine ⟨fun z ↦ if N.Nonempty then infDist (G z) N else 1, ?_, fun z ↦ ?_, fun z hz ↦ ?_,
-    fun z T hT ↦ ?_⟩
-  · split_ifs
-    · exact (continuous_infDist_pt N).comp hG
-    · exact continuous_const
-  · split_ifs
-    · exact infDist_nonneg
-    · exact zero_le_one
-  · split_ifs with hne
-    · exact (hN.notMem_iff_infDist_pos hne).mp fun h ↦ h hz
-    · exact one_pos
-  · by_contra hTN
-    have hlt : dist T (G z) < infDist (G z) N := by simpa [show N.Nonempty from ⟨T, hTN⟩] using hT
-    exact (infDist_le_dist_of_mem hTN).not_gt (by rwa [dist_comm] at hlt)
 
 end
