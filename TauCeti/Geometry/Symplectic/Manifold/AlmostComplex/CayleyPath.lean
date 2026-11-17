@@ -29,10 +29,13 @@ the family is jointly smooth on `ℝ × M` as a section of the endomorphism bund
 bundle along `(t, x) ↦ x`. So the path is smooth across both endpoints and constant in `t`
 outside `(0, 1)`. Tameness and compatibility of `J₁` are kept as distinct hypotheses.
 
-Read with the time reversed, `(t, J) ↦ J_{1 - t}` deforms every tame structure onto `J₀` through
-tame structures, keeps compatible structures compatible and fixes `J₀`. This is the bundlewise
-assembly of the linear contraction `TauCeti.SymplecticForm.Compatible.cayleyContraction` of the
-tame complex structures on a symplectic vector space.
+Read with the time reversed, the path `t ↦ J_{1 - t}` runs from `J₁` to `J₀` through tame
+structures, through compatible structures when `J₁` is compatible, and is constant when
+`J₁ = J₀`. At each point it is the path traced by `J₁ x` under the linear contraction
+`TauCeti.SymplecticForm.Compatible.cayleyContraction` of the tame complex structures on a
+symplectic vector space. This file only constructs these paths and their smooth
+finite-parameter families; it does not topologize the space of smooth almost complex
+structures.
 
 Smoothness is checked in the trivializations of the tangent bundle. The value of `J_t` at `x` is
 the rational expression `J₀ (1 + β C) (1 - β C)⁻¹` in `J₀ x` and `J₁ x`, where
@@ -264,15 +267,14 @@ def cayleyPath (t : ℝ) : SmoothAlmostComplexStructure I M where
       cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x),
     (contMDiff_cayleyPathFormula h₀ h₁).comp (contMDiff_const.prodMk contMDiff_id)⟩
   square_neg x := by
-    ext v
     -- The value at `x` is the continuous version of the pointwise structure.
-    change cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x)
-      (cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x) v) = -v
-    rw [← toContinuousLinearMap_cayleyPathAt h₀ h₁]
+    rw [ContMDiffSection.coeFn_mk, ← toContinuousLinearMap_cayleyPathAt h₀ h₁]
+    ext v
     exact AlmostComplexStructure.apply_apply _ v
 
 /-- The endomorphism of `T_x M` underlying the path is the Cayley path expression in the fibre
 values of `J₀` and `J₁`. -/
+@[simp]
 theorem cayleyPath_toEndomorphism (t : ℝ) (x : M) :
     (h₀.cayleyPath h₁ t).toEndomorphism x =
       cayleyPathFormula (smoothTransition t) (J₀.toEndomorphism x) (J₁.toEndomorphism x) :=
