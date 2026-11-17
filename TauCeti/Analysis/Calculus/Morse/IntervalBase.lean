@@ -833,7 +833,7 @@ theorem exists_eq_intervalBaseOrbit_of_hasDerivAt (hC : C ≠ 0) {γ : ℝ → �
       (s := fun _ ↦ Ioo 0 1) (.of_forall fun _ ↦ hLip) (hmem.mono fun r hr ↦ ⟨hγ r hr, hr⟩)
       (.of_forall fun r ↦ ⟨hσ r, intervalBaseOrbit_mem_Ioo _ _⟩) hs
   have hall := hclopen.eq_univ ⟨s₀, show γ s₀ = σ s₀ by simp [σ, hτ₀]⟩
-  exact ⟨τ₀ - s₀, funext fun s ↦ (hall ▸ mem_univ s : s ∈ {s | γ s = σ s})⟩
+  exact ⟨τ₀ - s₀, funext fun s ↦ Set.eq_univ_iff_forall.1 hall s⟩
 
 /-- **Trajectories with equal limits are constant.** For `C > 0`, a negative gradient trajectory
 of the base potential tending to the same point `a ∈ [-1, 1]` at `-∞` and at `+∞` is constant. -/

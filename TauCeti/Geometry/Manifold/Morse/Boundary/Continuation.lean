@@ -478,18 +478,12 @@ theorem tendsto_atBot_iff {p : M} :
     Tendsto γ atBot (𝓝 (p, 0)) ↔ ∀ᶠ a in atBot, (γ a).1 ∈ hX₀.flow.unstableSet p := by
   have hsnd := (hV.tendsto_snd_atBot hγ h₀ hC).mono_right nhdsWithin_le_nhds
   -- Up to a time `a`, the space component is the orbit of `(γ a).1`, shifted by `a`.
-  have key : ∀ a, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX₀.flow (s - a) (γ a).1) (Iic a) →
-      (Tendsto (fun s ↦ (γ s).1) atBot (𝓝 p) ↔ (γ a).1 ∈ hX₀.flow.unstableSet p) := by
-    intro a ha
-    rw [tendsto_congr' (eventuallyEq_of_mem (Iic_mem_atBot a) ha), Flow.mem_unstableSet]
-    exact ⟨fun h ↦ (h.comp (tendsto_atBot_add_const_right _ a tendsto_id)).congr fun s ↦ by simp,
-      fun h ↦ h.comp (tendsto_atBot_add_const_right _ (-a) tendsto_id) |>.congr fun s ↦ by
-        simp [sub_eq_add_neg]⟩
   have hev := hV.eventually_atBot_eqOn_flow hX₀ hC hγ h₀
   rw [nhds_prod_eq, tendsto_prod_iff']
-  refine ⟨fun h ↦ hev.mono fun a ha ↦ (key a ha).1 h.1, fun h ↦ ⟨?_, hsnd⟩⟩
+  refine ⟨fun h ↦ hev.mono fun a ha ↦
+    (Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn ha).1 h.1, fun h ↦ ⟨?_, hsnd⟩⟩
   obtain ⟨a, ha, hmem⟩ := (hev.and h).exists
-  exact (key a ha).2 hmem
+  exact (Flow.tendsto_atBot_iff_mem_unstableSet_of_eqOn ha).2 hmem
 
 include hV hX₁ hC hγ h₀ in
 /-- **The forward limit of a trajectory through the slab.** For `C > 0`, an integral curve `γ`
@@ -499,18 +493,12 @@ theorem tendsto_atTop_iff {q : M} :
     Tendsto γ atTop (𝓝 (q, 1)) ↔ ∀ᶠ b in atTop, (γ b).1 ∈ hX₁.flow.stableSet q := by
   have hsnd := (hV.tendsto_snd_atTop hγ h₀ hC).mono_right nhdsWithin_le_nhds
   -- From a time `b` on, the space component is the orbit of `(γ b).1`, shifted by `b`.
-  have key : ∀ b, EqOn (fun s ↦ (γ s).1) (fun s ↦ hX₁.flow (s - b) (γ b).1) (Ici b) →
-      (Tendsto (fun s ↦ (γ s).1) atTop (𝓝 q) ↔ (γ b).1 ∈ hX₁.flow.stableSet q) := by
-    intro b hb
-    rw [tendsto_congr' (eventuallyEq_of_mem (Ici_mem_atTop b) hb), Flow.mem_stableSet]
-    exact ⟨fun h ↦ (h.comp (tendsto_atTop_add_const_right _ b tendsto_id)).congr fun s ↦ by simp,
-      fun h ↦ h.comp (tendsto_atTop_add_const_right _ (-b) tendsto_id) |>.congr fun s ↦ by
-        simp [sub_eq_add_neg]⟩
   have hev := hV.eventually_atTop_eqOn_flow hX₁ hC hγ h₀
   rw [nhds_prod_eq, tendsto_prod_iff']
-  refine ⟨fun h ↦ hev.mono fun b hb ↦ (key b hb).1 h.1, fun h ↦ ⟨?_, hsnd⟩⟩
+  refine ⟨fun h ↦ hev.mono fun b hb ↦
+    (Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn hb).1 h.1, fun h ↦ ⟨?_, hsnd⟩⟩
   obtain ⟨b, hb, hmem⟩ := (hev.and h).exists
-  exact (key b hb).2 hmem
+  exact (Flow.tendsto_atTop_iff_mem_stableSet_of_eqOn hb).2 hmem
 
 include hV hX₀ hC hγ h₀ in
 /-- **A trajectory through the slab comes from a critical point of `f₀`.** For `C > 0` and a Morse
