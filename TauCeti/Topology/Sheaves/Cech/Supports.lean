@@ -336,10 +336,15 @@ def supportedCechCohomologyToCech :
         have := congrArg (cechCohomology X A n).map ((supportedSectionsι A S).naturality α)
         simp only [Functor.map_comp, Functor.id_map] at this
         exact this }
-  naturality S S' f := NatTrans.ext <| funext fun P ↦
-    (((cechCohomology X A n).map_comp _ _).symm.trans (congrArg _
-      (congr_app (supportedSectionsMap_comp_supportedSectionsι (leOfHom f)) P))).trans
-        (Category.comp_id _).symm
+  naturality S S' f := by
+    -- the constant functor sends `f` to the identity
+    rw [Functor.const_obj_map]
+    refine Eq.trans ?_ (Category.comp_id _).symm
+    ext P
+    -- the component at `P` of the left side is `Hⁿ` applied to a composite, by
+    -- `NatTrans.comp_app`, `supportedCechCohomology_map` and `Functor.whiskerRight_app` (all `rfl`)
+    exact ((cechCohomology X A n).map_comp _ _).symm.trans
+      (congrArg _ (congr_app (supportedSectionsMap_comp_supportedSectionsι (leOfHom f)) P))
 
 /-- Cohomology with supports in the whole space is ordinary Čech cohomology, for presheaves
 vanishing on the empty set. -/
@@ -411,6 +416,14 @@ theorem supportedCechCohomology_map_comp_compactSupportCechCohomologyι {K K' : 
       compactSupportCechCohomologyι X A n K := by
   ext P
   exact colimit.w ((Compacts.toClosedsFunctor X ⋙ supportedCechCohomology X A n).flip.obj P) f
+
+@[reassoc]
+theorem supportedCechCohomology_map_app_comp_compactSupportCechCohomologyι_app {K K' : Compacts X}
+    (f : K ⟶ K') (P : (Opens X)ᵒᵖ ⥤ A) :
+    ((supportedCechCohomology X A n).map ((Compacts.toClosedsFunctor X).map f)).app P ≫
+        (compactSupportCechCohomologyι X A n K').app P =
+      (compactSupportCechCohomologyι X A n K).app P :=
+  congr_app (supportedCechCohomology_map_comp_compactSupportCechCohomologyι n f) P
 
 variable (X A) in
 /-- A map out of `Hⁿ_c(X; P)`, induced by maps out of the `Hⁿ_K(X; P)` for the compact subsets `K`
