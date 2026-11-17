@@ -34,6 +34,9 @@ space by them.
   to connected components.
 * `ConnectedComponents.coe_eq_coe_iff_connectedComponentIn_eq`: points of a set lie in the same
   connected component of the subspace exactly when they have the same component in the set.
+* `IsClopen.preimage_image_connectedComponentsMk`, `IsClopen.image_connectedComponentsMk`: a clopen
+  set is saturated for the connected-components equivalence relation and has clopen image in
+  `ConnectedComponents X`.
 * `ConnectedComponents.clopensEquiv`: the clopen subsets of the space of connected components
   correspond to the clopen subsets of the space, by taking preimages.
 * `ConnectedComponents.opens`: in a locally connected space, the connected component indexed by a
@@ -254,18 +257,27 @@ theorem iUnion_carrierIn : (⋃ c : ConnectedComponents s, c.carrierIn) = s := b
 
 end Carrier
 
+/-- A clopen subset is saturated for the connected-components equivalence relation: pulling its
+image in `ConnectedComponents X` back along `ConnectedComponents.mk` recovers `s`. -/
+theorem _root_.IsClopen.preimage_image_connectedComponentsMk {s : Set X} (hs : IsClopen s) :
+    mk ⁻¹' (mk '' s) = s :=
+  (connectedComponents_preimage_image s).trans hs.biUnion_connectedComponent_eq
+
+/-- The image of a clopen subset under `ConnectedComponents.mk` is clopen in
+`ConnectedComponents X`. -/
+theorem _root_.IsClopen.image_connectedComponentsMk {s : Set X} (hs : IsClopen s) :
+    IsClopen (mk '' s) :=
+  isQuotientMap_coe.isClopen_preimage.mp (hs.preimage_image_connectedComponentsMk.symm ▸ hs)
+
 open TopologicalSpace in
 /-- The clopen subsets of `ConnectedComponents X` are in order-preserving bijection with the clopen
 subsets of `X`, by taking preimages under the quotient map `ConnectedComponents.mk`. Its inverse
 sends a clopen set to its image, a clopen set being a union of connected components. -/
 def clopensEquiv : Clopens (ConnectedComponents X) ≃o Clopens X where
   toFun U := ⟨mk ⁻¹' U, U.isClopen.preimage continuous_coe⟩
-  invFun V := ⟨mk '' V, isQuotientMap_coe.isClopen_preimage.mp <| by
-    rw [connectedComponents_preimage_image, V.isClopen.biUnion_connectedComponent_eq]
-    exact V.isClopen⟩
-  left_inv U := Clopens.ext <| image_preimage_eq _ surjective_coe
-  right_inv V := Clopens.ext <| (connectedComponents_preimage_image (V : Set X)).trans
-    V.isClopen.biUnion_connectedComponent_eq
+  invFun V := ⟨mk '' V, V.isClopen.image_connectedComponentsMk⟩
+  left_inv _ := Clopens.ext <| image_preimage_eq _ surjective_coe
+  right_inv V := Clopens.ext V.isClopen.preimage_image_connectedComponentsMk
   map_rel_iff' := surjective_coe.preimage_subset_preimage_iff
 
 open TopologicalSpace in
