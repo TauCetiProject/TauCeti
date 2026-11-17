@@ -67,8 +67,9 @@ compositions.
 * `LinearMap.isFormalTranspose_self_of_mem_differentialOperators_zero`: operators of order zero,
   that is multiplication operators, are their own transposes.
 * `LinearMap.IsFormalTranspose.smulCommutator`: the transpose of `[D, a]` is `-[D', a]`.
-* `LinearMap.IsFormalTranspose.withDensity`: with respect to a weighted measure `ρ μ`, the
-  transpose of `D` is `g ↦ ρ⁻¹ D' (ρ g)`, where `D'` is its transpose with respect to `μ`.
+* `LinearMap.IsFormalTranspose.withDensity`: if `D'` is a transpose of `D` with respect to `μ`,
+  `ρ ≥ 0` is smooth and `ρ D'' g = D' (ρ g)` for all `g`, then `D''` is a transpose of `D` with
+  respect to the weighted measure `ρ μ` (for `ρ > 0`, `D'' g = ρ⁻¹ D' (ρ g)`).
 * `LinearMap.IsFormalTranspose.mem_differentialOperators`: on a boundaryless manifold, a formal
   transpose of a differential operator of order at most `m` that is a differential operator has
   order at most `m`.

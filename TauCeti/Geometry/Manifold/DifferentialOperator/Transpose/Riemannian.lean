@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.DifferentialOperator.FirstOrder
 public import TauCeti.Geometry.Manifold.DifferentialOperator.LaplaceType
 public import TauCeti.Geometry.Manifold.DifferentialOperator.Transpose.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
@@ -30,8 +31,9 @@ The divergence theorem computes these transposes for operators of order at most 
 (`TauCeti.Manifold.integral_mvfderiv_mul`), so the transpose of `X + c` is
 `-X + (c - div X)` (`LinearMap.isFormalTranspose_vectorFieldDerivation_add_mulLeft`). The
 zeroth-order term `-div X` is what distinguishes the transpose from the naive `-X + c`; it vanishes
-exactly for divergence-free fields. Every operator of order at most one is of the form `X + c`, so
-it has a formal transpose of order at most one
+exactly for divergence-free fields. Every operator of order at most one is of the form `X + c`
+(`LinearMap.eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one`), so it has a
+formal transpose of order at most one
 (`LinearMap.formalTranspose_riemannianVolume_mem_differentialOperators_one`). Green's second
 identity says that the Laplace–Beltrami operator is its own transpose
 (`LinearMap.formalTranspose_smoothLaplaceBeltrami`).
@@ -41,11 +43,6 @@ function `φ`, and with respect to it the transpose of `X` acquires the extra te
 (`LinearMap.isFormalTranspose_vectorFieldDerivation_withDensity_exp`). On the real line with its
 Euclidean metric, where `dV = dx` and `div ∂ₓ = 0`, taking `φ = sin` gives the transpose
 `-∂ₓ - cos x` of `∂ₓ` for the density `e^(sin x) dx`.
-
-## Main definitions
-
-* `TauCeti.smoothDivergence I M`: the divergence of smooth vector fields, as a linear map to the
-  smooth functions.
 
 ## Main results
 
@@ -78,34 +75,6 @@ noncomputable section
 open Bundle MeasureTheory TauCeti.Manifold
 open scoped ContDiff Manifold
 
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
-
-variable (I M) in
-/-- The Riemannian divergence `X ↦ div X` (`TauCeti.Manifold.divergence`) of a smooth metric, as a
-real-linear map from smooth vector fields to smooth functions. -/
-def smoothDivergence :
-    Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯ where
-  toFun X := ⟨divergence I X,
-    contMDiff_divergence (n := ∞) (m := ∞) (k := ∞) (by simp) (by simp) X.contMDiff⟩
-  map_add' X Y := ContMDiffMap.ext fun x ↦
-    divergence_add I X Y x (X.contMDiff.mdifferentiableAt (by simp))
-      (Y.contMDiff.mdifferentiableAt (by simp))
-  map_smul' c X := ContMDiffMap.ext fun x ↦
-    divergence_smul I c X x (X.contMDiff.mdifferentiableAt (by simp))
-
-@[simp]
-theorem smoothDivergence_apply (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (x : M) :
-    smoothDivergence I M X x = divergence I X x :=
-  (rfl)
-
-end TauCeti
-
 namespace LinearMap
 
 open TauCeti
@@ -113,18 +82,6 @@ open TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
-
-/-- An operator of order at most one is differentiation along its vector field plus multiplication
-by its value on `1`. -/
-private theorem eq_vectorFieldDerivation_add_mulLeft_of_mem_differentialOperators_one
-    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
-    (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 1) :
-    D = (vectorFieldDerivation (derivationEquivSmoothVectorField
-      (D.derivationOfMemDifferentialOperatorsOne hD)) : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) +
-        mulLeft ℝ (D 1) := by
-  rw [← ContMDiffSection.derivationEquivSmoothVectorField_symm_apply, LinearEquiv.symm_apply_apply]
-  ext f x
-  simp [mul_comm]
 
 variable [SigmaCompactSpace M] [MeasurableSpace M] [BorelSpace M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
