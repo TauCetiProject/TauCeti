@@ -151,6 +151,10 @@ variable {F E} in
 theorem mem_sphereBundle {v : TotalSpace F E} : v ∈ sphereBundle F E ↔ ‖v.2‖ = 1 :=
   Iff.rfl
 
+/-- The unit sphere bundle lies in the unit disc bundle. -/
+theorem sphereBundle_subset_discBundle : sphereBundle F E ⊆ discBundle F E :=
+  gaugeSphereBundle_subset_gaugeDiscBundle _
+
 variable {F E} in
 /-- The vectors of norm less than one miss the sphere bundle. -/
 theorem disjoint_norm_lt_one_sphereBundle :

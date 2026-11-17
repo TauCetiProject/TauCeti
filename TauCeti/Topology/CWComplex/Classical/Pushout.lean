@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.RelativeCellComplex.Pushout
 public import TauCeti.Topology.CWComplex.Abstract.Classical
 public import TauCeti.Topology.CWComplex.Abstract.ClosedEmbedding
 public import TauCeti.Topology.CWComplex.Abstract.Hausdorff
+public import TauCeti.Topology.CWComplex.Classical.Image
 public import TauCeti.Topology.CWComplex.Classical.RelativeCWComplex
 public import TauCeti.Topology.Homotopy.Extension.Pushout
 import TauCeti.Topology.Homotopy.Extension.CWComplex
@@ -31,6 +32,11 @@ its quotient topology. This file shows:
   (`TauCeti.relativeCWPushout`), whose `n`-cells are the `n`-cells of `C`
   (`TauCeti.relativeCWPushoutCellEquiv`) and whose characteristic maps are those of `C` followed
   by the map `C → Z ∪_a C` (`TauCeti.relativeCWPushout_map_apply`);
+* the same holds for any pushout `P` of `D → C` along a map to `Z`, not only the chosen one: `P`
+  is Hausdorff when `Z` is (`CategoryTheory.IsPushout.t2Space`), and it is a relative CW complex
+  over the image of `Z` (`CategoryTheory.IsPushout.relCWComplex`) with the cells of `C`
+  (`CategoryTheory.IsPushout.relCWComplexCellEquiv`), whose characteristic maps are those of `C`
+  followed by `C → P` (`CategoryTheory.IsPushout.relCWComplex_map_apply`);
 * up to homotopy equivalence, `Z ∪_a C` depends only on the homotopy type of `Z`: a homotopy
   equivalence `e : Z ≃ₕ Z'` induces a homotopy equivalence `Z ∪_a C ≃ₕ Z' ∪_{e ∘ a} C` which is
   `e` on `Z` and whose inverse is the inverse of `e` on `Z'`
@@ -51,6 +57,7 @@ space along maps of their boundary spheres keeps the cells and their characteris
 * `TauCeti.relCWAdjunctionSpace`: the adjunction space `Z ∪_a C`.
 * `TauCeti.relativeCWPushout`: the classical relative CW structure on `Z ∪_a C` relative to `Z`.
 * `TauCeti.relativeCWPushoutCellEquiv`: its `n`-cells are the `n`-cells of `C`.
+* `CategoryTheory.IsPushout.relCWComplex`: the relative CW structure on any pushout of `D → C`.
 
 ## Main results
 
@@ -171,6 +178,74 @@ theorem relativeCWPushout_map_apply (n : ℕ) (i : cell (univ : Set (relCWAdjunc
   rw [coe_toRelativeCWComplex_cells_ι_apply, Homeomorph.apply_symm_apply]
 
 end TauCeti
+
+namespace CategoryTheory.IsPushout
+
+open TauCeti Limits Set Topology Topology.RelCWComplex
+
+variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D]
+  {Z P : TopCat.{u}} {g : TopCat.of D ⟶ Z} {i : TopCat.of C ⟶ P} {j : Z ⟶ P}
+  (h : IsPushout (relCWBaseInclusion C) g i j)
+
+omit [T2Space X] in
+include h in
+/-- In a pushout of the inclusion of the base of a relative CW complex, the comparison map from
+`TauCeti.relCWAdjunctionSpace` is a closed embedding. -/
+private theorem isClosedEmbedding_isoPushout_inv : IsClosedEmbedding h.isoPushout.inv :=
+  (TopCat.homeoOfIso h.isoPushout.symm).isClosedEmbedding
+
+omit [T2Space X] in
+include h in
+private theorem image_range_pushout_inr :
+    h.isoPushout.inv '' range (pushout.inr (relCWBaseInclusion C) g) = range j := by
+  rw [← range_comp]
+  exact congrArg (fun f : Z ⟶ P ↦ range f) h.inr_isoPushout_inv
+
+include h in
+/-- A pushout of the inclusion `D → C` of the base of a relative CW complex is Hausdorff when the
+space `Z` it is glued to is. -/
+theorem t2Space [T2Space Z] : T2Space P :=
+  haveI := t2Space_relCWAdjunctionSpace (C := C) g.hom
+  (TopCat.homeoOfIso h.isoPushout).isEmbedding.t2Space
+
+/-- **Gluing a relative CW complex to a space, for any pushout square.** If `C` is a relative CW
+complex with base `D` in a Hausdorff space and `P` is a pushout of the inclusion `D → C` and of a
+map `g : D → Z`, with maps `i : C → P` and `j : Z → P`, then `P` is a CW complex relative to the
+image of `j`. Its cells are those of `C` (`CategoryTheory.IsPushout.relCWComplexCellEquiv`), with
+the characteristic maps of `C` followed by `i` (`CategoryTheory.IsPushout.relCWComplex_map_apply`).
+For the canonical pushout this is `TauCeti.relativeCWPushout`. -/
+@[instance_reducible]
+def relCWComplex : RelCWComplex (univ : Set P) (range j) :=
+  letI := relativeCWPushout C g.hom
+  (isClosedEmbedding_isoPushout_inv h).relCWComplex
+    (image_univ_of_surjective (TopCat.homeoOfIso h.isoPushout.symm).surjective)
+    (image_range_pushout_inr h)
+
+/-- The `n`-cells of the relative CW structure on a pushout `P` of `D → C` are the `n`-cells
+of `C`. -/
+def relCWComplexCellEquiv (n : ℕ) :
+    letI := h.relCWComplex
+    cell (univ : Set P) n ≃ cell C n :=
+  letI := relativeCWPushout C g.hom
+  ((isClosedEmbedding_isoPushout_inv h).relCWComplexCellEquiv _ _ n).trans
+    (relativeCWPushoutCellEquiv C g.hom n)
+
+/-- The characteristic map of an `n`-cell of a pushout `P` of `D → C` is the characteristic map of
+the corresponding cell of `C`, followed by `i : C → P`. -/
+theorem relCWComplex_map_apply (n : ℕ)
+    (c : letI := h.relCWComplex; cell (univ : Set P) n) (x : closedBall (0 : Fin n → ℝ) 1) :
+    letI := h.relCWComplex
+    RelCWComplex.map n c x = i ⟨RelCWComplex.map n (h.relCWComplexCellEquiv n c) x,
+      closedCell_subset_complex n _ (mem_image_of_mem _ x.2)⟩ := by
+  let := relativeCWPushout C g.hom
+  let := h.relCWComplex
+  have hc := (isClosedEmbedding_isoPushout_inv h).coe_map_relCWComplex
+    (image_univ_of_surjective (TopCat.homeoOfIso h.isoPushout.symm).surjective)
+    (image_range_pushout_inr h) n c
+  rw [hc, Function.comp_apply, relativeCWPushout_map_apply g.hom]
+  exact ConcreteCategory.congr_hom h.inl_isoPushout_inv _
+
+end CategoryTheory.IsPushout
 
 namespace ContinuousMap.HomotopyEquiv
 
