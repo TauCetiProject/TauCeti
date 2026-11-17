@@ -920,8 +920,12 @@ theorem exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
     (by omega)
   have hε := isComplexPositive_detLineCongr_symm_ιMulti_append e₄ e₅ he₄ c₅ hc₅ hR₄ hB₆
     (by omega)
-  have hα := isComplexPositive_detLineCongr_symm_ιMulti_comp e₁ e₁ (f := LinearMap.id)
-    (g := LinearMap.id) rfl b₁ rfl hB₁
+  have hα : IsComplexPositive (e₁.symm.detLineCongr (exteriorPower.ιMulti ℝ _ u')) := by
+    rw [LinearEquiv.detLineCongr_ιMulti]
+    convert isComplexPositive_ιMulti_complexToRealFamily b₁
+      finrank_real_eq_two_mul_finrank_complex using 2
+    funext i
+    simp [u']
   have hζ := isComplexPositive_detLineCongr_symm_ιMulti_comp e₅ e₆ he₅ b₆ hy hB₆
   -- Functionals normalized at `δ` and at the exterior product of `g₅ ∘ y'`.
   obtain ⟨ψ, hψ⟩ := Projective.exists_dual_eq_one ℝ hδ.ne_zero
