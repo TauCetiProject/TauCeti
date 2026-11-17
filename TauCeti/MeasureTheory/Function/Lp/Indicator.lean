@@ -32,6 +32,8 @@ sets, and equals the constant one at `univ`.
 
 ## Main declarations
 
+* `TauCeti.indicatorConstLp_eq_zero_iff`: an `Lᵖ` constant indicator class vanishes if and only if
+  the set has measure zero or the constant is zero.
 * `TauCeti.indicatorConstLp_smul`: the indicator class of `a • c` is `a` times that of `c`.
 * `TauCeti.norm_sum_indicatorConstLp_one`: the `L¹` norm of a sum of indicator classes of pairwise
   disjoint sets.
@@ -56,6 +58,27 @@ namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal
+
+section Zero
+
+variable {α E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
+
+/-- An `Lᵖ` constant indicator class vanishes if and only if either the set has measure zero or
+the constant is zero. -/
+@[simp]
+theorem indicatorConstLp_eq_zero_iff {s : Set α} {hs : MeasurableSet s} {hμs : μ s ≠ ∞} {c : E} :
+    indicatorConstLp p hs hμs c = 0 ↔ μ s = 0 ∨ c = 0 := by
+  by_cases hc : c = 0
+  · simp only [hc, or_true, iff_true]
+    refine Lp.ext ?_
+    filter_upwards [indicatorConstLp_coeFn (p := p) (hs := hs) (hμs := hμs) (c := (0 : E)),
+      Lp.coeFn_zero E p μ] with x h₁ h₂
+    rw [h₁, h₂, Pi.zero_apply]
+    simp
+  · simp only [hc, or_false, ← indicatorConstLp_empty (p := p) (μ := μ) (c := c),
+      indicatorConstLp_inj hs hμs .empty (by simp) hc, ae_eq_empty]
+
+end Zero
 
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} {p : ℝ≥0∞} [NormedAddCommGroup E]
   [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] {s : Set α}
