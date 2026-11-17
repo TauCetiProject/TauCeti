@@ -14,7 +14,7 @@ import Mathlib.Tactic.NormNum.RealSqrt
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Bounds
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.EulerProduct.Basic
 import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
-import TauCeti.NumberTheory.LSeries.ZetaMul
+import TauCeti.NumberTheory.LSeries.Zeta.Mul
 import TauCeti.NumberTheory.LSeries.Quadratic.Character
 import TauCeti.NumberTheory.NumberField.PrimeIdeal
 import TauCeti.NumberTheory.NumberField.Quadratic.TotalRamification
