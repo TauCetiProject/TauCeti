@@ -343,15 +343,6 @@ theorem hasProperHomotopyExtensionProperty_sphere_closedBall {E : Type*} [Normed
   hasHomotopyExtensionProperty_sphere_closedBall.hasProperHomotopyExtensionProperty_of_compactSpace
     (Metric.isClosed_sphere.preimage continuous_subtype_val)
 
-/-- For a finite index type `N`, the boundary of the cube `I^N` is closed. -/
-theorem Cube.isClosed_boundary {N : Type*} [Finite N] : IsClosed (Cube.boundary N) := by
-  have heq : Cube.boundary N = ⋃ i : N, {y : N → I | y i = 0 ∨ y i = 1} := by
-    ext y; simp [Cube.boundary]
-  rw [heq]
-  exact isClosed_iUnion_of_finite fun i ↦
-    (isClosed_eq (continuous_apply i) continuous_const).union
-      (isClosed_eq (continuous_apply i) continuous_const)
-
 /-- For a finite index type `N`, the boundary of the cube `I^N` has the proper homotopy extension
 property in `I^N`. -/
 theorem hasProperHomotopyExtensionProperty_cubeBoundary {N : Type*} [Finite N] :
