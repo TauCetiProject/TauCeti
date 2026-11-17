@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Log.InvLog
 public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import TauCeti.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
 import TauCeti.Analysis.Asymptotics.Lemmas
 
 /-!
@@ -43,6 +44,9 @@ the remaining integral is `o (x / log x)`. Splitting that integral at `√x` bou
   relative to `δ Li x` gives `f x / (x / log x) → δ`.
 * `TauCeti.Real.isLittleO_integral_div_mul_log_sq` — for `f` interval integrable above `2` and of
   at most linear growth, `∫ t in 2..x, f t / (t * log t ^ 2)` is `o (x / log x)`.
+* `Asymptotics.IsEquivalent.log_of_div_log`, `Asymptotics.IsEquivalent.of_div_log` — inversion of
+  the scale `x / log x`: if `u → ∞` and `u / log u ∼ v`, then `log u ∼ log v` and
+  `u ∼ v log v`.
 
 The auxiliary bounds `TauCeti.Real.integral_inv_log_pow_le` and
 `TauCeti.Real.le_integral_inv_log_pow` estimate `∫ t in a..b, ((log t) ^ n)⁻¹` by monotonicity of
@@ -428,3 +432,38 @@ theorem isLittleO_integral_div_mul_log_sq {f : ℝ → ℝ}
     _ = ε * ‖x / Real.log x‖ := by ring
 
 end TauCeti.Real
+
+/-! ### Inverting the scale `x / log x`
+
+If `u → ∞` and `u / log u ∼ v`, then taking logarithms gives `log u − log log u ∼ log v`, and
+`log log u = o(log u)`, so `log u ∼ log v`; multiplying, `u = (u / log u) · log u ∼ v log v`. -/
+
+open Filter
+
+namespace Asymptotics.IsEquivalent
+
+variable {α : Type*} {l : Filter α} {u v : α → ℝ}
+
+/-- If `u → ∞` and `u / log u ∼ v`, then `log u ∼ log v`. -/
+theorem log_of_div_log (hu : Tendsto u l atTop)
+    (h : (fun x ↦ u x / Real.log (u x)) ~[l] v) :
+    (fun x ↦ Real.log (u x)) ~[l] fun x ↦ Real.log (v x) := by
+  have hlogu := Real.tendsto_log_atTop.comp hu
+  have hv := h.tendsto_atTop (TauCeti.Real.tendsto_div_log_atTop.comp hu)
+  refine IsEquivalent.trans ?_ (h.log hv)
+  have hsub : (fun x ↦ Real.log (u x) - Real.log (Real.log (u x))) ~[l]
+      fun x ↦ Real.log (u x) :=
+    IsEquivalent.refl.sub_isLittleO (Real.isLittleO_log_id_atTop.comp_tendsto hlogu)
+  refine (hsub.congr_left ?_).symm
+  filter_upwards [hu.eventually_gt_atTop 1] with x hx
+  rw [Real.log_div (by linarith) (Real.log_pos hx).ne']
+
+/-- **Asymptotic inversion of `x / log x`.** If `u → ∞` and `u / log u ∼ v`, then
+`u ∼ v log v`. -/
+theorem of_div_log (hu : Tendsto u l atTop) (h : (fun x ↦ u x / Real.log (u x)) ~[l] v) :
+    u ~[l] fun x ↦ v x * Real.log (v x) := by
+  refine (h.mul (h.log_of_div_log hu)).congr_left ?_
+  filter_upwards [hu.eventually_gt_atTop 1] with x hx
+  exact div_mul_cancel₀ _ (Real.log_pos hx).ne'
+
+end Asymptotics.IsEquivalent
