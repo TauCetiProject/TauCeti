@@ -40,6 +40,8 @@ spaces and lens spaces, product metrics on Dold manifolds `(Sᵃ × ℂPᵇ) / C
   isometry from `g` to the descended metric.
 * `Bundle.ContMDiffRiemannianMetric.scalarCurvature_descend`: the descended metric has the scalar
   curvature of `g`.
+* `Bundle.ContMDiffRiemannianMetric.isLocalRiemannianIsometry_smul`: an element of a group acting
+  smoothly by isometries of a metric acts by a local Riemannian isometry.
 * `Bundle.ContMDiffRiemannianMetric.inner_eq_of_quotientMk_eq`: a metric invariant under a free,
   properly discontinuous group action is compatible with the orbit projection.
 * `Bundle.ContMDiffRiemannianMetric.quotient`: a metric invariant under a free, properly
@@ -217,7 +219,20 @@ end Smooth
 section Quotient
 
 variable {G : Type*} [Group G] [MulAction G M]
-  [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M]
+
+/-- With `g` installed on `M`, an element `a` of a group acting smoothly on `M`, whose
+differential preserves `g`, acts by a local Riemannian isometry. -/
+theorem isLocalRiemannianIsometry_smul [ContMDiffConstSMul I ∞ G M] [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (a : G)
+    (ha : ∀ (x : M) (v w : TangentSpace I x),
+      g.inner (a • x) (mfderiv I I (a • ·) x v) (mfderiv I I (a • ·) x w) = g.inner x v w) :
+    letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+    TauCeti.IsLocalRiemannianIsometry I I (a • · : M → M) := by
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
+  rw [← TauCeti.RiemannianIsometry.coe_constSMul (ha := ha)]
+  exact (TauCeti.RiemannianIsometry.constSMul a ha).isLocalRiemannianIsometry
+
+variable [ProperlyDiscontinuousSMul G M] [ContinuousConstSMul G M]
   [IsCancelSMul G M] [T2Space M] [LocallyCompactSpace M]
 
 /-- A metric preserved by every element of `G` is compatible with the orbit projection of a free,

@@ -80,11 +80,12 @@ action `u ↦ u ∘ g⁻¹` of `G` on smooth functions (`TauCeti.smoothFunctionR
 theorem commute_smoothLaplaceBeltrami_smoothFunctionRep {G : Type*} [Group G] [MulAction G M]
     [ContMDiffConstSMul I ∞ G M] (hG : ∀ g : G, IsLocalRiemannianIsometry I I (g • · : M → M))
     (g : G) : Commute (smoothLaplaceBeltrami I M) (smoothFunctionRep ℝ I M ℝ ∞ G g) :=
-  LinearMap.ext fun u ↦ ContMDiffMap.ext fun x ↦ by
-    have hu : ⇑(smoothFunctionRep ℝ I M ℝ ∞ G g u) = u ∘ (g⁻¹ • ·) :=
-      funext fun y ↦ smoothFunctionRep_apply_apply g u y
-    simp only [mul_apply_eq_comp, smoothLaplaceBeltrami_apply, smoothFunctionRep_apply_apply, hu]
-    exact (hG g⁻¹).laplaceBeltrami_comp (u.contMDiff.contMDiffAt.of_le (by simp))
+  LinearMap.ext fun u ↦ by
+    have hu (v : C^∞⟮I, M; ℝ⟯) : smoothFunctionRep ℝ I M ℝ ∞ G g v =
+        v.comp ⟨(g⁻¹ • ·), contMDiff_const_smul g⁻¹⟩ :=
+      ContMDiffMap.ext fun y ↦ smoothFunctionRep_apply_apply g v y
+    rw [mul_apply_eq_comp, mul_apply_eq_comp, hu, hu]
+    exact (hG g⁻¹).smoothLaplaceBeltrami_comp u
 
 end TauCeti
 
@@ -180,17 +181,10 @@ theorem nonempty_linearEquiv_eigenspace_smoothLaplaceBeltrami_quotient
     ⟨(g.quotient fun (a : K₁) ↦ hg a).toRiemannianMetric⟩
   let : RiemannianBundle (fun x : MulAction.orbitRel.Quotient K₂ M ↦ TangentSpace I x) :=
     ⟨(g.quotient fun (a : K₂) ↦ hg a).toRiemannianMetric⟩
-  -- Each `q • ·` is a diffeomorphism preserving `g`, hence a local Riemannian isometry.
-  have hQ (q : Q) : IsLocalRiemannianIsometry I I (q • · : M → M) :=
-    { contMDiff := contMDiff_const_smul q
-      isInvertible_mfderiv :=
-        (Diffeomorph.isLocalDiffeomorph (n := ∞)
-          { toEquiv := MulAction.toPerm q
-            contMDiff_toFun := contMDiff_const_smul q
-            contMDiff_invFun := contMDiff_const_smul q⁻¹ }).isInvertible_mfderiv (by simp)
-      inner_mfderiv := hg q }
-  -- The orbit projections are local Riemannian isometries onto the descended metrics.
-  exact h.nonempty_linearEquiv_eigenspace_smoothLaplaceBeltrami hQ
+  -- Each `q • ·` is a local Riemannian isometry, and so are the orbit projections onto the
+  -- descended metrics.
+  exact h.nonempty_linearEquiv_eigenspace_smoothLaplaceBeltrami
+    (fun q ↦ g.isLocalRiemannianIsometry_smul q (hg q))
     (g.isLocalRiemannianIsometry_quotient fun (a : K₁) ↦ hg a)
     (g.isLocalRiemannianIsometry_quotient fun (a : K₂) ↦ hg a) μ
 
