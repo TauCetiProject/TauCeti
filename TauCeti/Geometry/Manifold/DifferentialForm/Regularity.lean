@@ -630,6 +630,13 @@ theorem mextDeriv_eq_bilinFormAt [IsManifold I 2 M] (α : SmoothForm I M ℝ 1) 
     mextDeriv α.1 x ![v, w] = (mextDerivₗ I 1 α).bilinFormAt x v w := by
   rw [bilinFormAt_apply, SmoothBundleForm.eval₂_apply, mextDerivₗ_apply]
 
+/-- A tangent vector lies in the kernel of the bilinear form of `dα` exactly when `dα` vanishes on
+every pair with that vector as its first argument. -/
+theorem mem_ker_bilinFormAt_mextDerivₗ_iff [IsManifold I 2 M] {α : SmoothForm I M ℝ 1} {x : M}
+    {v : TangentSpace I x} :
+    v ∈ LinearMap.ker ((mextDerivₗ I 1 α).bilinFormAt x) ↔ ∀ w, mextDeriv α.1 x ![v, w] = 0 := by
+  rw [mem_ker_bilinFormAt_iff, mextDerivₗ_apply]
+
 end SmoothForm
 
 /-- A coordinate form supported compactly inside the chart extends with the same regularity

@@ -522,6 +522,12 @@ theorem IsContact.eq_reebVector_iff (h : a.IsContact B) {r : V} :
 theorem IsContact.apply_reebVector (h : a.IsContact B) : a (a.reebVector B) = 1 :=
   (h.eq_reebVector_iff.1 rfl).1
 
+/-- Subtracting `a v` times the Reeb vector from `v` gives a vector of `ker a`: this is the
+component of `v` in `ker a` for the splitting `V = ker a ⊕ K r`. -/
+theorem IsContact.apply_sub_smul_reebVector (h : a.IsContact B) (v : V) :
+    a (v - a v • a.reebVector B) = 0 := by
+  rw [map_sub, map_smul, h.apply_reebVector, smul_eq_mul, mul_one, sub_self]
+
 /-- The Reeb vector is `B`-orthogonal to the kernel of the contact covector. -/
 theorem IsContact.apply_reebVector_of_apply_eq_zero (h : a.IsContact B) {w : V} (hw : a w = 0) :
     B (a.reebVector B) w = 0 :=
@@ -613,9 +619,7 @@ include hB
 @[simp]
 theorem IsContact.apply_reebVector_left (h : a.IsContact B) (w : V) :
     B (a.reebVector B) w = 0 := by
-  have hw : a (w - a w • a.reebVector B) = 0 := by
-    rw [map_sub, map_smul, h.apply_reebVector, smul_eq_mul, mul_one, sub_self]
-  have := h.apply_reebVector_of_apply_eq_zero hw
+  have := h.apply_reebVector_of_apply_eq_zero (h.apply_sub_smul_reebVector w)
   rwa [map_sub, map_smul, hB, smul_zero, sub_zero] at this
 
 /-- For an alternating `B`, every vector is `B`-orthogonal to the Reeb vector from the left. -/
@@ -623,6 +627,13 @@ theorem IsContact.apply_reebVector_left (h : a.IsContact B) (w : V) :
 theorem IsContact.apply_reebVector_right (h : a.IsContact B) (w : V) :
     B w (a.reebVector B) = 0 := by
   rw [← LinearMap.BilinForm.IsAlt.neg_eq hB, h.apply_reebVector_left hB, neg_zero]
+
+/-- For an alternating `B`, a contact covector's form `B` only sees the components in `ker a`
+along the Reeb vector: `B (v - a v • r) (w - a w • r) = B v w`. -/
+theorem IsContact.apply_sub_smul_reebVector_apply (h : a.IsContact B) (v w : V) :
+    B (v - a v • a.reebVector B) (w - a w • a.reebVector B) = B v w := by
+  simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply,
+    h.apply_reebVector_left hB, h.apply_reebVector_right hB, smul_zero, sub_zero]
 
 /-- For an alternating `B`, the Reeb vector of a contact covector lies in the kernel of `B`. -/
 theorem IsContact.reebVector_mem_ker (h : a.IsContact B) : a.reebVector B ∈ LinearMap.ker B :=
@@ -643,11 +654,8 @@ theorem IsContact.ker_eq_span_reebVector (h : a.IsContact B) :
   ext v
   rw [LinearMap.mem_ker, Submodule.mem_span_singleton]
   refine ⟨fun hv ↦ ⟨a v, ?_⟩, ?_⟩
-  · have hmem : v - a v • a.reebVector B ∈ LinearMap.ker a := by
-      rw [LinearMap.mem_ker, map_sub, map_smul, h.apply_reebVector, smul_eq_mul, mul_one,
-        sub_self]
-    have := h.nondegenerate_restrict.1 ⟨_, hmem⟩ fun w ↦ by
-      simp [hv, h.apply_reebVector_left hB]
+  · have := h.nondegenerate_restrict.1 ⟨_, LinearMap.mem_ker.2 (h.apply_sub_smul_reebVector v)⟩
+      fun w ↦ by simp [hv, h.apply_reebVector_left hB]
     exact (sub_eq_zero.1 (congrArg Subtype.val this)).symm
   · rintro ⟨t, rfl⟩
     rw [map_smul, LinearMap.mem_ker.1 (h.reebVector_mem_ker hB), smul_zero]

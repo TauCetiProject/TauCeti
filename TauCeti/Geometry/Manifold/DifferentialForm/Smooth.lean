@@ -817,6 +817,13 @@ theorem bilinFormAt_eq_zero_iff (φ : SmoothForm I M ℝ 2) (x : M) :
   · ext v w
     simp [h]
 
+/-- A tangent vector lies in the kernel of the bilinear form of a degree-two smooth form exactly
+when the form vanishes on every pair with that vector as its first argument. -/
+theorem mem_ker_bilinFormAt_iff {φ : SmoothForm I M ℝ 2} {x : M} {v : TangentSpace I x} :
+    v ∈ LinearMap.ker (φ.bilinFormAt x) ↔ ∀ w, φ.1 x ![v, w] = 0 := by
+  simp only [LinearMap.mem_ker, LinearMap.ext_iff, bilinFormAt_apply,
+    SmoothBundleForm.eval₂_apply, LinearMap.zero_apply]
+
 section SectionView
 
 variable {k : ℕ}
