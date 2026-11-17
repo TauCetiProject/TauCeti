@@ -209,19 +209,28 @@ theorem norm_poincareHomotopy_le {x₀ x : E} {ω : E → E [⋀^Fin (n + 1)]→
 radial vector `x - x₀` gives zero, since the integrand already contains `x - x₀` in its first
 slot. -/
 @[simp]
-theorem curryLeft_poincareHomotopy_sub_eq_zero [CompleteSpace F] (x₀ : E)
+theorem curryLeft_poincareHomotopy_sub_eq_zero (x₀ : E)
     (ω : E → E [⋀^Fin (n + 2)]→L[ℝ] F) (x : E) :
     (poincareHomotopy x₀ ω x).curryLeft (x - x₀) = 0 := by
   rw [poincareHomotopy_apply]
+  by_cases hG : CompleteSpace (E [⋀^Fin (n + 1)]→L[ℝ] F)
+  swap
+  · simp [intervalIntegral, integral_of_not_completeSpace hG]
   by_cases h : IntervalIntegrable
       (fun t : ℝ ↦ t ^ (n + 1) • (ω (lineMap x₀ x t)).curryLeft (x - x₀)) volume 0 1
   · let L := (ContinuousAlternatingMap.curryLeftLI (𝕜 := ℝ) (E := E) (F := F)
       (n := n)).toContinuousLinearMap.flip (x - x₀)
     have hL (f : E [⋀^Fin (n + 1)]→L[ℝ] F) : L f = f.curryLeft (x - x₀) := by simp [L]
-    rw [← hL, ← L.intervalIntegral_comp_comm h]
-    refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
-    rw [hL, ContinuousAlternatingMap.curryLeft_smul, smul_apply,
-      ContinuousAlternatingMap.curryLeft_same, smul_zero]
+    -- The codomain of `L` need not be complete, so commute the integral in its completion.
+    have key := ContinuousLinearMap.intervalIntegral_comp_comm (𝕜 := ℝ)
+      (F := UniformSpace.Completion (E [⋀^Fin n]→L[ℝ] F))
+      (UniformSpace.Completion.toComplL.comp L) h
+    simp only [ContinuousLinearMap.comp_apply, UniformSpace.Completion.coe_toComplL, hL,
+      ContinuousAlternatingMap.curryLeft_smul, smul_apply,
+      ContinuousAlternatingMap.curryLeft_same, smul_zero, UniformSpace.Completion.coe_zero,
+      intervalIntegral.integral_zero] at key
+    exact UniformSpace.Completion.coe_injective _
+      (key.symm.trans UniformSpace.Completion.coe_zero.symm)
   · rw [intervalIntegral.integral_undef h]
     simp
 
