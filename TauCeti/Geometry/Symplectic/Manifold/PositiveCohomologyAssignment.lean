@@ -18,8 +18,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 Let `Y` be a manifold with an almost complex structure `J` and let `Z ⊆ Y`. Taubes reconstructs
 a pseudoholomorphic curve with support `Z` from integer intersection numbers of `Z` with discs.
 A **positive cohomology assignment** to `Z` (`TauCeti.PositiveCohomologyAssignment`) gives an
-integer `I(σ)` to every continuous disc `σ : 𝔻 → Y` whose preimage `σ⁻¹(Z)` is compact, that is,
-every disc whose boundary stays away from `Z`, subject to the following laws.
+integer `I(σ)` to every continuous disc `σ : 𝔻 → Y` whose preimage `σ⁻¹(Z)` is compact, the
+open-disc substitute for a disc whose boundary stays away from `Z`, subject to the following laws.
 
 * **Vacuum.** `I(σ) = 0` when `σ` misses `Z`.
 * **Homotopy.** `I` is constant along a homotopy whose total preimage of `Z` in `[0, 1] × 𝔻` is
@@ -141,13 +141,6 @@ theorem charge_congr {σ σ' : C(𝔻, Y)} (hσ : σ = σ') (h : IsCompact (σ �
 
 /-! ### Restriction to round subdiscs -/
 
-/-- If no point of `σ⁻¹(Z)` lies on the circle `‖z - c‖ = r`, then the restriction of `σ` to the
-round subdisc `B(c, r)` again has compact preimage of `Z`. -/
-theorem isCompact_preimage_comp_subdisc {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)) {c : ℂ} {r : ℝ}
-    (hc : ‖c‖ + r ≤ 1) (hr : 0 < r) (hs : ∀ z, σ z ∈ Z → ‖(z : ℂ) - c‖ ≠ r) :
-    IsCompact ((σ.comp (subdisc c r hc hr)) ⁻¹' Z) :=
-  isCompact_subdisc_preimage h hs
-
 /-- If disjoint open round discs of positive radii cover `σ⁻¹(Z)`, no point of `σ⁻¹(Z)` lies on
 the boundary circle of any of them. -/
 private theorem norm_sub_ne_of_pairwise_disjoint {ι : Type*} {σ : C(𝔻, Y)} {c : ι → ℂ}
@@ -207,7 +200,8 @@ theorem isCompact_preimage_comp_subdisc_of_isolated {σ : C(𝔻, Y)} (hσ : IsC
     {z : 𝔻} {r R : ℝ} (hc : ‖(z : ℂ)‖ + r ≤ 1) (hr : 0 < r) (hrR : r < R)
     (hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) R → w = z) :
     IsCompact ((σ.comp (subdisc z r hc hr)) ⁻¹' Z) := by
-  refine isCompact_preimage_comp_subdisc hσ hc hr fun w hw hwr ↦ ?_
+  rw [ContinuousMap.coe_comp, preimage_comp]
+  refine isCompact_subdisc_preimage hσ fun w hw hwr ↦ ?_
   have hwz := hiso w hw (by rwa [mem_ball, dist_eq_norm, hwr])
   rw [hwz, sub_self, norm_zero] at hwr
   exact hr.ne hwr
@@ -241,15 +235,15 @@ def localCharge (σ : C(𝔻, Y)) (z : 𝔻) : ℤ :=
 disc `B(z, r)` for every `0 < r < R` with `B(z, r) ⊆ 𝔻`. -/
 theorem localCharge_eq_charge_comp_subdisc {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {z : 𝔻}
     {r R : ℝ} (hc : ‖(z : ℂ)‖ + r ≤ 1) (hr : 0 < r) (hrR : r < R)
-    (hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) R → w = z)
-    (h : IsCompact ((σ.comp (subdisc z r hc hr)) ⁻¹' Z)) :
-    A.localCharge σ z = A.charge _ h := by
+    (hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) R → w = z) :
+    A.localCharge σ z =
+      A.charge _ (isCompact_preimage_comp_subdisc_of_isolated hσ hc hr hrR hiso) := by
   refine Tendsto.limUnder_eq (tendsto_const_nhds.congr' ?_)
   filter_upwards [Ioc_mem_nhdsGT hr] with r' ⟨hr', hr'r⟩
   have hc' : ‖(z : ℂ)‖ + r' ≤ 1 := by linarith
   have h' := isCompact_preimage_comp_subdisc_of_isolated hσ hc' hr' (hr'r.trans_lt hrR) hiso
   rw [dite_eq_left ⟨hc', hr', h'⟩]
-  refine (A.charge_comp_subdisc_eq_of_le hc' hc hr' hr'r (fun w hw hwb ↦ ?_) _ h).symm
+  refine (A.charge_comp_subdisc_eq_of_le hc' hc hr' hr'r (fun w hw hwb ↦ ?_) _ _).symm
   rw [hiso w hw (ball_subset_ball hrR.le hwb)]
   exact mem_ball_self hr'
 
@@ -261,8 +255,7 @@ theorem localCharge_eq_zero {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {z
   obtain ⟨r, hr, hrε, hc⟩ := exists_pos_lt_and_norm_add_le_one z hε
   have hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) ε → w = z :=
     fun w hw hwb ↦ (hmiss w hw hwb).elim
-  rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrε hiso
-    (isCompact_preimage_comp_subdisc_of_isolated hσ hc hr hrε hiso)]
+  rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrε hiso]
   refine A.charge_eq_zero _ _ fun w hw ↦ hmiss _ hw ?_
   exact ball_subset_ball hrε.le (mem_range_subdisc.1 ⟨w, rfl⟩)
 
@@ -294,13 +287,13 @@ theorem charge_eq_sum_localCharge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)
     linarith
   have hcov : ∀ z, σ z ∈ Z → ∃ w : s, (z : ℂ) ∈ ball ((w : 𝔻) : ℂ) r :=
     fun z hz ↦ ⟨⟨z, (hs z).1 hz⟩, mem_ball_self hr⟩
-  have hadm : ∀ z : s, IsCompact ((σ.comp (subdisc _ r (hc z) hr)) ⁻¹' Z) := fun z ↦
-    isCompact_preimage_comp_subdisc h (hc z) hr
-      (norm_sub_ne_of_pairwise_disjoint (fun _ ↦ hr) hdisj hcov z)
+  have hadm : ∀ z : s, IsCompact ((σ.comp (subdisc _ r (hc z) hr)) ⁻¹' Z) := fun z ↦ by
+    rw [ContinuousMap.coe_comp, preimage_comp]
+    exact isCompact_subdisc_preimage h (norm_sub_ne_of_pairwise_disjoint (fun _ ↦ hr) hdisj hcov z)
   rw [A.charge_eq_sum σ h (fun z : s ↦ ((z : 𝔻) : ℂ)) (fun _ ↦ r) hc (fun _ ↦ hr) hdisj hcov hadm,
     ← Finset.sum_coe_sort s]
   refine Finset.sum_congr rfl fun z _ ↦ (A.localCharge_eq_charge_comp_subdisc h (hc z) hr
-    (by linarith : r < 2 * r) (fun w hw hwb ↦ ?_) (hadm z)).symm
+    (by linarith : r < 2 * r) (fun w hw hwb ↦ ?_)).symm
   by_contra hwz
   have := hsep z z.2 w ((hs w).1 hw) hwz
   rw [mem_ball] at hwb
@@ -321,7 +314,7 @@ theorem localCharge_pos {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) (u : �
     0 < A.localCharge σ z := by
   obtain ⟨r, hr, hrR, hc⟩ := exists_pos_lt_and_norm_add_le_one z hR
   have h := isCompact_preimage_comp_subdisc_of_isolated hσ hc hr hrR hiso
-  rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrR hiso h]
+  rw [A.localCharge_eq_charge_comp_subdisc hσ hc hr hrR hiso]
   set s := subdisc (z : ℂ) r hc hr
   have hs0 : s 0 = z := coe_injective (by simp [s])
   refine A.charge_pos _ h (fun w ↦ u (z + r * w)) (fun w ↦ ?_) ?_ ?_ ⟨0, ?_⟩
