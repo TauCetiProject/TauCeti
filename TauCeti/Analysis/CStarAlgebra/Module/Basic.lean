@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 public import Mathlib.Analysis.CStarAlgebra.Module.Defs
 public import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Sqrt
+import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.ConjSqrt
 
 /-!
 # Basic norm estimates for Hilbert C⋆-modules
@@ -327,6 +328,8 @@ end Essential
 
 section Paschke
 
+open scoped Ring
+
 omit [StarOrderedRing A] in
 /-- The diagonal inner product of `u.fst • z + u.snd • z` embeds into `Unitization ℂ A` as
 `u * ⟪z, z⟫_A * star u`. -/
@@ -342,6 +345,68 @@ private lemma inr_inner_unitization_smul {E : Type*} [AddCommGroup E] [Module �
       inner_op_smul_left, inner_op_smul_right, smul_add, smul_smul, mul_add, mul_smul_comm,
       mul_assoc]
 
+/-- Inverse-square-root conjugation bound: if `b` is strictly positive and conjugating `p` by
+`√(b⁻¹)` is bounded above by the scalar `c`, then `p ≤ c • b`. -/
+private lemma le_smul_of_conjSqrt_ringInverse_le {B : Type*} [PartialOrder B] [Ring B]
+    [StarRing B] [TopologicalSpace B] [StarOrderedRing B] [Algebra ℝ B]
+    [ContinuousFunctionalCalculus ℝ B IsSelfAdjoint] [NonnegSpectrumClass ℝ B]
+    [IsSemitopologicalRing B] [T2Space B]
+    {b p : B} {c : ℝ} (hb : IsStrictlyPositive b)
+    (h : CFC.conjSqrt b⁻¹ʳ p ≤ algebraMap ℝ B c) :
+    p ≤ c • b := by
+  calc p = CFC.conjSqrt b (CFC.conjSqrt b⁻¹ʳ p) :=
+        (CFC.conjSqrt_conjSqrt_ringInverse b p hb).symm
+    _ ≤ CFC.conjSqrt b (algebraMap ℝ B c) := CFC.conjSqrt_le_conjSqrt h
+    _ = c • b := by
+        rw [Algebra.algebraMap_eq_smul_one, map_smul, CFC.conjSqrt_one b hb.nonneg]
+
+/-- Regularized Paschke estimate: for any strictly positive majorant `b ≥ ⟪x, x⟫_A` in
+`Unitization ℂ A`, we have `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • b`.
+
+The proof normalizes `x` by `v = √(b⁻¹)`, forming `y = v • x` in the unit ball of `E`;
+boundedness of `T` then bounds `v ⟪T x, T x⟫_A v = ⟪T y, T y⟫_A` by `‖T‖ ^ 2`, and
+`le_smul_of_conjSqrt_ringInverse_le` conjugates back by `√b`. -/
+private lemma inr_inner_map_map_le_norm_sq_smul_of_le {E F : Type*} [SeminormedAddCommGroup E]
+    [NormedSpace ℂ E] [SMul A E] [CStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F]
+    [SMul A F] [CStarModule A F] (T : E →L[ℂ] F)
+    (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) {b : Unitization ℂ A}
+    (hb : IsStrictlyPositive b) (hxb : (inner A x x : Unitization ℂ A) ≤ b) :
+    (inner A (T x) (T x) : Unitization ℂ A) ≤ ‖T‖ ^ 2 • b := by
+  set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
+  set p : Unitization ℂ A := (inner A (T x) (T x) : Unitization ℂ A)
+  -- Normalize `x` via the unitization action of `v = √(b⁻¹)`.
+  set v : Unitization ℂ A := CFC.sqrt b⁻¹ʳ
+  have hv_sa : IsSelfAdjoint v := (CFC.sqrt_nonneg _).isSelfAdjoint
+  set y : E := v.fst • x + v.snd • x
+  have hy_inner : (inner A y y : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ q := by
+    rw [CFC.conjSqrt_apply]
+    simpa only [hv_sa.star_eq] using inr_inner_unitization_smul v x
+  have hTy_inner : (inner A (T y) (T y) : Unitization ℂ A) = CFC.conjSqrt b⁻¹ʳ p := by
+    have hTy : T y = v.fst • T x + v.snd • T x := by simp only [y, map_add, map_smul, hT]
+    rw [CFC.conjSqrt_apply]
+    simpa only [hTy, hv_sa.star_eq] using inr_inner_unitization_smul v (T x)
+  -- The majorant `q ≤ b` forces `⟪y, y⟫_A = √(b⁻¹) q √(b⁻¹) ≤ 1`, hence `‖y‖² ≤ 1`.
+  have hvqv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ q :=
+    hv_sa.conjugate_nonneg (Unitization.inr_nonneg _ inner_self_nonneg)
+  have hvqv_le : CFC.conjSqrt b⁻¹ʳ q ≤ 1 :=
+    (CFC.conjSqrt_le_conjSqrt hxb).trans_eq (CFC.conjSqrt_ringInverse_self b hb)
+  have hy_norm_sq : ‖y‖ ^ 2 ≤ 1 := by
+    rw [CStarModule.norm_sq_eq A, ← Unitization.norm_inr (𝕜 := ℂ), hy_inner]
+    exact (CStarAlgebra.norm_le_one_iff_of_nonneg _ hvqv_nonneg).mpr hvqv_le
+  -- Boundedness of `T` on the normalized vector `y` bounds `√(b⁻¹) p √(b⁻¹)` by `‖T‖²`.
+  have hvpv_nonneg : 0 ≤ CFC.conjSqrt b⁻¹ʳ p :=
+    hv_sa.conjugate_nonneg (Unitization.inr_nonneg _ inner_self_nonneg)
+  have hvpv_norm : ‖CFC.conjSqrt b⁻¹ʳ p‖ ≤ ‖T‖ ^ 2 := by
+    rw [← hTy_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A]
+    calc ‖T y‖ ^ 2 ≤ (‖T‖ * ‖y‖) ^ 2 := by gcongr; exact T.le_opNorm y
+      _ = ‖T‖ ^ 2 * ‖y‖ ^ 2 := mul_pow _ _ _
+      _ ≤ ‖T‖ ^ 2 * 1 := by gcongr
+      _ = ‖T‖ ^ 2 := mul_one _
+  have hvpv_le : CFC.conjSqrt b⁻¹ʳ p ≤ algebraMap ℝ (Unitization ℂ A) (‖T‖ ^ 2) :=
+    (CStarAlgebra.norm_le_iff_le_algebraMap _ (sq_nonneg ‖T‖) hvpv_nonneg).mp hvpv_norm
+  -- Conjugate back by `√b` to recover `p ≤ ‖T‖² • b`.
+  exact le_smul_of_conjSqrt_ringInverse_le hb hvpv_le
+
 /-- Paschke's inequality for bounded `A`-linear operators between Hilbert C⋆-modules:
 `⟪T x, T x⟫_A ≤ ‖T‖ ^ 2 • ⟪x, x⟫_A`, with no adjointability or completeness assumptions
 (Lance, Proposition 1.2). -/
@@ -349,68 +414,23 @@ theorem inner_map_map_le_norm_sq_smul {E F : Type*} [SeminormedAddCommGroup E] [
     [SMul A E] [CStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
     [CStarModule A F] (T : E →L[ℂ] F) (hT : ∀ (a : A) (x : E), T (a • x) = a • T x) (x : E) :
     inner A (T x) (T x) ≤ ‖T‖ ^ 2 • inner A x x := by
+  -- Pass to `Unitization ℂ A`, regularize `⟪x, x⟫_A` by `+ ε`, and let `ε → 0⁺`.
   rw [← Unitization.inr_le_inr_iff, Unitization.inr_smul]
   set q : Unitization ℂ A := (inner A x x : Unitization ℂ A)
-  set p : Unitization ℂ A := (inner A (T x) (T x) : Unitization ℂ A)
   have hq : 0 ≤ q := Unitization.inr_nonneg _ inner_self_nonneg
-  have hp : 0 ≤ p := Unitization.inr_nonneg _ inner_self_nonneg
-  have hle (ε : ℝ) (hε : 0 < ε) : p ≤ ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε) := by
-    set b : Unitization ℂ A := q + algebraMap ℝ (Unitization ℂ A) ε
-    have hε_nonneg : 0 ≤ algebraMap ℝ (Unitization ℂ A) ε := algebraMap_nonneg _ hε.le
+  have hle (ε : ℝ) (hε : 0 < ε) :
+      (inner A (T x) (T x) : Unitization ℂ A) ≤
+        ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε) := by
     have hε_pos : IsStrictlyPositive (algebraMap ℝ (Unitization ℂ A) ε) :=
-      (hε.ne'.isUnit.map (algebraMap ℝ (Unitization ℂ A))).isStrictlyPositive hε_nonneg
-    have hb : IsStrictlyPositive b := IsStrictlyPositive.nonneg_add hq hε_pos
-    set v : Unitization ℂ A := b ^ (-(1 / 2) : ℝ)
-    have hv_sa : IsSelfAdjoint v := (CFC.rpow_nonneg : 0 ≤ v).isSelfAdjoint
-    set y : E := v.fst • x + v.snd • x
-    have hy_inner : (inner A y y : Unitization ℂ A) = v * q * v := by
-      simpa only [hv_sa.star_eq] using inr_inner_unitization_smul v x
-    have hTy_eq : T y = v.fst • T x + v.snd • T x := by
-      simp only [y, map_add, map_smul, hT]
-    have hTy_inner : (inner A (T y) (T y) : Unitization ℂ A) = v * p * v := by
-      simpa only [hTy_eq, hv_sa.star_eq] using inr_inner_unitization_smul v (T x)
-    have hqb : q ≤ b := le_add_of_nonneg_right hε_nonneg
-    have hvqv_le : v * q * v ≤ 1 :=
-      (hv_sa.conjugate_le_conjugate hqb).trans_eq (CFC.conjugate_rpow_neg_one_half b hb)
-    have hvqv_nonneg : 0 ≤ v * q * v := by
-      simpa only [mul_zero, zero_mul] using hv_sa.conjugate_le_conjugate hq
-    have hy_norm_sq : ‖y‖ ^ 2 ≤ 1 := by
-      rw [CStarModule.norm_sq_eq A, ← Unitization.norm_inr (𝕜 := ℂ), hy_inner]
-      exact (CStarAlgebra.norm_le_one_iff_of_nonneg _ hvqv_nonneg).mpr hvqv_le
-    have hvpv_nonneg : 0 ≤ v * p * v := by
-      simpa only [mul_zero, zero_mul] using hv_sa.conjugate_le_conjugate hp
-    have hvpv_norm : ‖v * p * v‖ ≤ ‖T‖ ^ 2 := by
-      rw [← hTy_inner, Unitization.norm_inr (𝕜 := ℂ), ← CStarModule.norm_sq_eq A]
-      calc ‖T y‖ ^ 2 ≤ (‖T‖ * ‖y‖) ^ 2 := by gcongr; exact T.le_opNorm y
-        _ = ‖T‖ ^ 2 * ‖y‖ ^ 2 := mul_pow _ _ _
-        _ ≤ ‖T‖ ^ 2 * 1 := by gcongr
-        _ = ‖T‖ ^ 2 := mul_one _
-    have hvpv_le : v * p * v ≤ algebraMap ℝ (Unitization ℂ A) (‖T‖ ^ 2) :=
-      (CStarAlgebra.norm_le_iff_le_algebraMap (v * p * v) (sq_nonneg ‖T‖) hvpv_nonneg).mp hvpv_norm
-    have hsqrt_v : CFC.sqrt b * v = 1 := by
-      simp only [v, CFC.sqrt_eq_rpow .., ← CFC.rpow_add hb.isUnit]
-      norm_num
-      exact CFC.rpow_zero _
-    have hv_sqrt : v * CFC.sqrt b = 1 := by
-      simp only [v, CFC.sqrt_eq_rpow .., ← CFC.rpow_add hb.isUnit]
-      norm_num
-      exact CFC.rpow_zero _
-    calc p = (CFC.sqrt b * v) * p * (v * CFC.sqrt b) := by
-            rw [hsqrt_v, hv_sqrt, one_mul, mul_one]
-      _ = CFC.sqrt b * (v * p * v) * CFC.sqrt b := by
-            simp only [mul_assoc]
-      _ ≤ CFC.sqrt b * algebraMap ℝ (Unitization ℂ A) (‖T‖ ^ 2) * CFC.sqrt b :=
-            (CFC.sqrt_nonneg _).isSelfAdjoint.conjugate_le_conjugate hvpv_le
-      _ = ‖T‖ ^ 2 • (CFC.sqrt b * CFC.sqrt b) := by
-            rw [Algebra.algebraMap_eq_smul_one, mul_smul_comm, mul_one, smul_mul_assoc]
-      _ = ‖T‖ ^ 2 • b := by
-            rw [CFC.sqrt_mul_sqrt_self b hb.nonneg]
+      isStrictlyPositive_algebraMap hε
+    exact inr_inner_map_map_le_norm_sq_smul_of_le T hT x
+      (IsStrictlyPositive.nonneg_add hq hε_pos) (le_add_of_nonneg_right hε_pos.nonneg)
   have hcont : Continuous (fun ε : ℝ ↦ ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε)) := by
     fun_prop
   have htend : Tendsto (fun ε : ℝ ↦ ‖T‖ ^ 2 • (q + algebraMap ℝ (Unitization ℂ A) ε))
       (𝓝[>] 0) (𝓝 (‖T‖ ^ 2 • q)) := by
     simpa only [map_zero, add_zero] using (hcont.tendsto 0).mono_left nhdsWithin_le_nhds
-  exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall fun ε (hε : 0 < ε) ↦ hle ε hε)
+  exact ge_of_tendsto htend (eventually_nhdsWithin_of_forall hle)
 
 end Paschke
 
