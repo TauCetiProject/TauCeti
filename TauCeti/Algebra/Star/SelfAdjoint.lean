@@ -34,7 +34,7 @@ element `2 p - 1` is again self-adjoint.
   `star u * q = 0`.
 * `IsSelfAdjoint.two_mul_sub_one`: `2 p - 1` is self-adjoint for a self-adjoint `p`.
 * `IsSelfAdjoint.of_mul_eq_one`: a right inverse of a self-adjoint element is self-adjoint.
-* `IsSelfAdjoint.eq_of_same_range`: uniqueness of a self-adjoint element with the same range.
+* `IsSelfAdjoint.eq_of_mul_eq_right`: uniqueness from mutual multiplication identities.
 -/
 
 public section
@@ -93,7 +93,7 @@ theorem IsSelfAdjoint.of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv :
 
 /-- Two self-adjoint elements agreeing in range with an element `e` are equal.
 For idempotents in a ring, the equations express equality of their principal right ideals. -/
-theorem IsSelfAdjoint.eq_of_same_range {A : Type*} [Semigroup A] [StarMul A] {e p q : A}
+theorem IsSelfAdjoint.eq_of_mul_eq_right {A : Type*} [Semigroup A] [StarMul A] {e p q : A}
     (hp : IsSelfAdjoint p) (hq : IsSelfAdjoint q)
     (hep : e * p = p) (hpe : p * e = e) (heq : e * q = q) (hqe : q * e = e) :
     p = q := by
