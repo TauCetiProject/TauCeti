@@ -41,7 +41,7 @@ open scoped InnerProductSpace
 
 section ToSesqForm
 
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 E F : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
 variable (𝕜 E F) in
@@ -74,7 +74,12 @@ theorem inner_toSesqForm_symm_apply (a : F →ₗ⋆[𝕜] E →ₗ[𝕜] 𝕜) 
     ⟪x, (toSesqForm 𝕜 E F).symm a y⟫_𝕜 = a x y := by
   rw [← toSesqForm_apply_apply, LinearEquiv.apply_symm_apply]
 
-variable [FiniteDimensional 𝕜 E]
+end ToSesqForm
+
+section ToSesqFormEnd
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E]
 
 /-- The identity represents the inner product. -/
 @[simp]
@@ -110,7 +115,7 @@ theorem gram_mul_toMatrix_toSesqForm_symm {ι : Type*} [Fintype ι] [DecidableEq
     ← b.sum_repr ((toSesqForm 𝕜 E E).symm a (b j)), inner_sum]
   simp [Matrix.gram, LinearMap.toMatrix_apply, inner_smul_right, mul_comm]
 
-end ToSesqForm
+end ToSesqFormEnd
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [FiniteDimensional 𝕜 E]
