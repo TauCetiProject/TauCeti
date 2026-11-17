@@ -45,7 +45,6 @@ connected.
 
 * `TauCeti.exists_trivialization_twoFieldEquators_sphere`: `Σ → Sⁿ⁺²` is locally trivial with
   fibre the unit sphere `Sⁿ` of `ℝⁿ⁺¹`.
-* `TauCeti.compactSpace_twoFieldEquators`: `Σ` is compact.
 * `TauCeti.simplyConnectedSpace_twoFieldEquators`: for `n ≥ 2`, `Σ` is simply connected.
 * `TauCeti.nonempty_homologicalOrientation_twoFieldEquators`: for `n ≥ 2`, `Σ` is orientable.
 
@@ -65,19 +64,6 @@ namespace TauCeti
 section Charts
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {u v : sphere (0 : E) 1 → E}
-
-/-- **The space of equators is compact.** -/
-theorem compactSpace_twoFieldEquators [FiniteDimensional ℝ E] (hu : Continuous u)
-    (hv : Continuous v) : CompactSpace (twoFieldEquators u v) :=
-  isCompact_iff_compactSpace.1 (isCompact_twoFieldEquators hu hv)
-
-/-- The unit sphere of a space of dimension `n + 3` is simply connected. -/
-private theorem simplyConnectedSpace_sphere_of_finrank_eq (n : ℕ) [Fact (finrank ℝ E = n + 3)] :
-    SimplyConnectedSpace (sphere (0 : E) 1) := by
-  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ (n := n + 2) Fact.out
-  refine simplyConnectedSpace_sphere ?_ 0 zero_le_one
-  rw [← finrank_eq_rank, Fact.out (p := finrank ℝ E = n + 3)]
-  exact_mod_cast (by omega : 2 < n + 3)
 
 variable {n : ℕ} [Fact (finrank ℝ E = n + 3)]
 
@@ -143,7 +129,7 @@ open Quaternion
 open scoped RightActions
 
 variable {E : Type} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Module ℍᵐᵒᵖ E]
-  [NormSMulClass ℍᵐᵒᵖ E] [ContinuousConstSMul ℍᵐᵒᵖ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {n : ℕ}
+  [NormSMulClass ℍᵐᵒᵖ E] [ContinuousConstSMul ℍᵐᵒᵖ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 3)] {i j : Fin 3}
 
 /-- **The quaternionic spaces of equators are orientable.** If the quaternions act on the right on
@@ -157,8 +143,8 @@ theorem nonempty_homologicalOrientation_twoFieldEquators_quaternionFrame (hn : 2
       (letI := twoFieldEquatorsChartedSpace (n := n) (u := fun x ↦ quaternionFrame (x : E) i)
           (v := fun x ↦ quaternionFrame (x : E) j)
           (continuous_quaternionFrame_sphere i) (continuous_quaternionFrame_sphere j)
-          (fun x : sphere (0 : E) 1 ↦ (orthonormal_vecCons_iff.1
-            (orthonormal_vecCons_quaternionFrame_of_ne (norm_eq_of_mem_sphere x) hij)).2.2);
+          (fun x : sphere (0 : E) 1 ↦
+            orthonormal_quaternionFrame_pair_of_ne (norm_eq_of_mem_sphere x) hij);
         HomologicalOrientation
           (twoFieldEquators (fun x ↦ quaternionFrame (x : E) i) fun x ↦ quaternionFrame (x : E) j)
           (EuclideanSpace ℝ (Fin (n + 2 + n))) (n + 2 + n)) :=

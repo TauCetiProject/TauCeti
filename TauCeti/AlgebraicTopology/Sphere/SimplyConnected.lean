@@ -50,6 +50,8 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere`: spheres of nonnegative radius in real normed spaces
   of rank greater than two are simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
+* `TauCeti.simplyConnectedSpace_sphere_of_finrank_eq`: the unit sphere of a space of dimension
+  `n + 3` is simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
 
@@ -450,6 +452,15 @@ two-sphere. -/
 instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
   simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
+
+/-- The unit sphere of a real normed space of dimension `n + 3` is simply connected. This is not an
+instance: `n` does not appear in the conclusion, so instance search could not find it. -/
+theorem simplyConnectedSpace_sphere_of_finrank_eq (n : ℕ) [Fact (Module.finrank ℝ E = n + 3)] :
+    SimplyConnectedSpace (sphere (0 : E) 1) := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ (n := n + 2) Fact.out
+  refine simplyConnectedSpace_sphere ?_ 0 zero_le_one
+  rw [← Module.finrank_eq_rank, Fact.out (p := Module.finrank ℝ E = n + 3)]
+  exact_mod_cast (by omega : 2 < n + 3)
 
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :
