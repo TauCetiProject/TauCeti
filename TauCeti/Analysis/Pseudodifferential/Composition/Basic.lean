@@ -48,7 +48,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   smoothing symbols form an ideal for `#`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le`: the decay
   `‖a(x, ξ + y) ∘ b̂(η, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-r)` of the integrand for frequency shifts
-  `‖y‖ ≤ R ‖η‖`.
+  `‖y‖ ≤ R ‖η‖`. For a family `bᵢ` whose slices have Fourier transforms decaying uniformly in `i`,
+  the decay is uniform in `i`
+  (`TauCeti.Symbol.exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le`).
 * `TauCeti.Symbol.sharpIntegrand`: the integrand `exp(2πi ⟪η, x⟫) a(x, ξ + sη) ∘ b̂(η, ξ)` with a
   scaled frequency shift, with its decay, continuity and integrability
   (`TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_sharpIntegrand_le` and its companions).
@@ -235,22 +237,25 @@ private theorem compIntegrand_eq_bilinear (p : CoordinateSpace n × CoordinateSp
   simp only [compIntegrand, sharpIntegrand_apply,
     ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply]
 
-/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
-frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
-`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
-positions in any set `K` on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`: a compact set
-(`Symbol.exists_bound_coefficient`), or all positions if `a` is uniform
-(`Symbol.IsUniform.exists_bound_coefficient`). -/
-theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
-    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+/-- **Decay of the composition integrand, uniformly in a family.** Let `bᵢ` be symbols of order
+`m` whose position slices have Fourier transforms `b̂ᵢ(η, ξ)` decaying in `η` faster than every
+power, with the weight `⟨ξ⟩ ^ m` and constants independent of `i`. For a frequency shift `y` with
+`‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂ᵢ(η, ξ)` then decays in `η` faster than
+every power, with the weight `⟨ξ⟩ ^ (m' + m)`, uniformly in `i` and for positions in any set `K`
+on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
+theorem exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le {ι : Type*}
+    {b : ι → Symbol n V W m}
+    (hb : ∀ r : ℝ, ∃ C, 0 ≤ C ∧ ∀ i η ξ, ‖𝓕 (fun y ↦ (b i).coefficient (y, ξ)) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2))
+    {K : Set (CoordinateSpace n)}
     (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
     (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
-      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+    ∃ C, 0 ≤ C ∧ ∀ i, ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
+      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ (b i).coefficient (y, ξ)) η)‖ ≤
         C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
   obtain ⟨Ca, hCa0, hCa⟩ := ha
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
-  refine ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun x hx ξ η y hy ↦ ?_⟩
+  obtain ⟨Cb, hCb0, hCb⟩ := hb (r + |m'|)
+  refine ⟨Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb, by positivity, fun i x hx ξ η y hy ↦ ?_⟩
   have hshift : (1 + ‖y‖ ^ 2) ^ (|m'| / 2) ≤ R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
     have hy' : ‖y‖ ≤ ‖R • η‖ := by rwa [norm_smul, Real.norm_of_nonneg (zero_le_one.trans hR)]
     refine (Real.rpow_le_rpow (by positivity)
@@ -264,8 +269,8 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
       (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
     rw [← Real.rpow_add (by positivity)]
     ring_nf
-  calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖
-      ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ :=
+  calc ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ (b i).coefficient (y, ξ)) η)‖
+      ≤ ‖a.coefficient (x, ξ + y)‖ * ‖𝓕 (fun y ↦ (b i).coefficient (y, ξ)) η‖ :=
         ContinuousLinearMap.opNorm_comp_le _ _
     _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
           (R ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
@@ -273,11 +278,49 @@ theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
         gcongr
         · exact (hCa x hx _).trans
             (by gcongr; exact (one_add_norm_add_sq_rpow_le_mul m' ξ y).trans (by gcongr))
-        · exact hCb η ξ
+        · exact hCb i η ξ
     _ = Ca * 2 ^ (|m'| / 2) * R ^ |m'| * Cb *
           ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
     _ = _ := by rw [hξ, hη]
+
+/-- **Decay of the composition integrand.** For a symbol `b` with compact spatial support and a
+frequency shift `y` with `‖y‖ ≤ R ‖η‖`, `R ≥ 1`, the composition `a(x, ξ + y) ∘ b̂(η, ξ)` decays in
+`η` faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for
+positions in any set `K` on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`: a compact set
+(`Symbol.exists_bound_coefficient`), or all positions if `a` is uniform
+(`Symbol.IsUniform.exists_bound_coefficient`). -/
+theorem HasCompactSpatialSupport.exists_norm_comp_fourier_slice_le
+    (hb : b.HasCompactSpatialSupport) {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η y : CoordinateSpace n, ‖y‖ ≤ R * ‖η‖ →
+      ‖(a.coefficient (x, ξ + y)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) :=
+  (exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le (b := fun _ : Unit ↦ b)
+    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩) ha r
+    hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
+
+/-- **Decay of the shifted composition integrand, uniformly in a family.** For a family `bᵢ` whose
+position slices have Fourier transforms decaying faster than every power uniformly in `i`, and
+frequency shifts `sη` with `|s| ≤ R`, the integrand `sharpIntegrand a bᵢ s (x, ξ) η` decays in `η`
+faster than every power, with the weight `⟨ξ⟩ ^ (m' + m)`, uniformly in `i` and `s` and for
+positions in any set on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
+theorem exists_norm_sharpIntegrand_le_of_forall_norm_fourier_le {ι : Type*}
+    {b : ι → Symbol n V W m}
+    (hb : ∀ r : ℝ, ∃ C, 0 ≤ C ∧ ∀ i η ξ, ‖𝓕 (fun y ↦ (b i).coefficient (y, ξ)) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2))
+    {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ i, ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ η, ‖sharpIntegrand a (b i) s (x, ξ) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨C, hC0, hC⟩ := exists_norm_comp_fourier_slice_le_of_forall_norm_fourier_le hb ha r hR
+  refine ⟨C, hC0, fun i s hs x hx ξ η ↦ ?_⟩
+  rw [sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul]
+  refine hC i x hx ξ η _ ?_
+  rw [norm_smul, Real.norm_eq_abs]
+  gcongr
 
 /-- **Decay of the shifted composition integrand.** For frequency shifts `sη` with `|s| ≤ R`, the
 integrand `sharpIntegrand a b s (x, ξ) η` decays in `η` faster than every power, with the weight
@@ -288,13 +331,10 @@ theorem HasCompactSpatialSupport.exists_norm_sharpIntegrand_le (hb : b.HasCompac
     (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
     (r : ℝ) {R : ℝ} (hR : 1 ≤ R) :
     ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ η, ‖sharpIntegrand a b s (x, ξ) η‖ ≤
-      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_comp_fourier_slice_le ha r hR
-  refine ⟨C, hC0, fun s hs x hx ξ η ↦ ?_⟩
-  rw [sharpIntegrand_apply, norm_smul, Circle.norm_coe, one_mul]
-  refine hC x hx ξ η _ ?_
-  rw [norm_smul, Real.norm_eq_abs]
-  gcongr
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) :=
+  (exists_norm_sharpIntegrand_le_of_forall_norm_fourier_le (b := fun _ : Unit ↦ b)
+    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩) ha r
+    hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
 
 /-- The shifted composition integrand is jointly continuous in the position, the frequency and the
 integration variable. -/
@@ -326,6 +366,28 @@ theorem HasCompactSpatialSupport.integrable_sharpIntegrand (hb : b.HasCompactSpa
       (continuous_const.prodMk continuous_id)).aestronglyMeasurable
     (.of_forall fun η ↦ hC s (le_max_right 1 |s|) p.1 rfl p.2 η)
 
+/-- `‖∫ sharpIntegrand a bᵢ s (x, ξ) η dη‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniformly in `i`, for a family
+`bᵢ` whose position slices have Fourier transforms decaying faster than every power uniformly in
+`i`, uniformly for `|s| ≤ R` and positions in any set on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
+theorem exists_norm_integral_sharpIntegrand_le_of_forall_norm_fourier_le {ι : Type*}
+    {b : ι → Symbol n V W m}
+    (hb : ∀ r : ℝ, ∃ C, 0 ≤ C ∧ ∀ i η ξ, ‖𝓕 (fun y ↦ (b i).coefficient (y, ξ)) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2))
+    {K : Set (CoordinateSpace n)}
+    (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
+    {R : ℝ} (hR : 1 ≤ R) :
+    ∃ C, 0 ≤ C ∧ ∀ i, ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ,
+      ‖∫ η, sharpIntegrand a (b i) s (x, ξ) η‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
+  obtain ⟨C, hC0, hC⟩ :=
+    exists_norm_sharpIntegrand_le_of_forall_norm_fourier_le hb ha ((n : ℝ) + 1) hR
+  set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
+  have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
+  refine ⟨C * I, mul_nonneg hC0 hI, fun i s hs x hx ξ ↦ ?_⟩
+  refine (norm_integral_le_of_norm_le (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
+    (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall fun η ↦ hC i s hs x hx ξ η)).trans_eq ?_
+  rw [integral_const_mul]
+  ring
+
 /-- `‖∫ sharpIntegrand a b s (x, ξ) η dη‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniformly for `|s| ≤ R` and
 positions in any set on which `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m'`. -/
 theorem HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le
@@ -333,15 +395,10 @@ theorem HasCompactSpatialSupport.exists_norm_integral_sharpIntegrand_le
     (ha : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m' / 2))
     {R : ℝ} (hR : 1 ≤ R) :
     ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ∈ K, ∀ ξ,
-      ‖∫ η, sharpIntegrand a b s (x, ξ) η‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := hb.exists_norm_sharpIntegrand_le ha ((n : ℝ) + 1) hR
-  set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
-  have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
-  refine ⟨C * I, mul_nonneg hC0 hI, fun s hs x hx ξ ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le (integrable_one_add_norm_sq_rpow_neg_succ_div_two.const_mul
-    (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2))) (.of_forall fun η ↦ hC s hs x hx ξ η)).trans_eq ?_
-  rw [integral_const_mul]
-  ring
+      ‖∫ η, sharpIntegrand a b s (x, ξ) η‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) :=
+  (exists_norm_integral_sharpIntegrand_le_of_forall_norm_fourier_le (b := fun _ : Unit ↦ b)
+    (fun r ↦ (hb.exists_norm_fourier_slice_le r).imp fun _ hC ↦ ⟨hC.1, fun _ ↦ hC.2⟩) ha
+    hR).imp fun _ hC ↦ ⟨hC.1, hC.2 ()⟩
 
 /-- The integrand of the composition symbol decays in `η` faster than every power, with the
 weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a compact set. -/
@@ -1057,6 +1114,27 @@ theorem coefficient_coordSubSymbol (z : CoordinateSpace n) (j : Fin n)
     (q : CoordinateSpace n × CoordinateSpace n) :
     (coordSubSymbol (W := W) z j).coefficient q = (q.1 - z) j • ContinuousLinearMap.id ℂ W :=
   coefficient_ofSpatial _ _ q
+
+private theorem hasFDerivAt_coordSub (z : CoordinateSpace n) (j : Fin n) (y : CoordinateSpace n) :
+    HasFDerivAt (fun y' : CoordinateSpace n ↦ (y' - z) j • ContinuousLinearMap.id ℂ W)
+      ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).smulRight
+        (ContinuousLinearMap.id ℂ W)) y := by
+  have h := ((EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasFDerivAt (x := y)).sub_const
+    (z j)
+  convert h.smul_const (ContinuousLinearMap.id ℂ W) using 1
+  funext y'
+  simp [sub_smul]
+
+/-- The position derivative `∂_{xₗ}` of the symbol of multiplication by `(y - z)ⱼ` is the constant
+`δⱼₗ`. -/
+theorem coefficient_spatialDeriv_coordSubSymbol (z : CoordinateSpace n) (j l : Fin n)
+    (x ξ : CoordinateSpace n) :
+    (spatialDeriv l (coordSubSymbol (W := W) z j)).coefficient (x, ξ) =
+      (EuclideanSpace.single l (1 : ℝ)) j • ContinuousLinearMap.id ℂ W := by
+  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+  simp only [coefficient_coordSubSymbol]
+  rw [(hasFDerivAt_coordSub z j x).fderiv]
+  simp
 
 /-- Multiplying a symbol by `(y - z)ⱼ` before quantizing multiplies the quantization by
 `(x - z)ⱼ`. -/
