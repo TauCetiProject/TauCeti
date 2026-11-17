@@ -17,21 +17,14 @@ For a random population `ρ : Measure (κ → α)`, `sampleWithoutReplacement ρ
 into bounds on eventwise excess, extended total variation distance (`etvDist`), real total
 variation distance (`tvDist`), and real event probabilities (`Measure.real`).
 
-This file develops:
-
-1. **Subsingleton-sample vanishing**: when `Subsingleton ι` (`|ι| ≤ 1`), sampling without and with
-   replacement coincide, so `etvDist` (for finite `ρ`) and `tvDist` (unconditionally) vanish.
-2. **Random-population collision bounds** for `sampleWithoutReplacement ρ` against
-   `sampleWithReplacement ρ`: one-sided measurable-event excesses, `etvDist`, `tvDist`, and real
-   eventwise differences `|P.real A - Q.real A|` in the collision-event form, the exact
-   falling-factorial form `1 - (|κ|)_|ι| / |κ| ^ |ι|`, and the pairwise union-bound form
-   `choose |ι| 2 / |κ|`, with no nonemptiness or embedding assumptions needed on the upper bounds.
+This file develops random-population collision bounds for `sampleWithoutReplacement ρ` against
+`sampleWithReplacement ρ`: one-sided measurable-event excesses, `etvDist`, `tvDist`, and real
+eventwise differences `|P.real A - Q.real A|` in the collision-event form, the exact
+falling-factorial form `1 - (|κ|)_|ι| / |κ| ^ |ι|`, and the pairwise union-bound form
+`choose |ι| 2 / |κ|`, with no nonemptiness or embedding assumptions needed on the upper bounds.
 
 ## Main declarations
 
-* `etvDist_sampleWithoutReplacement_sampleWithReplacement_of_subsingleton`,
-  `tvDist_sampleWithoutReplacement_sampleWithReplacement_of_subsingleton`: vanishing discrepancy
-  on subsingleton sample indices;
 * `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_le_collision`,
   `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_le_exact_collision`,
   `iSup_sampleWithoutReplacement_sub_sampleWithReplacement_le` (and reversed companions):
@@ -55,26 +48,6 @@ open MeasureTheory ProbabilityTheory
 open scoped ENNReal
 
 namespace TauCeti.Probability
-
-section Vanishing
-
-variable {ι κ α : Type*} [MeasurableSpace κ] [MeasurableSpace α]
-
-/-- On a subsingleton sample index, `etvDist` between sampling without and with replacement is
-zero for every finite population law. -/
-theorem etvDist_sampleWithoutReplacement_sampleWithReplacement_of_subsingleton
-    [Fintype ι] [Subsingleton ι] (ρ : Measure (κ → α)) [IsFiniteMeasure ρ] :
-    etvDist (sampleWithoutReplacement (ι := ι) ρ) (sampleWithReplacement (ι := ι) ρ) = 0 := by
-  simp
-
-/-- On a subsingleton sample index, `tvDist` between sampling without and with replacement is
-zero for every population law. -/
-theorem tvDist_sampleWithoutReplacement_sampleWithReplacement_of_subsingleton
-    [Fintype ι] [Subsingleton ι] (ρ : Measure (κ → α)) :
-    tvDist (sampleWithoutReplacement (ι := ι) ρ) (sampleWithReplacement (ι := ι) ρ) = 0 := by
-  simp
-
-end Vanishing
 
 section CollisionBounds
 
@@ -223,16 +196,13 @@ theorem abs_sampleWithoutReplacement_real_sub_sampleWithReplacement_real_le_coll
     |(sampleWithoutReplacement (ι := ι) ρ).real A -
         (sampleWithReplacement (ι := ι) ρ).real A| ≤
       (uniformOn (Set.univ : Set (ι → κ))).real {k | ¬ Function.Injective k} := by
-  rw [abs_sub_le_iff]
-  constructor
-  · have h := ENNReal.toReal_mono (by finiteness)
+  simp only [abs_sub_le_iff, sub_le_iff_le_add', measureReal_def]
+  exact ⟨ENNReal.toReal_le_add
       (sampleWithoutReplacement_le_sampleWithReplacement_add_collision (ρ := ρ) A)
-    rw [ENNReal.toReal_add (by finiteness) (by finiteness)] at h
-    simpa [measureReal_def] using sub_le_iff_le_add'.2 h
-  · have h := ENNReal.toReal_mono (by finiteness)
+      (by finiteness) (by finiteness),
+    ENNReal.toReal_le_add
       (sampleWithReplacement_le_sampleWithoutReplacement_add_collision (ρ := ρ) A)
-    rw [ENNReal.toReal_add (by finiteness) (by finiteness)] at h
-    simpa [measureReal_def] using sub_le_iff_le_add'.2 h
+      (by finiteness) (by finiteness)⟩
 
 /-- Real eventwise bound with the exact falling-factorial collision error (factor `1`, for
 arbitrary subsets `A`). -/

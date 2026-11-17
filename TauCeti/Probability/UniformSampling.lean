@@ -73,9 +73,11 @@ set, without any finiteness or measurable-singleton assumption. -/
 theorem _root_.MeasurableEquiv.map_uniformOn {α β : Type*} [MeasurableSpace α]
     [MeasurableSpace β] (e : α ≃ᵐ β) (s : Set α) :
     (uniformOn s).map e = uniformOn (e '' s) := by
-  nth_rw 1 [← Set.preimage_image_eq s e.injective]
-  rw [uniformOn, uniformOn, ProbabilityTheory.cond, ProbabilityTheory.cond,
-    Measure.map_smul _ e.measurable.aemeasurable, ← e.restrict_map, ← e.map_apply, e.map_count]
+  ext t ht
+  have hcount (u : Set α) : Measure.count (e '' u) = Measure.count u := by
+    rw [← e.map_count, e.map_apply, Set.preimage_image_eq _ e.injective]
+  rw [e.map_apply, uniformOn, uniformOn, cond_apply' (e.measurable ht), cond_apply' ht,
+    ← Set.image_inter_preimage, hcount, hcount]
 
 /-- The real-valued mass of an event under a uniform measure is the ratio of its cardinality to
 the cardinality of the sampling set. This also covers the zero measure when the sampling set is
@@ -197,16 +199,16 @@ theorem uniformOn_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace �
 
 /-- On a subsingleton sample index, no selection has a coordinate collision. -/
 @[simp high]
-theorem uniformOn_not_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
+theorem uniformOn_not_injective_eq_zero_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
     (s : Set (ι → κ)) :
     uniformOn s {f : ι → κ | ¬ Function.Injective f} = 0 := by
   have h : {f : ι → κ | ¬ Function.Injective f} = ∅ :=
     Set.eq_empty_of_forall_notMem fun f hf => hf (Function.injective_of_subsingleton f)
   simp [h]
 
-/-- Real-valued form of `uniformOn_not_injective_of_subsingleton`. -/
+/-- Real-valued form of `uniformOn_not_injective_eq_zero_of_subsingleton`. -/
 @[simp high]
-theorem uniformOn_real_not_injective_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
+theorem uniformOn_real_not_injective_eq_zero_of_subsingleton [Subsingleton ι] [MeasurableSpace κ]
     (s : Set (ι → κ)) :
     (uniformOn s).real {f : ι → κ | ¬ Function.Injective f} = 0 := by
   simp [measureReal_def]
@@ -216,10 +218,10 @@ law on `ι → κ` without any finiteness or measurable-singleton assumption on 
 theorem pi_uniformOn_univ_of_subsingleton [Fintype ι] [Subsingleton ι] [MeasurableSpace κ] :
     (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) =
       uniformOn (Set.univ : Set (ι → κ)) := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨i₀⟩
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
   · rw [Measure.pi_of_empty, uniformOn, Subsingleton.count_eq_dirac isEmptyElim, cond_univ]
-  · obtain ⟨i₀⟩ := i₀
-    let _ : Unique ι := uniqueOfSubsingleton i₀
+  · let _ : Unique ι := uniqueOfSubsingleton i₀
+    -- `measurePreserving_funUnique` uses `Unique.fintype`; unify with the ambient `Fintype ι`.
     obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
     set e := MeasurableEquiv.funUnique ι κ
     have hmap₁ : (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)).map e =

@@ -120,6 +120,13 @@ theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ �
     Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
   rfl
 
+/-- Evaluating a sampled deterministic population on a measurable event is the selection mass
+of its preimage. -/
+theorem samplePopulation_dirac_apply {σ : Measure (ι → κ)} [SFinite σ] {x : κ → α}
+    {A : Set (ι → α)} (hA : MeasurableSet A) :
+    samplePopulation σ (Measure.dirac x) A = σ ((fun k : ι → κ => fun i => x (k i)) ⁻¹' A) := by
+  rw [samplePopulation_dirac, Measure.map_apply (measurable_readPopulation x) hA]
+
 /-- A measurable observation commutes with sampling along any selection law. The population law
 need only be s-finite; no finiteness or normalization is required of the selection law. -/
 theorem samplePopulation_map {β : Type*} [MeasurableSpace β] (σ : Measure (ι → κ))
@@ -199,8 +206,7 @@ theorem samplePopulation_le_add_lintegral_of_measurableSet
     (∫⁻ x, σ₁ ((fun k i => x (k i)) ⁻¹' A) ∂ρ)
         ≤ ∫⁻ x, σ₂ ((fun k i => x (k i)) ⁻¹' A) + g x ∂ρ := by
           refine lintegral_mono_ae (h.mono fun x hx => ?_)
-          simpa only [samplePopulation_dirac,
-            Measure.map_apply (measurable_readPopulation x) hA] using hx
+          rwa [samplePopulation_dirac_apply hA, samplePopulation_dirac_apply hA] at hx
     _ = (∫⁻ x, σ₂ ((fun k i => x (k i)) ⁻¹' A) ∂ρ) + ∫⁻ x, g x ∂ρ :=
           lintegral_add_left hf g
 

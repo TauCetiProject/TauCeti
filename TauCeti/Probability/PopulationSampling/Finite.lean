@@ -234,14 +234,6 @@ theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton [Finty
   rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
     uniformOn_injective_of_subsingleton, pi_uniformOn_univ_of_subsingleton]
 
-/-- Cardinality form of `sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton`: when
-`|ι| ≤ 1`, sampling without replacement and sampling with replacement coincide. -/
-theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_card_le_one [Fintype ι]
-    (h : Fintype.card ι ≤ 1) (ρ : Measure (κ → α)) :
-    sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
-  have : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.1 h
-  exact sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton ρ
-
 variable [MeasurableSingletonClass κ]
 
 /-- Sampling with replacement is `samplePopulation` along the uniform law on all index maps. -/
@@ -309,9 +301,8 @@ theorem sampleWithoutReplacement_le_sampleWithReplacement_add_collision [Finite 
     samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ A
         ≤ samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ A + ∫⁻ _, c ∂ρ :=
           samplePopulation_le_add_lintegral (fun B hB => ae_of_all _ fun x => by
-            simpa only [samplePopulation_dirac,
-              Measure.map_apply (measurable_readPopulation x) hB] using
-              uniformOn_injective_le_add ((fun k i => x (k i)) ⁻¹' B)) A
+            rw [samplePopulation_dirac_apply hB, samplePopulation_dirac_apply hB]
+            exact uniformOn_injective_le_add _) A
     _ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ A + c := by simp
 
 omit [Fintype κ] in
@@ -328,9 +319,8 @@ theorem sampleWithReplacement_le_sampleWithoutReplacement_add_collision [Finite 
     samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ A
         ≤ samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ A + ∫⁻ _, c ∂ρ :=
           samplePopulation_le_add_lintegral (fun B hB => ae_of_all _ fun x => by
-            simpa only [samplePopulation_dirac,
-              Measure.map_apply (measurable_readPopulation x) hB] using
-              uniformOn_univ_le_injective_add ((fun k i => x (k i)) ⁻¹' B)) A
+            rw [samplePopulation_dirac_apply hB, samplePopulation_dirac_apply hB]
+            exact uniformOn_univ_le_injective_add _) A
     _ = samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ A + c := by simp
 
 /-- **Exact-collision finite sampling bound, without replacement to with replacement.** For every

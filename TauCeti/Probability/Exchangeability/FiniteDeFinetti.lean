@@ -94,7 +94,8 @@ theorem ExchangeableAt.sampleWithReplacement_eq_prefixLaw_of_le_one
     {X : ℕ → Ω → α} {m n : ℕ} (h : ExchangeableAt μ X n) (hm : m ≤ 1) (hmn : m ≤ n)
     (hX : ∀ i : Fin n, AEMeasurable (X i.val) μ) :
     sampleWithReplacement (ι := Fin m) (prefixLaw μ X n) = prefixLaw μ X m := by
-  rw [← sampleWithoutReplacement_eq_sampleWithReplacement_of_card_le_one (by simpa using hm),
+  have : Subsingleton (Fin m) := Fintype.card_le_one_iff_subsingleton.1 (by simpa using hm)
+  rw [← sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton,
     h.sampleWithoutReplacement_eq_prefixLaw hmn hX]
 
 /-- **Finite de Finetti theorem.** If the first `n` coordinates of a process are exchangeable and
