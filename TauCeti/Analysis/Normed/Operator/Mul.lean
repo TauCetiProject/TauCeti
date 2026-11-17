@@ -14,7 +14,9 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 This file identifies the underlying linear maps of bounded left and right multiplication,
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
-It also records the norm of a difference of scalar-to-vector maps.
+It also records the norm of a difference of scalar-to-vector maps, notes that every subsingleton
+seminormed algebra is regular, and shows that left multiplication in a regular normed algebra is
+faithful (`RegularNormedAlgebra.faithfulSMul`).
 For unital algebras we also bundle the left regular representation as a unital algebra
 homomorphism and give its inverse norm bound without assuming that the identity has norm one.
 Finally, exponentiating bounded left or right multiplication by `x` gives multiplication by
@@ -54,7 +56,23 @@ theorem toLinearMap_flip_mul_eq_mulRight (x : R) :
   ext y
   simp
 
+/-- Every subsingleton seminormed algebra is trivially regular, since both the algebra and its
+bounded endomorphism ring are subsingletons. -/
+instance _root_.RegularNormedAlgebra.of_subsingleton [Subsingleton R] :
+    RegularNormedAlgebra 𝕜 R where
+  isometry_mul' := AddMonoidHomClass.isometry_of_norm _ fun x ↦ by
+    simp [Subsingleton.elim x 0, Subsingleton.elim (mul 𝕜 R 0) 0]
+
 end NonUnital
+
+variable (𝕜) in
+/-- Left multiplication in a regular normed algebra is faithful. -/
+theorem _root_.RegularNormedAlgebra.faithfulSMul [NonUnitalNormedRing R]
+    [NormedSpace 𝕜 R] [IsScalarTower 𝕜 R R] [SMulCommClass 𝕜 R R] [RegularNormedAlgebra 𝕜 R] :
+    FaithfulSMul R R where
+  eq_of_smul_eq_smul h := (isometry_mul 𝕜 R).injective <| by
+    ext c
+    simpa [smul_eq_mul] using h c
 
 section Unital
 
