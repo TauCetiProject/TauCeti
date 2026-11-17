@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.SphericalPendulum.TurningPoint
 public import TauCeti.Analysis.SpecialFunctions.Integrals.ArctanSqrt
-import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
+import TauCeti.Topology.Circle.Degree
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.Topology.Algebra.Group.Order
@@ -778,11 +778,6 @@ end Continuity
 
 /-! ### The rotation angle around the focus–focus value -/
 
-/-- The sine is negative on the lower half-circle `t ∈ (π, 2π)`. -/
-private theorem sin_neg_of_mem_Ioo_pi_two_pi {t : ℝ} (ht : t ∈ Ioo π (2 * π)) : sin t < 0 := by
-  rw [← sin_sub_two_pi]
-  exact sin_neg_of_neg_of_neg_pi_lt (by linarith [ht.2]) (by linarith [ht.1])
-
 /-- The one-sided limits of the rotation angle along the circle `γ(t) = (1 + r cos t, r sin t)`, at
 the points `γ(0) = γ(2π) = (1 + r, 0)` and `γ(π) = (1 - r, 0)` where it crosses the axis `j = 0`. -/
 private theorem tendsto_sphericalPendulumRotationAngle_circle {r : ℝ} (hr : 0 < r) (hr₂ : r < 2) :
@@ -801,7 +796,7 @@ private theorem tendsto_sphericalPendulumRotationAngle_circle {r : ℝ} (hr : 0 
   have hup : ∀ t ∈ Ioo 0 π, γ t ∈ {c : ℝ × ℝ | 0 < c.2} := fun t ht ↦
     mul_pos hr (sin_pos_of_pos_of_lt_pi ht.1 ht.2)
   have hdown : ∀ t ∈ Ioo π (2 * π), γ t ∈ {c : ℝ × ℝ | c.2 < 0} := fun t ht ↦
-    mul_neg_of_pos_of_neg hr (sin_neg_of_mem_Ioo_pi_two_pi ht)
+    mul_neg_of_pos_of_neg hr (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2)
   have hγ0 : γ 0 = (1 + r, 0) := by simp [hγdef]
   have hγπ : γ π = (1 - r, 0) := by simp [hγdef, sub_eq_add_neg]
   have hγ2π : γ (2 * π) = (1 + r, 0) := by simp [hγdef]
@@ -863,7 +858,8 @@ theorem sub_eq_neg_two_mul_pi_of_coe_eq_sphericalPendulumRotationAngle {r : ℝ}
   have hIcc₁ : Ioo 0 π ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨ht.1.le, by linarith [ht.2]⟩
   have hIcc₂ : Ioo π (2 * π) ⊆ Icc 0 (2 * π) := fun t ht ↦ ⟨by linarith [ht.1], ht.2.le⟩
   have hsin₁ : ∀ t ∈ Ioo 0 π, sin t ≠ 0 := fun t ht ↦ (sin_pos_of_pos_of_lt_pi ht.1 ht.2).ne'
-  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦ (sin_neg_of_mem_Ioo_pi_two_pi ht).ne
+  have hsin₂ : ∀ t ∈ Ioo π (2 * π), sin t ≠ 0 := fun t ht ↦
+    (sin_neg_of_pi_lt_of_lt_two_pi ht.1 ht.2).ne
   -- On each open half-circle the lift differs from `Θ ∘ γ` by a constant.
   obtain ⟨C₁, hC₁⟩ := isPreconnected_Ioo.exists_forall_sub_eq_of_coe_eq (hL.mono hIcc₁)
     (hΘ hsin₁) fun t ht ↦ hLΘ t (hIcc₁ ht) (hsin₁ t ht)

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Angle
-import TauCeti.Topology.Circle.Degree
 
 /-!
 # Normalising a real angle into `[0, 2π)`
@@ -46,8 +45,6 @@ order of the rank-two rotations in the geometric representation of a Coxeter gro
   nonpositive (`Real.Angle.toReal_add_toReal_eq_sub_pi_iff`).
 * `Real.Angle.eq_two_mul_of_abs_toReal_eq`: if `θ + α = β ∈ (0, π)` with `|θ| = α`, then
   `β = 2α`.
-* `IsPreconnected.exists_forall_sub_eq_of_coe_eq`: two real functions continuous on a preconnected
-  set and equal there in `Real.Angle` differ by a constant on it.
 -/
 
 public section
@@ -170,18 +167,5 @@ theorem _root_.Real.Angle.eq_two_mul_of_abs_toReal_eq {θ : Real.Angle} {α β :
     have h := congrArg Real.Angle.toReal hsum
     rw [hzero, Real.Angle.coe_zero, Real.Angle.toReal_zero, hβrep] at h
     linarith
-
-/-- **Continuous lifts of an angle differ by a constant.** Two real functions that are continuous
-on a preconnected set and agree there modulo `2π` differ by a constant on it: this is
-`Circle.exists_forall_eq_add_of_exp_eq` on the subtype, through `Real.Angle.toCircle`. -/
-theorem _root_.IsPreconnected.exists_forall_sub_eq_of_coe_eq {α : Type*} [TopologicalSpace α]
-    {s : Set α} (hs : IsPreconnected s) {f g : α → ℝ} (hf : ContinuousOn f s)
-    (hg : ContinuousOn g s) (h : ∀ x ∈ s, (f x : Real.Angle) = g x) :
-    ∃ C, ∀ x ∈ s, f x - g x = C := by
-  have := isPreconnected_iff_preconnectedSpace.1 hs
-  obtain ⟨c, hc⟩ := Circle.exists_forall_eq_add_of_exp_eq (G := fun x : s ↦ f x)
-    (G' := fun x : s ↦ g x) hf.domRestrict hg.domRestrict
-    fun x ↦ by simpa only [Real.Angle.toCircle_coe] using congrArg Real.Angle.toCircle (h x x.2)
-  exact ⟨c, fun x hx ↦ by linarith [hc ⟨x, hx⟩]⟩
 
 end TauCeti
