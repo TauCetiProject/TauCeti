@@ -158,7 +158,7 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_prod [DecidableEq K] {L : Type
     ‖f.evalAt x‖ ≤ f.gaussNorm norm c * (Z.map fun b ↦ ‖x - algebraMap K L b‖ / c).prod := by
   have : IsUltrametricDist L := .of_normedAlgebra K
   induction Z using Multiset.induction_on generalizing f with
-  | empty => simpa using norm_evalAt_le_gaussNorm (hasGaussNorm_of_isRestricted hf) hx
+  | empty => simpa using hf.norm_evalAt_le_gaussNorm hx
   | cons a Z ih =>
     have ha := hZ a (Multiset.mem_cons_self a Z)
     have hfa : f.evalAt a = 0 := by
