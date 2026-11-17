@@ -9,6 +9,7 @@ public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.WeakStar
 public import TauCeti.Topology.Algebra.ContinuousMonoidHom.Basic
 public import Mathlib.GroupTheory.Finiteness
+import TauCeti.GroupTheory.Amenable.Additive
 
 /-!
 # Directed unions of amenable subgroups
@@ -34,15 +35,17 @@ restricts to a function in the `UCB` space of each of them.
 
 ## Main results
 
-* `TauCeti.Amenable.of_forall_finset_subset_range`: a topological group is amenable if each of its
-  finite subsets lies in the range of a continuous homomorphism from an amenable topological group,
-  drawn from a fixed family.
-* `TauCeti.amenable_iSup_of_directed`: the supremum of a directed family of amenable subgroups is
-  an amenable subgroup.
-* `TauCeti.Amenable.of_directed_of_iSup_eq_top`: a topological group which is the supremum of a
-  directed family of amenable subgroups is amenable.
-* `TauCeti.Amenable.of_forall_fg`: a topological group whose finitely generated subgroups are
-  amenable is amenable.
+* `TauCeti.Amenable.of_forall_finset_subset_range`,
+  `TauCeti.AddAmenable.of_forall_finset_subset_range`: a topological group or additive group is
+  amenable if each of its finite subsets lies in the range of a continuous homomorphism from an
+  amenable topological group, drawn from a fixed family.
+* `TauCeti.amenable_iSup_of_directed`, `TauCeti.addAmenable_iSup_of_directed`: the supremum of a
+  directed family of amenable subgroups is an amenable subgroup.
+* `TauCeti.Amenable.of_directed_of_iSup_eq_top`, `TauCeti.AddAmenable.of_directed_of_iSup_eq_top`:
+  a topological group or additive group which is the supremum of a directed family of amenable
+  subgroups is amenable.
+* `TauCeti.Amenable.of_forall_fg`, `TauCeti.AddAmenable.of_forall_fg`: a topological group or
+  additive group whose finitely generated subgroups are amenable is amenable.
 
 ## References
 
@@ -72,9 +75,33 @@ theorem Amenable.of_forall_finset_subset_range {ι : Type*} {K : ι → Type*} [
   rw [← hk]
   exact hm.map_apply_leftTranslation (φ i) k p.2
 
+/-- A topological additive group `A` is amenable if, for a family of continuous homomorphisms
+`φ i : K i →ₜ+ A` from amenable topological additive groups, every finite subset of `A` lies in
+the range of some `φ i`. -/
+theorem AddAmenable.of_forall_finset_subset_range {A : Type*} [AddGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A] {ι : Type*} {K : ι → Type*} [∀ i, AddGroup (K i)]
+    [∀ i, TopologicalSpace (K i)] [∀ i, IsTopologicalAddGroup (K i)] [∀ i, AddAmenable (K i)]
+    (φ : ∀ i, K i →ₜ+ A) (h : ∀ s : Finset A, ∃ i, (s : Set A) ⊆ Set.range (φ i)) :
+    AddAmenable A := by
+  classical
+  refine amenable_multiplicative_iff.1 ?_
+  let φ' (i : ι) : Multiplicative (K i) →ₜ* Multiplicative A :=
+    ⟨AddMonoidHom.toMultiplicative (φ i).toAddMonoidHom, (φ i).continuous⟩
+  refine Amenable.of_forall_finset_subset_range φ' fun s => ?_
+  obtain ⟨i, hi⟩ := h (s.image Multiplicative.toAdd)
+  refine ⟨i, fun x hx => ?_⟩
+  obtain ⟨k, hk⟩ := hi (Finset.mem_coe.2 (Finset.mem_image_of_mem _ hx))
+  exact ⟨Multiplicative.ofAdd k, by simp [φ', hk]⟩
+
+attribute [to_additive existing] Amenable.of_forall_finset_subset_range
+
 /-- The supremum `⨆ i, H i` of a directed family of amenable subgroups `H i` of a topological
 group is an amenable subgroup. It is the union of the family when the family is nonempty, and the
 trivial subgroup when it is empty. -/
+@[to_additive addAmenable_iSup_of_directed
+  /-- The supremum `⨆ i, H i` of a directed family of amenable additive subgroups `H i` of a
+  topological additive group is an amenable additive subgroup. It is the union of the family when
+  the family is nonempty, and the trivial additive subgroup when it is empty. -/]
 theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) [∀ i, Amenable (H i)] : Amenable ↥(⨆ i, H i) := by
   classical
@@ -92,6 +119,9 @@ theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
 
 /-- A topological group which is the supremum of a directed family of amenable subgroups is
 amenable. -/
+@[to_additive
+  /-- A topological additive group which is the supremum of a directed family of amenable additive
+  subgroups is amenable. -/]
 theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, Amenable (H i)] : Amenable G :=
   have := amenable_iSup_of_directed hH
@@ -99,6 +129,9 @@ theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → Subgroup G}
     (Function.Surjective.denseRange fun x => ⟨⟨x, htop ▸ Subgroup.mem_top x⟩, rfl⟩)
 
 /-- A topological group all of whose finitely generated subgroups are amenable is amenable. -/
+@[to_additive
+  /-- A topological additive group all of whose finitely generated additive subgroups are amenable
+  is amenable. -/]
 theorem Amenable.of_forall_fg (h : ∀ K : Subgroup G, K.FG → Amenable K) : Amenable G := by
   have : ∀ K : {K : Subgroup G // K.FG}, Amenable K.1 := fun K => h K.1 K.2
   refine .of_forall_finset_subset_range

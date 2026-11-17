@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.Amenable.Finite
 public import TauCeti.GroupTheory.Amenable.Foelner
 public import TauCeti.GroupTheory.Amenable.WeakStar
 public import TauCeti.MeasureTheory.Group.Foelner.AddContent
+import TauCeti.GroupTheory.Amenable.Additive
 
 /-!
 # Averages over finite sets and amenability from Følner sets
@@ -55,9 +56,10 @@ unspecified weak-* cluster point.
 * `TauCeti.Amenable.of_tendsto_card_smul_symmDiff_div_card`: a topological group with finite
   nonempty sets `F i` such that `|g F i △ F i| / |F i| → 0` for every `g`, along a nontrivial
   filter, is amenable.
-* `TauCeti.Amenable.of_isFoelner`: the same for a counting-measure Følner family.
-* `TauCeti.Amenable.of_hasFoelnerSets`: a group with Følner sets is amenable for every group
-  topology.
+* `TauCeti.Amenable.of_isFoelner`, `TauCeti.AddAmenable.of_isAddFoelner`: the same for a
+  counting-measure Følner family.
+* `TauCeti.Amenable.of_hasFoelnerSets`, `TauCeti.AddAmenable.of_hasAddFoelnerSets`: a group or
+  additive group with Følner sets is amenable for every group topology.
 * `TauCeti.Mean.isLeftInvariant_ofIsFoelner`: the density-limit mean is left invariant.
 * `TauCeti.Mean.tendsto_average_ofIsFoelner`: along an ultrafilter, the averages over a Følner
   family converge weak-* to its density-limit mean.
@@ -210,5 +212,21 @@ theorem Amenable.of_isFoelner [MeasurableSpace G] {ι : Type*}
 theorem Amenable.of_hasFoelnerSets (_ : HasFoelnerSets G) : Amenable G :=
   let : MeasurableSpace G := ⊤
   .of_isFoelner (isFoelner_maxFoelner G MeasureTheory.Measure.count)
+
+/-- An additive group with additive Følner sets is amenable, for every additive group topology. -/
+theorem AddAmenable.of_hasAddFoelnerSets {A : Type*} [AddGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A] (h : HasAddFoelnerSets A) : AddAmenable A :=
+  amenable_multiplicative_iff.1 (.of_hasFoelnerSets (hasFoelnerSets_multiplicative_iff.2 h))
+
+attribute [to_additive existing AddAmenable.of_hasAddFoelnerSets] Amenable.of_hasFoelnerSets
+
+/-- A topological additive group is amenable when it has an additive Følner family for counting
+measure, along a nontrivial filter. -/
+theorem AddAmenable.of_isAddFoelner {A : Type*} [AddGroup A] [TopologicalSpace A]
+    [IsTopologicalAddGroup A] [MeasurableSpace A] {ι : Type*} {l : Filter ι} [l.NeBot]
+    {F : ι → Set A} (hF : IsAddFoelner A MeasureTheory.Measure.count l F) : AddAmenable A :=
+  .of_hasAddFoelnerSets (.of_isAddFoelner hF)
+
+attribute [to_additive existing AddAmenable.of_isAddFoelner] Amenable.of_isFoelner
 
 end TauCeti

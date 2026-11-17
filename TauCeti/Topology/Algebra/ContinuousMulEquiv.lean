@@ -41,6 +41,9 @@ live in a fixed universe be applied to a group in a smaller one.
   lemmas `toMultiplicative_apply` and `toMultiplicative_symm_apply`.
 * `TauCeti.ContinuousMulEquiv.ulift`: the topological isomorphism `ULift M ≃ₜ* M`, with its
   evaluation lemmas `ulift_apply` and `ulift_symm_apply`.
+* `TauCeti.ContinuousMulEquiv.multiplicativeAdditive`: the topological isomorphism
+  `Multiplicative (Additive M) ≃ₜ* M`, with its evaluation lemmas `multiplicativeAdditive_apply`
+  and `multiplicativeAdditive_symm_apply`.
 -/
 
 public section
@@ -180,5 +183,31 @@ theorem ContinuousMulEquiv.ulift_symm_apply (x : M) :
   (rfl)
 
 end ULift
+
+section MultiplicativeAdditive
+
+variable (M : Type*) [Mul M] [TopologicalSpace M]
+
+/-- The multiplicative type tag of the additive type tag of a topological magma is topologically
+isomorphic to the original magma. This is `MulEquiv.multiplicativeAdditive` as a
+`ContinuousMulEquiv`. -/
+def ContinuousMulEquiv.multiplicativeAdditive : Multiplicative (Additive M) ≃ₜ* M where
+  toMulEquiv := MulEquiv.multiplicativeAdditive M
+  continuous_toFun := continuous_toMul.comp continuous_toAdd
+  continuous_invFun := continuous_ofAdd.comp continuous_ofMul
+
+variable {M}
+
+@[simp]
+theorem ContinuousMulEquiv.multiplicativeAdditive_apply (x : Multiplicative (Additive M)) :
+    ContinuousMulEquiv.multiplicativeAdditive M x = x.toAdd.toMul :=
+  (rfl)
+
+@[simp]
+theorem ContinuousMulEquiv.multiplicativeAdditive_symm_apply (x : M) :
+    (ContinuousMulEquiv.multiplicativeAdditive M).symm x = ofAdd (Additive.ofMul x) :=
+  (rfl)
+
+end MultiplicativeAdditive
 
 end TauCeti

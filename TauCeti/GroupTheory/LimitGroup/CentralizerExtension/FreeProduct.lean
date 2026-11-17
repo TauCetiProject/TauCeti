@@ -116,7 +116,7 @@ private theorem isBlock_zpowersPiHom {v : Fin n → Multiplicative ℤ} (hv : v 
 /-- A nonzero power of `tᵢ` is a one-letter block. -/
 private theorem isBlock_t_zpow (i : Fin n) {k : ℤ} (hk : k ≠ 0) :
     IsBlock true true (t i ^ k : CentralizerExt u n) := by
-  rw [← zpowersPiHom_mulSingle t commute_t_t i, ← map_zpow]
+  rw [← toAdd_ofAdd k, ← zpowersPiHom_mulSingle t commute_t_t i (.ofAdd k)]
   exact isBlock_zpowersPiHom (by simpa using hk)
 
 /-- For `x ≠ 1`, the conjugate `(tᵢ g)⁻¹ x (tᵢ g)` is a block of `G`: the single letter `g⁻¹ x g`,
