@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Pseudodifferential.ProperSupport.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.SupportedIn
+import TauCeti.Analysis.Distribution.TestFunction.Postcomp
 import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
@@ -503,8 +504,9 @@ private theorem quantizeDistributionReal_apply (ha : a.HasNearDiagonalKernel R)
 has kernel supported within distance `R` of the diagonal, `Op(a)` acts on all distributions on
 `ℝⁿ` by transposition: `(Op(a) T) (φ) = T (Op(a)ᵗ φ)`, where `Op(a)ᵗ φ = conj (Op(a)* φ)` is the
 transpose of `Op(a)` for the bilinear pairing `∫ φ u` and `T` is paired with complex test functions
-by `Distribution.complexPairing` (`TauCeti.Symbol.quantizeDistribution_apply`). It is complex
-linear, and it extends `Op(a)` on test functions (`TauCeti.Symbol.quantizeDistribution_ofFun`). -/
+by `Distribution.complexPairing` (`TauCeti.Symbol.quantizeDistribution_apply`; on complex test
+functions, `TauCeti.Symbol.complexPairing_quantizeDistribution`). It is complex linear, and it
+extends `Op(a)` on test functions (`TauCeti.Symbol.quantizeDistribution_ofFun`). -/
 def quantizeDistribution (ha : a.HasNearDiagonalKernel R) :
     𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) →L[ℂ] 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ) where
   toFun := quantizeDistributionReal ha
@@ -524,6 +526,36 @@ theorem quantizeDistribution_apply (ha : a.HasNearDiagonalKernel R)
       (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
         (adjointTestFunctionCLM ha (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ))) :=
   quantizeDistributionReal_apply ha T φ
+
+/-- The complex-linear extension of `Op(a) T` pairs with a complex test function `ψ` as `T` with
+the transpose `Op(a)ᵗ ψ = conj (Op(a)* (conj ψ))`. -/
+@[simp]
+theorem complexPairing_quantizeDistribution (ha : a.HasNearDiagonalKernel R)
+    (T : 𝓓'((⊤ : Opens (CoordinateSpace n)), ℂ)) (ψ : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+    (quantizeDistribution ha T).complexPairing ψ = T.complexPairing
+      (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
+        (adjointTestFunctionCLM ha
+          (TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap ψ))) := by
+  have hconj (φ φ' : 𝓓((⊤ : Opens (CoordinateSpace n)), ℝ)) :
+      TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
+          (TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ +
+            Complex.I • TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ') =
+        TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ -
+          Complex.I • TestFunction.postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ' := by
+    ext x
+    simp [sub_eq_add_neg]
+  have hconj' (f g : 𝓓((⊤ : Opens (CoordinateSpace n)), ℂ)) :
+      TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap
+          (f - Complex.I • g) =
+        TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap f +
+          Complex.I •
+            TestFunction.postcompCLM (𝕜 := ℝ) Complex.conjCLE.toContinuousLinearMap g := by
+    ext x
+    simp
+  -- Split `ψ` into its real and imaginary parts, on which `Op(a) T` is given by its definition.
+  rw [← TestFunction.postcompCLM_re_add_I_smul_im ψ, hconj, map_sub, map_smul, hconj']
+  simp only [map_add, map_smul, Distribution.complexPairing_postcompCLM_ofRealCLM,
+    quantizeDistribution_apply, smul_eq_mul]
 
 /-- **`Op(a)` on distributions extends `Op(a)` on test functions**: on the distribution of a test
 function `u`, it is the distribution of `Op(a) u`. -/
