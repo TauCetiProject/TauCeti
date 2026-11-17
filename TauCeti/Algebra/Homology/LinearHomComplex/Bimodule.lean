@@ -6,26 +6,29 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.LinearHomComplex.Single
+import Mathlib.Algebra.Module.LinearMap.End
+import TauCeti.CategoryTheory.Preadditive.Endomorphism
 
 /-!
 # Bimodule Hom complexes and commuting scalar actions on cohomology
 
 Let `K` be a cochain complex in `ModuleCat k` and let `M` be a `k`-module carrying a commuting
-action of a ring `S` (`[SMulCommClass k S M]`). Over any rings `k` and `S`, the degreewise
-`S`-modules `K.X (-i) →ₗ[k] M` with signed precomposition differential
-`f ↦ (-1) ^ (i + 1) • (f ∘ₗ K.d (-j) (-i))` assemble into the `(k, S)`-bimodule Hom cochain
-complex `CochainComplex.bimoduleHomComplex` in `ModuleCat S`.
+action of a semiring `S` (`[SMulCommClass k S M]`).
 
-When `k` is commutative, scalar multiplication by `s : S` on `M` is a `k`-linear endomorphism of
-`M`, so postcomposition via `TauCeti.linearHomComplexPostcomp` defines a cochain endomorphism
-`CochainComplex.linearHomComplexSingleScalarHom` of
+When `S` is a ring (over any ring `k`), the degreewise `S`-modules `K.X (-i) →ₗ[k] M` with signed
+precomposition differential `f ↦ (-1) ^ (i + 1) • (f ∘ₗ K.d (-j) (-i))` assemble into the
+`(k, S)`-bimodule Hom cochain complex `CochainComplex.bimoduleHomComplex` in `ModuleCat S`.
+
+When `k` is commutative (and `S` is any semiring), scalar multiplication by `s : S` on `M` is a
+`k`-linear endomorphism of `M`, so postcomposition via `TauCeti.linearHomComplexPostcomp` defines
+a cochain endomorphism `CochainComplex.linearHomComplexSingleScalarHom` of
 `CochainComplex.linearHomComplex k K ((singleFunctor _ 0).obj (ModuleCat.of k M))` and induces a
 ring homomorphism `CochainComplex.linearHomComplexSingleHomologyAction` into the `k`-linear
-endomorphism ring of its cohomology. Forgetting scalar actions identifies `linearHomComplex` into
-`M` placed in degree `0` with `bimoduleHomComplex` as cochain complexes of abelian groups
-(`CochainComplex.forget₂BimoduleHomComplexIso`), intertwining `linearHomComplexSingleScalarHom`
-with `s • 𝟙 _` when `S` is commutative
-(`CochainComplex.map_linearHomComplexSingleScalarHom_comp_forget₂BimoduleHomComplexIso`).
+endomorphism ring of its cohomology. When `S` is a ring, forgetting scalar actions identifies
+`linearHomComplex` into `M` placed in degree `0` with `bimoduleHomComplex` as cochain complexes of
+abelian groups (`CochainComplex.forget₂BimoduleHomComplexIso`), intertwining
+`linearHomComplexSingleScalarHom` with `s • 𝟙 _` when `S` is commutative
+(`CochainComplex.map_linearHomComplexSingleScalarHom_comp_forget₂BimoduleHomComplexIso_hom`).
 
 ## Main definitions
 
@@ -33,7 +36,7 @@ with `s • 𝟙 _` when `S` is commutative
   complex `i ↦ (K.X (-i) →ₗ[k] M)` in `ModuleCat S` and its degreewise carrier identification.
 * `CochainComplex.linearHomComplexSingleScalarHom` and
   `CochainComplex.linearHomComplexSingleHomologyAction`: the cochain endomorphism and cohomology
-  ring action induced by a commuting scalar action on `M`.
+  ring action induced by a commuting semiring scalar action on `M`.
 * `CochainComplex.forget₂BimoduleHomComplexIso`: comparison between `linearHomComplex` into `M[0]`
   and `bimoduleHomComplex` in `CochainComplex AddCommGrpCat ℤ`.
 
@@ -93,28 +96,24 @@ def bimoduleHomComplexXIso (i : ℤ) :
 
 /-- Evaluation of the differential of `bimoduleHomComplex` under `bimoduleHomComplexXIso`. -/
 @[simp]
-lemma bimoduleHomComplex_d_apply (i : ℤ) (f : K.X (-i) →ₗ[k] M) :
+lemma bimoduleHomComplex_d_apply (i : ℤ) (z : (K.bimoduleHomComplex S M).X i) :
     (K.bimoduleHomComplexXIso S M (i + 1)).hom.hom
-      (((K.bimoduleHomComplex S M).d i (i + 1)).hom
-        ((K.bimoduleHomComplexXIso S M i).inv.hom f)) =
-      ((i + 1).negOnePow : ℤ) • f.comp (K.d (-(i + 1)) (-i)).hom := by
+      (((K.bimoduleHomComplex S M).d i (i + 1)).hom z) =
+      ((i + 1).negOnePow : ℤ) •
+        ((K.bimoduleHomComplexXIso S M i).hom.hom z).comp (K.d (-(i + 1)) (-i)).hom := by
   rfl
 
 end Ring
 
-section CommRing
+section SemiringScalar
 
 variable {k : Type u} [CommRing k]
-
-/-- Scalar multiplication by `s : S` on `M` as a `k`-linear endomorphism of `ModuleCat.of k M`. -/
-private def coeffScalarHom (S : Type*) [Ring S] (M : Type v) [AddCommGroup M]
-    [Module k M] [Module S M] [SMulCommClass k S M] (s : S) :
-    ModuleCat.of k M ⟶ ModuleCat.of k M :=
-  have := SMulCommClass.symm k S M
-  ModuleCat.ofHom (DistribSMul.toLinearMap k M s)
-
-variable (K : CochainComplex (ModuleCat.{v} k) ℤ) (S : Type*) [Ring S]
+  (S : Type*) [Semiring S]
   (M : Type v) [AddCommGroup M] [Module k M] [Module S M] [SMulCommClass k S M]
+
+section Receiver
+
+variable (K : CochainComplex (ModuleCat.{v} k) ℤ)
 
 /-- Scalar multiplication by `s : S` on `M` as a cochain endomorphism of
 `linearHomComplex k K ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M))`, defined via
@@ -122,8 +121,10 @@ variable (K : CochainComplex (ModuleCat.{v} k) ℤ) (S : Type*) [Ring S]
 def linearHomComplexSingleScalarHom (s : S) :
     linearHomComplex k K ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M)) ⟶
       linearHomComplex k K ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M)) :=
+  have := SMulCommClass.symm k S M
   TauCeti.linearHomComplexPostcomp k K
-    ((singleFunctor (ModuleCat.{v} k) 0).map (coeffScalarHom S M s))
+    ((singleFunctor (ModuleCat.{v} k) 0).map
+      (ModuleCat.ofHom (DistribSMul.toLinearMap k M s)))
 
 /-- `CochainComplex.linearHomComplexSingleScalarHom` is postcomposition on `linearHomComplex` by
 scalar multiplication on `M` placed in degree `0`. -/
@@ -135,6 +136,46 @@ lemma linearHomComplexSingleScalarHom_def (s : S) :
           (ModuleCat.ofHom (DistribSMul.toLinearMap k M s))) := by
   rfl
 
+@[simp]
+lemma linearHomComplexSingleScalarHom_zero :
+    K.linearHomComplexSingleScalarHom S M 0 = 0 := by
+  have := SMulCommClass.symm k S M
+  have h0 : DistribSMul.toLinearMap k M (0 : S) = 0 := map_zero (Module.toModuleEnd k M)
+  rw [linearHomComplexSingleScalarHom_def, h0]
+  simp
+
+@[simp]
+lemma linearHomComplexSingleScalarHom_one :
+    K.linearHomComplexSingleScalarHom S M 1 = 𝟙 _ := by
+  have := SMulCommClass.symm k S M
+  have h1 : DistribSMul.toLinearMap k M (1 : S) = LinearMap.id := map_one (Module.toModuleEnd k M)
+  rw [linearHomComplexSingleScalarHom_def, h1]
+  simp
+
+@[simp]
+lemma linearHomComplexSingleScalarHom_add (r s : S) :
+    K.linearHomComplexSingleScalarHom S M (r + s) =
+      K.linearHomComplexSingleScalarHom S M r + K.linearHomComplexSingleScalarHom S M s := by
+  have := SMulCommClass.symm k S M
+  have hadd : DistribSMul.toLinearMap k M (r + s) =
+      DistribSMul.toLinearMap k M r + DistribSMul.toLinearMap k M s :=
+    map_add (Module.toModuleEnd k M) r s
+  rw [linearHomComplexSingleScalarHom_def, hadd, ModuleCat.ofHom_add,
+    Functor.map_add, TauCeti.linearHomComplexPostcomp_add,
+    ← linearHomComplexSingleScalarHom_def, ← linearHomComplexSingleScalarHom_def]
+
+@[simp]
+lemma linearHomComplexSingleScalarHom_mul (r s : S) :
+    K.linearHomComplexSingleScalarHom S M (r * s) =
+      K.linearHomComplexSingleScalarHom S M s ≫ K.linearHomComplexSingleScalarHom S M r := by
+  have := SMulCommClass.symm k S M
+  have hmul : DistribSMul.toLinearMap k M (r * s) =
+      (DistribSMul.toLinearMap k M r).comp (DistribSMul.toLinearMap k M s) :=
+    map_mul (Module.toModuleEnd k M) r s
+  rw [linearHomComplexSingleScalarHom_def, hmul, ModuleCat.ofHom_comp,
+    Functor.map_comp, TauCeti.linearHomComplexPostcomp_comp,
+    ← linearHomComplexSingleScalarHom_def, ← linearHomComplexSingleScalarHom_def]
+
 /-- Under `Cochain.toSingleEquiv (neg_add_cancel i)`, `linearHomComplexSingleScalarHom` acts
 pointwise as `s • f` on `K.X (-i) →ₗ[k] M`. -/
 @[simp]
@@ -145,7 +186,7 @@ lemma toSingleEquiv_linearHomComplexSingleScalarHom_f_apply (s : S) (i : ℤ)
           ((K.linearHomComplexSingleScalarHom S M s).f i).hom z)) =
       s • ModuleCat.Hom.hom (Cochain.toSingleEquiv (neg_add_cancel i) z) := by
   obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective z (-i) (neg_add_cancel i)
-  rw [linearHomComplexSingleScalarHom]
+  rw [linearHomComplexSingleScalarHom_def]
   -- `linearHomComplexPostcomp_f_apply` is stated on the unfolded carrier `Cochain K _ i`.
   erw [TauCeti.linearHomComplexPostcomp_f_apply]
   rw [← Cochain.toSingleMk_postcomp, Cochain.toSingleEquiv_toSingleMk,
@@ -157,51 +198,15 @@ induced by `TauCeti.linearHomComplexPostcomp` applied to scalar multiplication o
 def linearHomComplexSingleHomologyAction (i : ℤ) :
     S →+* Module.End k
       ((linearHomComplex k K
-        ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M))).homology i) where
-  toFun s := (homologyMap (K.linearHomComplexSingleScalarHom S M s) i).hom
-  map_one' := by
-    have h1 : coeffScalarHom (k := k) S M 1 = 𝟙 _ := by ext m; exact one_smul S m
-    ext x
-    simp [linearHomComplexSingleScalarHom, h1]
-  map_mul' r s := by
-    -- In `Module.End`, `(f * g) x = f (g x)`, matching `s ≫ r` in `ModuleCat`.
-    have hmul : coeffScalarHom (k := k) S M (r * s) =
-        coeffScalarHom S M s ≫ coeffScalarHom S M r := by
-      ext m
-      exact mul_smul r s m
-    ext x
-    simp [linearHomComplexSingleScalarHom, hmul, TauCeti.linearHomComplexPostcomp_comp,
-      homologyMap_comp]
-  map_zero' := by
-    have h0 : K.linearHomComplexSingleScalarHom S M 0 = 0 := by
-      have hc : coeffScalarHom (k := k) S M 0 = 0 := by ext m; exact zero_smul S m
-      ext j z
-      obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective z (-j) (neg_add_cancel j)
-      rw [linearHomComplexSingleScalarHom, HomologicalComplex.zero_f_apply, ModuleCat.hom_zero,
-        LinearMap.zero_apply]
-      -- `linearHomComplexPostcomp_f_apply` is stated on the unfolded carrier `Cochain K _ j`.
-      erw [TauCeti.linearHomComplexPostcomp_f_apply]
-      rw [← Cochain.toSingleMk_postcomp, hc, comp_zero, Cochain.toSingleMk_zero]
-    ext x
-    simp [h0]
-  map_add' r s := by
-    have hadd : K.linearHomComplexSingleScalarHom S M (r + s) =
-        K.linearHomComplexSingleScalarHom S M r + K.linearHomComplexSingleScalarHom S M s := by
-      have hc : coeffScalarHom (k := k) S M (r + s) =
-          coeffScalarHom S M r + coeffScalarHom S M s := by
-        ext m
-        exact add_smul r s m
-      ext j z
-      obtain ⟨f, rfl⟩ := Cochain.toSingleMk_surjective z (-j) (neg_add_cancel j)
-      simp only [linearHomComplexSingleScalarHom, HomologicalComplex.add_f_apply,
-        ModuleCat.hom_add, LinearMap.add_apply]
-      -- `linearHomComplexPostcomp_f_apply` is stated on the unfolded carrier `Cochain K _ j`.
-      erw [TauCeti.linearHomComplexPostcomp_f_apply, TauCeti.linearHomComplexPostcomp_f_apply,
-        TauCeti.linearHomComplexPostcomp_f_apply]
-      rw [← Cochain.toSingleMk_postcomp, ← Cochain.toSingleMk_postcomp,
-        ← Cochain.toSingleMk_postcomp, hc, Preadditive.comp_add, Cochain.toSingleMk_add]
-    ext x
-    simp [hadd, homologyMap_add]
+        ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M))).homology i) :=
+  have := SMulCommClass.symm k S M
+  (ModuleCat.endRingEquiv _).toRingHom.comp
+    ((((singleFunctor (ModuleCat.{v} k) 0 ⋙
+      (TauCeti.linearHomComplexFunctor k).obj (Opposite.op K) ⋙
+      HomologicalComplex.homologyFunctor (ModuleCat.{v} k) (ComplexShape.up ℤ) i).mapEndRingHom
+        (ModuleCat.of k M))).comp
+      ((ModuleCat.endRingEquiv (ModuleCat.of k M)).symm.toRingHom.comp
+        (Module.toModuleEnd k M)))
 
 @[simp]
 lemma linearHomComplexSingleHomologyAction_apply (i : ℤ) (s : S)
@@ -209,7 +214,43 @@ lemma linearHomComplexSingleHomologyAction_apply (i : ℤ) (s : S)
       ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M))).homology i) :
     K.linearHomComplexSingleHomologyAction S M i s x =
       homologyMap (K.linearHomComplexSingleScalarHom S M s) i x := by
-  simp [linearHomComplexSingleHomologyAction]
+  have := SMulCommClass.symm k S M
+  let F := singleFunctor (ModuleCat.{v} k) 0 ⋙
+    (TauCeti.linearHomComplexFunctor k).obj (Opposite.op K) ⋙
+    HomologicalComplex.homologyFunctor (ModuleCat.{v} k) (ComplexShape.up ℤ) i
+  have h1 : (ModuleCat.endRingEquiv (F.obj (ModuleCat.of k M))
+      (F.mapEndRingHom (ModuleCat.of k M)
+        ((ModuleCat.endRingEquiv (ModuleCat.of k M)).symm (Module.toModuleEnd k M s)))) x =
+      homologyMap (K.linearHomComplexSingleScalarHom S M s) i x := by
+    simp only [ModuleCat.endRingEquiv_apply, CategoryTheory.Functor.mapEndRingHom_apply_asHom,
+      Module.toModuleEnd_apply, linearHomComplexSingleScalarHom]
+    simp only [F, Functor.comp_map, TauCeti.linearHomComplexFunctor_obj_map]
+    simp [ModuleCat.endRingEquiv]
+    rfl
+  exact h1
+
+end Receiver
+
+/-- `linearHomComplexSingleScalarHom` commutes with precomposition by a cochain map `φ : K' ⟶ K`. -/
+@[reassoc]
+lemma linearHomComplexPrecomp_comp_linearHomComplexSingleScalarHom
+    {K' K : CochainComplex (ModuleCat.{v} k) ℤ} (φ : K' ⟶ K) (s : S) :
+    TauCeti.linearHomComplexPrecomp k φ
+        ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M)) ≫
+      K'.linearHomComplexSingleScalarHom S M s =
+    K.linearHomComplexSingleScalarHom S M s ≫
+      TauCeti.linearHomComplexPrecomp k φ
+        ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M)) := by
+  rw [linearHomComplexSingleScalarHom_def, linearHomComplexSingleScalarHom_def]
+  exact TauCeti.linearHomComplexPrecomp_postcomp_comm k φ _
+
+end SemiringScalar
+
+section CommRing
+
+variable {k : Type u} [CommRing k] (K : CochainComplex (ModuleCat.{v} k) ℤ)
+  (S : Type*) [Ring S]
+  (M : Type v) [AddCommGroup M] [Module k M] [Module S M] [SMulCommClass k S M]
 
 /-- Forgetting scalar actions identifies `linearHomComplex k K ((singleFunctor _ 0).obj M)` with
 `K.bimoduleHomComplex S M` as cochain complexes of abelian groups. -/
@@ -225,13 +266,24 @@ def forget₂BimoduleHomComplexIso :
     fun i j hij ↦ by
       obtain rfl : j = i + 1 := hij.symm
       ext z
-      apply LinearMap.ext
-      intro x
-      have h := congrArg (fun φ ↦ ModuleCat.Hom.hom φ x)
-        (K.toSingleLinearEquiv_linearHomComplex_d_apply k (ModuleCat.of k M) i z).symm
-      rw [ModuleCat.hom_zsmul, LinearMap.smul_apply, ModuleCat.hom_comp, LinearMap.comp_apply,
-        Cochain.toSingleLinearEquiv_apply, Cochain.toSingleLinearEquiv_apply] at h
-      exact h
+      simp only [AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply,
+        Functor.mapHomologicalComplex_obj_d, AddEquiv.toAddCommGrpIso_hom,
+        AddCommGrpCat.hom_ofHom, AddEquiv.coe_toAddMonoidHom, ModuleCat.forget₂_map]
+      apply (K.bimoduleHomComplexXIso S M (i + 1)).toLinearEquiv.injective
+      -- Unfold `Iso.toLinearEquiv` and `AddEquiv.trans` / `ModuleCat.homAddEquiv` on the carrier
+      -- `(K.bimoduleHomComplex S M).X _` to rewrite with `bimoduleHomComplex_d_apply`.
+      change (K.bimoduleHomComplexXIso S M (i + 1)).hom.hom
+          (((K.bimoduleHomComplex S M).d i (i + 1)).hom
+            ((K.bimoduleHomComplexXIso S M i).inv.hom
+              (Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z).hom)) =
+        (Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel (i + 1))
+          (((linearHomComplex k K
+            ((singleFunctor (ModuleCat.{v} k) 0).obj (ModuleCat.of k M))).d i (i + 1)).hom z)).hom
+      rw [K.bimoduleHomComplex_d_apply,
+        K.toSingleLinearEquiv_linearHomComplex_d_apply k (ModuleCat.of k M) i z,
+        ← LinearMap.comp_apply ((K.bimoduleHomComplexXIso S M i).hom.hom), ← ModuleCat.hom_comp,
+        Iso.inv_hom_id, ModuleCat.hom_id, LinearMap.id_apply, ModuleCat.hom_zsmul,
+        ModuleCat.hom_comp]
 
 @[simp]
 lemma forget₂BimoduleHomComplexIso_hom_f_apply (i : ℤ)
@@ -240,6 +292,15 @@ lemma forget₂BimoduleHomComplexIso_hom_f_apply (i : ℤ)
       (K.bimoduleHomComplexXIso S M i).hom.hom
         (((K.forget₂BimoduleHomComplexIso S M).hom.f i) z)) =
       ModuleCat.Hom.hom (Cochain.toSingleEquiv (neg_add_cancel i) z) := by
+  rfl
+
+@[simp]
+lemma forget₂BimoduleHomComplexIso_inv_f_apply (i : ℤ)
+    (z : (K.bimoduleHomComplex S M).X i) :
+    (dsimp% only [Functor.mapHomologicalComplex_obj_X, linearHomComplex_X, ModuleCat.forget₂_obj]
+      (((K.forget₂BimoduleHomComplexIso S M).inv.f i) z)) =
+      Cochain.toSingleMk (ModuleCat.ofHom ((K.bimoduleHomComplexXIso S M i).hom.hom z))
+        (neg_add_cancel i) := by
   rfl
 
 end CommRing
@@ -254,7 +315,7 @@ variable {k : Type u} [CommRing k] (K : CochainComplex (ModuleCat.{v} k) ℤ)
 `K.linearHomComplexSingleScalarHom S M s` with scalar multiplication `s • 𝟙 _` on
 `K.bimoduleHomComplex S M`. -/
 @[reassoc]
-lemma map_linearHomComplexSingleScalarHom_comp_forget₂BimoduleHomComplexIso (s : S) :
+lemma map_linearHomComplexSingleScalarHom_comp_forget₂BimoduleHomComplexIso_hom (s : S) :
     ((forget₂ (ModuleCat.{v} k) AddCommGrpCat.{v}).mapHomologicalComplex _).map
         (K.linearHomComplexSingleScalarHom S M s) ≫
       (K.forget₂BimoduleHomComplexIso S M).hom =
@@ -262,6 +323,17 @@ lemma map_linearHomComplexSingleScalarHom_comp_forget₂BimoduleHomComplexIso (s
       ((forget₂ (ModuleCat.{v} S) AddCommGrpCat.{v}).mapHomologicalComplex _).map
         (s • 𝟙 (K.bimoduleHomComplex S M)) := by
   ext i z
+  have hinj : Function.Injective (K.bimoduleHomComplexXIso S M i).hom.hom :=
+    (K.bimoduleHomComplexXIso S M i).toLinearEquiv.injective
+  apply hinj
+  simp only [HomologicalComplex.comp_f, Functor.mapHomologicalComplex_map_f,
+    AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply, ModuleCat.forget₂_map,
+    AddCommGrpCat.hom_ofHom, HomologicalComplex.smul_f_apply, HomologicalComplex.id_f,
+    ModuleCat.hom_smul, ModuleCat.hom_id]
+  -- Cross the `linearHomComplex_X` / `forget₂_obj` carrier identifications to apply the
+  -- component evaluation lemmas.
+  erw [K.forget₂BimoduleHomComplexIso_hom_f_apply S M i,
+    K.forget₂BimoduleHomComplexIso_hom_f_apply S M i]
   exact K.toSingleEquiv_linearHomComplexSingleScalarHom_f_apply S M s i z
 
 end CommRingScalar

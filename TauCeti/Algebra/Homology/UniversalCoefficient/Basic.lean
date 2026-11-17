@@ -226,6 +226,13 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
     extToHomology, LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _),
     Submodule.range_liftQ]
 
+/-- `kronecker` vanishes on the image of `extToHomology` in degree `i = j + 1`. -/
+@[simp]
+lemma kronecker_extToHomology {i j : α} (hij : j + 1 = i) [Projective (X.cycles j)]
+    [IsSplitMono (X.iCycles j)] (e : Ext.{w} (X.homology j) Y 1) :
+    kronecker k X Y i (extToHomology.{w} k X Y i j e) = 0 :=
+  (exact_extToHomology_kronecker (k := k) (X := X) (Y := Y) hij).apply_apply_eq_zero e
+
 variable (k X Y) in
 /-- **The splitting of the universal coefficient sequence**: in degree `i = j + 1`, when the cycles
 `Zⱼ` are projective and `Zⱼ ⟶ Xⱼ`, `Zᵢ ⟶ Xᵢ` are split monomorphisms, the universal coefficient
@@ -276,6 +283,22 @@ lemma universalCoefficientEquiv_symm_apply {i j : α} (hij : j + 1 = i)
   have hx : x = (x.1, 0) + (0, x.2) := by ext <;> simp
   conv_lhs => rw [hx]
   rw [map_add, universalCoefficientEquiv_symm_inl, universalCoefficientEquiv_symm_inr]
+
+/-- `TauCeti.ChainComplex.universalCoefficientEquiv` sends `extToHomology e` to `(e, 0)`. -/
+@[simp]
+lemma universalCoefficientEquiv_extToHomology {i j : α} (hij : j + 1 = i)
+    [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)] [IsSplitMono (X.iCycles i)]
+    (e : Ext.{w} (X.homology j) Y 1) :
+    universalCoefficientEquiv k X Y hij (extToHomology k X Y i j e) = (e, 0) := by
+  rw [← universalCoefficientEquiv_symm_inl hij e, LinearEquiv.apply_symm_apply]
+
+/-- `TauCeti.ChainComplex.universalCoefficientEquiv` sends `kroneckerSection g` to `(0, g)`. -/
+@[simp]
+lemma universalCoefficientEquiv_kroneckerSection {i j : α} (hij : j + 1 = i)
+    [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)] [IsSplitMono (X.iCycles i)]
+    (g : X.homology i ⟶ Y) :
+    universalCoefficientEquiv k X Y hij (kroneckerSection k X Y i g) = (0, g) := by
+  rw [← universalCoefficientEquiv_symm_inr hij g, LinearEquiv.apply_symm_apply]
 
 /-- The second component of `TauCeti.ChainComplex.universalCoefficientEquiv` is the Kronecker
 map. -/

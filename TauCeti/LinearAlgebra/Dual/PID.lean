@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.PrincipalIdealDomain
 import Mathlib.LinearAlgebra.Dimension.Torsion.Basic
 import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.LinearAlgebra.FreeModule.PID
+import TauCeti.Algebra.Module.Torsion.Basic
 import TauCeti.LinearAlgebra.Dual.Basis
 
 /-!
@@ -35,9 +36,9 @@ theorem dual_finrank_eq_of_isPrincipalIdealRing (R M : Type*) [CommRing R] [IsDo
     Module.finrank R (Module.Dual R M) = Module.finrank R M := by
   let T := Submodule.torsion R M
   have htop : T.dualAnnihilator = ⊤ := eq_top_iff.2 fun φ _ ↦
-    (Submodule.mem_dualAnnihilator φ).2 fun x ⟨r, hr⟩ ↦ by
-      have h0 : (r : R) • φ x = 0 := by rw [← map_smul, ← Submonoid.smul_def, hr, map_zero]
-      exact (smul_eq_zero.1 h0).resolve_left (nonZeroDivisors.coe_ne_zero r)
+    (Submodule.mem_dualAnnihilator φ).2 fun x hx ↦ by
+      have hmem : φ x ∈ Submodule.torsion R R := φ.le_comap_torsion hx
+      rwa [Submodule.isTorsionFree_iff_torsion_eq_bot.mp inferInstance, Submodule.mem_bot] at hmem
   have : Module.Free R (M ⧸ T) := Module.free_of_finite_type_torsion_free'
   exact ((LinearEquiv.ofTop T.dualAnnihilator htop).symm.trans
     T.dualQuotEquivDualAnnihilator.symm).finrank_eq.trans

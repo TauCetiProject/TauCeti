@@ -9,9 +9,9 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.RingTheory.PrincipalIdealDomain
-import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 import Mathlib.LinearAlgebra.FreeModule.PID
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
+import TauCeti.Algebra.Category.ModuleCat.Quotient
 import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
@@ -42,13 +42,8 @@ theorem isTorsion_ext_succ_of_finite {R : Type u} [CommRing R] [IsDomain R]
   have : Module.Free R Q := Module.free_of_finite_type_torsion_free'
   have : Projective (ModuleCat.of R Q) :=
     ModuleCat.projective_of_free (Module.Free.chooseBasis R Q)
-  let S : ShortComplex (ModuleCat.{v} R) :=
-    ShortComplex.mk (ModuleCat.ofHom T.subtype) (ModuleCat.ofHom T.mkQ) (by ext; simp)
-  have hS : S.ShortExact :=
-    { exact := (ShortComplex.moduleCat_exact_iff _).2 fun x hx ↦
-        ⟨⟨x, (Submodule.Quotient.mk_eq_zero T).1 hx⟩, rfl⟩
-      mono_f := (ModuleCat.mono_iff_injective _).2 T.injective_subtype
-      epi_g := (ModuleCat.epi_iff_surjective _).2 T.mkQ_surjective }
+  let S := T.quotientShortComplex
+  have hS : S.ShortExact := T.shortExact_quotientShortComplex
   obtain ⟨r, hr_ann, hr_mem⟩ :=
     Submodule.annihilator_top_inter_nonZeroDivisors (Submodule.torsion_isTorsion (R := R) (M := A))
   have hrT : r ∈ Module.annihilator R (ModuleCat.of R T) :=
