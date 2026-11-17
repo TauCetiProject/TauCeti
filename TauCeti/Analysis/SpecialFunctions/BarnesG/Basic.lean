@@ -18,6 +18,7 @@ import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Complex.LogBounds
 import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 import TauCeti.Analysis.Analytic.Order
+import TauCeti.Analysis.Complex.SlitPlane
 import TauCeti.Analysis.SpecialFunctions.Gamma.GaussSeries
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Basic
 
@@ -366,11 +367,8 @@ theorem barnesG_ne_zero {z : ℂ} (hz : ∀ n : ℕ, z ≠ -(n : ℂ)) : barnesG
 
 /-- On the slit plane `ℂ \ (-∞, 0]`, `barnesG` is everywhere nonzero. -/
 theorem barnesG_ne_zero_of_mem_slitPlane {z : ℂ} (hz : z ∈ Complex.slitPlane) :
-    barnesG z ≠ 0 := by
-  refine barnesG_ne_zero fun n h ↦ ?_
-  rw [h] at hz
-  have hneg := (Complex.neg_ofReal_mem_slitPlane (x := (n : ℝ))).mp (by simpa using hz)
-  exact (Nat.cast_nonneg n).not_gt hneg
+    barnesG z ≠ 0 :=
+  barnesG_ne_zero (ne_neg_natCast_of_mem_slitPlane hz)
 
 /-- On the open right half-plane `Re z > 0`, `barnesG` is everywhere nonzero. -/
 theorem barnesG_ne_zero_of_re_pos {z : ℂ} (hz : 0 < z.re) : barnesG z ≠ 0 :=

@@ -189,10 +189,6 @@ theorem logBarnesG_add_one {z : ℂ} (hz : z ∈ slitPlane) :
     logBarnesG (z + 1) = logBarnesG z + logGamma z := by
   have hshift {w : ℂ} (hw : w ∈ slitPlane) : w + 1 ∈ slitPlane := by
     simpa [add_comm] using ofReal_add_mem_slitPlane hw zero_le_one
-  have hpole {w : ℂ} (hw : w ∈ slitPlane) (n : ℕ) : w ≠ -(n : ℂ) := by
-    rintro rfl
-    have hneg := (Complex.neg_ofReal_mem_slitPlane (x := (n : ℝ))).mp (by simpa using hw)
-    exact (Nat.cast_nonneg n).not_gt hneg
   let L : ℂ → ℂ := fun w ↦ logBarnesG (w + 1) - logGamma w
   have hL : DifferentiableOn ℂ L slitPlane :=
     (differentiableOn_logBarnesG.comp (differentiable_id.add_const 1).differentiableOn
@@ -201,7 +197,7 @@ theorem logBarnesG_add_one {z : ℂ} (hz : z ∈ slitPlane) :
     intro w hw
     rw [Complex.exp_sub, exp_logBarnesG (hshift hw), exp_logGamma hw,
       barnesG_add_one (slitPlane_ne_zero hw),
-      mul_div_cancel_left₀ _ (Complex.Gamma_ne_zero (hpole hw))]
+      mul_div_cancel_left₀ _ (Complex.Gamma_ne_zero (ne_neg_natCast_of_mem_slitPlane hw))]
   have hlg1 : logGamma 1 = 0 := by
     simpa using logGamma_ofReal (x := 1) zero_lt_one
   have h11 : (1 : ℂ) + 1 = 2 := by ring
@@ -242,12 +238,8 @@ theorem deriv_logBarnesG {z : ℂ} (hz : z ∈ slitPlane) :
 theorem deriv_logBarnesG_add_one {z : ℂ} (hz : z + 1 ∈ slitPlane) :
     deriv logBarnesG (z + 1) =
       (Real.log (2 * Real.pi) : ℂ) / 2 - 1 / 2 - z + z * Complex.digamma (z + 1) := by
-  have hz_succ : ∀ n : ℕ, z ≠ -((n : ℂ) + 1) := by
-    intro n h
-    have hzn : z + 1 = -(n : ℂ) := by linear_combination h
-    rw [hzn] at hz
-    have hneg := (Complex.neg_ofReal_mem_slitPlane (x := (n : ℝ))).mp (by simpa using hz)
-    exact (Nat.cast_nonneg n).not_gt hneg
+  have hz_succ : ∀ n : ℕ, z ≠ -((n : ℂ) + 1) := fun n h ↦
+    ne_neg_natCast_of_mem_slitPlane hz n (by linear_combination h)
   rw [deriv_logBarnesG hz, logDeriv_barnesG_add_one_of_ne_neg_succ hz_succ]
 
 /-- On `Complex.slitPlane`, `deriv logBarnesG (z + 1)` also takes the unshifted digamma form
@@ -257,11 +249,7 @@ theorem deriv_logBarnesG_add_one_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlan
       (Real.log (2 * Real.pi) : ℂ) / 2 + 1 / 2 - z + z * Complex.digamma z := by
   have hshift : z + 1 ∈ slitPlane := by
     simpa [add_comm] using ofReal_add_mem_slitPlane hz zero_le_one
-  have hpole (n : ℕ) : z ≠ -(n : ℂ) := by
-    rintro rfl
-    have hneg := (Complex.neg_ofReal_mem_slitPlane (x := (n : ℝ))).mp (by simpa using hz)
-    exact (Nat.cast_nonneg n).not_gt hneg
-  rw [deriv_logBarnesG hshift, logDeriv_barnesG_add_one hpole]
+  rw [deriv_logBarnesG hshift, logDeriv_barnesG_add_one (ne_neg_natCast_of_mem_slitPlane hz)]
 
 /-- Holomorphy of `logBarnesG` on every sector avoiding the negative real axis; all sector
 restrictions share the single normalized branch on `Complex.slitPlane`. -/
