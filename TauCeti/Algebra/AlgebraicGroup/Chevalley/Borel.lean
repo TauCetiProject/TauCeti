@@ -121,6 +121,21 @@ theorem map_borelSubgroup_le {B : Type w} [CommRing B] (f : A →+* B) :
       D.range_torusPoints_le_borelSubgroup B
         ⟨fun i => Units.map f.toMonoidHom (s i), rfl⟩
 
+/-- The negative point subgroup meets the positive Borel-type subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem negativePoints_inf_borelSubgroup_eq_bot :
+    D.negativePoints A ⊓ D.borelSubgroup A = ⊥ := by
+  rw [D.borelSubgroup_def]
+  exact D.negativePoints_inf_positivePoints_sup_range_torusPoints_eq_bot A
+
+/-- The positive Borel-type subgroup meets the negative point subgroup trivially over every
+commutative ring. -/
+@[simp]
+theorem borelSubgroup_inf_negativePoints_eq_bot :
+    D.borelSubgroup A ⊓ D.negativePoints A = ⊥ := by
+  rw [inf_comm, D.negativePoints_inf_borelSubgroup_eq_bot]
+
 /-- A negative root element belongs to the positive Borel-type subgroup exactly when it is
 the identity. This does not assume that the root parameter is injective. -/
 @[simp]
@@ -128,33 +143,9 @@ theorem rootSubgroupPoints_mem_borelSubgroup_iff_of_mem_negRoots {γ : Fin t.num
     (hγ : γ ∈ negRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (a : Multiplicative A) :
     D.rootSubgroupPoints γ A a ∈ D.borelSubgroup A ↔ D.rootSubgroupPoints γ A a = 1 := by
-  constructor
-  · intro ha
-    obtain ⟨u, hu, s, hs⟩ := (D.mem_borelSubgroup_iff A).mp ha
-    obtain ⟨v, hv, hvu⟩ := (D.mem_positivePoints_iff.mp hu)
-    let m := Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom
-    have hm : Function.Injective m :=
-      Units.map_injective (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).injective
-    let x := chevalleyRootSubgroup D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator γ (CommAlgCat.of ℤ A) a
-    have hx : x = v * kostantTorusPoints D.lattice D.basis D.coordinateWeight
-        (CommAlgCat.of ℤ A) s := by
-      apply hm
-      simpa only [m, x, MulEquiv.toMonoidHom_eq_coe, map_mul,
-        D.coe_rootSubgroupPoints, Subgroup.coe_mul,
-        basisMatrix_kostantTorusPoints, hvu, D.coe_torusPoints,
-        kostantTorusMatrix_apply] using congrArg Subtype.val hs.symm
-    have hxbot : x ∈ (⊥ : Subgroup _) := by
-      rw [← D.negativeSubgroup_inf_positiveSubgroup_sup_range_kostantTorusPoints_eq_bot A]
-      refine ⟨D.chevalleyRootSubgroup_mem_negativeSubgroup (CommAlgCat.of ℤ A) hγ a, ?_⟩
-      rw [hx]
-      exact Subgroup.mul_mem _ (Subgroup.mem_sup_left hv) (Subgroup.mem_sup_right ⟨s, rfl⟩)
-    apply Subtype.ext
-    exact (D.coe_rootSubgroupPoints γ A a).trans
-      ((congrArg m (Subgroup.mem_bot.mp hxbot)).trans m.map_one)
-  · intro ha
-    rw [ha]
-    exact (D.borelSubgroup A).one_mem
+  refine ⟨fun ha => Subgroup.mem_bot.mp ?_, fun ha => ha ▸ (D.borelSubgroup A).one_mem⟩
+  rw [← D.negativePoints_inf_borelSubgroup_eq_bot A]
+  exact ⟨D.rootSubgroupPoints_mem_negativePoints A hγ a, ha⟩
 
 /-- Conjugating a positive simple-root element by its pinned Weyl representative lands
 in the positive Borel-type subgroup exactly when that root element is trivial. -/
