@@ -126,7 +126,7 @@ theorem preglueEnd_of_le
   split_ifs with h₀
   · rw [preglue_of_le_neg_one (by dsimp only; linarith), Prod.mk_add_mk, sub_add_cancel, add_zero,
       comp_apply, positiveEndChart_endSign_mul_endCoord
-        (ne_endCenter_of_re_endCoord_ne_zero q fun h ↦ by simp [h] at h₀)]
+        (q.ne_endCenter_of_endSign_mul_re_endCoord_pos h₀)]
   · rfl
 
 /-- Near a point other than the center of the end `q` whose signed longitudinal coordinate on `q`
