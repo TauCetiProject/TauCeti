@@ -350,6 +350,13 @@ theorem isOpen_box_of_eventually_eq {C : ∀ i, Set (R i)} (hC : ∀ i, IsOpen (
     IsOpen (box C : Set (Πʳ i, [R i, A i])) :=
   isOpen_box hC (hCA.mono fun _ h ↦ h.symm.subset)
 
+/-- When `A i ⊆ interior (C i)` for all but finitely many `i`, the box of interiors `interior (C i)`
+lies inside the interior of `box C`. -/
+theorem box_interior_subset_interior_box {C : ∀ i, Set (R i)}
+    (hAC : ∀ᶠ i in cofinite, A i ⊆ interior (C i)) :
+    (box (fun i ↦ interior (C i)) : Set (Πʳ i, [R i, A i])) ⊆ interior (box C) :=
+  interior_maximal (box_mono fun _ ↦ interior_subset) (isOpen_box (fun _ ↦ isOpen_interior) hAC)
+
 /-- For a cofinite set `S`, the inclusion of `Πʳ i, [R i, A i]_[𝓟 S]` into `Πʳ i, [R i, A i]` is an
 open embedding whenever `A i` is open for every `i ∈ S`; openness outside `S` is not needed. -/
 theorem isOpenEmbedding_inclusion_principal_of_forall_mem {S : Set ι} (hS : cofinite ≤ 𝓟 S)
