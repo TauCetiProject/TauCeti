@@ -123,10 +123,9 @@ private theorem riemannSphereSquare_eq_sphereScale {y : Fin 2 → I}
   have hr : ‖(cubeHomeomorphClosedBall (Fin 2) y : Fin 2 → ℝ)‖ < 1 := by
     rw [norm_cubeHomeomorphClosedBall]
     exact (cubeRadius_le_one y).lt_of_ne (mt (cubeRadius_eq_one_iff y).1 hy)
-  rw [riemannSphereSquare_apply, cubeToOnePoint_apply, unitBallToOnePoint_apply_of_norm_lt hr,
-    OpenPartialHomeomorph.univUnitBall_symm_apply, norm_cubeHomeomorphClosedBall,
-    Homeomorph.onePointCongr_apply, OnePoint.map_some, ContinuousLinearEquiv.coe_toHomeomorph,
-    map_smul, squarePlaneEquiv_cubeHomeomorphClosedBall, Complex.real_smul, sphereScale]
+  rw [riemannSphereSquare_apply, cubeToOnePoint_apply, unitBallToOnePoint_apply_of_norm_lt hr]
+  simp [OpenPartialHomeomorph.univUnitBall_symm_apply, norm_cubeHomeomorphClosedBall,
+    squarePlaneEquiv_cubeHomeomorphClosedBall, sphereScale]
 
 /-- At a point of the open square, the standard sphere is `2 c / √(1 - r²)`, for the offset `c`
 from the centre and the sup radius `r = cubeRadius y`. -/
@@ -275,6 +274,6 @@ theorem clutchingNumber_tangentSpace_riemannSphereSquare :
       continuousOn_squareCenterDirection),
     squareBoundaryDegree_mul continuousOn_squareCenterDirection continuousOn_squareCenterDirection,
     squareBoundaryDegree_const, squareBoundaryDegree_squareCenterDirection]
-  rfl
+  norm_num
 
 end TauCeti
