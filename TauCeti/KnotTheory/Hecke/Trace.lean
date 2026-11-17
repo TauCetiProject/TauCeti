@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 public import TauCeti.KnotTheory.Markov.Basic
+import TauCeti.Algebra.Group.Units.Basic
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -261,26 +262,13 @@ theorem heckeBraidInvariant_mk (hτ : IsMarkovTrace z τ) (C : R) (l : Rˣ)
     (hneg : C * (↑l⁻¹ : R) * (z - ((q : R) - ↑q⁻¹)) = 1) (β : MarkovBraid) :
     heckeBraidInvariant hτ C l hpos hneg (Quot.mk MarkovEquiv β) = β.heckeTrace τ C l := (rfl)
 
-/-- If `(a : R) = z`, then `(l * a)⁻¹ * l * z = 1`. -/
-theorem val_inv_mul_mul_mul_eq_one (a l : Rˣ) (ha : (a : R) = z) :
-    (↑(l * a)⁻¹ : R) * (l : R) * z = 1 := by
-  rw [← ha, mul_assoc, ← Units.val_mul]
-  exact Units.inv_mul (l * a)
-
-/-- If `(a : R) = z` and `l ^ 2 * z = b`, then `(l * a)⁻¹ * l⁻¹ * b = 1`. -/
-theorem val_inv_mul_mul_inv_mul_eq_one (a l : Rˣ) {b : R} (ha : (a : R) = z)
-    (hl : (l : R) ^ 2 * z = b) :
-    (↑(l * a)⁻¹ : R) * (↑l⁻¹ : R) * b = 1 := by
-  rw [← hl, ← ha, ← Units.val_pow_eq_pow_val, ← Units.val_mul, ← Units.val_mul, ← Units.val_mul]
-  exact (congrArg Units.val (by group : (l * a)⁻¹ * l⁻¹ * (l ^ 2 * a) = 1)).trans Units.val_one
-
 /-- Markov invariance of `MarkovBraid.heckeTrace` for `C = (l * a)⁻¹` whenever `(a : R) = z` and
 `l ^ 2 * z = z - (q - q⁻¹)`. -/
 theorem MarkovEquiv.heckeTrace_eq_of_sq_mul {β γ : MarkovBraid} (h : MarkovEquiv β γ)
     (hτ : IsMarkovTrace z τ) (a l : Rˣ) (ha : (a : R) = z)
     (hl : (l : R) ^ 2 * z = z - ((q : R) - ↑q⁻¹)) :
     β.heckeTrace τ ↑(l * a)⁻¹ l = γ.heckeTrace τ ↑(l * a)⁻¹ l :=
-  h.heckeTrace_eq hτ ↑(l * a)⁻¹ l (val_inv_mul_mul_mul_eq_one a l ha)
-    (val_inv_mul_mul_inv_mul_eq_one a l ha hl)
+  h.heckeTrace_eq hτ ↑(l * a)⁻¹ l (Units.val_inv_mul_mul_mul_eq_one a l ha)
+    (Units.val_inv_mul_mul_inv_mul_eq_one a l ha hl)
 
 end TauCeti

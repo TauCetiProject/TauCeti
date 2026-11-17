@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.Units.Basic
 public import TauCeti.Algebra.TypeAHeckeAlgebra.OcneanuTrace
 public import TauCeti.KnotTheory.Hecke.Trace
 public import TauCeti.RingTheory.AdjoinRoot.Basic
@@ -253,8 +254,8 @@ theorem algHomEquiv_symm_heckeQuadraticBraidInvariant {S : Type*} [CommRing S] [
         ⟨(l : S), by simp [hl]⟩ (heckeQuadraticBraidInvariant q a b hb x) =
       heckeBraidInvariant (isMarkovTrace_ocneanuTrace (R := S) (q := q') (algebraMap R S a))
         (Units.val (l * Units.map (algebraMap R S).toMonoidHom a)⁻¹) l
-        (val_inv_mul_mul_mul_eq_one (Units.map (algebraMap R S).toMonoidHom a) l (by simp))
-        (val_inv_mul_mul_inv_mul_eq_one (z := algebraMap R S a)
+        (Units.val_inv_mul_mul_mul_eq_one (Units.map (algebraMap R S).toMonoidHom a) l (by simp))
+        (Units.val_inv_mul_mul_inv_mul_eq_one (z := algebraMap R S a)
           (Units.map (algebraMap R S).toMonoidHom a) l (by simp)
           (by
             have hba : ((b * a⁻¹ : Rˣ) : R) * a = (a : R) - ((q : R) - ↑q⁻¹) := by
