@@ -18,6 +18,7 @@ import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Leray.Edge
 import TauCeti.Topology.Sheaves.Cohomology.Instances
+import TauCeti.Topology.Sheaves.Functors
 
 /-!
 # Cohomology comparison through an affine morphism
@@ -239,16 +240,8 @@ open TopologicalSpace
 
 variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 
-private theorem preservesFiniteLimits_sheafPullback :
-    Limits.PreservesFiniteLimits ((Opens.map f.base).sheafPullback AddCommGrpCat.{u}
-      (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)) :=
-  letI : RepresentablyFlat (Opens.map f.base) := CategoryTheory.flat_of_preservesFiniteLimits _
-  Functor.sheafPullbackConstruction.preservesFiniteLimits _ _ _ _
-
 private def cohomologyLerayEdge (M : X.Modules) (n : ℕ) :
     Cohomology ((pushforward f).obj M) n →+ Cohomology M n :=
-  letI : RepresentablyFlat (Opens.map f.base) := CategoryTheory.flat_of_preservesFiniteLimits _
-  letI := f.preservesFiniteLimits_sheafPullback
   CategoryTheory.Sheaf.H.lerayEdge ((Opens.map f.base).sheafAdjunctionContinuous AddCommGrpCat.{u}
     (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X))
     ((Opens.map f.base).sheafPullbackConstantSheafIso AddCommGrpCat.{u}
@@ -258,10 +251,8 @@ private def cohomologyLerayEdge (M : X.Modules) (n : ℕ) :
 private lemma cohomologyLerayEdge_naturality {M N : X.Modules} (φ : M ⟶ N) (n : ℕ)
     (x : Cohomology ((pushforward f).obj M) n) :
     f.cohomologyLerayEdge N n ((cohomologyFunctor Y n).map ((pushforward f).map φ) x) =
-      (cohomologyFunctor X n).map φ (f.cohomologyLerayEdge M n x) := by
-  have : RepresentablyFlat (Opens.map f.base) := CategoryTheory.flat_of_preservesFiniteLimits _
-  have := f.preservesFiniteLimits_sheafPullback
-  exact CategoryTheory.Sheaf.H.lerayEdge_naturality
+      (cohomologyFunctor X n).map φ (f.cohomologyLerayEdge M n x) :=
+  CategoryTheory.Sheaf.H.lerayEdge_naturality
     ((Opens.map f.base).sheafAdjunctionContinuous AddCommGrpCat.{u}
       (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X))
     ((Opens.map f.base).sheafPullbackConstantSheafIso AddCommGrpCat.{u}
@@ -271,8 +262,6 @@ private lemma cohomologyLerayEdge_naturality {M N : X.Modules} (φ : M ⟶ N) (n
 private lemma cohomologyLerayEdge_bijective_of_isAffineHom [IsAffineHom f]
     (M : X.Modules) [M.IsQuasicoherent] (n : ℕ) :
     Function.Bijective (f.cohomologyLerayEdge M n) := by
-  have : RepresentablyFlat (Opens.map f.base) := CategoryTheory.flat_of_preservesFiniteLimits _
-  have := f.preservesFiniteLimits_sheafPullback
   refine CategoryTheory.Sheaf.H.lerayEdge_sheafAdjunctionContinuous_bijective (Opens.map f.base)
     (fun q ↦ ?_) n
   exact ((toSheaf Y).map_isZero (f.isZero_higherDirectImage_succ_of_isAffineHom M q)).of_iso

@@ -157,28 +157,6 @@ end IsCurveOverDVR
 
 section Finiteness
 
-private lemma withBot_enat_le_zero_of_add_one_le_one {d : WithBot ℕ∞} (h : d + 1 ≤ 1) : d ≤ 0 := by
-  cases d with
-  | bot => exact bot_le
-  | coe m => cases m with
-    | top => exact absurd (ENat.one_ne_top (top_le_iff.mp (WithBot.coe_le_coe.mp h))) id
-    | coe m =>
-      have : m + 1 ≤ 1 := ENat.natCast_le_natCast.mp (WithBot.coe_le_coe.mp h)
-      obtain rfl : m = 0 := by omega
-      exact le_rfl
-
-private lemma withBot_enat_eq_one_of_le_one_of_not_le_zero {d : WithBot ℕ∞} (h1 : d ≤ 1)
-    (h0 : ¬ d ≤ 0) : d = 1 := by
-  cases d with
-  | bot => exact absurd bot_le h0
-  | coe m => cases m with
-    | top => exact absurd (ENat.one_ne_top (top_le_iff.mp (WithBot.coe_le_coe.mp h1))) id
-    | coe m =>
-      have hm1 : m ≤ 1 := ENat.natCast_le_natCast.mp (WithBot.coe_le_coe.mp h1)
-      have hm0 : m ≠ 0 := fun h ↦ h0 (h ▸ le_rfl)
-      obtain rfl : m = 1 := by omega
-      rfl
-
 private theorem isFinite_of_topologicalKrullDim_le_zero [IsProper (X ↘ Spec (.of k))]
     (hX : topologicalKrullDim X ≤ 0) : IsFinite (X ↘ Spec (.of k)) := by
   have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
@@ -225,7 +203,7 @@ private theorem finiteDimensional_cohomology_of_not_nontrivial_stalk_genericPoin
   have hIdim : topologicalKrullDim I.subscheme ≤ 0 := by
     have hle := i.isClosedEmbedding.isInducing.topologicalKrullDim_add_one_le hnotdense
     rw [IsCurveOver.topologicalKrullDim_eq_one (X := X) k] at hle
-    exact withBot_enat_le_zero_of_add_one_le_one hle
+    exact ENat.WithBot.add_le_add_one_right_iff.mp (by simpa only [zero_add] using hle)
   have : IsIso ((pullbackPushforwardAdjunction i).unit.app Q) :=
     isIso_unit_app_of_ker_ideal_le_annihilator i Q fun U ↦ by
       rw [IdealSheafData.ker_subschemeι, Q.annihilator_ideal hQ U]
@@ -371,7 +349,11 @@ theorem finiteDimensional_cohomology_of_topologicalKrullDim_le_one
     FiniteDimensional k (Cohomology M n) := by
   by_cases h0 : topologicalKrullDim X ≤ 0
   · exact finiteDimensional_cohomology_of_topologicalKrullDim_le_zero h0 M n
-  · have : X.IsCurveOver k := ⟨withBot_enat_eq_one_of_le_one_of_not_le_zero hX h0⟩
+  · have : X.IsCurveOver k := ⟨le_antisymm hX (by
+      cases h : topologicalKrullDim X with
+      | bot => exact absurd (h ▸ bot_le) h0
+      | coe m => exact WithBot.coe_le_coe.mpr (Order.one_le_iff_pos.mpr
+          (WithBot.coe_lt_coe.mp (h ▸ lt_of_not_ge h0))))⟩
     exact finiteDimensional_cohomology_of_isCurveOver k M n
 
 end Finiteness
