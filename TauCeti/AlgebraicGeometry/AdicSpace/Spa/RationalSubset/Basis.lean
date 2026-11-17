@@ -50,6 +50,8 @@ the basis arguments uses it.
 
 ## Main results
 
+* `TauCeti.ValuationSpectrum.val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem`:
+  if some numerator `u ∈ T` is a unit, then `R(T/s)` belongs to the rational family.
 * `TauCeti.ValuationSpectrum.val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit`: a
   rational subset `R(T/s)` with unit denominator belongs to the family for every finite `T`, which
   is Wedhorn Remark 7.30(4); `TauCeti.ValuationSpectrum.setOf_vle_one_mem_spaRationalFamily` is
@@ -176,6 +178,15 @@ theorem univ_mem_spaRationalFamily (Aplus : Subring A) :
   · rw [rationalSubset_singleton_one]
     exact (Subtype.coe_preimage_self (spa Aplus)).symm
 
+/-- If one of the numerators `u ∈ T` is a unit, then `T · A = ⊤` is open and `R(T/s)` belongs to
+`spaRationalFamily A⁺`. -/
+theorem val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem (Aplus : Subring A)
+    {T : Finset A} {s u : A} (huT : u ∈ T) (hu : IsUnit u) :
+    Subtype.val ⁻¹' rationalSubset Aplus T s ∈ spaRationalFamily Aplus := by
+  refine ⟨T, s, ?_, rfl⟩
+  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr huT)) hu]
+  exact isOpen_univ
+
 /-- **Wedhorn Remark 7.30(4).** If the denominator `s` is a unit, then `R(T/s)` is a rational
 subset for every finite `T`, whether or not `T · A` is open: it is also `R((T ∪ {s})/s)`, and the
 numerator ideal of that presentation is the unit ideal. -/
@@ -183,10 +194,9 @@ theorem val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit (Aplus : Sub
     (T : Finset A) {s : A} (hs : IsUnit s) :
     Subtype.val ⁻¹' rationalSubset Aplus T s ∈ spaRationalFamily Aplus := by
   classical
-  refine ⟨insert s T, s, ?_, by rw [rationalSubset_insert_self]⟩
-  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr
-    (Finset.mem_insert_self s T))) hs]
-  exact isOpen_univ
+  rw [← rationalSubset_insert_self]
+  exact val_preimage_rationalSubset_mem_spaRationalFamily_of_isUnit_mem Aplus
+    (Finset.mem_insert_self s T) hs
 
 /-- **Wedhorn Remark 7.30(4)** for the denominator `1`: for every `f : A`, the locus
 `{v : v(f) ≤ 1}` of `Spa(A, A⁺)` is the rational subset `R(f/1)`. -/
@@ -543,7 +553,7 @@ theorem exists_unit_forall_mem_spa_exists_vlt (Aplus : Subring A) {T : Finset A}
       rwa [Subtype.image_preimage_coe,
         Set.inter_eq_right.mpr (rationalSubset_subset_spa Aplus T t)] at h
     exact exists_mem_nhds_zero_forall_vlt
-      (fun v hv ↦ (spa_def Aplus ▸ Set.inter_subset_left) (rationalSubset_subset_spa Aplus T t hv))
+      (fun v hv ↦ spa_subset_cont Aplus (rationalSubset_subset_spa Aplus T t hv))
       hcpt fun v hv ↦ ((mem_rationalSubset_iff _ _ _ _).mp hv).2.2
   choose I hI hIt using hdom
   -- a unit in the intersection of these neighbourhoods
