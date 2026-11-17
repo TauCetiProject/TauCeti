@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 import Mathlib.Topology.Instances.Real.Lemmas
-import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
 # Smooth proper exhaustion functions
@@ -45,9 +44,12 @@ theorem IsProperMap.finiteDimensional_of_manifold {𝕜 E H M Y : Type*} [Nontri
     [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
     [TopologicalSpace M] [ChartedSpace H M] [R1Space M] [Nonempty M] [TopologicalSpace Y]
     [WeaklyLocallyCompactSpace Y] {f : M → Y} (hf : IsProperMap f) (I : ModelWithCorners 𝕜 E H) :
-    FiniteDimensional 𝕜 E :=
-  have := hf.weaklyLocallyCompactSpace
-  .of_locallyCompact_manifold M I
+    FiniteDimensional 𝕜 E := by
+  -- The preimage of a compact neighbourhood of `f x` is a compact neighbourhood of `x`.
+  have : WeaklyLocallyCompactSpace M := ⟨fun x ↦
+    let ⟨K, hK, hKx⟩ := exists_compact_mem_nhds (f x)
+    ⟨f ⁻¹' K, hf.isCompact_preimage hK, hf.continuous.continuousAt.preimage_mem_nhds hKx⟩⟩
+  exact .of_locallyCompact_manifold M I
 
 namespace TauCeti
 
