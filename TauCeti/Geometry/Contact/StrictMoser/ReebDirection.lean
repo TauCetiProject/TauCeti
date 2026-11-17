@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Contact.Family
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
 public import TauCeti.Geometry.Manifold.Flow.Integral
 public import TauCeti.Geometry.Manifold.Flow.Parametric
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # The Reeb-direction equation with zero values on a transverse slice
@@ -123,7 +124,7 @@ theorem exists_mvfderiv_apply_reebVectorField_eq_of_flowOut
       (fun p : ℝ × M ↦ (⟨p.2, R p.1 p.2⟩ : TangentBundle I M)) :=
     contMDiff_reebVectorField_mpullback_prodMk α hc
   have hRt (t : ℝ) : CMDiff 1 (fun y ↦ (⟨y, R t y⟩ : TangentBundle I M)) :=
-    (hRsmooth.comp ((contMDiff_const (c := t)).prodMk contMDiff_id)).of_le (by simp)
+    (hRsmooth.apply_param t).of_le (by simp)
   have hV := contMDiff_verticalField (J := 𝓘(ℝ, ℝ)) hRsmooth
   have hfsmooth : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ f :=
     (contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc).neg
@@ -145,17 +146,8 @@ theorem exists_mvfderiv_apply_reebVectorField_eq_of_flowOut
   · -- The derivative of the slice `h_t` along `R_t` is the derivative of `h` along `(0, R_t)`.
     have hmd : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) h p :=
       (hsmooth.contMDiffAt (e.open_target.mem_nhds hp)).mdifferentiableAt (by simp)
-    have hslice := mvfderiv_comp_apply (g := h) (f := fun y : M ↦ (p.1, y)) p.2 hmd
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id) (R p.1 p.2)
-    rw [mfderiv_prod_right] at hslice
     have hp' := hderiv p hp
     rw [verticalField_apply] at hp'
-    -- `hslice` ends in `mvfderiv h (p.1, p.2) (inr (R p.1 p.2))` and `hp'` starts with
-    -- `mvfderiv h p (0, R p.1 p.2)`. These agree definitionally: `inr v` is `(0, v)`
-    -- (`ContinuousLinearMap.inr_apply`), and `(p.1, p.2)` is `p` by eta. The rewrite
-    -- `inr_apply` itself does not apply here: `inr` lands in the product
-    -- `TangentSpace 𝓘(ℝ, ℝ) p.1 × TangentSpace I p.2`, which is only definitionally the tangent
-    -- space `TangentSpace (𝓘(ℝ, ℝ).prod I) (p.1, p.2)`, so the rewrite is not type-correct.
-    exact hslice.trans hp'
+    exact (congrArg (· (R p.1 p.2)) (mvfderiv_curry_right p.1 p.2 hmd)).trans hp'
 
 end TauCeti.SmoothForm
