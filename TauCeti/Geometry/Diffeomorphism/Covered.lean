@@ -57,7 +57,9 @@ within a path component, since evaluations at two points joined by a path are ho
 * `IsCoveredByDiffeomorphisms.mul_left`: multiples of `ℓ`.
 * `isCoveredByDiffeomorphisms_neg`: independence of the orientation.
 * `isCoveredByDiffeomorphisms_iff_of_joined`,
-  `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`: independence of the base point.
+  `isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace`,
+  `isCoveredByDiffeomorphisms_iff_of_preconnectedSpace`: independence of the base point and
+  homological orientation.
 
 ## References
 
@@ -220,6 +222,19 @@ theorem isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace [PathConnectedSpace
     {ℓ : ℤ} :
     o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o.IsCoveredByDiffeomorphisms hd n x₁ ℓ :=
   isCoveredByDiffeomorphisms_iff_of_joined (PathConnectedSpace.joined x₀ x₁)
+
+/-- On a preconnected manifold, covering by diffeomorphisms does not depend on the homological
+orientation or the base point. -/
+theorem isCoveredByDiffeomorphisms_iff_of_preconnectedSpace [PreconnectedSpace M]
+    (o o' : HomologicalOrientation M E d) (x₀ x₁ : M) {ℓ : ℤ} :
+    o.IsCoveredByDiffeomorphisms hd n x₀ ℓ ↔ o'.IsCoveredByDiffeomorphisms hd n x₁ ℓ := by
+  have : ConnectedSpace M := { toNonempty := ⟨x₀⟩ }
+  have := ChartedSpace.locallyPathConnectedSpace E M
+  have := PathConnectedSpace.of_locallyPathConnectedSpace (X := M)
+  rcases eq_or_eq_neg hd o o' with rfl | rfl
+  · exact isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x₁
+  · exact (isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace x₀ x₁).trans
+      isCoveredByDiffeomorphisms_neg.symm
 
 end Covered
 
