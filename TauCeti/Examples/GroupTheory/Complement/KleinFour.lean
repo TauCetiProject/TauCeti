@@ -432,23 +432,11 @@ def matchingSubgroup (m : Fin 3) : Subgroup (Perm (Fin 4)) :=
 def swapZeroOneSubgroup : Subgroup (Perm (Fin 4)) :=
   Subgroup.zpowers (swap (0 : Fin 4) 1)
 
-private theorem matching_sq_eq_one (m : Fin 3) : symmetricGroupFourMatching m ^ 2 = 1 := by
-  fin_cases m <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, symmetricGroupFourMatching_zero,
-      symmetricGroupFourMatching_one, symmetricGroupFourMatching_two] <;>
-    decide
-
-private theorem matching_ne_one (m : Fin 3) : symmetricGroupFourMatching m ≠ 1 := by
-  fin_cases m <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, symmetricGroupFourMatching_zero,
-      symmetricGroupFourMatching_one, symmetricGroupFourMatching_two, ne_eq] <;>
-    decide
-
 /-- A permutation lies in `matchingSubgroup m` if and only if it is `1` or
 `symmetricGroupFourMatching m`. -/
 theorem mem_matchingSubgroup_iff (m : Fin 3) (σ : Perm (Fin 4)) :
     σ ∈ matchingSubgroup m ↔ σ = 1 ∨ σ = symmetricGroupFourMatching m :=
-  Subgroup.mem_zpowers_iff_of_sq_eq_one (matching_sq_eq_one m)
+  Subgroup.mem_zpowers_iff_of_sq_eq_one (symmetricGroupFourMatching_sq m)
 
 /-- Each `matchingSubgroup m` is contained in `symmKleinFour`. -/
 theorem matchingSubgroup_le_symmKleinFour (m : Fin 3) :
@@ -459,13 +447,14 @@ theorem matchingSubgroup_le_symmKleinFour (m : Fin 3) :
 /-- Each `matchingSubgroup m` has cardinality `2`. -/
 theorem card_matchingSubgroup (m : Fin 3) : Nat.card (matchingSubgroup m) = 2 := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  exact (Nat.card_zpowers _).trans (orderOf_eq_prime (matching_sq_eq_one m) (matching_ne_one m))
+  exact (Nat.card_zpowers _).trans
+    (orderOf_eq_prime (symmetricGroupFourMatching_sq m) (symmetricGroupFourMatching_ne_one m))
 
 /-- Each `matchingSubgroup m` is a `2`-group. -/
 theorem isPGroup_two_matchingSubgroup (m : Fin 3) : IsPGroup 2 (matchingSubgroup m) :=
   IsPGroup.of_card_dvd_pow (n := 1) <| by
     rw [matchingSubgroup, Nat.card_zpowers, pow_one]
-    exact orderOf_dvd_of_pow_eq_one (matching_sq_eq_one m)
+    exact orderOf_dvd_of_pow_eq_one (symmetricGroupFourMatching_sq m)
 
 /-- `swapZeroOneSubgroup` is a `2`-group. -/
 theorem isPGroup_two_swapZeroOneSubgroup : IsPGroup 2 swapZeroOneSubgroup :=
@@ -501,7 +490,7 @@ theorem isLocalComplement_matchingSubgroup_zero {m : Fin 3} (hm : m ≠ 0) :
     rcases h0 with rfl | rfl
     · rfl
     · rcases hm' with h | h
-      · exact absurd h (matching_ne_one 0)
+      · exact absurd h (symmetricGroupFourMatching_ne_one 0)
       · exact absurd (symmetricGroupFourMatching_injective h.symm) hm
   · intro σ hσ
     rw [mem_symmKleinFour_iff] at hσ
