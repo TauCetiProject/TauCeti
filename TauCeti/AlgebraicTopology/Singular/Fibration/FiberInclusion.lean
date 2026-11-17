@@ -144,9 +144,9 @@ private theorem preimageInclusion_comp :
       _root_.TopCat.ofHom (Φ.restrictPreimage {y}).toHomotopyEquiv.toFun ≫
         q.preimageInclusion hy := by
   have h (S : Set B) :
-      (Φ.restrictPreimage S).toHomotopyEquiv.toFun = restrictPreimageMap S Φ.comp_toFun :=
-    ContinuousMap.ext fun _ ↦ Subtype.ext <| by simp [toHomotopyEquiv_apply]
-  rw [h, h]
+      (Φ.restrictPreimage S).toHomotopyEquiv.toFun = (Φ.restrictPreimage S).toFun :=
+    ContinuousMap.ext (toHomotopyEquiv_apply _)
+  rw [h, h, restrictPreimage_toFun, restrictPreimage_toFun]
   exact ContinuousMap.preimageInclusion_comp_ofHom_restrictPreimageMap Φ.comp_toFun hy
 
 /-- On homology, the commutative square of `preimageInclusion_comp`. Its horizontal maps, induced

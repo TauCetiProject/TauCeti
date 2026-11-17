@@ -310,12 +310,20 @@ def restrictPreimage {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) 
     exact Φ.right_inv.map fun H ↦ restrictPreimageHomotopyWith S H _ _
 
 @[simp]
+theorem restrictPreimage_toFun {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q)
+    (S : Set B) : (Φ.restrictPreimage S).toFun = restrictPreimageMap S Φ.comp_toFun :=
+  (rfl)
+
+@[simp]
+theorem restrictPreimage_invFun {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q)
+    (S : Set B) : (Φ.restrictPreimage S).invFun = restrictPreimageMap S Φ.comp_invFun :=
+  (rfl)
+
 theorem coe_restrictPreimage_toFun_apply {p : C(E, B)} {q : C(E', B)}
     (Φ : FiberHomotopyEquiv p q) (S : Set B) (e : p ⁻¹' S) :
     ((Φ.restrictPreimage S).toFun e : E') = Φ.toFun e :=
   coe_restrictPreimageMap S Φ.comp_toFun e
 
-@[simp]
 theorem coe_restrictPreimage_invFun_apply {p : C(E, B)} {q : C(E', B)}
     (Φ : FiberHomotopyEquiv p q) (S : Set B) (e' : q ⁻¹' S) :
     ((Φ.restrictPreimage S).invFun e' : E) = Φ.invFun e' :=
