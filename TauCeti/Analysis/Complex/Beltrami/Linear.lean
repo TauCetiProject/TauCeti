@@ -436,6 +436,58 @@ theorem isComplexLinear_iff_conjWirtingerDeriv_eq (J : AlmostComplexStructure �
   · intro h
     linear_combination 2 * h
 
+/-- The Wirtinger parts `A 1 + i A i` and `A 1 - i A i` of `A ∘ (z ↦ z + a conj z)`, in terms
+of those of `A`. -/
+private theorem comp_linearMap_apply_one_add_sub_I_mul_apply_I (A : ℂ →L[ℝ] ℂ) (a : ℂ) :
+    A (linearMap a 1) + I * A (linearMap a I) =
+        (A 1 + I * A I) + a * (A 1 - I * A I) ∧
+      A (linearMap a 1) - I * A (linearMap a I) =
+        (A 1 - I * A I) + conj a * (A 1 + I * A I) := by
+  have hA (z : ℂ) : A z = z.re * A 1 + z.im * A I := by
+    simpa only [ContinuousLinearMap.coe_coe, Complex.real_smul] using
+      A.toLinearMap.apply_eq_re_smul_one_add_im_smul_I z
+  obtain ⟨s, t, rfl⟩ : ∃ s t : ℝ, a = s + t * I := ⟨a.re, a.im, (re_add_im a).symm⟩
+  rw [hA (linearMap _ 1), hA (linearMap _ I)]
+  simp only [linearMap_apply, map_one, map_add, map_mul, Complex.conj_ofReal, Complex.conj_I,
+    add_re, add_im, one_re, one_im, mul_re, mul_im, neg_re, neg_im, ofReal_re, ofReal_im, I_re,
+    I_im]
+  push_cast
+  constructor <;> ring_nf <;> simp only [I_sq] <;> ring
+
+/-- **The coefficient after an affine change of coordinates.** Let `J` and `J'` be tame
+structures with Beltrami coefficients `μ` and `ν` related by `ν (1 - conj a μ) = μ - a`, that is,
+`ν = (μ - a) / (1 - conj a μ)`. Then a real-linear map `A` intertwines `J'` with `i` exactly
+when `A ∘ (z ↦ z + a conj z)` intertwines `J` with `i`. For `a = μ` the structure `J'` is the
+standard one, which is the normalization `μ(0) = 0` of `transport_linearEquiv_eq_std`. -/
+theorem isComplexLinear_comp_linearMap_iff (J J' : AlmostComplexStructure ℂ)
+    (hJ : stdComplexSymplecticForm.Tames J) (hJ' : stdComplexSymplecticForm.Tames J') {a : ℂ}
+    (h : (coefficientEquiv ⟨J', hJ'⟩).val * (1 - conj a * (coefficientEquiv ⟨J, hJ⟩).val) =
+      (coefficientEquiv ⟨J, hJ⟩).val - a) (A : ℂ →L[ℝ] ℂ) :
+    IsComplexLinear J.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        (A.comp (linearMap a)).toLinearMap ↔
+      IsComplexLinear J'.toLinearMap (AlmostComplexStructure.ofComplexModule ℂ).toLinearMap
+        A.toLinearMap := by
+  rw [isComplexLinear_iff_apply_one_add_I_mul_apply_I J hJ,
+    isComplexLinear_iff_apply_one_add_I_mul_apply_I J' hJ']
+  set μ := (coefficientEquiv ⟨J, hJ⟩).val
+  set ν := (coefficientEquiv ⟨J', hJ'⟩).val
+  obtain ⟨h₁, h₂⟩ := comp_linearMap_apply_one_add_sub_I_mul_apply_I A a
+  simp only [ContinuousLinearMap.comp_apply, h₁, h₂]
+  -- The denominator `1 - conj a μ` does not vanish: otherwise `μ = a` and `‖μ‖ = 1`.
+  have hne : 1 - conj a * μ ≠ 0 := by
+    intro h0
+    have hμa : μ = a := by linear_combination -h + ν * h0
+    have hμ : ‖μ‖ < 1 := (coefficientEquiv ⟨J, hJ⟩).property
+    have h1 : ‖conj a * μ‖ = 1 := by rw [← sub_eq_zero.mp h0, norm_one]
+    rw [norm_mul, Complex.norm_conj, ← hμa] at h1
+    nlinarith [norm_nonneg μ]
+  constructor
+  · intro hA
+    apply mul_left_cancel₀ hne
+    linear_combination hA - (A 1 - I * A I) * h
+  · intro hA
+    linear_combination (1 - μ * conj a) * hA + (A 1 - I * A I) * h
+
 /-- The scalar coefficient of a tame structure vanishes exactly at the standard structure. -/
 theorem coefficientEquiv_eq_zero_iff (J : AlmostComplexStructure ℂ)
     (hJ : stdComplexSymplecticForm.Tames J) :
