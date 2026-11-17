@@ -148,6 +148,12 @@ theorem coe_lineGraphOfSimpleGraphIso_apply (H : SimpleGraph α) (e : E(ofSimple
     (lineGraphOfSimpleGraphIso H e : Sym2 α) = e :=
   (rfl)
 
+/-- The inverse of `Graph.lineGraphOfSimpleGraphIso` keeps each edge. -/
+@[simp]
+theorem coe_lineGraphOfSimpleGraphIso_symm_apply (H : SimpleGraph α) (e : H.edgeSet) :
+    ((lineGraphOfSimpleGraphIso H).symm e : Sym2 α) = e :=
+  (rfl)
+
 /-! ### Edge-colourings -/
 
 /-- A proper edge-colouring of a multigraph `G` by colours in `C` assigns a colour to every actual
