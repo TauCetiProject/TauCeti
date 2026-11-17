@@ -19,7 +19,9 @@ In a complete normed algebra, the exponential agrees with this quadratic truncat
 order at the origin; this file records that estimate in `Asymptotics.IsBigO` form. The exponential
 is also multiplicative on scalar multiples of a fixed element (`NormedSpace.exp_add_smul`).
 The file also bounds the norm of the exponential by a scalar exponential, comparing the exponential
-series termwise with the series of `Real.exp`.
+series termwise with the series of `Real.exp`, and records closed-form exponentials for
+idempotents (`e ^ (n + 1) = e`), collapsing `exp (a * e)` (when `a` commutes with `e`) and
+`exp (z • e)` to linear expressions in `e`.
 
 The exponential is analytic at `0` with power series `NormedSpace.expSeries`, so the statement is
 the Taylor formula `HasFPowerSeriesAt.isBigO_sub_partialSum_pow` at `n = 3`, once the third partial
@@ -46,6 +48,8 @@ Baker--Campbell--Hausdorff expansion.
 * `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
   bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
+* `IsIdempotentElem.exp_mul_of_commute`, `IsIdempotentElem.exp`, `IsIdempotentElem.exp_smul`:
+  closed forms for exponentials of `a * e`, `e`, and `z • e` for an idempotent `e`.
 -/
 
 public section
@@ -210,3 +214,54 @@ theorem norm_exp_smul_one_le [NormedAlgebra ℝ 𝔸] (h_one : ‖(1 : 𝔸)‖ 
   exact mul_le_of_le_one_right (Real.exp_nonneg c) h_one
 
 end TauCeti
+
+namespace IsIdempotentElem
+
+section RatBanachAlgebra
+
+variable {A : Type*} [NormedRing A] [NormedAlgebra ℚ A] [CompleteSpace A] {e : A}
+
+/-- In a complete normed `ℚ`-algebra, if `a` commutes with an idempotent `e`, then
+`exp (a * e) = 1 + (exp a - 1) * e`. -/
+theorem exp_mul_of_commute (he : IsIdempotentElem e) {a : A} (h : Commute a e) :
+    NormedSpace.exp (a * e) = 1 + (NormedSpace.exp a - 1) * e := by
+  have hseries : HasSum (fun n : ℕ ↦ (((n + 1)! : ℚ))⁻¹ • (a * e) ^ (n + 1))
+      ((NormedSpace.exp a - 1) * e) :=
+    ((NormedSpace.hasSum_exp_sub_one ℚ a).map (AddMonoidHom.mulRight e)
+      (continuous_mul_const e)).congr_fun fun n ↦ by
+      simp [h.mul_pow, he.pow_succ_eq]
+  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : ℚ) • (a * e) ^ n)
+      (1 + (NormedSpace.exp a - 1) * e) := by
+    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
+  exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℚ) (a * e)).unique hfull
+
+/-- In a complete normed `ℚ`-algebra, `exp e = 1 + (exp 1 - 1) * e` for an idempotent `e`. -/
+theorem exp (he : IsIdempotentElem e) :
+    NormedSpace.exp e = 1 + (NormedSpace.exp (1 : A) - 1) * e := by
+  simpa using he.exp_mul_of_commute (Commute.one_left e)
+
+end RatBanachAlgebra
+
+section BanachAlgebra
+
+variable {𝕂 A : Type*} [NontriviallyNormedField 𝕂] [CharZero 𝕂] [ContinuousSMul ℚ 𝕂]
+  [CompleteSpace 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A] [CompleteSpace A] {e : A}
+
+/-- In a complete normed algebra over a complete characteristic-zero normed field `𝕂` with
+continuous rational scaling (such as `ℝ` or `ℂ`), `exp (z • e) = 1 + (exp z - 1) • e` for any
+idempotent `e`. -/
+theorem exp_smul (he : IsIdempotentElem e) (z : 𝕂) :
+    NormedSpace.exp (z • e) = 1 + (NormedSpace.exp z - 1) • e := by
+  have hseries : HasSum (fun n : ℕ ↦ (((n + 1)! : 𝕂))⁻¹ • (z • e) ^ (n + 1))
+      ((NormedSpace.exp z - 1) • e) :=
+    ((NormedSpace.hasSum_exp_sub_one 𝕂 z).mapL
+      ((ContinuousLinearMap.id 𝕂 𝕂).smulRight e)).congr_fun fun n ↦ by
+      simp [smul_pow, he.pow_succ_eq, mul_smul]
+  have hfull : HasSum (fun n : ℕ ↦ (n.factorial⁻¹ : 𝕂) • (z • e) ^ n)
+      (1 + (NormedSpace.exp z - 1) • e) := by
+    rw [← hasSum_nat_add_iff' 1]; simpa [add_comm] using hseries
+  exact (NormedSpace.exp_series_hasSum_exp' (𝕂 := 𝕂) (z • e)).unique hfull
+
+end BanachAlgebra
+
+end IsIdempotentElem

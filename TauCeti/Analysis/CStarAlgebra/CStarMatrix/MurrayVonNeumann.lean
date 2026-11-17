@@ -486,6 +486,12 @@ def stabilizedSymmetry {m n A : Type*} [DecidableEq m] [DecidableEq n]
     (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
   fromBlocks (1 - p) v.conjTranspose v (1 - q)
 
+/-- Defining block formula for `stabilizedSymmetry p q v`. -/
+theorem stabilizedSymmetry_def {m n A : Type*} [DecidableEq m] [DecidableEq n]
+    [Zero A] [One A] [Sub A] [Star A] (p : CStarMatrix m m A) (q : CStarMatrix n n A)
+    (v : CStarMatrix n m A) :
+    stabilizedSymmetry p q v = fromBlocks (1 - p) v.conjTranspose v (1 - q) := (rfl)
+
 /-- `stabilizedSymmetry p q v` is self-adjoint whenever `vᴴ * v = p` and `v * vᴴ = q`. -/
 theorem isSelfAdjoint_stabilizedSymmetry {m n A : Type*} [Fintype m] [Fintype n]
     [DecidableEq m] [DecidableEq n] [NonAssocRing A] [StarRing A]
@@ -557,6 +563,11 @@ def rotationProjection {m n A : Type*} [Neg A] [Star A] [SMul ℂ A]
     (p : CStarMatrix m m A) (q : CStarMatrix n n A)
     (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=
   (1 / 2 : ℂ) • fromBlocks p (-v.conjTranspose) (-v) q
+
+/-- Defining block formula for `rotationProjection p q v`. -/
+theorem rotationProjection_def {m n A : Type*} [Neg A] [Star A] [SMul ℂ A]
+    (p : CStarMatrix m m A) (q : CStarMatrix n n A) (v : CStarMatrix n m A) :
+    rotationProjection p q v = (1 / 2 : ℂ) • fromBlocks p (-v.conjTranspose) (-v) q := (rfl)
 
 /-- Doubling `rotationProjection p q v` recovers `fromBlocks p (-v.conjTranspose) (-v) q`. -/
 theorem two_smul_rotationProjection {m n A : Type*} [Neg A] [Star A] [MulAction ℂ A]
@@ -649,6 +660,18 @@ def rotationUnitary {p : CStarMatrix m m A} {q : CStarMatrix n n A} {v : CStarMa
       selfAdjoint.mem_iff.mpr
         ((isStarProjection_rotationProjection hp hvp hvq).map
           (Unitization.inrNonUnitalStarAlgHom ℂ _)).isSelfAdjoint⟩)
+
+/-- Defining exponential-unitary formula for `rotationUnitary` at an arbitrary real parameter
+`t`. -/
+theorem rotationUnitary_def {p : CStarMatrix m m A} {q : CStarMatrix n n A}
+    {v : CStarMatrix n m A} (hp : IsIdempotentElem p)
+    (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) (t : ℝ) :
+    rotationUnitary hp hvp hvq t =
+      selfAdjoint.expUnitary ((Real.pi * t) •
+        ⟨(rotationProjection p q v : Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)),
+          selfAdjoint.mem_iff.mpr
+            ((isStarProjection_rotationProjection hp hvp hvq).map
+              (Unitization.inrNonUnitalStarAlgHom ℂ _)).isSelfAdjoint⟩) := (rfl)
 
 /-- At `t = 0`, `rotationUnitary` evaluates to the identity unitary `1`. -/
 @[simp] theorem rotationUnitary_zero {p : CStarMatrix m m A} {q : CStarMatrix n n A}

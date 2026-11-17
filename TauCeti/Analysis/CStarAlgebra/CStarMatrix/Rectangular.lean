@@ -13,11 +13,13 @@ import Mathlib.Analysis.CStarAlgebra.Hom
 # Rectangular norms, reindexing, and permutation matrices on `CStarMatrix`
 
 Mathlib equips square matrices `CStarMatrix n n A` over a C⋆-algebra `A` with a C⋆-algebra
-structure and rectangular matrices `CStarMatrix m n A` with their operator norm on the right
-Hilbert `A`-module `n → A`. Comparing projections across different matrix sizes via rectangular
-partial isometries, block decompositions, and coordinate equivalences `e : m ≃ n` requires
-rectangular multiplication, conjugate transposition, and reindexing to interact cleanly with that
-operator norm. This file develops that rectangular calculus:
+structure and rectangular matrices `CStarMatrix m n A` with the operator norm of the row-action
+operator `CStarMatrix.toCLM M` (`v ↦ v ᵥ* M`) from the Hilbert `A`-module `m → A` to `n → A`
+(which reverses composition order on products: `toCLM (M * N) = (toCLM N).comp (toCLM M)`).
+Comparing projections across different matrix sizes via rectangular partial isometries, block
+decompositions, and coordinate equivalences `e : m ≃ n` requires rectangular multiplication,
+conjugate transposition, and reindexing to interact cleanly with that operator norm. This file
+develops that rectangular calculus:
 
 * Rectangular algebraic, conjugate-transpose, entrywise map, and proper-star cancellation
   identities (`Mᴴ * M = 0 ↔ M = 0` and `(Mᴴ * M) * N = 0 ↔ M * N = 0`).
