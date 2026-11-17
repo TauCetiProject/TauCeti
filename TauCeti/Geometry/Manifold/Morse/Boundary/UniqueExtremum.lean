@@ -200,8 +200,8 @@ theorem ncard_morseTrajectorySlice_eq_two_of_unique_index_zero {q m : M}
     omega
   have hu (x : M) : hX.flow.unstableSet x = hXn.flow.stableSet x :=
     hX.unstableSet_eq_stableSet_neg hf x
-  have hs (x : M) : hX.flow.stableSet x = hXn.flow.unstableSet x := by
-    rw [hX.neg_flow hf, Flow.unstableSet_reverse]
+  have hs (x : M) : hX.flow.stableSet x = hXn.flow.unstableSet x :=
+    hX.stableSet_eq_unstableSet_neg hf x
   -- Every trajectory out of `q` goes to a critical point of index `0`, hence to `m`.
   have hW (y : M) (hyu : y ∈ hXn.flow.stableSet q) (hyq : y ≠ q) :
       y ∈ hXn.flow.unstableSet m := by

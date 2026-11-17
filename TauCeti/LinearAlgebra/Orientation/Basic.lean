@@ -44,6 +44,8 @@ compatibility under linear equivalences.
 * `Orientation.eq_or_eq_neg_of_card_eq_finrank`: any two orientations are equal or opposite when
   the index type has the dimension of the space, without assuming finite dimension.
 * `Orientation.intCast_units_smul_ite_eq`: the relative sign reconstructs an orientation.
+* `Orientation.exists_eq_neg_one_pow_smul`: every orientation is a signed copy `(-1) ^ i • y` of
+  any other orientation `y`.
 -/
 
 public section
@@ -259,5 +261,13 @@ theorem Orientation.intCast_units_smul_ite_eq
     (Units.map (Int.castRingHom R).toMonoidHom (if o = model then 1 else -1)) • model = o := by
   rcases eq_or_eq_neg_of_card_eq_finrank o model hι with h | h <;>
     simp [h, (Module.Ray.ne_neg_self model).symm]
+
+/-- Every orientation is a signed copy `(-1) ^ i • y` of any other orientation `y`, when the index
+type has the dimension of the space. -/
+theorem Orientation.exists_eq_neg_one_pow_smul (x y : Orientation R M ι)
+    (h : Fintype.card ι = finrank R M) : ∃ i : ℕ, x = (-1 : Rˣ) ^ i • y := by
+  rcases eq_or_eq_neg_of_card_eq_finrank x y h with rfl | rfl
+  · exact ⟨0, by rw [pow_zero, one_smul]⟩
+  · exact ⟨1, by rw [pow_one, Module.Ray.neg_units_smul, one_smul]⟩
 
 end Field

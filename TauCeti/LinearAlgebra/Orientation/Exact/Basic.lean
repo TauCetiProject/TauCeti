@@ -65,6 +65,7 @@ Naturality carries these orientations along the flow.
   naturality under isomorphisms of short exact sequences.
 * `Orientation.ofExact_inl_snd`: for a product, the induced orientation is the product
   orientation.
+* `Orientation.ofExact_eq_map_prod`: the induced orientation read in a splitting of the sequence.
 
 ## References
 
@@ -401,5 +402,23 @@ theorem ofExact_inl_snd (o : Orientation R A (Fin m)) (p : Orientation R C (Fin 
   rcases a.orientation_eq_or_eq_neg o with rfl | rfl <;>
     rcases c.orientation_eq_or_eq_neg p with rfl | rfl <;>
     simp only [ofExact_neg_left, ofExact_neg_right, prod_neg_left, prod_neg_right, hbase]
+
+/-- **The induced orientation in a splitting.** Let `G : A₀ × C ≃ B` split the sequence
+`0 → A → B → C → 0` through an isomorphism `e : A ≃ A₀`, in the sense that `G (e x, 0) = f x` and
+`g (G z) = z.2`. Then the orientation of `B` induced by `o` and `p` is the image under `G` of the
+product orientation of `e o` and `p`. -/
+theorem ofExact_eq_map_prod {A₀ : Type*} [AddCommGroup A₀] [Module R A₀] [Module.Free R A₀]
+    [Module.Finite R A₀] (e : A ≃ₗ[R] A₀) (G : (A₀ × C) ≃ₗ[R] B)
+    (hGf : ∀ x, G (e x, 0) = f x) (hGg : ∀ z, g (G z) = z.2) (o : Orientation R A (Fin m))
+    (p : Orientation R C (Fin n)) (hm : finrank R A = m) (hn : finrank R C = n) :
+    ofExact hf hfg hg o p hm hn =
+      Orientation.map _ G (prod (Orientation.map _ e o) p (e.finrank_eq.symm.trans hm) hn) := by
+  have h := map_ofExact hf hfg hg LinearMap.inl_injective Function.Exact.inl_snd
+    LinearMap.snd_surjective e G.symm (LinearEquiv.refl R C)
+    (fun x ↦ by rw [G.symm_apply_eq, LinearMap.inl_apply, hGf])
+    (fun z ↦ by rw [← G.apply_symm_apply z, hGg, LinearEquiv.refl_apply, G.symm_apply_apply,
+      LinearMap.snd_apply]) o p hm hn
+  rw [map_refl, Equiv.refl_apply, ofExact_inl_snd] at h
+  rw [← h, ← map_trans, LinearEquiv.symm_trans_self, map_refl, Equiv.refl_apply]
 
 end Orientation
