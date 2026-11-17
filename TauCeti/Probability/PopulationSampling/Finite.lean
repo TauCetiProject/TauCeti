@@ -46,8 +46,7 @@ the fibre counts of embeddings and of all index maps divided by `|κ|_(|ι|)` an
 * `sampleWithoutReplacement`, `sampleWithReplacement`: the two finite sampling laws;
 * `sampleWithoutReplacement_eq_zero_of_isEmpty_embedding`: sampling without replacement is zero
   when no injective selection exists;
-* `sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton`,
-  `sampleWithoutReplacement_eq_sampleWithReplacement_of_card_le_one`: the two laws coincide on
+* `sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton`: the two laws coincide on
   samples of size at most one;
 * `sampleWithoutReplacement_dirac_singleton`, `sampleWithReplacement_dirac_singleton`: singleton
   masses of deterministic sampling as fibre counts divided by `|κ|_(|ι|)` and `|κ| ^ |ι|`;
@@ -269,13 +268,20 @@ theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton [Finty
   ext k
   simp [Function.injective_of_subsingleton]
 
-/-- Sampling at most one entry without replacement equals sampling with replacement for every
-population law. -/
-theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_card_le_one [Fintype ι] [Finite κ]
-    (hι : Fintype.card ι ≤ 1) (ρ : Measure (κ → α)) :
-    sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
-  have : Subsingleton ι := Fintype.card_le_one_iff_subsingleton.mp hι
-  exact sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton ρ
+omit [MeasurableSpace α] [MeasurableSpace κ] [MeasurableSingletonClass κ] in
+/-- Injective index maps producing a given word have the same cardinality as embeddings producing
+that word. -/
+private theorem card_filter_injective_and_comp_eq [Fintype ι] [DecidableEq ι] [Fintype κ]
+    (x : κ → α) (y : ι → α)
+    [DecidablePred fun k : ι → κ => Function.Injective k ∧ x ∘ k = y] :
+    (Finset.univ.filter fun k : ι → κ => Function.Injective k ∧ x ∘ k = y).card =
+      Nat.card {f : ι ↪ κ // x ∘ f = y} := by
+  rw [← Fintype.card_subtype, ← Nat.card_eq_fintype_card]
+  exact Nat.card_congr
+    { toFun := fun k => ⟨⟨k.1, k.2.1⟩, k.2.2⟩
+      invFun := fun f => ⟨f.1, f.1.injective, f.2⟩
+      left_inv := fun _ => rfl
+      right_inv := fun _ => rfl }
 
 /-- The singleton mass of a word under sampling a deterministic finite population without
 replacement is the number of embeddings producing that word divided by `|κ|_(|ι|)`. This also
@@ -289,21 +295,14 @@ theorem sampleWithoutReplacement_dirac_singleton [Fintype ι] [Fintype κ]
   rw [sampleWithoutReplacement_dirac,
     Measure.map_apply (measurable_readPopulation x) (measurableSet_singleton y)]
   have hset : {k : ι → κ | Function.Injective k} =
-      (({k : ι → κ | Function.Injective k} : Finset (ι → κ)) : Set _) := by
+      ((Finset.univ.filter fun k : ι → κ => Function.Injective k) : Set (ι → κ)) := by
     simp
   have hpre : (fun k : ι → κ => fun i => x (k i)) ⁻¹' {y} =
-      (({k : ι → κ | x ∘ k = y} : Finset (ι → κ)) : Set _) := by
+      ((Finset.univ.filter fun k : ι → κ => x ∘ k = y) : Set (ι → κ)) := by
     ext k
     simp [Function.comp_def]
   rw [hset, hpre, uniformOn_apply_finset, ← Finset.filter_and,
-    ← Fintype.card_subtype (fun k : ι → κ => Function.Injective k), Fintype.card_subtype_injective]
-  congr 1
-  let e : {k : ι → κ // Function.Injective k ∧ x ∘ k = y} ≃ {f : ι ↪ κ // x ∘ f = y} :=
-    (Equiv.subtypeSubtypeEquivSubtypeInter (fun k : ι → κ => Function.Injective k)
-      (fun k => x ∘ k = y)).symm.trans
-      ((Equiv.subtypeInjectiveEquivEmbedding ι κ).subtypeEquiv fun _ => Iff.rfl)
-  exact_mod_cast
-    (Fintype.card_subtype _).symm.trans ((Nat.card_eq_fintype_card.symm).trans (Nat.card_congr e))
+    card_filter_injective_and_comp_eq, ← Fintype.card_subtype, Fintype.card_subtype_injective]
 
 /-- The singleton mass of a word under sampling a deterministic finite population with replacement
 is the number of index maps producing that word divided by `|κ| ^ |ι|`. This also holds when no
