@@ -23,9 +23,9 @@ two-variable currying isometry used to identify continuous multilinear second de
 curried bilinear maps, and the corresponding exact comparison for differences of second
 derivatives, which transfers Hölder bounds between the two forms of the second derivative.
 Where a function `ζ` equals one on a neighbourhood of a point, every iterated derivative of
-`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), and at a point of an
-open set `s` every iterated derivative of `s.indicator g` is that of `g`
-(`TauCeti.iteratedFDeriv_indicator_of_mem`). Bounded derivatives up
+`ζ * u` there is that of `u` (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`), and at a point of
+which `s` is a neighbourhood every iterated derivative of `s.indicator g` is that of `g`
+(`TauCeti.iteratedFDeriv_indicator_of_mem_nhds`). Bounded derivatives up
 to a finite order have a common bound
 (`TauCeti.exists_forall_norm_iteratedFDeriv_le_of_forall_exists`), and such a
 common bound is nonnegative and bounds the function itself
@@ -173,12 +173,13 @@ theorem _root_.Filter.EventuallyEq.iteratedFDeriv_mul_eq {𝕜 F A : Type*} [Non
     simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
   exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
 
-/-- At a point of an open set `s`, every iterated derivative of `s.indicator g` is that of `g`. -/
-theorem iteratedFDeriv_indicator_of_mem {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+/-- At a point of which `s` is a neighbourhood, every iterated derivative of `s.indicator g` is
+that of `g`. -/
+theorem iteratedFDeriv_indicator_of_mem_nhds {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
     [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {s : Set E} {g : E → F} (hs : IsOpen s) (k : ℕ) {x : E} (hx : x ∈ s) :
+    {s : Set E} {g : E → F} {x : E} (hs : s ∈ 𝓝 x) (k : ℕ) :
     iteratedFDeriv 𝕜 k (s.indicator g) x = iteratedFDeriv 𝕜 k g x :=
-  (Filter.EventuallyEq.iteratedFDeriv 𝕜 (Filter.eventually_of_mem (hs.mem_nhds hx)
+  (Filter.EventuallyEq.iteratedFDeriv 𝕜 (Filter.eventually_of_mem hs
     fun _ hy ↦ Set.indicator_of_mem hy g) k).eq_of_nhds
 
 end TauCeti

@@ -273,8 +273,8 @@ def ofContDiffOn (g : E → F) (hg : ContDiffOn ℝ k g Ω)
   holderOnWith' K hKΩ hK := by
     obtain ⟨C, hC⟩ := hH K hKΩ hK
     refine ⟨C, fun x hx y hy ↦ ?_⟩
-    rw [iteratedFDeriv_indicator_of_mem Ω.isOpen k (hKΩ hx),
-      iteratedFDeriv_indicator_of_mem Ω.isOpen k (hKΩ hy)]
+    rw [iteratedFDeriv_indicator_of_mem_nhds (Ω.isOpen.mem_nhds (hKΩ hx)) k,
+      iteratedFDeriv_indicator_of_mem_nhds (Ω.isOpen.mem_nhds (hKΩ hy)) k]
     exact hC x hx y hy
   eq_zero_of_notMem' _ hx := indicator_of_notMem hx g
 
@@ -299,7 +299,7 @@ theorem ofContDiffOn_apply_of_notMem {x : E} (hx : x ∉ Ω) : ofContDiffOn g hg
 @[simp]
 theorem iteratedFDeriv_ofContDiffOn (i : ℕ) {x : E} (hx : x ∈ Ω) :
     iteratedFDeriv ℝ i (ofContDiffOn g hg hH) x = iteratedFDeriv ℝ i g x :=
-  iteratedFDeriv_indicator_of_mem Ω.isOpen i hx
+  iteratedFDeriv_indicator_of_mem_nhds (Ω.isOpen.mem_nhds hx) i
 
 /-- Every element is `ofContDiffOn` of its own underlying map. -/
 @[simp]
@@ -334,6 +334,11 @@ def restrictBCF {i : ℕ} (hi : i ≤ k) (f : CkHolderLocSpace k α Ω F) : K �
 theorem restrictBCF_apply {i : ℕ} (hi : i ≤ k) (f : CkHolderLocSpace k α Ω F) (x : K) :
     restrictBCF K hK hi f x = iteratedFDeriv ℝ i f x :=
   (rfl)
+
+/-- `restrictBCF` is the restriction of the `i`-th derivative to `K`. -/
+theorem coe_restrictBCF {i : ℕ} (hi : i ≤ k) (f : CkHolderLocSpace k α Ω F) :
+    ⇑(restrictBCF K hK hi f) = (K : Set E).domRestrict (iteratedFDeriv ℝ i f) :=
+  funext (restrictBCF_apply K hK hi f)
 
 /-- The `k`-th derivative field of an element on a compact set `K ⊆ Ω` is `α`-Hölder. -/
 theorem memHolder_restrictBCF (f : CkHolderLocSpace k α Ω F) :
@@ -405,9 +410,8 @@ theorem seminorm_eq (f : CkHolderLocSpace k α Ω F) :
     CkHolderLocSpace.seminorm K hK f =
       ∑ i : Fin k, ‖restrictBCF K hK i.is_lt.le f‖ + ‖restrictBCF K hK le_rfl f‖ +
         nnHolderNorm α ((K : Set E).domRestrict (iteratedFDeriv ℝ k f)) := by
-  rw [seminorm_apply, HolderSpace.norm_def, toBoundedContinuousFunction_restrictHolder, add_assoc,
-    ← coe_restrictHolder, ← toBoundedContinuousFunction_restrictHolder,
-    HolderSpace.coe_toBoundedContinuousFunction]
+  rw [seminorm_apply, HolderSpace.norm_def, toBoundedContinuousFunction_restrictHolder,
+    coe_restrictBCF, add_assoc]
 
 /-- On a compact set `K ⊆ Ω`, the seminorm `p_K f` bounds the supremum norms of the derivative
 fields of `f` through order `k`. -/
@@ -460,8 +464,7 @@ theorem seminorm_mono {L : Compacts E} (hL : (L : Set E) ⊆ Ω) (hKL : K ≤ L)
   · exact hsup _
   · exact hsup _
   · have hL' := (memHolder_restrictBCF L hL f).holderWith
-    rw [← toBoundedContinuousFunction_restrictHolder, HolderSpace.coe_toBoundedContinuousFunction,
-      coe_restrictHolder, HolderWith.restrict_iff] at hL'
+    rw [coe_restrictBCF, HolderWith.restrict_iff] at hL'
     exact HolderWith.nnholderNorm_le (HolderWith.restrict_iff.2 (hL'.mono hKL))
 
 end Restrict
@@ -567,6 +570,18 @@ def restrictHolderL : CkHolderLocSpace k α Ω F →L[ℝ] HolderSpace α K (E [
 theorem restrictHolderL_apply (f : CkHolderLocSpace k α Ω F) :
     restrictHolderL K hK f = restrictHolder K hK f :=
   (rfl)
+
+/-- `restrictBCF` sends differences to differences. -/
+@[simp]
+theorem restrictBCF_sub {i : ℕ} (hi : i ≤ k) (f g : CkHolderLocSpace k α Ω F) :
+    restrictBCF K hK hi (f - g) = restrictBCF K hK hi f - restrictBCF K hK hi g :=
+  map_sub (restrictBCFL K hK hi) f g
+
+/-- `restrictHolder` sends differences to differences. -/
+@[simp]
+theorem restrictHolder_sub (f g : CkHolderLocSpace k α Ω F) :
+    restrictHolder K hK (f - g) = restrictHolder K hK f - restrictHolder K hK g :=
+  map_sub (restrictHolderL K hK) f g
 
 end Restrict
 
@@ -706,13 +721,13 @@ private theorem tendsto_limit (hu : CauchySeq u) : Tendsto u atTop (𝓝 (limit 
       ext1 x
       rw [restrictBCF_apply, hφG, coe_limit, iteratedFDeriv_limitFun hu hi (hK x.2)]
     rw [← hlim] at hφ
-    simpa [← restrictBCFL_apply, map_sub] using tendsto_iff_norm_sub_tendsto_zero.1 hφ
+    simpa using tendsto_iff_norm_sub_tendsto_zero.1 hφ
   have hHolder : Tendsto (fun n ↦ ‖restrictHolder K hK (u n - limit hu)‖) atTop (𝓝 0) := by
     obtain ⟨ψ, hψ, hψG⟩ := exists_tendsto_restrictHolder_eq hu K hK
     have hlim : restrictHolder K hK (limit hu) = ψ :=
       HolderSpace.ext fun x ↦ by rw [restrictHolder_apply, hψG, coe_limit]
     rw [← hlim] at hψ
-    simpa [← restrictHolderL_apply, map_sub] using tendsto_iff_norm_sub_tendsto_zero.1 hψ
+    simpa using tendsto_iff_norm_sub_tendsto_zero.1 hψ
   simp_rw [seminorm_apply]
   simpa using (tendsto_finsetSum Finset.univ fun (j : Fin k) _ ↦ hBCF j.is_lt.le).add hHolder
 
