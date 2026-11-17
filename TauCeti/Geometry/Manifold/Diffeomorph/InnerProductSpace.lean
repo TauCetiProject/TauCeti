@@ -14,9 +14,9 @@ import TauCeti.Analysis.Calculus.ContDiff.Adjoint
 
 Identifying covectors with vectors by the inner product, the cotangent map of a diffeomorphism
 `h : E → F` of complete real inner product spaces at `x` sends a covector `ξ` at `x` to the
-covector `(Dh(x)ᵀ)⁻¹ ξ` at `h x`, characterized by `⟪(Dh(x)ᵀ)⁻¹ ξ, Dh(x) v⟫ = ⟪ξ, v⟫`. Here
-`(Dh(x)ᵀ)⁻¹` is the adjoint of `D(h⁻¹)(h x)`. This is the vector form of the cotangent lift
-`Diffeomorph.cotangent`.
+covector `(Dh(x)ᵀ)⁻¹ ξ` at `h x`, characterized by `⟪(Dh(x)ᵀ)⁻¹ ξ, Dh(x) v⟫ = ⟪ξ, v⟫`
+(`Diffeomorph.inner_adjoint_fderiv_symm_apply_fderiv_apply`). Here `(Dh(x)ᵀ)⁻¹` is the adjoint
+of `D(h⁻¹)(h x)`.
 
 The adjoint of `Dh(x)` is a two-sided inverse of the cotangent map
 (`Diffeomorph.adjoint_fderiv_adjoint_fderiv_symm_apply`,
@@ -30,7 +30,7 @@ inverse depend `C^m`-smoothly on the base point for `m + 1 ≤ n`
 
 public section
 
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold RealInnerProductSpace
 
 open ContinuousLinearMap
 
@@ -60,6 +60,14 @@ theorem adjoint_fderiv_comp_adjoint_fderiv_symm (h : E ≃ₘ^n⟮𝓘(ℝ, E), 
   have hid := h.fderiv_symm_comp_fderiv hn (h.symm y)
   rw [h.apply_symm_apply] at hid
   rw [← adjoint_comp, hid, adjoint_id]
+
+/-- **The cotangent map preserves the pairing of covectors with tangent vectors:** the image
+`(Dh(x)ᵀ)⁻¹ ξ` of `ξ`, paired with `Dh(x) v`, is `ξ` paired with `v`. -/
+@[simp]
+theorem inner_adjoint_fderiv_symm_apply_fderiv_apply (h : E ≃ₘ^n⟮𝓘(ℝ, E), 𝓘(ℝ, F)⟯ F)
+    (hn : n ≠ 0) (x ξ v : E) :
+    ⟪adjoint (fderiv ℝ h.symm (h x)) ξ, fderiv ℝ h x v⟫ = ⟪ξ, v⟫ := by
+  rw [adjoint_inner_left, ← comp_apply, h.fderiv_symm_comp_fderiv hn, id_apply]
 
 /-- The adjoint of `Dh(x)` is a left inverse of the cotangent map at `x`. -/
 @[simp]
