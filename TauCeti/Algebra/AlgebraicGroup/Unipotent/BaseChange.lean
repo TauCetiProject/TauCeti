@@ -9,6 +9,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Faithful.BaseChange
 public import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Faithful
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Reduced
 import Mathlib.RingTheory.Etale.Descent
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.BaseChange
+import TauCeti.Algebra.AlgebraicGroup.Representation.UnipotentPoint.Naturality
 import TauCeti.Algebra.AlgebraicGroup.Smooth.BaseChange
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.PointAction
 import TauCeti.RingTheory.Smooth.GeometricallyReduced
@@ -28,8 +30,15 @@ extended comodule is obtained from the original one along the injective inclusio
 if and only if the original characteristic polynomial is a power of `X - 1` over `H`, and the
 faithful-representation criterion detects unipotence of geometric points on both sides.
 
+Without smoothness or finite-type assumptions, geometric-point unipotence alone is reflected by
+scalar extension: choosing a `k`-embedding `AlgebraicClosure k →ₐ[k] AlgebraicClosure K`,
+postcomposition and the base-change adjunction on points transfer unipotence back from `K ⊗[k] H`
+via `IsUnipotentPoint.of_baseChangePointsMulEquiv`.
+
 ## Main declarations
 
+* `TauCeti.geometricallyUnipotentPointsCommHopfAlgProperty.of_baseChange`: geometric-point
+  unipotence is reflected by arbitrary field extensions.
 * `TauCeti.smoothUnipotentCommHopfAlgProperty.baseChange`: smooth geometric unipotence is
   preserved by arbitrary field extension.
 * `TauCeti.smoothUnipotentCommHopfAlgProperty.of_baseChange`: smooth geometric unipotence is
@@ -50,9 +59,26 @@ open scoped TensorProduct
 
 namespace TauCeti
 
-universe u
+universe u v
 
 noncomputable section
+
+namespace geometricallyUnipotentPointsCommHopfAlgProperty
+
+/-- Geometric-point unipotence is reflected by arbitrary extension of the ground field, without
+finite-type or reducedness assumptions. -/
+theorem of_baseChange {k K : Type u} [Field k] [Field K] [Algebra k K]
+    (H : CommHopfAlgCat.{v} k)
+    (hH : geometricallyUnipotentPointsCommHopfAlgProperty K
+      (CommHopfAlgCat.baseChange (K := K) H)) :
+    geometricallyUnipotentPointsCommHopfAlgProperty k H := by
+  rw [geometricallyUnipotentPointsCommHopfAlgProperty_iff] at hH ⊢
+  intro g
+  let ι : AlgebraicClosure k →ₐ[k] AlgebraicClosure K := IsAlgClosed.lift
+  apply (HopfAlgebra.isUnipotentPoint_mapValue_iff_of_injective g ι ι.injective).mp
+  exact HopfAlgebra.IsUnipotentPoint.of_baseChangePointsMulEquiv (K := K) (hH _)
+
+end geometricallyUnipotentPointsCommHopfAlgProperty
 
 open geometricallyUnipotentPointsCommHopfAlgProperty
 
