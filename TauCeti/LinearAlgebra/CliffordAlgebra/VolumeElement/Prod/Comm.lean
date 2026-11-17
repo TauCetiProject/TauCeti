@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Eigenspace
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Prod.Orientation
 public import TauCeti.LinearAlgebra.Eigenspace.TensorProduct.Comm
 public import TauCeti.LinearAlgebra.Orientation.WithLp
@@ -64,7 +65,7 @@ of `V ⊕ W` on `E ⊗ F` by `Module.End.koszulComm (ρ₁ Γ_V) (ρ₂ Γ_W)` g
 `W ⊕ V` on `F ⊗ E` transported along `QuadraticMap.IsometryEquiv.withLpProdComm`. -/
 theorem conjAlgEquiv_koszulComm_complexProdTensor :
     let K := Module.End.koszulComm (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
     (K.conjAlgEquiv ℂ).toAlgHom.comp (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂) =
       (complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁).comp
         (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW
@@ -74,18 +75,12 @@ theorem conjAlgEquiv_koszulComm_complexProdTensor :
       ρ₁ (complexVolume Q₁ o₁) (ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) e') =
         -ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) (ρ₁ (complexVolume Q₁ o₁) e') := by
     simpa [LinearMap.comp_apply, ← Module.End.mul_eq_comp] using congrArg
-      (fun φ : Module.End ℂ E ↦ φ e') (by rw [← map_mul, ← map_mul,
-        complexVolume_mul_ι_of_even o₁ hn, map_neg] : ρ₁ (complexVolume Q₁ o₁) *
-          ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) = -(ρ₁ (ι (Q₁.baseChange ℂ) (1 ⊗ₜ v)) *
-            ρ₁ (complexVolume Q₁ o₁)))
+      (fun φ : Module.End ℂ E ↦ φ e') (map_complexVolume_mul_map_ι o₁ hn ρ₁ (1 ⊗ₜ v))
   have hanti₂ (w : W) (f' : F) :
       ρ₂ (complexVolume Q₂ o₂) (ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) f') =
         -ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) (ρ₂ (complexVolume Q₂ o₂) f') := by
     simpa [LinearMap.comp_apply, ← Module.End.mul_eq_comp] using congrArg
-      (fun φ : Module.End ℂ F ↦ φ f') (by rw [← map_mul, ← map_mul,
-        complexVolume_mul_ι_of_even o₂ hm, map_neg] : ρ₂ (complexVolume Q₂ o₂) *
-          ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) = -(ρ₂ (ι (Q₂.baseChange ℂ) (1 ⊗ₜ w)) *
-            ρ₂ (complexVolume Q₂ o₂)))
+      (fun φ : Module.End ℂ F ↦ φ f') (map_complexVolume_mul_map_ι o₂ hm ρ₂ (1 ⊗ₜ w))
   refine AlgHom.toRingHom_injective <| baseChange_ringHom_ext Q_VW (fun _ ↦ by simp) fun x ↦ ?_
   rcases x with ⟨⟨v, w⟩⟩
   refine LinearMap.ext fun y ↦ ?_
@@ -97,8 +92,8 @@ theorem conjAlgEquiv_koszulComm_complexProdTensor :
     QuadraticMap.IsometryEquiv.withLpProdComm_apply]
   induction z using TensorProduct.inductionOn with
   | tmul e f =>
-    have hsq₁ e' := involutive_apply_complexVolume o₁ hQ₁ ρ₁ e'
-    have hsq₂ f' := involutive_apply_complexVolume o₂ hQ₂ ρ₂ f'
+    have hsq₁ e' := ρ₁.involutive_complexVolume o₁ hQ₁ e'
+    have hsq₂ f' := ρ₂.involutive_complexVolume o₂ hQ₂ f'
     simp only [TensorProduct.map_tmul, LinearMap.rTensor_tmul, map_add, K,
       Module.End.koszulComm_tmul, hsq₁, hsq₂, hanti₁, hanti₂,
       TensorProduct.tmul_neg, TensorProduct.neg_tmul, map_smul, map_sub]
@@ -111,7 +106,7 @@ theorem conjAlgEquiv_koszulComm_complexProdTensor :
 theorem koszulComm_complexProdTensor
     (a : CliffordAlgebra (Q_VW.baseChange ℂ)) (z : E ⊗[ℂ] F) :
     let K := Module.End.koszulComm (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
     K (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂ a z) =
       complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁
         (map ((QuadraticMap.IsometryEquiv.withLpProdComm hQ_VW hQ_WV).toIsometry.baseChange ℂ) a)
@@ -138,7 +133,7 @@ theorem koszulComm_complexProdTensor_complexVolume
       (WithLp.linearEquiv 2 ℝ (W × V)).symm = o_WV)
     (z : E ⊗[ℂ] F) :
     let K := Module.End.koszulComm (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
     K (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q_VW o_VW) z) =
       complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁ (complexVolume Q_WV o_WV) (K z) := by
   intro K
@@ -157,7 +152,7 @@ theorem koszulComm_complexProdTensor_complexVolume_map
       (o_VW.map (Fin (n + m)) ((LinearEquiv.prodComm ℝ V W).withLpCongr 2)) = o_WV)
     (z : E ⊗[ℂ] F) :
     let K := Module.End.koszulComm (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂)
     K (complexProdTensor hQ_VW o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q_VW o_VW) z) =
       complexProdTensor hQ_WV o₂ hQ₂ hm ρ₂ ρ₁ (complexVolume Q_WV o_WV) (K z) := by
   have ho_WV' : (o₂.prod o₁ Fact.out Fact.out).map (Fin (m + n))

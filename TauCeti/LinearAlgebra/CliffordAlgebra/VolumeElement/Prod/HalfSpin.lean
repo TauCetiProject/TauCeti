@@ -96,25 +96,14 @@ variable [FiniteDimensional ℝ V] {n : ℕ} [Fact (finrank ℝ V = n)] (o₁ : 
   (ρ₁ : CliffordAlgebra (Q₁.baseChange ℂ) →ₐ[ℂ] Module.End ℂ E)
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
-include hQ₁ in
-private theorem map_complexVolume_mul_self' :
-    ρ₁ (complexVolume Q₁ o₁) * ρ₁ (complexVolume Q₁ o₁) = 1 := by
-  rw [← map_mul, complexVolume_mul_self o₁ hQ₁, map_one]
-
-include hn in
-private theorem map_complexVolume_mul_map_ι' (w : ℂ ⊗[ℝ] V) :
-    ρ₁ (complexVolume Q₁ o₁) * ρ₁ (ι (Q₁.baseChange ℂ) w) =
-      -(ρ₁ (ι (Q₁.baseChange ℂ) w) * ρ₁ (complexVolume Q₁ o₁)) := by
-  rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₁ hn, map_neg]
-
 private theorem complexProdTensor_comp_complexWithLpProdEquiv_symm :
     (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp (complexWithLpProdEquiv hQ).symm.toAlgHom =
       (AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (map_complexVolume_mul_self' o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι' o₁ hn ρ₁) ρ₂).comp
+        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
         (toProd (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)) := by
   have h : complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ =
       ((AlgHom.cliffordProdTensor ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-        (map_complexVolume_mul_self' o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι' o₁ hn ρ₁) ρ₂).comp
+        (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂).comp
         (toProd (Q₁.baseChange ℂ) (Q₂.baseChange ℂ))).comp
         (complexWithLpProdEquiv hQ).toAlgHom := by
     refine AlgHom.toRingHom_injective <| baseChange_ringHom_ext Q (fun _ ↦ by simp) fun x' ↦ ?_
@@ -132,7 +121,7 @@ theorem complexProdTensor_complexWithLpProdEquiv_symm_tmul
   (AlgHom.congr_fun
     (complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂) (a ᵍ⊗ₜ b)).trans
     (AlgHom.cliffordProdTensor_toProd_tmul ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self' o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι' o₁ hn ρ₁) ρ₂ a hb)
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ a hb)
 
 /-- **Koszul-signed evaluation on homogeneous spinors.** If `b` has parity `j` and `e` lies in the
 `(-1) ^ i`-eigenspace of `Γ_V`, then `(complexWithLpProdEquiv hQ).symm (a ᵍ⊗ b)` sends `e ⊗ f` to
@@ -147,7 +136,7 @@ theorem complexProdTensor_complexWithLpProdEquiv_symm_tmul_apply_tmul
     (complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂) (a ᵍ⊗ₜ b))
       (e ⊗ₜ f)).trans
     (AlgHom.cliffordProdTensor_toProd_tmul_apply_tmul ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self' o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι' o₁ hn ρ₁) ρ₂ a hb he f)
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂ a hb he f)
 
 /-- **The graded tensor product of spinor modules is a spinor module.** When `W` is
 finite-dimensional and `ρ₁`, `ρ₂` are bijective onto `End_ℂ E` and `End_ℂ F`, `complexProdTensor`
@@ -161,7 +150,7 @@ theorem complexProdTensor_bijective [FiniteDimensional ℝ W]
       ((complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂).comp (complexWithLpProdEquiv hQ).symm.toAlgHom) := by
     rw [complexProdTensor_comp_complexWithLpProdEquiv_symm hQ o₁ hQ₁ hn ρ₁ ρ₂]
     exact (AlgHom.cliffordProdTensor_bijective ρ₁ (ρ₁ (complexVolume Q₁ o₁))
-      (map_complexVolume_mul_self' o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι' o₁ hn ρ₁) ρ₂
+      (map_complexVolume_mul_self o₁ hQ₁ ρ₁) (map_complexVolume_mul_map_ι o₁ hn ρ₁) ρ₂
       hρ₁ hρ₂).comp (prodEquiv (Q₁.baseChange ℂ) (Q₂.baseChange ℂ)).symm.bijective
   convert hbij.comp (complexWithLpProdEquiv hQ).bijective
   ext a z; simp
@@ -195,7 +184,7 @@ def complexProdTensorComplexVolumeEigenspaceEquiv :
         (complexProdTensor_complexVolume_of_map_prod hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho))).trans
     (Module.End.eigenspaceTensorMapEquiv
       (ρ₁ (complexVolume Q₁ o₁)) (ρ₂ (complexVolume Q₂ o₂))
-      (involutive_apply_complexVolume o₁ hQ₁ ρ₁) (involutive_apply_complexVolume o₂ hQ₂ ρ₂) hμ)
+      (ρ₁.involutive_complexVolume o₁ hQ₁) (ρ₂.involutive_complexVolume o₂ hQ₂) hμ)
 
 /-- Forward map of `complexProdTensorComplexVolumeEigenspaceEquiv`. -/
 @[simp]
@@ -203,13 +192,13 @@ theorem complexProdTensorComplexVolumeEigenspaceEquiv_apply
     (z : (complexProdTensor hQ o₁ hQ₁ hn ρ₁ ρ₂ (complexVolume Q o)).eigenspace μ) :
     complexProdTensorComplexVolumeEigenspaceEquiv hQ o₁ hQ₁ hn ρ₁ ρ₂ o₂ o hm hQ₂ ho hμ z =
       (TensorProduct.map
-          (Module.End.eigenProjOfInvolutive (involutive_apply_complexVolume o₁ hQ₁ ρ₁)
+          (Module.End.eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             (one_mul 1))
-          (Module.End.eigenProjOfInvolutive (involutive_apply_complexVolume o₂ hQ₂ ρ₂) hμ) z.1,
+          (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂) hμ) z.1,
         TensorProduct.map
-          (Module.End.eigenProjOfInvolutive (involutive_apply_complexVolume o₁ hQ₁ ρ₁)
+          (Module.End.eigenProjOfInvolutive (ρ₁.involutive_complexVolume o₁ hQ₁)
             ((neg_mul_neg (1 : ℂ) 1).trans (one_mul 1)))
-          (Module.End.eigenProjOfInvolutive (involutive_apply_complexVolume o₂ hQ₂ ρ₂)
+          (Module.End.eigenProjOfInvolutive (ρ₂.involutive_complexVolume o₂ hQ₂)
             ((neg_mul_neg μ μ).trans hμ)) z.1) := by
   rw [complexProdTensorComplexVolumeEigenspaceEquiv, LinearEquiv.trans_apply,
     Module.End.eigenspaceTensorMapEquiv_apply, LinearEquiv.coe_ofEq_apply]
