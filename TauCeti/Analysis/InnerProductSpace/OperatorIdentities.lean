@@ -22,6 +22,8 @@ This module collects operator identities independent of projection-valued measur
 * `ContinuousLinearMap.adjoint_ofReal_smul`: the adjoint commutes with real scalars.
 * `ContinuousLinearMap.norm_apply_sq_of_adjoint_comp_eq_smul`: if `T† T = c` for a real scalar
   `c`, then `‖T x‖² = c ‖x‖²`.
+* `ContinuousLinearMap.adjoint_smul_comp_smul`: multiplying `T` by a scalar `c` multiplies
+  `T† T` by `‖c‖²`.
 * `ContinuousLinearMap.adjoint_ofReal_smul_comp_ofReal_smul` and
   `ContinuousLinearMap.ofReal_smul_comp_adjoint_ofReal_smul`: if `T† T` (respectively `T T†`)
   is a real scalar `s`, then the same product for `c T` is `c² s`.
@@ -100,6 +102,11 @@ theorem norm_apply_sq_of_adjoint_comp_eq_smul {T : E →L[𝕜] F} {c : ℝ}
   rw [apply_norm_sq_eq_inner_adjoint_left, hT, smul_apply, one_apply_eq_self, inner_smul_left,
     RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
     RCLike.ofReal_re]
+
+/-- Multiplying an operator by a scalar `c` multiplies `T† T` by `‖c‖²`. -/
+theorem adjoint_smul_comp_smul (c : 𝕜) (T : E →L[𝕜] F) :
+    (c • T).adjoint ∘L (c • T) = ((‖c‖ ^ 2 : ℝ) : 𝕜) • (T.adjoint ∘L T) := by
+  rw [map_smulₛₗ, smul_comp, comp_smul, smul_smul, RCLike.conj_mul, RCLike.ofReal_pow]
 
 /-- If `T† T = s` for a real scalar `s`, then `(c T)† (c T) = c² s` for real `c`. -/
 theorem adjoint_ofReal_smul_comp_ofReal_smul {T : E →L[𝕜] F} {s : ℝ}
