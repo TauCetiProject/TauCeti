@@ -16,10 +16,10 @@ import TauCeti.Probability.Martingale.Basic
 /-!
 # Brownian motion and its compensated square as martingales
 
-For a real pre-Brownian motion relative to a filtration, both `B` and `B² - t` are
-martingales on that filtration. The compensated square has every finite `Lᵖ` moment, even
-without a filtration. The conditional second moment of an increment is its elapsed time, and
-`E[B_t² | F_s] = B_s² + (t - s)` for `s ≤ t`.
+For a real pre-Brownian motion relative to a filtration, `B`, `B² - t`, and the centered square
+`B² - B₀² - t` are martingales on that filtration. The compensated square has every finite `Lᵖ`
+moment, even without a filtration. The conditional second moment of an increment is its elapsed
+time, and `E[B_t² | F_s] = B_s² + (t - s)` for `s ≤ t`.
 
 These identities are the elementary square decomposition behind Brownian quadratic variation.
 Only finite-dimensional Brownian laws, adaptation and independence from the filtration's past
@@ -121,5 +121,13 @@ theorem martingale_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P) :
   filter_upwards [hlin, hB.condExp_sq hst] with ω h₁ h₂
   rw [h₁, condExp_const (ℱ.le s), h₂]
   ring
+
+/-- The centered compensated square `B_t² - B_0² - t` of a filtered pre-Brownian motion is a true
+martingale. -/
+theorem martingale_sq_sub_sq_zero_sub (hB : IsFilteredPreBrownianReal ℱ B P) :
+    Martingale (fun t ω ↦ (B t ω) ^ 2 - (B 0 ω) ^ 2 - (t : ℝ)) ℱ P :=
+  hB.martingale_sq_sub.congr (fun t ↦ (((hB.adapted t).stronglyMeasurable.pow 2).sub
+    (((hB.adapted 0).stronglyMeasurable.pow 2).mono (ℱ.mono bot_le))).sub stronglyMeasurable_const)
+    fun _ ↦ hB.eval_zero_ae_eq_zero.mono fun _ h0 ↦ by simp [h0]
 
 end TauCeti.Probability.IsFilteredPreBrownianReal

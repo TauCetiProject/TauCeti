@@ -7,10 +7,11 @@ module
 
 public import TauCeti.Probability.Martingale.QuadraticVariation.Basic
 import Mathlib.Analysis.Normed.MulAction
-import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Probability.Martingale.Local.Centering
 import TauCeti.Probability.Martingale.Local.Congruence
 import TauCeti.Probability.Martingale.Local.InitialMultiplier
+import TauCeti.Probability.Process.ContinuousAE
 import TauCeti.Probability.Process.Stopping
 import TauCeti.Topology.EMetricSpace.BoundedVariation
 
@@ -294,7 +295,7 @@ theorem isCovariation_comm {M N C : ℝ≥0 → Ω → ℝ} :
 @[simp]
 theorem isCovariation_zero_left (N : ℝ≥0 → Ω → ℝ) : IsCovariation ℱ P 0 N 0 := by
   refine IsCovariation.mk (isStronglyProgressive_const ℱ 0) (ae_of_all P fun _ ↦ continuous_const)
-    (ae_of_all P fun _ _ _ _ _ ↦ by simp [BoundedVariationOn, eVariationOn]) .rfl ?_
+    (ae_of_all P fun _ ↦ locallyBoundedVariationOn_const 0 univ) .rfl ?_
   convert Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P) (martingale_zero ℝ ℱ P) using 1; ext; simp
 
 /-- The zero process has covariation `0` on the right with any process. -/
@@ -308,7 +309,7 @@ theorem isCovariation_const_left [SigmaFiniteFiltration P ℱ] {ξ : Ω → ℝ}
     (hξ : StronglyMeasurable[ℱ 0] ξ) {N : ℝ≥0 → Ω → ℝ}
     (hN : Locally (fun Y ↦ Martingale Y ℱ P) ℱ N P) : IsCovariation ℱ P (fun _ ↦ ξ) N 0 := by
   refine IsCovariation.mk (isStronglyProgressive_const ℱ 0) (ae_of_all P fun _ ↦ continuous_const)
-    (ae_of_all P fun _ _ _ _ _ ↦ by simp [BoundedVariationOn, eVariationOn]) .rfl ?_
+    (ae_of_all P fun _ ↦ locallyBoundedVariationOn_const 0 univ) .rfl ?_
   convert hN.martingale_sub_initialValue.martingale_smul_initial hξ using 1
   ext; simp only [Pi.zero_apply, sub_zero, smul_eq_mul, bot_eq_zero]; ring
 
@@ -379,12 +380,6 @@ theorem isCovariation_of_isQuadraticVariation_add [IsFiniteMeasure P]
       (.of_forall fun _ _ ↦ by
         dsimp only [Pi.add_apply, Pi.sub_apply, Pi.smul_apply, smul_eq_mul]; ring))
 
-private theorem ae_continuous_sum {ι : Type*} (s : Finset ι) {U : ι → ℝ≥0 → Ω → ℝ}
-    (hc : ∀ i ∈ s, ∀ᵐ ω ∂P, Continuous (U i · ω)) :
-    ∀ᵐ ω ∂P, Continuous (fun t ↦ ∑ i ∈ s, U i t ω) :=
-  ((ae_ball_iff s.countable_toSet).2 hc).mono fun ω hω ↦ by
-    have (i : ι) (hi : i ∈ s) : Continuous (U i · ω) := hω i hi; fun_prop
-
 /-- Finite left linearity of covariation. -/
 theorem isCovariation_sum_left [IsFiniteMeasure P] {ι : Type*} (s : Finset ι)
     {M C : ι → ℝ≥0 → Ω → ℝ} {N : ℝ≥0 → Ω → ℝ}
@@ -403,7 +398,7 @@ theorem isCovariation_sum_left [IsFiniteMeasure P] {ι : Type*} (s : Finset ι)
       (hMprog a (Finset.mem_insert_self a s))
       (IsStronglyProgressive.finsetSum fun i hi ↦ hMprog i (Finset.mem_insert_of_mem hi)) hNprog
       (hcM a (Finset.mem_insert_self a s))
-      (ae_continuous_sum s fun i hi ↦ hcM i (Finset.mem_insert_of_mem hi)) hcN using 1 <;>
+      (s.ae_continuous_sum fun i hi ↦ hcM i (Finset.mem_insert_of_mem hi)) hcN using 1 <;>
       · ext; simp [Finset.sum_insert ha]
 
 /-- Bilinear expansion of covariation over two finite sums. -/
@@ -417,7 +412,7 @@ theorem isCovariation_sum [IsFiniteMeasure P] {ι κ : Type*} (s : Finset ι) (r
     IsCovariation ℱ P (fun t ω ↦ ∑ i ∈ s, M i t ω) (fun t ω ↦ ∑ j ∈ r, N j t ω)
       (fun t ω ↦ ∑ i ∈ s, ∑ j ∈ r, C i j t ω) :=
   isCovariation_sum_left s hMprog (IsStronglyProgressive.finsetSum hNprog) hcM
-    (ae_continuous_sum r hcN) fun i hi ↦ (isCovariation_sum_left r hNprog (hMprog i hi)
+    (r.ae_continuous_sum hcN) fun i hi ↦ (isCovariation_sum_left r hNprog (hMprog i hi)
       hcN (hcM i hi) fun j hj ↦ (hC i hi j hj).symm).symm
 
 /-- **Pythagorean rule for pairwise orthogonal processes.** If a finite family of strongly
@@ -448,22 +443,6 @@ end PolarizationAndSums
 
 section KunitaWatanabe
 
-private theorem abs_le_sqrt_mul_sqrt_of_quad_nonneg {a b c : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (h : ∀ q : ℚ, 0 ≤ a + 2 * (q : ℝ) * c + (q : ℝ) ^ 2 * b) : |c| ≤ √a * √b := by
-  have hreal (r : ℝ) : 0 ≤ a + 2 * r * c + r ^ 2 * b :=
-    Rat.denseRange_cast.induction_on r (isClosed_le continuous_const (by fun_prop)) h
-  rcases hb.eq_or_lt with rfl | hb_pos
-  · by_cases hc : c = 0
-    · simp [hc]
-    · have hbad := hreal (-(a + 1) / (2 * c))
-      have : a + 2 * (-(a + 1) / (2 * c)) * c + (-(a + 1) / (2 * c)) ^ 2 * 0 = -1 := by
-        field_simp; ring
-      linarith
-  · have hmul := mul_nonneg (hreal (-c / b)) hb_pos.le
-    have : (a + 2 * (-c / b) * c + (-c / b) ^ 2 * b) * b = a * b - c ^ 2 := by
-      field_simp [hb_pos.ne']; ring
-    rw [← Real.sqrt_sq_eq_abs, ← Real.sqrt_mul ha]; exact Real.sqrt_le_sqrt (by linarith)
-
 namespace IsCovariation
 
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {ℱ : Filtration ℝ≥0 mΩ} {P : Measure Ω}
@@ -492,9 +471,8 @@ theorem ae_abs_sub_le_sqrt_mul_sqrt [IsFiniteMeasure P] (hC : IsCovariation ℱ 
         hqprog hMprog hqprog hcq hcM hcq)
       hMprog hqprog (hMprog.add hqprog) hcM hcq hcsum).isQuadraticVariation_of_exists hcsum
       (hquad q)).ae_monotone
-  filter_upwards [ae_all_iff.2 hqmono, hA.ae_monotone, hB.ae_monotone] with ω hq hAm hBm s t hst
-  refine abs_le_sqrt_mul_sqrt_of_quad_nonneg (sub_nonneg.2 (hAm hst)) (sub_nonneg.2 (hBm hst))
-    fun q ↦ ?_
+  filter_upwards [ae_all_iff.2 hqmono] with ω hq s t hst
+  refine Real.abs_le_sqrt_mul_sqrt_of_forall_rat_quadratic_nonneg fun q ↦ ?_
   have hle := sub_nonneg.2 (hq q hst)
   dsimp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul] at hle; linarith
 

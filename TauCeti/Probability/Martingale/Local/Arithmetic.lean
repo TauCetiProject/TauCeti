@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Martingale.Basic
 public import TauCeti.Probability.Martingale.ContinuousStopping
 public import TauCeti.Probability.Martingale.Local.Version
+import TauCeti.Probability.Process.ContinuousAE
 import TauCeti.Probability.Process.Stopping
 
 /-!
@@ -91,26 +92,6 @@ variable {Ω E : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMea
   [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {ℱ : Filtration ℝ≥0 mΩ} {X Y Z : ℝ≥0 → Ω → E}
 
-omit [NormedSpace ℝ E] [CompleteSpace E] in
-private theorem isStronglyProgressive_stopped_indicator (hX : IsStronglyProgressive ℱ X)
-    {τ : Ω → WithTop ℝ≥0} (hτ : IsStoppingTime ℱ τ) :
-    IsStronglyProgressive ℱ (stoppedProcess (fun t ↦ {ω | 0 < τ ω}.indicator (X t)) τ) := by
-  rw [stoppedProcess_indicator_comm']; intro t
-  convert (hX.stoppedProcess hτ t).indicator
-    ((MeasurableSet.univ : MeasurableSet (univ : Set (Iic t))).prod
-      (ℱ.mono bot_le _ (hτ.measurableSet_gt 0))) using 1
-  ext ⟨_, ω⟩; by_cases hω : 0 < τ ω <;> simp [hω]
-
-omit [IsFiniteMeasure P] [NormedSpace ℝ E] [CompleteSpace E] in
-private theorem ae_isRightContinuous_stopped_indicator
-    (hcX : ∀ᵐ ω ∂P, IsRightContinuous (X · ω)) (τ : Ω → WithTop ℝ≥0) :
-    ∀ᵐ ω ∂P,
-      IsRightContinuous (stoppedProcess (fun t ↦ {ω | 0 < τ ω}.indicator (X t)) τ · ω) := by
-  filter_upwards [hcX] with ω hω t; rw [stoppedProcess_indicator_comm']
-  by_cases hpos : 0 < τ ω
-  · simpa [Set.indicator_apply, hpos] using (hω t).stoppedProcess
-  · simpa [Set.indicator_apply, hpos] using continuousWithinAt_const
-
 private theorem locally_martingale_add_progressive
     (hXprog : IsStronglyProgressive ℱ X) (hYprog : IsStronglyProgressive ℱ Y)
     (hX : Locally (fun U ↦ Martingale U ℱ P) ℱ X P) (hY : Locally (fun U ↦ Martingale U ℱ P) ℱ Y P)
@@ -119,11 +100,11 @@ private theorem locally_martingale_add_progressive
   have hτ := hX.isLocalizingSequence_localSeq; have hσ := hY.isLocalizingSequence_localSeq
   refine ⟨min hX.localSeq hY.localSeq, hτ.min hσ, fun n ↦ ?_⟩
   convert ((hX.stoppedProcess_localSeq n).stoppedProcess_indicator_of_ae_isRightContinuous
-      (isStronglyProgressive_stopped_indicator hXprog (hτ.isStoppingTime n))
-      (ae_isRightContinuous_stopped_indicator hcX (hX.localSeq n)) (hσ.isStoppingTime n)).add
+      (hXprog.stoppedProcess_indicator_pos (hτ.isStoppingTime n))
+      (hcX.mono fun _ ↦ IsRightContinuous.stoppedProcess_indicator) (hσ.isStoppingTime n)).add
     ((hY.stoppedProcess_localSeq n).stoppedProcess_indicator_of_ae_isRightContinuous
-      (isStronglyProgressive_stopped_indicator hYprog (hσ.isStoppingTime n))
-      (ae_isRightContinuous_stopped_indicator hcY (hY.localSeq n)) (hτ.isStoppingTime n)) using 1
+      (hYprog.stoppedProcess_indicator_pos (hσ.isStoppingTime n))
+      (hcY.mono fun _ ↦ IsRightContinuous.stoppedProcess_indicator) (hτ.isStoppingTime n)) using 1
   simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
   ext _ ω; by_cases h1 : 0 < hX.localSeq n ω <;> by_cases h2 : 0 < hY.localSeq n ω <;>
     simp [stoppedProcess, Pi.inf_apply, lt_min_iff, inf_comm, h1, h2]
@@ -187,9 +168,7 @@ theorem IsStronglyProgressive.locally_martingale_sum {ι : Type*} {s : Finset ι
       using 1; ext; simp
   | insert a s ha ih =>
     have hps := IsStronglyProgressive.finsetSum fun i hi ↦ hprog i (Finset.mem_insert_of_mem hi)
-    have hcs : ∀ᵐ ω ∂P, Continuous (fun t ↦ ∑ i ∈ s, U i t ω) :=
-      ((ae_ball_iff s.countable_toSet).2 fun i hi ↦ hc i (Finset.mem_insert_of_mem hi)).mono
-        fun ω hω ↦ by have (i : ι) (hi : i ∈ s) : Continuous (U i · ω) := hω i hi; fun_prop
+    have hcs := s.ae_continuous_sum fun i hi ↦ hc i (Finset.mem_insert_of_mem hi)
     convert (hprog a (Finset.mem_insert_self a s)).locally_martingale_add hps
       (hloc a (Finset.mem_insert_self a s))
       (ih (fun i hi ↦ hprog i (Finset.mem_insert_of_mem hi))
@@ -207,8 +186,8 @@ theorem IsStronglyProgressive.locally_martingale_stoppedProcess
   have hloc := hX.isLocalizingSequence_localSeq
   refine ⟨hX.localSeq, hloc, fun n ↦ ?_⟩
   convert (hX.stoppedProcess_localSeq n).stoppedProcess_of_ae_isRightContinuous
-    (isStronglyProgressive_stopped_indicator hXprog (hloc.isStoppingTime n))
-    (ae_isRightContinuous_stopped_indicator hcX (hX.localSeq n)) hτ using 1
+    (hXprog.stoppedProcess_indicator_pos (hloc.isStoppingTime n))
+    (hcX.mono fun _ ↦ IsRightContinuous.stoppedProcess_indicator) hτ using 1
   simp only [stoppedProcess_indicator_comm', stoppedProcess_stoppedProcess]
   ext _ ω; by_cases hpos : 0 < hX.localSeq n ω <;>
     simp [MeasureTheory.stoppedProcess, inf_comm, hpos]

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Probability.Process.Stopping
 public import Mathlib.Topology.EMetricSpace.BoundedVariation
+public import Mathlib.Topology.Order.Cadlag
+import TauCeti.Probability.Process.Progressive
 
 /-!
 # Stopping times and stopped paths
@@ -14,11 +16,13 @@ public import Mathlib.Topology.EMetricSpace.BoundedVariation
 A stopping time remains a stopping time for a larger filtration, and finite suprema and infima
 preserve the stopping-time property.
 
-Stopping preserves right continuity at each time, full path continuity, path monotonicity, and
-initial-interval or global local bounded variation, including at infinite stopping times, with no
-measurability hypothesis. Simultaneously almost-sure nonnegativity and pathwise set membership up to
-the random time also pass to stopped processes (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`,
-`MeasureTheory.stoppedProcess_mem`).
+Stopping preserves right continuity (both pointwise and globally, including after restricting by an
+indicator), full path continuity, path monotonicity, and initial-interval or global local bounded
+variation, including at infinite stopping times, with no measurability hypothesis. Stopping a
+strongly progressive process at a stopping time and restricting to `{⊥ < τ}` preserves strong
+progressivity (`MeasureTheory.IsStronglyProgressive.stoppedProcess_indicator_pos`). Simultaneously
+almost-sure nonnegativity and pathwise set membership up to the random time also pass to stopped
+processes (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`, `MeasureTheory.stoppedProcess_mem`).
 -/
 
 public section
@@ -93,6 +97,26 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
         (fun s hs ↦ MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut.trans hs.le))
         (MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut))
 
+/-- Stopping preserves right continuity of a path, without any measurability assumption on the
+random time. -/
+theorem IsRightContinuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} (hX : IsRightContinuous (X · ω)) :
+    IsRightContinuous (MeasureTheory.stoppedProcess X τ · ω) :=
+  fun t ↦ (hX t).stoppedProcess
+
+/-- Stopping and restricting by an indicator preserves right continuity of a path, without any
+measurability assumption on the random time or the event. -/
+theorem IsRightContinuous.stoppedProcess_indicator {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    [TopologicalSpace ι] [OrderTopology ι] [TopologicalSpace E] [Zero E]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} {s : Set Ω} (hX : IsRightContinuous (X · ω)) :
+    IsRightContinuous (MeasureTheory.stoppedProcess (fun t ↦ s.indicator (X t)) τ · ω) := by
+  intro t
+  rw [MeasureTheory.stoppedProcess_indicator_comm']
+  by_cases hω : ω ∈ s
+  · simpa [Set.indicator_apply, hω] using (hX t).stoppedProcess
+  · simpa [Set.indicator_apply, hω] using continuousWithinAt_const
+
 /-- Stopping preserves full continuity of a path, without any measurability assumption on the
 random time. -/
 theorem Continuous.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
@@ -150,6 +174,18 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
       if ⊥ < τ ω then X (min (t : WithTop ι) (τ ω)).untopA ω else 0 := by
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
+
+/-- Stopping a strongly progressive process at a stopping time `τ` and restricting to `{⊥ < τ}`
+preserves strong progressivity. -/
+theorem IsStronglyProgressive.stoppedProcess_indicator_pos {ι Ω E : Type*} [LinearOrder ι]
+    [OrderBot ι] [MeasurableSpace ι] [TopologicalSpace ι] [OrderTopology ι]
+    [SecondCountableTopology ι] [BorelSpace ι] [TopologicalSpace.PseudoMetrizableSpace ι]
+    {mΩ : MeasurableSpace Ω} [TopologicalSpace E] [Zero E] {ℱ : Filtration ι mΩ}
+    {X : ι → Ω → E} (hX : IsStronglyProgressive ℱ X) {τ : Ω → WithTop ι}
+    (hτ : IsStoppingTime ℱ τ) :
+    IsStronglyProgressive ℱ
+      (MeasureTheory.stoppedProcess (fun t ↦ {ω | (⊥ : WithTop ι) < τ ω}.indicator (X t)) τ) :=
+  (hX.indicator fun _ ↦ ℱ.mono bot_le _ (hτ.measurableSet_gt ⊥)).stoppedProcess hτ
 
 /-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]

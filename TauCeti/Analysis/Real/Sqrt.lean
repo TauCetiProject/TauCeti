@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Real.Sqrt
+import Mathlib.Algebra.QuadraticDiscriminant
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Topology.Algebra.Order.Archimedean
 
 /-!
 # Rescaling by a square root
@@ -28,7 +30,8 @@ squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluatio
 
 A real number `x` of the same sign as `c` is rescaled to `c` by the positive square of
 `√(c / x)`. For `0 ≤ t < √2 - 1`, completing `(t + 1)² < 2` bounds the quadratic majorant
-`2 t + t² < 1`.
+`2 t + t² < 1`. A quadratic form `a + 2 r c + r² b` that is nonnegative for all real (or
+rational) `r` satisfies the Cauchy–Schwarz bound `|c| ≤ √a * √b`.
 
 ## Main results
 
@@ -45,6 +48,9 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 * `Real.sq_sqrt_one_sub_sq_lt_one`: `√(1 - t²)² < 1` for nonzero `t`.
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
 * `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
+* `Real.abs_le_sqrt_mul_sqrt_of_forall_quadratic_nonneg` and
+  `Real.abs_le_sqrt_mul_sqrt_of_forall_rat_quadratic_nonneg`: nonnegativity of
+  `a + 2 r c + r² b` on `ℝ` or `ℚ` implies `|c| ≤ √a * √b`.
 -/
 
 public section
@@ -152,5 +158,23 @@ theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
   have hsq : (t + 1) ^ 2 < √2 ^ 2 := pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
   rw [sq_sqrt zero_le_two] at hsq
   linarith
+
+/-- If `a + 2 * r * c + r ^ 2 * b ≥ 0` for all real `r`, then `|c| ≤ √a * √b`. No separate
+nonnegativity hypotheses on `a` or `b` are needed. -/
+theorem abs_le_sqrt_mul_sqrt_of_forall_quadratic_nonneg {a b c : ℝ}
+    (h : ∀ r : ℝ, 0 ≤ a + 2 * r * c + r ^ 2 * b) : |c| ≤ √a * √b := by
+  have ha : 0 ≤ a := by simpa using h 0
+  have hd : discrim b (2 * c) a ≤ 0 := discrim_le_zero fun r ↦ by
+    have : b * (r * r) + 2 * c * r + a = a + 2 * r * c + r ^ 2 * b := by ring
+    linarith [h r]
+  rw [discrim] at hd
+  rw [← sqrt_sq_eq_abs, ← sqrt_mul ha]
+  exact sqrt_le_sqrt (by linarith)
+
+/-- If `a + 2 * q * c + q ^ 2 * b ≥ 0` for all rational `q`, then `|c| ≤ √a * √b`. -/
+theorem abs_le_sqrt_mul_sqrt_of_forall_rat_quadratic_nonneg {a b c : ℝ}
+    (h : ∀ q : ℚ, 0 ≤ a + 2 * (q : ℝ) * c + (q : ℝ) ^ 2 * b) : |c| ≤ √a * √b :=
+  abs_le_sqrt_mul_sqrt_of_forall_quadratic_nonneg fun r ↦
+    Rat.denseRange_cast.induction_on r (isClosed_le continuous_const (by fun_prop)) h
 
 end Real

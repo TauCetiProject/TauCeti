@@ -13,6 +13,7 @@ import Mathlib.Probability.ConditionalExpectation
 import Mathlib.Probability.Distributions.Gaussian.IsGaussianProcess.Basic
 import Mathlib.Probability.Independence.Integration
 import TauCeti.Probability.BrownianMotion.Martingale
+import TauCeti.Probability.Process.Progressive
 import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
@@ -23,9 +24,8 @@ to `TauCeti.Probability.IsQuadraticVariation` and `TauCeti.Probability.IsCovaria
 
 * **Single Brownian motion**: `IsFilteredPreBrownianReal.isQuadraticVariation` (`[B]_t = t` without
   continuity or usual conditions) and `IsFilteredPreBrownianReal.indist_of_isQuadraticVariation`.
-* **Elementary Brownian integrals**: `IsFilteredPreBrownianReal.martingale_mul_simpleGains_sub`,
-  `IsFilteredPreBrownianReal.isQuadraticVariation_simpleGains`, and
-  `IsFilteredPreBrownianReal.isCovariation_simpleGains`.
+* **Elementary Brownian integrals**: `IsFilteredPreBrownianReal.isQuadraticVariation_simpleGains`
+  and `IsFilteredPreBrownianReal.isCovariation_simpleGains`.
 * **Independent Brownian motions and linear combinations**:
   `IsFilteredPreBrownianReal.martingale_mul_of_indep_sub`,
   `IsFilteredPreBrownianReal.isCovariation_zero_of_indep_sub`,
@@ -48,11 +48,6 @@ open Filter MeasureTheory ProbabilityTheory
 open scoped ENNReal InnerProductSpace NNReal Topology
 
 namespace TauCeti.Probability
-
-private theorem isStronglyProgressive_deterministic {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    (ℱ : Filtration ℝ≥0 mΩ) {f : ℝ≥0 → ℝ} (hf : Continuous f) :
-    IsStronglyProgressive ℱ (fun t _ ↦ f t) :=
-  StronglyAdapted.isStronglyProgressive_of_continuous (fun _ ↦ stronglyMeasurable_const) fun _ ↦ hf
 
 private theorem monotone_min_sub_min {a b : ℝ≥0} (hab : a ≤ b) :
     Monotone (fun t : ℝ≥0 ↦ ↑(min b t) - (↑(min a t) : ℝ)) := fun s t hst ↦ by
@@ -91,19 +86,11 @@ namespace IsFilteredPreBrownianReal
 variable {Ω : Type*} {mΩ : MeasurableSpace Ω} {P : Measure Ω}
   {ℱ : Filtration ℝ≥0 mΩ} {B B₁ B₂ W : ℝ≥0 → Ω → ℝ}
 
-/-- The centered compensated square `B_t² - B_0² - t` of a filtered pre-Brownian motion is a true
-martingale. -/
-theorem martingale_sq_sub_sq_zero_sub (hB : IsFilteredPreBrownianReal ℱ B P) :
-    Martingale (fun t ω ↦ (B t ω) ^ 2 - (B 0 ω) ^ 2 - (t : ℝ)) ℱ P :=
-  hB.martingale_sq_sub.congr (fun t ↦ (((hB.adapted t).stronglyMeasurable.pow 2).sub
-    (((hB.adapted 0).stronglyMeasurable.pow 2).mono (ℱ.mono bot_le))).sub stronglyMeasurable_const)
-    fun _ ↦ hB.eval_zero_ae_eq_zero.mono fun _ h0 ↦ by simp [h0]
-
 /-- A real pre-Brownian motion relative to `ℱ` has quadratic variation `t ↦ t`. Neither path
 continuity nor usual conditions on `ℱ` are required. -/
 theorem isQuadraticVariation (hB : IsFilteredPreBrownianReal ℱ B P) :
     IsQuadraticVariation ℱ P B (fun t _ ↦ (t : ℝ)) :=
-  IsQuadraticVariation.mk (isStronglyProgressive_deterministic ℱ NNReal.continuous_coe)
+  IsQuadraticVariation.mk (NNReal.continuous_coe.stronglyMeasurable.isStronglyProgressive ℱ)
     (ae_of_all P fun _ ↦ NNReal.continuous_coe) (ae_of_all P fun _ ↦ NNReal.coe_mono)
     (ae_of_all P fun _ ↦ NNReal.coe_zero)
     (Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P) hB.martingale_sq_sub_sq_zero_sub)
@@ -136,32 +123,6 @@ theorem isQuadraticVariation_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P
             fun i hi ↦ (ha i hi).pow 2).stronglyAdapted t))
         fun _ ↦ .of_forall fun _ ↦ by simp [Finance.simpleGains_def])) using 1
   ext t ω; exact (Finance.simpleGains_def τ n (fun i ω ↦ a i ω ^ 2) (fun u _ ↦ (u : ℝ)) t ω).symm
-
-/-- **Elementary Brownian product decomposition.** The product of two elementary Brownian integrals
-on a common monotone grid with square-integrable left-endpoint heights, minus their elapsed mutual
-energy, is a true martingale. -/
-theorem martingale_mul_simpleGains_sub (hW : IsFilteredPreBrownianReal ℱ W P)
-    {τ : ℕ → ℝ≥0} {n : ℕ} {a b : ℕ → Ω → ℝ} (hτ : MonotoneOn τ (Set.Iic n))
-    (ha : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (a i))
-    (hb : ∀ i < n, StronglyMeasurable[ℱ (τ i)] (b i))
-    (ha₂ : ∀ i < n, MemLp (a i) 2 P) (hb₂ : ∀ i < n, MemLp (b i) 2 P) :
-    Martingale (fun t ω ↦ Finance.simpleGains τ n a W t ω * Finance.simpleGains τ n b W t ω -
-      ∑ i ∈ Finset.range n, a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) ℱ P := by
-  convert ((hW.martingale_sq_simpleGains_sub (a := a + b) hτ
-      (fun i hi ↦ (ha i hi).add (hb i hi)) fun i hi ↦ (ha₂ i hi).add (hb₂ i hi)).sub
-    (hW.martingale_sq_simpleGains_sub (a := a - b) hτ
-      (fun i hi ↦ (ha i hi).sub (hb i hi)) fun i hi ↦ (ha₂ i hi).sub (hb₂ i hi))).smul
-    (4⁻¹ : ℝ) using 1
-  ext t ω
-  have hsub : Finance.simpleGains τ n (a - b) W t ω =
-      Finance.simpleGains τ n a W t ω - Finance.simpleGains τ n b W t ω := by
-    simp only [Finance.simpleGains_def, Pi.sub_apply, sub_mul, Finset.sum_sub_distrib]
-  have hsum : ∑ i ∈ Finset.range n, a i ω * b i ω * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t)) =
-      4⁻¹ * (∑ i ∈ Finset.range n, (a i ω + b i ω) ^ 2 * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t)) -
-        ∑ i ∈ Finset.range n, (a i ω - b i ω) ^ 2 * (↑(min (τ (i + 1)) t) - ↑(min (τ i) t))) := by
-    rw [← Finset.sum_sub_distrib, Finset.mul_sum]; exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  simp only [Pi.smul_apply, Pi.sub_apply, smul_eq_mul, Finance.simpleGains_add, hsub, Pi.add_apply,
-    hsum]; ring
 
 /-- **Covariation of two elementary Brownian integrals.** On a common monotone grid with
 square-integrable left-endpoint heights, the covariation of `Finance.simpleGains τ n a W` and
@@ -269,7 +230,7 @@ theorem isCovariation_zero_of_martingale_mul (hB₁ : IsFilteredPreBrownianReal 
     (hB₂ : IsFilteredPreBrownianReal ℱ B₂ P) (hmul : Martingale (B₁ * B₂) ℱ P) :
     IsCovariation ℱ P B₁ B₂ 0 := by
   refine IsCovariation.mk (isStronglyProgressive_const ℱ 0) (ae_of_all P fun _ ↦ continuous_const)
-    (ae_of_all P fun _ _ _ _ _ ↦ by simp [BoundedVariationOn, eVariationOn]) .rfl ?_
+    (ae_of_all P fun _ ↦ locallyBoundedVariationOn_const 0 Set.univ) .rfl ?_
   simpa only [Pi.zero_apply, sub_zero] using Locally.of_prop (p := fun Y ↦ Martingale Y ℱ P)
     (hB₁.martingale_mul_sub_zero hB₂ hmul)
 
@@ -315,7 +276,7 @@ theorem isCovariation_sum_mul_of_martingale_mul (s : Finset ι) (u v : ι → �
   have := (hB i₀ hi₀).isGaussianProcess.isProbabilityMeasure
   let c := ∑ i ∈ s, u i * v i
   refine IsCovariation.mk
-    (isStronglyProgressive_deterministic ℱ (continuous_const.mul NNReal.continuous_coe))
+    ((continuous_const.mul NNReal.continuous_coe).stronglyMeasurable.isStronglyProgressive ℱ)
     (ae_of_all P fun _ ↦ continuous_const.mul NNReal.continuous_coe)
     (ae_of_all P fun _ ↦ ((lipschitzWith_smul c).comp_locallyBoundedVariationOn
       (NNReal.coe_mono.monotoneOn Set.univ).locallyBoundedVariationOn).congr fun _ _ ↦ rfl)

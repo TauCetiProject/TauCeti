@@ -15,6 +15,7 @@ import Mathlib.Probability.Process.HittingTime
 import TauCeti.Probability.Martingale.CountableStopping
 import TauCeti.Probability.Process.ContinuousAE
 import TauCeti.Probability.Process.Stopping
+import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 /-!
 # Continuous local martingales of finite variation are constant
@@ -162,11 +163,12 @@ private theorem stopped_gridHit_sq_sum_le {Ω : Type*} {W : ℝ≥0 → Ω → �
       · have h0 : Z (n + 1) ω - Z n ω = 0 := by
           dsimp only [Z]; rw [stopped_gridHit_sub_eq]; simp [hn]
         simpa only [h0, abs_zero, add_zero] using ih
-  let B : ℝ≥0 := ⟨2 * C, by positivity⟩
-  have hosc : (gridOsc W T k ω : ℝ) ≤ (B : ℝ) := NNReal.coe_le_coe.2 <| Finset.sup_le fun _ _ ↦ by
-    rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]; exact habs_le _ _ (hb _) (hb _)
+  have hosc : (gridOsc W T k ω : ℝ) ≤ 2 * C := by
+    rw [← NNReal.coe_mk (2 * C) (by positivity)]
+    exact NNReal.coe_le_coe.2 <| Finset.sup_le fun _ _ ↦ by
+      rw [← NNReal.coe_le_coe, coe_nnNorm, Real.norm_eq_abs]; exact habs_le _ _ (hb _) (hb _)
   have : 0 ≤ (M : ℝ) + 2 * C := by positivity
-  refine ⟨?_, by change (gridOsc W T k ω : ℝ) ≤ 2 * C at hosc; nlinarith⟩
+  refine ⟨?_, by nlinarith⟩
   refine (Finset.sum_le_sum (g := fun i ↦ (gridOsc W T k ω : ℝ) * |Z (i + 1) ω - Z i ω|)
     fun i hi ↦ ?_).trans ?_
   · have hi_osc : |Z (i + 1) ω - Z i ω| ≤ (gridOsc W T k ω : ℝ) := (hinc_le i).trans <| by
@@ -201,6 +203,68 @@ private theorem isStoppingTime_gridHit {W : ℝ≥0 → Ω → ℝ}
       (Filtration.comp_apply (ℱ := ℱ) (hτ := dyadicPt_mono T k) j).ge).measurable)
     measurableSet_Ioi
 
+private theorem martingale_stopped_gridHit {W : ℝ≥0 → Ω → ℝ}
+    (hW : Martingale W ℱ P) (T : ℝ≥0) (k M : ℕ) :
+    Martingale (stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M))
+      (ℱ.comp (dyadicPt_mono T k)) P :=
+  (hW.comp (dyadicPt_mono T k)).stoppedProcess_of_countable_range
+    (isStoppingTime_gridHit hW.stronglyAdapted T k M) (to_countable _)
+
+private theorem memLp_stopped_gridHit {W : ℝ≥0 → Ω → ℝ}
+    (hW : Martingale W ℱ P) {C : ℝ} (hb : ∀ᵐ ω ∂P, ∀ t, |W t ω| ≤ C)
+    (T : ℝ≥0) (k M j : ℕ) :
+    MemLp (stoppedProcess (fun i ↦ W (dyadicPt T k i)) (gridHit W T k M) j) 2 P :=
+  memLp_of_bounded (a := -C) (b := C)
+    (hb.mono fun _ hω ↦ stoppedProcess_mem (s := Icc (-C) C) (fun _ _ ↦ abs_le.1 (hω _)) j)
+    (((martingale_stopped_gridHit hW T k M).stronglyAdapted j).mono
+      ((ℱ.comp (dyadicPt_mono T k)).le j)).aestronglyMeasurable 2
+
+private theorem integral_stopped_gridHit_sq_le {W : ℝ≥0 → Ω → ℝ}
+    (hW : Martingale W ℱ P) (hW0 : ∀ ω, W 0 ω = 0) {C : ℝ} (hC : 0 ≤ C)
+    (hb : ∀ᵐ ω ∂P, ∀ t, |W t ω| ≤ C) (T : ℝ≥0) (k M : ℕ) :
+    ∫ ω, stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M) (2 ^ k) ω ^ 2 ∂P ≤
+      ∫ ω, ((M : ℝ) + 2 * C) * (gridOsc W T k ω : ℝ) ∂P := by
+  let Z := stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M)
+  have hZ : Martingale Z (ℱ.comp (dyadicPt_mono T k)) P := martingale_stopped_gridHit hW T k M
+  have hZbdd (j : ℕ) : MemLp (Z j) 2 P := memLp_stopped_gridHit hW hb T k M j
+  have hZ0 : ∫ ω, Z 0 ω ^ 2 ∂P = 0 := by
+    have h0 (ω : Ω) : Z 0 ω = 0 :=
+      (congr_fun (stoppedProcess_bot (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M)) ω).trans
+        (by simp [dyadicPt, hW0 ω])
+    simp [h0]
+  have htele := hZ.sum_integral_sq_sub (g := id) (n := 2 ^ k) (monotone_id.monotoneOn _) (hZbdd _)
+  have hint (i : ℕ) : Integrable (fun ω ↦ (Z (i + 1) ω - Z i ω) ^ 2) P :=
+    ((hZbdd _).sub (hZbdd _)).integrable_sq
+  have hg_int : Integrable (fun ω ↦ ((M : ℝ) + 2 * C) * (gridOsc W T k ω : ℝ)) P :=
+    (integrable_const (2 * C * (M + 2 * C))).mono'
+      (stronglyMeasurable_const.mul
+        (stronglyMeasurable_gridOsc (fun t ↦ (hW.stronglyAdapted t).mono (ℱ.le t))
+          T k)).aestronglyMeasurable
+      (hb.mono fun _ hω ↦ by
+        rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+        exact (stopped_gridHit_sq_sum_le hC hω).2)
+  simp only [id_eq, hZ0, sub_zero] at htele
+  rw [← htele, ← integral_finsetSum (Finset.range (2 ^ k)) fun i _ ↦ hint i]
+  exact integral_mono_ae (integrable_finsetSum (Finset.range (2 ^ k)) fun i _ ↦ hint i)
+    hg_int (hb.mono fun _ hω ↦ (stopped_gridHit_sq_sum_le hC hω).1)
+
+private theorem integral_indicator_sq_le_stopped_gridHit {W : ℝ≥0 → Ω → ℝ}
+    (hW : Martingale W ℱ P) {C : ℝ} (hb : ∀ᵐ ω ∂P, ∀ t, |W t ω| ≤ C)
+    (T : ℝ≥0) (k M : ℕ) :
+    ∫ ω, (⋂ m : ℕ, {ω' | gridVar W T m (2 ^ m) ω' ≤ M}).indicator
+        (fun ω' ↦ W T ω' ^ 2) ω ∂P ≤
+      ∫ ω, stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M) (2 ^ k) ω ^ 2 ∂P := by
+  refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
+    (memLp_stopped_gridHit hW hb T k M (2 ^ k)).integrable_sq (ae_of_all _ fun ω ↦ ?_)
+  by_cases hω : ω ∈ ⋂ m : ℕ, {ω' | gridVar W T m (2 ^ m) ω' ≤ M}
+  · have hle : WithTop.some (2 ^ k) ≤ gridHit W T k M ω :=
+      (not_le.1 (mt gridHit_le_iff.1 (mem_iInter.1 hω k).not_gt)).le
+    have hEq : stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M) (2 ^ k) ω = W T ω := by
+      rw [stoppedProcess_eq_of_le hle]
+      simp [dyadicPt, pow_ne_zero k (two_ne_zero : (2 : ℝ≥0) ≠ 0)]
+    simp [hω, hEq]
+  · simp [hω, sq_nonneg]
+
 private theorem ae_eq_zero_of_bounded_centered_real_martingale {W : ℝ≥0 → Ω → ℝ}
     (hW : Martingale W ℱ P) (hW0 : ∀ ω, W 0 ω = 0) {C : ℝ} (hC : 0 ≤ C)
     (hb : ∀ᵐ ω ∂P, ∀ t, |W t ω| ≤ C) (hc : ∀ᵐ ω ∂P, Continuous (W · ω))
@@ -209,65 +273,37 @@ private theorem ae_eq_zero_of_bounded_centered_real_martingale {W : ℝ≥0 → 
   have hWT_L2 : MemLp (W T) 2 P :=
     memLp_of_bounded (a := -C) (b := C) (hb.mono fun ω hω ↦ abs_le.1 (hω T))
       ((hW.stronglyAdapted T).mono (ℱ.le T)).aestronglyMeasurable 2
+  -- Step 1: On the event `E_M` where every dyadic grid variation stays below `M`, `W T = 0` a.e.
   have hM_zero (M : ℕ) :
       (⋂ k : ℕ, {ω | gridVar W T k (2 ^ k) ω ≤ M}).indicator (fun ω ↦ W T ω ^ 2) =ᵐ[P] 0 := by
     let E : Set Ω := ⋂ k : ℕ, {ω | gridVar W T k (2 ^ k) ω ≤ M}
-    let Z (k : ℕ) := stoppedProcess (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M)
-    have hZ (k : ℕ) : Martingale (Z k) (ℱ.comp (dyadicPt_mono T k)) P :=
-      (hW.comp (dyadicPt_mono T k)).stoppedProcess_of_countable_range
-        (isStoppingTime_gridHit hW.stronglyAdapted T k M) (to_countable _)
-    have hZbdd (k j : ℕ) : MemLp (Z k j) 2 P :=
-      memLp_of_bounded (a := -C) (b := C)
-        (hb.mono fun ω hω ↦ stoppedProcess_mem (s := Icc (-C) C) (fun u _ ↦ abs_le.1 (hω _)) j)
-        (((hZ k).stronglyAdapted j).mono ((ℱ.comp (dyadicPt_mono T k)).le j)).aestronglyMeasurable 2
-    let g (k : ℕ) (ω : Ω) := ((M : ℝ) + 2 * C) * (gridOsc W T k ω : ℝ)
-    have hg_meas (k : ℕ) : AEStronglyMeasurable (g k) P :=
-      (stronglyMeasurable_const.mul
-        (stronglyMeasurable_gridOsc (fun t ↦ (hW.stronglyAdapted t).mono (ℱ.le t))
-          T k)).aestronglyMeasurable
-    have hg_bound (k : ℕ) : ∀ᵐ ω ∂P, ‖g k ω‖ ≤ 2 * C * (M + 2 * C) := hb.mono fun ω hω ↦ by
-      dsimp only [g]; rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-      exact (stopped_gridHit_sq_sum_le hC hω).2
-    have hg_lim : Tendsto (fun k ↦ ∫ ω, g k ω ∂P) atTop (𝓝 0) := by
+    -- Dominated convergence sends the oscillation majorant `(M + 2 C) * gridOsc` to `0` in `L¹`.
+    have hg_lim : Tendsto (fun k ↦ ∫ ω, ((M : ℝ) + 2 * C) * (gridOsc W T k ω : ℝ) ∂P)
+        atTop (𝓝 0) := by
       simpa only [integral_const, smul_zero] using
-        tendsto_integral_of_dominated_convergence (fun _ ↦ 2 * C * (M + 2 * C)) hg_meas
-          (integrable_const _) hg_bound (f := fun _ ↦ (0 : ℝ))
-          (hc.mono fun ω hω ↦ by
+        tendsto_integral_of_dominated_convergence
+          (F := fun k ω ↦ ((M : ℝ) + 2 * C) * (gridOsc W T k ω : ℝ))
+          (fun _ ↦ 2 * C * (M + 2 * C))
+          (fun k ↦ ((stronglyMeasurable_gridOsc (fun t ↦ (hW.stronglyAdapted t).mono (ℱ.le t))
+            T k).const_mul ((M : ℝ) + 2 * C)).aestronglyMeasurable)
+          (integrable_const _)
+          (fun k ↦ hb.mono fun _ hω ↦ by
+            rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+            exact (stopped_gridHit_sq_sum_le hC hω).2)
+          (f := fun _ ↦ (0 : ℝ))
+          (hc.mono fun _ hω ↦ by
             simpa only [mul_zero] using (tendsto_gridOsc (T := T) hω).const_mul ((M : ℝ) + 2 * C))
-    have hZ_lim : Tendsto (fun k ↦ ∫ ω, Z k (2 ^ k) ω ^ 2 ∂P) atTop (𝓝 0) := by
-      refine squeeze_zero' (Eventually.of_forall fun _ ↦ integral_nonneg fun _ ↦ sq_nonneg _)
-        (Eventually.of_forall fun k ↦ ?_) hg_lim
-      have hZ0 : ∫ ω, Z k 0 ω ^ 2 ∂P = 0 := by
-        have h0 (ω : Ω) : Z k 0 ω = 0 :=
-          (congr_fun (stoppedProcess_bot (fun j ↦ W (dyadicPt T k j)) (gridHit W T k M)) ω).trans
-            (by simp [dyadicPt, hW0 ω])
-        simp [h0]
-      have htele := (hZ k).sum_integral_sq_sub (g := id) (n := 2 ^ k) (monotone_id.monotoneOn _)
-        (hZbdd k _)
-      have hint (i : ℕ) : Integrable (fun ω ↦ (Z k (i + 1) ω - Z k i ω) ^ 2) P :=
-        ((hZbdd k _).sub (hZbdd k _)).integrable_sq
-      simp only [id_eq, hZ0, sub_zero] at htele
-      rw [← htele, ← integral_finsetSum (Finset.range (2 ^ k)) fun i _ ↦ hint i]
-      exact integral_mono_ae (integrable_finsetSum (Finset.range (2 ^ k)) fun i _ ↦ hint i)
-        ((integrable_const (2 * C * (M + 2 * C))).mono' (hg_meas k) (hg_bound k))
-        (hb.mono fun ω hω ↦ (stopped_gridHit_sq_sum_le hC hω).1)
+    -- Compare the `E`-restricted square against the stopped dyadic martingale and pass to `k → ∞`.
     have hE : MeasurableSet E := MeasurableSet.iInter fun k ↦ measurableSet_le
       ((stronglyMeasurable_gridVar hW.stronglyAdapted T k (2 ^ k)).mono (ℱ.le _)).measurable
       measurable_const
     refine (integral_eq_zero_iff_of_nonneg (fun _ ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
       (hWT_L2.integrable_sq.indicator hE)).1
-      (le_antisymm (ge_of_tendsto' hZ_lim fun k ↦ ?_)
+      (le_antisymm (ge_of_tendsto' hg_lim fun k ↦
+        (integral_indicator_sq_le_stopped_gridHit hW hb T k M).trans
+          (integral_stopped_gridHit_sq_le hW hW0 hC hb T k M))
         (integral_nonneg fun _ ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) _))
-    refine integral_mono_of_nonneg (ae_of_all _ fun _ ↦ indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
-      (hZbdd k (2 ^ k)).integrable_sq (ae_of_all _ fun ω ↦ ?_)
-    by_cases hω : ω ∈ E
-    · have hle : WithTop.some (2 ^ k) ≤ gridHit W T k M ω :=
-        (not_le.1 (mt gridHit_le_iff.1 (mem_iInter.1 hω k).not_gt)).le
-      have hEq : Z k (2 ^ k) ω = W T ω := by
-        dsimp only [Z]; rw [stoppedProcess_eq_of_le hle]
-        simp [dyadicPt, pow_ne_zero k (two_ne_zero : (2 : ℝ≥0) ≠ 0)]
-      simp [hω, hEq]
-    · simp [hω, sq_nonneg]
+  -- Step 2: Exhaust almost every finite-variation path by the countable union of events `E_M`.
   filter_upwards [hbv, ae_all_iff.2 hM_zero] with ω hbvω h0ω
   obtain ⟨M, hM⟩ := ENNReal.exists_nat_gt hbvω
   have hmem : ω ∈ ⋂ k : ℕ, {ω' | gridVar W T k (2 ^ k) ω' ≤ M} := mem_iInter.2 fun k ↦ by
@@ -305,7 +341,7 @@ private theorem indist_const_real_localMartingale {M : ℝ≥0 → Ω → ℝ}
     refine (LipschitzWith.id.sub (LipschitzWith.const (Z n 0 ω))).comp_boundedVariationOn
       (g := (Z n · ω)) ?_
     rw [hZpath n ω]; split_ifs
-    exacts [hω.stoppedProcess_Icc, by simp [BoundedVariationOn, eVariationOn]]
+    exacts [hω.stoppedProcess_Icc, TauCeti.boundedVariationOn_const 0 (Icc 0 T)]
   filter_upwards [hρ.tendsto_top, ae_all_iff.2 hZconst] with ω htop hZω t
   obtain ⟨n, hn⟩ := (htop.eventually (eventually_gt_nhds (WithTop.coe_lt_top t))).exists
   have hpos : 0 < ρ n ω := lt_of_le_of_lt (WithTop.coe_le_coe.2 bot_le) hn
