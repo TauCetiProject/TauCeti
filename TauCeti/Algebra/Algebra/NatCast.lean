@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
 public import Mathlib.Algebra.Field.Rat
+public import Mathlib.Data.Nat.Prime.Defs
+import Mathlib.Data.Nat.Factorization.Induction
 
 /-!
 # Natural numbers invertible in semirings and algebras
@@ -26,6 +28,8 @@ differentiation.
 * `IsUnit.neZero_natCast`: a natural number invertible in a nontrivial semiring is nonzero.
 * `Subalgebra.natCast_mul_mem_iff`: if `(m : K)` is a unit, a `K`-subalgebra contains `m * t`
   exactly when it contains `t`.
+* `TauCeti.isUnit_natCast_iff_forall_prime_dvd`: a nonzero natural number is a unit in a
+  commutative semiring exactly when each of its prime divisors is.
 * `TauCeti.isUnit_natCast_of_ne_zero`, `TauCeti.isUnit_natCast_add_of_ne_zero`,
   `TauCeti.isUnit_natCast_add_one`: every nonzero natural number (in particular `(m : K) + k` for
   `k ≠ 0` and `(m : K) + 1`) is a unit in a `ℚ`-algebra.
@@ -54,6 +58,20 @@ theorem Subalgebra.natCast_mul_mem_iff {K L : Type*} [CommSemiring K] [Semiring 
   exact Submodule.smul_mem_iff_of_isUnit (Subalgebra.toSubmodule T) hm
 
 namespace TauCeti
+
+/-- A nonzero natural number is a unit in a commutative semiring `K` exactly when each of its
+prime divisors is. The hypothesis `n ≠ 0` is needed: in `ℚ` every prime is a unit, but `0` is
+not. -/
+theorem isUnit_natCast_iff_forall_prime_dvd {K : Type*} [CommSemiring K] {n : ℕ} (hn : n ≠ 0) :
+    IsUnit (n : K) ↔ ∀ p : ℕ, p.Prime → p ∣ n → IsUnit (p : K) := by
+  refine ⟨fun h p _ hp ↦ isUnit_of_dvd_unit (Nat.cast_dvd_cast hp) h, fun h ↦ ?_⟩
+  induction n using induction_on_primes with
+  | zero => exact absurd rfl hn
+  | one => simp
+  | prime_mul p a hp ih =>
+    rw [Nat.cast_mul]
+    exact (h p hp (dvd_mul_right p a)).mul
+      (ih (right_ne_zero_of_mul hn) fun q hq hqa ↦ h q hq (hqa.mul_left p))
 
 /-- Every nonzero natural number is a unit in a `ℚ`-algebra. -/
 theorem isUnit_natCast_of_ne_zero {K : Type*} [Semiring K] [Algebra ℚ K] {m : ℕ}
