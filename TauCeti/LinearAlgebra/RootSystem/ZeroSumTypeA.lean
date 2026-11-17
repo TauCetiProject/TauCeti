@@ -200,18 +200,25 @@ noncomputable def typeAZeroSumRootPairing (m : ℕ) :
   (typeABaseChangeRootSystem K m).map (typeAIndexEquiv m).symm
     (zeroSumWeightEquiv K m).symm (zeroSumCoweightEquiv K m)
 
+private lemma typeAZeroSumRootPairing_eq_map (m : ℕ) :
+    typeAZeroSumRootPairing K m =
+      (typeABaseChangeRootSystem K m).map (typeAIndexEquiv m).symm
+        (zeroSumWeightEquiv K m).symm (zeroSumCoweightEquiv K m) := rfl
+
 /-- `typeAZeroSumRootPairing K m` is a root system. -/
 instance instIsRootSystemTypeAZeroSumRootPairing (m : ℕ) :
-    (typeAZeroSumRootPairing K m).IsRootSystem := by delta typeAZeroSumRootPairing; infer_instance
+    (typeAZeroSumRootPairing K m).IsRootSystem := by
+  rw [typeAZeroSumRootPairing_eq_map]; infer_instance
 
 /-- `typeAZeroSumRootPairing K m` is crystallographic. -/
 instance instIsCrystallographicTypeAZeroSumRootPairing (m : ℕ) :
     (typeAZeroSumRootPairing K m).IsCrystallographic := by
-  delta typeAZeroSumRootPairing; infer_instance
+  rw [typeAZeroSumRootPairing_eq_map]; infer_instance
 
 /-- `typeAZeroSumRootPairing K m` is reduced. -/
 instance instIsReducedTypeAZeroSumRootPairing (m : ℕ) :
-    (typeAZeroSumRootPairing K m).IsReduced := by delta typeAZeroSumRootPairing; infer_instance
+    (typeAZeroSumRootPairing K m).IsReduced := by
+  rw [typeAZeroSumRootPairing_eq_map]; infer_instance
 
 /-- Canonical equivalence from `typeABaseChangeRootSystem K m` to `typeAZeroSumRootPairing K m`. -/
 noncomputable def typeABaseChangeEquivZeroSum (m : ℕ) :
@@ -261,6 +268,18 @@ theorem reflectionPerm_typeAZeroSumRootPairing_val (m : ℕ) (p q : TypeAIndex m
     (typeAZeroSumRootPairing K m).reflectionPerm p p = ⟨(p.val.2, p.val.1), p.2.symm⟩ :=
   Subtype.ext (by simp [reflectionPerm_typeAZeroSumRootPairing_val])
 
+-- `typeABaseChangeEquivZeroSum` has dependent target type `typeAZeroSumRootPairing K m`, so
+-- `rw [typeAZeroSumRootPairing_eq_map]` cannot rewrite its codomain directly; the `equivMap`
+-- simp lemmas apply directly to the definitional `equivMap` expression.
+private lemma typeABaseChangeEquivZeroSum_weightEquiv (m : ℕ) :
+    (typeABaseChangeEquivZeroSum K m).weightEquiv = (zeroSumWeightEquiv K m).symm :=
+  RootPairing.weightEquiv_equivMap ..
+
+private lemma typeABaseChangeEquivZeroSum_coweightMap_apply (m : ℕ)
+    (v : singleParityCheckCode K (Fin (m + 1))) :
+    (typeABaseChangeEquivZeroSum K m).coweightMap v = (zeroSumCoweightEquiv K m).symm v :=
+  RootPairing.coweightMap_equivMap_apply ..
+
 /-- The index equivalence of `typeABaseChangeEquivZeroSum K m` is `(typeAIndexEquiv m).symm`. -/
 @[simp] theorem indexEquiv_typeABaseChangeEquivZeroSum (m : ℕ) :
     (typeABaseChangeEquivZeroSum K m).indexEquiv = (typeAIndexEquiv m).symm :=
@@ -271,8 +290,7 @@ theorem reflectionPerm_typeAZeroSumRootPairing_val (m : ℕ) (p q : TypeAIndex m
     (u : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
     (typeABaseChangeEquivZeroSum K m).weightEquiv.symm u k =
       (u : Fin (m + 1) → K) k.castSucc - (u : Fin (m + 1) → K) k.succ := by
-  delta typeABaseChangeEquivZeroSum typeAZeroSumRootPairing
-  rw [RootPairing.weightEquiv_equivMap, LinearEquiv.symm_symm, zeroSumWeightEquiv_apply]
+  rw [typeABaseChangeEquivZeroSum_weightEquiv, LinearEquiv.symm_symm, zeroSumWeightEquiv_apply]
 
 /-- The contravariant coweight map of `typeABaseChangeEquivZeroSum K m` takes coordinates in
 `singleParityCheckCodeBasis K m`. -/
@@ -280,8 +298,7 @@ theorem reflectionPerm_typeAZeroSumRootPairing_val (m : ℕ) (p q : TypeAIndex m
     (v : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
     (typeABaseChangeEquivZeroSum K m).coweightMap v k =
       (singleParityCheckCodeBasis K m).repr v k := by
-  delta typeABaseChangeEquivZeroSum typeAZeroSumRootPairing
-  rw [RootPairing.coweightMap_equivMap_apply, zeroSumCoweightEquiv_symm_apply]
+  rw [typeABaseChangeEquivZeroSum_coweightMap_apply, zeroSumCoweightEquiv_symm_apply]
 
 /-- The `i`-th consecutive pair `(i, i + 1)` indexing the `i`-th Bourbaki simple root. -/
 def typeAZeroSumSimplePair (m : ℕ) (i : Fin m) : TypeAIndex m :=
@@ -298,7 +315,8 @@ theorem typeAZeroSumSimplePair_injective (m : ℕ) : Injective (typeAZeroSumSimp
 /-- `(typeAIndexEquiv m).symm` maps `typeASimpleIndex m i` to `typeAZeroSumSimplePair m i`. -/
 theorem typeAIndexEquiv_symm_typeASimpleIndex_eq_simplePair (m : ℕ) (i : Fin m) :
     (typeAIndexEquiv m).symm (typeASimpleIndex m i) = typeAZeroSumSimplePair m i := by
-  rw [typeAIndexEquiv_symm_typeASimpleIndex]; rfl
+  refine Subtype.ext (Prod.ext (Fin.ext ?_) (Fin.ext ?_)) <;>
+    simp [typeAIndexEquiv_symm_typeASimpleIndex]
 
 /-- The support of `typeAZeroSumBase K m` consists of the consecutive pairs `(i, i + 1)`. -/
 theorem mem_support_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :

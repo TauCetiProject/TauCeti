@@ -35,8 +35,8 @@ integral vectors in the hyperplane.
 
 ## Main declarations
 
-* `TauCeti.IntegralLattice.dotProduct_singleParityCheckCodeBasis`: the dot products of the
-  adjacent-difference basis vectors are the entries of `CartanMatrix.A n`.
+* `TauCeti.IntegralLattice.singleParityCheckCodeBasis_dotProduct_singleParityCheckCodeBasis`: the
+  dot products of the adjacent-difference basis vectors are the entries of `CartanMatrix.A n`.
 * `TauCeti.IntegralLattice.zeroSumLattice`: the lattice `Aₙ` with the restricted dot product.
 * `TauCeti.IntegralLattice.mem_zeroSumLattice_carrier_iff`: its carrier consists exactly of the
   integral vectors of coordinate sum zero.
@@ -74,7 +74,7 @@ variable (n : ℕ)
 
 /-- **The dot products of the adjacent-difference basis vectors are the entries of the Cartan
 matrix of type `Aₙ`.** -/
-theorem dotProduct_singleParityCheckCodeBasis (i j : Fin n) :
+theorem singleParityCheckCodeBasis_dotProduct_singleParityCheckCodeBasis (i j : Fin n) :
     (singleParityCheckCodeBasis ℚ n i : Fin (n + 1) → ℚ) ⬝ᵥ
       (singleParityCheckCodeBasis ℚ n j : Fin (n + 1) → ℚ) = (CartanMatrix.A n i j : ℚ) := by
   simp only [coe_singleParityCheckCodeBasis_apply, dotProduct_sub, dotProduct_single, mul_one]
@@ -102,7 +102,7 @@ model `TauCeti.IntegralLattice.typeARootLattice n` by
 noncomputable def zeroSumLattice : IntegralLattice (singleParityCheckCode ℚ (Fin (n + 1))) :=
   ofBasis (singleParityCheckCodeBasis ℚ n) (zeroSumForm n)
     (isSymm_dotProductBilin.restrict _) fun i j ↦ by
-    rw [zeroSumForm_apply, dotProduct_singleParityCheckCodeBasis]
+    rw [zeroSumForm_apply, singleParityCheckCodeBasis_dotProduct_singleParityCheckCodeBasis]
     exact Submodule.mem_one.mpr ⟨CartanMatrix.A n i j, rfl⟩
 
 @[simp]
@@ -166,7 +166,8 @@ theorem gramMatrix_zeroSumSimpleRootBasis :
   ext i j
   have h := intCast_gramMatrix_apply (zeroSumLattice n) (zeroSumSimpleRootBasis n) i j
   rw [zeroSumLattice_form, zeroSumForm_apply, coe_zeroSumSimpleRootBasis_apply,
-    coe_zeroSumSimpleRootBasis_apply, dotProduct_singleParityCheckCodeBasis] at h
+    coe_zeroSumSimpleRootBasis_apply,
+    singleParityCheckCodeBasis_dotProduct_singleParityCheckCodeBasis] at h
   exact_mod_cast h
 
 /-! ## The isometry with the simple-root model -/

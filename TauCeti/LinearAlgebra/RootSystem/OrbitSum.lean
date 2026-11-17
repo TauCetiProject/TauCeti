@@ -50,6 +50,8 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
 * `RootPairing.orbitSum_eq_root_of_indexEquiv_eq`: the orbit sum of a fixed root is that root.
 * `RootPairing.sum_range_root_pow_apply_eq_nsmul`: a sum over a period `m` is `m / d` times the
   orbit sum.
+* `RootPairing.coroot'_orbitSum`: evaluating a coroot functional on an orbit sum sums the
+  root-coroot pairings over the orbit.
 * `RootPairing.weightMap_orbitSum` and `RootPairing.weightMap_orbitSum_of_autCongr`: an
   equivalence of root pairings intertwining two automorphisms carries orbit sums to orbit sums
   (and `RootPairing.mem_foldedIndices_weightMap` transports membership in `foldedIndices`); in
@@ -197,6 +199,12 @@ theorem orbitSum_eq_sum_range :
   · obtain ⟨k, -, rfl⟩ := mem_image.mp hj
     exact mem_orbitIndices_iff_exists_pow.mpr ⟨k, rfl⟩
   · rw [card_image_of_injOn hinj, card_range, card_orbitIndices]
+
+/-- Evaluating a coroot functional on an orbit sum sums the root-coroot pairings over the orbit. -/
+theorem coroot'_orbitSum (j : ι) :
+    P.coroot' j (P.orbitSum σ i) = ∑ r ∈ P.orbitIndices σ i, P.pairing r j := by
+  rw [orbitSum_def, map_sum]
+  exact sum_congr rfl fun r _ ↦ P.root_coroot'_eq_pairing j r
 
 variable {P σ i}
 

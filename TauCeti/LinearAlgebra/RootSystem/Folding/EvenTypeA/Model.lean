@@ -260,7 +260,8 @@ theorem evenTypeAFixedShortLift_spec (n : ℕ) (i : Fin n) :
     by rw [orbitIndices_typeAZeroSumRevAut,
       (finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev _).mpr hfix,
       pair_eq_singleton, card_singleton],
-    by rw [orbitSum_typeAZeroSumRevAut_eq, ite_eq_left hfix]; rfl⟩
+    by rw [orbitSum_typeAZeroSumRevAut_eq, ite_eq_left hfix, evenTypeAFixedShortLift_val,
+      evenTypeAFoldAtom_left]⟩
 
 /-- `evenTypeAPairedShortLift n i` is positive, has orbit size `2`, and has orbit sum `fᵢ`. -/
 theorem evenTypeAPairedShortLift_spec (n : ℕ) (i : Fin n) :
@@ -380,18 +381,28 @@ private def evenTypeAFoldAtomFixed (n : ℕ) (a : Fin (2 * n + 1)) :
     rw [LinearMap.mem_fixedSubmodule_iff, weightMap_typeAZeroSumRevAut, LinearEquiv.coe_coe,
       evenTypeAFoldAtom, typeAZeroSumRevEquiv_vec, Fin.rev_rev]⟩
 
+@[simp] private lemma coe_evenTypeAFoldAtomFixed (n : ℕ) (a : Fin (2 * n + 1)) :
+    (evenTypeAFoldAtomFixed K n a : singleParityCheckCode K (Fin (2 * n + 1))) =
+      evenTypeAFoldAtom K n a := rfl
+
+private lemma evenTypeAFoldAtomFixed_left (n : ℕ) (i : Fin n) :
+    evenTypeAFoldAtomFixed K n (evenTypeALeftIdx n i) =
+      ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩ :=
+  Subtype.ext (by rw [coe_evenTypeAFoldAtomFixed, evenTypeAFoldAtom_left])
+
 private lemma evenTypeAFixedCoordEquiv_foldAtom_rev (n : ℕ) (a : Fin (2 * n + 1)) :
     evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n a.rev) =
       -evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n a) := by
   rw [← map_neg (evenTypeAFixedCoordEquiv K n)]
   exact congrArg _ (Subtype.ext (by
-    rw [Submodule.coe_neg]; dsimp only [evenTypeAFoldAtomFixed]
-    rw [evenTypeAFoldAtom, Fin.rev_rev, evenTypeAFoldAtom, neg_typeAZeroSumVec]))
+    rw [Submodule.coe_neg, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed,
+      evenTypeAFoldAtom, Fin.rev_rev, evenTypeAFoldAtom, neg_typeAZeroSumVec]))
 
 private lemma evenTypeAFixedCoordEquiv_foldAtom_mid (n : ℕ) :
     evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n (evenTypeAMidIdx n)) = 0 := by
   rw [← map_zero (evenTypeAFixedCoordEquiv K n)]
-  exact congrArg _ (Subtype.ext (evenTypeAFoldAtom_mid K n))
+  exact congrArg _ (Subtype.ext (by
+    rw [coe_evenTypeAFoldAtomFixed, evenTypeAFoldAtom_mid, Submodule.coe_zero]))
 
 private lemma evenTypeAFixedCoordEquiv_signedIdx (n : ℕ) (u : Fin (2 * n)) :
     evenTypeAFixedCoordEquiv K n (evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u)) =
@@ -400,10 +411,11 @@ private lemma evenTypeAFixedCoordEquiv_signedIdx (n : ℕ) (u : Fin (2 * n)) :
   by_cases hlt : (u : ℕ) < n
   · rw [TypeB.signedWeight_def, TypeB.sgn_def, TypeB.axis_def, ite_eq_left hlt, ite_eq_left hlt,
       one_smul, ← evenTypeAFixedCoordEquiv_basisVec K n ⟨u, hlt⟩, evenTypeASignedIdx,
-      dite_eq_left hlt]; rfl
+      dite_eq_left hlt, evenTypeAFoldAtomFixed_left]
   · rw [TypeB.signedWeight_def, TypeB.sgn_def, TypeB.axis_def, ite_eq_right hlt, ite_eq_right hlt,
       neg_one_smul, map_neg, ← evenTypeAFixedCoordEquiv_basisVec K n ⟨(u : ℕ) - n, by omega⟩,
-      evenTypeASignedIdx, dite_eq_right hlt, evenTypeAFixedCoordEquiv_foldAtom_rev]; rfl
+      evenTypeASignedIdx, dite_eq_right hlt, evenTypeAFixedCoordEquiv_foldAtom_rev,
+      evenTypeAFoldAtomFixed_left]
 
 private lemma mem_foldedIndices_of_mem_range_typeB {n : ℕ}
     {x : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap}
@@ -421,7 +433,7 @@ private lemma mem_foldedIndices_of_mem_range_typeB {n : ℕ}
     have hx' : x = evenTypeAFoldAtomFixed K n (evenTypeASignedIdx n u) :=
       (evenTypeAFixedCoordEquiv K n).injective (by
         rw [hroot, TypeB.rootOfPair_self, evenTypeAFixedCoordEquiv_signedIdx])
-    rw [hx', orbitSum_typeAZeroSumRevAut_eq, ite_eq_left rfl]; rfl
+    rw [hx', orbitSum_typeAZeroSumRevAut_eq, ite_eq_left rfl, coe_evenTypeAFoldAtomFixed]
   · let a := evenTypeASignedIdx n u; let b := (evenTypeASignedIdx n v).rev
     have hab : a ≠ b := fun hc ↦ huv.ne_opp (evenTypeASignedIdx_injective n (by
       simpa [a, b, rev_evenTypeASignedIdx] using hc))
@@ -433,7 +445,8 @@ private lemma mem_foldedIndices_of_mem_range_typeB {n : ℕ}
         rw [hroot, TypeB.rootOfPair_of_ne hne, map_add, map_sub (evenTypeAFixedCoordEquiv K n),
           evenTypeAFixedCoordEquiv_foldAtom_rev, sub_neg_eq_add,
           evenTypeAFixedCoordEquiv_signedIdx, evenTypeAFixedCoordEquiv_signedIdx])
-    rw [hx', orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hnotfix]; rfl
+    rw [hx', orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hnotfix, Submodule.coe_sub,
+      coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed]
 
 private lemma evenTypeAFoldAtom_mem_range_typeB (n : ℕ) {a : Fin (2 * n + 1)}
     (ha : a ≠ evenTypeAMidIdx n) :
@@ -482,28 +495,14 @@ theorem mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices (n : ℕ)
   obtain ⟨p, hp⟩ := RootPairing.mem_foldedIndices.mp hx
   by_cases hfix : p.val.2 = p.val.1.rev
   · have hx' : x = evenTypeAFoldAtomFixed K n p.val.1 :=
-      Subtype.ext (by rw [← hp, orbitSum_typeAZeroSumRevAut_eq, ite_eq_left hfix]; rfl)
+      Subtype.ext (by rw [← hp, orbitSum_typeAZeroSumRevAut_eq, ite_eq_left hfix,
+        coe_evenTypeAFoldAtomFixed])
     exact hx' ▸ evenTypeAFoldAtom_mem_range_typeB K n
       (fun hc ↦ p.2 (by rw [hfix, hc, rev_evenTypeAMidIdx]))
   · have hx' : x = evenTypeAFoldAtomFixed K n p.val.1 - evenTypeAFoldAtomFixed K n p.val.2 :=
-      Subtype.ext (by rw [← hp, orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hfix]; rfl)
+      Subtype.ext (by rw [← hp, orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hfix,
+        Submodule.coe_sub, coe_evenTypeAFoldAtomFixed, coe_evenTypeAFoldAtomFixed])
     exact hx' ▸ evenTypeAFoldAtom_sub_mem_range_typeB K n p.2 hfix
-
-/-- Twice a short root `2 • fᵢ` is never an orbit sum of `typeAZeroSumRevAut K (2 * n)`. -/
-theorem two_smul_evenTypeABasisVec_notMem_foldedIndices (n : ℕ) (i : Fin n) :
-    (2 : K) • evenTypeABasisVec K n i ∉
-      (typeAZeroSumRootPairing K (2 * n)).foldedIndices (typeAZeroSumRevAut K (2 * n)) := by
-  let x : LinearMap.fixedSubmodule (typeAZeroSumRevAut K (2 * n)).weightMap :=
-    ⟨evenTypeABasisVec K n i, evenTypeABasisVec_mem_fixedSubmodule K n i⟩
-  obtain ⟨r, hr⟩ := (mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices K n x).mpr
-    (RootPairing.mem_foldedIndices.mpr
-      ⟨evenTypeAFixedShortLift n i, (evenTypeAFixedShortLift_spec K n i).2.2⟩)
-  intro hmem
-  have h2 := (mem_range_root_typeBBaseChangeRootSystem_iff_mem_foldedIndices K n ((2 : K) • x)).mpr
-    hmem
-  rw [map_smul, ← hr, ← Nat.cast_two (R := K), Nat.cast_smul_eq_nsmul] at h2
-  have : HasUniqueDiv (Fin n → K) := .of_isTorsionFree K _
-  exact (typeBBaseChangeRootSystem K n).nsmul_notMem_range_root (n := 2) (i := r) h2
 
 /-- `evenTypeAFixedCoordEquiv K n` sends the `k`-th simple orbit sum of `A₂ₙ` to the `k`-th
 Bourbaki simple root of `typeBBaseChangeRootSystem K n`. -/
