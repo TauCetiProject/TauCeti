@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import TauCeti.RingTheory.KrullDimension.LocalRing
 public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.Length
+import TauCeti.RingTheory.OrderOfVanishing
 
 /-!
 # The length of a quotient by two equations
@@ -74,6 +75,9 @@ In the namespace `TauCeti`:
   product of equations, which is additivity over a union of curves, whenever the image of the
   second factor `h` on the first curve is a non-zero-divisor; `g` is unrestricted, and no
   finiteness is assumed, so the three lengths may be infinite;
+* `length_quotient_span_pair_prod_pow_eq_sum_of_mem_nonZeroDivisors`: the n-ary form of that
+  additivity, `length R/(f, ∏ᵢ gᵢ^nᵢ) = ∑ᵢ nᵢ • length R/(f, gᵢ)` whenever each `gᵢ` is a
+  non-zero-divisor on the first curve, again with possibly infinite lengths;
 * `length_quotient_span_pair_mul_eq_add`: the same additivity for an irreducible first curve, that
   is, a prime `(f)`, where it is enough that the second factor `h` lie outside `(f)`, so that its
   image there is a nonzero element of the domain `R ⧸ (f)` and hence a non-zero-divisor; the three
@@ -106,7 +110,8 @@ which identifies the length of a module over a surjective quotient with its leng
 original ring. The two vanishing criteria use `Module.length_eq_zero_iff` and
 `Submodule.Quotient.subsingleton_iff`, the general form of the fact that `R ⧸ I` is trivial
 exactly when `I = ⊤`. Additivity is `Ring.ord_mul`, the additivity of the order of vanishing over a
-product, read as a length. The finiteness of an `𝔪`-primary pair of equations, and with it the
+product, read as a length; over a finite product of powers it is `Ring.ord_pow` together with
+`TauCeti.Ring.ord_prod`. The finiteness of an `𝔪`-primary pair of equations, and with it the
 natural number it becomes, is `Ideal.isFiniteLength_quotient_of_isMaximal_radical` in
 `TauCeti.RingTheory.Length`.
 
@@ -245,6 +250,22 @@ theorem length_quotient_span_pair_mul_eq_add {f g h : R} (_ : (Ideal.span {f}).I
       = Module.length R (R ⧸ Ideal.span {f, g}) + Module.length R (R ⧸ Ideal.span {f, h}) :=
   length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors
     (mem_nonZeroDivisors_of_ne_zero fun hzero => hh ((Submodule.Quotient.mk_eq_zero _).mp hzero))
+
+/-- **The length of the quotient by an equation and a finite product of powers is the weighted
+sum of the lengths.** If the image of each `gᵢ` in `R ⧸ (f)` is a non-zero-divisor, then
+`length R/(f, ∏ᵢ gᵢ^nᵢ) = ∑ᵢ nᵢ • length R/(f, gᵢ)`. This is the n-ary form of
+`TauCeti.length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: no hypothesis on `R`
+beyond commutativity is placed and no finiteness is assumed, so the lengths may be infinite. -/
+theorem length_quotient_span_pair_prod_pow_eq_sum_of_mem_nonZeroDivisors
+    {ι : Type*} (s : Finset ι) (f : R) (g : ι → R) (n : ι → ℕ)
+    (hg : ∀ i ∈ s, Ideal.Quotient.mk (span {f}) (g i) ∈ nonZeroDivisors (R ⧸ span {f})) :
+    Module.length R (R ⧸ span {f, ∏ i ∈ s, g i ^ n i}) =
+      ∑ i ∈ s, n i • Module.length R (R ⧸ span {f, g i}) := by
+  rw [← ord_eq_length_quotient_span_pair, map_prod]
+  simp_rw [map_pow]
+  rw [Ring.ord_prod (fun i hi ↦ pow_mem (hg i hi) _)]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  rw [_root_.Ring.ord_pow (hg i hi), ord_eq_length_quotient_span_pair]
 
 end Quotient
 

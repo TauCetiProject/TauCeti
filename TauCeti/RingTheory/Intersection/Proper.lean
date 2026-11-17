@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.Intersection.Basic
 public import TauCeti.RingTheory.CohenMacaulay.RegularSequence
-import TauCeti.RingTheory.OrderOfVanishing
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Local intersection multiplicities of products of equations
@@ -34,12 +34,11 @@ infinite. Empty products and zero exponents are allowed.
 * `Module.IsCohenMacaulay.mk_mem_nonZeroDivisors_of_radical_eq`: in a two-dimensional
   Cohen–Macaulay local ring, if `(f, g)` has radical the maximal ideal, then `g` is a
   non-zero-divisor on `R ⧸ (f)`; this uses `Module.IsCohenMacaulay.isRegular_of_le_radical`.
-* `TauCeti.length_quotient_span_pair_prod_pow_eq_sum_of_mem_nonZeroDivisors`: in any commutative
-  ring, the possibly infinite length `length R/(f, ∏ᵢ gᵢ^nᵢ)` is `∑ᵢ nᵢ • length R/(f, gᵢ)` when
-  each `gᵢ` is a non-zero-divisor on `R ⧸ (f)`, by Mathlib's `Ring.ord_pow` and the
-  finite-product order formula `TauCeti.Ring.ord_prod`.
 * `TauCeti.length_quotient_span_pair_prod_pow_eq_sum_of_isCohenMacaulay`: the finite formula
-  above for proper intersections on a two-dimensional Cohen–Macaulay local ring.
+  above for proper intersections on a two-dimensional Cohen–Macaulay local ring, deduced from
+  the general non-zero-divisor formula
+  `TauCeti.length_quotient_span_pair_prod_pow_eq_sum_of_mem_nonZeroDivisors` of
+  `TauCeti.RingTheory.Intersection.Basic`.
 
 ## References
 
@@ -52,7 +51,6 @@ infinite. Empty products and zero exponents are allowed.
 public section
 
 open Ideal IsLocalRing RingTheory.Sequence
-open scoped Pointwise
 
 namespace Module.IsCohenMacaulay
 
@@ -61,9 +59,9 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R]
 /-- **A proper-intersection partner is a non-zero-divisor on the first curve.** In a
 two-dimensional Cohen–Macaulay local ring, if `(f, g)` has radical the maximal ideal, then the
 image of `g` in `R ⧸ (f)` is a non-zero-divisor. The pair is a system of parameters, hence a
-regular sequence by `Module.IsCohenMacaulay.isRegular_of_le_radical`; regularity of `g` on
-`QuotSMulTop f R`, the quotient by the scalar submodule `f • ⊤`, is then transported to
-`R ⧸ (f)` along the equality `f • ⊤ = (f)`. Neither `f` nor `g` needs to be prime. -/
+regular sequence by `Module.IsCohenMacaulay.isRegular_of_le_radical`, and its last entry is
+left-regular modulo the first by `RingTheory.Sequence.IsWeaklyRegular.isLeftRegular_mk_ofList`.
+Neither `f` nor `g` needs to be prime. -/
 theorem mk_mem_nonZeroDivisors_of_radical_eq (hR : IsCohenMacaulay R R)
     (hd : ringKrullDim R = 2) {f g : R} (hfg : (span {f, g}).radical = maximalIdeal R) :
     Ideal.Quotient.mk (span {f}) g ∈ nonZeroDivisors (R ⧸ span {f}) := by
@@ -81,42 +79,13 @@ theorem mk_mem_nonZeroDivisors_of_radical_eq (hR : IsCohenMacaulay R R)
         · exact hle (subset_span (by simp)))
       (by simpa only [hlist, hann, sup_bot_eq] using hfg.ge)
       (by simp [Module.supportDim_self_eq_ringKrullDim, hd])
-  have hg := (isRegular_cons_iff R f [g]).mp hrs
-  have hg' := (isWeaklyRegular_singleton_iff (QuotSMulTop f R) g).mp hg.2.toIsWeaklyRegular
-  -- `QuotSMulTop f R` uses the scalar submodule `f • ⊤`; the order API uses `(f)`.
-  have heq : f • (⊤ : Submodule R R) = span {f} := by
-    rw [← Submodule.ideal_span_singleton_smul, smul_eq_mul, mul_top]
-  have hg'' : IsSMulRegular (R ⧸ span {f}) g :=
-    ((Submodule.quotEquivOfEq _ _ heq).isSMulRegular_congr g).mp hg'
-  exact (isRegular_iff_mem_nonZeroDivisors).mp
-    ((Commute.isRegular_iff (fun _ ↦ mul_comm _ _)).mpr
-      ((isSMulRegular_algebraMap_iff (R ⧸ span {f})).mpr hg'').isLeftRegular)
+  have hg := IsWeaklyRegular.isLeftRegular_mk_ofList (rs := [f]) hrs.toIsWeaklyRegular
+  rw [ofList_singleton] at hg
+  exact isRegular_iff_mem_nonZeroDivisors.mp ((Commute.isRegular_iff fun _ ↦ mul_comm _ _).mpr hg)
 
 end Module.IsCohenMacaulay
 
 namespace TauCeti
-
-section Quotient
-
-variable {R : Type*} [CommRing R]
-
-/-- **The length of the quotient by an equation and a finite product of powers is the weighted
-sum of the lengths.** If the image of each `gᵢ` in `R ⧸ (f)` is a non-zero-divisor, then
-`length R/(f, ∏ᵢ gᵢ^nᵢ) = ∑ᵢ nᵢ • length R/(f, gᵢ)`. This is the n-ary form of
-`TauCeti.length_quotient_span_pair_mul_eq_add_of_mem_nonZeroDivisors`: no hypothesis on `R`
-beyond commutativity is placed and no finiteness is assumed, so the lengths may be infinite. -/
-theorem length_quotient_span_pair_prod_pow_eq_sum_of_mem_nonZeroDivisors
-    {ι : Type*} (s : Finset ι) (f : R) (g : ι → R) (n : ι → ℕ)
-    (hg : ∀ i ∈ s, Ideal.Quotient.mk (span {f}) (g i) ∈ nonZeroDivisors (R ⧸ span {f})) :
-    Module.length R (R ⧸ span {f, ∏ i ∈ s, g i ^ n i}) =
-      ∑ i ∈ s, n i • Module.length R (R ⧸ span {f, g i}) := by
-  rw [← ord_eq_length_quotient_span_pair, map_prod]
-  simp_rw [map_pow]
-  rw [Ring.ord_prod (fun i hi ↦ pow_mem (hg i hi) _)]
-  refine Finset.sum_congr rfl fun i hi ↦ ?_
-  rw [_root_.Ring.ord_pow (hg i hi), ord_eq_length_quotient_span_pair]
-
-end Quotient
 
 section CohenMacaulay
 
