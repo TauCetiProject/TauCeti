@@ -170,16 +170,17 @@ private theorem exact_sub_congr {L₁ L₂ L₁₂ : Type*}
     fun ⟨r, hr⟩ ↦ ⟨r, Prod.ext (by simpa using congrArg e₁.symm (congrArg Prod.fst hr))
       (by simpa using congrArg e₂.symm (congrArg Prod.snd hr))⟩⟩
 
-/-- Transport a `GlueingSquare` across homeomorphic `R`-algebra equivalences on `R₁`, `R₂`, and
-`R₁₂` intertwining the transition homomorphisms to the overlap ring. -/
-theorem GlueingSquare.congr [Algebra R R₁₂] {L₁ L₂ L₁₂ : Type*}
+/-- Transport a `GlueingSquare` across homeomorphic `R`-algebra equivalences on `R₁`, `R₂` and a
+homeomorphic ring equivalence on `R₁₂` intertwining the transition homomorphisms to the overlap
+ring. -/
+theorem GlueingSquare.congr {L₁ L₂ L₁₂ : Type*}
     [CommRing L₁] [CommRing L₂] [CommRing L₁₂]
     [TopologicalSpace L₁] [TopologicalSpace L₂] [TopologicalSpace L₁₂]
-    [Algebra R L₁] [Algebra R L₂] [Algebra L₁ L₁₂] [Algebra L₂ L₁₂] [Algebra R L₁₂]
+    [Algebra R L₁] [Algebra R L₂] [Algebra L₁ L₁₂] [Algebra L₂ L₁₂]
     (h : GlueingSquare R L₁ L₂ L₁₂)
     (e₁ : L₁ ≃ₐ[R] R₁) (he₁ : Continuous e₁) (he₁_symm : Continuous e₁.symm)
     (e₂ : L₂ ≃ₐ[R] R₂) (he₂ : Continuous e₂) (he₂_symm : Continuous e₂.symm)
-    (e₁₂ : L₁₂ ≃ₐ[R] R₁₂) (he₁₂ : Continuous e₁₂) (he₁₂_symm : Continuous e₁₂.symm)
+    (e₁₂ : L₁₂ ≃+* R₁₂) (he₁₂ : Continuous e₁₂) (he₁₂_symm : Continuous e₁₂.symm)
     (hcomp₁ : ∀ x : L₁, e₁₂ (algebraMap L₁ L₁₂ x) = algebraMap R₁ R₁₂ (e₁ x))
     (hcomp₂ : ∀ x : L₂, e₁₂ (algebraMap L₂ L₁₂ x) = algebraMap R₂ R₁₂ (e₂ x)) :
     GlueingSquare R R₁ R₂ R₁₂ := by
@@ -202,7 +203,7 @@ theorem GlueingSquare.congr [Algebra R R₁₂] {L₁ L₂ L₁₂ : Type*}
     hmap₁ ▸ he₁₂.comp (h.continuous_algebraMap₁₂.comp he₁_symm),
     hmap₂ ▸ he₁₂.comp (h.continuous_algebraMap₂₁₂.comp he₂_symm),
     hι ▸ (H₁.prodCongr H₂).injective.comp h.injective,
-    exact_sub_congr h.exact_sub e₁ e₂ e₁₂.toRingEquiv hcomp₁ hcomp₂,
+    exact_sub_congr h.exact_sub e₁ e₂ e₁₂ hcomp₁ hcomp₂,
     hδ ▸ H₁₂.surjective.comp (h.surjective_sub.comp (H₁.prodCongr H₂).symm.surjective),
     hι ▸ (H₁.prodCongr H₂).isInducing.comp h.isInducing,
     by rw [hδ, Homeomorph.comp_isStrictMap_iff, Homeomorph.isStrictMap_comp_iff]
@@ -228,7 +229,7 @@ variable {R R₁ R₂ R₁₂ : Type*} [CommRing R] [CommRing R₁] [CommRing R�
   [UniformSpace R₂] [IsUniformAddGroup R₂] [IsTopologicalRing R₂] [IsHuberRing R₂]
   [CompleteSpace R₂] [T0Space R₂]
   [UniformSpace R₁₂] [IsUniformAddGroup R₁₂] [IsTopologicalRing R₁₂] [IsHuberRing R₁₂]
-  [CompleteSpace R₁₂] [T2Space R₁₂]
+  [CompleteSpace R₁₂] [T0Space R₁₂]
   [Algebra R R₁] [Algebra R R₂] [Algebra R₁ R₁₂] [Algebra R₂ R₁₂] [Algebra R R₁₂]
   [IsScalarTower R R₁ R₁₂] [IsScalarTower R R₂ R₁₂]
 
@@ -277,8 +278,9 @@ theorem GlueingSquare.of_exact
   exact ⟨hc₁, hc₂, hc₁₂, hc₂₁₂, hinj, hexact, hsurj, hι_emb.isInducing,
     (δ.isQuotientMap_of_isTateRing hsurj hδ_cont.continuousAt).isStrictMap, hdense, hprime⟩
 
-/-- The identity glueing square `R → R, R → R` on any topological ring `R`. -/
-theorem GlueingSquare.id (R : Type*) [CommRing R] [TopologicalSpace R] [IsTopologicalAddGroup R] :
+/-- The identity glueing square `R → R, R → R` on any topological ring `R` with continuous
+subtraction. -/
+theorem GlueingSquare.id (R : Type*) [CommRing R] [TopologicalSpace R] [ContinuousSub R] :
     GlueingSquare R R R R where
   continuous_algebraMap₁ := continuous_id
   continuous_algebraMap₂ := continuous_id
@@ -341,6 +343,7 @@ variable (R₁ R₂ R₁₂ M₁ M₂ M₁₂) in
 /-- A *glueing datum* on `R₁, R₂ → R₁₂`: modules `M₁` over `R₁`, `M₂` over `R₂`, `M₁₂` over
 `R₁₂`, and `R₁₂`-linear isomorphisms `ψᵢ : R₁₂ ⊗_{Rᵢ} Mᵢ ≃ₗ[R₁₂] M₁₂`
 (Kedlaya–Liu, Definition 2.7.3). -/
+@[ext]
 structure GlueingDatum where
   /-- Identification `R₁₂ ⊗_{R₁} M₁ ≃ₗ[R₁₂] M₁₂`. -/
   ψ₁ : R₁₂ ⊗[R₁] M₁ ≃ₗ[R₁₂] M₁₂
@@ -360,6 +363,10 @@ theorem GlueingDatum.symm_ψ₁ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M�
 @[simp]
 theorem GlueingDatum.symm_ψ₂ (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
     D.symm.ψ₂ = D.ψ₁ := by rfl
+
+@[simp]
+theorem GlueingDatum.symm_symm (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) :
+    D.symm.symm = D := by rfl
 
 section Sections
 
@@ -413,6 +420,16 @@ theorem GlueingDatum.fst_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M�
 theorem GlueingDatum.snd_apply (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
     D.snd R x = x.1.2 := by rfl
 
+@[simp]
+theorem GlueingDatum.sectionsEquivProdOfSubsingleton_apply [Subsingleton M₁₂]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : D.sections R) :
+    D.sectionsEquivProdOfSubsingleton R x = x.1 := by rfl
+
+@[simp]
+theorem GlueingDatum.coe_sectionsEquivProdOfSubsingleton_symm [Subsingleton M₁₂]
+    (D : GlueingDatum R₁ R₂ R₁₂ M₁ M₂ M₁₂) (x : M₁ × M₂) :
+    ((D.sectionsEquivProdOfSubsingleton R).symm x : M₁ × M₂) = x := by rfl
+
 end Simps
 
 end Sections
@@ -463,25 +480,13 @@ private theorem ofModule_cocycle_eq_rTensor (z : (R₁ ⊗[R] N) × (R₂ ⊗[R]
       ((TensorProduct.prodLeft R R R₁ R₂ N).symm z) =
     (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).ψ₁ (1 ⊗ₜ z.1) -
       (GlueingDatum.ofModule R₁ R₂ R₁₂ R N).ψ₂ (1 ⊗ₜ z.2) := by
-  rcases z with ⟨z₁, z₂⟩
-  dsimp only
-  rw [show (z₁, z₂) = (z₁, (0 : R₂ ⊗[R] N)) + ((0 : R₁ ⊗[R] N), z₂) by simp,
-    map_add, map_add, sub_eq_add_neg]
-  congr 1
-  · induction z₁ using TensorProduct.inductionOn with
-    | tmul a n =>
-      rw [show (0 : R₂ ⊗[R] N) = (0 : R₂) ⊗ₜ[R] n by simp, TensorProduct.prodLeft_symm_tmul]
-      simp [Algebra.algebraMap_eq_smul_one]
-    | add x y hx hy =>
-      rw [show (x + y, (0 : R₂ ⊗[R] N)) = (x, 0) + (y, 0) by simp,
-        map_add, map_add, hx, hy, TensorProduct.tmul_add, map_add]
-  · induction z₂ using TensorProduct.inductionOn with
-    | tmul b n =>
-      rw [show (0 : R₁ ⊗[R] N) = (0 : R₁) ⊗ₜ[R] n by simp, TensorProduct.prodLeft_symm_tmul]
-      simp [Algebra.algebraMap_eq_smul_one]
-    | add x y hx hy =>
-      rw [show ((0 : R₁ ⊗[R] N), x + y) = (0, x) + (0, y) by simp,
-        map_add, map_add, hx, hy, TensorProduct.tmul_add, map_add, neg_add]
+  obtain ⟨w, rfl⟩ := (TensorProduct.prodLeft R R R₁ R₂ N).surjective z
+  rw [LinearEquiv.symm_apply_apply]
+  induction w using TensorProduct.inductionOn with
+  | tmul r n => rcases r with ⟨r₁, r₂⟩; simp [Algebra.algebraMap_eq_smul_one]
+  | add x y hx hy =>
+    rw [map_add, map_add, Prod.fst_add, Prod.snd_add, TensorProduct.tmul_add,
+      TensorProduct.tmul_add, map_add, map_add, hx, hy, add_sub_add_comm]
 
 /-- Whenever `0 → R → R₁ × R₂ → R₁₂` is exact and `N` is a flat `R`-module, the canonical map
 `GlueingDatum.toSectionsOfModule` is bijective: flat base change preserves both injectivity of

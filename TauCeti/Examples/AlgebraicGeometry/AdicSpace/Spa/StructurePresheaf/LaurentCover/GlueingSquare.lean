@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Strongly
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.RingTheory.Huber.Restricted.Noetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
+public import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # End-to-end checks for simple Laurent glueing squares
@@ -31,19 +32,13 @@ public section
 
 namespace TauCeti.Huber.LaurentGlueingSquareChecks
 
-/-- Any finite set containing `1` generates the unit ideal, which is open. -/
-theorem isOpen_span_of_one_mem {A : Type*} [CommRing A] [TopologicalSpace A] {T : Finset A}
-    (h1 : (1 : A) ∈ T) : IsOpen (Ideal.span (T : Set A) : Set A) := by
-  rw [Ideal.eq_top_of_isUnit_mem _ (Ideal.subset_span (Finset.mem_coe.mpr h1)) isUnit_one]
-  exact isOpen_univ
-
 open Classical in
 /-- For any complete Hausdorff sheafy Tate ring `R`, pair of definition `P`, and `f : R`, there
 exist models `R₁`, `R₂`, `R₁₂` of `R⟨f, 1/1⟩`, `R⟨1/f⟩`, and `R⟨f², 1/f⟩` (constructed from
 `ratLoc` and `existsUnique_laurentLeftAlgHom` / `existsUnique_laurentRightAlgHom`) that form a
 `GlueingSquare`. -/
 theorem exists_simpleLaurent_glueingSquare {R : Type u} [CommRing R] [UniformSpace R]
-    [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T2Space R]
+    [IsUniformAddGroup R] [IsTopologicalRing R] [IsTateRing R] [CompleteSpace R] [T0Space R]
     (hs : IsSheafyRing R) (P : PairOfDefinition R) (f : R) :
     ∃ (R₁ R₂ R₁₂ : Type u) (_ : CommRing R₁) (_ : CommRing R₂) (_ : CommRing R₁₂)
       (_ : TopologicalSpace R₁) (_ : TopologicalSpace R₂) (_ : TopologicalSpace R₁₂)
