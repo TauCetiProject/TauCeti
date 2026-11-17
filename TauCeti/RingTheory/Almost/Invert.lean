@@ -363,11 +363,6 @@ noncomputable def Module.baseChangeAwayEquiv (W : Type u) [CommRing W] [_root_.A
 
 section IsUnit
 
-/-- Localizing `V` away from a unit `ϖ` is isomorphic to `V` via `algebraMap`. -/
-private noncomputable def ringEquivAwayOfIsUnit (hu : IsUnit ϖ) :
-    V ≃+* Localization.Away ϖ :=
-  (IsLocalization.atUnits V (Submonoid.powers ϖ) (Submonoid.powers_le.mpr hu)).toRingEquiv
-
 /-- When `S.ideal` contains a unit `ϖ`, `Module.toAlmost S` is an equivalence of categories. -/
 private theorem isEquivalence_toAlmost_of_isUnit (hϖ : ϖ ∈ S.ideal) (hu : IsUnit ϖ) :
     (Module.toAlmost S).IsEquivalence := by
@@ -384,7 +379,8 @@ noncomputable def invertCompRestrictScalarsIsoElements (hu : IsUnit ϖ) :
   let Q := (Module.toAlmost S).asEquivalence
   let eElem : Module.elements S ≅ Q.inverse :=
     (Module.adjElements S).rightAdjointUniq Q.toAdjunction
-  let E := ModuleCat.restrictScalarsEquivalenceOfRingEquiv (ringEquivAwayOfIsUnit hu)
+  let E := ModuleCat.restrictScalarsEquivalenceOfRingEquiv
+    (IsLocalization.atUnit V (Localization.Away ϖ) ϖ hu).toRingEquiv
   let eExt : ModuleCat.extendScalars.{u, u, u} (algebraMap V (Localization.Away ϖ)) ≅ E.inverse :=
     (ModuleCat.extendRestrictScalarsAdj (algebraMap V (Localization.Away ϖ))).leftAdjointUniq
       E.symm.toAdjunction
@@ -408,7 +404,8 @@ theorem isEquivalence_invert_of_isUnit (hu : IsUnit ϖ) : (invert S hϖ).IsEquiv
       ((Module.adjElements S).rightAdjointUniq (Module.toAlmost S).asEquivalence.toAdjunction).symm
   have : (ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence :=
     inferInstanceAs
-      (ModuleCat.restrictScalars (ringEquivAwayOfIsUnit hu).toRingHom).IsEquivalence
+      (ModuleCat.restrictScalars
+        (IsLocalization.atUnit V (Localization.Away ϖ) ϖ hu).toRingEquiv.toRingHom).IsEquivalence
   have : (invert S hϖ ⋙
       ModuleCat.restrictScalars (algebraMap V (Localization.Away ϖ))).IsEquivalence :=
     Functor.isEquivalence_of_iso (invertCompRestrictScalarsIsoElements S hϖ hu).symm
@@ -667,9 +664,7 @@ instance subsingleton_invert_zero_obj (A : Algebra S) :
 `A_* → (Algebra.invert S ϖ).obj A` is an `A_*`-algebra (hence `V`-algebra) isomorphism. -/
 noncomputable def invertObjEquivElementsOfIsUnit {ϖ : V} (hu : IsUnit ϖ) (A : Algebra S) :
     ((invert S ϖ).obj A) ≃ₐ[(elements S).obj A] (elements S).obj A :=
-  (IsLocalization.atUnits ((elements S).obj A)
-    (Submonoid.powers (algebraMap V ((elements S).obj A) ϖ)) (S := (invert S ϖ).obj A)
-    (Submonoid.powers_le.mpr (hu.map (algebraMap V ((elements S).obj A))))).symm
+  (IsLocalization.atUnit _ _ _ (hu.map (algebraMap V ((elements S).obj A)))).symm
 
 /-- Under `invertObjEquivElementsOfIsUnit`, a canonical numerator `algebraMap A_* _ x` maps back
 to `x`. -/
