@@ -16,8 +16,8 @@ For endomorphisms `f` of `M` and `g` of `N`, finite free modules over a commutat
 
 `det (f ⊗ g) = det f ^ rank N * det g ^ rank M`
 
-(`TensorProduct.det_map`). In bases `b` of `M` and `c` of `N` the matrix of `f ⊗ g` in the
-product basis `b ⊗ c` is the Kronecker product of the matrices of `f` and `g`
+(`LinearMap.det_tensorProductMap`). In bases `b` of `M` and `c` of `N` the matrix of `f ⊗ g` in
+the product basis `b ⊗ c` is the Kronecker product of the matrices of `f` and `g`
 (`TensorProduct.toMatrix_map`), whose determinant is computed by `Matrix.det_kronecker`.
 
 For line bundles, `rank M = rank N = 1`, this is the multiplicativity of the transition functions
@@ -29,14 +29,15 @@ public section
 
 open Module
 
-namespace TensorProduct
+namespace LinearMap
 
 variable {R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Module.Free R M]
   [Module.Finite R M] [AddCommGroup N] [Module R N] [Module.Free R N] [Module.Finite R N]
 
 /-- The determinant of `f ⊗ g` is `det f ^ rank N * det g ^ rank M`. -/
-theorem det_map (f : M →ₗ[R] M) (g : N →ₗ[R] N) :
-    LinearMap.det (map f g) = LinearMap.det f ^ finrank R N * LinearMap.det g ^ finrank R M := by
+theorem det_tensorProductMap (f : M →ₗ[R] M) (g : N →ₗ[R] N) :
+    LinearMap.det (TensorProduct.map f g) =
+      LinearMap.det f ^ finrank R N * LinearMap.det g ^ finrank R M := by
   classical
   rcases subsingleton_or_nontrivial R with hR | hR
   · exact Subsingleton.elim _ _
@@ -46,4 +47,4 @@ theorem det_map (f : M →ₗ[R] M) (g : N →ₗ[R] N) :
     Matrix.det_kronecker, LinearMap.det_toMatrix, LinearMap.det_toMatrix,
     finrank_eq_card_chooseBasisIndex, finrank_eq_card_chooseBasisIndex]
 
-end TensorProduct
+end LinearMap

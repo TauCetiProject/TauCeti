@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Determinant.TensorProduct
 public import TauCeti.Topology.VectorBundle.Complex.Clutching
 public import TauCeti.Topology.VectorBundle.TensorProduct.Basic
 
@@ -31,8 +30,9 @@ between a frame along `p` and a trivialization near `x`. Frames `φ₁` of `E₁
 (`TauCeti.continuous_prodFrame`, `TauCeti.continuous_tensorProductFrame`). Read in the product
 and tensor product trivializations, their transitions are `g₁ × g₂` and `g₁ ⊗ g₂`, where `g₁` and
 `g₂` are the transitions of the factors. Since `det (g₁ × g₂) = det g₁ det g₂` and
-`det (g₁ ⊗ g₂) = (det g₁) ^ n₂ (det g₂) ^ n₁` (`TensorProduct.det_map`), the clutching functions
-are `Γ₁ Γ₂` and `Γ₁ ^ n₂ Γ₂ ^ n₁` (`TauCeti.clutchingFunction_prodFrame`,
+`det (g₁ ⊗ g₂) = (det g₁) ^ n₂ (det g₂) ^ n₁` (`LinearMap.det_tensorProductMap`,
+`ContinuousLinearEquiv.normalizedDet_eq_pow_mul_pow_of_apply_tmul`), the clutching functions are
+`Γ₁ Γ₂` and `Γ₁ ^ n₂ Γ₂ ^ n₁` (`TauCeti.clutchingFunction_prodFrame`,
 `TauCeti.clutchingFunction_tensorProductFrame`), whose degrees around the boundary of the square
 are `deg Γ₁ + deg Γ₂` and `n₂ deg Γ₁ + n₁ deg Γ₂`.
 
@@ -48,8 +48,6 @@ curves.
 * `TauCeti.clutchingNumber_prod`, `TauCeti.clutchingNumberHom_prod`: the Whitney sum formula.
 * `TauCeti.clutchingNumber_tensorProduct`, `TauCeti.clutchingNumberHom_tensorProduct`: the tensor
   product formula, and `TauCeti.clutchingNumber_tensorProduct_of_finrank_eq_one` for line bundles.
-* `ContinuousLinearEquiv.normalizedDet_eq_pow_mul_pow_of_apply_tmul`: the normalized determinant
-  of `A₁ ⊗ A₂`.
 
 ## References
 
@@ -64,37 +62,6 @@ public section
 
 open Bundle Module Set Topology
 open scoped unitInterval Topology.Homotopy TensorProduct
-
-namespace ContinuousLinearEquiv
-
-variable {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℂ E₁] [FiniteDimensional ℂ E₁]
-  [NormedAddCommGroup E₂] [NormedSpace ℂ E₂] [FiniteDimensional ℂ E₂]
-
-/-- An automorphism of the projective tensor product `E₁ ⊗ E₂` acting on pure tensors as
-`A₁ ⊗ A₂` has normalized determinant `normalizedDet A₁ ^ dim E₂ * normalizedDet A₂ ^ dim E₁`. -/
-theorem normalizedDet_eq_pow_mul_pow_of_apply_tmul
-    {A : TauCeti.ProjectiveTensor ℂ E₁ E₂ ≃L[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂}
-    {A₁ : E₁ ≃L[ℂ] E₁} {A₂ : E₂ ≃L[ℂ] E₂} (h : ∀ v w, A ⟨v ⊗ₜ w⟩ = ⟨A₁ v ⊗ₜ A₂ w⟩) :
-    A.normalizedDet = A₁.normalizedDet ^ finrank ℂ E₂ * A₂.normalizedDet ^ finrank ℂ E₁ := by
-  set L := TauCeti.ProjectiveTensor.linearEquiv ℂ E₁ E₂
-  -- Read through the underlying algebraic tensor product, `A` is `TensorProduct.map A₁ A₂`.
-  have hconj : (L : TauCeti.ProjectiveTensor ℂ E₁ E₂ →ₗ[ℂ] E₁ ⊗[ℂ] E₂) ∘ₗ
-      (A.toLinearEquiv :
-        TauCeti.ProjectiveTensor ℂ E₁ E₂ →ₗ[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂) ∘ₗ
-        (L.symm : E₁ ⊗[ℂ] E₂ →ₗ[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂) =
-      TensorProduct.map (A₁.toLinearEquiv : E₁ →ₗ[ℂ] E₁) (A₂.toLinearEquiv : E₂ →ₗ[ℂ] E₂) :=
-    TensorProduct.ext' fun v w ↦ by simp [L, h]
-  have hdet : LinearMap.det (A.toLinearEquiv :
-      TauCeti.ProjectiveTensor ℂ E₁ E₂ →ₗ[ℂ] TauCeti.ProjectiveTensor ℂ E₁ E₂) =
-      LinearMap.det (A₁.toLinearEquiv : E₁ →ₗ[ℂ] E₁) ^ finrank ℂ E₂ *
-        LinearMap.det (A₂.toLinearEquiv : E₂ →ₗ[ℂ] E₂) ^ finrank ℂ E₁ := by
-    rw [← LinearMap.det_conj _ L, hconj, TensorProduct.det_map]
-  ext1
-  simp only [coe_normalizedDet, Circle.coe_mul, Circle.coe_pow, hdet, norm_mul, norm_pow,
-    Complex.ofReal_mul, Complex.ofReal_pow]
-  ring
-
-end ContinuousLinearEquiv
 
 namespace TauCeti
 
@@ -281,7 +248,7 @@ theorem clutchingNumberHom_prod :
       clutchingNumberHom F₁ E₁ x + clutchingNumberHom F₂ E₂ x := by
   refine AddMonoidHom.ext fun a ↦ ?_
   obtain ⟨p, hp⟩ := Quotient.exists_rep a.toMul
-  obtain rfl : a = Additive.ofMul (show π_ 2 X x from Quotient.mk _ p) := by rw [hp]; rfl
+  rw [← ofMul_toMul a, ← hp]
   rw [AddMonoidHom.add_apply, clutchingNumberHom_apply_mk, clutchingNumberHom_apply_mk,
     clutchingNumberHom_apply_mk, clutchingNumber_prod]
 
@@ -333,7 +300,7 @@ theorem clutchingNumberHom_tensorProduct :
       finrank ℂ F₂ • clutchingNumberHom F₁ E₁ x + finrank ℂ F₁ • clutchingNumberHom F₂ E₂ x := by
   refine AddMonoidHom.ext fun a ↦ ?_
   obtain ⟨p, hp⟩ := Quotient.exists_rep a.toMul
-  obtain rfl : a = Additive.ofMul (show π_ 2 X x from Quotient.mk _ p) := by rw [hp]; rfl
+  rw [← ofMul_toMul a, ← hp]
   rw [AddMonoidHom.add_apply, AddMonoidHom.nsmul_apply, AddMonoidHom.nsmul_apply,
     clutchingNumberHom_apply_mk, clutchingNumberHom_apply_mk, clutchingNumberHom_apply_mk,
     clutchingNumber_tensorProduct, nsmul_eq_mul, nsmul_eq_mul]
