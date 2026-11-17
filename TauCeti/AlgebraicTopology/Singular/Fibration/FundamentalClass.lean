@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.AlgebraicTopology.Singular.Fibration.LocalHomology
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.IsFundamentalClass
 
@@ -24,15 +23,19 @@ This file shows that when `p` is trivial over a chart ball about `b`, with fibre
 (`TauCeti.IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization`), in the sense
 of `TauCeti.IsFundamentalClass`: classes whose image in the local homology at every point
 generates it. For a fibre bundle of closed manifolds this is the identity `j_![E] = [F]` of
-Barraud, Damian, Humilière and Oancea, which turns the nonvanishing of `σ_*[F]` into a criterion
-for `σ_*[E]` to live over the fundamental class of the base.
+Barraud, Damian, Humilière and Oancea. It is one input to their criterion (Corollary 2.13) for
+`σ_*[E]` to live over the fundamental class of the base when `σ_*[F]` is nonzero; the other input,
+the naturality of the shriek map under maps of fibrations, is not treated here.
 
 ## The argument
 
 Fix `y ∈ F`. The point is that `j_!` is compatible with restriction to `y`: the shriek map
 followed by `Hₙ(F) → Hₙ(F, F ∖ {y})` is the restriction `Hₙ₊ᵣ(E, E ∖ F) → Hₙ₊ᵣ(E, E ∖ {y})`
-followed by an isomorphism. A fundamental class of `E` restricts to a generator of
-`Hₙ₊ᵣ(E, E ∖ {y})`, so its image under `j_!` restricts to a generator of `Hₙ(F, F ∖ {y})`.
+followed by an isomorphism `Hₙ₊ᵣ(E, E ∖ {y}) ≅ Hₙ(F, F ∖ {y})`
+(`TauCeti.TopCat.singularHomologyComplSingletonFiberIso`,
+`TauCeti.TopCat.singularHomologyComplFiberIso_hom_comp_singularHomologyπ`). A fundamental class
+of `E` restricts to a generator of `Hₙ₊ᵣ(E, E ∖ {y})`, so its image under `j_!` restricts to a
+generator of `Hₙ(F, F ∖ {y})`.
 
 After excision onto the part of `E` over the chart ball, the fibration is a product `K × Y → K`
 over a ball `K` about `0`. Let `A = K × (Y ∖ {y})`, an open set since `Y` is `T₁`. Then
@@ -40,13 +43,18 @@ over a ball `K` about `0`. Let `A = K × (Y ∖ {y})`, an open set since `Y` is 
 `Hₙ₊ᵣ(E, E ∖ F)` by relative Mayer–Vietoris sequences
 (`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`) runs relative to `A` as well
 (`TauCeti.TopCat.singularHomologyPreimageNeZeroRelIso`), compatibly with it
-(`TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ`). The acyclicity
-it needs relative to `A` holds because moving along straight lines in `K` keeps the coordinate in
-`Y`. Its value `Hₙ(E, A)` is `Hₙ(F, F ∖ {y})`, since the retraction of `E` onto the fibre keeping
-the coordinate in `Y` is a homotopy inverse of the inclusion of pairs.
+(`TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_comp_homologyMap_comp_singularHomologyπ`).
+The acyclicity it needs relative to `A` holds because moving along straight lines in `K`
+keeps the coordinate in `Y`. Its value `Hₙ(E, A)` is `Hₙ(F, F ∖ {y})`, since the retraction of
+`E` onto the fibre keeping the coordinate in `Y` is a homotopy inverse of the inclusion of pairs.
 
-## Main results
+## Main definitions and results
 
+* `TauCeti.TopCat.singularHomologyComplSingletonFiberIso`: for a point `y` of the fibre `F`, the
+  isomorphism `Hₙ₊ᵣ(E, E ∖ {y}) ≅ Hₙ(F, F ∖ {y})`.
+* `TauCeti.TopCat.singularHomologyComplFiberIso_hom_comp_singularHomologyπ`: the shriek map
+  followed by `Hₙ(F) → Hₙ(F, F ∖ {y})` is the restriction `Hₙ₊ᵣ(E, E ∖ F) → Hₙ₊ᵣ(E, E ∖ {y})`
+  followed by `TauCeti.TopCat.singularHomologyComplSingletonFiberIso`.
 * `TauCeti.IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization`: the shriek
   map of a point sends fundamental classes of the total space to fundamental classes of the
   fibre.
@@ -146,16 +154,10 @@ private lemma isZero_offSlice (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (
     IsZero ((TopPair.ofSubset
       (offSlice φ x ∪ p ⁻¹' {k : K | ¬((k : V) ∈ W ∧ ψ k ≤ 0)})).singularHomology
         (ModuleCat.of R R) n) := by
-  -- A neighbourhood of `0` is absorbent, so it contains a positive multiple `c` of `v`.
-  have hev : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • v ∈ K :=
-    ((absorbent_nhds_zero hK₀).eventually_nhdsNE_zero v).filter_mono
-      (nhdsWithin_mono _ fun _ h ↦ ne_of_gt h)
-  obtain ⟨t, htK, ht : 0 < t⟩ := (hev.and self_mem_nhdsWithin).exists
-  have hψc : 0 < ψ (t • v) := by simpa [hψv] using ht
-  have hS := starConvex_compl_setOf_mem_and_nonpos (W.smul_mem t hv) hψc
-  have hcS : t • v ∉ {y | y ∈ W ∧ ψ y ≤ 0} := fun h ↦ (not_le.2 hψc) h.2
+  obtain ⟨c₀, hc₀K, hcS, hS⟩ :=
+    exists_mem_starConvex_compl_setOf_mem_and_nonpos hK₀ hv (hψv ▸ one_pos)
   let B := offSlice φ x ∪ p ⁻¹' {k : K | ¬((k : V) ∈ W ∧ ψ k ≤ 0)}
-  let c : K := ⟨t • v, htK⟩
+  let c : K := ⟨c₀, hc₀K⟩
   -- The straight line from `p e` to `c` in `K`, with the coordinate of `e` in `Y`.
   let G : C(I × E, E) :=
     { toFun q := φ.symm (⟨AffineMap.lineMap (p q.2 : V) (c : V) (q.1 : ℝ),
@@ -175,16 +177,16 @@ private lemma isZero_offSlice (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (
       map_zero_left e := eq_of_snd_eq φ hφ (Subtype.ext ((hGp (0, e)).trans (by simp)))
         (by simpa using hGY (0, e))
       map_one_left _ := rfl }
+  -- `H` is the homotopy with underlying map `G`, so `hGp` and `hGY` describe it.
+  have hHG : ∀ q, H q = G q := fun _ ↦ rfl
   have hH := TopPair.ofSubsetHomotopy (B := B) (B' := B) H fun τ e he ↦ by
     rcases he with he | he
     · refine Or.inl ?_
-      -- `H` is the homotopy with underlying map `G`; read the goal through `G` to use `hGY`.
-      change (φ (G (τ, e))).2 ≠ (φ x).2
-      rw [hGY]
+      simp only [mem_ofPred_eq, hHG, hGY]
       exact he
     · refine Or.inr ?_
       simp only [mem_preimage, mem_ofPred_eq] at he ⊢
-      rw [show H (τ, e) = G (τ, e) from rfl, hGp, AffineMap.lineMap_apply_module, add_comm]
+      rw [hHG, hGp, AffineMap.lineMap_apply_module, add_comm]
       exact hS he τ.2.1 (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)
   refine TopPair.isZero_singularHomology_of_homotopy (P := TopPair.ofSubset B)
     (f := TopPair.ofSubsetMap ρ fun e _ ↦ hρ e) ?_
@@ -246,44 +248,54 @@ private lemma mapsTo_compl_singleton (x₀ : fiber p) :
 variable [FiniteDimensional ℝ V]
 
 include hφ in
+/-- `E ∖ {x₀}`, for `x₀` in the fibre over `0`, is `offSlice φ x₀` together with the part of `E`
+over `K ∖ {0}`. -/
+private def complSingletonPairIso (x₀ : fiber p) :
+    TopPair.ofSubset ({x₀.1}ᶜ : Set E) ≅
+      TopPair.ofSubset (offSlice φ x₀.1 ∪ p ⁻¹' {k : K | (k : V) ≠ 0}) :=
+  TopPair.ofSubsetIso (Homeomorph.refl _) fun e ↦ by
+    rw [offSlice_union φ hφ x₀.1 x₀.2]
+    rfl
+
 /-- **The local homology of a trivial fibration at a point of the fibre over `0`.** Let `K` be a
 convex neighbourhood of `0` in a finite-dimensional real normed space of dimension `r`, and let
-`p : E ⟶ K` be a Serre fibration which is trivial, through `φ : E ≃ₜ K × Y` with `Y` a `T₁`
-space. For a point `x₀` of the fibre `F` over `0`, the shriek map
-`Hₘ(E, E ∖ F) ≅ Hₙ(F)` followed by `Hₙ(F) ⟶ Hₙ(F, F ∖ {x₀})` factors as the restriction
-`Hₘ(E, E ∖ F) ⟶ Hₘ(E, E ∖ {x₀})` followed by an isomorphism, for `m = n + r`. -/
-private theorem exists_iso_comp_singularHomologyMap [T1Space Y] (hp : serreFibrations p)
-    (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (x₀ : fiber p) (n m : ℕ)
+`p : E ⟶ K` be trivial, through `φ : E ≃ₜ K × Y` with `Y` a `T₁` space. For a point `x₀` of the
+fibre `F` over `0`, `Hₘ(E, E ∖ {x₀}) ≅ Hₙ(F, F ∖ {x₀})` for `m = n + r`: relative to
+`offSlice φ x₀`, which with the part of `E` over `K ∖ {0}` makes up `E ∖ {x₀}`, the computation
+of `TauCeti.TopCat.singularHomologyPreimageNeZeroRelIso` gives `Hₙ(E, offSlice φ x₀)`, which is
+`Hₙ(F, F ∖ {x₀})` (`fiberPairIso`). -/
+private def complSingletonIso [T1Space Y] (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V))
+    (x₀ : fiber p) (n m : ℕ) (h : n + finrank ℝ V = m) :
+    (TopPair.ofSubset ({x₀.1}ᶜ : Set E)).singularHomology (ModuleCat.of R R) m ≅
+      (TopPair.ofSubset ({x₀}ᶜ : Set (_root_.TopCat.of (fiber p)))).singularHomology
+        (ModuleCat.of R R) n :=
+  TopPair.singularHomologyMapIso _ (complSingletonPairIso φ hφ x₀) m ≪≫
+    singularHomologyPreimageNeZeroRelIso R (isOpen_offSlice φ x₀.1)
+      (isZero_offSlice φ hφ x₀.1 R hK hK₀) n m h ≪≫
+    (fiberPairIso φ hφ R hK (mem_of_mem_nhds hK₀) x₀ n).symm
+
+/-- For a trivial fibration `p : E ⟶ K` as in `complSingletonIso`, which is moreover a Serre
+fibration, and a point `x₀` of the fibre `F` over `0`, the shriek map `Hₘ(E, E ∖ F) ≅ Hₙ(F)`
+followed by `Hₙ(F) ⟶ Hₙ(F, F ∖ {x₀})` is the restriction `Hₘ(E, E ∖ F) ⟶ Hₘ(E, E ∖ {x₀})`
+followed by `complSingletonIso`. -/
+private theorem singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ [T1Space Y]
+    (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (x₀ : fiber p) (n m : ℕ)
     (h : n + finrank ℝ V = m) :
-    ∃ ψ : (TopPair.ofSubset ({x₀.1}ᶜ : Set E)).singularHomology (ModuleCat.of R R) m ≅
-        (TopPair.ofSubset ({x₀}ᶜ : Set (_root_.TopCat.of (fiber p)))).singularHomology
-          (ModuleCat.of R R) n,
-      (singularHomologyPreimageNeZeroIso R hp hK hK₀ n m h).hom ≫
-          (TopPair.ofSubset ({x₀}ᶜ : Set (_root_.TopCat.of (fiber p)))).singularHomologyπ
-            (ModuleCat.of R R) n =
-        TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) (mapsTo_compl_singleton x₀))
-          (ModuleCat.of R R) m ≫ ψ.hom := by
-  have hA := isOpen_offSlice φ x₀.1
-  have hA' := isZero_offSlice φ hφ x₀.1 R hK hK₀
-  -- `E ∖ {x₀}` is `offSlice φ x₀` together with the part of `E` over `K ∖ {0}`.
-  let setIso : TopPair.ofSubset ({x₀.1}ᶜ : Set E) ≅
-      TopPair.ofSubset (offSlice φ x₀.1 ∪ p ⁻¹' {k : K | (k : V) ≠ 0}) :=
-    TopPair.ofSubsetIso (Homeomorph.refl _) fun e ↦ by
-      rw [offSlice_union φ hφ x₀.1 x₀.2]
-      rfl
-  refine ⟨asIso (TopPair.singularHomologyMap setIso.hom _ m) ≪≫
-    singularHomologyPreimageNeZeroRelIso R hA hA' n m h ≪≫
-      (fiberPairIso φ hφ R hK (mem_of_mem_nhds hK₀) x₀ n).symm, ?_⟩
-  have hcompat := singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ R hA hA' hp hK hK₀
-    n m h
+    (singularHomologyPreimageNeZeroIso R hp hK hK₀ n m h).hom ≫
+        (TopPair.ofSubset ({x₀}ᶜ : Set (_root_.TopCat.of (fiber p)))).singularHomologyπ
+          (ModuleCat.of R R) n =
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) (mapsTo_compl_singleton x₀))
+          (ModuleCat.of R R) m ≫ (complSingletonIso φ hφ R hK hK₀ x₀ n m h).hom := by
+  have hcompat := singularHomologyPreimageNeZeroIso_hom_comp_homologyMap_comp_singularHomologyπ R
+    (isOpen_offSlice φ x₀.1) (isZero_offSlice φ hφ x₀.1 R hK hK₀) hp hK hK₀ n m h
   have hπ := TopPair.singularHomologyπ_naturality
     (TopPair.ofSubsetMap (fiberIncl p) (mapsTo_fiber φ hφ x₀)) (ModuleCat.of R R) n
   rw [TopPair.ofSubsetMap_fst] at hπ
-  have hincl : TopPair.ofSubsetMap (𝟙 E) (mapsTo_compl_singleton x₀) ≫ setIso.hom =
-      TopPair.ofSubsetMap (𝟙 E) fun _ ↦ Or.inr := by
-    simp only [setIso, TopPair.ofSubsetIso_hom]
+  have hincl : TopPair.ofSubsetMap (𝟙 E) (mapsTo_compl_singleton x₀) ≫
+      (complSingletonPairIso φ hφ x₀).hom = TopPair.ofSubsetMap (𝟙 E) fun _ ↦ Or.inr := by
+    simp only [complSingletonPairIso, TopPair.ofSubsetIso_hom]
     exact TopPair.ofSubsetMap_comp_ofSubsetMap_of_comp_eq _ _ _ rfl
-  simp only [Iso.trans_hom, Iso.symm_hom, asIso_hom]
+  simp only [complSingletonIso, TopPair.singularHomologyMapIso, Iso.trans_hom, Iso.symm_hom]
   rw [← Category.assoc, ← Category.assoc, Iso.eq_comp_inv,
     ← TopPair.singularHomologyMap_comp, hincl]
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) hπ.symm).trans hcompat)
@@ -302,19 +314,6 @@ variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensio
   {ε : ℝ} (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε) (hp : serreFibrations p)
   {Y : Type u} [TopologicalSpace Y] (T : Bundle.Trivialization Y p)
   (hT : e.chartBall b ε ⊆ T.baseSet)
-
-/-- Over `OpenPartialHomeomorph.chartBall e b ε`, a trivialization of `p` identifies the part of
-`E` with the product of the ball of radius `ε` about `0` and the fibre. -/
-private def chartBallTrivialization :
-    p ⁻¹' e.chartBall b ε ≃ₜ ball (0 : V) ε × Y :=
-  (T.preimageHomeomorph hT).trans ((e.chartBallHomeomorph hε).prodCongr (Homeomorph.refl Y))
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] [T1Space B] in
-private lemma chartBallTrivialization_fst (z : p ⁻¹' e.chartBall b ε) :
-    (chartBallTrivialization e hε T hT z).1 = e.chartBallProj hε p z :=
-  Subtype.ext (by
-    rw [OpenPartialHomeomorph.coe_chartBallProj_apply]
-    simp [chartBallTrivialization, T.preimageHomeomorph_apply])
 
 omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] [T1Space B] in
 /-- The complement of the fibre over `b` lies in the complement of each of its points. -/
@@ -391,58 +390,82 @@ private lemma isIso_singularHomologyMap_excisionMap_compl_singleton (m : ℕ) :
       (isClosed_singleton.preimage p.hom.continuous)).trans
       (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀)))) m
 
-include hp hT in
-/-- **Local homology along the shriek map.** For a Serre fibration `p : E ⟶ B` over a `T₁` space,
-trivial over a chart ball about `b` with fibre a `T₁` space, and a point `y` of the fibre
-`F = p⁻¹(b)`, the shriek map `Hₘ(E, E ∖ F) ≅ Hₙ(F)` followed by `Hₙ(F) ⟶ Hₙ(F, F ∖ {y})` is the
-restriction `Hₘ(E, E ∖ F) ⟶ Hₘ(E, E ∖ {y})` followed by an isomorphism, for `m = n + dim V`. -/
-private theorem exists_iso_singularHomologyComplFiberIso_hom_comp [T1Space Y] (n m : ℕ)
-    (h : n + finrank ℝ V = m) :
-    ∃ Ψ : (TopPair.ofSubset ({y.1}ᶜ : Set E)).singularHomology (ModuleCat.of R R) m ≅
-        (TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b})))).singularHomology
-          (ModuleCat.of R R) n,
-      (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom ≫
-          (TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b})))).singularHomologyπ
-            (ModuleCat.of R R) n =
-        TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E)
-          (mapsTo_compl_fiber y)) (ModuleCat.of R R) m ≫ Ψ.hom := by
-  -- Over the chart ball the fibration is trivial, so its local homology at the point of the fibre
-  -- over `0` corresponding to `y` is computed by `exists_iso_comp_singularHomologyMap`.
-  obtain ⟨ψ, hψ⟩ := exists_iso_comp_singularHomologyMap (chartBallTrivialization e hε T hT)
-    (chartBallTrivialization_fst e hε T hT) R (e.mem_serreFibrations_chartBallProj hε hp)
-    (convex_ball 0 ε) (ball_mem_nhds 0 hε₀) (fiberPoint e hb hε hε₀ y) n m h
-  have := isIso_singularHomologyMap_excisionMap_compl_singleton R e hb hε₀ y m
-  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
-    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
-    (isClosed_singleton.preimage p.hom.continuous)
-    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
-  refine ⟨(asIso (TopPair.singularHomologyMap
+include hb hε₀ in
+/-- **Local homology along the shriek map.** For a map `p : E ⟶ B` over a `T₁` space, trivial over
+a chart ball about `b` with fibre a `T₁` space, and a point `y` of the fibre `F = p⁻¹(b)`,
+`Hₘ(E, E ∖ {y}) ≅ Hₙ(F, F ∖ {y})` for `m = n + dim V`. After excision onto the part of `E` over
+the chart ball, which is a product with the ball, it is computed by relative Mayer–Vietoris
+sequences (`TauCeti.TopCat.singularHomologyPreimageNeZeroRelIso`). When `p` is a Serre
+fibration, it relates the shriek map `TauCeti.TopCat.singularHomologyComplFiberIso` with
+restriction to `y` (`TauCeti.TopCat.singularHomologyComplFiberIso_hom_comp_singularHomologyπ`). -/
+def singularHomologyComplSingletonFiberIso [T1Space Y] (n m : ℕ) (h : n + finrank ℝ V = m) :
+    (TopPair.ofSubset ({y.1}ᶜ : Set E)).singularHomology (ModuleCat.of R R) m ≅
+      (TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b})))).singularHomology
+        (ModuleCat.of R R) n :=
+  haveI := isIso_singularHomologyMap_excisionMap_compl_singleton R e hb hε₀ y m
+  (asIso (TopPair.singularHomologyMap
     (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) ({y.1}ᶜ : Set E))
       (ModuleCat.of R R) m)).symm ≪≫
-    TopPair.singularHomologyMapIso _ (pointPairIso e hb hε hε₀ y) m ≪≫ ψ ≪≫
-      TopPair.singularHomologyMapIso _ (fiberPointPairIso e hb hε hε₀ y) n, ?_⟩
+    TopPair.singularHomologyMapIso _ (pointPairIso e hb hε hε₀ y) m ≪≫
+    complSingletonIso (e.chartBallTrivialization hε T hT)
+      (e.chartBallTrivialization_apply_fst hε T hT) R (convex_ball 0 ε) (ball_mem_nhds 0 hε₀)
+      (fiberPoint e hb hε hε₀ y) n m h ≪≫
+    TopPair.singularHomologyMapIso _ (fiberPointPairIso e hb hε hε₀ y) n
+
+include hp in
+/-- **The shriek map commutes with restriction to a point of the fibre.** For a Serre fibration
+`p : E ⟶ B` over a `T₁` space, trivial over a chart ball about `b` with fibre a `T₁` space, and a
+point `y` of the fibre `F = p⁻¹(b)`, the shriek map `Hₘ(E, E ∖ F) ≅ Hₙ(F)` followed by
+`Hₙ(F) ⟶ Hₙ(F, F ∖ {y})` is the restriction `Hₘ(E, E ∖ F) ⟶ Hₘ(E, E ∖ {y})` followed by
+`TauCeti.TopCat.singularHomologyComplSingletonFiberIso`, for `m = n + dim V`. -/
+theorem singularHomologyComplFiberIso_hom_comp_singularHomologyπ [T1Space Y] (n m : ℕ)
+    (h : n + finrank ℝ V = m) :
+    (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom ≫
+        (TopPair.ofSubset ({y}ᶜ : Set (_root_.TopCat.of (p ⁻¹' {b})))).singularHomologyπ
+          (ModuleCat.of R R) n =
+      TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E)
+          fun _ hz ↦ compl_subset_compl.2 (singleton_subset_iff.2 y.2) hz) (ModuleCat.of R R) m ≫
+        (singularHomologyComplSingletonFiberIso R e hb hε hε₀ T hT y n m h).hom := by
+  -- Over the chart ball the fibration is trivial, so its local homology at the point of the fibre
+  -- over `0` corresponding to `y` is computed by `complSingletonIso`.
+  have hψ := TrivialDisk.singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ
+    (e.chartBallTrivialization hε T hT) (e.chartBallTrivialization_apply_fst hε T hT) R
+    (e.mem_serreFibrations_chartBallProj hε hp) (convex_ball 0 ε) (ball_mem_nhds 0 hε₀)
+    (fiberPoint e hb hε hε₀ y) n m h
   -- On the fibres, the restriction to `y` is the restriction to the corresponding point over `0`.
   have hfib := TopPair.singularHomologyπ_naturality (fiberPointPairIso e hb hε hε₀ y).hom
     (ModuleCat.of R R) n
   rw [fst_fiberPointPairIso_hom] at hfib
-  -- After excision onto the chart ball, both sides are computed over the chart ball.
-  have hright := excisionMap_comp_ofSubsetMap e hb hε hε₀ y
-  apply_fun (TopPair.singularHomologyMap · (ModuleCat.of R R) m) at hright
-  simp only [TopPair.singularHomologyMap_comp] at hright
+  -- Excision onto the chart ball commutes with restriction to `y`.
+  have hexc := congrArg (TopPair.singularHomologyMap · (ModuleCat.of R R) m)
+    (excisionMap_comp_ofSubsetMap e hb hε hε₀ y)
+  simp only [TopPair.singularHomologyMap_comp] at hexc
+  have := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
+    (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
+    (isClosed_singleton.preimage p.hom.continuous)
+    (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
   rw [← cancel_epi (TopPair.singularHomologyMap
     (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ) (ModuleCat.of R R) m)]
-  refine (singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom_assoc R e hb hε
-    hε₀ hp n m h _).trans (Eq.trans (b := TopPair.singularHomologyMap
-      (e.chartBallComplFiberPairIso hb hε p).hom (ModuleCat.of R R) m ≫
-      (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
-        (mapsTo_compl_singleton (fiberPoint e hb hε hε₀ y))) (ModuleCat.of R R) m ≫ ψ.hom) ≫
-      TopPair.singularHomologyMap (fiberPointPairIso e hb hε hε₀ y).hom (ModuleCat.of R R) n) ?_ ?_)
-  · exact congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) hfib).trans
-      ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hψ)))
-  · simp only [Iso.trans_hom, Iso.symm_hom, asIso_inv, TopPair.singularHomologyMapIso,
-      reassoc_of% hright, Category.assoc, IsIso.hom_inv_id_assoc]
-    rw [← TopPair.singularHomologyMap_comp_assoc (f := (pointPairIso e hb hε hε₀ y).inv),
-      Iso.inv_hom_id, TopPair.singularHomologyMap_id, Category.id_comp]
+  calc _ = _ := singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom_assoc R e hb
+        hε hε₀ hp n m h _
+    -- Over the chart ball: the square of `complSingletonIso`, then the identification of fibres.
+    _ = TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
+          (ModuleCat.of R R) m ≫
+          (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 _)
+            (mapsTo_compl_singleton (fiberPoint e hb hε hε₀ y))) (ModuleCat.of R R) m ≫
+            (complSingletonIso (e.chartBallTrivialization hε T hT)
+              (e.chartBallTrivialization_apply_fst hε T hT) R (convex_ball 0 ε)
+              (ball_mem_nhds 0 hε₀) (fiberPoint e hb hε hε₀ y) n m h).hom) ≫
+          TopPair.singularHomologyMap (fiberPointPairIso e hb hε hε₀ y).hom (ModuleCat.of R R) n :=
+      congrArg (_ ≫ ·) ((congrArg (_ ≫ ·) hfib).trans
+        ((Category.assoc _ _ _).symm.trans (congrArg (· ≫ _) hψ)))
+    -- Back in `E`, through the excision square at `y`.
+    _ = _ := by
+      simp only [singularHomologyComplSingletonFiberIso, Iso.trans_hom, Iso.symm_hom, asIso_inv,
+        TopPair.singularHomologyMapIso, reassoc_of% hexc, Category.assoc, IsIso.hom_inv_id_assoc]
+      rw [← TopPair.singularHomologyMap_comp_assoc (f := (pointPairIso e hb hε hε₀ y).inv),
+        Iso.inv_hom_id, TopPair.singularHomologyMap_id, Category.id_comp]
+
 end Chart
 
 end TopCat
@@ -475,17 +498,19 @@ theorem IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization {
       ((TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom.hom
         ((fiberLocalization (ModuleCat.of R R) p b m).hom μ)) := by
   refine (isFundamentalClass_iff _).2 fun y ↦ ?_
-  obtain ⟨Ψ, hΨ⟩ := TopCat.exists_iso_singularHomologyComplFiberIso_hom_comp R e hb hε hε₀ hp T hT
-    y n m h
+  let Ψ := TopCat.singularHomologyComplSingletonFiberIso R e hb hε hε₀ T hT y n m h
   -- Restricting to `y` before or after the shriek map differ by the isomorphism `Ψ`.
   have hy : singularHomologyToLocalHomology (ModuleCat.of R R) y n
       ((TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom.hom
         ((fiberLocalization (ModuleCat.of R R) p b m).hom μ)) =
       Ψ.hom.hom (singularHomologyToLocalHomology (ModuleCat.of R R) y.1 m μ) := by
-    rw [singularHomologyToLocalHomology_eq, singularHomologyToLocalHomology_eq,
+    rw [singularHomologyToLocalHomology_eq_singularHomologyπ,
+      singularHomologyToLocalHomology_eq_singularHomologyπ,
       ← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id _
         (TopCat.mapsTo_compl_fiber y)]
-    exact congrArg (fun f ↦ f.hom ((fiberLocalization (ModuleCat.of R R) p b m).hom μ)) hΨ
+    exact congrArg (fun f ↦ f.hom ((fiberLocalization (ModuleCat.of R R) p b m).hom μ))
+      (TopCat.singularHomologyComplFiberIso_hom_comp_singularHomologyπ R e hb hε hε₀ hp T hT y n m
+        h)
   rw [hy, ← Set.image_singleton, Submodule.span_image, (isFundamentalClass_iff _).1 hμ y.1,
     Submodule.map_top, LinearMap.range_eq_top]
   exact fun z ↦ ⟨Ψ.inv.hom z, by simp⟩

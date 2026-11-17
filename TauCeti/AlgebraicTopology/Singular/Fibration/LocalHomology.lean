@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.AlgebraicTopology.Singular.Fibration.Disk
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
@@ -67,6 +68,10 @@ dimension
 * `TauCeti.livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero`: a class lives
   over the fundamental class exactly when its image in `Hₖ₋ᵣ(p⁻¹(b))` is nonzero.
 * `TauCeti.LivesOverFundamentalClass.finrank_le`: such a class has degree at least `r`.
+* `OpenPartialHomeomorph.chartBallTrivialization`: a trivialization of `p` over the chart ball
+  identifies the part of `E` over it with the product of the ball of radius `ε` about `0` and the
+  fibre, compatibly with `OpenPartialHomeomorph.chartBallProj`
+  (`OpenPartialHomeomorph.chartBallTrivialization_apply_fst`).
 
 ## References
 
@@ -173,6 +178,22 @@ lemma coe_chartBallProjFiberHomeomorph_apply (p : E ⟶ B) (hε₀ : 0 < ε)
 lemma coe_chartBallProjFiberHomeomorph_symm_apply (p : E ⟶ B) (hε₀ : 0 < ε) (y : p ⁻¹' {b}) :
     ((chartBallProjFiberHomeomorph e hb hε p hε₀).symm y).1.1 = y.1 :=
   (rfl)
+
+/-- Over `chartBall e b ε`, a trivialization of `p` over a base set containing the chart ball
+identifies the part of `E` with the product of the ball of radius `ε` about `0` and the fibre. -/
+def chartBallTrivialization {p : E ⟶ B} {Y : Type u} [TopologicalSpace Y]
+    (T : Bundle.Trivialization Y p) (hT : chartBall e b ε ⊆ T.baseSet) :
+    p ⁻¹' chartBall e b ε ≃ₜ ball (0 : V) ε × Y :=
+  (T.preimageHomeomorph hT).trans ((e.chartBallHomeomorph hε).prodCongr (Homeomorph.refl Y))
+
+/-- The first coordinate of `chartBallTrivialization` is `chartBallProj`. -/
+lemma chartBallTrivialization_apply_fst {p : E ⟶ B} {Y : Type u} [TopologicalSpace Y]
+    (T : Bundle.Trivialization Y p) (hT : chartBall e b ε ⊆ T.baseSet)
+    (z : p ⁻¹' chartBall e b ε) :
+    (chartBallTrivialization e hε T hT z).1 = chartBallProj e hε p z :=
+  Subtype.ext (by
+    rw [coe_chartBallProj_apply]
+    simp [chartBallTrivialization, T.preimageHomeomorph_apply])
 
 end OpenPartialHomeomorph
 

@@ -164,7 +164,7 @@ theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
 
 /-- The map to the local homology at `x` is the map `Hₖ(M) → Hₖ(M, M ∖ {x})` to the homology of
 `M` relative to the complement of `x`. -/
-theorem singularHomologyToLocalHomology_eq (x : M) (k : ℕ) :
+theorem singularHomologyToLocalHomology_eq_singularHomologyπ (x : M) (k : ℕ) :
     singularHomologyToLocalHomology N x k =
       ((TopPair.ofSubset ({x}ᶜ : Set (TopCat.of M))).singularHomologyπ
         (C := ModuleCat.{w} Λ) N k).hom :=

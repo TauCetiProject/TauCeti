@@ -37,9 +37,10 @@ vanishes.
 With `A = ∅` this is the common core of the homology of the Thom pair of a product bundle
 (`TauCeti.prodThomPairSingularHomologyIso`, with `q` the projection `B × F → F`) and of a Serre
 fibration over a disk relative to its boundary sphere
-(`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`). With `A` open in the total space of a
-product bundle `K × Y → K` of the form `K × Y'`, it computes the local homology of the total space
-at a point of a fibre.
+(`TauCeti.TopCat.singularHomologyPreimageNeZeroIso`). For a product bundle `K × Y → K` over a
+neighbourhood `K` of `0`, a point `y` of a `T₁` space `Y` and `A = K × (Y ∖ {y})`, under the
+acyclicity hypothesis it computes the local homology `Hₘ(K × Y, (K × Y) ∖ {(0, y)})` of the total
+space at a point of the fibre over `0`.
 -/
 
 public section

@@ -78,9 +78,9 @@ along straight lines. Over the closed unit ball, the radial deformation
 * `TauCeti.TopCat.singularHomologyPreimageNeZeroRelIso`: the same computation relative to an open
   set `A ⊆ E`, `Hₘ(E, A ∪ p⁻¹(K ∖ {0}); R) ≅ Hₙ(E, A; R)`, when `E` is acyclic modulo `A` and the
   part over the complement of every closed half-subspace.
-* `TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ`: it is compatible
-  with `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` through the inclusion of the fibre and
-  the map `Hₙ(E) → Hₙ(E, A)`.
+* `TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_comp_homologyMap_comp_singularHomologyπ`:
+  it is compatible with `TauCeti.TopCat.singularHomologyPreimageNeZeroIso` through the inclusion
+  of the fibre and the map `Hₙ(E) → Hₙ(E, A)`.
 
 ## References
 
@@ -139,16 +139,10 @@ private lemma isZero_half (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : 
     IsZero ((TopPair.ofSubset (∅ ∪ proj p ⁻¹' {y | y ∈ W ∧ φ y ≤ 0}ᶜ)).singularHomology
       (ModuleCat.of R R) m) := by
   rw [Set.empty_union]
-  -- A neighbourhood of `0` is absorbent, so it contains a positive multiple of `v`.
-  have hev : ∀ᶠ t in 𝓝[>] (0 : ℝ), t • v ∈ K :=
-    ((absorbent_nhds_zero hK₀).eventually_nhdsNE_zero v).filter_mono
-      (nhdsWithin_mono _ fun _ h ↦ ne_of_gt h)
-  obtain ⟨t, htK, ht : 0 < t⟩ := (hev.and self_mem_nhdsWithin).exists
-  have htv : 0 < φ (t • v) := by simpa [hφv] using ht
+  obtain ⟨c, hcK, hcS, hS⟩ :=
+    exists_mem_starConvex_compl_setOf_mem_and_nonpos hK₀ hv (hφv ▸ one_pos)
   -- The preimage under `E → K → V` of a set `S` is the part of `E` over `K ∩ S` by definition.
-  exact isZero_of_starConvex R hp hK htK
-    (starConvex_compl_setOf_mem_and_nonpos (W.smul_mem t hv) htv)
-    (fun h ↦ (not_le.2 htv) h.2) m
+  exact isZero_of_starConvex R hp hK hcK hS hcS m
 
 /-- The pair `(E, p⁻¹(K ∖ W))`. -/
 private abbrev pair (p : E ⟶ _root_.TopCat.of K) (W : Submodule ℝ V) : TopPair.{u} :=
@@ -166,6 +160,18 @@ private def emptyIso (hp : serreFibrations p) (hK : Convex ℝ K) (h₀ : (0 : V
     (asIso (SSet.homologyMap (TopCat.toSSet.map
       (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) ∈ ({0} : Set V)})).map)
       (ModuleCat.of R R) n)).symm
+
+/-- The inclusion of the fibre over `0` followed by `Hₙ(E) ⟶ Hₙ(E, ∅)` is the inverse of
+`emptyIso`. -/
+@[reassoc]
+private lemma homologyMap_comp_singularHomologyπ_eq_emptyIso_inv (hp : serreFibrations p)
+    (hK : Convex ℝ K) (h₀ : (0 : V) ∈ K) (n : ℕ) :
+    SSet.homologyMap (TopCat.toSSet.map (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) = 0})).map)
+        (ModuleCat.of R R) n ≫ (pair p (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n =
+      (emptyIso R hp hK h₀ n).inv :=
+  -- `emptyIso` is defined as the inverse of this composite; its fibre `{x | x ∈ {0}}` is
+  -- `{x | x = 0}` by definition of membership in a singleton.
+  rfl
 
 /-- The identification of `(E, p⁻¹(K ∖ {0}))` with `(E, p⁻¹(K ∖ ⊥))`. -/
 private def botIso (p : E ⟶ _root_.TopCat.of K) :
@@ -344,7 +350,8 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
     calc H.map g ≫ (emptyIso R hp' hK h₀ n).inv
         = H.map g ≫ H.map ι' ≫
             (pair p' (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n :=
-          rfl
+          congrArg (H.map g ≫ ·)
+            (homologyMap_comp_singularHomologyπ_eq_emptyIso_inv R hp' hK h₀ n).symm
       _ = (H.map ι ≫ H.map f ≫
             (pair p' (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n :
               H.obj (_root_.TopCat.of (p ⁻¹' {x : K | (x : V) = 0})) ⟶ _) :=
@@ -356,7 +363,8 @@ private lemma emptyIso_hom_naturality (hp : serreFibrations p) (hp' : serreFibra
       _ = (emptyIso R hp hK h₀ n).inv ≫
             TopPair.singularHomologyMap (pairMap hf ⊤)
               (ModuleCat.of R R) n :=
-          (Category.assoc _ _ _).symm
+          (Category.assoc _ _ _).symm.trans
+            (congrArg (· ≫ _) (homologyMap_comp_singularHomologyπ_eq_emptyIso_inv R hp hK h₀ n))
   rw [← Iso.comp_inv_eq, Category.assoc, key, Iso.hom_inv_id_assoc]
 
 omit [FiniteDimensional ℝ V] in
@@ -500,8 +508,9 @@ complement in `K` of every closed half-subspace. Then
 
 The isomorphism is the composite of `r` relative Mayer–Vietoris connecting morphisms, for the
 same flag of subspaces of `V` as `TauCeti.TopCat.singularHomologyPreimageNeZeroIso`, which it
-extends (`TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ`). For a
-product `K × Y` and `A = K × Y'` it computes the homology of `E` modulo the complement of
+extends
+(`TauCeti.TopCat.singularHomologyPreimageNeZeroIso_hom_comp_homologyMap_comp_singularHomologyπ`).
+For a product `K × Y` and `A = K × Y'` it computes the homology of `E` modulo the complement of
 `{0} × (Y ∖ Y')`. -/
 def singularHomologyPreimageNeZeroRelIso (n m : ℕ) (h : n + finrank ℝ V = m) :
     (TopPair.ofSubset (A ∪ p ⁻¹' {x : K | (x : V) ≠ 0})).singularHomology (ModuleCat.of R R) m ≅
@@ -519,8 +528,9 @@ convex neighbourhood of `0` and an open set `A ⊆ E` as in
 `Hₘ(E, p⁻¹(K ∖ {0})) → Hₘ(E, A ∪ p⁻¹(K ∖ {0})) ≅ Hₙ(E, A)`
 
 commutes, where the unlabelled maps are induced by inclusions. -/
-theorem singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ (hp : serreFibrations p)
-    (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (n m : ℕ) (h : n + finrank ℝ V = m) :
+theorem singularHomologyPreimageNeZeroIso_hom_comp_homologyMap_comp_singularHomologyπ
+    (hp : serreFibrations p) (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (n m : ℕ)
+    (h : n + finrank ℝ V = m) :
     (singularHomologyPreimageNeZeroIso R hp hK hK₀ n m h).hom ≫
         SSet.homologyMap (_root_.TopCat.toSSet.map
           (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) = 0})).map) (ModuleCat.of R R) n ≫
@@ -555,20 +565,10 @@ theorem singularHomologyPreimageNeZeroIso_hom_comp_singularHomologyπ (hp : serr
       SSet.homologyMap (_root_.TopCat.toSSet.map
         (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) = 0})).map) (ModuleCat.of R R) n ≫
       (TopPair.ofSubset A).singularHomologyπ (ModuleCat.of R R) n =
-        TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) hmaps) (ModuleCat.of R R) n :=
-    calc _ = (emptyIso R hp hK (mem_of_mem_nhds hK₀) n).hom ≫
-          (SSet.homologyMap (_root_.TopCat.toSSet.map
-            (TopPair.ofSubset (p ⁻¹' {x : K | (x : V) = 0})).map) (ModuleCat.of R R) n ≫
-          (pair p (⊤ : Submodule ℝ V)).singularHomologyπ (ModuleCat.of R R) n) ≫
-          TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) hmaps) (ModuleCat.of R R) n :=
-        congrArg (_ ≫ ·) ((congrArg (_ ≫ ·)
-          (TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id _ hmaps n).symm).trans
-            (Category.assoc _ _ _).symm)
-      _ = (emptyIso R hp hK (mem_of_mem_nhds hK₀) n).hom ≫
-          (emptyIso R hp hK (mem_of_mem_nhds hK₀) n).inv ≫
-          TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) hmaps) (ModuleCat.of R R) n :=
-        rfl
-      _ = _ := Iso.hom_inv_id_assoc _ _
+        TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 E) hmaps) (ModuleCat.of R R) n := by
+    rw [← TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id _ hmaps n]
+    exact (congrArg (_ ≫ ·) (homologyMap_comp_singularHomologyπ_eq_emptyIso_inv_assoc R hp hK
+      (mem_of_mem_nhds hK₀) n _)).trans (Iso.hom_inv_id_assoc _ _)
   simp only [singularHomologyPreimageNeZeroIso, singularHomologyPreimageNeZeroRelIso,
     Iso.trans_hom, asIso_hom, Category.assoc]
   rw [hempty, ← htop, TopPair.singularHomologyMap_comp, reassoc_of% hnat,
