@@ -167,8 +167,8 @@ theorem mvfderiv_cyclicAction_comp_add_right_eq_zero_iff (S : ZMod N → Q × Q 
           mvfderiv (ModelWithCorners.pi fun _ : ZMod N ↦ I) (cyclicAction fun i ↦ S (i + k))
             (fun i ↦ q (i + k)) fun i ↦ v (i + k) := by
       rw [← hcomp, mvfderiv_comp_apply q hd
-        (hasMFDerivAt_comp_right (M := fun _ : ZMod N ↦ Q) (· + k) q).mdifferentiableAt v,
-        mfderiv_comp_right]
+        (hasMFDerivAt_precomp (M := fun _ : ZMod N ↦ Q) (· + k) q).mdifferentiableAt v,
+        mfderiv_precomp]
       -- `Pi.compRightL` sends `v` to `i ↦ v (i + k)`; `simp` cannot rewrite it across the
       -- tangent-space type synonyms.
       rfl
@@ -193,7 +193,7 @@ theorem mvfderiv_cyclicAction_comp_add_right_eq_zero_iff (S : ZMod N → Q × Q 
         simp only [add_neg_cancel_right]
       rw [hinv] at hd
       exact hd (h.comp_of_eq _
-        (hasMFDerivAt_comp_right (M := fun _ : ZMod N ↦ Q) (· + -k) _).mdifferentiableAt
+        (hasMFDerivAt_precomp (M := fun _ : ZMod N ↦ Q) (· + -k) _).mdifferentiableAt
         (by simp))
     simp [mvfderiv, mfderiv_zero_of_not_mdifferentiableAt hd,
       mfderiv_zero_of_not_mdifferentiableAt hd']

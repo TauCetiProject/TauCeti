@@ -30,7 +30,7 @@ the factors. The smoothness of the coordinate insertions is `TauCeti.contMDiff_u
 A map into the product has derivative the product of the derivatives of its components
 (`TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`). In particular the reindexing
 `x ↦ (j ↦ x (σ j))` along `σ : ι' → ι`, such as a cyclic shift of the coordinates, has derivative
-the same reindexing `Pi.compRightL` of the model spaces (`TauCeti.mfderiv_comp_right`).
+the same reindexing `Pi.compRightL` of the model spaces (`TauCeti.mfderiv_precomp`).
 
 ## Main declarations
 
@@ -39,7 +39,7 @@ the same reindexing `Pi.compRightL` of the model spaces (`TauCeti.mfderiv_comp_r
 * `TauCeti.hasMFDerivAt_update`, `TauCeti.mfderiv_update`: the derivative of a coordinate
   insertion.
 * `TauCeti.hasMFDerivAt_pi`, `TauCeti.mfderiv_pi`: the derivative of a map into a product.
-* `TauCeti.hasMFDerivAt_comp_right`, `TauCeti.mfderiv_comp_right`: the derivative of a
+* `TauCeti.hasMFDerivAt_precomp`, `TauCeti.mfderiv_precomp`: the derivative of a
   reindexing of the factors.
 
 ## References
@@ -125,7 +125,7 @@ end Pi
 
 /-- The reindexing `x ↦ (j ↦ x (σ j))` of a finite product of manifolds along `σ : ι' → ι` has
 derivative the same reindexing `Pi.compRightL` of the product of the model spaces. -/
-theorem hasMFDerivAt_comp_right {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
+theorem hasMFDerivAt_precomp {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
     HasMFDerivAt (ModelWithCorners.pi I) (ModelWithCorners.pi fun j ↦ I (σ j))
       (fun x : ∀ i, M i ↦ fun j ↦ x (σ j)) x (Pi.compRightL 𝕜 E σ) :=
   hasMFDerivAt_pi fun j ↦ hasMFDerivAt_apply (σ j) x
@@ -133,10 +133,10 @@ theorem hasMFDerivAt_comp_right {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x
 /-- The derivative of the reindexing `x ↦ (j ↦ x (σ j))` of a finite product of manifolds along
 `σ : ι' → ι` is the same reindexing `Pi.compRightL` of the product of the model spaces. -/
 @[simp]
-theorem mfderiv_comp_right {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
+theorem mfderiv_precomp {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
     mfderiv (ModelWithCorners.pi I) (ModelWithCorners.pi fun j ↦ I (σ j))
       (fun x : ∀ i, M i ↦ fun j ↦ x (σ j)) x = Pi.compRightL 𝕜 E σ :=
-  (hasMFDerivAt_comp_right σ x).mfderiv
+  (hasMFDerivAt_precomp σ x).mfderiv
 
 variable [DecidableEq ι]
 
