@@ -13,6 +13,7 @@ import TauCeti.Analysis.InnerProductSpace.Orientation
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.LinearAlgebra.ExteriorPower.Square
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
 
 /-!
@@ -203,14 +204,6 @@ theorem norm_ιMulti_apply_sq (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v
     real_inner_self_eq_norm_sq]
   ring
 
-/-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. -/
-@[simp]
-theorem lieMap_kahlerForm :
-    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
-  refine ext_inner_ιMulti_two fun u w ↦ ?_
-  rw [inner_lieMap_left (inner_apply_left hJ), lieMap_two_apply_ιMulti]
-  simp [inner_add_right, inner_kahlerForm_ιMulti hJ, hJ]
-
 /-- A complex-linear linear isometry equivalence between orthogonal almost complex inner product
 spaces transports the Kähler two-vector. -/
 theorem map_kahlerForm_of_isComplexLinearMap {V' : Type*} [NormedAddCommGroup V']
@@ -263,6 +256,27 @@ theorem norm_lieMap_lieMap_le (η : ⋀[ℝ]^2 V) :
   nlinarith [norm_nonneg (D η), norm_nonneg η]
 
 end Orthogonal
+
+/-- The derivation action of `J` kills each complex line `v ∧ J v`:
+`D_J (v ∧ J v) = J v ∧ J v + v ∧ J (J v) = J v ∧ J v - v ∧ v = 0`. No orthogonality of `J` is
+needed, nor any inner product on the underlying real module. -/
+theorem lieMap_ιMulti_apply {W : Type*} [AddCommGroup W] [Module ℝ W]
+    (J : AlmostComplexStructure W) (v : W) :
+    exteriorPower.lieMap 2 J.toLinearMap (ιMulti ℝ 2 ![v, J v]) = 0 := by
+  have h : ∀ x : W, ιMulti ℝ 2 ![x, x] = 0 := fun x ↦
+    (ιMulti ℝ 2).map_eq_zero_of_eq _ (i := 0) (j := 1) (by simp) (by decide)
+  have h' : ∀ x : W, ιMulti ℝ 2 ![x, -x] = 0 := fun x ↦ by
+    rw [← neg_one_smul ℝ x, ιMulti_two_smul_right, h, smul_zero]
+  rw [lieMap_two_apply_ιMulti]
+  simp [AlmostComplexStructure.apply_apply, h, h']
+
+/-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. Each summand
+`b ∧ J b` is killed by `lieMap_ιMulti_apply`; no orthogonality of `J` is needed. -/
+@[simp]
+theorem lieMap_kahlerForm (J : AlmostComplexStructure V) :
+    exteriorPower.lieMap 2 J.toLinearMap J.kahlerForm = 0 := by
+  simp only [kahlerForm_def, map_smul, map_sum, lieMap_ιMulti_apply, Finset.sum_const_zero,
+    smul_zero]
 
 /-! ### Almost complex structures represented by a two-vector -/
 
