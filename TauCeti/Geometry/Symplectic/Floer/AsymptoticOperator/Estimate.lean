@@ -307,9 +307,6 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
   refine ⟨ε, by positivity, 4 * C₀ * M / m, by positivity,
     fun ξ hξ a b hest η hη hclose ↦ ?_⟩
   have hR : IsCompact (Icc a b ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hw : Continuous fun z : ℝ × ℝ ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z) :=
-    ((hξ.continuous_fderiv one_ne_zero).clm_apply continuous_const).sub
-      ((hSc.comp continuous_snd).clm_apply hξ.continuous)
   have hQi : IntegrableOn (fun z : ℝ × ℝ ↦
       (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
           (fderiv ℝ ξ z stdComplexLineReal) +
@@ -319,10 +316,7 @@ theorem exists_pos_forall_setIntegral_le_mul_setIntegral_of_norm_sub_le
     ((continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc hξ).add
     (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous)).continuousOn
     |>.integrableOn_compact (μ := volume) hR
-  have hDc : Continuous (stationaryCylinderOperator J S ξ) :=
-    (((hξ.continuous_fderiv one_ne_zero).clm_apply
-      (continuous_const (y := stdComplexLineReal))).add
-      (hJc.comp (continuous_snd.prodMk hw))).congr fun z ↦ by simp [stationaryCylinderOperator_def]
+  have hDc := continuous_stationaryCylinderOperator he hSc hξ
   have hdi := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hDc).continuousOn
     |>.integrableOn_compact (μ := volume) hR
   have hηi : IntegrableOn (fun z ↦ ω.associatedBilinForm (J z.2) (η z) (η z))
