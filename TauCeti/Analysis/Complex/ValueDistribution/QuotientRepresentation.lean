@@ -67,7 +67,7 @@ normalized multipliers (`AnalyticOnNhd.sInf_max_sSup_log_norm_eq_proximity_top`)
 
 ## Main results
 
-* `TauCeti.log_norm_quotientMultiplier_le_proximity`,
+* `CircleIntegrable.log_norm_quotientMultiplier_le_proximity`,
   `AnalyticOnNhd.quotientMultiplier_mul_of_norm_eq`, and
   `AnalyticOnNhd.log_norm_quotientMultiplier_mul_le_proximity`: the complex product identity (with
   centre phase `G 0 / ‖G 0‖`) and interior logarithmic bounds for `quotientMultiplier g r` and
@@ -214,11 +214,15 @@ lemma quotientMultiplier_apply_zero (g : ℂ → ℂ) {r : ℝ} (hr : r ≠ 0) :
   rw [quotientMultiplier_apply, circleAverage_congr_sphere hsphere, havg, sub_self,
     Complex.exp_zero]
 
+end TauCeti
+
+namespace CircleIntegrable
+
 /-- When `log⁺ ‖g‖` is circle-integrable on `sphere 0 |r|`, `quotientMultiplier g r` is analytic on
 the complement of `sphere 0 |r|` (in particular on `ball 0 |r|`). -/
 lemma analyticOnNhd_quotientMultiplier {g : ℂ → ℂ} {r : ℝ}
     (hg : CircleIntegrable (fun w ↦ Real.posLog ‖g w‖) 0 r) :
-    AnalyticOnNhd ℂ (quotientMultiplier g r) (sphere 0 |r|)ᶜ := by
+    AnalyticOnNhd ℂ (TauCeti.quotientMultiplier g r) (sphere 0 |r|)ᶜ := by
   have hg' : CircleIntegrable (fun w ↦ (Real.posLog ‖g w‖ : ℂ)) 0 r := by
     simp only [CircleIntegrable, intervalIntegrable_iff] at hg ⊢
     exact Complex.ofRealCLM.integrable_comp hg
@@ -231,11 +235,12 @@ real part of `log⁺ ‖g‖` bounds `Real.log ‖quotientMultiplier g r z‖` b
 `ValueDistribution.proximity g ⊤ r` for every `z ∈ ball 0 |r|`. -/
 lemma log_norm_quotientMultiplier_le_proximity {g : ℂ → ℂ} {r : ℝ} {z : ℂ}
     (hg : CircleIntegrable (fun w ↦ Real.posLog ‖g w‖) 0 r) (hz : z ∈ ball 0 |r|) :
-    Real.log ‖quotientMultiplier g r z‖ ≤ ValueDistribution.proximity g ⊤ r := by
-  rw [quotientMultiplier_apply, Complex.norm_exp, Real.log_exp, Complex.sub_re, Complex.ofReal_re]
+    Real.log ‖TauCeti.quotientMultiplier g r z‖ ≤ ValueDistribution.proximity g ⊤ r := by
+  rw [TauCeti.quotientMultiplier_apply, Complex.norm_exp, Real.log_exp, Complex.sub_re,
+    Complex.ofReal_re]
   linarith [hg.re_circleAverage_herglotzRieszKernel_smul_nonneg (fun _ _ ↦ Real.posLog_nonneg) hz]
 
-end TauCeti
+end CircleIntegrable
 
 namespace AnalyticOnNhd
 
@@ -392,14 +397,14 @@ theorem exists_gt_log_norm_quotientMultiplier_le_proximity_add {g : ℂ → ℂ}
       rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hr_mem.1)]
       linarith [hr_mem.2, min_le_right (δ / 2) δ₁]
     linarith [(abs_lt.mp (Real.dist_eq _ _ ▸ hprox hdist)).2]
-  refine ⟨r, hr_mem.1, hg_r, hs_r, (TauCeti.analyticOnNhd_quotientMultiplier hint_r).mono ?_,
+  refine ⟨r, hr_mem.1, hg_r, hs_r, hint_r.analyticOnNhd_quotientMultiplier.mono ?_,
     fun z hz ↦ ?_⟩
   · intro z hz
     rw [mem_compl_iff, mem_sphere_zero_iff_norm, abs_of_pos hr_pos]
     exact ((mem_closedBall_zero_iff.mp hz).trans_lt hr_mem.1).ne
   · have hzr : z ∈ ball (0 : ℂ) r := closedBall_subset_ball hr_mem.1 hz
     have hzr_abs : z ∈ ball (0 : ℂ) |r| := by rwa [abs_of_pos hr_pos]
-    exact ⟨(TauCeti.log_norm_quotientMultiplier_le_proximity hint_r hzr_abs).trans hprox_le,
+    exact ⟨(hint_r.log_norm_quotientMultiplier_le_proximity hzr_abs).trans hprox_le,
       (hg_r.log_norm_quotientMultiplier_mul_le_proximity hs_r hzr).trans hprox_le⟩
 
 /-- **Nevanlinna's quotient representation** (Calegari–Dimitrov–Tang, Lemma 2.3.1).
