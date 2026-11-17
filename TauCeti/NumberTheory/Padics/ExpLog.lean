@@ -15,9 +15,9 @@ import Mathlib.RingTheory.PowerSeries.Log
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
 import TauCeti.NumberTheory.LocalField.Exponential
 import TauCeti.NumberTheory.LocalField.Logarithm
-import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.PadicValNat
+import TauCeti.NumberTheory.Padics.PowerSeries
 
 /-!
 # The `p`-adic exponential and logarithm in terms of the norm
@@ -186,21 +186,6 @@ private theorem pow_mul_sub_one_mul {n : ℕ} (hn : n ≠ 0) :
     (p : ℚ_[p]) ^ (i * n) = (p : ℚ_[p]) ^ (i * (n - 1)) * (p : ℚ_[p]) ^ i := by
   rw [← pow_add, ← Nat.mul_succ, Nat.succ_eq_add_one, Nat.sub_add_cancel (Nat.pos_of_ne_zero hn)]
 
-private theorem isRestricted_of_hasSum_coe {f : ℤ_[p]⟦X⟧} {s : ℚ_[p]}
-    (hf : HasSum (fun n ↦ ((PowerSeries.coeff n f : ℤ_[p]) : ℚ_[p]) * (1 : ℚ_[p]) ^ n) s) :
-    f.IsRestricted 1 := by
-  rw [PowerSeries.isRestricted_iff']
-  simpa only [one_pow, mul_one, ← PadicInt.norm_def, Function.comp_def] using
-    tendsto_norm_zero.comp hf.summable.tendsto_atTop_zero
-
-private theorem coe_evalAt_of_hasSum_coe {f : ℤ_[p]⟦X⟧} (hf : f.IsRestricted 1) (x : ℤ_[p])
-    {s : ℚ_[p]}
-    (hs : HasSum (fun n ↦ ((PowerSeries.coeff n f : ℤ_[p]) : ℚ_[p]) * (x : ℚ_[p]) ^ n) s) :
-    ((f.evalAt x : ℤ_[p]) : ℚ_[p]) = s := by
-  rw [← PadicInt.Coe.ringHom_apply]
-  exact ((hf.hasSum_evalAt (PadicInt.norm_le_one x)).map PadicInt.Coe.ringHom
-    PadicInt.isEmbedding_coe_ringHom.continuous).unique (hs.congr_fun fun n ↦ by simp)
-
 private theorem norm_deepLogTerm_le_one (hi : i ≠ 0) {n : ℕ} (hn : n ≠ 0) :
     ‖(-1 : ℚ_[p]) ^ (n + 1) * (p : ℚ_[p]) ^ (i * (n - 1)) / (n : ℚ_[p])‖ ≤ 1 := by
   rw [mul_div_assoc, norm_mul, norm_pow, norm_neg, norm_one, one_pow, one_mul]
@@ -262,15 +247,18 @@ theorem hasSum_coeff_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
 
 /-- **Restrictedness of the normalized deep logarithm series.** At any nonzero depth `i ≠ 0`,
 `deepLogSeries hi` is restricted at radius `1`. -/
-theorem isRestricted_deepLogSeries (hi : i ≠ 0) : (deepLogSeries (p := p) hi).IsRestricted 1 :=
-  isRestricted_of_hasSum_coe (hasSum_coeff_deepLogSeries (p := p) hi 1)
+theorem isRestricted_deepLogSeries (hi : i ≠ 0) : (deepLogSeries (p := p) hi).IsRestricted 1 := by
+  simpa only [norm_one] using
+    ((deepLogSeries (p := p) hi).isRestricted_norm_iff_summable_coe_coeff_mul_pow 1).mpr
+      (hasSum_coeff_deepLogSeries (p := p) hi 1).summable
 
 /-- **Evaluation of `deepLogSeries`.** For `i ≠ 0` and `x : ℤ_p`,
 `((deepLogSeries hi).evalAt x : ℚ_p) = log (1 + p^i x) / p^i`. -/
 @[simp] theorem coe_evalAt_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
     (((deepLogSeries (p := p) hi).evalAt x : ℤ_[p]) : ℚ_[p]) =
       log (1 + (p : ℚ_[p]) ^ i * x) / (p : ℚ_[p]) ^ i :=
-  coe_evalAt_of_hasSum_coe (isRestricted_deepLogSeries hi) x (hasSum_coeff_deepLogSeries hi x)
+  ((isRestricted_deepLogSeries hi).hasSum_coe_evalAt (PadicInt.norm_le_one x)).unique
+    (hasSum_coeff_deepLogSeries hi x)
 
 /-- Evaluated at `x : ℤ_p`, `p^i · (deepLogSeries hi)(x) = log (1 + p^i x)`. -/
 theorem pow_mul_coe_evalAt_deepLogSeries (hi : i ≠ 0) (x : ℤ_[p]) :
@@ -316,15 +304,18 @@ theorem hasSum_coeff_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
 /-- **Restrictedness of the normalized deep exponential series.** At a depth `i` with
 `1 < (p - 1) * i`, `deepExpSeries hi` is restricted at radius `1`. -/
 theorem isRestricted_deepExpSeries (hi : 1 < (p - 1) * i) :
-    (deepExpSeries (p := p) hi).IsRestricted 1 :=
-  isRestricted_of_hasSum_coe (hasSum_coeff_deepExpSeries (p := p) hi 1)
+    (deepExpSeries (p := p) hi).IsRestricted 1 := by
+  simpa only [norm_one] using
+    ((deepExpSeries (p := p) hi).isRestricted_norm_iff_summable_coe_coeff_mul_pow 1).mpr
+      (hasSum_coeff_deepExpSeries (p := p) hi 1).summable
 
 /-- **Evaluation of `deepExpSeries`.** For `1 < (p - 1) * i` and `x : ℤ_p`,
 `((deepExpSeries hi).evalAt x : ℚ_p) = (exp (p^i x) - 1) / p^i`. -/
 @[simp] theorem coe_evalAt_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :
     (((deepExpSeries hi).evalAt x : ℤ_[p]) : ℚ_[p]) =
       (exp ((p : ℚ_[p]) ^ i * x) - 1) / (p : ℚ_[p]) ^ i :=
-  coe_evalAt_of_hasSum_coe (isRestricted_deepExpSeries hi) x (hasSum_coeff_deepExpSeries hi x)
+  ((isRestricted_deepExpSeries hi).hasSum_coe_evalAt (PadicInt.norm_le_one x)).unique
+    (hasSum_coeff_deepExpSeries hi x)
 
 /-- Evaluated at `x : ℤ_p`, `1 + p^i · (deepExpSeries hi)(x) = exp (p^i x)`. -/
 theorem one_add_pow_mul_coe_evalAt_deepExpSeries (hi : 1 < (p - 1) * i) (x : ℤ_[p]) :

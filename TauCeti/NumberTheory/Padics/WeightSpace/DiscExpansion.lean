@@ -39,7 +39,7 @@ and without assuming `‖1‖ = 1`), and suppose `‖κ(γ ^ (p ^ j)) - 1‖ < r
 `r_0 = TauCeti.amiceRadius p 0 = p ^ (-1 / (p - 1))`. Expanding the additive character
 `s ↦ κ.principalChar(pʲ s)` at level `0` by Amice's theorem
 (`TauCeti.AnalyticStage.addCharExpansion`), scaling on the left by `κ(u_a)`, and pulling back along
-`g(u_a⁻¹ X)` via `TauCeti.PowerSeries.compNullSeq` yields an explicit coefficient vector
+`g(u_a⁻¹ X)` via `PowerSeries.compNullSeq` yields an explicit coefficient vector
 `κ.discExpansion j ht : AnalyticStage p (k + j) R` whose evaluation is `κ.zeroExtend`
 (`TauCeti.WeightSpace.eval_discExpansion`). Its constant term on each unit disc `a` is `κ(u_a)`,
 all its positive-degree (`m ≠ 0`) coefficients have norm at most
@@ -289,7 +289,7 @@ noncomputable def discExpansion (κ : WeightSpace p R) (j : ℕ)
   (AnalyticStage.rowsEquiv p ℤ_[p] (padicUnitsDepth p + j)).symm fun a ↦
     if ha : IsUnit a then
       let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
-      TauCeti.PowerSeries.compNullSeq ℤ_[p] (isRestricted_rescale_deepLogSeries j u⁻¹)
+      PowerSeries.compNullSeq ℤ_[p] (isRestricted_rescale_deepLogSeries j u⁻¹)
         (fun _ ↦ PadicInt.norm_le_one _) (discExpansionScaledRow κ j ht u)
     else 0
 
@@ -298,7 +298,7 @@ private theorem discExpansion_apply_of_isUnit_eq_compNullSeq (κ : WeightSpace p
     {a : ZMod (p ^ (padicUnitsDepth p + j))} (ha : IsUnit a) (m : ℕ) :
     let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
     κ.discExpansion j ht (a, m) =
-      TauCeti.PowerSeries.compNullSeq ℤ_[p] (isRestricted_rescale_deepLogSeries j u⁻¹)
+      PowerSeries.compNullSeq ℤ_[p] (isRestricted_rescale_deepLogSeries j u⁻¹)
         (fun _ ↦ PadicInt.norm_le_one _) (discExpansionScaledRow κ j ht u) m := by
   simp [discExpansion, ha]
 
@@ -329,7 +329,7 @@ theorem discExpansion_apply_of_isUnit (κ : WeightSpace p R) (j : ℕ)
           ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht (0, n)) := by
   intro u
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha m,
-    TauCeti.PowerSeries.compNullSeq_apply]
+    PowerSeries.compNullSeq_apply]
   simp [u]
 
 /-- On every non-unit residue class `a`, all coefficients of `κ.discExpansion` vanish. -/
@@ -350,7 +350,7 @@ theorem discExpansion_apply_zero_of_isUnit (κ : WeightSpace p R) (j : ℕ)
     fun _ ↦ by rw [PowerSeries.constantCoeff_rescale, constantCoeff_deepLogSeries]
   have hval0 : (0 : ZMod (p ^ 0)).val = 0 := by rw [pow_zero]; simp
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha 0,
-    TauCeti.PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero ℤ_[p] _ _ (hg0 _),
+    PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero ℤ_[p] _ _ (hg0 _),
     discExpansionScaledRow_apply, AnalyticStage.addCharExpansion_apply_zero, hval0, pow_zero,
     mul_one]
 
@@ -381,7 +381,7 @@ and `ℚ_p`, `κ.discExpansion j ht` evaluates to `κ.zeroExtend` on `ℤ_p`. -/
   · let u := ((PadicInt.isUnit_natCast_val_iff (padicUnitsDepth_add_ne_zero p j) a).mpr ha).unit
     let c₀ := AnalyticStage.addCharExpansion p 0 ((κ (padicUnitsGenerator p ^ p ^ j) : R) - 1) ht
     simp_rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha]
-    rw [TauCeti.PowerSeries.tsum_pow_smul_compNullSeq ℤ_[p] _ _ _ (PadicInt.norm_le_one w)]
+    rw [PowerSeries.tsum_pow_smul_compNullSeq ℤ_[p] _ _ _ (PadicInt.norm_le_one w)]
     let z := (PowerSeries.rescale (↑u⁻¹ : ℤ_[p])
       (deepLogSeries (p := p) (padicUnitsDepth_add_ne_zero p j))).evalAt w
     have h0z : ((0 : ZMod (p ^ 0)).val : ℤ_[p]) + (p : ℤ_[p]) ^ 0 * z = z := by rw [pow_zero]; simp
@@ -413,7 +413,7 @@ theorem norm_discExpansion_apply_le_of_ne_zero (κ : WeightSpace p R) (j : ℕ)
       (‖(κ (padicUnitsGenerator p ^ p ^ j) : R) - 1‖ / amiceRadius p 0) :=
     mul_nonneg (norm_nonneg _) (div_nonneg (norm_nonneg _) (amiceRadius_pos 0).le)
   rw [discExpansion_apply_of_isUnit_eq_compNullSeq κ j ht ha m]
-  refine TauCeti.PowerSeries.norm_compNullSeq_apply_le_of_ne_zero ℤ_[p] _ _ hB0 (fun n hn ↦ ?_) hm
+  refine PowerSeries.norm_compNullSeq_apply_le_of_ne_zero ℤ_[p] _ _ hB0 (fun n hn ↦ ?_) hm
   rw [discExpansionScaledRow_apply]
   exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left
     (AnalyticStage.norm_addCharExpansion_apply_le_of_ne_zero ht 0 hn) (norm_nonneg _))
@@ -528,7 +528,7 @@ theorem norm_coord_lt_amiceRadius_of_eval_one_add_pow_mul (κ : WeightSpace p K)
     rw [ZMod.val_one'' (Nat.one_lt_pow (padicUnitsDepth_add_ne_zero p j) hp.out.one_lt).ne',
       Nat.cast_one]
   let row₁ : C₀(ℕ, K) := AnalyticStage.rowsEquiv p ℤ_[p] h f 1
-  let c₀ : C₀(ℕ, K) := TauCeti.PowerSeries.compNullSeq ℤ_[p]
+  let c₀ : C₀(ℕ, K) := PowerSeries.compNullSeq ℤ_[p]
     (isRestricted_deepExpSeries hh) (fun _ ↦ PadicInt.norm_le_one _) row₁
   let f₀ : AnalyticStage p 0 K := (AnalyticStage.levelZeroEquiv p ℤ_[p]).symm c₀
   have hf₀ : ⇑(AnalyticStage.eval ℤ_[p] f₀) =
@@ -536,7 +536,7 @@ theorem norm_coord_lt_amiceRadius_of_eval_one_add_pow_mul (κ : WeightSpace p K)
         (tendsto_apply_padicUnitsGenerator_pow_sub_one_pow κ j) := by
     ext s
     rw [AnalyticStage.eval_levelZeroEquiv_symm_apply,
-      TauCeti.PowerSeries.tsum_pow_smul_compNullSeq ℤ_[p] _ _ _ (PadicInt.norm_le_one s)]
+      PowerSeries.tsum_pow_smul_compNullSeq ℤ_[p] _ _ _ (PadicInt.norm_le_one s)]
     let w := (deepExpSeries hh).evalAt s
     have hev₁ : (∑' n, w ^ n • row₁ n) = AnalyticStage.eval S f (1 + (p : ℤ_[p]) ^ h * w) := by
       rw [← h1val, AnalyticStage.eval_natCast_val_add_mul]

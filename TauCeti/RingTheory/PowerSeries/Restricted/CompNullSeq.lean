@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.PowerSeries.Substitution
 public import TauCeti.RingTheory.PowerSeries.EvalAt
+public import TauCeti.RingTheory.PowerSeries.Restricted.Substitution
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Discrete
+import TauCeti.RingTheory.PowerSeries.Restricted
 import TauCeti.RingTheory.PowerSeries.Substitution
 import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
@@ -15,51 +16,37 @@ import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 # Substitution of a restricted power series into a vector-valued null sequence
 
 Let `R` be an ultrametric normed ring and `E` a complete ultrametric normed `R`-module. A sequence
-`b ∈ C₀(ℕ, E)` is the coefficient vector of the convergent series `z ↦ ∑' n, z ^ n • b n` on the
-closed unit disc `‖z‖ ≤ 1` of `R` (when `R` is commutative). Given a scalar power series `g ∈ R⟦X⟧`
-restricted at the radius `1` whose coefficients satisfy `‖coeff k g‖ ≤ 1` for all `k`, substituting
-`z = g(w)` re-expands `∑' n, g(w) ^ n • b n` in powers of `w`:
+`b ∈ C₀(ℕ, E)` gives the coefficients of `z ↦ ∑' n, z ^ n • b n` on `‖z‖ ≤ 1`. Given `g ∈ R⟦X⟧`
+restricted at radius `1` with `‖coeff k g‖ ≤ 1`, substituting `z = g(w)` re-expands the series as
 
 ```text
 c_k = ∑' n, coeff k (g ^ n) • b n,    ∑' k, w ^ k • c_k = ∑' n, (g.evalAt w) ^ n • b n  (‖w‖ ≤ 1).
 ```
 
-Because `R` is ultrametric, every positive power `g ^ n` again has coefficients of norm at most
-`1` and is restricted at `1`. At `n = 0` the series `g ^ 0 = 1` acts on `b 0` by `1 • b 0 = b 0`,
-so neither `NormOneClass R` nor nontriviality of `R` is needed. Using `Matrix.toZeroAtInftySMulCLM`
-on the matrix `(coeff k (g ^ n))_{k, n}`, the re-expanded coefficients form a continuous linear
-operator `TauCeti.PowerSeries.compNullSeq` of norm at most `1` on `C₀(ℕ, E)`, linear over every
-scalar semiring `S` commuting with the `R`-action on `E`. When `g` has zero constant coefficient,
-`c_0 = b 0` and every higher coefficient `c_k` (`k ≠ 0`) depends only on `b n` for `n ≠ 0`. Over a
-commutative ring, `compNullSeq` is contravariantly functorial under `PowerSeries.subst` of series
-with zero constant term.
+Built via `Matrix.toZeroAtInftySMulCLM` on `(coeff k (g ^ n))_{k, n}` without requiring
+`NormOneClass R`, the pullback `PowerSeries.compNullSeq` is a contractive continuous `S`-linear
+operator on `C₀(ℕ, E)` for any scalar semiring `S` commuting with `R`. When `constantCoeff g = 0`,
+`c_0 = b 0` and each higher `c_k` depends only on `b n` (`n ≠ 0`). Over a commutative ring,
+`compNullSeq` is contravariantly functorial under `PowerSeries.subst` of series with zero constant
+term, and evaluates as above when `R` is complete.
 
 ## Main definitions
 
-* `TauCeti.PowerSeries.compNullSeq`: the pullback `C₀(ℕ, E) →L[S] C₀(ℕ, E)` sending `b` to
+* `PowerSeries.compNullSeq`: pullback `C₀(ℕ, E) →L[S] C₀(ℕ, E)` sending `b` to
   `k ↦ ∑' n, coeff k (g ^ n) • b n`.
 
 ## Main results
 
-* `TauCeti.PowerSeries.norm_coeff_mul_le`, `TauCeti.PowerSeries.norm_coeff_pow_le`,
-  `TauCeti.PowerSeries.norm_coeff_pow_le_one`: ultrametric uniform coefficient bounds for products
-  and positive powers of power series over a seminormed ring.
-* `TauCeti.PowerSeries.hasSum_compNullSeq_apply`, `TauCeti.PowerSeries.compNullSeq_apply`,
-  `TauCeti.PowerSeries.compNullSeq_single_apply`, `TauCeti.PowerSeries.compNullSeq_X`,
-  `TauCeti.PowerSeries.compNullSeq_zero`, `TauCeti.PowerSeries.compLeft_compNullSeq`: coefficient
-  summation, basis action, behavior at `X` and `0`, and naturality under continuous `R`-linear maps.
-* `TauCeti.PowerSeries.norm_compNullSeq_le`, `TauCeti.PowerSeries.opNorm_compNullSeq_le_one`:
-  `compNullSeq` does not increase the sup norm and has operator norm at most `1`.
-* `TauCeti.PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero`: when
-  `constantCoeff g = 0`, the constant term is `b 0`.
-* `TauCeti.PowerSeries.norm_compNullSeq_apply_le_of_ne_zero`: every positive-degree coefficient is
-  bounded by any nonnegative bound on `b n` for `n ≠ 0`.
-* `TauCeti.PowerSeries.norm_coeff_subst_le_one`, `TauCeti.PowerSeries.isRestricted_subst_one`,
-  `TauCeti.PowerSeries.compNullSeq_subst`: restrictedness and contravariant functoriality under
-  formal power-series substitution.
-* `TauCeti.PowerSeries.hasSum_pow_smul_compNullSeq`,
-  `TauCeti.PowerSeries.tsum_pow_smul_compNullSeq`: when `R` is commutative and complete, evaluating
-  the pulled-back series at any `w` with `‖w‖ ≤ 1` gives `∑' n, (g.evalAt w) ^ n • b n`.
+* `PowerSeries.hasSum_compNullSeq_apply`, `PowerSeries.compNullSeq_apply`,
+  `PowerSeries.compNullSeq_single_apply`, `PowerSeries.compNullSeq_X`,
+  `PowerSeries.compNullSeq_zero`, `PowerSeries.compLeft_compNullSeq`: summation, basis action,
+  values at `X` and `0`, and naturality under continuous `R`-linear maps.
+* `PowerSeries.norm_compNullSeq_le`, `PowerSeries.opNorm_compNullSeq_le_one`: contractivity.
+* `PowerSeries.compNullSeq_apply_zero_of_constantCoeff_eq_zero`,
+  `PowerSeries.norm_compNullSeq_apply_le_of_ne_zero`: constant and positive-degree bounds.
+* `PowerSeries.compNullSeq_subst`: contravariant functoriality under `PowerSeries.subst`.
+* `PowerSeries.hasSum_pow_smul_compNullSeq`, `PowerSeries.tsum_pow_smul_compNullSeq`: evaluation
+  at `w : R` with `‖w‖ ≤ 1`.
 -/
 
 public section
@@ -67,43 +54,7 @@ public section
 open Filter Topology
 open scoped PowerSeries ZeroAtInfty
 
-namespace TauCeti.PowerSeries
-
-open _root_.PowerSeries
-
-section CoeffBounds
-
-variable {R : Type*} [SeminormedRing R] [IsUltrametricDist R]
-
-/-- Over an ultrametric seminormed ring, uniform bounds `r` and `s` on the coefficients of `f` and
-`g` bound every coefficient of `f * g` by `r * s`. -/
-theorem norm_coeff_mul_le {f g : R⟦X⟧} {r s : ℝ} (hf : ∀ k, ‖coeff k f‖ ≤ r)
-    (hg : ∀ k, ‖coeff k g‖ ≤ s) (k : ℕ) :
-    ‖coeff k (f * g)‖ ≤ r * s := by
-  have hr0 : 0 ≤ r := (norm_nonneg _).trans (hf 0)
-  have hs0 : 0 ≤ s := (norm_nonneg _).trans (hg 0)
-  rw [coeff_mul]
-  exact IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (mul_nonneg hr0 hs0) fun p _ ↦
-    (norm_mul_le _ _).trans (mul_le_mul (hf p.1) (hg p.2) (norm_nonneg _) hr0)
-
-/-- Over an ultrametric seminormed ring, if every coefficient of `g` has norm at most `r`, then
-every coefficient of a positive power `g ^ n` (`n ≠ 0`) has norm at most `r ^ n`. -/
-theorem norm_coeff_pow_le {g : R⟦X⟧} {r : ℝ} (hgn : ∀ k, ‖coeff k g‖ ≤ r) {n : ℕ} (hn : n ≠ 0)
-    (k : ℕ) : ‖coeff k (g ^ n)‖ ≤ r ^ n := by
-  induction n generalizing k with
-  | zero => exact absurd rfl hn
-  | succ n ih =>
-    rcases eq_or_ne n 0 with rfl | hn0
-    · simpa using hgn k
-    · rw [pow_succ, pow_succ]; exact norm_coeff_mul_le (ih hn0) hgn k
-
-/-- Over an ultrametric seminormed ring, every positive power of a power series whose coefficients
-have norm at most `1` also has coefficients of norm at most `1`. -/
-theorem norm_coeff_pow_le_one {g : R⟦X⟧} (hgn : ∀ k, ‖coeff k g‖ ≤ 1) {n : ℕ} (hn : n ≠ 0)
-    (k : ℕ) : ‖coeff k (g ^ n)‖ ≤ 1 := by
-  simpa only [one_pow] using norm_coeff_pow_le hgn hn k
-
-end CoeffBounds
+namespace PowerSeries
 
 section Operator
 
@@ -226,66 +177,30 @@ theorem norm_compNullSeq_apply_le_of_ne_zero (hg : g.IsRestricted 1)
 
 end Operator
 
-section Subst
+section CommRing
 
-variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R] {f g : R⟦X⟧}
+variable {R E : Type*} [NormedCommRing R] [IsUltrametricDist R]
+  [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] {f g : R⟦X⟧}
 
-/-- Substituting a unit-ball series `f` with zero constant term into a unit-ball series `g`
-preserves the unit-ball coefficient bound (without needing `NormOneClass R`). -/
-theorem norm_coeff_subst_le_one (hgn : ∀ k, ‖coeff k g‖ ≤ 1) (hfn : ∀ k, ‖coeff k f‖ ≤ 1)
-    (hf0 : constantCoeff f = 0) (k : ℕ) : ‖coeff k (g.subst f)‖ ≤ 1 := by
-  rw [coeff_subst_eq_sum_range g hf0 k]
-  refine IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg zero_le_one fun m _ ↦ ?_
-  rcases eq_or_ne m 0 with rfl | hm
-  · rcases eq_or_ne k 0 with rfl | hk
-    · simpa using hgn 0
-    · simp [coeff_one, hk]
-  · rw [smul_eq_mul]
-    exact (norm_mul_le _ _).trans <|
-      (mul_le_mul (hgn m) (norm_coeff_pow_le_one hfn hm k) (norm_nonneg _) zero_le_one).trans_eq
-        (one_mul 1)
+private theorem norm_pow_smul_coeff_pow_smul_le (hgn : ∀ k, ‖coeff k g‖ ≤ 1) {w : R}
+    (hw : ‖w‖ ≤ 1) (e : E) (k n : ℕ) : ‖w ^ k • (coeff k (g ^ n) • e)‖ ≤ ‖e‖ := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simpa using norm_coeff_pow_smul_le hgn e n 0
+  · refine (norm_smul_le _ _).trans <| (mul_le_of_le_one_left (norm_nonneg _) ?_).trans
+      (norm_coeff_pow_smul_le hgn e n k)
+    exact (norm_pow_le' w (Nat.pos_of_ne_zero hk)).trans (pow_le_one₀ (norm_nonneg w) hw)
 
-/-- Substituting a restricted unit-ball series `f` with zero constant term into a series `g`
-restricted at radius `1` yields a series restricted at radius `1`. -/
-theorem isRestricted_subst_one (hg : g.IsRestricted 1) (hf : f.IsRestricted 1)
-    (hfn : ∀ k, ‖coeff k f‖ ≤ 1) (hf0 : constantCoeff f = 0) :
-    PowerSeries.IsRestricted 1 (g.subst f) := by
-  rw [isRestricted_iff']; simp only [one_pow, mul_one]
-  refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
-  have hg_lim : Tendsto (fun m ↦ ‖coeff m g‖) atTop (𝓝 0) := by
-    simpa only [one_pow, mul_one] using (isRestricted_iff' 1 g).mp hg
-  obtain ⟨M, hM⟩ := Metric.tendsto_atTop.mp hg_lim (ε / 2) (half_pos hε)
-  have hhead : ∀ m ∈ Finset.range (M + 1),
-      ∀ᶠ k in atTop, ‖coeff m g * coeff k (f ^ m)‖ < ε / 2 := fun m _ ↦ by
-    have hm_lim : Tendsto (fun k ↦ coeff m g * coeff k (f ^ m)) atTop (𝓝 0) := by
-      simpa only [Nat.cofinite_eq_atTop, mul_zero] using
-        (tendsto_coeff_pow_cofinite hf m).const_mul (coeff m g)
-    exact NormedAddGroup.tendsto_nhds_zero.mp hm_lim (ε / 2) (half_pos hε)
-  obtain ⟨K, hK⟩ := eventually_atTop.mp ((Finset.range (M + 1)).eventually_all.mpr hhead)
-  refine ⟨K, fun k hk ↦ ?_⟩
-  rw [Real.dist_eq, sub_zero, abs_norm, coeff_subst_eq_sum_range g hf0 k]
-  refine (IsUltrametricDist.norm_sum_le_of_forall_le_of_nonneg (half_pos hε).le
-    fun m _ ↦ ?_).trans_lt (half_lt_self hε)
-  rw [smul_eq_mul]
-  rcases lt_or_ge m (M + 1) with hm | hm
-  · exact (hK k hk m (Finset.mem_range.mpr hm)).le
-  · have hgm : ‖coeff m g‖ < ε / 2 := by simpa [Real.dist_eq, abs_norm] using hM m (by omega)
-    exact (norm_mul_le _ _).trans <| (mul_le_of_le_one_right (norm_nonneg _)
-      (norm_coeff_pow_le_one hfn (by omega) k)).trans hgm.le
+variable [IsUltrametricDist E] [CompleteSpace E]
 
 /-- **Contravariant functoriality of `compNullSeq` under formal substitution.** When `f` has zero
 constant coefficient, pulling back along `g` and then along `f` equals pulling back along
 `g.subst f`. -/
-theorem compNullSeq_subst {E : Type*} [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E]
-    [IsUltrametricDist E] [CompleteSpace E]
-    (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass R S E]
-    (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1)
+theorem compNullSeq_subst (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E]
+    [SMulCommClass R S E] (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff k g‖ ≤ 1)
     (hf : f.IsRestricted 1) (hfn : ∀ k, ‖coeff k f‖ ≤ 1) (hf0 : constantCoeff f = 0)
     (b : C₀(ℕ, E)) :
     compNullSeq S hf hfn (compNullSeq S hg hgn b) =
-      compNullSeq S (isRestricted_subst_one hg hf hfn hf0) (norm_coeff_subst_le_one hgn hfn hf0)
-        b := by
-  have hsub_f : HasSubst f := .of_constantCoeff_zero' hf0
+      compNullSeq S (hg.subst_one hf hfn hf0) (norm_coeff_subst_le hgn hfn hf0) b := by
   ext k
   have hfin : compNullSeq S hf hfn (compNullSeq S hg hgn b) k =
       ∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • compNullSeq S hg hgn b m := by
@@ -302,28 +217,10 @@ theorem compNullSeq_subst {E : Type*} [NormedAddCommGroup E] [Module R E] [IsBou
     hasSum_sum fun m _ ↦ (hasSum_compNullSeq_apply S hg hgn b m).const_smul (coeff k (f ^ m))
   have heq (n : ℕ) : coeff k ((g.subst f) ^ n) • b n =
       ∑ m ∈ Finset.range (k + 1), coeff k (f ^ m) • (coeff m (g ^ n) • b n) := by
-    rw [← subst_pow hsub_f, coeff_subst_eq_sum_range (g ^ n) hf0 k, Finset.sum_smul]
+    rw [← subst_pow (.of_constantCoeff_zero' hf0), coeff_subst_eq_sum_range (g ^ n) hf0 k,
+      Finset.sum_smul]
     exact Finset.sum_congr rfl fun m _ ↦ by rw [smul_smul, smul_eq_mul, mul_comm]
   exact (hsum.congr_fun heq).unique (hasSum_compNullSeq_apply S _ _ b k)
-
-end Subst
-
-section Eval
-
-variable {R E : Type*} [NormedCommRing R] [IsUltrametricDist R]
-  [NormedAddCommGroup E] [Module R E] [IsBoundedSMul R E] {g : R⟦X⟧}
-
-private theorem norm_pow_smul_coeff_pow_smul_le (hgn : ∀ k, ‖coeff k g‖ ≤ 1) {w : R}
-    (hw : ‖w‖ ≤ 1) (e : E) (k n : ℕ) :
-    ‖w ^ k • (coeff k (g ^ n) • e)‖ ≤ ‖e‖ := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · simpa using norm_coeff_pow_smul_le hgn e n 0
-  · refine (norm_smul_le _ _).trans ?_
-    have hwk : ‖w ^ k‖ ≤ 1 :=
-      (norm_pow_le' w (Nat.pos_of_ne_zero hk)).trans (pow_le_one₀ (norm_nonneg w) hw)
-    exact (mul_le_of_le_one_left (norm_nonneg _) hwk).trans (norm_coeff_pow_smul_le hgn e n k)
-
-variable [IsUltrametricDist E] [CompleteSpace E]
 
 /-- Every bivariate term `w ^ k • (coeff k (g ^ n) • b n)` is dominated by `‖b n‖` and vanishes
 in `k` for each fixed `n`, so packaging the `n`-indexed rows via
@@ -334,20 +231,18 @@ private theorem summable_uncurry_pow_smul (hg : g.IsRestricted 1) (hgn : ∀ k, 
   let row (n : ℕ) : C₀(ℕ, E) :=
     ZeroAtInftyContinuousMap.mkOfDiscrete (fun k ↦ w ^ k • (coeff k (g ^ n) • b n)) <| by
       have hp : (g ^ n).IsRestricted 1 := (IsRestricted.subring (R := R) 1).pow_mem hg n
-      have h0 : Tendsto (fun k ↦ (coeff k (g ^ n) • w ^ k) • b n) cofinite (𝓝 0) := by
-        simpa using (hp.tendsto_smul_pow hw).smul_const (b n)
-      exact h0.congr fun k ↦ by rw [smul_eq_mul, mul_comm, mul_smul]
+      exact ((by simpa using (hp.tendsto_smul_pow hw).smul_const (b n) :
+        Tendsto (fun k ↦ (coeff k (g ^ n) • w ^ k) • b n) cofinite (𝓝 0))).congr
+        fun k ↦ by rw [smul_eq_mul, mul_comm, mul_smul]
   have hrow_le (n : ℕ) : ‖row n‖ ≤ ‖b n‖ :=
     (ZeroAtInftyContinuousMap.norm_le (norm_nonneg (b n))).mpr fun k ↦ by
       simpa [row] using norm_pow_smul_coeff_pow_smul_le hgn hw (b n) k n
-  let rows : C₀(ℕ, C₀(ℕ, E)) :=
-    ZeroAtInftyContinuousMap.mkOfDiscrete row <|
-      squeeze_zero_norm hrow_le (tendsto_zero_iff_norm_tendsto_zero.mp b.tendsto_cofinite)
-  have hsum_swap : Summable (Function.uncurry fun n k ↦ w ^ k • (coeff k (g ^ n) • b n)) := by
-    have hs := NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
-      ((ZeroAtInftyContinuousMap.curryEquiv ℕ E).symm rows).tendsto_cofinite
-    exact hs.congr fun ⟨n, k⟩ ↦ by simp [rows, row]
-  exact (Equiv.prodComm ℕ ℕ).summable_iff.mp hsum_swap
+  let rows : C₀(ℕ, C₀(ℕ, E)) := ZeroAtInftyContinuousMap.mkOfDiscrete row <|
+    squeeze_zero_norm hrow_le (tendsto_zero_iff_norm_tendsto_zero.mp b.tendsto_cofinite)
+  exact (Equiv.prodComm ℕ ℕ).summable_iff.mp <|
+    (NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero
+      ((ZeroAtInftyContinuousMap.curryEquiv ℕ E).symm rows).tendsto_cofinite).congr
+      fun ⟨n, k⟩ ↦ by simp [rows, row]
 
 variable [CompleteSpace R]
   (S : Type*) [Semiring S] [Module S E] [ContinuousConstSMul S E] [SMulCommClass R S E]
@@ -361,16 +256,12 @@ theorem hasSum_pow_smul_compNullSeq (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coe
   have hcol (n : ℕ) :
       HasSum (fun k ↦ w ^ k • (coeff k (g ^ n) • b n)) ((g.evalAt w) ^ n • b n) := by
     have hp : (g ^ n).IsRestricted 1 := (IsRestricted.subring (R := R) 1).pow_mem hg n
-    have hev : (g ^ n).evalAt w = (g.evalAt w) ^ n := by
-      simpa using (IsRestricted.evalAtHom R hw).map_pow ⟨g, hg⟩ n
     have hs := (hp.hasSum_evalAt (b := w) hw).smul_const (b n)
-    rw [hev] at hs
+    rw [show (g ^ n).evalAt w = (g.evalAt w) ^ n by
+      simpa using (IsRestricted.evalAtHom R hw).map_pow ⟨g, hg⟩ n] at hs
     exact hs.congr_fun fun k ↦ by rw [smul_eq_mul, mul_comm, mul_smul]
-  have hrow (k : ℕ) :
-      HasSum (fun n ↦ w ^ k • (coeff k (g ^ n) • b n)) (w ^ k • compNullSeq S hg hgn b k) :=
-    (hasSum_compNullSeq_apply S hg hgn b k).const_smul (w ^ k)
   rw [(((Equiv.prodComm ℕ ℕ).hasSum_iff.mpr hF.hasSum).prod_fiberwise hcol).tsum_eq]
-  exact hF.hasSum.prod_fiberwise hrow
+  exact hF.hasSum.prod_fiberwise fun k ↦ (hasSum_compNullSeq_apply S hg hgn b k).const_smul (w ^ k)
 
 /-- **Evaluation of a pulled-back null sequence.** When `R` is complete, for every `w : R` with
 `‖w‖ ≤ 1`, `∑' k, w ^ k • compNullSeq S hg hgn b k = ∑' n, (g.evalAt w) ^ n • b n`. -/
@@ -379,6 +270,6 @@ theorem tsum_pow_smul_compNullSeq (hg : g.IsRestricted 1) (hgn : ∀ k, ‖coeff
     ∑' k, w ^ k • compNullSeq S hg hgn b k = ∑' n, (g.evalAt w) ^ n • b n :=
   (hasSum_pow_smul_compNullSeq S hg hgn b hw).tsum_eq
 
-end Eval
+end CommRing
 
-end TauCeti.PowerSeries
+end PowerSeries
