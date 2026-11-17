@@ -22,7 +22,9 @@ exhaustion function remains proper. The source needs no metric or separation ass
 
 The proof uses Mathlib's compactness of closed thickenings in proper metric spaces: the
 inverse image of a compact set under the perturbed map is a closed subset of the original
-map's inverse image of a compact thickening.
+map's inverse image of a compact thickening. Likewise, a family whose images under a proper map
+into a proper metric space frequently lie in a bounded set has a cluster point
+(`IsProperMap.exists_mapClusterPt_of_frequently_mem`).
 
 In a proper normed group the squared distance `v ↦ ‖v - a‖ ^ 2` from a point tends to infinity
 along the cocompact filter, so it is proper, and so is its composition with any closed embedding.
@@ -53,6 +55,16 @@ theorem _root_.IsProperMap.of_dist_le {X Y : Type*} [TopologicalSpace X] [Metric
     (hK.isClosed.preimage hg) ?_
   intro x hx
   exact Metric.mem_cthickening_of_dist_le (f x) (g x) C K hx (hfg x)
+
+/-- **Cluster points along proper maps.** If `f` is a proper map into a proper metric space and
+`f (u i)` frequently lies in a bounded set `s` along `l`, then `u` has a cluster point along `l`,
+which `f` maps into the closure of `s`. -/
+theorem _root_.IsProperMap.exists_mapClusterPt_of_frequently_mem {X Y ι : Type*}
+    [TopologicalSpace X] [PseudoMetricSpace Y] [ProperSpace Y] {f : X → Y} (hf : IsProperMap f)
+    {s : Set Y} (hs : Bornology.IsBounded s) {l : Filter ι} {u : ι → X}
+    (hu : ∃ᶠ i in l, f (u i) ∈ s) : ∃ x, f x ∈ closure s ∧ MapClusterPt x l u :=
+  (hf.isCompact_preimage hs.isCompact_closure).exists_mapClusterPt_of_frequently
+    (hu.mono fun _ h ↦ subset_closure h)
 
 /-- In a proper normed group, the squared distance from a point is a proper map. -/
 theorem isProperMap_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [ProperSpace E] (a : E) :

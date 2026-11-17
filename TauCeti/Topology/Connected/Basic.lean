@@ -20,7 +20,9 @@ nonempty members are joined by a chain of members in which consecutive sets meet
 (`IsPreconnected.transGen_of_iUnion_of_isClosed`). For instance, the irreducible components of a
 connected Noetherian space form a connected intersection graph. Likewise, open sets covering a
 preconnected set and each meeting it are joined by chains of members overlapping inside the set
-(`IsPreconnected.reflTransGen_of_subset_biUnion`).
+(`IsPreconnected.reflTransGen_of_subset_biUnion`). The fibres `V ∩ f ⁻¹' {v}` of a map in a set
+`V` are all preconnected once those over points of `f '' V` are, the others being empty
+(`TauCeti.isPreconnected_inter_preimage_singleton_of_forall_mem_image`).
 
 The same principle selects a limit: a function which tends to a finite subset of a Hausdorff
 space along a filter in which arbitrarily small sets have preconnected images tends to a single
@@ -226,5 +228,19 @@ theorem _root_.IsPreconnected.reflTransGen_of_subset_biUnion {C : Set α} {T : S
     hi (hne hiC) hj (hne hjC))
   rintro k l ⟨hk, hl, c, hck, hcl⟩
   exact ⟨hk, hl, c, ⟨hck, hcl⟩, c.2⟩
+
+/-- Fibres of `f` in `V` over points outside `f '' V` are empty, so it suffices to check that the
+fibres over points of `f '' V` are preconnected. -/
+theorem isPreconnected_inter_preimage_singleton_of_forall_mem_image {β : Type*} {f : α → β}
+    {V : Set α} (h : ∀ v ∈ f '' V, IsPreconnected (V ∩ f ⁻¹' {v})) (v : β) :
+    IsPreconnected (V ∩ f ⁻¹' {v}) := by
+  by_cases hv : v ∈ f '' V
+  · exact h v hv
+  · convert isPreconnected_empty
+    ext x
+    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false,
+      not_and]
+    rintro hxV rfl
+    exact hv (mem_image_of_mem f hxV)
 
 end TauCeti

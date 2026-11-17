@@ -14,6 +14,9 @@ public import TauCeti.Topology.Compactness.Compact
 public import TauCeti.Topology.Connected.Basic
 public import TauCeti.Topology.Frontier
 
+import TauCeti.Topology.Maps.Proper.Metric
+import TauCeti.Topology.Semicontinuity.Basic
+
 /-!
 # The local-to-global principle for convexity
 
@@ -189,20 +192,6 @@ private theorem exists_isConvexChart_continuousLinearEquiv_comp {F : Type*}
     ∃ U, x ∈ U ∧ IsConvexChart (e ∘ f) U :=
   let ⟨U, hx, hU⟩ := hloc x
   ⟨U, hx, hU.continuousLinearEquiv_comp e⟩
-
-/-- Fibres of `f` in `V` over points outside `f '' V` are empty, so it suffices to check that the
-fibres over points of `f '' V` are preconnected. -/
-private theorem isPreconnected_inter_preimage_singleton_of_forall_mem_image {Y : Type*} {f : X → Y}
-    {V : Set X} (h : ∀ v ∈ f '' V, IsPreconnected (V ∩ f ⁻¹' {v})) (v : Y) :
-    IsPreconnected (V ∩ f ⁻¹' {v}) := by
-  by_cases hv : v ∈ f '' V
-  · exact h v hv
-  · convert isPreconnected_empty
-    ext x
-    simp only [mem_inter_iff, mem_preimage, mem_singleton_iff, mem_empty_iff_false, iff_false,
-      not_and]
-    rintro hxV rfl
-    exact hv (mem_image_of_mem f hxV)
 
 /-- **Convexity charts from local convexity data.** Suppose that `f` maps an open set `U` into a
 convex set `C`, sending open subsets of `U` onto relative neighbourhoods in `C`, with preconnected
@@ -422,33 +411,6 @@ section Proper
 
 variable [ProperSpace E] {f : X → E}
 
-omit [NormedSpace ℝ E] in
-/-- **Cluster points of nearly bounded sequences.** For a proper map `f`, a sequence `u` whose
-images satisfy `dist (f a) (f (u n)) ≤ C + 1 / (n + 1)` has a cluster point. -/
-private theorem exists_mapClusterPt_of_dist_le (hf : IsProperMap f) (a : X) {C : ℝ}
-    {u : ℕ → X} (hu : ∀ n : ℕ, dist (f a) (f (u n)) ≤ C + 1 / (n + 1)) :
-    ∃ x₀, MapClusterPt x₀ atTop u := by
-  have huK : ∀ n, u n ∈ f ⁻¹' closedBall (f a) (C + 1) := fun n ↦ by
-    have h₁ : 1 / ((n : ℝ) + 1) ≤ 1 := by
-      rw [div_le_one (by positivity)]
-      linarith [n.cast_nonneg (α := ℝ)]
-    rw [mem_preimage, mem_closedBall, dist_comm]
-    linarith [hu n]
-  obtain ⟨x₀, -, hx₀⟩ := (hf.isCompact_preimage (isCompact_closedBall (f a) (C + 1))
-    ).exists_mapClusterPt (f := atTop) (u := u) (tendsto_principal.2 (Eventually.of_forall huK))
-  exact ⟨x₀, hx₀⟩
-
-/-- **Nearly bounded functions at cluster points.** If a continuous `g` satisfies
-`g (u n) ≤ c + 1 / (n + 1)` along a sequence `u`, then `g x₀ ≤ c` at every cluster point `x₀`. -/
-private theorem le_of_mapClusterPt_of_le_add_one_div {g : X → ℝ} (hg : Continuous g) {c : ℝ}
-    {u : ℕ → X} {x₀ : X} (hx₀ : MapClusterPt x₀ atTop u)
-    (hu : ∀ n : ℕ, g (u n) ≤ c + 1 / (n + 1)) : g x₀ ≤ c := by
-  refine le_of_forall_pos_le_add fun ε hε ↦
-    (isClosed_le hg continuous_const).mem_of_mapClusterPt hx₀ ?_
-  filter_upwards [tendsto_one_div_add_atTop_nhds_zero_nat.eventually (eventually_le_nhds hε)]
-    with n hn
-  linarith [hu n]
-
 /-- **Midpoints.** For every `t ∈ [0, 1]` there is a point at chain distance `t ρ x y` from `x` and
 `(1 - t) ρ x y` from `y`. -/
 private theorem exists_chainDist_eq_mul (hf : IsProperMap f)
@@ -472,16 +434,19 @@ private theorem exists_chainDist_eq_mul (hf : IsProperMap f)
     exact mul_le_mul_of_nonneg_left hℓ.le (sub_nonneg.2 ht.2)
   choose m hxm hmy using hseq
   -- The splitting points have a cluster point.
-  obtain ⟨m₀, hm₀⟩ := exists_mapClusterPt_of_dist_le hf x fun n ↦
+  obtain ⟨m₀, -, hm₀⟩ := hf.exists_mapClusterPt_of_frequently_mem (l := atTop)
+    (isBounded_closedBall (x := f x) (r := L + 1)) <| .of_forall fun n ↦ mem_closedBall'.2 <|
     calc dist (f x) (f (m n)) ≤ chainDist f x (m n) := dist_le_chainDist hR _ _
       _ ≤ t * (L + 1 / (n + 1)) := hxm n
       _ ≤ L + 1 / (n + 1) := mul_le_of_le_one_left (by positivity) ht.2
+      _ ≤ L + 1 := by gcongr; exact div_le_one_of_le₀ (by simp) (by positivity)
   -- Bounds holding along the sequence up to errors tending to zero pass to the cluster point.
   have hbound : ∀ g : X → ℝ, Continuous g → ∀ s ∈ Icc (0 : ℝ) 1,
       (∀ n : ℕ, g (m n) ≤ s * (L + 1 / (n + 1))) → g m₀ ≤ s * L := fun g hg s hs hgm ↦
-    le_of_mapClusterPt_of_le_add_one_div hg hm₀ fun n ↦ (hgm n).trans <| by
-      rw [mul_add]
-      exact add_le_add_right (mul_le_of_le_one_left (by positivity) hs.2) _
+    hm₀.le_of_eventually_le_add hg.lowerSemicontinuous tendsto_one_div_add_atTop_nhds_zero_nat <|
+      .of_forall fun n ↦ (hgm n).trans <| by
+        rw [mul_add]
+        exact add_le_add_right (mul_le_of_le_one_left (by positivity) hs.2) _
   have h₁ := hbound _ (continuous_chainDist hR hloc hf.continuous x) t ht hxm
   have h₂ := hbound _ ((continuous_chainDist hR hloc hf.continuous y).congr
     fun w ↦ chainDist_comm hR y w) (1 - t) ⟨sub_nonneg.2 ht.2, by linarith [ht.1]⟩ hmy
@@ -624,12 +589,14 @@ private theorem exists_pos_forall_chainDist_lt_mem (hf : IsProperMap f)
     obtain ⟨s, hs, hsd⟩ := h.exists_mem_frontier hpO haO
     exact ⟨s, hs, hsd.trans hℓ.le⟩
   choose s hsO hsd using hseq
-  obtain ⟨s₀, hs₀⟩ := exists_mapClusterPt_of_dist_le hf p (C := 0) fun n ↦ (hsd n).trans_eq
-    (zero_add _).symm
+  obtain ⟨s₀, -, hs₀⟩ := hf.exists_mapClusterPt_of_frequently_mem (l := atTop)
+    (isBounded_closedBall (x := f p) (r := 1)) <| .of_forall fun n ↦ mem_closedBall'.2 <|
+      (hsd n).trans (div_le_one_of_le₀ (by simp) (by positivity))
   have hs₀O : s₀ ∈ frontier O := isClosed_frontier.mem_of_mapClusterPt hs₀ (.of_forall hsO)
   have hfs₀ : f s₀ = f p := dist_le_zero.1 <|
-    le_of_mapClusterPt_of_le_add_one_div (g := fun w ↦ dist (f w) (f p))
-      (hf.continuous.dist continuous_const) hs₀ fun n ↦ by
+    hs₀.le_of_eventually_le_add (g := fun w ↦ dist (f w) (f p))
+      (hf.continuous.dist continuous_const).lowerSemicontinuous
+      tendsto_one_div_add_atTop_nhds_zero_nat <| .of_forall fun n ↦ by
         rw [dist_comm, zero_add]
         exact hsd n
   by_cases hs₀N : s₀ ∈ N
