@@ -8,14 +8,15 @@ module
 public import Mathlib.ModelTheory.Syntax
 
 /-!
-# First-order terms under relabelling, substitution and language maps
+# First-order terms and formulas under relabelling, substitution and language maps
 
 Mathlib's `FirstOrder.Language.Term.varFinsetLeft` collects the variables of a term over `α ⊕ β`
 that come from the left summand `α`. This file characterizes it through the full variable set
 `Term.varFinset`, and computes it after `Term.relabel` and `Term.subst`. It also records that a
-language map commutes with relabelling the variables of a term, and a language map that is
-injective on function symbols acts injectively on terms. Constructor equations for
-`BoundedFormula.constantsVarsEquiv` describe abstraction of constants in finitary formulas.
+language map commutes with relabelling the variables of a term and with negation of bounded
+formulas, formulas, and sentences, and that a language map injective on function symbols acts
+injectively on terms. Constructor equations for `BoundedFormula.constantsVarsEquiv` describe
+abstraction of constants in finitary formulas.
 
 ## Main results
 
@@ -32,6 +33,9 @@ injective on function symbols acts injectively on terms. Constructor equations f
 * `FirstOrder.Language.LHom.onTerm_injective`: a language map that is injective on function
   symbols acts injectively on terms; `FirstOrder.Language.LHom.Injective.onTerm_injective`
   specializes it to injective language maps.
+* `FirstOrder.Language.LHom.onBoundedFormula_not`, `FirstOrder.Language.LHom.onFormula_not`,
+  `FirstOrder.Language.LHom.onSentence_not`, and their `FirstOrder.Language.LEquiv` counterparts:
+  language maps and equivalences commute with negation.
 -/
 
 public section
@@ -130,7 +134,47 @@ theorem Injective.onTerm_injective {g : L →ᴸ L'} (hg : g.Injective) {β : Ty
     Function.Injective (g.onTerm : L.Term β → L'.Term β) :=
   LHom.onTerm_injective fun {_} => hg.onFunction
 
+/-- A language homomorphism commutes with negation of bounded formulas. -/
+-- Not `@[simp]`: Mathlib marks `LHom.onBoundedFormula` `@[simp]`, unfolding `φ.not` before theorem
+-- rewrites fire.
+theorem onBoundedFormula_not (g : L →ᴸ L') {α : Type*} {n : ℕ} (φ : L.BoundedFormula α n) :
+    g.onBoundedFormula φ.not = (g.onBoundedFormula φ).not :=
+  (rfl)
+
+/-- A language homomorphism commutes with negation of formulas. -/
+@[simp]
+theorem onFormula_not (g : L →ᴸ L') {α : Type*} (φ : L.Formula α) :
+    g.onFormula φ.not = (g.onFormula φ).not :=
+  (rfl)
+
+/-- A language homomorphism commutes with negation of sentences. -/
+@[simp]
+theorem onSentence_not (g : L →ᴸ L') (φ : L.Sentence) :
+    g.onSentence φ.not = (g.onSentence φ).not :=
+  (rfl)
+
 end LHom
+
+namespace LEquiv
+
+variable {L L' : Language} (e : L ≃ᴸ L')
+
+/-- A language equivalence commutes with negation of bounded formulas. -/
+theorem onBoundedFormula_not {α : Type*} {n : ℕ} (φ : L.BoundedFormula α n) :
+    e.onBoundedFormula φ.not = (e.onBoundedFormula φ).not :=
+  (rfl)
+
+/-- A language equivalence commutes with negation of formulas. -/
+theorem onFormula_not {α : Type*} (φ : L.Formula α) :
+    e.onFormula φ.not = (e.onFormula φ).not :=
+  (rfl)
+
+/-- A language equivalence commutes with negation of sentences. -/
+theorem onSentence_not (φ : L.Sentence) :
+    e.onSentence φ.not = (e.onSentence φ).not :=
+  (rfl)
+
+end LEquiv
 
 namespace BoundedFormula
 
