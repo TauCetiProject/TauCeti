@@ -38,6 +38,9 @@ action of its functionals accessible through coordinates.
   `ℓᵖ` family.
 * `ContinuousLinearMap.norm_le_opNorm_of_forall_eq_lp_single`: an `ℓᵖ` family of coordinate
   values of a functional on `ℓ^q` has norm at most the norm of the functional.
+* `lp.sum_norm_rpow_le_of_forall_norm_sum_mul_le`: for `p < ∞`, finitely many coefficients
+  `zᵢ` whose pairing `c ↦ ∑ cᵢ zᵢ` is bounded by `B ‖c‖_q` on `ℓ^q` have
+  `∑ ‖zᵢ‖ ^ p ≤ B ^ p`.
 * `lp.dualEquiv`: the isometric equivalence `ℓᵖ ≃ₗᵢ (ℓ^q)*`.
 * `ContinuousLinearMap.norm_eq_ciSup_norm_lp_single`: the norm of a functional on ℓ¹ is the
   supremum of the norms of its coordinate values.
@@ -190,6 +193,32 @@ namespace lp
 
 variable {𝕜 ι : Type*} [RCLike 𝕜] {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
   [p.HolderConjugate q]
+
+omit [Fact (1 ≤ p)] in
+/-- **Finite sums of coefficients bounded by duality.** For Hölder conjugate exponents `p` and
+`q` with `p < ∞`, if the pairing `c ↦ ∑ i ∈ s, cᵢ zᵢ` with finitely many coefficients `zᵢ`
+satisfies `‖∑ i ∈ s, cᵢ zᵢ‖ ≤ B ‖c‖_q` for every `c ∈ ℓ^q`, then `∑ i ∈ s, ‖zᵢ‖ ^ p ≤ B ^ p`. -/
+theorem sum_norm_rpow_le_of_forall_norm_sum_mul_le (hp : p ≠ ∞) (s : Finset ι)
+    (z : ι → 𝕜) {B : ℝ} (hB : 0 ≤ B)
+    (h : ∀ c : lp (fun _ : ι ↦ 𝕜) q, ‖∑ i ∈ s, c i * z i‖ ≤ B * ‖c‖) :
+    ∑ i ∈ s, ‖z i‖ ^ p.toReal ≤ B ^ p.toReal := by
+  classical
+  -- The pairing is a continuous linear functional on `ℓ^q` of norm at most `B`.
+  let f : lp (fun _ : ι ↦ 𝕜) q →ₗ[𝕜] 𝕜 :=
+    { toFun c := ∑ i ∈ s, c i * z i
+      map_add' c d := by simp only [coeFn_add, Pi.add_apply, add_mul, Finset.sum_add_distrib]
+      map_smul' a c := by
+        simp only [coeFn_smul, Pi.smul_apply, smul_eq_mul, RingHom.id_apply, Finset.mul_sum,
+          mul_assoc] }
+  have hf (i : ι) (hi : i ∈ s) : f.mkContinuous B h (lp.single q i 1) = z i := by
+    simp [f, lp.single_apply, Pi.single_apply, hi]
+  calc ∑ i ∈ s, ‖z i‖ ^ p.toReal
+      = ∑ i ∈ s, ‖f.mkContinuous B h (lp.single q i 1)‖ ^ p.toReal :=
+        Finset.sum_congr rfl fun i hi ↦ by rw [hf i hi]
+    _ ≤ ‖f.mkContinuous B h‖ ^ p.toReal := (f.mkContinuous B h).sum_norm_lp_single_rpow_le hp s
+    _ ≤ B ^ p.toReal := by
+        gcongr
+        exact LinearMap.mkContinuous_norm_le _ hB _
 
 variable (𝕜 ι p q)
 
