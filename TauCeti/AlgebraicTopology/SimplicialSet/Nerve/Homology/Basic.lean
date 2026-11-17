@@ -16,6 +16,7 @@ public import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import Mathlib.CategoryTheory.Limits.FunctorCategory.Basic
 import TauCeti.Algebra.Homology.ShortComplex.FunctorCategory
+import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
 import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 
 /-!
@@ -67,8 +68,19 @@ def categorySimplicialObjectFunctor : (C ⥤ A) ⥤ SimplicialObject A where
     map {Δ₁ Δ₂} θ := Limits.Sigma.map' (nerveMapFn θ) fun σ ↦
       M.map (σ.map (homOfLE (Fin.zero_le (θ.unop.toOrderHom 0))))
     map_id Δ := Limits.Sigma.hom_ext _ _ fun σ ↦ (Limits.Sigma.ι_comp_map' _ _ σ).trans <| by
-      change M.map (σ.map (homOfLE (Fin.zero_le 0))) ≫
-        Limits.Sigma.ι (fun τ : ComposableArrows C Δ.unop.len ↦ M.obj (τ.obj 0)) σ = _; simp
+      have h0 : (0 : Fin (Δ.unop.len + 1)) = (𝟙 Δ).unop.toOrderHom 0 := by simp
+      have hσ : σ = nerveMapFn (𝟙 Δ) σ := by
+        rw [nerveMapFn, unop_id, SimplexCategory.toCat.map_id, Cat.Hom.id_toFunctor]
+        exact (Functor.id_comp σ).symm
+      have hm : M.map (σ.map (homOfLE (Fin.zero_le ((𝟙 Δ).unop.toOrderHom 0)))) =
+          eqToHom (congrArg (fun k ↦ M.obj (σ.obj k)) h0) := by
+        rw [Subsingleton.elim (homOfLE (Fin.zero_le _)) (eqToHom h0), eqToHom_map, eqToHom_map]
+      have hι : ∀ {τ : ComposableArrows C Δ.unop.len} (h : σ = τ),
+          eqToHom (congrArg (fun τ ↦ M.obj (τ.obj 0)) h) ≫
+            Limits.Sigma.ι (fun τ : ComposableArrows C Δ.unop.len ↦ M.obj (τ.obj 0)) τ =
+            Limits.Sigma.ι (fun τ : ComposableArrows C Δ.unop.len ↦ M.obj (τ.obj 0)) σ := by
+        rintro _ rfl; simp
+      exact (congrArg (· ≫ _) hm).trans ((hι hσ).trans (comp_id _).symm)
     map_comp {Δ₁ Δ₂ Δ₃} θ₁ θ₂ := Limits.Sigma.hom_ext _ _ fun σ ↦ by
       have hmap : M.map (σ.map (homOfLE (Fin.zero_le ((θ₁ ≫ θ₂).unop.toOrderHom 0)))) =
           M.map (σ.map (homOfLE (Fin.zero_le (θ₁.unop.toOrderHom 0)))) ≫
@@ -146,10 +158,13 @@ def descCategorySimplicial (M : C ⥤ A) {n : ℕ} {T : A}
 @[reassoc (attr := simp)] lemma ιCategorySimplicial_δ_succ (M : C ⥤ A) {n : ℕ} (j : Fin (n + 1))
     (σ : ComposableArrows C (n + 1)) :
     ιCategorySimplicial M σ ≫ (categorySimplicialObject M).δ j.succ =
-      ιCategorySimplicial M ((nerve C).δ j.succ σ) :=
-  (ιCategorySimplicial_map M (SimplexCategory.δ j.succ) σ).trans <| by
-    change M.map (σ.map (homOfLE (Fin.zero_le 0))) ≫ _ = _
-    simp only [homOfLE_refl, CategoryTheory.Functor.map_id]; exact id_comp _
+      ιCategorySimplicial M ((nerve C).δ j.succ σ) := by
+  refine (ιCategorySimplicial_map M (SimplexCategory.δ j.succ) σ).trans ?_
+  have h0 : (0 : Fin (n + 2)) = (SimplexCategory.δ j.succ).toOrderHom 0 := by
+    simp [SimplexCategory.δ]
+  rw [Subsingleton.elim (homOfLE (Fin.zero_le _)) (eqToHom h0), eqToHom_map, eqToHom_map]
+  exact (congrArg (· ≫ ιCategorySimplicial M ((nerve C).δ j.succ σ))
+    (eqToHom_refl (M.obj (σ.obj 0)) _)).trans (id_comp _)
 
 @[reassoc] lemma ιCategorySimplicial_δ_last (M : C ⥤ A) {n : ℕ} (σ : ComposableArrows C (n + 1)) :
     ιCategorySimplicial M σ ≫ (categorySimplicialObject M).δ (Fin.last (n + 1)) =
@@ -159,10 +174,13 @@ def descCategorySimplicial (M : C ⥤ A) {n : ℕ} {T : A}
 /-- Degeneracies `σ i` fix vertex `0` and act as the identity on `M.obj (σ.obj 0)`. -/
 @[reassoc (attr := simp)] lemma ιCategorySimplicial_σ (M : C ⥤ A) {n : ℕ} (i : Fin (n + 1))
     (σ : ComposableArrows C n) : ιCategorySimplicial M σ ≫ (categorySimplicialObject M).σ i =
-      ιCategorySimplicial M ((nerve C).σ i σ) :=
-  (ιCategorySimplicial_map M (SimplexCategory.σ i) σ).trans <| by
-    change M.map (σ.map (homOfLE (Fin.zero_le 0))) ≫ _ = _
-    simp only [homOfLE_refl, CategoryTheory.Functor.map_id]; exact id_comp _
+      ιCategorySimplicial M ((nerve C).σ i σ) := by
+  refine (ιCategorySimplicial_map M (SimplexCategory.σ i) σ).trans ?_
+  have h0 : (0 : Fin (n + 1)) = (SimplexCategory.σ i).toOrderHom 0 := by
+    simp [SimplexCategory.σ]
+  rw [Subsingleton.elim (homOfLE (Fin.zero_le _)) (eqToHom h0), eqToHom_map, eqToHom_map]
+  exact (congrArg (· ≫ ιCategorySimplicial M ((nerve C).σ i σ))
+    (eqToHom_refl (M.obj (σ.obj 0)) _)).trans (id_comp _)
 
 @[reassoc (attr := simp)] lemma ιCategorySimplicial_map_app {M N : C ⥤ A} (α : M ⟶ N) {n : ℕ}
     (σ : ComposableArrows C n) :
@@ -815,18 +833,14 @@ def categoryChainComplexConstIso (X : A) :
   dsimp [categoryChainComplexConstIso, ιCategoryChainComplex, SSet.ιChainComplex]
   exact ι_categorySimplicialObjectConstIso_inv_app X σ
 
-private lemma ιChainComplex_chainComplexFunctor_map_app_nerve_f {X Y : A} (f : X ⟶ Y)
-    {n : ℕ} (σ : ComposableArrows C n) :
-    (nerve C).ιChainComplex σ ≫ (((SSet.chainComplexFunctor A).map f).app (nerve C)).f n =
-      f ≫ (nerve C).ιChainComplex σ := by
-  dsimp [SSet.chainComplexFunctor, SSet.ιChainComplex, SimplicialObject.whiskering, sigmaConst]
-  exact Limits.Sigma.ι_map (fun _ : (nerve C) _⦋n⦌ ↦ f) σ
-
 @[reassoc] lemma categoryChainComplexConstIso_hom_naturality {X Y : A} (f : X ⟶ Y) :
     categoryChainComplexMap ((Functor.const C).map f) ≫ (categoryChainComplexConstIso C Y).hom =
       (categoryChainComplexConstIso C X).hom ≫
         ((SSet.chainComplexFunctor A).map f).app (nerve C) := by
-  ext n σ; simp [ιChainComplex_chainComplexFunctor_map_app_nerve_f]
+  ext n σ
+  simpa only [HomologicalComplex.comp_f, ιCategoryChainComplex_map_f_assoc, Functor.const_map_app,
+    ιCategoryChainComplex_constIso_hom_f, ιCategoryChainComplex_constIso_hom_f_assoc] using
+    (SSet.ιChainComplex_chainComplexFunctor_map_app_f f (X := nerve C) σ).symm
 
 @[reassoc] lemma categoryChainComplexPushforward_constIso_hom {D : Type u} [Category.{v} D]
     (F : C ⥤ D) (X : A) :
@@ -834,15 +848,17 @@ private lemma ιChainComplex_chainComplexFunctor_map_app_nerve_f {X Y : A} (f : 
         (categoryChainComplexConstIso D X).hom =
       (categoryChainComplexConstIso C X).hom ≫ SSet.chainComplexMap (nerveMap F) X := by
   ext n σ
-  have happ : (nerveMap F).app (op ⦋n⦌) σ = (F.mapComposableArrows n).obj σ := by
-    rw [nerveMap_app]; rfl
-  simp only [HomologicalComplex.comp_f, ιCategoryChainComplex_pushforward_f_assoc,
-    ιCategoryChainComplex_constIso_hom_f]
-  change (nerve D).ιChainComplex ((F.mapComposableArrows n).obj σ) =
-    ιCategoryChainComplex ((Functor.const C).obj X) σ ≫ _
-  rw [ιCategoryChainComplex_constIso_hom_f_assoc]
-  exact (congrArg (nerve D).ιChainComplex happ.symm).trans
-    (SSet.ι_chainComplexMap_f (nerve C) (nerve D) (nerveMap F) X σ).symm
+  calc
+    ιCategoryChainComplex (F ⋙ (Functor.const D).obj X) σ ≫
+        (categoryChainComplexPushforward F ((Functor.const D).obj X) ≫
+          (categoryChainComplexConstIso D X).hom).f n
+      = (nerve D).ιChainComplex ((F.mapComposableArrows n).obj σ) := by simp
+    _ = (nerve D).ιChainComplex ((nerveMap F).app (op ⦋n⦌) σ) := by rw [nerveMap_app]; rfl
+    _ = (nerve C).ιChainComplex σ ≫ (SSet.chainComplexMap (nerveMap F) X).f n :=
+        (SSet.ι_chainComplexMap_f (nerve C) (nerve D) (nerveMap F) X σ).symm
+    _ = ιCategoryChainComplex ((Functor.const C).obj X) σ ≫
+        ((categoryChainComplexConstIso C X).hom ≫ SSet.chainComplexMap (nerveMap F) X).f n := by
+      simp
 
 section CategoryWithHomology
 
