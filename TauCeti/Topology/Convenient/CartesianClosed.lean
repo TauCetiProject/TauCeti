@@ -359,7 +359,7 @@ private def uncurryHom (g : Z ⟶ (internalHom Y).obj T) : Y ⊗ Z ⟶ T :=
     (WithGeneratedByTopology.counit X (ContinuousMapGeneratedBy X Y T)).comp g.hom.hom
   let h : ContinuousMapGeneratedBy X (Y × Z) T :=
     ContinuousMapGeneratedBy.curryEquiv.symm (g₀.toContinuousMapGeneratedBy X)
-  ofHom ⟨fun p ↦ h (tensorEquiv Y Z p),
+  ConcreteCategory.ofHom ⟨fun p ↦ h (tensorEquiv Y Z p),
     (IsGeneratedBy.continuous_iff X _).2
       (h.prop.comp (continuous_tensorEquiv Y Z).continuousGeneratedBy)⟩
 
@@ -388,16 +388,18 @@ private theorem uncurryHom_apply (g : Z ⟶ (internalHom Y).obj T) (p : ↑(Y �
     uncurryHom g p = internalHomEquiv Y T (g (snd Y Z p)) (fst Y Z p) := by
   have hp : tensorEquiv Y Z p = (fst Y Z p, snd Y Z p) :=
     Prod.ext (tensorEquiv_fst p) (tensorEquiv_snd p)
+  dsimp only [uncurryHom]
+  rw [ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk, hp,
+    ContinuousMapGeneratedBy.curryEquiv_symm_apply,
+    ContinuousMap.toContinuousMapGeneratedBy_apply_apply]
   simp only [internalHomEquiv, Equiv.trans_apply, ContinuousMapGeneratedBy.equivContinuousMap_apply,
     ContinuousMapGeneratedBy.toContinuousMap_apply]
-  change (ContinuousMapGeneratedBy.curryEquiv.symm
-    (((WithGeneratedByTopology.counit X (ContinuousMapGeneratedBy X Y T)).comp
-      g.hom.hom).toContinuousMapGeneratedBy X)) (tensorEquiv Y Z p) = _
-  rw [hp, ContinuousMapGeneratedBy.curryEquiv_symm_apply]
-  exact congrArg (fun k : ContinuousMapGeneratedBy X Y T ↦ k (fst Y Z p))
-    ((ContinuousMap.toContinuousMapGeneratedBy_apply_apply X _ (snd Y Z p)).trans
-      (WithGeneratedByTopology.counit_apply X (X := ContinuousMapGeneratedBy X Y T)
-        (g (snd Y Z p))))
+  let c := WithGeneratedByTopology.counit X (ContinuousMapGeneratedBy X Y T)
+  exact congrArg (fun k : ContinuousMapGeneratedBy X Y T ↦ k (fst Y Z p)) <|
+    (ContinuousMap.comp_apply c g.hom.hom (snd Y Z p)).trans <|
+      (congrArg c (hom_apply g (snd Y Z p))).trans
+        (WithGeneratedByTopology.counit_apply X (X := ContinuousMapGeneratedBy X Y T)
+          (g (snd Y Z p)))
 
 end InternalHom
 
