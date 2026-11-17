@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.WordLength
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
+import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # Coarsening the grading of the signed symmetric algebra

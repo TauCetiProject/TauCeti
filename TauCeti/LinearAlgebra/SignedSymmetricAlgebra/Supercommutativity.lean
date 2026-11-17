@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Grading
 public import TauCeti.RingTheory.GradedAlgebra.Coarsen
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.CharP.Invertible
+import TauCeti.RingTheory.GradedAlgebra.Supercommutativity
 
 /-!
 # Supercommutativity of the signed symmetric algebra

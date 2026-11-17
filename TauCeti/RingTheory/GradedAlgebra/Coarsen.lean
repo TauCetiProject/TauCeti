@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
+import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # Coarsening the grading of a graded algebra
@@ -32,17 +33,9 @@ of a unit of `ℤ` by an element of `ZMod 2`.
 * The instances `SetLike.GradedMul (coarsenGrading 𝒜 f)`, over a nonunital algebra,
   `SetLike.GradedMonoid (coarsenGrading 𝒜 f)` and `GradedAlgebra (coarsenGrading 𝒜 f)`, which
   apply in particular to `parityGrading 𝒜`.
-* `TauCeti.uzpow_mul_eq_of_forall_uzpow_eq`,
-  `TauCeti.mul_eq_uzpow_smul_mul_of_mem_coarsenGrading`, and
+* `TauCeti.mul_eq_uzpow_smul_mul_of_mem_coarsenGrading` and
   `TauCeti.mul_eq_uzpow_smul_mul_of_mem_parityGrading`: Koszul graded commutativity passes to
   sign-preserving coarsenings, and in particular from integer degree to parity.
-* `TauCeti.commute_of_mul_eq_uzpow_smul_mul`,
-  `TauCeti.commute_of_mul_eq_uzpow_smul_mul_of_mem_zero`,
-  `TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul`, and
-  `TauCeti.mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one`: in any ring with Koszul graded
-  commutativity over a Koszul-signed degree semiring `ι`, elements of degree `p` with
-  `(-1 : ℤˣ) ^ p = 1` (in particular degree `0`) commute with every element, and elements of degree
-  `p` with `(-1 : ℤˣ) ^ p = -1` (in particular degree `1`) square to their own negatives.
 * `TauCeti.leibniz_coarsenGrading_of_leibniz`: the graded Leibniz rule passes to sign-preserving
   coarsenings.
 -/
@@ -120,19 +113,6 @@ variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
   [CommSemiring ι] [Module ι (Additive ℤˣ)] [CommSemiring κ] [Module κ (Additive ℤˣ)]
   {𝒜 : ι → Submodule R A}
 
-omit [Semiring R] [NonUnitalNonAssocRing A] [Module R A] in
-/-- Any function between Koszul-signed degree semirings that preserves `u ^ ·` for a unit
-`u : ℤˣ` automatically preserves pairwise powers `u ^ (p * q)`. -/
-theorem uzpow_mul_eq_of_forall_uzpow_eq {u : ℤˣ} {f : ι → κ}
-    (hf : ∀ p : ι, u ^ f p = u ^ p) (p q : ι) :
-    u ^ (f p * f q) = u ^ (p * q) := by
-  rcases Int.units_eq_one_or u with rfl | rfl
-  · simp
-  · rw [uzpow_mul, uzpow_mul, hf p]
-    rcases Int.units_eq_one_or ((-1 : ℤˣ) ^ p) with h | h
-    · rw [h, one_uzpow, one_uzpow]
-    · rw [h, hf q]
-
 /-- **Koszul graded commutativity passes to any sign-preserving coarsening.** If homogeneous
 elements of degrees `p` and `q` commute up to the Koszul sign `(-1) ^ (p * q)` and `f : ι → κ`
 preserves `(-1) ^ ·`, then elements of coarsened degrees `i` and `j` commute up to
@@ -169,49 +149,6 @@ theorem leibniz_coarsenGrading_of_leibniz {d : A →ₗ[R] A} {f : ι → κ}
     abel
 
 end CoarsenComm
-
-section SignedComm
-
-variable {A : Type uA} {ι : Type uι} {σ : Type*}
-  [NonUnitalNonAssocRing A] [CommSemiring ι] [Module ι (Additive ℤˣ)] [SetLike σ A]
-
-/-- In an internally graded ring with Koszul signs, every homogeneous element whose degree `p`
-satisfies `(-1 : ℤˣ) ^ p = 1` commutes with the entire ring. -/
-theorem commute_of_mul_eq_uzpow_smul_mul [DecidableEq ι] [AddSubmonoidClass σ A] {ℬ : ι → σ}
-    [Decomposition ℬ]
-    (hcomm : ∀ {p q : ι} {a b : A},
-      a ∈ ℬ p → b ∈ ℬ q → a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
-    {p : ι} {a : A} (ha : a ∈ ℬ p) (hp : (-1 : ℤˣ) ^ p = 1) (b : A) : Commute a b := by
-  induction b using Decomposition.inductionOn ℬ with
-  | zero => simp [Commute, SemiconjBy]
-  | @homogeneous q b => simpa [Commute, SemiconjBy, uzpow_mul, hp] using hcomm ha b.2
-  | add x y hx hy => simp only [Commute, SemiconjBy, mul_add, add_mul, hx.eq, hy.eq]
-
-/-- In an internally graded ring with Koszul signs, every element of degree `0` commutes with the
-entire ring. -/
-theorem commute_of_mul_eq_uzpow_smul_mul_of_mem_zero [DecidableEq ι] [AddSubmonoidClass σ A]
-    {ℬ : ι → σ} [Decomposition ℬ]
-    (hcomm : ∀ {p q : ι} {a b : A},
-      a ∈ ℬ p → b ∈ ℬ q → a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
-    {a : A} (ha : a ∈ ℬ 0) (b : A) : Commute a b :=
-  commute_of_mul_eq_uzpow_smul_mul hcomm ha (uzpow_zero (-1)) b
-
-/-- Under Koszul graded commutativity, every homogeneous element whose degree `p` satisfies
-`(-1 : ℤˣ) ^ p = -1` squares to its own negative. -/
-theorem mul_self_eq_neg_of_mul_eq_uzpow_smul_mul {ℬ : ι → σ}
-    (hcomm : ∀ {p q : ι} {a b : A},
-      a ∈ ℬ p → b ∈ ℬ q → a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
-    {p : ι} {a : A} (ha : a ∈ ℬ p) (hp : (-1 : ℤˣ) ^ p = -1) : a * a = -(a * a) := by
-  simpa [uzpow_mul, hp] using hcomm ha ha
-
-/-- Under Koszul graded commutativity, every element of degree `1` squares to its own negative. -/
-theorem mul_self_eq_neg_of_mul_eq_uzpow_smul_mul_of_mem_one {ℬ : ι → σ}
-    (hcomm : ∀ {p q : ι} {a b : A},
-      a ∈ ℬ p → b ∈ ℬ q → a * b = ((-1 : ℤˣ) ^ (p * q)) • (b * a))
-    {a : A} (ha : a ∈ ℬ 1) : a * a = -(a * a) :=
-  mul_self_eq_neg_of_mul_eq_uzpow_smul_mul hcomm ha (uzpow_one (-1))
-
-end SignedComm
 
 section ParityComm
 
