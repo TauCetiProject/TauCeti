@@ -132,10 +132,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the retained generated set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@e20ce63fce91710739716d84b03da63037ad6e2b
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a94bf58e6032630c65da1a61a989bfb985ad8cd0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: e20ce63fce91710739716d84b03da63037ad6e2b
+          tools-ref: a94bf58e6032630c65da1a61a989bfb985ad8cd0
           project-directory: .
       - name: Restore the last published data assets
         id: retained-data
