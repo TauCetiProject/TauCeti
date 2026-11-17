@@ -31,13 +31,13 @@ derivatives `\bar∂ (g i)` agree on overlaps and glue to a global smooth functi
 setting `b i = g i - u` yields holomorphic functions with the same differences.
 
 Any two solutions `b₁` and `b₂` of the same additive Cousin problem differ by a single global
-holomorphic function on `⋃ i, U i` (`TauCeti.exists_differentiableOn_iUnion_eq_sub`).
+holomorphic function on `⋃ i, U i` (`TauCeti.exists_differentiableOn_iUnion_sub_eq`).
 
 ## Main results
 
 * `TauCeti.exists_differentiableOn_sub_eq`: every holomorphic additive cocycle on an arbitrary
   open cover of an open subset of `ℂ` is a coboundary (Cousin I).
-* `TauCeti.exists_differentiableOn_iUnion_eq_sub`: two holomorphic coboundaries with the same
+* `TauCeti.exists_differentiableOn_iUnion_sub_eq`: two holomorphic coboundaries with the same
   overlap differences differ by a global holomorphic function on the union of the cover.
 
 ## References
@@ -54,7 +54,34 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
+private theorem exists_eqOn_iUnion {ι α β : Type*} [Zero β] {U : ι → Set α} {φ : ι → α → β}
+    (hagree : ∀ i j, ∀ z ∈ U i ∩ U j, φ i z = φ j z) :
+    ∃ ψ : α → β, ∀ i, EqOn (φ i) ψ (U i) := by
+  classical
+  refine ⟨fun z ↦ if hz : z ∈ ⋃ i, U i then φ (mem_iUnion.1 hz).choose z else 0, fun i z hz ↦ ?_⟩
+  have hzU : z ∈ ⋃ k, U k := mem_iUnion.2 ⟨i, hz⟩
+  simp only [hzU, ↓reduceDIte]
+  exact hagree i _ z ⟨hz, (mem_iUnion.1 hzU).choose_spec⟩
+
 variable {ι W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
+
+private theorem cocycle_sub {U : ι → Set ℂ} {c : ι → ι → ℂ → W}
+    (hcycle : ∀ i j k, ∀ z ∈ U i ∩ U j ∩ U k, c i j z + c j k z + c k i z = 0)
+    {i j k : ι} {z : ℂ} (hz : z ∈ U i ∩ U j ∩ U k) :
+    c i k z - c j k z = c i j z := by
+  have hdiag : c i i z = 0 := by
+    have h3 : (3 : ℝ) • c i i z = 0 := by
+      rw [show (3 : ℝ) = 1 + 1 + 1 by norm_num, add_smul, add_smul, one_smul]
+      exact hcycle i i i z ⟨⟨hz.1.1, hz.1.1⟩, hz.1.1⟩
+    exact (smul_eq_zero.1 h3).resolve_left (by norm_num)
+  have hskew : c k i z = -c i k z := by
+    have h := hcycle i k i z ⟨⟨hz.1.1, hz.2⟩, hz.1.1⟩
+    rw [hdiag, add_zero] at h
+    exact eq_neg_of_add_eq_zero_right h
+  have h := hcycle i j k z hz
+  rw [hskew] at h
+  have hrew : c i k z - c j k z - c i j z = -(c i j z + c j k z + -c i k z) := by abel
+  exact eq_of_sub_eq_zero (by rw [hrew, h, neg_zero])
 
 /-- **Additive Cousin problem (Cousin I).** For an arbitrary family of open subsets
 `U : ι → Set ℂ` and a Banach-valued holomorphic cocycle `c i j` on `U i ∩ U j` satisfying
@@ -67,7 +94,6 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
     (hcycle : ∀ i j k, ∀ z ∈ U i ∩ U j ∩ U k, c i j z + c j k z + c k i z = 0) :
     ∃ b : ι → ℂ → W, (∀ i, DifferentiableOn ℂ (b i) (U i)) ∧
       ∀ i j, ∀ z ∈ U i ∩ U j, b i z - b j z = c i j z := by
-  classical
   -- Work on the open submanifold `Ω = ⋃ i, U i`, which is Hausdorff and σ-compact.
   let Ω : Opens ℂ := ⟨⋃ i, U i, isOpen_iUnion hU⟩
   have : LocallyCompactSpace Ω := Ω.isOpen.locallyCompactSpace
@@ -78,91 +104,47 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
     exact mem_iUnion.2 ⟨i, hi⟩
   obtain ⟨ρ, hρ⟩ :=
     SmoothPartitionOfUnity.exists_isSubordinate 𝓘(ℝ, ℂ) isClosed_univ V hVopen hVcover
-  -- Cocycle algebra on overlaps: `c i i = 0`, `c k i = -c i k`, hence `c i k - c j k = c i j`.
-  have hcocycle_sub {i j k : ι} {z : ℂ} (hz : z ∈ U i ∩ U j ∩ U k) :
-      c i k z - c j k z = c i j z := by
-    have hdiag : c i i z = 0 := by
-      have h3 : (3 : ℝ) • c i i z = 0 := by
-        rw [show (3 : ℝ) = 1 + 1 + 1 by norm_num, add_smul, add_smul, one_smul]
-        exact hcycle i i i z ⟨⟨hz.1.1, hz.1.1⟩, hz.1.1⟩
-      exact (smul_eq_zero.1 h3).resolve_left (by norm_num)
-    have hskew : c k i z = -c i k z := by
-      have h := hcycle i k i z ⟨⟨hz.1.1, hz.2⟩, hz.1.1⟩
-      rw [hdiag, add_zero] at h
-      exact eq_neg_of_add_eq_zero_right h
-    have h := hcycle i j k z hz
-    rw [hskew] at h
-    have hrew : c i k z - c j k z - c i j z = -(c i j z + c j k z + -c i k z) := by abel
-    exact eq_of_sub_eq_zero (by rw [hrew, h, neg_zero])
   -- Smooth splitting `g i = ∑ᶠ k, ρ k • c i k` on `U i`.
-  let g : ι → ℂ → W := fun i z ↦
-    if hz : z ∈ (Ω : Set ℂ) then ∑ᶠ k, ρ k ⟨z, hz⟩ • c i k z else 0
+  let gΩ : ι → Ω → W := fun i x ↦ ∑ᶠ k, ρ k x • c i k x
+  let g : ι → ℂ → W := fun i ↦ Subtype.val.extend (gΩ i) 0
   have hg_sub {i j : ι} {z : ℂ} (hz : z ∈ U i ∩ U j) : g i z - g j z = c i j z := by
-    have hzΩ : z ∈ (Ω : Set ℂ) := mem_iUnion.2 ⟨i, hz.1⟩
-    set x : Ω := ⟨z, hzΩ⟩
-    simp only [g, hzΩ, ↓reduceDIte]
+    set x : Ω := ⟨z, mem_iUnion.2 ⟨i, hz.1⟩⟩
+    have hgi : g i z = gΩ i x := Subtype.val_injective.extend_apply (gΩ i) 0 x
+    have hgj : g j z = gΩ j x := Subtype.val_injective.extend_apply (gΩ j) 0 x
+    rw [hgi, hgj]
+    dsimp only [gΩ]
     rw [← ρ.sum_finsupport_smul_eq_finsum x (fun k (y : Ω) ↦ c i k y),
       ← ρ.sum_finsupport_smul_eq_finsum x (fun k (y : Ω) ↦ c j k y),
       ← Finset.sum_sub_distrib]
     have hcongr : ∑ k ∈ ρ.finsupport x, (ρ k x • c i k z - ρ k x • c j k z) =
         ∑ k ∈ ρ.finsupport x, ρ k x • c i j z := by
       refine Finset.sum_congr rfl fun k hk ↦ ?_
-      have hzk : z ∈ U k := hρ k (subset_tsupport _ (ρ.mem_finsupport x |>.1 hk))
-      rw [← smul_sub, hcocycle_sub ⟨hz, hzk⟩]
+      have hzk : z ∈ U k := hρ k (subset_tsupport _ ((ρ.mem_finsupport x).1 hk))
+      rw [← smul_sub, cocycle_sub hcycle ⟨hz, hzk⟩]
     rw [hcongr, ← Finset.sum_smul, ρ.sum_finsupport x (mem_univ x), one_smul]
   have hg_smooth (i : ι) : ContDiffOn ℝ ∞ (g i) (U i) := fun z₀ hz₀ ↦ by
-    have hz₀Ω : z₀ ∈ (Ω : Set ℂ) := mem_iUnion.2 ⟨i, hz₀⟩
-    set x₀ : Ω := ⟨z₀, hz₀Ω⟩
-    set S : Finset ι := ρ.fintsupport x₀
-    have hev_sub : ∀ᶠ x in 𝓝 x₀, ρ.finsupport x ⊆ S :=
-      ρ.eventually_finsupport_subset x₀
-    have hev_nhds :
-        ∀ᶠ y in 𝓝 z₀, ∃ hy : y ∈ (Ω : Set ℂ), ρ.finsupport ⟨y, hy⟩ ⊆ S := by
-      obtain ⟨t, ht_sub, ht_open, hx₀t⟩ := mem_nhds_iff.1 hev_sub
-      obtain ⟨W₀, hW₀_open, rfl⟩ := isOpen_induced_iff.1 ht_open
-      filter_upwards [(hW₀_open.inter Ω.isOpen).mem_nhds ⟨hx₀t, hz₀Ω⟩] with y hy
-      exact ⟨hy.2, ht_sub hy.1⟩
-    have heq : g i =ᶠ[𝓝 z₀]
-        fun y ↦ ∑ k ∈ S, Subtype.val.extend (fun x : Ω ↦ ρ k x) 0 y • c i k y := by
-      filter_upwards [hev_nhds] with y ⟨hyΩ, hsub⟩
-      simp only [g, hyΩ, ↓reduceDIte]
-      rw [← ρ.sum_finsupport_smul_eq_finsum ⟨y, hyΩ⟩ (fun k (x : Ω) ↦ c i k x)]
-      refine (Finset.sum_subset hsub fun k _ hk ↦ ?_).trans (Finset.sum_congr rfl fun k _ ↦ ?_)
-      · have h0 : ρ k ⟨y, hyΩ⟩ = 0 := by
-          by_contra hne
-          exact hk ((ρ.mem_finsupport ⟨y, hyΩ⟩).2 hne)
-        simp [h0]
-      · rw [Subtype.val_injective.extend_apply (fun x : Ω ↦ ρ k x) 0 ⟨y, hyΩ⟩]
-    have hsum_smooth : ContDiffAt ℝ ∞
-        (fun y ↦ ∑ k ∈ S, Subtype.val.extend (fun x : Ω ↦ ρ k x) 0 y • c i k y) z₀ := by
-      refine ContDiffAt.sum fun k hk ↦ ?_
-      have hzk : z₀ ∈ U k := hρ k ((ρ.mem_fintsupport_iff x₀ k).1 hk)
-      have hρk : ContDiffAt ℝ ∞ (Subtype.val.extend (fun x : Ω ↦ ρ k x) 0) z₀ :=
-        contMDiffAt_iff_contDiffAt.1
-          (((ρ k).contMDiff.contMDiffAt (x := x₀)).extend_subtypeVal 0)
+    set x₀ : Ω := ⟨z₀, mem_iUnion.2 ⟨i, hz₀⟩⟩
+    have hΩ : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, W) ∞ (gΩ i) x₀ := by
+      refine ρ.contMDiffAt_finsum (g := fun k (x : Ω) ↦ c i k x) fun k hk ↦ ?_
+      have hzk : z₀ ∈ U k := hρ k hk
       have hck : ContDiffAt ℝ ∞ (c i k) z₀ :=
         (((hc i k).contDiffOn ((hU i).inter (hU k))).of_le le_top).restrict_scalars ℝ
           |>.contDiffAt (((hU i).inter (hU k)).mem_nhds ⟨hz₀, hzk⟩)
-      exact hρk.smul hck
-    exact (hsum_smooth.congr_of_eventuallyEq heq).contDiffWithinAt
+      exact contMDiffAt_subtype_iff.2 (contMDiffAt_iff_contDiffAt.2 hck)
+    exact (contMDiffAt_iff_contDiffAt.1 (hΩ.extend_subtypeVal 0)).contDiffWithinAt
   -- Glue `\bar∂ (g i)` across the cover to a global smooth datum `f` on `Ω`.
-  let f : ℂ → W := fun z ↦
-    if hz : z ∈ (Ω : Set ℂ) then conjWirtingerDeriv (g (mem_iUnion.1 hz).choose) z 1 else 0
-  have hf_eq (i : ι) {z : ℂ} (hz : z ∈ U i) : conjWirtingerDeriv (g i) z 1 = f z := by
-    have hzΩ : z ∈ (Ω : Set ℂ) := mem_iUnion.2 ⟨i, hz⟩
-    set j : ι := (mem_iUnion.1 hzΩ).choose
-    have hzj : z ∈ U j := (mem_iUnion.1 hzΩ).choose_spec
-    have heq : g i =ᶠ[𝓝 z] g j + c i j := by
-      filter_upwards [((hU i).inter (hU j)).mem_nhds ⟨hz, hzj⟩] with w hw
-      simp only [Pi.add_apply, ← hg_sub hw]
-      abel
-    have hgj : DifferentiableAt ℝ (g j) z :=
-      ((hg_smooth j).contDiffAt ((hU j).mem_nhds hzj)).differentiableAt (by simp)
-    have hcij : DifferentiableAt ℂ (c i j) z :=
-      (hc i j).differentiableAt (((hU i).inter (hU j)).mem_nhds ⟨hz, hzj⟩)
-    simp only [f, hzΩ, ↓reduceDIte]
-    rw [heq.conjWirtingerDeriv_eq, conjWirtingerDeriv_add hgj (hcij.restrictScalars ℝ), add_apply,
-      hcij.conjWirtingerDeriv_eq_zero, zero_apply, add_zero]
+  obtain ⟨f, hf_eq⟩ := exists_eqOn_iUnion (U := U)
+    (φ := fun i z ↦ conjWirtingerDeriv (g i) z 1) fun i j z ⟨hzi, hzj⟩ ↦ by
+      have heq : g i =ᶠ[𝓝 z] g j + c i j := by
+        filter_upwards [((hU i).inter (hU j)).mem_nhds ⟨hzi, hzj⟩] with w hw
+        simp only [Pi.add_apply, ← hg_sub hw]
+        abel
+      have hgj : DifferentiableAt ℝ (g j) z :=
+        ((hg_smooth j).contDiffAt ((hU j).mem_nhds hzj)).differentiableAt (by simp)
+      have hcij : DifferentiableAt ℂ (c i j) z :=
+        (hc i j).differentiableAt (((hU i).inter (hU j)).mem_nhds ⟨hzi, hzj⟩)
+      rw [heq.conjWirtingerDeriv_eq, conjWirtingerDeriv_add hgj (hcij.restrictScalars ℝ),
+        add_apply, hcij.conjWirtingerDeriv_eq_zero, zero_apply, add_zero]
   have hf_smooth : ContDiffOn ℝ ∞ f (Ω : Set ℂ) := fun z hz ↦ by
     obtain ⟨i, hzi⟩ := mem_iUnion.1 hz
     have heq : f =ᶠ[𝓝 z] fun w ↦ conjWirtingerDeriv (g i) w 1 := by
@@ -184,27 +166,19 @@ theorem exists_differentiableOn_sub_eq [CompleteSpace W] {U : ι → Set ℂ}
 /-- **Uniqueness of Cousin I solutions modulo global holomorphic functions.** If two families of
 holomorphic functions on an open cover `U : ι → Set ℂ` have the same overlap differences, their
 termwise difference glues to a single holomorphic function on `⋃ i, U i`. -/
-theorem exists_differentiableOn_iUnion_eq_sub {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i))
+theorem exists_differentiableOn_iUnion_sub_eq {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i))
     {b₁ b₂ : ι → ℂ → W} (hb₁ : ∀ i, DifferentiableOn ℂ (b₁ i) (U i))
     (hb₂ : ∀ i, DifferentiableOn ℂ (b₂ i) (U i))
     (hdiff : ∀ i j, ∀ z ∈ U i ∩ U j, b₁ i z - b₁ j z = b₂ i z - b₂ j z) :
     ∃ h : ℂ → W, DifferentiableOn ℂ h (⋃ i, U i) ∧
       ∀ i, ∀ z ∈ U i, b₁ i z - b₂ i z = h z := by
-  classical
-  let h : ℂ → W := fun z ↦
-    if hz : z ∈ ⋃ i, U i then
-      b₁ (mem_iUnion.1 hz).choose z - b₂ (mem_iUnion.1 hz).choose z
-    else 0
-  have heq (i : ι) {z : ℂ} (hz : z ∈ U i) : b₁ i z - b₂ i z = h z := by
-    have hzU : z ∈ ⋃ k, U k := mem_iUnion.2 ⟨i, hz⟩
-    set j : ι := (mem_iUnion.1 hzU).choose
-    have hzj : z ∈ U j := (mem_iUnion.1 hzU).choose_spec
-    simp only [h, hzU, ↓reduceDIte]
-    have hsub := hdiff i j z ⟨hz, hzj⟩
-    have hrew :
-        b₁ i z - b₂ i z - (b₁ j z - b₂ j z) = (b₁ i z - b₁ j z) - (b₂ i z - b₂ j z) := by
-      abel
-    exact eq_of_sub_eq_zero (by rw [hrew, hsub, sub_self])
+  obtain ⟨h, heq⟩ := exists_eqOn_iUnion (U := U)
+    (φ := fun i z ↦ b₁ i z - b₂ i z) fun i j z hz ↦ by
+      have hsub := hdiff i j z hz
+      have hrew :
+          b₁ i z - b₂ i z - (b₁ j z - b₂ j z) = (b₁ i z - b₁ j z) - (b₂ i z - b₂ j z) := by
+        abel
+      exact eq_of_sub_eq_zero (by rw [hrew, hsub, sub_self])
   refine ⟨h, fun z hz ↦ ?_, fun i z hz ↦ heq i hz⟩
   obtain ⟨i, hzi⟩ := mem_iUnion.1 hz
   have hloc : h =ᶠ[𝓝 z] fun w ↦ b₁ i w - b₂ i w := by
