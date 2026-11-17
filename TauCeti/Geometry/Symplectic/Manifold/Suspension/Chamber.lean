@@ -93,9 +93,6 @@ theorem apply_self_sub_apply_canonical_eq (hv : B v v = 0) (ht : B t t = 0) (hvt
     (htv : B t v = 1) (he : IsOfFinAddOrder (e - (a • v + c • t)))
     (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
     B e e - B κ e = 2 * c * (a + 1 - g) := by
-  -- `apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub` is stated for the default `ℤ`-module
-  -- structure; any two `ℤ`-module structures agree, so substitute it for the given one.
-  obtain rfl := Subsingleton.elim ‹Module ℤ H› (AddCommGroup.toIntModule H)
   rw [B.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub hv ht hvt htv he,
     B.apply_eq_apply_of_isOfFinAddOrder_sub_left hκ,
     B.apply_eq_apply_of_isOfFinAddOrder_sub_right he]
