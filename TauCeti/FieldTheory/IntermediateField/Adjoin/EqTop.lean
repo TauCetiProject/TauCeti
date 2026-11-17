@@ -56,8 +56,9 @@ a ring `A`, then `L` is the fraction field of the `A`-algebra they generate.
   semiring are determined by their values on a generating set.
 * `TauCeti.IntermediateField.algEquiv_ext_of_adjoin_eq_top`: two algebra isomorphisms agreeing on
   a generating set are equal.
-* `TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top`: an automorphism fixing each
-  element of a generating set is `1`.
+* `TauCeti.IntermediateField.algEquiv_eq_one_of_adjoin_eq_top` and
+  `TauCeti.IntermediateField.algEquiv_eq_one_iff_of_adjoin_eq_top`: an automorphism is `1` if and
+  only if it fixes each element of a generating set.
 * `TauCeti.IntermediateField.adjoin_image_eq_top_of_ringEquiv`: a ring isomorphism carrying `F`
   into `F'` carries a generating set over `F` to a generating set over `F'`.
 * `TauCeti.IntermediateField.adjoin_sup_fieldRange_eq_top`: for a tower `K ⊆ L ⊆ M` in which
@@ -125,6 +126,12 @@ the identity. -/
 theorem algEquiv_eq_one_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
     {σ : E ≃ₐ[F] E} (hfix : ∀ x ∈ s, σ x = x) : σ = 1 :=
   algEquiv_ext_of_adjoin_eq_top htop (σ := σ) (τ := 1) (by simpa using hfix)
+
+/-- An `F`-algebra automorphism of `E` is the identity if and only if it fixes every element of a
+set generating `E` over `F`. -/
+theorem algEquiv_eq_one_iff_of_adjoin_eq_top (htop : IntermediateField.adjoin F s = ⊤)
+    {σ : E ≃ₐ[F] E} : σ = 1 ↔ ∀ x ∈ s, σ x = x :=
+  ⟨fun h x _ ↦ by rw [h, AlgEquiv.one_apply], algEquiv_eq_one_of_adjoin_eq_top htop⟩
 
 /-- **Generating sets transport along semilinear ring isomorphisms.** Let `f : E ≃+* E'` be a ring
 isomorphism carrying `F` into `F'` along a ring homomorphism `σ : F →+* F'`, as a Galois

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Galois.Basic
+import TauCeti.GroupTheory.Index.Basic
 
 /-!
 # Restricting automorphisms along an embedding of a normal extension
@@ -49,6 +50,8 @@ of restriction of scalars.
 * `AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one` and
   `AlgEquiv.range_restrictScalarsHom_eq_ker_restrictNormalHom`: the restriction kernel is
   the image of restriction of scalars.
+* `AlgEquiv.index_range_restrictScalarsHom`: in a finite Galois tower `K ⊆ L ⊆ M`, the image of
+  `Gal(M/L)` in `Gal(M/K)` has index `[L : K]`.
 * `AlgEquiv.restrictNormal_mul_restrictScalars`: multiplying by an automorphism of the top field
   over the intermediate one does not change the restriction.
 * `AlgEquiv.restrictNormalHom_adjoin_simple_eq_one_iff`: restriction to a normal simple
@@ -274,6 +277,20 @@ theorem AlgEquiv.restrictNormal_mul_restrictScalars (σ : M ≃ₐ[K] M) (τ : M
     AlgEquiv.restrictNormalHom_apply_eq_restrictNormal,
     (AlgEquiv.mem_range_restrictScalarsHom_iff_restrictNormal_eq_one K L M
       (τ.restrictScalars K)).1 ⟨τ, rfl⟩, mul_one]
+
+omit [Normal K L] in
+/-- In a finite Galois tower `K ⊆ L ⊆ M`, the image of `Gal(M/L)` in `Gal(M/K)` under restriction
+of scalars has index `[L : K]`. -/
+@[simp]
+theorem AlgEquiv.index_range_restrictScalarsHom [FiniteDimensional K M] [IsGalois K M] :
+    (AlgEquiv.restrictScalarsHom K : Gal(M/L) →* Gal(M/K)).range.index =
+      Module.finrank K L := by
+  have : IsGalois L M := IsGalois.tower_top_of_isGalois K L M
+  have : FiniteDimensional L M := Module.Finite.right K L M
+  exact TauCeti.index_eq_of_natCard_eq_mul (Module.finrank_pos (R := L) (M := M))
+    (by rw [← Nat.card_congr (MonoidHom.ofInjective (AlgEquiv.restrictScalarsHom_injective K
+          (S := L) (A := M))).toEquiv, IsGalois.card_aut_eq_finrank])
+    (by rw [IsGalois.card_aut_eq_finrank K M, ← Module.finrank_mul_finrank K L M, mul_comm])
 
 end Tower
 
