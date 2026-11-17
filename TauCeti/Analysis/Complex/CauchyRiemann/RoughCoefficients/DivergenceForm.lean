@@ -10,9 +10,11 @@ public import TauCeti.Analysis.Complex.Wirtinger.DivergenceLaplace
 import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
-import TauCeti.Analysis.Sobolev.Local.Holder
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
+import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.Topology.MetricSpace.Thickening
 import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
@@ -93,28 +95,33 @@ omit [FiniteDimensional ℝ V] in
 private theorem crPairing_apply (v w : V) (A : V →L[ℝ] V) : crPairing v w A = ⟪v, A w⟫_ℝ := by
   simp [crPairing]
 
-/-- A bilinear pairing of an integrable function vanishing off a compact set `K` with a function
-continuous on `K` is integrable. -/
-private theorem integrable_bilin_of_continuousOn {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] (B : E →L[ℝ] F →L[ℝ] ℝ)
-    {a : ℂ → E} (ha : Integrable a) {K : Set ℂ} (hK : IsCompact K) (haK : ∀ z ∉ K, a z = 0)
-    {M : ℂ → F} (hM : ContinuousOn M K) : Integrable (fun z => B (a z) (M z)) := by
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hM
-  have heq : (fun z => B (a z) (M z)) = fun z => B (a z) (K.indicator M z) := by
-    funext z
-    by_cases hz : z ∈ K
-    · rw [Set.indicator_of_mem hz]
-    · simp [haK z hz]
-  rw [heq]
-  refine B.integrable_of_bilin_of_bdd_right (max C 0) ha
-    ((aestronglyMeasurable_indicator_iff hK.measurableSet).2
-      (hM.aestronglyMeasurable hK.measurableSet))
-    (.of_forall fun z => ?_)
-  by_cases hz : z ∈ K
-  · rw [Set.indicator_of_mem hz]
-    exact (hC z hz).trans (le_max_left _ _)
-  · rw [Set.indicator_of_notMem hz, norm_zero]
-    exact le_max_right _ _
+/-- The Hölder condition `1/p + 1/q ≤ 1` forces `1 ≤ p`. -/
+private theorem one_le_left_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ p :=
+  ENNReal.inv_le_one.1 (le_self_add.trans hpq)
+
+/-- The Hölder condition `1/p + 1/q ≤ 1` forces `1 ≤ q`. -/
+private theorem one_le_right_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ q :=
+  ENNReal.inv_le_one.1 (le_add_self.trans hpq)
+
+omit [FiniteDimensional ℝ V] in
+/-- The directional weak derivatives `∂_e J` of the coefficient are locally `Lᵖ`. -/
+private theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
+  hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
+
+omit [FiniteDimensional ℝ V] in
+/-- A test function times any field vanishes off the support of the test function. -/
+private theorem smul_eq_zero_of_notMem_tsupport (χ : 𝓓(Ω, ℝ)) (w : ℂ → V) {z : ℂ}
+    (hz : z ∉ tsupport (χ : ℂ → ℝ)) : χ z • w z = 0 := by
+  simp [image_eq_zero_of_notMem_tsupport hz]
+
+omit [FiniteDimensional ℝ V] in
+/-- The field `a = ∂_s χ ξ + ∂_t χ J ξ + χ ((∂_t J) ξ - S ξ + η)` vanishes off the support
+of `χ`. -/
+private theorem crPairingField_eq_zero_of_notMem_tsupport (χ : 𝓓(Ω, ℝ)) {z : ℂ}
+    (hz : z ∉ tsupport (χ : ℂ → ℝ)) : fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
+      χ z • (DJ z I (ξ z) - S z (ξ z) + η z) = 0 := by
+  simp [image_eq_zero_of_notMem_tsupport hz, fderiv_of_notMem_tsupport ℝ hz]
 
 omit [FiniteDimensional ℝ V] in
 /-- A test function times a locally `Lˢ` function on `Ω` is in `Lˢ` of the plane. -/
@@ -131,19 +138,12 @@ private theorem IsWeakCRSolution.integrable_crPairingField
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) :
     Integrable (fun z => fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
       χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hq1 : 1 ≤ q := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-  have hξ1 : MemLpLoc 1 Ω ξ := h.memLpLoc.mono_exponent hq1
-  have hJξ : MemLpLoc 1 Ω (fun z => J z (ξ z)) := (memLpLoc_one_iff_locallyIntegrableOn hloc).2
-    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply h.memLpLoc hpq hloc)
-  have hDJξ : MemLpLoc 1 Ω (fun z => DJ z I (ξ z)) :=
-    (memLpLoc_one_iff_locallyIntegrableOn hloc).2
-      (MemLpLoc.locallyIntegrableOn_clm_apply
-        (hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I))
-        h.memLpLoc hpq hloc)
-  have hSξ : MemLpLoc 1 Ω (fun z => S z (ξ z)) := (memLpLoc_one_iff_locallyIntegrableOn hloc).2
-    (hc.memLpLoc_zeroth.locallyIntegrableOn_clm_apply h.memLpLoc hpq hloc)
-  have hη : MemLpLoc 1 Ω η := (memLpLoc_one_iff_locallyIntegrableOn hloc).2 h.locallyIntegrableOn
+  have hξ1 : MemLpLoc 1 Ω ξ := h.memLpLoc.mono_exponent (one_le_right_of_inv_add_inv_le_one hpq)
+  have hJξ := hc.memLpLoc_coeff.memLpLoc_one_clm_apply h.memLpLoc hpq
+  have hDJξ := (hc.memLpLoc_deriv_apply I).memLpLoc_one_clm_apply h.memLpLoc hpq
+  have hSξ := hc.memLpLoc_zeroth.memLpLoc_one_clm_apply h.memLpLoc hpq
+  have hη : MemLpLoc 1 Ω η :=
+    (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 h.locallyIntegrableOn
   have hW : MemLpLoc 1 Ω (fun z => DJ z I (ξ z) - S z (ξ z) + η z) := (hDJξ.sub hSξ).add hη
   have hd (e : ℂ) : (fun z => fderiv ℝ (χ : ℂ → ℝ) z e) = ⇑(∂_{e} χ : 𝓓(Ω, ℝ)) :=
     funext fun z => (TestFunction.lineDerivOp_apply_eq_fderiv χ e z).symm
@@ -152,7 +152,6 @@ private theorem IsWeakCRSolution.integrable_crPairingField
   have h3 := memLp_testFunction_smul χ hW
   rw [← hd] at h1 h2
   exact memLp_one_iff_integrable.1 ((h1.add h2).add h3)
-
 
 /-- **The test function `χ Aᵀ v`.** For a smooth field `A` of operators, a test function `χ` and a
 vector `v`, the function `χ Aᵀ v` is a test function `Φ`, and pointwise
@@ -205,30 +204,21 @@ private theorem IsWeakCRSolution.integral_crPairing_of_contDiff
         (∫ z, crPairing v (χ z • ξ z) (fderiv ℝ A z 1)) +
         ∫ z, crPairing v (χ z • J z (ξ z)) (fderiv ℝ A z I) = 0 := by
   have hK : IsCompact (tsupport (χ : ℂ → ℝ)) := χ.hasCompactSupport
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hq1 : 1 ≤ q := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-  have hξ1 : MemLpLoc 1 Ω ξ := h.memLpLoc.mono_exponent hq1
-  have hJξ : MemLpLoc 1 Ω (fun z => J z (ξ z)) := (memLpLoc_one_iff_locallyIntegrableOn hloc).2
-    (hc.memLpLoc_coeff.locallyIntegrableOn_clm_apply h.memLpLoc hpq hloc)
+  have hξ1 : MemLpLoc 1 Ω ξ := h.memLpLoc.mono_exponent (one_le_right_of_inv_add_inv_le_one hpq)
+  have hJξ := hc.memLpLoc_coeff.memLpLoc_one_clm_apply h.memLpLoc hpq
   have ha := h.integrable_crPairingField hc hpq χ
   have hb₁ : Integrable (fun z => χ z • ξ z) :=
     memLp_one_iff_integrable.1 (memLp_testFunction_smul χ hξ1)
   have hb₂ : Integrable (fun z => χ z • J z (ξ z)) :=
     memLp_one_iff_integrable.1 (memLp_testFunction_smul χ hJξ)
-  have hχK (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : χ z = 0 ∧ fderiv ℝ χ z = 0 :=
-    ⟨image_eq_zero_of_notMem_tsupport hz, fderiv_of_notMem_tsupport ℝ hz⟩
-  have haK (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : fderiv ℝ χ z 1 • ξ z +
-      fderiv ℝ χ z I • J z (ξ z) + χ z • (DJ z I (ξ z) - S z (ξ z) + η z) = 0 := by
-    simp [(hχK z hz).1, (hχK z hz).2]
-  have hbK₁ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : χ z • ξ z = 0 := by
-    simp [(hχK z hz).1]
-  have hbK₂ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : χ z • J z (ξ z) = 0 := by
-    simp [(hχK z hz).1]
-  have hP := integrable_bilin_of_continuousOn (crPairing v) ha hK haK hA.continuous.continuousOn
+  have hP := (crPairing v).integrable_of_bilin_of_continuousOn ha hK
+    (fun z hz => crPairingField_eq_zero_of_notMem_tsupport χ hz) hA.continuous.continuousOn
   have hA' (e : ℂ) : ContinuousOn (fun z => fderiv ℝ A z e) (tsupport (χ : ℂ → ℝ)) :=
     ((hA.continuous_fderiv (by simp)).clm_apply continuous_const).continuousOn
-  have hQ₁ := integrable_bilin_of_continuousOn (crPairing v) hb₁ hK hbK₁ (hA' 1)
-  have hQ₂ := integrable_bilin_of_continuousOn (crPairing v) hb₂ hK hbK₂ (hA' I)
+  have hQ₁ := (crPairing v).integrable_of_bilin_of_continuousOn hb₁ hK
+    (fun z hz => smul_eq_zero_of_notMem_tsupport χ ξ hz) (hA' 1)
+  have hQ₂ := (crPairing v).integrable_of_bilin_of_continuousOn hb₂ hK
+    (fun z hz => smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz) (hA' I)
   refine ⟨hP, hQ₁, hQ₂, ?_⟩
   obtain ⟨Φ, hpt⟩ := exists_testFunction_inner_crFormalAdjoint_sub_inner (J := J) (DJ := DJ)
     (S := S) (ξ := ξ) (η := η) χ v hA
@@ -241,51 +231,6 @@ private theorem IsWeakCRSolution.integral_crPairing_of_contDiff
   · exact hP.add hQ₁
 
 /-! ### Passing to the coefficient `J` by mollification -/
-
-omit [FiniteDimensional ℝ V] in
-/-- A compact subset `K` of `Ω` has an open neighbourhood `U` with compact closure in `Ω`
-containing the closed balls of radius less than some `δ > 0` about the points of `K`. -/
-private theorem exists_opens_closedBall_subset {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
-    ∃ U : Opens ℂ, ∃ δ > 0, IsCompact (closure (U : Set ℂ)) ∧ closure (U : Set ℂ) ⊆ Ω ∧
-      ∀ z ∈ K, ∀ r < δ, closedBall z r ⊆ U := by
-  obtain ⟨δ, hδ, hδΩ⟩ := hK.exists_cthickening_subset_open Ω.isOpen hKΩ
-  have hcl : closure (thickening δ K) ⊆ cthickening δ K := closure_thickening_subset_cthickening δ K
-  exact ⟨⟨thickening δ K, isOpen_thickening⟩, δ, hδ,
-    hK.cthickening.of_isClosed_subset isClosed_closure hcl, hcl.trans hδΩ,
-    fun z hz r hr => (closedBall_subset_ball hr).trans (ball_subset_thickening hz δ)⟩
-
-/-- On `U`, the derivative of the mollification of the zero extension of a weakly differentiable
-function `u`, in a direction `e`, is the mollification of the zero extension of its weak
-derivative in that direction, at every point whose closed ball of the bump radius lies in `U`. -/
-private theorem fderiv_normed_convolution_indicator_apply {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {U : Opens ℂ} {u : ℂ → F} {Du : ℂ → ℂ →L[ℝ] F}
-    (hu : HasWeakFDerivOn volume U u Du) (hup : MemLp u p (volume.restrict U))
-    (hDup : MemLp Du p (volume.restrict U)) (hp : 1 ≤ p) (φ : ContDiffBump (0 : ℂ)) {z : ℂ}
-    (hz : closedBall z φ.rOut ⊆ U) (e : ℂ) :
-    fderiv ℝ (φ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (U : Set ℂ).indicator u)
-        z e =
-      (φ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
-        (U : Set ℂ).indicator (fun z => Du z e)) z := by
-  have h1 := hu.fderiv_indicator_convolution_normed hup hDup hp hp φ z hz
-  rw [convolution_flip, convolution_flip] at h1
-  have hloc : LocallyIntegrable ((U : Set ℂ).indicator Du) volume :=
-    MemLp.locallyIntegrable
-      ((memLp_indicator_iff_restrict U.isOpen.measurableSet.nullMeasurableSet).2 hDup) hp
-  have hint := ((φ.hasCompactSupport_normed (μ := volume)).convolutionExists_left
-    (ContinuousLinearMap.lsmul ℝ ℝ) φ.continuous_normed hloc) z
-  rw [h1, convolution_def, convolution_def, ContinuousLinearMap.integral_apply hint]
-  refine integral_congr_ae (.of_forall fun t => ?_)
-  by_cases ht : z - t ∈ (U : Set ℂ)
-  · simp [Set.indicator_of_mem ht]
-  · simp [Set.indicator_of_notMem ht]
-
-/-- The directional derivatives of an `Lᵖ` field of derivatives are in `Lᵖ`. This is
-`ContinuousLinearMap.comp_memLp'` for evaluation at `e`, stated for an arbitrary codomain `F`:
-applied directly to `F = V →L[ℝ] V` for an inner product space `V`, the instance search for the
-norm structure of `ℂ →L[ℝ] V →L[ℝ] V` does not terminate in reasonable time. -/
-private theorem memLp_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure ℂ}
-    {Du : ℂ → ℂ →L[ℝ] F} (hDu : MemLp Du p μ) (e : ℂ) : MemLp (fun z => Du z e) p μ :=
-  (ContinuousLinearMap.apply ℝ F e).comp_memLp' hDu
 
 /-- **Passing to the limit in the pairings.** If the pairings of fixed fields `a ∈ L¹` and
 `b₁, b₂ ∈ Lᵖ'` with the mollifications of `g ∈ L^∞` and `g₁, g₂ ∈ Lᵖ` add up to zero along a
@@ -333,10 +278,10 @@ private theorem IsWeakCRSolution.integral_crPairing_normed_convolution
     refine integral_congr_ae (.of_forall fun z => ?_)
     dsimp only
     by_cases hz : z ∈ tsupport (χ : ℂ → ℝ)
-    · rw [fderiv_normed_convolution_indicator_apply hwJ hJpU hDJU hp1 φ (hball z hz)]
+    · rw [hwJ.fderiv_normed_convolution_indicator_apply hJpU hDJU hp1 hp1 φ (hball z hz)]
     · simp [hw z hz]
-  rwa [e 1 _ fun z hz => by simp [image_eq_zero_of_notMem_tsupport hz],
-    e I _ fun z hz => by simp [image_eq_zero_of_notMem_tsupport hz]] at h0
+  rwa [e 1 _ fun z hz => smul_eq_zero_of_notMem_tsupport χ ξ hz,
+    e I _ fun z hz => smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz] at h0
 
 /-- The fields `χ ξ` and `χ J ξ` paired with the derivative of `J` lie in the conjugate exponent
 of `p`, when `J` is locally bounded and `1/p + 1/q ≤ 1`. -/
@@ -344,7 +289,7 @@ private theorem IsWeakCRSolution.memLp_conjExponent_smul (h : IsWeakCRSolution q
     (hJ : MemLpLoc ⊤ Ω J) (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) :
     MemLp (fun z => χ z • ξ z) p.conjExponent volume ∧
       MemLp (fun z => χ z • J z (ξ z)) p.conjExponent volume := by
-  have hp1 : 1 ≤ p := ENNReal.inv_le_one.1 (le_self_add.trans hpq)
+  have hp1 := one_le_left_of_inv_add_inv_le_one hpq
   have : Fact (1 ≤ p) := ⟨hp1⟩
   have hp'q : p.conjExponent ≤ q := by
     have h1 : p⁻¹ + p.conjExponent⁻¹ = 1 := by
@@ -354,18 +299,9 @@ private theorem IsWeakCRSolution.memLp_conjExponent_smul (h : IsWeakCRSolution q
   exact ⟨memLp_testFunction_smul χ (h.memLpLoc.mono_exponent hp'q),
     memLp_testFunction_smul χ ((hJ.clm_apply h.memLpLoc).mono_exponent hp'q)⟩
 
-/-- A sequence of bumps whose radii are less than `δ` and tend to zero. -/
-private theorem exists_seq_contDiffBump_rOut_lt {δ : ℝ} (hδ : 0 < δ) :
-    ∃ φ : ℕ → ContDiffBump (0 : ℂ), Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) ∧
-      ∀ n, (φ n).rOut < δ :=
-  ⟨fun n => ⟨δ / (n + 2) / 2, δ / (n + 2), by positivity, half_lt_self (by positivity)⟩,
-    tendsto_const_nhds.div_atTop (tendsto_atTop_add_const_right _ 2 tendsto_natCast_atTop_atTop),
-    fun n => div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)])⟩
-
 /-- **The weak equation tested against `χ Jᵀ v`.** The identity of
 `IsWeakCRSolution.integral_crPairing_of_contDiff` also holds for the coefficient `J` itself, paired
-with its weak derivative `DJ`, when `J` is locally bounded and `p < ∞`. The proof applies it to the
-mollifications of `J` and passes to the limit. -/
+with its weak derivative `DJ`, when `J` is locally bounded. -/
 private theorem IsWeakCRSolution.integral_crPairing_coeff
     (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hJ : MemLpLoc ⊤ Ω J) (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) (v : V) :
@@ -377,19 +313,19 @@ private theorem IsWeakCRSolution.integral_crPairing_coeff
           χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) (J z)) +
         (∫ z, crPairing v (χ z • ξ z) (DJ z 1)) +
         ∫ z, crPairing v (χ z • J z (ξ z)) (DJ z I) = 0 := by
-  have hK : IsCompact (tsupport (χ : ℂ → ℝ)) := χ.hasCompactSupport
-  have hp1 : 1 ≤ p := ENNReal.inv_le_one.1 (le_self_add.trans hpq)
+  have hp1 := one_le_left_of_inv_add_inv_le_one hpq
   have : Fact (1 ≤ p) := ⟨hp1⟩
   obtain ⟨hb₁, hb₂⟩ := h.memLp_conjExponent_smul hJ hpq χ
-  have hw₁ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : χ z • ξ z = 0 := by
-    simp [image_eq_zero_of_notMem_tsupport hz]
-  have hw₂ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : χ z • J z (ξ z) = 0 := by
-    simp [image_eq_zero_of_notMem_tsupport hz]
+  have hw₁ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) := smul_eq_zero_of_notMem_tsupport χ ξ hz
+  have hw₂ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) :=
+    smul_eq_zero_of_notMem_tsupport χ (fun z => J z (ξ z)) hz
   have ha := h.integrable_crPairingField hc hpq χ
   -- the zero extensions of `J` and `DJ` off a neighbourhood `U` of the support of `χ`
-  obtain ⟨U, δ, hδ, hUc, hUΩ, hball⟩ := exists_opens_closedBall_subset hK χ.tsupport_subset
+  obtain ⟨U₀, hU₀, δ, hδ, hUc, hUΩ, hball⟩ :=
+    IsCompact.exists_isOpen_closedBall_subset χ.hasCompactSupport Ω.isOpen χ.tsupport_subset
+  let U : Opens ℂ := ⟨U₀, hU₀⟩
   have hKU (z : ℂ) (hz : z ∈ tsupport (χ : ℂ → ℝ)) : z ∈ U :=
-    hball z hz 0 hδ (mem_closedBall_self le_rfl)
+    hball z hz 0 hδ.le (mem_closedBall_self le_rfl)
   have hUm : MeasurableSet (U : Set ℂ) := U.isOpen.measurableSet
   have hJpU : MemLp J p (volume.restrict U) :=
     hc.memLpLoc_coeff.memLp_restrict_of_isCompact_closure hUc hUΩ
@@ -399,24 +335,25 @@ private theorem IsWeakCRSolution.integral_crPairing_coeff
     (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2
       (hJ.memLp_restrict_of_isCompact_closure hUc hUΩ)
   have hDg (e : ℂ) : MemLp ((U : Set ℂ).indicator (fun z => DJ z e)) p volume :=
-    (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2 (memLp_apply hDJU e)
+    (memLp_indicator_iff_restrict hUm.nullMeasurableSet).2
+      ((hc.memLpLoc_deriv_apply e).memLp_restrict_of_isCompact_closure hUc hUΩ)
   have hwJ : HasWeakFDerivOn volume U J DJ :=
     hc.hasWeakFDerivOn.mono fun x hx => hUΩ (subset_closure hx)
-  -- mollifiers of radius less than `δ`
-  obtain ⟨φ, hφ, hφδ⟩ := exists_seq_contDiffBump_rOut_lt hδ
   have key := integral_add_eq_zero_of_forall_normed_convolution (crPairing v)
-    (memLp_one_iff_integrable.2 ha) hb₁ hb₂ hg (hDg 1) (hDg I) hφ fun n =>
+    (memLp_one_iff_integrable.2 ha) hb₁ hb₂ hg (hDg 1) (hDg I)
+    (ContDiffBump.tendsto_rOut_shrinking hδ) fun n =>
       h.integral_crPairing_normed_convolution hc hpq χ v hwJ hJpU hDJU hp1
-        (hg.locallyIntegrable le_top) (φ n) fun z hz => hball z hz _ (hφδ n)
+        (hg.locallyIntegrable le_top) (ContDiffBump.shrinking hδ n) fun z hz => hball z hz _
+          ((ContDiffBump.rOut_shrinking hδ n).trans_le
+            (div_le_self hδ.le (le_add_of_nonneg_left n.cast_nonneg)))
   -- off `U` the fields vanish, so the zero extensions can be replaced by `J` and `DJ`
   have eU (w : ℂ → V) (hw : ∀ z ∉ tsupport (χ : ℂ → ℝ), w z = 0) (f : ℂ → V →L[ℝ] V) (z : ℂ) :
       crPairing v (w z) ((U : Set ℂ).indicator f z) = crPairing v (w z) (f z) := by
     by_cases hz : z ∈ (U : Set ℂ)
     · simp only [Set.indicator_of_mem hz]
     · simp [hw z fun h' => hz (hKU z h')]
-  have ha0 (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) : fderiv ℝ χ z 1 • ξ z +
-      fderiv ℝ χ z I • J z (ξ z) + χ z • (DJ z I (ξ z) - S z (ξ z) + η z) = 0 := by
-    simp [image_eq_zero_of_notMem_tsupport hz, fderiv_of_notMem_tsupport ℝ hz]
+  have ha0 (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) :=
+    crPairingField_eq_zero_of_notMem_tsupport (J := J) (DJ := DJ) (S := S) (ξ := ξ) (η := η) χ hz
   have hP := memLp_one_iff_integrable.1
     ((crPairing v).memLp_of_bilin 1 (memLp_one_iff_integrable.2 ha) hg)
   have hQ₁ := memLp_one_iff_integrable.1 ((crPairing v).memLp_of_bilin 1 hb₁ (hDg 1))
@@ -488,25 +425,20 @@ theorem IsWeakCRSolution.integral_laplacian_smul_eq (h : IsWeakCRSolution q Ω J
       -∫ z, (fderiv ℝ (ψ : ℂ → ℝ) z 1 • (η z + DJ z I (ξ z) - S z (ξ z)) +
         fderiv ℝ (ψ : ℂ → ℝ) z I • (-J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
           DJ z I (J z (ξ z)))) := by
-  have hloc := Ω.isOpen.isLocallyClosed
-  have hq1 : 1 ≤ q := ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-  have hl (A : ℂ → V →L[ℝ] V) (hA : MemLpLoc p Ω A) {w : ℂ → V} (hw : MemLpLoc q Ω w) :
-      MemLpLoc 1 Ω (fun z => A z (w z)) :=
-    (memLpLoc_one_iff_locallyIntegrableOn hloc).2 (hA.locallyIntegrableOn_clm_apply hw hpq hloc)
-  have hDJ (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
   have hF : MemLpLoc 1 Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
-    (((memLpLoc_one_iff_locallyIntegrableOn hloc).2 h.locallyIntegrableOn).add
-      (hl _ (hDJ I) h.memLpLoc)).sub (hl _ hc.memLpLoc_zeroth h.memLpLoc)
+    (((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 h.locallyIntegrableOn).add
+      ((hc.memLpLoc_deriv_apply I).memLpLoc_one_clm_apply h.memLpLoc hpq)).sub
+      (hc.memLpLoc_zeroth.memLpLoc_one_clm_apply h.memLpLoc hpq)
   have hG : MemLpLoc 1 Ω (fun z => -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
       DJ z I (J z (ξ z))) :=
-    ((hJ.clm_apply hF).neg.sub (hl _ (hDJ 1) h.memLpLoc)).sub
-      (hl _ (hDJ I) (hJ.clm_apply (r := q) h.memLpLoc))
+    ((hJ.clm_apply hF).neg.sub ((hc.memLpLoc_deriv_apply 1).memLpLoc_one_clm_apply h.memLpLoc
+      hpq)).sub ((hc.memLpLoc_deriv_apply I).memLpLoc_one_clm_apply
+        (hJ.clm_apply (r := q) h.memLpLoc) hpq)
   have hd (e : ℂ) : (fun z => fderiv ℝ (ψ : ℂ → ℝ) z e) = ⇑(∂_{e} ψ : 𝓓(Ω, ℝ)) :=
     funext fun z => (TestFunction.lineDerivOp_apply_eq_fderiv ψ e z).symm
   have hL : Integrable (fun z => Δ (ψ : ℂ → ℝ) z • ξ z) := by
     have h1 := memLp_testFunction_smul (LineDeriv.laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) ψ)
-      (h.memLpLoc.mono_exponent hq1)
+      (h.memLpLoc.mono_exponent (one_le_right_of_inv_add_inv_le_one hpq))
     simp only [TestFunction.laplacianCLM_apply] at h1
     exact memLp_one_iff_integrable.1 h1
   have hR : Integrable (fun z => fderiv ℝ (ψ : ℂ → ℝ) z 1 • (η z + DJ z I (ξ z) - S z (ξ z)) +
@@ -544,14 +476,13 @@ theorem IsWeakCRSolution.memWkpLoc_one (h : IsWeakCRSolution q Ω J DJ S ξ η)
     rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p q r]
     exact (ENNReal.inv_lt_one.2 hr).le
   have hrq : r ≤ q := ENNReal.HolderTriple.le q p r
-  have hDJ (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
-    hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
   have hF : MemLpLoc r Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
-    (hη.add ((hDJ I).clm_apply h.memLpLoc)).sub (hc.memLpLoc_zeroth.clm_apply h.memLpLoc)
+    (hη.add ((hc.memLpLoc_deriv_apply I).clm_apply h.memLpLoc)).sub
+      (hc.memLpLoc_zeroth.clm_apply h.memLpLoc)
   have hG : MemLpLoc r Ω (fun z => -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
       DJ z I (J z (ξ z))) :=
-    ((hJ.clm_apply hF).neg.sub ((hDJ 1).clm_apply h.memLpLoc)).sub
-      ((hDJ I).clm_apply (hJ.clm_apply (r := q) h.memLpLoc))
+    ((hJ.clm_apply hF).neg.sub ((hc.memLpLoc_deriv_apply 1).clm_apply h.memLpLoc)).sub
+      ((hc.memLpLoc_deriv_apply I).clm_apply (hJ.clm_apply (r := q) h.memLpLoc))
   exact memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top
     (h.memLpLoc.locallyIntegrableOn (hr.le.trans hrq) Ω.isOpen.isLocallyClosed) hF hG
     fun ψ => h.integral_laplacian_smul_eq hc hJ hJJ hpq ψ
