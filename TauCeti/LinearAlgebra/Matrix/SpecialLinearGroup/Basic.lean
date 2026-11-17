@@ -84,6 +84,8 @@ proof is independent of the source's.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
   `SL₂(R)` matrix over a commutative ring gives the Bézout relation `a d - b c = 1` for its top
   row `(a, b)`.
+* `Matrix.SpecialLinearGroup.ext_of_isRegular_apply_zero_zero`: two matrices in `SL₂(R)` with
+  regular `(0, 0)` entry and equal `(0, 0)`, `(0, 1)`, and `(1, 0)` entries are equal.
 * `Matrix.SpecialLinearGroup.centerMulEquivRootsOfUnityFin`: the center of `SL(Fin n, A)` is
   `rootsOfUnity n A` when `0 < n`.
 * `Matrix.SpecialLinearGroup.mem_center_iff_eq_one_or_eq_neg_one`: the centre of `SL₂` is
@@ -283,6 +285,20 @@ relation `a d - b c = 1`. -/
 lemma mul_sub_mul_eq_one_of_lowerRow {R : Type*} [CommRing R] {c d : R} {σ : SL(2, R)}
     (hσ10 : σ 1 0 = c) (hσ11 : σ 1 1 = d) : σ 0 0 * d - σ 0 1 * c = 1 := by
   simpa only [hσ10, hσ11] using fin_two_mul_sub_mul_eq_one σ
+
+/-- Two matrices in `SL₂(R)` with regular `(0, 0)` entry are determined by their `(0, 0)`,
+`(0, 1)`, and `(1, 0)` entries, since the determinant-one relation then pins down their
+`(1, 1)` entry. -/
+theorem ext_of_isRegular_apply_zero_zero {R : Type*} [CommRing R] {A B : SL(2, R)}
+    (hreg : IsRegular (A 0 0)) (h00 : A 0 0 = B 0 0) (h01 : A 0 1 = B 0 1)
+    (h10 : A 1 0 = B 1 0) : A = B := by
+  have h11 : A 1 1 = B 1 1 := hreg.left <| by
+    have hA := A.fin_two_mul_sub_mul_eq_one
+    have hB := B.fin_two_mul_sub_mul_eq_one
+    rw [← h00, ← h01, ← h10] at hB
+    linear_combination hA - hB
+  ext i j
+  fin_cases i <;> fin_cases j <;> simp [h00, h01, h10, h11]
 
 /-- For `0 < n`, the center of `SL(Fin n, A)` is the group of `n`th roots of unity. -/
 noncomputable def centerMulEquivRootsOfUnityFin (n : ℕ) (hn : 0 < n)

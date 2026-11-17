@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Projective
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Cusp.Width
+import TauCeti.NumberTheory.ModularForms.WithCenter
 
 /-!
 # The strict level of a subgroup of `SL₂(ℤ)`
@@ -38,6 +40,11 @@ lie in `Γ`.
 * `Subgroup.strictLevel_inf`, `Subgroup.strictLevel_normalCore`: the strict level of an
   intersection is the least common multiple of the strict levels, and passing to the normal core
   does not change it.
+* `Subgroup.strictLevel_withCenter_dvd`, `Subgroup.strictLevel_dvd_two_mul_strictLevel_withCenter`,
+  `Subgroup.strictLevel_eq_or_eq_two_mul_strictLevel_withCenter`,
+  `Subgroup.strictLevel_liftSL_dvd_iff`, `Subgroup.strictLevel_liftSL_eq_orderOf`: comparison
+  between strict level, signed level `Γ.withCenter.strictLevel`, and the order of `T` modulo the
+  projective normal core.
 * `CongruenceSubgroup.strictLevel_Gamma`, `CongruenceSubgroup.strictLevel_Gamma0`,
   `CongruenceSubgroup.strictLevel_Gamma1`: `Γ(N)`, `Γ₀(N)` and `Γ₁(N)` have strict level `N`.
 * `CongruenceSubgroup.strictLevel_dvd_of_Gamma_le`: a subgroup containing `Γ(N)` has strict level
@@ -135,6 +142,71 @@ theorem strictLevel_normalCore : Γ.normalCore.strictLevel = Γ.strictLevel :=
 @[simp]
 theorem strictLevel_top : (⊤ : Subgroup SL(2, ℤ)).strictLevel = 1 :=
   Nat.dvd_one.mp (strictLevel_dvd_iff.mpr fun _ ↦ mem_top _)
+
+/-- The signed level `Γ.withCenter.strictLevel` divides the strict level `Γ.strictLevel`. -/
+theorem strictLevel_withCenter_dvd (Γ : Subgroup SL(2, ℤ)) :
+    Γ.withCenter.strictLevel ∣ Γ.strictLevel :=
+  strictLevel_dvd_of_le Γ.le_withCenter
+
+/-- The strict level `Γ.strictLevel` divides twice the signed level `Γ.withCenter.strictLevel`:
+if every conjugate `σ Tᴺ σ⁻¹` lies in `±Γ`, then its square `σ T^{2N} σ⁻¹` lies in `Γ`. -/
+theorem strictLevel_dvd_two_mul_strictLevel_withCenter (Γ : Subgroup SL(2, ℤ)) :
+    Γ.strictLevel ∣ 2 * Γ.withCenter.strictLevel := by
+  rw [strictLevel_dvd_iff]
+  intro σ
+  obtain ⟨γ, hγ, h⟩ := Subgroup.mem_withCenter_iff_exists_eq_or_eq_neg.mp
+    (conj_T_pow_strictLevel_mem (Γ := Γ.withCenter) σ)
+  have hsq : σ * ModularGroup.T ^ (2 * Γ.withCenter.strictLevel) * σ⁻¹ =
+      (σ * ModularGroup.T ^ Γ.withCenter.strictLevel * σ⁻¹) ^ 2 := by
+    rw [mul_comm 2, pow_mul, sq, sq]
+    simp [mul_assoc]
+  rw [hsq]
+  rcases h with h | h <;> rw [h]
+  · exact pow_mem hγ 2
+  · rw [neg_sq]
+    exact pow_mem hγ 2
+
+/-- The strict level of `Γ` equals either `Γ.withCenter.strictLevel` or
+`2 * Γ.withCenter.strictLevel`. -/
+theorem strictLevel_eq_or_eq_two_mul_strictLevel_withCenter (Γ : Subgroup SL(2, ℤ)) :
+    Γ.strictLevel = Γ.withCenter.strictLevel ∨
+      Γ.strictLevel = 2 * Γ.withCenter.strictLevel := by
+  obtain ⟨k, hk⟩ := strictLevel_withCenter_dvd Γ
+  rcases eq_or_ne Γ.withCenter.strictLevel 0 with h0 | hne
+  · left
+    rw [hk, h0, zero_mul]
+  · have hk2 : k ∣ 2 := by
+      have hdvd := strictLevel_dvd_two_mul_strictLevel_withCenter Γ
+      rw [hk, mul_comm 2] at hdvd
+      exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero hne)).mp hdvd
+    rcases (Nat.dvd_prime Nat.prime_two).mp hk2 with rfl | rfl
+    · exact Or.inl (by rw [hk, mul_one])
+    · exact Or.inr (by rw [hk, mul_comm])
+
+/-- For a subgroup `Γ' ≤ PSL(2, ℤ)`, the strict level of its lift `Γ'.liftSL` divides `m`
+precisely when every projective conjugate of `T ^ m` lies in `Γ'`. -/
+theorem strictLevel_liftSL_dvd_iff {Γ' : Subgroup PSL(2, ℤ)} {m : ℕ} :
+    Γ'.liftSL.strictLevel ∣ m ↔
+      ∀ g : PSL(2, ℤ), g * (ModularGroup.T : PSL(2, ℤ)) ^ m * g⁻¹ ∈ Γ' := by
+  rw [strictLevel_dvd_iff]
+  constructor
+  · intro h g
+    obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective g
+    simpa [QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow] using h σ
+  · intro h σ
+    simpa [mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv, QuotientGroup.mk_pow] using
+      h (σ : PSL(2, ℤ))
+
+/-- The strict level of the lift `Γ'.liftSL` of `Γ' ≤ PSL(2, ℤ)` equals the order of the image of
+`T` modulo the normal core of `Γ'` in `PSL(2, ℤ)`. -/
+theorem strictLevel_liftSL_eq_orderOf (Γ' : Subgroup PSL(2, ℤ)) :
+    Γ'.liftSL.strictLevel =
+      orderOf (QuotientGroup.mk (ModularGroup.T : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'.normalCore) := by
+  refine Nat.dvd_right_iff_eq.mp fun m ↦ ?_
+  rw [strictLevel_liftSL_dvd_iff, orderOf_dvd_iff_pow_eq_one,
+    ← QuotientGroup.mk_pow (N := Γ'.normalCore), QuotientGroup.eq_one_iff,
+    Subgroup.normalCore_eq_iInf_comap_conj]
+  simp [Subgroup.mem_iInf, MulAut.conj_apply]
 
 /-- **The strict level is the least common multiple of the cusp widths**: it divides `m` exactly
 when the width of every cusp translation orbit of `Γ` does. -/

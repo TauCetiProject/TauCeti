@@ -140,6 +140,10 @@ infrastructure independent of the diamond operators.
 * `CongruenceSubgroup.exists_mul_eq_of_mem_Gamma1_gcd`: every matrix of `Γ₁(gcd a b)` is a product
   of one of `Γ₁(a)` and one of `Γ₁(b)`; in particular `Γ₁(gcd a b) = Γ₁(a) ⊔ Γ₁(b)`
   (`CongruenceSubgroup.Gamma1_gcd_eq_sup`).
+* `CongruenceSubgroup.isCongruenceSubgroup_top`, `CongruenceSubgroup.not_isCongruenceSubgroup_bot`,
+  `CongruenceSubgroup.isCongruenceSubgroup_inf_iff`,
+  `CongruenceSubgroup.isCongruenceSubgroup_normalCore_iff`: basic lattice closure properties of
+  `IsCongruenceSubgroup`.
 * `CongruenceSubgroup.Gamma0_relIndex_Gamma0_of_coprime`: for coprime `a` and `b`,
   `[Γ₀(b) : Γ₀(a) ⊓ Γ₀(b)] = [SL₂(ℤ) : Γ₀(a)]`.
 * `CongruenceSubgroup.Gamma0_index_mul_of_coprime`: the index of `Γ₀` is multiplicative in the
@@ -1057,6 +1061,46 @@ theorem Gamma1_gcd_eq_sup (a b : ℕ) : Gamma1 (Nat.gcd a b) = Gamma1 a ⊔ Gamm
     (Gamma1_le_Gamma1_of_dvd (Nat.gcd_dvd_right a b)))
   obtain ⟨α, hα, β, hβ, rfl⟩ := exists_mul_eq_of_mem_Gamma1_gcd hγ
   exact mul_mem (Subgroup.mem_sup_left hα) (Subgroup.mem_sup_right hβ)
+
+/-! ### Lattice closure of `IsCongruenceSubgroup` -/
+
+/-- `SL(2, ℤ)` is a congruence subgroup (of level `1`). -/
+@[simp]
+theorem isCongruenceSubgroup_top : IsCongruenceSubgroup ⊤ :=
+  ⟨1, one_ne_zero, le_top⟩
+
+/-- The trivial subgroup is not a congruence subgroup: every `Γ(N)` with `N ≠ 0` contains the
+nontrivial translation `T ^ N`. -/
+@[simp]
+theorem not_isCongruenceSubgroup_bot : ¬ IsCongruenceSubgroup ⊥ := by
+  rintro ⟨N, hN, hle⟩
+  have hT : ModularGroup.T ^ (N : ℤ) ∈ Gamma N := by
+    simpa [Int.natAbs_natCast] using ModularGroup_T_pow_mem_Gamma (N : ℤ) N dvd_rfl
+  have h1 : ModularGroup.T ^ (N : ℤ) = 1 := Subgroup.mem_bot.mp (hle hT)
+  have h01 := congrArg (fun g : SL(2, ℤ) ↦ g 0 1) h1
+  rw [ModularGroup.coe_T_zpow] at h01
+  exact hN (Int.natCast_eq_zero.mp (by simpa using h01))
+
+/-- The intersection of two subgroups is a congruence subgroup if and only if both are. -/
+@[simp]
+theorem isCongruenceSubgroup_inf_iff {Γ₁ Γ₂ : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup (Γ₁ ⊓ Γ₂) ↔ IsCongruenceSubgroup Γ₁ ∧ IsCongruenceSubgroup Γ₂ := by
+  refine ⟨fun h ↦ ⟨isCongruenceSubgroup_trans _ _ inf_le_left h,
+    isCongruenceSubgroup_trans _ _ inf_le_right h⟩, ?_⟩
+  rintro ⟨⟨N₁, hN₁, h₁⟩, ⟨N₂, hN₂, h₂⟩⟩
+  refine ⟨Nat.lcm N₁ N₂, Nat.lcm_ne_zero hN₁ hN₂, ?_⟩
+  rw [Gamma_lcm_eq_inf]
+  exact inf_le_inf h₁ h₂
+
+/-- Passing to the normal core preserves and reflects being a congruence subgroup, since every
+principal congruence subgroup `Γ(N)` is normal in `SL(2, ℤ)`. -/
+@[simp]
+theorem isCongruenceSubgroup_normalCore_iff {Γ : Subgroup SL(2, ℤ)} :
+    IsCongruenceSubgroup Γ.normalCore ↔ IsCongruenceSubgroup Γ := by
+  refine ⟨isCongruenceSubgroup_trans _ _ Γ.normalCore_le, ?_⟩
+  rintro ⟨N, hN, hle⟩
+  have := Gamma_normal N
+  exact ⟨N, hN, Subgroup.normal_le_normalCore.mpr hle⟩
 
 /-! ### The index of `Γ₀(N)` at every level -/
 
