@@ -171,7 +171,6 @@ def tensorProductSheafIso :
 /-- On a pure tensor of local sections, the isomorphism `I ⊗ J ≅ I * J` multiplies the two
 functions. The sheafification unit sends the sectionwise pure tensor into the tensor product
 sheaf. -/
-@[simp]
 theorem tensorProductSheafIso_hom_tmul (U : X.Opens) (s : Γ(I.sheaf, U)) (t : Γ(J.sheaf, U)) :
     dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj,
       Functor.id_obj]
