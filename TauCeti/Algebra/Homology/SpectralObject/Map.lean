@@ -33,6 +33,8 @@ spectral sequences induced by `φ`.
 * `CategoryTheory.Abelian.SpectralObject.EMap_id`, `EMap_comp`: functoriality.
 * `CategoryTheory.Abelian.SpectralObject.map_EMap`: compatibility with `X.map`.
 * `CategoryTheory.Abelian.SpectralObject.d_EMap`: compatibility with the differentials.
+* `CategoryTheory.Abelian.SpectralObject.EMap_comp_EIsoH_hom`: on the objects `E^n(𝟙, f, 𝟙)`,
+  identified with `H^n(f)`, `EMap φ` is the component of `φ` at `f`.
 
 ## References
 
@@ -299,5 +301,23 @@ lemma d_EMap :
     toCycles_cyclesMapOfHom_assoc]
 
 end Differentials
+
+section FirstPage
+
+variable {i₀ i₁ : ι} (f : i₀ ⟶ i₁) (n₀ n₁ n₂ : ℤ) (hn₁ : n₀ + 1 = n₁) (hn₂ : n₁ + 1 = n₂)
+
+/-- On the objects `E^n(𝟙, f, 𝟙)`, identified with `H^n(f)` by Mathlib's `EIsoH`, the map `EMap`
+induced by a morphism of spectral objects is its component at `f`. -/
+@[reassoc]
+lemma EMap_comp_EIsoH_hom :
+    EMap φ (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂ ≫ (Y.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom =
+      (X.EIsoH f n₀ n₁ n₂ hn₁ hn₂).hom ≫ (φ.hom n₁).app (mk₁ f) := by
+  rw [← cancel_epi (X.toCycles (𝟙 i₀) f f (Category.id_comp f) n₁ ≫
+    X.πE (𝟙 i₀) f (𝟙 i₁) n₀ n₁ n₂ hn₁ hn₂)]
+  simp only [Category.assoc, πE_EMap_assoc, πE_EIsoH_hom, πE_EIsoH_hom_assoc,
+    toCycles_cyclesMapOfHom_assoc, cyclesIsoH_inv_hom_id, cyclesIsoH_inv_hom_id_assoc,
+    Category.comp_id]
+
+end FirstPage
 
 end CategoryTheory.Abelian.SpectralObject
