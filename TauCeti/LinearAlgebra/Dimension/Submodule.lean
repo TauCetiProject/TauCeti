@@ -36,6 +36,9 @@ does not enlarge the kernel. Conjugating an endomorphism by a linear equivalence
 dimension of its kernel.
 The kernel of a surjection from a finite-dimensional space has dimension the difference of the
 dimensions.
+Two finite-dimensional subspaces of equal dimension are exchanged by a linear automorphism of the
+ambient space (`Submodule.exists_linearEquiv_mem_iff`), which need not itself be
+finite-dimensional.
 -/
 
 public section
@@ -198,6 +201,20 @@ theorem exists_mem_notMem_span_pair {V : Submodule 𝕜 E} (a : E) (h : 3 ≤ fi
   have := Set.ncard_insert_le a ({x} : Set E)
   rw [Set.ncard_singleton] at this
   omega
+
+/-- **Subspaces of equal finite dimension are exchanged by a linear automorphism.** In any
+vector space `E` over a division ring `𝕜`, two finite-dimensional subspaces of the same dimension
+are mapped onto each other by a linear automorphism of `E` (`E` itself need not be
+finite-dimensional). -/
+theorem exists_linearEquiv_mem_iff (V L : Submodule 𝕜 E) [FiniteDimensional 𝕜 V]
+    [FiniteDimensional 𝕜 L] (h : finrank 𝕜 V = finrank 𝕜 L) :
+    ∃ g : E ≃ₗ[𝕜] E, ∀ z, z ∈ V ↔ g z ∈ L := by
+  let f := LinearEquiv.ofFinrankEq V L h
+  obtain ⟨g, hg⟩ := V.exists_linearEquiv_restrict_eq f
+  refine ⟨g, fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩⟩
+  · simp [← hg ⟨z, hz⟩]
+  · have hw : g (f.symm ⟨g z, hz⟩) = g z := by rw [← hg, LinearEquiv.apply_symm_apply]
+    exact g.injective hw ▸ (f.symm ⟨g z, hz⟩).2
 
 end DivisionRing
 

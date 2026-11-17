@@ -243,8 +243,8 @@ end PolynomialMap
 section AffineMap
 
 omit [LinearOrder R] in
-/-- Every affine map out of a finite-dimensional coordinate space `σ → R` has degree-at-most-one
-polynomial coordinates. -/
+/-- Every affine map out of a finite-dimensional coordinate space `σ → R` is given coordinatewise
+by evaluation of polynomials. -/
 theorem _root_.AffineMap.exists_mvPolynomial_eval_eq [Finite σ] (A : (σ → R) →ᵃ[R] (τ → R)) :
     ∃ p : τ → MvPolynomial σ R, ∀ x, A x = fun i => eval x (p i) := by
   classical

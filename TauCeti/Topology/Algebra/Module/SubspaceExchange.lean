@@ -6,17 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
-import Mathlib.LinearAlgebra.Dimension.Free
+import TauCeti.LinearAlgebra.Dimension.Submodule
 import TauCeti.Topology.Algebra.Module.Equiv.Fin
 
 /-!
 # Subspaces of equal dimension are exchanged by an automorphism
 
 In a finite-dimensional Hausdorff topological vector space over a complete field, two subspaces of
-the same dimension are mapped onto each other by a continuous linear automorphism: extend a linear
-equivalence between them to the whole space (`Submodule.exists_linearEquiv_restrict_eq`) and use
-that linear maps on such a space are continuous. (Over an incomplete field the latter fails: a
-finite-dimensional space can carry inequivalent norms.)
+the same dimension are mapped onto each other by a continuous linear automorphism: apply the
+purely algebraic exchange lemma (`Submodule.exists_linearEquiv_mem_iff`) and use that linear maps
+on such a space are continuous. (Over an incomplete field the latter fails: a finite-dimensional
+space can carry inequivalent norms.)
 
 On a finite coordinate space `ι → 𝕜` carrying the product topology, every linear map is already
 continuous (`LinearMap.continuous_on_pi`), so no completeness or norm assumption on `𝕜` is needed
@@ -52,13 +52,9 @@ Hausdorff topological vector space over a complete field, two subspaces of the s
 mapped onto each other by a continuous linear automorphism. -/
 theorem exists_continuousLinearEquiv_mem_iff
     (V L : Submodule 𝕜 E) (h : Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
-    ∃ Φ : E ≃L[𝕜] E, ∀ z, z ∈ V ↔ Φ z ∈ L := by
-  obtain ⟨g, hg⟩ := V.exists_linearEquiv_restrict_eq (LinearEquiv.ofFinrankEq V L h)
-  refine ⟨g.toContinuousLinearEquiv, fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩⟩
-  · simp [← hg ⟨z, hz⟩]
-  · set w := (LinearEquiv.ofFinrankEq V L h).symm ⟨g z, hz⟩
-    have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
-    exact g.injective hw ▸ w.2
+    ∃ Φ : E ≃L[𝕜] E, ∀ z, z ∈ V ↔ Φ z ∈ L :=
+  let ⟨g, hg⟩ := V.exists_linearEquiv_mem_iff L h
+  ⟨g.toContinuousLinearEquiv, hg⟩
 
 end CompleteSpace
 
@@ -74,15 +70,11 @@ completeness or norm assumption on `𝕜` is needed because every linear map out
 continuous for the product topology (`LinearMap.continuous_on_pi`). -/
 theorem exists_continuousLinearEquiv_mem_iff_pi {ι : Type*} [Finite ι]
     (V L : Submodule 𝕜 (ι → 𝕜)) (h : Module.finrank 𝕜 V = Module.finrank 𝕜 L) :
-    ∃ Φ : (ι → 𝕜) ≃L[𝕜] (ι → 𝕜), ∀ z, z ∈ V ↔ Φ z ∈ L := by
-  obtain ⟨g, hg⟩ := V.exists_linearEquiv_restrict_eq (LinearEquiv.ofFinrankEq V L h)
-  refine ⟨{ g with
+    ∃ Φ : (ι → 𝕜) ≃L[𝕜] (ι → 𝕜), ∀ z, z ∈ V ↔ Φ z ∈ L :=
+  let ⟨g, hg⟩ := V.exists_linearEquiv_mem_iff L h
+  ⟨{ g with
     continuous_toFun := g.toLinearMap.continuous_on_pi
-    continuous_invFun := g.symm.toLinearMap.continuous_on_pi }, fun z ↦ ⟨fun hz ↦ ?_, fun hz ↦ ?_⟩⟩
-  · simp [← hg ⟨z, hz⟩]
-  · set w := (LinearEquiv.ofFinrankEq V L h).symm ⟨g z, hz⟩
-    have hw : g w = g z := by rw [← hg w, LinearEquiv.apply_symm_apply]
-    exact g.injective hw ▸ w.2
+    continuous_invFun := g.symm.toLinearMap.continuous_on_pi }, hg⟩
 
 /-- Every linear subspace `W` of `Fin n → 𝕜` over a division ring with continuous addition and
 multiplication is the preimage of the coordinate subspace

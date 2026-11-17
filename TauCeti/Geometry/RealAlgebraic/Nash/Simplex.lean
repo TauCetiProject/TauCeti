@@ -88,10 +88,12 @@ theorem AffineIndependent.nashOnSubmanifold_intrinsicInterior_convexHull_iff [Ne
         (TauCeti.openStdSimplex ℝ (Fin m)) := by
   constructor
   · intro hg
-    exact hg.comp
-      (TauCeti.nashOnSubmanifold_sum_smul p TauCeti.isAnalyticSubmanifold_openStdSimplex
+    exact (hg.comp
+      ((Fintype.linearCombination ℝ p).toAffineMap.nashOnSubmanifold
+        TauCeti.isAnalyticSubmanifold_openStdSimplex
         TauCeti.isSemialgebraic_openStdSimplex)
-      fun w hw => hp.intrinsicInterior_convexHull_eq_image_sum_smul ▸ mem_image_of_mem _ hw
+      fun w hw => hp.intrinsicInterior_convexHull_eq_image_sum_smul ▸ mem_image_of_mem _ hw).congr
+      fun _ _ => congrArg g (Fintype.linearCombination_apply ℝ p _)
   · intro hgw
     obtain ⟨B, -, hclosed, hopen⟩ := hp.exists_affineMap_barycentricCoord
     have hM : TauCeti.IsAnalyticSubmanifold (m - 1)
