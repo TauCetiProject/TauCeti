@@ -9,7 +9,6 @@ public import TauCeti.Probability.Renewal.Excess.Basic
 public import TauCeti.Probability.Renewal.Equilibrium
 public import TauCeti.Probability.Renewal.Lattice.Basic
 public import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Cdf
-import TauCeti.MeasureTheory.Integral.Lebesgue.Support
 import TauCeti.Probability.Renewal.Blackwell
 import TauCeti.Probability.Renewal.InfiniteMean
 import TauCeti.Probability.Renewal.Excess.Escape
@@ -80,8 +79,7 @@ theorem tendsto_measureReal_renewalExcess_le_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hF := (P.map (T 0)).measure_singleton_lt_one_of_lintegral_pos
-    (f := fun u ↦ (u : ℝ≥0∞)) (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
+  have hF := (P.map (T 0)).measure_singleton_zero_lt_one_of_mean_eq_top hmean
   have hzero : P {ω | T 0 ω = 0} < 1 := by
     rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)] at hF
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
@@ -97,14 +95,7 @@ theorem tendsto_measureReal_lt_renewalExcess_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) = ∞) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | x < renewalExcess T t ω}) atTop (𝓝 1) := by
   have := hindep.isProbabilityMeasure
-  have he (t : ℝ≥0) : P.real {ω | x < renewalExcess T t ω} =
-      1 - P.real {ω | renewalExcess T t ω ≤ x} := by
-    rw [← probReal_compl_eq_one_sub
-      (measurableSet_le (measurable_renewalExcess hT t) measurable_const)]
-    congr 1
-    ext ω
-    simp
-  simp_rw [he]
+  simp_rw [measureReal_lt_renewalExcess_eq_one_sub hT]
   simpa only [sub_zero] using tendsto_const_nhds.sub
     (tendsto_measureReal_renewalExcess_le_of_mean_eq_top hT hindep hid hmean x)
 

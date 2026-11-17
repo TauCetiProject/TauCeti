@@ -78,14 +78,7 @@ theorem tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
     rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
   have := (P.map (T 0)).isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
     hF hmean
-  have he (t : ℝ≥0) : P.real {ω | renewalExcess T t ω ≤ x} =
-      1 - P.real {ω | x < renewalExcess T t ω} := by
-    rw [← probReal_compl_eq_one_sub (measurableSet_lt measurable_const
-      (measurable_renewalExcess hT t))]
-    congr 1
-    ext ω
-    simp
-  simp_rw [he]
+  simp_rw [measureReal_renewalExcess_le_eq_one_sub hT]
   have hcomp : (P.map (T 0)).equilibriumExcessLaw.real (Iic (x : ℝ)) =
       1 - (P.map (T 0)).equilibriumExcessLaw.real (Ioi (x : ℝ)) := by
     rw [← probReal_compl_eq_one_sub measurableSet_Ioi, compl_Ioi]
