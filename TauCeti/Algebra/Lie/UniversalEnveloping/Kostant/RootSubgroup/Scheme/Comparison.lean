@@ -16,8 +16,9 @@ generator families and admissibility proofs may differ. This permits comparison 
 presentation with an independently pinned Lie-algebra action without changing lattice
 coordinates or checking only field-valued points.
 
-This extends `kostantRootSubgroup_congr`, which keeps the Lie algebra and its representation
-fixed, using the same divided-power coefficient formula of `kostantRootSubgroupComodule`.
+The comparison uses the divided-power coefficient formula of `kostantRootSubgroupComodule`.
+It includes changes of generator family within a fixed Lie algebra and representation as a
+special case.
 
 ## References
 

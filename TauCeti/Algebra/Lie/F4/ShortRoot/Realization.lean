@@ -219,7 +219,7 @@ theorem chevalleyDatumPointsEquiv_map {A B : Type*} [CommRing A] [CommRing B]
   -- The presented-point maps use the datum dimension rather than the displayed dimension 26.
   erw [GeneralLinear.IntegralPointsPresentation.coe_map,
     GeneralLinear.IntegralPointsPresentation.coe_map]
-  rfl
+  rw [coe_chevalleyDatumPointsEquiv]
 
 /-- Realization intertwines the two independently defined whole-point Frobenius maps. -/
 @[simp↓] theorem chevalleyDatumPointsEquiv_frobenius (p k : ℕ) (A : Type*) [CommRing A]
