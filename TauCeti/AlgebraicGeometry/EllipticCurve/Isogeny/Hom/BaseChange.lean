@@ -312,21 +312,21 @@ theorem pointMap_map_algebraMap_genericPoint [W₁.IsElliptic] [W₂.IsElliptic]
     exact zero_pointMap W₁.genericPoint
   let ι := algebraMap F W₁.FunctionField
   let idF := AlgHom.id F W₁.FunctionField
+  -- `W₁.genericPoint` and `(ofIsogeny φ).tautologicalPoint` live on `Wᵢ⁄W₁.FunctionField`
+  -- (`WeierstrassCurve.baseChange`), which is definitionally `Wᵢ.map ι`; typing the `Point.some`
+  -- witnesses over `Wᵢ.map ι` lets `rw` apply `pointMap_eq_iff` and `equivBaseChangeSelf_some`.
   have hP₁ : (W₁.map ι).Nonsingular W₁.genericX W₁.genericY := W₁.nonsingular_genericX_genericY
   have hP₂ : (W₂.map ι).Nonsingular (φ.fieldPullback W₂.genericX)
-      (φ.fieldPullback W₂.genericY) := by
-    rw [genericX_def, genericY_def]
-    exact equation_iff_nonsingular.mp (CoordinateRing.equation_of_algHom
-      (φ.fieldPullback.comp
-        (IsScalarTower.toAlgHom F W₂.CoordinateRing W₂.FunctionField)))
+      (φ.fieldPullback W₂.genericY) :=
+    (W₂.baseChange_nonsingular φ.fieldPullback.injective ..).mpr W₂.nonsingular_genericX_genericY
   have hsrc : W₁.genericPoint = (Point.some W₁.genericX W₁.genericY hP₁ : (W₁.map ι).Point) :=
     W₁.genericPoint_eq_some
   have hdst : (ofIsogeny φ).tautologicalPoint =
       (Point.some (φ.fieldPullback W₂.genericX) (φ.fieldPullback W₂.genericY) hP₂ :
-        (W₂.map ι).Point) := by
-    rw [tautologicalPoint_ofIsogeny, Isogeny.tautologicalPoint_eq_map_genericPoint,
-      genericPoint_eq_some, Point.map_some]
-    rfl
+        (W₂.map ι).Point) :=
+    (tautologicalPoint_ofIsogeny φ).trans <|
+      (Isogeny.tautologicalPoint_eq_map_genericPoint φ).trans <|
+        (congrArg (Point.map φ.fieldPullback) W₂.genericPoint_eq_some).trans (Point.map_some ..)
   rw [ofIsogeny_map, hsrc, hdst, pointMap_eq_iff, tautologicalPoint_ofIsogeny,
     Isogeny.tautologicalPoint_eq_map_genericPoint, genericPoint_eq_some, Point.map_some,
     Point.equivBaseChangeSelf_some, some_sub_baseChange_mem_polePoints_iff,
