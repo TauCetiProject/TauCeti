@@ -10,10 +10,9 @@ public import Mathlib.LinearAlgebra.Quotient.Basic
 public import Mathlib.RingTheory.Finiteness.Basic
 public import Mathlib.Topology.Algebra.LinearTopology
 public import Mathlib.Topology.Algebra.Nonarchimedean.TotallyDisconnected
+public import TauCeti.Topology.Algebra.Group.LocallyProfinite
 public import TauCeti.Topology.Algebra.Module.Quotient
-public import TauCeti.Topology.Algebra.Nonarchimedean.Profinite
 public import TauCeti.Topology.Algebra.Nonarchimedean.Quotient
-import Mathlib.Topology.Separation.Connected
 
 /-!
 # Compact modules over a compact ring
