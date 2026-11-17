@@ -231,9 +231,45 @@ theorem extendByZero_of_mem (W : PiecewiseContMDiffSectionAlong (F := F) (V := V
   dite_eq_left ht
 
 /-- Outside `[a, b]`, the zero-extension vanishes. -/
+@[simp]
 theorem extendByZero_of_notMem (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ)
     {t : ℝ} (ht : t ∉ Icc a b) : W.extendByZero t = 0 :=
   dite_eq_right ht
+
+/-- Zero-extension preserves the zero section. -/
+@[simp]
+theorem extendByZero_zero :
+    (0 : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ).extendByZero = 0 := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves addition. -/
+@[simp]
+theorem extendByZero_add (U W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (U + W).extendByZero = U.extendByZero + W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves negation. -/
+@[simp]
+theorem extendByZero_neg (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (-W).extendByZero = -W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves subtraction. -/
+@[simp]
+theorem extendByZero_sub (U W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (U - W).extendByZero = U.extendByZero - W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
+
+/-- Zero-extension preserves scalar multiplication. -/
+@[simp]
+theorem extendByZero_smul (c : ℝ) (W : PiecewiseContMDiffSectionAlong (F := F) (V := V) hγ) :
+    (c • W).extendByZero = c • W.extendByZero := by
+  funext t
+  by_cases ht : t ∈ Icc a b <;> simp [ht]
 
 /-- The zero-extension of a bundled piecewise `C^n` section along `γ` on `[a, b]` has a piecewise
 `C^n` total-space lift on `[a, b]`. -/

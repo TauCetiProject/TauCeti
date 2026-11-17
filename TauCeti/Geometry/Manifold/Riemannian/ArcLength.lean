@@ -39,8 +39,10 @@ that energy less than `(b - a) / 2` forces length less than `b - a`.
 * `TauCeti.Manifold.pathELength_eq_setLIntegral_enorm_curveVelocity_Icc` and its `Ioo` variant:
   the Riemannian length of any curve is the integral of its speed.
 * `ContMDiffOn.continuousOn_norm_curveVelocityWithin`: the speed of a `C¹` curve is continuous on
-  a parameter set with unique derivatives, and `ContMDiffOn.continuousOn_norm_curveVelocity` is
-  its open-set case.
+  a parameter set with unique derivatives, `ContMDiffOn.continuousOn_norm_curveVelocity` is its
+  open-set case, and `ContMDiffAt.continuousAt_norm_curveVelocity` is its pointwise case.
+* `TauCeti.Manifold.norm_curveVelocity_eq_Icc_of_Ioo`: a curve that is `C¹` at every point of
+  `[a, b]` (`a < b`) and has constant speed `C` on `(a, b)` has constant speed `C` on `[a, b]`.
 * `ContMDiffOn.setLIntegral_enorm_curveVelocity_lt_top`: a `C¹` curve on an open parameter set
   has finite length on every compact subset of it.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
@@ -125,6 +127,31 @@ theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocity {γ : ℝ → M} {O :
     ContinuousOn (fun t ↦ ‖curveVelocity I γ t‖) O :=
   (hγ.continuousOn_norm_curveVelocityWithin hO.uniqueMDiffOn).congr fun t ht ↦ by
     simp only [curveVelocityWithin_of_mem_nhds (hO.mem_nhds ht)]
+
+/-- The Riemannian speed of a curve that is `C¹` at `t` is continuous at `t`. -/
+theorem _root_.ContMDiffAt.continuousAt_norm_curveVelocity {γ : ℝ → M} {t : ℝ}
+    (hγ : ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t) :
+    ContinuousAt (fun r ↦ ‖curveVelocity I γ r‖) t := by
+  let ι : ℝ → TangentBundle 𝓘(ℝ, ℝ) ℝ := fun r ↦
+    (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ)).symm (r, (1 : ℝ))
+  have hι : Continuous ι :=
+    (tangentBundleModelSpaceHomeomorph 𝓘(ℝ, ℝ)).symm.continuous.comp
+      (continuous_id.prodMk continuous_const)
+  have hmap : ContinuousAt (tangentMap 𝓘(ℝ, ℝ) I γ) (ι t) :=
+    hγ.continuousAt_tangentMap le_rfl
+  exact ((TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).continuousAt.comp
+    (hmap.comp hι.continuousAt)).congr (Eventually.of_forall fun r ↦ by
+      simp only [Function.comp_apply, ι, tangentMap, curveVelocity_apply]; rfl)
+
+/-- If a curve `γ` is `C¹` at every point of `[a, b]` (`a < b`) and has constant Riemannian speed
+`C` on `(a, b)`, then it has constant Riemannian speed `C` on `[a, b]`. -/
+theorem norm_curveVelocity_eq_Icc_of_Ioo {γ : ℝ → M} {a b C : ℝ} (hab : a < b)
+    (hγ : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ) I 1 γ t)
+    (hspeed : ∀ t ∈ Ioo a b, ‖curveVelocity I γ t‖ = C) :
+    ∀ t ∈ Icc a b, ‖curveVelocity I γ t‖ = C :=
+  Set.EqOn.of_subset_closure hspeed
+    (fun t ht ↦ (hγ t ht).continuousAt_norm_curveVelocity.continuousWithinAt)
+    continuousOn_const Ioo_subset_Icc_self (by rw [closure_Ioo hab.ne])
 
 /-- A `C¹` curve on an open parameter set has finite length on every compact subset of it: the
 integral of its speed over such a set is finite. -/

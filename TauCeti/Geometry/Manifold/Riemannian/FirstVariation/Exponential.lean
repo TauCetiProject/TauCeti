@@ -313,32 +313,14 @@ theorem hasDerivAt_toReal_pathELength_exponentialVariation {a b : ℝ} (hab : a 
   obtain ⟨γ', V', hV', hEq, hExp⟩ := exists_contMDiffAt_exponentialVariation_eqOn γ V hVu
   have hγEq : EqOn γ' γ (Icc a b) := fun r hr ↦
     congrArg TotalSpace.proj (hEq r (by rwa [uIcc_of_le hab]))
-  -- The two-sided `C²` extension `γ'` has continuous speed on `[a, b]` agreeing with `C` on the
-  -- dense subset `(a, b)`, hence has constant speed `C` on all of `[a, b]`.
   have hspeed' : ∀ t ∈ Icc a b, ‖curveVelocity I γ' t‖ = C := by
     have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
       IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞)
-    have hγ'1 : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ' (Icc a b) := fun t ht ↦
-      ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp t
-        ((hV' t (by rwa [uIcc_of_le hab])).of_le one_le_two)).contMDiffWithinAt
-    have hcont : ContinuousOn (fun t ↦ ‖curveVelocity I γ' t‖) (Icc a b) :=
-      (hγ'1.continuousOn_norm_curveVelocityWithin (uniqueDiffOn_Icc hlt).uniqueMDiffOn).congr
-        fun t ht ↦ by
-          have hd : MDifferentiableAt 𝓘(ℝ, ℝ) I γ' t :=
-            ((contMDiff_proj (TangentSpace I)).contMDiffAt.comp t
-              ((hV' t (by rwa [uIcc_of_le hab])).of_le one_le_two)).mdifferentiableAt one_ne_zero
-          dsimp only
-          rw [← curveVelocityWithin_univ,
-            ← curveVelocityWithin_subset (subset_univ _) (uniqueDiffOn_Icc hlt t ht)
-              hd.mdifferentiableWithinAt]
-    have hIoo : ∀ t ∈ Ioo a b, ‖curveVelocity I γ' t‖ = C := fun t ht ↦ by
-      have hnear : γ' =ᶠ[𝓝 t] γ := eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2) hγEq
-      rw [hnear.norm_curveVelocity_eq, hspeed t ht]
-    intro t ht
-    have : (𝓝[Ioo a b] t).NeBot :=
-      mem_closure_iff_nhdsWithin_neBot.mp (by rwa [closure_Ioo hlt.ne])
-    exact tendsto_nhds_unique ((hcont t ht).mono Ioo_subset_Icc_self)
-      (tendsto_const_nhds.congr' (eventually_nhdsWithin_of_forall fun r hr ↦ (hIoo r hr).symm))
+    exact norm_curveVelocity_eq_Icc_of_Ioo hlt
+      (fun t ht ↦ (contMDiff_proj (TangentSpace I)).contMDiffAt.comp t
+        ((hV' t (by rwa [uIcc_of_le hab])).of_le one_le_two))
+      fun t ht ↦ by
+        rw [(eventuallyEq_of_mem (Icc_mem_nhds ht.1 ht.2) hγEq).norm_curveVelocity_eq, hspeed t ht]
   have hF : ∀ t ∈ Icc a b, ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I 2
       (fun z : ℝ × ℝ ↦ exponentialVariation I γ' V' z.1 z.2) (0, t) :=
     fun t ht ↦ contMDiffAt_exponentialVariation_zero γ' V' (hV' t (by rwa [uIcc_of_le hab]))

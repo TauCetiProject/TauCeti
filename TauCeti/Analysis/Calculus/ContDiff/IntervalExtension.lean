@@ -276,20 +276,6 @@ private theorem pasteEndpointDerivatives_hasDerivAt {a b : ℝ} (hab : a < b)
     · rw [pasteEndpointDerivatives_eq_right hab hrb' hbx.le]
       exact (hr x).congr_of_eventuallyEq (eventuallyEq_of_mem (Ici_mem_nhds hbx) hR)
 
-/-- A finite derivative tower whose top level is continuous produces a `C^m` function at level
-zero. -/
-private theorem contDiff_of_finite_derivative_tower (F : ℕ → ℝ → E) :
-    ∀ m : ℕ, (∀ k < m, ∀ x, HasDerivAt (F k) (F (k + 1) x) x) →
-      Continuous (F m) → ContDiff ℝ m (F 0)
-  | 0, _, hcont => contDiff_zero.2 hcont
-  | m + 1, hderiv, hcont => by
-    rw [Nat.cast_add, Nat.cast_one, contDiff_succ_iff_deriv]
-    refine ⟨fun x ↦ (hderiv 0 (Nat.zero_lt_succ m) x).differentiableAt, by simp, ?_⟩
-    have hEq : deriv (F 0) = F 1 := funext fun x ↦ (hderiv 0 (Nat.zero_lt_succ m) x).deriv
-    rw [hEq]
-    exact contDiff_of_finite_derivative_tower (fun k ↦ F (k + 1)) m
-      (fun k hk x ↦ hderiv (k + 1) (Nat.succ_lt_succ hk) x) hcont
-
 /-- Smooth functions with all matching left and right endpoint jets paste to a globally smooth
 representative of the closed-interval function. -/
 theorem smooth_pasting_of_matching_endpoint_jets {a b : ℝ} (hab : a < b)
