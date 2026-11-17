@@ -263,14 +263,24 @@ theorem preimage_mul_right_box [∀ i, Mul (G i)] [∀ i, MulMemClass (S i) (G i
   ext x
   simp
 
+open scoped Pointwise in
+/-- Pointwise inversion of a box in a restricted product is the box of coordinatewise pointwise
+inverses. -/
+@[to_additive (attr := simp)
+  /-- Pointwise negation of a box in a restricted product is the box of coordinatewise pointwise
+  negations. -/]
+theorem inv_box [∀ i, Inv (G i)] [∀ i, InvMemClass (S i) (G i)] (C : ∀ i, Set (G i)) :
+    (box C : Set (Πʳ i, [G i, B i]_[𝓕]))⁻¹ = box (fun i ↦ (C i)⁻¹) := by
+  ext x
+  simp
+
 /-- Preimage of a box under inversion in a restricted product is the box of coordinatewise
-inversion preimages. -/
+inversion preimages. See `RestrictedProduct.inv_box` for the `simp`-normal pointwise form. -/
 @[to_additive
   /-- Preimage of a box under negation in a restricted product is the box of coordinatewise
-  negation preimages. -/]
+  negation preimages. See `RestrictedProduct.neg_box` for the `simp`-normal pointwise form. -/]
 theorem preimage_inv_box [∀ i, Inv (G i)] [∀ i, InvMemClass (S i) (G i)] (C : ∀ i, Set (G i)) :
     Inv.inv ⁻¹' (box C : Set (Πʳ i, [G i, B i]_[𝓕])) = box (fun i ↦ Inv.inv ⁻¹' C i) := by
-  ext x
   simp
 
 /-- Preimage of a box under scalar action in a restricted product is the box of coordinatewise
