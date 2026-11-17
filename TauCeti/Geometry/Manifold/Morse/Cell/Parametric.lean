@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Cell.CharacteristicHomotopy
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import TauCeti.Topology.CWComplex.Abstract.FiberwiseCell.ReattachmentInv
-import TauCeti.Topology.Homotopy.Homotopic.Rel
 
 /-!
 # Comparing families of Morse cell attachments over a compact parameter space
@@ -66,12 +65,12 @@ single parameter (`TauCeti.homotopicRel_morseCellReattachment_comp_morseCellReat
 * `TauCeti.exists_fiberHomotopyEquiv_fiberwiseCellComparison_morseFamilyAttachingMap`: **Milnor's
   cell attachment theorem over a compact parameter space**, in homotopy form.
 * `TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamilyAttachingMap`: Milnor's
-  comparison maps compose up to homotopy over a compact parameter space.
+  reattachment maps compose up to homotopy over a compact parameter space.
 
 ## References
 
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
-  Lemma 3.6 and Remark 3.3.
+  §3 (Theorem 3.2, Remark 3.3, Theorem 3.5 and Lemma 3.6).
 -/
 
 public section
@@ -178,6 +177,10 @@ private def lowerSublevelIncl :
     C({x : M | f x ≤ c - ε}, {y : {x : M | f x ≤ c + ε} | f y ≤ c - ε}) :=
   ⟨fun x ↦ ⟨⟨x, (show f x ≤ c - ε from x.2).trans (by linarith)⟩, x.2⟩,
     (continuous_subtype_val.subtype_mk _).subtype_mk _⟩
+
+private theorem coe_lowerSublevelIncl (x : {x : M | f x ≤ c - ε}) :
+    ((lowerSublevelIncl hε x : {x : M | f x ≤ c + ε}) : M) = x :=
+  rfl
 
 include hball in
 /-- The inverses of the charts of a fixed family are continuous on the closed ball of radius `√ε`,
@@ -312,7 +315,7 @@ private theorem constLeftInverse_fiberwiseCellComparison [LocallyCompactSpace P]
       Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl φ k hk hball hf hε
         ⟨x.2.1.1, x.2.2⟩).symm
     rw [hx, hg, morseCellAttachmentToConst_morseCellAttachmentIncl]
-    rfl
+    exact congrArg _ (Prod.ext rfl (Subtype.ext (Subtype.ext (coe_lowerSublevelIncl hε _))))
   · rw [fiberwiseCellComparison_fiberwiseCellAttachmentCell, constLeftInverse_apply]
     have hx : morseFamilyCharacteristicMap (fun _ : P ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
         (continuousOn_symm_const φ hball) i x =
@@ -369,8 +372,7 @@ private theorem exists_homotopyRel_fiberwiseCellComparison_comp_constLeftInverse
     ⟨morseCellAttachmentIncl φ k hk hε hball hf ⟨y.2, hy⟩,
       Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl φ k hk hball hf hε _)⟩
   have h : (y.1, H.symm (t, y.2)) = (y.1, morseCellComparison φ k hk hε hball hf (g y.2)) := by
-    rw [H.symm.eq_fst t hy']
-    rfl
+    rw [H.symm.eq_fst t hy', ContinuousMap.comp_apply]
   exact h.trans (hΦL y).symm
 
 end Reference
@@ -378,44 +380,6 @@ end Reference
 section FiberHomotopyEquiv
 
 open unitInterval
-
-omit [FiniteDimensional ℝ E] [Iₘ.Boundaryless] [IsManifold Iₘ ∞ M] [T2Space M] in
-/-- In a normal-form chart `φ` of `f`, every critical point lies on the level `c`: along the
-curve `t ↦ φ⁻¹(t • φ x)` the function is `c + t² (f x - c)`, with derivative `2 (f x - c)` at
-`t = 1`. -/
-private theorem mfderiv_ne_zero_of_mem_source (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
-    (φ : PartialDiffeomorph Iₘ 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
-    {k : ℕ} (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
-    {x : M} (hx : x ∈ φ.source) (hxc : f x ≠ c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := by
-  intro h0
-  set y := φ x
-  have hy : y ∈ φ.target := φ.map_source hx
-  set γ : ℝ → M := fun t ↦ φ.symm (t • y)
-  have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
-  have hγ : MDifferentiableAt 𝓘(ℝ) Iₘ γ 1 :=
-    ((φ.contMDiffOn_invFun.contMDiffAt
-      (φ.open_target.mem_nhds (by simpa using hy))).mdifferentiableAt (by simp)).comp 1
-        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.smul_const y))
-  have hd : HasFDerivAt (f ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
-    rw [← hγ1] at h0
-    have h := (hfs.mdifferentiableAt (by simp)).hasMFDerivAt.comp 1 hγ.hasMFDerivAt
-    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
-  have hsum (t : ℝ) : ∑ j, (if j.val < k then -1 else 1) * (t • y) j ^ 2 =
-      t ^ 2 * ∑ j, (if j.val < k then (-1 : ℝ) else 1) * y j ^ 2 := by
-    rw [Finset.mul_sum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    simp only [PiLp.smul_apply, smul_eq_mul]
-    ring
-  have heq : f ∘ γ =ᶠ[𝓝 1] fun t ↦ c + t ^ 2 * (f x - c) := by
-    filter_upwards [((continuous_id.smul continuous_const).continuousAt (x := (1 : ℝ))
-      (f := fun t : ℝ ↦ t • y)).preimage_mem_nhds
-        (φ.open_target.mem_nhds (by simpa using hy))] with t (ht : t • y ∈ φ.target)
-    refine (hfφ _ (φ.map_target ht)).trans ?_
-    rw [φ.right_inv ht, hsum, hfφ x hx]
-    ring
-  have hq := ((hasDerivAt_pow 2 (1 : ℝ)).mul_const (f x - c)).const_add c
-  have hval := (hq.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
-  exact hxc (by linear_combination hval / 2)
 
 /-- **Milnor's cell attachment theorem over a compact parameter space.** Let `f` be smooth, and let
 `φ i` be normal-form charts with disjoint sources around the critical points of a compact band
@@ -429,12 +393,7 @@ continuous in `p` and `y`.
 Then the comparison map `Φ : (P × M_{c-ε}) ∪_α ⨆ᵢ (P × D^{k i}) → P × M_{c+ε}` of the cells of the
 family `ψ` is a fibre homotopy equivalence over `P`. Its homotopy inverse `θ` composed with `Φ` is
 homotopic to the identity relative to `P × M_{c-ε}`, and `Φ ∘ θ` is homotopic to the identity
-relative to the points of `P × M_{c+ε}` over `M_{c-ε}`, by homotopies over `P`.
-
-The inverse is built from the fixed family `φ`: Milnor's deformation retraction for `φ`
-(`TauCeti.exists_morseCellAttachment_deformation`), applied over every `p`, followed by the
-comparison over `P` of the cells of `φ` with those of `ψ`
-(`TauCeti.exists_fiberHomotopyEquiv_fiberwiseCellAttachment_morseFamilyAttachingMap`). -/
+relative to the points of `P × M_{c+ε}` over `M_{c-ε}`, by homotopies over `P`. -/
 theorem exists_fiberHomotopyEquiv_fiberwiseCellComparison_morseFamilyAttachingMap [CompactSpace P]
     [LocallyCompactSpace P] [Finite ι] (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
     (φ : ι → PartialDiffeomorph Iₘ 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
@@ -507,7 +466,7 @@ theorem exists_fiberHomotopyEquiv_fiberwiseCellComparison_morseFamilyAttachingMa
       (constLeftInverse_of_le φ' k hk hε.le hballφ' hfφ hg y.1 ⟨y.2, hy⟩).symm⟩)
     (G₂ := B) (hG₂ := hB)
 
-/-- **Milnor's comparison maps compose over a compact parameter space.** Let `ψ₀`, `ψ₁`, `ψ₂` be
+/-- **Milnor's reattachment maps compose over a compact parameter space.** Let `ψ₀`, `ψ₁`, `ψ₂` be
 three families over a compact, locally compact `P` of normal-form charts around the critical points
 of a compact band `f⁻¹[c - ε, c + ε]`, as in
 `TauCeti.exists_fiberHomotopyEquiv_fiberwiseCellAttachment_morseFamilyAttachingMap`, with `ψ₀`

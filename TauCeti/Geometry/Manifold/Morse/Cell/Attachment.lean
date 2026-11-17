@@ -481,6 +481,43 @@ private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
 
 end MilnorFunction
 
+/-- In a normal-form chart `φ` of `f`, every critical point lies on the level `c`: along the
+curve `t ↦ φ⁻¹(t • φ x)` the function is `c + t² (f x - c)`, with derivative `2 (f x - c)` at
+`t = 1`. -/
+theorem mfderiv_ne_zero_of_mem_source (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
+    {k : ℕ} (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
+    {x : M} (hx : x ∈ φ.source) (hxc : f x ≠ c) : mfderiv I 𝓘(ℝ) f x ≠ 0 := by
+  intro h0
+  set y := φ x
+  have hy : y ∈ φ.target := φ.map_source hx
+  set γ : ℝ → M := fun t ↦ φ.symm (t • y)
+  have hγ1 : γ 1 = x := by simp only [γ, one_smul]; exact φ.left_inv hx
+  have hγ : MDifferentiableAt 𝓘(ℝ) I γ 1 :=
+    ((φ.contMDiffOn_invFun.contMDiffAt
+      (φ.open_target.mem_nhds (by simpa using hy))).mdifferentiableAt (by simp)).comp 1
+        (mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.smul_const y))
+  have hd : HasFDerivAt (f ∘ γ) (0 : ℝ →L[ℝ] ℝ) 1 := by
+    rw [← hγ1] at h0
+    have h := (hfs.mdifferentiableAt (by simp)).hasMFDerivAt.comp 1 hγ.hasMFDerivAt
+    rwa [h0, ContinuousLinearMap.zero_comp, hasMFDerivAt_iff_hasFDerivAt] at h
+  have hsum (t : ℝ) : ∑ j, (if j.val < k then -1 else 1) * (t • y) j ^ 2 =
+      t ^ 2 * ∑ j, (if j.val < k then (-1 : ℝ) else 1) * y j ^ 2 := by
+    rw [Finset.mul_sum]
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    simp only [PiLp.smul_apply, smul_eq_mul]
+    ring
+  have heq : f ∘ γ =ᶠ[𝓝 1] fun t ↦ c + t ^ 2 * (f x - c) := by
+    filter_upwards [((continuous_id.smul continuous_const).continuousAt (x := (1 : ℝ))
+      (f := fun t : ℝ ↦ t • y)).preimage_mem_nhds
+        (φ.open_target.mem_nhds (by simpa using hy))] with t (ht : t • y ∈ φ.target)
+    refine (hfφ _ (φ.map_target ht)).trans ?_
+    rw [φ.right_inv ht, hsum, hfφ x hx]
+    ring
+  have hq := ((hasDerivAt_pow 2 (1 : ℝ)).mul_const (f x - c)).const_add c
+  have hval := (hq.congr_of_eventuallyEq heq).unique (by simpa using hd.hasDerivAt)
+  exact hxc (by linear_combination hval / 2)
+
 /-- **The handle of a chart is a product of discs.** In the coordinates of the chart `ψ i`, split
 into the first `k i` and the remaining coordinates, the handle `milnorHandle ψ k ε μ i` is Milnor's
 handle `TauCeti.quadraticHandle ε μ`, which the rescaling `TauCeti.quadraticHandleMap` identifies
