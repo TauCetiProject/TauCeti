@@ -56,7 +56,7 @@ archimedean quantities agree with their `ContinuousInfinityType` counterparts on
 public noncomputable section
 
 open Complex ComplexConjugate MeasureTheory NumberField NumberField.InfinitePlace
-  NumberField.InfinitePlace.Completion NumberField.mixedEmbedding TauCeti.NumberField.mixedEmbedding
+  NumberField.mixedEmbedding TauCeti.NumberField.mixedEmbedding
 open scoped FourierTransform NumberField Real
 
 namespace TauCeti.LFunctions
@@ -572,37 +572,20 @@ private theorem unitaryPart_real_mul_pow (χ : Grossencharacter K 𝔪)
       (((mixedEmbedding K (x : K)).1 w : ℝ) : ℂ) ^
         (χ.toHeckeCharacter.infinityType.realParity w).val =
       ((normAtPlace w.1 (mixedEmbedding K (x : K)) ^ χ.harmonicExponent w.1 : ℝ) : ℂ) := by
-  have htransport :
-      χ.toHeckeCharacter.unitaryPart.infiniteComponent w.1
-          (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
-        χ.toHeckeCharacter.unitaryPart.realComponent w
-          (Units.map (embedding_of_isReal w.2).toMonoidHom x) := by
-    rw [HeckeCharacter.realComponent_apply]
-    congr 1
-    apply (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).injective
-    rw [ContinuousMulEquiv.apply_symm_apply]
-    apply Units.ext
-    exact (continuousMulEquivRealOfIsReal_apply w.2 _).trans
-      (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
-  rw [htransport, HeckeCharacter.realComponent_eq, χ.infinityType_unitaryPart]
+  rw [HeckeCharacter.infiniteComponent_map_algebraMap_eq_realComponent,
+    HeckeCharacter.realComponent_eq, χ.infinityType_unitaryPart]
   simp only [Pi.zero_apply, TauCeti.realUnitsCharacter_zero_left]
   rw [mixedEmbedding_apply_isReal, normAtPlace_apply_of_isReal w.2, mixedEmbedding_apply_isReal,
     Real.norm_eq_abs, χ.harmonicExponent_of_isReal w.2]
-  set r : ℝ := embedding_of_isReal w.2 (x : K)
-  have hr0 : r ≠ 0 := (map_ne_zero (embedding_of_isReal w.2)).mpr x.ne_zero
-  have hval : (χ.toHeckeCharacter.infinityType.realParity w).val = 0 ∨
-      (χ.toHeckeCharacter.infinityType.realParity w).val = 1 := by
-    have hlt := (χ.toHeckeCharacter.infinityType.realParity w).val_lt
-    omega
-  rcases hval with h0 | h1
-  · simp [h0]
-  · simp only [h1, pow_one, TauCeti.coe_realSignCharacter_apply, Units.coe_map,
+  have hr0 : embedding_of_isReal w.2 (x : K) ≠ 0 := (map_ne_zero _).mpr x.ne_zero
+  have hpar := (χ.toHeckeCharacter.infinityType.realParity w).val_lt
+  interval_cases (χ.toHeckeCharacter.infinityType.realParity w).val
+  · simp
+  · simp only [pow_one, TauCeti.coe_realSignCharacter_apply, Units.coe_map,
       RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
     rcases lt_or_gt_of_ne hr0 with hlt | hgt
-    · rw [sign_neg hlt, abs_of_neg hlt]
-      simp
-    · rw [sign_pos hgt, abs_of_pos hgt]
-      simp
+    · simp [sign_neg hlt, abs_of_neg hlt]
+    · simp [sign_pos hgt, abs_of_pos hgt]
 
 private theorem unitaryPart_complex_mul_monomial (χ : Grossencharacter K 𝔪)
     (w : {w : InfinitePlace K // w.IsComplex}) (x : Kˣ) :
@@ -612,19 +595,8 @@ private theorem unitaryPart_complex_mul_monomial (χ : Grossencharacter K 𝔪)
         ((AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency w)
         ((mixedEmbedding K (x : K)).2 w) =
       ((normAtPlace w.1 (mixedEmbedding K (x : K)) ^ χ.harmonicExponent w.1 : ℝ) : ℂ) := by
-  have htransport :
-      χ.toHeckeCharacter.unitaryPart.infiniteComponent w.1
-          (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
-        χ.toHeckeCharacter.unitaryPart.complexComponent w
-          (Units.map w.1.embedding.toMonoidHom x) := by
-    rw [HeckeCharacter.complexComponent_apply]
-    congr 1
-    apply (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).injective
-    rw [ContinuousMulEquiv.apply_symm_apply]
-    apply Units.ext
-    exact (continuousMulEquivComplexOfIsComplex_apply w.2 _).trans
-      (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
-  rw [htransport, HeckeCharacter.complexComponent_eq, χ.infinityType_unitaryPart]
+  rw [HeckeCharacter.infiniteComponent_map_algebraMap_eq_complexComponent,
+    HeckeCharacter.complexComponent_eq, χ.infinityType_unitaryPart]
   simp only [Pi.zero_apply, TauCeti.coe_complexUnitsCharacter_apply, cpow_zero, one_mul,
     Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
   rw [mixedEmbedding_apply_isComplex, TauCeti.angular_mul_complexHarmonicMonomial,

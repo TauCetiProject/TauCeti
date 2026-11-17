@@ -144,6 +144,17 @@ theorem realComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K //
       ((Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).symm x) :=
   (rfl)
 
+/-- On a global unit `x : Kˣ` at a real place `w`, the infinite component of `χ` agrees with
+`χ.realComponent w` evaluated at the real embedding `embedding_of_isReal w.2`. -/
+theorem infiniteComponent_map_algebraMap_eq_realComponent (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsReal}) (x : Kˣ) :
+    χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
+      χ.realComponent w (Units.map (embedding_of_isReal w.2).toMonoidHom x) := by
+  rw [realComponent_apply]
+  congr 1
+  rw [ContinuousMulEquiv.eq_symm_apply]
+  exact Units.ext <| by simp [algebraMap_apply_eq_coe]
+
 /-- The **component of a Hecke character at a complex place `w`**, as a character of `ℂˣ`: the
 component at `w` transported along the isomorphism `ℂ ≃ K_w` inverse to the extension of
 `w.embedding`. -/
@@ -160,6 +171,17 @@ theorem complexComponent_apply (χ : HeckeCharacter K) (w : {w : InfinitePlace K
     χ.complexComponent w z = χ.infiniteComponent w.1
       ((Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).symm z) :=
   (rfl)
+
+/-- On a global unit `x : Kˣ` at a complex place `w`, the infinite component of `χ` agrees with
+`χ.complexComponent w` evaluated at the complex embedding `w.1.embedding`. -/
+theorem infiniteComponent_map_algebraMap_eq_complexComponent (χ : HeckeCharacter K)
+    (w : {w : InfinitePlace K // w.IsComplex}) (x : Kˣ) :
+    χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
+      χ.complexComponent w (Units.map w.1.embedding.toMonoidHom x) := by
+  rw [complexComponent_apply]
+  congr 1
+  rw [ContinuousMulEquiv.eq_symm_apply]
+  exact Units.ext <| by simp [algebraMap_apply_eq_coe]
 
 /-- The trivial Hecke character has trivial real components. -/
 @[simp]
