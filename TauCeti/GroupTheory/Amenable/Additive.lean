@@ -217,7 +217,12 @@ theorem addAmenable_iff_exists_boundedContinuousFunction_mean :
               map_add' f g := map_add m _ _
               map_smul' c f := map_smul m c _
               monotone' _ _ h := OrderHomClass.mono m fun x => h x.toAdd }, hm1, fun a f => ?_⟩
-    exact hm (Multiplicative.ofAdd a) (f.compContinuous toAddMap)
+    have htrans : (f.compContinuous (ContinuousMap.addLeft (-a))).compContinuous toAddMap =
+        (f.compContinuous toAddMap).compContinuous
+          (ContinuousMap.mulLeft (Multiplicative.ofAdd a)⁻¹) := by
+      ext x
+      simp [toAddMap, toAdd_mul]
+    exact (congrArg m htrans).trans (hm (Multiplicative.ofAdd a) (f.compContinuous toAddMap))
   · rintro ⟨m, hm1, hm⟩
     refine ⟨{ toFun f := m (f.compContinuous ofAddMap)
               map_add' f g := map_add m _ _
@@ -388,13 +393,13 @@ theorem AddAmenable.of_isAddFoelner [MeasurableSpace A] {ι : Type*}
 
 attribute [to_additive existing AddAmenable.of_isAddFoelner] Amenable.of_isFoelner
 
-/-- An additive topological group is amenable when it has finite nonempty sets `F i` with
-`|(a +ᵥ F i) △ F i| / |F i| → 0` for every `a`, along a nontrivial filter. -/
+/-- An additive topological group is amenable when it has eventually nonempty finite sets `F i`
+with `|(a +ᵥ F i) △ F i| / |F i| → 0` for every `a`, along a nontrivial filter. -/
 theorem AddAmenable.of_tendsto_card_vadd_symmDiff_div_card [DecidableEq A] {ι : Type*}
-    {l : Filter ι} [l.NeBot] {F : ι → Finset A} (hne : ∀ i, (F i).Nonempty)
+    {l : Filter ι} [l.NeBot] {F : ι → Finset A} (hne : ∀ᶠ i in l, (F i).Nonempty)
     (h : ∀ a : A, Tendsto (fun i => (#((a +ᵥ F i) ∆ F i) : ℝ) / #(F i)) l (𝓝 0)) :
     AddAmenable A :=
-  .of_hasAddFoelnerSets (.of_tendsto_card_vadd_symmDiff_div_card (Eventually.of_forall hne) h)
+  .of_hasAddFoelnerSets (.of_tendsto_card_vadd_symmDiff_div_card hne h)
 
 attribute [to_additive existing AddAmenable.of_tendsto_card_vadd_symmDiff_div_card]
   Amenable.of_tendsto_card_smul_symmDiff_div_card
