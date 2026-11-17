@@ -174,6 +174,28 @@ theorem nonempty_homotopy_id_zero_of_homotopyEquiv (e : HomotopyEquiv K L) :
 
 end
 
+section DescHomotopy
+
+open HomComplex
+
+variable {M : CochainComplex C ℤ} (f₁ f₂ : mappingCone f ⟶ M) (γ₁ : Cochain K M (-2))
+  (γ₂ : Cochain L M (-1))
+
+/-- The components of `descHomotopy f f₁ f₂ γ₁ γ₂ h₁ h₂` are those of the cochain
+`descCochain f γ₁ γ₂`. -/
+lemma descHomotopy_hom
+    (h₁ : (inl f).comp (Cochain.ofHom f₁) (add_zero (-1)) =
+      δ (-2) (-1) γ₁ + (Cochain.ofHom f).comp γ₂ (zero_add (-1)) +
+      (inl f).comp (Cochain.ofHom f₂) (add_zero (-1)))
+    (h₂ : Cochain.ofHom (inr f ≫ f₁) = δ (-1) 0 γ₂ + Cochain.ofHom (inr f ≫ f₂))
+    (p q : ℤ) (hpq : p + -1 = q) :
+    (descHomotopy f f₁ f₂ γ₁ γ₂ h₁ h₂).hom p q = (descCochain f γ₁ γ₂ (by simp)).v p q hpq := by
+  -- Mathlib defines `descHomotopy` through the inverse of `Cochain.equivHomotopy`, whose
+  -- components are those of the cochain in degrees `p + -1 = q` and zero otherwise.
+  simp only [descHomotopy, Cochain.equivHomotopy, Equiv.coe_fn_symm_mk, hpq, ↓reduceDIte]
+
+end DescHomotopy
+
 section HomotopySquares
 
 open HomComplex
@@ -337,8 +359,7 @@ inclusion. -/
 lemma inl_v_mapHomotopy_hom (p q r : ℤ) (hpq : p + -1 = q) (hqr : q + -1 = r) :
     (inl φ₁).v p q hpq ≫ (mapHomotopy φ₁ φ₂ a b comm comm' ha hb h).hom q r =
       -(ha.hom p q ≫ (inl φ₂).v q r hqr) := by
-  simp only [mapHomotopy, descHomotopy, Cochain.equivHomotopy, Equiv.coe_fn_symm_mk, hqr,
-    ↓reduceDIte, inl_v_descCochain_v]
+  rw [mapHomotopy, descHomotopy_hom _ _ _ _ _ _ _ q r hqr, inl_v_descCochain_v]
   simp [Cochain.comp_v _ _ _ p q r hpq hqr, Cochain.ofHomotopy]
 
 /-- On the target, the homotopy of maps of mapping cones is `hb` followed by the right
@@ -348,8 +369,7 @@ lemma inr_f_mapHomotopy_hom (p q : ℤ) :
     (inr φ₁).f p ≫ (mapHomotopy φ₁ φ₂ a b comm comm' ha hb h).hom p q =
       hb.hom p q ≫ (inr φ₂).f q := by
   by_cases hpq : p + -1 = q
-  · simp only [mapHomotopy, descHomotopy, Cochain.equivHomotopy, Equiv.coe_fn_symm_mk, hpq,
-      ↓reduceDIte, inr_f_descCochain_v]
+  · rw [mapHomotopy, descHomotopy_hom _ _ _ _ _ _ _ p q hpq, inr_f_descCochain_v]
     simp [Cochain.ofHomotopy]
   · rw [Homotopy.zero _ p q (by simp; lia), hb.zero p q (by simp; lia), comp_zero, zero_comp]
 

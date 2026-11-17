@@ -365,12 +365,15 @@ lemma filtrationFunctor_map_comp_objIso_hom {a b : EInt} (f : a ⟶ b) :
   simp only [Category.comp_id, Category.id_comp]
   rfl
 
-/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
-lemma filtrationFunctor_map_bot (a : EInt) :
-    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 := by
-  refine IsZero.eq_of_src ?_ _ _
+/-- The object at `⊥` of the functor of a filtration is zero. -/
+lemma isZero_filtrationFunctor_obj_bot : IsZero ((filtrationFunctor F hF).obj ⊥) := by
   rw [filtrationFunctor_obj, filtrationEInt_bot]
   exact IsZero.of_iso (isZero_zero _) Subobject.botCoeIsoZero
+
+/-- The maps `F_⊥ ⟶ F_a` of the functor of a filtration vanish, their source being zero. -/
+lemma filtrationFunctor_map_bot (a : EInt) :
+    (filtrationFunctor F hF).map (homOfLE (bot_le : (⊥ : EInt) ≤ a)) = 0 :=
+  (isZero_filtrationFunctor_obj_bot F hF).eq_of_src _ _
 
 instance {a b : EInt} (f : a ⟶ b) : Mono ((filtrationFunctor F hF).map f) :=
   inferInstanceAs (Mono (Subobject.ofLE _ _ (monotone_filtrationEInt F hF (leOfHom f))))
@@ -413,6 +416,21 @@ lemma eqToHom_comp_filtrationFunctorArrow (q : ℤ) :
       (F q).arrow :=
   -- Both the comparison `eqToHom` and `filtrationFunctorObjIso` are identities by definition.
   (Category.id_comp _).trans (Category.id_comp _)
+
+/-- At an integer `n`, the inclusion of the piece of the functor of a filtration is the inclusion
+of the subcomplex `F n`. Not `@[simp]`: it would rewrite the left-hand side of
+`eqToHom_comp_filtrationFunctorArrow`. -/
+lemma filtrationFunctorArrow_coe (n : ℤ) :
+    filtrationFunctorArrow F hF n = eqToHom (filtrationFunctor_obj_coe F hF n) ≫ (F n).arrow := by
+  rw [← eqToHom_comp_filtrationFunctorArrow F hF n, eqToHom_trans_assoc, eqToHom_refl,
+    Category.id_comp]
+
+/-- The inclusion of the piece at `⊤` of the functor of a filtration is an isomorphism. -/
+instance isIso_filtrationFunctorArrow_top : IsIso (filtrationFunctorArrow F hF ⊤) := by
+  have : IsIso (filtrationEInt F ⊤).arrow := by
+    rw [filtrationEInt_top]
+    infer_instance
+  infer_instance
 
 /-- A morphism of complexes sending each piece of a filtration into the corresponding piece of
 another one does so for the extensions of the filtrations to `EInt`. -/
