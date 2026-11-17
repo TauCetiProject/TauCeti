@@ -70,6 +70,10 @@ finite-dimensional and `A` is injective), it is a left inverse of `A`
 noncomputable def gramLeftInverse (A : F →L[𝕜] V) : V →L[𝕜] F :=
   Ring.inverse (adjoint A ∘L A) ∘L adjoint A
 
+/-- The defining formula for the Gram left inverse. -/
+theorem gramLeftInverse_def (A : F →L[𝕜] V) :
+    gramLeftInverse A = Ring.inverse (adjoint A ∘L A) ∘L adjoint A := (rfl)
+
 /-- The Gram left inverse is a left inverse of every operator with invertible Gram operator. -/
 @[simp]
 theorem gramLeftInverse_comp {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) :
@@ -82,15 +86,6 @@ theorem gramLeftInverse_comp {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A
 theorem gramLeftInverse_apply_apply {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A)) (v : F) :
     gramLeftInverse A (A v) = v :=
   congr($(gramLeftInverse_comp hA) v)
-
-/-- The Gram left inverse of a surjective operator with invertible Gram operator is injective. -/
-theorem gramLeftInverse_injective {A : F →L[𝕜] V} (hA : IsUnit (adjoint A ∘L A))
-    (hsurj : Surjective A) : Injective (gramLeftInverse A) := by
-  intro v w h
-  obtain ⟨x, rfl⟩ := hsurj v
-  obtain ⟨y, rfl⟩ := hsurj w
-  rw [gramLeftInverse_apply_apply hA, gramLeftInverse_apply_apply hA] at h
-  rw [h]
 
 /-- The Gram left inverse is continuous at every operator with invertible Gram operator. -/
 theorem continuousAt_gramLeftInverse {A : F →L[𝕜] V}
