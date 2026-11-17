@@ -43,6 +43,8 @@ power-series and circle-integral arguments adapt the real modified-Bessel proofs
   `besselJ ν z` for every `ν, z : ℂ` (DLMF 10.2.2).
 * `Complex.hasSum_besselJ_natCast`, `Complex.hasSum_besselJ_zero_left` — the factorial power series
   for natural orders `n : ℕ` and order `0`.
+* `Complex.I_zpow_mul_besselJ_int_eq_natAbs` — integer-order reflection symmetry
+  `i^n J_n(z) = i^{|n|} J_{|n|}(z)` for `n : ℤ` and `z : ℂ`.
 * `Complex.integral_exp_I_mul_cos_mul_exp`, `Complex.integral_exp_I_mul_cos_mul_exp_add_two_pi` —
   the Hansen–Bessel circle integrals `∫_{-π}^π e^{i z cos θ} e^{i n θ} dθ = 2π i^n J_n(z)` and
   `∫_a^{a + 2π} e^{i z cos θ} e^{i n θ} dθ = 2π i^n J_n(z)` for `n : ℤ` and `z : ℂ`.
@@ -156,18 +158,20 @@ theorem hasSum_besselJ_zero_left (z : ℂ) :
 
 /-! ### Hansen–Bessel circle integrals and the order-zero Bessel integral -/
 
+/-- For every integer `n` and `z : ℂ`, `i^n J_n(z) = i^{|n|} J_{|n|}(z)`. -/
+theorem I_zpow_mul_besselJ_int_eq_natAbs (n : ℤ) (z : ℂ) :
+    I ^ n * besselJ n z = I ^ n.natAbs * besselJ n.natAbs z := by
+  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
+  · simp
+  · rw [Int.cast_neg, besselJ_neg_int]
+    simp [← mul_assoc, ← inv_pow, ← mul_pow]
+
 /-- **Hansen–Bessel circle integral**: for every `z : ℂ` and `n : ℤ`,
 `∫_{-π}^π e^{i z cos θ} e^{i n θ} dθ = 2π i^n J_n(z)`. -/
 theorem integral_exp_I_mul_cos_mul_exp (z : ℂ) (n : ℤ) :
     ∫ θ in -π..π, exp (I * z * Real.cos θ) * exp (n * θ * I) =
       2 * π * I ^ n * besselJ n z := by
-  have hsymm : I ^ n * besselJ n z = I ^ n.natAbs * besselJ n.natAbs z := by
-    obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
-    · simp
-    · rw [Int.natAbs_neg, Int.natAbs_natCast, Int.cast_neg, besselJ_neg_int, Int.cast_natCast,
-        zpow_neg, zpow_natCast, zpow_natCast, ← inv_pow, inv_I, ← mul_assoc, ← mul_pow]
-      simp
-  rw [mul_assoc (2 * (π : ℂ)), hsymm, ← mul_assoc]
+  rw [mul_assoc (2 * (π : ℂ)), I_zpow_mul_besselJ_int_eq_natAbs, ← mul_assoc]
   refine (hasSum_integral_exp_mul_cos_mul_exp (I * z) n).unique ?_
   refine ((hasSum_besselJ_natCast n.natAbs z).mul_left
     (2 * (π : ℂ) * I ^ n.natAbs)).congr_fun fun j => ?_
