@@ -11,6 +11,7 @@ public import TauCeti.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Group.Integral
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+import TauCeti.MeasureTheory.Group.Convolution.Norm
 
 /-!
 # Twisted convolution of compactly supported coefficient functions
@@ -41,8 +42,6 @@ The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter
 
 ## Main statements
 
-* `TauCeti.integral_norm_le_mul_of_norm_le_integral`: pointwise domination of `‖F s‖` by the scalar
-  convolution `∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` implies `∫ ‖F‖ ≤ (∫ ‖f‖) * ∫ ‖g‖`.
 * `TauCeti.CStarAction.support_convolution_subset`: the support of a twisted convolution lies in
   the product of the supports.
 * `TauCeti.CStarAction.smul_convolution`: left multiplication by a coefficient commutes with
@@ -57,44 +56,6 @@ open MeasureTheory Function
 open scoped CompactlySupported Pointwise
 
 namespace TauCeti
-
-/-- If `F : C_c(G, E₃)` is bounded in norm pointwise by the scalar convolution
-`s ↦ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ` of `f : C_c(G, E₁)` and `g : C_c(G, E₂)` against a
-left-invariant measure `μ` finite on compacts, then
-`∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ`. -/
-theorem integral_norm_le_mul_of_norm_le_integral {G E₁ E₂ E₃ : Type*}
-    [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G]
-    [OpensMeasurableSpace G] [MeasurableMul G]
-    [SeminormedAddCommGroup E₁] [SeminormedAddCommGroup E₂] [SeminormedAddCommGroup E₃]
-    (μ : Measure G) [IsFiniteMeasureOnCompacts μ] [μ.IsMulLeftInvariant]
-    (F : C_c(G, E₃)) (f : C_c(G, E₁)) (g : C_c(G, E₂))
-    (hF : ∀ s, ‖F s‖ ≤ ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ) :
-    ∫ s, ‖F s‖ ∂μ ≤ (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := by
-  have hsupp : ∀ s r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ≠ 0 → r ∈ tsupport f ∧ r⁻¹ * s ∈ tsupport g :=
-    fun _ _ h => mem_tsupport_and_inv_mul_mem_tsupport h (by intro hf; simp [hf])
-      (by intro hg; simp [hg])
-  have hcont : Continuous (uncurry fun s r => ‖f r‖ * ‖g (r⁻¹ * s)‖) := by
-    rw [uncurry_def]
-    fun_prop
-  have hNcont := continuous_integral_of_compact_support μ f.hasCompactSupport hcont
-    fun s r h => (hsupp s r h).1
-  have hNsupp := hasCompactSupport_integral_of_inv_mul_mem μ f.hasCompactSupport
-    g.hasCompactSupport hsupp
-  calc ∫ s, ‖F s‖ ∂μ
-      ≤ ∫ s, ∫ r, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
-        integral_mono
-          (F.continuous.norm.integrable_of_hasCompactSupport
-            (F.hasCompactSupport.comp_left norm_zero))
-          (hNcont.integrable_of_hasCompactSupport hNsupp) hF
-    _ = ∫ r, ∫ s, ‖f r‖ * ‖g (r⁻¹ * s)‖ ∂μ ∂μ :=
-        integral_integral_swap_of_hasCompactSupport hcont
-          (hasCompactSupport_uncurry_of_inv_mul_mem f.hasCompactSupport g.hasCompactSupport hsupp)
-    _ = ∫ r, ‖f r‖ * ∫ s, ‖g s‖ ∂μ ∂μ := by
-        congr 1 with r
-        rw [integral_const_mul]
-        congr 1
-        exact integral_mul_left_eq_self (fun s => ‖g s‖) r⁻¹
-    _ = (∫ s, ‖f s‖ ∂μ) * ∫ s, ‖g s‖ ∂μ := integral_mul_const _ _
 
 namespace CStarAction
 

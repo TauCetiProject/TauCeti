@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CentralTwist.Basic
 public import TauCeti.Analysis.CStarAlgebra.Action.Convolution.Algebra
+import TauCeti.MeasureTheory.Group.Convolution.Norm
 
 /-!
 # Cocycle-twisted convolution and involution on `C_c(G, A)`
