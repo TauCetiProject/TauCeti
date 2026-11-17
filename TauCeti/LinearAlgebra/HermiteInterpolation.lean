@@ -352,27 +352,6 @@ theorem sum_eval_hasseDeriv_smul_hermiteBasis {f : R[X]} (hf : f.degree < ∑ i,
   have hf' : f ∈ degreeLT R (∑ i, m i) := mem_degreeLT.2 (by simpa using hf)
   simpa using congr_arg Subtype.val ((hermiteBasis ha m).sum_repr ⟨f, hf'⟩)
 
-/-- Hermite interpolation with ordinary derivatives: when the differences of the nodes are units
-and `k !` is a unit for every order `k < m i` that occurs, the jets `(derivative^[k] f).eval (a i)`
-determine a polynomial of degree below `∑ i, m i`, and every such datum is attained. They are
-`k !` times the Hasse jets. -/
-theorem eval_iterate_derivative_bijective (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) :
-    Bijective fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
-      (derivative^[k] (f : R[X])).eval (a i) := by
-  have : (fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
-      (derivative^[k] (f : R[X])).eval (a i)) =
-      (fun (c : ∀ i, Fin (m i) → R) i (k : Fin (m i)) => ((k : ℕ) ! : R) * c i k) ∘
-        hermiteJet a m := by
-    ext f i k
-    simp [← factorial_smul_hasseDeriv]
-  rw [this]
-  refine Bijective.comp ⟨fun c d h => ?_, fun c => ⟨fun i k => ↑(hm i k k.2).unit⁻¹ * c i k, ?_⟩⟩
-    (hermiteJet_bijective_of_pairwise_isUnit_sub ha m)
-  · ext i k
-    exact (hm i k k.2).mul_left_cancel (congr_fun (congr_fun h i) k)
-  · ext i k
-    simp [← mul_assoc]
-
 end CommRing
 
 section ConfluentVandermonde
@@ -518,6 +497,17 @@ theorem eval_iterate_derivative_bijective_iff {a : ι → R} {m : ι → ℕ} :
     obtain ⟨c, hc⟩ := h.surjective.of_comp (fun _ _ => 1)
     exact fun i k hk => IsUnit.of_mul_eq_one (c i ⟨k, hk⟩) (congr_fun (congr_fun hc i) ⟨k, hk⟩)
   exact ⟨hm, hermiteJet_bijective_iff.1 (((hS hm).of_comp_iff' _).1 h)⟩
+
+/-- Hermite interpolation with ordinary derivatives: when the differences of the nodes are units
+and `k !` is a unit for every order `k < m i` that occurs, the jets `(derivative^[k] f).eval (a i)`
+determine a polynomial of degree below `∑ i, m i`, and every such datum is attained. They are
+`k !` times the Hasse jets. -/
+theorem eval_iterate_derivative_bijective {a : ι → R}
+    (ha : Pairwise fun i j => IsUnit (a i - a j)) (m : ι → ℕ)
+    (hm : ∀ i, ∀ k < m i, IsUnit (k ! : R)) :
+    Bijective fun (f : degreeLT R (∑ i, m i)) i (k : Fin (m i)) =>
+      (derivative^[k] (f : R[X])).eval (a i) :=
+  eval_iterate_derivative_bijective_iff.2 ⟨hm, fun _ _ hij _ _ => ha hij⟩
 
 end ConfluentVandermonde
 
