@@ -116,6 +116,12 @@ theorem degree_ne_zero {n d : ℕ}
     (hx : IsPositiveDegreeCupProduct X R n x) : d ≠ 0 := by
   cases hx <;> omega
 
+/-- A product of `n` positive-degree classes has degree at least `n`. -/
+theorem le_degree {n d : ℕ}
+    {x : (TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) d}
+    (hx : IsPositiveDegreeCupProduct X R n x) : n ≤ d := by
+  induction hx <;> omega
+
 /-- The products of length one are exactly the classes of positive degree. -/
 @[simp]
 theorem one_iff {d : ℕ}
@@ -195,6 +201,17 @@ theorem lsCupLength_eq_zero_iff :
   rw [← not_iff_not, ← ne_eq, ← Order.one_le_iff_ne_zero, ← Nat.cast_one,
     natCast_le_lsCupLength_iff one_ne_zero]
   simp
+
+/-- **Cohomology vanishing above degree `N` gives cup length at most `N`.** If `Hᵖ(X; R)` is a
+subsingleton in every degree `p > N`, then `lsCupLength X R ≤ N`, since a product of `n`
+positive-degree classes has degree at least `n`. -/
+theorem lsCupLength_le_of_subsingleton {N : ℕ}
+    (h : ∀ p, N < p → Subsingleton
+      ((TopCat.of X).singularCohomology (𝟙_ (ModuleCat.{u} R)) R (𝟙_ (ModuleCat.{u} R)) p)) :
+    lsCupLength X R ≤ N := by
+  refine lsCupLength_le_iff.mpr fun n d x hx hx0 ↦ ?_
+  by_contra hn
+  exact hx0 (@Subsingleton.elim _ (h d (by have := hx.le_degree; norm_cast at hn; omega)) x 0)
 
 /-- **Cohomology in a single positive degree has cup length at most `1`.** If `Hᵖ(X; R)` is a
 subsingleton in every positive degree `p ≠ N`, so that the cohomology of `X` is nonzero in at most
