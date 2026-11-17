@@ -35,7 +35,7 @@ de Rham–Witt complex.
   `TauCeti.DieudonneComplex.IsSaturated.V_F_apply`: `F V = V F = p`.
 * `TauCeti.DieudonneComplex.IsSaturated.F_d_V_apply`: `F d V = d`.
 * `TauCeti.DieudonneComplex.IsSaturated.V_d_apply`: `V d = p d V`.
-* `TauCeti.DieudonneComplex.Hom.V_apply`: morphisms commute with the Verschiebung.
+* `TauCeti.DieudonneComplex.Hom.comm_V_apply`: morphisms commute with the Verschiebung.
 * `TauCeti.DieudonneComplex.IsSaturated.mem_range_F_iterate_iff`: `x` is in the image of `Fʳ`
   iff `d x` is divisible by `pʳ`.
 
@@ -96,12 +96,8 @@ noncomputable def V (n : ℤ) : M.X n ⟶ M.X n :=
 
 /-- `F V = p`. -/
 @[simp]
-lemma F_V_apply {n : ℤ} (x : M.X n) : (M.F n).hom ((hM.V n).hom x) = p • x := by
-  have h := AddMonoidHom.ofInjective_apply (hM.injective_F n)
-    (x := (AddMonoidHom.ofInjective (hM.injective_F n)).symm
-      ((DistribSMul.toAddMonoidHom (M.X n) p).codRestrict _ hM.smul_mem_range_F x))
-  rw [AddEquiv.apply_symm_apply] at h
-  exact h.symm
+lemma F_V_apply {n : ℤ} (x : M.X n) : (M.F n).hom ((hM.V n).hom x) = p • x :=
+  AddMonoidHom.apply_ofInjective_symm (hM.injective_F n) _
 
 /-- `V x` is the unique `y` with `F y = p • x`. -/
 lemma V_eq_iff {n : ℤ} {x y : M.X n} : (hM.V n).hom x = y ↔ (M.F n).hom y = p • x :=
@@ -122,7 +118,8 @@ lemma F_d_V_apply {n : ℤ} (x : M.X n) :
     (M.F (n + 1)).hom ((M.d n (n + 1)).hom ((hM.V n).hom x)) = (M.d n (n + 1)).hom x :=
   hM.isSMulRegular (n + 1) (by beta_reduce; rw [← M.d_F, F_V_apply, map_nsmul])
 
-/-- `V d = p d V`: the Verschiebung is not a cochain map. -/
+/-- `V d = p d V`: the Verschiebung commutes with the differential only up to a factor of
+`p`. -/
 lemma V_d_apply {n : ℤ} (x : M.X n) :
     (hM.V (n + 1)).hom ((M.d n (n + 1)).hom x) = p • (M.d n (n + 1)).hom ((hM.V n).hom x) := by
   conv_lhs => rw [← hM.F_d_V_apply x]
@@ -131,7 +128,7 @@ lemma V_d_apply {n : ℤ} (x : M.X n) :
 end IsSaturated
 
 /-- A morphism between saturated Dieudonné complexes commutes with the Verschiebung. -/
-lemma Hom.V_apply {N : DieudonneComplex.{u} p} (hM : M.IsSaturated) (hN : N.IsSaturated)
+lemma Hom.comm_V_apply {N : DieudonneComplex.{u} p} (hM : M.IsSaturated) (hN : N.IsSaturated)
     (f : M ⟶ N) {n : ℤ} (x : M.X n) :
     (f.hom.f n).hom ((hM.V n).hom x) = (hN.V n).hom ((f.hom.f n).hom x) :=
   ((hN.V_eq_iff).2 (by rw [← Hom.comm_F_apply, hM.F_V_apply, map_nsmul])).symm
@@ -181,7 +178,7 @@ lemma mem_range_F_iterate_iff {n : ℤ} (r : ℕ) {x : M.X n} :
       ((hM.isSMulRegular (n + 1 + 1)).pow (r + 1)) <| by
         beta_reduce
         rw [smul_zero, ← map_nsmul, hy, ← AddCommGrpCat.comp_apply, M.d_comp_d]
-        rfl
+        simp
     obtain ⟨y', rfl⟩ := hM.mem_range_F_iff.2 ⟨0, by rw [smul_zero, hdy]⟩
     -- Cancelling `p F` in `p F (d x') = d (F x') = p ^ (r + 1) F y'` gives `d x' = p ^ r y'`.
     have hx' : p ^ r • y' = (M.d n (n + 1)).hom x' := by

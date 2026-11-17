@@ -183,8 +183,8 @@ lemma toNormalizedDecalage_f_apply (n : ℤ) (x : M.X n) :
 
 /-- The Dieudonné complex structure on a `p`-torsion-free cochain complex `K` whose Frobenius is
 given by a cochain map `α : K ⟶ E_p(K)` into the normalized décalage. -/
-@[simps toCochainComplex]
-noncomputable abbrev ofNormalizedDecalage (K : CochainComplex AddCommGrpCat.{u} ℤ)
+@[expose, simps toCochainComplex]
+noncomputable def ofNormalizedDecalage (K : CochainComplex AddCommGrpCat.{u} ℤ)
     (hK : ∀ n, IsSMulRegular (K.X n) p) (α : K ⟶ K.normalizedDecalage p hK) :
     DieudonneComplex.{u} p where
   toCochainComplex := K
@@ -207,7 +207,7 @@ lemma toNormalizedDecalage_ofNormalizedDecalage (K : CochainComplex AddCommGrpCa
     (hK : ∀ n, IsSMulRegular (K.X n) p) (α : K ⟶ K.normalizedDecalage p hK) :
     (ofNormalizedDecalage K hK α).toNormalizedDecalage hK = α := by
   ext n x
-  rw [toNormalizedDecalage_f_apply, ofNormalizedDecalage_F_apply]
+  exact (toNormalizedDecalage_f_apply _ hK n x).trans (ofNormalizedDecalage_F_apply K hK α n x)
 
 /-- The Dieudonné complex defined by the cochain map `α_F` is the original one. -/
 @[simp]

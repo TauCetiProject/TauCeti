@@ -93,21 +93,16 @@ private noncomputable def divD (n : ℤ) : M.decalageAddSubgroup p n →+ M.X (n
         fun x ↦ AddSubgroup.mem_comap.1 x.2)
 
 private lemma smul_divD (n : ℤ) (x : M.decalageAddSubgroup p n) :
-    p • divD hM n x = (M.d n (n + 1)).hom x := by
-  set e := AddMonoidHom.ofInjective (f := DistribSMul.toAddMonoidHom (M.X (n + 1)) p) (hM (n + 1))
-  set z := ((M.d n (n + 1)).hom.comp (M.decalageAddSubgroup p n).subtype).codRestrict _
-    (fun x ↦ AddSubgroup.mem_comap.1 x.2) x
-  have h := AddMonoidHom.ofInjective_apply (f := DistribSMul.toAddMonoidHom (M.X (n + 1)) p)
-    (hM (n + 1)) (x := e.symm z)
-  rw [AddEquiv.apply_symm_apply] at h
-  exact h.symm
+    p • divD hM n x = (M.d n (n + 1)).hom x :=
+  AddMonoidHom.apply_ofInjective_symm (f := DistribSMul.toAddMonoidHom (M.X (n + 1)) p)
+    (hM (n + 1)) _
 
 private lemma d_divD (n : ℤ) (x : M.decalageAddSubgroup p n) :
     (M.d (n + 1) (n + 1 + 1)).hom (divD hM n x) = 0 := by
   refine hM (n + 1 + 1) ?_
   beta_reduce
   rw [smul_zero, ← map_nsmul, smul_divD, ← AddCommGrpCat.comp_apply, M.d_comp_d]
-  rfl
+  simp
 
 /-- The differential `x ↦ d x / p` of the normalized décalage. -/
 noncomputable def decalageD (n : ℤ) :
@@ -147,8 +142,7 @@ noncomputable abbrev normalizedDecalage : CochainComplex AddCommGrpCat.{u} ℤ :
 
 lemma normalizedDecalage_d_apply (n : ℤ) (x : M.decalageAddSubgroup p n) :
     ((M.normalizedDecalage p hM).d n (n + 1)).hom x = decalageD hM n x := by
-  simp only [normalizedDecalage, CochainComplex.of_d]
-  rfl
+  simp only [normalizedDecalage, CochainComplex.of_d, AddCommGrpCat.hom_ofHom]
 
 /-- The differential of `E_p(M)` multiplied by `p` is the differential of `M`. -/
 lemma smul_normalizedDecalage_d (n : ℤ) (x : M.decalageAddSubgroup p n) :
@@ -185,9 +179,9 @@ noncomputable def normalizedDecalageMap (φ : M ⟶ N) :
     M.normalizedDecalage p hM ⟶ N.normalizedDecalage p hN :=
   CochainComplex.ofHom (normalizedDecalageMapF hM hN φ) fun n ↦ by
     ext x
-    rw [AddCommGrpCat.hom_comp, AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply,
-      AddMonoidHom.comp_apply, normalizedDecalage_d_apply, normalizedDecalageMapF_apply,
-      decalageD_eq_iff, ← map_nsmul, smul_normalizedDecalage_d, normalizedDecalageMapF_apply,
+    simp only [AddCommGrpCat.hom_comp, AddMonoidHom.comp_apply]
+    rw [normalizedDecalage_d_apply, decalageD_eq_iff, normalizedDecalageMapF_apply,
+      normalizedDecalageMapF_apply, ← map_nsmul, smul_normalizedDecalage_d,
       ← AddCommGrpCat.comp_apply, ← φ.comm, AddCommGrpCat.comp_apply]
 
 @[simp]
