@@ -118,10 +118,8 @@ private theorem norm_resonantTail_le (hα : α < 0) (hαβ : 0 < α + β) (N M :
         ≤ ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (M ≤ ·), ‖v.block k‖ := norm_sum_le _ _
       _ ≤ ∑ k ∈ Finset.Ico M (M + N), ‖v.block k‖ :=
           Finset.sum_le_sum_of_subset_of_nonneg hsub fun _ _ _ ↦ norm_nonneg _
-      _ ≤ ∑ _k ∈ Finset.Ico M (M + N), b ^ M * ‖v‖ := Finset.sum_le_sum fun k hk ↦ by
-          refine (v.norm_block_le k).trans ?_
-          rw [Real.rpow_mul zero_le_two, Real.rpow_natCast]
-          exact mul_le_mul_of_nonneg_right
+      _ ≤ ∑ _k ∈ Finset.Ico M (M + N), b ^ M * ‖v‖ := Finset.sum_le_sum fun k hk ↦
+          (v.norm_block_le k).trans <| mul_le_mul_of_nonneg_right
             (pow_le_pow_of_le_one (by positivity) hb (Finset.mem_Ico.1 hk).1) (norm_nonneg _)
       _ = N * (b ^ M * ‖v‖) := by simp
   have hab : (2 : ℝ) ^ (-α * M) * b ^ M = (2 ^ (-(α + β))) ^ M := by
