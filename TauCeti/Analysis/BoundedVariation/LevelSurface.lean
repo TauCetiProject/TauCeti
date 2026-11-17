@@ -132,17 +132,11 @@ theorem _root_.LocallyLipschitzOn.ae_perimeter_setOf_lt_eq_euclideanHausdorffMea
       (hUc n)).mono_set subset_closure
     filter_upwards [hg.locallyLipschitz.ae_perimeter_eq_surface_of_integrableOn hi] with t ht
     have hper : TauCeti.perimeter volume (U n) {x | t < h x} =
-        TauCeti.perimeter volume (U n) {x | t < g x} := by
-      apply TauCeti.perimeter_congr_of_inter_eq
-      ext x
-      by_cases hx : x ∈ U n
-      · simp [hx, hagree hx]
-      · simp [hx]
-    have hsurface : (U n : Set E) ∩ h ⁻¹' {t} = (U n : Set E) ∩ g ⁻¹' {t} := by
-      ext x
-      by_cases hx : x ∈ U n
-      · simp [hx, hagree hx]
-      · simp [hx]
+        TauCeti.perimeter volume (U n) {x | t < g x} :=
+      TauCeti.perimeter_congr_of_inter_eq
+        ((inter_comm _ _).trans ((hagree.inter_preimage_eq (Ioi t)).trans (inter_comm _ _)))
+    have hsurface : (U n : Set E) ∩ h ⁻¹' {t} = (U n : Set E) ∩ g ⁻¹' {t} :=
+      hagree.inter_preimage_eq {t}
     rw [hper, hsurface]
     exact ht
   filter_upwards [ae_all_iff.mpr hae] with t ht
