@@ -94,7 +94,8 @@ open scoped ENNReal NNReal
 namespace TauCeti.CylinderSobolev
 
 open StripSobolev (stripMeasure jet jet_apply continuous_jet jet_add jet_smul
-  jet_eq_zero_of_lt_abs memLp_jet_of_contDiff)
+  jet_eq_zero_of_lt_abs memLp_jet_of_contDiff norm_le_norm_jet norm_fderiv_one_zero_le_norm_jet
+  norm_fderiv_zero_one_le_norm_jet)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -389,22 +390,6 @@ theorem valueL_injective : Function.Injective (valueL (V := V)) := by
 end Value
 
 /-! ### The cutoff -/
-
-private theorem norm_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : ‖ξ z‖ ≤ ‖jet ξ z‖ := by
-  rw [jet_apply]
-  exact norm_fst_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
-
-private theorem norm_fderiv_one_zero_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z (1, 0)‖ ≤ ‖jet ξ z‖ := by
-  rw [jet_apply]
-  exact (norm_fst_le (fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))).trans
-    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
-
-private theorem norm_fderiv_zero_one_le_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    ‖fderiv ℝ ξ z (0, 1)‖ ≤ ‖jet ξ z‖ := by
-  rw [jet_apply]
-  exact (norm_snd_le (fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))).trans
-    (norm_snd_le (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1)))
 
 private theorem norm_fderiv_le_two_mul_norm_jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ‖fderiv ℝ ξ z‖ ≤ 2 * ‖jet ξ z‖ := by
