@@ -15,50 +15,39 @@ public import TauCeti.Algebra.Star.Opposite
 /-!
 # Positive semidefinite C⋆-modules and their separation quotients
 
-Algebraic tensor products, Stinespring/KSGNS representations, pushforwards, and modules over dense
-`⋆`-subalgebras carry positive semidefinite C⋆-algebra-valued inner products prior to separation
-and completion. We develop them at two levels:
+We develop positive semidefinite C⋆-algebra-valued inner-product modules prior to separation and
+completion at two levels:
 
-* `TauCeti.SemiCStarModuleAlong φ E`: a complex module `E` with an `A₀`-action and an `A`-valued
+* `TauCeti.SemiCStarModuleAlong φ E`: complex module `E` with an `A₀`-action and an `A`-valued
   positive semidefinite inner product and seminorm along `φ : A₀ →⋆ₙₐ[ℂ] A`.
 * `TauCeti.SemiCStarModule A E`: the case `φ = NonUnitalStarAlgHom.id ℂ A`, omitting only
-  definiteness `inner x x = 0 ↔ x = 0` from `CStarModule A E`.
+  definiteness `inner x x = 0 ↔ x = 0` from `CStarModule A E`. Every `CStarModule` is a
+  `SemiCStarModule`, so shared lemmas (polarization, right-module inner-product/Cauchy–Schwarz
+  identities, and action norm bounds) live here rather than duplicating them in `CStarModule`.
 
-For a general `SemiCStarModuleAlong φ E` over a C⋆-algebra `A`, the `A₀`-action is already
-`‖φ a₀‖`-Lipschitz (`dist_smul_le`, without assuming `DistribSMul` on null vectors or density of
-`φ`). When `φ` has dense range, density transfers `0 ≤ ⟪a₀ • x - y, a₀ • x - y⟫_A` from `A₀` to
-`A`, yielding the C⋆-valued Cauchy–Schwarz inequality `⟪x, y⟫_A ⟪y, x⟫_A ≤ ‖x‖² • ⟪y, y⟫_A`
-without definiteness, `SeminormedSpace.Core ℂ E`, and joint continuity of the semi-inner product
-(`continuous_inner`). For `SemiCStarModule A E` (`φ = id`), this gives boundedness of the
-`A`-action (`instIsBoundedSMul`) and the definite `CStarModule A` structure on
-`SeparationQuotient E` (`SeparationQuotient.instCStarModule`). Without assuming density or
-C⋆-algebra structure, any plain inner-product-preserving map from a `SemiCStarModuleAlong φ E`
-into a definite `CStarModule A F` is automatically `ℂ`-linear, intertwines the action along `φ`,
-defines a linear isometry (`linearIsometryOfInner`), and factors uniquely through
-`SeparationQuotient E` (`liftInnerₗᵢ`).
+Over a C⋆-algebra `A`, `A₀` acts `‖φ a₀‖`-Lipschitzly (`dist_smul_le`, without assuming
+`DistribSMul` or density). When `φ` has dense range, density transfers
+`0 ≤ ⟪a₀ • x - y, a₀ • x - y⟫_A` from `A₀` to `A`, yielding C⋆-valued Cauchy–Schwarz without
+definiteness (`inner_mul_inner_swap_le`), `SeminormedSpace.Core ℂ E`, and `continuous_inner`. For
+`φ = id` this yields `instIsBoundedSMul` and the definite `SeparationQuotient.instCStarModule`.
+Without density or C⋆-structure, any plain inner-product-preserving map into a definite
+`CStarModule A F` is `ℂ`-linear, intertwines `A₀` along `φ`, yields `linearIsometryOfInner`, and
+factors uniquely through `SeparationQuotient E` (`liftInnerₗᵢ`).
 
 ## Main declarations
 
 * `TauCeti.SemiCStarModuleAlong`, `TauCeti.SemiCStarModule`: positive semidefinite C⋆-modules.
-* `NonUnitalStarSubalgebra.instSemiCStarModuleAlongOp`: a nonunital `⋆`-subalgebra `S ⊆ A` as a
-  right pre-Hilbert `S`-module with positivity and norm measured in `A`.
-* `TauCeti.SemiCStarModuleAlong.inner_mul_inner_swap_le`,
-  `TauCeti.SemiCStarModule.inner_mul_inner_swap_le`: C⋆-valued Cauchy–Schwarz without definiteness.
-* `TauCeti.SemiCStarModuleAlong.seminormedSpaceCore`,
-  `TauCeti.SemiCStarModule.seminormedSpaceCore`: `SeminormedSpace.Core ℂ E` from `‖x‖ = √‖⟪x, x⟫‖`.
-* `TauCeti.SemiCStarModule.instIsBoundedSMul`: bounded `A`-action on seminormed `SemiCStarModule`.
-* `SeparationQuotient.instCStarModule`: the definite `CStarModule A` on `SeparationQuotient E`.
-* `TauCeti.SemiCStarModuleAlong.linearIsometryOfInner`,
-  `TauCeti.SemiCStarModuleAlong.liftInnerₗᵢ`, `TauCeti.SemiCStarModule.liftInnerₗᵢ`:
-  automatic linearity/isometry and universal property for inner-product-preserving maps.
+* `NonUnitalStarSubalgebra.instSemiCStarModuleAlongOp`: `S ⊆ A` as a right pre-Hilbert `S`-module.
+* `inner_mul_inner_swap_le`, `seminormedSpaceCore` (in both `SemiCStarModuleAlong` and
+  `SemiCStarModule`): C⋆-valued Cauchy–Schwarz without definiteness and induced seminormed core.
+* `TauCeti.SemiCStarModule.instIsBoundedSMul`, `SeparationQuotient.instCStarModule`.
+* `linearIsometryOfInner`, `liftInnerₗᵢ` (in both `SemiCStarModuleAlong` and `SemiCStarModule`).
 
 ## References
 
 * E. Christopher Lance, *Hilbert C⋆-Modules: A Toolkit for Operator Algebraists*, Chapter 1.
-* Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*,
-  Chapter 2.
-* `Mathlib.Analysis.CStarAlgebra.Module.Defs` (`CStarModule`), adapted to the non-definite,
-  dense-subalgebra setting.
+* Iain Raeburn and Dana P. Williams, *Morita Equivalence and Continuous-Trace C⋆-Algebras*, Ch. 2.
+* `Mathlib.Analysis.CStarAlgebra.Module.Defs` (`CStarModule`), adapted without definiteness.
 -/
 
 public section
@@ -135,8 +124,7 @@ theorem SemiCStarModuleAlong.ofMapInner {A₀ A E : Type*}
     (hsmul : ∀ (a₀ : A₀) (x y : E), inner A₀ x (a₀ • y) = a₀ * inner A₀ x y)
     (hcpx : ∀ (z : ℂ) (x y : E), inner A₀ x (z • y) = z • inner A₀ x y)
     (hstar : ∀ x y : E, star (inner A₀ x y) = inner A₀ y x)
-    (hnorm : ∀ x : E, ‖x‖ = √‖φ (inner A₀ x x)‖) :
-    SemiCStarModuleAlong φ E where
+    (hnorm : ∀ x : E, ‖x‖ = √‖φ (inner A₀ x x)‖) : SemiCStarModuleAlong φ E where
   inner_add_right := by simp [hmap, hadd]
   inner_self_nonneg {x} := by rw [hmap]; exact hnonneg x
   inner_op_smul_right := by simp [hmap, hsmul]
@@ -145,8 +133,7 @@ theorem SemiCStarModuleAlong.ofMapInner {A₀ A E : Type*}
   norm_eq_sqrt_norm_inner_self x := by rw [hmap, hnorm]
 
 /-- Pull back a `SemiCStarModule A F` structure along an `A`-equivariant `ℂ`-linear map `f : E → F`
-to a `SemiCStarModule A E` structure with `⟪x, y⟫_A = ⟪f x, f y⟫_A` and `‖x‖ = ‖f x‖`. When `f` has
-nontrivial kernel, this produces genuinely non-separated positive semidefinite modules. -/
+to a `SemiCStarModule A E` structure with `⟪x, y⟫_A = ⟪f x, f y⟫_A` and `‖x‖ = ‖f x‖`. -/
 abbrev SemiCStarModule.ofLinearMap {A E F : Type*} [NonUnitalSemiring A] [StarRing A]
     [Module ℂ A] [PartialOrder A] [Norm A] [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
     [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [SemiCStarModule A F]
@@ -201,11 +188,11 @@ variable {A : Type*} [NonUnitalCStarAlgebra A] (S : NonUnitalStarSubalgebra ℂ 
 instance instInnerMulOpposite : Inner Aᵐᵒᵖ S where
   inner x y := op (star (x : A) * (y : A))
 
-@[simp]
-theorem inner_mulOpposite_apply (x y : S) : inner Aᵐᵒᵖ x y = op (star (x : A) * (y : A)) := rfl
+@[simp] theorem inner_mulOpposite_apply (x y : S) :
+    inner Aᵐᵒᵖ x y = op (star (x : A) * (y : A)) := rfl
 
-theorem unop_inner_mulOpposite_apply (x y : S) : unop (inner Aᵐᵒᵖ x y) = star (x : A) * (y : A) :=
-  rfl
+theorem unop_inner_mulOpposite_apply (x y : S) :
+    unop (inner Aᵐᵒᵖ x y) = star (x : A) * (y : A) := rfl
 
 variable [PartialOrder A] [StarOrderedRing A]
 
@@ -231,42 +218,31 @@ namespace TauCeti
 
 namespace SemiCStarModuleAlong
 
-section Algebraic
-
 variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
   [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   (φ : A₀ →⋆ₙₐ[ℂ] A) [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E]
   [Inner A E] [SemiCStarModuleAlong φ E]
-
 include φ
 
 lemma inner_add_left (x y z : E) : inner A (x + y) z = inner A x z + inner A y z := by
   rw [← star_star (inner A (x + y) z), star_inner (φ := φ), inner_add_right (φ := φ), star_add,
     star_inner (φ := φ), star_inner (φ := φ)]
-
 lemma inner_op_smul_left (a₀ : A₀) (x y : E) :
     inner A (a₀ • x) y = inner A x y * star (φ a₀) := by
   rw [← star_inner (φ := φ) y, inner_op_smul_right (φ := φ), star_mul, star_inner (φ := φ)]
-
 lemma isSelfAdjoint_inner_self (x : E) : IsSelfAdjoint (inner A x x) := star_inner (φ := φ) x x
-
 lemma inner_smul_right_real (r : ℝ) (x y : E) : inner A x (r • y) = r • inner A x y := by
   rw [← Complex.coe_smul, inner_smul_right_complex (φ := φ)]; simp
-
 lemma inner_zero_right (x : E) : inner A x 0 = 0 :=
   add_left_cancel (a := inner A x 0) <| by rw [← inner_add_right (φ := φ), add_zero, add_zero]
-
 lemma inner_zero_left (x : E) : inner A 0 x = 0 := by
   rw [← star_inner (φ := φ) x 0, inner_zero_right φ, star_zero]
-
-section StarModule
 
 variable [StarModule ℂ A]
 
 lemma inner_smul_left_complex (z : ℂ) (x y : E) :
     inner A (z • x) y = star z • inner A x y := by
   rw [← star_inner (φ := φ) y, inner_smul_right_complex (φ := φ), star_smul, star_inner (φ := φ)]
-
 lemma inner_smul_left_real (r : ℝ) (x y : E) : inner A (r • x) y = r • inner A x y := by
   rw [← Complex.coe_smul, inner_smul_left_complex φ]; simp
 
@@ -280,48 +256,33 @@ def innerₛₗ : E →ₗ⋆[ℂ] E →ₗ[ℂ] A where
   map_smul' c x := by ext z; exact inner_smul_left_complex φ c x z
 
 @[simp] lemma innerₛₗ_apply (x y : E) : innerₛₗ φ x y = inner A x y := (rfl)
-
 lemma inner_neg_right (x y : E) : inner A x (-y) = -inner A x y := map_neg (innerₛₗ φ x) y
-
 lemma inner_neg_left (x y : E) : inner A (-x) y = -inner A x y :=
   LinearMap.congr_fun (map_neg (innerₛₗ φ) x) y
-
 lemma inner_sub_right (x y z : E) : inner A x (y - z) = inner A x y - inner A x z :=
   map_sub (innerₛₗ φ x) y z
-
 lemma inner_sub_left (x y z : E) : inner A (x - y) z = inner A x z - inner A y z :=
   LinearMap.congr_fun (map_sub (innerₛₗ φ) x y) z
-
-end StarModule
-
-end Algebraic
 
 end SemiCStarModuleAlong
 
 namespace SemiCStarModule
 
-section Algebraic
-
 variable {A E : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
   [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [SemiCStarModule A E]
 
 @[simp] lemma inner_add_left {x y z : E} : inner A (x + y) z = inner A x z + inner A y z :=
-  SemiCStarModuleAlong.inner_add_left (NonUnitalStarAlgHom.id ℂ A) x y z
-
+  SemiCStarModuleAlong.inner_add_left (.id ℂ A) x y z
 @[simp] lemma inner_op_smul_left {a : A} {x y : E} : inner A (a • x) y = inner A x y * star a :=
-  SemiCStarModuleAlong.inner_op_smul_left (NonUnitalStarAlgHom.id ℂ A) a x y
-
+  SemiCStarModuleAlong.inner_op_smul_left (.id ℂ A) a x y
 @[simp] lemma isSelfAdjoint_inner_self {x : E} : IsSelfAdjoint (inner A x x) :=
-  SemiCStarModuleAlong.isSelfAdjoint_inner_self (NonUnitalStarAlgHom.id ℂ A) x
-
+  SemiCStarModuleAlong.isSelfAdjoint_inner_self (.id ℂ A) x
 @[simp] lemma inner_zero_right {x : E} : inner A x 0 = 0 :=
-  SemiCStarModuleAlong.inner_zero_right (NonUnitalStarAlgHom.id ℂ A) x
-
+  SemiCStarModuleAlong.inner_zero_right (.id ℂ A) x
 @[simp] lemma inner_zero_left {x : E} : inner A 0 x = 0 :=
-  SemiCStarModuleAlong.inner_zero_left (NonUnitalStarAlgHom.id ℂ A) x
-
+  SemiCStarModuleAlong.inner_zero_left (.id ℂ A) x
 @[simp] lemma inner_smul_right_real {r : ℝ} {x y : E} : inner A x (r • y) = r • inner A x y :=
-  SemiCStarModuleAlong.inner_smul_right_real (NonUnitalStarAlgHom.id ℂ A) r x y
+  SemiCStarModuleAlong.inner_smul_right_real (.id ℂ A) r x y
 
 section StarModule
 
@@ -329,31 +290,24 @@ variable [StarModule ℂ A]
 
 @[simp] lemma inner_smul_left_complex {z : ℂ} {x y : E} :
     inner A (z • x) y = star z • inner A x y :=
-  SemiCStarModuleAlong.inner_smul_left_complex (NonUnitalStarAlgHom.id ℂ A) z x y
-
+  SemiCStarModuleAlong.inner_smul_left_complex (.id ℂ A) z x y
 @[simp] lemma inner_smul_left_real {r : ℝ} {x y : E} : inner A (r • x) y = r • inner A x y :=
-  SemiCStarModuleAlong.inner_smul_left_real (NonUnitalStarAlgHom.id ℂ A) r x y
+  SemiCStarModuleAlong.inner_smul_left_real (.id ℂ A) r x y
 
 /-- The semi-inner product bundled as a `ℂ`-sesquilinear map. -/
-def innerₛₗ : E →ₗ⋆[ℂ] E →ₗ[ℂ] A := SemiCStarModuleAlong.innerₛₗ (NonUnitalStarAlgHom.id ℂ A)
+def innerₛₗ : E →ₗ⋆[ℂ] E →ₗ[ℂ] A := SemiCStarModuleAlong.innerₛₗ (.id ℂ A)
 
 @[simp] lemma innerₛₗ_apply {x y : E} : innerₛₗ x y = inner A x y := (rfl)
-
 @[simp] lemma inner_neg_right {x y : E} : inner A x (-y) = -inner A x y :=
-  SemiCStarModuleAlong.inner_neg_right (NonUnitalStarAlgHom.id ℂ A) x y
-
+  SemiCStarModuleAlong.inner_neg_right (.id ℂ A) x y
 @[simp] lemma inner_neg_left {x y : E} : inner A (-x) y = -inner A x y :=
-  SemiCStarModuleAlong.inner_neg_left (NonUnitalStarAlgHom.id ℂ A) x y
-
+  SemiCStarModuleAlong.inner_neg_left (.id ℂ A) x y
 @[simp] lemma inner_sub_right {x y z : E} : inner A x (y - z) = inner A x y - inner A x z :=
-  SemiCStarModuleAlong.inner_sub_right (NonUnitalStarAlgHom.id ℂ A) x y z
-
+  SemiCStarModuleAlong.inner_sub_right (.id ℂ A) x y z
 @[simp] lemma inner_sub_left {x y z : E} : inner A (x - y) z = inner A x z - inner A y z :=
-  SemiCStarModuleAlong.inner_sub_left (NonUnitalStarAlgHom.id ℂ A) x y z
-
+  SemiCStarModuleAlong.inner_sub_left (.id ℂ A) x y z
 @[simp] lemma inner_sum_right {ι : Type*} {s : Finset ι} {x : E} {y : ι → E} :
     inner A x (∑ i ∈ s, y i) = ∑ i ∈ s, inner A x (y i) := map_sum (innerₛₗ x) y s
-
 @[simp] lemma inner_sum_left {ι : Type*} {s : Finset ι} {x : ι → E} {y : E} :
     inner A (∑ i ∈ s, x i) y = ∑ i ∈ s, inner A (x i) y := map_sum (innerₛₗ.flip y) x s
 
@@ -373,16 +327,16 @@ section Right
 variable {A E : Type*} [NonUnitalSeminormedRing A] [StarRing A] [Module ℂ A] [PartialOrder A]
   [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E] [SemiCStarModule Aᵐᵒᵖ E]
 
+/-- Conjugate-linearity of the right-module inner product in the first slot:
+`⟨x a, y⟩_A = a⋆ ⟨x, y⟩_A`. -/
 lemma unop_inner_op_smul_left (a : A) (x y : E) :
     unop (inner Aᵐᵒᵖ (op a • x) y) = star a * unop (inner Aᵐᵒᵖ x y) := by simp
 
+/-- Linearity of the right-module inner product in the second slot: `⟨x, y a⟩_A = ⟨x, y⟩_A a`. -/
 lemma unop_inner_op_smul_right (a : A) (x y : E) :
     unop (inner Aᵐᵒᵖ x (op a • y)) = unop (inner Aᵐᵒᵖ x y) * a := by simp
 
 end Right
-
-end Algebraic
-
 end SemiCStarModule
 
 /-! ### Action norm bounds, Cauchy–Schwarz without definiteness, and seminormed structure -/
@@ -392,18 +346,15 @@ namespace SemiCStarModuleAlong
 section CStar
 
 variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
-  [NonUnitalCStarAlgebra A] [PartialOrder A]
-  (φ : A₀ →⋆ₙₐ[ℂ] A) [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E]
-  [Inner A E] [SemiCStarModuleAlong φ E]
+  [NonUnitalCStarAlgebra A] [PartialOrder A] (φ : A₀ →⋆ₙₐ[ℂ] A)
+  [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E] [Inner A E] [SemiCStarModuleAlong φ E]
 
 include φ
 
 lemma norm_sq_eq (x : E) : ‖x‖ ^ 2 = ‖inner A x x‖ := by
   simp [norm_eq_sqrt_norm_inner_self (φ := φ) x]
-
 lemma norm_nonneg (x : E) : 0 ≤ ‖x‖ :=
   (norm_eq_sqrt_norm_inner_self (φ := φ) x).symm ▸ Real.sqrt_nonneg _
-
 lemma norm_zero : ‖(0 : E)‖ = 0 := by
   simp [norm_eq_sqrt_norm_inner_self (φ := φ) (0 : E), inner_zero_right φ]
 
@@ -429,8 +380,7 @@ lemma norm_sub_smul_sub_eq_zero {A₀ : Type*} [NonUnitalRing A₀] [StarRing A�
 
 variable [StarOrderedRing A]
 
-/-- The inner product of `a₀ • x` with itself is `(φ a₀ * |x|) (φ a₀ * |x|)⋆`, where
-`|x| = CFC.sqrt ⟪x, x⟫_A`. -/
+/-- `⟪a₀ • x, a₀ • x⟫_A = (φ a₀ * |x|) (φ a₀ * |x|)⋆`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a₀ : A₀) (x : E) :
     inner A (a₀ • x) (a₀ • x) =
       (φ a₀ * CFC.sqrt (inner A x x)) * star (φ a₀ * CFC.sqrt (inner A x x)) := by
@@ -453,8 +403,6 @@ theorem norm_smul_le (a₀ : A₀) (x : E) : ‖a₀ • x‖ ≤ ‖φ a₀‖ 
 
 /-! #### Cauchy–Schwarz when `φ` has dense range -/
 
-section DenseRange
-
 variable {φ}
 
 /-- Extending `0 ≤ ⟪a₀ • x - y, a₀ • x - y⟫_A` from the dense range of `φ` to all `a ∈ A`. -/
@@ -462,8 +410,7 @@ private lemma quadratic_nonneg_of_denseRange (hφ : DenseRange φ) (x y : E) (a 
     (0 : A) ≤ ‖x‖ ^ 2 • (a * star a) - a * inner A y x - inner A x y * star a + inner A y y := by
   refine hφ.induction (fun a ⟨a₀, ha₀⟩ ↦ ?_) (isClosed_le (by fun_prop) (by fun_prop)) a
   subst ha₀
-  calc
-    (0 : A) ≤ inner A (a₀ • x - y) (a₀ • x - y) := inner_self_nonneg (φ := φ)
+  calc (0 : A) ≤ inner A (a₀ • x - y) (a₀ • x - y) := inner_self_nonneg (φ := φ)
     _ = φ a₀ * inner A x x * star (φ a₀) - φ a₀ * inner A y x -
           inner A x y * star (φ a₀) + inner A y y := by
       simp only [inner_sub_right φ, inner_sub_left φ, inner_op_smul_right (φ := φ),
@@ -474,8 +421,7 @@ private lemma quadratic_nonneg_of_denseRange (hφ : DenseRange φ) (x y : E) (a 
       exact CStarAlgebra.star_right_conjugate_le_norm_smul (φ a₀) (inner A x x)
         (isSelfAdjoint_inner_self φ x)
 
-/-- Vectors of seminorm zero are orthogonal on the left to every vector when `φ` has dense
-range. -/
+/-- Vectors of seminorm zero are left-orthogonal to all vectors when `φ` has dense range. -/
 theorem inner_eq_zero_of_norm_eq_zero_left (hφ : DenseRange φ) {x : E} (hx : ‖x‖ = 0) (y : E) :
     inner A x y = 0 := by
   set w := inner A x y
@@ -495,14 +441,12 @@ theorem inner_eq_zero_of_norm_eq_zero_left (hφ : DenseRange φ) {x : E} (hx : �
     ← sq, ht] at hnorm_le
   linarith
 
-/-- Vectors of seminorm zero are orthogonal on the right to every vector when `φ` has dense
-range. -/
+/-- Vectors of seminorm zero are right-orthogonal to all vectors when `φ` has dense range. -/
 theorem inner_eq_zero_of_norm_eq_zero_right (hφ : DenseRange φ) (x : E) {y : E} (hy : ‖y‖ = 0) :
     inner A x y = 0 := by
   rw [← star_inner (φ := φ) y x, inner_eq_zero_of_norm_eq_zero_left hφ hy x, star_zero]
 
-/-- C⋆-algebra-valued Cauchy–Schwarz inequality for positive semidefinite modules over a dense
-`⋆`-subalgebra. -/
+/-- C⋆-valued Cauchy–Schwarz inequality for positive semidefinite modules along dense `φ`. -/
 theorem inner_mul_inner_swap_le (hφ : DenseRange φ) (x y : E) :
     inner A x y * inner A y x ≤ ‖x‖ ^ 2 • inner A y y := by
   rcases (norm_nonneg φ x).eq_or_lt with hx | hx
@@ -513,8 +457,7 @@ theorem inner_mul_inner_swap_le (hφ : DenseRange φ) (x y : E) :
       mul_smul_comm, smul_mul_assoc, sub_self, zero_sub, le_neg_add_iff_add_le, add_zero] at hquad
     exact (smul_le_smul_iff_of_pos_left (sq_pos_of_pos hx)).mp hquad
 
-/-- Norm Cauchy–Schwarz inequality `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` for positive semidefinite modules
-over a dense `⋆`-subalgebra. -/
+/-- Norm Cauchy–Schwarz inequality `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` along dense `φ`. -/
 theorem norm_inner_le (hφ : DenseRange φ) (x y : E) : ‖inner A x y‖ ≤ ‖x‖ * ‖y‖ := by
   refine (pow_le_pow_iff_left₀ (_root_.norm_nonneg _)
     (mul_nonneg (norm_nonneg φ x) (norm_nonneg φ y)) two_ne_zero).mp ?_
@@ -537,9 +480,8 @@ theorem norm_triangle (hφ : DenseRange φ) (x y : E) : ‖x + y‖ ≤ ‖x‖ 
         gcongr <;> exact norm_inner_le hφ _ _
     _ = (‖x‖ + ‖y‖) ^ 2 := by rw [← norm_sq_eq φ x, ← norm_sq_eq φ y]; ring
 
-/-- `SeminormedSpace.Core ℂ E` built from the module seminorm `‖x‖ = √‖⟪x, x⟫_A‖`. Use with
-`SeminormedAddCommGroup.ofCore` (or `ofCoreReplaceAll`) to equip `E` with its seminormed space
-structure. -/
+/-- `SeminormedSpace.Core ℂ E` from `‖x‖ = √‖⟪x, x⟫_A‖`, for use with
+`SeminormedAddCommGroup.ofCore` (or `ofCoreReplaceAll`). -/
 lemma seminormedSpaceCore (hφ : DenseRange φ) : SeminormedSpace.Core ℂ E where
   norm_nonneg := norm_nonneg φ
   norm_smul c x := by
@@ -552,8 +494,6 @@ lemma seminormedSpaceCore (hφ : DenseRange φ) : SeminormedSpace.Core ℂ E whe
 an instance so existing topologies or uniformities on `E` are not shadowed. -/
 noncomputable abbrev seminormedAddCommGroup (hφ : DenseRange φ) : SeminormedAddCommGroup E :=
   SeminormedAddCommGroup.ofCore (seminormedSpaceCore hφ)
-
-end DenseRange
 
 end CStar
 
@@ -568,11 +508,9 @@ variable {A₀ A E : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ
 section Module
 
 variable [Module ℂ E] [SemiCStarModuleAlong φ E]
-
 include φ
 
-/-- Each scalar `a₀ : A₀` acts `‖φ a₀‖`-Lipschitzly on `E`, even without assuming `DistribSMul`
-on null vectors. -/
+/-- Each `a₀ : A₀` acts `‖φ a₀‖`-Lipschitzly on `E` (without assuming `DistribSMul`). -/
 theorem dist_smul_le (a₀ : A₀) (x y : E) : dist (a₀ • x) (a₀ • y) ≤ ‖φ a₀‖ * dist x y := by
   rw [dist_eq_norm, dist_eq_norm, norm_eq_sqrt_norm_inner_self (φ := φ)]
   have h : inner A (a₀ • x - a₀ • y) (a₀ • x - a₀ • y) = inner A (a₀ • (x - y)) (a₀ • (x - y)) := by
@@ -581,9 +519,8 @@ theorem dist_smul_le (a₀ : A₀) (x y : E) : dist (a₀ • x) (a₀ • y) �
   rw [h, ← norm_eq_sqrt_norm_inner_self (φ := φ)]
   exact norm_smul_le φ a₀ (x - y)
 
-/-- Reducible `UniformContinuousConstSMul A₀ E` derived from `dist_smul_le`, allowing
-`UniformSpace.Completion` and `SeparationQuotient` to inherit the `A₀`-action without assuming
-`DistribSMul A₀ E`. -/
+/-- Reducible `UniformContinuousConstSMul A₀ E` from `dist_smul_le`, letting `Completion` and
+`SeparationQuotient` inherit the `A₀`-action without assuming `DistribSMul A₀ E`. -/
 abbrev uniformContinuousConstSMul : UniformContinuousConstSMul A₀ E where
   uniformContinuous_const_smul a₀ :=
     LipschitzWith.uniformContinuous (K := ⟨‖φ a₀‖, _root_.norm_nonneg _⟩)
@@ -594,7 +531,6 @@ end Module
 section NormedSpace
 
 variable [NormedSpace ℂ E] [SemiCStarModuleAlong φ E]
-
 include φ
 
 omit [StarOrderedRing A] in
@@ -603,8 +539,7 @@ theorem mem_nullSubmodule_iff_inner_self_eq_zero (x : E) :
     x ∈ nullSubmodule ℂ E ↔ inner A x x = 0 := by
   rw [mem_nullSubmodule_iff, norm_eq_zero_iff_inner_self_eq_zero φ]
 
-/-- When `φ` has dense range, `nullSubmodule ℂ E` consists precisely of the vectors orthogonal to
-all of `E`. -/
+/-- Along dense `φ`, `nullSubmodule ℂ E` consists of vectors orthogonal to all of `E`. -/
 theorem mem_nullSubmodule_iff_forall_inner_eq_zero (hφ : DenseRange φ) (x : E) :
     x ∈ nullSubmodule ℂ E ↔ ∀ y : E, inner A x y = 0 :=
   ⟨fun hx y ↦ inner_eq_zero_of_norm_eq_zero_left hφ (mem_nullSubmodule_iff.mp hx) y,
@@ -632,41 +567,31 @@ theorem inner_eq_inner_of_inseparable (hφ : DenseRange φ) {x₁ x₂ y₁ y₂
   ((hx.prod hy).map (continuous_inner hφ)).eq
 
 end NormedSpace
-
 end Seminormed
-
 end SemiCStarModuleAlong
 
 namespace SemiCStarModule
 
-section CStar
-
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
 
 private lemma denseRange_id (A : Type*) [NonUnitalCStarAlgebra A] :
-    DenseRange (NonUnitalStarAlgHom.id ℂ A) :=
-  Function.surjective_id.denseRange
+    DenseRange (NonUnitalStarAlgHom.id ℂ A) := Function.surjective_id.denseRange
 
 section Norm
 
 variable [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E] [SemiCStarModule A E]
 
 theorem norm_eq_zero_iff_inner_self_eq_zero (x : E) : ‖x‖ = 0 ↔ inner A x x = 0 :=
-  SemiCStarModuleAlong.norm_eq_zero_iff_inner_self_eq_zero (NonUnitalStarAlgHom.id ℂ A) x
+  SemiCStarModuleAlong.norm_eq_zero_iff_inner_self_eq_zero (.id ℂ A) x
 
 section ExplicitA
-
 include A
 variable (A)
 
 lemma norm_sq_eq (x : E) : ‖x‖ ^ 2 = ‖inner A x x‖ :=
-  SemiCStarModuleAlong.norm_sq_eq (NonUnitalStarAlgHom.id ℂ A) x
-
-protected lemma norm_nonneg (x : E) : 0 ≤ ‖x‖ :=
-  SemiCStarModuleAlong.norm_nonneg (NonUnitalStarAlgHom.id ℂ A) x
-
-protected lemma norm_zero : ‖(0 : E)‖ = 0 :=
-  SemiCStarModuleAlong.norm_zero (NonUnitalStarAlgHom.id ℂ A)
+  SemiCStarModuleAlong.norm_sq_eq (.id ℂ A) x
+protected lemma norm_nonneg (x : E) : 0 ≤ ‖x‖ := SemiCStarModuleAlong.norm_nonneg (.id ℂ A) x
+protected lemma norm_zero : ‖(0 : E)‖ = 0 := SemiCStarModuleAlong.norm_zero (.id ℂ A)
 
 variable [StarOrderedRing A]
 
@@ -685,31 +610,31 @@ end ExplicitA
 
 variable [StarOrderedRing A]
 
+/-- `⟪a • x, a • x⟫_A = (a * |x|) (a * |x|)⋆`, where `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
 lemma inner_smul_smul (a : A) (x : E) :
     inner A (a • x) (a • x) =
       (a * CFC.sqrt (inner A x x)) * star (a * CFC.sqrt (inner A x x)) :=
-  SemiCStarModuleAlong.inner_smul_smul (NonUnitalStarAlgHom.id ℂ A) a x
+  SemiCStarModuleAlong.inner_smul_smul (.id ℂ A) a x
 
+/-- The seminorm of `a • x` equals `‖a * CFC.sqrt ⟪x, x⟫_A‖` in `A`. -/
 protected theorem norm_smul (a : A) (x : E) : ‖a • x‖ = ‖a * CFC.sqrt (inner A x x)‖ :=
-  SemiCStarModuleAlong.norm_smul (NonUnitalStarAlgHom.id ℂ A) a x
+  SemiCStarModuleAlong.norm_smul (.id ℂ A) a x
 
+/-- Action of a C⋆-algebra on a positive semidefinite module is bounded: `‖a • x‖ ≤ ‖a‖ * ‖x‖`. -/
 protected theorem norm_smul_le (a : A) (x : E) : ‖a • x‖ ≤ ‖a‖ * ‖x‖ :=
-  SemiCStarModuleAlong.norm_smul_le (NonUnitalStarAlgHom.id ℂ A) a x
+  SemiCStarModuleAlong.norm_smul_le (.id ℂ A) a x
 
 /-- C⋆-algebra-valued Cauchy–Schwarz inequality for positive semidefinite `A`-modules. -/
-theorem inner_mul_inner_swap_le {x y : E} :
-    inner A x y * inner A y x ≤ ‖x‖ ^ 2 • inner A y y :=
+theorem inner_mul_inner_swap_le {x y : E} : inner A x y * inner A y x ≤ ‖x‖ ^ 2 • inner A y y :=
   SemiCStarModuleAlong.inner_mul_inner_swap_le (denseRange_id A) x y
 
 variable (E) in
-/-- Norm Cauchy–Schwarz inequality `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` for positive semidefinite
-`A`-modules. -/
+/-- Norm Cauchy–Schwarz `‖⟪x, y⟫_A‖ ≤ ‖x‖ * ‖y‖` for positive semidefinite `A`-modules. -/
 theorem norm_inner_le {x y : E} : ‖inner A x y‖ ≤ ‖x‖ * ‖y‖ :=
   SemiCStarModuleAlong.norm_inner_le (denseRange_id A) x y
 
 theorem inner_eq_zero_of_norm_eq_zero_left {x : E} (hx : ‖x‖ = 0) (y : E) : inner A x y = 0 :=
   SemiCStarModuleAlong.inner_eq_zero_of_norm_eq_zero_left (denseRange_id A) hx y
-
 theorem inner_eq_zero_of_norm_eq_zero_right (x : E) {y : E} (hy : ‖y‖ = 0) : inner A x y = 0 :=
   SemiCStarModuleAlong.inner_eq_zero_of_norm_eq_zero_right (denseRange_id A) x hy
 
@@ -720,16 +645,17 @@ section Right
 variable [StarOrderedRing A] [AddCommGroup E] [Module ℂ E] [SMul Aᵐᵒᵖ E] [Norm E]
   [SemiCStarModule Aᵐᵒᵖ E]
 
-/-- Cauchy–Schwarz inequality in right-module form for positive semidefinite modules:
-`⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² • ⟨y, y⟩_A`. -/
+/-- Right-module Cauchy–Schwarz: `⟨x, y⟩_A⋆ ⟨x, y⟩_A ≤ ‖x‖² • ⟨y, y⟩_A`. -/
 theorem star_unop_inner_mul_unop_inner_le (x y : E) :
     star (unop (inner Aᵐᵒᵖ x y)) * unop (inner Aᵐᵒᵖ x y) ≤ ‖x‖ ^ 2 • unop (inner Aᵐᵒᵖ y y) := by
   have h := unop_le_unop.mpr (inner_mul_inner_swap_le (A := Aᵐᵒᵖ) (x := x) (y := y))
   rwa [unop_mul, unop_smul, ← star_inner x y, unop_star] at h
 
+/-- Right-module norm Cauchy–Schwarz: `‖⟨x, y⟩_A‖ ≤ ‖x‖ * ‖y‖`. -/
 theorem norm_unop_inner_le (x y : E) : ‖unop (inner Aᵐᵒᵖ x y)‖ ≤ ‖x‖ * ‖y‖ := by
   rw [norm_unop]; exact norm_inner_le E
 
+/-- Right-module action norm bound: `‖op a • x‖ ≤ ‖x‖ * ‖a‖`. -/
 theorem norm_op_smul_le (a : A) (x : E) : ‖op a • x‖ ≤ ‖x‖ * ‖a‖ := by
   rw [mul_comm, ← norm_op a]; exact SemiCStarModule.norm_smul_le _ x
 
@@ -739,12 +665,11 @@ section Seminormed
 
 variable [StarOrderedRing A] [SeminormedAddCommGroup E] [SMul A E]
 
-/-- The action of a C⋆-algebra `A` on any seminormed `SemiCStarModule A E` is bounded, without
-requiring `DistribSMul A E` or definiteness of the inner product. -/
+/-- The action of `A` on any seminormed `SemiCStarModule A E` is bounded, without requiring
+`DistribSMul A E` or definiteness of the inner product. -/
 instance instIsBoundedSMul [Module ℂ E] [SemiCStarModule A E] : IsBoundedSMul A E where
   dist_smul_pair' a x y := by
-    simpa [dist_zero_right] using
-      SemiCStarModuleAlong.dist_smul_le (φ := NonUnitalStarAlgHom.id ℂ A) a x y
+    simpa [dist_zero_right] using SemiCStarModuleAlong.dist_smul_le (φ := .id ℂ A) a x y
   dist_pair_smul' a b x := by
     rw [dist_eq_norm, dist_eq_norm, dist_zero_right,
       SemiCStarModule.norm_eq_sqrt_norm_inner_self (A := A)]
@@ -762,8 +687,7 @@ omit [StarOrderedRing A] in
 /-- Membership in `nullSubmodule ℂ E` is equivalent to vanishing of the self-inner product. -/
 theorem mem_nullSubmodule_iff_inner_self_eq_zero (x : E) :
     x ∈ nullSubmodule ℂ E ↔ inner A x x = 0 :=
-  SemiCStarModuleAlong.mem_nullSubmodule_iff_inner_self_eq_zero
-    (φ := NonUnitalStarAlgHom.id ℂ A) x
+  SemiCStarModuleAlong.mem_nullSubmodule_iff_inner_self_eq_zero (φ := .id ℂ A) x
 
 /-- `nullSubmodule ℂ E` consists precisely of the vectors orthogonal to all of `E`. -/
 theorem mem_nullSubmodule_iff_forall_inner_eq_zero (x : E) :
@@ -773,11 +697,10 @@ theorem mem_nullSubmodule_iff_forall_inner_eq_zero (x : E) :
 /-- `nullSubmodule ℂ E` is invariant under the action of `A`. -/
 theorem smul_mem_nullSubmodule (a : A) {x : E} (hx : x ∈ nullSubmodule ℂ E) :
     a • x ∈ nullSubmodule ℂ E :=
-  SemiCStarModuleAlong.smul_mem_nullSubmodule (φ := NonUnitalStarAlgHom.id ℂ A) a hx
+  SemiCStarModuleAlong.smul_mem_nullSubmodule (φ := .id ℂ A) a hx
 
 /-- The `A`-valued semi-inner product as a continuous sesquilinear map. -/
-noncomputable def innerSL : E →L⋆[ℂ] E →L[ℂ] A :=
-  SemiCStarModuleAlong.innerSL (denseRange_id A)
+noncomputable def innerSL : E →L⋆[ℂ] E →L[ℂ] A := SemiCStarModuleAlong.innerSL (denseRange_id A)
 
 @[simp] lemma innerSL_apply {x y : E} : innerSL x y = inner A x y := (rfl)
 
@@ -791,62 +714,49 @@ theorem inner_eq_inner_of_inseparable {x₁ x₂ y₁ y₂ : E} (hx : Inseparabl
   SemiCStarModuleAlong.inner_eq_inner_of_inseparable (denseRange_id A) hx hy
 
 end NormedSpace
-
 end Seminormed
-
-end CStar
-
 end SemiCStarModule
 
 /-! ### Automatic linearity, isometry, and separation-quotient lifts of inner-preserving maps -/
 
 namespace SemiCStarModuleAlong
 
-section InnerPreserving
-
 variable {A₀ A : Type*} [NonUnitalSemiring A₀] [StarRing A₀] [Module ℂ A₀]
-  [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A]
-  (φ : A₀ →⋆ₙₐ[ℂ] A)
+  [NonUnitalRing A] [StarRing A] [Module ℂ A] [PartialOrder A] [Norm A] (φ : A₀ →⋆ₙₐ[ℂ] A)
 
 section Algebraic
 
 variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A₀ E] [Norm E] [Inner A E]
   [SemiCStarModuleAlong φ E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
   {f : E → F} (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
-
 include φ hf
 
-/-- Any plain function `f : E → F` into a definite `CStarModule A F` preserving the `A`-valued
-inner product preserves `0`. -/
+/-- An inner-product-preserving map into a definite `CStarModule A F` preserves `0`. -/
 theorem map_zero_of_inner : f 0 = 0 :=
   CStarModule.inner_self (A := A).mp <| by rw [hf, inner_zero_right φ]
 
-/-- Any plain function `f : E → F` into a definite `CStarModule A F` preserving the `A`-valued
-inner product preserves norms. -/
+/-- An inner-product-preserving map into a definite `CStarModule A F` preserves norms. -/
 theorem norm_map_of_inner (x : E) : ‖f x‖ = ‖x‖ := by
   rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) (f x), hf,
     SemiCStarModuleAlong.norm_eq_sqrt_norm_inner_self (φ := φ) x]
 
 variable [StarModule ℂ A]
 
-/-- Any plain function `f : E → F` into a definite `CStarModule A F` preserving the `A`-valued
-inner product is additive. -/
+/-- An inner-product-preserving map into a definite `CStarModule A F` is additive. -/
 theorem map_add_of_inner (x y : E) : f (x + y) = f x + f y := by
   rw [← sub_eq_zero, ← CStarModule.inner_self (A := A)]
   simp only [CStarModule.inner_sub_left, CStarModule.inner_sub_right, CStarModule.inner_add_left,
     CStarModule.inner_add_right, hf, inner_add_left φ, inner_add_right (φ := φ)]
   abel
 
-/-- Any plain function `f : E → F` into a definite `CStarModule A F` preserving the `A`-valued
-inner product is `ℂ`-homogeneous. -/
+/-- An inner-product-preserving map into a definite `CStarModule A F` is `ℂ`-homogeneous. -/
 theorem map_smul_complex_of_inner (c : ℂ) (x : E) : f (c • x) = c • f x := by
   rw [← sub_eq_zero, ← CStarModule.inner_self (A := A)]
   simp [CStarModule.inner_sub_left, CStarModule.inner_sub_right,
     CStarModule.inner_smul_left_complex, CStarModule.inner_smul_right_complex, hf,
     inner_smul_left_complex φ, inner_smul_right_complex (φ := φ), smul_smul]
 
-/-- Any plain function `f : E → F` into a definite `CStarModule A F` preserving the `A`-valued
-inner product intertwines the `A₀`-action with the `A`-action along `φ`. -/
+/-- An inner-product-preserving map into a definite `CStarModule A F` intertwines `A₀` along `φ`. -/
 theorem map_smul_along_of_inner (a₀ : A₀) (x : E) : f (a₀ • x) = φ a₀ • f x := by
   rw [← sub_eq_zero, ← CStarModule.inner_self (A := A)]
   simp [CStarModule.inner_sub_left, CStarModule.inner_sub_right,
@@ -855,39 +765,34 @@ theorem map_smul_along_of_inner (a₀ : A₀) (x : E) : f (a₀ • x) = φ a₀
 
 end Algebraic
 
-section Seminormed
-
 variable [StarModule ℂ A] {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
   [SMul A₀ E] [Inner A E] [SemiCStarModuleAlong φ E]
-  [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
-  (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
 
+section Seminormed
+
+variable [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+  (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
 include φ
 
-/-- Bundle a plain inner-product-preserving map `f : E → F` into a definite `CStarModule A F` as a
-complex `LinearIsometry`. -/
+/-- Bundle an inner-product-preserving map into a definite `CStarModule` as a `LinearIsometry`. -/
 def linearIsometryOfInner : E →ₗᵢ[ℂ] F where
   toFun := f
   map_add' := map_add_of_inner φ hf
   map_smul' := map_smul_complex_of_inner φ hf
   norm_map' := norm_map_of_inner φ hf
 
-@[simp] theorem linearIsometryOfInner_apply (x : E) :
-    linearIsometryOfInner φ f hf x = f x := (rfl)
+@[simp] theorem linearIsometryOfInner_apply (x : E) : linearIsometryOfInner φ f hf x = f x := (rfl)
 
 end Seminormed
 
 section LiftInner
 
-variable [StarModule ℂ A] {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E]
-  [SMul A₀ E] [Inner A E] [SemiCStarModuleAlong φ E]
-  [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+variable [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
   (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
-
 include φ
 
-/-- Any plain function `f : E → F` into a separated `CStarModule A F` preserving the `A`-valued
-inner product descends to a `ℂ`-linear isometry `SeparationQuotient E →ₗᵢ[ℂ] F`. -/
+/-- An inner-product-preserving map `f : E → F` into a separated `CStarModule A F` descends to a
+`ℂ`-linear isometry `SeparationQuotient E →ₗᵢ[ℂ] F`. -/
 noncomputable def liftInnerₗᵢ : SeparationQuotient E →ₗᵢ[ℂ] F :=
   let fₗᵢ := linearIsometryOfInner φ f hf
   { toLinearMap := (SeparationQuotient.liftCLM fₗᵢ.toContinuousLinearMap
@@ -896,113 +801,86 @@ noncomputable def liftInnerₗᵢ : SeparationQuotient E →ₗᵢ[ℂ] F :=
       rw [ContinuousLinearMap.coe_coe, SeparationQuotient.liftCLM_mk,
         LinearIsometry.coe_toContinuousLinearMap, fₗᵢ.norm_map, SeparationQuotient.norm_mk] }
 
-@[simp]
-theorem liftInnerₗᵢ_mk (x : E) : liftInnerₗᵢ φ f hf (SeparationQuotient.mk x) = f x := (rfl)
+@[simp] theorem liftInnerₗᵢ_mk (x : E) :
+    liftInnerₗᵢ φ f hf (SeparationQuotient.mk x) = f x := (rfl)
 
-/-- The separation-quotient lift of an inner-product-preserving map intertwines the `A₀`-action
-with the `A`-action along `φ`. -/
-@[simp]
-theorem liftInnerₗᵢ_smul [ContinuousConstSMul A₀ E] (a₀ : A₀) (q : SeparationQuotient E) :
+/-- The separation-quotient lift of an inner-product-preserving map intertwines `A₀` along `φ`. -/
+@[simp] theorem liftInnerₗᵢ_smul [ContinuousConstSMul A₀ E] (a₀ : A₀) (q : SeparationQuotient E) :
     liftInnerₗᵢ φ f hf (a₀ • q) = φ a₀ • liftInnerₗᵢ φ f hf q := by
   obtain ⟨x, rfl⟩ := SeparationQuotient.surjective_mk q
   rw [← SeparationQuotient.mk_smul, liftInnerₗᵢ_mk, liftInnerₗᵢ_mk]
   exact map_smul_along_of_inner φ hf a₀ x
 
-/-- Uniqueness in the universal property of `SeparationQuotient E` for inner-product-preserving
-maps. -/
+/-- Uniqueness in the universal property of `SeparationQuotient E` for inner-preserving maps. -/
 theorem eq_liftInnerₗᵢ_iff (g : SeparationQuotient E →ₗᵢ[ℂ] F) :
     g = liftInnerₗᵢ φ f hf ↔ ∀ x : E, g (SeparationQuotient.mk x) = f x :=
   ⟨fun h x ↦ by rw [h, liftInnerₗᵢ_mk], fun h ↦ LinearIsometry.ext <|
     SeparationQuotient.surjective_mk.forall.2 fun x ↦ (h x).trans (liftInnerₗᵢ_mk φ f hf x).symm⟩
 
 end LiftInner
-
-end InnerPreserving
-
 end SemiCStarModuleAlong
 
 namespace SemiCStarModule
 
-section InnerPreserving
-
 variable {A : Type*} [NonUnitalRing A] [StarRing A] [Module ℂ A] [StarModule ℂ A]
   [PartialOrder A] [Norm A]
 
-/-- Any plain function `f : E → F` into a definite `CStarModule A F` preserving the `A`-valued
-inner product intertwines the `A`-action. -/
+/-- An inner-product-preserving map into a definite `CStarModule A F` intertwines the `A`-action. -/
 theorem map_smul_of_inner {E F : Type*} [AddCommGroup E] [Module ℂ E] [SMul A E] [Norm E]
     [SemiCStarModule A E] [AddCommGroup F] [Module ℂ F] [SMul A F] [Norm F] [CStarModule A F]
     {f : E → F} (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y) (a : A) (x : E) :
     f (a • x) = a • f x :=
-  SemiCStarModuleAlong.map_smul_along_of_inner (NonUnitalStarAlgHom.id ℂ A) hf a x
-
-section Seminormed
+  SemiCStarModuleAlong.map_smul_along_of_inner (.id ℂ A) hf a x
 
 variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
-  [SemiCStarModule A E] [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
-  [CStarModule A F] (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+  [SemiCStarModule A E]
 
-/-- Bundle a plain inner-product-preserving map `f : E → F` into a definite `CStarModule A F` as a
-complex `LinearIsometry`. -/
+section Seminormed
+variable [SeminormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+  (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
+
+/-- Bundle an inner-product-preserving map into a definite `CStarModule` as a `LinearIsometry`. -/
 def linearIsometryOfInner : E →ₗᵢ[ℂ] F :=
-  SemiCStarModuleAlong.linearIsometryOfInner (NonUnitalStarAlgHom.id ℂ A) f hf
-
-@[simp]
-theorem linearIsometryOfInner_apply (x : E) : linearIsometryOfInner f hf x = f x := (rfl)
-
+  SemiCStarModuleAlong.linearIsometryOfInner (.id ℂ A) f hf
+@[simp] theorem linearIsometryOfInner_apply (x : E) : linearIsometryOfInner f hf x = f x := (rfl)
 end Seminormed
 
 section LiftInner
+variable [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
+  (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
 
-variable {E F : Type*} [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
-  [SemiCStarModule A E] [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F]
-  [CStarModule A F] (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)
-
-/-- Any plain function `f : E → F` into a separated `CStarModule A F` preserving the `A`-valued
-inner product descends to a `ℂ`-linear isometry `SeparationQuotient E →ₗᵢ[ℂ] F`. -/
+/-- An inner-product-preserving map `f : E → F` into a separated `CStarModule A F` descends to a
+`ℂ`-linear isometry `SeparationQuotient E →ₗᵢ[ℂ] F`. -/
 noncomputable def liftInnerₗᵢ : SeparationQuotient E →ₗᵢ[ℂ] F :=
-  SemiCStarModuleAlong.liftInnerₗᵢ (NonUnitalStarAlgHom.id ℂ A) f hf
-
-@[simp]
-theorem liftInnerₗᵢ_mk (x : E) : liftInnerₗᵢ f hf (SeparationQuotient.mk x) = f x := (rfl)
+  SemiCStarModuleAlong.liftInnerₗᵢ (.id ℂ A) f hf
+@[simp] theorem liftInnerₗᵢ_mk (x : E) : liftInnerₗᵢ f hf (SeparationQuotient.mk x) = f x := (rfl)
 
 /-- The separation-quotient lift of an inner-product-preserving map commutes with the `A`-action. -/
-@[simp]
-theorem liftInnerₗᵢ_smul [ContinuousConstSMul A E] (a : A) (q : SeparationQuotient E) :
+@[simp] theorem liftInnerₗᵢ_smul [ContinuousConstSMul A E] (a : A) (q : SeparationQuotient E) :
     liftInnerₗᵢ f hf (a • q) = a • liftInnerₗᵢ f hf q :=
-  SemiCStarModuleAlong.liftInnerₗᵢ_smul (NonUnitalStarAlgHom.id ℂ A) f hf a q
+  SemiCStarModuleAlong.liftInnerₗᵢ_smul (.id ℂ A) f hf a q
 
-/-- Uniqueness in the universal property of `SeparationQuotient E` for inner-product-preserving
-maps. -/
+/-- Uniqueness in the universal property of `SeparationQuotient E` for inner-preserving maps. -/
 theorem eq_liftInnerₗᵢ_iff (g : SeparationQuotient E →ₗᵢ[ℂ] F) :
     g = liftInnerₗᵢ f hf ↔ ∀ x : E, g (SeparationQuotient.mk x) = f x :=
-  SemiCStarModuleAlong.eq_liftInnerₗᵢ_iff (NonUnitalStarAlgHom.id ℂ A) f hf g
-
+  SemiCStarModuleAlong.eq_liftInnerₗᵢ_iff (.id ℂ A) f hf g
 end LiftInner
-
-end InnerPreserving
-
 end SemiCStarModule
-
 end TauCeti
 
 /-! ### The separation quotient of a positive semidefinite module -/
 
 namespace SeparationQuotient
 
-section SemiCStarModule
-
 variable {A E : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E] [TauCeti.SemiCStarModule A E]
 
-/-- The `A`-valued inner product on the separation quotient of a positive semidefinite
-`A`-module. -/
+/-- The `A`-valued inner product on `SeparationQuotient E` for a `SemiCStarModule A E`. -/
 noncomputable instance instInnerOfSemiCStarModule : Inner A (SeparationQuotient E) where
   inner := SeparationQuotient.lift₂ (inner A) fun _ _ _ _ hx hy ↦
     TauCeti.SemiCStarModule.inner_eq_inner_of_inseparable hx hy
 
-@[simp]
-theorem inner_mk_mk_of_semiCStarModule (x y : E) :
+@[simp] theorem inner_mk_mk_of_semiCStarModule (x y : E) :
     inner A (mk x : SeparationQuotient E) (mk y) = inner A x y := rfl
 
 open scoped ComplexOrder in
@@ -1019,8 +897,7 @@ noncomputable instance instCStarModule : CStarModule A (SeparationQuotient E) wh
     obtain ⟨z, rfl⟩ := surjective_mk z
     rw [← mk_add]; exact TauCeti.SemiCStarModule.inner_add_right (A := A)
   inner_self_nonneg {x} := by
-    obtain ⟨x, rfl⟩ := surjective_mk x
-    exact TauCeti.SemiCStarModule.inner_self_nonneg (A := A)
+    obtain ⟨x, rfl⟩ := surjective_mk x; exact TauCeti.SemiCStarModule.inner_self_nonneg (A := A)
   inner_self {x} := by
     obtain ⟨x, rfl⟩ := surjective_mk x
     rw [inner_mk_mk_of_semiCStarModule,
@@ -1037,16 +914,12 @@ noncomputable instance instCStarModule : CStarModule A (SeparationQuotient E) wh
     rw [norm_mk, inner_mk_mk_of_semiCStarModule,
       TauCeti.SemiCStarModule.norm_eq_sqrt_norm_inner_self (A := A) x]
 
-end SemiCStarModule
-
 end SeparationQuotient
 
 namespace TauCeti.SemiCStarModule
 
-/-- The separation-quotient lift of an inner-product-preserving map preserves `A`-valued inner
-products. -/
-@[simp]
-theorem inner_liftInnerₗᵢ {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
+/-- The separation-quotient lift of an inner-product-preserving map preserves inner products. -/
+@[simp] theorem inner_liftInnerₗᵢ {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A]
     [StarOrderedRing A] [SeminormedAddCommGroup E] [NormedSpace ℂ E] [SMul A E]
     [SemiCStarModule A E] [NormedAddCommGroup F] [NormedSpace ℂ F] [SMul A F] [CStarModule A F]
     (f : E → F) (hf : ∀ x y : E, inner A (f x) (f y) = inner A x y)

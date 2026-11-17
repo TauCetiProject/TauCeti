@@ -623,18 +623,13 @@ variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [Nontrivially
   {σ₁₂ : 𝕜 →+* 𝕜₂} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
-/-- Descending a bounded semilinear map to the separation quotient of its domain preserves
-its operator norm. -/
-@[simp]
-theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
+/-- Descending a bounded semilinear map to `SeparationQuotient` preserves its operator norm. -/
+@[simp] theorem norm_liftCLM (f : E →SL[σ₁₂] F) (hf : ∀ x y, Inseparable x y → f x = f y) :
     ‖liftCLM f hf‖ = ‖f‖ := by
   rw [ContinuousLinearMap.norm_def, ContinuousLinearMap.norm_def]
-  congr 1
-  ext c
-  refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
-  · simpa only [liftCLM_mk, norm_mk] using h (mk x)
-  · obtain ⟨x, rfl⟩ := surjective_mk x
-    simpa only [liftCLM_mk, norm_mk] using h x
+  congr 1; ext c
+  exact and_congr_right fun _ ↦ ⟨fun h x ↦ by simpa only [liftCLM_mk, norm_mk] using h (mk x),
+    fun h ↦ surjective_mk.forall.2 fun x ↦ by simpa only [liftCLM_mk, norm_mk] using h x⟩
 
 end SeparationQuotient
 

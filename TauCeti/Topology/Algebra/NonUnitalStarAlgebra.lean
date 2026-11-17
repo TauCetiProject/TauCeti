@@ -43,12 +43,10 @@ namespace NonUnitalStarAlgHom
 
 /-- Taking `MulOpposite` preserves dense range of a nonunital `⋆`-algebra homomorphism, without
 requiring any topology on the domain. -/
-@[simp]
-theorem denseRange_op_iff {R A₀ A : Type*} [Monoid R]
+@[simp] theorem denseRange_op_iff {R A₀ A : Type*} [Monoid R]
     [NonUnitalNonAssocSemiring A₀] [DistribMulAction R A₀] [Star A₀]
     [NonUnitalNonAssocSemiring A] [DistribMulAction R A] [Star A] [TopologicalSpace A]
-    (φ : A₀ →⋆ₙₐ[R] A) :
-    DenseRange φ.op ↔ DenseRange φ := by
+    (φ : A₀ →⋆ₙₐ[R] A) : DenseRange φ.op ↔ DenseRange φ := by
   unfold DenseRange
   have hfun : (⇑φ.op : A₀ᵐᵒᵖ → Aᵐᵒᵖ) = (MulOpposite.opHomeomorph ∘ φ) ∘ MulOpposite.unop := by
     ext x; simp
@@ -64,8 +62,6 @@ if and only if the subalgebra is dense. -/
 theorem denseRange_subtype_op_iff {R A S : Type*} [CommSemiring R]
     [NonUnitalNonAssocSemiring A] [Star A] [Module R A] [TopologicalSpace A]
     [SetLike S A] [NonUnitalSubsemiringClass S A] [SMulMemClass S R A] [StarMemClass S A]
-    (s : S) :
-    DenseRange (subtype (R := R) s).op ↔ Dense (s : Set A) := by
-  simp
+    (s : S) : DenseRange (subtype (R := R) s).op ↔ Dense (s : Set A) := by simp
 
 end NonUnitalStarSubalgebraClass
