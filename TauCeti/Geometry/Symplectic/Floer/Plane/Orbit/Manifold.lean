@@ -38,7 +38,8 @@ the end lift
 half-cylinder theorem applies on the positive plane, and on the negative plane the orbit of
 `-H(-t)` is run backwards
 (`TauCeti.SmoothTwoForm.comp_neg_mem_periodicSolutions_hamiltonianVectorField_iff`). The
-convergence of the capped end actions on a manifold is not treated here.
+convergence of the capped end actions and the energy identity at the orbit `x` are in
+`TauCeti.Geometry.Symplectic.Floer.Plane.Orbit.Energy`.
 
 ## References
 
