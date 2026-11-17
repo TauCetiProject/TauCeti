@@ -68,6 +68,8 @@ relative homotopy invariance of cubical homology is transported from the simplic
 * The terms of `TopPair.cubicalChainComplex k P` are projective `k`-modules (an instance), and in
   each degree the chains of the subspace split off those of the ambient space
   (`TopPair.isSplitMono_normalizedCubicalChainComplex_map_f`).
+* `TopPair.cokernel_π_f_map_eq_zero_of_range_subset`: a chain pushed forward along a map with
+  values in the subspace vanishes in the relative chains.
 * `TopPair.quasiIso_singularToCubicalRel`, `TopPair.quasiIso_cubicalToSingularRel`: the relative
   comparison maps are quasi-isomorphisms.
 * `TopPair.cubicalChainComplexMap_eq_zero_of_fac`: a map of pairs whose ambient map factors
@@ -130,6 +132,20 @@ theorem cubicalChainComplex_condition_f (P : TopPair.{u}) (n : ℕ) :
     ((normalizedCubicalChainComplex k).map P.map).f n ≫
       (cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n = 0 := by
   simp [← HomologicalComplex.comp_f]
+
+/-- A chain pushed forward along a map with values in the subspace of a pair vanishes in the
+relative normalized cubical chains of the pair. -/
+theorem cokernel_π_f_map_eq_zero_of_range_subset (P : TopPair.{u}) {Z : TopCat.{u}}
+    (g : Z ⟶ P.fst) (hg : Set.range g ⊆ Set.range P.map) {n : ℕ}
+    (b : NormalizedCubicalChain Z k n) :
+    ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n).hom
+      (NormalizedCubicalChain.map k g.hom n b) = 0 := by
+  -- `g` factors through the embedding of the subspace.
+  have hg' : g.hom = P.map.hom.comp (P.liftSnd g.hom fun z ↦ hg ⟨z, rfl⟩) := by
+    ext z
+    exact (TopPair.map_liftSnd _ _ z).symm
+  rw [hg', ← NormalizedCubicalChain.map_map]
+  exact ConcreteCategory.congr_hom (cubicalChainComplex_condition_f k P n) _
 
 /-- The sequence `N(A) ⟶ N(X) ⟶ N(X, A)` of normalized cubical chain complexes of a pair. -/
 abbrev cubicalChainComplexShortComplex (P : TopPair.{u}) :
