@@ -34,9 +34,11 @@ the unit, by `TauCeti.mem_stateSpace_iff_norm_eq_one_and_map_one`. The extension
 an injective star homomorphism of C⋆-algebras is isometric. An extension of a state need not be
 pure, multiplicative or unique.
 
-A pure state `φ` of `A` has a pure extension: its extensions form a nonempty weak-* compact face of
-the state space of `B`, so by the Krein–Milman theorem the face has an extreme point, and an
-extreme point of a face is an extreme point of the whole state space.
+A pure state `φ` of `A` has a pure extension: restriction is a continuous affine map sending the
+weak-* compact state space of `B` onto that of `A`, so by Mathlib's `surjOn_extremePoints_image`
+(a consequence of the Krein–Milman lemma) every extreme point of the image is the image of an
+extreme point. Equivalently, the extensions of `φ` form a nonempty weak-* compact face of the
+state space of `B`, whose extreme points are extreme points of the whole state space.
 
 Pure states are the extreme points `extremePoints ℝ (stateSpace A)` of the state space.
 
@@ -131,11 +133,12 @@ C⋆-algebras, every pure state of `A` is the restriction `φ ∘ f` of a pure s
 theorem surjOn_pullbackFunctional_extremePoints_stateSpace (f : F) (hf : Function.Injective f) :
     SurjOn (pullbackFunctional A f) (extremePoints ℝ (stateSpace B))
       (extremePoints ℝ (stateSpace A)) := by
-  intro φ hφ
-  obtain ⟨ψ, hψ⟩ := (isCompact_stateSpace_inter_preimage f φ).extremePoints_nonempty
-    (surjOn_pullbackFunctional_stateSpace f hf hφ.1)
-  have hface := isExtreme_stateSpace_inter_preimage_pullbackFunctional f hφ
-  exact ⟨ψ, hface.extremePoints_subset_extremePoints hψ, (extremePoints_subset hψ).2⟩
+  have h := surjOn_extremePoints_image
+    ((pullbackFunctional A f).restrictScalars ℝ).toContinuousAffineMap
+    (isCompact_stateSpace (A := B))
+  rwa [ContinuousLinearMap.coe_toContinuousAffineMap, ContinuousLinearMap.coe_restrictScalars',
+    (surjOn_pullbackFunctional_stateSpace f hf).image_eq_of_mapsTo
+      (mapsTo_pullbackFunctional_stateSpace f)] at h
 
 end TauCeti
 
