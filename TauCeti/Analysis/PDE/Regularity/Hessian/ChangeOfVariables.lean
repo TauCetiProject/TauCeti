@@ -100,8 +100,8 @@ depend on the basis, and the coefficient fields `A`, `b`, `c₀` and the right-h
 arbitrary functions. -/
 theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq {ι : Type*} [Fintype ι]
     (e : OrthonormalBasis ι ℝ E) (hΦ : IsChangeOfVariables 2 U V Φ L c)
-    (hΨ : IsChangeOfVariables 2 V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
-    (hp : p ≠ ⊤) (u : Wkp mu V p 2) {A : E → E →L[ℝ] E} {b : E → E} {c₀ f : E → ℝ}
+    (hΨ : IsChangeOfVariables 2 V U Ψ L' c') (hΦΨ : RightInvOn Ψ Φ V) (hp : p ≠ ⊤)
+    (u : Wkp mu V p 2) {A : E → E →L[ℝ] E} {b : E → E} {c₀ f : E → ℝ}
     (hu : ∀ᵐ y ∂mu.restrict V, traceCLM ℝ E (A y ∘L iteratedGradient 1 u y) +
       ⟪b y, iteratedGradient 0 (lowerOrder 1 u) y⟫_ℝ + c₀ y * value 2 u y = f y) :
     ∀ᵐ x ∂mu.restrict U,
@@ -134,6 +134,6 @@ theorem ae_traceCLM_comp_iteratedGradient_compL_add_inner_add_mul_eq {ι : Type*
     rw [← hy, inner_add_left, sum_inner]
     ring
   filter_upwards [hΦ.ae_comp hkey, ae_restrict_mem U.isOpen.measurableSet] with x hx hxU
-  rwa [hΨΦ hxU] at hx
+  rwa [hΦ.injOn (hΨ.mapsTo (hΦ.mapsTo hxU)) hxU (hΦΨ (hΦ.mapsTo hxU))] at hx
 
 end TauCeti.PDE
