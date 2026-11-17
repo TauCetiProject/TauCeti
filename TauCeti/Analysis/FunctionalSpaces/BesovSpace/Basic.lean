@@ -69,6 +69,8 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
   `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
   are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos`: for `0 < s`, `B^s_{p,q} ⊆ Lᵖ` with
+  `‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`.
 * `TemperedDistribution.MemBesov.of_bump` and `TauCeti.BesovSpace.bumpEquiv`: the Besov space does
   not depend on the bump function; the identity on tempered distributions is an isomorphism of
   normed spaces between the Besov spaces built from two bump functions.
@@ -903,22 +905,16 @@ variable [Fact (1 ≤ q)]
 
 /-- **Besov spaces of positive smoothness consist of `Lᵖ` functions.** For `0 < s`, every
 `u ∈ B^s_{p,q}` is the tempered distribution of an `Lᵖ` function `f` with
-`‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`: the blocks satisfy `‖Δⱼ u‖_p ≤ 2^{-js} ‖u‖`, so the series
-`f = ∑ⱼ Δⱼ u` converges absolutely in `Lᵖ`, and it represents `u` by the Littlewood–Paley
-reconstruction `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`. -/
+`‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`. -/
 theorem exists_toDistr_eq_and_norm_le_of_pos (hs : 0 < s) (u : BesovSpace F φ s p q) :
     ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
+  -- Since `‖Δⱼ u‖_p ≤ 2^{-js} ‖u‖`, the series `f = ∑ⱼ Δⱼ u` converges absolutely in `Lᵖ`, and it
+  -- represents `u` by the Littlewood–Paley reconstruction `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
   set ρ : ℝ := 2 ^ (-s)
   have hρ0 : 0 ≤ ρ := by positivity
   have hρ1 : ρ < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_neg_of_pos hs)
-  have hblock (j : ℕ) : ‖u.block j‖ ≤ ‖u‖ * ρ ^ j := by
-    have hρj : ρ ^ j * 2 ^ (s * j) = 1 := by
-      simpa using Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos s j 0
-    calc ‖u.block j‖ = ρ ^ j * (2 ^ (s * j) * ‖u.block j‖) := by rw [← mul_assoc, hρj, one_mul]
-      _ ≤ ρ ^ j * ‖u‖ := by
-          gcongr
-          exact u.rpow_mul_norm_block_le j
-      _ = _ := mul_comm _ _
+  have hblock (j : ℕ) : ‖u.block j‖ ≤ ‖u‖ * ρ ^ j :=
+    Real.le_mul_rpow_neg_pow_of_rpow_mul_le two_pos (u.rpow_mul_norm_block_le j)
   have hgeom := (summable_geometric_of_lt_one hρ0 hρ1).mul_left ‖u‖
   have hsum := Summable.of_norm_bounded hgeom hblock
   refine ⟨∑' j, u.block j, tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u.toDistr) ?_,

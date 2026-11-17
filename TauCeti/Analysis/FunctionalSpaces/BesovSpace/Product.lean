@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
-import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Products of Besov distributions of opposite regularity
@@ -70,41 +69,6 @@ section Truncation
 variable {p₁ p₂ r q₁ q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)] [Fact (1 ≤ q₁)]
   [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r]
 
-omit [Fact (1 ≤ r)] in
-/-- A block of `u` times blocks of `v` of nearby index: if `t ⊆ [j - N, j + N]`, then
-`2^{j(α+β)} ‖Δⱼ u · ∑_{k ∈ t} Δₖ v‖_r ≤ (2N + 1) 2^{|β| (N + 1)} ‖u‖ ‖v‖`. -/
-private theorem rpow_mul_norm_block_smul_sum_block_le_of_subset (u : BesovSpace ℂ φ α p₁ q₁)
-    (v : BesovSpace F φ β p₂ q₂) {N j : ℕ} {t : Finset ℕ} (ht : t ⊆ Finset.Icc (j - N) (j + N)) :
-    2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖ ≤
-      (2 * N + 1) * 2 ^ (|β| * (N + 1 : ℕ)) * ‖u‖ * ‖v‖ := by
-  have hk (k : ℕ) (hk : k ∈ t) : 2 ^ (β * j) * ‖v.block k‖ ≤ 2 ^ (|β| * (N + 1 : ℕ)) * ‖v‖ := by
-    have hmem : j ∈ Finset.Ico (k - (N + 1)) (k + (N + 1)) := by
-      have := ht hk
-      simp only [Finset.mem_Icc, Finset.mem_Ico] at this ⊢
-      omega
-    calc 2 ^ (β * j) * ‖v.block k‖ ≤ 2 ^ (|β| * (N + 1 : ℕ)) * 2 ^ (β * k) * ‖v.block k‖ := by
-          gcongr
-          exact Real.rpow_mul_natCast_le_of_mem_Ico one_le_two β hmem
-      _ ≤ _ := by
-          rw [mul_assoc]
-          gcongr
-          exact v.rpow_mul_norm_block_le k
-  have hcard : (t.card : ℝ) ≤ 2 * N + 1 := by
-    have := (Finset.card_le_card ht).trans_eq (Nat.card_Icc _ _)
-    exact_mod_cast this.trans (by omega)
-  calc 2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖
-      ≤ 2 ^ (α * j) * ‖u.block j‖ * ∑ k ∈ t, 2 ^ (β * j) * ‖v.block k‖ := by
-        rw [add_mul, Real.rpow_add two_pos, ← Finset.mul_sum, mul_mul_mul_comm]
-        gcongr
-        exact (Lp.norm_smul_le _ _).trans (by gcongr; exact norm_sum_le _ _)
-    _ ≤ ‖u‖ * ∑ k ∈ t, 2 ^ (|β| * (N + 1 : ℕ)) * ‖v‖ :=
-        mul_le_mul (u.rpow_mul_norm_block_le j) (Finset.sum_le_sum hk) (by positivity)
-          (norm_nonneg _)
-    _ = ‖u‖ * (t.card * (2 ^ (|β| * (N + 1 : ℕ)) * ‖v‖)) := by
-        rw [Finset.sum_const, nsmul_eq_mul]
-    _ ≤ ‖u‖ * ((2 * N + 1) * (2 ^ (|β| * (N + 1 : ℕ)) * ‖v‖)) := by gcongr
-    _ = _ := by ring
-
 /-- **The resonant terms missed by the truncation.** In `S_M u · S_M v` the resonant part is
 summed only over block indices below `M`; the missing terms `Δⱼ u · Δₖ v` with `j < M ≤ k ≤ j + N`
 tend to zero in `Lʳ` as `M → ∞` when `0 < α + β`, since their norms are `O(2^{-(α+β) j})` with
@@ -114,21 +78,25 @@ private theorem tendsto_sum_block_smul_sum_block_filter (hαβ : 0 < α + β)
     Tendsto (fun M ↦ ∑ j ∈ Finset.range M, (u.block j •
       ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (fun k ↦ ¬k < M), v.block k :
         Lp F r (volume : Measure E))) atTop (𝓝 0) := by
-  set K := (2 * N + 1) * 2 ^ (|β| * (N + 1 : ℕ)) * ‖u‖ * ‖v‖
+  set K := ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) * (2 * (N + 1 : ℕ) * ‖v‖))
   set ρ : ℝ := 2 ^ (-(α + β))
   have hρ0 : 0 ≤ ρ := by positivity
   have hρ1 : ρ < 1 := Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_neg_of_pos hαβ)
   set D : ℕ → ℕ → Lp F r (volume : Measure E) := fun M j ↦
     u.block j • ∑ k ∈ (Finset.Icc (j - N) (j + N)).filter (fun k ↦ ¬k < M), v.block k
+  -- The window sums of the weighted block norms of `v` are at most `2 (N + 1) ‖v‖`.
+  have hwin (j : ℕ) : ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖ ≤
+      2 * (N + 1 : ℕ) * ‖v‖ := by
+    refine (Finset.sum_le_sum fun k _ ↦ v.rpow_mul_norm_block_le k).trans ?_
+    rw [Finset.sum_const, nsmul_eq_mul, Nat.card_Ico]
+    gcongr
+    exact_mod_cast (by omega : j + (N + 1) - (j - (N + 1)) ≤ 2 * (N + 1))
   -- Each term is `O(ρ ^ j)`, and only the indices `M - N ≤ j < M` contribute.
-  have hD (M j : ℕ) : ‖D M j‖ ≤ ρ ^ j * K := by
-    have hρj : ρ ^ j * 2 ^ ((α + β) * j) = 1 := by
-      have h := Real.rpow_neg_pow_mul_rpow_mul_natCast_add two_pos (α + β) j 0
-      rwa [add_zero, Nat.cast_zero, mul_zero, Real.rpow_zero] at h
-    calc ‖D M j‖ = ρ ^ j * (2 ^ ((α + β) * j) * ‖D M j‖) := by rw [← mul_assoc, hρj, one_mul]
-      _ ≤ ρ ^ j * K := by
-          gcongr
-          exact rpow_mul_norm_block_smul_sum_block_le_of_subset u v (Finset.filter_subset _ _)
+  have hD (M j : ℕ) : ‖D M j‖ ≤ K * ρ ^ j :=
+    Real.le_mul_rpow_neg_pow_of_rpow_mul_le two_pos <|
+      (rpow_mul_norm_block_smul_sum_block_le u v (Finset.filter_subset _ _)).trans <|
+        mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_left (hwin j) (by positivity))
+          (norm_nonneg _)
   have hsub (M : ℕ) : ∑ j ∈ Finset.range M, D M j = ∑ j ∈ Finset.Ico (M - N) M, D M j := by
     refine (Finset.sum_subset (fun j hj ↦ ?_) fun j hjM hj ↦ ?_).symm
     · exact Finset.mem_range.2 (Finset.mem_Ico.1 hj).2
@@ -142,13 +110,13 @@ private theorem tendsto_sum_block_smul_sum_block_filter (hαβ : 0 < α + β)
       simp only [D, hempty, Finset.sum_empty, Lp.smul_zero]
   have hbound (M : ℕ) : ‖∑ j ∈ Finset.range M, D M j‖ ≤ N * K * ρ ^ (M - N) := by
     rw [hsub]
-    calc ‖∑ j ∈ Finset.Ico (M - N) M, D M j‖ ≤ ∑ _j ∈ Finset.Ico (M - N) M, ρ ^ (M - N) * K := by
+    calc ‖∑ j ∈ Finset.Ico (M - N) M, D M j‖ ≤ ∑ _j ∈ Finset.Ico (M - N) M, K * ρ ^ (M - N) := by
           refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j hj ↦ (hD M j).trans ?_)
-          exact mul_le_mul_of_nonneg_right
+          exact mul_le_mul_of_nonneg_left
             (pow_le_pow_of_le_one hρ0 hρ1.le (Finset.mem_Ico.1 hj).1) (by positivity)
-      _ = (Finset.Ico (M - N) M).card * (ρ ^ (M - N) * K) := by
+      _ = (Finset.Ico (M - N) M).card * (K * ρ ^ (M - N)) := by
           rw [Finset.sum_const, nsmul_eq_mul]
-      _ ≤ N * (ρ ^ (M - N) * K) := by
+      _ ≤ N * (K * ρ ^ (M - N)) := by
           gcongr
           rw [Nat.card_Ico]
           exact_mod_cast (by omega : M - (M - N) ≤ N)
@@ -197,8 +165,15 @@ private theorem tendsto_lowPass_smul_lowPass_of_hasSum (hαβ : 0 < α + β)
 end Truncation
 
 variable (φ) in
-/-- **The product of a distribution of negative regularity and a smoother one**
-(Bahouri–Chemin–Danchin, Theorems 2.82 and 2.85). Let `α < 0 < α + β`. There is `C ≥ 0`,
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A gap `N` for which the paraproduct terms are spectrally localized in dyadic annuli. -/
+private theorem exists_rOut_lt_two_pow_mul_rIn : ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
+  exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
+
+variable (φ) in
+/-- **The product of a distribution of negative regularity and a smoother one**, a consequence of
+Bahouri–Chemin–Danchin, Theorems 2.82 and 2.85. Let `α < 0 < α + β`. There is `C ≥ 0`,
 depending only on `φ`, `α` and `β`, with the following property for all exponents
 `1 ≤ p₁, p₂, r, q₁, q₂ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and
 `v ∈ B^β_{p₂,q₂}`, then the products `S_M u · S_M v` of the low-frequency cut-offs converge in the
@@ -213,10 +188,7 @@ theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_left (hα : α < 
           𝓢'(E, F))) atTop (𝓝 w.toDistr) ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   have hβ : 0 < β := by linarith
   have hlt : α < α + β := by linarith
-  -- A gap `N` for which the paraproduct terms are spectrally localized in dyadic annuli.
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
-    obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
-    exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
+  obtain ⟨N, hN⟩ := exists_rOut_lt_two_pow_mul_rIn φ
   obtain ⟨C₁, hC₁, h₁⟩ := exists_hasSum_lowPass_smul_block_and_norm_le_of_neg (F := F) φ hα β hN
   obtain ⟨C₂, hC₂, h₂⟩ :=
     exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq (F := F) φ α hN
@@ -247,8 +219,8 @@ theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_left (hα : α < 
       _ = (c * C₁ + C₂ * d + c * C₃) * ‖u‖ * ‖v‖ := by ring
 
 variable (φ) in
-/-- **The product of a smoother distribution and one of negative regularity**
-(Bahouri–Chemin–Danchin, Theorems 2.82 and 2.85). Let `β < 0 < α + β`. There is `C ≥ 0`,
+/-- **The product of a smoother distribution and one of negative regularity**, a consequence of
+Bahouri–Chemin–Danchin, Theorems 2.82 and 2.85. Let `β < 0 < α + β`. There is `C ≥ 0`,
 depending only on `φ`, `α` and `β`, with the following property for all exponents
 `1 ≤ p₁, p₂, r, q₁, q₂ ≤ ∞` with `1/r = 1/p₁ + 1/p₂`. If `u ∈ B^α_{p₁,q₁}` and
 `v ∈ B^β_{p₂,q₂}`, then the products `S_M u · S_M v` of the low-frequency cut-offs converge in the
@@ -262,10 +234,7 @@ theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_right (hβ : β <
           𝓢'(E, F))) atTop (𝓝 w.toDistr) ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖ := by
   have hα : 0 < α := by linarith
   have hlt : β < α + β := by linarith
-  -- A gap `N` for which the paraproduct terms are spectrally localized in dyadic annuli.
-  obtain ⟨N, hN⟩ : ∃ N : ℕ, φ.rOut < 2 ^ N * φ.rIn := by
-    obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) one_lt_two
-    exact ⟨N, (div_lt_iff₀ φ.rIn_pos).1 hN⟩
+  obtain ⟨N, hN⟩ := exists_rOut_lt_two_pow_mul_rIn φ
   obtain ⟨C₁, hC₁, h₁⟩ :=
     exists_hasSum_lowPass_smul_block_and_norm_le_of_toDistr_eq (F := F) φ β hN
   obtain ⟨C₂, hC₂, h₂⟩ := exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (F := F) φ α hβ hN
