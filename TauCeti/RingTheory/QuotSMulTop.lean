@@ -67,6 +67,8 @@ domain, an element `r` not divisible by a prime `π` is regular on `R ⧸ (π ^ 
   depends only on its class modulo `I`, up to multiplication by units.
 * `Prime.isSMulRegular_quotient_span_pow`: in a domain, if the prime `π` does not divide `r`, then
   `r` is regular on `R ⧸ (π ^ m)`.
+* `isSMulRegular_quotient_smul_top_congr`: elements congruent modulo a left ideal `I` have the same
+  regularity on `M ⧸ I • ⊤`.
 -/
 
 public section
