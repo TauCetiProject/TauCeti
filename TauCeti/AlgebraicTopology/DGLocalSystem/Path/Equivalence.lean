@@ -235,6 +235,12 @@ theorem tensorPathChainRoundTripIso_hom_app (h : Nonempty (MoorePathBetween B a 
     (tensorPathChainRoundTripIso.{u, w, v} La h).hom.app M =
       La.map (tensorPathChainConcat M b a) ≫
         La.map (tensorPathChainOneIso.{u, w, v} B a R M).hom := by
+  -- `tensorPathChainRoundTripIso` ascribes the whiskered concatenation iso a source written with
+  -- `tensorPathChainLocalizerMorphism`, which agrees with the source of `asIso` only up to
+  -- unfolding. After unfolding, `simp only [tensorPathChainRoundTripIso, Iso.trans_hom]` sees an
+  -- ill-typed `Iso.trans` and does not rewrite past it, so `change` states the unfolded components.
+  -- For the same reason, the two sides left after `rw` differ in hidden implicit arguments that
+  -- agree only up to unfolding, which the closing `rfl` checks.
   change 𝟙 _ ≫ La.map ((tensorPathChainConcatNatTrans.{u, w, v} B R a b a).app M) ≫
     (tensorPathChainSelfCompIso.{u, w, v} La).hom.app M = _
   rw [Category.id_comp, tensorPathChainConcatNatTrans_app, tensorPathChainSelfCompIso_hom_app]
