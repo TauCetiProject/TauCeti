@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 public import TauCeti.Analysis.Sobolev.Wkp.Density
 public import TauCeti.Analysis.Sobolev.Wkp.ZeroAtInfty
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
+import TauCeti.Analysis.Distribution.TestFunction.ZeroAtInfty
 import TauCeti.Analysis.FunctionalSpaces.SobolevInequality
 
 /-!
@@ -71,22 +72,6 @@ namespace Wkp
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {k : ℕ}
 
-/-- A test function on the whole space represents its image in `W^{k,1}`. -/
-private theorem value_ofTestFunctionₗ_ae_eq (φ : 𝓓((⊤ : Opens E), ℝ)) :
-    value k (ofTestFunctionₗ (mu := (volume : Measure E)) (p := 1) k φ) =ᵐ[volume] φ := by
-  simpa only [value_ofTestFunctionₗ, Opens.coe_top, Measure.restrict_univ, EventuallyEq] using
-    testFunctionLp_apply_ae (mu := (volume : Measure E)) 1 φ
-
-/-- A test function on the whole space, as a continuous function vanishing at infinity. -/
-private def testFunctionToZeroAtInfty (φ : 𝓓((⊤ : Opens E), ℝ)) : C₀(E, ℝ) :=
-  ⟨⟨φ, φ.continuous⟩, φ.hasCompactSupport.is_zero_at_infty⟩
-
-omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-@[simp]
-private theorem coe_testFunctionToZeroAtInfty (φ : 𝓓((⊤ : Opens E), ℝ)) :
-    ⇑(testFunctionToZeroAtInfty φ) = φ :=
-  rfl
-
 /-- **The critical Sobolev inequality for test functions.** For `dim E ≤ k`, the values of a test
 function are bounded by its `W^{k,1}` norm. -/
 private theorem norm_apply_le_norm_ofTestFunctionₗ (hk : finrank ℝ E ≤ k)
@@ -95,7 +80,7 @@ private theorem norm_apply_le_norm_ofTestFunctionₗ (hk : finrank ℝ E ≤ k)
   have hvolume : (volume : Measure E).restrict ((⊤ : Opens E) : Set E) = volume := by simp
   have hvalue : (value k (ofTestFunctionₗ (mu := (volume : Measure E)) (p := 1) k φ) : E → ℝ)
       =ᵐ[(volume : Measure E).restrict (⊤ : Opens E)] φ :=
-    ae_restrict_of_ae (value_ofTestFunctionₗ_ae_eq φ)
+    ae_restrict_of_ae (value_ofTestFunctionₗ_top_ae k φ)
   have hle := lpNorm_iteratedFDeriv_le_of_contDiffOn k _
     (φ.contDiff.of_le (by exact_mod_cast le_top)).contDiffOn hvalue _ hk
   have hmem : MemLp (iteratedFDeriv ℝ (finrank ℝ E) (φ : E → ℝ)) 1 volume :=
@@ -121,26 +106,25 @@ private theorem exists_zeroAtInftyContinuousMap_ae_eq_and_norm_le (hk : finrank 
   obtain ⟨w, hwD, hw⟩ := mem_closure_iff_seq_limit.1
     ((denseRange_ofTestFunctionₗ_top (mu := (volume : Measure E)) ENNReal.one_ne_top k) u)
   choose φ hφ using hwD
-  let G := testFunctionToZeroAtInfty (E := E)
+  let G := TestFunction.toZeroAtInftyCLM ℝ (Ω := (⊤ : Opens E)) (F := ℝ) (n := ⊤)
+  have hG (ψ : 𝓓((⊤ : Opens E), ℝ)) : value k (D ψ) =ᵐ[volume] G ψ := by
+    simpa only [G, TestFunction.coe_toZeroAtInftyCLM] using value_ofTestFunctionₗ_top_ae k ψ
   have hDφ : Tendsto (fun j => D (φ j)) atTop (𝓝 u) := by simpa only [D, hφ] using hw
   have hnorm (ψ : 𝓓((⊤ : Opens E), ℝ)) : ‖G ψ‖ ≤ ‖D ψ‖ := by
     rw [← ZeroAtInftyContinuousMap.norm_toBCF_eq_norm,
       BoundedContinuousFunction.norm_le (norm_nonneg _)]
-    exact norm_apply_le_norm_ofTestFunctionₗ hk ψ
+    simpa [G] using norm_apply_le_norm_ofTestFunctionₗ hk ψ
   -- Their continuous versions form a Cauchy sequence in `C₀`, with a limit `g`.
   have hcauchy : CauchySeq fun j => G (φ j) := by
     refine Metric.cauchySeq_iff.2 fun ε hε => ?_
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hDφ.cauchySeq ε hε
     refine ⟨N, fun i hi j hj => ?_⟩
-    have hsub : G (φ i) - G (φ j) = G (φ i - φ j) := by
-      ext x
-      simp [G]
-    rw [dist_eq_norm, hsub]
+    rw [dist_eq_norm, ← map_sub]
     refine (hnorm _).trans_lt ?_
     rw [map_sub, ← dist_eq_norm]
     exact hN i hi j hj
   obtain ⟨g, hg⟩ := cauchySeq_tendsto_of_complete hcauchy
-  exact ⟨g, value_ae_eq_of_tendsto hDφ (fun j => value_ofTestFunctionₗ_ae_eq (φ j)) hg,
+  exact ⟨g, value_ae_eq_of_tendsto hDφ (fun j => hG (φ j)) hg,
     le_of_tendsto_of_tendsto' hg.norm hDφ.norm fun j => hnorm (φ j)⟩
 
 /-- **The critical Sobolev embedding `W^{k,1}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)`** for `dim E ≤ k`: the bounded
@@ -166,9 +150,10 @@ theorem toZeroAtInftyOne_eq_iff (hk : finrank ℝ E ≤ k) (u : Wkp (volume : Me
 /-- The Sobolev embedding sends a test function to itself. -/
 @[simp]
 theorem coe_toZeroAtInftyOne_ofTestFunctionₗ (hk : finrank ℝ E ≤ k) (φ : 𝓓((⊤ : Opens E), ℝ)) :
-    ⇑(toZeroAtInftyOne hk (ofTestFunctionₗ k φ)) = φ :=
-  congrArg DFunLike.coe <| (toZeroAtInftyOne_eq_iff hk _ (testFunctionToZeroAtInfty φ)).2 <|
-    value_ofTestFunctionₗ_ae_eq φ
+    ⇑(toZeroAtInftyOne hk (ofTestFunctionₗ k φ)) = φ := by
+  rw [(toZeroAtInftyOne_eq_iff hk _ (TestFunction.toZeroAtInftyCLM ℝ φ)).2,
+    TestFunction.coe_toZeroAtInftyCLM]
+  simpa only [TestFunction.coe_toZeroAtInftyCLM] using value_ofTestFunctionₗ_top_ae k φ
 
 /-- **The critical Sobolev inequality** `sup_x |u(x)| ≤ ‖u‖_{W^{k,1}}` for `dim E ≤ k`. -/
 theorem norm_toZeroAtInftyOne_le (hk : finrank ℝ E ≤ k) (u : Wkp (volume : Measure E) ⊤ 1 k) :
