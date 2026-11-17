@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Cartesian.Basic
 public import Mathlib.Topology.Category.TopCat.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Closed.Braided
-public import TauCeti.Topology.Convenient.GeneratedBy
-public import TauCeti.Topology.Convenient.Product
+public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
+public import TauCeti.Topology.Convenient.HomSpace
+import Mathlib.CategoryTheory.Elementwise
 
 /-!
 # Cartesian monoidal closed categories of generated spaces
@@ -27,9 +27,10 @@ calculations unwrap products and internal homs via `tensorEquiv` and `ihomEquiv`
   `GeneratedByTopCat.prodComparisonIsoOfLocallyCompactLeft` and `Right`.
 * When every `X i` is locally compact and every `X i × X j` is `X`-generated,
   `Topology.ContinuousMapGeneratedBy.curryEquiv` makes `ContinuousGeneratedByCat.{v} X` cartesian
-  monoidal closed, and transporting along `ContinuousGeneratedByCat.equivalence` gives
-  `GeneratedByTopCat.{v} X` its `MonoidalClosed` structure, `MonoidalClosed.ihomTensorIso`
-  evaluation lemmas, `ihomIsoCompactOpen`, and `compactOpenCurryIso`.
+  monoidal closed, and `CategoryTheory.cartesianClosedOfEquiv` applied to
+  `ContinuousGeneratedByCat.equivalence.symm` transports the `MonoidalClosed` structure to
+  `GeneratedByTopCat.{v} X`, yielding `MonoidalClosed.ihomTensorIso` evaluation lemmas,
+  `ihomIsoCompactOpen`, and `compactOpenCurryIso`.
 
 ## References
 
@@ -56,9 +57,24 @@ def isTerminalPUnit : IsTerminal (of (X := X) PUnit.{v + 1}) :=
     (fun _ _ ↦ by ext)
 
 /-- The binary product fan of `Y` and `Z` in `ContinuousGeneratedByCat X`, given by `Y × Z`. -/
-@[expose] def prodBinaryFan (Y Z : ContinuousGeneratedByCat.{v} X) : BinaryFan Y Z :=
+def prodBinaryFan (Y Z : ContinuousGeneratedByCat.{v} X) : BinaryFan Y Z :=
   BinaryFan.mk (homMk (Y := of (X := X) (Y × Z)) Prod.fst continuous_fst.continuousGeneratedBy)
     (homMk (Y := of (X := X) (Y × Z)) Prod.snd continuous_snd.continuousGeneratedBy)
+
+theorem prodBinaryFan_pt (Y Z : ContinuousGeneratedByCat.{v} X) :
+    (prodBinaryFan Y Z).pt = of (X := X) (Y × Z) := (rfl)
+
+theorem prodBinaryFan_fst (Y Z : ContinuousGeneratedByCat.{v} X) :
+    (prodBinaryFan Y Z).fst = eqToHom (prodBinaryFan_pt Y Z) ≫
+      homMk (Y := of (X := X) (Y × Z)) Prod.fst continuous_fst.continuousGeneratedBy :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ _) (eqToHom_refl (of (X := X) (Y × Z)) (prodBinaryFan_pt Y Z)).symm)
+
+theorem prodBinaryFan_snd (Y Z : ContinuousGeneratedByCat.{v} X) :
+    (prodBinaryFan Y Z).snd = eqToHom (prodBinaryFan_pt Y Z) ≫
+      homMk (Y := of (X := X) (Y × Z)) Prod.snd continuous_snd.continuousGeneratedBy :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ _) (eqToHom_refl (of (X := X) (Y × Z)) (prodBinaryFan_pt Y Z)).symm)
 
 /-- The ordinary product `Y × Z` is a binary product in `ContinuousGeneratedByCat X`. -/
 def prodBinaryFanIsLimit (Y Z : ContinuousGeneratedByCat.{v} X) : IsLimit (prodBinaryFan Y Z) :=
@@ -78,17 +94,22 @@ instance instCartesianMonoidalCategory :
 instance instBraidedCategory : BraidedCategory (ContinuousGeneratedByCat.{v} X) :=
   .ofCartesianMonoidalCategory
 
-theorem tensorObj_def (Y Z : ContinuousGeneratedByCat.{v} X) : Y ⊗ Z = of (X := X) (Y × Z) := (rfl)
+theorem tensorObj_def (Y Z : ContinuousGeneratedByCat.{v} X) : Y ⊗ Z = of (X := X) (Y × Z) :=
+  prodBinaryFan_pt Y Z
 theorem tensorUnit_def : 𝟙_ (ContinuousGeneratedByCat.{v} X) = of (X := X) PUnit.{v + 1} := (rfl)
 
 /-- The canonical bijection identifying points of `Y ⊗ Z` in `ContinuousGeneratedByCat X` with
 `Y × Z`. -/
-@[expose] def tensorEquiv (Y Z : ContinuousGeneratedByCat.{v} X) : ↑(Y ⊗ Z) ≃ Y × Z := Equiv.refl _
+def tensorEquiv (Y Z : ContinuousGeneratedByCat.{v} X) : ↑(Y ⊗ Z) ≃ Y × Z := Equiv.refl _
 
 variable {W W₁ W₂ Y Y₁ Y₂ Z Z₁ Z₂ T T' : ContinuousGeneratedByCat.{v} X}
 
 @[ext] theorem tensor_ext {p q : ↑(Y ⊗ Z)} (h : tensorEquiv Y Z p = tensorEquiv Y Z q) : p = q :=
   (tensorEquiv Y Z).injective h
+@[simp] theorem prodBinaryFan_fst_apply (p : ↑(prodBinaryFan Y Z).pt) :
+    (prodBinaryFan Y Z).fst p = (tensorEquiv Y Z p).1 := (rfl)
+@[simp] theorem prodBinaryFan_snd_apply (p : ↑(prodBinaryFan Y Z).pt) :
+    (prodBinaryFan Y Z).snd p = (tensorEquiv Y Z p).2 := (rfl)
 @[simp] theorem fst_apply (p : ↑(Y ⊗ Z)) : fst Y Z p = (tensorEquiv Y Z p).1 := (rfl)
 @[simp] theorem snd_apply (p : ↑(Y ⊗ Z)) : snd Y Z p = (tensorEquiv Y Z p).2 := (rfl)
 
@@ -145,7 +166,7 @@ variable [∀ i, LocallyCompactSpace (X i)] [∀ i j, IsGeneratedBy X (X i × X 
 
 /-- The internal hom functor on `ContinuousGeneratedByCat X` sending `T` to
 `ContinuousMapGeneratedBy X Y T` and acting on morphisms by postcomposition. -/
-@[expose] protected def ihom (Y : ContinuousGeneratedByCat.{v} X) :
+protected def ihom (Y : ContinuousGeneratedByCat.{v} X) :
     ContinuousGeneratedByCat.{v} X ⥤ ContinuousGeneratedByCat.{v} X where
   obj T := of (X := X) (ContinuousMapGeneratedBy X Y T)
   map p := ConcreteCategory.ofHom p.hom.postcomp
@@ -181,7 +202,7 @@ theorem ihom_map_def (p : T ⟶ T') : (ihom Y).map p = (ContinuousGeneratedByCat
 
 /-- The canonical bijection identifying points of `(ihom Y).obj T` in `ContinuousGeneratedByCat X`
 with `X`-continuous maps `Y → T`. -/
-@[expose] def ihomEquiv (Y T : ContinuousGeneratedByCat.{v} X) :
+def ihomEquiv (Y T : ContinuousGeneratedByCat.{v} X) :
     ↑((ihom Y).obj T) ≃ ContinuousMapGeneratedBy X Y T := Equiv.refl _
 
 @[ext] theorem ihom_obj_ext {f g : ↑((ihom Y).obj T)}
@@ -223,9 +244,8 @@ with `X`-continuous maps `Y → T`. -/
     ihomEquiv (Y ⊗ Z) T ((ihomTensorIso Y Z T).inv h) p =
       ihomEquiv Z T (ihomEquiv Y ((ihom Z).obj T) h (tensorEquiv Y Z p).1)
         (tensorEquiv Y Z p).2 := by
-  simpa [show (ihomTensorIso Y Z T).hom ((ihomTensorIso Y Z T).inv h) = h from
-    congr($((ihomTensorIso Y Z T).inv_hom_id) h)] using (ihomTensorIso_hom_apply Y Z T
-      ((ihomTensorIso Y Z T).inv h) (tensorEquiv Y Z p).1 (tensorEquiv Y Z p).2).symm
+  simpa [Iso.inv_hom_id_apply] using (ihomTensorIso_hom_apply Y Z T
+    ((ihomTensorIso Y Z T).inv h) (tensorEquiv Y Z p).1 (tensorEquiv Y Z p).2).symm
 
 end Closed
 
@@ -241,7 +261,7 @@ def isTerminalPUnit : IsTerminal (of (X := X) PUnit.{v + 1}) :=
 
 /-- The binary product fan of `Y` and `Z` in `GeneratedByTopCat X`, given by the convenient
 product `WithGeneratedByTopology X (Y × Z)`. -/
-@[expose] def prodBinaryFan (Y Z : GeneratedByTopCat.{v} X) : BinaryFan Y Z :=
+def prodBinaryFan (Y Z : GeneratedByTopCat.{v} X) : BinaryFan Y Z :=
   BinaryFan.mk
     (ObjectProperty.homMk (X := of (X := X) (WithGeneratedByTopology X (Y × Z))) <| TopCat.ofHom
       ⟨Prod.fst ∘ WithGeneratedByTopology.equiv (X := X),
@@ -249,6 +269,27 @@ product `WithGeneratedByTopology X (Y × Z)`. -/
     (ObjectProperty.homMk (X := of (X := X) (WithGeneratedByTopology X (Y × Z))) <| TopCat.ofHom
       ⟨Prod.snd ∘ WithGeneratedByTopology.equiv (X := X),
         continuous_snd.comp WithGeneratedByTopology.continuous_equiv⟩)
+
+theorem prodBinaryFan_pt (Y Z : GeneratedByTopCat.{v} X) :
+    (prodBinaryFan Y Z).pt = of (X := X) (WithGeneratedByTopology X (Y × Z)) := (rfl)
+
+theorem prodBinaryFan_fst (Y Z : GeneratedByTopCat.{v} X) :
+    (prodBinaryFan Y Z).fst = eqToHom (prodBinaryFan_pt Y Z) ≫
+      ObjectProperty.homMk (X := of (X := X) (WithGeneratedByTopology X (Y × Z)))
+        (TopCat.ofHom ⟨Prod.fst ∘ WithGeneratedByTopology.equiv (X := X),
+          continuous_fst.comp WithGeneratedByTopology.continuous_equiv⟩) :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ _) (eqToHom_refl (of (X := X) (WithGeneratedByTopology X (Y × Z)))
+      (prodBinaryFan_pt Y Z)).symm)
+
+theorem prodBinaryFan_snd (Y Z : GeneratedByTopCat.{v} X) :
+    (prodBinaryFan Y Z).snd = eqToHom (prodBinaryFan_pt Y Z) ≫
+      ObjectProperty.homMk (X := of (X := X) (WithGeneratedByTopology X (Y × Z)))
+        (TopCat.ofHom ⟨Prod.snd ∘ WithGeneratedByTopology.equiv (X := X),
+          continuous_snd.comp WithGeneratedByTopology.continuous_equiv⟩) :=
+  (Category.id_comp _).symm.trans
+    (congrArg (· ≫ _) (eqToHom_refl (of (X := X) (WithGeneratedByTopology X (Y × Z)))
+      (prodBinaryFan_pt Y Z)).symm)
 
 /-- The convenient product `WithGeneratedByTopology X (Y × Z)` is a binary product in
 `GeneratedByTopCat X`. -/
@@ -273,12 +314,16 @@ instance instBraidedCategory : BraidedCategory (GeneratedByTopCat.{v} X) :=
   .ofCartesianMonoidalCategory
 
 theorem tensorObj_def (Y Z : GeneratedByTopCat.{v} X) :
-    Y ⊗ Z = of (X := X) (WithGeneratedByTopology X (Y × Z)) := (rfl)
+    Y ⊗ Z = of (X := X) (WithGeneratedByTopology X (Y × Z)) := prodBinaryFan_pt Y Z
 theorem tensorUnit_def : 𝟙_ (GeneratedByTopCat.{v} X) = of (X := X) PUnit.{v + 1} := (rfl)
 
 /-- The canonical bijection identifying points of `Y ⊗ Z` in `GeneratedByTopCat X` with `Y × Z`. -/
-@[expose] def tensorEquiv (Y Z : GeneratedByTopCat.{v} X) : ↑(Y ⊗ Z) ≃ Y × Z :=
+def tensorEquiv (Y Z : GeneratedByTopCat.{v} X) : ↑(Y ⊗ Z) ≃ Y × Z :=
   WithGeneratedByTopology.equiv (X := X) (Y := Y × Z)
+
+@[continuity, fun_prop] theorem continuous_tensorEquiv (Y Z : GeneratedByTopCat.{v} X) :
+    Continuous (tensorEquiv Y Z) :=
+  WithGeneratedByTopology.continuous_equiv
 
 instance instT2SpaceTensor (Y Z : GeneratedByTopCat.{v} X) [T2Space Y] [T2Space Z] :
     T2Space ↑(Y ⊗ Z) := inferInstanceAs (T2Space (WithGeneratedByTopology X (Y × Z)))
@@ -291,6 +336,10 @@ variable {W W₁ W₂ Y Y₁ Y₂ Z Z' Z₁ Z₂ T T' : GeneratedByTopCat.{v} X}
 
 @[ext] theorem tensor_ext {p q : ↑(Y ⊗ Z)} (h : tensorEquiv Y Z p = tensorEquiv Y Z q) : p = q :=
   (tensorEquiv Y Z).injective h
+@[simp] theorem prodBinaryFan_fst_apply (p : ↑(prodBinaryFan Y Z).pt) :
+    (prodBinaryFan Y Z).fst p = (tensorEquiv Y Z p).1 := (rfl)
+@[simp] theorem prodBinaryFan_snd_apply (p : ↑(prodBinaryFan Y Z).pt) :
+    (prodBinaryFan Y Z).snd p = (tensorEquiv Y Z p).2 := (rfl)
 @[simp] theorem fst_apply (p : ↑(Y ⊗ Z)) : fst Y Z p = (tensorEquiv Y Z p).1 := (rfl)
 @[simp] theorem snd_apply (p : ↑(Y ⊗ Z)) : snd Y Z p = (tensorEquiv Y Z p).2 := (rfl)
 
@@ -365,19 +414,36 @@ instance preservesLimit_pair_toTopCat (Y Z : GeneratedByTopCat.{v} X) [IsGenerat
   apply (tensorEquiv Y Z).injective; rw [Equiv.apply_symm_apply, ← prodComparison_toTopCat_apply]
   exact congr($((CartesianMonoidalCategory.prodComparisonIso (toTopCat (X := X)) Y Z).inv_hom_id) p)
 
-private theorem equivalence_toAdjunction_homEquiv_apply {B : ContinuousGeneratedByCat.{v} X}
-    (h : ContinuousGeneratedByCat.equivalence.functor.obj Z ⟶ B) (z : Z) :
-    WithGeneratedByTopology.equiv (X := X) (Y := B)
-      (ContinuousGeneratedByCat.equivalence.toAdjunction.homEquiv Z B h z) = h z := by
-  rw [Adjunction.homEquiv_unit]; exact (ContinuousGeneratedByCat.toGeneratedByTopCat_map_apply h
-    (ContinuousGeneratedByCat.equivalence.toAdjunction.unit.app Z z)).trans
-    ((Equiv.apply_symm_apply _ _).trans (congrArg h (Equiv.apply_symm_apply _ z)))
-private theorem equivalence_symm_toAdjunction_homEquiv_apply {A : ContinuousGeneratedByCat.{v} X}
-    (f : ContinuousGeneratedByCat.equivalence.symm.functor.obj A ⟶ T) (a : A) :
-    ContinuousGeneratedByCat.equivalence.symm.toAdjunction.homEquiv A T f a =
-      f ((WithGeneratedByTopology.equiv (X := X) (Y := A)).symm a) := by
-  rw [Adjunction.homEquiv_unit, CategoryTheory.comp_apply]
-  dsimp [ContinuousGeneratedByCat.equivalence, ContinuousGeneratedByCat.adjUnitIso]; rfl
+private theorem prodComparison_fromGeneratedByTopCat_apply (Y Z : GeneratedByTopCat.{v} X)
+    (p : ↑(Y ⊗ Z)) :
+    dsimp% ContinuousGeneratedByCat.tensorEquiv
+      (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Y)
+      (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Z)
+      (CartesianMonoidalCategory.prodComparison ContinuousGeneratedByCat.fromGeneratedByTopCat
+        Y Z p) = tensorEquiv Y Z p :=
+  Prod.ext
+    congr($(CartesianMonoidalCategory.prodComparison_fst
+      ContinuousGeneratedByCat.fromGeneratedByTopCat Y Z)
+      (p : ↑(ContinuousGeneratedByCat.fromGeneratedByTopCat.obj (Y ⊗ Z))))
+    congr($(CartesianMonoidalCategory.prodComparison_snd
+      ContinuousGeneratedByCat.fromGeneratedByTopCat Y Z)
+      (p : ↑(ContinuousGeneratedByCat.fromGeneratedByTopCat.obj (Y ⊗ Z))))
+
+private theorem prodComparisonIso_fromGeneratedByTopCat_inv_apply (Y Z : GeneratedByTopCat.{v} X)
+    (y : ↑(ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Y))
+    (z : ↑(ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Z)) :
+    (CartesianMonoidalCategory.prodComparisonIso
+      ContinuousGeneratedByCat.fromGeneratedByTopCat Y Z).inv
+      ((ContinuousGeneratedByCat.tensorEquiv
+        (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Y)
+        (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Z)).symm (y, z)) =
+      (tensorEquiv Y Z).symm (y, z) :=
+  (tensorEquiv Y Z).injective <|
+    (prodComparison_fromGeneratedByTopCat_apply Y Z _).symm.trans <|
+      (congrArg (ContinuousGeneratedByCat.tensorEquiv _ _)
+        (Iso.inv_hom_id_apply (CartesianMonoidalCategory.prodComparisonIso
+          ContinuousGeneratedByCat.fromGeneratedByTopCat Y Z) _)).trans <|
+        (Equiv.apply_symm_apply _ (y, z)).trans ((tensorEquiv Y Z).apply_symm_apply (y, z)).symm
 
 section Closed
 
@@ -422,81 +488,20 @@ def prodComparisonIsoOfLocallyCompactRight [LocallyCompactSpace Z] : (Y ⊗ Z).o
 
 end ProdComparison
 
-/-- The internal hom functor on `GeneratedByTopCat X`, transported from `ContinuousGeneratedByCat X`
-along `ContinuousGeneratedByCat.equivalence` so that `(GeneratedByTopCat.ihom Y).obj T` is
-`WithGeneratedByTopology X (ContinuousMapGeneratedBy X Y T)`. -/
-@[expose] protected def ihom (Y : GeneratedByTopCat.{v} X) :
-    GeneratedByTopCat.{v} X ⥤ GeneratedByTopCat.{v} X :=
-  ContinuousGeneratedByCat.fromGeneratedByTopCat ⋙
-    ContinuousGeneratedByCat.ihom (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Y) ⋙
-    ContinuousGeneratedByCat.toGeneratedByTopCat
-
-/-- Suppose `[∀ i, LocallyCompactSpace (X i)]` and `[∀ i j, IsGeneratedBy X (X i × X j)]`. Currying
-in `GeneratedByTopCat X` transports `ContinuousGeneratedByCat.tensorHomEquiv` across
-`ContinuousGeneratedByCat.equivalence`. -/
-def tensorHomEquiv (Y Z T : GeneratedByTopCat.{v} X) :
-    (Y ⊗ Z ⟶ T) ≃ (Z ⟶ (GeneratedByTopCat.ihom Y).obj T) :=
-  let F := ContinuousGeneratedByCat.fromGeneratedByTopCat (X := X)
-  (ContinuousGeneratedByCat.equivalence.symm.toAdjunction.homEquiv (F.obj Y ⊗ F.obj Z) T).trans <|
-    (ContinuousGeneratedByCat.tensorHomEquiv (F.obj Y) (F.obj Z) (F.obj T)).trans
-      (ContinuousGeneratedByCat.equivalence.toAdjunction.homEquiv Z _)
-
-private theorem tensorHomEquiv_apply_aux (f : Y ⊗ Z ⟶ T) (z : Z) (y : Y) :
-    WithGeneratedByTopology.equiv (X := X) (Y := ContinuousMapGeneratedBy X Y T)
-      (tensorHomEquiv Y Z T f z) y = f ((tensorEquiv Y Z).symm (y, z)) := by
-  let F := ContinuousGeneratedByCat.fromGeneratedByTopCat (X := X)
-  let f₁ := ContinuousGeneratedByCat.equivalence.symm.toAdjunction.homEquiv (F.obj Y ⊗ F.obj Z) T f
-  let f₂ := ContinuousGeneratedByCat.tensorHomEquiv (F.obj Y) (F.obj Z) (F.obj T) f₁
-  exact (congrArg (fun k : ContinuousMapGeneratedBy X Y T ↦ k y)
-    (equivalence_toAdjunction_homEquiv_apply f₂ z)).trans
-    ((ContinuousGeneratedByCat.tensorHomEquiv_apply_apply f₁ z y).trans
-      (equivalence_symm_toAdjunction_homEquiv_apply f
-        ((ContinuousGeneratedByCat.tensorEquiv (F.obj Y) (F.obj Z)).symm (y, z))))
-
-private theorem tensorHomEquiv_symm_apply_aux (g : Z ⟶ (GeneratedByTopCat.ihom Y).obj T)
-    (p : ↑(Y ⊗ Z)) : (tensorHomEquiv Y Z T).symm g p =
-      WithGeneratedByTopology.equiv (X := X) (Y := ContinuousMapGeneratedBy X Y T)
-        (g (tensorEquiv Y Z p).2) (tensorEquiv Y Z p).1 :=
-  let h := (tensorHomEquiv Y Z T).apply_symm_apply g
-  (congrArg ((tensorHomEquiv Y Z T).symm g) ((tensorEquiv Y Z).symm_apply_apply p).symm).trans <|
-    (tensorHomEquiv_apply_aux ((tensorHomEquiv Y Z T).symm g)
-      (tensorEquiv Y Z p).2 (tensorEquiv Y Z p).1).symm.trans <|
-      congrArg (fun k ↦ WithGeneratedByTopology.equiv (X := X)
-        (Y := ContinuousMapGeneratedBy X Y T) (k (tensorEquiv Y Z p).2) (tensorEquiv Y Z p).1) h
-
-theorem tensorHomEquiv_symm_comp (f : Z' ⟶ Z) (g : Z ⟶ (GeneratedByTopCat.ihom Y).obj T) :
-    (tensorHomEquiv Y Z' T).symm (f ≫ g) = Y ◁ f ≫ (tensorHomEquiv Y Z T).symm g :=
-  ConcreteCategory.hom_ext _ _ fun p ↦ by simp [tensorHomEquiv_symm_apply_aux]
-
-theorem tensorHomEquiv_comp (f : Y ⊗ Z ⟶ T) (g : T ⟶ T') :
-    tensorHomEquiv Y Z T' (f ≫ g) = tensorHomEquiv Y Z T f ≫ (GeneratedByTopCat.ihom Y).map g :=
-  ConcreteCategory.hom_ext _ _ fun z ↦ (WithGeneratedByTopology.equiv (X := X)
-    (Y := ContinuousMapGeneratedBy X Y T')).injective <| DFunLike.ext _ _ fun y ↦
-      (tensorHomEquiv_apply_aux (f ≫ g) z y).trans
-        (congrArg g (tensorHomEquiv_apply_aux f z y).symm)
-
 /-- **Cartesian closedness of `GeneratedByTopCat X`.**
 When every test space `X i` is locally compact and every pairwise product `X i × X j` is
-`X`-generated, `GeneratedByTopCat X` is cartesian monoidal closed. -/
-instance instMonoidalClosed : MonoidalClosed (GeneratedByTopCat.{v} X) where
-  closed Y :=
-    { rightAdj := GeneratedByTopCat.ihom Y
-      adj := Adjunction.mkOfHomEquiv
-        { homEquiv := tensorHomEquiv Y
-          homEquiv_naturality_left_symm := tensorHomEquiv_symm_comp
-          homEquiv_naturality_right := tensorHomEquiv_comp } }
+`X`-generated, `GeneratedByTopCat X` is cartesian monoidal closed, transported from
+`ContinuousGeneratedByCat X` along `ContinuousGeneratedByCat.equivalence.symm`. -/
+instance instMonoidalClosed : MonoidalClosed (GeneratedByTopCat.{v} X) :=
+  cartesianClosedOfEquiv ContinuousGeneratedByCat.equivalence.symm
 
-theorem homEquiv_def (Y Z T : GeneratedByTopCat.{v} X) :
-    (ihom.adjunction Y).homEquiv Z T = tensorHomEquiv Y Z T :=
-  congrFun (congrFun (Adjunction.mkOfHomEquiv_homEquiv _) _) _
 theorem ihom_obj_def (Y T : GeneratedByTopCat.{v} X) :
     (ihom Y).obj T = of (X := X) (WithGeneratedByTopology X (ContinuousMapGeneratedBy X Y T)) :=
   (rfl)
-theorem ihom_map_def (p : T ⟶ T') : (ihom Y).map p = (GeneratedByTopCat.ihom Y).map p := (rfl)
 
 /-- The canonical bijection identifying points of `(ihom Y).obj T` in `GeneratedByTopCat X` with
 `X`-continuous maps `Y → T`. -/
-@[expose] def ihomEquiv (Y T : GeneratedByTopCat.{v} X) :
+def ihomEquiv (Y T : GeneratedByTopCat.{v} X) :
     ↑((ihom Y).obj T) ≃ ContinuousMapGeneratedBy X Y T :=
   WithGeneratedByTopology.equiv (X := X)
 
@@ -509,19 +514,33 @@ instance instNontrivialIhom (Y T : GeneratedByTopCat.{v} X) [Nonempty Y] [Nontri
   (ihomEquiv Y T).injective (DFunLike.ext _ _ h)
 @[simp] theorem ihom_map_apply (p : T ⟶ T') (g : ↑((ihom Y).obj T)) (y : Y) :
     ihomEquiv Y T' ((ihom Y).map p g) y = p (ihomEquiv Y T g y) := (rfl)
-@[simp] theorem tensorHomEquiv_apply_apply (f : Y ⊗ Z ⟶ T) (z : Z) (y : Y) :
-    ihomEquiv Y T (tensorHomEquiv Y Z T f z) y = f ((tensorEquiv Y Z).symm (y, z)) :=
-  tensorHomEquiv_apply_aux f z y
-@[simp] theorem tensorHomEquiv_symm_apply (g : Z ⟶ (GeneratedByTopCat.ihom Y).obj T)
-    (p : ↑(Y ⊗ Z)) : (tensorHomEquiv Y Z T).symm g p =
-      ihomEquiv Y T (g (tensorEquiv Y Z p).2) (tensorEquiv Y Z p).1 :=
-  tensorHomEquiv_symm_apply_aux g p
+
 @[simp] theorem curry_apply (f : Y ⊗ Z ⟶ T) (z : Z) (y : Y) :
     ihomEquiv Y T (MonoidalClosed.curry f z) y = f ((tensorEquiv Y Z).symm (y, z)) := by
-  rw [← MonoidalClosed.homEquiv_apply_eq, homEquiv_def]; exact tensorHomEquiv_apply_apply f z y
+  have hc := cartesianClosedOfEquiv_curry
+    (ContinuousGeneratedByCat.equivalence.{v} (X := X)).symm f
+  refine (congrArg (fun g : Z ⟶ (ihom Y).obj T ↦ ihomEquiv Y T (g z) y) hc).trans ?_
+  have heq (h : ContinuousGeneratedByCat.equivalence.functor.obj Z ⟶
+      (ihom (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Y)).obj
+        (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj T)) :
+      WithGeneratedByTopology.equiv (X := X) (Y := ContinuousMapGeneratedBy X Y T)
+        (ContinuousGeneratedByCat.equivalence.toAdjunction.homEquiv Z _ h z) = h z := by
+    rw [Adjunction.homEquiv_unit]
+    exact (ContinuousGeneratedByCat.toGeneratedByTopCat_map_apply h
+      (ContinuousGeneratedByCat.equivalence.toAdjunction.unit.app Z z)).trans
+      ((Equiv.apply_symm_apply _ _).trans (congrArg h (Equiv.apply_symm_apply _ z)))
+  refine (congrArg (fun k : ContinuousMapGeneratedBy X Y T ↦ k y) (heq _)).trans ?_
+  exact (ContinuousGeneratedByCat.curry_apply
+    ((CartesianMonoidalCategory.prodComparisonIso
+      ContinuousGeneratedByCat.fromGeneratedByTopCat Y Z).inv ≫
+      ContinuousGeneratedByCat.fromGeneratedByTopCat.map f) z y).trans
+    (congrArg f (prodComparisonIso_fromGeneratedByTopCat_inv_apply Y Z y z))
+
 @[simp] theorem uncurry_apply (g : Z ⟶ (ihom Y).obj T) (p : ↑(Y ⊗ Z)) :
     MonoidalClosed.uncurry g p = ihomEquiv Y T (g (tensorEquiv Y Z p).2) (tensorEquiv Y Z p).1 := by
-  rw [← MonoidalClosed.homEquiv_symm_apply_eq, homEquiv_def]; exact tensorHomEquiv_symm_apply g p
+  simpa [MonoidalClosed.curry_uncurry] using
+    (curry_apply (MonoidalClosed.uncurry g) (tensorEquiv Y Z p).2 (tensorEquiv Y Z p).1).symm
+
 @[simp] theorem ihom_ev_app_apply (p : ↑(Y ⊗ (ihom Y).obj T)) :
     dsimp% (ihom.ev Y).app T p = ihomEquiv Y T (tensorEquiv Y _ p).2 (tensorEquiv Y _ p).1 := by
   simp [← MonoidalClosed.uncurry_id_eq_ev]
@@ -552,12 +571,8 @@ def evalHom (T : GeneratedByTopCat.{v} X) (y : Y) : (ihom Y).obj T ⟶ T :=
     ihomEquiv (Y ⊗ Z) T ((ihomTensorIso Y Z T).inv h) p =
       ihomEquiv Z T (ihomEquiv Y ((ihom Z).obj T) h (tensorEquiv Y Z p).1)
         (tensorEquiv Y Z p).2 := by
-  simpa [show (ihomTensorIso Y Z T).hom ((ihomTensorIso Y Z T).inv h) = h from
-    congr($((ihomTensorIso Y Z T).inv_hom_id) h)] using (ihomTensorIso_hom_apply Y Z T
-      ((ihomTensorIso Y Z T).inv h) (tensorEquiv Y Z p).1 (tensorEquiv Y Z p).2).symm
-
-instance instIsGeneratedByFromGeneratedByTopCat (Y : GeneratedByTopCat.{v} X) :
-    IsGeneratedBy X (ContinuousGeneratedByCat.fromGeneratedByTopCat.obj Y) := Y.property
+  simpa [Iso.inv_hom_id_apply] using (ihomTensorIso_hom_apply Y Z T
+    ((ihomTensorIso Y Z T).inv h) (tensorEquiv Y Z p).1 (tensorEquiv Y Z p).2).symm
 
 /-- Suppose `[∀ i, LocallyCompactSpace (X i)]` and `[∀ i j, IsGeneratedBy X (X i × X j)]`. For
 every `Y, T : GeneratedByTopCat X`, `(ihom Y).obj T` is canonically isomorphic to the `X`-generated
@@ -565,13 +580,16 @@ refinement of the compact-open mapping space `C(Y, T)`. -/
 def ihomIsoCompactOpen (Y T : GeneratedByTopCat.{v} X) :
     (ihom Y).obj T ≅ of (X := X) (WithGeneratedByTopology X C(Y, T)) :=
   ObjectProperty.isoMk (TopCat.generatedBy X)
-    (TopCat.isoOfHomeo (ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap (X := X)))
+    (TopCat.isoOfHomeo (ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap (X := X)
+      (Y := Y) (T := T)))
 
 @[simp] theorem ihomIsoCompactOpen_hom_apply (Y T : GeneratedByTopCat.{v} X)
     (g : ↑((ihom Y).obj T)) (y : Y) :
     dsimp% WithGeneratedByTopology.equiv (X := X) (Y := C(Y, T))
       ((ihomIsoCompactOpen Y T).hom g) y = ihomEquiv Y T g y :=
-  congr($(ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap_apply (X := X) g) y).trans
+  let g' : WithGeneratedByTopology X (ContinuousMapGeneratedBy X Y T) := g
+  (congrArg (fun h : C(Y, T) ↦ h y)
+    (ContinuousMapGeneratedBy.generatedByHomeomorphContinuousMap_apply (X := X) g')).trans
     (ContinuousMapGeneratedBy.toContinuousMap_apply _ y)
 @[simp] theorem ihomIsoCompactOpen_inv_apply (Y T : GeneratedByTopCat.{v} X)
     (f : WithGeneratedByTopology X C(Y, T)) (y : Y) :
@@ -613,9 +631,8 @@ def compactOpenCurryIso (Y Z T : GeneratedByTopCat.{v} X) :
         (WithGeneratedByTopology.equiv (X := X)
           (Y := C(Y, WithGeneratedByTopology X C(Z, T))) g (tensorEquiv Y Z p).1)
         (tensorEquiv Y Z p).2 := by
-  simpa [show (compactOpenCurryIso Y Z T).hom ((compactOpenCurryIso Y Z T).inv g) = g from
-    congr($((compactOpenCurryIso Y Z T).inv_hom_id) g)] using (compactOpenCurryIso_hom_apply Y Z T
-      ((compactOpenCurryIso Y Z T).inv g) (tensorEquiv Y Z p).1 (tensorEquiv Y Z p).2).symm
+  simpa [Iso.inv_hom_id_apply] using (compactOpenCurryIso_hom_apply Y Z T
+    ((compactOpenCurryIso Y Z T).inv g) (tensorEquiv Y Z p).1 (tensorEquiv Y Z p).2).symm
 
 end Closed
 

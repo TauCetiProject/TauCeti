@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Compactness.CompactlyGeneratedSpace
-public import TauCeti.Topology.Convenient.GeneratedBy
-public import TauCeti.Topology.Convenient.Product
+public import TauCeti.Topology.Convenient.HomSpace
 
 /-!
 # Compact Hausdorff generators, locally compact products, and Hausdorff mapping spaces

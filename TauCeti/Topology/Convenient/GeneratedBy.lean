@@ -19,6 +19,12 @@ particular every empty space is delta-generated.
 `(GeneratedByTopCat.adjCounit (X := G)).app Y` is an isomorphism in `TopCat` iff `Y` is
 `G`-generated (`GeneratedByTopCat.isIso_adjCounit_app_iff`). A continuous map from a generated space
 lifts uniquely through the counit on its target (`ContinuousMap.toGeneratedBy`).
+
+For any generating family `X`, `Topology.IsGeneratedBy.sigmaEval X Y` evaluates all continuous test
+maps `X i → Y` on the disjoint union of their domains; it coinduces the topology of every
+`X`-generated space `Y`, and is a quotient map whenever some `X i` is nonempty
+(`Topology.IsGeneratedBy.isQuotientMap_sigmaEval`). If every `X i` is empty, every `X`-generated
+space is discrete (`Topology.IsGeneratedBy.discreteTopology_of_forall_isEmpty`).
 -/
 
 public section
@@ -32,6 +38,55 @@ instance instIsGeneratedByOfIsEmpty {ι : Type*} (X : ι → Type*)
   Topology.IsGeneratedBy.iff_le_generatedBy.2 fun U _ ↦ by simp [Set.eq_empty_of_isEmpty U]
 
 end TauCeti
+
+namespace Topology.IsGeneratedBy
+
+section SigmaEval
+
+variable {ι : Type*} (X : ι → Type*) [∀ i, TopologicalSpace (X i)]
+
+/-- The canonical evaluation map from the disjoint union of all continuous test maps `X i → Y`
+into `Y`. -/
+def sigmaEval (Y : Type*) [TopologicalSpace Y] (p : (f : (i : ι) × C(X i, Y)) × X f.1) : Y :=
+  p.1.2 p.2
+
+theorem sigmaEval_def (Y : Type*) [TopologicalSpace Y] :
+    sigmaEval X Y = fun p : (f : (i : ι) × C(X i, Y)) × X f.1 ↦ p.1.2 p.2 := (rfl)
+
+@[simp] theorem sigmaEval_apply {Y : Type*} [TopologicalSpace Y] (i : ι) (f : C(X i, Y))
+    (x : X i) : sigmaEval X Y ⟨⟨i, f⟩, x⟩ = f x := (rfl)
+
+/-- The canonical evaluation map out of the sigma space of continuous test maps is continuous. -/
+@[continuity, fun_prop] theorem continuous_sigmaEval (Y : Type*) [TopologicalSpace Y] :
+    Continuous (sigmaEval X Y) := continuous_sigma fun ⟨_, f⟩ ↦ f.continuous
+
+/-- For an `X`-generated space `Y`, `sigmaEval X Y` coinduces the topology of `Y`. -/
+theorem isCoinducing_sigmaEval (Y : Type*) [TopologicalSpace Y] [IsGeneratedBy X Y] :
+    IsCoinducing (sigmaEval X Y) where
+  eq_coinduced := (generatedBy_eq (X := X) (Y := Y)).symm.trans <|
+    (TopologicalSpace.generatedBy_eq_coinduced X).trans <| by rw [sigmaEval_def]
+
+/-- When at least one test space `X i` is nonempty, `sigmaEval X Y` is surjective. -/
+theorem sigmaEval_surjective (Y : Type*) [TopologicalSpace Y] (hX : ∃ i, Nonempty (X i)) :
+    Function.Surjective (sigmaEval X Y) := by
+  obtain ⟨i₀, ⟨x₀⟩⟩ := hX; exact fun y ↦ ⟨⟨⟨i₀, ContinuousMap.const (X i₀) y⟩, x₀⟩, rfl⟩
+
+/-- When at least one test space `X i` is nonempty and `Y` is `X`-generated, `sigmaEval X Y` is a
+quotient map. -/
+theorem isQuotientMap_sigmaEval (Y : Type*) [TopologicalSpace Y] [IsGeneratedBy X Y]
+    (hX : ∃ i, Nonempty (X i)) : IsQuotientMap (sigmaEval X Y) :=
+  ⟨isCoinducing_sigmaEval X Y, sigmaEval_surjective X Y hX⟩
+
+/-- When every test space `X i` is empty, every `X`-generated space carries the discrete
+topology. -/
+theorem discreteTopology_of_forall_isEmpty {Y : Type*} [TopologicalSpace Y] [IsGeneratedBy X Y]
+    (hX : ∀ i, IsEmpty (X i)) : DiscreteTopology Y :=
+  discreteTopology_iff_forall_isOpen.2 fun U ↦ (isOpen_iff X).2 fun i f ↦ by
+    have := hX i; rw [Set.eq_empty_of_isEmpty (f ⁻¹' U)]; exact isOpen_empty
+
+end SigmaEval
+
+end Topology.IsGeneratedBy
 
 namespace Topology.WithGeneratedByTopology
 
