@@ -126,6 +126,33 @@ private theorem gramSchmidt_sub_mem_span_Iio {lam q : Fin (n + 1) → ℝ} (i : 
   rw [Submodule.starProjection_singleton]
   exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨j, Finset.mem_Iio.mp hj, rfl⟩)
 
+private theorem diagMul_gramSchmidt_sub_mem_span_Iio (lam q : Fin (n + 1) → ℝ) (k : Fin n) :
+    (Matrix.diagonal lam).toEuclideanLin
+      (gramSchmidt ℝ (spectralVandermondeVec lam q) k.castSucc -
+        spectralVandermondeVec lam q k.castSucc) ∈
+      Submodule.span ℝ (spectralVandermondeVec lam q '' Set.Iio k.succ) := by
+  have hrem := gramSchmidt_sub_mem_span_Iio (lam := lam) (q := q) k.castSucc
+  rcases k with ⟨kv, hkv⟩
+  cases kv with
+  | zero =>
+      have hemp : Set.Iio (⟨0, hkv⟩ : Fin n).castSucc = ∅ := by ext x; simp
+      rw [hemp, Set.image_empty, Submodule.span_empty, Submodule.mem_bot] at hrem
+      rw [hrem, map_zero]
+      exact Submodule.zero_mem _
+  | succ kv' =>
+      have hsub : Set.Iio (⟨kv' + 1, hkv⟩ : Fin n).castSucc =
+          Set.Iic (⟨kv', by omega⟩ : Fin n).castSucc := by
+        ext x
+        simp only [Set.mem_Iio, Set.mem_Iic, Fin.lt_def, Fin.le_def, Fin.val_castSucc]
+        omega
+      have hsub2 : Set.Iic (⟨kv', by omega⟩ : Fin n).succ ⊆
+          Set.Iio (⟨kv' + 1, hkv⟩ : Fin n).succ := fun x hx => by
+        simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ] at hx ⊢
+        omega
+      rw [hsub] at hrem
+      exact Submodule.span_mono (Set.image_mono hsub2)
+        (diagMul_mem_span_Iic lam q ⟨kv', by omega⟩ hrem)
+
 private theorem subdiagonal_pos_gramSchmidt {lam q : Fin (n + 1) → ℝ}
     (hw_li : LinearIndependent ℝ (spectralVandermondeVec lam q)) (k : Fin n) :
     0 < ⟪gramSchmidtNormed ℝ (spectralVandermondeVec lam q) k.succ,
@@ -136,35 +163,14 @@ private theorem subdiagonal_pos_gramSchmidt {lam q : Fin (n + 1) → ℝ}
   let T := (Matrix.diagonal lam).toEuclideanLin
   have hgne : gramSchmidt ℝ w k.castSucc ≠ 0 := gramSchmidt_ne_zero k.castSucc hw_li
   have hgne' : gramSchmidt ℝ w k.succ ≠ 0 := gramSchmidt_ne_zero k.succ hw_li
-  have hrem := gramSchmidt_sub_mem_span_Iio (lam := lam) (q := q) k.castSucc
-  have hTrem : T (gramSchmidt ℝ w k.castSucc - w k.castSucc) ∈
-      Submodule.span ℝ (w '' Set.Iio k.succ) := by
-    rcases k with ⟨kv, hkv⟩
-    cases kv with
-    | zero =>
-        have hemp : Set.Iio (⟨0, hkv⟩ : Fin n).castSucc = ∅ := by ext x; simp
-        rw [hemp, Set.image_empty, Submodule.span_empty, Submodule.mem_bot] at hrem
-        rw [hrem, map_zero]
-        exact Submodule.zero_mem _
-    | succ kv' =>
-        have hsub : Set.Iio (⟨kv' + 1, hkv⟩ : Fin n).castSucc =
-            Set.Iic (⟨kv', by omega⟩ : Fin n).castSucc := by
-          ext x
-          simp only [Set.mem_Iio, Set.mem_Iic, Fin.lt_def, Fin.le_def, Fin.val_castSucc]
-          omega
-        have hsub2 : Set.Iic (⟨kv', by omega⟩ : Fin n).succ ⊆
-            Set.Iio (⟨kv' + 1, hkv⟩ : Fin n).succ := fun x hx => by
-          simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ] at hx ⊢
-          omega
-        rw [hsub] at hrem
-        exact Submodule.span_mono (Set.image_mono hsub2)
-          (diagMul_mem_span_Iic lam q ⟨kv', by omega⟩ hrem)
   have hstep1 : ⟪e k.succ, T (gramSchmidt ℝ w k.castSucc)⟫ = ⟪e k.succ, w k.succ⟫ := by
     have hdiff : T (gramSchmidt ℝ w k.castSucc) - w k.succ =
         T (gramSchmidt ℝ w k.castSucc - w k.castSucc) := by
       rw [map_sub, diagMul_spectralVandermondeVec]
     have h0 : ⟪e k.succ, T (gramSchmidt ℝ w k.castSucc) - w k.succ⟫ = 0 := by
-      rw [hdiff]; exact gramSchmidtNormed_ortho_span_Iio hw_li k.succ hTrem
+      rw [hdiff]
+      exact gramSchmidtNormed_ortho_span_Iio hw_li k.succ
+        (diagMul_gramSchmidt_sub_mem_span_Iio lam q k)
     linarith [inner_sub_right (𝕜 := ℝ) (e k.succ) (T (gramSchmidt ℝ w k.castSucc)) (w k.succ)]
   have hstep2 : ⟪e k.succ, w k.succ⟫ = ‖gramSchmidt ℝ w k.succ‖ := by
     have hwsucc : w k.succ - gramSchmidt ℝ w k.succ ∈ Submodule.span ℝ (w '' Set.Iio k.succ) := by
@@ -181,6 +187,24 @@ private theorem subdiagonal_pos_gramSchmidt {lam q : Fin (n + 1) → ℝ}
     rw [map_smul, inner_smul_right, hstep1, hstep2]
   rw [hval]
   exact mul_pos (inv_pos.mpr (norm_pos_iff.mpr hgne)) (norm_pos_iff.mpr hgne')
+
+private theorem gramSchmidt_diagMul_eq_zero_of_add_one_lt {lam q : Fin (n + 1) → ℝ}
+    (hw_li : LinearIndependent ℝ (spectralVandermondeVec lam q))
+    {i j : Fin (n + 1)} (h : j.val + 1 < i.val) :
+    ⟪gramSchmidtNormed ℝ (spectralVandermondeVec lam q) i,
+      (Matrix.diagonal lam).toEuclideanLin
+        (gramSchmidtNormed ℝ (spectralVandermondeVec lam q) j)⟫ = 0 := by
+  let w := spectralVandermondeVec lam q
+  let j' : Fin n := ⟨j.val, by omega⟩
+  have hj_eq : j = j'.castSucc := Fin.ext rfl
+  have hej : gramSchmidtNormed ℝ w j ∈ Submodule.span ℝ (w '' Set.Iic j'.castSucc) := by
+    rw [← span_gramSchmidt_Iic ℝ w j'.castSucc, ← span_gramSchmidtNormed w, hj_eq]
+    exact Submodule.subset_span ⟨j'.castSucc, Set.mem_Iic.mpr le_rfl, rfl⟩
+  have hsub : Set.Iic j'.succ ⊆ Set.Iio i := fun x hx => by
+    simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ, j'] at hx ⊢
+    omega
+  exact gramSchmidtNormed_ortho_span_Iio hw_li i
+    (Submodule.span_mono (Set.image_mono hsub) (diagMul_mem_span_Iic lam q j' hej))
 
 private theorem gramSchmidt_tridiagonal {lam q : Fin (n + 1) → ℝ}
     (hw_li : LinearIndependent ℝ (spectralVandermondeVec lam q)) (i j : Fin (n + 1)) :
@@ -217,27 +241,9 @@ private theorem gramSchmidt_tridiagonal {lam q : Fin (n + 1) → ℝ}
         · rw [jacobiMatrix_apply_of_add_one_lt_right _ _ (by omega)]
           rw [show ⟪e i, T (e j)⟫ = ⟪e j, T (e i)⟫ from
             (hT_symm (e i) (e j)).symm.trans (real_inner_comm _ _)]
-          let i' : Fin n := ⟨i.val, by omega⟩
-          have hi_eq : i = i'.castSucc := Fin.ext rfl
-          have hei : e i ∈ Submodule.span ℝ (w '' Set.Iic i'.castSucc) := by
-            rw [← span_gramSchmidt_Iic ℝ w i'.castSucc, ← span_gramSchmidtNormed w, hi_eq]
-            exact Submodule.subset_span ⟨i'.castSucc, Set.mem_Iic.mpr le_rfl, rfl⟩
-          have hsub : Set.Iic i'.succ ⊆ Set.Iio j := fun x hx => by
-            simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ, i'] at hx ⊢
-            omega
-          exact gramSchmidtNormed_ortho_span_Iio hw_li j
-            (Submodule.span_mono (Set.image_mono hsub) (diagMul_mem_span_Iic lam q i' hei))
+          exact gramSchmidt_diagMul_eq_zero_of_add_one_lt hw_li (by omega)
         · rw [jacobiMatrix_apply_of_add_one_lt_left _ _ (by omega)]
-          let j' : Fin n := ⟨j.val, by omega⟩
-          have hj_eq : j = j'.castSucc := Fin.ext rfl
-          have hej : e j ∈ Submodule.span ℝ (w '' Set.Iic j'.castSucc) := by
-            rw [← span_gramSchmidt_Iic ℝ w j'.castSucc, ← span_gramSchmidtNormed w, hj_eq]
-            exact Submodule.subset_span ⟨j'.castSucc, Set.mem_Iic.mpr le_rfl, rfl⟩
-          have hsub : Set.Iic j'.succ ⊆ Set.Iio i := fun x hx => by
-            simp only [Set.mem_Iic, Set.mem_Iio, Fin.le_def, Fin.lt_def, Fin.val_succ, j'] at hx ⊢
-            omega
-          exact gramSchmidtNormed_ortho_span_Iio hw_li i
-            (Submodule.span_mono (Set.image_mono hsub) (diagMul_mem_span_Iic lam q j' hej))
+          exact gramSchmidt_diagMul_eq_zero_of_add_one_lt hw_li (by omega)
 
 private theorem gramSchmidtNormed_zero_eq_self {lam q : Fin (n + 1) → ℝ}
     (hq : ∀ k, 0 < q k) (hsum : ∑ k, q k = 1) :
@@ -258,6 +264,24 @@ private theorem gramSchmidtNormed_zero_eq_self {lam q : Fin (n + 1) → ℝ}
   rw [gramSchmidtNormed]
   change ‖gramSchmidt ℝ w 0‖⁻¹ • gramSchmidt ℝ w 0 = w 0
   rw [hg0, hnorm0, inv_one, one_smul]
+
+private theorem norm_and_mulVec_of_mul_transpose_eq_one
+    {Q : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} (hQQT : Q * Qᵀ = 1) (lam : Fin (n + 1) → ℝ)
+    (k : Fin (n + 1)) :
+    ‖(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1)))‖ = 1 ∧
+      (Qᵀ * Matrix.diagonal lam * Q) *ᵥ (Q k) = lam k • (Q k) := by
+  refine ⟨?_, ?_⟩
+  · have hsq : ‖(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1)))‖ ^ 2 = 1 := by
+      rw [EuclideanSpace.norm_sq_eq]
+      simpa [Matrix.mul_apply, sq] using congrFun (congrFun hQQT k) k
+    exact (sq_eq_sq₀ (norm_nonneg _) zero_le_one).mp (by simpa using hsq)
+  · have hQvk : Q *ᵥ (Q k) = Pi.single k 1 := by
+      ext r
+      simpa [mulVec, dotProduct, Matrix.mul_apply, Matrix.one_apply, Pi.single_apply,
+        eq_comm] using congrFun (congrFun hQQT r) k
+    rw [← mulVec_mulVec, hQvk, ← mulVec_mulVec, Matrix.diagonal_mulVec_single, mul_one]
+    ext i
+    simp [mulVec, dotProduct, Pi.single_apply, mul_comm]
 
 /-- **Spectral reconstruction for Jacobi matrices**: every strictly decreasing tuple of eigenvalues
 `lam` and positive spectral weight vector `q` summing to `1` are realized by a Jacobi matrix with
@@ -294,25 +318,14 @@ theorem exists_jacobiMatrix_of_strictAnti_weights {lam q : Fin (n + 1) → ℝ}
     refine jacobiEigenvalues_eq_of_charpoly_eq hlam.antitone ?_
     rw [hJeq, Matrix.charpoly_mul_comm, ← mul_assoc, hQQT, one_mul, Matrix.charpoly_diagonal]
   refine ⟨a, b, hb_pos, hlam_eq, funext fun k => ?_⟩
-  let vk : EuclideanSpace ℝ (Fin (n + 1)) := WithLp.toLp 2 fun i => e i k
-  have hvk_norm : ‖vk‖ = 1 := by
-    have hsq : ‖vk‖ ^ 2 = 1 := by
-      rw [EuclideanSpace.norm_sq_eq]
-      have hdiag := congrFun (congrFun hQQT k) k
-      simpa [vk, Q, Matrix.mul_apply, sq] using hdiag
-    exact (sq_eq_sq₀ (norm_nonneg _) zero_le_one).mp (by simpa using hsq)
-  have hvk_eig : jacobiMatrix a b *ᵥ ⇑vk = jacobiEigenvalues a b k • ⇑vk := by
-    rw [hlam_eq, hJeq]
-    have hQvk : Q *ᵥ ⇑vk = Pi.single k 1 := by
-      ext r
-      have hr := congrFun (congrFun hQQT r) k
-      simpa [Q, vk, mulVec, dotProduct, Matrix.mul_apply, Matrix.one_apply, Pi.single_apply,
-        eq_comm] using hr
-    rw [← mulVec_mulVec, hQvk, ← mulVec_mulVec, Matrix.diagonal_mulVec_single, mul_one]
-    ext i
-    simp [Q, vk, mulVec, dotProduct, Pi.single_apply, mul_comm]
-  rw [jacobiSpectralWeight_eq_sq_eigenvector (fun j => (hb_pos j).ne') k hvk_norm hvk_eig]
-  have hv0 : vk 0 = Real.sqrt (q k) := by
+  obtain ⟨hvk_norm, hvk_eig⟩ := norm_and_mulVec_of_mul_transpose_eq_one hQQT lam k
+  have hvk_eig' : jacobiMatrix a b *ᵥ ⇑(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1))) =
+      jacobiEigenvalues a b k • ⇑(WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1))) := by
+    simpa [hJeq, hlam_eq] using hvk_eig
+  have hsimple : ∀ j ≠ k, jacobiEigenvalues a b j ≠ jacobiEigenvalues a b k :=
+    fun _ hj => by rw [hlam_eq]; exact hlam.injective.ne hj
+  rw [jacobiSpectralWeight_eq_sq_eigenvector hsimple hvk_norm hvk_eig']
+  have hv0 : (WithLp.toLp 2 (Q k) : EuclideanSpace ℝ (Fin (n + 1))) 0 = Real.sqrt (q k) := by
     change (gramSchmidtNormed ℝ (spectralVandermondeVec lam q) 0).ofLp k = _
     rw [gramSchmidtNormed_zero_eq_self hq hsum]
     simp [spectralVandermondeVec]
