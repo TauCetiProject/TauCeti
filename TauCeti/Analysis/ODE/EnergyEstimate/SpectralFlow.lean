@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
+public import TauCeti.Analysis.Fredholm.Spectral.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
@@ -42,12 +44,21 @@ index of `⟪B ·, ·⟫` is the number of negative eigenvalues of `B`
 an invertible symmetric operator, so it agrees with that of `A±` at all large enough `±t`, where
 `A t` is invertible (`TauCeti.exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto`).
 
+The same comparison identifies the index with Phillips' spectral flow `TauCeti.spectralFlow`,
+defined from the ranks of spectral projections, with no differentiability of `A` and no condition
+on the crossings. In finite dimensions the spectral flow of `A` from `a` to `b` is
+`n⁻(A a) - n⁻(A b)` (`TauCeti.spectralFlow_eq_finrank_sub_finrank`), and `n⁻(A (-T))` and
+`n⁻(A T)` are those of `A⁻` and `A⁺` for all large `T`, so the index of `D_A` is the spectral flow
+of `A` from `-T` to `T` for all large enough `T`. For `A s = tanh s` on `ℝ` this is `1 - 0 = 1`.
+
 ## Main results
 
 * `TauCeti.finite_setOf_ker_ne_bot_of_tendsto`: a family of symmetric operators with invertible
   limits and only regular crossings has finitely many crossings.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the
   index of `u ↦ u' + A u` is the sum of the signatures of the crossing forms of `A`.
+* `TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`: the index of
+  `u ↦ u' + A u` is the spectral flow of `A` from `-T` to `T` for all large enough `T`.
 
 ## References
 
@@ -145,6 +156,32 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
     iff_of_true ?_ (mem_univ t)).trans (finsum_mem_univ _)
   by_contra hab
   exact ht (sigPos_sub_sigNeg_crossingForm_eq_zero (hnd hab) _)
+
+/-- **The index of the trajectory operator is Phillips' spectral flow.** Let `A` be a continuous
+family of symmetric operators on a finite-dimensional real inner product space with invertible
+limits `A±` at `±∞`. Then for every large enough `T`, the index of the trajectory operator
+`u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the spectral flow of `A` from `-T` to `T`. -/
+theorem eventually_index_trajectoryOperator_eq_spectralFlow (hA : Continuous A)
+    (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric) {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    ∀ᶠ T in atTop, (trajectoryOperator (p := 2) AL).index = spectralFlow A (-T) T := by
+  have hbot' := tendsto_neg_atTop_atBot.eventually (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto
+    hsym (LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦
+      (le_inv_mul_iff₀ hα).2 (hminus v))) hbot)
+  have htop' := eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym (LinearMap.ker_eq_bot.2
+    (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hplus v))) htop
+  filter_upwards [hbot', htop', eventually_ge_atTop 0] with T hTbot hTtop hT
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA
+      (isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
+      (isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)) hα hminus hplus hbot htop
+      AL hAL,
+    spectralFlow_eq_finrank_sub_finrank (by linarith) hA.continuousOn
+      fun t _ ↦ isSelfAdjoint_iff_isSymmetric.2 (hsym t),
+    ← hTbot.2, ← hTtop.2, (hsym _).sigNeg_toBilinForm_innerSL_comp,
+    (hsym _).sigNeg_toBilinForm_innerSL_comp]
 
 end WeakDerivStep
 
