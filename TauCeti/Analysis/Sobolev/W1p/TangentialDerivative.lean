@@ -76,20 +76,6 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_mapsTo (hp : p ≠ ∞
   rw [smul_smul]
   exact hΩ (s * t) (hKΩ hx)
 
-omit [FiniteDimensional ℝ E] in
-/-- The `Lᵖ` norm of the directional derivative `⟪τ, ∇u⟫` of `u ∈ W^{1,p}(Ω)` is at most
-`‖τ‖ ‖u‖_{W^{1,p}(Ω)}`. -/
-theorem W1p.eLpNorm_inner_gradient_le (τ : E) (u : W1p mu Omega p) :
-    eLpNorm (fun x ↦ ⟪τ, W1p.gradient u x⟫_ℝ) p (mu.restrict Omega) ≤ ‖τ‖ₑ * ‖u‖ₑ := by
-  calc eLpNorm (fun x ↦ ⟪τ, W1p.gradient u x⟫_ℝ) p (mu.restrict Omega)
-      ≤ eLpNorm (‖τ‖ • (W1p.gradient u : E → E)) p (mu.restrict Omega) :=
-        eLpNorm_mono_ae (aestronglyMeasurable_const.inner (Lp.aestronglyMeasurable _))
-          (Eventually.of_forall fun x ↦ by
-            rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
-            exact abs_real_inner_le_norm τ _)
-    _ = ‖τ‖ₑ * ‖W1p.gradient u‖ₑ := by rw [eLpNorm_const_smul, eNorm_norm, Lp.eNorm_def]
-    _ ≤ ‖τ‖ₑ * ‖u‖ₑ := by gcongr; exact W1p.enorm_gradient_le u
-
 /-- The convergence of difference quotients for the restriction to `Ω` of a test function on the
 whole space, from the Taylor estimate. -/
 private theorem W1p.tendsto_eLpNorm_inv_mul_value_restrictL_ofTestFunctionₗ_sub
@@ -137,10 +123,10 @@ theorem W1p.tendsto_eLpNorm_inv_mul_value_comp_add_smul_sub_sub_inner_gradient (
         ≤ eLpNorm (fun x ↦ t⁻¹ * (W1p.value w (x + t • τ) - W1p.value w x)) p
             (mu.restrict Omega) + eLpNorm (fun x ↦ ⟪τ, W1p.gradient w x⟫_ℝ) p
             (mu.restrict Omega) := eLpNorm_sub_le Fact.out
-      _ ≤ ‖τ‖ₑ * ‖w‖ₑ + ‖τ‖ₑ * ‖w‖ₑ := add_le_add
+      _ ≤ ‖τ‖ₑ * ‖W1p.gradient w‖ₑ + ‖τ‖ₑ * ‖W1p.gradient w‖ₑ := add_le_add
           ((W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le_of_mapsTo hp hΩ w t).trans
             (W1p.eLpNorm_inner_gradient_le τ w)) (W1p.eLpNorm_inner_gradient_le τ w)
-      _ = 2 * (‖τ‖ₑ * ‖w‖ₑ) := (two_mul _).symm
+      _ ≤ 2 * (‖τ‖ₑ * ‖w‖ₑ) := by rw [← two_mul]; gcongr; exact W1p.enorm_gradient_le w
   have hadd : ∀ v w t, F v t =ᵐ[mu.restrict Omega] F (v - w) t + F w t := fun v w t ↦ by
     filter_upwards [W1p.value_sub_ae v w, (W1p.value_sub_ae v w).comp_add_right_restrict_of_mapsTo
       (hΩ t), Lp.coeFn_sub (W1p.gradient v) (W1p.gradient w)] with x h0 h1 h2
