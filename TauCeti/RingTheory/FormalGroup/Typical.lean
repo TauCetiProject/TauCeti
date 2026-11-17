@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Graded
 public import TauCeti.RingTheory.FormalGroup.Curve.Typical
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.Integral
 
@@ -35,7 +36,9 @@ Canonical `p`-typicalization fixes `p`-typical formal group laws, is idempotent,
 base change; over a `ℚ`-algebra, the logarithm of `F.pTypicalFormalGroup` is obtained from `F.log`
 by deleting all degrees divisible by a prime `q ≠ p` and, when `p` is prime, keeping the `p^n`-th
 coefficients unchanged (`FormalGroup.coeff_log_pTypicalFormalGroup` and
-`FormalGroup.coeff_pow_log_pTypicalFormalGroup`).
+`FormalGroup.coeff_pow_log_pTypicalFormalGroup`). Canonical `p`-typicalization commutes with
+transport along homotheties `X ↦ u X` (which conjugate `F.pTypicalCoordinate`), and hence preserves
+`ℕ`-gradings of formal group laws (`FormalGroup.coeff_pTypicalFormalGroup_mem`).
 
 ## Main definitions
 
@@ -59,6 +62,10 @@ coefficients unchanged (`FormalGroup.coeff_log_pTypicalFormalGroup` and
   characterization, and idempotence of canonical `p`-typicalization.
 * `FormalGroup.coeff_log_pTypicalFormalGroup` and `FormalGroup.coeff_pow_log_pTypicalFormalGroup`:
   Quillen's logarithm formula for `F.pTypicalFormalGroup`.
+* `FormalGroup.isPTypical_homothety_smul_iff`, `FormalGroup.pTypicalCoordinate_homothety_smul`,
+  `FormalGroup.pTypicalFormalGroup_homothety_smul`,
+  `FormalGroup.pTypicalCoordinate_mem_gradedSubgroup`, and
+  `FormalGroup.coeff_pTypicalFormalGroup_mem`: homothety equivariance and preservation of grading.
 
 ## References
 
@@ -247,6 +254,19 @@ theorem coeff_one_pTypicalCoordinate (p : ℕ)
     PowerSeries.coeff 1 (F.pTypicalCoordinate p hunit).toPowerSeries = 1 := by
   rw [← TauCeti.FormalCoordinate.val_linearCoeff, linearCoeff_pTypicalCoordinate, Units.val_one]
 
+/-- `F.pTypicalCoordinate` lies in the subgroup of strict formal coordinates. -/
+theorem pTypicalCoordinate_mem_ker_linearCoeff (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    F.pTypicalCoordinate p hunit ∈ (TauCeti.FormalCoordinate.linearCoeff (R := R)).ker :=
+  MonoidHom.mem_ker.mpr (F.linearCoeff_pTypicalCoordinate p hunit)
+
+/-- Equal commutative formal group laws have equal canonical `p`-typicalization coordinates. -/
+theorem pTypicalCoordinate_congr {F G : FormalGroup R} [F.IsComm] [G.IsComm] (h : F = G) (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    F.pTypicalCoordinate p hunit = G.pTypicalCoordinate p hunit := by
+  subst h
+  rfl
+
 /-- Base change commutes with `F.pTypicalCoordinate`. -/
 theorem map_pTypicalCoordinate (φ : R →+* S) (p : ℕ)
     (hR : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
@@ -271,6 +291,13 @@ noncomputable def pTypicalFormalGroup (p : ℕ)
 theorem pTypicalFormalGroup_def (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
     F.pTypicalFormalGroup p hunit = F.pTypicalCoordinate p hunit • F :=
   (rfl)
+
+/-- Equal commutative formal group laws have equal canonical `p`-typicalizations. -/
+theorem pTypicalFormalGroup_congr {F G : FormalGroup R} [F.IsComm] [G.IsComm] (h : F = G) (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
+    F.pTypicalFormalGroup p hunit = G.pTypicalFormalGroup p hunit := by
+  subst h
+  rfl
 
 /-- Canonical `p`-typicalization preserves commutativity of formal group laws. -/
 instance (p : ℕ) (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) :
@@ -430,5 +457,105 @@ theorem coeff_pow_log_pTypicalFormalGroup [Algebra ℚ R] {p : ℕ} (hp : p.Prim
     toPowerSeries_tautologicalCurve, PowerSeries.X_subst]
 
 end CanonicalTypicalization
+
+/-! ### Homothety equivariance and preservation of grading -/
+
+section Graded
+
+open TauCeti (FormalCoordinate FormalGroupHom)
+
+private theorem mapCurve_homothety_tautologicalCurve (F : FormalGroup R) (u : Rˣ) :
+    (smulIso (FormalCoordinate.homothety u) F).toHom.mapCurve
+        (F.homothetyCurve (↑u⁻¹ : R) F.tautologicalCurve) =
+      (FormalCoordinate.homothety u • F).tautologicalCurve :=
+  Curve.ext <| by
+    rw [FormalGroupHom.toPowerSeries_mapCurve, smulIso_toHom_toPowerSeries,
+      FormalCoordinate.toPowerSeries_homothety,
+      PowerSeries.subst_smul (F.homothetyCurve (↑u⁻¹ : R) F.tautologicalCurve).hasSubst,
+      PowerSeries.subst_X (F.homothetyCurve (↑u⁻¹ : R) F.tautologicalCurve).hasSubst,
+      toPowerSeries_homothetyCurve, toPowerSeries_tautologicalCurve,
+      toPowerSeries_tautologicalCurve, PowerSeries.rescale_X, PowerSeries.smul_eq_C_mul,
+      ← mul_assoc, ← map_mul, Units.mul_inv, map_one, one_mul]
+
+/-- Transporting a commutative formal group law along a homothety `X ↦ u X` preserves and reflects
+`p`-typicality. -/
+@[simp]
+theorem isPTypical_homothety_smul_iff (F : FormalGroup R) [F.IsComm] (p : ℕ) (u : Rˣ) :
+    (FormalCoordinate.homothety u • F).IsPTypical p ↔ F.IsPTypical p := by
+  have key (G : FormalGroup R) [G.IsComm] (v : Rˣ) (hG : G.IsPTypical p) :
+      (FormalCoordinate.homothety v • G).IsPTypical p := by
+    rw [isPTypical_def, ← mapCurve_homothety_tautologicalCurve G v]
+    exact (hG.tautologicalCurve.homothetyCurve _).mapCurve _
+  refine ⟨fun h ↦ ?_, key F u⟩
+  have hsmul : FormalCoordinate.homothety u⁻¹ • FormalCoordinate.homothety u • F = F := by
+    rw [← mul_smul, ← map_mul, inv_mul_cancel, map_one, one_smul]
+  exact (isPTypical_congr hsmul p).mp (key (FormalCoordinate.homothety u • F) u⁻¹ h)
+
+/-- Transporting `F` along the homothety `X ↦ u X` conjugates its canonical `p`-typicalization
+coordinate by that homothety. -/
+theorem pTypicalCoordinate_homothety_smul (F : FormalGroup R) [F.IsComm] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (u : Rˣ) :
+    (FormalCoordinate.homothety u • F).pTypicalCoordinate p hunit =
+      FormalCoordinate.homothety u * F.pTypicalCoordinate p hunit *
+        (FormalCoordinate.homothety u)⁻¹ := by
+  let δ := F.homothetyCurve (↑u⁻¹ : R) (F.pTypicalProjectorCurve p hunit F.tautologicalCurve)
+  have hproj := (smulIso (FormalCoordinate.homothety u) F).toHom.mapCurve_pTypicalProjectorCurve
+    p hunit (F.homothetyCurve (↑u⁻¹ : R) F.tautologicalCurve)
+  rw [mapCurve_homothety_tautologicalCurve, F.pTypicalProjectorCurve_homothetyCurve] at hproj
+  have hinv : ((FormalCoordinate.homothety u • F).pTypicalCoordinate p hunit)⁻¹ =
+      FormalCoordinate.homothety u * (F.pTypicalCoordinate p hunit)⁻¹ *
+        (FormalCoordinate.homothety u)⁻¹ := by
+    refine FormalCoordinate.ext <| PowerSeries.ext fun k ↦ ?_
+    rw [inv_pTypicalCoordinate_toPowerSeries, ← hproj, FormalGroupHom.toPowerSeries_mapCurve,
+      smulIso_toHom_toPowerSeries, FormalCoordinate.toPowerSeries_homothety,
+      PowerSeries.subst_smul δ.hasSubst, PowerSeries.subst_X δ.hasSubst,
+      toPowerSeries_homothetyCurve, ← inv_pTypicalCoordinate_toPowerSeries]
+    have hconj := FormalCoordinate.coeff_homothety_inv_mul_mul_homothety u⁻¹
+      (F.pTypicalCoordinate p hunit)⁻¹ k
+    rw [inv_inv, map_inv] at hconj
+    rw [hconj, PowerSeries.coeff_smul, PowerSeries.coeff_rescale, smul_eq_mul, mul_assoc]
+  rw [← inv_inv ((FormalCoordinate.homothety u • F).pTypicalCoordinate p hunit), hinv,
+    mul_inv_rev, mul_inv_rev, inv_inv, inv_inv, mul_assoc]
+
+/-- Transporting a commutative formal group law along a homothety commutes with canonical
+`p`-typicalization. -/
+theorem pTypicalFormalGroup_homothety_smul (F : FormalGroup R) [F.IsComm] (p : ℕ)
+    (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : R)) (u : Rˣ) :
+    (FormalCoordinate.homothety u • F).pTypicalFormalGroup p hunit =
+      FormalCoordinate.homothety u • F.pTypicalFormalGroup p hunit := by
+  rw [pTypicalFormalGroup_def, pTypicalFormalGroup_def, pTypicalCoordinate_homothety_smul,
+    mul_smul, mul_smul, inv_smul_smul]
+
+section GradedRing
+
+variable {A σ : Type*} [CommRing A] [SetLike σ A] [AddSubmonoidClass σ A] {𝒜 : ℕ → σ}
+  [GradedRing 𝒜] (F : FormalGroup A) [F.IsComm] (w p : ℕ)
+  (hunit : ∀ q : ℕ, q.Prime → q ≠ p → IsUnit (q : A))
+  (hF : ∀ d : Fin 2 →₀ ℕ, MvPowerSeries.coeff d F.toPowerSeries ∈ 𝒜 (w * (d.degree - 1)))
+include hF
+
+/-- For a graded commutative formal group law over `A`, whose coefficient of `Xⁱ Yʲ` lies in degree
+`w * (i + j - 1)`, the canonical `p`-typicalization coordinate `F.pTypicalCoordinate p hunit` lies
+in `TauCeti.FormalCoordinate.gradedSubgroup 𝒜 w`. -/
+theorem pTypicalCoordinate_mem_gradedSubgroup :
+    F.pTypicalCoordinate p hunit ∈ FormalCoordinate.gradedSubgroup 𝒜 w := by
+  rw [FormalCoordinate.mem_gradedSubgroup, ← FormalCoordinate.map_toLaurent_eq_conjugate_iff,
+    F.map_pTypicalCoordinate _ p hunit,
+    pTypicalCoordinate_congr ((F.map_toLaurent_eq_homothety_smul_iff w).mpr hF) p _,
+    pTypicalCoordinate_homothety_smul, ← F.map_pTypicalCoordinate LaurentPolynomial.C p hunit,
+    ← map_inv, inv_inv]
+
+/-- **Canonical `p`-typicalization preserves grading**: if the coefficient of `Xⁱ Yʲ` in `F` lies
+in degree `w * (i + j - 1)`, then so does the coefficient of `Xⁱ Yʲ` in
+`F.pTypicalFormalGroup p hunit`. -/
+theorem coeff_pTypicalFormalGroup_mem (d : Fin 2 →₀ ℕ) :
+    MvPowerSeries.coeff d (F.pTypicalFormalGroup p hunit).toPowerSeries ∈
+      𝒜 (w * (d.degree - 1)) :=
+  F.coeff_smul_mem w (F.pTypicalCoordinate p hunit)
+    (F.pTypicalCoordinate_mem_gradedSubgroup w p hunit hF) hF d
+
+end GradedRing
+
+end Graded
 
 end FormalGroup

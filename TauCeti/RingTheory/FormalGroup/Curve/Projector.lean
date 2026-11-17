@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Arithmetic
+public import TauCeti.RingTheory.FormalGroup.Curve.Homothety
 public import Mathlib.Algebra.Group.Hom.End
 public import Mathlib.Algebra.Group.Idempotent
 
@@ -241,6 +242,16 @@ theorem frobeniusCurve_cartierProjectorCurve_of_coprime {m n : ℕ} (hm : m ≠ 
   rw [cartierProjectorCurve_apply, cartierProjectorCurve_apply, map_sub,
     frobeniusCurve_verschiebungCurve_of_coprime F hm hn hcop,
     F.map_nsmulCurveEquiv_symm (F.frobeniusCurve m hm) n hunit hunit, hf]
+
+/-- Elementary Cartier projectors commute with Cartier's homothety operator `[r]`. -/
+theorem cartierProjectorCurve_homothetyCurve (r : R) (n : ℕ) (hn : n ≠ 0)
+    (hunit : IsUnit (n : R)) (γ : F.Curve) :
+    F.cartierProjectorCurve n hn hunit (F.homothetyCurve r γ) =
+      F.homothetyCurve r (F.cartierProjectorCurve n hn hunit γ) := by
+  rw [cartierProjectorCurve_apply, cartierProjectorCurve_apply, map_sub,
+    F.frobeniusCurve_homothetyCurve,
+    ← F.map_nsmulCurveEquiv_symm (F.homothetyCurve (r ^ n)) n hunit hunit,
+    ← F.homothetyCurve_verschiebungCurve]
 
 /-- On the additive formal group, the Cartier projector subtracts the part supported in
 degrees divisible by its index. -/
