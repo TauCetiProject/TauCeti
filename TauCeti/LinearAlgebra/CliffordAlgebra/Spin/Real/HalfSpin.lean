@@ -72,19 +72,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   {Q : QuadraticForm ℝ V} (o : Orientation ℝ V (Fin 4)) (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   (b : OrthonormalBasis (Fin 4) ℝ V)
 
-omit [Fact (finrank ℝ V = 4)] in
-private theorem realEvenCliffordEquiv_reverseEven (x : even (realCliffordForm 4 0)) :
-    b.realEvenCliffordEquiv hQ (reverseEven (realCliffordForm 4 0) x) =
-      reverseEven Q (b.realEvenCliffordEquiv hQ x) := by
-  have heq (y : even (realCliffordForm 4 0)) :
-      b.realEvenCliffordEquiv hQ y =
-        evenEquivOfIsometry (b.negRealCliffordFormIsometryEquiv hQ)
-          (evenEquivEvenNeg (realCliffordForm 4 0) y) := by
-    apply Subtype.ext
-    rw [b.coe_realEvenCliffordEquiv_apply hQ, coe_evenEquivOfIsometry_apply,
-      equivOfIsometry_apply]
-  rw [heq, heq, evenEquivEvenNeg_reverseEven, evenEquivOfIsometry_reverseEven]
-
 section Module
 
 variable {W : Type*} [AddCommGroup W] [Module ℂ W] (ρ : CliffordAlgebra Q →ₐ[ℝ] Module.End ℂ W)
@@ -314,7 +301,7 @@ theorem adjoint_positiveQuaternionAction
     LinearMap.adjoint (positiveQuaternionAction o hQ b ρ hb q) =
       positiveQuaternionAction o hQ b ρ hb (star q) := by
   rw [positiveQuaternionAction_apply, adjoint_evenHalfSpinAction o hρ,
-    ← realEvenCliffordEquiv_reverseEven hQ b, reverseEven_symm_quaternionProd, star_zero,
+    ← b.realEvenCliffordEquiv_reverseEven hQ, reverseEven_symm_quaternionProd, star_zero,
     ← positiveQuaternionAction_apply]
 
 include hQ in
@@ -326,7 +313,7 @@ theorem adjoint_negativeQuaternionAction
     LinearMap.adjoint (negativeQuaternionAction o hQ b ρ hb q) =
       negativeQuaternionAction o hQ b ρ hb (star q) := by
   rw [negativeQuaternionAction_apply, adjoint_evenHalfSpinAction o hρ,
-    ← realEvenCliffordEquiv_reverseEven hQ b, reverseEven_symm_quaternionProd, star_zero,
+    ← b.realEvenCliffordEquiv_reverseEven hQ, reverseEven_symm_quaternionProd, star_zero,
     ← negativeQuaternionAction_apply]
 
 include hQ in

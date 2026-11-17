@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.Quaternion.ComplexMatrix
+import Mathlib.Algebra.QuaternionBasis
 import Mathlib.LinearAlgebra.Eigenspace.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Separation
 
@@ -168,25 +169,19 @@ theorem exists_orthonormalBasis_toMatrix_eq_toComplexMatrix
   have h_j₁ : ψ ⟨0, 0, 1, 0⟩ (c 1) = c 0 := by rw [hc 1, hc 0]; exact he₁_j
   let Φ : ℍ[ℝ] →ₐ[ℝ] Matrix (Fin 2) (Fin 2) ℂ :=
     ((LinearMap.toMatrixAlgEquiv c.toBasis).toAlgHom.restrictScalars ℝ).comp ψ
-  have hΦ_i : Φ ⟨0, 1, 0, 0⟩ = Quaternion.toComplexMatrix ⟨0, 1, 0, 0⟩ := by
+  have hΦ_i : Φ (QuaternionAlgebra.Basis.self ℝ).i =
+      Quaternion.toComplexMatrix.toAlgHom (QuaternionAlgebra.Basis.self ℝ).i := by
     ext a b; fin_cases a <;> fin_cases b <;>
       simp [Φ, LinearMap.toMatrixAlgEquiv_apply, h_i₀, h_i₁, Quaternion.toComplexMatrix_apply]
-  have hΦ_j : Φ ⟨0, 0, 1, 0⟩ = Quaternion.toComplexMatrix ⟨0, 0, 1, 0⟩ := by
+  have hΦ_j : Φ (QuaternionAlgebra.Basis.self ℝ).j =
+      Quaternion.toComplexMatrix.toAlgHom (QuaternionAlgebra.Basis.self ℝ).j := by
     ext a b; fin_cases a <;> fin_cases b <;>
       simp [Φ, LinearMap.toMatrixAlgEquiv_apply, h_j₀, h_j₁, Quaternion.toComplexMatrix_apply]
-  have hk : (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) = ⟨0, 1, 0, 0⟩ * ⟨0, 0, 1, 0⟩ := by ext <;> simp
-  have hΦ_k : Φ ⟨0, 0, 0, 1⟩ = Quaternion.toComplexMatrix ⟨0, 0, 0, 1⟩ := by
-    rw [hk, map_mul, map_mul, hΦ_i, hΦ_j]
-  have hΦ (q : ℍ[ℝ]) : Φ q = Quaternion.toComplexMatrix.toAlgHom q := by
-    have hdecomp : q = algebraMap ℝ ℍ[ℝ] q.re + q.imI • (⟨0, 1, 0, 0⟩ : ℍ[ℝ]) +
-        q.imJ • (⟨0, 0, 1, 0⟩ : ℍ[ℝ]) + q.imK • (⟨0, 0, 0, 1⟩ : ℍ[ℝ]) := by ext <;> simp
-    conv_lhs => rw [hdecomp]
-    conv_rhs => rw [hdecomp]
-    simp only [map_add, map_smul, AlgHom.commutes, hΦ_i, hΦ_j, hΦ_k]
-    rfl
+  have hΦ := Quaternion.hom_ext hΦ_i hΦ_j
   refine ⟨c, fun q ↦ ?_⟩
   ext i j
-  simpa [Φ, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply] using congr_fun₂ (hΦ q) i j
+  simpa [Φ, LinearMap.toMatrixAlgEquiv_apply, LinearMap.toMatrix_apply] using
+    congr_fun₂ (AlgHom.congr_fun hΦ q) i j
 
 end TauCeti
 

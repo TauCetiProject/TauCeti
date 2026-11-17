@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Reversal.Basic
 
 /-!
 # Orthonormal bases as isometries with the compact coordinate form
@@ -45,6 +46,8 @@ compact Spin group `Spin(n)`. This is the frame identification of the Spin group
   `evenEquivEvenNeg` followed by the map induced by the coordinates of `b`.
 * `OrthonormalBasis.realEvenCliffordEquiv_ι`: the even frame comparison sends a bivector `eᵢ eⱼ` to
   `-c(bᵢ) c(bⱼ)`.
+* `OrthonormalBasis.realEvenCliffordEquiv_reverseEven`: the even frame comparison commutes with
+  Clifford reversal on the even subalgebra.
 * `OrthonormalBasis.isometryEquivRealCliffordFormZero_apply_self`: the positive coordinate isometry
   sends `b i` to the `i`-th coordinate vector.
 
@@ -126,6 +129,14 @@ theorem realEvenCliffordEquiv_ι (x y : Fin (n + 0) → ℝ) :
         (b.negRealCliffordFormIsometryEquiv hQ y) := by
   rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, evenEquivEvenNeg_apply, evenToNeg_ι, map_neg,
     evenEquivOfIsometry_ι]
+
+/-- `OrthonormalBasis.realEvenCliffordEquiv` commutes with Clifford reversal on the even
+subalgebra. -/
+theorem realEvenCliffordEquiv_reverseEven (x : even (realCliffordForm n 0)) :
+    b.realEvenCliffordEquiv hQ (reverseEven (realCliffordForm n 0) x) =
+      reverseEven Q (b.realEvenCliffordEquiv hQ x) := by
+  rw [realEvenCliffordEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
+    evenEquivEvenNeg_reverseEven, evenEquivOfIsometry_reverseEven]
 
 section Positive
 

@@ -34,8 +34,9 @@ along linear isometries `f : V ≃ₗᵢ[ℝ] V'`.
 
 In dimension four with `Q v = -‖v‖²`, skew-adjoint generators make the chirality eigenspaces
 mutually orthogonal (`CliffordAlgebra.inner_eq_zero_of_mem_eigenspace_chirality`), half-spin rank
-two implies `dim_ℂ W = 4` (`CliffordAlgebra.finrank_eq_two_mul_finrank_positiveHalfSpinors`), and
-every unitary intertwiner along an orientation-preserving isometry restricts to unitary chirality
+two forces fullness of the complexified Clifford action
+(`CliffordAlgebra.complexifyAction_bijective_of_finrank_positiveHalfSpinors_eq_two`), and every
+unitary intertwiner along an orientation-preserving isometry restricts to unitary chirality
 equivalences (`CliffordAlgebra.halfSpinLinearIsometryEquiv`) whose operator conjugation is
 independent of the `Circle` phase (`CliffordAlgebra.conj_halfSpinLinearIsometryEquiv_eq`).
 
