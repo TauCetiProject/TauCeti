@@ -88,21 +88,6 @@ private theorem continuous_liftPS [TopologicalSpace B] [IsTopologicalRing B] (h�
   exact (continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm hε
     ((Units.coeHom B).comp η) (fun _ _ ↦ Commute.all _ _)).comp
     (continuous_padicUnitsCoordinate_symm p)
-
-private theorem hasSum_liftNCAlgHom [TopologicalSpace B] [IsTopologicalRing B] {t : B}
-    (hε : ∀ φ : PowerSeries ℤ_[p], HasSum (fun n : ℕ ↦ φ.coeff n • t ^ n) (ε φ))
-    (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
-    HasSum (fun n : ℕ ↦ MonoidAlgebra.lift ℤ_[p] B (ZMod (p ^ padicUnitsDepth p))ˣ
-        ((Units.coeHom B).comp η) (F.coeff n) * t ^ n)
-      (MonoidAlgebra.liftNCAlgHom ε ((Units.coeHom B).comp η) (fun _ _ ↦ Commute.all _ _)
-        ((MonoidAlgebra.powerSeriesAlgEquiv ℤ_[p] ℤ_[p] _).symm F)) := by
-  rw [MonoidAlgebra.liftNCAlgHom_powerSeriesAlgEquiv_symm_apply]
-  refine (hasSum_sum fun δ _ ↦ (hε _).mul_right (η δ : B)).congr_fun fun n ↦ ?_
-  rw [MonoidAlgebra.lift_apply,
-    Finsupp.sum_fintype _ _ (fun δ ↦ zero_smul ℤ_[p] (((Units.coeHom B).comp η) δ)), Finset.sum_mul]
-  exact Finset.sum_congr rfl fun δ _ ↦ by
-    rw [MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, MonoidHom.comp_apply,
-      Units.coeHom_apply, Algebra.smul_def, Algebra.smul_def, mul_right_comm]
 end LiftHelper
 
 namespace WeightSpace
@@ -211,7 +196,8 @@ theorem hasSum_adicSpecialize_padicUnitsCoordinate (κ : WeightSpace p S)
       (κ.adicSpecialize (padicUnitsCoordinate p F)) := by
   simpa only [adicSpecialize, liftPS, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     AlgEquiv.symm_apply_apply] using
-    hasSum_liftNCAlgHom κ.finiteChar (PowerSeries.hasSum_aeval κ.hasEval_coord) F
+    hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm (PowerSeries.hasSum_aeval κ.hasEval_coord)
+      ((Units.coeHom S).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
 theorem adicSpecialize_padicUnitsCoordinate_eq_tsum (κ : WeightSpace p S)
     (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
     κ.adicSpecialize (padicUnitsCoordinate p F) = ∑' n : ℕ,
@@ -309,7 +295,8 @@ theorem hasSum_normedSpecialize_padicUnitsCoordinate (κ : WeightSpace p R)
       (κ.normedSpecialize (padicUnitsCoordinate p F)) := by
   simpa only [normedSpecialize, liftPS, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
     AlgEquiv.symm_apply_apply] using
-    hasSum_liftNCAlgHom κ.finiteChar (hasSum_padicPowerSeriesEval p κ.tendsto_coord_pow) F
+    hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm (hasSum_padicPowerSeriesEval p κ.tendsto_coord_pow)
+      ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
 theorem normedSpecialize_padicUnitsCoordinate_eq_tsum (κ : WeightSpace p R)
     (F : PowerSeries (MonoidAlgebra ℤ_[p] (ZMod (p ^ padicUnitsDepth p))ˣ)) :
     κ.normedSpecialize (padicUnitsCoordinate p F) = ∑' n : ℕ,
@@ -414,7 +401,9 @@ theorem hasSum_normedSpecialize_padicUnitsCoordinateAt (κ : WeightSpace p R) (u
             simp [PowerSeries.C_eq_algebraMap])
   rw [← AlgEquiv.coe_toAlgHom (padicUnitsCoordinateAt p u), ← AlgHom.comp_apply,
     congrFun hL_eq F]
-  exact hasSum_liftNCAlgHom κ.finiteChar (hasSum_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u)) F
+  exact hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm
+    (hasSum_padicPowerSeriesEval p (κ.tendsto_coordAt_pow u))
+    ((Units.coeHom R).comp κ.finiteChar) (fun _ _ ↦ Commute.all _ _) (fun _ ↦ Commute.all _ _) F
 
 /-- Specialising at the trivial weight `1` augments the constant term of `F` and kills `X`. -/
 theorem normedSpecialize_one_padicUnitsCoordinate

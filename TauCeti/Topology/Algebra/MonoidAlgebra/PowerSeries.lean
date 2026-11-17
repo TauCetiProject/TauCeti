@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Module.ModuleTopology
 public import TauCeti.Algebra.MonoidAlgebra.PowerSeries
 
 /-!
-# Continuity of power-series identifications over finite monoid algebras
+# Continuity and series expansions for power series over finite monoid algebras
 
 For a finite monoid `M` and an `R`-algebra `A`, `MonoidAlgebra.powerSeriesAlgEquiv R A M`
 identifies `A⟦X⟧[M]` with `A[M]⟦X⟧`. When `A[M]` carries the `R`-module topology and power-series
@@ -19,6 +19,11 @@ rings carry their coefficientwise topology (`PowerSeries.WithPiTopology`), extra
 lifted algebra homomorphism `A[M]⟦X⟧ →ₐ[R] B` built from a continuous `ε : A⟦X⟧ →ₐ[R] B` and a
 commuting monoid homomorphism `η : M →* B` is continuous.
 
+Moreover, if `ε` evaluates power series via convergent sums in `B` against powers of an element `t`
+commuting with the image of `η`, then the lifted map through `(powerSeriesAlgEquiv R A M).symm`
+evaluates `F ∈ A[M]⟦X⟧` via the convergent series whose `n`-th term applies the coefficientwise lift
+to `F.coeff n` multiplied by `t ^ n`.
+
 ## Main results
 
 * `TauCeti.continuous_coeff_powerSeriesAlgEquiv_symm`: extracting the `m`-coefficient series
@@ -26,6 +31,11 @@ commuting monoid homomorphism `η : M →* B` is continuous.
 * `TauCeti.continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm`: lifting a continuous
   `ε : A⟦X⟧ →ₐ[R] B` and a commuting `η : M →* B` along `(powerSeriesAlgEquiv R A M).symm` is
   continuous.
+* `TauCeti.hasSum_liftNC_powerSeriesAlgEquiv_symm`: convergent power-series expansion of
+  `MonoidAlgebra.liftNC ε η` along `(MonoidAlgebra.powerSeriesAlgEquiv R A M).symm`.
+* `TauCeti.hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm`: convergent power-series expansion of
+  `MonoidAlgebra.liftNCAlgHom ε η h_comm` along `(MonoidAlgebra.powerSeriesAlgEquiv R R M).symm`
+  using `MonoidAlgebra.lift R B M η`.
 -/
 
 public section
@@ -72,5 +82,51 @@ theorem continuous_liftNCAlgHom_powerSeriesAlgEquiv_symm {R A M B : Type*} [Comm
       (hε.comp (continuous_coeff_powerSeriesAlgEquiv_symm m)).mul continuous_const).congr fun ψ ↦ by
     simpa only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom] using
       (MonoidAlgebra.liftNCAlgHom_powerSeriesAlgEquiv_symm_apply R A M ε η h_comm ψ).symm
+
+/-- For a finite monoid `M`, if `ε : A⟦X⟧ →+ B` evaluates power series via convergent sums
+`∑ n, f (φ.coeff n) * t ^ n` where `t` commutes with every `η m`, then `MonoidAlgebra.liftNC ε η`
+composed with `(MonoidAlgebra.powerSeriesAlgEquiv R A M).symm` evaluates `F ∈ A[M]⟦X⟧` via the
+convergent series `∑ n, MonoidAlgebra.liftNC f η (F.coeff n) * t ^ n`. -/
+theorem hasSum_liftNC_powerSeriesAlgEquiv_symm {R A M B : Type*} [CommSemiring R]
+    [Semiring A] [Algebra R A] [Monoid M] [Finite M] [Semiring B] [TopologicalSpace B]
+    [ContinuousAdd B] [ContinuousMul B] {L : SummationFilter ℕ} {ε : PowerSeries A →+ B}
+    {f : A →+ B} {t : B}
+    (hε : ∀ φ : PowerSeries A, HasSum (fun n : ℕ ↦ f (φ.coeff n) * t ^ n) (ε φ) L)
+    (η : M → B) (ht : ∀ m, Commute t (η m)) (F : PowerSeries (MonoidAlgebra A M)) :
+    HasSum (fun n : ℕ ↦ MonoidAlgebra.liftNC f η (F.coeff n) * t ^ n)
+      (MonoidAlgebra.liftNC ε η ((MonoidAlgebra.powerSeriesAlgEquiv R A M).symm F)) L := by
+  classical
+  have := Fintype.ofFinite M
+  have hsum_lift {S : Type _} [Semiring S] (g : S →+ B) (x : MonoidAlgebra S M) :
+      MonoidAlgebra.liftNC g η x = ∑ m : M, g (x.coeff m) * η m := by
+    conv_lhs => rw [← MonoidAlgebra.sum_coeff_single x,
+      Finsupp.sum_fintype _ _ (fun m ↦ MonoidAlgebra.single_zero m), map_sum]
+    exact Finset.sum_congr rfl fun m _ ↦ MonoidAlgebra.liftNC_single g η m (x.coeff m)
+  rw [hsum_lift ε]
+  refine (hasSum_sum fun m _ ↦
+    (hε (((MonoidAlgebra.powerSeriesAlgEquiv R A M).symm F).coeff m)).map
+      (AddMonoidHom.mulRight (η m)) (continuous_id.mul continuous_const)).congr_fun fun n ↦ ?_
+  rw [hsum_lift f, Finset.sum_mul]
+  exact Finset.sum_congr rfl fun m _ ↦ by
+    simp only [Function.comp_apply, AddMonoidHom.coe_mulRight,
+      MonoidAlgebra.coeff_coeff_powerSeriesAlgEquiv_symm, mul_assoc, ((ht m).pow_left n).eq]
+
+/-- For a finite monoid `M`, if `ε : R⟦X⟧ →ₐ[R] B` evaluates power series via convergent sums
+`∑ n, φ.coeff n • t ^ n` where `t` commutes with `η : M →* B`, then the lifted algebra homomorphism
+`R[M]⟦X⟧ →ₐ[R] B` through `(MonoidAlgebra.powerSeriesAlgEquiv R R M).symm` evaluates `F` via the
+convergent series `∑ n, MonoidAlgebra.lift R B M η (F.coeff n) * t ^ n`. -/
+theorem hasSum_liftNCAlgHom_powerSeriesAlgEquiv_symm {R M B : Type*} [CommSemiring R]
+    [Monoid M] [Finite M] [Semiring B] [Algebra R B] [TopologicalSpace B] [ContinuousAdd B]
+    [ContinuousMul B] {L : SummationFilter ℕ} {ε : PowerSeries R →ₐ[R] B} {t : B}
+    (hε : ∀ φ : PowerSeries R, HasSum (fun n : ℕ ↦ φ.coeff n • t ^ n) (ε φ) L)
+    (η : M →* B) (h_comm : ∀ x y, Commute (ε x) (η y)) (ht : ∀ m, Commute t (η m))
+    (F : PowerSeries (MonoidAlgebra R M)) :
+    HasSum (fun n : ℕ ↦ MonoidAlgebra.lift R B M η (F.coeff n) * t ^ n)
+      (MonoidAlgebra.liftNCAlgHom ε η h_comm
+        ((MonoidAlgebra.powerSeriesAlgEquiv R R M).symm F)) L := by
+  simpa only [MonoidAlgebra.lift_def, MonoidAlgebra.coe_liftNCAlgHom] using
+    hasSum_liftNC_powerSeriesAlgEquiv_symm (R := R) (A := R) (ε := (ε : PowerSeries R →+ B))
+      (f := (algebraMap R B : R →+ B))
+      (fun φ ↦ by simpa only [Algebra.smul_def, AddMonoidHom.coe_ofClass] using hε φ) η ht F
 
 end TauCeti
