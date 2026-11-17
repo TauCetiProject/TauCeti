@@ -73,6 +73,10 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
   `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
   are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_zero_one`: the endpoint embedding
+  `B^0_{p,1} ⊆ Lᵖ` with `‖f‖_p ≤ ‖u‖`.
+* `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_le_of_pos`: for `0 < s`, `B^s_{p,q} ⊆ Lᵖ` with
+  `‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`.
 * `TemperedDistribution.MemBesov.of_bump` and `TauCeti.BesovSpace.bumpEquiv`: the Besov space does
   not depend on the bump function; the identity on tempered distributions is an isomorphism of
   normed spaces between the Besov spaces built from two bump functions.
@@ -972,6 +976,35 @@ theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
   norm_le_of_toDistr_eq_of_lt hs (toDistr_inclusionOfLT hs u).symm
 
 end Inclusion
+
+section PositiveSmoothness
+
+/-- **The endpoint embedding `B^0_{p,1} ⊆ Lᵖ`.** Every `u ∈ B^0_{p,1}` is the tempered distribution
+of an `Lᵖ` function `f` with `‖f‖_p ≤ ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_zero_one (u : BesovSpace F φ 0 p 1) :
+    ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ ‖u‖ := by
+  -- The `B^0_{p,1}` norm is `∑ⱼ ‖Δⱼ u‖_p`, so the series `f = ∑ⱼ Δⱼ u` converges absolutely in
+  -- `Lᵖ`, and it represents `u` by the Littlewood–Paley reconstruction `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
+  have hnorm : HasSum (fun j ↦ ‖u.block j‖) ‖u‖ := by
+    simpa using hasSum_norm ENNReal.one_ne_top u
+  have hsum := hnorm.summable.of_norm
+  refine ⟨∑' j, u.block j, tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u.toDistr) ?_,
+    tsum_of_norm_bounded hnorm fun _ ↦ le_rfl⟩
+  simpa [Function.comp_def] using (hsum.hasSum.map (Lp.toTemperedDistributionCLM F volume p)
+    (ContinuousLinearMap.continuous _)).tendsto_sum_nat
+
+variable [Fact (1 ≤ q)]
+
+/-- **Besov spaces of positive smoothness consist of `Lᵖ` functions.** For `0 < s`, every
+`u ∈ B^s_{p,q}` is the tempered distribution of an `Lᵖ` function `f` with
+`‖f‖_p ≤ (1 - 2^{-s})⁻¹ ‖u‖`. -/
+theorem exists_toDistr_eq_and_norm_le_of_pos (hs : 0 < s) (u : BesovSpace F φ s p q) :
+    ∃ f : Lp F p (volume : Measure E), u.toDistr = f ∧ ‖f‖ ≤ (1 - 2 ^ (-s))⁻¹ * ‖u‖ := by
+  obtain ⟨f, hf, hfn⟩ := exists_toDistr_eq_and_norm_le_of_zero_one (inclusionOfLT F φ p q 1 hs u)
+  refine ⟨f, by rwa [toDistr_inclusionOfLT] at hf, hfn.trans ?_⟩
+  simpa only [zero_sub] using norm_inclusionOfLT_le (q' := 1) hs u
+
+end PositiveSmoothness
 
 section BandLimited
 

@@ -335,9 +335,8 @@ theorem exists_toLpTop_eq_and_contDiff_and_norm_iteratedFDeriv_le_and_holderWith
       (toLpTop volume ℂ f : 𝓢'(E, F)) = u.toDistr ∧ ContDiff ℝ k f ∧
         (∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i f x‖ ≤ C * ‖u‖) ∧
           HolderWith (C * ‖u‖₊) α (iteratedFDeriv ℝ k f) := by
-  obtain ⟨n₀, hn₀⟩ : ∃ n₀ : ℕ, φ.rOut ≤ 2 ^ n₀ * φ.rIn := by
-    obtain ⟨n, hn⟩ := pow_unbounded_of_one_lt (φ.rOut / φ.rIn) (one_lt_two (α := ℝ))
-    exact ⟨n, ((div_lt_iff₀ φ.rIn_pos).1 hn).le⟩
+  obtain ⟨n₀, hn₀⟩ := φ.exists_rOut_lt_two_pow_mul_rIn
+  replace hn₀ := hn₀.le
   obtain ⟨C₀, hC₀⟩ := exists_holderWith_tsum_of_rpow_mul_le (X := E) (Y := E [×k]→L[ℝ] F) hα0 hα1
   -- `B m = 2^{n₀ m} ‖D^m K₀‖₁` bounds the `m`-th derivatives of the smoothed blocks, and
   -- `q = 2^{-α}` is the ratio of the geometric series they form.
