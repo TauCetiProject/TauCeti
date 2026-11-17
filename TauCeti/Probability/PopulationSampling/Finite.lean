@@ -40,6 +40,9 @@ of the latter's sampling law, without separation assumptions on the value space.
 ## Main declarations
 
 * `sampleWithoutReplacement`, `sampleWithReplacement`: the two finite sampling laws;
+* `sampleWithoutReplacement_dirac_apply`, `sampleWithoutReplacement_dirac_apply_singleton`,
+  `sampleWithReplacement_dirac_apply`, `sampleWithReplacement_dirac_apply_singleton`:
+  event and singleton masses of sampled words as selection counts;
 * `sampleWithoutReplacement_map`, `sampleWithReplacement_map`: measurable observations commute
   with sampling;
 * `sampleWithoutReplacement_dirac_comp`, `sampleWithReplacement_dirac_comp`: their
@@ -99,6 +102,42 @@ theorem sampleWithoutReplacement_dirac {ι κ : Type*} [Finite κ] [MeasurableSp
     sampleWithoutReplacement (ι := ι) (Measure.dirac x) =
       (uniformOn {k : ι → κ | Function.Injective k}).map (fun k i => x (k i)) := by
   rw [sampleWithoutReplacement_def, samplePopulation_dirac]
+
+/-- Under without-replacement sampling from a deterministic finite population `x : κ → α`, the
+mass of a measurable event `A` is the number of embeddings `f : ι ↪ κ` with `x ∘ f ∈ A` divided
+by `|κ|.descFactorial |ι|`. When `|κ| < |ι|`, both sides are zero (`0 / 0 = 0` in `ℝ≥0∞`). -/
+theorem sampleWithoutReplacement_dirac_apply {ι κ : Type*} [Fintype ι] [Fintype κ]
+    [MeasurableSpace κ] [MeasurableSingletonClass κ] (x : κ → α) {A : Set (ι → α)}
+    (hA : MeasurableSet A) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac x) A =
+      Nat.card {f : ι ↪ κ // x ∘ f ∈ A} /
+        (Fintype.card κ).descFactorial (Fintype.card ι) := by
+  classical
+  simp only [sampleWithoutReplacement_dirac, Measure.map_apply (measurable_readPopulation x) hA]
+  have hS : {k : ι → κ | Function.Injective k} =
+      (({k : ι → κ | Function.Injective k} : Finset (ι → κ)) : Set (ι → κ)) := by simp
+  have hT : (fun k i => x (k i)) ⁻¹' A =
+      (({k : ι → κ | x ∘ k ∈ A} : Finset (ι → κ)) : Set (ι → κ)) := by
+    ext k
+    simp [Function.comp_def]
+  have heq : {k : ι → κ // Function.Injective k ∧ x ∘ k ∈ A} ≃ {f : ι ↪ κ // x ∘ f ∈ A} :=
+    (Equiv.subtypeSubtypeEquivSubtypeInter
+      (fun k : ι → κ => Function.Injective k) (fun k : ι → κ => x ∘ k ∈ A)).symm.trans
+      ((Equiv.subtypeInjectiveEquivEmbedding ι κ).subtypeEquiv fun _ => Iff.rfl)
+  rw [← Nat.card_congr heq, hS, hT, uniformOn_apply_finset]
+  simp [← Finset.filter_and, ← Fintype.card_subtype,
+    Fintype.card_congr (Equiv.subtypeInjectiveEquivEmbedding ι κ)]
+
+/-- Under without-replacement sampling from a deterministic finite population `x : κ → α`, the
+mass of a word `y : ι → α` is the number of embeddings `f : ι ↪ κ` with `x ∘ f = y` divided by
+`|κ|.descFactorial |ι|`. When `|κ| < |ι|`, both sides are zero (`0 / 0 = 0` in `ℝ≥0∞`). -/
+theorem sampleWithoutReplacement_dirac_apply_singleton {ι κ : Type*} [Fintype ι] [Fintype κ]
+    [MeasurableSpace κ] [MeasurableSingletonClass κ] [MeasurableSingletonClass α]
+    (x : κ → α) (y : ι → α) :
+    sampleWithoutReplacement (ι := ι) (Measure.dirac x) {y} =
+      Nat.card {f : ι ↪ κ // x ∘ f = y} /
+        (Fintype.card κ).descFactorial (Fintype.card ι) :=
+  sampleWithoutReplacement_dirac_apply x (measurableSet_singleton y)
 
 /-- Observing population values commutes with sampling without replacement. -/
 theorem sampleWithoutReplacement_map {ι κ : Type*} [MeasurableSpace κ]
@@ -198,6 +237,29 @@ theorem sampleWithReplacement_dirac [Fintype ι] [Finite κ] (x : κ → α) :
     sampleWithReplacement (ι := ι) (Measure.dirac x) =
       (uniformOn (Set.univ : Set (ι → κ))).map (fun k i => x (k i)) := by
   rw [sampleWithReplacement_eq_samplePopulation_uniformOn, samplePopulation_dirac]
+
+/-- Under with-replacement sampling from a deterministic finite population `x : κ → α`, the
+mass of a measurable event `A` is the number of index maps `f : ι → κ` with `x ∘ f ∈ A` divided
+by `|κ| ^ |ι|`. When `ι → κ` is empty, both sides are zero (`0 / 0 = 0` in `ℝ≥0∞`). -/
+theorem sampleWithReplacement_dirac_apply [Fintype ι] [Fintype κ] (x : κ → α)
+    {A : Set (ι → α)} (hA : MeasurableSet A) :
+    sampleWithReplacement (ι := ι) (Measure.dirac x) A =
+      Nat.card {f : ι → κ // x ∘ f ∈ A} / (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι := by
+  classical
+  have hpre : (fun k i => x (k i)) ⁻¹' A = {k : ι → κ | x ∘ k ∈ A} := by
+    ext k
+    simp [Function.comp_def]
+  simp [Measure.map_apply (measurable_readPopulation x) hA, hpre, uniformOn_univ,
+    Measure.count_apply_finite _ (Set.toFinite _), ← Fintype.card_subtype]
+
+/-- Under with-replacement sampling from a deterministic finite population `x : κ → α`, the
+mass of a word `y : ι → α` is the number of index maps `f : ι → κ` with `x ∘ f = y` divided by
+`|κ| ^ |ι|`. When `ι → κ` is empty, both sides are zero (`0 / 0 = 0` in `ℝ≥0∞`). -/
+theorem sampleWithReplacement_dirac_apply_singleton [Fintype ι] [Fintype κ]
+    [MeasurableSingletonClass α] (x : κ → α) (y : ι → α) :
+    sampleWithReplacement (ι := ι) (Measure.dirac x) {y} =
+      Nat.card {f : ι → κ // x ∘ f = y} / (Fintype.card κ : ℝ≥0∞) ^ Fintype.card ι :=
+  sampleWithReplacement_dirac_apply x (measurableSet_singleton y)
 
 /-- Observing population values commutes with sampling with replacement. -/
 theorem sampleWithReplacement_map [Fintype ι] [Countable κ]
