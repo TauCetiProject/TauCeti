@@ -17,7 +17,7 @@ theorem), then evaluating `holomorphicCalculus` of `holomorphicCalculus a f` at 
 evaluating `holomorphicCalculus a` at the composite germ `g ∘ f`.
 
 Rather than computing iterated nested contour integrals, the proof deduces composition directly from
-the uniqueness theorem (`eq_holomorphicCalculus_of_forall_continuous`), the spectral mapping
+the uniqueness theorem (`AlgHom.eq_holomorphicCalculus_of_forall_continuous`), the spectral mapping
 theorem (`spectrum_holomorphicCalculus`), and compact-open continuity of precomposition on algebras
 of holomorphic functions (`HolomorphicFunctions.continuous_comp`).
 
@@ -57,7 +57,7 @@ theorem holomorphicCalculus_comp (a : A) (f : holomorphicGerms (spectrum ℂ a))
   let Φ : holomorphicGerms (spectrum ℂ b) →ₐ[ℂ] A :=
     (holomorphicCalculus a).comp (holomorphicGerms.comp f (spectrum_holomorphicCalculus a f).ge)
   suffices hΦ : Φ = holomorphicCalculus b from (DFunLike.congr_fun hΦ g).symm
-  refine eq_holomorphicCalculus_of_forall_continuous Φ ?_ ?_
+  refine Φ.eq_holomorphicCalculus_of_forall_continuous ?_ ?_
   · simp [Φ, b]
   · intro V hbV
     obtain ⟨U, haU, f₀, hf₀⟩ := holomorphicGerms.exists_toGerm_eq f

@@ -442,33 +442,26 @@ theorem map_holomorphicCalculus (φ : A ≃A[ℂ] B) (a : A)
 
 end ContinuousAlgEquiv
 
-namespace TauCeti
+namespace AlgHom
 
-open Contour HolomorphicFunctions
-
-section ResolventKernel
-
-private theorem not_continuousAt_sub_inv (w : ℂ) :
-    ¬ ContinuousAt (fun z : ℂ ↦ (w - z)⁻¹) w := by
-  intro h
-  have h0 : Tendsto (fun z : ℂ ↦ (w - z) * (w - z)⁻¹) (𝓝[≠] w) (𝓝 0) := by
-    simpa using ((continuousAt_const.sub continuousAt_id).tendsto.mul h.tendsto).mono_left
-      nhdsWithin_le_nhds
-  have h1 : Tendsto (fun z : ℂ ↦ (w - z) * (w - z)⁻¹) (𝓝[≠] w) (𝓝 1) :=
-    tendsto_const_nhds.congr' <|
-      eventually_nhdsWithin_of_forall fun z (hz : z ≠ w) ↦
-        (mul_inv_cancel₀ (sub_ne_zero.mpr hz.symm)).symm
-  exact zero_ne_one (tendsto_nhds_unique h0 h1)
+open TauCeti
 
 /-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
 coordinate germ to `a` maps the Cauchy kernel `(w - ·)⁻¹` to `resolvent a w`. -/
-theorem algHom_ofFun_sub_inv_eq_resolvent {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
+theorem ofFun_sub_inv_eq_resolvent {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
     (Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A)
     (hid : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
     {w : ℂ} (hf : AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) (spectrum ℂ a)) :
     Φ (holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf) = resolvent a w := by
   have hw : w ∈ resolventSet ℂ a :=
-    spectrum.notMem_iff.mp fun hwσ ↦ not_continuousAt_sub_inv w (hf w hwσ).continuousAt
+    spectrum.notMem_iff.mp fun hwσ ↦ by
+      have hcont : ContinuousAt (fun z : ℂ ↦ (w - z)⁻¹) (w - 0) := by
+        rw [sub_zero]
+        exact (hf w hwσ).continuousAt
+      have h0 : ContinuousAt (Inv.inv : ℂ → ℂ) 0 := by
+        simpa only [Function.comp_def, sub_sub_cancel] using
+          hcont.comp (continuousAt_const.sub continuousAt_id)
+      exact NormedField.continuousAt_inv.mp h0 rfl
   let k := holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf
   have hmul : (algebraMap ℂ (holomorphicGerms (spectrum ℂ a)) w -
       holomorphicGerms.ofFun id analyticOnNhd_id) * k = 1 := by
@@ -488,7 +481,11 @@ theorem algHom_ofFun_sub_inv_eq_resolvent {A : Type*} [Ring A] [Algebra ℂ A] {
     _ = resolvent a w * ((algebraMap ℂ A w - a) * Φ k) := mul_assoc _ _ _
     _ = resolvent a w := by rw [hΦ, mul_one]
 
-end ResolventKernel
+end AlgHom
+
+namespace TauCeti
+
+open Contour HolomorphicFunctions
 
 section ResolventAndRational
 
@@ -499,7 +496,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 theorem holomorphicCalculus_sub_inv (a : A) (w : ℂ)
     (hf : AnalyticOnNhd ℂ (fun z ↦ (w - z)⁻¹) (spectrum ℂ a)) :
     holomorphicCalculus a (holomorphicGerms.ofFun (fun z ↦ (w - z)⁻¹) hf) = resolvent a w :=
-  algHom_ofFun_sub_inv_eq_resolvent (holomorphicCalculus a) (holomorphicCalculus_id a) hf
+  (holomorphicCalculus a).ofFun_sub_inv_eq_resolvent (holomorphicCalculus_id a) hf
 
 /-- On an open neighbourhood `U` of `spectrum ℂ a`, `holomorphicCalculusOn` maps `(w - ·)⁻¹` to
 `resolvent a w`. -/
