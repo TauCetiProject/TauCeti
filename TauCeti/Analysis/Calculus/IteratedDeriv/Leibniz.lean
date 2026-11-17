@@ -20,8 +20,8 @@ analytic function `f` factors as `f z = (z - a) ^ n • h z` (for instance throu
 More generally, multiplying by `(z - a) ^ p` shifts the Taylor coefficients at `a` up by `p`
 without changing them.
 
-For functions `c` and `d` with values in continuous linear maps, `Cⁿ` on an open set, Leibniz's
-rule `(c ∘ d)⁽ⁿ⁾ = ∑ᵢ (n choose i) c⁽ⁱ⁾ ∘ d⁽ⁿ⁻ⁱ⁾` holds for their pointwise composition.
+For functions `c` and `d` with values in continuous linear maps, `Cⁿ` at a point, Leibniz's
+rule `(c ∘ d)⁽ⁿ⁾ = ∑ᵢ (n choose i) c⁽ⁱ⁾ ∘ d⁽ⁿ⁻ⁱ⁾` holds there for their pointwise composition.
 
 ## Main results
 
@@ -97,12 +97,11 @@ section CLMComp
 variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
   [NormedSpace 𝕜 G]
 
-/-- **Leibniz's rule for compositions of continuous linear maps.** If `c` and `d` are `Cⁿ` on an
-open set `s` containing `x`, the `n`-th derivative at `x` of their pointwise composition is
-`∑ᵢ (n choose i) c⁽ⁱ⁾(x) ∘ d⁽ⁿ⁻ⁱ⁾(x)`. -/
-theorem iteratedDeriv_clm_comp {s : Set 𝕜} (hs : IsOpen s) {c : 𝕜 → F →L[𝕜] G}
-    {d : 𝕜 → E →L[𝕜] F} {n : ℕ} (hc : ContDiffOn 𝕜 n c s) (hd : ContDiffOn 𝕜 n d s) {x : 𝕜}
-    (hx : x ∈ s) :
+/-- Leibniz's rule for compositions of continuous linear maps, on an open set where both factors
+are `Cⁿ`. -/
+private theorem iteratedDeriv_clm_comp_of_isOpen {s : Set 𝕜} (hs : IsOpen s)
+    {c : 𝕜 → F →L[𝕜] G} {d : 𝕜 → E →L[𝕜] F} {n : ℕ} (hc : ContDiffOn 𝕜 n c s)
+    (hd : ContDiffOn 𝕜 n d s) {x : 𝕜} (hx : x ∈ s) :
     iteratedDeriv n (fun y ↦ (c y).comp (d y)) x =
       ∑ i ∈ Finset.range (n + 1),
         n.choose i • (iteratedDeriv i c x).comp (iteratedDeriv (n - i) d x) := by
@@ -124,13 +123,27 @@ theorem iteratedDeriv_clm_comp {s : Set 𝕜} (hs : IsOpen s) {c : 𝕜 → F �
         (((hc.of_le hle).clm_comp hd').contDiffAt hm), ih hc' (hd.of_le hle),
       ih (hc.of_le hle) hd']
     simp only [← iteratedDeriv_succ']
-    rw [show n + 1 + 1 = n + 2 from rfl,
-      Finset.sum_choose_succ_nsmul (fun i k ↦ (iteratedDeriv i c x).comp (iteratedDeriv k d x)) n,
-      add_comm]
+    refine Eq.trans ?_ (Finset.sum_choose_succ_nsmul
+      (fun i k ↦ (iteratedDeriv i c x).comp (iteratedDeriv k d x)) n).symm
+    rw [add_comm]
     congr 1
     refine Finset.sum_congr rfl fun i hi ↦ ?_
     rw [Finset.mem_range] at hi
     rw [show n - i + 1 = n + 1 - i by omega]
+
+/-- **Leibniz's rule for compositions of continuous linear maps.** If `c` and `d` are `Cⁿ` at `x`,
+the `n`-th derivative at `x` of their pointwise composition is
+`∑ᵢ (n choose i) c⁽ⁱ⁾(x) ∘ d⁽ⁿ⁻ⁱ⁾(x)`. -/
+theorem iteratedDeriv_clm_comp {c : 𝕜 → F →L[𝕜] G} {d : 𝕜 → E →L[𝕜] F} {n : ℕ} {x : 𝕜}
+    (hc : ContDiffAt 𝕜 n c x) (hd : ContDiffAt 𝕜 n d x) :
+    iteratedDeriv n (fun y ↦ (c y).comp (d y)) x =
+      ∑ i ∈ Finset.range (n + 1),
+        n.choose i • (iteratedDeriv i c x).comp (iteratedDeriv (n - i) d x) := by
+  obtain ⟨u, hu, hcu⟩ := hc.contDiffOn le_rfl (by simp)
+  obtain ⟨v, hv, hdv⟩ := hd.contDiffOn le_rfl (by simp)
+  obtain ⟨s, hsuv, hs, hx⟩ := mem_nhds_iff.1 (Filter.inter_mem hu hv)
+  exact iteratedDeriv_clm_comp_of_isOpen hs (hcu.mono fun y hy ↦ (hsuv hy).1)
+    (hdv.mono fun y hy ↦ (hsuv hy).2) hx
 
 end CLMComp
 

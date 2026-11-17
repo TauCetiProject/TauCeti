@@ -30,8 +30,9 @@ in `r` may cost `d` frequency orders, the anisotropy `d` being the order of `A`.
 also use the classes of the products `λ ^ δ a` with such `a`; this file treats `δ = 0`.
 
 This file defines the class `TauCeti.WeakParameterSymbol n R V W d m` of such `b`, on an open set
-`R ⊆ ℂ` of inverse parameters (typically the inverse of a sector of spectral parameters, cut off
-near `r = 0`), with values in `V →L[ℂ] W`. Its `j`-th slice at `r ∈ R`,
+`R ⊆ ℂ` of inverse parameters (typically the image under `λ ↦ 1 / λ` of a sector of spectral
+parameters with `|λ| ≥ 1`, a bounded set of inverse parameters `r ≠ 0`), with values in
+`V →L[ℂ] W`. Its `j`-th slice at `r ∈ R`,
 `TauCeti.WeakParameterSymbol.slice b j r`, is the ordinary symbol `(x, ξ) ↦ ∂_r^j b(x, ξ, r)` of
 order `m + d j`, and the defining estimates say that every seminorm of the slices is bounded
 uniformly in `r` (`TauCeti.WeakParameterSymbol.exists_seminorm_slice_le`); a holomorphic family
@@ -49,7 +50,8 @@ with such slices is a weakly parameter-dependent symbol
   holomorphic with bounded derivatives on `R`, is a symbol of order `0`.
 * `TauCeti.WeakParameterSymbol.comp`: the pointwise composition of symbols of orders `m'` and `m`
   has order `m' + m`. Its slices are given by Leibniz's rule in `r`
-  (`TauCeti.WeakParameterSymbol.slice_comp`), and each term
+  (`TauCeti.WeakParameterSymbol.slice_comp`, `TauCeti.WeakParameterSymbol.coefficient_slice_comp`),
+  and each term
   `∂_r^i b' ∘ ∂_r^(j - i) b` has order `m' + d i + m + d (j - i) = m' + m + d j`.
 
 ## References
@@ -184,24 +186,6 @@ theorem slice_ofSlices (j : ℕ) (r : R) : (ofSlices b hb hb₀ s hs hbound).sli
   Symbol.ext (funext fun p ↦ (hs j r p).symm)
 
 end OfSlices
-
-/-- Seminorm bounds, uniform in the parameter, for the compositions of two families of symbols
-with uniformly bounded seminorms. -/
-private theorem exists_seminorm_comp_le {ι : Type*} (b : ι → Symbol n W U m')
-    (a : ι → Symbol n V W m)
-    (hb : ∀ (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
-      ∃ C, ∀ i, Symbol.seminorm K α β (b i) ≤ C)
-    (ha : ∀ (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)),
-      ∃ C, ∀ i, Symbol.seminorm K α β (a i) ≤ C)
-    (K : Compacts (CoordinateSpace n)) (α β : List (Fin n)) :
-    ∃ C, ∀ i, Symbol.seminorm K α β ((b i).comp (a i)) ≤ C := by
-  choose Cb hCb using hb K
-  choose Ca hCa using ha K
-  refine ⟨(β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
-    Cb s.1 t.1 * Ca s.2 t.2).sum).sum, fun i ↦ (Symbol.seminorm_comp_le K α β _ _).trans ?_⟩
-  refine List.sum_le_sum fun t _ ↦ List.sum_le_sum fun s _ ↦ ?_
-  exact mul_le_mul (hCb _ _ i) (hCa _ _ i) (apply_nonneg _ _)
-    ((apply_nonneg _ _).trans (hCb _ _ i))
 
 section Module
 
@@ -352,6 +336,10 @@ theorem slice_inclusion (h : m ≤ m') (a : WeakParameterSymbol n R V W d m) (j 
       Symbol.inclusion (by linarith : m + d * j ≤ m' + d * j) (a.slice j r) :=
   slice_ofSlices ..
 
+theorem inclusion_injective (h : m ≤ m') :
+    Function.Injective (inclusion (n := n) (R := R) (V := V) (W := W) (d := d) h) :=
+  fun _ _ hab ↦ coefficient_injective (by simpa using congrArg coefficient hab)
+
 end Inclusion
 
 section OfSymbol
@@ -391,6 +379,12 @@ theorem coefficient_slice_ofSymbol_zero (b : Symbol n V W m) (r : R)
     ((ofSymbol (R := R) (d := d) b).slice 0 r).coefficient p = b.coefficient p := by
   simp [ofSymbol, ofSymbolSlice]
 
+@[simp]
+theorem slice_ofSymbol_zero (b : Symbol n V W m) (r : R) :
+    (ofSymbol (R := R) (d := d) b).slice 0 r = Symbol.inclusion (by simp) b :=
+  slice_ofSlices ..
+
+@[simp]
 theorem slice_ofSymbol_succ (b : Symbol n V W m) (j : ℕ) (r : R) :
     (ofSymbol (R := R) (d := d) b).slice (j + 1) r = 0 := by
   simp [ofSymbol, ofSymbolSlice]
@@ -468,15 +462,16 @@ def comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W
       (j.choose i : ℂ) •
         Symbol.inclusion (comp_order_le i) ((b.slice i r).comp (a.slice (j - i) r)))
     (fun j r p ↦ by
-      rw [iteratedDeriv_clm_comp R.isOpen (b.contDiffOn_coefficient p)
-        (a.contDiffOn_coefficient p) r.2, Symbol.coefficient_sum, Finset.sum_apply,
+      rw [iteratedDeriv_clm_comp (b.contDiffAt_coefficient p r) (a.contDiffAt_coefficient p r),
+        Symbol.coefficient_sum, Finset.sum_apply,
         ← Fin.sum_univ_eq_sum_range (fun i ↦ j.choose i •
           (iteratedDeriv i (b.coefficient p) r).comp (iteratedDeriv (j - i) (a.coefficient p) r))]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       simp [Nat.cast_smul_eq_nsmul])
     (fun K α β j ↦ by
-      choose C hC using fun i : Fin (j + 1) ↦ exists_seminorm_comp_le (fun r : R ↦ b.slice i r)
-        (fun r ↦ a.slice (j - i) r) (fun K α β ↦ b.exists_seminorm_slice_le K α β i)
+      choose C hC using fun i : Fin (j + 1) ↦ Symbol.exists_seminorm_comp_le
+        (b := fun r : R ↦ b.slice i r) (a := fun r ↦ a.slice (j - i) r)
+        (fun K α β ↦ b.exists_seminorm_slice_le K α β i)
         (fun K α β ↦ a.exists_seminorm_slice_le K α β (j - i)) K α β
       refine ⟨∑ i : Fin (j + 1), ‖(j.choose i : ℂ)‖ * C i, fun r ↦ ?_⟩
       refine (Finset.le_sum_of_subadditive _ (map_zero _).le (map_add_le_add _) _ _).trans
@@ -498,8 +493,18 @@ theorem coefficient_slice_comp (b : WeakParameterSymbol n R W U d m')
     ((b.comp a).slice j r).coefficient p = ∑ i ∈ Finset.range (j + 1),
       j.choose i • ((b.slice i r).coefficient p).comp ((a.slice (j - i) r).coefficient p) := by
   simp only [coefficient_slice]
-  exact iteratedDeriv_clm_comp R.isOpen (b.contDiffOn_coefficient p)
-    (a.contDiffOn_coefficient p) r.2
+  exact iteratedDeriv_clm_comp (b.contDiffAt_coefficient p r) (a.contDiffAt_coefficient p r)
+
+/-- **Leibniz's rule for the slices of a composition**, as symbols: the `j`-th slice of `b' ∘ b`
+is the sum of the compositions `(j choose i) ∂_r^i b' ∘ ∂_r^(j - i) b` of slices, each of order
+`m' + m + d j`. -/
+@[simp]
+theorem slice_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m)
+    (j : ℕ) (r : R) :
+    (b.comp a).slice j r = ∑ i : Fin (j + 1), (j.choose i : ℂ) •
+      Symbol.inclusion (le_of_eq (by rw [Nat.cast_sub (Nat.lt_succ_iff.1 i.2)]; ring))
+        ((b.slice i r).comp (a.slice (j - i) r)) :=
+  slice_ofSlices ..
 
 theorem comp_add (b : WeakParameterSymbol n R W U d m') (a₁ a₂ : WeakParameterSymbol n R V W d m) :
     b.comp (a₁ + a₂) = b.comp a₁ + b.comp a₂ := by
@@ -511,15 +516,76 @@ theorem add_comp (b₁ b₂ : WeakParameterSymbol n R W U d m') (a : WeakParamet
   ext p r
   simp
 
+@[simp]
 theorem comp_smul (c : ℂ) (b : WeakParameterSymbol n R W U d m')
     (a : WeakParameterSymbol n R V W d m) : b.comp (c • a) = c • b.comp a := by
   ext p r
   simp
 
+@[simp]
 theorem smul_comp (c : ℂ) (b : WeakParameterSymbol n R W U d m')
     (a : WeakParameterSymbol n R V W d m) : (c • b).comp a = c • b.comp a := by
   ext p r
   simp
+
+@[simp]
+theorem comp_zero (b : WeakParameterSymbol n R W U d m') :
+    b.comp (0 : WeakParameterSymbol n R V W d m) = 0 := by
+  ext p r
+  simp
+
+@[simp]
+theorem zero_comp (a : WeakParameterSymbol n R V W d m) :
+    (0 : WeakParameterSymbol n R W U d m').comp a = 0 := by
+  ext p r
+  simp
+
+@[simp]
+theorem comp_neg (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    b.comp (-a) = -b.comp a := by
+  ext p r
+  simp
+
+@[simp]
+theorem neg_comp (b : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    (-b).comp a = -b.comp a := by
+  ext p r
+  simp
+
+theorem comp_sub (b : WeakParameterSymbol n R W U d m') (a₁ a₂ : WeakParameterSymbol n R V W d m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ := by
+  ext p r
+  simp [ContinuousLinearMap.comp_sub]
+
+theorem sub_comp (b₁ b₂ : WeakParameterSymbol n R W U d m') (a : WeakParameterSymbol n R V W d m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a := by
+  ext p r
+  simp [ContinuousLinearMap.sub_comp]
+
+variable {m'' : ℝ}
+
+/-- Composing after raising the order of the outer symbol raises the order of the composition. -/
+theorem inclusion_comp (h : m' ≤ m'') (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) :
+    (inclusion h b).comp a = inclusion (by linarith) (b.comp a) := by
+  ext p r
+  simp
+
+/-- Composing after raising the order of the inner symbol raises the order of the composition. -/
+theorem comp_inclusion (h : m ≤ m'') (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) :
+    b.comp (inclusion h a) = inclusion (by linarith) (b.comp a) := by
+  ext p r
+  simp
+
+/-- Composition of weakly parameter-dependent symbols is associative, up to the identification of
+the orders `(m'' + m') + m = m'' + (m' + m)`. -/
+theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] [CompleteSpace U']
+    (c : WeakParameterSymbol n R U U' d m'') (b : WeakParameterSymbol n R W U d m')
+    (a : WeakParameterSymbol n R V W d m) :
+    (c.comp b).comp a = inclusion (add_assoc m'' m' m).ge (c.comp (b.comp a)) := by
+  ext p r
+  simp [ContinuousLinearMap.comp_assoc]
 
 end Comp
 
