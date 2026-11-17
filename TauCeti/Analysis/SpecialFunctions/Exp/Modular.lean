@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
+import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -25,12 +26,21 @@ potential into a bound on a quantity comparable to `min (t², |t|)`. It is the p
 coercivity estimates for functionals with this potential, such as Taubes's functional for planar
 vortices.
 
+On a bounded range `|t| ≤ B` the potential is comparable to `t²` from above,
+`exp (2t) - 1 - 2t ≤ 4 exp (2B) t²`, and its derivative `2 (exp (2t) - 1)` to `|t|`; and around any
+point `a` it expands exactly as `φ(a + x) = φ(a) + 2 (exp (2a) - 1) x + exp (2a) φ(x)`, where
+`φ(t) = exp (2t) - 1 - 2t`. These describe the potential near a bounded function, such as a
+bounded minimizer of a functional with this potential.
+
 ## Main results
 
 * `Real.exp_two_mul_sub_one_sub_two_mul_nonneg`: for every real `t`, `0 ≤ exp (2t) - 1 - 2t`.
 * `Real.convexOn_exp_two_mul_sub_one_sub_two_mul`: the potential `exp (2t) - 1 - 2t` is convex.
 * `Real.sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul`: for every real `t`,
   `√(1 + t²) - 1 ≤ exp (2t) - 1 - 2t`.
+* `Real.abs_exp_two_mul_sub_one_le`, `Real.exp_two_mul_sub_one_sub_two_mul_le`: for `|t| ≤ B`,
+  `|exp (2t) - 1| ≤ 2 exp (2B) |t|` and `exp (2t) - 1 - 2t ≤ 4 exp (2B) t²`.
+* `Real.exp_two_mul_add_sub_one_sub_two_mul`: the expansion of the potential around `a`.
 -/
 
 public section
@@ -71,6 +81,42 @@ theorem sqrt_one_add_sq_sub_one_le_exp_two_mul_sub_one_sub_two_mul (t : ℝ) :
     have habs := sqrt_one_add_sq_sub_one_le_abs t
     rw [abs_of_nonpos ht] at habs
     nlinarith [exp_pos (2 * t)]
+
+/-- On `|t| ≤ B`, the derivative `2 (exp (2t) - 1)` of the potential is at most a constant times
+`|t|`: `|exp (2t) - 1| ≤ 2 exp (2B) |t|`. -/
+theorem abs_exp_two_mul_sub_one_le {t B : ℝ} (ht : |t| ≤ B) :
+    |exp (2 * t) - 1| ≤ 2 * exp (2 * B) * |t| := by
+  have h := TauCeti.abs_exp_sub_one_le_mul_exp_abs (2 * t)
+  have he : exp (2 * |t|) ≤ exp (2 * B) := exp_le_exp.mpr (by linarith)
+  rw [abs_mul, abs_two] at h
+  nlinarith [mul_le_mul_of_nonneg_left he (by positivity : (0 : ℝ) ≤ 2 * |t|)]
+
+/-- On `|t| ≤ B`, the potential is at most a constant times `t²`:
+`exp (2t) - 1 - 2t ≤ 4 exp (2B) t²`. -/
+theorem exp_two_mul_sub_one_sub_two_mul_le {t B : ℝ} (ht : |t| ≤ B) :
+    exp (2 * t) - 1 - 2 * t ≤ 4 * exp (2 * B) * t ^ 2 := by
+  -- Convexity below the tangent at `t`: the potential is at most `2t (exp (2t) - 1)`.
+  have h1 : exp (2 * t) - 1 - 2 * t ≤ 2 * t * (exp (2 * t) - 1) := by
+    have h := add_one_le_exp (-(2 * t))
+    have h2 : exp (-(2 * t)) * exp (2 * t) = 1 := by rw [← exp_add]; simp
+    nlinarith [exp_pos (2 * t)]
+  have h2 : 2 * t * (exp (2 * t) - 1) ≤ |2 * t| * |exp (2 * t) - 1| := by
+    rw [← abs_mul]; exact le_abs_self _
+  rw [abs_mul, abs_two] at h2
+  have h4 : 2 * |t| * |exp (2 * t) - 1| ≤ 2 * |t| * (2 * exp (2 * B) * |t|) :=
+    mul_le_mul_of_nonneg_left (abs_exp_two_mul_sub_one_le ht) (by positivity)
+  have h5 : 2 * |t| * (2 * exp (2 * B) * |t|) = 4 * exp (2 * B) * t ^ 2 := by
+    rw [← sq_abs t]; ring
+  linarith
+
+/-- The expansion of the potential `φ(t) = exp (2t) - 1 - 2t` around `a`:
+`φ(a + x) = φ(a) + 2 (exp (2a) - 1) x + exp (2a) φ(x)`. -/
+theorem exp_two_mul_add_sub_one_sub_two_mul (a x : ℝ) :
+    exp (2 * (a + x)) - 1 - 2 * (a + x) =
+      (exp (2 * a) - 1 - 2 * a) + 2 * (exp (2 * a) - 1) * x +
+        exp (2 * a) * (exp (2 * x) - 1 - 2 * x) := by
+  rw [mul_add, exp_add]
+  ring
 
 end Real
 
