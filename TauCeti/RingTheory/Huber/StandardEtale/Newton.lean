@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.StandardEtale.TateSeries
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries
 public import TauCeti.RingTheory.Huber.WeightedEval.Newton
 import Mathlib.RingTheory.Jacobson.Ideal
 import TauCeti.RingTheory.Huber.WeightedEval.Continuous

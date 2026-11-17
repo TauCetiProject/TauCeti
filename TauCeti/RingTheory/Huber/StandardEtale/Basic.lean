@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
 public import TauCeti.RingTheory.Huber.QuotientMapping
-public import TauCeti.RingTheory.Huber.StandardEtale.TateSeries
+public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.TateSeries
 import Mathlib.Topology.Algebra.Group.Neighborhood
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
 
@@ -29,8 +29,6 @@ of `C⁺`, and `k` feeds into `TauCeti.Huber.exists_unique_zero_restrictedPowerS
 
 ## Main definitions
 
-* `TauCeti.Huber.tateSeries.jacobianMatrix` and `TauCeti.Huber.tateSeries.jacobian`: the formal
-  `N × N` Jacobian matrix `(∂Fᵢ/∂Tⱼ)` and its determinant in `tateSeries N A`.
 * `TauCeti.Huber.StandardEtalePresentation`: data presenting `(C, C⁺)` as a standard étale quotient
   of `(A⟨T₁, …, T_N⟩, A⁺⟨T₁, …, T_N⟩)` with Jacobian scale `ϖ ^ k`.
 * `TauCeti.Huber.StandardEtalePresentation.toBasePairHom`, `toPairHom`, `quotientToTarget`,
@@ -56,64 +54,6 @@ public section
 open Filter Matrix Topology
 
 namespace TauCeti.Huber
-
-section Jacobian
-
-variable {N : ℕ} {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-
-/-- **The formal Jacobian matrix `(∂Fᵢ/∂Tⱼ)` of an `N`-tuple of restricted series.** -/
-noncomputable def tateSeries.jacobianMatrix (F : Fin N → tateSeries N A) :
-    Matrix (Fin N) (Fin N) (tateSeries N A) :=
-  Matrix.of fun i j ↦ tateSeries.pderiv j (F i)
-
-@[simp]
-theorem tateSeries.jacobianMatrix_apply (F : Fin N → tateSeries N A) (i j : Fin N) :
-    tateSeries.jacobianMatrix F i j = tateSeries.pderiv j (F i) :=
-  (rfl)
-
-/-- **The formal Jacobian determinant `det(∂Fᵢ/∂Tⱼ) ∈ A⟨T₁, …, T_N⟩`.** -/
-noncomputable def tateSeries.jacobian (F : Fin N → tateSeries N A) : tateSeries N A :=
-  (tateSeries.jacobianMatrix F).det
-
-theorem tateSeries.jacobian_def (F : Fin N → tateSeries N A) :
-    tateSeries.jacobian F = (tateSeries.jacobianMatrix F).det :=
-  (rfl)
-
-/-- Coercing `tateSeries.jacobian F` to `MvPowerSeries (Fin N) A` computes the determinant of the
-power-series Jacobian matrix `(MvPowerSeries.pderiv j (F i))`. -/
-@[simp]
-theorem tateSeries.coe_jacobian (F : Fin N → tateSeries N A) :
-    (tateSeries.jacobian F : MvPowerSeries (Fin N) A) =
-      (Matrix.of fun i j ↦ MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)).det := by
-  rw [tateSeries.jacobian_def, ← Subring.subtype_apply, RingHom.map_det, RingHom.mapMatrix_apply]
-  congr 1
-  refine Matrix.ext fun i j ↦ ?_
-  simp [tateSeries.jacobianMatrix]
-
-/-- If each equation `F i` has coefficients in `Aplus`, then so does `tateSeries.jacobian F`. -/
-theorem tateSeries.jacobian_mem_tateSeriesPlus {Aplus : Subring A} {F : Fin N → tateSeries N A}
-    (hF : ∀ i, F i ∈ tateSeriesPlus N A Aplus) :
-    tateSeries.jacobian F ∈ tateSeriesPlus N A Aplus := by
-  let Jplus : Matrix (Fin N) (Fin N) (tateSeriesPlus N A Aplus) :=
-    Matrix.of fun i j ↦ ⟨tateSeries.pderiv j (F i), tateSeries.pderiv_mem_tateSeriesPlus (hF i) j⟩
-  have hdet : ((Jplus.det : tateSeriesPlus N A Aplus) : tateSeries N A) =
-      tateSeries.jacobian F := by
-    rw [← Subring.subtype_apply, RingHom.map_det, RingHom.mapMatrix_apply, tateSeries.jacobian_def]
-    congr 1
-  exact hdet ▸ Jplus.det.2
-
-@[simp]
-theorem tateSeries.jacobian_fin_zero (F : Fin 0 → tateSeries 0 A) :
-    tateSeries.jacobian F = 1 := by
-  rw [tateSeries.jacobian_def]
-  exact Matrix.det_isEmpty
-
-@[simp]
-theorem tateSeries.jacobian_fin_one (F : Fin 1 → tateSeries 1 A) :
-    tateSeries.jacobian F = tateSeries.pderiv 0 (F 0) := by
-  rw [tateSeries.jacobian_def, Matrix.det_fin_one, tateSeries.jacobianMatrix_apply]
-
-end Jacobian
 
 /-- **Standard étale presentation of a Huber `(A, A⁺)`-algebra `(C, C⁺)`** over a complete Hausdorff
 Tate pair `(A, A⁺)` with chosen pseudouniformiser `ϖ ∈ A`: a topological quotient `A`-algebra map

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.StandardEtale.Basic
-public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 
 import Mathlib.Data.Fin.SuccPred
 import Mathlib.Topology.Algebra.Group.Neighborhood
@@ -35,8 +34,6 @@ $k' : \mathbb{N}$, the model quotient of `explicitInverse` automatically carries
   `T_{N'+1} * castSuccAlgHom (jacobian F') - algebraMap A _ (ϖ ^ k')`.
 * `TauCeti.Huber.jacobian_explicitInverse`: the formal Jacobian determinant of
   `explicitInverse A ϖ F' k'` equals `tateSeries.castSuccAlgHom (tateSeries.jacobian F') ^ 2`.
-* `TauCeti.Huber.weightedEvalHom_mem_plus_of_mem_tateSeriesPlus`: evaluating `tateSeriesPlus`
-  along a morphism into a complete Hausdorff Huber pair at elements of `U⁺` lands in `U⁺`.
 * `TauCeti.Huber.StandardEtalePresentation.ofExplicitInverse`: canonical presentation of the model
   quotient pair of `explicitInverse A ϖ F' k'` with scale exponent `2 * k'`.
 * `TauCeti.Huber.StandardEtalePresentation.withInverseHom` and
@@ -218,36 +215,6 @@ theorem ofExplicitInverse_k (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer
 
 end OfExplicitInverse
 
-end StandardEtalePresentation
-
-/-- **Evaluation of `tateSeriesPlus` into a complete Hausdorff Huber pair:** if `z : (A, A⁺) →
-(U, U⁺)` is a morphism of Huber pairs into a complete Hausdorff Huber pair and `b : Fin M → U` has
-entries in `U⁺`, then `weightedEvalHom` carries `tateSeriesPlus M A Aplus.plus` into `U⁺`. -/
-theorem weightedEvalHom_mem_plus_of_mem_tateSeriesPlus
-    {A : Type*} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
-    {Aplus : Pair A}
-    {U : Type*} [CommRing U] [UniformSpace U] [IsUniformAddGroup U] [IsTopologicalRing U]
-    [IsHuberRing U] [CompleteSpace U] [T2Space U]
-    (Uplus : Pair U) (z : Pair.Hom Aplus Uplus) {M : ℕ} {b : Fin M → U}
-    (hb_mem : ∀ i, b i ∈ Uplus.plus)
-    (hb : IsWeightBounded z.toRingHom (fun _ : Fin M ↦ ({1} : Set A)) b)
-    {f : tateSeries M A} (hf : f ∈ tateSeriesPlus M A Aplus.plus) :
-    weightedEvalHom isWeightFamily_one_weight z.continuous_toRingHom.continuousAt hb f ∈
-      Uplus.plus := by
-  have hclosed : IsClosed (Uplus.plus : Set U) :=
-    AddSubgroup.isClosed_of_isOpen Uplus.plus.toAddSubgroup Uplus.isRingOfIntegralElements.isOpen
-  rw [coe_weightedEvalHom]
-  refine hclosed.mem_of_tendsto
-    (hasSum_weightedEval z.continuous_toRingHom.continuousAt hb
-      (mem_weightedRestrictedSubring.mp f.property)) ?_
-  filter_upwards with s
-  refine Uplus.plus.sum_mem fun ν _ ↦ ?_
-  rw [weightedEvalTerm_def]
-  refine Uplus.plus.mul_mem (z.map_mem_plus _ (mem_tateSeriesPlus_iff.mp hf ν)) ?_
-  exact Uplus.plus.prod_mem fun i _ ↦ Uplus.plus.pow_mem (hb_mem i) (ν i)
-
-namespace StandardEtalePresentation
-
 section WithInverse
 
 variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
@@ -318,16 +285,22 @@ theorem continuous_withInverseHom (P : StandardEtalePresentation Aplus ϖ Cplus)
   exact continuous_weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
     P.isWeightBounded_withInverseTuple
 
-private theorem withInverseHom_X_apply
-    (P : StandardEtalePresentation Aplus ϖ Cplus) (j : Fin (P.N + 1)) :
-    P.withInverseHom (tateSeries.X (P.N + 1) A j) = P.withInverseTuple j := by
+private theorem withInverseHom_apply
+    (P : StandardEtalePresentation Aplus ϖ Cplus) (f : tateSeries (P.N + 1) A) :
+    P.withInverseHom f =
+      weightedEval (algebraMap A C) P.withInverseTuple
+        (f : MvPowerSeries (Fin (P.N + 1)) A) := by
   let _ : UniformSpace C := IsTopologicalAddGroup.rightUniformSpace C
   have : IsUniformAddGroup C := isUniformAddGroup_of_addCommGroup
   have : T2Space C := P.t2Space
   have : CompleteSpace C := P.isOpenQuotientMap_π.completeSpace
-  dsimp only [withInverseHom]
-  rw [AlgHom.coe_mk, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, tateSeries.X_eq_weightedX,
-    weightedEvalHom_weightedX]
+  exact coe_weightedEvalHom isWeightFamily_one_weight P.continuous_algebraMap.continuousAt
+    P.isWeightBounded_withInverseTuple f
+
+private theorem withInverseHom_X_apply
+    (P : StandardEtalePresentation Aplus ϖ Cplus) (j : Fin (P.N + 1)) :
+    P.withInverseHom (tateSeries.X (P.N + 1) A j) = P.withInverseTuple j := by
+  rw [P.withInverseHom_apply, tateSeries.coe_X, weightedEval_X]
 
 @[simp]
 theorem withInverseHom_castSuccAlgHom
@@ -505,8 +478,7 @@ noncomputable def withInverse (P : StandardEtalePresentation Aplus ϖ Cplus) :
         have hval : P.withInverseHom.toRingHom f =
             weightedEvalHom isWeightFamily_one_weight
               P.toBasePairHom.continuous_toRingHom.continuousAt hb f := by
-          dsimp only [withInverseHom]
-          rw [RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk, coe_weightedEvalHom,
+          rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, P.withInverseHom_apply,
             coe_weightedEvalHom, P.toBasePairHom_toRingHom]
         rw [hval]
         exact weightedEvalHom_mem_plus_of_mem_tateSeriesPlus Cplus P.toBasePairHom

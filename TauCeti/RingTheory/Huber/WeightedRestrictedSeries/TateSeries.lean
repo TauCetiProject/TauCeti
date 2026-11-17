@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.Determinant.Basic
+public import TauCeti.RingTheory.Huber.WeightedEval.Hom
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PDeriv
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Pair.Polydisc
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
@@ -12,6 +14,7 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Rename
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.GaussValuation
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.NonUnit
 import TauCeti.RingTheory.MvPowerSeries.Derivative
+import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
 /-!
 # Restricted power-series rings `A⟨T₁, …, T_N⟩` and coefficient plus subrings
@@ -23,7 +26,8 @@ variables `TauCeti.Huber.tateSeries.X` and coefficientwise subring
 `TauCeti.Huber.tateSeriesPlus N A Aplus`. When `A` is complete and Hausdorff, `tateSeries N A` is
 complete and Hausdorff, so `TauCeti.Huber.restrictedMvPowerSeriesCompletionEquiv` identifies
 `restrictedMvPowerSeriesCompletion N A` with `tateSeries N A` while retaining termwise formal
-partial derivatives `MvPowerSeries.pderiv`.
+partial derivatives `MvPowerSeries.pderiv` and formal Jacobian determinants
+`TauCeti.Huber.tateSeries.jacobian`.
 
 For a Huber pair `S = (A, A⁺)`, `TauCeti.Huber.tateSeriesPair N A S` is the uncompleted unit-weight
 Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
@@ -35,6 +39,8 @@ Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
 
 * `TauCeti.Huber.tateSeries` and `TauCeti.Huber.tateSeries.X`: `A⟨T₁, …, T_N⟩` and coordinate `Tᵢ`.
 * `TauCeti.Huber.tateSeries.pderiv`: formal partial derivative `∂/∂Tⱼ` on `tateSeries N A`.
+* `TauCeti.Huber.tateSeries.jacobianMatrix` and `TauCeti.Huber.tateSeries.jacobian`: the formal
+  `N × N` Jacobian matrix `(∂Fᵢ/∂Tⱼ)` and its determinant in `tateSeries N A`.
 * `TauCeti.Huber.tateSeries.renameAlgHom`, `TauCeti.Huber.tateSeries.castSuccAlgHom`, and
   `TauCeti.Huber.tateSeries.mapRingHom`: variable renaming, `N ↪ N + 1` inclusion, and base change.
 * `TauCeti.Huber.tateSeriesPlus` and `TauCeti.Huber.tateSeriesPair`: the coefficientwise subring
@@ -44,9 +50,13 @@ Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
 
 * `TauCeti.Huber.mem_tateSeriesPlus_iff` and `TauCeti.Huber.tateSeriesPlus_eq_weightedSubring`:
   `f ∈ tateSeriesPlus N A Aplus` iff every coefficient of `f` lies in `Aplus`.
-* `TauCeti.Huber.tateSeries.pderiv_mem_tateSeriesPlus`: `∂/∂Tⱼ` preserves `tateSeriesPlus`.
+* `TauCeti.Huber.tateSeries.pderiv_mem_tateSeriesPlus` and
+  `TauCeti.Huber.tateSeries.jacobian_mem_tateSeriesPlus`: `∂/∂Tⱼ` and formal Jacobians preserve
+  `tateSeriesPlus`.
 * `TauCeti.Huber.map_symm_tateSeriesPlus_eq_polydiscPlus`: comparison with `S.polydiscPlus N`.
 * `TauCeti.Huber.exists_pow_smul_mem_tateSeriesPlus`: rescaling into an open subring by `ϖ ^ m`.
+* `TauCeti.Huber.weightedEvalHom_mem_plus_of_mem_tateSeriesPlus`: evaluating `tateSeriesPlus`
+  along a morphism into a complete Hausdorff Huber pair at elements of `U⁺` lands in `U⁺`.
 
 ## References
 
@@ -57,7 +67,7 @@ Huber pair `S.weighted isWeightFamily_one_weight`, whose plus ring equals
 
 public section
 
-open Filter Topology UniformSpace
+open Topology UniformSpace
 
 namespace TauCeti.Huber
 
@@ -214,6 +224,60 @@ theorem tateSeries.pderiv_mem_tateSeriesPlus {Aplus : Subring A} {f : tateSeries
   rw [mem_tateSeriesPlus_iff] at hf ⊢
   exact MvPowerSeries.coeff_pderiv_mem hf j
 
+section Jacobian
+
+/-- **The formal Jacobian matrix `(∂Fᵢ/∂Tⱼ)` of an `N`-tuple of restricted series.** -/
+noncomputable def tateSeries.jacobianMatrix (F : Fin N → tateSeries N A) :
+    Matrix (Fin N) (Fin N) (tateSeries N A) :=
+  Matrix.of fun i j ↦ tateSeries.pderiv j (F i)
+
+@[simp]
+theorem tateSeries.jacobianMatrix_apply (F : Fin N → tateSeries N A) (i j : Fin N) :
+    tateSeries.jacobianMatrix F i j = tateSeries.pderiv j (F i) :=
+  (rfl)
+
+/-- **The formal Jacobian determinant `det(∂Fᵢ/∂Tⱼ) ∈ A⟨T₁, …, T_N⟩`.** -/
+noncomputable def tateSeries.jacobian (F : Fin N → tateSeries N A) : tateSeries N A :=
+  (tateSeries.jacobianMatrix F).det
+
+theorem tateSeries.jacobian_def (F : Fin N → tateSeries N A) :
+    tateSeries.jacobian F = (tateSeries.jacobianMatrix F).det :=
+  (rfl)
+
+/-- Coercing `tateSeries.jacobian F` to `MvPowerSeries (Fin N) A` computes the determinant of the
+power-series Jacobian matrix `(MvPowerSeries.pderiv j (F i))`. -/
+@[simp]
+theorem tateSeries.coe_jacobian (F : Fin N → tateSeries N A) :
+    (tateSeries.jacobian F : MvPowerSeries (Fin N) A) =
+      (Matrix.of fun i j ↦ MvPowerSeries.pderiv j (F i : MvPowerSeries (Fin N) A)).det := by
+  rw [tateSeries.jacobian_def, ← Subring.subtype_apply, RingHom.map_det, RingHom.mapMatrix_apply]
+  congr 1
+
+/-- If each equation `F i` has coefficients in `Aplus`, then so does `tateSeries.jacobian F`. -/
+theorem tateSeries.jacobian_mem_tateSeriesPlus {Aplus : Subring A} {F : Fin N → tateSeries N A}
+    (hF : ∀ i, F i ∈ tateSeriesPlus N A Aplus) :
+    tateSeries.jacobian F ∈ tateSeriesPlus N A Aplus := by
+  let Jplus : Matrix (Fin N) (Fin N) (tateSeriesPlus N A Aplus) :=
+    Matrix.of fun i j ↦ ⟨tateSeries.pderiv j (F i), tateSeries.pderiv_mem_tateSeriesPlus (hF i) j⟩
+  have hdet : ((Jplus.det : tateSeriesPlus N A Aplus) : tateSeries N A) =
+      tateSeries.jacobian F := by
+    rw [← Subring.subtype_apply, RingHom.map_det, RingHom.mapMatrix_apply, tateSeries.jacobian_def]
+    congr 1
+  exact hdet ▸ Jplus.det.2
+
+@[simp]
+theorem tateSeries.jacobian_fin_zero (F : Fin 0 → tateSeries 0 A) :
+    tateSeries.jacobian F = 1 := by
+  rw [tateSeries.jacobian_def]
+  exact Matrix.det_isEmpty
+
+@[simp]
+theorem tateSeries.jacobian_fin_one (F : Fin 1 → tateSeries 1 A) :
+    tateSeries.jacobian F = tateSeries.pderiv 0 (F 0) := by
+  rw [tateSeries.jacobian_def, Matrix.det_fin_one, tateSeries.jacobianMatrix_apply]
+
+end Jacobian
+
 /-- **Variable renaming `A⟨T₁, …, T_N⟩ →ₐ[A] A⟨T₁, …, T_M⟩` along an embedding `Fin N ↪ Fin M`.** -/
 noncomputable def tateSeries.renameAlgHom {M : ℕ} (e : Fin N ↪ Fin M) :
     tateSeries N A →ₐ[A] tateSeries M A :=
@@ -361,29 +425,13 @@ theorem exists_pow_smul_mem_tateSeriesPlus {Aplus : Subring A}
     (hopen : IsOpen (Aplus : Set A)) {ϖ : A} (hϖ : IsTopologicallyNilpotent ϖ)
     (f : tateSeries N A) :
     ∃ m : ℕ, ϖ ^ m • f ∈ tateSeriesPlus N A Aplus := by
-  classical
-  let U : OpenAddSubgroup A := ⟨Aplus.toAddSubgroup, hopen⟩
-  have hbad := (mem_weightedRestrictedSubring.mp f.2).finite_coeff_notMem U
-  have hnhds : (Aplus : Set A) ∈ nhds (0 : A) := hopen.mem_nhds Aplus.zero_mem
-  have hev : ∀ ν : hbad.toFinset, ∀ᶠ m in atTop,
-      ϖ ^ m * MvPowerSeries.coeff ν.1 (f : MvPowerSeries (Fin N) A) ∈ Aplus := fun ν ↦ by
-    have hlim : Tendsto (fun m ↦ ϖ ^ m * MvPowerSeries.coeff ν.1 (f : MvPowerSeries (Fin N) A))
-        atTop (nhds 0) := by
-      simpa using hϖ.mul_const (MvPowerSeries.coeff ν.1 (f : MvPowerSeries (Fin N) A))
-    exact hlim.eventually hnhds
-  obtain ⟨m, hm⟩ := ((Filter.eventually_all.mpr hev).and (hϖ.eventually hnhds)).exists
-  refine ⟨m, mem_tateSeriesPlus_iff.mpr fun ν ↦ ?_⟩
-  rw [Algebra.smul_def, MulMemClass.coe_mul, tateSeries.coe_algebraMap, MvPowerSeries.coeff_C_mul]
-  by_cases hν : ν ∈ hbad.toFinset
-  · exact hm.1 ⟨ν, hν⟩
-  · have hmemU : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin N) A) ∈
-        weightMul (fun _ : Fin N ↦ ({1} : Set A)) ν U.toAddSubgroup :=
-      not_not.mp fun h ↦ hν (hbad.mem_toFinset.mpr h)
-    rw [weightMul_one_weight] at hmemU
-    have hmem : MvPowerSeries.coeff ν (f : MvPowerSeries (Fin N) A) ∈ Aplus := hmemU
-    rcases m.eq_zero_or_pos with rfl | _
-    · simpa using hmem
-    · exact Aplus.mul_mem hm.2 hmem
+  obtain ⟨m, hm⟩ := exists_mul_pow_mem_of_isTopologicallyNilpotent
+    (hϖ.map (continuous_weightedC isWeightFamily_one_weight))
+    (isOpen_weightedSubring isWeightFamily_one_weight hopen) f
+  refine ⟨m, ?_⟩
+  rw [tateSeriesPlus_eq_weightedSubring, Algebra.smul_def, mul_comm,
+    algebraMap_weightedRestrictedSubring, map_pow]
+  exact hm
 
 end Nonarchimedean
 
@@ -415,6 +463,24 @@ theorem map_symm_tateSeriesPlus_eq_polydiscPlus (N : ℕ) (S : Pair A)
       S.polydiscPlus N := by
   rw [tateSeriesPlus_eq_weightedSubring, ← S.map_polydiscPlus_equiv N, Subring.map_map]
   ext x; simp
+
+/-- **Evaluation of `tateSeriesPlus` into a complete Hausdorff Huber pair:** if `z : (A, A⁺) →
+(U, U⁺)` is a morphism of Huber pairs into a complete Hausdorff Huber pair and `b : Fin M → U` has
+entries in `U⁺`, then `weightedEvalHom` carries `tateSeriesPlus M A Aplus.plus` into `U⁺`. -/
+theorem weightedEvalHom_mem_plus_of_mem_tateSeriesPlus
+    {Aplus : Pair A}
+    {U : Type*} [CommRing U] [UniformSpace U] [IsUniformAddGroup U] [IsTopologicalRing U]
+    [IsHuberRing U] [CompleteSpace U] [T2Space U]
+    (Uplus : Pair U) (z : Pair.Hom Aplus Uplus) {M : ℕ} {b : Fin M → U}
+    (hb_mem : ∀ i, b i ∈ Uplus.plus)
+    (hb : IsWeightBounded z.toRingHom (fun _ : Fin M ↦ ({1} : Set A)) b)
+    {f : tateSeries M A} (hf : f ∈ tateSeriesPlus M A Aplus.plus) :
+    weightedEvalHom isWeightFamily_one_weight z.continuous_toRingHom.continuousAt hb f ∈
+      Uplus.plus := by
+  have hclosed : IsClosed (Uplus.plus : Set U) :=
+    AddSubgroup.isClosed_of_isOpen Uplus.plus.toAddSubgroup Uplus.isRingOfIntegralElements.isOpen
+  rw [coe_weightedEvalHom]
+  exact weightedEval_mem hclosed (fun ν ↦ z.map_mem_plus _ (mem_tateSeriesPlus_iff.mp hf ν)) hb_mem
 
 end HuberPair
 
