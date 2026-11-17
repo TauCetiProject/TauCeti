@@ -30,7 +30,7 @@ from the Smith-normal-form integral-matrix scaling of
   (`MeasureTheory.Measure.addHaar_image_linearMap_of_isNonarchimedeanLocalField`);
 * for `T : V ≃ₗ[E] V`, `Measure.map T μ = |det T|_E⁻¹ • μ`
   (`MeasureTheory.Measure.map_linearEquiv_addHaar`), and `distribHaarChar V T = |det T|_E`
-  (`TauCeti.distribHaarChar_linearEquiv`);
+  (`LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`);
 * scalar multiplication by `c : E` scales `μ` by `|c|_E ^ finrank E V`
   (`MeasureTheory.Measure.addHaar_smul_module_of_isNonarchimedeanLocalField`,
   `MeasureTheory.Measure.addHaar_preimage_smul_module_of_isNonarchimedeanLocalField`,
@@ -70,8 +70,9 @@ for any `T ∈ GL(L)`).
   `MeasureTheory.Measure.map_continuousLinearMap_addHaar`,
   `MeasureTheory.Measure.map_smul_module_addHaar`: linear and scalar-dilation change of variables
   on `V`.
-* `TauCeti.distribHaarChar_linearEquiv`, `TauCeti.distribHaarChar_generalLinearGroup`,
-  `TauCeti.distribHaarChar_continuousLinearMapUnits`: `distribHaarChar V T = |det T|_E`.
+* `LinearEquiv.distribHaarChar_eq_normalizedAbsoluteValue_det`,
+  `LinearMap.GeneralLinearGroup.distribHaarChar_eq_normalizedAbsoluteValue_det`,
+  `Units.distribHaarChar_eq_normalizedAbsoluteValue_det`: `distribHaarChar V T = |det T|_E`.
 * `Submodule.IsLattice.map_linearEquiv_addHaar_of_mem_stabilizer`,
   `Module.Basis.map_localAddHaar`, `Module.Basis.localAddHaar_eq_smul`,
   `Module.Basis.localAddHaar_eq_of_valuation_det_eq_one`: invariance under `GL(L)`, transport along
@@ -511,18 +512,20 @@ end ProdChecks
 
 end MeasureTheory.Measure
 
-namespace TauCeti
-
 section DistribHaarCharModule
+
+open TauCeti
 
 variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E] [AddCommGroup V] [Module E V] [Module.Finite E V]
   [TopologicalSpace V] [IsTopologicalAddGroup V] [LocallyCompactSpace V] [IsModuleTopology E V]
 
+namespace LinearEquiv
+
 /-- **Distributive Haar character of a linear equivalence.** On a finite-dimensional `E`-vector
 space `V` with its module topology, `distribHaarChar V T = |det T|_E` for every `T : V ≃ₗ[E] V`. -/
 @[simp, grind =]
-theorem distribHaarChar_linearEquiv (T : V ≃ₗ[E] V) :
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det (T : V ≃ₗ[E] V) :
     distribHaarChar V T =
       (normalizedAbsoluteValue E (LinearMap.det (T : V →ₗ[E] V)) : ℝ≥0) := by
   borelize V
@@ -534,10 +537,14 @@ theorem distribHaarChar_linearEquiv (T : V ≃ₗ[E] V) :
     simp [mem_smul_set, LinearEquiv.smul_def]
   rw [hsmul, addHaar_image_linearEquiv_of_isNonarchimedeanLocalField]
 
+end LinearEquiv
+
+namespace LinearMap.GeneralLinearGroup
+
 /-- **Distributive Haar character on `GL(V)`.** Every `g : LinearMap.GeneralLinearGroup E V` has
 `distribHaarChar V g = |det g|_E`. -/
 @[simp, grind =]
-theorem distribHaarChar_generalLinearGroup (g : LinearMap.GeneralLinearGroup E V) :
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det (g : LinearMap.GeneralLinearGroup E V) :
     distribHaarChar V g =
       (normalizedAbsoluteValue E (LinearMap.det (g : V →ₗ[E] V)) : ℝ≥0) := by
   let T : V ≃ₗ[E] V := LinearMap.GeneralLinearGroup.toLinearEquiv g
@@ -546,12 +553,16 @@ theorem distribHaarChar_generalLinearGroup (g : LinearMap.GeneralLinearGroup E V
     simp [T]
   rw [distribHaarChar_eq_of_smul_eq (h := T) fun v ↦ by
       simp [T, Units.smul_def, LinearEquiv.smul_def],
-    distribHaarChar_linearEquiv (E := E) T, hcoe]
+    T.distribHaarChar_eq_normalizedAbsoluteValue_det, hcoe]
+
+end LinearMap.GeneralLinearGroup
+
+namespace Units
 
 /-- **Distributive Haar character of continuous linear units.** Every `u : (V →L[E] V)ˣ` has
 `distribHaarChar V u = |det u|_E`. -/
 @[simp, grind =]
-theorem distribHaarChar_continuousLinearMapUnits (u : (V →L[E] V)ˣ) :
+theorem distribHaarChar_eq_normalizedAbsoluteValue_det (u : (V →L[E] V)ˣ) :
     distribHaarChar V u =
       (normalizedAbsoluteValue E (LinearMap.det ((u : V →L[E] V) : V →ₗ[E] V)) : ℝ≥0) := by
   let T : V ≃ₗ[E] V := (ContinuousLinearEquiv.unitsEquiv E V u).toLinearEquiv
@@ -560,11 +571,11 @@ theorem distribHaarChar_continuousLinearMapUnits (u : (V →L[E] V)ˣ) :
     simp [T]
   rw [distribHaarChar_eq_of_smul_eq (h := T) fun v ↦ by
       simp [T, Units.smul_def, LinearEquiv.smul_def],
-    distribHaarChar_linearEquiv (E := E) T, hcoe]
+    T.distribHaarChar_eq_normalizedAbsoluteValue_det, hcoe]
+
+end Units
 
 end DistribHaarCharModule
-
-end TauCeti
 
 /-! ### Lattice-normalized and basis-normalized Haar measures -/
 

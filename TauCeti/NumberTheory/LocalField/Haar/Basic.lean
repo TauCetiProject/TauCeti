@@ -56,7 +56,7 @@ sibling modules (`TauCeti.NumberTheory.LocalField.Haar.Padic`,
 * `TauCeti.localAddHaar_image_maximalIdeal_pow`, `TauCeti.localAddHaar_setOf_valuation_eq_one`:
   `𝓂[E] ^ n` has normalized measure `q ^ (-n)` and the unit sphere `{x : E | valuation E x = 1}`
   has normalized measure `1 - q⁻¹`.
-* `TauCeti.distribHaarChar_eq_normalizedAbsoluteValue`, `TauCeti.distribHaarChar_eq_zpow`:
+* `Units.distribHaarChar_eq_normalizedAbsoluteValue`, `Units.distribHaarChar_eq_zpow`:
   `MeasureTheory.distribHaarChar E a = |a|_E = q ^ (-v_E(a))` for `a ∈ Eˣ`.
 * `MeasureTheory.Measure.addHaar_image_mul_left`, `MeasureTheory.Measure.map_mul_left_addHaar`,
   `MeasureTheory.Measure.map_units_mul_left_addHaar`: image and pushforward scaling of any additive
@@ -258,9 +258,13 @@ theorem existsUnique_regular_addHaar_integer (E : Type*) [Ring E] [ValuativeRel 
 
 end Uniqueness
 
+end TauCeti
+
 section LocalHaarCharacter
 
 variable {E : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
+
+namespace TauCeti
 
 section Borel
 
@@ -298,28 +302,16 @@ theorem localAddHaar_setOf_valuation_eq_one :
 
 end Borel
 
-/-- **Character of a valuation-ring unit.** Every unit `u ∈ 𝒪[E]ˣ` has distributive Haar character
-`1` on `E`. -/
-@[simp, grind =]
-theorem distribHaarChar_integerUnits (u : 𝒪[E]ˣ) :
-    distribHaarChar E (Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u) = 1 := by
-  borelize E
-  set u' : Eˣ := Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u
-  have hsmul : u' • (𝒪[E] : Set E) = (𝒪[E] : Set E) := by
-    ext x
-    simp only [mem_smul_set, Units.smul_def, smul_eq_mul, SetLike.mem_coe, u',
-      Units.coe_map, MonoidHom.coe_ofClass, Subring.subtype_apply]
-    refine ⟨fun ⟨y, hy, hxy⟩ ↦ hxy ▸ mul_mem u.val.2 hy, fun hx ↦ ?_⟩
-    refine ⟨(((u⁻¹ : 𝒪[E]ˣ) : 𝒪[E]) : E) * x, mul_mem (u⁻¹ : 𝒪[E]ˣ).val.2 hx, ?_⟩
-    rw [← mul_assoc, ← Subring.coe_mul, Units.mul_inv, OneMemClass.coe_one, one_mul]
-  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := localAddHaar E) (s := (𝒪[E] : Set E))
-    (by simp) (by simp) ?_
-  rw [hsmul, ENNReal.coe_one, one_mul]
+end TauCeti
+
+namespace Irreducible
+
+open TauCeti
 
 /-- An irreducible element `π` of `𝒪[E]` viewed as a unit of `E` has distributive Haar character
 `q⁻¹`. -/
 @[simp, grind =]
-theorem distribHaarChar_irreducible {π : 𝒪[E]} (hπ : Irreducible π) :
+theorem distribHaarChar_unitsMk0 {π : 𝒪[E]} (hπ : Irreducible π) :
     distribHaarChar E (Units.mk0 (π : E) fun h ↦ hπ.ne_zero (Subtype.ext h)) =
       (Nat.card 𝓀[E] : ℝ≥0)⁻¹ := by
   borelize E
@@ -333,6 +325,30 @@ theorem distribHaarChar_irreducible {π : 𝒪[E]} (hπ : Irreducible π) :
   rw [hsmul, localAddHaar_image_maximalIdeal_pow, pow_one, localAddHaar_integer, mul_one,
     ENNReal.coe_inv (Nat.cast_ne_zero.2 Nat.card_pos.ne'), ENNReal.coe_natCast]
 
+end Irreducible
+
+namespace Units
+
+open TauCeti
+
+/-- **Character of a valuation-ring unit.** Every unit `u ∈ 𝒪[E]ˣ` has distributive Haar character
+`1` on `E`. -/
+@[simp, grind =]
+theorem distribHaarChar_map_subtype_eq_one (u : 𝒪[E]ˣ) :
+    distribHaarChar E (Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u) = 1 := by
+  borelize E
+  set u' : Eˣ := Units.map (Subring.subtype 𝒪[E] : 𝒪[E] →* E) u
+  have hsmul : u' • (𝒪[E] : Set E) = (𝒪[E] : Set E) := by
+    ext x
+    simp only [mem_smul_set, Units.smul_def, _root_.smul_eq_mul, SetLike.mem_coe, u',
+      Units.coe_map, MonoidHom.coe_ofClass, Subring.subtype_apply]
+    refine ⟨fun ⟨y, hy, hxy⟩ ↦ hxy ▸ mul_mem u.val.2 hy, fun hx ↦ ?_⟩
+    refine ⟨(((u⁻¹ : 𝒪[E]ˣ) : 𝒪[E]) : E) * x, mul_mem (u⁻¹ : 𝒪[E]ˣ).val.2 hx, ?_⟩
+    rw [← mul_assoc, ← Subring.coe_mul, Units.mul_inv, OneMemClass.coe_one, one_mul]
+  refine distribHaarChar_eq_of_measure_smul_eq_mul (μ := localAddHaar E) (s := (𝒪[E] : Set E))
+    (by simp) (by simp) ?_
+  rw [hsmul, ENNReal.coe_one, one_mul]
+
 /-- **Local Haar character formula (power form).** For a nonarchimedean local field `E` with
 residue field of cardinality `q = Nat.card 𝓀[E]`, left multiplication by `a ∈ Eˣ` has distributive
 Haar character `q ^ (-v_E(a))`. -/
@@ -341,7 +357,7 @@ theorem distribHaarChar_eq_zpow (a : Eˣ) :
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[E]
   conv_lhs => rw [← (unitsEquivProd hπ).symm_apply_apply a]
   rw [unitsEquivProd_symm_apply, unitsProdHom_apply, map_mul, map_zpow,
-    distribHaarChar_irreducible hπ, distribHaarChar_integerUnits, mul_one, fst_unitsEquivProd,
+    hπ.distribHaarChar_unitsMk0, distribHaarChar_map_subtype_eq_one, mul_one, fst_unitsEquivProd,
     inv_zpow, ← zpow_neg]
 
 /-- **Local Haar character equals normalized absolute value.** For every `a ∈ Eˣ`,
@@ -349,35 +365,39 @@ theorem distribHaarChar_eq_zpow (a : Eˣ) :
 @[grind =]
 theorem distribHaarChar_eq_normalizedAbsoluteValue (a : Eˣ) :
     distribHaarChar E a = (normalizedAbsoluteValue E (a : E) : ℝ≥0) := by
-  rw [distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe]
+  rw [a.distribHaarChar_eq_zpow, normalizedAbsoluteValue_coe]
   push_cast
   rfl
-
-/-- **Character of a uniformizer.** Any uniformizer `ϖ ∈ Eˣ` has distributive Haar character
-`q⁻¹`, where `q = Nat.card 𝓀[E]`. -/
-theorem distribHaarChar_of_isUniformizer {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
-    distribHaarChar E ϖ = (Nat.card 𝓀[E] : ℝ≥0)⁻¹ := by
-  rw [distribHaarChar_eq_zpow, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_neg_one]
 
 /-- A unit `a ∈ Eˣ` has distributive Haar character `1` if and only if its normalized valuation is
 trivial, i.e., `a` is a unit of `𝒪[E]`. -/
 @[simp, grind =]
 theorem distribHaarChar_eq_one_iff (a : Eˣ) :
     distribHaarChar E a = 1 ↔ normalizedValuation E a = 1 := by
-  rw [distribHaarChar_eq_normalizedAbsoluteValue]
+  rw [a.distribHaarChar_eq_normalizedAbsoluteValue]
   norm_cast
   rw [normalizedAbsoluteValue_eq_one_iff, ← normalizedValuation_eq_one_iff]
+
+end Units
+
+namespace TauCeti
+
+/-- **Character of a uniformizer.** Any uniformizer `ϖ ∈ Eˣ` has distributive Haar character
+`q⁻¹`, where `q = Nat.card 𝓀[E]`. -/
+theorem distribHaarChar_of_isUniformizer {ϖ : Eˣ} (hϖ : IsUniformizer E ϖ) :
+    distribHaarChar E ϖ = (Nat.card 𝓀[E] : ℝ≥0)⁻¹ := by
+  rw [ϖ.distribHaarChar_eq_zpow, (isUniformizer_def ϖ).1 hϖ, toAdd_ofAdd, zpow_neg_one]
 
 /-- Every element of the depth-zero unit filtration `U(E, 0) = 𝒪[E]ˣ` has distributive Haar
 character `1`. -/
 @[grind =]
 theorem distribHaarChar_eq_one_of_mem_unitFiltration_zero {u : Eˣ} (hu : u ∈ unitFiltration E 0) :
     distribHaarChar E u = 1 :=
-  (distribHaarChar_eq_one_iff u).2 (normalizedValuation_coe_unitFiltration_zero (K := E) ⟨u, hu⟩)
-
-end LocalHaarCharacter
+  u.distribHaarChar_eq_one_iff.2 (normalizedValuation_coe_unitFiltration_zero (K := E) ⟨u, hu⟩)
 
 end TauCeti
+
+end LocalHaarCharacter
 
 namespace MeasureTheory.Measure
 
@@ -402,7 +422,7 @@ theorem addHaar_smul_of_isNonarchimedeanLocalField (a : E) (s : Set E) :
     have hsmul : a • s = u • s := by
       ext x
       simp [u, mem_smul_set, Units.smul_mk0]
-    rw [hsmul, ← distribHaarChar_mul μ u s, distribHaarChar_eq_normalizedAbsoluteValue,
+    rw [hsmul, ← distribHaarChar_mul μ u s, u.distribHaarChar_eq_normalizedAbsoluteValue,
       Units.val_mk0]
 
 /-- Left multiplication by `a : E` multiplies the additive Haar measure of any subset of `E` by

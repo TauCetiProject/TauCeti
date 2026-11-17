@@ -60,6 +60,6 @@ norm `‖a‖₊`. -/
 @[simp, grind =]
 theorem distribHaarChar_eq_nnnorm {p : ℕ} [Fact p.Prime] (a : ℚ_[p]ˣ) :
     distribHaarChar ℚ_[p] a = ‖(a : ℚ_[p])‖₊ := by
-  rw [TauCeti.distribHaarChar_eq_normalizedAbsoluteValue, normalizedAbsoluteValue_eq_nnnorm]
+  rw [a.distribHaarChar_eq_normalizedAbsoluteValue, normalizedAbsoluteValue_eq_nnnorm]
 
 end Padic

@@ -73,7 +73,7 @@ with `‖a‖₊` for the pinned norm using `Ideal.absNorm v.asIdeal`. -/
 theorem distribHaarChar_adicCompletion [Ring.HasFiniteQuotients R] [Finite (R ⧸ v.asIdeal)]
     (a : (v.adicCompletion K)ˣ) :
     distribHaarChar (v.adicCompletion K) a = ‖(a : v.adicCompletion K)‖₊ := by
-  rw [distribHaarChar_eq_normalizedAbsoluteValue,
+  rw [a.distribHaarChar_eq_normalizedAbsoluteValue,
     v.normalizedAbsoluteValue_adicCompletion_eq_nnnorm]
 
 /-- Any uniformizer `ϖ` of `v.adicCompletion K` has distributive Haar character

@@ -366,11 +366,10 @@ theorem normalizedAbsoluteValue_adicCompletion_eq_nnnorm [Ring.HasFiniteQuotient
       (-(TauCeti.normalizedValuation (v.adicCompletion K) (Units.mk0 x hx)).toAdd) := by
     have h := v.normalizedValuationWithZero_adicCompletion (K := K) (Units.mk0 x hx)
     rw [TauCeti.normalizedValuationWithZero_coe, Units.val_mk0] at h
-    rw [← inv_inv (Valued.v x), ← h, ← WithZero.coe_inv]
-    rfl
+    rw [← inv_inv (Valued.v x), ← h, WithZero.exp_neg, WithZero.exp_eq_coe_ofAdd, ofAdd_toAdd]
   apply NNReal.coe_injective
-  change (TauCeti.normalizedAbsoluteValue (v.adicCompletion K) x : ℝ) = ‖x‖
-  rw [TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx, NumberField.FinitePlace.norm_def, hv,
+  rw [coe_nnNorm, TauCeti.normalizedAbsoluteValue_apply_ne_zero x hx,
+    NumberField.FinitePlace.norm_def, hv,
     WithZeroMulInt.toNNReal_neg_apply _ WithZero.exp_ne_zero, WithZero.log_exp,
     v.natCard_residueField_adicCompletion_eq_absNorm]
   simp
