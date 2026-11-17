@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Category.Basic
+public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.ContinuousMap.Basic
 
 /-!
@@ -16,11 +17,19 @@ carrier for constructions that need a distinguished point of the space itself, s
 and based mapping spaces. `TauCeti.BasedTopologicalSpace.Hom` is the type of
 continuous maps preserving the basepoint.
 
+A based space `X` gives the topological pair `(X, *)` whose subspace is the one-point space
+mapped to the basepoint (`TauCeti.BasedTopologicalSpace.toTopPair`). Relative invariants of this
+pair, such as the relative groups of a homology theory, are the reduced invariants of `X`.
+Adding a disjoint basepoint to a space `X` gives the based space `X₊ = * ⊔ X`
+(`TauCeti.BasedTopologicalSpace.addBasepoint`).
+
 ## Main declarations
 
 * `TauCeti.BasedTopologicalSpace`: a topological space with a basepoint.
 * `TauCeti.BasedTopologicalSpace.Hom`: basepoint-preserving continuous maps, with `Hom.id` and
   `Hom.comp`, forming a category.
+* `TauCeti.BasedTopologicalSpace.toTopPair`: the functor `X ↦ (X, *)` to topological pairs.
+* `TauCeti.BasedTopologicalSpace.addBasepoint`: the functor `X ↦ X₊` adding a disjoint basepoint.
 -/
 
 public section
@@ -142,6 +151,35 @@ theorem id_eq_hom_id (X : BasedTopologicalSpace.{u}) : (𝟙 X : X ⟶ X) = Hom.
 theorem comp_eq_hom_comp {X Y Z : BasedTopologicalSpace.{u}} (f : X ⟶ Y) (g : Y ⟶ Z) :
     f ≫ g = Hom.comp g f :=
   rfl
+
+/-- The topological pair `(X, *)` of a based space: the one-point space, embedded at the
+basepoint, as a subspace of `X`. A based map is a map of pairs which is the identity on the
+point.
+
+This is a reducible definition built from the structure constructors, so that the ambient space
+of `(X, *)` is `X` and its subspace is the point up to reducible unfolding. -/
+abbrev toTopPair : BasedTopologicalSpace.{u} ⥤ TopPair.{u} where
+  obj X :=
+    { left := TopCat.of PUnit.{u + 1}
+      right := TopCat.of X.carrier
+      hom := TopCat.ofHom (ContinuousMap.const _ X.basepoint)
+      prop := Topology.IsEmbedding.of_subsingleton (X := PUnit.{u + 1}) _ }
+  map f :=
+    { left := 𝟙 _
+      right := TopCat.ofHom f.toContinuousMap
+      w := by ext; exact f.map_basepoint.symm
+      prop_hom_left := trivial
+      prop_hom_right := trivial }
+
+/-- The space `X₊ = * ⊔ X` obtained by adding a disjoint basepoint to a space `X`. Like
+`toTopPair`, it is reducible, so that the carrier of `X₊` is `PUnit ⊕ X` up to reducible
+unfolding. -/
+@[simps]
+abbrev addBasepoint : TopCat.{u} ⥤ BasedTopologicalSpace.{u} where
+  obj X := ⟨PUnit.{u + 1} ⊕ X, Sum.inl PUnit.unit⟩
+  map f := ⟨⟨Sum.map id f, by fun_prop⟩, rfl⟩
+  map_id _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
+  map_comp _ _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
 
 end BasedTopologicalSpace
 
