@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.MvPolynomial.Eval
 public import Mathlib.Algebra.Ring.ULift
 public import Mathlib.AlgebraicGeometry.EllipticCurve.VariableChange
+import Mathlib.Algebra.CharP.Algebra
 
 /-!
 # The coordinate algebra of Weierstrass changes of variables
@@ -67,6 +68,28 @@ of admissible changes of variables of Weierstrass curves. -/
 abbrev ChangeRing : Type _ := Localization.Away (X 0 : MvPolynomial (Fin 4) B)
 
 namespace ChangeRing
+
+/-- `B[u, u⁻¹, r, s, t]` is a domain when `B` is. -/
+instance isDomain [IsDomain B] : IsDomain (ChangeRing B) :=
+  Localization.Away.isDomain (X_ne_zero 0)
+
+/-- The localization map `B[u, r, s, t] → B[u, u⁻¹, r, s, t]` is injective, since `u` is not a
+zero divisor. -/
+instance faithfulSMul_mvPolynomial : FaithfulSMul (MvPolynomial (Fin 4) B) (ChangeRing B) :=
+  (faithfulSMul_iff_algebraMap_injective _ _).2 <|
+    IsLocalization.injective _ (Submonoid.powers_le.2 (isRegular_X (n := 0)).mem_nonZeroDivisors)
+
+/-- The coefficient map `B → B[u, u⁻¹, r, s, t]` is injective. -/
+instance faithfulSMul : FaithfulSMul B (ChangeRing B) :=
+  .trans B (MvPolynomial (Fin 4) B) (ChangeRing B)
+
+/-- `B[u, u⁻¹, r, s, t]` has characteristic `p` when `B` has. -/
+instance charP (p : ℕ) [CharP B p] : CharP (ChangeRing B) p :=
+  charP_of_injective_algebraMap' B p
+
+/-- `B[u, u⁻¹, r, s, t]` has characteristic zero when `B` has. -/
+instance charZero [CharZero B] : CharZero (ChangeRing B) :=
+  CharP.charP_to_charZero (ChangeRing B)
 
 variable (B) in
 /-- The universal change of variables `(u, r, s, t)` over `B[u, u⁻¹, r, s, t]`. -/
