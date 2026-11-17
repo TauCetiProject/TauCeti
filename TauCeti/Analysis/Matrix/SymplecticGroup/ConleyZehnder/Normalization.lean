@@ -1,0 +1,443 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Matrix.SymplecticGroup.ConleyZehnder
+public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
+import Mathlib.Analysis.Calculus.DSlope
+import Mathlib.Analysis.Normed.Algebra.MatrixExponential
+import Mathlib.Analysis.SpecialFunctions.Exponential
+import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
+import TauCeti.Analysis.Normed.Operator.Exponential
+
+/-!
+# The normalization of the Conley–Zehnder index
+
+The Conley–Zehnder index `TauCeti.GLSymplectic.conleyZehnderIndex` of a path of symplectic matrices
+is minus the Robbin–Salamon index of its graphs relative to the diagonal. This file computes it for
+paths that never meet the eigenvalue `-1`, and deduces the normalization axiom: for every
+sufficiently small nondegenerate symmetric matrix `S`, the path `t ↦ exp (t J S)`, `t ∈ [0, 1]`,
+has index `-signature(S) / 2`
+(`TauCeti.GLSymplectic.eventually_conleyZehnderIndex_eq_neg_signature_div_two`). With
+`S = diag (α, α)` this recovers the computation on rotations
+`TauCeti.GLSymplectic.conleyZehnderIndex_map_ofUnitary_eq_neg_sum_sign_of_rotation`, which covers
+the diagonal matrices of this form; here `S` is an arbitrary symmetric matrix, in particular a
+Hessian that is not diagonalized by a symplectic basis.
+
+## Paths avoiding `-1`
+
+The diagonal straightening `T` sends the graph of a real matrix `Ψ` to the real span of
+`(Ψ + 1) + i (-J (Ψ - 1))`. If `Ψ` is symplectic and `Ψ + 1` is invertible, this is the graph
+`{x + i A x}` of the symmetric matrix
+
+`A = (Ψ + 1)⁻ᵀ (Ψᵀ J - J Ψ) (Ψ + 1)⁻¹`,
+
+the Cayley transform of `Ψ`, since `Ψᵀ J Ψ = J` gives `(Ψ + 1)ᵀ (-J (Ψ - 1)) = Ψᵀ J - J Ψ`. The
+localization axiom `Matrix.UnitaryGroup.maslovIndex_eq_signature_sub_of_souriau_eq_cayley` then
+computes the index of a path `γ` none of whose matrices has eigenvalue `-1` from its endpoints,
+and Sylvester's law of inertia removes the congruence by `(Ψ + 1)⁻¹`:
+
+`CZ(γ) = (signature (Ψ₀ᵀ J - J Ψ₀) - signature (Ψ₁ᵀ J - J Ψ₁)) / 2`, `Ψᵢ = γ i`
+
+(`TauCeti.GLSymplectic.conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one`). At `Ψ = 1` the
+matrix `Ψᵀ J - J Ψ` vanishes.
+
+## The path `exp (t J S)`
+
+Let `K = J S` with `‖2 K‖ < log 2` for the operator norm. For `|u| ≤ 1` the vectors fixed by
+`exp (2 u K)` are then the kernel of `u K` (`ContinuousLinearMap.exp_apply_eq_self_iff`). This
+shows that `exp (u K)` never has the eigenvalue `-1`, and that
+`Ψ_uᵀ J - J Ψ_u = J (exp (-u K) - exp (u K))`, `Ψ_u = exp (u K)`, is nondegenerate for
+`0 < |u| ≤ 1` when `S` is. Divided by `u`, these matrices tend to their derivative
+`Kᵀ J - J K = 2 S` at `u = 0`, so they form a continuous path of nondegenerate symmetric matrices
+from `2 S` to `Ψ₁ᵀ J - J Ψ₁` along which the signature is constant
+(`Matrix.IsHermitian.eventually_signature_eq_of_continuousAt`). Hence
+`signature (Ψ₁ᵀ J - J Ψ₁) = signature S`, and the index is `-signature(S) / 2`.
+
+## References
+
+* J. Robbin and D. Salamon, *The Maslov index for paths*, Topology **32** (1993), 827–844,
+  Section 4 (the Conley–Zehnder index as the index of graphs relative to the diagonal, and its
+  normalization on `exp (t J S)`).
+* D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
+  Math. Ser. 7 (1999), Lecture 2 (the axioms of the Conley–Zehnder index, including the
+  normalization for symmetric `S` with `‖S‖ < 2π`).
+-/
+
+public section
+
+open Matrix Matrix.GeneralLinearGroup Matrix.UnitaryGroup Complex
+open scoped unitInterval Topology
+open Filter
+
+namespace TauCeti
+
+namespace GLSymplectic
+
+variable {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The straightened graph frame of a real matrix `Ψ` is
+`(1/√2) ((Ψ + 1) + i (-J (Ψ - 1)))`. -/
+private theorem diagonalStraightening_mul_graphFrame_eq (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    diagonalStraightening n * graphFrame Ψ = ((√2 : ℝ) : ℂ)⁻¹ •
+      ((Ψ + 1).map ((↑) : ℝ → ℂ) + Complex.I • (-(J n ℝ * (Ψ - 1))).map ((↑) : ℝ → ℂ)) := by
+  refine ext_of_mulVec_single fun j ↦ ?_
+  have hx : (Pi.single j 1 : n ⊕ n → ℂ) =
+      fun k ↦ (((Pi.single j (1 : ℝ) : n ⊕ n → ℝ) k : ℝ) : ℂ) := by
+    ext k
+    by_cases hk : k = j
+    · subst hk; simp
+    · simp [hk]
+  rw [hx, ← mulVec_mulVec, graphFrame_mulVec]
+  generalize (Pi.single j (1 : ℝ) : n ⊕ n → ℝ) = x
+  have hmap (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) (k : n ⊕ n) :
+      (A.map ((↑) : ℝ → ℂ) *ᵥ fun k ↦ (x k : ℂ)) k = ((A *ᵥ x) k : ℂ) := by
+    simp [mulVec, dotProduct]
+  have hJ : ((J n ℝ * (Ψ - 1)) *ᵥ x) = J n ℝ *ᵥ (Ψ *ᵥ x - x) := by
+    rw [← mulVec_mulVec, sub_mulVec, one_mulVec]
+  ext (i | i) <;>
+    simp only [smul_mulVec, add_mulVec, Pi.smul_apply, Pi.add_apply, hmap, neg_mulVec, Pi.neg_apply,
+      diagonalStraightening_def, fromBlocks_mulVec, hJ, one_mulVec] <;>
+    simp [J, fromBlocks_mulVec, neg_mulVec, one_mulVec]
+  · ring
+  · linear_combination (-(x (Sum.inr i) : ℂ) - ((Ψ *ᵥ x) (Sum.inr i) : ℂ)) * I_sq
+
+/-- The symmetric matrix `(Ψ + 1)⁻ᵀ (Ψᵀ J - J Ψ) (Ψ + 1)⁻¹` whose graph is the straightened graph
+of `Ψ`, when `Ψ` is symplectic and `Ψ + 1` is invertible. -/
+private noncomputable def graphSymm (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ :=
+  ((Ψ + 1)⁻¹)ᵀ * (Ψᵀ * J n ℝ - J n ℝ * Ψ) * (Ψ + 1)⁻¹
+
+private theorem transpose_transpose_mul_J_sub_J_mul (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (Ψᵀ * J n ℝ - J n ℝ * Ψ)ᵀ = Ψᵀ * J n ℝ - J n ℝ * Ψ := by
+  simp only [transpose_sub, transpose_mul, transpose_transpose, J_transpose, Matrix.neg_mul,
+    Matrix.mul_neg]
+  abel
+
+private theorem isHermitian_graphSymm (Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+    (graphSymm Ψ).IsHermitian := by
+  rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, graphSymm, transpose_mul, transpose_mul,
+    transpose_transpose, transpose_transpose_mul_J_sub_J_mul, Matrix.mul_assoc]
+
+private theorem graphSymm_mul {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hΨ : Ψ ∈ symplecticGroup n ℝ)
+    (h : IsUnit (Ψ + 1).det) : graphSymm Ψ * (Ψ + 1) = -(J n ℝ * (Ψ - 1)) := by
+  have hD : Ψᵀ * J n ℝ - J n ℝ * Ψ = (Ψ + 1)ᵀ * -(J n ℝ * (Ψ - 1)) := by
+    rw [transpose_add, transpose_one]
+    simp only [Matrix.add_mul, Matrix.mul_neg, Matrix.mul_sub, Matrix.one_mul, Matrix.mul_one,
+      ← Matrix.mul_assoc, SymplecticGroup.mem_iff'.1 hΨ]
+    abel
+  rw [graphSymm, Matrix.mul_assoc, nonsing_inv_mul _ h, Matrix.mul_one, hD, ← Matrix.mul_assoc,
+    ← transpose_mul, mul_nonsing_inv _ h, transpose_one, Matrix.one_mul]
+
+private theorem signature_graphSymm {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ} (h : IsUnit (Ψ + 1).det) :
+    signature (graphSymm Ψ) = signature (Ψᵀ * J n ℝ - J n ℝ * Ψ) := by
+  have := signature_congr (P := ((Ψ + 1)⁻¹)ᵀ)
+    (by rw [det_transpose]; exact isUnit_nonsing_inv_det _ h) (Ψᵀ * J n ℝ - J n ℝ * Ψ)
+  rwa [transpose_transpose] at this
+
+/-- The frame `1 + i A` of the graph of a real symmetric matrix is Lagrangian. -/
+private theorem map_im_conjTranspose_mul_self_one_add_I_smul {A : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hA : A.IsHermitian) :
+    ((1 + Complex.I • A.map ((↑) : ℝ → ℂ))ᴴ * (1 + Complex.I • A.map ((↑) : ℝ → ℂ))).map
+      Complex.im = 0 := by
+  have hAc := hA.map_ofReal
+  have h : (1 + Complex.I • A.map ((↑) : ℝ → ℂ))ᴴ * (1 + Complex.I • A.map ((↑) : ℝ → ℂ)) =
+      1 + A.map (↑) * A.map (↑) := by
+    rw [conjTranspose_add, conjTranspose_one, conjTranspose_smul, hAc.eq, star_def, conj_I,
+      neg_smul, ← sub_eq_add_neg, Matrix.sub_mul, Matrix.mul_add, Matrix.mul_add, Matrix.one_mul,
+      Matrix.one_mul, Matrix.mul_one, smul_mul_smul, I_mul_I, neg_one_smul]
+    abel
+  rw [h]
+  ext i j
+  simp [Matrix.mul_apply, Matrix.one_apply, apply_ite]
+
+/-- The straightened graph of a symplectic matrix `Ψ` with `Ψ + 1` invertible is the graph
+`{x + i A x}` of the symmetric matrix `A = graphSymm Ψ`. -/
+private theorem realImage_diagonalStraightening_mul_graphFrame {Ψ : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hΨ : Ψ ∈ symplecticGroup n ℝ) (h : IsUnit (Ψ + 1).det) :
+    (diagonalStraightening n * graphFrame Ψ).realImage =
+      (1 + Complex.I • (graphSymm Ψ).map ((↑) : ℝ → ℂ)).realImage := by
+  have hu : IsUnit (((√2 : ℝ)⁻¹) • (Ψ + 1)) :=
+    (isUnit_iff_isUnit_det _).2 (by
+      rw [det_smul]
+      exact ((IsUnit.mk0 _ (by positivity)).pow _).mul h)
+  have hm (X Y : Matrix (n ⊕ n) (n ⊕ n) ℝ) : (X * Y).map ((↑) : ℝ → ℂ) = X.map (↑) * Y.map (↑) :=
+    Matrix.map_mul (f := Complex.ofRealHom)
+  have heq : diagonalStraightening n * graphFrame Ψ =
+      (1 + Complex.I • (graphSymm Ψ).map ((↑) : ℝ → ℂ)) *
+        ((((√2 : ℝ)⁻¹) • (Ψ + 1)).map ((↑) : ℝ → ℂ)) := by
+    have hs : (((√2 : ℝ)⁻¹) • (Ψ + 1)).map ((↑) : ℝ → ℂ) = ((√2 : ℝ) : ℂ)⁻¹ • (Ψ + 1).map (↑) := by
+      ext i j
+      simp [mul_add]
+    rw [diagonalStraightening_mul_graphFrame_eq, ← graphSymm_mul hΨ h, hm, hs, Matrix.add_mul,
+      Matrix.one_mul, Matrix.smul_mul, Matrix.mul_smul]
+    module
+  rw [heq, realImage_mul_map_ofReal _ hu]
+
+open scoped Matrix.Norms.L2Operator in
+/-- A family of invertible complex matrices is continuous when its matrices are. -/
+private theorem continuous_units_of_continuous_val {X : Type*} [TopologicalSpace X]
+    {M : X → GL (n ⊕ n) ℂ} (hM : Continuous fun x ↦ (M x : Matrix (n ⊕ n) (n ⊕ n) ℂ)) :
+    Continuous M :=
+  Units.isOpenEmbedding_val.continuous_iff.2 hM
+
+/-- A continuous path `t ↦ S t` of real symmetric matrices has a continuous path of unitary frames
+of the graphs `{x + i S t x}`, whose Souriau maps are the Cayley transforms of `S t`. The frames
+are the real orthonormalizations of `1 + i S t`. -/
+private theorem exists_path_realImage_eq_and_souriau_eq_cayley
+    {S : I → Matrix (n ⊕ n) (n ⊕ n) ℝ} (hSc : Continuous S) (hS : ∀ t, (S t).IsHermitian) :
+    ∃ (U V : unitaryGroup (n ⊕ n) ℂ) (δ : Path U V), ∀ t,
+      (δ t : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
+        (1 + Complex.I • (S t).map ((↑) : ℝ → ℂ)).realImage ∧
+      (souriau (δ t) : Matrix (n ⊕ n) (n ⊕ n) ℂ) = cayley ((S t).map ((↑) : ℝ → ℂ)) := by
+  have hdet (t : I) : IsUnit (1 + Complex.I • (S t).map ((↑) : ℝ → ℂ)) :=
+    (isUnit_iff_isUnit_det _).2 (hS t).map_ofReal.isUnit_det_one_add_I_smul
+  let F : I → GL (n ⊕ n) ℂ := fun t ↦ (hdet t).unit
+  have hF (t : I) : (F t : Matrix (n ⊕ n) (n ⊕ n) ℂ) = 1 + Complex.I • (S t).map ((↑) : ℝ → ℂ) :=
+    IsUnit.unit_spec _
+  have hG : Continuous fun t ↦ (1 + Complex.I • (S t).map ((↑) : ℝ → ℂ)) :=
+    continuous_const.add ((hSc.matrix_map continuous_ofReal).const_smul Complex.I)
+  have hFc : Continuous F :=
+    continuous_units_of_continuous_val (hG.congr fun t ↦ (hF t).symm)
+  let δ' : I → unitaryGroup (n ⊕ n) ℂ := fun t ↦
+    ⟨realOrthonormalize (F t), realOrthonormalize_mem_unitaryGroup (by
+      rw [hF]
+      exact map_im_conjTranspose_mul_self_one_add_I_smul (hS t))⟩
+  have hδc : Continuous δ' :=
+    (Units.continuous_val.comp (continuous_realOrthonormalize hFc)).subtype_mk _
+  have hδ (t : I) : (δ' t : Matrix (n ⊕ n) (n ⊕ n) ℂ) = realOrthonormalize (F t) := (rfl)
+  refine ⟨δ' 0, δ' 1, ⟨⟨δ', hδc⟩, rfl, rfl⟩, fun t ↦ ⟨?_, ?_⟩⟩
+  · simp only [Path.coe_mk_mk, hδ, realImage_realOrthonormalize, hF]
+  · have h := coe_realOrthonormalize (F t)
+    rw [hF] at h
+    exact souriau_eq_cayley_of_coe_eq_mul (hS t) ((hδ t).trans h)
+
+/-- **The Conley–Zehnder index of a path avoiding the eigenvalue `-1`.** If no matrix of the path
+`γ` of symplectic matrices has eigenvalue `-1`, its Conley–Zehnder index is half the drop of the
+signature of the symmetric matrix `Ψᵀ J - J Ψ` from `Ψ = γ 0` to `Ψ = γ 1`. -/
+theorem conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one {A B : GLSymplectic n ℝ}
+    (γ : Path A B)
+    (hγ : ∀ t, IsUnit (((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) + 1).det) :
+    conleyZehnderIndex γ =
+      (signature (((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * J n ℝ -
+          J n ℝ * ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) -
+        signature (((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)ᵀ * J n ℝ -
+          J n ℝ * ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) : ℝ) / 2 := by
+  set Ψ : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ ((γ t : GL (n ⊕ n) ℝ) : Matrix _ _ ℝ)
+  have hΨc : Continuous Ψ :=
+    Units.continuous_val.comp (continuous_subtype_val.comp γ.continuous)
+  -- The straightened graph of `γ t` is the graph of the symmetric matrix `graphSymm (γ t)`.
+  set S : I → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun t ↦ graphSymm (Ψ t) with hSdef
+  have hinv : Continuous fun t ↦ (Ψ t + 1)⁻¹ :=
+    continuous_iff_continuousAt.2 fun t ↦
+      (continuousAt_matrix_inv _ (by
+        rw [Ring.inverse_eq_inv']
+        exact continuousAt_inv₀ (hγ t).ne_zero)).comp (hΨc.add continuous_const).continuousAt
+  have hSc : Continuous S :=
+    (hinv.matrix_transpose.mul ((hΨc.matrix_transpose.mul continuous_const).sub
+      (continuous_const.mul hΨc))).mul hinv
+  have hS (t : I) : (S t).IsHermitian := isHermitian_graphSymm _
+  obtain ⟨U, V, δ, hδ⟩ := exists_path_realImage_eq_and_souriau_eq_cayley hSc hS
+  have hreal (t : I) : (δ t : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage = (diagonalStraightening n *
+      graphFrame ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).realImage := by
+    rw [(hδ t).1, realImage_diagonalStraightening_mul_graphFrame
+      (mem_iff_mem_symplecticGroup.1 (γ t).2) (hγ t)]
+  rw [conleyZehnderIndex_eq_neg_maslovIndex γ δ hreal,
+    maslovIndex_eq_signature_sub_of_souriau_eq_cayley δ hSc hS fun t ↦ (hδ t).2, hSdef]
+  dsimp only
+  rw [signature_graphSymm (hγ 1), signature_graphSymm (hγ 0), γ.source, γ.target]
+  ring
+
+/-! ### Exponentials of small Hamiltonian matrices -/
+
+open scoped Matrix.Norms.L2Operator in
+/-- For `‖a‖ < log 2`, the vectors fixed by `exp a` are the kernel of `a`. This is
+`ContinuousLinearMap.exp_apply_eq_self_iff` read through `Matrix.toEuclideanCLM`. -/
+private theorem exp_mulVec_eq_self_iff {a : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (ha : ‖a‖ < Real.log 2) {v : n ⊕ n → ℝ} :
+    NormedSpace.exp a *ᵥ v = v ↔ a *ᵥ v = 0 := by
+  have hc : Continuous (toEuclideanCLM (n := n ⊕ n) (𝕜 := ℝ)) :=
+    AddMonoidHomClass.continuous_of_bound _ 1 fun A ↦ by rw [one_mul, cstar_norm_def]
+  have h := ContinuousLinearMap.exp_apply_eq_self_iff (𝕜 := ℝ)
+    (B := toEuclideanCLM (n := n ⊕ n) (𝕜 := ℝ) a) (x := WithLp.toLp 2 v)
+    (by rwa [← cstar_norm_def])
+  let +nondep : NormedAlgebra ℚ (Matrix (n ⊕ n) (n ⊕ n) ℝ) := .restrictScalars ℚ ℝ _
+  rw [← NormedSpace.map_exp _ hc, toEuclideanCLM_toLp, toEuclideanCLM_toLp, ← WithLp.toLp_zero 2,
+    (WithLp.toLp_injective 2).eq_iff, (WithLp.toLp_injective 2).eq_iff] at h
+  exact h
+
+open scoped Matrix.Norms.L2Operator in
+/-- If `‖2 K‖ < log 2` and `|u| ≤ 1`, a vector fixed by `exp (u K) ^ 2` lies in the kernel of
+`u K`. -/
+private theorem smul_mulVec_eq_zero_of_exp_mulVec_exp_mulVec {K : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hK : ‖(2 : ℝ) • K‖ < Real.log 2) {u : ℝ} (hu : |u| ≤ 1) {v : n ⊕ n → ℝ}
+    (hv : NormedSpace.exp (u • K) *ᵥ (NormedSpace.exp (u • K) *ᵥ v) = v) : (u • K) *ᵥ v = 0 := by
+  have hexp : NormedSpace.exp ((2 : ℝ) • (u • K)) =
+      NormedSpace.exp (u • K) * NormedSpace.exp (u • K) := by
+    rw [two_smul, Matrix.exp_add_of_commute _ _ (Commute.refl _)]
+  have hnorm : ‖(2 : ℝ) • (u • K)‖ < Real.log 2 := by
+    rw [smul_comm, norm_smul, Real.norm_eq_abs]
+    exact (mul_le_of_le_one_left (norm_nonneg _) hu).trans_lt hK
+  have h := (exp_mulVec_eq_self_iff hnorm (v := v)).1 (by rw [hexp, ← mulVec_mulVec, hv])
+  rw [smul_mulVec, smul_eq_zero] at h
+  exact h.resolve_left two_ne_zero
+
+open scoped Matrix.Norms.L2Operator in
+/-- If `‖2 K‖ < log 2` and `|u| ≤ 1`, then `exp (u K)` does not have the eigenvalue `-1`. -/
+private theorem isUnit_det_exp_smul_add_one {K : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hK : ‖(2 : ℝ) • K‖ < Real.log 2) {u : ℝ} (hu : |u| ≤ 1) :
+    IsUnit (NormedSpace.exp (u • K) + 1).det := by
+  rw [isUnit_iff_ne_zero]
+  intro hdet
+  obtain ⟨v, hv0, hv⟩ := exists_mulVec_eq_zero_iff.2 hdet
+  have hneg : NormedSpace.exp (u • K) *ᵥ v = -v := by
+    rwa [add_mulVec, one_mulVec, add_eq_zero_iff_eq_neg] at hv
+  have hker := smul_mulVec_eq_zero_of_exp_mulVec_exp_mulVec hK hu
+    (by rw [hneg, mulVec_neg, hneg, neg_neg])
+  have hnorm : ‖u • K‖ < Real.log 2 := by
+    have h2 : ‖u • K‖ ≤ ‖(2 : ℝ) • K‖ := by
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_two]
+      exact mul_le_mul_of_nonneg_right (hu.trans one_le_two) (norm_nonneg _)
+    exact h2.trans_lt hK
+  have hfix := (exp_mulVec_eq_self_iff hnorm (v := v)).2 hker
+  rw [hneg, neg_eq_iff_add_eq_zero, ← two_smul ℝ v, smul_eq_zero] at hfix
+  exact hv0 (hfix.resolve_left two_ne_zero)
+
+/-- The matrix `J` is injective on vectors. -/
+private theorem eq_of_J_mulVec_eq {v w : n ⊕ n → ℝ} (h : J n ℝ *ᵥ v = J n ℝ *ᵥ w) : v = w := by
+  have h' := congrArg (J n ℝ *ᵥ ·) h
+  simpa only [mulVec_mulVec, J_squared, neg_mulVec, one_mulVec, neg_inj] using h'
+
+open scoped Matrix.Norms.L2Operator in
+/-- If `‖2 J S‖ < log 2`, `S` is nondegenerate and `0 < |u| ≤ 1`, then for the symplectic matrix
+`Ψ = exp (u J S)` the symmetric matrix `Ψᵀ J - J Ψ` is nondegenerate. -/
+private theorem isUnit_det_transpose_mul_J_sub_J_mul_exp {S : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hS : IsUnit S.det) (hK : ‖(2 : ℝ) • (J n ℝ * S)‖ < Real.log 2) {u : ℝ} (hu0 : u ≠ 0)
+    (hu : |u| ≤ 1) (hΨ : NormedSpace.exp (u • (J n ℝ * S)) ∈ symplecticGroup n ℝ) :
+    IsUnit ((NormedSpace.exp (u • (J n ℝ * S)))ᵀ * J n ℝ -
+      J n ℝ * NormedSpace.exp (u • (J n ℝ * S))).det := by
+  set Ψ := NormedSpace.exp (u • (J n ℝ * S))
+  set Ψ' := NormedSpace.exp (-(u • (J n ℝ * S)))
+  have hΨΨ' : Ψ * Ψ' = 1 := by
+    rw [← Matrix.exp_add_of_commute _ _ ((Commute.refl (u • (J n ℝ * S))).neg_right),
+      add_neg_cancel, NormedSpace.exp_zero]
+  -- `Ψᵀ J = J Ψ⁻¹`, since `Ψᵀ J Ψ = J`.
+  have hT : Ψᵀ * J n ℝ = J n ℝ * Ψ' := by
+    rw [← Matrix.mul_one (Ψᵀ * J n ℝ), ← hΨΨ', ← Matrix.mul_assoc, SymplecticGroup.mem_iff'.1 hΨ]
+  rw [isUnit_iff_ne_zero]
+  intro hdet
+  obtain ⟨v, hv0, hv⟩ := exists_mulVec_eq_zero_iff.2 hdet
+  rw [hT, sub_mulVec, sub_eq_zero, ← mulVec_mulVec, ← mulVec_mulVec] at hv
+  have hfix : Ψ *ᵥ (Ψ *ᵥ v) = v := by
+    rw [← eq_of_J_mulVec_eq hv, mulVec_mulVec, hΨΨ', one_mulVec]
+  have hker := smul_mulVec_eq_zero_of_exp_mulVec_exp_mulVec hK hu hfix
+  rw [smul_mulVec, smul_eq_zero, ← mulVec_mulVec] at hker
+  have hSv : S *ᵥ v = 0 := eq_of_J_mulVec_eq (by rw [hker.resolve_left hu0, mulVec_zero])
+  exact hv0 ((mulVec_injective_iff_isUnit.2 ((isUnit_iff_isUnit_det S).2 hS))
+    (hSv.trans (mulVec_zero S).symm))
+
+/-- For a symmetric `S`, the derivative `Kᵀ J - J K` at `u = 0` of `Ψ_uᵀ J - J Ψ_u`,
+`Ψ_u = exp (u K)`, `K = J S`, is `2 S`. -/
+private theorem transpose_J_mul_mul_J_sub_J_mul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hS : S.IsHermitian) : (J n ℝ * S)ᵀ * J n ℝ - J n ℝ * (J n ℝ * S) = (2 : ℝ) • S := by
+  have hST : Sᵀ = S := (conjTranspose_eq_transpose_of_trivial S).symm.trans hS.eq
+  rw [transpose_mul, J_transpose, hST, ← Matrix.mul_assoc, Matrix.mul_assoc, Matrix.neg_mul,
+    J_squared]
+  simp only [Matrix.mul_one, Matrix.neg_mul, Matrix.one_mul, neg_neg, two_smul, sub_neg_eq_add]
+
+open scoped Matrix.Norms.L2Operator in
+/-- If `S` is symmetric and nondegenerate with `‖2 J S‖ < log 2`, and `exp (u J S)` is symplectic
+for `u ∈ [0, 1]`, then for `Ψ = exp (J S)` the symmetric matrix `Ψᵀ J - J Ψ` has the signature of
+`S`. Along `u ∈ [0, 1]` the matrices `(Ψ_uᵀ J - J Ψ_u) / u`, `Ψ_u = exp (u J S)`, extended by their
+limit `2 S` at `u = 0`, form a continuous path of nondegenerate symmetric matrices. -/
+private theorem signature_exp_transpose_mul_J_sub_J_mul_exp {S : Matrix (n ⊕ n) (n ⊕ n) ℝ}
+    (hS : S.IsHermitian) (hSdet : IsUnit S.det) (hK : ‖(2 : ℝ) • (J n ℝ * S)‖ < Real.log 2)
+    (hΨ : ∀ u : I, NormedSpace.exp ((u : ℝ) • (J n ℝ * S)) ∈ symplecticGroup n ℝ) :
+    signature ((NormedSpace.exp (J n ℝ * S))ᵀ * J n ℝ - J n ℝ * NormedSpace.exp (J n ℝ * S)) =
+      signature S := by
+  set K := J n ℝ * S
+  let f : ℝ → Matrix (n ⊕ n) (n ⊕ n) ℝ := fun u ↦
+    NormedSpace.exp (u • Kᵀ) * J n ℝ - J n ℝ * NormedSpace.exp (u • K)
+  have hf (u : ℝ) : f u = (NormedSpace.exp (u • K))ᵀ * J n ℝ - J n ℝ * NormedSpace.exp (u • K) := by
+    simp only [f, ← Matrix.exp_transpose, transpose_smul]
+  have hderiv (t : ℝ) : HasDerivAt f (NormedSpace.exp (t • Kᵀ) * Kᵀ * J n ℝ -
+      J n ℝ * (NormedSpace.exp (t • K) * K)) t :=
+    ((hasDerivAt_exp_smul_const Kᵀ t).mul_const _).sub
+      ((hasDerivAt_exp_smul_const K t).const_mul _)
+  have hK0 : Kᵀ * J n ℝ - J n ℝ * K = (2 : ℝ) • S := transpose_J_mul_mul_J_sub_J_mul_J_mul hS
+  have hf0 : f 0 = 0 := by simp [f]
+  -- The slope of `f` at `0`, extended by the derivative `2 S`.
+  set g := dslope f 0 with hgdef
+  have hg0 : g 0 = (2 : ℝ) • S := by
+    rw [hgdef, dslope_same, (hderiv 0).deriv, ← hK0]
+    simp
+  have hgu {u : ℝ} (hu : u ≠ 0) : g u = u⁻¹ • f u := by
+    rw [hgdef, dslope_of_ne _ hu, slope_def_module, hf0, sub_zero, sub_zero]
+  have hgc : Continuous g := continuous_iff_continuousAt.2 fun u ↦ by
+    rcases eq_or_ne u 0 with rfl | hu
+    · exact continuousAt_dslope_same.2 (hderiv 0).differentiableAt
+    · exact (continuousAt_dslope_of_ne hu).2 (hderiv u).continuousAt
+  have hgh (u : I) : (g u).IsHermitian := by
+    rcases eq_or_ne (u : ℝ) 0 with hu | hu
+    · rw [hu, hg0]
+      exact hS.smul (IsSelfAdjoint.all _)
+    · rw [hgu hu, hf]
+      refine IsHermitian.smul ?_ (IsSelfAdjoint.all _)
+      rw [IsHermitian, conjTranspose_eq_transpose_of_trivial, transpose_transpose_mul_J_sub_J_mul]
+  have hgdet (u : I) : IsUnit (g u).det := by
+    have hu1 : |(u : ℝ)| ≤ 1 := by rw [abs_of_nonneg u.2.1]; exact u.2.2
+    rcases eq_or_ne (u : ℝ) 0 with hu | hu
+    · rw [hu, hg0, det_smul]
+      exact ((IsUnit.mk0 _ two_ne_zero).pow _).mul hSdet
+    · rw [hgu hu, det_smul, hf]
+      exact ((IsUnit.mk0 _ (inv_ne_zero hu)).pow _).mul
+        (isUnit_det_transpose_mul_J_sub_J_mul_exp hSdet hK hu hu1 (hΨ u))
+  -- The signature of `g` is locally constant on `[0, 1]`, hence constant.
+  have hloc : IsLocallyConstant fun u : I ↦ signature (g u) := by
+    refine (IsLocallyConstant.iff_eventually_eq _).2 fun u ↦ ?_
+    filter_upwards [IsHermitian.eventually_signature_eq_of_continuousAt hgh
+      (hgc.comp continuous_subtype_val).continuousAt (hgdet u)] with w hw
+    exact (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hgh w)).symm.trans
+      (hw.trans (IsHermitian.signature_map_ofReal (𝕜 := ℝ) (hgh u)))
+  have h := hloc.apply_eq_of_preconnectedSpace 1 0
+  simp only [Set.Icc.coe_one, Set.Icc.coe_zero, hg0,
+    signature_smul_of_pos (c := (2 : ℝ)) two_pos] at h
+  rw [hgu one_ne_zero, inv_one, one_smul, hf, one_smul] at h
+  exact h
+
+open scoped Matrix.Norms.L2Operator in
+/-- Near `0`, the matrices `S` satisfy `‖2 J S‖ < log 2` for the operator norm. -/
+private theorem eventually_norm_two_smul_J_mul_lt :
+    ∀ᶠ S in 𝓝 (0 : Matrix (n ⊕ n) (n ⊕ n) ℝ), ‖(2 : ℝ) • (J n ℝ * S)‖ < Real.log 2 := by
+  have hc : Continuous fun S : Matrix (n ⊕ n) (n ⊕ n) ℝ ↦ (2 : ℝ) • (J n ℝ * S) := by fun_prop
+  have h := hc.tendsto' 0 0 (by simp)
+  exact (tendsto_norm_zero.comp h).eventually (gt_mem_nhds (Real.log_pos one_lt_two))
+
+/-- **Normalization of the Conley–Zehnder index.** For every sufficiently small nondegenerate
+symmetric matrix `S`, the path `t ↦ exp (t J S)`, `t ∈ [0, 1]`, of symplectic matrices has
+Conley–Zehnder index `-signature(S) / 2`. -/
+theorem eventually_conleyZehnderIndex_eq_neg_signature_div_two :
+    ∀ᶠ S in 𝓝 (0 : Matrix (n ⊕ n) (n ⊕ n) ℝ), S.IsHermitian → IsUnit S.det →
+      ∀ {A B : GLSymplectic n ℝ} (γ : Path A B),
+        (∀ t : I, ((γ t : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
+          NormedSpace.exp ((t : ℝ) • (J n ℝ * S))) →
+        conleyZehnderIndex γ = -(signature S : ℝ) / 2 := by
+  filter_upwards [eventually_norm_two_smul_J_mul_lt] with S hK hS hSdet A B γ hγ
+  have hu (t : I) : |(t : ℝ)| ≤ 1 := by rw [abs_of_nonneg t.2.1]; exact t.2.2
+  rw [conleyZehnderIndex_eq_signature_sub_of_isUnit_det_add_one γ fun t ↦ by
+    rw [hγ t]; exact isUnit_det_exp_smul_add_one hK (hu t)]
+  have hΨ (t : I) : NormedSpace.exp ((t : ℝ) • (J n ℝ * S)) ∈ symplecticGroup n ℝ := by
+    rw [← hγ t]
+    exact mem_iff_mem_symplecticGroup.1 (γ t).2
+  have hA : ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = 1 := by
+    rw [← γ.source, hγ 0, Set.Icc.coe_zero, zero_smul, NormedSpace.exp_zero]
+  have hB : ((B : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) = NormedSpace.exp (J n ℝ * S) := by
+    rw [← γ.target, hγ 1, Set.Icc.coe_one, one_smul]
+  rw [hA, hB, signature_exp_transpose_mul_J_sub_J_mul_exp hS hSdet hK hΨ]
+  simp
+
+end GLSymplectic
+
+end TauCeti
