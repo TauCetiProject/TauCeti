@@ -43,9 +43,11 @@ specializations to the constant form `SymplecticForm.constSmooth`.
 ## Main results
 
 * `TauCeti.Floer.tendsto_setIntegral_truncation`,
-  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`: integrals over `S` are limits of integrals over
-  its truncations, and integrals of a Hamiltonian along the end loops converge to its integral
-  along their pointwise limits.
+  `TauCeti.Floer.tendsto_intervalIntegral_endLoop`,
+  `TauCeti.Floer.tendsto_intervalIntegral_endChart_of_isCompact`: integrals over `S` are limits of
+  integrals over its truncations, and integrals of a Hamiltonian along the end loops converge to
+  its integral along their pointwise limits, either when the Hamiltonian is globally bounded or
+  when the map takes values in a compact set.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`: the energy
   identity on the whole pair of pants, for a map with asymptotic loops at the ends; the
   vector-space case is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation`.
@@ -111,6 +113,34 @@ theorem tendsto_intervalIntegral_endLoop {M : Type*} [TopologicalSpace M]
   rw [mem_thricePuncturedSphereReal_iff, ContinuousLinearEquiv.symm_apply_apply]
   refine cylindricalEndLift_ne_zero_and_ne_one q ?_
   rcases endSign_eq_one_or_eq_neg_one q with h | h <;> simp [h, hR]
+
+/-- If `u` maps `S` into a compact set `B`, `H_q` is continuous, and the end loops
+`t ↦ u(φ_q(±s, t))` converge pointwise to `x` as `s → ∞`, then the integrals
+`∫₀¹ H_q(t, u(φ_q(±s, t))) dt` converge to `∫₀¹ H_q(t, x(t)) dt`. Unlike
+`TauCeti.Floer.tendsto_intervalIntegral_endLoop`, no global bound on `H_q` is needed. -/
+theorem tendsto_intervalIntegral_endChart_of_isCompact {M : Type*} [TopologicalSpace M]
+    {H : Puncture → ℝ → M → ℝ} {q : Puncture} (hHc : Continuous (uncurry (H q))) {B : Set M}
+    (hB : IsCompact B) {u : ℝ × ℝ → M} (hu : ContinuousOn u thricePuncturedSphereReal)
+    (huB : ∀ z ∈ thricePuncturedSphereReal, u z ∈ B) {x : ℝ → M}
+    (hx : ∀ t, Tendsto (fun s : ℝ ↦ u (endChart q (q.endSign * s, t))) atTop (𝓝 (x t))) :
+    Tendsto (fun s : ℝ ↦ ∫ t in (0 : ℝ)..1, H q t (u (endChart q (q.endSign * s, t))))
+      atTop (𝓝 (∫ t in (0 : ℝ)..1, H q t (x t))) := by
+  have hmem {s : ℝ} (hs : 0 < s) (t : ℝ) :
+      endChart q (q.endSign * s, t) ∈ thricePuncturedSphereReal := by
+    rw [endChart_eq_positiveEndChart]
+    exact positiveEndChart_mem_thricePuncturedSphereReal hs
+  have hlim : Tendsto (fun s : ℝ ↦ ∫ t in (0 : ℝ)..1,
+      H q t (u (endChart q (q.endSign * max s 1, t)))) atTop
+      (𝓝 (∫ t in (0 : ℝ)..1, H q t (x t))) := by
+    refine tendsto_intervalIntegral_comp_of_tendsto (Φ := uncurry (H q))
+      (y := fun s t ↦ u (endChart q (q.endSign * max s 1, t))) hHc hB
+      (fun s ↦ (hu.comp_continuous ((contDiff_endChart q 0).continuous.comp
+        (continuous_const.prodMk continuous_id))
+        (hmem (lt_max_of_lt_right zero_lt_one))).continuousOn)
+      (fun s t _ ↦ huB _ (hmem (lt_max_of_lt_right zero_lt_one) t))
+      fun t _ ↦ (hx t).congr' ((eventually_ge_atTop (1 : ℝ)).mono fun s hs ↦ by
+        simp only [max_eq_left hs])
+  exact hlim.congr' ((eventually_ge_atTop (1 : ℝ)).mono fun s hs ↦ by simp only [max_eq_left hs])
 
 end Floer
 
