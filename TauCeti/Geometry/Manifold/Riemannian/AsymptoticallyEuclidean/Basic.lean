@@ -12,10 +12,10 @@ public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Metri
 
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.IsManifold.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Topology.MetricSpace.Annulus
 
@@ -273,9 +273,7 @@ theorem coe_endRadius (y : E.openImage) :
 @[simp] theorem coe_endRadius_param (x : exteriorOpen n E.radius) :
     (E.endRadius ⟨E.param x, E.mem_openImage_param x⟩ : ℝ) =
       ‖(x : EuclideanSpace ℝ (Fin n))‖ := by
-  change ‖((Equiv.ofInjective E.param E.injective).symm
-    (Equiv.ofInjective E.param E.injective x) : EuclideanSpace ℝ (Fin n))‖ = _
-  rw [Equiv.symm_apply_apply]
+  rw [coe_endRadius, Equiv.ofInjective_symm_apply]
 
 /-- Every closed coordinate annulus `{E.param x : r₁ ≤ ‖x‖ ≤ r₂}` with `E.radius < r₁` is compact
 in `M`. -/
@@ -473,21 +471,19 @@ theorem isLocalDiffeomorph_one : IsLocalDiffeomorph (𝓡 n) (𝓡 n) 1 E.param 
 /-- On a `C¹` manifold `M`, an AE end parametrizes its open image by a homeomorphism
 `exteriorOpen n E.radius ≃ₜ E.openImage`. -/
 def homeomorphImage : exteriorOpen n E.radius ≃ₜ E.openImage :=
-  (Equiv.ofInjective E.param E.injective).toHomeomorphOfIsInducing <|
-    Topology.IsInducing.subtypeVal.of_comp_iff.mp
-      (E.isLocalDiffeomorph_one.isLocalHomeomorph.isOpenEmbedding_of_injective
-        E.injective).toIsInducing
+  (E.isLocalDiffeomorph_one.diffeomorphOfInjective E.injective).toHomeomorph
 
 @[simp] theorem coe_homeomorphImage_apply (x : exteriorOpen n E.radius) :
-    (E.homeomorphImage x : M) = E.param x := (rfl)
+    (E.homeomorphImage x : M) = E.param x :=
+  E.isLocalDiffeomorph_one.coe_diffeomorphOfInjective_apply E.injective x
 
 @[simp] theorem homeomorphImage_symm_param (x : exteriorOpen n E.radius) :
     E.homeomorphImage.symm ⟨E.param x, E.mem_openImage_param x⟩ = x :=
-  (Equiv.ofInjective E.param E.injective).symm_apply_apply x
+  E.homeomorphImage.symm_apply_eq.mpr (Subtype.ext (E.coe_homeomorphImage_apply x).symm)
 
 @[simp] theorem param_homeomorphImage_symm (y : E.openImage) :
     E.param (E.homeomorphImage.symm y) = (y : M) :=
-  congrArg Subtype.val ((Equiv.ofInjective E.param E.injective).apply_symm_apply y)
+  E.isLocalDiffeomorph_one.apply_diffeomorphOfInjective_symm E.injective y
 
 /-- **Shrinking an AE end to a larger excision radius.** Restricting an AE end `E` on a `C¹`
 manifold `M` from `E.radius` to any `R' ≥ E.radius` gives an AE end of the same order `t`. -/
@@ -557,8 +553,13 @@ theorem isProperMap_endRadius : IsProperMap E.endRadius := by
   have heq : E.endRadius =
       (fun x : exteriorOpen n E.radius =>
         (⟨‖(x : EuclideanSpace ℝ (Fin n))‖, mem_exteriorOpen.mp x.2⟩ : Ioi E.radius)) ∘
-        E.homeomorphImage.symm :=
-    rfl
+        E.homeomorphImage.symm := by
+    funext y
+    have hy : y = ⟨E.param (E.homeomorphImage.symm y), E.mem_openImage_param _⟩ :=
+      Subtype.ext (E.param_homeomorphImage_symm y).symm
+    apply Subtype.ext
+    conv_lhs => rw [hy]
+    exact E.coe_endRadius_param (E.homeomorphImage.symm y)
   rw [heq]
   exact isProperMap_exteriorOpen_norm.comp E.homeomorphImage.symm.isProperMap
 
@@ -579,35 +580,31 @@ theorem isLocalDiffeomorph : IsLocalDiffeomorph (𝓡 n) (𝓡 n) ∞ E.param :=
 
 /-- On a smooth manifold `M`, an AE end parametrizes its open image by a smooth diffeomorphism
 `exteriorOpen n E.radius ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ E.openImage`. -/
-def diffeomorphImage : exteriorOpen n E.radius ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ E.openImage where
-  toEquiv := E.homeomorphImage.toEquiv
-  contMDiff_toFun := (TauCeti.ContMDiff.subtypeVal_comp_iff E.openImage _).mp E.contMDiff
-  contMDiff_invFun :=
-    ContMDiff.of_comp_isLocalDiffeomorph E.isLocalDiffeomorph
-      E.homeomorphImage.symm.continuous <| by
-        have hcomp :
-            E.param ∘ E.homeomorphImage.toEquiv.symm = (Subtype.val : E.openImage → M) :=
-          funext E.param_homeomorphImage_symm
-        rw [hcomp]
-        exact contMDiff_subtype_val
+def diffeomorphImage : exteriorOpen n E.radius ≃ₘ^∞⟮𝓡 n, 𝓡 n⟯ E.openImage :=
+  E.isLocalDiffeomorph.diffeomorphOfInjective E.injective
 
 @[simp] theorem coe_diffeomorphImage_apply (x : exteriorOpen n E.radius) :
-    (E.diffeomorphImage x : M) = E.param x := (rfl)
+    (E.diffeomorphImage x : M) = E.param x :=
+  E.isLocalDiffeomorph.coe_diffeomorphOfInjective_apply E.injective x
 
 @[simp] theorem diffeomorphImage_symm_param (x : exteriorOpen n E.radius) :
     E.diffeomorphImage.symm ⟨E.param x, E.mem_openImage_param x⟩ = x :=
-  E.homeomorphImage_symm_param x
+  E.diffeomorphImage.symm_apply_eq.mpr (Subtype.ext (E.coe_diffeomorphImage_apply x).symm)
 
 @[simp] theorem param_diffeomorphImage_symm (y : E.openImage) :
     E.param (E.diffeomorphImage.symm y) = (y : M) :=
-  E.param_homeomorphImage_symm y
+  E.isLocalDiffeomorph.apply_diffeomorphOfInjective_symm E.injective y
 
 /-- The real-valued coordinate radius `y ↦ (E.endRadius y : ℝ)` is smooth on `E.openImage`. -/
 theorem contMDiff_coe_endRadius :
     ContMDiff (𝓡 n) 𝓘(ℝ) ∞ (fun y : E.openImage => (E.endRadius y : ℝ)) := by
   have heq : (fun y : E.openImage => (E.endRadius y : ℝ)) =
-      norm ∘ fun z : E.openImage => (E.diffeomorphImage.symm z : EuclideanSpace ℝ (Fin n)) :=
-    rfl
+      norm ∘ fun z : E.openImage => (E.diffeomorphImage.symm z : EuclideanSpace ℝ (Fin n)) := by
+    funext y
+    have hy : y = ⟨E.param (E.diffeomorphImage.symm y), E.mem_openImage_param _⟩ :=
+      Subtype.ext (E.param_diffeomorphImage_symm y).symm
+    conv_lhs => rw [hy]
+    exact E.coe_endRadius_param (E.diffeomorphImage.symm y)
   rw [heq]
   intro y
   have hne : (E.diffeomorphImage.symm y : EuclideanSpace ℝ (Fin n)) ≠ 0 :=
