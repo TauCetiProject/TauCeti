@@ -21,15 +21,20 @@ induced by `inl` and `inr`. Given rational subsets `W = R(T₀/s₀) ⊆ Spa(A, 
 `Spa(g)(V) ⊆ W`, this file establishes (without completeness, Hausdorffness or sheafiness
 hypotheses):
 
-1. **Rational preimages and intersections** (`completedTensorRationalEquiv_preimage`): `p_B⁻¹(U)`,
-   `p_C⁻¹(V)` and `p_B⁻¹(U) ∩ p_C⁻¹(V)` belong to `spaRationalFamily`, with explicit presentation
-   `completedTensor.interPresentation`.
+1. **Rational preimages and intersections**
+   (`completedTensor.inl_spaComap_preimage_rationalSubset`,
+   `completedTensor.inr_spaComap_preimage_rationalSubset`,
+   `completedTensor.inl_preimage_inter_inr_preimage_rationalSubset`, and their `spaRationalFamily`
+   counterparts): `p_B⁻¹(U)`, `p_C⁻¹(V)` and `p_B⁻¹(U) ∩ p_C⁻¹(V)` belong to `spaRationalFamily`,
+   with explicit presentation `completedTensor.interPresentation`.
 2. **Comparison of completed rational-localisation pairs** (`completedTensor.rationalRingEquiv`,
-   `completedTensor.map_plus_rationalRingEquiv`): along `O(W) → O(U)` and `O(W) → O(V)`, for any
-   presentation `d` of `p_B⁻¹(U) ∩ p_C⁻¹(V)` on `D`, `O(U) ⊗̂_{O(W)} O(V) ≃+* O_D(d)`
+   `completedTensor.isHomeomorph_rationalRingEquiv`, `completedTensor.map_plus_rationalRingEquiv`,
+   `completedTensor.rationalRingEquiv_toCompletion_tmul`): along `O(W) → O(U)` and `O(W) → O(V)`,
+   for any presentation `d` of `p_B⁻¹(U) ∩ p_C⁻¹(V)` on `D`, `O(U) ⊗̂_{O(W)} O(V) ≃+* O_D(d)`
    topologically and on rings of integral elements, sending `ρ_B(b) ⊗ₜ ρ_C(c)` to `ρ_D(b ⊗ₜ c)`.
 3. **Homeomorphism and rational-subset bijection on `Spa`**
-   (`completedTensor.rationalSpaHomeomorph`, `completedTensorRationalEquiv`):
+   (`completedTensor.rationalSpaHomeomorph`, `completedTensor.rationalSpaHomeomorph_val`,
+   `completedTensor.bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily`):
    `Spa(O(U) ⊗̂_{O(W)} O(V)) ≃ₜ ↥(p_B⁻¹(U) ∩ p_C⁻¹(V))`, bijecting rational subsets of
    `Spa(D, D⁺)` inside `p_B⁻¹(U) ∩ p_C⁻¹(V)` onto `spaRationalFamily`.
 
@@ -44,10 +49,15 @@ hypotheses):
 
 ## Main results
 
-* `TauCeti.Huber.Pair.completedTensorRationalEquiv_preimage`: preimage, rationality and
-  intersection formulas on `Spa((B, B⁺) ⊗̂_A (C, C⁺))`.
-* `TauCeti.Huber.Pair.completedTensorRationalEquiv`: combined comparison of adic base-change
-  morphisms, topological Huber-pair equivalence `e`, and `Spa` homeomorphism `H`.
+* `TauCeti.Huber.Pair.completedTensor.inl_preimage_inter_inr_preimage_rationalSubset` and
+  `inl_preimage_inter_inr_preimage_mem_spaRationalFamily`: rational intersection formula and
+  membership in `spaRationalFamily` on `Spa((B, B⁺) ⊗̂_A (C, C⁺))`.
+* `TauCeti.Huber.Pair.completedTensor.isHomeomorph_rationalRingEquiv`,
+  `map_plus_rationalRingEquiv`, and `rationalRingEquiv_toCompletion_tmul`: topological, plus-ring,
+  and pure-tensor compatibility of `rationalRingEquiv`.
+* `TauCeti.Huber.Pair.completedTensor.rationalSpaHomeomorph_val` and
+  `bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily`: valuation pullback formula and
+  rational-subset bijection for `rationalSpaHomeomorph`.
 
 ## References
 
@@ -207,40 +217,6 @@ omit [IsHuberRing B] [IsHuberRing C] in
     (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
     (completedTensor.interPresentation PD s s' hT hT').den =
       CompletedTensor.inl A B C s * CompletedTensor.inr A B C s' := (rfl)
-
-open Classical in
-/-- **Rational preimages and intersections on completed tensor products** (Wedhorn, Lemma 7.46(3)
-and Remark 7.30(5)): without assuming sheafiness or completeness, `p_B⁻¹(R(T/s))` and
-`p_C⁻¹(R(T'/s'))` are rational subsets of `Spa((B, B⁺) ⊗̂_A (C, C⁺))`, and their intersection is the
-rational subset `R((insert (inl s) (inl T) * insert (inr s') (inr T')) / (inl s * inr s'))` with
-open numerator ideal. -/
-theorem completedTensorRationalEquiv_preimage
-    {T : Finset B} (s : B) {T' : Finset C} (s' : C)
-    (hT : IsOpen (Ideal.span (T : Set B) : Set B))
-    (hT' : IsOpen (Ideal.span (T' : Set C) : Set C)) :
-    let U : Set (spa UB.plus) := Subtype.val ⁻¹' rationalSubset UB.plus T s
-    let V : Set (spa UC.plus) := Subtype.val ⁻¹' rationalSubset UC.plus T' s'
-    let pB := (completedTensor.inl A UB UC).spaComap
-    let pC := (completedTensor.inr A UB UC).spaComap
-    (pB ⁻¹' U = Subtype.val ⁻¹' rationalSubset (UB.completedTensor A UC).plus
-        (T.image (CompletedTensor.inl A B C)) (CompletedTensor.inl A B C s) ∧
-      pB ⁻¹' U ∈ spaRationalFamily (UB.completedTensor A UC).plus) ∧
-    (pC ⁻¹' V = Subtype.val ⁻¹' rationalSubset (UB.completedTensor A UC).plus
-        (T'.image (CompletedTensor.inr A B C)) (CompletedTensor.inr A B C s') ∧
-      pC ⁻¹' V ∈ spaRationalFamily (UB.completedTensor A UC).plus) ∧
-    (pB ⁻¹' U ∩ pC ⁻¹' V = Subtype.val ⁻¹' rationalSubset (UB.completedTensor A UC).plus
-        (insert (CompletedTensor.inl A B C s) (T.image (CompletedTensor.inl A B C)) *
-          insert (CompletedTensor.inr A B C s') (T'.image (CompletedTensor.inr A B C)))
-        (CompletedTensor.inl A B C s * CompletedTensor.inr A B C s') ∧
-      pB ⁻¹' U ∩ pC ⁻¹' V ∈ spaRationalFamily (UB.completedTensor A UC).plus) :=
-  ⟨⟨completedTensor.inl_spaComap_preimage_rationalSubset UB UC T s,
-      completedTensor.inl_spaComap_preimage_mem_spaRationalFamily UB UC
-        (mem_spaRationalFamily_iff.mpr ⟨T, s, hT, rfl⟩)⟩,
-    ⟨completedTensor.inr_spaComap_preimage_rationalSubset UB UC T' s',
-      completedTensor.inr_spaComap_preimage_mem_spaRationalFamily UB UC
-        (mem_spaRationalFamily_iff.mpr ⟨T', s', hT', rfl⟩)⟩,
-    ⟨completedTensor.inl_preimage_inter_inr_preimage_rationalSubset UB UC T s T' s',
-      completedTensor.inl_preimage_inter_inr_preimage_mem_spaRationalFamily UB UC s s' hT hT'⟩⟩
 
 /-- Degenerate case `U = Spa(B, B⁺)` (`T = {1}`, `s = 1`): intersecting with `p_B⁻¹(R({1}/1))`
 leaves `p_C⁻¹(V)` unchanged. -/
@@ -576,87 +552,6 @@ theorem completedTensor.bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily :
     rw [hdom] at hbij₂
     exact (hbij₁.comp hbij₂).congr fun Z _ ↦ by
       ext x; simp [completedTensor.rationalSpaHomeomorph]
-
-include hb hc hPD hd_open hf_alg hg_alg hf hg hd in
-/-- **Rational localisation commutes with completed tensor products** (Kedlaya–Liu §2.4, after
-Definition 2.4.12; Huber 1994, Lemma 1.5(ii) and Proposition 3.7; Wedhorn, Lemma 8.1 and
-Proposition 8.2(2)).
-
-Given adic morphisms `f : (A, A⁺) → (B, B⁺)` and `g : (A, A⁺) → (C, C⁺)`, presentations `a`, `b`,
-`c` of `W ⊆ Spa(A, A⁺)`, `U ⊆ Spa(B, B⁺)`, `V ⊆ Spa(C, C⁺)` with `Spa(f)(U) ⊆ W` and
-`Spa(g)(V) ⊆ W`, and a presentation `d` on `D = B ⊗̂_A C` with open numerator ideal representing
-`p_B⁻¹(U) ∩ p_C⁻¹(V)`, there exist compatible adic morphisms `f₀ : O(W) → O(U)` and
-`g₀ : O(W) → O(V)`, a topological Huber-pair equivalence `e : O(U) ⊗̂_{O(W)} O(V) ≃+* O_D(d)`
-sending `ρ_B(x) ⊗ₜ ρ_C(y)` to `ρ_D(x ⊗ₜ y)`, and a homeomorphism
-`H : Spa(O(U) ⊗̂_{O(W)} O(V)) ≃ₜ ↥(p_B⁻¹(U) ∩ p_C⁻¹(V))` pulling valuations back along `e⁻¹ ∘ ρ_D`
-and bijecting rational subsets inside `p_B⁻¹(U) ∩ p_C⁻¹(V)` onto `spaRationalFamily`. -/
-theorem completedTensorRationalEquiv :
-    withFourPres PA a PB b PC c PD d in
-    ∃ (f₀ : Hom (locPairPres PA UA hPA a) (locPairPres PB UB hPB b))
-      (g₀ : Hom (locPairPres PA UA hPA a) (locPairPres PC UC hPC c))
-      (hf₀_adic : IsAdicHom f₀.toRingHom)
-      (hg₀_adic : IsAdicHom g₀.toRingHom),
-      f₀.comp (toCompletionLocHom PA UA hPA a.num a.den _ a.hasDenominatorPower) =
-          (toCompletionLocHom PB UB hPB b.num b.den _ b.hasDenominatorPower).comp f ∧
-        g₀.comp (toCompletionLocHom PA UA hPA a.num a.den _ a.hasDenominatorPower) =
-          (toCompletionLocHom PC UC hPC c.num c.den _ c.hasDenominatorPower).comp g ∧
-        letI := f₀.toRingHom.toAlgebra
-        letI := g₀.toRingHom.toAlgebra
-        haveI : IsAdicHom (algebraMap (Completion (Localization.Away a.den))
-          (Completion (Localization.Away b.den))) := hf₀_adic
-        haveI : IsAdicHom (algebraMap (Completion (Localization.Away a.den))
-          (Completion (Localization.Away c.den))) := hg₀_adic
-        ∃ (e : CompletedTensor (Completion (Localization.Away a.den))
-            (Completion (Localization.Away b.den))
-            (Completion (Localization.Away c.den)) ≃+* Completion (Localization.Away d.den)),
-          IsHomeomorph e ∧
-            (((locPairPres PB UB hPB b).completedTensor (Completion (Localization.Away a.den))
-                (locPairPres PC UC hPC c)).plus.map (e : _ →+* _) =
-              completedPlusSubring PD (UB.completedTensor A UC).plus d.num d.den _
-                d.hasDenominatorPower) ∧
-            (∀ (x : B) (y : C),
-              e (CompletedTensor.toCompletion (Completion (Localization.Away a.den))
-                  (Completion (Localization.Away b.den))
-                  (Completion (Localization.Away c.den))
-                  (toCompletionLoc PB b.num b.den _ b.hasDenominatorPower x ⊗ₜ
-                    toCompletionLoc PC c.num c.den _ c.hasDenominatorPower y)) =
-                toCompletionLoc PD d.num d.den _ d.hasDenominatorPower
-                  (CompletedTensor.toCompletion A B C (x ⊗ₜ y))) ∧
-            ∃ H : spa ((locPairPres PB UB hPB b).completedTensor
-                (Completion (Localization.Away a.den))
-                (locPairPres PC UC hPC c)).plus ≃ₜ ↥(interPreimage A UB UC b c),
-              (∀ v, ((H v).1 : Spv (CompletedTensor A B C)) =
-                  ValuationSpectrum.comap (e.symm.toRingHom.comp
-                    (toCompletionLoc PD d.num d.den _ d.hasDenominatorPower)) v.1) ∧
-                Set.BijOn (fun Z : Set (spa (UB.completedTensor A UC).plus) ↦
-                    H ⁻¹' (Subtype.val ⁻¹' Z))
-                  {Z ∈ spaRationalFamily (UB.completedTensor A UC).plus |
-                    Z ⊆ interPreimage A UB UC b c}
-                  (spaRationalFamily ((locPairPres PB UB hPB b).completedTensor
-                    (Completion (Localization.Away a.den)) (locPairPres PC UC hPC c)).plus) :=
-  withFourPres PA a PB b PC c PD d in by
-    have _ : IsAdicHom f.toRingHom := hf_alg ▸ inferInstance
-    have _ : IsAdicHom g.toRingHom := hg_alg ▸ inferInstance
-    refine ⟨pairHomOfSpaComapImageSubset PA UA hPA a.num a.den _ a.hasDenominatorPower
-        PB UB hPB b.num b.den _ b.hasDenominatorPower f hf,
-      pairHomOfSpaComapImageSubset PA UA hPA a.num a.den _ a.hasDenominatorPower
-        PC UC hPC c.num c.den _ c.hasDenominatorPower g hg,
-      isAdicHom_pairHomOfSpaComapImageSubset ..,
-      isAdicHom_pairHomOfSpaComapImageSubset ..,
-      pairHomOfSpaComapImageSubset_comp_toCompletionLocHom ..,
-      pairHomOfSpaComapImageSubset_comp_toCompletionLocHom ..,
-      completedTensor.rationalRingEquiv PA UA hPA a PB UB hPB b hb PC UC hPC c hc PD d f g
-        hf_alg hg_alg hf hg hd,
-      completedTensor.isHomeomorph_rationalRingEquiv ..,
-      completedTensor.map_plus_rationalRingEquiv (hPD := hPD) ..,
-      completedTensor.rationalRingEquiv_toCompletion_tmul PA UA hPA a PB UB hPB b hb PC UC hPC c hc
-        PD d f g hf_alg hg_alg hf hg hd,
-      completedTensor.rationalSpaHomeomorph PA UA hPA a PB UB hPB b hb PC UC hPC c hc
-        PD hPD d f g hf_alg hg_alg hf hg hd,
-      completedTensor.rationalSpaHomeomorph_val PA UA hPA a PB UB hPB b hb PC UC hPC c hc
-        PD hPD d f g hf_alg hg_alg hf hg hd,
-      completedTensor.bijOn_preimage_rationalSpaHomeomorph_spaRationalFamily (hd_open := hd_open)
-        ..⟩
 
 end RationalEquiv
 

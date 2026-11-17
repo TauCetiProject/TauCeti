@@ -14,7 +14,8 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Completion
 The structure map `A → A⟨T/s⟩` of a completed localisation of a Huber ring is adic: it is
 continuous, and the ideal it generates from an open ideal of `A` is open. This is what makes a
 completed rational localisation an adic algebra over its base, as completed tensor products along
-adic homomorphisms require.
+adic homomorphisms require. Conversely, any continuous homomorphism out of `A⟨T/s⟩` whose composite
+with `A → A⟨T/s⟩` is adic is itself adic.
 
 ## References
 
@@ -40,5 +41,24 @@ theorem isAdicHom_toCompletionLoc {A : Type*} [CommRing A] [TopologicalSpace A]
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
   exact IsAdicHom.of_continuous_isOpen_map (continuous_toCompletionLoc P T s S hden)
     fun _ hJ ↦ isOpen_map_toCompletionLoc P T s S hden hJ
+
+/-- A continuous ring homomorphism out of a completed localisation `A⟨T/s⟩` whose composite with
+the structure map `A → A⟨T/s⟩` is adic is itself adic. -/
+theorem isAdicHom_of_comp_toCompletionLoc {A : Type*} [CommRing A] [TopologicalSpace A]
+    [IsTopologicalRing A] (P : PairOfDefinition A) (T : Set A) (s : A) (S : Type*)
+    [CommRing S] [Algebra A S] [IsLocalization.Away s S]
+    (hden : HasDenominatorPower P T s S) {B : Type*} [CommRing B] [TopologicalSpace B]
+    [IsTopologicalRing B] :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∀ {φ : UniformSpace.Completion S →+* B}, Continuous φ →
+      IsAdicHom (φ.comp (toCompletionLoc P T s S hden)) → IsAdicHom φ := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  intro φ hφ hadic
+  have _ := isHuberRing_completion_locTopology P T s S hden
+  exact IsAdicHom.of_comp hadic (continuous_toCompletionLoc P T s S hden) hφ
 
 end TauCeti.Huber.PairOfDefinition

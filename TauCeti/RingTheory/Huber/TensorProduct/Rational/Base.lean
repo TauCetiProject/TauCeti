@@ -33,8 +33,6 @@ integral elements (`Pair.completedTensor.map_plus_completionLocBaseEquiv`, `toBa
 
 ## Main results
 
-* `TauCeti.Huber.PairOfDefinition.isAdicHom_of_comp_toCompletionLoc`: a continuous homomorphism out
-  of `A⟨T₀/s₀⟩` whose composite with `A → A⟨T₀/s₀⟩` is adic is itself adic.
 * `TauCeti.Huber.CompletedTensor.isHomeomorph_completionLocBaseEquiv`:
   `completionLocBaseEquiv` is a homeomorphism.
 * `TauCeti.Huber.Pair.completedTensor.map_plus_completionLocBaseEquiv`:
@@ -52,26 +50,6 @@ integral elements (`Pair.completedTensor.map_plus_completionLocBaseEquiv`, `toBa
 public section
 
 open TensorProduct UniformSpace
-
-namespace TauCeti.Huber.PairOfDefinition
-
-/-- A continuous ring homomorphism out of a completed localisation `A⟨T₀/s₀⟩` whose composite with
-the structure map `A → A⟨T₀/s₀⟩` is adic is itself adic. -/
-theorem isAdicHom_of_comp_toCompletionLoc {A : Type*} [CommRing A] [TopologicalSpace A]
-    [IsTopologicalRing A] (P₀ : PairOfDefinition A) (T₀ : Set A) (s₀ : A) (S₀ : Type*)
-    [CommRing S₀] [Algebra A S₀] [IsLocalization.Away s₀ S₀]
-    (hden₀ : HasDenominatorPower P₀ T₀ s₀ S₀) {B : Type*} [CommRing B] [TopologicalSpace B]
-    [IsTopologicalRing B] :
-    let _ := locUniformSpace P₀ T₀ s₀ S₀ hden₀
-    let _ := isUniformAddGroup_locUniformSpace P₀ T₀ s₀ S₀ hden₀
-    let _ := isTopologicalRing_locUniformSpace P₀ T₀ s₀ S₀ hden₀
-    ∀ {φ : Completion S₀ →+* B}, Continuous φ →
-      IsAdicHom (φ.comp (toCompletionLoc P₀ T₀ s₀ S₀ hden₀)) → IsAdicHom φ := by
-  intro _ _ _ φ hφ hadic
-  have _ := isHuberRing_completion_locTopology P₀ T₀ s₀ S₀ hden₀
-  exact IsAdicHom.of_comp hadic (continuous_toCompletionLoc P₀ T₀ s₀ S₀ hden₀) hφ
-
-end TauCeti.Huber.PairOfDefinition
 
 open TauCeti.Huber TauCeti.Huber.PairOfDefinition in
 local macro "withCompletionLocBase " A:term:max B:term:max C:term:max

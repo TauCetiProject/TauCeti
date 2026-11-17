@@ -28,6 +28,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
 
 * `TauCeti.ValuationSpectrum.spaComap`: the pullback map `spa Bplus → spa Aplus`.
 * `TauCeti.ValuationSpectrum.spaComapTopHom`: the same map as a morphism of `TopCat`.
+* `TauCeti.ValuationSpectrum.spaHomeomorphOfRingEquiv`: homeomorphism `spa Aplus ≃ₜ spa Bplus`
+  induced by a topological ring equivalence carrying `Aplus` onto `Bplus`.
 
 ## Main results
 
@@ -39,6 +41,8 @@ No Huber-ring hypotheses are needed. The bundled version for morphisms of Huber 
   `spaComapTopHom_comp`: contravariant functoriality.
 * `TauCeti.ValuationSpectrum.spaComap_spaComap`, `mem_of_spaComap_mem_map`: pulling back along a
   left inverse of `φ` and then along `φ` is the identity.
+* `TauCeti.ValuationSpectrum.spaHomeomorphOfRingEquiv_val`,
+  `spaHomeomorphOfRingEquiv_symm_val`: valuation pullback formulas for `spaHomeomorphOfRingEquiv`.
 * `TauCeti.ValuationSpectrum.comap_preimage_rationalSubset_inter_spa`,
   `spaComap_preimage_rationalSubset`, `map_spaComapTopHom_obj_spaBasicOpen`: preimages of
   rational subsets.
@@ -135,6 +139,40 @@ theorem spaComap_spaComap (φ : A →+* B) (hφ : Continuous φ) {Aplus : Subrin
   refine Subtype.ext ?_
   rw [spaComap_val, spaComap_val, ← Function.comp_apply (f := comap φ), ← comap_comp, hcomp,
     comap_id, id]
+
+section RingEquiv
+
+variable {Aplus : Subring A} {Bplus : Subring B}
+  (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
+  (hplus : Aplus.map (e : A →+* B) = Bplus)
+
+/-- **Homeomorphism of adic spectra induced by a topological ring equivalence.** Given a ring
+isomorphism `e : A ≃+* B` continuous in both directions with `A⁺.map e = B⁺`, pulling valuations
+back along `e.symm` identifies `Spa(A, A⁺)` homeomorphically with `Spa(B, B⁺)`. -/
+noncomputable def spaHomeomorphOfRingEquiv : spa Aplus ≃ₜ spa Bplus where
+  toFun := spaComap (e.symm : B →+* A) he' Bplus Aplus fun b hb ↦ by
+    obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
+    simpa using ha
+  invFun := spaComap (e : A →+* B) he Aplus Bplus fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
+  left_inv := spaComap_spaComap (e : A →+* B) he (fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩)
+    (e.symm : B →+* A) he' e.symm_apply_apply fun b hb ↦ by
+      obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
+      simpa using ha
+  right_inv := spaComap_spaComap (e.symm : B →+* A) he'
+    (fun b hb ↦ by obtain ⟨a, ha, rfl⟩ := hplus ▸ hb; simpa using ha)
+    (e : A →+* B) he e.apply_symm_apply fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
+  continuous_toFun := continuous_spaComap _ he' _ _ _
+  continuous_invFun := continuous_spaComap _ he _ _ _
+
+/-- `spaHomeomorphOfRingEquiv` pulls valuations back along `e.symm`. -/
+@[simp] theorem spaHomeomorphOfRingEquiv_val (v : spa Aplus) :
+    (spaHomeomorphOfRingEquiv e he he' hplus v : Spv B) = comap (e.symm : B →+* A) v.1 := (rfl)
+
+/-- The inverse of `spaHomeomorphOfRingEquiv` pulls valuations back along `e`. -/
+@[simp] theorem spaHomeomorphOfRingEquiv_symm_val (w : spa Bplus) :
+    ((spaHomeomorphOfRingEquiv e he he' hplus).symm w : Spv A) = comap (e : A →+* B) w.1 := (rfl)
+
+end RingEquiv
 
 open scoped Classical in
 /-- Preimage of a rational subset under `comap φ`, after intersecting with `spa Bplus`:

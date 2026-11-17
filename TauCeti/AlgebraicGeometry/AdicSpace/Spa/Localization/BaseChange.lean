@@ -13,19 +13,14 @@ public import TauCeti.RingTheory.Huber.LocalizationTopology.Pair
 /-!
 # Geometric base change of rational-localisation Huber pairs
 
-This file provides three Huber-pair and adic-spectrum comparisons used when pulling back and
-gluing completed rational localisations:
+This file provides two Huber-pair and adic-spectrum comparisons used when pulling back and gluing
+completed rational localisations:
 
-1. **Homeomorphism of adic spectra along a topological ring equivalence**
-   (`spaHomeomorphOfRingEquiv` and `bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily`): a
-   topological ring isomorphism `e : A ≃+* B` carrying `A⁺` onto `B⁺` induces a homeomorphism
-   `Spa(A, A⁺) ≃ₜ Spa(B, B⁺)` pulling valuations back along `e.symm`, whose preimage map bijects
-   `spaRationalFamily B⁺` onto `spaRationalFamily A⁺`.
-2. **Presentation independence of `completedPlusSubring`**
+1. **Presentation independence of `completedPlusSubring`**
    (`map_completedPlusSubring_presentationRingEquivOfEq`): for two presentations of the same
    rational subset of `Spa(A, A⁺)`, `presentationRingEquivOfEq` maps the completed plus subring of
    the first onto that of the second.
-3. **Wedhorn's geometric universal property for morphisms of Huber pairs**
+2. **Wedhorn's geometric universal property for morphisms of Huber pairs**
    (`existsUnique_pairHom_of_forall_spaComap_mem_rationalSubset`,
    `pairHomOfForallSpaComapMemRationalSubset`, and `pairHomOfSpaComapImageSubset`): a morphism
    `f : (A, A⁺) → (B, B⁺)` whose induced map on `Spa` carries `U = R(T'/s') ⊆ Spa(B, B⁺)` into
@@ -34,8 +29,6 @@ gluing completed rational localisations:
 
 ## Main definitions
 
-* `TauCeti.ValuationSpectrum.spaHomeomorphOfRingEquiv`: homeomorphism `Spa(A, A⁺) ≃ₜ Spa(B, B⁺)`
-  induced by a topological ring equivalence `e : A ≃+* B` with `A⁺.map e = B⁺`.
 * `TauCeti.Huber.PairOfDefinition.pairHomOfForallSpaComapMemRationalSubset`: unique extension of
   `f : (A, A⁺) → (B, B⁺)` across `toCompletionLocHom` when `B` is complete and separated and
   `Spa(f)` lands in `R(T/s)`.
@@ -44,8 +37,6 @@ gluing completed rational localisations:
 
 ## Main results
 
-* `TauCeti.ValuationSpectrum.bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily`: preimage
-  along `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto `spaRationalFamily A⁺`.
 * `TauCeti.ValuationSpectrum.map_completedPlusSubring_presentationRingEquivOfEq`:
   `presentationRingEquivOfEq` preserves `completedPlusSubring`.
 * `TauCeti.Huber.PairOfDefinition.existsUnique_pairHom_of_forall_spaComap_mem_rationalSubset`,
@@ -85,63 +76,6 @@ local macro "withLocHuber " P:term:max T:term:max s:term:max S:term:max hden:ter
     $t)
 
 namespace TauCeti.ValuationSpectrum
-
-section RingEquiv
-
-variable {A B : Type*} [CommRing A] [TopologicalSpace A] [CommRing B] [TopologicalSpace B]
-  {Aplus : Subring A} {Bplus : Subring B}
-  (e : A ≃+* B) (he : Continuous e) (he' : Continuous e.symm)
-  (hplus : Aplus.map (e : A →+* B) = Bplus)
-
-/-- **Homeomorphism of adic spectra induced by a topological ring equivalence.** Given a ring
-isomorphism `e : A ≃+* B` continuous in both directions with `A⁺.map e = B⁺`, pulling valuations
-back along `e.symm` identifies `Spa(A, A⁺)` homeomorphically with `Spa(B, B⁺)`. -/
-noncomputable def spaHomeomorphOfRingEquiv : spa Aplus ≃ₜ spa Bplus where
-  toFun := spaComap (e.symm : B →+* A) he' Bplus Aplus fun b hb ↦ by
-    obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
-    simpa using ha
-  invFun := spaComap (e : A →+* B) he Aplus Bplus fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
-  left_inv := spaComap_spaComap (e : A →+* B) he (fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩)
-    (e.symm : B →+* A) he' e.symm_apply_apply fun b hb ↦ by
-      obtain ⟨a, ha, rfl⟩ := hplus ▸ hb
-      simpa using ha
-  right_inv := spaComap_spaComap (e.symm : B →+* A) he'
-    (fun b hb ↦ by obtain ⟨a, ha, rfl⟩ := hplus ▸ hb; simpa using ha)
-    (e : A →+* B) he e.apply_symm_apply fun a ha ↦ hplus ▸ ⟨a, ha, rfl⟩
-  continuous_toFun := continuous_spaComap _ he' _ _ _
-  continuous_invFun := continuous_spaComap _ he _ _ _
-
-/-- `spaHomeomorphOfRingEquiv` pulls valuations back along `e.symm`. -/
-@[simp] theorem spaHomeomorphOfRingEquiv_val (v : spa Aplus) :
-    (spaHomeomorphOfRingEquiv e he he' hplus v : Spv B) = comap (e.symm : B →+* A) v.1 :=
-  spaComap_val (e.symm : B →+* A) he' Bplus Aplus _ v
-
-/-- The inverse of `spaHomeomorphOfRingEquiv` pulls valuations back along `e`. -/
-@[simp] theorem spaHomeomorphOfRingEquiv_symm_val (w : spa Bplus) :
-    ((spaHomeomorphOfRingEquiv e he he' hplus).symm w : Spv A) = comap (e : A →+* B) w.1 :=
-  spaComap_val (e : A →+* B) he Aplus Bplus _ w
-
-/-- Preimage under `spaHomeomorphOfRingEquiv` bijects `spaRationalFamily B⁺` onto
-`spaRationalFamily A⁺`. -/
-theorem bijOn_preimage_spaHomeomorphOfRingEquiv_spaRationalFamily :
-    Set.BijOn (fun V : Set (spa Bplus) ↦ spaHomeomorphOfRingEquiv e he he' hplus ⁻¹' V)
-      (spaRationalFamily Bplus) (spaRationalFamily Aplus) := by
-  have hopen_symm : ∀ J : Ideal B, IsOpen (J : Set B) →
-      IsOpen (Ideal.map (e.symm : B →+* A) J : Set A) := fun J hJ ↦ by
-    rw [Ideal.map_eq_image_of_surjective (e.symm : B →+* A) e.symm.surjective]
-    exact (IsOpenMap.of_inverse he e.symm_apply_apply e.apply_symm_apply) J hJ
-  have hopen : ∀ J : Ideal A, IsOpen (J : Set A) →
-      IsOpen (Ideal.map (e : A →+* B) J : Set B) := fun J hJ ↦ by
-    rw [Ideal.map_eq_image_of_surjective (e : A →+* B) e.surjective]
-    exact (IsOpenMap.of_inverse he' e.apply_symm_apply e.symm_apply_apply) J hJ
-  refine ⟨fun V hV ↦ spaComap_preimage_mem_spaRationalFamily (e.symm : B →+* A) he' Bplus Aplus _
-      hopen_symm hV,
-    (spaHomeomorphOfRingEquiv e he he' hplus).surjective.preimage_injective.injOn,
-    fun U hU ↦ ⟨(spaHomeomorphOfRingEquiv e he he' hplus).symm ⁻¹' U,
-      spaComap_preimage_mem_spaRationalFamily (e : A →+* B) he Aplus Bplus _ hopen hU, ?_⟩⟩
-  ext x; simp
-
-end RingEquiv
 
 section PresentationPlus
 
@@ -268,11 +202,10 @@ theorem isAdicHom_pairHomOfForallSpaComapMemRationalSubset [IsAdicHom f.toRingHo
     withLocHuber P T s S hden in
     IsAdicHom (pairHomOfForallSpaComapMemRationalSubset P UA hP T s S hden f hf).toRingHom :=
   withLocHuber P T s S hden in
-    IsAdicHom.of_comp
+    isAdicHom_of_comp_toCompletionLoc P T s S hden
+      (pairHomOfForallSpaComapMemRationalSubset P UA hP T s S hden f hf).continuous_toRingHom
       ((toRingHom_pairHomOfForallSpaComapMemRationalSubset_comp_toCompletionLoc P UA hP T s S hden
         f hf).symm ▸ inferInstanceAs (IsAdicHom f.toRingHom))
-      (continuous_toCompletionLoc P T s S hden)
-      (pairHomOfForallSpaComapMemRationalSubset P UA hP T s S hden f hf).continuous_toRingHom
 
 end GeometricUniversalProperty
 
