@@ -35,7 +35,8 @@ for some `w` of norm at most `R`: the sets of approximate preimages are nested, 
 bounded. This realizes limits of approximations with controlled norms, for instance in a Sobolev
 space defined as a completion.
 
-Applying this at `u = 0` to the closed tail convex hulls `closure (convexHull ℝ (f '' Set.Ici n))`
+Applying the nested-intersection result to the closed tail convex hulls
+`closure (convexHull ℝ (f '' Set.Ici n))`
 of a bounded sequence `f : ℕ → E` in a complete real inner product space yields a Hilbert-space form
 of Mazur's lemma without passing through the weak topology: there exists a sequence `w : ℕ → E` of
 finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that converges in norm.
@@ -48,8 +49,8 @@ finite tail convex combinations `w n ∈ convexHull ℝ (f '' Set.Ici n)` that c
   space, those metric projections converge in norm to a point of `⋂ n, K n`.
 * `TauCeti.nonempty_iInter_of_antitone_isClosed_convex`: nested nonempty closed convex sets, the
   first of which is bounded, have a common point.
-* `ContinuousLinearMap.exists_norm_le_apply_eq_of_forall`: approximate preimages with norms tending
-  to `R` give an exact preimage of norm at most `R`.
+* `ContinuousLinearMap.exists_norm_le_apply_eq_of_forall`: approximate preimages with norms at most
+  `R + ε` for every `ε > 0` give an exact preimage of norm at most `R`.
 * `TauCeti.exists_tendsto_mem_convexHull_image_Ici`: every bounded sequence in a complete real inner
   product space admits a norm-convergent sequence of finite tail convex combinations.
 * `TauCeti.exists_tendsto_sum_smul_of_isBounded_range`: explicit-coefficient form giving finite sets
@@ -209,34 +210,17 @@ theorem exists_tendsto_mem_convexHull_image_Ici {f : ℕ → E}
     ⟨f n, subset_closure (subset_convexHull ℝ _ ⟨n, self_mem_Ici, rfl⟩)⟩
   have hK_closed (n : ℕ) : IsClosed (K n) := isClosed_closure
   have hK_conv (n : ℕ) : Convex ℝ (K n) := (convex_convexHull ℝ _).closure
-  choose p hp_mem hp_eq using fun n ↦
-    exists_norm_eq_iInf_of_complete_convex (hK_ne n) (hK_closed n).isComplete (hK_conv n) 0
-  have hp_min (n : ℕ) (w : E) (hw : w ∈ K n) : ‖(0 : E) - p n‖ ≤ ‖(0 : E) - w‖ := by
-    rw [hp_eq n]
-    exact ciInf_le ⟨0, forall_mem_range.2 fun _ ↦ norm_nonneg _⟩ (⟨w, hw⟩ : K n)
-  obtain ⟨C, hC⟩ := (Metric.isBounded_iff_subset_closedBall 0).1 hbdd
-  have hp_bdd : BddAbove (range fun n ↦ ‖(0 : E) - p n‖) := by
-    refine ⟨C, forall_mem_range.2 fun n ↦ ?_⟩
-    have hfn : f n ∈ K n := subset_closure (subset_convexHull ℝ _ ⟨n, self_mem_Ici, rfl⟩)
-    have hfnC : ‖f n‖ ≤ C := by simpa using hC (mem_range_self n)
-    calc
-      ‖(0 : E) - p n‖ ≤ ‖(0 : E) - f n‖ := hp_min n (f n) hfn
-      _ = ‖f n‖ := by simp
-      _ ≤ C := hfnC
-  obtain ⟨v, -, hp_tendsto⟩ := exists_tendsto_of_antitone_isClosed_convex_norm_sub_le
-    hK_anti hK_closed hK_conv hp_mem hp_min hp_bdd
+  obtain ⟨v, hv⟩ := nonempty_iInter_of_antitone_isClosed_convex hK_anti hK_ne hK_closed hK_conv
+    ((isBounded_convexHull.2 (hbdd.subset (image_subset_range _ _))).closure)
   have hw_ex (n : ℕ) :
-      ∃ w ∈ convexHull ℝ (f '' Ici n), dist (p n) w < 1 / ((n : ℝ) + 1) :=
-    Metric.mem_closure_iff.1 (hp_mem n) _ (by positivity)
+      ∃ w ∈ convexHull ℝ (f '' Ici n), dist v w < 1 / ((n : ℝ) + 1) :=
+    Metric.mem_closure_iff.1 (mem_iInter.1 hv n) _ (by positivity)
   choose w hw_mem hw_dist using hw_ex
   refine ⟨v, w, hw_mem, ?_⟩
   rw [tendsto_iff_dist_tendsto_zero]
-  have hbound (n : ℕ) : dist (w n) v ≤ 1 / ((n : ℝ) + 1) + dist (p n) v :=
-    (dist_triangle (w n) (p n) v).trans <|
-      add_le_add ((dist_comm (w n) (p n)).trans_le (hw_dist n).le) le_rfl
-  refine squeeze_zero (fun _ ↦ dist_nonneg) hbound ?_
-  simpa using tendsto_one_div_add_atTop_nhds_zero_nat.add
-    (tendsto_iff_dist_tendsto_zero.1 hp_tendsto)
+  exact squeeze_zero (fun _ ↦ dist_nonneg)
+    (fun n ↦ (dist_comm (w n) v).trans_le (hw_dist n).le)
+    tendsto_one_div_add_atTop_nhds_zero_nat
 
 /-- **Explicit norm-convergent tail convex combinations in a Hilbert space.** Every bounded
 sequence `f : ℕ → E` in a complete real inner product space admits a vector `v : E`, finite index
