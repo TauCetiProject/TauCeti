@@ -124,6 +124,17 @@ instance isFiniteMeasure_prefixLaw (μ : Measure Ω) [IsFiniteMeasure μ] (X : �
     (n : ℕ) : IsFiniteMeasure (prefixLaw μ X n) :=
   isFiniteMeasure_blockLaw μ X _
 
+/-- A block law of a family under a probability measure is a probability measure. -/
+instance isProbabilityMeasure_blockLaw (μ : Measure Ω) [IsProbabilityMeasure μ] (X : ι → Ω → α)
+    {m : ℕ} (k : Fin m → ι) : IsProbabilityMeasure (blockLaw μ X k) := by
+  rw [blockLaw_def]
+  infer_instance
+
+/-- A prefix law of a process under a probability measure is a probability measure. -/
+instance isProbabilityMeasure_prefixLaw (μ : Measure Ω) [IsProbabilityMeasure μ] (X : ℕ → Ω → α)
+    (n : ℕ) : IsProbabilityMeasure (prefixLaw μ X n) :=
+  isProbabilityMeasure_blockLaw μ X _
+
 /-- The mass of a finite path, as the measure of the event that the process spells it out:
 `prefixLaw μ X n {w} = μ {ω | ∀ i, X i.val ω = w i}`. The singleton specialization of
 `blockLaw_apply_of_measurable` along the prefix selection. -/
