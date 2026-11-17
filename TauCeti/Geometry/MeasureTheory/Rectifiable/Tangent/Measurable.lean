@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.Bilipschitz
-public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentCone
+public import TauCeti.Geometry.MeasureTheory.Rectifiable.Tangent.Cone
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.ContinuousLinearMap
 import TauCeti.MeasureTheory.Function.SpecialFunctions.Projection
 import TauCeti.Geometry.Euclidean.Volume.Measure
@@ -68,7 +68,7 @@ theorem LipschitzOnWith.exists_measurable_tangent_projection
     (fun _ ↦ ⟨0⟩)
   refine ⟨Q, hQm, ?_⟩
   filter_upwards [hg.ae_exists_fderiv_range_forall_infDist_le hi'] with y hy hyimage
-  obtain ⟨x, hx, rfl, hdim, hcone⟩ := hy hyimage
+  obtain ⟨x, hx, rfl, -, hdim, hcone⟩ := hy hyimage
   exact ⟨(fderiv ℝ g x).range, hdim, congrFun hQ ⟨x, hx⟩, hcone⟩
 
 namespace TauCeti
