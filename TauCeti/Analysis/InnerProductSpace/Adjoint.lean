@@ -364,6 +364,11 @@ theorem adjointEquiv_apply [CompleteSpace E] [CompleteSpace F]
     A.adjointEquiv x = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) x := by
   exact equivOfInverse_apply _ _ _ _ _
 
+/-- As a continuous linear map, the adjoint equivalence is the adjoint map. -/
+theorem coe_adjointEquiv [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
+    (A.adjointEquiv : F →L[𝕜] E) = ContinuousLinearMap.adjoint (A : E →L[𝕜] F) :=
+  ContinuousLinearMap.ext A.adjointEquiv_apply
+
 /-- The inverse of the adjoint equivalence is the adjoint equivalence of the inverse. -/
 @[simp]
 theorem adjointEquiv_symm [CompleteSpace E] [CompleteSpace F] (A : E ≃L[𝕜] F) :
