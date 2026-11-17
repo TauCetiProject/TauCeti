@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Real.Sqrt
 
 /-!
 # Basic lemmas on normed scalar actions and modules
@@ -21,6 +22,8 @@ normed spaces:
   against positive weights `r i`, the combination `∑ i ∈ s, a i • u i` has norm at most
   `(∑ i ∈ s, ‖u i‖ / r i) * b`; in particular, strict-generator representations yield uniformly
   norm-bounded preimages along linear maps.
+* `TauCeti.norm_sqrt_smul_sq`: scaling a vector by `√a`, `a ≥ 0`, multiplies its squared norm by
+  `a`.
 * `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
   `u` and `v` are scaled by the same nonzero scalar.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
@@ -57,6 +60,11 @@ theorem norm_sum_smul_le_sum_div_mul {ι A E : Type*} [SeminormedAddGroup A]
               mul_le_mul_of_nonneg_right ((le_div_iff₀ (hr i hi)).mpr (ha i hi)) (norm_nonneg _)
           _ = ‖u i‖ / r i * b := by ring
     _ = (∑ i ∈ s, ‖u i‖ / r i) * b := (Finset.sum_mul s _ b).symm
+
+/-- The squared norm of a vector scaled by the square root of `a ≥ 0` is multiplied by `a`. -/
+theorem norm_sqrt_smul_sq {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E] {a : ℝ}
+    (ha : 0 ≤ a) (x : E) : ‖√a • x‖ ^ 2 = a * ‖x‖ ^ 2 := by
+  simp [norm_smul, mul_pow, Real.sq_sqrt ha]
 
 /-- The ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when `u` and `v` are scaled by the same nonzero
 scalar. -/

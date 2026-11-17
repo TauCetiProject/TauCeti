@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 public import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 public import TauCeti.Analysis.PDE.Schrodinger.Basic
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.MeasureTheory.Function.Lp.Dilation
 import TauCeti.MeasureTheory.Measure.OpenPos
@@ -78,12 +80,9 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 private def profile (s : ℝ) (y : E) : ℂ :=
   (1 + 4 * s * I) ^ (-(finrank ℝ E : ℂ) / 2) * cexp (-‖y‖ ^ 2 / (1 + 4 * s * I))
 
-private theorem norm_sqrt_smul_sq {c : ℝ} (hc : 0 < c) (x : E) : ‖√c • x‖ ^ 2 = c * ‖x‖ ^ 2 := by
-  rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg c), mul_pow, Real.sq_sqrt hc.le]
-
 private theorem ofReal_norm_sqrt_smul_sq {c : ℝ} (hc : 0 < c) (x : E) :
     (‖√c • x‖ : ℂ) ^ 2 = c * ‖x‖ ^ 2 := by
-  exact_mod_cast norm_sqrt_smul_sq hc x
+  exact_mod_cast norm_sqrt_smul_sq hc.le x
 
 private theorem profile_mul_sqrt_smul {c : ℝ} (hc : 0 < c) (t : ℝ) (x : E) :
     (1 + 4 * c * t * I) ^ (-(finrank ℝ E : ℂ) / 2) *
@@ -122,16 +121,6 @@ private theorem continuous_profile (s : ℝ) : Continuous (profile (E := E) s) :
 private theorem profile_zero (y : E) :
     profile 0 y = (SchwartzMap.gaussian (b := 1) (by simp) : 𝓢(E, ℂ)) y := by
   simp [profile, SchwartzMap.gaussian_apply]
-
-/-- `a^s (a⁻¹ w⁻¹)^s = w^(-s)` for `a > 0` and `w` off the negative real axis, with the principal
-power. -/
-private theorem ofReal_cpow_mul_inv_mul_inv_cpow {a : ℝ} (ha : 0 < a) {w : ℂ} (hw : w.arg ≠ π)
-    (s : ℂ) : (a : ℂ) ^ s * ((a : ℂ)⁻¹ * w⁻¹) ^ s = w ^ (-s) := by
-  have has : (a : ℂ) ^ s ≠ 0 := by simp [ha.ne']
-  rw [mul_cpow (by simpa [← ofReal_inv, arg_ofReal_of_nonneg (inv_nonneg.2 ha.le)]
-      using arg_mem_Ioc w⁻¹),
-    inv_cpow_ofReal_nonneg ha.le, inv_cpow _ _ hw, cpow_neg]
-  field_simp
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -199,7 +188,7 @@ theorem norm_schrodingerPropagator_toLp_gaussian {c : ℝ} (hc : 0 < c) (t : ℝ
       (1 + 16 * c ^ 2 * t ^ 2) ^ (-(finrank ℝ E : ℝ) / 4) *
         Real.exp (-c * ‖x‖ ^ 2 / (1 + 16 * c ^ 2 * t ^ 2)) := by
   filter_upwards [coeFn_schrodingerPropagator_toLp_gaussian hc t] with x hx
-  rw [hx, profile_mul_sqrt_smul hc, norm_profile, norm_sqrt_smul_sq hc]
+  rw [hx, profile_mul_sqrt_smul hc, norm_profile, norm_sqrt_smul_sq hc.le]
   congr 2 <;> ring
 
 /-! ### Norms of the evolved Gaussian -/
