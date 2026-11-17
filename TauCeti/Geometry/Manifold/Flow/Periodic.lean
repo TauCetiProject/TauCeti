@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
 public import TauCeti.Geometry.Manifold.Topology
 public import TauCeti.Topology.Homotopy.AddCircle
-public import Mathlib.Algebra.Ring.Periodic
+public import TauCeti.Algebra.Ring.Periodic
 
 /-!
 # Periodic solutions of time-periodic vector fields on manifolds
@@ -63,6 +63,8 @@ isolated, fixed points is finite.
 
 * `TauCeti.mem_periodicSolutions_const_iff`: the periodic solutions of an autonomous field are its
   periodic integral curves.
+* `TauCeti.comp_neg_mem_periodicSolutions_iff`: reversing time turns the periodic solutions of `X`
+  into those of the reversed field `(t, x) ↦ -X (-t) x`.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
@@ -120,6 +122,28 @@ theorem mem_periodicSolutions_const_iff {Y : (x : M) → TangentSpace I x} {γ :
 theorem continuous_of_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
     Continuous γ :=
   continuous_iff_continuousAt.2 fun t ↦ (hγ.1 t).continuousAt
+
+/-- **Reversing time.** If `γ` is a `T`-periodic solution of `X`, then `t ↦ γ (-t)` is a
+`T`-periodic solution of the reversed field `(t, x) ↦ -X (-t) x`. -/
+theorem comp_neg_mem_periodicSolutions {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T) :
+    (fun t ↦ γ (-t)) ∈ periodicSolutions (fun t x ↦ -X (-t) x) T := by
+  refine ⟨fun t ↦ ?_, Periodic.comp_neg hγ.2⟩
+  have hneg : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ) (fun t : ℝ ↦ -t) t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ)) :=
+    (hasDerivAt_neg t).hasFDerivAt.hasMFDerivAt
+  have h : (1 : ℝ →L[ℝ] ℝ).smulRight (-X (-t) (γ (-t))) =
+      (1 : ℝ →L[ℝ] ℝ).smulRight (X (-t) (γ (-t))) ∘SL (1 : ℝ →L[ℝ] ℝ).smulRight (-1 : ℝ) := by
+    simp [ContinuousLinearMap.smulRight_comp_smulRight]
+  rw [h]
+  exact (hγ.1 (-t)).comp t hneg
+
+/-- **Reversing time**, as a characterization: `t ↦ γ (-t)` is a `T`-periodic solution of `X`
+exactly when `γ` is a `T`-periodic solution of the reversed field `(t, x) ↦ -X (-t) x`. -/
+theorem comp_neg_mem_periodicSolutions_iff {γ : ℝ → M} :
+    (fun t ↦ γ (-t)) ∈ periodicSolutions X T ↔
+      γ ∈ periodicSolutions (fun t x ↦ -X (-t) x) T := by
+  -- Each direction is the reversal of the other side, since reversing twice is the identity.
+  constructor <;> intro h <;> simpa only [neg_neg] using comp_neg_mem_periodicSolutions h
 
 /-- The **contractible** `T`-periodic solutions of `X`: the `T`-periodic solutions `γ` whose loop
 `ℝ ⧸ Tℤ → M`, `t ↦ γ t`, is null-homotopic. -/

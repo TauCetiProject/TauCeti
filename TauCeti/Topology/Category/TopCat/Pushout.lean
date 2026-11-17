@@ -12,6 +12,7 @@ import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Pullbacks
 import Mathlib.CategoryTheory.Limits.Types.Pushouts
 import Mathlib.Topology.LocallyFinite
+import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
 
 /-!
 # Maps and homotopies out of pushouts in `TopCat`
@@ -31,10 +32,6 @@ map out of such a pushout which restricts to closed embeddings on `A` and on fin
 `B k`, any two of which meet only inside `A`, and meeting `A` only along the `S k`, is still a
 closed embedding.
 
-In a Hausdorff space, a closed set `F` together with the image `Θ(D)` of a compact set `D` under a
-continuous injective map, meeting `F` exactly in the image `Θ(A)` of a subset `A ⊆ D`, is the
-pushout of the inclusion `A → D` along `Θ : A → F`, since `Θ(D)` is closed.
-
 ## Main declarations
 
 * `CategoryTheory.IsPushout.continuousMap_ext`: continuous maps out of a pushout agree when they
@@ -49,8 +46,8 @@ pushout of the inclusion `A → D` along `Θ : A → F`, since `Θ(D)` is closed
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
-* `CategoryTheory.IsPushout.of_isClosedEmbedding_of_union`: the case of a single piece, a cover
-  by two closed subspaces meeting along a prescribed subspace.
+* `CategoryTheory.IsPushout.of_isClosedEmbedding_of_range_union_range`: a cover by two closed
+  subspaces meeting along a prescribed subspace is a pushout square.
 * `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
   `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
@@ -59,9 +56,6 @@ pushout of the inclusion `A → D` along `Θ : A → F`, since `Θ(D)` is closed
   `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed embeddings) on `L` and on
   the `D i`, with the images of any two `D i` meeting only inside the image of `L` and each
   meeting it only along `A i`, is injective (resp. a closed embedding).
-* `TauCeti.TopCat.exists_isPushout_union_image`: a closed set `F` together with the injective
-  image `Θ(D)` of a compact set, meeting `F` exactly in `Θ(A)`, is the pushout of `A → D` along
-  `Θ : A → F`.
 -/
 
 public section
@@ -289,36 +283,27 @@ theorem of_isClosedEmbedding (w : ∀ k, g k ≫ i = m k ≫ j k) (hi : IsClosed
       rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, hk,
         (desc s).choose_spec.2 k]
 
-end ClosedCover
-
-section ClosedUnion
-
-open Set Topology Limits
-
-universe u
-
-variable {S A B X : TopCat.{u}} {g : S ⟶ A} {m : S ⟶ B} {i : A ⟶ X} {j : B ⟶ X}
-
-/-- **Two closed pieces meeting along a prescribed subspace form a pushout.** Let `X` be covered
-by the ranges of closed embeddings `i : A ⟶ X` and `j : B ⟶ X` which meet exactly along `S`: the
-square `g ≫ i = m ≫ j` commutes, and every point `i a = j b` comes from a point `s` of `S` with
-`g s = a` and `m s = b`. Then `X` is the pushout of `A` and `B` along `S`. This is the case of a
-single piece of `CategoryTheory.IsPushout.of_isClosedEmbedding`. -/
-theorem of_isClosedEmbedding_of_union (w : g ≫ i = m ≫ j) (hi : IsClosedEmbedding i)
+/-- **A cover by two closed subspaces is a pushout.** Let `X` be covered by the ranges of two
+closed embeddings `i : A ⟶ X` and `j : B ⟶ X` which meet exactly along `S`: the square
+`g ≫ i = m ≫ j` commutes, and every point `i a = j b` comes from a point `s` of `S` with `g s = a`
+and `m s = b`. Then `X` is the pushout of `A` and `B` along `S`. This is the one-piece case of
+`CategoryTheory.IsPushout.of_isClosedEmbedding`, without the coproducts. -/
+theorem of_isClosedEmbedding_of_range_union_range {S A B X : TopCat.{u}} {g : S ⟶ A}
+    {m : S ⟶ B} {i : A ⟶ X} {j : B ⟶ X} (w : g ≫ i = m ≫ j) (hi : IsClosedEmbedding i)
     (hj : IsClosedEmbedding j) (hcover : range i ∪ range j = univ)
     (hij : ∀ a b, i a = j b → ∃ s, g s = a ∧ m s = b) :
     IsPushout g m i j := by
-  have h := of_isClosedEmbedding (ι := PUnit.{u + 1}) (S := fun _ ↦ S) (B := fun _ ↦ B)
-    (g := fun _ ↦ g) (m := fun _ ↦ m) (j := fun _ ↦ j) (fun _ ↦ w) hi (fun _ ↦ hj)
-    (by rwa [iUnion_const]) (fun k l hkl ↦ absurd (Subsingleton.elim k l) hkl) fun _ ↦ hij
-  refine h.of_iso (coproductUniqueIso _) (Iso.refl _) (coproductUniqueIso _) (Iso.refl _) ?_ ?_
-    ?_ ?_
-  · exact Sigma.hom_ext _ _ fun _ ↦ by simp
-  · exact Sigma.hom_ext _ _ fun _ ↦ by simp
-  · simp
-  · exact Sigma.hom_ext _ _ fun _ ↦ by simp
+  let desc (s : PushoutCocone g m) : X ⟶ s.pt :=
+    TopCat.ofHom (ContinuousMap.glueClosedEmbeddings s.inl.hom s.inr.hom hi hj hcover
+      fun a b h ↦ by
+        obtain ⟨t, rfl, rfl⟩ := hij a b h
+        exact ConcreteCategory.congr_hom s.condition t)
+  refine IsPushout.of_isColimit' ⟨w⟩ (PushoutCocone.IsColimit.mk w desc
+    (fun s ↦ by ext; simp [desc]) (fun s ↦ by ext; simp [desc]) fun s d h₁ h₂ ↦
+      TopCat.hom_ext (ContinuousMap.eq_glueClosedEmbeddings (ConcreteCategory.congr_hom h₁)
+        (ConcreteCategory.congr_hom h₂)))
 
-end ClosedUnion
+end ClosedCover
 
 end CategoryTheory.IsPushout
 
@@ -429,66 +414,5 @@ theorem isClosedEmbedding_of_isPushout_sigma_of_comp [Finite ι] (hg : IsClosedE
       (hC.preimage (inr.hom.continuous.comp (Sigma.ι D i).hom.continuous)))
 
 end PushoutSigma
-
-section UnionImage
-
-open CategoryTheory Limits Set Topology
-
-universe u
-
-variable {X M : Type u} [TopologicalSpace X] [TopologicalSpace M] [T2Space M] {A D : Set X}
-  {F U : Set M} {Θ : X → M}
-
-/-- **Attaching the image of a compact set to a closed set.** Let `F` be a closed subset of a
-Hausdorff space `M`, and let `Θ` be continuous and injective on a compact set `D`, meeting `F`
-exactly in the image of a subset `A ⊆ D`. Then, inside any subspace `U` containing `F` and
-`Θ(D)`, the union `F ∪ Θ(D)` is the pushout of the inclusion `A → D` along `α = Θ : A → F`, with
-legs `χ = Θ : D → F ∪ Θ(D)` and the inclusion `j : F → F ∪ Θ(D)`. -/
-theorem exists_isPushout_union_image (hF : IsClosed F) (hFU : F ⊆ U) (hAD : A ⊆ D)
-    (hD : IsCompact D) (hΘ : ContinuousOn Θ D) (hinj : InjOn Θ D) (hΘU : MapsTo Θ D U)
-    (hΘF : ∀ x ∈ D, Θ x ∈ F ↔ x ∈ A) :
-    ∃ (α : C(A, F)) (χ : C(D, ↥(U ∩ (F ∪ Θ '' D)))) (j : C(F, ↥(U ∩ (F ∪ Θ '' D)))),
-      (∀ x, (α x : M) = Θ x) ∧ (∀ y, (j y : M) = y) ∧
-      IsPushout (TopCat.ofHom (ContinuousMap.inclusion hAD)) (TopCat.ofHom α) (TopCat.ofHom χ)
-        (TopCat.ofHom j) := by
-  have : CompactSpace D := isCompact_iff_compactSpace.1 hD
-  have hΘc : Continuous fun x : D ↦ Θ x := hΘ.comp_continuous continuous_subtype_val Subtype.prop
-  have hFsub : F ⊆ U ∩ (F ∪ Θ '' D) := fun y hy ↦ ⟨hFU hy, Or.inl hy⟩
-  let α : C(A, F) :=
-    ⟨fun x ↦ ⟨Θ x, (hΘF x (hAD x.2)).2 x.2⟩, (hΘc.comp (continuous_inclusion hAD)).subtype_mk _⟩
-  have hα (x : A) : (α x : M) = Θ x := rfl
-  let χ : C(D, ↥(U ∩ (F ∪ Θ '' D))) :=
-    ⟨fun x ↦ ⟨Θ x, hΘU x.2, Or.inr (mem_image_of_mem Θ x.2)⟩, hΘc.subtype_mk _⟩
-  have hχ (x : D) : (χ x : M) = Θ x := rfl
-  let j : C(F, ↥(U ∩ (F ∪ Θ '' D))) := ContinuousMap.inclusion hFsub
-  have hj (y : F) : (j y : M) = y := ContinuousMap.inclusion_apply_coe hFsub y
-  refine ⟨α, χ, j, hα, hj, (IsPushout.of_isClosedEmbedding_of_union ?_ ?_ ?_ ?_
-    fun y x hyx ↦ ?_).flip⟩
-  · -- Both composites send `x ∈ A` to the point `Θ x`.
-    rw [← TopCat.ofHom_comp, ← TopCat.ofHom_comp]
-    refine congrArg TopCat.ofHom (ContinuousMap.ext fun x ↦ Subtype.ext ?_)
-    rw [ContinuousMap.comp_apply, ContinuousMap.comp_apply, hχ, hj, hα,
-      ContinuousMap.inclusion_apply_coe]
-  · -- `F` is closed.
-    simp only [TopCat.hom_ofHom]
-    exact IsClosedEmbedding.inclusion hFsub (hF.preimage continuous_subtype_val)
-  · -- `Θ` is injective on the compact set `D`.
-    simp only [TopCat.hom_ofHom]
-    exact χ.continuous.isClosedEmbedding fun x x' hxx' ↦
-      Subtype.ext (hinj x.2 x'.2 (by rw [← hχ, ← hχ, hxx']))
-  · simp only [TopCat.hom_ofHom]
-    refine eq_univ_of_forall fun y ↦ ?_
-    obtain hy | ⟨x, hx, hxy⟩ := y.2.2
-    · exact Or.inl ⟨⟨y, hy⟩, Subtype.ext (hj _)⟩
-    · exact Or.inr ⟨⟨x, hx⟩, Subtype.ext ((hχ _).trans hxy)⟩
-  · -- A point of `F` in `Θ(D)` lies in `Θ(A)`.
-    simp only [TopCat.hom_ofHom] at hyx
-    have h : (y : M) = Θ x := by rw [← hj, hyx, hχ]
-    have hxA : (x : X) ∈ A := (hΘF x x.2).1 (h ▸ y.2)
-    refine ⟨⟨x, hxA⟩, Subtype.ext ?_, Subtype.ext ?_⟩
-    · rw [TopCat.ofHom_apply, hα, h]
-    · rw [TopCat.ofHom_apply, ContinuousMap.inclusion_apply_coe]
-
-end UnionImage
 
 end TauCeti.TopCat

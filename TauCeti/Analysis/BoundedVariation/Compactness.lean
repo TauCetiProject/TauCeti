@@ -91,38 +91,26 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 variable {K : Set E} {S : Set (E → ℝ)} {M : ℝ≥0∞}
 
-/-- **The Fréchet--Kolmogorov step.** A family of integrable functions `F u` vanishing off a
-bounded set `L`, bounded in `L¹` and in total variation on the whole space, is totally bounded in
-`L¹(μ)`: the translation estimate gives the equicontinuity under translations. -/
-theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E → ℝ} {L : Set E}
+/-- **The Fréchet--Kolmogorov step.** A family in `L¹(μ)` vanishing almost everywhere off a bounded
+set `L`, bounded in `L¹` and in total variation on the whole space, is totally bounded in `L¹(μ)`:
+the translation estimate gives the equicontinuity under translations. -/
+theorem totallyBounded_of_lintegral_le_of_totalVariationOn_le {S : Set (Lp ℝ 1 μ)} {L : Set E}
     {B : ℝ≥0∞} (hL : Bornology.IsBounded L) (hM : M ≠ ⊤) (hB : B ≠ ⊤)
-    (hsupp : ∀ u ∈ S, ∀ x ∉ L, F u x = 0) (hint : ∀ u ∈ S, Integrable (F u) μ)
-    (hnorm : ∀ u ∈ S, ∫⁻ x, ‖F u x‖ₑ ∂μ ≤ M)
-    (hvar : ∀ u ∈ S, totalVariationOn μ ⊤ (F u) ≤ B) :
-    TotallyBounded {f : Lp ℝ 1 μ | ∃ u ∈ S, f =ᵐ[μ] F u} := by
+    (hsupp : ∀ f ∈ S, ∀ᵐ x ∂μ, x ∉ L → f x = 0)
+    (hnorm : ∀ f ∈ S, ∫⁻ x, ‖f x‖ₑ ∂μ ≤ M)
+    (hvar : ∀ f ∈ S, totalVariationOn μ ⊤ f ≤ B) :
+    TotallyBounded S := by
   refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl ENNReal.one_ne_top
-    hL ?_ hM ?_ ?_
-  · rintro f ⟨u, hu, hf⟩
-    filter_upwards [hf] with x hx hxL
-    rw [hx]
-    exact hsupp u hu x hxL
-  · rintro f ⟨u, hu, hf⟩
-    rw [eLpNorm_congr_ae hf, eLpNorm_one_eq_lintegral_eNorm (hint u hu).aestronglyMeasurable]
-    exact hnorm u hu
-  · intro ε hε
-    obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hB hε.ne'
-    refine ⟨δ, by exact_mod_cast hδ, fun f ⟨u, hu, hf⟩ h hh => ?_⟩
-    have hfh : (fun x => f (x + h)) =ᵐ[μ] fun x => F u (x + h) :=
-      (measurePreserving_add_right μ h).quasiMeasurePreserving.ae_eq_comp hf
-    have hinc : (fun x => f (x + h) - f x) =ᵐ[μ] fun x => F u (x + h) - F u x := by
-      filter_upwards [hfh, hf] with x h₁ h₂
-      rw [h₁, h₂]
-    rw [eLpNorm_congr_ae hinc, eLpNorm_one_eq_lintegral_eNorm
-      (f := fun x => F u (x + h) - F u x)
-      (((hint u hu).comp_add_right h).sub (hint u hu)).aestronglyMeasurable]
-    refine (lintegral_enorm_comp_add_sub_le_mul_totalVariationOn
-      (hint u hu).locallyIntegrable h).trans ?_
-    refine (mul_le_mul' ?_ (hvar u hu)).trans hδε.le
+    hL hsupp hM (fun f hf => ?_) fun ε hε => ?_
+  · rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f)]
+    exact hnorm f hf
+  · obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hB hε.ne'
+    refine ⟨δ, by exact_mod_cast hδ, fun f hf h hh => ?_⟩
+    have hint := L1.integrable_coeFn f
+    rw [eLpNorm_one_eq_lintegral_eNorm (f := fun x => f (x + h) - f x)
+      ((hint.comp_add_right h).sub hint).aestronglyMeasurable]
+    refine (lintegral_enorm_comp_add_sub_le_mul_totalVariationOn hint.locallyIntegrable h).trans ?_
+    refine (mul_le_mul' ?_ (hvar f hf)).trans hδε.le
     exact eNorm_le_coe.mpr (by exact_mod_cast hh.le)
 
 /-- **Compactness of families of bounded variation.** Let `S` be a family of functions on `Ω`
@@ -160,10 +148,18 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
     (totalVariationOn_top_mul_le hχ hχ1 hχΩ (fun x => hC (mem_range_self x))
       (huΩ u hu).locallyIntegrableOn).trans (by gcongr <;> simp [hvar u hu, hbdd u hu])
   -- The Fréchet--Kolmogorov criterion applies to the family of the `χ u` in `L¹`.
-  have hT := totallyBounded_of_integrable_totalVariationOn_le (S := S) (F := (χ * ·))
-    hχc.isCompact.isBounded hM hB (fun u _ x hx => by
-      simp [image_eq_zero_of_notMem_tsupport hx]) hint
-    (fun u hu => (hnorm u).trans (hbdd u hu)) hvarχ
+  have hT := totallyBounded_of_lintegral_le_of_totalVariationOn_le
+    (S := {f : Lp ℝ 1 μ | ∃ u ∈ S, f =ᵐ[μ] χ * u}) hχc.isCompact.isBounded hM hB
+    (fun f ⟨u, _, hf⟩ => by
+      filter_upwards [hf] with x hx hxL
+      simp [hx, image_eq_zero_of_notMem_tsupport hxL])
+    (fun f ⟨u, hu, hf⟩ => by
+      refine le_trans (le_of_eq (lintegral_congr_ae ?_)) ((hnorm u).trans (hbdd u hu))
+      filter_upwards [hf] with x hx
+      rw [hx])
+    fun f ⟨u, hu, hf⟩ => by
+      rw [totalVariationOn_congr_ae (ae_restrict_of_ae hf)]
+      exact hvarχ u hu
   exact totallyBounded_restrict_of_forall_eqOn (g := (χ * ·)) hK.measurableSet
     (fun u hu => memLp_one_iff_integrable.2 (hint u hu))
     (fun u _ x hx => by
