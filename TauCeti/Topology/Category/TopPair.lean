@@ -108,6 +108,12 @@ lemma ofInclusion_congr {X : TopCat.{u}} {s t s' t' : Set X} (h : s ⊆ t) (h' :
 variable {X Y Z : TopCat.{u}} (g : X ⟶ Y) (g' : Y ⟶ Z) {B : Set X} {B' : Set Y} {B'' : Set Z}
   (hB : Set.MapsTo g B B') (hB' : Set.MapsTo g' B' B'')
 
+/-- The embedding of the pair `(X, B)` is `ContinuousMap.subtypeVal B`. -/
+lemma ofSubset_map (B : Set X) :
+    (ofSubset B).map = TopCat.ofHom (ContinuousMap.subtypeVal B) := by
+  ext
+  rfl
+
 /-- The embedding of the pair `(X, B)` has range `B`. -/
 lemma range_ofSubset_map : Set.range (ofSubset B).map = B :=
   Subtype.range_coe
