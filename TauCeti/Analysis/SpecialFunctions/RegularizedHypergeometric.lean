@@ -50,6 +50,8 @@ hypothesis on the lower parameter.
   termwise differentiated series.
 * `Complex.regularizedHGFun_of_zero_mem` — when `0 ∈ a`, `regularizedHGFun a b` is constant and
   equals `(b.map Gamma).prod⁻¹`.
+* `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
+  converges to it on the open unit disk `‖z‖ < 1`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.sum_regularizedHGFunCoeff_zero_singleton_mul` and
@@ -120,6 +122,17 @@ theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z 
     (by simp [radius_regularizedHGFunSeries_eq_top h])
   simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
     mul_comm] using this
+
+/-- On the open unit disk `‖z‖ < 1`, the regularized Gauss hypergeometric power series converges
+to `regularizedGaussHGFun a b c z`. -/
+theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ => (regularizedGaussHGFunSeries a b c).coeff n * z ^ n)
+      (regularizedGaussHGFun a b c z) := by
+  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius :=
+    Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c) <| by
+      rwa [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]
+  simpa only [regularizedGaussHGFun, FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
+    mul_comm] using (regularizedGaussHGFunSeries a b c).hasSum hmem
 
 /-- When there are at most as many upper as lower parameters, the regularized hypergeometric
 series converges absolutely at every `z`. -/
