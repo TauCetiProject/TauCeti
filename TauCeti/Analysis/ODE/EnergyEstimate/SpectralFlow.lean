@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 public import TauCeti.Analysis.Matrix.HermitianSignature.RegularCrossings
 public import TauCeti.Analysis.ODE.EnergyEstimate.Index
+public import TauCeti.Analysis.Fredholm.Spectral.FiniteDimensional
+public import TauCeti.Analysis.InnerProductSpace.ContinuousFunctionalCalculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
@@ -42,12 +44,22 @@ index of `⟪B ·, ·⟫` is the number of negative eigenvalues of `B`
 an invertible symmetric operator, so it agrees with that of `A±` at all large enough `±t`, where
 `A t` is invertible (`TauCeti.exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto`).
 
+The same computation identifies the index with the spectral flow of Phillips
+(`TauCeti.spectralFlow`), with no differentiability or crossing hypothesis: in finite dimension the
+spectral flow of `A` from `a` to `b` is the number of negative eigenvalues of `A a` minus that of
+`A b` (`TauCeti.spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank`), and for `a` far enough
+to the left and `b` far enough to the right these are the numbers of negative eigenvalues of `A⁻`
+and `A⁺`. So the index of `u ↦ u' + A u` is `TauCeti.spectralFlow A a b` for all such `a` and `b`.
+
 ## Main results
 
 * `TauCeti.finite_setOf_ker_ne_bot_of_tendsto`: a family of symmetric operators with invertible
   limits and only regular crossings has finitely many crossings.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm`: the
   index of `u ↦ u' + A u` is the sum of the signatures of the crossing forms of `A`.
+* `TauCeti.WeakDerivStep.eventually_index_trajectoryOperator_eq_spectralFlow`: the index of
+  `u ↦ u' + A u` is the spectral flow of `A` from `a` to `b`, for every `a` far enough to the left
+  and `b` far enough to the right.
 
 ## References
 
@@ -145,6 +157,38 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
     iff_of_true ?_ (mem_univ t)).trans (finsum_mem_univ _)
   by_contra hab
   exact ht (sigPos_sub_sigNeg_crossingForm_eq_zero (hnd hab) _)
+
+/-- **The index of the trajectory operator is the spectral flow of Phillips.** Let `A` be a
+continuous family of symmetric operators on a finite-dimensional real inner product space with
+invertible limits `A±` at `±∞`. Then for every `a` far enough to the left and every `b` far enough
+to the right, the index of the trajectory operator `u ↦ u' + A u` from `W^{1,2}(ℝ, E)` to
+`L²(ℝ, E)` is the spectral flow `TauCeti.spectralFlow A a b`. Neither differentiability of `A` nor
+regularity of its crossings is needed. Completeness of `E`, automatic in finite dimension, is
+assumed because the spectral flow is defined through the adjoint of `E →L[ℝ] E`. -/
+theorem eventually_index_trajectoryOperator_eq_spectralFlow [CompleteSpace E]
+    (hA : Continuous A) (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric)
+    {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
+    (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    ∀ᶠ ab in atBot ×ˢ atTop,
+      (trajectoryOperator (p := 2) AL).index = spectralFlow A ab.1 ab.2 := by
+  have hker {L : E →L[ℝ] E} (hL : ∀ v, α * ‖v‖ ≤ ‖L v‖) : LinearMap.ker (L : E →ₗ[ℝ] E) = ⊥ :=
+    LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun v ↦ (le_inv_mul_iff₀ hα).2 (hL v))
+  filter_upwards [((eventually_le_atBot 0).and
+      (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym (hker hminus) hbot)).prod_mk
+    ((eventually_ge_atTop 0).and
+      (eventually_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym (hker hplus) htop))]
+    with ⟨a, b⟩ hab
+  obtain ⟨⟨ha0, -, ha⟩, hb0, -, hb⟩ := hab
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA
+      (isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
+      (isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)) hα hminus hplus hbot htop
+      AL hAL, ← ha, ← hb, (hsym a).sigNeg_toBilinForm_innerSL_comp,
+    (hsym b).sigNeg_toBilinForm_innerSL_comp,
+    spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank (ha0.trans hb0) hA.continuousOn
+      fun t _ ↦ isSelfAdjoint_iff_isSymmetric.2 (hsym t)]
 
 end WeakDerivStep
 
