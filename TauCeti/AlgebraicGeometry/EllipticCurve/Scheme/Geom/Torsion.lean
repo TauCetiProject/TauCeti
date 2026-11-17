@@ -309,6 +309,7 @@ theorem torsionMap_hom : torsionMap n hg h0 ≫ (E.torsion n).X.hom = (E'.torsio
 
 open MonoidalCategory in
 /-- The morphism `E'[n] ⟶ E[n]` carries the zero section of `E'[n]` to that of `E[n]`. -/
+@[reassoc (attr := simp)]
 theorem one_left_torsionMap :
     (1 : 𝟙_ (Over S') ⟶ (E'.torsion n).X).left ≫ torsionMap n hg h0 =
       f ≫ (1 : 𝟙_ (Over S) ⟶ (E.torsion n).X).left := by
