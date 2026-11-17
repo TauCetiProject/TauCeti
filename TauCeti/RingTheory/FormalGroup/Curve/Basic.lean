@@ -61,6 +61,8 @@ yields Cartier's relations over every commutative ring:
 * `FormalGroup.Curve.map`: base change of curves along a ring homomorphism `R →+* S`.
 * `TauCeti.FormalGroupHom.mapCurve` and `TauCeti.FormalGroupIso.curveEquiv`: pushforward of curves
   along homomorphisms and isomorphisms of formal group laws.
+* `TauCeti.FormalCoordinate.toCurve`: view a formal coordinate `φ` as a curve on a formal group
+  law `F`, compatible with coordinate-change pushforwards under `FormalGroup.smulIso`.
 * `FormalGroup.verschiebungCurve`: Cartier's Verschiebung operator `V_n : F.Curve →+ F.Curve`.
 * `FormalGroup.frobeniusCurve`: Cartier's Frobenius operator `f_n : F.Curve →+ F.Curve`.
 
@@ -524,11 +526,79 @@ end FormalGroupIso
 
 end Hom
 
+namespace FormalCoordinate
+
+variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- View a formal coordinate `φ` as a curve on a formal group law `F`. -/
+def toCurve (φ : FormalCoordinate R) (F : FormalGroup R) : F.Curve where
+  toPowerSeries := φ.toPowerSeries
+  constantCoeff_toPowerSeries := φ.constantCoeff_toPowerSeries
+
+/-- Viewing a formal coordinate as a curve preserves the underlying power series. -/
+@[simp]
+theorem toPowerSeries_toCurve (φ : FormalCoordinate R) (F : FormalGroup R) :
+    (φ.toCurve F).toPowerSeries = φ.toPowerSeries :=
+  (rfl)
+
+/-- Viewing formal coordinates as curves on `F` is injective. -/
+theorem toCurve_injective (F : FormalGroup R) :
+    Function.Injective fun φ : FormalCoordinate R ↦ φ.toCurve F :=
+  fun _ _ h ↦ FormalCoordinate.ext (congrArg FormalGroup.Curve.toPowerSeries h)
+
+/-- Two formal coordinates yield the same curve on `F` if and only if they are equal. -/
+@[simp]
+theorem toCurve_inj {φ ψ : FormalCoordinate R} (F : FormalGroup R) :
+    φ.toCurve F = ψ.toCurve F ↔ φ = ψ :=
+  (toCurve_injective F).eq_iff
+
+/-- Viewing the identity coordinate `1` as a curve yields the tautological curve `T`. -/
+@[simp]
+theorem toCurve_one (F : FormalGroup R) :
+    (1 : FormalCoordinate R).toCurve F = F.tautologicalCurve :=
+  FormalGroup.Curve.ext (by simp)
+
+/-- Base change of curves commutes with viewing a formal coordinate as a curve. -/
+@[simp]
+theorem map_toCurve (f : R →+* S) (φ : FormalCoordinate R) (F : FormalGroup R) :
+    FormalGroup.Curve.map f (φ.toCurve F) = (map f φ).toCurve (F.map f) :=
+  FormalGroup.Curve.ext (by simp)
+
+end FormalCoordinate
+
 end TauCeti
 
 namespace FormalGroup
 
 variable {R S : Type*} [CommRing R] [CommRing S]
+
+/-- The forward homomorphism of `smulIso ψ F` pushes `φ.toCurve F` forward to
+`(ψ * φ).toCurve (ψ • F)`. -/
+@[simp]
+theorem smulIso_toHom_mapCurve_toCurve (ψ φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) :
+    (smulIso ψ F).toHom.mapCurve (φ.toCurve F) = (ψ * φ).toCurve (ψ • F) :=
+  Curve.ext (by simp)
+
+/-- The inverse homomorphism of `smulIso ψ F` pushes `φ.toCurve (ψ • F)` forward to
+`(ψ⁻¹ * φ).toCurve F`. -/
+@[simp]
+theorem smulIso_invHom_mapCurve_toCurve (ψ φ : TauCeti.FormalCoordinate R) (F : FormalGroup R) :
+    (smulIso ψ F).invHom.mapCurve (φ.toCurve (ψ • F)) = (ψ⁻¹ * φ).toCurve F :=
+  Curve.ext (by simp)
+
+/-- The forward homomorphism of `smulIso φ F` sends the tautological curve of `F` to `φ` viewed as
+a curve on `φ • F`. -/
+theorem smulIso_toHom_mapCurve_tautologicalCurve (φ : TauCeti.FormalCoordinate R)
+    (F : FormalGroup R) :
+    (smulIso φ F).toHom.mapCurve F.tautologicalCurve = φ.toCurve (φ • F) := by
+  rw [← TauCeti.FormalCoordinate.toCurve_one, smulIso_toHom_mapCurve_toCurve, mul_one]
+
+/-- The inverse homomorphism of `smulIso φ F` sends the tautological curve of `φ • F` to `φ⁻¹`
+viewed as a curve on `F`. -/
+theorem smulIso_invHom_mapCurve_tautologicalCurve (φ : TauCeti.FormalCoordinate R)
+    (F : FormalGroup R) :
+    (smulIso φ F).invHom.mapCurve (φ • F).tautologicalCurve = φ⁻¹.toCurve F := by
+  rw [← TauCeti.FormalCoordinate.toCurve_one, smulIso_invHom_mapCurve_toCurve, mul_one]
 
 /-! ### Cartier's Verschiebung operator -/
 
