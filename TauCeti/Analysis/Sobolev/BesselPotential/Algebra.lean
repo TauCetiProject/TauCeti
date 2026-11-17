@@ -146,9 +146,7 @@ theorem MemSobolev.mul {s : ℝ} (hs : finrank ℝ E < 2 * s)
     {u v : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ)))
     (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ))) :
     MemSobolev s 2 ((hu.memLp_mul hs v).toLp _ : 𝓢'(E, ℂ)) := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
   obtain ⟨v₁, h₁⟩ := hu.fourier_memL1 hs
   obtain ⟨v₂, h₂⟩ := hv.fourier_memL1 hs
   have hW := (L1.integrable_coeFn v₁).integrable_convolution (ContinuousLinearMap.mul ℂ ℂ)
@@ -179,9 +177,7 @@ theorem exists_norm_toBesselPotentialSpace_mul_le {s : ℝ} (hs : finrank ℝ E 
       (hv : MemSobolev s 2 (v : 𝓢'(E, ℂ))),
       ‖(hu.mul hs hv).toBesselPotentialSpace‖ ≤
         C * ‖hu.toBesselPotentialSpace‖ * ‖hv.toBesselPotentialSpace‖ := by
-  have hs0 : 0 ≤ s := by
-    have := (finrank ℝ E).cast_nonneg (α := ℝ)
-    linarith
+  have hs0 : 0 ≤ s := TauCeti.nonneg_of_finrank_lt_two_mul hs
   set K := eLpNorm (fun ξ : E => (1 + ‖ξ‖ ^ 2) ^ (-s / 2)) 2 volume
   have hK : K ≠ ∞ := (TauCeti.memLp_rpow_neg_one_add_norm_sq volume hs).ne
   refine ⟨2 ^ s * (2 * K.toReal), by positivity, fun {u v} hu hv => ?_⟩
