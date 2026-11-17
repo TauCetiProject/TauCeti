@@ -344,9 +344,7 @@ theorem _root_.LinearMap.mem_firstOrderOperators_iff_existsUnique_complexifiedVe
       ContMDiffMap.ext fun x ↦ by
         rw [hp u x,
           complexFirstOrderOperatorsEquivComplexifiedVectorFieldProd_fst_eq_iff.mp hD' u x, h1]
-    have heq : D = D'.val := LinearMap.ext fun f ↦ by
-      rw [← ContMDiffMap.ofReal_re_add_I_smul_im f, map_add, map_add, map_smul, map_smul, hreal,
-        hreal]
+    have heq : D = D'.val := ContMDiffMap.linearMap_ext_ofReal hreal
     exact heq ▸ D'.property
 
 namespace complexFirstOrderOperators
@@ -400,8 +398,9 @@ theorem lie_mulLeft_ofReal_apply
     (u : C^∞⟮I, M; ℝ⟯) (f : C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     ⁅D.val, LinearMap.mulLeft ℂ (ContMDiffMap.ofReal u)⁆ f x =
       ((mvfderiv I u x (X x) : ℂ) + (mvfderiv I u x (Y x) : ℂ) * Complex.I) * f x := by
-  rw [lie_mulLeft_apply h, ContMDiffMap.ofReal_re, ContMDiffMap.ofReal_im, ContMDiffMap.coe_zero,
-    mvfderiv_zero, zero_apply, zero_apply, sub_zero, add_zero]
+  rw [lie_mulLeft_apply h]
+  push_cast [mvfderiv_zero]
+  simp
 
 end complexFirstOrderOperators
 
