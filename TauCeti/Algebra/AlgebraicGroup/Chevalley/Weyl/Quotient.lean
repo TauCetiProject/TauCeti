@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
-import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
+import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
 
 /-!
 # The Weyl quotient of a Chevalley datum over an arbitrary field
@@ -167,7 +167,7 @@ private theorem ncard_inversions_titsSystemWeylProjection_eq_wordLength
     have hnotmem := D.notMem_inversions_of_wordLength_lt_simple_mul K i ny hlt
     rw [← hprod, map_mul, D.titsSystemWeylProjection_titsSystemSimple K i,
       D.titsSystemWeylProjection_mk K ny,
-      ncard_inversions_ofIdx_mul_of_notMem P b _ (by simp [b]) hnotmem,
+      ncard_inversions_ofIdx_mul_of_notMem P _ b (by simp [b]) hnotmem,
       ← D.titsSystemWeylProjection_mk K ny, ih _ hylen]
 
 private theorem titsSystemWeylProjection_bijective :

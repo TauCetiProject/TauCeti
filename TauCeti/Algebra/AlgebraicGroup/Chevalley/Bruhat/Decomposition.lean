@@ -13,6 +13,7 @@ import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Uniqueness
+import TauCeti.LinearAlgebra.RootSystem.Inversions.Exchange
 import TauCeti.LinearAlgebra.RootSystem.Inversions.Length
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
@@ -441,7 +442,7 @@ private theorem exists_mem_inversionPositivePoints_mul_borelSubgroup_of_mem_posi
         simp only [ni, P, map_mul, map_inv, D.weylProjection_weylElement K i,
           RootPairing.weylGroup.ofIdx_inv_eq]
       have hdrop :=
-        ncard_inversions_ofIdx_mul_of_mem P b₀ (D.weylProjection K n) (by simp [b₀]) hγinv
+        ncard_inversions_ofIdx_mul_of_mem P (D.weylProjection K n) b₀ (by simp [b₀]) hγinv
       rw [hproj]
       omega
     exact D.exists_mem_inversionPositivePoints_mul_borelSubgroup_step K i n hγinv hu₁
