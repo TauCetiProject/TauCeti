@@ -287,8 +287,8 @@ private theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul_of_diffe
   have hg : MDifferentiable 𝓘(ℝ, V) 𝓘(ℝ, V) g :=
     (ιN.symm.contMDiff.comp (hf.comp ιM.contMDiff)).mdifferentiable one_ne_zero
   have hgdeg : degreeAtRegularValue oM oN g (ιN.symm y) = degreeAtRegularValue o o' f y := by
-    rw [← degreeAtRegularValue_comp_left_of_injective (e := ιN) ιN.toHomeomorph.injective
-      (o'.isOrientationPreservingAt_pullback _ hιN _) hg, hιg, ιN.apply_symm_apply,
+    rw [← degreeAtRegularValue_comp_left (e := ιN) (fun _ hz ↦ ιN.injective hz)
+      (o'.isOrientationPreservingAt_pullback _ hιN _ _) fun x _ ↦ hg x, hιg, ιN.apply_symm_apply,
       degreeAtRegularValue_comp_of_bijective (e := ιM) ιM.toHomeomorph.bijective
         (o.isOrientationPreservingAt_pullback _ hιM _) (hf.mdifferentiable one_ne_zero)]
   have hreg : IsRegularValue 𝓘(ℝ, V) 𝓘(ℝ, V) g (ιN.symm y) := by
@@ -348,16 +348,6 @@ theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul {k : ℕ}
   have hV : finrank ℝ V = k + 1 := finrank_euclideanSpace_fin
   let IM := I.transContinuousLinearEquiv (ContinuousLinearEquiv.ofFinrankEq (hW.trans hV.symm))
   let IN := J.transContinuousLinearEquiv (ContinuousLinearEquiv.ofFinrankEq (hW'.trans hV.symm))
-  let _ : CompactSpace (BoundarylessModel IM M) := (BoundarylessModel.homeomorph IM M).compactSpace
-  let _ : T2Space (BoundarylessModel IM M) := (BoundarylessModel.homeomorph IM M).t2Space
-  let _ : ConnectedSpace (BoundarylessModel IM M) :=
-    (BoundarylessModel.homeomorph IM M).surjective.connectedSpace
-      (BoundarylessModel.homeomorph IM M).continuous
-  let _ : CompactSpace (BoundarylessModel IN N) := (BoundarylessModel.homeomorph IN N).compactSpace
-  let _ : T2Space (BoundarylessModel IN N) := (BoundarylessModel.homeomorph IN N).t2Space
-  let _ : ConnectedSpace (BoundarylessModel IN N) :=
-    (BoundarylessModel.homeomorph IN N).surjective.connectedSpace
-      (BoundarylessModel.homeomorph IN N).continuous
   let ιM : BoundarylessModel IM M ≃ₘ^1⟮𝓘(ℝ, V), I⟯ M :=
     ((ContinuousLinearEquiv.toTransContinuousLinearEquiv I M _).trans
       (BoundarylessModel.diffeomorph IM 1)).symm

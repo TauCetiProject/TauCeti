@@ -21,7 +21,8 @@ normal forms and implicit-function constructions can retain their actual coordin
 
 `OpenPartialHomeomorph.symm_trans_mem_contDiffGroupoid_iff_of_extend` compares coordinate changes
 for any pair of extended charts, independently of model-boundarylessness.
-The carrier also inherits monoid, additive monoid, group and additive group operations.
+The carrier also inherits compactness, the Hausdorff property and connectedness, as well as
+monoid, additive monoid, group and additive group operations.
 `homeomorph_one`, `homeomorph_mul`, `homeomorph_inv` and their `symm` forms give the algebraic
 transport laws; `homeomorph_zero`, `homeomorph_add`, `homeomorph_neg` and their `symm` forms
 are their additive counterparts.
@@ -109,6 +110,16 @@ variable (I : ModelWithCorners 𝕜 E H) (M : Type*) [TopologicalSpace M]
 
 /-- The model copy inherits the topology of the original manifold. -/
 instance : TopologicalSpace (BoundarylessModel I M) := inferInstanceAs (TopologicalSpace M)
+
+/-- The model copy of a compact space is compact. -/
+instance [CompactSpace M] : CompactSpace (BoundarylessModel I M) := inferInstanceAs (CompactSpace M)
+
+/-- The model copy of a Hausdorff space is Hausdorff. -/
+instance [T2Space M] : T2Space (BoundarylessModel I M) := inferInstanceAs (T2Space M)
+
+/-- The model copy of a connected space is connected. -/
+instance [ConnectedSpace M] : ConnectedSpace (BoundarylessModel I M) :=
+  inferInstanceAs (ConnectedSpace M)
 
 /-- The identity homeomorphism to the copy with vector-space-valued charts. -/
 def homeomorph : M ≃ₜ BoundarylessModel I M where

@@ -154,7 +154,9 @@ theorem IsFundamentalClass.map_homeomorph
   have h := congrArg (Submodule.map (localHomologyMap N (e : C(M, M')) hx n).hom) (hμ x)
   rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
     LinearMap.range_eq_top.2 hsurj] at h
-  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology.
+  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology. The
+  -- class `μ` is typed in `SSet.homology` of the singular simplicial set, while the naturality
+  -- lemma reads it in the homology functor's object; they agree after unfolding.
   erw [singularHomologyToLocalHomology_singularHomologyMap N (e : C(M, M')) hx]
   exact h
 

@@ -231,8 +231,6 @@ private theorem isCoveredByDiffeomorphisms_sphereOrientation_two
       EuclideanSpace ℝ (Fin (m + 1)) := ContinuousLinearEquiv.ofFinrankEq (by simp)
   let J := ((𝓡 m).prod (𝓡 1)).transContinuousLinearEquiv L
   let P := sphere (0 : (ℝ ∙ (p : F))ᗮ) 1 × sphere (0 : ℂ) 1
-  let _ : CompactSpace (BoundarylessModel J P) := (BoundarylessModel.homeomorph J P).compactSpace
-  let _ : T2Space (BoundarylessModel J P) := (BoundarylessModel.homeomorph J P).t2Space
   let ι : BoundarylessModel J P ≃ₘ^∞⟮𝓡 (m + 1), (𝓡 m).prod (𝓡 1)⟯ P :=
     ((ContinuousLinearEquiv.toTransContinuousLinearEquiv ((𝓡 m).prod (𝓡 1)) P L).trans
       (BoundarylessModel.diffeomorph J ∞)).symm

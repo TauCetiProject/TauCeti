@@ -45,8 +45,9 @@ Hausdorff boundaryless one, is proved in `TauCeti.Geometry.Manifold.Degree.Globa
   `1` and a constant map into a manifold of positive dimension has degree `0`.
 * `TauCeti.degreeAtRegularValue_comp_of_bijective`: precomposing with an orientation-preserving
   bijection does not change the degree.
-* `TauCeti.degreeAtRegularValue_comp_left_of_injective`: postcomposing with an
-  orientation-preserving injection does not change the degree.
+* `TauCeti.degreeAtRegularValue_comp_left`: postcomposing with a map that is
+  orientation-preserving at a value and has no other preimage of its image there does not change
+  the degree at that value.
 * `TauCeti.degreeAtRegularValue_modEq_ncard`: over a regular value the degree has the parity of
   the number of preimages.
 * `TauCeti.degree_id`, `TauCeti.degree_const`: the identity of a nonempty manifold has degree `1`
@@ -162,21 +163,25 @@ variable {E₁ H₁ N₁ : Type*} [NormedAddCommGroup E₁] [NormedSpace ℝ E�
   [TopologicalSpace H₁] {J₁ : ModelWithCorners ℝ E₁ H₁} [TopologicalSpace N₁]
   [ChartedSpace H₁ N₁] [IsManifold J₁ 1 N₁] {o₁ : Manifold.Orientation J₁ N₁ ι}
 
-/-- **Postcomposing with an orientation-preserving injection preserves the degree.** If
-`e : N → N₁` is an injection preserving the orientations `o'` and `o₁` at every point and `f` is
-differentiable, then `e ∘ f` has the same degree at `e y` as `f` at `y`: the two maps have the same
-fibres over these points, and the orientation signs agree. -/
-theorem degreeAtRegularValue_comp_left_of_injective {e : N → N₁} (he : Injective e)
-    (hpres : ∀ z, IsOrientationPreservingAt o' o₁ e z) (hf : MDifferentiable I J f) (y : N) :
+/-- **Postcomposing with a map that is orientation-preserving over the value preserves the
+degree.** If `y` is the only preimage of `e y` under `e : N → N₁`, `e` preserves the orientations
+`o'` and `o₁` at `y`, and `f` is differentiable along its fibre over `y`, then `e ∘ f` has the same
+degree at `e y` as `f` at `y`: the two maps have the same fibres over these points, and the
+orientation signs agree. -/
+theorem degreeAtRegularValue_comp_left {e : N → N₁} {y : N} (he : e ⁻¹' {e y} ⊆ {y})
+    (hpres : IsOrientationPreservingAt o' o₁ e y)
+    (hf : ∀ x ∈ f ⁻¹' {y}, MDifferentiableAt I J f x) :
     degreeAtRegularValue o o₁ (e ∘ f) (e y) = degreeAtRegularValue o o' f y := by
-  have hfib : (e ∘ f) ⁻¹' {e y} = f ⁻¹' {y} := by
-    ext x
-    simp [he.eq_iff]
+  have hfib : (e ∘ f) ⁻¹' {e y} = f ⁻¹' {y} :=
+    Subset.antisymm (fun x hx ↦ he hx) fun x hx ↦ by simp_all
   rw [degreeAtRegularValue, degreeAtRegularValue, hfib]
-  refine finsum_mem_congr rfl fun x _ ↦ ?_
+  refine finsum_mem_congr rfl fun x hx ↦ ?_
+  have hfx := hf x hx
+  rw [mem_preimage, mem_singleton_iff] at hx
+  subst hx
   rw [orientationSign_comp
-      (mdifferentiableAt_of_isInvertible_mfderiv (hpres (f x)).isInvertible_mfderiv) (hf x),
-    orientationSign_of_isOrientationPreservingAt (hpres (f x)), one_mul]
+      (mdifferentiableAt_of_isInvertible_mfderiv hpres.isInvertible_mfderiv) hfx,
+    orientationSign_of_isOrientationPreservingAt hpres, one_mul]
 
 end Comp
 
