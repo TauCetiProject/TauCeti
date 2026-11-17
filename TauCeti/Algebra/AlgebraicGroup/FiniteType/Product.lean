@@ -97,28 +97,6 @@ theorem toBialgHom_tensorProductCongr_inv
       Bialgebra.TensorProduct.map (toBialgHom e.inv) (toBialgHom f.inv) :=
   (rfl)
 
-/-- The tensor-product isomorphism applies its two factors to a pure tensor.
-
-This is not a `simp` lemma: `toBialgHom_tensorProductCongr_hom` and
-`Bialgebra.TensorProduct.map_tmul` already rewrite the left-hand side. -/
-theorem tensorProductCongr_hom_tmul
-    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K')
-    (h : H) (k : K) :
-    toBialgHom (tensorProductCongr e f).hom (h ⊗ₜ[R] k) =
-      toBialgHom e.hom h ⊗ₜ[R] toBialgHom f.hom k := by
-  rw [toBialgHom_tensorProductCongr_hom, Bialgebra.TensorProduct.map_tmul]
-
-/-- The inverse tensor-product isomorphism applies the two inverse factors to a pure tensor.
-
-This is not a `simp` lemma: `toBialgHom_tensorProductCongr_inv` and
-`Bialgebra.TensorProduct.map_tmul` already rewrite the left-hand side. -/
-theorem tensorProductCongr_inv_tmul
-    {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K')
-    (h : H') (k : K') :
-    toBialgHom (tensorProductCongr e f).inv (h ⊗ₜ[R] k) =
-      toBialgHom e.inv h ⊗ₜ[R] toBialgHom f.inv k := by
-  rw [toBialgHom_tensorProductCongr_inv, Bialgebra.TensorProduct.map_tmul]
-
 /-- The inverse of a tensor-product isomorphism is the tensor product of the inverses. -/
 @[simp]
 theorem tensorProductCongr_symm
@@ -132,10 +110,8 @@ theorem tensorProductCongr_refl (H K : FiniteTypeCommHopfAlgCat.{u, v} R) :
     tensorProductCongr (Iso.refl H) (Iso.refl K) = Iso.refl (tensorProduct H K) := by
   ext : 2
   apply BialgHom.coe_toAlgHom_injective
-  apply Algebra.TensorProduct.ext'
-  intro h k
-  simp only [BialgHom.coe_toAlgHom, toBialgHom_tensorProductCongr_hom,
-    Bialgebra.TensorProduct.map_tmul, Iso.refl_hom, toBialgHom_id, BialgHom.id_apply]
+  simp only [toBialgHom_tensorProductCongr_hom, Iso.refl_hom, toBialgHom_id,
+    Bialgebra.TensorProduct.map_toAlgHom, BialgHom.id_toAlgHom, Algebra.TensorProduct.map_id]
 
 /-- Tensor-product isomorphisms compose factorwise. -/
 theorem tensorProductCongr_trans
@@ -145,10 +121,8 @@ theorem tensorProductCongr_trans
       tensorProductCongr (e ≪≫ e') (f ≪≫ f') := by
   ext : 2
   apply BialgHom.coe_toAlgHom_injective
-  apply Algebra.TensorProduct.ext'
-  intro h k
-  simp only [BialgHom.coe_toAlgHom, Iso.trans_hom, toBialgHom_comp, BialgHom.comp_apply,
-    toBialgHom_tensorProductCongr_hom, Bialgebra.TensorProduct.map_tmul]
+  simp only [Iso.trans_hom, toBialgHom_comp, toBialgHom_tensorProductCongr_hom,
+    BialgHom.comp_toAlgHom, Bialgebra.TensorProduct.map_toAlgHom, Algebra.TensorProduct.map_comp]
 
 /-- The left coordinate inclusion `H → H ⊗[R] K`, bundled in the finite-type commutative
 Hopf-algebra category. On points this is the first projection from product points. -/
@@ -181,22 +155,16 @@ inclusion. -/
 @[reassoc (attr := simp)]
 theorem includeLeft_comp_tensorProductCongr_hom
     {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
-    includeLeft H K ≫ (tensorProductCongr e f).hom = e.hom ≫ includeLeft H' K' := by
-  ext h
-  rw [toBialgHom_comp, toBialgHom_comp, BialgHom.comp_apply, BialgHom.comp_apply,
-    includeLeft_apply, includeLeft_apply, toBialgHom_tensorProductCongr_hom,
-    Bialgebra.TensorProduct.map_tmul, map_one]
+    includeLeft H K ≫ (tensorProductCongr e f).hom = e.hom ≫ includeLeft H' K' :=
+  hom_ext <| Bialgebra.TensorProduct.map_comp_includeLeft (toBialgHom e.hom) (toBialgHom f.hom)
 
 /-- A tensor-product isomorphism carries the right coordinate inclusion to the right coordinate
 inclusion. -/
 @[reassoc (attr := simp)]
 theorem includeRight_comp_tensorProductCongr_hom
     {H H' K K' : FiniteTypeCommHopfAlgCat.{u, v} R} (e : H ≅ H') (f : K ≅ K') :
-    includeRight H K ≫ (tensorProductCongr e f).hom = f.hom ≫ includeRight H' K' := by
-  ext k
-  rw [toBialgHom_comp, toBialgHom_comp, BialgHom.comp_apply, BialgHom.comp_apply,
-    includeRight_apply, includeRight_apply, toBialgHom_tensorProductCongr_hom,
-    Bialgebra.TensorProduct.map_tmul, map_one]
+    includeRight H K ≫ (tensorProductCongr e f).hom = f.hom ≫ includeRight H' K' :=
+  hom_ext <| Bialgebra.TensorProduct.map_comp_includeRight (toBialgHom e.hom) (toBialgHom f.hom)
 
 /-- The inverse of a tensor-product isomorphism carries the left coordinate inclusion to the
 left coordinate inclusion. -/

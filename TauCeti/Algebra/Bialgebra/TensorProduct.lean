@@ -15,8 +15,8 @@ This file packages the canonical inclusions into and projections out of a tensor
 bialgebras as bialgebra morphisms, and records their action on pure tensors. The projections are
 obtained by applying the counit to the other tensor factor.
 
-Tensor products of bialgebra maps compose to the identity when both factors do, which is the
-input for transporting isomorphisms along tensor products.
+Tensor products of bialgebra maps commute with the inclusions, and compose to the identity when
+both factors do, which is the input for transporting isomorphisms along tensor products.
 
 Scalar extension also commutes with tensor products of bialgebras. The resulting bialgebra
 equivalence upgrades `TauCeti.Algebra.TensorProduct.baseChangeTensorAlgEquiv` and records its
@@ -117,6 +117,26 @@ theorem projectRight_comp_includeRight :
   ext y
   simp
 
+/-- Tensor products of bialgebra maps commute with the left inclusions. -/
+@[simp]
+theorem map_comp_includeLeft {A B C D : Type*} [Semiring A] [Semiring B] [Semiring C] [Semiring D]
+    [_root_.Bialgebra R A] [_root_.Bialgebra R B] [_root_.Bialgebra R C] [_root_.Bialgebra R D]
+    (φ : A →ₐc[R] B) (ψ : C →ₐc[R] D) :
+    (_root_.Bialgebra.TensorProduct.map φ ψ).comp includeLeft = includeLeft.comp φ := by
+  apply BialgHom.coe_toAlgHom_injective
+  simp only [BialgHom.comp_toAlgHom, _root_.Bialgebra.TensorProduct.map_toAlgHom,
+    includeLeft_toAlgHom, Algebra.TensorProduct.map_comp_includeLeft]
+
+/-- Tensor products of bialgebra maps commute with the right inclusions. -/
+@[simp]
+theorem map_comp_includeRight {A B C D : Type*} [Semiring A] [Semiring B] [Semiring C] [Semiring D]
+    [_root_.Bialgebra R A] [_root_.Bialgebra R B] [_root_.Bialgebra R C] [_root_.Bialgebra R D]
+    (φ : A →ₐc[R] B) (ψ : C →ₐc[R] D) :
+    (_root_.Bialgebra.TensorProduct.map φ ψ).comp includeRight = includeRight.comp ψ := by
+  apply BialgHom.coe_toAlgHom_injective
+  simp only [BialgHom.comp_toAlgHom, _root_.Bialgebra.TensorProduct.map_toAlgHom,
+    includeRight_toAlgHom, Algebra.TensorProduct.map_comp_includeRight]
+
 /-- Tensor products of bialgebra maps compose to the identity when both factors do. -/
 theorem map_comp_map_eq_id {A B C D : Type*} [Semiring A] [Semiring B] [Semiring C] [Semiring D]
     [_root_.Bialgebra R A] [_root_.Bialgebra R B] [_root_.Bialgebra R C] [_root_.Bialgebra R D]
@@ -125,12 +145,10 @@ theorem map_comp_map_eq_id {A B C D : Type*} [Semiring A] [Semiring B] [Semiring
     (_root_.Bialgebra.TensorProduct.map φ' ψ').comp (_root_.Bialgebra.TensorProduct.map φ ψ) =
       BialgHom.id R (A ⊗[R] C) := by
   apply BialgHom.coe_toAlgHom_injective
-  apply Algebra.TensorProduct.ext'
-  intro a c
-  simp only [BialgHom.coe_toAlgHom, BialgHom.comp_apply, _root_.Bialgebra.TensorProduct.map_tmul,
-    BialgHom.id_apply]
-  rw [← BialgHom.comp_apply, ← BialgHom.comp_apply, hφ, hψ, BialgHom.id_apply,
-    BialgHom.id_apply]
+  rw [BialgHom.comp_toAlgHom, _root_.Bialgebra.TensorProduct.map_toAlgHom,
+    _root_.Bialgebra.TensorProduct.map_toAlgHom, ← Algebra.TensorProduct.map_comp,
+    ← BialgHom.comp_toAlgHom, ← BialgHom.comp_toAlgHom, hφ, hψ]
+  simp only [BialgHom.id_toAlgHom, Algebra.TensorProduct.map_id]
 
 section BaseChange
 
