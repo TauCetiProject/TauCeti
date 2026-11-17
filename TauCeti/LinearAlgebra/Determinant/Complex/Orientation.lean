@@ -14,6 +14,7 @@ import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.LinearAlgebra.LinearEquiv.Basic
+import TauCeti.LinearAlgebra.LinearMap.Range
 
 /-!
 # Complex orientations of real determinant lines
@@ -684,7 +685,7 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   obtain ⟨z, bC, hz, hbC⟩ := Basis.exists_coe_eq_append_lift (LinearMap.range g).injective_subtype
     hghC.range_subtype hhC bR bD
   have hv' : g ∘ v = (LinearMap.range g).subtype ∘ bR := by
-    rw [← hv, ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict]
+    rw [← hv, LinearMap.subtype_comp_rangeRestrict_comp]
   rw [← hv'] at hbC
   have hB : finrank ℂ B = _ := (finrank_eq_card_basis bB).trans (Fintype.card_fin _)
   have hC : finrank ℂ C = _ := (finrank_eq_card_basis bC).trans (Fintype.card_fin _)
@@ -885,12 +886,9 @@ theorem exists_isComplexPositiveTMulDual_detLineSixTermEquiv_congr_eq_tmul
   obtain ⟨y, c₅, hy, hc₅⟩ := Basis.exists_coe_eq_append_lift
     (LinearMap.range f₄).injective_subtype h₄₅.range_subtype hf₅
     (finBasis ℂ (LinearMap.range f₄)) b₆
-  rw [← hv, ← Function.comp_assoc, ← LinearMap.coe_comp,
-    LinearMap.subtype_comp_rangeRestrict] at hc₃
-  rw [← hw, ← Function.comp_assoc, ← LinearMap.coe_comp,
-    LinearMap.subtype_comp_rangeRestrict] at hc₄
-  rw [← hx, ← Function.comp_assoc, ← LinearMap.coe_comp,
-    LinearMap.subtype_comp_rangeRestrict] at hc₅
+  rw [← hv, LinearMap.subtype_comp_rangeRestrict_comp] at hc₃
+  rw [← hw, LinearMap.subtype_comp_rangeRestrict_comp] at hc₄
+  rw [← hx, LinearMap.subtype_comp_rangeRestrict_comp] at hc₅
   -- Real dimensions of the terms of the real sequence and of the ranges of its maps.
   have hB₁ : finrank ℝ B₁ = 2 * finrank ℂ A₁ :=
     e₁.finrank_eq.symm.trans finrank_real_eq_two_mul_finrank_complex
