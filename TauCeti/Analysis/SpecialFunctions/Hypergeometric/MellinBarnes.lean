@@ -20,6 +20,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 import TauCeti.MeasureTheory.Integral.Prod
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Mellin–Barnes integrals for the Gauss hypergeometric function
@@ -737,7 +738,7 @@ private theorem integral_four_Gamma_mul_multichoose (a b c z : ℂ) {σ : ℝ} (
       have hre := congrArg re hk; simp [s] at hre; linarith [k.cast_nonneg' (α := ℝ)]
     have hGs : Gamma (-s) ≠ 0 := Gamma_ne_zero_of_re_pos (by simp [s]; linarith)
     have hmc : Gamma (-s) * Ring.multichoose (-s) n = Gamma ((n : ℂ) - s) / (n ! : ℂ) := by
-      rw [TauCeti.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
+      rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
         ← Gamma_add_nat_div_Gamma_eq (-s) hs_ne, neg_add_eq_sub]
       field_simp [hGs, hfac]
     calc Gamma (a + s) * Gamma (b + s) * Gamma (c - a - b - s) * Gamma (-s) *
@@ -847,7 +848,7 @@ private theorem regularizedGaussHGFun_eq_mellinBarnes_one_sub_of_norm_lt_half (a
   -- Measurability and dominated-convergence bounds for the binomial-series terms.
   have hF_meas (n : ℕ) : AEStronglyMeasurable (F n) volume := by
     refine Continuous.aestronglyMeasurable <| (continuous_four_Gamma ha' hb' hc' hσ').mul ?_
-    simp_rw [TauCeti.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
+    simp_rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer]
     exact (continuous_const.mul ((ascPochhammer ℂ n).continuous.comp (by fun_prop))).mul
       continuous_const
   have h_bound (n : ℕ) : ∀ᵐ y : ℝ, ‖F n y‖ ≤ bound n y := by

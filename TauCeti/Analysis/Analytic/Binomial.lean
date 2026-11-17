@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Analytic.Binomial
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Convergence of binomial and multichoose power series
@@ -33,8 +34,6 @@ of `1 / 2` is a square root of `1 + y` for `‖y‖ < 1`, in any Banach algebra 
   multichoose binomial series on the open unit disk.
 * `TauCeti.summable_multichoose_mul_geometric_iff_norm_lt_one` — exact summability of
   `∑ n, multichoose r n * q ^ n` for `0 < r`.
-* `TauCeti.multichoose_eq_inv_factorial_mul_eval_ascPochhammer` — expression of
-  `Ring.multichoose x n` as `(n!)⁻¹ * (ascPochhammer R n).eval x` over a characteristic-zero field.
 * `TauCeti.norm_multichoose_le_of_norm_le` — norm bound
   `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` for `‖w‖ ≤ r`.
 * `TauCeti.binomialSeries_radius_ge_one_of_normedRing` — the binomial series has radius at least
@@ -51,16 +50,6 @@ open Filter Set Topology
 open scoped ENNReal NNReal
 
 namespace TauCeti
-
-/-- Over a field of characteristic zero, `Ring.multichoose x n` equals
-`(n!)⁻¹ * (ascPochhammer R n).eval x`. -/
-theorem multichoose_eq_inv_factorial_mul_eval_ascPochhammer {R : Type*} [Field R] [CharZero R]
-    (x : R) (n : ℕ) :
-    Ring.multichoose x n = (n.factorial : R)⁻¹ * (ascPochhammer R n).eval x := by
-  have h := Ring.factorial_nsmul_multichoose_eq_ascPochhammer x n
-  rw [nsmul_eq_mul, Polynomial.ascPochhammer_smeval_cast,
-    Polynomial.ascPochhammer_smeval_eq_eval] at h
-  rw [← h, inv_mul_cancel_left₀ (Nat.cast_ne_zero.mpr n.factorial_ne_zero)]
 
 /-- Generalized multichoose norm bound: `‖Ring.multichoose w n‖ ≤ Ring.multichoose r n` whenever
 `‖w‖ ≤ r`. -/
@@ -79,8 +68,9 @@ theorem norm_multichoose_le_of_norm_le {𝕂 : Type*} [RCLike 𝕂]
         simp only [Polynomial.eval_add, Polynomial.eval_X, Polynomial.eval_natCast]
         exact (norm_add_le w k).trans (by simpa using add_le_add_right hr (k : ℝ))
       exact mul_le_mul ih hstep (norm_nonneg _) hnonneg
-  rw [multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
-    multichoose_eq_inv_factorial_mul_eval_ascPochhammer, norm_mul, norm_inv, RCLike.norm_natCast]
+  rw [TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer,
+    TauCeti.Ring.multichoose_eq_inv_factorial_mul_eval_ascPochhammer, norm_mul, norm_inv,
+    RCLike.norm_natCast]
   exact mul_le_mul_of_nonneg_left hp (by positivity)
 
 /-- The generalized multichoose power series sums to `(1 - x)⁻ʳ` when `|x| < 1`. -/
