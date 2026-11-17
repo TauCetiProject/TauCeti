@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Group.Completion
 import Mathlib.Algebra.Algebra.Bilinear
+import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 public import Mathlib.Analysis.Normed.Group.Ultra
@@ -48,7 +49,8 @@ decay on a product index requires all but finitely many pairs to be small.
 The summation API parallels Mathlib's nonarchimedean ring results
 `HasSum.mul_of_nonarchimedean` (whose passage to the completion we follow) and
 `Summable.tsum_mul_tsum_eq_tsum_sum_antidiagonal`, reusing the generic module and
-fiberwise-summation interfaces.
+fiberwise-summation interfaces; it also provides the general normed-module product sum
+`HasSum.smul_of_summable_norm` for two absolutely summable series without completeness.
 
 For bilateral Laurent series `∑ₙ f(n) uⁿ` over a field, shifting the coefficients by `k` places
 multiplies the sum by `uᵏ`. The Cauchy product `∑' m, f(m) g(n - m)` of the coefficients
@@ -236,6 +238,27 @@ theorem _root_.Filter.Tendsto.smul_cofinite_nhds_zero [SeminormedAddGroup R] [Se
     Tendsto (fun ij : α × β ↦ f ij.1 • g ij.2) cofinite (𝓝 0) :=
   tendsto_bilinear_cofinite_nhds_zero (· • ·) (C := 1)
     norm_smul_le_one_mul hf hg
+
+/-- Scalar multiplication distributes over two absolutely summable series in a seminormed module,
+without requiring completeness. This is the module analogue of Mathlib's
+`summable_mul_of_summable_norm'`. -/
+theorem _root_.HasSum.smul_of_summable_norm [SeminormedRing R] [SeminormedAddCommGroup M]
+    [Module R M] [IsBoundedSMul R M] {α β : Type*} {f : α → R} {g : β → M} {a : R} {b : M}
+    (hf : HasSum f a) (hg : HasSum g b)
+    (hfn : Summable fun i ↦ ‖f i‖) (hgn : Summable fun j ↦ ‖g j‖) :
+    HasSum (fun p : α × β ↦ f p.1 • g p.2) (a • b) := by
+  classical
+  have hnorm : Summable fun p : α × β ↦ ‖f p.1 • g p.2‖ :=
+    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun p ↦ norm_smul_le (f p.1) (g p.2))
+      (hfn.mul_of_nonneg hgn (fun _ ↦ norm_nonneg _) (fun _ ↦ norm_nonneg _))
+  apply hasSum_of_subseq_of_summable hnorm (s := fun p : Finset α × Finset β ↦ p.1 ×ˢ p.2)
+    tendsto_finsetProd_atTop
+  rw [← prod_atTop_atTop_eq]
+  have hpair := Tendsto.prodMap hf hg
+  rw [← nhds_prod_eq] at hpair
+  convert! ((continuous_smul : Continuous fun p : R × M ↦ p.1 • p.2).continuousAt
+    (x := (a, b))).tendsto.comp hpair with p
+  simp [Finset.sum_product, Finset.sum_smul_sum]
 
 variable [SeminormedAddCommGroup M] [IsUltrametricDist M]
 
