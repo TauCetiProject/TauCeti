@@ -288,17 +288,12 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
 
-/-- An empty space has no cubical chains. -/
+/-- A space without points has no nonzero chains. -/
 instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) :=
   subsingleton_of_forall_eq 0 fun m ↦ by
     induction m using cubicalChainModule.induction_on with
+    | lof n c => rw [Subsingleton.elim c 0, map_zero]
     | add m m' hm hm' => rw [hm, hm', add_zero]
-    | lof n c =>
-      induction c using NormalizedCubicalChain.induction_on with
-      | zero => exact map_zero _
-      | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
-      | smul r c ih => rw [map_smul, ih, smul_zero]
-      | ofCube c => exact isEmptyElim (c 0)
 
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
@@ -453,10 +448,7 @@ omit [ContinuousMul G] in
 /-- The unit acts trivially on the module. -/
 theorem cubicalChainActBilin_one (m : cubicalChainModule Y G R) :
     cubicalChainActBilin Y G R m 1 = m := by
-  have h1 : (1 : normalizedCubicalChainAlgebra G R) = cubicalChainLof G R 0 (one G R) := by
-    rw [DirectSum.lof_eq_of]
-    rfl
-  rw [h1]
+  rw [← cubicalChainLof_one]
   induction m using cubicalChainModule.induction_on with
   | lof n c =>
     rw [cubicalChainActBilin_lof_lof, act_one_eq_self]
