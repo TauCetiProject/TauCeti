@@ -38,9 +38,9 @@ its coefficients `ℤ ⊗ ℤ` are identified with `ℤ`
 above the dimension.
 
 In degree zero (`TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_const_ne`)
-the reduced homology `H₀(Ω²G, pt)` is the quotient of `H₀(Ω²G)` by the image of the class of a
-point, so the hypothesis on `α` is that it is not fixed by the map `c_*` induced by the
-constant self-map `c` of `Map_*(S², G)` at the constant sphere `1`. The class `[G] × α` then has
+the reduced homology `H₀(Ω²G, pt)` is the quotient of `H₀(Ω²G)` by the multiples of the class of
+the base point `1`, so the hypothesis on `α` is that it is not fixed by the map `c_*` induced by
+the constant self-map `c` of `Map_*(S², G)` at the constant sphere `1`. The class `[G] × α` then has
 degree `n`, and the second condition of Definition 6.11 asks that its localization at the fibre
 over `b` is not that of a class of constant spheres. The self-map `f ↦ const (f(north))` of
 `Map(S², G)` lies over `G`, so it preserves localizations, and it fixes the constant spheres. If
@@ -68,7 +68,8 @@ they are not aspherical and are abundant with 2-spheres
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_ne_zero`: a nonzero class of
   positive degree of `Ω²G` makes `G` abundant with 2-spheres.
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_homologyMap_const_ne`: so does a
-  class of degree zero which is not in the image of the class of a point.
+  class of degree zero which is not a multiple of the class of the constant sphere `1` (the base
+  point).
 * `TauCeti.HomologicalOrientation.isAbundantWithTwoSpheres_of_not_isAspherical`: a
   path-connected `G` which is not aspherical is abundant with 2-spheres.
 * `TauCeti.isAbundantWithTwoSpheres_sphere_quaternion`: the unit quaternions `S³` are abundant
@@ -173,6 +174,33 @@ private theorem sphereClass_sub {k : ℕ}
     (congrArg _ (TensorProduct.tmul_sub _ _ _)).trans (map_sub _ _ _)
   exact (congrArg _ ((congrArg _ h).trans (map_sub _ _ _))).trans (map_sub _ _ _)
 
+omit [IsTopologicalGroup G] in
+/-- The cross product with `[G]` is natural in the second factor: `(id × g)_*([G] × α)` is
+`[G] × g_* α`. -/
+private theorem homologyMap_prodMap_crossFundamentalClass {k : ℕ}
+    (g : C(BasedMap Sphere2 G Sphere2.north 1, BasedMap Sphere2 G Sphere2.north 1))
+    (α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) k : ModuleCat.{0} ℤ)) :
+    (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom ((ContinuousMap.id G).prodMap g)))
+      (ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) : ModuleCat.{0} ℤ)
+        (n + k)).hom (o.crossFundamentalClass hn α) =
+      o.crossFundamentalClass hn ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g))
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom α) := by
+  -- Both maps send `(x, y)` to `(x, g y)`.
+  have hg : 𝟙 (TopCat.of G) ⊗ₘ TopCat.ofHom g = TopCat.ofHom ((ContinuousMap.id G).prodMap g) :=
+    TopCat.ext fun _ ↦ rfl
+  have := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn ⊗ₜ α))
+    (TopCat.singularHomologyCross_naturality (𝟙 (TopCat.of G)) (TopCat.ofHom g)
+      (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl)
+  rw [ModuleCat.hom_comp, ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply,
+    CategoryTheory.Functor.map_id, hg, ModuleCat.hom_tensorHom] at this
+  -- `this` is the goal up to unfolding `crossFundamentalClass`, the action of `𝟙 _ ⊗ₘ g_*` on a
+  -- pure tensor (`TensorProduct.map_tmul`), and the functor map as `SSet.homologyMap` of
+  -- `TopCat.toSSet.map` (`TauCeti.singularHomologyFunctor_obj_map`). These cannot be rewritten
+  -- in `this`: the naturality lemma types its classes by the functor's objects, while `α` and
+  -- `[G]` are typed by `SSet.homology`, so the rewritten terms would not be type-correct.
+  exact this.symm
+
 /-- The constant spheres at the values at the north pole, `f ↦ const (f north)`, send `[G] × α`
 to `[G] × c_* α`, where `c` is the constant self-map of `Map_*(S², G)` at the constant sphere `1`:
 composed with `G × Map_*(S², G) ≃ₜ Map(S², G)`, this self-map of `Map(S², G)` is the identity
@@ -198,16 +226,6 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
       ContinuousMap.coe_ofClass]
     rw [mappingSpaceGroupHomeomorph_apply, mappingSpaceGroupHomeomorph_apply]
     simp [y.2]
-  -- The cross product with `[G]` is natural in the second factor.
-  have hcross : (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom γ)) (R ⊗ R : ModuleCat.{0} ℤ)
-      (n + k)).hom
-      (o.crossFundamentalClass hn α) = o.crossFundamentalClass hn
-        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom c)) R k).hom α) := by
-    have := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn ⊗ₜ α))
-      (TopCat.singularHomologyCross_naturality (𝟙 (TopCat.of G)) (TopCat.ofHom c) R R n k
-        (n + k) rfl)
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply, CategoryTheory.Functor.map_id] at this
-    exact this.symm
   -- The identification of coefficients is natural in the space.
   have hcoeff : HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
       coefficientIso.hom).app (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k) ≫
@@ -231,7 +249,7 @@ private theorem homologyMap_const'_comp_mappingSpaceEval_sphereClass {k : ℕ}
     (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map coefficientIso.hom).app
       (TopCat.toSSet.obj (TopCat.of (G × Y)))) (n + k)).hom (o.crossFundamentalClass hn α))
   simp only [ConcreteCategory.comp_apply] at e₁ e₂
-  rw [sphereClass, sphereClass, ← hcross, ← e₁, e₂]
+  rw [sphereClass, sphereClass, ← o.homologyMap_prodMap_crossFundamentalClass hn c α, ← e₁, e₂]
 
 include o hn in
 /-- **A topological group with a nonzero class of positive degree in its double loop space is
@@ -253,11 +271,11 @@ multiple of the class of the base point is abundant with 2-spheres**
 (Barraud–Damian–Humilière–Oancea, Example 6.30). Let `G` be a compact oriented `n`-manifold which
 is a topological group, and let `α ∈ H₀(Map_*(S², G); ℤ)` be a class of the based mapping space of
 maps sending the north pole to `1`, a model of `Ω²G`, which is not fixed by the map `c_*` induced
-by the constant self-map at the constant sphere `1`; equivalently, `α` is not in the image of
-the class of a point, that is, it is nonzero in `H₀(Ω²G, pt)`. Then the image of `[G] × α` under
-`G × Map_*(S², G) ≃ₜ Map(S², G)` lives over the fundamental class of `G` at every point `b` and its
-localization is not that of a class of constant spheres, so `G` is abundant with 2-spheres at
-`b`. -/
+by the constant self-map at the constant sphere `1`; equivalently, `α` is not a multiple of the
+class of the constant sphere `1` (the base point), that is, it is nonzero in `H₀(Ω²G, pt)`. Then
+the image of `[G] × α` under `G × Map_*(S², G) ≃ₜ Map(S², G)` lives over the fundamental class of
+`G` at every point `b` and its localization is not that of a class of constant spheres, so `G` is
+abundant with 2-spheres at `b`. -/
 theorem isAbundantWithTwoSpheres_of_homologyMap_const_ne (b : G)
     {α : ((TopCat.toSSet.obj (TopCat.of (BasedMap Sphere2 G Sphere2.north 1))).homology
       (ModuleCat.of ℤ (ULift.{0} ℤ)) 0 : ModuleCat.{0} ℤ)}
@@ -329,9 +347,10 @@ theorem isAbundantWithTwoSpheres_of_not_isAspherical [PathConnectedSpace G] (b :
       (α := (singularHomology₀Section R (X := TopCat.of Y) y₁).hom (ULift.up 1)) ?_
     intro h
     -- `c_* [y₁] = [c y₁] = [1]`, so `h` says that `[1] = [y₁]`.
-    have hc := ConcreteCategory.congr_hom
+    have hc := congrArg (fun φ ↦ φ.hom (ULift.up 1 : R))
       (singularHomology₀Section_naturality R (TopCat.ofHom (ContinuousMap.const Y y₀)) y₁)
-      (ULift.up 1)
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, singularHomologyFunctor_obj_map] at hc
+    simp only [TopCat.hom_ofHom, ContinuousMap.const_apply] at hc
     exact hy₁ ((singularHomology₀Section_apply_eq_iff hr).1 (hc.symm.trans h))
 
 end HomologicalOrientation

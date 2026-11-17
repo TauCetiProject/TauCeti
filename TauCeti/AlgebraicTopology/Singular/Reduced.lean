@@ -193,7 +193,7 @@ lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C
 
 /-- With coefficients in a module, the classes of two points in zeroth singular homology agree
 on a nonzero coefficient `r` exactly when the points are joined by a path. -/
-theorem singularHomology₀Section_apply_eq_iff {k : Type w} [Ring k] {M : ModuleCat.{w} k}
+theorem singularHomology₀Section_apply_eq_iff {k : Type v} [Ring k] {M : ModuleCat.{w} k}
     {X : TopCat.{w}} {x y : X} {r : M} (hr : r ≠ 0) :
     (singularHomology₀Section M x).hom r = (singularHomology₀Section M y).hom r ↔ Joined x y := by
   classical
