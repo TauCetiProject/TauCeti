@@ -625,6 +625,24 @@ theorem componentCount_banana {x y : α} {F : Set β} (hF : F.Nonempty) :
   simp only [Subtype.mk.injEq] at huv
   rcases hu with rfl | rfl <;> rcases hv with rfl | rfl <;> simp_all
 
+/-- `Graph.ofSimpleGraph H` is connected as a multigraph if and only if `H` is connected. -/
+@[simp]
+theorem connected_ofSimpleGraph_iff (H : SimpleGraph α) :
+    (Graph.ofSimpleGraph H).Connected ↔ H.Connected := by
+  rw [connected_iff_toSimpleGraph_connected, (toSimpleGraphOfSimpleGraphIso H).connected_iff]
+
 end
 
 end Graph
+
+namespace SimpleGraph.Subgraph
+
+/-- `S.toGraph` is connected as a multigraph if and only if `S` is connected as a simple-graph
+subgraph. -/
+@[simp]
+theorem connected_toGraph_iff {α : Type u} {H : SimpleGraph α} {S : H.Subgraph} :
+    S.toGraph.Connected ↔ S.Connected := by
+  rw [Graph.connected_iff_toSimpleGraph_connected, ← S.toSimpleGraphToGraphIso.symm.connected_iff,
+    ← Subgraph.connected_iff']
+
+end SimpleGraph.Subgraph
