@@ -37,8 +37,12 @@ and scalar multiplication.
 * `LinearPMap.IsRelativelyBounded.mono`: increasing the constants.
 * `LinearPMap.IsRelativelyBounded.domain_add`: the domain of `A + V` is the domain of `A`.
 * `LinearPMap.IsRelativelyBounded.add`, `.sub`, `.neg`, `.smul`: the linear calculus.
+* `LinearPMap.IsRelativelyBounded.isRelativelyBounded_self_add`: for `A`-bound `b < 1`, `A` is
+  `(A + V)`-bounded.
 * `LinearPMap.isRelativelyBounded_zero`, `ContinuousLinearMap.isRelativelyBounded_toPMap`: the
   zero map and restrictions of bounded operators.
+* `LinearPMap.exists_normalized_of_not_isRelativelyBounded`: over a normed `ℝ`-algebra, a relative
+  bound that fails, fails at a vector of graph norm `‖x‖ + ‖A x‖ = 1`.
 
 ## References
 
@@ -110,6 +114,23 @@ theorem smul {M : Type*} [SeminormedRing M] [DistribMulAction M G] [IsBoundedSMu
           (norm_smul_le _ _).trans (by gcongr; exact h.norm_apply_le x)
       _ = _ := by ring
 
+/-- If `V` is `A`-bounded with `A`-bound `b < 1`, then `A` is `(A + V)`-bounded: the graph norm
+of `A + V` dominates that of `A` up to a constant factor. -/
+theorem isRelativelyBounded_self_add {V : E →ₛₗ.[τ] F} (h : V.IsRelativelyBounded A a b)
+    (hb : b < 1) : A.IsRelativelyBounded (A + V) (a / (1 - b)) (1 - b)⁻¹ where
+  domain_le := h.domain_add.le
+  norm_apply_le x := by
+    let y : A.domain := ⟨x, h.domain_add.le x.2⟩
+    have hAV : (A + V) x = A y + V ⟨x, h.domain_le y.2⟩ := add_apply A V x
+    have hVy : ‖V ⟨x, h.domain_le y.2⟩‖ ≤ a * ‖(x : E)‖ + b * ‖A y‖ := h.norm_apply_le y
+    have h₁ : ‖A y‖ ≤ ‖(A + V) x‖ + ‖V ⟨x, h.domain_le y.2⟩‖ := by
+      rw [hAV]
+      exact norm_le_add_norm_add _ _
+    have h₂ : (1 - b) * ‖A y‖ ≤ a * ‖(x : E)‖ + ‖(A + V) x‖ := by linarith
+    rw [div_eq_mul_inv, mul_comm a, mul_assoc, ← mul_add, ← div_eq_inv_mul,
+      le_div_iff₀' (by linarith)]
+    exact h₂
+
 end IsRelativelyBounded
 
 /-- The zero map is relatively bounded with constants `0, 0`. -/
@@ -117,6 +138,46 @@ theorem isRelativelyBounded_zero (A : E →ₛₗ.[τ] F) :
     (0 : E →ₛₗ.[σ] G).IsRelativelyBounded A 0 0 where
   domain_le := le_top
   norm_apply_le x := by simp
+
+section Normalized
+
+variable {𝕜 E F G : Type*} [NormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [SeminormedAddCommGroup G]
+  [NormedSpace 𝕜 G]
+
+/-- If a relative bound fails, it fails at a vector of graph norm `‖x‖ + ‖A x‖ = 1`. -/
+theorem exists_normalized_of_not_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+    (hle : A.domain ≤ V.domain) {a b : ℝ} (h : ¬ V.IsRelativelyBounded A a b) :
+    ∃ u : A.domain, ‖(u : E)‖ + ‖A u‖ = 1 ∧
+      a * ‖(u : E)‖ + b * ‖A u‖ < ‖V ⟨u, hle u.2⟩‖ := by
+  obtain ⟨x, hx⟩ : ∃ x : A.domain, a * ‖(x : E)‖ + b * ‖A x‖ < ‖V ⟨x, hle x.2⟩‖ := by
+    by_contra! hall
+    exact h ⟨hle, hall⟩
+  have hx0 : (x : E) ≠ 0 := by
+    intro h0
+    have hV0 : V ⟨x, hle x.2⟩ = 0 := by
+      rw [← V.map_zero]
+      exact congrArg V (Subtype.ext h0)
+    have hA0 : A x = 0 := by
+      rw [← A.map_zero]
+      exact congrArg A (Subtype.ext h0)
+    rw [hV0, hA0, h0] at hx
+    simp at hx
+  set s := ‖(x : E)‖ + ‖A x‖
+  have hs : 0 < s := by positivity
+  set c : 𝕜 := algebraMap ℝ 𝕜 s⁻¹
+  have hc : ‖c‖ = s⁻¹ := by rw [norm_algebraMap', Real.norm_of_nonneg (inv_nonneg.2 hs.le)]
+  have hV : V ⟨((c • x : A.domain) : E), hle (c • x).2⟩ = c • V ⟨x, hle x.2⟩ := by
+    rw [← V.map_smul]
+    exact congrArg V (Subtype.ext (by simp))
+  refine ⟨c • x, ?_, ?_⟩
+  · rw [A.map_smul, Submodule.coe_smul, norm_smul, norm_smul, hc, ← mul_add]
+    exact inv_mul_cancel₀ hs.ne'
+  · rw [hV, A.map_smul, Submodule.coe_smul, norm_smul, norm_smul, norm_smul, hc]
+    have := mul_lt_mul_of_pos_left hx (inv_pos.2 hs)
+    linarith
+
+end Normalized
 
 end LinearPMap
 

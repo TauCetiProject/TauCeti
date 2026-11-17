@@ -5,40 +5,38 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Dual
-public import Mathlib.Analysis.Normed.Module.HahnBanach
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.KatoRellich
 public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Resolvent
-public import TauCeti.Analysis.Normed.Operator.LinearPMap.RelativeCompact
+public import TauCeti.Analysis.Normed.Operator.LinearPMap.Relative.Compact
+import Mathlib.Analysis.InnerProductSpace.Dual
+import Mathlib.Analysis.InnerProductSpace.ProdL2
+import Mathlib.Analysis.InnerProductSpace.Projection.Submodule
+import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.InnerProductSpace.LinearPMap.KatoRellich
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Relatively compact perturbations on Hilbert space
 
-Let `A` be a partial linear map on a Hilbert space `E` with a point `z` in its resolvent set, and
-let `V` be `A`-compact (`LinearPMap.IsRelativelyCompact`). Then `V` has `A`-bound zero: for every
-`ε > 0` there is an `a` with `‖V x‖ ≤ a ‖x‖ + ε ‖A x‖` on `dom A`
-(`LinearPMap.IsRelativelyCompact.exists_isRelativelyBounded`, Teschl, Lemma 6.22).
+Let `A : E →ₗ.[𝕜] F` be a closable partial linear map between Hilbert spaces over an `RCLike`
+field, and let `V` be `A`-compact (`LinearPMap.IsRelativelyCompact`). Then `V` has `A`-bound zero:
+for every `ε > 0` there is an `a` with `‖V x‖ ≤ a ‖x‖ + ε ‖A x‖` on `dom A`
+(`LinearPMap.IsRelativelyCompact.exists_isRelativelyBounded`; Teschl, Lemma 6.22, and Kato,
+§IV.1.3). Closability cannot be dropped: for a discontinuous linear functional `φ` on a
+dense subspace and a unit vector `e`, the map `A = V = φ(·) e` is `A`-compact with `A`-bound one.
 
-The proof is by contradiction. A failure at `ε` gives vectors `uₙ` with `‖uₙ‖ + ‖A uₙ‖ = 1` and
-`n ‖uₙ‖ + ε ‖A uₙ‖ < ‖V uₙ‖`. Compactness bounds `V uₙ`, so `uₙ → 0`, and gives a subsequence
-with `V uₙ → w`, `‖w‖ ≥ ε`. On the other hand `V uₙ = K (z uₙ - A uₙ)` with `K = V (z I - A)⁻¹`
-compact, and `z uₙ - A uₙ` tends to zero weakly: `A uₙ` is bounded, and with `R = (z I - A)⁻¹`
-the inner products `⟪R* e, A uₙ⟫ = ⟪e, z R uₙ - uₙ⟫` tend to zero, while the range of `R*` is
-dense because `R` is injective. Hence every continuous linear functional vanishes at `w`, so
-`w = 0`.
-
-Combined with the Kato–Rellich theorem, a symmetric `A`-compact perturbation of a self-adjoint
-`A` is self-adjoint on `dom A` (`IsSelfAdjoint.add_of_isRelativelyCompact`), `V` stays compact
-relative to `A + V` (Teschl, Lemma 6.23), and the resolvents of `A + V` and `A` differ by a compact
-operator off the real axis, the input of Weyl's theorem.
+Consequently `V` stays compact relative to `A + V` (Teschl, Lemma 6.23). Over any `RCLike` field,
+a symmetric `A`-compact perturbation of a self-adjoint `A` is self-adjoint on `dom A`, by the
+Kato–Rellich theorem (`IsSelfAdjoint.add_of_isRelativelyCompact`), and the resolvents of `A + V`
+and `A` differ by a compact operator at every nonreal point, the input of Weyl's theorem.
 
 ## Main declarations
 
-* `LinearPMap.IsRelativelyCompact.exists_isRelativelyBounded`: relative compactness gives relative
-  bound zero.
-* `LinearPMap.IsRelativelyCompact.isRelativelyCompact_add`: `V` is `(A + V)`-compact.
-* `IsSelfAdjoint.add_of_isRelativelyCompact_of_mem_resolventSet`,
-  `IsSelfAdjoint.add_of_isRelativelyCompact`: symmetric relatively compact perturbations of a
+* `LinearPMap.IsRelativelyCompact.exists_isRelativelyBounded`: for closable `A`, relative
+  compactness gives relative bound zero.
+* `LinearPMap.IsRelativelyCompact.add_right`, `LinearPMap.IsRelativelyCompact.add_right_self`: for
+  closable `A` and `A`-compact `V`, every `A`-compact map, in particular `V`, is
+  `(A + V)`-compact.
+* `IsSelfAdjoint.add_of_isRelativelyCompact`: symmetric relatively compact perturbations of a
   self-adjoint operator are self-adjoint.
 * `IsSelfAdjoint.isCompactOperator_resolvent_add_sub_of_isRelativelyCompact`: the resolvent
   difference is compact at every nonreal point.
@@ -57,119 +55,124 @@ open scoped InnerProductSpace
 
 namespace LinearPMap
 
-variable {𝕜 E G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+variable {𝕜 E F G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [CompleteSpace E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [CompleteSpace F]
   [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- A bounded sequence whose inner products with every vector of a dense set tend to zero has
-inner products with every vector tending to zero. -/
-private theorem tendsto_inner_of_dense {D : Set E} (hD : Dense D) {v : ℕ → E} {M : ℝ}
-    (hv : ∀ n, ‖v n‖ ≤ M) (h : ∀ d ∈ D, Tendsto (fun n ↦ ⟪d, v n⟫_𝕜) atTop (𝓝 0)) (k : E) :
-    Tendsto (fun n ↦ ⟪k, v n⟫_𝕜) atTop (𝓝 0) := by
-  rw [Metric.tendsto_atTop]
-  intro ε hε
-  set M' := max M 0 + 1
-  have hM' : 0 < M' := by positivity
-  obtain ⟨d, hd, hkd⟩ := hD.exists_dist_lt k (show 0 < ε / 2 / M' by positivity)
-  obtain ⟨N, hN⟩ := Metric.tendsto_atTop.1 (h d hd) (ε / 2) (half_pos hε)
-  refine ⟨N, fun n hn ↦ ?_⟩
-  have hvn : ‖v n‖ ≤ M' := (hv n).trans (by linarith [le_max_left M 0])
-  have h₁ : ‖⟪k - d, v n⟫_𝕜‖ < ε / 2 := by
-    calc ‖⟪k - d, v n⟫_𝕜‖ ≤ ‖k - d‖ * M' :=
-          (norm_inner_le_norm _ _).trans (by gcongr)
-      _ < ε / 2 / M' * M' := by
-          gcongr
-          rwa [← dist_eq_norm]
-      _ = ε / 2 := div_mul_cancel₀ _ hM'.ne'
-  have h₂ := hN n hn
-  rw [dist_zero_right] at h₂ ⊢
-  calc ‖⟪k, v n⟫_𝕜‖ = ‖⟪k - d, v n⟫_𝕜 + ⟪d, v n⟫_𝕜‖ := by rw [← inner_add_left, sub_add_cancel]
-    _ ≤ ‖⟪k - d, v n⟫_𝕜‖ + ‖⟪d, v n⟫_𝕜‖ := norm_add_le _ _
-    _ < ε := by linarith
-
-/-- If a relative bound fails, it fails at a vector normalized in the graph norm. -/
-private theorem exists_normalized_of_not_isRelativelyBounded {A : E →ₗ.[𝕜] E}
-    {V : E →ₗ.[𝕜] G} (hle : A.domain ≤ V.domain) {a b : ℝ}
-    (h : ¬ V.IsRelativelyBounded A a b) : ∃ u : A.domain, ‖(u : E)‖ + ‖A u‖ = 1 ∧
-      a * ‖(u : E)‖ + b * ‖A u‖ < ‖V ⟨u, hle u.2⟩‖ := by
-  obtain ⟨x, hx⟩ : ∃ x : A.domain, a * ‖(x : E)‖ + b * ‖A x‖ < ‖V ⟨x, hle x.2⟩‖ := by
-    by_contra! hall
-    exact h ⟨hle, hall⟩
-  have hx0 : (x : E) ≠ 0 := by
-    intro h0
-    obtain rfl : x = 0 := Subtype.ext h0
-    simp only [ZeroMemClass.coe_zero, norm_zero, mul_zero, LinearPMap.map_zero, add_zero] at hx
-    exact hx.ne' (by rw [norm_eq_zero]; exact V.map_zero)
-  set s := ‖(x : E)‖ + ‖A x‖
-  have hs : 0 < s := by positivity
-  set c : 𝕜 := ((s⁻¹ : ℝ) : 𝕜)
-  have hc : ‖c‖ = s⁻¹ := by rw [RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hs)]
-  have hV : V ⟨((c • x : A.domain) : E), hle (c • x).2⟩ = c • V ⟨x, hle x.2⟩ :=
-    V.map_smul c ⟨x, hle x.2⟩
-  refine ⟨c • x, ?_, ?_⟩
-  · rw [A.map_smul, Submodule.coe_smul, norm_smul, norm_smul, hc, ← mul_add]
-    exact inv_mul_cancel₀ hs.ne'
-  · rw [hV, A.map_smul, Submodule.coe_smul, norm_smul, norm_smul, norm_smul, hc]
-    have := mul_lt_mul_of_pos_left hx (inv_pos.2 hs)
-    linarith
-
-variable [CompleteSpace E]
-
-/-- Along a sequence `uₙ` of `dom A` with `uₙ → 0` and `‖A uₙ‖ ≤ 1`, the values `f (V uₙ)` of
-every continuous linear functional tend to zero, when `V` is `A`-compact and `A` has a resolvent
-point `z`. Write `V uₙ = K (z uₙ - A uₙ)` with `K = V (z I - A)⁻¹` compact; the vectors `A uₙ`
-tend to zero weakly, since `⟪R* e, A uₙ⟫ = ⟪e, z R uₙ - uₙ⟫` for `R = (z I - A)⁻¹`, and the range
-of `R*` is dense because `R` is injective. -/
-private theorem tendsto_dual_apply_of_isRelativelyCompact {A : E →ₗ.[𝕜] E} {V : E →ₗ.[𝕜] G}
-    (hV : V.IsRelativelyCompact A) {z : 𝕜} (hz : z ∈ A.resolventSet) {u : ℕ → A.domain}
-    (hu0 : Tendsto (fun n ↦ ‖(u n : E)‖) atTop (𝓝 0)) (hAu : ∀ n, ‖A (u n)‖ ≤ 1)
-    (f : StrongDual 𝕜 G) :
-    Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).2⟩)) atTop (𝓝 0) := by
-  obtain ⟨K, -, hK⟩ := hV.exists_isCompactOperator hz
-  set R := A.resolvent z
-  set k := (InnerProductSpace.toDual 𝕜 E).symm (f.comp K)
-  have hsplit (n : ℕ) : f (V ⟨u n, hV.domain_le (u n).2⟩) =
-      z * ⟪k, (u n : E)⟫_𝕜 - ⟪k, A (u n)⟫_𝕜 := by
-    have hR := resolvent_smul_sub_apply hz (u n)
-    have hVu : V ⟨u n, hV.domain_le (u n).2⟩ = K (z • (u n : E) - A (u n)) := by
-      rw [← hK]
-      congr 2
-      exact hR.symm
-    rw [hVu, ← inner_smul_right, ← inner_sub_right, InnerProductSpace.toDual_symm_apply]
-    rfl
-  have hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0) := tendsto_zero_iff_norm_tendsto_zero.2 hu0
-  have hRu : Tendsto (fun n ↦ z • R (u n) - (u n : E)) atTop (𝓝 0) := by
-    simpa using (((R.continuous.tendsto 0).comp hu).const_smul z).sub hu
-  have hker : LinearMap.ker (R : E →ₗ[𝕜] E) = ⊥ := by
-    refine LinearMap.ker_eq_bot'.2 fun y hy ↦ ?_
-    have h₁ := smul_sub_apply_resolvent hz y
-    have h₀ : (⟨R y, resolvent_mem_domain hz y⟩ : A.domain) = 0 := Subtype.ext hy
-    rw [h₀, LinearPMap.map_zero, sub_zero] at h₁
-    have hy' : R y = 0 := hy
-    rw [← h₁, hy', smul_zero]
-  have hdense : Dense ((ContinuousLinearMap.adjoint R : E →ₗ[𝕜] E).range : Set E) := by
+/-- For a closable `A` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`, the vectors `A uₙ`
+tend to zero weakly. -/
+private theorem tendsto_inner_apply_of_isClosable {A : E →ₗ.[𝕜] F} (hA : A.IsClosable)
+    {u : ℕ → A.domain} (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0))
+    (hAu : ∀ n, ‖A (u n)‖ ≤ 1) (k : F) : Tendsto (fun n ↦ ⟪A (u n), k⟫_𝕜) atTop (𝓝 0) := by
+  let e := WithLp.prodContinuousLinearEquiv 2 𝕜 E F
+  let S : Submodule 𝕜 (WithLp 2 (E × F)) := A.graph.comap e.toLinearMap
+  -- The second coordinates of the vectors orthogonal to the graph.
+  let D : Submodule 𝕜 F :=
+    Sᗮ.map ((LinearMap.snd 𝕜 E F).comp (WithLp.linearEquiv 2 𝕜 (E × F)).toLinearMap)
+  have horth (w : WithLp 2 (E × F)) (hw : w ∈ Sᗮ) (x : A.domain) :
+      ⟪(x : E), (WithLp.ofLp w).1⟫_𝕜 + ⟪A x, (WithLp.ofLp w).2⟫_𝕜 = 0 := by
+    have hx : WithLp.toLp 2 ((x : E), A x) ∈ S := by
+      rw [Submodule.mem_comap]
+      simp [e]
+    simpa [WithLp.prod_inner_apply] using (Submodule.mem_orthogonal S w).1 hw _ hx
+  -- Closability makes these second coordinates dense.
+  have hdense : Dense (D : Set F) := by
     refine Submodule.dense_iff_topologicalClosure_eq_top.2
-      (Submodule.topologicalClosure_eq_top_iff.2 ?_)
-    rw [ContinuousLinearMap.orthogonal_range, ContinuousLinearMap.adjoint_adjoint]
-    exact hker
-  have hA : Tendsto (fun n ↦ ⟪k, A (u n)⟫_𝕜) atTop (𝓝 0) := by
-    refine tendsto_inner_of_dense hdense hAu (fun d hd ↦ ?_) k
-    obtain ⟨e, rfl⟩ := hd
-    have hd' (n : ℕ) : ⟪ContinuousLinearMap.adjoint R e, A (u n)⟫_𝕜 =
-        ⟪e, z • R (u n) - (u n : E)⟫_𝕜 := by
-      rw [ContinuousLinearMap.adjoint_inner_left, resolvent_apply_comm hz, apply_resolvent hz]
-    have he := (tendsto_const_nhds (x := e)).inner (𝕜 := 𝕜) hRu
-    rw [inner_zero_right] at he
-    exact he.congr fun n ↦ (hd' n).symm
-  have hnorm : Tendsto (fun n ↦ ⟪k, (u n : E)⟫_𝕜) atTop (𝓝 0) := by
-    simpa using (tendsto_const_nhds (x := k)).inner (𝕜 := 𝕜) hu
-  simp_rw [hsplit]
-  simpa using (hnorm.const_mul z).sub hA
+      (Submodule.topologicalClosure_eq_top_iff.2 ((Submodule.eq_bot_iff _).2 fun c hc ↦ ?_))
+    have h0c : WithLp.toLp 2 ((0 : E), c) ∈ S.topologicalClosure := by
+      rw [← Submodule.orthogonal_orthogonal_eq_closure]
+      refine (Submodule.mem_orthogonal' _ _).2 fun w hw ↦ ?_
+      have hwD : (WithLp.ofLp w).2 ∈ D := ⟨w, hw, rfl⟩
+      simpa [WithLp.prod_inner_apply] using (Submodule.mem_orthogonal' D c).1 hc _ hwD
+    have hcl : ((0 : E), c) ∈ _root_.closure (A.graph : Set (E × F)) := by
+      have hsub : (S.topologicalClosure : Set (WithLp 2 (E × F))) ⊆
+          e ⁻¹' A.graph.topologicalClosure :=
+        closure_minimal (fun s hs ↦ Submodule.le_topologicalClosure _ hs)
+          ((Submodule.isClosed_topologicalClosure _).preimage e.continuous)
+      simpa [e] using hsub h0c
+    obtain ⟨f', hf'⟩ := hA
+    rw [← Submodule.topologicalClosure_coe, hf'] at hcl
+    exact f'.graph_fst_eq_zero_snd hcl rfl
+  have hD (b : F) (hb : b ∈ D) : Tendsto (fun n ↦ ⟪A (u n), b⟫_𝕜) atTop (𝓝 0) := by
+    obtain ⟨w, hw, rfl⟩ := hb
+    have hw' : Tendsto (fun n ↦ -⟪(u n : E), (WithLp.ofLp w).1⟫_𝕜) atTop (𝓝 0) := by
+      have hc : Continuous fun x : E ↦ ⟪x, (WithLp.ofLp w).1⟫_𝕜 :=
+        continuous_id.inner continuous_const
+      simpa using ((hc.tendsto 0).comp hu).neg
+    refine hw'.congr fun n ↦ ?_
+    simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.snd_apply,
+      LinearEquiv.coe_coe, WithLp.coe_linearEquiv]
+    linear_combination (horth w hw (u n)).symm
+  have := ContinuousLinearMap.tendsto_apply_of_dense hdense (l := atTop)
+    (f := fun n ↦ innerSL 𝕜 (A (u n))) (g := 0) (C := 1)
+    (.of_forall fun n ↦ (innerSL_apply_norm 𝕜 _).trans_le (hAu n))
+    (fun b hb ↦ by simpa using hD b hb) k
+  simpa using this
 
-/-- **A relatively compact map has relative bound zero** (Teschl, Lemma 6.22). Let `A` be a
-partial linear map on a Hilbert space with a point `z` in its resolvent set. If `V` is
-`A`-compact, then for every `ε > 0` there is an `a` with `‖V x‖ ≤ a ‖x‖ + ε ‖A x‖` on `dom A`. -/
-theorem IsRelativelyCompact.exists_isRelativelyBounded {A : E →ₗ.[𝕜] E} {V : E →ₗ.[𝕜] G}
-    (hV : V.IsRelativelyCompact A) {z : 𝕜} (hz : z ∈ A.resolventSet) {ε : ℝ} (hε : 0 < ε) :
+/-- For a closable `A`, an `A`-bounded `V` and a sequence `uₙ → 0` of `dom A` with `‖A uₙ‖ ≤ 1`,
+the vectors `V uₙ` tend to zero weakly. -/
+private theorem tendsto_dual_apply_of_isClosable {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+    (hA : A.IsClosable) {a b : ℝ} (hV : V.IsRelativelyBounded A a b) {u : ℕ → A.domain}
+    (hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0)) (hAu : ∀ n, ‖A (u n)‖ ≤ 1)
+    (f : StrongDual 𝕜 G) : Tendsto (fun n ↦ f (V ⟨u n, hV.domain_le (u n).2⟩)) atTop (𝓝 0) := by
+  -- Represent `x ↦ f (V x)` as a continuous functional of `(x, A x)`, by Hahn–Banach.
+  let L : A.domain →ₗ[𝕜] E × F := A.domain.subtype.prod A.toFun
+  have hL : Function.Injective L := fun x y h ↦ Subtype.ext (congrArg Prod.fst h)
+  let Φ : A.domain →ₗ[𝕜] 𝕜 :=
+    (f : G →ₗ[𝕜] 𝕜) ∘ₗ V.toFun ∘ₗ Submodule.inclusion hV.domain_le
+  let ψ : LinearMap.range L →ₗ[𝕜] 𝕜 := Φ ∘ₗ (LinearEquiv.ofInjective L hL).symm.toLinearMap
+  have hψ (x : A.domain) : ψ ⟨L x, x, rfl⟩ = f (V ⟨x, hV.domain_le x.2⟩) := by
+    have hx : (LinearEquiv.ofInjective L hL).symm ⟨L x, x, rfl⟩ = x :=
+      (LinearEquiv.ofInjective L hL).symm_apply_eq.2
+        (Subtype.ext (LinearEquiv.ofInjective_apply L x).symm)
+    simp only [ψ, Φ, LinearMap.comp_apply, LinearEquiv.coe_coe, hx, ContinuousLinearMap.coe_coe,
+      LinearPMap.toFun_eq_coe, Submodule.inclusion_apply]
+  have hbound (s : LinearMap.range L) : ‖ψ s‖ ≤ ‖f‖ * (|a| + |b|) * ‖s‖ := by
+    obtain ⟨_, x, rfl⟩ := s
+    have hLx : L x = ((x : E), A x) := by simp [L]
+    have hn : ‖(⟨L x, x, rfl⟩ : LinearMap.range L)‖ = max ‖(x : E)‖ ‖A x‖ := by
+      rw [← Submodule.norm_coe]
+      dsimp only
+      rw [hLx, Prod.norm_def]
+    rw [hψ, hn]
+    refine (f.le_opNorm _).trans ?_
+    rw [mul_assoc]
+    gcongr
+    refine (hV.norm_apply_le x).trans ?_
+    have h₁ : a * ‖(x : E)‖ ≤ |a| * max ‖(x : E)‖ ‖A x‖ :=
+      (mul_le_mul_of_nonneg_right (le_abs_self a) (norm_nonneg _)).trans
+        (mul_le_mul_of_nonneg_left (le_max_left _ _) (abs_nonneg a))
+    have h₂ : b * ‖A x‖ ≤ |b| * max ‖(x : E)‖ ‖A x‖ :=
+      (mul_le_mul_of_nonneg_right (le_abs_self b) (norm_nonneg _)).trans
+        (mul_le_mul_of_nonneg_left (le_max_right _ _) (abs_nonneg b))
+    linarith
+  obtain ⟨g, hg, -⟩ := exists_extension_norm_eq (LinearMap.range L) (ψ.mkContinuous _ hbound)
+  have hsplit (n : ℕ) : f (V ⟨u n, hV.domain_le (u n).2⟩) =
+      g (ContinuousLinearMap.inl 𝕜 E F (u n)) + g (ContinuousLinearMap.inr 𝕜 E F (A (u n))) := by
+    rw [← hψ, ← LinearMap.mkContinuous_apply ψ _ hbound, ← hg, ← _root_.map_add g]
+    congr 1
+    ext <;> simp [L]
+  have h₁ : Tendsto (fun n ↦ g (ContinuousLinearMap.inl 𝕜 E F (u n))) atTop (𝓝 0) := by
+    simpa [Function.comp_def, Prod.mk_zero_zero] using
+      ((g.comp (ContinuousLinearMap.inl 𝕜 E F)).continuous.tendsto 0).comp hu
+  -- The second coordinate is represented by a vector `k` of the Hilbert space `F`.
+  set k := (InnerProductSpace.toDual 𝕜 F).symm (g.comp (ContinuousLinearMap.inr 𝕜 E F))
+  have h₂ : Tendsto (fun n ↦ g (ContinuousLinearMap.inr 𝕜 E F (A (u n)))) atTop (𝓝 0) := by
+    have hk (y : F) : g (ContinuousLinearMap.inr 𝕜 E F y) = ⟪k, y⟫_𝕜 := by
+      rw [InnerProductSpace.toDual_symm_apply, ContinuousLinearMap.comp_apply]
+    simp_rw [hk]
+    have := ((RCLike.continuous_conj (K := 𝕜)).tendsto 0).comp
+      (tendsto_inner_apply_of_isClosable hA hu hAu k)
+    rw [_root_.map_zero] at this
+    exact this.congr fun n ↦ inner_conj_symm _ _
+  simp_rw [hsplit]
+  simpa using h₁.add h₂
+
+/-- **A relatively compact map has relative bound zero** (Teschl, Lemma 6.22; Kato, §IV.1.3).
+Let `A` be a closable partial linear map between Hilbert spaces. If `V` is `A`-compact, then for
+every `ε > 0` there is an `a` with `‖V x‖ ≤ a ‖x‖ + ε ‖A x‖` on `dom A`. -/
+theorem IsRelativelyCompact.exists_isRelativelyBounded {A : E →ₗ.[𝕜] F} {V : E →ₗ.[𝕜] G}
+    (hV : V.IsRelativelyCompact A) (hA : A.IsClosable) {ε : ℝ} (hε : 0 < ε) :
     ∃ a, V.IsRelativelyBounded A a ε := by
   by_contra! hcon
   choose u hu1 hu2 using fun n : ℕ ↦
@@ -195,20 +198,28 @@ theorem IsRelativelyCompact.exists_isRelativelyBounded {A : E →ₗ.[𝕜] E} {
     have := mul_nonneg (Nat.cast_nonneg (α := ℝ) (φ n)) (norm_nonneg (u (φ n) : E))
     simp only [Function.comp_apply]
     linarith
+  obtain ⟨C, hC⟩ := hV.exists_isRelativelyBounded_const
+  have hu : Tendsto (fun n ↦ (u n : E)) atTop (𝓝 0) := tendsto_zero_iff_norm_tendsto_zero.2 hu0
   have hw0 : w = 0 := SeparatingDual.eq_zero_of_forall_dual_eq_zero fun f ↦
     tendsto_nhds_unique ((f.continuous.tendsto w).comp hlim)
-      ((tendsto_dual_apply_of_isRelativelyCompact hV hz hu0 hAu f).comp
-        hφ.tendsto_atTop)
+      ((tendsto_dual_apply_of_isClosable hA hC hu hAu f).comp hφ.tendsto_atTop)
   rw [hw0, norm_zero] at hw
   linarith
 
-/-- **A relatively compact perturbation stays relatively compact** (Teschl, Lemma 6.23). If
-`V` is `A`-compact and `A` has a point `z` in its resolvent set, then `V` is `(A + V)`-compact. -/
-theorem IsRelativelyCompact.isRelativelyCompact_add {A V : E →ₗ.[𝕜] E}
-    (hV : V.IsRelativelyCompact A) {z : 𝕜} (hz : z ∈ A.resolventSet) :
-    V.IsRelativelyCompact (A + V) := by
-  obtain ⟨a, ha⟩ := hV.exists_isRelativelyBounded hz one_half_pos
-  exact hV.add_of_isRelativelyBounded ha (by norm_num)
+/-- **Relatively compact perturbations preserve relative compactness.** If `A` is closable and
+`V` is `A`-compact, then every `A`-compact `W` is `(A + V)`-compact. -/
+theorem IsRelativelyCompact.add_right {S H : Type*} [Ring S] {σ : 𝕜 →+* S} [AddCommGroup H]
+    [TopologicalSpace H] [Module S H] {A V : E →ₗ.[𝕜] F} {W : E →ₛₗ.[σ] H}
+    (hW : W.IsRelativelyCompact A) (hV : V.IsRelativelyCompact A) (hA : A.IsClosable) :
+    W.IsRelativelyCompact (A + V) := by
+  obtain ⟨a, ha⟩ := hV.exists_isRelativelyBounded hA one_half_pos
+  exact hW.add_right_of_isRelativelyBounded ha (by norm_num)
+
+/-- **A relatively compact perturbation stays relatively compact** (Teschl, Lemma 6.23). If `A`
+is closable and `V` is `A`-compact, then `V` is `(A + V)`-compact. -/
+theorem IsRelativelyCompact.add_right_self {A V : E →ₗ.[𝕜] F} (hV : V.IsRelativelyCompact A)
+    (hA : A.IsClosable) : V.IsRelativelyCompact (A + V) :=
+  hV.add_right hV hA
 
 end LinearPMap
 
@@ -217,13 +228,11 @@ open LinearPMap
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
   [CompleteSpace E] {A V : E →ₗ.[𝕜] E}
 
-/-- **Relatively compact perturbations preserve self-adjointness.** If `A` is self-adjoint with a
-point `z` in its resolvent set and `V` is symmetric and `A`-compact, then `A + V`, with domain
-`dom A`, is self-adjoint. -/
-theorem IsSelfAdjoint.add_of_isRelativelyCompact_of_mem_resolventSet (hA : IsSelfAdjoint A)
-    (hV : V.IsFormalAdjoint V) (hAV : V.IsRelativelyCompact A) {z : 𝕜}
-    (hz : z ∈ A.resolventSet) : IsSelfAdjoint (A + V) := by
-  obtain ⟨a, ha⟩ := hAV.exists_isRelativelyBounded hz one_half_pos
+/-- **Relatively compact perturbations preserve self-adjointness.** If `A` is self-adjoint and
+`V` is symmetric and `A`-compact, then `A + V`, with domain `dom A`, is self-adjoint. -/
+theorem IsSelfAdjoint.add_of_isRelativelyCompact (hA : IsSelfAdjoint A)
+    (hV : V.IsFormalAdjoint V) (hAV : V.IsRelativelyCompact A) : IsSelfAdjoint (A + V) := by
+  obtain ⟨a, ha⟩ := hAV.exists_isRelativelyBounded hA.isClosed.isClosable one_half_pos
   exact hA.add_of_isRelativelyBounded hV ha (by norm_num)
 
 /-- **Compact resolvent difference of a relatively compact perturbation.** If `A` is
@@ -231,16 +240,6 @@ self-adjoint and `V` is symmetric and `A`-compact, then at every `z` with nonzer
 `R_{A+V}(z) - R_A(z)` is a compact operator. -/
 theorem IsSelfAdjoint.isCompactOperator_resolvent_add_sub_of_isRelativelyCompact
     (hA : IsSelfAdjoint A) (hV : V.IsFormalAdjoint V) (hAV : V.IsRelativelyCompact A) {z : 𝕜}
-    (hz : RCLike.im z ≠ 0) : IsCompactOperator ((A + V).resolvent z - A.resolvent z) := by
-  have hzA := hA.mem_resolventSet_of_im_ne_zero hz
-  exact hAV.isCompactOperator_resolvent_add_sub hzA
-    ((hA.add_of_isRelativelyCompact_of_mem_resolventSet hV hAV hzA).mem_resolventSet_of_im_ne_zero
-      hz)
-
-/-- **Relatively compact perturbations preserve self-adjointness** over `ℂ`: if `A` is
-self-adjoint and `V` is symmetric and `A`-compact, then `A + V`, with domain `dom A`, is
-self-adjoint. -/
-theorem IsSelfAdjoint.add_of_isRelativelyCompact {H : Type*} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H] {A V : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A)
-    (hV : V.IsFormalAdjoint V) (hAV : V.IsRelativelyCompact A) : IsSelfAdjoint (A + V) :=
-  hA.add_of_isRelativelyCompact_of_mem_resolventSet hV hAV hA.I_mem_resolventSet
+    (hz : RCLike.im z ≠ 0) : IsCompactOperator ((A + V).resolvent z - A.resolvent z) :=
+  hAV.isCompactOperator_resolvent_add_sub (hA.mem_resolventSet_of_im_ne_zero hz)
+    ((hA.add_of_isRelativelyCompact hV hAV).mem_resolventSet_of_im_ne_zero hz)
