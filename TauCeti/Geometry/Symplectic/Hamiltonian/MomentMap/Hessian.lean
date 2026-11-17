@@ -34,9 +34,9 @@ the one-parameter subgroup on `T_p M`.
 
 Since `σ_p` is nondegenerate, the null space of the Hessian is the kernel of `A_ξ`, which consists
 of the tangent vectors fixed by the differential at `p` of every element of `T_ξ`
-(`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_eq_zero_iff`). This is the
-Morse–Bott condition on the Hessian: the null space is the fixed space `(T_p M)^{T_ξ}` of the
-isotropy representation, the expected tangent space of the critical manifold `M^{T_ξ}`. In
+(`TauCeti.SmoothTwoForm.IsMomentMap.criticalHessian_apply_eq_zero_iff`): the null space is the
+fixed space `(T_p M)^{T_ξ}` of the isotropy representation. That this fixed space is the tangent
+space at `p` of the critical set `M^{T_ξ}`, the Morse–Bott property, is not proved here. In
 particular `p` is a nondegenerate critical point of `μ^ξ` exactly when no nonzero tangent vector
 at `p` is fixed by `T_ξ`
 (`TauCeti.SmoothTwoForm.IsMomentMap.isManifoldNondegenerateCriticalPoint_iff`).

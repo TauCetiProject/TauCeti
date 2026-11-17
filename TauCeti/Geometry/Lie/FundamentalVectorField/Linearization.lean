@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.FundamentalVectorField
 public import TauCeti.Geometry.Lie.Subgroup.OneParameter
 public import TauCeti.Geometry.Manifold.Flow.RestPoint
+import TauCeti.Analysis.Calculus.Deriv.FixedVector
 import TauCeti.Topology.Algebra.ConstMulAction
 
 /-!
@@ -105,25 +106,6 @@ theorem hasDerivAt_mfderiv_mulInvariantExp_smul_smul (hp : fundamentalVectorFiel
   exact congrArg (β := E' →L[ℝ] E') (fun f : M → M ↦ mfderiv I' I' f p)
     (funext (flowOf_fundamentalVectorField ξ t)).symm
 
-omit [I'.Boundaryless] [IsManifold I' 2 M] [ContMDiffSMul I I' 3 G M] [CompleteSpace E']
-  [T2Space M] in
-/-- The one-parameter subgroup acts on the tangent space at a common fixed point by a
-one-parameter group of operators: `d(exp ((s + t) ξ))_p = d(exp (s ξ))_p ∘ d(exp (t ξ))_p`. -/
-private theorem mfderiv_mulInvariantExp_add_smul_smul [ContMDiffSMul I I' 1 G M]
-    (hfix : ∀ t : ℝ, mulInvariantExp (t • ξ) • p = p) (s t : ℝ) :
-    (mfderiv I' I' (fun y : M ↦ mulInvariantExp ((s + t) • ξ) • y) p : E' →L[ℝ] E') =
-      (mfderiv I' I' (fun y : M ↦ mulInvariantExp (s • ξ) • y) p : E' →L[ℝ] E').comp
-        (mfderiv I' I' (fun y : M ↦ mulInvariantExp (t • ξ) • y) p : E' →L[ℝ] E') := by
-  have hd (g : G) : MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
-    (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := 1) g).mdifferentiableAt
-      one_ne_zero
-  have hcomp : (fun y : M ↦ mulInvariantExp ((s + t) • ξ) • y) =
-      (fun y : M ↦ mulInvariantExp (s • ξ) • y) ∘ fun y : M ↦ mulInvariantExp (t • ξ) • y := by
-    funext y
-    simp only [comp_apply, mulInvariantExp_add_smul, mul_smul]
-  rw [hcomp]
-  exact mfderiv_comp_of_apply_eq_self (hd _) (hd _) (hfix t)
-
 /-- **The kernel of the linearization of a fundamental vector field.** At a zero `p` of the
 fundamental vector field `ξ_M` of a `C³` action, a tangent vector is killed by the linearization
 of `ξ_M` at `p` exactly when it is fixed by the differential at `p` of every `exp (t ξ)`. -/
@@ -136,42 +118,19 @@ theorem fderiv_mpullbackWithin_fundamentalVectorField_apply_eq_zero_iff
   have : ContMDiffSMul I I' 1 G M := ContMDiffSMul.of_le (M := M) (m := 3) (by norm_num)
   have : IsManifold I' 1 M := IsManifold.of_le (n := 2) (by norm_num)
   have hfix := (mulInvariantExp_smul_smul_eq_iff (I' := I')).2 hp
-  -- Work with the differentials `D t = d(exp (t ξ))_p` as operators on the model space `E'`.
-  set D : ℝ → E' →L[ℝ] E' := fun t ↦ mfderiv I' I' (fun y : M ↦ mulInvariantExp (t • ξ) • y) p
-    with hD_def
-  set L := fderiv ℝ (VectorField.mpullbackWithin 𝓘(ℝ, E') I' (extChartAt I' p).symm
-    (fundamentalVectorField I' ξ) (range I')) (extChartAt I' p p)
-  have hD : HasDerivAt D L 0 := hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp
-  have hD0 : D 0 = ContinuousLinearMap.id ℝ E' := by
-    have h1 : (fun y : M ↦ mulInvariantExp ((0 : ℝ) • ξ) • y) = id := funext fun y ↦ by simp
-    simp only [hD_def]
-    rw [h1, mfderiv_id]
-    rfl
-  have hDv : HasDerivAt (fun t ↦ D t v) (L v) 0 := by
-    simpa using hD.clm_apply (hasDerivAt_const (F := E') (0 : ℝ) v)
-  constructor
-  · -- If `L v = 0`, then `t ↦ D t v` has derivative `D t (L v) = 0` at every `t`, because
-    -- `D u = D t ∘ D (u - t)`; so it is the constant `D 0 v = v`.
-    intro hv
-    have hderiv (t : ℝ) : HasDerivAt (fun u ↦ D u v) 0 t := by
-      have hg := (D t).hasFDerivAt.comp_hasDerivAt (0 : ℝ) hDv
-      rw [hv, map_zero, ← sub_self t] at hg
-      refine (hg.comp_sub_const t t).congr_of_eventuallyEq
-        (Filter.Eventually.of_forall fun u ↦ ?_)
-      have key := mfderiv_mulInvariantExp_add_smul_smul (I' := I') hfix t (u - t)
-      rw [add_sub_cancel] at key
-      exact congrArg (fun A : E' →L[ℝ] E' ↦ A v) key
-    intro t
-    have hconst := is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
-      (fun u ↦ (hderiv u).deriv) t 0
-    rw [hD0] at hconst
-    exact hconst
-  · -- If every `D t` fixes `v`, then `t ↦ D t v` is constant, so its derivative `L v` vanishes.
-    intro hv
-    have hconst : HasDerivAt (fun t ↦ D t v) 0 0 :=
-      (hasDerivAt_const (F := E') (0 : ℝ) v).congr_of_eventuallyEq
-        (Filter.Eventually.of_forall hv)
-    exact hDv.unique hconst
+  have hd : ∀ g ∈ MulAction.stabilizer G p, MDifferentiableAt I' I' (fun y : M ↦ g • y) p :=
+    fun g _ ↦ (ContMDiffSMul.contMDiff_const_smul (I := I) (I' := I') (n := 1) g).mdifferentiableAt
+      one_ne_zero
+  -- The differentials `d(exp (t ξ))_p` are the tangent representation of the stabilizer of `p`
+  -- along the one-parameter subgroup, so they form a one-parameter group of operators on `E'`.
+  let φ : ℝ → MulAction.stabilizer G p := fun t ↦ ⟨_, hfix t⟩
+  have hφ0 : φ 0 = 1 := Subtype.ext (by simp [φ, mulInvariantExp_zero])
+  have hφadd (s t : ℝ) : φ (s + t) = φ s * φ t := Subtype.ext (mulInvariantExp_add_smul ξ s t)
+  have hrep (t : ℝ) := tangentRepresentation_apply hd (φ t)
+  exact HasDerivAt.apply_eq_zero_iff_forall_apply_eq_self (F := E')
+    (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp)
+    ((hrep 0).symm.trans (by rw [hφ0, map_one]; rfl))
+    (fun s t ↦ (hrep (s + t)).symm.trans (by rw [hφadd, map_mul, hrep, hrep]; rfl)) (v : E')
 
 omit [I'.Boundaryless] [IsManifold I' 2 M] [ContMDiffSMul I I' 3 G M] [CompleteSpace E'] in
 /-- **Vectors fixed by a closed one-parameter subgroup.** Let every `exp (t ξ)` fix `p`. A tangent
