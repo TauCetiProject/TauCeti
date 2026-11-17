@@ -95,6 +95,13 @@ theorem induction {P : ParitySignedSym G → Prop}
   | mul a b ha hb => simpa only [map_mul] using mul _ _ ha hb
   | add a b ha hb => simpa only [map_add] using add _ _ ha hb
 
+/-- `ParitySignedSym G` is generated as an `R`-algebra by the image of `generator G`. -/
+@[simp]
+theorem adjoin_range_generator : Algebra.adjoin R (Set.range (generator G)) = ⊤ := by
+  rw [← (AlgHom.range_eq_top _).2 (quotient_surjective G), ← Algebra.map_top,
+    ← TensorAlgebra.adjoin_range_ι, AlgHom.map_adjoin, ← Set.range_comp]
+  rfl
+
 /-- Algebra maps from the parity presentation are determined on generators. -/
 @[ext 1200]
 theorem hom_ext {A : Type w} [Semiring A] [Algebra R A] {f g : ParitySignedSym G →ₐ[R] A}

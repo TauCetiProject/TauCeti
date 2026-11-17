@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Supercommutativity
 import Mathlib.GroupTheory.GroupAction.Ring
 import TauCeti.Algebra.Module.GradedModule.KoszulTwist.Algebra
+import TauCeti.RingTheory.Derivation.Graded
 import TauCeti.RingTheory.Derivation.LowerTriangular
 
 /-!
@@ -63,36 +64,6 @@ variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 variable {G : InternalGrading R V ℤ}
 
-/-- A linear map out of `A(V)` satisfying a Leibniz rule along an algebra map `f`, with an
-arbitrary sign `s p` for a left factor of degree `p`, and vanishing on generators, is zero.
-This covers differences of intertwined odd derivations and squares of odd derivations. -/
-private theorem eq_zero_of_leibniz {A : Type*} [Ring A] [Algebra R A]
-    (s : ℤ → ℤˣ) (f : SignedSym G →ₐ[R] A) {D : SignedSym G →ₗ[R] A}
-    (hD : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p → ∀ b : SignedSym G,
-      D (a * b) = D a * f b + s p • (f a * D b))
-    (hgen : ∀ x, D (generator G x) = 0) : D = 0 := by
-  have hone : D 1 = 0 := by
-    have h := hD (SetLike.GradedOne.one_mem (A := signedSymPiece G)) 1
-    simp only [map_one, mul_one, one_mul, left_eq_add] at h
-    exact (smul_eq_zero_iff_eq (s 0)).1 h
-  have hhom : ∀ {p : ℤ} {a : SignedSym G}, a ∈ signedSymPiece G p → D a = 0 := by
-    intro p a ha
-    refine (homogeneous_induction G (P := fun p a => a ∈ signedSymPiece G p ∧ D a = 0)
-      ⟨SetLike.GradedOne.one_mem, hone⟩
-      (fun p x hx => ⟨generator_mem_signedSymPiece G hx, hgen x⟩)
-      (fun p q a b ha hb => ⟨SetLike.mul_mem_graded ha.1 hb.1, by
-        rw [hD ha.1, ha.2, hb.2, zero_mul, mul_zero, zero_add]
-        exact smul_zero _⟩)
-      (fun p => ⟨zero_mem _, map_zero D⟩)
-      (fun p a b ha hb => ⟨add_mem ha.1 hb.1, by rw [map_add, ha.2, hb.2, add_zero]⟩)
-      (fun p r a ha => ⟨Submodule.smul_mem _ r ha.1, by rw [map_smul, ha.2, smul_zero]⟩)
-      ha).2
-  ext a
-  induction a using DirectSum.Decomposition.inductionOn (signedSymPiece G) with
-  | zero => simp
-  | homogeneous a => exact hhom a.2
-  | add a b ha hb => simp_all
-
 /-- A graded algebra map out of `A(V)` intertwines signed Leibniz maps if it does so on
 all generators. Neither degree-shift nor square-zero hypotheses are needed. -/
 theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
@@ -107,8 +78,10 @@ theorem apply_map_eq_map_apply_of_leibniz {A : Type*} [Ring A] [Algebra R A]
     (hgen : ∀ x, d (f (generator G x)) = f (dV (generator G x)))
     (a : SignedSym G) : d (f a) = f (dV a) := by
   have hzero : d ∘ₗ f.toAlgHom.toLinearMap - f.toAlgHom.toLinearMap ∘ₗ dV = 0 := by
-    refine eq_zero_of_leibniz Int.negOnePow f.toAlgHom (fun {p a} ha b => ?_)
-      (fun x => by simp [hgen x])
+    refine eq_zero_of_adjoin_range_eq_top_of_leibniz (ℬ := signedSymPiece G) G.piece
+      Int.negOnePow f.toAlgHom (map_one _) (generator G) (adjoin_range_generator G)
+      (fun hx => ⟨_, generator_mem_signedSymPiece G hx⟩) (fun {p a} ha b => ?_)
+      (fun _ => by simp [hgen])
     simp only [LinearMap.sub_apply, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
       GradedAlgHom.coe_toAlgHom, map_mul,
       hd (Graded.map_mem f ha), hV ha, map_add, map_zsmul, sub_mul, mul_sub,
@@ -242,13 +215,14 @@ theorem comp_self_eq_zero_iff {d : SignedSym G →ₗ[R] SignedSym G}
       d (a * b) = d a * b + p.negOnePow • (a * d b)) :
     d ∘ₗ d = 0 ↔ ∀ x, d (d (generator G x)) = 0 := by
   refine ⟨fun h x => LinearMap.congr_fun h (generator G x), fun h => ?_⟩
-  refine eq_zero_of_leibniz 1 (AlgHom.id R _) (fun {p a} ha b => ?_) h
-  simp only [AlgHom.id_apply]
+  refine eq_zero_of_adjoin_range_eq_top_of_leibniz (ℬ := signedSymPiece G) G.piece
+    (1 : ℤ → ℤˣ) id rfl (generator G) (adjoin_range_generator G)
+    (fun hx => ⟨_, generator_mem_signedSymPiece G hx⟩) (fun {p a} ha b => ?_) (fun _ => h _)
   have hda := hdeg.map_mem ha
   rw [LinearMap.comp_apply, LinearMap.comp_apply, LinearMap.comp_apply, hleibniz ha, map_add,
     map_zsmul_unit, hleibniz hda, hleibniz ha, Int.negOnePow_succ]
   simp only [Units.smul_def, Units.val_neg, neg_zsmul, zsmul_add, smul_smul, ← Units.val_mul,
-    Int.units_mul_self, Units.val_one, one_zsmul, Pi.one_apply]
+    Int.units_mul_self, Units.val_one, one_zsmul, Pi.one_apply, id_eq]
   abel
 
 /-- **The extension is a differential**: `liftDerivation δ hδ` makes `A(V)` a differential

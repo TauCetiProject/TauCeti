@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Homology.DG.Algebra.Parity
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Derivation
 public import TauCeti.LinearAlgebra.SignedSymmetricAlgebra.Parity.Supercommutativity
 import Mathlib.GroupTheory.GroupAction.Ring
+import TauCeti.RingTheory.Derivation.Graded
 import TauCeti.RingTheory.Derivation.LowerTriangular
 
 /-!
@@ -71,36 +72,6 @@ variable {V : Type v} [AddCommGroup V] [Module R V]
 namespace ParitySignedSym
 
 variable {G : InternalGrading R V (ZMod 2)}
-
-/-- A linear endomorphism of `ParitySignedSym G` satisfying a Leibniz rule with an arbitrary sign
-`s i` on a left factor of parity `i`, and vanishing on generators, is zero. This covers both the
-difference of two odd derivations and the square of an odd derivation. -/
-private theorem eq_zero_of_leibniz (s : ZMod 2 → ℤˣ)
-    {D : ParitySignedSym G →ₗ[R] ParitySignedSym G}
-    (hD : ∀ {i : ZMod 2} {a : ParitySignedSym G}, a ∈ paritySignedSymPiece G i →
-      ∀ b : ParitySignedSym G, D (a * b) = D a * b + s i • (a * D b))
-    (hgen : ∀ x, D (generator G x) = 0) : D = 0 := by
-  have hone : D 1 = 0 := by
-    have h := hD (SetLike.GradedOne.one_mem (A := paritySignedSymPiece G)) 1
-    simp only [mul_one, one_mul, left_eq_add] at h
-    exact (smul_eq_zero_iff_eq (s 0)).1 h
-  have hhom : ∀ {i : ZMod 2} {a : ParitySignedSym G},
-      a ∈ paritySignedSymPiece G i → D a = 0 := by
-    intro i a ha
-    refine (homogeneous_induction G (P := fun i a ↦ a ∈ paritySignedSymPiece G i ∧ D a = 0)
-      ⟨SetLike.GradedOne.one_mem, hone⟩
-      (fun i x hx ↦ ⟨generator_mem_paritySignedSymPiece G hx, hgen x⟩)
-      (fun i j a b ha hb ↦ ⟨SetLike.mul_mem_graded ha.1 hb.1, by
-        rw [hD ha.1, ha.2, hb.2, zero_mul, mul_zero, zero_add, Units.smul_def, zsmul_zero]⟩)
-      (fun i ↦ ⟨zero_mem _, map_zero D⟩)
-      (fun i a b ha hb ↦ ⟨add_mem ha.1 hb.1, by rw [map_add, ha.2, hb.2, add_zero]⟩)
-      (fun i r a ha ↦ ⟨Submodule.smul_mem _ r ha.1, by rw [map_smul, ha.2, smul_zero]⟩)
-      ha).2
-  ext a
-  induction a using DirectSum.Decomposition.inductionOn (paritySignedSymPiece G) with
-  | zero => simp
-  | homogeneous a => exact hhom a.2
-  | add a b ha hb => simp_all
 
 section Lift
 
@@ -246,8 +217,10 @@ theorem eq_liftDerivation {d : ParitySignedSym G →ₗ[R] ParitySignedSym G}
       ∀ b : ParitySignedSym G, d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b))
     (hgen : ∀ x, d (generator G x) = δ x) : d = liftDerivation δ hδ := by
   rw [← sub_eq_zero]
-  refine eq_zero_of_leibniz (fun i ↦ (-1 : ℤˣ) ^ i) (fun {i a} ha b ↦ ?_) fun x ↦ ?_
-  · simp only [LinearMap.sub_apply, hleibniz ha, liftDerivation_mul hδ ha, sub_mul, mul_sub,
+  refine eq_zero_of_adjoin_range_eq_top_of_leibniz (ℬ := paritySignedSymPiece G) G.piece
+    (fun i ↦ (-1 : ℤˣ) ^ i) id rfl (generator G) (adjoin_range_generator G)
+    (fun hx ↦ ⟨_, generator_mem_paritySignedSymPiece G hx⟩) (fun {i a} ha b ↦ ?_) fun _ ↦ ?_
+  · simp only [LinearMap.sub_apply, id_eq, hleibniz ha, liftDerivation_mul hδ ha, sub_mul, mul_sub,
       Units.smul_def, zsmul_sub]
     abel
   · simp [hgen]
@@ -295,8 +268,10 @@ theorem comp_self_eq_zero_iff {d : ParitySignedSym G →ₗ[R] ParitySignedSym G
       ∀ b : ParitySignedSym G, d (a * b) = d a * b + ((-1 : ℤˣ) ^ i) • (a * d b)) :
     d ∘ₗ d = 0 ↔ ∀ x, d (d (generator G x)) = 0 := by
   refine ⟨fun h x ↦ LinearMap.congr_fun h (generator G x), fun h ↦ ?_⟩
-  refine eq_zero_of_leibniz 1 (fun {i a} _ b ↦ ?_) h
-  simpa only [LinearMap.comp_apply, Pi.one_apply, one_smul] using
+  refine eq_zero_of_adjoin_range_eq_top_of_leibniz (ℬ := paritySignedSymPiece G) G.piece
+    (1 : ZMod 2 → ℤˣ) id rfl (generator G) (adjoin_range_generator G)
+    (fun hx ↦ ⟨_, generator_mem_paritySignedSymPiece G hx⟩) (fun {i a} _ b ↦ ?_) (fun _ ↦ h _)
+  simpa only [LinearMap.comp_apply, Pi.one_apply, one_smul, id_eq] using
     apply_apply_mul_of_leibniz hdeg hleibniz a b
 
 /-- **Generator criterion for `d ∘ₗ d = 0`**: `liftDerivation δ hδ` squares to zero if and only if
