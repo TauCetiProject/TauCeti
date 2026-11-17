@@ -55,15 +55,17 @@ map is a morphism of chain complexes.
   `Δ[a] ⊗ Δ[b]`, with `SSet.stdSimplex.prodConeChain_d` its boundary formula.
 * `SSet.shuffleChain`: the shuffle chain of `Δ[p] ⊗ Δ[q]`, with its defining recursion
   `SSet.shuffleChain_zero_zero`, `SSet.shuffleChain_succ_zero`, `SSet.shuffleChain_zero_succ` and
-  `SSet.shuffleChain_succ_succ`, its value `SSet.shuffleChain_zero_left` on a vertex and a
-  simplex, its boundary formula `SSet.shuffleChain_d_succ_succ`,
+  `SSet.shuffleChain_succ_succ`, its values `SSet.shuffleChain_zero_left` on a vertex and a
+  simplex and `SSet.shuffleChain_zero_right` on a simplex and a vertex, its boundary formula
+  `SSet.shuffleChain_d_succ_succ`,
   `SSet.shuffleChain_d_succ_zero` and `SSet.shuffleChain_d_zero_succ`, and its naturality in the
   coefficient object.
 * `SSet.shuffle`: the shuffle map, a morphism of chain complexes.
 * `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f`: its value on the summand of a pair of
   simplices, `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_zero` in degree zero,
   `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd` on a vertex and a simplex followed by
-  the projection to the second factor, and
+  the projection to the second factor, `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst`
+  on a simplex and a vertex followed by the projection to the first factor, and
   `SSet.ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one` on two `1`-simplices.
 * `SSet.shuffle_naturality`: it is natural in both simplicial sets.
 * `SSet.shuffle_coefficient_naturality`: it is natural in both coefficient objects.
@@ -536,6 +538,24 @@ lemma shuffleChain_zero_left (q : ℕ) (h : 0 + q = q) (f : (Δ[q] : SSet.{w}) �
     exact Prod.ext (stdSimplex.ext _ _ fun _ ↦ Subsingleton.elim (α := Fin 1) _ _)
       (stdSimplex.cone_δ_zero_yonedaEquiv_id q)
 
+/-- **The shuffle chain of a simplex and a vertex**: the shuffle chain of `Δ[p] ⊗ Δ[0]` is the
+single `p`-simplex whose first component is the top simplex of `Δ[p]` and whose second component
+is the constant simplex of `Δ[0]`. Here it is written as the simplex classified by the map
+`(𝟙, f) : Δ[p] ⟶ Δ[p] ⊗ Δ[0]`, for the unique map `f : Δ[p] ⟶ Δ[0]`. -/
+lemma shuffleChain_zero_right (p : ℕ) (h : p + 0 = p) (f : (Δ[p] : SSet.{w}) ⟶ Δ[0]) :
+    shuffleChain T p 0 p h = ((Δ[p] : SSet.{w}) ⊗ Δ[0]).ιChainComplex
+      (yonedaEquiv (CartesianMonoidalCategory.lift (𝟙 _) f)) := by
+  induction p with
+  | zero => exact shuffleChain_zero_zero T h _
+  | succ p ih =>
+    rw [shuffleChain_succ_zero, ih _ (stdSimplex.δ 0 ≫ f), ι_chainComplexMap_f_assoc (Δ[p] ⊗ Δ[0]),
+      stdSimplex.ιChainComplex_prodConeChain]
+    -- the cone on the zeroth face of the top simplex is the top simplex, and the cone on the
+    -- constant simplex is constant
+    congr 1
+    exact Prod.ext (stdSimplex.cone_δ_zero_yonedaEquiv_id p)
+      (stdSimplex.ext _ _ fun _ ↦ Subsingleton.elim (α := Fin 1) _ _)
+
 /-- The faces of the shuffle chain in the first factor. -/
 private def xFace : (p q n : ℕ) → p + q = n + 1 →
     (T ⟶ (((Δ[p] : SSet.{w}) ⊗ Δ[q]).chainComplex T).X n)
@@ -766,6 +786,21 @@ lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_snd {q : ℕ} (x : K _�
     shuffleChain_zero_left _ q _ (yonedaEquiv.symm (stdSimplex.const 0 0 _)),
     chainComplexMap_f_comp, ι_chainComplexMap_f]
   exact congrArg _ (yonedaEquiv_symm_app_id y)
+
+/-- In bidegree `(p, 0)`, the shuffle map followed by the projection `K × L ⟶ K` sends the summand
+of a `p`-simplex `x` of `K` and a vertex `y` of `L` to the summand of `x`: the shuffle product of a
+simplex with a vertex projects onto that simplex. -/
+@[reassoc]
+lemma ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst {p : ℕ} (x : K _⦋p⦌) (y : L _⦋0⦌) :
+    (K.ιChainComplex x ⊗ₘ L.ιChainComplex y) ≫
+        ιTensorObj (K.chainComplex R) (L.chainComplex S) p 0 p (add_zero p) ≫
+          (shuffle K L R S).f p ≫
+            (chainComplexMap (CartesianMonoidalCategory.fst K L) (R ⊗ S)).f p =
+      K.ιChainComplex x := by
+  rw [ιChainComplex_tensorHom_ιChainComplex_shuffle_f_assoc,
+    shuffleChain_zero_right _ p _ (yonedaEquiv.symm (stdSimplex.const 0 0 _)),
+    chainComplexMap_f_comp, ι_chainComplexMap_f]
+  exact congrArg _ (yonedaEquiv_symm_app_id x)
 
 /-- In bidegree `(1, 1)`, the shuffle map sends the summand of a pair of `1`-simplices `(x, y)` to
 `(s₁ x, s₀ y) - (s₀ x, s₁ y)`, the classical formula for the shuffle product of two

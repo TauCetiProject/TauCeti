@@ -41,8 +41,11 @@ A morphism out of zeroth homology is determined by its values on the classes of 
 (`TauCeti.singularHomology₀_hom_ext`), and any family of values on the classes of points that is
 constant along paths is attained by such a morphism (`TauCeti.singularHomology₀Desc`,
 `TauCeti.singularHomology₀Section_singularHomology₀Desc`). Points joined by a path have the same
-class (`TauCeti.singularHomology₀Section_eq_of_joined`). On a path-connected space the class of a
-point does not depend on the point, and with coefficients in a ring it spans zeroth homology
+class (`TauCeti.singularHomology₀Section_eq_of_joined`), while with coefficients in a module the
+classes of points in different path components are not proportional
+(`TauCeti.singularHomology₀Section_apply_ne_smul_of_not_joined`). On a path-connected space the
+class of a point does not depend on the point, and with coefficients in a ring it spans zeroth
+homology
 (`TauCeti.singularHomology₀_eq_smul_singularHomology₀Section`). Since its augmentation is an
 isomorphism, every map out of a path-connected space is injective on zeroth homology
 (`TauCeti.mono_singularHomologyMap_zero_of_pathConnectedSpace`).
@@ -188,6 +191,31 @@ lemma singularHomology₀Section_singularHomology₀Desc {X : TopCat.{w}} {Y : C
     (hv : ∀ ⦃x y : X⦄, Path x y → v x = v y) (x : X) :
     singularHomology₀Section R x ≫ singularHomology₀Desc R v hv = v x := by
   simp [singularHomology₀Desc]
+
+/-- With coefficients in a module `M` over a ring `k`, the classes of points in different path
+components are not proportional: if `x` and `y` are not joined by a path and `r ≠ 0`, then
+`r[x] ≠ c • r[y]` for every `c : k`. -/
+theorem singularHomology₀Section_apply_ne_smul_of_not_joined {k : Type*} [Ring k]
+    {M : ModuleCat.{w} k} {X : TopCat.{w}} {x y : X} (h : ¬Joined x y) {r : M} (hr : r ≠ 0)
+    (c : k) :
+    (singularHomology₀Section M x).hom r ≠ c • (singularHomology₀Section M y).hom r := by
+  classical
+  -- The morphism out of `H₀` which is the identity on the classes of the path component of `x`
+  -- and zero on the other classes separates the two sides.
+  let v : X → (M ⟶ M) := fun z ↦ if Joined z x then 𝟙 M else 0
+  have hv : ∀ ⦃z z' : X⦄, Path z z' → v z = v z' := fun z z' q ↦ by
+    have : Joined z x ↔ Joined z' x :=
+      ⟨fun h ↦ Joined.trans (Joined.symm ⟨q⟩) h, fun h ↦ Joined.trans ⟨q⟩ h⟩
+    simp only [v, this]
+  intro hxy
+  have := congrArg (singularHomology₀Desc M v hv).hom hxy
+  rw [map_smul, ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
+    singularHomology₀Section_singularHomology₀Desc,
+    singularHomology₀Section_singularHomology₀Desc] at this
+  have hyx : ¬Joined y x := fun h' ↦ h h'.symm
+  simp only [v, hyx, Joined.refl, ↓reduceIte, ModuleCat.hom_id, LinearMap.id_apply,
+    ModuleCat.hom_zero, LinearMap.zero_apply, smul_zero] at this
+  exact hr this
 
 variable [HasKernels C]
 
