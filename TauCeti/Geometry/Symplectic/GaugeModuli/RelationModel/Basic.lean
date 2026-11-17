@@ -53,9 +53,14 @@ coprime rank and degree*, §3).
 * `TauCeti.GaugeModuli.exists_eq_smul_one_of_commute_relationSet` and
   `TauCeti.GaugeModuli.eq_zero_of_commute_relationSet_of_trace_eq_zero`: Schur's lemma and
   vanishing of the trace-free commuting matrices (the infinitesimal stabilizer) at every solution.
-* `TauCeti.GaugeModuli.relationSet_stabilizer_central` and
-  `TauCeti.GaugeModuli.stabilizer_psu_relationSet_eq_bot`: every `SU(r)`-stabilizer is the center
-  `μ_r`, so the effective `PSU(r)` action on `relationSet r ζ g` is free.
+* `TauCeti.GaugeModuli.relationSet_stabilizer_central`,
+  `TauCeti.GaugeModuli.conjAct_smul_relationSet_eq_self_iff`,
+  `TauCeti.GaugeModuli.psu_smul_relationSet_eq_self_iff`, and
+  `TauCeti.GaugeModuli.stabilizer_psu_relationSet_eq_bot`: commuting elements of `SU(r)` are
+  central (`relationSet_stabilizer_central`), every `SU(r)`-stabilizer equals the center `μ_r`
+  (`conjAct_smul_relationSet_eq_self_iff`), and the effective `PSU(r)` action on
+  `relationSet r ζ g` is free (`psu_smul_relationSet_eq_self_iff`,
+  `stabilizer_psu_relationSet_eq_bot`).
 * `TauCeti.GaugeModuli.isEmpty_relationModuli_zero`: the genus-zero moduli is empty for `r ≥ 2`
   and primitive `ζ`.
 * `TauCeti.GaugeModuli.relationModuli_rank_one` and
@@ -210,17 +215,10 @@ theorem conjAct_smul_eq_self_of_mem_center {r : ℕ} {ζ : ℂ} {g : ℕ}
     {u : Matrix.specialUnitaryGroup (Fin r) ℂ}
     (hu : u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
     (x : relationSet r ζ g) : ConjAct.toConjAct u • x = x := by
-  apply Subtype.ext
-  funext j
-  ext1
-  · have h1 := Subgroup.mem_center_iff.mp hu (x.1 j).1
-    simp only [coe_conjAct_smul_relationSet, Pi.smul_apply, Prod.smul_fst, ConjAct.smul_def,
-      ConjAct.ofConjAct_toConjAct]
-    rw [← h1, mul_inv_cancel_right]
-  · have h2 := Subgroup.mem_center_iff.mp hu (x.1 j).2
-    simp only [coe_conjAct_smul_relationSet, Pi.smul_apply, Prod.smul_snd, ConjAct.smul_def,
-      ConjAct.ofConjAct_toConjAct]
-    rw [← h2, mul_inv_cancel_right]
+  have hfix (a : Matrix.specialUnitaryGroup (Fin r) ℂ) : ConjAct.toConjAct u • a = a := by
+    rw [ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, mul_inv_eq_iff_eq_mul]
+    exact (Subgroup.mem_center_iff.mp hu a).symm
+  exact Subtype.ext <| funext fun j => Prod.ext (hfix (x.1 j).1) (hfix (x.1 j).2)
 
 /-- The effective simultaneous conjugation action of `PSU(r)` on `relationSet r ζ g`. -/
 noncomputable instance instMulActionPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ) :
@@ -231,10 +229,8 @@ noncomputable instance instMulActionPSURelationSet (r : ℕ) (ζ : ℂ) (g : ℕ
         ProjectiveSpecialLinearGroup (Fin r) ℂ).ker
       ((MulAction.toPermHom (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
           (relationSet r ζ g)).comp ConjAct.toConjAct.toMonoidHom)
-      (show (toPSL : Matrix.specialUnitaryGroup (Fin r) ℂ →*
-          ProjectiveSpecialLinearGroup (Fin r) ℂ).ker ≤ _ from fun _ hu =>
-        Equiv.ext fun x =>
-          conjAct_smul_eq_self_of_mem_center (ker_toPSL_le_center hu) x)).comp
+      (IsConcreteLE.le_iff.mpr fun _ hu => MonoidHom.mem_ker.mpr <| Equiv.ext fun x =>
+        conjAct_smul_eq_self_of_mem_center (ker_toPSL_le_center hu) x)).comp
       (QuotientGroup.quotientKerEquivRange toPSL).symm.toMonoidHom
 
 /-- On an element `toPSL.rangeRestrict u ∈ PSU(r)`, the `PSU(r)` action on `relationSet r ζ g`
@@ -487,8 +483,9 @@ theorem eq_zero_of_commute_relationSet_of_trace_eq_zero {r : ℕ} {ζ : ℂ}
   simp [hc0]
 
 /-- Every element of `SU(r)` commuting with all entries of a solution of the twisted relation is
-central. Equivalently, the stabilizers of the simultaneous conjugation action are the center `μ_r`,
-so the effective `PSU(r)` action on `relationSet r ζ g` is free. -/
+central; see `conjAct_smul_relationSet_eq_self_iff` for the equality of `SU(r)`-stabilizers with
+the center and `psu_smul_relationSet_eq_self_iff` / `stabilizer_psu_relationSet_eq_bot` for
+freeness of the effective `PSU(r)` action. -/
 theorem relationSet_stabilizer_central (r : ℕ) (ζ : ℂ) (hζ : IsPrimitiveRoot ζ r)
     (g : ℕ) (x : Fin g → Matrix.specialUnitaryGroup (Fin r) ℂ ×
       Matrix.specialUnitaryGroup (Fin r) ℂ) (hx : x ∈ relationSet r ζ g)
@@ -516,17 +513,13 @@ theorem conjAct_smul_relationSet_eq_self_iff {r : ℕ} {ζ : ℂ}
       u ∈ Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ) := by
   constructor
   · intro h
+    have hcomm {a : Matrix.specialUnitaryGroup (Fin r) ℂ}
+        (ha : ConjAct.toConjAct u • a = a) : Commute u a := by
+      rw [ConjAct.smul_def, ConjAct.ofConjAct_toConjAct, mul_inv_eq_iff_eq_mul] at ha
+      exact ha
     refine relationSet_stabilizer_central r ζ hζ g x.1 x.2 u fun j => ?_
-    have hj := congrFun (congrArg Subtype.val h) j
-    have h1 : u * (x.1 j).1 * u⁻¹ = (x.1 j).1 := congrArg Prod.fst hj
-    have h2 : u * (x.1 j).2 * u⁻¹ = (x.1 j).2 := congrArg Prod.snd hj
-    refine ⟨?_, ?_⟩
-    · rw [commute_iff_eq]
-      calc u * (x.1 j).1 = (u * (x.1 j).1 * u⁻¹) * u := by group
-        _ = (x.1 j).1 * u := by rw [h1]
-    · rw [commute_iff_eq]
-      calc u * (x.1 j).2 = (u * (x.1 j).2 * u⁻¹) * u := by group
-        _ = (x.1 j).2 * u := by rw [h2]
+    have hj : ConjAct.toConjAct u • x.1 j = x.1 j := congrFun (congrArg Subtype.val h) j
+    exact ⟨hcomm (congrArg Prod.fst hj), hcomm (congrArg Prod.snd hj)⟩
   · exact fun hu => conjAct_smul_eq_self_of_mem_center hu x
 
 /-- **Freeness of the effective `PSU(r)` action.** For a primitive `r`-th root of unity `ζ`, an
@@ -622,9 +615,8 @@ theorem relationModuli_rank_one {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 1) (g : ℕ
 /-- At rank one with `ζ = 1`, the moduli space is simply connected in every genus. -/
 theorem simplyConnectedSpace_relationModuli_rank_one {ζ : ℂ} (hζ : IsPrimitiveRoot ζ 1) (g : ℕ) :
     SimplyConnectedSpace (relationModuli 1 ζ g) := by
-  have h := relationModuli_rank_one hζ g
-  have : Nonempty (relationModuli 1 ζ g) := h.1
-  have : Subsingleton (relationModuli 1 ζ g) := h.2
+  -- `Subsingleton` is inferred via `instSubsingletonRelationModuli`; only `Nonempty` is needed.
+  have : Nonempty (relationModuli 1 ζ g) := (relationModuli_rank_one hζ g).1
   exact SimplyConnectedSpace.ofContractible _
 
 end BoundaryCases
@@ -700,19 +692,16 @@ instance instSMulCommClassCenterTwistConjAct (r : ℕ) (ζ : ℂ) (g : ℕ) :
       (ConjAct (Matrix.specialUnitaryGroup (Fin r) ℂ))
       (relationSet r ζ g) where
   smul_comm ε u x := by
-    apply Subtype.ext
-    funext j
-    have h1 := Subgroup.mem_center_iff.mp (ε j).1.2 (ConjAct.ofConjAct u)
-    have h2 := Subgroup.mem_center_iff.mp (ε j).2.2 (ConjAct.ofConjAct u)
-    ext1
-    · simp only [coe_centerTwist_smul_relationSet, coe_conjAct_smul_relationSet, Pi.smul_apply,
-        Prod.smul_fst, ConjAct.smul_def]
-      rw [← mul_assoc, ← mul_assoc, ← h1]
-      group
-    · simp only [coe_centerTwist_smul_relationSet, coe_conjAct_smul_relationSet, Pi.smul_apply,
-        Prod.smul_snd, ConjAct.smul_def]
-      rw [← mul_assoc, ← mul_assoc, ← h2]
-      group
+    have hcoord (z : Subgroup.center (Matrix.specialUnitaryGroup (Fin r) ℂ))
+        (a : Matrix.specialUnitaryGroup (Fin r) ℂ) :
+        z.1 * (u • a) = u • (z.1 * a) := by
+      rw [ConjAct.smul_def, ConjAct.smul_def, ← mul_assoc, ← mul_assoc,
+        ← Subgroup.mem_center_iff.mp z.2 (ConjAct.ofConjAct u),
+        mul_assoc (ConjAct.ofConjAct u)]
+    refine Subtype.ext <| funext fun j => ?_
+    simp only [coe_centerTwist_smul_relationSet, coe_conjAct_smul_relationSet, Pi.smul_apply,
+      Prod.ext_iff, Prod.smul_fst, Prod.smul_snd]
+    exact ⟨hcoord (ε j).1 (x.1 j).1, hcoord (ε j).2 (x.1 j).2⟩
 
 /-- The induced central-twist action of `(Z(SU(r)) × Z(SU(r)))^g` on `relationModuli r ζ g`. -/
 instance instMulActionCenterTwistRelationModuli (r : ℕ) (ζ : ℂ) (g : ℕ) :

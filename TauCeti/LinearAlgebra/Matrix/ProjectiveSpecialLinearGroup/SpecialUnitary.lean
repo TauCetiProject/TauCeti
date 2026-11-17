@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Basic.Complex.Basic
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
@@ -32,11 +31,10 @@ kernel of `toPSL` coincides with the center of `SU(n)`
 (`Matrix.specialUnitaryGroup.ker_toPSL_eq_center`), which consists of the scalar matrices whose
 scalar is a `card n`-th root of unity (`Matrix.specialUnitaryGroup.mem_center_iff`). (Over `ℝ`
 this fails in dimension two, where `SO(2)` is abelian.) For `n = 2` the kernel of `toPSL` is
-`{1, -1}` (`Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`), with central element `-1` given by
-`Matrix.specialUnitaryGroup.negOne`, so `PSU(2) = SU(2) ⧸ {±1}`. For `𝕜 = ℂ`, `PSU(2)` acts on the
-Riemann sphere by the Möbius transformations commuting with its antipodal map (see
-`TauCeti.Topology.Compactification.OnePoint.Antipode`), classically the rotations of the round
-sphere.
+`{1, -1}` (`Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`), so `PSU(2) = SU(2) ⧸ {±1}`. For
+`𝕜 = ℂ`, `PSU(2)` acts on the Riemann sphere by the Möbius transformations commuting with its
+antipodal map (see `TauCeti.Topology.Compactification.OnePoint.Antipode`), classically the
+rotations of the round sphere.
 
 ## Main declarations
 
@@ -44,10 +42,6 @@ sphere.
 * `Matrix.specialUnitaryGroup.toGL_toSL`: in `GL(n)`, it agrees with the unitary units.
 * `Matrix.specialUnitaryGroup.toPSL`: the homomorphism `SU(n) → PSL(n)`, whose range is `PSU(n)`.
 * `Matrix.specialUnitaryGroup.ker_toPSL`: its kernel is the preimage of the center of `SL(n)`.
-* `Matrix.specialUnitaryGroup.commutatorElement_eq_smul_one_iff`: in `SU(n, α)`, the group
-  commutator relation `⁅A, B⁆ = c • 1` is equivalent to the Weyl relation `A * B = c • (B * A)`.
-* `Matrix.specialUnitaryGroup.negOne` and `Matrix.specialUnitaryGroup.negOne_ne_one_iff`: the
-  central element `-1 ∈ Z(SU(2, α))`, which is nontrivial iff `-1 ≠ 1` in `α`.
 * `Matrix.specialUnitaryGroup.mk_mem_range_toPSL_iff`: over `ℝ` or `ℂ`, the class of a matrix of
   `SL(n)` lies in `PSU(n)` exactly when the matrix is unitary.
 * `Matrix.specialUnitaryGroup.mem_ker_toPSL_iff`: over a ring without zero divisors, such as
@@ -64,7 +58,7 @@ sphere.
 
 public section
 
-open scoped MatrixGroups commutatorElement
+open scoped MatrixGroups
 
 namespace Matrix
 
@@ -146,51 +140,6 @@ theorem mem_ker_toPSL_iff [NoZeroDivisors α] {A : specialUnitaryGroup (Fin 2) �
     · exact ⟨1, by simp, by rw [map_one, coe_toSL, hA]⟩
     · exact ⟨-1, by norm_num, by rw [map_neg, map_one, coe_toSL, hA]⟩
 
-/-- In `SU(n, α)`, the group-commutator equation `⁅A, B⁆ = c • 1` is equivalent to the Weyl
-commutation relation `A * B = c • (B * A)`. -/
-theorem commutatorElement_eq_smul_one_iff {A B : specialUnitaryGroup n α} {c : α} :
-    ((⁅A, B⁆ : specialUnitaryGroup n α) : Matrix n n α) = c • (1 : Matrix n n α) ↔
-      (A : Matrix n n α) * (B : Matrix n n α) =
-        c • ((B : Matrix n n α) * (A : Matrix n n α)) := by
-  constructor
-  · intro h
-    have hmul : ((⁅A, B⁆ * (B * A) : specialUnitaryGroup n α) : Matrix n n α) =
-        (A * B : specialUnitaryGroup n α) :=
-      congrArg Subtype.val (by group : ⁅A, B⁆ * (B * A) = A * B)
-    simpa [Submonoid.coe_mul, h, Matrix.smul_mul] using hmul.symm
-  · intro h
-    have hmul : ((⁅A, B⁆ : specialUnitaryGroup n α) : Matrix n n α) =
-        ((A * B : specialUnitaryGroup n α) : Matrix n n α) *
-          ((A⁻¹ * B⁻¹ : specialUnitaryGroup n α) : Matrix n n α) :=
-      congrArg Subtype.val (by group : ⁅A, B⁆ = (A * B) * (A⁻¹ * B⁻¹))
-    have hcancel : (((B * A) * (A⁻¹ * B⁻¹) : specialUnitaryGroup n α) : Matrix n n α) = 1 :=
-      congrArg Subtype.val (by group : (B * A) * (A⁻¹ * B⁻¹) = 1)
-    rw [hmul, Submonoid.coe_mul, h, Matrix.smul_mul, ← Submonoid.coe_mul, ← Submonoid.coe_mul,
-      hcancel]
-
-/-- The central element `-1 ∈ Z(SU(2, α))`. -/
-def negOne : Subgroup.center (specialUnitaryGroup (Fin 2) α) :=
-  ⟨⟨-1, mem_specialUnitaryGroup_iff.mpr ⟨by
-    rw [mem_unitaryGroup_iff']
-    simp, by simp [det_fin_two]⟩⟩,
-    Subgroup.mem_center_iff.mpr fun B => Subtype.ext <| by simp⟩
-
-@[simp]
-theorem coe_negOne :
-    (((negOne : Subgroup.center (specialUnitaryGroup (Fin 2) α)) :
-      specialUnitaryGroup (Fin 2) α) : Matrix (Fin 2) (Fin 2) α) = -1 :=
-  (rfl)
-
-/-- The central element `-1 ∈ Z(SU(2, α))` is nontrivial if and only if `-1 ≠ 1` in `α`. -/
-theorem negOne_ne_one_iff :
-    (negOne : Subgroup.center (specialUnitaryGroup (Fin 2) α)) ≠ 1 ↔ (-1 : α) ≠ 1 := by
-  refine not_congr ⟨fun h => ?_, fun h => Subtype.ext <| Subtype.ext ?_⟩
-  · have h00 := congr_fun₂ (congrArg (fun z : Subgroup.center (specialUnitaryGroup (Fin 2) α) =>
-      (z.1 : Matrix (Fin 2) (Fin 2) α)) h) 0 0
-    simpa [coe_negOne] using h00
-  · ext i j
-    by_cases hij : i = j <;> simp [coe_negOne, hij, h]
-
 section RCLike
 
 variable {𝕜 : Type*} [RCLike 𝕜]
@@ -270,10 +219,8 @@ theorem ker_toPSL_eq_center :
     have hcomm : Commute ((diagITest hij : specialUnitaryGroup n ℂ) : Matrix n n ℂ) A :=
       congrArg Subtype.val (Subgroup.mem_center_iff.mp hA (diagITest hij))
     refine TauCeti.apply_eq_zero_of_commute_diagonal hcomm ?_
-    simp only [Function.update_apply, hij, ↓reduceIte, ne_eq]
-    intro h
-    have him := congrArg Complex.im h
-    norm_num at him
+    simp [hij, Complex.ext_iff]
+    norm_num
   have hconst : ∀ i : n, (A : Matrix n n ℂ) i i = (A : Matrix n n ℂ) i₀ i₀ := fun i => by
     by_cases hi : i = i₀
     · rw [hi]

@@ -5,13 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Group.Commutator
 public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Basic
-public import TauCeti.LinearAlgebra.Matrix.ProjectiveSpecialLinearGroup.SpecialUnitary
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Algebra.Star.Basic
 import TauCeti.Analysis.Matrix.Normal
+import TauCeti.Analysis.RCLike.Basic
+import TauCeti.LinearAlgebra.UnitaryGroup
 
 /-!
 # Unitary clock and shift matrices and the finite Stone–von Neumann theorem
@@ -69,24 +72,12 @@ open scoped commutatorElement
 
 namespace Matrix
 
-/-- The underlying natural number of `k + 1` in `Fin r` is `(k.val + 1) % r`. -/
-private theorem fin_val_add_one {r : ℕ} [NeZero r] (k : Fin r) :
-    ((k + 1 : Fin r) : ℕ) = (k.val + 1) % r := by
-  rw [Fin.val_add, Fin.val_one', Nat.add_mod_mod]
-
-/-- Entry `(i, k)` of a matrix product `M * W` is the `i`-th entry of `M` applied to the `k`-th
-column `Wᵀ k`. -/
-private theorem mul_apply_eq_mulVec_transpose {m n o α : Type*} [Fintype n]
-    [NonUnitalNonAssocSemiring α] (M : Matrix m n α) (W : Matrix n o α) (i : m) (k : o) :
-    (M * W) i k = (M *ᵥ Wᵀ k) i := by
-  simp [Matrix.mul_apply, Matrix.mulVec, dotProduct]
-
 /-- The unitary clock matrix `C₀ = diag(1, ζ, …, ζ^{r-1}) ∈ U(r)`. -/
 def clockUnitary {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r) :
     unitaryGroup (Fin r) ℂ :=
   ⟨diagonal fun k : Fin r => ζ ^ (k : ℕ), by
     have hζu : ζ ∈ unitary ℂ :=
-      Circle.coe_mem_unitary ⟨ζ, mem_sphere_zero_iff_norm.mpr (hζ.norm'_eq_one (NeZero.ne r))⟩
+      RCLike.mem_unitary_iff_norm_eq_one.mpr (hζ.norm'_eq_one (NeZero.ne r))
     rw [diagonal_mem_unitary, Pi.mem_unitary_iff]
     exact fun k => Submonoid.pow_mem _ hζu k.val⟩
 
@@ -113,14 +104,17 @@ theorem clockUnitary_mul_shiftUnitary {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : IsP
     (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) * (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ) =
       ζ • ((shiftUnitary r : Matrix (Fin r) (Fin r) ℂ) *
         (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ)) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
   ext i j
   simp only [coe_clockUnitary, diagonal_mul, mul_diagonal, Matrix.smul_apply, smul_eq_mul,
     shiftUnitary_apply]
   split_ifs with h
   · subst h
-    have hpow : ζ ^ ((j.val + 1) % r) = ζ ^ (j.val + 1) :=
-      (congrArg (fun n => ζ ^ ((j.val + 1) % n)) hζ.eq_orderOf).trans (pow_mod_orderOf _ _)
-    rw [fin_val_add_one, hpow, pow_succ', mul_one, one_mul]
+    rw [Fin.val_add_one]
+    split_ifs with hj
+    · subst hj
+      simp [← pow_succ', hζ.pow_eq_one]
+    · rw [pow_succ', mul_one, one_mul]
   · simp
 
 /-- Iterated conjugation of `S₀` by `C₀^n` multiplies `S₀` by `ζ^n`. -/
@@ -130,32 +124,14 @@ theorem clockUnitary_pow_conj_shiftUnitary {r : ℕ} [NeZero r] {ζ : ℂ} (hζ 
         (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ) *
         star (((clockUnitary hζ) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
       ζ ^ n • (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ) := by
-  set C := clockUnitary hζ
-  set S := shiftUnitary r
-  have hSCinv : (C : Matrix (Fin r) (Fin r) ℂ) * (S : Matrix (Fin r) (Fin r) ℂ) *
-      star (C : Matrix (Fin r) (Fin r) ℂ) = ζ • (S : Matrix (Fin r) (Fin r) ℂ) := by
+  have hSCinv : (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) *
+      (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ) *
+      star (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) =
+      ζ • (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ) := by
     rw [clockUnitary_mul_shiftUnitary hζ, Matrix.smul_mul, Matrix.mul_assoc,
-      mem_unitaryGroup_iff.mp C.2, Matrix.mul_one]
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have h1 : ((C ^ (n + 1) : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-        (C : Matrix (Fin r) (Fin r) ℂ) *
-          ((C ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
-      rw [pow_succ', Submonoid.coe_mul]
-    rw [h1, star_mul]
-    calc
-      (C : Matrix (Fin r) (Fin r) ℂ) * ((C ^ n : unitaryGroup (Fin r) ℂ) :
-          Matrix (Fin r) (Fin r) ℂ) * (S : Matrix (Fin r) (Fin r) ℂ) *
-          (star ((C ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-            star (C : Matrix (Fin r) (Fin r) ℂ))
-        = (C : Matrix (Fin r) (Fin r) ℂ) *
-            (((C ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-              (S : Matrix (Fin r) (Fin r) ℂ) *
-              star ((C ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) *
-            star (C : Matrix (Fin r) (Fin r) ℂ) := by simp only [Matrix.mul_assoc]
-      _ = ζ ^ (n + 1) • (S : Matrix (Fin r) (Fin r) ℂ) := by
-            rw [ih, Matrix.mul_smul, Matrix.smul_mul, hSCinv, smul_smul, pow_succ]
+      mem_unitaryGroup_iff.mp (clockUnitary hζ).2, Matrix.mul_one]
+  simpa only [SubmonoidClass.coe_pow] using
+    TauCeti.pow_mul_mul_star_pow_of_mul_mul_star_eq_smul hSCinv n
 
 /-- Iterated conjugation of `C₀` by `(S₀⁻¹)^n` multiplies `C₀` by `ζ^n`. -/
 theorem shiftUnitary_inv_pow_conj_clockUnitary {r : ℕ} [NeZero r] {ζ : ℂ}
@@ -164,33 +140,15 @@ theorem shiftUnitary_inv_pow_conj_clockUnitary {r : ℕ} [NeZero r] {ζ : ℂ}
         (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) *
         star ((((shiftUnitary r)⁻¹) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
       ζ ^ n • (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) := by
-  set C := clockUnitary hζ
-  set S := shiftUnitary r
-  have hSinvC : star (S : Matrix (Fin r) (Fin r) ℂ) * (C : Matrix (Fin r) (Fin r) ℂ) *
-      (S : Matrix (Fin r) (Fin r) ℂ) = ζ • (C : Matrix (Fin r) (Fin r) ℂ) := by
-    rw [Matrix.mul_assoc, clockUnitary_mul_shiftUnitary hζ, Matrix.mul_smul, ← Matrix.mul_assoc,
-      mem_unitaryGroup_iff'.mp S.2, Matrix.one_mul]
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    have h1 : (((S⁻¹) ^ (n + 1) : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-        star (S : Matrix (Fin r) (Fin r) ℂ) *
-          (((S⁻¹) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
-      rw [pow_succ', Submonoid.coe_mul, UnitaryGroup.inv_val]
-    rw [h1, star_mul, star_star]
-    calc
-      star (S : Matrix (Fin r) (Fin r) ℂ) *
-          (((S⁻¹) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-          (C : Matrix (Fin r) (Fin r) ℂ) *
-          (star (((S⁻¹) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-            (S : Matrix (Fin r) (Fin r) ℂ))
-        = star (S : Matrix (Fin r) (Fin r) ℂ) *
-            ((((S⁻¹) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-              (C : Matrix (Fin r) (Fin r) ℂ) *
-              star (((S⁻¹) ^ n : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) *
-            (S : Matrix (Fin r) (Fin r) ℂ) := by simp only [Matrix.mul_assoc]
-      _ = ζ ^ (n + 1) • (C : Matrix (Fin r) (Fin r) ℂ) := by
-            rw [ih, Matrix.mul_smul, Matrix.smul_mul, hSinvC, smul_smul, pow_succ]
+  have hSinvC : (((shiftUnitary r)⁻¹ : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
+      (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) *
+      star (((shiftUnitary r)⁻¹ : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
+      ζ • (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ) := by
+    rw [UnitaryGroup.inv_val, star_star, Matrix.mul_assoc, clockUnitary_mul_shiftUnitary hζ,
+      Matrix.mul_smul, ← Matrix.mul_assoc, mem_unitaryGroup_iff'.mp (shiftUnitary r).2,
+      Matrix.one_mul]
+  simpa only [SubmonoidClass.coe_pow] using
+    TauCeti.pow_mul_mul_star_pow_of_mul_mul_star_eq_smul hSinvC n
 
 /-- Conjugating `α • C₀` and `b • S₀` by `P = C₀^q * (S₀⁻¹)^p` shifts them by `ζ^p` and `ζ^q`. -/
 theorem clockUnitary_shiftUnitary_phase_conj {r : ℕ} [NeZero r] {ζ : ℂ} (hζ : IsPrimitiveRoot ζ r)
@@ -205,30 +163,21 @@ theorem clockUnitary_shiftUnitary_phase_conj {r : ℕ} [NeZero r] {ζ : ℂ} (h�
   intro P
   set C := clockUnitary hζ
   set S := shiftUnitary r
-  have hCcomm : ((C ^ q : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-      (C : Matrix (Fin r) (Fin r) ℂ) *
-      star ((C ^ q : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-      (C : Matrix (Fin r) (Fin r) ℂ) := by
-    rw [← UnitaryGroup.inv_val (C ^ q), ← Submonoid.coe_mul, ← Submonoid.coe_mul]
-    exact congrArg Subtype.val (by rw [← pow_succ, pow_succ', mul_inv_cancel_right] :
-      (C ^ q : unitaryGroup (Fin r) ℂ) * C * (C ^ q)⁻¹ = C)
-  have hScomm : (((S⁻¹) ^ p : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
-      (S : Matrix (Fin r) (Fin r) ℂ) *
-      star (((S⁻¹) ^ p : unitaryGroup (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) =
-      (S : Matrix (Fin r) (Fin r) ℂ) := by
-    have hc : Commute ((S⁻¹) ^ p) S := (Commute.inv_left (Commute.refl S)).pow_left p
-    rw [← UnitaryGroup.inv_val ((S⁻¹) ^ p), ← Submonoid.coe_mul, ← Submonoid.coe_mul]
-    exact congrArg Subtype.val (by rw [hc.eq, mul_inv_cancel_right] :
-      ((S⁻¹) ^ p : unitaryGroup (Fin r) ℂ) * S * ((S⁻¹) ^ p)⁻¹ = S)
-  have hassoc (X Y M : Matrix (Fin r) (Fin r) ℂ) :
+  have hconj_comm {X Y : unitaryGroup (Fin r) ℂ} (hc : Commute X Y) :
+      (X : Matrix (Fin r) (Fin r) ℂ) * (Y : Matrix (Fin r) (Fin r) ℂ) *
+        star (X : Matrix (Fin r) (Fin r) ℂ) = Y := by
+    rw [← UnitaryGroup.inv_val X, ← Submonoid.coe_mul, ← Submonoid.coe_mul]
+    exact congrArg Subtype.val (by rw [hc.eq, mul_inv_cancel_right])
+  have hsplit (X Y M : Matrix (Fin r) (Fin r) ℂ) :
       (X * Y) * M * (star Y * star X) = X * (Y * M * star Y) * star X := by
     simp only [Matrix.mul_assoc]
   constructor
   · simp only [P, Submonoid.coe_mul, star_mul, Matrix.mul_smul, Matrix.smul_mul]
-    rw [hassoc, shiftUnitary_inv_pow_conj_clockUnitary hζ p, Matrix.mul_smul, Matrix.smul_mul,
-      hCcomm, smul_smul, mul_comm]
+    rw [hsplit, shiftUnitary_inv_pow_conj_clockUnitary hζ p, Matrix.mul_smul, Matrix.smul_mul,
+      hconj_comm ((Commute.refl C).pow_left q), smul_smul, mul_comm α (ζ ^ p)]
   · simp only [P, Submonoid.coe_mul, star_mul, Matrix.mul_smul, Matrix.smul_mul]
-    rw [hassoc, hScomm, clockUnitary_pow_conj_shiftUnitary hζ q, smul_smul, mul_comm]
+    rw [hsplit, hconj_comm ((Commute.refl S).inv_left.pow_left p),
+      clockUnitary_pow_conj_shiftUnitary hζ q, smul_smul, mul_comm b (ζ ^ q)]
 
 /-- Given `A₁ = diagonal d` and `B₁` in `U(r)` with `A₁ * B₁ = ζ • (B₁ * A₁)`, the orbit vectors
 `vNat m = B₁^m *ᵥ e₀` are unit eigenvectors of `A₁` with eigenvalues `ζ^m * d 0`, pairwise
@@ -247,7 +196,7 @@ private theorem eigenvectorOrbit_mem_unitary {r : ℕ} [NeZero r] {ζ : ℂ} (h�
     (Vmat ∈ unitaryGroup (Fin r) ℂ) := by
   intro vNat Vmat
   have hζu : ζ ∈ unitary ℂ :=
-    Circle.coe_mem_unitary ⟨ζ, mem_sphere_zero_iff_norm.mpr (hζ.norm'_eq_one (NeZero.ne r))⟩
+    RCLike.mem_unitary_iff_norm_eq_one.mpr (hζ.norm'_eq_one (NeZero.ne r))
   have hαu : d 0 ∈ unitary ℂ :=
     Pi.mem_unitary_iff.mp (diagonal_mem_unitary.mp (hA₁ ▸ A₁.2)) 0
   have hv_eig (m : ℕ) : (A₁ : Matrix (Fin r) (Fin r) ℂ) *ᵥ vNat m = (ζ ^ m * d 0) • vNat m := by
@@ -346,41 +295,34 @@ private theorem shift_intertwine_of_orbit {r : ℕ} [NeZero r]
     (hW_entry : ∀ i (k : Fin r),
       (W : Matrix (Fin r) (Fin r) ℂ) i k = vNat k.val i * ((b⁻¹ : Circle) : ℂ) ^ k.val)
     (hW_col : ∀ k : Fin r,
-      (W : Matrix (Fin r) (Fin r) ℂ)ᵀ k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val) :
+      (W : Matrix (Fin r) (Fin r) ℂ).col k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val) :
     (B₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) =
       (W : Matrix (Fin r) (Fin r) ℂ) * ((b : ℂ) • (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ)) := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (NeZero.ne r)
   ext i k
-  have hR : ((W : Matrix (Fin r) (Fin r) ℂ) *
-      ((b : ℂ) • (shiftUnitary r : Matrix (Fin r) (Fin r) ℂ))) i k =
-      (b : ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) i (k + 1) := by
+  have hL : ((B₁ : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *
+      (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ)) i k =
+      ((B₁ : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *ᵥ
+        (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ).col k) i :=
+    (Matrix.col_apply _ k i).symm.trans (congrFun Matrix.col_mul_eq_mulVec_col i)
+  have hR : ((W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) *
+      ((b : ℂ) • (shiftUnitary (m + 1) : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ))) i k =
+      (b : ℂ) * (W : Matrix (Fin (m + 1)) (Fin (m + 1)) ℂ) i (k + 1) := by
     rw [Matrix.mul_smul, Matrix.smul_apply, smul_eq_mul]
     congr 1
     simp [Matrix.mul_apply, shiftUnitary_apply]
-  rw [mul_apply_eq_mulVec_transpose, hW_col k, mulVec_smul, hv_step k.val, hR, hW_entry]
-  simp only [Pi.smul_apply, smul_eq_mul]
-  have hbb : (b : ℂ) * ((b⁻¹ : Circle) : ℂ) = 1 := by
-    rw [Circle.coe_inv_eq_conj]
-    exact (Unitary.mem_iff.mp b.coe_mem_unitary).2
-  by_cases hlt : k.val + 1 < r
-  · have hk1 : ((k + 1 : Fin r) : ℕ) = k.val + 1 := (fin_val_add_one k).trans (Nat.mod_eq_of_lt hlt)
-    rw [hk1, pow_succ']
-    calc ((b⁻¹ : Circle) : ℂ) ^ k.val * vNat (k.val + 1) i
-        = ((b : ℂ) * ((b⁻¹ : Circle) : ℂ)) *
-            (((b⁻¹ : Circle) : ℂ) ^ k.val * vNat (k.val + 1) i) := by rw [hbb, one_mul]
-      _ = (b : ℂ) * (vNat (k.val + 1) i * (((b⁻¹ : Circle) : ℂ) *
-            ((b⁻¹ : Circle) : ℂ) ^ k.val)) := by ring
-  · have heq : k.val + 1 = r := by omega
-    have hk1 : ((k + 1 : Fin r) : ℕ) = 0 :=
-      (fin_val_add_one k).trans (by rw [heq, Nat.mod_self])
-    have hbr : (b : ℂ) ^ r = (b : ℂ) ^ k.val * (b : ℂ) :=
-      (congrArg ((b : ℂ) ^ ·) heq.symm).trans (pow_succ _ _)
-    have hpow_cancel : ((b⁻¹ : Circle) : ℂ) ^ k.val * (b : ℂ) ^ k.val = 1 := by
-      rw [← mul_pow, mul_comm, hbb, one_pow]
-    have hv_r_i : vNat r i = (β : ℂ) * vNat 0 i := congrFun hv_r i
-    rw [heq, hv_r_i, hk1, pow_zero, mul_one, ← hbpow, hbr]
-    calc ((b⁻¹ : Circle) : ℂ) ^ k.val * ((b : ℂ) ^ k.val * (b : ℂ) * vNat 0 i)
-        = (((b⁻¹ : Circle) : ℂ) ^ k.val * (b : ℂ) ^ k.val) * ((b : ℂ) * vNat 0 i) := by ring
-      _ = (b : ℂ) * vNat 0 i := by rw [hpow_cancel, one_mul]
+  rw [hL, hW_col k, mulVec_smul, hv_step k.val, hR, hW_entry]
+  simp only [Pi.smul_apply, smul_eq_mul, Fin.val_add_one, Circle.coe_inv]
+  have hb0 : (b : ℂ) ≠ 0 := Circle.coe_ne_zero b
+  split_ifs with hk
+  · subst hk
+    have hv_r_i : vNat (m + 1) i = (β : ℂ) * vNat 0 i := congrFun hv_r i
+    have hpow : (b : ℂ)⁻¹ ^ m * (b : ℂ) ^ m = 1 := by
+      rw [← mul_pow, inv_mul_cancel₀ hb0, one_pow]
+    simp only [Fin.val_last, hv_r_i, pow_zero, mul_one, ← hbpow, pow_succ]
+    linear_combination (b : ℂ) * vNat 0 i * hpow
+  · rw [pow_succ']
+    linear_combination -((b : ℂ)⁻¹ ^ k.val * vNat (k.val + 1) i) * mul_inv_cancel₀ hb0
 
 /-- Given unitary matrices `A₁ = diagonal d` and `B₁` with `A₁ * B₁ = ζ • (B₁ * A₁)`, there is a
 unitary matrix `W` simultaneously conjugating `(A₁, B₁)` to `(α • C₀, b • S₀)` for unit-modulus
@@ -416,14 +358,17 @@ theorem exists_unitary_conj_diagonal_to_clock_shift {r : ℕ} [NeZero r] {ζ : �
     dsimp only [W, Dmat]
     rw [Submonoid.coe_mul, mul_diagonal]
   have hW_col (k : Fin r) :
-      (W : Matrix (Fin r) (Fin r) ℂ)ᵀ k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val := by
+      (W : Matrix (Fin r) (Fin r) ℂ).col k = (((b⁻¹ : Circle) : ℂ) ^ k.val) • vNat k.val := by
     ext j
-    simp [transpose_apply, hW_entry, mul_comm]
+    simp [Matrix.col_apply, hW_entry, mul_comm]
   have hAW : (A₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ) =
       (W : Matrix (Fin r) (Fin r) ℂ) *
         ((α : ℂ) • (clockUnitary hζ : Matrix (Fin r) (Fin r) ℂ)) := by
     ext i k
-    rw [mul_apply_eq_mulVec_transpose, hW_col k, mulVec_smul, hv_eig k.val]
+    have hL : ((A₁ : Matrix (Fin r) (Fin r) ℂ) * (W : Matrix (Fin r) (Fin r) ℂ)) i k =
+        ((A₁ : Matrix (Fin r) (Fin r) ℂ) *ᵥ (W : Matrix (Fin r) (Fin r) ℂ).col k) i :=
+      (Matrix.col_apply _ k i).symm.trans (congrFun Matrix.col_mul_eq_mulVec_col i)
+    rw [hL, hW_col k, mulVec_smul, hv_eig k.val]
     simp only [Pi.smul_apply, smul_eq_mul, coe_clockUnitary, Matrix.mul_smul, mul_diagonal,
       Matrix.smul_apply, hW_entry, α]
     ring
@@ -484,9 +429,7 @@ theorem exists_clock_shift_specialUnitaryGroup {r : ℕ} [NeZero r] {ζ : ℂ}
   let A₀ : specialUnitaryGroup (Fin r) ℂ := ⟨_, hc₁⟩
   let B₀ : specialUnitaryGroup (Fin r) ℂ := ⟨_, hc₂⟩
   refine ⟨c₁, c₂, A₀, B₀, rfl, rfl, specialUnitaryGroup.commutatorElement_eq_smul_one_iff.mpr ?_⟩
-  dsimp only [A₀, B₀]
-  rw [Matrix.smul_mul, Matrix.mul_smul, Matrix.smul_mul, Matrix.mul_smul,
-    clockUnitary_mul_shiftUnitary hζ, smul_smul, smul_smul, smul_smul, smul_smul]
+  simp only [A₀, B₀, Matrix.smul_mul, Matrix.mul_smul, clockUnitary_mul_shiftUnitary hζ, smul_smul]
   congr 1
   ring
 
@@ -500,22 +443,18 @@ theorem exists_pow_mul_eq_of_unitary_conj_specialUnitaryGroup {r : ℕ} [NeZero 
       (U : Matrix (Fin r) (Fin r) ℂ) = s • (M : Matrix (Fin r) (Fin r) ℂ))
     (h2 : (X₀ : Matrix (Fin r) (Fin r) ℂ) = c • (M : Matrix (Fin r) (Fin r) ℂ)) :
     ∃ k < r, ζ ^ k * s = c := by
-  have hdetU : (U : Matrix (Fin r) (Fin r) ℂ).det * (star (U : Matrix (Fin r) (Fin r) ℂ)).det =
+  have hdetU : (star (U : Matrix (Fin r) (Fin r) ℂ)).det * (U : Matrix (Fin r) (Fin r) ℂ).det =
       1 := by
-    rw [← det_mul, mem_unitaryGroup_iff.mp U.2, det_one]
+    rw [← det_mul, mem_unitaryGroup_iff'.mp U.2, det_one]
   have hdetM : (M : Matrix (Fin r) (Fin r) ℂ).det ≠ 0 := fun h0 => by
     have hnorm := CStarRing.norm_of_mem_unitary (det_of_mem_unitary M.2)
     rw [h0, norm_zero] at hnorm
     exact zero_ne_one hnorm
   have hd1 : s ^ r * (M : Matrix (Fin r) (Fin r) ℂ).det = 1 := by
-    have hd := congrArg det h1
-    rw [det_mul, det_mul, det_smul, Fintype.card_fin, (mem_specialUnitaryGroup_iff.mp X.2).2,
-      mul_one, mul_comm, hdetU] at hd
-    exact hd.symm
+    simpa [det_mul, det_smul, (mem_specialUnitaryGroup_iff.mp X.2).2, hdetU] using
+      (congrArg det h1).symm
   have hd2 : c ^ r * (M : Matrix (Fin r) (Fin r) ℂ).det = 1 := by
-    have hd := congrArg det h2
-    rw [det_smul, Fintype.card_fin, (mem_specialUnitaryGroup_iff.mp X₀.2).2] at hd
-    exact hd.symm
+    simpa [det_smul, (mem_specialUnitaryGroup_iff.mp X₀.2).2] using (congrArg det h2).symm
   have hpow : (c * s⁻¹) ^ r = 1 := by
     have heq : c ^ r = s ^ r := mul_right_cancel₀ hdetM (hd2.trans hd1.symm)
     rw [mul_pow, inv_pow, heq, mul_inv_cancel₀ (pow_ne_zero r hs)]
