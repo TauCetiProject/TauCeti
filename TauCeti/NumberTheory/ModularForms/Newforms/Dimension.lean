@@ -59,17 +59,6 @@ open _root_.CuspForm HeckeRing.GL2
 
 /-! ### Forward divisor-count dimension identities -/
 
-private lemma natCard_sigma_prod_mul_dvd (N : ℕ) [NeZero N] (α : {M : ℕ // M ∣ N} → Type*)
-    [∀ M, Finite (α M)] :
-    Nat.card (Σ M : {M : ℕ // M ∣ N}, α M × {d : ℕ // d * M.1 ∣ N}) =
-      ∑ M ∈ N.divisors.attach,
-        #(N / M.1).divisors * Nat.card (α ⟨M.1, Nat.dvd_of_mem_divisors M.2⟩) := by
-  rw [← Nat.card_congr (Equiv.sigmaCongrLeft (Nat.divisorsEquiv N)), Nat.card_sigma,
-    Finset.univ_eq_attach]
-  refine Finset.sum_congr rfl fun M _ ↦ ?_
-  rw [Nat.divisorsEquiv_apply, Nat.card_prod, Nat.card_mul_dvd (Nat.dvd_of_mem_divisors M.2),
-    mul_comm]
-
 /-- **Divisor-count dimension formula for `S_k(Γ₁(N))`** (a consequence of Diamond–Shurman,
 Theorem 5.8.3): `dim S_k(Γ₁(N)) = ∑_{M ∣ N} #(N / M).divisors · dim S_k(Γ₁(M))ⁿᵉʷ`. -/
 theorem finrank_cuspForm_Gamma1_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ) :
@@ -80,7 +69,7 @@ theorem finrank_cuspForm_Gamma1_eq_sum_divisors (N : ℕ) [NeZero N] (k : ℤ) :
   have : ∀ M : {M : ℕ // M ∣ N},
       Finite (letI : NeZero M.1 := NeZero.of_dvd M.2; Newform M.1 k) :=
     fun M ↦ letI : NeZero M.1 := NeZero.of_dvd M.2; inferInstance
-  rw [Module.finrank_eq_nat_card_basis (Newform.levelRaiseBasis N k), natCard_sigma_prod_mul_dvd]
+  rw [Module.finrank_eq_nat_card_basis (Newform.levelRaiseBasis N k), Nat.card_sigma_prod_mul_dvd]
   refine Finset.sum_congr rfl fun M _ ↦ ?_
   have : NeZero M.1 := NeZero.of_dvd (Nat.dvd_of_mem_divisors M.2)
   rw [Newform.finrank_cuspFormsNew]
@@ -98,7 +87,7 @@ private lemma finrank_cuspFormCharSpace_eq_sum_divisors_natCard (M : ℕ) [NeZer
         {g : Newform d.1 k // g.χ.comp (ZMod.unitsMap d.2) = ψ}) :=
     fun d ↦ letI : NeZero d.1 := NeZero.of_dvd d.2; inferInstance
   rw [Module.finrank_eq_nat_card_basis (Newform.levelRaiseBasisCharSpace M k ψ),
-    natCard_sigma_prod_mul_dvd]
+    Nat.card_sigma_prod_mul_dvd]
 
 private lemma natCard_newform_comp_unitsMap_eq {N M d : ℕ} [NeZero N] {k : ℤ}
     {χ : (ZMod N)ˣ →* ℂˣ} (hdM : d ∣ M)

@@ -18,7 +18,9 @@ import Mathlib.Tactic.NormNum
 
 For `N ≠ 0`, `Nat.divisorsEquiv` identifies `N.divisors` with `{M : ℕ // M ∣ N}`, and for `M ∣ N`,
 `Nat.mulDvdEquivDivDivisors` identifies `{d : ℕ // d * M ∣ N}` with `(N / M).divisors`, giving
-`Nat.card_mul_dvd` (`Nat.card {d : ℕ // d * M ∣ N} = (N / M).divisors.card`).
+`Nat.card_mul_dvd` (`Nat.card {d : ℕ // d * M ∣ N} = (N / M).divisors.card`) and
+`Nat.card_sigma_prod_mul_dvd` for the cardinality of a dependent sum over `{M : ℕ // M ∣ N}`
+weighted by `{d : ℕ // d * M.1 ∣ N}`.
 
 For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d`) are at most one,
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
@@ -104,6 +106,30 @@ theorem card_mul_dvd {M N : ℕ} (hM : M ∣ N) :
     simp
   · have : NeZero N := ⟨hN⟩
     rw [Nat.card_congr (mulDvdEquivDivDivisors hM), Nat.card_eq_fintype_card, Fintype.card_coe]
+
+/-- For a family `α` of finite types indexed by divisors `M ∣ N`, the cardinality of
+`Σ M : {M : ℕ // M ∣ N}, α M × {d : ℕ // d * M.1 ∣ N}` equals
+`∑ M ∈ N.divisors.attach, (N / M.1).divisors.card * Nat.card (α ⟨M.1, _⟩)`.
+This holds unconditionally for all `N : ℕ`, including `N = 0` where both sides are `0`. -/
+theorem card_sigma_prod_mul_dvd (N : ℕ) (α : {M : ℕ // M ∣ N} → Type*)
+    [∀ M, Finite (α M)] :
+    Nat.card (Σ M : {M : ℕ // M ∣ N}, α M × {d : ℕ // d * M.1 ∣ N}) =
+      ∑ M ∈ N.divisors.attach,
+        (N / M.1).divisors.card * Nat.card (α ⟨M.1, dvd_of_mem_divisors M.2⟩) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [Finset.sum_eq_zero fun M _ ↦ absurd M.2 (by simp)]
+    rcases isEmpty_or_nonempty (Σ M : {M : ℕ // M ∣ 0}, α M × {d : ℕ // d * M.1 ∣ 0}) with
+      _ | ⟨⟨M, a, _⟩⟩
+    · exact Nat.card_of_isEmpty
+    · have : Infinite (Σ M : {M : ℕ // M ∣ 0}, α M × {d : ℕ // d * M.1 ∣ 0}) :=
+        Infinite.of_injective (fun d : ℕ ↦ ⟨M, a, ⟨d, dvd_zero _⟩⟩) fun _ _ h ↦
+          congrArg (fun x ↦ x.2.2.1) h
+      exact Nat.card_eq_zero_of_infinite
+  · have : NeZero N := ⟨hN⟩
+    rw [← Nat.card_congr (Equiv.sigmaCongrLeft (divisorsEquiv N)), Nat.card_sigma,
+      Finset.univ_eq_attach]
+    refine Finset.sum_congr rfl fun M _ ↦ ?_
+    rw [divisorsEquiv_apply, Nat.card_prod, card_mul_dvd (dvd_of_mem_divisors M.2), mul_comm]
 
 variable {M : Type*} [AddCommMonoid M]
 

@@ -8,17 +8,19 @@ module
 public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.NumberTheory.ArithmeticFunction.Moebius
 
+import TauCeti.NumberTheory.ArithmeticFunction.Zeta
 import TauCeti.NumberTheory.Divisors
 
 /-!
 # Convolution square of the Möbius function and divisor-count inversion
 
 In the Dirichlet ring of arithmetic functions, the divisor-counting function `σ 0`
-(`n ↦ #n.divisors`) is the convolution square `ζ * ζ` of the constant-`1` function `ζ`. Since
+(`n ↦ #n.divisors`) is the convolution square `ζ * ζ` of the constant-`1` function `ζ`
+(`ArithmeticFunction.zeta_mul_zeta` in `TauCeti.NumberTheory.ArithmeticFunction.Zeta`). Since
 `μ * ζ = 1`, the convolution inverse of `σ 0` over `ℤ` (and over any ring) is the convolution
 square `μ * μ` of the Möbius function.
 
-This file records the convolution identities relating `ζ * ζ`, `σ 0`, and `μ * μ`, evaluates `μ * μ`
+This file records the Dirichlet-inverse identities between `σ 0` and `μ * μ`, evaluates `μ * μ`
 at prime powers (`1, -2, 1, 0, 0, …` on `1, p, p², p³, …`), and derives Möbius-square inversion for
 sums weighted by `#(n / d).divisors`: if `g(n) = ∑_{d ∣ n} #(n / d).divisors • f(d)`, then
 `f(n) = ∑_{d ∣ n} (μ * μ)(n / d) • g(d)`, globally, on divisor-closed sets, at a fixed level `N`,
@@ -26,7 +28,6 @@ and along multiples of a fixed divisor `c ∣ N`.
 
 ## Main results
 
-* `ArithmeticFunction.zeta_mul_zeta`: `ζ * ζ = σ 0` in `ArithmeticFunction ℕ`.
 * `ArithmeticFunction.moebius_mul_moebius_mul_coe_sigma_zero`,
   `ArithmeticFunction.coe_sigma_zero_mul_moebius_mul_moebius`, and their `[Ring R]` forms: `μ * μ`
   and `σ 0` are mutually inverse under Dirichlet convolution.
@@ -53,11 +54,6 @@ namespace ArithmeticFunction
 variable {R : Type*}
 
 /-! ### Dirichlet convolution identities and prime-power values of `μ * μ` -/
-
-/-- **The Dirichlet square of `ζ` is the divisor-counting function `σ 0`.** -/
-theorem zeta_mul_zeta : (ζ * ζ : ArithmeticFunction ℕ) = σ 0 := by
-  rw [← pow_zero_eq_zeta]
-  exact zeta_mul_pow_eq_sigma
 
 /-- **`μ * μ` is the left Dirichlet inverse of `σ 0` over `ℤ`.** -/
 @[simp]
