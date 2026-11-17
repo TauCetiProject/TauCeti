@@ -185,7 +185,8 @@ theorem continuousDegree_eq_degreeAtRegularValue (o : Manifold.Orientation I M (
     (o' : Manifold.Orientation J N (Fin k)) {f : C(M, N)} (hf : ContMDiff I J ∞ f) {y : N}
     (hy : IsRegularValue I J f y) :
     continuousDegree o o' f = degreeAtRegularValue o o' f y :=
-  (continuousDegree_eq_degree o o' hf).trans (degree_eq_degreeAtRegularValue o o' hf hy)
+  (continuousDegree_eq_degree o o' hf).trans
+    (degree_eq_degreeAtRegularValue o o' hf hf.continuous.isProperMap hy)
 
 /-- **Homotopy invariance of the continuous degree.** Continuously homotopic maps `f, g : C(M, N)`
 have the same mapping degree. -/
@@ -246,7 +247,7 @@ theorem continuousDegree_eq_zero_of_notMem_range (o : Manifold.Orientation I M (
     exact hfι ▸ ContinuousMap.Homotopic.comp (.refl ι) hfg'
   rw [continuousDegree_eq_degree_of_homotopic o o' hιg' hhom]
   by_contra hne
-  obtain ⟨x, hx⟩ := surjective_of_degree_ne_zero o o' hιg' hne y
+  obtain ⟨x, hx⟩ := surjective_of_degree_ne_zero o o' hιg' hιg'.continuous.isProperMap hne y
   exact (g' x).2 hx
 
 /-- **Surjectivity from nonzero continuous degree.** Every continuous map `f : C(M, N)` of nonzero
@@ -282,7 +283,7 @@ theorem continuousDegree_comp {E'' H'' P : Type*} [NormedAddCommGroup E''] [Norm
   obtain ⟨g₀, hg₀, hgg₀, hdg⟩ :=
     exists_contMDiff_homotopic_and_continuousDegree_eq_degree o' o'' g
   rw [hdf, hdg, continuousDegree_eq_degree_of_homotopic o o'' (hg₀.comp hf₀) (hgg₀.comp hff₀)]
-  exact degree_comp o o' o'' hf₀ hg₀
+  exact degree_comp o o' o'' hf₀ hg₀ hf₀.continuous.isProperMap hg₀.continuous.isProperMap
 
 omit [BoundarylessManifold I M] [SigmaCompactSpace N] in
 /-- If `g.comp f` is homotopic to the identity of `M`, then the product of the continuous degrees

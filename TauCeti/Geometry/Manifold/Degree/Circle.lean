@@ -162,7 +162,7 @@ theorem integralTopForm_mpullback_circleAngularForm (o : Manifold.Orientation I 
     {f : M → Circle} (hf : ContMDiff I (𝓡 1) ∞ f) :
     integralTopForm o (mpullback I (𝓡 1) f circleAngularForm) =
       degree o circleOrientation f * (2 * Real.pi) := by
-  rw [integralTopForm_mpullback_eq_degree_mul o circleOrientation hf
+  rw [integralTopForm_mpullback_eq_degree_mul o circleOrientation hf hf.continuous.isProperMap
       isSmoothForm_circleAngularForm (isClosed_tsupport _).isCompact,
     integralTopForm_circleOrientation_circleAngularForm]
 
@@ -362,7 +362,9 @@ theorem isRegularValue_zpow_circle {k : ℤ} (hk : k ≠ 0) (y : Circle) :
 theorem degreeAtRegularValue_zpow_circle (o : Manifold.Orientation (𝓡 1) Circle (Fin 1))
     {k : ℤ} (hk : k ≠ 0) (y : Circle) :
     degreeAtRegularValue o o (fun z : Circle ↦ z ^ k) y = k := by
-  rw [← degree_eq_degreeAtRegularValue o o (contMDiff_zpow k) (isRegularValue_zpow_circle hk y),
+  have hf : ContMDiff (𝓡 1) (𝓡 1) ∞ (fun z : Circle ↦ z ^ k) := contMDiff_zpow k
+  rw [← degree_eq_degreeAtRegularValue o o hf hf.continuous.isProperMap
+      (isRegularValue_zpow_circle hk y),
     degree_zpow_id_circle]
 
 /-- Inversion `z ↦ z⁻¹` on `Circle` has signed fibre count `-1` at every point. -/
