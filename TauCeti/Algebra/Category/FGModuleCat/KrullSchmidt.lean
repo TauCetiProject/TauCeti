@@ -14,6 +14,7 @@ public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.Basic
 import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
 import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 import TauCeti.Algebra.Category.ModuleCat.Indecomposable
+import TauCeti.CategoryTheory.Functor.Indecomposable
 import TauCeti.CategoryTheory.Functor.RingEquivEnd
 
 /-!
@@ -26,6 +27,8 @@ is read off from the existence half of the Krull-Schmidt theorem,
 morphisms `a j : X ⟶ W j` and `b j : W j ⟶ X` with `∑ j, a j ≫ b j = 𝟙 X`, which needs no
 biproducts in `FGModuleCat A`. By Fitting's lemma, a finitely generated indecomposable module of
 finite length has a local endomorphism ring (`FGModuleCat.isLocalRing_end_of_indecomposable`).
+Over any ring, a finitely generated module is indecomposable as a module exactly when it is an
+indecomposable object of `FGModuleCat A` (`FGModuleCat.indecomposable_obj_iff`).
 
 Over a left Artinian ring `A`, for instance an Artin algebra, finitely generated modules have finite
 length, so `mod A = FGModuleCat A` is a Krull-Schmidt category
@@ -76,6 +79,20 @@ theorem isLocalRing_end_of_indecomposable {X : FGModuleCat.{w} A} [IsNoetherian 
   have : IsLocalRing (End ((ObjectProperty.ι _).obj X)) :=
     (TauCeti.indecomposable_iff_isLocalRing_end X.obj hfl).mp hX
   exact ((ObjectProperty.fullyFaithfulι _).ringEquivEnd X).symm.isLocalRing
+
+/-- A finitely generated module is indecomposable in the category of all modules exactly when it
+is an indecomposable object of `mod A`, over any ring. -/
+theorem indecomposable_obj_iff (P : FGModuleCat.{w} A) :
+    Indecomposable P.obj ↔ Indecomposable P := by
+  -- The inclusion `mod A ⥤ Mod A` is additive and fully faithful: it reflects indecomposability
+  -- because it reflects zero objects, and preserves it because it is bijective on endomorphisms
+  -- and idempotents split in `mod A`.
+  let ι := ObjectProperty.ι (ModuleCat.isFG.{w} A)
+  have := preservesBinaryBiproducts_of_preservesBiproducts ι
+  exact ⟨fun h ↦ ι.indecomposable_of_indecomposable_obj_of_reflects_isZero_retract h
+      fun _ ↦ IsZero.of_full_of_faithful_of_isZero ι _,
+    fun h ↦ ι.indecomposable_obj_of_map_bijective h
+      ((ObjectProperty.fullyFaithfulι _).map_bijective P P)⟩
 
 open TauCeti in
 /-- **`mod A` is Krull-Schmidt over a left Artinian ring `A`**, for instance an Artin algebra: the
