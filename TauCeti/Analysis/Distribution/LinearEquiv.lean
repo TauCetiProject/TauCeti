@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Distributions under linear changes of variables
@@ -136,14 +137,10 @@ theorem compCLMOfContinuousLinearEquiv_ofFun [MeasurableSpace E] [BorelSpace E]
   ext φ
   rw [compCLMOfContinuousLinearEquiv_apply, ofFun_apply hf,
     ofFun_apply (hf.comp_continuousLinearEquiv_of_mapsTo e hVO)]
-  -- Change variables `y = e x`: the image of `μ` under `e` is `|det e|⁻¹ • μ`.
-  have hmap : μ.map e = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
-    Measure.map_linearMap_addHaar_eq_smul_addHaar μ (LinearEquiv.isUnit_det' _).ne_zero
-  have hcov := integral_map_equiv (μ := μ) e.toHomeomorph.toMeasurableEquiv
-    fun y ↦ φ (e.symm y) • f y
-  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph,
-    ContinuousLinearEquiv.symm_apply_apply] at hcov
-  rw [← hcov, hmap, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), abs_inv]
+  -- Change variables `y = e x`.
+  have hcov := Measure.integral_comp_continuousLinearEquiv μ (fun y ↦ φ (e.symm y) • f y) e
+  simp only [ContinuousLinearEquiv.symm_apply_apply] at hcov
+  rw [hcov]
   simp only [ContinuousLinearEquiv.transportTestFunction_apply]
 
 /-- The complex-linear extension of the pullback `e^* T` of a complex distribution pairs a
