@@ -10,6 +10,7 @@ public import TauCeti.RingTheory.PowerSeries.HasseDeriv.GaussNorm
 import TauCeti.RingTheory.PowerSeries.HasseDeriv.Eval
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import Mathlib.Analysis.Normed.Algebra.Ultra
+import TauCeti.Data.Multiset.Replicate
 
 /-!
 # The Schwarz lemma for restricted and bounded power series
@@ -169,16 +170,6 @@ private theorem IsRestricted.evalAt_hasseDeriv_eq_zero_of_X_sub_C_mul [Decidable
 
 end CommRing
 
-private theorem mem_of_mem_sum_replicate {α : Type*} {s : Finset α} {T : α → ℕ} {b : α}
-    (hb : b ∈ ∑ a ∈ s, Multiset.replicate (T a) a) : b ∈ s := by
-  obtain ⟨a, ha, hba⟩ := Multiset.mem_sum.mp hb
-  rwa [Multiset.eq_of_mem_replicate hba]
-
-private theorem count_sum_replicate {α : Type*} [DecidableEq α] {s : Finset α} (T : α → ℕ)
-    {b : α} (hb : b ∈ s) :
-    (∑ a ∈ s, Multiset.replicate (T a) a).count b = T b := by
-  simp [Multiset.count_sum', Multiset.count_replicate, hb]
-
 section Field
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : ℝ}
@@ -240,9 +231,11 @@ theorem IsRestricted.norm_evalAt_le_gaussNorm_mul_prod_pow {L : Type*} [NormedFi
   classical
   set Z : Multiset K := ∑ b ∈ s, Multiset.replicate (T b) b
   have h := hf.norm_evalAt_le_gaussNorm_mul_prod hc (Z := Z)
-    (fun b hb ↦ hs b (mem_of_mem_sum_replicate hb))
-    (fun b hb t ht ↦ hzero b (mem_of_mem_sum_replicate hb) t
-      (count_sum_replicate T (mem_of_mem_sum_replicate hb) ▸ ht)) hx
+    (fun b hb ↦ hs b (Multiset.mem_sum_replicate.mp hb).1)
+    (fun b hb t ht ↦ by
+      have hbs : b ∈ s := (Multiset.mem_sum_replicate.mp hb).1
+      simp only [Z, Multiset.count_sum_replicate, ite_eq_left hbs] at ht
+      exact hzero b hbs t ht) hx
   have hprod : (Z.map fun b ↦ ‖x - algebraMap K L b‖ / c).prod =
       ∏ b ∈ s, (‖x - algebraMap K L b‖ / c) ^ T b := by
     rw [← Multiset.coe_mapAddMonoidHom, map_sum, Multiset.prod_sum]
@@ -366,9 +359,11 @@ theorem HasGaussNorm.gaussNorm_le_gaussNorm_mul_div_pow_sum {r s : ℝ}
   set Z : Multiset R := ∑ b ∈ A, Multiset.replicate (T b) b
   have hcard : Z.card = ∑ b ∈ A, T b := by simp [Z]
   simpa [hcard] using hf.gaussNorm_le_gaussNorm_mul_div_pow hr hs0 hsr (Z := Z)
-    (fun b hb ↦ hA b (mem_of_mem_sum_replicate hb))
-    (fun b hb t ht ↦ hzero b (mem_of_mem_sum_replicate hb) t
-      (count_sum_replicate T (mem_of_mem_sum_replicate hb) ▸ ht))
+    (fun b hb ↦ hA b (Multiset.mem_sum_replicate.mp hb).1)
+    (fun b hb t ht ↦ by
+      have hbA : b ∈ A := (Multiset.mem_sum_replicate.mp hb).1
+      simp only [Z, Multiset.count_sum_replicate, ite_eq_left hbA] at ht
+      exact hzero b hbA t ht)
 
 /-- **Two-radii Gauss-norm contraction for Hasse derivatives.** Let `f` be a power series over a
 complete ultrametric normed commutative ring `R` without zero divisors (with `‖1‖ = 1`), with
