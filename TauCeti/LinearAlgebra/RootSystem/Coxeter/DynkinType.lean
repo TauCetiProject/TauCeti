@@ -108,29 +108,29 @@ lemma cartanMatrix_mul_cartanMatrix_mem_of_ne (t : DynkinType) {i j : Fin t.rank
 /-! ## The Coxeter matrix of a type -/
 
 /-- **The standard Coxeter matrix of a Dynkin type**, indexed by `Fin t.rank` in the Bourbaki node
-numbering of `TauCeti.DynkinType.cartanMatrix`: it is `TauCeti.coxeterMatrixOfCartanMatrix` applied
-to the standard Cartan matrix, so the entry at a pair of nodes is `TauCeti.coxeterOrder` of their
-Cartan product.
+numbering of `TauCeti.DynkinType.cartanMatrix`: it is
+`TauCeti.coxeterMatrixOfGeneralizedCartanMatrix` applied to the standard Cartan matrix, so the
+entry at a pair of nodes is `TauCeti.coxeterOrder` of their Cartan product.
 
 The body is not exposed: `TauCeti.DynkinType.coxeterMatrix_apply` is the entry API. -/
 def coxeterMatrix (t : DynkinType) : CoxeterMatrix (Fin t.rank) :=
-  coxeterMatrixOfCartanMatrix t.cartanMatrix t.cartanMatrix_apply_same
-    fun _ _ hij ↦ t.cartanMatrix_mul_cartanMatrix_mem_of_ne hij
+  coxeterMatrixOfGeneralizedCartanMatrix t.cartanMatrix
 
 /-- The entry of the standard Coxeter matrix of a type at a pair of nodes is `TauCeti.coxeterOrder`
 applied to the product of the two Cartan entries. -/
 @[simp]
 lemma coxeterMatrix_apply (t : DynkinType) (i j : Fin t.rank) :
     t.coxeterMatrix i j = coxeterOrder (t.cartanMatrix i j * t.cartanMatrix j i) :=
-  coxeterMatrixOfCartanMatrix_apply ..
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_coxeterOrder _ i j (t.cartanMatrix_apply_same i)
+    fun hij ↦ (mem_zero_one_two_three_iff.mp (t.cartanMatrix_mul_cartanMatrix_mem_of_ne hij)).2
 
 /-- **Two nodes carry the Coxeter entry `2` exactly when they are not joined**: the two simple
 reflections commute exactly when the two simple roots are orthogonal. On the diagonal both sides
 fail. -/
 lemma coxeterMatrix_apply_eq_two_iff (t : DynkinType) {i j : Fin t.rank} :
     t.coxeterMatrix i j = 2 ↔ t.cartanMatrix i j = 0 :=
-  coxeterMatrixOfCartanMatrix_apply_eq_two_iff _ _ _
-    (fun i j h ↦ (t.cartanMatrix_apply_eq_zero_iff_symm i j).mp h)
+  coxeterMatrixOfGeneralizedCartanMatrix_apply_eq_two_iff _ (t.cartanMatrix_apply_same i)
+    (t.cartanMatrix_apply_eq_zero_iff_symm j i).mp
 
 /-- **On a simply-laced type the Coxeter matrix is the diagram**: distinct nodes carry the entry `2`
 when they are not joined and `3` when they are, there being no multiple edge to raise an entry to
