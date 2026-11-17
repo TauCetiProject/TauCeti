@@ -533,6 +533,53 @@ private theorem invCompPointsMulEquiv_apply [Module.Finite A C] [Module.Projecti
   (compPointsMulEquiv A B C H T).symm_apply_eq.2
     (compPointsMulEquiv_comp_compAlgEquiv (B := B) x).symm
 
+/-- `WeilRestriction.compAlgEquiv` commutes with the counits, since `invCompPointsMulEquiv`
+preserves the convolution unit on `A`-points. -/
+private theorem counit_comp_compAlgEquiv [Module.Finite A C] [Module.Projective A C] :
+    (Bialgebra.counitAlgHom A (WeilRestriction A C H)).comp
+        (compAlgEquiv A B C H).toAlgHom =
+      Bialgebra.counitAlgHom A (WeilRestriction A B (WeilRestriction B C H)) := by
+  apply WithConv.toConv_injective
+  calc
+    toConv ((Bialgebra.counitAlgHom A (WeilRestriction A C H)).comp
+        (compAlgEquiv A B C H).toAlgHom)
+      = invCompPointsMulEquiv A B C H A 1 := by
+          simp [invCompPointsMulEquiv_apply, TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom]
+    _ = 1 := map_one _
+    _ = toConv (Bialgebra.counitAlgHom A (WeilRestriction A B (WeilRestriction B C H))) := by
+          simp [← TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom]
+
+/-- `WeilRestriction.compAlgEquiv` commutes with the comultiplications: on tensor-square points of
+`WeilRestriction A C H`, `invCompPointsMulEquiv` preserves the convolution product of the two
+tensor-factor inclusions. -/
+private theorem map_comp_comul_compAlgEquiv [Module.Finite A C] [Module.Projective A C] :
+    (Algebra.TensorProduct.map (compAlgEquiv A B C H).toAlgHom (compAlgEquiv A B C H).toAlgHom).comp
+        (Bialgebra.comulAlgHom A (WeilRestriction A B (WeilRestriction B C H))) =
+      (Bialgebra.comulAlgHom A (WeilRestriction A C H)).comp (compAlgEquiv A B C H).toAlgHom := by
+  let W₁ := WeilRestriction A B (WeilRestriction B C H)
+  let W₂ := WeilRestriction A C H
+  let e : W₁ →ₐ[A] W₂ := (compAlgEquiv A B C H).toAlgHom
+  let ι₁ : W₂ →ₐ[A] W₂ ⊗[A] W₂ := Algebra.TensorProduct.includeLeft
+  let ι₂ : W₂ →ₐ[A] W₂ ⊗[A] W₂ := Algebra.TensorProduct.includeRight
+  apply WithConv.toConv_injective
+  calc
+    toConv ((Algebra.TensorProduct.map e e).comp (Bialgebra.comulAlgHom A W₁))
+      = toConv ((Algebra.TensorProduct.map e e).comp Algebra.TensorProduct.includeLeft) *
+          toConv ((Algebra.TensorProduct.map e e).comp Algebra.TensorProduct.includeRight) :=
+          TauCeti.Bialgebra.toConv_comp_comulAlgHom (Algebra.TensorProduct.map e e)
+    _ = toConv (ι₁.comp e) * toConv (ι₂.comp e) := by
+          simp [ι₁, ι₂, Algebra.TensorProduct.map_comp_includeLeft,
+            Algebra.TensorProduct.map_comp_includeRight]
+    _ = invCompPointsMulEquiv A B C H (W₂ ⊗[A] W₂) (toConv ι₁) *
+          invCompPointsMulEquiv A B C H (W₂ ⊗[A] W₂) (toConv ι₂) := by
+          simp [invCompPointsMulEquiv_apply, e]
+    _ = invCompPointsMulEquiv A B C H (W₂ ⊗[A] W₂) (toConv ι₁ * toConv ι₂) :=
+          (map_mul _ _ _).symm
+    _ = invCompPointsMulEquiv A B C H (W₂ ⊗[A] W₂) (toConv (Bialgebra.comulAlgHom A W₂)) := by
+          rw [← TauCeti.Bialgebra.comulPoint_eq_include_mul]
+    _ = toConv ((Bialgebra.comulAlgHom A W₂).comp e) := by
+          simp [invCompPointsMulEquiv_apply, e]
+
 /-- **Composition of Weil restrictions of affine monoid and group schemes.** In a tower
 `A → B → C` of finite projective algebras, `WeilRestriction.compAlgEquiv` is a bialgebra
 equivalence `Res_{B/A} Res_{C/B} H ≃ₐc[A] Res_{C/A} H` (hence a Hopf equivalence when `H` is a
@@ -544,31 +591,9 @@ noncomputable def compBialgEquiv
     WeilRestriction A B (WeilRestriction B C H) ≃ₐc[A] WeilRestriction A C H :=
   letI := hfin
   letI := hproj
-  let e := compAlgEquiv A B C H hfin hproj
-  BialgEquiv.ofAlgEquiv e
-    (by
-      -- On `A`-points, `invCompPointsMulEquiv` preserves the convolution unit, which is the counit.
-      let u : WithConv (WeilRestriction A C H →ₐ[A] A) := 1
-      have h1 := (invCompPointsMulEquiv_apply (B := B) u).symm.trans
-        (map_one (invCompPointsMulEquiv A B C H A))
-      simpa only [u, TauCeti.Bialgebra.ofConv_one_eq_counitAlgHom] using
-        congrArg WithConv.ofConv h1)
-    (by
-      -- On `(W₂ ⊗ W₂)`-points, `invCompPointsMulEquiv` preserves the product of the two
-      -- tensor-factor inclusions, which classifies the comultiplication.
-      let W₂ := WeilRestriction A C H
-      let ι₁ : W₂ →ₐ[A] W₂ ⊗[A] W₂ := Algebra.TensorProduct.includeLeft
-      let ι₂ : W₂ →ₐ[A] W₂ ⊗[A] W₂ := Algebra.TensorProduct.includeRight
-      have hmul := (map_mul (invCompPointsMulEquiv A B C H (W₂ ⊗[A] W₂))
-        (toConv ι₁) (toConv ι₂)).symm.trans
-        (invCompPointsMulEquiv_apply (B := B) (toConv ι₁ * toConv ι₂))
-      rw [invCompPointsMulEquiv_apply, invCompPointsMulEquiv_apply,
-        ← Algebra.TensorProduct.map_comp_includeLeft e.toAlgHom e.toAlgHom,
-        ← Algebra.TensorProduct.map_comp_includeRight e.toAlgHom e.toAlgHom,
-        ← AlgHom.mapValue_apply, ← AlgHom.mapValue_apply, ← map_mul,
-        AlgHom.mapValue_apply, ← TauCeti.Bialgebra.comulPoint_eq_include_mul,
-        ← TauCeti.Bialgebra.comulPoint_eq_include_mul] at hmul
-      simpa only [ofConv_toConv] using congrArg WithConv.ofConv hmul)
+  BialgEquiv.ofAlgEquiv (compAlgEquiv A B C H hfin hproj)
+    (counit_comp_compAlgEquiv A B C H)
+    (map_comp_comul_compAlgEquiv A B C H)
 
 variable {A B C H}
 
@@ -738,6 +763,36 @@ theorem pointsMulEquivOfBaseChange_mapDomain_mapBialgHom {A B H₁ H₂ T S : Ty
     (BialgHom.mapValue_mapDomain φ (e.baseChangeRight he : B ⊗[A] T →ₐ[B] S))
     (pointsMulEquiv A B H₂ T x)).symm
 
+/-- In a tower `A → B → C`, when `e₁₃ : T ⊗[A] C ≃ₐ[T] S₂` factors through `e₁₂ : T ⊗[A] B ≃ₐ[T] S₁`
+and `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂`, their swapped right-base-change equivalences form a commutative
+triangle with `Algebra.TensorProduct.cancelBaseChange`. -/
+private theorem baseChangeRight_comp_lTensor {A B C T S₁ S₂ : Type*}
+    [CommSemiring A] [CommSemiring B] [CommSemiring C] [CommSemiring T] [CommSemiring S₁]
+    [Semiring S₂] [Algebra A B] [Algebra B C] [Algebra A C] [IsScalarTower A B C]
+    [Algebra A T] [Algebra B S₁] [Algebra T S₁] [Algebra C S₂] [Algebra S₁ S₂] [Algebra T S₂]
+    (e₁₂ : T ⊗[A] B ≃ₐ[T] S₁) (he₁₂ : ∀ b : B, e₁₂ (1 ⊗ₜ[A] b) = algebraMap B S₁ b)
+    (e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂) (he₂₃ : ∀ c : C, e₂₃ (1 ⊗ₜ[B] c) = algebraMap C S₂ c)
+    (e₁₃ : T ⊗[A] C ≃ₐ[T] S₂) (he₁₃ : ∀ c : C, e₁₃ (1 ⊗ₜ[A] c) = algebraMap C S₂ c)
+    (htower : ∀ (t : T) (c : C), e₁₃ (t ⊗ₜ[A] c) = e₂₃ (e₁₂ (t ⊗ₜ[A] 1) ⊗ₜ[B] c)) :
+    (e₂₃.baseChangeRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂).comp
+        (Algebra.TensorProduct.lTensor (S := C) C
+          (e₁₂.baseChangeRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)) =
+      (e₁₃.baseChangeRight he₁₃ : C ⊗[A] T →ₐ[C] S₂).comp
+        (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom := by
+  refine AlgHom.ext fun z ↦ ?_
+  induction z using TensorProduct.inductionOn with
+  | tmul c u =>
+    induction u using TensorProduct.inductionOn with
+    | tmul b t =>
+      have hb : e₁₂ (t ⊗ₜ[A] b) = b • e₁₂ (t ⊗ₜ[A] 1) := by
+        calc
+          e₁₂ (t ⊗ₜ[A] b) = e₁₂ ((1 ⊗ₜ[A] b) * (t ⊗ₜ[A] 1)) := by simp
+          _ = algebraMap B S₁ b * e₁₂ (t ⊗ₜ[A] 1) := by rw [map_mul, he₁₂]
+          _ = b • e₁₂ (t ⊗ₜ[A] 1) := (Algebra.smul_def b _).symm
+      simp [hb, htower]
+    | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
+  | add z₁ z₂ hz₁ hz₂ => simp only [map_add, hz₁, hz₂]
+
 /-- **Tower compatibility of `pointsMulEquivOfBaseChange`.** In a tower `A → B → C` of finite
 projective algebras, if `e₁₃ : T ⊗[A] C ≃ₐ[T] S₂` factors through `e₁₂ : T ⊗[A] B ≃ₐ[T] S₁` and
 `e₂₃ : S₁ ⊗[B] C ≃ₐ[S₁] S₂` via `e₁₃ (t ⊗ c) = e₂₃ (e₁₂ (t ⊗ 1) ⊗ c)`, then restricting along
@@ -759,34 +814,40 @@ theorem pointsMulEquivOfBaseChange_mapDomain_compBialgEquiv {A B C H T S₁ S₂
           (BialgHom.mapDomain (compBialgEquiv A B C H :
             WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) x)) =
       pointsMulEquivOfBaseChange A C H e₁₃ he₁₃ x := by
-  let ψ₁₂ := (e₁₂.baseChangeRight he₁₂ : B ⊗[A] T →ₐ[B] S₁)
-  let ψ₂₃ := (e₂₃.baseChangeRight he₂₃ : C ⊗[B] S₁ →ₐ[C] S₂)
-  let ψ₁₃ := (e₁₃.baseChangeRight he₁₃ : C ⊗[A] T →ₐ[C] S₂)
-  have hcomp : ψ₂₃.comp (Algebra.TensorProduct.lTensor (S := C) C ψ₁₂) =
-      ψ₁₃.comp (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom := by
-    refine AlgHom.ext fun z ↦ ?_
-    induction z using TensorProduct.inductionOn with
-    | tmul c u =>
-      induction u using TensorProduct.inductionOn with
-      | tmul b t =>
-        have hb : e₁₂ (t ⊗ₜ[A] b) = b • e₁₂ (t ⊗ₜ[A] 1) := by
-          calc
-            e₁₂ (t ⊗ₜ[A] b) = e₁₂ ((1 ⊗ₜ[A] b) * (t ⊗ₜ[A] 1)) := by simp
-            _ = algebraMap B S₁ b * e₁₂ (t ⊗ₜ[A] 1) := by rw [map_mul, he₁₂]
-            _ = b • e₁₂ (t ⊗ₜ[A] 1) := (Algebra.smul_def b _).symm
-        simp only [ψ₁₂, ψ₂₃, ψ₁₃, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom,
-          Algebra.TensorProduct.map_tmul, AlgHom.id_apply,
-          Algebra.TensorProduct.cancelBaseChange_tmul, AlgEquiv.baseChangeRight_apply,
-          Algebra.TensorProduct.comm_tmul]
-        rw [hb, TensorProduct.smul_tmul, htower]
-      | add u v hu hv => simp only [TensorProduct.tmul_add, map_add, hu, hv]
-    | add z₁ z₂ hz₁ hz₂ => simp only [map_add, hz₁, hz₂]
-  simp only [pointsMulEquivOfBaseChange, MulEquiv.trans_apply, AlgEquiv.mapValueMulEquiv_apply]
-  rw [AlgHom.mapValue_apply ψ₁₂, pointsMulEquiv_naturality, ← AlgHom.mapValue_apply,
-    ← MonoidHom.comp_apply, ← AlgHom.mapValue_comp, hcomp,
-    AlgHom.mapValue_comp, MonoidHom.comp_apply,
-    ← AlgEquiv.mapValueMulEquiv_apply (Algebra.TensorProduct.cancelBaseChange A B C C T),
-    pointsMulEquiv_mapDomain_compBialgEquiv (B := B)]
+  let ψ₁₂ : B ⊗[A] T →ₐ[B] S₁ := e₁₂.baseChangeRight he₁₂
+  let ψ₂₃ : C ⊗[B] S₁ →ₐ[C] S₂ := e₂₃.baseChangeRight he₂₃
+  let ψ₁₃ : C ⊗[A] T →ₐ[C] S₂ := e₁₃.baseChangeRight he₁₃
+  let w : WithConv (WeilRestriction B C H →ₐ[B] B ⊗[A] T) :=
+    pointsMulEquiv A B (WeilRestriction B C H) T
+      (BialgHom.mapDomain (compBialgEquiv A B C H :
+        WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) x)
+  have hw : (Algebra.TensorProduct.cancelBaseChange A B C C T).mapValueMulEquiv
+      (pointsMulEquiv B C H (B ⊗[A] T) w) = pointsMulEquiv A C H T x :=
+    pointsMulEquiv_mapDomain_compBialgEquiv (B := B) x
+  refine WithConv.ofConv_injective ?_
+  calc
+    (pointsMulEquivOfBaseChange B C H e₂₃ he₂₃
+        (pointsMulEquivOfBaseChange A B (WeilRestriction B C H) e₁₂ he₁₂
+          (BialgHom.mapDomain (compBialgEquiv A B C H :
+            WeilRestriction A B (WeilRestriction B C H) →ₐc[A] WeilRestriction A C H) x))).ofConv
+      = ψ₂₃.comp (pointsMulEquiv B C H S₁ (toConv (ψ₁₂.comp w.ofConv))).ofConv := by
+          simp [pointsMulEquivOfBaseChange, ψ₁₂, ψ₂₃, w]
+    _ = ψ₂₃.comp ((Algebra.TensorProduct.lTensor (S := C) C ψ₁₂).comp
+          (pointsMulEquiv B C H (B ⊗[A] T) w).ofConv) := by
+          simp [pointsMulEquiv_naturality]
+    _ = (ψ₂₃.comp (Algebra.TensorProduct.lTensor (S := C) C ψ₁₂)).comp
+          (pointsMulEquiv B C H (B ⊗[A] T) w).ofConv :=
+          (AlgHom.comp_assoc _ _ _).symm
+    _ = (ψ₁₃.comp (Algebra.TensorProduct.cancelBaseChange A B C C T).toAlgHom).comp
+          (pointsMulEquiv B C H (B ⊗[A] T) w).ofConv := by
+          rw [baseChangeRight_comp_lTensor e₁₂ he₁₂ e₂₃ he₂₃ e₁₃ he₁₃ htower]
+    _ = ψ₁₃.comp ((Algebra.TensorProduct.cancelBaseChange A B C C T).mapValueMulEquiv
+          (pointsMulEquiv B C H (B ⊗[A] T) w)).ofConv := by
+          simp [AlgHom.comp_assoc]
+    _ = ψ₁₃.comp (pointsMulEquiv A C H T x).ofConv := by
+          rw [hw]
+    _ = (pointsMulEquivOfBaseChange A C H e₁₃ he₁₃ x).ofConv := by
+          simp [pointsMulEquivOfBaseChange, ψ₁₃]
 
 end BaseChange
 
