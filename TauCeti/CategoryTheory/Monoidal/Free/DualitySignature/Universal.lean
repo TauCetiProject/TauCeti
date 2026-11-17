@@ -20,16 +20,16 @@ arbitrary (not necessarily strict) rigid monoidal category `D`:
 * `FreeRigid.natTrans_ext`: monoidal natural transformations from a strong monoidal functor out of
   `S.FreeRigid` to a lax monoidal functor into an arbitrary monoidal category are determined by
   their components at the generating objects.
-* `FreeRigid.monoidalNatIso` and `FreeRigid.eq_monoidalNatIso`: two strong monoidal functors into a
-  rigid category that agree up to isomorphism on generating objects compatibly with coupons are
-  uniquely monoidally naturally isomorphic.
+* `FreeRigid.monoidalNatIso` and `FreeRigid.eq_monoidalNatIso`: two strong monoidal functors into an
+  arbitrary monoidal category that agree up to isomorphism on generating objects compatibly with
+  coupons are uniquely monoidally naturally isomorphic.
 
 ## Design notes and attribution
 
 The universal lift and uniqueness construction parallel `TauCeti.TensorSignature.FreeMonoidal`
 (modeled on Markus Himmel's `Mathlib/CategoryTheory/Monoidal/Free/Basic.lean`), extended to right
-and left duality via `Functor.mapRightDualIso`, `Functor.mapLeftDualIso`, and
-`NatTrans.app_right_eq_of_exactPairing`.
+and left duality via `ExactPairing.rightMateIso`, `ExactPairing.leftMateIso`,
+`Functor.mapRightDualIso`, `Functor.mapLeftDualIso`, and `NatTrans.app_right_eq_of_exactPairing`.
 
 ## References
 
@@ -280,12 +280,13 @@ theorem natTrans_ext {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
   | leftDual X hX =>
     exact NatTrans.app_left_eq_of_exactPairing (ᘁ(⟨X⟩ : S.FreeRigid)) (⟨X⟩ : S.FreeRigid) hX
 
-variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [RigidCategory D]
+variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D]
 variable (F G : S.FreeRigid ⥤ D) [F.Monoidal] [G.Monoidal] (e : ∀ a, F.obj (of a) ≅ G.obj (of a))
 
 /-- The canonical isomorphism between the images of a formal rigid object expression under two
 strong monoidal functors `F, G : S.FreeRigid ⥤ D`, built from isomorphisms `e` at the generating
-objects together with the unit, tensor, right-dual and left-dual comparisons of `F` and `G`. -/
+objects together with the unit and tensor comparisons of `F` and `G` and adjoint mates for the
+image exact pairings. -/
 noncomputable def objIso : ∀ X : RigidObject S.Obj, F.obj ⟨X⟩ ≅ G.obj ⟨X⟩
   | .of a => e a
   | .unit => (Functor.Monoidal.εIso F).symm ≪≫ Functor.Monoidal.εIso G
@@ -293,11 +294,15 @@ noncomputable def objIso : ∀ X : RigidObject S.Obj, F.obj ⟨X⟩ ≅ G.obj �
     (Functor.Monoidal.μIso F ⟨X⟩ ⟨Y⟩).symm ≪≫ (objIso X ⊗ᵢ objIso Y) ≪≫
       Functor.Monoidal.μIso G ⟨X⟩ ⟨Y⟩
   | .rightDual X =>
-    F.mapRightDualIso (⟨X⟩ : S.FreeRigid) ≪≫ (objIso X).symm.rightAdjointMate ≪≫
-      (G.mapRightDualIso (⟨X⟩ : S.FreeRigid)).symm
+    ExactPairing.rightMateIso
+      (G.mapExactPairing (⟨X⟩ : S.FreeRigid) ((⟨X⟩ : S.FreeRigid)ᘁ))
+      (F.mapExactPairing (⟨X⟩ : S.FreeRigid) ((⟨X⟩ : S.FreeRigid)ᘁ))
+      (objIso X).symm
   | .leftDual X =>
-    F.mapLeftDualIso (⟨X⟩ : S.FreeRigid) ≪≫ (objIso X).symm.leftAdjointMate ≪≫
-      (G.mapLeftDualIso (⟨X⟩ : S.FreeRigid)).symm
+    ExactPairing.leftMateIso
+      (G.mapExactPairing (ᘁ(⟨X⟩ : S.FreeRigid)) (⟨X⟩ : S.FreeRigid))
+      (F.mapExactPairing (ᘁ(⟨X⟩ : S.FreeRigid)) (⟨X⟩ : S.FreeRigid))
+      (objIso X).symm
 
 @[simp] theorem objIso_of (a : S.Obj) : objIso F G e (of a).as = e a := by rfl
 
@@ -318,23 +323,37 @@ noncomputable def objIso : ∀ X : RigidObject S.Obj, F.obj ⟨X⟩ ≅ G.obj �
 
 theorem objIso_rightDual (X : S.FreeRigid) :
     objIso F G e (Xᘁ).as =
-      F.mapRightDualIso X ≪≫ (objIso F G e X.as).symm.rightAdjointMate ≪≫
-        (G.mapRightDualIso X).symm := by rfl
+      ExactPairing.rightMateIso (G.mapExactPairing X (Xᘁ)) (F.mapExactPairing X (Xᘁ))
+        (objIso F G e X.as).symm := by rfl
 
 theorem objIso_leftDual (X : S.FreeRigid) :
     objIso F G e (ᘁX).as =
-      F.mapLeftDualIso X ≪≫ (objIso F G e X.as).symm.leftAdjointMate ≪≫
-        (G.mapLeftDualIso X).symm := by rfl
+      ExactPairing.leftMateIso (G.mapExactPairing (ᘁX) X) (F.mapExactPairing (ᘁX) X)
+        (objIso F G e X.as).symm := by rfl
 
 @[simp] theorem objIso_rightDual_hom (X : S.FreeRigid) :
     (objIso F G e (Xᘁ).as).hom =
-      (F.mapRightDualIso X).hom ≫ ((objIso F G e X.as).inv)ᘁ ≫ (G.mapRightDualIso X).inv := by
-  rw [objIso_rightDual]; simp
+      ExactPairing.rightMate (G.mapExactPairing X (Xᘁ)) (F.mapExactPairing X (Xᘁ))
+        (objIso F G e X.as).inv :=
+  ExactPairing.rightMateIso_hom _ _ _
+
+@[simp] theorem objIso_rightDual_inv (X : S.FreeRigid) :
+    (objIso F G e (Xᘁ).as).inv =
+      ExactPairing.rightMate (F.mapExactPairing X (Xᘁ)) (G.mapExactPairing X (Xᘁ))
+        (objIso F G e X.as).hom :=
+  ExactPairing.rightMateIso_inv _ _ _
 
 @[simp] theorem objIso_leftDual_hom (X : S.FreeRigid) :
     (objIso F G e (ᘁX).as).hom =
-      (F.mapLeftDualIso X).hom ≫ (ᘁ(objIso F G e X.as).inv) ≫ (G.mapLeftDualIso X).inv := by
-  rw [objIso_leftDual]; simp
+      ExactPairing.leftMate (G.mapExactPairing (ᘁX) X) (F.mapExactPairing (ᘁX) X)
+        (objIso F G e X.as).inv :=
+  ExactPairing.leftMateIso_hom _ _ _
+
+@[simp] theorem objIso_leftDual_inv (X : S.FreeRigid) :
+    (objIso F G e (ᘁX).as).inv =
+      ExactPairing.leftMate (F.mapExactPairing (ᘁX) X) (G.mapExactPairing (ᘁX) X)
+        (objIso F G e X.as).hom :=
+  ExactPairing.leftMateIso_inv _ _ _
 
 variable {F G e}
 
@@ -346,58 +365,29 @@ private theorem map_rightCoevaluation_comp_objIso_hom (X : S.FreeRigid) :
     F.map (η_ X (Xᘁ)) ≫ (objIso F G e (X ⊗ Xᘁ).as).hom =
       (objIso F G e (𝟙_ S.FreeRigid).as).hom ≫ G.map (η_ X (Xᘁ)) := by
   rw [← cancel_epi (ε F), ← cancel_mono (δ G X (Xᘁ))]
-  simp only [objIso_tensor_hom, objIso_rightDual_hom, objIso_tensorUnit_hom, Category.assoc,
-    Functor.Monoidal.μ_δ, Category.comp_id, Functor.Monoidal.ε_η_assoc]
-  rw [← F.coevaluation_whiskerLeft_mapRightDualIso_inv_assoc X,
-    ← G.coevaluation_whiskerLeft_mapRightDualIso_inv X,
-    whiskerLeft_comp_tensorHom, Iso.inv_hom_id_assoc,
-    tensorHom_def' (objIso F G e X.as).hom, MonoidalCategory.whiskerLeft_comp_assoc,
-    coevaluation_comp_rightAdjointMate_assoc, whisker_exchange,
-    ← comp_whiskerRight_assoc, Iso.inv_hom_id, MonoidalCategory.id_whiskerRight, Category.id_comp]
+  simpa using ExactPairing.coevaluation_comp_tensorHom_rightMate
+    (G.mapExactPairing X (Xᘁ)) (F.mapExactPairing X (Xᘁ)) (objIso F G e X.as).symm
 
 private theorem map_rightEvaluation_comp_objIso_hom (X : S.FreeRigid) :
     F.map (ε_ X (Xᘁ)) ≫ (objIso F G e (𝟙_ S.FreeRigid).as).hom =
       (objIso F G e (Xᘁ ⊗ X).as).hom ≫ G.map (ε_ X (Xᘁ)) := by
   rw [← cancel_epi (μ F (Xᘁ) X), ← cancel_mono (η G)]
-  simp only [objIso_tensor_hom, objIso_rightDual_hom, objIso_tensorUnit_hom, Category.assoc,
-    Functor.Monoidal.μ_δ_assoc, Functor.Monoidal.ε_η, Category.comp_id]
-  rw [← F.mapRightDualIso_hom_whiskerRight_evaluation X,
-    ← G.mapRightDualIso_hom_whiskerRight_evaluation X,
-    tensorHom_comp_whiskerRight_assoc]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  rw [tensorHom_def' ((F.mapRightDualIso X).hom ≫ ((objIso F G e X.as).inv)ᘁ),
-    comp_whiskerRight, Category.assoc, Category.assoc, rightAdjointMate_comp_evaluation,
-    ← whisker_exchange_assoc, ← MonoidalCategory.whiskerLeft_comp_assoc, Iso.hom_inv_id,
-    MonoidalCategory.whiskerLeft_id, Category.id_comp]
+  simpa using (ExactPairing.tensorHom_rightMate_comp_evaluation
+    (G.mapExactPairing X (Xᘁ)) (F.mapExactPairing X (Xᘁ)) (objIso F G e X.as).symm).symm
 
 private theorem map_leftCoevaluation_comp_objIso_hom (X : S.FreeRigid) :
     F.map (η_ (ᘁX) X) ≫ (objIso F G e ((ᘁX) ⊗ X).as).hom =
       (objIso F G e (𝟙_ S.FreeRigid).as).hom ≫ G.map (η_ (ᘁX) X) := by
   rw [← cancel_epi (ε F), ← cancel_mono (δ G (ᘁX) X)]
-  simp only [objIso_tensor_hom, objIso_leftDual_hom, objIso_tensorUnit_hom, Category.assoc,
-    Functor.Monoidal.μ_δ, Category.comp_id, Functor.Monoidal.ε_η_assoc]
-  rw [← F.coevaluation_mapLeftDualIso_inv_whiskerRight_assoc X,
-    ← G.coevaluation_mapLeftDualIso_inv_whiskerRight X,
-    whiskerRight_comp_tensorHom, Iso.inv_hom_id_assoc,
-    MonoidalCategory.tensorHom_def, comp_whiskerRight_assoc,
-    coevaluation_comp_leftAdjointMate_assoc, ← whisker_exchange,
-    ← MonoidalCategory.whiskerLeft_comp_assoc, Iso.inv_hom_id, MonoidalCategory.whiskerLeft_id,
-    Category.id_comp]
+  simpa using ExactPairing.coevaluation_comp_tensorHom_leftMate
+    (G.mapExactPairing (ᘁX) X) (F.mapExactPairing (ᘁX) X) (objIso F G e X.as).symm
 
 private theorem map_leftEvaluation_comp_objIso_hom (X : S.FreeRigid) :
     F.map (ε_ (ᘁX) X) ≫ (objIso F G e (𝟙_ S.FreeRigid).as).hom =
       (objIso F G e (X ⊗ ᘁX).as).hom ≫ G.map (ε_ (ᘁX) X) := by
   rw [← cancel_epi (μ F X (ᘁX)), ← cancel_mono (η G)]
-  simp only [objIso_tensor_hom, objIso_leftDual_hom, objIso_tensorUnit_hom, Category.assoc,
-    Functor.Monoidal.μ_δ_assoc, Functor.Monoidal.ε_η, Category.comp_id]
-  rw [← F.whiskerLeft_mapLeftDualIso_hom_evaluation X,
-    ← G.whiskerLeft_mapLeftDualIso_hom_evaluation X,
-    tensorHom_comp_whiskerLeft_assoc]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id]
-  rw [MonoidalCategory.tensorHom_def (objIso F G e X.as).hom,
-    MonoidalCategory.whiskerLeft_comp, Category.assoc, Category.assoc,
-    leftAdjointMate_comp_evaluation, whisker_exchange_assoc, ← comp_whiskerRight_assoc,
-    Iso.hom_inv_id, MonoidalCategory.id_whiskerRight, Category.id_comp]
+  simpa using (ExactPairing.tensorHom_leftMate_comp_evaluation
+    (G.mapExactPairing (ᘁX) X) (F.mapExactPairing (ᘁX) X) (objIso F G e X.as).symm).symm
 
 /-- The family `objIso F G e` is natural with respect to all morphisms of `S.FreeRigid` as soon as
 it is natural with respect to every coupon. -/
@@ -442,9 +432,9 @@ theorem map_comp_objIso_hom
       Functor.Monoidal.μ_δ_assoc, whiskerRight_comp_tensorHom_assoc,
       tensorHom_comp_whiskerRight_assoc, hf]
 
-/-- Two strong monoidal functors out of `S.FreeRigid` into a rigid monoidal category `D` that agree
-up to isomorphisms `e` on the generating objects, compatibly with every coupon, are isomorphic by a
-monoidal natural isomorphism extending `e`. -/
+/-- Two strong monoidal functors out of `S.FreeRigid` into an arbitrary monoidal category `D` that
+agree up to isomorphisms `e` on the generating objects, compatibly with every coupon, are isomorphic
+by a monoidal natural isomorphism extending `e`. -/
 noncomputable def monoidalNatIso
     (he : ∀ g, F.map (coupon g) ≫ (objIso F G e (S.tgt g)).hom =
       (objIso F G e (S.src g)).hom ≫ G.map (coupon g)) :

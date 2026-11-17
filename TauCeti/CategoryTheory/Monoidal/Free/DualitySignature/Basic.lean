@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
-public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.Basic
+public import TauCeti.CategoryTheory.Monoidal.Diagram.RigidObject.ProjectObj
 public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Basic
 
 /-!
@@ -33,9 +33,6 @@ coupon-free signatures is proved in
 
 ## Main definitions and results
 
-* `TauCeti.RigidObject.projectObj`: interpret formal rigid object expressions in an arbitrary
-  rigid monoidal category, compatibly with `FreeMonoidalCategory.projectObj` via
-  `RigidObject.projectObj_toRigidObject`.
 * `TauCeti.DualitySignature` and `TauCeti.TensorSignature.toDualitySignature`: duality signatures
   with `RigidObject` boundaries and the inclusion of dual-free tensor signatures.
 * `TauCeti.DualitySignature.FreeRigid S`: the free rigid monoidal category on `S`, equipped with
@@ -61,52 +58,11 @@ on Markus Himmel's `Mathlib/CategoryTheory/Monoidal/Free/Basic.lean`), extended 
 
 public section
 
-universe u v u' v'
+universe u v
 
 open CategoryTheory MonoidalCategory ExactPairing
 
 namespace TauCeti
-
-namespace RigidObject
-
-section ProjectObj
-
-variable {α : Type u} {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [RigidCategory D]
-
-/-- Interpret a formal rigid object expression in a rigid monoidal category `D`, sending `.of a` to
-`f a`, `.unit` to `𝟙_ D`, `.tensor` to tensor product, `.rightDual` to the chosen right dual, and
-`.leftDual` to the chosen left dual. Exposed so dependent morphism types over interpreted boundaries
-reduce on constructors, matching `FreeMonoidalCategory.projectObj`. -/
-@[expose] noncomputable def projectObj (f : α → D) : RigidObject α → D
-  | .of a => f a
-  | .unit => 𝟙_ D
-  | .tensor X Y => projectObj f X ⊗ projectObj f Y
-  | .rightDual X => (projectObj f X)ᘁ
-  | .leftDual X => ᘁ(projectObj f X)
-
-@[simp] theorem projectObj_of (f : α → D) (a : α) : projectObj f (.of a) = f a := rfl
-
-@[simp] theorem projectObj_unit (f : α → D) : projectObj f .unit = 𝟙_ D := rfl
-
-@[simp] theorem projectObj_tensor (f : α → D) (X Y : RigidObject α) :
-    projectObj f (X.tensor Y) = projectObj f X ⊗ projectObj f Y := rfl
-
-@[simp] theorem projectObj_rightDual (f : α → D) (X : RigidObject α) :
-    projectObj f X.rightDual = (projectObj f X)ᘁ := rfl
-
-@[simp] theorem projectObj_leftDual (f : α → D) (X : RigidObject α) :
-    projectObj f X.leftDual = ᘁ(projectObj f X) := rfl
-
-/-- Interpreting a dual-free monoidal word after embedding into `RigidObject` agrees with Mathlib's
-`FreeMonoidalCategory.projectObj`. -/
-@[simp]
-theorem projectObj_toRigidObject (f : α → D) (W : FreeMonoidalCategory α) :
-    projectObj f W.toRigidObject = FreeMonoidalCategory.projectObj f W := by
-  induction W <;> simp_all [FreeMonoidalCategory.projectObj]
-
-end ProjectObj
-
-end RigidObject
 
 /-- A duality signature: a type `Obj` of generating objects and a type `Coupon` of generating
 morphisms, each coupon having a source and a target formal rigid object expression in `Obj`. -/
