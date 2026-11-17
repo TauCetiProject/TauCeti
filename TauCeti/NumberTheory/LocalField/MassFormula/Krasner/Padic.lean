@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LocalField.MassFormula.Krasner.Basic
 public import TauCeti.NumberTheory.LocalField.Padic
-import Mathlib.Data.Nat.Factorization.Basic
+import TauCeti.Data.Nat.Factorization.Basic
 
 /-!
 # Closed-form Krasner counts over `ℚ_[p]`
@@ -16,7 +16,8 @@ Over `ℚ_[p]`, every positive integer has finite `p`-adic valuation `padicValNa
 admissibility condition reduces to `min(v_p(j % n) * n, v_p(n) * n) ≤ j ≤ v_p(n) * n`
 (`TauCeti.isOreAdmissible_padic_iff`), and the sum of Ore coefficient depths
 `∑_{1 ≤ h < n} oreCoefficientDepth ℚ_[p] n j h` can be evaluated in closed form by double counting
-prime powers `p ^ i` dividing `1, …, n - 1` via `Nat.Ioc_filter_dvd_card_eq_div`. Substituting this
+prime powers `p ^ i` dividing `1, …, n - 1` via `Nat.Ico_filter_not_dvd_card_add_div_of_dvd` and
+`Nat.Ico_filter_not_dvd_card_add_div_of_not_dvd`. Substituting this
 closed form into `TauCeti.ncard_mem_totallyRamifiedOfDegree_wildExponent_eq_mul_pow` yields Pauli
 and Roblot's closed-form `ℕ` expression for `#{E ∈ σ_{ℚ_[p]}(n) | E.wildExponent = j}` and for
 `#σ_{ℚ_[p]}(n)` — matching `#σ_{ℚ_[2]}(2) = 2 + 4 = 6`
@@ -99,13 +100,12 @@ theorem isOreAdmissible_padic_iff (p : ℕ) [Fact p.Prime] {n j : ℕ} :
       · exact absurd (le_antisymm h2 hmin) hj_ne
 
 /-- Double-counting evaluation of the base Ore depth sum `∑_{1 ≤ h < n} (j / n - v_p(h))` for an
-Ore-admissible pair `(n, j)` over `ℚ_[p]`, using `Nat.Ioc_filter_dvd_card_eq_div`. -/
+Ore-admissible pair `(n, j)` over `ℚ_[p]`, using `Nat.Ico_filter_not_dvd_card_add_div_of_dvd`. -/
 private theorem sum_Ico_div_sub_padicValNat_of_isOreAdmissible (p : ℕ) [Fact p.Prime] {n j : ℕ}
     (hadm : IsOreAdmissible ℚ_[p] n j) :
     (∑ h ∈ Finset.Ico 1 n, (j / n - padicValNat p h)) +
       ∑ i ∈ Finset.Icc 1 (j / n), n / p ^ i = (j / n) * n := by
   have hn := hadm.pos
-  have hp_pos : 0 < p := (Fact.out : p.Prime).pos
   have ha_le : j / n ≤ padicValNat p n := by
     have h := hadm.div_le_addVal
     rw [TauCeti.IsDiscreteValuationRing.addVal_natCast ℚ_[p] n (Nat.cast_ne_zero.mpr hn.ne'),
@@ -129,24 +129,10 @@ private theorem sum_Ico_div_sub_padicValNat_of_isOreAdmissible (p : ℕ) [Fact p
       (∑ h ∈ Finset.Ico 1 n, if ¬ p ^ i ∣ h then 1 else 0) + n / p ^ i = n := by
     intro i hi
     rw [Finset.mem_Icc] at hi
-    have hd_pos : 0 < p ^ i := pow_pos hp_pos i
     rw [Nat.padicValNat_def] at ha_le
-    obtain ⟨k, hk⟩ := (multiplicity_dvd_iff_le hn.ne').mpr (hi.2.trans ha_le)
-    have hk_pos : 0 < k := Nat.pos_of_ne_zero fun hk0 ↦ by simp [hk0] at hk; omega
-    have hIco : Finset.Ico 1 n = Finset.Ioc 0 (n - 1) := by
-      ext h; simp only [Finset.mem_Ico, Finset.mem_Ioc]; omega
-    have hpart := Finset.card_filter_add_card_filter_not (s := Finset.Ioc 0 (n - 1))
-      (fun h ↦ p ^ i ∣ h)
-    rw [Nat.Ioc_filter_dvd_card_eq_div, Nat.card_Ioc, Nat.sub_zero] at hpart
-    have hmul : p ^ i * (k - 1) + p ^ i = n := by
-      rw [← Nat.mul_add_one, Nat.sub_add_cancel hk_pos, hk]
-    have hdecomp : (p ^ i - 1) + p ^ i * (k - 1) = n - 1 := by omega
-    have hdiv_sub : (n - 1) / p ^ i = k - 1 := by
-      rw [← hdecomp, Nat.add_mul_div_left _ _ hd_pos, Nat.div_eq_of_lt (by omega), zero_add]
-    have hdiv_n : n / p ^ i = k := by rw [hk, Nat.mul_div_right _ hd_pos]
-    rw [hdiv_sub] at hpart
-    rw [hIco, Finset.sum_boole, Nat.cast_id, hdiv_n]
-    omega
+    have hdvd : p ^ i ∣ n := (multiplicity_dvd_iff_le hn.ne').mpr (hi.2.trans ha_le)
+    rw [Finset.sum_boole, Nat.cast_id]
+    exact Nat.Ico_filter_not_dvd_card_add_div_of_dvd hdvd
   rw [Finset.sum_congr rfl hinner, Finset.sum_const, Nat.card_Icc, smul_eq_mul,
     Nat.add_sub_cancel]
 
@@ -170,36 +156,6 @@ theorem sum_oreCoefficientDepth_padic_of_mod_eq_zero (p : ℕ) [Fact p.Prime] {n
     rwa [hmod, add_zero, Nat.mul_comm] at this
   rw [Finset.sum_congr rfl hdepth, Finset.sum_add_distrib, Finset.sum_const, Nat.card_Ico,
     smul_eq_mul, mul_one, add_assoc, sum_Ico_div_sub_padicValNat_of_isOreAdmissible p hadm, hj]
-  omega
-
-/-- Sub-remainder prime-power count `∑_{1 ≤ h < b} [¬ p ^ (a + 1) ∣ h] + b / p ^ (a + 1) = b - 1`
-when `v_p(b) ≤ a`. -/
-private theorem sum_Ico_lt_mod_not_dvd_add_div (p : ℕ) [Fact p.Prime] {n b a : ℕ}
-    (hb : 0 < b) (hbn : b < n) (hvb : padicValNat p b ≤ a) :
-    (∑ h ∈ Finset.Ico 1 n,
-      if h < b then (if ¬ p ^ (a + 1) ∣ h then 1 else 0) else 0) +
-      b / p ^ (a + 1) = b - 1 := by
-  have hsplit :
-      (∑ h ∈ Finset.Ico 1 n, if h < b then (if ¬ p ^ (a + 1) ∣ h then 1 else 0) else 0) =
-      ∑ h ∈ Finset.Ioc 0 (b - 1), if ¬ p ^ (a + 1) ∣ h then 1 else 0 := by
-    rw [← Finset.sum_filter]
-    refine Finset.sum_congr ?_ fun _ _ ↦ rfl
-    ext h; simp only [Finset.mem_filter, Finset.mem_Ico, Finset.mem_Ioc]; omega
-  have hd_pos : 0 < p ^ (a + 1) := pow_pos (Fact.out : p.Prime).pos _
-  have hndvd_b : ¬ p ^ (a + 1) ∣ b := by
-    rw [Nat.padicValNat_def] at hvb
-    rw [multiplicity_dvd_iff_le hb.ne']; omega
-  have hdecomp : (b % p ^ (a + 1) - 1) + p ^ (a + 1) * (b / p ^ (a + 1)) = b - 1 := by
-    have := Nat.pos_of_ne_zero (mt Nat.dvd_iff_mod_eq_zero.mpr hndvd_b)
-    have := Nat.div_add_mod b (p ^ (a + 1))
-    omega
-  have hdiv_b : (b - 1) / p ^ (a + 1) = b / p ^ (a + 1) := by
-    have := Nat.mod_lt b hd_pos
-    rw [← hdecomp, Nat.add_mul_div_left _ _ hd_pos, Nat.div_eq_of_lt (by omega), zero_add]
-  have hpart := Finset.card_filter_add_card_filter_not (s := Finset.Ioc 0 (b - 1))
-    (fun h ↦ p ^ (a + 1) ∣ h)
-  rw [Nat.Ioc_filter_dvd_card_eq_div, hdiv_b, Nat.card_Ioc, Nat.sub_zero] at hpart
-  rw [hsplit, Finset.sum_boole, Nat.cast_id]
   omega
 
 /-- **Sum of Ore coefficient depths over `ℚ_[p]` when `0 < j % n`**: for an Ore-admissible pair
@@ -231,7 +187,17 @@ theorem sum_oreCoefficientDepth_padic_of_mod_pos (p : ℕ) [Fact p.Prime] {n j :
       · rw [ite_eq_right (not_not.mpr (hdvd.mpr hle))]; omega
       · rw [ite_eq_left (mt hdvd.mp hle)]; omega
     · rw [ite_eq_right hlt, ite_eq_right hlt]; omega
-  have hextra := sum_Ico_lt_mod_not_dvd_add_div p hmod hlt_b hvb_le
+  have hndvd : ¬ p ^ (j / n + 1) ∣ j % n := by
+    rw [Nat.padicValNat_def] at hvb_le
+    rw [multiplicity_dvd_iff_le hmod.ne']
+    omega
+  have hextra :
+      (∑ h ∈ Finset.Ico 1 n,
+        if h < j % n then (if ¬ p ^ (j / n + 1) ∣ h then 1 else 0) else 0) +
+        (j % n) / p ^ (j / n + 1) = j % n - 1 := by
+    rw [← Finset.sum_filter, Finset.Ico_filter_lt_of_le_right hlt_b.le, Finset.sum_boole,
+      Nat.cast_id]
+    exact Nat.Ico_filter_not_dvd_card_add_div_of_not_dvd hndvd
   have := Nat.div_add_mod j n
   have hbase := sum_Ico_div_sub_padicValNat_of_isOreAdmissible p hadm
   rw [Nat.mul_comm (j / n) n] at hbase
