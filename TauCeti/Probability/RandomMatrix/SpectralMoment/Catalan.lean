@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import TauCeti.Combinatorics.TreeWalk.Enumeration
 public import TauCeti.Probability.Distributions.Semicircle.Moments
 public import TauCeti.Probability.RandomMatrix.MomentBounds
-import TauCeti.Data.Nat.Factorial.Basic
+import TauCeti.Data.Nat.Factorial.Bounds
 
 /-!
 # Convergence of expected Wigner spectral moments to the semicircle moments
@@ -59,29 +59,6 @@ open scoped Topology
 
 namespace TauCeti
 
-private theorem norm_catalan_mul_descFactorial_inv_pow_sub_le {m n : ℕ} (hn : n ≠ 0) :
-    ‖(n : ℂ)⁻¹ * ((catalan m * n.descFactorial (m + 1) : ℂ) * (n : ℂ)⁻¹ ^ m) - (catalan m : ℂ)‖ ≤
-      (catalan m * (m + 1).choose 2 : ℝ) / n := by
-  have hnR : (0 : ℝ) < n := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hn)
-  have hpowR : (0 : ℝ) < (n : ℝ) ^ (m + 1) := pow_pos hnR _
-  have hdf_le : (n.descFactorial (m + 1) : ℝ) ≤ (n : ℝ) ^ (m + 1) := by
-    exact_mod_cast Nat.descFactorial_le_pow n (m + 1)
-  have hsub_le : (n : ℝ) ^ (m + 1) - n.descFactorial (m + 1) ≤ (m + 1).choose 2 * (n : ℝ) ^ m := by
-    linarith [show (n : ℝ) ^ (m + 1) ≤ n.descFactorial (m + 1) + (m + 1).choose 2 * (n : ℝ) ^ m by
-      exact_mod_cast Nat.pow_succ_le_descFactorial_add_choose_two_mul_pow n m]
-  have hcast :
-      (n : ℂ)⁻¹ * ((catalan m * n.descFactorial (m + 1) : ℂ) * (n : ℂ)⁻¹ ^ m) - (catalan m : ℂ) =
-        (((catalan m : ℝ) * ((n.descFactorial (m + 1) : ℝ) / (n : ℝ) ^ (m + 1) - 1) : ℝ) : ℂ) := by
-    push_cast; rw [div_eq_mul_inv, inv_pow]; ring
-  rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_mul, abs_of_nonneg (Nat.cast_nonneg _),
-    abs_of_nonpos (by linarith [(div_le_one hpowR).mpr hdf_le]), neg_sub]
-  calc (catalan m : ℝ) * (1 - (n.descFactorial (m + 1) : ℝ) / (n : ℝ) ^ (m + 1))
-      = (catalan m : ℝ) * (((n : ℝ) ^ (m + 1) - n.descFactorial (m + 1)) / (n : ℝ) ^ (m + 1)) := by
-        rw [one_sub_div hpowR.ne']
-    _ ≤ (catalan m : ℝ) * (((m + 1).choose 2 * (n : ℝ) ^ m) / (n : ℝ) ^ (m + 1)) :=
-        mul_le_mul_of_nonneg_left (div_le_div_of_nonneg_right hsub_le hpowR.le) (Nat.cast_nonneg _)
-    _ = (catalan m * (m + 1).choose 2 : ℝ) / n := by rw [pow_succ]; field_simp
-
 section TraceMoments
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
@@ -130,8 +107,20 @@ theorem norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_catalan_le
     have hrem := norm_inv_mul_integral_trace_pow_two_mul_wignerMatrix_sub_sum_le
       (n := n) hindep hξzero hm hξp hηp hξ hη
     rw [sum_integral_prod_wignerMatrix_leading (η := η) hm hindep_ξ hsecond, mul_sub] at hrem
+    have hlead :
+        ‖(n : ℂ)⁻¹ * ((catalan m * n.descFactorial (m + 1) : ℂ) * (n : ℂ)⁻¹ ^ m) -
+          (catalan m : ℂ)‖ ≤ (catalan m * (m + 1).choose 2 : ℝ) / n := by
+      have hcast :
+          (n : ℂ)⁻¹ * ((catalan m * n.descFactorial (m + 1) : ℂ) * (n : ℂ)⁻¹ ^ m) -
+            (catalan m : ℂ) = (((catalan m : ℝ) *
+              ((n.descFactorial (m + 1) : ℝ) / (n : ℝ) ^ (m + 1) - 1) : ℝ) : ℂ) := by
+        push_cast; rw [div_eq_mul_inv, inv_pow]; ring
+      rw [hcast, Complex.norm_real, Real.norm_eq_abs, abs_mul,
+        abs_of_nonneg (Nat.cast_nonneg _)]
+      exact (mul_le_mul_of_nonneg_left (Nat.abs_descFactorial_div_pow_sub_one_le hn (m + 1))
+        (Nat.cast_nonneg _)).trans_eq (mul_div_assoc _ _ _).symm
     exact (norm_sub_le_norm_sub_add_norm_sub _ _ _).trans <|
-      (add_le_add hrem (norm_catalan_mul_descFactorial_inv_pow_sub_le hn)).trans_eq (by ring)
+      (add_le_add hrem hlead).trans_eq (by ring)
 
 /-- The normalized expected `2m`-th trace of a Wigner matrix with independent coordinates in
 `L ^ (2 * m)`, centered unit-variance off-diagonal entries, and `2m`-th absolute moments uniformly

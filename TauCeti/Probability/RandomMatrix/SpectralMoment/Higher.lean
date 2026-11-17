@@ -9,6 +9,7 @@ public import TauCeti.Probability.RandomMatrix.SpectralMoment.Catalan
 public import TauCeti.Probability.Moments.Variance
 public import TauCeti.Probability.Moments.WeakConvergence
 import Mathlib.Analysis.PSeries
+import TauCeti.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.OuterMeasure.BorelCantelli
 import TauCeti.Topology.Instances.ENNReal
 
@@ -90,22 +91,11 @@ omit [MeasurableSpace Ω] in
 private theorem ofReal_inv_mul_re_trace_pow_eq_sum_wordProd {k : ℕ} (hk : k ≠ 0)
     (n : ℕ) (ω : Ω) :
     (((n : ℝ)⁻¹ * ((wignerMatrix ξ η n ω ^ k).trace).re : ℝ) : ℂ) =
-      (n : ℂ)⁻¹ * ∑ w : Fin k → Fin n, wordProd ξ η w ω := by
+      (((n : ℝ)⁻¹ : ℝ) : ℂ) * ∑ w : Fin k → Fin n, wordProd ξ η w ω := by
   have hre : (((wignerMatrix ξ η n ω ^ k).trace).re : ℂ) = (wignerMatrix ξ η n ω ^ k).trace := by
     simpa only [RCLike.re_to_complex, RCLike.ofReal_eq_complex_ofReal] using
       ((wignerMatrix_isHermitian ξ η ω n).pow k).coe_re_trace
-  rw [Complex.ofReal_mul, Complex.ofReal_inv, Complex.ofReal_natCast, hre,
-    trace_pow_eq_sum_prod _ hk]; rfl
-
-omit [MeasurableSpace Ω] in
-private theorem sq_eq_inv_sq_mul_re_sum_product {ι : Type*} [Fintype ι] {r : ℝ} {n : ℕ}
-    {f : ι → ℂ} (h : (r : ℂ) = (n : ℂ)⁻¹ * ∑ w : ι, f w) :
-    r ^ 2 = (n : ℝ)⁻¹ ^ 2 * (∑ p : ι × ι, f p.1 * f p.2).re := by
-  have hre := congrArg (fun z : ℂ ↦ (z ^ 2).re) h
-  rw [← Complex.ofReal_pow, Complex.ofReal_re, mul_pow, sq (∑ w, f w), sum_mul_sum,
-    ← sum_product', univ_product_univ, ← Complex.ofReal_natCast, ← Complex.ofReal_inv,
-    ← Complex.ofReal_pow, Complex.re_ofReal_mul] at hre
-  exact hre
+  rw [Complex.ofReal_mul, hre, trace_pow_eq_sum_prod _ hk]; rfl
 
 /-- On a finite measure space, the normalized real trace of the `k`-th power of a Wigner matrix
 belongs to `L²` whenever all coordinates belong to `L²ᵏ`. -/
@@ -124,8 +114,9 @@ theorem memLp_two_inv_mul_re_trace_pow_wignerMatrix [IsFiniteMeasure P] {k : ℕ
     have hsq (ω : Ω) : ‖(n : ℝ)⁻¹ * ((wignerMatrix ξ η n ω ^ k).trace).re‖ ^ 2 =
         (n : ℝ)⁻¹ ^ 2 * (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
           wordProd ξ η p.1 ω * wordProd ξ η p.2 ω).re := by
-      rw [Real.norm_eq_abs, sq_abs]
-      exact sq_eq_inv_sq_mul_re_sum_product (ofReal_inv_mul_re_trace_pow_eq_sum_wordProd hk n ω)
+      rw [Real.norm_eq_abs, sq_abs, ← Complex.ofReal_re (_ ^ 2), Complex.ofReal_pow,
+        ofReal_inv_mul_re_trace_pow_eq_sum_wordProd hk n ω, Complex.re_ofReal_mul_sum_sq,
+        univ_product_univ]
     simp_rw [hsq]
     simpa only [RCLike.re_to_complex] using
       ((integrable_finsetSum (univ : Finset ((Fin k → Fin n) × (Fin k → Fin n))) fun p _ ↦
@@ -141,19 +132,22 @@ private theorem variance_re_trace_eq_re_sum_wordCov [IsProbabilityMeasure P] {k 
   have hηk : ∀ i, MemLp (η i) k P := fun i ↦ (hηp i).mono_exponent (by norm_cast; omega)
   have hwp_int (w : Fin k → Fin n) : Integrable (wordProd ξ η w) P :=
     integrable_prod_wignerMatrix_apply (by simpa using hξk) (by simpa using hηk) _ _
-  have hT_coe (ω : Ω) : (T ω : ℂ) = (n : ℂ)⁻¹ * ∑ w : Fin k → Fin n, wordProd ξ η w ω := by
+  have hT_coe (ω : Ω) :
+      (T ω : ℂ) = (((n : ℝ)⁻¹ : ℝ) : ℂ) * ∑ w : Fin k → Fin n, wordProd ξ η w ω := by
     rw [hT_def]
     exact ofReal_inv_mul_re_trace_pow_eq_sum_wordProd hk n ω
   have hT_sq (ω : Ω) : T ω ^ 2 = (n : ℝ)⁻¹ ^ 2 *
-      (∑ p : (Fin k → Fin n) × (Fin k → Fin n), wordProd ξ η p.1 ω * wordProd ξ η p.2 ω).re :=
-    sq_eq_inv_sq_mul_re_sum_product (hT_coe ω)
+      (∑ p : (Fin k → Fin n) × (Fin k → Fin n), wordProd ξ η p.1 ω * wordProd ξ η p.2 ω).re := by
+    rw [← Complex.ofReal_re (_ ^ 2), Complex.ofReal_pow, hT_coe ω, Complex.re_ofReal_mul_sum_sq,
+      univ_product_univ]
   have hmean_coe : ((∫ ω, T ω ∂P : ℝ) : ℂ) =
-      (n : ℂ)⁻¹ * ∑ w : Fin k → Fin n, ∫ ω, wordProd ξ η w ω ∂P := by
+      (((n : ℝ)⁻¹ : ℝ) : ℂ) * ∑ w : Fin k → Fin n, ∫ ω, wordProd ξ η w ω ∂P := by
     rw [← integral_complex_ofReal, integral_congr_ae (.of_forall hT_coe), integral_const_mul,
       integral_finsetSum _ fun w _ ↦ hwp_int w]
   have hmean_sq : (∫ ω, T ω ∂P) ^ 2 = (n : ℝ)⁻¹ ^ 2 * (∑ p : (Fin k → Fin n) × (Fin k → Fin n),
-      (∫ ω, wordProd ξ η p.1 ω ∂P) * (∫ ω, wordProd ξ η p.2 ω ∂P)).re :=
-    sq_eq_inv_sq_mul_re_sum_product hmean_coe
+      (∫ ω, wordProd ξ η p.1 ω ∂P) * (∫ ω, wordProd ξ η p.2 ω ∂P)).re := by
+    rw [← Complex.ofReal_re (_ ^ 2), Complex.ofReal_pow, hmean_coe, Complex.re_ofReal_mul_sum_sq,
+      univ_product_univ]
   rw [ProbabilityTheory.variance_eq_sub (memLp_two_inv_mul_re_trace_pow_wignerMatrix hξp hηp n)]
   have hint_sum := integrable_finsetSum (univ : Finset ((Fin k → Fin n) × (Fin k → Fin n)))
     fun p _ ↦ integrable_wordProd_mul hξp hηp p.1 p.2

@@ -247,11 +247,6 @@ private theorem spliceWords_edge {u₁ u₂ : Fin (m + 1) → α} (h0 : u₁ 0 =
         simp [spliceEquiv]; omega
       rw [hrot, spliceWords_spliceEquiv, Fin.finRotate_castSucc]; rfl
 
-private theorem rotateWord_image [DecidableEq α] (w : Fin (m + 1) → α) (r : Fin (m + 1)) :
-    univ.image (fun i ↦ w (i + r)) = univ.image w := by
-  ext x; simp only [mem_image, mem_univ, true_and]
-  exact ⟨fun ⟨i, hi⟩ ↦ ⟨i + r, hi⟩, fun ⟨j, hj⟩ ↦ ⟨j - r, by simpa using hj⟩⟩
-
 private theorem spliceWords_shifted_edge_and_no_singleton_nonloop {w₁ w₂ : Fin (m + 1) → α}
     {t₁ r₂ : Fin (m + 1)} (hr₂ : w₁ t₁ = w₂ r₂)
     (hns : ∀ x : Fin (m + 1) ⊕ Fin (m + 1),
@@ -357,7 +352,10 @@ theorem card_union_image_le_of_shared_edge_of_no_singleton_nonloop_edge [Decidab
   obtain ⟨hW_edge, hW_ns_nl⟩ := spliceWords_shifted_edge_and_no_singleton_nonloop hr₂ hns
   rw [← hW_def] at hW_edge hW_ns_nl
   have hW_img : univ.image W = univ.image w₁ ∪ univ.image w₂ := by
-    rw [hW_def, image_spliceWords, rotateWord_image, rotateWord_image]
+    rw [hW_def, image_spliceWords]
+    congr 1
+    · exact (image_comp (g := w₁) (f := Equiv.addRight t₁)).trans (by rw [image_univ_equiv])
+    · exact (image_comp (g := w₂) (f := Equiv.addRight r₂)).trans (by rw [image_univ_equiv])
   have hW_le : #(univ.image W) ≤ m + 2 := by
     simpa [Nat.mul_div_right _ two_pos] using
       card_image_le_div_two_add_one_of_no_singleton_nonloop_edge W hW_ns_nl
