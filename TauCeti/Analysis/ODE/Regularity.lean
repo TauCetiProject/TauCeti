@@ -14,6 +14,8 @@ This file contains the basic regularity theorem that a solution of a first-order
 derivative over a right-hand side that is already differentiable on its range. The parameter
 set only needs unique derivatives, so the result also applies at closed interval endpoints. It
 holds over any nontrivially normed field and for finite or infinite order of differentiability.
+The same holds for a linear equation `f' = A_t f` whose coefficient `A` is `C^n` in `t`
+(`TauCeti.contDiff_succ_of_hasDerivAt_clm_apply`).
 -/
 
 public section
@@ -41,6 +43,23 @@ theorem contDiffOn_succ_of_hasDerivWithinAt_comp {𝕜 F : Type*} [NontriviallyN
       exact ((hv.of_le (mod_cast hmn)).comp (ih (hmn.trans le_self_add)) hfu).congr
         fun t ht ↦ (hf t ht).derivWithin (hs t ht)
   exact_mod_cast contDiffOn_iff_forall_nat_le.mpr key
+
+/-- A solution of a linear equation `f' = A_t f` whose coefficient `A` is `C^n` is `C^(n + 1)`.
+The order `n` may be infinite. -/
+theorem contDiff_succ_of_hasDerivAt_clm_apply {𝕜 F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞} {A : 𝕜 → F →L[𝕜] F} {f : 𝕜 → F}
+    (hA : ContDiff 𝕜 n A) (hf : ∀ t, HasDerivAt f (A t (f t)) t) :
+    ContDiff 𝕜 (n + 1) f := by
+  have key (m : ℕ) (hm : m ≤ n + 1) : ContDiff 𝕜 m f := by
+    induction m with
+    | zero => exact contDiff_zero.mpr (continuous_iff_continuousAt.2 fun t ↦ (hf t).continuousAt)
+    | succ m ih =>
+      have hmn : (m : ℕ∞) ≤ n := by simpa using hm
+      rw [Nat.cast_add, Nat.cast_one, contDiff_succ_iff_deriv]
+      refine ⟨fun t ↦ (hf t).differentiableAt, by simp, ?_⟩
+      rw [show deriv f = fun t ↦ A t (f t) from funext fun t ↦ (hf t).deriv]
+      exact (hA.of_le (mod_cast hmn)).clm_apply (ih (hmn.trans le_self_add))
+  exact_mod_cast contDiff_iff_forall_nat_le.mpr key
 
 end TauCeti
 

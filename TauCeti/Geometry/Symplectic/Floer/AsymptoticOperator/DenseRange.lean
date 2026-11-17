@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.LinearODE.Eigenbasis
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
+import TauCeti.Analysis.ODE.Regularity
 import TauCeti.Analysis.Sobolev.Cylinder.Slice
 
 /-!
@@ -83,40 +84,6 @@ namespace TauCeti.Floer
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [FiniteDimensional ℂ F]
 
-omit [FiniteDimensional ℂ F] in
-/-- On a product section `φ(s) e(t)` whose loop `e` solves `e' = S_t e - λ J₀ e`, the stationary
-cylinder operator of `J₀ = i` is `(φ' + λ φ) e`. -/
-private theorem stationaryCylinderOperator_smul_of_hasDerivAt {S : ℝ → F →L[ℝ] F}
-    {e : ℝ → F} {lam : ℝ} (he : ∀ y, HasDerivAt e (S y (e y) - lam • I • e y) y)
-    {φ : ℝ → ℝ} (hφ : Differentiable ℝ φ) (z : ℝ × ℝ) :
-    stationaryCylinderOperator (fun _ ↦ AlmostComplexStructure.ofComplexModule F) S
-        (fun w ↦ φ w.1 • e w.2) z = (deriv φ z.1 + lam * φ z.1) • e z.2 := by
-  have h1 : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1)
-      (deriv φ z.1 • ContinuousLinearMap.fst ℝ ℝ ℝ) z :=
-    (hφ z.1).hasDerivAt.comp_hasFDerivAt z (hasFDerivAt_fst)
-  have h2 := (he z.2).hasFDerivAt.comp z (hasFDerivAt_snd (p := z))
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1 • e w.2) _ z := h1.smul h2
-  rw [stationaryCylinderOperator_def, h.fderiv]
-  simp [stdComplexLineReal, stdComplexLineImag, AlmostComplexStructure.ofComplexModule_apply,
-    smul_smul, I_mul_I]
-  module
-
-omit [FiniteDimensional ℂ F] in
-/-- A loop solving `e' = S_t e - λ J₀ e` with `S` of class `C¹` is of class `C²`. -/
-private theorem contDiff_two_of_hasDerivAt {S : ℝ → F →L[ℝ] F} (hS : ContDiff ℝ 1 S)
-    {e : ℝ → F} {lam : ℝ} (he : ∀ y, HasDerivAt e (S y (e y) - lam • I • e y) y) :
-    ContDiff ℝ 2 e := by
-  have hd : deriv e = fun y ↦ S y (e y) - lam • I • e y := funext fun y ↦ (he y).deriv
-  have hdiff : Differentiable ℝ e := fun y ↦ (he y).differentiableAt
-  have h1 : ContDiff ℝ 1 e := contDiff_one_iff_deriv.2 ⟨hdiff, by
-    rw [hd]
-    exact (hS.continuous.clm_apply hdiff.continuous).sub
-      (hdiff.continuous.const_smul I |>.const_smul lam)⟩
-  rw [← one_add_one_eq_two, contDiff_succ_iff_deriv]
-  refine ⟨hdiff, by simp, ?_⟩
-  rw [hd]
-  exact (hS.clm_apply h1).sub ((h1.const_smul I).const_smul lam)
-
 open CylinderSobolev
 
 omit [FiniteDimensional ℂ F] in
@@ -132,6 +99,14 @@ private theorem slice_re_inner_ae_eq_zero_of_hasDerivAt {S : ℝ → F →L[ℝ]
     (h : ∀ ξ ∈ testSection F, ∫ z, (inner ℂ (stationaryCylinderOperator
       (fun _ ↦ AlmostComplexStructure.ofComplexModule F) S ξ z) (η z)).re ∂stripMeasure = 0) :
     (fun s ↦ ∫ t in Icc (0 : ℝ) 1, (inner ℂ (e t) (η (s, t))).re) =ᵐ[volume] 0 := by
+  -- `e` solves `e' = S_t e - λ J₀ e` for `J₀ = ofComplexModule F`, so it is of class `C²`.
+  have heJ (y : ℝ) : HasDerivAt (fun y : ℝ ↦ e y)
+      (S y (e y) - lam • AlmostComplexStructure.ofComplexModule F (e y)) y := by
+    simpa only [AlmostComplexStructure.ofComplexModule_apply] using he y
+  have he2 : ContDiff ℝ 2 fun t : ℝ ↦ e t :=
+    contDiff_succ_of_hasDerivAt_clm_apply (n := 1)
+      (A := fun y ↦ S y - lam • (I • ContinuousLinearMap.id ℝ F)) (hS₁.sub contDiff_const)
+      fun y ↦ by simpa using he y
   have hbd (t : ℝ) : ‖e t‖ ≤ ‖e‖ := e.norm_coe_le_norm _
   have he' : Continuous fun t : ℝ ↦ e t := e.continuous.comp (AddCircle.continuous_mk' 1)
   refine ae_eq_zero_of_integral_deriv_add_mul_smul_eq_zero hlam
@@ -145,12 +120,12 @@ private theorem slice_re_inner_ae_eq_zero_of_hasDerivAt {S : ℝ → F →L[ℝ]
   obtain ⟨R, -, hR⟩ := hφc.exists_pos_le_norm
   have hξ : (fun z : ℝ × ℝ ↦ φ z.1 • e z.2) ∈ testSection F := by
     refine mem_testSection_iff.2 ⟨((hφ.of_le (by simp)).comp contDiff_fst).smul
-      ((contDiff_two_of_hasDerivAt hS₁ he).comp contDiff_snd), fun s t ↦ ?_, R,
+      (he2.comp contDiff_snd), fun s t ↦ ?_, R,
       fun s t hs ↦ ?_⟩
     · simp only [AddCircle.coe_add_period]
     · simp [hR s (by rwa [Real.norm_eq_abs])]
   have h0 := h _ hξ
-  simp_rw [stationaryCylinderOperator_smul_of_hasDerivAt he (hφ.differentiable (by simp))] at h0
+  simp_rw [stationaryCylinderOperator_smul_of_hasDerivAt heJ (hφ.differentiable (by simp))] at h0
   simp_rw [smul_eq_mul]
   rw [← integral_re_inner_smul_eq_integral_mul_slice hη (φ := fun s ↦ deriv φ s + lam * φ s)
     ((hφ.continuous_deriv (by simp)).add (continuous_const.mul hφ.continuous))

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Cylinder
 public import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
+import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
@@ -26,6 +27,8 @@ period one determine `η`.
 
 ## Main results
 
+* `TauCeti.CylinderSobolev.integrable_re_inner_smul`: the pairing of `η` with a product section
+  `φ(s) ψ(t)` is integrable on the strip.
 * `TauCeti.CylinderSobolev.integral_re_inner_smul_eq_integral_mul_slice`: Fubini's theorem for
   the pairing of `η` with a product section `φ(s) ψ(t)`.
 * `TauCeti.CylinderSobolev.integrableOn_slice_re_inner_and_integral_abs_le` and
@@ -51,6 +54,13 @@ namespace TauCeti.CylinderSobolev
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
+/-- The pairing of `η` with a product section `φ(s) ψ(t)`, for `φ` continuous with compact support
+and `ψ` continuous, is integrable on the strip. -/
+theorem integrable_re_inner_smul {η : ℝ × ℝ → F} (hη : MemLp η 2 stripMeasure) {φ : ℝ → ℝ}
+    (hφ : Continuous φ) (hφc : HasCompactSupport φ) {ψ : ℝ → F} (hψ : Continuous ψ) :
+    Integrable (fun z ↦ (inner ℂ (φ z.1 • ψ z.2) (η z)).re) stripMeasure :=
+  ((memLp_smul_of_hasCompactSupport hφ hφc hψ 2).integrable_inner (𝕜 := ℂ) hη).re
+
 /-- **Fubini for product sections.** Pairing `η` with `φ(s) ψ(t)` over the strip integrates `φ`
 against the slice pairing `s ↦ ∫₀¹ Re ⟪ψ(t), η(s, t)⟫`. -/
 theorem integral_re_inner_smul_eq_integral_mul_slice {η : ℝ × ℝ → F}
@@ -58,8 +68,7 @@ theorem integral_re_inner_smul_eq_integral_mul_slice {η : ℝ × ℝ → F}
     {ψ : ℝ → F} (hψ : Continuous ψ) :
     ∫ z, (inner ℂ (φ z.1 • ψ z.2) (η z)).re ∂stripMeasure =
       ∫ s, φ s * ∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re := by
-  have hint : Integrable (fun z ↦ (inner ℂ (φ z.1 • ψ z.2) (η z)).re) stripMeasure :=
-    ((memLp_smul_of_hasCompactSupport hφ hφc hψ 2).integrable_inner (𝕜 := ℂ) hη).re
+  have hint := integrable_re_inner_smul hη hφ hφc hψ
   rw [stripMeasure_eq_prod] at hint ⊢
   rw [integral_prod _ hint]
   refine integral_congr_ae (ae_of_all _ fun s ↦ ?_)
@@ -169,8 +178,7 @@ theorem slice_re_inner_ae_eq_zero_of_hilbertBasis [FiniteDimensional ℂ F] {η 
     fun φ hφ hφc ↦ ?_
   have hint (χ : C(AddCircle (1 : ℝ), F)) :
       Integrable (fun z ↦ (inner ℂ (φ z.1 • χ z.2) (η z)).re) stripMeasure :=
-    ((memLp_smul_of_hasCompactSupport (ψ := fun t : ℝ ↦ χ t) hφ.continuous hφc
-      (χ.continuous.comp (AddCircle.continuous_mk' 1)) 2).integrable_inner (𝕜 := ℂ) hη).re
+    integrable_re_inner_smul hη hφ.continuous hφc (χ.continuous.comp (AddCircle.continuous_mk' 1))
   -- The functional `Λ χ = ∫ ⟪φ ⊗ χ, η⟫` on continuous loops is real-linear.
   let Λ : C(AddCircle (1 : ℝ), F) →ₗ[ℝ] ℝ :=
     { toFun := fun χ ↦ ∫ z, (inner ℂ (φ z.1 • χ z.2) (η z)).re ∂stripMeasure

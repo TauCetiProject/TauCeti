@@ -13,8 +13,6 @@ import TauCeti.Analysis.Fourier.Uniqueness
 import TauCeti.MeasureTheory.Integral.ContinuousMap
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.MeasureTheory.Function.L2Space
-import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
-import Mathlib.Analysis.InnerProductSpace.Dual
 
 /-!
 # Continuous loops in the circle Sobolev space `H⁰`
@@ -67,10 +65,6 @@ from frequency zero, because differentiation multiplies Fourier coefficients by 
 * `TauCeti.CircleSobolev.eq_zero_of_abs_le_of_hilbertBasis`: a real-linear functional on
   continuous loops, bounded by a multiple of the `H⁰` norm and vanishing on loops forming a Hilbert
   basis of `H⁰`, vanishes.
-* `TauCeti.integral_re_inner_eq_zero_of_dense`: a function on `[0, T]` orthogonal to a dense set
-  of continuous loops of period `T` is orthogonal to all of them.
-* `TauCeti.ae_eq_zero_of_forall_integral_re_inner_eq_zero`: a function on `[0, T]` whose pairing
-  with every continuous loop of period `T` vanishes is zero almost everywhere.
 
 ## References
 
@@ -365,89 +359,5 @@ theorem eq_zero_of_abs_le_of_hilbertBasis (Λ : C(AddCircle T, F) →ₗ[ℝ] �
 end Inner
 
 end CircleSobolev
-
-section Orthogonal
-
-open Set
-
-variable {T : ℝ} [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-  [FiniteDimensional ℂ F]
-
-omit [FiniteDimensional ℂ F] in
-/-- **Orthogonality to a dense set of loops.** A function on `[0, T]`, integrable there, whose
-pairing `∫_{[0, T]} Re ⟪ψ, f⟫` vanishes for every loop `ψ` in a dense set of continuous loops of
-period `T`, has vanishing pairing with every continuous loop, since the pairing is continuous in
-the loop for the sup norm. -/
-theorem integral_re_inner_eq_zero_of_dense {f : ℝ → F} (hf : IntegrableOn f (Icc 0 T))
-    {D : Set C(AddCircle T, F)} (hD : Dense D)
-    (h : ∀ ψ ∈ D, ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0) (ψ : C(AddCircle T, F)) :
-    ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0 := by
-  have hle (χ : C(AddCircle T, F)) (t : ℝ) : ‖(inner ℂ (χ t) (f t)).re‖ ≤ ‖χ‖ * ‖f t‖ :=
-    (abs_re_le_norm _).trans ((norm_inner_le_norm _ _).trans
-      (mul_le_mul_of_nonneg_right (χ.norm_coe_le_norm _) (norm_nonneg _)))
-  have hint (χ : C(AddCircle T, F)) :
-      IntegrableOn (fun t : ℝ ↦ (inner ℂ (χ t) (f t)).re) (Icc 0 T) :=
-    (hf.norm.const_mul ‖χ‖).mono' ((χ.continuous.comp (AddCircle.continuous_mk' T)
-      ).aestronglyMeasurable.inner (𝕜 := ℂ) hf.aestronglyMeasurable).re (ae_of_all _ (hle χ))
-  -- The pairing is additive in the loop and bounded by `‖χ‖ ∫_{[0, T]} ‖f‖`.
-  let Λ : C(AddCircle T, F) →+ ℝ :=
-    AddMonoidHom.mk' (fun χ ↦ ∫ t in Icc 0 T, (inner ℂ (χ t) (f t)).re) fun χ χ' ↦ by
-      simp only [ContinuousMap.add_apply, inner_add_left, add_re]
-      exact integral_add (hint χ) (hint χ')
-  have hΛ : Continuous Λ :=
-    AddMonoidHomClass.continuous_of_bound Λ (∫ t in Icc 0 T, ‖f t‖) fun χ ↦ by
-      rw [mul_comm, ← integral_const_mul]
-      exact norm_integral_le_of_norm_le (hf.norm.const_mul _) (ae_of_all _ (hle χ))
-  exact congrFun (hΛ.ext_on hD continuous_const h) ψ
-
-/-- **A function orthogonal to all continuous loops vanishes.** A function on `[0, T]`, integrable
-there, whose pairing `∫_{[0, T]} Re ⟪ψ, f⟫` with every continuous loop `ψ` of period `T` vanishes,
-is zero almost everywhere on `[0, T]`: test against the loops `g(t) v` with `g` supported in
-`(0, T)` and `v` running over `b j` and `i b j` for a complex basis `b`. -/
-theorem ae_eq_zero_of_forall_integral_re_inner_eq_zero {f : ℝ → F}
-    (hf : IntegrableOn f (Icc 0 T))
-    (h : ∀ ψ : C(AddCircle T, F), ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0) :
-    ∀ᵐ t ∂volume.restrict (Icc 0 T), f t = 0 := by
-  have hv (v : F) : ∀ᵐ t, t ∈ Ioo 0 T → (inner ℂ v (f t)).re = 0 := by
-    refine isOpen_Ioo.ae_eq_zero_of_integral_contDiff_smul_eq_zero
-      (IntegrableOn.mono_set (t := Icc 0 T) (hf.const_inner (𝕜 := ℂ) v).re
-        Ioo_subset_Icc_self).locallyIntegrableOn
-      fun g hg _ hgs ↦ ?_
-    have hg0 (t : ℝ) (ht : t ∉ Ioo 0 T) : g t = 0 :=
-      image_eq_zero_of_notMem_tsupport fun h' ↦ ht (hgs h')
-    -- The loop `g(t) v`, continuous since `g` vanishes at `0` and `T`.
-    let ψ : C(AddCircle T, F) :=
-      ⟨AddCircle.liftIco T 0 fun t ↦ g t • v, AddCircle.liftIco_continuous
-        (by rw [hg0 0 (by simp), hg0 (0 + T) (by simp)])
-        (hg.continuous.smul continuous_const).continuousOn⟩
-    have hψ (t : ℝ) (ht : t ∈ Icc 0 T) : ψ t = g t • v := by
-      simp only [ψ, ContinuousMap.coe_mk]
-      rcases eq_or_lt_of_le ht.2 with rfl | ht1
-      · rw [show ((t : ℝ) : AddCircle t) = ((0 : ℝ) : AddCircle t) by
-          rw [AddCircle.coe_period, QuotientAddGroup.mk_zero], AddCircle.liftIco_coe_apply
-          (by simp [hT.out]), hg0 0 (by simp), hg0 t (by simp)]
-      · exact AddCircle.liftIco_coe_apply ⟨ht.1, by simpa using ht1⟩
-    have h0 := h ψ
-    rw [setIntegral_congr_fun measurableSet_Icc fun t ht ↦ by rw [hψ t ht]] at h0
-    simp only [inner_smul_left_eq_smul, Complex.smul_re, smul_eq_mul] at h0
-    rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun t ht ↦ by
-      rw [hg0 t fun h' ↦ ht (Ioo_subset_Icc_self h'), zero_mul]] at h0
-    simpa [smul_eq_mul] using h0
-  -- Both the real and imaginary parts of `⟪b j, f t⟫` vanish, the latter as `Re ⟪i b j, f t⟫`.
-  set b := Module.finBasis ℂ F
-  have hall : ∀ᵐ t, ∀ j, t ∈ Ioo 0 T →
-      (inner ℂ (b j) (f t)).re = 0 ∧ (inner ℂ (I • b j) (f t)).re = 0 :=
-    ae_all_iff.2 fun j ↦ by
-      filter_upwards [hv (b j), hv (I • b j)] with t h₁ h₂ ht using ⟨h₁ ht, h₂ ht⟩
-  rw [← Measure.restrict_congr_set Ioo_ae_eq_Icc]
-  refine (ae_restrict_iff' measurableSet_Ioo).2 ?_
-  filter_upwards [hall] with t ht htI
-  refine InnerProductSpace.ext_inner_left_basis b fun j ↦ ?_
-  obtain ⟨h₁, h₂⟩ := ht j htI
-  simp [inner_smul_left] at h₂
-  rw [inner_zero_right]
-  exact Complex.ext (by simpa using h₁) (by simp only [Complex.zero_im]; linarith)
-
-end Orthogonal
 
 end TauCeti
