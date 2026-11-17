@@ -104,7 +104,6 @@ theorem elementary_def (c : B) (v : Fin n → B) :
 omit [CommRing B] [Algebra A B] in
 variable {A} in
 /-- `A`-linear maps out of the symbols agree once they agree on every basis symbol `[c; v]`. -/
-@[ext]
 theorem symbols_hom_ext {M : Type*} [AddCommGroup M] [Module A M]
     {f g : Symbols A B n →ₗ[A] M} (h : ∀ (c : B) (v : Fin n → B), f (sym A c v) = g (sym A c v)) :
     f = g :=
@@ -266,6 +265,14 @@ theorem symbolMap_surjective : Surjective (symbolMap A B n) := by
   choose v hv using fun i => hw ⟨i, rfl⟩
   refine ⟨sym A c v, ?_⟩
   simp only [symbolMap_sym, elementary_def, hv]
+
+variable {A B n} in
+/-- `A`-linear maps out of the forms agree once they agree on every elementary form
+`c • dv₀ ∧ ⋯ ∧ dvₙ₋₁`. -/
+theorem forms_hom_ext {M : Type*} [AddCommGroup M] [Module A M] {f g : Forms A B n →ₗ[A] M}
+    (h : ∀ (c : B) (v : Fin n → B), f (elementary A c v) = g (elementary A c v)) : f = g :=
+  (LinearMap.cancel_right (symbolMap_surjective A B n)).1 <|
+    symbols_hom_ext fun c v => by simpa only [LinearMap.comp_apply, symbolMap_sym] using h c v
 
 end
 

@@ -134,21 +134,18 @@ theorem d_unique (f : Forms A B n →ₗ[A] Forms A B (n + 1))
     (hf : ∀ (c : B) (v : Fin n → B),
       f (elementary A c v) =
         ιMulti B (n + 1) (Fin.cons (D A B c) fun i => D A B (v i))) :
-    f = d A B n := by
-  refine (LinearMap.cancel_right (symbolMap_surjective A B n)).1 ?_
-  rw [d_comp_symbolMap]
-  exact symbols_hom_ext fun c v => by simpa using hf c v
+    f = d A B n :=
+  forms_hom_ext fun c v => by rw [hf, d_elementary]
 
 /-- **The de Rham differential squares to zero.** -/
 @[simp]
 theorem d_comp_d : d A B (n + 1) ∘ₗ d A B n = 0 := by
-  refine (LinearMap.cancel_right (symbolMap_surjective A B n)).1 ?_
-  refine symbols_hom_ext fun c v => ?_
+  refine forms_hom_ext fun c v => ?_
   have h : (ιMulti B (n + 1) (Fin.cons (D A B c) fun i => D A B (v i)) :
       Forms A B (n + 1)) = elementary A 1 (Fin.cons c v) := by
     rw [elementary_def, one_smul]
     exact congrArg _ (Fin.comp_cons (D A B) c v).symm
-  simp only [LinearMap.comp_apply, LinearMap.zero_apply, symbolMap_sym, d_elementary, h,
+  simp only [LinearMap.comp_apply, LinearMap.zero_apply, d_elementary, h,
     Derivation.map_one_eq_zero]
   exact AlternatingMap.map_coord_zero _ 0 (Fin.cons_zero _ _)
 
