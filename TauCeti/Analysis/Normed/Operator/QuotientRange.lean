@@ -29,6 +29,14 @@ regularity of operator inversion and requires completeness of `E × G` when inve
 assumed only at one parameter. `Continuous.quotientRangeCoordinate` needs no completeness when
 the family is invertible at every parameter.
 
+For a fixed submodule `V ≤ E` and complementary subspace `W ≤ F`, the restricted coproduct
+`T ↦ (T.domRestrict V).coprod W.subtypeL` is continuous in the operator norm
+(`ContinuousLinearMap.continuous_coprod_domRestrict`). When `V`, `W`, and `F` are complete, `V` is
+disjoint from `ker T₀`, and `W` is an algebraic complement of `T₀(V)`, Banach's open mapping
+theorem makes this coproduct invertible at `T₀`
+(`ContinuousLinearMap.isInvertible_coprod_domRestrict`) and hence on an operator-norm neighborhood
+of `T₀` (`ContinuousLinearMap.eventually_nhds_isInvertible_coprod_domRestrict`).
+
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
 the normal-bundle construction preceding Theorem 6.24.
 -/
@@ -93,3 +101,49 @@ theorem Continuous.quotientRangeCoordinate [TopologicalSpace X]
   have hg := (hA.continuousLinearMapCoprod continuous_const).clm_inverse h
   simpa only [ContinuousLinearMap.quotientRangeCoordinate_def] using
     (continuous_const (y := ContinuousLinearMap.snd 𝕜 E G)).clm_comp hg
+
+namespace ContinuousLinearMap
+
+/-! ### Continuity and stability of restricted coproducts -/
+
+/-- Restricting an operator to a fixed submodule `V` and taking the coproduct with the inclusion
+of `W` varies continuously in the operator norm. -/
+@[fun_prop]
+theorem continuous_coprod_domRestrict {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (V : Submodule 𝕜 E) (W : Submodule 𝕜 F) :
+    Continuous fun T : E →L[𝕜] F ↦ (T.domRestrict V).coprod W.subtypeL := by
+  simp only [domRestrict]
+  fun_prop
+
+section Banach
+
+variable [CompleteSpace F]
+
+/-- **Basepoint invertibility of a transverse restricted coproduct.** If `V` and `W` are complete,
+`W` is an algebraic complement of `V.map (T₀ : E →ₗ[𝕜] F)` in a Banach space `F`, and
+`Disjoint V T₀.ker`, then `(T₀.domRestrict V).coprod W.subtypeL : (V × W) →L[𝕜] F` is
+invertible. -/
+theorem isInvertible_coprod_domRestrict {T₀ : E →L[𝕜] F}
+    {V : Submodule 𝕜 E} {W : Submodule 𝕜 F} [CompleteSpace V] [CompleteSpace W]
+    (hW : IsCompl (V.map (T₀ : E →ₗ[𝕜] F)) W) (hdisj : Disjoint V T₀.ker) :
+    ((T₀.domRestrict V).coprod W.subtypeL).IsInvertible := by
+  refine ⟨(T₀.domRestrict V).coprodSubtypeLEquivOfIsCompl
+    (by simpa [LinearMap.range_domRestrict] using hW)
+    (by simpa [LinearMap.ker_domRestrict, Submodule.disjoint_iff_comap_eq_bot] using hdisj), ?_⟩
+  rw [coprodSubtypeLEquivOfIsCompl, ContinuousLinearEquiv.coe_ofBijective]
+
+/-- **Neighborhood invertibility of a transverse restricted coproduct.** Under the hypotheses of
+`isInvertible_coprod_domRestrict`, `(T.domRestrict V).coprod W.subtypeL` remains invertible for all
+`T` in an operator-norm neighborhood of `T₀`. -/
+theorem eventually_nhds_isInvertible_coprod_domRestrict {T₀ : E →L[𝕜] F}
+    {V : Submodule 𝕜 E} {W : Submodule 𝕜 F} [CompleteSpace V] [CompleteSpace W]
+    (hW : IsCompl (V.map (T₀ : E →ₗ[𝕜] F)) W) (hdisj : Disjoint V T₀.ker) :
+    ∀ᶠ T in 𝓝 T₀, ((T.domRestrict V).coprod W.subtypeL).IsInvertible :=
+  (continuous_coprod_domRestrict V W).tendsto T₀ |>.eventually
+    (isInvertible_coprod_domRestrict hW hdisj).eventually_nhds
+
+end Banach
+
+end ContinuousLinearMap

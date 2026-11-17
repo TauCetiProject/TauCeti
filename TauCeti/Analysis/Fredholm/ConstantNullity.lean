@@ -120,14 +120,14 @@ theorem IsFredholm.eventually_finrank_ker_le (hT₀ : IsFredholm (T x₀)) (hT :
   rw [LinearMap.index_eq_finrank_sub, LinearMap.index_eq_finrank_sub] at hindex
   omega
 
+omit [CompleteSpace F] in
 /-- Near a parameter where a family continuous there is Fredholm, the drops in nullity and in
 conullity from `x₀` are equal as natural numbers. -/
 theorem IsFredholm.eventually_finrank_ker_sub_eq (hT₀ : IsFredholm (T x₀))
     (hT : ContinuousAt T x₀) :
     ∀ᶠ x in 𝓝 x₀, finrank 𝕜 (T x₀).ker - finrank 𝕜 (T x).ker =
       finrank 𝕜 (F ⧸ (T x₀).range) - finrank 𝕜 (F ⧸ (T x).range) := by
-  filter_upwards [hT₀.eventually_finrank_ker_le hT,
-    hT.eventually hT₀.eventually_nhds_index_eq] with x hker hindex
+  filter_upwards [hT.eventually hT₀.eventually_nhds_index_eq] with x hindex
   rw [LinearMap.index_eq_finrank_sub, LinearMap.index_eq_finrank_sub] at hindex
   omega
 
