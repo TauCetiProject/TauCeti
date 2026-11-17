@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Regular
+public import Mathlib.MeasureTheory.Measure.Typeclasses.Probability
 
 import TauCeti.MeasureTheory.Measure.Comap
 
@@ -39,6 +40,10 @@ of `μ.comap (↑)`:
 * `MeasureTheory.Measure.comap_preimage_le`: `(μ.comap f) (f ⁻¹' v) ≤ μ v` for measurable `f`.
 * `MeasureTheory.Measure.comap_inclusion_comap_subtype_coe`: compatibility of `Measure.comap` along
   nested subtypes `s ⊆ t` with `t` measurable.
+* `MeasureTheory.Measure.map_comap_subtype_coe_eq_self`,
+  `MeasureTheory.Measure.map_subtype_coe_compl_eq_zero`, and
+  `MeasureTheory.Measure.isProbabilityMeasure_comap_subtype_coe`: pushing and pulling measures
+  concentrated on a measurable subtype `s`.
 * `MeasureTheory.Measure.instIsLocallyFiniteMeasureComapSubtype`,
   `MeasureTheory.Measure.instIsFiniteMeasureOnCompactsComapSubtype`: local finiteness and finiteness
   on compact sets for `μ.comap (Subtype.val)`.
@@ -80,6 +85,29 @@ theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) 
     (μ : Measure α) :
     (μ.comap ((↑) : t → α)).comap (Set.inclusion hst) = μ.comap ((↑) : s → α) :=
   (MeasurableEmbedding.subtype_coe ht).comap_comap (Set.inclusion hst) μ
+
+/-- Pushing the pullback of a measure concentrated on a measurable set `s` back along subtype
+inclusion recovers the ambient measure. -/
+theorem map_comap_subtype_coe_eq_self (μ : Measure α) {s : Set α} (hs : MeasurableSet s)
+    (hμ : μ sᶜ = 0) :
+    (μ.comap ((↑) : s → α)).map (↑) = μ := by
+  rw [map_comap_subtype_coe hs, restrict_eq_self_of_ae_mem (ae_iff.mpr hμ)]
+
+/-- The pushforward of a measure on a measurable subtype assigns measure zero to the complement of
+the subtype. -/
+theorem map_subtype_coe_compl_eq_zero {s : Set α} (ν : Measure s) (hs : MeasurableSet s) :
+    (ν.map ((↑) : s → α)) sᶜ = 0 := by
+  rw [Measure.map_apply measurable_subtype_coe hs.compl]
+  simp
+
+/-- Pulling a probability measure concentrated on a measurable set `s` back to the subtype `s`
+yields a probability measure. -/
+theorem isProbabilityMeasure_comap_subtype_coe (μ : Measure α) [IsProbabilityMeasure μ]
+    {s : Set α} (hs : MeasurableSet s) (hμ : μ sᶜ = 0) :
+    IsProbabilityMeasure (μ.comap ((↑) : s → α)) := by
+  have hae : ∀ᵐ x ∂μ, x ∈ range ((↑) : s → α) := by
+    simpa only [Subtype.range_coe] using (ae_iff.mpr hμ : ∀ᵐ x ∂μ, x ∈ s)
+  exact (MeasurableEmbedding.subtype_coe hs).isProbabilityMeasure_comap hae
 
 end Measurable
 

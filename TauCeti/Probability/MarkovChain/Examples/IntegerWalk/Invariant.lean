@@ -23,7 +23,7 @@ More generally, because every nearest-neighbor integer walk `integerWalk p` (`p 
 has no positive recurrent states (`TauCeti.Probability.integerWalk_not_isPositiveRecurrent`),
 every finite `(integerWalk p)`-invariant measure is zero
 (`ProbabilityTheory.Kernel.Invariant.eq_zero_of_integerWalk`) and no `integerWalk p` admits an
-invariant probability law (`TauCeti.Probability.not_integerWalk_invariant_of_isProbabilityMeasure`),
+invariant probability law (`TauCeti.Probability.integerWalk_not_invariant_of_isProbabilityMeasure`),
 for symmetric and biased parameters alike (including the deterministic endpoints `0` and `1`).
 
 See J. R. Norris, *Markov Chains* (1997), §§1.6–1.7.
@@ -69,7 +69,7 @@ end ProbabilityTheory.Kernel.Invariant
 namespace TauCeti.Probability
 
 /-- No nearest-neighbor integer walk admits an invariant probability measure. -/
-theorem not_integerWalk_invariant_of_isProbabilityMeasure (p : unitInterval) (μ : Measure ℤ)
+theorem integerWalk_not_invariant_of_isProbabilityMeasure (p : unitInterval) (μ : Measure ℤ)
     [IsProbabilityMeasure μ] :
     ¬ (integerWalk p).Invariant μ :=
   Kernel.not_invariant_of_forall_not_isPositiveRecurrent (integerWalk_not_isPositiveRecurrent p) μ

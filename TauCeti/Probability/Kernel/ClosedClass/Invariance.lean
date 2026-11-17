@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
 public import Mathlib.Probability.Kernel.Invariance
+import TauCeti.MeasureTheory.Measure.Subtype
 
 /-!
 # Invariant measures on closed state spaces
@@ -58,29 +59,12 @@ theorem invariant_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
   rw [← map_comp_subtype κ hs hclosed ν]
   exact (MeasurableEmbedding.subtype_coe hs).map_injective.eq_iff.symm
 
-private theorem map_comap_subtype_val_eq_self (hs : MeasurableSet s) {μ : Measure S}
-    (hμ : μ sᶜ = 0) :
-    (μ.comap (Subtype.val : s → S)).map Subtype.val = μ := by
-  rw [map_comap_subtype_coe hs, Measure.restrict_eq_self_of_ae_mem (ae_iff.mpr hμ)]
-
 /-- An ambient measure concentrated on a closed set is invariant if and only if its
 pullback to that set is invariant for the restricted kernel. -/
 theorem invariant_comap_subtype_iff (κ : Kernel S S) (hs : MeasurableSet s)
     (hclosed : κ.IsClosedSet s) (ν : Measure S) (hν : ν sᶜ = 0) :
     (κ.subtype hs).Invariant (ν.comap Subtype.val) ↔ κ.Invariant ν := by
-  rw [invariant_subtype_iff κ hs hclosed, map_comap_subtype_val_eq_self hs hν]
-
-private theorem map_subtype_val_compl_eq_zero (hs : MeasurableSet s) (ν : Measure s) :
-    ν.map Subtype.val sᶜ = 0 := by
-  rw [Measure.map_apply measurable_subtype_coe hs.compl]
-  simp
-
-private theorem isProbabilityMeasure_comap_subtype_val (hs : MeasurableSet s) {μ : Measure S}
-    [IsProbabilityMeasure μ] (hμ : μ sᶜ = 0) :
-    IsProbabilityMeasure (μ.comap (Subtype.val : s → S)) := by
-  have hae : ∀ᵐ x ∂μ, x ∈ range (Subtype.val : s → S) := by
-    simpa only [Subtype.range_coe] using (ae_iff.mpr hμ : ∀ᵐ x ∂μ, x ∈ s)
-  exact (MeasurableEmbedding.subtype_coe hs).isProbabilityMeasure_comap hae
+  rw [invariant_subtype_iff κ hs hclosed, ν.map_comap_subtype_coe_eq_self hs hν]
 
 /-- Pushforward and pullback along `Subtype.val` identify invariant probability measures of
 `κ.subtype hs` with ambient `κ`-invariant probability measures concentrated on `s`. -/
@@ -91,13 +75,13 @@ noncomputable def invariantProbabilitySubtypeEquiv (κ : Kernel S S) (hs : Measu
   toFun := fun ⟨ν, hprob, hinv⟩ =>
     letI := hprob
     ⟨ν.map Subtype.val, inferInstance,
-      (invariant_subtype_iff κ hs hclosed ν).1 hinv, map_subtype_val_compl_eq_zero hs ν⟩
+      (invariant_subtype_iff κ hs hclosed ν).1 hinv, ν.map_subtype_coe_compl_eq_zero hs⟩
   invFun := fun ⟨μ, hprob, hinv, hμ⟩ =>
     letI := hprob
-    ⟨μ.comap Subtype.val, isProbabilityMeasure_comap_subtype_val hs hμ,
+    ⟨μ.comap Subtype.val, μ.isProbabilityMeasure_comap_subtype_coe hs hμ,
       (invariant_comap_subtype_iff κ hs hclosed μ hμ).2 hinv⟩
   left_inv := fun ⟨ν, _, _⟩ => Subtype.ext ((MeasurableEmbedding.subtype_coe hs).comap_map ν)
-  right_inv := fun ⟨_, _, _, hμ⟩ => Subtype.ext (map_comap_subtype_val_eq_self hs hμ)
+  right_inv := fun ⟨μ, _, _, hμ⟩ => Subtype.ext (μ.map_comap_subtype_coe_eq_self hs hμ)
 
 /-- A closed-state restriction has an invariant probability exactly when the ambient kernel
 has an invariant probability concentrated on those states. This includes the empty set:

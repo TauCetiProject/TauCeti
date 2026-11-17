@@ -5,16 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Probability.Process.HittingTime
+import Mathlib.Dynamics.PeriodicPts.Lemmas
 
 /-!
-# Composition identities for hitting times
+# Composition and deterministic-orbit identities for hitting times
 
 Postcomposing a process `u` with a map `f` pulls back the target set in `MeasureTheory.hittingAfter`
 along `f`, and precomposing the sample space pulls back `MeasureTheory.hittingAfter` along the
 sample-space map. In particular, applying an injective map (such as `Subtype.val`) to the state
 space preserves the hitting time of a singleton. No measurability, topology, or linear order is
-required.
+required. For a deterministic orbit `n ↦ f^[n] x`, the first positive return time to `x` equals
+`Function.minimalPeriod f x` on `Function.periodicPts f` and `⊤` off it.
 
 ## Main statements
 
@@ -27,11 +30,15 @@ required.
 * `MeasureTheory.hittingAfter_eval_comp` and
   `MeasureTheory.hittingAfter_eval_subtype_coe_singleton`: specialization to the coordinate process
   on trajectories.
+* `MeasureTheory.hittingAfter_iterate_singleton`: first positive return time along a deterministic
+  orbit.
 -/
 
 public section
 
 namespace MeasureTheory
+
+section Composition
 
 variable {ι Ω Ω' α β : Type*} [Preorder ι] [InfSet ι]
 
@@ -74,7 +81,35 @@ theorem hittingAfter_eval_comp (f : α → β) (t : Set β) (n : ι) (ω : ι �
 singleton hitting times. -/
 theorem hittingAfter_eval_subtype_coe_singleton {s : Set α} (x : s) (n : ι) (ω : ι → s) :
     hittingAfter (fun i (w : ι → α) => w i) {x.val} n (fun i => (ω i).val) =
-      hittingAfter (fun i w => w i) {x} n ω := by
-  rw [hittingAfter_eval_comp, ← Set.image_singleton, Subtype.coe_injective.preimage_image]
+      hittingAfter (fun i w => w i) {x} n ω :=
+  (congrFun (hittingAfter_comp_right (fun i (w : ι → α) => w i)
+    (fun (w : ι → s) i => (w i).val) {x.val} n) ω).symm.trans
+    (congrFun (hittingAfter_subtype_coe_singleton (fun i (w : ι → s) => w i) x n) ω)
+
+end Composition
+
+section Iterate
+
+open scoped Classical in
+/-- The first positive return time of a deterministic orbit `n ↦ f^[n] x` to its starting point
+`x` is `Function.minimalPeriod f x` when `x` is periodic under `f`, and `⊤` otherwise. -/
+theorem hittingAfter_iterate_singleton {α : Type*} (f : α → α) (x : α) :
+    hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 (fun n => f^[n] x) =
+      if x ∈ Function.periodicPts f then WithTop.some (Function.minimalPeriod f x) else ⊤ := by
+  have hex : (∃ j : ℕ, 1 ≤ j ∧ f^[j] x ∈ ({x} : Set α)) ↔ x ∈ Function.periodicPts f := by
+    rw [Function.mem_periodicPts]
+    exact ⟨fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩, fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩⟩
+  have hset : {i : ℕ | 1 ≤ i ∧ f^[i] x ∈ ({x} : Set α)} =
+      {n : ℕ | 0 < n ∧ Function.IsPeriodicPt f n x} := by
+    ext i
+    simp [Nat.pos_iff_ne_zero, Nat.one_le_iff_ne_zero, Function.IsPeriodicPt, Function.IsFixedPt]
+  rw [hittingAfter_def]
+  dsimp only
+  by_cases hx : x ∈ Function.periodicPts f
+  · rw [ite_eq_left (hex.mpr hx), ite_eq_left hx, hset,
+      ← Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
+  · rw [ite_eq_right (mt hex.mp hx), ite_eq_right hx]
+
+end Iterate
 
 end MeasureTheory

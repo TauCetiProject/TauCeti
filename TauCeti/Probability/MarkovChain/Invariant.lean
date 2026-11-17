@@ -9,6 +9,7 @@ public import Mathlib.Dynamics.PeriodicPts.Lemmas
 public import TauCeti.Probability.MarkovChain.Recurrence
 import TauCeti.MeasureTheory.Measure.GiryMonad
 import TauCeti.Probability.Kernel.Invariance
+import TauCeti.Probability.Process.HittingTime.Basic
 
 /-!
 # Positive recurrence, cycle occupation measures, and Kac's theorem
@@ -127,12 +128,6 @@ theorem IsPositiveRecurrent.meanReturnTime_ne_top {κ : Kernel α α} [IsMarkovK
 theorem IsPositiveRecurrent.isRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
     (hx : κ.IsPositiveRecurrent x) : κ.IsRecurrent x :=
   isRecurrent_of_meanReturnTime_ne_top hx.meanReturnTime_ne_top
-
-/-- Started at a positive recurrent state `x`, the chain returns to `x` almost surely. -/
-theorem IsPositiveRecurrent.ae_hittingAfter_ne_top [MeasurableSingletonClass α]
-    {κ : Kernel α α} [IsMarkovKernel κ] {x : α} (hx : κ.IsPositiveRecurrent x) :
-    ∀ᵐ w ∂markovChainLaw (Measure.dirac x) κ, hittingAfter (fun n w => w n) {x} 1 w ≠ ⊤ :=
-  hx.isRecurrent.ae_hittingAfter_one_ne_top
 
 /-- A positive recurrent state is not transient. -/
 theorem IsPositiveRecurrent.not_isTransient {κ : Kernel α α} [IsMarkovKernel κ] {x : α}
@@ -259,8 +254,13 @@ theorem meanReturnTime_le_cycleOccupation_univ (κ : Kernel α α) [IsMarkovKern
   refine tsum_congr fun n => ?_
   rw [Measure.map_apply (measurable_pi_apply n) MeasurableSet.univ, Set.preimage_univ,
     Measure.restrict_apply_univ]
-  -- `ENat` (`ℕ∞`) is semireducibly `WithTop ℕ`, so the `Nat.cast` superlevel sets are defeq.
-  rfl
+  refine congrArg (markovChainLaw (Measure.dirac x) κ) (Set.ext fun w => ?_)
+  simp only [Set.mem_ofPred_eq]
+  rw [← WithTop.coe_natCast (α := ℕ) n, Nat.cast_id]
+  cases hittingAfter (fun k w => w k) {x} 1 w with
+  | top => exact iff_of_true (ENat.natCast_lt_top n) (WithTop.coe_lt_top n)
+  | coe m => exact (congrArg ((n : ℕ∞) < ·) (congrFun ENat.some_eq_natCast m) ▸
+      ENat.natCast_lt_natCast).trans WithTop.coe_lt_coe.symm
 
 /-- At any state that is not positive recurrent, the cycle occupation measure has infinite total
 mass, even without measurable singletons. -/
@@ -859,25 +859,6 @@ theorem const_dirac_eq_deterministic (a : α) :
   ext1 _
   simp [deterministic_apply]
 
-omit [MeasurableSpace α] in
-open scoped Classical in
-private theorem hittingAfter_iterate_singleton_self (f : α → α) (x : α) :
-    hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 (fun n => f^[n] x) =
-      if x ∈ Function.periodicPts f then WithTop.some (Function.minimalPeriod f x) else ⊤ := by
-  have hex : (∃ j : ℕ, 1 ≤ j ∧ f^[j] x ∈ ({x} : Set α)) ↔ x ∈ Function.periodicPts f := by
-    rw [Function.mem_periodicPts]
-    exact ⟨fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩, fun ⟨j, hj, hx⟩ => ⟨j, hj, hx⟩⟩
-  have hset : {i : ℕ | 1 ≤ i ∧ f^[i] x ∈ ({x} : Set α)} =
-      {n : ℕ | 0 < n ∧ Function.IsPeriodicPt f n x} := by
-    ext i
-    simp [Nat.pos_iff_ne_zero, Nat.one_le_iff_ne_zero, Function.IsPeriodicPt, Function.IsFixedPt]
-  rw [hittingAfter_def]
-  dsimp only
-  by_cases hx : x ∈ Function.periodicPts f
-  · rw [ite_eq_left (hex.mpr hx), ite_eq_left hx, hset,
-      ← Function.minimalPeriod_eq_sInf_n_pos_IsPeriodicPt]
-  · rw [ite_eq_right (mt hex.mp hx), ite_eq_right hx]
-
 variable [MeasurableSingletonClass α]
 
 open scoped Classical in
@@ -894,7 +875,7 @@ theorem meanReturnTime_deterministic {f : α → α} (hf : Measurable f) (x : α
       ENat.toENNReal (hittingAfter (fun (n : ℕ) (w : ℕ → α) => w n) {x} 1 w) :=
     Measurable.of_discrete.comp hτ
   rw [meanReturnTime_def, markovChainLaw_dirac_deterministic, lintegral_dirac' _ hm,
-    hittingAfter_iterate_singleton_self]
+    hittingAfter_iterate_singleton]
   split_ifs
   · exact ENat.toENNReal_coe _
   · exact ENat.toENNReal_top
@@ -917,7 +898,7 @@ theorem isRecurrent_deterministic {f : α → α} (hf : Measurable f) (x : α) :
     measurableSet_hittingAfter_coord_ne_top (measurableSet_singleton x) 1
   rw [isRecurrent_iff, markovChainLaw_dirac_deterministic, Measure.dirac_apply' _ hE]
   by_cases hx : x ∈ Function.periodicPts f <;>
-    simp [Set.indicator, hittingAfter_iterate_singleton_self, hx]
+    simp [Set.indicator, hittingAfter_iterate_singleton, hx]
 
 /-- Under `deterministic f hf`, `x` is transient if and only if `x` is not a periodic point of
 `f`. -/

@@ -171,13 +171,13 @@ theorem cycleKernel_tendsto_tvDist_uniformOn_iff (x : Fin n) :
   (cycleKernel_isPositiveRecurrent n x).isRecurrent
 
 /-- No state of the finite cycle is transient. -/
-@[simp] theorem not_cycleKernel_isTransient (x : Fin n) :
+@[simp] theorem cycleKernel_not_isTransient (x : Fin n) :
     ¬ (cycleKernel n).IsTransient x :=
   (cycleKernel_isPositiveRecurrent n x).not_isTransient
 
 -- `Kernel.not_isNullRecurrent_of_finite` already supplies the `simp` lemma on `Fin n`.
 /-- No state of the finite cycle is null recurrent. -/
-theorem not_cycleKernel_isNullRecurrent (x : Fin n) :
+theorem cycleKernel_not_isNullRecurrent (x : Fin n) :
     ¬ (cycleKernel n).IsNullRecurrent x :=
   Kernel.not_isNullRecurrent_of_finite
 

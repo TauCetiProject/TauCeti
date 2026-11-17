@@ -118,20 +118,6 @@ section PeriodDecay
 
 variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
 
-private theorem period_pos_of_isRecurrent {κ : Kernel α α} [IsMarkovKernel κ] {y : α}
-    (hy : κ.IsRecurrent y) :
-    0 < κ.period y := by
-  refine Nat.pos_of_ne_zero fun h0 => ?_
-  have hempty := period_eq_zero_iff.mp h0
-  have hzero (n : ℕ) : (κ ^ (n + 1)) y {y} = 0 :=
-    nonpos_iff_eq_zero.mp (not_lt.mp fun hpos =>
-      Set.eq_empty_iff_forall_notMem.mp hempty (n + 1)
-        (mem_returnLengths.mpr ⟨Nat.succ_pos n, hpos⟩))
-  have hsum : ∑' n : ℕ, (κ ^ n) y {y} = 1 := by
-    rw [tsum_eq_zero_add' CompleteLattice.summable]
-    simp [hzero, one_def, id_apply]
-  exact ENNReal.one_ne_top (hsum.symm.trans (isRecurrent_iff_tsum_eq_top.mp hy))
-
 omit [MeasurableSingletonClass α] in
 private theorem cesaro_pow_mul_le (κ : Kernel α α) {d : ℕ} (hd : 0 < d) (y : α) (k : ℕ) :
     (∑ j ∈ Finset.range k, (((κ ^ d) ^ (j + 1)) y).real {y}) / k ≤
@@ -172,7 +158,7 @@ theorem IsNullRecurrent.pow_period [Countable α] {κ : Kernel α α} [IsMarkovK
   -- Positive return probabilities occur only at multiples of `κ.period y`, while Cesàro return
   -- averages of `κ ^ κ.period y` are bounded by `κ.period y` times those of `κ`.
   set d := κ.period y
-  have hd : 0 < d := period_pos_of_isRecurrent hy.isRecurrent
+  have hd : 0 < d := hy.isRecurrent.period_pos
   have hrec : (κ ^ d).IsRecurrent y := by
     rw [isRecurrent_iff_tsum_eq_top]
     simp_rw [← pow_mul]
@@ -268,10 +254,8 @@ private theorem tendsto_pow_period_mul_comp_real_singleton_of_isNullRecurrent
   set s := η.communicatingClass y
   have hs : MeasurableSet s := η.measurableSet_communicatingClass y
   have hclosed : η.IsClosedSet s := hη.isRecurrent.isClosedSet_communicatingClass
-  have : IsMarkovKernel (η.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
-  have : IsIrreducible Measure.count (η.subtype hs) :=
-    hclosed.isIrreducible_subtype_communicatingClass hs
-  let y_s : s := ⟨y, (mem_communicatingClass_iff y y).mpr (Communicates.refl y)⟩
+  have ⟨_, _⟩ := hclosed.isMarkovKernel_and_isIrreducible_subtype_communicatingClass hs
+  let y_s : s := ⟨y, mem_communicatingClass_self y⟩
   have haper : (η.subtype hs).IsAperiodic := by
     rw [isAperiodic_iff_period_eq_one y_s, period_subtype hs hclosed]
     exact period_pow_period κ y
@@ -306,7 +290,7 @@ theorem IsNullRecurrent.tendsto_pow_comp_real_singleton {κ : Kernel α α} [IsM
     (ν : Measure α) [IsFiniteMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
   set d := κ.period y
-  have hd : 0 < d := period_pos_of_isRecurrent hy.isRecurrent
+  have hd : 0 < d := hy.isRecurrent.period_pos
   have hres (r : ℕ) : Tendsto (fun q : ℕ => ((κ ^ (d * q + r)) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
     have hcomp (q : ℕ) :
         (κ ^ (d * q + r)) ∘ₘ ν = (κ ^ (d * q)) ∘ₘ ((κ ^ r : Kernel α α) ∘ₘ ν) := by
@@ -372,17 +356,5 @@ theorem tendsto_measureReal_apply_eq_of_not_isPositiveRecurrent
     (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
   simp_rw [heq]
   exact κ.tendsto_pow_comp_real_singleton_of_not_isPositiveRecurrent hy ν
-
-/-- On any realization of a counting-measure-irreducible chain (periodic or aperiodic) started from
-a finite initial law, the time-`n` measure of occupying a null recurrent state tends to zero. -/
-theorem tendsto_measureReal_apply_eq_of_isNullRecurrent
-    {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
-    [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
-    [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsFiniteMeasure ν]
-    {P : Measure Ω} {X : ℕ → Ω → α}
-    (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
-    {y : α} (hy : κ.IsNullRecurrent y) :
-    Tendsto (fun n : ℕ => P.real {ω | X n ω = y}) atTop (𝓝 0) :=
-  hX.tendsto_measureReal_apply_eq_of_not_isPositiveRecurrent hy.not_isPositiveRecurrent
 
 end ProbabilityTheory.HasLaw

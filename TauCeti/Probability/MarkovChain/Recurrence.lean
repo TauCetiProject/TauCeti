@@ -7,14 +7,16 @@ module
 
 public import TauCeti.Probability.MarkovChain.Visits
 public import TauCeti.Probability.Kernel.ClosedClass.Basic
+public import TauCeti.Probability.MarkovChain.Period
 
 /-!
 # Recurrence and communicating classes
 
 A state of a Markov kernel is recurrent if the chain started there returns at a positive
 time almost surely, and transient otherwise. Recurrence is equivalent to divergence of
-the diagonal Green function, and is constant on communicating classes. The mean return
-time is the extended nonnegative expectation of the first return time; it is at least one,
+the diagonal Green function, is constant on communicating classes, and implies strictly positive
+period (`ProbabilityTheory.Kernel.IsRecurrent.period_pos`) without measurable singletons. The mean
+return time is the extended nonnegative expectation of the first return time; it is at least one,
 equals the sum of the pre-return tail probabilities when singletons are measurable, and is
 infinite at a transient state.
 
@@ -150,6 +152,33 @@ theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) : κ.meanRetur
         exact (ENat.toENNReal_eq_top.mpr hωA).ge
       · rw [Set.indicator_of_notMem hω]
         exact zero_le
+
+/-- A recurrent state has strictly positive period. No measurable-singleton assumption is
+required. -/
+theorem IsRecurrent.period_pos (hx : κ.IsRecurrent x) : 0 < κ.period x := by
+  refine Nat.pos_of_ne_zero fun h0 => ?_
+  have hempty := period_eq_zero_iff.mp h0
+  have hzero (n : ℕ) : (κ ^ (n + 1)) x {x} = 0 :=
+    nonpos_iff_eq_zero.mp (not_lt.mp fun hpos =>
+      Set.eq_empty_iff_forall_notMem.mp hempty (n + 1)
+        (mem_returnLengths.mpr ⟨Nat.succ_pos n, hpos⟩))
+  have hsub : {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} ⊆
+      ⋃ n : ℕ, (fun ω : ℕ → S => ω (n + 1)) ⁻¹' {x} := fun ω hω => by
+    simp only [Set.mem_ofPred_eq, ne_eq, hittingAfter_eq_top_iff, Set.mem_singleton_iff,
+      not_forall, not_not] at hω
+    obtain ⟨k, hk, hkx⟩ := hω
+    exact Set.mem_iUnion.mpr ⟨k - 1, by simpa [Nat.sub_add_cancel hk] using hkx⟩
+  have hnull : markovChainLaw (Measure.dirac x) κ
+      (⋃ n : ℕ, (fun ω : ℕ → S => ω (n + 1)) ⁻¹' {x}) = 0 := by
+    refine measure_iUnion_null fun n => nonpos_iff_eq_zero.mp ?_
+    calc
+      markovChainLaw (Measure.dirac x) κ ((fun ω : ℕ → S => ω (n + 1)) ⁻¹' {x})
+        ≤ ((markovChainLaw (Measure.dirac x) κ).map (fun ω => ω (n + 1))) {x} :=
+          Measure.le_map_apply (measurable_pi_apply (X := fun _ : ℕ => S) (n + 1)).aemeasurable {x}
+      _ = (κ ^ (n + 1)) x {x} := by
+          rw [Measure.markovChainLaw_map_eval, Measure.dirac_bind (κ ^ (n + 1)).measurable]
+      _ = 0 := hzero n
+  exact one_ne_zero ((isRecurrent_iff.mp hx).symm.trans (measure_mono_null hsub hnull))
 
 variable [MeasurableSingletonClass S]
 

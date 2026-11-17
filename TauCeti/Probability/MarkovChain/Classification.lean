@@ -30,15 +30,18 @@ classes, giving the global trichotomy of counting-measure-irreducible chains: ei
 transient, all states are positive recurrent, or all states are null recurrent.
 
 At a null recurrent state `x`, the cycle occupation measure `κ.cycleOccupation x` has infinite total
-mass (`IsNullRecurrent.cycleOccupation_univ`), every finite `κ`-invariant measure assigns mass zero
-to `{x}`, and on a counting-measure-irreducible chain every finite `κ`-invariant measure vanishes
-and no invariant probability measure exists.
+mass (`IsNullRecurrent.cycleOccupation_univ`) and fails to be finite
+(`IsNullRecurrent.not_isFiniteMeasure_cycleOccupation`), while the invariant-measure vanishing
+theorems for non-positive-recurrent states in `TauCeti.Probability.MarkovChain.Invariant` apply via
+`IsNullRecurrent.not_isPositiveRecurrent`.
 
 On countable state spaces with measurable singletons, the occupation strong law characterizes
 positive and null recurrence via long-run visit frequencies: positive recurrence is equivalent to a
 strictly positive expected (or almost-sure) limiting visit fraction starting from the state, while
 null recurrence is equivalent to recurrence with vanishing expected (or almost-sure) limiting visit
-fraction.
+fraction. From any initial law `ν`, visit fractions at non-positive-recurrent states tend to zero
+almost surely (and in expectation for finite `ν`), both on the canonical path space and on
+arbitrary `HasLaw` realizations.
 
 Finally, restricting to a finite closed communicating class transfers finite irreducible positive
 recurrence to arbitrary ambient state spaces with measurable singletons: every state in a finite
@@ -69,8 +72,8 @@ remains in the closed communicating class of a positive recurrent state.
   `Kernel.isNullRecurrent_iff_isRecurrent_and_tendsto_integral_visitCount_div_zero`, and
   `Kernel.isNullRecurrent_iff_isRecurrent_and_ae_tendsto_visitCount_div_zero`:
   expected and almost-sure occupation-frequency characterizations of positive and null recurrence.
-* `Kernel.isPositiveRecurrent_of_finite_communicatingClass`,
-  `Kernel.IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass`,
+* `Kernel.IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass`,
+  `Kernel.IsClosedSet.existsUnique_invariant_probability_communicatingClass_of_isPositiveRecurrent`,
   `Kernel.IsClosedSet.existsUnique_invariant_probability_of_finite_communicatingClass`,
   `Kernel.IsRecurrent.isPositiveRecurrent_of_finite_communicatingClass`,
   `Kernel.isRecurrent_iff_isPositiveRecurrent_of_finite`, and
@@ -312,26 +315,6 @@ theorem forall_isTransient_or_forall_isPositiveRecurrent_or_forall_isNullRecurre
     · exact Or.inr (Or.inl fun x => (isPositiveRecurrent_iff_isPositiveRecurrent x₀ x).mp hp)
     · exact Or.inr (Or.inr fun x => (isNullRecurrent_iff_isNullRecurrent x₀ x).mp hn)
 
-/-- Every finite `κ`-invariant measure assigns mass zero to any null recurrent state. -/
-theorem Invariant.apply_singleton_eq_zero_of_isNullRecurrent {μ : Measure S} [IsFiniteMeasure μ]
-    (hμ : κ.Invariant μ) (hx : κ.IsNullRecurrent x) :
-    μ {x} = 0 :=
-  hμ.apply_singleton_eq_zero_of_not_isPositiveRecurrent hx.not_isPositiveRecurrent
-
-/-- On a counting-measure-irreducible chain with a null recurrent state, every finite `κ`-invariant
-measure vanishes. -/
-theorem Invariant.eq_zero_of_isNullRecurrent [IsIrreducible Measure.count κ] {μ : Measure S}
-    [IsFiniteMeasure μ] (hμ : κ.Invariant μ) (hx : κ.IsNullRecurrent x) :
-    μ = 0 :=
-  hμ.eq_zero_of_not_isPositiveRecurrent hx.not_isPositiveRecurrent
-
-/-- A counting-measure-irreducible chain with a null recurrent state admits no invariant
-probability measure. -/
-theorem IsNullRecurrent.not_invariant_of_isProbabilityMeasure [IsIrreducible Measure.count κ]
-    (hx : κ.IsNullRecurrent x) (π : Measure S) [IsProbabilityMeasure π] :
-    ¬ κ.Invariant π :=
-  not_invariant_of_not_isPositiveRecurrent hx.not_isPositiveRecurrent π
-
 end MeasurableSingleton
 
 /-! ### Countable state spaces: occupation-frequency characterizations -/
@@ -411,33 +394,20 @@ theorem IsClosedSet.isPositiveRecurrent_of_finite_communicatingClass
     κ.IsPositiveRecurrent y := by
   have hs : MeasurableSet (κ.communicatingClass x) := hfin.measurableSet
   have : Finite (κ.communicatingClass x) := hfin.to_subtype
-  have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
-  have : IsIrreducible Measure.count (κ.subtype hs) :=
-    hclosed.isIrreducible_subtype_communicatingClass hs
+  have ⟨_, _⟩ := hclosed.isMarkovKernel_and_isIrreducible_subtype_communicatingClass hs
   exact (isPositiveRecurrent_subtype_iff hs ⟨y, hy⟩).mp
     ((κ.subtype hs).isPositiveRecurrent_of_finite ⟨y, hy⟩)
-
-/-- Every state in a finite closed communicating class is positive recurrent.
-Only the class, not the ambient state space, must be finite. -/
-theorem isPositiveRecurrent_of_finite_communicatingClass
-    (hfinite : (κ.communicatingClass x).Finite)
-    (hclosed : κ.IsClosedSet (κ.communicatingClass x)) : κ.IsPositiveRecurrent x :=
-  hclosed.isPositiveRecurrent_of_finite_communicatingClass hfinite
-    ((mem_communicatingClass_iff x x).mpr (Communicates.refl x))
 
 /-- **Existence and uniqueness of the stationary law on a positive recurrent closed communicating
 class.** If `κ.communicatingClass x` is measurable and closed and `x` is positive recurrent, then
 `κ` admits a unique invariant probability measure concentrated on `κ.communicatingClass x`. -/
-theorem IsClosedSet.existsUnique_invariant_probability_communicatingClass
+theorem IsClosedSet.existsUnique_invariant_probability_communicatingClass_of_isPositiveRecurrent
     (hclosed : κ.IsClosedSet (κ.communicatingClass x))
     (hs : MeasurableSet (κ.communicatingClass x)) (hx : κ.IsPositiveRecurrent x) :
     ∃! π : Measure S,
       IsProbabilityMeasure π ∧ κ.Invariant π ∧ π (κ.communicatingClass x)ᶜ = 0 := by
-  have : IsMarkovKernel (κ.subtype hs) := (isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed
-  have : IsIrreducible Measure.count (κ.subtype hs) :=
-    hclosed.isIrreducible_subtype_communicatingClass hs
-  let x_s : κ.communicatingClass x :=
-    ⟨x, (mem_communicatingClass_iff x x).mpr (Communicates.refl x)⟩
+  have ⟨_, _⟩ := hclosed.isMarkovKernel_and_isIrreducible_subtype_communicatingClass hs
+  let x_s : κ.communicatingClass x := ⟨x, mem_communicatingClass_self x⟩
   have hx_s : (κ.subtype hs).IsPositiveRecurrent x_s :=
     (isPositiveRecurrent_subtype_iff hs x_s).mpr hx
   exact (existsUnique_invariant_probability_subtype_iff κ hs hclosed).mp
@@ -451,15 +421,17 @@ theorem IsClosedSet.existsUnique_invariant_probability_of_finite_communicatingCl
     (hfin : (κ.communicatingClass x).Finite) :
     ∃! π : Measure S,
       IsProbabilityMeasure π ∧ κ.Invariant π ∧ π (κ.communicatingClass x)ᶜ = 0 :=
-  hclosed.existsUnique_invariant_probability_communicatingClass hfin.measurableSet
-    (Kernel.isPositiveRecurrent_of_finite_communicatingClass hfin hclosed)
+  hclosed.existsUnique_invariant_probability_communicatingClass_of_isPositiveRecurrent
+    hfin.measurableSet
+    (hclosed.isPositiveRecurrent_of_finite_communicatingClass hfin (mem_communicatingClass_self x))
 
 /-- On a countable state space, a recurrent state with a finite communicating class
 is positive recurrent. -/
 theorem IsRecurrent.isPositiveRecurrent_of_finite_communicatingClass [Countable S]
     (hx : κ.IsRecurrent x) (hfinite : (κ.communicatingClass x).Finite) :
     κ.IsPositiveRecurrent x :=
-  Kernel.isPositiveRecurrent_of_finite_communicatingClass hfinite hx.isClosedSet_communicatingClass
+  hx.isClosedSet_communicatingClass.isPositiveRecurrent_of_finite_communicatingClass
+    hfinite (mem_communicatingClass_self x)
 
 /-- On a countable state space, a null recurrent state has an infinite communicating class. -/
 theorem IsNullRecurrent.infinite_communicatingClass [Countable S] (hx : κ.IsNullRecurrent x) :
@@ -493,7 +465,8 @@ theorem ae_exists_isPositiveRecurrent_and_forall_mem_communicatingClass [Finite 
       κ.IsPositiveRecurrent (w n) ∧ κ.IsClosedSet (κ.communicatingClass (w n)) ∧
         ∀ m, n ≤ m → w m ∈ κ.communicatingClass (w n) := by
   filter_upwards [κ.ae_exists_forall_mem_isClosedSet_communicatingClass ν] with w ⟨n, hclosed, hm⟩
-  exact ⟨n, isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _) hclosed, hclosed, hm⟩
+  exact ⟨n, hclosed.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _)
+    (mem_communicatingClass_self _), hclosed, hm⟩
 
 end FiniteClass
 
@@ -524,28 +497,6 @@ theorem tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent [IsFinit
 
 end MeasureTheory.Measure
 
-namespace ProbabilityTheory.Kernel
-
-variable {S : Type*} [MeasurableSpace S] [MeasurableSingletonClass S] [Countable S]
-  {κ : Kernel S S} [IsMarkovKernel κ] {y : S}
-
-/-- From any initial measure `ν`, the positive-time visit fraction at a null recurrent state tends
-to zero almost surely, even though the state may be visited infinitely often. -/
-theorem IsNullRecurrent.ae_tendsto_visitCount_div_zero (hy : κ.IsNullRecurrent y) (ν : Measure S) :
-    ∀ᵐ ω ∂markovChainLaw ν κ,
-      Tendsto (fun n : ℕ => (visitCount (fun k => ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) :=
-  ν.ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent κ hy.not_isPositiveRecurrent
-
-/-- From any finite initial measure `ν`, the expected positive-time visit fraction at a null
-recurrent state tends to zero. -/
-theorem IsNullRecurrent.tendsto_integral_visitCount_div_zero (hy : κ.IsNullRecurrent y)
-    (ν : Measure S) [IsFiniteMeasure ν] :
-    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => ω (k + 1)) y n : ℝ) / n
-        ∂markovChainLaw ν κ) atTop (𝓝 0) :=
-  ν.tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent κ hy.not_isPositiveRecurrent
-
-end ProbabilityTheory.Kernel
-
 namespace ProbabilityTheory.HasLaw
 
 section Occupation
@@ -560,17 +511,8 @@ theorem ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent
     (hX : HasLaw X (markovChainLaw ν κ) P) (hy : ¬ κ.IsPositiveRecurrent y) :
     ∀ᵐ ω ∂P,
       Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) := by
-  have h := ν.ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent κ hy
-  rw [← hX.map_eq] at h
-  exact ae_of_ae_map hX.aemeasurable h
-
-/-- On any realization of a Markov chain from any initial law `ν`, the positive-time visit fraction
-at a null recurrent state tends to zero almost surely. -/
-theorem ae_tendsto_visitCount_div_zero_of_isNullRecurrent
-    (hX : HasLaw X (markovChainLaw ν κ) P) (hy : κ.IsNullRecurrent y) :
-    ∀ᵐ ω ∂P,
-      Tendsto (fun n : ℕ => (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n) atTop (𝓝 0) :=
-  hX.ae_tendsto_visitCount_div_zero_of_not_isPositiveRecurrent hy.not_isPositiveRecurrent
+  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
+  simpa only [h0, ite_self] using hX.ae_tendsto_visitCount_div_markovChainLaw y
 
 /-- On any realization of a Markov chain from a finite initial law `ν`, the expected positive-time
 visit fraction at a non-positive-recurrent state tends to zero. -/
@@ -578,25 +520,8 @@ theorem tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent [IsFinit
     (hX : HasLaw X (markovChainLaw ν κ) P) (hy : ¬ κ.IsPositiveRecurrent y) :
     Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P)
       atTop (𝓝 0) := by
-  have hm (n : ℕ) : Measurable (fun x : ℕ → S =>
-      (visitCount (fun k => x (k + 1)) y n : ℝ) / n) :=
-    ((measurable_of_countable (fun k : ℕ => (k : ℝ))).comp
-      (measurable_visitCount_comp y n (measurableSet_singleton y)
-        (fun i _ => measurable_pi_apply (i + 1)))).div_const n
-  have heq (n : ℕ) :
-      (∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P) =
-        ∫ x, (visitCount (fun k => x (k + 1)) y n : ℝ) / n ∂markovChainLaw ν κ := by
-    rw [← hX.map_eq, integral_map hX.aemeasurable (hm n).aestronglyMeasurable]
-  simp_rw [heq]
-  exact ν.tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent κ hy
-
-/-- On any realization of a Markov chain from a finite initial law `ν`, the expected positive-time
-visit fraction at a null recurrent state tends to zero. -/
-theorem tendsto_integral_visitCount_div_zero_of_isNullRecurrent [IsFiniteMeasure ν]
-    (hX : HasLaw X (markovChainLaw ν κ) P) (hy : κ.IsNullRecurrent y) :
-    Tendsto (fun n : ℕ => ∫ ω, (visitCount (fun k => X ω (k + 1)) y n : ℝ) / n ∂P)
-      atTop (𝓝 0) :=
-  hX.tendsto_integral_visitCount_div_zero_of_not_isPositiveRecurrent hy.not_isPositiveRecurrent
+  have h0 : (κ.meanReturnTime y)⁻¹.toReal = 0 := Kernel.inv_meanReturnTime_toReal_eq_zero_iff.mpr hy
+  simpa only [h0, mul_zero] using hX.tendsto_integral_visitCount_div_markovChainLaw y
 
 end Occupation
 
@@ -614,8 +539,8 @@ theorem ae_exists_isPositiveRecurrent_and_forall_mem_communicatingClass
       κ.IsPositiveRecurrent (X n ω) ∧ κ.IsClosedSet (κ.communicatingClass (X n ω)) ∧
         ∀ m, n ≤ m → X m ω ∈ κ.communicatingClass (X n ω) := by
   filter_upwards [h.ae_exists_forall_mem_isClosedSet_communicatingClass] with ω ⟨n, hclosed, hm⟩
-  exact ⟨n, Kernel.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _) hclosed,
-    hclosed, hm⟩
+  exact ⟨n, hclosed.isPositiveRecurrent_of_finite_communicatingClass (Set.toFinite _)
+    (Kernel.mem_communicatingClass_self _), hclosed, hm⟩
 
 end Finite
 

@@ -197,11 +197,20 @@ theorem isIrreducible_subtype_iff (hs : MeasurableSet s)
 /-- Restriction to a measurable closed communicating class is irreducible for counting measure,
 with no countability or singleton-measurability assumption on the ambient space. -/
 theorem IsClosedSet.isIrreducible_subtype_communicatingClass {x : S}
-    (hs : MeasurableSet (κ.communicatingClass x))
-    (hclosed : κ.IsClosedSet (κ.communicatingClass x)) :
+    (hclosed : κ.IsClosedSet (κ.communicatingClass x))
+    (hs : MeasurableSet (κ.communicatingClass x)) :
     IsIrreducible Measure.count (κ.subtype hs) :=
   (isIrreducible_subtype_iff hs hclosed).mpr fun a ha b hb =>
     ((mem_communicatingClass_iff x a).mp ha).symm.trans ((mem_communicatingClass_iff x b).mp hb)
+
+/-- Restriction of a Markov kernel to a measurable closed communicating class is a
+counting-measure-irreducible Markov kernel. -/
+theorem IsClosedSet.isMarkovKernel_and_isIrreducible_subtype_communicatingClass
+    [IsMarkovKernel κ] {x : S} (hclosed : κ.IsClosedSet (κ.communicatingClass x))
+    (hs : MeasurableSet (κ.communicatingClass x)) :
+    IsMarkovKernel (κ.subtype hs) ∧ IsIrreducible Measure.count (κ.subtype hs) :=
+  ⟨(isMarkovKernel_subtype_iff_isClosedSet hs).mpr hclosed,
+    hclosed.isIrreducible_subtype_communicatingClass hs⟩
 
 /-- A communicating class is closed exactly when every state reachable from its
 representative can reach the representative again. No Markov assumption is needed. -/
