@@ -115,8 +115,8 @@ the target coefficient ring. -/
 theorem pushforwardExteriorPowerComparison_app_val_app_mk (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
     (m : Fin n → PresheafOfModulesOfCommRing.obj (R := S.obj) ((pushforward φ).obj M).val U) :
-    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, sheafCompose_obj_obj,
-      CommRingCat.forgetToRingCat_obj]
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, sheafCompose_obj_obj,
+      CommRingCat.forgetToRingCat_obj, Functor.id_obj]
     (((pushforwardExteriorPowerComparison φ n).app M).val.app U
       ((exteriorPowerIso n ((pushforward φ).obj M)).inv.val.app U
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app

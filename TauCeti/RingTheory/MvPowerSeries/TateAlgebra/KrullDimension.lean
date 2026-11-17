@@ -6,17 +6,14 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Height
-public import Mathlib.RingTheory.IntegralClosure.Algebra.Defs
-public import Mathlib.RingTheory.KrullDimension.Basic
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
-import Mathlib.RingTheory.Ideal.GoingDown
+public import Mathlib.RingTheory.MvPowerSeries.Restricted
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.RingTheory.KrullDimension.Basic
 import TauCeti.RingTheory.KrullDimension.Integral
 import TauCeti.RingTheory.KrullDimension.Quotient
+import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Distinguished
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Groebner
-import TauCeti.RingTheory.PowerSeries.TateAlgebra
 import TauCeti.RingTheory.PowerSeries.Weierstrass.Quotient
 
 /-!

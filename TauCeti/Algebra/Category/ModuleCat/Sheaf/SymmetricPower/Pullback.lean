@@ -104,8 +104,8 @@ theorem pushforwardSymmetricPowerComparison_app_val_app_unit (n : ℕ)
     (M : SheafOfModules.{u} (ringCatSheaf R)) (U : Cᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := S.obj)
       ((pushforward φ).obj M).val U).symmetricPower n) :
-    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, Functor.id_obj, sheafCompose_obj_obj,
-      CommRingCat.forgetToRingCat_obj]
+    dsimp% only [Functor.comp_obj, ObjectProperty.ι_obj, sheafCompose_obj_obj,
+      CommRingCat.forgetToRingCat_obj, Functor.id_obj]
     (((pushforwardSymmetricPowerComparison φ n).app M).val.app U
       ((symmetricPowerIso n ((pushforward φ).obj M)).inv.val.app U
         (((PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)).unit.app
