@@ -28,9 +28,9 @@ Hence, when `Ω / L` is algebraic and separable (for instance an algebraic closu
 characteristic zero) and `ι : Kbar →ₐ[K] Ω` embeds an algebraically closed field over `K`, the
 field `Ω` is the compositum `L · ι(Kbar)`, an `L`-algebra map out of `Ω` is determined by its
 values on `ι(Kbar)`, and every finite separable extension of `L` inside `Ω` is `L⟮ι β⟯` for some
-`β ∈ Kbar`. For a number field `F`, a finite place `v`, `L = F_v`, `Ω = F̄_v` and `Kbar = F̄`
+`β ∈ Kbar`. For a number field `F`, a finite place `v`, `L = F_v`, `Ω = F_v^alg` and `Kbar = F^alg`
 this is the comparison of the global and local algebraic closures (ArithmeticGaloisRepresentations
-§2.1): an `F_v`-automorphism of `F̄_v` fixing `ι(F̄)` is the identity.
+§2.1): an `F_v`-automorphism of `F_v^alg` fixing `ι(F^alg)` is the identity.
 
 ## Main results
 
