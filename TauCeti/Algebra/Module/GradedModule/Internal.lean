@@ -60,8 +60,10 @@ Koszul twist and its tuple operation work over any ring: their integer signs are
   span of homogeneous families `s p ⊆ C p` lie in the matching `C p`.
 * `TauCeti.InternalGrading.finite_piece_ne_bot`: a finitely generated internally graded module has
   only finitely many nonzero homogeneous pieces.
-* `TauCeti.InternalGrading.koszulTwist_apply_of_mem`: the twist acts by the Koszul scalar on
-  each homogeneous piece.
+* `TauCeti.InternalGrading.koszulTwist_apply_of_mem`,
+  `TauCeti.InternalGrading.koszulTwist_eq_negOnePow_smul`, and
+  `TauCeti.InternalGrading.koszulTwist_one_eq_negOnePow_smul`: the twist acts by the Koszul scalar
+  (or unit sign on an additive group) on each homogeneous piece.
 * `TauCeti.InternalGrading.koszulTwist_comp`: twists compose by adding the twist parameters.
 * `TauCeti.InternalGrading.koszulTwist_ofDecomposition_mul` and
   `TauCeti.InternalGrading.koszulTwist_ofDecomposition_one`: the Koszul twist of a graded algebra
@@ -900,6 +902,26 @@ theorem InternalGrading.twistedTuple_zero_twist (G : InternalGrading R M ℤ) {n
   simp [twistedTuple]
 
 end KoszulTwistLemmas
+
+section KoszulTwistNegOnePow
+
+variable {R : Type u} {M : Type v} [Ring R] [AddCommGroup M] [Module R M]
+
+/-- On a homogeneous element of degree `e` in an additive group, the Koszul twist of parameter `q`
+acts as the unit sign `(-1)^(q * e)`. -/
+theorem InternalGrading.koszulTwist_eq_negOnePow_smul (G : InternalGrading R M ℤ) {x : M} {e : ℤ}
+    (hx : x ∈ G.piece e) (q : ℤ) :
+    koszulTwist G q x = (q * e).negOnePow • x := by
+  rw [InternalGrading.koszulTwist_apply_of_mem G hx q, Int.cast_smul_eq_zsmul, Units.smul_def]
+
+/-- On a homogeneous element of degree `e` in an additive group, the Koszul twist of parameter one
+acts as the unit sign `(-1)^e`. -/
+theorem InternalGrading.koszulTwist_one_eq_negOnePow_smul (G : InternalGrading R M ℤ) {x : M}
+    {e : ℤ} (hx : x ∈ G.piece e) :
+    koszulTwist G 1 x = e.negOnePow • x := by
+  rw [InternalGrading.koszulTwist_eq_negOnePow_smul G hx 1, one_mul]
+
+end KoszulTwistNegOnePow
 
 namespace InternalGrading
 
