@@ -10,7 +10,6 @@ public import Mathlib.NumberTheory.ModularForms.NormTrace
 public import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 public import TauCeti.GroupTheory.GroupAction.ConjAct
 import Mathlib.Analysis.Calculus.FDeriv.Star
-import TauCeti.GroupTheory.GroupAction.Stabilizer.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 
 /-!
@@ -82,8 +81,7 @@ AINTLIB `LeanModularForms` project
 * `TauCeti.ModularForm.SL_slash_S_slash_S`: `(f ∣[k] S) ∣[k] S = (-1)^k • f`, the action of
   `S² = -I`.
 * `Subgroup.IsArithmetic.conj_mapGL_inv`, `Subgroup.mem_conj_mapGL_inv_iff`,
-  `Subgroup.conj_mapGL_neg`, `Subgroup.card_stabilizer_mapGL`: conjugation by `(mapGL ℝ γ)⁻¹`
-  and point stabiliser orders of `(Γ : Subgroup (GL (Fin 2) ℝ))` on `ℍ`.
+  `Subgroup.conj_mapGL_neg`: conjugation of subgroups of `GL(2, ℝ)` by `(mapGL ℝ γ)⁻¹`.
 * `Subgroup.IsArithmetic.isCusp_of_isCusp`: any two arithmetic groups have the same cusps.
 * `TauCeti.ModularForm.eq_zero_of_eq_const`: a constant slash-invariant form of nonzero weight
   vanishes when its group has finite-index intersection with the modular group.
@@ -453,17 +451,6 @@ theorem _root_.Subgroup.conj_mapGL_neg (Γ : Subgroup (GL (Fin 2) ℝ)) (γ : SL
   ext x
   rw [Subgroup.mem_conj_mapGL_inv_iff, Subgroup.mem_conj_mapGL_inv_iff]
   simp [mapGL_neg]
-
-/-- The matrix image `(Γ : Subgroup (GL (Fin 2) ℝ))` has the same point stabiliser orders on `ℍ`
-as `Γ ≤ SL(2, ℤ)`. -/
-theorem _root_.Subgroup.card_stabilizer_mapGL (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    Nat.card (MulAction.stabilizer (Γ : Subgroup (GL (Fin 2) ℝ)) z) =
-      Nat.card (MulAction.stabilizer Γ z) := by
-  have h := TauCeti.card_stabilizer_eq_card_ker_mul_card_stabilizer
-    ((mapGL ℝ).subgroupMap Γ) (MonoidHom.subgroupMap_surjective _ _) z
-    fun g ↦ by simp [Subgroup.smul_def, MulAction.compHom_smul_def]
-  rw [Subgroup.ker_subgroupMap, (MonoidHom.ker_eq_bot_iff _).mpr mapGL_injective] at h
-  simpa using h.symm
 
 /-- Two arithmetic subgroups of `GL(2, ℝ)` have the same cusps, namely those of `SL(2, ℤ)`.
 This is the standard way to supply the cusp hypothesis of `ModularForm.ofSlashInvariant`. -/

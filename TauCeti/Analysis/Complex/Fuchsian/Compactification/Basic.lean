@@ -150,20 +150,15 @@ theorem effectiveStabilizerOrder_ofQuotient (q : orbitRel.Quotient Γ ℍ) :
 theorem effectiveStabilizerOrder_ofCusp (C : Γ.CuspOrbit) :
     effectiveStabilizerOrder (ofCusp C : Γ.CompactifiedQuotient) = 1 := (rfl)
 
-/-- Every point of `Γ.CompactifiedQuotient` has positive effective stabilizer order for properly
-discontinuous `Γ`. -/
-theorem effectiveStabilizerOrder_pos [ProperlyDiscontinuousSMul Γ ℍ]
-    (x : Γ.CompactifiedQuotient) : 0 < effectiveStabilizerOrder x := by
-  cases x with
-  | ofQuotient q =>
-    refine Quotient.inductionOn' q fun z ↦ ?_
-    have : Finite (stabilizer Γ z) := (ProperlyDiscontinuousSMul.finite_stabilizer z).to_subtype
-    rw [effectiveStabilizerOrder_ofQuotient, TauCeti.cardStabilizerOnOrbit_mk]; exact Nat.card_pos
-  | ofCusp _ => exact Nat.one_pos
+/-- Every point of `Γ.CompactifiedQuotient` has positive effective stabilizer order when every
+point stabilizer of `Γ` on `ℍ` is finite. -/
+theorem effectiveStabilizerOrder_pos [∀ z : ℍ, Finite (stabilizer Γ z)]
+    (x : Γ.CompactifiedQuotient) : 0 < effectiveStabilizerOrder x :=
+  match x with | ofQuotient q => TauCeti.cardStabilizerOnOrbit_pos q | ofCusp _ => Nat.one_pos
 
-/-- Every point of `Γ.CompactifiedQuotient` has nonzero effective stabilizer order for properly
-discontinuous `Γ`. -/
-theorem effectiveStabilizerOrder_ne_zero [ProperlyDiscontinuousSMul Γ ℍ]
+/-- Every point of `Γ.CompactifiedQuotient` has nonzero effective stabilizer order when every
+point stabilizer of `Γ` on `ℍ` is finite. -/
+theorem effectiveStabilizerOrder_ne_zero [∀ z : ℍ, Finite (stabilizer Γ z)]
     (x : Γ.CompactifiedQuotient) : effectiveStabilizerOrder x ≠ 0 :=
   (effectiveStabilizerOrder_pos x).ne'
 

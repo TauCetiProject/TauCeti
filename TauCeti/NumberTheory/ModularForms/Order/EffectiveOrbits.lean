@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 public import TauCeti.NumberTheory.ModularForms.Norm.Valence
-public import TauCeti.NumberTheory.ModularForms.WithCenter
 import TauCeti.Analysis.Complex.Fuchsian.ProperAction
+import TauCeti.NumberTheory.Modular.Stabilizer
 import TauCeti.Topology.Algebra.ConstMulAction
 import TauCeti.Topology.Algebra.Matrix.ProjectiveSpecialLinearGroup
 
@@ -29,48 +30,7 @@ public noncomputable section
 open MulAction UpperHalfPlane
 open scoped MatrixGroups ModularForm Modular
 
-namespace Subgroup
-
-private lemma orbitRel_subgroup_iff_effective (Γ : Subgroup SL(2, ℤ)) {z w : ℍ} :
-    orbitRel (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ z w ↔ orbitRel (Γ.map sl2zToPSL2R) ℍ z w := by
-  rw [Subgroup.orbitRel_map_sl2zToPSL2R_iff, orbitRel_apply, mem_orbit_iff]
-  refine ⟨fun ⟨⟨_, g, hg, rfl⟩, h⟩ ↦ ⟨g, hg, ?_⟩, fun ⟨g, hg, h⟩ ↦
-    ⟨⟨Matrix.SpecialLinearGroup.mapGL ℝ g, Subgroup.mem_map_of_mem _ hg⟩, ?_⟩⟩
-  all_goals simpa only [Subgroup.smul_def, MulAction.compHom_smul_def] using h
-
-/-- Canonical equivalence `(Γ : Subgroup (GL (Fin 2) ℝ)) \ ℍ ≃ (Γ.map sl2zToPSL2R) \ ℍ`. -/
-def subgroupOrbitEquivEffectiveOrbit (Γ : Subgroup SL(2, ℤ)) :
-    orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ ≃
-      orbitRel.Quotient (Γ.map sl2zToPSL2R) ℍ where
-  toFun := Quotient.map' id fun _ _ h ↦ (orbitRel_subgroup_iff_effective Γ).mp h
-  invFun := Quotient.map' id fun _ _ h ↦ (orbitRel_subgroup_iff_effective Γ).mpr h
-  left_inv o := Quotient.inductionOn' o fun _ ↦ rfl
-  right_inv P := Quotient.inductionOn' P fun _ ↦ rfl
-
-/-- `subgroupOrbitEquivEffectiveOrbit` acts as the identity on orbit representatives. -/
-@[simp]
-theorem subgroupOrbitEquivEffectiveOrbit_mk (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    Γ.subgroupOrbitEquivEffectiveOrbit (Quotient.mk'' z) = Quotient.mk'' z := (rfl)
-
-/-- `subgroupOrbitEquivEffectiveOrbit.symm` acts as the identity on orbit representatives. -/
-@[simp]
-theorem subgroupOrbitEquivEffectiveOrbit_symm_mk (Γ : Subgroup SL(2, ℤ)) (z : ℍ) :
-    Γ.subgroupOrbitEquivEffectiveOrbit.symm (Quotient.mk'' z) = Quotient.mk'' z := (rfl)
-
-end Subgroup
-
 namespace TauCeti.ModularForm
-
-/-- Orbitwise stabiliser splitting: `|Stab_Γ o| = |{±I} ∩ Γ| · e_P`. -/
-theorem cardStabilizerOnOrbit_eq_card_center_mul_effective {Γ : Subgroup SL(2, ℤ)}
-    (o : orbitRel.Quotient (Γ : Subgroup (GL (Fin 2) ℝ)) ℍ) :
-    cardStabilizerOnOrbit o =
-      Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
-        cardStabilizerOnOrbit (Γ.subgroupOrbitEquivEffectiveOrbit o) := by
-  induction o using Quotient.inductionOn' with | h z =>
-    rw [Subgroup.subgroupOrbitEquivEffectiveOrbit_mk, cardStabilizerOnOrbit_mk,
-      cardStabilizerOnOrbit_mk, Γ.card_stabilizer_mapGL,
-      Γ.card_stabilizer_eq_card_center_mul_card_stabilizer_effective]
 
 variable {Γ : Subgroup SL(2, ℤ)} {k k₁ k₂ k₃ : ℤ}
 variable {F F₁ F₂ F₃ : Type*} [FunLike F ℍ ℂ] [FunLike F₁ ℍ ℂ] [FunLike F₂ ℍ ℂ] [FunLike F₃ ℍ ℂ]
@@ -167,7 +127,7 @@ theorem weightedOrderOfVanishingOnSubgroupOrbit_eq_relIndex_withCenter_mul (f : 
   have hstab : (cardStabilizerOnOrbit o : ℚ) =
       Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) *
         cardStabilizerOnOrbit (Γ.subgroupOrbitEquivEffectiveOrbit o) := by
-    exact_mod_cast cardStabilizerOnOrbit_eq_card_center_mul_effective o
+    exact_mod_cast TauCeti.ModularGroup.cardStabilizerOnOrbit_eq_card_center_mul_effective o
   have hprod : (Γ.relIndex Γ.withCenter : ℚ) *
       Nat.card ((Subgroup.center SL(2, ℤ)).subgroupOf Γ) = 2 := by
     exact_mod_cast Γ.relIndex_withCenter_mul_card_center_subgroupOf_eq_two

@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.QExpansion.Order
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
+import TauCeti.LinearAlgebra.Matrix.Triangular
 import TauCeti.NumberTheory.ModularForms.QExpansion.Basic
 
 /-!
@@ -324,21 +325,14 @@ open scoped MatrixGroups
 
 variable {k : ℤ} {M : GL (Fin 2) ℝ} {t : SL(2, ℝ)}
 
-private lemma div_apply_pos_of_det_pos_of_apply_one_zero_eq_zero
-    (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0) :
-    0 < M 1 1 / M 0 0 ∧ M 0 0 ≠ 0 ∧ M 1 1 ≠ 0 := by
-  have hmul : 0 < M 0 0 * M 1 1 := by simpa [Matrix.det_fin_two, hM] using hdet
-  have h00 := left_ne_zero_of_mul hmul.ne'
-  exact ⟨(show M 1 1 / M 0 0 = M 0 0 * M 1 1 / M 0 0 ^ 2 by field_simp) ▸
-    div_pos hmul (sq_pos_of_ne_zero h00), h00, right_ne_zero_of_mul hmul.ne'⟩
-
 /-- Slashing an `h`-periodic function by positive-determinant upper-triangular `M ∈ GL(2, ℝ)`
 gives period `(M 1 1 / M 0 0) * h`. -/
 lemma periodic_slash_of_apply_one_zero_eq_zero
     (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) h) :
     Periodic ((g ∣[k] M) ∘ ofComplex) ((M 1 1 / M 0 0) * h : ℝ) := by
-  obtain ⟨-, h00, h11⟩ := div_apply_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
+  obtain ⟨h11, h00⟩ := div_ne_zero_iff.mp
+    (apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM).ne'
   refine TauCeti.UpperHalfPlane.periodic_comp_ofComplex_iff.mpr fun τ ↦ ?_
   simp only [_root_.ModularForm.slash_apply_of_apply_one_zero_eq_zero hdet hM]
   rw [show M • (((M 1 1 / M 0 0) * h) +ᵥ τ) = h +ᵥ (M • τ) from UpperHalfPlane.ext <| by
@@ -355,7 +349,8 @@ lemma cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero (hh : 0 < h)
     cuspFunction ((M 1 1 / M 0 0) * h) (g ∣[k] M) =ᶠ[𝓝 0] fun q : ℂ ↦
       ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k) * cuspFunction h g
         (Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h) * q) := by
-  obtain ⟨hdiv, h00, h11⟩ := div_apply_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
+  have hdiv := apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
+  obtain ⟨h11, h00⟩ := div_ne_zero_iff.mp hdiv.ne'
   have hh' := mul_pos hdiv hh
   refine TauCeti.UpperHalfPlane.cuspFunction_eventuallyEq_nhds_of_continuousAt
     (eventually_nhdsWithin_iff.mpr ?_)
@@ -390,19 +385,21 @@ theorem qExpansionOrderAtCusp_slash_of_apply_one_zero_eq_zero (hh : 0 < h)
     (hdet : 0 < (M : Matrix (Fin 2) (Fin 2) ℝ).det) (hM : M 1 0 = 0)
     (hg_per : Periodic (g ∘ ofComplex) h) (hg : AnalyticAt ℂ (cuspFunction h g) 0) :
     qExpansionOrderAtCusp ((M 1 1 / M 0 0) * h) (g ∣[k] M) = qExpansionOrderAtCusp h g := by
-  obtain ⟨-, -, h11⟩ := div_apply_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM
+  have h11 := (div_ne_zero_iff.mp
+    (apply_one_one_div_apply_zero_zero_pos_of_det_pos_of_apply_one_zero_eq_zero hdet hM).ne').1
   set c : ℂ := ((|(M.det : ℝ)| : ℝ) : ℂ) ^ (k - 1) * (M 1 1 : ℂ) ^ (-k)
   set ζ : ℂ := Complex.exp (2 * Real.pi * Complex.I * (M 0 1 / M 1 1 : ℝ) / h)
   have hc : c ≠ 0 := mul_ne_zero (zpow_ne_zero _ <| Complex.ofReal_ne_zero.mpr <|
     abs_ne_zero.mpr (M.det : ℝˣ).ne_zero) (zpow_ne_zero _ (Complex.ofReal_ne_zero.mpr h11))
   have hmul : AnalyticAt ℂ (fun q : ℂ ↦ ζ * q) 0 := analyticAt_const.mul analyticAt_id
+  have hev : cuspFunction ((M 1 1 / M 0 0) * h) (g ∣[k] M) =ᶠ[𝓝 0]
+      fun q : ℂ ↦ c * (cuspFunction h g ∘ (fun q : ℂ ↦ ζ * q)) q :=
+    (cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero hh hdet hM hg_per
+      hg.continuousAt).mono fun _ hq ↦ by simpa only [c, ζ, Function.comp_apply] using hq
   rw [qExpansionOrderAtCusp_eq_analyticOrderAt
       (analyticAt_cuspFunction_slash_of_apply_one_zero_eq_zero hh hdet hM hg_per hg),
-    qExpansionOrderAtCusp_eq_analyticOrderAt hg, analyticOrderAt_congr
-      (cuspFunction_slash_eventuallyEq_of_apply_one_zero_eq_zero hh hdet hM hg_per hg.continuousAt)]
-  change ((analyticOrderAt (fun q : ℂ ↦ c * (cuspFunction h g ∘ (fun q : ℂ ↦ ζ * q)) q) 0).toNat :
-    ℤ) = _
-  rw [analyticOrderAt_fun_const_mul (hg.comp_of_eq hmul (mul_zero ζ)) c, ite_eq_right hc,
+    qExpansionOrderAtCusp_eq_analyticOrderAt hg, analyticOrderAt_congr hev,
+    analyticOrderAt_fun_const_mul (hg.comp_of_eq hmul (mul_zero ζ)) c, ite_eq_right hc,
     analyticOrderAt_comp_of_deriv_ne_zero hmul (by
       rw [((hasDerivAt_id' (0 : ℂ)).const_mul ζ).deriv, mul_one]; exact Complex.exp_ne_zero _),
     mul_zero]

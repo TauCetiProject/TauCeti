@@ -100,7 +100,12 @@ proof is independent of the source's.
   exactly when it contains `-I`.
 * `Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem` and
   `Matrix.SpecialLinearGroup.relIndex_withCenter_eq_two_of_neg_one_notMem`: when `-I ∉ Γ`,
-  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`.
+  `[SL₂(R) : Γ] = 2 · [SL₂(R) : ±Γ]`, alongside the `Subgroup` companions
+  `Subgroup.index_eq_index_withCenter_of_neg_one_mem`,
+  `Subgroup.relIndex_withCenter_eq_one_of_neg_one_mem`,
+  `Subgroup.relIndex_withCenter_eq_one_or_two`, `Subgroup.relIndex_withCenter_pos`,
+  `Subgroup.relIndex_withCenter_ne_zero`, and
+  `Subgroup.relIndex_withCenter_mul_card_center_subgroupOf_eq_two`.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
   `= 1` case, `Disjoint (center _) Γ ↔ -I ∉ Γ`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff` and
@@ -535,6 +540,44 @@ theorem relIndex_withCenter_eq_two_of_neg_one_notMem [NoZeroDivisors R]
   Subgroup.relIndex_withCenter_eq_two
     (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)) h
     fun _ hc ↦ mem_center_iff_eq_one_or_eq_neg_one.mp hc
+
+/-- When `-I ∈ Γ`, adjoining `±I` leaves the index of `Γ ≤ SL₂(R)` unchanged. -/
+theorem _root_.Subgroup.index_eq_index_withCenter_of_neg_one_mem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
+    Γ.index = Γ.withCenter.index :=
+  Subgroup.index_eq_index_withCenter (center_le_iff_neg_one_mem.mpr h)
+
+/-- When `-I ∈ Γ`, `Γ ≤ SL₂(R)` has relative index `1` inside `±Γ`. -/
+theorem _root_.Subgroup.relIndex_withCenter_eq_one_of_neg_one_mem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} (h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ) :
+    Γ.relIndex Γ.withCenter = 1 :=
+  Subgroup.relIndex_withCenter_eq_one (center_le_iff_neg_one_mem.mpr h)
+
+/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is either `1` or `2`. -/
+theorem _root_.Subgroup.relIndex_withCenter_eq_one_or_two [NoZeroDivisors R]
+    (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    Γ.relIndex Γ.withCenter = 1 ∨ Γ.relIndex Γ.withCenter = 2 := by
+  by_cases h : (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ
+  · exact Or.inl (Subgroup.relIndex_withCenter_eq_one_of_neg_one_mem h)
+  · exact Or.inr (relIndex_withCenter_eq_two_of_neg_one_notMem h)
+
+/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is positive. -/
+theorem _root_.Subgroup.relIndex_withCenter_pos [NoZeroDivisors R]
+    (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) : 0 < Γ.relIndex Γ.withCenter := by
+  rcases Γ.relIndex_withCenter_eq_one_or_two with h | h <;> omega
+
+/-- The relative index `[±Γ : Γ]` of any subgroup `Γ ≤ SL₂(R)` is nonzero. -/
+theorem _root_.Subgroup.relIndex_withCenter_ne_zero [NoZeroDivisors R]
+    (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) : Γ.relIndex Γ.withCenter ≠ 0 :=
+  Γ.relIndex_withCenter_pos.ne'
+
+/-- When `(2 : R) ≠ 0`, `[±Γ : Γ] · |{±I} ∩ Γ| = 2` for every `Γ ≤ SL₂(R)`. -/
+theorem _root_.Subgroup.relIndex_withCenter_mul_card_center_subgroupOf_eq_two
+    [NoZeroDivisors R] [NeZero (2 : R)] (Γ : Subgroup (SpecialLinearGroup (Fin 2) R)) :
+    Γ.relIndex Γ.withCenter *
+        Nat.card ((Subgroup.center (SpecialLinearGroup (Fin 2) R)).subgroupOf Γ) = 2 := by
+  rw [Γ.relIndex_withCenter_mul_card_center_subgroupOf,
+    card_center_eq_two neg_one_ne_one_of_neZero_two]
 
 /-- **The `±I` factor is `2` exactly when `-I ∈ Γ`.** The part of the centre that `Γ` contains is
 `{I}` or `{±I}` according to whether `Γ` contains `-I`, so the centre factor in the stabiliser
