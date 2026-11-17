@@ -12,10 +12,11 @@ import Mathlib.Topology.Sheaves.SheafCondition.PairwiseIntersections
 /-!
 # Connectedness of schemes from their global functions
 
-A nonempty scheme whose ring of global functions is local is connected
-(`AlgebraicGeometry.Scheme.connectedSpace_of_isLocalRing_Γ`): a decomposition into two disjoint
-nonempty open subsets would split the global functions as a product of two nonzero rings, which
-is not local.
+A scheme whose ring of global functions is local is connected
+(`AlgebraicGeometry.Scheme.connectedSpace_of_isLocalRing_Γ`): it is nonempty since the global
+functions of the empty scheme form the zero ring, and a decomposition into two disjoint nonempty
+open subsets would split the global functions as a product of two nonzero rings, which is not
+local.
 -/
 
 public section
@@ -26,11 +27,15 @@ universe u
 
 namespace AlgebraicGeometry.Scheme
 
-/-- A nonempty scheme whose ring of global functions is local is connected: a decomposition into
-two disjoint nonempty open subsets would split the global functions as a product of two nonzero
-rings. -/
-theorem connectedSpace_of_isLocalRing_Γ (X : Scheme.{u}) [Nonempty X] [IsLocalRing Γ(X, ⊤)] :
+/-- A scheme whose ring of global functions is local is connected: it is nonempty since a local
+ring is nonzero, and a decomposition into two disjoint nonempty open subsets would split the
+global functions as a product of two nonzero rings. -/
+theorem connectedSpace_of_isLocalRing_Γ (X : Scheme.{u}) [IsLocalRing Γ(X, ⊤)] :
     ConnectedSpace X := by
+  have : Nonempty X := by
+    by_contra! h
+    exact not_subsingleton Γ(X, ⊤) (CommRingCat.subsingleton_of_isTerminal
+      (X.sheaf.isTerminalOfEqEmpty (TopologicalSpace.Opens.ext (Set.univ_eq_empty_iff.mpr h))))
   refine connectedSpace_iff_clopen.mpr ⟨inferInstance, fun s hs ↦ ?_⟩
   by_contra! hne
   let V : X.Opens := ⟨s, hs.isOpen⟩

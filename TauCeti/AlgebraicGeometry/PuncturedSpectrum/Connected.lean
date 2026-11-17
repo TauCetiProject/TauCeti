@@ -60,10 +60,6 @@ variable (R : Type u) [CommRing R] [IsLocalRing R]
 theorem connectedSpace_puncturedSpectrum [IsNoetherianRing R]
     (hdepth : 2 ≤ _root_.IsLocalRing.depth (ModuleCat.of R R)) :
     ConnectedSpace (puncturedSpectrum R).toScheme := by
-  -- The closed point is not dense, so some point of `Spec R` lies outside it.
-  obtain ⟨x, hx⟩ :=
-    (dense_compl_singleton_closedPoint_of_one_le_depth (one_le_two.trans hdepth)).nonempty
-  have : Nonempty (puncturedSpectrum R).toScheme := ⟨⟨x, (mem_puncturedSpectrum_iff R x).mpr hx⟩⟩
   -- By the Hartogs principle, the global functions on the punctured spectrum are `R`.
   have := isIso_appTop_ι_puncturedSpectrum R hdepth
   have : _root_.IsLocalRing Γ((puncturedSpectrum R).toScheme, ⊤) :=
