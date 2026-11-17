@@ -84,15 +84,11 @@ each block is nonzero precisely when at least one of its coordinates is nonzero.
 theorem isSemialgebraic_piConeDomain {ι : Type*} {κ : ι → Type*} {R : Type*}
     [CommRing R] [LinearOrder R] [Finite ι] [∀ i, Finite (κ i)] :
     IsSemialgebraic (piConeDomain κ R) := by
-  let xij (i : ι) (j : κ i) : MvPolynomial (Σ i, κ i) R := X ⟨i, j⟩
-  have h : piConeDomain κ R =
-      ⋂ i : ι, ⋃ j : κ i, {v : (Σ i, κ i) → R | eval v (xij i j) ≠ 0} := by
-    ext v
-    simp only [mem_piConeDomain_iff, Function.ne_iff, Pi.zero_apply, mem_iInter, mem_iUnion,
-      Set.mem_ofPred_eq, xij, eval_X, ne_eq]
-  rw [h]
-  exact IsSemialgebraic.iInter fun i ↦
-    IsSemialgebraic.iUnion fun j ↦ isSemialgebraic_eval_ne_zero (xij i j)
+  convert IsSemialgebraic.iInter fun i : ι ↦ IsSemialgebraic.iUnion fun j : κ i ↦
+    isSemialgebraic_eval_ne_zero (X ⟨i, j⟩ : MvPolynomial (Σ i, κ i) R) using 1
+  ext v
+  simp only [mem_piConeDomain_iff, Function.ne_iff, Pi.zero_apply, mem_iInter, mem_iUnion,
+    Set.mem_ofPred_eq, eval_X, ne_eq]
 
 section MultiprojectiveSemialgebraic
 
@@ -105,8 +101,7 @@ def IsMultiprojectiveSemialgebraic (S : Set ((i : ι) → ℙ K (κ i → K))) :
   IsSemialgebraic (piConePreimage S)
 
 theorem isMultiprojectiveSemialgebraic_def {S : Set ((i : ι) → ℙ K (κ i → K))} :
-    IsMultiprojectiveSemialgebraic S ↔ IsSemialgebraic (piConePreimage S) :=
-  Iff.rfl
+    IsMultiprojectiveSemialgebraic S ↔ IsSemialgebraic (piConePreimage S) := Iff.rfl
 
 @[simp]
 theorem isMultiprojectiveSemialgebraic_empty :
@@ -116,34 +111,28 @@ theorem isMultiprojectiveSemialgebraic_empty :
 theorem IsMultiprojectiveSemialgebraic.union {S T : Set ((i : ι) → ℙ K (κ i → K))}
     (hS : IsMultiprojectiveSemialgebraic S) (hT : IsMultiprojectiveSemialgebraic T) :
     IsMultiprojectiveSemialgebraic (S ∪ T) := by
-  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_union]
-  exact IsSemialgebraic.union hS hT
+  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_union]; exact IsSemialgebraic.union hS hT
 
 theorem IsMultiprojectiveSemialgebraic.inter {S T : Set ((i : ι) → ℙ K (κ i → K))}
     (hS : IsMultiprojectiveSemialgebraic S) (hT : IsMultiprojectiveSemialgebraic T) :
     IsMultiprojectiveSemialgebraic (S ∩ T) := by
-  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_inter]
-  exact IsSemialgebraic.inter hS hT
+  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_inter]; exact IsSemialgebraic.inter hS hT
 
 theorem IsMultiprojectiveSemialgebraic.sdiff {S T : Set ((i : ι) → ℙ K (κ i → K))}
     (hS : IsMultiprojectiveSemialgebraic S) (hT : IsMultiprojectiveSemialgebraic T) :
     IsMultiprojectiveSemialgebraic (S \ T) := by
-  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_sdiff]
-  exact IsSemialgebraic.sdiff hS hT
+  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_sdiff]; exact IsSemialgebraic.sdiff hS hT
 
 theorem IsMultiprojectiveSemialgebraic.iUnion {α : Type*} [Finite α]
-    {S : α → Set ((i : ι) → ℙ K (κ i → K))}
-    (hS : ∀ a, IsMultiprojectiveSemialgebraic (S a)) :
+    {S : α → Set ((i : ι) → ℙ K (κ i → K))} (hS : ∀ a, IsMultiprojectiveSemialgebraic (S a)) :
     IsMultiprojectiveSemialgebraic (⋃ a, S a) := by
-  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_iUnion]
-  exact IsSemialgebraic.iUnion hS
+  rw [isMultiprojectiveSemialgebraic_def, piConePreimage_iUnion]; exact IsSemialgebraic.iUnion hS
 
 theorem IsMultiprojectiveSemialgebraic.biUnion {α : Type*} {t : Set α} (ht : t.Finite)
     {S : α → Set ((i : ι) → ℙ K (κ i → K))}
     (hS : ∀ a ∈ t, IsMultiprojectiveSemialgebraic (S a)) :
     IsMultiprojectiveSemialgebraic (⋃ a ∈ t, S a) := by
-  have := ht.to_subtype
-  rw [biUnion_eq_iUnion]
+  have := ht.to_subtype; rw [biUnion_eq_iUnion]
   exact IsMultiprojectiveSemialgebraic.iUnion fun x ↦ hS x.1 x.2
 
 /-- For finite `ι`, every standard product affine open `piAffineOpen I` is multiprojective
@@ -151,12 +140,9 @@ semialgebraic (without requiring finiteness of the factor coordinate types `κ i
 theorem isMultiprojectiveSemialgebraic_piAffineOpen [Finite ι] (I : ∀ i, κ i) :
     IsMultiprojectiveSemialgebraic (piAffineOpen (K := K) I) := by
   rw [isMultiprojectiveSemialgebraic_def, piConePreimage_piAffineOpen]
-  have h : {v : (Σ i, κ i) → K | ∀ i, v ⟨i, I i⟩ ≠ 0} =
-      ⋂ i : ι, {v | eval v (X ⟨i, I i⟩ : MvPolynomial (Σ i, κ i) K) ≠ 0} := by
-    ext v
-    simp
-  rw [h]
-  exact IsSemialgebraic.iInter fun i ↦ isSemialgebraic_eval_ne_zero _
+  convert IsSemialgebraic.iInter fun i : ι ↦
+    isSemialgebraic_eval_ne_zero (X ⟨i, I i⟩ : MvPolynomial (Σ i, κ i) K) using 1
+  ext v; simp
 
 section Finite
 
@@ -178,8 +164,7 @@ theorem isMultiprojectiveSemialgebraic_univ :
   isSetAlgebra_setOf_isMultiprojectiveSemialgebraic.univ_mem
 
 theorem IsMultiprojectiveSemialgebraic.compl {S : Set ((i : ι) → ℙ K (κ i → K))}
-    (hS : IsMultiprojectiveSemialgebraic S) :
-    IsMultiprojectiveSemialgebraic Sᶜ :=
+    (hS : IsMultiprojectiveSemialgebraic S) : IsMultiprojectiveSemialgebraic Sᶜ :=
   isSetAlgebra_setOf_isMultiprojectiveSemialgebraic.compl_mem hS
 
 @[simp]
@@ -195,8 +180,7 @@ theorem IsMultiprojectiveSemialgebraic.biInter {α : Type*} {t : Set α} (ht : t
     (by simpa using hS)
 
 theorem IsMultiprojectiveSemialgebraic.iInter {α : Type*} [Finite α]
-    {S : α → Set ((i : ι) → ℙ K (κ i → K))}
-    (hS : ∀ a, IsMultiprojectiveSemialgebraic (S a)) :
+    {S : α → Set ((i : ι) → ℙ K (κ i → K))} (hS : ∀ a, IsMultiprojectiveSemialgebraic (S a)) :
     IsMultiprojectiveSemialgebraic (⋂ a, S a) := by
   simpa using IsMultiprojectiveSemialgebraic.biInter finite_univ fun a _ ↦ hS a
 
@@ -252,32 +236,25 @@ theorem isMultiprojectiveSemialgebraic_preimage_sumPiEquivProdPi_diagonal [Finit
   rw [isMultiprojectiveSemialgebraic_def]
   let minorPoly (i : ι) (a b : κ i) : MvPolynomial (Σ k : ι ⊕ ι, Sum.elim κ κ k) K :=
     X ⟨.inl i, a⟩ * X ⟨.inr i, b⟩
-  have h : piConePreimage
-      (Equiv.sumPiEquivProdPi (fun k ↦ ℙ K (Sum.elim κ κ k → K)) ⁻¹'
-        diagonal ((i : ι) → ℙ K (κ i → K))) =
-      piConeDomain (Sum.elim κ κ) K ∩
-        ⋂ (i : ι) (a : κ i) (b : κ i),
-          {w : (Σ k : ι ⊕ ι, Sum.elim κ κ k) → K |
-            eval w (minorPoly i a b) = eval w (minorPoly i b a)} := by
-    ext w
-    rw [mem_piConePreimage_iff, mem_inter_iff, mem_piConeDomain_iff]
-    refine ⟨fun ⟨hw, heq⟩ ↦ ⟨hw, mem_iInter.2 fun i ↦ mem_iInter.2 fun a ↦
-        mem_iInter.2 fun b ↦ ?_⟩, fun ⟨hw, hmin⟩ ↦ ⟨hw, ?_⟩⟩
-    · have hdiag : (fun i ↦ mk K (fun j ↦ w ⟨.inl i, j⟩) (hw (.inl i))) =
-          fun i ↦ mk K (fun j ↦ w ⟨.inr i, j⟩) (hw (.inr i)) := by
-        simpa only [Equiv.sumPiEquivProdPi_apply] using mem_diagonal_iff.1 (mem_preimage.1 heq)
-      simpa only [Set.mem_ofPred_eq, minorPoly, map_mul, eval_X] using
-        (mk_eq_mk_iff_forall_mul_eq (hw (.inl i)) (hw (.inr i))).1 (congr_fun hdiag i) a b
-    · refine mem_preimage.2 (mem_diagonal_iff.2 ?_)
-      simp only [Equiv.sumPiEquivProdPi_apply]
-      refine funext fun i ↦
-        (mk_eq_mk_iff_forall_mul_eq (hw (.inl i)) (hw (.inr i))).2 fun a b ↦ ?_
-      simpa only [Set.mem_ofPred_eq, minorPoly, map_mul, eval_X] using
-        mem_iInter.1 (mem_iInter.1 (mem_iInter.1 hmin i) a) b
-  rw [h]
-  exact isSemialgebraic_piConeDomain.inter <|
+  convert isSemialgebraic_piConeDomain.inter <|
     IsSemialgebraic.iInter fun i ↦ IsSemialgebraic.iInter fun a ↦
-      IsSemialgebraic.iInter fun b ↦ isSemialgebraic_eval_eq (minorPoly i a b) (minorPoly i b a)
+      IsSemialgebraic.iInter fun b ↦
+        isSemialgebraic_eval_eq (minorPoly i a b) (minorPoly i b a) using 1
+  ext w
+  rw [mem_piConePreimage_iff, mem_inter_iff, mem_piConeDomain_iff]
+  refine ⟨fun ⟨hw, heq⟩ ↦ ⟨hw, mem_iInter.2 fun i ↦ mem_iInter.2 fun a ↦
+      mem_iInter.2 fun b ↦ ?_⟩, fun ⟨hw, hmin⟩ ↦ ⟨hw, ?_⟩⟩
+  · have hdiag : (fun i ↦ mk K (fun j ↦ w ⟨.inl i, j⟩) (hw (.inl i))) =
+        fun i ↦ mk K (fun j ↦ w ⟨.inr i, j⟩) (hw (.inr i)) := by
+      simpa only [Equiv.sumPiEquivProdPi_apply] using mem_diagonal_iff.1 (mem_preimage.1 heq)
+    simpa only [Set.mem_ofPred_eq, minorPoly, map_mul, eval_X] using
+      (mk_eq_mk_iff_forall_mul_eq (hw (.inl i)) (hw (.inr i))).1 (congr_fun hdiag i) a b
+  · refine mem_preimage.2 (mem_diagonal_iff.2 ?_)
+    simp only [Equiv.sumPiEquivProdPi_apply]
+    refine funext fun i ↦
+      (mk_eq_mk_iff_forall_mul_eq (hw (.inl i)) (hw (.inr i))).2 fun a b ↦ ?_
+    simpa only [Set.mem_ofPred_eq, minorPoly, map_mul, eval_X] using
+      mem_iInter.1 (mem_iInter.1 (mem_iInter.1 hmin i) a) b
 
 /-- For finite `ι` and finite blocks `κ i`, every singleton in `(i : ι) → ℙ K (κ i → K)` is
 multiprojective semialgebraic. -/
@@ -294,20 +271,15 @@ theorem isMultiprojectiveSemialgebraic_singleton [Finite ι] [∀ i, Finite (κ 
   rw [mem_piConePreimage_iff, mem_preimage, mem_piConePreimage_iff]
   have h1 (i : ι) : (fun j ↦ eval v (f ⟨.inl i, j⟩)) = fun j ↦ v ⟨i, j⟩ :=
     funext fun j ↦ by simp [f]
-  have h2 (i : ι) : (fun j ↦ eval v (f ⟨.inr i, j⟩)) = (p i).rep :=
-    funext fun j ↦ by simp [f]
+  have h2 (i : ι) : (fun j ↦ eval v (f ⟨.inr i, j⟩)) = (p i).rep := funext fun j ↦ by simp [f]
   constructor
   · rintro ⟨hv, hvp⟩
     rw [mem_singleton_iff] at hvp
     refine ⟨Sum.rec (fun i ↦ (h1 i).symm ▸ hv i) (fun i ↦ (h2 i).symm ▸ (p i).rep_ne_zero),
       mem_preimage.2 (mem_diagonal_iff.2 ?_)⟩
     simp only [Equiv.sumPiEquivProdPi_apply]
-    refine funext fun i ↦ ?_
-    have heq : mk K (fun j ↦ eval v (f ⟨.inl i, j⟩)) ((h1 i).symm ▸ hv i) =
-        mk K (fun j ↦ eval v (f ⟨.inr i, j⟩)) ((h2 i).symm ▸ (p i).rep_ne_zero) := by
-      simp only [h1, h2]
-      exact (congr_fun hvp i).trans (p i).mk_rep.symm
-    exact heq
+    exact funext fun i ↦ by
+      simp only [h1, h2]; exact (congr_fun hvp i).trans (p i).mk_rep.symm
   · rintro ⟨hv, hvp⟩
     have hdiag : (fun i ↦ mk K (fun j ↦ eval v (f ⟨.inl i, j⟩)) (hv (.inl i))) =
         fun i ↦ mk K (fun j ↦ eval v (f ⟨.inr i, j⟩)) (hv (.inr i)) := by

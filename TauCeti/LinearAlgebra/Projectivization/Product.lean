@@ -71,8 +71,7 @@ def piAffineOpen (I : ∀ i, κ i) : Set ((i : ι) → ℙ K (κ i → K)) :=
   univ.pi fun i ↦ affineOpen (I i)
 
 theorem piAffineOpen_def (I : ∀ i, κ i) :
-    piAffineOpen (K := K) I = univ.pi fun i ↦ affineOpen (I i) :=
-  (rfl)
+    piAffineOpen (K := K) I = univ.pi fun i ↦ affineOpen (I i) := (rfl)
 
 @[simp]
 theorem mem_piAffineOpen_iff {I : ∀ i, κ i} {p : (i : ι) → ℙ K (κ i → K)} :
@@ -91,15 +90,13 @@ theorem exists_mem_piAffineOpen (p : (i : ι) → ℙ K (κ i → K)) :
 
 /-- The standard product affine opens cover `(i : ι) → ℙ K (κ i → K)`, including when `ι` is
 empty. -/
-theorem iUnion_piAffineOpen :
-    ⋃ I : ∀ i, κ i, piAffineOpen (K := K) I = univ :=
+theorem iUnion_piAffineOpen : ⋃ I : ∀ i, κ i, piAffineOpen (K := K) I = univ :=
   eq_univ_of_forall fun p ↦ mem_iUnion.2 (exists_mem_piAffineOpen p)
 
 @[simp]
 theorem piAffineOpen_of_isEmpty [IsEmpty ι] (I : ∀ i, κ i) :
     piAffineOpen (K := K) I = univ := by
-  ext p
-  simp
+  ext p; simp
 
 end PiAffineOpen
 
@@ -119,14 +116,12 @@ noncomputable def piAffineChart (I : ∀ i, Fin (n i + 1)) :
 @[simp]
 theorem piAffineChart_source (I : ∀ i, Fin (n i + 1)) :
     (piAffineChart (K := K) I).source = piAffineOpen I := by
-  ext p
-  simp [piAffineChart, PartialEquiv.pi]
+  ext p; simp [piAffineChart, PartialEquiv.pi]
 
 @[simp]
 theorem piAffineChart_target (I : ∀ i, Fin (n i + 1)) :
     (piAffineChart (K := K) I).target = univ := by
-  ext z
-  simp [piAffineChart, PartialEquiv.pi]
+  ext z; simp [piAffineChart, PartialEquiv.pi]
 
 @[simp]
 theorem piAffineChart_apply (I : ∀ i, Fin (n i + 1))
@@ -139,8 +134,7 @@ theorem piAffineChart_mk (I : ∀ i, Fin (n i + 1))
     (v : ∀ i, Fin (n i + 1) → K) (hv : ∀ i, v i ≠ 0) :
     piAffineChart I (fun i ↦ mk K (v i) (hv i)) =
       fun q ↦ v q.1 ((I q.1).succAbove q.2) / v q.1 (I q.1) := by
-  ext q
-  simp [affineChart_mk]
+  ext q; simp [affineChart_mk]
 
 @[simp]
 theorem piAffineChart_symm_apply (I : ∀ i, Fin (n i + 1))
@@ -148,8 +142,7 @@ theorem piAffineChart_symm_apply (I : ∀ i, Fin (n i + 1))
     (piAffineChart I).symm z i = (affineChart (I i)).symm fun k ↦ z ⟨i, k⟩ := by
   simp only [piAffineChart, PartialEquiv.transEquiv, PartialEquiv.coe_trans_symm,
     Equiv.toPartialEquiv_symm_apply, Equiv.symm_symm, PartialEquiv.pi_symm, PartialEquiv.pi_apply]
-  refine congrArg _ (funext fun k ↦ ?_)
-  simp [Sigma.curry]
+  exact congrArg _ (funext fun k ↦ by simp [Sigma.curry])
 
 end PiAffineChart
 
@@ -171,13 +164,11 @@ def piConeDomain (κ : ι → Type*) (K : Type*) [Zero K] : Set ((Σ i, κ i) �
   {v | ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0}
 
 theorem piConeDomain_def (κ : ι → Type*) (K : Type*) [Zero K] :
-    piConeDomain κ K = {v | ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0} :=
-  (rfl)
+    piConeDomain κ K = {v | ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0} := (rfl)
 
 @[simp]
 theorem mem_piConeDomain_iff {K : Type*} [Zero K] {v : (Σ i, κ i) → K} :
-    v ∈ piConeDomain κ K ↔ ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0 :=
-  Iff.rfl
+    v ∈ piConeDomain κ K ↔ ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0 := Iff.rfl
 
 section DivisionRing
 
@@ -211,65 +202,55 @@ theorem piConePreimage_subset_piConeDomain (S : Set ((i : ι) → ℙ K (κ i �
 @[simp]
 theorem piConePreimage_empty :
     piConePreimage (∅ : Set ((i : ι) → ℙ K (κ i → K))) = ∅ := by
-  ext v
-  simp
+  ext v; simp
 
 @[simp]
 theorem piConePreimage_univ :
     piConePreimage (univ : Set ((i : ι) → ℙ K (κ i → K))) = piConeDomain κ K := by
-  ext v
-  simp
+  ext v; simp
 
 @[simp]
 theorem piConePreimage_compl (S : Set ((i : ι) → ℙ K (κ i → K))) :
     piConePreimage Sᶜ = piConeDomain κ K \ piConePreimage S := by
-  ext v
-  simp only [mem_piConePreimage_iff, mem_compl_iff, mem_sdiff, mem_piConeDomain_iff]
+  ext v; simp only [mem_piConePreimage_iff, mem_compl_iff, mem_sdiff, mem_piConeDomain_iff]
   exact ⟨fun ⟨hv, hS⟩ ↦ ⟨hv, fun ⟨_, h⟩ ↦ hS h⟩, fun ⟨hv, hS⟩ ↦ ⟨hv, fun h ↦ hS ⟨hv, h⟩⟩⟩
 
 @[simp]
 theorem piConePreimage_union (S T : Set ((i : ι) → ℙ K (κ i → K))) :
     piConePreimage (S ∪ T) = piConePreimage S ∪ piConePreimage T := by
-  ext v
-  simp only [mem_piConePreimage_iff, mem_union]
+  ext v; simp only [mem_piConePreimage_iff, mem_union]
   exact ⟨fun ⟨hv, h⟩ ↦ h.imp (fun hS ↦ ⟨hv, hS⟩) (fun hT ↦ ⟨hv, hT⟩),
     fun h ↦ h.elim (fun ⟨hv, hS⟩ ↦ ⟨hv, Or.inl hS⟩) (fun ⟨hv, hT⟩ ↦ ⟨hv, Or.inr hT⟩)⟩
 
 @[simp]
 theorem piConePreimage_inter (S T : Set ((i : ι) → ℙ K (κ i → K))) :
     piConePreimage (S ∩ T) = piConePreimage S ∩ piConePreimage T := by
-  ext v
-  simp only [mem_piConePreimage_iff, mem_inter_iff]
+  ext v; simp only [mem_piConePreimage_iff, mem_inter_iff]
   exact ⟨fun ⟨hv, hS, hT⟩ ↦ ⟨⟨hv, hS⟩, ⟨hv, hT⟩⟩, fun ⟨⟨hv, hS⟩, ⟨_, hT⟩⟩ ↦ ⟨hv, hS, hT⟩⟩
 
 @[simp]
 theorem piConePreimage_sdiff (S T : Set ((i : ι) → ℙ K (κ i → K))) :
     piConePreimage (S \ T) = piConePreimage S \ piConePreimage T := by
-  ext v
-  simp only [mem_piConePreimage_iff, mem_sdiff]
+  ext v; simp only [mem_piConePreimage_iff, mem_sdiff]
   exact ⟨fun ⟨hv, hS, hT⟩ ↦ ⟨⟨hv, hS⟩, fun ⟨_, h⟩ ↦ hT h⟩,
     fun ⟨⟨hv, hS⟩, hT⟩ ↦ ⟨hv, hS, fun h ↦ hT ⟨hv, h⟩⟩⟩
 
 @[simp]
 theorem piConePreimage_iUnion {α : Type*} (S : α → Set ((i : ι) → ℙ K (κ i → K))) :
     piConePreimage (⋃ a, S a) = ⋃ a, piConePreimage (S a) := by
-  ext v
-  simp only [mem_piConePreimage_iff, mem_iUnion]
+  ext v; simp only [mem_piConePreimage_iff, mem_iUnion]
   exact ⟨fun ⟨hv, a, ha⟩ ↦ ⟨a, hv, ha⟩, fun ⟨a, hv, ha⟩ ↦ ⟨hv, a, ha⟩⟩
 
 theorem piConePreimage_mono {S T : Set ((i : ι) → ℙ K (κ i → K))} (h : S ⊆ T) :
-    piConePreimage S ⊆ piConePreimage T :=
-  fun _ ⟨hv, hS⟩ ↦ ⟨hv, h hS⟩
+    piConePreimage S ⊆ piConePreimage T := fun _ ⟨hv, hS⟩ ↦ ⟨hv, h hS⟩
 
 @[simp]
 theorem piConePreimage_subset_piConePreimage_iff {S T : Set ((i : ι) → ℙ K (κ i → K))} :
     piConePreimage S ⊆ piConePreimage T ↔ S ⊆ T := by
   refine ⟨fun h p hpS ↦ ?_, piConePreimage_mono⟩
-  let v : (Σ i, κ i) → K := fun q ↦ (p q.1).rep q.2
-  have hv : ∀ i, (fun j ↦ v ⟨i, j⟩) ≠ 0 := fun i ↦ (p i).rep_ne_zero
-  have hpv : (fun i ↦ mk K (fun j ↦ v ⟨i, j⟩) (hv i)) = p :=
-    funext fun i ↦ (p i).mk_rep
-  obtain ⟨_, hT⟩ := h ⟨hv, hpv.symm ▸ hpS⟩
+  have hv : ∀ i, (fun j ↦ (p i).rep j) ≠ 0 := fun i ↦ (p i).rep_ne_zero
+  have hpv : (fun i ↦ mk K (fun j ↦ (p i).rep j) (hv i)) = p := funext fun i ↦ (p i).mk_rep
+  obtain ⟨_, hT⟩ := h (a := fun q ↦ (p q.1).rep q.2) ⟨hv, hpv.symm ▸ hpS⟩
   rwa [hpv] at hT
 
 theorem piConePreimage_injective :
@@ -303,9 +284,7 @@ def piProjectorLocus {ι : Type*} (κ : ι → Type*) (K : Type*) [∀ i, Fintyp
   univ.pi fun i ↦ projectorLocus (κ i) K
 
 theorem piProjectorLocus_def {ι : Type*} (κ : ι → Type*) (K : Type*) [∀ i, Fintype (κ i)]
-    [Field K] :
-    piProjectorLocus κ K = univ.pi fun i ↦ projectorLocus (κ i) K :=
-  (rfl)
+    [Field K] : piProjectorLocus κ K = univ.pi fun i ↦ projectorLocus (κ i) K := (rfl)
 
 @[simp]
 theorem mem_piProjectorLocus {ι : Type*} {κ : ι → Type*} {K : Type*} [∀ i, Fintype (κ i)]
@@ -332,8 +311,7 @@ def piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ 
 
 theorem piProjector_def :
     (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) =
-      Pi.map fun _ ↦ projector :=
-  (rfl)
+      Pi.map fun _ ↦ projector := (rfl)
 
 @[simp]
 theorem piProjector_apply (p : (i : ι) → ℙ K (κ i → K)) (i : ι) :
@@ -343,8 +321,7 @@ theorem piProjector_apply (p : (i : ι) → ℙ K (κ i → K)) (i : ι) :
 @[simp]
 theorem piProjector_mk (v : ∀ i, κ i → K) (hv : ∀ i, v i ≠ 0) :
     piProjector (fun i ↦ mk K (v i) (hv i)) = fun i ↦ rankOneProjector (v i) := by
-  ext i j k
-  simp [piProjector]
+  ext i j k; simp [piProjector]
 
 /-- The product projector map read in flattened matrix coordinates `(Σ i, κ i × κ i) → K`. -/
 def piProjectorCoords (p : (i : ι) → ℙ K (κ i → K)) : (Σ i, κ i × κ i) → K :=
@@ -352,8 +329,7 @@ def piProjectorCoords (p : (i : ι) → ℙ K (κ i → K)) : (Σ i, κ i × κ 
 
 theorem piProjectorCoords_def :
     (piProjectorCoords : ((i : ι) → ℙ K (κ i → K)) → (Σ i, κ i × κ i) → K) =
-      piMatrixLinearEquiv K κ κ K ∘ piProjector :=
-  (rfl)
+      piMatrixLinearEquiv K κ κ K ∘ piProjector := (rfl)
 
 @[simp]
 theorem piProjectorCoords_apply (p : (i : ι) → ℙ K (κ i → K)) (q : Σ i, κ i × κ i) :
@@ -362,8 +338,7 @@ theorem piProjectorCoords_apply (p : (i : ι) → ℙ K (κ i → K)) (q : Σ i,
 
 @[simp]
 theorem piMatrixLinearEquiv_piProjector (p : (i : ι) → ℙ K (κ i → K)) :
-    piMatrixLinearEquiv K κ κ K (piProjector p) = piProjectorCoords p :=
-  (rfl)
+    piMatrixLinearEquiv K κ κ K (piProjector p) = piProjectorCoords p := (rfl)
 
 @[simp]
 theorem piMatrixLinearEquiv_symm_piProjectorCoords (p : (i : ι) → ℙ K (κ i → K)) :
@@ -400,8 +375,7 @@ theorem piProjectorCoords_injective :
 theorem range_piProjector :
     range (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) =
       piProjectorLocus κ K := by
-  rw [piProjector_def, Set.range_piMap]
-  simp [piProjectorLocus, range_projector]
+  rw [piProjector_def, Set.range_piMap]; simp [piProjectorLocus, range_projector]
 
 /-- Over an ordered field, the range of `piProjectorCoords` is the flattened product projector
 locus. -/
@@ -432,8 +406,7 @@ theorem image_piProjector_piAffineOpen (I : ∀ i, κ i) :
     piProjector '' piAffineOpen (K := K) I =
       {A ∈ piProjectorLocus κ K | ∀ i, A i (I i) (I i) ≠ 0} := by
   rw [piProjector_def, piAffineOpen_def, Set.piMap_image_univ_pi]
-  ext A
-  simp [image_projector_affineOpen, mem_piProjectorLocus, forall_and]
+  ext A; simp [image_projector_affineOpen, mem_piProjectorLocus, forall_and]
 
 /-- The image of a standard product affine open `piAffineOpen I` under `piProjectorCoords` consists
 of the points of the flattened product projector locus whose `(i, I i, I i)`-entry is nonzero for
@@ -444,10 +417,8 @@ theorem image_piProjectorCoords_piAffineOpen (I : ∀ i, κ i) :
   rw [piProjectorCoords_def, image_comp, image_piProjector_piAffineOpen]
   ext a
   constructor
-  · rintro ⟨A, ⟨hA, hdiag⟩, rfl⟩
-    exact ⟨⟨A, hA, rfl⟩, fun i ↦ by simpa using hdiag i⟩
-  · rintro ⟨⟨A, hA, rfl⟩, hdiag⟩
-    exact ⟨A, ⟨hA, fun i ↦ by simpa using hdiag i⟩, rfl⟩
+  · rintro ⟨A, ⟨hA, hdiag⟩, rfl⟩; exact ⟨⟨A, hA, rfl⟩, fun i ↦ by simpa using hdiag i⟩
+  · rintro ⟨⟨A, hA, rfl⟩, hdiag⟩; exact ⟨A, ⟨hA, fun i ↦ by simpa using hdiag i⟩, rfl⟩
 
 /-- Recovering the `i`-th projective factor from a row of `piProjectorCoords p` whose diagonal
 entry is nonzero. -/

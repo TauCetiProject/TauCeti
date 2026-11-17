@@ -337,8 +337,7 @@ theorem IsSemialgebraic.preimage_eval_div {K : Type*} [Field K] [LinearOrder K]
         IsSemialgebraic (cell Z ∩ {x | q (eval (fun i ↦ eval x (N i) / eval x (D i)) p)}) := by
       let N' : τ → MvPolynomial σ K := fun i ↦ if i ∈ Z then 0 else N i
       let D' : τ → MvPolynomial σ K := fun i ↦ if i ∈ Z then 1 else D i
-      have hD' : ∀ x ∈ cell Z, ∀ i ∈ p.vars, eval x (D' i) ≠ 0 := by
-        intro x hx i hi
+      have hD' : ∀ x ∈ cell Z, ∀ i ∈ p.vars, eval x (D' i) ≠ 0 := fun x hx i hi ↦ by
         by_cases hiZ : i ∈ Z
         · simp [D', hiZ]
         · simpa [D', hiZ] using mem_iInter₂.1 hx.2 i (Finset.mem_sdiff.2 ⟨hi, hiZ⟩)
@@ -347,24 +346,23 @@ theorem IsSemialgebraic.preimage_eval_div {K : Type*} [Field K] [LinearOrder K]
       ext x
       refine and_congr_right fun hx ↦ ?_
       have heq : eval (fun i ↦ eval x (N i) / eval x (D i)) p =
-          eval (fun i ↦ eval x (N' i) / eval x (D' i)) p := by
-        refine eval₂Hom_congr' rfl (fun i _ _ ↦ ?_) rfl
-        by_cases hiZ : i ∈ Z
-        · have h0 : eval x (D i) = 0 := mem_iInter₂.1 hx.1 i hiZ
-          simp [N', D', hiZ, h0]
-        · simp [N', D', hiZ]
+          eval (fun i ↦ eval x (N' i) / eval x (D' i)) p :=
+        eval₂Hom_congr' rfl (fun i _ _ ↦ by
+          by_cases hiZ : i ∈ Z
+          · simp [N', D', hiZ, show eval x (D i) = 0 from mem_iInter₂.1 hx.1 i hiZ]
+          · simp [N', D', hiZ]) rfl
       obtain ⟨hBpos, hEq⟩ := hAB x hx
       rw [mem_ofPred_eq, mem_ofPred_eq, heq, hEq, hq hBpos]
     have hunion : (fun x i ↦ eval x (N i) / eval x (D i)) ⁻¹' {y | q (eval y p)} =
         ⋃ Z ∈ p.vars.powerset, cell Z ∩ {x | q (eval (fun i ↦ eval x (N i) / eval x (D i)) p)} := by
       ext x
       simp only [mem_preimage, mem_ofPred_eq, mem_iUnion, mem_inter_iff]
-      refine ⟨fun hp ↦ ?_, fun ⟨_, _, _, hp⟩ ↦ hp⟩
-      refine ⟨p.vars.filter fun i ↦ eval x (D i) = 0,
-        Finset.mem_powerset.2 (Finset.filter_subset _ _), ⟨?_, ?_⟩, hp⟩
-      · exact mem_iInter₂.2 fun i hi ↦ (Finset.mem_filter.1 hi).2
-      · exact mem_iInter₂.2 fun i hi h0 ↦ (Finset.mem_sdiff.1 hi).2
-          (Finset.mem_filter.2 ⟨(Finset.mem_sdiff.1 hi).1, h0⟩)
+      refine ⟨fun hp ↦ ⟨p.vars.filter fun i ↦ eval x (D i) = 0,
+        Finset.mem_powerset.2 (Finset.filter_subset _ _),
+        ⟨mem_iInter₂.2 fun i hi ↦ (Finset.mem_filter.1 hi).2,
+          mem_iInter₂.2 fun i hi h0 ↦ (Finset.mem_sdiff.1 hi).2
+            (Finset.mem_filter.2 ⟨(Finset.mem_sdiff.1 hi).1, h0⟩)⟩, hp⟩,
+        fun ⟨_, _, _, hp⟩ ↦ hp⟩
     rw [hunion]
     exact IsSemialgebraic.biUnion p.vars.powerset.finite_toSet fun Z _ ↦ hpiece Z
   refine setOf_isSemialgebraic_subset

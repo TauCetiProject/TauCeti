@@ -70,8 +70,7 @@ variable {K : Type*} [DivisionRing K] [TopologicalSpace K] [T1Space K]
 /-- For a finite index type `ι`, each standard product affine open of `(i : ι) → ℙ K (κ i → K)` is
 open in the product topology. -/
 theorem isOpen_piAffineOpen (I : ∀ i, κ i) : IsOpen (piAffineOpen (K := K) I) := by
-  rw [piAffineOpen_def]
-  exact isOpen_set_pi finite_univ fun i _ ↦ isOpen_affineOpen (I i)
+  rw [piAffineOpen_def]; exact isOpen_set_pi finite_univ fun i _ ↦ isOpen_affineOpen (I i)
 
 end PiAffineOpen
 
@@ -85,11 +84,7 @@ theorem continuous_piAffineChart_symm (I : ∀ i, Fin (n i + 1)) :
   ((Continuous.piMap fun i ↦ continuous_affineChart_symm (I i)).comp
     (TauCeti.piCurryHomeomorph fun (_ : ι) (_ : Fin _) ↦ K).continuous).congr fun z ↦ by
       ext i
-      have hcurry : TauCeti.piCurryHomeomorph (fun (_ : ι) (_ : Fin _) ↦ K) z i =
-          fun k ↦ z ⟨i, k⟩ := by
-        ext k
-        simp
-      simp [Pi.map, hcurry]
+      simp [Pi.map, funext (TauCeti.piCurryHomeomorph_apply (fun _ _ ↦ K) z i)]
 
 variable [ContinuousMul K] [ContinuousInv₀ K]
 
@@ -97,15 +92,11 @@ variable [ContinuousMul K] [ContinuousInv₀ K]
 theorem continuousOn_piAffineChart (I : ∀ i, Fin (n i + 1)) :
     ContinuousOn (piAffineChart (K := K) I) (piAffineOpen I) := by
   have hpi : ContinuousOn (Pi.map fun i ↦ (affineChart (K := K) (I i) : _ → Fin (n i) → K))
-      (piAffineOpen I) := by
-    rw [continuousOn_pi]
-    intro i
-    exact (continuousOn_affineChart (I i)).comp (continuous_apply i).continuousOn
-      fun _ hp ↦ mem_piAffineOpen_iff.1 hp i
+      (piAffineOpen I) :=
+    continuousOn_pi.2 fun i ↦ (continuousOn_affineChart (I i)).comp
+      (continuous_apply i).continuousOn fun _ hp ↦ mem_piAffineOpen_iff.1 hp i
   exact ((TauCeti.piCurryHomeomorph fun (_ : ι) (_ : Fin _) ↦ K).symm.continuous.comp_continuousOn
-    hpi).congr fun p _ ↦ by
-      ext ⟨i, k⟩
-      simp [Pi.map]
+    hpi).congr fun p _ ↦ by ext ⟨i, k⟩; simp [Pi.map]
 
 /-- **The affine part of a subset of multiprojective space.** The standard product affine chart at
 `I` restricts to a homeomorphism from `X ∩ piAffineOpen I` onto its coordinate image `Z` in
@@ -150,17 +141,10 @@ noncomputable def piAffineOpenPartialHomeomorph (I : ∀ i, Fin (n i + 1)) :
 @[simp]
 theorem piAffineOpenPartialHomeomorph_toPartialEquiv (I : ∀ i, Fin (n i + 1)) :
     (piAffineOpenPartialHomeomorph (K := K) I).toPartialEquiv = piAffineChart I := by
-  refine PartialEquiv.ext (fun p ↦ ?_) (fun z ↦ ?_) ?_
-  · ext ⟨i, k⟩
-    simp [piAffineOpenPartialHomeomorph]
+  refine PartialEquiv.ext (fun p ↦ ?_) (fun z ↦ ?_) (by ext p; simp [piAffineOpenPartialHomeomorph])
+  · ext ⟨i, k⟩; simp [piAffineOpenPartialHomeomorph]
   · ext i
-    have hcurry : TauCeti.piCurryHomeomorph (fun (_ : ι) (_ : Fin _) ↦ K) z i =
-        fun k ↦ z ⟨i, k⟩ := by
-      ext k
-      simp
-    simp [piAffineOpenPartialHomeomorph, hcurry]
-  · ext p
-    simp [piAffineOpenPartialHomeomorph]
+    simp [piAffineOpenPartialHomeomorph, funext (TauCeti.piCurryHomeomorph_apply (fun _ _ ↦ K) z i)]
 
 @[simp]
 theorem coe_piAffineOpenPartialHomeomorph (I : ∀ i, Fin (n i + 1)) :
@@ -198,8 +182,7 @@ variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
 /-- The factorwise product projector map is continuous for the product topologies. -/
 theorem continuous_piProjector :
     Continuous (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) := by
-  rw [piProjector_def]
-  exact Continuous.piMap fun _ ↦ continuous_projector
+  rw [piProjector_def]; exact Continuous.piMap fun _ ↦ continuous_projector
 
 /-- The flattened product projector map into `(Σ i, κ i × κ i) → K` is continuous. -/
 theorem continuous_piProjectorCoords :
@@ -212,8 +195,7 @@ projector map is a closed embedding onto `TauCeti.piProjectorLocus κ K`. -/
 theorem isClosedEmbedding_piProjector [T2Space K] :
     IsClosedEmbedding
       (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) := by
-  rw [piProjector_def]
-  exact IsClosedEmbedding.piMap fun _ ↦ isClosedEmbedding_projector
+  rw [piProjector_def]; exact IsClosedEmbedding.piMap fun _ ↦ isClosedEmbedding_projector
 
 /-- Over a Hausdorff topological ordered field with continuous inversion, the flattened product
 projector map is a closed embedding into `(Σ i, κ i × κ i) → K`. -/
@@ -235,8 +217,7 @@ variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
 
 /-- Over `ℝ`, the product projector locus is compact. -/
 theorem isCompact_piProjectorLocus : IsCompact (piProjectorLocus κ ℝ) := by
-  rw [piProjectorLocus_def]
-  exact isCompact_univ_pi fun i ↦ isCompact_projectorLocus
+  rw [piProjectorLocus_def]; exact isCompact_univ_pi fun i ↦ isCompact_projectorLocus
 
 /-- Over `ℝ`, the flattened product projector locus is compact. -/
 theorem isCompact_image_piMatrixLinearEquiv_piProjectorLocus :
@@ -247,8 +228,7 @@ variable {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Spa
 
 /-- The product projector locus is closed over a Hausdorff topological ring. -/
 theorem isClosed_piProjectorLocus : IsClosed (piProjectorLocus κ K) := by
-  rw [piProjectorLocus_def]
-  exact isClosed_set_pi fun i _ ↦ isClosed_projectorLocus
+  rw [piProjectorLocus_def]; exact isClosed_set_pi fun i _ ↦ isClosed_projectorLocus
 
 /-- The flattened product projector locus is closed over a Hausdorff topological ring. -/
 theorem isClosed_image_piMatrixLinearEquiv_piProjectorLocus :

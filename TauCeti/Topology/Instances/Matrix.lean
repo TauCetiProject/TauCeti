@@ -117,18 +117,15 @@ def ofHomeomorph {m n α : Type*} [TopologicalSpace α] : (m → n → α) ≃�
 
 @[simp]
 theorem ofHomeomorph_toEquiv {m n α : Type*} [TopologicalSpace α] :
-    (ofHomeomorph : (m → n → α) ≃ₜ Matrix m n α).toEquiv = of :=
-  (rfl)
+    (ofHomeomorph : (m → n → α) ≃ₜ Matrix m n α).toEquiv = of := (rfl)
 
 @[simp]
 theorem ofHomeomorph_apply {m n α : Type*} [TopologicalSpace α] (f : m → n → α) :
-    ofHomeomorph f = of f :=
-  (rfl)
+    ofHomeomorph f = of f := (rfl)
 
 @[simp]
 theorem ofHomeomorph_symm_apply {m n α : Type*} [TopologicalSpace α] (A : Matrix m n α) :
-    ofHomeomorph.symm A = of.symm A :=
-  (rfl)
+    ofHomeomorph.symm A = of.symm A := (rfl)
 
 end Matrix
 
@@ -152,8 +149,7 @@ theorem piMatrixHomeomorph_apply (A : (i : ι) → Matrix (κ i) (μ i) α) (p :
   simp [piMatrixHomeomorph, Function.uncurry]
 
 @[simp]
-theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α)
-    (i : ι) (j : κ i) (k : μ i) :
+theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α) (i : ι) (j : κ i) (k : μ i) :
     (piMatrixHomeomorph κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
   simp [piMatrixHomeomorph, Function.curry]
 
@@ -161,23 +157,20 @@ theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α)
 `TauCeti.piMatrixLinearEquiv`. -/
 theorem piMatrixHomeomorph_toEquiv (R : Type*) [Semiring R] [AddCommMonoid α] [Module R α] :
     (piMatrixHomeomorph κ μ α).toEquiv = (piMatrixLinearEquiv R κ μ α).toEquiv := by
-  ext A p
-  simp
+  ext A p; simp
 
 /-- The forward map of `TauCeti.piMatrixHomeomorph` agrees with `TauCeti.piMatrixLinearEquiv`. -/
 theorem coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv (R : Type*) [Semiring R]
     [AddCommMonoid α] [Module R α] :
     ⇑(piMatrixHomeomorph κ μ α) = ⇑(piMatrixLinearEquiv R κ μ α) := by
-  ext A p
-  simp
+  ext A p; simp
 
 /-- The inverse map of `TauCeti.piMatrixHomeomorph` agrees with the inverse of
 `TauCeti.piMatrixLinearEquiv`. -/
 theorem coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm (R : Type*) [Semiring R]
     [AddCommMonoid α] [Module R α] :
     ⇑(piMatrixHomeomorph κ μ α).symm = ⇑(piMatrixLinearEquiv R κ μ α).symm := by
-  ext a i j k
-  simp
+  ext a i j k; simp
 
 variable {κ μ α}
 
@@ -192,8 +185,7 @@ theorem continuous_piMatrixLinearEquiv {R : Type*} [Semiring R] [AddCommMonoid �
 topologies. -/
 @[continuity, fun_prop]
 theorem continuous_piMatrixLinearEquiv_symm {R : Type*} [Semiring R]
-    [AddCommMonoid α] [Module R α] :
-    Continuous (piMatrixLinearEquiv R κ μ α).symm :=
+    [AddCommMonoid α] [Module R α] : Continuous (piMatrixLinearEquiv R κ μ α).symm :=
   coe_piMatrixHomeomorph_symm_eq_piMatrixLinearEquiv_symm κ μ α R ▸
     (piMatrixHomeomorph κ μ α).symm.continuous
 

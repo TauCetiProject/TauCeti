@@ -79,33 +79,24 @@ private theorem exists_pos_eval_eq_mul_eval_div_of_forall {α β K : Type*} [Fie
     ∃ A B : MvPolynomial β K, ∀ x ∈ u,
       0 < eval x B ∧ eval x A = eval x B * eval (fun a ↦ eval x (N a) / eval x (D a)) p := by
   induction p using MvPolynomial.induction_on with
-  | C c =>
-    exact ⟨C c, 1, fun x _ ↦ ⟨by simp, by simp⟩⟩
+  | C c => exact ⟨C c, 1, fun _ _ ↦ ⟨by simp, by simp⟩⟩
   | add p q ihp ihq =>
-    obtain ⟨A₁, B₁, h₁⟩ := ihp
-    obtain ⟨A₂, B₂, h₂⟩ := ihq
+    obtain ⟨A₁, B₁, h₁⟩ := ihp; obtain ⟨A₂, B₂, h₂⟩ := ihq
     refine ⟨A₁ * B₂ + A₂ * B₁, B₁ * B₂, fun x hx ↦ ?_⟩
-    obtain ⟨hB₁, hA₁⟩ := h₁ x hx
-    obtain ⟨hB₂, hA₂⟩ := h₂ x hx
-    refine ⟨by simp [mul_pos hB₁ hB₂], ?_⟩
-    simp only [map_add, map_mul, hA₁, hA₂]
-    ring
+    obtain ⟨hB₁, hA₁⟩ := h₁ x hx; obtain ⟨hB₂, hA₂⟩ := h₂ x hx
+    exact ⟨by simp [mul_pos hB₁ hB₂], by simp only [map_add, map_mul, hA₁, hA₂]; ring⟩
   | mul_X p a ihp =>
     obtain ⟨A₁, B₁, h₁⟩ := ihp
     refine ⟨A₁ * (N a * D a), B₁ * (D a * D a), fun x hx ↦ ?_⟩
     obtain ⟨hB₁, hA₁⟩ := h₁ x hx
     have hDa : eval x (D a) ≠ 0 := hD x hx a
+    have hmul : eval x (N a) * eval x (D a) =
+        eval x (D a) * eval x (D a) * (eval x (N a) / eval x (D a)) := by
+      rw [mul_assoc, mul_div_cancel₀ _ hDa, mul_comm]
     refine ⟨by simp [mul_pos hB₁ (mul_self_pos.2 hDa)], ?_⟩
     simp only [map_mul, eval_X, hA₁]
-    calc
-      eval x B₁ * eval (fun b ↦ eval x (N b) / eval x (D b)) p * (eval x (N a) * eval x (D a))
-        = eval x B₁ * eval (fun b ↦ eval x (N b) / eval x (D b)) p *
-            ((eval x (D a) * eval x (D a)) * (eval x (N a) / eval x (D a))) := by
-          rw [mul_assoc (eval x (D a)), mul_div_cancel₀ _ hDa, mul_comm (eval x (D a))]
-      _ = eval x B₁ * (eval x (D a) * eval x (D a)) *
-            (eval (fun b ↦ eval x (N b) / eval x (D b)) p *
-              (eval x (N a) / eval x (D a))) := by
-          ring
+    rw [hmul]
+    ring
 
 /-- **Clearing polynomial denominators by a strictly positive polynomial factor.** Over an ordered
 field, if the denominators `D a` for variables `a ∈ p.vars` do not vanish on `u`, then there exist
@@ -118,17 +109,15 @@ theorem exists_pos_eval_eq_mul_eval_div {α β K : Type*} [Field K] [LinearOrder
   classical
   let N' (a : α) : MvPolynomial β K := if a ∈ p.vars then N a else 0
   let D' (a : α) : MvPolynomial β K := if a ∈ p.vars then D a else 1
-  have hD' : ∀ x ∈ u, ∀ a, eval x (D' a) ≠ 0 := by
-    intro x hx a
+  have hD' : ∀ x ∈ u, ∀ a, eval x (D' a) ≠ 0 := fun x hx a ↦ by
     by_cases ha : a ∈ p.vars
     · simpa [D', ha] using hD x hx a ha
     · simp [D', ha]
   obtain ⟨A, B, hAB⟩ := exists_pos_eval_eq_mul_eval_div_of_forall hD' p
   refine ⟨A, B, fun x hx ↦ ?_⟩
-  obtain ⟨hB, hEq⟩ := hAB x hx
   have heval : eval (fun a ↦ eval x (N' a) / eval x (D' a)) p =
       eval (fun a ↦ eval x (N a) / eval x (D a)) p :=
     eval₂Hom_congr' rfl (fun a ha _ ↦ by simp [N', D', ha]) rfl
-  exact ⟨hB, heval ▸ hEq⟩
+  obtain ⟨hB, hEq⟩ := hAB x hx; exact ⟨hB, heval ▸ hEq⟩
 
 end MvPolynomial
