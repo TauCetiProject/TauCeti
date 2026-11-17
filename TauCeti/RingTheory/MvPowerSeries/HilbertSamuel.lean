@@ -25,7 +25,8 @@ many variables, Hironaka's formal division theorem identifies `MvPowerSeries σ 
 `MonomialOrder.complementSubmoduleEquivFun`). Passing to `I ⊔ 𝔪 ^ (n + 1)` adjoins all exponents of
 total degree at least `n + 1` to the graded lexicographic initial diagram
 (`MonomialOrder.initialDiagram_degLex_sup_maximalIdeal_pow`), while local length over
-`MvPowerSeries σ K` agrees with `K`-vector space length (`MvPowerSeries.length_restrictScalars`).
+`MvPowerSeries σ K` agrees with `K`-vector space length
+(`TauCeti.length_mvPowerSeries_restrictScalars`).
 Consequently, `TauCeti.localQuotientHilbertSamuel (MvPowerSeries σ K) I n` counts the exponents
 `α : σ →₀ ℕ` of total degree at most `n` outside `degLex.initialDiagram I`
 (`TauCeti.localQuotientHilbertSamuel_mvPowerSeries`, Bierstone–Milman 1997, Corollary 3.20). For
@@ -101,7 +102,7 @@ theorem localQuotientHilbertSamuel_mvPowerSeries {σ K : Type*} [Field K] [Finit
     ((MonomialOrder.degLex.quotientEquivComplementSubmodule J).trans
       (MonomialOrder.degLex.complementSubmoduleEquivFun J)).trans
       (LinearEquiv.funCongrLeft K K finEquiv.symm)
-  rw [localQuotientHilbertSamuel_def, ← MvPowerSeries.length_restrictScalars (R := K),
+  rw [localQuotientHilbertSamuel_def, ← length_mvPowerSeries_restrictScalars (R := K),
     linEquiv.length_eq, Module.length_eq_finrank, Module.finrank_fin_fun]
 
 /-- Two ideals of `MvPowerSeries σ K₁` and `MvPowerSeries σ K₂` with the same graded lexicographic
