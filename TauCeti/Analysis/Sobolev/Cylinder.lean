@@ -98,6 +98,24 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 `ℝ × S¹`. -/
 abbrev stripMeasure : Measure (ℝ × ℝ) := volume.restrict (univ ×ˢ Icc 0 1)
 
+/-- Translation by `a` in the `s` direction preserves the Lebesgue measure of the strip. -/
+theorem measurePreserving_add_right_stripMeasure (a : ℝ) :
+    MeasurePreserving (fun z : ℝ × ℝ ↦ z + (a, 0)) stripMeasure stripMeasure := by
+  have hprod : MeasurePreserving (fun z : ℝ × ℝ ↦ z + (a, 0)) volume volume := by
+    have h := (MeasureTheory.measurePreserving_add_right (volume : Measure ℝ) a).prod
+      (MeasurePreserving.id (volume : Measure ℝ))
+    rw [← Measure.volume_eq_prod] at h
+    convert h using 1
+    funext z
+    ext <;> simp
+  have h := hprod.restrict_preimage
+    (MeasurableSet.univ.prod (measurableSet_Icc (a := (0 : ℝ)) (b := 1)))
+  have hpre : (fun z : ℝ × ℝ ↦ z + (a, 0)) ⁻¹' (univ ×ˢ Icc (0 : ℝ) 1) =
+      univ ×ˢ Icc (0 : ℝ) 1 := by
+    ext z
+    simp
+  rwa [hpre] at h
+
 variable (V) in
 /-- The test sections of the trivial bundle with fibre `V` over the cylinder: `C²` maps
 `ξ : ℝ × ℝ → V` of period one in `t` that vanish for `|s|` large. -/
@@ -159,6 +177,12 @@ theorem jet_add_one (hξ : ξ ∈ testSection V) (s t : ℝ) : jet ξ (s, t + 1)
   rw [hper] at h
   simp only [Prod.mk_add_mk, add_zero] at h
   simp [jet, ← h, hξp]
+
+/-- The jet of the translate of a map is the translate of its jet. -/
+theorem jet_comp_add_right (ξ : ℝ × ℝ → V) (c : ℝ × ℝ) :
+    jet (fun z ↦ ξ (z + c)) = fun z ↦ jet ξ (z + c) := by
+  funext z
+  simp [jet_apply, fderiv_comp_add_right]
 
 /-- The jet of a section vanishing for `|s| ≥ R` vanishes for `|s| > R`. -/
 theorem jet_eq_zero_of_lt_abs {R : ℝ} (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) {z : ℝ × ℝ}
@@ -732,7 +756,8 @@ theorem hasSemiFredholmEstimate_iff {M : ℝ × ℝ → V × V × V →L[ℝ] W}
               ∫ z in Icc (-T) T ×ˢ Icc (0 : ℝ) 1, ‖ξ z‖ ^ 2) :=
   Iff.rfl
 
-private theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+/-- The squared norm of the jet is at most the pointwise `W^{1,2}` energy density. -/
+theorem sq_norm_jet_le (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
     ‖jet ξ z‖ ^ 2 ≤ ‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2 := by
   have h : ‖jet ξ z‖ ≤ √(‖fderiv ℝ ξ z (1, 0)‖ ^ 2 + ‖fderiv ℝ ξ z (0, 1)‖ ^ 2 + ‖ξ z‖ ^ 2) := by
     simp only [jet, Prod.norm_def, max_le_iff]
