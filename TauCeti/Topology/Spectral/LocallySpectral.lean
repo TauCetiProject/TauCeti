@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Spectral.SpectralMap
+import Mathlib.Topology.Spectral.ConstructibleTopology
+import Mathlib.Topology.WithTopology
 import TauCeti.Topology.Compactness.Compact
+import TauCeti.Topology.Spectral.PatchCriterion
 
 /-!
 # Locally spectral spaces and maps
@@ -19,9 +22,9 @@ opens to be compact globally.
 
 The main comparison identifies locally spectral spaces that are compact and quasiseparated with
 spectral spaces. Likewise, between spectral spaces the relative notion of locally spectral map
-agrees with Mathlib's absolute one. Local spectrality of spaces passes to open subspaces, local
-spectrality of maps can be tested on a single cover of the source, and locally spectral maps
-compose through a locally spectral middle space.
+agrees with Mathlib's absolute one. Local spectrality of spaces passes to open subspaces and
+finite products, local spectrality of maps can be tested on a single cover of the source, and
+locally spectral maps compose through a locally spectral middle space.
 
 ## Main definitions
 
@@ -36,10 +39,17 @@ compose through a locally spectral middle space.
   between spectral spaces.
 * `TauCeti.IsLocallySpectralSpace.isTopologicalBasis`: the spectral open subsets of a locally
   spectral space form a basis.
+* `TauCeti.IsLocallySpectralSpace.spectralSpace_of_isOpen_isCompact`: compact open subsets of a
+  quasiseparated locally spectral space are spectral.
 * `Topology.IsOpenEmbedding.isLocallySpectralSpace`: open subspaces of locally spectral spaces are
   locally spectral.
+* `TauCeti.spectralSpace_prod`, `TauCeti.IsLocallySpectralSpace.prod`: binary products of spectral
+  and locally spectral spaces are spectral and locally spectral, respectively.
 * `TauCeti.IsLocallySpectralMap.of_forall_exists`: local spectrality of a map tested on one cover.
 * `TauCeti.IsLocallySpectralMap.comp`: composition through a locally spectral middle space.
+* `Topology.IsOpenEmbedding.isLocallySpectralMap`, `TauCeti.isLocallySpectralMap_fst`,
+  `TauCeti.isLocallySpectralMap_snd`: open embeddings and projections out of prespectral products
+  are locally spectral.
 
 ## References
 
@@ -149,6 +159,69 @@ theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralSpace {Z : Type*} [Topo
   let h := he.isEmbedding.homeomorphOfSubsetRange hWe
   have : CompactSpace (e ⁻¹' W) := h.symm.compactSpace
   exact h.isOpenEmbedding.spectralSpace
+
+/-- A compact open subset of a quasiseparated locally spectral space is spectral. -/
+theorem IsLocallySpectralSpace.spectralSpace_of_isOpen_isCompact [QuasiSeparatedSpace X]
+    (hX : IsLocallySpectralSpace X) {U : Set X} (hUo : IsOpen U) (hUc : IsCompact U) :
+    SpectralSpace U :=
+  spectralSpace_iff_isLocallySpectralSpace.mpr
+    ⟨hUo.isOpenEmbedding_subtypeVal.isLocallySpectralSpace hX,
+      isCompact_iff_compactSpace.mp hUc,
+      hUo.isOpenEmbedding_subtypeVal.quasiSeparatedSpace⟩
+
+/-- A binary product of prespectral spaces is prespectral. -/
+instance prespectralSpace_prod [PrespectralSpace X] [PrespectralSpace Y] :
+    PrespectralSpace (X × Y) := by
+  refine .of_isTopologicalBasis
+    (PrespectralSpace.isTopologicalBasis.prod PrespectralSpace.isTopologicalBasis) ?_
+  rintro _ ⟨U, hU, V, hV, rfl⟩
+  exact hU.2.prod hV.2
+
+/-- A binary product of spectral spaces is spectral. -/
+instance spectralSpace_prod [SpectralSpace X] [SpectralSpace Y] : SpectralSpace (X × Y) := by
+  have hb := PrespectralSpace.isTopologicalBasis (X := X) |>.prod
+    (PrespectralSpace.isTopologicalBasis (X := Y))
+  have hgen := hb.eq_generateFrom
+  have hT0 : T0Space (X × Y) := inferInstance
+  let t' : TopologicalSpace (X × Y) :=
+    @instTopologicalSpaceProd X Y (constructibleTopology X) (constructibleTopology Y)
+  have hc : @CompactSpace (X × Y) t' := by
+    have hcompX : @CompactSpace X (constructibleTopology X) :=
+      @Function.Surjective.compactSpace (WithConstructibleTopology X) X _
+        (constructibleTopology X) WithTopology.ofTopology
+        (WithTopology.continuous_ofTopology _) inferInstance
+        (WithTopology.ofTopology_surjective _)
+    have hcompY : @CompactSpace Y (constructibleTopology Y) :=
+      @Function.Surjective.compactSpace (WithConstructibleTopology Y) Y _
+        (constructibleTopology Y) WithTopology.ofTopology
+        (WithTopology.continuous_ofTopology _) inferInstance
+        (WithTopology.ofTopology_surjective _)
+    exact ⟨by
+      rw [← Set.univ_prod_univ]
+      exact @IsCompact.prod X Y (constructibleTopology X) (constructibleTopology Y) _ _
+        (@CompactSpace.isCompact_univ X _ hcompX) (@CompactSpace.isCompact_univ Y _ hcompY)⟩
+  refine @spectralSpace_of_isClopen_generateFrom _ _ t' (@instTopologicalSpaceProd X Y _ _)
+    hgen hc ?_ hT0
+  rintro _ ⟨U, ⟨hUo, hUc⟩, V, ⟨hVo, hVc⟩, rfl⟩
+  dsimp only
+  rw [Set.prod_eq]
+  exact @IsClopen.inter _ t' _ _
+    (@IsClopen.preimage _ _ t' (constructibleTopology X) _
+      (hUc.isClopen_constructibleTopology_of_isOpen hUo) Prod.fst
+      (@continuous_fst X Y (constructibleTopology X) (constructibleTopology Y)))
+    (@IsClopen.preimage _ _ t' (constructibleTopology Y) _
+      (hVc.isClopen_constructibleTopology_of_isOpen hVo) Prod.snd
+      (@continuous_snd X Y (constructibleTopology X) (constructibleTopology Y)))
+
+/-- A binary product of locally spectral spaces is locally spectral. -/
+theorem IsLocallySpectralSpace.prod (hX : IsLocallySpectralSpace X)
+    (hY : IsLocallySpectralSpace Y) : IsLocallySpectralSpace (X × Y) := by
+  rintro ⟨x, y⟩
+  obtain ⟨U, hUo, hxU, hUs⟩ := hX x
+  obtain ⟨V, hVo, hyV, hVs⟩ := hY y
+  refine ⟨U ×ˢ V, hUo.prod hVo, ⟨hxU, hyV⟩, ?_⟩
+  have _ : CompactSpace (U ×ˢ V : Set (X × Y)) := (Homeomorph.Set.prod U V).symm.compactSpace
+  exact (Homeomorph.Set.prod U V).isOpenEmbedding.spectralSpace
 
 /-- A map is **locally spectral** if it is continuous and every restriction between spectral open
 subspaces is a spectral map. This is a relative condition: no global compactness is imposed on
@@ -315,6 +388,73 @@ theorem IsLocallySpectralMap.comp {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
   have heq : U' ∩ (g ∘ f) ⁻¹' K = U' ∩ f ⁻¹' (V ∩ g ⁻¹' K) := Set.ext fun y ↦
     ⟨fun ⟨hy, hyK⟩ ↦ ⟨hy, hU'V hy, hyK⟩, fun ⟨hy, _, hyK⟩ ↦ ⟨hy, hyK⟩⟩
   rwa [heq]
+
+/-- Precomposing a locally spectral map with an open embedding yields a locally spectral map. -/
+theorem IsLocallySpectralMap.comp_isOpenEmbedding {Z : Type*} [TopologicalSpace Z] {g : Y → Z}
+    {e : X → Y} (hg : IsLocallySpectralMap g) (he : IsOpenEmbedding e) :
+    IsLocallySpectralMap (g ∘ e) := by
+  refine .of_isSpectralMap_restrict (hg.continuous.comp he.continuous)
+    fun U W hUW hUo hWo hUs hWs ↦ ?_
+  rw [hUW.isSpectralMap_restrict_iff (hg.continuous.comp he.continuous).continuousOn hWo]
+  intro K hKW hKo hKc
+  have heU_open : IsOpen (e '' U) := he.isOpenMap U hUo
+  have heU_spec : SpectralSpace (e '' U) := by
+    have _ : SpectralSpace U := hUs
+    refine (he.isEmbedding.spectralSpace_preimage_iff (Set.image_subset_range e U)).mp ?_
+    rwa [Set.preimage_image_eq U he.injective]
+  have hmaps : MapsTo g (e '' U) W := by
+    rintro _ ⟨x, hx, rfl⟩
+    exact hUW hx
+  have hpre : IsCompact (e '' U ∩ g ⁻¹' K) :=
+    (hmaps.isSpectralMap_restrict_iff hg.continuous.continuousOn hWo).mp
+      (hg.isSpectralMap_restrict hmaps heU_open hWo) K hKW hKo hKc
+  rw [he.isEmbedding.isCompact_iff, Set.preimage_comp, Set.image_inter_preimage]
+  exact hpre
+
+/-- Every open embedding is a locally spectral map. -/
+theorem _root_.Topology.IsOpenEmbedding.isLocallySpectralMap {f : X → Y}
+    (hf : IsOpenEmbedding f) : IsLocallySpectralMap f :=
+  isLocallySpectralMap_id.comp_isOpenEmbedding hf
+
+/-- The first projection out of a product of prespectral spaces is locally spectral. -/
+theorem isLocallySpectralMap_fst [PrespectralSpace X] [PrespectralSpace Y] :
+    IsLocallySpectralMap (Prod.fst : X × Y → X) := by
+  refine .of_isSpectralMap_restrict continuous_fst fun U V hUV hUo hVo hUs hVs ↦ ?_
+  rw [hUV.isSpectralMap_restrict_iff continuous_fst.continuousOn hVo]
+  intro K hKV hKo hKc
+  have hUcomp : IsCompact U := isCompact_iff_compactSpace.mpr hUs.toCompactSpace
+  have hboxes (p : U) : ∃ (A : Set X) (B : Set Y),
+      IsOpen A ∧ IsCompact A ∧ IsOpen B ∧ IsCompact B ∧
+        p.1 ∈ A ×ˢ B ∧ A ×ˢ B ⊆ U := by
+    obtain ⟨W, ⟨A, ⟨hAo, hAc⟩, B, ⟨hBo, hBc⟩, rfl⟩, hpW, hWU⟩ :=
+      (PrespectralSpace.isTopologicalBasis.prod
+        PrespectralSpace.isTopologicalBasis).exists_subset_of_mem_open p.2 hUo
+    exact ⟨A, B, hAo, hAc, hBo, hBc, hpW, hWU⟩
+  choose A B hAo hAc hBo hBc hpAB hABU using hboxes
+  obtain ⟨T, hT⟩ := hUcomp.elim_finite_subcover (fun p : U ↦ A p ×ˢ B p)
+    (fun p ↦ (hAo p).prod (hBo p))
+    (fun p hp ↦ Set.mem_iUnion.mpr ⟨⟨p, hp⟩, hpAB ⟨p, hp⟩⟩)
+  have heq : U ∩ Prod.fst ⁻¹' K = ⋃ p ∈ T, (A p ∩ K) ×ˢ B p := by
+    ext ⟨x, y⟩
+    constructor
+    · rintro ⟨hxyU, hxK⟩
+      obtain ⟨p, hpT, hxA, hyB⟩ := Set.mem_iUnion₂.mp (hT hxyU)
+      exact Set.mem_iUnion₂.mpr ⟨p, hpT, ⟨hxA, hxK⟩, hyB⟩
+    · intro h
+      obtain ⟨p, -, ⟨hxA, hxK⟩, hyB⟩ := Set.mem_iUnion₂.mp h
+      exact ⟨hABU p ⟨hxA, hyB⟩, hxK⟩
+  rw [heq]
+  refine T.isCompact_biUnion fun p _ ↦ (?_ : IsCompact (A p ∩ K)).prod (hBc p)
+  have hAV : A p ⊆ V := fun a ha ↦ by
+    have hmem : (a, p.1.2) ∈ A p ×ˢ B p := ⟨ha, (hpAB p).2⟩
+    exact hUV (hABU p hmem)
+  exact (isQuasiSeparated_iff_quasiSeparatedSpace V hVo).mpr hVs.toQuasiSeparatedSpace
+    (A p) K hAV (hAo p) (hAc p) hKV hKo hKc
+
+/-- The second projection out of a product of prespectral spaces is locally spectral. -/
+theorem isLocallySpectralMap_snd [PrespectralSpace X] [PrespectralSpace Y] :
+    IsLocallySpectralMap (Prod.snd : X × Y → Y) :=
+  isLocallySpectralMap_fst.comp_isOpenEmbedding (Homeomorph.prodComm X Y).isOpenEmbedding
 
 end TauCeti
 

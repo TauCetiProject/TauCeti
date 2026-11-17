@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Spectral.ConstructibleTopology
 public import TauCeti.Topology.Spectral.SpectralMap
+import Mathlib.Order.Zorn
 import Mathlib.Topology.WithTopology
 
 /-!
@@ -49,6 +50,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `IsCompact.isProConstructible` — a quasi-compact open subset is pro-constructible. It is
   in fact clopen for the constructible topology, which is what makes the two previous families
   interact.
+* `TauCeti.isProConstructible_singleton` — every singleton subset of a T₀ prespectral space is
+  pro-constructible.
 * `TauCeti.IsProConstructible.inter`, `.iInter`, `.sInter`, `.union`, `.iUnion` — the calculus of
   pro-constructible subsets. Arbitrary intersections and finite unions are allowed.
 * `TauCeti.IsProConstructible.preimage` — pro-constructibility is stable under preimage along a
@@ -65,7 +68,9 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `TauCeti.IsProConstructible.mem_of_isGenericPoint` — in any topological space, every generic
   point of the closure of a pro-constructible subset belongs to that subset.
 * `TauCeti.IsProConstructible.quasiSober` — a pro-constructible subspace of a quasi-sober
-  space is quasi-sober.
+  space is quasi-sober; `TauCeti.IsProConstructible.exists_minimal_specializes` — every point of
+  a pro-constructible subset of a quasi-sober space specializes from a point of that subset that
+  is minimal for specialization.
 * `TauCeti.IsProConstructible.spectralSpace` — **a pro-constructible subspace of a spectral space
   is spectral**. `IsClosed.spectralSpace` is the closed special case, the
   counterpart of Mathlib's `Topology.IsOpenEmbedding.spectralSpace`.
@@ -82,6 +87,8 @@ Recall that Mathlib orders topologies by *reverse* inclusion of their open sets,
 * `IsSpectralMap.isQuotientMap_of_generalizingMap` — a surjective generalizing spectral map onto
   a spectral space is a quotient map. This is the general form of Mathlib's
   `PrimeSpectrum.isQuotientMap_of_generalizingMap`, whose proof it follows.
+* `IsSpectralMap.quasiSober_of_surjective` — the target of a surjective spectral map from a
+  compact, quasi-sober, quasi-separated prespectral space to a prespectral space is quasi-sober.
 
 ## References
 
@@ -187,6 +194,19 @@ theorem isProConstructible_setOfPred_specializes [PrespectralSpace X] (x : X) :
         (x := y) (y := x)
   rw [heq]
   exact IsProConstructible.sInter fun U hU ↦ hU.2.1.isProConstructible hU.1
+
+/-- Every singleton subset of a T₀ prespectral space is pro-constructible. -/
+theorem isProConstructible_singleton [PrespectralSpace X] [T0Space X] (x : X) :
+    IsProConstructible ({x} : Set X) := by
+  have heq : ({x} : Set X) = closure {x} ∩ {y : X | y ⤳ x} := by
+    ext y
+    constructor
+    · rintro rfl
+      exact ⟨subset_closure rfl, specializes_rfl⟩
+    · rintro ⟨hycl, hyx⟩
+      exact (hyx.antisymm (specializes_iff_mem_closure.2 hycl)).eq
+  rw [heq]
+  exact isClosed_closure.isProConstructible.inter (isProConstructible_setOfPred_specializes x)
 
 /-! ### Functoriality -/
 
@@ -313,6 +333,33 @@ theorem IsProConstructible.quasiSober [QuasiSober X] {s : Set X}
     have h₂ := IsEmbedding.subtypeVal.isInducing.closure_eq_preimage_closure_image (Z : Set s)
     rw [isGenericPoint_def, h₁, Set.image_singleton, hη, ← h₂, hZcl.closure_eq]
 
+/-- Every point of a pro-constructible subset of a quasi-sober space is a specialization of a
+point of that subset that is minimal for specialization. -/
+theorem IsProConstructible.exists_minimal_specializes [QuasiSober X] {s : Set X}
+    (hs : IsProConstructible s) {x₀ : X} (hx₀ : x₀ ∈ s) :
+    ∃ η ∈ s, η ⤳ x₀ ∧ ∀ x ∈ s, x ⤳ η → η ⤳ x := by
+  let _ : Preorder X := specializationPreorder X
+  have hzorn : ∀ c ⊆ s, IsChain (· ≤ ·) c → ∀ y ∈ c,
+      ∃ ub ∈ s, ∀ z ∈ c, z ≤ ub := by
+    intro c hcs hc y hy
+    -- A nonempty specialization chain is irreducible; a generic point of its closure lies in `s`
+    -- and generalizes every element of the chain.
+    have hcirr : IsIrreducible c :=
+      ⟨⟨y, hy⟩, fun U V hUo hVo ⟨a, hac, haU⟩ ⟨b, hbc, hbV⟩ ↦ by
+        rcases hc.total hac hbc with hab | hba
+        · exact ⟨b, hbc, hab.mem_open hUo haU, hbV⟩
+        · exact ⟨a, hac, haU, hba.mem_open hVo hbV⟩⟩
+    obtain ⟨η, hη⟩ := QuasiSober.sober hcirr.closure isClosed_closure
+    have hηs : η ∈ s :=
+      (@IsClosed.closure_subset X (constructibleTopology X) s
+        (isProConstructible_iff_isClosed.1 hs)) <|
+        (@closure_mono X (constructibleTopology X) _ _ hcs)
+          hη.mem_closure_constructibleTopology
+    exact ⟨η, hηs,
+      fun z hz ↦ specializes_iff_mem_closure.2 (hη.def.symm ▸ subset_closure hz)⟩
+  obtain ⟨η, hx₀η, hηs, hηmax⟩ := zorn_le_nonempty₀ s hzorn x₀ hx₀
+  exact ⟨η, hηs, hx₀η, fun x hxs hxη ↦ hηmax hxs hxη⟩
+
 /-! ### Spectrality of pro-constructible subspaces -/
 
 section Spectral
@@ -416,6 +463,70 @@ theorem _root_.IsSpectralMap.isQuotientMap_of_generalizingMap [CompactSpace X] [
   rw [Set.image_preimage_eq t hsurj, ← stableUnderGeneralization_compl_iff]
   convert hg.stableUnderGeneralization_image ht.isOpen_compl.stableUnderGeneralization
   rw [← Set.preimage_compl, Set.image_preimage_eq _ hsurj]
+
+/-- **The target of a surjective spectral map from a compact, quasi-sober, quasi-separated
+prespectral space to a prespectral space is quasi-sober.** -/
+theorem _root_.IsSpectralMap.quasiSober_of_surjective [CompactSpace X] [QuasiSober X]
+    [PrespectralSpace X] [QuasiSeparatedSpace X] [PrespectralSpace Y] {f : X → Y}
+    (hf : IsSpectralMap f) (hsurj : Function.Surjective f) : QuasiSober Y where
+  sober {Z} hZ hZc := by
+    let S : Set (Set X) := {C | IsClosed C ∧ C ⊆ f ⁻¹' Z ∧ Z ⊆ closure (f '' C)}
+    have hpre : f ⁻¹' Z ∈ S := ⟨hZc.preimage hf.continuous, Subset.rfl, by
+      rw [Set.image_preimage_eq Z hsurj]
+      exact subset_closure⟩
+    have hzorn : ∀ c ⊆ S, IsChain (· ⊆ ·) c → c.Nonempty →
+        ∃ lb ∈ S, ∀ C ∈ c, lb ⊆ C := by
+      intro c hcS hc ⟨C₁, hC₁⟩
+      -- Compactness of `WithConstructibleTopology X` preserves membership in `S` along chains.
+      refine ⟨⋂₀ c, ⟨isClosed_sInter fun C hC ↦ (hcS hC).1,
+        (sInter_subset_of_mem hC₁).trans (hcS hC₁).2.1, fun y hyZ ↦ ?_⟩,
+        fun C hC ↦ sInter_subset_of_mem hC⟩
+      rw [PrespectralSpace.isTopologicalBasis.mem_closure_iff]
+      rintro V ⟨hVo, hVc⟩ hyV
+      let F : c → Set (WithConstructibleTopology X) := fun C ↦
+        WithTopology.ofTopology ⁻¹' (C.1 ∩ f ⁻¹' V)
+      have _ : Nonempty c := ⟨⟨C₁, hC₁⟩⟩
+      have hcl (C : c) : IsClosed (F C) :=
+        ((hcS C.2).1.isProConstructible).inter
+          ((hf.isCompact_preimage_of_isOpen hVo hVc).isClopen_preimage_ofTopology_of_isOpen
+            (hVo.preimage hf.continuous)).isClosed
+      have hdir : Directed (· ⊇ ·) F := fun A B ↦ by
+        rcases hc.total A.2 B.2 with hAB | hBA
+        · exact ⟨A, Subset.rfl, Set.preimage_mono (Set.inter_subset_inter_left _ hAB)⟩
+        · exact ⟨B, Set.preimage_mono (Set.inter_subset_inter_left _ hBA), Subset.rfl⟩
+      have hFne (C : c) : (F C).Nonempty := by
+        obtain ⟨z, hzV, x, hxC, rfl⟩ := mem_closure_iff.1 ((hcS C.2).2.2 hyZ) V hVo hyV
+        exact ⟨WithTopology.toTopology _ x, hxC, hzV⟩
+      obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed F hdir
+        hFne (fun C ↦ (hcl C).isCompact) hcl
+      have hx' : ∀ C : c, x ∈ F C := Set.mem_iInter.1 hx
+      exact ⟨f (WithTopology.ofTopology x), (hx' ⟨C₁, hC₁⟩).2,
+        WithTopology.ofTopology x, Set.mem_sInter.2 fun C hC ↦ (hx' ⟨C, hC⟩).1, rfl⟩
+    obtain ⟨M, -, ⟨hMc, hMZ, hZM⟩, hMmin⟩ := zorn_superset_nonempty S hzorn _ hpre
+    -- Minimality forces `M` to be irreducible; the image of its generic point is generic in `Z`.
+    have hMirr : IsIrreducible M := by
+      refine ⟨?_, isPreirreducible_iff_isClosed_union_isClosed.2 fun A B hAc hBc hMAB ↦ ?_⟩
+      · obtain ⟨y, hy⟩ := hZ.nonempty
+        by_contra hM
+        rw [Set.not_nonempty_iff_eq_empty] at hM
+        simpa [hM] using hZM hy
+      · have hsub : Z ⊆ closure (f '' (M ∩ A)) ∪ closure (f '' (M ∩ B)) := by
+          rw [← closure_union, ← Set.image_union, ← Set.inter_union_distrib_left,
+            Set.inter_eq_left.2 hMAB]
+          exact hZM
+        rcases isPreirreducible_iff_isClosed_union_isClosed.1 hZ.isPreirreducible _ _
+            isClosed_closure isClosed_closure hsub with hZA | hZB
+        · exact Or.inl <| (hMmin ⟨hMc.inter hAc, inter_subset_left.trans hMZ, hZA⟩
+            inter_subset_left).trans inter_subset_right
+        · exact Or.inr <| (hMmin ⟨hMc.inter hBc, inter_subset_left.trans hMZ, hZB⟩
+            inter_subset_left).trans inter_subset_right
+    obtain ⟨η, hη⟩ := QuasiSober.sober hMirr hMc
+    refine ⟨f η, isGenericPoint_def.2 (Subset.antisymm ?_ ?_)⟩
+    · exact closure_minimal (Set.singleton_subset_iff.2 (hMZ hη.mem)) hZc
+    · refine hZM.trans (closure_minimal ?_ isClosed_closure)
+      rw [← hη.def]
+      simpa only [Set.image_singleton] using
+        image_closure_subset_closure_image (s := {η}) hf.continuous
 
 end TauCeti
 

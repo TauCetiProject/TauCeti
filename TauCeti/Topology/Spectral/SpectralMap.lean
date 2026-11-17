@@ -50,6 +50,8 @@ but no criterion that tests spectrality on a basis; this supplies the missing en
 * `TauCeti.spectralSpace_univ` : the full subspace of a spectral space is spectral.
 * `IsSpectralMap.isConstructible_preimage` : constructible sets pull back along spectral maps
   from quasiseparated spaces to compact spaces.
+* `IsSpectralMap.quasiSeparatedSpace_of_surjective` : the target of a surjective spectral map
+  from a quasiseparated space is quasiseparated.
 
 ## References
 
@@ -208,6 +210,18 @@ theorem _root_.Topology.IsOpenEmbedding.isSpectralMap [CompactSpace X] [QuasiSep
 theorem spectralSpace_univ [SpectralSpace X] : SpectralSpace (Set.univ : Set X) := by
   let _ : CompactSpace (univ : Set X) := (Homeomorph.Set.univ X).symm.compactSpace
   exact isOpen_univ.isOpenEmbedding_subtypeVal.spectralSpace
+
+/-- The target of a surjective spectral map from a quasiseparated space is quasiseparated. -/
+theorem _root_.IsSpectralMap.quasiSeparatedSpace_of_surjective [QuasiSeparatedSpace X]
+    {f : X → Y} (hf : IsSpectralMap f) (hsurj : Function.Surjective f) :
+    QuasiSeparatedSpace Y where
+  inter_isCompact U V hUo hUc hVo hVc := by
+    have hinter : IsCompact (f ⁻¹' (U ∩ V)) :=
+      QuasiSeparatedSpace.inter_isCompact _ _
+        (hUo.preimage hf.continuous) (hf.isCompact_preimage_of_isOpen hUo hUc)
+        (hVo.preimage hf.continuous) (hf.isCompact_preimage_of_isOpen hVo hVc)
+    rw [← Set.image_preimage_eq (U ∩ V) hsurj]
+    exact hinter.image hf.continuous
 
 end TauCeti
 
