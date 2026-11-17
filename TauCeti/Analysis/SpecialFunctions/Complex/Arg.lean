@@ -52,6 +52,8 @@ Since the argument is continuous on the slit plane and blind to positive real sc
   `arg (-e^{2iφ}) = 2φ - π - 2π⌊φ / π⌋`.
 * `Complex.inv_exp_arg_mul_le_exp_pi_mul_abs`: `(exp (arg u * r))⁻¹ ≤ exp (π * |r|)`.
 * `Complex.abs_arg_lt_pi_of_mem_slitPlane`: on the slit plane, `|arg z| < π`.
+* `Complex.isOpen_slitPlane_inter_abs_arg_lt`: for any `α : ℝ`, the sector
+  `{w : ℂ | w ∈ slitPlane ∧ |arg w| < α}` in the slit plane is open.
 * `Complex.exists_mem_nhds_slitPlane_norm_and_arg_lt`: a point `w₀ ∈ slitPlane` with `|arg w₀| < α`
   has a neighborhood in `slitPlane` with norm bounded away from `0` and `∞` and `|arg w| ≤ α' < α`.
 * `Complex.exp_mem_slitPlane_of_abs_im_lt`: `exp x` lies in the slit plane when `|im x| < π`.
@@ -198,6 +200,12 @@ theorem contDiffOn_div_norm_pow (m : ℕ) {N : WithTop ℕ∞} :
 /-- On the slit plane the argument lies strictly between `-π` and `π`. -/
 theorem abs_arg_lt_pi_of_mem_slitPlane {z : ℂ} (hz : z ∈ slitPlane) : |arg z| < π :=
   abs_lt.2 ⟨neg_pi_lt_arg z, lt_of_le_of_ne (arg_le_pi z) (slitPlane_arg_ne_pi hz)⟩
+
+/-- For any `α : ℝ`, the sector `{w : ℂ | w ∈ slitPlane ∧ |arg w| < α}` in the slit plane is
+open. -/
+theorem isOpen_slitPlane_inter_abs_arg_lt (α : ℝ) :
+    IsOpen {w : ℂ | w ∈ slitPlane ∧ |arg w| < α} :=
+  continuousOn_arg.abs.isOpen_inter_preimage isOpen_slitPlane isOpen_Iio
 
 open Filter Topology in
 /-- Around any point `w₀ ∈ slitPlane` with `|arg w₀| < α`, there is a neighborhood contained in

@@ -18,6 +18,7 @@ import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 import TauCeti.Analysis.SpecialFunctions.Gamma.Stirling.Vertical
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.RegularizedHypergeometric
 import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
@@ -267,48 +268,6 @@ theorem analyticOnNhd_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_n
   (differentiableOn_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_neg_cpow
     c haσ hbσ hσ).analyticOnNhd (isOpen_slitPlane.preimage continuous_neg)
 
-/-- Uniform vertical majorant for `‖deriv (Γ⁻¹) (c + (σ + i y))‖` as `c` varies over the open
-unit ball around `c₀`. -/
-private theorem exists_norm_deriv_inv_Gamma_ball_le (c₀ : ℂ) (σ : ℝ) :
-    ∃ C > 0, ∃ r' : ℝ, 0 ≤ r' ∧ ∀ c ∈ Metric.ball c₀ 1, ∀ y : ℝ,
-      ‖deriv (fun u : ℂ ↦ (Gamma u)⁻¹) (c + ((σ : ℂ) + y * I))‖ ≤
-        C * (1 + |y|) ^ r' * Real.exp (π * |y| / 2) := by
-  obtain ⟨C₄, hC₄, h₄⟩ :=
-    TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le (c₀.re + σ - 1) (c₀.re + σ + 1)
-  set r' : ℝ := max (3 / 2 - (c₀.re + σ - 1)) 0
-  refine ⟨C₄ * (2 + |c₀.im|) ^ r' * Real.exp (π * (1 + |c₀.im|) / 2), by positivity, r',
-    le_max_right _ _, fun c hc y ↦ ?_⟩
-  rw [Metric.mem_ball, dist_eq_norm] at hc
-  have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
-  set w : ℂ := c + ((σ : ℂ) + y * I)
-  have hw_re : w.re ∈ Icc (c₀.re + σ - 1) (c₀.re + σ + 1) := by
-    obtain ⟨hl, hu⟩ := abs_lt.1 ((abs_re_le_norm (c - c₀)).trans_lt hc)
-    have hre : w.re = c.re + σ := by simp [w]
-    simp only [sub_re] at hl hu
-    exact ⟨by linarith, by linarith⟩
-  have hw_im_le : |w.im| ≤ 1 + |c₀.im| + |y| := by
-    have hcim : |c.im - c₀.im| < 1 := (abs_im_le_norm (c - c₀)).trans_lt hc
-    have ht1 := abs_add_le ((c.im - c₀.im) + c₀.im) y
-    have ht2 := abs_add_le (c.im - c₀.im) c₀.im
-    rw [show (c.im - c₀.im) + c₀.im + y = w.im by simp [w]] at ht1
-    linarith
-  have hr_le : (1 + |w.im|) ^ (3 / 2 - w.re) ≤ (2 + |c₀.im|) ^ r' * (1 + |y|) ^ r' :=
-    (Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg w.im])
-      ((by linarith [hw_re.1] : 3 / 2 - w.re ≤ 3 / 2 - (c₀.re + σ - 1)).trans
-        (le_max_left _ _))).trans
-      ((Real.rpow_le_rpow (by positivity)
-        (by nlinarith [abs_nonneg c₀.im, abs_nonneg y]) (le_max_right _ _)).trans_eq
-        (Real.mul_rpow (by linarith [abs_nonneg c₀.im]) h1y.le))
-  have hexp : Real.exp (π * |w.im| / 2) ≤
-      Real.exp (π * (1 + |c₀.im|) / 2) * Real.exp (π * |y| / 2) := by
-    rw [← Real.exp_add]; exact Real.exp_le_exp.2 (by nlinarith [Real.pi_pos])
-  calc ‖deriv (fun u : ℂ ↦ (Gamma u)⁻¹) w‖
-      ≤ C₄ * (1 + |w.im|) ^ (3 / 2 - w.re) * Real.exp (π * |w.im| / 2) := h₄ w hw_re
-    _ ≤ C₄ * ((2 + |c₀.im|) ^ r' * (1 + |y|) ^ r') *
-          (Real.exp (π * (1 + |c₀.im|) / 2) * Real.exp (π * |y| / 2)) :=
-        mul_le_mul (mul_le_mul_of_nonneg_left hr_le hC₄.le) hexp (by positivity) (by positivity)
-    _ = _ := by ring
-
 /-- For fixed `a, b, z` with `-z ∈ Complex.slitPlane` and pole-free `σ`, the Mellin–Barnes
 integral of DLMF 15.6.6 is an entire function of the denominator parameter `c : ℂ`. -/
 theorem differentiable_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_neg_cpow_denom
@@ -319,7 +278,8 @@ theorem differentiable_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_
         Gamma (-(σ + y * I)) * (Gamma (c + (σ + y * I)))⁻¹ * (-z) ^ (σ + y * I) := by
   intro c₀
   obtain ⟨h3_cont, C₃, hC₃, h3⟩ := continuous_and_norm_threeGamma_le haσ hbσ hσ
-  obtain ⟨C₄, _, r', _, h₄⟩ := exists_norm_deriv_inv_Gamma_ball_le c₀ σ
+  obtain ⟨C₄, _, h₄⟩ :=
+    TauCeti.exists_norm_deriv_inv_Gamma_closedBall_add_mul_I_le (c₀ + (σ : ℂ)) 1
   have hinvG : Differentiable ℂ fun w : ℂ ↦ (Gamma w)⁻¹ := by
     simpa only [one_div] using differentiable_one_div_Gamma
   let h : ℝ → ℂ := fun y ↦
@@ -330,6 +290,7 @@ theorem differentiable_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_
   set δ : ℝ := π - |(-z).arg|
   have hδ : 0 < δ := sub_pos.2 (abs_arg_lt_pi_of_mem_slitPlane hz)
   set K : ℝ := C₃ * ‖-z‖ ^ σ * C₄
+  set r' : ℝ := 3 / 2 - (c₀ + (σ : ℂ)).re + 1
   set R : ℝ := a.re + b.re + σ - 3 / 2 + r'
   have hF_meas : ∀ᶠ c in 𝓝 c₀, AEStronglyMeasurable (fun y : ℝ ↦
       Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) *
@@ -354,6 +315,11 @@ theorem differentiable_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_
     have h1y : 0 < 1 + |y| := by linarith [abs_nonneg y]
     have bpow : ‖(-z) ^ ((σ : ℂ) + y * I)‖ ≤ ‖-z‖ ^ σ * Real.exp ((π - δ) * |y|) := by
       simpa [δ] using norm_cpow_le_rpow_mul_exp_abs_arg_mul_abs_im (-z) ((σ : ℂ) + y * I)
+    have h4y : ‖deriv (fun u : ℂ ↦ (Gamma u)⁻¹) (c + ((σ : ℂ) + y * I))‖ ≤
+        C₄ * (1 + |y|) ^ r' * Real.exp (π * |y| / 2) := by
+      rw [← add_assoc]
+      exact h₄ (c + (σ : ℂ))
+        (by rw [Metric.mem_closedBall, dist_add_right]; exact (Metric.mem_ball.1 hc).le) y
     dsimp [h]
     rw [norm_mul, norm_mul]
     calc ‖Gamma (a + (σ + y * I)) * Gamma (b + (σ + y * I)) * Gamma (-(σ + y * I))‖ *
@@ -362,7 +328,7 @@ theorem differentiable_integral_Gamma_mul_Gamma_mul_Gamma_neg_mul_inv_Gamma_mul_
         ≤ (C₃ * (1 + |y|) ^ (a.re + b.re + σ - 3 / 2) * Real.exp (-(3 * π / 2) * |y|)) *
             (‖-z‖ ^ σ * Real.exp ((π - δ) * |y|)) *
             (C₄ * (1 + |y|) ^ r' * Real.exp (π * |y| / 2)) :=
-          mul_le_mul (mul_le_mul (h3 y) bpow (norm_nonneg _) (by positivity)) (h₄ c hc y)
+          mul_le_mul (mul_le_mul (h3 y) bpow (norm_nonneg _) (by positivity)) h4y
             (norm_nonneg _) (by positivity)
       _ = K * ((1 + |y|) ^ (a.re + b.re + σ - 3 / 2) * (1 + |y|) ^ r') *
             (Real.exp (-(3 * π / 2) * |y|) * Real.exp ((π - δ) * |y|) * Real.exp (π * |y| / 2)) :=
@@ -701,21 +667,6 @@ theorem integral_Gamma_mul_Gamma_mul_Gamma_sub_mul_Gamma_neg_mul_multichoose
     ← Gamma_add_nat_div_Gamma_eq (n := n) a (ne_neg_natCast_of_re_pos ha),
     ← Gamma_add_nat_div_Gamma_eq (n := n) b (ne_neg_natCast_of_re_pos hb)]
   field_simp [hpi, hΓa, hΓb, hΓca, hΓcb]
-
-/-- Power-series expansion of `Complex.regularizedGaussHGFun` on the open unit disk `‖w‖ < 1`. -/
-private theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {w : ℂ} (hw : ‖w‖ < 1) :
-    HasSum (fun n : ℕ ↦
-        ((ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b) /
-          (n ! * Gamma (c + n)) * w ^ n)
-      (regularizedGaussHGFun a b c w) := by
-  have hmem : w ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius :=
-    Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c)
-      (by rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]; exact hw)
-  rw [regularizedGaussHGFun]
-  convert (regularizedGaussHGFunSeries a b c).hasSum hmem using 1
-  ext n
-  rw [FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
-    coeff_regularizedGaussHGFunSeries, mul_comm]
 
 /-- Integrability of the dominated-convergence envelope `y ↦ ‖g y‖ * 2 ^ ‖σ + i y‖` for the
 four-Gamma kernel `g` of DLMF 15.6.7. -/

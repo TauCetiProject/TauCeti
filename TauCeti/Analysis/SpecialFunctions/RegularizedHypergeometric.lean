@@ -30,6 +30,8 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
   everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
 * `Complex.hasSum_deriv_regularizedHGFun` — the termwise differentiated series converges to the
   derivative.
+* `Complex.hasSum_regularizedGaussHGFun` — the power series of `regularizedGaussHGFun a b c`
+  converges to it on the open unit disk `‖z‖ < 1`.
 * `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
   function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
@@ -102,6 +104,21 @@ theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.car
     rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_real,
       Real.norm_of_nonneg (by positivity)]
     gcongr
+
+/-- Power-series expansion of `Complex.regularizedGaussHGFun` on the open unit disk `‖z‖ < 1`. -/
+theorem hasSum_regularizedGaussHGFun (a b c : ℂ) {z : ℂ} (hz : ‖z‖ < 1) :
+    HasSum (fun n : ℕ ↦
+        ((ascPochhammer ℂ n).eval a * (ascPochhammer ℂ n).eval b) /
+          (n ! * Gamma (c + n)) * z ^ n)
+      (regularizedGaussHGFun a b c z) := by
+  have hmem : z ∈ Metric.eball (0 : ℂ) (regularizedGaussHGFunSeries a b c).radius :=
+    Metric.eball_subset_eball (radius_regularizedGaussHGFunSeries_ge_one a b c)
+      (by rw [Metric.mem_eball, edist_zero_right, ← ofReal_norm, ENNReal.ofReal_lt_one]; exact hz)
+  rw [regularizedGaussHGFun]
+  convert (regularizedGaussHGFunSeries a b c).hasSum hmem using 1
+  ext n
+  rw [FormalMultilinearSeries.apply_eq_pow_smul_coeff, smul_eq_mul,
+    coeff_regularizedGaussHGFunSeries, mul_comm]
 
 /-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
 `1 / Γ(b + n)`. -/

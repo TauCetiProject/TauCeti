@@ -60,6 +60,9 @@ axis gives global norm bounds for `Γ` on pole-free vertical lines and for the e
   `TauCeti.exists_norm_deriv_inv_Gamma_vertical_strip_le`: global vertical-strip growth bounds
   `O((1 + |Im s|) ^ (1/2 - Re s) e^{π |Im s| / 2})` for `‖(Γ s)⁻¹‖` and
   `O((1 + |Im s|) ^ (3/2 - Re s) e^{π |Im s| / 2})` for its derivative.
+* `TauCeti.exists_norm_deriv_inv_Gamma_closedBall_add_mul_I_le`: locally uniform vertical-line
+  growth bound `O((1 + |y|) ^ (3/2 - Re z₀ + R) e^{π |y| / 2})` for
+  `‖deriv (fun u ↦ (Γ u)⁻¹) (z + i y)‖` on `z ∈ Metric.closedBall z₀ R`.
 -/
 
 public section
@@ -464,5 +467,55 @@ theorem exists_norm_deriv_inv_Gamma_vertical_strip_le (a b : ℝ) :
             mul_le_mul (mul_le_mul_of_nonneg_left (hexp_le.trans hrpow) hC₀.le) hexp
               (by positivity) (by positivity)
         _ = _ := by ring
+
+/-- Locally uniform vertical-line bound for the derivative of the entire reciprocal Gamma function:
+for every `z₀ : ℂ` and `R : ℝ`, there exists `C > 0` such that
+`‖deriv (fun u ↦ (Γ u)⁻¹) (z + i y)‖ ≤ C (1 + |y|) ^ (3/2 - Re z₀ + R) e^{π |y| / 2}` for all
+`z ∈ Metric.closedBall z₀ R` and `y : ℝ`. -/
+theorem exists_norm_deriv_inv_Gamma_closedBall_add_mul_I_le (z₀ : ℂ) (R : ℝ) :
+    ∃ C > 0, ∀ z ∈ Metric.closedBall z₀ R, ∀ y : ℝ,
+      ‖deriv (fun u : ℂ ↦ (Complex.Gamma u)⁻¹) (z + y * I)‖ ≤
+        C * (1 + |y|) ^ (3 / 2 - z₀.re + R) * Real.exp (π * |y| / 2) := by
+  obtain ⟨C₀, hC₀, hstrip⟩ :=
+    exists_norm_deriv_inv_Gamma_vertical_strip_le (z₀.re - R) (z₀.re + R)
+  set r : ℝ := 3 / 2 - z₀.re + R
+  set M : ℝ := |z₀.im| + max R 0
+  refine ⟨C₀ * (1 + M) ^ |r| * Real.exp (π * M / 2), by positivity, fun z hz y ↦ ?_⟩
+  rw [Metric.mem_closedBall, dist_eq_norm] at hz
+  have hre : (z + y * I).re = z.re := by simp
+  have him : (z + y * I).im = z.im + y := by simp
+  have hre_diff : |z.re - z₀.re| ≤ R := (abs_re_le_norm (z - z₀)).trans hz
+  have him_diff : |z.im - z₀.im| ≤ R := (abs_im_le_norm (z - z₀)).trans hz
+  have hz_re : (z + y * I).re ∈ Icc (z₀.re - R) (z₀.re + R) := by
+    obtain ⟨hl, hu⟩ := abs_le.1 hre_diff
+    rw [hre]
+    exact ⟨by linarith, by linarith⟩
+  have hzim : |z.im| ≤ M := by
+    have h1 := abs_add_le (z.im - z₀.im) z₀.im
+    rw [sub_add_cancel] at h1
+    have hR : R ≤ max R 0 := le_max_left R 0
+    dsimp [M]
+    linarith
+  have hexp_r : (1 + |(z + y * I).im|) ^ (3 / 2 - (z + y * I).re) ≤ (1 + |z.im + y|) ^ r := by
+    rw [hre, him]
+    exact Real.rpow_le_rpow_of_exponent_le (by linarith [abs_nonneg (z.im + y)])
+      (by dsimp [r]; linarith [hre ▸ hz_re.1])
+  have hrpow : (1 + |z.im + y|) ^ r ≤ (1 + M) ^ |r| * (1 + |y|) ^ r := by
+    have hpeetre : (1 + |z.im + y|) ^ r ≤ (1 + |z.im|) ^ |r| * (1 + |y|) ^ r := by
+      simpa only [Real.norm_eq_abs] using one_add_norm_add_rpow_le_mul z.im y r
+    exact hpeetre.trans <| mul_le_mul_of_nonneg_right
+      (Real.rpow_le_rpow (by positivity) (by linarith) (abs_nonneg r)) (by positivity)
+  have hexp : Real.exp (π * |(z + y * I).im| / 2) ≤
+      Real.exp (π * M / 2) * Real.exp (π * |y| / 2) := by
+    rw [him, ← Real.exp_add]
+    exact Real.exp_le_exp.2 (by nlinarith [abs_add_le z.im y, Real.pi_pos])
+  calc ‖deriv (fun u : ℂ ↦ (Complex.Gamma u)⁻¹) (z + y * I)‖
+      ≤ C₀ * (1 + |(z + y * I).im|) ^ (3 / 2 - (z + y * I).re) *
+          Real.exp (π * |(z + y * I).im| / 2) := hstrip (z + y * I) hz_re
+    _ ≤ C₀ * ((1 + M) ^ |r| * (1 + |y|) ^ r) *
+          (Real.exp (π * M / 2) * Real.exp (π * |y| / 2)) :=
+        mul_le_mul (mul_le_mul_of_nonneg_left (hexp_r.trans hrpow) hC₀.le) hexp
+          (by positivity) (by positivity)
+    _ = _ := by ring
 
 end TauCeti

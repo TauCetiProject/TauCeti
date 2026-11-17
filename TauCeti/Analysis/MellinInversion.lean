@@ -298,12 +298,6 @@ theorem hasDerivAt_integral_cpow_neg_smul {E : Type*} [NormedAddCommGroup E]
     simp only [ofReal_neg, neg_neg]
     rw [show -(σ : ℂ) + -(y : ℂ) * I = -((σ : ℂ) + y * I) by ring]
 
-private theorem isOpen_slitPlane_inter_abs_arg_lt (α : ℝ) :
-    IsOpen {w : ℂ | w ∈ slitPlane ∧ |w.arg| < α} :=
-  isOpen_iff_mem_nhds.2 fun _ ⟨hslit, harg⟩ ↦
-    Filter.inter_mem (isOpen_slitPlane.mem_nhds hslit)
-      ((Complex.continuousAt_arg hslit).abs.preimage_mem_nhds (Iio_mem_nhds harg))
-
 /-- If `g : ℝ → E` is strongly measurable and satisfies
 `‖g y‖ ≤ C (1 + |y|) ^ R e^{-α |y|}` almost everywhere, then `w ↦ ∫ y : ℝ, w ^ (σ + i y) • g y`
 is complex differentiable on `{w : ℂ | w ∈ Complex.slitPlane ∧ |arg w| < α}`. -/
