@@ -10,12 +10,10 @@ public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Topology.FilledIn
 import Mathlib.Analysis.Complex.AbsMax
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import TauCeti.Analysis.Complex.Conformal.NormalFamilies
-import TauCeti.Analysis.Complex.Pompeiu.Cutoff
+import TauCeti.Analysis.Complex.Pompeiu.Discretization
 import TauCeti.Analysis.Complex.Runge.SimpleFraction
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Geometry.Manifold.Connected
-import TauCeti.MeasureTheory.Integral.SquareQuadrature
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -45,14 +43,12 @@ This file establishes three forms of Runge's theorem for compact subsets of open
 
 ## Implementation notes
 
-To obtain the operator-norm bound `ε * B` uniformly across all `U`-holomorphic `f`, we represent
-`f` on `K` via `IsCompact.exists_contDiff_conjWirtingerDeriv_cutoff_representation` inside
-`interior L`, combine uniform equicontinuity of the smooth kernel `(ξ, ζ) ↦ (ξ - ζ)⁻¹ * φ ζ` on
-`K ×ˢ tsupport φ` with the Cauchy Lipschitz estimate
-`TauCeti.dist_le_of_forall_mem_closedBall_two_mul_norm_le` on balls inside `L`, discretize the area
-integral by `IsCompact.exists_fin_planarSquareCell_quadrature`, and approximate the resulting
-finitely many simple fractions `(z - ζ j)⁻¹` on `K` via
-`TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`.
+To obtain the operator-norm bound `ε * B` uniformly across all `U`-holomorphic `f`, we pick a
+compact collar `L ⊆ U ∩ Ω` with `K ⊆ interior L`, apply the discretized Cauchy–Pompeiu formula
+`IsCompact.exists_norm_sub_sum_mul_sub_inv_smul_le` on `interior L` to approximate every
+`U`-holomorphic `f` uniformly on `K` by a fixed linear combination of simple fractions
+`(z - ζ j)⁻¹` with poles `ζ j ∈ interior L \ K`, and replace each simple fraction on `K` by an
+`Ω`-holomorphic function via `TauCeti.IsFilledIn.exists_differentiableOn_norm_inv_sub_lt`.
 
 ## References
 
@@ -63,8 +59,8 @@ finitely many simple fractions `(z - ζ j)⁻¹` on `K` via
 
 public section
 
-open MeasureTheory Complex Metric Set Filter
-open scoped Real Topology
+open Complex Metric Set Filter
+open scoped Topology
 
 namespace TauCeti
 
@@ -119,124 +115,9 @@ theorem isRungeCompactPair_empty {Ω : Set ℂ} : IsRungeCompactPair Ω ∅ ↔ 
 
 section FiniteRankOperator
 
-/-- Bilinear difference bound `‖k₁ * a₁ - k₂ * a₂‖ ≤ η * B` from bounds on `‖k₁ - k₂‖`, `‖a₁‖`,
-`‖k₂‖`, and `‖a₁ - a₂‖`. -/
-private theorem norm_mul_sub_mul_le {k₁ k₂ a₁ a₂ : ℂ} {η B K₀ c : ℝ} (hη : 0 ≤ η) (hB : 0 ≤ B)
-    (hK₀ : 0 ≤ K₀) (hk_diff : ‖k₁ - k₂‖ ≤ η / 2) (ha₁ : ‖a₁‖ ≤ B) (hk₂ : ‖k₂‖ ≤ K₀)
-    (ha_diff : ‖a₁ - a₂‖ ≤ c * B) (hc : K₀ * c ≤ η / 2) :
-    ‖k₁ * a₁ - k₂ * a₂‖ ≤ η * B := by
-  have hsplit : k₁ * a₁ - k₂ * a₂ = (k₁ - k₂) * a₁ + k₂ * (a₁ - a₂) := by ring
-  have hterm₁ : ‖(k₁ - k₂) * a₁‖ ≤ η / 2 * B := by
-    rw [norm_mul]
-    exact mul_le_mul hk_diff ha₁ (norm_nonneg _) (div_nonneg hη zero_le_two)
-  have hterm₂ : ‖k₂ * (a₁ - a₂)‖ ≤ η / 2 * B := by
-    rw [norm_mul]
-    calc ‖k₂‖ * ‖a₁ - a₂‖ ≤ K₀ * (c * B) := mul_le_mul hk₂ ha_diff (norm_nonneg _) hK₀
-      _ = K₀ * c * B := (mul_assoc K₀ c B).symm
-      _ ≤ η / 2 * B := mul_le_mul_of_nonneg_right hc hB
-  exact (hsplit ▸ norm_add_le _ _).trans ((add_le_add hterm₁ hterm₂).trans_eq (by ring))
-
-/-- Uniform mesh control for the cutoff Cauchy–Pompeiu integrand `(ξ - ζ)⁻¹ * φ ζ * f ζ` on
-`tsupport φ`: combining uniform continuity of `(ζ, ξ) ↦ (ξ - ζ)⁻¹ * φ ζ` on `tsupport φ ×ˢ K` with
-the Cauchy Lipschitz estimate for `f` on balls inside `L` bounds the oscillation linearly in `B`. -/
-private theorem exists_mesh_oscillation_cutoff_kernel {U K L : Set ℂ} (hU : IsOpen U)
-    (hK : IsCompact K) (hLU : L ⊆ U) {φ : ℂ → ℂ} (hφ : Continuous φ)
-    (hScpt : IsCompact (tsupport φ)) (hSintL : tsupport φ ⊆ interior L)
-    (hKS : Disjoint K (tsupport φ)) {η : ℝ} (hη : 0 < η) :
-    ∃ δ > 0, ∀ {f : ℂ → ℂ}, DifferentiableOn ℂ f U →
-      ∀ {B : ℝ}, 0 ≤ B → (∀ z ∈ L, ‖f z‖ ≤ B) →
-        ∀ ξ ∈ K, ∀ ζ ∈ tsupport φ, ∀ ζ' ∈ tsupport φ, dist ζ ζ' ≤ √2 * δ →
-          ‖(ξ - ζ)⁻¹ * φ ζ * f ζ - (ξ - ζ')⁻¹ * φ ζ' * f ζ'‖ ≤ η * B := by
-  set S : Set ℂ := tsupport φ
-  set k : ℂ → ℂ → ℂ := fun ζ ξ ↦ (ξ - ζ)⁻¹ * φ ζ
-  have hne : ∀ p ∈ S ×ˢ K, p.2 - p.1 ≠ 0 :=
-    fun p hp h0 ↦ disjoint_left.mp hKS (sub_eq_zero.mp h0 ▸ hp.2) hp.1
-  have hk_cont : ContinuousOn k.uncurry (S ×ˢ K) :=
-    ((continuousOn_snd.sub continuousOn_fst).inv₀ hne).mul
-      (hφ.continuousOn.comp continuousOn_fst fun _ hp ↦ hp.1)
-  obtain ⟨K₀', hK₀'⟩ := (hScpt.prod hK).exists_bound_of_continuousOn hk_cont
-  set K₀ : ℝ := max 0 K₀'
-  obtain ⟨r₁, hr₁, hk_osc⟩ :=
-    hScpt.exists_pos_forall_norm_sub_le_of_continuousOn_prod hK hk_cont (half_pos hη)
-  obtain ⟨t, ht, htL⟩ := hScpt.exists_cthickening_subset_open isOpen_interior hSintL
-  set r₀ : ℝ := t / 2
-  have hr₀ : 0 < r₀ := half_pos ht
-  set r₂ : ℝ := min r₁ (min r₀ (r₀ * (η / 2) / (K₀ + 1)))
-  have hr₂ : 0 < r₂ := by positivity
-  refine ⟨r₂ / 2, half_pos hr₂, fun {f} hf {B} hB hfL ξ hξ ζ hζ ζ' hζ' hdist ↦ ?_⟩
-  have hlt : dist ζ ζ' < r₂ := by
-    have h2 : √2 < 2 := by rw [Real.sqrt_lt' two_pos]; norm_num
-    nlinarith [dist_nonneg (x := ζ) (y := ζ')]
-  have hballL : closedBall ζ' (2 * r₀) ⊆ L := by
-    have h2t : 2 * r₀ = t := by ring
-    exact h2t ▸ (closedBall_subset_cthickening hζ' t).trans (htL.trans interior_subset)
-  have hf_lip : ‖f ζ - f ζ'‖ ≤ dist ζ ζ' / r₀ * B := by
-    have h := dist_le_of_forall_mem_closedBall_two_mul_norm_le hU hf hr₀ (hballL.trans hLU)
-      (fun w hw ↦ hfL w (hballL hw))
-      (mem_ball.mpr (hlt.trans_le ((min_le_right _ _).trans (min_le_left _ _))))
-      (mem_ball_self hr₀)
-    rw [dist_eq_norm] at h
-    exact h.trans_eq (by ring)
-  have hc : K₀ * (dist ζ ζ' / r₀) ≤ η / 2 := by
-    have hlt_lip := hlt.trans_le ((min_le_right _ _).trans (min_le_right _ _))
-    have h2 : (K₀ + 1) * dist ζ ζ' < r₀ * (η / 2) := by
-      rwa [lt_div_iff₀ (by positivity), mul_comm] at hlt_lip
-    rw [mul_div_assoc', div_le_iff₀ hr₀]
-    nlinarith [dist_nonneg (x := ζ) (y := ζ')]
-  exact norm_mul_sub_mul_le hη.le hB (le_max_left 0 K₀')
-    (hk_osc ζ hζ ζ' hζ' (hlt.trans_le (min_le_left _ _)) ξ hξ)
-    (hfL ζ (interior_subset (hSintL hζ)))
-    ((hK₀' (ζ', ξ) ⟨hζ', hξ⟩).trans (le_max_right 0 K₀')) hf_lip hc
-
-/-- Bounding the quadrature step of `exists_finite_rank_runge_operator`: replacing the cutoff
-integral `π⁻¹ * ∫ ζ in S, (ξ - ζ)⁻¹ * (φ ζ * f ζ)` by its square-mesh Riemann sum incurs error at
-most `(ε / 2) * B`. -/
-private theorem norm_sub_quadrature_sum_le {U K L : Set ℂ} {φ : ℂ → ℂ} (hφ : Continuous φ)
-    (hScpt : IsCompact (tsupport φ)) (hSintL : tsupport φ ⊆ interior L) (hLU : L ⊆ U)
-    (hKS : Disjoint K (tsupport φ)) {N : ℕ} {ζ : Fin N → ℂ} {v : Fin N → ℝ} {δ ε B : ℝ}
-    (hε : 0 < ε) (hB : 0 ≤ B)
-    (hquad : ∀ g : ℂ → ℂ, IntegrableOn g (tsupport φ) → ∀ {ω : ℝ},
-      (∀ z ∈ tsupport φ, ∀ z' ∈ tsupport φ, dist z z' ≤ √2 * δ → ‖g z - g z'‖ ≤ ω) →
-      ‖(∫ z in tsupport φ, g z) - ∑ j, v j • g (ζ j)‖ ≤ volume.real (tsupport φ) * ω)
-    {f : ℂ → ℂ} (hf : DifferentiableOn ℂ f U) {ξ : ℂ}
-    (hrep : f ξ = (Real.pi : ℂ)⁻¹ • ∫ z in tsupport φ, (ξ - z)⁻¹ • (φ z • f z))
-    (hosc : ∀ z ∈ tsupport φ, ∀ z' ∈ tsupport φ, dist z z' ≤ √2 * δ →
-      ‖(ξ - z)⁻¹ * φ z * f z - (ξ - z')⁻¹ * φ z' * f z'‖ ≤
-        (ε / 2 * Real.pi / (volume.real (tsupport φ) + 1)) * B)
-    (hξ : ξ ∈ K) :
-    ‖f ξ - ∑ j, ((Real.pi : ℂ)⁻¹ * (v j : ℂ) * φ (ζ j)) * f (ζ j) * (ξ - ζ j)⁻¹‖ ≤
-      ε / 2 * B := by
-  set S : Set ℂ := tsupport φ
-  set η : ℝ := ε / 2 * Real.pi / (volume.real S + 1)
-  have hne : ∀ z ∈ S, ξ - z ≠ 0 :=
-    fun z hz h0 ↦ disjoint_left.mp hKS (sub_eq_zero.mp h0 ▸ hξ) hz
-  have hg_cont : ContinuousOn (fun z ↦ (ξ - z)⁻¹ * φ z * f z) S :=
-    (((continuousOn_const.sub continuousOn_id).inv₀ hne).mul hφ.continuousOn).mul
-      (hf.continuousOn.mono (hSintL.trans (interior_subset.trans hLU)))
-  have hrew : f ξ - ∑ j, ((Real.pi : ℂ)⁻¹ * (v j : ℂ) * φ (ζ j)) * f (ζ j) * (ξ - ζ j)⁻¹ =
-      (Real.pi : ℂ)⁻¹ • ((∫ z in S, (ξ - z)⁻¹ * φ z * f z) -
-        ∑ j, v j • ((ξ - ζ j)⁻¹ * φ (ζ j) * f (ζ j))) := by
-    rw [hrep, smul_sub, Finset.smul_sum]
-    simp only [smul_eq_mul, Complex.real_smul]
-    congr 1
-    · simp_rw [mul_assoc]
-    · exact Finset.sum_congr rfl fun _ _ ↦ by ring
-  rw [hrew, norm_pi_inv_smul]
-  have hvol_le : volume.real S / (volume.real S + 1) ≤ 1 :=
-    div_le_one_of_le₀ (by linarith) (by linarith [measureReal_nonneg (μ := volume) (s := S)])
-  calc Real.pi⁻¹ * ‖(∫ z in S, (ξ - z)⁻¹ * φ z * f z) -
-          ∑ j, v j • ((ξ - ζ j)⁻¹ * φ (ζ j) * f (ζ j))‖
-      ≤ Real.pi⁻¹ * (volume.real S * (η * B)) :=
-        mul_le_mul_of_nonneg_left (hquad _ (hg_cont.integrableOn_compact hScpt) hosc)
-          (inv_nonneg.mpr Real.pi_pos.le)
-    _ = (volume.real S / (volume.real S + 1)) * (ε / 2 * B) := by
-        simp only [η]; field_simp [Real.pi_pos.ne']
-    _ ≤ 1 * (ε / 2 * B) := mul_le_mul_of_nonneg_right hvol_le (by positivity)
-    _ = ε / 2 * B := one_mul _
-
 /-- Bounding the pole-pushing step of `exists_finite_rank_runge_operator`: replacing each simple
-fraction `(ξ - ζ j)⁻¹` in the Riemann sum by an `Ω`-holomorphic approximant `g j` within
-`(ε / 2) / (∑ j, ‖w j‖ + 1)` incurs error at most `(ε / 2) * B`. -/
+fraction `(ξ - ζ j)⁻¹` in the discretized Cauchy–Pompeiu sum by an `Ω`-holomorphic approximant
+`g j` within `(ε / 2) / (∑ j, ‖w j‖ + 1)` incurs error at most `(ε / 2) * B`. -/
 private theorem norm_sum_inv_sub_le {N : ℕ} {ζ : Fin N → ℂ} {w : Fin N → ℂ} {g : Fin N → ℂ → ℂ}
     {f : ℂ → ℂ} {ε B : ℝ} (hε : 0 < ε) (hB : 0 ≤ B) (hfζ : ∀ j, ‖f (ζ j)‖ ≤ B) {ξ : ℂ}
     (hgξ : ∀ j, ‖(ξ - ζ j)⁻¹ - g j ξ‖ ≤ (ε / 2) / ((∑ i : Fin N, ‖w i‖) + 1)) :
@@ -281,29 +162,23 @@ theorem exists_finite_rank_runge_operator {Ω K U : Set ℂ}
     (hU.inter hRunge.isOpen) (subset_inter hKU hRunge.subset)
   have hLU : L ⊆ U := hLUΩ.trans inter_subset_left
   refine ⟨L, hL, hKL, hLUΩ, fun ε hε ↦ ?_⟩
-  obtain ⟨φ, hφ_smooth, hφ_cpt, hφ_sub, hKφ, hrep⟩ :=
-    hRunge.isCompact.exists_contDiff_conjWirtingerDeriv_cutoff_representation isOpen_interior hKL
-  set S : Set ℂ := tsupport φ
-  set η : ℝ := ε / 2 * Real.pi / (volume.real S + 1)
-  have hη : 0 < η :=
-    div_pos (mul_pos (half_pos hε) Real.pi_pos)
-      (by linarith [measureReal_nonneg (μ := volume) (s := S)])
-  obtain ⟨δ, hδ, hosc⟩ := exists_mesh_oscillation_cutoff_kernel hU hRunge.isCompact hLU
-    hφ_smooth.continuous hφ_cpt hφ_sub hKφ hη
-  obtain ⟨N, ζ, v, hζS, -, -, hquad⟩ := hφ_cpt.exists_fin_planarSquareCell_quadrature hδ
-  set w : Fin N → ℂ := fun j ↦ (Real.pi : ℂ)⁻¹ * (v j : ℂ) * φ (ζ j)
+  obtain ⟨N, ζ, w, hζ, hdisc⟩ :=
+    hRunge.isCompact.exists_norm_sub_sum_mul_sub_inv_smul_le.{0} isOpen_interior hKL (half_pos hε)
   set τ : ℝ := (ε / 2) / ((∑ j : Fin N, ‖w j‖) + 1)
   have hτ : 0 < τ := div_pos (half_pos hε) (by positivity)
   choose g hgΩ hgK using fun j : Fin N ↦
     hRunge.isFilledIn.exists_differentiableOn_norm_inv_sub_lt hRunge.isOpen hRunge.isCompact
-      hRunge.subset (disjoint_right.mp hKφ (hζS j)) hτ
-  refine ⟨N, ζ, w, g, fun j ↦ hφ_sub (hζS j), hgΩ, fun f hf B hfL ξ hξ ↦ ?_⟩
+      hRunge.subset (hζ j).2 hτ
+  refine ⟨N, ζ, w, g, fun j ↦ (hζ j).1, hgΩ, fun f hf B hfL ξ hξ ↦ ?_⟩
   have hB : 0 ≤ B := (norm_nonneg (f ξ)).trans (hfL ξ (interior_subset (hKL hξ)))
-  have hq_err : ‖f ξ - ∑ j, w j * f (ζ j) * (ξ - ζ j)⁻¹‖ ≤ ε / 2 * B :=
-    norm_sub_quadrature_sum_le hφ_smooth.continuous hφ_cpt hφ_sub hLU hKφ hε hB hquad hf
-      (hrep (hf.mono (interior_subset.trans hLU)) ξ hξ) (hosc hf hB hfL ξ hξ) hξ
+  have hq_err : ‖f ξ - ∑ j, w j * f (ζ j) * (ξ - ζ j)⁻¹‖ ≤ ε / 2 * B := by
+    have h := hdisc f B (hf.mono (interior_subset.trans hLU))
+      (fun z hz ↦ hfL z (interior_subset hz)) ξ hξ
+    refine le_trans (le_of_eq ?_) h
+    congr 2
+    exact Finset.sum_congr rfl fun j _ ↦ by simp only [smul_eq_mul]; ring
   have hp_err : ‖∑ j, w j * f (ζ j) * (ξ - ζ j)⁻¹ - ∑ j, w j * f (ζ j) * g j ξ‖ ≤ ε / 2 * B :=
-    norm_sum_inv_sub_le hε hB (fun j ↦ hfL (ζ j) (interior_subset (hφ_sub (hζS j))))
+    norm_sum_inv_sub_le hε hB (fun j ↦ hfL (ζ j) (interior_subset (hζ j).1))
       fun j ↦ (hgK j ξ hξ).le
   calc ‖f ξ - ∑ j, w j * f (ζ j) * g j ξ‖
       ≤ ‖f ξ - ∑ j, w j * f (ζ j) * (ξ - ζ j)⁻¹‖ +
@@ -439,6 +314,19 @@ theorem IsRungeCompactPair.insert {Ω K : Set ℂ} (hRunge : IsRungeCompactPair 
     ⟨(hcpt.union isCompact_singleton).of_isClosed_subset isClosed_closure hcl_sub,
       hcl_sub.trans (union_subset hclΩ (singleton_subset_iff.mpr ha))⟩
 
+/-- Any point `a` outside both `Ω` and `K` is separated from `K` by `({a}).indicator (fun _ ↦ 2)`,
+which vanishes (hence is holomorphic) on `Ω` and has modulus `2 > 1` at `a`. -/
+theorem exists_differentiableOn_norm_lt_one_lt_of_notMem_of_notMem {Ω K : Set ℂ} {a : ℂ}
+    (haΩ : a ∉ Ω) (haK : a ∉ K) :
+    ∃ g : ℂ → ℂ, DifferentiableOn ℂ g Ω ∧ (∀ z ∈ K, ‖g z‖ < 1) ∧ 1 < ‖g a‖ :=
+  ⟨({a} : Set ℂ).indicator fun _ ↦ (2 : ℂ),
+    (differentiableOn_const 0).congr fun _ hz ↦
+      indicator_of_notMem (s := {a}) (by rintro rfl; exact haΩ hz) _,
+    fun _ hz ↦ by
+      rw [indicator_of_notMem (s := {a}) (by rintro rfl; exact haK hz)]
+      simp,
+    by rw [indicator_of_mem (mem_singleton a)]; norm_num⟩
+
 /-- **Point separation off a compact Runge pair.** If `(Ω, K)` is a compact Runge pair and
 `a ∉ K`, there is a function `g` holomorphic on `Ω` with `‖g z‖ < 1` for all `z ∈ K` and
 `1 < ‖g a‖`. -/
@@ -480,14 +368,7 @@ theorem IsRungeCompactPair.exists_differentiableOn_norm_lt_one_lt {Ω K : Set �
       rw [hfa] at hga
       have htri : (2 : ℝ) - ‖g a‖ ≤ ‖(2 : ℂ) - g a‖ := by simpa using norm_sub_norm_le (2 : ℂ) (g a)
       linarith
-  · refine ⟨({a} : Set ℂ).indicator fun _ ↦ (2 : ℂ),
-      (differentiableOn_const 0).congr fun z hz ↦
-        indicator_of_notMem (fun hza : z ∈ ({a} : Set ℂ) ↦ haΩ (mem_singleton_iff.mp hza ▸ hz)) _,
-      fun z hz ↦ ?_, ?_⟩
-    · rw [indicator_of_notMem (fun hza : z ∈ ({a} : Set ℂ) ↦ ha (mem_singleton_iff.mp hza ▸ hz))]
-      simp
-    · rw [indicator_of_mem (mem_singleton a)]
-      norm_num
+  · exact exists_differentiableOn_norm_lt_one_lt_of_notMem_of_notMem haΩ ha
 
 end PointSeparation
 

@@ -163,15 +163,7 @@ theorem exists_differentiableOn_norm_lt_one_lt_of_notMem_holomorphicHull {Ω K :
       · rw [norm_mul, norm_inv, Complex.norm_of_nonneg hc_pos.le, inv_mul_eq_div,
           one_lt_div hc_pos]
         linarith [hc_def]
-  · refine ⟨({a} : Set ℂ).indicator fun _ ↦ (2 : ℂ),
-      (differentiableOn_const 0).congr fun z hz ↦
-        indicator_of_notMem (fun hza : z ∈ ({a} : Set ℂ) ↦ haΩ (mem_singleton_iff.mp hza ▸ hz)) _,
-      fun z hz ↦ ?_, ?_⟩
-    · rw [indicator_of_notMem
-        (fun hza : z ∈ ({a} : Set ℂ) ↦ haΩ (mem_singleton_iff.mp hza ▸ hKΩ hz))]
-      simp
-    · rw [indicator_of_mem (mem_singleton a)]
-      norm_num
+  · exact exists_differentiableOn_norm_lt_one_lt_of_notMem_of_notMem haΩ fun h ↦ haΩ (hKΩ h)
 
 section DirectProperties
 
@@ -304,30 +296,17 @@ private def topologicalFill (Ω K : Set ℂ) : Set ℂ :=
   K ∪ {z | z ∈ Ω \ K ∧ IsCompact (closure (connectedComponentIn (Ω \ K) z)) ∧
     closure (connectedComponentIn (Ω \ K) z) ⊆ Ω}
 
-/-- Under the inclusion `↥Ω → ℂ`, the connected component of `y ∈ ↥Ω \ K'` in `K'ᶜ` maps onto the
+/-- Under the inclusion `↥Ω → ℂ`, the connected component of `y : ↥Ω` in `K'ᶜ` maps onto the
 connected component of `y.1` in `Ω \ K`. -/
-private theorem image_subtype_connectedComponentIn_compl_eq {Ω K : Set ℂ} {y : ↥Ω}
-    (hy : (y : ℂ) ∉ K) :
+private theorem image_subtype_connectedComponentIn_compl_eq {Ω K : Set ℂ} (y : ↥Ω) :
     ((↑) : ↥Ω → ℂ) '' connectedComponentIn (((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ y =
       connectedComponentIn (Ω \ K) y.1 := by
-  set K' : Set ↥Ω := ((↑) : ↥Ω → ℂ) ⁻¹' K
-  refine Subset.antisymm ?_ ?_
-  · exact (isPreconnected_connectedComponentIn.image _ continuous_subtype_val.continuousOn)
-      |>.subset_connectedComponentIn
-        (mem_image_of_mem _ (mem_connectedComponentIn hy))
-        (by rintro _ ⟨w, hw, rfl⟩; exact ⟨w.2, connectedComponentIn_subset _ _ hw⟩)
-  · set C : Set ℂ := connectedComponentIn (Ω \ K) y.1
-    have hCΩ : C ⊆ Ω := (connectedComponentIn_subset _ _).trans sdiff_subset
-    set P : Set ↥Ω := ((↑) : ↥Ω → ℂ) ⁻¹' C
-    have himgP : ((↑) : ↥Ω → ℂ) '' P = C :=
-      Subset.antisymm (image_preimage_subset _ _) fun z hz ↦ ⟨⟨z, hCΩ hz⟩, hz, rfl⟩
-    have hP_pre : IsPreconnected P :=
-      Topology.IsInducing.subtypeVal.isPreconnected_image.mp (himgP.symm ▸
-        isPreconnected_connectedComponentIn)
-    have hsub : P ⊆ connectedComponentIn K'ᶜ y :=
-      hP_pre.subset_connectedComponentIn (mem_connectedComponentIn ⟨y.2, hy⟩)
-        fun w hw ↦ (connectedComponentIn_subset _ _ hw).2
-    simpa only [himgP] using image_mono (f := ((↑) : ↥Ω → ℂ)) hsub
+  have hpre : ((↑) : ↥Ω → ℂ) ⁻¹' (Ω \ K) = (((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ := by
+    ext w
+    simp
+  rw [← hpre]
+  exact Topology.IsInducing.subtypeVal.image_connectedComponentIn_preimage
+    ((connectedComponentIn_subset _ _).trans (sdiff_subset.trans Subtype.range_coe.symm.subset))
 
 /-- `topologicalFill Ω K` is the image under `((↑) : ↥Ω → ℂ)` of the points of `↥Ω` whose
 connected component in `(((↑) : ↥Ω → ℂ) ⁻¹' K)ᶜ` has compact closure in `↥Ω`. -/
@@ -345,7 +324,7 @@ private theorem image_subtype_setOf_isCompact_closure_connectedComponentIn_compl
       set L : Set ℂ := ((↑) : ↥Ω → ℂ) '' closure (connectedComponentIn K'ᶜ y)
       have hLcpt : IsCompact L := hyB.image continuous_subtype_val
       have hCL : connectedComponentIn (Ω \ K) y.1 ⊆ L := by
-        rw [← image_subtype_connectedComponentIn_compl_eq hyK]
+        rw [← image_subtype_connectedComponentIn_compl_eq y]
         exact image_mono subset_closure
       have hclL : closure (connectedComponentIn (Ω \ K) y.1) ⊆ L :=
         closure_minimal hCL hLcpt.isClosed
@@ -363,7 +342,7 @@ private theorem image_subtype_setOf_isCompact_closure_connectedComponentIn_compl
         Topology.IsInducing.subtypeVal.isCompact_iff.mpr (himgM'.symm ▸ hcpt)
       have hsubM' : connectedComponentIn K'ᶜ ⟨z, hz.1⟩ ⊆ M' := fun w hw ↦ by
         have hw_img : (w : ℂ) ∈ connectedComponentIn (Ω \ K) z := by
-          rw [← image_subtype_connectedComponentIn_compl_eq (y := ⟨z, hz.1⟩) hz.2]
+          rw [← image_subtype_connectedComponentIn_compl_eq (⟨z, hz.1⟩ : ↥Ω)]
           exact mem_image_of_mem _ hw
         exact subset_closure hw_img
       exact hM'cpt.of_isClosed_subset isClosed_closure (closure_minimal hsubM' hM'cpt.isClosed)
