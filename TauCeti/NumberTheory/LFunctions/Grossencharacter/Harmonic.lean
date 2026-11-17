@@ -527,44 +527,6 @@ theorem integral_archGaussian_mul_archWeight_mul_archNorm_cpow (χ : Grossenchar
 
 /-! ### Archimedean sign and phase cancellation on `Kˣ` and `(𝓞 K)ˣ` -/
 
-/-- Because `χ` is algebraic, the infinity type of `χ.toHeckeCharacter.unitaryPart` has vanishing
-real and complex modulus exponents at every archimedean place, retaining only the real parities and
-complex angular frequencies of `χ`. -/
-theorem infinityType_unitaryPart (χ : Grossencharacter K 𝔪) :
-    χ.toHeckeCharacter.unitaryPart.infinityType =
-      { realExponent := 0
-        realParity := χ.toHeckeCharacter.infinityType.realParity
-        complexExponent := 0
-        complexAngularFrequency :=
-          (AlgebraicInfinityType.toContinuous χ.infinityType).complexAngularFrequency } := by
-  obtain ⟨hre_eq, hce_eq, hfreq_eq⟩ :=
-    (χ.toHeckeCharacter.infinityType.agreesOnIdentityComponent_iff _).mp
-      χ.agreesOnIdentityComponent
-  rw [HeckeCharacter.unitaryPart_def, HeckeCharacter.infinityType_mul,
-    HeckeCharacter.infinityType_normPow]
-  ext w
-  · have hval : χ.toHeckeCharacter.infinityType.realExponent w =
-        (χ.infinityType w.1.embedding : ℂ) := by
-      simpa using congrFun hre_eq w
-    have hshift := χ.toHeckeCharacter.re_realExponent_infinityType w
-    rw [hval, intCast_re] at hshift
-    simp [ContinuousInfinityType.add_realExponent, hval, ← hshift]
-  · simp
-  · have hval : χ.toHeckeCharacter.infinityType.complexExponent w =
-        ((χ.infinityType w.1.embedding +
-          χ.infinityType (ComplexEmbedding.conjugate w.1.embedding) : ℤ) : ℂ) := by
-      simpa using congrFun hce_eq w
-    have hshift := χ.toHeckeCharacter.re_complexExponent_infinityType w
-    rw [hval, intCast_re] at hshift
-    have hc : ((χ.infinityType w.1.embedding +
-        χ.infinityType (ComplexEmbedding.conjugate w.1.embedding) : ℤ) : ℂ) =
-        ((2 * χ.toHeckeCharacter.shift : ℝ) : ℂ) := by
-      exact_mod_cast hshift
-    simp only [ContinuousInfinityType.add_complexExponent, Pi.add_apply, Pi.zero_apply, hval, hc]
-    push_cast
-    ring
-  · simp [hfreq_eq]
-
 private theorem unitaryPart_real_mul_pow (χ : Grossencharacter K 𝔪)
     (w : {w : InfinitePlace K // w.IsReal}) (x : Kˣ) :
     (χ.toHeckeCharacter.unitaryPart.infiniteComponent w.1
