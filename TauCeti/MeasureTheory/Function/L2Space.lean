@@ -71,13 +71,6 @@ namespace MeasureTheory
 variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
 
-/-- The pointwise inner product of two square-integrable functions is integrable. -/
-theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
-    Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
-  (L2.integrable_inner (𝕜 := 𝕜) (hf.toLp f) (hg.toLp g)).congr <| by
-    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x hfx hgx
-    rw [hfx, hgx]
-
 /-- **Hölder's inequality for the inner product**: the pointwise inner product of `f ∈ Lᵖ` and
 `g ∈ L^q` with `1/p + 1/q = 1` is integrable. For `p = q = 2` this is
 `MeasureTheory.MemLp.integrable_inner`. -/
@@ -85,6 +78,11 @@ theorem MemLp.integrable_inner_of_holderTriple {p q : ℝ≥0∞} [p.HolderTripl
     (hf : MemLp f p μ) (hg : MemLp g q μ) : Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
   memLp_one_iff_integrable.1 (hf.of_bilin (fun v w ↦ ⟪v, w⟫_𝕜) 1 hg continuous_inner
     (ae_of_all _ fun x ↦ by simpa using nnNorm_inner_le_nnNorm (𝕜 := 𝕜) (f x) (g x)))
+
+/-- The pointwise inner product of two square-integrable functions is integrable. -/
+theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
+    Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
+  hf.integrable_inner_of_holderTriple hg
 
 /-- The quadratic form of a matrix on a square-integrable Euclidean-valued function is
 integrable. -/

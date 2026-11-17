@@ -471,33 +471,6 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL (hν : ν �
   exact (energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0 _).trans (congrArg _
     (W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ).symm)
 
-/-- **Odd reflection of a weak solution with a right-hand side.** Let `H = {x | c₀ < ⟪x, ν⟫}`
-with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, and let `U` be open with
-`ρ U ⊆ U`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a weak
-solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` with `f ∈ L²(U ∩ H)`, tested against
-`H¹₀(U ∩ H)`. If the reflected coefficients are bounded on `U`, then the odd reflection
-`u - u ∘ ρ` is a weak solution on `U` of the equation with the reflected coefficients and the
-odd reflection `x ↦ 1_H f x - 1_H f (ρ x)` of `f` as right-hand side, tested against `H¹₀(U)`. -/
-theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral (hν : ν ≠ 0)
-    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
-    (hcoeff : MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
-      (reflectDensity ν c₀ c x)) ⊤ (mu.restrict U))
-    {u : W1p mu U 2} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0)
-    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict (U ⊓ H)))
-    (hu : ∀ v : W1p0 mu (U ⊓ H) 2,
-      energyFormH1 a b c (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u) (v : W1p mu (U ⊓ H) 2) =
-        ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu)
-    (φ : W1p0 mu U 2) :
-    energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
-        (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (φ : W1p mu U 2) =
-      ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
-        (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
-          W1p.value (φ : W1p mu U 2) x ∂mu := by
-  rw [energyFormH1_sub_left hcoeff, energyFormH1_reflectPrincipal_compHyperplaneReflectionL hν hU,
-    ← energyFormH1_sub_right hcoeff, energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0,
-    ← W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ, hu,
-    W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf]
-
 /-- **Odd reflection of a weak solution with a right-hand side `f + ∂ᵢFⁱ`.** Let
 `H = {x | c₀ < ⟪x, ν⟫}` with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, whose
 linear part is `R = (ℝ ∙ ν)ᗮ.reflection`, and let `U` be open with `ρ U ⊆ U`. Let `u ∈ H¹(U)`
@@ -532,6 +505,34 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegr
     ← W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ, hu,
     W1p0.setIntegral_mul_value_restrictSubCompHyperplaneReflectionL _ hH hU hf,
     W1p0.setIntegral_inner_gradient_restrictSubCompHyperplaneReflectionL _ hH hU hF]
+
+/-- **Odd reflection of a weak solution with a right-hand side.** Let `H = {x | c₀ < ⟪x, ν⟫}`
+with `ν ≠ 0`, let `ρ` be the reflection in the hyperplane `∂H`, and let `U` be open with
+`ρ U ⊆ U`. Let `u ∈ H¹(U)` vanish on `U ∖ H` and let its restriction to `U ∩ H` be a weak
+solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` with `f ∈ L²(U ∩ H)`, tested against
+`H¹₀(U ∩ H)`. If the reflected coefficients are bounded on `U`, then the odd reflection
+`u - u ∘ ρ` is a weak solution on `U` of the equation with the reflected coefficients and the
+odd reflection `x ↦ 1_H f x - 1_H f (ρ x)` of `f` as right-hand side, tested against `H¹₀(U)`. -/
+theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral (hν : ν ≠ 0)
+    (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ) (hU : MapsTo (hyperplaneReflection ν c₀) U U)
+    (hcoeff : MemLp (fun x => energyIntegrand (reflectPrincipal ν c₀ a x) (reflectDrift ν c₀ b x)
+      (reflectDensity ν c₀ c x)) ⊤ (mu.restrict U))
+    {u : W1p mu U 2} (hu0 : ∀ᵐ x ∂mu.restrict U, x ∉ H → W1p.value u x = 0)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f 2 (mu.restrict (U ⊓ H)))
+    (hu : ∀ v : W1p0 mu (U ⊓ H) 2,
+      energyFormH1 a b c (W1p.restrictL (inf_le_left : U ⊓ H ≤ U) u) (v : W1p mu (U ⊓ H) 2) =
+        ∫ x in U ⊓ H, f x * W1p.value (v : W1p mu (U ⊓ H) 2) x ∂mu)
+    (φ : W1p0 mu U 2) :
+    energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
+        (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (φ : W1p mu U 2) =
+      ∫ x in U, ((H : Set (EuclideanSpace ℝ ι)).indicator f x -
+        (H : Set (EuclideanSpace ℝ ι)).indicator f (hyperplaneReflection ν c₀ x)) *
+          W1p.value (φ : W1p mu U 2) x ∂mu := by
+  -- The case `F = 0` of the divergence-datum form.
+  simpa only [indicator_zero, map_zero, sub_zero, inner_zero_left, integral_zero] using
+    energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL_eq_setIntegral_sub hν hH hU hcoeff
+      hu0 hf (MemLp.zero' (ε := EuclideanSpace ℝ ι))
+      (fun v => by rw [hu v]; simp only [inner_zero_left, integral_zero, sub_zero]) φ
 
 end WeakSolution
 
