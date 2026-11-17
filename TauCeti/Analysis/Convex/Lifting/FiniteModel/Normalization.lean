@@ -34,7 +34,8 @@ existence of attained minima (`FiniteModel.normalization_attainment_iff`,
 ## Main definitions
 
 * `TauCeti.ConvexLifting.FiniteModel.normalizedLift` — the normalized finite model with `q`
-  appended continuous argument coordinates and `q + q` opposite affine equality rows.
+  appended continuous argument coordinates and `q + q` affine inequality rows (one opposite pair per
+  coordinate) imposing the argument equalities.
 
 ## Main statements
 
@@ -138,7 +139,8 @@ theorem normalizedLift_rhs_orig (d : FiniteModel n m l r)
     (d.normalizedLift a b offset phi weight).rhs (k.castAdd (q + q)) = d.rhs k := by
   simp [normalizedLift]
 
-/-- Right-hand side of an upper argument-equality row in `normalizedLift`. -/
+/-- Right-hand side of an upper affine inequality row imposing the argument equality in
+`normalizedLift`. -/
 @[simp]
 theorem normalizedLift_rhs_upper (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
@@ -146,7 +148,8 @@ theorem normalizedLift_rhs_upper (d : FiniteModel n m l r)
     (d.normalizedLift a b offset phi weight).rhs ((j.castAdd q).natAdd r) = offset j := by
   simp [normalizedLift]
 
-/-- Right-hand side of a lower argument-equality row in `normalizedLift`. -/
+/-- Right-hand side of a lower affine inequality row imposing the argument equality in
+`normalizedLift`. -/
 @[simp]
 theorem normalizedLift_rhs_lower (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
@@ -164,18 +167,21 @@ theorem normalizedLift_row_orig (d : FiniteModel n m l r)
       (∑ i, d.A k i * (project z).1 i) + ∑ s, d.B k s * (project z).2 s := by
   simp [normalizedLift, sum_append_zero_right_mul_fst]
 
-/-- Evaluation of an added upper argument-equality affine row in `normalizedLift`. -/
+/-- Evaluation of an added upper affine inequality row imposing the argument equality in
+`normalizedLift`. -/
 theorem normalizedLift_row_upper (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) (j : Fin q) (z : Point (n + q) m) :
     (∑ i, (d.normalizedLift a b offset phi weight).A ((j.castAdd q).natAdd r) i * z.1 i) +
         (∑ s, (d.normalizedLift a b offset phi weight).B ((j.castAdd q).natAdd r) s * z.2 s) =
       height z j - (∑ i, a j i * (project z).1 i) - ∑ s, b j s * (project z).2 s := by
-  simp only [normalizedLift, Fin.append_right, Fin.append_left]
-  simp [sum_append_mul_fst, Finset.sum_neg_distrib, Pi.single_apply]
+  simp only [normalizedLift, Fin.append_right, Fin.append_left, sum_append_mul_fst, Pi.neg_apply,
+    neg_mul, Finset.sum_neg_distrib, Pi.single_apply, ite_mul, one_mul, zero_mul,
+    Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, project_snd]
   ring
 
-/-- Evaluation of an added lower argument-equality affine row in `normalizedLift`. -/
+/-- Evaluation of an added lower affine inequality row imposing the argument equality in
+`normalizedLift`. -/
 theorem normalizedLift_row_lower (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) (j : Fin q) (z : Point (n + q) m) :
@@ -183,8 +189,8 @@ theorem normalizedLift_row_lower (d : FiniteModel n m l r)
         (∑ s, (d.normalizedLift a b offset phi weight).B ((j.addNat q).natAdd r) s * z.2 s) =
       (∑ i, a j i * (project z).1 i) + (∑ s, b j s * (project z).2 s) - height z j := by
   rw [← Fin.natAdd_eq_addNat]
-  simp only [normalizedLift, Fin.append_right]
-  simp [sum_append_mul_fst, Pi.single_apply]
+  simp only [normalizedLift, Fin.append_right, sum_append_mul_fst, Pi.single_apply, ite_mul,
+    neg_mul, one_mul, zero_mul, Finset.sum_ite_eq', Finset.mem_univ, ↓reduceIte, project_snd]
   ring
 
 /-- The affine rows of `normalizedLift` consist precisely of the original affine rows on

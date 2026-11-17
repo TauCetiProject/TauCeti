@@ -20,10 +20,10 @@ satisfying `g x ≤ y` and `h y ≤ b` defines the lifted set
     {(x, y) ∈ X × Y | x ∈ D ∧ y ∈ E ∧ g x ≤ y ∧ h y ≤ b}.
 
 Whenever `g` maps `D` into `E` and `h` is monotone on `E`, projecting onto the original variable
-recovers `{x ∈ D | h (g x) ≤ b}` exactly (`TauCeti.ConvexLifting.projection_eq`), without
-requiring convexity, differentiability, or compactness. Specializing the pointwise existential
-characterization (`TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet`) to a varying
-budget `b` yields the epigraph lifting criterion via `mem_originalSet_iff` and `mem_liftedSet_iff`.
+recovers `{x ∈ D | h (g x) ≤ b}` exactly (`TauCeti.ConvexLifting.projection_eq`), with the
+corresponding pointwise existential characterization
+(`TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet`), without requiring convexity,
+differentiability, or compactness.
 When `g` is convex on `D` and `h` is quasiconvex on `E` (in particular, when `h` is convex on `E`),
 the lifted set is convex with no `MapsTo g D E` or monotonicity requirement
 (`TauCeti.ConvexLifting.convex_liftedSet`). When additionally `h` is monotone on `E` and
@@ -44,8 +44,8 @@ attained minima transfer identically between the lifted and original sets
 
 * `TauCeti.ConvexLifting.projection_eq` — `Prod.fst '' liftedSet D E g h b = originalSet D g h b`
   under `MapsTo g D E` and `MonotoneOn h E`.
-* `TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet` — pointwise existential (and,
-  for varying budget `b`, epigraph) characterization of `originalSet` via `liftedSet`.
+* `TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet` — pointwise existential
+  characterization of `originalSet` via `liftedSet`.
 * `TauCeti.ConvexLifting.convex_liftedSet` — convexity of `liftedSet` assuming only
   `ConvexOn 𝕜 D g` and `QuasiconvexOn 𝕜 E h` (no `MapsTo` or monotonicity needed).
 * `TauCeti.ConvexLifting.convex_originalSet` — convexity of `originalSet` under `ConvexOn 𝕜 D g`,
@@ -260,7 +260,7 @@ theorem image_comp_fst_liftedSet (hg : MapsTo g D E) (hm : MonotoneOn h E) (f : 
   rw [image_comp, projection_eq hg hm]
 
 /-- Lower bounds on `f` transfer identically between `liftedSet` and `originalSet`. -/
-theorem forall_le_of_mem_liftedSet_iff [LE α] (hg : MapsTo g D E) (hm : MonotoneOn h E)
+theorem forall_mem_liftedSet_le_apply_iff [LE α] (hg : MapsTo g D E) (hm : MonotoneOn h E)
     (f : X → α) (c : α) :
     (∀ p ∈ liftedSet D E g h b, c ≤ f p.1) ↔ ∀ x ∈ originalSet D g h b, c ≤ f x := by
   rw [← projection_eq (b := b) hg hm, forall_mem_image]

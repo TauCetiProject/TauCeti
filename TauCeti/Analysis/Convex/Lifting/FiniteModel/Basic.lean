@@ -133,6 +133,26 @@ theorem insertHeight_fst_natAdd (x : Point n m) (y : Fin q → ℝ) (j : Fin q) 
 theorem insertHeight_snd (x : Point n m) (y : Fin q → ℝ) :
     (insertHeight x y).2 = x.2 := (rfl)
 
+/-- Projecting after height insertion recovers the original point. -/
+@[simp]
+theorem project_insertHeight (x : Point n m) (y : Fin q → ℝ) :
+    project (insertHeight x y) = x := by
+  ext i <;> simp
+
+/-- Reading the height after height insertion recovers the inserted vector. -/
+@[simp]
+theorem height_insertHeight (x : Point n m) (y : Fin q → ℝ) :
+    height (insertHeight x y) = y := by
+  ext j
+  simp
+
+/-- Reconstructing an enlarged point from its projection and height recovers the point. -/
+@[simp]
+theorem insertHeight_project_height (z : Point (n + q) m) :
+    insertHeight (project z) (height z) = z := by
+  unfold insertHeight project height
+  exact Prod.ext (Fin.append_castAdd_natAdd (f := z.1)) rfl
+
 /-- The splitting equivalence `Point (n + q) m ≃ Point n m × (Fin q → ℝ)` built from
 `Fin.appendEquiv`, separating `project z` from the `q` appended coordinates `height z`. -/
 def pointEquiv (n m q : ℕ) : Point (n + q) m ≃ Point n m × (Fin q → ℝ) :=
@@ -143,37 +163,19 @@ def pointEquiv (n m q : ℕ) : Point (n + q) m ≃ Point n m × (Fin q → ℝ) 
 /-- Forward evaluation of `pointEquiv`. -/
 @[simp]
 theorem pointEquiv_apply (z : Point (n + q) m) :
-    pointEquiv n m q z = (project z, height z) := (rfl)
+    pointEquiv n m q z = (project z, height z) := by
+  ext i <;> simp [pointEquiv]
 
 /-- Inverse evaluation of `pointEquiv`. -/
 @[simp]
 theorem pointEquiv_symm_apply (p : Point n m × (Fin q → ℝ)) :
-    (pointEquiv n m q).symm p = insertHeight p.1 p.2 := (rfl)
+    (pointEquiv n m q).symm p = insertHeight p.1 p.2 := by
+  ext i <;> simp [pointEquiv, insertHeight]
 
 /-- Composing `pointEquiv` with `Prod.fst` gives `project`. -/
 @[simp]
-theorem fst_comp_pointEquiv : Prod.fst ∘ pointEquiv n m q = project := (rfl)
-
-/-- Projecting after height insertion recovers the original point. -/
-@[simp]
-theorem project_insertHeight (x : Point n m) (y : Fin q → ℝ) :
-    project (insertHeight x y) = x := by
-  simpa only [pointEquiv_apply, pointEquiv_symm_apply] using
-    congrArg Prod.fst ((pointEquiv n m q).apply_symm_apply (x, y))
-
-/-- Reading the height after height insertion recovers the inserted vector. -/
-@[simp]
-theorem height_insertHeight (x : Point n m) (y : Fin q → ℝ) :
-    height (insertHeight x y) = y := by
-  simpa only [pointEquiv_apply, pointEquiv_symm_apply] using
-    congrArg Prod.snd ((pointEquiv n m q).apply_symm_apply (x, y))
-
-/-- Reconstructing an enlarged point from its projection and height recovers the point. -/
-@[simp]
-theorem insertHeight_project_height (z : Point (n + q) m) :
-    insertHeight (project z) (height z) = z := by
-  simpa only [pointEquiv_apply, pointEquiv_symm_apply] using
-    (pointEquiv n m q).symm_apply_apply z
+theorem fst_comp_pointEquiv : Prod.fst ∘ pointEquiv n m q = project :=
+  funext fun z => congrArg Prod.fst (pointEquiv_apply z)
 
 /-- With `q = 0` appended coordinates, projection is the identity. -/
 @[simp]
@@ -215,17 +217,8 @@ section AffineArgument
 
 variable {n m : ℕ}
 
-/-- An affine expression `(∑ i, a i * x.1 i) + (∑ j, b j * x.2 j) + offset` on `Point n m`. -/
-def affineArgument (a : Fin n → ℝ) (b : Fin m → ℝ) (offset : ℝ) (x : Point n m) : ℝ :=
-  (∑ i, a i * x.1 i) + (∑ j, b j * x.2 j) + offset
-
-/-- Explicit evaluation of `affineArgument`. -/
-@[simp]
-theorem affineArgument_apply (a : Fin n → ℝ) (b : Fin m → ℝ) (offset : ℝ) (x : Point n m) :
-    affineArgument a b offset x = (∑ i, a i * x.1 i) + (∑ j, b j * x.2 j) + offset := (rfl)
-
 /-- The continuous linear part of `affineArgument a b offset`. -/
-noncomputable def affineArgumentCLM (a : Fin n → ℝ) (b : Fin m → ℝ) : Point n m →L[ℝ] ℝ :=
+def affineArgumentCLM (a : Fin n → ℝ) (b : Fin m → ℝ) : Point n m →L[ℝ] ℝ :=
   (∑ i : Fin n, a i • (ContinuousLinearMap.proj (R := ℝ) i).comp
       (ContinuousLinearMap.fst ℝ (Fin n → ℝ) (Fin m → ℝ))) +
     ∑ j : Fin m, b j • (ContinuousLinearMap.proj (R := ℝ) j).comp
@@ -237,16 +230,34 @@ theorem affineArgumentCLM_apply (a : Fin n → ℝ) (b : Fin m → ℝ) (v : Poi
     affineArgumentCLM a b v = (∑ i, a i * v.1 i) + ∑ j, b j * v.2 j := by
   simp [affineArgumentCLM, smul_eq_mul]
 
+/-- Extending the continuous-block coefficients of `affineArgumentCLM` by zero on appended
+coordinates pulls the linear form back along `project`. -/
+@[simp]
+theorem coe_affineArgumentCLM_append_zero {q : ℕ} (a : Fin n → ℝ) (b : Fin m → ℝ) :
+    ⇑(affineArgumentCLM (Fin.append a (0 : Fin q → ℝ)) b) =
+      ⇑(affineArgumentCLM a b) ∘ project := by
+  ext z
+  simp only [Function.comp_apply, affineArgumentCLM_apply, sum_append_zero_right_mul_fst,
+    project_snd]
+
+/-- An affine expression `(∑ i, a i * x.1 i) + (∑ j, b j * x.2 j) + offset` on `Point n m`,
+defined via its continuous linear part `affineArgumentCLM a b`. -/
+def affineArgument (a : Fin n → ℝ) (b : Fin m → ℝ) (offset : ℝ)
+    (x : Point n m) : ℝ :=
+  affineArgumentCLM a b x + offset
+
+/-- Explicit evaluation of `affineArgument`. -/
+@[simp]
+theorem affineArgument_apply (a : Fin n → ℝ) (b : Fin m → ℝ) (offset : ℝ) (x : Point n m) :
+    affineArgument a b offset x = (∑ i, a i * x.1 i) + (∑ j, b j * x.2 j) + offset := by
+  simp only [affineArgument, affineArgumentCLM_apply]
+
 /-- The Fréchet derivative of `affineArgument a b offset` at every point `x` is
 `affineArgumentCLM a b`. -/
 theorem hasFDerivAt_affineArgument (a : Fin n → ℝ) (b : Fin m → ℝ) (offset : ℝ)
     (x : Point n m) :
-    HasFDerivAt (affineArgument a b offset) (affineArgumentCLM a b) x := by
-  have hEq : affineArgument a b offset = fun y => affineArgumentCLM a b y + offset := by
-    ext y
-    simp
-  rw [hEq]
-  exact (affineArgumentCLM a b).hasFDerivAt.add_const offset
+    HasFDerivAt (affineArgument a b offset) (affineArgumentCLM a b) x :=
+  (affineArgumentCLM a b).hasFDerivAt.add_const offset
 
 /-- Transporting a univariate derivative `HasDerivAt φ φ'` at `affineArgument a b offset x` to a
 Fréchet derivative of `y ↦ φ (affineArgument a b offset y)` at `x`. -/
@@ -276,13 +287,18 @@ namespace FiniteModel
 variable {n m l r q : ℕ}
 
 /-- The linear objective `(∑ i, d.c1 i * x.1 i) + ∑ j, d.c2 j * x.2 j` in the two coordinate
-blocks. -/
-def objective (d : FiniteModel n m l r) (x : Point n m) : ℝ :=
-  (∑ i, d.c1 i * x.1 i) + ∑ j, d.c2 j * x.2 j
+blocks, given by `affineArgumentCLM d.c1 d.c2`. -/
+def objective (d : FiniteModel n m l r) : Point n m → ℝ :=
+  ⇑(affineArgumentCLM d.c1 d.c2)
+
+/-- `FiniteModel.objective` is the underlying function of `affineArgumentCLM d.c1 d.c2`. -/
+theorem objective_eq_affineArgumentCLM (d : FiniteModel n m l r) :
+    d.objective = ⇑(affineArgumentCLM d.c1 d.c2) := (rfl)
 
 /-- Explicit evaluation of `FiniteModel.objective`. -/
 theorem objective_apply (d : FiniteModel n m l r) (x : Point n m) :
-    d.objective x = (∑ i, d.c1 i * x.1 i) + ∑ j, d.c2 j * x.2 j := (rfl)
+    d.objective x = (∑ i, d.c1 i * x.1 i) + ∑ j, d.c2 j * x.2 j := by
+  rw [objective_eq_affineArgumentCLM, affineArgumentCLM_apply]
 
 /-- With zero continuous and integer coordinates, the objective is identically zero. -/
 @[simp]
@@ -296,9 +312,8 @@ theorem objective_eq_comp_project {l' r' : ℕ} {d : FiniteModel n m l r}
     {d' : FiniteModel (n + q) m l' r'}
     (hc1 : d'.c1 = Fin.append d.c1 0) (hc2 : d'.c2 = d.c2) :
     d'.objective = d.objective ∘ project := by
-  ext z
-  simp only [Function.comp_apply, objective_apply, hc1, hc2, project_snd]
-  rw [sum_append_zero_right_mul_fst]
+  rw [objective_eq_affineArgumentCLM, objective_eq_affineArgumentCLM, hc1, hc2,
+    coe_affineArgumentCLM_append_zero]
 
 /-- Points `x ∈ D` satisfying all affine inequality rows of `d` together with a predicate `P` on
 the integer-block coordinates `x.2`, excluding the nonlinear residuals `d.g`. -/

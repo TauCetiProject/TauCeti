@@ -25,13 +25,14 @@ appended height coordinates.
 
 Under `pointEquiv n m q : Point (n + q) m ≃ Point n m × (Fin q → ℝ)`, the lifted mixed-integer and
 relaxed feasible sets are preimages of `liftedSet` with inner map `fun x j => component j x`,
-coordinatewise-monotone outer map `fun y i => ∑ j, weight i j * y j`, and budget `0 : Fin l → ℝ`.
-This directly instantiates `projection_eq` to yield exact projection
-(`FiniteModel.separable_projection`, `FiniteModel.separable_relaxation_projection`), from which
-feasible-minimum equivalence (`FiniteModel.separable_minimum_iff`,
-`FiniteModel.separable_relaxation_minimum_iff`) and attainment equivalence
-(`FiniteModel.separable_attainment_iff`, `FiniteModel.separable_relaxation_attainment_iff`) follow
-immediately.
+outer map `fun y i => ∑ j, weight i j * y j` (coordinatewise-monotone when `0 ≤ weight i j`), and
+budget `0 : Fin l → ℝ` (`FiniteModel.separableLift_feasibleWith_eq_preimage_liftedSet`,
+`FiniteModel.feasibleWith_eq_originalSet`). This directly instantiates `projection_eq` to yield
+exact projection (`FiniteModel.separable_projection`,
+`FiniteModel.separable_relaxation_projection`), from which feasible-minimum equivalence
+(`FiniteModel.separable_minimum_iff`, `FiniteModel.separable_relaxation_minimum_iff`) and
+attainment equivalence (`FiniteModel.separable_attainment_iff`,
+`FiniteModel.separable_relaxation_attainment_iff`) follow immediately.
 
 ## Main definitions
 
@@ -42,6 +43,11 @@ immediately.
 
 * `TauCeti.ConvexLifting.FiniteModel.separableLift_affine_rows_iff` — equivalence of the lifted
   affine rows with the original affine rows plus the weighted height budget rows.
+* `TauCeti.ConvexLifting.FiniteModel.feasibleWith_eq_originalSet` and
+  `TauCeti.ConvexLifting.FiniteModel.separableLift_feasibleWith_eq_preimage_liftedSet` —
+  identification of `d.feasibleWith D P` with `originalSet` and of
+  `(d.separableLift component weight).feasibleWith (project ⁻¹' D) P` with the `pointEquiv`
+  preimage of `liftedSet`.
 * `TauCeti.ConvexLifting.FiniteModel.separable_projection` and
   `TauCeti.ConvexLifting.FiniteModel.separable_relaxation_projection` — exact projection for
   mixed-integer feasibility and the continuous relaxation under nonnegative weights.
@@ -177,7 +183,10 @@ theorem separableLift_nonlinear_rows_iff (d : FiniteModel n m l r)
       ∀ j, component j (project z) ≤ height z j :=
   forall_congr' fun _ => sub_nonpos
 
-private theorem feasibleWith_eq_originalSet (d : FiniteModel n m l r) (D : Set (Point n m))
+/-- Under the separable decomposition `hg`, the parameterized feasible set `d.feasibleWith D P`
+coincides with `originalSet` on base domain `d.affineFeasibleWith D P`, with inner map
+`fun x j => component j x`, outer map `fun y i => ∑ j, weight i j * y j`, and budget `0`. -/
+theorem feasibleWith_eq_originalSet (d : FiniteModel n m l r) (D : Set (Point n m))
     (P : (Fin m → ℝ) → Prop) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) :
     d.feasibleWith D P =
@@ -188,7 +197,11 @@ private theorem feasibleWith_eq_originalSet (d : FiniteModel n m l r) (D : Set (
     Pi.zero_apply, hg]
   tauto
 
-private theorem separableLift_feasibleWith_eq_preimage_liftedSet (d : FiniteModel n m l r)
+/-- Under `pointEquiv n m q`, the lifted parameterized feasible set of `d.separableLift` equals
+the preimage of `liftedSet` on base domain `d.affineFeasibleWith D P` and unrestricted height
+domain `univ`, with inner map `fun x j => component j x`, outer map
+`fun y i => ∑ j, weight i j * y j`, and budget `0`. -/
+theorem separableLift_feasibleWith_eq_preimage_liftedSet (d : FiniteModel n m l r)
     (D : Set (Point n m)) (P : (Fin m → ℝ) → Prop)
     (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
     (d.separableLift component weight).feasibleWith (project ⁻¹' D) P =
