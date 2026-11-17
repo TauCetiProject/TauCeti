@@ -594,7 +594,7 @@ theorem _root_.CovariantDerivative.contMDiffOn_bundleChristoffelMap
     CMDiff[e.baseSet ∩ eT.baseSet] ∞
       (bundleChristoffelMap b eT (cov.isCovariantDerivativeOn (s := e.baseSet))) := by
   have : ContMDiffCovariantDerivativeOn F ∞ cov.toFun e.baseSet :=
-    cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ⊤) e.open_baseSet
+    cov.contMDiffCovariantDerivativeOn_of_isOpen (n := ∞) e.open_baseSet
   have : ContMDiffVectorBundle 1 F V I := .of_le (n := ∞) (by simp)
   have : ContMDiffVectorBundle (∞ + 1) F V I :=
     by simpa using (inferInstance : ContMDiffVectorBundle ∞ F V I)

@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.RingTheory.Huber.WeightedEval.Basic
 
 /-!
@@ -41,9 +40,9 @@ the remaining step before 5.50 can be stated as a universal property.
   summable term families, with no weights, completeness or restrictedness in sight.
   `TauCeti.Huber.weightedEval_add` and its corollaries are that composed with a way of producing
   summability.
-* `TauCeti.Huber.weightedEval_mem_ringOfDefinition`: a restricted series with coefficients in a
-  ring of definition `A₀` takes values in `A₀` at points of `A₀^k`, because `A₀` is open, hence
-  closed, and contains every term of the evaluation.
+* `TauCeti.Huber.weightedEval_mem`: a series with coefficients in a closed subsemiring takes
+  values in it at points of it, because the subsemiring contains every term of the evaluation. A
+  ring of definition is open, hence closed, so this applies to it.
 
 ## References
 
@@ -196,26 +195,22 @@ theorem weightedEval_add_of_forall_isPowerBounded (hφ : ContinuousAt φ 0)
 
 end Sums
 
-section RingOfDefinition
+section Closed
 
-variable {k : ℕ} {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C]
-  [IsTopologicalRing C] [CompleteSpace C] (P : PairOfDefinition C)
+variable {k : ℕ} {A B S : Type*} [CommSemiring A] [CommSemiring B] [TopologicalSpace B]
+  [SetLike S B] [SubsemiringClass S B]
 
-/-- **A restricted series with integral coefficients takes integral values** at integral points:
-if the coefficients of `F` lie in the ring of definition `A₀`, then so does `F(x)` for every
-`x ∈ A₀^k`. -/
-theorem weightedEval_mem_ringOfDefinition {F : MvPowerSeries (Fin k) C}
-    (hF : IsWeightedRestricted (fun _ : Fin k ↦ ({1} : Set C)) F)
-    (hF₀ : ∀ ν, MvPowerSeries.coeff ν F ∈ P.ringOfDefinition) (x : Fin k → P.ringOfDefinition) :
-    weightedEval (RingHom.id C) (fun i ↦ (x i : C)) F ∈ P.ringOfDefinition := by
-  have := P.toNonarchimedeanRing
-  have hsum := hasSum_weightedEval_of_forall_isPowerBounded (φ := RingHom.id C)
-    continuous_id.continuousAt
-    (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (x i).2) hF
-  simpa using P.mem_smul_of_hasSum isUnit_one hsum fun ν ↦ by
-    simpa [weightedEvalTerm_def] using mul_mem (hF₀ ν) (prod_mem fun i _ ↦ pow_mem (x i).2 (ν i))
+/-- **Evaluation stays in a closed subsemiring.** If the coefficients of `f`, mapped along `φ`,
+and the entries of `b` lie in a closed subsemiring `s`, then so does `weightedEval φ b f`. When the
+term family is not summable the evaluation is the junk value `0`, which also lies in `s`. -/
+theorem weightedEval_mem {s : S} (hs : IsClosed (s : Set B)) {φ : A →+* B} {b : Fin k → B}
+    {f : MvPowerSeries (Fin k) A} (hf : ∀ ν, φ (MvPowerSeries.coeff ν f) ∈ s)
+    (hb : ∀ i, b i ∈ s) : weightedEval φ b f ∈ s := by
+  rw [weightedEval_def]
+  exact tsum_mem hs fun ν ↦ by
+    simpa [weightedEvalTerm_def] using mul_mem (hf ν) (prod_mem fun i _ ↦ pow_mem (hb i) (ν i))
 
-end RingOfDefinition
+end Closed
 
 end TauCeti.Huber
 
