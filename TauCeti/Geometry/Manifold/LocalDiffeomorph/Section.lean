@@ -7,9 +7,14 @@ module
 
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
 public import TauCeti.Topology.MetricSpace.InjectiveNeighborhood
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
 # Assembling local diffeomorphisms near a section
+
+A map which is a local diffeomorphism at a point `x` agrees with a single partial
+diffeomorphism near `x`, whose source can be kept inside any prescribed open set containing `x`
+(`IsLocalDiffeomorphAt.exists_partialDiffeomorph_eqOn`).
 
 A map which is locally invertible near a retraction section, and induces the topology
 on that section, identifies a smaller neighbourhood with its image by a single partial
@@ -33,6 +38,36 @@ public section
 
 open Set Function
 open scoped Manifold ContDiff
+
+namespace IsLocalDiffeomorphAt
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {H G : Type*} [TopologicalSpace H] [TopologicalSpace G]
+  {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
+  {M N : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  [TopologicalSpace N] [ChartedSpace G N] {n : ℕ∞ω} {f : M → N} {x : M}
+
+/-- A `C^n` local diffeomorphism at `x` agrees with a partial diffeomorphism on its source, which
+contains `x` and lies inside any prescribed open set containing `x`. -/
+theorem exists_partialDiffeomorph_eqOn (hf : IsLocalDiffeomorphAt I J n f x) {s : Set M}
+    (hs : IsOpen s) (hxs : x ∈ s) :
+    ∃ Φ : PartialDiffeomorph I J M N n, x ∈ Φ.source ∧ Φ.source ⊆ s ∧ EqOn f Φ Φ.source := by
+  have : Nonempty M := ⟨x⟩
+  obtain ⟨t, ht, hinj⟩ := hf.exists_mem_nhds_injOn
+  obtain ⟨U, hUsub, hUo, hxU⟩ :=
+    mem_nhds_iff.1 (Filter.inter_mem (Filter.inter_mem (hs.mem_nhds hxs) ht) hf.eventually)
+  have hloc : IsLocalDiffeomorphOn I J n f U := fun y ↦ (hUsub y.2).2
+  have hinjU : InjOn f U := hinj.mono fun y hy ↦ (hUsub hy).1.2
+  refine ⟨hloc.partialDiffeomorphOfInjOn hUo hinjU, ?_, ?_, ?_⟩
+  · rwa [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source]
+  · rw [IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn_source]
+    exact fun y hy ↦ (hUsub hy).1.1
+  · intro y _
+    rw [IsLocalDiffeomorphOn.coe_partialDiffeomorphOfInjOn]
+
+end IsLocalDiffeomorphAt
 
 namespace IsLocalDiffeomorphOn
 
