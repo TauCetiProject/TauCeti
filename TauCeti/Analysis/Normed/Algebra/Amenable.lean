@@ -461,50 +461,6 @@ end
 
 variable [CompleteSpace A]
 
-omit [IsScalarTower 𝕜 A A] [SMulCommClass 𝕜 A A] in
-/-- Pulling `a ↦ a · E₀ - E₀ · a ∈ ker T**` across `kerBidualEquivKerPrecompPrecomp` gives a
-bounded derivation `A →L[𝕜] (ker T)**`. -/
-private theorem exists_derivation_ker {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-    [CompleteSpace X] {L R : A →L[𝕜] X →L[𝕜] X} {T : X →L[𝕜] A}
-    (hL : ∀ a b x, L (a * b) x = L a (L b x))
-    (hR : ∀ a b x, R (a * b) x = R b (R a x))
-    (hLR : ∀ a b x, L a (R b x) = R b (L a x))
-    (hTL : ∀ a x, x ∈ T.ker → L a x ∈ T.ker)
-    (hTR : ∀ a x, x ∈ T.ker → R a x ∈ T.ker)
-    (hclosed : IsClosed (T.range : Set A))
-    (E₀ : StrongDual 𝕜 (StrongDual 𝕜 X))
-    (hker : ∀ a : A,
-      dualAction (dualAction L) a E₀ - dualAction (dualAction R) a E₀ ∈ (bidualMap T).ker) :
-    ∃ D : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 T.ker),
-      (∀ a (f : StrongDual 𝕜 X),
-        D a (f.comp T.ker.subtypeL) =
-          E₀ (dualAction L a f) - E₀ (dualAction R a f)) ∧
-      ∀ a b, D (a * b) =
-        dualAction (dualAction (L.restrictAction T.ker hTL)) a (D b) +
-          dualAction (dualAction (R.restrictAction T.ker hTR)) b (D a) := by
-  let bL := dualAction (dualAction L)
-  let bR := dualAction (dualAction R)
-  let D₀ := bL.flip E₀ - bR.flip E₀
-  let e := T.kerBidualEquivKerPrecompPrecomp hclosed
-  let D : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 T.ker) :=
-    e.symm.toLinearIsometry.toContinuousLinearMap.comp (D₀.codRestrict (bidualMap T).ker hker)
-  have hD_iota (a : A) : bidualKerMap T (D a) = bL a E₀ - bR a E₀ := by
-    rw [bidualKerMap_apply, ← T.coe_kerBidualEquivKerPrecompPrecomp_apply hclosed]
-    exact congrArg Subtype.val (e.apply_symm_apply (D₀.codRestrict (bidualMap T).ker hker a))
-  have hD_eval (a : A) (f : StrongDual 𝕜 X) :
-      D a (f.comp T.ker.subtypeL) = E₀ (dualAction L a f) - E₀ (dualAction R a f) := by
-    simpa only [bL, bR, bidualKerMap_apply, precomp_apply, comp_apply, sub_apply,
-      dualAction_apply_apply] using congr($(hD_iota a) f)
-  refine ⟨D, hD_eval, fun a b ↦ ?_⟩
-  ext g
-  obtain ⟨f, rfl⟩ := T.ker.surjective_precomp_subtypeL g
-  rw [precomp_apply, add_apply, dualAction_apply_apply, dualAction_apply_apply,
-    dualAction_restrictAction_comp_subtypeL, dualAction_restrictAction_comp_subtypeL,
-    hD_eval, hD_eval, hD_eval,
-    dualAction_mul_apply_of_left hL a b f, dualAction_mul_apply_of_right hR a b f,
-    dualAction_apply_dualAction_apply_comm hLR b a f]
-  abel
-
 /-- Correcting `E₀ ∈ X**` along `ker T**` using amenability on `(ker T)**` produces `M ∈ X**` with
 `a · M = M · a` and `T** M = T** E₀`. -/
 private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
@@ -526,7 +482,16 @@ private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
       (∀ a : A, dualAction (dualAction L) a M = dualAction (dualAction R) a M) ∧
       ∀ a : A, dualAction (dualAction (ContinuousLinearMap.mul 𝕜 A)) a
         (precomp 𝕜 (precomp 𝕜 T) M) = inclusionInDoubleDual 𝕜 A a := by
-  obtain ⟨D, hD_eval, hD⟩ := exists_derivation_ker hL hR hLR hTL hTR hclosed E₀ hE₀_ker
+  let D₀ : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 X) :=
+    (dualAction (dualAction L)).flip E₀ - (dualAction (dualAction R)).flip E₀
+  have hD₀ (a b : A) : D₀ (a * b) =
+      dualAction (dualAction L) a (D₀ b) + dualAction (dualAction R) b (D₀ a) := by
+    simp only [D₀, sub_apply, flip_apply, map_sub,
+      dualAction_mul_apply_of_right (dualAction_mul_apply_of_left hL),
+      dualAction_mul_apply_of_left (dualAction_mul_apply_of_right hR),
+      dualAction_apply_dualAction_apply_comm (dualAction_apply_dualAction_apply_comm hLR)]
+    abel
+  obtain ⟨D, hD_precomp, hD⟩ := T.exists_derivation_bidual_ker hTL hTR hclosed D₀ hD₀ hE₀_ker
   have : Small.{u} (StrongDual 𝕜 T.ker) := small_of_surjective T.ker.surjective_precomp_subtypeL
   let kL := L.restrictAction T.ker hTL
   let kR := R.restrictAction T.ker hTR
@@ -541,11 +506,11 @@ private theorem exists_bidual_intertwining_of_isAmenable (h : IsAmenable 𝕜 A)
   refine ⟨E₀ - bidualKerMap T N₀, ?_, ?_⟩
   · intro a
     ext f
+    have hD_eval := congr($(hD_precomp a) f)
     have hN₀_eval := congr($(hN₀ a) (f.comp T.ker.subtypeL))
-    rw [hD_eval, sub_apply, dualAction_apply_apply, dualAction_apply_apply,
-      dualAction_restrictAction_comp_subtypeL, dualAction_restrictAction_comp_subtypeL] at hN₀_eval
-    simp only [dualAction_apply_apply, sub_apply, bidualKerMap_apply, precomp_apply, comp_apply]
-    linear_combination hN₀_eval
+    simp only [D₀, precomp_apply, comp_apply, sub_apply, flip_apply, dualAction_apply_apply,
+      dualAction_restrictAction_comp_subtypeL, bidualKerMap_apply, kL, kR] at hD_eval hN₀_eval ⊢
+    linear_combination hN₀_eval - hD_eval
   · intro a
     have hker_N₀ : bidualMap T (bidualKerMap T N₀) = 0 := by
       have hm := (T.kerBidualEquivKerPrecompPrecomp hclosed N₀).2

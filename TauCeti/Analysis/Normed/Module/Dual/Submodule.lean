@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.Dual.Bilinear
 public import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 public import TauCeti.Analysis.Normed.Module.Dual.Quotient
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # The dual and bidual of a submodule
@@ -166,16 +167,11 @@ theorem norm_comp_precomp_subtypeL (S : Submodule 𝕜 E)
     ext f
     simp [Ψ]
   rw [heq, Submodule.norm_coe, LinearIsometryEquiv.norm_map]
-  refine le_antisymm
-    ((Φ.opNorm_comp_le _).trans <| mul_le_of_le_one_right (norm_nonneg Φ)
-      S.quotientAnnihilatorEquivDual.toLinearIsometry.norm_toContinuousLinearMap_le) ?_
-  have hΦ : Φ =
-      Ψ.comp S.quotientAnnihilatorEquivDual.symm.toLinearIsometry.toContinuousLinearMap := by
-    ext g
-    simp [Ψ]
-  conv_lhs => rw [hΦ]
-  exact (Ψ.opNorm_comp_le _).trans <| mul_le_of_le_one_right (norm_nonneg Ψ)
-    S.quotientAnnihilatorEquivDual.symm.toLinearIsometry.norm_toContinuousLinearMap_le
+  have : IsClosed (S.orthogonalBilin (topDualPairing 𝕜 E).flip : Set (StrongDual 𝕜 E)) := by
+    rw [← S.ker_precomp_subtypeL]
+    exact ContinuousLinearMap.isClosed_ker _
+  let : NormedAddCommGroup (StrongDual 𝕜 S) := ContinuousLinearMap.normedAddCommGroup
+  exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv Φ S.quotientAnnihilatorEquivDual
 
 /-- The bidual of a submodule is isometrically the double annihilator `(Sᗮ)ᗮ` of the submodule in
 the bidual of the ambient space. The forward map is the bidual adjoint of `S.subtypeL`. -/

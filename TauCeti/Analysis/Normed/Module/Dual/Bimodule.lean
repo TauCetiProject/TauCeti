@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.DoubleDual
 public import Mathlib.Topology.Algebra.Module.Spaces.WeakDual
 public import TauCeti.Analysis.Normed.Operator.Restrict
+import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 import TauCeti.Analysis.Normed.Module.Dual.Functoriality
 
 /-!
@@ -39,7 +40,10 @@ actions. Since `dualAction M a` is the adjoint `precomp 𝕜 (M a)` of `M a`
 its bidual `E**` is a bimodule map when `E**` carries the dual actions of `E*`. Likewise, the
 correspondence between invariant subspaces and their annihilators in
 `TauCeti.Analysis.Normed.Module.Dual.Invariant` identifies the closed submodules of `E` with the
-weak-star closed submodules of `E*`.
+weak-star closed submodules of `E*`. Over fields satisfying `IsRCLikeNormedField`, a bounded
+derivation `D₀ : A →L[𝕜] E**` whose values lie in the bidual image of a bi-invariant submodule `p`
+(in particular, in `ker T**` for a closed-range bounded operator `T` between Banach spaces) pulls
+back to a bounded derivation into `p**` (respectively `(ker T)**`).
 
 ## Main definitions
 
@@ -63,6 +67,10 @@ weak-star closed submodules of `E*`.
   `ContinuousLinearMap.precomp_precomp_dualAction_dualAction_apply`: the iterated dual action on
   the bidual `E**` extends `M` along the canonical embedding and is intertwined by bidual adjoints
   of module maps.
+* `ContinuousLinearMap.exists_derivation_bidual_of_mem_range_precomp_precomp_subtypeL` and
+  `ContinuousLinearMap.exists_derivation_bidual_ker`: pulling a bounded derivation `A →L[𝕜] E**`
+  landing in the bidual image of a bi-invariant submodule (or in `ker T**` for closed-range `T`)
+  back to a bounded derivation into `p**` (respectively `(ker T)**`).
 
 ## References
 
@@ -173,5 +181,86 @@ theorem precomp_precomp_dualAction_dualAction_apply {M : A →L[𝕜] E →L[�
       dualAction (dualAction N) a
         (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) Φ) :=
   precomp_dualAction_apply (precomp_dualAction_apply hT) a Φ
+
+section BidualDerivation
+
+variable [IsRCLikeNormedField 𝕜] [Mul A]
+
+/-- If a bounded derivation `D₀ : A →L[𝕜] E**` takes values in the range of the bidual adjoint of
+`p.subtypeL` for a bi-invariant submodule `p ≤ E`, then it pulls back along `(p.subtypeL)**` to a
+bounded derivation `A →L[𝕜] p**` for the restricted bidual actions. -/
+theorem exists_derivation_bidual_of_mem_range_precomp_precomp_subtypeL
+    (D₀ : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E))
+    {L R : A →L[𝕜] E →L[𝕜] E} {p : Submodule 𝕜 E}
+    (hpL : ∀ a x, x ∈ p → L a x ∈ p)
+    (hpR : ∀ a x, x ∈ p → R a x ∈ p)
+    (hD₀ : ∀ a b : A,
+      D₀ (a * b) = dualAction (dualAction L) a (D₀ b) + dualAction (dualAction R) b (D₀ a))
+    (hmem : ∀ a : A,
+      D₀ a ∈ (precomp 𝕜 (precomp 𝕜 p.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 p) :
+        StrongDual 𝕜 (StrongDual 𝕜 p) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)).range) :
+    ∃ D : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 p),
+      (∀ a : A,
+        precomp 𝕜 (precomp 𝕜 p.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 p) (D a) = D₀ a) ∧
+      ∀ a b : A, D (a * b) =
+        dualAction (dualAction (L.restrictAction p hpL)) a (D b) +
+          dualAction (dualAction (R.restrictAction p hpR)) b (D a) := by
+  let : SeminormedAddCommGroup (StrongDual 𝕜 E) := inferInstance
+  let : NormedSpace 𝕜 (StrongDual 𝕜 E) := inferInstance
+  let : SeminormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 E)) := inferInstance
+  let : NormedSpace 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 E)) := inferInstance
+  let : SeminormedAddCommGroup (StrongDual 𝕜 p) := inferInstance
+  let : NormedSpace 𝕜 (StrongDual 𝕜 p) := inferInstance
+  let : SeminormedAddCommGroup (StrongDual 𝕜 (StrongDual 𝕜 p)) := inferInstance
+  let : NormedSpace 𝕜 (StrongDual 𝕜 (StrongDual 𝕜 p)) := inferInstance
+  have hmem' (a : A) : D₀ a ∈
+      (p.orthogonalBilin (topDualPairing 𝕜 E).flip).orthogonalBilin
+        (topDualPairing 𝕜 (StrongDual 𝕜 E)).flip :=
+    p.range_precomp_precomp_subtypeL ▸ hmem a
+  let D : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 p) :=
+    p.bidualEquivDoubleAnnihilator.symm.toLinearIsometry.toContinuousLinearMap.comp
+      (D₀.codRestrict _ hmem')
+  have hD_precomp (a : A) :
+      precomp 𝕜 (precomp 𝕜 p.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 p) (D a) = D₀ a := by
+    rw [← p.coe_bidualEquivDoubleAnnihilator_apply]
+    exact congrArg Subtype.val (p.bidualEquivDoubleAnnihilator.apply_symm_apply _)
+  refine ⟨D, hD_precomp, fun a b ↦ p.bidualEquivDoubleAnnihilator.injective <| Subtype.ext ?_⟩
+  rw [p.coe_bidualEquivDoubleAnnihilator_apply, p.coe_bidualEquivDoubleAnnihilator_apply,
+    map_add, hD_precomp, hD₀,
+    precomp_precomp_dualAction_dualAction_apply (M := L.restrictAction p hpL) (N := L)
+      (T := p.subtypeL) (coe_restrictAction_apply L p hpL),
+    precomp_precomp_dualAction_dualAction_apply (M := R.restrictAction p hpR) (N := R)
+      (T := p.subtypeL) (coe_restrictAction_apply R p hpR),
+    hD_precomp, hD_precomp]
+
+/-- If `T : E →L[𝕜] F` is a closed-range bounded operator between Banach spaces whose kernel is
+bi-invariant and `D₀ : A →L[𝕜] E**` is a bounded derivation taking values in `ker T**`, then `D₀`
+pulls back along `(T.ker.subtypeL)**` to a bounded derivation `A →L[𝕜] (ker T)**` for the
+restricted bidual actions. -/
+theorem exists_derivation_bidual_ker {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
+    (T : E →L[𝕜] F) {L R : A →L[𝕜] E →L[𝕜] E}
+    (hTL : ∀ a x, x ∈ T.ker → L a x ∈ T.ker)
+    (hTR : ∀ a x, x ∈ T.ker → R a x ∈ T.ker)
+    (hT : IsClosed (T.range : Set F))
+    (D₀ : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E))
+    (hD₀ : ∀ a b : A,
+      D₀ (a * b) = dualAction (dualAction L) a (D₀ b) + dualAction (dualAction R) b (D₀ a))
+    (hker : ∀ a : A,
+      D₀ a ∈ (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) :
+        StrongDual 𝕜 (StrongDual 𝕜 E) →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 F)).ker) :
+    ∃ D : A →L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 T.ker),
+      (∀ a : A,
+        precomp 𝕜 (precomp 𝕜 T.ker.subtypeL : StrongDual 𝕜 E →L[𝕜] StrongDual 𝕜 T.ker) (D a) =
+          D₀ a) ∧
+      ∀ a b : A, D (a * b) =
+        dualAction (dualAction (L.restrictAction T.ker hTL)) a (D b) +
+          dualAction (dualAction (R.restrictAction T.ker hTR)) b (D a) :=
+  D₀.exists_derivation_bidual_of_mem_range_precomp_precomp_subtypeL hTL hTR hD₀ fun a ↦ by
+    rw [← T.ker_precomp_precomp_eq_range_precomp_precomp_subtypeL hT]
+    exact hker a
+
+end BidualDerivation
 
 end ContinuousLinearMap
