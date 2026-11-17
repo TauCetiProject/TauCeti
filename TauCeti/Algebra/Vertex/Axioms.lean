@@ -149,15 +149,7 @@ theorem translation_apply (a : V) : A.translation a = ((A.field a)[[-2]]) A.vacu
 /-- The creation identity without division: `k! • a₍₋ₖ₋₁₎|0⟩ = Tᵏ a`. -/
 theorem factorial_smul_ncoeff_field_apply_vacuum (a : V) (k : ℕ) :
     k.factorial • ((A.field a)[[-k - 1]]) A.vacuum = (A.translation ^ k) a := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    have h := A.translation_ncoeff_apply_vacuum a (-k - 1)
-    have h₁ : -(-(k : ℤ) - 1) = ((k + 1 : ℕ) : ℤ) := by push_cast; ring
-    have h₂ : -(k : ℤ) - 1 - 1 = -((k + 1 : ℕ) : ℤ) - 1 := by push_cast; ring
-    rw [h₁, h₂, natCast_zsmul] at h
-    rw [pow_succ', mul_apply_eq_comp, ← ih, map_nsmul, h, Nat.factorial_succ, mul_nsmul,
-      smul_comm]
+  simpa using factorial_smul_ncoeff_apply A.translation_vacuum (A.lie_translation_ncoeff a) k
 
 /-- The creation identity `Y(a,z)|0⟩ = e^{zT} a`, in modes: `a₍₋ₖ₋₁₎|0⟩ = Tᵏ a / k!`. -/
 theorem ncoeff_field_apply_vacuum_neg [Module ℚ V] (a : V) (k : ℕ) :

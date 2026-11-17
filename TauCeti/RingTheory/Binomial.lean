@@ -509,6 +509,11 @@ The identity combines them without division, which is the integral step needed i
 
 ## Main results
 
+* `TauCeti.Ring.choose_neg_one` and `TauCeti.Ring.choose_neg_natCast_sub_one`: upper negation at
+  `-1` (`(-1 choose n) = (-1) ^ n`) and at `-k - 1`
+  (`(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`), together with the signed cancellation
+  `TauCeti.Ring.neg_one_pow_mul_choose_neg_natCast_sub_one` and its symmetry
+  `TauCeti.Ring.neg_one_pow_mul_choose_neg_natCast_sub_one_comm`.
 * `TauCeti.Ring.choose_neg_succ_eq_sum`: the expansion of `(-r choose (n + 1))` as a signed
   Chu--Vandermonde sum of the coefficients `(r choose k)`.
 * `TauCeti.Ring.choose_neg_mem`: an additive subgroup containing the coefficients of `r` up to
@@ -587,6 +592,35 @@ theorem add_one_nsmul_multichoose_add_one {R : Type*} [Semiring R] [BinomialRing
 /-! ## Negating the argument -/
 
 variable {R : Type*} [Ring R] [BinomialRing R]
+
+/-- Upper negation at `-1`: `(-1 choose n) = (-1) ^ n`. -/
+@[simp]
+theorem choose_neg_one (n : ℕ) : _root_.Ring.choose (-1 : R) n = (-1 : R) ^ n := by
+  rw [_root_.Ring.choose_neg', _root_.Ring.multichoose_one, Units.smul_def,
+    Int.coe_negOnePow_natCast, zsmul_one, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- Upper negation at `-k - 1`: `(-k - 1 choose i) = (-1) ^ i * (k + i choose i)`. -/
+theorem choose_neg_natCast_sub_one (k i : ℕ) :
+    _root_.Ring.choose (-(k : R) - 1) i = (-1 : R) ^ i * ((k + i).choose i : R) := by
+  have h₁ : -(k : R) - 1 = -((k : R) + 1) := by abel
+  have h₂ : (k : R) + 1 + (i : R) - 1 = ((k + i : ℕ) : R) := by push_cast; abel
+  rw [h₁, _root_.Ring.choose_neg, h₂, _root_.Ring.choose_natCast, Units.smul_def,
+    Int.coe_negOnePow_natCast, zsmul_eq_mul, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- Multiplying `(-k - 1 choose i)` by `(-1) ^ i` cancels the upper-negation sign and gives
+`(k + i choose i)`. -/
+theorem neg_one_pow_mul_choose_neg_natCast_sub_one (k i : ℕ) :
+    (-1 : R) ^ i * _root_.Ring.choose (-(k : R) - 1) i = ((k + i).choose i : R) := by
+  rw [choose_neg_natCast_sub_one, ← mul_assoc, ← (Commute.refl (-1 : R)).mul_pow, neg_one_mul,
+    neg_neg, one_pow, one_mul]
+
+/-- Symmetry of signed negative-integer binomial coefficients:
+`(-1) ^ k * (-i - 1 choose k) = (-1) ^ i * (-k - 1 choose i)`. -/
+theorem neg_one_pow_mul_choose_neg_natCast_sub_one_comm (k i : ℕ) :
+    (-1 : R) ^ k * _root_.Ring.choose (-(i : R) - 1) k =
+      (-1 : R) ^ i * _root_.Ring.choose (-(k : R) - 1) i := by
+  rw [neg_one_pow_mul_choose_neg_natCast_sub_one, neg_one_pow_mul_choose_neg_natCast_sub_one,
+    Nat.add_comm k i, Nat.choose_symm_add]
 
 /-- Negating the argument of a generalized binomial coefficient of positive degree expands, by
 Chu--Vandermonde, into a signed sum of the coefficients of the original argument weighted by
