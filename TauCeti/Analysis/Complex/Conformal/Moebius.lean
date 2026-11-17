@@ -165,9 +165,8 @@ lemma lipschitzOnWith_unitDiscMoebiusFormula_of_norm_le_one {a : ℂ} (ha : ‖a
     rw [norm_one] at this
     linarith
   have hnum : ‖1 - (starRingEnd ℂ) a * a‖ ≤ 1 := by
-    rw [Complex.conj_mul', ← ofReal_pow, ← ofReal_one, ← ofReal_sub, norm_real, Real.norm_eq_abs,
-      abs_le]
-    constructor <;> nlinarith [norm_nonneg a]
+    rw [norm_one_sub_conj_mul_self_of_norm_le_one ha]
+    exact sub_le_self _ (by positivity)
   refine LipschitzOnWith.of_dist_le_mul fun s hs t ht => ?_
   have hs0 := hden s hs
   have ht0 := hden t ht

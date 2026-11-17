@@ -66,34 +66,23 @@ open scoped ComplexConjugate NNReal Topology
 namespace TauCeti.Beltrami
 
 /-- **The normalized coefficient is Hölder.** If `μ` is `α`-Hölder on `ball c ρ` and bounded
-there by `R < 1`, and `‖L‖ ρ' < ρ`, then for `‖a‖ ≤ 1` the coefficient
-`x ↦ (μ(c + L x) - a) / (1 - conj a μ(c + L x))` is `α`-Hölder on `ball 0 ρ'`. -/
+there by `R < 1`, and `x ↦ c + L x` maps `ball 0 ρ'` into `ball c ρ`, then for `‖a‖ ≤ 1` the
+coefficient `x ↦ (μ(c + L x) - a) / (1 - conj a μ(c + L x))` is `α`-Hölder on `ball 0 ρ'`. -/
 private theorem exists_holderOnWith_moebius_comp {μ : ℂ → ℂ} {C α : ℝ≥0} {c a : ℂ}
     {L : ℂ →L[ℝ] ℂ} {ρ ρ' R : ℝ} (hμ : HolderOnWith C α μ (ball c ρ)) (hR : R < 1)
-    (ha : ‖a‖ ≤ 1) (hμR : ∀ z ∈ ball c ρ, ‖μ z‖ ≤ R) (hL : ‖L‖ * ρ' < ρ) :
+    (ha : ‖a‖ ≤ 1) (hμR : ∀ z ∈ ball c ρ, ‖μ z‖ ≤ R)
+    (hmaps : MapsTo (fun x ↦ c + L x) (ball (0 : ℂ) ρ') (ball c ρ)) :
     ∃ K : ℝ≥0, HolderOnWith K α
       (fun x ↦ (μ (c + L x) - a) / (1 - conj a * μ (c + L x))) (ball 0 ρ') := by
-  have hmaps : ∀ x ∈ ball (0 : ℂ) ρ', c + L x ∈ ball c ρ := by
-    intro x hx
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left]
-    exact (L.le_opNorm x).trans_lt
-      ((mul_le_mul_of_nonneg_left (mem_ball_zero_iff.mp hx).le (norm_nonneg L)).trans_lt hL)
-  refine ⟨((1 - R) ^ 2)⁻¹.toNNReal * C * ‖L‖₊ ^ (α : ℝ), HolderOnWith.of_dist_le ?_⟩
-  intro x hx y hy
-  have hLxy : dist (c + L x) (c + L y) ≤ ‖L‖ * dist x y := by
-    rw [dist_add_left, dist_eq_norm, dist_eq_norm, ← map_sub]
-    exact L.le_opNorm _
-  refine ((lipschitzOnWith_unitDiscMoebiusFormula_of_norm_le_one ha hR).dist_le_mul _
-    (mem_closedBall_zero_iff.mpr (hμR _ (hmaps x hx))) _
-    (mem_closedBall_zero_iff.mpr (hμR _ (hmaps y hy)))).trans ?_
-  push_cast
-  rw [mul_assoc, mul_assoc]
-  gcongr
-  calc dist (μ (c + L x)) (μ (c + L y)) ≤ C * dist (c + L x) (c + L y) ^ (α : ℝ) :=
-        hμ.dist_le (hmaps x hx) (hmaps y hy)
-    _ ≤ C * (‖L‖ * dist x y) ^ (α : ℝ) := by gcongr
-    _ = C * (‖L‖ ^ (α : ℝ) * dist x y ^ (α : ℝ)) := by
-        rw [Real.mul_rpow (norm_nonneg L) dist_nonneg]
+  -- Compose `μ` with the affine map and the Möbius map, Lipschitz on `closedBall 0 R`.
+  have hpre : HolderOnWith ‖L‖₊ 1 (fun x ↦ c + L x) (ball (0 : ℂ) ρ') :=
+    holderOnWith_one.mpr (LipschitzOnWith.of_dist_le_mul fun x _ y _ ↦ by
+      rw [dist_add_left, dist_eq_norm, dist_eq_norm, ← map_sub]
+      exact L.le_opNorm _)
+  have h := (holderOnWith_one.mpr (lipschitzOnWith_unitDiscMoebiusFormula_of_norm_le_one ha
+    hR)).comp (hμ.comp hpre hmaps) fun x hx ↦ mem_closedBall_zero_iff.mpr (hμR _ (hmaps hx))
+  rw [mul_one, one_mul] at h
+  exact ⟨_, h⟩
 
 /-- **Normalized and rescaled coefficient.** Let `μ` be `α`-Hölder on `ball c ρ` with
 `‖μ c‖ < 1`, write `a = μ c`, and let `M` be a real-linear map. For every `δ > 0` there are
@@ -127,13 +116,13 @@ private theorem exists_rescaled_coefficient {α C : ℝ≥0} (hα0 : 0 < α) (h�
   have hM : ‖M‖ * ρ₃ < ρ₂ := by
     rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
     nlinarith [norm_nonneg M]
-  have hmaps : ∀ x ∈ ball (0 : ℂ) ρ₃, c + M x ∈ ball c ρ₂ := by
+  have hmaps : MapsTo (fun x ↦ c + M x) (ball (0 : ℂ) ρ₃) (ball c ρ₂) := by
     intro x hx
     rw [mem_ball, dist_eq_norm, add_sub_cancel_left]
     exact (M.le_opNorm x).trans_lt
       ((mul_le_mul_of_nonneg_left (mem_ball_zero_iff.mp hx).le (norm_nonneg M)).trans_lt hM)
   obtain ⟨K, hK⟩ := exists_holderOnWith_moebius_comp
-    (hμ.mono (ball_subset_ball (min_le_right _ _))) hR (by linarith) hμR hM
+    (hμ.mono (ball_subset_ball (min_le_right _ _))) hR hμc.le hμR hmaps
   -- Rescale with a bump equal to `1` on the unit disc and supported in the disc of radius `2`.
   let χ : ContDiffBump (0 : ℂ) := ⟨1, 2, one_pos, one_lt_two⟩
   have hsmall := eventually_exists_holderSpace_cutoff_rescale hα0 hα1.le hρ₃ hK (by simp [a])
@@ -146,14 +135,10 @@ private theorem exists_rescaled_coefficient {α C : ℝ≥0} (hα0 : 0 < α) (h�
     rw [mem_ball_zero_iff, norm_smul, Real.norm_of_nonneg hε.1.le]
     calc ε * ‖w‖ ≤ ε * 1 := by gcongr; exacts [hε.1.le, (mem_ball_zero_iff.mp hw).le]
       _ < ρ₃ := by rw [mul_one]; exact hε.2
-  have hz := hmaps _ hεw
+  have hz := hmaps hεw
   refine ⟨ball_subset_ball (min_le_right _ _) hz, ?_⟩
-  have hden : 1 - conj a * μ (c + M (ε • w)) ≠ 0 := by
-    intro h0
-    have h1 : ‖conj a * μ (c + M (ε • w))‖ = 1 := by rw [← sub_eq_zero.mp h0, norm_one]
-    rw [norm_mul, Complex.norm_conj] at h1
-    have := hμR _ hz
-    nlinarith [norm_nonneg a, norm_nonneg (μ (c + M (ε • w)))]
+  have hden : 1 - conj a * μ (c + M (ε • w)) ≠ 0 :=
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one ((hμR _ hz).trans hR.le) hμc
   rw [hfχ, χ.one_of_mem_closedBall (ball_subset_closedBall hw), one_smul,
     div_mul_cancel₀ _ hden]
 
@@ -221,7 +206,7 @@ private theorem exists_chart_comp_affine {α K : ℝ≥0} {φ : ℂ → ℂ} {e 
       ∀ z ∈ E.source, fderiv ℝ E z =
         (fderiv ℝ φ (ε⁻¹ • L (z - c))).comp (ε⁻¹ • (L : ℂ →L[ℝ] ℂ)) := by
   set T : ℂ →L[ℝ] ℂ := ε⁻¹ • (L : ℂ →L[ℝ] ℂ)
-  have hT (z : ℂ) : T z = ε⁻¹ • L z := rfl
+  have hT (z : ℂ) : T z = ε⁻¹ • L z := by simp [T]
   let R : ℂ ≃ₜ ℂ := (Homeomorph.subRight c).trans
     (L.toHomeomorph.trans (Homeomorph.smulOfNeZero ε⁻¹ (inv_ne_zero hε)))
   set E := R.toOpenPartialHomeomorph.trans (e.restrOpen (ball 0 1) isOpen_ball)
