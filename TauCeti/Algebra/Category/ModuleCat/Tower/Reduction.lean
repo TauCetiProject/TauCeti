@@ -458,6 +458,10 @@ noncomputable def finiteReductionEquiv [IsNoetherianRing A] [IsAdicComplete I A]
     intro M N f
     apply FGModuleCat.hom_ext
     ext x
+    -- The unit component is `toLimReduction` bundled by `toFGModuleCatIso`;
+    -- the lifted functors act by `reductionMap` and `limMap`. This component is
+    -- constructed inline above, so it has no named evaluation lemma to rewrite here.
+    -- Exposing these wrappers lets the existing linear-map naturality lemma apply.
     change toLimReduction I N (f.hom.hom x) =
       limMap (reductionMap I f.hom.hom) (toLimReduction I M x)
     exact (limMap_reductionMap_toLimReduction I f.hom.hom x).symm)
@@ -471,6 +475,10 @@ noncomputable def finiteReductionEquiv [IsNoetherianRing A] [IsAdicComplete I A]
     ext ⟨n⟩ : 2
     ext z
     obtain ⟨x, rfl⟩ := quotientsπ_surjective _ (I.pow_succ_smul_top_antitone F.obj.lim) n z
+    -- `ObjectProperty.isoMk` bundles `reductionLimIso`, and the lifted composite
+    -- `finiteLim I ⋙ finiteReduction I` maps `f` by `reductionMap I (limMap f.hom)`.
+    -- The counit components are constructed inline above and have no named evaluation
+    -- lemma here; expose their underlying maps so the projection lemmas below match.
     change (((isFiniteAdicSystem_iff I _).1 G.property).1.reductionLimIso.hom.app (op n)).hom
         (((reductionMap I (limMap f.hom)).app (op n)).hom (reductionπ I F.obj.lim n x)) =
       (f.hom.app (op n)).hom
@@ -486,6 +494,11 @@ noncomputable def finiteReductionEquiv [IsNoetherianRing A] [IsAdicComplete I A]
     ext ⟨n⟩ : 2
     ext z
     obtain ⟨x, rfl⟩ := quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) n z
+    -- Mapping the unit through the lifted reduction functor gives
+    -- `reductionMap I (toLimReduction I M)`; the counit is `reductionLimIso` bundled
+    -- by `ObjectProperty.isoMk`, and the identity acts as the identity on elements.
+    -- These inline components have no evaluation lemmas until this equivalence is
+    -- defined, so expose their underlying maps before rewriting the projections.
     change ((isAdicSystem_reduction I M).reductionLimIso.hom.app (op n)).hom
       (((reductionMap I (toLimReduction I M)).app (op n)).hom (reductionπ I M n x)) =
         reductionπ I M n x
