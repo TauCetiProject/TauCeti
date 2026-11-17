@@ -88,6 +88,18 @@ theorem symmetricGroupFourMatching_injective : Function.Injective symmetricGroup
   unfold Function.Injective
   decide
 
+/-- The double transposition of each matching is an involution. -/
+@[simp]
+theorem symmetricGroupFourMatching_sq (m : Fin 3) : symmetricGroupFourMatching m ^ 2 = 1 := by
+  revert m
+  decide
+
+/-- The double transposition of each matching is not the identity. -/
+@[simp]
+theorem symmetricGroupFourMatching_ne_one (m : Fin 3) : symmetricGroupFourMatching m ≠ 1 := by
+  revert m
+  decide
+
 /-- The double transposition of each matching is an even permutation. -/
 theorem symmetricGroupFourMatching_mem_alternatingGroup (m : Fin 3) :
     symmetricGroupFourMatching m ∈ alternatingGroup (Fin 4) := by
