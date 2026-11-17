@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.HighestWeight.Basis
 public import TauCeti.Algebra.Lie.HighestWeight.FiniteDimensional
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.HighestWeight
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Orbit.Weight
 import TauCeti.Algebra.Lie.UniversalEnveloping.Module
 
@@ -136,12 +136,13 @@ theorem highestWeightLattice_eq_span_loweringWord
 /-- At a dominant integral weight, the integral orbit is a full lattice: it is finitely
 generated over `ℤ` and spans `L(λ)` over `ℚ`. -/
 theorem isLattice_highestWeightLattice (hlam : IsDominantIntegral b.base lam) :
-    Submodule.IsLattice ℚ (b.highestWeightLattice lam) := by
+    Submodule.IsFullLattice ℚ (b.highestWeightLattice lam) := by
   let _ := b.isCartanSubalgebra
   let := finiteDimensional_irreducibleQuotient_of_isDominantIntegral hlam
   obtain ⟨wt, hwt⟩ := b.exists_isCartanWeightVector_generator lam hlam.isIntegralWeight
-  exact ⟨b.fg_orbitOfRep_kostantForm_singleton _ hwt (b.representation_e_generator lam),
-    b.span_highestWeightLattice_eq_top lam⟩
+  have : Submodule.IsLattice ℚ (b.highestWeightLattice lam) := Submodule.IsLattice.of_fg ℚ
+    (b.fg_orbitOfRep_kostantForm_singleton _ hwt (b.representation_e_generator lam))
+  exact ⟨b.span_highestWeightLattice_eq_top lam⟩
 
 include hH in
 /-- At an integral highest weight, the integral form lies in the span of the integral joint
@@ -164,6 +165,7 @@ theorem exists_weightBasis_highestWeightLattice (hlam : IsDominantIntegral b.bas
         ((B i : b.highestWeightLattice lam) : irreducibleQuotient b.base lam) := by
   let _ := b.isCartanSubalgebra
   let := b.isLattice_highestWeightLattice lam hlam
+  have := Submodule.IsLattice.finite ℚ (b.highestWeightLattice lam)
   let M := (b.highestWeightLattice lam).toAddSubgroup
   let _ : Module.Finite ℤ M := inferInstanceAs (Module.Finite ℤ (b.highestWeightLattice lam))
   have hM : ∀ u ∈ TauCeti.UniversalEnvelopingAlgebra.kostantForm (rootGenerator b) b.h, ∀ v ∈ M,

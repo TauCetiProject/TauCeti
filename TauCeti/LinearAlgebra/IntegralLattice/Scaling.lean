@@ -555,7 +555,7 @@ theorem smul_isometryQuotient_injective {n : ℤ} (hn : n ≠ 0) :
 /-! ## Interaction with constructors -/
 
 @[simp]
-theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
+theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ]
     (B : LinearMap.BilinForm ℚ V) (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     n • ofSubmodule S B hB hle = ofSubmodule S ((n : ℚ) • B) (hB.smul (n : ℚ))
       (by
@@ -567,7 +567,7 @@ theorem smul_ofSubmodule (n : ℤ) (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
   apply IntegralLattice.ext <;> simp
 
 @[simp]
-theorem neg_ofSubmodule (S : Submodule ℤ V) [hS : S.IsLattice ℚ]
+theorem neg_ofSubmodule (S : Submodule ℤ V) [hS : S.IsFullLattice ℚ]
     (B : LinearMap.BilinForm ℚ V) (hB : B.IsSymm) (hle : S ≤ B.dualSubmodule S) :
     -ofSubmodule S B hB hle = ofSubmodule S (-B) hB.neg
       (by

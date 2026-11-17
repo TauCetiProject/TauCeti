@@ -403,7 +403,7 @@ theorem lieEquivOfIsLocalDiffeomorphAt_apply
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (hφ : IsLocalDiffeomorphAt I I' ∞ φ 1)
     (X : LeftInvariantDerivation I G) :
     lieEquivOfIsLocalDiffeomorphAt φ hφ X = lieMap φ X := by
-  simp [lieEquivOfIsLocalDiffeomorphAt]
+  rfl
 
 /-- The Lie homomorphism underlying the equivalence induced by a local diffeomorphism is its Lie
 map. -/

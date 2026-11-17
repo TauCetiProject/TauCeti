@@ -71,7 +71,7 @@ theorem IsUnimodular.nondegenerate {L : IntegralLattice V}
     (hL : L.IsUnimodular) : L.form.Nondegenerate := by
   apply L.isLattice_dualCarrier_iff_nondegenerate.mp
   rw [L.isUnimodular_def] at hL
-  simpa only [← hL] using (inferInstance : L.carrier.IsLattice ℚ)
+  simpa only [← hL] using (inferInstance : L.carrier.IsFullLattice ℚ)
 
 /-- Unimodularity is equivalent to every vector in the dual carrier already belonging to the
 original carrier. -/

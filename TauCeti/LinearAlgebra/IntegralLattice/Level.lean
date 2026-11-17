@@ -207,7 +207,7 @@ theorem level_dvd_iff_gramMatrix {ι : Type v} [Fintype ι] [DecidableEq ι] (b 
     (N : ℤ) :
     (L.level : ℤ) ∣ N ↔ ∃ M : Matrix ι ι ℤ, (∀ i, Even (M i i)) ∧
       M.map (Int.cast : ℤ → ℚ) = (N : ℚ) • ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ := by
-  set f := (L.dualCarrierBasis b).extendOfIsLattice ℚ
+  set f := (L.dualCarrierBasis b).extendOfIsFullLattice ℚ
   -- The inverse Gram matrix is the Gram matrix of the dual basis.
   have hinv (i j : ι) : ((L.gramMatrix b).map (Int.cast : ℤ → ℚ))⁻¹ i j = L.form (f i) (f j) := by
     have h := congrFun (congrFun (L.toMatrix_dualCarrierBasis b) i) j

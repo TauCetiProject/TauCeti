@@ -180,10 +180,10 @@ private theorem splitCarrier_le : splitCarrier L x ≤ L.carrier :=
 `d • y = (x, y) • x + (d • y - (x, y) • x)` with the second summand orthogonal to `x`. Hence it
 is a full sublattice. -/
 private theorem isLattice_splitCarrier (hx : L.integralNorm x ≠ 0) :
-    (splitCarrier L x).IsLattice ℚ := by
+    (splitCarrier L x).IsFullLattice ℚ := by
   have hd : ((L.integralNorm x : ℤ) : ℚ) ≠ 0 := Int.cast_ne_zero.mpr hx
-  refine Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ (M := Units.mk0 _ hd • L.carrier) ?_
-    (Submodule.FG.of_le Submodule.IsLattice.fg (splitCarrier_le L x))
+  refine Submodule.IsFullLattice.of_le_of_fg ℚ (M := Units.mk0 _ hd • L.carrier) ?_
+    (Submodule.FG.of_le (Submodule.IsLattice.fg ℚ L.carrier) (splitCarrier_le L x))
   intro z hz
   obtain ⟨y, hy, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hz
   set c : ℤ := L.integralForm x ⟨y, hy⟩

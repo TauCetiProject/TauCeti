@@ -265,8 +265,8 @@ theorem lattice_mulSingle_principal [DecidableEq (HeightOneSpectrum A)]
 /-- **`I(α)` is a full lattice.** When `Λ` is an `A`-order in `B` and `A` is not a field, `I(α)` is
 an `A`-lattice in `B`: finitely generated and spanning `B` over `F`. -/
 theorem isLattice_lattice (hA : ¬IsField A) (hΛ : IntegralOrder.IsOrder F Λ)
-    (α : FiniteIdeles F Λ) : (lattice F Λ α).IsLattice F := by
-  refine ⟨?_, span_lattice hΛ.span_eq_top α⟩
+    (α : FiniteIdeles F Λ) : (lattice F Λ α).IsFullLattice F := by
+  refine { toIsLattice := IsLattice.of_fg F ?_, span_eq_top := span_lattice hΛ.span_eq_top α }
   -- Some nonzero `a ∈ A` makes every `a • α_v` integral, so that `a • I(α) ⊆ I(1) = Λ`.
   obtain ⟨a, ha, hav⟩ := exists_ne_zero_forall_smul_inv_mem_baseChange hΛ.span_eq_top α⁻¹
   have ha' : algebraMap A F a ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective A F)).2 ha
@@ -329,7 +329,7 @@ theorem leftLattice_one (hA : ¬IsField A) : leftLattice F Λ 1 = Subalgebra.toS
 the left lattice of every finite idele of `Λᵒᵖ` is an `A`-lattice in `B`. -/
 theorem isLattice_leftLattice [Algebra F B] [IsScalarTower A F B] (hA : ¬IsField A)
     (hΛ : IntegralOrder.IsOrder F Λ) (α : FiniteIdeles F Λ.op) :
-    (leftLattice F Λ α).IsLattice F := by
+    (leftLattice F Λ α).IsFullLattice F := by
   have := isLattice_lattice hA (IntegralOrder.isOrder_op_iff.2 hΛ) α
   convert Submodule.isLattice_map (lattice F Λ.op α)
     (MulOpposite.opLinearEquiv F : B ≃ₗ[F] Bᵐᵒᵖ).symm.toLinearMap

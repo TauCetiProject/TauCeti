@@ -127,7 +127,7 @@ theorem _root_.Subgroup.restrictSubgroup_isScalarTower_finite_projective (C : Su
   have hAX : IsScalarTower R[C] R[G] X := ⟨fun r s x ↦ by
     rw [hX r (s • x)]
     exact mul_smul (φ r) s x⟩
-  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans R[G] X, .trans R[G] X⟩
+  refine ⟨hAA, hAX, ⟨fun a r x ↦ ?_⟩, .trans R[G] X, .trans R[C] R[G] X⟩
   rw [hX (a • r) x, hX r x]
   exact (congrArg (· • x) (map_smul φ a r)).trans (smul_assoc a (φ r) x)
 

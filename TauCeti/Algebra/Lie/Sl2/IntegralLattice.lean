@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
 public import TauCeti.Algebra.Lie.Sl2.Standard
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
 public import TauCeti.LinearAlgebra.CoordinateLattice
@@ -330,7 +330,7 @@ theorem span_integralLattice_eq_top :
     Submodule.span ℚ (integralLattice n : Set (Sl2Std ℚ n)) = ⊤ := by
   exact (TauCeti.instIsLatticeCoordinateLattice (Fin (n + 1))).span_eq_top
 
-instance : Submodule.IsLattice ℚ (integralLattice n) where
+instance : Submodule.IsFullLattice ℚ (integralLattice n) where
   __ := TauCeti.instIsLatticeCoordinateLattice (Fin (n + 1))
 
 /-! ### The restricted rank-one Kostant action -/

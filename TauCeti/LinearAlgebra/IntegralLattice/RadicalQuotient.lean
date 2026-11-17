@@ -97,8 +97,9 @@ theorem mem_radicalQuotientCarrier_iff (x : V ⧸ L.radical) :
     Submodule.mkQ_apply]
 
 /-- The image of a full integral carrier in the radical quotient is again a full lattice. -/
-instance isLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsLattice ℚ where
-  fg := L.isLattice.fg.map _
+instance isLattice_radicalQuotientCarrier : L.radicalQuotientCarrier.IsFullLattice ℚ where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := L.radicalQuotientCarrier)
+    ((Submodule.IsLattice.fg ℚ L.carrier).map _)
   span_eq_top := by
     -- Express the carrier set as the image of the original carrier under the rational projection
     have hcoe : (L.radicalQuotientCarrier : Set (V ⧸ L.radical)) =

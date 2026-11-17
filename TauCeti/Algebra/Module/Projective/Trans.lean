@@ -10,34 +10,7 @@ public import Mathlib.Algebra.Module.Projective
 /-!
 # Projectivity along a tower of scalars
 
-If `S` is a projective `R`-module and `M` is a projective `S`-module, compatibly with the
-`R`-actions, then `M` is a projective `R`-module: `M` is a direct summand of a free `S`-module,
-which is a direct sum of copies of the projective `R`-module `S`.
-
-No commutativity is assumed, and `S` need not be an `R`-algebra: it suffices that `R` acts on `S`
-compatibly with multiplication on the left. This is the situation of a subring that is not central,
-for instance the group algebra `A[H]` of a subgroup acting on `A[G]` by left multiplication, and is
-how a projective `A[G]`-module is restricted to a projective `A[H]`-module.
-
-## Main results
-
-* `Module.Projective.trans`: projectivity is transitive along a scalar tower.
+Transitivity of projectivity along a scalar tower, `Module.Projective.trans`, is now in Mathlib
+(`Mathlib.Algebra.Module.Projective`), with `R`, `S` and `M` all explicit. This file only
+re-exports that import for the files that depend on it.
 -/
-
-public section
-
-namespace Module.Projective
-
-variable {R : Type*} (S M : Type*) [Semiring R] [Semiring S] [Module R S] [IsScalarTower R S S]
-  [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
-
-/-- **Projectivity is transitive along a scalar tower.** A projective module over a ring `S` that is
-itself projective as a left `R`-module is projective over `R`. -/
-theorem trans [Module.Projective R S] [Module.Projective S M] : Module.Projective R M := by
-  classical
-  obtain ⟨s, hs⟩ := Module.projective_def'.mp ‹Module.Projective S M›
-  have : Module.Projective R (M →₀ S) := .of_equiv' (finsuppLequivDFinsupp R).symm
-  exact .of_split (s.restrictScalars R) ((Finsupp.linearCombination S id).restrictScalars R)
-    (LinearMap.ext fun x ↦ LinearMap.congr_fun hs x)
-
-end Module.Projective

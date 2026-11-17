@@ -155,7 +155,9 @@ private def scalarExtensionRingEquiv : R ⊗[K] CrossedProduct c ≃+*
 private theorem scalarExtensionRingEquiv_includeRight (a : CrossedProduct c) :
     scalarExtensionRingEquiv c ι π hπ hbase (1 ⊗ₜ[K] a) =
       (comapRingEquiv c ι π hπ).symm a := by
-  simp [scalarExtensionRingEquiv, ← Algebra.TensorProduct.includeRight_apply]
+  simp [scalarExtensionRingEquiv, ← Algebra.TensorProduct.includeRight_apply,
+    RingEquiv.symm_apply_eq]
+  rfl
 
 /-- Scalar extension along an isomorphism of base rings carries a crossed product to the
 crossed product of the transported cocycle. This is the tensor-defined algebra transport. -/

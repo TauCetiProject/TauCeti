@@ -137,7 +137,7 @@ theorem finrank_integralLattice :
   have h := Module.finrank_eq_card_basis (integralLatticeBasis b)
   simpa only [Fintype.card_finset, Nat.card_eq_fintype_card] using h
 
-instance : Submodule.IsLattice ℚ (integralLattice b) where
+instance : Submodule.IsFullLattice ℚ (integralLattice b) where
   __ := TauCeti.IntegralLattice.isLattice_span_basis b.ExteriorAlgebra
 
 end Finite

@@ -245,7 +245,7 @@ noncomputable def quotientEquivOfIsCompl : (L ⧸ I) ≃ₗ⁅R⁆ S :=
 @[simp]
 theorem quotientEquivOfIsCompl_symm_apply (x : S) :
     (I.quotientEquivOfIsCompl S h).symm x = LieSubmodule.Quotient.mk (x : L) := by
-  simp [quotientEquivOfIsCompl]
+  rfl
 
 /-- `LieIdeal.quotientEquivOfIsCompl` sends the class of `x : S` to `x`. -/
 @[simp]

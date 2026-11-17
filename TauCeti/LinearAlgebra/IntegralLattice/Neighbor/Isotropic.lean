@@ -156,10 +156,10 @@ theorem relIndex_neighborKernel {v w : L} (hvw : IsCoprime (L.integralForm v w) 
 
 /-- The neighbor kernel is a full lattice in the ambient space, since it contains `p L`. -/
 instance isLattice_neighborKernel [NeZero p] (v : L) :
-    (L.neighborKernel p v).IsLattice ℚ where
-  fg := by
+    (L.neighborKernel p v).IsFullLattice ℚ where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ (M := L.neighborKernel p v) (by
     rw [neighborKernel]
-    exact (IsNoetherian.noetherian _).map _
+    exact (IsNoetherian.noetherian _).map _)
   span_eq_top := by
     apply top_unique
     rw [← L.isLattice.span_eq_top, Submodule.span_le]
@@ -170,9 +170,9 @@ instance isLattice_neighborKernel [NeZero p] (v : L) :
       smul_inv_smul₀ (Nat.cast_ne_zero.mpr (NeZero.ne p))] at h
 
 private theorem isLattice_neighborCarrier [NeZero p] (v : L) :
-    (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsLattice ℚ :=
-  Submodule.IsLattice.of_le_of_isLattice_of_fg ℚ le_sup_left
-    (Submodule.IsLattice.fg.sup (Submodule.fg_span_singleton _))
+    (L.neighborKernel p v ⊔ ℤ ∙ ((p : ℚ)⁻¹ • (v : V))).IsFullLattice ℚ :=
+  Submodule.IsFullLattice.of_le_of_fg ℚ le_sup_left
+    ((Submodule.IsLattice.fg ℚ (L.neighborKernel p v)).sup (Submodule.fg_span_singleton _))
 
 attribute [local instance] isLattice_neighborCarrier
 

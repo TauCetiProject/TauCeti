@@ -284,10 +284,18 @@ noncomputable def toChevalleyLieLatticeEquiv :
       rcases idx with j | i <;> apply Subtype.ext <;> simp [f, b0, b1, σ, simpleCorootCoweightMap]
     rw [← LieHom.coe_toLinearMap, hf_eq]; exact (b0.equiv b1 (.refl _)).bijective
 
+private theorem toChevalleyLieLatticeEquiv_apply
+    (y : ChevalleyLieAlgebra (hx.chevalleyConstants P e he)) :
+    hx.toChevalleyLieLatticeEquiv P e he b bY s hbY y =
+      hx.toChevalleyLieLattice P e he (simpleCorootCoweightMap b bY s)
+        (hx.simpleCorootCoweightMap_mem b bY s)
+        (simpleCorootCoweightMap_pair P e he b bY s hbY) y :=
+  rfl
+
 @[simp] theorem coe_toChevalleyLieLatticeEquiv_cartan_coroot (i : ι) :
     (hx.toChevalleyLieLatticeEquiv P e he b bY s hbY
       (ChevalleyLieAlgebra.cartan _ (P.coroot i)) : L) = (coroot (e i : Weight K H L) : L) := by
-  simp [toChevalleyLieLatticeEquiv, map_coroot_eq_rootSystem_coroot e he _
+  simp [toChevalleyLieLatticeEquiv_apply, map_coroot_eq_rootSystem_coroot e he _
     (simpleCorootCoweightMap_pair P e he b bY s hbY), rootSystem_coroot_apply]
 
 /-- Not `@[simp]` because `hbY` is an explicit hypothesis rewriting `bY j` under `simpNF`; see
@@ -298,7 +306,7 @@ theorem coe_toChevalleyLieLatticeEquiv_cartan_basis (j : J) :
 
 @[simp] theorem coe_toChevalleyLieLatticeEquiv_root (i : ι) :
     (hx.toChevalleyLieLatticeEquiv P e he b bY s hbY (ChevalleyLieAlgebra.root _ i) : L) =
-      x (e i) := by simp [toChevalleyLieLatticeEquiv]
+      x (e i) := by simp [toChevalleyLieLatticeEquiv_apply]
 
 end IsChevalleySystem
 

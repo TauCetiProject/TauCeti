@@ -77,7 +77,7 @@ values. Its integral dual is the weight lattice
 structure CoweightLattice (R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H) where
   /-- The coweight lattice, as a `ℤ`-submodule of the ambient space. -/
   lattice : Submodule ℤ H
-  [isLattice : lattice.IsLattice ℚ]
+  [isLattice : lattice.IsFullLattice ℚ]
   /-- Every simple coroot is a coweight. -/
   coroot_mem (i : I) : R.coroot i ∈ lattice
   /-- Every simple root is integral on the coweight lattice. -/
@@ -88,6 +88,12 @@ namespace CoweightLattice
 attribute [instance] isLattice
 
 variable {R : CartanRealization (A.map (Int.cast : ℤ → ℚ)) H} (L : R.CoweightLattice)
+
+/-- A coweight lattice is a free `ℤ`-module. -/
+instance : Module.Free ℤ L.lattice := Submodule.IsLattice.free ℚ L.lattice
+
+/-- A coweight lattice is a finite `ℤ`-module. -/
+instance : Module.Finite ℤ L.lattice := Submodule.IsLattice.finite ℚ L.lattice
 
 /-- A coweight lattice is determined by its underlying submodule. -/
 @[ext]
@@ -110,7 +116,7 @@ theorem mem_weightLattice_iff (φ : Dual ℚ H) :
   simp [weightLattice, Submodule.mem_one]
 
 /-- The weight lattice is a full lattice in the dual space. -/
-instance isLattice_weightLattice : L.weightLattice.IsLattice ℚ :=
+instance isLattice_weightLattice : L.weightLattice.IsFullLattice ℚ :=
   Submodule.isLattice_dualLattice L.lattice
 
 /-- The integral pairing `⟨λ, y⟩` between weights and coweights. -/

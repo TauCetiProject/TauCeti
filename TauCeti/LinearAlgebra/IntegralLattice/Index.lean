@@ -61,11 +61,11 @@ theorem determinant_eq_mul_relIndex_sq (L M : IntegralLattice V) (hform : L.form
       M.determinant * (L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup : ℤ) ^ 2 := by
   classical
   let bM : Basis (Module.Free.ChooseBasisIndex ℤ M) ℤ M := Module.Free.chooseBasis ℤ M
-  let eM := bM.extendOfIsLattice ℚ
-  let σ := (Module.Free.chooseBasis ℤ L).extendOfIsLattice ℚ |>.indexEquiv eM
+  let eM := bM.extendOfIsFullLattice ℚ
+  let σ := (Module.Free.chooseBasis ℤ L).extendOfIsFullLattice ℚ |>.indexEquiv eM
   let bL : Basis (Module.Free.ChooseBasisIndex ℤ M) ℤ L :=
     (Module.Free.chooseBasis ℤ L).reindex σ
-  let eL := bL.extendOfIsLattice ℚ
+  let eL := bL.extendOfIsFullLattice ℚ
   have hidx : ((L.carrier.toAddSubgroup.relIndex M.carrier.toAddSubgroup : ℕ) : ℚ)
       = |eM.det eL| :=
     AddSubgroup.relIndex_eq_abs_det _ _ ((Submodule.toAddSubgroup_le _ _).mpr hle) eL eM

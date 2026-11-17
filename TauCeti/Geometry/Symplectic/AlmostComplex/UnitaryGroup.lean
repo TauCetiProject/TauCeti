@@ -45,7 +45,7 @@ theorem mem_unitaryGroup_iff {J : AlmostComplexStructure V} {Q : QuadraticForm �
     {A : QuadraticMap.specialOrthogonalGroup Q} :
     A ∈ J.unitaryGroup Q ↔ ∀ v, (A : V ≃ₗ[ℝ] V) (J v) = J ((A : V ≃ₗ[ℝ] V) v) := by
   simp only [unitaryGroup, Subgroup.mem_comap, Subgroup.coe_subtype,
-    Subgroup.mem_centralizer_singleton_iff, LinearEquiv.ext_iff, mul_apply_eq_comp,
-    linearEquiv_apply]
+    Subgroup.mem_centralizer_singleton_iff, commute_iff_eq, LinearEquiv.ext_iff,
+    mul_apply_eq_comp, linearEquiv_apply]
 
 end TauCeti.AlmostComplexStructure

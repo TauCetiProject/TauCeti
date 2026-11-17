@@ -160,9 +160,13 @@ theorem scLattice_eq_orbitOfRep :
 
 /-- **The full-weight lattice is a full lattice in `V_sc(t)`**: it is finitely generated over `ℤ`
 and spans `V_sc(t)` over `ℚ`, being the direct sum of full lattices of the summands. -/
-instance instIsLatticeScLattice : (t.scLattice ht).IsLattice ℚ :=
+instance instIsLatticeScLattice : (t.scLattice ht).IsFullLattice ℚ :=
   Submodule.isLattice_map _ _
     (linearEquivFunOnFintype ℚ (Fin t.rank) (t.fundamentalModule ht)).symm.surjective
+
+/-- The full-weight lattice is a finite `ℤ`-module. -/
+instance instModuleFiniteScLattice : Module.Finite ℤ (t.scLattice ht) :=
+  Submodule.IsLattice.finite ℚ _
 
 /-- **The integral weight spaces of the Cartan generators span `V_sc(t)`**:
 each component does, and the inclusion of a summand preserves weight vectors

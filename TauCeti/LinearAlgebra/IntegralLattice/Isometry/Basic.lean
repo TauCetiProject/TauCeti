@@ -362,8 +362,8 @@ private noncomputable def isometryEquivOfCarrierEquiv (e : L ≃ₗ[ℤ] M)
   toLinearEquiv := LinearEquiv.extendOfIsLattice e
   map_app' x y := by
     have hforms :
-        M.form.comp (LinearEquiv.extendOfIsLattice e).toLinearMap
-          (LinearEquiv.extendOfIsLattice e).toLinearMap = L.form := by
+        M.form.comp (LinearEquiv.extendOfIsLattice (K := ℚ) e).toLinearMap
+          (LinearEquiv.extendOfIsLattice (K := ℚ) e).toLinearMap = L.form := by
       apply LinearMap.BilinForm.ext_basis L.rationalBasis
       intro i j
       rw [LinearMap.BilinForm.comp_apply, L.rationalBasis_apply, L.rationalBasis_apply,
@@ -378,12 +378,12 @@ integral lattices. -/
 noncomputable def ofCarrierEquiv (e : L ≃ₗ[ℤ] M)
     (hform : ∀ x y, M.integralForm (e x) (e y) = L.integralForm x y) : Isometry L M where
   toIsometryEquiv := isometryEquivOfCarrierEquiv e hform
-  map_carrier := LinearEquiv.extendOfIsLattice_map e
+  map_carrier := LinearEquiv.extendOfIsLattice_map (K := ℚ) e
 
 @[simp]
 theorem ofCarrierEquiv_apply (e : L ≃ₗ[ℤ] M)
     (hform : ∀ x y, M.integralForm (e x) (e y) = L.integralForm x y) (x : V) :
-    ofCarrierEquiv e hform x = LinearEquiv.extendOfIsLattice e x := (rfl)
+    ofCarrierEquiv e hform x = LinearEquiv.extendOfIsLattice (K := ℚ) e x := (rfl)
 
 /-- Restricting the isometry constructed from a form-preserving carrier equivalence recovers the
 original carrier equivalence. -/
@@ -393,13 +393,13 @@ theorem carrierEquiv_ofCarrierEquiv (e : L ≃ₗ[ℤ] M)
     (ofCarrierEquiv e hform).carrierEquiv = e := by
   ext x
   simpa only [coe_carrierEquiv_apply, ofCarrierEquiv_apply] using
-    LinearEquiv.extendOfIsLattice_apply e x
+    LinearEquiv.extendOfIsLattice_apply (K := ℚ) e x
 
 /-- Extending the carrier restriction of an isometry recovers the original ambient isometry. -/
 @[simp]
 theorem ofCarrierEquiv_carrierEquiv (e : Isometry L M) :
     ofCarrierEquiv e.carrierEquiv e.carrierEquiv_map_integralForm = e := by
-  have hlinear : (e : V ≃ₗ[ℚ] W) = LinearEquiv.extendOfIsLattice e.carrierEquiv :=
+  have hlinear : (e : V ≃ₗ[ℚ] W) = LinearEquiv.extendOfIsLattice (K := ℚ) e.carrierEquiv :=
     LinearEquiv.eq_extendOfIsLattice e.carrierEquiv (e : V ≃ₗ[ℚ] W) e.coe_carrierEquiv_apply
   ext x
   simpa only [ofCarrierEquiv_apply, coe_toLinearEquiv] using (LinearEquiv.congr_fun hlinear x).symm

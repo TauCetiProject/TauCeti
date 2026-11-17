@@ -261,7 +261,7 @@ private theorem apply_prod_range_eq_firstPartSum (hφ : φ 1 = 1) {a b : A}
       freeCumulant_const_eq_coeff_freeCumulantSeries]
   · push Not at he
     obtain ⟨y, hy, hyo⟩ := he
-    exact hmix (P.1.mem_part h0L) hy (by decide) hyo
+    exact hmix (P.1.mem_part h0L) hy (by decide) (Nat.not_even_iff_odd.mpr hyo)
 
 /-- *The first functional equation*: `M_{ab}(z) = C_a(z P(z))` with
 `P(z) = ∑_{m ≥ 0} φ ((b a)ᵐ b) zᵐ`. -/

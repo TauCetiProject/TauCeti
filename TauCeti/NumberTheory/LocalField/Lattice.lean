@@ -17,9 +17,9 @@ public import TauCeti.Topology.Algebra.Module.ModuleTopology
 
 Let `E` be a nonarchimedean local field with valuation ring `𝒪[E]`, and `V` a finite-dimensional
 `E`-vector space with its module topology. A lattice in `V` is an `𝒪[E]`-submodule `L` that is
-finitely generated and spans `V` over `E` (Mathlib's `Submodule.IsLattice E L`). This file shows
-that every lattice is a compact open subgroup of `V`, and that its stabilizer `GL(L)` in the group
-`V ≃ₗ[E] V` of linear automorphisms, with the forward-and-inverse topology of
+finitely generated and spans `V` over `E` (Mathlib's `Submodule.IsFullLattice E L`). This file
+shows that every lattice is a compact open subgroup of `V`, and that its stabilizer `GL(L)` in the
+group `V ≃ₗ[E] V` of linear automorphisms, with the forward-and-inverse topology of
 `TauCeti.Topology.Algebra.Module.GeneralLinearGroup`, is a compact open subgroup. These are the
 topological inputs of the stable-lattice theorem for compact groups acting on `V`.
 
@@ -77,13 +77,13 @@ theorem _root_.Module.Basis.isOpen_span_range {ι : Type*} [Finite ι] (b : Basi
   exact (isOpen_set_pi finite_univ fun _ _ => Valuation.isOpen_integer).preimage
     (TauCeti.ModuleTopology.equivFunHomeomorph b).continuous
 
-variable (L : Submodule 𝒪[E] V) [IsLattice E L]
+variable (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 
 /-- **A lattice is open.** It contains the `𝒪[E]`-span of an `E`-basis of `V`, which is open. -/
 theorem IsLattice.isOpen : IsOpen (L : Set V) := by
   have : IsTopologicalAddGroup V := IsModuleTopology.isTopologicalAddGroup E V
   have := Module.Finite.of_isLattice (A := E) L
-  have hs : ⊤ ≤ span E (L : Set V) := (IsLattice.span_eq_top (A := E) (M := L)).ge
+  have hs : ⊤ ≤ span E (L : Set V) := (IsFullLattice.span_eq_top (A := E) (M := L)).ge
   let b := Basis.ofSpan hs
   have : Finite _ := Module.Finite.finite_basis b
   exact isOpen_mono (span_le.mpr (Basis.ofSpan_subset hs)) b.isOpen_span_range
@@ -108,7 +108,7 @@ instance IsLattice.isModuleTopology : IsModuleTopology 𝒪[E] L := by
   let Φ : (s → E) →ₗ[E] V := Fintype.linearCombination E fun i : s => (i : V)
   have hΦ : Function.Surjective Φ := by
     rw [← LinearMap.range_eq_top, Fintype.range_linearCombination, Subtype.range_coe_subtype,
-      Finset.setOfPred_mem, ← span_span_of_tower 𝒪[E], hs, IsLattice.span_eq_top]
+      Finset.setOfPred_mem, ← span_span_of_tower 𝒪[E], hs, IsFullLattice.span_eq_top]
   have hcomm (w : s → 𝒪[E]) : (φ w : V) = Φ fun i => (w i : E) := by
     simp only [φ, Φ, Fintype.linearCombination_apply, coe_sum, coe_smul]
     exact Finset.sum_congr rfl fun i _ => (algebraMap_smul E (w i) (i : V)).symm
@@ -169,14 +169,14 @@ variable {E V : Type*} [Field E] [ValuativeRel E] [TopologicalSpace E]
   [IsNonarchimedeanLocalField E]
   [AddCommGroup V] [Module E V] [Module 𝒪[E] V] [IsScalarTower 𝒪[E] E V]
   [TopologicalSpace V] [IsModuleTopology E V]
-  (L : Submodule 𝒪[E] V) [IsLattice E L]
+  (L : Submodule 𝒪[E] V) [IsFullLattice E L]
 
 /-- **A lattice is compact**: it is finitely generated over the compact ring `𝒪[E]`. -/
 theorem IsLattice.isCompact : IsCompact (L : Set V) := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
   have : ContinuousSMul 𝒪[E] V := ⟨((continuous_subtype_val.comp continuous_fst).smul
     continuous_snd).congr fun p => algebraMap_smul E p.1 p.2⟩
-  exact isCompact_of_fg IsLattice.fg
+  exact isCompact_of_fg (IsLattice.fg E L)
 
 /-- **The endomorphisms preserving a lattice form a compact set** of `Module.End E V`: such an
 endomorphism is determined by the images in the compact lattice of an `E`-basis of `V` contained
@@ -184,7 +184,7 @@ in the lattice. -/
 theorem IsLattice.isCompact_setOf_mapsTo : IsCompact {f : Module.End E V | MapsTo f L L} := by
   have : ContinuousAdd V := IsModuleTopology.toContinuousAdd E V
   have := Module.Finite.of_isLattice (A := E) L
-  have hs : ⊤ ≤ span E (L : Set V) := (IsLattice.span_eq_top (A := E) (M := L)).ge
+  have hs : ⊤ ≤ span E (L : Set V) := (IsFullLattice.span_eq_top (A := E) (M := L)).ge
   let b := Basis.ofSpan hs
   have : Finite _ := Module.Finite.finite_basis b
   have hclosed : IsClosed {f : Module.End E V | MapsTo f L L} := by

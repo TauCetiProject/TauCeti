@@ -14,7 +14,7 @@ Let `ρ` be a jointly continuous representation (`TauCeti.ContinuousRep`) of a t
 `Γ` on a module `V` over a ring `E`, and let `O → E` be a ring map, typically the inclusion of a
 discrete valuation ring into its fraction field. An *integral model* of `ρ` over `O` is a
 `Γ`-stable full lattice `Λ ⊆ V`: a finitely generated `O`-submodule spanning `V` over `E`
-(Mathlib's `Submodule.IsLattice E Λ`) and preserved by every `ρ g`. For an `ℓ`-adic Galois
+(Mathlib's `Submodule.IsFullLattice E Λ`) and preserved by every `ρ g`. For an `ℓ`-adic Galois
 representation on a `ℚ_ℓ`-vector space, an integral model is a `Γ`-stable `ℤ_ℓ`-lattice, the
 object whose reductions modulo `ℓⁿ` are the finite-level Galois representations.
 
@@ -73,7 +73,7 @@ structure IntegralModel (ρ : ContinuousRep Γ E V) where
   /-- The underlying lattice. -/
   lattice : Submodule O V
   /-- The lattice is full: finitely generated over `O` and spanning `V` over `E`. -/
-  isLattice : lattice.IsLattice E
+  isLattice : lattice.IsFullLattice E
   /-- The lattice is stable under the action. -/
   stable : ∀ g, ∀ x ∈ lattice, ρ g x ∈ lattice
 
@@ -82,6 +82,10 @@ attribute [instance] IntegralModel.isLattice
 namespace IntegralModel
 
 variable {O} {ρ : ContinuousRep Γ E V}
+
+/-- The lattice of an integral model is a finite `O`-module. -/
+instance finite_lattice (Λ : IntegralModel O ρ) : Module.Finite O Λ.lattice :=
+  IsLattice.finite E Λ.lattice
 
 /-- An integral model is determined by its lattice. -/
 theorem lattice_injective : Function.Injective (lattice : IntegralModel O ρ → Submodule O V) :=
@@ -142,6 +146,19 @@ theorem lattice_le_lattice {Λ Λ' : IntegralModel O ρ} : Λ.lattice ≤ Λ'.la
 theorem lattice_lt_lattice {Λ Λ' : IntegralModel O ρ} : Λ.lattice < Λ'.lattice ↔ Λ < Λ' :=
   .rfl
 
+end IntegralModel
+
+end Basic
+
+section Sup
+
+variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
+  {E : Type*} [Field E] [Algebra O E] [IsFractionRing O E]
+  {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V] [TopologicalSpace V]
+  {ρ : ContinuousRep Γ E V}
+
+namespace IntegralModel
+
 /-- The sum `Λ + Λ'` of two integral models. -/
 instance : Max (IntegralModel O ρ) where
   max Λ Λ' :=
@@ -161,7 +178,7 @@ instance : SemilatticeSup (IntegralModel O ρ) :=
 
 end IntegralModel
 
-end Basic
+end Sup
 
 section Inf
 
@@ -209,7 +226,7 @@ variable (Λ : IntegralModel O ρ) [Module.Free O Λ.lattice] [IsModuleTopology 
 /-- **The generic fibre of an integral model.** Extending scalars from `O` to its fraction field
 `E` recovers the representation: `E ⊗[O] Λ ≅ V`, sending `a ⊗ x` to `a • x`. -/
 noncomputable def genericFiberIso : ContinuousRep.Iso (Λ.toContinuousRep.baseChange E) ρ :=
-  .ofEquiv (.mk (rationalizationEquiv Λ.lattice) fun g ↦ by
+  .ofEquiv (.mk (rationalizationEquiv (K := E) Λ.lattice) fun g ↦ by
     ext x
     simp)
 

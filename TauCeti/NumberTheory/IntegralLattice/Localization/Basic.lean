@@ -198,8 +198,8 @@ theorem span_range_localizationToCompletion :
 
 /-- The image of the integral localization is a full `ℤ_p`-lattice in the completion. -/
 instance isLattice_range_localizationToCompletion :
-    (LinearMap.range (L.localizationToCompletion p)).IsLattice ℚ_[p] where
-  fg := Submodule.fg_range _
+    (LinearMap.range (L.localizationToCompletion p)).IsFullLattice ℚ_[p] where
+  toIsLattice := Submodule.IsLattice.of_fg ℚ_[p] (Submodule.fg_range _)
   span_eq_top := by
     rw [LinearMap.coe_range]
     exact L.span_range_localizationToCompletion p
@@ -220,18 +220,18 @@ variable {ι : Type*} (e : Basis ι ℤ L)
 extension of the corresponding rational basis of `V`. -/
 theorem localizationToCompletion_basis_baseChange (i : ι) :
     L.localizationToCompletion p (e.baseChange ℤ_[p] i) =
-      (e.extendOfIsLattice ℚ).baseChange ℚ_[p] i := by
-  simp [Basis.baseChange_apply, Basis.extendOfIsLattice_apply]
+      (e.extendOfIsFullLattice ℚ).baseChange ℚ_[p] i := by
+  simp [Basis.baseChange_apply, Basis.extendOfIsFullLattice_apply]
 
 /-- The coordinates of a vector of `L_p`, read in `V_p`, are the images of its `ℤ_p`-coordinates:
 in the rational basis of a basis `e` of `L`, the image of `L_p` has `p`-adic integral
 coordinates. -/
 theorem repr_localizationToCompletion (x : L.LocalCarrier p) (i : ι) :
-    ((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr (L.localizationToCompletion p x) i =
+    ((e.extendOfIsFullLattice ℚ).baseChange ℚ_[p]).repr (L.localizationToCompletion p x) i =
       ((e.baseChange ℤ_[p]).repr x i : ℚ_[p]) := by
   classical
   -- Both sides are `ℤ_p`-linear in `x`; compare them on the basis `e.baseChange ℤ_p`.
-  have h : (((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).coord i).restrictScalars ℤ_[p] ∘ₗ
+  have h : (((e.extendOfIsFullLattice ℚ).baseChange ℚ_[p]).coord i).restrictScalars ℤ_[p] ∘ₗ
       L.localizationToCompletion p =
         Algebra.linearMap ℤ_[p] ℚ_[p] ∘ₗ (e.baseChange ℤ_[p]).coord i :=
     (e.baseChange ℤ_[p]).ext fun j ↦ by
@@ -246,7 +246,7 @@ theorem repr_localizationToCompletion (x : L.LocalCarrier p) (i : ι) :
 vectors whose coordinates are `p`-adic integers. -/
 theorem mem_range_localizationToCompletion_iff (x : ℚ_[p] ⊗[ℚ] V) :
     x ∈ LinearMap.range (L.localizationToCompletion p) ↔
-      ∀ i, ‖((e.extendOfIsLattice ℚ).baseChange ℚ_[p]).repr x i‖ ≤ 1 := by
+      ∀ i, ‖((e.extendOfIsFullLattice ℚ).baseChange ℚ_[p]).repr x i‖ ≤ 1 := by
   rw [range_localizationToCompletion]
   exact Submodule.mem_padicLocalization_iff_repr_mem e x
 
