@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.FocusFocus
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.Positivity
 import TauCeti.Algebra.Lie.SkewAdjoint
-import TauCeti.LinearAlgebra.SesquilinearForm.AdjointPair
+import TauCeti.Geometry.Symplectic.Spectrum
 
 /-!
 # Williamson's classification: the focus-focus type
@@ -144,12 +144,10 @@ theorem exists_isDarbouxBasis_apply_eq_of_commute (hV : finrank ℝ V = 4)
   -- `q, A₂ q ∈ V₊` and `p, A₂ p ∈ V₋`, and both eigenspaces of `A₁` are isotropic.
   have hq₂ : a₁ (a₂ q) = a₂ q := by rw [k₁₂, hq]
   have hp₂ : a₁ (a₂ p) = -a₂ p := by rw [k₁₂, hp, map_neg]
-  have hA₁ : ω.toBilinForm.IsSkewAdjoint a₁ := (LinearMap.mem_skewAdjointSubmodule a₁).1 A₁.2
   have iso {μ : ℝ} (hμ : μ ≠ 0) {u w : V} (hu : a₁ u = μ • u) (hw : a₁ w = μ • w) :
       ω.toBilinForm u w = 0 :=
-    LinearMap.IsSkewAdjoint.apply_eq_zero_of_mem_genEigenspace_self hA₁ (k := 1) (l := 1)
-      (isUnit_iff_ne_zero.2 (mul_ne_zero two_ne_zero hμ)) (Module.End.mem_genEigenspace_one.2 hu)
-      (Module.End.mem_genEigenspace_one.2 hw)
+    isIsotropic_iff.1 (isIsotropic_genEigenspace ω A₁.2 hμ 1) _
+      (Module.End.mem_genEigenspace_one.2 hu) _ (Module.End.mem_genEigenspace_one.2 hw)
   obtain ⟨b, hb, hbe⟩ := exists_isDarbouxBasis_coe_eq (ω := ω)
     (v := fun c ↦ ![![q, p], ![a₂ q, a₂ p]] c.1 c.2) (by omega)
     (fun i j ↦ by
