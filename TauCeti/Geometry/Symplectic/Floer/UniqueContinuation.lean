@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.DifferentialInequality
 public import TauCeti.Analysis.Complex.EquivRealProd
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
+import TauCeti.Analysis.Calculus.ContDiff.Prod
+import TauCeti.Data.Set.Function
+import TauCeti.Topology.Codiscrete
 
 /-!
 # Unique continuation for the linearized Floer operator and for Floer solutions
@@ -69,7 +72,7 @@ graph of the first solution.
 The proofs read `ℝ × ℝ` as `ℂ` through `Complex.equivRealProdCLM`, under which `∂ₛ` and `∂ₜ` are
 the derivatives in the directions `1` and `i`
 (`TauCeti.fderiv_comp_equivRealProdCLM_one`, `TauCeti.fderiv_comp_equivRealProdCLM_I`), and
-carry the conclusions back with the transfer lemmas of `TauCeti.Analysis.Complex.EquivRealProd`.
+carry the conclusions back along this homeomorphism.
 
 ## References
 
@@ -117,7 +120,8 @@ private theorem floerLinearization_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
       fun z hz ↦ hu.contDiffAt (hΩ.mem_nhds hz)).comp e.continuous.continuousOn
       (mapsTo_preimage _ _)
   refine ⟨hΩ', (e.toHomeomorph.isPreconnected_preimage).2 hΩc,
-    contDiffOn_comp_equivRealProdCLM hΩ hJ hu, fun w hw ↦ hJJ (e w) hw,
+    (contDiffOn_comp_graph hJ hu).comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ),
+    fun w hw ↦ hJJ (e w) hw,
     hξ.comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ), hC.aestronglyMeasurable hΩ'.measurableSet,
     fun w hw ↦ ?_, fun w hw ↦ ?_⟩
   · exact ⟨_, ((hC.continuousAt (hΩ'.mem_nhds hw)).norm.eventually
@@ -143,7 +147,7 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_eqOn_zero (hΩ : IsOpen Ω)
     floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
   obtain ⟨z₁, hz₁⟩ := hUne
-  exact eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
+  exact e.surjective.eqOn_of_eqOn_comp <|
     eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb heq
       (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
       fun w hw ↦ h₀ hw
@@ -165,7 +169,7 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_forall_isBigO (hΩ : IsOpen �
   obtain ⟨hΩ', hΩc', hJ', hJJ', hξ', hCm, hCb, heq⟩ :=
     floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
-  exact eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
+  exact e.surjective.eqOn_of_eqOn_comp <|
     eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
       heq (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
       (isBigO_comp_equivRealProdCLM h₀)
@@ -188,7 +192,7 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero (hΩ : 
   obtain ⟨z₁, hz₁, hξz₁⟩ := hne
   have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ' hΩc' hJ'
     hJJ' hξ' hCm hCb heq ⟨e.symm z₁, by simpa using hz₁, by simpa using hξz₁⟩
-  exact mem_codiscreteWithin_of_preimage_equivRealProdCLM h
+  exact e.toHomeomorph.preimage_mem_codiscreteWithin.1 h
 
 /-! ### Unique continuation for Floer solutions -/
 
@@ -196,19 +200,18 @@ section Solutions
 
 variable {v : ℝ × ℝ → V}
 
-/-- **The difference of two Floer solutions obeys a Cauchy–Riemann inequality.** Let `J` be `C¹`
-and the Hamiltonians `K_s`, `K_t` be `C²` near the graph of `u` over an open set `Ω ⊆ ℝ × ℝ`, and
-let `u` and `v` be `C¹` solutions of the Floer equation
-`∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` on `Ω`. Near a coincidence `u z₀ = v z₀` in
-`Ω`, the Lipschitz bounds of `J` and of the Hamiltonian vector fields near the common value give
-`‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` for the difference `w = u - v` and some constant `M`. -/
-theorem exists_eventually_norm_le_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
-    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
-    (hKs : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Ks) (z, u z))
-    (hKt : ∀ z ∈ Ω, ContDiffAt ℝ 2 (uncurry Kt) (z, u z)) (hu : ContDiffOn ℝ 1 u Ω)
-    (hv : ContDiffOn ℝ 1 v Ω) (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
-    (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) {z₀ : ℝ × ℝ} (hz₀ : z₀ ∈ Ω)
-    (h : u z₀ = v z₀) :
+/-- **The difference of two Floer solutions obeys a Cauchy–Riemann inequality.** Let `u` and `v` be
+`C¹` solutions of the Floer equation `∂ₛu - X_{K_s}(u) + J(z, u)(∂ₜu - X_{K_t}(u)) = 0` on an open
+set `Ω ⊆ ℝ × ℝ`, with a coincidence `u z₀ = v z₀` at `z₀ ∈ Ω`, and let `J` be `C¹` and the
+Hamiltonians `K_s`, `K_t` be `C²` near `(z₀, u z₀)`. Near `z₀`, the Lipschitz bounds of `J` and
+of the Hamiltonian vector fields near the common value give `‖∂ₛw + J(z, u z) ∂ₜw‖ ≤ M ‖w‖` for
+the difference `w = u - v` and some constant `M`. -/
+theorem exists_eventually_norm_le_of_floerOperator_eq_zero (hΩ : IsOpen Ω) {z₀ : ℝ × ℝ}
+    (hz₀ : z₀ ∈ Ω) (hJ : ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z₀, u z₀))
+    (hKs : ContDiffAt ℝ 2 (uncurry Ks) (z₀, u z₀)) (hKt : ContDiffAt ℝ 2 (uncurry Kt) (z₀, u z₀))
+    (hu : ContDiffOn ℝ 1 u Ω) (hv : ContDiffOn ℝ 1 v Ω)
+    (hFu : ∀ z ∈ Ω, ω.floerOperator J Ks Kt u z = 0)
+    (hFv : ∀ z ∈ Ω, ω.floerOperator J Ks Kt v z = 0) (h : u z₀ = v z₀) :
     ∃ M, ∀ᶠ z in 𝓝 z₀, ‖fderiv ℝ (u - v) z stdComplexLineReal +
       J z (u z) (fderiv ℝ (u - v) z stdComplexLineImag)‖ ≤ M * ‖(u - v) z‖ := by
   have hΩz := hΩ.mem_nhds hz₀
@@ -217,13 +220,13 @@ theorem exists_eventually_norm_le_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
   have hgv₀ : ContinuousAt (fun z ↦ (z, v z)) z₀ :=
     continuousAt_id.prodMk (hv.continuousOn.continuousAt hΩz)
   have hgv : Tendsto (fun z ↦ (z, v z)) (𝓝 z₀) (𝓝 (z₀, u z₀)) := by rw [h]; exact hgv₀
-  have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) (hKs z₀ hz₀)
-  have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) (hKt z₀ hz₀)
-  obtain ⟨LJ, tJ, htJ, hLJ⟩ := (hJ z₀ hz₀).exists_lipschitzOnWith
+  have hXs := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKs
+  have hXt := ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hKt
+  obtain ⟨LJ, tJ, htJ, hLJ⟩ := hJ.exists_lipschitzOnWith
   obtain ⟨Ls, ts, hts, hLs⟩ := hXs.exists_lipschitzOnWith
   obtain ⟨Lt, tt, htt, hLt⟩ := hXt.exists_lipschitzOnWith
   -- The structure along `u` and the factor `b = ∂ₜv - X_{K_t}(v)` are bounded near `z₀`.
-  have hJu : ContinuousAt (fun z ↦ J z (u z)) z₀ := (hJ z₀ hz₀).continuousAt.comp_of_eq hgu rfl
+  have hJu : ContinuousAt (fun z ↦ J z (u z)) z₀ := hJ.continuousAt.comp_of_eq hgu rfl
   set b : ℝ × ℝ → V := fun z ↦
     fderiv ℝ v z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (v z)
   have hb : ContinuousAt b z₀ :=
@@ -281,10 +284,10 @@ private theorem floerOperator_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
         J (e w') (u (e w')) (fderiv ℝ ((u - v) ∘ e) w' I)‖ ≤ M * ‖((u - v) ∘ e) w'‖ := by
   intro e
   refine ⟨hΩ.preimage e.continuous, (e.toHomeomorph.isPreconnected_preimage).2 hΩc,
-    contDiffOn_comp_equivRealProdCLM hΩ hJ hu,
+    (contDiffOn_comp_graph hJ hu).comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ),
     (hu.sub hv).comp_continuousLinearMap (e : ℂ →L[ℝ] ℝ × ℝ), fun w hw h ↦ ?_⟩
-  obtain ⟨M, hM⟩ := exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hJ hKs hKt hu hv hFu
-    hFv hw (sub_eq_zero.1 h)
+  obtain ⟨M, hM⟩ := exists_eventually_norm_le_of_floerOperator_eq_zero hΩ hw (hJ _ hw)
+    (hKs _ hw) (hKt _ hw) hu hv hFu hFv (sub_eq_zero.1 h)
   refine ⟨M, (e.continuous.tendsto w).eventually hM |>.mono fun w' hw' ↦ ?_⟩
   rwa [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, comp_apply]
 
@@ -304,7 +307,7 @@ theorem eqOn_of_floerOperator_eq_zero_of_eqOn (hΩ : IsOpen Ω) (hΩc : IsPrecon
     floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
   set e := Complex.equivRealProdCLM
   obtain ⟨z₁, hz₁⟩ := hUne
-  have h := eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
+  have h : EqOn (u - v) 0 Ω := e.surjective.eqOn_of_eqOn_comp <|
     eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw) hξ' hb
       (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
       fun w hw ↦ sub_eq_zero.2 (h₀ hw)
@@ -326,7 +329,7 @@ theorem eqOn_of_floerOperator_eq_zero_of_forall_isBigO (hΩ : IsOpen Ω)
   obtain ⟨hΩ', hΩc', hJ', hξ', hb⟩ :=
     floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
   set e := Complex.equivRealProdCLM
-  have h := eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM <|
+  have h : EqOn (u - v) 0 Ω := e.surjective.eqOn_of_eqOn_comp <|
     eqOn_zero_of_contDiffOn_of_forall_isBigO_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw)
       hξ' hb (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
       (isBigO_comp_equivRealProdCLM h₀)
@@ -353,7 +356,7 @@ theorem setOf_ne_mem_codiscreteWithin_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
     (fun w hw ↦ hJJ (e w) hw) hξ' hb
     ⟨e.symm z₁, by simpa using hz₁, by simpa [sub_eq_zero] using hne₁⟩
   simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using
-    mem_codiscreteWithin_of_preimage_equivRealProdCLM (s := {z | (u - v) z ≠ 0}) h
+    (e.toHomeomorph.preimage_mem_codiscreteWithin (s := {z | (u - v) z ≠ 0})).1 h
 
 end Solutions
 

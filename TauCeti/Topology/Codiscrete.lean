@@ -34,6 +34,8 @@ for sets `s ∈ Filter.codiscreteWithin U` and their complement specializations
   `U`.
 * `IsCompact.finite_inter_of_compl_mem_codiscreteWithin`: any compact subset `K ⊆ U` meets `s` in a
   finite set whenever `sᶜ ∈ Filter.codiscreteWithin U`.
+* `Homeomorph.preimage_mem_codiscreteWithin`: a homeomorphism `e` carries codiscreteness within
+  `t` to codiscreteness of preimages within `e ⁻¹' t`, and back.
 -/
 
 public section
@@ -152,5 +154,12 @@ theorem IsCompact.finite_inter_of_compl_mem_codiscreteWithin (hK : IsCompact K) 
     (hs : sᶜ ∈ codiscreteWithin U) : (K ∩ s).Finite := by
   simpa only [sdiff_compl] using
     hK.finite_sdiff_of_mem_codiscreteWithin (codiscreteWithin_mono hKU hs)
+
+/-- Under a homeomorphism `e`, the preimage `e ⁻¹' s` is codiscrete within `e ⁻¹' t` exactly when
+`s` is codiscrete within `t`. -/
+theorem Homeomorph.preimage_mem_codiscreteWithin {Y : Type*} [TopologicalSpace Y] (e : X ≃ₜ Y)
+    {s t : Set Y} : e ⁻¹' s ∈ codiscreteWithin (e ⁻¹' t) ↔ s ∈ codiscreteWithin t := by
+  rw [← e.image_symm]
+  exact e.symm.isEmbedding.image_mem_codiscreteWithin
 
 end TopologicalSpace
