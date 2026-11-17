@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.NumberTheory.NumberField.Units.Candidates
 public import TauCeti.NumberTheory.NumberField.Index.Discriminant
 import TauCeti.NumberTheory.NumberField.Units.Normalization
 import TauCeti.NumberTheory.NumberField.Units.PrimeDegree
+import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 
 /-!
 # Elimination certificates for fundamental units
@@ -19,10 +21,11 @@ The field test can be discharged by the index–discriminant formula. These are 
 not Boolean assertions about an unchecked root-finding procedure.
 
 In a number field of unit rank one with a real place, whose degree is then prime, a certificate
-excludes every unit in the selected real interval. With `B = w u > 1`, normalization then proves
-that `u` generates the units modulo torsion. The certificate does not depend on a choice of real
-place: the root test excludes all real roots in the interval, and soundness can be applied at any
-real place.
+excludes every unit in the selected real interval, yielding the regulator lower bound
+`log B ≤ regulator K` for `B > 0` (`UnitCandidateEliminationCertificate.log_le_regulator`). With
+`B = w u > 1`, normalization also proves that `u` generates the units modulo torsion. The
+certificate does not depend on a choice of real place: the root test excludes all real roots in the
+interval, and soundness can be applied at any real place.
 
 ## References
 
@@ -94,6 +97,21 @@ theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate 
       exact (ne_of_gt hlo) (hval ▸ hone)
     exact hfield ⟨v, adjoin_eq_top_of_finrank_prime
       (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot⟩ rfl
+
+/-- In unit rank one with a real infinite place, an elimination certificate at `B > 0` implies
+`log B ≤ regulator K`. -/
+theorem log_le_regulator {B : ℝ} (h : UnitCandidateEliminationCertificate K B)
+    (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal) (hB : 0 < B) :
+    Real.log B ≤ regulator K := by
+  obtain ⟨u, hu⟩ := exists_closure_sup_torsion_eq_top_of_rank_eq_one hr
+  have hreg := regulator_eq_mult_abs_log_of_rank_eq_one hr u hu w
+  rw [hw.mult_eq_one, Nat.cast_one, one_mul] at hreg
+  rw [hreg]
+  by_contra! hlt
+  have hpos : 0 < |Real.log (w u)| := hreg ▸ regulator_pos K
+  have hne : w u ≠ 1 := fun h1 ↦ by simp [h1] at hpos
+  obtain ⟨ε, δ, -, hlo, hhi⟩ := exists_normalized_unit_between B u w hw hB hne hlt
+  exact h.no_unit_between_real hr hw ⟨ε.1 * δ, hlo, hhi⟩
 
 /-- **Soundness of unit-candidate elimination.** A unit expanding at a real place generates
 modulo torsion if every candidate below its absolute value has been eliminated. -/
