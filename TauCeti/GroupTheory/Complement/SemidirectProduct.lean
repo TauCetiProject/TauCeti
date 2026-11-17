@@ -43,25 +43,33 @@ namespace Subgroup.IsLocalComplement
 variable {G : Type*} [Group G] {N K H : Subgroup G}
   [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H)
 
+/-- Identifying `N.subgroupOf H` with `N` and `K.subgroupOf H` with `K` intertwines their
+normalizer actions. -/
+theorem subgroupOfEquivOfLe_normalizer_comm (k : K.subgroupOf H) :
+    (((N.subgroupOf H).normalizerMonoidHom).comp
+        (inclusion ((N.subgroupOf H).normalizer_eq_top ▸ le_top)) k).trans
+        (N.subgroupOfEquivOfLe h.left_le) =
+      (N.subgroupOfEquivOfLe h.left_le).trans
+        (((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer))
+          (K.subgroupOfEquivOfLe h.right_le k)) := by
+  ext n
+  simp
+
 /-- The internal semidirect-product isomorphism `N ⋊ K ≃* H` determined by a local complement `K`
 of `N` in `H`, when `N` is normal in `H`. -/
 noncomputable def semidirectProductMulEquiv :
     N ⋊[(N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)] K ≃* H :=
-  { SemidirectProduct.equivProd.trans h.equiv.symm with
-    map_mul' x y := by
-      apply Subtype.ext
-      simp only [Equiv.toFun_as_coe, Equiv.trans_apply, SemidirectProduct.equivProd_apply,
-        coe_mul, coe_equiv_symm_apply, SemidirectProduct.mul_left, SemidirectProduct.mul_right,
-        MonoidHom.comp_apply]
-      simp [mul_assoc] }
+  (SemidirectProduct.congr (N.subgroupOfEquivOfLe h.left_le) (K.subgroupOfEquivOfLe h.right_le)
+      h.subgroupOfEquivOfLe_normalizer_comm).symm.trans
+    (SemidirectProduct.mulEquivSubgroup h.isComplement'_subgroupOf)
 
 /-- Evaluating `Subgroup.IsLocalComplement.semidirectProductMulEquiv` multiplies the two subgroup
 components inside `G`. -/
 @[simp]
 theorem coe_semidirectProductMulEquiv_apply
     (x : N ⋊[(N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer)] K) :
-    (h.semidirectProductMulEquiv x : G) = (x.left : G) * x.right :=
-  h.coe_equiv_symm_apply (x.left, x.right)
+    (h.semidirectProductMulEquiv x : G) = (x.left : G) * x.right := by
+  simp [semidirectProductMulEquiv]
 
 /-- Composing `Subgroup.IsLocalComplement.semidirectProductMulEquiv` with `H.subtype` recovers the
 external multiplication homomorphism `SemidirectProduct.monoidHomSubgroup`. -/
@@ -76,14 +84,15 @@ theorem subtype_comp_semidirectProductMulEquiv :
 /-- As an equivalence of types, `Subgroup.IsLocalComplement.semidirectProductMulEquiv` is
 `SemidirectProduct.equivProd` followed by the inverse of `Subgroup.IsLocalComplement.equiv`. -/
 theorem toEquiv_semidirectProductMulEquiv :
-    h.semidirectProductMulEquiv.toEquiv = SemidirectProduct.equivProd.trans h.equiv.symm :=
-  (rfl)
+    h.semidirectProductMulEquiv.toEquiv = SemidirectProduct.equivProd.trans h.equiv.symm := by
+  ext x
+  simp
 
 /-- As an equivalence of types, `(Subgroup.IsLocalComplement.semidirectProductMulEquiv h).symm` is
 `Subgroup.IsLocalComplement.equiv` followed by `SemidirectProduct.equivProd.symm`. -/
 theorem toEquiv_semidirectProductMulEquiv_symm :
     h.semidirectProductMulEquiv.symm.toEquiv = h.equiv.trans SemidirectProduct.equivProd.symm :=
-  (rfl)
+  congrArg Equiv.symm h.toEquiv_semidirectProductMulEquiv
 
 /-- `Subgroup.IsLocalComplement.semidirectProductMulEquiv` sends `inl` to the inclusion `N →* H`. -/
 @[simp]
@@ -122,14 +131,18 @@ theorem semidirectProductMulEquiv_comp_inr :
 /-- The left component of `h.semidirectProductMulEquiv.symm x` is `h.leftProjection x`. -/
 @[simp]
 theorem semidirectProductMulEquiv_symm_left (x : H) :
-    (h.semidirectProductMulEquiv.symm x).left = h.leftProjection x :=
-  (h.leftProjection_apply x).symm
+    (h.semidirectProductMulEquiv.symm x).left = h.leftProjection x := by
+  rw [h.leftProjection_apply]
+  exact congrArg SemidirectProduct.left
+    (Equiv.congr_fun h.toEquiv_semidirectProductMulEquiv_symm x)
 
 /-- The right component of `h.semidirectProductMulEquiv.symm x` is `h.rightProjection x`. -/
 @[simp]
 theorem semidirectProductMulEquiv_symm_right (x : H) :
-    (h.semidirectProductMulEquiv.symm x).right = h.rightProjection x :=
-  (h.rightProjection_apply x).symm
+    (h.semidirectProductMulEquiv.symm x).right = h.rightProjection x := by
+  rw [h.rightProjection_apply]
+  exact congrArg SemidirectProduct.right
+    (Equiv.congr_fun h.toEquiv_semidirectProductMulEquiv_symm x)
 
 /-- `h.semidirectProductMulEquiv.symm` decomposes an element of `H` into the product of its left
 and right projections inside `N ⋊ K`. -/
@@ -183,26 +196,13 @@ theorem semidirectProductMulEquiv_symm_comp_inclusion_right :
   intro k
   exact h.semidirectProductMulEquiv_symm_inclusion_right k
 
-/-- Identifying `N.subgroupOf H` with `N` and `K.subgroupOf H` with `K` intertwines their
-normalizer actions. -/
-theorem subgroupOfEquivOfLe_normalizer_comm (k : K.subgroupOf H) :
-    (((N.subgroupOf H).normalizerMonoidHom).comp
-        (inclusion ((N.subgroupOf H).normalizer_eq_top ▸ le_top)) k).trans
-        (N.subgroupOfEquivOfLe h.left_le) =
-      (N.subgroupOfEquivOfLe h.left_le).trans
-        (((N.normalizerMonoidHom).comp (inclusion h.right_le_normalizer))
-          (K.subgroupOfEquivOfLe h.right_le k)) := by
-  ext n
-  simp
-
 /-- Under `N.subgroupOf H ≃* N` and `K.subgroupOf H ≃* K`, the local isomorphism
 `Subgroup.IsLocalComplement.semidirectProductMulEquiv` agrees with
 `SemidirectProduct.mulEquivSubgroup` applied inside `H`. -/
 theorem congr_subgroupOfEquivOfLe_trans_semidirectProductMulEquiv :
     (SemidirectProduct.congr (N.subgroupOfEquivOfLe h.left_le) (K.subgroupOfEquivOfLe h.right_le)
         h.subgroupOfEquivOfLe_normalizer_comm).trans h.semidirectProductMulEquiv =
-      SemidirectProduct.mulEquivSubgroup h.isComplement'_subgroupOf := by
-  ext x
-  simp
+      SemidirectProduct.mulEquivSubgroup h.isComplement'_subgroupOf :=
+  MulEquiv.ext fun x => by simp [semidirectProductMulEquiv]
 
 end Subgroup.IsLocalComplement
