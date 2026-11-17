@@ -8,6 +8,7 @@ module
 public import TauCeti.CategoryTheory.GrothendieckGroup.Monoidal.Rigid
 public import TauCeti.CategoryTheory.Semisimple.GrothendieckRing
 public import TauCeti.CategoryTheory.Simple.Rigid
+import TauCeti.CategoryTheory.Monoidal.Closed.Preadditive
 
 /-!
 # Duality in a finite semisimple rigid category
@@ -127,22 +128,9 @@ private theorem coevaluation_comp_simpleSwapDualHom (X : C) [Simple X] :
 
 omit [MonoidalPreadditive C] in
 private theorem isIso_simpleSwapDualHom (X : C) [Simple X] : IsIso (simpleSwapDualHom X) := by
-  -- In a rigid abelian category, tensoring on either side is both a left and right adjoint, hence
-  -- preserves zero morphisms and binary products and is additive (`MonoidalPreadditive C`); this
-  -- supplies `Simple (Xᘁ)ᘁ` via `TauCeti.simple_rightDual`.
-  have : MonoidalPreadditive C :=
-    { whiskerLeft_zero {W Y Z} := whiskerLeft_zero_of_hasLeftDual W
-      zero_whiskerRight {W Y Z} := zero_whiskerRight_of_hasRightDual W
-      whiskerLeft_add {W Y Z} f g := by
-        have : (tensorLeft W).PreservesZeroMorphisms :=
-          ⟨fun _ _ ↦ whiskerLeft_zero_of_hasLeftDual W⟩
-        have := (tensorLeft W).additive_of_preserves_binary_products
-        exact (tensorLeft W).map_add
-      add_whiskerRight {W Y Z} f g := by
-        have : (tensorRight W).PreservesZeroMorphisms :=
-          ⟨fun _ _ ↦ zero_whiskerRight_of_hasRightDual W⟩
-        have := (tensorRight W).additive_of_preserves_binary_products
-        exact (tensorRight W).map_add }
+  -- In a rigid abelian category, tensoring on either side is a left adjoint, giving
+  -- `MonoidalPreadditive C` and hence `Simple (Xᘁ)ᘁ` via `TauCeti.simple_rightDual`.
+  have : MonoidalPreadditive C := monoidalPreadditive_of_isLeftAdjoint C
   have := isSplitEpi_of_nonzero_to_simple (evaluation_ne_zero (Y := Xᘁ) (Simple.not_isZero X))
   refine isIso_of_hom_simple fun h ↦ CategoryTheory.id_ne_zero (𝟙_ C) ?_
   rw [← IsSplitEpi.id (ε_ X Xᘁ), ← coevaluation_comp_simpleSwapDualHom X, h,
