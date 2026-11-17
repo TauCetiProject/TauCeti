@@ -115,9 +115,10 @@ theorem finite_of_surjective_of_map_eq_zero {H : Type*} [AddGroup H] {f : ℤ �
   have hr : 0 ≤ j % k := Int.emod_nonneg j hk
   refine ⟨⟨(j % k).toNat, by have := Int.emod_lt j hk; omega⟩, ?_⟩
   -- `j` and its residue modulo `k` differ by a multiple of `k`, which `f` kills.
+  have hq : f (k * (j / k)) = 0 := by
+    rw [mul_comm, ← smul_eq_mul, map_zsmul, hfk, smul_zero]
   conv_rhs => rw [← Int.emod_add_mul_ediv j k]
-  rw [map_add, mul_comm, ← smul_eq_mul, map_zsmul, hfk, smul_zero, add_zero]
-  simp [Int.toNat_of_nonneg hr]
+  simp [Int.toNat_of_nonneg hr, hq]
 
 end AddMonoidHom
 

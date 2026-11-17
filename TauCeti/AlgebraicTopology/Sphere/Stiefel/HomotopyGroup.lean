@@ -16,7 +16,7 @@ public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 Let `k ≥ 3` be odd. The Stiefel manifold `V₂(ℝᵏ⁺²)` of orthonormal two-frames is
 `(k - 1)`-connected (`TauCeti.finiteOrthonormalFrame.subsingleton_homotopyGroup`). This file
 proves that its first possibly nontrivial homotopy group `πₖ(V₂(ℝᵏ⁺²))` is finite
-(`TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_two`).
+(`TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_of_odd`).
 
 Forgetting the second vector is a fibration `V₂(ℝᵏ⁺²) → V₁(ℝᵏ⁺²) = Sᵏ⁺¹` whose fibre over a unit
 vector `u` is the unit sphere `Sᵏ` of `u^⊥`
@@ -51,8 +51,8 @@ torsion group for odd `k`.
 
 * `TauCeti.finiteOrthonormalFrame.homotopyGroupMap_forgetLast_eq_const`: for `n` even, forgetting
   the second vector induces the trivial map `πₙ₊₂(V₂(ℝⁿ⁺³)) → πₙ₊₂(V₁(ℝⁿ⁺³))`.
-* `TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_two`: `πₖ(V₂(ℝᵏ⁺²))` is finite for odd
-  `k ≥ 3`.
+* `TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_of_odd`: `πₖ(V₂(ℝᵏ⁺²))` is finite for
+  odd `k ≥ 3`.
 
 ## References
 
@@ -119,8 +119,8 @@ private theorem nontrivial_homotopyGroup_option_fin (b : finiteOrthonormalFrame 
   ((HomotopyGroup.congrEquiv (finSuccEquiv (n + 3)).symm).trans
     (HomotopyGroup.homeomorphEquiv (sphereHomeomorph (n + 5)) b)).nontrivial
 
-/-- `finite_homotopyGroup_two` for `k = n + 3`. -/
-private theorem finite_homotopyGroup_two_aux (hn : Even n)
+/-- `finite_homotopyGroup_of_odd` for `k = n + 3`. -/
+private theorem finite_homotopyGroup_of_odd_aux (hn : Even n)
     (g : finiteOrthonormalFrame ℝ 2 (n + 5)) :
     Finite (π_ (n + 3) (finiteOrthonormalFrame ℝ 2 (n + 5)) g) := by
   -- The fibration `V₂(ℝⁿ⁺⁵) → V₁(ℝⁿ⁺⁵)`, with fibre the unit sphere of the complement of `b`.
@@ -178,10 +178,10 @@ private theorem finite_homotopyGroup_two_aux (hn : Even n)
 /-- **The first possibly nontrivial homotopy group of `V₂(ℝᵏ⁺²)` is finite.** For odd `k ≥ 3`,
 the homotopy group `πₖ` of the Stiefel manifold of orthonormal two-frames of `ℝᵏ⁺²` is finite, at
 every base point. -/
-theorem finite_homotopyGroup_two {k : ℕ} (hk : Odd k) (hk3 : 3 ≤ k)
+theorem finite_homotopyGroup_of_odd {k : ℕ} (hk : Odd k) (hk3 : 3 ≤ k)
     (g : finiteOrthonormalFrame ℝ 2 (k + 2)) :
     Finite (π_ k (finiteOrthonormalFrame ℝ 2 (k + 2)) g) := by
   obtain ⟨n, rfl⟩ : ∃ n, k = n + 3 := ⟨k - 3, by omega⟩
-  exact finite_homotopyGroup_two_aux (by simpa [Nat.even_add_one, parity_simps] using hk) g
+  exact finite_homotopyGroup_of_odd_aux (by simpa [Nat.even_add_one, parity_simps] using hk) g
 
 end TauCeti.finiteOrthonormalFrame

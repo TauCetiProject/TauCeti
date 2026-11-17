@@ -16,7 +16,8 @@ public import TauCeti.Topology.Homotopy.Antipodal
 
 Let `S` be the unit sphere of a real inner product space `E` of dimension `n + 2`, so that `S` has
 dimension `n + 1`. The antipodal map of `S` acts on `Hₙ₊₁(S)` by `(-1) ^ (n + 2)`
-(`TauCeti.singularHomologyFunctor_map_sphere_neg`), so by `-1` when the dimension of `S` is even.
+(`TauCeti.singularHomologyFunctor_map_sphere_neg`, in `TauCeti.AlgebraicTopology.Singular.Sphere`),
+so by `-1` when the dimension of `S` is even.
 
 A continuous map `f : Y → S` with a nowhere-vanishing field orthogonal to it is homotopic to its
 antipode `-f` (`ContinuousMap.homotopic_neg_of_inner_eq_zero`). When `S` has even dimension, the
@@ -33,8 +34,6 @@ is what makes the boundary map of the fibration `V₂(ℝᵏ⁺²) → Sᵏ⁺¹
 
 ## Main results
 
-* `TauCeti.singularHomologyFunctor_map_sphere_neg`: the antipodal map of the unit sphere of an
-  `(n + 2)`-dimensional space acts by `(-1) ^ (n + 2)` on `Hₙ₊₁`.
 * `TauCeti.singularHomologyFunctor_map_eq_neg_of_inner_eq_zero`: a map into an even-dimensional
   sphere with a nowhere-vanishing normal field induces its own negative on top homology.
 * `GenLoop.mk_eq_one_of_inner_eq_zero`: a class of `πₙ₊₂(Sⁿ⁺²)`, `n` even, whose sphere
@@ -64,20 +63,6 @@ section Homology
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Abelian C] (R : C)
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
-/-- **The antipodal map acts by `(-1) ^ (n + 2)` on the top homology of a sphere.** For a real
-inner product space `E` of dimension `n + 2`, the antipodal map `x ↦ -x` of the unit sphere `S`
-of `E` induces multiplication by `(-1) ^ (n + 2)` on `Hₙ₊₁(S)`. -/
-theorem singularHomologyFunctor_map_sphere_neg (hE : finrank ℝ E = n + 2) :
-    ((singularHomologyFunctor C (n + 1)).obj R).map
-        (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) =
-      (-1 : ℤ) ^ (n + 2) • 𝟙 _ := by
-  -- In positive degrees ordinary and reduced homology agree naturally.
-  have h := (reducedSingularHomologySuccIso R n).hom.naturality
-    (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _)
-  rw [reducedSingularHomologyFunctor_map_sphere_neg R hE] at h
-  rw [← cancel_epi ((reducedSingularHomologySuccIso R n).hom.app _), ← h]
-  simp
-
 variable {Y : Type w} [TopologicalSpace Y]
 
 /-- **A map into an even-dimensional sphere with a normal field induces its own negative on top
@@ -91,9 +76,10 @@ theorem singularHomologyFunctor_map_eq_neg_of_inner_eq_zero (hE : finrank ℝ E 
     ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom f) =
       -((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom f) := by
   obtain ⟨H⟩ := f.homotopic_neg_of_inner_eq_zero hv h0 ht
+  -- The pointwise negation `-f` is `f` followed by the antipodal map.
   have hneg : TopCat.ofHom (-f) = TopCat.ofHom f ≫
-      (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) :=
-    (rfl)
+      (TopCat.ofHom ⟨Neg.neg, continuous_neg⟩ : TopCat.of (sphere (0 : E) 1) ⟶ _) := by
+    ext; simp
   have hH := TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor
     (f := TopCat.ofHom f) (g := TopCat.ofHom (-f)) H R (n + 1)
   -- The homotopy invariance is stated for the homology of the singular chain complex functor,
