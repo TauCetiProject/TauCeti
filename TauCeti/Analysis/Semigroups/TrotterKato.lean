@@ -78,15 +78,6 @@ namespace StronglyContinuousSemigroup
 
 variable {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
 
-/-- The generator sends `R(λ) w` to `λ R(λ) w - w`. -/
-private theorem generator_resolvent_apply (S : StronglyContinuousSemigroup X) {ω M : ℝ}
-    (hb : S.HasGrowthBound ω M) {lambda : ℝ} (hlambda : ω < lambda) (w : X) :
-    S.generator ⟨S.resolvent hb lambda hlambda w,
-        (S.isResolventAt_generator hb hlambda).mem_domain w⟩ =
-      lambda • S.resolvent hb lambda hlambda w - w := by
-  rw [eq_sub_iff_add_eq, add_comm, ← eq_sub_iff_add_eq]
-  exact ((S.isResolventAt_generator hb hlambda).smul_sub_apply w).symm
-
 /-- **The interpolation between two semigroups through their resolvents.** For two semigroups `S`
 and `T` and `0 ≤ s < t`, the path `u ↦ S(t - u) R_S T(u) R_T y` has right derivative
 `S(t - s) (R_T - R_S) T(s) y` at `s`. -/
@@ -106,7 +97,7 @@ private theorem hasDerivWithinAt_interpolate (S T : StronglyContinuousSemigroup 
   have hquot := T.generator_tendsto_comp_sub_const ⟨T.realOperator s x, hsx⟩ s
   rw [T.realOperator_generator_map ⟨x, hxT⟩] at hquot
   have hAx : T.generator ⟨x, by rw [T.generator_domain]; exact hxT⟩ = lambda • x - y :=
-    T.generator_resolvent_apply hT hlambda y
+    (T.isResolventAt_generator hT hlambda).apply_eq_smul_sub y
   rw [hAx] at hquot
   have htime : Tendsto (fun u : ℝ => t - u) (𝓝[>] s) (𝓝 (t - s)) :=
     ((continuous_sub_left t).tendsto s).mono_left nhdsWithin_le_nhds
@@ -114,11 +105,11 @@ private theorem hasDerivWithinAt_interpolate (S T : StronglyContinuousSemigroup 
   -- The outer factor: `u ↦ S(t - u) R_S z` is differentiable, with `A_S R_S z = λ R_S z - z`.
   have hc := hasDerivAt_realOperator_sub (S := S) (sub_pos.mpr hst)
     ((S.isResolventAt_generator hS hlambda).mem_domain (T.realOperator s x))
-    (S.generator_resolvent_apply hS hlambda (T.realOperator s x))
+    ((S.isResolventAt_generator hS hlambda).apply_eq_smul_sub (T.realOperator s x))
   have h := T.hasDerivWithinAt_apply_realOperator_of_tendsto
     (fun u => (S.realOperator (t - u)).comp RS) x hs hb hc.hasDerivWithinAt
   refine h.congr_deriv ?_
-  have hcomm := T.resolvent_realOperator_apply hT lambda hlambda s y
+  have hcomm := T.resolvent_realOperator_comm hT lambda hlambda s y
   simp only [RS, RT, x] at hcomm ⊢
   rw [← _root_.map_neg, ← _root_.map_add]
   congr 1
@@ -216,7 +207,7 @@ private theorem tendstoUniformlyOn_realOperator_resolvent_resolvent {ι : Type*}
       (R (T.realOperator t (R y)) - Ri i (T.realOperator t (R y))) +
         (Ri i (T.realOperator t (R y)) - (S i).realOperator t (Ri i (R y))) +
         (S i).realOperator t (Ri i (R y) - R (R y)) := by
-    rw [map_sub, ← T.resolvent_realOperator_apply hT lambda hlambda t (R y)]
+    rw [map_sub, ← T.resolvent_realOperator_comm hT lambda hlambda t (R y)]
     abel
   rw [dist_eq_norm, hsplit]
   calc _ ≤ ‖R (T.realOperator t (R y)) - Ri i (T.realOperator t (R y))‖ +

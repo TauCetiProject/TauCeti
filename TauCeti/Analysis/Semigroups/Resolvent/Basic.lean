@@ -280,7 +280,7 @@ private theorem StronglyContinuousSemigroup.resolvent_generator_tendsto
       · exact S.tendsto_average_resolvent_integrand lambda x
 
 /-- **The resolvent commutes with the semigroup**: `R(λ) S(t) x = S(t) R(λ) x`. -/
-theorem StronglyContinuousSemigroup.resolvent_realOperator_apply
+theorem StronglyContinuousSemigroup.resolvent_realOperator_comm
     (S : StronglyContinuousSemigroup X) {ω M : ℝ} (hb : S.HasGrowthBound ω M)
     (lambda : ℝ) (hlam : ω < lambda) (t : ℝ) (x : X) :
     S.resolvent hb lambda hlam (S.realOperator t x) =
