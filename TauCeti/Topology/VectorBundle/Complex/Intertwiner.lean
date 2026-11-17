@@ -31,7 +31,7 @@ The intertwiner is invertible when `J b` and `K b` are tamed by a common symplec
 then `1 - K b ∘ J b` is injective; this is how the first Chern number of a symplectic manifold
 is seen not to depend on the choice of tame almost complex structure. With `J = K` the intertwiner
 is the identity, which shows that the clutching number of a single complex structure does not
-depend on the model fibre.
+depend on the model fibre (`TauCeti.Bundle.ContinuousComplexStructure.clutchingNumberHom_model_eq`).
 
 ## Main definitions
 
@@ -172,7 +172,7 @@ theorem clutchingNumberHom_eq_of_isUnit_intertwiner (h : ∀ b, IsUnit (J.intert
 
 /-- The clutching number homomorphism of a complex structure does not depend on the model fibre.
 -/
-theorem clutchingNumberHom_eq_of_model (x : B) :
+theorem clutchingNumberHom_model_eq (x : B) :
     clutchingNumberHom G' J.Fiber x = clutchingNumberHom G J.Fiber x :=
   J.clutchingNumberHom_eq_of_isUnit_intertwiner J G G' (fun b ↦ by simp) x
 
