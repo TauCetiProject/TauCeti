@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Morphisms.FiniteType
 public import TauCeti.AlgebraicGeometry.AdicSpace.PreAdicSpace.LocallyHuberStandard
 
-import TauCeti.RingTheory.Huber.LocalizationTopology.Discrete
 import TauCeti.RingTheory.Huber.NoetherianType.TopologicallyFiniteType
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Cancel
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Comp
@@ -85,26 +84,9 @@ open CategoryTheory TopologicalSpace Topology
 
 namespace TauCeti
 
-open Huber Huber.PairOfDefinition ValuationSpectrum
+open Huber ValuationSpectrum
 
 universe u
-
-namespace PreAdicSpace
-
-/-- Over a complete affinoid open `C` with discrete underlying ring `C.Ring`, the canonical ring
-homomorphism `(C.rationalLocalizationHom T s hT).toRingHom` into the rational localisation
-`C.Ring⟨T/s⟩` is algebraically of finite presentation (`RingHom.FinitePresentation`). -/
-theorem CompleteAffinoidOpen.finitePresentation_rationalLocalizationHom
-    {Y : PreAdicSpace.{u}} (C : CompleteAffinoidOpen Y) [DiscreteTopology C.Ring]
-    (T : Finset C.Ring) (s : C.Ring)
-    (hT : IsOpen (Ideal.span (T : Set C.Ring) : Set C.Ring)) :
-    (C.rationalLocalizationHom T s hT).toRingHom.FinitePresentation := by
-  rw [rationalLocalizationHom, toRationalLocalizationHom_def, toRingHom_toCompletionLocHom]
-  exact C.pairOfDefinition.finitePresentation_toCompletionLoc_of_discreteTopology (T : Set C.Ring) s
-    (Localization.Away s)
-    (C.pairOfDefinition.hasDenominatorPower_of_isOpen_span T s (Localization.Away s) hT)
-
-end PreAdicSpace
 
 namespace AdicSpace
 
@@ -428,18 +410,10 @@ theorem LocallyOfFinitePresentation.exists_openImmersion_over_rationalLocalizati
       (𝟙 Y.obj) had₁
   refine ⟨TA, sA, hTA, ha₀R, ?_⟩
   let CY₁ := CY.rationalLocalization TA sA hTA
-  have hα₁α₀ : α₁.comp α₀ = CY.rationalLocalizationHom TA sA hTA := by
-    have hl : CY'₁.pairComap CY₁ α₁ ≫ CY.pairComap CY'₁ α₀ =
-        toRationalLocalizationComap CY.pairOfDefinition CY.le_plus CY.isSheaf CY.hom TA sA hTA := by
-      rw [← cancel_mono CY.hom, Category.assoc, hsq_α₀, Category.comp_id, hsq_α₁, Category.comp_id,
-        ofRationalLocalization_hom]
-    have h := congrArg (presentationLimitHomPairHom CY.pairOfDefinition CY₁.pairOfDefinition
-      CY.pair CY₁.pair CY.le_plus CY₁.le_plus) hl
-    rwa [← CY.pairComap_comp CY'₁ CY₁ α₀ α₁,
-      presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap CY.pairOfDefinition
-        CY₁.pairOfDefinition CY.pair CY₁.pair CY.le_plus CY₁.le_plus CY₁.isSheaf,
-      presentationLimitHomPairHom_presentationLimitPreAdicSpacePairComap CY.pairOfDefinition
-        CY₁.pairOfDefinition CY.pair CY₁.pair CY.le_plus CY₁.le_plus CY₁.isSheaf] at h
+  have hα₁α₀ : α₁.comp α₀ = CY.rationalLocalizationHom TA sA hTA :=
+    CY.pairComap_injective CY₁ <| by
+      rw [CY.pairComap_comp CY'₁ CY₁, ← cancel_mono CY.hom, Category.assoc, hsq_α₀,
+        Category.comp_id, hsq_α₁, Category.comp_id, ofRationalLocalization_hom]
   have hα₁_tft : α₁.IsTopologicallyFiniteType := .of_comp (by
     rw [hα₁α₀]
     exact CY.isTopologicallyFiniteType_rationalLocalizationHom TA sA hTA)
