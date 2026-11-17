@@ -21,8 +21,10 @@ Let `α` be a contact form on a boundaryless smooth manifold `M`, with contact d
 `IsContactForm.kerSymplecticForm` in `TauCeti.Geometry.Contact.Distribution`), Reeb vector field
 `R_α` (`TauCeti.SmoothForm.reebVectorField`), and complete Reeb flow `IsContactForm.reebFlow`
 (from `TauCeti.Geometry.Contact.Flow`). This file develops the periodic trajectories and
-unparametrized closed orbits of `reebFlow`, culminating in finiteness of nondegenerate closed Reeb
-orbits (including multiply covered ones) below any action bound.
+unparametrized closed orbits of `reebFlow`, culminating in finiteness below any action bound `A`:
+whenever every closed Reeb orbit of period (equivalently, contact action) at most `A` (meeting a
+compact subset `K`, or globally on a compact boundaryless manifold) is nondegenerate, there are
+only finitely many such closed Reeb orbits (including multiply covered ones).
 
 ## Periodic Reeb trajectories and nondegeneracy
 
@@ -54,10 +56,11 @@ basepoint are inherited directly from `TauCeti.Dynamics.Flow.ClosedOrbit`.
 * **Finiteness below an action bound**
   (`IsContactForm.finite_closedOrbit_inter_nonempty_and_period_le`,
   `IsContactForm.finite_closedOrbit_period_le`): for a complete Reeb flow and a compact subset `K`,
-  if all closed Reeb orbits meeting `K` of period (equivalently, contact action) at most `A` are
+  if every closed Reeb orbit meeting `K` of period (equivalently, contact action) at most `A` is
   nondegenerate, there are only finitely many of them (including covers); in particular, on a
-  compact boundaryless contact manifold there are finitely many nondegenerate closed Reeb orbits of
-  period at most `A`.
+  compact boundaryless contact manifold, if every closed Reeb orbit of period at most `A` is
+  nondegenerate, then there are only finitely many closed Reeb orbits (including covers) of period
+  at most `A`.
 * **Circle witness** (`AddCircle.isContactForm_timeForm`,
   `AddCircle.isNondegenerateOrbit_timeForm`, `AddCircle.multiplicity_mk_primitiveTrajectory`): on
   the `1`-dimensional circle `AddCircle p` (`p > 0`), `AddCircle.timeForm p` is a contact form with
