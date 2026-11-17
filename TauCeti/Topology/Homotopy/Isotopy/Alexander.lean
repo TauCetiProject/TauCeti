@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Topology.Homeomorph.ClosedBall
+public import TauCeti.Topology.Homeomorph.ClosedBall.Basic
 public import TauCeti.Topology.Homotopy.Isotopy.Restrict
 
 /-!
