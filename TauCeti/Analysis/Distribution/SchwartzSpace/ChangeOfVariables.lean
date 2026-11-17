@@ -41,12 +41,12 @@ determinant (`SchwartzMap.pushforwardCLM_trans`), and the identity pushes forwar
 (`SchwartzMap.pushforwardCLM_refl`). Multiplication by `g ∘ φ` before the pushforward is
 multiplication by `g` after it (`SchwartzMap.pushforwardCLM_smulLeftCLM`).
 
-On a real inner product space, composition with `φ` is also the transpose of the pushforward for
-the sesquilinear `L²` pairing, `∫ ⟪w ∘ φ, v⟫ = ∫ ⟪w, φ_* v⟫`
-(`SchwartzMap.integral_inner_compCLM_eq`). The derivatives of `u ∘ g` along an orthonormal basis
-`b` follow the chain rule `∂_{bᵢ} (u ∘ g) = ∑ⱼ ⟪bⱼ, Dg(·) bᵢ⟫ (∂_{bⱼ} u) ∘ g`
-(`SchwartzMap.lineDerivOp_compCLM`). These are inputs of the Sobolev estimates for changes of
-variables in `TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
+Composition with `φ` is also the transpose of the pushforward for the sesquilinear `L²` pairing,
+`∫ ⟪w ∘ φ, v⟫ dμ = ∫ ⟪w, φ_* v⟫ dμ` (`SchwartzMap.integral_inner_compCLM_eq`). On a real inner
+product space, the derivatives of `u ∘ g` along an orthonormal basis `b` follow the chain rule
+`∂_{bᵢ} (u ∘ g) = ∑ⱼ ⟪bⱼ, Dg(·) bᵢ⟫ (∂_{bⱼ} u) ∘ g` (`SchwartzMap.lineDerivOp_compCLM`). These are
+inputs of the Sobolev estimates for changes of variables in
+`TauCeti.Analysis.Sobolev.BesselPotential.ChangeOfVariables`.
 
 ## References
 
@@ -81,6 +81,16 @@ theorem pushforwardCLM_apply (hφ : (φ : E → E).HasTemperateGrowth)
       ((RCLike.hasTemperateGrowth_ofReal 𝕜).comp (hφ.abs_det_fderiv_symm hψ)), compCLM_apply,
     Function.comp_apply]
 
+omit [FiniteDimensional ℝ E] in
+/-- The pushforward is multiplication by the Jacobian factor `|det Dφ⁻¹|` after composition with
+`φ⁻¹`. -/
+theorem pushforwardCLM_eq_smulLeftCLM_comp (hφ : (φ : E → E).HasTemperateGrowth)
+    (hψ : (φ.symm : E → E).HasTemperateGrowth) :
+    pushforwardCLM 𝕜 φ hφ hψ (F := F) =
+      smulLeftCLM F (fun y ↦ ((|(fderiv ℝ φ.symm y).det| : ℝ) : 𝕜)) ∘L
+        compCLM 𝕜 hψ (hφ.exists_norm_le_of_leftInverse φ.right_inv) := by
+  rw [pushforwardCLM]
+
 /-- **The pushforward is the transpose of composition.** For every function `u` and every
 additive Haar measure `μ`, `∫ (φ_* f)(y) • u(y) dμ(y) = ∫ f(x) • u(φ x) dμ(x)`. No integrability
 is needed: both sides are the two sides of the change of variables formula. -/
@@ -95,6 +105,22 @@ theorem integral_pushforwardCLM_smul {G : Type*} [NormedAddCommGroup G] [NormedS
   rw [hcv]
   congr 1 with y
   rw [pushforwardCLM_apply, smul_assoc, RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+
+open scoped InnerProductSpace in
+/-- **Composition with `φ` is the transpose of the pushforward of densities** for the `L²` pairing:
+`∫ ⟪w ∘ φ, v⟫ dμ = ∫ ⟪w, φ_* v⟫ dμ` for every additive Haar measure `μ`, where
+`(φ_* v)(y) = |det Dφ⁻¹(y)| v(φ⁻¹ y)`. -/
+theorem integral_inner_compCLM_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
+    [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
+    (w v : 𝓢(E, F)) :
+    ∫ x, ⟪compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) w x, v x⟫_ℂ ∂μ =
+      ∫ y, ⟪w y, pushforwardCLM ℂ φ hφ hψ v y⟫_ℂ ∂μ := by
+  have hcv := TauCeti.integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul μ
+    (hψ.1.differentiable (by simp)) fun y ↦ ⟪w y, v (φ.symm y)⟫_ℂ
+  simp only [Equiv.symm_apply_apply] at hcv
+  simp only [compCLM_apply, Function.comp_apply, pushforwardCLM_apply, inner_smul_right, hcv,
+    RCLike.real_smul_eq_coe_mul (K := ℂ)]
 
 /-- **Functoriality of the pushforward**: `(χ ∘ φ)_* = χ_* ∘ φ_*`, by the chain rule for the
 Jacobian determinant. -/
@@ -155,22 +181,6 @@ theorem lineDerivOp_compCLM {ι : Type*} [Fintype ι] (b : OrthonormalBasis ι �
   rw [map_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [map_smul, Complex.coe_smul, Function.comp_apply, lineDerivOp_apply_eq_fderiv]
-
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {φ : E ≃ E}
-
-open scoped InnerProductSpace in
-/-- **Composition with `φ` is the transpose of the pushforward of densities** for the `L²` pairing:
-`∫ ⟪w ∘ φ, v⟫ = ∫ ⟪w, φ_* v⟫`, where `(φ_* v)(y) = |det Dφ⁻¹(y)| v(φ⁻¹ y)`. -/
-theorem integral_inner_compCLM_eq {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
-    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (w v : 𝓢(E, F)) :
-    ∫ x, ⟪compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) w x, v x⟫_ℂ =
-      ∫ y, ⟪w y, pushforwardCLM ℂ φ hφ hψ v y⟫_ℂ := by
-  have hcv := TauCeti.integral_comp_equiv_eq_integral_abs_det_fderiv_symm_smul volume
-    (hψ.1.differentiable (by simp)) fun y ↦ ⟪w y, v (φ.symm y)⟫_ℂ
-  simp only [Equiv.symm_apply_apply] at hcv
-  simp only [compCLM_apply, Function.comp_apply, pushforwardCLM_apply, inner_smul_right, hcv]
-  congr 1 with y
 
 end InnerProduct
 

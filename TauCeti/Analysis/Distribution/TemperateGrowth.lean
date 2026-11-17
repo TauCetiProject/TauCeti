@@ -71,10 +71,11 @@ A measure of temperate growth is finite on compact sets.
   bijection `φ` such that `φ` and `φ⁻¹` have temperate growth.
 * `Function.HasTemperateGrowth.inner_fderiv_apply`,
   `Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_inner_fderiv_apply_le`: the chain-rule
-  coefficient `x ↦ ⟪w, Dg(x) v⟫` has temperate growth, and bounded derivatives when those of `g` of
-  positive order are bounded.
+  coefficient `x ↦ ⟪w, Dg(x) v⟫` has temperate growth, and a bounded derivative of order `n` when
+  that of `g` of order `n + 1` is bounded.
 * `Function.HasTemperateGrowth.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le`: the Jacobian
-  factor `|det Dφ⁻¹|` has bounded derivatives when those of `φ⁻¹` of positive order are bounded.
+  factor `|det Dφ⁻¹|` has a bounded derivative of order `n` when those of `φ⁻¹` of orders `1` to
+  `n + 1` are bounded.
 * `Function.HasTemperateGrowth.exists_norm_le_of_leftInverse`: a polynomial lower bound for
   `‖f x‖` from a left inverse of temperate growth.
 * `MeasureTheory.Measure.HasTemperateGrowth.isFiniteMeasureOnCompacts`: a measure of temperate
@@ -216,12 +217,12 @@ theorem inner_fderiv_apply (hg : g.HasTemperateGrowth) (v w : E) :
   rw [ofReal_inner_fderiv_apply_eq]
   exact (ContinuousLinearMap.hasTemperateGrowth _).comp hg.fderiv
 
-/-- If the derivatives of `g` of positive order are bounded, then so are all derivatives of the
-chain-rule coefficient `x ↦ ⟪w, Dg(x) v⟫`. -/
-theorem exists_norm_iteratedFDeriv_inner_fderiv_apply_le (hg : g.HasTemperateGrowth)
-    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) g x‖ ≤ C) (v w : E) (n : ℕ) :
+/-- If the derivative of `g` of order `n + 1` is bounded, then so is the derivative of order `n` of
+the chain-rule coefficient `x ↦ ⟪w, Dg(x) v⟫`. -/
+theorem exists_norm_iteratedFDeriv_inner_fderiv_apply_le (hg : g.HasTemperateGrowth) (v w : E)
+    {n : ℕ} (hb : ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) g x‖ ≤ C) :
     ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ ((⟪w, _root_.fderiv ℝ g x v⟫ : ℝ) : ℂ)) x‖ ≤ C := by
-  obtain ⟨C, hC⟩ := hb n
+  obtain ⟨C, hC⟩ := hb
   set L := (Complex.ofRealCLM.comp (innerSL ℝ w)).comp (ContinuousLinearMap.apply ℝ E v)
   refine ⟨‖L‖ * C, fun x ↦ ?_⟩
   rw [ofReal_inner_fderiv_apply_eq]
@@ -229,18 +230,18 @@ theorem exists_norm_iteratedFDeriv_inner_fderiv_apply_le (hg : g.HasTemperateGro
   rw [norm_iteratedFDeriv_fderiv]
   exact mul_le_mul_of_nonneg_left (hC x) (norm_nonneg _)
 
-/-- If `φ` and `φ⁻¹` have temperate growth and the derivatives of `φ⁻¹` of positive order are
-bounded, then the Jacobian factor `|det Dφ⁻¹|` has bounded derivatives of every order. -/
+/-- If `φ` and `φ⁻¹` have temperate growth and the derivatives of `φ⁻¹` of orders `1` to `n + 1`
+are bounded, then the derivative of order `n` of the Jacobian factor `|det Dφ⁻¹|` is bounded. -/
 theorem exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le [FiniteDimensional ℝ E] {φ : E ≃ E}
-    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth)
-    (hb : ∀ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (n + 1) φ.symm x‖ ≤ C) (n : ℕ) :
+    (hφ : (φ : E → E).HasTemperateGrowth) (hψ : (φ.symm : E → E).HasTemperateGrowth) (n : ℕ)
+    (hb : ∀ m ≤ n, ∃ C, ∀ x, ‖iteratedFDeriv ℝ (m + 1) φ.symm x‖ ≤ C) :
     ∃ C, ∀ y, ‖iteratedFDeriv ℝ n
       (fun y ↦ ((|(_root_.fderiv ℝ φ.symm y).det| : ℝ) : ℂ)) y‖ ≤ C := by
   -- The determinant of the bounded smooth map `Dφ⁻¹` has bounded derivatives.
   obtain ⟨C, hC⟩ := (ContinuousLinearMap.hasTemperateGrowth_det.1.of_le
     (by exact_mod_cast le_top)).exists_norm_iteratedFDeriv_comp_le
       (hψ.fderiv.1.of_le (by exact_mod_cast le_top))
-      fun m _ ↦ (hb m).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x
+      fun m hm ↦ (hb m hm).imp fun C hC x ↦ by rw [norm_iteratedFDeriv_fderiv]; exact hC x
   -- `det Dφ⁻¹` has no zeros on the connected space `E`, hence a constant sign `ε`.
   have hcont : Continuous fun y ↦ (_root_.fderiv ℝ φ.symm y).det := hψ.det_fderiv.1.continuous
   obtain ⟨ε, hε⟩ := isPreconnected_univ.exists_abs_eq_mul hcont.continuousOn fun y _ ↦

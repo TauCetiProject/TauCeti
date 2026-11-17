@@ -176,7 +176,7 @@ private theorem exists_sq_bound_compCLM_succ
         c * ‖toBesselPotentialSpaceCLM k 2 w‖ :=
     exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (by norm_num) ENNReal.ofNat_ne_top k
       (hφ.inner_fderiv_apply _ _)
-      fun n _ ↦ hφ.exists_norm_iteratedFDeriv_inner_fderiv_apply_le hb _ _ n
+      fun n _ ↦ hφ.exists_norm_iteratedFDeriv_inner_fderiv_apply_le _ _ (hb n)
   choose c _ hc using hc
   set K := ∑ i, ∑ j, c i j ^ 2
   refine ⟨C * (1 + K), by positivity, fun u ↦ ?_⟩
@@ -261,27 +261,27 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_neg_natCast
   have hJ : J.HasTemperateGrowth :=
     (RCLike.hasTemperateGrowth_ofReal ℂ).comp (hφ.abs_det_fderiv_symm hψ)
   -- The pushforward `φ_* v = J (v ∘ φ⁻¹)` is bounded on `H^k`.
-  obtain ⟨M, hM⟩ := hψ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hφ' (by simpa using hb) 0
+  obtain ⟨M, hM⟩ := hψ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hφ' 0
+    fun m _ ↦ by simpa using hb m
   have hM' (y : E) : |(fderiv ℝ φ.symm.symm y).det| ≤ M := by simpa using hM y
   obtain ⟨Cs, hCs0, hCs⟩ := exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast (F := F)
     (φ := φ.symm) hψ hφ' hb' hM' k
   obtain ⟨CJ, hCJ0, hCJ⟩ := exists_norm_toBesselPotentialSpaceCLM_smulLeftCLM_le (F := F) (p := 2)
     (by norm_num) ENNReal.ofNat_ne_top k hJ fun n _ ↦
-      hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ hb' n
+      hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ n fun m _ ↦ hb' m
   have hQ (v : 𝓢(E, F)) : ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ ≤
       CJ * (Cs * ‖toBesselPotentialSpaceCLM k 2 v‖) := by
     have hv : pushforwardCLM ℂ φ hφ hψ v = smulLeftCLM F J
         (compCLM ℂ hψ (hφ'.exists_norm_le_of_leftInverse φ.symm.left_inv) v) := by
-      ext y
-      rw [pushforwardCLM_apply, smulLeftCLM_apply_apply hJ, compCLM_apply, Function.comp_apply]
-      rfl
+      simp only [pushforwardCLM_eq_smulLeftCLM_comp, ContinuousLinearMap.comp_apply,
+        RCLike.ofReal_eq_complex_ofReal, J]
     rw [hv]
     exact (hCJ _).trans (mul_le_mul_of_nonneg_left (hCs v) hCJ0)
   -- Duality turns the bound of the transpose `φ_*` on `H^k` into the bound on `H^{-k}`.
   refine ⟨CJ * Cs, mul_nonneg hCJ0 hCs0, fun w ↦ ?_⟩
   refine norm_toBesselPotentialSpaceCLM_neg_le_of_forall (k : ℝ) _
     (mul_nonneg (mul_nonneg hCJ0 hCs0) (norm_nonneg _)) fun v ↦ ?_
-  rw [integral_inner_compCLM_eq hφ hψ]
+  rw [integral_inner_compCLM_eq volume hφ hψ]
   calc _ ≤ ‖toBesselPotentialSpaceCLM (-k) 2 w‖ *
         ‖toBesselPotentialSpaceCLM k 2 (pushforwardCLM ℂ φ hφ hψ v)‖ :=
         norm_integral_inner_le_norm_toBesselPotentialSpaceCLM_mul_norm (k : ℝ) w _
@@ -300,7 +300,8 @@ private theorem exists_norm_toBesselPotentialSpaceCLM_compCLM_le_intCast
           (compCLM ℂ hφ (hψ.exists_norm_le_of_leftInverse φ.left_inv) u)‖ ≤
         C * ‖toBesselPotentialSpaceCLM m 2 u‖ := by
   obtain ⟨k, rfl | rfl⟩ := m.eq_nat_or_neg
-  · obtain ⟨M, hM⟩ := hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ hb' 0
+  · obtain ⟨M, hM⟩ := hφ.exists_norm_iteratedFDeriv_abs_det_fderiv_symm_le hψ 0
+      fun m _ ↦ hb' m
     rw [Int.cast_natCast]
     exact exists_norm_toBesselPotentialSpaceCLM_compCLM_le_natCast (F := F) hφ hψ hb
       (M := M) (fun y ↦ by simpa using hM y) k
