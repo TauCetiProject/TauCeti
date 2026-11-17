@@ -6,16 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.FinitePresentation
-public import TauCeti.RingTheory.Huber.ModuleTopology.NaturallyComplete
+public import TauCeti.RingTheory.Huber.ModuleTopology.PseudoFlat
 public import TauCeti.RingTheory.Huber.Restricted.BaseChange
 public import TauCeti.RingTheory.Huber.Restricted.TwoSidedSeries.Ring
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Complete
-public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.FirstCountable
 import Mathlib.Logic.Equiv.Nat
 import TauCeti.Topology.Algebra.Nonarchimedean.Pi
 
 /-!
-# Non-noetherian restricted-series base change and null-sequence comparisons
+# Non-noetherian restricted-series base change and `2`-pseudoflatness
 
 Over any complete Hausdorff Tate ring `A` (with no noetherian hypothesis), the comparison map
 `M ⊗[A] A⟨X₁, …, Xₖ⟩ → M⟨X₁, …, Xₖ⟩` of `TauCeti.RingTheory.Huber.Restricted.BaseChange` is
@@ -27,8 +26,21 @@ natural completeness makes the kernel of any finite free presentation `Aⁿ →[
 closed, so Henkel's open mapping theorem makes `u` strict onto its image.
 
 Specialising to one-variable restricted power series and two-sided restricted Laurent series yields
-Kedlaya–Liu II, Corollary 2.4.9(c), together with the uniform-convergence carrier
-`TauCeti.Huber.RestrictedLaurentSeries` for `A⟨T, T⁻¹⟩`.
+Kedlaya–Liu II, Corollary 2.4.9(c), and shows that for every index type `ι` the null-family module
+`c₀(ι, A)` (`Filter.zeroAtFilterSubmodule (β := A) A Filter.cofinite`) satisfies
+`Tor₁^A(P, c₀(ι, A)) = 0` for all `2`-pseudocoherent `A`-modules `P`
+(`TauCeti.Huber.rTensor_injective_zeroAtFilterSubmodule`), hence is `2`-pseudoflat
+(`TauCeti.Huber.isPseudoFlat_zeroAtFilterSubmodule`). By transport along linear equivalences,
+`A⟨X₁, …, Xₖ⟩` (`TauCeti.Huber.isPseudoFlat_restrictedMvPowerSeriesCompletion`) and `A⟨T, T⁻¹⟩`
+(`TauCeti.Huber.isPseudoFlat_twoSidedRestrictedSubmodule`) are `2`-pseudoflat (Kedlaya–Liu II,
+Corollary 2.4.9(a)–(b)), and every `A`-linear retract of `c₀(ι, A)` is `2`-pseudoflat by
+`TauCeti.Huber.IsPseudoFlat.of_retract`.
+
+We intentionally do not define a general pro-projectivity predicate (Kedlaya–Liu II,
+Definition 2.4.6) here: continuous finite-projective projectors converging pointwise to the identity
+on a complete metrizable (indeed, ultrametric Banach) `A`-module do not by themselves imply
+`2`-pseudoflatness, as verified by the formal counterexample in
+`TauCeti.Examples.RingTheory.Huber.ModuleTopology.PseudoFlat`.
 
 ## Main definitions
 
@@ -39,8 +51,6 @@ Kedlaya–Liu II, Corollary 2.4.9(c), together with the uniform-convergence carr
   `A⟨T⟩ ⊗[A] M →ₗ[A] c₀(ℕ, M)` sending `f ⊗ₜ v` to `n ↦ restrictedCoeff n f • v`.
 * `TauCeti.Huber.restrictedLaurentSeriesTensorToNull`: the Laurent comparison map
   `A⟨T, T⁻¹⟩ ⊗[A] M →ₗ[A] M⟨T, T⁻¹⟩` sending `f ⊗ₜ v` to `n ↦ f n • v` for `n : ℤ`.
-* `TauCeti.Huber.RestrictedLaurentSeries`: the commutative `A`-algebra `A⟨T, T⁻¹⟩` equipped with
-  the uniformity of uniform convergence of coefficients.
 
 ## Main results
 
@@ -52,11 +62,17 @@ Kedlaya–Liu II, Corollary 2.4.9(c), together with the uniform-convergence carr
   `TauCeti.Huber.restrictedPowerSeriesTensorToNull_bijective`,
   `TauCeti.Huber.restrictedLaurentSeriesTensorToNull_surjective`, and
   `TauCeti.Huber.restrictedLaurentSeriesTensorToNull_bijective`: Corollary 2.4.9(c).
+* `TauCeti.Huber.rTensor_injective_zeroAtFilterSubmodule` and
+  `TauCeti.Huber.isPseudoFlat_zeroAtFilterSubmodule`: `Tor₁` vanishing and `2`-pseudoflatness for
+  `c₀(ι, A)` with arbitrary index type `ι`.
+* `TauCeti.Huber.isPseudoFlat_restrictedMvPowerSeriesCompletion` and
+  `TauCeti.Huber.isPseudoFlat_twoSidedRestrictedSubmodule`: `2`-pseudoflatness of
+  `A⟨X₁, …, Xₖ⟩` and `A⟨T, T⁻¹⟩` (Corollary 2.4.9(a)–(b)).
 
 ## References
 
 * K. S. Kedlaya and R. Liu, *Relative p-adic Hodge theory, II: Imperfect period rings*, §2.4,
-  Corollary 2.4.9(c).
+  Lemma 2.4.7 and Corollaries 2.4.8–2.4.9.
 * [T. Wedhorn, *Adic Spaces*][wedhorn_adic], Proposition 5.49, Example 6.39, and Remark 8.29.
 -/
 
@@ -155,6 +171,45 @@ theorem coe_twoSidedRestrictedSubmoduleEquivZeroAtFilter_symm {A M : Type*} [Sem
     (((twoSidedRestrictedSubmoduleEquivZeroAtFilter A M).symm g :
         twoSidedRestrictedSubmodule A M) : ℤ → M) = (g : ℤ → M) := (rfl)
 
+private noncomputable def zeroAtFilterExtend (A M : Type*) [Semiring A] [AddCommMonoid M]
+    [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousConstSMul A M] {κ ι : Type*}
+    (j : κ → ι) :
+    Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter κ) →ₗ[A]
+      Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ι) where
+  toFun f := by
+    classical
+    refine ⟨fun x ↦ if h : ∃ i, j i = x then (f : κ → M) h.choose else 0, fun U hU ↦ ?_⟩
+    rw [Filter.mem_map, Filter.mem_cofinite]
+    refine ((Filter.mem_cofinite.mp (Filter.mem_map.mp (f.2 hU))).image j).subset fun x hx ↦ ?_
+    simp only [Set.mem_preimage, Set.mem_compl_iff] at hx
+    by_cases h : ∃ i, j i = x
+    · exact ⟨h.choose, by simpa [h] using hx, h.choose_spec⟩
+    · exact absurd (by simpa [h] using mem_of_mem_nhds hU) hx
+  map_add' _ _ := by
+    classical exact Subtype.ext <| funext fun x ↦ by by_cases h : ∃ i, j i = x <;> simp [h]
+  map_smul' _ _ := by
+    classical exact Subtype.ext <| funext fun x ↦ by by_cases h : ∃ i, j i = x <;> simp [h]
+
+private def zeroAtFilterRestrict (A M : Type*) [Semiring A] [AddCommMonoid M] [TopologicalSpace M]
+    [Module A M] [ContinuousAdd M] [ContinuousConstSMul A M] {κ ι : Type*} {j : κ → ι}
+    (hj : Function.Injective j) :
+    Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ι) →ₗ[A]
+      Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter κ) where
+  toFun g := ⟨fun i ↦ (g : ι → M) (j i), Filter.Tendsto.comp g.2 hj.tendsto_cofinite⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+private theorem zeroAtFilterRestrict_comp_extend (A M : Type*) [Semiring A] [AddCommMonoid M]
+    [TopologicalSpace M] [Module A M] [ContinuousAdd M] [ContinuousConstSMul A M] {κ ι : Type*}
+    {j : κ → ι} (hj : Function.Injective j) :
+    zeroAtFilterRestrict A M hj ∘ₗ zeroAtFilterExtend A M j = LinearMap.id := by
+  classical
+  refine LinearMap.ext fun f ↦ Subtype.ext <| funext fun i ↦ ?_
+  dsimp [zeroAtFilterRestrict, zeroAtFilterExtend]
+  split_ifs with h'
+  · exact congrArg (f : κ → M) (hj h'.choose_spec)
+  · exact absurd ⟨i, rfl⟩ h'
+
 /-- For any countable index type `ι`, the module of `ι`-indexed null families is an `A`-linear
 retract of the module of `ℕ`-indexed null families: choose an injection `ι → ℕ`, extend outside its
 image by `0`, and restrict back. -/
@@ -165,30 +220,9 @@ theorem exists_retract_zeroAtFilterSubmodule_nat (A M ι : Type*) [Semiring A] [
       (proj : Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ℕ) →ₗ[A]
           Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ι)),
       proj ∘ₗ emb = LinearMap.id := by
-  classical
   obtain ⟨j, hj⟩ := Countable.exists_injective_nat ι
-  let emb : Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ι) →ₗ[A]
-      Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ℕ) :=
-    { toFun := fun f ↦
-        ⟨fun n ↦ if h : ∃ i, j i = n then (f : ι → M) h.choose else 0, fun U hU ↦ by
-          rw [Filter.mem_map, Filter.mem_cofinite]
-          refine ((Filter.mem_cofinite.mp (Filter.mem_map.mp (f.2 hU))).image j).subset
-            fun n hn ↦ ?_
-          simp only [Set.mem_preimage, Set.mem_compl_iff] at hn
-          by_cases h : ∃ i, j i = n
-          · exact ⟨h.choose, by simpa [h] using hn, h.choose_spec⟩
-          · exact absurd (by simpa [h] using mem_of_mem_nhds hU) hn⟩
-      map_add' := fun _ _ ↦ Subtype.ext <| funext fun n ↦ by by_cases h : ∃ i, j i = n <;> simp [h]
-      map_smul' := fun _ _ ↦ Subtype.ext <| funext fun n ↦ by
-        by_cases h : ∃ i, j i = n <;> simp [h] }
-  let proj : Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ℕ) →ₗ[A]
-      Filter.zeroAtFilterSubmodule (β := M) A (Filter.cofinite : Filter ι) :=
-    { toFun := fun g ↦ ⟨fun i ↦ (g : ℕ → M) (j i), Filter.Tendsto.comp g.2 hj.tendsto_cofinite⟩
-      map_add' := fun _ _ ↦ rfl, map_smul' := fun _ _ ↦ rfl }
-  refine ⟨emb, proj, LinearMap.ext fun f ↦ Subtype.ext <| funext fun i ↦ ?_⟩
-  dsimp [proj, emb]; split_ifs with h'
-  · exact congrArg (f : ι → M) (hj h'.choose_spec)
-  · exact absurd ⟨i, rfl⟩ h'
+  exact ⟨zeroAtFilterExtend A M j, zeroAtFilterRestrict A M hj,
+    zeroAtFilterRestrict_comp_extend A M hj⟩
 
 end NullFamilies
 
@@ -400,7 +434,7 @@ noncomputable def restrictedPowerSeriesTensorToNullEquiv {A : Type*} [CommRing A
 
 end OneVariablePowerSeries
 
-/-! ### Null-sequence comparison and uniform carrier for `A⟨T, T⁻¹⟩` -/
+/-! ### Null-sequence comparison for `A⟨T, T⁻¹⟩` -/
 
 section LaurentSeries
 
@@ -488,170 +522,215 @@ noncomputable def restrictedLaurentSeriesTensorToNullEquiv {A : Type*} [CommRing
   LinearEquiv.ofBijective restrictedLaurentSeriesTensorToNull
     (restrictedLaurentSeriesTensorToNull_bijective hM)
 
-/-- **The ring `A⟨T, T⁻¹⟩` of restricted Laurent series equipped with uniform coefficient
-convergence.** Defined as a wrapper around `twoSidedRestrictedSubmodule A A` so its uniform
-structure does not conflict with the pointwise-convergence subspace uniformity on
-`twoSidedRestrictedSubmodule A A ⊆ (ℤ → A)`. -/
-structure RestrictedLaurentSeries (A : Type*) [Semiring A] [TopologicalSpace A]
-    [ContinuousAdd A] [ContinuousConstSMul A A] where
-  /-- The underlying two-sided restricted series. -/
-  toTwoSided : twoSidedRestrictedSubmodule A A
-
-namespace RestrictedLaurentSeries
-
-@[ext]
-theorem ext {A : Type*} [Semiring A] [TopologicalSpace A] [ContinuousAdd A]
-    [ContinuousConstSMul A A] {f g : RestrictedLaurentSeries A} (h : f.toTwoSided = g.toTwoSided) :
-    f = g := by cases f; cases g; exact congrArg mk h
-
-section Module
-
-variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
-
-instance : AddCommGroup (RestrictedLaurentSeries A) where
-  zero := ⟨0⟩; add f g := ⟨f.1 + g.1⟩; neg f := ⟨-f.1⟩; sub f g := ⟨f.1 - g.1⟩
-  nsmul n f := ⟨n • f.1⟩; zsmul n f := ⟨n • f.1⟩
-  add_assoc _ _ _ := congrArg mk (add_assoc _ _ _); zero_add _ := congrArg mk (zero_add _)
-  add_zero _ := congrArg mk (add_zero _); nsmul_zero _ := congrArg mk (zero_smul ℕ _)
-  nsmul_succ n f := congrArg mk (succ_nsmul f.1 n); zsmul_zero' _ := congrArg mk (zero_smul ℤ _)
-  zsmul_succ' n f := congrArg mk (SubNegMonoid.zsmul_succ' n f.1)
-  zsmul_neg' n f := congrArg mk (SubNegMonoid.zsmul_neg' n f.1)
-  neg_add_cancel _ := congrArg mk (neg_add_cancel _); add_comm _ _ := congrArg mk (add_comm _ _)
-  sub_eq_add_neg _ _ := congrArg mk (sub_eq_add_neg _ _)
-
-instance : Module A (RestrictedLaurentSeries A) where
-  smul a f := ⟨a • f.1⟩; one_smul _ := congrArg mk (one_smul _ _)
-  mul_smul _ _ _ := congrArg mk (mul_smul _ _ _); smul_zero _ := congrArg mk (smul_zero _)
-  smul_add _ _ _ := congrArg mk (smul_add _ _ _); add_smul _ _ _ := congrArg mk (add_smul _ _ _)
-  zero_smul _ := congrArg mk (zero_smul _ _)
-
-@[simp] theorem toTwoSided_zero : (0 : RestrictedLaurentSeries A).toTwoSided = 0 := rfl
-@[simp] theorem toTwoSided_add (f g : RestrictedLaurentSeries A) :
-    (f + g).toTwoSided = f.toTwoSided + g.toTwoSided := rfl
-@[simp] theorem toTwoSided_neg (f : RestrictedLaurentSeries A) :
-    (-f).toTwoSided = -f.toTwoSided := rfl
-@[simp] theorem toTwoSided_sub (f g : RestrictedLaurentSeries A) :
-    (f - g).toTwoSided = f.toTwoSided - g.toTwoSided := rfl
-@[simp] theorem toTwoSided_smul (a : A) (f : RestrictedLaurentSeries A) :
-    (a • f).toTwoSided = a • f.toTwoSided := rfl
-
-/-- The tautological `A`-linear equivalence `RestrictedLaurentSeries A ≃ₗ[A]
-twoSidedRestrictedSubmodule A A`. -/
-def toTwoSidedLinearEquiv (A : Type*) [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A] :
-    RestrictedLaurentSeries A ≃ₗ[A] twoSidedRestrictedSubmodule A A where
-  toFun := toTwoSided; invFun := mk
-  left_inv _ := rfl; right_inv _ := rfl; map_add' _ _ := rfl; map_smul' _ _ := rfl
-
-/-- Coefficient-reindexing `A`-linear equivalence between `RestrictedLaurentSeries A` and the
-one-variable trivial-weight restricted power-series ring. -/
-noncomputable def toWeightedLinearEquiv (A : Type*) [CommRing A] [TopologicalSpace A]
-    [NonarchimedeanRing A] :
-    RestrictedLaurentSeries A ≃ₗ[A]
-      weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight :=
-  toTwoSidedLinearEquiv A ≪≫ₗ twoSidedToRestrictedSubringLinearEquiv A ≪≫ₗ
-    (AlgEquiv.ofRingEquiv
-      (f := RingEquiv.subringCongr (weightedRestrictedSubring_one_weight (k := 1) (A := A)))
-      subringCongr_one_weight_weightedC).symm.toLinearEquiv
-
-end Module
-
-section Algebra
-
-variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [NonarchimedeanRing A]
-
-/-- The uniform structure of uniform convergence of coefficients on `RestrictedLaurentSeries A`,
-pulled back along `toWeightedLinearEquiv`. -/
-noncomputable instance instUniformSpace : UniformSpace (RestrictedLaurentSeries A) :=
-  UniformSpace.comap (toWeightedLinearEquiv A) inferInstance
-
-/-- `toWeightedLinearEquiv` as a uniform equivalence. -/
-noncomputable def toWeightedUniformEquiv (A : Type*) [CommRing A] [UniformSpace A]
-    [NonarchimedeanRing A] :
-    RestrictedLaurentSeries A ≃ᵤ
-      weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight where
-  toEquiv := (toWeightedLinearEquiv A).toEquiv
-  uniformContinuous_toFun := uniformContinuous_comap
-  uniformContinuous_invFun := uniformContinuous_iff_le_comap.mpr <| by
-    dsimp [instUniformSpace]; rw [← UniformSpace.comap_comap]
-    have hcomp : ⇑(toWeightedLinearEquiv A) ∘ ⇑(toWeightedLinearEquiv A).symm = id :=
-      funext (toWeightedLinearEquiv A).apply_symm_apply
-    rw [hcomp, UniformSpace.comap_id]; exact le_rfl
-
-theorem uniformContinuous_toWeightedLinearEquiv (A : Type*) [CommRing A] [UniformSpace A]
-    [NonarchimedeanRing A] : UniformContinuous (toWeightedLinearEquiv A) :=
-  (toWeightedUniformEquiv A).uniformContinuous_toFun
-
-theorem uniformContinuous_toWeightedLinearEquiv_symm (A : Type*) [CommRing A] [UniformSpace A]
-    [NonarchimedeanRing A] : UniformContinuous (toWeightedLinearEquiv A).symm :=
-  (toWeightedUniformEquiv A).uniformContinuous_invFun
-
-noncomputable instance : IsUniformAddGroup (RestrictedLaurentSeries A) where
-  uniformContinuous_sub := uniformContinuous_comap' <| by
-    have hsub : ⇑(toWeightedLinearEquiv A) ∘
-          (fun p : RestrictedLaurentSeries A × RestrictedLaurentSeries A ↦ p.1 - p.2) =
-        (fun q ↦ q.1 - q.2) ∘ Prod.map (toWeightedLinearEquiv A) (toWeightedLinearEquiv A) :=
-      funext fun ⟨f, g⟩ ↦ map_sub (toWeightedLinearEquiv A) f g
-    rw [hsub]
-    exact uniformContinuous_sub.comp (uniformContinuous_comap.prodMap uniformContinuous_comap)
-
-instance [CompleteSpace A] : CompleteSpace (RestrictedLaurentSeries A) :=
-  (toWeightedUniformEquiv A).completeSpace_iff.mpr inferInstance
-
-instance [T0Space A] : T2Space (RestrictedLaurentSeries A) :=
-  have : T2Space
-      (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A)) isWeightFamily_one_weight) :=
-    inferInstance
-  .of_injective_continuous (toWeightedLinearEquiv A).injective
-    (toWeightedUniformEquiv A).continuous
-
-instance [(𝓝 (0 : A)).IsCountablyGenerated] :
-    (𝓤 (RestrictedLaurentSeries A)).IsCountablyGenerated := by
-  have : (𝓤 (weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set A))
-      isWeightFamily_one_weight)).IsCountablyGenerated :=
-    IsUniformAddGroup.uniformity_countably_generated
-  exact Filter.comap.isCountablyGenerated _ _
-
-noncomputable instance [CompleteSpace A] [T0Space A] : CommRing (RestrictedLaurentSeries A) :=
-  { (inferInstance : AddCommGroup (RestrictedLaurentSeries A)) with
-    one := ⟨1⟩
-    mul f g := ⟨f.1 * g.1⟩
-    npow n f := ⟨f.1 ^ n⟩
-    natCast n := ⟨n⟩
-    intCast n := ⟨n⟩
-    mul_assoc _ _ _ := congrArg mk (mul_assoc _ _ _)
-    one_mul _ := congrArg mk (one_mul _)
-    mul_one _ := congrArg mk (mul_one _)
-    left_distrib _ _ _ := congrArg mk (left_distrib _ _ _)
-    right_distrib _ _ _ := congrArg mk (right_distrib _ _ _)
-    zero_mul _ := congrArg mk (zero_mul _)
-    mul_zero _ := congrArg mk (mul_zero _)
-    npow_zero _ := congrArg mk (pow_zero _)
-    npow_succ _ _ := congrArg mk (pow_succ _ _)
-    natCast_zero := congrArg mk Nat.cast_zero
-    natCast_succ _ := congrArg mk (Nat.cast_succ _)
-    intCast_ofNat _ := congrArg mk (Int.cast_natCast _)
-    intCast_negSucc _ := congrArg mk (Int.cast_negSucc _)
-    mul_comm _ _ := congrArg mk (mul_comm _ _) }
-
-noncomputable instance [CompleteSpace A] [T0Space A] : Algebra A (RestrictedLaurentSeries A) :=
-  Algebra.ofModule (fun r x y ↦ congrArg mk (Algebra.smul_mul_assoc r x.1 y.1))
-    (fun r x y ↦ congrArg mk (Algebra.mul_smul_comm r x.1 y.1))
-
-@[simp] theorem toTwoSided_one [CompleteSpace A] [T0Space A] :
-    (1 : RestrictedLaurentSeries A).toTwoSided = 1 := rfl
-@[simp] theorem toTwoSided_mul [CompleteSpace A] [T0Space A] (f g : RestrictedLaurentSeries A) :
-    (f * g).toTwoSided = f.toTwoSided * g.toTwoSided := rfl
-@[simp] theorem toTwoSided_pow [CompleteSpace A] [T0Space A] (f : RestrictedLaurentSeries A)
-    (n : ℕ) : (f ^ n).toTwoSided = f.toTwoSided ^ n := rfl
-@[simp] theorem toTwoSided_algebraMap [CompleteSpace A] [T0Space A] (r : A) :
-    (algebraMap A (RestrictedLaurentSeries A) r).toTwoSided =
-      algebraMap A (twoSidedRestrictedSubmodule A A) r := by
-  rw [Algebra.algebraMap_eq_smul_one, Algebra.algebraMap_eq_smul_one]; rfl
-
-end Algebra
-
-end RestrictedLaurentSeries
-
 end LaurentSeries
+
+/-! ### `Tor₁` vanishing and `2`-pseudoflatness for null families and restricted series -/
+
+section PseudoFlat
+
+private theorem countable_support_of_mem_zeroAtFilterSubmodule {A ι : Type*} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [ContinuousConstSMul A A] [T0Space A]
+    [(𝓤 A).IsCountablyGenerated]
+    (f : Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι)) :
+    (Function.support (f : ι → A)).Countable := by
+  have : FirstCountableTopology A := UniformSpace.firstCountableTopology A
+  obtain ⟨U, hU⟩ := Filter.exists_antitone_basis (𝓝 (0 : A))
+  have hsub : Function.support (f : ι → A) ⊆ ⋃ n : ℕ, {x : ι | (f : ι → A) x ∉ U n} := by
+    intro x hx
+    rw [Set.mem_iUnion]
+    by_contra! hall
+    apply hx
+    exact tendsto_nhds_unique (f := fun _ : ℕ ↦ (f : ι → A) x) (l := atTop) tendsto_const_nhds
+      (hU.tendsto_right_iff.mpr fun n _ ↦ Filter.Eventually.of_forall fun _ ↦ not_not.mp (hall n))
+  exact (Set.countable_iUnion fun n ↦
+    (Filter.mem_cofinite.mp (Filter.mem_map.mp (f.2 (hU.mem n)))).countable).mono hsub
+
+private theorem zeroAtFilterExtend_comp_inclusion {A ι : Type*} [Semiring A] [TopologicalSpace A]
+    [ContinuousAdd A] [ContinuousConstSMul A A] {S₁ S₂ : Set ι} (hsub : S₁ ⊆ S₂) :
+    zeroAtFilterExtend A A (Subtype.val : S₂ → ι) ∘ₗ
+        zeroAtFilterExtend A A (Set.inclusion hsub) =
+      zeroAtFilterExtend A A (Subtype.val : S₁ → ι) := by
+  classical
+  refine LinearMap.ext fun f ↦ Subtype.ext <| funext fun x ↦ ?_
+  change (if h₂ : ∃ s : S₂, s.1 = x then
+      if h₁ : ∃ s₁ : S₁, Set.inclusion hsub s₁ = h₂.choose then (f : S₁ → A) h₁.choose else 0
+    else 0) =
+    if h : ∃ s₁ : S₁, s₁.1 = x then (f : S₁ → A) h.choose else 0
+  by_cases hx : x ∈ S₁
+  · have h₂ : ∃ s : S₂, s.1 = x := ⟨⟨x, hsub hx⟩, rfl⟩
+    have h₁ : ∃ s₁ : S₁, Set.inclusion hsub s₁ = h₂.choose :=
+      ⟨⟨x, hx⟩, Subtype.ext h₂.choose_spec.symm⟩
+    have h : ∃ s₁ : S₁, s₁.1 = x := ⟨⟨x, hx⟩, rfl⟩
+    simp only [h₂, h₁, h, ↓reduceDIte]
+    exact congrArg (f : S₁ → A) (Subtype.ext <| (congrArg Subtype.val h₁.choose_spec).trans
+      (h₂.choose_spec.trans h.choose_spec.symm))
+  · have h : ¬ ∃ s₁ : S₁, s₁.1 = x := fun ⟨s₁, hs₁⟩ ↦ hx (hs₁ ▸ s₁.2)
+    simp only [h, ↓reduceDIte]
+    split_ifs with h₂ h₁
+    · exact absurd ((congrArg Subtype.val h₁.choose_spec).trans h₂.choose_spec ▸ h₁.choose.2) hx
+    · rfl
+    · rfl
+
+private theorem rTensor_injective_zeroAtFilterSubmodule_nat {A : Type*} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A]
+    [IsTateRing A] {M N P : Type*} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+    [Module.Finite A N] [Module.Projective A N] [AddCommGroup P] [Module A P]
+    {i : M →ₗ[A] N} {p : N →ₗ[A] P} (hi : Function.Injective i) (hp : Function.Surjective p)
+    (hexact : Function.Exact i p) (hP : IsPseudoCoherentOver A P 2) :
+    Function.Injective
+      (i.rTensor (Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ℕ))) := by
+  have hker_coh : IsPseudoCoherentOver A (LinearMap.ker p) 1 :=
+    (hP : IsPseudoCoherentOver A P ((1 : ℕ∞) + 1)).ker_of_projective hp
+  let eM : M ≃ₗ[A] LinearMap.ker p :=
+    LinearEquiv.ofBijective (i.codRestrict (LinearMap.ker p) hexact.apply_apply_eq_zero)
+      ⟨fun x y hxy ↦ hi (congrArg Subtype.val hxy), fun ⟨y, hy⟩ ↦
+        let ⟨x, hx⟩ := (hexact y).mp hy; ⟨x, Subtype.ext hx⟩⟩
+  have hM_coh : IsPseudoCoherentOver A M 1 := hker_coh.of_equiv eM.symm
+  have : Module.FinitePresentation A M := IsPseudoCoherentOver.one_iff.mp hM_coh
+  have : Module.Finite A M := hM_coh.finite
+  have : Module.FinitePresentation A N :=
+    IsPseudoCoherentOver.one_iff.mp (IsPseudoCoherentOver.of_projective.mono le_top)
+  have hN_nc : IsNaturallyComplete A N := IsNaturallyComplete.of_projective
+  have hM_nc : IsNaturallyComplete A M := hN_nc.of_injective hi
+  let _ : TopologicalSpace M := moduleTopology A M; let _ : TopologicalSpace N := moduleTopology A N
+  have _ : IsModuleTopology A M := ⟨rfl⟩; have _ : IsModuleTopology A N := ⟨rfl⟩
+  have _ := IsModuleTopology.toContinuousAdd A M; have _ := IsModuleTopology.toContinuousAdd A N
+  have _ := IsModuleTopology.toContinuousSMul A M; have _ := IsModuleTopology.toContinuousSMul A N
+  have hi_cont : Continuous i := IsModuleTopology.continuous_of_linearMap i
+  let S := restrictedMvPowerSeriesSubring 1 A
+  have hinj_S : Function.Injective (i.rTensor S) := fun z₁ z₂ hz ↦
+    (restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete (k := 1) hM_nc).injective <|
+      restrictedMvPowerSeriesSubmoduleMap_injective i hi_cont.continuousAt hi <| by
+        rw [restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete_apply,
+          restrictedMvPowerSeriesBaseChangeEquivOfNaturallyComplete_apply,
+          restrictedMvPowerSeriesSubmoduleMap_baseChange i hi_cont.continuousAt z₁,
+          restrictedMvPowerSeriesSubmoduleMap_baseChange i hi_cont.continuousAt z₂]
+        exact congrArg restrictedMvPowerSeriesBaseChange hz
+  let eNat : S ≃ₗ[A] Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ℕ) :=
+    restrictedMvPowerSeriesSubringLinearEquiv 1 A ≪≫ₗ
+      restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter 1 A A ≪≫ₗ
+      zeroAtFilterCofiniteCongr A A (Finsupp.uniqueEquiv (0 : Fin 1))
+  have hcomm : (LinearEquiv.lTensor N eNat).toLinearMap ∘ₗ i.rTensor S ∘ₗ
+      (LinearEquiv.lTensor M eNat.symm).toLinearMap =
+      i.rTensor (Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ℕ)) := by
+    ext; simp
+  rw [← hcomm]
+  exact (LinearEquiv.lTensor N eNat).injective.comp
+    (hinj_S.comp (LinearEquiv.lTensor M eNat.symm).injective)
+
+private theorem rTensor_injective_zeroAtFilterSubmodule_countable {A : Type*} [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A]
+    [IsTateRing A] (ι : Type*) [Countable ι] {M N P : Type*} [AddCommGroup M] [Module A M]
+    [AddCommGroup N] [Module A N] [Module.Finite A N] [Module.Projective A N] [AddCommGroup P]
+    [Module A P] {i : M →ₗ[A] N} {p : N →ₗ[A] P} (hi : Function.Injective i)
+    (hp : Function.Surjective p) (hexact : Function.Exact i p)
+    (hP : IsPseudoCoherentOver A P 2) :
+    Function.Injective
+      (i.rTensor (Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι))) := by
+  obtain ⟨emb, proj, hret⟩ := exists_retract_zeroAtFilterSubmodule_nat A A ι
+  have hli : LinearMap.lTensor M proj ∘ₗ LinearMap.lTensor M emb = LinearMap.id := by
+    rw [← LinearMap.lTensor_comp, hret, LinearMap.lTensor_id]
+  have hsq : LinearMap.lTensor N emb ∘ₗ i.rTensor _ =
+      i.rTensor _ ∘ₗ LinearMap.lTensor M emb := by ext; rfl
+  exact Function.Injective.of_comp (f := LinearMap.lTensor N emb) <| by
+    rw [← LinearMap.coe_comp, hsq]
+    exact (rTensor_injective_zeroAtFilterSubmodule_nat hi hp hexact hP).comp
+      (Function.LeftInverse.injective fun z ↦ congr($hli z))
+
+/-- **Vanishing of `Tor₁` against `c₀(ι, A)` for any index type `ι`** (the null-family core of
+Kedlaya–Liu II, Lemma 2.4.7). Over a complete Hausdorff Tate ring `A`, for any index type `ι`
+(not necessarily countable) and any short exact sequence `0 → M →[i] N →[p] P → 0` with `N` finite
+projective and `P` `2`-pseudocoherent, `i.rTensor c₀(ι, A)` is injective. -/
+theorem rTensor_injective_zeroAtFilterSubmodule {A : Type*} [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A]
+    (ι : Type*) {M N P : Type*} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
+    [Module.Finite A N] [Module.Projective A N] [AddCommGroup P] [Module A P]
+    {i : M →ₗ[A] N} {p : N →ₗ[A] P} (hi : Function.Injective i) (hp : Function.Surjective p)
+    (hexact : Function.Exact i p) (hP : IsPseudoCoherentOver A P 2) :
+    Function.Injective
+      (i.rTensor (Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι))) := by
+  have : (𝓤 A).IsCountablyGenerated := IsUniformAddGroup.uniformity_countably_generated
+  have hsupp : ∀ z : M ⊗[A] Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι),
+      ∃ (S : Set ι), S.Countable ∧
+        ∃ w : M ⊗[A] Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter S),
+          LinearMap.lTensor M (zeroAtFilterExtend A A (Subtype.val : S → ι)) w = z := by
+    intro z
+    induction z using TensorProduct.inductionOn with
+    | tmul m f =>
+      refine ⟨Function.support (f : ι → A), countable_support_of_mem_zeroAtFilterSubmodule f,
+        m ⊗ₜ[A] zeroAtFilterRestrict A A Subtype.val_injective f, ?_⟩
+      simp only [LinearMap.lTensor_tmul]
+      congr 1; classical
+      refine Subtype.ext <| funext fun x ↦ ?_
+      change (if h : ∃ s : Function.support (f : ι → A), s.1 = x then
+          (f : ι → A) h.choose.1 else 0) = (f : ι → A) x
+      by_cases hx : (f : ι → A) x = 0
+      · split_ifs with h
+        · rw [h.choose_spec, hx]
+        · exact hx.symm
+      · have h : ∃ s : Function.support (f : ι → A), s.1 = x := ⟨⟨x, hx⟩, rfl⟩
+        simp only [h, ↓reduceDIte, h.choose_spec]
+    | add z₁ z₂ ih₁ ih₂ =>
+      obtain ⟨S₁, hS₁, w₁, rfl⟩ := ih₁
+      obtain ⟨S₂, hS₂, w₂, rfl⟩ := ih₂
+      refine ⟨S₁ ∪ S₂, hS₁.union hS₂,
+        LinearMap.lTensor M (zeroAtFilterExtend A A (Set.inclusion Set.subset_union_left)) w₁ +
+          LinearMap.lTensor M (zeroAtFilterExtend A A (Set.inclusion Set.subset_union_right)) w₂,
+        ?_⟩
+      rw [map_add, ← LinearMap.comp_apply, ← LinearMap.comp_apply, ← LinearMap.lTensor_comp,
+        ← LinearMap.lTensor_comp, zeroAtFilterExtend_comp_inclusion,
+        zeroAtFilterExtend_comp_inclusion]
+  refine (injective_iff_map_eq_zero _).mpr fun z hz ↦ ?_
+  obtain ⟨S, hS, w, rfl⟩ := hsupp z
+  have : Countable S := hS.to_subtype
+  have hret := zeroAtFilterRestrict_comp_extend A A (Subtype.val_injective (p := (· ∈ S)))
+  have hw : i.rTensor _ w = 0 := by
+    have hnat :
+        LinearMap.lTensor N (zeroAtFilterRestrict A A (Subtype.val_injective (p := (· ∈ S)))) ∘ₗ
+            i.rTensor _ ∘ₗ
+            LinearMap.lTensor M (zeroAtFilterExtend A A (Subtype.val : S → ι)) =
+          i.rTensor _ := by
+      refine TensorProduct.ext' fun m f ↦ ?_
+      simp only [LinearMap.comp_apply, LinearMap.lTensor_tmul, LinearMap.rTensor_tmul]
+      congr 1
+      exact congr($hret f)
+    rw [← hnat, LinearMap.comp_apply, LinearMap.comp_apply, hz, map_zero]
+  have hw0 : w = 0 :=
+    rTensor_injective_zeroAtFilterSubmodule_countable S hi hp hexact hP
+      (hw.trans (map_zero _).symm)
+  rw [hw0, map_zero]
+
+/-- **Null-family modules `c₀(ι, A)` are `2`-pseudoflat** over a complete Hausdorff Tate ring `A`,
+for every index type `ι`. Any `A`-linear retract of `c₀(ι, A)` is therefore also `2`-pseudoflat by
+`TauCeti.Huber.IsPseudoFlat.of_retract`. -/
+theorem isPseudoFlat_zeroAtFilterSubmodule (ι : Type*) (A : Type*) [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A] :
+    IsPseudoFlat A (Filter.zeroAtFilterSubmodule (β := A) A (Filter.cofinite : Filter ι)) 2 :=
+  isPseudoFlat_iff.mpr fun _ K hK ↦ rTensor_injective_zeroAtFilterSubmodule ι
+    K.injective_subtype (Submodule.mkQ_surjective K) (LinearMap.exact_subtype_mkQ K)
+    hK.isPseudoCoherentOver
+
+/-- **Kedlaya–Liu II, Corollary 2.4.9(a)–(b) (`2`-pseudoflatness of `A⟨X₁, …, Xₖ⟩`).** Over a
+complete Hausdorff Tate ring `A`, the completed restricted power-series algebra `A⟨X₁, …, Xₖ⟩` is
+`2`-pseudoflat over `A`. -/
+theorem isPseudoFlat_restrictedMvPowerSeriesCompletion (k : ℕ) (A : Type*) [CommRing A]
+    [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A]
+    [IsTateRing A] :
+    IsPseudoFlat A (restrictedMvPowerSeriesCompletion k A) 2 :=
+  (isPseudoFlat_zeroAtFilterSubmodule (Fin k →₀ ℕ) A).of_equiv
+    ((restrictedMvPowerSeriesCompletionSubringAlgEquiv k A).toLinearEquiv ≪≫ₗ
+      restrictedMvPowerSeriesSubringLinearEquiv k A ≪≫ₗ
+      restrictedMvPowerSeriesSubmoduleEquivZeroAtFilter k A A).symm
+
+/-- **Kedlaya–Liu II, Corollary 2.4.9(a)–(b) (`2`-pseudoflatness of `A⟨T, T⁻¹⟩`).** Over a complete
+Hausdorff Tate ring `A`, the two-sided restricted Laurent-series algebra `A⟨T, T⁻¹⟩` is
+`2`-pseudoflat over `A`. -/
+theorem isPseudoFlat_twoSidedRestrictedSubmodule (A : Type*) [CommRing A] [UniformSpace A]
+    [IsUniformAddGroup A] [IsTopologicalRing A] [CompleteSpace A] [T0Space A] [IsTateRing A] :
+    IsPseudoFlat A (twoSidedRestrictedSubmodule A A) 2 :=
+  (isPseudoFlat_zeroAtFilterSubmodule ℤ A).of_equiv
+    (twoSidedRestrictedSubmoduleEquivZeroAtFilter A A).symm
+
+end PseudoFlat
 
 end TauCeti.Huber
