@@ -37,6 +37,10 @@ compatibility with composition characterizes the transport
   induced by the identity of `M`.
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
   `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
+* `TauCeti.singularHomologyπ_compl_univ_bijective`: the quotient map `Hₖ(M) → Hₖ(M, M ∖ M)` is
+  bijective.
+* `TauCeti.localHomologySingletonLinearEquiv`: with coefficients `N ≃ₗ[Λ] Λ`, the local homology
+  `Hₙ(M, M ∖ {x}; N)` of an `n`-manifold is a copy of `Λ`.
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
@@ -86,6 +90,13 @@ variable {M : Type w} [TopologicalSpace M]
 `S = {x}` it is the local homology of `M` at `x`. -/
 abbrev localHomology (S : Set M) (k : ℕ) : A :=
   (TopPair.ofSubset (Sᶜ : Set (TopCat.of M))).singularHomology R k
+
+/-- The subspace `M ∖ M` of the pair `(M, M ∖ M)` is empty, so `Hₖ(M, M ∖ M)` is the singular
+homology of `M`. -/
+instance isEmpty_ofSubset_compl_univ_snd :
+    IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).snd := by
+  simp only [compl_univ]
+  exact inferInstanceAs (IsEmpty (∅ : Set M))
 
 /-- For `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)` on relative singular homology induced by
 the identity of `M`. -/
@@ -161,6 +172,23 @@ theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
         (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
           (C := ModuleCat.{w} Λ) N k).hom μ) :=
   (rfl)
+
+variable (M) in
+/-- The quotient map `Hₖ(M) → Hₖ(M, M ∖ M)` is bijective, the subspace `M ∖ M` being empty. -/
+theorem singularHomologyπ_compl_univ_bijective (k : ℕ) :
+    Function.Bijective ((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{w} Λ) N k) :=
+  (ConcreteCategory.isIso_iff_bijective _).1 inferInstance
+
+/-- With coefficients `N ≃ₗ[Λ] Λ`, the local homology `Hₙ(M, M ∖ {x}; N)` of a manifold of
+dimension `n` at a point `x` is a copy of `Λ`, through the computation of local homology in the
+chart at `x` (`TauCeti.singularHomologyComplSingletonFinrankIso`). -/
+def localHomologySingletonLinearEquiv [T1Space M] {E : Type w} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] {n : ℕ}
+    (hn : Module.finrank ℝ E = n) (eN : N ≃ₗ[Λ] Λ) (x : M) :
+    (localHomology N ({x} : Set M) n : ModuleCat.{w} Λ) ≃ₗ[Λ] Λ :=
+  ((hn ▸ singularHomologyComplSingletonFinrankIso N (chartAt E x) (mem_chart_source E x) :
+    localHomology N ({x} : Set M) n ≅ N).toLinearEquiv).trans eN
 
 end SingularHomology
 
