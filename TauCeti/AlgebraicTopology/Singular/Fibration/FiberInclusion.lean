@@ -98,9 +98,19 @@ namespace ContinuousMap
 variable {E' B' : Type u} [TopologicalSpace E'] [TopologicalSpace B'] {Y : Set B'} {y : B'}
 
 /-- The inclusion `p⁻¹(y) → p⁻¹(Y)` of the fibre over a point `y ∈ Y` into the preimage of `Y`. -/
-abbrev preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
+def preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
     TopCat.of (p ⁻¹' {y}) ⟶ TopCat.of (p ⁻¹' Y) :=
   TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)))
+
+@[simp]
+theorem hom_preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
+    (p.preimageInclusion hy).hom =
+      ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)) :=
+  (rfl)
+
+theorem coe_preimageInclusion_apply (p : C(E', B')) (hy : y ∈ Y) (x : p ⁻¹' {y}) :
+    ((p.preimageInclusion hy).hom x : E') = x :=
+  (rfl)
 
 /-- The fibre `p⁻¹(y)` is the fibre over `y` of the restriction `p⁻¹(Y) → Y`. -/
 def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
