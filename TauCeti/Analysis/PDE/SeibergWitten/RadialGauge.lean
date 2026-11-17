@@ -160,8 +160,10 @@ theorem phaseForm_radialGauge (x₀ : E) (hb : ContDiff ℝ 1 b) (x : E) :
   have hf : DifferentiableAt ℝ f x :=
     (contDiff_poincareHomotopy_apply_zero x₀ hb).differentiable one_ne_zero x
   -- The homotopy formula, with the zero-form `K b` read as the function `f`.
+  have hK : poincareHomotopy x₀ b = fun y ↦ constOfIsEmpty ℝ E (Fin 0) (f y) :=
+    funext fun y ↦ ((constOfIsEmptyLIE ℝ E ℝ (Fin 0)).apply_symm_apply _).symm
   have hhom := extDeriv_poincareHomotopy_add_poincareHomotopy_extDeriv x₀ hb x
-  rw [poincareHomotopy_eq_constOfIsEmpty x₀ b, extDeriv_constOfIsEmpty] at hhom
+  rw [hK, extDeriv_constOfIsEmpty] at hhom
   rw [radialConnection, ← hhom, add_sub_cancel_right]
   -- The phase form of `exp (i f)` is `df`.
   have hd : HasFDerivAt (radialGauge x₀ b)
@@ -237,8 +239,22 @@ theorem norm_fderiv_radialGauge_mul_le (x₀ : E) (hb : ContDiff ℝ 1 b)
   refine (norm_sub_le _ _).trans (add_le_add (le_of_eq ?_) (le_of_eq ?_))
   · rw [covariantDeriv_radialConnection_radialGauge_mul x₀ hb hα, norm_smul, norm_radialGauge,
       one_mul]
-  · rw [ContinuousLinearMap.norm_smulRight_apply, LinearIsometryEquiv.norm_map, Pi.mul_apply,
-      norm_mul, norm_I, one_mul, norm_mul, norm_radialGauge, one_mul]
+  · simp [ContinuousLinearMap.norm_smulRight_apply, -ofSubsingletonLIE_symm_apply]
+
+/-- Pointwise bounds `|α| ≤ C`, `|∇_b α| ≤ C` and `|K (db)| ≤ M` bound the derivatives of order
+at most `1` of the section `u α` in radial gauge by `C + M C`. -/
+private theorem norm_iteratedFDeriv_radialGauge_mul_le (x₀ : E) (hb : ContDiff ℝ 1 b)
+    (hα : DifferentiableAt ℝ α x) {C M : ℝ} (hM0 : 0 ≤ M) (hαC : ‖α x‖ ≤ C)
+    (hcov : ‖covariantDeriv b α x‖ ≤ C) (hM : ‖radialConnection x₀ b x‖ ≤ M) {j : ℕ}
+    (hj : j ≤ 1) :
+    ‖iteratedFDeriv ℝ j (radialGauge x₀ b * α) x‖ ≤ C + M * C := by
+  have hC : 0 ≤ C := (norm_nonneg _).trans hαC
+  rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
+  · rw [norm_iteratedFDeriv_zero, Pi.mul_apply, norm_mul, norm_radialGauge, one_mul]
+    exact hαC.trans (le_add_of_nonneg_right (mul_nonneg hM0 hC))
+  · rw [norm_iteratedFDeriv_one]
+    exact (norm_fderiv_radialGauge_mul_le x₀ hb hα).trans
+      (add_le_add hcov (mul_le_mul hM hαC (norm_nonneg _) hM0))
 
 /-! ### Derivative bounds and compactness modulo gauge -/
 
@@ -315,21 +331,11 @@ theorem exists_strictMono_tendstoLocallyUniformlyOn_radialConnection [FiniteDime
   have hβ (n : ℕ) : ContDiff ℝ 1 (radialGauge x₀ (b (φ n)) * α (φ n)) :=
     (contDiff_radialGauge x₀ (hb1 (φ n))).mul (hα (φ n))
   obtain ⟨ψ, hψ, α', hα', hconvα⟩ := exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv
-    isOpen_ball 0 (fun n ↦ (hβ n).contDiffOn) fun K _ hK ↦ ⟨C + M * C, fun n j hj x hx ↦ by
-      have hb'x := hM (φ n) 0 (Nat.zero_le _) x (hK hx)
-      rw [norm_iteratedFDeriv_zero] at hb'x
-      have hC : 0 ≤ C := (norm_nonneg _).trans (hαC (φ n) x (hK hx))
-      rcases (show j = 0 ∨ j = 1 by omega) with rfl | rfl
-      · rw [norm_iteratedFDeriv_zero, Pi.mul_apply, norm_mul, norm_radialGauge, one_mul]
-        exact (hαC (φ n) x (hK hx)).trans (le_add_of_nonneg_right (mul_nonneg hM0 hC))
-      · rw [norm_iteratedFDeriv_one]
-        calc ‖fderiv ℝ (radialGauge x₀ (b (φ n)) * α (φ n)) x‖
-            ≤ ‖covariantDeriv (b (φ n)) (α (φ n)) x‖ +
-                ‖radialConnection x₀ (b (φ n)) x‖ * ‖α (φ n) x‖ :=
-              norm_fderiv_radialGauge_mul_le x₀ (hb1 (φ n))
-                ((hα (φ n)).differentiable one_ne_zero x)
-          _ ≤ C + M * C := add_le_add (hcov (φ n) x (hK hx))
-              (mul_le_mul hb'x (hαC (φ n) x (hK hx)) (norm_nonneg _) hM0)⟩
+    isOpen_ball 0 (fun n ↦ (hβ n).contDiffOn) fun K _ hK ↦ ⟨C + M * C, fun n j hj x hx ↦
+      norm_iteratedFDeriv_radialGauge_mul_le x₀ (hb1 (φ n))
+        ((hα (φ n)).differentiable one_ne_zero x) hM0 (hαC (φ n) x (hK hx))
+        (hcov (φ n) x (hK hx))
+        (by simpa using hM (φ n) 0 (Nat.zero_le _) x (hK hx)) hj⟩
   exact ⟨φ ∘ ψ, hφ.comp hψ, b', α', hb', contDiffOn_zero.1 hα',
     fun j hj ↦ (hconv j hj).comp_tendsto hψ.tendsto_atTop,
     tendstoLocallyUniformlyOn_iteratedFDeriv_zero_iff.1 (hconvα 0 le_rfl)⟩
