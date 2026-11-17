@@ -7,7 +7,7 @@ module
 
 import TauCeti.LinearAlgebra.IntegralLattice.Basic
 
-public import Mathlib.Algebra.Module.Lattice
+public import Mathlib.Algebra.Module.Lattice.Full
 public import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
