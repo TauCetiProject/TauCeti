@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Holder.Iterated
 public import TauCeti.Analysis.Holder.OpenSet
 import TauCeti.Analysis.Holder.Leibniz
+import TauCeti.LinearAlgebra.ExtendByZero
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
 
@@ -171,7 +172,7 @@ theorem norm_compCkHolder₂_apply_le (B : E →L[ℝ] F →L[ℝ] G) (hα : α 
 
 section OpenSet
 
-open CkHolderSpaceOn (extendZero extendZero_coe)
+open Function.ExtendByZero (linearMap_apply_of_injective)
 
 variable {Ω : Opens X}
 
@@ -211,37 +212,44 @@ private theorem holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn (B : E �
   convert h using 1; ring
 
 /-- The pointwise product of two elements of `C^{k,α}(Ω)`, as an element of `C^{k,α}(Ω)`. The
-product is computed from the extensions by zero, which agree with the factors on `Ω`. -/
+product is computed from the extensions by zero (`Function.ExtendByZero.linearMap` along
+`Subtype.val`), which agree with the factors on `Ω`. -/
 private def ckHolderOnBilinear (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
     CkHolderSpaceOn k α Ω G :=
-  CkHolderSpaceOn.ofContDiffOn (fun x ↦ B (extendZero f x) (extendZero g x))
-    (B.isBoundedBilinearMap.contDiff.comp_contDiffOn
-      ((f.contDiffOn (extendZero_coe f)).prodMk (g.contDiffOn (extendZero_coe g))))
+  CkHolderSpaceOn.ofContDiffOn (fun x ↦ B (Function.ExtendByZero.linearMap ℝ E Subtype.val f x)
+      (Function.ExtendByZero.linearMap ℝ F Subtype.val g x))
+    (B.isBoundedBilinearMap.contDiff.comp_contDiffOn ((f.contDiffOn
+      (linearMap_apply_of_injective ℝ Subtype.val_injective f)).prodMk
+      (g.contDiffOn (linearMap_apply_of_injective ℝ Subtype.val_injective g))))
     (fun _ hj ↦ ⟨2 ^ k * ‖B‖ * ‖f‖ * ‖g‖, norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g
-      (extendZero_coe f) (extendZero_coe g) hj⟩)
+      (linearMap_apply_of_injective ℝ Subtype.val_injective f)
+      (linearMap_apply_of_injective ℝ Subtype.val_injective g) hj⟩)
     (HolderWith.memHolder fun x y ↦ holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα
-      f g (extendZero_coe f) (extendZero_coe g) x x.2 y y.2)
+      f g (linearMap_apply_of_injective ℝ Subtype.val_injective f)
+      (linearMap_apply_of_injective ℝ Subtype.val_injective g) x x.2 y y.2)
 
 @[simp]
 private theorem ckHolderOnBilinear_apply (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) (x : Ω) :
     ckHolderOnBilinear B hΩ hα f g x = B (f x) (g x) := by
-  rw [ckHolderOnBilinear, CkHolderSpaceOn.ofContDiffOn_apply, extendZero_coe, extendZero_coe]
+  rw [ckHolderOnBilinear, CkHolderSpaceOn.ofContDiffOn_apply,
+    linearMap_apply_of_injective ℝ Subtype.val_injective,
+    linearMap_apply_of_injective ℝ Subtype.val_injective]
 
 private theorem norm_ckHolderOnBilinear_le (B : E →L[ℝ] F →L[ℝ] G) (hΩ : Convex ℝ (Ω : Set X))
     (hα : α ≤ 1) (f : CkHolderSpaceOn k α Ω E) (g : CkHolderSpaceOn k α Ω F) :
     ‖ckHolderOnBilinear B hΩ hα f g‖ ≤ (k + 7) * 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖ := by
+  have hf := linearMap_apply_of_injective ℝ Subtype.val_injective f
+  have hg := linearMap_apply_of_injective ℝ Subtype.val_injective g
   refine (CkHolderSpaceOn.norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
     (M := fun _ ↦ 2 ^ k * ‖B‖ * ‖f‖ * ‖g‖) (fun _ ↦ by positivity) (fun i x ↦ ?_)
     (K := 6 * 2 ^ k * ‖B‖₊ * ‖f‖₊ * ‖g‖₊) (fun x y ↦ ?_)).trans_eq ?_
   · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn]
-    exact norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g (extendZero_coe f)
-      (extendZero_coe g) (by omega) x
+    exact norm_iteratedFDeriv_comp₂_le_of_ckHolderSpaceOn B f g hf hg (by omega) x
   · rw [ckHolderOnBilinear, CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn,
       CkHolderSpaceOn.iteratedFDeriv_ofContDiffOn, Fin.val_last]
-    exact holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g (extendZero_coe f)
-      (extendZero_coe g) x x.2 y y.2
+    exact holderOnWith_iteratedFDeriv_comp₂_of_ckHolderSpaceOn B hΩ hα f g hf hg x x.2 y y.2
   · simp only [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
     push_cast
     ring

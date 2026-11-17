@@ -56,8 +56,7 @@ completeness.
   `α ≤ 1`, every derivative field through order `k` is `α`-Hölder on `Ω`, with constant `3 ‖f‖`.
   Below order `k`, `TauCeti.CkHolderSpaceOn.holderOnWith_iteratedFDeriv_of_lt` gives the sharper
   constant from the supremum norms of the field and the next one. Products and multiplication by
-  coefficients are built on these in `TauCeti.Analysis.Holder.Product`, using the extension by
-  zero `TauCeti.CkHolderSpaceOn.extendZero`.
+  coefficients are built on these in `TauCeti.Analysis.Holder.Product`.
 * `TauCeti.CkHolderSpaceOn.inclusionSuccL`: on a convex open set and for `α ≤ 1`, the inclusion
   `C^{k+1,α}(Ω) → C^{k,α}(Ω)`, of operator norm at most `3`. On non-convex open sets the
   inclusion can fail: across a slit, the global Hölder seminorm of the `k`-th derivative is not
@@ -171,21 +170,13 @@ private theorem fieldL_last (J : Jet k α Ω F) :
     (cast := fun j ↦ (PiLp.proj 1 _ j).comp (WithLp.fstL 1 ℝ _ _)))).trans (by simp)
 
 /-- The extension by zero of a field on `Ω` to the whole space. -/
-def extendZero {G : Type*} [Zero G] (g : Ω → G) : E → G :=
+private def extendZero {G : Type*} [Zero G] (g : Ω → G) : E → G :=
   Function.extend Subtype.val g 0
 
 omit [NormedSpace ℝ E] in
-/-- The extension by zero of a field on `Ω` agrees with it on `Ω`. -/
-@[simp]
-theorem extendZero_coe {G : Type*} [Zero G] (g : Ω → G) (x : Ω) :
+private theorem extendZero_coe {G : Type*} [Zero G] (g : Ω → G) (x : Ω) :
     extendZero g (x : E) = g x :=
   Subtype.val_injective.extend_apply g 0 x
-
-omit [NormedSpace ℝ E] in
-/-- The extension by zero of a field on `Ω` vanishes off `Ω`. -/
-theorem extendZero_of_notMem {G : Type*} [Zero G] (g : Ω → G) {x : E} (hx : x ∉ Ω) :
-    extendZero g x = 0 :=
-  Function.extend_apply' g (0 : E → G) x fun ⟨y, hy⟩ ↦ hx (hy ▸ y.2)
 
 /-- The derivative identities of a jet: each field below order `k`, extended by zero, has the
 next field, curried on the left, as its Fréchet derivative at every point of `Ω`. -/
@@ -785,8 +776,8 @@ def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
         (HolderWith.memHolder fun x y ↦
           f.holderOnWith_iteratedFDeriv_of_lt (extendZero_coe f) hconv hα k.lt_succ_self
             x x.2 y y.2)
-      map_add' f g := by ext x; simp
-      map_smul' c f := by ext x; simp }
+      map_add' f g := by ext x; simp [extendZero_coe]
+      map_smul' c f := by ext x; simp [extendZero_coe] }
     3 fun f ↦ by
       rw [LinearMap.coe_mk, AddHom.coe_mk]
       refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
@@ -810,7 +801,7 @@ def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
 @[simp]
 theorem inclusionSuccL_apply (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) : inclusionSuccL hconv hα f x = f x := by
-  simp [inclusionSuccL]
+  simp [inclusionSuccL, extendZero_coe]
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` keeps the derivative fields through order `k`. -/
 @[simp]
