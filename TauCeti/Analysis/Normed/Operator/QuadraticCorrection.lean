@@ -66,9 +66,10 @@ gluing constructions, with explicit radii.
   residual with Lipschitz constant `2 C` (`TauCeti.norm_sub_le_two_mul_mul_norm_sub`). Suppose
   the residuals satisfy `‖e p‖ ≤ ε` with `2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, and add a forcing
   term `g p ρ` of size at most `β`, depending on a second parameter `ρ`. Under the tolerance
-  `16 C² L β ≤ 1` and `8 C β ≤ δ`, the forced equations `e p + g p ρ + D p x + N p x = 0`
-  have solutions `x p ρ`. These are continuous in `(p, ρ)`, `2 C`-Lipschitz in the forcing, and
-  unique in the range of `Q p` below the radius `min (δ / 2) (2 C L)⁻¹`
+  `16 C² L β ≤ 1` and `8 C β ≤ δ`, the radius `2 C (ε + β)` lies below
+  `min (δ / 2) (2 C L)⁻¹` (`TauCeti.two_mul_mul_add_lt_min`), and the forced equations
+  `e p + g p ρ + D p x + N p x = 0` have solutions `x p ρ`. These are continuous in `(p, ρ)`,
+  `2 C`-Lipschitz in the forcing, and unique in the range of `Q p` below that radius
   (`TauCeti.exists_continuousOn_forall_add_add_add_eq_zero`). This is how a small curvature
   perturbation `ρ`, added after the unforced correction has been constructed, is absorbed: its
   admissible size is fixed by the constants of the unforced problem alone.
@@ -326,6 +327,17 @@ theorem exists_mem_range_norm_le_add_add_eq_zero [CompleteSpace E] (hN0 : N 0 = 
 
 end Normed
 
+/-- **The forcing tolerance.** If the residual `ε` satisfies the contraction and radius conditions
+`2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, and a forcing of size `β` stays within the tolerance
+`16 C² L β ≤ 1` and `8 C β ≤ δ`, then the radius `2 C (ε + β)` of the forced solution lies in the
+uniqueness ball: `2 C (ε + β) < min (δ / 2) (2 C L)⁻¹`. -/
+theorem two_mul_mul_add_lt_min {C L δ ε β : ℝ} (hC : 0 < C) (hL : 0 < L)
+    (hε : 2 * C ^ 2 * L * ε < 1 / 4) (hεδ : 2 * C * ε < δ / 4) (hβ : 16 * C ^ 2 * L * β ≤ 1)
+    (hβδ : 8 * C * β ≤ δ) : 2 * C * (ε + β) < min (δ / 2) (2 * C * L)⁻¹ := by
+  have hCL : 0 < 2 * C * L := by positivity
+  rw [lt_min_iff, ← one_div, lt_div_iff₀ hCL]
+  constructor <;> nlinarith
+
 section Parametric
 
 /-! ### Dependence on a parameter -/
@@ -493,11 +505,10 @@ theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : 
     have hyR : ‖y p ρ‖ ≤ R := hnρ.trans ((hbound p ρ hρ).trans (min_le_left R δ))
     -- The uniqueness ball is nonempty, so `C L > 0`.
     have hCL : 0 < 2 * (C : ℝ) * L := inv_pos.1 ((norm_nonneg z).trans_lt (lt_min_iff.1 hz).2)
-    have hRγ : R < (2 * (C : ℝ) * L)⁻¹ := by
-      rw [← one_div, lt_div_iff₀ hCL]
-      linarith
+    have hC₀ : (0 : ℝ) < C := lt_of_le_of_ne hC fun h ↦ by simp [← h] at hCL
+    have hL₀ : (0 : ℝ) < L := lt_of_le_of_ne hL fun h ↦ by simp [← h] at hCL
     exact eq_of_add_add_eq_zero_of_lt_min (hDQ p) (hQ p) (hN p) hz
-      (lt_min (by linarith) (hyR.trans_lt hRγ)) hzQ hze hQρ heρ
+      (hyR.trans_lt (two_mul_mul_add_lt_min hC₀ hL₀ hε hεδ hβ hβδ)) hzQ hze hQρ heρ
   · obtain ⟨hQρ, hnρ, heρ⟩ := hys p ρ hρ
     obtain ⟨hQρ', hnρ', heρ'⟩ := hys p ρ' hρ'
     have h := norm_sub_le_two_mul_mul_norm_sub (hDQ p) (hQ p) (hN p) (min_le_right R δ) hCLr

@@ -23,9 +23,7 @@ solution recovered within `R ε` of the approximate solution, where `R` is the c
 recovery estimate, is therefore the fixed point `x₀` as soon as `R ε < γ`, provided its
 correction also lies in the range of `Q`.
 `TauCeti.IsNewtonWitness C L δ ε R` records the three inequalities
-`2 C² L ε < 1 / 4`, `2 C ε < δ / 4` and `R ε < γ`. A forcing of size `β` added to the residual
-keeps the forced solution, of norm at most `2 C (ε + β)`, inside the uniqueness ball as soon as
-`16 C² L β ≤ 1` and `8 C β ≤ δ` (`TauCeti.two_mul_mul_add_lt_min`).
+`2 C² L ε < 1 / 4`, `2 C ε < δ / 4` and `R ε < γ`.
 
 In gluing constructions all five constants depend on a small scale `h → 0⁺`, and only
 polynomial rates are known: `C ≤ K h^(-q)`, `L ≤ K h^(-p)`, `δ ≥ k h^a`, `ε ≤ K h^e` and
@@ -48,8 +46,6 @@ from the fixed exponents alone, and the scale is shrunk afterwards.
 
 * `TauCeti.IsNewtonWitness`: the contraction and recovery inequalities of a Newton step.
 * `TauCeti.IsNewtonWitness.two_mul_mul_lt_min_div_two`: the fixed point lies in half the
-  uniqueness ball.
-* `TauCeti.two_mul_mul_add_lt_min`: the forcing tolerance keeps the forced solution in the
   uniqueness ball.
 * `TauCeti.eventually_forall_isNewtonWitness`: polynomial rates satisfying the four exponent
   inequalities give the witness for all small scales.
@@ -98,17 +94,6 @@ theorem two_mul_mul_lt_min_div_two (hw : IsNewtonWitness C L δ ε R) (hC : 0 < 
   constructor <;> linarith
 
 end IsNewtonWitness
-
-/-- **The forcing tolerance.** If the residual `ε` satisfies the contraction and radius conditions
-`2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, and a forcing of size `β` stays within the tolerance
-`16 C² L β ≤ 1` and `8 C β ≤ δ`, then the radius `2 C (ε + β)` of the forced solution lies in the
-uniqueness ball: `2 C (ε + β) < min (δ / 2) (2 C L)⁻¹`. -/
-theorem two_mul_mul_add_lt_min {C L δ ε β : ℝ} (hC : 0 < C) (hL : 0 < L)
-    (hε : 2 * C ^ 2 * L * ε < 1 / 4) (hεδ : 2 * C * ε < δ / 4) (hβ : 16 * C ^ 2 * L * β ≤ 1)
-    (hβδ : 8 * C * β ≤ δ) : 2 * C * (ε + β) < min (δ / 2) (2 * C * L)⁻¹ := by
-  have hCL : 0 < 2 * C * L := by positivity
-  rw [lt_min_iff, ← one_div, lt_div_iff₀ hCL]
-  constructor <;> nlinarith
 
 /-- The pointwise step of `TauCeti.eventually_forall_isNewtonWitness`: at a scale `h > 0` where
 the constants obey their rates and the four rate products are small, they form a Newton
