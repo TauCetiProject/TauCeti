@@ -19,7 +19,8 @@ point, the identity `‖-i y - A y‖ = ‖i y - A y‖` makes the Cayley transf
 an isometry. Since every nonreal scalar is a resolvent point of a self-adjoint partial linear map
 on a complex Hilbert space, its Cayley transform is also surjective, hence unitary, and in
 particular star-normal. This turns the spectral theory of an unbounded self-adjoint operator into
-that of a bounded unitary operator. In particular, a bounded operator intertwining two
+that of a bounded unitary operator: every resolvent of `A` is a continuous function of its
+Cayley transform. In particular, a bounded operator intertwining two
 self-adjoint partial linear maps intertwines every continuous function of their Cayley transforms.
 
 The Cayley transform itself and its algebraic properties are in
@@ -30,6 +31,11 @@ The Cayley transform itself and its algebraic properties are in
 * `LinearPMap.IsFormalAdjoint.norm_cayley_apply`: `U` is isometric for symmetric `A`.
 * `IsSelfAdjoint.cayley_mem_unitary`, `IsSelfAdjoint.isStarNormal_cayley`: the Cayley transform
   of a self-adjoint partial linear map is unitary and star-normal.
+* `IsSelfAdjoint.resolvent_eq_cfc_cayley`: the resolvent `R(z)` is the continuous function
+  `(1 - U) ((z - i) - (z + i) U)⁻¹` of the Cayley transform `U`.
+* `IsSelfAdjoint.ofReal_re_inverseCayley_eq_and_mem_spectrum`: away from `1`, the inverse Cayley
+  image `i (1 + w) / (1 - w)` of a point `w` of the spectrum of `U` is real and lies in the
+  spectrum of `A`.
 * `LinearPMap.Intertwines.comp_cfc_cayley_eq`: an intertwiner `X A ⊆ B X` of self-adjoint partial
   linear maps satisfies `X f(U_A) = f(U_B) X` for every symbol `f` continuous on both spectra.
 
@@ -85,6 +91,41 @@ theorem _root_.IsSelfAdjoint.cayley_mem_unitary (hA : IsSelfAdjoint A) :
 theorem _root_.IsSelfAdjoint.isStarNormal_cayley (hA : IsSelfAdjoint A) :
     IsStarNormal A.cayley :=
   isStarNormal_of_mem_unitary hA.cayley_mem_unitary
+
+/-- **The resolvent as a function of the Cayley transform.** At every resolvent point `z`, the
+resolvent of a self-adjoint partial linear map is `R(z) = (1 - U) ((z - i) - (z + i) U)⁻¹`, the
+continuous functional calculus of the Cayley transform `U` at
+`w ↦ (1 - w) / ((z - i) - (z + i) w)`. -/
+theorem _root_.IsSelfAdjoint.resolvent_eq_cfc_cayley (hA : IsSelfAdjoint A) {z : ℂ}
+    (hz : z ∈ A.resolventSet) :
+    A.resolvent z = cfc (fun w => (1 - w) / (z - I - (z + I) * w)) A.cayley := by
+  have := hA.isStarNormal_cayley
+  have hm := hA.neg_I_mem_resolventSet
+  have hd : ∀ w ∈ _root_.spectrum ℂ A.cayley, z - I - (z + I) * w ≠ 0 := fun _ hw =>
+    sub_I_sub_add_I_mul_ne_zero_of_mem_spectrum_cayley hm hz hw
+  rw [cfc_map_div _ _ A.cayley hd,
+    Ring.eq_mul_inverse_iff_mul_eq _ _ _ ((isUnit_cfc_iff _ A.cayley).mpr hd),
+    cfc_sub (fun _ => z - I) (fun w => (z + I) * w) A.cayley, cfc_const (z - I) A.cayley,
+    cfc_const_mul (z + I) (fun w => w) A.cayley, cfc_sub (fun _ => 1) (fun w => w) A.cayley,
+    cfc_const_one ℂ A.cayley, cfc_id' ℂ A.cayley, Algebra.algebraMap_eq_smul_one]
+  -- With `U = 1 + 2i R(-i)`, this is the resolvent identity `R(z) - R(-i) = (-i - z) R(z) R(-i)`.
+  have h := resolvent_sub_resolvent hz hm
+  rw [← ContinuousLinearMap.mul_def] at h
+  have hU : A.cayley = 1 + (2 * I) • A.resolvent (-I) := by
+    ext x
+    simp [cayley_apply]
+  simp only [hU, mul_sub, mul_add, mul_smul_comm, mul_one]
+  linear_combination (norm := module) (-2 * I) • h
+
+/-- Away from `1`, a point `w` of the spectrum of the Cayley transform of a self-adjoint partial
+linear map `A` has a real inverse Cayley image `i (1 + w) / (1 - w)`, which lies in the spectrum of
+`A`. -/
+theorem _root_.IsSelfAdjoint.ofReal_re_inverseCayley_eq_and_mem_spectrum (hA : IsSelfAdjoint A)
+    {w : ℂ} (hw : w ∈ _root_.spectrum ℂ A.cayley) (h1 : w ≠ 1) :
+    (((I * (1 + w) / (1 - w)).re : ℝ) : ℂ) = I * (1 + w) / (1 - w) ∧
+      I * (1 + w) / (1 - w) ∈ A.spectrum := by
+  have hmem := (mem_spectrum_cayley_iff hA.neg_I_mem_resolventSet h1).mp hw
+  exact ⟨Complex.ext (by simp) (by simpa using (hA.spectrum_subset_im_eq_zero hmem).symm), hmem⟩
 
 section Intertwining
 
