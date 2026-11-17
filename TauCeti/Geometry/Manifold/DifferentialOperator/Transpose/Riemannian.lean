@@ -135,6 +135,7 @@ theorem isFormalTranspose_vectorFieldDerivation_add_mulLeft
 
 /-- With respect to the Riemannian volume, the formal transpose of differentiation along a smooth
 vector field `X` is `-X - div X`. -/
+@[simp]
 theorem formalTranspose_vectorFieldDerivation (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) :
     (vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).formalTranspose
         (riemannianVolume I M) =
@@ -144,6 +145,7 @@ theorem formalTranspose_vectorFieldDerivation (X : Cₛ^∞⟮I; E, (TangentSpac
 
 /-- With respect to the Riemannian volume, the formal transpose of `X + c` is `-X + (c - div X)`.
 -/
+@[simp]
 theorem formalTranspose_vectorFieldDerivation_add_mulLeft
     (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (c : C^∞⟮I, M; ℝ⟯) :
     ((vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯) + mulLeft ℝ c).formalTranspose
@@ -230,6 +232,7 @@ theorem isFormalTranspose_vectorFieldDerivation_withDensity_exp
 
 /-- With respect to the density `e^φ dV`, the formal transpose of differentiation along a smooth
 vector field `X` is `-X - (div X + X φ)`. -/
+@[simp]
 theorem formalTranspose_vectorFieldDerivation_withDensity_exp
     (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯) (φ : C^∞⟮I, M; ℝ⟯) :
     (vectorFieldDerivation X : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯).formalTranspose
