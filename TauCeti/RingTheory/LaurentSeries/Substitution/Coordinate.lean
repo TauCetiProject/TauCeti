@@ -76,6 +76,12 @@ theorem isUnit_coe_toPowerSeries (φ : FormalCoordinate R) : IsUnit (φ.toPowerS
   simpa using IsLocalization.map_units R⸨X⸩ (⟨X, Submonoid.mem_powers X⟩ :
     Submonoid.powers (X : R⟦X⟧))
 
+/-- Substituting a formal coordinate into `X ^ n` gives a unit of `R⸨X⸩`. -/
+private theorem isUnit_coe_substAlgEquiv_X_pow (φ : FormalCoordinate R) (n : ℕ) :
+    IsUnit ((φ.substAlgEquiv (X ^ n) : R⟦X⟧) : R⸨X⸩) := by
+  rw [map_pow, FormalCoordinate.substAlgEquiv_X, PowerSeries.coe_pow]
+  exact (isUnit_coe_toPowerSeries φ).pow n
+
 /-- Substitution of a formal coordinate into power series, followed by the inclusion into Laurent
 series, extended to the localization `R⸨X⸩` of `R⟦X⟧` at the powers of `X`. -/
 private noncomputable def substAlgHomAux (φ : FormalCoordinate R) : R⸨X⸩ →ₐ[R] R⸨X⸩ :=
@@ -83,8 +89,8 @@ private noncomputable def substAlgHomAux (φ : FormalCoordinate R) : R⸨X⸩ �
     (f := (IsScalarTower.toAlgHom R R⟦X⟧ R⸨X⸩).comp φ.substAlgEquiv.toAlgHom) (by
       rintro ⟨_, n, rfl⟩
       rw [AlgHom.comp_apply, IsScalarTower.coe_toAlgHom', _root_.LaurentSeries.coe_algebraMap,
-        AlgEquiv.toAlgHom_apply, map_pow, FormalCoordinate.substAlgEquiv_X, PowerSeries.coe_pow]
-      exact (isUnit_coe_toPowerSeries φ).pow n)
+        AlgEquiv.toAlgHom_apply]
+      exact isUnit_coe_substAlgEquiv_X_pow φ n)
 
 private theorem substAlgHomAux_coe (φ : FormalCoordinate R) (f : R⟦X⟧) :
     substAlgHomAux φ (f : R⸨X⸩) = ((φ.substAlgEquiv f : R⟦X⟧) : R⸨X⸩) := by
@@ -135,6 +141,12 @@ theorem substAlgEquiv_C (φ : FormalCoordinate R) (a : R) :
     substAlgEquiv φ (HahnSeries.C a) = HahnSeries.C a := by
   rw [← ofPowerSeries_C, substAlgEquiv_coe, ← PowerSeries.algebraMap_eq, AlgEquiv.commutes]
 
+/-- Substitution fixes the constants, in the simp-normal form `single 0 a` of `C a`. -/
+@[simp]
+theorem substAlgEquiv_single_zero (φ : FormalCoordinate R) (a : R) :
+    substAlgEquiv φ (single 0 a) = single 0 a :=
+  substAlgEquiv_C φ a
+
 /-- Write `φ = X v` with `v` a unit power series. Substitution sends the monomial `a X ^ n`, for
 every integer `n`, to `a φ ^ n = a X ^ n v ^ n`. -/
 theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧ˣ}
@@ -143,8 +155,8 @@ theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧
   have hnat (m : ℕ) :
       substAlgEquiv φ (single (m : ℤ) 1) = single (m : ℤ) 1 * ((↑(v ^ m) : R⟦X⟧) : R⸨X⸩) := by
     have hX (m : ℕ) : (single (m : ℤ) 1 : R⸨X⸩) = single 1 1 ^ m := by simp [single_pow]
-    rw [hX, map_pow, substAlgEquiv_single_one, hv, PowerSeries.coe_mul,
-      PowerSeries.coe_X, mul_pow, Units.val_pow_eq_pow_val, PowerSeries.coe_pow]
+    rw [hX, map_pow, substAlgEquiv_single_one, hv]
+    simp [mul_pow]
   have hone : substAlgEquiv φ (single n 1) = single n 1 * ((↑(v ^ n) : R⟦X⟧) : R⸨X⸩) := by
     obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg n
     · simpa using hnat m
@@ -153,9 +165,9 @@ theorem substAlgEquiv_single_of_eq_X_mul (φ : FormalCoordinate R) {v : R⟦X⟧
       rw [← map_mul, single_mul_single, neg_add_cancel, one_mul, single_zero_one, map_one]
     have h₂ : single (-(m : ℤ)) 1 * ((↑(v ^ (-(m : ℤ))) : R⟦X⟧) : R⸨X⸩) *
         substAlgEquiv φ (single (m : ℤ) 1) = 1 := by
-      rw [hnat, mul_mul_mul_comm, single_mul_single, neg_add_cancel, one_mul, single_zero_one,
-        one_mul, ← PowerSeries.coe_mul, ← Units.val_mul, ← zpow_natCast, ← zpow_add,
-        neg_add_cancel, zpow_zero, Units.val_one, map_one]
+      have hv : v ^ (-(m : ℤ)) * v ^ m = 1 := by group
+      rw [hnat, mul_mul_mul_comm, single_mul_single, ← PowerSeries.coe_mul, ← Units.val_mul, hv]
+      simp
     exact (IsUnit.of_mul_eq_one_right _ h₁).mul_left_injective (h₁.trans h₂.symm)
   have hC : (single n a : R⸨X⸩) = HahnSeries.C a * single n 1 := by
     rw [HahnSeries.C_apply, single_mul_single, zero_add, mul_one]
@@ -250,8 +262,8 @@ theorem derivative_substAlgEquiv (φ : FormalCoordinate R) (f : R⸨X⸩) :
   simp only [_root_.LaurentSeries.coe_algebraMap] at hp
   set x : R⸨X⸩ := ((X ^ n : R⟦X⟧) : R⸨X⸩)
   have hx : IsUnit (σ x) := by
-    rw [substAlgEquiv_coe, map_pow, FormalCoordinate.substAlgEquiv_X, PowerSeries.coe_pow]
-    exact (isUnit_coe_toPowerSeries φ).pow n
+    rw [substAlgEquiv_coe]
+    exact isUnit_coe_substAlgEquiv_X_pow φ n
   have h₁ : D (σ (f * x)) = D (σ p) := by rw [hp]
   have h₂ : σ (D (f * x)) = σ (D p) := by rw [hp]
   rw [map_mul, D.leibniz, hcoe, hcoe, smul_eq_mul, smul_eq_mul] at h₁
