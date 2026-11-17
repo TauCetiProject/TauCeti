@@ -23,7 +23,9 @@ length `L = R - 1` along the three ends, on which the data are `H_q(t) dt` and `
 PSS planes, one at each pole: the long-neck end of the family, whose broken configurations give
 the composite of the pair-of-pants product with the PSS maps on its two inputs and its output.
 This file proves the interior part of Gromov–Floer compactness at this end, for a symplectic
-vector space target `(V, ω)`, on each of the four pieces, uniformly in `R`. Compactness over
+vector space target `(V, ω)`, uniformly in `R`, on the pair of pants and on the cap of each PSS
+plane, where the signed longitudinal coordinate in the translated coordinate is at least `2`.
+Compactness over
 compact windows of parameters is in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.Capped`.
 
@@ -32,7 +34,8 @@ compact windows of parameters is in
   pair-of-pants perturbation `TauCeti.Floer.pairOfPantsPerturbation H` and the pair-of-pants
   structure there (`TauCeti.Floer.cappedPerturbation_eq_smul_pairOfPantsPerturbation`,
   `TauCeti.Floer.cappedAlmostComplex_eq_pairOfPantsAlmostComplex`). They no longer depend on `R`.
-* **The PSS planes.** Beyond the neck at `q` the data are the data with no neck, translated by
+* **The caps of the PSS planes.** Beyond the neck at `q` the data are the data with no neck,
+  translated by
   `±L` along the end. In the coordinate `w` of the plane they are pulled back along the
   translation `χ = TauCeti.ThricePuncturedSphere.Puncture.endShift q L`, an affine map with
   positive real derivative, to the data `K_0 = TauCeti.Floer.cappedPerturbation 1 0 H` and
@@ -44,7 +47,10 @@ compact windows of parameters is in
   holomorphic, `u ∘ χ` solves the Floer equation of these fixed data there
   (`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_comp_realChart_endShift`), and its
   energy over a region `Ω` is the energy of `u` over `χ(Ω)`
-  (`TauCeti.SymplecticForm.integral_floerEnergyDensity_image_endShift`).
+  (`TauCeti.SymplecticForm.integral_floerEnergyDensity_image_endShift`). Below the cap, on the
+  cylindrical end of the plane where the signed longitudinal coordinate `σ` is less than `2`, the
+  pulled-back data are not those with no neck: for `σ ≥ 2 - L` their profile is
+  `smoothTransition (3 - σ)`, the profile of the limit plane, so they still depend on `L`.
 
 The energy identity of the family
 (`TauCeti.SymplecticForm.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`)
@@ -58,8 +64,8 @@ then applies on each piece.
 In the namespace `TauCeti.SymplecticForm`:
 
 * `isComplexLinearMap_perturbedFDeriv_comp_realChart_endShift`,
-  `integral_floerEnergyDensity_image_endShift`: the Floer equation and the energy on a PSS plane
-  piece, read through the translation by the neck length.
+  `integral_floerEnergyDensity_image_endShift`: the Floer equation and the energy on the cap of
+  a PSS plane piece, read through the translation by the neck length.
 * `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_truncation`:
   on an open subset of the truncation `S_T`, solutions for parameters `Rₖ ≥ max 2 (T - 1)`
   converge off finitely many bubbling points.
@@ -69,11 +75,12 @@ In the namespace `TauCeti.SymplecticForm`:
   bubbling points.
 * `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_longNeck`:
   a single subsequence along which the solutions converge on the pair of pants and the translated
-  solutions converge on all three PSS planes.
+  solutions converge on the caps of all three PSS planes.
 
-The bubbles at the bubbling points, the Floer cylinders that break off along the three necks,
-and the behaviour at the pole `∞` itself, which is not a point of the plane chart, are not treated
-here.
+The cylindrical ends of the PSS planes below their caps, which need the limit data with profile
+`smoothTransition (3 - σ)` in place of the data with no neck, the bubbles at the bubbling points,
+the Floer cylinders that break off along the three necks, and the behaviour at the pole `∞`
+itself, which is not a point of the plane chart, are not treated here.
 
 ## References
 
@@ -93,11 +100,11 @@ open TauCeti.Complex (realChart equivRealProdCLM_symm_realChart realChart_inject
 
 namespace TauCeti.Floer
 
-/-- **The PSS plane pieces of the comparison family in fixed coordinates.** For `R ≥ 2`, at the
-center `c_q` of the end `q`, which is its pole for an input end, and at every point whose signed
-longitudinal coordinate on the end is at least `2`, the pullback of the comparison datum `K_R` along
-the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length is
-the datum `TauCeti.Floer.cappedPerturbation 1 0 H` with no neck. -/
+/-- **The caps of the PSS plane pieces of the comparison family in fixed coordinates.** For
+`R ≥ 2`, at the center `c_q` of the end `q`, which is its pole for an input end, and at every point
+whose signed longitudinal coordinate on the end is at least `2`, the pullback of the comparison
+datum `K_R` along the translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by
+the neck length is the datum `TauCeti.Floer.cappedPerturbation 1 0 H` with no neck. -/
 theorem perturbationPullback_cappedComparisonPerturbation_endShift {M : Type*}
     {H : Puncture → ℝ → M → ℝ} {q : Puncture} (hH : Periodic (H q) 1) {R : ℝ} (hR : 2 ≤ R)
     {w : ℝ × ℝ} (hw : equivRealProdCLM.symm w = q.endCenter ∨
@@ -120,11 +127,11 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
   {H : Puncture → ℝ → V → ℝ} {J₀ : AlmostComplexStructure V}
   {J : Puncture → ℝ → V → AlmostComplexStructure V}
 
-/-- **The Floer equation on the PSS plane pieces.** For `R ≥ 2`, let `χ` be the translation
-`TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length along the end `q`. At
-a point `w` which is the center `c_q` of the end, its pole for an input end, or has signed
-longitudinal coordinate at least `2` on it, if `u` solves the Floer equation of the comparison
-family at `χ(w)`, then `u ∘ χ` solves the Floer equation of the data
+/-- **The Floer equation on the caps of the PSS plane pieces.** For `R ≥ 2`, let `χ` be the
+translation `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length along the
+end `q`. At a point `w` which is the center `c_q` of the end, its pole for an input end, or has
+signed longitudinal coordinate at least `2` on it, if `u` solves the Floer equation of the
+comparison family at `χ(w)`, then `u ∘ χ` solves the Floer equation of the data
 `TauCeti.Floer.cappedPerturbation 1 0 H` and `TauCeti.Floer.cappedAlmostComplex h₀ J hJ 1 0` with no
 neck at `w`. -/
 theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_endShift (ω : SymplecticForm V)
@@ -166,7 +173,7 @@ theorem isComplexLinearMap_perturbedFDeriv_comp_realChart_endShift (ω : Symplec
     (funext fun x ↦ by rw [perturbationPullback_cappedComparisonPerturbation_endShift (hH q) hR hw,
       equivRealProdCLM_symm_stdComplexLineImag])] at h'
 
-/-- **The energy of the PSS plane pieces.** For `R ≥ 2`, let `χ` be the translation
+/-- **The energy on the caps of the PSS plane pieces.** For `R ≥ 2`, let `χ` be the translation
 `TauCeti.ThricePuncturedSphere.Puncture.endShift q (R - 1)` by the neck length along the end `q`. On
 a measurable set `Ω` of points which are the center `c_q` of the end, its pole for an input end, or
 have signed longitudinal coordinate at least `2` on it, the energy of `u` for the comparison datum
@@ -291,7 +298,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
       ω.floerEnergyDensity_congr_perturbation _ (hKb k hz 1) (hKb k hz I)) hΩ.measurableSet)
     hE
 
-/-- **The translated solutions converge on the PSS planes, uniformly along the long necks.** Let
+/-- **The translated solutions converge on the caps of the PSS planes, uniformly along the long
+necks.** Let
 `H_q` be period-one `C³` Hamiltonians with `|H_q| ≤ B_q`, let `J₀` be `ω`-compatible, and let
 `J_q(t, x)` be period-one `C²` families of `ω`-tame structures on the three ends. Fix an end `q` and
 compact sets `D ⊆ ℝ × ℝ` and `K ⊆ V`. There is a threshold `δ > 0` with the following property. Let
@@ -306,7 +314,9 @@ subsequence `φ`, a finite set `Z ⊆ Ω` with `#Z * δ ≤ A + 2 (B₀ + B₁ +
 `v : Ω \ Z → K` such that along `φ` every disc about a point of `Z` eventually carries Floer energy
 at least `δ` for the datum `TauCeti.Floer.cappedPerturbation 1 0 H` with no neck, the differentials
 of `u_{φ n} ∘ χ_{φ n}` are uniformly bounded on every compact subset of `Ω \ Z`, and
-`u_{φ n} ∘ χ_{φ n} → v` locally uniformly on `Ω \ Z`. The parameters `Rₖ` need not be bounded. -/
+`u_{φ n} ∘ χ_{φ n} → v` locally uniformly on `Ω \ Z`. The parameters `Rₖ` need not be bounded.
+Points of the plane whose signed longitudinal coordinate is less than `2`, on its cylindrical end
+below the cap, are not covered. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_comp_endShift_subseq_off_finset_cappedComparison
     (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
     (hJp : ∀ q, Periodic (J q) 1)
@@ -391,9 +401,10 @@ longitudinal coordinate at least `2` on it, with `uₖ(χ_{q,k}(Ω'_q)) ⊆ K` f
 `χ_{q,k} = TauCeti.ThricePuncturedSphere.Puncture.endShift q (Rₖ - 1)` along the end. Then along a
 single subsequence `φ` the maps `u_{φ n}` converge locally uniformly on the pair of pants `Ω` off a
 finite set `Z`, and for each end `q` the translated maps `u_{φ n} ∘ χ_{q, φ n}` converge locally
-uniformly on the PSS plane `Ω'_q` off a finite set `Z'_q`, where `#Z * δ` and every `#Z'_q * δ` are
-at most `A + 2 (B₀ + B₁ + B_∞)`. For `Rₖ → ∞` these are the four pieces into which the capped
-sphere breaks: the pair of pants and the three PSS planes. -/
+uniformly on the part `Ω'_q` of the cap of the PSS plane off a finite set `Z'_q`, where `#Z * δ`
+and every `#Z'_q * δ` are at most `A + 2 (B₀ + B₁ + B_∞)`. For `Rₖ → ∞` the capped sphere breaks
+into the pair of pants and the three PSS planes; on each plane this covers only the cap, not the
+cylindrical end below it, where the signed longitudinal coordinate is less than `2`. -/
 theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison_longNeck
     (ω : SymplecticForm V) (h₀ : ω.Compatible J₀) (hJ : ∀ q t x, ω.Tames (J q t x))
     (hJp : ∀ q, Periodic (J q) 1)
@@ -441,7 +452,8 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComp
       {Z₀ : Finset (ℝ × ℝ)} (h : Z₀.card * δ' ≤ A + 2 * ∑ q, B q) :
       Z₀.card * min δc (min (δp .zero) (min (δp .one) (δp .inf))) ≤ A + 2 * ∑ q, B q :=
     (mul_le_mul_of_nonneg_left hδ' (Nat.cast_nonneg _)).trans h
-  -- Compactness on the pair of pants, then on the three PSS planes along further subsequences.
+  -- Compactness on the pair of pants, then on the caps of the three PSS planes along further
+  -- subsequences.
   obtain ⟨φ₀, Z, v, hφ₀, hZ, hZE, -, -, hvc, hvK, hv⟩ :=
     hcore hΩ hΩT hR2 hRT hu hfl huK hint harea
   obtain ⟨φ₁, Z₀, v₀, hφ₁, hZ₀, hZ₀E, -, -, hv₀c, hv₀K, hv₀⟩ :=

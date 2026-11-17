@@ -67,9 +67,9 @@ most `A`, the energy over every region is at most `A + 2 (B₀ + B₁ + B_∞)`
 energy bound, uniform in `R` for a fixed area, from which compactness of the comparison family
 over compact windows of `R` in the plane chart follows (in the namespace `SymplecticForm`,
 `exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset_cappedComparison`), and
-interior compactness at the long-neck end `R → ∞`
-(`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`). Compactness near the pole
-`∞` is still to be proved.
+interior compactness at the long-neck end `R → ∞` on the pair of pants and the caps of the PSS
+planes (`TauCeti.Geometry.Symplectic.Floer.PairOfPants.Compactness.LongNeck`). Compactness near
+the pole `∞` is still to be proved.
 
 ## Main results
 
