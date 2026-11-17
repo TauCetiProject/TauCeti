@@ -31,6 +31,10 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 `√(c / x)`. For `0 ≤ t < √2 - 1`, completing `(t + 1)² < 2` bounds the quadratic majorant
 `2 t + t² < 1`.
 
+For nonnegative `a` and `b`, the geometric mean is at most the arithmetic mean,
+`√(ab) ≤ (a + b) / 2`, as `NNReal.sqrt_mul_le_half_add` states in `ℝ≥0`, and the square of
+`√a - √b` expands to `a + b - 2√(ab)`.
+
 ## Main results
 
 * `Real.inv_sqrt_mul_sq`: `((√a)⁻¹ * x) ^ 2 = x ^ 2 / a` for `0 ≤ a`.
@@ -47,6 +51,8 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 * `Real.sqrt_one_sub_sq_pos`: `0 < √(1 - t²)` for `t ∈ (-1, 1)`.
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
 * `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
+* `Real.sqrt_mul_le_half_add`: `√(ab) ≤ (a + b) / 2` for `0 ≤ a` and `0 ≤ b`.
+* `Real.sq_sqrt_sub_sqrt`: `(√a - √b)² = a + b - 2√(ab)` for `0 ≤ a` and `0 ≤ b`.
 -/
 
 public section
@@ -188,5 +194,17 @@ theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
   have hsq : (t + 1) ^ 2 < √2 ^ 2 := pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
   rw [sq_sqrt zero_le_two] at hsq
   linarith
+
+/-- For nonnegative `a`, `b`, the geometric mean is at most the arithmetic mean:
+`√(ab) ≤ (a + b) / 2`. This is `NNReal.sqrt_mul_le_half_add` for real numbers. -/
+theorem sqrt_mul_le_half_add {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    √(a * b) ≤ (a + b) / 2 :=
+  sqrt_le_iff.mpr ⟨by positivity, by nlinarith [sq_nonneg (a - b)]⟩
+
+/-- For nonnegative `a`, `b`, `(√a - √b)² = a + b - 2 √(ab)`. -/
+theorem sq_sqrt_sub_sqrt {a b : ℝ} (ha : 0 ≤ a) (hb : 0 ≤ b) :
+    (√a - √b) ^ 2 = a + b - 2 * √(a * b) := by
+  rw [sub_sq, sq_sqrt ha, sq_sqrt hb, sqrt_mul ha]
+  ring
 
 end Real
