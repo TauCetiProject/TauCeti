@@ -45,9 +45,9 @@ kernel of the linearized equation. The composite `d₀* d₀` is almost everywhe
 Schrödinger operator that linearizes the Coulomb condition `d₀* (u · x - x) = 0` at the identity
 of the gauge group.
 
-The hypotheses ask for coordinates of real `C¹` fields because the comparison with the pointwise
-operators goes through classical derivatives; no Leibniz rule for products in `H^(k+1)(ℂ)` is
-used.
+The hypotheses ask for `C¹` components wherever an operator differentiates them, because the
+comparison with the pointwise operators goes through classical derivatives; no Leibniz rule for
+products in `H^(k+1)(ℂ)` is used.
 
 ## References
 
@@ -178,21 +178,24 @@ theorem sobolevGaugeAdjoint_apply (hk : 1 ≤ k) (y h : Fin 4 → H^{(k : ℝ) +
   (rfl)
 
 /-- **The Sobolev adjoint gauge action computes the pointwise one.** If the coordinates of `u`
-and `w` are almost everywhere those of the real fields `y` and `h`, with `h` of class `C¹`, then
-`sobolevGaugeAdjoint f m hk u w` is almost everywhere `gaugeAdjoint (x_m + y) h`. -/
+and `w` are almost everywhere those of the real fields `y` and `h`, with the connection components
+`h₀` and `h₁` of class `C¹`, then `sobolevGaugeAdjoint f m hk u w` is almost everywhere
+`gaugeAdjoint (x_m + y) h`. -/
 theorem coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq (hk : 1 ≤ k)
     {u w : Fin 4 → H^{(k : ℝ) + 1}(ℂ)} {y h : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ))
     (hw : ∀ a, ⇑(inclusionLp (by positivity) (w a)) =ᵐ[volume] fun z ↦ (h z a : ℂ))
-    (hh : ContDiff ℝ 1 h) :
+    (hh₀ : ContDiff ℝ 1 fun z ↦ h z 0) (hh₁ : ContDiff ℝ 1 fun z ↦ h z 1) :
     ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) (sobolevGaugeAdjoint f m hk u w))
       =ᵐ[volume] fun z ↦ (gaugeAdjoint (referenceField f m + y) h z : ℂ) := by
-  have hd (b : Fin 4) (v : ℂ) := coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two
-    ENNReal.ofNat_ne_top k.cast_nonneg (contDiff_euclidean.1 hh b) (hw b) v
+  have hd₀ := coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top
+    k.cast_nonneg hh₀ (hw 0) 1
+  have hd₁ := coeFn_inclusionLp_lineDerivCLM_ae_eq ENNReal.one_lt_two ENNReal.ofNat_ne_top
+    k.cast_nonneg hh₁ (hw 1) I
   have hX (a b : Fin 4) := coeFn_inclusionLp_fieldMulCLM_ae_eq (f := f) (m := m) hk hu a (hw b)
   rw [sobolevGaugeAdjoint_apply, map_sub, map_add, map_add]
   filter_upwards [Lp.coeFn_sub_ae_eq_of_ae_eq (Lp.coeFn_add_ae_eq_of_ae_eq
-    (Lp.coeFn_add_ae_eq_of_ae_eq (hd 0 1) (hd 1 I)) (hX 2 3)) (hX 3 2)] with z hz
+    (Lp.coeFn_add_ae_eq_of_ae_eq hd₀ hd₁) (hX 2 3)) (hX 3 2)] with z hz
   rw [hz]
   simp only [Pi.add_apply, Pi.sub_apply, gaugeAdjoint_def, Complex.ofReal_add,
     Complex.ofReal_sub]
@@ -253,7 +256,8 @@ theorem coeFn_inclusionLp_sobolevScaleGaugeFixedOperator_ae_eq (hk : 1 ≤ k)
   have hd (i : Fin 3) :=
     coeFn_inclusionLp_sobolevLinearizedEquation_ae_eq (f := f) (m := m) hk hu hw hh i
   fin_cases a
-  · simpa using coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq (f := f) (m := m) hk hu hw hh
+  · simpa using coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq (f := f) (m := m) hk hu hw
+      (contDiff_euclidean.1 hh 0) (contDiff_euclidean.1 hh 1)
   · simpa using hd 0
   · simpa using hd 1
   · simpa using hd 2
@@ -342,23 +346,24 @@ theorem sobolevLinearizedEquation_comp_sobolevGaugeDirection_eq_zero (hk : 1 ≤
   simp only [comp_apply, zero_apply, hreal]
 
 /-- **`d₀* d₀` is the gauge Laplacian.** If the coordinates of `u` are almost everywhere those of
-the real `C¹` field `y`, and `v` is almost everywhere the real `C²` phase `g`, then
+the real field `y`, and `v` is almost everywhere the real `C²` phase `g`, then
 `sobolevGaugeAdjoint f m hk u (sobolevGaugeDirection f m hk u v)` is almost everywhere
 `-Δg + (p² + q²) g`, where `p` and `q` are the section coordinates of `x_m + y`. -/
 theorem coeFn_inclusionLp_sobolevGaugeAdjoint_sobolevGaugeDirection_ae_eq (hk : 1 ≤ k)
     {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ))
-    (hy : ContDiff ℝ 1 y) {v : H^{(k : ℝ) + 1 + 1}(ℂ)} {g : ℂ → ℝ}
+    {v : H^{(k : ℝ) + 1 + 1}(ℂ)} {g : ℂ → ℝ}
     (hv : ⇑(inclusionLp (by positivity) v) =ᵐ[volume] fun z ↦ (g z : ℂ)) (hg : ContDiff ℝ 2 g) :
     ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k)
         (sobolevGaugeAdjoint f m hk u (sobolevGaugeDirection f m hk u v))) =ᵐ[volume]
       fun z ↦ ((-Δ g z +
         ((referenceField f m + y) z 2 ^ 2 + (referenceField f m + y) z 3 ^ 2) * g z : ℝ) : ℂ) := by
-  have hx : ContDiff ℝ 1 (referenceField f m + y) :=
-    ((contDiff_referenceField f m).of_le (by simp)).add hy
+  -- The connection components of `d₀ g` are `-∂₁ g` and `-∂₂ g`, of class `C¹`.
+  have hdg (w : ℂ) : ContDiff ℝ 1 fun z ↦ -fderiv ℝ g z w :=
+    ((hg.fderiv_right (by norm_num)).clm_apply contDiff_const).neg
   filter_upwards [coeFn_inclusionLp_sobolevGaugeAdjoint_ae_eq hk hu
     (coeFn_inclusionLp_sobolevGaugeDirection_ae_eq hk hu hv (hg.of_le (by norm_num)))
-    (contDiff_gaugeDirection hx (by norm_num; exact hg))] with z hz
+    (by simpa using hdg 1) (by simpa using hdg I)] with z hz
   rw [hz, gaugeAdjoint_gaugeDirection _ hg.contDiffAt]
 
 end TauCeti.Vortex
