@@ -131,19 +131,6 @@ private theorem measurable_chordEnd : Measurable χ.chordEnd := by
   have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   exact measurable_snd.prodMk (Measurable.inner ((measurable_deriv χ).comp measurable_snd) hu)
 
-private theorem differentiableAt_chordDir {p : ℝ × ℝ} (h : χ p.2 ≠ χ p.1) :
-    DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ χ.chordDir q.1 q.2) p := by
-  have hd : DifferentiableAt ℝ (fun q : ℝ × ℝ ↦ χ q.2 - χ q.1) p :=
-    ((χ.differentiableAt p.2).comp p differentiableAt_snd).sub
-      ((χ.differentiableAt p.1).comp p differentiableAt_fst)
-  have hne : χ p.2 - χ p.1 ≠ 0 := sub_ne_zero.2 h
-  have hu : (fun q : ℝ × ℝ ↦ χ.chordDir q.1 q.2) =
-      (fun q : ℝ × ℝ ↦ ‖χ q.2 - χ q.1‖)⁻¹ • fun q ↦ χ q.2 - χ q.1 := by
-    funext q
-    simp [chordDir_def, NormedSpace.normalize]
-  rw [hu]
-  exact ((hd.norm ℝ hne).inv (norm_ne_zero_iff.2 hne)).smul hd
-
 private theorem isOpen_window : IsOpen χ.window :=
   (isOpen_lt continuous_fst continuous_snd).inter
     (isOpen_lt continuous_snd (continuous_fst.add continuous_const))
@@ -157,15 +144,6 @@ private theorem injOn_chordStart : InjOn χ.chordStart χ.window := by
   refine Prod.ext h1 ?_
   rw [← χ.nextParam_inner_deriv_chordDir hp, ← χ.nextParam_inner_deriv_chordDir hq]
   exact congrArg₂ χ.nextParam h1 h2
-
-/-- The next-collision map is injective on the strip. -/
-private theorem injOn_nextCollision : InjOn χ.nextCollision (univ ×ˢ Ioo (-1 : ℝ) 1) := by
-  rintro ⟨s, v⟩ ⟨-, hv⟩ ⟨s', v'⟩ ⟨-, hv'⟩ h
-  simp only [nextCollision_apply, Prod.mk.injEq] at h
-  have := χ.nextCollisionEquiv.injective (a₁ := (s, ⟨v, hv⟩)) (a₂ := (s', ⟨v', hv'⟩)) (by
-    simp only [nextCollisionEquiv_apply]
-    exact Prod.ext h.1 (Subtype.ext h.2))
-  simpa using this
 
 private theorem injOn_chordEnd : InjOn χ.chordEnd χ.window := by
   intro p hp q hq h
@@ -238,8 +216,16 @@ private theorem volume_image_chordStart (hχ : Differentiable ℝ (deriv χ)) {K
 private def stripIncl (x : ℝ × Ioo (-1 : ℝ) 1) : ℝ × ℝ :=
   (x.1, x.2)
 
-private theorem measurableEmbedding_stripIncl : MeasurableEmbedding stripIncl :=
-  MeasurableEmbedding.id.prodMap (MeasurableEmbedding.subtype_coe measurableSet_Ioo)
+@[simp]
+private theorem stripIncl_apply (x : ℝ × Ioo (-1 : ℝ) 1) : stripIncl x = (x.1, (x.2 : ℝ)) :=
+  rfl
+
+private theorem stripIncl_eq_prodMap : stripIncl = Prod.map id ((↑) : Ioo (-1 : ℝ) 1 → ℝ) :=
+  rfl
+
+private theorem measurableEmbedding_stripIncl : MeasurableEmbedding stripIncl := by
+  rw [stripIncl_eq_prodMap]
+  exact MeasurableEmbedding.id.prodMap (MeasurableEmbedding.subtype_coe measurableSet_Ioo)
 
 /-- The inclusion of the strip carries its measure to Lebesgue measure. -/
 private theorem volume_image_stripIncl (A : Set (ℝ × Ioo (-1 : ℝ) 1)) :
@@ -248,6 +234,7 @@ private theorem volume_image_stripIncl (A : Set (ℝ × Ioo (-1 : ℝ) 1)) :
     MeasurableSet.univ.prod measurableSet_Ioo
   have hmp : MeasurePreserving stripIncl (volume.prod (volume.comap Subtype.val))
       (volume.restrict (univ ×ˢ Ioo (-1 : ℝ) 1)) := by
+    rw [stripIncl_eq_prodMap]
     have := (MeasurePreserving.id (volume : Measure ℝ)).prod
       (measurePreserving_subtype_coe (μa := (volume : Measure ℝ)) (s := Ioo (-1 : ℝ) 1)
         measurableSet_Ioo)
@@ -263,12 +250,13 @@ private theorem volume_image_stripIncl (A : Set (ℝ × Ioo (-1 : ℝ) 1)) :
 
 private theorem stripIncl_nextCollisionEquiv (x : ℝ × Ioo (-1 : ℝ) 1) :
     stripIncl (χ.nextCollisionEquiv x) = χ.nextCollision (stripIncl x) := by
-  simp [stripIncl, nextCollision_apply]
+  simp [nextCollision_apply]
 
 /-- The state `x` of the strip is the initial state of its chord. -/
 private theorem chordStart_eq_stripIncl (x : ℝ × Ioo (-1 : ℝ) 1) :
-    χ.chordStart (x.1, χ.nextParam x.1 x.2) = stripIncl x :=
-  χ.chordStart_nextParam x.2.2
+    χ.chordStart (x.1, χ.nextParam x.1 x.2) = stripIncl x := by
+  rw [stripIncl_apply]
+  exact χ.chordStart_nextParam x.2.2
 
 private theorem stripIncl_mem_image_chordEnd (x : ℝ × Ioo (-1 : ℝ) 1) :
     stripIncl x ∈ χ.chordEnd '' χ.window := by
@@ -291,11 +279,11 @@ private theorem image_preimage_nextCollisionEquiv (A : Set (ℝ × Ioo (-1 : ℝ
       ← stripIncl_nextCollisionEquiv]
     exact mem_image_of_mem _ hx
   · rintro ⟨p, ⟨hp, a, ha, hpa⟩, rfl⟩
-    refine ⟨(p.1, ⟨_, χ.inner_deriv_chordDir_mem_Ioo p.1 p.2⟩), ?_, rfl⟩
+    refine ⟨(p.1, ⟨_, χ.inner_deriv_chordDir_mem_Ioo p.1 p.2⟩), ?_, by simp [chordStart]⟩
     have : χ.nextCollisionEquiv (p.1, ⟨_, χ.inner_deriv_chordDir_mem_Ioo p.1 p.2⟩) = a := by
       refine measurableEmbedding_stripIncl.injective ?_
       rw [hpa, stripIncl_nextCollisionEquiv, ← χ.nextCollision_chordStart hp]
-      simp [stripIncl, chordStart]
+      simp [chordStart]
     rw [mem_preimage, this]
     exact ha
 
