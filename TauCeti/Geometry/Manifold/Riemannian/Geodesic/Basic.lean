@@ -210,6 +210,14 @@ theorem IsGeodesicCurveOn.congr {γ' : ℝ → M} (h : IsGeodesicCurveOn I γ s)
   rw [hγ hr, derivWithin_congr hfirst (hfirst hr), hfirst hr]
   exact h.2 r hr
 
+/-- A geodesic with prescribed initial data depends only on the values of the curve on its
+parameter set. -/
+theorem IsGeodesicCurveOnFrom.congr {γ' : ℝ → M} (h : IsGeodesicCurveOnFrom I γ s p v)
+    (hγ : EqOn γ' γ s) : IsGeodesicCurveOnFrom I γ' s p v := by
+  refine ⟨h.isGeodesicCurveOn.congr hγ, h.zero_mem, Eq.trans ?_ h.initial_eq⟩
+  simpa only [curveVelocityLiftWithin_apply] using
+    hγ.eventuallyEq_nhdsWithin.curveVelocityLiftWithin_eq (I := I) (hγ h.zero_mem)
+
 /-! ### Open parameter sets -/
 
 /-- On an open parameter set, the geodesic equation is the unrestricted one. -/

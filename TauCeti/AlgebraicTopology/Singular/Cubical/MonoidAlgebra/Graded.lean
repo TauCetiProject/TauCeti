@@ -174,6 +174,11 @@ theorem cubicalChainLof_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
   rw [DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.lof_eq_of, DirectSum.of_mul_of,
     NormalizedCubicalChain.gMul_mul]
 
+omit [ContinuousMul G] in
+/-- The `0`-chain of the unit is the unit of the graded algebra. -/
+theorem cubicalChainLof_one : cubicalChainLof G R 0 (NormalizedCubicalChain.one G R) = 1 := by
+  rw [← NormalizedCubicalChain.gOne_one, DirectSum.lof_eq_of, DirectSum.one_def]
+
 end TauCeti
 
 end
