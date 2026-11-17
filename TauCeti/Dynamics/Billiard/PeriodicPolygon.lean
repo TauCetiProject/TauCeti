@@ -56,10 +56,11 @@ distinct, each term of `P` is differentiable in `s_k`
 local extremum gives `⟪u_(k-1), χ'(s_k)⟫ = ⟪u_k, χ'(s_k)⟫`
 (`TauCeti.inner_eq_inner_of_isLocalExtr_inscribedPerimeter`), the reflection law when
 `χ'(s_k) ≠ 0`. For `N = 2` it says that the chord is orthogonal to the velocity vectors at both
-ends. There nonconstancy of the curve suffices for the maximal chord to be nondegenerate, so
-every nonconstant differentiable periodic curve has a chord between distinct points `χ(a)` and
-`χ(b)` orthogonal to `χ'(a)` and to `χ'(b)` (`TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`),
-a double normal when `χ'(a) ≠ 0` and `χ'(b) ≠ 0`.
+ends (`TauCeti.inner_eq_inner_zmod_two_iff`). There nonconstancy of the curve suffices for the
+maximal chord to be nondegenerate, so every nonconstant differentiable periodic curve has a chord
+between distinct points `χ(a)` and `χ(b)` orthogonal to `χ'(a)` and to `χ'(b)`
+(`TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`), a double normal when `χ'(a) ≠ 0` and
+`χ'(b) ≠ 0`.
 
 Neither convexity of the curve nor injectivity of the parametrization is used. For the boundary
 of a bounded strictly convex planar table, positively oriented and parametrized by arclength,
@@ -68,6 +69,8 @@ polygon need not stay on one side of it.
 
 ## Main results
 
+* `TauCeti.inscribedPerimeter_zmod_three`: three-term expansion of `inscribedPerimeter` for
+  `N = 3`.
 * `TauCeti.exists_isMaxOn_inscribedPerimeter`: the inscribed perimeter has a global maximum.
 * `TauCeti.apply_add_one_ne_of_isMaxOn_inscribedPerimeter`: at a maximizer, consecutive vertices
   are distinct.
@@ -78,6 +81,9 @@ polygon need not stay on one side of it.
   where the curve is differentiable, have equal inner products with `χ'(s_k)`.
 * `TauCeti.exists_billiard_periodic_reflection`: periodic billiard polygons with `N` vertices, for
   every `N ≥ 2`.
+* `TauCeti.inner_eq_inner_zmod_two_iff`: for `N = 2`, equality of the incoming and outgoing
+  unit-chord inner products at both vertices is equivalent to orthogonality of the chord to both
+  tangent directions.
 * `TauCeti.exists_ne_and_inner_sub_deriv_eq_zero`: a chord orthogonal to the velocity vectors of
   the curve at both of its endpoints.
 
@@ -125,6 +131,18 @@ theorem inscribedPerimeter_congr {s s' : ZMod N → α} (h : ∀ k, χ (s k) = �
 theorem inscribedPerimeter_comp {β : Type*} (χ : β → F) (f : α → β) (s : ZMod N → α) :
     inscribedPerimeter χ (f ∘ s) = inscribedPerimeter (χ ∘ f) s :=
   (rfl)
+
+/-- Explicit three-term expansion of `inscribedPerimeter` for `N = 3`. -/
+theorem inscribedPerimeter_zmod_three (χ : α → F) (s : ZMod 3 → α) :
+    inscribedPerimeter χ s =
+      ‖χ (s 1) - χ (s 0)‖ + ‖χ (s 2) - χ (s 1)‖ + ‖χ (s 0) - χ (s 2)‖ := by
+  have huniv : (Finset.univ : Finset (ZMod 3)) = {0, 1, 2} := by decide
+  have h01 : (0 : ZMod 3) + 1 = 1 := rfl
+  have h11 : (1 : ZMod 3) + 1 = 2 := rfl
+  have h21 : (2 : ZMod 3) + 1 = 0 := rfl
+  rw [inscribedPerimeter_def, huniv, Finset.sum_insert (by decide),
+    Finset.sum_insert (by decide), Finset.sum_singleton, h01, h11, h21]
+  ring
 
 theorem continuous_inscribedPerimeter [TopologicalSpace α] (hχ : Continuous χ) :
     Continuous (inscribedPerimeter (N := N) χ) :=
@@ -282,6 +300,33 @@ theorem exists_billiard_periodic_reflection (hper : Periodic χ L) (hL : L ≠ 0
     (hs.isExtrOn.isLocalExtr Filter.univ_mem) (hχ (s k))
     (by simpa only [sub_add_cancel] using hne (k - 1)) (hne k)⟩⟩
 
+/-- **For `N = 2`, the equal-angle reflection law is double normality.** Equality of the incoming
+and outgoing unit-chord inner products at both vertices of a `2`-gon is equivalent to orthogonality
+of the chord `χ(s_1) - χ(s_0)` to both `d(s_0)` and `d(s_1)`. -/
+theorem inner_eq_inner_zmod_two_iff {β G : Type*} [SeminormedAddCommGroup G]
+    [InnerProductSpace ℝ G] (χ d : β → G) (s : ZMod 2 → β) :
+    (∀ k : ZMod 2,
+        ⟪‖χ (s k) - χ (s (k - 1))‖⁻¹ • (χ (s k) - χ (s (k - 1))), d (s k)⟫ =
+          ⟪‖χ (s (k + 1)) - χ (s k)‖⁻¹ • (χ (s (k + 1)) - χ (s k)), d (s k)⟫) ↔
+      ⟪χ (s 1) - χ (s 0), d (s 0)⟫ = 0 ∧ ⟪χ (s 1) - χ (s 0), d (s 1)⟫ = 0 := by
+  have hall {P : ZMod 2 → Prop} : (∀ k, P k) ↔ P 0 ∧ P 1 :=
+    ⟨fun h ↦ ⟨h 0, h 1⟩,
+      fun ⟨h0, h1⟩ k ↦ ((by decide : ∀ k : ZMod 2, k = 0 ∨ k = 1) k).elim (· ▸ h0) (· ▸ h1)⟩
+  have hunit (v u : G) : ‖v‖⁻¹ * ⟪v, u⟫ = 0 ↔ ⟪v, u⟫ = 0 := by
+    refine ⟨fun h ↦ (mul_eq_zero.1 h).elim (fun hv ↦ ?_) id, fun h ↦ by rw [h, mul_zero]⟩
+    have habs := abs_real_inner_le_norm v u
+    rw [inv_eq_zero.1 hv, zero_mul] at habs
+    exact abs_nonpos_iff.1 habs
+  have h0_sub : (0 : ZMod 2) - 1 = 1 := rfl
+  have h0_add : (0 : ZMod 2) + 1 = 1 := rfl
+  have h1_sub : (1 : ZMod 2) - 1 = 0 := rfl
+  have h1_add : (1 : ZMod 2) + 1 = 0 := rfl
+  rw [hall, h0_sub, h0_add, h1_sub, h1_add, norm_sub_rev (χ (s 0)) (χ (s 1)),
+    ← neg_sub (χ (s 1)) (χ (s 0)), smul_neg]
+  refine and_congr ?_ ?_ <;>
+    (rw [inner_neg_left, real_inner_smul_left];
+      exact ⟨fun h ↦ (hunit _ _).1 (by linarith), fun h ↦ by rw [(hunit _ _).2 h]; ring⟩)
+
 omit [NeZero N] in
 /-- **Double normals.** A nonconstant differentiable periodic curve has a chord, between distinct
 points `χ(a)` and `χ(b)`, that is orthogonal to the velocity vectors `χ'(a)` and `χ'(b)`. When
@@ -300,20 +345,10 @@ theorem exists_ne_and_inner_sub_deriv_eq_zero (hχ : Differentiable ℝ χ) (hpe
     have h (t : ℝ) := mem_segment_of_isMaxOn_inscribedPerimeter_of_eq le_rfl hs hk t
     simp only [hkk, segment_same, mem_singleton_iff] at h
     exact hab ((h a).trans (h b).symm)
-  -- In `ℤ/2`, `k - 1 = k + 1`, so the two sides at a vertex are the same chord, reversed.
-  have h (k : ZMod 2) : ⟪χ (s (k + 1)) - χ (s k), deriv χ (s k)⟫ = 0 := by
-    have hk' : k - 1 = k + 1 := (by decide : ∀ k : ZMod 2, k - 1 = k + 1) k
-    have hk := inner_eq_inner_of_isLocalExtr_inscribedPerimeter
-      (hs.isExtrOn.isLocalExtr Filter.univ_mem) (hχ (s k)) (hk' ▸ (hne k).symm) (hne k)
-    rw [hk', ← neg_sub (χ (s (k + 1))), norm_neg, smul_neg, inner_neg_left,
-      real_inner_smul_left] at hk
-    have hpos : 0 < ‖χ (s (k + 1)) - χ (s k)‖⁻¹ :=
-      inv_pos.2 (norm_pos_iff.2 (sub_ne_zero.2 (hne k)))
-    nlinarith [hk, hpos]
-  refine ⟨s 0, s 1, (hne 0).symm, by simpa using h 0, ?_⟩
-  have h1 := h 1
-  have h11 : (1 : ZMod 2) + 1 = 0 := by decide
-  rw [h11, ← neg_sub, inner_neg_left, neg_eq_zero] at h1
-  exact h1
+  have hrefl (k : ZMod 2) := inner_eq_inner_of_isLocalExtr_inscribedPerimeter
+    (hs.isExtrOn.isLocalExtr Filter.univ_mem) (hχ (s k))
+    ((by decide : ∀ k : ZMod 2, k - 1 = k + 1) k ▸ (hne k).symm) (hne k)
+  obtain ⟨h0, h1⟩ := (inner_eq_inner_zmod_two_iff χ (deriv χ) s).1 hrefl
+  exact ⟨s 0, s 1, (hne 0).symm, h0, h1⟩
 
 end TauCeti
