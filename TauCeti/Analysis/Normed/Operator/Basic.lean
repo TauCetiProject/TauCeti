@@ -46,8 +46,10 @@ with `G` a left inverse of `M` and `G'` a right inverse of `M'`, differ by at mo
 triple-composition bound `ContinuousLinearMap.opNorm_comp_comp_le`.
 
 Finally, an operator bounded below is injective
-(`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
-`1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
+(`ContinuousLinearMap.injective_of_forall_norm_le`), so a lower bound `α ‖x‖ ≤ ‖f x‖` with
+`0 < α` gives a trivial kernel (`ContinuousLinearMap.ker_eq_bot_of_forall_mul_norm_le`), its
+lower and upper bounds satisfy `1 ≤ ‖f‖ M` on a nontrivial space
+(`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
 it stays nonzero under a sufficiently small perturbation
 (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
 surjective
@@ -303,6 +305,12 @@ theorem injective_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F] [Norm
     {f : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖) : Function.Injective f := by
   refine (injective_iff_map_eq_zero f).mpr fun x hx ↦ norm_le_zero_iff.mp ?_
   simpa [hx] using h x
+
+/-- An operator bounded below, `α ‖x‖ ≤ ‖f x‖` with `0 < α`, has trivial kernel. -/
+theorem ker_eq_bot_of_forall_mul_norm_le {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f : E →L[𝕜] F} {α : ℝ} (hα : 0 < α) (h : ∀ x, α * ‖x‖ ≤ ‖f x‖) :
+    LinearMap.ker (f : E →ₗ[𝕜] F) = ⊥ :=
+  LinearMap.ker_eq_bot.2 (injective_of_forall_norm_le fun x ↦ (le_inv_mul_iff₀ hα).2 (h x))
 
 /-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays nonzero at `x ≠ 0` under a perturbation `w`
 with `‖w‖ ≤ ε ‖x‖`, provided `M ε < 1`. -/
