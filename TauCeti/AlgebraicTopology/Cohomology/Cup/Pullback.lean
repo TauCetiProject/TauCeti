@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.Cup.Relative
 public import Mathlib.Tactic.CategoryTheory.Monoidal.Basic
+import TauCeti.AlgebraicTopology.Cohomology.Point
 
 /-!
 # The cup product with a relative class after pulling back
@@ -27,7 +28,8 @@ to be bijective when `u` is a Thom class.
 
 For a map `π : X ⟶ Y`, a subset `Z ⊆ X` and a subset `S ⊆ Y`, restricting `u ∈ Hⁿ(X, Z)` to the pair
 `(π⁻¹ S, π⁻¹ S ∩ Z)` and `π` to `π⁻¹ S ⟶ S` gives the map over `S` (`TopCat.pullbackCupRestrict`).
-It is natural in `S` (`TopCat.pullbackCupRestrict_naturality`), and over the whole base it is
+It is natural in `S` (`TopCat.pullbackCupRestrict_naturality`), over the empty subset it is
+trivially bijective (`TopCat.bijective_pullbackCupRestrict_empty`), and over the whole base it is
 bijective exactly when `a ↦ π^*a ⌣ u` is (`TopCat.bijective_pullbackCupRestrict_univ_iff`).
 For a vector bundle and `Z` its nonzero vectors, this pair is the Thom pair `(E|_S, E₀|_S)` of the
 restriction of the bundle to `S`.
@@ -41,6 +43,7 @@ restriction of the bundle to `S`.
 * `TopPair.bijective_pullbackCup_iff_of_isIso`: invariance of bijectivity under isomorphisms.
 * `TopCat.pullbackCupRestrict`: the map over a subset of the base.
 * `TopCat.pullbackCupRestrict_naturality`: its naturality in the subset.
+* `TopCat.bijective_pullbackCupRestrict_empty`: over the empty subset it is bijective.
 * `TopCat.bijective_pullbackCupRestrict_univ_iff`: over the whole base it is `a ↦ π^*a ⌣ u`.
 -/
 
@@ -216,6 +219,24 @@ theorem pullbackCupRestrict_naturality {S T : Set Y} (hST : S ⊆ T) {n p m : �
   rw [pullbackCupRestrict_apply, pullbackCupRestrict_apply,
     ← ofInclusionMap_inclusion_comp_restrictPreimagePairMap π Z hST,
     TopPair.singularCohomologyMap_comp_apply, TopPair.pullbackCup_naturality _ _ _ _ hg]
+
+/-- **The empty base case for `TopCat.pullbackCupRestrict`**: over the empty subset `∅ ⊆ Y`, both
+`Hᵖ(∅; M)` and `Hᵐ(π⁻¹ ∅, π⁻¹ ∅ ∩ Z; M)` vanish, so `TopCat.pullbackCupRestrict` is bijective in
+every degree. -/
+theorem bijective_pullbackCupRestrict_empty {n p m : ℕ} (h : p + n = m)
+    (u : (TopPair.ofSubset Z).singularCohomology (ModuleCat.of K K) K (ModuleCat.of K K) n) :
+    Function.Bijective (pullbackCupRestrict π Z M (∅ : Set Y) n p m h u) := by
+  let P := TopPair.ofInclusion (Set.inter_subset_left : π ⁻¹' (∅ : Set Y) ∩ Z ⊆ π ⁻¹' (∅ : Set Y))
+  have : IsEmpty P.fst := ⟨fun x ↦ x.2⟩
+  have : IsEmpty P.snd := ⟨fun x ↦ x.2.1⟩
+  have : Subsingleton ((of (∅ : Set Y)).singularCohomology (ModuleCat.of K K) K M p) :=
+    ModuleCat.subsingleton_of_isZero
+      (TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M (of (∅ : Set Y)) p)
+  have : Subsingleton (P.singularCohomology (ModuleCat.of K K) K M m) :=
+    ModuleCat.subsingleton_of_isZero
+      ((TauCeti.isZero_singularCohomology_of_isEmpty (ModuleCat.of K K) K M P.fst m).of_iso
+        (asIso (P.singularCohomologyπ (ModuleCat.of K K) K M m)))
+  exact Function.bijective_of_subsingleton' _
 
 /-- Over the whole base, the map over `S` of `u` is bijective exactly when `a ↦ π^*a ⌣ u` is. -/
 theorem bijective_pullbackCupRestrict_univ_iff {n p m : ℕ} (h : p + n = m)
