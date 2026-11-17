@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Eval
-public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Map
+public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Reduction
 public import TauCeti.Topology.Algebra.Valued.Integer
 public import TauCeti.RingTheory.Huber.Normed
 public import TauCeti.Analysis.Normed.Ring.UnitBall
@@ -44,7 +44,9 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 
 * `TauCeti.MvPowerSeries.restrictedIntegerEquiv`: the isometric ring isomorphism
   `𝒪[K]⟨X⟩ ≃ T°`.
-* `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`.
+* `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`, defined
+  from `(maximalIdeal 𝒪[K]).isRestrictedReduction`
+  (`TauCeti.MvPowerSeries.restrictedReduction_restrictedIntegerEquiv_eq`).
 * `TauCeti.MvPowerSeries.restrictedReductionQuotientEquiv`: `T° ⧸ T°° ≃+* 𝓀[K][X]`, where the
   kernel `T°°` is described by `TauCeti.MvPowerSeries.restrictedReduction_eq_zero_iff`.
 
@@ -194,49 +196,34 @@ end IntegerEquiv
 
 section Reduction
 
-/-- Only finitely many coefficients of a restricted series over `𝒪[K]` have nonzero residue. -/
-private theorem finite_support_residue_coeff (f : Tint) :
-    (Function.support fun t ↦ residue 𝒪[K] (coeff t (f : MvPowerSeries σ 𝒪[K]))).Finite := by
-  have hfin : {t | 1 ≤ ‖coeff t (f : MvPowerSeries σ 𝒪[K])‖}.Finite := by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds one_pos)
-  refine hfin.subset fun t ht ↦ ?_
-  rw [Function.mem_support, Ne, residue_eq_zero_iff, mem_maximalIdeal, mem_nonunits_iff,
-    not_not, Valued.integer.isUnit_iff_norm_eq_one] at ht
-  exact ht.ge
-
-/-- Coefficientwise reduction of a restricted series over `𝒪[K]`, a polynomial over `𝓀[K]`. -/
-private noncomputable def integerReduction (f : Tint) : MvPolynomial σ 𝓀[K] :=
-  .ofCoeff (Finsupp.ofSupportFinite _ (finite_support_residue_coeff f))
-
-private theorem coe_integerReduction (f : Tint) :
-    (integerReduction f : MvPowerSeries σ 𝓀[K]) =
-      MvPowerSeries.map (residue 𝒪[K]) (f : MvPowerSeries σ 𝒪[K]) := by
-  ext t
-  simp [MvPolynomial.coeff_coe, integerReduction, Finsupp.ofSupportFinite_coe]
-
-/-- Coefficientwise reduction `𝒪[K]⟨X⟩ →+* 𝓀[K][X]` as a ring homomorphism. -/
-private noncomputable def integerReductionHom : Tint →+* MvPolynomial σ 𝓀[K] where
-  toFun := integerReduction
-  map_one' := MvPolynomial.coe_injective _ _ <| by simp [coe_integerReduction]
-  map_mul' f g := MvPolynomial.coe_injective _ _ <| by simp [coe_integerReduction]
-  map_zero' := MvPolynomial.coe_injective _ _ <| by simp [coe_integerReduction]
-  map_add' f g := MvPolynomial.coe_injective _ _ <| by simp [coe_integerReduction]
-
 /-- **Reduction of the Gauss unit ball.** A series of Gauss norm at most one in `K⟨X⟩` is sent to
 the polynomial over the residue field `𝓀[K]` obtained by reducing each coefficient; only finitely
 many coefficients have nonzero residue. -/
 noncomputable def restrictedReduction : T° →+* MvPolynomial σ 𝓀[K] :=
-  integerReductionHom.comp restrictedIntegerEquiv.symm.toRingHom
+  ((maximalIdeal 𝒪[K]).isRestrictedReduction TauCeti.isOpen_maximalIdeal_integer).comp
+    restrictedIntegerEquiv.symm.toRingHom
 
 /-- The coefficients of the reduction are the residues of the coefficients. -/
 @[simp]
 theorem coeff_restrictedReduction (f : T°) (t : σ →₀ ℕ) :
     (restrictedReduction f).coeff t =
-      residue 𝒪[K] ⟨coeff t ((f : T) : MvPowerSeries σ K), coeff_mem_integer f t⟩ := by
-  rw [← MvPolynomial.coeff_coe]
-  simp only [restrictedReduction, integerReductionHom, RingHom.comp_apply, RingHom.coe_mk,
-    MonoidHom.coe_mk, OneHom.coe_mk, coe_integerReduction, coeff_map]
-  exact congrArg _ (Subtype.ext (by simp))
+      residue 𝒪[K] ⟨coeff t ((f : T) : MvPowerSeries σ K), coeff_mem_integer f t⟩ :=
+  (Ideal.coeff_isRestrictedReduction (maximalIdeal 𝒪[K]) TauCeti.isOpen_maximalIdeal_integer
+    (restrictedIntegerEquiv.symm f) t).trans
+    (congrArg (residue 𝒪[K]) (Subtype.ext (coeff_restrictedIntegerEquiv_symm f t)))
+
+/-- **Compatibility of unit-ball reduction and open-ideal reduction.** Under the coefficient
+identification `restrictedIntegerEquiv : 𝒪[K]⟨X⟩ ≃+* K⟨X⟩°`, the residue-field reduction
+`TauCeti.MvPowerSeries.restrictedReduction` on the Gauss unit ball agrees with
+`(maximalIdeal 𝒪[K]).isRestrictedReduction` on `𝒪[K]⟨X⟩`. -/
+theorem restrictedReduction_restrictedIntegerEquiv_eq (f : Tint) :
+    restrictedReduction (restrictedIntegerEquiv f) =
+      (maximalIdeal 𝒪[K]).isRestrictedReduction TauCeti.isOpen_maximalIdeal_integer f := by
+  refine MvPolynomial.ext _ _ fun t ↦ ?_
+  rw [coeff_restrictedReduction]
+  exact (congrArg (residue 𝒪[K]) (Subtype.ext (coeff_restrictedIntegerEquiv f t))).trans
+    (Ideal.coeff_isRestrictedReduction (maximalIdeal 𝒪[K]) TauCeti.isOpen_maximalIdeal_integer
+      f t).symm
 
 /-- A coefficient of the reduction vanishes exactly when the corresponding coefficient of the
 series has norm less than one. -/
