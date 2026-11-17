@@ -80,8 +80,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C] [Monoid
 
 namespace TopCat
 
-attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_left
-  TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
+attribute [local instance] TopPair.mono_toSSetPair_map_ofInclusionMap_inclusion_right
 
 /-! ### The connecting morphism and the cup product -/
 
