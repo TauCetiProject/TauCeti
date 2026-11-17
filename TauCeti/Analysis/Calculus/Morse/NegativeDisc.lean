@@ -153,10 +153,8 @@ theorem _root_.HasFDerivAt.exists_negativeDisc_homotopy
   let N : E →L[ℝ] E := (ContinuousLinearMap.fst ℝ E F).comp C
   have hN : ∀ u, ‖u‖ ≤ ‖N u‖ := C.norm_le_norm_fst_of_norm_sq_sub hC
   -- Its polar factor is a linear isometry.
-  let h₀ : E →ₗᵢ[ℝ] E :=
-    { toLinearMap := N.polarFactor
-      norm_map' := N.norm_polarFactor_apply_of_injective
-        (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x) }
+  let h₀ : E →ₗᵢ[ℝ] E := N.polarIsometry
+    (ContinuousLinearMap.injective_of_forall_norm_le (M := 1) fun x ↦ by simpa using hN x)
   refine ⟨h₀, rfl, δ₀, hδ₀, fun δ hδ ↦ ?_⟩
   let ι : C(closedBall (0 : E) δ, E) := ⟨Subtype.val, continuous_subtype_val⟩
   have hw (w : closedBall (0 : E) δ) : ((w : E), (0 : F)) ∈ closedBall (0 : E × F) δ₀ := by

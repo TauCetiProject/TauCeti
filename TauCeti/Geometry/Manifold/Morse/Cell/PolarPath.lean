@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Polar.NegativeColumn
 public import TauCeti.Geometry.Manifold.Morse.Cell.NegativeDisc
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
+import TauCeti.Geometry.Manifold.Morse.ChartTransition
 
 /-!
 # Polar factors of three families of Morse charts
@@ -55,65 +57,8 @@ coordinates (`TauCeti.exists_path_polarFactor_family_of_charts_euclidean`).
 
 public section
 
-open Filter Set Topology unitInterval ContinuousLinearMap
+open Set unitInterval ContinuousLinearMap
 open LinearIsometry (piLpExtendByZero)
-
-namespace OpenPartialHomeomorph
-
-section Transition
-
-variable {𝕜 M V₀ V₁ V₂ : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace M]
-  [NormedAddCommGroup V₀] [NormedSpace 𝕜 V₀] [NormedAddCommGroup V₁] [NormedSpace 𝕜 V₁]
-  [NormedAddCommGroup V₂] [NormedSpace 𝕜 V₂]
-
-/-- **The chain rule for transitions of charts.** For a point `x` in the sources of `ψ₁` and `ψ₂`,
-the transition `ψ₀ ∘ ψ₂⁻¹` agrees near `ψ₂ x` with `(ψ₀ ∘ ψ₁⁻¹) ∘ (ψ₁ ∘ ψ₂⁻¹)`, so its derivative
-there is the composite of the derivatives of the two transitions. -/
-theorem hasFDerivAt_comp_symm_trans (ψ₀ : OpenPartialHomeomorph M V₀)
-    (ψ₁ : OpenPartialHomeomorph M V₁) (ψ₂ : OpenPartialHomeomorph M V₂) {x : M}
-    (hx₁ : x ∈ ψ₁.source) (hx₂ : x ∈ ψ₂.source) {D₀₁ : V₁ →L[𝕜] V₀} {D₁₂ : V₂ →L[𝕜] V₁}
-    (hT₀₁ : HasFDerivAt (fun z ↦ ψ₀ (ψ₁.symm z)) D₀₁ (ψ₁ x))
-    (hT₁₂ : HasFDerivAt (fun z ↦ ψ₁ (ψ₂.symm z)) D₁₂ (ψ₂ x)) :
-    HasFDerivAt (fun z ↦ ψ₀ (ψ₂.symm z)) (D₀₁ ∘L D₁₂) (ψ₂ x) := by
-  have hT₀₁' : HasFDerivAt (fun z ↦ ψ₀ (ψ₁.symm z)) D₀₁ (ψ₁ (ψ₂.symm (ψ₂ x))) := by
-    rwa [ψ₂.left_inv hx₂]
-  refine (hT₀₁'.comp (ψ₂ x) hT₁₂).congr_of_eventuallyEq ?_
-  -- Near `ψ₂ x` the map `ψ₂⁻¹` lands in the source of `ψ₁`, where `ψ₁⁻¹ ∘ ψ₁` is the identity.
-  have hsource : ∀ᶠ z in 𝓝 (ψ₂ x), ψ₂.symm z ∈ ψ₁.source :=
-    ψ₂.continuousAt_symm (ψ₂.map_source hx₂) |>.preimage_mem_nhds
-      (ψ₁.open_source.mem_nhds (by rwa [ψ₂.left_inv hx₂]))
-  filter_upwards [hsource] with z hz
-  simp [ψ₁.left_inv hz]
-
-end Transition
-
-variable {M E F : Type*} [TopologicalSpace M]
-  [NormedAddCommGroup E] [InnerProductSpace ℝ E] [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-
-/-- **The derivative of the transition between two Morse charts preserves `Q`.** If `ψ₀` and `ψ₁`
-have a common centre, `f = c - ‖u‖² + ‖v‖²` in both, and the transition `ψ₀ ∘ ψ₁⁻¹` has derivative
-`D` at the origin, then `D` preserves `‖u‖² - ‖v‖²`. Only a neighbourhood of the centre is used. -/
-theorem norm_sq_sub_apply_of_hasFDerivAt (ψ₀ ψ₁ : OpenPartialHomeomorph M (E × F)) {f : M → ℝ}
-    {c : ℝ} (hf₀ : ∀ y ∈ ψ₀.source, f y = c - ‖(ψ₀ y).1‖ ^ 2 + ‖(ψ₀ y).2‖ ^ 2)
-    (hf₁ : ∀ y ∈ ψ₁.source, f y = c - ‖(ψ₁ y).1‖ ^ 2 + ‖(ψ₁ y).2‖ ^ 2)
-    (h₀ : (0 : E × F) ∈ ψ₀.target) (h₁ : (0 : E × F) ∈ ψ₁.target) (hp : ψ₀.symm 0 = ψ₁.symm 0)
-    {D : E × F →L[ℝ] E × F} (hT : HasFDerivAt (fun z ↦ ψ₀ (ψ₁.symm z)) D 0) (z : E × F) :
-    ‖(D z).1‖ ^ 2 - ‖(D z).2‖ ^ 2 = ‖z.1‖ ^ 2 - ‖z.2‖ ^ 2 := by
-  have hT0 : ψ₀ (ψ₁.symm 0) = 0 := by rw [← hp, ψ₀.right_inv h₀]
-  -- Near the origin both normal forms apply, so the transition preserves `Q`.
-  have hsource : ∀ᶠ y in 𝓝 (0 : E × F), ψ₁.symm y ∈ ψ₀.source :=
-    ψ₁.continuousAt_symm h₁ |>.preimage_mem_nhds
-      (ψ₀.open_source.mem_nhds (hp ▸ ψ₀.map_target h₀))
-  have hQ : ∀ᶠ y in 𝓝 (0 : E × F),
-      ‖(ψ₀ (ψ₁.symm y)).1‖ ^ 2 - ‖(ψ₀ (ψ₁.symm y)).2‖ ^ 2 = ‖y.1‖ ^ 2 - ‖y.2‖ ^ 2 := by
-    filter_upwards [hsource, ψ₁.open_target.mem_nhds h₁] with y hy₀ hy₁
-    have e₀ := hf₀ _ hy₀
-    have e₁ := hf₁ _ (ψ₁.map_target hy₁)
-    rw [ψ₁.right_inv hy₁] at e₁
-    linarith
-  simpa [hT.fderiv] using hT.differentiableAt.norm_sq_sub_fderiv hT0 hQ z
-
-end OpenPartialHomeomorph
 
 namespace TauCeti
 

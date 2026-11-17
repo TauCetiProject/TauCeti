@@ -35,6 +35,7 @@ on `T`.
 * `ContinuousLinearMap.polarFactor`: the canonical polar partial isometry of a bounded operator.
 * `ContinuousLinearMap.polarFactor_comp_modulus`: the polar decomposition `U |T| = T`.
 * `ContinuousLinearMap.isPartialIsometry_polarFactor`: `U` is a partial isometry.
+* `ContinuousLinearMap.polarIsometry`: for injective `T`, `U` bundled as a linear isometry.
 * `ContinuousLinearMap.ker_polarFactor`, `ContinuousLinearMap.range_polarFactor`: `ker U = ker T`
   and the range of `U` is the closure of the range of `T`.
 * `ContinuousLinearMap.adjoint_polarFactor_comp_polarFactor`,
@@ -117,6 +118,17 @@ theorem norm_polarFactor_apply_of_injective (hT : Function.Injective T) (x : E) 
   T.norm_polarFactor_apply <| by
     rw [LinearMap.ker_eq_bot.2 (by exact hT), Submodule.bot_orthogonal_eq_top]
     exact Submodule.mem_top
+
+/-- The polar factor of an injective operator, bundled as a linear isometry. This is the
+bounded-operator counterpart of `LinearMap.polarIsometry`. -/
+@[expose] def polarIsometry (hT : Function.Injective T) : E →ₗᵢ[𝕜] F where
+  toLinearMap := T.polarFactor.toLinearMap
+  norm_map' := T.norm_polarFactor_apply_of_injective hT
+
+@[simp]
+theorem coe_polarIsometry (hT : Function.Injective T) :
+    ⇑(T.polarIsometry hT) = T.polarFactor :=
+  rfl
 
 /-- The polar factor is a partial isometry. -/
 @[simp]

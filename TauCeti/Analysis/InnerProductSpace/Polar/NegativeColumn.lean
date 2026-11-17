@@ -94,9 +94,9 @@ theorem norm_smul_snd_lt_norm_segment_polarFactor {t : ℝ} (ht₀ : 0 ≤ t) (h
     rw [real_inner_comm]
     exact N.isPositive_modulus.inner_nonneg_left u
   have hsq : ‖t • (C u).2‖ ^ 2 < ‖(1 - t) • u + t • N.modulus u‖ ^ 2 := by
-    rw [norm_add_sq_real, norm_smul, norm_smul, norm_smul, real_inner_smul_left,
-      real_inner_smul_right, norm_modulus_apply, hN, Real.norm_eq_abs, Real.norm_eq_abs,
-      abs_of_nonneg ht₀, abs_of_nonneg (sub_nonneg.2 ht₁)]
+    simp only [norm_add_sq_real, norm_smul, real_inner_smul_left, real_inner_smul_right,
+      norm_modulus_apply, hN, Real.norm_eq_abs, abs_of_nonneg ht₀,
+      abs_of_nonneg (sub_nonneg.2 ht₁)]
     have hu' : 0 < ‖u‖ := norm_pos_iff.2 hu
     nlinarith [hC u, mul_nonneg (mul_nonneg (sub_nonneg.2 ht₁) ht₀) hip, sq_nonneg (1 - 2 * t),
       mul_pos hu' hu']
@@ -123,14 +123,12 @@ theorem exists_path_polarFactor_fst_comp_comp {X : Type*} [TopologicalSpace X]
         (fst ℝ E F ∘L C x).polarFactor) ∧
       ∀ x, ⇑(γ x 1) = (fst ℝ E F ∘L A x ∘L C x).polarFactor := by
   -- The polar factor of an injective endomorphism of `E` is a linear isometric equivalence.
-  have hiso {T : E →L[ℝ] E} (hT : Injective T) : ∃ e : E ≃ₗᵢ[ℝ] E, ⇑e = T.polarFactor :=
-    ⟨(⟨T.polarFactor.toLinearMap, norm_polarFactor_apply_of_injective T hT⟩ : E →ₗᵢ[ℝ] E)
-      |>.toLinearIsometryEquiv rfl, rfl⟩
+  let iso (T : E →L[ℝ] E) (hT : Injective T) : E ≃ₗᵢ[ℝ] E :=
+    (T.polarIsometry hT).toLinearIsometryEquiv rfl
   -- The negative blocks `fst ∘ C x` are invertible, so their polar factors are orthogonal and
   -- depend continuously on `x`.
   have hNinj (x : X) : Injective (fst ℝ E F ∘L C x) :=
     ((C x).isInvertible_fst_of_norm_sq_sub (hC x)).injective
-  choose g hg using fun x ↦ hiso (hNinj x)
   have hgc : Continuous fun x ↦ (fst ℝ E F ∘L C x).polarFactor :=
     continuousOn_polarFactor.comp_continuous (by fun_prop)
       fun x ↦ isUnit_modulus_iff_injective.2 (hNinj x)
@@ -145,22 +143,18 @@ theorem exists_path_polarFactor_fst_comp_comp {X : Type*} [TopologicalSpace X]
   have hTinj (x : X) (t : I) : Injective (fst ℝ E F ∘L A x ∘L L x t) :=
     (A x ∘L L x t).injective_fst_comp_of_norm_snd_lt fun u hu ↦ hA x _ <| by
       simpa [L] using (C x).norm_smul_snd_lt_norm_segment_polarFactor (hC x) t.2.1 t.2.2 hu
-  choose γ hγ using fun x t ↦ hiso (hTinj x t)
-  have hγ' (x : X) (t : I) : (γ x t : E →L[ℝ] E) = (fst ℝ E F ∘L A x ∘L L x t).polarFactor :=
-    coe_inj.1 (LinearMap.ext fun u ↦ congrFun (hγ x t) u)
-  refine ⟨γ, ?_, fun x ↦ ?_, fun x ↦ ?_⟩
-  · simp only [hγ']
-    exact continuousOn_polarFactor.comp_continuous
+  refine ⟨fun x t ↦ iso _ (hTinj x t), ?_, fun x ↦ ?_, fun x ↦ ?_⟩
+  · exact continuousOn_polarFactor.comp_continuous
       (continuous_const.clm_comp ((hAc.comp continuous_fst).clm_comp hLc))
       fun q ↦ isUnit_modulus_iff_injective.2 (hTinj q.1 q.2)
   · -- At `t = 0` the operator is `(fst ∘ A x ∘ inl) ∘ g x`, with `g x` orthogonal.
     have h0 : fst ℝ E F ∘L A x ∘L L x 0 =
-        (fst ℝ E F ∘L A x ∘L inl ℝ E F) ∘L ((g x : E ≃ₗᵢ[ℝ] E) : E →L[ℝ] E) := by
+        (fst ℝ E F ∘L A x ∘L inl ℝ E F) ∘L (iso _ (hNinj x) : E →L[ℝ] E) := by
       ext u
-      simp [L, hg]
-    rw [hγ, Set.Icc.coe_zero, h0, polarFactor_comp_linearIsometryEquiv]
-    ext u
-    simp [hg]
-  · simp [hγ, L]
+      simp [L, iso]
+    change ⇑(fst ℝ E F ∘L A x ∘L L x 0).polarFactor = _
+    rw [h0, polarFactor_comp_linearIsometryEquiv]
+    rfl
+  · simp [iso, L]
 
 end ContinuousLinearMap
