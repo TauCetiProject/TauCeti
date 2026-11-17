@@ -44,7 +44,9 @@ neighbourhood, this identifies a neighbourhood of a Legendrian submanifold with 
 the zero section of `J¹M` to first order, the linear input of the Legendrian neighbourhood theorem.
 It is the contact counterpart of the identification of the normal bundle of a Lagrangian embedding
 with its cotangent bundle (`TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfIsLagrangianMap`),
-whose pairing covector `σ(df ·, v)` is reused here for `σ = dα`.
+whose pairing covector `σ(df ·, v)` is reused here for `σ = dα`. Both are instances of the
+identification of a normal bundle by a smooth family of maps with kernels the tangent ranges
+(`TauCeti.SmoothEmbedding.normalBundleDiffeomorphOfKer`).
 
 ## References
 
@@ -154,9 +156,7 @@ theorem contactPairing_eq_zero_iff_mem_tangentRange
       LinearMap.ker_eq_bot.1 <| Submodule.ker_liftQ_eq_bot _ _ _ (kerDistribution_def α (f x)).ge
     refine hinj ?_
     rw [map_zero, liftQ_distributionLeviForm_kerDistribution (hf.isContactForm.apply_ne_zero _),
-      ← mextDerivₗ_apply, ← SmoothBundleForm.eval₂_apply, SmoothBundleForm.eval₂_swap,
-      ← pairingCovector_apply_apply, ← contactPairing_apply_fst, hdα,
-      zero_apply, neg_zero]
+      mextDeriv_apply_swap, ← contactPairing_apply_fst_apply, hdα, zero_apply, neg_zero]
   · rintro ⟨u', rfl⟩
     refine ⟨ContinuousLinearMap.ext fun u ↦ ?_, mem_kerDistribution.1
       (hf.isHorizontalMap.mfderiv_mem x u')⟩
@@ -166,29 +166,28 @@ theorem contactPairing_eq_zero_iff_mem_tangentRange
       mpullback_mextDerivₗ_eq_zero_of_isHorizontalMap hc hf.isHorizontalMap]
     simp [SmoothBundleForm.eval₂_apply]
 
+omit [IsManifold I 2 M] in
+/-- The codimension of a Legendrian immersion is the dimension of `(E →L[ℝ] ℝ) × ℝ`, so this is a
+model fibre for the normal bundle of a Legendrian embedding. -/
+theorem finrank_prod_eq_sub_of_isLegendrianImmersion [FiniteDimensional ℝ E] {g : M → N}
+    (hg : IsLegendrianImmersion I α.kerDistribution g) :
+    finrank ℝ ((E →L[ℝ] ℝ) × ℝ) = finrank ℝ F - finrank ℝ E := by
+  have h2 := hg.two_mul_finrank_add_one
+  rw [finrank_prod, ← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq,
+    finrank_self]
+  omega
+
 /-- **The normal space of a Legendrian embedding is `T_x^* M × ℝ`.** For an embedding which is a
 Legendrian immersion for the kernel of a contact form `α`, the normal class `[v]` of an ambient
 tangent vector `v` at `f x` corresponds to the pair `(dα_(f x)(df_x ·, v), α_(f x)(v))`. -/
 def normalSpaceEquivOfIsLegendrianImmersion (hf : IsLegendrianImmersion I α.kerDistribution f)
     (hn : n ≠ 0) (x : M) :
     f.NormalSpace x hn ≃L[ℝ] (TangentSpace I x →L[ℝ] ℝ) × ℝ :=
-  haveI := f.finiteDimensional_tangentSpace x hn
-  let φ := f.normalLiftL x hn (f.contactPairing α x)
-    fun v ↦ (f.contactPairing_eq_zero_iff_mem_tangentRange hf hn x v).2
-  have hφ : ∀ v, φ (f.normalClass x hn v) = f.contactPairing α x v :=
-    f.normalLiftL_normalClass x hn _ _
-  have hinj : Function.Injective φ := by
-    refine (injective_iff_map_eq_zero φ).2 fun w hw ↦ ?_
-    obtain ⟨v, rfl⟩ := f.normalClass_surjective x hn w
-    rw [hφ, f.contactPairing_eq_zero_iff_mem_tangentRange hf hn] at hw
-    exact (f.normalClass_eq_zero_iff x hn v).2 hw
-  -- Both spaces have dimension `dim M + 1`, since `2 dim M + 1 = dim N`.
-  have hdim : finrank ℝ (f.NormalSpace x hn) = finrank ℝ ((TangentSpace I x →L[ℝ] ℝ) × ℝ) := by
-    have h2 := hf.two_mul_finrank_add_one
-    rw [f.finrank_normalSpace x hn, finrank_prod, ← LinearMap.toContinuousLinearMap.finrank_eq,
-      Subspace.dual_finrank_eq, finrank_tangentSpace, finrank_tangentSpace, finrank_self]
-    omega
-  (φ.toLinearMap.linearEquivOfInjective hinj hdim).toContinuousLinearEquiv
+  haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
+  f.normalSpaceEquivOfKer x hn (f.contactPairing α x)
+    (f.contactPairing_eq_zero_iff_mem_tangentRange hf hn x) <| by
+    rw [f.finrank_normalSpace x hn, finrank_tangentSpace, finrank_tangentSpace]
+    exact (finrank_prod_eq_sub_of_isLegendrianImmersion hf).symm
 
 /-- The normal class `[v]` of an ambient tangent vector at `f x` corresponds to the pair
 `(dα(df ·, v), α(v))`. -/
@@ -197,10 +196,9 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_normalClass
     (hf : IsLegendrianImmersion I α.kerDistribution f) (hn : n ≠ 0) (x : M)
     (v : TangentSpace J (f x)) :
     f.normalSpaceEquivOfIsLegendrianImmersion hf hn x (f.normalClass x hn v) =
-      f.contactPairing α x v := by
-  have := f.finiteDimensional_tangentSpace x hn
-  rw [normalSpaceEquivOfIsLegendrianImmersion, LinearEquiv.coe_toContinuousLinearEquiv',
-    LinearMap.linearEquivOfInjective_apply, ContinuousLinearMap.coe_coe, normalLiftL_normalClass]
+      f.contactPairing α x v :=
+  haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
+  f.normalSpaceEquivOfKer_normalClass x hn _ _ _ v
 
 /-- The pair `(dα(df ·, v), α(v))` corresponds to the normal class `[v]`. -/
 @[simp]
@@ -209,8 +207,8 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_symm_contactPairing
     (v : TangentSpace J (f x)) :
     (f.normalSpaceEquivOfIsLegendrianImmersion hf hn x).symm (f.contactPairing α x v) =
       f.normalClass x hn v :=
-  (ContinuousLinearEquiv.symm_apply_eq _).2
-    (f.normalSpaceEquivOfIsLegendrianImmersion_normalClass hf hn x v).symm
+  haveI : FiniteDimensional ℝ E := f.finiteDimensional_tangentSpace x hn
+  f.normalSpaceEquivOfKer_symm_apply x hn _ _ _ v
 
 /-- **The Reeb direction spans the trivial factor.** The normal class of the Reeb vector field of
 `α` at `f x` corresponds to `(0, 1)`. -/
@@ -231,17 +229,6 @@ theorem normalSpaceEquivOfIsLegendrianImmersion_symm_zero_one
       f.normalClass x hn (α.reebVectorField (f x)) :=
   (ContinuousLinearEquiv.symm_apply_eq _).2
     (f.normalSpaceEquivOfIsLegendrianImmersion_normalClass_reebVectorField hf hn x).symm
-
-omit [IsManifold I 2 M] in
-/-- The codimension of a Legendrian immersion is the dimension of `(E →L[ℝ] ℝ) × ℝ`, so this is a
-model fibre for the normal bundle of a Legendrian embedding. -/
-theorem finrank_prod_eq_sub_of_isLegendrianImmersion [FiniteDimensional ℝ E] {g : M → N}
-    (hg : IsLegendrianImmersion I α.kerDistribution g) :
-    finrank ℝ ((E →L[ℝ] ℝ) × ℝ) = finrank ℝ F - finrank ℝ E := by
-  have h2 := hg.two_mul_finrank_add_one
-  rw [finrank_prod, ← LinearMap.toContinuousLinearMap.finrank_eq, Subspace.dual_finrank_eq,
-    finrank_self]
-  omega
 
 variable [FiniteDimensional ℝ E] [IsManifold I (m + 1) M]
   [NormedAddCommGroup P] [NormedSpace ℝ P] [FiniteDimensional ℝ P]
@@ -264,11 +251,10 @@ theorem contMDiff_normalSpaceEquivOfIsLegendrianImmersion
           (f.normalSpaceEquivOfIsLegendrianImmersion hf hn p.proj p.2)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have : IsManifold J (m + 1) N := .of_le hm'
-  let := f.normalSpaceFiberBundle hn hdim
-  rw [f.contMDiff_normalBundle_iff hn hm hdim]
-  refine (f.contMDiff_contactPairing α hm hm').congr fun ⟨x, v⟩ ↦ ?_
-  rw [Function.comp_apply, normalQuotientMap_apply,
-    f.normalSpaceEquivOfIsLegendrianImmersion_normalClass hf hn x v]
+  exact f.contMDiff_normalSpaceEquivOfKer hn hm hdim (f.contactPairing α)
+    (f.contactPairing_eq_zero_iff_mem_tangentRange hf hn)
+    (fun x ↦ (f.normalSpaceEquivOfIsLegendrianImmersion hf hn x).toLinearEquiv.finrank_eq)
+    (f.contMDiff_contactPairing α hm hm')
 
 /-- **The normal bundle of a Legendrian embedding is diffeomorphic to `T^* M × ℝ`.** For a `C^n`
 embedding which is a Legendrian immersion for the kernel of a contact form `α`, with `m + 1 ≤ n`
@@ -283,11 +269,13 @@ def normalBundleDiffeomorphOfIsLegendrianImmersion
     TotalSpace P (fun x ↦ f.NormalSpace x hn)
       ≃ₘ^m⟮I.prod 𝓘(ℝ, P), (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)).prod 𝓘(ℝ, ℝ)⟯ CotangentBundle I M × ℝ :=
   haveI : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  haveI : IsManifold J (m + 1) N := .of_le hm'
   letI := f.normalSpaceFiberBundle hn hdim
-  letI := f.normalSpaceVectorBundle hn hdim
-  (TauCeti.bundleDiffeomorph (E₂ := (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ×ᵇ Trivial M ℝ)
-    (f.normalSpaceEquivOfIsLegendrianImmersion hf hn)
-    (f.contMDiff_normalSpaceEquivOfIsLegendrianImmersion hf hn hm hm' hdim)).trans
+  (f.normalBundleDiffeomorphOfKer hn hm hdim
+    (E₂ := (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) ×ᵇ Trivial M ℝ) (f.contactPairing α)
+    (f.contactPairing_eq_zero_iff_mem_tangentRange hf hn)
+    (fun x ↦ (f.normalSpaceEquivOfIsLegendrianImmersion hf hn x).toLinearEquiv.finrank_eq)
+    (f.contMDiff_contactPairing α hm hm')).trans
     (Bundle.Prod.diffeomorphProdTrivial I ℝ (fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) m)
 
 /-- The diffeomorphism sends a normal vector at `x` to the corresponding pair of a covector at `x`
@@ -303,10 +291,11 @@ theorem normalBundleDiffeomorphOfIsLegendrianImmersion_apply
       (⟨p.proj, (f.normalSpaceEquivOfIsLegendrianImmersion hf hn p.proj p.2).1⟩,
         (f.normalSpaceEquivOfIsLegendrianImmersion hf hn p.proj p.2).2) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  have : IsManifold J (m + 1) N := .of_le hm'
   let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
   rw [normalBundleDiffeomorphOfIsLegendrianImmersion, Diffeomorph.coe_trans, Function.comp_apply,
-    TauCeti.bundleDiffeomorph_apply, Bundle.Prod.diffeomorphProdTrivial_apply]
+    normalBundleDiffeomorphOfKer_apply, Bundle.Prod.diffeomorphProdTrivial_apply]
+  rfl
 
 /-- The inverse diffeomorphism sends a covector at `x` and a real number to the corresponding
 normal vector at `x`. -/
@@ -320,11 +309,12 @@ theorem normalBundleDiffeomorphOfIsLegendrianImmersion_symm_apply
     (f.normalBundleDiffeomorphOfIsLegendrianImmersion hf hn hm hm' hdim).symm q =
       ⟨q.1.proj, (f.normalSpaceEquivOfIsLegendrianImmersion hf hn q.1.proj).symm (q.1.2, q.2)⟩ := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  have : IsManifold J (m + 1) N := .of_le hm'
   let := f.normalSpaceFiberBundle hn hdim
-  let := f.normalSpaceVectorBundle hn hdim
   rw [normalBundleDiffeomorphOfIsLegendrianImmersion, Diffeomorph.symm_trans',
     Diffeomorph.coe_trans, Function.comp_apply, Bundle.Prod.diffeomorphProdTrivial_symm_apply,
-    TauCeti.bundleDiffeomorph_symm_apply]
+    normalBundleDiffeomorphOfKer_symm_apply]
+  rfl
 
 /-- The diffeomorphism sends the normal class `[v]` at `x` to the covector `dα(df ·, v)` at `x`
 together with `α(v)`. -/
