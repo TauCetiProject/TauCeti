@@ -30,8 +30,8 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul`: a function on an
   `SL₂(ℤ)`-set that is invariant under `S` and `T` is invariant under all of `SL₂(ℤ)`.
 * `TauCeti.Matrix.SpecialLinearGroup.eq_of_le_of_perm_S_T`: a subgroup `H ≤ K ≤ SL₂(ℤ)` equals `K`
-  when right coset representatives of `K` with trivial basepoint are permuted modulo `H` under left
-  multiplication by `S` and `T`.
+  when a family `R i` (with `R 0 = 1` and meeting `K` only at `0`) has its left cosets `R i · H`
+  permuted under left multiplication by `S` and `T`.
 
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
@@ -96,7 +96,7 @@ theorem apply_smul_eq_of_S_smul_of_T_smul {X α : Type*} [MulAction SL(2, ℤ) X
 
 open ModularGroup in
 /-- If `H ≤ K ≤ SL(2, ℤ)` and `R : Fin n → SL(2, ℤ)` with `R 0 = 1` meets `K` only at `0` while
-left multiplication by `S` and `T` permutes the right cosets `H · R i`, then `H = K`. -/
+left multiplication by `S` and `T` permutes the left cosets `R i · H`, then `H = K`. -/
 theorem eq_of_le_of_perm_S_T {n : ℕ} [NeZero n] {H K : Subgroup SL(2, ℤ)} (hle : H ≤ K)
     (R : Fin n → SL(2, ℤ)) (hR0 : R 0 = 1) (hRK : ∀ i, R i ∈ K → i = 0)
     (hS : ∃ σ : Equiv.Perm (Fin n), ∀ i, (R (σ i))⁻¹ * S * R i ∈ H)
