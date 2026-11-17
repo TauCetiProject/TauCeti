@@ -13,23 +13,9 @@ import TauCeti.FieldTheory.Finite.NonsquareSum
 /-!
 # Vanishing of Milnor K-theory of finite fields
 
-Over any field `F` with cyclic unit group `Fˣ`, every Steinberg pairing `c : Fˣ → Fˣ → A` is
-determined by `c g g` on a generator `g` of `Fˣ`. When `F` has characteristic `2`, `c g g = 0`
-directly from `TauCeti.IsSteinbergPairing.map_self_eq_zero_of_charTwo`. When `F` is finite of odd
-characteristic, `TauCeti.FiniteField.exists_odd_zpow_add_eq_one` supplies odd integers `m, n` with
-`g ^ m + g ^ n = 1`; the Steinberg relation then forces `(m * n) • c g g = 0`, which combined with
-`2 • c g g = 0` yields `c g g = 0`.
-
-Consequently:
-
-* every Steinberg pairing on a finite field vanishes identically
-  (`TauCeti.IsSteinbergPairing.eq_zero_of_finite`);
-* `TauCeti.SymbolGroup F` is trivial for every finite field `F`
-  (`TauCeti.SymbolGroup.subsingleton_of_finite`);
-* every Milnor symbol of length at least `2` vanishes over a finite field
-  (`TauCeti.MilnorK.symbol_eq_zero_of_finite`);
-* `MilnorK.degree F n` is trivial for every finite field `F` and every `n ≥ 2`
-  (`TauCeti.MilnorK.finiteField_vanishing`).
+Every Steinberg pairing on a finite field `F` vanishes (`IsSteinbergPairing.eq_zero_of_finite`),
+hence `SymbolGroup F` is trivial (`SymbolGroup.subsingleton_of_finite`) and `MilnorK.degree F n`
+vanishes for every `n ≥ 2` (`MilnorK.finiteField_vanishing`).
 
 ## References
 
@@ -64,15 +50,10 @@ theorem eq_zero_of_isCyclic_of_exists_odd_add_eq_one {c : Fˣ → Fˣ → A}
     (a b : Fˣ) : c a b = 0 := by
   have hgg : c g g = 0 := by
     have hmn : (m * n) • c g g = 0 := by
-      have hst := hc.steinberg (g ^ m) (g ^ n) hadd
-      rw [hc.map_zpow_left, hc.map_zpow_right, smul_smul] at hst
-      exact hst
-    have h2 : (2 : ℤ) • c g g = 0 := by
-      rw [two_zsmul, ← two_nsmul]
-      exact hc.two_nsmul_map_self g
+      simpa [hc.map_zpow_left, hc.map_zpow_right, smul_smul] using hc.steinberg (g ^ m) (g ^ n) hadd
+    have h2 : (2 : ℤ) • c g g = 0 := by rw [two_zsmul, ← two_nsmul]; exact hc.two_nsmul_map_self g
     obtain ⟨k, hk⟩ := hm.mul hn
-    rw [hk, add_zsmul, one_zsmul, mul_comm (2 : ℤ) k, mul_zsmul, h2, smul_zero, zero_add] at hmn
-    exact hmn
+    rwa [hk, add_zsmul, one_zsmul, mul_comm (2 : ℤ) k, mul_zsmul, h2, smul_zero, zero_add] at hmn
   obtain ⟨r, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg a)
   obtain ⟨s, rfl⟩ := Subgroup.mem_zpowers_iff.mp (hg b)
   rw [hc.map_zpow_left, hc.map_zpow_right, hgg, smul_zero, smul_zero]
@@ -93,13 +74,11 @@ end IsSteinbergPairing
 namespace SymbolGroup
 
 /-- The degree-two Steinberg symbol group `SymbolGroup F` of any finite field `F` is trivial. -/
-theorem subsingleton_of_finite (F : Type*) [Field F] [Finite F] : Subsingleton (SymbolGroup F) := by
-  refine Subsingleton.intro fun x y => ?_
-  suffices h : ∀ z : SymbolGroup F, z = 0 from (h x).trans (h y).symm
-  intro z
-  induction z using SymbolGroup.induction_on with
-  | symbol a b => exact (isSteinbergPairing_symbol (R := F)).eq_zero_of_finite a b
-  | add x y hx hy => rw [hx, hy, add_zero]
+theorem subsingleton_of_finite (F : Type*) [Field F] [Finite F] : Subsingleton (SymbolGroup F) :=
+  subsingleton_of_forall_eq 0 fun z => by
+    induction z using SymbolGroup.induction_on with
+    | symbol a b => exact (isSteinbergPairing_symbol (R := F)).eq_zero_of_finite a b
+    | add _ _ hx hy => rw [hx, hy, add_zero]
 
 end SymbolGroup
 
@@ -108,32 +87,25 @@ namespace MilnorK
 variable {F : Type u} [Field F]
 
 /-- Over a finite field, every degree-two product `ofUnit a * ofUnit b` vanishes in `MilnorK F`. -/
-theorem ofUnit_mul_eq_zero_of_finite [Finite F] (a b : Fˣ) :
-    ofUnit a * ofUnit b = 0 :=
+theorem ofUnit_mul_eq_zero_of_finite [Finite F] (a b : Fˣ) : ofUnit a * ofUnit b = 0 :=
   isSteinbergPairing_ofUnit_mul.eq_zero_of_finite a b
 
 /-- Over a finite field, every Milnor symbol of length at least `2` vanishes. -/
-theorem symbol_eq_zero_of_finite [Finite F] {l : List Fˣ} (hl : 2 ≤ l.length) :
-    symbol l = 0 := by
+theorem symbol_eq_zero_of_finite [Finite F] {l : List Fˣ} (hl : 2 ≤ l.length) : symbol l = 0 := by
   match l, hl with
-  | a :: b :: rest, _ =>
+  | a :: b :: _, _ =>
     rw [symbol_cons, symbol_cons, ← mul_assoc, ofUnit_mul_eq_zero_of_finite a b, zero_mul]
 
 /-- Over a finite field, `MilnorK.degree F n` is the bottom submodule for every `n ≥ 2`. -/
 theorem degree_eq_bot_of_finite (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
     degree F n = ⊥ := by
   rw [eq_bot_iff, degree_le_iff]
-  intro l hl
-  rw [Submodule.mem_bot]
-  exact symbol_eq_zero_of_finite (hl.symm ▸ hn)
+  exact fun _ hl => (Submodule.mem_bot ℤ).mpr (symbol_eq_zero_of_finite (hl.symm ▸ hn))
 
-/-- **Milnor K-groups of finite fields vanish in every degree at least two**:
-`Kₙᴹ(F) = 0` for every finite field `F` and every `n ≥ 2` (Milnor 1970, Example 1.5;
-Weibel, III.7.1.1). -/
+/-- **Milnor K-groups of finite fields vanish in every degree at least two**: `Kₙᴹ(F) = 0` for
+every finite field `F` and every `n ≥ 2` (Milnor 1970, Example 1.5; Weibel, III.7.1.1). -/
 theorem finiteField_vanishing (F : Type u) [Field F] [Finite F] (n : ℕ) (hn : 2 ≤ n) :
-    Subsingleton (MilnorK.degree F n) := by
-  rw [degree_eq_bot_of_finite F n hn]
-  infer_instance
+    Subsingleton (MilnorK.degree F n) := by rw [degree_eq_bot_of_finite F n hn]; infer_instance
 
 end MilnorK
 
