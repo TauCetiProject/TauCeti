@@ -18,8 +18,8 @@ surjective local diffeomorphism (`AddCircle.isLocalDiffeomorph_coe`), the circle
 `c.circleMap : AddCircle c.period → M` has the same `C^n` regularity as its real lift
 `s ↦ ϕ s c.point`, and when that lift is an integral curve of a vector field `v` its velocity at
 each `θ : AddCircle c.period` is `v (c.circleMap θ)`. Specializing to the global flow of a complete
-vector field yields `C^n` regularity and unit-speed tangent velocity along periodic trajectories of
-`TauCeti.globalFlow`.
+vector field yields `C^n` regularity and velocity equal to the vector field along periodic
+trajectories of `TauCeti.globalFlow`.
 
 ## Main results
 
