@@ -6,7 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Basic
+import TauCeti.RingTheory.FormalGroup.Point.Order
+import TauCeti.RingTheory.MvPowerSeries.Equiv
 import TauCeti.RingTheory.PowerSeries.Expand
+import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Arithmetic of curves
@@ -18,6 +22,10 @@ formal group law does not give a scalar action of the coefficient ring. These ar
 support normalized Cartier operators on curves. Verschiebung `Vₙ` (the substitution of `X^n`
 for the curve parameter `X`) is injective for every nonzero index `n`, without commutativity of
 the formal group law or a unit assumption on the index.
+
+Curve operations also respect degree-by-degree truncation: the degree-`k` coefficients of
+`V_n γ`, `f_n γ`, and `f_* γ` depend only on the coefficients of `γ` up to degrees `k / n`,
+`k * n`, and `k`, respectively.
 -/
 
 public section
@@ -92,5 +100,94 @@ theorem verschiebungCurve_injective (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0)
   apply Curve.ext
   apply PowerSeries.expand_injective n hn
   simpa only [toPowerSeries_verschiebungCurve] using congrArg Curve.toPowerSeries h
+
+/-! ### Degree-by-degree truncation of curve operators -/
+
+/-- The degree-`≤ M` coefficients of the symmetric formal-group sum `∑ i : σ, γ(Tᵢ)` depend only
+on the coefficients of `γ` up to degree `M`. -/
+theorem Curve.coeff_symmSum_congr (F : FormalGroup R) [F.IsComm] (σ : Type*) [Fintype σ]
+    {γ₁ γ₂ : F.Curve} {M : ℕ}
+    (h : ∀ i ≤ M, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries)
+    {d : σ →₀ ℕ} (hd : d.degree ≤ M) :
+    MvPowerSeries.coeff d (Curve.symmSum F σ γ₁ : MvPowerSeries σ R) =
+      MvPowerSeries.coeff d (Curve.symmSum F σ γ₂ : MvPowerSeries σ R) := by
+  classical
+  have hzero_single (γ : F.Curve) (a : σ) :
+      MvPowerSeries.constantCoeff (Curve.coordPointHom F a γ).val = 0 := by
+    rw [Curve.val_coordPointHom, PowerSeries.toMvPowerSeries_apply,
+      MvPowerSeries.constantCoeff_rename]
+    exact γ.constantCoeff_toPowerSeries
+  have hcoord (a : σ) : ((M + 1 : ℕ) : ℕ∞) ≤
+      (Curve.coordPointHom F a γ₁ - Curve.coordPointHom F a γ₂).val.order :=
+    F.le_order_val_sub_of_le_order_sub (hzero_single γ₁ a) (hzero_single γ₂ a) <|
+      MvPowerSeries.nat_le_order fun e he ↦ by
+        rw [map_sub, Curve.val_coordPointHom, Curve.val_coordPointHom,
+          PowerSeries.coeff_toMvPowerSeries, PowerSeries.coeff_toMvPowerSeries]
+        split_ifs with hea
+        · exact sub_eq_zero.mpr (h (e a) ((Finsupp.le_degree a e).trans (Nat.lt_succ_iff.mp he)))
+        · exact sub_self 0
+  have hpt : ((M + 1 : ℕ) : ℕ∞) ≤
+      ((∑ a : σ, Curve.coordPointHom F a γ₁) -
+        (∑ a : σ, Curve.coordPointHom F a γ₂)).val.order := by
+    rw [← Finset.sum_sub_distrib]
+    exact F.le_order_val_sum Finset.univ _ fun a _ ↦ hcoord a
+  have hdiff := (Nat.cast_le.mpr (Nat.le_succ (M + 1))).trans
+    (F.le_order_val_sub_val_sub (Nat.succ_ne_zero M)
+      (Curve.constantCoeff_val_sum_coordPointHom γ₂) hpt)
+  have hsum : ((M + 1 : ℕ) : ℕ∞) ≤
+      ((∑ a : σ, Curve.coordPointHom F a γ₁).val -
+        (∑ a : σ, Curve.coordPointHom F a γ₂).val).order := by
+    simpa only [sub_add_cancel] using MvPowerSeries.le_order_add hdiff hpt
+  have hlt : (d.degree : ℕ∞) < ((M + 1 : ℕ) : ℕ∞) := Nat.cast_lt.mpr (Nat.lt_succ_of_le hd)
+  rw [Curve.coe_symmSum, Curve.coe_symmSum]
+  exact sub_eq_zero.mp <| by
+    rw [← map_sub]
+    exact MvPowerSeries.coeff_of_lt_order (hlt.trans_le hsum)
+
+/-- The degree-`k` coefficient of `V_n γ` depends only on the coefficients of `γ` up to degree
+`k / n`. -/
+theorem coeff_verschiebungCurve_congr (F : FormalGroup R) (n : ℕ) (hn : n ≠ 0)
+    {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k / n, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.verschiebungCurve n hn γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.verschiebungCurve n hn γ₂).toPowerSeries := by
+  simp only [toPowerSeries_verschiebungCurve, PowerSeries.coeff_expand]
+  split_ifs with hdvd
+  · exact h (k / n) le_rfl
+  · rfl
+
+/-- The degree-`k` coefficient of `f_n γ` depends only on the coefficients of `γ` up to degree
+`k * n`. -/
+theorem coeff_frobeniusCurve_congr (F : FormalGroup R) [F.IsComm] (n : ℕ) (hn : n ≠ 0)
+    {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k * n, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (F.frobeniusCurve n hn γ₁).toPowerSeries =
+      PowerSeries.coeff k (F.frobeniusCurve n hn γ₂).toPowerSeries := by
+  rw [toPowerSeries_frobeniusCurve, toPowerSeries_frobeniusCurve,
+    MvPowerSeries.symmetricSubalgebra.coeff_evalTopEsymm,
+    MvPowerSeries.symmetricSubalgebra.coeff_evalTopEsymm, Fintype.card_fin]
+  refine congrArg (fun P ↦ (MvPolynomial.symmetricSubalgebra.evalTopEsymm (Fin n) R P).coeff k)
+    (Subtype.ext <| MvPolynomial.coe_inj.mp <| MvPowerSeries.ext fun d ↦ ?_)
+  rw [MvPowerSeries.coe_homogeneousComponentPolynomial,
+    MvPowerSeries.coe_homogeneousComponentPolynomial,
+    MvPowerSeries.coeff_homogeneousComponent, MvPowerSeries.coeff_homogeneousComponent]
+  split_ifs with hd
+  · exact Curve.coeff_symmSum_congr F (Fin n) h hd.le
+  · rfl
+
+/-- The degree-`k` coefficient of `f.mapCurve γ` depends only on the coefficients of `γ` up to
+degree `k`. -/
+theorem _root_.TauCeti.FormalGroupHom.coeff_mapCurve_congr {F G : FormalGroup R}
+    (f : TauCeti.FormalGroupHom F G) {γ₁ γ₂ : F.Curve} {k : ℕ}
+    (h : ∀ i ≤ k, PowerSeries.coeff i γ₁.toPowerSeries = PowerSeries.coeff i γ₂.toPowerSeries) :
+    PowerSeries.coeff k (f.mapCurve γ₁).toPowerSeries =
+      PowerSeries.coeff k (f.mapCurve γ₂).toPowerSeries := by
+  rw [TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
+    TauCeti.FormalGroupHom.toPowerSeries_mapCurve,
+    ← PowerSeries.coeff_trunc_comp_trunc f.toPowerSeries γ₁.constantCoeff_toPowerSeries
+      (Nat.lt_succ_self k) (Nat.lt_succ_self k),
+    ← PowerSeries.coeff_trunc_comp_trunc f.toPowerSeries γ₂.constantCoeff_toPowerSeries
+      (Nat.lt_succ_self k) (Nat.lt_succ_self k),
+    PowerSeries.trunc_eq_trunc_iff.mpr fun i hi ↦ h i (Nat.lt_succ_iff.mp hi)]
 
 end FormalGroup
