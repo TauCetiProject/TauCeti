@@ -8,8 +8,7 @@ module
 public import Mathlib.Algebra.Homology.CochainComplexOpposite
 public import Mathlib.Algebra.Homology.Embedding.CochainComplex
 public import Mathlib.Algebra.Homology.Embedding.RestrictionHomology
-public import Mathlib.Algebra.Homology.HomotopyCategory.HomComplexSingle
-public import TauCeti.Algebra.Homology.LinearHomComplex.Basic
+public import TauCeti.Algebra.Homology.LinearHomComplex.Single.Basic
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Naturality
 import TauCeti.Algebra.Homology.Embedding.Restriction.Surjective
 import TauCeti.Algebra.Ring.NegOnePow
@@ -22,7 +21,7 @@ For a `ℤ`-indexed cochain complex `K` in a `k`-linear abelian category `C` and
 `CochainComplex.linearHomComplex k K ((singleFunctor C 0).obj Y)` has degree-`i` cochains
 identified with `K.X (-i) ⟶ Y` via `Cochain.toSingleLinearEquiv (neg_add_cancel i)`, with
 differential `f ↦ (-1)^(i + 1) • (K.d (-(i + 1)) (-i) ≫ f)`
-(`TauCeti.toSingleLinearEquiv_linearHomComplex_d_apply`).
+(`TauCeti.Algebra.Homology.LinearHomComplex.Single.Basic`).
 
 Reindexing `K` along `n ↦ -n` (`ComplexShape.embeddingDownIntUpInt`) gives a chain complex `K'`
 whose unsigned dual `K'.linearYonedaObj k Y` is naturally isomorphic to `linearHomComplex k K Y[0]`
@@ -42,10 +41,6 @@ is proved in `TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.NonNaturalit
 
 ## Main definitions and results
 
-* `TauCeti.toSingleLinearEquiv_linearHomComplex_d_apply`,
-  `TauCeti.toSingleLinearEquiv_linearHomComplexPrecomp_f_apply`, and
-  `TauCeti.toSingleLinearEquiv_linearHomComplexPostcomp_f_apply`: differential and functoriality
-  formulas in degree `i`.
 * `TauCeti.linearHomComplexSingle₀Iso` and `TauCeti.linearHomComplexSingle₀HomologyIso`: signed
   complex comparison and unsigned cohomology comparison with `linearYonedaObj`.
 * `TauCeti.cochainKronecker`, `TauCeti.cochainKroneckerEquiv`,
@@ -73,51 +68,6 @@ universe w v u
 
 namespace TauCeti
 
-section Differential
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] {k : Type*} [Ring k] [Linear k C]
-
-/-- **The differential of `linearHomComplex` into a degree-zero object.** Under the degreewise
-identification `Cochain.toSingleLinearEquiv (neg_add_cancel _)`, the differential from degree `i` to
-degree `i + 1` sends `f : K.X (-i) ⟶ Y` to `(-1)^(i + 1) • (K.d (-(i + 1)) (-i) ≫ f)`. -/
-theorem toSingleLinearEquiv_linearHomComplex_d_apply [HasZeroObject C]
-    (K : CochainComplex C ℤ) (Y : C) (i : ℤ)
-    (z : (linearHomComplex k K ((singleFunctor C 0).obj Y)).X i) :
-    Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel (i + 1))
-        (((linearHomComplex k K ((singleFunctor C 0).obj Y)).d i (i + 1)).hom z) =
-      (i + 1).negOnePow •
-        (K.d (-(i + 1)) (-i) ≫ Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z) := by
-  have hz := Cochain.toSingleMk_toSingleEquiv (neg_add_cancel i) z
-  rw [linearHomComplex_d_hom_apply, ← hz,
-    Cochain.δ_toSingleMk _ (neg_add_cancel i) (i + 1) (-(i + 1)) (neg_add_cancel (i + 1))]
-  simp [Cochain.toSingleLinearEquiv]
-
-/-- Under `Cochain.toSingleLinearEquiv`, precomposition in `linearHomComplex` into a degree-zero
-object acts by precomposing with `φ.f (-i)`. -/
-lemma toSingleLinearEquiv_linearHomComplexPrecomp_f_apply [HasZeroObject C]
-    {K₁ K₂ : CochainComplex C ℤ} (φ : K₁ ⟶ K₂) (Y : C) (i : ℤ)
-    (z : (linearHomComplex k K₂ ((singleFunctor C 0).obj Y)).X i) :
-    Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
-        (((linearHomComplexPrecomp k φ ((singleFunctor C 0).obj Y)).f i).hom z) =
-      φ.f (-i) ≫ Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z := by
-  have hz := Cochain.toSingleMk_toSingleEquiv (neg_add_cancel i) z
-  rw [linearHomComplexPrecomp_f_apply, ← hz, ← Cochain.toSingleMk_precomp]
-  simp [Cochain.toSingleLinearEquiv]
-
-/-- Under `Cochain.toSingleLinearEquiv`, postcomposition in `linearHomComplex` into a degree-zero
-object acts by postcomposing with `g`. -/
-lemma toSingleLinearEquiv_linearHomComplexPostcomp_f_apply [HasZeroObject C]
-    (K : CochainComplex C ℤ) {Y₁ Y₂ : C} (g : Y₁ ⟶ Y₂) (i : ℤ)
-    (z : (linearHomComplex k K ((singleFunctor C 0).obj Y₁)).X i) :
-    Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
-        (((linearHomComplexPostcomp k K ((singleFunctor C 0).map g)).f i).hom z) =
-      Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i) z ≫ g := by
-  have hz := Cochain.toSingleMk_toSingleEquiv (neg_add_cancel i) z
-  rw [linearHomComplexPostcomp_f_apply, ← hz, ← Cochain.toSingleMk_postcomp]
-  simp [Cochain.toSingleLinearEquiv]
-
-end Differential
-
 section Comparison
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
@@ -135,6 +85,36 @@ private lemma restrictionXIso_hom_comp (K : CochainComplex C ℤ) (i : ℤ) {Z :
     (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
       (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫ g = g :=
   Category.id_comp g
+
+/-- Comparison morphism from degree-`(i - 1)` boundaries of `negChain K` to degree-`j` boundaries
+of `K` induced by the cycle and homology comparison isomorphisms along `n ↦ -n`. -/
+private def negChainBoundariesMap (K : CochainComplex C ℤ) {i j : ℤ}
+    (hji : ComplexShape.embeddingDownIntUpInt.f (i - 1) = j) :
+    kernel ((negChain K).homologyπ (i - 1)) ⟶ kernel (K.homologyπ j) :=
+  kernel.map ((negChain K).homologyπ (i - 1)) (K.homologyπ j)
+    (K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+      surjective_embeddingDownIntUpInt_f (i - 1) j hji).hom
+    (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+      surjective_embeddingDownIntUpInt_f (i - 1) j hji).hom
+    (K.homologyπ_restrictionHomologyIsoOfSurjective_hom ComplexShape.embeddingDownIntUpInt
+      surjective_embeddingDownIntUpInt_f (i - 1) j hji)
+
+/-- Boundary compatibility under `n ↦ -n`: `toBoundaries` on `negChain K` followed by
+`negChainBoundariesMap` matches `K.toBoundaries (-i) j` after `restrictionXIso`. -/
+private lemma negChain_toBoundaries_comp_boundariesMap (K : CochainComplex C ℤ) {i j : ℤ}
+    (hji : ComplexShape.embeddingDownIntUpInt.f (i - 1) = j) :
+    (negChain K).toBoundaries i (i - 1) ≫ negChainBoundariesMap K hji =
+      (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
+        (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫ K.toBoundaries (-i) j := by
+  -- Cancel the boundary and cycle monomorphisms to reduce to the differential formula.
+  rw [← cancel_mono (kernel.ι (K.homologyπ j)), ← cancel_mono (K.iCycles j)]
+  simp only [Category.assoc, negChainBoundariesMap, kernel.lift_ι,
+    HomologicalComplex.toBoundaries_ι_assoc, HomologicalComplex.toBoundaries_ι,
+    HomologicalComplex.restrictionCyclesIsoOfSurjective_hom_iCycles,
+    HomologicalComplex.toCycles_i_assoc, HomologicalComplex.toCycles_i]
+  rw [K.restriction_d_eq ComplexShape.embeddingDownIntUpInt
+    (ComplexShape.embeddingDownIntUpInt_f i) hji, Category.assoc, Category.assoc,
+    Iso.inv_hom_id, Category.comp_id]
 
 variable (k : Type*) [Ring k] [Linear k C]
 
@@ -646,6 +626,37 @@ def cochainExtToHomology {i j : ℤ} (hij : i + j = 1) [Projective (K.cycles j)]
         (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
           surjective_embeddingDownIntUpInt_f (i - 1) j hji).symm (Iso.refl Y) 1).toLinearMap
 
+/-- Extension-class transport under `n ↦ -n`: transporting the extension class of
+`β : Bʲ(K) ⟶ Y` along `restrictionHomologyIsoOfSurjective` gives the extension class of
+`negChainBoundariesMap K hji ≫ β` on `negChain K`. -/
+private lemma extLinearEquivOfIso_negChain_extClass_comp_mk₀ {i j : ℤ}
+    (hji : ComplexShape.embeddingDownIntUpInt.f (i - 1) = j) (β : kernel (K.homologyπ j) ⟶ Y) :
+    (extLinearEquivOfIso k
+      (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+        surjective_embeddingDownIntUpInt_f (i - 1) j hji).symm (Iso.refl Y) 1)
+      ((kernelSequence_shortExact (K.homologyπ j)).extClass.comp (Ext.mk₀ β) (add_zero 1)) =
+    (kernelSequence_shortExact ((negChain K).homologyπ (i - 1))).extClass.comp
+      (Ext.mk₀ (negChainBoundariesMap K hji ≫ β)) (add_zero 1) := by
+  -- Assemble the morphism between the boundary-cycle-homology short exact sequences.
+  let s : ShortComplex.mk (kernel.ι ((negChain K).homologyπ (i - 1)))
+        ((negChain K).homologyπ (i - 1)) (kernel.condition _) ⟶
+      ShortComplex.mk (kernel.ι (K.homologyπ j)) (K.homologyπ j) (kernel.condition _) :=
+    { τ₁ := negChainBoundariesMap K hji
+      τ₂ := (K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+        surjective_embeddingDownIntUpInt_f (i - 1) j hji).hom
+      τ₃ := (K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
+        surjective_embeddingDownIntUpInt_f (i - 1) j hji).hom
+      comm₁₂ := kernel.lift_ι _ _ _
+      comm₂₃ := (K.homologyπ_restrictionHomologyIsoOfSurjective_hom
+        ComplexShape.embeddingDownIntUpInt surjective_embeddingDownIntUpInt_f (i - 1) j hji).symm }
+  have hn := ShortComplex.ShortExact.extClass_naturality
+    (kernelSequence_shortExact ((negChain K).homologyπ (i - 1)))
+    (kernelSequence_shortExact (K.homologyπ j)) s
+  dsimp only [s, ShortComplex.kernelSequence] at hn ⊢
+  rw [extLinearEquivOfIso_apply, Iso.symm_inv, Iso.refl_hom, Ext.comp_mk₀_id,
+    ← Ext.comp_assoc _ _ _ (zero_add 1) (add_zero 1) (zero_add 1), ← hn,
+    Ext.comp_assoc _ _ _ (add_zero 1) (zero_add 0) (add_zero 1), Ext.mk₀_comp_mk₀]
+
 /-- **The characterization of `cochainExtToHomology`**: for `i + j = 1`, the class in
 `Ext¹(Hʲ(K), Y)` of a morphism `β : Bʲ(K) ⟶ Y` from the degree-`j` boundaries goes to the
 cohomology class of any cocycle `φ` with underlying morphism `K.toBoundaries (-i) j ≫ β`. -/
@@ -664,58 +675,24 @@ lemma cochainExtToHomology_extClass_comp_mk₀ {i j : ℤ} (hij : i + j = 1)
     surjective_embeddingDownIntUpInt_f (i - 1) j hji
   have := K.isSplitMono_restriction_iCycles_of_surjective ComplexShape.embeddingDownIntUpInt
     surjective_embeddingDownIntUpInt_f (i - 1) j hji
-  let eZ := K.restrictionCyclesIsoOfSurjective ComplexShape.embeddingDownIntUpInt
-    surjective_embeddingDownIntUpInt_f (i - 1) j hji
-  let eH := K.restrictionHomologyIsoOfSurjective ComplexShape.embeddingDownIntUpInt
-    surjective_embeddingDownIntUpInt_f (i - 1) j hji
-  have hcomm : (negChain K).homologyπ (i - 1) ≫ eH.hom = eZ.hom ≫ K.homologyπ j :=
-    K.homologyπ_restrictionHomologyIsoOfSurjective_hom ComplexShape.embeddingDownIntUpInt
-      surjective_embeddingDownIntUpInt_f (i - 1) j hji
-  let b : kernel ((negChain K).homologyπ (i - 1)) ⟶ kernel (K.homologyπ j) :=
-    kernel.map ((negChain K).homologyπ (i - 1)) (K.homologyπ j) eZ.hom eH.hom hcomm
-  let s : ShortComplex.mk (kernel.ι ((negChain K).homologyπ (i - 1)))
-        ((negChain K).homologyπ (i - 1)) (kernel.condition _) ⟶
-      ShortComplex.mk (kernel.ι (K.homologyπ j)) (K.homologyπ j) (kernel.condition _) :=
-    { τ₁ := b
-      τ₂ := eZ.hom
-      τ₃ := eH.hom
-      comm₁₂ := kernel.lift_ι _ _ _
-      comm₂₃ := hcomm.symm }
-  have hn := ShortComplex.ShortExact.extClass_naturality
-    (kernelSequence_shortExact ((negChain K).homologyπ (i - 1)))
-    (kernelSequence_shortExact (K.homologyπ j)) s
-  dsimp only [s, ShortComplex.kernelSequence] at hn
-  have hB : (negChain K).toBoundaries i (i - 1) ≫ b =
-      (K.restrictionXIso ComplexShape.embeddingDownIntUpInt
-        (ComplexShape.embeddingDownIntUpInt_f i)).hom ≫ K.toBoundaries (-i) j := by
-    rw [← cancel_mono (kernel.ι (K.homologyπ j)), Category.assoc, Category.assoc, kernel.lift_ι,
-      HomologicalComplex.toBoundaries_ι_assoc, HomologicalComplex.toBoundaries_ι,
-      ← cancel_mono (K.iCycles j), Category.assoc, Category.assoc,
-      HomologicalComplex.restrictionCyclesIsoOfSurjective_hom_iCycles,
-      HomologicalComplex.toCycles_i_assoc, HomologicalComplex.toCycles_i,
-      K.restriction_d_eq ComplexShape.embeddingDownIntUpInt
-        (ComplexShape.embeddingDownIntUpInt_f i) hji,
-      Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+  -- Build the matching cocycle `ψ` on `negChain K` via the boundary comparison map.
   let ψ := ChainComplex.cocycleOfComp k Y (X := negChain K)
-    ((negChain K).toBoundaries i (i - 1)) ((negChain K).d_toBoundaries _ i (i - 1)) (b ≫ β)
+    ((negChain K).toBoundaries i (i - 1)) ((negChain K).d_toBoundaries _ i (i - 1))
+    (negChainBoundariesMap K hji ≫ β)
   have hψ : ((negChain K).linearYonedaObj k Y).iCycles i ψ =
       Cochain.toSingleLinearEquiv (R := k) (neg_add_cancel i)
         (((linearHomComplex k K ((singleFunctor C 0).obj Y)).iCycles i).hom φ) := by
-    rw [ChainComplex.iCycles_cocycleOfComp, ← Category.assoc, hB, Category.assoc, hφ]
+    rw [ChainComplex.iCycles_cocycleOfComp, ← Category.assoc,
+      negChain_toBoundaries_comp_boundariesMap K hji, Category.assoc, hφ]
     exact restrictionXIso_hom_comp K i _
-  have harg : (extLinearEquivOfIso k eH.symm (Iso.refl Y) 1)
-        ((kernelSequence_shortExact (K.homologyπ j)).extClass.comp (Ext.mk₀ β) (add_zero 1)) =
-      (kernelSequence_shortExact ((negChain K).homologyπ (i - 1))).extClass.comp
-        (Ext.mk₀ (b ≫ β)) (add_zero 1) := by
-    dsimp only [ShortComplex.kernelSequence]
-    rw [extLinearEquivOfIso_apply, Iso.symm_inv, Iso.refl_hom, Ext.comp_mk₀_id,
-      ← Ext.comp_assoc _ _ _ (zero_add 1) (add_zero 1) (zero_add 1), ← hn,
-      Ext.comp_assoc _ _ _ (add_zero 1) (zero_add 0) (add_zero 1), Ext.mk₀_comp_mk₀]
+  -- Transport the extension class to `negChain K`, evaluate `ChainComplex.extToHomology`, and
+  -- return to `linearHomComplex` along `linearHomComplexSingle₀HomologyIso`.
+  have harg := extLinearEquivOfIso_negChain_extClass_comp_mk₀ (k := k) (K := K) (Y := Y) hji β
   exact (congrArg (fun e ↦ (linearHomComplexSingle₀HomologyIso k K Y i).inv.hom
       (ChainComplex.extToHomology k (negChain K) Y i (i - 1) e)) harg).trans
     ((congrArg (linearHomComplexSingle₀HomologyIso k K Y i).inv.hom
-      (ChainComplex.extToHomology_extClass_comp_mk₀ i (i - 1) (b ≫ β) ψ
-        (ChainComplex.iCycles_cocycleOfComp _ _ _))).trans
+      (ChainComplex.extToHomology_extClass_comp_mk₀ i (i - 1)
+        (negChainBoundariesMap K hji ≫ β) ψ (ChainComplex.iCycles_cocycleOfComp _ _ _))).trans
       (linearHomComplexSingle₀HomologyIso_inv_homologyπ K Y i φ ψ hψ))
 
 /-- **Injectivity of `cochainExtToHomology`**: in bidegree `i + j = 1`, the map

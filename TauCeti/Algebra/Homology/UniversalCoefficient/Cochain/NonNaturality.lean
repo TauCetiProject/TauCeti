@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.FreeModule.Basic
 public import Mathlib.RingTheory.Finiteness.Defs
 public import TauCeti.Algebra.Homology.UniversalCoefficient.Cochain.Basic
+import Mathlib.Algebra.Homology.Double
 import Mathlib.RingTheory.Finiteness.Basic
 import TauCeti.Algebra.Homology.ModuleCat.Basic
 
@@ -41,97 +42,75 @@ namespace TauCeti
 
 section NonNaturality
 
-private abbrev mulTwoObj (i : ℤ) : ModuleCat.{0} ℤ :=
-  if i = 0 then ModuleCat.of ℤ ℤ else if i = 1 then ModuleCat.of ℤ ℤ else ModuleCat.of ℤ PUnit
+private abbrev mulTwoHom : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ :=
+  ModuleCat.ofHom ((2 : ℤ) • (LinearMap.id : ℤ →ₗ[ℤ] ℤ))
+
+private lemma up_rel_zero_one : (ComplexShape.up ℤ).Rel (0 : ℤ) 1 := by simp
 
 /-- The two-term bounded finite free `ℤ`-cochain complex `0 ⟶ ℤ xrightarrow{×2} ℤ ⟶ 0` in degrees
 `0` and `1` witnessing that the universal coefficient splitting cannot be chosen naturally. -/
-private def mulTwoCochainComplex : CochainComplex (ModuleCat.{0} ℤ) ℤ where
-  X := mulTwoObj
-  d i j :=
-    if hi : i = 0 then
-      if hj : j = 1 then
-        eqToHom (by subst hi; rfl) ≫
-          ModuleCat.ofHom ((2 : ℤ) • (LinearMap.id : ℤ →ₗ[ℤ] ℤ)) ≫
-          eqToHom (by subst hj; rfl)
-      else 0
-    else 0
-  shape i j hij := by
-    simp only [ComplexShape.up_Rel] at hij; split_ifs <;> first | omega | rfl
-  d_comp_d' i j k hij hjk := by
-    simp only [ComplexShape.up_Rel] at hij hjk
-    by_cases hi : i = 0
-    · subst hi; obtain rfl : j = 1 := by omega
-      obtain rfl : k = 2 := by omega
-      simp
-    · rw [dite_eq_right hi, zero_comp]
-
-private def mulTwoX0Iso : mulTwoCochainComplex.X 0 ≅ ModuleCat.of ℤ ℤ := Iso.refl _
-
-private def mulTwoX1Iso : mulTwoCochainComplex.X 1 ≅ ModuleCat.of ℤ ℤ := Iso.refl _
-
-private lemma mulTwoCochainComplex_d_zero_one :
-    mulTwoCochainComplex.d 0 1 =
-      mulTwoX0Iso.hom ≫ ModuleCat.ofHom ((2 : ℤ) • (LinearMap.id : ℤ →ₗ[ℤ] ℤ)) ≫
-        mulTwoX1Iso.inv := by
-  simp [mulTwoCochainComplex, mulTwoX0Iso, mulTwoX1Iso, mulTwoObj]
+private abbrev mulTwoCochainComplex : CochainComplex (ModuleCat.{0} ℤ) ℤ :=
+  HomologicalComplex.double mulTwoHom up_rel_zero_one
 
 private instance (i : ℤ) : Module.Free ℤ (mulTwoCochainComplex.X i) := by
   by_cases hi0 : i = 0
-  · subst hi0; exact inferInstanceAs (Module.Free ℤ ℤ)
+  · subst hi0
+    exact Module.Free.of_equiv (doubleXIso₀ mulTwoHom up_rel_zero_one).symm.toLinearEquiv
   · by_cases hi1 : i = 1
-    · subst hi1; exact inferInstanceAs (Module.Free ℤ ℤ)
-    · rw [show mulTwoCochainComplex.X i = ModuleCat.of ℤ PUnit by
-        simp [mulTwoCochainComplex, mulTwoObj, hi0, hi1]]
-      exact inferInstanceAs (Module.Free ℤ PUnit)
+    · subst hi1
+      exact Module.Free.of_equiv
+        (doubleXIso₁ mulTwoHom up_rel_zero_one (by decide)).symm.toLinearEquiv
+    · have : Subsingleton (mulTwoCochainComplex.X i) :=
+        ModuleCat.isZero_iff_subsingleton.1 (isZero_double_X mulTwoHom up_rel_zero_one i hi0 hi1)
+      infer_instance
 
 private instance (i : ℤ) : Module.Finite ℤ (mulTwoCochainComplex.X i) := by
   by_cases hi0 : i = 0
-  · subst hi0; exact inferInstanceAs (Module.Finite ℤ ℤ)
+  · subst hi0
+    exact Module.Finite.equiv (doubleXIso₀ mulTwoHom up_rel_zero_one).symm.toLinearEquiv
   · by_cases hi1 : i = 1
-    · subst hi1; exact inferInstanceAs (Module.Finite ℤ ℤ)
-    · rw [show mulTwoCochainComplex.X i = ModuleCat.of ℤ PUnit by
-        simp [mulTwoCochainComplex, mulTwoObj, hi0, hi1]]
-      exact inferInstanceAs (Module.Finite ℤ PUnit)
+    · subst hi1
+      exact Module.Finite.equiv
+        (doubleXIso₁ mulTwoHom up_rel_zero_one (by decide)).symm.toLinearEquiv
+    · have : Subsingleton (mulTwoCochainComplex.X i) :=
+        ModuleCat.isZero_iff_subsingleton.1 (isZero_double_X mulTwoHom up_rel_zero_one i hi0 hi1)
+      infer_instance
 
 private instance : mulTwoCochainComplex.IsStrictlyGE 0 :=
-  (CochainComplex.isStrictlyGE_iff _ _).2 fun i hi ↦ by
-    dsimp only [mulTwoCochainComplex, mulTwoObj]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-    exact ModuleCat.isZero_of_subsingleton _
+  (CochainComplex.isStrictlyGE_iff _ _).2 fun i hi ↦
+    isZero_double_X mulTwoHom up_rel_zero_one i (by omega) (by omega)
 
 private instance : mulTwoCochainComplex.IsStrictlyLE 1 :=
-  (CochainComplex.isStrictlyLE_iff _ _).2 fun i hi ↦ by
-    dsimp only [mulTwoCochainComplex, mulTwoObj]
-    rw [ite_eq_right (by omega), ite_eq_right (by omega)]
-    exact ModuleCat.isZero_of_subsingleton _
+  (CochainComplex.isStrictlyLE_iff _ _).2 fun i hi ↦
+    isZero_double_X mulTwoHom up_rel_zero_one i (by omega) (by omega)
 
 private lemma isZero_homology_zero_mulTwoCochainComplex :
     IsZero (mulTwoCochainComplex.homology 0) := by
-  have hmul2 : Mono (ModuleCat.ofHom ((2 : ℤ) • (LinearMap.id : ℤ →ₗ[ℤ] ℤ))) :=
+  have hmul2 : Mono mulTwoHom :=
     (ModuleCat.mono_iff_injective _).2 fun a b hab ↦ by
       have h : (2 : ℤ) * (a : ℤ) = (2 : ℤ) * (b : ℤ) := by
-        simpa only [ModuleCat.hom_ofHom, LinearMap.smul_apply, LinearMap.id_apply,
+        simpa only [mulTwoHom, ModuleCat.hom_ofHom, LinearMap.smul_apply, LinearMap.id_apply,
           smul_eq_mul] using hab
       exact mul_left_cancel₀ (by decide : (2 : ℤ) ≠ 0) h
   have hmono : Mono (mulTwoCochainComplex.d 0 1) := by
-    rw [mulTwoCochainComplex_d_zero_one]
+    rw [double_d mulTwoHom up_rel_zero_one (by decide)]
     exact mono_comp _ _
   have hex : mulTwoCochainComplex.ExactAt 0 :=
     (HomologicalComplex.exactAt_iff' _ (-1) 0 1 (by simp) (by simp)).2
-      (((mulTwoCochainComplex.sc' (-1) 0 1).exact_iff_mono rfl).2 hmono)
+      (((mulTwoCochainComplex.sc' (-1) 0 1).exact_iff_mono
+        (double_d_eq_zero₀ mulTwoHom up_rel_zero_one (-1) 0 (by decide))).2 hmono)
   exact hex.isZero_homology
 
 private lemma not_exists_leftInverse_mulTwoCochainComplex_d :
     ¬ ∃ g : mulTwoCochainComplex.X 1 ⟶ ModuleCat.of ℤ ℤ,
-      mulTwoCochainComplex.d 0 1 ≫ g = mulTwoX0Iso.hom := by
+      mulTwoCochainComplex.d 0 1 ≫ g = (doubleXIso₀ mulTwoHom up_rel_zero_one).hom := by
   rintro ⟨g, hg⟩
-  rw [mulTwoCochainComplex_d_zero_one, Category.assoc, Category.assoc] at hg
-  have hg' : ModuleCat.ofHom ((2 : ℤ) • (LinearMap.id : ℤ →ₗ[ℤ] ℤ)) ≫
-      (mulTwoX1Iso.inv ≫ g) = 𝟙 (ModuleCat.of ℤ ℤ) := by
-    rw [← cancel_epi mulTwoX0Iso.hom, Category.comp_id]
+  rw [double_d mulTwoHom up_rel_zero_one (by decide), Category.assoc, Category.assoc] at hg
+  let f : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ :=
+    (doubleXIso₁ mulTwoHom up_rel_zero_one (by decide)).inv ≫ g
+  have hg' : mulTwoHom ≫ f = 𝟙 (ModuleCat.of ℤ ℤ) := by
+    rw [← cancel_epi (doubleXIso₀ mulTwoHom up_rel_zero_one).hom, Category.comp_id]
     exact hg
-  let f : ModuleCat.of ℤ ℤ ⟶ ModuleCat.of ℤ ℤ := mulTwoX1Iso.inv ≫ g
   have h1 : (2 : ℤ) * f.hom (1 : ℤ) = (1 : ℤ) := by
     have h := ConcreteCategory.congr_hom hg' (1 : ℤ)
     rw [ModuleCat.comp_apply, ModuleCat.ofHom_apply, LinearMap.smul_apply, LinearMap.id_apply,
@@ -215,7 +194,7 @@ theorem not_exists_natural_section_cochainKronecker :
   rintro ⟨s, hs_sec, hs_nat⟩
   -- Map `mulTwoCochainComplex` to `ℤ[0]` by the identity in degree `0`.
   let φ : mulTwoCochainComplex ⟶ singleIntComplex :=
-    HomologicalComplex.mkHomToSingle mulTwoX0Iso.hom (fun i hi ↦
+    HomologicalComplex.mkHomToSingle (doubleXIso₀ mulTwoHom up_rel_zero_one).hom (fun i hi ↦
       (mulTwoCochainComplex.isZero_of_isStrictlyGE 0 i
         (by simp only [ComplexShape.up_Rel] at hi; omega)).eq_of_src _ _)
   let g₀ : singleIntComplex.homology 0 ⟶ ModuleCat.of ℤ ℤ :=
@@ -239,10 +218,10 @@ theorem not_exists_natural_section_cochainKronecker :
   -- Evaluating the coboundary relation in degree `0` produces a left inverse to `×2 : ℤ ⟶ ℤ`.
   have hpre : Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0)
       (((linearHomComplexPrecomp ℤ φ singleIntComplex).f 0).hom ((L₂.iCycles 0).hom cyc₂)) =
-      mulTwoX0Iso.hom := by
+      (doubleXIso₀ mulTwoHom up_rel_zero_one).hom := by
     rw [toSingleLinearEquiv_linearHomComplexPrecomp_f_apply, hf₂]
     exact (congrArg (· ≫ (singleObjXSelf (ComplexShape.up ℤ) 0 (ModuleCat.of ℤ ℤ)).hom)
-      (HomologicalComplex.mkHomToSingle_f mulTwoX0Iso.hom _)).trans
+      (HomologicalComplex.mkHomToSingle_f (doubleXIso₀ mulTwoHom up_rel_zero_one).hom _)).trans
         (by rw [Category.assoc, Iso.inv_hom_id, Category.comp_id])
   have hd : Cochain.toSingleLinearEquiv (R := ℤ) (neg_add_cancel 0) ((L₁.d (-1) 0).hom y) =
       mulTwoCochainComplex.d 0 1 ≫
