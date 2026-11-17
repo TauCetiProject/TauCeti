@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.ContinuousMap.Bounded.Normed
+import Mathlib.Analysis.Calculus.Deriv.AffineMap
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
 # Curve integrals of continuous `1`-forms along segments
@@ -18,12 +22,18 @@ map `v ↦ α ![v]` through `ContinuousAlternatingMap.ofSubsingletonLIE`, curve 
 segment from `a` to `b` is therefore a continuous linear functional on bounded continuous
 `1`-form fields, of norm at most the length `‖b - a‖` of the segment.
 
+For a complex function `F` with continuous derivative `f` on the segment, the curve integral of
+the exact form `f(z) dz` along the segment from `a` to `b` is `F b - F a`
+(`TauCeti.curveIntegral_segment_toSpanSingleton_eq_sub`).
+
 ## Main declarations
 
 * `Continuous.curveIntegrable_segment`: a continuous field is curve integrable along segments.
 * `BoundedContinuousFunction.curveIntegralSegmentCLM a b`: curve integration along the segment
   from `a` to `b`, as a continuous linear functional on bounded continuous `1`-form fields.
 * `BoundedContinuousFunction.norm_curveIntegralSegmentCLM_le`: its norm is at most `‖b - a‖`.
+* `TauCeti.curveIntegral_segment_toSpanSingleton_eq_sub`: the fundamental theorem of calculus
+  along a segment in `ℂ`.
 -/
 
 public section
@@ -77,3 +87,31 @@ theorem norm_curveIntegralSegmentCLM_le (a b : E) :
   LinearMap.mkContinuous_norm_le _ (norm_nonneg _) _
 
 end BoundedContinuousFunction
+
+namespace TauCeti
+
+open Set
+
+/-- **Fundamental theorem of calculus along a segment.** If `F` has complex derivative `f` at every
+point of the segment `[a, b]` and `f` is continuous there, the curve integral of `f(z) dz` along
+`Path.segment a b` is `F b - F a`. -/
+theorem curveIntegral_segment_toSpanSingleton_eq_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℂ E] [CompleteSpace E] {F f : ℂ → E} {a b : ℂ}
+    (hF : ∀ z ∈ segment ℝ a b, HasDerivAt F (f z) z) (hf : ContinuousOn f (segment ℝ a b)) :
+    ∫ᶜ z in Path.segment a b, ContinuousLinearMap.toSpanSingleton ℂ (f z) = F b - F a := by
+  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ ℂ E
+  have hmem : ∀ t ∈ uIcc (0 : ℝ) 1, AffineMap.lineMap a b t ∈ segment ℝ a b := fun t ht =>
+    lineMap_mem_segment ℝ a b (by rwa [uIcc_of_le zero_le_one] at ht)
+  rw [curveIntegral_segment]
+  simp only [ContinuousLinearMap.toSpanSingleton_apply]
+  have hderiv : ∀ t ∈ uIcc (0 : ℝ) 1,
+      HasDerivAt (fun t : ℝ => F (AffineMap.lineMap a b t))
+        ((b - a) • f (AffineMap.lineMap a b t)) t := fun t ht =>
+    (hF _ (hmem t ht)).scomp t (AffineMap.hasDerivAt_lineMap (a := a) (b := b) (x := t))
+  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv, AffineMap.lineMap_apply_one,
+    AffineMap.lineMap_apply_zero]
+  refine ContinuousOn.intervalIntegrable ?_
+  refine continuousOn_const.smul (hf.comp ?_ hmem)
+  exact (AffineMap.lineMap_continuous (R := ℝ)).continuousOn
+
+end TauCeti

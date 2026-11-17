@@ -8,11 +8,12 @@ module
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
-import Mathlib.Analysis.Calculus.Deriv.AffineMap
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
+import TauCeti.MeasureTheory.Integral.CurveIntegral.Segment
 
 /-!
 # The complex slope and the incomplete beta kernel
@@ -30,7 +31,7 @@ For `v₁ = (x₁, y₁)` and `v₂ = (x₂, y₂)` in `ℤ²`, the incomplete b
 integrated from `conj ξ` to `ξ` along the polygonal path through `c = 1/2` when `y₁ ≥ y₂` and
 through `c = -1` when `y₁ < y₂`, as a sum of Mathlib's curve integrals along two segments. It
 depends only on `v₂ - v₁` (`incompleteBetaKernel_add_right`); on the diagonal it is `arg ξ / π`
-(`incompleteBetaKernel_self`), and along a row it is
+for `ξ` in the slit plane `ℂ \ (-∞, 0]` (`incompleteBetaKernel_self`), and along a row it is
 `K_ξ(v; v + (m, 0)) = |ξ|^m sin(m arg ξ) / (πm)` for `m ≠ 0` (`incompleteBetaKernel_add_row`).
 For `ξ = ξ(s, t)` these are the density `s` and the discrete sine kernel `sin(πsm) / (πm)`
 twisted by `|ξ|^m`.
@@ -53,37 +54,18 @@ open scoped Real ComplexConjugate
 
 namespace TauCeti
 
-/-! ### Curve integrals of exact forms along segments -/
-
-/-- **Fundamental theorem of calculus along a segment.** If `F` has complex derivative `f` at every
-point of the segment `[a, b]` and `f` is continuous there, the curve integral of `f(z) dz` along
-`Path.segment a b` is `F b - F a`. -/
-theorem curveIntegral_segment_toSpanSingleton_eq_sub {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℂ E] [CompleteSpace E] {F f : ℂ → E} {a b : ℂ}
-    (hF : ∀ z ∈ segment ℝ a b, HasDerivAt F (f z) z) (hf : ContinuousOn f (segment ℝ a b)) :
-    ∫ᶜ z in Path.segment a b, ContinuousLinearMap.toSpanSingleton ℂ (f z) = F b - F a := by
-  let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ ℂ E
-  have hmem : ∀ t ∈ uIcc (0 : ℝ) 1, AffineMap.lineMap a b t ∈ segment ℝ a b := fun t ht =>
-    lineMap_mem_segment ℝ a b (by rwa [uIcc_of_le zero_le_one] at ht)
-  rw [curveIntegral_segment]
-  simp only [ContinuousLinearMap.toSpanSingleton_apply]
-  have hderiv : ∀ t ∈ uIcc (0 : ℝ) 1,
-      HasDerivAt (fun t : ℝ => F (AffineMap.lineMap a b t))
-        ((b - a) • f (AffineMap.lineMap a b t)) t := fun t ht =>
-    (hF _ (hmem t ht)).scomp t (AffineMap.hasDerivAt_lineMap (a := a) (b := b) (x := t))
-  rw [intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv, AffineMap.lineMap_apply_one,
-    AffineMap.lineMap_apply_zero]
-  refine ContinuousOn.intervalIntegrable ?_
-  refine continuousOn_const.smul (hf.comp ?_ hmem)
-  exact (AffineMap.lineMap_continuous (R := ℝ)).continuousOn
-
 /-! ### The complex slope -/
 
 /-- The complex slope `ξ(s, t) = e^{πis} sin(πt) / sin(π(1 - s - t))` of a slope `(s, t)`. For
 `(s, t)` in the open triangle `s > 0`, `t > 0`, `s + t < 1` it is the apex of the triangle on
 `[0, 1]` with angles `πs` at `0` and `πt` at `1`. -/
-@[expose] noncomputable def complexSlope (s t : ℝ) : ℂ :=
+noncomputable def complexSlope (s t : ℝ) : ℂ :=
   exp (↑(π * s) * I) * ↑(Real.sin (π * t) / Real.sin (π * (1 - s - t)))
+
+/-- The defining formula of `complexSlope`. -/
+theorem complexSlope_def (s t : ℝ) :
+    complexSlope s t = exp (↑(π * s) * I) * ↑(Real.sin (π * t) / Real.sin (π * (1 - s - t))) :=
+  (rfl)
 
 private theorem complexSlope_eq_mul (s t : ℝ) :
     complexSlope s t = ↑(Real.sin (π * t) / Real.sin (π * (1 - s - t))) *
@@ -97,7 +79,8 @@ theorem one_sub_complexSlope {s t : ℝ} (h : Real.sin (π * (1 - s - t)) ≠ 0)
       exp (↑(-(π * t)) * I) * ↑(Real.sin (π * s) / Real.sin (π * (1 - s - t))) := by
   have hS : Real.sin (π * (1 - s - t)) =
       Real.sin (π * s) * Real.cos (π * t) + Real.cos (π * s) * Real.sin (π * t) := by
-    rw [← Real.sin_add, show π * (1 - s - t) = π - (π * s + π * t) by ring, Real.sin_pi_sub]
+    have hangle : π * (1 - s - t) = π - (π * s + π * t) := by ring
+    rw [← Real.sin_add, hangle, Real.sin_pi_sub]
   rw [complexSlope, exp_mul_I, exp_mul_I, ← ofReal_cos, ← ofReal_sin, ← ofReal_cos,
     ← ofReal_sin, Real.cos_neg, Real.sin_neg]
   apply Complex.ext <;>
@@ -113,19 +96,16 @@ private theorem one_sub_complexSlope_eq_mul {s t : ℝ} (h : Real.sin (π * (1 -
       (cos ↑(-(π * t)) + sin ↑(-(π * t)) * I) := by
   rw [one_sub_complexSlope h, exp_mul_I, mul_comm]
 
-private theorem sin_pi_mul_pos {x : ℝ} (h₀ : 0 < x) (h₁ : x < 1) : 0 < Real.sin (π * x) :=
-  Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
-
 /-- On the open triangle, `sin(π(1 - s - t)) > 0`. -/
 private theorem sin_pi_mul_one_sub_sub_pos {s t : ℝ} (hs : 0 < s) (ht : 0 < t)
     (hst : s + t < 1) : 0 < Real.sin (π * (1 - s - t)) :=
-  sin_pi_mul_pos (by linarith) (by linarith)
+  sin_pi_mul_pos_of_pos_of_lt_one (by linarith) (by linarith)
 
 /-- On the open triangle, the argument of `ξ(s, t)` is `πs`: the angle of the triangle at `0`. -/
 theorem arg_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s + t < 1) :
     arg (complexSlope s t) = π * s := by
   rw [complexSlope_eq_mul]
-  refine arg_mul_cos_add_sin_mul_I (div_pos (sin_pi_mul_pos ht (by linarith))
+  refine arg_mul_cos_add_sin_mul_I (div_pos (sin_pi_mul_pos_of_pos_of_lt_one ht (by linarith))
     (sin_pi_mul_one_sub_sub_pos hs ht hst)) ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
 
 /-- On the open triangle, `|ξ(s, t)| = sin(πt) / sin(π(1 - s - t))`: the side opposite the angle
@@ -133,7 +113,8 @@ theorem arg_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s + t < 1)
 theorem norm_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s + t < 1) :
     ‖complexSlope s t‖ = Real.sin (π * t) / Real.sin (π * (1 - s - t)) := by
   rw [complexSlope, norm_mul, norm_exp_ofReal_mul_I, one_mul, norm_real, Real.norm_eq_abs,
-    abs_of_pos (div_pos (sin_pi_mul_pos ht (by linarith)) (sin_pi_mul_one_sub_sub_pos hs ht hst))]
+    abs_of_pos (div_pos (sin_pi_mul_pos_of_pos_of_lt_one ht (by linarith))
+      (sin_pi_mul_one_sub_sub_pos hs ht hst))]
 
 /-- On the open triangle, `ξ(s, t)` lies in the upper half-plane. -/
 theorem im_complexSlope_pos {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s + t < 1) :
@@ -141,15 +122,15 @@ theorem im_complexSlope_pos {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s + t <
   rw [complexSlope_eq_mul, ← ofReal_cos, ← ofReal_sin]
   simp only [mul_im, ofReal_re, ofReal_im, add_im, I_re, I_im, zero_mul, mul_zero, add_zero,
     mul_one, zero_add]
-  exact mul_pos (div_pos (sin_pi_mul_pos ht (by linarith))
-    (sin_pi_mul_one_sub_sub_pos hs ht hst)) (sin_pi_mul_pos hs (by linarith))
+  exact mul_pos (div_pos (sin_pi_mul_pos_of_pos_of_lt_one ht (by linarith))
+    (sin_pi_mul_one_sub_sub_pos hs ht hst)) (sin_pi_mul_pos_of_pos_of_lt_one hs (by linarith))
 
 /-- On the open triangle, the argument of `1 - ξ(s, t)` is `-πt`: the angle of the triangle at `1`
 is `πt`. -/
 theorem arg_one_sub_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s + t < 1) :
     arg (1 - complexSlope s t) = -(π * t) := by
   rw [one_sub_complexSlope_eq_mul (sin_pi_mul_one_sub_sub_pos hs ht hst).ne']
-  refine arg_mul_cos_add_sin_mul_I (div_pos (sin_pi_mul_pos hs (by linarith))
+  refine arg_mul_cos_add_sin_mul_I (div_pos (sin_pi_mul_pos_of_pos_of_lt_one hs (by linarith))
     (sin_pi_mul_one_sub_sub_pos hs ht hst)) ⟨by nlinarith [Real.pi_pos], by nlinarith [Real.pi_pos]⟩
 
 /-- On the open triangle, `|1 - ξ(s, t)| = sin(πs) / sin(π(1 - s - t))`: the side opposite the
@@ -158,7 +139,8 @@ theorem norm_one_sub_complexSlope {s t : ℝ} (hs : 0 < s) (ht : 0 < t) (hst : s
     ‖1 - complexSlope s t‖ = Real.sin (π * s) / Real.sin (π * (1 - s - t)) := by
   rw [one_sub_complexSlope (sin_pi_mul_one_sub_sub_pos hs ht hst).ne', norm_mul,
     norm_exp_ofReal_mul_I, one_mul, norm_real, Real.norm_eq_abs,
-    abs_of_pos (div_pos (sin_pi_mul_pos hs (by linarith)) (sin_pi_mul_one_sub_sub_pos hs ht hst))]
+    abs_of_pos (div_pos (sin_pi_mul_pos_of_pos_of_lt_one hs (by linarith))
+      (sin_pi_mul_one_sub_sub_pos hs ht hst))]
 
 /-- The sine of the angle `π - arg ξ + arg (1 - ξ)` of the triangle `0, 1, ξ` at `ξ`. -/
 private theorem sin_arg_sub_arg_one_sub {ξ : ℂ} (h₀ : ξ ≠ 0) (h₁ : 1 - ξ ≠ 0) :
@@ -185,9 +167,11 @@ theorem complexSlope_arg_div_pi {ξ : ℂ} (hξ : 0 < ξ.im) :
     field_simp
     ring
   have ht : Real.sin (π * (-arg (1 - ξ) / π)) = ξ.im / ‖1 - ξ‖ := by
-    rw [show π * (-arg (1 - ξ) / π) = -arg (1 - ξ) by field_simp, Real.sin_neg, sin_arg]
+    have hangle : π * (-arg (1 - ξ) / π) = -arg (1 - ξ) := by field_simp
+    rw [hangle, Real.sin_neg, sin_arg]
     simp [neg_div]
-  rw [complexSlope, hS, ht, show π * (arg ξ / π) = arg ξ by field_simp]
+  have hs : π * (arg ξ / π) = arg ξ := by field_simp
+  rw [complexSlope, hS, ht, hs]
   conv_rhs => rw [← norm_mul_exp_arg_mul_I ξ]
   rw [mul_comm]
   congr 2
@@ -237,11 +221,22 @@ from `conj ξ` to `ξ` along the polygonal path through `c = 1/2` when `y₁ ≥
 when `y₁ < y₂`: the sum of Mathlib's curve integrals of the `1`-form `f(z) dz`, written
 `v ↦ v • f z`, along `Path.segment (conj ξ) c` and `Path.segment c ξ`. For `ξ` in the upper
 half-plane both segments avoid `0` and `1`. -/
-@[expose] noncomputable def incompleteBetaKernel (ξ : ℂ) (v₁ v₂ : ℤ × ℤ) : ℂ :=
+noncomputable def incompleteBetaKernel (ξ : ℂ) (v₁ v₂ : ℤ × ℤ) : ℂ :=
   let ω : ℂ → ℂ →L[ℂ] ℂ := fun z =>
     ContinuousLinearMap.toSpanSingleton ℂ ((1 - z) ^ (v₁.2 - v₂.2) * z ^ (v₂.1 - v₁.1 - 1))
   let c : ℂ := if v₂.2 ≤ v₁.2 then 1 / 2 else -1
   (2 * π * I)⁻¹ * ((∫ᶜ z in Path.segment (conj ξ) c, ω z) + ∫ᶜ z in Path.segment c ξ, ω z)
+
+/-- The defining formula of `incompleteBetaKernel`. -/
+theorem incompleteBetaKernel_def (ξ : ℂ) (v₁ v₂ : ℤ × ℤ) :
+    incompleteBetaKernel ξ v₁ v₂ = (2 * π * I)⁻¹ *
+      ((∫ᶜ z in Path.segment (conj ξ) (if v₂.2 ≤ v₁.2 then 1 / 2 else -1 : ℂ),
+          ContinuousLinearMap.toSpanSingleton ℂ
+            ((1 - z) ^ (v₁.2 - v₂.2) * z ^ (v₂.1 - v₁.1 - 1))) +
+        ∫ᶜ z in Path.segment (if v₂.2 ≤ v₁.2 then 1 / 2 else -1 : ℂ) ξ,
+          ContinuousLinearMap.toSpanSingleton ℂ
+            ((1 - z) ^ (v₁.2 - v₂.2) * z ^ (v₂.1 - v₁.1 - 1))) :=
+  (rfl)
 
 /-- The incomplete beta kernel depends only on `v₂ - v₁`. -/
 theorem incompleteBetaKernel_add_right (ξ : ℂ) (v₁ v₂ w : ℤ × ℤ) :
@@ -272,8 +267,10 @@ private theorem curveIntegral_conj_half_add_eq_sub {F f : ℂ → ℂ} {ξ : ℂ
     curveIntegral_segment_toSpanSingleton_eq_sub (fun z hz => hF z (h₂ hz)) (hf.mono h₂)]
   ring
 
-/-- **The diagonal of the incomplete beta kernel**: `K_ξ(v; v) = arg ξ / π`, which is `s` for
-`ξ = ξ(s, t)`. Here the integrand is `z⁻¹`, with primitive `log z` on the slit plane. -/
+/-- **The diagonal of the incomplete beta kernel**: for `ξ` in the slit plane `ℂ \ (-∞, 0]`,
+`K_ξ(v; v) = arg ξ / π`, which is `s` for `ξ = ξ(s, t)`. Here the integrand is `z⁻¹`, with
+primitive `log z` on the slit plane. It fails off the slit plane: for `ξ = -1` the two segments
+are the same segment traversed in opposite directions, so `K_ξ(v; v) = 0 ≠ arg (-1) / π`. -/
 theorem incompleteBetaKernel_self {ξ : ℂ} (hξ : ξ ∈ slitPlane) (v : ℤ × ℤ) :
     incompleteBetaKernel ξ v v = arg ξ / π := by
   have hlog := curveIntegral_conj_half_add_eq_sub (F := log) (f := fun z => z⁻¹) hξ
@@ -286,12 +283,6 @@ theorem incompleteBetaKernel_self {ξ : ℂ} (hξ : ξ ∈ slitPlane) (v : ℤ �
   push_cast
   field_simp
 
-/-- `Im (ξ ^ m) = |ξ|^m sin(m arg ξ)`. -/
-private theorem im_zpow (ξ : ℂ) (m : ℤ) : (ξ ^ m).im = ‖ξ‖ ^ m * Real.sin (m * arg ξ) := by
-  conv_lhs => rw [← norm_mul_exp_arg_mul_I ξ]
-  rw [mul_zpow, ← exp_int_mul, ← ofReal_zpow, ← mul_assoc, ← ofReal_intCast, ← ofReal_mul,
-    im_ofReal_mul, exp_ofReal_mul_I_im]
-
 /-- **The incomplete beta kernel along a row**: for `m ≠ 0`,
 `K_ξ(v; v + (m, 0)) = |ξ|^m sin(m arg ξ) / (πm)`, which is `|ξ|^m sin(πsm) / (πm)` for
 `ξ = ξ(s, t)`. Here the integrand is `z^(m - 1)`, with primitive `z^m / m` away from `0`. -/
@@ -301,7 +292,7 @@ theorem incompleteBetaKernel_add_row (ξ : ℂ) (v : ℤ × ℤ) {m : ℤ} (hm :
   simp only [incompleteBetaKernel, Prod.fst_add, Prod.snd_add, add_zero, sub_self, zpow_zero,
     one_mul, add_sub_cancel_left]
   have hc : (if v.2 + 0 ≤ v.2 then (1 / 2 : ℂ) else -1) = 1 / 2 := by simp
-  rw [hc, ← im_zpow]
+  rw [hc, ← Complex.im_zpow]
   by_cases him : ξ.im = 0
   · have hc : conj ξ = ξ := conj_eq_iff_im.2 him
     have hreal : (ξ ^ m).im = 0 := by

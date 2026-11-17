@@ -31,6 +31,7 @@ the argument is smooth on the whole punctured plane: near the negative real axis
 from the argument of `-z`.
 Since the argument is continuous on the slit plane and blind to positive real scaling,
 `arg (f x) → arg Q` as soon as some positive real multiple of `f x` tends to `Q ∈ slitPlane`.
+In polar coordinates, `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 
 ## Main results
 
@@ -56,6 +57,7 @@ Since the argument is continuous on the slit plane and blind to positive real sc
 * `Complex.contDiffAt_arg`: the argument is smooth on the slit plane.
 * `Complex.tendsto_arg_of_tendsto_ofReal_mul`: if `c x * f x → Q ∈ slitPlane` with `c x > 0`
   eventually, then `arg (f x) → arg Q`.
+* `Complex.im_zpow`: `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`.
 * `HasDerivAt.hasFDerivAt_arg`: the real derivative of `arg ∘ f` on the slit plane is the
   imaginary part of the logarithmic derivative of `f`.
 * `ContDiff.contDiffAt_comp_arg`: a smooth `2π`-periodic function of the argument is smooth away
@@ -218,6 +220,12 @@ theorem tendsto_arg_of_tendsto_ofReal_mul {α : Type*} {l : Filter α} {c : α �
     (h : Tendsto (fun x ↦ (c x : ℂ) * f x) l (𝓝 Q)) :
     Tendsto (fun x ↦ arg (f x)) l (𝓝 (arg Q)) :=
   ((continuousAt_arg hQ).tendsto.comp h).congr' (hc.mono fun _ hx ↦ arg_real_mul _ hx)
+
+/-- `Im (z ^ m) = |z|^m sin(m arg z)` for every integer `m`. -/
+theorem im_zpow (z : ℂ) (m : ℤ) : (z ^ m).im = ‖z‖ ^ m * Real.sin (m * arg z) := by
+  conv_lhs => rw [← norm_mul_exp_arg_mul_I z]
+  rw [mul_zpow, ← exp_int_mul, ← ofReal_zpow, ← mul_assoc, ← ofReal_intCast, ← ofReal_mul,
+    im_ofReal_mul, exp_ofReal_mul_I_im]
 
 end Complex
 
