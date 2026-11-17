@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
-public import TauCeti.RingTheory.Localization.AtPrime
+public import TauCeti.RingTheory.Localization.AtPrime.FractionRing
 
 /-!
 # A local ring inside the completed integer ring

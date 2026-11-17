@@ -13,8 +13,8 @@ public import Mathlib.RingTheory.Localization.LocalizationLocalization
 Let `R` be a domain with fraction field `K` (any commutative ring with `IsFractionRing R K`, as in
 Mathlib's `IsFractionRing` API) and let `f` be a nonzero element of `R`. The localization
 `Localization.Away f` embeds in `K`, and `K` is again its fraction field. This is the
-analogue for `Localization.Away` of `TauCeti/RingTheory/Localization/AtPrime.lean`, built the same
-way from `IsLocalization.localizationAlgebraOfSubmonoidLe`, here for the inequality
+analogue for `Localization.Away` of `TauCeti/RingTheory/Localization/AtPrime/FractionRing.lean`,
+built the same way from `IsLocalization.localizationAlgebraOfSubmonoidLe`, here for the inequality
 `powers_le_nonZeroDivisors_of_noZeroDivisors`.
 
 Unlike the prime case, the construction needs the hypothesis `f ≠ 0` (for `f = 0` the
