@@ -56,11 +56,6 @@ open TauCeti.Probability
 
 variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
 
-private lemma measure_singleton_zero_lt_one_of_mean_eq_top
-    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) : F {0} < 1 :=
-  F.measure_singleton_lt_one_of_lintegral_pos (f := fun u ↦ (u : ℝ≥0∞))
-    (a := 0) (by simp) (hmean ▸ ENNReal.zero_lt_top)
-
 /-- For any probability measure on `ℝ≥0` of infinite extended mean, lattice or nonlattice, every
 fixed-window increment of the real-valued renewal function tends to zero at infinity. Atoms at
 zero are allowed. -/
@@ -78,7 +73,8 @@ theorem tendsto_renewalMeasure_real_Ioc_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 ↦ F.renewalMeasure.real (Ioc t (t + x))) atTop (𝓝 0) := by
   let : IsLocallyFiniteMeasure F.renewalMeasure :=
-    F.isLocallyFiniteMeasure_renewalMeasure (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean)
+    F.isLocallyFiniteMeasure_renewalMeasure
+      (F.measure_singleton_lt_one_of_lintegral_pos ENNReal.coe_zero (hmean ▸ ENNReal.zero_lt_top))
   simpa only [← F.toReal_renewalFunction_add_sub] using
     F.tendsto_renewalFunction_add_sub_of_mean_eq_top hmean x
 
@@ -88,7 +84,8 @@ theorem tendsto_renewalMeasure_Ioc_of_mean_eq_top
     (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) = ∞) (x : ℝ≥0) :
     Tendsto (fun t : ℝ≥0 ↦ F.renewalMeasure (Ioc t (t + x))) atTop (𝓝 0) := by
   let : IsLocallyFiniteMeasure F.renewalMeasure :=
-    F.isLocallyFiniteMeasure_renewalMeasure (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean)
+    F.isLocallyFiniteMeasure_renewalMeasure
+      (F.measure_singleton_lt_one_of_lintegral_pos ENNReal.coe_zero (hmean ▸ ENNReal.zero_lt_top))
   simpa only [ofReal_measureReal measure_Ioc_lt_top.ne, ENNReal.ofReal_zero] using
     ENNReal.tendsto_ofReal (F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean x)
 
@@ -101,7 +98,8 @@ theorem tendsto_renewalConv_indicator_Iio_of_mean_eq_top
     (A : ℝ≥0) {C : ℝ} (hC : ∀ s < A, |h s| ≤ C) :
     Tendsto (renewalConv ((Iio A).indicator h) F.renewalMeasure) atTop (𝓝 0) := by
   let : IsLocallyFiniteMeasure F.renewalMeasure :=
-    F.isLocallyFiniteMeasure_renewalMeasure (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean)
+    F.isLocallyFiniteMeasure_renewalMeasure
+      (F.measure_singleton_lt_one_of_lintegral_pos ENNReal.coe_zero (hmean ▸ ENNReal.zero_lt_top))
   exact F.renewalMeasure.tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc_nhds_zero
     (F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean A) hC
 
@@ -114,8 +112,9 @@ theorem tendsto_renewalConv_of_mean_eq_top
     (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) :
     Tendsto (renewalConv h F.renewalMeasure) atTop (𝓝 0) := by
   simpa using F.tendsto_renewalConv_of_tendsto_measureReal_Ioc
-    (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean) (r := 0)
-    (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d) hh h₀ hint
+    (F.measure_singleton_lt_one_of_lintegral_pos ENNReal.coe_zero (hmean ▸ ENNReal.zero_lt_top))
+    (r := 0) (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d)
+    hh h₀ hint
 
 /-- For any probability measure on `ℝ≥0` of infinite extended mean, lattice or nonlattice, the
 convolution of `F.renewalMeasure - dirac 0` with any nonnegative, nonincreasing,
@@ -126,8 +125,9 @@ theorem tendsto_renewalConv_sub_dirac_of_mean_eq_top
     (hint : IntegrableOn (fun x : ℝ => h x.toNNReal) (Ioi 0)) :
     Tendsto (renewalConv h (F.renewalMeasure - dirac 0)) atTop (𝓝 0) := by
   simpa using F.tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
-    (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean) (r := 0)
-    (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d) hh h₀ hint
+    (F.measure_singleton_lt_one_of_lintegral_pos ENNReal.coe_zero (hmean ▸ ENNReal.zero_lt_top))
+    (r := 0) (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d)
+    hh h₀ hint
 
 end MeasureTheory.Measure
 
@@ -144,8 +144,8 @@ theorem tendsto_of_eq_add_renewalConv_of_mean_eq_top
     (hgeq : g = h + renewalConv g F) :
     Tendsto g atTop (𝓝 0) := by
   simpa using tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
-    (F.measure_singleton_zero_lt_one_of_mean_eq_top hmean) (r := 0)
-    (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d)
+    (F.measure_singleton_lt_one_of_lintegral_pos ENNReal.coe_zero (hmean ▸ ENNReal.zero_lt_top))
+    (r := 0) (fun d ↦ by simpa using F.tendsto_renewalMeasure_real_Ioc_of_mean_eq_top hmean d)
     hh h₀ hint hg hgb hgeq
 
 end TauCeti.Probability

@@ -184,11 +184,6 @@ theorem tendsto_renewalConv_indicator_Iio_of_tendsto_measureReal_Ioc_nhds_zero
   rw [Real.norm_eq_abs]
   exact (hC _ hts).trans (le_max_left C 0)
 
-private lemma abs_le_apply_zero_of_antitone {h : ℝ≥0 → ℝ} (hh : Antitone h)
-    (h₀ : ∀ x, 0 ≤ h x) (x : ℝ≥0) : |h x| ≤ h 0 := by
-  rw [abs_of_nonneg (h₀ x)]
-  exact hh bot_le
-
 /-- The analytic implication from Blackwell interval limits to the key renewal limit.
 The nonlattice hypothesis and the identification of `r` must be supplied by the interval-limit
 theorem; neither is assumed implicitly. Zero increments and infinite increment mean are allowed. -/
@@ -202,7 +197,7 @@ theorem tendsto_renewalConv_of_tendsto_measureReal_Ioc
     Tendsto (renewalConv h μ.renewalMeasure) atTop
       (𝓝 (r * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
   have := isLocallyFiniteMeasure_renewalMeasure μ hμ
-  have hbound : ∀ x : ℝ≥0, |h x| ≤ h 0 := abs_le_apply_zero_of_antitone hh h₀
+  have hbound : ∀ x : ℝ≥0, |h x| ≤ h 0 := fun x => (abs_of_nonneg (h₀ x)).trans_le (hh bot_le)
   have hintconv (t : ℝ≥0) : IntegrableOn (fun s => h (t - s)) (Iic t)
       μ.renewalMeasure :=
     integrableOn_Iic_sub hh.measurable (fun s _ => hbound s) measure_Iic_lt_top.ne
@@ -261,7 +256,7 @@ theorem tendsto_renewalConv_sub_dirac_of_tendsto_measureReal_Ioc
       renewalConv h μ.renewalMeasure t - h t := by
     have heq := renewalConv_renewalMeasure_eq_add_sub_dirac (μ := μ) (t := t)
       (integrableOn_Iic_sub hh.measurable
-        (fun s _ => abs_le_apply_zero_of_antitone hh h₀ s) measure_Iic_lt_top.ne)
+        (fun s _ => (abs_of_nonneg (h₀ s)).trans_le (hh bot_le)) measure_Iic_lt_top.ne)
     linarith
   rw [funext he]
   simpa only [sub_zero] using
@@ -286,7 +281,7 @@ theorem tendsto_of_eq_add_renewalConv_of_tendsto_measureReal_Ioc
     Tendsto g atTop (𝓝 (r * ∫ x in Ioi (0 : ℝ), h x.toNNReal)) := by
   let : IsLocallyFiniteMeasure F.renewalMeasure := F.isLocallyFiniteMeasure_renewalMeasure hF
   have hhb : ∀ t, ∃ C, ∀ s ≤ t, |h s| ≤ C := fun _ =>
-    ⟨h 0, fun s _ => Measure.abs_le_apply_zero_of_antitone hh h₀ s⟩
+    ⟨h 0, fun s _ => (abs_of_nonneg (h₀ s)).trans_le (hh bot_le)⟩
   rw [eq_renewalConv_renewalMeasure hh.measurable hhb hg hgb hgeq]
   exact F.tendsto_renewalConv_of_tendsto_measureReal_Ioc hF hlim hh h₀ hint
 
