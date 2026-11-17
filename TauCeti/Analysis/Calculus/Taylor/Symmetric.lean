@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Topology.UniformSpace.HeineCantor
 import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Symmetric-endpoint, midpoint, and cross-increment Taylor estimates
@@ -270,37 +271,19 @@ theorem tendsto_sum_sub_mul_sub_sub_deriv_mul_sq {h h' : ℝ → ℝ} {a b : ℝ
     (hQ : l.IsBoundedUnder (· ≤ ·) (fun k ↦ ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2)) :
     Tendsto (fun k ↦ (∑ i ∈ range (n k), (h (x k (i + 1)) - h (x k i)) * (x k (i + 1) - x k i)) -
       ∑ i ∈ range (n k), h' (x k i) * (x k (i + 1) - x k i) ^ 2) l (𝓝 0) := by
-  obtain ⟨K, hK⟩ := hQ
-  rw [eventually_map] at hK
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  have hKpos : 0 < max K 0 + 1 := by positivity
+  refine (tendsto_sum_zero_of_forall_norm_le_mul (w := fun k i ↦ (x k (i + 1) - x k i) ^ 2)
+    (fun ε hε ↦ ?_) hQ).congr fun k ↦ sum_sub_distrib ..
   obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
-    (isCompact_Icc.uniformContinuousOn_of_continuous hc) (ε / (max K 0 + 1)) (div_pos hε hKpos)
-  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hK] with k hk hxk hδk hKk
-  rw [Real.dist_eq, sub_zero, ← sum_sub_distrib]
-  have hstep (i : ℕ) (hi : i ∈ range (n k)) :
-      ‖(h (x k (i + 1)) - h (x k i)) * (x k (i + 1) - x k i) -
-        h' (x k i) * (x k (i + 1) - x k i) ^ 2‖ ≤
-        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
-    rw [Real.norm_eq_abs]
-    have hi' := mem_range.1 hi
-    have hsub := uIcc_subset_Icc (hxk i hi'.le) (hxk (i + 1) hi')
-    refine abs_sub_mul_sub_sub_deriv_mul_sq_le hsub (fun z hz ↦ hh z (hsub hz)) fun z hz ↦ ?_
-    have hzx : dist z (x k i) < η := by
-      rw [Real.dist_eq]
-      exact (abs_sub_left_of_mem_uIcc hz).trans_lt ((hδk i hi').trans_lt hk)
-    exact (Real.dist_eq (h' z) (h' (x k i)) ▸ hosc z (hsub hz) (x k i) (hxk i hi'.le) hzx).le
-  have hsum : |∑ i ∈ range (n k), ((h (x k (i + 1)) - h (x k i)) * (x k (i + 1) - x k i) -
-      h' (x k i) * (x k (i + 1) - x k i) ^ 2)| ≤
-      ε / (max K 0 + 1) * max K 0 := by
-    calc
-      _ ≤ ε / (max K 0 + 1) * ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2 := by
-        simpa only [Real.norm_eq_abs, ← mul_sum] using norm_sum_le_of_le (range (n k)) hstep
-      _ ≤ _ := by gcongr; exact hKk.trans (le_max_left _ _)
-  apply hsum.trans_lt
-  rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
-  linarith
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc) ε hε
+  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ] with k hk hxk hδk i hi
+  rw [Real.norm_eq_abs]
+  have hi' := mem_range.1 hi
+  have hsub := uIcc_subset_Icc (hxk i hi'.le) (hxk (i + 1) hi')
+  refine abs_sub_mul_sub_sub_deriv_mul_sq_le hsub (fun z hz ↦ hh z (hsub hz)) fun z hz ↦ ?_
+  have hzx : dist z (x k i) < η := by
+    rw [Real.dist_eq]
+    exact (abs_sub_left_of_mem_uIcc hz).trans_lt ((hδk i hi').trans_lt hk)
+  exact (Real.dist_eq (h' z) (h' (x k i)) ▸ hosc z (hsub hz) (x k i) (hxk i hi'.le) hzx).le
 
 /-- **Deterministic symmetric-endpoint chain rule.** If `H` has derivative `h` and `h` has
 continuous derivative `h'` within `[a, b]`, the symmetric-endpoint sums
@@ -319,38 +302,23 @@ theorem tendsto_sum_half_add_mul_sub_sub {H h h' : ℝ → ℝ} {a b : ℝ}
     Tendsto (fun k ↦ (∑ i ∈ range (n k),
         (h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i)) -
       (H (x k (n k)) - H (x k 0))) l (𝓝 0) := by
-  obtain ⟨K, hK⟩ := hQ
-  rw [eventually_map] at hK
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  have hKpos : 0 < max K 0 + 1 := by positivity
+  refine (tendsto_sum_zero_of_forall_norm_le_mul
+    (f := fun k i ↦
+      (h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i) - (H (x k (i + 1)) - H (x k i)))
+    (w := fun k i ↦ (x k (i + 1) - x k i) ^ 2) (fun ε hε ↦ ?_) hQ).congr fun k ↦ by
+      rw [sum_sub_distrib, sum_range_sub (fun i ↦ H (x k i)) (n k)]
   obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
-    (isCompact_Icc.uniformContinuousOn_of_continuous hc) (ε / (max K 0 + 1)) (div_pos hε hKpos)
-  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ, hK] with k hk hxk hδk hKk
-  rw [Real.dist_eq, sub_zero, ← sum_range_sub (fun i ↦ H (x k i)) (n k), ← sum_sub_distrib]
-  have hstep (i : ℕ) (hi : i ∈ range (n k)) :
-      ‖(h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i) -
-        (H (x k (i + 1)) - H (x k i))‖ ≤
-        ε / (max K 0 + 1) * (x k (i + 1) - x k i) ^ 2 := by
-    rw [Real.norm_eq_abs]
-    have hi' := mem_range.1 hi
-    have hsub := uIcc_subset_Icc (hxk i hi'.le) (hxk (i + 1) hi')
-    refine abs_half_add_mul_sub_sub_le hsub (fun z hz ↦ hH z (hsub hz))
-      (fun z hz ↦ hh z (hsub hz)) fun z hz ↦ ?_
-    have hzx : dist z (x k i) < η := by
-      rw [Real.dist_eq]
-      exact (abs_sub_left_of_mem_uIcc hz).trans_lt ((hδk i hi').trans_lt hk)
-    exact (Real.dist_eq (h' z) (h' (x k i)) ▸ hosc z (hsub hz) (x k i) (hxk i hi'.le) hzx).le
-  have hsum : |∑ i ∈ range (n k), ((h (x k i) + h (x k (i + 1))) / 2 * (x k (i + 1) - x k i) -
-      (H (x k (i + 1)) - H (x k i)))| ≤
-      ε / (max K 0 + 1) * max K 0 := by
-    calc
-      _ ≤ ε / (max K 0 + 1) * ∑ i ∈ range (n k), (x k (i + 1) - x k i) ^ 2 := by
-        simpa only [Real.norm_eq_abs, ← mul_sum] using norm_sum_le_of_le (range (n k)) hstep
-      _ ≤ _ := by gcongr; exact hKk.trans (le_max_left _ _)
-  apply hsum.trans_lt
-  rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
-  linarith
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc) ε hε
+  filter_upwards [(tendsto_order.1 hδ0).2 η hη, hx, hδ] with k hk hxk hδk i hi
+  rw [Real.norm_eq_abs]
+  have hi' := mem_range.1 hi
+  have hsub := uIcc_subset_Icc (hxk i hi'.le) (hxk (i + 1) hi')
+  refine abs_half_add_mul_sub_sub_le hsub (fun z hz ↦ hH z (hsub hz))
+    (fun z hz ↦ hh z (hsub hz)) fun z hz ↦ ?_
+  have hzx : dist z (x k i) < η := by
+    rw [Real.dist_eq]
+    exact (abs_sub_left_of_mem_uIcc hz).trans_lt ((hδk i hi').trans_lt hk)
+  exact (Real.dist_eq (h' z) (h' (x k i)) ▸ hosc z (hsub hz) (x k i) (hxk i hi'.le) hzx).le
 
 /-- Along finite families of triples `(x k i, z k i, y k i)` in `[a, b]` whose half-step increments
 vanish uniformly and whose refined quadratic sums are eventually bounded, the difference between
@@ -371,51 +339,31 @@ theorem tendsto_sum_midpoint_sub_half_add_sub_half_deriv {h h' : ℝ → ℝ} {a
     Tendsto (fun k ↦ ∑ i ∈ range (n k),
       (h (z k i) * (y k i - x k i) - (h (x k i) + h (y k i)) / 2 * (y k i - x k i) -
         1 / 2 * h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2))) l (𝓝 0) := by
-  obtain ⟨K, hK⟩ := hQ
-  rw [eventually_map] at hK
-  apply Metric.tendsto_nhds.2
-  intro ε hε
-  have hKpos : 0 < max K 0 + 1 := by positivity
+  refine tendsto_sum_zero_of_forall_norm_le_mul
+    (w := fun k i ↦ (z k i - x k i) ^ 2 + (y k i - z k i) ^ 2) (fun ε hε ↦ ?_) hQ
   obtain ⟨η, hη, hosc⟩ := Metric.uniformContinuousOn_iff.1
-    (isCompact_Icc.uniformContinuousOn_of_continuous hc) (ε / (max K 0 + 1)) (div_pos hε hKpos)
-  filter_upwards [(tendsto_order.1 hδ0).2 (η / 2) (half_pos hη), hx, hz, hy, hδ₁, hδ₂, hK]
-    with k hk hxk hzk hyk hδ₁k hδ₂k hKk
-  rw [Real.dist_eq, sub_zero]
-  have hstep (i : ℕ) (hi : i ∈ range (n k)) :
-      ‖h (z k i) * (y k i - x k i) - (h (x k i) + h (y k i)) / 2 * (y k i - x k i) -
-        1 / 2 * h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2)‖ ≤
-        ε / (max K 0 + 1) * ((z k i - x k i) ^ 2 + (y k i - z k i) ^ 2) := by
-    rw [Real.norm_eq_abs]
-    have hi' := mem_range.1 hi
-    have hxz := uIcc_subset_Icc (hxk i hi') (hzk i hi')
-    have hzy := uIcc_subset_Icc (hzk i hi') (hyk i hi')
-    refine abs_midpoint_sub_half_add_sub_half_deriv_le hxz hzy
-      (fun u hu ↦ hh u (hu.elim (fun h ↦ hxz h) (fun h ↦ hzy h))) fun u hu ↦ ?_
-    have hux : dist u (x k i) < η := by
-      rw [Real.dist_eq]
-      rcases hu with hu | hu
-      · exact ((abs_sub_left_of_mem_uIcc hu).trans (hδ₁k i hi')).trans_lt
-          (hk.trans (half_lt_self hη))
-      · calc
-          |u - x k i| ≤ |u - z k i| + |z k i - x k i| := abs_sub_le u (z k i) (x k i)
-          _ ≤ |y k i - z k i| + |z k i - x k i| :=
-            add_le_add_left (abs_sub_left_of_mem_uIcc hu) _
-          _ ≤ δ k + δ k := add_le_add (hδ₂k i hi') (hδ₁k i hi')
-          _ < η / 2 + η / 2 := add_lt_add hk hk
-          _ = η := add_halves η
-    have humem : u ∈ Icc a b := hu.elim (fun h ↦ hxz h) (fun h ↦ hzy h)
-    exact (Real.dist_eq (h' u) (h' (x k i)) ▸ hosc u humem (x k i) (hxk i hi') hux).le
-  have hsum : |∑ i ∈ range (n k),
-      (h (z k i) * (y k i - x k i) - (h (x k i) + h (y k i)) / 2 * (y k i - x k i) -
-        1 / 2 * h' (x k i) * ((z k i - x k i) ^ 2 - (y k i - z k i) ^ 2))| ≤
-      ε / (max K 0 + 1) * max K 0 := by
-    calc
-      _ ≤ ε / (max K 0 + 1) * ∑ i ∈ range (n k),
-          ((z k i - x k i) ^ 2 + (y k i - z k i) ^ 2) := by
-        simpa only [Real.norm_eq_abs, ← mul_sum] using norm_sum_le_of_le (range (n k)) hstep
-      _ ≤ _ := by gcongr; exact hKk.trans (le_max_left _ _)
-  apply hsum.trans_lt
-  rw [div_mul_eq_mul_div, div_lt_iff₀ hKpos]
-  linarith
+    (isCompact_Icc.uniformContinuousOn_of_continuous hc) ε hε
+  filter_upwards [(tendsto_order.1 hδ0).2 (η / 2) (half_pos hη), hx, hz, hy, hδ₁, hδ₂]
+    with k hk hxk hzk hyk hδ₁k hδ₂k i hi
+  rw [Real.norm_eq_abs]
+  have hi' := mem_range.1 hi
+  have hxz := uIcc_subset_Icc (hxk i hi') (hzk i hi')
+  have hzy := uIcc_subset_Icc (hzk i hi') (hyk i hi')
+  refine abs_midpoint_sub_half_add_sub_half_deriv_le hxz hzy
+    (fun u hu ↦ hh u (hu.elim (fun h ↦ hxz h) (fun h ↦ hzy h))) fun u hu ↦ ?_
+  have hux : dist u (x k i) < η := by
+    rw [Real.dist_eq]
+    rcases hu with hu | hu
+    · exact ((abs_sub_left_of_mem_uIcc hu).trans (hδ₁k i hi')).trans_lt
+        (hk.trans (half_lt_self hη))
+    · calc
+        |u - x k i| ≤ |u - z k i| + |z k i - x k i| := abs_sub_le u (z k i) (x k i)
+        _ ≤ |y k i - z k i| + |z k i - x k i| :=
+          add_le_add_left (abs_sub_left_of_mem_uIcc hu) _
+        _ ≤ δ k + δ k := add_le_add (hδ₂k i hi') (hδ₁k i hi')
+        _ < η / 2 + η / 2 := add_lt_add hk hk
+        _ = η := add_halves η
+  have humem : u ∈ Icc a b := hu.elim (fun h ↦ hxz h) (fun h ↦ hzy h)
+  exact (Real.dist_eq (h' u) (h' (x k i)) ▸ hosc u humem (x k i) (hxk i hi') hux).le
 
 end TauCeti
