@@ -5,18 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.FourierMultiplier
-public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
-import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
-import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Delta
-import TauCeti.Analysis.Normed.Operator.Extend
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
+import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Restrict
 
 /-!
 # The little Besov spaces
@@ -602,17 +597,6 @@ theorem littleBesovPostcompEquiv_symm (e : F ≃L[ℂ] G) :
   ContinuousLinearEquiv.ext <| funext fun _ ↦ Subtype.ext <| by simp [littleBesovPostcompEquiv]
 
 open scoped ContDiff in
-@[simp]
-theorem _root_.SchwartzMap.fourierMultiplierCLM_toBesovSpaceCLM {q : ℝ≥0∞} [Fact (1 ≤ q)]
-    {g : E → ℂ} {m s' : ℝ} (hg : ContDiff ℝ ∞ g)
-    (hgm : ∀ i : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
-    (hs : s' = s - m) (f : 𝓢(E, F)) :
-    fourierMultiplierCLM F φ p q hg hgm hs (SchwartzMap.toBesovSpaceCLM F φ s p q f) =
-      SchwartzMap.toBesovSpaceCLM F φ s' p q (SchwartzMap.fourierMultiplierCLM F g f) := by
-  have hgt : g.HasTemperateGrowth := .of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hg hgm
-  exact ext (by simp [fourierMultiplierCLM_toTemperedDistributionCLM_eq hgt])
-
-open scoped ContDiff in
 /-- **Fourier multipliers on little Besov spaces.** A smooth symbol `g` of order `m` maps
 `b^s_{p,∞}` into `b^{s - m}_{p,∞}` for every `1 ≤ p ≤ ∞`. -/
 theorem fourierMultiplierCLM_mem_littleBesov {g : E → ℂ} {m s' : ℝ} (hg : ContDiff ℝ ∞ g)
@@ -621,20 +605,6 @@ theorem fourierMultiplierCLM_mem_littleBesov {g : E → ℂ} {m s' : ℝ} (hg : 
     fourierMultiplierCLM F φ p ∞ hg hgm hs u ∈ littleBesov F φ s' p :=
   map_mem_littleBesov_of_toBesovSpaceCLM (fourierMultiplierCLM F φ p ∞ hg hgm hs)
     (fun f ↦ by simp) hu
-
-@[simp]
-theorem _root_.SchwartzMap.besselPotentialEquiv_toBesovSpaceCLM {q : ℝ≥0∞} [Fact (1 ≤ q)]
-    (t : ℝ) {s' : ℝ} (hs : s' = s - t) (f : 𝓢(E, F)) :
-    besselPotentialEquiv F φ p q t hs (SchwartzMap.toBesovSpaceCLM F φ s p q f) =
-      SchwartzMap.toBesovSpaceCLM F φ s' p q
-        (SchwartzMap.fourierMultiplierCLM F
-          (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) f) := by
-  have hgt : Function.HasTemperateGrowth (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) :=
-    .of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
-      (contDiff_ofReal_one_add_norm_sq_rpow (t / 2))
-      (exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le t)
-  exact ext (by simp [TemperedDistribution.besselPotential,
-    fourierMultiplierCLM_toTemperedDistributionCLM_eq hgt])
 
 /-- `besselPotentialEquiv` maps `b^s_{p,∞}` into `b^{s - t}_{p,∞}` for every `1 ≤ p ≤ ∞`. -/
 theorem besselPotentialEquiv_mem_littleBesov (t : ℝ) {s' : ℝ} (hs : s' = s - t)
@@ -683,14 +653,6 @@ theorem littleBesovBesselPotentialEquiv_symm (t : ℝ) {s' : ℝ} (hs : s' = s -
       littleBesovBesselPotentialEquiv F φ p (-t) (by rw [hs, sub_neg_eq_add, sub_add_cancel]) :=
   ContinuousLinearEquiv.ext <| funext fun _ ↦
     Subtype.ext <| by simp [littleBesovBesselPotentialEquiv]
-
-@[simp]
-theorem _root_.SchwartzMap.smulLeftCLM_toBesovSpaceCLM {q : ℝ≥0∞} [Fact (1 ≤ q)]
-    {g : E → ℂ} (hg : g.HasTemperateGrowth)
-    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (f : 𝓢(E, F)) :
-    smulLeftCLM F φ s p q g hg hbd (SchwartzMap.toBesovSpaceCLM F φ s p q f) =
-      SchwartzMap.toBesovSpaceCLM F φ s p q (SchwartzMap.smulLeftCLM F g f) :=
-  ext (by simp [smulLeftCLM_toTemperedDistributionCLM_eq])
 
 /-- **Smooth multipliers of little Besov spaces.** Multiplication by a function `g : E → ℂ` of
 temperate growth with bounded derivatives up to order `⌊|s|⌋₊ + 1` maps `b^s_{p,∞}(E, F)` into

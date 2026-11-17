@@ -44,14 +44,6 @@ variable {E F G H : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Fin
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
   [NormedAddCommGroup G] [NormedSpace ℂ G] [NormedAddCommGroup H] [NormedSpace ℂ H]
 
-omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem two_rpow_mul_norm_compLp_le {μ : Measure E} {p : ℝ≥0∞} (s : ℝ) (j : ℕ)
-    (L : F →L[ℂ] G) (f : Lp F p μ) :
-    (2 : ℝ) ^ (s * j) * ‖L.compLp f‖ ≤ ‖L‖ * (2 ^ (s * j) * ‖f‖) :=
-  calc (2 : ℝ) ^ (s * j) * ‖L.compLp f‖
-      ≤ 2 ^ (s * j) * (‖L‖ * ‖f‖) := by gcongr; exact L.norm_compLp_le f
-    _ = ‖L‖ * (2 ^ (s * j) * ‖f‖) := by ring
-
 namespace TemperedDistribution
 
 variable [CompleteSpace F] [CompleteSpace G]
@@ -65,8 +57,9 @@ theorem MemBesov.postcomp {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0�
   refine memBesov_iff.2 ⟨fun j ↦ L.compLp (f j),
     fun j ↦ littlewoodPaleyBlock_postcomp_eq_compLp L (hf j),
     (hmem.const_mul ‖L‖).mono fun j ↦ ?_⟩
-  rw [Real.norm_of_nonneg (by positivity)]
-  exact two_rpow_mul_norm_compLp_le s j L (f j)
+  rw [Real.norm_of_nonneg (by positivity), mul_left_comm]
+  gcongr
+  exact L.norm_compLp_le (f j)
 
 end TemperedDistribution
 
@@ -85,7 +78,7 @@ private theorem norm_postcomp_le_aux (L : F →L[ℂ] G) (u : BesovSpace F φ s 
     (w := (PointwiseConvergenceCLM.postcomp 𝓢(E, ℂ) L u.toDistr : 𝓢'(E, G)))
     (fun j ↦ L.compLp (u.block j))
     (fun j ↦ littlewoodPaleyBlock_postcomp_eq_compLp L (coe_block u j).symm)
-    (fun j ↦ two_rpow_mul_norm_compLp_le s j L (u.block j))
+    (fun j ↦ by rw [mul_left_comm]; gcongr; exact L.norm_compLp_le _)
   rwa [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
 
 variable (φ s p q) in

@@ -5,12 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.FourierMultiplier
+public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Multiplication
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.PartialSum
 public import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Postcomp
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 public import TauCeti.Analysis.Sobolev.BesselPotential.Schwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
+import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
 # Smooth density and Schwartz intertwining in Besov spaces
@@ -20,8 +25,9 @@ Let `φ : E → ℝ` be a smooth bump function on a finite-dimensional real inne
 embeds continuously into `B^s_{p,q}(E, F)` via `SchwartzMap.toBesovSpaceCLM` (defined in
 `TauCeti.Analysis.Sobolev.BesselPotential.Besov` for all `s ∈ ℝ` and `1 ≤ p, q ≤ ∞`), intertwining
 Besov and Bernstein inclusions, change of bump, `postcomp`, Bessel-potential inclusions and the
-`B^s_{2,2} ≃ H^{s,2}` equivalence, and dyadic partial sums `TauCeti.BesovSpace.partialSumCLM`
-(defined in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.PartialSum`).
+`B^s_{2,2} ≃ H^{s,2}` equivalence, dyadic partial sums `TauCeti.BesovSpace.partialSumCLM`
+(defined in `TauCeti.Analysis.FunctionalSpaces.BesovSpace.PartialSum`), Fourier multipliers,
+Bessel-potential lifting, and smooth multiplication.
 
 Because the Fourier transform of each dyadic partial sum `S_N u` has compact support, `S_N u` lies
 in `B^{s+1}_{p,1} ⊆ H^{s+1,p}`, so for `1 ≤ p < ∞` it lies in the closure of `𝓢(E, F)` in
@@ -37,9 +43,12 @@ norm-dense in `B^s_{p,q}(E, F)` whenever `1 ≤ p < ∞` and `1 ≤ q < ∞`.
   `SchwartzMap.toBesovSpaceCLM_postcompCLM`, `SchwartzMap.toBesovSpace_toBesselPotentialSpaceCLM`,
   `SchwartzMap.toBesselPotentialSpace_toBesovSpaceCLM`,
   `SchwartzMap.besselPotentialSpaceEquiv_toBesovSpaceCLM`,
-  `SchwartzMap.besselPotentialSpaceEquiv_symm_toBesselPotentialSpaceCLM`, and
-  `SchwartzMap.partialSumCLM_toBesovSpaceCLM`: compatibility of `SchwartzMap.toBesovSpaceCLM` with
-  inclusions, change of bump, `postcomp`, `BesselPotentialSpace`, and dyadic partial sums.
+  `SchwartzMap.besselPotentialSpaceEquiv_symm_toBesselPotentialSpaceCLM`,
+  `SchwartzMap.partialSumCLM_toBesovSpaceCLM`, `SchwartzMap.fourierMultiplierCLM_toBesovSpaceCLM`,
+  `SchwartzMap.besselPotentialEquiv_toBesovSpaceCLM`, and `SchwartzMap.smulLeftCLM_toBesovSpaceCLM`:
+  compatibility of `SchwartzMap.toBesovSpaceCLM` with inclusions, change of bump, `postcomp`,
+  `BesselPotentialSpace`, dyadic partial sums, Fourier multipliers, Bessel-potential lifting, and
+  smooth multiplication.
 * `SchwartzMap.denseRange_toBesovSpaceCLM` and
   `SchwartzMap.dense_image_toBesovSpaceCLM_hasCompactSupport`: for `1 ≤ p < ∞` and `1 ≤ q < ∞`,
   Schwartz functions and compactly supported smooth functions are dense in `B^s_{p,q}(E, F)`.
@@ -143,6 +152,37 @@ theorem partialSumCLM_toBesovSpaceCLM (N : ℕ) (f : 𝓢(E, F)) :
     rw [TauCeti.BesovSpace.toDistr_partialSumCLM, toDistr_toBesovSpaceCLM,
       toDistr_toBesovSpaceCLM, map_sum]
     simp [TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq]
+
+open scoped ContDiff in
+@[simp]
+theorem fourierMultiplierCLM_toBesovSpaceCLM {g : E → ℂ} {m s' : ℝ} (hg : ContDiff ℝ ∞ g)
+    (hgm : ∀ i : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i g ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
+    (hs : s' = s - m) (f : 𝓢(E, F)) :
+    TauCeti.BesovSpace.fourierMultiplierCLM F φ p q hg hgm hs (toBesovSpaceCLM F φ s p q f) =
+      toBesovSpaceCLM F φ s' p q (fourierMultiplierCLM F g f) := by
+  have hgt : g.HasTemperateGrowth := .of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow hg hgm
+  exact TauCeti.BesovSpace.ext (by
+    simp [TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hgt])
+
+@[simp]
+theorem besselPotentialEquiv_toBesovSpaceCLM (t : ℝ) {s' : ℝ} (hs : s' = s - t) (f : 𝓢(E, F)) :
+    TauCeti.BesovSpace.besselPotentialEquiv F φ p q t hs (toBesovSpaceCLM F φ s p q f) =
+      toBesovSpaceCLM F φ s' p q
+        (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) f) := by
+  have hgt : Function.HasTemperateGrowth (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (t / 2) : ℝ) : ℂ)) :=
+    .of_norm_iteratedFDeriv_le_one_add_norm_sq_rpow
+      (TauCeti.contDiff_ofReal_one_add_norm_sq_rpow (t / 2))
+      (TauCeti.exists_norm_iteratedFDeriv_ofReal_one_add_norm_sq_rpow_half_le t)
+  exact TauCeti.BesovSpace.ext (by
+    simp [TemperedDistribution.besselPotential,
+      TemperedDistribution.fourierMultiplierCLM_toTemperedDistributionCLM_eq hgt])
+
+@[simp]
+theorem smulLeftCLM_toBesovSpaceCLM {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hbd : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) (f : 𝓢(E, F)) :
+    TauCeti.BesovSpace.smulLeftCLM F φ s p q g hg hbd (toBesovSpaceCLM F φ s p q f) =
+      toBesovSpaceCLM F φ s p q (smulLeftCLM F g f) :=
+  TauCeti.BesovSpace.ext (by simp [TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq])
 
 end SchwartzMap
 
