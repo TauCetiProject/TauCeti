@@ -8,6 +8,7 @@ module
 public import TauCeti.RepresentationTheory.LSPath.Crystal.Basic
 public import TauCeti.RepresentationTheory.LSPath.Lower
 
+import TauCeti.Data.List.TakeDrop
 import TauCeti.RepresentationTheory.LSPath.Weight
 
 /-!
@@ -39,7 +40,7 @@ are Littelmann's, proved in `TauCeti.LinearAlgebra.RootSystem.Weyl.ReflectedChai
 With lowering stability, this makes the realized LS paths of a dominant shape an operator-closed
 set of paths with lattice endpoints and integral minimal heights
 (`TauCeti.LSPath.isCrystalSet_range_toPLPath`), which `TauCeti.PLPath.normalCrystalOn` turns
-into a normal crystal.
+into a normal crystal when `f` is injective.
 
 ## Main results
 
@@ -160,10 +161,7 @@ private theorem sum_map_snd_raiseList (i : b.support) {l : List (P.weylGroup × 
     (hj₀ : j₀ < l.length) (hj₀k₁ : j₀ < k₁) (θ : ℚ) :
     ((raiseList b i l j₀ k₁ l[j₀].1 l[j₀].2 θ).map Prod.snd).sum = (l.map Prod.snd).sum := by
   have hsplit : l.drop j₀ = l[j₀] :: ((l.take k₁).drop (j₀ + 1) ++ l.drop k₁) := by
-    rw [List.drop_eq_getElem_cons hj₀]
-    congr 1
-    conv_lhs => rw [← List.take_append_drop k₁ l]
-    rw [List.drop_append_of_le_length (by simp; omega)]
+    rw [List.drop_eq_getElem_cons hj₀, List.drop_take_append_drop_of_le _ hj₀k₁]
   conv_rhs => rw [← List.take_append_drop j₀ l, hsplit]
   simp only [raiseList, List.map_append, List.map_cons, List.map_map, List.sum_append,
     List.sum_cons, Function.comp_def]
@@ -274,11 +272,7 @@ private theorem linked_raiseList (hlam : lam ∈ dominantChamber P b)
       Dp.mapIdx fun k p ↦ if j₀ + 1 ≤ k ∧ k ≤ k₁ then (s * p.1, p.2) else p := by
     have hDp' : Dp = l.take j₀ ++ [(τ, θ * d)] ++ ((τ, (1 - θ) * d) ::
         (l.take k₁).drop (j₀ + 1)) ++ l.drop k₁ := by
-      rw [hDp]
-      have : l.drop (j₀ + 1) = (l.take k₁).drop (j₀ + 1) ++ l.drop k₁ := by
-        conv_lhs => rw [← List.take_append_drop k₁ l]
-        rw [List.drop_append_of_le_length (by simp; omega)]
-      rw [this]
+      rw [hDp, ← List.drop_take_append_drop_of_le l hj₀k₁]
       simp only [List.append_assoc, List.cons_append, List.nil_append]
     have hA : (l.take j₀ ++ [(τ, θ * d)]).length = j₀ + 1 := by simp; omega
     have hB : ((τ, (1 - θ) * d) :: (l.take k₁).drop (j₀ + 1)).length = k₁ - j₀ := by
@@ -447,13 +441,9 @@ private theorem exists_raise_toPLPath_eq_ofSegments_raiseList (π : LSPath P b l
     linear_combination hθd - hm
   · rw [hrai, hDj₀]
     congr 2
-    -- The reflection `Module.preReflection (f αᵢ) F` sends `d • f (w λ)` to `d • f ((sᵢ w) λ)`.
-    have hσ : ∀ (d : 𝕜) (w : P.weylGroup),
-        Module.preReflection (f (P.root i)) F (d • f (w • lam)) =
-          d • f (((weylCoxeterSystem P b).simple i * w) • lam) := fun d w ↦ by
-      rw [map_smul, ← P.map_reflection_eq_preReflection i hF, simple_mul_smul_eq_reflection]
     simp only [raiseList, hseg, List.map_append, List.map_cons, List.map_map, List.map_take,
-      List.map_drop, Function.comp_def, hσ, Rat.cast_mul, Rat.cast_sub, Rat.cast_one, D]
+      List.map_drop, Function.comp_def, preReflection_smul_apply f i F hF, Rat.cast_mul,
+      Rat.cast_sub, Rat.cast_one, D]
 
 /-- **Littelmann's raising operator preserves Lakshmibai–Seshadri paths.** Let `π` be an LS path of
 dominant shape `λ`, realized in `V` by `f`, let `αᵢ` be a simple root and let `F` be a form on `V`
@@ -485,7 +475,7 @@ theorem exists_toPLPath_eq_of_raise_eq_some (π : LSPath P b lam)
 For dominant `λ`, a realization `f` of the weights and height forms `F i` inducing the simple
 coroot pairings on `f(M)`, the realized paths of the LS paths of shape `λ` end in `f(M)`, have
 integral minimal heights, and are closed under all the simple-root raising and lowering operators.
-So `TauCeti.PLPath.normalCrystalOn` makes them a normal crystal. -/
+So, for injective `f`, `TauCeti.PLPath.normalCrystalOn` makes them a normal crystal. -/
 theorem isCrystalSet_range_toPLPath (hlam : lam ∈ dominantChamber P b) (f : M →+ V)
     {F : b.support → Module.Dual 𝕜 V} (hF : ∀ (i : b.support) (m : M), F i (f m) = P.coroot' i m) :
     PLPath.IsCrystalSet b f F (Set.range fun π : LSPath P b lam ↦ π.toPLPath 𝕜 f) where

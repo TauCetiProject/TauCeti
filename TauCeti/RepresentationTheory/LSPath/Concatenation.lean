@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.LSPath.RootOperator
+import TauCeti.Data.List.TakeDrop
 
 /-!
 # Root operators and concatenation
@@ -335,10 +336,7 @@ theorem raise_ofSegments_eq_of_strictly_falling {l : List V} {k₀ k₁ : ℕ} {
     linarith
   -- Split `l` around the cut segment.
   have hdrop : l.drop k₀ = v :: (m ++ l.drop k₁) := by
-    rw [List.drop_eq_getElem_cons (by omega)]
-    congr 1
-    conv_lhs => rw [← List.take_append_drop k₁ l]
-    rw [List.drop_append_of_le_length (by simp; omega)]
+    rw [List.drop_eq_getElem_cons (by omega), ← List.drop_take_append_drop_of_le l hk₀₁]
   have hsplit : ofSegments 𝕜 l = ofSegments 𝕜 ((l.take k₀ ++ [θ • v]) ++
       ((1 - θ) • v :: m) ++ l.drop k₁) := by
     have := ofSegments_append_cut_eq (𝕜 := 𝕜) (a := l.take k₀) (m := []) (v := v)

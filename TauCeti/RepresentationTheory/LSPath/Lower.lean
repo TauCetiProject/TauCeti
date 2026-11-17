@@ -265,7 +265,7 @@ variable {𝕜 V : Type*} [Field 𝕜] [LinearOrder 𝕜] [IsStrictOrderedRing �
 omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 /-- The reflection `s = Module.preReflection (f αᵢ) F`, for a form `F` inducing `⟨-, αᵢ^∨⟩`,
 sends the segment `d • f (τ λ)` to `d • f ((sᵢ τ) λ)`. -/
-private theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
+theorem preReflection_smul_apply (f : M →+ V) (i : b.support) (F : Module.Dual 𝕜 V)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) (d : 𝕜) (w : P.weylGroup) :
     Module.preReflection (f (P.root i)) F (d • f (w • lam)) =
       d • f (((weylCoxeterSystem P b).simple i * w) • lam) := by
