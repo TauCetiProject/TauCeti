@@ -114,7 +114,7 @@ theorem isPrestableMap_const (x : X) : IsPrestableMap J d fun _ ↦ x where
 structure, a map from the normalization of a nodal curve is prestable exactly when it is
 holomorphic on every component and takes the same value at the two points of every flag pair. -/
 theorem isPrestableMap_ofComplexManifold_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-    [FiniteDimensional ℂ F] {Z : Type*} [TopologicalSpace Z] [ChartedSpace F Z]
+    [CompleteSpace F] {Z : Type*} [TopologicalSpace Z] [ChartedSpace F Z]
     [IsManifold 𝓘(ℂ, F) ∞ Z] {v : (Σ i, C i) → Z} :
     IsPrestableMap (SmoothAlmostComplexStructure.ofComplexManifold F Z) d v ↔
       (∀ i, MDifferentiable 𝓘(ℂ) 𝓘(ℂ, F) fun z : C i ↦ v ⟨i, z⟩) ∧

@@ -156,9 +156,7 @@ group. -/
 private theorem injective_ofComponent_isotropy {i : ι} (hu : ∀ x y : X i, u ⟨i, x⟩ = u ⟨i, y⟩) :
     Function.Injective fun φ : Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i) ↦
       (⟨ofComponent i φ, ofComponent_mem_isotropy hu φ⟩ : isotropy I n m u) :=
-  fun _ _ h ↦ ofComponent_injective i <| Subtype.ext <| by
-    have := congrArg Subtype.val h
-    exact this
+  fun _ _ h ↦ ofComponent_injective i <| Subtype.ext <| Subtype.mk.inj h
 
 /-- **Infinitely many automorphisms of a constant component.** If `u` is constant on a component
 with infinitely many diffeomorphisms fixing its special points, the isotropy group of `u` is
@@ -213,8 +211,9 @@ theorem finite_isotropy_of_forall_finite_fixingSubgroup [Finite ι] [Finite Flag
 /-- **Stability of maps constant on every component.** For finitely many connected components,
 flag pairs and auxiliary labels, if `u` is constant on every component, its isotropy group is
 finite exactly when every component has finitely many diffeomorphisms fixing its special points.
-Only the forward direction uses that `u` is constant on every component
-(`finite_isotropy_of_forall_finite_fixingSubgroup`). -/
+Only the forward direction (`finite_fixingSubgroup_of_finite_isotropy`) uses that `u` is constant
+on every component; the converse `finite_isotropy_of_forall_finite_fixingSubgroup` holds for every
+map. -/
 theorem finite_isotropy_iff_of_forall_apply_eq [Finite ι] [Finite Flag] [Finite R]
     [∀ i, ConnectedSpace (X i)] (hu : ∀ i (x y : X i), u ⟨i, x⟩ = u ⟨i, y⟩) :
     Finite (isotropy I n m u) ↔
