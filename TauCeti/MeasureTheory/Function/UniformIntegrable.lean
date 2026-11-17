@@ -116,11 +116,11 @@ namespace TauCeti
 
 /-- An integral is bounded in norm by any real bound on the `L¹` norm of the integrand. -/
 theorem norm_integral_le_of_eLpNorm_one_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} (hf : AEStronglyMeasurable f μ) {ε : ℝ}
-    (hε : 0 ≤ ε) (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} {ε : ℝ} (hε : 0 ≤ ε)
+    (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
   have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ) f
-  rw [← eLpNorm_one_eq_lintegral_eNorm hf, ← ofReal_norm] at h1
-  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans h)
+  rw [← ofReal_norm] at h1
+  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans (lintegral_eNorm_le_eLpNorm_one.trans h))
 
 /-- A family of almost everywhere nonnegative integrable real functions on a finite measure
 space is uniformly integrable when its integrals over the upper tails `{C ≤ f i}` are uniformly
