@@ -61,8 +61,8 @@ theorem analytic_continuedL_apply (s : ℂ) :
         ((T.arithmetic.conductor : ℕ) : ℂ) ^ (-(z + (T.weight : ℂ) / 2) / 2) *
           T.arithmetic.completed (z + (T.weight : ℂ) / 2) *
             T.arithmetic.invGammaFactor (z + (T.weight : ℂ) / 2) := by
-    rw [T.conductor_eq, T.completed_eq, T.analytic_invGammaFactor,
-      show -(z + (T.weight : ℂ) / 2) / 2 = -z / 2 + -(T.weight : ℂ) / 4 by ring,
+    have hexp : -(z + (T.weight : ℂ) / 2) / 2 = -z / 2 + -(T.weight : ℂ) / 4 := by ring
+    rw [T.conductor_eq, T.completed_eq, T.analytic_invGammaFactor, hexp,
       cpow_add _ _ (Nat.cast_ne_zero.mpr T.arithmetic.conductor.ne_zero)]
     ring
   have hraw : (fun z : ℂ ↦ ((T.analytic.conductor : ℕ) : ℂ) ^ (-z / 2) *

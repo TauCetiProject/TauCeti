@@ -589,8 +589,8 @@ theorem HasFunctionalEquation.gammaFactor_mul_continuedL_eq
   have hfe := h.completed_eq s hp ((h.polarOrder_one_sub_conj s).trans hp)
   have hc := d.completed_eq_mul_continuedL hγ
   have hc' := d.dual.completed_eq_mul_continuedL hγ'
-  rw [dual_conductor, show (1 - s) / 2 = s / 2 + (1 / 2 - s) by ring,
-    cpow_add _ _ d.conductor_cast_ne_zero] at hc'
+  have hexp : (1 - s) / 2 = s / 2 + (1 / 2 - s) := by ring
+  rw [dual_conductor, hexp, cpow_add _ _ d.conductor_cast_ne_zero] at hc'
   linear_combination -hc + hfe + d.rootNumber * hc'
 
 /-- **Asymmetric functional equation as germs.** For any card `d` satisfying
