@@ -146,22 +146,16 @@ noncomputable def leSpan (μ : Λ) : Submodule R A :=
 /-- `A(≤μ)` is the span of the basis vectors `C ν s t` with `ν ≤ μ`. -/
 theorem leSpan_def (μ : Λ) : c.leSpan μ = span R (c.basis '' {i | i.1 ≤ μ}) := (rfl)
 
-private theorem mem_span_basis_image_iff {s : Set (Σ μ, M μ × M μ)} {x : A} :
-    x ∈ span R (c.basis '' s) ↔ ∀ i, i ∉ s → c.basis.repr x i = 0 := by
-  rw [c.basis.mem_span_image]
-  exact ⟨fun h i hi ↦ by_contra fun hx ↦ hi (h (Finsupp.mem_support_iff.2 hx)),
-    fun h i hi ↦ by_contra fun hx ↦ Finsupp.mem_support_iff.1 hi (h i hx)⟩
-
 /-- An element lies in `A(<μ)` exactly when its coordinates outside the cells strictly below
 `μ` vanish. -/
 theorem mem_lowerSpan_iff {μ : Λ} {x : A} :
     x ∈ c.lowerSpan μ ↔ ∀ i : Σ μ, M μ × M μ, ¬ i.1 < μ → c.basis.repr x i = 0 :=
-  c.mem_span_basis_image_iff
+  c.basis.mem_span_image.trans Finsupp.support_subset_iff
 
 /-- An element lies in `A(≤μ)` exactly when its coordinates outside `{ν | ν ≤ μ}` vanish. -/
 theorem mem_leSpan_iff {μ : Λ} {x : A} :
     x ∈ c.leSpan μ ↔ ∀ i : Σ μ, M μ × M μ, ¬ i.1 ≤ μ → c.basis.repr x i = 0 :=
-  c.mem_span_basis_image_iff
+  c.basis.mem_span_image.trans Finsupp.support_subset_iff
 
 /-- The basis vectors of a cell `ν < μ` lie in `A(<μ)`. -/
 theorem basis_mem_lowerSpan {ν μ : Λ} (h : ν < μ) (s t : M ν) :
@@ -295,12 +289,6 @@ section Map
 
 variable {B C : Type*} [Ring B] [Algebra R B] [Ring C] [Algebra R C]
 
-private theorem span_basis_map_image (e : A ≃ₐ[R] B) (s : Set (Σ μ, M μ × M μ)) :
-    span R (c.basis.map e.toLinearEquiv '' s) = (span R (c.basis '' s)).map e.toLinearMap := by
-  rw [Submodule.map_span, ← Set.image_comp]
-  exact congrArg (span R) (congrArg (· '' _)
-    (funext fun i ↦ c.basis.map_apply e.toLinearEquiv i))
-
 /-- Transport a cellular basis along an `R`-algebra equivalence `e : A ≃ₐ[R] B`. -/
 noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
   basis := c.basis.map e.toLinearEquiv
@@ -309,9 +297,10 @@ noncomputable def map (e : A ≃ₐ[R] B) : CellularBasis R B M where
   exists_mul_basis b μ s := by
     obtain ⟨r, hr⟩ := c.exists_mul_basis (e.symm b) μ s
     refine ⟨r, fun t ↦ ?_⟩
-    rw [c.span_basis_map_image e]
-    refine ⟨e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩, hr t, ?_⟩
-    simp [map_sub, map_mul, map_sum, map_smul]
+    have hmem : e (e.symm b * c.basis ⟨μ, s, t⟩ - ∑ u, r u • c.basis ⟨μ, u, t⟩) ∈
+        (span R (c.basis '' {i | i.1 < μ})).map e.toLinearMap :=
+      Submodule.mem_map_of_mem (hr t)
+    simpa [Submodule.map_span, Set.image_image, Basis.coe_map] using hmem
 
 /-- The cellular basis transported along `e` applies `e` to each basis vector. -/
 @[simp]
@@ -347,7 +336,7 @@ theorem unop_antiInvolution_map (e : A ≃ₐ[R] B) (b : B) :
 /-- Lower cell spans push forward under `e`. -/
 theorem lowerSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
     (c.map e).lowerSpan μ = (c.lowerSpan μ).map e.toLinearMap := by
-  rw [lowerSpan_def, lowerSpan_def, map, c.span_basis_map_image]
+  simp [lowerSpan_def, map, Submodule.map_span, Set.image_image, Basis.coe_map]
 
 /-- Membership in `(c.map e).lowerSpan μ` pulls back via `e.symm`. -/
 @[simp]
@@ -359,7 +348,7 @@ theorem mem_lowerSpan_map_iff (e : A ≃ₐ[R] B) {μ : Λ} {b : B} :
 /-- Inclusive cell spans push forward under `e`. -/
 theorem leSpan_map (e : A ≃ₐ[R] B) (μ : Λ) :
     (c.map e).leSpan μ = (c.leSpan μ).map e.toLinearMap := by
-  rw [leSpan_def, leSpan_def, map, c.span_basis_map_image]
+  simp [leSpan_def, map, Submodule.map_span, Set.image_image, Basis.coe_map]
 
 /-- Membership in `(c.map e).leSpan μ` pulls back via `e.symm`. -/
 @[simp]
