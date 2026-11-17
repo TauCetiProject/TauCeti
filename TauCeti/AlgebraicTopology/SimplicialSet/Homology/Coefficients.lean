@@ -9,7 +9,8 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.Basic
 public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
 public import Mathlib.Algebra.Category.ModuleCat.Descent
-import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
+public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
 import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Localization.Rat
 
@@ -101,6 +102,23 @@ def homologyExtendScalarsIso {R S : Type u} [CommRing R] [CommRing S] (X : SSet.
       (((SSet.chainComplexFunctor.{u} (ModuleCat.{u} S)).flip.obj X).mapIso eM) n
   exact eH ≪≫ eC
 
+/-- The identification `SSet.homologyExtendScalarsIso` is the composite of three comparisons:
+extension of scalars commutes with the homology of the chain complex, with the simplicial chain
+complex, and carries the coefficients `ULift R` to `S`. -/
+theorem homologyExtendScalarsIso_hom {R S : Type u} [CommRing R] [CommRing S] (X : SSet.{u})
+    (f : R →+* S) [PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} f)] (n : ℕ) :
+    (X.homologyExtendScalarsIso f n).hom =
+      (((X.chainComplex (ModuleCat.of R (ULift.{u} R))).sc n).mapHomologyIso
+          (ModuleCat.extendScalars f)).inv ≫
+        HomologicalComplex.homologyMap ((SSet.chainComplexFunctorObjCompMapIso
+          (ModuleCat.extendScalars f) (ModuleCat.of R (ULift.{u} R))).hom.app X) n ≫
+        HomologicalComplex.homologyMap
+          (((SSet.chainComplexFunctor (ModuleCat.{u} S)).flip.obj X).map
+            ((ModuleCat.extendScalars f).map ULift.moduleEquiv.toModuleIso.hom ≫
+              (letI := f.toAlgebra; (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso.hom)))
+          n :=
+  (rfl)
+
 /-- The identification of the extension of scalars of the homology with coefficients in `R` with
 the homology with coefficients in `S` is natural in the simplicial set. -/
 @[reassoc]
@@ -115,7 +133,7 @@ theorem homologyExtendScalarsIso_hom_naturality {R S : Type u} [CommRing R] [Com
   let M := ModuleCat.of R (ULift.{u} R)
   let eM : F.obj M ≅ ModuleCat.of S S := F.mapIso ULift.moduleEquiv.toModuleIso ≪≫
     (letI := f.toAlgebra; (TensorProduct.AlgebraTensorModule.rid R S S).toModuleIso)
-  -- `homologyExtendScalarsIso` is by definition the composite of three comparisons, each natural.
+  -- `homologyExtendScalarsIso` is the composite of three comparisons, each natural.
   have h₁ := ShortComplex.mapHomologyIso_inv_naturality
     ((HomologicalComplex.shortComplexFunctor _ (.down ℕ) n).map (chainComplexMap g M)) F
   have h₂ := congrArg (HomologicalComplex.homologyMap · n)
@@ -123,6 +141,7 @@ theorem homologyExtendScalarsIso_hom_naturality {R S : Type u} [CommRing R] [Com
   have h₃ := congrArg (HomologicalComplex.homologyMap · n)
     (((SSet.chainComplexFunctor (ModuleCat.{u} S)).map eM.hom).naturality g)
   simp only [HomologicalComplex.homologyMap_comp, Functor.comp_map] at h₂ h₃
+  rw [homologyExtendScalarsIso_hom, homologyExtendScalarsIso_hom]
   -- The squares name the same objects in different unfolded forms, so they are chained explicitly.
   exact ((reassoc_of% h₁) _).trans <| congrArg (_ ≫ ·) <| ((reassoc_of% h₂) _).trans <|
     congrArg (_ ≫ ·) h₃

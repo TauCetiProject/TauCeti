@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.RingTheory.Flat.Localization
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 public import TauCeti.Algebra.Module.Torsion.Localization
@@ -23,7 +22,7 @@ from `R`-modules to `S`-modules which preserves coproducts, so it commutes with 
 (`TauCeti.singularHomologyTensorIso`). This is the universal coefficient theorem for flat
 coefficients, where the `Tor` term vanishes. It is the simplicial comparison
 `SSet.homologyExtendScalarsIso` applied to the singular simplicial set. The exactness of
-`S ⊗[R] -` is the scoped instance `TauCeti.preservesFiniteLimits_extendScalars_algebraMap`.
+`S ⊗[R] -` is the instance `ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`.
 
 The main example is a localization `S = M⁻¹R` of `R` at a submonoid `M`, for instance
 `ℚ = (ℤ ∖ 0)⁻¹ℤ` or `ℤ[1/d]`. Since `M⁻¹R ⊗[R] N` vanishes exactly when every element of `N` is
@@ -60,12 +59,6 @@ universe u
 namespace TauCeti
 
 variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
-
-/-- Extension of scalars along a flat algebra is exact, so it preserves finite limits. -/
-scoped instance preservesFiniteLimits_extendScalars_algebraMap [Module.Flat R S] :
-    PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
-  ModuleCat.preservesFiniteLimits_extendScalars_of_flat
-    (RingHom.flat_algebraMap_iff.2 inferInstance)
 
 /-- **Flat base change in singular homology.** For a flat `R`-algebra `S`, singular homology with
 coefficients in `S` is the extension of scalars of singular homology with coefficients in `R`:

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.GroupTheory.FiniteAbelian.Basic
 public import Mathlib.RingTheory.QuotSMulTop
+public import TauCeti.Algebra.Module.Torsion.Basic
 
 /-!
 # Torsion and reduction of abelian groups
@@ -115,18 +116,11 @@ theorem span_range_mk_ofMul_eq_top_iff {G ι : Type*} [CommGroup G] (ε : ι →
     map_sup, map_top, hclosure, htors, ← Submodule.toAddSubgroup_inj, Submodule.sup_toAddSubgroup,
     Submodule.top_toAddSubgroup]
 
-/-- One implication of `AddEquiv.isTorsion'_iff`. An element of `S` acts through its value in
-`ℤ`, and additive maps commute with the action of `ℤ`. -/
-private theorem isTorsion'_of_addEquiv {G H : Type*} [AddCommGroup G] [AddCommGroup H]
-    (e : G ≃+ H) {S : Submonoid ℤ} (h : Module.IsTorsion' G S) : Module.IsTorsion' H S :=
-  fun x ↦ (@h (e.symm x)).imp fun a ha ↦ by
-    rw [Submonoid.smul_def] at ha ⊢
-    simpa using congrArg e ha
-
 /-- For a submonoid `S` of `ℤ`, being `S`-torsion, every element killed by an element of `S`, is
-invariant under additive equivalences of abelian groups. -/
+invariant under additive equivalences of abelian groups, for the canonical action of `ℤ`. This is
+`LinearEquiv.isTorsion'_iff` for the induced `ℤ`-linear equivalence. -/
 theorem _root_.AddEquiv.isTorsion'_iff {G H : Type*} [AddCommGroup G] [AddCommGroup H]
     (e : G ≃+ H) {S : Submonoid ℤ} : Module.IsTorsion' G S ↔ Module.IsTorsion' H S :=
-  ⟨isTorsion'_of_addEquiv e, isTorsion'_of_addEquiv e.symm⟩
+  e.toIntLinearEquiv.isTorsion'_iff
 
 end TauCeti
