@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Billiard.Circle
+public import TauCeti.Dynamics.Billiard.Circle.Basic
 public import TauCeti.Dynamics.Billiard.SpherePolygon
 import TauCeti.Data.ZMod.Periodic
 

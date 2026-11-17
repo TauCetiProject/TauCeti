@@ -31,7 +31,7 @@ This file constructs the circular billiard table, computes its strip and quotien
 proves the chord-length primitive identity and invariant-measure properties, and establishes the
 rational-rotation periodicity criterion and irrational-rotation density. Explicit inscribed `N`-gon
 perimeter maximizers and reflection-law checks for `N = 2, 3, 4` live in
-`TauCeti.Dynamics.Billiard.CirclePolygon`.
+`TauCeti.Dynamics.Billiard.Circle.Polygon`.
 
 ## Main definitions
 
