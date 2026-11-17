@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Ultraweak
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct.Completion
 public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 
 /-!
