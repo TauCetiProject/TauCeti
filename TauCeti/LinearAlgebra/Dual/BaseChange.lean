@@ -26,8 +26,12 @@ is faithful, as recorded by `IsBaseChange.toDual_ne_zero`.
 * `TauCeti.Module.Dual.baseChangeEvaluation_tmul`: its value on two pure tensors.
 * `Module.Dual.baseChangeEvaluation_one_tmul_baseChange`: naturality of evaluation
   with respect to a base-changed linear map.
+* `TauCeti.Module.Dual.baseChangeEvaluation_comp_baseChange_dualMap`: naturality of
+  `baseChangeEvaluation` with respect to dual maps.
 * `TauCeti.Module.Dual.baseChangeEvaluationEquiv`: scalar extension commutes with the dual of a
   finite projective module.
+* `TauCeti.Module.Dual.baseChangeEvaluationEquiv_toLinearMap`: the underlying linear map of
+  `baseChangeEvaluationEquiv` is `baseChangeEvaluation`.
 * `TauCeti.Module.Dual.baseChange_coord`: base-changed dual basis elements recover the
   coordinates in the base-changed basis.
 * `TauCeti.Module.Dual.eq_of_baseChange_eq`: base changes of all dual elements jointly
@@ -89,6 +93,16 @@ theorem _root_.Module.Dual.baseChangeEvaluation_one_tmul_baseChange
   | add s t hs ht => simpa only [map_add] using congrArg₂ (· + ·) hs ht
   | tmul a m => simp [baseChangeEvaluation_tmul]
 
+/-- Scalar-extended evaluation is natural with respect to dual maps: applying `baseChangeEvaluation`
+after the base change of `f.dualMap` agrees with applying `(f.baseChange A).dualMap` after
+`baseChangeEvaluation`. -/
+theorem baseChangeEvaluation_comp_baseChange_dualMap
+    {N : Type*} [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N) :
+    (baseChangeEvaluation (R := R) (M := M) (A := A)).comp (f.dualMap.baseChange A) =
+      (f.baseChange A).dualMap.comp (baseChangeEvaluation (R := R) (M := N) (A := A)) := by
+  ext a ψ
+  simp
+
 section FiniteProjective
 
 variable [Module.Finite R M] [Module.Projective R M]
@@ -121,6 +135,13 @@ theorem baseChangeEvaluationEquiv_apply (z : A ⊗[R] Module.Dual R M) :
     baseChangeEvaluationEquiv (R := R) (A := A) (M := M) z =
       baseChangeEvaluation (R := R) (M := M) (A := A) z :=
   by simp only [baseChangeEvaluationEquiv, LinearEquiv.ofBijective_apply]
+
+/-- The underlying linear map of `baseChangeEvaluationEquiv` is `baseChangeEvaluation`. -/
+@[simp]
+theorem baseChangeEvaluationEquiv_toLinearMap :
+    (baseChangeEvaluationEquiv (R := R) (A := A) (M := M)).toLinearMap =
+      baseChangeEvaluation (R := R) (M := M) (A := A) :=
+  LinearMap.ext baseChangeEvaluationEquiv_apply
 
 end FiniteProjective
 

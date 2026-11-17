@@ -290,8 +290,8 @@ def lift (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) (g : ContragredientDual σ P
         -- Under `op r ↦ σ⁻¹ r`, `op (σ s)` acts on `N` as `σ⁻¹ (σ s) • ·`.
         change L (MulOpposite.op (σ s) • toARTranspose x) =
           σ.symm (σ s) • L (toARTranspose x) at hL
-        rw [toARTranspose_smul, ← AuslanderReitenTranspose.op_algebraMap_smul (k := R) f (σ s),
-          Algebra.algebraMap_self_apply, hL, σ.symm_apply_apply, RingHom.id_apply] }
+        rw [toARTranspose_smul, ← AuslanderReitenTranspose.op_smul_eq_smul f (σ s),
+          hL, σ.symm_apply_apply, RingHom.id_apply] }
 
 @[simp]
 theorem lift_mk (σ : S ≃+* R) (f : P₁ →ₗ[R] P₀) (g : ContragredientDual σ P₁ →ₗ[S] N)
@@ -318,50 +318,34 @@ theorem hom_ext {σ : S ≃+* R} {f : P₁ →ₗ[R] P₀}
 end Lift
 
 /-- An isomorphism of presentation arrows `(e₁, e₀)` with `e₀ ∘ f = g ∘ e₁` induces an `S`-linear
-equivalence between their transposes. -/
+equivalence between their transposes, obtained by transporting
+`AuslanderReitenTranspose.linearEquiv` along `toARTranspose`. -/
 def congr (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
     (e₁ : P₁ ≃ₗ[R] Q₁) (e₀ : P₀ ≃ₗ[R] Q₀)
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) :
-    PresentationTranspose σ f ≃ₗ[S] PresentationTranspose σ g := by
-  have hgf : e₀.symm.toLinearMap ∘ₗ g = f ∘ₗ e₁.symm.toLinearMap := by
-    ext y
-    apply e₀.injective
-    have hy := LinearMap.congr_fun hfg (e₁.symm y)
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] at hy ⊢
-    exact hy.symm
-  refine LinearEquiv.ofLinearMap
-    (lift σ f ((mk σ g).comp (ContragredientDual.congr σ e₁.symm).toLinearMap) fun ψ ↦ ?_)
-    (lift σ g ((mk σ f).comp (ContragredientDual.congr σ e₁).toLinearMap) fun ψ ↦ ?_)
-    (hom_ext fun φ ↦ ?_) (hom_ext fun φ ↦ ?_)
-  · have hcomm : ContragredientDual.congr σ e₁.symm (ContragredientDual.map σ f ψ) =
-        ContragredientDual.map σ g (ContragredientDual.congr σ e₀.symm ψ) := by
-      ext y
-      have hy := LinearMap.congr_fun hgf y
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hy
-      simp [ ← hy]
-    simp [hcomm]
-  · have hcomm : ContragredientDual.congr σ e₁ (ContragredientDual.map σ g ψ) =
-        ContragredientDual.map σ f (ContragredientDual.congr σ e₀ ψ) := by
-      ext x
-      have hx := LinearMap.congr_fun hfg x
-      simp only [LinearMap.comp_apply, LinearEquiv.coe_coe] at hx
-      simp [hx]
-    simp [hcomm]
-  · simp only [LinearMap.comp_apply, LinearMap.id_apply, lift_mk, LinearEquiv.coe_coe]
-    congr 1
-    ext y
-    simp
-  · simp only [LinearMap.comp_apply, LinearMap.id_apply, lift_mk, LinearEquiv.coe_coe]
-    congr 1
-    ext x
-    simp
+    PresentationTranspose σ f ≃ₗ[S] PresentationTranspose σ g :=
+  let e := AuslanderReitenTranspose.linearEquiv e₀ e₁ hfg
+  { toFun x := toARTranspose.symm (e (toARTranspose x))
+    invFun y := toARTranspose.symm (e.symm (toARTranspose y))
+    left_inv x := by simp
+    right_inv y := by simp
+    map_add' x y := by simp
+    map_smul' s x := by
+      rw [toARTranspose_smul, ← AuslanderReitenTranspose.op_smul_eq_smul f (σ s), map_smul,
+        AuslanderReitenTranspose.op_smul_eq_smul g (σ s), toARTranspose_symm_smul,
+        σ.symm_apply_apply, RingHom.id_apply] }
 
 @[simp]
 theorem congr_mk (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {g : Q₁ →ₗ[R] Q₀}
     (e₁ : P₁ ≃ₗ[R] Q₁) (e₀ : P₀ ≃ₗ[R] Q₀)
     (hfg : e₀.toLinearMap ∘ₗ f = g ∘ₗ e₁.toLinearMap) (φ : ContragredientDual σ P₁) :
     congr σ e₁ e₀ hfg (mk σ f φ) = mk σ g (ContragredientDual.congr σ e₁.symm φ) := by
-  simp [congr]
+  apply toARTranspose.injective
+  simp only [congr, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk, toARTranspose_mk,
+    AddEquiv.apply_symm_apply, AuslanderReitenTranspose.linearEquiv_mk]
+  congr 1
+  ext x
+  simp [LinearMap.lcomp_apply]
 
 /-- A split monomorphism has vanishing transpose. -/
 theorem subsingleton_of_comp_eq_id (σ : S ≃+* R) {f : P₁ →ₗ[R] P₀} {r : P₀ →ₗ[R] P₁}

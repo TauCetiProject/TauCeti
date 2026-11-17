@@ -29,8 +29,8 @@ Precomposition turns an `R`-linear map `f : M →ₗ[R] N` contravariantly into 
 `ContragredientDual.map σ f : ContragredientDual σ N →ₗ[S] ContragredientDual σ M`. Because `σ` is
 a ring isomorphism, `toDualLinearEquiv` is a `σ`-semilinear equivalence onto `Module.Dual R M`: a
 finite `R`-basis of `M` yields an `S`-basis of `ContragredientDual σ M`
-(`Basis.contragredientDual`), and finite generation, freeness, and projectivity transport from `M`
-over `R` to `ContragredientDual σ M` over `S`.
+(`Basis.contragredientDual`), freeness is preserved for finite free modules, and finite generation
+and projectivity are preserved for finite projective modules.
 
 ## Main definitions
 
@@ -50,8 +50,8 @@ over `R` to `ContragredientDual σ M` over `S`.
 * `TauCeti.ContragredientDual.toMatrix_map`: in dual bases, the matrix of
   `ContragredientDual.map σ f` is the entrywise `σ⁻¹`-image of the transpose of the matrix of `f`.
 * `TauCeti.ContragredientDual.free`, `TauCeti.ContragredientDual.finite`,
-  `TauCeti.ContragredientDual.projective`: preservation of freeness, finite generation, and
-  projectivity for finite modules.
+  `TauCeti.ContragredientDual.projective`: preservation of freeness for finite free modules, and of
+  finite generation and projectivity for finite projective modules.
 
 ## References
 
