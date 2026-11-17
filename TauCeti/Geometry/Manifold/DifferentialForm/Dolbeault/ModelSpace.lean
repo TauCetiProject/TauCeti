@@ -21,7 +21,8 @@ the real derivative splits into complex-linear and conjugate-linear parts; alter
 gives the components of `dη` of types `(p+1,q)` and `(p,q+1)`. Additivity and the type
 decomposition give the same formula without a type hypothesis. This allows the coordinate
 calculus to be applied to mixed types as well as purely antiholomorphic forms. In degree one,
-`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)`.
+`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)`, so the conjugate coordinate derivatives of the
+coordinate evaluations of a Dolbeault-closed one-form on `ι → ℂ` are symmetric.
 
 On `ι → ℂ` for a linearly ordered finite `ι`, the coefficients `SmoothForm.conjCoeff` of a form
 are its values on increasing families of coordinate vectors. Those of `∂bar η` are obtained from
@@ -38,6 +39,8 @@ that of the form `∑_J u_J d(conj z)_J` (`SmoothForm.exists_isOfType_conjCoeff_
 * `TauCeti.SmoothForm.delBar_eq_alternatizeUncurryFin`: `∂bar` as alternation of the
   conjugate-linear derivative.
 * `TauCeti.SmoothForm.delBar_apply`: evaluation of `∂bar` of an arbitrary smooth form.
+* `TauCeti.SmoothForm.conjWirtingerDeriv_apply_single_eq`: the symmetry of conjugate
+  coordinate derivatives of a Dolbeault-closed one-form.
 * `TauCeti.SmoothForm.conjCoeff`: the coefficients of a form on `ι → ℂ`.
 * `TauCeti.SmoothForm.conjCoeff_delBar`: coordinate evaluation intertwines `∂bar` with
   `TauCeti.delBarCoeff`.
@@ -140,8 +143,10 @@ theorem delBar_eq_alternatizeUncurryFin (η : SmoothForm 𝓘(ℝ, E) E F k) (z 
       (fderiv ℝ Φ z + I • (fderiv ℝ Φ z) ∘L (I • ContinuousLinearMap.id ℝ E)))
   let A : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
     { toFun φ := ((ofComplexManifold E E).delBar φ).1 z
-      map_zero' := by simp; rfl
-      map_add' φ ψ := by simp; rfl }
+      -- `∂bar` is additive; the final `rfl` identifies the zero and addition of the fibre at `z`
+      -- with those of its model space `E [⋀^Fin (k + 1)]→L[ℝ] F`.
+      map_zero' := by rw [map_zero, ZeroMemClass.coe_zero, Pi.zero_apply]; rfl
+      map_add' φ ψ := by rw [map_add, AddMemClass.coe_add, Pi.add_apply]; rfl }
   let B : SmoothForm 𝓘(ℝ, E) E F k →+ E [⋀^Fin (k + 1)]→L[ℝ] F :=
     { toFun φ := C (field φ)
       map_zero' := by
@@ -203,6 +208,22 @@ theorem delBar_apply_pair (η : SmoothForm 𝓘(ℝ, E) E F 1) (z v w : E) :
 
 end ModelSpace
 
+section Coordinates
+
+variable {ι : Type*} [DecidableEq ι] [Fintype ι]
+
+/-- A Dolbeault-closed smooth one-form has symmetric conjugate coordinate derivatives. -/
+theorem conjWirtingerDeriv_apply_single_eq
+    (η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F 1) {z : ι → ℂ}
+    (hz : ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) (i j : ι) :
+    conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single j 1]) z (Pi.single i 1) =
+      conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single i 1]) z (Pi.single j 1) := by
+  apply sub_eq_zero.mp
+  rw [← delBar_apply_pair η, hz]
+  rfl
+
+end Coordinates
+
 section Coefficients
 
 open Finset
@@ -252,8 +273,11 @@ theorem conjCoeff_delBar {q : ℕ} (η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι �
       rw [card_erase_of_mem (I.orderEmbOfFin_mem hI a), hI, Nat.add_sub_cancel]
     -- Removing the `a`-th coordinate vector leaves the increasing enumeration of `I \ {e a}`.
     have herase := removeNth_orderEmbOfFin_symm_eq (e a) I (I.orderEmbOfFin_mem hI a) hI hcard
-    rw [show (⟨e a, _⟩ : I) = I.orderIsoOfFin hI a from
-      Subtype.ext (coe_orderIsoOfFin_apply ..).symm, OrderIso.symm_apply_apply] at herase
+    -- `herase` is phrased via the order isomorphism `I ≃o Fin (q + 1)`, whose argument is the
+    -- subtype element `⟨e a, _⟩`; identify it with the image of `a` to cancel the inverse.
+    have hea : (⟨e a, I.orderEmbOfFin_mem hI a⟩ : I) = I.orderIsoOfFin hI a :=
+      Subtype.ext (coe_orderIsoOfFin_apply ..).symm
+    rw [hea, OrderIso.symm_apply_apply] at herase
     have hcoeff : η.conjCoeff (I.erase (e a)) =
         fun y ↦ η.1 y (a.removeNth fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) := by
       funext y

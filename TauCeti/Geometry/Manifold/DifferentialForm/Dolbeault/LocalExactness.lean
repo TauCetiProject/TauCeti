@@ -13,10 +13,6 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ModelSpace
 /-!
 # Local exactness for smooth forms of type `(0,q)`
 
-On a complex vector space, the Dolbeault differential of a smooth `(0,1)`-form `η` on `v,w` is
-`∂bar η(v,w) = ∂bar(η(w))(v) - ∂bar(η(v))(w)` (`SmoothForm.delBar_apply_pair`), so the
-conjugate coordinate derivatives of the coefficients of a closed `(0,1)`-form are symmetric.
-
 A smooth form of type `(0,q+1)` on `ι → ℂ` whose Dolbeault differential vanishes on a finite
 product of planar domains has a smooth primitive of type `(0,q)` near every compact subproduct.
 Both the input and the primitive are `SmoothForm`s. The coefficients of the input are closed for
@@ -29,8 +25,6 @@ domain.
 
 ## Main declarations
 
-* `TauCeti.SmoothForm.conjWirtingerDeriv_apply_single_eq`: the symmetry of conjugate
-  coordinate derivatives of a Dolbeault-closed one-form.
 * `TauCeti.SmoothForm.IsOfType.exists_delBar_eventually_eq_of_pi`: local exactness of closed
   `(0,q+1)`-forms on products of planar domains.
 * `TauCeti.SmoothForm.IsOfType.exists_delBar_eq_of_polydisc`: exactness of closed
@@ -60,16 +54,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
 section Coordinates
 
 variable {ι : Type*} [DecidableEq ι] [Fintype ι]
-
-/-- A Dolbeault-closed smooth one-form has symmetric conjugate coordinate derivatives. -/
-theorem conjWirtingerDeriv_apply_single_eq
-    (η : SmoothForm 𝓘(ℝ, ι → ℂ) (ι → ℂ) F 1) {z : ι → ℂ}
-    (hz : ((ofComplexManifold (ι → ℂ) (ι → ℂ)).delBar η).1 z = 0) (i j : ι) :
-    conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single j 1]) z (Pi.single i 1) =
-      conjWirtingerDeriv (fun y ↦ η.1 y ![Pi.single i 1]) z (Pi.single j 1) := by
-  apply sub_eq_zero.mp
-  rw [← delBar_apply_pair η, hz]
-  rfl
 
 variable [CompleteSpace F]
 
