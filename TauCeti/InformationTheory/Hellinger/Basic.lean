@@ -38,6 +38,8 @@ laws, which is why it is used in lower bounds involving many independent observa
   from the densities with respect to any σ-finite measure dominating both measures.
 * `TauCeti.sqHellinger_eq_integral`: for probability measures,
   `sqHellinger P Q = ∫ (√(dP/dμ) - √(dQ/dμ))² dμ` for any σ-finite dominating `μ`.
+* `TauCeti.ofReal_sqrt_sqHellinger_eq_eLpNorm`: for probability measures, the Hellinger distance
+  `√(sqHellinger P Q)` is the `L²(μ)` seminorm of `√(dP/dμ) - √(dQ/dμ)`.
 * `TauCeti.hellingerAffinity_mem_Icc`, `TauCeti.sqHellinger_mem_Icc`: for probability measures
   the affinity lies in `[0, 1]` and the squared distance in `[0, 2]`.
 * `TauCeti.sqHellinger_eq_zero_iff`: the squared distance vanishes exactly on the diagonal.
@@ -103,29 +105,6 @@ theorem sqHellinger_le_two : sqHellinger P Q ≤ 2 := by
   rw [sqHellinger]
   linarith [hellingerAffinity_nonneg P Q]
 
-/-- The integrand `√(dP/dμ · dQ/dμ)` of the Hellinger affinity is integrable for finite `P`
-and `Q`, whatever the reference measure `μ`. -/
-theorem integrable_sqrt_toReal_rnDeriv_mul [IsFiniteMeasure P] [IsFiniteMeasure Q]
-    (μ : Measure X) :
-    Integrable (fun x ↦ √((P.rnDeriv μ x).toReal * (Q.rnDeriv μ x).toReal)) μ := by
-  have hpq : Integrable (fun x ↦ ((P.rnDeriv μ x).toReal + (Q.rnDeriv μ x).toReal) / 2) μ :=
-    (Measure.integrable_toReal_rnDeriv.add Measure.integrable_toReal_rnDeriv).div_const 2
-  refine hpq.mono ?_ (ae_of_all _ fun x ↦ ?_)
-  · exact ((P.measurable_rnDeriv μ).ennreal_toReal.mul
-      (Q.measurable_rnDeriv μ).ennreal_toReal).sqrt.aestronglyMeasurable
-  · rw [Real.norm_of_nonneg (Real.sqrt_nonneg _), Real.norm_of_nonneg (by positivity)]
-    exact Real.sqrt_mul_le_half_add ENNReal.toReal_nonneg ENNReal.toReal_nonneg
-
-/-- The integrand `(√(dP/dμ) - √(dQ/dμ))²` of the squared Hellinger distance is integrable for
-finite `P` and `Q`. -/
-theorem integrable_sq_sqrt_toReal_rnDeriv_sub [IsFiniteMeasure P] [IsFiniteMeasure Q]
-    (μ : Measure X) :
-    Integrable (fun x ↦ (√(P.rnDeriv μ x).toReal - √(Q.rnDeriv μ x).toReal) ^ 2) μ := by
-  simp only [Real.sq_sqrt_sub_sqrt ENNReal.toReal_nonneg ENNReal.toReal_nonneg]
-  have hpq : Integrable (fun x ↦ (P.rnDeriv μ x).toReal + (Q.rnDeriv μ x).toReal) μ :=
-    Measure.integrable_toReal_rnDeriv.add Measure.integrable_toReal_rnDeriv
-  exact hpq.sub ((integrable_sqrt_toReal_rnDeriv_mul P Q μ).const_mul 2)
-
 end Basic
 
 /-- The Hellinger affinity of σ-finite `P` and `Q` does not depend on the dominating measure: for
@@ -164,7 +143,7 @@ theorem hellingerAffinity_le_add_div_two (P Q : Measure X) [IsFiniteMeasure P]
   have hQ := Measure.absolutelyContinuous_add_self P Q
   calc hellingerAffinity P Q
       ≤ ∫ x, ((P.rnDeriv (P + Q) x).toReal + (Q.rnDeriv (P + Q) x).toReal) / 2 ∂(P + Q) :=
-        integral_mono (integrable_sqrt_toReal_rnDeriv_mul P Q _)
+        integral_mono (Measure.integrable_sqrt_toReal_rnDeriv_mul P Q _)
           ((Measure.integrable_toReal_rnDeriv.add Measure.integrable_toReal_rnDeriv).div_const 2)
           fun _ ↦ Real.sqrt_mul_le_half_add ENNReal.toReal_nonneg ENNReal.toReal_nonneg
     _ = (P.real univ + Q.real univ) / 2 := by
@@ -203,12 +182,23 @@ theorem sqHellinger_eq_integral {μ : Measure X} [SigmaFinite μ] (hP : P ≪ μ
   have hp : Integrable (fun x ↦ (P.rnDeriv μ x).toReal) μ := Measure.integrable_toReal_rnDeriv
   have hq : Integrable (fun x ↦ (Q.rnDeriv μ x).toReal) μ := Measure.integrable_toReal_rnDeriv
   have hpq : Integrable (fun x ↦ (P.rnDeriv μ x).toReal + (Q.rnDeriv μ x).toReal) μ := hp.add hq
-  rw [integral_sub hpq ((integrable_sqrt_toReal_rnDeriv_mul P Q μ).const_mul 2),
+  rw [integral_sub hpq ((Measure.integrable_sqrt_toReal_rnDeriv_mul P Q μ).const_mul 2),
     integral_add hp hq,
     integral_const_mul, Measure.integral_toReal_rnDeriv hP, Measure.integral_toReal_rnDeriv hQ,
     ← hellingerAffinity_eq_integral hP hQ, sqHellinger]
   simp only [probReal_univ]
   ring
+
+/-- For probability measures, the Hellinger distance `√(sqHellinger P Q)` is the `L²(μ)` seminorm
+of `√(dP/dμ) - √(dQ/dμ)` for every σ-finite measure `μ` dominating `P` and `Q`. -/
+theorem ofReal_sqrt_sqHellinger_eq_eLpNorm {μ : Measure X} [SigmaFinite μ] (hP : P ≪ μ)
+    (hQ : Q ≪ μ) :
+    ENNReal.ofReal √(sqHellinger P Q) =
+      eLpNorm (fun x ↦ √(P.rnDeriv μ x).toReal - √(Q.rnDeriv μ x).toReal) 2 μ := by
+  refine Eq.trans ?_ ((Measure.memLp_two_sqrt_toReal_rnDeriv P μ).sub
+    (Measure.memLp_two_sqrt_toReal_rnDeriv Q μ)).eLpNorm_two_eq_ofReal_sqrt_integral.symm
+  rw [sqHellinger_eq_integral hP hQ]
+  simp only [Pi.sub_apply, Real.norm_eq_abs, sq_abs]
 
 /-- The squared Hellinger distance between probability measures vanishes exactly when the
 measures are equal. -/
@@ -217,7 +207,7 @@ theorem sqHellinger_eq_zero_iff : sqHellinger P Q = 0 ↔ P = Q := by
   have hP := Measure.absolutelyContinuous_self_add P Q
   have hQ := Measure.absolutelyContinuous_add_self P Q
   rw [sqHellinger_eq_integral hP hQ, integral_eq_zero_iff_of_nonneg (fun _ ↦ sq_nonneg _)
-    (integrable_sq_sqrt_toReal_rnDeriv_sub P Q _)] at h
+    (Measure.integrable_sq_sqrt_toReal_rnDeriv_sub P Q _)] at h
   refine (Measure.withDensity_rnDeriv_eq P _ hP).symm.trans
     ((withDensity_congr_ae ?_).trans (Measure.withDensity_rnDeriv_eq Q _ hQ))
   filter_upwards [h, Measure.rnDeriv_ne_top P (P + Q), Measure.rnDeriv_ne_top Q (P + Q)]
@@ -240,7 +230,7 @@ theorem hellingerAffinity_eq_zero_iff {P Q : Measure X} [IsFiniteMeasure P] [IsF
       S s = 0 ↔ (P + Q) ({x | S.rnDeriv (P + Q) x ≠ 0} ∩ s) = 0 := by
     rw [← withDensity_apply_eq_zero (S.measurable_rnDeriv _), Measure.withDensity_rnDeriv_eq S _ hS]
   rw [hellingerAffinity, integral_eq_zero_iff_of_nonneg (fun _ ↦ Real.sqrt_nonneg _)
-    (integrable_sqrt_toReal_rnDeriv_mul P Q _)]
+    (Measure.integrable_sqrt_toReal_rnDeriv_mul P Q _)]
   constructor
   · intro h
     refine ⟨{x | P.rnDeriv (P + Q) x = 0},
@@ -279,20 +269,16 @@ theorem sqrt_sqHellinger_triangle (P Q R : Measure X) [IsProbabilityMeasure P]
   have hP : P ≪ P + Q + R := (Measure.absolutelyContinuous_self_add P Q).add_right R
   have hQ : Q ≪ P + Q + R := (Measure.absolutelyContinuous_add_self P Q).add_right R
   have hR : R ≪ P + Q + R := Measure.absolutelyContinuous_add_self _ R
-  set F := fun x ↦ √(P.rnDeriv (P + Q + R) x).toReal
-  set G := fun x ↦ √(Q.rnDeriv (P + Q + R) x).toReal
-  set H := fun x ↦ √(R.rnDeriv (P + Q + R) x).toReal
-  have hF : MemLp F 2 (P + Q + R) := Measure.memLp_two_sqrt_toReal_rnDeriv P _
-  have hG : MemLp G 2 (P + Q + R) := Measure.memLp_two_sqrt_toReal_rnDeriv Q _
-  have hH : MemLp H 2 (P + Q + R) := Measure.memLp_two_sqrt_toReal_rnDeriv R _
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity),
+    ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _),
+    ofReal_sqrt_sqHellinger_eq_eLpNorm hP hR, ofReal_sqrt_sqHellinger_eq_eLpNorm hP hQ,
+    ofReal_sqrt_sqHellinger_eq_eLpNorm hQ hR]
   -- Minkowski's inequality in `L²(P + Q + R)`.
-  have key := eLpNorm_add_le (μ := P + Q + R) (f := F - G) (g := G - H) one_le_two
-  rw [sub_add_sub_cancel, (hF.sub hH).eLpNorm_two_eq_ofReal_sqrt_integral,
-    (hF.sub hG).eLpNorm_two_eq_ofReal_sqrt_integral,
-    (hG.sub hH).eLpNorm_two_eq_ofReal_sqrt_integral,
-    ← ENNReal.ofReal_add (Real.sqrt_nonneg _) (Real.sqrt_nonneg _),
-    ENNReal.ofReal_le_ofReal_iff (by positivity)] at key
-  rw [sqHellinger_eq_integral hP hR, sqHellinger_eq_integral hP hQ, sqHellinger_eq_integral hQ hR]
-  simpa only [F, G, H, Pi.sub_apply, Real.norm_eq_abs, sq_abs] using key
+  refine le_of_eq_of_le (congrArg (eLpNorm · 2 (P + Q + R)) (funext fun x ↦ ?_))
+    (eLpNorm_add_le (μ := P + Q + R)
+      (f := fun x ↦ √(P.rnDeriv (P + Q + R) x).toReal - √(Q.rnDeriv (P + Q + R) x).toReal)
+      (g := fun x ↦ √(Q.rnDeriv (P + Q + R) x).toReal - √(R.rnDeriv (P + Q + R) x).toReal)
+      one_le_two)
+  simp only [Pi.add_apply, sub_add_sub_cancel]
 
 end TauCeti
