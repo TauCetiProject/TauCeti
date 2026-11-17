@@ -172,11 +172,11 @@ theorem norm_eq_of_forall_norm_eq {F : ι → Type*} [∀ i, NormedAddCommGroup 
 
 /-- The sequence `i ↦ ‖f i‖` of the norms of the coordinates of `f ∈ ℓᵖ`, as an element of the
 scalar `ℓᵖ`. It has the same norm as `f` (`lp.norm_normSeq`). -/
-@[expose] def normSeq (f : lp E p) : lp (fun _ : ι ↦ ℝ) p :=
+def normSeq (f : lp E p) : lp (fun _ : ι ↦ ℝ) p :=
   ⟨fun i ↦ ‖f i‖, (lp.memℓp f).norm⟩
 
 @[simp]
-theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := rfl
+theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := (rfl)
 
 @[simp]
 theorem norm_normSeq (f : lp E p) : ‖normSeq f‖ = ‖f‖ :=

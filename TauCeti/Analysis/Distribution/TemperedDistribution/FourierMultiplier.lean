@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
+import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
 
 /-!
@@ -78,16 +79,8 @@ theorem fourierMultiplierCLM_apply_apply_of_even {g : E → ℂ} (hg : g.Even) (
   swap
   · simp [hgt, SchwartzMap.fourierMultiplierCLM_apply,
       SchwartzMap.smulLeftCLM_of_not_hasTemperateGrowth hgt]
-  rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourierMultiplierCLM_apply]
-  congr 1
-  have key : (SchwartzMap.smulLeftCLM ℂ g (𝓕⁻ f) : E → ℂ) =
-      (SchwartzMap.smulLeftCLM ℂ g (𝓕 f) : E → ℂ) ∘ LinearIsometryEquiv.neg ℝ (E := E) := by
-    ext ξ
-    simp [SchwartzMap.smulLeftCLM_apply_apply hgt, SchwartzMap.fourierInv_coe,
-      Real.fourierInv_eq_fourier_neg, SchwartzMap.fourier_coe, hg ξ]
-  ext x
-  rw [SchwartzMap.fourier_coe, key, Real.fourier_comp_linearIsometry]
-  simp [SchwartzMap.fourierInv_coe, Real.fourierInv_eq_fourier_neg]
+  rw [fourierMultiplierCLM_apply_apply, SchwartzMap.fourier_smulLeftCLM_fourierInv_eq hgt,
+    show (fun ξ ↦ g (-ξ)) = g from funext hg]
 
 /-- Fourier multipliers on tempered distributions are additive in the symbol. -/
 theorem fourierMultiplierCLM_add {g₁ g₂ : E → ℂ} (hg₁ : g₁.HasTemperateGrowth)
