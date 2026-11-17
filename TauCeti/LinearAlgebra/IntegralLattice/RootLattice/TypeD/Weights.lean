@@ -269,19 +269,31 @@ theorem form_typeDCospinorWeight_single (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced
   rw [hsub, form_typeDSpinorWeight_single hn ht i, form_typeDVectorWeight_single hn ht i]
   split_ifs <;> first | (exfalso; omega) | ring
 
+-- Pull back a discriminant class along an isometry when a dual-carrier vector maps to a
+-- representative of that class.
+private theorem mk_eq_symm_discriminantGroupEquiv_of_map_eq
+    {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
+    {L : IntegralLattice V} {M : IntegralLattice W} (e : Isometry L M)
+    (u : L.dualCarrier) (v : M.dualCarrier) {c : M.DiscriminantGroup}
+    (hmap : e (u : V) = (v : W))
+    (hmk : (Submodule.Quotient.mk v : M.DiscriminantGroup) = c) :
+    (Submodule.Quotient.mk u : L.DiscriminantGroup) = e.symm.discriminantGroupEquiv c := by
+  have huv : e.dualCarrierEquiv u = v := Subtype.ext ((e.coe_dualCarrierEquiv_apply u).trans hmap)
+  rw [Isometry.discriminantGroupEquiv_symm, LinearEquiv.eq_symm_apply,
+    Isometry.discriminantGroupEquiv_mk, huv, hmk]
+
 /-- `typeDSpinorWeightDual` represents the spinor class pulled back along
 `rootLatticeIsometryCheckerboard`. -/
 @[simp] theorem mk_typeDSpinorWeightDual (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced) :
     (Submodule.Quotient.mk (typeDSpinorWeightDual n hn ht) :
         ((D n).rootLattice ht).DiscriminantGroup) =
       (rootLatticeIsometryCheckerboard n hn ht).symm.discriminantGroupEquiv
-        (checkerboardSpinorClass n) := by
-  apply (rootLatticeIsometryCheckerboard n hn ht).discriminantGroupEquiv.injective
-  rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
-    LinearEquiv.apply_symm_apply, mk_eq_checkerboardSpinorClass_iff,
-    Isometry.coe_dualCarrierEquiv_apply, coe_typeDSpinorWeightDual,
-    rootLatticeIsometryCheckerboard_typeDSpinorWeight, sub_self]
-  exact (checkerboardCarrier n).zero_mem
+        (checkerboardSpinorClass n) :=
+  mk_eq_symm_discriminantGroupEquiv_of_map_eq (rootLatticeIsometryCheckerboard n hn ht)
+    (typeDSpinorWeightDual n hn ht) ⟨checkerboardSpinor n, checkerboardSpinor_mem_dualCarrier⟩
+    ((congrArg _ (coe_typeDSpinorWeightDual hn ht)).trans
+      (rootLatticeIsometryCheckerboard_typeDSpinorWeight hn ht))
+    (checkerboardSpinorClass_def n).symm
 
 /-- `typeDVectorWeightDual` represents the vector class pulled back along
 `rootLatticeIsometryCheckerboard`. -/
@@ -292,12 +304,12 @@ theorem form_typeDCospinorWeight_single (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced
       (rootLatticeIsometryCheckerboard n hn ht).symm.discriminantGroupEquiv
         (checkerboardVectorClass n) := by
   have : NeZero n := ⟨by omega⟩
-  apply (rootLatticeIsometryCheckerboard n hn ht).discriminantGroupEquiv.injective
-  rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
-    LinearEquiv.apply_symm_apply, mk_eq_checkerboardVectorClass_iff,
-    Isometry.coe_dualCarrierEquiv_apply, coe_typeDVectorWeightDual,
-    rootLatticeIsometryCheckerboard_typeDVectorWeight, sub_self]
-  exact (checkerboardCarrier n).zero_mem
+  exact mk_eq_symm_discriminantGroupEquiv_of_map_eq (rootLatticeIsometryCheckerboard n hn ht)
+    (typeDVectorWeightDual n hn ht) ⟨checkerboardVector n, checkerboardVector_mem_dualCarrier⟩
+    ((congrArg _ (coe_typeDVectorWeightDual hn ht)).trans
+      (rootLatticeIsometryCheckerboard_typeDVectorWeight hn ht))
+    ((mk_eq_checkerboardVectorClass_iff _).mpr
+      ((sub_self (checkerboardVector n)).symm ▸ (checkerboardCarrier n).zero_mem))
 
 /-- `typeDCospinorWeightDual` represents the cospinor class pulled back along
 `rootLatticeIsometryCheckerboard`. -/
@@ -308,11 +320,12 @@ theorem form_typeDCospinorWeight_single (hn : 4 ≤ n) (ht : (D n).IsSimplyLaced
       (rootLatticeIsometryCheckerboard n hn ht).symm.discriminantGroupEquiv
         (checkerboardCospinorClass n) := by
   have : NeZero n := ⟨by omega⟩
-  apply (rootLatticeIsometryCheckerboard n hn ht).discriminantGroupEquiv.injective
-  rw [Isometry.discriminantGroupEquiv_mk, Isometry.discriminantGroupEquiv_symm,
-    LinearEquiv.apply_symm_apply, mk_eq_checkerboardCospinorClass_iff,
-    Isometry.coe_dualCarrierEquiv_apply, coe_typeDCospinorWeightDual,
-    rootLatticeIsometryCheckerboard_typeDCospinorWeight, sub_self]
-  exact (checkerboardCarrier n).zero_mem
+  exact mk_eq_symm_discriminantGroupEquiv_of_map_eq (rootLatticeIsometryCheckerboard n hn ht)
+    (typeDCospinorWeightDual n hn ht)
+    ⟨checkerboardCospinor n, checkerboardCospinor_mem_dualCarrier⟩
+    ((congrArg _ (coe_typeDCospinorWeightDual hn ht)).trans
+      (rootLatticeIsometryCheckerboard_typeDCospinorWeight hn ht))
+    ((mk_eq_checkerboardCospinorClass_iff _).mpr
+      ((sub_self (checkerboardCospinor n)).symm ▸ (checkerboardCarrier n).zero_mem))
 
 end TauCeti.IntegralLattice

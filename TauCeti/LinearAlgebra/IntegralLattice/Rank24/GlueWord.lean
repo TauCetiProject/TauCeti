@@ -303,7 +303,7 @@ open IntegralLattice
 coset named by `l` (`mk_glueWordVector_of_decodeGlueWord_eq_some`, `form_glueWordVector_self`).
 Missing entries default to digit `0` (hence `0`), while out-of-range digits follow
 `TauCeti.DynkinType.glueLabelVector` (`0`, except on `Aₘ` where digit `d` gives a dual-carrier
-representative of `d • ω₁`, shortest only for `d ≤ m + 1`). -/
+representative of `d • ω₁`, guaranteed shortest for `d ≤ m + 1`). -/
 def glueWordVector {n : ℕ} (t : Fin n → DynkinType) (l : List ℕ) :
     ∀ i, Fin (t i).rank → ℚ :=
   fun i ↦ (t i).glueLabelVector (l.getD i 0)

@@ -96,7 +96,7 @@ coordinates `Fin t.rank → ℚ`.  When `t` is valid and simply laced and `d < t
 is the canonical shortest representative of the discriminant coset named by digit `d`
 (`mk_glueLabelVector`, `form_glueLabelVector_self`).  Digits `d ≥ t.glueLabelCount` evaluate to `0`,
 except on `Aₙ` where `typeACosetRepresentative n d` gives a dual-carrier representative of `d • ω₁`
-for all `d : ℕ` (shortest only for `d ≤ n + 1`). -/
+for all `d : ℕ` (guaranteed shortest for `d ≤ n + 1`). -/
 def glueLabelVector : (t : DynkinType) → ℕ → Fin t.rank → ℚ
   | A n, d => typeACosetRepresentative n d
   | D n, d =>
