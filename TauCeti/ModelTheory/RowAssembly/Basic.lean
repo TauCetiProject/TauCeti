@@ -452,7 +452,10 @@ def rowEquiv (e : Carrier R₁ C₁ ≃[lang ι Lc] Carrier R₂ C₂) : R₁ �
     rw [apply_row_eq e.symm r', apply_row_eq e (rowMap e.symm r')] at h
     exact h
 
-/-- Action of a `(lang ι Lc)`-isomorphism on a row element via `rowEquiv`. -/
+/-- Action of a `(lang ι Lc)`-isomorphism on a row element via `rowEquiv`. The `simp` priority is
+`low` so specialized evaluation lemmas such as `equivOfFibers_row`, `equivOfFibers_symm_row`, and
+`FirstOrder.Language.Equiv.refl_apply` (as well as local hypotheses) fire first. -/
+@[simp low]
 theorem apply_row (e : Carrier R₁ C₁ ≃[lang ι Lc] Carrier R₂ C₂) (r : R₁) :
     e (.row r) = .row (e.rowEquiv r) :=
   apply_row_eq e r
@@ -466,7 +469,7 @@ theorem rowEquiv_symm (e : Carrier R₁ C₁ ≃[lang ι Lc] Carrier R₂ C₂) 
 theorem ownerRow_apply (e : Carrier R₁ C₁ ≃[lang ι Lc] Carrier R₂ C₂) (u : Carrier R₁ C₁) :
     (e u).ownerRow = e.rowEquiv u.ownerRow := by
   cases u with
-  | row r => simp [apply_row]
+  | row r => simp
   | pt r τ x =>
     let v : Fin 2 → Carrier R₁ C₁ := Fin.cons (.pt r τ x) (fun _ => .row r)
     have hown : Structure.RelMap (L := lang ι Lc) Sym.own v := by simp [v]
@@ -510,7 +513,10 @@ noncomputable def fiberToEquiv (e : Carrier R₁ C₁ ≃[lang ι Lc] Carrier R�
     C₁ r τ ≃ C₂ (e.rowEquiv r) τ :=
   Equiv.ofBijective (fiberMap e r τ) (bijective_fiberMap e r τ)
 
-/-- Action of a `(lang ι Lc)`-isomorphism on a fiber point via `rowEquiv` and `fiberToEquiv`. -/
+/-- Action of a `(lang ι Lc)`-isomorphism on a fiber point via `rowEquiv` and `fiberToEquiv`.
+Intentionally not `@[simp]`: because `Carrier.pt` depends on the row index, eager rewriting of
+`e (.pt r τ x)` breaks bottom-up `simp` on `FirstOrder.Language.Equiv.symm_apply_apply`,
+`apply_symm_apply`, and `EmbeddingLike.apply_eq_iff_eq`, leaving stuck `HEq` goals. -/
 theorem apply_pt_eq_pt_fiberToEquiv (e : Carrier R₁ C₁ ≃[lang ι Lc] Carrier R₂ C₂) (r : R₁)
     (τ : ι) (x : C₁ r τ) :
     e (.pt r τ x) = .pt (e.rowEquiv r) τ (e.fiberToEquiv r τ x) :=
