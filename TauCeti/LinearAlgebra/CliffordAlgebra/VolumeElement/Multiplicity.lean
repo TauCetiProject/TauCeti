@@ -338,7 +338,7 @@ theorem apply_mem_oddVolumeSubmodule {μ : ℂ}
     (f : S →ₗ[CliffordAlgebra (Q.baseChange ℂ)] E) (s : S) :
     f s ∈ oddVolumeSubmodule (E := E) Q o hn μ := by
   rw [mem_oddVolumeSubmodule]
-  exact f.smul_apply_of_smul_eq hω s
+  exact f.smul_apply_of_smul_eq (hω s)
 
 /-- **Cross-eigenvalue vanishing for the complex volume.** In any dimension and for any quadratic
 form `Q`, if `complexVolume Q o` acts on `S` by `μ` and on `E` by `ν` with `μ ≠ ν`, every

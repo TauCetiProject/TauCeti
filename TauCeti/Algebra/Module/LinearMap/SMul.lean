@@ -41,8 +41,8 @@ variable {k A S M : Type*} [Semiring k] [Semiring A] [SMul k A]
   [AddCommMonoid M] [Module k M] [Module A M] [IsScalarTower k A M]
 
 /-- An `A`-linear map carries a `μ`-eigenvector of `z ∈ A` to a `μ`-eigenvector of `z`. -/
-theorem smul_apply_of_smul_eq (f : S →ₗ[A] M) {z : A} {μ : k}
-    (hz : ∀ s : S, z • s = μ • s) (s : S) :
+theorem smul_apply_of_smul_eq (f : S →ₗ[A] M) {z : A} {μ : k} {s : S}
+    (hz : z • s = μ • s) :
     z • f s = μ • f s := by
   rw [← f.map_smul, hz, f.map_smul_of_tower]
 
@@ -62,7 +62,7 @@ theorem eq_zero_of_smul_eq_of_isSMulRegular (f : S →ₗ[A] M) {z : A} {μ ν :
     f = 0 := by
   ext s
   refine hreg.eq_iff.mp ?_
-  rw [LinearMap.zero_apply, smul_zero, sub_smul, ← f.smul_apply_of_smul_eq hzS, hzM, sub_self]
+  rw [LinearMap.zero_apply, smul_zero, sub_smul, ← f.smul_apply_of_smul_eq (hzS s), hzM, sub_self]
 
 end Ring
 
