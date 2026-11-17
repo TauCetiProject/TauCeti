@@ -9,6 +9,7 @@ public import Mathlib.Probability.Martingale.Centering
 public import TauCeti.Probability.Martingale.ClassD
 public import TauCeti.Probability.Process.Filtration.Comp
 import TauCeti.MeasureTheory.Function.UniformIntegrable
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Martingale.Basic
 import TauCeti.Probability.Martingale.DoobMeyer.Discrete
 
@@ -61,8 +62,8 @@ private theorem setIntegral_sub_stoppedValue_le
   set τ := BoundedStoppingTime.ofComp hg hgN hσ hσN
   have hδN := hδ (BoundedStoppingTime.const hgN) _ hs
   rw [BoundedStoppingTime.stoppedValue_const] at hδN
-  have hN := norm_integral_le_of_eLpNorm_one_le hε' hδN
-  have hτ := norm_integral_le_of_eLpNorm_one_le hε' (hδ τ _ hs)
+  have hN := MeasureTheory.norm_integral_le_of_eLpNorm_one_le hε' hδN
+  have hτ := MeasureTheory.norm_integral_le_of_eLpNorm_one_le hε' (hδ τ _ hs)
   rw [Real.norm_eq_abs] at hN hτ
   rw [← BoundedStoppingTime.stoppedValue_ofComp hg hgN hσ hσN, integral_sub (hX (g N)).integrableOn
     (memLp_one_iff_integrable.1 (hU.memLp τ)).integrableOn]
@@ -83,7 +84,7 @@ theorem IsClassDL.uniformIntegrable_predictablePart [IsFiniteMeasure μ]
   set K := (⨆ τ : BoundedStoppingTime ℱ T, eLpNorm (stoppedValue X τ.1) 1 μ).toReal
   have hK0 : 0 ≤ K := ENNReal.toReal_nonneg
   have hK (t : ι) (ht : t ≤ T) : |∫ ω, X t ω ∂μ| ≤ K := by
-    have h := norm_integral_le_of_eLpNorm_one_le (μ := μ) (f := X t) (ε := K)
+    have h := MeasureTheory.norm_integral_le_of_eLpNorm_one_le (μ := μ) (f := X t) (ε := K)
       ENNReal.toReal_nonneg ?_
     · simpa using h
     rw [ENNReal.ofReal_toReal hU.iSup_eLpNorm_lt.ne,

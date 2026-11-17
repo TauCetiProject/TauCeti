@@ -49,8 +49,6 @@ convergent sequence of their finite `Lᵖ` norms is bounded, and this bound upgr
   integrable supremum of its `p`-th powers of norms is uniformly integrable with a uniform
   `Lᵖ` bound;
 * `MeasureTheory.UniformIntegrable.comp` — uniform integrability passes to reindexed families;
-* `TauCeti.norm_integral_le_of_eLpNorm_one_le` — an integral is bounded in norm by a real bound
-  on the `L¹` norm of the integrand;
 * `TauCeti.uniformIntegrable_of_setIntegral_le` — over a finite measure, a family of
   nonnegative integrable real functions with uniformly small upper-tail integrals is uniformly
   integrable;
@@ -113,14 +111,6 @@ theorem MeasureTheory.MemLp.uniformIntegrable_of_eNorm_le {α β γ ι : Type*}
   (uniformIntegrable_const hp hp_top hD).ae_mono hV hle
 
 namespace TauCeti
-
-/-- An integral is bounded in norm by any real bound on the `L¹` norm of the integrand. -/
-theorem norm_integral_le_of_eLpNorm_one_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : α → E} {ε : ℝ} (hε : 0 ≤ ε)
-    (h : eLpNorm f 1 μ ≤ ENNReal.ofReal ε) : ‖∫ x, f x ∂μ‖ ≤ ε := by
-  have h1 := eNorm_integral_le_lintegral_eNorm (μ := μ) f
-  rw [← ofReal_norm] at h1
-  exact (ENNReal.ofReal_le_ofReal_iff hε).1 (h1.trans (lintegral_eNorm_le_eLpNorm_one.trans h))
 
 /-- A family of almost everywhere nonnegative integrable real functions on a finite measure
 space is uniformly integrable when its integrals over the upper tails `{C ≤ f i}` are uniformly
