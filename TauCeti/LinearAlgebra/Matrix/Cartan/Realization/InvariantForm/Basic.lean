@@ -152,15 +152,12 @@ theorem form_coroot_self_ne_zero (i : I) : B.form (R.coroot i) (R.coroot i) ≠ 
 
 /-- Any two standard invariant forms agree whenever their left argument lies in `R.corootSpan`. -/
 theorem form_eq_of_mem_corootSpan_left (B₁ B₂ : InvariantForm A R) {x : H}
-    (hx : x ∈ R.corootSpan) (y : H) : B₁.form x y = B₂.form x y := by
-  rw [R.corootSpan_def] at hx
-  induction hx using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨i, rfl⟩ := h
-    rw [B₁.form_coroot, B₂.form_coroot]
-  | zero => simp
-  | add _ _ _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | smul c _ _ ih => simp [ih]
+    (hx : x ∈ R.corootSpan) (y : H) : B₁.form x y = B₂.form x y :=
+  LinearMap.congr_fun
+    (LinearMap.eqOn_span (f := B₁.form) (g := B₂.form)
+      (by rintro _ ⟨i, rfl⟩; ext h; rw [B₁.form_coroot, B₂.form_coroot])
+      (R.corootSpan_def ▸ hx))
+    y
 
 /-- Any two standard invariant forms agree whenever their right argument lies in `R.corootSpan`. -/
 theorem form_eq_of_mem_corootSpan_right (B₁ B₂ : InvariantForm A R) (x : H) {y : H}
@@ -176,14 +173,10 @@ theorem eq_of_corootSpan_eq_top (hR : R.corootSpan = ⊤) (B₁ B₂ : Invariant
 /-- Vectors in `R.corootSpan` pair to zero on the left with vectors in `R.cartanCenter`. -/
 theorem form_eq_zero_of_mem_corootSpan_of_mem_cartanCenter {x z : H}
     (hx : x ∈ R.corootSpan) (hz : z ∈ R.cartanCenter) : B.form x z = 0 := by
-  rw [R.corootSpan_def] at hx
-  induction hx using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨i, rfl⟩ := h
-    simp [(R.mem_cartanCenter_iff z).mp hz i]
-  | zero => simp
-  | add _ _ _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | smul c _ _ ih => simp [ih]
+  simpa only [LinearMap.BilinForm.flip_apply, LinearMap.zero_apply] using
+    LinearMap.eqOn_span (f := B.form.flip z) (g := 0)
+      (by rintro _ ⟨i, rfl⟩; simp [(R.mem_cartanCenter_iff z).mp hz i])
+      (R.corootSpan_def ▸ hx)
 
 /-- Vectors in `R.cartanCenter` pair to zero on the left with vectors in `R.corootSpan`. -/
 theorem form_eq_zero_of_mem_cartanCenter_of_mem_corootSpan {z x : H}

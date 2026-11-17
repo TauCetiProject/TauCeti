@@ -165,14 +165,11 @@ whenever the left argument lies in `Submodule.span K (Set.range R.root)`. -/
 theorem dualForm_eq_of_mem_rootSpan_left {B₁ B₂ : InvariantForm A R}
     (hB₁ : B₁.form.Nondegenerate) (hB₂ : B₂.form.Nondegenerate) {φ : Dual K H}
     (hφ : φ ∈ Submodule.span K (Set.range R.root)) (ψ : Dual K H) :
-    B₁.dualForm hB₁ φ ψ = B₂.dualForm hB₂ φ ψ := by
-  induction hφ using Submodule.span_induction with
-  | mem _ h =>
-    obtain ⟨i, rfl⟩ := h
-    rw [B₁.dualForm_root_left, B₂.dualForm_root_left]
-  | zero => simp
-  | add _ _ _ _ ih₁ ih₂ => simp [ih₁, ih₂]
-  | smul c _ _ ih => simp [ih]
+    B₁.dualForm hB₁ φ ψ = B₂.dualForm hB₂ φ ψ :=
+  LinearMap.congr_fun
+    (LinearMap.eqOn_span (f := B₁.dualForm hB₁) (g := B₂.dualForm hB₂)
+      (by rintro _ ⟨i, rfl⟩; ext μ; rw [B₁.dualForm_root_left, B₂.dualForm_root_left]) hφ)
+    ψ
 
 /-- Any two nondegenerate standard invariant forms induce the same pairing whenever the right
 argument lies in `Submodule.span K (Set.range R.root)`. -/
