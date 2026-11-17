@@ -121,15 +121,6 @@ theorem HasDirichletAgreement.meromorphicAt_LSeries (hD : d.HasDirichletAgreemen
   simp only [Pi.div_apply, Pi.mul_apply, hD.completed_eq z hz, mul_div_cancel_left₀ _
     (mul_ne_zero (d.conductor_cpow_ne_zero _) hzγ)]
 
-/-- With Dirichlet agreement and a completion meromorphic on `Re s > 1`, any abscissa of
-absolute convergence other than `⊤` is at most one. -/
-theorem HasDirichletAgreement.abscissaOfAbsConv_le_one (hD : d.HasDirichletAgreement)
-    (hm : MeromorphicOn d.completed {z | 1 < z.re})
-    (htop : LSeries.abscissaOfAbsConv d.coeff ≠ ⊤) :
-    LSeries.abscissaOfAbsConv d.coeff ≤ 1 :=
-  MeromorphicOn.abscissaOfAbsConv_le
-    (fun s hs ↦ hD.meromorphicAt_LSeries (hm s hs) hs) htop
-
 /-- Dirichlet agreement and local meromorphy of the completion at a point of `Re s > 1`
 make the Dirichlet series analytic there, without a coefficient-growth hypothesis. -/
 theorem HasDirichletAgreement.analyticAt_LSeries (hD : d.HasDirichletAgreement)

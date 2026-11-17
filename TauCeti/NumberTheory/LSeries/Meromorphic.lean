@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Analysis.Meromorphic.Basic
 public import Mathlib.NumberTheory.LSeries.Deriv
-import Mathlib.NumberTheory.LSeries.Injectivity
-import Mathlib.Analysis.Complex.Convex
 import Mathlib.Analysis.Complex.HalfPlane
+import TauCeti.NumberTheory.LSeries.Continuation
 
 /-!
 # Meromorphy of the totalized Dirichlet series
@@ -18,7 +17,7 @@ import Mathlib.Analysis.Complex.HalfPlane
 meromorphic on its finite abscissa of absolute convergence: a meromorphic germ there would
 propagate the zero values on the left into the convergence half-plane on the right, forcing
 all coefficients away from zero to vanish. In particular, local meromorphy of the totalized
-series implies analyticity, and half-plane meromorphy bounds any non-top abscissa.
+series implies analyticity.
 
 These statements concern the totalized series, not an arbitrary meromorphic continuation.
 -/
@@ -73,15 +72,13 @@ theorem MeromorphicAt.abscissaOfAbsConv_ne_re (hm : MeromorphicAt (LSeries a) s)
   have heq : LSeries a =ᶠ[𝓝 t] 0 :=
     eventuallyEq_of_mem ((Metric.isOpen_ball.inter isClosed_singleton.isOpen_compl).mem_nhds
       ⟨hdt, hne⟩) fun z hz' ↦ hz hz'
-  have hzero : EqOn (LSeries a) 0 {z : ℂ | s.re < z.re} :=
-    ((LSeries_analyticOnNhd a).mono (fun z hz ↦ by simpa only [hσ,
-      EReal.coe_lt_coe_iff] using hz)).eqOn_zero_of_preconnected_of_eventuallyEq_zero
-      (convex_halfSpace_re_gt s.re).isPreconnected ht heq
-  have hev : (fun x : ℝ ↦ LSeries a x) =ᶠ[atTop] 0 :=
-    (eventually_gt_atTop s.re).mono fun x hx ↦
-      hzero (by simpa only [mem_ofPred_eq, ofReal_re] using hx)
-  have ha := (LSeries_eventually_eq_zero_iff'.mp hev).resolve_right
-    (by simp only [hσ, EReal.coe_ne_top, not_false_eq_true])
+  have hc := isContinuationOn_LSeries (a := a) (by rw [hσ]; exact EReal.coe_lt_top _)
+  have ha : ∀ n ≠ 0, a n = 0 := by
+    intro n hn
+    by_contra han
+    exact hc.analyticOrderAt_ne_top ⟨n, hn, han⟩ (s := t)
+      (by simpa only [hσ, mem_ofPred_eq, EReal.coe_lt_coe_iff] using ht)
+      (analyticOrderAt_eq_top.mpr heq)
   have hsum : LSeriesSummable a (s.re - 1 : ℝ) := by
     exact (LSeriesSummable_congr (f := 0) _ (fun {n} hn ↦ (ha n hn).symm)).mp
       LSeriesSummable_zero
@@ -101,14 +98,3 @@ theorem MeromorphicAt.analyticAt_LSeries (hm : MeromorphicAt (LSeries a) s) :
     filter_upwards [((Complex.isOpen_re_lt_EReal _).mem_nhds hs)] with z hz
     exact (eq_zero_of_not_LSeriesSummable a z fun hsum ↦
       (not_le_of_gt hz) hsum.abscissaOfAbsConv_le).symm
-
-/-- Meromorphy of the totalized series on a right half-plane bounds its abscissa of absolute
-convergence, unless the abscissa is `⊤` and the series is identically zero. -/
-theorem MeromorphicOn.abscissaOfAbsConv_le {c : ℝ}
-    (hm : MeromorphicOn (LSeries a) {z | c < z.re}) (htop : abscissaOfAbsConv a ≠ ⊤) :
-    abscissaOfAbsConv a ≤ c := by
-  by_contra hc
-  have hr := EReal.coe_toReal htop (ne_bot_of_gt (lt_of_not_ge hc))
-  let r := (abscissaOfAbsConv a).toReal
-  have hcr : c < r := EReal.coe_lt_coe_iff.mp (hr.symm ▸ lt_of_not_ge hc)
-  exact (hm r (by simpa using hcr)).abscissaOfAbsConv_ne_re hr.symm
