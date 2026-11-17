@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.BaseChange.Hom
 public import TauCeti.Geometry.Lie.Subgroup.Symplectic
-public import TauCeti.Geometry.Lie.Subgroup.Unitary
+public import TauCeti.Geometry.Lie.Subgroup.Unitary.Basic
 import TauCeti.LinearAlgebra.Complex.RealForm
 
 /-!

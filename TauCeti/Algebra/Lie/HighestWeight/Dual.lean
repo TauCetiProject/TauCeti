@@ -67,8 +67,8 @@ writing `m_V(lam)` for the multiplicity of `L(lam)` in `V`,
 
 Both sides vanish when `lam` is not dominant integral. Over an algebraically closed field a
 finite-dimensional module is determined by its multiplicities
-(`TauCeti.nonempty_lieModuleEquiv_iff_isotypicMultiplicity`), so `V ≃ V*` exactly when
-`m_V(lam) = m_V(-(w₀ • lam))` for every dominant integral `lam`.
+(`TauCeti.nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq`), so
+`V ≃ V*` exactly when `m_V(lam) = m_V(-(w₀ • lam))` for every dominant integral `lam`.
 
 ## Main results
 
@@ -275,7 +275,7 @@ theorem nonempty_lieModuleEquiv_dual_iff_isotypicMultiplicity :
       LieModule.isotypicMultiplicity K L V (irreducibleQuotient b lam) =
         LieModule.isotypicMultiplicity K L V
           (irreducibleQuotient b (-(longestElement (IsKilling.rootSystem H) b • lam))) := by
-  rw [nonempty_lieModuleEquiv_iff_isotypicMultiplicity b]
+  rw [nonempty_lieModuleEquiv_iff_forall_isotypicMultiplicity_irreducibleQuotient_eq b]
   simp_rw [isotypicMultiplicity_dual_irreducibleQuotient b]
 
 end SelfDual
