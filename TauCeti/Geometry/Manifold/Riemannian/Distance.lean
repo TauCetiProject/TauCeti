@@ -40,7 +40,9 @@ is the special case that matters downstream.
 * `TauCeti.PseudoMetricSpace.ofRiemannianMetric` and `TauCeti.MetricSpace.ofRiemannianMetric`: the
   (pseudo)metric space structures of a preconnected Riemannian manifold, refining
   `PseudoEMetricSpace.ofRiemannianMetric` and `EMetricSpace.ofRiemannianMetric`; both satisfy
-  `IsRiemannianManifold I M`.
+  `IsRiemannianManifold I M`, and `PseudoMetricSpace.ofRiemannianMetric_eq`,
+  `MetricSpace.ofRiemannianMetric_eq`, and `MetricSpace.completeSpace_ofRiemannianMetric` compare
+  them with an existing ambient `(Pseudo)MetricSpace` satisfying `IsRiemannianManifold I M`.
 * `TauCeti.IsRiemannianManifold.edist_le_pathELength` and
   `TauCeti.IsRiemannianManifold.dist_le_toReal_pathELength`: the ambient (extended) distance of a
   Riemannian manifold, read through `IsRiemannianManifold.out`, is bounded by the length of any
@@ -433,5 +435,44 @@ instance [T3Space M] [PreconnectedSpace M] :
   exact ⟨fun _ _ ↦ rfl⟩
 
 end OfRiemannianMetric
+
+section OfRiemannianMetricEq
+
+variable (I) in
+/-- When the ambient pseudometric space on a preconnected Riemannian manifold already has distance
+given by `riemannianEDist`, `PseudoMetricSpace.ofRiemannianMetric` recovers that ambient
+`PseudoMetricSpace` structure. -/
+theorem PseudoMetricSpace.ofRiemannianMetric_eq (M : Type*) [hM : PseudoMetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [PreconnectedSpace M]
+    [IsRiemannianManifold I M] :
+    PseudoMetricSpace.ofRiemannianMetric I M = hM := by
+  ext x y
+  exact (IsRiemannianManifold.dist_eq_toReal_riemannianEDist I x y).symm
+
+variable (I) in
+/-- When the ambient metric space on a preconnected Riemannian manifold already has distance given
+by `riemannianEDist`, `MetricSpace.ofRiemannianMetric` recovers that ambient `MetricSpace`
+structure. -/
+theorem MetricSpace.ofRiemannianMetric_eq (M : Type*) [hM : MetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [PreconnectedSpace M]
+    [IsRiemannianManifold I M] :
+    MetricSpace.ofRiemannianMetric I M = hM := by
+  ext x y
+  exact (IsRiemannianManifold.dist_eq_toReal_riemannianEDist I x y).symm
+
+variable (I) in
+/-- When a complete metric space on a preconnected Riemannian manifold has distance given by
+`riemannianEDist`, the metric space `MetricSpace.ofRiemannianMetric I M` is also complete. -/
+theorem MetricSpace.completeSpace_ofRiemannianMetric (M : Type*) [MetricSpace M]
+    [ChartedSpace H M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsManifold I 1 M]
+    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] [PreconnectedSpace M]
+    [IsRiemannianManifold I M] [CompleteSpace M] :
+    @CompleteSpace M (MetricSpace.ofRiemannianMetric I M).toUniformSpace := by
+  rw [MetricSpace.ofRiemannianMetric_eq I M]
+  infer_instance
+
+end OfRiemannianMetricEq
 
 end TauCeti
