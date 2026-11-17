@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Basic
 public import Mathlib.Analysis.CStarAlgebra.Unitization
+public import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Approximate unitary equivalence with unitaries of the unitization
@@ -48,29 +49,6 @@ section Unital
 
 variable [CStarAlgebra B]
 
-/-- For a unital algebra `B`, the unital multiplicative map `B → B⁺` sending `x` to
-`1 + (x - 1_B)`. It maps unitaries of `B` to unitaries of `B⁺` acting on `B` by the same
-conjugation. -/
-private noncomputable def toUnitization : B →⋆* Unitization ℂ B where
-  toFun x := 1 + ((x - 1 : B) : Unitization ℂ B)
-  map_one' := by simp
-  map_mul' x y := by
-    ext
-    · simp
-    · simp only [Unitization.snd_mul, Unitization.fst_add, Unitization.snd_add,
-        Unitization.fst_one, Unitization.snd_one, Unitization.fst_inr, Unitization.snd_inr]
-      simp only [add_zero, zero_add, one_smul]
-      noncomm_ring
-  map_star' x := by simp [← Unitization.inr_star]
-
-private theorem toUnitization_mul_inr (x c : B) :
-    toUnitization x * (c : Unitization ℂ B) = ((x * c : B) : Unitization ℂ B) := by
-  simp [toUnitization, add_mul, sub_mul, ← Unitization.inr_mul]
-
-private theorem inr_mul_toUnitization (c x : B) :
-    (c : Unitization ℂ B) * toUnitization x = ((c * x : B) : Unitization ℂ B) := by
-  simp [toUnitization, mul_add, mul_sub, ← Unitization.inr_mul]
-
 /-- For a unital target, approximate unitary equivalence with unitaries of the unitization is
 approximate unitary equivalence with unitaries of the target. -/
 theorem unitization_iff {φ ψ : A →⋆ₙₐ[ℂ] B} :
@@ -81,22 +59,22 @@ theorem unitization_iff {φ ψ : A →⋆ₙₐ[ℂ] B} :
   · intro h
     have hlift (χ : A →⋆ₙₐ[ℂ] B) :
         (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B)).toNonUnitalStarAlgHom.comp
-          ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp χ) = χ :=
-      NonUnitalStarAlgHom.ext fun a ↦ by
-        rw [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.comp_apply,
-          StarAlgHom.coe_toNonUnitalStarAlgHom, Unitization.inrNonUnitalStarAlgHom_apply,
-          ← Unitization.starLift_symm_apply_apply, Equiv.symm_apply_apply,
-          NonUnitalStarAlgHom.coe_id, id_eq]
+          ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp χ) = χ := by
+      rw [← NonUnitalStarAlgHom.comp_assoc, Unitization.starLift_comp_inr,
+        NonUnitalStarAlgHom.id_comp]
     simpa only [hlift] using h.postcomp (Unitization.starLift (NonUnitalStarAlgHom.id ℂ B))
   · intro h
     rw [approximatelyUnitarilyEquivalent_def] at h ⊢
     intro F ε hε
     obtain ⟨u, hu⟩ := h F ε hε
-    refine ⟨Unitary.map toUnitization u, fun a ha ↦ ?_⟩
-    have hconj : (Unitary.map toUnitization u : Unitization ℂ B) * ((φ a : B) : Unitization ℂ B) *
-        star (Unitary.map toUnitization u : Unitization ℂ B) =
+    refine ⟨Unitary.map (Unitization.oneAddInrSubOne (R := ℂ)) u, fun a ha ↦ ?_⟩
+    have hconj :
+        (Unitary.map (Unitization.oneAddInrSubOne (R := ℂ) (B := B)) u : Unitization ℂ B) *
+          ((φ a : B) : Unitization ℂ B) *
+          star (Unitary.map (Unitization.oneAddInrSubOne (R := ℂ) (B := B)) u : Unitization ℂ B) =
           (((u : B) * φ a * star (u : B) : B) : Unitization ℂ B) := by
-      rw [Unitary.coe_map, ← map_star, toUnitization_mul_inr, inr_mul_toUnitization]
+      rw [Unitary.coe_map, ← map_star, Unitization.oneAddInrSubOne_mul_inr,
+        Unitization.inr_mul_oneAddInrSubOne]
     simpa only [NonUnitalStarAlgHom.comp_apply, Unitization.inrNonUnitalStarAlgHom_apply, hconj,
       ← Unitization.inr_sub, Unitization.norm_inr] using hu a ha
 

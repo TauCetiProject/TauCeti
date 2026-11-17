@@ -98,12 +98,8 @@ theorem multiplier_of_unitization
   let ι := Unitization.starLift (DoubleCentralizer.coeHom (𝕜 := ℂ) (A := B))
   have hι (χ : A →⋆ₙₐ[ℂ] B) : ι.toNonUnitalStarAlgHom.comp
       ((Unitization.inrNonUnitalStarAlgHom ℂ B).comp χ) =
-        (DoubleCentralizer.coeHom (𝕜 := ℂ)).comp χ :=
-    NonUnitalStarAlgHom.ext fun a ↦ by
-      rw [NonUnitalStarAlgHom.comp_apply, NonUnitalStarAlgHom.comp_apply,
-        StarAlgHom.coe_toNonUnitalStarAlgHom, Unitization.inrNonUnitalStarAlgHom_apply,
-        ← Unitization.starLift_symm_apply_apply, Equiv.symm_apply_apply,
-        NonUnitalStarAlgHom.comp_apply]
+        (DoubleCentralizer.coeHom (𝕜 := ℂ)).comp χ := by
+    rw [← NonUnitalStarAlgHom.comp_assoc, Unitization.starLift_comp_inr]
   simpa only [hι] using h.postcomp ι
 
 /-- Approximate unitary equivalence with unitaries of the multiplier algebra is preserved by
