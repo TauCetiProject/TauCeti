@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Module.Submodule.EqLocus
+public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Basic
 public import TauCeti.LinearAlgebra.TensorCoalgebra.Primitives
 
@@ -53,6 +54,8 @@ length at most `n + 1` only through its top component.
   on the words of length at most `n + 1`.
 * `TauCeti.ReducedTensorWords.stabilisingLinearMap_apply_of_mem_filtration`: a stabilising sequence
   of linear maps agrees with its assembled map on every filtration step.
+* `TauCeti.ReducedTensorWords.isHomogeneous_stabilisingLinearMap`: a stabilising sequence of
+  homogeneous linear maps assembles to a homogeneous linear map.
 
 ## References
 
@@ -374,6 +377,18 @@ theorem stabilisingLinearMap_apply_of_mem_filtration {φ : ℕ → (ReducedTenso
   refine (show filtration R M n ≤ LinearMap.eqLocus (stabilisingLinearMap φ) (φ n) from ?_) hz
   rw [filtration_le_iff]; rintro k hk _ ⟨x, rfl⟩
   rw [LinearMap.mem_eqLocus, stabilisingLinearMap_of, hle hk _ (of_mem_filtration R M le_rfl x)]
+
+/-- If each `φ n` is homogeneous of degree `r` and `φ` stabilises along `filtration`, then
+`stabilisingLinearMap φ` is homogeneous of degree `r`. -/
+theorem isHomogeneous_stabilisingLinearMap {ι σM σN : Type*} [AddMonoid ι]
+    [SetLike σM (ReducedTensorWords R M)] [SetLike σN N] {𝒜 : ι → σM} {ℬ : ι → σN} {r : ι}
+    {φ : ℕ → (ReducedTensorWords R M →ₗ[R] N)}
+    (hφ : ∀ k, ∀ w ∈ filtration R M k, φ (k + 1) w = φ k w)
+    (hhom : ∀ n, LinearMap.IsHomogeneous (φ n) 𝒜 ℬ r) :
+    LinearMap.IsHomogeneous (stabilisingLinearMap φ) 𝒜 ℬ r :=
+  LinearMap.isHomogeneous_def.2 fun _ z hz ↦ by
+    obtain ⟨n, hn⟩ := exists_mem_filtration R M z
+    rw [stabilisingLinearMap_apply_of_mem_filtration hφ hn]; exact (hhom n).map_mem hz
 
 end Stabilising
 

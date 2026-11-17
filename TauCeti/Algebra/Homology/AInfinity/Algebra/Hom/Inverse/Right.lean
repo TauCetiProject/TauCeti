@@ -105,8 +105,9 @@ private theorem isHomogeneous_nu : LinearMap.IsHomogeneous S.nu
   exact (add_zero (-1 : ℤ) ▸ hf₁.comp (zero_add (-1 : ℤ) ▸ hhA.comp S.isHomogeneous_delta)).sub
     (zero_add (-1 : ℤ) ▸ hhB.comp
       (S.isHomogeneous_obsR.add (add_zero (0 : ℤ) ▸ hf₁.comp S.isHomogeneous_delta)))
-private theorem obsE_eq_zero {w} (hw : w ∈ filtration R B k) : S.obsE w = 0 :=
-  (congrArg (letter R A) (sub_eq_zero.2 (S.intertwines w hw))).trans (map_zero _)
+private theorem obsE_eq_zero {w} (hw : w ∈ filtration R B k) : S.obsE w = 0 := by
+  rw [obsE, errG, LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.comp_apply,
+    LinearMap.comp_apply, S.intertwines w hw, sub_self, map_zero]
 private theorem obsR_eq_zero {w} (hw : w ∈ filtration R B k) : S.obsR w = 0 := by
   rw [obsR, LinearMap.comp_apply, S.homotopy_eq w hw, map_zero]
 private theorem errG_apply_ofLetter {z} (hz : z ∈ filtration R B (k + 1)) :
@@ -299,12 +300,14 @@ noncomputable def homotopyInverse : AInfinityHom BB AA where
       (rightInvSeq L n).intertwines z (filtration_monotone R B n.le_succ hn),
       coalgHom_rightInv_eq L (BB.barDifferential_mem_filtration hn)]
 
+private theorem barMap_homotopyInverse : L.homotopyInverse.barMap =
+    coalgHom R (stabilisingLinearMap fun k ↦ (rightInvSeq L k).γ) := rfl
+
 /-- The linear part of `L.homotopyInverse` is `L.inv`. -/
 @[simp] theorem linearPart_homotopyInverse : L.homotopyInverse.linearPart = L.inv :=
   LinearMap.ext fun b ↦ by
-    rw [linearPart_apply, taylor_def, LinearMap.comp_apply]
-    change letter R A (coalgHom R _ (ofLetter R B b)) = _
-    rw [coalgHom_rightInv_eq L (ofLetter_mem_filtration R B b), coalgHom_ofLetter, letter_ofLetter]
+    rw [linearPart_apply, taylor_def, LinearMap.comp_apply, barMap_homotopyInverse,
+      coalgHom_rightInv_eq L (ofLetter_mem_filtration R B b), coalgHom_ofLetter, letter_ofLetter]
     simp only [rightInvSeq, LinearMap.add_apply,
       (rightInvBase L).delta_eq_zero (ofLetter_mem_filtration R B b), add_zero]
     simp only [rightInvBase, LinearMap.comp_apply, letter_ofLetter]
@@ -331,22 +334,27 @@ noncomputable def homotopyCompHomotopyInverse :
         (f.isCoalgHom_barMap.comp (isCoalgHom_coalgHom (rightInvSeq L n).γ)) (isCoalgHom_id B)
         (rightInvSeq_η_stab L)
         (fun _ hu ↦ by
-          rw [barMap_comp]; exact congrArg f.barMap
+          rw [barMap_comp, LinearMap.comp_apply, LinearMap.comp_apply, barMap_homotopyInverse]
+          exact congrArg f.barMap
             (coalgHom_rightInv_eq L (filtration_monotone R B (Nat.sub_le n 1) hu)))
         (fun _ _ ↦ by rw [barMap_id]) hw
       have heq := (rightInvSeq L n).homotopy_eq z (filtration_monotone R B n.le_succ hn)
       simp only [rightErrH, LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply] at heq ⊢
       rw [hH hn, hH (BB.barDifferential_mem_filtration hn), barMap_comp, LinearMap.comp_apply,
-        show L.homotopyInverse.barMap z = (rightInvSeq L n).barG z from coalgHom_rightInv_eq L hn,
-        barMap_id, LinearMap.id_apply]; exact sub_eq_zero.1 heq }
+        barMap_homotopyInverse, coalgHom_rightInv_eq L hn, barMap_id, LinearMap.id_apply]
+      exact sub_eq_zero.1 heq }
+
+private theorem barHomotopy_homotopyCompHomotopyInverse :
+    L.homotopyCompHomotopyInverse.barHomotopy =
+      gradedCoderivAlong (BB.grading.shift 1) 1 (f.comp L.homotopyInverse).barMap
+        (AInfinityHom.id BB).barMap (stabilisingLinearMap fun k ↦ (rightInvSeq L k).η) := rfl
 
 /-- The linear homotopy of `L.homotopyCompHomotopyInverse` is `L.homotopyRight`. -/
 @[simp] theorem linearHomotopy_homotopyCompHomotopyInverse :
     L.homotopyCompHomotopyInverse.linearHomotopy = L.homotopyRight :=
   LinearMap.ext fun b ↦ by
-    rw [Homotopy.linearHomotopy_apply, Homotopy.taylor_def]
-    change (letter R B ∘ₗ gradedCoderivAlong (BB.grading.shift 1) 1 _ _ _) (ofLetter R B b) = _
-    rw [letter_comp_gradedCoderivAlong,
+    rw [Homotopy.linearHomotopy_apply, Homotopy.taylor_def,
+      barHomotopy_homotopyCompHomotopyInverse, letter_comp_gradedCoderivAlong,
       stabilisingLinearMap_apply_of_mem_filtration (rightInvSeq_η_stab L)
         (ofLetter_mem_filtration R B b)]
     simp only [rightInvSeq, LinearMap.add_apply,

@@ -382,23 +382,6 @@ theorem gradedCoderivAlong_stabilisingLinearMap_apply
 end Filtration
 end TaylorExpansion
 
-section StabilisingHomogeneous
-variable {R : Type uR} {ι : Type*} {M : Type uM} {N : Type uN} {σM σN : Type*}
-  [CommSemiring R] [AddMonoid ι] [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
-  [SetLike σM (ReducedTensorWords R M)] [SetLike σN N]
-
-/-- If each `φ n` is homogeneous of degree `r` and `φ` stabilises along `filtration`, then
-`stabilisingLinearMap φ` is homogeneous of degree `r`. -/
-theorem isHomogeneous_stabilisingLinearMap {𝒜 : ι → σM} {ℬ : ι → σN} {r : ι}
-    {φ : ℕ → (ReducedTensorWords R M →ₗ[R] N)}
-    (hφ : ∀ k, ∀ w ∈ filtration R M k, φ (k + 1) w = φ k w)
-    (hhom : ∀ n, LinearMap.IsHomogeneous (φ n) 𝒜 ℬ r) :
-    LinearMap.IsHomogeneous (stabilisingLinearMap φ) 𝒜 ℬ r :=
-  LinearMap.isHomogeneous_def.2 fun _ z hz ↦ by
-    obtain ⟨n, hn⟩ := exists_mem_filtration R M z
-    rw [stabilisingLinearMap_apply_of_mem_filtration hφ hn]; exact (hhom n).map_mem hz
-end StabilisingHomogeneous
-
 section Group
 variable {R : Type uR} {M : Type uM} {N : Type uN} [CommRing R] [AddCommMonoid M] [Module R M]
   [AddCommGroup N] [Module R N]

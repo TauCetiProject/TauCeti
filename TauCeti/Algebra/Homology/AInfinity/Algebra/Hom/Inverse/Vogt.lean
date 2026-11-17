@@ -49,12 +49,6 @@ section Vogt
 variable {A : Type uA} {B : Type uB} [AddCommGroup A] [Module R A] [AddCommGroup B] [Module R B]
   {AA : AInfinityAlgebra R A} {BB : AInfinityAlgebra R B}
 
-private theorem diff_apply_of_chain_eq {M : Type*} [AddCommGroup M] [Module R M]
-    {d f' h : M →ₗ[R] M} (heq : f' - LinearMap.id = d ∘ₗ h + h ∘ₗ d) (x : M) :
-    d (h x) = f' x - x - h (d x) :=
-  eq_sub_of_add_eq (by simpa only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
-    LinearMap.id_apply] using (LinearMap.congr_fun heq x).symm)
-
 section PrivateHelpers
 variable {f : AInfinityHom AA BB} {g : AInfinityHom BB AA}
 
@@ -102,10 +96,13 @@ private theorem adjointHomotopy_chain_eq
   LinearMap.ext fun a ↦ by
     have hdf := LinearMap.congr_fun f.differential_comp_linearPart
     have hdg := LinearMap.congr_fun g.differential_comp_linearPart
+    have hA1 := LinearMap.congr_fun hhA_eq (a - g.linearPart (f.linearPart a))
+    have hB1 := congrArg g.linearPart
+      (LinearMap.congr_fun (linearPart_right_eq hR) (f.linearPart a))
     simp only [LinearMap.comp_apply] at hdf hdg
     simp only [adjointHomotopy, LinearMap.add_apply, LinearMap.sub_apply, LinearMap.comp_apply,
-      LinearMap.id_apply, diff_apply_of_chain_eq hhA_eq, hdg,
-      diff_apply_of_chain_eq (linearPart_right_eq hR), hdf, map_sub, map_add]; abel
+      LinearMap.id_apply, map_sub, map_add, hdg, hdf] at hA1 hB1 ⊢
+    exact sub_eq_zero.1 (Eq.trans (by abel) (sub_eq_zero.2 (congrArg₂ (· + ·) hA1 hB1)))
 private theorem isHomogeneous_vogtTwoHomotopy
     (hhA : LinearMap.IsHomogeneous hA AA.grading.piece AA.grading.piece (-1)) :
     LinearMap.IsHomogeneous (vogtTwoHomotopy f hR.linearHomotopy hA) AA.grading.piece
@@ -125,10 +122,14 @@ private theorem vogtTwoHomotopy_diff_eq
         f.linearPart ∘ₗ adjointHomotopy f g hR.linearHomotopy hA :=
   LinearMap.ext fun a ↦ by
     have hdf := LinearMap.congr_fun f.differential_comp_linearPart
-    simp only [LinearMap.comp_apply] at hdf
+    have hA' := LinearMap.congr_fun hhA_eq
+    have hB' := LinearMap.congr_fun (linearPart_right_eq hR)
+    simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
+      LinearMap.id_apply] at hdf hA' hB'
+    have hdA (x) := eq_sub_of_add_eq (hA' x).symm
+    have hdB (y) := eq_sub_of_add_eq (hB' y).symm
     simp only [vogtTwoHomotopy, adjointHomotopy, LinearMap.sub_apply, LinearMap.add_apply,
-      LinearMap.comp_apply, LinearMap.id_apply, diff_apply_of_chain_eq (linearPart_right_eq hR),
-      hdf, diff_apply_of_chain_eq hhA_eq, map_sub, map_add]; abel
+      LinearMap.comp_apply, LinearMap.id_apply, hdB, hdf, hdA, map_sub, map_add]; abel
 end LinearAdjoint
 
 private theorem isHomogeneous_vogtBarHA {ξ} (hξ : LinearMap.IsHomogeneous ξ
@@ -303,12 +304,13 @@ private theorem differential_deltaXi_add {z} (hz : z ∈ filtration R A (k + 1))
 private theorem differential_deltaMu_sub {z} (hz : z ∈ filtration R A (k + 1)) :
     BB.differential (V.deltaMu hA' z) - V.deltaMu hA' (AA.unaryBarDifferential z) =
       V.topS z - f.linearPart (V.deltaXi hA' z) := by
-  set dξ := V.deltaXi hA'; set s' := V.topS - f.linearPart ∘ₗ dξ
+  set dξ := V.deltaXi hA' with hdξ_def; set s' := V.topS - f.linearPart ∘ₗ dξ with hs'_def
   have hdξ := V.differential_deltaXi_add hhA'_eq hz
   have hs'_anti : s' (AA.unaryBarDifferential z) = -BB.differential (s' z) := by
     have hxz := congrArg f.linearPart hdξ
     have hf₁ := LinearMap.congr_fun f.differential_comp_linearPart (dξ z)
-    simp only [s', dξ, LinearMap.sub_apply, LinearMap.comp_apply, map_sub, map_add] at hxz hf₁ ⊢
+    simp only [hs'_def, hdξ_def, LinearMap.sub_apply, LinearMap.comp_apply,
+      map_sub, map_add] at hxz hf₁ ⊢
     rw [← hf₁] at hxz
     exact sub_eq_zero.1 (Eq.trans (by abel)
       (sub_eq_zero.2 (congrArg₂ (· + ·) (V.topS_diff_eq hz) hxz.symm)))
@@ -321,13 +323,14 @@ private theorem differential_deltaMu_sub {z} (hz : z ∈ filtration R A (k + 1))
     refine congrArg f.linearPart ?_
     simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.comp_apply,
       LinearMap.id_apply] at hAz
-    simp only [s', LinearMap.sub_apply, LinearMap.comp_apply, map_sub]
-    rw [show g.linearPart (V.topS z) = dξ z + hA' (V.topQ z) from eq_add_of_sub_eq rfl,
-      ← hdξ, map_add]
-    dsimp only [dξ] at hAz ⊢; exact sub_eq_zero.1 (Eq.trans (by abel) (sub_eq_zero.2 hAz.symm))
+    simp only [hs'_def, LinearMap.sub_apply, LinearMap.comp_apply, map_sub]
+    have htop : g.linearPart (V.topS z) = dξ z + hA' (V.topQ z) := eq_add_of_sub_eq
+      (by simp only [hdξ_def, deltaXi, LinearMap.sub_apply, LinearMap.comp_apply])
+    rw [htop, ← hdξ, map_add, hdξ_def]
+    rw [hdξ_def] at hAz; exact sub_eq_zero.1 (Eq.trans (by abel) (sub_eq_zero.2 hAz.symm))
   have hBz := LinearMap.congr_fun (linearPart_right_eq hR) (s' z)
-  have hμ_def : V.deltaMu hA' = -(hR.linearHomotopy ∘ₗ s' + f.linearPart ∘ₗ hA' ∘ₗ dξ) := rfl
-  rw [hμ_def]; change _ - _ = s' z
+  rw [deltaMu, ← hdξ_def, ← hs'_def, ← LinearMap.comp_apply f.linearPart, ← LinearMap.sub_apply,
+    ← hs'_def]
   simp only [LinearMap.sub_apply, LinearMap.add_apply, LinearMap.neg_apply, LinearMap.comp_apply,
     LinearMap.id_apply, map_neg, map_add, hs'_anti] at hBz ⊢
   exact sub_eq_zero.1 (Eq.trans (by abel) (sub_eq_zero.2 (congrArg₂ (· + ·) hBz hgz.symm)))
