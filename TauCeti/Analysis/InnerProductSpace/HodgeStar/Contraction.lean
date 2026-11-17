@@ -35,6 +35,7 @@ the identity above as its symbol.
 
 * `TauCeti.inner_wedgeLeft_eq_inner_koszulDifferential`: `⟪u ∧ x, y⟫ = ⟪x, ι_u y⟫` in every
   degree, and `TauCeti.adjoint_wedgeLeft`: the adjoint of `ε_u` is `ι_u`.
+* `TauCeti.toContinuousLinearMap_wedgeLeft_comp_wedgeLeft`: `ε_u ε_u = 0` as bounded operators.
 * `TauCeti.hodgeLaplacian_wedgeLeft`: `ε_u ε_u* + ε_u* ε_u = ‖u‖²` in positive degrees, and
   `TauCeti.adjoint_wedgeLeft_comp_wedgeLeft_zero`: `ε_u* ε_u = ‖u‖²` on scalars, as identities of
   bounded operators.
@@ -80,6 +81,14 @@ theorem adjoint_wedgeLeft (u : V) (n : ℕ) :
     LinearMap.adjoint (ExteriorAlgebra.wedgeLeft u n) = koszulDifferential (innerₗ V u) n :=
   ((LinearMap.eq_adjoint_iff _ _).2 fun y x ↦ by
     rw [real_inner_comm, ← inner_wedgeLeft_eq_inner_koszulDifferential, real_inner_comm]).symm
+
+/-- Exterior multiplication by `u` squares to zero as a bounded operator, `u ∧ u ∧ x = 0`. -/
+@[simp]
+theorem toContinuousLinearMap_wedgeLeft_comp_wedgeLeft (u : V) (n : ℕ) :
+    (ExteriorAlgebra.wedgeLeft (R := ℝ) u (n + 1)).toContinuousLinearMap ∘L
+        (ExteriorAlgebra.wedgeLeft (R := ℝ) u n).toContinuousLinearMap = 0 :=
+  ContinuousLinearMap.ext fun v ↦
+    LinearMap.congr_fun (ExteriorAlgebra.wedgeLeft_comp_wedgeLeft u n) v
 
 /-- **Exterior multiplication and its adjoint anticommute to `‖u‖²`**: on `⋀ⁿ⁺¹ V`, the Laplacian
 `ε_u ε_u* + ε_u* ε_u` of `⋀ⁿ V → ⋀ⁿ⁺¹ V → ⋀ⁿ⁺² V` is `‖u‖²`, where `ε_u = u ∧ ·` and `ε_u*` is the

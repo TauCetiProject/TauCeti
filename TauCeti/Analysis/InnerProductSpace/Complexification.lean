@@ -144,9 +144,7 @@ instance instComplexificationCompleteSpace [CompleteSpace X] :
 /-- The `L²` complexification of a finite-dimensional real space is finite-dimensional. -/
 instance instComplexificationFiniteDimensional [FiniteDimensional ℝ X] :
     FiniteDimensional ℂ (WithLp 2 (Complexification X)) :=
-  haveI : FiniteDimensional ℝ (WithLp 2 (Complexification X)) :=
-    (complexificationEquivProd X).toLinearEquiv.symm.finiteDimensional
-  Module.Finite.of_restrictScalars_finite ℝ ℂ _
+  (WithLp.linearEquiv 2 ℂ (Complexification X)).symm.finiteDimensional
 
 /-- The complex dimension of the complexification of `X` is the real dimension of `X`. -/
 @[simp]

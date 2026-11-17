@@ -95,16 +95,8 @@ theorem coefficient_adjoint_extDeriv (k : ℕ) (p : X × E) :
 theorem extDeriv_comp_extDeriv (k : ℕ) : (extDeriv X E (k + 1)).comp (extDeriv X E k) = 0 := by
   ext1
   funext p
-  have h : (ExteriorAlgebra.wedgeLeft p.2 (k + 1)).toContinuousLinearMap.comp
-      (ExteriorAlgebra.wedgeLeft (R := ℝ) p.2 k).toContinuousLinearMap = 0 :=
-    ContinuousLinearMap.ext fun v ↦
-      LinearMap.congr_fun (ExteriorAlgebra.wedgeLeft_comp_wedgeLeft p.2 k) v
   ext1 v
-  simp only [coefficient_comp, coefficient_extDeriv, ContinuousLinearMap.comp_apply,
-    FunLike.coe_smul, Pi.smul_apply, map_smul]
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.complexifyL2_comp, h,
-    ContinuousLinearMap.complexifyL2_zero, zero_apply, smul_zero, smul_zero,
-    coefficient_zero, Pi.zero_apply, zero_apply]
+  simp [← ContinuousLinearMap.complexifyL2_comp]
 
 /-- **The symbol of the Hodge Laplacian** on `(k + 1)`-forms: `σ(d) σ(d)† + σ(d)† σ(d) = ‖ξ‖² Id`,
 from the anticommutator identity `ε_ξ ι_ξ + ι_ξ ε_ξ = ‖ξ‖²`. -/
@@ -142,6 +134,19 @@ theorem adjoint_comp_extDeriv_zero :
     rw [coefficient_adjoint_comp_extDeriv_zero, coefficient_normRpow_of_ne_zero _ _ _ hξ,
       one_add_one_eq_two, Real.rpow_two]
 
+/-- **The de Rham complex is elliptic**: the Laplacian of its symbol complex is elliptic in every
+positive degree. -/
+theorem isElliptic_hodgeLaplacian_extDeriv (k : ℕ) :
+    ((extDeriv X E k).hodgeLaplacian (extDeriv X E (k + 1))).IsElliptic := by
+  rw [hodgeLaplacian_extDeriv]
+  exact isElliptic_normRpow X E _ _
+
+/-- The Laplacian `σ(d)† σ(d)` of the de Rham symbol complex on functions is elliptic. -/
+theorem isElliptic_adjoint_comp_extDeriv_zero :
+    ((extDeriv X E 0).adjoint.comp (extDeriv X E 0)).IsElliptic := by
+  rw [adjoint_comp_extDeriv_zero]
+  exact isElliptic_normRpow X E _ _
+
 /-- **The de Rham symbol sequence is exact at every nonzero covector**:
 `(⋀ᵏ E)_ℂ → (⋀ᵏ⁺¹ E)_ℂ → (⋀ᵏ⁺² E)_ℂ`, both maps given by `i ξ ∧ ·`, is exact for `ξ ≠ 0`. -/
 theorem exact_extDeriv (k : ℕ) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
@@ -150,35 +155,16 @@ theorem exact_extDeriv (k : ℕ) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
   have hBA := congrFun (congrArg coefficient (extDeriv_comp_extDeriv (X := X) (E := E) k)) (x, ξ)
   rw [coefficient_comp, coefficient_zero, Pi.zero_apply] at hBA
   rw [ContinuousLinearMap.exact_iff_isInvertible_hodgeLaplacian _ _ hBA,
-    ← coefficient_hodgeLaplacian, coefficient_hodgeLaplacian_extDeriv]
-  exact ContinuousLinearMap.isInvertible_iff_isUnit.2
-    (ContinuousLinearMap.isUnit_smul_id_of_ne_zero (by positivity))
+    ← coefficient_hodgeLaplacian]
+  exact isElliptic_iff.1 (isElliptic_hodgeLaplacian_extDeriv k) x ξ hξ
 
 /-- On functions, the symbol `i ξ` of the exterior derivative is injective at every nonzero
 covector: the de Rham symbol sequence `0 → ℂ → E_ℂ` is exact there. -/
 theorem injective_extDeriv_zero {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     Function.Injective ((extDeriv X E 0).coefficient (x, ξ)) := by
-  have h := coefficient_adjoint_comp_extDeriv_zero (X := X) (x, ξ)
-  rw [coefficient_comp, coefficient_adjoint] at h
-  intro v w hvw
-  have hv := congrArg (ContinuousLinearMap.adjoint ((extDeriv X E 0).coefficient (x, ξ))) hvw
-  rw [← ContinuousLinearMap.comp_apply, ← ContinuousLinearMap.comp_apply, h] at hv
-  exact (ContinuousLinearMap.isInvertible_iff_isUnit.2
-    (ContinuousLinearMap.isUnit_smul_id_of_ne_zero (by positivity))).injective hv
-
-/-- **The de Rham complex is elliptic**: the Laplacian of its symbol complex is elliptic in every
-positive degree. -/
-theorem isElliptic_hodgeLaplacian_extDeriv (k : ℕ) :
-    ((extDeriv X E k).hodgeLaplacian (extDeriv X E (k + 1))).IsElliptic :=
-  isElliptic_hodgeLaplacian _ _ fun _ _ hξ ↦ exact_extDeriv k hξ
-
-/-- The Laplacian `σ(d)† σ(d)` of the de Rham symbol complex on functions is elliptic. -/
-theorem isElliptic_adjoint_comp_extDeriv_zero :
-    ((extDeriv X E 0).adjoint.comp (extDeriv X E 0)).IsElliptic :=
-  isElliptic_iff.2 fun x ξ hξ ↦ by
-    rw [coefficient_adjoint_comp_extDeriv_zero]
-    exact ContinuousLinearMap.isInvertible_iff_isUnit.2
-      (ContinuousLinearMap.isUnit_smul_id_of_ne_zero (by positivity))
+  have h := (isElliptic_iff.1 isElliptic_adjoint_comp_extDeriv_zero x ξ hξ).injective
+  rw [coefficient_comp, ContinuousLinearMap.coe_comp] at h
+  exact h.of_comp
 
 /-- **The exterior derivative on functions is elliptic only in dimension at most one.** At a
 nonzero covector `ξ`, `σ(d)(ξ) : ℂ → E_ℂ` is injective with one-dimensional image, so it is
