@@ -343,6 +343,38 @@ theorem mk_smul_mk (J : TwoSidedIdeal A) (a : A) (x : E) :
   rw [← TwoSidedIdeal.Quotient.quotientAddGroupMk_eq_mk]
   rfl
 
+/-- For any positive contractive element `e ∈ J`, adjusting the representative `x` to `x - e • x`
+yields the squared quotient-norm estimate `‖mk x‖ ^ 2 ≤ ‖⟪x, x⟫_A + z‖ + ‖z - z * e‖` via
+`TauCeti.CStarAlgebra.norm_sub_mul_sq_le` applied to `|x| = CFC.sqrt ⟪x, x⟫_A`. -/
+private theorem norm_mk_idealSubmodule_sq_le_of_mem {J : TwoSidedIdeal A} {e : A}
+    (heJ : e ∈ J) (he₀ : 0 ≤ e) (he₁ : ‖e‖ ≤ 1) (x : E) (z : A) :
+    ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ^ 2 ≤
+      ‖inner A x x + z‖ + ‖z - z * e‖ := by
+  set s := CFC.sqrt (inner A x x)
+  have hs_star : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
+  have hs_mul : star s * s = inner A x x := by
+    rw [hs_star]
+    exact CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
+  have he_star : star e = e := (IsSelfAdjoint.of_nonneg he₀).star_eq
+  have hq_eq : (Submodule.Quotient.mk x : E ⧸ idealSubmodule J E) =
+      Submodule.Quotient.mk (x - e • x) := by
+    symm
+    rw [Submodule.Quotient.eq, sub_sub_cancel_left, neg_mem_iff]
+    exact smul_mem_idealSubmodule heJ x
+  have hnorm_le : ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ≤ ‖s - s * e‖ := by
+    have h1 : ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ≤ ‖x - e • x‖ := by
+      rw [hq_eq]
+      exact Submodule.Quotient.norm_mk_le (idealSubmodule J E) _
+    refine h1.trans_eq ?_
+    rw [norm_sub_rev, norm_smul_sub_self, norm_sub_rev, ← norm_star, star_sub, star_mul,
+      hs_star, he_star]
+  calc
+    ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ^ 2
+        ≤ ‖s - s * e‖ ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hnorm_le 2
+    _ ≤ ‖star s * s + z‖ + ‖z - z * e‖ :=
+      TauCeti.CStarAlgebra.norm_sub_mul_sq_le he₀ he₁ s z
+    _ = ‖inner A x x + z‖ + ‖z - z * e‖ := by rw [hs_mul]
+
 section ClosedQuotient
 
 variable (J : TwoSidedIdeal A) [IsClosed (J : Set A)]
@@ -367,68 +399,60 @@ theorem inner_mk_mk (x y : E) :
       TwoSidedIdeal.Quotient.mk J (inner A x y) :=
   (rfl)
 
+/-- Upper bound in the quotient norm formula: `‖mk x‖ ^ 2 ≤ ‖mk J ⟪x, x⟫_A‖`, obtained by taking
+the limit of `norm_mk_idealSubmodule_sq_le_of_mem` along an increasing approximate unit of `J` and
+then the infimum over `z ∈ J`. -/
+private theorem norm_mk_idealSubmodule_sq_le (x : E) :
+    ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ^ 2 ≤
+      ‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ := by
+  rw [TwoSidedIdeal.Quotient.norm_mk_eq J (inner A x x)]
+  refine le_csInf ⟨‖inner A x x + 0‖, 0, J.zero_mem, rfl⟩ ?_
+  rintro _ ⟨z, hz, rfl⟩
+  let S := J.toNonUnitalStarSubalgebra
+  let l : Filter S := CStarAlgebra.approximateUnit S
+  have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
+  have := hl.neBot
+  let z' : S := ⟨z, J.mem_toNonUnitalStarSubalgebra.mpr hz⟩
+  have hz_lim : Tendsto (fun e : S => ‖inner A x x + z‖ + ‖(z' - z' * e : S)‖) l
+      (𝓝 ‖inner A x x + z‖) := by
+    simpa only [add_zero, norm_sub_rev] using tendsto_const_nhds.add
+      (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left z'))
+  refine ge_of_tendsto hz_lim ?_
+  filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
+  simpa only [AddSubgroupClass.coe_norm, AddSubgroupClass.coe_sub, MulMemClass.coe_mul] using
+    norm_mk_idealSubmodule_sq_le_of_mem (J.mem_toNonUnitalStarSubalgebra.mp e.2)
+      (Subtype.coe_le_coe.mpr he₀) (by simpa only [AddSubgroupClass.coe_norm] using he₁) x z
+
+/-- Lower bound in the quotient norm formula: `‖mk J ⟪x, x⟫_A‖ ≤ ‖mk x‖ ^ 2`, obtained by lifting
+`mk x` to representatives with norm arbitrarily close to `‖mk x‖`. -/
+private theorem norm_mk_inner_le_norm_mk_idealSubmodule_sq (x : E) :
+    ‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ ≤
+      ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ^ 2 := by
+  set q : E ⧸ idealSubmodule J E := Submodule.Quotient.mk x
+  have hle : √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ ≤ ‖q‖ := by
+    refine le_of_forall_pos_le_add fun ε hε => ?_
+    obtain ⟨y, hy, hlt⟩ := Submodule.Quotient.norm_mk_lt q hε
+    have hinner : TwoSidedIdeal.Quotient.mk J (inner A x x) =
+        TwoSidedIdeal.Quotient.mk J (inner A y y) := by
+      rw [← inner_mk_mk J x x, ← inner_mk_mk J y y, hy]
+    calc
+      √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖
+          = √‖TwoSidedIdeal.Quotient.mk J (inner A y y)‖ := by rw [hinner]
+      _ ≤ √‖inner A y y‖ := Real.sqrt_le_sqrt (TwoSidedIdeal.Quotient.norm_mk_le J _)
+      _ = ‖y‖ := (norm_eq_sqrt_norm_inner_self (A := A) y).symm
+      _ ≤ ‖q‖ + ε := hlt.le
+  calc
+    ‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖
+        = √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ ^ 2 :=
+          (Real.sq_sqrt (norm_nonneg _)).symm
+    _ ≤ ‖q‖ ^ 2 := pow_le_pow_left₀ (Real.sqrt_nonneg _) hle 2
+
 /-- Squared quotient norm formula on `E ⧸ idealSubmodule J E`:
 `‖mk x‖ ^ 2 = ‖mk J ⟪x, x⟫_A‖`. -/
 theorem norm_mk_idealSubmodule_sq (x : E) :
     ‖(Submodule.Quotient.mk x : E ⧸ idealSubmodule J E)‖ ^ 2 =
-      ‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ := by
-  set q : E ⧸ idealSubmodule J E := Submodule.Quotient.mk x
-  refine le_antisymm ?_ ?_
-  · rw [TwoSidedIdeal.Quotient.norm_mk_eq J (inner A x x)]
-    refine le_csInf ⟨‖inner A x x + 0‖, 0, J.zero_mem, rfl⟩ ?_
-    rintro _ ⟨z, hz, rfl⟩
-    let S := J.toNonUnitalStarSubalgebra
-    let l : Filter S := CStarAlgebra.approximateUnit S
-    have hl : l.IsIncreasingApproximateUnit := CStarAlgebra.increasingApproximateUnit S
-    have := hl.neBot
-    let z' : S := ⟨z, J.mem_toNonUnitalStarSubalgebra.mpr hz⟩
-    have hz_lim : Tendsto (fun e : S => ‖inner A x x + z‖ + ‖(z' - z' * e : S)‖) l
-        (𝓝 ‖inner A x x + z‖) := by
-      simpa only [add_zero, norm_sub_rev] using tendsto_const_nhds.add
-        (tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_left z'))
-    refine ge_of_tendsto hz_lim ?_
-    filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
-    set s := CFC.sqrt (inner A x x)
-    have hs_mul : star s * s = inner A x x := by
-      rw [(CFC.sqrt_nonneg _).isSelfAdjoint.star_eq]
-      exact CFC.sqrt_mul_sqrt_self _ inner_self_nonneg
-    have hs_star : star s = s := (CFC.sqrt_nonneg _).isSelfAdjoint.star_eq
-    have he_star : star (e : A) = (e : A) :=
-      congrArg Subtype.val (IsSelfAdjoint.of_nonneg he₀).star_eq
-    have hq_eq : q = Submodule.Quotient.mk (x - (e : A) • x) := by
-      symm
-      rw [Submodule.Quotient.eq, sub_sub_cancel_left, neg_mem_iff]
-      exact smul_mem_idealSubmodule (J.mem_toNonUnitalStarSubalgebra.mp e.2) x
-    have hnorm_le : ‖q‖ ≤ ‖s - s * (e : A)‖ := by
-      have h1 : ‖q‖ ≤ ‖x - (e : A) • x‖ := by
-        rw [hq_eq]
-        exact Submodule.Quotient.norm_mk_le (idealSubmodule J E) _
-      refine h1.trans_eq ?_
-      rw [norm_sub_rev, norm_smul_sub_self, norm_sub_rev, ← norm_star, star_sub, star_mul,
-        hs_star, he_star]
-    calc
-      ‖q‖ ^ 2 ≤ ‖s - s * (e : A)‖ ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hnorm_le 2
-      _ ≤ ‖star s * s + z‖ + ‖z - z * (e : A)‖ :=
-        TauCeti.CStarAlgebra.norm_sub_mul_sq_le (e := (e : A)) he₀ he₁ s z
-      _ = ‖inner A x x + z‖ + ‖(z' - z' * e : S)‖ := by
-        rw [hs_mul, AddSubgroupClass.coe_norm, AddSubgroupClass.coe_sub, MulMemClass.coe_mul]
-  · have hle : √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ ≤ ‖q‖ := by
-      refine le_of_forall_pos_le_add fun ε hε => ?_
-      obtain ⟨y, hy, hlt⟩ := Submodule.Quotient.norm_mk_lt q hε
-      have hinner : TwoSidedIdeal.Quotient.mk J (inner A x x) =
-          TwoSidedIdeal.Quotient.mk J (inner A y y) := by
-        rw [← inner_mk_mk J x x, ← inner_mk_mk J y y, hy]
-      calc
-        √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖
-            = √‖TwoSidedIdeal.Quotient.mk J (inner A y y)‖ := by rw [hinner]
-        _ ≤ √‖inner A y y‖ := Real.sqrt_le_sqrt (TwoSidedIdeal.Quotient.norm_mk_le J _)
-        _ = ‖y‖ := (norm_eq_sqrt_norm_inner_self (A := A) y).symm
-        _ ≤ ‖q‖ + ε := hlt.le
-    calc
-      ‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖
-          = √‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ ^ 2 :=
-            (Real.sq_sqrt (norm_nonneg _)).symm
-      _ ≤ ‖q‖ ^ 2 := pow_le_pow_left₀ (Real.sqrt_nonneg _) hle 2
+      ‖TwoSidedIdeal.Quotient.mk J (inner A x x)‖ :=
+  le_antisymm (norm_mk_idealSubmodule_sq_le J x) (norm_mk_inner_le_norm_mk_idealSubmodule_sq J x)
 
 /-- Quotient norm formula on `E ⧸ idealSubmodule J E`:
 `‖mk x‖ = √‖mk J ⟪x, x⟫_A‖`. -/
