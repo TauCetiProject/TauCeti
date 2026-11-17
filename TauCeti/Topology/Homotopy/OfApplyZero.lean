@@ -16,9 +16,9 @@ continuous map together with its value at time zero, for the results which take 
 
 A deformation of `Y` starting at the identity, keeping subsets `B` and `N` inside themselves and
 pushing `N` into `B` at time one, is in particular a homotopy from the identity to a map carrying
-`N` into `B` (`TauCeti.exists_homotopy_id_of_deformation`): these are the hypotheses under which
-enlarging the subspace `B` of a pair to `N` induces isomorphisms on relative singular homology and
-cohomology.
+`N` into `B` (`ContinuousMap.exists_homotopy_id_of_deformation`): these are the hypotheses under
+which enlarging the subspace `B` of a pair to `N` induces isomorphisms on relative singular homology
+and cohomology.
 -/
 
 public section
@@ -43,9 +43,9 @@ theorem ofApplyZero_apply (H : C(I × X, Y)) (hH : ∀ x, H (0, x) = f x) (p : I
 
 end ContinuousMap.Homotopy
 
-namespace TauCeti
+namespace ContinuousMap
 
-open ContinuousMap.Homotopy Set
+open Homotopy Set
 
 /-- **A deformation as a homotopy from the identity.** A deformation `H` of `Y` which starts at the
 identity, keeps `B` and `N` inside themselves and pushes `N` into `B` at time one is a homotopy from
@@ -68,4 +68,4 @@ theorem exists_homotopy_id_of_deformation {Y : Type*} [TopologicalSpace Y] {B N 
   · rw [ContinuousMap.curry_apply]
     exact hH₁ y hy
 
-end TauCeti
+end ContinuousMap

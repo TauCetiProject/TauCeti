@@ -30,8 +30,9 @@ bundle, where the same push runs in every fibre.
 The proof thickens `X` to the open set `N = X ∪ φ(O)`
 (`Topology.IsClosedEmbedding.isOpen_union_image`). The deformation `H` shows that
 `(A, S) ⟶ (A, O)` induces isomorphisms, and its extension by the identity of `X`
-(`TauCeti.attachHomotopy`) that `(Z, X) ⟶ (Z, N)` does
-(`TauCeti.exists_homotopy_id_of_deformation`, `TauCeti.exists_homotopy_id_attach` and
+(`Topology.IsClosedEmbedding.attachDeformation`) that `(Z, X) ⟶ (Z, N)` does
+(`ContinuousMap.exists_homotopy_id_of_deformation`,
+`Topology.IsClosedEmbedding.exists_homotopy_id_attach` and
 `TopPair.isIso_singularHomologyMap_ofSubsetMap_id_of_homotopy`). Finally the complement of `X`
 lies in the image of `φ`, so excision for the open cover of `Z` by `N` and the complement of `X`
 (`TopPair.isIso_singularHomologyMap_of_open_cover`) makes `(A, O) ⟶ (Z, N)` an isomorphism.
@@ -166,9 +167,9 @@ theorem isIso_singularHomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClose
   -- The deformation `H` and its extension to `Z` make both enlargements isomorphisms, and excision
   -- for the open cover of `Z` by the thickening and the complement of `X` makes the map of the
   -- enlarged pairs one.
-  obtain ⟨ρA, HA, hA₁, hA₂, hA₃⟩ := exists_homotopy_id_of_deformation H hH₀
+  obtain ⟨ρA, HA, hA₁, hA₂, hA₃⟩ := ContinuousMap.exists_homotopy_id_of_deformation H hH₀
     (fun t a ha ↦ (hHS t a ha).symm ▸ ha) hHO hH₁
-  obtain ⟨ρZ, HZ, hZ₁, hZ₂, hZ₃⟩ := exists_homotopy_id_attach hf hX hfX hcover H hHS
+  obtain ⟨ρZ, HZ, hZ₁, hZ₂, hZ₃⟩ := hf.exists_homotopy_id_attach hX hfX hcover H hHS
     (mapsTo_range_map_of_hom f) hH₀ hHO hH₁
   -- The homotopies are read as homotopies of morphisms of `TopCat`: the identity morphism has
   -- underlying map `ContinuousMap.id`, and `TopCat.ofHom ρ` has underlying map `ρ`, definitionally.

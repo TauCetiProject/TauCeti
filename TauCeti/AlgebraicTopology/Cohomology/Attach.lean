@@ -19,8 +19,8 @@ singular cohomology, with arbitrary coefficients, in every degree
 (`TopPair.isIso_singularCohomologyMap_of_attach`). This is the cohomology form of
 `TopPair.isIso_singularHomologyMap_of_attach`, proved in the same way: the subspaces are thickened
 to the open neighbourhoods `O` of `S` and `X ∪ φ(O)` of `X`, which the deformation and its
-extension (`TauCeti.attachHomotopy`) push back into the subspaces, and excision compares the
-thickened pairs.
+extension (`Topology.IsClosedEmbedding.attachDeformation`) push back into the subspaces, and
+excision compares the thickened pairs.
 
 ## Main results
 
@@ -85,9 +85,9 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
   -- The deformation `H` and its extension to `Z` make both enlargements isomorphisms, and excision
   -- for the open cover of `Z` by the thickening and the complement of `X` makes the map of the
   -- enlarged pairs one.
-  obtain ⟨ρA, HA, hA₁, hA₂, hA₃⟩ := exists_homotopy_id_of_deformation H hH₀
+  obtain ⟨ρA, HA, hA₁, hA₂, hA₃⟩ := ContinuousMap.exists_homotopy_id_of_deformation H hH₀
     (fun t a ha ↦ (hHS t a ha).symm ▸ ha) hHO hH₁
-  obtain ⟨ρZ, HZ, hZ₁, hZ₂, hZ₃⟩ := exists_homotopy_id_attach hf hX hfX hcover H hHS
+  obtain ⟨ρZ, HZ, hZ₁, hZ₂, hZ₃⟩ := hf.exists_homotopy_id_attach hX hfX hcover H hHS
     (mapsTo_range_map_of_hom f) hH₀ hHO hH₁
   -- The homotopies are read as homotopies of morphisms of `TopCat`: the identity morphism has
   -- underlying map `ContinuousMap.id`, and `TopCat.ofHom ρ` has underlying map `ρ`, definitionally.
