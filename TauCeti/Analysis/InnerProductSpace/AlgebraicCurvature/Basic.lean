@@ -411,7 +411,8 @@ theorem eq_zero_of_finrank_le_one_of_antisymm_first [FiniteDimensional ℝ V]
   apply toLinearMap₄_injective; rw [map_zero]
   let b := Module.finBasis ℝ V
   refine b.ext fun i ↦ b.ext fun j ↦ b.ext fun k ↦ b.ext fun l ↦ ?_
-  rw [show i = j from Fin.ext (by omega)]; simp [apply_self_first_of_antisymm hr₁]
+  have hij : i = j := Fin.ext (by omega)
+  rw [hij]; simp [apply_self_first_of_antisymm hr₁]
 theorem IsAlgebraicCurvature.eq_zero_of_finrank_le_one [FiniteDimensional ℝ V]
     {r : FourTensor V} (hr : IsAlgebraicCurvature r) (hn : Module.finrank ℝ V ≤ 1) : r = 0 :=
   eq_zero_of_finrank_le_one_of_antisymm_first hn hr.antisymm_first
@@ -721,7 +722,8 @@ theorem eq_smul_constantCurvature_of_finrank_eq_two (hn : Module.finrank ℝ V =
     · linarith [hr₁ (b 1) (b 0) (b 1) (b 0), hr₂ (b 0) (b 1) (b 1) (b 0)]
   have hscal : scalar r = 2 * k := by
     rw [hrk, map_smul, scalar_constantCurvature, hn, smul_eq_mul]; norm_num; ring
-  rwa [show k = scalar r / 2 by linarith] at hrk
+  have hk : k = scalar r / 2 := by linarith
+  rwa [hk] at hrk
 
 /-- **In dimension `2`, every algebraic curvature tensor is `(Scal / 2)` times the
 constant-curvature tensor.** -/

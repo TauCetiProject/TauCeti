@@ -96,9 +96,6 @@ private theorem eq_zero_of_finrank_eq_zero (hn : Module.finrank ℝ V = 0) (r : 
     r = 0 := by
   have := Module.finrank_zero_iff.mp hn
   ext m; exact r.map_coord_zero (0 : Fin 4) (Subsingleton.elim (m 0) 0)
-private theorem bilinForm_eq_zero_of_finrank_eq_zero (hn : Module.finrank ℝ V = 0)
-    (B : BilinForm ℝ V) : B = 0 := by
-  have := Module.finrank_zero_iff.mp hn; ext u v; rw [Subsingleton.elim u 0]; simp
 
 /-! ### The Ricci and trace-free Ricci endomorphisms -/
 
@@ -159,7 +156,8 @@ theorem tracelessRicci_apply_apply (r : FourTensor V) (u v : V) :
 @[simp] theorem bilinFormTrace_tracelessRicci (r : FourTensor V) :
     bilinFormTrace (tracelessRicci r) = 0 := by
   rcases eq_or_ne (Module.finrank ℝ V) 0 with hn | hn
-  · rw [bilinForm_eq_zero_of_finrank_eq_zero hn (tracelessRicci r), map_zero]
+  · have := Module.finrank_zero_iff.mp hn
+    rw [Subsingleton.eq_zero (tracelessRicci r), map_zero]
   · let b := stdOrthonormalBasis ℝ V
     rw [bilinFormTrace_eq_sum _ b]
     simp [tracelessRicci_apply_apply, Finset.sum_sub_distrib, ← bilinFormTrace_eq_sum (ricci r) b,
@@ -179,7 +177,8 @@ theorem IsAlgebraicCurvature.isSymm_tracelessRicci {r : FourTensor V}
 
 @[simp] theorem tracelessRicci_constantCurvature : tracelessRicci (constantCurvature V) = 0 := by
   rcases eq_or_ne (Module.finrank ℝ V) 0 with hn | hn
-  · exact bilinForm_eq_zero_of_finrank_eq_zero hn _
+  · have := Module.finrank_zero_iff.mp hn
+    exact Subsingleton.eq_zero _
   · ext u v; simp [tracelessRicci_apply_apply, ricci_constantCurvature, scalar_constantCurvature,
       mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr hn : (Module.finrank ℝ V : ℝ) ≠ 0)]
 
@@ -389,7 +388,8 @@ theorem IsAlgebraicCurvature.curvatureOperator_eq_add {r : FourTensor V}
 theorem ricci_scalarPart_of_finrank_ne_one (hn : Module.finrank ℝ V ≠ 1) (r : FourTensor V) :
     ricci (scalarPart r) = (scalar r / Module.finrank ℝ V) • innerₗ V := by
   rcases eq_or_ne (Module.finrank ℝ V) 0 with hn0 | hn0
-  · simp [eq_zero_of_finrank_eq_zero hn0 r, bilinForm_eq_zero_of_finrank_eq_zero hn0 (innerₗ V)]
+  · have := Module.finrank_zero_iff.mp hn0
+    exact Subsingleton.elim _ _
   · have : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn0
     have := finrank_sub_one_ne_zero hn
     rw [scalarPart_apply, map_smul, ricci_constantCurvature, smul_smul]; congr 1; field_simp
@@ -768,9 +768,6 @@ section Orthogonality
 variable {ι : Type*} [Fintype ι]
 
 omit [FiniteDimensional ℝ V] in
-private theorem sum_inner_mul_apply (b : OrthonormalBasis ι ℝ V) (d : ι) (F : ι → ℝ) :
-    (∑ e, ⟪b d, b e⟫ * F e) = F d := by classical simp [orthonormal_iff_ite.mp b.orthonormal]
-omit [FiniteDimensional ℝ V] in
 private theorem sum_smul_mul (c : ℝ) (f g : FourTensor V) (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, (c • f) ![b i, b j, b k, b l] * g ![b i, b j, b k, b l]) =
       c * ∑ i, ∑ j, ∑ k, ∑ l, f ![b i, b j, b k, b l] * g ![b i, b j, b k, b l] := by
@@ -781,9 +778,9 @@ private theorem sum_kn_term₂ (b : OrthonormalBasis ι ℝ V) (h : BilinForm �
       ∑ j, ∑ l, h (b j) (b l) * ricci q (b j) (b l) := by
   have hl (i j : ι) : (∑ k, ∑ l, h (b j) (b l) * ⟪b i, b k⟫ * q ![b i, b j, b k, b l]) =
       ∑ l, h (b j) (b l) * q ![b i, b j, b i, b l] := by
-    rw [Finset.sum_comm]; refine Finset.sum_congr rfl fun l _ ↦ ?_
-    simp_rw [show ∀ k, h (b j) (b l) * ⟪b i, b k⟫ * q ![b i, b j, b k, b l] =
-      ⟪b i, b k⟫ * (h (b j) (b l) * q ![b i, b j, b k, b l]) by intros; ring, sum_inner_mul_apply]
+    classical
+    rw [Finset.sum_comm]
+    simp [orthonormal_iff_ite.mp b.orthonormal]
   simp_rw [hl, ricci_apply_orthonormalBasis b, Finset.mul_sum]
   rw [Finset.sum_comm]; exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_comm
 private theorem sum_kn_term₃ (b : OrthonormalBasis ι ℝ V) (h : BilinForm ℝ V) {q : FourTensor V}
@@ -844,9 +841,11 @@ theorem sum_constantCurvature_mul (b : OrthonormalBasis ι ℝ V) {q : FourTenso
         innerₗ V (b i) (b l) * ⟪b j, b k⟫ * q ![b i, b j, b k, b l] := by
     simp only [constantCurvature_apply, innerₗ_apply_apply]; ring
   simp_rw [hc, Finset.sum_sub_distrib]
+  classical
   rw [sum_kn_term₂ b (innerₗ V) q, sum_kn_term₃ b (innerₗ V) hq₁]
-  simp only [innerₗ_apply_apply, sum_inner_mul_apply, ← bilinFormTrace_eq_sum (ricci q) b,
-    ← scalar_apply]; ring
+  simp [orthonormal_iff_ite.mp b.orthonormal, ← bilinFormTrace_eq_sum (ricci q) b,
+    ← scalar_apply]
+  ring
 /-- The squared component norm of `constantCurvature V` in an orthonormal basis is `2 n (n - 1)`. -/
 theorem sum_constantCurvature_sq (b : OrthonormalBasis ι ℝ V) :
     (∑ i, ∑ j, ∑ k, ∑ l, constantCurvature V ![b i, b j, b k, b l] ^ 2) =

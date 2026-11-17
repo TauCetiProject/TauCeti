@@ -512,7 +512,8 @@ private theorem choose_four_add_div_twelve (n : ℕ) :
     simp [Nat.descFactorial_succ, Nat.factorial] at h; linear_combination h
   have hmc : 2 * Nat.multichoose ((k + 3).choose 2) 2 =
       ((k + 3).choose 2 + 1) * (k + 3).choose 2 := by
-    rw [Nat.multichoose_eq, show (k + 3).choose 2 + 2 - 1 = (k + 3).choose 2 + 1 by omega]
+    have hsub : (k + 3).choose 2 + 2 - 1 = (k + 3).choose 2 + 1 := by omega
+    rw [Nat.multichoose_eq, hsub]
     have h := (Nat.descFactorial_eq_factorial_mul_choose ((k + 3).choose 2 + 1) 2).symm
     simp [Nat.descFactorial_succ, Nat.factorial] at h; linear_combination h
   have h24r : 24 * Nat.multichoose ((k + 3).choose 2) 2 =
@@ -547,8 +548,9 @@ private theorem lt_curv_dim_succ_three (m : ℕ) :
   have hsq : (m + 3) ^ 2 - 1 = (m + 4) * (m + 2) := by
     have : (m + 3) ^ 2 = (m + 4) * (m + 2) + 1 := by ring
     omega
-  rw [hsq, show (m + 3) ^ 2 * ((m + 4) * (m + 2)) =
-    m ^ 4 + 12 * m ^ 3 + 53 * m ^ 2 + 102 * m + 72 by ring]
+  have hexpand : (m + 3) ^ 2 * ((m + 4) * (m + 2)) =
+      m ^ 4 + 12 * m ^ 3 + 53 * m ^ 2 + 102 * m + 72 := by ring
+  rw [hsq, hexpand]
   omega
 
 /-- **Dimension of the space of algebraic curvature tensors.** On any real normed space `V` of
