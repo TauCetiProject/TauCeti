@@ -89,45 +89,6 @@ variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace �
 
 section Cutoff
 
-variable {ψ : CoordinateSpace n → ℝ}
-
-/-- The position derivatives of the cutoff symbol are those of `ψ`. -/
-private theorem mixedDeriv_cutoff (hψ : ContDiff ℝ ∞ ψ) (α : List (Fin n))
-    (x ξ : CoordinateSpace n) :
-    mixedDeriv α [] (cutoff V hψ).coefficient x ξ =
-      coordinateDeriv α ψ x • ContinuousLinearMap.id ℂ V := by
-  have h : (cutoff V hψ).coefficient = fun p ↦ ψ p.1 • ContinuousLinearMap.id ℂ V :=
-    funext (coefficient_cutoff hψ)
-  rw [h, mixedDeriv_nil_comp_fst (fun y ↦ ψ y • ContinuousLinearMap.id ℂ V)]
-  exact (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
-    (ContinuousLinearMap.id ℂ V)).coordinateDeriv_comp_left α (hψ.of_le (by simp)) x
-
-/-- If `ψ` is constant near `x`, all nonempty position derivatives of the cutoff symbol vanish
-at `x`. -/
-private theorem mixedDeriv_cutoff_eq_zero (hψ : ContDiff ℝ ∞ ψ) {x : CoordinateSpace n} {c : ℝ}
-    (hx : ψ =ᶠ[𝓝 x] fun _ ↦ c) {α : List (Fin n)} (hα : α ≠ []) (ξ : CoordinateSpace n) :
-    mixedDeriv α [] (cutoff V hψ).coefficient x ξ = 0 := by
-  rw [mixedDeriv_cutoff, (hx.coordinateDeriv α).eq_of_nhds, coordinateDeriv_const c hα,
-    Pi.zero_apply, zero_smul]
-
-private theorem cutoff_add {ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.add hψ') = cutoff V hψ + cutoff V hψ' := by
-  ext1
-  funext p
-  simp [coefficient_cutoff, add_smul]
-
-private theorem cutoff_sub {ψ' : CoordinateSpace n → ℝ} (hψ : ContDiff ℝ ∞ ψ)
-    (hψ' : ContDiff ℝ ∞ ψ') : cutoff V (hψ.sub hψ') = cutoff V hψ - cutoff V hψ' := by
-  ext1
-  funext p
-  simp [coefficient_cutoff, sub_smul]
-
-private theorem cutoff_zero (hψ : ContDiff ℝ ∞ (0 : CoordinateSpace n → ℝ)) :
-    cutoff V hψ = 0 := by
-  ext1
-  funext p
-  simp [coefficient_cutoff]
-
 /-- The composition `a # b` only depends on `b`, not on the proof of its compact spatial
 support. -/
 private theorem sharp_congr {a : Symbol n V W m} {b b' : Symbol n V V 0}
