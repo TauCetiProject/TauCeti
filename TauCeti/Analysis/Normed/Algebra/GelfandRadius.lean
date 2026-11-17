@@ -5,11 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Analytic.ConvergenceRadius
 public import Mathlib.Analysis.Normed.Algebra.GelfandFormula
 public import Mathlib.Analysis.Normed.Algebra.UnitizationL1
 
 /-!
-# The Gelfand radius of idempotents and of nonunital elements
+# The Gelfand radius: idempotents, nonunital elements, and power series
 
 The Gelfand radius `gelfandRadius a` of an element of a normed ring is the limit of
 `‖a ^ k‖ ^ (1 / k)`. A nonzero idempotent has Gelfand radius one, whatever its norm, since all
@@ -22,6 +23,11 @@ Gelfand radius of its image in the unitization. Together these give a lower boun
 radii of elements of nonunital Banach algebras near a nonzero idempotent, which is how
 idempotents obstruct the separating spaces of algebra homomorphisms.
 
+Finally, whenever `ENNReal.ofReal (gelfandRadius a) < p.radius`, the power series
+`∑ p.coeff k • a ^ k` is absolutely summable in norm, with no completeness assumption on the
+ring. Combined with Gelfand's formula in a complex Banach algebra, this gives absolute convergence
+of `∑ p.coeff k • (a - z₀ 1) ^ k` whenever `spectrum ℂ a ⊆ Metric.eball z₀ p.radius`.
+
 ## Main results
 
 * `IsIdempotentElem.gelfandRadius_eq_one`: a nonzero idempotent has Gelfand radius one.
@@ -29,11 +35,17 @@ idempotents obstruct the separating spaces of algebra homomorphisms.
   of elements of the corner `p R p`.
 * `TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr`: Gelfand's formula for a nonunital complex
   Banach algebra, through its ℓ¹ unitization.
+* `FormalMultilinearSeries.summable_norm_coeff_smul_pow_of_gelfandRadius_lt`: absolute convergence
+  of `∑ p.coeff k • a ^ k` when `ENNReal.ofReal (gelfandRadius a) < p.radius`.
+* `FormalMultilinearSeries.summable_norm_coeff_smul_pow_of_spectrum_subset_eball`: absolute
+  convergence of `∑ p.coeff k • (a - z₀ 1) ^ k` in a complex Banach algebra when
+  `spectrum ℂ a ⊆ Metric.eball z₀ p.radius`.
 -/
 
 public section
 
 open Filter Topology
+open scoped ENNReal NNReal
 
 /-- A nonzero idempotent has Gelfand radius one: all its positive powers are equal to it, so
 `‖p ^ k‖ ^ (1 / k) = ‖p‖ ^ (1 / k)` tends to one. No normalization of the norm is needed. -/
@@ -65,6 +77,48 @@ theorem IsIdempotentElem.one_le_gelfandRadius_mul_norm_inverse {R : Type*} [Norm
         rw [hyw, mul_assoc, w.mul_inv, mul_one]
     _ ≤ gelfandRadius y * gelfandRadius ((w⁻¹ : Rˣ) : R) := hcomm.gelfandRadius_mul_le
     _ ≤ gelfandRadius y * ‖((w⁻¹ : Rˣ) : R)‖ := by grw [gelfandRadius_le_norm ((w⁻¹ : Rˣ) : R)]
+
+namespace FormalMultilinearSeries
+
+/-- If `ENNReal.ofReal (gelfandRadius a) < p.radius`, then `∑ p.coeff k • a ^ k` is absolutely
+summable in norm, with no completeness assumption on `A`. -/
+theorem summable_norm_coeff_smul_pow_of_gelfandRadius_lt {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedRing A] [SMulZeroClass 𝕜 A] [IsBoundedSMul 𝕜 A]
+    (p : FormalMultilinearSeries 𝕜 𝕜 𝕜) {a : A}
+    (ha : ENNReal.ofReal (gelfandRadius a) < p.radius) :
+    Summable fun k : ℕ ↦ ‖p.coeff k • a ^ k‖ := by
+  obtain ⟨ρ, hg_lt, hρ_lt⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ha
+  have hρ_gt : gelfandRadius a < (ρ : ℝ) :=
+    (ENNReal.ofReal_lt_iff_lt_toReal (gelfandRadius_nonneg a) ENNReal.coe_ne_top).mp hg_lt
+  obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt a hρ_gt
+  refine Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun k ↦ ?_)
+    ((p.summable_norm_mul_pow hρ_lt).mul_left C)
+  calc ‖p.coeff k • a ^ k‖ ≤ ‖p.coeff k‖ * ‖a ^ k‖ := norm_smul_le _ _
+    _ = ‖p k‖ * ‖a ^ k‖ := by rw [p.norm_apply_eq_norm_coef]
+    _ ≤ ‖p k‖ * (C * (ρ : ℝ) ^ k) := mul_le_mul_of_nonneg_left (hC k) (norm_nonneg _)
+    _ = C * (‖p k‖ * (ρ : ℝ) ^ k) := by ring
+
+/-- **Absolute convergence of Banach-algebra power series under spectral containment.** If
+`spectrum ℂ a ⊆ Metric.eball z₀ p.radius` in a complex Banach algebra `A`, then
+`∑ p.coeff k • (a - z₀ 1) ^ k` is absolutely summable in norm (including in the zero algebra). -/
+theorem summable_norm_coeff_smul_pow_of_spectrum_subset_eball {A : Type*} [NormedRing A]
+    [NormedAlgebra ℂ A] [CompleteSpace A] (p : FormalMultilinearSeries ℂ ℂ ℂ) {a : A} {z₀ : ℂ}
+    (ha : spectrum ℂ a ⊆ Metric.eball z₀ p.radius) :
+    Summable fun k : ℕ ↦ ‖p.coeff k • (a - algebraMap ℂ A z₀) ^ k‖ := by
+  rcases subsingleton_or_nontrivial A with _ | _
+  · convert summable_zero with k
+    rw [Subsingleton.elim (p.coeff k • (a - algebraMap ℂ A z₀) ^ k) 0, norm_zero]
+  set b := a - algebraMap ℂ A z₀
+  obtain ⟨w, hw, hsr⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
+  have hw_mem : w + z₀ ∈ spectrum ℂ a := by
+    rwa [spectrum.add_mem_iff, neg_add_eq_sub]
+  have hlt : ENNReal.ofReal (gelfandRadius b) < p.radius := by
+    rw [← spectrum.spectralRadius_eq_gelfandRadius]
+    have hed : edist (w + z₀) z₀ < p.radius := Metric.mem_eball.mp (ha hw_mem)
+    simpa only [← hsr, eDist_eq_eNorm_sub, add_sub_cancel_right, eNorm_eq_nnNorm] using hed
+  exact p.summable_norm_coeff_smul_pow_of_gelfandRadius_lt hlt
+
+end FormalMultilinearSeries
 
 namespace TauCeti
 
