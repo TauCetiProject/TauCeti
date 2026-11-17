@@ -70,6 +70,15 @@ theorem hasLaw_nat_count_Ioc_smul_nnvolume
     nnvolume.isLocallyFiniteMeasure_smul ENNReal.coe_ne_top
   simpa only [smul_nnvolume_Ioc, ENNReal.toNNReal_coe] using h.hasLaw_nat_count_Ioc s t
 
+/-- A positive-rate homogeneous temporal Poisson random measure has infinite total mass almost
+surely. -/
+theorem ae_apply_univ_eq_top_smul_nnvolume
+    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (hr : 0 < r) :
+    ∀ᵐ ω ∂P, M ω univ = ∞ := by
+  have hnn : nnvolume univ = ∞ := by simpa using nnvolume_setOf_coe_le ∞
+  exact h.ae_eq_top MeasurableSet.univ (by
+    rw [smul_apply, hnn, smul_eq_mul, ENNReal.mul_top (ENNReal.coe_ne_zero.mpr hr.ne')])
+
 /-- Natural cumulative counts are monotone on one event of full probability. Local finiteness
 of the intensity rules out infinite counts simultaneously on all bounded time intervals. -/
 theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]

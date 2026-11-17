@@ -80,6 +80,27 @@ theorem occurrenceTime_eq_top_iff (μ : Measure ℝ≥0) (n : ℕ) :
   rw [← not_lt_top_iff, occurrenceTime_lt_iff]
   simp
 
+/-- Every occurrence time is finite exactly when the total mass of the measure is infinite.
+No local finiteness or integrality hypothesis is required. -/
+theorem forall_occurrenceTime_ne_top_iff (μ : Measure ℝ≥0) :
+    (∀ n, μ.occurrenceTime n ≠ ∞) ↔ μ univ = ∞ := by
+  constructor
+  · intro h
+    by_contra hfin
+    obtain ⟨n, hn⟩ := ENNReal.exists_nat_gt hfin
+    obtain ⟨t, _, ht⟩ := (μ.occurrenceTime_lt_iff n ∞).1 (lt_top_iff_ne_top.2 (h n))
+    have hle : (n + 1 : ℝ≥0∞) ≤ μ univ := ht.trans (measure_mono (subset_univ _))
+    exact not_le_of_gt (hn.trans_le (le_add_of_nonneg_right zero_le_one)) hle
+  · intro huniv n
+    have hmono : Monotone fun k : ℕ => Iic (k : ℝ≥0) :=
+      fun _ _ h => Iic_subset_Iic.2 (Nat.cast_le.2 h)
+    have hunion : ⋃ k : ℕ, Iic (k : ℝ≥0) = univ :=
+      eq_univ_iff_forall.2 fun x => mem_iUnion.2 (exists_nat_ge x)
+    have hsup : ⨆ k : ℕ, μ (Iic (k : ℝ≥0)) = ∞ := by
+      rw [← hmono.measure_iUnion, hunion, huniv]
+    obtain ⟨k, hk⟩ := iSup_eq_top.1 hsup (n + 1 : ℝ≥0∞) (by finiteness)
+    exact ne_top_of_le_ne_top ENNReal.coe_ne_top (μ.occurrenceTime_le_of_le hk.le)
+
 @[simp]
 theorem occurrenceTime_zero_measure (n : ℕ) : (0 : Measure ℝ≥0).occurrenceTime n = ∞ := by
   simp [occurrenceTime_eq_top_iff]
@@ -118,6 +139,18 @@ theorem tendsto_occurrenceTime_nhds_top (μ : Measure ℝ≥0) [IsLocallyFiniteM
   have hmass := (μ.occurrenceTime_le_iff m (k : ℝ≥0)).1 (by exact_mod_cast hle)
   have hnm : (n : ℝ≥0∞) ≤ m := by exact_mod_cast hm
   exact not_le_of_gt (hn.trans_le (hnm.trans (le_add_of_nonneg_right zero_le_one))) hmass
+
+/-- A measure on the half-line is locally finite if and only if its occurrence times tend to
+infinity. Neither integrality nor infinite total mass is assumed. -/
+theorem isLocallyFiniteMeasure_iff_tendsto_occurrenceTime_nhds_top (μ : Measure ℝ≥0) :
+    IsLocallyFiniteMeasure μ ↔ Tendsto μ.occurrenceTime atTop (𝓝 ∞) := by
+  refine ⟨fun _ => μ.tendsto_occurrenceTime_nhds_top, fun ht =>
+    μ.isLocallyFiniteMeasure_of_measure_Iic_lt_top fun t => ?_⟩
+  obtain ⟨n, hn⟩ := eventually_atTop.1
+    (ht.eventually (eventually_gt_nhds (ENNReal.coe_lt_top (r := t))))
+  have hlt : μ (Iic t) < (n + 1 : ℝ≥0∞) :=
+    lt_of_not_ge fun hle => not_le_of_gt (hn n le_rfl) (μ.occurrenceTime_le_of_le hle)
+  exact hlt.trans (by finiteness)
 
 /-- Restricting to a closed observation window retains exactly the occurrences in
 that window; all subsequent occurrence times become infinite. -/

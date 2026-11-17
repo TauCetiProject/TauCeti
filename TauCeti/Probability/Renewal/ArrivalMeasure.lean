@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Exponential.Basic
 public import TauCeti.Probability.Renewal.Measure
-public import TauCeti.Probability.PointProcess.OccurrenceTime.Reconstruction
+public import TauCeti.Probability.PointProcess.OccurrenceTime.Gap
 public import Mathlib.MeasureTheory.Measure.GiryMonad
 import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 
@@ -17,7 +17,10 @@ import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 `renewalArrivalMeasure T ω` places one Dirac mass at each positive-index arrival of the
 renewal process with increments `T`. It omits the artificial arrival at index zero, but
 retains genuine arrivals at zero and repeated arrivals. Its evaluation on `[0,t]` is the
-extended renewal count, and local finiteness is equivalent to nonexplosion.
+extended renewal count, its total mass is infinite, and local finiteness is equivalent to
+nonexplosion. Extracting `Measure.occurrenceGap` recovers the increments `T`; conversely,
+every locally finite integer-valued measure of infinite total mass equals the renewal arrival
+measure of its own interarrival gaps.
 
 The construction is measurable into Mathlib's space of measures with its evaluation
 σ-algebra. Its entire law transfers to the canonical product realization of i.i.d.
@@ -95,6 +98,26 @@ theorem occurrenceTime_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
     occurrenceTime_occurrenceTimeMeasure (fun _ _ h => by
       exact_mod_cast monotone_arrival T ω (Nat.succ_le_succ h))]
 
+/-- Every renewal arrival measure has infinite total mass, since it sums infinitely many
+positive-index Dirac arrivals. -/
+@[simp]
+theorem renewalArrivalMeasure_univ (ω : Ω) :
+    renewalArrivalMeasure T ω univ = ∞ :=
+  (Measure.forall_occurrenceTime_ne_top_iff _).1 fun n => by
+    simp [occurrenceTime_renewalArrivalMeasure]
+
+/-- Extracting interarrival gaps from the arrival measure recovers every increment, even with
+zero increments or explosion. -/
+@[simp]
+theorem occurrenceGap_renewalArrivalMeasure (ω : Ω) (n : ℕ) :
+    (renewalArrivalMeasure T ω).occurrenceGap n = T n ω := by
+  cases n with
+  | zero => simp [Measure.occurrenceGap_zero, arrival_succ]
+  | succ n =>
+    rw [Measure.occurrenceGap_succ, occurrenceTime_renewalArrivalMeasure,
+      occurrenceTime_renewalArrivalMeasure, ENNReal.toNNReal_coe, ENNReal.toNNReal_coe,
+      arrival_succ, add_tsub_cancel_left]
+
 /-- Integration against the arrival measure sums the test function over all arrivals. -/
 @[simp]
 theorem lintegral_renewalArrivalMeasure (ω : Ω) (f : ℝ≥0 → ℝ≥0∞) :
@@ -114,6 +137,45 @@ theorem isLocallyFiniteMeasure_renewalArrivalMeasure_iff (ω : Ω) :
   rw [renewalArrivalMeasure_eq_occurrenceTimeMeasure,
     isLocallyFiniteMeasure_occurrenceTimeMeasure_iff, ENNReal.tendsto_coe_nhds_top]
   exact Filter.tendsto_add_atTop_iff_nat (f := fun n => arrival T n ω) 1
+
+/-- The positive-index renewal arrivals built from a measure's interarrival gaps recover its
+finite occurrence times. -/
+theorem arrival_occurrenceGap (M : Ω → Measure ℝ≥0) {ω : Ω} {n : ℕ}
+    (hn : (M ω).occurrenceTime n ≠ ∞) :
+    arrival (fun k ω => (M ω).occurrenceGap k) (n + 1) ω = ((M ω).occurrenceTime n).toNNReal := by
+  rw [arrival_def]
+  exact (M ω).sum_range_occurrenceGap_eq_toNNReal_occurrenceTime hn
+
+/-- A locally finite integer-valued measure of infinite total mass equals the renewal arrival
+measure of its interarrival gaps. Atoms at zero and multiple occurrences are allowed. -/
+theorem renewalArrivalMeasure_occurrenceGap (M : Ω → Measure ℝ≥0) {ω : Ω}
+    [IsLocallyFiniteMeasure (M ω)] (hM : (M ω).IsIntegerValued) (huniv : M ω univ = ∞) :
+    renewalArrivalMeasure (fun k ω => (M ω).occurrenceGap k) ω = M ω := by
+  simpa only [renewalArrivalMeasure_def, arrival_def] using
+    (hM.eq_sum_dirac_sum_occurrenceGap huniv).symm
+
+/-- The extended renewal count of a locally finite counting measure's interarrival gaps
+recovers its cumulative mass on `[0, t]`. -/
+theorem renewalCount_occurrenceGap (M : Ω → Measure ℝ≥0) {ω : Ω}
+    [IsLocallyFiniteMeasure (M ω)] (hM : (M ω).IsIntegerValued) (huniv : M ω univ = ∞)
+    (t : ℝ≥0) :
+    renewalCount (fun k ω => (M ω).occurrenceGap k) t ω = M ω (Iic t) := by
+  rw [← renewalArrivalMeasure_Iic, renewalArrivalMeasure_occurrenceGap M hM huniv]
+
+/-- The natural-valued renewal count of a locally finite counting measure's interarrival gaps
+recovers the floored cumulative mass on `[0, t]`. -/
+theorem renewalCountNat_occurrenceGap (M : Ω → Measure ℝ≥0) {ω : Ω}
+    [IsLocallyFiniteMeasure (M ω)] (hM : (M ω).IsIntegerValued) (huniv : M ω univ = ∞)
+    (t : ℝ≥0) :
+    renewalCountNat (fun k ω => (M ω).occurrenceGap k) t ω = ⌊(M ω (Iic t)).toNNReal⌋₊ := by
+  have hdiv : Tendsto (fun n => arrival (fun k ω => (M ω).occurrenceGap k) n ω) atTop atTop := by
+    rw [← isLocallyFiniteMeasure_renewalArrivalMeasure_iff,
+      renewalArrivalMeasure_occurrenceGap M hM huniv]
+    infer_instance
+  have hcast :
+      (renewalCountNat (fun k ω => (M ω).occurrenceGap k) t ω : ℝ≥0∞) = M ω (Iic t) := by
+    rw [natCast_renewalCountNat hdiv, renewalCount_occurrenceGap M hM huniv]
+  rw [← hcast, ENNReal.toNNReal_natCast, Nat.floor_natCast]
 
 /-- A positive first increment rules out any arrival at zero; later increments may vanish. -/
 theorem renewalArrivalMeasure_singleton_zero {ω : Ω} (hT : 0 < T 0 ω) :
