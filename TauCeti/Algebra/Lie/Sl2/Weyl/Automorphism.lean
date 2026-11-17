@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.AdjointAction.InnerAutomorphismGroup
 public import TauCeti.Algebra.Lie.Sl2.Basic
 public import TauCeti.RingTheory.Nilpotent.Exp.Basic
+import Mathlib.Algebra.Ring.Action.ConjAct
 
 /-!
 # The Weyl automorphism of an `sl₂` triple
@@ -529,6 +530,38 @@ theorem coe_inv_weylUnit (hE : IsNilpotent E) (hF : IsNilpotent F) :
     (((weylUnit hE hF)⁻¹ : Aˣ) : A) =
       IsNilpotent.exp (-E) * IsNilpotent.exp F * IsNilpotent.exp (-E) := by
   simp [weylUnit, mul_inv_rev, mul_assoc]
+
+/-- The pinned Weyl unit is trivial when both root operators vanish. -/
+theorem weylUnit_eq_one_of_eq_zero (hE : IsNilpotent E) (hF : IsNilpotent F)
+    (he : E = 0) (hf : F = 0) : weylUnit hE hF = 1 := by
+  apply Units.ext
+  simp [he, hf]
+
+/-- A ring homomorphism carries the pinned Weyl unit to that of the image root operators. -/
+theorem map_weylUnit {B G : Type*} [Ring B] [Algebra ℚ B]
+    [FunLike G A B] [RingHomClass G A B] (f : G)
+    (hE : IsNilpotent E) (hF : IsNilpotent F) :
+    Units.map (MonoidHom.ofClass f) (weylUnit hE hF) =
+      weylUnit (hE.map f) (hF.map f) := by
+  apply Units.ext
+  simp only [Units.coe_map, MonoidHom.coe_ofClass, coe_weylUnit, map_mul,
+    hE.map_exp f, hF.neg.map_exp f, map_neg]
+
+/-- Conjugating both nilpotent root operators conjugates their pinned Weyl unit.
+No `sl₂` relations or nonvanishing hypotheses are needed. -/
+theorem conj_weylUnit_of_conj_eq {E' F' : A}
+    (hE : IsNilpotent E) (hF : IsNilpotent F)
+    (hE' : IsNilpotent E') (hF' : IsNilpotent F') (u : Aˣ)
+    (he : (u : A) * E * ↑u⁻¹ = E') (hf : (u : A) * F * ↑u⁻¹ = F') :
+    u * weylUnit hE hF * u⁻¹ = weylUnit hE' hF' := by
+  let d := MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
+  have hd (x : A) : d x = (u : A) * x * ↑u⁻¹ := by
+    simp only [d, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
+      ConjAct.ofConjAct_toConjAct]
+  apply Units.ext
+  have h := congrArg Units.val (map_weylUnit d hE hF)
+  simpa only [Units.coe_map, MonoidHom.coe_ofClass, coe_weylUnit, hd, he, hf,
+    Units.val_mul, Units.val_inv] using h
 
 variable {K : Type*} [CommRing K] [Algebra K A]
 

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Lie.SerreConstruction
 public import Mathlib.Algebra.Lie.Sl2
 public import TauCeti.Algebra.Lie.Presentation.Basic
 import TauCeti.Algebra.Lie.Basic
+import TauCeti.Algebra.Lie.Weights.Eigenvector
 public import TauCeti.Algebra.Lie.Quotient
 
 /-!
@@ -300,10 +301,31 @@ theorem IsSerreSystem.lie_H_E_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
   simpa only [Int.cast_smul_eq_zsmul] using hs.lie_H_E i j
 
 omit [DecidableEq B] in
+/-- Repeated adjoint raising shifts a Cartan weight by the raising generator's weight
+at each step. -/
+theorem IsSerreSystem.lie_H_ad_pow_E (hs : IsSerreSystem R CM H E F) (k i j : B) (n : ℕ) :
+    ⁅H k, (ad R L (E i) ^ n) (E j)⁆ =
+      ((n : ℤ) * CM k i + CM k j) • (ad R L (E i) ^ n) (E j) := by
+  rw [ad_pow_apply_eq_ad_pow_apply R ℤ, ad_eq_toEnd, add_comm]
+  exact lie_pow_toEnd_eq_smul (R := ℤ) (M := L) (hs.lie_H_E k j) (hs.lie_H_E k i) n
+
+omit [DecidableEq B] in
 /-- The lowering weight relation with the negative Cartan entry read in the base ring. -/
 theorem IsSerreSystem.lie_H_F_smul (hs : IsSerreSystem R CM H E F) (i j : B) :
     ⁅H i, F j⁆ = -(CM i j : R) • F j := by
   simpa only [neg_smul, Int.cast_smul_eq_zsmul] using hs.lie_H_F i j
+
+omit [DecidableEq B] in
+/-- Repeated adjoint lowering shifts a Cartan weight by the lowering generator's weight
+at each step. -/
+theorem IsSerreSystem.lie_H_ad_pow_F (hs : IsSerreSystem R CM H E F) (k i j : B) (n : ℕ) :
+    ⁅H k, (ad R L (F i) ^ n) (F j)⁆ =
+      -(((n : ℤ) * CM k i + CM k j) • (ad R L (F i) ^ n) (F j)) := by
+  rw [ad_pow_apply_eq_ad_pow_apply R ℤ, ad_eq_toEnd]
+  simpa only [neg_smul, mul_neg, ← neg_add, add_comm] using
+    lie_pow_toEnd_eq_smul (R := ℤ) (M := L) (a := -CM k j) (c := -CM k i)
+      (by simpa only [neg_smul] using hs.lie_H_F k j)
+      (by simpa only [neg_smul] using hs.lie_H_F k i) n
 
 omit [DecidableEq B] in
 /-- In a torsion-free Serre system, a zero Cartan generator forces every raising generator
@@ -322,6 +344,14 @@ theorem IsSerreSystem.F_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
     F j = 0 := by
   apply (IsAddTorsionFree.zsmul_eq_zero_iff_right hij).mp
   simpa [hH] using (hs.lie_H_F i j).symm
+
+omit [DecidableEq B] in
+/-- In a torsion-free Serre system, a zero Cartan generator forces every Cartan generator
+with a nonzero Cartan entry in its row to vanish. -/
+theorem IsSerreSystem.H_eq_zero_of_H_eq_zero [IsAddTorsionFree L]
+    (hs : IsSerreSystem R CM H E F) {i j : B} (hH : H i = 0) (hij : CM i j ≠ 0) :
+    H j = 0 := by
+  rw [← hs.lie_E_F_self j, hs.E_eq_zero_of_H_eq_zero hH hij, zero_lie]
 
 end CartanWeights
 
