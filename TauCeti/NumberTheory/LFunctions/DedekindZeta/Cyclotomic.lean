@@ -216,9 +216,10 @@ theorem dedekindZetaC_mul_prod_ite_eq_prod_LFunction_of_isPrimitive
     split_ifs with hpc
     · rw [(hprim χ).level_eq_conductor_of_changeLevel_eq (hdvd χ) (hind χ)] at hpc
       simp [χ.primitiveCharacter_apply_prime_eq_zero (Nat.prime_of_mem_primeFactors hp) hpc]
-    · rw [show (χ' χ) p = χ.primitiveCharacter p by
-        simpa using
-          (hprim χ).apply_intCast_eq_primitiveCharacter_of_changeLevel_eq (hdvd χ) (hind χ) p]
+    · have hp_eq : (χ' χ) p = χ.primitiveCharacter p := by
+        simpa only [Int.cast_natCast] using
+          (hprim χ).apply_intCast_eq_primitiveCharacter_of_changeLevel_eq (hdvd χ) (hind χ) p
+      rw [hp_eq]
   rw [hcorr]
   exact dedekindZetaC_mul_prod_eq_prod_LFunction (n := n) hs
 

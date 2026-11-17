@@ -14,6 +14,7 @@ import TauCeti.Algebra.GroupWithZero.Divisibility
 import TauCeti.Data.ZMod.OrderOf
 import TauCeti.NumberTheory.DirichletCharacter.ArithmeticFunction
 import TauCeti.NumberTheory.DirichletCharacter.Conductor
+import TauCeti.RingTheory.PowerSeries.Geometric
 
 /-!
 # Products of linear Euler factors over Dirichlet characters
@@ -165,10 +166,6 @@ private theorem prod_mk_primitiveCharacter_prime_pow_eq {n p k m : ℕ} (hp : p.
   set U : PowerSeries R :=
     PowerSeries.subst (PowerSeries.X ^ f : PowerSeries R) (PowerSeries.mk 1 : PowerSeries R)
   set Z : PowerSeries R := (1 - PowerSeries.X ^ f) ^ g
-  have hgeom (a : R) :
-      (PowerSeries.mk fun i ↦ a ^ i) * (1 - PowerSeries.C a * PowerSeries.X) = 1 := by
-    simpa [PowerSeries.rescale_mk] using
-      congrArg (PowerSeries.rescale a) (PowerSeries.mk_one_mul_one_sub_eq_one R)
   have hVZ : (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) *
       Z = 1 := by
     have hZ : Z = ∏ χ : DirichletCharacter R n,
@@ -176,13 +173,14 @@ private theorem prod_mk_primitiveCharacter_prime_pow_eq {n p k m : ℕ} (hp : p.
       simpa [Z, map_prod] using (congrArg (Polynomial.coeToPowerSeries.ringHom (R := R))
         (prod_one_sub_C_primitiveCharacter_prime_mul_X (R := R) hp hn hm)).symm
     rw [hZ, ← Finset.prod_mul_distrib]
-    exact Finset.prod_eq_one fun χ _ ↦ hgeom _
+    exact Finset.prod_eq_one fun χ _ ↦ TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one _
   have hUZ : U ^ g * Z = 1 := by
-    have hsub := congrArg
-      (PowerSeries.substAlgHom (R := R) (PowerSeries.HasSubst.X_pow (R := R) hf0))
-      (PowerSeries.mk_one_mul_one_sub_eq_one R)
-    rw [map_mul, map_sub, map_one, PowerSeries.substAlgHom_X, PowerSeries.coe_substAlgHom] at hsub
-    rw [← mul_pow, show U * (1 - PowerSeries.X ^ f) = 1 from hsub, one_pow]
+    have hU : U * (1 - PowerSeries.X ^ f) = 1 := by
+      simpa only [U, map_mul, map_sub, map_one, PowerSeries.substAlgHom_X,
+        PowerSeries.coe_substAlgHom] using congrArg
+          (PowerSeries.substAlgHom (R := R) (PowerSeries.HasSubst.X_pow (R := R) hf0))
+          (PowerSeries.mk_one_mul_one_sub_eq_one R)
+    rw [← mul_pow, hU, one_pow]
   calc (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i)
       = (∏ χ : DirichletCharacter R n, PowerSeries.mk fun i ↦ χ.primitiveCharacter p ^ i) *
           (U ^ g * Z) := by rw [hUZ, mul_one]
