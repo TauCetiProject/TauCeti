@@ -40,10 +40,10 @@ critical radius `p ^ (-1 / (p - 1))`.
 * `Padic.rpow_neg_div_le_norm_factorial`: `p ^ (-n / (p - 1)) ≤ ‖n!‖` in `ℚ_[p]`.
 * `TauCeti.rpow_neg_div_le_norm_factorial`, `TauCeti.rpow_neg_sub_one_div_le_norm_factorial`:
   Legendre's lower bounds for `‖(n! : K)‖` in any seminormed `ℚ_[p]`-algebra with `‖1‖ = 1`.
-* `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_pow_prime`,
-  `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`, `TauCeti.norm_inv_factorial_mul_pow_le`,
-  `TauCeti.norm_pow_mul_inv_factorial_le_sq`: inverse-factorial and critical-radius estimates in
-  any normed division algebra over `ℚ_[p]`.
+* `TauCeti.norm_inv_factorial_le`, `TauCeti.norm_inv_factorial_le_rpow_sub_one_div`,
+  `TauCeti.norm_inv_factorial_pow_prime`, `TauCeti.le_norm_inv_factorial_pow_prime_mul_pow`,
+  `TauCeti.norm_inv_factorial_mul_pow_le`, `TauCeti.norm_pow_mul_inv_factorial_le_sq`:
+  inverse-factorial and critical-radius estimates in any normed division algebra over `ℚ_[p]`.
 -/
 
 public section
@@ -208,6 +208,16 @@ theorem norm_inv_factorial_le (n : ℕ) :
   refine (inv_anti₀ hpos (rpow_neg_div_le_norm_factorial (p := p) n)).trans_eq ?_
   rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
 
+/-- Sharpened upper bound `‖(n!)⁻¹‖ ≤ p ^ ((n - 1) / (p - 1))` for `n ≠ 0` in a normed division
+algebra over `ℚ_[p]`. -/
+theorem norm_inv_factorial_le_rpow_sub_one_div {n : ℕ} (hn : n ≠ 0) :
+    ‖(n ! : D)⁻¹‖ ≤ (p : ℝ) ^ (((n : ℝ) - 1) / ((p : ℝ) - 1)) := by
+  have hpos : (0 : ℝ) < (p : ℝ) ^ (-(((n : ℝ) - 1) / ((p : ℝ) - 1))) :=
+    Real.rpow_pos_of_pos (Nat.cast_pos.mpr hp.out.pos) _
+  rw [norm_inv]
+  refine (inv_anti₀ hpos (rpow_neg_sub_one_div_le_norm_factorial (p := p) hn)).trans_eq ?_
+  rw [Real.rpow_neg (Nat.cast_nonneg p), inv_inv]
+
 /-- Exact norm of `((p ^ k)!)⁻¹` in any normed division algebra over `ℚ_[p]`: since `p ^ k` has
 base-`p` digit sum `1`, `‖((p ^ k)!)⁻¹‖ = p ^ ((p ^ k - 1) / (p - 1))`. -/
 theorem norm_inv_factorial_pow_prime (k : ℕ) :
@@ -267,13 +277,6 @@ theorem norm_pow_mul_inv_factorial_le_sq {x : D}
     ‖x ^ n * (n ! : D)⁻¹‖ ≤ ‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) := by
   obtain ⟨k, rfl⟩ : ∃ k, n = k + 2 := Nat.exists_eq_add_of_le' hn
   have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
-  have hpos : (0 : ℝ) < (p : ℝ) ^ (-((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1))) :=
-    Real.rpow_pos_of_pos hp0 _
-  have hinv : ‖((k + 2)! : D)⁻¹‖ ≤ (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
-    rw [norm_inv]
-    refine (inv_anti₀ hpos (rpow_neg_sub_one_div_le_norm_factorial (p := p)
-      (Nat.succ_ne_zero _))).trans_eq ?_
-    rw [Real.rpow_neg hp0.le, inv_inv]
   have hpow_k : ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1)) ≤ 1 := by
     calc
       ‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))
@@ -293,7 +296,8 @@ theorem norm_pow_mul_inv_factorial_le_sq {x : D}
   calc
     ‖x‖ ^ (k + 2) * ‖((k + 2)! : D)⁻¹‖
         ≤ ‖x‖ ^ (k + 2) * (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) :=
-          mul_le_mul_of_nonneg_left hinv (by positivity)
+          mul_le_mul_of_nonneg_left
+            (norm_inv_factorial_le_rpow_sub_one_div (p := p) (Nat.succ_ne_zero _)) (by positivity)
     _ = (‖x‖ ^ k * (p : ℝ) ^ ((k : ℝ) / ((p : ℝ) - 1))) *
           (‖x‖ ^ 2 * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) := by
           rw [pow_add, hsplit, Real.rpow_add hp0]

@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Algebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.NumberTheory.Padics.PadicNumbers
 public import TauCeti.RingTheory.PowerSeries.Derivative
+import Mathlib.Algebra.Algebra.Rat
 import Mathlib.Analysis.Normed.Algebra.Ultra
 import Mathlib.Analysis.Normed.Group.Ultra
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
@@ -21,12 +22,14 @@ import TauCeti.NumberTheory.Padics.Factorial
 /-!
 # Exponential polynomials over `p`-adic fields
 
-In a normed field `L` over `ℚ_[p]` of characteristic zero, an exponential polynomial
-`Q(X) exp(ψ X)` is represented formally as the power series
-`(Q : PowerSeries L) * PowerSeries.rescale ψ (PowerSeries.exp L)`. By Legendre's factorial bound
-(`TauCeti.norm_inv_factorial_mul_pow_le`), whenever `0 ≤ r` and
+In a normed field `L` over `ℚ_[p]` (retaining its rational algebra structure `[Algebra ℚ L]` used
+by `PowerSeries.exp`), an exponential polynomial `Q(X) exp(ψ X)` is represented formally as the
+power series `(Q : PowerSeries L) * PowerSeries.rescale ψ (PowerSeries.exp L)`. By Legendre's
+factorial bound (`TauCeti.norm_inv_factorial_mul_pow_le`), in any seminormed commutative
+`ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` and `[Algebra ℚ A]`, whenever `0 ≤ r` and
 `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, the rescaled exponential `exp(ψ X)` has `r`-weighted coefficients
-bounded by `1`, so multiplying `(Q : PowerSeries L)` by `exp(ψ X)` preserves any `r`-weighted bound
+bounded by `1` (`PowerSeries.norm_coeff_rescale_exp_mul_pow_le`). Over a normed field `L` over
+`ℚ_[p]`, multiplying `(Q : PowerSeries L)` by `exp(ψ X)` therefore preserves any `r`-weighted bound
 `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M` (`PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`).
 
 When `L` is complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the Cauchy product of the finite polynomial
@@ -39,8 +42,9 @@ power series `(Q : PowerSeries L) * rescale ψ (exp L)` converges at `x` to
 
 ## Main results
 
-* `PowerSeries.norm_coeff_rescale_exp_mul_pow_le`: if `0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-(p - 1)⁻¹)`,
-  then `‖coeff k (rescale ψ (exp L))‖ * r ^ k ≤ 1`.
+* `PowerSeries.norm_coeff_rescale_exp_mul_pow_le`: in any seminormed commutative `ℚ_[p]`-algebra `A`
+  with `‖(1 : A)‖ = 1` and `[Algebra ℚ A]`, if `0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-(p - 1)⁻¹)`, then
+  `‖coeff k (rescale ψ (exp A))‖ * r ^ k ≤ 1`.
 * `PowerSeries.norm_coeff_coe_mul_rescale_exp_mul_pow_le`,
   `PowerSeries.norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le`: weighted coefficient
   bounds for `(Q : L⟦X⟧) * exp(ψ X)` and its `m`-th formal derivative.
@@ -65,25 +69,36 @@ namespace PowerSeries
 
 open Polynomial
 
-variable {p : ℕ} [hp : Fact p.Prime] {L : Type*} [NormedField L] [NormedAlgebra ℚ_[p] L]
+variable {p : ℕ} [hp : Fact p.Prime]
 
-/-- In a normed field `L` over `ℚ_[p]`, if `0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, then every
-`r`-weighted coefficient of `exp(ψ X)` has norm at most `1`. -/
-theorem norm_coeff_rescale_exp_mul_pow_le [CharZero L] {ψ : L} {r : ℝ} (hr : 0 ≤ r)
+/-- In a seminormed commutative `ℚ_[p]`-algebra `A` with `‖(1 : A)‖ = 1` and `[Algebra ℚ A]`, if
+`0 ≤ r` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, then every `r`-weighted coefficient of `exp(ψ X)` has
+norm at most `1`. -/
+theorem norm_coeff_rescale_exp_mul_pow_le {A : Type*} [SeminormedCommRing A] [NormOneClass A]
+    [Algebra ℚ A] [NormedAlgebra ℚ_[p] A] {ψ : A} {r : ℝ} (hr : 0 ≤ r)
     (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) (k : ℕ) :
-    ‖coeff k (rescale ψ (exp L))‖ * r ^ k ≤ 1 := by
-  rw [coeff_rescale, coeff_exp]
-  have hcast : (algebraMap ℚ L (1 / (k.factorial : ℚ))) = (k.factorial : L)⁻¹ := by simp
-  rw [hcast, norm_mul, norm_pow]
+    ‖coeff k (rescale ψ (exp A))‖ * r ^ k ≤ 1 := by
+  rw [coeff_rescale, coeff_exp, ← RingHom.map_rat_algebraMap (algebraMap ℚ_[p] A)]
+  have hnorm : ‖algebraMap ℚ_[p] A (algebraMap ℚ ℚ_[p] (1 / (k.factorial : ℚ)))‖ =
+      ‖(k.factorial : ℚ_[p])⁻¹‖ := by
+    rw [norm_algebraMap']
+    simp
   calc
-    ‖ψ‖ ^ k * ‖(k.factorial : L)⁻¹‖ * r ^ k
-        = ‖(k.factorial : L)⁻¹‖ * (‖ψ‖ * r) ^ k := by rw [mul_pow]; ring
+    ‖ψ ^ k * algebraMap ℚ_[p] A (algebraMap ℚ ℚ_[p] (1 / (k.factorial : ℚ)))‖ * r ^ k
+        ≤ (‖ψ‖ ^ k * ‖(k.factorial : ℚ_[p])⁻¹‖) * r ^ k := by
+          gcongr
+          exact (norm_mul_le _ _).trans <|
+            mul_le_mul (norm_pow_le _ _) hnorm.le (norm_nonneg _) (by positivity)
+    _ = ‖(k.factorial : ℚ_[p])⁻¹‖ * (‖ψ‖ * r) ^ k := by rw [mul_pow]; ring
     _ ≤ 1 := TauCeti.norm_inv_factorial_mul_pow_le (mul_nonneg (norm_nonneg ψ) hr) hψ k
+
+-- Retain the caller's rational algebra structure, which occurs in `PowerSeries.exp`.
+variable {L : Type*} [NormedField L] [Algebra ℚ L] [NormedAlgebra ℚ_[p] L]
 
 /-- **Coefficient bound for a `p`-adic exponential polynomial.** If `‖Q.coeff j‖ * r ^ j ≤ M` for
 all `j` and `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))` (`r ≥ 0`), then the coefficients of `Q(X) exp(ψ X)`
 satisfy the same `r`-weighted bound `M`. -/
-theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le [CharZero L] (Q : L[X]) {ψ : L}
+theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le (Q : L[X]) {ψ : L}
     {r M : ℝ} (hr : 0 ≤ r) (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹))
     (hQ : ∀ j, ‖Q.coeff j‖ * r ^ j ≤ M) (k : ℕ) :
     ‖coeff k ((Q : PowerSeries L) * rescale ψ (exp L))‖ * r ^ k ≤ M := by
@@ -109,7 +124,7 @@ theorem norm_coeff_coe_mul_rescale_exp_mul_pow_le [CharZero L] (Q : L[X]) {ψ : 
 polynomial `Q(X) exp(ψ X)`: if `0 < r`, `‖ψ‖ * r ≤ p ^ (-1 / (p - 1))`, and
 `∀ j, ‖Q.coeff j‖ * r ^ j ≤ M`, then every `r`-weighted coefficient of
 `(d⁄dX)^[m] (Q(X) exp(ψ X))` is at most `max r⁻¹ ‖ψ‖ ^ m * M`. -/
-theorem norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le [CharZero L] (Q : L[X])
+theorem norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le (Q : L[X])
     {ψ : L} {r M : ℝ} (hr : 0 < r) (hψ : ‖ψ‖ * r ≤ (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹))
     (hQ : ∀ j, ‖Q.coeff j‖ * r ^ j ≤ M) (m k : ℕ) :
     ‖coeff k ((d⁄dX)^[m] ((Q : PowerSeries L) * rescale ψ (exp L)))‖ * r ^ k ≤
@@ -122,7 +137,7 @@ theorem norm_coeff_iterate_derivative_coe_mul_rescale_exp_mul_pow_le [CharZero L
 /-- **Value of a `p`-adic exponential polynomial** inside the disc of convergence: when `L` is
 complete and `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the power series `Q(X) exp(ψ X)` evaluated at `x`
 converges to `Q.eval x * NormedSpace.exp (ψ * x)`. -/
-theorem hasSum_coeff_coe_mul_rescale_exp [CompleteSpace L] [CharZero L] (Q : L[X]) {ψ x : L}
+theorem hasSum_coeff_coe_mul_rescale_exp [CompleteSpace L] (Q : L[X]) {ψ x : L}
     (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
     HasSum (fun k => coeff k ((Q : PowerSeries L) * rescale ψ (exp L)) * x ^ k)
       (Q.eval x * NormedSpace.exp (ψ * x)) := by
@@ -160,7 +175,7 @@ theorem hasSum_coeff_coe_mul_rescale_exp [CompleteSpace L] [CharZero L] (Q : L[X
 
 /-- Inside `‖ψ * x‖ < p ^ (-1 / (p - 1))`, the `m`-th formal derivative of `Q(X) exp(ψ X)`
 converges at `x` to `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`. -/
-theorem hasSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace L] [CharZero L]
+theorem hasSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace L]
     (Q : L[X]) {ψ x : L} (m : ℕ) (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
     HasSum (fun k => coeff k ((d⁄dX)^[m] ((Q : PowerSeries L) * rescale ψ (exp L))) * x ^ k)
       ((Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)) := by
@@ -169,7 +184,7 @@ theorem hasSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace L] [C
 
 /-- Evaluating `Q(X) exp(ψ X)` via `FormalMultilinearSeries.ofScalarsSum` at `x` with
 `‖ψ * x‖ < p ^ (-1 / (p - 1))` gives `Q.eval x * NormedSpace.exp (ψ * x)`. -/
-theorem ofScalarsSum_coeff_coe_mul_rescale_exp [CompleteSpace L] [CharZero L] (Q : L[X]) {ψ x : L}
+theorem ofScalarsSum_coeff_coe_mul_rescale_exp [CompleteSpace L] (Q : L[X]) {ψ x : L}
     (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
     FormalMultilinearSeries.ofScalarsSum (E := L)
         (fun k => coeff k ((Q : PowerSeries L) * rescale ψ (exp L))) x =
@@ -180,7 +195,7 @@ theorem ofScalarsSum_coeff_coe_mul_rescale_exp [CompleteSpace L] [CharZero L] (Q
 /-- Evaluating the `m`-th formal derivative of `Q(X) exp(ψ X)` via
 `FormalMultilinearSeries.ofScalarsSum` at `x` with `‖ψ * x‖ < p ^ (-1 / (p - 1))` gives
 `(Polynomial.expDerivFactor ψ m Q).eval x * NormedSpace.exp (ψ * x)`. -/
-theorem ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace L] [CharZero L]
+theorem ofScalarsSum_coeff_iterate_derivative_coe_mul_rescale_exp [CompleteSpace L]
     (Q : L[X]) {ψ x : L} (m : ℕ) (h : ‖ψ * x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹)) :
     FormalMultilinearSeries.ofScalarsSum (E := L)
         (fun k => coeff k ((d⁄dX)^[m] ((Q : PowerSeries L) * rescale ψ (exp L)))) x =

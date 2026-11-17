@@ -15,6 +15,7 @@ import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 import Mathlib.Analysis.Normed.Ring.InfiniteSum
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Data.Nat.Choose.Cast
+import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.NumberTheory.Padics.Basic
 import TauCeti.NumberTheory.Padics.Factorial
 
@@ -382,32 +383,13 @@ theorem norm_exp_sub_exp {x y : D} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)
   rcases eq_or_ne x y with rfl | hxy
   · simp
   set M : ℝ := max ‖x‖ ‖y‖
-  have hM : M < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) := max_lt hx hy
   have hp0 : (0 : ℝ) < p := Nat.cast_pos.mpr hp.out.pos
   have hprod : M * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) < 1 := by
     calc
       M * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)
           < (p : ℝ) ^ (-((p : ℝ) - 1)⁻¹) * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) :=
-            mul_lt_mul_of_pos_right hM (Real.rpow_pos_of_pos hp0 _)
+            mul_lt_mul_of_pos_right (max_lt hx hy) (Real.rpow_pos_of_pos hp0 _)
       _ = 1 := by rw [← Real.rpow_add hp0, neg_add_cancel, Real.rpow_zero]
-  have hpow : ∀ n : ℕ, ‖x ^ (n + 1) - y ^ (n + 1)‖ ≤ M ^ n * ‖x - y‖ := by
-    intro n
-    induction n with
-    | zero => simp
-    | succ n ih =>
-      have hid : x ^ (n + 2) - y ^ (n + 2) =
-          x ^ (n + 1) * (x - y) + (x ^ (n + 1) - y ^ (n + 1)) * y := by
-        rw [mul_sub, sub_mul, sub_add_sub_cancel, ← pow_succ, ← pow_succ]
-      rw [hid]
-      refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
-      · rw [norm_mul, norm_pow]
-        exact mul_le_mul_of_nonneg_right
-          (pow_le_pow_left₀ (norm_nonneg x) (le_max_left _ _) _) (norm_nonneg _)
-      · rw [norm_mul]
-        calc
-          ‖x ^ (n + 1) - y ^ (n + 1)‖ * ‖y‖ ≤ M ^ n * ‖x - y‖ * M :=
-            mul_le_mul ih (le_max_right _ _) (norm_nonneg _) (by positivity)
-          _ = M ^ (n + 1) * ‖x - y‖ := by rw [pow_succ]; ring
   have h2 : HasSum (fun k : ℕ ↦ (x ^ (k + 2) - y ^ (k + 2)) / (((k + 2)! : ℕ) : D))
       (NormedSpace.exp x - NormedSpace.exp y - (x - y)) := by
     have hsub := (hasSum_exp hx).sub (hasSum_exp hy)
@@ -420,13 +402,6 @@ theorem norm_exp_sub_exp {x y : D} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)
       M * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) * ‖x - y‖ := by
     rw [← h2.tsum_eq]
     refine IsUltrametricDist.norm_tsum_le_of_forall_le fun k ↦ ?_
-    have hpos : (0 : ℝ) < (p : ℝ) ^ (-((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1))) :=
-      Real.rpow_pos_of_pos hp0 _
-    have hinv : ‖(((k + 2)! : ℕ) : D)⁻¹‖ ≤ (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) := by
-      rw [norm_inv]
-      refine (inv_anti₀ hpos (rpow_neg_sub_one_div_le_norm_factorial (p := p)
-        (Nat.succ_ne_zero _))).trans_eq ?_
-      rw [Real.rpow_neg hp0.le, inv_inv]
     have hexp : (((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1) = ((p : ℝ) - 1)⁻¹ * (k + 1 : ℕ) := by
       push_cast; ring
     have hpow_le : (M * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) ^ (k + 1) ≤
@@ -436,7 +411,9 @@ theorem norm_exp_sub_exp {x y : D} (hx : ‖x‖ < (p : ℝ) ^ (-((p : ℝ) - 1)
     calc
       ‖x ^ (k + 2) - y ^ (k + 2)‖ * ‖(((k + 2)! : ℕ) : D)⁻¹‖
           ≤ (M ^ (k + 1) * ‖x - y‖) * (p : ℝ) ^ ((((k + 2 : ℕ) : ℝ) - 1) / ((p : ℝ) - 1)) :=
-            mul_le_mul (hpow (k + 1)) hinv (norm_nonneg _) (by positivity)
+            mul_le_mul (TauCeti.norm_pow_sub_pow_le x y (k + 2))
+              (norm_inv_factorial_le_rpow_sub_one_div (p := p) (Nat.succ_ne_zero _))
+              (norm_nonneg _) (by positivity)
       _ = (M * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹)) ^ (k + 1) * ‖x - y‖ := by
             rw [hexp, Real.rpow_mul hp0.le, Real.rpow_natCast, mul_pow]; ring
       _ ≤ M * (p : ℝ) ^ (((p : ℝ) - 1)⁻¹) * ‖x - y‖ :=
