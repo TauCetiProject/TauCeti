@@ -141,15 +141,19 @@ variable {X : Scheme.{u}}
 
 /-! ### Serre's twisting-generation theorem -/
 
+/-- The structural morphism `(F ⊗ M^{⊗ k}) ⊗ M^{⊗ (n - k)} ⟶ F ⊗ M^{⊗ n}` combining tensor
+powers of `M` when `k ≤ n`. -/
+private def raiseMap (F M : X.Modules) {k n : ℕ} (hkn : k ≤ n) :
+    (F ⊗ tensorPow M k) ⊗ tensorPow M (n - k) ⟶ F ⊗ tensorPow M n :=
+  (α_ F (tensorPow M k) (tensorPow M (n - k))).hom ≫
+    F ◁ (tensorPowAddIso M k (n - k)).hom ≫
+    F ◁ eqToHom (congrArg (tensorPow M) (Nat.sub_add_cancel hkn))
+
 /-- Raise a global section of `F ⊗ M^{⊗ k}` to degree `n ≥ k` by tensoring with `s^{n - k}` and
 combining the tensor powers `M^{⊗ k} ⊗ M^{⊗ (n - k)} ≅ M^{⊗ n}`. -/
 private def raiseSection (F M : X.Modules) (s : Γ(M, ⊤)) {k n : ℕ} (hkn : k ≤ n)
     (g : Γ(F ⊗ tensorPow M k, ⊤)) : Γ(F ⊗ tensorPow M n, ⊤) :=
-  let ψ : (F ⊗ tensorPow M k) ⊗ tensorPow M (n - k) ⟶ F ⊗ tensorPow M n :=
-    (α_ F (tensorPow M k) (tensorPow M (n - k))).hom ≫
-      F ◁ (tensorPowAddIso M k (n - k)).hom ≫
-      F ◁ eqToHom (congrArg (tensorPow M) (Nat.sub_add_cancel hkn))
-  ψ.app ⊤ (tmulRight (F ⊗ tensorPow M k) (tensorPowSection s (n - k)) g)
+  (raiseMap F M hkn).app ⊤ (tmulRight (F ⊗ tensorPow M k) (tensorPowSection s (n - k)) g)
 
 /-- If `g ∈ Γ(F ⊗ M^{⊗ k}, ⊤)` restricts to `t ⊗ sᵏ` on `U`, then `raiseSection` restricts to
 `t ⊗ sⁿ` on `U`. -/
@@ -159,16 +163,12 @@ private lemma map_raiseSection (F M : X.Modules) (s : Γ(M, ⊤)) {U : X.Opens} 
       tmulRight F (tensorPowSection (M.presheaf.map U.leTop.op s) k) t) :
     (F ⊗ tensorPow M n).presheaf.map U.leTop.op (raiseSection F M s hkn g) =
       tmulRight F (tensorPowSection (M.presheaf.map U.leTop.op s) n) t := by
-  let ψ : (F ⊗ tensorPow M k) ⊗ tensorPow M (n - k) ⟶ F ⊗ tensorPow M n :=
-    (α_ F (tensorPow M k) (tensorPow M (n - k))).hom ≫
-      F ◁ (tensorPowAddIso M k (n - k)).hom ≫
-      F ◁ eqToHom (congrArg (tensorPow M) (Nat.sub_add_cancel hkn))
-  have hnat : ψ.app U (((F ⊗ tensorPow M k) ⊗ tensorPow M (n - k)).presheaf.map U.leTop.op
-      (tmulRight (F ⊗ tensorPow M k) (tensorPowSection s (n - k)) g)) =
+  have hnat : (raiseMap F M hkn).app U (((F ⊗ tensorPow M k) ⊗ tensorPow M (n - k)).presheaf.map
+        U.leTop.op (tmulRight (F ⊗ tensorPow M k) (tensorPowSection s (n - k)) g)) =
       (F ⊗ tensorPow M n).presheaf.map U.leTop.op (raiseSection F M s hkn g) :=
-    ψ.mapPresheaf.naturality_apply U.leTop.op _
+    (raiseMap F M hkn).mapPresheaf.naturality_apply U.leTop.op _
   rw [← hnat, map_tmulRight_tensorPowSection, hg]
-  simp only [ψ, Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
+  simp only [raiseMap, Hom.comp_app, ConcreteCategory.comp_apply, associator_hom_app_tmulRight,
     whiskerLeft_app_tmulRight, tensorPowAddIso_hom_app_tmulRight_tensorPowSection]
   have heq : ∀ (a : ℕ) (h : a = n),
       (eqToHom (congrArg (tensorPow M) h)).app U
@@ -318,14 +318,11 @@ theorem exists_generatingSections_tensorPow_of_isAmple
       @isInvertible_tensorObj X _ _ Ar.property Mq.property⟩
   let B : InvertibleSheaf X := ⟨tensorPow L.obj n, isInvertible_tensorPow L.obj n⟩
   have hAB : LineBundleClass.mk A = LineBundleClass.mk B := by
-    have hA1 : LineBundleClass.mk A = LineBundleClass.mk Ar * LineBundleClass.mk Mq := by
-      rw [← LineBundleClass.mk_tensorProduct, LineBundleClass.mk_eq_mk_iff]
-      exact ⟨(InvertibleSheaf.tensorProductObjIso Ar Mq).symm⟩
     have hM : LineBundleClass.mk Mq = LineBundleClass.mk L ^ (d * q) := by
       rw [LineBundleClass.mk_tensorPow_obj ⟨M, hM_inv⟩ q,
         LineBundleClass.mk_tensorPow_obj L d, ← pow_mul]
-    rw [hA1, LineBundleClass.mk_tensorPow_obj, hM, LineBundleClass.mk_tensorPow_obj, ← pow_add,
-      add_comm, Nat.div_add_mod]
+    rw [LineBundleClass.mk_tensorObj Ar Mq, LineBundleClass.mk_tensorPow_obj, hM,
+      LineBundleClass.mk_tensorPow_obj, ← pow_add, add_comm, Nat.div_add_mod]
   obtain ⟨eL⟩ := LineBundleClass.mk_eq_mk_iff.mp hAB
   let e : (F ⊗ tensorPow L.obj r.1) ⊗ tensorPow M q ≅ F ⊗ tensorPow L.obj n :=
     α_ F (tensorPow L.obj r.1) (tensorPow M q) ≪≫ whiskerLeftIso F eL
@@ -378,11 +375,7 @@ theorem exists_epi_biproduct_of_isAmple
   have : Epi (K.obj ◁ π) := TauCeti.epi_whiskerLeft K.obj π
   -- Identify `K ⊗ (F ⊗ K^∨) ≅ F`.
   have hKK : LineBundleClass.mk ⟨K.obj ⊗ K.dual.obj, inferInstance⟩ = 1 := by
-    have : LineBundleClass.mk ⟨K.obj ⊗ K.dual.obj, inferInstance⟩ =
-        LineBundleClass.mk K * LineBundleClass.mk K.dual := by
-      rw [← LineBundleClass.mk_tensorProduct, LineBundleClass.mk_eq_mk_iff]
-      exact ⟨(InvertibleSheaf.tensorProductObjIso K K.dual).symm⟩
-    rw [this, ← LineBundleClass.inv_mk, mul_inv_cancel]
+    rw [LineBundleClass.mk_tensorObj, ← LineBundleClass.inv_mk, mul_inv_cancel]
   obtain ⟨eUnit⟩ := LineBundleClass.mk_eq_one_iff.mp hKK
   let eF : K.obj ⊗ (F ⊗ K.dual.obj) ≅ F :=
     whiskerLeftIso K.obj (β_ F K.dual.obj) ≪≫

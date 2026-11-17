@@ -57,8 +57,9 @@ open of `Y` to a morphism from a quasi-compact quasi-separated scheme.
 * `AlgebraicGeometry.Scheme.Hom.higherDirectImageBasicOpenSectionsAddEquiv`: over an affine base,
   the sections of `Rⁿ f_* M` over `D(g)` are `Hⁿ(f⁻¹ D(g), M)`;
 * `AlgebraicGeometry.Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv`: additive equivalence
-  `Hⁿ(X, M) ≃+ Γ(Rⁿ f_* M, ⊤)` over an affine base, with scalar compatibility
-  `AlgebraicGeometry.Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv_smul`;
+  `Hⁿ(X, M) ≃+ Γ(Rⁿ f_* M, ⊤)` over an affine base, with evaluation formula
+  `AlgebraicGeometry.Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv_apply` and scalar
+  compatibility `AlgebraicGeometry.Scheme.Hom.higherDirectImageGlobalSectionsAddEquiv_smul`;
 * `AlgebraicGeometry.Scheme.Modules.cohomologyEquivHigherDirectImageSections`: `R`-linear
   equivalence `Hⁿ(X, M) ≃ₗ[R] moduleSpecΓFunctor.obj (Rⁿ f_* M)` for `X` quasi-compact and
   quasi-separated over `Spec R`;
@@ -210,6 +211,32 @@ private def cohomologyEquivPreimageTop (M : X.Modules) (n : ℕ) :
       (by rw [cohomologyOnResLinear_comp, cohomologyOnResLinear_refl])
   (cohomologyOnTopLinearEquiv M n).symm.trans res
 
+/-- Evaluating a morphism out of the sheafification of a presheaf of `𝒪_Y`-modules after the
+sheafification unit at `⊤` carries scalar multiplication by the restriction of `r` along `⊤ ⟶ ⊤`
+to scalar multiplication by `r : Γ(Y, ⊤)`. -/
+private lemma sheafification_unit_comp_app_top_smul {P : Y.PresheafOfModules} {N : Y.Modules}
+    (i : ((PresheafOfModules.sheafification (𝟙 Y.ringCatSheaf.obj)).obj P : Y.Modules) ⟶ N)
+    (r : Γ(Y, ⊤)) (y : P.obj (.op ⊤)) :
+    i.val.app (.op ⊤)
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P).app
+          (.op ⊤) ((show Y.ringCatSheaf.obj.obj (.op ⊤) from
+            Y.presheaf.map (⊤ : Y.Opens).leTop.op r) • y)) =
+      r • (show Γ(N, ⊤) from i.val.app (.op ⊤)
+        (((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P).app
+          (.op ⊤) y)) := by
+  let η := ((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app P).app
+    (.op ⊤)
+  have hη : η ((show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • y) =
+      (show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • η y :=
+    η.hom.map_smul _ y
+  simp only [Scheme.presheaf_map_top_leTop, ConcreteCategory.id_apply]
+  -- `i.val.app (.op ⊤)` acts on global sections as `Scheme.Modules.Hom.app i ⊤`,
+  -- over the same scalar ring `Γ(Y, ⊤)`.
+  change Scheme.Modules.Hom.app i ⊤ (η ((show Y.ringCatSheaf.obj.obj (.op ⊤) from r) • y)) =
+    r • Scheme.Modules.Hom.app i ⊤ (η y)
+  rw [hη]
+  exact Scheme.Modules.Hom.app_smul i r (η y)
+
 section AffineGlobalSections
 
 variable [IsAffine Y] [QuasiCompact f] [QuasiSeparated f]
@@ -222,33 +249,39 @@ def higherDirectImageGlobalSectionsAddEquiv (M : X.Modules) [M.IsQuasicoherent] 
   (cohomologyEquivPreimageTop f M n).toAddEquiv.trans
     (f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩)
 
+/-- Evaluating `higherDirectImageGlobalSectionsAddEquiv` restricts a cohomology class along
+`f ⁻¹ᵁ ⊤ = ⊤` and applies `higherDirectImageBasicOpenSectionsAddEquiv` on `D(1) = ⊤`. -/
+@[simp]
+lemma higherDirectImageGlobalSectionsAddEquiv_apply (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
+    (x : Cohomology M n) :
+    f.higherDirectImageGlobalSectionsAddEquiv M n x =
+      f.higherDirectImageBasicOpenSectionsAddEquiv M n ⟨1, Y.basicOpen_one⟩
+        (cohomologyOnRes M n (le_of_eq f.preimage_top)
+          ((cohomologyOnTopLinearEquiv M n).symm x)) := by
+  simp only [higherDirectImageGlobalSectionsAddEquiv, cohomologyEquivPreimageTop,
+    AddEquiv.trans_apply, LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply,
+    LinearEquiv.trans_apply, LinearEquiv.coe_ofLinearMap, cohomologyOnResLinear_apply]
+
 /-- The identification `Hⁿ(X, M) ≃+ Γ(Rⁿ f_* M, ⊤)` carries the action of a pulled-back global
 function `f^* r` on cohomology to scalar multiplication by `r` on global sections of `Rⁿ f_* M`. -/
 theorem higherDirectImageGlobalSectionsAddEquiv_smul (M : X.Modules) [M.IsQuasicoherent] (n : ℕ)
     (r : Γ(Y, ⊤)) (x : Cohomology M n) :
     f.higherDirectImageGlobalSectionsAddEquiv M n (f.appTop r • x) =
       r • f.higherDirectImageGlobalSectionsAddEquiv M n x := by
-  let e := f.higherDirectImagePresheafToPresheafIso M n
-  have hbij := ConcreteCategory.bijective_of_isIso (e.hom.app (.op ⊤))
-  obtain ⟨y₀, hy₀⟩ := hbij.2 (cohomologyEquivPreimageTop f M n x)
-  let y : ((f.higherDirectImagePresheaf n).obj M).obj (.op ⊤) := y₀
-  have hy : (f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op ⊤) y =
-      cohomologyEquivPreimageTop f M n x := hy₀
+  -- The underlying abelian presheaf of `(f.higherDirectImagePresheaf n).obj M` has the same
+  -- section carrier at `⊤`, so surjectivity yields `y` directly in that module.
+  obtain ⟨(y : ((f.higherDirectImagePresheaf n).obj M).obj (.op ⊤)), hy⟩ :=
+    (ConcreteCategory.bijective_of_isIso
+      ((f.higherDirectImagePresheafToPresheafIso M n).hom.app (.op ⊤))).2
+      (cohomologyEquivPreimageTop f M n x)
   -- Apply the basic-open comparison at `⊤ = D(1)` and use linearity of sheafification.
   simp only [higherDirectImageGlobalSectionsAddEquiv, AddEquiv.trans_apply,
     LinearEquiv.coe_toAddEquiv, LinearEquiv.coe_addEquiv_apply, LinearEquiv.map_smul, ← hy]
   rw [← f.higherDirectImagePresheafToPresheafIso_hom_app_smul M n r ⊤ y,
     f.higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app,
     f.higherDirectImageBasicOpenSectionsAddEquiv_higherDirectImagePresheafToPresheafIso_hom_app]
-  let η := ((PresheafOfModules.sheafificationAdjunction (𝟙 Y.ringCatSheaf.obj)).unit.app
-    ((f.higherDirectImagePresheaf n).obj M)).app (.op ⊤)
-  let i := ((f.higherDirectImagePresheafSheafificationIso n).app M).hom.val.app (.op ⊤)
-  -- `Y.ringCatSheaf.obj.obj (.op ⊤)` has carrier `Γ(Y, ⊤)` with the same scalar action on global
-  -- sections, and restriction along `⊤ ⟶ ⊤` is the identity.
-  exact ((congrArg i (η.hom.map_smul _ y)).trans (i.hom.map_smul _ (η y))).trans
-    (congrArg (· • (i (η y) : Γ((f.higherDirectImage n).obj M, ⊤)))
-      ((congrArg (fun φ ↦ φ r) (Scheme.presheaf_map_top_leTop Y)).trans
-        (ConcreteCategory.id_apply r)))
+  exact sheafification_unit_comp_app_top_smul
+    ((f.higherDirectImagePresheafSheafificationIso n).app M).hom r y
 
 end AffineGlobalSections
 

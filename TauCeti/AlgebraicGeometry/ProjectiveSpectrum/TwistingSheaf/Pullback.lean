@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Functor
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.LocalTriviality
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
 public import TauCeti.AlgebraicGeometry.Modules.AffineRestriction
+import Mathlib.RingTheory.Finiteness.Cardinality
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 
 /-!
 # Pullback of the twisting sheaves along `Proj.map`
@@ -57,6 +60,9 @@ The comparison sends it to `(f a)ⁿ`, which freely generates `Γ(D₊(f a), �
   degree-one standard opens cover `Proj 𝒜`.
 * `AlgebraicGeometry.Proj.pullbackTwistingSheafIso`: the resulting isomorphism
   `(Proj.map f hf)^* 𝒪(n) ≅ 𝒪(n)`.
+* `TauCeti.SymmetricAlgebra.exists_closedImmersion_proj_fin_add`: every `Proj (Sym_R M)` for a
+  finite `R`-module `M` embeds as a closed subscheme over `Spec R` into
+  `Proj (Sym_R (Fin (d + k) → R))` with twisting sheaves pulling back to twisting sheaves.
 
 ## References
 
@@ -244,6 +250,8 @@ end AlgebraicGeometry.Proj
 
 namespace TauCeti.SymmetricAlgebra
 
+section
+
 variable {R M B τ : Type u} [CommRing R] [AddCommMonoid M] [Module R M]
   [CommRing B] [SetLike τ B] [AddSubgroupClass τ B] {ℬ : ℕ → τ} [GradedRing ℬ]
 
@@ -254,5 +262,32 @@ instance isIso_pullbackTwistingSheafMap (f : homogeneousSubmodule R M →+*ᵍ �
     IsIso (AlgebraicGeometry.Proj.pullbackTwistingSheafMap f hf n) :=
   AlgebraicGeometry.Proj.isIso_pullbackTwistingSheafMap f hf (_root_.SymmetricAlgebra.ι R M)
     (ι_mem_homogeneousSubmodule R M) (iSup_basicOpen_ι_eq_top R M id (by simp)) n
+
+end
+
+/-- Every `Proj (Sym_R M)` for a finite `R`-module `M` embeds as a closed subscheme over `Spec R`
+into a projective space `Proj (Sym_R (Fin (d + k) → R))` of ambient rank at least `k` so that
+twisting sheaves pull back to twisting sheaves. Taking `k = 2` ensures the indexing type is
+nontrivial. -/
+theorem exists_closedImmersion_proj_fin_add (R M : Type u) [CommRing R]
+    [AddCommMonoid M] [Module R M] [Module.Finite R M] (k : ℕ) :
+    ∃ (d : ℕ) (j : Proj (homogeneousSubmodule R M) ⟶
+        Proj (homogeneousSubmodule R (Fin (d + k) → R))),
+      IsClosedImmersion j ∧ j.IsOver (Spec (.of R)) ∧
+        ∀ n : ℤ, Nonempty ((Scheme.Modules.pullback j).obj
+          (Proj.twistingSheaf (homogeneousSubmodule R (Fin (d + k) → R)) n) ≅
+          Proj.twistingSheaf (homogeneousSubmodule R M) n) := by
+  obtain ⟨d, g₀, hg₀⟩ := Module.Finite.exists_fin' R M
+  let proj : (Fin (d + k) → R) →ₗ[R] (Fin d → R) :=
+    LinearMap.funLeft R R (Fin.castLE (Nat.le_add_right d k))
+  have hproj : Function.Surjective proj :=
+    LinearMap.funLeft_surjective_of_injective R R (Fin.castLE (Nat.le_add_right d k))
+      (Fin.castLE_injective (Nat.le_add_right d k))
+  let φ := _root_.SymmetricAlgebra.gradedMap R (g₀.comp proj)
+  have hφ_surj : Function.Surjective φ :=
+    _root_.SymmetricAlgebra.gradedMap_surjective R (hg₀.comp hproj)
+  let hφ := HomogeneousIdeal.irrelevant_le_map_of_surjective φ hφ_surj
+  exact ⟨d, Proj.map φ hφ, Proj.isClosedImmersion_map φ hφ hφ_surj, inferInstance,
+    fun n ↦ ⟨asIso (Proj.pullbackTwistingSheafMap φ hφ n)⟩⟩
 
 end TauCeti.SymmetricAlgebra

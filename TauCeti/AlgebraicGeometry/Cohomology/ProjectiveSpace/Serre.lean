@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveOver
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
 import Mathlib.Algebra.Module.Equiv.Basic
-import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 import TauCeti.AlgebraicGeometry.Cohomology.Biproduct
 import TauCeti.AlgebraicGeometry.Cohomology.ClosedImmersion.Linear
@@ -20,7 +19,6 @@ import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.Modules.Biprod
 import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Pushforward.Finite
-import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Ample
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Pullback
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.TensorProduct
@@ -104,29 +102,6 @@ private lemma exists_kernel_shortExact_biproduct_twistingSheaf
     TauCeti.SheafOfModules.IsInvertible.isFinitePresentation
       (R := (Proj (homogeneousSubmodule R M)).ringCatSheaf) (M := _)
   exact ⟨m, k, p, Scheme.Modules.isFinitePresentation_kernel p, TauCeti.kernelSequence_shortExact p⟩
-
-/-- Every `Proj (Sym_R M)` for a finite `R`-module `M` embeds as a closed subscheme over `Spec R`
-into positive-dimensional projective space `Proj (Sym_R (Fin (d + 2) → R))` so that twisting
-sheaves pull back to twisting sheaves. The shift by `2` ensures the indexing type is nontrivial. -/
-private lemma exists_closedImmersion_proj_fin_add_two (R M : Type u) [CommRing R]
-    [AddCommMonoid M] [Module R M] [Module.Finite R M] :
-    ∃ (d : ℕ) (j : Proj (homogeneousSubmodule R M) ⟶
-        Proj (homogeneousSubmodule R (Fin (d + 2) → R))),
-      IsClosedImmersion j ∧ j.IsOver (Spec (.of R)) ∧
-        ∀ n : ℤ, Nonempty ((Scheme.Modules.pullback j).obj
-          (Proj.twistingSheaf (homogeneousSubmodule R (Fin (d + 2) → R)) n) ≅
-          Proj.twistingSheaf (homogeneousSubmodule R M) n) := by
-  obtain ⟨d, g₀, hg₀⟩ := Module.Finite.exists_fin' R M
-  let proj : (Fin (d + 2) → R) →ₗ[R] (Fin d → R) :=
-    LinearMap.funLeft R R (Fin.castLE (Nat.le_add_right d 2))
-  have hproj : Function.Surjective proj :=
-    LinearMap.funLeft_surjective_of_injective R R (Fin.castLE (Nat.le_add_right d 2))
-      (Fin.castLE_injective (Nat.le_add_right d 2))
-  let φ := SymmetricAlgebra.gradedMap R (g₀.comp proj)
-  have hφ_surj : Function.Surjective φ := SymmetricAlgebra.gradedMap_surjective R (hg₀.comp hproj)
-  let hφ := HomogeneousIdeal.irrelevant_le_map_of_surjective φ hφ_surj
-  exact ⟨d, Proj.map φ hφ, Proj.isClosedImmersion_map φ hφ hφ_surj, inferInstance,
-    fun n ↦ ⟨asIso (Proj.pullbackTwistingSheafMap φ hφ n)⟩⟩
 
 /-- Serre's finiteness theorem on positive-dimensional projective space `Proj (Sym_R M)` over a
 Noetherian ring `R`, proved by descending induction on the cohomological degree. -/
@@ -269,7 +244,7 @@ theorem finite_cohomology_of_isProjectiveOver (R : Type u) [CommRing R] [IsNoeth
     Module.Finite R (Cohomology F q) := by
   obtain ⟨M, _, _, _, i₀, hi₀, hi₀R⟩ :=
     Scheme.IsProjectiveOver.exists_isClosedImmersion (R := R) (X := X)
-  obtain ⟨d, j, _, _, -⟩ := exists_closedImmersion_proj_fin_add_two R M
+  obtain ⟨d, j, _, _, -⟩ := exists_closedImmersion_proj_fin_add R M 2
   let i : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i₀ ≫ j
   have : ((pushforward i).obj F).IsFinitePresentation :=
     isFinitePresentation_pushforward_of_isFinite i F
@@ -288,7 +263,7 @@ theorem exists_subsingleton_cohomology_pullback_twistingSheaf_tensor
     ∃ n₀ : ℤ, ∀ n ≥ n₀, ∀ q > 0,
       Subsingleton (Cohomology
         ((pullback i).obj (Proj.twistingSheaf (homogeneousSubmodule R M) n) ⊗ F) q) := by
-  obtain ⟨d, j, _, _, hjPull⟩ := exists_closedImmersion_proj_fin_add_two R M
+  obtain ⟨d, j, _, _, hjPull⟩ := exists_closedImmersion_proj_fin_add R M 2
   let ι : X ⟶ Proj (homogeneousSubmodule R (Fin (d + 2) → R)) := i ≫ j
   have : ((pushforward ι).obj F).IsFinitePresentation :=
     isFinitePresentation_pushforward_of_isFinite ι F
