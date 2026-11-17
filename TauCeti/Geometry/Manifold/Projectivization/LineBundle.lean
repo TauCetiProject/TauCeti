@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.MvPolynomial.Dehomogenization
 import Mathlib.Analysis.Analytic.Polynomial
 import TauCeti.Analysis.Calculus.ContDiffZPow
 import TauCeti.RingTheory.MvPolynomial.Homogeneous
+import TauCeti.Topology.VectorBundle.Coordinates
 
 /-!
 # The line bundles `𝒪(k)` on projective space
@@ -224,11 +225,8 @@ theorem det_coordChangeL_localTriv_twistCore (k : ℤ) {i j : Fin (n + 1)}
     {x : ℙ 𝕜 (Fin (n + 1) → 𝕜)} (hi : x ∈ affineOpen i) (hj : x ∈ affineOpen j) :
     LinearMap.det ((((twistCore k).localTriv i).coordChangeL 𝕜
       ((twistCore k).localTriv j) x).toLinearEquiv : 𝕜 →ₗ[𝕜] 𝕜) = twistTransition k i j x := by
-  have h : (((twistCore k).localTriv i).coordChangeL 𝕜 ((twistCore k).localTriv j) x :
-      𝕜 →L[𝕜] 𝕜) = (twistCore k).coordChange i j x := by
-    ext
-    exact (twistCore k).localTriv_coordChange_eq i j ⟨hi, hj⟩ 1
-  rw [← det_coordChange_twistCore k i j x, ← h, ContinuousLinearMap.det,
+  rw [← det_coordChange_twistCore k i j x,
+    ← (twistCore k).localTriv_coordChangeL (i := i) (j := j) ⟨hi, hj⟩, ContinuousLinearMap.det,
     ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
 
 /-- **`𝒪(k)` is an analytic line bundle.** Its transition functions are analytic, so for
