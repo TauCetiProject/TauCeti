@@ -30,6 +30,8 @@ field of degree `p` over `K`
 * `TauCeti.IsPurelyInseparable.exists_intermediateField_finrank_eq_expChar`: every nontrivial
   purely inseparable field extension in exponential characteristic `p` contains an intermediate
   field of degree `p`.
+* `TauCeti.IsPurelyInseparable.charP_of_prime_dvd_finrank`: if a prime `p` divides the degree of
+  a finite purely inseparable field extension `M / K`, then `K` has characteristic `p`.
 -/
 
 public section
@@ -63,6 +65,23 @@ end Polynomial
 namespace TauCeti.IsPurelyInseparable
 
 open IntermediateField Polynomial
+
+/-- **Prime divisor of the degree determines the characteristic**: if `M / K` is a finite purely
+inseparable field extension whose degree is divisible by a prime `p`, then `K` has characteristic
+`p`. -/
+theorem charP_of_prime_dvd_finrank {K M : Type*} [Field K] [Field M] [Algebra K M]
+    [_root_.IsPurelyInseparable K M] [FiniteDimensional K M] {p : ℕ} (hp : p.Prime)
+    (hdvd : p ∣ Module.finrank K M) : CharP K p := by
+  obtain ⟨q, hq⟩ := ExpChar.exists K
+  obtain ⟨r, hr⟩ := _root_.IsPurelyInseparable.finrank_eq_pow K M q
+  rcases hq with _ | hq_prime
+  · rw [hr, one_pow] at hdvd
+    exact absurd hdvd hp.not_dvd_one
+  · rw [hr] at hdvd
+    have hqp : p = q :=
+      (Nat.prime_dvd_prime_iff_eq hp hq_prime).mp (hp.dvd_of_dvd_pow hdvd)
+    subst hqp
+    infer_instance
 
 /-- **Prime-degree subextension of a nontrivial purely inseparable extension**: if `M / K` is a
 purely inseparable extension in exponential characteristic `p` that is not trivial

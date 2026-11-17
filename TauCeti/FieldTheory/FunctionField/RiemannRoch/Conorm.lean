@@ -200,24 +200,43 @@ theorem riemannRochSpace_conorm_comap (hF' : IsFunctionField k' F')
 end FiniteFibres
 
 /-- **Enlarging the base field inside `F` preserves `L(D)` as a set**: for an integral extension
-`k' / k` inside a function field `F / k'`, the Riemann–Roch space of the conorm `Con D` in `F / k'`,
-viewed as a `k`-subspace of `F`, is `L(D)`. -/
+`k' / k` inside a field `F`, the Riemann–Roch space of the conorm `Con D` in `F / k'`, viewed as a
+`k`-subspace of `F`, is `L(D)`. -/
 @[simp]
 theorem restrictScalars_riemannRochSpace_conorm [Algebra k' F] [IsScalarTower k k' F]
-    (hF' : IsFunctionField k' F) (D : Divisor k F) :
+    (D : Divisor k F) :
     (riemannRochSpace (Divisor.conorm k' F D)).restrictScalars k = riemannRochSpace D := by
   ext f
-  simpa using mem_riemannRochSpace_conorm_iff (F' := F) hF' D f
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp
+  rw [Submodule.restrictScalars_mem, mem_riemannRochSpace_iff_neg_le_ord hf,
+    mem_riemannRochSpace_iff_neg_le_ord hf]
+  constructor
+  · intro h P
+    set P' : Place k' F := Place.constantsEquiv k k' F P
+    have hP' : P'.restrict k F = P :=
+      (Place.restrict_eq_iff_integers_le k F P' P).2 fun x hx ↦ by
+        simpa [P', Place.integers_constantsEquiv] using hx
+    have hbound := h P'
+    rw [Divisor.coeff_conorm, hP'] at hbound
+    have hord := Place.ord_algebraMap_restrict k F P' f
+    rw [Algebra.algebraMap_self, RingHom.id_apply, hP'] at hord
+    have he : (0 : ℤ) < Place.ramificationIdx F P' := by
+      exact_mod_cast Place.ramificationIdx_pos F P'
+    nlinarith
+  · intro h P'
+    have hord := Place.ord_algebraMap_restrict k F P' f
+    rw [Algebra.algebraMap_self, RingHom.id_apply] at hord
+    rw [Divisor.coeff_conorm]
+    nlinarith [h (P'.restrict k F)]
 
-omit [Algebra.IsIntegral k k'] in
-/-- **Riemann–Roch dimension under base-field enlargement inside `F`**: for a finite extension
-`k' / k` inside a function field `F / k'`, `ℓ_k(D) = [k' : k] · ℓ_{k'}(Con D)`, since both
-Riemann–Roch spaces have the same underlying subset of `F`. -/
+/-- **Riemann–Roch dimension under base-field enlargement inside `F`**: for an integral extension
+`k' / k` inside a field `F`, `ℓ_k(D) = [k' : k] · ℓ_{k'}(Con D)`, since both Riemann–Roch spaces
+have the same underlying subset of `F`. -/
 theorem Divisor.dim_eq_finrank_mul_dim_conorm [Algebra k' F] [IsScalarTower k k' F]
-    [FiniteDimensional k k'] (hF' : IsFunctionField k' F) (D : Divisor k F) :
+    (D : Divisor k F) :
     D.dim = Module.finrank k k' * (Divisor.conorm k' F D).dim := by
-  have : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
-  rw [Divisor.dim_def, ← restrictScalars_riemannRochSpace_conorm hF' D, Divisor.dim_def]
+  rw [Divisor.dim_def, ← restrictScalars_riemannRochSpace_conorm (k' := k') D, Divisor.dim_def]
   exact (Module.finrank_mul_finrank k k' (riemannRochSpace (Divisor.conorm k' F D))).symm
 
 variable [FiniteDimensional F F']

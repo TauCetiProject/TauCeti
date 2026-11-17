@@ -14,7 +14,6 @@ public import Mathlib.RingTheory.PowerBasis
 import Mathlib.Algebra.BigOperators.Intervals
 import Mathlib.Algebra.CharP.Lemmas
 import Mathlib.LinearAlgebra.Matrix.Block
-import Mathlib.RingTheory.Polynomial.DegreeLT
 import TauCeti.Algebra.Polynomial.Taylor
 
 /-!
@@ -33,17 +32,19 @@ This file computes its determinant:
 
 `det A = (f.derivative.eval c) ^ (n * (n - 1) / 2)`.
 
-Changing basis on the target via `X ↦ X + C c` (`Polynomial.taylor c`) and on the source from
-`X ^ i` to `(X - C (f.eval c)) ^ i` multiplies `A` on both sides by upper-triangular monic
-polynomial coefficient matrices of determinant `1` (`Matrix.det_matrixOfPolynomials`), turning `A`
-into the lower-triangular matrix of coefficients of `(taylor c f - C (f.eval c)) ^ i` below degree
-`n`, whose `i`-th diagonal entry is `(f.derivative.eval c) ^ i`.
+Following Schröer's (2009) unitriangular Taylor-shift proof, changing basis on the target via
+`X ↦ X + C c` (`Polynomial.taylor c`) and on the source from `X ^ i` to `(X - C (f.eval c)) ^ i`
+multiplies `A` on both sides by upper-triangular monic polynomial coefficient matrices of
+determinant `1` (`Matrix.det_matrixOfPolynomials`), turning `A` into the lower-triangular matrix of
+coefficients of `(taylor c f - C (f.eval c)) ^ i` below degree `n`, whose `i`-th diagonal entry is
+`(f.derivative.eval c) ^ i`.
 
 In exponential characteristic `p`, `(X - C c) ^ p ^ e = X ^ p ^ e - C (c ^ p ^ e)`, so for any
 power basis `pb` of `S` over `R` of dimension `pb.dim = p ^ e` with `pb.gen ^ pb.dim ∈ R`, the
 transition matrix from `pb.basis` to the powers of `aeval pb.gen f` has determinant
 `aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2)` in `S`
-(`PowerBasis.det_toMatrix_aeval_pow`).
+(`PowerBasis.det_toMatrix_aeval_pow`). This is the local determinant step in Schröer's (2009) proof
+of Tate's (1952) genus-change theorem.
 
 ## Main results
 
@@ -56,6 +57,13 @@ transition matrix from `pb.basis` to the powers of `aeval pb.gen f` has determin
   characteristic `p` with `pb.gen ^ pb.dim ∈ R`, the determinant of the transition matrix from
   `pb.basis` to the powers of `aeval pb.gen f` equals
   `aeval pb.gen f.derivative ^ (pb.dim * (pb.dim - 1) / 2)` in `S`.
+
+## References
+
+* S. Schröer, *On genus change in algebraic curves over imperfect fields*, Proc. Amer. Math. Soc.
+  137 (2009), 1239–1243.
+* J. Tate, *Genus change in inseparable extensions of function fields*, Proc. Amer. Math. Soc. 3
+  (1952), 400–406.
 -/
 
 public section
@@ -75,10 +83,7 @@ private theorem shift_mul_apply_of_X_sub_C_pow_dvd {f : R[X]} {c : R} {A : Matri
     ((of fun k j : Fin n ↦ ((X + C c) ^ (j : ℕ)).coeff k) * A) k i =
       ((taylor c f) ^ (i : ℕ)).coeff k := by
   have hdvd : X ^ n ∣ (taylor c f) ^ (i : ℕ) - ∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ) := by
-    obtain ⟨q, hq⟩ := hA i
-    refine ⟨taylor c q, ?_⟩
-    have ht := congrArg (taylorAlgHom c) hq
-    simpa [taylor_apply, add_sub_cancel_right] using ht
+    simpa [taylor_apply] using X_sub_C_pow_dvd_iff.mp (hA i)
   have hzero : ((taylor c f) ^ (i : ℕ)).coeff k =
       (∑ j : Fin n, C (A j i) * (X + C c) ^ (j : ℕ)).coeff k := by
     rw [← sub_eq_zero, ← coeff_sub]
@@ -214,16 +219,9 @@ theorem det_toMatrix_aeval_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra 
         simpa [q, map_sum] using sub_eq_zero.2 (hcol i)
       have hmod0 : aeval pb.gen (X ^ pb.dim - C b) = 0 := by
         rw [map_sub, map_pow, aeval_X, aeval_C, hb, sub_self]
-      have hdiv := congrArg (aeval pb.gen) (modByMonic_add_div q (X ^ pb.dim - C b))
-      rwa [map_add, map_mul, hmod0, zero_mul, add_zero, hq0] at hdiv
-    have hsum : ∑ j : Fin pb.dim, C ((q %ₘ (X ^ pb.dim - C b)).coeff j) * X ^ (j : ℕ) =
-        q %ₘ (X ^ pb.dim - C b) := by
-      rw [Fin.sum_univ_eq_sum_range (fun m ↦ C ((q %ₘ (X ^ pb.dim - C b)).coeff m) * X ^ m) pb.dim]
-      exact ((q %ₘ (X ^ pb.dim - C b)).as_sum_range_C_mul_X_pow' hdeg).symm
-    rw [← hsum] at haeval_mod ⊢
-    simp only [map_sum, map_mul, aeval_C, map_pow, aeval_X, ← pb.basis_eq_pow,
-      ← Algebra.smul_def] at haeval_mod
-    simp [(Fintype.linearIndependent_iff.1 pb.basis.linearIndependent) _ haeval_mod]
+      rw [aeval_modByMonic_eq_self_of_root hmod0, hq0]
+    by_contra hne
+    exact (pb.dim_le_natDegree_of_root hne haeval_mod).not_gt hdeg
   have hdvd_S (i : Fin pb.dim) : (X - C pb.gen) ^ pb.dim ∣
       (f.map (algebraMap R S)) ^ (i : ℕ) -
         ∑ j : Fin pb.dim, C (((algebraMap R S).mapMatrix A) j i) * X ^ (j : ℕ) := by

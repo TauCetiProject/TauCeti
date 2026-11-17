@@ -12,9 +12,9 @@ import Mathlib.RingTheory.Polynomial.RationalRoot
 import TauCeti.FieldTheory.FunctionField.Place.Extension.PurelyInseparable
 import TauCeti.FieldTheory.FunctionField.Place.OrderOfVanishing
 import TauCeti.FieldTheory.IntermediateField.Adjoin.PrimitiveElement
-import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 import TauCeti.FieldTheory.PurelyInseparable.Basic
 import TauCeti.FieldTheory.PurelyInseparable.Exponent
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Basic
 import TauCeti.RingTheory.Length.Determinant
 import TauCeti.RingTheory.LocalRing.Monogenic
 import TauCeti.RingTheory.Polynomial.Truncated.Determinant
@@ -72,10 +72,10 @@ computation at a purely inseparable constant step `k' / k` of prime degree `p`:
   `TauCeti.sub_one_dvd_two_mul_genus_sub_genus_algebraicClosure_of_constantCompositum_eq_top`:
   Tate's genus-change divisibility `(p - 1) ∣ 2 (g(F / k) - g(F' / k''))` for arbitrary algebraic
   constant extensions in characteristic `p`, with or without constant growth.
-* `TauCeti.half_sub_one_dvd_genus_sub_genus_of_constantCompositum_eq_top`: for `p ≠ 2`,
+* `TauCeti.sub_one_div_two_dvd_genus_sub_genus_of_constantCompositum_eq_top`: for `p ≠ 2`,
   `(p - 1) / 2 ∣ g(F / k) - g(F' / k'')`.
 * `TauCeti.genus_eq_genus_of_two_mul_genus_lt_sub_one`,
-  `TauCeti.genus_eq_genus_of_genus_lt_half_sub_one`, and
+  `TauCeti.genus_eq_genus_of_genus_lt_sub_one_div_two`, and
   `TauCeti.isIntegrallyClosedIn_of_one_le_genus_of_two_mul_genus_lt_sub_one`: genus conservation
   and preservation of exact constants when `2 g(F / k) < p - 1`.
 
@@ -94,47 +94,6 @@ open IntermediateField IsLocalRing Module Polynomial
 namespace TauCeti
 
 universe u u' v v'
-
-/-! ### Prime-degree constant extensions -/
-
-section PrimeStep
-
-/-- When `k` is exact in `F` and `k' / k` has prime degree `p`, the constant compositum
-`F' = F · k'` also has degree `p` over `F`. -/
-private theorem finrank_eq_of_isIntegrallyClosedIn_of_finrank_prime {k : Type u} {k' : Type u'}
-    {F : Type v} {F' : Type v'} [Field k] [Field k'] [Field F] [Field F'] [Algebra k k']
-    [Algebra k F] [Algebra k F'] [Algebra k' F'] [Algebra F F'] [IsScalarTower k k' F']
-    [IsScalarTower k F F'] {p : ℕ} (hp : p.Prime) (hk' : finrank k k' = p)
-    (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
-    finrank F F' = p := by
-  have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
-  obtain ⟨α, hα⟩ := Field.exists_adjoin_simple_eq_top_of_finrank_prime (hk' ▸ hp)
-  have hα_int : IsIntegral k α := Algebra.IsIntegral.isIntegral α
-  have hFα : F⟮algebraMap k' F' α⟯ = ⊤ := by
-    rw [← h, constantCompositum_eq_adjoin_of_adjoin_eq_top F k' F' ({α} : Set k') hα,
-      Set.image_singleton]
-  have hkα : k⟮algebraMap k' F' α⟯ = (IsScalarTower.toAlgHom k k' F').fieldRange := by
-    apply le_antisymm
-    · rw [adjoin_le_iff]
-      rintro _ ⟨rfl⟩
-      exact ⟨α, rfl⟩
-    · rintro _ ⟨c, rfl⟩
-      have hc : c ∈ k⟮α⟯ := hα ▸ IntermediateField.mem_top
-      have hmap := IntermediateField.adjoin_map k ({α} : Set k') (IsScalarTower.toAlgHom k k' F')
-      rw [Set.image_singleton] at hmap
-      exact hmap.le ⟨c, hc, rfl⟩
-  calc finrank F F'
-      = finrank F F⟮algebraMap k' F' α⟯ := by rw [hFα, IntermediateField.finrank_top']
-    _ = finrank k k⟮algebraMap k' F' α⟯ :=
-        IntermediateField.finrank_adjoin_simple_eq_finrank_adjoin_simple_of_isIntegrallyClosedIn
-          hex (hα_int.map (IsScalarTower.toAlgHom k k' F'))
-    _ = finrank k k' := by
-        rw [hkα]
-        exact
-          (AlgEquiv.ofInjectiveField (IsScalarTower.toAlgHom k k' F')).symm.toLinearEquiv.finrank_eq
-    _ = p := hk'
-
-end PrimeStep
 
 /-! ### Local monogenicity at a prime purely inseparable constant step -/
 
@@ -300,8 +259,10 @@ private theorem Place.exists_adjoin_integers_eq_top_of_finrank_eq_prime {p : ℕ
       (Algebra.IsAlgebraic.isAlgebraic bar_b), hbar]
     rfl
 
-/-- **Local monogenicity at a prime purely inseparable step**: when `[k' : k] = p` is prime and
-`k' / k` is purely inseparable, `𝒪_{P'}` admits a power basis of dimension `p` over `𝒪_P`. -/
+/-- **Local monogenicity at a prime purely inseparable step**: for a purely inseparable constant
+field extension `F' = F · k'` of prime degree `[k' : k] = p` over a function field `F / k` with
+exact constant field `k`, at any place `P'` of `F' / k'` above `P = P'|_F`, the valuation ring
+`𝒪_{P'}` admits a power basis of dimension `p` over `𝒪_P`. -/
 theorem Place.exists_powerBasis_integers_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
     [IsPurelyInseparable k k'] [Algebra.IsIntegral F F'] (hk' : finrank k k' = p)
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
@@ -311,7 +272,9 @@ theorem Place.exists_powerBasis_integers_of_finrank_eq_prime {p : ℕ} [Fact p.P
   have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
-  have hFF' : finrank F F' = p := finrank_eq_of_isIntegrallyClosedIn_of_finrank_prime hp hk' hex h
+  have hFF' : finrank F F' = p := by
+    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
+    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
   have hn : finrank F F' = finrank k k' := hFF'.trans hk'.symm
   have : Module.Finite (P'.restrict k F).integers P'.integers :=
     P'.moduleFinite_integers_of_isPurelyInseparable hF hex h hn
@@ -342,39 +305,6 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 
 attribute [local instance 10] Place.algebraIntegersExtension Place.isScalarTowerIntegersExtension
 
-/-- When `cF` is an `F`-basis of `F'` whose `i`-th vector is `ψ (w i)`, the matrix of `ψ` in an
-`𝒪_P`-basis `w` of `𝒪_{P'}` has nonzero determinant. -/
-private theorem Place.det_toMatrix_ne_zero_of_basis {ι : Type*} [Fintype ι] [DecidableEq ι]
-    [Algebra.IsIntegral F F'] (P' : Place k' F')
-    (w : Basis ι (P'.restrict k F).integers P'.integers)
-    (ψ : P'.integers →ₗ[(P'.restrict k F).integers] P'.integers) (cF : Basis ι F F')
-    (hcF : ∀ i, cF i = (ψ (w i) : F')) :
-    (LinearMap.toMatrix w w ψ).det ≠ 0 := by
-  set P := P'.restrict k F
-  set A := LinearMap.toMatrix w w ψ
-  intro h0
-  have h0F : ((algebraMap P.integers F).mapMatrix A).det = 0 := by
-    rw [← RingHom.map_det, h0, map_zero]
-  obtain ⟨u, hu0, hmul⟩ := Matrix.exists_mulVec_eq_zero_iff.2 h0F
-  refine hu0 (funext <| (Fintype.linearIndependent_iff.1 cF.linearIndependent) u ?_)
-  have hψi (i : ι) : cF i = ∑ j, (A j i : F) • (w j : F') := by
-    rw [hcF i]
-    conv_lhs => rw [← w.sum_repr (ψ (w i))]
-    rw [AddSubmonoidClass.coe_finsetSum]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [← LinearMap.toMatrix_apply w w ψ j i, Algebra.smul_def, Algebra.smul_def,
-      Subring.coe_mul, Place.coe_algebraMap_integers]
-  calc ∑ i, u i • cF i
-      = ∑ j, (∑ i, (A j i : F) * u i) • (w j : F') := by
-        simp_rw [hψi, Finset.smul_sum, smul_smul, mul_comm (u _)]
-        rw [Finset.sum_comm]
-        simp_rw [← Finset.sum_smul]
-    _ = 0 := by
-        refine Finset.sum_eq_zero fun j _ ↦ ?_
-        have hj : ∑ i, (A j i : F) * u i = 0 := by
-          simpa [Matrix.mulVec, dotProduct] using congrFun hmul j
-        rw [hj, zero_smul]
-
 /-- Comparing `𝒪_P`-length and `k'`-dimension identifies `p · δ_P` with `ord_P(det A) · deg P`. -/
 private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : ℕ} (hp : p.Prime)
     [FiniteDimensional k k'] [IsPurelyInseparable F F'] (hk' : finrank k k' = p)
@@ -390,8 +320,9 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   classical
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have hF' := hF.of_constantCompositum_eq_top h
-  have hn : finrank F F' = finrank k k' :=
-    (finrank_eq_of_isIntegrallyClosedIn_of_finrank_prime hp hk' hex h).trans hk'.symm
+  have hn : finrank F F' = finrank k k' := by
+    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
+    rwa [h, IntermediateField.finrank_top'] at hdeg
   set P := P'.restrict k F
   let αS : P'.integers := ⟨algebraMap k' F' α, P'.algebraMap_mem_integers α⟩
   let ψ := w.constr P.integers fun i : Fin n ↦ αS ^ (i : ℕ)
@@ -405,8 +336,17 @@ private theorem Place.mul_singularityDegree_eq_toNat_ord_det_mul_degree {n p : �
   have hcF (i : Fin n) : cF i = (ψ (w i) : F') := by
     rw [constantBasisOfFinrankEq_apply, hbk, map_pow, w.constr_basis]
     rfl
-  have hAdet : A.det ≠ 0 := P'.det_toMatrix_ne_zero_of_basis w ψ cF hcF
-  have hAdetF : (A.det : F) ≠ 0 := fun h0 ↦ hAdet (Subtype.ext h0)
+  let ιP : P'.integers →ₛₗ[algebraMap P.integers F] F' :=
+    { toFun := Subtype.val
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun r x ↦ by
+        rw [Algebra.smul_def, Algebra.smul_def, Subring.coe_mul, Place.coe_algebraMap_integers,
+          ValuationSubring.algebraMap_apply] }
+  have hli : LinearIndependent F fun i ↦ ιP (ψ (w i)) :=
+    (funext fun i ↦ (hcF i).symm : (fun i ↦ ιP (ψ (w i))) = cF) ▸ cF.linearIndependent
+  have hAdet : A.det ≠ 0 := LinearMap.det_toMatrix_ne_zero_of_linearIndependent w w ψ ιP hli
+  have hAdetF : (A.det : F) ≠ 0 :=
+    LinearMap.map_det_toMatrix_ne_zero_of_linearIndependent w w ψ ιP hli
   have hrange : LinearMap.range ψ = P'.constantSpanSubmodule k F := by
     rw [LinearMap.range_eq_map, ← w.span_eq, Submodule.map_span, ← Set.range_comp,
       P'.constantSpanSubmodule_eq_span h hn bk]
@@ -460,16 +400,20 @@ private theorem Place.two_mul_ramificationIdx_mul_toNat_ord_eq {p : ℕ} (hp : p
 of prime degree `p` over a function field `F / k` with exact constants, at the unique place `P'`
 above `P = P'|_F` there is a natural number `m` such that `2 δ_P = (p - 1) · m · deg P'`. -/
 theorem Place.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {p : ℕ}
-    [Fact p.Prime] [CharP k p] [IsPurelyInseparable k k'] [Algebra.IsIntegral F F']
+    [Fact p.Prime] [IsPurelyInseparable k k'] [Algebra.IsIntegral F F']
     (hk' : finrank k k' = p) (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (P' : Place k' F') :
     ∃ m : ℕ, 2 * (P'.restrict k F).singularityDegree k' F' = (p - 1) * m * P'.degree := by
   classical
   have hp : p.Prime := Fact.out
   have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
+  have : CharP k p :=
+    TauCeti.IsPurelyInseparable.charP_of_prime_dvd_finrank (K := k) (M := k') hp (by rw [hk'])
   have := finiteDimensional_of_constantCompositum_eq_top (k := k) h
   have : IsPurelyInseparable F F' := isPurelyInseparable_of_constantCompositum_eq_top (k := k) h
-  have hFF' : finrank F F' = p := finrank_eq_of_isIntegrallyClosedIn_of_finrank_prime hp hk' hex h
+  have hFF' : finrank F F' = p := by
+    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
+    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
   have : CharP F p := charP_of_injective_algebraMap (algebraMap k F).injective p
   have : ExpChar F p := .prime hp
   have : CharP k' p := charP_of_injective_algebraMap (algebraMap k k').injective p
@@ -514,7 +458,7 @@ theorem Place.exists_two_mul_singularityDegree_restrict_eq_of_finrank_eq_prime {
 prime degree `p` over a function field `F / k` with exact constants, `p - 1` divides `2 δ_P` at
 every place `P` of `F / k`. -/
 theorem Place.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
-    [CharP k p] [IsPurelyInseparable k k'] (hk' : finrank k k' = p) (hF : IsFunctionField k F)
+    [IsPurelyInseparable k k'] (hk' : finrank k k' = p) (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) (P : Place k F) :
     (p - 1) ∣ 2 * P.singularityDegree k' F' := by
   have hp : p.Prime := Fact.out
@@ -525,9 +469,10 @@ theorem Place.sub_one_dvd_two_mul_singularityDegree_of_finrank_eq_prime {p : ℕ
   exact ⟨m * P'.degree, by rw [hm, mul_assoc]⟩
 
 /-- For an odd prime `p`, `(p - 1) / 2` divides the local singularity degree `δ_P` at every place
-`P` of a degree-`p` purely inseparable constant extension. -/
-theorem Place.half_sub_one_dvd_singularityDegree_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
-    [CharP k p] [IsPurelyInseparable k k'] (hp2 : p ≠ 2) (hk' : finrank k k' = p)
+`P` of a function field `F / k` with exact constants under a degree-`p` purely inseparable constant
+field extension `F' = F · k'`. -/
+theorem Place.sub_one_div_two_dvd_singularityDegree_of_finrank_eq_prime {p : ℕ} [Fact p.Prime]
+    [IsPurelyInseparable k k'] (hp2 : p ≠ 2) (hk' : finrank k k' = p)
     (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (P : Place k F) :
     ((p - 1) / 2) ∣ P.singularityDegree k' F' := by
@@ -592,7 +537,9 @@ private theorem sub_one_dvd_two_mul_genus_sub_genus_of_finrank_eq_prime {k : Typ
     genus k'' F' ≤ genus k F ∧ (p - 1) ∣ 2 * (genus k F - genus k'' F') := by
   have hp : p.Prime := Fact.out
   have : FiniteDimensional k k' := Module.finite_of_finrank_pos (hk' ▸ hp.pos)
-  have hFF' : finrank F F' = p := finrank_eq_of_isIntegrallyClosedIn_of_finrank_prime hp hk' hex h
+  have hFF' : finrank F F' = p := by
+    have hdeg := finrank_constantCompositum_eq_finrank_of_finrank_prime F k' F' hex (hk' ▸ hp)
+    rwa [h, IntermediateField.finrank_top', hk'] at hdeg
   have hn : finrank F F' = finrank k k' := hFF'.trans hk'.symm
   have hF' := hF.of_constantCompositum_eq_top h
   have : FiniteDimensional k' k'' := hF'.finiteDimensional_of_isAlgebraic k''
@@ -797,8 +744,9 @@ private theorem genus_le_and_constantCompositum_eq_top_of_enlargement [Algebra.I
   exact ⟨hst, halg, h'', genus_le_genus_of_constantCompositum_eq_top hF h''⟩
 
 /-- **Tate's genus-change theorem** (allowing constant growth): for any algebraic constant field
-extension `F' = F · k'` of `F / k` in prime characteristic `p` and any algebraic enlargement
-`k'' / k'` inside `F'` that is exact in `F'`, `p - 1` divides `2 (g(F / k) - g(F' / k''))`. -/
+extension `F' = F · k'` of a function field `F / k` in prime characteristic `p` with `k` exact in
+`F`, and any algebraic enlargement `k'' / k'` inside `F'` that is exact in `F'`, `p - 1` divides
+`2 (g(F / k) - g(F' / k''))`. -/
 theorem sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top {p : ℕ} [Fact p.Prime]
     [CharP k p] [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
@@ -809,8 +757,11 @@ theorem sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top {p : �
   obtain ⟨_, _, h'', -⟩ := genus_le_and_constantCompositum_eq_top_of_enlargement hF h (k'' := k'')
   exact sub_one_dvd_two_mul_genus_sub_genus_of_isIntegrallyClosedIn hF hex h'' hex''
 
-/-- **Tate's genus-change theorem for `algebraicClosure k' F'`**: specialization requiring no
-exactness hypothesis on `k'` in `F'`. -/
+/-- **Tate's genus-change theorem for `algebraicClosure k' F'`**: specialization of
+`TauCeti.sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top` to
+`k'' = algebraicClosure k' F'` for an algebraic constant field extension `F' = F · k'` of a function
+field `F / k` in prime characteristic `p` with `k` exact in `F`, requiring no exactness hypothesis
+on `k'` in `F'`. -/
 theorem sub_one_dvd_two_mul_genus_sub_genus_algebraicClosure_of_constantCompositum_eq_top {p : ℕ}
     [Fact p.Prime] [CharP k p] [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
@@ -818,10 +769,11 @@ theorem sub_one_dvd_two_mul_genus_sub_genus_algebraicClosure_of_constantComposit
   sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top hF hex h
     (isIntegrallyClosedIn_algebraicClosure (k := k') (F := F'))
 
-/-- **Odd-characteristic Tate divisibility**: for an odd prime `p`, `(p - 1) / 2` divides the genus
-drop `g(F / k) - g(F' / k'')` across any algebraic constant field extension `F' = F · k'` with
-exact constant field `k''` in `F'`. -/
-theorem half_sub_one_dvd_genus_sub_genus_of_constantCompositum_eq_top {p : ℕ} [Fact p.Prime]
+/-- **Odd-characteristic Tate divisibility**: for a function field `F / k` in odd prime
+characteristic `p` with `k` exact in `F`, `(p - 1) / 2` divides the genus drop
+`g(F / k) - g(F' / k'')` across any algebraic constant field extension `F' = F · k'` and any
+algebraic extension `k'' / k'` inside `F'` that is exact in `F'`. -/
+theorem sub_one_div_two_dvd_genus_sub_genus_of_constantCompositum_eq_top {p : ℕ} [Fact p.Prime]
     [CharP k p] (hp2 : p ≠ 2) [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
@@ -834,9 +786,10 @@ theorem half_sub_one_dvd_genus_sub_genus_of_constantCompositum_eq_top {p : ℕ} 
   rw [h2]
   exact sub_one_dvd_two_mul_genus_sub_genus_of_constantCompositum_eq_top hF hex h hex''
 
-/-- **Genus conservation in small genus**: in characteristic `p > 0`, if `2 g(F / k) < p - 1`, then
-the genus is unchanged under every algebraic constant field extension `F' = F · k'`, even when new
-constants `k''` appear. -/
+/-- **Genus conservation in small genus**: for a function field `F / k` in prime characteristic `p`
+with `k` exact in `F`, if `2 g(F / k) < p - 1`, then `g(F' / k'') = g(F / k)` for every algebraic
+constant field extension `F' = F · k'` and every algebraic extension `k'' / k'` inside `F'` that is
+exact in `F'`. -/
 theorem genus_eq_genus_of_two_mul_genus_lt_sub_one {p : ℕ} [Fact p.Prime] [CharP k p]
     [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (hlt : 2 * genus k F < p - 1)
@@ -849,9 +802,11 @@ theorem genus_eq_genus_of_two_mul_genus_lt_sub_one {p : ℕ} [Fact p.Prime] [Cha
   have hzero : 2 * (genus k F - genus k'' F') = 0 := Nat.eq_zero_of_dvd_of_lt hdvd (by omega)
   omega
 
-/-- **Genus conservation in odd characteristic**: for `p ≠ 2`, if `g(F / k) < (p - 1) / 2`, then
-`g(F' / k'') = g(F / k)` across every algebraic constant field extension `F' = F · k'`. -/
-theorem genus_eq_genus_of_genus_lt_half_sub_one {p : ℕ} [Fact p.Prime] [CharP k p] (hp2 : p ≠ 2)
+/-- **Genus conservation in odd characteristic**: for a function field `F / k` in odd prime
+characteristic `p` with `k` exact in `F`, if `g(F / k) < (p - 1) / 2`, then
+`g(F' / k'') = g(F / k)` for every algebraic constant field extension `F' = F · k'` and every
+algebraic extension `k'' / k'` inside `F'` that is exact in `F'`. -/
+theorem genus_eq_genus_of_genus_lt_sub_one_div_two {p : ℕ} [Fact p.Prime] [CharP k p] (hp2 : p ≠ 2)
     [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F)
     (h : constantCompositum F k' F' = ⊤) (hlt : genus k F < (p - 1) / 2)
     {k'' : Type*} [Field k''] [Algebra k' k''] [Algebra k'' F'] [IsScalarTower k' k'' F']
@@ -862,15 +817,16 @@ theorem genus_eq_genus_of_genus_lt_half_sub_one {p : ℕ} [Fact p.Prime] [CharP 
     Nat.mul_div_cancel' ((hp.odd_of_ne_two hp2).tsub_odd odd_one).two_dvd
   exact genus_eq_genus_of_two_mul_genus_lt_sub_one hF hex h (by omega) hex''
 
-/-- **Exactness of constants in small positive genus**: if `1 ≤ g(F / k)`, `2 g(F / k) < p - 1`,
-and `[F' : F] = [k' : k]` for a finite constant field extension `F' = F · k'`, then `k'` remains
-the exact constant field of `F'`. -/
+/-- **Exactness of constants in small positive genus**: for a function field `F / k` in prime
+characteristic `p` with exact constant field `k`, if `1 ≤ g(F / k)` and `2 g(F / k) < p - 1`, then
+for every algebraic constant field extension `F' = F · k'` (finite or infinite), `k'` remains the
+exact constant field of `F'`. -/
 theorem isIntegrallyClosedIn_of_one_le_genus_of_two_mul_genus_lt_sub_one {p : ℕ} [Fact p.Prime]
-    [CharP k p] [FiniteDimensional k k'] (hF : IsFunctionField k F)
+    [CharP k p] [Algebra.IsAlgebraic k k'] (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤)
-    (hn : finrank F F' = finrank k k') (hg1 : 1 ≤ genus k F) (hlt : 2 * genus k F < p - 1) :
+    (hg1 : 1 ≤ genus k F) (hlt : 2 * genus k F < p - 1) :
     IsIntegrallyClosedIn k' F' :=
-  isIntegrallyClosedIn_of_one_le_genus_of_genus_eq hF hex h hn hg1
+  isIntegrallyClosedIn_of_one_le_genus_of_genus_eq hF hex h hg1
     (isIntegrallyClosedIn_algebraicClosure (k := k') (F := F'))
     (genus_eq_genus_of_two_mul_genus_lt_sub_one hF hex h hlt
       (isIntegrallyClosedIn_algebraicClosure (k := k') (F := F')))
