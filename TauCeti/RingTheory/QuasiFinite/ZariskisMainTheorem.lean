@@ -21,7 +21,9 @@ many elements `r ∈ A'` generating the unit ideal of `A`, such that every eleme
 into `A'` by a large enough power of each `r`.
 
 The quotient criterion below checks quasi-finiteness at a prime using a quasi-finite quotient
-by an ideal contained in the extension of the contracted prime.
+by an ideal contained in the extension of the contracted prime. It is deduced from Mathlib's
+`Algebra.QuasiFiniteAt.of_weaklyQuasiFiniteAt`, which derives `Algebra.QuasiFiniteAt R q` for a
+finite type `R`-algebra from quasi-finiteness at `q` modulo the extension of `q.under R`.
 
 ## Main results
 

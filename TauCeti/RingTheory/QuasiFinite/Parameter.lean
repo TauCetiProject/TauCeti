@@ -11,21 +11,22 @@ public import TauCeti.RingTheory.KrullDimension.Parameter
 /-!
 # Quasi-finite coordinates at closed points
 
-A function on an affine curve whose zero fibre is finite defines a quasi-finite map to
-the affine line at every point of that fibre. In particular, a closed point of an affine
-curve admits such a coordinate over an arbitrary field, including a finite field.
+A function on an affine scheme of finite type over a ring `k` whose zero fibre is quasi-finite
+over `k` defines a quasi-finite map to the affine line over `k` at every point of that fibre.
 
-The general criterion `Algebra.QuasiFiniteAt.of_quasiFinite_quotient` allows one to check
-quasi-finiteness at a prime using a quasi-finite quotient by any ideal contained in the
-extension of the contraction of that prime to the base.
-It is useful for lifting coordinates from a special fibre.
+## Main results
+
+* `AlgHom.quasiFiniteAt_aeval`: a coordinate whose image under a surjection `f : A → B` has
+  quasi-finite zero fibre is quasi-finite at every prime `q` of `A` containing it, provided the
+  kernel of `f` lies in the extension of `q.under k`. This lifts coordinates from a special
+  fibre, using `Algebra.QuasiFiniteAt.of_quasiFinite_quotient`.
+* `Ideal.exists_mem_quasiFiniteAt_aeval`: every closed point of an affine scheme of dimension at
+  most one and finite type over a Noetherian ring admits such a coordinate vanishing there. Over
+  a field this includes closed points of affine curves over finite fields.
 
 ## References
 
 * The Stacks Project, Lemma 55.8.2, https://stacks.math.columbia.edu/tag/0C2T.
-* Mathlib's `Algebra.QuasiFiniteAt.of_weaklyQuasiFiniteAt`, a consequence of the algebraic
-  Zariski main theorem: a finite type algebra is quasi-finite at a prime `q` if it is
-  quasi-finite at `q` modulo the extension of `q.under R`.
 -/
 
 public section
@@ -77,8 +78,9 @@ end AlgHom
 
 namespace Ideal
 
-/-- A closed point of an affine curve over a Noetherian ring admits a function vanishing there
-which defines a quasi-finite map to the affine line at that point. -/
+/-- On an affine scheme of dimension at most one and finite type over a Noetherian ring, every
+closed point admits a function vanishing there which defines a quasi-finite map to the affine
+line at that point. -/
 theorem exists_mem_quasiFiniteAt_aeval {k A : Type*} [CommRing k] [IsNoetherianRing k] [CommRing A]
     [Algebra k A] [Algebra.FiniteType k A] [Ring.KrullDimLE 1 A]
     (m : Ideal A) [m.IsMaximal] :
