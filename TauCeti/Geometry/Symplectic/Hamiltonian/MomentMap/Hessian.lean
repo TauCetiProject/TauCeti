@@ -178,10 +178,10 @@ theorem isMorse_iff_of_eq_top
   simp only [Subgroup.mem_top, true_imp_iff]
 
 variable (G) in
-/-- **Generic components of a torus moment map are Morse.** Let a compact connected abelian Lie
-group `G` act with a moment map `μ` such that at every fixed point of `G` no nonzero tangent vector
-is fixed by the differential of every element of `G`. Then the elements `ξ` of the Lie algebra for
-which `μ^ξ` is a Morse function form a dense subset. -/
+/-- **Generic components are Morse when fixed points are infinitesimally isolated.** Let a
+compact connected abelian Lie group `G` act with a moment map `μ` such that at every fixed point
+of `G` no nonzero tangent vector is fixed by the differential of every element of `G`. Then the
+elements `ξ` of the Lie algebra for which `μ^ξ` is a Morse function form a dense subset. -/
 theorem dense_setOf_isMorse [IsMulCommutative G] [CompactSpace G] [PreconnectedSpace G]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ) (hσ : σ.IsNondegenerate)
     (hfix : ∀ p ∈ MulAction.fixedPoints G M, ∀ v : TangentSpace I' p,
