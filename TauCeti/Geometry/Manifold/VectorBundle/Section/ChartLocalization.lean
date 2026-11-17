@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.CompactSupportTopology
 public import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.WeakWhitney
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
@@ -257,39 +258,39 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiberBundle F V]
 
 variable (I F) in
-/-- The extended chart at `x`, an open partial homeomorphism onto an open subset of the model
-space since the model is boundaryless, restricted to the base set of the trivialization at `x`. -/
+/-- The chart at `x`, restricted to the base set of the trivialization at `x` and read in the model
+space: an open partial homeomorphism onto an open subset of `E` since the model is boundaryless. -/
 private def testChart (x : M) : OpenPartialHomeomorph M E :=
-  ((chartAt H x).transHomeomorph I.toHomeomorph).restrOpen (trivializationAt F V x).baseSet
-    (trivializationAt F V x).open_baseSet
+  ((chartAt H x).restr (trivializationAt F V x).baseSet).extendTrans I (Homeomorph.refl E)
+
+private theorem testChart_source (x : M) :
+    (testChart F I V x).source = (chartAt H x).source ∩ (trivializationAt F V x).baseSet := by
+  rw [testChart, OpenPartialHomeomorph.extendTrans_source,
+    OpenPartialHomeomorph.restr_source' _ _ (trivializationAt F V x).open_baseSet]
 
 private theorem mem_testChart_source (x : M) : x ∈ (testChart F I V x).source := by
-  simp [testChart, mem_chart_source, FiberBundle.mem_baseSet_trivializationAt']
+  rw [testChart_source]
+  exact ⟨mem_chart_source H x, FiberBundle.mem_baseSet_trivializationAt' x⟩
 
 private theorem testChart_source_subset (x : M) :
     (testChart F I V x).source ⊆ (trivializationAt F V x).baseSet := by
-  simp [testChart]
+  rw [testChart_source]
+  exact inter_subset_right
 
-private theorem testChart_apply (x y : M) : testChart F I V x y = I (chartAt H x y) := by
-  simp [testChart]
-
-private theorem testChart_symm_apply (x : M) (y : E) :
-    (testChart F I V x).symm y = (chartAt H x).symm (I.symm y) := by
-  simp [testChart]
+omit [I.Boundaryless] in
+private theorem restr_chartAt_mem_maximalAtlas {n : ℕ∞ω} [IsManifold I n M] (x : M) :
+    (chartAt H x).restr (trivializationAt F V x).baseSet ∈ IsManifold.maximalAtlas I n M :=
+  restr_mem_maximalAtlas _ (IsManifold.chart_mem_maximalAtlas x)
+    (trivializationAt F V x).open_baseSet
 
 private theorem contMDiffOn_testChart {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn I 𝓘(ℝ, E) n (testChart F I V x) (testChart F I V x).source := by
-  refine ((contMDiffOn_extChartAt (x := x)).mono fun y hy ↦ ?_).congr fun y _ ↦ ?_
-  · simp only [testChart, OpenPartialHomeomorph.restrOpen_source, mem_inter_iff] at hy
-    exact hy.1
-  · simp [testChart_apply]
+    ContMDiffOn I 𝓘(ℝ, E) n (testChart F I V x) (testChart F I V x).source :=
+  OpenPartialHomeomorph.contMDiffOn_extendTrans _ (restr_chartAt_mem_maximalAtlas V x) contDiff_id
 
 private theorem contMDiffOn_testChart_symm {n : ℕ∞ω} [IsManifold I n M] (x : M) :
-    ContMDiffOn 𝓘(ℝ, E) I n (testChart F I V x).symm (testChart F I V x).target := by
-  refine ((contMDiffOn_extChartAt_symm (n := n) x).mono fun y hy ↦ ?_).congr fun y _ ↦ ?_
-  · rw [extChartAt_target, I.range_eq_univ, inter_univ]
-    exact hy.1
-  · simp [testChart_symm_apply]
+    ContMDiffOn 𝓘(ℝ, E) I n (testChart F I V x).symm (testChart F I V x).target :=
+  OpenPartialHomeomorph.contMDiffOn_extendTrans_symm _ (restr_chartAt_mem_maximalAtlas V x)
+    contDiff_id
 
 end TestChart
 
