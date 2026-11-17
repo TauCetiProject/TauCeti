@@ -9,6 +9,8 @@ public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.A5FourthD4
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Group
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Symmetries of the glue columns act on the rootful rank-24 lattices
 
@@ -140,15 +142,12 @@ theorem mem_glueSymmetries_of_glueWords {g : Equiv.Perm (Fin r.components.length
   refine ⟨hg, fun w ↦ ?_⟩
   set φ := piGlueAlphabetCongr r.componentType r.isSimplyLaced_componentType g hg
     (hs := r.isSimplyLaced_componentType)
-  -- `toLinearEquiv.toAddEquiv` has the same underlying function as `φ` by definition.
-  have hgen : φ.toLinearEquiv.toAddEquiv ⁻¹' r.glueGenerators = r.glueGenerators := by
-    ext v
-    change φ v ∈ r.glueGenerators ↔ v ∈ r.glueGenerators
-    rw [mem_glueGenerators_iff, mem_glueGenerators_iff,
-      encodeGlueWord_piGlueAlphabetCongr_eq_ofFn, encodeGlueWord_def]
-    exact hw fun i ↦ (((r.componentType i).glueLabelEquiv
-      (r.isSimplyLaced_componentType i)).symm (v i)).val
-  exact r.mem_glueSubgroup_iff_of_preimage_glueGenerators φ.toLinearEquiv.toAddEquiv hgen w
+  have hgen : Set.MapsTo φ r.glueGenerators r.glueGenerators := fun v hv ↦ by
+    rw [mem_glueGenerators_iff, encodeGlueWord_piGlueAlphabetCongr_eq_ofFn]
+    rw [mem_glueGenerators_iff, encodeGlueWord_def] at hv
+    exact (hw fun i ↦ (((r.componentType i).glueLabelEquiv
+      (r.isSimplyLaced_componentType i)).symm (v i)).val).mpr hv
+  exact r.mem_glueSubgroup_iff_of_mapsTo_glueGenerators φ hgen w
 
 /-- **Glue symmetries from the patterns**: a permutation preserving the component types is a glue
 symmetry of a row as soon as the expansion of every pattern of the row is invariant under it. -/
@@ -200,13 +199,11 @@ noncomputable def latticeIsometryHom :
   toFun g := r.glueSymmetryIsometry (inv_mem g.2)
   map_one' := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [glueSymmetryIsometry_apply, Isometry.one_apply]
-    exact congr_heq (congr_arg_heq x (by simp))
-      ((Fin.heq_ext_iff (by simp)).mpr (by simp))
+    exact apply_fin_eq_of_val_eq x (by simp) (Fin.val_cast _ j)
   map_mul' g h := Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ by
     rw [Isometry.mul_apply, glueSymmetryIsometry_apply, glueSymmetryIsometry_apply,
       glueSymmetryIsometry_apply, Fin.cast_cast]
-    exact congr_heq (congr_arg_heq x (by simp))
-      ((Fin.heq_ext_iff (by simp)).mpr (by simp))
+    exact apply_fin_eq_of_val_eq x (by simp) (by simp)
 
 /-- The action of a glue symmetry `g` on `N_r` reads the component in position `k` from position
 `g⁻¹ k`. -/

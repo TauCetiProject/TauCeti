@@ -8,6 +8,9 @@ module
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Niemeier
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
 
+import Mathlib.GroupTheory.SpecificGroups.Cyclic
+import TauCeti.Data.Fin.Basic
+
 /-!
 # The triality-lifted cyclic symmetry of the Niemeier lattice `A₅⁴ D₄`
 
@@ -202,15 +205,20 @@ theorem a5FourthD4CyclicPerm_ne_one : a5FourthD4CyclicPerm ≠ 1 := by
 theorem orderOf_a5FourthD4CyclicPerm : orderOf a5FourthD4CyclicPerm = 3 :=
   orderOf_eq_prime a5FourthD4CyclicPerm_pow_three a5FourthD4CyclicPerm_ne_one
 
+/-- Any component position of `A₅⁴ D₄` not among the first four is position `4`. -/
+private theorem eq_four_of_not_lt_four
+    {k : Fin a5FourthD4.components.length} (hk : ¬ k.val < 4) :
+    k = ⟨4, by decide⟩ := by
+  have hlt : k.val < 5 := length_components_a5FourthD4 ▸ k.isLt
+  exact Fin.ext (show k.val = 4 by omega)
+
 /-- The `A₅⁴ D₄` cyclic permutation preserves component types. -/
 theorem componentType_a5FourthD4CyclicPerm (k : Fin a5FourthD4.components.length) :
     a5FourthD4.componentType (a5FourthD4CyclicPerm k) = a5FourthD4.componentType k := by
-  fin_cases k <;> simp <;> rfl
-
-/-- The inverse `A₅⁴ D₄` cyclic permutation preserves component types. -/
-theorem componentType_a5FourthD4CyclicPerm_inv (k : Fin a5FourthD4.components.length) :
-    a5FourthD4.componentType (a5FourthD4CyclicPerm⁻¹ k) = a5FourthD4.componentType k := by
-  fin_cases k <;> simp <;> rfl
+  by_cases hk : k.val < 4
+  · have hk' : (a5FourthD4CyclicPerm k).val < 4 := by fin_cases k <;> simp_all
+    rw [componentType_a5FourthD4_of_lt_four hk', componentType_a5FourthD4_of_lt_four hk]
+  · rw [eq_four_of_not_lt_four hk, a5FourthD4CyclicPerm_apply_four]
 
 /-- The inverse `A₅⁴ D₄` cyclic permutation maps the four `A₅` positions into themselves. -/
 private theorem a5FourthD4CyclicPerm_inv_lt_four
@@ -244,15 +252,6 @@ theorem mem_zpowers_a5FourthD4CyclicPerm_iff
     show Finset.range 3 = {0, 1, 2} by decide]
   simp
 
-/-- Every element `g` of `Subgroup.zpowers a5FourthD4CyclicPerm` is the power
-`a5FourthD4CyclicPerm ^ ((g ⟨1, _⟩).val - 1)`. -/
-theorem eq_a5FourthD4CyclicPerm_pow_of_mem_zpowers
-    {g : Equiv.Perm (Fin a5FourthD4.components.length)}
-    (hg : g ∈ Subgroup.zpowers a5FourthD4CyclicPerm) :
-    g = a5FourthD4CyclicPerm ^ ((g ⟨1, by decide⟩).val - 1) := by
-  rcases mem_zpowers_a5FourthD4CyclicPerm_iff.mp hg with rfl | rfl | rfl <;>
-    simp [pow_two, Equiv.Perm.mul_apply]
-
 /-- Every element of `Subgroup.zpowers a5FourthD4CyclicPerm` preserves component types. -/
 theorem componentType_of_mem_zpowers_a5FourthD4CyclicPerm
     {g : Equiv.Perm (Fin a5FourthD4.components.length)}
@@ -263,6 +262,11 @@ theorem componentType_of_mem_zpowers_a5FourthD4CyclicPerm
   · exact componentType_a5FourthD4CyclicPerm k
   · rw [pow_two, Equiv.Perm.mul_apply, componentType_a5FourthD4CyclicPerm,
       componentType_a5FourthD4CyclicPerm]
+
+/-- The inverse `A₅⁴ D₄` cyclic permutation preserves component types. -/
+theorem componentType_a5FourthD4CyclicPerm_inv (k : Fin a5FourthD4.components.length) :
+    a5FourthD4.componentType (a5FourthD4CyclicPerm⁻¹ k) = a5FourthD4.componentType k :=
+  componentType_of_mem_zpowers_a5FourthD4CyclicPerm (inv_mem (Subgroup.mem_zpowers _)) k
 
 /-! ### The triality-lifted automorphism of the `A₅⁴ D₄` glue module -/
 
@@ -414,15 +418,11 @@ theorem a5FourthD4CyclicGlueIsometry_apply_apply_apply (w : a5FourthD4.glueModul
       (F := fun i ↦ (a5FourthD4.componentType i).glueAlphabet
         (a5FourthD4.isSimplyLaced_componentType i))
       w hk3 _ rfl).trans (by simp)
-  · have hlt : k.val < 5 := length_components_a5FourthD4 ▸ k.isLt
-    have hval : k.val = 4 := by omega
-    have hk4 : k = ⟨4, by decide⟩ := Fin.ext hval
+  · have hk4 := eq_four_of_not_lt_four hk
     subst hk4
     rw [a5FourthD4CyclicGlueIsometry_apply_four, a5FourthD4CyclicGlueIsometry_apply_four,
-      a5FourthD4CyclicGlueIsometry_apply_four, FiniteQuadraticModule.Isometry.ofEq_symm_apply,
-      FiniteQuadraticModule.Isometry.ofEq_symm_apply,
-      typeD4TrialityGlueIsometry_apply_apply_apply,
-      FiniteQuadraticModule.Isometry.ofEq_symm_apply]
+      a5FourthD4CyclicGlueIsometry_apply_four]
+    simp
 
 /-- The digit-list transformation corresponding to `a5FourthD4CyclicGlueIsometry`: cycling
 positions `1 ↦ 2 ↦ 3 ↦ 1` and permuting the `D₄` label in position `4` by `1 ↦ 2 ↦ 3 ↦ 1`. -/
@@ -454,14 +454,13 @@ private theorem encodeGlueWord_a5FourthD4CyclicGlueIsometry (w : a5FourthD4.glue
       ← getD_encodeGlueWord _ _ w (a5FourthD4CyclicPerm⁻¹ ⟨i, hi'⟩)]
     interval_cases i <;> simp [a5FourthD4CyclicDigits]
   · -- On position `4`, `typeD4TrialityGlueIsometry` cycles the `D₄` labels `1 ↦ 2 ↦ 3 ↦ 1`.
-    have hi5 : i < 5 := length_components_a5FourthD4 ▸ hi'
-    have hi_eq : i = 4 := by omega
-    subst hi_eq
-    have h4 : (⟨4, hi'⟩ : Fin a5FourthD4.components.length) = ⟨4, by decide⟩ := rfl
+    have h4 : (⟨i, hi'⟩ : Fin a5FourthD4.components.length) = ⟨4, by decide⟩ :=
+      eq_four_of_not_lt_four hi4
+    have hi_eq : i = 4 := congrArg Fin.val h4
     rw [h4, a5FourthD4CyclicGlueIsometry_apply_four,
       val_glueLabelEquiv_symm_ofEq componentType_a5FourthD4_four.symm,
       glueLabelEquiv_symm_typeD4TrialityGlueIsometry]
-    simp only [a5FourthD4CyclicDigits, List.getElem_cons_succ, List.getElem_cons_zero]
+    simp only [hi_eq, a5FourthD4CyclicDigits, List.getElem_cons_succ, List.getElem_cons_zero]
     rw [getD_encodeGlueWord _ _ w ⟨4, by decide⟩]
     have hval :
         (((D 4).glueLabelEquiv (isSimplyLaced_D 4)).symm
@@ -485,23 +484,11 @@ permutes the six glue generators, cycling `[2(024)0]` and `[33001] ↦ [30302] �
 so it maps `a5FourthD4.glueSubgroup` onto itself. -/
 @[simp]
 theorem a5FourthD4CyclicGlueIsometry_mem_glueSubgroup_iff (w : a5FourthD4.glueModule) :
-    a5FourthD4CyclicGlueIsometry w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup := by
-  have hgen_fwd (v : a5FourthD4.glueModule) (hv : v ∈ a5FourthD4.glueGenerators) :
-      a5FourthD4CyclicGlueIsometry v ∈ a5FourthD4.glueGenerators := by
-    rw [mem_glueGenerators_iff, encodeGlueWord_a5FourthD4CyclicGlueIsometry]
-    exact a5FourthD4CyclicDigits_mem_glueWords _ (mem_glueGenerators_iff.mp hv)
-  -- `toLinearEquiv.toAddEquiv` has the same underlying function as the isometry by definition.
-  have hgen :
-      a5FourthD4CyclicGlueIsometry.toLinearEquiv.toAddEquiv ⁻¹' a5FourthD4.glueGenerators =
-        a5FourthD4.glueGenerators := by
-    ext v
-    change a5FourthD4CyclicGlueIsometry v ∈ a5FourthD4.glueGenerators ↔
-      v ∈ a5FourthD4.glueGenerators
-    refine ⟨fun hv ↦ ?_, hgen_fwd v⟩
-    have hv3 := hgen_fwd _ (hgen_fwd _ hv)
-    rwa [a5FourthD4CyclicGlueIsometry_apply_apply_apply] at hv3
-  exact a5FourthD4.mem_glueSubgroup_iff_of_preimage_glueGenerators
-    a5FourthD4CyclicGlueIsometry.toLinearEquiv.toAddEquiv hgen w
+    a5FourthD4CyclicGlueIsometry w ∈ a5FourthD4.glueSubgroup ↔ w ∈ a5FourthD4.glueSubgroup :=
+  a5FourthD4.mem_glueSubgroup_iff_of_mapsTo_glueGenerators a5FourthD4CyclicGlueIsometry
+    (fun v hv ↦ by
+      rw [mem_glueGenerators_iff, encodeGlueWord_a5FourthD4CyclicGlueIsometry]
+      exact a5FourthD4CyclicDigits_mem_glueWords _ (mem_glueGenerators_iff.mp hv)) w
 
 /-! ### The triality-lifted cyclic isometry of `A₅⁴ D₄` -/
 
@@ -559,8 +546,8 @@ theorem a5FourthD4CyclicIsometry_apply_four
   refine congrFun (congrArg (typeD4Triality (isSimplyLaced_D 4)) ?_) _
   funext i
   rw [rootLatticeIsometryOfEq_apply, Function.comp_apply]
-  exact congr_heq (congr_arg_heq x a5FourthD4CyclicPerm_inv_apply_four)
-    ((Fin.heq_ext_iff (by rw [a5FourthD4CyclicPerm_inv_apply_four])).mpr rfl)
+  exact apply_fin_eq_of_val_eq x a5FourthD4CyclicPerm_inv_apply_four
+    ((Fin.val_cast _ i).trans (Fin.val_cast _ i).symm)
 
 /-- On the four `A₅` components, the `m`-th power of `a5FourthD4CyclicIsometry` reads component `k`
 from `(a5FourthD4CyclicPerm ^ m)⁻¹ k`. -/
@@ -577,16 +564,14 @@ theorem a5FourthD4CyclicIsometry_pow_apply_of_lt_four (m : ℕ)
   induction m generalizing k with
   | zero =>
     rw [pow_zero, Isometry.one_apply]
-    exact congr_heq (congr_arg_heq x (by simp))
-      ((Fin.heq_ext_iff (by simp)).mpr (by simp))
+    exact apply_fin_eq_of_val_eq x (by simp) (by simp)
   | succ m ih =>
     rw [pow_succ', Isometry.mul_apply, a5FourthD4CyclicIsometry_apply_of_lt_four _ hk j,
       ih (a5FourthD4CyclicPerm_inv_lt_four hk), Fin.cast_cast]
     have hidx : (a5FourthD4CyclicPerm ^ m)⁻¹ (a5FourthD4CyclicPerm⁻¹ k) =
         (a5FourthD4CyclicPerm ^ (m + 1))⁻¹ k := by
       rw [pow_succ', mul_inv_rev, Equiv.Perm.mul_apply]
-    exact congr_heq (congr_arg_heq x hidx)
-      ((Fin.heq_ext_iff (by rw [hidx])).mpr (by simp))
+    exact apply_fin_eq_of_val_eq x hidx (by simp)
 
 /-- On the `D₄` component `4`, the `m`-th power of `a5FourthD4CyclicIsometry` acts by the `m`-th
 power of `DynkinType.typeD4Triality`. -/
@@ -615,11 +600,8 @@ theorem a5FourthD4CyclicIsometry_pow_three : a5FourthD4CyclicIsometry ^ 3 = 1 :=
   refine Isometry.ext fun x ↦ funext fun k ↦ funext fun j ↦ ?_
   by_cases hk : k.val < 4
   · rw [a5FourthD4CyclicIsometry_pow_apply_of_lt_four 3 x hk j, Isometry.one_apply]
-    exact congr_heq (congr_arg_heq x (by simp))
-      ((Fin.heq_ext_iff (by simp)).mpr (by simp))
-  · have hlt : k.val < 5 := length_components_a5FourthD4 ▸ k.isLt
-    have hval : k.val = 4 := by omega
-    have hk4 : k = ⟨4, by decide⟩ := Fin.ext hval
+    exact apply_fin_eq_of_val_eq x (by simp) (by simp)
+  · have hk4 := eq_four_of_not_lt_four hk
     subst hk4
     rw [a5FourthD4CyclicIsometry_pow_apply_four 3 x j, typeD4Triality_pow_three,
       Isometry.one_apply, Isometry.one_apply, Function.comp_apply, Fin.cast_cast, Fin.cast_eq_self]
@@ -648,33 +630,44 @@ theorem orderOf_a5FourthD4CyclicIsometry : orderOf a5FourthD4CyclicIsometry = 3 
 sending `a5FourthD4CyclicPerm` to `a5FourthD4CyclicIsometry`. -/
 noncomputable def a5FourthD4CyclicIsometryHom :
     Subgroup.zpowers a5FourthD4CyclicPerm →*
-      IntegralLattice.Isometry a5FourthD4.lattice a5FourthD4.lattice where
-  toFun g := a5FourthD4CyclicIsometry ^ ((g.1 ⟨1, by decide⟩).val - 1)
-  map_one' := by simp
-  map_mul' g h := by
-    have hmod :
-        (((g.1 ⟨1, by decide⟩).val - 1) + ((h.1 ⟨1, by decide⟩).val - 1)) % 3 =
-          (((g.1 * h.1) ⟨1, by decide⟩).val - 1) % 3 := by
-      rcases mem_zpowers_a5FourthD4CyclicPerm_iff.mp g.2 with hg | hg | hg <;>
-        rcases mem_zpowers_a5FourthD4CyclicPerm_iff.mp h.2 with hh | hh | hh <;>
-        simp [hg, hh, pow_two, Equiv.Perm.mul_apply]
-    rw [Subgroup.coe_mul, ← pow_add, pow_eq_pow_mod _ a5FourthD4CyclicIsometry_pow_three,
-      pow_eq_pow_mod (_ + _) a5FourthD4CyclicIsometry_pow_three, hmod]
-
-/-- Each element `g` of `Subgroup.zpowers a5FourthD4CyclicPerm` acts as
-`a5FourthD4CyclicIsometry ^ ((g.1 ⟨1, _⟩).val - 1)`. -/
-theorem a5FourthD4CyclicIsometryHom_apply (g : Subgroup.zpowers a5FourthD4CyclicPerm) :
-    a5FourthD4CyclicIsometryHom g =
-      a5FourthD4CyclicIsometry ^ ((g.1 ⟨1, by decide⟩).val - 1) :=
-  (rfl)
+      IntegralLattice.Isometry a5FourthD4.lattice a5FourthD4.lattice :=
+  (Subgroup.zpowers a5FourthD4CyclicIsometry).subtype.comp
+    (mulEquivOfOrderOfEq
+      (g := (⟨a5FourthD4CyclicPerm, Subgroup.mem_zpowers _⟩ :
+        Subgroup.zpowers a5FourthD4CyclicPerm))
+      (g' := (⟨a5FourthD4CyclicIsometry, Subgroup.mem_zpowers _⟩ :
+        Subgroup.zpowers a5FourthD4CyclicIsometry))
+      (fun x ↦ by
+        obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp x.2
+        exact Subgroup.mem_zpowers_iff.mpr ⟨n, Subtype.ext (by rw [SubgroupClass.coe_zpow, hn])⟩)
+      (fun y ↦ by
+        obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp y.2
+        exact Subgroup.mem_zpowers_iff.mpr ⟨n, Subtype.ext (by rw [SubgroupClass.coe_zpow, hn])⟩)
+      (by
+        rw [Subgroup.orderOf_mk, Subgroup.orderOf_mk, orderOf_a5FourthD4CyclicPerm,
+          orderOf_a5FourthD4CyclicIsometry])).toMonoidHom
 
 /-- The generator `a5FourthD4CyclicPerm` acts as `a5FourthD4CyclicIsometry`. -/
 @[simp]
 theorem a5FourthD4CyclicIsometryHom_gen :
     a5FourthD4CyclicIsometryHom ⟨a5FourthD4CyclicPerm, Subgroup.mem_zpowers _⟩ =
       a5FourthD4CyclicIsometry := by
-  rw [a5FourthD4CyclicIsometryHom_apply]
-  simp
+  rw [a5FourthD4CyclicIsometryHom, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    mulEquivOfOrderOfEq_apply_gen, Subgroup.coe_subtype]
+
+/-- Every power `a5FourthD4CyclicPerm ^ m` acts as `a5FourthD4CyclicIsometry ^ m`. -/
+@[simp]
+theorem a5FourthD4CyclicIsometryHom_pow (m : ℕ) :
+    a5FourthD4CyclicIsometryHom
+        ⟨a5FourthD4CyclicPerm ^ m, Subgroup.npow_mem_zpowers _ m⟩ =
+      a5FourthD4CyclicIsometry ^ m := by
+  have hmk :
+      (⟨a5FourthD4CyclicPerm ^ m, Subgroup.npow_mem_zpowers _ m⟩ :
+        Subgroup.zpowers a5FourthD4CyclicPerm) =
+      (⟨a5FourthD4CyclicPerm, Subgroup.mem_zpowers _⟩ :
+        Subgroup.zpowers a5FourthD4CyclicPerm) ^ m :=
+    Subtype.ext (by rw [SubmonoidClass.coe_pow])
+  rw [hmk, map_pow, a5FourthD4CyclicIsometryHom_gen]
 
 /-- On the four `A₅` components, `a5FourthD4CyclicIsometryHom g` reads component `k` from
 `g⁻¹ k`. -/
@@ -688,39 +681,29 @@ theorem a5FourthD4CyclicIsometryHom_apply_of_lt_four
       x ((g : Equiv.Perm _)⁻¹ k)
         (Fin.cast (congrArg rank
           (componentType_of_mem_zpowers_a5FourthD4CyclicPerm (inv_mem g.2) k)).symm j) := by
-  rw [a5FourthD4CyclicIsometryHom_apply, a5FourthD4CyclicIsometry_pow_apply_of_lt_four _ x hk j]
-  have hidx := congrArg (fun σ : Equiv.Perm _ ↦ σ⁻¹ k)
-    (eq_a5FourthD4CyclicPerm_pow_of_mem_zpowers g.2).symm
-  exact congr_heq (congr_arg_heq x hidx)
-    ((Fin.heq_ext_iff (by rw [hidx])).mpr (by simp))
+  obtain ⟨m, hm⟩ := (Submonoid.mem_powers_iff g.1 _).mp (mem_powers_iff_mem_zpowers.mpr g.2)
+  have hg : g = ⟨a5FourthD4CyclicPerm ^ m, Subgroup.npow_mem_zpowers _ m⟩ :=
+    Subtype.ext hm.symm
+  rw [hg, a5FourthD4CyclicIsometryHom_pow, a5FourthD4CyclicIsometry_pow_apply_of_lt_four m x hk j]
 
-/-- On the `D₄` component `4`, `a5FourthD4CyclicIsometryHom g` acts by the matching power of
-`DynkinType.typeD4Triality`. -/
-@[simp]
+/-- On the `D₄` component `4`, any element `a5FourthD4CyclicPerm ^ m` of
+`Subgroup.zpowers a5FourthD4CyclicPerm` acts by the `m`-th power of `DynkinType.typeD4Triality`. -/
 theorem a5FourthD4CyclicIsometryHom_apply_four
-    (g : Subgroup.zpowers a5FourthD4CyclicPerm)
+    {g : Subgroup.zpowers a5FourthD4CyclicPerm} {m : ℕ}
+    (hg : (g : Equiv.Perm _) = a5FourthD4CyclicPerm ^ m)
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
     (j : Fin (a5FourthD4.componentType ⟨4, by decide⟩).rank) :
     a5FourthD4CyclicIsometryHom g x ⟨4, by decide⟩ j =
-      (typeD4Triality (isSimplyLaced_D 4) ^ ((g.1 ⟨1, by decide⟩).val - 1))
+      (typeD4Triality (isSimplyLaced_D 4) ^ m)
         (x ⟨4, by decide⟩ ∘ Fin.cast (congrArg rank componentType_a5FourthD4_four).symm)
         (Fin.cast (congrArg rank componentType_a5FourthD4_four) j) := by
-  rw [a5FourthD4CyclicIsometryHom_apply, a5FourthD4CyclicIsometry_pow_apply_four]
+  have hmk : g = ⟨a5FourthD4CyclicPerm ^ m, Subgroup.npow_mem_zpowers _ m⟩ := Subtype.ext hg
+  rw [hmk, a5FourthD4CyclicIsometryHom_pow, a5FourthD4CyclicIsometry_pow_apply_four]
 
 /-- The triality-lifted cyclic action on `A₅⁴ D₄` is faithful. -/
 theorem a5FourthD4CyclicIsometryHom_injective : Function.Injective a5FourthD4CyclicIsometryHom := by
-  intro ⟨g, hg⟩ ⟨h, hh⟩ hgh
-  apply Subtype.ext
-  dsimp only
-  rw [a5FourthD4CyclicIsometryHom_apply, a5FourthD4CyclicIsometryHom_apply] at hgh
-  have hmod := (isOfFinOrder_iff_pow_eq_one.mpr
-    ⟨3, by decide, a5FourthD4CyclicIsometry_pow_three⟩).pow_inj_mod.mp hgh
-  rw [orderOf_a5FourthD4CyclicIsometry] at hmod
-  rw [eq_a5FourthD4CyclicPerm_pow_of_mem_zpowers hg,
-    eq_a5FourthD4CyclicPerm_pow_of_mem_zpowers hh]
-  conv_lhs => rw [pow_eq_pow_mod _ a5FourthD4CyclicPerm_pow_three]
-  conv_rhs => rw [pow_eq_pow_mod _ a5FourthD4CyclicPerm_pow_three]
-  rw [hmod]
+  rw [a5FourthD4CyclicIsometryHom, MonoidHom.coe_comp]
+  exact (Subgroup.zpowers a5FourthD4CyclicIsometry).subtype_injective.comp (MulEquiv.injective _)
 
 /-- Every indicated symmetry of a table pattern of `A₅⁴ D₄`, read on the component positions, lies
 in `Subgroup.zpowers a5FourthD4CyclicPerm`. -/
@@ -788,19 +771,20 @@ theorem a5FourthD4PatternIsometryHom_apply_of_lt_four {p : GluePattern}
             (inv_mem (permCongr_mem_zpowers_a5FourthD4CyclicPerm hp g.2)) k)).symm j) := by
   rw [a5FourthD4PatternIsometryHom_apply, a5FourthD4CyclicIsometryHom_apply_of_lt_four _ x hk j]
 
-/-- On the `D₄` component `4`, an indicated pattern symmetry `g` of `A₅⁴ D₄` acts by the matching
-power of `DynkinType.typeD4Triality`. -/
-@[simp]
+/-- On the `D₄` component `4`, an indicated pattern symmetry of `A₅⁴ D₄` corresponding to
+`a5FourthD4CyclicPerm ^ m` acts by the `m`-th power of `DynkinType.typeD4Triality`. -/
 theorem a5FourthD4PatternIsometryHom_apply_four {p : GluePattern}
-    (hp : p ∈ a5FourthD4.gluePatterns) (g : p.symmetries)
+    (hp : p ∈ a5FourthD4.gluePatterns) {g : p.symmetries} {m : ℕ}
+    (hg : (finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1 =
+      a5FourthD4CyclicPerm ^ m)
     (x : ∀ i, Fin (a5FourthD4.componentType i).rank → ℚ)
     (j : Fin (a5FourthD4.componentType ⟨4, by decide⟩).rank) :
     a5FourthD4PatternIsometryHom hp g x ⟨4, by decide⟩ j =
-      (typeD4Triality (isSimplyLaced_D 4) ^
-          ((((finCongr (length_eq_of_mem_gluePatterns hp)).permCongr g.1) ⟨1, by decide⟩).val - 1))
+      (typeD4Triality (isSimplyLaced_D 4) ^ m)
         (x ⟨4, by decide⟩ ∘ Fin.cast (congrArg rank componentType_a5FourthD4_four).symm)
         (Fin.cast (congrArg rank componentType_a5FourthD4_four) j) := by
-  rw [a5FourthD4PatternIsometryHom_apply, a5FourthD4CyclicIsometryHom_apply_four]
+  rw [a5FourthD4PatternIsometryHom_apply]
+  exact a5FourthD4CyclicIsometryHom_apply_four hg x j
 
 /-- The lifted action of the indicated symmetries of every table pattern of `A₅⁴ D₄` is
 faithful. -/

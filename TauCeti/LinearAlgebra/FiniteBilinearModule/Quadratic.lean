@@ -314,13 +314,6 @@ theorem symm_ofEq {A' : FiniteQuadraticModule.{u}} (h : A = A') :
   -- The inverse of `QuadraticMap.IsometryEquiv.refl` is definitionally itself.
   rfl
 
-/-- Applying the identity isometry along `h` after `h.symm` is the identity. -/
-theorem ofEq_symm_apply {A' : FiniteQuadraticModule.{u}} (h : A = A') (x : A') :
-    ofEq h (ofEq h.symm x) = x := by
-  subst h
-  -- `ofEq rfl` is the identity isometry, which acts as the identity function.
-  rfl
-
 /-- Identifying the modules of a dependent family at equal indices with the same target module
 produces the same element. -/
 theorem ofEq_apply_eq {ι : Sort*} {F : ι → FiniteQuadraticModule.{u}} (w : ∀ i, F i)
