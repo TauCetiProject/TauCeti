@@ -133,8 +133,8 @@ end Definition
 
 section Homeomorph
 
-variable {M M' : Type w} [TopologicalSpace M] [TopologicalSpace M'] [T1Space M'] {R : Type u}
-  [Ring R] {N : ModuleCat.{w} R} {n : ℕ}
+variable {M M' : Type w} [TopologicalSpace M] [TopologicalSpace M'] {R : Type u} [Ring R]
+  {N : ModuleCat.{w} R} {n : ℕ}
 
 open AlgebraicTopology in
 /-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : M ≃ₜ M'`
@@ -148,9 +148,15 @@ theorem IsFundamentalClass.map_homeomorph
   intro y
   obtain ⟨x, rfl⟩ : ∃ x, (e : C(M, M')) x = y := e.surjective y
   have hx : (e : C(M, M')) ⁻¹' {(e : C(M, M')) x} ⊆ {x} := fun z hz ↦ e.injective hz
-  have hsurj := (ConcreteCategory.bijective_of_isIso
-    (localHomologyIsoOfIsOpenEmbedding N e.isOpenEmbedding x n).hom).2
-  rw [localHomologyIsoOfIsOpenEmbedding_hom] at hsurj
+  have hx' : (e.symm : C(M', M)) ⁻¹' {x} ⊆ {(e : C(M, M')) x} := fun z hz ↦
+    e.symm_apply_eq.1 hz
+  -- The map of local homology induced by `e` has the one induced by `e.symm` as a section.
+  have hsurj : Function.Surjective (localHomologyMap N (e : C(M, M')) hx n) := fun z ↦ by
+    refine ⟨localHomologyMap N (e.symm : C(M', M)) hx' n z, ?_⟩
+    rw [← ConcreteCategory.comp_apply, localHomologyMap_comp,
+      localHomologyMap_congr N (ContinuousMap.ext fun y ↦ e.apply_symm_apply y :
+        (e : C(M, M')).comp e.symm = ContinuousMap.id M'), localHomologyMap_id]
+    exact congrArg (fun φ ↦ φ.hom z) (localHomologyRestriction_refl N _ n)
   have h := congrArg (Submodule.map (localHomologyMap N (e : C(M, M')) hx n).hom) (hμ x)
   rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
     LinearMap.range_eq_top.2 hsurj] at h
