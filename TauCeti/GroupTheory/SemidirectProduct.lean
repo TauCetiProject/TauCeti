@@ -42,7 +42,8 @@ decomposition `g = n * d` of `Subgroup.IsComplement.equiv`.
   `SemidirectProduct.mulEquivSubgroup` and `Subgroup.IsComplement.equiv` are mutually inverse
   modulo `SemidirectProduct.equivProd`.
 * `SemidirectProduct.mulEquivSubgroup_symm_apply_left`,
-  `SemidirectProduct.mulEquivSubgroup_symm_apply_right`, and
+  `SemidirectProduct.mulEquivSubgroup_symm_apply_right`,
+  `SemidirectProduct.mulEquivSubgroup_symm_eq_inl_mul_inr`, and
   `SemidirectProduct.rightHom_comp_mulEquivSubgroup_symm`: projections and quotient description
   of `(SemidirectProduct.mulEquivSubgroup h).symm`.
 -/
@@ -167,6 +168,13 @@ theorem toEquiv_mulEquivSubgroup :
 theorem toEquiv_mulEquivSubgroup_symm :
     (mulEquivSubgroup h).symm.toEquiv = h.equiv.trans equivProd.symm :=
   congrArg Equiv.symm (toEquiv_mulEquivSubgroup h)
+
+/-- `(SemidirectProduct.mulEquivSubgroup h).symm` decomposes an element into the product of its
+left and right subgroup components inside the semidirect product. -/
+theorem mulEquivSubgroup_symm_eq_inl_mul_inr (g : G) :
+    (mulEquivSubgroup h).symm g = inl (h.equiv g).1 * inr (h.equiv g).2 := by
+  rw [← inl_left_mul_inr_right ((mulEquivSubgroup h).symm g), mulEquivSubgroup_symm_apply_left,
+    mulEquivSubgroup_symm_apply_right]
 
 /-- On the normal factor, `(SemidirectProduct.mulEquivSubgroup h).symm` agrees with
 `SemidirectProduct.inl`. -/
