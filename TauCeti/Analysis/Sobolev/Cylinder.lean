@@ -98,6 +98,13 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 `ℝ × S¹`. -/
 abbrev stripMeasure : Measure (ℝ × ℝ) := volume.restrict (univ ×ˢ Icc 0 1)
 
+/-- The strip measure is the product of Lebesgue measure on `ℝ` and on `[0, 1]`, so that
+integrals over the strip are iterated integrals over the segments `{s} × [0, 1]`. -/
+theorem stripMeasure_eq_prod :
+    stripMeasure = (volume : Measure ℝ).prod (volume.restrict (Icc (0 : ℝ) 1)) := by
+  unfold stripMeasure
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
+
 variable (V) in
 /-- The test sections of the trivial bundle with fibre `V` over the cylinder: `C²` maps
 `ξ : ℝ × ℝ → V` of period one in `t` that vanish for `|s|` large. -/
@@ -129,21 +136,18 @@ theorem jet_apply (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
 
 variable {ξ η : ℝ × ℝ → V}
 
-/-- The jet of a test section is continuous. -/
-theorem continuous_jet (hξ : ξ ∈ testSection V) : Continuous (jet ξ) := by
-  have hξ2 := (mem_testSection_iff.1 hξ).1
-  have h := hξ2.continuous_fderiv (by norm_num)
-  have h0 := hξ2.continuous
+/-- The jet of a `C¹` map is continuous. -/
+theorem continuous_jet (hξ : ContDiff ℝ 1 ξ) : Continuous (jet ξ) := by
+  have := hξ.continuous_fderiv (by norm_num)
+  have := hξ.continuous
   unfold jet
   fun_prop
 
-/-- The jet is additive on test sections. -/
-theorem jet_add (hξ : ξ ∈ testSection V) (hη : η ∈ testSection V) :
+/-- The jet is additive on differentiable maps. -/
+theorem jet_add (hξ : Differentiable ℝ ξ) (hη : Differentiable ℝ η) :
     jet (ξ + η) = jet ξ + jet η := by
   funext z
-  have h₁ := ((mem_testSection_iff.1 hξ).1.differentiable (by norm_num)) z
-  have h₂ := ((mem_testSection_iff.1 hη).1.differentiable (by norm_num)) z
-  simp [jet, fderiv_add h₁ h₂]
+  simp [jet, fderiv_add (hξ z) (hη z)]
 
 /-- The jet commutes with scalar multiplication. -/
 theorem jet_smul (c : ℝ) (ξ : ℝ × ℝ → V) : jet (c • ξ) = c • jet ξ := by
@@ -181,9 +185,9 @@ private theorem integral_strip_eq_setIntegral_of_jet_eq_zero {E : Type*} [Normed
       have h : z.1 ∉ Icc (-R) R := fun h ↦ hz.2 ⟨h, hz.1.2⟩
       rwa [mem_Icc, ← abs_le, not_le] at h))
 
-/-- The jet of a test section is square integrable on the strip. -/
-theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
-  obtain ⟨-, -, R, hR⟩ := mem_testSection_iff.1 hξ
+/-- The jet of a `C¹` map vanishing for `|s|` large is square integrable on the strip. -/
+theorem memLp_jet_of_contDiff (hξ : ContDiff ℝ 1 ξ) {R : ℝ}
+    (hR : ∀ s t, R ≤ |s| → ξ (s, t) = 0) : MemLp (jet ξ) 2 stripMeasure := by
   set K : Set (ℝ × ℝ) := Icc (-R) R ×ˢ Icc 0 1
   have hK : IsCompact K := isCompact_Icc.prod isCompact_Icc
   have hae : jet ξ =ᵐ[stripMeasure] K.indicator (jet ξ) := by
@@ -203,6 +207,11 @@ theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure :
   exact MemLp.of_bound (continuous_jet hξ).aestronglyMeasurable C
     ((ae_restrict_mem hK.measurableSet).mono hC)
 
+/-- The jet of a test section is square integrable on the strip. -/
+theorem memLp_jet (hξ : ξ ∈ testSection V) : MemLp (jet ξ) 2 stripMeasure := by
+  obtain ⟨hξ2, -, R, hR⟩ := mem_testSection_iff.1 hξ
+  exact memLp_jet_of_contDiff (hξ2.of_le (by norm_num)) hR
+
 variable (V) in
 /-- The `L²` jet `(ξ, ∂s ξ, ∂t ξ)` of a test section, as a linear map into
 `L²(ℝ × [0, 1], V × V × V)`. -/
@@ -210,7 +219,9 @@ def jetₗ : testSection V →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure where
   toFun ξ := (memLp_jet ξ.2).toLp (jet (ξ : ℝ × ℝ → V))
   map_add' ξ η := by
     simp only [Submodule.coe_add, ← MemLp.toLp_add]
-    exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by rw [jet_add ξ.2 η.2])
+    exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by
+      rw [jet_add ((mem_testSection_iff.1 ξ.2).1.differentiable (by norm_num))
+        ((mem_testSection_iff.1 η.2).1.differentiable (by norm_num))])
   map_smul' c ξ := by
     simp only [SetLike.val_smul, RingHom.id_apply, ← MemLp.toLp_const_smul]
     exact MemLp.toLp_congr _ _ (Eventually.of_forall fun z ↦ by rw [jet_smul])
@@ -492,9 +503,10 @@ private theorem cutoff_estimates (T : ℝ) : ∃ (χ : ℝ × ℝ → ℝ) (A : 
   refine ⟨χ, 2 * (C + 2), hχT, hχB, fun ξ hξ ↦ ?_⟩
   set P : Set (ℝ × ℝ) := univ ×ˢ Icc (-1 : ℝ) 2
   have hP : MeasurableSet P := MeasurableSet.univ.prod measurableSet_Icc
-  have hjm : AEStronglyMeasurable (jet ξ) volume := (continuous_jet hξ).aestronglyMeasurable
-  have hper := TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le hjm (jet_add_one hξ)
   have hξ2 := (mem_testSection_iff.1 hξ).1
+  have hjm : AEStronglyMeasurable (jet ξ) volume :=
+    (continuous_jet (hξ2.of_le (by norm_num))).aestronglyMeasurable
+  have hper := TauCeti.eLpNorm_restrict_univ_prod_Icc_neg_one_two_le hjm (jet_add_one hξ)
   have hf : ContDiff ℝ 2 (fun z ↦ χ z • ξ z) := hχ.smul hξ2
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
   refine ⟨hf, ?_, ?_⟩
