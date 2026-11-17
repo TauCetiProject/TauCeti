@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Bimodule
 public import TauCeti.AlgebraicTopology.DGLocalSystem.Path.Homotopy
+public import TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Augmentation
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Module
 public import TauCeti.Algebra.Homology.DG.Module.Right.QuasiIso
 public import TauCeti.Algebra.Homology.DG.Module.TensorProduct.Differential
@@ -26,10 +27,11 @@ Otherwise, `C_*(P_{a→b} B)` is a homotopy retract of the free module of rank o
 **left** module over `C_*(Ω_a B)`. Fix a Moore path `δ` from `a` to `b`. Appending its reversal,
 `P_{a→b} B → Ω_a B`, commutes with the loops at `a` acting in front, so on chains it is a map
 `ρ` of left modules into `C_*(Ω_a B)` (`TauCeti.pathChainToLoopChain_smul`). Acting on the
-`0`-chain `[δ]` of `δ` goes back, and the composite `c ↦ ρ(c) · [δ]` is the push-forward of
-appending `δ⁻¹` and then `δ` (`TauCeti.pathChainToLoopChain_smul_pathChainPoint`), which the
-growing retracing suffix joins to the identity through a homotopy that is graded linear for the
-left action (`TauCeti.pathChainAppendHomotopy`). Tensoring with a right module `M` gives the maps
+`0`-chain `[δ]` of `δ` (`TauCeti.cubicalChainModulePoint`) goes back, and the composite
+`c ↦ ρ(c) · [δ]` is the push-forward of appending `δ⁻¹` and then `δ`
+(`TauCeti.pathChainToLoopChain_smul_cubicalChainModulePoint`), which the growing retracing suffix
+joins to the identity through a homotopy that is graded linear for the left action
+(`TauCeti.pathChainAppendHomotopy`). Tensoring with a right module `M` gives the maps
 `m ⊗ c ↦ m · ρ(c)` from `M ⊗ C_*(P_{a→b} B)` to `M` and `m ↦ m ⊗ [δ]` back, and the homotopy
 `m ⊗ c ↦ (-1) ^ |m| m ⊗ K c` between their composite and the identity. These maps are not linear
 over the loops at `b`, but they are natural in `M`, which is all that is needed to transfer
@@ -46,7 +48,7 @@ quasi-isomorphisms (`TauCeti.DGRightModuleHom.isQuasiIso_of_homotopyRetract`).
 ## Main results
 
 * `TauCeti.pathChainToLoopChain_smul`: `ρ` is a map of left modules over `C_*(Ω_a B)`.
-* `TauCeti.pathChainToLoopChain_smul_pathChainPoint`: `ρ(c) · [δ]` is the push-forward of
+* `TauCeti.pathChainToLoopChain_smul_cubicalChainModulePoint`: `ρ(c) · [δ]` is the push-forward of
   appending `δ⁻¹` and then `δ`.
 * `TauCeti.tensorPathChainPoint_tensorPathChainAct`: the composite of `m ⊗ c ↦ m · ρ(c)` and
   the map back is homotopic to the identity.
@@ -133,36 +135,11 @@ theorem pathChainToLoopChain_differential (δ : MoorePathBetween B a b)
   simp only [pathChainToLoopChain, LinearMap.comp_apply, LinearEquiv.coe_coe,
     cubicalChainModuleEquiv_differential, cubicalChainDifferential_cubicalChainSumMap]
 
-variable (R) in
-/-- The `0`-chain of a path. -/
-def pathChainPoint (δ : MoorePathBetween B a b) :
-    cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R :=
-  cubicalChainModuleLof _ _ R 0 (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ))
-
-/-- The `0`-chain of a path is the class of the constant `0`-cube at the path. -/
-theorem pathChainPoint_def (δ : MoorePathBetween B a b) :
-    pathChainPoint R δ =
-      cubicalChainModuleLof (MoorePathBetween B a b) (MooreLoopSpace B b) R 0
-        (NormalizedCubicalChain.ofCube (MoorePathBetween B a b) R (SingularCube.point δ)) :=
-  (rfl)
-
-/-- The `0`-chain of a path has degree `0`. -/
-theorem pathChainPoint_mem (δ : MoorePathBetween B a b) :
-    pathChainPoint R δ ∈
-      cubicalChainModuleGrading (MoorePathBetween B a b) (MooreLoopSpace B b) R 0 :=
-  mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨0, _, by simp, rfl⟩)
-
-/-- The `0`-chain of a path is a cycle. -/
-@[simp]
-theorem cubicalChainModuleDifferential_pathChainPoint (δ : MoorePathBetween B a b) :
-    cubicalChainModuleDifferential _ _ R (pathChainPoint R δ) = 0 :=
-  cubicalChainModuleDifferential_lof_zero _
-
 /-- Acting on the `0`-chain of `δ` after `pathChainToLoopChain` is the push-forward of appending
 `δ⁻¹` and then `δ`. -/
-theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
+theorem pathChainToLoopChain_smul_cubicalChainModulePoint (δ : MoorePathBetween B a b)
     (x : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R) :
-    pathChainToLoopChain R δ x • pathChainPoint R δ =
+    pathChainToLoopChain R δ x • cubicalChainModulePoint _ _ R δ =
       cubicalChainModuleLinearMap R
         ((MoorePathBetween.append δ a).comp (MoorePathBetween.append δ.symm a)) x := by
   induction x using cubicalChainModule.induction_on with
@@ -173,7 +150,7 @@ theorem pathChainToLoopChain_smul_pathChainPoint (δ : MoorePathBetween B a b)
           (MoorePathBetween.loopAppendHomotopyEquiv δ).symm.toFun =
         (MoorePathBetween.append δ a).comp (MoorePathBetween.append δ.symm a) :=
       ContinuousMap.ext fun x ↦ MoorePathBetween.ext (by simp [MoorePath.trans_assoc])
-    rw [pathChainToLoopChain_lof, pathChainPoint, lof_smul_cubicalChainModuleLof,
+    rw [pathChainToLoopChain_lof, cubicalChainModulePoint_def, lof_smul_cubicalChainModuleLof,
       cubicalChainModuleLinearMap_lof, ← cubicalChainModuleLof_cast (Nat.add_zero q),
       NormalizedCubicalChain.leftAct_def, ← NormalizedCubicalChain.map_cast,
       NormalizedCubicalChain.crossProduct_point_right, ← h, NormalizedCubicalChain.map_comp,
@@ -225,12 +202,13 @@ theorem tensorPathChainAct_tmul (m : M)
 
 /-- The map `M → M ⊗ C_*(P_{a→b} B)`, `m ↦ m ⊗ [δ]`, tensoring with the `0`-chain of `δ`. -/
 def tensorPathChainPoint : M →ₗ[R] tensorBimoduleObj M (pathChainBimodule B a b R) :=
-  (BalancedTensorProduct.mk R (loopChainAlgebra B a R)).flip (pathChainPoint R δ)
+  (BalancedTensorProduct.mk R (loopChainAlgebra B a R)).flip (cubicalChainModulePoint _ _ R δ)
 
 /-- The map back is `m ↦ m ⊗ [δ]`. -/
 @[simp]
 theorem tensorPathChainPoint_apply (m : M) :
-    tensorPathChainPoint M δ m = tmul R (loopChainAlgebra B a R) m (pathChainPoint R δ) := by
+    tensorPathChainPoint M δ m =
+      tmul R (loopChainAlgebra B a R) m (cubicalChainModulePoint _ _ R δ) := by
   rw [tensorPathChainPoint, LinearMap.flip_apply, mk_apply]
 
 variable {M}
@@ -280,7 +258,8 @@ theorem differential_tensorPathChainPoint (m : M) :
     (tensorBimoduleObj M (pathChainBimodule B a b R)).differential (tensorPathChainPoint M δ m) =
       tensorPathChainPoint M δ (M.differential m) := by
   rw [tensorPathChainPoint_apply, BalancedTensorProduct.differential_tmul,
-    cubicalChainModuleDifferential_pathChainPoint, tmul_zero, add_zero, tensorPathChainPoint_apply]
+    cubicalChainModuleDifferential_cubicalChainModulePoint, tmul_zero, add_zero,
+    tensorPathChainPoint_apply]
 
 /-- The map `m ⊗ c ↦ m · ρ(c)` is natural in `M`. -/
 theorem tensorPathChainAct_tensorBimoduleMap
@@ -356,7 +335,7 @@ theorem tensorPathChainPoint_tensorPathChainAct
       (fun hm x ↦ tensorBimoduleObj_differential_tmul hm x) m c
     rw [LinearMap.id_apply, sub_eq_iff_eq_add'] at h
     rw [tensorPathChainAct_tmul, tensorPathChainPoint_apply, balance,
-      pathChainToLoopChain_smul_pathChainPoint, h, add_assoc, tensorPathChainHomotopy]
+      pathChainToLoopChain_smul_cubicalChainModulePoint, h, add_assoc, tensorPathChainHomotopy]
 
 /-- **Changing the basepoint preserves quasi-isomorphisms.** For every quasi-isomorphism
 `f : M → N` of DG local systems at `a`, the tensored morphism
