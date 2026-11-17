@@ -170,7 +170,8 @@ theorem exists_algebraMap_adicCompletionIntegers_iff (v : HeightOneSpectrum R) (
   have hLoc : (∃ r : Localization.AtPrime v.asIdeal,
       algebraMap (Localization.AtPrime v.asIdeal) K r = x) ↔ v.valuation K x ≤ 1 :=
     ⟨fun ⟨r, hr⟩ ↦ hr ▸ hvLoc.map_le_one r, fun h ↦ hvLoc.exists_of_le_one h⟩
-  rw [hComp, hLoc, v.valued_algebraMap_adicCompletion]
+  rw [hComp, hLoc, v.algebraMap_adicCompletion (K := K), Function.comp_apply,
+    Algebra.algebraMap_self_apply, v.valuedAdicCompletion_eq_valuation']
 
 end IsDedekindDomain.HeightOneSpectrum
 

@@ -250,8 +250,10 @@ theorem finiteKummerRatio_eq {W₁ W₂ : WeierstrassCurve F} [W₁.IsElliptic] 
           (valuation (u.adicCompletion F)) := by
     rw [finiteKummerRatio_def]
     exact hk
-  rw [← hψ_ratio, hk', u.valued_algebraMap_adicCompletion, ← baseChange_smul_baseChange,
-    ← baseChange_smul_baseChange, tamagawaNumber_smul, tamagawaNumber_smul]
+  rw [← hψ_ratio, hk', u.algebraMap_adicCompletion (K := F), Function.comp_apply,
+    Algebra.algebraMap_self_apply, u.valuedAdicCompletion_eq_valuation',
+    ← baseChange_smul_baseChange, ← baseChange_smul_baseChange,
+    tamagawaNumber_smul, tamagawaNumber_smul]
 
 /-- **The finite local Kummer ratio on locally minimal equations.** When `W₁` and `W₂` are already
 minimal over `A_(u)`, no scaling-factor correction `u₂ / u₁` appears. -/

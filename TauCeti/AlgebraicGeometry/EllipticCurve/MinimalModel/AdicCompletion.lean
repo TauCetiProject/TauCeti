@@ -99,30 +99,25 @@ instance isIntegral_adicCompletionIntegers_of_isIntegral (W : WeierstrassCurve F
     [IsIntegral S_u W] : IsIntegral O_u (W.baseChange F_u) :=
   (isIntegral_adicCompletionIntegers_baseChange_iff u W).mpr inferInstance
 
-/-- Since `F` is dense in `F_u`, every element of `F_u` can be approximated by an element of `F`
-within the valuation of any nonzero `a : F_u`. -/
-private theorem exists_valued_algebraMap_sub_lt (x : F_u) {a : F_u} (ha : a ≠ 0) :
-    ∃ y : F, Valued.v (algebraMap F F_u y - x) < Valued.v a := by
-  have hva : (Valued.v : Valuation F_u _).restrict a ≠ 0 := (Valuation.ne_zero_iff _).mpr ha
-  have hx : {z : F_u | (Valued.v : Valuation F_u _).restrict (z - x) <
-      (Units.mk0 _ hva).1} ∈ nhds x := Valued.mem_nhds.mpr ⟨Units.mk0 _ hva, fun _ h ↦ h⟩
-  obtain ⟨y, hy⟩ := (u.denseRange_algebraMap (K := F)).mem_nhds hx
-  exact ⟨y, (Valued.v : Valuation F_u _).restrict_lt_iff.mp hy⟩
-
 /-- Every change of variables `D` over `F_u` is congruent on the left, modulo changes of variables
 defined over `O_u`, to the base change of some `C : VariableChange F`. -/
 private theorem exists_variableChange_baseChange_mul_inv (D : VariableChange F_u) :
     ∃ (C : VariableChange F) (B : VariableChange O_u),
       B.baseChange F_u = C.baseChange F_u * D⁻¹ := by
+  have approx (x : F_u) {a : F_u} (ha : a ≠ 0) :
+      ∃ y : F, Valued.v (algebraMap F F_u y - x) < Valued.v a := by
+    have hva : (Valued.v : Valuation F_u _).restrict a ≠ 0 := (Valuation.ne_zero_iff _).mpr ha
+    obtain ⟨y, hy⟩ := (u.denseRange_algebraMap (K := F)).mem_nhds
+      (Valued.mem_nhds.mpr ⟨Units.mk0 _ hva, fun _ h ↦ h⟩)
+    exact ⟨y, (Valued.v : Valuation F_u _).restrict_lt_iff.mp hy⟩
   have hDu_ne : Valued.v (D.u : F_u) ≠ 0 := (Valuation.ne_zero_iff _).mpr D.u.ne_zero
-  obtain ⟨cu, hcu⟩ := exists_valued_algebraMap_sub_lt u D.u D.u.ne_zero
+  obtain ⟨cu, hcu⟩ := approx D.u D.u.ne_zero
   have hval_cu : Valued.v (algebraMap F F_u cu) = Valued.v (D.u : F_u) := by
     rw [← sub_add_cancel (algebraMap F F_u cu) D.u, Valuation.map_add_eq_of_lt_right _ hcu]
   have hcu0 : cu ≠ 0 := by rintro rfl; simp [hDu_ne.symm] at hval_cu
-  obtain ⟨cr, hcr⟩ := exists_valued_algebraMap_sub_lt u D.r (pow_ne_zero 2 D.u.ne_zero)
-  obtain ⟨cs, hcs⟩ := exists_valued_algebraMap_sub_lt u D.s D.u.ne_zero
-  obtain ⟨ct, hct⟩ := exists_valued_algebraMap_sub_lt u
-    (D.t + D.s * (algebraMap F F_u cr - D.r)) (pow_ne_zero 3 D.u.ne_zero)
+  obtain ⟨cr, hcr⟩ := approx D.r (pow_ne_zero 2 D.u.ne_zero)
+  obtain ⟨cs, hcs⟩ := approx D.s D.u.ne_zero
+  obtain ⟨ct, hct⟩ := approx (D.t + D.s * (algebraMap F F_u cr - D.r)) (pow_ne_zero 3 D.u.ne_zero)
   let C : VariableChange F := ⟨Units.mk0 cu hcu0, cr, cs, ct⟩
   refine ⟨C, VariableChange.exists_baseChange_eq_mul_inv_of_valuation_sub_le
     (adicCompletionIntegers.integers F u) (C.baseChange F_u) D ?_ ?_ ?_ ?_⟩
@@ -131,8 +126,7 @@ private theorem exists_variableChange_baseChange_mul_inv (D : VariableChange F_u
   · simpa only [C, VariableChange.baseChange, VariableChange.map_r, map_pow] using hcr.le
   · simpa only [C, VariableChange.baseChange, VariableChange.map_s] using hcs.le
   · simp only [C, VariableChange.baseChange, VariableChange.map_r, VariableChange.map_t]
-    rw [show algebraMap F F_u ct - D.t - D.s * (algebraMap F F_u cr - D.r) =
-      algebraMap F F_u ct - (D.t + D.s * (algebraMap F F_u cr - D.r)) by ring]
+    rw [sub_sub]
     exact (hct.trans_eq (map_pow _ _ _)).le
 
 /-- **Minimality over the completion agrees with minimality over the localisation**: `W` is minimal
@@ -149,11 +143,12 @@ theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve F)
     have hIC : IsIntegral S_u (C • W) := hC
     rw [one_smul, ← Subtype.coe_le_coe, valuation_Δ_aux_eq_of_isIntegral S_u (C • W),
       valuation_Δ_aux_eq_of_isIntegral S_u W, u.valuation_maximalIdeal_localizationAtPrime,
-      u.valuation_maximalIdeal_localizationAtPrime, ← u.valued_algebraMap_adicCompletion,
-      ← u.valued_algebraMap_adicCompletion]
+      u.valuation_maximalIdeal_localizationAtPrime]
     have hle := valuation_Δ_le_of_isMinimal_smul O_u (C.baseChange F_u)
       (baseChange_smul_baseChange F_u C W)
-    simpa only [u.valuation_maximalIdeal_adicCompletionIntegers, baseChange, map_Δ] using hle
+    simpa only [u.valuation_maximalIdeal_adicCompletionIntegers, baseChange, map_Δ,
+      u.algebraMap_adicCompletion (K := F), Function.comp_apply, Algebra.algebraMap_self_apply,
+      u.valuedAdicCompletion_eq_valuation'] using hle
   · intro hm
     have hIW : IsIntegral O_u (W.baseChange F_u) := inferInstance
     refine ⟨⟨by simpa only [one_smul] using hIW, fun {D} hD _ ↦ ?_⟩⟩
@@ -175,7 +170,8 @@ theorem isMinimal_adicCompletionIntegers_baseChange_iff (W : WeierstrassCurve F)
       rw [hCW, valuation_Δ_baseChange_smul]
     rw [← hvalB]
     simp only [u.valuation_maximalIdeal_adicCompletionIntegers, baseChange, map_Δ,
-      u.valued_algebraMap_adicCompletion, ← u.valuation_maximalIdeal_localizationAtPrime]
+      u.algebraMap_adicCompletion (K := F), Function.comp_apply, Algebra.algebraMap_self_apply,
+      u.valuedAdicCompletion_eq_valuation', ← u.valuation_maximalIdeal_localizationAtPrime]
     exact valuation_Δ_le_of_isMinimal_smul S_u C rfl
 
 /-- A Weierstrass equation minimal at `A_(u)` has base change minimal over `O_u`. -/
