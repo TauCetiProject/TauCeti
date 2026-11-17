@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.Prod
 import TauCeti.LinearAlgebra.FiniteBilinearModule.Dyadic.GaussSum
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.GaussSum
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.LegendreSymbol.ZModChar

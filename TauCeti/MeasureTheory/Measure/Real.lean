@@ -17,7 +17,8 @@ and nothing else, so it determines a measure on the line as soon as the measure 
 signs apart. For a reflection-invariant measure, the pushforward under squaring is a complete
 invariant: such a measure is determined by its mass on subsets of `(0, ∞)` and on `{0}`, and the
 squared pushforward records both. For a measure carried by the nonnegative
-half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the measure outright.
+half-line, squaring and `Real.sqrt` induce mutually inverse pushforwards, so either pushforward
+determines the measure outright.
 
 ## Main results
 
@@ -34,6 +35,8 @@ half-line, squaring is undone by `Real.sqrt`, so the pushforward determines the 
   measures with the same pushforward after squaring are equal.
 * `MeasureTheory.Measure.map_sqrt_map_sq` — on the nonnegative half-line, taking square roots
   undoes squaring.
+* `MeasureTheory.Measure.map_sq_map_sqrt` — on the nonnegative half-line, squaring undoes
+  taking square roots.
 -/
 
 public section
@@ -153,12 +156,22 @@ theorem eq_of_map_sq_eq_of_map_neg_eq_self (μ ν : Measure ℝ)
 
 /-- **Square roots undo squaring** for a measure carried by the nonnegative half-line: the
 pushforward of `μ` under `x ↦ x ^ 2` returns to `μ` under `Real.sqrt`. -/
+@[simp]
 theorem map_sqrt_map_sq (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
     (μ.map fun t : ℝ ↦ t ^ 2).map Real.sqrt = μ := by
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
   refine (Measure.map_congr ?_).trans Measure.map_id
   filter_upwards [hμ] with t ht
   simpa using Real.sqrt_sq ht
+
+/-- **Squaring undoes square roots** for a measure carried by the nonnegative half-line. -/
+@[simp]
+theorem map_sq_map_sqrt (μ : Measure ℝ) (hμ : ∀ᵐ t ∂μ, 0 ≤ t) :
+    (μ.map Real.sqrt).map (fun t : ℝ ↦ t ^ 2) = μ := by
+  rw [Measure.map_map (by fun_prop) (by fun_prop)]
+  refine (Measure.map_congr ?_).trans Measure.map_id
+  filter_upwards [hμ] with t ht
+  exact Real.sq_sqrt ht
 
 end MeasureTheory.Measure
 

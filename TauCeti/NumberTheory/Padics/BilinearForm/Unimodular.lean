@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.BilinearForm.Isometry
 import TauCeti.LinearAlgebra.BilinearForm.Odd.LocalRing
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 import TauCeti.LinearAlgebra.BilinearForm.Prod
+import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.PerfectPairing.Basis
 import TauCeti.NumberTheory.Padics.BilinearForm.OddUnimodular
 import TauCeti.NumberTheory.Padics.DyadicUnits
