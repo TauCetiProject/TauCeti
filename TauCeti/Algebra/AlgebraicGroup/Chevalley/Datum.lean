@@ -184,6 +184,16 @@ theorem coordinateWeight_def (j : Fin D.dim) :
     D.coordinateWeight j = D.weightLatticeBasis.repr ⟨D.weight j, D.weight_mem_weightLattice j⟩ :=
   (rfl)
 
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
+coordinate weights agree with the weights themselves. -/
+theorem coordinateWeight_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1) :
+    D.coordinateWeight = D.weight := by
+  funext j i
+  have h := congrFun (D.sum_coordinateWeight_smul j) i
+  simpa only [Finset.sum_apply, Pi.smul_apply, hb, Pi.single_apply, smul_eq_mul, mul_ite,
+    mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using h
+
 /-- **The coordinate weights span the character lattice.** The weights span `Λ(D)` by definition,
 and reading `Λ(D)` in the chosen basis is a linear isomorphism onto `Fin t.rank → ℤ`. -/
 theorem span_range_coordinateWeight_eq_top :
@@ -260,6 +270,17 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
       (t.simplyConnectedRootDatum ht).root γ := by
   have h := congrArg Subtype.val (D.weightLatticeBasis.sum_repr ⟨_, D.root_mem_weightLattice γ⟩)
   rwa [Submodule.coe_sum] at h
+
+/-- When the chosen basis of the weight lattice is the standard basis of fundamental weights, the
+coordinate roots agree with the roots of the pinned root datum. -/
+theorem coordinateRoot_eq_of_coe_weightLatticeBasis
+    (hb : ∀ i, (D.weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1)
+    (γ : Fin t.numRoots) :
+    D.coordinateRoot γ = (t.simplyConnectedRootDatum ht).root γ := by
+  ext i
+  have h := congrFun (D.sum_coordinateRoot_smul γ) i
+  simpa only [Finset.sum_apply, Pi.smul_apply, hb, Pi.single_apply, smul_eq_mul, mul_ite,
+    mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte] using h
 
 /-! ## Nilpotence of the root generators -/
 
