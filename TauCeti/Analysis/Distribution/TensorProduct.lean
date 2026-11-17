@@ -11,7 +11,6 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.IteratedFDeriv.FDerivApply
 import TauCeti.Analysis.Distribution.Order
 import TauCeti.Analysis.Distribution.Support
-import TauCeti.Analysis.Distribution.TestFunction.Basic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
 
