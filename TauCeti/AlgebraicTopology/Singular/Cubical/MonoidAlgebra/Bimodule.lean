@@ -244,10 +244,7 @@ omit [ContinuousMul G] in
 /-- The unit acts trivially on the module from the left. -/
 theorem cubicalChainLeftActBilin_one (m : cubicalChainModule Y H R) :
     cubicalChainLeftActBilin G Y H R 1 m = m := by
-  have h1 : (1 : normalizedCubicalChainAlgebra G R) = cubicalChainLof G R 0 (one G R) := by
-    rw [DirectSum.lof_eq_of]
-    rfl
-  rw [h1]
+  rw [← cubicalChainLof_one]
   induction m using cubicalChainModule.induction_on with
   | lof n c =>
     rw [cubicalChainLeftActBilin_lof_lof, ← cubicalChainModuleLof_cast (Nat.zero_add n),

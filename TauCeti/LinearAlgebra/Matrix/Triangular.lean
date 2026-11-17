@@ -6,6 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import Mathlib.LinearAlgebra.Matrix.Block
+public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.Order.Interval.Set.OrdConnected
 public import Mathlib.RingTheory.Nilpotent.Defs
 import Mathlib.LinearAlgebra.Matrix.Reindex
@@ -45,6 +46,9 @@ Lie-algebra theory.
   diagonal are determined by their product with their transpose.
 * `Matrix.IsLowerTriangular.submatrix_castLE_mul_transpose` — a leading principal submatrix of a
   lower-triangular Gram matrix is the Gram matrix of the corresponding submatrix.
+* `Matrix.mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular` — an entry of a product
+  of lower- and upper-triangular matrices is a sum over the columns at most both indices.
+* `Matrix.IsLowerTriangular.mul_transpose_apply_eq_sum_Iic` — the Gram-matrix specialization.
 * `Matrix.IsUpperTriangular.submatrix_mul` and `submatrix_pow` — restriction to order-connected
   index sets preserves multiplication and powers.
 * `Matrix.pow_apply_diag_of_isUpperTriangular` — the diagonal of a power of an upper-triangular
@@ -261,6 +265,28 @@ theorem mul_apply_diag_of_isLowerTriangular (hA : A.IsLowerTriangular)
     · rw [hB hki, mul_zero]
     · rw [hA hik, zero_mul]
   · exact fun h ↦ absurd (Finset.mem_univ i) h
+
+/-- An entry of a product of lower- and upper-triangular matrices only involves the indices
+`k ≤ min i j`. -/
+theorem mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular
+    {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
+    {L U : Matrix ι ι R} (hL : L.IsLowerTriangular) (hU : U.IsUpperTriangular) (i j : ι) :
+    (L * U) i j = ∑ k ∈ Finset.Iic (min i j), L i k * U k j := by
+  rw [Matrix.mul_apply]
+  symm
+  apply Finset.sum_subset (Finset.subset_univ _)
+  intro k _ hk
+  rcases min_lt_iff.mp (not_le.mp (Finset.mem_Iic.not.mp hk)) with h | h
+  · rw [hL h, zero_mul]
+  · rw [hU h, mul_zero]
+
+/-- An entry of `L * Lᵀ` for lower-triangular `L` only involves the columns `k ≤ min i j`. -/
+theorem IsLowerTriangular.mul_transpose_apply_eq_sum_Iic
+    {ι : Type*} [LinearOrder ι] [LocallyFiniteOrderBot ι] [Fintype ι]
+    {L : Matrix ι ι R} (hL : L.IsLowerTriangular) (i j : ι) :
+    (L * Lᵀ) i j = ∑ k ∈ Finset.Iic (min i j), L i k * L j k := by
+  apply mul_apply_eq_sum_Iic_of_isLowerTriangular_of_isUpperTriangular hL
+  exact fun _ _ h ↦ hL h
 
 /-- **The leading principal submatrix of a lower-triangular Gram matrix is a Gram matrix.** The
 first `q` rows of a lower-triangular matrix vanish outside their first `q` columns, so the leading
