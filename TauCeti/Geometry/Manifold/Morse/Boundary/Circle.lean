@@ -79,6 +79,17 @@ private noncomputable def minCrit (δ r : ℝ) (j : Fin 2) :
     criticalPoints 𝓘(ℝ) (circleCosTwo δ r) :=
   ⟨circleCosTwoMin r j, circleCosTwoMin_mem_criticalPoints δ r j⟩
 
+/-- The other maximum `p_{j + 1}` is not `p_j`. -/
+private theorem maxCrit_add_one_ne (δ r : ℝ) (j : Fin 2) : maxCrit δ r (j + 1) ≠ maxCrit δ r j :=
+  fun he ↦ by
+    have := congrArg Subtype.val he
+    fin_cases j <;> simp [maxCrit] at this
+
+/-- For `δ > 0` the maxima have Morse index `1`. -/
+private theorem manifoldMorseIndex_maxCrit (hδ : 0 < δ) (j : Fin 2) :
+    manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) (maxCrit δ r j) = 1 :=
+  manifoldMorseIndex_circleCosTwoMax hδ r j
+
 /-- Two distinct critical points of index `0` are the two minima, so every critical point of
 index `0` is one of them. -/
 private theorem eq_or_eq_of_manifoldMorseIndex_eq_zero (hδ : 0 < δ)
@@ -120,12 +131,9 @@ theorem morseBoundary_single_apply_circleCosTwo (hδ : 0 < δ)
       if manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q = 0 then 1 else 0 := by
   -- `p` is a maximum `p_j`; the other maximum is `p_{j + 1}`.
   obtain ⟨j, hj⟩ := exists_eq_circleCosTwoMax_of_manifoldMorseIndex_eq_one hδ r p.2 hp
+  obtain rfl : p = maxCrit δ r j := Subtype.ext hj
   obtain ⟨q₀, q₁, hne, hq₀, hq₁, hd⟩ := h.exists_ne_morseBoundary_single_of_finrank_eq_one hf
-    (finrank_self ℝ) hp (c := maxCrit δ r (j + 1))
-    (fun he ↦ by
-      have := circleCosTwoMax_injective r ((congrArg Subtype.val he).trans hj)
-      fin_cases j <;> simp at this)
-    (by simp [maxCrit, manifoldMorseIndex_circleCosTwoMax hδ])
+    (finrank_self ℝ) hp (maxCrit_add_one_ne δ r j) (by simp [manifoldMorseIndex_maxCrit hδ])
   rw [hd, Finsupp.add_apply]
   by_cases hq : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q = 0
   · rw [ite_eq_left_iff.2 fun h ↦ (h hq).elim]
@@ -161,12 +169,8 @@ theorem exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq (h�
           hX.signedMorseBoundaryCoeff 𝔬 (maxCrit δ r j) (minCrit δ r 1) = -e := by
     obtain ⟨Q₀, Q₁, hne, hQ₀, hQ₁, hsign, hrel, -⟩ :=
       hX.exists_ne_signedMorseBoundaryCoeff_of_finrank_eq_one hf (finrank_self ℝ) 𝔬
-        (p := maxCrit δ r j) (c := maxCrit δ r (j + 1))
-        (manifoldMorseIndex_circleCosTwoMax hδ r j)
-        (fun he ↦ by
-          have := circleCosTwoMax_injective r (congrArg Subtype.val he)
-          fin_cases j <;> simp at this)
-        (by simp [maxCrit, manifoldMorseIndex_circleCosTwoMax hδ])
+        (manifoldMorseIndex_maxCrit hδ j) (maxCrit_add_one_ne δ r j)
+        (by simp [manifoldMorseIndex_maxCrit hδ])
     have haug := 𝔬.augmentationSign_eq_one_or_eq_neg_one hQ₀
     set e := 𝔬.augmentationSign Q₀ * hX.signedMorseBoundaryCoeff 𝔬 (maxCrit δ r j) Q₀
     have he : e = 1 ∨ e = -1 := by
@@ -174,8 +178,7 @@ theorem exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq (h�
     have hmin (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) (minCrit δ r i) = 0 :=
       manifoldMorseIndex_circleCosTwoMin hδ r i
     have hm01 : minCrit δ r 0 ≠ minCrit δ r 1 := fun he ↦ by
-      have := circleCosTwoMin_injective r (congrArg Subtype.val he)
-      simp at this
+      simpa [minCrit] using congrArg Subtype.val he
     -- The labels of `Q₀` and `Q₁` are `0` and `1` in some order.
     rcases eq_or_eq_of_manifoldMorseIndex_eq_zero hδ hne hQ₀ hQ₁ (hmin 0) with h0 | h0
     · rcases eq_or_eq_of_manifoldMorseIndex_eq_zero hδ hne hQ₀ hQ₁ (hmin 1) with h1 | h1

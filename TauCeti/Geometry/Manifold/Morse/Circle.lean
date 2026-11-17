@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Algebra.AddCircle
 import TauCeti.Analysis.Calculus.Morse.OneDimensional
 import TauCeti.Topology.Circle.AddCircle
 
@@ -35,6 +36,8 @@ second derivative `-4 δ cos (2 (y - r))`. So the critical points are the angles
 * `TauCeti.circleCosTwo`: the function `θ ↦ δ cos (2 (θ - r))` on `AddCircle (2 * π)`.
 * `TauCeti.circleCosTwoMax`, `TauCeti.circleCosTwoMin`: the angles `r + j π` and
   `r + π / 2 + j π`.
+* `TauCeti.circleCosTwoMax_inj`, `TauCeti.circleCosTwoMin_inj`,
+  `TauCeti.circleCosTwoMax_ne_circleCosTwoMin`: the four labelled angles are distinct.
 * `TauCeti.isMorse_circleCosTwo`: for `δ ≠ 0` it is a Morse function.
 * `TauCeti.mem_criticalPoints_circleCosTwo_iff_exists`: for `δ ≠ 0` its critical points are the
   two maxima and the two minima.
@@ -101,7 +104,7 @@ theorem circleCosTwoMin_def (r : ℝ) (j : Fin 2) :
 @[simp]
 theorem circleCosTwo_circleCosTwoMax (δ r : ℝ) (j : Fin 2) :
     circleCosTwo δ r (circleCosTwoMax r j) = δ := by
-  rw [circleCosTwoMax, circleCosTwo_coe,
+  rw [circleCosTwoMax_def, circleCosTwo_coe,
     show 2 * (r + (j : ℝ) * π - r) = ((j : ℕ) : ℝ) * (2 * π) by ring, Real.cos_nat_mul_two_pi,
     mul_one]
 
@@ -109,9 +112,16 @@ theorem circleCosTwo_circleCosTwoMax (δ r : ℝ) (j : Fin 2) :
 @[simp]
 theorem circleCosTwo_circleCosTwoMin (δ r : ℝ) (j : Fin 2) :
     circleCosTwo δ r (circleCosTwoMin r j) = -δ := by
-  rw [circleCosTwoMin, circleCosTwo_coe,
+  rw [circleCosTwoMin_def, circleCosTwo_coe,
     show 2 * (r + π / 2 + (j : ℝ) * π - r) = π + ((j : ℕ) : ℝ) * (2 * π) by ring,
     Real.cos_add_nat_mul_two_pi, Real.cos_pi, mul_neg_one]
+
+/-- A maximum is never a minimum: the function takes the values `1` and `-1` there for `δ = 1`. -/
+theorem circleCosTwoMax_ne_circleCosTwoMin (r : ℝ) (i j : Fin 2) :
+    circleCosTwoMax r i ≠ circleCosTwoMin r j := fun h ↦ by
+  have := circleCosTwo_circleCosTwoMin 1 r j
+  rw [← h, circleCosTwo_circleCosTwoMax] at this
+  norm_num at this
 
 /-- The angles `a` and `a + π` are different points of the circle. -/
 private theorem coe_add_pi_ne (a : ℝ) :
@@ -123,8 +133,8 @@ theorem circleCosTwoMax_injective (r : ℝ) : Injective (circleCosTwoMax r) := b
   intro i j hij
   fin_cases i <;> fin_cases j
   · rfl
-  · exact ((coe_add_pi_ne r) (by simpa [circleCosTwoMax] using hij.symm)).elim
-  · exact ((coe_add_pi_ne r) (by simpa [circleCosTwoMax] using hij)).elim
+  · exact ((coe_add_pi_ne r) (by simpa [circleCosTwoMax_def] using hij.symm)).elim
+  · exact ((coe_add_pi_ne r) (by simpa [circleCosTwoMax_def] using hij)).elim
   · rfl
 
 /-- The two minima are different. -/
@@ -132,9 +142,21 @@ theorem circleCosTwoMin_injective (r : ℝ) : Injective (circleCosTwoMin r) := b
   intro i j hij
   fin_cases i <;> fin_cases j
   · rfl
-  · exact ((coe_add_pi_ne (r + π / 2)) (by simpa [circleCosTwoMin] using hij.symm)).elim
-  · exact ((coe_add_pi_ne (r + π / 2)) (by simpa [circleCosTwoMin] using hij)).elim
+  · exact ((coe_add_pi_ne (r + π / 2)) (by simpa [circleCosTwoMin_def] using hij.symm)).elim
+  · exact ((coe_add_pi_ne (r + π / 2)) (by simpa [circleCosTwoMin_def] using hij)).elim
   · rfl
+
+/-- The two maxima are equal only if their labels are. -/
+@[simp]
+theorem circleCosTwoMax_inj (r : ℝ) {i j : Fin 2} :
+    circleCosTwoMax r i = circleCosTwoMax r j ↔ i = j :=
+  (circleCosTwoMax_injective r).eq_iff
+
+/-- The two minima are equal only if their labels are. -/
+@[simp]
+theorem circleCosTwoMin_inj (r : ℝ) {i j : Fin 2} :
+    circleCosTwoMin r i = circleCosTwoMin r j ↔ i = j :=
+  (circleCosTwoMin_injective r).eq_iff
 
 /-! ### The function in charts -/
 
@@ -233,16 +255,12 @@ private theorem manifoldMorseIndex_circleCosTwo_of_lift (δ r : ℝ) (x : AddCir
   rw [manifoldMorseIndex_def,
     morseIndex_congr_of_eventuallyEq (circleCosTwo_comp_extChartAt_symm_eventuallyEq δ r x)]
 
-/-- The class of `a + 2 k π` is the class of `a`. -/
-private theorem coe_add_int_mul_two_pi (a : ℝ) (k : ℤ) :
-    ((a + k * (2 * π) : ℝ) : AddCircle (2 * π)) = a := by
-  rw [coe_add, ← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero, add_zero]
-
 /-- The maxima `r + j π` are critical points. -/
 theorem circleCosTwoMax_mem_criticalPoints (δ r : ℝ) (j : Fin 2) :
     circleCosTwoMax r j ∈ criticalPoints 𝓘(ℝ) (circleCosTwo δ r) := by
   rw [mem_criticalPoints_circleCosTwo_iff_mul,
-    ← sin_two_eq_of_coe_eq (x := circleCosTwoMax r j) (y := r + j * π) rfl r,
+    ← sin_two_eq_of_coe_eq (x := circleCosTwoMax r j) (y := r + j * π)
+      (circleCosTwoMax_def r j).symm r,
     show 2 * (r + (j : ℝ) * π - r) = ((2 * (j : ℕ) : ℕ) : ℝ) * π by push_cast; ring,
     Real.sin_nat_mul_pi, mul_zero]
 
@@ -250,7 +268,8 @@ theorem circleCosTwoMax_mem_criticalPoints (δ r : ℝ) (j : Fin 2) :
 theorem circleCosTwoMin_mem_criticalPoints (δ r : ℝ) (j : Fin 2) :
     circleCosTwoMin r j ∈ criticalPoints 𝓘(ℝ) (circleCosTwo δ r) := by
   rw [mem_criticalPoints_circleCosTwo_iff_mul,
-    ← sin_two_eq_of_coe_eq (x := circleCosTwoMin r j) (y := r + π / 2 + j * π) rfl r,
+    ← sin_two_eq_of_coe_eq (x := circleCosTwoMin r j) (y := r + π / 2 + j * π)
+      (circleCosTwoMin_def r j).symm r,
     show 2 * (r + π / 2 + (j : ℝ) * π - r) = ((2 * (j : ℕ) + 1 : ℕ) : ℝ) * π by push_cast; ring,
     Real.sin_nat_mul_pi, mul_zero]
 
@@ -268,7 +287,7 @@ theorem mem_criticalPoints_circleCosTwo_iff_exists {δ : ℝ} (hδ : δ ≠ 0) (
       rw [sin_two_eq_of_coe_eq hy r]
       exact (mem_criticalPoints_circleCosTwo_iff hδ r).1 hx
     have hlift (a : ℝ) (n : ℤ) (h : y = a + n * (2 * π)) : x = (a : AddCircle (2 * π)) := by
-      rw [← hy, h, coe_add_int_mul_two_pi]
+      rw [← hy, h, coe_add_int_mul_period]
     -- Write `2 (y - r) = k π` with `k = 4 n + l` and `l ∈ {0, 1, 2, 3}`.
     obtain ⟨k, hk⟩ := Real.sin_eq_zero_iff.1 hsin
     obtain ⟨m, rfl | rfl⟩ := Int.even_or_odd' k <;> obtain ⟨n, rfl | rfl⟩ := Int.even_or_odd' m <;>
@@ -295,7 +314,8 @@ theorem manifoldMorseIndex_circleCosTwoMax {δ : ℝ} (hδ : 0 < δ) (r : ℝ) (
   rw [manifoldMorseIndex_circleCosTwo_of_lift]
   refine morseIndex_real_of_neg ?_
   rw [iteratedDeriv_two_cos_two, cos_two_eq_of_coe_eq (coe_extChartAt_self _) r,
-    ← cos_two_eq_of_coe_eq (x := circleCosTwoMax r j) (y := r + j * π) rfl r,
+    ← cos_two_eq_of_coe_eq (x := circleCosTwoMax r j) (y := r + j * π)
+      (circleCosTwoMax_def r j).symm r,
     show 2 * (r + (j : ℝ) * π - r) = ((j : ℕ) : ℝ) * (2 * π) by ring,
     Real.cos_nat_mul_two_pi, mul_one]
   linarith
@@ -306,7 +326,8 @@ theorem manifoldMorseIndex_circleCosTwoMin {δ : ℝ} (hδ : 0 < δ) (r : ℝ) (
   rw [manifoldMorseIndex_circleCosTwo_of_lift]
   refine morseIndex_real_of_pos ?_
   rw [iteratedDeriv_two_cos_two, cos_two_eq_of_coe_eq (coe_extChartAt_self _) r,
-    ← cos_two_eq_of_coe_eq (x := circleCosTwoMin r j) (y := r + π / 2 + j * π) rfl r,
+    ← cos_two_eq_of_coe_eq (x := circleCosTwoMin r j) (y := r + π / 2 + j * π)
+      (circleCosTwoMin_def r j).symm r,
     show 2 * (r + π / 2 + (j : ℝ) * π - r) = π + ((j : ℕ) : ℝ) * (2 * π) by ring,
     Real.cos_add_nat_mul_two_pi, Real.cos_pi]
   linarith
