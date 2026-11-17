@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.RingTheory.Huber.CompleteRankOneBase
+import TauCeti.RingTheory.Huber.CompleteRankOneBase.Basic
 import TauCeti.RingTheory.Huber.Restricted.Adic
 import TauCeti.RingTheory.Huber.TopologicallyFiniteType.FinitePresentation
 import TauCeti.RingTheory.Huber.WeightedEval.Completion
