@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.End.Coordinate
 public import TauCeti.Analysis.Complex.RealChart
 
@@ -77,8 +78,8 @@ theorem endShift_endCenter (q : Puncture) (L : ℝ) : q.endShift L q.endCenter =
 /-- Translating by `0` is the identity. -/
 @[simp]
 theorem endShift_zero (q : Puncture) : q.endShift 0 = id := by
-  funext w
-  simp [endShift_apply]
+  rw [endShift, mul_zero, mul_zero, neg_zero, Real.exp_zero, Complex.ofReal_one,
+    AffineMap.homothety_one, AffineMap.coe_id]
 
 /-- The translations along an end compose additively. -/
 @[simp]
@@ -91,11 +92,9 @@ theorem endShift_endShift (q : Puncture) (L L' : ℝ) (w : ℂ) :
 /-- The translation is affine with the positive real derivative `e^{-2π (±L)}`. -/
 theorem hasDerivAt_endShift (q : Puncture) (L : ℝ) (w : ℂ) :
     HasDerivAt (q.endShift L) (Real.exp (-(2 * π * (q.endSign * L))) : ℂ) w := by
-  rw [endShift_eq]
-  have h := (((hasDerivAt_id w).sub_const q.endCenter).const_mul
-    (Real.exp (-(2 * π * (q.endSign * L))) : ℂ)).const_add q.endCenter
-  rw [mul_one] at h
-  exact h
+  simpa [endShift, AffineMap.homothety_linear] using
+    (AffineMap.homothety q.endCenter (Real.exp (-(2 * π * (q.endSign * L))) : ℂ)).hasDerivAt
+      (x := w)
 
 theorem endShift_injective (q : Puncture) (L : ℝ) : Function.Injective (q.endShift L) :=
   AffineMap.homothety_injective _ (Complex.ofReal_ne_zero.2 (Real.exp_pos _).ne')
