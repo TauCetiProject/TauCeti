@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors, Arend Mellendijk, OpenAI Codex
 -/
 module
 
-public import Mathlib.NumberTheory.Divisors
 public import Mathlib.Algebra.Squarefree.Basic
+public import Mathlib.NumberTheory.Divisors
+public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.Algebra.Order.Ring.Abs
 import Mathlib.Algebra.GCDMonoid.Nat
 import Mathlib.Tactic.Linarith
@@ -14,6 +15,12 @@ import Mathlib.Tactic.NormNum
 
 /-!
 # Divisor equivalences, factor pairs, and shifted-index sums
+
+For `N ≠ 0`, `Nat.divisorsEquiv` identifies `N.divisors` with `{M : ℕ // M ∣ N}`, and for `M ∣ N`,
+`Nat.mulDvdEquivDivDivisors` identifies `{d : ℕ // d * M ∣ N}` with `(N / M).divisors`, giving
+`Nat.card_mul_dvd` (`Nat.card {d : ℕ // d * M ∣ N} = (N / M).divisors.card`) and
+`Nat.card_sigma_prod_mul_dvd` for the cardinality of a dependent sum over `{M : ℕ // M ∣ N}`
+weighted by `{d : ℕ // d * M.1 ∣ N}`.
 
 For `N ≠ 0`, the divisors `d` of `N` with `a = N + d` (respectively `a = N - d`) are at most one,
 and such a divisor exists exactly when `a - N` divides `N` (respectively `N - a` divides `a`).
@@ -45,6 +52,84 @@ divisors of `d ^ M` divisible by `d` are pairwise disjoint as `d` ranges over th
 public section
 
 namespace Nat
+
+/-- For `N ≠ 0`, the finset `N.divisors` is equivalent to `{M : ℕ // M ∣ N}`. -/
+def divisorsEquiv (N : ℕ) [NeZero N] : ↥N.divisors ≃ {M : ℕ // M ∣ N} where
+  toFun M := ⟨M.1, dvd_of_mem_divisors M.2⟩
+  invFun M := ⟨M.1, mem_divisors.mpr ⟨M.2, NeZero.ne N⟩⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem divisorsEquiv_apply (N : ℕ) [NeZero N] (M : ↥N.divisors) :
+    divisorsEquiv N M = ⟨M.1, dvd_of_mem_divisors M.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem coe_divisorsEquiv_symm_apply (N : ℕ) [NeZero N] (M : {M : ℕ // M ∣ N}) :
+    ((divisorsEquiv N).symm M : ℕ) = M.1 :=
+  (rfl)
+
+/-- For `M ∣ N` with `N ≠ 0`, natural numbers `d` with `d * M ∣ N` correspond to elements of
+`(N / M).divisors`. -/
+def mulDvdEquivDivDivisors {M N : ℕ} [NeZero N] (hM : M ∣ N) :
+    {d : ℕ // d * M ∣ N} ≃ ↥(N / M).divisors :=
+  haveI : NeZero (N / M) := ⟨ne_zero_of_dvd_ne_zero (NeZero.ne N) (Nat.div_dvd_of_dvd hM)⟩
+  (Equiv.subtypeEquivRight fun d ↦ by rw [mul_comm, ← Nat.dvd_div_iff_mul_dvd hM]).trans
+    (divisorsEquiv (N / M)).symm
+
+@[simp]
+theorem coe_mulDvdEquivDivDivisors_apply {M N : ℕ} [NeZero N] (hM : M ∣ N)
+    (d : {d : ℕ // d * M ∣ N}) :
+    (mulDvdEquivDivDivisors hM d : ℕ) = d.1 :=
+  (rfl)
+
+@[simp]
+theorem coe_mulDvdEquivDivDivisors_symm_apply {M N : ℕ} [NeZero N] (hM : M ∣ N)
+    (d : ↥(N / M).divisors) :
+    ((mulDvdEquivDivDivisors hM).symm d : ℕ) = d.1 :=
+  (rfl)
+
+/-- For `N ≠ 0`, there are only finitely many `d : ℕ` with `d * M ∣ N`. -/
+instance instFiniteMulDvd {M N : ℕ} [NeZero N] : Finite {d : ℕ // d * M ∣ N} := by
+  by_cases hM : M ∣ N
+  · exact Finite.of_equiv _ (mulDvdEquivDivDivisors hM).symm
+  · have : IsEmpty {d : ℕ // d * M ∣ N} := ⟨fun d ↦ hM (dvd_of_mul_left_dvd d.2)⟩
+    infer_instance
+
+/-- For `M ∣ N`, the cardinality of `{d : ℕ // d * M ∣ N}` is `(N / M).divisors.card`. -/
+theorem card_mul_dvd {M N : ℕ} (hM : M ∣ N) :
+    Nat.card {d : ℕ // d * M ∣ N} = (N / M).divisors.card := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · have : Infinite {d : ℕ // d * M ∣ 0} :=
+      Infinite.of_injective (fun d : ℕ ↦ ⟨d, dvd_zero _⟩) fun _ _ h ↦ Subtype.mk.inj h
+    simp
+  · have : NeZero N := ⟨hN⟩
+    rw [Nat.card_congr (mulDvdEquivDivDivisors hM), Nat.card_eq_fintype_card, Fintype.card_coe]
+
+/-- For a family `α` of finite types indexed by divisors `M ∣ N`, the cardinality of
+`Σ M : {M : ℕ // M ∣ N}, α M × {d : ℕ // d * M.1 ∣ N}` equals
+`∑ M ∈ N.divisors.attach, (N / M.1).divisors.card * Nat.card (α ⟨M.1, _⟩)`.
+This holds unconditionally for all `N : ℕ`, including `N = 0` where both sides are `0`. -/
+theorem card_sigma_prod_mul_dvd (N : ℕ) (α : {M : ℕ // M ∣ N} → Type*)
+    [∀ M, Finite (α M)] :
+    Nat.card (Σ M : {M : ℕ // M ∣ N}, α M × {d : ℕ // d * M.1 ∣ N}) =
+      ∑ M ∈ N.divisors.attach,
+        (N / M.1).divisors.card * Nat.card (α ⟨M.1, dvd_of_mem_divisors M.2⟩) := by
+  rcases eq_or_ne N 0 with rfl | hN
+  · rw [Finset.sum_eq_zero fun M _ ↦ absurd M.2 (by simp)]
+    rcases isEmpty_or_nonempty (Σ M : {M : ℕ // M ∣ 0}, α M × {d : ℕ // d * M.1 ∣ 0}) with
+      _ | ⟨⟨M, a, _⟩⟩
+    · exact Nat.card_of_isEmpty
+    · have : Infinite (Σ M : {M : ℕ // M ∣ 0}, α M × {d : ℕ // d * M.1 ∣ 0}) :=
+        Infinite.of_injective (fun d : ℕ ↦ ⟨M, a, ⟨d, dvd_zero _⟩⟩) fun _ _ h ↦
+          congrArg (fun x ↦ x.2.2.1) h
+      exact Nat.card_eq_zero_of_infinite
+  · have : NeZero N := ⟨hN⟩
+    rw [← Nat.card_congr (Equiv.sigmaCongrLeft (divisorsEquiv N)), Nat.card_sigma,
+      Finset.univ_eq_attach]
+    refine Finset.sum_congr rfl fun M _ ↦ ?_
+    rw [divisorsEquiv_apply, Nat.card_prod, card_mul_dvd (dvd_of_mem_divisors M.2), mul_comm]
 
 variable {M : Type*} [AddCommMonoid M]
 

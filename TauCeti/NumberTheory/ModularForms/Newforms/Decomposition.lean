@@ -8,15 +8,28 @@ module
 public import TauCeti.LinearAlgebra.Eigenspace.JointEigenvector.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.OrthogonalBasis
 
-/-!
-# Level-raised newforms span the cusp forms
+import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Data.ZMod.Units
+import TauCeti.LinearAlgebra.LinearIndependent.Basic
+import TauCeti.LinearAlgebra.Submodule.Independent
 
-Every cusp form of level `Γ₁(N)` is a linear combination of forms `V_d g`, `(V_d g)(τ) = g(dτ)`,
-with `g` a newform of some level `M` and `d * M ∣ N`. This is the spanning half of
+/-!
+# Level-raised newforms form a basis of the cusp forms
+
+Every cusp form of level `Γ₁(N)` is a unique linear combination of forms `V_d g`,
+`(V_d g)(τ) = g(dτ)`, with `g` a newform of some level `M` and `d * M ∣ N`. This is
 Diamond–Shurman's Theorem 5.8.3, the decomposition
 
 ```text
-S_k(Γ₁(N)) = ⊕_{M ∣ N} ⊕_{f newform of level M} ⊕_{d ∣ N/M} ℂ · f(dτ).
+S_k(Γ₁(N)) = ⊕_{M ∣ N} ⊕_{f newform of level M} ⊕_{d ∣ N/M} ℂ · f(dτ),
+```
+
+packaged both as `ℂ`-bases of `S_k(Γ₁(N))` and `S_k(N, χ)` and as internal direct sums of
+level-raised new subspaces:
+
+```text
+S_k(Γ₁(N)) = ⨁_{M ∣ N} ⨁_{d ∣ N / M} V_d S_k(Γ₁(M))ⁿᵉʷ,
+S_k(N, χ)  = ⨁_{cond χ ∣ M ∣ N} ⨁_{d ∣ N / M} V_d S_k(M, χ_M)ⁿᵉʷ.
 ```
 
 The eigenvalue-refined spanning theorem says that a cusp form of level `Γ₁(N)` that is an
@@ -24,17 +37,27 @@ eigenvector of every `Tₚ` with `p ∤ N` is a combination of those `V_d g` who
 the same eigenvalues at these primes. In particular a good Hecke
 eigenform of level `N` shares its eigenvalues at the primes not dividing `N` with a newform of
 some level `M ∣ N`. This is the eigenvalue half of the existence of the newform associated with
-an eigenform (Diamond–Shurman, Proposition 5.8.4; Miyake, Corollary 4.6.20). Uniqueness of that
-newform, and hence the statement that the eigenform lies in the span of the `V_d g` for a single
-`g`, needs strong multiplicity one across levels and is not proved here.
+an eigenform (Diamond–Shurman, Proposition 5.8.4; Miyake, Corollary 4.6.20).
 
-Inside the nebentypus space of a newform `f` of level `N` the spanning theorem does close up: a
-good Hecke eigenvector `F ∈ S_k(N, χ_f)` with the eigenvalues of `f` is the multiple `a₁(F) • f`
+Inside the nebentypus space of a newform `f` of level `N` the spanning theorem closes up to a line:
+a good Hecke eigenvector `F ∈ S_k(N, χ_f)` with the eigenvalues of `f` is the multiple `a₁(F) • f`
 of `f` (`Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul`, the
 whole-space form of Diamond–Shurman's Theorem 5.8.2). The level-raised newforms spanning `F` with
 compatible nebentypus have level `N` by the divisor-level rigidity
 `Newform.level_eq_of_dvd_of_forall_prime_eigenvalue_eq`, hence are `f` by strong multiplicity
 one, and the others lie in nebentypus spaces meeting `S_k(N, χ_f)` only in `0`.
+
+Linear independence of the `V_d g` is assembled in three steps: for fixed `(M, g)` via
+`CuspForm.linearIndependent_levelRaise`, across distinct `(M, g)` in `S_k(N, χ)` via cross-level
+strong multiplicity one (`HeckeRing.GL2.Newform.eigenvalue_injective_of_comp_unitsMap_eq`), and
+across characters `χ` via `TauCeti.iSupIndep_cuspFormCharSpace`.
+
+## Main definitions
+
+* `HeckeRing.GL2.Newform.levelRaiseBasis`: the level-raised newforms `V_d g` (`M ∣ N`,
+  `d * M ∣ N`), as a `ℂ`-basis of `S_k(Γ₁(N))`.
+* `HeckeRing.GL2.Newform.levelRaiseBasisCharSpace`: the level-raised newforms whose nebentypus
+  pulls back to `χ`, as a `ℂ`-basis of `S_k(N, χ)`.
 
 ## Main results
 
@@ -53,11 +76,24 @@ one, and the others lie in nebentypus spaces meeting `S_k(N, χ_f)` only in `0`.
 * `HeckeRing.GL2.Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul`: a
   good Hecke eigenvector of `S_k(N, χ)` with the eigenvalues of a newform `f` of level `N` and
   nebentypus `χ` is the multiple `a₁ • f` of `f`.
+* `HeckeRing.GL2.Newform.linearIndependent_levelRaise_of_comp_unitsMap_eq`,
+  `HeckeRing.GL2.Newform.linearIndependent_levelRaise`: linear independence of the level-raised
+  newforms at a fixed nebentypus and across all nebentypes.
+* `TauCeti.iSup_map_levelRaiseₗ_cuspFormsNew_eq_top`,
+  `TauCeti.iSupIndep_map_levelRaiseₗ_cuspFormsNew`,
+  `TauCeti.isInternal_map_levelRaiseₗ_cuspFormsNew`: internal direct-sum decomposition of
+  `S_k(Γ₁(N))` into `V_d S_k(Γ₁(M))ⁿᵉʷ` over all pairs `(M, d)` with `d * M ∣ N`.
+* `TauCeti.iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace_eq_cuspFormCharSpace`,
+  `TauCeti.iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace`,
+  `TauCeti.isInternal_comap_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace`: the
+  fixed-character refinement on `S_k(N, χ)` over pairs `(M, d)` with `d * M ∣ N` and `cond χ ∣ M`.
 
 ## Provenance
 
-The last statement is that of `strongMultiplicityOne_constMul` in the AINTLIB `LeanModularForms`
-project (Chris Birkbeck, Apache-2.0, <https://github.com/CBirkbeck/AINTLIB> @ `2baa76f742bd`),
+The proportionality statement
+`Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_smul` is that of
+`strongMultiplicityOne_constMul` in the AINTLIB `LeanModularForms` project (Chris Birkbeck,
+Apache-2.0, <https://github.com/CBirkbeck/AINTLIB> @ `2baa76f742bd`),
 `projects/LeanModularForms/LeanModularForms/StrongMultiplicityOne/ConstantMultiple.lean`: a
 newform and a good Hecke eigenform sharing eigenvalues are proportional. It is proved here
 independently, from the spanning theorem, the divisor-level rigidity of the level and the
@@ -302,3 +338,344 @@ theorem Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_sm
     PowerSeries.coeff_smul, f.isNorm, smul_eq_mul, mul_one]
 
 end HeckeRing.GL2
+
+namespace HeckeRing.GL2.Newform
+
+open TauCeti _root_.CuspForm
+
+/-! ### Linear independence and bases of level-raised newforms -/
+
+/-- **Linear independence of the level-raised newforms at a fixed nebentypus** (Diamond–Shurman,
+Theorem 5.8.3). For a character `χ` modulo `N`, the level-raises `V_d g` over divisor levels
+`M ∣ N`, newforms `g` of level `M` whose nebentypus pulls back to `χ`, and `d` with `d * M ∣ N` are
+`ℂ`-linearly independent in `S_k(Γ₁(N))`. -/
+theorem linearIndependent_levelRaise_of_comp_unitsMap_eq (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) :
+    LinearIndependent ℂ
+      (fun i : Σ M : {M : ℕ // M ∣ N},
+          (letI : NeZero M.1 := NeZero.of_dvd M.2;
+            {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}) ×
+            {d : ℕ // d * M.1 ∣ N} ↦
+        letI : NeZero i.1.1 := NeZero.of_dvd i.1.2
+        letI : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
+        CuspForm.levelRaise i.2.2.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd i.2.2.2)
+          i.2.1.1.toCuspForm) := by
+  let P := {p : ℕ // p.Prime ∧ Nat.Coprime p N}
+  let T : P → Module.End ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) := fun p ↦
+    heckeTCuspNat k p.1 (_hn := ⟨p.2.1.ne_zero⟩)
+  let η := Σ M : {M : ℕ // M ∣ N},
+    letI : NeZero M.1 := NeZero.of_dvd M.2
+    {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}
+  let fam : ∀ mg : η, {d : ℕ // d * mg.1.1 ∣ N} → CuspForm ((Gamma1 N).map (mapGL ℝ)) k :=
+    fun mg d ↦
+      letI : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
+      letI : NeZero d.1 := NeZero.of_dvd (dvd_of_mul_right_dvd d.2)
+      CuspForm.levelRaise d.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd d.2) mg.2.1.toCuspForm
+  -- Step 1 (`_root_.CuspForm.linearIndependent_levelRaise`) gives independence of `V_d g` for each
+  -- `(M, g)`; Step 2 (`eigenvalue_injective_of_comp_unitsMap_eq`) separates distinct `(M, g)` into
+  -- independent joint `Tₚ`-eigenspaces (`p ∤ N`).
+  have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep (f := fam)
+    (fun mg ↦ by
+      have : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
+      have : ∀ d : {d : ℕ // d * mg.1.1 ∣ N}, NeZero d.1 :=
+        fun d ↦ NeZero.of_dvd (dvd_of_mul_right_dvd d.2)
+      exact _root_.CuspForm.linearIndependent_levelRaise (one_mem_strictPeriods_Gamma1_map mg.1.1)
+        mg.2.1.ne_zero Subtype.val_injective
+        fun d ↦ Gamma1_map_le_conjAct_scaleGL_of_dvd d.2)
+    ((iSupIndep_iInf_eigenspace T).comp (eigenvalue_injective_of_comp_unitsMap_eq N k χ))
+    fun mg d ↦ by
+      have : NeZero mg.1.1 := NeZero.of_dvd mg.1.2
+      have : NeZero d.1 := NeZero.of_dvd (dvd_of_mul_right_dvd d.2)
+      exact (Submodule.mem_iInf _).mpr fun p ↦ Module.End.mem_eigenspace_iff.mpr
+        (mg.2.1.heckeTCuspNat_levelRaise_eq_eigenvalue_smul d.2 p.2.1 p.2.2)
+  -- Reassociate `(M, (g, d))` with `((M, g), d)` to match the sigma-indexed family `fam`.
+  let reindex :
+      (Σ M : {M : ℕ // M ∣ N},
+        (letI : NeZero M.1 := NeZero.of_dvd M.2;
+          {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}) ×
+          {d : ℕ // d * M.1 ∣ N}) ≃
+      Σ mg : η, {d : ℕ // d * mg.1.1 ∣ N} :=
+    { toFun := fun i ↦ ⟨⟨i.1, i.2.1⟩, i.2.2⟩
+      invFun := fun j ↦ ⟨j.1.1, j.1.2, j.2⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  exact hli_sigma.comp reindex reindex.injective
+
+/-- **Linear independence of all level-raised newforms in `S_k(Γ₁(N))`** (Diamond–Shurman,
+Theorem 5.8.3). As `M` ranges over the divisors of `N`, `g` over the newforms of level `M`, and `d`
+over the positive divisors with `d * M ∣ N`, the cusp forms `V_d g` are `ℂ`-linearly independent. -/
+theorem linearIndependent_levelRaise (N : ℕ) [NeZero N] (k : ℤ) :
+    LinearIndependent ℂ
+      (fun i : Σ M : {M : ℕ // M ∣ N},
+          (letI : NeZero M.1 := NeZero.of_dvd M.2; Newform M.1 k) × {d : ℕ // d * M.1 ∣ N} ↦
+        letI : NeZero i.1.1 := NeZero.of_dvd i.1.2
+        letI : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
+        CuspForm.levelRaise i.2.2.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd i.2.2.2)
+          i.2.1.toCuspForm) := by
+  -- Step 3: glue the fixed-character families across the independent subspaces `S_k(N, χ)`, then
+  -- group each `(M, g, d)` under its lifted nebentypus `χ = g.χ ∘ unitsMap`.
+  have hli_sigma := TauCeti.linearIndependent_sigma_of_iSupIndep
+    (W := cuspFormCharSpace (N := N) k)
+    (fun χ ↦ linearIndependent_levelRaise_of_comp_unitsMap_eq N k χ)
+    (iSupIndep_cuspFormCharSpace k)
+    fun χ i ↦ by
+      have : NeZero i.1.1 := NeZero.of_dvd i.1.2
+      have : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
+      have hmem := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd i.2.2.2 i.2.1.1.χ
+        i.2.1.1.mem_charSpace
+      rwa [i.2.1.2] at hmem
+  let reindex :
+      (Σ M : {M : ℕ // M ∣ N},
+        (letI : NeZero M.1 := NeZero.of_dvd M.2; Newform M.1 k) × {d : ℕ // d * M.1 ∣ N}) ≃
+      Σ χ : (ZMod N)ˣ →* ℂˣ, Σ M : {M : ℕ // M ∣ N},
+        (letI : NeZero M.1 := NeZero.of_dvd M.2;
+          {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}) ×
+          {d : ℕ // d * M.1 ∣ N} :=
+    { toFun := fun i ↦
+        letI : NeZero i.1.1 := NeZero.of_dvd i.1.2
+        ⟨i.2.1.χ.comp (ZMod.unitsMap i.1.2), i.1, ⟨i.2.1, rfl⟩, i.2.2⟩
+      invFun := fun j ↦ ⟨j.2.1, j.2.2.1.1, j.2.2.2⟩
+      left_inv := fun ⟨_, _, _⟩ ↦ rfl
+      right_inv := fun ⟨_, _, ⟨_, rfl⟩, _⟩ ↦ rfl }
+  exact hli_sigma.comp reindex reindex.injective
+
+/-- **The level-raised newforms `V_d g` (`M ∣ N`, `d * M ∣ N`), as a `ℂ`-basis of `S_k(Γ₁(N))`**
+(Diamond–Shurman, Theorem 5.8.3). -/
+noncomputable def levelRaiseBasis (N : ℕ) [NeZero N] (k : ℤ) :
+    Module.Basis
+      (Σ M : {M : ℕ // M ∣ N},
+        (letI : NeZero M.1 := NeZero.of_dvd M.2; Newform M.1 k) × {d : ℕ // d * M.1 ∣ N})
+      ℂ (CuspForm ((Gamma1 N).map (mapGL ℝ)) k) :=
+  Module.Basis.mk (linearIndependent_levelRaise N k) <| by
+    refine (span_levelRaise_eq_top N k).ge.trans (Submodule.span_mono ?_)
+    rintro _ ⟨M, d, _, _, h, g, rfl⟩
+    exact ⟨⟨⟨M, dvd_of_mul_left_dvd h⟩, g, ⟨d, h⟩⟩, rfl⟩
+
+/-- Evaluating `levelRaiseBasis` at `(M, g, d)` gives `V_d g`. -/
+@[simp]
+theorem levelRaiseBasis_apply (N : ℕ) [NeZero N] (k : ℤ)
+    (i : Σ M : {M : ℕ // M ∣ N},
+      (letI : NeZero M.1 := NeZero.of_dvd M.2; Newform M.1 k) × {d : ℕ // d * M.1 ∣ N}) :
+    levelRaiseBasis N k i =
+      (letI : NeZero i.1.1 := NeZero.of_dvd i.1.2;
+        letI : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2);
+        CuspForm.levelRaise i.2.2.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd i.2.2.2)
+          i.2.1.toCuspForm) := by
+  simp [levelRaiseBasis]
+
+private noncomputable def levelRaiseToCharSpace (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ)
+    (i : Σ M : {M : ℕ // M ∣ N},
+      (letI : NeZero M.1 := NeZero.of_dvd M.2;
+        {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}) ×
+        {d : ℕ // d * M.1 ∣ N}) :
+    cuspFormCharSpace k χ :=
+  letI : NeZero i.1.1 := NeZero.of_dvd i.1.2
+  letI : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
+  ⟨CuspForm.levelRaise i.2.2.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd i.2.2.2) i.2.1.1.toCuspForm,
+    by
+      have hmem := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd i.2.2.2 i.2.1.1.χ
+        i.2.1.1.mem_charSpace
+      rwa [i.2.1.2] at hmem⟩
+
+private theorem linearIndependent_levelRaiseToCharSpace (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) :
+    LinearIndependent ℂ (levelRaiseToCharSpace N k χ) :=
+  LinearIndependent.of_comp (cuspFormCharSpace k χ).subtype
+    (linearIndependent_levelRaise_of_comp_unitsMap_eq N k χ)
+
+private theorem top_le_span_range_levelRaiseToCharSpace (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) :
+    ⊤ ≤ Submodule.span ℂ (Set.range (levelRaiseToCharSpace N k χ)) := by
+  rintro F -
+  rw [← Submodule.comap_map_eq_of_injective (cuspFormCharSpace k χ).injective_subtype
+    (Submodule.span ℂ _), Submodule.mem_comap]
+  set S := (Submodule.span ℂ (Set.range (levelRaiseToCharSpace N k χ))).map
+    (cuspFormCharSpace k χ).subtype
+  set W := ⨆ (ψ : (ZMod N)ˣ →* ℂˣ) (_ : ψ ≠ χ), cuspFormCharSpace (N := N) k ψ
+  have hSW : (F : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) ∈ S ⊔ W := by
+    refine Submodule.span_le.mpr ?_
+      ((span_levelRaise_eq_top N k).ge (Submodule.mem_top (x := F.1)))
+    rintro _ ⟨M, d, _, _, hdM, g, rfl⟩
+    have hMN : M ∣ N := dvd_of_mul_left_dvd hdM
+    by_cases hgχ : g.χ.comp (ZMod.unitsMap hMN) = χ
+    · exact Submodule.mem_sup_left (Submodule.mem_map.mpr
+        ⟨levelRaiseToCharSpace N k χ ⟨⟨M, hMN⟩, ⟨g, hgχ⟩, ⟨d, hdM⟩⟩,
+          Submodule.subset_span (Set.mem_range_self _), rfl⟩)
+    · exact Submodule.mem_sup_right (Submodule.mem_iSup_of_mem _ (Submodule.mem_iSup_of_mem hgχ
+        (CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd hdM g.χ g.mem_charSpace)))
+  obtain ⟨s, hs, t, ht, hst⟩ := Submodule.mem_sup.mp hSW
+  have hsχ : s ∈ cuspFormCharSpace k χ :=
+    Submodule.map_subtype_le (cuspFormCharSpace k χ) _ hs
+  have htχ : t ∈ cuspFormCharSpace k χ := by
+    have hsub := Submodule.sub_mem _ F.2 hsχ
+    rwa [← hst, add_sub_cancel_left] at hsub
+  have ht0 : t = 0 :=
+    (Submodule.disjoint_def.mp (iSupIndep_def.mp (iSupIndep_cuspFormCharSpace k) χ)) t htχ ht
+  rw [ht0, add_zero] at hst
+  rw [Submodule.coe_subtype, ← hst]
+  exact hs
+
+/-- **The level-raised newforms whose nebentypus pulls back to `χ`, as a `ℂ`-basis of
+`S_k(N, χ)`** (Diamond–Shurman, Theorem 5.8.3). -/
+noncomputable def levelRaiseBasisCharSpace (N : ℕ) [NeZero N] (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
+    Module.Basis
+      (Σ M : {M : ℕ // M ∣ N},
+        (letI : NeZero M.1 := NeZero.of_dvd M.2;
+          {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}) ×
+          {d : ℕ // d * M.1 ∣ N})
+      ℂ (cuspFormCharSpace k χ) :=
+  Module.Basis.mk
+    (linearIndependent_levelRaiseToCharSpace N k χ)
+    (top_le_span_range_levelRaiseToCharSpace N k χ)
+
+/-- Evaluating `levelRaiseBasisCharSpace` at `(M, g, d)` gives `V_d g` inside `S_k(N, χ)`. -/
+@[simp]
+theorem coe_levelRaiseBasisCharSpace_apply (N : ℕ) [NeZero N] (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ)
+    (i : Σ M : {M : ℕ // M ∣ N},
+      (letI : NeZero M.1 := NeZero.of_dvd M.2;
+        {g : Newform M.1 k // g.χ.comp (ZMod.unitsMap M.2) = χ}) ×
+        {d : ℕ // d * M.1 ∣ N}) :
+    (levelRaiseBasisCharSpace N k χ i : CuspForm ((Gamma1 N).map (mapGL ℝ)) k) =
+      (letI : NeZero i.1.1 := NeZero.of_dvd i.1.2;
+        letI : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2);
+        CuspForm.levelRaise i.2.2.1 (Gamma1_map_le_conjAct_scaleGL_of_dvd i.2.2.2)
+          i.2.1.1.toCuspForm) := by
+  simp [levelRaiseBasisCharSpace, levelRaiseToCharSpace]
+
+end HeckeRing.GL2.Newform
+
+namespace TauCeti
+
+open _root_.CuspForm HeckeRing.GL2
+
+/-! ### Internal direct-sum decompositions of `S_k(Γ₁(N))` and `S_k(N, χ)` -/
+
+/-- **The level-raised newspaces `V_d S_k(Γ₁(M))ⁿᵉʷ` (`d * M ∣ N`) span `S_k(Γ₁(N))`**
+(Diamond–Shurman, Theorem 5.8.3). -/
+theorem iSup_map_levelRaiseₗ_cuspFormsNew_eq_top (N : ℕ) [NeZero N] (k : ℤ) :
+    (⨆ md : {md : ℕ × ℕ // md.2 * md.1 ∣ N},
+      letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2)
+      letI : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2)
+      (cuspFormsNew md.1.1 k).map
+        (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2))) = ⊤ := by
+  refine eq_top_iff.mpr ((Newform.span_levelRaise_eq_top N k).ge.trans (Submodule.span_le.mpr ?_))
+  rintro _ ⟨M, d, _, _, h, g, rfl⟩
+  exact Submodule.mem_iSup_of_mem ⟨(M, d), h⟩ ⟨g.toCuspForm, g.isNew, CuspForm.levelRaiseₗ_apply ..⟩
+
+/-- **The level-raised newspaces `V_d S_k(Γ₁(M))ⁿᵉʷ` (`d * M ∣ N`) are linearly independent**
+(Diamond–Shurman, Theorem 5.8.3). -/
+theorem iSupIndep_map_levelRaiseₗ_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ) :
+    iSupIndep (fun md : {md : ℕ × ℕ // md.2 * md.1 ∣ N} ↦
+      letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2)
+      letI : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2)
+      (cuspFormsNew md.1.1 k).map
+        (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2))) := by
+  let π : (Σ M : {M : ℕ // M ∣ N},
+      (letI : NeZero M.1 := NeZero.of_dvd M.2; Newform M.1 k) × {d : ℕ // d * M.1 ∣ N}) →
+      {md : ℕ × ℕ // md.2 * md.1 ∣ N} :=
+    fun i ↦ ⟨(i.1.1, i.2.2.1), i.2.2.2⟩
+  refine ((Newform.levelRaiseBasis N k).isInternal_span_image_fiber π).submodule_iSupIndep.mono
+    fun md ↦ ?_
+  have : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2)
+  have : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2)
+  rw [← Newform.span_range_toCuspForm_eq_cuspFormsNew, Submodule.map_span, Submodule.span_le]
+  rintro _ ⟨_, ⟨g, rfl⟩, rfl⟩
+  refine Submodule.subset_span
+    ⟨⟨⟨md.1.1, dvd_of_mul_left_dvd md.2⟩, g, ⟨md.1.2, md.2⟩⟩, Subtype.ext rfl, ?_⟩
+  simp [CuspForm.levelRaiseₗ_apply]
+
+/-- **Internal direct-sum decomposition of `S_k(Γ₁(N))`** into the level-raised newspaces
+`V_d S_k(Γ₁(M))ⁿᵉʷ` over all pairs `(M, d)` with `d * M ∣ N` (Diamond–Shurman, Theorem 5.8.3). -/
+theorem isInternal_map_levelRaiseₗ_cuspFormsNew (N : ℕ) [NeZero N] (k : ℤ) :
+    DirectSum.IsInternal (fun md : {md : ℕ × ℕ // md.2 * md.1 ∣ N} ↦
+      letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2)
+      letI : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2)
+      (cuspFormsNew md.1.1 k).map
+        (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2))) :=
+  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top
+    (iSupIndep_map_levelRaiseₗ_cuspFormsNew N k)
+    (iSup_map_levelRaiseₗ_cuspFormsNew_eq_top N k)
+
+/-- **The level-raised character newspaces `V_d S_k(M, χ_M)ⁿᵉʷ` (`d * M ∣ N`, `cond χ ∣ M`) span
+`S_k(N, χ)`** (Diamond–Shurman, Theorem 5.8.3). -/
+theorem iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace_eq_cuspFormCharSpace (N : ℕ)
+    [NeZero N] (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
+    (⨆ md : {md : ℕ × ℕ //
+        md.2 * md.1 ∣ N ∧ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ md.1},
+      letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2.1)
+      letI : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2.1)
+      (cuspFormsNew md.1.1 k ⊓ cuspFormCharSpace k
+        ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+          (ZMod.unitsMap md.2.2))).map
+        (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2.1))) =
+      cuspFormCharSpace k χ := by
+  refine le_antisymm (iSup_le fun md ↦ ?_) fun F hF ↦ ?_
+  · have : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2.1)
+    have : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2.1)
+    rintro _ ⟨g, hg, rfl⟩
+    rw [CuspForm.levelRaiseₗ_apply]
+    have hmem := CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd md.2.1 _ hg.2
+    rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp,
+      DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap] at hmem
+  · have hbasis : (⟨F, hF⟩ : cuspFormCharSpace k χ) ∈
+        Submodule.span ℂ (Set.range (Newform.levelRaiseBasisCharSpace N k χ)) := by
+      rw [(Newform.levelRaiseBasisCharSpace N k χ).span_eq]
+      exact Submodule.mem_top
+    have hmap := Submodule.mem_map_of_mem (f := (cuspFormCharSpace k χ).subtype) hbasis
+    rw [Submodule.map_span, ← Set.range_comp] at hmap
+    refine Submodule.span_le.mpr (Set.range_subset_iff.mpr ?_) hmap
+    intro i
+    have : NeZero i.1.1 := NeZero.of_dvd i.1.2
+    have : NeZero i.2.2.1 := NeZero.of_dvd (dvd_of_mul_right_dvd i.2.2.2)
+    have hcM : DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ i.1.1 :=
+      DirichletCharacter.conductor_ofUnitHom_dvd_of_comp_unitsMap_eq i.1.2 i.2.1.2
+    have hgχ : i.2.1.1.χ =
+        (DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+          (ZMod.unitsMap hcM) :=
+      (ZMod.comp_unitsMap_eq_iff hcM i.1.2 _).mp
+        (i.2.1.2.trans (DirichletCharacter.primitiveCharacter_toUnitHom_comp_unitsMap χ).symm)
+    refine Submodule.mem_iSup_of_mem ⟨(i.1.1, i.2.2.1), i.2.2.2, hcM⟩
+      ⟨i.2.1.1.toCuspForm, ⟨i.2.1.1.isNew, hgχ ▸ i.2.1.1.mem_charSpace⟩, ?_⟩
+    simp [CuspForm.levelRaiseₗ_apply]
+
+/-- **The level-raised character newspaces `V_d S_k(M, χ_M)ⁿᵉʷ` (`d * M ∣ N`, `cond χ ∣ M`) are
+linearly independent** (Diamond–Shurman, Theorem 5.8.3). -/
+theorem iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N : ℕ) [NeZero N] (k : ℤ)
+    (χ : (ZMod N)ˣ →* ℂˣ) :
+    iSupIndep (fun md : {md : ℕ × ℕ //
+        md.2 * md.1 ∣ N ∧ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ md.1} ↦
+      letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2.1)
+      letI : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2.1)
+      (cuspFormsNew md.1.1 k ⊓ cuspFormCharSpace k
+        ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+          (ZMod.unitsMap md.2.2))).map
+        (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2.1))) := by
+  have hinj : Function.Injective
+      (fun md : {md : ℕ × ℕ //
+          md.2 * md.1 ∣ N ∧ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ md.1} ↦
+        (⟨md.1, md.2.1⟩ : {md : ℕ × ℕ // md.2 * md.1 ∣ N})) :=
+    fun _ _ h ↦ Subtype.ext (Subtype.mk.inj h)
+  exact ((iSupIndep_map_levelRaiseₗ_cuspFormsNew N k).comp hinj).mono
+    fun _ ↦ Submodule.map_mono inf_le_left
+
+/-- **Internal direct-sum decomposition of `S_k(N, χ)`** into the level-raised character newspaces
+`V_d S_k(M, χ_M)ⁿᵉʷ` over all pairs `(M, d)` with `d * M ∣ N` and `cond χ ∣ M` (Diamond–Shurman,
+Theorem 5.8.3). -/
+theorem isInternal_comap_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace (N : ℕ) [NeZero N]
+    (k : ℤ) (χ : (ZMod N)ˣ →* ℂˣ) :
+    DirectSum.IsInternal (fun md : {md : ℕ × ℕ //
+        md.2 * md.1 ∣ N ∧ DirichletCharacter.conductor (MulChar.ofUnitHom χ) ∣ md.1} ↦
+      letI : NeZero md.1.1 := NeZero.of_dvd (dvd_of_mul_left_dvd md.2.1)
+      letI : NeZero md.1.2 := NeZero.of_dvd (dvd_of_mul_right_dvd md.2.1)
+      ((cuspFormsNew md.1.1 k ⊓ cuspFormCharSpace k
+        ((DirichletCharacter.primitiveCharacter (MulChar.ofUnitHom χ)).toUnitHom.comp
+          (ZMod.unitsMap md.2.2))).map
+        (CuspForm.levelRaiseₗ md.1.2 (Gamma1_map_le_conjAct_scaleGL_of_dvd md.2.1))).comap
+        (cuspFormCharSpace k χ).subtype) :=
+  DirectSum.isInternal_comap_subtype_of_iSupIndep_of_iSup_eq
+    (iSupIndep_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace N k χ)
+    (iSup_map_levelRaiseₗ_cuspFormsNew_inf_cuspFormCharSpace_eq_cuspFormCharSpace N k χ)
+
+end TauCeti
+

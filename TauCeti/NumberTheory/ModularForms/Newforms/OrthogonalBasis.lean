@@ -45,8 +45,9 @@ Hecke eigenvector in the new subspace has `a₁ ≠ 0`, so dividing by `a₁` ma
   newforms of nebentypus `χ` span `S_k(Γ₁(N))ⁿᵉʷ ⊓ S_k(N, χ)`.
 * `HeckeRing.GL2.Newform.span_range_toCuspForm_eq_cuspFormsNew`: the newforms span `S_k(Γ₁(N))ⁿᵉʷ`.
 * `HeckeRing.GL2.Newform.linearIndependent_toCuspForm`: the newforms are linearly independent.
-* `HeckeRing.GL2.Newform.finrank_cuspFormsNew_comap_cuspFormCharSpace`: the dimension of
-  `S_k(N, χ)ⁿᵉʷ` is the number of newforms of nebentypus `χ`.
+* `HeckeRing.GL2.Newform.finrank_cuspFormsNew`,
+  `HeckeRing.GL2.Newform.finrank_cuspFormsNew_comap_cuspFormCharSpace`: the dimensions of
+  `S_k(Γ₁(N))ⁿᵉʷ` and `S_k(N, χ)ⁿᵉʷ` equal the numbers of newforms (respectively of nebentypus `χ`).
 
 ## References
 
@@ -266,6 +267,12 @@ theorem coe_basis_apply (f : Newform N k) :
 /-- There are finitely many newforms of a given level and weight. -/
 instance : Finite (Newform N k) :=
   Module.Finite.finite_basis (basis N k)
+
+variable (N k) in
+/-- **The dimension of `S_k(Γ₁(N))ⁿᵉʷ` is the number of newforms of level `N` and weight `k`.** -/
+theorem finrank_cuspFormsNew :
+    Module.finrank ℂ (cuspFormsNew N k) = Nat.card (Newform N k) :=
+  Module.finrank_eq_nat_card_basis (basis N k)
 
 /-- A newform of nebentypus `χ`, as an element of `S_k(N, χ)ⁿᵉʷ`. -/
 private noncomputable def toCuspFormsNewCharSpace {χ : (ZMod N)ˣ →* ℂˣ}

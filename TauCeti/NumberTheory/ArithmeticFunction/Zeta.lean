@@ -1,13 +1,12 @@
 /-
 Copyright (c) 2026 The PrimeNumberTheoremAnd contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The PrimeNumberTheoremAnd contributors
+Authors: The PrimeNumberTheoremAnd contributors, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.ArithmeticFunction.Zeta
+public import Mathlib.NumberTheory.ArithmeticFunction.Misc
 public import Mathlib.Data.Nat.Choose.Basic
-import Mathlib.NumberTheory.ArithmeticFunction.Misc
 import Mathlib.Data.Nat.Choose.Bounds
 import Mathlib.Data.Nat.Choose.Sum
 
@@ -15,8 +14,9 @@ import Mathlib.Data.Nat.Choose.Sum
 # Convolution powers of the arithmetic zeta function
 
 The Dirichlet-convolution powers of `ArithmeticFunction.zeta` are the fixed-order divisor
-functions. Their prime-power coefficients are binomial coefficients, and these coefficients
-are bounded by powers of the ordinary divisor count. The analytic subpower estimate is in
+functions; in particular, `ζ * ζ = σ 0` (`ArithmeticFunction.zeta_mul_zeta`). Their prime-power
+coefficients are binomial coefficients, and these coefficients are bounded by powers of the
+ordinary divisor count. The analytic subpower estimate is in
 `TauCeti.NumberTheory.ArithmeticFunction.DivisorBounds`.
 
 The prime-power argument is adapted from `d_apply_prime_pow` in
@@ -30,7 +30,12 @@ public section
 namespace ArithmeticFunction
 
 open Finset Nat
-open scoped zeta
+open scoped zeta sigma
+
+/-- **The Dirichlet square of `ζ` is the divisor-counting function `σ 0`.** -/
+theorem zeta_mul_zeta : (ζ * ζ : ArithmeticFunction ℕ) = σ 0 := by
+  rw [← pow_zero_eq_zeta]
+  exact zeta_mul_pow_eq_sigma
 
 /-- The prime-power coefficient of the `(k + 1)`-fold divisor function. -/
 theorem zeta_pow_succ_apply_prime_pow (k a : ℕ) {p : ℕ} (hp : p.Prime) :
