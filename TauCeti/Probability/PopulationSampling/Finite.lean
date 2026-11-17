@@ -9,7 +9,6 @@ public import TauCeti.Probability.PopulationSampling.Basic
 public import TauCeti.Probability.Process.EmpiricalMeasure
 public import TauCeti.Probability.UniformSampling
 public import Mathlib.MeasureTheory.Measure.FiniteMeasurePi
-import TauCeti.Probability.Distributions.Uniform.Finite
 
 /-!
 # Sampling finite populations with and without replacement
@@ -86,10 +85,11 @@ selection `k : ι → κ`; then return the sample `i ↦ x (k i)`. This is `samp
 uniform law on injective index maps. If no injective selection exists, Mathlib's `uniformOn`
 convention makes this the zero measure.
 
-Deterministic evaluation, probability-mass preservation, and collision bounds below take
-`[Finite κ] [MeasurableSingletonClass κ]` (with `[Countable κ]` sufficing for measurable
-observations), whereas finite-measure preservation, infeasible-selection vanishing, and
-subsingleton-sample agreement require neither. -/
+Deterministic evaluation, probability-mass preservation, subsingleton-sample agreement, and
+collision bounds below take `[Finite κ] [MeasurableSingletonClass κ]` (with `[Countable κ]`
+sufficing for measurable observations), whereas finite-measure preservation and
+infeasible-selection vanishing (`sampleWithoutReplacement_eq_zero_of_isEmpty`) require neither
+(and `sampleWithoutReplacement_eq_zero_of_card_lt` needs only `[Fintype κ]`). -/
 def sampleWithoutReplacement {ι κ : Type*} [MeasurableSpace κ] (ρ : Measure (κ → α)) :
     Measure (ι → α) :=
   samplePopulation (uniformOn {k : ι → κ | Function.Injective k}) ρ
@@ -197,10 +197,10 @@ as `sampleWithoutReplacement` without the injectivity constraint. If `κ` is emp
 no index map exists, and Mathlib's `uniformOn` convention makes this the zero measure.
 
 The sample index is finite because the selection law is a finite product. Deterministic
-evaluation, the empirical-product mixture, probability-mass preservation, and collision bounds
-below take `[Finite κ] [MeasurableSingletonClass κ]` (with `[Countable κ]` sufficing for
-measurable observations), whereas finite-measure preservation, infeasible-selection vanishing,
-and subsingleton-sample agreement require neither. -/
+evaluation, subsingleton-sample agreement, the empirical-product mixture, probability-mass
+preservation, and collision bounds below take `[Finite κ] [MeasurableSingletonClass κ]` (with
+`[Countable κ]` sufficing for measurable observations), whereas finite-measure preservation and
+infeasible-selection vanishing require neither. -/
 def sampleWithReplacement [Fintype ι] (ρ : Measure (κ → α)) : Measure (ι → α) :=
   samplePopulation (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) ρ
 
@@ -225,16 +225,6 @@ theorem sampleWithReplacement_eq_zero_of_isEmpty [Fintype ι] [IsEmpty (ι → �
   simp [sampleWithReplacement_def,
     Measure.eq_zero_of_isEmpty (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ))]
 
-/-- On a subsingleton sample index (samples of size `0` or `1`), sampling without replacement and
-sampling with replacement have the exact same law for every population law `ρ`, with no finiteness
-or measurable-singleton hypothesis on `κ`. -/
-@[simp]
-theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton [Fintype ι]
-    [Subsingleton ι] (ρ : Measure (κ → α)) :
-    sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
-  rw [sampleWithoutReplacement_def, sampleWithReplacement_def,
-    uniformOn_injective_of_subsingleton, pi_uniformOn_univ_of_subsingleton]
-
 variable [MeasurableSingletonClass κ]
 
 /-- Sampling with replacement is `samplePopulation` along the uniform law on all index maps. -/
@@ -242,6 +232,15 @@ theorem sampleWithReplacement_eq_samplePopulation_uniformOn [Fintype ι] [Finite
     (ρ : Measure (κ → α)) :
     sampleWithReplacement (ι := ι) ρ = samplePopulation (uniformOn (Set.univ : Set (ι → κ))) ρ := by
   rw [sampleWithReplacement_def, ← uniformOn_pi, Set.pi_univ]
+
+/-- On a subsingleton sample index (samples of size `0` or `1`), sampling without replacement and
+sampling with replacement have the exact same law for every population law `ρ`. -/
+@[simp]
+theorem sampleWithoutReplacement_eq_sampleWithReplacement_of_subsingleton [Fintype ι]
+    [Subsingleton ι] [Finite κ] (ρ : Measure (κ → α)) :
+    sampleWithoutReplacement (ι := ι) ρ = sampleWithReplacement (ι := ι) ρ := by
+  rw [sampleWithoutReplacement_def, sampleWithReplacement_eq_samplePopulation_uniformOn,
+    uniformOn_injective_of_subsingleton]
 
 /-- Sampling a deterministic population with replacement is the pushforward of uniform
 selections, without an injectivity constraint. -/

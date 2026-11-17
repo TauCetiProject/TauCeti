@@ -10,7 +10,6 @@ public import Mathlib.Probability.UniformOn
 public import Mathlib.MeasureTheory.Measure.Prod
 public import Mathlib.MeasureTheory.Measure.Support
 public import TauCeti.Probability.Cdf
-import TauCeti.MeasureTheory.Measure.Count.Basic
 
 /-!
 # Uniform measures on finite types
@@ -36,11 +35,6 @@ are in `TauCeti.Probability.Distributions.Uniform.Quantile`.
   label masses and cumulative masses are proportions of inputs.
 * `Set.BijOn.map_uniformOn`: a bijection between sets pushes a uniform law to
   the uniform law on its target, with no finiteness restriction.
-* `MeasurableEquiv.map_uniformOn`: a measurable equivalence pushes a uniform law to
-  the uniform law on its image, without finiteness or measurable-singleton assumptions.
-* `TauCeti.Probability.pi_uniformOn_univ_of_subsingleton`: on a finite subsingleton index type,
-  the product of uniform laws on `κ` coincides with the uniform law on `ι → κ`, without finiteness
-  or measurable-singleton assumptions on `κ`.
 * `TauCeti.Probability.uniformOfFinset_univ_fin_two_prod_offDiagonal`: two independent uniform
   samples from `Fin 2` differ with probability `1 / 2`.
 -/
@@ -244,46 +238,7 @@ theorem map_uniformOn_univ (e : α ≃ β) :
 
 end Equiv
 
-namespace MeasurableEquiv
-
-/-- A measurable equivalence pushes a uniform measure forward to the uniform measure on the image
-set, without any finiteness or measurable-singleton assumption. -/
-theorem map_uniformOn {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
-    (e : α ≃ᵐ β) (s : Set α) :
-    (uniformOn s).map e = uniformOn (e '' s) := by
-  ext t ht
-  have hcount (u : Set α) : Measure.count (e '' u) = Measure.count u := by
-    rw [← e.map_count, e.map_apply, Set.preimage_image_eq _ e.injective]
-  rw [e.map_apply, uniformOn, uniformOn, cond_apply' (e.measurable ht), cond_apply' ht,
-    ← Set.image_inter_preimage, hcount, hcount]
-
-end MeasurableEquiv
-
 namespace TauCeti.Probability
-
-/-- On a subsingleton index type, the product of uniform laws on `κ` coincides with the uniform
-law on `ι → κ` without any finiteness or measurable-singleton assumption on `κ`. -/
-theorem pi_uniformOn_univ_of_subsingleton {ι κ : Type*} [Fintype ι] [Subsingleton ι]
-    [MeasurableSpace κ] :
-    (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)) =
-      uniformOn (Set.univ : Set (ι → κ)) := by
-  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₀⟩⟩
-  · rw [Measure.pi_of_empty, uniformOn, Subsingleton.count_eq_dirac isEmptyElim, cond_univ]
-  · let _ : Unique ι := uniqueOfSubsingleton i₀
-    -- `measurePreserving_funUnique` uses `Unique.fintype`; unify with the ambient `Fintype ι`.
-    obtain rfl : ‹Fintype ι› = Unique.fintype := Subsingleton.elim _ _
-    set e := MeasurableEquiv.funUnique ι κ
-    have hmap₁ : (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)).map e =
-        uniformOn (Set.univ : Set κ) :=
-      (measurePreserving_funUnique (uniformOn (Set.univ : Set κ)) ι).map_eq
-    have hmap₂ : (uniformOn (Set.univ : Set (ι → κ))).map e = uniformOn (Set.univ : Set κ) := by
-      simpa [e.surjective.range_eq] using e.map_uniformOn Set.univ
-    calc
-      (Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ))
-          = ((Measure.pi fun _ : ι => uniformOn (Set.univ : Set κ)).map e).map e.symm :=
-            e.map_symm_map.symm
-      _ = ((uniformOn (Set.univ : Set (ι → κ))).map e).map e.symm := by rw [hmap₁, hmap₂]
-      _ = uniformOn (Set.univ : Set (ι → κ)) := e.map_symm_map
 
 /-- The uniform measure on all of a nonempty finite type is a probability measure. -/
 instance isProbabilityMeasure_uniformOfFinset_univ {α : Type*} [Fintype α] [Nonempty α]
