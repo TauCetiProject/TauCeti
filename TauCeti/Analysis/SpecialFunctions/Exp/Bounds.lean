@@ -34,6 +34,7 @@ is bounded on `x ≥ 0`.
   `a, b ≥ -M`.
 * `TauCeti.exp_sub_one_sq_le_two_mul_sq_mul_cosh`: `(exp t - 1)² ≤ 2 t² cosh (2t)` for every real
   `t`.
+* `TauCeti.fourteen_le_two_mul_exp_two_pi`: the numerical bound `14 ≤ 2 exp (2π)`.
 -/
 
 public section
@@ -150,5 +151,9 @@ theorem exp_sub_one_sq_le_two_mul_sq_mul_cosh (t : ℝ) :
         rw [mul_pow, sq_abs, ← exp_nat_mul]; push_cast; ring_nf
     _ ≤ t ^ 2 * (2 * cosh (2 * t)) := by gcongr
     _ = 2 * t ^ 2 * cosh (2 * t) := by ring
+
+/-- `2 exp (2π)` is at least `14`. -/
+theorem fourteen_le_two_mul_exp_two_pi : 14 ≤ 2 * exp (2 * π) := by
+  nlinarith [quadratic_le_exp_of_nonneg (by positivity : 0 ≤ 2 * π), two_le_pi]
 
 end TauCeti
