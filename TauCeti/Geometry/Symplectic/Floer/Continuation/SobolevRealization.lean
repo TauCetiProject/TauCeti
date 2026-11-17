@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Continuation
-public import TauCeti.Geometry.Symplectic.Floer.Continuation.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Floer.Continuation.SemiFredholm
 public import TauCeti.Geometry.Symplectic.Floer.SobolevRealization
 
 /-!
@@ -86,14 +85,9 @@ theorem memLp_floerJetCoeff_continuationHomotopy (ω : SymplecticForm V)
       (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
         |>.toContinuousLinearMap)
       (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u) ∞ stripMeasure :=
-  ω.memLp_floerJetCoeff_of_cylindrical (Ks := fun _ _ ↦ 0) (R := 1)
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_nonpos h₀ (by linarith)))
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_one_le h₀ hz)) (fun _ _ ↦ rfl)
-    (fun _ hz ↦ funext (continuationHomotopy_of_nonpos (by linarith)))
-    (fun _ hz ↦ funext (continuationHomotopy_of_one_le hz))
-    (fun _ ↦ (contDiff_continuationAlmostComplex h₀ hJm hJp).contDiffAt)
-    (fun _ ↦ contDiffAt_const) (fun _ ↦ (contDiff_uncurry_continuationHomotopy hHm hHp).contDiffAt)
-    hu hHm hJm huxm hδm hHp hJp huxp hδp
+  ω.memLp_floerJetCoeff_of_cylindrical
+    (isCylindricalNearEnds_continuationHomotopy h₀ hJm hJp hHm hHp u) hu hHm hJm huxm hδm hHp hJp
+    huxp hδp
 
 /-- **The linearized Floer operator along a continuation cylinder has finite-dimensional kernel on
 `W^{1,2}`.** Under the hypotheses of the semi-Fredholm estimate
@@ -133,14 +127,9 @@ theorem finiteDimensional_ker_floerSobolevOperator_continuationHomotopy (ω : Sy
       (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
         |>.toContinuousLinearMap)
       (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u).ker :=
-  ω.finiteDimensional_ker_floerSobolevOperator_of_cylindrical (Ks := fun _ _ ↦ 0) (R := 1)
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_nonpos h₀ (by linarith)))
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_one_le h₀ hz)) (fun _ _ ↦ rfl)
-    (fun _ hz ↦ funext (continuationHomotopy_of_nonpos (by linarith)))
-    (fun _ hz ↦ funext (continuationHomotopy_of_one_le hz))
-    (fun _ ↦ (contDiff_continuationAlmostComplex h₀ hJm hJp).contDiffAt)
-    (fun _ ↦ contDiffAt_const) (fun _ ↦ (contDiff_uncurry_continuationHomotopy hHm hHp).contDiffAt)
-    hu hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+  ω.finiteDimensional_ker_floerSobolevOperator_of_cylindrical
+    (isCylindricalNearEnds_continuationHomotopy h₀ hJm hJp hHm hHp u) hu hJu hXm hHm hxm hndm hJm
+    hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
 
 /-- **The linearized Floer operator along a continuation cylinder has closed range on
 `W^{1,2}`.** Under the hypotheses of
@@ -177,13 +166,8 @@ theorem isClosed_range_floerSobolevOperator_continuationHomotopy (ω : Symplecti
       (fun w y ↦ (continuationAlmostComplex h₀ Jm Jp hJmt hJpt w y).toLinearMap
         |>.toContinuousLinearMap)
       (fun _ _ ↦ 0) (continuationHomotopy Hm Hp) u).range : Set (Lp V 2 stripMeasure)) :=
-  ω.isClosed_range_floerSobolevOperator_of_cylindrical (Ks := fun _ _ ↦ 0) (R := 1)
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_nonpos h₀ (by linarith)))
-    (fun _ hz ↦ funext (continuationAlmostComplex_of_one_le h₀ hz)) (fun _ _ ↦ rfl)
-    (fun _ hz ↦ funext (continuationHomotopy_of_nonpos (by linarith)))
-    (fun _ hz ↦ funext (continuationHomotopy_of_one_le hz))
-    (fun _ ↦ (contDiff_continuationAlmostComplex h₀ hJm hJp).contDiffAt)
-    (fun _ ↦ contDiffAt_const) (fun _ ↦ (contDiff_uncurry_continuationHomotopy hHm hHp).contDiffAt)
-    hu hJu hXm hHm hxm hndm hJm hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
+  ω.isClosed_range_floerSobolevOperator_of_cylindrical
+    (isCylindricalNearEnds_continuationHomotopy h₀ hJm hJp hHm hHp u) hu hJu hXm hHm hxm hndm hJm
+    hJxm huxm hδm hXp hHp hxp hndp hJp hJxp huxp hδp
 
 end TauCeti.SymplecticForm
