@@ -63,9 +63,17 @@ open CliffordAlgebra Module
 
 namespace AlgEquiv
 
+private theorem neg_I_pow_mul_I_pow (m : ℕ) : (-Complex.I) ^ m * Complex.I ^ m = 1 := by
+  rw [← mul_pow, neg_mul, Complex.I_mul_I, neg_neg, one_pow]
+
 variable {V S : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] [AddCommGroup S] [Module ℂ S]
   {n : ℕ} [Fact (Module.finrank ℝ V = n)] {Q : QuadraticForm ℝ V}
+
+private theorem even_of_algEquiv_end
+    (ρ : CliffordAlgebra (Q.baseChange ℂ) ≃ₐ[ℂ] Module.End ℂ S) : Even n := by
+  have h := even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
+  rwa [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)] at h
 
 /-- **Left multiplication by spinor chirality is the signed complex Hodge star**: for `k + l = n`
 and `x ∈ ℂ ⊗[ℝ] ⋀[ℝ]^k V`, multiplying `ρ.cliffordFormsEquivEnd` on the left by
@@ -77,10 +85,7 @@ theorem mul_complexVolume_cliffordFormsEquivEnd
     ρ (complexVolume Q o) * ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ x) =
       Complex.I ^ (n / 2 + k * (k - 1)) •
         ρ.cliffordFormsEquivEnd ((⋀[ℝ]^l V).subtype.baseChange ℂ (o.complexHodgeStar hkl x)) := by
-  have hn : Even n := by
-    have h := even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
-    rwa [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)] at h
-  obtain ⟨_, _⟩ := hn
+  obtain ⟨_, _⟩ : Even n := even_of_algEquiv_end ρ
   rw [← ρ.cliffordFormsEquivEnd_action,
     baseChangeExteriorAction_complexVolume_of_eq_two_mul o hQ (by omega : n = 2 * (n / 2)) hkl,
     map_smul]
@@ -95,9 +100,7 @@ theorem cliffordFormsEquivEnd_complexHodgeStar
     ρ.cliffordFormsEquivEnd ((⋀[ℝ]^l V).subtype.baseChange ℂ (o.complexHodgeStar hkl x)) =
       (-Complex.I) ^ (n / 2 + k * (k - 1)) •
         (ρ (complexVolume Q o) * ρ.cliffordFormsEquivEnd ((⋀[ℝ]^k V).subtype.baseChange ℂ x)) := by
-  have hI : (-Complex.I) ^ (n / 2 + k * (k - 1)) * Complex.I ^ (n / 2 + k * (k - 1)) = 1 := by
-    rw [← mul_pow, neg_mul, Complex.I_mul_I, neg_neg, one_pow]
-  rw [ρ.mul_complexVolume_cliffordFormsEquivEnd o hQ hkl, smul_smul, hI, one_smul]
+  rw [ρ.mul_complexVolume_cliffordFormsEquivEnd o hQ hkl, smul_smul, neg_I_pow_mul_I_pow, one_smul]
 
 /-- **Middle-degree Hodge star in dimension divisible by `4`**: when `4 ∣ n` and `k + k = n`,
 the complex Hodge star on `ℂ ⊗[ℝ] ⋀[ℝ]^k V` corresponds with sign `+1` to left multiplication by
@@ -121,8 +124,8 @@ theorem cliffordFormsEquivEnd_complexHodgeStar_of_four_dvd
       rw [hsub, hdiv]
       ring
   have hI4 : (-Complex.I) ^ 4 = 1 := by
-    calc (-Complex.I) ^ 4 = ((-Complex.I) * (-Complex.I)) * ((-Complex.I) * (-Complex.I)) := by ring
-      _ = 1 := by simp
+    rw [neg_pow, Complex.I_pow_four]
+    norm_num
   rw [ρ.cliffordFormsEquivEnd_complexHodgeStar o hQ hk, hexp, pow_mul, hI4, one_pow, one_smul]
 
 section Tensor
@@ -141,10 +144,7 @@ theorem map_complexVolume_id_cliffordFormsEquivTensor
       Complex.I ^ (n / 2 + k * (k - 1)) •
         ρ.cliffordFormsEquivTensor
           ((⋀[ℝ]^l V).subtype.baseChange ℂ (o.complexHodgeStar hkl x)) := by
-  have hn : Even n := by
-    have h := even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
-    rwa [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)] at h
-  obtain ⟨_, _⟩ := hn
+  obtain ⟨_, _⟩ : Even n := even_of_algEquiv_end ρ
   rw [← ρ.cliffordFormsEquivTensor_action,
     baseChangeExteriorAction_complexVolume_of_eq_two_mul o hQ (by omega : n = 2 * (n / 2)) hkl,
     map_smul]
@@ -160,9 +160,8 @@ theorem cliffordFormsEquivTensor_complexHodgeStar
       (-Complex.I) ^ (n / 2 + k * (k - 1)) •
         TensorProduct.map (ρ (complexVolume Q o)) LinearMap.id
           (ρ.cliffordFormsEquivTensor ((⋀[ℝ]^k V).subtype.baseChange ℂ x)) := by
-  have hI : (-Complex.I) ^ (n / 2 + k * (k - 1)) * Complex.I ^ (n / 2 + k * (k - 1)) = 1 := by
-    rw [← mul_pow, neg_mul, Complex.I_mul_I, neg_neg, one_pow]
-  rw [ρ.map_complexVolume_id_cliffordFormsEquivTensor o hQ hkl, smul_smul, hI, one_smul]
+  rw [ρ.map_complexVolume_id_cliffordFormsEquivTensor o hQ hkl, smul_smul, neg_I_pow_mul_I_pow,
+    one_smul]
 
 /-- **Middle-degree Hodge star on spinor tensors in dimension divisible by `4`**: when `4 ∣ n` and
 `k + k = n`, the complex Hodge star on `ℂ ⊗[ℝ] ⋀[ℝ]^k V` corresponds on `S ⊗[ℂ] Dual ℂ S` to
@@ -193,12 +192,9 @@ theorem map_cliffordReverseDual_complexVolume_cliffordFormsEquivTensor
         (ρ.cliffordFormsEquivTensor x) =
       (-1 : ℂ) ^ (n / 2) •
         ρ.cliffordFormsEquivTensor (involute.toLinearMap.baseChange ℂ x) := by
-  have hn : Even n := by
-    have h := even_finrank_of_algEquiv_end (Q.baseChange ℂ) ρ
-    rwa [Module.finrank_baseChange, Fact.out (p := finrank ℝ V = n)] at h
   rw [AlgHom.cliffordReverseDual_complexVolume, AlgEquiv.toAlgHom_apply,
     TensorProduct.map_smul_right, LinearMap.smul_apply,
-    ρ.cliffordFormsEquivTensor_involute o hQ hn]
+    ρ.cliffordFormsEquivTensor_involute o hQ (even_of_algEquiv_end ρ)]
 
 end Tensor
 

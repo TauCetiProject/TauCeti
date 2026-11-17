@@ -164,7 +164,9 @@ theorem gramForm_ιMulti_ιMulti (k : ℕ) (u v : Fin k → V) :
     gramForm V (ιMulti ℝ k u) (ιMulti ℝ k v) = (Matrix.of fun i j ↦ ⟪u i, v j⟫).det := by
   let e := stdOrthonormalBasis ℝ V
   rw [gramForm_eq_toLinearMapₛₗ₂ e, toLinearMapₛₗ₂_ιMulti_ιMulti, e.toLinearMapₛₗ₂_real]
-  rfl
+  refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+  rw [Matrix.of_apply, Matrix.of_apply]
+  exact innerₗ_apply_apply (u i) (v j)
 
 /-- **On each exterior power `⋀[ℝ]^k V`, `gramForm V` agrees with Mathlib's inner product.** -/
 @[simp]
@@ -177,7 +179,8 @@ theorem gramForm_coe_exteriorPower {k : ℕ} (x y : ⋀[ℝ]^k V) :
       exteriorPower.ιMulti_apply_coe, gramForm_ιMulti_ιMulti, innerₗ_apply_apply,
       exteriorPower.inner_ιMulti_ιMulti]
     rw [← Matrix.det_transpose]
-    rfl
+    refine congrArg Matrix.det (Matrix.ext fun i j ↦ ?_)
+    rw [Matrix.transpose_apply, Matrix.of_apply, Matrix.of_apply]
   exact LinearMap.congr_fun₂ key x y
 
 /-- `gramForm V` is symmetric. -/
@@ -251,32 +254,23 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv
   set H := Matrix.toLinearMapₛₗ₂ (starRingEnd ℂ)
     (e.toBasis.baseChange ℂ).ExteriorAlgebra (e.toBasis.baseChange ℂ).ExteriorAlgebra
     (1 : Matrix (Finset I) (Finset I) ℂ)
-  have hbasis (s : Finset I) :
-      ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ e.toBasis.ExteriorAlgebra s) =
-        (e.toBasis.baseChange ℂ).ExteriorAlgebra s := by
-    rw [e.toBasis.exteriorAlgebra_eq_prod_map_sort,
-      (e.toBasis.baseChange ℂ).exteriorAlgebra_eq_prod_map_sort,
-      ← Algebra.TensorProduct.includeRight_apply (R := ℝ) (A := ℂ), map_list_prod, map_list_prod]
-    simp [List.map_map, Function.comp_def, ExteriorAlgebra.baseChangeEquiv_apply]
-  have htmul (c : ℂ) (u : ExteriorAlgebra ℝ V) :
-      ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (c ⊗ₜ[ℝ] u) =
-        c • ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ[ℝ] u) := by
-    have hc : c ⊗ₜ[ℝ] u = c • ((1 : ℂ) ⊗ₜ[ℝ] u) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
-    rw [hc, map_smul]
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ => simp only [map_add, LinearMap.add_apply, hx₁, hx₂]
   | tmul z u =>
     induction y using TensorProduct.inductionOn with
     | add y₁ y₂ hy₁ hy₂ => simp only [map_add, hy₁, hy₂]
     | tmul w v =>
-      rw [LinearMap.BilinForm.sesqComplexification_tmul_tmul, htmul z u, htmul w v, H.map_smulₛₗ,
-        LinearMap.smul_apply, map_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc]
+      rw [LinearMap.BilinForm.sesqComplexification_tmul_tmul,
+        TensorProduct.tmul_eq_smul_one_tmul z u, TensorProduct.tmul_eq_smul_one_tmul w v,
+        map_smul (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ),
+        map_smul (ExteriorAlgebra.baseChangeEquiv ℝ V ℂ), H.map_smulₛₗ, LinearMap.smul_apply,
+        map_smul, smul_eq_mul, smul_eq_mul, ← mul_assoc]
       congr 1
       have hbasis' (r : ℝ) (s : Finset I) :
           ExteriorAlgebra.baseChangeEquiv ℝ V ℂ (1 ⊗ₜ[ℝ] (r • e.toBasis.ExteriorAlgebra s)) =
             (r : ℂ) • (e.toBasis.baseChange ℂ).ExteriorAlgebra s := by
-        rw [← TensorProduct.smul_tmul, Complex.real_smul, mul_one, htmul, hbasis]
+        rw [← TensorProduct.smul_tmul, Complex.real_smul, mul_one,
+          ExteriorAlgebra.baseChangeEquiv_tmul_basis]
       -- Both sides are ℝ-bilinear in `(u, v)`; compare them on the wedge basis of `e`.
       conv_lhs =>
         rw [← e.toBasis.ExteriorAlgebra.sum_repr u, ← e.toBasis.ExteriorAlgebra.sum_repr v]
@@ -298,15 +292,11 @@ theorem toLinearMapₛₗ₂_baseChange_exteriorAlgebra_coe_exteriorPower {k : �
       LinearMap.BilinForm.sesqComplexification (innerₗ (⋀[ℝ]^k V))
         (TauCeti.exteriorPower.equivBaseChange ℂ k x)
         (TauCeti.exteriorPower.equivBaseChange ℂ k y) := by
-  have hx : (x : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) =
+  have h (z : ⋀[ℂ]^k (ℂ ⊗[ℝ] V)) : (z : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) =
       ExteriorAlgebra.baseChangeEquiv ℝ V ℂ
-        ((⋀[ℝ]^k V).subtype.baseChange ℂ (TauCeti.exteriorPower.equivBaseChange ℂ k x)) := by
+        ((⋀[ℝ]^k V).subtype.baseChange ℂ (TauCeti.exteriorPower.equivBaseChange ℂ k z)) := by
     rw [TauCeti.exteriorPower.subtype_baseChange_equivBaseChange, AlgEquiv.apply_symm_apply]
-  have hy : (y : ExteriorAlgebra ℂ (ℂ ⊗[ℝ] V)) =
-      ExteriorAlgebra.baseChangeEquiv ℝ V ℂ
-        ((⋀[ℝ]^k V).subtype.baseChange ℂ (TauCeti.exteriorPower.equivBaseChange ℂ k y)) := by
-    rw [TauCeti.exteriorPower.subtype_baseChange_equivBaseChange, AlgEquiv.apply_symm_apply]
-  rw [hx, hy, e.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv,
+  rw [h x, h y, e.toLinearMapₛₗ₂_baseChange_exteriorAlgebra_baseChangeEquiv,
     ExteriorAlgebra.sesqComplexification_gramForm_subtype_baseChange]
 
 end OrthonormalBasis

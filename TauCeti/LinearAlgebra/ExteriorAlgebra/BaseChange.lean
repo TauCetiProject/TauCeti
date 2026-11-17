@@ -8,6 +8,10 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import Mathlib.LinearAlgebra.Dual.BaseChange
 public import Mathlib.LinearAlgebra.ExteriorAlgebra.BaseChange
+public import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
+public import Mathlib.LinearAlgebra.TensorProduct.Basis
+-- Private: `Module.Basis.exteriorAlgebra_eq_prod_map_sort` is used only inside a proof.
+import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
 # Scalar extension of exterior algebras
@@ -17,8 +21,9 @@ arbitrary commutative rings, including in characteristic two, and records its va
 `a ⊗ ι m` and on `ι (a ⊗ m)`. This file extends that API: on the inverse comparison, its value on
 an arbitrary generator, on wedges of pure tensors, and its naturality in the module; on the
 forward comparison, its intertwining of scalar-extended interior contraction with contraction by
-the scalar-extended functional (`ExteriorAlgebra.baseChangeEquiv_baseChange_contractLeft`).
-No flatness or freeness assumption is needed.
+the scalar-extended functional (`ExteriorAlgebra.baseChangeEquiv_baseChange_contractLeft`) and its
+action on exterior basis vectors (`ExteriorAlgebra.baseChangeEquiv_tmul_basis`).
+No flatness or freeness assumption is needed for the basis-free comparisons.
 -/
 
 public section
@@ -107,10 +112,22 @@ theorem baseChangeEquiv_baseChange_contractLeft (d : Module.Dual R M)
   induction x using TensorProduct.inductionOn with
   | add x₁ x₂ hx₁ hx₂ => simp only [map_add, hx₁, hx₂]
   | tmul a y =>
-    have hay (z : ExteriorAlgebra R M) : a ⊗ₜ[R] z = a • ((1 : A) ⊗ₜ[R] z) := by
-      rw [TensorProduct.smul_tmul', smul_eq_mul, mul_one]
     have hy : P y := by simpa only [mul_one] using hmul y 1 h1
-    rw [LinearMap.baseChange_tmul, hay, hay y, map_smul, map_smul, map_smul, ← hφ, ← hφ]
+    rw [LinearMap.baseChange_tmul, TensorProduct.tmul_eq_smul_one_tmul a,
+      TensorProduct.tmul_eq_smul_one_tmul a y, map_smul, map_smul, map_smul, ← hφ, ← hφ]
     exact congrArg (a • ·) hy
+
+/-- `ExteriorAlgebra.baseChangeEquiv` sends a scalar multiple of an exterior basis vector to the
+corresponding exterior basis vector of the base-changed basis. -/
+@[simp]
+theorem baseChangeEquiv_tmul_basis {I : Type*} [LinearOrder I] (b : Module.Basis I R M)
+    (a : A) (s : Finset I) :
+    baseChangeEquiv R M A (a ⊗ₜ[R] b.ExteriorAlgebra s) =
+      a • (b.baseChange A).ExteriorAlgebra s := by
+  rw [TensorProduct.tmul_eq_smul_one_tmul, map_smul, b.exteriorAlgebra_eq_prod_map_sort,
+    (b.baseChange A).exteriorAlgebra_eq_prod_map_sort,
+    ← Algebra.TensorProduct.includeRight_apply (R := R) (A := A), map_list_prod, map_list_prod]
+  simp only [List.map_map, Function.comp_def, Algebra.TensorProduct.includeRight_apply,
+    baseChangeEquiv_apply, Module.Basis.baseChange_apply]
 
 end ExteriorAlgebra

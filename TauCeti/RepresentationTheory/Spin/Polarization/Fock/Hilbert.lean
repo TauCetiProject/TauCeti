@@ -181,10 +181,8 @@ theorem inner_fock_ιMulti_ιMulti (p : ℕ) (x y : Fin p → W) :
     ring
   have hsmul : LinearMap.BilinForm.baseChange ℂ ((-2 : ℝ) • innerₗ V) =
       (-2 : ℝ) • LinearMap.BilinForm.baseChange ℂ (innerₗ V) := by
-    refine TensorProduct.AlgebraTensorModule.ext fun a u ↦
-      TensorProduct.AlgebraTensorModule.ext fun b v ↦ ?_
-    simp [Complex.real_smul]
-    ring
+    simp only [LinearMap.BilinForm.baseChange, LinearMap.BilinForm.tmul, TensorProduct.tmul_smul,
+      LinearMap.map_smul_of_tower]
   rw [J.inner_fock hQJ hQnd hQ _ (J.fockMetricBasis_polar hQJ hQnd hQ),
     J.toLinearMapₛₗ₂_ιMulti_ιMulti hQJ hQnd _ (J.fockMetricBasis_polar hQJ hQnd hQ)]
   congr 1
