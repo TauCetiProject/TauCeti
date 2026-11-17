@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.ContinuousInverse
 public import TauCeti.Analysis.InnerProductSpace.Projection.Basic
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Snake
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Exact
 
 /-!
 # Topological splittings of short exact sequences through Hilbert spaces
