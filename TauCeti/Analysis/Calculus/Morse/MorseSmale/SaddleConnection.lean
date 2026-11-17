@@ -94,6 +94,23 @@ private noncomputable abbrev e₀ : EuclideanSpace ℝ (Fin 2) := EuclideanSpace
 
 private noncomputable abbrev e₁ : EuclideanSpace ℝ (Fin 2) := EuclideanSpace.single 1 1
 
+private theorem smul_e₀_add_smul_e₁_apply_zero (a b : ℝ) : (a • e₀ + b • e₁) 0 = a := by
+  simp
+
+private theorem smul_e₀_add_smul_e₁_apply_one (a b : ℝ) : (a • e₀ + b • e₁) 1 = b := by
+  simp
+
+/-- Two points of the plane agree when both coordinates do. -/
+private theorem ext_two {u v : EuclideanSpace ℝ (Fin 2)} (h0 : u 0 = v 0) (h1 : u 1 = v 1) :
+    u = v := by
+  ext i
+  fin_cases i
+  exacts [h0, h1]
+
+/-- The inner product on the plane in coordinates. -/
+private theorem inner_eq (u v : EuclideanSpace ℝ (Fin 2)) : ⟪u, v⟫ = u 0 * v 0 + u 1 * v 1 := by
+  simp [PiLp.inner_apply, Fin.sum_univ_two, mul_comm]
+
 /-- The gradient field `(-(2 + cos y) sin x, -sin y cos x + ε cos y)`. -/
 private noncomputable def gradField (ε : ℝ) (z : EuclideanSpace ℝ (Fin 2)) :
     EuclideanSpace ℝ (Fin 2) :=
@@ -120,11 +137,9 @@ private theorem hasGradientAt_tiltedTorusHeight (z : EuclideanSpace ℝ (Fin 2))
   have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z hp1
   refine ((((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hc0).add (hs1.const_mul ε)).congr_fderiv ?_
   ext u
-  simp only [Fin.isValue, Pi.add_apply, Function.comp_apply, neg_smul, smul_neg, zero_add,
-    add_apply, neg_apply, smul_apply, PiLp.proj_apply, smul_eq_mul, gradField, map_add, map_neg,
-    map_smul, toDual_apply_apply, PiLp.inner_apply, PiLp.single_apply, RCLike.inner_apply,
-    MonoidWithZeroHom.map_ite_one_zero, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq',
-    Finset.mem_univ, ↓reduceIte]
+  simp only [add_apply, smul_apply, zero_apply, PiLp.proj_apply, Pi.add_apply,
+    Function.comp_apply, smul_eq_mul, toDual_apply_apply, inner_eq, gradField_apply_zero,
+    gradField_apply_one]
   ring
 
 /-- The gradient of the tilted torus height. -/
@@ -180,14 +195,10 @@ private theorem hasFDerivAt_gradField (z : EuclideanSpace ℝ (Fin 2)) :
   have g0 := (((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hs0).neg.smul_const e₀
   have g1 := ((hs1.mul hc0).neg.add (hc1.const_mul ε)).smul_const e₁
   refine (g0.add g1).congr_fderiv ?_
-  ext u i
-  fin_cases i <;>
-    simp only [Fin.isValue, Pi.add_apply, Function.comp_apply, neg_smul, zero_add, smul_neg,
-      neg_add_rev, neg_neg, add_apply, ContinuousLinearMap.smulRight_apply, smul_apply,
-      PiLp.proj_apply, smul_eq_mul, neg_apply, Fin.zero_eta, Fin.mk_one, PiLp.add_apply,
-      PiLp.smul_apply, PiLp.single_eq_same, mul_one, ne_eq, zero_ne_one, one_ne_zero,
-      not_false_eq_true, PiLp.single_eq_of_ne, mul_zero, add_zero, hessField, hessA, hessB,
-      hessD] <;>
+  rw [hessField]
+  congr 2 <;> ext u <;>
+    simp only [add_apply, neg_apply, smul_apply, zero_apply, PiLp.proj_apply, Pi.add_apply,
+      Function.comp_apply, smul_eq_mul, hessA, hessB, hessD] <;>
     ring
 
 /-- The Hessian operator of the tilted torus height. -/
@@ -201,10 +212,8 @@ private theorem hessianQuadraticForm_tiltedTorusHeight (z u : EuclideanSpace ℝ
     hessianQuadraticForm (tiltedTorusHeight ε) z u =
       hessA z * u 0 ^ 2 + 2 * hessB z * u 0 * u 1 + hessD ε z * u 1 ^ 2 := by
   rw [hessianQuadraticForm_apply, ← inner_hessianOperator_left,
-    hessianOperator_tiltedTorusHeight, hessField_apply]
-  simp only [Fin.isValue, PiLp.inner_apply, PiLp.add_apply, PiLp.smul_apply, PiLp.single_apply,
-    smul_eq_mul, mul_ite, mul_one, mul_zero, RCLike.inner_apply, conj_trivial, Fin.sum_univ_two,
-    ↓reduceIte, zero_ne_one, add_zero, one_ne_zero, zero_add]
+    hessianOperator_tiltedTorusHeight, hessField_apply, inner_eq, smul_e₀_add_smul_e₁_apply_zero,
+    smul_e₀_add_smul_e₁_apply_one]
   ring
 
 private theorem abs_hessA_le (z : EuclideanSpace ℝ (Fin 2)) : |hessA z| ≤ 3 := by
@@ -465,6 +474,15 @@ theorem morseIndex_tiltedTorusHeight_of_cos_eq_neg_one_of_cos_pos
 private noncomputable def saddleConnection (t : ℝ) : EuclideanSpace ℝ (Fin 2) :=
   (2 * Real.arctan (Real.exp t)) • e₀ + Real.pi • e₁
 
+@[simp]
+private theorem saddleConnection_apply_zero (t : ℝ) :
+    saddleConnection t 0 = 2 * Real.arctan (Real.exp t) :=
+  smul_e₀_add_smul_e₁_apply_zero _ _
+
+@[simp]
+private theorem saddleConnection_apply_one (t : ℝ) : saddleConnection t 1 = Real.pi :=
+  smul_e₀_add_smul_e₁_apply_one _ _
+
 private theorem saddleConnection_eq_comp :
     saddleConnection = (fun a : ℝ ↦ (2 * a) • e₀ + Real.pi • e₁) ∘ (Real.arctan ∘ Real.exp) := by
   funext t
@@ -476,15 +494,12 @@ private theorem isIntegralCurve_saddleConnection :
   rw [gradient_tiltedTorusHeight]
   have hA := ((Real.hasDerivAt_arctan (Real.exp t)).comp t (Real.hasDerivAt_exp t)).const_mul 2
   refine ((hA.smul_const e₀).add_const (Real.pi • e₁)).congr_deriv ?_
-  ext i
-  fin_cases i
-  · simp only [one_div, Fin.zero_eta, Fin.isValue, PiLp.smul_apply, PiLp.single_eq_same,
-      smul_eq_mul, mul_one, saddleConnection, PiLp.neg_apply, gradField_apply_zero, PiLp.add_apply,
-      ne_eq, one_ne_zero, not_false_eq_true, PiLp.single_eq_of_ne, mul_zero, zero_add, Real.cos_pi,
-      zero_ne_one, add_zero, Real.sin_two_mul_arctan, neg_neg]
-    field_simp
-    norm_num
-  · simp [saddleConnection]
+  refine ext_two ?_ (by simp)
+  simp only [PiLp.smul_apply, PiLp.single_eq_same, smul_eq_mul, mul_one, PiLp.neg_apply,
+    gradField_apply_zero, saddleConnection_apply_zero, saddleConnection_apply_one,
+    Real.sin_two_mul_arctan, Real.cos_pi]
+  field_simp
+  norm_num
 
 /-- **The saddle connection of the upright torus.** For the height function
 `(2 + cos y) cos x` of the upright torus, the point `(π / 2, π)` lies on the trajectory
@@ -498,14 +513,10 @@ theorem mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero :
   have hflow := eq_negativeGradientFlow (tiltedTorusHeight 0)
     (lipschitzWith_gradient_tiltedTorusHeight 0) isIntegralCurve_saddleConnection
   have h0 : saddleConnection 0 = !₂[Real.pi / 2, Real.pi] := by
-    ext i
-    fin_cases i
-    · simp only [saddleConnection, Real.exp_zero, Real.arctan_one, Fin.zero_eta, Fin.isValue,
-        PiLp.add_apply, PiLp.smul_apply, PiLp.single_eq_same, smul_eq_mul, mul_one, ne_eq,
-        zero_ne_one, not_false_eq_true, PiLp.single_eq_of_ne, mul_zero, add_zero,
-        Matrix.cons_val_zero]
-      ring
-    · simp [saddleConnection]
+    refine ext_two ?_ (by simp)
+    rw [saddleConnection_apply_zero, Real.exp_zero, Real.arctan_one]
+    simp only [Matrix.cons_val_zero]
+    ring
   rw [← h0]
   have hc : Continuous fun a : ℝ ↦ (2 * a) • e₀ + Real.pi • e₁ := by fun_prop
   refine ⟨Flow.mem_unstableSet.2 (Tendsto.congr hflow ?_),
@@ -521,13 +532,10 @@ theorem mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero :
       (Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp Real.tendsto_exp_atTop
     rw [saddleConnection_eq_comp]
     convert (hc.tendsto (Real.pi / 2)).comp harc using 2
-    ext i
-    fin_cases i
-    · simp only [Fin.zero_eta, Fin.isValue, Matrix.cons_val_zero, PiLp.add_apply, PiLp.smul_apply,
-        PiLp.single_eq_same, smul_eq_mul, mul_one, ne_eq, zero_ne_one, not_false_eq_true,
-        PiLp.single_eq_of_ne, mul_zero, add_zero]
-      ring
-    · simp
+    refine ext_two ?_ (by simp)
+    rw [smul_e₀_add_smul_e₁_apply_zero]
+    simp only [Matrix.cons_val_zero]
+    ring
 
 /-- **The upright torus is not Morse–Smale.** The negative gradient flow of the height function
 `(2 + cos y) cos x` has a trajectory between the saddles `(0, π)` and `(π, π)`, both of Morse
@@ -616,18 +624,6 @@ private theorem cos_eq_one_and_cos_eq_neg_one_of_lt {p q : EuclideanSpace ℝ (F
     · linarith [Real.cos_le_one (p 0)]
     · exact h
 
-/-- A coordinate of the negative gradient flow of `f_ε` has derivative the corresponding coordinate
-of `-∇ f_ε`. -/
-private theorem hasDerivAt_negativeGradientFlow_apply (y : EuclideanSpace ℝ (Fin 2)) (i : Fin 2)
-    (s : ℝ) :
-    HasDerivAt (fun s ↦ negativeGradientFlow (tiltedTorusHeight ε)
-        (lipschitzWith_gradient_tiltedTorusHeight ε) s y i)
-      (-∇ (tiltedTorusHeight ε) (negativeGradientFlow (tiltedTorusHeight ε)
-        (lipschitzWith_gradient_tiltedTorusHeight ε) s y) i) s := by
-  have h := (isNegativeGradient_negativeGradientFlow (tiltedTorusHeight ε)
-    (lipschitzWith_gradient_tiltedTorusHeight ε)).isIntegralCurve y s
-  exact (PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 _ i).comp_hasDerivAt s h
-
 /-- Along the negative gradient flow of `f_ε` the function `cos x` is antitone: its derivative is
 `-sin x · (2 + cos y) sin x = -(2 + cos y) sin² x`. -/
 private theorem antitone_cos_negativeGradientFlow (y : EuclideanSpace ℝ (Fin 2)) :
@@ -637,7 +633,7 @@ private theorem antitone_cos_negativeGradientFlow (y : EuclideanSpace ℝ (Fin 2
   refine antitone_of_hasDerivAt_nonpos (f' := fun s ↦
     -Real.sin (Φ s y 0) * ((2 + Real.cos (Φ s y 1)) * Real.sin (Φ s y 0))) (fun s ↦ ?_) fun s ↦ ?_
   · have hx : HasDerivAt (fun s ↦ Φ s y 0) ((2 + Real.cos (Φ s y 1)) * Real.sin (Φ s y 0)) s :=
-      (hasDerivAt_negativeGradientFlow_apply y 0 s).congr_deriv (by
+      (hasDerivAt_negativeGradientFlow_apply _ _ y 0 s).congr_deriv (by
         rw [gradient_tiltedTorusHeight_apply_zero, neg_neg])
     exact (Real.hasDerivAt_cos _).comp s hx
   · rw [Pi.zero_apply]
@@ -655,7 +651,7 @@ private theorem mul_sin_negativeGradientFlow_nonpos (hε : ε ≠ 0) (y : Euclid
   set Φ := negativeGradientFlow (tiltedTorusHeight ε) (lipschitzWith_gradient_tiltedTorusHeight ε)
   have hγ (s : ℝ) : HasDerivAt (fun s ↦ Φ s y 1)
       (Real.sin (Φ s y 1) * Real.cos (Φ s y 0) - ε * Real.cos (Φ s y 1)) s :=
-    (hasDerivAt_negativeGradientFlow_apply y 1 s).congr_deriv (by
+    (hasDerivAt_negativeGradientFlow_apply _ _ y 1 s).congr_deriv (by
       rw [gradient_tiltedTorusHeight_apply_one]
       ring)
   have hg (s : ℝ) : HasDerivAt (fun s ↦ ε * Real.sin (Φ s y 1))
