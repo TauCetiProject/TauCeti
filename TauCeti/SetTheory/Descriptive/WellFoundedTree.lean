@@ -12,15 +12,12 @@ public import TauCeti.SetTheory.Descriptive.Tree
 
 For a descriptive tree `T : Descriptive.tree A`, the **body** `Descriptive.Tree.body T` is the set
 of infinite branches `x : ℕ → A`, the sequences all of whose initial segments
-`Descriptive.Tree.initialSegment x n` lie in `T`. The names and statements of `initialSegment`,
-`IsBranch` and `body` follow Mathlib PR #41946.
+`Descriptive.Tree.initialSegment x n` lie in `T`.
 
 A tree is well-founded (`Descriptive.Tree.IsWellFounded`, defined through immediate extension in
 `TauCeti.SetTheory.Descriptive.Tree`) exactly when its body is empty, and exactly when **strict
-extension** `Descriptive.Tree.StrictExt T` is well-founded on its nodes; no finiteness of the
-branching is needed. The rank `Descriptive.Tree.rank T` of a well-founded tree is also the strict
-supremum of the strict-extension ranks of its nodes, and it is monotone along homomorphisms of
-strict extension.
+extension** `Descriptive.Tree.StrictExt T` (also defined there) is well-founded on its nodes; no
+finiteness of the branching is needed.
 
 For a discrete alphabet the body of a tree is closed in `ℕ → A`, and the body of the tree of
 initial segments of the points of a set `C` is the closure of `C`, so every closed subset of
@@ -32,17 +29,12 @@ of the body of a tree on `Bool × ℕ`.
 * `Descriptive.Tree.initialSegment x n`: the list of the first `n` values of `x : ℕ → A`.
 * `Descriptive.Tree.IsBranch T x` and `Descriptive.Tree.body T`: infinite branches and the body.
 * `Descriptive.Tree.initialSegmentTree C`: the tree of initial segments of the points of `C`.
-* `Descriptive.Tree.StrictExt T`: proper extension on the nodes of `T`.
 
 ## Main results
 
 * `Descriptive.Tree.isWellFounded_iff_body_eq_empty` and
   `Descriptive.Tree.wellFounded_strictExt_iff`: a tree is well-founded iff its body is empty iff
   strict extension is well-founded on its nodes.
-* `Descriptive.Tree.IsWellFounded.rank_eq_iSup_strictExt`: the rank of a well-founded tree is the
-  strict supremum of the strict-extension ranks of its nodes.
-* `Descriptive.Tree.IsWellFounded.rank_le_of_relHom`: rank is monotone along homomorphisms of
-  strict extension.
 * `Descriptive.Tree.isClosed_body` and `Descriptive.Tree.body_initialSegmentTree`: bodies are
   closed, and the body of the tree of initial segments of a set is its closure.
 * `MeasureTheory.exists_tree_of_analyticSet_cantor`: the tree representation of analytic subsets
@@ -53,6 +45,8 @@ of the body of a tree on `Bool × ℕ`.
 * Alexander S. Kechris, *Classical Descriptive Set Theory*, Graduate Texts in Mathematics 156,
   Springer, 1995, Sections 2.A, 2.B, 2.E and 25.A.
 * David Marker, *Lectures on infinitary model theory*, Chapter 9.
+* The names and statements of `initialSegment`, `IsBranch` and `body` are those of
+  [Mathlib PR 41946](https://github.com/leanprover-community/mathlib4/pull/41946).
 -/
 
 public section
@@ -68,13 +62,13 @@ variable {A : Type u} {S T : tree A}
 /-! ### Initial segments, branches and bodies -/
 
 /-- The list of the first `n` values of an infinite sequence. -/
-@[expose] def initialSegment (x : ℕ → A) (n : ℕ) : List A :=
+def initialSegment (x : ℕ → A) (n : ℕ) : List A :=
   List.ofFn fun i : Fin n ↦ x i
 
 /-- Unfolding lemma for `Descriptive.Tree.initialSegment`. -/
 theorem initialSegment_def (x : ℕ → A) (n : ℕ) :
     initialSegment x n = List.ofFn fun i : Fin n ↦ x i :=
-  rfl
+  (rfl)
 
 @[simp] lemma initialSegment_zero (x : ℕ → A) : initialSegment x 0 = [] := by
   rfl
@@ -100,7 +94,7 @@ theorem initialSegment_eq_initialSegment_iff {x y : ℕ → A} {n : ℕ} :
   simp only [initialSegment, List.ofFn_inj, funext_iff, Fin.forall_iff]
 
 /-- An infinite sequence is a branch when every finite initial segment belongs to the tree. -/
-@[expose] def IsBranch (T : tree A) (x : ℕ → A) : Prop :=
+def IsBranch (T : tree A) (x : ℕ → A) : Prop :=
   ∀ n, initialSegment x n ∈ T
 
 /-- Unfolding lemma for `Descriptive.Tree.IsBranch`. -/
@@ -108,7 +102,7 @@ theorem isBranch_iff {x : ℕ → A} : IsBranch T x ↔ ∀ n, initialSegment x 
   Iff.rfl
 
 /-- The body of a tree is the set of all its infinite branches. -/
-@[expose] def body (T : tree A) : Set (ℕ → A) :=
+def body (T : tree A) : Set (ℕ → A) :=
   {x | IsBranch T x}
 
 @[simp] lemma mem_body {x : ℕ → A} : x ∈ body T ↔ ∀ n, initialSegment x n ∈ T :=
@@ -188,55 +182,7 @@ theorem _root_.IsClosed.body_initialSegmentTree [TopologicalSpace A] [DiscreteTo
     {C : Set (ℕ → A)} (hC : IsClosed C) : body (initialSegmentTree C) = C := by
   rw [Descriptive.Tree.body_initialSegmentTree, hC.closure_eq]
 
-/-! ### Strict extension -/
-
-/-- Strict extension on the nodes of a tree: `StrictExt T y x` holds when `y` properly extends
-`x`. -/
-@[expose] def StrictExt (T : tree A) (y x : T) : Prop :=
-  (x : List A) <+: y ∧ (x : List A) ≠ y
-
-/-- Unfolding lemma for `Descriptive.Tree.StrictExt`. -/
-theorem strictExt_iff {y x : T} : StrictExt T y x ↔ (x : List A) <+: y ∧ (x : List A) ≠ y :=
-  Iff.rfl
-
-/-- An immediate extension is a strict extension. -/
-theorem ChildRel.strictExt {y x : T} (h : ChildRel T y x) : StrictExt T y x := by
-  obtain ⟨a, ha⟩ := childRel_iff.1 h
-  exact ⟨ha ▸ List.prefix_append _ _, fun h' => by simp [← h'] at ha⟩
-
-/-- Node ranks do not increase along extensions. -/
-private theorem nodeRank_append_le (hT : IsWellFounded T) (u : T) (l : List A)
-    (hl : u.1 ++ l ∈ T) : (hT.apply ⟨u.1 ++ l, hl⟩).rank ≤ (hT.apply u).rank := by
-  induction l generalizing u with
-  | nil =>
-    have heq : (⟨u.1 ++ [], hl⟩ : T) = u := Subtype.ext (by simp)
-    rw [heq]
-  | cons a l ih =>
-    have hl' : (u.1 ++ [a]) ++ l ∈ T := by simpa using hl
-    have heq : (⟨u.1 ++ a :: l, hl⟩ : T) = ⟨(u.1 ++ [a]) ++ l, hl'⟩ := Subtype.ext (by simp)
-    rw [heq]
-    exact (ih ⟨u.1 ++ [a], mem_of_append hl'⟩ hl').trans
-      ((hT.apply u).rank_lt_of_rel (a := ⟨u.1 ++ [a], mem_of_append hl'⟩)
-        (childRel_iff.2 ⟨a, rfl⟩)).le
-
-/-- In a well-founded tree, node ranks strictly decrease along strict extension. -/
-theorem IsWellFounded.rank_lt_of_strictExt (hT : IsWellFounded T) {y x : T}
-    (h : StrictExt T y x) : (hT.apply y).rank < (hT.apply x).rank := by
-  obtain ⟨⟨l, hl⟩, hne⟩ := h
-  obtain _ | ⟨a, l⟩ := l
-  · exact absurd (by simp [← hl]) hne
-  have hy : (x.1 ++ [a]) ++ l ∈ T := by simp [hl]
-  have heq : y = ⟨(x.1 ++ [a]) ++ l, hy⟩ := Subtype.ext (by simp [← hl])
-  rw [heq]
-  exact (nodeRank_append_le hT ⟨x.1 ++ [a], mem_of_append hy⟩ l hy).trans_lt
-    ((hT.apply x).rank_lt_of_rel (a := ⟨x.1 ++ [a], mem_of_append hy⟩)
-      (childRel_iff.2 ⟨a, rfl⟩))
-
-/-- Strict extension is well-founded on the nodes of a well-founded tree. -/
-theorem IsWellFounded.wellFounded_strictExt (hT : IsWellFounded T) :
-    WellFounded (StrictExt T) :=
-  Subrelation.wf (fun h => hT.rank_lt_of_strictExt h)
-    (InvImage.wf (fun u : T => (hT.apply u).rank) wellFounded_lt)
+/-! ### Strict extension and bodies -/
 
 /-- **Strict extension and bodies.** A tree has no infinite branch exactly when strict extension
 is well-founded on its nodes. No finiteness of the branching is needed. -/
@@ -245,55 +191,9 @@ theorem wellFounded_strictExt_iff (T : tree A) : WellFounded (StrictExt T) ↔ b
     (isWellFounded_iff_body_eq_empty.2 h).wellFounded_strictExt⟩
   let c : ℕ → T := fun n => ⟨initialSegment x n, hx n⟩
   have hstep (n : ℕ) : StrictExt T (c (n + 1)) (c n) :=
-    ⟨initialSegment_prefix_initialSegment x n.le_succ, fun h => by
+    strictExt_iff.2 ⟨initialSegment_prefix_initialSegment x n.le_succ, fun h => by
       simpa [c] using congrArg List.length h⟩
   exact (wellFounded_iff_isEmpty_descending_chain.mp hwf).false ⟨c, hstep⟩
-
-/-- In a well-founded tree, the strict-extension rank of a node is its immediate-extension rank.
--/
-theorem IsWellFounded.rank_strictExt_eq (hT : IsWellFounded T) (u : T) :
-    (hT.wellFounded_strictExt.apply u).rank = (hT.apply u).rank := by
-  induction u using hT.wellFounded_strictExt.induction with
-  | h u ih =>
-    refine le_antisymm ?_ ?_
-    · rw [(hT.wellFounded_strictExt.apply u).rank_eq]
-      refine Ordinal.iSup_le fun v => ?_
-      rw [ih v.1 v.2]
-      exact Order.succ_le_of_lt (hT.rank_lt_of_strictExt v.2)
-    · rw [(hT.apply u).rank_eq]
-      refine Ordinal.iSup_le fun v => ?_
-      have hv : StrictExt T v.1 u := v.2.strictExt
-      have h := (hT.wellFounded_strictExt.apply u).rank_lt_of_rel hv
-      rw [ih v.1 hv] at h
-      exact Order.succ_le_of_lt h
-
-/-- The rank of a well-founded tree is the strict supremum of the strict-extension ranks of its
-nodes. -/
-theorem IsWellFounded.rank_eq_iSup_strictExt (hT : IsWellFounded T) :
-    rank T = ⨆ u : T, Order.succ (hT.wellFounded_strictExt.apply u).rank := by
-  simp only [hT.rank_strictExt_eq, hT.rank_eq_iSup]
-
-/-- A tree with a homomorphism of strict extension into a well-founded tree is well-founded. -/
-theorem IsWellFounded.of_relHom (hT : IsWellFounded T) (f : StrictExt S →r StrictExt T) :
-    IsWellFounded S :=
-  isWellFounded_iff_body_eq_empty.2 <|
-    (wellFounded_strictExt_iff S).1 (RelHomClass.wellFounded f hT.wellFounded_strictExt)
-
-/-- **Monotonicity of rank.** A homomorphism of strict extension into a well-founded tree, injective
-or not, does not increase the rank. -/
-theorem IsWellFounded.rank_le_of_relHom (hT : IsWellFounded T) (f : StrictExt S →r StrictExt T) :
-    rank S ≤ rank T := by
-  have hS := hT.of_relHom f
-  have hnode (u : S) : (hS.wellFounded_strictExt.apply u).rank ≤
-      (hT.wellFounded_strictExt.apply (f u)).rank := by
-    induction u using hS.wellFounded_strictExt.induction with
-    | h u ih =>
-      rw [(hS.wellFounded_strictExt.apply u).rank_eq]
-      exact Ordinal.iSup_le fun v => Order.succ_le_of_lt <| (ih v.1 v.2).trans_lt
-        ((hT.wellFounded_strictExt.apply (f u)).rank_lt_of_rel (f.map_rel v.2))
-  rw [hS.rank_eq_iSup_strictExt, hT.rank_eq_iSup_strictExt]
-  exact Ordinal.iSup_le fun u => (Order.succ_le_succ (hnode u)).trans (Ordinal.le_iSup
-    (fun w : T => Order.succ (hT.wellFounded_strictExt.apply w).rank) (f u))
 
 end Descriptive.Tree
 

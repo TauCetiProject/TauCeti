@@ -40,7 +40,7 @@ theorem mem_rootTree {l : List ℕ} : l ∈ rootTree ↔ l = [] :=
 /-- The tree of the root alone has no branch. -/
 theorem body_rootTree : body rootTree = ∅ :=
   Set.eq_empty_of_forall_notMem fun x hx => by
-    simpa [initialSegment_succ, mem_rootTree] using hx 1
+    simpa [initialSegment_succ, mem_rootTree] using mem_body.1 hx 1
 
 -- The empty tree has empty body.
 example : body (⊥ : tree ℕ) = ∅ := body_bot
@@ -55,16 +55,18 @@ def zeroTree : tree ℕ :=
 -- The tree of constant-zero sequences has the zero sequence as its only branch.
 example : body zeroTree = {fun _ => 0} := by
   ext x
-  refine ⟨fun hx => funext fun n => hx (n + 1) (x n) ?_, ?_⟩
+  refine ⟨fun hx => funext fun n => mem_body.1 hx (n + 1) (x n) ?_, fun hx => mem_body.2 ?_⟩
   · simp [initialSegment_succ]
-  · rintro rfl n a ha
+  · rw [Set.mem_singleton_iff] at hx
+    subst hx
+    intro n a ha
     rw [initialSegment_def, List.mem_ofFn'] at ha
     obtain ⟨i, rfl⟩ := ha
     rfl
 
 -- The full tree has a branch.
 example : (body (⊤ : tree ℕ)).Nonempty :=
-  ⟨fun _ => 0, fun _ => by simp⟩
+  ⟨fun _ => 0, mem_body.2 fun _ => by simp⟩
 
 -- The empty tree has rank `0`.
 example : rank (⊥ : tree ℕ) = 0 := rank_bot
@@ -119,7 +121,7 @@ theorem subAt_decBelow_of_le {m a : ℕ} (ha : m ≤ a) : subAt (decBelow m) [a]
 theorem isWellFounded_decTree : IsWellFounded decTree := by
   refine isWellFounded_iff_body_eq_empty.2 (Set.eq_empty_of_forall_notMem fun x hx => ?_)
   have hstep (n : ℕ) : x (n + 1) < x n := by
-    have h := mem_decTree.1 (hx (n + 2))
+    have h := mem_decTree.1 (mem_body.1 hx (n + 2))
     rw [initialSegment_succ, List.pairwise_append] at h
     exact h.2.2 (x n) (by simp [initialSegment_succ]) (x (n + 1)) (by simp)
   exact (wellFounded_iff_isEmpty_descending_chain.mp wellFounded_lt).false ⟨x, hstep⟩

@@ -46,7 +46,7 @@ open _root_.Descriptive.Tree
 /-- The **Kleene–Brouwer order** on finite sequences of natural numbers: `KBLT x y` holds when `x`
 properly extends `y`, or when at the first position where they differ the entry of `x` is
 smaller. -/
-@[expose] def KBLT (x y : List ℕ) : Prop :=
+def KBLT (x y : List ℕ) : Prop :=
   (y <+: x ∧ x ≠ y) ∨
     ∃ (p : List ℕ) (a b : ℕ) (x' y' : List ℕ), a < b ∧ x = p ++ a :: x' ∧ y = p ++ b :: y'
 
@@ -166,7 +166,7 @@ exactly when the tree has no infinite branch. -/
 theorem wellFounded_kbLT_iff (T : tree ℕ) :
     WellFounded (fun x y : T => KBLT x y) ↔ body T = ∅ := by
   refine ⟨fun hwf => eq_empty_of_forall_notMem fun x hx => ?_, fun hT => ?_⟩
-  · let c : ℕ → T := fun n => ⟨initialSegment x n, hx n⟩
+  · let c : ℕ → T := fun n => ⟨initialSegment x n, mem_body.1 hx n⟩
     have hstep (n : ℕ) : KBLT (c (n + 1)) (c n) :=
       kbLT_of_prefix (initialSegment_prefix_initialSegment x n.le_succ) fun h => by
         simpa [c] using congrArg List.length h
@@ -182,9 +182,9 @@ theorem wellFounded_kbLT_iff (T : tree ℕ) :
     fun n => Nat.rec ⟨[], h₀⟩ (fun _ p => ⟨p.1 ++ [f p], hf p⟩) n
   have hseq (n : ℕ) : initialSegment (fun k => f (seq k)) n = (seq n).1 := by
     induction n with
-    | zero => rfl
+    | zero => simp [seq]
     | succ n ih => rw [initialSegment_succ, ih]
-  refine (eq_empty_iff_forall_notMem.1 hT) (fun k => f (seq k)) fun n => ?_
+  refine (eq_empty_iff_forall_notMem.1 hT) (fun k => f (seq k)) (mem_body.2 fun n => ?_)
   obtain ⟨s, -, hps⟩ := (seq n).2.1
   exact hseq n ▸ mem_of_prefix hps s.2
 
@@ -205,7 +205,7 @@ theorem rank_le_type_kbLT (T : tree ℕ) [hT : IsWellOrder T (fun x y : T => KBL
     | h u ih =>
       rw [(hT.apply u).rank_eq]
       refine Ordinal.iSup_le fun v => Order.succ_le_of_lt ((ih v.1 v.2).trans_lt ?_)
-      obtain ⟨h, hne⟩ := v.2.strictExt
+      obtain ⟨h, hne⟩ := strictExt_iff.1 v.2.strictExt
       exact (Ordinal.typein_lt_typein _).2 (kbLT_of_prefix h hne)
   rw [hT.rank_eq_iSup]
   exact Ordinal.iSup_le fun u =>
