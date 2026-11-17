@@ -166,7 +166,8 @@ private theorem contMDiffAt_inputAlmostComplex {F G N : Type*} [NormedAddCommGro
         (b y) ((inputAlmostComplex h₀ J hJ (f y)).toEndomorphism (b y))) y₀ :=
   have h := periodic_and_contMDiff_update_inf (J₀ := J₀) J hJp hJs
   contMDiffAt_endWeightedAlmostComplex h₀ _ _ (hb := hb)
-    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q 1 hf (ne_endCenter hS q))
+    (fun q => Floer.contMDiffAt_smoothTransition_endCoord_comp q hf contMDiffAt_const
+      (ne_endCenter hS q))
     fun q => q.contMDiffAt_toEndomorphism_comp_im_endCoord (h q).1 (h q).2 hf hb
       (ne_endCenter hS q)
 

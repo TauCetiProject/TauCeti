@@ -91,7 +91,7 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
       MDifferentiableAt I 𝓘(ℝ) (Kt z) (u r z) ∧
       MDifferentiableAt I 𝓘(ℝ) (δKs z) (u r z) ∧
       MDifferentiableAt I 𝓘(ℝ) (δKt z) (u r z)) :
-    HasDerivAt (sectionCoord (F := E) (fun r ↦ u r z) (fun r ↦
+    HasDerivAt (sectionCoord ℝ (F := E) (fun r ↦ u r z) (fun r ↦
       ω.floerOperator (fun w x ↦ J w x + r • Y w x)
           (fun w ↦ Ks w + r • δKs w) (fun w ↦ Kt w + r • δKt w) (u r) z -
         ω.floerOperator J Ks Kt (u r) z) (u 0 z))
@@ -124,14 +124,14 @@ private theorem hasDerivAt_sectionCoord_floerOperator_coefficient_difference
   have hbase := FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ 0)
   have hcoord (V : ∀ r, TangentSpace I (γ r))
       (hV : ContinuousAt (fun r ↦ TotalSpace.mk' E (γ r) (V r)) 0) :=
-    continuousAt_sectionCoord γ V hV hbase
-  have hW : ContinuousAt (sectionCoord (F := E) γ W (γ 0)) 0 := by
-    simpa only [W, sectionCoord_sub, sectionCoord_smul] using!
+    continuousAt_sectionCoord ℝ γ V hV hbase
+  have hW : ContinuousAt (sectionCoord ℝ (F := E) γ W (γ 0)) 0 := by
+    simpa only [W, sectionCoord_fun_sub, sectionCoord_fun_smul] using!
       (((hcoord _ (hYγ.clm_bundle_apply hΔt.continuousAt)).sub (hcoord _ hδXsγ)).sub
         (hcoord _ (hJγ.clm_bundle_apply hδXtγ))).sub
           (continuousAt_id.smul (hcoord _ (hYγ.clm_bundle_apply hδXtγ)))
   -- At zero, the derivative of r • W(r) is W(0), using continuity rather than a product rule.
-  have hp : HasDerivAt (fun r ↦ r • sectionCoord (F := E) γ W (γ 0) r)
+  have hp : HasDerivAt (fun r ↦ r • sectionCoord ℝ (F := E) γ W (γ 0) r)
       (W 0) 0 := by
     have hd := (hasDerivAt_id (0 : ℝ)).smul_of_eq_zero hW rfl
     simp only [one_smul] at hd
@@ -178,7 +178,7 @@ theorem mdifferentiableAt_floerOperator_add_smul_coefficients
   have hF := differentiableAt_sectionCoord _ _ hF₀ hbase
   have hd := ω.hasDerivAt_sectionCoord_floerOperator_coefficient_difference
     J Y Ks Kt δKs δKt hu hJ hY hXt hδXs hδXt hK
-  simpa only [sectionCoord_sub, add_sub_cancel] using! hF.add hd.differentiableAt
+  simpa only [sectionCoord_fun_sub, add_sub_cancel] using! hF.add hd.differentiableAt
 
 variable [FiniteDimensional ℝ E]
 

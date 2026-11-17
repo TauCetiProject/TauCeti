@@ -50,8 +50,9 @@ the pullback of a global function to multiplication by its restriction. -/
 lemma higherDirectImagePresheaf_map_globalSectionsSmul_app (M : X.Modules) (n : ℕ)
     (r : Γ(Y, ⊤)) (U : Y.Opens)
     (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op U)) :
-    ((f.higherDirectImagePresheaf n).map (M.globalSectionsSmul (f.appTop r))).app (.op U) x =
-      (show Y.ringCatSheaf.obj.obj (.op U) from Y.presheaf.map U.leTop.op r) • x := by
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    (((f.higherDirectImagePresheaf n).map (M.globalSectionsSmul (f.appTop r))).app (.op U) x =
+      (show Y.ringCatSheaf.obj.obj (.op U) from Y.presheaf.map U.leTop.op r) • x) := by
   let := Functor.additive_of_preserves_binary_products
     (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y)
   let F := Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y
