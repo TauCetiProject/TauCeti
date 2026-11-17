@@ -600,14 +600,11 @@ theorem reachable_toGraph_iff {x y : α} :
       ∃ (hx : x ∈ S.verts) (hy : y ∈ S.verts), S.coe.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
   have key (hx : x ∈ S.verts) (hy : y ∈ S.verts) :
       S.toGraph.Reachable x y ↔ S.coe.Reachable ⟨x, hx⟩ ⟨y, hy⟩ := by
-    let ux : V(S.toGraph) := ⟨x, S.vertexSet_toGraph.symm ▸ hx⟩
-    let uy : V(S.toGraph) := ⟨y, S.vertexSet_toGraph.symm ▸ hy⟩
-    rw [← Graph.toSimpleGraph_reachable_iff (G := S.toGraph) (u := ux) (v := uy),
-      ← S.toSimpleGraphToGraphIso.reachable_iff,
-      show S.toSimpleGraphToGraphIso ux = ⟨x, hx⟩ from
-        Subtype.ext (S.coe_toSimpleGraphToGraphIso_apply ux),
-      show S.toSimpleGraphToGraphIso uy = ⟨y, hy⟩ from
-        Subtype.ext (S.coe_toSimpleGraphToGraphIso_apply uy)]
+    simpa only [coe_toSimpleGraphToGraphIso_symm_apply] using
+      (Graph.toSimpleGraph_reachable_iff (G := S.toGraph)
+        (u := S.toSimpleGraphToGraphIso.symm ⟨x, hx⟩)
+        (v := S.toSimpleGraphToGraphIso.symm ⟨y, hy⟩)).symm.trans
+        S.toSimpleGraphToGraphIso.symm.reachable_iff
   exact ⟨fun h ↦ ⟨S.vertexSet_toGraph ▸ h.left_mem, S.vertexSet_toGraph ▸ h.right_mem,
     (key _ _).mp h⟩, fun ⟨hx, hy, hr⟩ ↦ (key hx hy).mpr hr⟩
 

@@ -126,9 +126,8 @@ theorem Preconnected.finite_of_finite_edgeSet {V : Type*} {G : SimpleGraph V} [F
   · exact Finite.of_subsingleton
   · rw [not_subsingleton_iff_nontrivial] at hsub
     have hf : (⋃ e : G.edgeSet, {x : V | x ∈ (e : Sym2 V)}).Finite :=
-      Set.finite_iUnion fun e ↦ Sym2.ind (fun u v ↦ by
-        rw [show {x : V | x ∈ s(u, v)} = {u, v} by ext; simp]
-        exact (Set.finite_singleton v).insert u) e.1
+      Set.finite_iUnion fun e ↦ Sym2.ind
+        (fun u v ↦ ((Set.finite_singleton v).insert u).subset fun _ ↦ Sym2.mem_iff.mp) e.1
     refine Set.finite_univ_iff.mp (hf.subset fun x _ ↦ ?_)
     obtain ⟨y, hyx⟩ := exists_ne x
     obtain ⟨p⟩ := hG x y
