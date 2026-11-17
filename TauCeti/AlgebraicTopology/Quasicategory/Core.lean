@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicTopology.Quasicategory.InnerFibration
 public import Mathlib.AlgebraicTopology.SimplicialSet.Monoidal
 public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
 public import Mathlib.AlgebraicTopology.SimplicialSet.PiZero
+public import TauCeti.AlgebraicTopology.SimplicialSet.Op
 public import TauCeti.CategoryTheory.Core
 import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 
@@ -21,11 +22,14 @@ An edge `e : x₀ ⟶ x₁` of a simplicial set `X` is an *equivalence* when it 
 exactly that `e` becomes an isomorphism in the homotopy category of `X`.
 
 The *core* `X.core` of `X` is the subcomplex of the simplices all of whose edges are equivalences.
-When `X` is a quasicategory, its core is again a quasicategory: an inner horn determines all edges
-of its filler except, for `Λ[2, 1]`, the long edge, which is a composite of two equivalences. Every
-Kan complex contained in `X` lies in the core. That the core of a quasicategory is itself a Kan
-complex, hence the largest Kan complex in `X`, is Joyal's theorem on special outer horns, which is
-not proved here. For the nerve of a category `C`, the core is the nerve of the groupoid `Core C`.
+Every edge of `X.core` is already an equivalence in `X.core` itself, so taking the core is
+idempotent (`SSet.core_core`). When `X` is a quasicategory, its core is again a quasicategory: an
+inner horn determines all edges of its filler except, for `Λ[2, 1]`, the long edge, which is a
+composite of two equivalences. Every Kan complex contained in `X` lies in the core. That the core
+of a quasicategory is itself a Kan complex, hence the largest Kan complex in `X`, follows from
+Joyal's theorem on special outer horns and is proved in
+`TauCeti.AlgebraicTopology.Quasicategory.OuterHorn` (`SSet.core.kanComplex`). For the nerve of a
+category `C`, the core is the nerve of the groupoid `Core C`.
 
 ## Main definitions
 
@@ -35,6 +39,8 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
 
 ## Main results
 
+* `SSet.Edge.isEquivalence_opEquiv_iff`, `SSet.op_core`: equivalences and cores commute with
+  passing to the opposite simplicial set.
 * `SSet.Edge.isEquivalence_iff_isIso`: in a quasicategory, an edge is an equivalence exactly
   when its class in the homotopy category is an isomorphism.
 * `SSet.Edge.CompStruct.isEquivalence₀₂`, `isEquivalence₀₁`, `isEquivalence₁₂`: equivalences in
@@ -44,6 +50,8 @@ not proved here. For the nerve of a category `C`, the core is the nerve of the g
   vertices of a Kan complex lie in the same connected component exactly when an edge joins them
   (`SSet.π₀.mk_eq_mk_iff_nonempty_edge`).
 * `SSet.le_core_iff`: the core is the largest subcomplex all of whose edges are equivalences.
+* `SSet.core.isEquivalence`, `SSet.core_core`: every edge of `X.core` is an equivalence in
+  `X.core`, so the core of the core is everything.
 * `SSet.Edge.isEquivalence_tensor_iff`, `SSet.core_tensor`: an edge of a product is an
   equivalence exactly when both of its projections are, so the core of a product is the product
   of the cores. This makes the cores of function complexes closed under composition.
@@ -106,6 +114,26 @@ equivalence. -/
 lemma isEquivalence_ofEq_iff {y₀ y₁ : X _⦋0⦌} {e : Edge x₀ x₁} (h₀ : x₀ = y₀) (h₁ : x₁ = y₁) :
     (e.ofEq h₀ h₁).IsEquivalence ↔ e.IsEquivalence :=
   isEquivalence_iff_of_edge_eq (ofEq_edge e h₀ h₁)
+
+/-- An edge of `X` is an equivalence if and only if the opposite edge of `Xᵒᵖ` is. -/
+@[simp]
+lemma isEquivalence_opEquiv_iff {e : Edge x₀ x₁} :
+    (Edge.opEquiv e).IsEquivalence ↔ e.IsEquivalence :=
+  InvStruct.opEquiv.symm.nonempty_congr
+
+/-- A `1`-simplex of `X` is an equivalence in `Xᵒᵖ` if and only if it is an equivalence in `X`. -/
+@[simp]
+lemma isEquivalence_mk'_opObjEquiv_symm_iff (s : X _⦋1⦌) :
+    (mk' (X.opObjEquiv.symm s)).IsEquivalence ↔ (mk' s).IsEquivalence :=
+  (isEquivalence_iff_of_edge_eq (e := mk' (X.opObjEquiv.symm s))
+    (opEquiv_edge (mk' s)).symm).trans isEquivalence_opEquiv_iff
+
+/-- A `1`-simplex of `Xᵒᵖ` is an equivalence in `X` if and only if it is an equivalence in
+`Xᵒᵖ`. -/
+@[simp]
+lemma isEquivalence_mk'_opObjEquiv_iff (s : X.op _⦋1⦌) :
+    (mk' (X.opObjEquiv s)).IsEquivalence ↔ (mk' s).IsEquivalence := by
+  rw [← isEquivalence_mk'_opObjEquiv_symm_iff, Equiv.symm_apply_apply]
 
 section Quasicategory
 
@@ -418,6 +446,71 @@ instance [Quasicategory X] : InnerFibration X.core.ι where
 /-- The core of a quasicategory is a quasicategory. -/
 instance core.quasicategory [Quasicategory X] : Quasicategory (X.core : SSet) :=
   quasicategory_of_innerFibration X.core.ι
+
+/-- The opposite of the core of `X` is the core of `Xᵒᵖ`. -/
+@[simp]
+lemma op_core (X : SSet.{u}) : X.core.op = X.op.core := by
+  ext d s
+  rw [Subcomplex.mem_op_obj_iff, mem_core_iff, mem_core_iff]
+  refine ⟨fun h g ↦ ?_, fun h f ↦ ?_⟩
+  · rw [op_map, isEquivalence_mk'_opObjEquiv_symm_iff]
+    exact h (SimplexCategory.rev.map g)
+  · have hrev : SimplexCategory.rev.map (SimplexCategory.rev.map f) = f := by
+      ext i
+      simp
+    rw [← hrev]
+    simpa [op_map] using h (SimplexCategory.rev.map f)
+
+/-- A `2`-simplex lies in the core if and only if its three faces are equivalences. -/
+lemma mem_core_obj_two_iff (s : X _⦋2⦌) :
+    s ∈ X.core.obj (op ⦋2⦌) ↔
+      (mk' (X.δ 0 s)).IsEquivalence ∧ (mk' (X.δ 1 s)).IsEquivalence ∧
+        (mk' (X.δ 2 s)).IsEquivalence := by
+  rw [mem_core_iff]
+  refine ⟨fun h ↦ ⟨h (SimplexCategory.δ 0), h (SimplexCategory.δ 1), h (SimplexCategory.δ 2)⟩, ?_⟩
+  rintro ⟨h₀, h₁, h₂⟩ f
+  obtain rfl | rfl | rfl | ⟨k, rfl⟩ := SimplexCategory.eq_of_one_to_two' f
+  · exact h₀
+  · exact h₁
+  · exact h₂
+  · exact isEquivalence_mk'_map_of_eq _ _ rfl
+
+/-- A `2`-simplex witnessing a composition of equivalences as an equivalence lies in the core. -/
+lemma Edge.CompStruct.simplex_mem_core {x₀ x₁ x₂ : X _⦋0⦌}
+    {e₀₁ : Edge x₀ x₁} {e₁₂ : Edge x₁ x₂} {e₀₂ : Edge x₀ x₂} (c : CompStruct e₀₁ e₁₂ e₀₂)
+    (h₀₁ : e₀₁.IsEquivalence) (h₁₂ : e₁₂.IsEquivalence) (h₀₂ : e₀₂.IsEquivalence) :
+    c.simplex ∈ X.core.obj (op ⦋2⦌) :=
+  (mem_core_obj_two_iff c.simplex).2
+    ⟨(isEquivalence_iff_of_edge_eq (e := mk' (X.δ 0 c.simplex)) c.d₀).2 h₁₂,
+      (isEquivalence_iff_of_edge_eq (e := mk' (X.δ 1 c.simplex)) c.d₁).2 h₀₂,
+      (isEquivalence_iff_of_edge_eq (e := mk' (X.δ 2 c.simplex)) c.d₂).2 h₀₁⟩
+
+/-- Every edge of `X.core` is an equivalence in `X.core` itself: an inverse structure in `X` has
+all its edges invertible, so both the inverse edge and the `2`-simplices witnessing it already lie
+in `X.core`. -/
+lemma core.isEquivalence {x₀ x₁ : (X.core : SSet) _⦋0⦌} (e : Edge x₀ x₁) :
+    e.IsEquivalence := by
+  have he : (e.map X.core.ι).IsEquivalence := (edge_mem_core_iff (e.map X.core.ι)).1 e.edge.2
+  let I := he.invStruct
+  have hinv_eq : I.inv.IsEquivalence := I.invStructInv.isEquivalence
+  have hinv : I.inv.edge ∈ X.core.obj (op ⦋1⦌) := (edge_mem_core_iff I.inv).2 hinv_eq
+  let g : Edge x₁ x₀ := Edge.mk ⟨I.inv.edge, hinv⟩ (Subtype.ext I.inv.src_eq)
+    (Subtype.ext I.inv.tgt_eq)
+  have h₁ : I.homInvId.simplex ∈ X.core.obj (op ⦋2⦌) :=
+    I.homInvId.simplex_mem_core he hinv_eq (isEquivalence_id _)
+  have h₂ : I.invHomId.simplex ∈ X.core.obj (op ⦋2⦌) :=
+    I.invHomId.simplex_mem_core hinv_eq he (isEquivalence_id _)
+  exact ⟨{ inv := g
+           homInvId := CompStruct.mk ⟨I.homInvId.simplex, h₁⟩ (Subtype.ext I.homInvId.d₂)
+             (Subtype.ext I.homInvId.d₀) (Subtype.ext I.homInvId.d₁)
+           invHomId := CompStruct.mk ⟨I.invHomId.simplex, h₂⟩ (Subtype.ext I.invHomId.d₂)
+             (Subtype.ext I.invHomId.d₀) (Subtype.ext I.invHomId.d₁) }⟩
+
+/-- Taking the core of a simplicial set is idempotent: every edge of `X.core` is already an
+equivalence in `X.core`. -/
+@[simp]
+lemma core_core (X : SSet.{u}) : (X.core : SSet).core = ⊤ :=
+  core_eq_top_iff.2 fun _ ↦ core.isEquivalence _
 
 end SSet
 
