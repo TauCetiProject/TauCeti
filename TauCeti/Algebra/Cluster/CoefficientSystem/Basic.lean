@@ -31,7 +31,7 @@ system (`CoefficientSystem.ofRepresentatives`).
 When a direction of a cluster seed is mutated, the exchange polynomials of the other directions
 are dilated by units fixed by the propagation law; this prescribes them only up to a unit, and the
 normalizer chooses the unit. The scalar system `CoefficientSystem.trivial R`, with `𝕂 = R` and
-`ν = 1`, normalizes nothing, and its mutation is polynomial mutation. Maps of coefficient systems
+`ν = 1`, normalizes nothing: every exchange polynomial is normalized. Maps of coefficient systems
 (`CoefficientSystem.Hom`) are multiplicative maps of coefficients compatible with the scalar maps
 and the normalizers; they commute with normalization.
 
@@ -204,8 +204,8 @@ theorem existsUnique_isNormalized_scale (H : ExchangePolynomial 𝕂) :
     ∃! e : c.normalizerSubgroup, c.IsNormalized (H.scale e) := by
   refine ⟨⟨c.normalizer H, c.normalizer_mem_normalizerSubgroup H⟩,
     c.isNormalized_normalize H, ?_⟩
-  rintro ⟨e, he⟩ (h : c.normalizer (H.scale e) = 1)
-  rw [normalizer_scale c he, inv_mul_eq_one] at h
+  rintro ⟨e, he⟩ h
+  rw [isNormalized_iff, normalizer_scale c he, inv_mul_eq_one] at h
   exact Subtype.ext h
 
 /-- Two normalized polynomials that differ by an element of the normalizer subgroup agree. -/
@@ -292,7 +292,9 @@ theorem ext_of_isNormalized {c c' : CoefficientSystem 𝕂 R} (hφ : c.toScalar 
     (hG : c.normalizerSubgroup = c'.normalizerSubgroup)
     (hN : ∀ H, c.IsNormalized H ↔ c'.IsNormalized H) : c = c' := by
   rw [← c.ofRepresentatives_eq, ← c'.ofRepresentatives_eq]
-  congr 1
+  congr! -closePre -closePost 1
+  · exact hφ
+  · exact hG
   · exact Set.ext hN
 
 /-! ### The scalar system -/
@@ -301,8 +303,8 @@ section Trivial
 
 variable (R)
 
-/-- The scalar coefficient system of `R`: coefficients are the scalars themselves and nothing is
-normalized. Its mutation is polynomial mutation. -/
+/-- The scalar coefficient system of `R`: coefficients are the scalars themselves and the
+normalizer is `1`, so every exchange polynomial is normalized. -/
 def trivial : CoefficientSystem R R where
   toScalar := MonoidWithZeroHom.id R
   normalizer _ := 1
@@ -389,7 +391,8 @@ protected def id : Hom c c where
   toScalar_comp := MonoidWithZeroHom.comp_id _
   normalizer_map H := by
     rw [map_id]
-    rfl
+    ext
+    simp
 
 @[simp] theorem id_apply (a : 𝕂) : Hom.id c a = a := (rfl)
 
@@ -400,7 +403,8 @@ def comp (g : Hom c' c'') (f : Hom c c') : Hom c c'' where
     rw [← MonoidWithZeroHom.comp_assoc, g.toScalar_comp, f.toScalar_comp]
   normalizer_map H := by
     rw [← map_map, g.normalizer_map, f.normalizer_map]
-    rfl
+    ext
+    simp
 
 @[simp] theorem comp_apply (g : Hom c' c'') (f : Hom c c') (a : 𝕂) : g.comp f a = g (f a) :=
   (rfl)

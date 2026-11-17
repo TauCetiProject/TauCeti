@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Cluster.CoefficientSemifield.Basic
+public import TauCeti.Algebra.Cluster.CoefficientSemifield.WithZero
 public import TauCeti.Algebra.Cluster.CoefficientSystem.Basic
 public import TauCeti.Algebra.Cluster.ExchangePolynomial.Polynomial
-import TauCeti.Algebra.Cluster.CoefficientSemifield.WithZero
 
 /-!
 # The normalized coefficient system
@@ -30,6 +29,9 @@ These are the coefficient formulas of Fomin–Zelevinsky `Y`-seed mutation, writ
 coefficient semifield `Sˣ`. Since `φ` need neither preserve addition nor be injective, the
 coefficients cannot be recovered from their scalar realizations, which is why they live in `S`
 rather than in `C`.
+
+For a coefficient semifield `P` and a group map `ψ : P →* Cˣ`, the normalized system of
+`WithZero P` whose scalar map extends `ψ` by zero is `CoefficientSystem.ofCoefficientSemifield ψ`.
 
 Semiring maps between such semifields compatible with the scalar maps are maps of normalized
 coefficient systems (`CoefficientSystem.Hom.ofRingHom`); for coefficient semifields these come
@@ -80,12 +82,12 @@ variable (φ : S →*₀ C)
 
 /-- An exchange polynomial is normalized in the normalized system exactly when its coefficients
 sum to one. -/
-theorem isNormalized_normalized_iff (H : ExchangePolynomial S) :
+@[simp] theorem isNormalized_normalized_iff (H : ExchangePolynomial S) :
     (normalized φ).IsNormalized H ↔ H.toPolynomial.eval 1 = 1 := by
   rw [isNormalized_iff, ← Units.val_eq_one, val_normalizer_normalized, inv_eq_one]
 
 /-- The normalizer of the normalized system is homogeneous of degree `-1` for every unit. -/
-theorem normalizer_normalized_scale (H : ExchangePolynomial S) (e : Sˣ) :
+@[simp] theorem normalizer_normalized_scale (H : ExchangePolynomial S) (e : Sˣ) :
     (normalized φ).normalizer (H.scale e) = e⁻¹ * (normalized φ).normalizer H := by
   ext
   simp [mul_comm]
@@ -110,13 +112,13 @@ coefficient semifield `Sˣ`. -/
 
 /-- Reversing the normalized binomial with coefficient `y` gives the normalized binomial with
 coefficient `y⁻¹`. -/
-theorem reverse_normalize_normalized_binomial (y : Sˣ) :
+@[simp] theorem reverse_normalize_normalized_binomial (y : Sˣ) :
     ((normalized φ).normalize (binomial y)).reverse = (normalized φ).normalize (binomial y⁻¹) := by
   rw [← normalize_reverse, reverse_binomial, normalize_normalized_scale]
 
 /-- Dilating the normalized binomial with coefficient `y` by `κ` and normalizing again gives the
 normalized binomial with coefficient `κ y`. -/
-theorem normalize_dilate_normalize_normalized_binomial (y κ : Sˣ) :
+@[simp] theorem normalize_dilate_normalize_normalized_binomial (y κ : Sˣ) :
     (normalized φ).normalize (((normalized φ).normalize (binomial y)).dilate κ) =
       (normalized φ).normalize (binomial (κ * y)) := by
   rw [normalize_def (H := binomial y), dilate_scale, normalize_normalized_scale, dilate_binomial]
@@ -124,7 +126,7 @@ theorem normalize_dilate_normalize_normalized_binomial (y κ : Sˣ) :
 /-- The dilation factor of the normalized binomial with coefficient `y` at the divided matrix
 entry `b` is `y ^ [b]₊ (y + 1) ^ (-b)`, the factor of Fomin–Zelevinsky `Y`-seed mutation
 (`TauCeti.YSeed.mutation`). -/
-theorem dilationFactor_normalize_normalized_binomial (y : Sˣ) (b : ℤ) :
+@[simp] theorem dilationFactor_normalize_normalized_binomial (y : Sˣ) (b : ℤ) :
     ((normalized φ).normalize (binomial y)).dilationFactor b = y ^ (b⁺ : ℤ) * (y + 1) ^ (-b) := by
   rw [normalize_def, dilationFactor_scale, normalizer_normalized_binomial, dilationFactor_binomial,
     inv_zpow', mul_comm]
@@ -153,11 +155,35 @@ noncomputable def normalizedBinomialEquiv :
     (normalizedBinomialEquiv φ).symm H = H.1.leadingUnit / H.1.constantUnit :=
   (rfl)
 
-/-- Normalized systems are built in particular from a group map `P →* Cˣ` out of a coefficient
-semifield `P`, extended by zero to the semifield `WithZero P`. -/
-noncomputable example {P : Type*} [CoefficientSemifield P] (ψ : P →* Cˣ) :
-    CoefficientSystem (WithZero P) C :=
+section CoefficientSemifield
+
+open CoefficientSemifield
+
+variable {P : Type*} [CoefficientSemifield P] (ψ : P →* Cˣ)
+
+/-- The normalized coefficient system of a coefficient semifield `P` and a group map
+`ψ : P →* Cˣ`: its coefficients lie in `WithZero P` and its scalar map extends `ψ` by zero. It is
+an abbreviation, so the lemmas about `normalized` apply to it; `unitsWithZeroRingEquiv` identifies
+its coefficient units `(WithZero P)ˣ` with `P`. -/
+noncomputable abbrev ofCoefficientSemifield : CoefficientSystem (WithZero P) C :=
   normalized (WithZero.lift' ((Units.coeHom C).comp ψ))
+
+/-- The normalizer of the binomial `1 + y T` with coefficient `y ∈ P` is `(y + 1)⁻¹`, where the
+sum is formed in the coefficient semifield `P`. -/
+theorem normalizer_ofCoefficientSemifield_binomial (y : P) :
+    (ofCoefficientSemifield ψ).normalizer (binomial (unitsWithZeroRingEquiv.symm y)) =
+      unitsWithZeroRingEquiv.symm (y + 1)⁻¹ := by
+  rw [normalizer_normalized_binomial, map_inv, map_add, map_one]
+
+/-- The dilation factor of the normalized binomial with coefficient `y ∈ P` at the divided matrix
+entry `b` is `y ^ [b]₊ (y + 1) ^ (-b)`, computed in the coefficient semifield `P`. -/
+theorem dilationFactor_normalize_ofCoefficientSemifield_binomial (y : P) (b : ℤ) :
+    ((ofCoefficientSemifield ψ).normalize
+        (binomial (unitsWithZeroRingEquiv.symm y))).dilationFactor b =
+      unitsWithZeroRingEquiv.symm (y ^ (b⁺ : ℤ) * (y + 1) ^ (-b)) := by
+  rw [dilationFactor_normalize_normalized_binomial, map_mul, map_zpow, map_zpow, map_add, map_one]
+
+end CoefficientSemifield
 
 namespace Hom
 
