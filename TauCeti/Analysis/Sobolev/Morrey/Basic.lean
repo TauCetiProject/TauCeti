@@ -50,6 +50,8 @@ mean of `u` over a ball containing both points gives the Hölder estimate.
 * `TauCeti.enorm_sub_setAverage_le_of_convex_of_finrank_lt`: the same on a bounded convex domain.
 * `TauCeti.enorm_sub_le_of_mem_ball_of_finrank_lt`: Morrey's inequality on a ball.
 * `TauCeti.enorm_sub_le_of_contDiff_of_finrank_lt`: Morrey's inequality on the whole space.
+* `TauCeti.edist_le_of_contDiffOn_ball_midpoint_of_finrank_lt`: Morrey's inequality between two
+  points, for `u` that is `C¹` on the ball about their midpoint, in Hölder form.
 * `TauCeti.holderWith_of_contDiff_of_finrank_lt`: a `C¹` function with derivative in `Lᵖ`,
   `p > n`, is Hölder continuous of exponent `1 - n / p`.
 
@@ -242,6 +244,43 @@ theorem enorm_sub_le_of_mem_ball_of_finrank_lt [CompleteSpace F] {z : E} {r : �
     _ ≤ _ := add_le_add (hmean x hx) (hmean y hy)
     _ = _ := hconst
 
+/-- **Morrey's inequality between two points.** If `u` is `C¹` on the ball of radius `‖x - y‖`
+about the midpoint of `x` and `y`, and `p` exceeds the dimension `n` of the space, then
+`‖u x - u y‖` is at most `2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * 2 ^ (1 - n / p)` times the `Lᵖ`
+norm of the derivative of `u` on that ball times `‖x - y‖ ^ (1 - n / p)`, where `ω = μ(B(0, 1))`
+and `K = n ω (p - 1) / (p - n)`. -/
+theorem edist_le_of_contDiffOn_ball_midpoint_of_finrank_lt [CompleteSpace F] {x y : E}
+    (hu : ContDiffOn ℝ 1 u (ball (midpoint ℝ x y) (dist x y))) (hp : (finrank ℝ E : ℝ≥0) < p) :
+    edist (u x) (u y) ≤
+      ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / (finrank ℝ E * μ.real (ball 0 1)) *
+        (finrank ℝ E * μ.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
+          2 ^ (1 - finrank ℝ E / (p : ℝ))) *
+        eLpNorm (fderiv ℝ u) p (μ.restrict (ball (midpoint ℝ x y) (dist x y))) *
+        edist x y ^ (((1 - finrank ℝ E / p : ℝ≥0)) : ℝ) := by
+  rcases eq_or_ne x y with rfl | hxy
+  · simp
+  set n := finrank ℝ E
+  have hα : (((1 - n / p : ℝ≥0)) : ℝ) = 1 - n / (p : ℝ) := by
+    rw [NNReal.coe_sub ((div_le_one (zero_le.trans_lt hp)).2 hp.le), NNReal.coe_one,
+      NNReal.coe_div, NNReal.coe_natCast]
+  have hα0 : 0 ≤ 1 - n / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
+  -- Both points lie in the ball of radius `‖x - y‖` about their midpoint.
+  have hpos : 0 < dist x y := dist_pos.2 hxy
+  have hx : x ∈ ball (midpoint ℝ x y) (dist x y) := by
+    rw [mem_ball, dist_left_midpoint]
+    norm_num
+    linarith
+  have hy : y ∈ ball (midpoint ℝ x y) (dist x y) := by
+    rw [mem_ball, dist_right_midpoint]
+    norm_num
+    linarith
+  -- The constant `(2 ‖x - y‖) ^ (1 - n / p)` of Morrey's inequality on the ball splits off the
+  -- factor `‖x - y‖ ^ (1 - n / p)`.
+  rw [eDist_eq_eNorm_sub, edist_dist, hα, ENNReal.ofReal_rpow_of_nonneg hpos.le hα0,
+    mul_right_comm, ← ENNReal.ofReal_mul' (Real.rpow_nonneg hpos.le _), mul_assoc _ (2 ^ _),
+    ← Real.mul_rpow zero_le_two hpos.le]
+  exact enorm_sub_le_of_mem_ball_of_finrank_lt hu hx hy hp
+
 /-- **Morrey's inequality.** If `u` is `C¹` on the whole space and `p` exceeds the dimension `n`
 of the space, then `‖u x - u y‖` is at most
 `2 ^ (n + 1) / (n ω) * K ^ (1 - 1 / p) * (2 ‖x - y‖) ^ (1 - n / p)` times the `Lᵖ` norm of the
@@ -253,34 +292,19 @@ theorem enorm_sub_le_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff 
         (finrank ℝ E * μ.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
           (2 * ‖x - y‖) ^ (1 - finrank ℝ E / (p : ℝ))) *
         eLpNorm (fderiv ℝ u) p μ := by
-  rcases eq_or_ne x y with rfl | hxy
-  · simp
-  -- Both points lie in the ball of radius `‖x - y‖` about their midpoint.
-  have hpos : 0 < dist x y := dist_pos.2 hxy
-  have hx : x ∈ ball (midpoint ℝ x y) ‖x - y‖ := by
-    rw [mem_ball, dist_left_midpoint, ← dist_eq_norm]
-    norm_num
-    linarith
-  have hy : y ∈ ball (midpoint ℝ x y) ‖x - y‖ := by
-    rw [mem_ball, dist_right_midpoint, ← dist_eq_norm]
-    norm_num
-    linarith
-  refine (enorm_sub_le_of_mem_ball_of_finrank_lt (μ := μ) hu.contDiffOn hx hy hp).trans ?_
+  set n := finrank ℝ E
+  have hα : (((1 - n / p : ℝ≥0)) : ℝ) = 1 - n / (p : ℝ) := by
+    rw [NNReal.coe_sub ((div_le_one (zero_le.trans_lt hp)).2 hp.le), NNReal.coe_one,
+      NNReal.coe_div, NNReal.coe_natCast]
+  have hα0 : 0 ≤ 1 - n / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
+  refine (eDist_eq_eNorm_sub (u x) (u y) ▸
+    edist_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := μ) hu.contDiffOn hp).trans ?_
+  -- The factor `‖x - y‖ ^ (1 - n / p)` recombines with `2 ^ (1 - n / p)`.
+  rw [edist_dist, hα, ENNReal.ofReal_rpow_of_nonneg dist_nonneg hα0, mul_right_comm,
+    ← ENNReal.ofReal_mul' (Real.rpow_nonneg dist_nonneg _), mul_assoc _ (2 ^ _),
+    ← Real.mul_rpow zero_le_two dist_nonneg, dist_eq_norm]
   gcongr
   exact Measure.restrict_le_self
-
-/-- The Hölder constant of Morrey's inequality is nonnegative. -/
-private theorem morreyConstant_nonneg (n : ℕ) (m : ℝ) (p : ℝ≥0) (hm : 0 ≤ m)
-    (hp : (n : ℝ≥0) < p) :
-    0 ≤ 2 ^ (n + 1) / (n * m) * (n * m * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-      2 ^ (1 - n / (p : ℝ)) := by
-  have hK : 0 ≤ (n * m * (p - 1) / (p - n) : ℝ) := by
-    rcases Nat.eq_zero_or_pos n with hn | hn
-    · simp [hn]
-    have hpn : (n : ℝ) < p := by exact_mod_cast hp
-    have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
-    exact div_nonneg (mul_nonneg (by positivity) (by linarith)) (by linarith)
-  exact mul_nonneg (mul_nonneg (by positivity) (Real.rpow_nonneg hK _)) (by positivity)
 
 /-- **Morrey's inequality, Hölder form.** If `u` is `C¹` on the whole space, `p` exceeds the
 dimension `n` of the space, and the derivative of `u` lies in `Lᵖ`, then `u` is Hölder continuous
@@ -293,50 +317,10 @@ theorem holderWith_of_contDiff_of_finrank_lt [CompleteSpace F] (hu : ContDiff �
         (finrank ℝ E * μ.real (ball 0 1) * (p - 1) / (p - finrank ℝ E)) ^ (1 - 1 / (p : ℝ)) *
           2 ^ (1 - finrank ℝ E / (p : ℝ))) * (eLpNorm (fderiv ℝ u) p μ).toNNReal)
       (1 - finrank ℝ E / p) u := by
-  set n := finrank ℝ E
-  have hα : (((1 - n / p : ℝ≥0)) : ℝ) = 1 - n / (p : ℝ) := by
-    rw [NNReal.coe_sub ((div_le_one (zero_le.trans_lt hp)).2 hp.le), NNReal.coe_one,
-      NNReal.coe_div, NNReal.coe_natCast]
-  have hα0 : 0 ≤ 1 - n / (p : ℝ) := hα ▸ NNReal.coe_nonneg _
-  have hC := morreyConstant_nonneg n (μ.real (ball 0 1)) p measureReal_nonneg hp
   intro x y
-  have hdist : edist x y ^ (1 - n / (p : ℝ)) =
-      ENNReal.ofReal (‖x - y‖ ^ (1 - n / (p : ℝ))) := by
-    rw [eDist_eq_eNorm_sub, ← ofReal_norm (x - y),
-      ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hα0]
-  have hcoefficient :
-      (↑(Real.toNNReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-            2 ^ (1 - n / (p : ℝ))) *
-          (eLpNorm (fderiv ℝ u) p μ).toNNReal) : ℝ≥0∞) =
-        ENNReal.ofReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-            2 ^ (1 - n / (p : ℝ))) * eLpNorm (fderiv ℝ u) p μ := by
-    rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hDu, ENNReal.ofNNReal_toNNReal]
-  have hscale :
-      (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-            2 ^ (1 - n / (p : ℝ))) * ‖x - y‖ ^ (1 - n / (p : ℝ)) =
-        2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-            (2 * ‖x - y‖) ^ (1 - n / (p : ℝ)) := by
-    rw [mul_assoc _ (2 ^ _), ← Real.mul_rpow zero_le_two (norm_nonneg _)]
-  calc
-    edist (u x) (u y) = ‖u x - u y‖ₑ := eDist_eq_eNorm_sub _ _
-    _ ≤ ENNReal.ofReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-        (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-          (2 * ‖x - y‖) ^ (1 - n / (p : ℝ))) * eLpNorm (fderiv ℝ u) p μ :=
-      enorm_sub_le_of_contDiff_of_finrank_lt hu x y hp
-    _ = ENNReal.ofReal ((2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-            2 ^ (1 - n / (p : ℝ))) * ‖x - y‖ ^ (1 - n / (p : ℝ))) *
-          eLpNorm (fderiv ℝ u) p μ := by rw [hscale]
-    _ = (↑(Real.toNNReal (2 ^ (n + 1) / (n * μ.real (ball 0 1)) *
-          (n * μ.real (ball 0 1) * (p - 1) / (p - n)) ^ (1 - 1 / (p : ℝ)) *
-            2 ^ (1 - n / (p : ℝ))) *
-          (eLpNorm (fderiv ℝ u) p μ).toNNReal) : ℝ≥0∞) *
-        edist x y ^ (((1 - n / p : ℝ≥0)) : ℝ) := by
-      rw [ENNReal.ofReal_mul hC, hα, hdist, hcoefficient]
-      ac_rfl
+  rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hDu, ENNReal.ofNNReal_toNNReal]
+  refine (edist_le_of_contDiffOn_ball_midpoint_of_finrank_lt (μ := μ) hu.contDiffOn hp).trans ?_
+  gcongr
+  exact Measure.restrict_le_self
 
 end TauCeti
