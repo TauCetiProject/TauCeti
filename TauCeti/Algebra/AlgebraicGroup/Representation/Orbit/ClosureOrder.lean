@@ -93,37 +93,25 @@ theorem disjoint_image_of_ne {O₁ O₂ : VectorOrbit k H M} (hne : O₁ ≠ O�
   rw [Set.disjoint_iff_inter_eq_empty]
   by_contra hne'
   rw [image_mk, image_mk] at hne'
-  have hcons : IsConstructible
-      (Set.range (projectiveOrbitMap (H := H) ((v₁, 1) : M × k) (Module.isUnimodular_mk_one v₁)) ∩
-        Set.range (projectiveOrbitMap (H := H) ((v₂, 1) : M × k)
-          (Module.isUnimodular_mk_one v₂))) :=
-    (isConstructible_range_projectiveOrbitMap _ _).inter
-      (isConstructible_range_projectiveOrbitMap _ _)
   obtain ⟨x, ⟨hx₁, hx₂⟩, hxc⟩ :=
-    hcons.nonempty_inter_closedPoints (Set.nonempty_iff_ne_empty.mpr hne')
-  have hx₁' : x ∈ Set.range (fun g : WithConv (H →ₐ[k] k) ↦
-      projectiveOrbitMap (H := H) ((v₁, 1) : M × k) (Module.isUnimodular_mk_one v₁)
-        (AlgHom.kernelPoint g.ofConv)) := by
-    rw [range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints]
-    exact ⟨hx₁, hxc⟩
-  have hx₂' : x ∈ Set.range (fun g : WithConv (H →ₐ[k] k) ↦
-      projectiveOrbitMap (H := H) ((v₂, 1) : M × k) (Module.isUnimodular_mk_one v₂)
-        (AlgHom.kernelPoint g.ofConv)) := by
-    rw [range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints]
-    exact ⟨hx₂, hxc⟩
-  obtain ⟨g₁, rfl⟩ := hx₁'
-  obtain ⟨g₂, hg₂⟩ := hx₂'
+    ((isConstructible_range_projectiveOrbitMap (H := H) ((v₁, 1) : M × k) _).inter
+      (isConstructible_range_projectiveOrbitMap (H := H) ((v₂, 1) : M × k) _))
+      |>.nonempty_inter_closedPoints (Set.nonempty_iff_ne_empty.mpr hne')
+  obtain ⟨g₁, rfl⟩ :=
+    (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H)
+      ((v₁, 1) : M × k) _).ge ⟨hx₁, hxc⟩
+  obtain ⟨g₂, hg₂⟩ :=
+    (range_projectiveOrbitMap_kernelPoint_eq_range_inter_closedPoints (H := H)
+      ((v₂, 1) : M × k) _).ge ⟨hx₂, hxc⟩
   have hspan := (projectiveOrbitMap_kernelPoint_eq_iff_span_eq
-    ((v₂, 1) : M × k) (Module.isUnimodular_mk_one v₂)
-    ((v₁, 1) : M × k) (Module.isUnimodular_mk_one v₁) g₂ g₁).mp hg₂
+    ((v₂, 1) : M × k) _ ((v₁, 1) : M × k) _ g₂ g₁).mp hg₂
   have hspan' : k ∙ basePointsRepresentation (M × k) (g₁⁻¹ * g₂) ((v₂, 1) : M × k) =
       k ∙ ((v₁, 1) : M × k) := by
-    have hmap := congrArg (Submodule.map (basePointsRepresentation (M × k) g₁⁻¹)) hspan
-    simp only [Submodule.map_span, Set.image_singleton, Representation.inv_self_apply] at hmap
-    simpa only [map_mul, mul_apply_eq_comp] using hmap
-  have hconj := basePointsRepresentation_eq_of_span_eq hspan'
+    simpa only [Submodule.map_span, Set.image_singleton, Representation.inv_self_apply, map_mul,
+      mul_apply_eq_comp] using
+      congrArg (Submodule.map (basePointsRepresentation (M × k) g₁⁻¹)) hspan
   exact hne (mk_eq_mk_iff.mpr ⟨(g₁⁻¹ * g₂)⁻¹, by
-    rw [← hconj, Representation.inv_self_apply]⟩)
+    rw [← basePointsRepresentation_eq_of_span_eq hspan', Representation.inv_self_apply]⟩)
 
 /-- **Orbits are determined by their closures.** Two rational orbits whose geometric images
 have the same closure in `P(M × k)` are equal. -/
@@ -188,36 +176,6 @@ theorem strictMono_topologicalKrullDim_image :
   rw [image_mk, image_mk]
   exact Comodule.topologicalKrullDim_range_projectiveOrbitMap_lt _ _ (mk_lt_mk_iff.mp h)
 
-omit [IsAlgClosed k] [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H] [Comodule k H M]
-  [Module.Finite k M] in
-private theorem exists_polynomial_eval_eq_lift_eval (v : M)
-    (s : SymmetricAlgebra k (Module.Dual k (M × k))) :
-    ∃ p : Polynomial k, ∀ t : k,
-      p.eval t = SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) s := by
-  let α : Module.Dual k (M × k) →ₗ[k] Polynomial k :=
-    { toFun := fun φ ↦ Polynomial.C (φ (0, 1)) + Polynomial.C (φ (v, 0)) * Polynomial.X
-      map_add' := fun φ ψ ↦ by
-        simp only [LinearMap.add_apply, map_add]
-        ring
-      map_smul' := fun r φ ↦ by
-        simp only [LinearMap.smul_apply, smul_eq_mul, map_mul, RingHom.id_apply,
-          Polynomial.smul_eq_C_mul]
-        ring }
-  refine ⟨SymmetricAlgebra.lift α s, fun t ↦ ?_⟩
-  have hhom : (Polynomial.aeval t).comp (SymmetricAlgebra.lift α) =
-      SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
-    apply SymmetricAlgebra.algHom_ext
-    ext φ
-    simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
-      AlgHom.comp_apply, SymmetricAlgebra.lift_ι_apply, Module.Dual.eval_apply, α,
-      LinearMap.coe_mk, AddHom.coe_mk, map_add, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
-      Algebra.algebraMap_self, RingHom.id_apply]
-    have hvec : (t • v, (1 : k)) = (0, 1) + t • (v, 0) := by
-      ext <;> simp
-    rw [hvec, map_add, map_smul, smul_eq_mul, mul_comm]
-  simpa [Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, Polynomial.map_id] using
-    AlgHom.congr_fun hhom s
-
 /-- **Scaling-invariant orbits contain the zero orbit in their closure.** If every nonzero scalar
 multiple of `v` lies in the same rational orbit as `v`, then `mk 0 ≤ mk v` in the closure order. -/
 theorem mk_zero_le_mk_of_forall_smul {v : M}
@@ -227,49 +185,54 @@ theorem mk_zero_le_mk_of_forall_smul {v : M}
   let 𝒜 := TauCeti.SymmetricAlgebra.homogeneousSubmodule k (Module.Dual k (M × k))
   rw [mk_le_mk_iff, mem_closure_iff]
   intro U hU h0U
-  have hbasis := ProjectiveSpectrum.isTopologicalBasis_basic_opens 𝒜
-  obtain ⟨_, ⟨f, rfl⟩, h0f, hfU⟩ := hbasis.exists_subset_of_mem_open h0U hU
-  dsimp only at h0f hfU
-  have h0f' : (projectiveOrbitMap (H := H) ((0, 1) : M × k) (Module.isUnimodular_mk_one (0 : M))
-      (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H)) : ProjectiveSpectrum 𝒜) ∈
-      (ProjectiveSpectrum.basicOpen 𝒜 f : Set (ProjectiveSpectrum 𝒜)) := h0f
-  rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f,
-    TopologicalSpace.Opens.coe_iSup] at h0f'
-  obtain ⟨_, ⟨n, rfl⟩, h0n⟩ := Set.mem_sUnion.mp h0f'
+  obtain ⟨_, ⟨f, rfl⟩, h0f, hfU⟩ :=
+    (ProjectiveSpectrum.isTopologicalBasis_basic_opens 𝒜).exists_subset_of_mem_open h0U hU
+  change _ ∈ (ProjectiveSpectrum.basicOpen 𝒜 f : Set (ProjectiveSpectrum 𝒜)) at h0f
+  rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f, TopologicalSpace.Opens.coe_iSup]
+    at h0f
+  obtain ⟨_, ⟨n, rfl⟩, h0n⟩ := Set.mem_sUnion.mp h0f
   let s := GradedRing.proj 𝒜 n f
   have hs : s ∈ 𝒜 n := SetLike.coe_mem _
   have hs_ne : SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (0, 1)) s ≠ 0 := by
-    have hmem : s ∉ (projectiveOrbitMap (H := H) ((0, 1) : M × k)
-        (Module.isUnimodular_mk_one (0 : M))
-        (AlgHom.kernelPoint (Bialgebra.counitAlgHom k H))).asHomogeneousIdeal := h0n
     have hiff := mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((0, 1) : M × k)
-      (Module.isUnimodular_mk_one (0 : M)) 1 hs
+      (Module.isUnimodular_mk_one 0) 1 hs
     simp only [map_one, one_apply_eq_self] at hiff
     simp only [AlgHom.convOne_def, Algebra.ofId_self, AlgHom.id_comp] at hiff
-    exact hiff.not.mp hmem
-  obtain ⟨p, hpeval⟩ := exists_polynomial_eval_eq_lift_eval v s
-  have hp0 : p ≠ 0 := by
-    intro hp
-    have h0 := hpeval 0
-    rw [hp, Polynomial.eval_zero, zero_smul] at h0
-    exact hs_ne h0.symm
-  -- Since `k` is infinite (as it is algebraically closed), pick `c ≠ 0` not a root of `p`.
+    exact hiff.not.mp h0n
+  let α : Module.Dual k (M × k) →ₗ[k] Polynomial k :=
+    { toFun := fun φ ↦ Polynomial.C (φ (0, 1)) + Polynomial.C (φ (v, 0)) * Polynomial.X
+      map_add' := fun φ ψ ↦ by simp only [LinearMap.add_apply, map_add]; ring
+      map_smul' := fun r φ ↦ by
+        simp only [LinearMap.smul_apply, smul_eq_mul, map_mul, RingHom.id_apply,
+          Polynomial.smul_eq_C_mul]; ring }
+  set p : Polynomial k := SymmetricAlgebra.lift α s
+  have hpeval (t : k) :
+      p.eval t = SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) s := by
+    have hhom : (Polynomial.aeval t).comp (SymmetricAlgebra.lift α) =
+        SymmetricAlgebra.lift (Module.Dual.eval k (M × k) (t • v, 1)) := by
+      refine SymmetricAlgebra.algHom_ext (LinearMap.ext fun φ ↦ ?_)
+      simp only [← AlgHom.toLinearMap_eq_coe, LinearMap.comp_apply, AlgHom.toLinearMap_apply,
+        AlgHom.comp_apply, SymmetricAlgebra.lift_ι_apply, Module.Dual.eval_apply, α,
+        LinearMap.coe_mk, AddHom.coe_mk, map_add, map_mul, Polynomial.aeval_C, Polynomial.aeval_X,
+        Algebra.algebraMap_self, RingHom.id_apply]
+      rw [show (t • v, (1 : k)) = (0, 1) + t • (v, 0) by ext <;> simp, map_add, map_smul,
+        smul_eq_mul, mul_comm]
+    simpa [p, Polynomial.aeval_def, Polynomial.eval₂_eq_eval_map, Polynomial.map_id] using
+      AlgHom.congr_fun hhom s
+  have hp0 : p ≠ 0 := fun hp ↦ hs_ne (by simpa [hp] using (hpeval 0).symm)
   obtain ⟨c, hc⟩ := Infinite.exists_notMem_finset (insert (0 : k) p.roots.toFinset)
   have hc0 : c ≠ 0 := fun h ↦ hc (by simp [h])
   have hpc : p.eval c ≠ 0 := fun h ↦
     hc (Finset.mem_insert_of_mem (Multiset.mem_toFinset.mpr ((Polynomial.mem_roots hp0).mpr h)))
   obtain ⟨g, hg⟩ := mk_eq_mk_iff.mp (hscale (Units.mk0 c hc0)).symm
-  have hmem_f : (projectiveOrbitMap (H := H) ((v, 1) : M × k) (Module.isUnimodular_mk_one v)
-      (AlgHom.kernelPoint g.ofConv) : ProjectiveSpectrum 𝒜) ∈
-      (ProjectiveSpectrum.basicOpen 𝒜 f : Set (ProjectiveSpectrum 𝒜)) := by
-    rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f,
-      TopologicalSpace.Opens.coe_iSup]
-    refine Set.mem_sUnion.mpr ⟨_, ⟨n, rfl⟩, ?_⟩
-    exact (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((v, 1) : M × k)
-      (Module.isUnimodular_mk_one v) g hs).not.mpr (by
-        rw [basePointsRepresentation_prodTrivial, hg]
-        simpa [Units.val_mk0, ← hpeval c] using hpc)
-  exact ⟨_, hfU hmem_f, Set.mem_range_self _⟩
+  refine ⟨_, hfU ?_, Set.mem_range_self (AlgHom.kernelPoint g.ofConv)⟩
+  change _ ∈ (ProjectiveSpectrum.basicOpen 𝒜 f : Set (ProjectiveSpectrum 𝒜))
+  rw [ProjectiveSpectrum.basicOpen_eq_union_of_projection 𝒜 f, TopologicalSpace.Opens.coe_iSup]
+  refine Set.mem_sUnion.mpr ⟨_, ⟨n, rfl⟩,
+    (mem_projectiveOrbitMap_kernelPoint_iff (H := H) ((v, 1) : M × k)
+      (Module.isUnimodular_mk_one v) g hs).not.mpr ?_⟩
+  rw [basePointsRepresentation_prodTrivial, hg]
+  simpa [Units.val_mk0, ← hpeval c] using hpc
 
 end VectorOrbit
 
