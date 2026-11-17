@@ -61,8 +61,8 @@ In the namespace `TauCeti.Manifold.IsNormalDomain`:
 In the namespace `TauCeti.Manifold`:
 
 * `contMDiffAt_dist_sq_self`: squared distance is smooth at the centre.
-* `mgradient_dist_self`: the distance gradient vanishes at the centre.
 * `mvfderiv_dist_sq_self` and `mgradient_dist_sq_self`: its differential and gradient vanish there.
+* `mgradient_dist_self`: the distance gradient vanishes at the centre.
 * `exists_dist_riemannianExp_eq_dist_sub`: a sufficiently small geodesic sphere about `x` has a
   point whose distance to any `q` decreases by the radius.
 
