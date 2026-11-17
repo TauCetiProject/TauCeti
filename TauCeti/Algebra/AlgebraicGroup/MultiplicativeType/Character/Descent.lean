@@ -21,8 +21,11 @@ type by their pullbacks on geometric characters, including non-smooth groups.
 
 Perfectness ensures that the algebraic closure is Galois. The extension of a character map to
 that closure then descends using Galois descent for bialgebra morphisms, without a finiteness
-assumption on the extension. This is the morphism part of the character-lattice classification
-of tori over perfect fields.
+assumption on the extension.
+
+Over an arbitrary field, morphisms between two groups of multiplicative type, and hence between
+tori, descend instead through the separable closure; see
+`TauCeti.Algebra.AlgebraicGroup.MultiplicativeType.Character.SeparableDescent`.
 
 ## References
 
@@ -72,28 +75,8 @@ coordinate algebra over a perfect field is induced by a coordinate Hopf morphism
 theorem geometricCharacterRepresentationMap_surjective
     (hH : multiplicativeTypeCommHopfAlgProperty k H) :
     Function.Surjective
-      (CommHopfAlgCat.geometricCharacterRepresentationMap (H := H.obj) (K := K)) := by
-  intro f
-  -- Normalize the representation carrier to the additive character group for scalar inference.
-  dsimp only [CommHopfAlgCat.geometricCharacterRepresentation, Rep.ofMulDistribMulAction] at f
-  let q : CommHopfAlgCat.geometricCharacterGroup H.obj →*
-      CommHopfAlgCat.geometricCharacterGroup K :=
-    f.hom.toLinearMap.toAddMonoidHom.toMultiplicative
-  have hq (σ : Field.absoluteGaloisGroup k) x : q (σ • x) = σ • q x := by
-    have hx := Representation.IntertwiningMap.isIntertwining _ _ f.hom σ
-      (Additive.ofMul x)
-    -- The multiplicative-action representation acts on the same additive type tag.
-    exact congrArg (Additive.toMul (α := CommHopfAlgCat.geometricCharacterGroup K)) hx
-  obtain ⟨g, hg, _⟩ := hH.existsUnique_geometricCharacterMap_eq q hq
-  refine ⟨g, ?_⟩
-  apply Rep.hom_ext
-  apply Representation.IntertwiningMap.ext
-  apply LinearMap.ext
-  intro x
-  simp only [Representation.IntertwiningMap.toLinearMap_apply]
-  have hx := CommHopfAlgCat.geometricCharacterRepresentationMap_hom_apply g x
-  apply (Additive.toMul (α := CommHopfAlgCat.geometricCharacterGroup K)).injective
-  exact (congrArg Additive.toMul hx).trans
-    ((CommHopfAlgCat.toMul_additiveCharacterMap g x).trans (DFunLike.congr_fun hg x.toMul))
+      (CommHopfAlgCat.geometricCharacterRepresentationMap (H := H.obj) (K := K)) :=
+  CommHopfAlgCat.geometricCharacterRepresentationMap_surjective_of_exists_geometricCharacterMap_eq
+    fun q hq ↦ (hH.existsUnique_geometricCharacterMap_eq q hq).exists
 
 end TauCeti.multiplicativeTypeCommHopfAlgProperty

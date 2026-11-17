@@ -20,6 +20,8 @@ compatibility under linear equivalences.
 ## Main results
 
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
+* `Orientation.map_symm_map`, `Orientation.map_map_symm`: transport along a linear equivalence
+  and back along its inverse is the identity.
 * `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.reindex_trans`: reindexing along a composite is the composite of the reindexings.
 * `Orientation.reindex_finCongr_reindex_finCongr`: two successive casts of the index type compose.
@@ -62,6 +64,20 @@ transporting it along each in turn. -/
 theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orientation R M ι) :
     Orientation.map ι (e.trans f) x = Orientation.map ι f (Orientation.map ι e x) := by
   induction x using Module.Ray.ind with | h v hv => rfl
+
+/-- Transporting an orientation along a linear equivalence and then back along its inverse gives
+the original orientation. -/
+@[simp]
+theorem Orientation.map_symm_map (e : M ≃ₗ[R] N) (x : Orientation R M ι) :
+    Orientation.map ι e.symm (Orientation.map ι e x) = x :=
+  (Orientation.map ι e).symm_apply_apply x
+
+/-- Transporting an orientation along the inverse of a linear equivalence and then back along the
+equivalence gives the original orientation. -/
+@[simp]
+theorem Orientation.map_map_symm (e : M ≃ₗ[R] N) (x : Orientation R N ι) :
+    Orientation.map ι e (Orientation.map ι e.symm x) = x :=
+  (Orientation.map ι e).apply_symm_apply x
 
 /-- Transporting an orientation along a linear equivalence commutes with reindexing its index
 type. -/
