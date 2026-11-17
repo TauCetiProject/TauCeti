@@ -54,6 +54,8 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 
 namespace BesselPotentialSpace
 
+open TauCeti (nonneg_of_finrank_lt_two_mul)
+
 variable {s r : ℝ}
 
 /-! ### The Sobolev embedding into `C₀` -/
@@ -66,7 +68,7 @@ private theorem exists_inclusionLp_ae_eq (h0 : 0 ≤ s) (hs : finrank ℝ E < 2 
 
 /-- The continuous representative of an element of `H^s`, `s > dim E / 2`, as a linear map. -/
 private def toZeroAtInftyₗ (hs : finrank ℝ E < 2 * s) : H^{s}(E, F) →ₗ[ℂ] C₀(E, F) :=
-  TauCeti.zeroAtInftyRepresentativeₗ (exists_inclusionLp_ae_eq (nonneg_of_finrank_lt hs) hs)
+  TauCeti.zeroAtInftyRepresentativeₗ (exists_inclusionLp_ae_eq (nonneg_of_finrank_lt_two_mul hs) hs)
     (fun u v ↦ by simpa only [map_add] using Lp.coeFn_add (inclusionLp _ u) (inclusionLp _ v))
     (fun c u ↦ by simpa only [map_smul] using Lp.coeFn_smul c (inclusionLp _ u))
 
@@ -91,7 +93,7 @@ map sending an element of the Bessel-potential space `H^s` to its unique represe
 continuous and vanishes at infinity (`BesselPotentialSpace.toZeroAtInfty_eq_iff`). -/
 def toZeroAtInfty (hs : finrank ℝ E < 2 * s) : H^{s}(E, F) →L[ℂ] C₀(E, F) :=
   (toZeroAtInftyₗ hs).mkContinuousOfExistsBound <| by
-    have h0 : 0 ≤ s := nonneg_of_finrank_lt hs
+    have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
     obtain ⟨C, hC, hbound⟩ := exists_norm_iteratedFDeriv_le_of_ae_eq (F := F) h0 (k := 0)
       (by simpa using hs)
     refine ⟨C, fun u ↦ ?_⟩
@@ -120,7 +122,7 @@ theorem toZeroAtInfty_eq_iff (h0 : 0 ≤ s) (u : H^{s}(E, F)) (g : C₀(E, F)) :
 embedding. -/
 theorem toDistr_apply_eq_integral_toZeroAtInfty (u : H^{s}(E, F)) (φ : 𝓢(E, ℂ)) :
     u.toDistr φ = ∫ x, φ x • toZeroAtInfty hs u x := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt hs
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   rw [← toTemperedDistribution_inclusionLp h0, Lp.toTemperedDistribution_apply]
   exact integral_congr_ae <|
     (inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u).mono fun x hx ↦ by simp only [hx]
@@ -129,8 +131,8 @@ theorem toDistr_apply_eq_integral_toZeroAtInfty (u : H^{s}(E, F)) (φ : 𝓢(E, 
 of the Bessel-potential space it is taken in. -/
 theorem toZeroAtInfty_congr {hr : finrank ℝ E < 2 * r} {u : H^{s}(E, F)} {v : H^{r}(E, F)}
     (h : u.toDistr = v.toDistr) : toZeroAtInfty hs u = toZeroAtInfty hr v := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt hs
-  have hr0 : 0 ≤ r := nonneg_of_finrank_lt hr
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
+  have hr0 : 0 ≤ r := nonneg_of_finrank_lt_two_mul hr
   have huv : inclusionLp h0 u = inclusionLp hr0 v := by
     rw [inclusionLp_eq_iff, toTemperedDistribution_inclusionLp, h]
   rw [toZeroAtInfty_eq_iff h0, huv]
@@ -144,7 +146,7 @@ theorem toZeroAtInfty_inclusion {hr : finrank ℝ E < 2 * r} (h : r ≤ s) (u : 
 /-- The Sobolev embedding is injective. -/
 theorem toZeroAtInfty_injective :
     Function.Injective (toZeroAtInfty hs : H^{s}(E, F) → C₀(E, F)) := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt hs
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   intro u v huv
   refine inclusionLp_injective h0 (Lp.ext ?_)
   filter_upwards [inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 u,
@@ -155,7 +157,7 @@ theorem toZeroAtInfty_injective :
 @[simp]
 theorem toZeroAtInfty_toBesselPotentialSpaceCLM (f : 𝓢(E, F)) :
     toZeroAtInfty hs (SchwartzMap.toBesselPotentialSpaceCLM s 2 f) = f.toZeroAtInfty := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt hs
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   rw [toZeroAtInfty_eq_iff h0, inclusionLp_toBesselPotentialSpaceCLM]
   filter_upwards [f.coeFn_toLp 2 volume] with x hx
   rw [hx, SchwartzMap.toZeroAtInfty_apply]
@@ -165,7 +167,7 @@ multiplication by `φ`. -/
 @[simp]
 theorem toZeroAtInfty_smulLeftCLM_apply (φ : 𝓢(E, ℂ)) (u : H^{s}(E, F)) (x : E) :
     toZeroAtInfty hs (smulLeftCLM s φ u) x = φ x • toZeroAtInfty hs u x := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt hs
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul hs
   refine congrFun ((Continuous.ae_eq_iff_eq volume (map_continuous (toZeroAtInfty hs _))
     (φ.continuous.smul (map_continuous (toZeroAtInfty hs u)))).1 ?_) x
   filter_upwards [inclusionLp_ae_eq_toZeroAtInfty (hs := hs) h0 (smulLeftCLM s φ u),
@@ -185,7 +187,7 @@ end ZeroAtInfty
 `k` times continuously differentiable. -/
 theorem contDiff_toZeroAtInfty {k : ℕ} (hk : finrank ℝ E + 2 * k < 2 * s) (u : H^{s}(E, F)) :
     ContDiff ℝ k (toZeroAtInfty (by linarith) u) := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt (E := E) (by linarith)
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul (E := E) (by linarith)
   exact MemSobolev.contDiff_of_ae_eq (by linarith) (memSobolev_inclusionLp h0 u)
     (toZeroAtInfty _ u).continuous (inclusionLp_ae_eq_toZeroAtInfty h0 u)
 
@@ -196,7 +198,7 @@ theorem exists_norm_iteratedFDeriv_toZeroAtInfty_le {k : ℕ}
     (hk : finrank ℝ E + 2 * k < 2 * s) :
     ∃ C, 0 ≤ C ∧ ∀ (u : H^{s}(E, F)) (j : ℕ), j ≤ k → ∀ x,
       ‖iteratedFDeriv ℝ j (toZeroAtInfty (by linarith) u) x‖ ≤ C * ‖u‖ := by
-  have h0 : 0 ≤ s := nonneg_of_finrank_lt (E := E) (by linarith)
+  have h0 : 0 ≤ s := nonneg_of_finrank_lt_two_mul (E := E) (by linarith)
   obtain ⟨C, hC, hbound⟩ := exists_norm_iteratedFDeriv_le_of_ae_eq (F := F) h0 (k := k)
     (by linarith)
   exact ⟨C, hC, fun u ↦ hbound u (toZeroAtInfty _ u).continuous

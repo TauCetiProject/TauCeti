@@ -62,10 +62,8 @@ common compact support, are statements about this map.
   almost everywhere.
 * `BesselPotentialSpace.toTemperedDistribution_toLp_inclusion`: for `s ≥ 0`, the inclusion into
   `H^{0,p}(E, G) = Lᵖ` exhibits every element of `H^{s,p}(E, G)` as an `Lᵖ` function, which lies
-  in `H^{s,p}` (`BesselPotentialSpace.memSobolev_toLp_inclusion`,
-  `BesselPotentialSpace.memSobolev_inclusionLp`) and defines `u` again
-  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_toLp_inclusion`,
-  `BesselPotentialSpace.toBesselPotentialSpace_memSobolev_inclusionLp`).
+  in `H^{s,p}` (`BesselPotentialSpace.memSobolev_inclusionLp`) and defines `u` again
+  (`BesselPotentialSpace.toBesselPotentialSpace_memSobolev_inclusionLp`).
 * `BesselPotentialSpace.toLp_inclusion_toBesselPotentialSpace`: for `s ≥ 0`, the `Lᵖ` function of
   the element of `H^{s,p}(E, G)` defined by an `Lᵖ` function `g` is `g`.
 * `BesselPotentialSpace.inclusionLp_smulLeftCLM_ae_eq`: for `p = 2`, the `L²` function of `φ u`,
@@ -86,6 +84,13 @@ open scoped ENNReal SchwartzMap BesselPotentialSpace
 variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- An order `s` above half the dimension of `E` is nonnegative, so that `H^{s,p}(E, G)` embeds
+in `Lᵖ` (`BesselPotentialSpace.inclusionLp`). -/
+theorem TauCeti.nonneg_of_finrank_lt_two_mul {s : ℝ} (hs : Module.finrank ℝ E < 2 * s) :
+    0 ≤ s := by
+  linarith [(Module.finrank ℝ E).cast_nonneg (α := ℝ)]
 
 namespace BesselPotentialSpace
 
@@ -145,12 +150,6 @@ theorem inclusion_toBesselPotentialSpaceCLM (h : r ≤ s) (u : 𝓢(E, G)) :
     inclusion h (SchwartzMap.toBesselPotentialSpaceCLM s p u) =
       SchwartzMap.toBesselPotentialSpaceCLM r p u :=
   ext (by simp)
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [Fact (1 ≤ p)] in
-/-- An order `s` above half the dimension of `E` is nonnegative, so that `H^{s,p}(E, G)` embeds
-in `Lᵖ` (`BesselPotentialSpace.inclusionLp`). -/
-theorem nonneg_of_finrank_lt (hs : Module.finrank ℝ E < 2 * s) : 0 ≤ s := by
-  linarith [(Module.finrank ℝ E).cast_nonneg (α := ℝ)]
 
 /-- The continuous inclusion `H^{s,p}(E, G) ⊆ H^{0,p}(E, G) = Lᵖ(E, G)` for `0 ≤ s`. It sends `u`
 to the `Lᵖ` function whose tempered distribution is `u.toDistr`
@@ -232,18 +231,6 @@ inclusion of `u ∈ H^{s,p}(E, G)` into `H^{0,p}(E, G)` has the tempered distrib
 theorem toTemperedDistribution_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
     ((inclusion h u).toLp : 𝓢'(E, G)) = u := by
   simp
-
-/-- For `s ≥ 0`, the `Lᵖ` function of `u ∈ H^{s,p}(E, G)` lies in `H^{s,p}`. -/
-theorem memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
-    MemSobolev s p ((inclusion h u).toLp : 𝓢'(E, G)) := by
-  rw [toTemperedDistribution_toLp_inclusion]
-  exact u.memSobolev_toDistr
-
-/-- For `s ≥ 0`, the element of `H^{s,p}(E, G)` defined by the `Lᵖ` function of
-`u ∈ H^{s,p}(E, G)` is `u`. -/
-theorem toBesselPotentialSpace_memSobolev_toLp_inclusion (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
-    (memSobolev_toLp_inclusion h u).toBesselPotentialSpace = u :=
-  ext (by simp)
 
 /-- For `s ≥ 0`, the `Lᵖ` function `inclusionLp h u` of `u ∈ H^{s,p}(E, G)` lies in `H^{s,p}`. -/
 theorem memSobolev_inclusionLp (h : 0 ≤ s) (u : H^{s, p}(E, G)) :
