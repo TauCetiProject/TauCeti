@@ -62,8 +62,10 @@ for parameters in the closed unit ball.
   of the perturbed flow in a parameter direction at the parameter `0`, and
   `TauCeti.fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt` at any parameter of norm
   less than `1`, with the flow of the perturbation in place of the flow of `f`.
-* `TauCeti.exists_pos_forall_unstableSet_perturb_eq`: for a family supported where `f > c` and a
-  rest point with `f p < c`, small perturbations keep the whole unstable set of `p`;
+* `TauCeti.mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem`: membership
+  in unstable sets is that for `f` when the backward orbit of the perturbed flow avoids the
+  supports. `TauCeti.exists_pos_forall_unstableSet_perturb_eq`: for a family supported where
+  `f > c` and a rest point with `f p < c`, small perturbations keep the whole unstable set of `p`;
   `TauCeti.exists_pos_forall_value_negativeGradientFlow_perturb_lt`: if the time-`T` images of a
   compact set lie below a level, they still do for small perturbations.
 * `TauCeti.range_fst_fderiv_perturbedFlow_inr_le`: at the parameter `0`, a family whose members
@@ -297,10 +299,9 @@ theorem isCompact_sublevel_perturb (hfc : Continuous f) (hcont : ∀ i, Continuo
     unfold perturb
     fun_prop
   refine (hcompact (c + M * ‖s‖)).of_isClosed_subset (isClosed_le hpc continuous_const)
-    fun x (hx : perturb f h s x ≤ c) ↦ ?_
-  have := (abs_le.1 (hM s x)).1
-  change f x ≤ c + M * ‖s‖
-  linarith
+    fun x hx ↦ ?_
+  simp only [Set.mem_ofPred_eq] at hx ⊢
+  linarith [(abs_le.1 (hM s x)).1]
 
 end Differential
 
@@ -392,6 +393,25 @@ theorem mem_unstableSet_perturb_iff (hf : LipschitzWith K (∇ f)) {s : Euclidea
   simp only [Flow.mem_unstableSet]
   exact tendsto_congr' heq
 
+/-- **Unstable sets away from the perturbation, along the perturbed orbit.** If the backward orbit
+of `y` under the negative-gradient flow of `perturb f h s` avoids the supports of the family, then
+`y` lies in the unstable set of a point `p` for the perturbed flow if and only if it does for the
+flow of `f`. -/
+theorem mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem
+    (hf : LipschitzWith K (∇ f)) {s : EuclideanSpace ℝ ι} {K' : ℝ≥0}
+    (hf' : LipschitzWith K' (∇ (perturb f h s))) {y p : E}
+    (hy : ∀ τ, τ ≤ 0 → ∀ i, negativeGradientFlow (perturb f h s) hf' τ y ∉ tsupport (h i)) :
+    y ∈ Flow.unstableSet (negativeGradientFlow (perturb f h s) hf') p ↔
+      y ∈ Flow.unstableSet (negativeGradientFlow f hf) p := by
+  have heq : (fun t ↦ negativeGradientFlow f hf t y) =ᶠ[atBot]
+      fun t ↦ negativeGradientFlow (perturb f h s) hf' t y := by
+    filter_upwards [eventually_le_atBot 0] with t ht
+    refine negativeGradientFlow_apply_eq_of_gradient_eq hf hf' fun τ hτ ↦ ?_
+    rw [uIcc_of_ge ht] at hτ
+    exact (gradient_perturb_of_forall_notMem_tsupport s (hy τ hτ.2)).symm
+  simp only [Flow.mem_unstableSet]
+  exact (tendsto_congr' heq).symm
+
 /-- **Unstable sets of low rest points are unchanged.** If the family is supported where `f > c`
 and `f p < c`, then for all sufficiently small `s` the unstable set of `p` for the perturbed flow
 is that for the flow of `f`: on the supports the perturbation stays above `f p`, so the backward
@@ -423,19 +443,12 @@ theorem exists_pos_forall_unstableSet_perturb_eq (hfs : ContDiff ℝ 1 f)
   ext y
   constructor
   · intro hy
-    set ψ := negativeGradientFlow (perturb f h s) hf'
-    have hoff : ∀ τ, τ ≤ 0 → ∀ i, ψ τ y ∉ tsupport (h i) := fun τ _ i hmem ↦ by
-      have hle : perturb f h s (ψ τ y) ≤ perturb f h s p :=
-        (isNegativeGradient_negativeGradientFlow _ hf').value_ge_of_mem_unstableSet
-          (Flow.isInvariant_unstableSet ψ p τ hy) (fun _ ↦ hds _) hds.continuous.continuousAt
-      exact ((hhigh i _ hmem).2.trans_le (hle.trans hpp.le)).false
-    have heq : (fun t ↦ ψ t y) =ᶠ[atBot] fun t ↦ negativeGradientFlow f hf t y := by
-      filter_upwards [eventually_le_atBot 0] with t ht
-      refine (negativeGradientFlow_apply_eq_of_gradient_eq hf hf' fun τ hτ ↦ ?_).symm
-      rw [uIcc_of_ge ht] at hτ
-      exact (gradient_perturb_of_forall_notMem_tsupport s (hoff τ hτ.2)).symm
-    simp only [Flow.mem_unstableSet] at hy ⊢
-    exact (tendsto_congr' heq).1 hy
+    refine (mem_unstableSet_perturb_iff_of_forall_negativeGradientFlow_perturb_notMem hf hf'
+      fun τ _ i hmem ↦ ?_).1 hy
+    have hle : perturb f h s (negativeGradientFlow (perturb f h s) hf' τ y) ≤ perturb f h s p :=
+      (isNegativeGradient_negativeGradientFlow _ hf').value_ge_of_mem_unstableSet
+        (Flow.isInvariant_unstableSet _ p τ hy) (fun _ ↦ hds _) hds.continuous.continuousAt
+    exact ((hhigh i _ hmem).2.trans_le (hle.trans hpp.le)).false
   · intro hy
     refine (mem_unstableSet_perturb_iff hf hf' fun τ _ i hmem ↦ ?_).2 hy
     have hle : f (negativeGradientFlow f hf τ y) ≤ f p :=
@@ -924,7 +937,7 @@ theorem fst_fderiv_perturbedFlow_apply_eq_neg_integral_of_norm_lt (hfs : ContDif
 /-- **Descent persists under small perturbations.** If the time-`T` images of a compact set `C`
 under the negative-gradient flow of `f` lie where `f < c`, then so do its time-`T` images under the
 negative-gradient flow of `perturb f h s`, for all sufficiently small `s`. -/
-theorem exists_pos_forall_value_negativeGradientFlow_perturb_lt (hfs : ContDiff ℝ 2 f)
+theorem exists_pos_forall_value_negativeGradientFlow_perturb_lt (hd : Differentiable ℝ f)
     (hf : LipschitzWith K (∇ f)) (hh : ∀ i, ContDiff ℝ 2 (h i))
     (hc : ∀ i, HasCompactSupport (h i)) {C : Set E} (hC : IsCompact C) {T c : ℝ}
     (hT : ∀ x ∈ C, f (negativeGradientFlow f hf T x) < c) :
@@ -933,7 +946,7 @@ theorem exists_pos_forall_value_negativeGradientFlow_perturb_lt (hfs : ContDiff 
       ∀ x ∈ C, f (negativeGradientFlow (perturb f h s) hf' T x) < c := by
   set Φ := perturbedFlow f h hf hh hc
   have hcont : Continuous fun z : EuclideanSpace ℝ ι × E ↦ f (Φ T (z.2, z.1)).1 :=
-    hfs.continuous.comp (continuous_fst.comp ((Φ.continuous_toFun T).comp continuous_swap))
+    hd.continuous.comp (continuous_fst.comp ((Φ.continuous_toFun T).comp continuous_swap))
   have hev : ∀ᶠ s in 𝓝 (0 : EuclideanSpace ℝ ι), ∀ x ∈ C, f (Φ T (x, s)).1 < c :=
     hC.eventually_forall_of_forall_eventually fun x hx ↦
       hcont.continuousAt.eventually (gt_mem_nhds (by
@@ -942,7 +955,7 @@ theorem exists_pos_forall_value_negativeGradientFlow_perturb_lt (hfs : ContDiff 
   obtain ⟨ε, hε, hεC⟩ := Metric.eventually_nhds_iff.1 hev
   refine ⟨min ε 1, lt_min hε one_pos, fun s hs K' hf' x hx ↦ ?_⟩
   have h1 := hεC (show dist s 0 < ε by simpa using hs.trans_le (min_le_left _ _)) x hx
-  rwa [perturbedFlow_apply_of_norm_le (hfs.differentiable (by norm_num)) hf hh hc
+  rwa [perturbedFlow_apply_of_norm_le hd hf hh hc
     (hs.le.trans (min_le_right _ _)) hf'] at h1
 
 

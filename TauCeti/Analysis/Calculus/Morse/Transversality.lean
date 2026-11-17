@@ -47,7 +47,7 @@ of `p`, and the complementary dimension for the stable set of `q`.
 * `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_unstableSet` and
   `TauCeti.IsNondegenerateCriticalPoint.finrank_span_tangentConeAt_stableSet_add_morseIndex`: the
   dimensions of the tangent spaces of the unstable and stable sets.
-* `span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_self` (in the namespace
+* `span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_self_eq_top` (in the namespace
   `TauCeti.IsNondegenerateCriticalPoint`): at the critical point itself, the unstable and stable
   sets are transverse.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_unstableSet_inter_stableSet_chart`: a transverse
@@ -130,7 +130,7 @@ theorem finrank_span_tangentConeAt_stableSet_add_morseIndex (hq : IsNondegenerat
 /-- **Transversality at a critical point.** At a Morse critical point `p`, the tangent spaces at
 `p` of the unstable and stable sets of `p` together span the whole space: they are the unstable
 and stable linear subspaces of the Hessian, which are complementary. -/
-theorem span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_self
+theorem span_tangentConeAt_unstableSet_sup_span_tangentConeAt_stableSet_self_eq_top
     (hp : IsNondegenerateCriticalPoint f p) (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f)) :
     Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) p) ⊔
       Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) p) p) = ⊤ := by

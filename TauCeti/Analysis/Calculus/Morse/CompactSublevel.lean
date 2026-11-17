@@ -80,13 +80,6 @@ theorem exists_stableSet_of_isCompact_sublevel (hfs : ContDiff ℝ 2 f)
   exact ⟨q, (hasNondegenerateCriticalPointsOn_iff.mp hM) (mem_univ q) hq',
     Flow.mem_stableSet.mpr hlim⟩
 
-/-- Points in the closure of the unstable set of `p` have value at most `f p`. -/
-private theorem le_of_mem_closure_unstableSet (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    {p z : E} (hz : z ∈ closure (Flow.unstableSet (negativeGradientFlow f hf) p)) : f z ≤ f p :=
-  ((isClosed_le hfs.continuous continuous_const).closure_subset_iff.2 fun _ hw ↦
-    (isNegativeGradient_negativeGradientFlow f hf).value_ge_of_mem_unstableSet hw
-      (fun _ ↦ hfs.differentiable (by norm_num) _) hfs.continuous.continuousAt) hz
-
 /-- Every backward orbit starting in the closure of an unstable manifold converges to some
 nondegenerate critical point when the sublevel at the originating point is compact. -/
 theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
@@ -98,7 +91,8 @@ theorem exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
       y ∈ Flow.unstableSet (negativeGradientFlow f hf) a := by
   let φ := negativeGradientFlow f hf
   have hmaps : MapsTo (fun t ↦ φ t y) (Iic 0) {z | f z ≤ f p} := fun t _ ↦
-    le_of_mem_closure_unstableSet hfs hf
+    (isNegativeGradient_negativeGradientFlow f hf).value_ge_of_mem_closure_unstableSet
+      (hfs.differentiable (by norm_num))
       (map_mem_closure (φ.continuous_toFun t) hy (Flow.isInvariant_unstableSet φ p t))
   have hγ : IsIntegralCurveOn (fun t ↦ φ t y) (fun _ x ↦ -∇ f x) (Iic 0) :=
     ((isNegativeGradient_negativeGradientFlow f hf).isIntegralCurve y).isIntegralCurveOn _
@@ -213,24 +207,17 @@ theorem value_lt_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_suble
     f a < f p := by
   let φ := negativeGradientFlow f hf
   have hφ := isNegativeGradient_negativeGradientFlow f hf
-  have hd : ∀ x t, DifferentiableAt ℝ f (φ t x) := fun _ _ ↦ hfs.differentiable (by norm_num) _
-  let _ : NeBot (𝓝[>] (0 : ℝ)) := nhdsGT_neBot_of_exists_gt ⟨1, zero_lt_one⟩
-  have hpos : ∀ᶠ r in 𝓝[>] (0 : ℝ), 0 < r := self_mem_nhdsWithin
-  obtain ⟨r, hr, z, hz, hzr⟩ :=
-    (hpos.and (ha.eventually_exists_mem_closure_unstableSet_inter_stableSet hφ hpa hy)).exists
-  obtain ⟨b, -, hzb⟩ :=
-    exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel hfs hf hM hcompact hz.1
-  have hba : b ≠ a := by
-    rintro rfl
-    rw [hφ.eq_of_mem_unstableSet_inter_stableSet (hd z) hfs.continuous.continuousAt ⟨hzb, hz.2⟩,
-      dist_self] at hzr
-    exact hr.ne hzr
+  have hd : Differentiable ℝ f := hfs.differentiable (by norm_num)
+  obtain ⟨b, z, -, hba, hz, hzb⟩ :=
+    exists_prevCriticalPoint_of_mem_closure_unstableSet_inter_unstableSet ha hfs hf hpa hy
+      fun hz ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel hfs hf hM
+        hcompact hz
   have hbp : f b ≤ f p :=
-    le_of_tendsto (hfs.continuous.continuousAt.tendsto.comp (Flow.mem_unstableSet.1 hzb))
-      (Eventually.of_forall fun t ↦ le_of_mem_closure_unstableSet hfs hf
+    le_of_tendsto (hd.continuous.continuousAt.tendsto.comp (Flow.mem_unstableSet.1 hzb))
+      (Eventually.of_forall fun t ↦ hφ.value_ge_of_mem_closure_unstableSet hd
         (map_mem_closure (φ.continuous_toFun t) hz.1 (Flow.isInvariant_unstableSet φ p t)))
-  exact (hφ.value_lt_of_mem_unstableSet_inter_stableSet (hd z) hfs.continuous.continuousAt
-    hfs.continuous.continuousAt hba ⟨hzb, hz.2⟩).trans_le hbp
+  exact (hφ.value_lt_of_mem_unstableSet_inter_stableSet (fun _ ↦ hd _)
+    hd.continuous.continuousAt hd.continuous.continuousAt hba ⟨hzb, hz.2⟩).trans_le hbp
 
 /-- **The levels of an unstable set are compact.** Let `f` be a globally Morse function whose
 sublevel at `p` is compact. If no critical value lies in `[c, f p)`, then the points of the
@@ -241,8 +228,10 @@ theorem isCompact_unstableSet_inter_level_of_isCompact_sublevel
     (hcompact : IsCompact {z | f z ≤ f p}) {c : ℝ}
     (hc : ∀ a, IsNondegenerateCriticalPoint f a → f a < f p → f a < c) :
     IsCompact (Flow.unstableSet (negativeGradientFlow f hf) p ∩ {z | f z = c}) := by
+  have hφ := isNegativeGradient_negativeGradientFlow f hf
+  have hd : Differentiable ℝ f := hfs.differentiable (by norm_num)
   refine hcompact.of_isClosed_subset (isClosed_of_closure_subset fun y hy ↦ ?_)
-    fun z hz ↦ le_of_mem_closure_unstableSet hfs hf (subset_closure hz.1)
+    fun z hz ↦ hφ.value_ge_of_mem_closure_unstableSet hd (subset_closure hz.1)
   have hyc : f y = c := (isClosed_eq hfs.continuous continuous_const).closure_subset
     (closure_mono inter_subset_right hy)
   have hyu := closure_mono inter_subset_left hy
@@ -251,18 +240,19 @@ theorem isCompact_unstableSet_inter_level_of_isCompact_sublevel
   refine ⟨?_, hyc⟩
   obtain rfl | hpa := eq_or_ne p a
   · exact hya
-  have hle : f y ≤ f a := (isNegativeGradient_negativeGradientFlow f hf).value_ge_of_mem_unstableSet
-    hya (fun _ ↦ hfs.differentiable (by norm_num) _) hfs.continuous.continuousAt
+  have hle : f y ≤ f a :=
+    hφ.value_ge_of_mem_unstableSet hya (fun _ ↦ hd _) hd.continuous.continuousAt
   exact absurd (hc a ha (value_lt_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_sublevel
     hfs hf hM hcompact ha hpa ⟨hyu, hya⟩)) (hyc ▸ hle).not_gt
 
-/-- **Uniform descent below a regular band.** Let `f` be a globally Morse function with compact
-sublevels and no critical value in `[c₁, c)`. The forward orbits of a compact set of noncritical
-points of value at most `c` all lie below `c₁` after a common time. -/
+/-- **Uniform descent below a regular band.** Let `f` be a globally Morse function whose sublevel
+at `c` is compact, with no critical value in `[c₁, c)`. The forward orbits of a compact set of
+noncritical points of value at most `c` all lie below `c₁` after a common time. -/
 theorem exists_forall_value_negativeGradientFlow_lt_of_isCompact_sublevel
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
-    (hM : HasNondegenerateCriticalPointsOn f univ) (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
-    {c₁ c : ℝ} (hc : ∀ a, IsNondegenerateCriticalPoint f a → f a < c → f a < c₁)
+    (hM : HasNondegenerateCriticalPointsOn f univ) {c₁ c : ℝ}
+    (hcompact : IsCompact {z | f z ≤ c})
+    (hc : ∀ a, IsNondegenerateCriticalPoint f a → f a < c → f a < c₁)
     {C : Set E} (hC : IsCompact C) (hCc : ∀ x ∈ C, f x ≤ c) (hCcrit : ∀ x ∈ C, ∇ f x ≠ 0) :
     ∃ T, ∀ x ∈ C, ∀ t, T ≤ t → f (negativeGradientFlow f hf t x) < c₁ := by
   let φ := negativeGradientFlow f hf
@@ -270,7 +260,9 @@ theorem exists_forall_value_negativeGradientFlow_lt_of_isCompact_sublevel
   have hd : ∀ x t, DifferentiableAt ℝ f (φ t x) := fun _ _ ↦ hfs.differentiable (by norm_num) _
   have hexit : ∀ x ∈ C, ∃ t > 0, φ t x ∈ {z | f z < c₁} := by
     intro x hx
-    obtain ⟨q, hq, hxq⟩ := exists_stableSet_of_isCompact_sublevel hfs hf hM x (hcompact _)
+    obtain ⟨q, hq, hxq⟩ := exists_stableSet_of_isCompact_sublevel hfs hf hM x
+      (hcompact.of_isClosed_subset (isClosed_le hfs.continuous continuous_const)
+        fun _ hz ↦ le_trans hz (hCc x hx))
     have hmove : ∃ t, φ t x ≠ x := by
       by_contra! hfix
       exact hCcrit x hx ((forall_negativeGradientFlow_eq_self_iff f hf x).1 hfix)
