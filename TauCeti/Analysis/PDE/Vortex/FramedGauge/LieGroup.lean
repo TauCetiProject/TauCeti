@@ -71,42 +71,6 @@ variable {s : ℝ}
 
 open SobolevTopologicalGaugeGroup
 
-/-! ### The exponential near `0` -/
-
-/-- The coefficients of `exp z - 1 - z = ∑ₙ bₙ z ^ (n + 1)`: the exponential series without its
-terms of degree `0` and `1`. -/
-private def expRemainderCoeff (n : ℕ) : ℂ := (((n + 1)! : ℂ))⁻¹ - if n = 0 then 1 else 0
-
-private theorem hasSum_expRemainderCoeff (z : ℂ) :
-    HasSum (fun n ↦ expRemainderCoeff n * z ^ (n + 1)) (exp z - 1 - z) := by
-  have h := (Complex.hasSum_exp_sub_one z).sub (hasSum_ite_eq 0 z)
-  refine h.congr_fun fun n ↦ ?_
-  rcases n with _ | n <;> simp [expRemainderCoeff]
-
-/-- The majorant series of `expRemainderCoeff` at `x ≥ 0` is at most `x exp x`. -/
-private theorem summable_and_tsum_norm_expRemainderCoeff_le {x : ℝ} (hx : 0 ≤ x) :
-    Summable (fun n ↦ ‖expRemainderCoeff n‖ * x ^ n) ∧
-      ∑' n, ‖expRemainderCoeff n‖ * x ^ n ≤ x * Real.exp x := by
-  -- After the vanishing term `n = 0`, the terms are `x ^ (n + 1) / (n + 2)! ≤ x · xⁿ / n!`.
-  have hle (n : ℕ) : ‖expRemainderCoeff (n + 1)‖ * x ^ (n + 1) ≤ x * (x ^ n / n !) := by
-    have h₂ : (n ! : ℝ) ≤ (n + 1 + 1)! :=
-      Nat.cast_le.2 (Nat.factorial_le (by omega))
-    simp only [expRemainderCoeff, n.succ_ne_zero, ↓reduceIte, sub_zero, norm_inv,
-      Complex.norm_natCast, pow_succ, div_eq_mul_inv]
-    calc ((n + 1 + 1)! : ℝ)⁻¹ * (x ^ n * x) ≤ (n ! : ℝ)⁻¹ * (x ^ n * x) := by
-          gcongr
-      _ = x * (x ^ n * (n ! : ℝ)⁻¹) := by ring
-  have hexp := (Real.summable_pow_div_factorial x).mul_left x
-  have hsum : Summable fun n ↦ ‖expRemainderCoeff (n + 1)‖ * x ^ (n + 1) :=
-    hexp.of_nonneg_of_le (fun n ↦ by positivity) hle
-  have hsum' : Summable fun n ↦ ‖expRemainderCoeff n‖ * x ^ n := (summable_nat_add_iff 1).1 hsum
-  refine ⟨hsum', ?_⟩
-  rw [hsum'.tsum_eq_zero_add]
-  have h0 : expRemainderCoeff 0 = 0 := by simp [expRemainderCoeff]
-  rw [h0, norm_zero, zero_mul, zero_add, Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div,
-    ← tsum_mul_left]
-  exact hsum.tsum_le_tsum hle hexp
-
 /-- **The quadratic Taylor estimate for the exponential of a real phase.** For `s > 1` there is
 `C ≥ 0` such that `‖(exp (i G) - 1) - i G‖_{H^s} ≤ C ‖G‖² exp (C ‖G‖)` for every real phase
 `G ∈ H^s(ℂ)`. -/
@@ -250,35 +214,19 @@ instance instLieGroup (n : WithTop ℕ∞) :
       (SobolevTopologicalGaugeGroup hs) where
   contMDiff_mul := by
     rintro ⟨u, v⟩
-    -- On the product of the chart domains at `u` and `v`, the product is
-    -- `(p, q) ↦ (u v) exp (i (φ_u p + φ_v q))`.
-    set U := (gaugeChart u).source ×ˢ (gaugeChart v).source
-    have hU : U ∈ 𝓝 (u, v) := prod_mem_nhds ((gaugeChart u).open_source.mem_nhds
-      (mem_gaugeChart_source_self u)) ((gaugeChart v).open_source.mem_nhds
-      (mem_gaugeChart_source_self v))
-    have hφ (w : SobolevTopologicalGaugeGroup hs) :=
-      contMDiffOn_chart (I := 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le))) (n := n) (x := w)
-    have hsmooth := (contMDiff_gaugeChart_symm n (u * v)).comp_contMDiffOn
-      (((hφ u).comp (contMDiffOn_fst (s := U)) fun _ hp ↦ hp.1).add
-        ((hφ v).comp (contMDiffOn_snd (s := U)) fun _ hp ↦ hp.2))
-    refine (hsmooth.contMDiffAt hU).congr_of_eventuallyEq ?_
-    filter_upwards [hU] with p hp
-    simp only [Function.comp_apply, Pi.add_apply, gaugeChart_symm_apply, AddChar.map_add_eq_mul]
-    conv_lhs => rw [← mul_expGauge_gaugeChart hp.1, ← mul_expGauge_gaugeChart hp.2]
-    ac_rfl
+    -- In the charts at `u`, `v` and `u v`, the product is `(F, G) ↦ F + G`.
+    have h := (contMDiff_gaugeChart_symm n (u * v)).comp
+      (contMDiff_iff_contDiff.2 (contDiff_fst.add contDiff_snd))
+    rw [contMDiffAt_iff_source, extChartAt_prod]
+    simpa [Function.comp_def, AddChar.map_add_eq_mul, mul_mul_mul_comm u] using
+      h.contMDiffAt.contMDiffWithinAt
   contMDiff_inv := by
     intro u
-    -- On the chart domain at `u`, inversion is `p ↦ u⁻¹ exp (-i φ_u p)`.
-    have hU : (gaugeChart u).source ∈ 𝓝 u :=
-      (gaugeChart u).open_source.mem_nhds (mem_gaugeChart_source_self u)
-    have hsmooth := (contMDiff_gaugeChart_symm n u⁻¹).comp_contMDiffOn
-      (contMDiffOn_chart (I := 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le))) (n := n)
-        (x := u)).neg
-    refine (hsmooth.contMDiffAt hU).congr_of_eventuallyEq ?_
-    filter_upwards [hU] with p hp
-    simp only [Function.comp_apply, chartAt_eq, gaugeChart_symm_apply, AddChar.map_neg_eq_inv]
-    conv_lhs => rw [← mul_expGauge_gaugeChart hp]
-    rw [mul_inv]
+    -- In the charts at `u` and `u⁻¹`, inversion is `F ↦ -F`.
+    have h := (contMDiff_gaugeChart_symm n u⁻¹).comp (contMDiff_iff_contDiff.2 contDiff_neg)
+    rw [contMDiffAt_iff_source]
+    simpa [Function.comp_def, AddChar.map_neg_eq_inv, mul_comm] using
+      h.contMDiffAt.contMDiffWithinAt
 
 end SobolevTopologicalGaugeGroup
 
@@ -299,19 +247,13 @@ theorem contMDiff_subOne :
       (subOne : SobolevTopologicalGaugeGroup hs → H^{s}(ℂ)) := by
   intro u
   set M := mulCLM (finrank_real_complex_lt_two_mul hs)
-  have hU : (gaugeChart u).source ∈ 𝓝 u :=
-    (gaugeChart u).open_source.mem_nhds (mem_gaugeChart_source_self u)
   have hg : ContDiff ℝ ∞ fun F : realSubmodule ℂ (zero_le_one.trans hs.le) ↦
       subOne u + subOne (expGauge hs F) + M (subOne u) (subOne (expGauge hs F)) :=
     (contDiff_const.add contDiff_subOne_expGauge).add
       (((M (subOne u)).restrictScalars ℝ).contDiff.comp contDiff_subOne_expGauge)
-  have hsmooth := (contMDiff_iff_contDiff.2 hg).comp_contMDiffOn
-    (contMDiffOn_chart (I := 𝓘(ℝ, realSubmodule ℂ (zero_le_one.trans hs.le))) (n := ∞) (x := u))
-  refine (hsmooth.contMDiffAt hU).congr_of_eventuallyEq ?_
-  filter_upwards [hU] with p hp
-  simp only [Function.comp_apply, chartAt_eq]
-  conv_lhs => rw [← mul_expGauge_gaugeChart hp]
-  rw [subOne_mul]
+  rw [contMDiffAt_iff_source]
+  simpa [Function.comp_def, subOne_mul] using
+    (contMDiff_iff_contDiff.2 hg).contMDiffAt.contMDiffWithinAt
 
 end SobolevTopologicalGaugeGroup
 
