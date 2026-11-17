@@ -346,17 +346,6 @@ theorem IsCrosscut.exists_filledHull_union_filledHull_eq_closedBall {c : ℂ} {r
     hτ.exists_filledHull_union_filledHull_eq_closure isOpen_ball isBounded_ball
       (hfr.symm ▸ isJordanCurve_sphere c hr)
 
-/-- A Jordan filled hull covered by two closed sets whose intersection lies in the curve
-is contained in one of those sets. -/
-private theorem filledHull_subset_or_subset {A B J : Set ℂ} (hA : IsClosed A)
-    (hB : IsClosed B) (hAB : A ∩ B ⊆ J) (hJ : IsJordanCurve J)
-    (hcover : filledHull J ⊆ A ∪ B) : filledHull J ⊆ A ∨ filledHull J ⊆ B := by
-  have h := isPreconnected_iff_subset_of_disjoint_closed.mp
-    hJ.isConnected_filledHull_sdiff.isPreconnected A B hA hB (sdiff_subset.trans hcover)
-    (eq_empty_of_forall_notMem fun _ ⟨hp, h⟩ ↦ hp.2 (hAB h))
-  exact h.imp (fun h ↦ hJ.closure_filledHull_sdiff ▸ closure_minimal h hA)
-    (fun h ↦ hJ.closure_filledHull_sdiff ▸ closure_minimal h hB)
-
 /-- For given complementary injective frontier paths of a crosscut in a bounded open Jordan
 domain, any two closed proper subsets covering the closure, with intersection contained in
 the crosscut, are the two corresponding filled hulls, up to exchanging them. -/
@@ -386,9 +375,9 @@ theorem IsCrosscut.eq_filledHull_and_eq_filledHull_or_of_union_eq_closure (hτ :
   have hBA' : B ∩ A ⊆ range τ := by rwa [inter_comm]
   have hcover' : filledHull (range τ ∪ range β) ∪ filledHull (range τ ∪ range α) = closure U :=
     by rwa [union_comm]
-  rcases filledHull_subset_or_subset hA hB (hAB'.trans subset_union_left) hJα
+  rcases hJα.filledHull_subset_or_subset hA hB (hAB'.trans subset_union_left)
       (hAB.symm ▸ hcover ▸ subset_union_left) with h₁ | h₁ <;>
-    rcases filledHull_subset_or_subset hA hB (hAB'.trans subset_union_left) hJβ
+    rcases hJβ.filledHull_subset_or_subset hA hB (hAB'.trans subset_union_left)
       (hAB.symm ▸ hcover ▸ subset_union_right) with h₂ | h₂
   · exact (hAne (Subset.antisymm (hAB ▸ subset_union_left)
       (hcover ▸ union_subset h₁ h₂))).elim
