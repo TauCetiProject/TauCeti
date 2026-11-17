@@ -232,7 +232,6 @@ theorem infinite_infiniteDomain (Z : Set ℕ) : (infiniteDomain Z).Infinite := b
 /-- **Upper classification of `FIN`.** The finite-domain index set relative to `Z` is Σ⁰₂ relative
 to `Z`. -/
 theorem isSigma_two_finiteDomain : IsSigma Z 2 (· ∈ finiteDomain Z) := by
-  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
   have hlt : IsPi Z 1 (fun a : (ℕ × ℕ) × ℕ => a.2 < a.1.2) := by
     refine (isPi_zero_iff.2 (isSigma_zero_iff.2
       ⟨fun a : (ℕ × ℕ) × ℕ => decide (a.2 < a.1.2), ?_,
@@ -244,7 +243,7 @@ theorem isSigma_two_finiteDomain : IsSigma Z 2 (· ∈ finiteDomain Z) := by
     have hpair : Primrec fun a : (ℕ × ℕ) × ℕ => Nat.pair a.1.1 a.2 :=
       Primrec₂.natPair.comp (Primrec.fst.comp Primrec.fst) Primrec.snd
     refine ((isSigma_one_dom_eval Code.universal).preimage hpair.computableIn).of_eq fun a => ?_
-    rw [hZ, Code.eval_universal]
+    rw [Z.oracle_eq_indicator, Code.eval_universal]
   refine isSigma_succ_iff.2
     ⟨fun p => ∀ x, x < p.2 ∨ ¬(Code.eval Z.oracle (ofNat Code p.1) x).Dom,
       (hlt.or hnotdom).forall_nat, fun e => ?_⟩
@@ -342,10 +341,10 @@ theorem not_manyOneReducible_infiniteDomain_finiteDomain :
   have hg : Computable fun c : Code => ofNat Code (f (encode c)) :=
     (Computable.ofNat Code).comp (hf.comp Computable.encode)
   obtain ⟨c, hc⟩ := Code.fixed_point hg
-  have hZ : ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) = Z.oracle := funext fun n => by simp
   have heval : Code.eval Z.oracle (ofNat Code (f (encode c))) =
       Code.eval Z.oracle (ofNat Code (encode c)) := by
-    simpa [hZ] using hc (Z.indicator 1)
+    rw [Z.oracle_eq_indicator, ofNat_encode]
+    exact hc (Z.indicator 1)
   have hsame : f (encode c) ∈ finiteDomain Z ↔ encode c ∈ finiteDomain Z :=
     mem_finiteDomain_congr fun x => by rw [heval]
   exact not_iff_self ((notMem_finiteDomain.trans (hiff (encode c))).trans hsame)
