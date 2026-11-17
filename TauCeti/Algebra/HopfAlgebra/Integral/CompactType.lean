@@ -168,7 +168,8 @@ private theorem sSup_simpleUnitaryCoefficientSubmodules_eq_top
     le_trans ?_ (le_sSup (isAtom_matrixCoefficientSubmodule_mem_simpleUnitary hUnit hW))
   rintro _ ⟨w, hw, rfl⟩
   rw [matrixCoefficientLinear_apply,
-    show w = W.subtype ⟨w, hw⟩ from (W.subtype_apply ⟨w, hw⟩).symm, matrixCoefficient_map]
+    ← Subtype.coe_mk w (Subcomodule.mem_toSubmodule.mp hw),
+    ← W.subtype_apply, matrixCoefficient_map]
   exact matrixCoefficient_mem_submodule _ _
 
 omit [StarModule ℂ A] [StarCoalgebra ℂ A] in
