@@ -36,9 +36,9 @@ tends to zero as `x ↓ 0`. Then:
 * `δ x ≤ x (1 - H(x))`, hence `δ ≤ 1 - H(x)` and the clearing map tends to infinity;
 * the clearing map is a bijection of `(0, ∞)` onto itself (`bijOn_clearingMap`): every positive
   value of `c(y)` has exactly one positive equilibrium price (`existsUnique_clearingMap_eq`);
-* the inverse (the equilibrium price as a function of `c(y)`) is strictly increasing,
-  Lipschitz with constant `δ⁻¹`, and differentiable with derivative the reciprocal of the
-  clearing derivative.
+* the inverse (the equilibrium price as a function of `c(y)`) is strictly increasing and
+  Lipschitz with constant `δ⁻¹` on the range of the clearing map, which needs only the margin,
+  and differentiable with derivative the reciprocal of the clearing derivative.
 
 Without the margin, strict monotonicity and the endpoint limits do not give a differentiable
 inverse: `x (1 - H(x)) = 1 + (x - 1)³` has a critical point at `x = 1`.
@@ -94,6 +94,17 @@ theorem _root_.HasDerivAt.clearingMap {h : ℝ} (hH : HasDerivAt H h x) :
   · simp only [id_eq]
     ring
 
+/-- If the program-trader demand `H` is differentiable on the positive half-line, the clearing
+map has derivative `1 - H(x) - x H'(x)` at every positive price `x`. -/
+theorem hasDerivAt_clearingMap_of_differentiableOn (hH : DifferentiableOn ℝ H (Ioi 0))
+    (hx : 0 < x) : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x) x :=
+  ((hH x hx).differentiableAt (Ioi_mem_nhds hx)).hasDerivAt.clearingMap
+
+/-- The clearing map is continuous wherever the program-trader demand is. -/
+theorem continuousOn_clearingMap {s : Set ℝ} (hH : ContinuousOn H s) :
+    ContinuousOn (clearingMap H) s :=
+  continuousOn_id.mul (continuousOn_const.sub hH)
+
 section Margin
 
 variable (hH : DifferentiableOn ℝ H (Ioi 0)) (hmargin : ∀ x, 0 < x → δ ≤ 1 - H x - x * deriv H x)
@@ -103,14 +114,12 @@ include hH hmargin
 grow at rate at least `δ` on the positive half-line. -/
 theorem mul_sub_le_clearingMap_sub {x₁ x₂ : ℝ} (hx₁ : 0 < x₁) (hx : x₁ ≤ x₂) :
     δ * (x₂ - x₁) ≤ clearingMap H x₂ - clearingMap H x₁ := by
-  have hderiv : ∀ x ∈ Ioi (0 : ℝ), HasDerivAt (clearingMap H) (1 - H x - x * deriv H x) x :=
-    fun x hx ↦ ((hH x hx).differentiableAt (Ioi_mem_nhds hx)).hasDerivAt.clearingMap
-  refine (convex_Ioi 0).mul_sub_le_image_sub_of_le_deriv
-    (fun x hx ↦ (hderiv x hx).continuousAt.continuousWithinAt)
-    (fun x hx ↦ (hderiv x (interior_subset hx)).differentiableAt.differentiableWithinAt)
+  refine (convex_Ioi 0).mul_sub_le_image_sub_of_le_deriv (continuousOn_clearingMap hH.continuousOn)
+    (fun x hx ↦ (hasDerivAt_clearingMap_of_differentiableOn hH
+      (interior_subset hx)).differentiableAt.differentiableWithinAt)
     (fun x hx ↦ ?_) x₁ hx₁ x₂ (hx₁.trans_le hx) hx
   rw [interior_Ioi] at hx
-  rw [(hderiv x hx).deriv]
+  rw [(hasDerivAt_clearingMap_of_differentiableOn hH hx).deriv]
   exact hmargin x hx
 
 /-- Under a lower bound `δ` on the clearing derivative, positive prices at distance `d` have
@@ -135,6 +144,26 @@ positive price from its clearing value. -/
 theorem invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
     invFunOn (clearingMap H) (Ioi 0) (clearingMap H x) = x :=
   (strictMonoOn_clearingMap hH hmargin hδ).injOn.leftInvOn_invFunOn hx
+
+/-- Under a strictly positive clearing-derivative margin, the equilibrium price is strictly
+increasing on the range of the clearing map. -/
+theorem strictMonoOn_invFunOn_clearingMap (hδ : 0 < δ) :
+    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (clearingMap H '' Ioi 0) := by
+  rintro _ ⟨x₁, hx₁, rfl⟩ _ ⟨x₂, hx₂, rfl⟩ h
+  rw [invFunOn_clearingMap hH hmargin hδ hx₁, invFunOn_clearingMap hH hmargin hδ hx₂]
+  exact ((strictMonoOn_clearingMap hH hmargin hδ).lt_iff_lt hx₁ hx₂).1 h
+
+/-- A lower bound `δ > 0` on the clearing derivative makes the equilibrium price Lipschitz with
+constant `δ⁻¹` on the range of the clearing map. -/
+theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
+    LipschitzOnWith (Real.toNNReal δ⁻¹) (invFunOn (clearingMap H) (Ioi 0))
+      (clearingMap H '' Ioi 0) := by
+  refine LipschitzOnWith.of_dist_le_mul ?_
+  rintro _ ⟨x₁, hx₁, rfl⟩ _ ⟨x₂, hx₂, rfl⟩
+  rw [invFunOn_clearingMap hH hmargin hδ hx₁, invFunOn_clearingMap hH hmargin hδ hx₂,
+    Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Real.dist_eq, Real.dist_eq, ← div_eq_inv_mul,
+    le_div_iff₀' hδ]
+  exact mul_abs_sub_le_abs_clearingMap_sub hH hmargin hx₂ hx₁
 
 variable (hzero : Tendsto (clearingMap H) (𝓝[>] 0) (𝓝 0))
 include hzero
@@ -172,9 +201,8 @@ theorem bijOn_clearingMap (hδ : 0 < δ) : BijOn (clearingMap H) (Ioi 0) (Ioi 0)
     ((hzero.eventually (gt_mem_nhds hy)).and self_mem_nhdsWithin).exists
   obtain ⟨b, hby, hab⟩ := ((tendsto_clearingMap_atTop hH hmargin hzero hδ).eventually_gt_atTop y
     |>.and (eventually_ge_atTop a)).exists
-  have hcont : ContinuousOn (clearingMap H) (Icc a b) := fun x hx ↦
-    (((hH x (ha.trans_le hx.1)).differentiableAt
-      (Ioi_mem_nhds (ha.trans_le hx.1))).hasDerivAt.clearingMap).continuousAt.continuousWithinAt
+  have hcont : ContinuousOn (clearingMap H) (Icc a b) :=
+    (continuousOn_clearingMap hH.continuousOn).mono fun x hx ↦ ha.trans_le hx.1
   obtain ⟨x, hx, rfl⟩ := intermediate_value_Icc hab hcont ⟨hay.le, hby.le⟩
   exact ⟨x, ha.trans_le hx.1, rfl⟩
 
@@ -201,26 +229,19 @@ theorem clearingMap_invFunOn (hδ : 0 < δ) (hy : 0 < y) :
     clearingMap H (invFunOn (clearingMap H) (Ioi 0) y) = y :=
   (bijOn_clearingMap hH hmargin hzero hδ).invOn_invFunOn.2 hy
 
-/-- The equilibrium price is strictly increasing in the right-hand side of the clearing
-equation. -/
-theorem strictMonoOn_invFunOn_clearingMap (hδ : 0 < δ) :
-    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (Ioi 0) := by
-  intro y₁ hy₁ y₂ hy₂ hy
-  have hg := (bijOn_invFunOn_clearingMap hH hmargin hzero hδ).mapsTo
-  rwa [← (strictMonoOn_clearingMap hH hmargin hδ).lt_iff_lt (hg hy₁) (hg hy₂),
-    clearingMap_invFunOn hH hmargin hzero hδ hy₁, clearingMap_invFunOn hH hmargin hzero hδ hy₂]
-
-/-- The equilibrium price is Lipschitz with constant `δ⁻¹` in the right-hand side of the
+/-- The equilibrium price is strictly increasing in the positive right-hand side of the
 clearing equation. -/
-theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
-    LipschitzOnWith (Real.toNNReal δ⁻¹) (invFunOn (clearingMap H) (Ioi 0)) (Ioi 0) := by
-  refine LipschitzOnWith.of_dist_le_mul fun y₁ hy₁ y₂ hy₂ ↦ ?_
-  have hg := (bijOn_invFunOn_clearingMap hH hmargin hzero hδ).mapsTo
-  have := mul_abs_sub_le_abs_clearingMap_sub hH hmargin (hg hy₂) (hg hy₁)
-  rw [clearingMap_invFunOn hH hmargin hzero hδ hy₁, clearingMap_invFunOn hH hmargin hzero hδ hy₂,
-    ← le_div_iff₀' hδ] at this
-  rw [Real.coe_toNNReal _ (inv_nonneg.2 hδ.le), Real.dist_eq, Real.dist_eq, ← div_eq_inv_mul]
-  exact this
+theorem strictMonoOn_invFunOn_clearingMap_Ioi (hδ : 0 < δ) :
+    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (Ioi 0) :=
+  (strictMonoOn_invFunOn_clearingMap hH hmargin hδ).mono
+    (bijOn_clearingMap hH hmargin hzero hδ).surjOn
+
+/-- The equilibrium price is Lipschitz with constant `δ⁻¹` in the positive right-hand side of the
+clearing equation. -/
+theorem lipschitzOnWith_invFunOn_clearingMap_Ioi (hδ : 0 < δ) :
+    LipschitzOnWith (Real.toNNReal δ⁻¹) (invFunOn (clearingMap H) (Ioi 0)) (Ioi 0) :=
+  (lipschitzOnWith_invFunOn_clearingMap hH hmargin hδ).mono
+    (bijOn_clearingMap hH hmargin hzero hδ).surjOn
 
 /-- The equilibrium price is differentiable: at the clearing value of a positive price `x`, its
 derivative is the reciprocal of the clearing derivative `1 - H(x) - x H'(x)`. -/
@@ -231,9 +252,9 @@ theorem hasDerivAt_invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
   have hderiv : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x)
       (invFunOn (clearingMap H) (Ioi 0) (clearingMap H x)) := by
     rw [invFunOn_clearingMap hH hmargin hδ hx]
-    exact ((hH x hx).differentiableAt (Ioi_mem_nhds hx)).hasDerivAt.clearingMap
+    exact hasDerivAt_clearingMap_of_differentiableOn hH hx
   refine HasDerivAt.of_local_left_inverse ?_ hderiv ?_ ?_
-  · exact (lipschitzOnWith_invFunOn_clearingMap hH hmargin hzero hδ).continuousOn.continuousAt
+  · exact (lipschitzOnWith_invFunOn_clearingMap_Ioi hH hmargin hzero hδ).continuousOn.continuousAt
       (Ioi_mem_nhds hy)
   · exact (hδ.trans_le (hmargin x hx)).ne'
   · filter_upwards [Ioi_mem_nhds hy] with y' hy'
