@@ -9,9 +9,10 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.MeasureTheory.Integral.SetToL1.ChangeMeasure
 public import Mathlib.MeasureTheory.VectorMeasure.SetIntegral
 public import TauCeti.MeasureTheory.VectorMeasure.Variation.Basic
+import Mathlib.Topology.EMetricSpace.Basic
 
 /-!
-# Naturality and homogeneity of the vector-measure integral
+# Naturality, homogeneity and uniform approximation of vector-measure integrals
 
 The integral `∫ᵛ x, f x ∂[B; μ]` of Mathlib is natural in the measure: a continuous linear map `φ`
 applied to the values of `μ` corresponds to a continuous linear map applied to the integral,
@@ -20,6 +21,10 @@ the integral is homogeneous for scalars acting on the integrand or on the measur
 pairing is linear over those scalars. For `RCLike` scalar integrands paired via
 `ContinuousLinearMap.lsmul ℝ 𝕜`, the integral decomposes into its real and imaginary parts
 (`integral_lsmul_eq_re_add_I_smul_im`).
+
+Convergence in L¹ of the variation measure gives convergence of set integrals uniformly
+over all sets (`tendstoUniformly_setIntegral_of_L1`). In particular this controls an entire
+indefinite integral, including all its observation times, with one error estimate.
 
 ## Main declarations
 
@@ -31,6 +36,8 @@ pairing is linear over those scalars. For `RCLike` scalar integrands paired via
 * `MeasureTheory.VectorMeasure.integral_ofReal_lsmul` and
   `MeasureTheory.VectorMeasure.integral_lsmul_eq_re_add_I_smul_im`: real embedding and
   real/imaginary decomposition for `RCLike` scalar integrands under `lsmul ℝ 𝕜`.
+* `MeasureTheory.VectorMeasure.tendstoUniformly_setIntegral_of_L1`: uniform convergence of
+  set integrals under L¹ convergence for the variation measure.
 -/
 
 public section
@@ -142,5 +149,48 @@ theorem integral_lsmul_eq_re_add_I_smul_im [RCLike 𝕜] [NormedSpace 𝕜 E] [I
   rw [integral_fun_add hre_k him_k,
     integral_fun_smul_of_smul_left (fun c y v ↦ by simp [mul_smul]),
     integral_ofReal_lsmul, integral_ofReal_lsmul]
+
+end MeasureTheory.VectorMeasure
+
+namespace MeasureTheory.VectorMeasure
+
+open Filter Topology
+
+/-- L¹ convergence for the variation measure gives convergence of vector-measure set
+integrals uniformly over all sets. No finiteness of the variation measure is needed.
+Nonmeasurable sets are allowed, with the native zero convention for their integrals. -/
+theorem tendstoUniformly_setIntegral_of_L1
+    {X E F G ι : Type*} [MeasurableSpace X]
+    [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {μ : VectorMeasure X F} {B : E →L[ℝ] F →L[ℝ] G}
+    {f : X → E} (hf : AEStronglyMeasurable f μ.variation) {u : ι → X → E} {l : Filter ι}
+    (hu : ∀ᶠ i in l, μ.Integrable (u i))
+    (hlim : Tendsto (fun i ↦ ∫⁻ x, ‖u i x - f x‖ₑ ∂μ.variation) l (𝓝 0)) :
+    TendstoUniformly (fun i s ↦ ∫ᵛ x in s, u i x ∂[B; μ])
+      (fun s ↦ ∫ᵛ x in s, f x ∂[B; μ]) l := by
+  rcases eq_or_neBot l with rfl | hl
+  · simp [EMetric.tendstoUniformly_iff]
+  -- Recover integrability as in MeasureTheory.tendsto_setToFun_of_L1.
+  have hf : μ.Integrable f := by
+    obtain ⟨i, hsmall, hi⟩ : ∃ i, ∫⁻ x, ‖u i x - f x‖ₑ ∂μ.variation < 1 ∧
+        μ.Integrable (u i) :=
+      (((tendsto_order.1 hlim).2 _ zero_lt_one).and hu).exists
+    have hsub : μ.Integrable (u i - f) :=
+      ⟨hi.aestronglyMeasurable.sub hf, hsmall.trans ENNReal.one_lt_top⟩
+    convert hi.sub hsub using 1
+    abel
+  have hbound := ENNReal.Tendsto.const_mul (a := ‖B‖ₑ) hlim (by simp)
+  rw [mul_zero] at hbound
+  apply EMetric.tendstoUniformly_iff.mpr
+  intro ε hε
+  filter_upwards [hu, hbound.eventually (gt_mem_nhds hε)] with i hi hsmall s
+  rw [edist_comm]
+  apply lt_of_le_of_lt (edist_integral_le_lintegral_edist hi.restrict hf.restrict) ?_
+  refine lt_of_le_of_lt ?_ hsmall
+  simp_rw [eDist_eq_eNorm_sub]
+  gcongr
+  exact variation_restrict_le.trans Measure.restrict_le_self
 
 end MeasureTheory.VectorMeasure
