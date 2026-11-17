@@ -60,10 +60,13 @@ section ExplicitInverse
 
 variable {A : Type*} [CommRing A] [TopologicalSpace A] [NonarchimedeanRing A]
 
-/-- **Enlarged standard étale system adjoining an explicit scaled Jacobian inverse.** Given
-`F' : Fin N' → tateSeries N' A` and an exponent `k' : ℕ`, this system in `N' + 1` restricted
+/-- **Enlarged system adjoining the relation `T_{N'} * J(F') = ϖ ^ k'`.** Given `ϖ : A`,
+`F' : Fin N' → tateSeries N' A`, and an exponent `k' : ℕ`, this system in `N' + 1` restricted
 variables keeps the embedded equations `F'_0, …, F'_{N'-1}` and appends
-`T_{N'} * J(F') - ϖ ^ k'`, forcing `T_{N'} = ϖ ^ k' · J(F')⁻¹` in the quotient. -/
+`T_{N'} * J(F') - ϖ ^ k'`. In a quotient where this system vanishes, the appended equation imposes
+the relation `T_{N'} * J(F') = ϖ ^ k'`; when `ϖ` is a unit in `A` (in particular, a
+pseudouniformiser of a Tate ring), this forces the image of `J(F')` to be invertible in the
+quotient with `T_{N'} = ϖ ^ k' * J(F')⁻¹`. -/
 noncomputable def explicitInverse (A : Type*) [CommRing A] [TopologicalSpace A]
     [NonarchimedeanRing A] (ϖ : A) {N' : ℕ} (F' : Fin N' → tateSeries N' A) (k' : ℕ) :
     Fin (N' + 1) → tateSeries (N' + 1) A :=
@@ -212,6 +215,28 @@ theorem ofExplicitInverse_k (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer
     (k' : ℕ) :
     (ofExplicitInverse Aplus hϖ F' hF' k').k = 2 * k' := by
   simp [ofExplicitInverse]
+
+/-- The defining equation family of `ofExplicitInverse` is `explicitInverse A ϖ F' k'`
+(transported along `ofExplicitInverse_N`). -/
+@[simp]
+theorem ofExplicitInverse_F (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
+    (k' : ℕ) :
+    cast (congrArg (fun n ↦ Fin n → tateSeries n A) (ofExplicitInverse_N Aplus hϖ F' hF' k'))
+      (ofExplicitInverse Aplus hϖ F' hF' k').F = explicitInverse A ϖ F' k' := by
+  simp [ofExplicitInverse]
+
+/-- The presenting map of `ofExplicitInverse` evaluates on a series as `Ideal.Quotient.mk`
+(transported along `ofExplicitInverse_N`). -/
+@[simp]
+theorem ofExplicitInverse_π_apply (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {N' : ℕ} (F' : Fin N' → tateSeries N' A) (hF' : ∀ i, F' i ∈ tateSeriesPlus N' A Aplus.plus)
+    (k' : ℕ) (f : tateSeries (N' + 1) A) :
+    (ofExplicitInverse Aplus hϖ F' hF' k').π
+      (cast (congrArg (tateSeries · A) (ofExplicitInverse_N Aplus hϖ F' hF' k').symm) f) =
+      Ideal.Quotient.mk (Ideal.span (Set.range (explicitInverse A ϖ F' k'))).closure f := by
+  unfold ofExplicitInverse
+  exact ofQuotient_π_apply _ _ _ _ _ _ f
 
 end OfExplicitInverse
 

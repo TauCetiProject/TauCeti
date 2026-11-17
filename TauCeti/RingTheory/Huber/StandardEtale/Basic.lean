@@ -355,6 +355,14 @@ theorem ofQuotient_k (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
     {N : ℕ} (F : Fin N → tateSeries N A) (hF : ∀ i, F i ∈ tateSeriesPlus N A Aplus.plus)
     (k : ℕ) (hu) : (ofQuotient Aplus hϖ F hF k hu).k = k := (rfl)
 
+/-- The defining equation family of `ofQuotient` is `F` (transported along `ofQuotient_N`). -/
+@[simp]
+theorem ofQuotient_F (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
+    {N : ℕ} (F : Fin N → tateSeries N A) (hF : ∀ i, F i ∈ tateSeriesPlus N A Aplus.plus)
+    (k : ℕ) (hu) :
+    cast (congrArg (fun n ↦ Fin n → tateSeries n A) (ofQuotient_N Aplus hϖ F hF k hu))
+      (ofQuotient Aplus hϖ F hF k hu).F = F := (rfl)
+
 @[simp]
 theorem ofQuotient_π_apply (Aplus : Pair A) {ϖ : A} (hϖ : IsPseudoUniformizer ϖ)
     {N : ℕ} (F : Fin N → tateSeries N A) (hF : ∀ i, F i ∈ tateSeriesPlus N A Aplus.plus)
