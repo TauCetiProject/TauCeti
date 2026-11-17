@@ -127,8 +127,7 @@ def realToSpecialOrthogonalRange : G →ₜ* SpecialOrthogonalUnitsRange where
     (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toMonoidHom.comp
       (toSpecialOrthogonal (realCliffordForm n 0) hQ)
   continuous_toFun :=
-    (show Continuous (realCliffordSpecialOrthogonalContinuousMulEquivRange n) from
-      (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous).comp
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).continuous.comp
       (continuous_toSpecialOrthogonal (realCliffordForm n 0) hQ)
 
 /-- `realToSpecialOrthogonalRange` transports `toSpecialOrthogonal` into the matrix-units range. -/
@@ -156,29 +155,31 @@ theorem realToSpecialOrthogonalSmoothRange_apply (g : G) :
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofCircleContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofCircleContinuousMonoidHom _ hQ) = 1 :=
-  ContinuousMonoidHom.ext fun z ↦ Subtype.ext <| by
-    change (realToSpecialOrthogonalRange n hQ (ofCircleContinuousMonoidHom _ hQ z)).1 = 1
-    rw [ofCircleContinuousMonoidHom_apply, realToSpecialOrthogonalRange_apply,
-      toSpecialOrthogonal_ofCircle, map_one, OneMemClass.coe_one]
+  ContinuousMonoidHom.ext fun z ↦ by
+    rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_one,
+      Pi.one_apply, ofCircleContinuousMonoidHom_apply, realToSpecialOrthogonalRange_apply,
+      toSpecialOrthogonal_ofCircle, map_one]
 
 /-- Restricting `realToSpecialOrthogonalRange` to `Spin(n)` recovers the compact Spin projection
 into `SO(n)`. -/
 @[simp]
 theorem realToSpecialOrthogonalRange_comp_ofSpinContinuousMonoidHom :
     (realToSpecialOrthogonalRange n hQ).comp (ofSpinContinuousMonoidHom _ hQ) =
+      -- `realCliffordSpinToSpecialOrthogonalRange n` is defined under the default matrix topology
+      -- `instTopologicalSpaceMatrix`, whereas this file activates `Matrix.linftyOpTopologicalSpace`
+      -- locally. The two topologies are definitionally equal, so `show` aligns the target carrier's
+      -- `TopologicalSpace` instance in `→ₜ*` before composing (matching `Spin/Projection.lean`).
       (show SpinUnitsRange →ₜ* SpecialOrthogonalUnitsRange from
         realCliffordSpinToSpecialOrthogonalRange n).comp
         (realCliffordSpinContinuousMulEquivUnitsRange n :
           spinGroup (realCliffordForm n 0) →ₜ* SpinUnitsRange) :=
-  ContinuousMonoidHom.ext fun s ↦ Subtype.ext <| by
-    have h2 := congrArg Subtype.val
-      ((congrArg (realCliffordSpinToSpecialOrthogonalRange n)
-        (realCliffordSpinContinuousMulEquivUnitsRange_apply n s)).trans
-        (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s))
-    change (realToSpecialOrthogonalRange n hQ (ofSpinContinuousMonoidHom _ hQ s)).1 = _
-    rw [ofSpinContinuousMonoidHom_apply, realToSpecialOrthogonalRange_apply,
+  ContinuousMonoidHom.ext fun s ↦ by
+    rw [ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      ContinuousMonoidHom.coe_comp, Function.comp_apply,
+      ofSpinContinuousMonoidHom_apply, realToSpecialOrthogonalRange_apply,
       toSpecialOrthogonal_ofSpin, realCliffordSpecialOrthogonalContinuousMulEquivRange_apply]
-    exact h2.symm
+    simp only [ContinuousMonoidHom.coe_coe, realCliffordSpinContinuousMulEquivUnitsRange_apply]
+    exact (realCliffordSpinToSpecialOrthogonalRange_apply_toUnits n s).symm
 
 local notation "πO" =>
   ContinuousMonoidHom.lieMap (I := IC) (I' := ISO) (realToSpecialOrthogonalRange n hQ)
@@ -515,9 +516,7 @@ theorem isCoveringMap_realToSpecialOrthogonalProdDetRange :
     IsCoveringMap (realToSpecialOrthogonalProdDetRange n hQ) := by
   let e : QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) × Circle ≃ₜ
       SpecialOrthogonalUnitsRange × Circle :=
-    (show QuadraticMap.specialOrthogonalGroup (realCliffordForm n 0) ≃ₜ
-      SpecialOrthogonalUnitsRange from
-        (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph).prodCongr
+    (realCliffordSpecialOrthogonalContinuousMulEquivRange n).toHomeomorph.prodCongr
       (Homeomorph.refl Circle)
   have hfun : ⇑(realToSpecialOrthogonalProdDetRange n hQ) =
       e ∘ ((toSpecialOrthogonal (realCliffordForm n 0) hQ).prod

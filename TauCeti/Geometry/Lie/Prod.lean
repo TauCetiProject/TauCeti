@@ -133,20 +133,6 @@ theorem lieMap_snd_prodLieEquiv_symm
     ((prodLieEquiv (I := I) (I' := I') (G := G) (G' := G')).apply_symm_apply p)
   simpa only [prodLieEquiv_apply] using h
 
-private theorem fst_eq_continuousMonoidHom_fst :
-    ContMDiffMonoidMorphism.fst (I := I) (I' := I') (n := ∞) (G := G) (G' := G') =
-      (ContinuousMonoidHom.fst G G').toContMDiffMonoidMorphism (I.prod I') I := by
-  apply DFunLike.coe_injective
-  rw [ContMDiffMonoidMorphism.coe_fst, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-  rfl
-
-private theorem snd_eq_continuousMonoidHom_snd :
-    ContMDiffMonoidMorphism.snd (I := I) (I' := I') (n := ∞) (G := G) (G' := G') =
-      (ContinuousMonoidHom.snd G G').toContMDiffMonoidMorphism (I.prod I') I' := by
-  apply DFunLike.coe_injective
-  rw [ContMDiffMonoidMorphism.coe_snd, ContinuousMonoidHom.coe_toContMDiffMonoidMorphism]
-  rfl
-
 /-- In product Lie-algebra coordinates, the Lie map of a product of continuous homomorphisms
 evaluates componentwise. -/
 theorem prodLieEquiv_continuousMonoidHom_lieMap_prod
@@ -157,7 +143,9 @@ theorem prodLieEquiv_continuousMonoidHom_lieMap_prod
     prodLieEquiv (ContinuousMonoidHom.lieMap (I := I'') (I' := I.prod I') (f.prod g) D) =
       (ContinuousMonoidHom.lieMap (I := I'') (I' := I) f D,
         ContinuousMonoidHom.lieMap (I := I'') (I' := I') g D) := by
-  rw [prodLieEquiv_apply, fst_eq_continuousMonoidHom_fst, snd_eq_continuousMonoidHom_snd,
+  rw [prodLieEquiv_apply,
+    ← ContinuousMonoidHom.toContMDiffMonoidMorphism_fst (I := I) (I' := I') (G := G) (G' := G'),
+    ← ContinuousMonoidHom.toContMDiffMonoidMorphism_snd (I := I) (I' := I') (G := G) (G' := G'),
     ← ContinuousMonoidHom.lieMap_def, ← ContinuousMonoidHom.lieMap_def]
   have hfst : (ContinuousMonoidHom.fst G G').comp (f.prod g) = f := by
     apply ContinuousMonoidHom.ext; intro x; rfl

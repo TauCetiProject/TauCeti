@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Lie.Exponential.Classification
 public import TauCeti.Geometry.Lie.Exponential.Smoothness
 public import TauCeti.Geometry.Lie.Exponential.Trotter
+public import TauCeti.Geometry.Manifold.Algebra.Monoid
 import TauCeti.Geometry.Lie.Exponential.Homomorphism
 
 /-!
@@ -41,6 +42,9 @@ The linear map `L` is not exposed: once `f` is known to be smooth, it is the dif
   homomorphism between finite-dimensional real Lie groups is smooth.
 * `ContinuousMonoidHom.toContMDiffMonoidMorphism`: a continuous homomorphism of such Lie groups,
   bundled as a smooth monoid morphism.
+* `ContinuousMonoidHom.toContMDiffMonoidMorphism_fst` and
+  `ContinuousMonoidHom.toContMDiffMonoidMorphism_snd`: converting the continuous product
+  projections recovers `ContMDiffMonoidMorphism.fst` and `ContMDiffMonoidMorphism.snd`.
 
 ## References
 
@@ -162,5 +166,27 @@ def toContMDiffMonoidMorphism (f : G →ₜ* G') : ContMDiffMonoidMorphism I I' 
 theorem coe_toContMDiffMonoidMorphism (f : G →ₜ* G') :
     ⇑(f.toContMDiffMonoidMorphism I I') = f :=
   (rfl)
+
+/-- Converting the continuous first projection to a smooth morphism recovers
+`ContMDiffMonoidMorphism.fst`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_fst :
+    (ContinuousMonoidHom.fst G G').toContMDiffMonoidMorphism (I.prod I') I =
+      ContMDiffMonoidMorphism.fst := by
+  apply DFunLike.coe_injective
+  funext p
+  rw [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_fst]
+  exact rfl
+
+/-- Converting the continuous second projection to a smooth morphism recovers
+`ContMDiffMonoidMorphism.snd`. -/
+@[simp]
+theorem toContMDiffMonoidMorphism_snd :
+    (ContinuousMonoidHom.snd G G').toContMDiffMonoidMorphism (I.prod I') I' =
+      ContMDiffMonoidMorphism.snd := by
+  apply DFunLike.coe_injective
+  funext p
+  rw [coe_toContMDiffMonoidMorphism, ContMDiffMonoidMorphism.coe_snd]
+  exact rfl
 
 end ContinuousMonoidHom
