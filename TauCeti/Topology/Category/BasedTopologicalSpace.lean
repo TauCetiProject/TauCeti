@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Category.Basic
+public import Mathlib.Topology.Category.TopCat.Limits.Products
 public import Mathlib.Topology.Category.TopPair
 public import Mathlib.Topology.ContinuousMap.Basic
 
@@ -21,7 +22,8 @@ A based space `X` gives the topological pair `(X, *)` whose subspace is the one-
 mapped to the basepoint (`TauCeti.BasedTopologicalSpace.toTopPair`). Relative invariants of this
 pair, such as the relative groups of a homology theory, are the reduced invariants of `X`.
 Adding a disjoint basepoint to a space `X` gives the based space `X₊ = * ⊔ X`
-(`TauCeti.BasedTopologicalSpace.addBasepoint`).
+(`TauCeti.BasedTopologicalSpace.addBasepoint`), the coproduct of the point and `X`
+(`TauCeti.BasedTopologicalSpace.addBasepointIsColimit`).
 
 ## Main declarations
 
@@ -30,6 +32,8 @@ Adding a disjoint basepoint to a space `X` gives the based space `X₊ = * ⊔ X
   `Hom.comp`, forming a category.
 * `TauCeti.BasedTopologicalSpace.toTopPair`: the functor `X ↦ (X, *)` to topological pairs.
 * `TauCeti.BasedTopologicalSpace.addBasepoint`: the functor `X ↦ X₊` adding a disjoint basepoint.
+* `TauCeti.BasedTopologicalSpace.addBasepointInr` and `addBasepointIsColimit`: the inclusion
+  `X ⟶ X₊`, which with the basepoint exhibits `X₊` as the coproduct `* ⊔ X`.
 -/
 
 public section
@@ -177,12 +181,26 @@ def addBasepoint : TopCat.{u} ⥤ BasedTopologicalSpace.{u} where
   map_id _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
   map_comp _ _ := Hom.ext <| ContinuousMap.ext fun x ↦ by cases x <;> rfl
 
+/-- The inclusion `X ⟶ X₊` of a space into the space with a disjoint basepoint added. -/
+def addBasepointInr (X : TopCat.{u}) : X ⟶ TopCat.of (addBasepoint.obj X).carrier :=
+  TopCat.ofHom ⟨Sum.inr, continuous_inr⟩
+
+/-- The inclusion `X ⟶ X₊` sends a point `x` to `Sum.inr x`. -/
+lemma addBasepointInr_apply (X : TopCat.{u}) (x : X) : addBasepointInr X x = Sum.inr x :=
+  (rfl)
+
+/-- The space `X₊` is the coproduct `* ⊔ X`, with inclusions the basepoint of the pair `(X₊, *)`
+and `addBasepointInr`. -/
+def addBasepointIsColimit (X : TopCat.{u}) :
+    Limits.IsColimit
+      (Limits.BinaryCofan.mk (toTopPair.obj (addBasepoint.obj X)).hom (addBasepointInr X)) :=
+  TopCat.binaryCofanIsColimit (TopCat.of PUnit.{u + 1}) X
+
 /-- The inclusion `X ⟶ X₊` is natural in `X`. -/
 @[reassoc]
-lemma inr_comp_addBasepoint_map {X Y : TopCat.{u}} (f : X ⟶ Y) :
-    TopCat.ofHom (Y := (addBasepoint.obj X).carrier) ⟨Sum.inr, continuous_inr⟩ ≫
-        TopCat.ofHom (addBasepoint.map f).toContinuousMap =
-      f ≫ TopCat.ofHom (Y := (addBasepoint.obj Y).carrier) ⟨Sum.inr, continuous_inr⟩ := by
+lemma addBasepointInr_comp_addBasepoint_map {X Y : TopCat.{u}} (f : X ⟶ Y) :
+    addBasepointInr X ≫ TopCat.ofHom (addBasepoint.map f).toContinuousMap =
+      f ≫ addBasepointInr Y := by
   ext
   -- `Sum.map id f (Sum.inr x) = Sum.inr (f x)` holds by the definition of `Sum.map`.
   rfl

@@ -281,16 +281,14 @@ map to the relative homology of `(X₊, *)`. -/
 def addBasepointIso (i : ι) (X : TopCat.{u}) :
     (HP.H i).obj X ≅ (HP.Hₚ i).obj
       (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) :=
-  haveI := HP.isIso_map_inr_comp_hFstToHₚ i
-    (X := BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) (B := X)
-    (TopCat.ofHom ⟨Sum.inr, continuous_inr⟩)
-    (TopCat.binaryCofanIsColimit (TopCat.of PUnit.{u + 1}) X)
-  asIso ((HP.H i).map (TopCat.ofHom ⟨Sum.inr, continuous_inr⟩) ≫ HP.hFstToHₚ i
+  haveI := HP.isIso_map_inr_comp_hFstToHₚ i _
+    (BasedTopologicalSpace.addBasepointIsColimit X)
+  asIso ((HP.H i).map (BasedTopologicalSpace.addBasepointInr X) ≫ HP.hFstToHₚ i
     (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)))
 
 @[simp]
 lemma addBasepointIso_hom (i : ι) (X : TopCat.{u}) :
-    (HP.addBasepointIso i X).hom = (HP.H i).map (TopCat.ofHom ⟨Sum.inr, continuous_inr⟩) ≫
+    (HP.addBasepointIso i X).hom = (HP.H i).map (BasedTopologicalSpace.addBasepointInr X) ≫
       HP.hFstToHₚ i
         (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) :=
   (rfl)
@@ -304,7 +302,7 @@ lemma addBasepointIso_hom_naturality (i : ι) {X Y : TopCat.{u}} (f : X ⟶ Y) :
           (BasedTopologicalSpace.toTopPair.map (BasedTopologicalSpace.addBasepoint.map f)) := by
   rw [addBasepointIso_hom, addBasepointIso_hom, Category.assoc, hFstToHₚ_naturality]
   simp only [← Functor.map_comp_assoc, BasedTopologicalSpace.toTopPair_map_right]
-  rw [BasedTopologicalSpace.inr_comp_addBasepoint_map]
+  rw [BasedTopologicalSpace.addBasepointInr_comp_addBasepoint_map]
 
 end AddBasepoint
 
