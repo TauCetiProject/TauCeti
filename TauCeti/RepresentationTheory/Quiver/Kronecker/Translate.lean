@@ -60,6 +60,7 @@ theorem nonempty_iso_arTranslate_simpleRep_src_kronecker
   have : Module.Finite k M :=
     module_finite_quiverRepEquivalenceFunctorObj_of_isFinDim k Q S hS
   have : Module.Finite (pathAlgebra k Q) M := Module.Finite.of_restrictScalars_finite k _ _
+  have : Module.FinitePresentation (pathAlgebra k Q) M := Module.finitePresentation_of_finite _ M
   obtain ⟨P, hP⟩ := FiniteProjectivePresentation.exists_isMinimal (M := M)
   have hnp : ¬ Module.Projective (pathAlgebra k Q) M := by
     intro hp
