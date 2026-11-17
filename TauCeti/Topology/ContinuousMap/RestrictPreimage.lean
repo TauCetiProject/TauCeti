@@ -36,12 +36,14 @@ theorem coe_restrictPreimageMap {p : C(E, B)} {q : C(E', B)} (S : Set B) {f : C(
     (hf : q.comp f = p) (e : p ⁻¹' S) : (restrictPreimageMap S hf e : E') = f e :=
   (rfl)
 
+@[simp]
 theorem restrictPreimageMap_comp {p : C(E, B)} {q : C(E', B)} {r : C(E'', B)} (S : Set B)
     {f : C(E, E')} {g : C(E', E'')} (hf : q.comp f = p) (hg : r.comp g = q) :
     (restrictPreimageMap S hg).comp (restrictPreimageMap S hf) =
       restrictPreimageMap (f := g.comp f) S (by rw [← ContinuousMap.comp_assoc, hg, hf]) :=
   (rfl)
 
+@[simp]
 theorem restrictPreimageMap_id {p : C(E, B)} (S : Set B) :
     restrictPreimageMap (f := .id E) S (ContinuousMap.comp_id p) = .id _ :=
   (rfl)

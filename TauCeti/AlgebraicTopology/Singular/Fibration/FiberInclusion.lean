@@ -142,8 +142,12 @@ include Φ
 private theorem preimageInclusion_comp :
     p.preimageInclusion hy ≫ _root_.TopCat.ofHom (Φ.restrictPreimage Y).toHomotopyEquiv.toFun =
       _root_.TopCat.ofHom (Φ.restrictPreimage {y}).toHomotopyEquiv.toFun ≫
-        q.preimageInclusion hy :=
-  _root_.TopCat.ext fun x ↦ Subtype.ext <| by simp [toHomotopyEquiv_apply]
+        q.preimageInclusion hy := by
+  have h (S : Set B) :
+      (Φ.restrictPreimage S).toHomotopyEquiv.toFun = restrictPreimageMap S Φ.comp_toFun :=
+    ContinuousMap.ext fun _ ↦ Subtype.ext <| by simp [toHomotopyEquiv_apply]
+  rw [h, h]
+  exact ContinuousMap.preimageInclusion_comp_ofHom_restrictPreimageMap Φ.comp_toFun hy
 
 /-- On homology, the commutative square of `preimageInclusion_comp`. Its horizontal maps, induced
 by the restrictions of `Φ`, are isomorphisms. -/

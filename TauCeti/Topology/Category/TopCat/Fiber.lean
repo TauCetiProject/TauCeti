@@ -19,7 +19,8 @@ fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal compositio
 More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
 (`TopCat.Hom.preimageMap`). For a continuous map `p : E → B` and a point `y` of a subset `Y` of `B`,
 `ContinuousMap.preimageInclusion` is the inclusion `p⁻¹(y) → p⁻¹(Y)`, which is the fibre inclusion
-of the restriction `p⁻¹(Y) → Y` (`ContinuousMap.preimageInclusion_eq`).
+of the restriction `p⁻¹(Y) → Y` (`ContinuousMap.preimageInclusion_eq`) and is natural in maps over
+the base (`ContinuousMap.preimageInclusion_comp_ofHom_restrictPreimageMap`).
 
 The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
 `AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
@@ -124,6 +125,15 @@ theorem hom_preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
 theorem coe_preimageInclusion_apply (p : C(E', B')) (hy : y ∈ Y) (x : p ⁻¹' {y}) :
     ((p.preimageInclusion hy).hom x : E') = x :=
   (rfl)
+
+/-- The inclusion `p⁻¹(y) → p⁻¹(Y)` is natural in maps over the base: it commutes with the
+restrictions of a map `f` over `B` to the preimages of `{y}` and of `Y`. -/
+@[reassoc (attr := simp)]
+theorem preimageInclusion_comp_ofHom_restrictPreimageMap {E'' : Type u} [TopologicalSpace E'']
+    {p : C(E', B')} {q : C(E'', B')} {f : C(E', E'')} (hf : q.comp f = p) (hy : y ∈ Y) :
+    p.preimageInclusion hy ≫ TopCat.ofHom (TauCeti.restrictPreimageMap Y hf) =
+      TopCat.ofHom (TauCeti.restrictPreimageMap {y} hf) ≫ q.preimageInclusion hy :=
+  TopCat.ext fun _ ↦ Subtype.ext <| by simp
 
 /-- The fibre `p⁻¹(y)` is the fibre over `y` of the restriction `p⁻¹(Y) → Y`. -/
 def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
