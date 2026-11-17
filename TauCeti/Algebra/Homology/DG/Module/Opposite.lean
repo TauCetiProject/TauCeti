@@ -48,7 +48,7 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
 /-- A differential graded left module over `A` is a differential graded right module over the
 Koszul-signed graded opposite of `A`, with action `GradedOpposite.leftToRightModule`. -/
 theorem gradedOppositeRight
-    {G : InternalGrading R A} {H : InternalGrading R M}
+    {G : InternalGrading R A ℤ} {H : InternalGrading R M ℤ}
     [GradedAlgebra G.piece] [SetLike.GradedSMul G.piece H.piece]
     {d : A →ₗ[R] A} {hA : IsDGAlgebra G.piece d}
     {dM : M →ₗ[R] M}

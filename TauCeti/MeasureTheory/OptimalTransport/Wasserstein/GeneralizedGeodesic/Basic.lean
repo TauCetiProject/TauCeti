@@ -318,7 +318,7 @@ theorem hasFiniteMoment_generalizedGeodesic {γ : Measure (E × E × E)} [IsFini
     ((memLp_of_hasFiniteMoment_map
       (measurable_snd.comp measurable_snd).aemeasurable h₁).const_smul t)
   rw [generalizedGeodesic_def, hasFiniteMoment_map_iff_memLp_edist (by fun_prop) 0]
-  exact (memLp_congr_enorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
+  exact (memLp_congr_eNorm h.aestronglyMeasurable (by fun_prop) (.of_forall fun w ↦ by simp)).1 h
 
 /-- A measure on `E × E × E` whose last two coordinates are coupled as two laws of `P₂(E)`, for
 instance a generalized-geodesic plan between them, has its generalized geodesic in `P₂(E)`: at every

@@ -104,7 +104,7 @@ theorem exists_cartier_coe_polynomial_eq (q r : ℕ) (hq : q ≠ 0) (P : Polynom
     ?_⟩
   ext n
   simp only [coeff_cartier, Polynomial.coeff_coe, Polynomial.finsetSum_coeff,
-    Polynomial.coeff_monomial, Finset.sum_ite_eq', Finset.mem_range]
+    Polynomial.coeff_monomial_apply, Finset.sum_ite_eq', Finset.mem_range]
   split_ifs with hn
   · rfl
   · refine Polynomial.coeff_eq_zero_of_natDegree_lt ?_

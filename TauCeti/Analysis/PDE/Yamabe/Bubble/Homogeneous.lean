@@ -211,7 +211,7 @@ private theorem tendsto_fderiv_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
       ((cutoffBubble_smooth_compact t b n).1.continuous_fderiv (by simp)).aestronglyMeasurable)
     ((memLp_fderiv_bubble μ hn ht b).norm.const_smul B)
   · exact Eventually.of_forall fun n ↦ Eventually.of_forall fun x ↦ by
-      simpa only [ENNReal.coe_one, one_mul, Pi.smul_apply, smul_eq_mul, Real.enorm_of_nonneg
+      simpa only [ENNReal.coe_one, one_mul, Pi.smul_apply, smul_eq_mul, Real.eNorm_of_nonneg
         (mul_nonneg hB (norm_nonneg _)), ← ofReal_norm] using
           ENNReal.ofReal_le_ofReal (hbound n x)
   · exact Eventually.of_forall fun x ↦ (tendsto_congr'
@@ -233,6 +233,8 @@ private theorem tendsto_cutoffBubble (hn : 2 < finrank ℝ E) {t : ℝ}
       (memLp_bubble μ hn ht 0).aestronglyMeasurable
       (Eventually.of_forall fun x ↦ norm_iteratedFDeriv_zero)).mpr (memLp_bubble μ hn ht 0)
   have h := tendsto_eLpNorm_iteratedFDeriv_cutoff_sub ENNReal.ofReal_ne_top
+    (r := fun n : ℕ ↦ (n : ℝ) + 1)
+    (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)
     (χ.contDiff : ContDiff ℝ 0 (χ : E → ℝ)) χ.eventuallyEq_one
     (B := fun _ ↦ 1) (fun i hi x ↦ by
       obtain rfl : i = 0 := by omega

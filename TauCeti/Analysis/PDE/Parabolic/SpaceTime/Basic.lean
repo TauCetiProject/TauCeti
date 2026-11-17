@@ -50,7 +50,7 @@ public section
 noncomputable section
 
 open Set Metric
-open scoped ENNReal NNReal
+open scoped NNReal
 
 namespace TauCeti
 
@@ -152,6 +152,21 @@ def slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b)
 @[simp]
 theorem slabSpaceMap_slabMk {E' : Type*} {a b : ℝ} (f : E → E') (x : E) (t : Icc a b) :
     slabSpaceMap f (slabMk x t) = slabMk (f x) t :=
+  (rfl)
+
+@[simp]
+theorem slabTime_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    slabTime (slabSpaceMap f p) = slabTime p :=
+  (rfl)
+
+@[simp]
+theorem space_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    (slabSpaceMap f p : ParabolicSpaceTime E').space = f (p : ParabolicSpaceTime E).space :=
+  (rfl)
+
+@[simp]
+theorem time_slabSpaceMap {E' : Type*} {a b : ℝ} (f : E → E') (p : slab (E := E) a b) :
+    (slabSpaceMap f p : ParabolicSpaceTime E').time = (p : ParabolicSpaceTime E).time :=
   (rfl)
 
 @[simp]
@@ -286,11 +301,11 @@ theorem coordsHomeomorph_symm_apply (z : E × ℝ) :
 
 @[fun_prop]
 theorem continuous_space : Continuous (space : ParabolicSpaceTime E → E) :=
-  (continuous_fst.comp coordsHomeomorph.continuous).congr fun _ => by simp
+  WithLp.continuous_fst 1 E ParabolicTime
 
 @[fun_prop]
 theorem continuous_time : Continuous (time : ParabolicSpaceTime E → ℝ) :=
-  (continuous_snd.comp coordsHomeomorph.continuous).congr fun _ => by simp
+  Snowflaking.continuous_ofSnowflaking.comp (WithLp.continuous_snd 1 E ParabolicTime)
 
 /-- Building a point from its coordinates is jointly continuous in `(x, t)`. -/
 @[fun_prop]
@@ -368,8 +383,8 @@ theorem timeReverse_symm (T : ℝ) :
 theorem preimage_timeReverse_slab (T a b : ℝ) :
     timeReverse T ⁻¹' slab (E := E) a b = slab (T - b) (T - a) := by
   ext p
-  simp only [mem_preimage, mem_slab, time_timeReverse, mem_Icc]
-  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+  simp only [mem_preimage, mem_slab, time_timeReverse,
+    ← Set.mem_preimage (f := (T - ·)) (a := p.time), Set.preimage_const_sub_Icc]
 
 /-- Time reversal `t ↦ T - t`, as an isometry from the slab `E × [a', b']` onto the slab
 `E × [a, b]`, where `a' = T - b` and `b' = T - a`. -/

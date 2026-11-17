@@ -56,7 +56,7 @@ theorem exists_tendsto_integral_apply_circleMap_nhds_zero (ω : SymplecticForm V
     ∃ r : ℕ → ℝ, (∀ n, 0 < r n ∧ r n ≤ b) ∧ Tendsto r atTop (𝓝 0) ∧
       Tendsto (fun n ↦ ∫ θ in -π..π, ω (u (circleMap z₀ (r n) θ))
         (deriv (fun θ ↦ u (circleMap z₀ (r n) θ)) θ)) atTop (𝓝 0) := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let action (r : ℝ) := ∫ θ in -π..π, ω (u (circleMap z₀ r θ))
     (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)
   -- Use Euclidean coordinates only for Wirtinger; the original norm controls their energy.
@@ -129,7 +129,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
       (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (circleMap z₀ b θ))
         (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   let D := {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let A (r : ℝ) := {z : ℂ | r ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}
   let area (z : ℂ) := ω (fderiv ℝ u z 1) (fderiv ℝ u z I)

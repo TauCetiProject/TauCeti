@@ -24,10 +24,12 @@ The rational square-root map `k ↦ 2√k / (1 + k)` has complementary square
 These identities are used by both kinds of complete elliptic integral in Landen's transformation.
 For `|t| ≤ 1`, the square of `√(1 - t²)` is `1 - t²`; for any nonzero `t`, this square
 is strictly less than `1`. In particular, for nonnegative ordered inputs `0 ≤ b ≤ a`,
-squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluations.
+squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluations. For
+`t ∈ (-1, 1)` the square root `√(1 - t²)` itself is positive.
 
 A real number `x` of the same sign as `c` is rescaled to `c` by the positive square of
-`√(c / x)`.
+`√(c / x)`. For `0 ≤ t < √2 - 1`, completing `(t + 1)² < 2` bounds the quadratic majorant
+`2 t + t² < 1`.
 
 ## Main results
 
@@ -42,7 +44,9 @@ A real number `x` of the same sign as `c` is rescaled to `c` by the positive squ
 * `Real.sq_sqrt_one_sub_sq`: `√(1 - t²)² = 1 - t²` for `|t| ≤ 1`.
 * `Real.sq_sqrt_one_sub_sq_div`: the same identity for `t = b / a` when `0 ≤ b ≤ a`.
 * `Real.sq_sqrt_one_sub_sq_lt_one`: `√(1 - t²)² < 1` for nonzero `t`.
+* `Real.sqrt_one_sub_sq_pos`: `0 < √(1 - t²)` for `t ∈ (-1, 1)`.
 * `Real.exists_pos_sq_mul_eq_of_mul_pos`: `μ ^ 2 * x = c` for some `μ > 0` when `0 < c * x`.
+* `Real.two_mul_add_sq_lt_one`: `2 * t + t ^ 2 < 1` for `0 ≤ t < √2 - 1`.
 -/
 
 public section
@@ -134,6 +138,10 @@ theorem sq_sqrt_one_sub_sq_lt_one {t : ℝ} (ht : t ≠ 0) :
   rw [sq_sqrt']
   exact max_lt (by nlinarith [sq_pos_of_ne_zero ht]) zero_lt_one
 
+/-- For `t ∈ (-1, 1)`, the square root `√(1 - t²)` is positive. -/
+theorem sqrt_one_sub_sq_pos {t : ℝ} (ht : t ∈ Set.Ioo (-1) 1) : 0 < √(1 - t ^ 2) :=
+  sqrt_pos.2 (by nlinarith [ht.1, ht.2])
+
 /-- A value `x` of the same sign as `c` can be rescaled to `c` by a positive square. -/
 theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
     ∃ μ : ℝ, 0 < μ ∧ μ ^ 2 * x = c := by
@@ -142,5 +150,13 @@ theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
   refine ⟨√(c / x), sqrt_pos.2 hcx, ?_⟩
   rw [sq_sqrt hcx.le]
   field_simp
+
+/-- Whenever `0 ≤ t < √2 - 1`, the quadratic majorant `2 * t + t ^ 2` is strictly less than `1`. -/
+theorem two_mul_add_sq_lt_one {t : ℝ} (ht₀ : 0 ≤ t) (ht : t < √2 - 1) :
+    2 * t + t ^ 2 < 1 := by
+  have hlt : t + 1 < √2 := by linarith
+  have hsq : (t + 1) ^ 2 < √2 ^ 2 := pow_lt_pow_left₀ hlt (by positivity) two_ne_zero
+  rw [sq_sqrt zero_le_two] at hsq
+  linarith
 
 end Real

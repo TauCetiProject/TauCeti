@@ -7,7 +7,6 @@ module
 
 public import TauCeti.GroupTheory.TitsSystem.Coxeter
 import TauCeti.Algebra.Group.Subgroup.Map
-import TauCeti.GroupTheory.QuotientGroup.Map
 import Mathlib.Tactic.Group
 
 /-!
@@ -134,7 +133,7 @@ private theorem comapWeylGroupHom_mk_of_mul_eq {x : H} (hx : f x ∈ T.subgroupN
 
 private theorem comapWeylGroupHom_injective :
     Function.Injective (comapWeylGroupHom T (f := f)) :=
-  (TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr (comap_subgroupOf_eq T)
+  (_root_.QuotientGroup.map_injective_iff _ _ _ _).mpr (comap_subgroupOf_eq T).ge
 
 private theorem comapWeylGroupHom_surjective
     (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x * t = g) :
@@ -285,7 +284,7 @@ theorem normalCore_comap_subgroupB :
   rw [comap_subgroupB]
   exact Subgroup.normalCore_comap_of_forall_exists_mul_eq f fun g ↦
     let ⟨x, t, ht, h⟩ := hf g
-    ⟨x, t, ht.1, h⟩
+    ⟨x, t, Subgroup.le_normalizer ht.1, h⟩
 
 /-- **A pulled-back Tits system is irreducible exactly when the original one is**, since the two
 Weyl groups are identified together with their simple reflections. -/

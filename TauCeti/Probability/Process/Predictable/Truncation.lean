@@ -64,9 +64,9 @@ theorem continuous_toLp_indicator_Ioc (ℱ : Filtration ℝ≥0 m)
     calc
       ‖(Ioc 0 s ×ˢ univ).indicator f x - (Ioc 0 t ×ˢ univ).indicator f x‖ₑ ≤
           ‖(Ioc 0 s ×ˢ univ).indicator f x‖ₑ + ‖(Ioc 0 t ×ˢ univ).indicator f x‖ₑ :=
-        enorm_sub_le
+        eNorm_sub_le
       _ ≤ ‖f x‖ₑ + ‖f x‖ₑ :=
-        add_le_add (enorm_indicator_le_enorm_self f x) (enorm_indicator_le_enorm_self f x)
+        add_le_add (eNorm_indicator_le_eNorm_self f x) (eNorm_indicator_le_eNorm_self f x)
       _ = (2 : ℝ≥0) * ‖f x‖ₑ := by simp [two_mul]
   · have hnull : ∀ᵐ x ∂μ, x ∉ ({t} ×ˢ (univ : Set Ω)) :=
       measure_eq_zero_iff_ae_notMem.mp (hμ t)

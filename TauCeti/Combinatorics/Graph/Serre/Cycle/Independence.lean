@@ -87,7 +87,7 @@ theorem IsSpanningForest.eq_zero_of_incidenceBoundary_eq_zero
     (hF : Γ.IsSpanningForest O F) (c : O →₀ R)
     (hc : Γ.incidenceBoundary O R c = 0) (hs : ∀ e ∈ c.support, e.val ∈ F) :
     c = 0 :=
-  SerreGraph.eq_zero_of_incidenceBoundary_eq_zero hF.subset
+  SerreGraph.eq_zero_of_incidenceBoundary_eq_zero
     (incidenceBoundary_injective_of_isAcyclic hF.src_ne_tgt hF.endpoints_injOn hF.isAcyclic)
     c hc hs
 
@@ -103,7 +103,7 @@ theorem IsSpanningForest.eq_of_incidenceBoundary_eq_of_forall_notMem
     (hF : Γ.IsSpanningForest O F) (c d : O →₀ R)
     (hboundary : Γ.incidenceBoundary O R c = Γ.incidenceBoundary O R d)
     (hchord : ∀ e : O, e.val ∉ F → c e = d e) : c = d :=
-  SerreGraph.eq_of_incidenceBoundary_eq_of_forall_notMem hF.subset
+  SerreGraph.eq_of_incidenceBoundary_eq_of_forall_notMem
     (incidenceBoundary_injective_of_isAcyclic hF.src_ne_tgt hF.endpoints_injOn hF.isAcyclic)
     c d hboundary hchord
 

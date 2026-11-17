@@ -88,7 +88,7 @@ private theorem tendsto_volume_inter_closedBall_div_of_norm_eq {s : Set E}
     ← hρ.measure_preimage (s := s ∩ closedBall (ρ x) r)
       (hs.inter measurableSet_closedBall.nullMeasurableSet),
     preimage_inter, ρ.preimage_closedBall, LinearIsometryEquiv.symm_apply_apply,
-    measure_congr (hρs.inter (ae_eq_refl _))]
+    measure_congr (hρs.inter Filter.EventuallyEqSet.rfl)]
 
 /-- **Fixed points of Steiner symmetrization.** A Lebesgue-measurable set of finite volume which
 agrees almost everywhere with its Steiner symmetral in every unit direction agrees almost
@@ -109,7 +109,7 @@ theorem exists_ae_eq_ball_of_forall_steinerSymmetrization_ae_eq {s : Set E}
   -- The density points form a convex set, since every line section of `s` is a.e. an interval.
   have hconv : Convex ℝ D := convex_setOf_tendsto_volume_inter_closedBall_div hs fun e he =>
     (ae_lineSection_ordConnected_iff e he (h e he)).1 <| Eventually.of_forall fun y =>
-      ⟨_, ordConnected_lineSection_steinerSymmetrization e he s y, ae_eq_refl _⟩
+      ⟨_, ordConnected_lineSection_steinerSymmetrization e he s y, Filter.EventuallyEqSet.rfl⟩
   have hsphere {x z : E} (hx : x ∈ D) (hz : ‖z‖ = ‖x‖) : z ∈ D :=
     tendsto_volume_inter_closedBall_div_of_norm_eq hs h hz hx
   -- Hence the density points contain, with each point, the closed ball it bounds.
