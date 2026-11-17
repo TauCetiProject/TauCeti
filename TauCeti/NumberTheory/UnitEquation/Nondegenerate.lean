@@ -108,6 +108,14 @@ theorem map [Semiring S] (h : IsNondegenerateSolution α x) (φ : R →+* S)
   refine h.subsum_ne_zero hI (hφ ⟨I, rfl⟩ ⟨∅, sum_empty⟩ ?_)
   simpa [map_sum, map_mul] using hφI
 
+/-- An injective ring homomorphism preserves and reflects nondegenerate solutions. This moves
+solutions between a field and a subring containing their coordinates and coefficients. -/
+theorem _root_.TauCeti.isNondegenerateSolution_map_iff [Semiring S] {φ : R →+* S}
+    (hφ : Function.Injective φ) : IsNondegenerateSolution (φ ∘ α) (φ ∘ x) ↔
+      IsNondegenerateSolution α x := by
+  simp only [isNondegenerateSolution_iff, Function.comp_apply, ← map_mul, ← map_sum,
+    hφ.eq_iff' (map_one φ), ne_eq, map_eq_zero_iff φ hφ]
+
 /-- If a solution of `∑ αᵢ xᵢ = 1` has a vanishing subsum over `I` and no vanishing nonempty
 subsum disjoint from `I`, then its restriction to the complement of `I` is nondegenerate. -/
 theorem restrict [DecidableEq ι] {I : Finset ι} (h : ∑ i, α i * x i = 1)
