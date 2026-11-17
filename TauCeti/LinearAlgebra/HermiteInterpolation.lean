@@ -10,8 +10,9 @@ public import Mathlib.Algebra.Polynomial.HasseDeriv
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
 public import Mathlib.RingTheory.Polynomial.Basic
+public import TauCeti.Algebra.Polynomial.Taylor
+import Mathlib.Tactic.ComputeDegree
 import TauCeti.Algebra.Polynomial.BigOperators
-import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -32,7 +33,9 @@ by `∏ i, (X - a i) ^ m i`: at one node this is Taylor's formula
 coprime. The map is surjective by the Chinese remainder theorem, so it identifies
 `R[X] ⧸ (∏ i, (X - a i) ^ m i)` with the jet space (`Polynomial.hasseJetQuotientEquiv`); since the
 product is monic of degree `M`, the restriction `Polynomial.hermiteJet a m` to polynomials of
-degree below `M` is bijective (`AdjoinRoot.degreeLTEquiv`).
+degree below `M` is bijective (`AdjoinRoot.degreeLTEquiv`). The identification factors through
+the Chinese remainder isomorphism `R[X] ⧸ (∏ i, (X - a i) ^ m i) ≃ ∏ i, R[X] ⧸ ((X - a i) ^ m i)`
+followed by the Taylor coordinates `TauCeti.taylorJetQuotientEquiv` at each node.
 
 ## Main definitions
 
@@ -48,6 +51,10 @@ degree below `M` is bijective (`AdjoinRoot.degreeLTEquiv`).
   vanish iff `∏ i, (X - C (a i)) ^ m i ∣ f`; `all_jets_vanish_iff_dvd_of_pairwise_isUnit_sub` is
   the form over a commutative ring.
 * `Polynomial.hasseJetQuotientEquiv`: `R[X] ⧸ (∏ i, (X - C (a i)) ^ m i) ≃ₗ[R] ∀ i, Fin (m i) → R`.
+* `Polynomial.hermiteQuotientEquiv`: the Chinese remainder isomorphism
+  `R[X] ⧸ (∏ i, (X - C (a i)) ^ m i) ≃+* ∀ i, R[X] ⧸ ((X - C (a i)) ^ m i)`, and
+  `Polynomial.hasseJetQuotientEquiv_apply`: the jet equivalence is this isomorphism followed by the
+  local Taylor coordinates.
 * `Polynomial.hermiteJet_bijective`: over a field, for injective nodes, the Hermite jet map is
   bijective; `hermiteJet_bijective_of_pairwise_isUnit_sub` is the form over a commutative ring.
 * `Polynomial.eq_hermiteJetEquiv_symm_iff`: the interpolation polynomial is the unique polynomial
@@ -78,9 +85,10 @@ variable [Semiring R]
 
 /-- The Hasse jet map at the nodes `a i` with multiplicities `m i`: the `R`-linear map sending a
 polynomial `f` to its Hasse jets `(hasseDeriv k f).eval (a i)` of the orders `k < m i`. A node
-with `m i = 0` contributes no coordinate. -/
+with `m i = 0` contributes no coordinate. At each node these are the Taylor coordinates
+`TauCeti.taylorJet (a i) (m i)`. -/
 noncomputable def hasseJet (a : ι → R) (m : ι → ℕ) : R[X] →ₗ[R] ∀ i, Fin (m i) → R :=
-  LinearMap.pi fun i => LinearMap.pi fun k => leval (a i) ∘ₗ hasseDeriv (k : ℕ)
+  LinearMap.pi fun i => TauCeti.taylorJet (a i) (m i)
 
 @[simp]
 theorem hasseJet_apply (a : ι → R) (m : ι → ℕ) (f : R[X]) (i : ι) (k : Fin (m i)) :
@@ -175,6 +183,34 @@ theorem hasseJetQuotientEquiv_mk (f : R[X]) :
 theorem hasseJetQuotientEquiv_symm_hasseJet (f : R[X]) :
     (hasseJetQuotientEquiv ha m).symm (hasseJet a m f) = Ideal.Quotient.mk _ f := by
   rw [LinearEquiv.symm_apply_eq, hasseJetQuotientEquiv_mk]
+
+/-- **The Chinese remainder theorem** for the nodes: when their differences are units,
+`R[X] ⧸ (∏ i, (X - a i) ^ m i)` is the product of the local quotients `R[X] ⧸ ((X - a i) ^ m i)`.
+-/
+noncomputable def hermiteQuotientEquiv :
+    R[X] ⧸ Ideal.span {∏ i, (X - C (a i)) ^ m i} ≃+*
+      ∀ i, R[X] ⧸ Ideal.span {(X - C (a i)) ^ m i} :=
+  have hcop : Pairwise fun i j => IsCoprime ((X - C (a i)) ^ m i) ((X - C (a j)) ^ m j) :=
+    fun _ _ hij => (isCoprime_X_sub_C_of_isUnit_sub (ha hij)).pow
+  (Ideal.quotEquivOfEq (Ideal.iInf_span_singleton fun _ _ hij => hcop hij).symm).trans <|
+    Ideal.quotientInfRingEquivPiQuotient _ fun _ _ hij =>
+      (Ideal.isCoprime_span_singleton_iff _ _).2 (hcop hij)
+
+@[simp]
+theorem hermiteQuotientEquiv_mk (f : R[X]) (i : ι) :
+    hermiteQuotientEquiv ha m (Ideal.Quotient.mk _ f) i = Ideal.Quotient.mk _ f := by
+  rw [hermiteQuotientEquiv, RingEquiv.trans_apply, Ideal.quotEquivOfEq_mk]
+  exact Ideal.quotientInfRingEquivPiQuotient_mk_apply _ _ _
+
+/-- The jet equivalence `hasseJetQuotientEquiv` is the Chinese remainder isomorphism
+`hermiteQuotientEquiv` followed, at each node `a i`, by the Taylor coordinates
+`TauCeti.taylorJetQuotientEquiv (a i) (m i)` on `R[X] ⧸ ((X - a i) ^ m i)`. -/
+theorem hasseJetQuotientEquiv_apply (x : R[X] ⧸ Ideal.span {∏ i, (X - C (a i)) ^ m i}) (i : ι) :
+    hasseJetQuotientEquiv ha m x i =
+      TauCeti.taylorJetQuotientEquiv (a i) (m i) (hermiteQuotientEquiv ha m x i) := by
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
+  ext k
+  simp
 
 /-- Hermite interpolation as a linear equivalence, when the differences of the nodes are units: a
 polynomial of degree below `∑ i, m i` is determined by its Hasse jets of the orders `k < m i` at
@@ -333,5 +369,83 @@ theorem hermiteJet_bijective (ha : Injective a) (m : ι → ℕ) : Bijective (he
     (fun _ _ hij => (sub_ne_zero.2 (ha.ne hij)).isUnit) m
 
 end Field
+
+/-! ### Checks -/
+
+section Examples
+
+/-- One node `c` of multiplicity `2`: `c₀ + c₁ X ↦ (c₀ + c₁ c, c₁)`. -/
+example (c c₀ c₁ : ℚ) (h : C c₀ + C c₁ * X ∈ degreeLT ℚ (∑ i, ![2] i)) :
+    hermiteJet ![c] ![2] ⟨_, h⟩ 0 ⟨0, by simp⟩ = c₀ + c₁ * c ∧
+      hermiteJet ![c] ![2] ⟨_, h⟩ 0 ⟨1, by simp⟩ = c₁ := by
+  simp only [hermiteJet_apply, hasseJet_apply]
+  simp
+
+/-- Simple nodes `0, 1`: `c₀ + c₁ X ↦ (c₀, c₀ + c₁)`, the values at the nodes. -/
+example (c₀ c₁ : ℚ) (h : C c₀ + C c₁ * X ∈ degreeLT ℚ (∑ i, ![1, 1] i)) :
+    hermiteJet ![0, 1] ![1, 1] ⟨_, h⟩ 0 ⟨0, by simp⟩ = c₀ ∧
+      hermiteJet ![0, 1] ![1, 1] ⟨_, h⟩ 1 ⟨0, by simp⟩ = c₀ + c₁ := by
+  simp only [hermiteJet_apply, hasseJet_apply]
+  simp
+
+/-- No nodes: the map from the zero space to the one-point space is bijective. -/
+example : Bijective (hermiteJet (![] : Fin 0 → ℚ) ![]) :=
+  hermiteJet_bijective (injective_of_subsingleton _) _
+
+/-- A repeated node: `X ↦ (0, 0)`, so injectivity of the nodes is necessary. -/
+example : ¬ Injective (hermiteJet ![(0 : ℚ), 0] ![1, 1]) := by
+  intro h
+  have hX : (X : ℚ[X]) ∈ degreeLT ℚ (∑ i, ![1, 1] i) := by
+    simp [mem_degreeLT]
+  refine X_ne_zero (congrArg Subtype.val (@h ⟨X, hX⟩ 0 ?_))
+  ext i k
+  rw [hermiteJet_apply, hasseJet_apply, map_zero, Pi.zero_apply, Pi.zero_apply]
+  fin_cases i <;> fin_cases k <;> simp
+
+/-- In characteristic `2` the ordinary jets at the node `0` of multiplicity `3` kill `X²`, whose
+Hasse jet of order `2` is `1`: the unit hypothesis on the factorials in
+`eval_iterate_derivative_bijective` is necessary. -/
+example : ¬ Injective fun (f : degreeLT (ZMod 2) (∑ i, ![3] i)) i (k : Fin (![3] i)) =>
+    (derivative^[k] (f : (ZMod 2)[X])).eval (![0] i) := by
+  intro h
+  have hX : (X ^ 2 : (ZMod 2)[X]) ∈ degreeLT (ZMod 2) (∑ i, ![3] i) := by
+    rw [mem_degreeLT]
+    compute_degree!
+  have h0 : (X ^ 2 : (ZMod 2)[X]) = 0 := by
+    refine congrArg Subtype.val (@h ⟨_, hX⟩ 0 ?_)
+    ext i k
+    fin_cases i
+    fin_cases k <;> simp [CharTwo.add_self_eq_zero]
+  have := congrArg (fun p : (ZMod 2)[X] => p.coeff 2) h0
+  simp only [coeff_X_pow_self, coeff_zero] at this
+  exact absurd this (by decide)
+
+/-- `X² ∤ X`: the jet of order `1` of `X` at `0` is `1`. -/
+example : ¬ (∏ i, (X - C (![(0 : ℚ)] i)) ^ ![2] i) ∣ X := by
+  rw [← all_jets_vanish_iff_dvd (injective_of_subsingleton _)]
+  intro h
+  simpa [hasseDeriv_one'] using h 0 ⟨1, by simp⟩
+
+/-- `X (X - 1) ∣ X² - X`. -/
+example : (∏ i, (X - C (![(0 : ℚ), 1] i)) ^ ![1, 1] i) ∣ X ^ 2 - X := by
+  rw [← all_jets_vanish_iff_dvd (by decide)]
+  intro i k
+  fin_cases i <;> fin_cases k <;> simp
+
+/-- Worked example: `1 - X²` is the only polynomial of degree below `3` with `f(0) = 1`,
+`f'(0) = 0` and `f(1) = 0`. -/
+example (f : ℚ[X]) (hf : f ∈ degreeLT ℚ 3) (h₀ : f.eval 0 = 1) (h₁ : (derivative f).eval 0 = 0)
+    (h₂ : f.eval 1 = 0) : f = 1 - X ^ 2 := by
+  have hM : ∑ i, ![2, 1] i = 3 := rfl
+  have hg : (1 - X ^ 2 : ℚ[X]) ∈ degreeLT ℚ (∑ i, ![2, 1] i) := by
+    rw [hM, mem_degreeLT]
+    compute_degree!
+  refine congrArg Subtype.val ((hermiteJet_bijective (a := ![(0 : ℚ), 1]) (by decide) ![2, 1]).1
+    (a₁ := ⟨f, hM ▸ hf⟩) (a₂ := ⟨_, hg⟩) ?_)
+  ext i k
+  simp only [hermiteJet_apply, hasseJet_apply]
+  fin_cases i <;> fin_cases k <;> simp [h₀, h₁, h₂]
+
+end Examples
 
 end Polynomial
