@@ -86,13 +86,8 @@ theorem adjoint_wedgeEnd (f g : E →ₗ[ℝ] F) :
 `⋀[ℝ]^2 E`. -/
 theorem _root_.LinearMap.IsSymmetric.wedgeEnd {f g : Module.End ℝ E}
     (hf : f.IsSymmetric) (hg : g.IsSymmetric) :
-    (exteriorPower.wedgeEnd f g).IsSymmetric := by
-  have hfa : f.adjoint = f := LinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ by
-    rw [LinearMap.adjoint_inner_left, ← hf x y]
-  have hga : g.adjoint = g := LinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ by
-    rw [LinearMap.adjoint_inner_left, ← hg x y]
-  intro x y
-  rw [inner_wedgeEnd_left, hfa, hga]
+    (exteriorPower.wedgeEnd f g).IsSymmetric := fun x y ↦ by
+  rw [inner_wedgeEnd_left, hf.adjoint_eq, hg.adjoint_eq]
 
 /-- The trace of `f ∧ g` on `⋀[ℝ]^2 E` is `(tr f · tr g - tr(f ∘ g)) / 2`. Neither `f` nor `g`
 need be symmetric. -/

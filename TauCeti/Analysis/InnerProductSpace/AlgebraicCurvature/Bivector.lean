@@ -13,6 +13,8 @@ public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.KulkarniNomizu
 public import TauCeti.LinearAlgebra.ExteriorPower.Bilinear
 public import TauCeti.LinearAlgebra.ExteriorPower.WedgePairing
 public import TauCeti.Topology.Algebra.Module.SymmetricBilinear.Dimension
+import Mathlib.Data.Nat.Choose.Cast
+import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
 # Algebraic curvature tensors as symmetric bivector operators
@@ -152,24 +154,34 @@ pair-antisymmetric tensor (and in particular for every algebraic curvature tenso
 characterized by `⟪curvatureOperator r (u ∧ v), z ∧ w⟫ = r ![u, v, z, w]`. -/
 def curvatureOperator : FourTensor V →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V) where
   toFun r :=
-    (InnerProductSpace.toDual ℝ (⋀[ℝ]^2 V)).symm.toLinearEquiv.toLinearMap ∘ₗ
-      (LinearMap.toContinuousLinearMap.toLinearMap ∘ₗ exteriorBilinForm r)
+    (InnerProductSpace.continuousLinearMapOfBilin
+      (exteriorBilinForm r).toContinuousBilinearMap).toLinearMap
   map_add' r q := by
     refine linearMap_ext_inner_ιMulti_two fun u v z w ↦ ?_
-    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toLinearEquiv, InnerProductSpace.toDual_symm_apply,
-      LinearMap.coe_toContinuousLinearMap', exteriorBilinForm,
-      LinearMap.exteriorSquareBilinear_ιMulti_ιMulti, pairAltLinear₄_apply,
-      Matrix.cons_val_zero, Matrix.cons_val_one, add_apply, inner_add_left]
+    have h (s : FourTensor V) :
+        ⟪(InnerProductSpace.continuousLinearMapOfBilin
+            (exteriorBilinForm s).toContinuousBilinearMap) (ιMulti ℝ 2 ![u, v]),
+          ιMulti ℝ 2 ![z, w]⟫ =
+          exteriorBilinForm s (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) :=
+      InnerProductSpace.continuousLinearMapOfBilin_apply
+        (exteriorBilinForm s).toContinuousBilinearMap (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w])
+    simp only [LinearMap.add_apply, ContinuousLinearMap.coe_coe, inner_add_left, h]
+    simp only [exteriorBilinForm, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti,
+      pairAltLinear₄_apply, Matrix.cons_val_zero, Matrix.cons_val_one, add_apply]
     ring
   map_smul' c r := by
     refine linearMap_ext_inner_ιMulti_two fun u v z w ↦ ?_
-    simp only [LinearMap.smul_apply, LinearMap.comp_apply, LinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toLinearEquiv, InnerProductSpace.toDual_symm_apply,
-      LinearMap.coe_toContinuousLinearMap', exteriorBilinForm,
-      LinearMap.exteriorSquareBilinear_ιMulti_ιMulti, pairAltLinear₄_apply,
-      Matrix.cons_val_zero, Matrix.cons_val_one, smul_apply,
-      RingHom.id_apply, real_inner_smul_left, smul_eq_mul]
+    have h (s : FourTensor V) :
+        ⟪(InnerProductSpace.continuousLinearMapOfBilin
+            (exteriorBilinForm s).toContinuousBilinearMap) (ιMulti ℝ 2 ![u, v]),
+          ιMulti ℝ 2 ![z, w]⟫ =
+          exteriorBilinForm s (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) :=
+      InnerProductSpace.continuousLinearMapOfBilin_apply
+        (exteriorBilinForm s).toContinuousBilinearMap (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w])
+    simp only [LinearMap.smul_apply, ContinuousLinearMap.coe_coe, RingHom.id_apply,
+      real_inner_smul_left, h]
+    simp only [exteriorBilinForm, LinearMap.exteriorSquareBilinear_ιMulti_ιMulti,
+      pairAltLinear₄_apply, Matrix.cons_val_zero, Matrix.cons_val_one, smul_apply, smul_eq_mul]
     ring
 
 /-- Pairing `curvatureOperator r (u ∧ v)` with `z ∧ w` recovers the pair-antisymmetrization of
@@ -177,8 +189,12 @@ def curvatureOperator : FourTensor V →ₗ[ℝ] Module.End ℝ (⋀[ℝ]^2 V) w
 theorem inner_curvatureOperator_ιMulti (r : FourTensor V) (u v z w : V) :
     ⟪curvatureOperator r (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫ =
       (r ![u, v, z, w] - r ![v, u, z, w] - r ![u, v, w, z] + r ![v, u, w, z]) / 4 := by
-  simp [curvatureOperator, InnerProductSpace.toDual_symm_apply, exteriorBilinForm,
-    pairAltLinear₄_apply]
+  calc
+    ⟪curvatureOperator r (ιMulti ℝ 2 ![u, v]), ιMulti ℝ 2 ![z, w]⟫
+      = exteriorBilinForm r (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w]) :=
+        InnerProductSpace.continuousLinearMapOfBilin_apply
+          (exteriorBilinForm r).toContinuousBilinearMap (ιMulti ℝ 2 ![u, v]) (ιMulti ℝ 2 ![z, w])
+    _ = _ := by simp [exteriorBilinForm, pairAltLinear₄_apply]
 
 /-- For a four-tensor antisymmetric in both its first and last pairs of arguments, the bivector
 operator satisfies `⟪curvatureOperator r (u ∧ v), z ∧ w⟫ = r ![u, v, z, w]`. -/
@@ -663,30 +679,6 @@ private theorem bilinOfEnd_apply {E : Type*} [NormedAddCommGroup E] [InnerProduc
     bilinOfEnd T x y = ⟪T x, y⟫ :=
   (rfl)
 
-private def endOfBilin {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] (B : E →L[ℝ] E →L[ℝ] ℝ) : Module.End ℝ E :=
-  (InnerProductSpace.toDual ℝ E).symm.toLinearEquiv.toLinearMap ∘ₗ B.toLinearMap
-
-private theorem inner_endOfBilin {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] (B : E →L[ℝ] E →L[ℝ] ℝ) (x y : E) :
-    ⟪endOfBilin B x, y⟫ = B x y := by
-  simp [endOfBilin, InnerProductSpace.toDual_symm_apply]
-
-private theorem endOfBilin_bilinOfEnd {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] (T : Module.End ℝ E) :
-    endOfBilin (bilinOfEnd T) = T :=
-  LinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦ inner_endOfBilin (bilinOfEnd T) x y
-
-private theorem bilinOfEnd_endOfBilin {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] (B : E →L[ℝ] E →L[ℝ] ℝ) :
-    bilinOfEnd (endOfBilin B) = B :=
-  ContinuousLinearMap.ext fun x ↦ ContinuousLinearMap.ext fun y ↦ inner_endOfBilin B x y
-
-private theorem isSymmetric_endOfBilin {E : Type*} [NormedAddCommGroup E]
-    [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {B : E →L[ℝ] E →L[ℝ] ℝ}
-    (hB : ∀ x y, B x y = B y x) : (endOfBilin B).IsSymmetric := fun x y ↦ by
-  rw [inner_endOfBilin, real_inner_comm (endOfBilin B y) x, inner_endOfBilin, hB]
-
 variable (V) in
 /-- The linear isomorphism identifying `algebraicCurvatureSubmodule V` with the kernel of the
 Bianchi map `Sym²(⋀² V) → ⋀⁴ V*`. -/
@@ -703,36 +695,39 @@ def algebraicCurvatureEquivKerBianchi :
         exact (mem_algebraicCurvatureSubmodule.mp r.2).isBivectorCurvatureOperator.bianchi
           (m 0) (m 1) (m 2) (m 3)⟩
   invFun B :=
-    ⟨ofBivectorEnd (endOfBilin B.1.1),
+    ⟨ofBivectorEnd (InnerProductSpace.continuousLinearMapOfBilin B.1.1).toLinearMap,
       mem_algebraicCurvatureSubmodule.mpr <| isAlgebraicCurvature_ofBivectorEnd_iff.mpr
-        ⟨isSymmetric_endOfBilin ((mem_symmetricBilinearMaps ℝ (⋀[ℝ]^2 V) ℝ B.1.1).mp B.1.2),
+        ⟨InnerProductSpace.isSymmetric_continuousLinearMapOfBilin
+          ((mem_symmetricBilinearMaps ℝ (⋀[ℝ]^2 V) ℝ B.1.1).mp B.1.2),
         fun u v z w ↦ by
           have hker := AlternatingMap.congr_fun (LinearMap.mem_ker.mp B.2) ![u, v, z, w]
-          simpa only [inner_endOfBilin, bianchiMap_apply, Matrix.cons_val_zero,
-            Matrix.cons_val_one, Matrix.cons_val, zero_apply] using hker⟩⟩
+          simpa only [ContinuousLinearMap.coe_coe,
+            InnerProductSpace.continuousLinearMapOfBilin_apply, bianchiMap_apply,
+            Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val, zero_apply] using hker⟩⟩
   left_inv r := by
     apply Subtype.ext
-    change ofBivectorEnd (endOfBilin (bilinOfEnd (curvatureOperator r.1))) = r.1
-    rw [endOfBilin_bilinOfEnd,
-      (mem_algebraicCurvatureSubmodule.mp r.2).ofBivectorEnd_curvatureOperator]
+    change ofBivectorEnd
+      (InnerProductSpace.continuousLinearMapOfBilin
+        (bilinOfEnd (curvatureOperator r.1))).toLinearMap = r.1
+    have h : (InnerProductSpace.continuousLinearMapOfBilin
+        (bilinOfEnd (curvatureOperator r.1))).toLinearMap = curvatureOperator r.1 :=
+      LinearMap.ext fun x ↦ ext_inner_right ℝ fun y ↦
+        InnerProductSpace.continuousLinearMapOfBilin_apply (bilinOfEnd (curvatureOperator r.1)) x y
+    rw [h, (mem_algebraicCurvatureSubmodule.mp r.2).ofBivectorEnd_curvatureOperator]
   right_inv B := by
     apply Subtype.ext
     apply Subtype.ext
-    change bilinOfEnd (curvatureOperator (ofBivectorEnd (endOfBilin B.1.1))) = B.1.1
-    rw [curvatureOperator_ofBivectorEnd, bilinOfEnd_endOfBilin]
+    change bilinOfEnd (curvatureOperator (ofBivectorEnd
+      (InnerProductSpace.continuousLinearMapOfBilin B.1.1).toLinearMap)) = B.1.1
+    rw [curvatureOperator_ofBivectorEnd]
+    exact ContinuousLinearMap.ext fun x ↦ ContinuousLinearMap.ext fun y ↦
+      InnerProductSpace.continuousLinearMapOfBilin_apply B.1.1 x y
   map_add' r q := Subtype.ext <| Subtype.ext <|
     ContinuousLinearMap.ext fun x ↦ ContinuousLinearMap.ext fun y ↦ by
       simp [bilinOfEnd_apply, inner_add_left]
   map_smul' c r := Subtype.ext <| Subtype.ext <|
     ContinuousLinearMap.ext fun x ↦ ContinuousLinearMap.ext fun y ↦ by
       simp [bilinOfEnd_apply, real_inner_smul_left]
-
-private theorem choose_two_cast_rat (n : ℕ) :
-    (n.choose 2 : ℚ) = (n : ℚ) * ((n : ℚ) - 1) / 2 := by
-  rw [Nat.choose_two_right, Nat.cast_div (Nat.even_mul_pred_self n).two_dvd (by norm_num)]
-  rcases n with _ | n
-  · norm_num
-  · push_cast; ring
 
 private theorem choose_four_cast_rat (n : ℕ) :
     (n.choose 4 : ℚ) = (n : ℚ) * ((n : ℚ) - 1) * ((n : ℚ) - 2) * ((n : ℚ) - 3) / 24 := by
@@ -759,7 +754,7 @@ private theorem choose_four_add_eq_choose_two (n k : ℕ)
       rw [Nat.cast_add, Nat.cast_div hm_even (by norm_num)] at this
       push_cast at this
       exact this
-    have hm_val : (m : ℚ) = (n : ℚ) * ((n : ℚ) - 1) / 2 := choose_two_cast_rat n
+    have hm_val : (m : ℚ) = (n : ℚ) * ((n : ℚ) - 1) / 2 := Nat.cast_choose_two ℚ n
     have hc4 := choose_four_cast_rat n
     have hrhs : ((n ^ 2 * (n ^ 2 - 1) : ℕ) : ℚ) = (n : ℚ) ^ 2 * ((n : ℚ) ^ 2 - 1) := by
       rcases n with _ | n

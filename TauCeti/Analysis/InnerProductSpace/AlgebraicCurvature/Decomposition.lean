@@ -203,11 +203,6 @@ theorem tracelessRicci_apply_apply (r : FourTensor V) (u v : V) :
     tracelessRicci r u v = ricci r u v - scalar r / (Module.finrank ℝ V : ℝ) * ⟪u, v⟫ := by
   simp [tracelessRicci_apply]
 
-private theorem bilinFormTrace_sub (h k : BilinForm ℝ V) :
-    bilinFormTrace (h - k) = bilinFormTrace h - bilinFormTrace k := by
-  simp only [bilinFormTrace_eq_sum _ (stdOrthonormalBasis ℝ V), LinearMap.sub_apply,
-    Finset.sum_sub_distrib]
-
 /-- The metric trace of `tracelessRicci r` vanishes in every dimension. -/
 @[simp]
 theorem bilinFormTrace_tracelessRicci (r : FourTensor V) :
@@ -220,8 +215,11 @@ theorem bilinFormTrace_tracelessRicci (r : FourTensor V) :
       simp
     rw [htr, map_zero]
   · have hn' : (Module.finrank ℝ V : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hn
-    rw [tracelessRicci_apply, bilinFormTrace_sub, map_smul, bilinFormTrace_inner, ← scalar_apply,
-      smul_eq_mul, div_mul_cancel₀ _ hn', sub_self]
+    rw [tracelessRicci, LinearMap.add_apply, map_add, LinearMap.smulRight_apply,
+      LinearMap.smul_apply, map_smul, bilinFormTrace_inner, ← scalar_apply, smul_eq_mul,
+      smul_eq_mul]
+    field_simp
+    ring
 
 /-- For an algebraic curvature tensor, `tracelessRicci r` is a symmetric bilinear form. -/
 theorem IsAlgebraicCurvature.isSymm_tracelessRicci {r : FourTensor V}
@@ -259,23 +257,28 @@ theorem tracelessRicci_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
 /-- Riesz identification of a bilinear form `h : BilinForm ℝ V` with the endomorphism `A` satisfying
 `⟪A u, v⟫ = h u v`. -/
 private def rieszEnd : BilinForm ℝ V →ₗ[ℝ] Module.End ℝ V where
-  toFun h := (InnerProductSpace.toDual ℝ V).symm.toLinearEquiv.toLinearMap ∘ₗ
-    h.toContinuousBilinearMap.toLinearMap
+  toFun h := (InnerProductSpace.continuousLinearMapOfBilin h.toContinuousBilinearMap).toLinearMap
   map_add' h k := LinearMap.ext fun u ↦ ext_inner_right ℝ fun v ↦ by
-    simp [InnerProductSpace.toDual_symm_apply, inner_add_left]
+    rw [LinearMap.add_apply, inner_add_left]
+    exact (InnerProductSpace.continuousLinearMapOfBilin_apply
+      (h + k).toContinuousBilinearMap u v).trans
+      (congrArg₂ (· + ·)
+        (InnerProductSpace.continuousLinearMapOfBilin_apply h.toContinuousBilinearMap u v).symm
+        (InnerProductSpace.continuousLinearMapOfBilin_apply k.toContinuousBilinearMap u v).symm)
   map_smul' c h := LinearMap.ext fun u ↦ ext_inner_right ℝ fun v ↦ by
-    simp [InnerProductSpace.toDual_symm_apply, real_inner_smul_left]
-
-private theorem inner_rieszEnd_left (h : BilinForm ℝ V) (u v : V) :
-    ⟪rieszEnd h u, v⟫ = h u v := by
-  simp [rieszEnd, InnerProductSpace.toDual_symm_apply]
+    rw [RingHom.id_apply, LinearMap.smul_apply, real_inner_smul_left]
+    exact (InnerProductSpace.continuousLinearMapOfBilin_apply
+      (c • h).toContinuousBilinearMap u v).trans
+      (congrArg (c * ·)
+        (InnerProductSpace.continuousLinearMapOfBilin_apply h.toContinuousBilinearMap u v).symm)
 
 private theorem trace_rieszEnd (h : BilinForm ℝ V) :
     LinearMap.trace ℝ V (rieszEnd h) = bilinFormTrace h := by
   let b := stdOrthonormalBasis ℝ V
   rw [LinearMap.trace_eq_sum_inner _ b, bilinFormTrace_eq_sum h b]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [real_inner_comm, inner_rieszEnd_left]
+  rw [real_inner_comm]
+  exact InnerProductSpace.continuousLinearMapOfBilin_apply h.toContinuousBilinearMap (b i) (b i)
 
 /-- The Ricci endomorphism `RicEnd(r) : Module.End ℝ V` characterized by
 `⟪ricciEnd r u, v⟫ = ricci r u v`. -/
@@ -286,7 +289,7 @@ def ricciEnd : FourTensor V →ₗ[ℝ] Module.End ℝ V :=
 @[simp]
 theorem inner_ricciEnd_left (r : FourTensor V) (u v : V) :
     ⟪ricciEnd r u, v⟫ = ricci r u v :=
-  inner_rieszEnd_left (ricci r) u v
+  InnerProductSpace.continuousLinearMapOfBilin_apply (ricci r).toContinuousBilinearMap u v
 
 /-- The trace of `ricciEnd r` is `scalar r`. -/
 @[simp]
@@ -309,7 +312,7 @@ def tracelessRicciEnd : FourTensor V →ₗ[ℝ] Module.End ℝ V :=
 @[simp]
 theorem inner_tracelessRicciEnd_left (r : FourTensor V) (u v : V) :
     ⟪tracelessRicciEnd r u, v⟫ = tracelessRicci r u v :=
-  inner_rieszEnd_left (tracelessRicci r) u v
+  InnerProductSpace.continuousLinearMapOfBilin_apply (tracelessRicci r).toContinuousBilinearMap u v
 
 /-- The trace of `tracelessRicciEnd r` vanishes in every dimension. -/
 @[simp]
