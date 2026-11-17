@@ -277,6 +277,28 @@ lemma singularHomologyComplFiberIso_inv
           M m := by
   simp [singularHomologyComplFiberIso, excisionIso]
 
+/-- **The local homology along a path-connected fibre.** For a Serre fibration over a `T₁` space
+whose fibre over `b` is path connected, with a chart of dimension `r` at `b`, the local homology
+`Hᵣ(E, E ∖ p⁻¹(b); R)` along the fibre is the coefficient ring `R`: it is the zeroth homology
+of the fibre (`TauCeti.TopCat.singularHomologyComplFiberIso`), followed by the augmentation. -/
+def singularHomologyComplFiberIsoOfPathConnectedSpace [PathConnectedSpace (p ⁻¹' {b})]
+    (hε₀ : 0 < ε) (hp : serreFibrations p) :
+    (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) (finrank ℝ V) ≅
+      ModuleCat.of R R :=
+  singularHomologyComplFiberIso R e hb hε hε₀ hp 0 _ (zero_add _) ≪≫
+    asIso ((_root_.TopCat.of (p ⁻¹' {b})).singularHomology₀ε (ModuleCat.of R R))
+
+/-- `TauCeti.TopCat.singularHomologyComplFiberIsoOfPathConnectedSpace` is
+`TauCeti.TopCat.singularHomologyComplFiberIso` onto the zeroth homology of the fibre, followed by
+the augmentation. -/
+@[reassoc]
+lemma singularHomologyComplFiberIsoOfPathConnectedSpace_hom [PathConnectedSpace (p ⁻¹' {b})]
+    (hε₀ : 0 < ε) (hp : serreFibrations p) :
+    (singularHomologyComplFiberIsoOfPathConnectedSpace R e hb hε hε₀ hp).hom =
+      (singularHomologyComplFiberIso R e hb hε hε₀ hp 0 _ (zero_add _)).hom ≫
+        (_root_.TopCat.of (p ⁻¹' {b})).singularHomology₀ε (ModuleCat.of R R) := by
+  simp [singularHomologyComplFiberIsoOfPathConnectedSpace]
+
 end Chart
 
 end TopCat
