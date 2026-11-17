@@ -179,34 +179,6 @@ private theorem mul_powerResidueSymbolIdeal_add_mul_eq {ζ : K} {hζ : IsPrimiti
         rw [heq1, mul_assoc]
     _ = _ := by rw [heq2]; ring
 
-/-- For an odd integer `n`, `x` divisible by `n`, and `y` coprime to `n`,
-`((x + y i) / n)_4 = (-1) ^ ((n² - 1) / 8)`, read in `K`. -/
-private theorem coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd {ζ : K}
-    (hζ : IsPrimitiveRoot ζ 4) {n x y : ℤ} (hn : Odd n) (hxn : n ∣ x) (hyn : IsCoprime y n) :
-    ((powerResidueSymbolIdeal (span {(n : 𝓞 K)}) 4
-        (Ideal.Quotient.mk _ ((x : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger)) : 𝓞 K) : K) =
-      (-1) ^ ((n ^ 2 - 1) / 8) := by
-  obtain ⟨q, rfl⟩ := hxn
-  have hmk : Ideal.Quotient.mk (span {(n : 𝓞 K)})
-      (((n * q : ℤ) : 𝓞 K) + (y : 𝓞 K) * hζ.toInteger) =
-      Ideal.Quotient.mk (span {(n : 𝓞 K)}) ((y : 𝓞 K) * hζ.toInteger) :=
-    Ideal.Quotient.eq.mpr (mem_span_singleton.mpr ⟨q, by push_cast; ring⟩)
-  rw [hmk, map_mul, map_mul, map_intCast, powerResidueSymbolIdeal_intCast_four hyn, one_mul]
-  exact hζ.powerResidueSymbolIdeal_span_intCast_mk_toInteger_of_odd hn
-
-/-- For primary `π = c + d i` with coprime coordinates, `(c / π)_4` read in `K` equals
-`(-1) ^ ((c² - 1) / 8 + ((c - 1) / 2)²)`. -/
-private theorem coe_powerResidueSymbolIdeal_mk_re {ζ : K} {hζ : IsPrimitiveRoot ζ 4} {c d : ℤ}
-    (hπ : IsPrimaryGaussian ((c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger)) (hcd : IsCoprime c d) :
-    ((powerResidueSymbolIdeal (span {(c : 𝓞 K) + (d : 𝓞 K) * hζ.toInteger}) 4
-        (Ideal.Quotient.mk _ (c : 𝓞 K)) : 𝓞 K) : K) =
-      (-1) ^ ((c ^ 2 - 1) / 8 + ((c - 1) / 2) * ((c - 1) / 2)) := by
-  have hcoord := (hζ.isPrimaryGaussian_add_mul_iff (a := c) (b := d)).mp hπ
-  have hc_odd : Odd c := by rw [Int.odd_iff]; simp only [Int.ModEq] at hcoord; omega
-  rw [hπ.coe_quartic_reciprocity_intCast_add_mul_of_odd hc_odd,
-    coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd hζ hc_odd dvd_rfl hcd.symm,
-    ← zpow_add₀ (by norm_num)]
-
 /-- For coprime primary elements `π₁ = a + b i` and `π₂ = c + d i` with coprime coordinates and
 `m = a c + b d`, evaluates `(m / π₂)_4 * (m / τ π₁)_4` in `K`. -/
 private theorem coe_mul_powerResidueSymbolIdeal_add_mul_eq_zpow {ζ : K} {hζ : IsPrimitiveRoot ζ 4}
@@ -244,7 +216,7 @@ private theorem coe_mul_powerResidueSymbolIdeal_add_mul_eq_zpow {ζ : K} {hζ : 
   have hL_sym : ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ π₂) : 𝓞 K) :
       K) * ((powerResidueSymbolIdeal (span {(m : 𝓞 K)}) 4 (Ideal.Quotient.mk _ (τ π₁)) : 𝓞 K) :
       K) = (-1) ^ ((m ^ 2 - 1) / 8) := by
-    have h := coe_powerResidueSymbolIdeal_span_intCast_add_mul_of_dvd hζ hm_odd dvd_rfl
+    have h := hζ.powerResidueSymbolIdeal_span_intCast_mk_add_mul_of_dvd hm_odd dvd_rfl
       (hζ.isCoprime_mul_sub_mul_mul_add_mul_of_four hab hcd
         ((isCoprime_span_singleton_iff _ _).mp hcop).symm)
     rw [← hprod] at h
@@ -285,8 +257,8 @@ private theorem coe_quartic_reciprocity_add_mul_of_isCoprime {ζ : K} {hζ : IsP
   have hmasterK := congrArg (algebraMap (𝓞 K) K) (mul_powerResidueSymbolIdeal_add_mul_eq hτ hcop)
   simp only [map_mul, ← RingOfIntegers.coe_eq_algebraMap] at hmasterK
   rw [coe_mul_powerResidueSymbolIdeal_add_mul_eq_zpow hτ hπ₁ hπ₂ hab hcd hcop,
-    coe_powerResidueSymbolIdeal_mk_re hπ₂ hcd, hτπ₁,
-    coe_powerResidueSymbolIdeal_mk_re hτπ₁_prim hab.neg_right,
+    hπ₂.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime hcd, hτπ₁,
+    hτπ₁_prim.powerResidueSymbolIdeal_add_mul_mk_intCast_of_isCoprime hab.neg_right,
     ← zpow_add₀ (by norm_num)] at hmasterK
   set eL : ℤ := (m ^ 2 - 1) / 8 + ((m - 1) / 2) * ((c - 1) / 2) + ((m - 1) / 2) * ((a - 1) / 2)
   set eR : ℤ := ((c ^ 2 - 1) / 8 + ((c - 1) / 2) * ((c - 1) / 2)) +
