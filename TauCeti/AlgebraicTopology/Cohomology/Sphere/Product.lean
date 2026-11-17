@@ -75,6 +75,20 @@ component `b ⌣ b'` vanishes
 (`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace`); for a closed
 three-manifold `Y` the cup product on `H²(S¹ × Y)` is thus off-diagonal in the decomposition.
 
+**Cup squares.** For a class `x = (b, c)` of even degree `p + d + 1`, the two cross terms `c ⌣ b`
+and `b ⌣ c` of `x ⌣ x` agree by graded commutativity and carry the same sign, so
+`x ⌣ x = (b ⌣ b, 2 (b ⌣ c))` (`TopCat.singularCohomologySphereProdSlantEquiv_singularCup_self`).
+When `Y` is a compact manifold whose dimension is below the degree of `x ⌣ x`, the component
+`b ⌣ b` vanishes, so `x ⌣ x = 2 (pr₁^* θ ⌣ pr₂^* (b ⌣ c))`
+(`TopCat.singularCup_self_eq_two_smul_of_compactSpace`), and `⟨x ⌣ x, z⟩` is divisible by `2` for
+every homology class `z` (`TopCat.two_dvd_singularKronecker_singularCup_self_of_compactSpace`).
+For a closed three-manifold `Y`, `d = 0`, `p = 1`, `k = ℤ` and `z` a fundamental class of
+`S¹ × Y`, this says that the intersection form of the four-manifold `S¹ × Y` is even: no class of
+`H²(S¹ × Y; ℤ)` has square `-1`, so no class of `S¹ × Y` is that of an exceptional sphere. Here
+homology is computed from chains with coefficients in the unit `k`-module, so the fundamental class
+of `TauCeti.HomologicalOrientation`, built from chains with coefficients in `ULift ℤ`, enters
+through the isomorphism of these coefficient modules, which is not made here.
+
 For the circle `S¹` (`d = 0`), with `k = M = ℤ` and `n = 1` this is the integral decomposition
 `H²(S¹ × Y; ℤ) = pr₂^* H²(Y; ℤ) ⊕ (θ ⌣ pr₂^* H¹(Y; ℤ))` of the second cohomology of a product
 with a circle, torsion included; `θ` generates `H¹(S¹; ℤ)`. Under `S¹ ≅ ℝ / ℤ`, `θ` corresponds
@@ -438,5 +452,94 @@ theorem singularCohomologySphereProdSlantEquiv_singularCup_of_compactSpace
   exact Prod.ext (Subsingleton.elim _ _) rfl
 
 end Cup
+
+section CupSquare
+
+/-- **Cup squares on `Sᵈ⁺¹ × Y` in the slant decomposition**: let `x` be a class of even degree
+`p + d + 1` on `Sᵈ⁺¹ × Y`, with components `(b, c) = (x / [x₀], x / γ)` in the decomposition
+`TopCat.singularCohomologySphereProdSlantEquiv`. Then the components of `x ⌣ x` are
+`(b ⌣ b, 2 (b ⌣ c))`. The cross terms `c ⌣ b` and `b ⌣ c` of the product formula
+`TopCat.singularCohomologySphereProdSlantEquiv_singularCup` agree by graded commutativity, because
+`b` has even degree, and they enter with the same sign because `x` has even degree. -/
+theorem singularCohomologySphereProdSlantEquiv_singularCup_self (Y : TopCat.{w}) {d : ℕ}
+    (x₀ : TopCat.sphere.{w} (d + 1)) {p : ℕ} (hp : Even (p + (d + 1)))
+    (x : (TopCat.sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1))) :
+    singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ (p + p + (d + 1))
+        ((TopCat.sphere.{w} (d + 1) ⊗ Y).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1))
+          (p + (d + 1)) (p + p + (d + 1) + (d + 1)) (by omega) x x) =
+      (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) (p + (d + 1))
+          (p + p + (d + 1) + (d + 1)) (by omega)
+          (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p x).1
+          (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p x).1,
+        (2 : k) • Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) p (p + p + (d + 1))
+          (by omega) (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p x).1
+          (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p x).2) := by
+  set bc := singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p x
+  have hx : x = (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) Y x₀ p).symm bc :=
+    ((singularCohomologySphereProdSlantEquiv _ Y x₀ p).symm_apply_apply x).symm
+  rw [hx, singularCohomologySphereProdSlantEquiv_singularCup]
+  refine Prod.ext rfl ?_
+  -- `c ⌣ b = (-1)^((p + d + 1) p) b ⌣ c`, and both signs are `1` since `p + d + 1` is even
+  rw [Y.singularCup_gradedComm_tensorUnit k (μ := (λ_ _).hom) (IsCommMonObj.mul_comm _)
+      (show p + (d + 1) + p = p + p + (d + 1) by omega) bc.1 bc.2,
+    (hp.mul_right p).neg_one_pow, (hp.mul_left (d + 1)).neg_one_pow, one_smul,
+    two_smul]
+
+/-- **Cup squares on `Sᵈ⁺¹ × Y` are divisible by two** when `Y` is a compact manifold of dimension
+below the degree of the square: for a class `x` of even degree `p + d + 1` on `Sᵈ⁺¹ × Y`, with
+components `(b, c) = (x / [x₀], x / γ)`, the component `b ⌣ b` lies in a vanishing cohomology group
+of `Y`, so `x ⌣ x = 2 (pr₁^* θ ⌣ pr₂^* (b ⌣ c))`. Here `k` is a commutative ring over which every
+module has projective dimension at most one, such as `ℤ` or a field. For a closed three-manifold
+`Y`, `d = 0` and `p = 1` this is the cup square `H²(S¹ × Y) → H⁴(S¹ × Y)`. -/
+theorem singularCup_self_eq_two_smul_of_compactSpace
+    [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] {M E : Type w} [TopologicalSpace M]
+    [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [ChartedSpace E M] [CompactSpace M] {d : ℕ} (x₀ : TopCat.sphere.{w} (d + 1)) {n p : ℕ}
+    (hn : Module.finrank ℝ E = n) (hnp : n < p + p + (d + 1) + (d + 1))
+    (hp : Even (p + (d + 1)))
+    (x : (TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1))) :
+    (TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1))
+        (p + (d + 1)) (p + p + (d + 1) + (d + 1)) (by omega) x x =
+      (2 : k) • (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) (TopCat.of M) x₀
+        (p + p + (d + 1))).symm
+        (0, (TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) p (p + p + (d + 1))
+          (by omega)
+          (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).1
+          (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).2) := by
+  have : Module.Projective k (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Module.Projective k k)
+  have := ModuleCat.subsingleton_of_isZero (TauCeti.isZero_singularCohomology_of_compactSpace
+    (M := M) (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) hn hnp)
+  rw [← map_smul, LinearEquiv.eq_symm_apply, singularCohomologySphereProdSlantEquiv_singularCup_self
+    _ x₀ hp]
+  exact Prod.ext ((Subsingleton.elim _ _).trans (smul_zero _).symm) rfl
+
+/-- **The intersection form of `Sᵈ⁺¹ × Y` is even**: if `Y` is a compact manifold of dimension
+below the degree of the cup square, then for a class `x` of even degree on `Sᵈ⁺¹ × Y`, the cup
+square `x ⌣ x` takes values divisible by `2` on every homology class `z` of `Sᵈ⁺¹ × Y`. For a
+closed three-manifold `Y`, `d = 0`, `p = 1`, `k = ℤ` and `z` a fundamental class of `S¹ × Y`,
+this says that the intersection form of the four-manifold `S¹ × Y` is even, so no class of
+`H²(S¹ × Y; ℤ)` has square `-1`. -/
+theorem two_dvd_singularKronecker_singularCup_self_of_compactSpace
+    [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] {M E : Type w} [TopologicalSpace M]
+    [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [ChartedSpace E M] [CompactSpace M] {d n p : ℕ}
+    (hn : Module.finrank ℝ E = n) (hnp : n < p + p + (d + 1) + (d + 1))
+    (hp : Even (p + (d + 1)))
+    (x : (TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))
+    (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
+      (𝟙_ (ModuleCat.{w} k))).obj (TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M)) :
+    (2 : k) ∣ ((TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M).singularKronecker k
+      (p + p + (d + 1) + (d + 1))
+      ((TopCat.sphere.{w} (d + 1) ⊗ TopCat.of M).singularCup k (λ_ _).inv (λ_ _).hom
+        (p + (d + 1)) (p + (d + 1)) (p + p + (d + 1) + (d + 1)) (by omega) x x)).hom z := by
+  obtain ⟨x₀⟩ : Nonempty (TopCat.sphere.{w} (d + 1)) := inferInstance
+  rw [singularCup_self_eq_two_smul_of_compactSpace x₀ hn hnp hp x, map_smul, ModuleCat.hom_smul,
+    LinearMap.smul_apply]
+  exact Dvd.intro _ rfl
+
+end CupSquare
 
 end TopCat

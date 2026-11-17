@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.TestFunction.SchwartzKernel
 import TauCeti.Analysis.Distribution.Gluing
+import TauCeti.Analysis.Distribution.TestFunction.Complexify
+import TauCeti.Analysis.Distribution.TestFunction.TensorDensity
+import TauCeti.Analysis.Normed.Module.Complexification
 import TauCeti.Topology.MetricSpace.Pseudo.Lemmas
 
 /-!
@@ -29,6 +32,12 @@ continuity of the map `ψ ↦ B (·) ψ` from `𝓓(O)` to `𝓓'(Ω)`; here the
 For `F = ℂ` the kernel is an actual distribution `K ∈ 𝓓'(Ω × O, ℂ)`, acting on complex test
 functions through its complex-linear extension `Distribution.complexPairing`
 (`LinearMap.existsUnique_schwartzKernel_distribution`).
+
+A real bilinear map `B` on the real test functions `𝓓(Ω, ℝ) × 𝓓(O, ℝ)` with values in a real
+Banach space `G`, under the same estimate, has a unique kernel `T ∈ 𝓓'(Ω × O, G)` with
+`T (φ ⊗ ψ) = B φ ψ` (`LinearMap.existsUnique_schwartzKernel_prodSMulCLM`). It is the real part of
+the kernel of the complex-bilinear extension of `B` with values in the complexification of `G`
+(`LinearMap.complexifyTestFunction`).
 
 ## Proof
 
@@ -57,6 +66,8 @@ on compact sets applies to it.
   of `ℝ^a × ℝ^b`.
 * `LinearMap.existsUnique_schwartzKernel_distribution`: its form for complex-valued
   distributions.
+* `LinearMap.existsUnique_schwartzKernel_prodSMulCLM`: its form for real test functions and
+  distributions with values in a real Banach space.
 
 ## References
 
@@ -363,18 +374,59 @@ theorem existsUnique_schwartzKernel_distribution (B : 𝓓(Ω, ℂ) →ₗ[ℂ] 
   let K : 𝓓'(V, ℂ) := T.restrictScalars ℝ ∘L postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
   have hK : K.complexPairing = T := by
     ext Φ
-    have hΦ : postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (postcompCLM (𝕜 := ℝ) Complex.reCLM Φ) +
-        Complex.I • postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
-          (postcompCLM (𝕜 := ℝ) Complex.imCLM Φ) = Φ := by
-      ext p
-      simp [mul_comm Complex.I, Complex.re_add_im]
     have hKapp (φ : 𝓓(V, ℝ)) : K φ = T (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ) := rfl
     rw [Distribution.complexPairing_apply, hKapp, hKapp, ← smul_eq_mul, ← map_smul, ← map_add,
-      hΦ]
+      postcompCLM_re_add_I_smul_im Φ]
   refine ⟨K, fun φ ψ ↦ by rw [hK, hT], fun K' hK' ↦ ?_⟩
   have h := hTuniq K'.complexPairing hK'
   ext φ
   rw [← Distribution.complexPairing_postcompCLM_ofRealCLM, h, ← hK,
     Distribution.complexPairing_postcompCLM_ofRealCLM]
+
+/-- **The Schwartz kernel theorem on open sets, for real test functions.** Let `B` be a real
+bilinear map on the real test functions on open sets `Ω ⊆ ℝ^a` and `O ⊆ ℝ^b`, with values in a real
+Banach space `G`, such that for all compact sets `K₁ ⊆ Ω` and `K₂ ⊆ O` some `C` and `k` give
+`‖B φ ψ‖ ≤ C N_k(φ) N_k(ψ)` for `φ` supported in `K₁` and `ψ` supported in `K₂`. Then there is a
+unique `G`-valued distribution `T` on `V = Ω × O` with `T (φ ⊗ ψ) = B φ ψ` for all `φ` and `ψ`. -/
+theorem existsUnique_schwartzKernel_prodSMulCLM {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] [CompleteSpace G] (B : 𝓓(Ω, ℝ) →ₗ[ℝ] 𝓓(O, ℝ) →ₗ[ℝ] G)
+    (hB : ∀ (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ)) (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω)
+      (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O), ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+        ‖B (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+          C * ContDiffMapSupportedIn.supSeminorm ℝ _ ℝ ⊤ K₁ k φ *
+            ContDiffMapSupportedIn.supSeminorm ℝ _ ℝ ⊤ K₂ k ψ)
+    {V : Opens ((a → ℝ) × (b → ℝ))}
+    (hV : (V : Set ((a → ℝ) × (b → ℝ))) = (Ω : Set (a → ℝ)) ×ˢ (O : Set (b → ℝ))) :
+    ∃! T : 𝓓'(V, G), ∀ (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)), T (prodSMulCLM ψ hV.symm.subset φ) = B φ ψ := by
+  -- The complex-bilinear extension of `B` with values in the complexification of `G`.
+  let BC := complexifyTestFunction (B.compr₂ (TauCeti.Complexification.ofRealLI G).toLinearMap)
+  have hBC (K₁ : Compacts (a → ℝ)) (K₂ : Compacts (b → ℝ)) (hK₁ : (K₁ : Set (a → ℝ)) ⊆ Ω)
+      (hK₂ : (K₂ : Set (b → ℝ)) ⊆ O) : ∃ (C : ℝ) (k : ℕ), ∀ φ ψ,
+        ‖BC (ofSupportedIn hK₁ φ) (ofSupportedIn hK₂ ψ)‖ ≤
+          C * ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₁ k φ *
+            ContDiffMapSupportedIn.supSeminorm ℂ _ ℂ ⊤ K₂ k ψ := by
+    obtain ⟨C, k, hC⟩ := hB K₁ K₂ hK₁ hK₂
+    refine ⟨4 * max C 0, k, norm_complexifyTestFunction_ofSupportedIn_le hK₁ hK₂
+      (le_max_right C 0) fun φ ψ ↦ ?_⟩
+    rw [compr₂_apply, LinearIsometry.coe_toLinearMap, LinearIsometry.norm_map]
+    refine (hC φ ψ).trans (mul_le_mul_of_nonneg_right ?_ (apply_nonneg _ _))
+    exact mul_le_mul_of_nonneg_right (le_max_left C 0) (apply_nonneg _ _)
+  obtain ⟨T, hT, -⟩ := existsUnique_schwartzKernel_testFunction BC hBC hV
+  -- The real part of `T` on real test functions.
+  let S : 𝓓'(V, G) := TauCeti.Complexification.reCLM G ∘L T.restrictScalars ℝ ∘L
+    postcompCLM (𝕜 := ℝ) Complex.ofRealCLM
+  have hS (φ : 𝓓(Ω, ℝ)) (ψ : 𝓓(O, ℝ)) : S (prodSMulCLM ψ hV.symm.subset φ) = B φ ψ := by
+    have h : postcompCLM (𝕜 := ℝ) Complex.ofRealCLM (prodSMulCLM ψ hV.symm.subset φ) =
+        (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM φ).tensor
+          (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM ψ) hV.symm.subset := by
+      ext p
+      simp [prodSMulCLM_apply, tensor_apply, mul_comm]
+    have hSapp (f : 𝓓(V, ℝ)) :
+        S f = TauCeti.Complexification.reCLM G (T (postcompCLM (𝕜 := ℝ) Complex.ofRealCLM f)) :=
+      rfl
+    rw [hSapp, h, hT]
+    simp [BC]
+  -- Uniqueness is the density of tensor products.
+  exact ⟨S, hS, fun S' hS' ↦ ext_prodSMulCLM hV fun ψ φ ↦ by rw [hS', hS]⟩
 
 end LinearMap

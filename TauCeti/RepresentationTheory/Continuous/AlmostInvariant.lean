@@ -9,17 +9,19 @@ public import Mathlib.RepresentationTheory.Continuous.Basic
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 import TauCeti.RepresentationTheory.Invariants
 import TauCeti.Algebra.BigOperators.Finset.Average
+import TauCeti.Topology.MetricSpace.SimultaneousApproximation
 
 /-!
 # Almost invariant vectors
 
 A representation has almost invariant vectors if every finite set of group elements moves some
-unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition.
-Its failure is characterized by a finite quadratic lower bound on orbit displacements.
-For finite groups it is equivalent to the existence of a nonzero invariant vector, without
-unitarity or completeness assumptions. The quantitative averaging lemma also produces an
-invariant vector close to a vector whose entire orbit is close to it. Almost invariant vectors
-also have arbitrarily small total squared displacement on any finite set.
+unit vector by arbitrarily little. Restriction along a homomorphism preserves this condition, and
+almost invariant vectors yield a directed net of unit vectors whose displacements tend to `0` at
+every element of the monoid. Its failure is characterized by a finite quadratic lower bound on
+orbit displacements. For finite groups it is equivalent to the existence of a nonzero invariant
+vector, without unitarity or completeness assumptions. The quantitative averaging lemma also
+produces an invariant vector close to a vector whose entire orbit is close to it. Almost invariant
+vectors also have arbitrarily small total squared displacement on any finite set.
 
 These results provide the finite-group averaging step in the theory of property (T).
 The definition follows Anantharaman–Popa, *An Introduction to II₁ Factors*, Definition 14.1.1.
@@ -27,6 +29,8 @@ The finite average is Mathlib's `Representation.averageMap`.
 -/
 
 public section
+
+open Filter Topology
 
 namespace ContRepresentation
 
@@ -90,6 +94,18 @@ theorem HasAlmostInvariantVectors.exists_sum_norm_sq_lt
       _ = _ := by simp
   have hmul := (div_mul_cancel₀ ε hd.ne').symm
   nlinarith
+
+/-- Extract a directed net of unit vectors whose displacements tend to `0` at every monoid element
+from `ContRepresentation.HasAlmostInvariantVectors`. -/
+theorem HasAlmostInvariantVectors.exists_unit_net_tendsto_sub_zero
+    (hρ : ρ.HasAlmostInvariantVectors) :
+    ∃ v : Finset G × ℕ → V, (∀ p, ‖v p‖ = 1) ∧
+      ∀ g : G, Tendsto (fun p ↦ ‖ρ g (v p) - v p‖) atTop (𝓝 0) :=
+  TauCeti.exists_net_tendsto_of_forall_finset_dist_lt
+    (p := fun v : V ↦ ‖v‖ = 1) (F := fun g v ↦ ‖ρ g v - v‖) (x := fun _ ↦ 0)
+    fun s ε hε ↦ by
+      simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using
+        (hasAlmostInvariantVectors_def ρ).mp hρ s ε hε
 
 end Definition
 
