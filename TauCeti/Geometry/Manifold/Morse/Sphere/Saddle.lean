@@ -24,8 +24,8 @@ is a Morse function on `Sⁿ` (`TauCeti.isMorse_sphereHeight_sq_add_smul_sphereH
 four critical points (`TauCeti.criticalPoints_sphereHeight_sq_add_smul_sphereHeight`):
 
 * the south pole `-v`, the minimum, of index `0`;
-* the north pole `v`, a saddle of index `n - 1`: along `u` the square `hᵤ²` wins over the tilt
-  `t hᵥ`, since `t < 2`, and in the other directions the height `hᵥ` decreases;
+* the north pole `v`, of index `n - 1`, a saddle when `n ≥ 2`: along `u` the square `hᵤ²` wins
+  over the tilt `t hᵥ`, since `t < 2`, and in the other directions the height `hᵥ` decreases;
 * the two maxima `±√(1 - t² / 4) u + (t / 2) v`, of index `n`, the points with `hᵥ = t / 2` and
   `hᵤ² = 1 - t² / 4`.
 
@@ -157,9 +157,9 @@ theorem mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht : t ≠ 0) :
     p ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) ↔
       p = v ∨ p = -v ∨ (sphereHeight v p = t / 2 ∧ sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) := by
-  have hu : ⟪(u : E), (u : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
-  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
-  have hp : ⟪(p : E), (p : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have hu : ⟪(u : E), (u : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere u)
+  have hv : ⟪(v : E), (v : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere v)
+  have hp : ⟪(p : E), (p : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere p)
   have hvu : ⟪(v : E), (u : E)⟫ = 0 := by rw [real_inner_comm, huv]
   rw [sphereHeight_sq_add_smul_sphereHeight_eq,
     mem_criticalPoints_comp_coe_sphere_iff_mem_span (hasFDerivAt_ambient (p : E))]
@@ -235,7 +235,7 @@ private theorem exists_mvfderiv_coe_sphere_eq (huv : ⟪(u : E), (v : E)⟫ = 0)
   have h : (u : E) ∈ (ℝ ∙ (v : E))ᗮ :=
     Submodule.mem_orthogonal_singleton_iff_inner_right.2 (by rw [real_inner_comm, huv])
   rw [← range_mvfderiv_subtypeVal (n := n) v] at h
-  exact h
+  exact LinearMap.mem_range.1 h
 
 /-- At the north pole the critical Hessian is `2 ⟪ι a, u⟫ ⟪ι b, u⟫ - t ⟪ι a, ι b⟫`. -/
 private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_self
@@ -256,12 +256,12 @@ critical point. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeight_self
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : t ≠ 0) (ht₂ : t ≠ 2) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) v := by
-  refine .of_forall_criticalHessian_eq_zero
+  refine .of_nondegenerate_criticalHessian
     ((contMDiff_sphereHeight_sq_add_smul_sphereHeight v).of_le (by simp))
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀).2 (Or.inl rfl))
     fun a h ↦ ?_
   obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) huv
-  have hu : ⟪(u : E), (u : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have hu : ⟪(u : E), (u : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere u)
   set x := mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v a
   -- Pairing with `b` gives `(2 - t) ⟪x, u⟫ = 0`; then pairing with `a` gives `-t ‖x‖² = 0`.
   have h1 := h b
@@ -277,14 +277,14 @@ theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeig
     exact norm_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 ((mul_eq_zero.1 this).resolve_left ht₀))
   exact injective_mvfderiv_subtypeVal_sphere v (hx.trans (map_zero _).symm)
 
-/-- **The saddle of `hᵤ² + t hᵥ`.** For `0 < t < 2`, the north pole `v` has Morse index `n - 1`:
-the critical Hessian is positive along the tangent vector `u` and negative definite on the
-tangent vectors orthogonal to `u`. -/
+/-- **The saddle of `hᵤ² + t hᵥ`.** For `0 < t < 2`, the north pole `v` has Morse index `n - 1`, so
+it is a saddle when `n ≥ 2`: the critical Hessian is positive along the tangent vector `u` and
+negative definite on the tangent vectors orthogonal to `u`. -/
 theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : 0 < t) (ht₂ : t < 2) :
     manifoldMorseIndex (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) v = n - 1 := by
   obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) huv
-  have hu : ⟪(u : E), (u : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have hu : ⟪(u : E), (u : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere u)
   have hb0 : b ≠ 0 := by
     rintro rfl
     simpa using congrArg norm hb
@@ -314,7 +314,7 @@ theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_self
     (f := sphereHeight u ^ 2 + t • sphereHeight v) (W := LinearMap.ker ℓ) fun z hz ↦ by
       have hzu : ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v z, (u : E)⟫ = 0 := by
         rw [real_inner_comm]
-        exact z.2
+        simpa [ℓ, LinearMap.mem_ker] using z.2
       have hx := (map_ne_zero_iff _ (injective_mvfderiv_subtypeVal_sphere v)).2
         fun h : (z : TangentSpace (𝓡 n) v) = 0 ↦ hz (Subtype.ext h)
       simp only [QuadraticMap.restrict_apply, neg_apply,
@@ -400,7 +400,7 @@ theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeig
     (huv : ⟪(u : E), (v : E)⟫ = 0) (h1 : sphereHeight v p = t / 2)
     (h2 : sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) (ht : t ^ 2 ≠ 4) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p := by
-  refine .of_forall_criticalHessian_eq_zero
+  refine .of_nondegenerate_criticalHessian
     ((contMDiff_sphereHeight_sq_add_smul_sphereHeight p).of_le (by simp))
     (mem_criticalPoints_of_sphereHeight_eq huv h1 h2) fun a h ↦ by_contra fun ha ↦
       (criticalHessian_sphereHeight_sq_add_smul_sphereHeight_neg huv h1 h2 ht ha).ne (h a)
@@ -439,8 +439,8 @@ omit [Fact (finrank ℝ E = n + 1)] in
 private theorem encard_setOf_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0) (ht : t ^ 2 < 4) :
     {x : sphere (0 : E) 1 | sphereHeight v x = t / 2 ∧ sphereHeight u x ^ 2 = 1 - t ^ 2 / 4}.encard
       = 2 := by
-  have hu : ⟪(u : E), (u : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
-  have hv : ⟪(v : E), (v : E)⟫ = 1 := by simp [norm_eq_of_mem_sphere]
+  have hu : ⟪(u : E), (u : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere u)
+  have hv : ⟪(v : E), (v : E)⟫ = 1 := inner_self_eq_one_of_norm_eq_one (norm_eq_of_mem_sphere v)
   have hvu : ⟪(v : E), (u : E)⟫ = 0 := by rw [real_inner_comm, huv]
   set s := √(1 - t ^ 2 / 4)
   have hs : s ^ 2 = 1 - t ^ 2 / 4 := Real.sq_sqrt (by linarith)

@@ -24,8 +24,9 @@ in `E` through the differential `ι` of the inclusion, is the hyperplane `pᗮ`
   inner product with a vector `g`, for instance the gradient of `F`, this says that `g` is a
   multiple of `p` (`TauCeti.mem_criticalPoints_comp_coe_sphere_iff_mem_span`); the factor is the
   Lagrange multiplier `μ = DF(p) p`.
-* **The Hessian.** At a critical point `p` of `f`, with `F` twice differentiable there, the critical
-  Hessian of `f` is the second derivative of `F` corrected by the Lagrange multiplier:
+* **The Hessian.** At a critical point `p` of `f`, with `F` twice continuously differentiable at
+  `p`, the critical Hessian of `f` is the second derivative of `F` corrected by the Lagrange
+  multiplier:
   `Hess f(p)(v, w) = D²F(p)(ι v, ι w) - μ ⟪ι v, ι w⟫`
   (`TauCeti.criticalHessian_comp_coe_sphere_apply`).
 
