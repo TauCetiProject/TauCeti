@@ -1,0 +1,132 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.CategoryTheory.Bicategory.NaturalTransformation.Pseudo
+public import Mathlib.CategoryTheory.Sites.Descent.IsStack
+
+/-!
+# Gerbes over a site
+
+Let `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` be a pseudofunctor and `J` a Grothendieck topology on `C`.
+`F` is a gerbe for `J` (Stacks, Section 06NY, Definition 8.11.1) if it is a stack for `J`, every
+fibre category is a groupoid, every object `U` of `C` has a `J`-covering sieve over whose arrows
+`V ⟶ U` the fibre over `V` is nonempty, and any two objects of a fibre become isomorphic after
+pullback along every arrow of some `J`-covering sieve.
+
+## Main declarations
+
+* `CategoryTheory.Pseudofunctor.IsGerbe`: the property that `F` is a gerbe for `J`.
+* `CategoryTheory.Pseudofunctor.isGerbe_iff_of_isEquivalence`: for a strong transformation
+  `F ⟶ G` whose components are equivalences between stacks `F` and `G`, `F` is a gerbe if and
+  only if `G` is.
+
+## References
+
+* [Stacks Project, Section 06NY](https://stacks.math.columbia.edu/tag/06NY), Definition 8.11.1
+  and Lemma 8.11.2
+-/
+
+public section
+
+universe v u v' u'
+
+open CategoryTheory Opposite Bicategory
+
+namespace CategoryTheory.Pseudofunctor
+
+variable {C : Type u} [Category.{v} C]
+
+/-- A pseudofunctor `F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat` is a gerbe for a Grothendieck topology `J`
+if it is a stack for `J` whose fibre categories are groupoids, which has objects locally, and any
+two of whose objects over the same base are locally isomorphic (Stacks, Section 06NY,
+Definition 8.11.1). The locality conditions are stated with `J`-covering sieves. -/
+class IsGerbe (F : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}) (J : GrothendieckTopology C) : Prop
+    extends F.IsStack J where
+  /-- Every fibre category is a groupoid. -/
+  isGroupoid (U : C) : IsGroupoid (F.obj (.mk (op U)))
+  /-- Every object `U` has a covering sieve over whose arrows `V ⟶ U` the fibre is nonempty. -/
+  exists_covering_nonempty (U : C) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f → Nonempty (F.obj (.mk (op V)))
+  /-- Any two objects over `U` become isomorphic after pullback along every arrow of some
+  covering sieve of `U`. -/
+  exists_covering_iso {U : C} (x y : F.obj (.mk (op U))) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj y)
+
+attribute [instance] IsGerbe.isGroupoid
+
+variable {F G : LocallyDiscrete Cᵒᵖ ⥤ᵖ Cat.{v', u'}} {J : GrothendieckTopology C}
+
+/-- The component at `x` of the naturality isomorphism of a strong transformation `η : F ⟶ G`
+along `f : V ⟶ U`: the image under `η` of the pullback of `x` is isomorphic to the pullback of
+the image of `x`. -/
+private noncomputable def naturalityObjIso (η : StrongTrans F G) {U V : C} (f : V ⟶ U)
+    (x : F.obj (.mk (op U))) :
+    (η.app (.mk (op V))).toFunctor.obj ((F.map f.op.toLoc).toFunctor.obj x) ≅
+      (G.map f.op.toLoc).toFunctor.obj ((η.app (.mk (op U))).toFunctor.obj x) :=
+  (Cat.Hom.toNatIso (η.naturality f.op.toLoc)).app x
+
+/-- Local isomorphy of objects transfers along a strong transformation whose components are
+essentially surjective. -/
+private lemma exists_covering_iso_of_essSurj [F.IsGerbe J] (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.EssSurj) {U : C}
+    (y y' : G.obj (.mk (op U))) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((G.map f.op.toLoc).toFunctor.obj y ≅ (G.map f.op.toLoc).toFunctor.obj y') := by
+  let e := (η.app (.mk (op U))).toFunctor
+  have := hη U
+  obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) (e.objPreimage y) (e.objPreimage y')
+  refine ⟨R, hR, fun V f hf ↦ ?_⟩
+  obtain ⟨i⟩ := h f hf
+  let p := (G.map f.op.toLoc).toFunctor
+  exact ⟨p.mapIso (e.objObjPreimageIso y).symm ≪≫ (naturalityObjIso η f _).symm ≪≫
+    (η.app (.mk (op V))).toFunctor.mapIso i ≪≫ naturalityObjIso η f _ ≪≫
+    p.mapIso (e.objObjPreimageIso y')⟩
+
+/-- Local isomorphy of objects is reflected by a strong transformation whose components are
+fully faithful. -/
+private lemma exists_covering_iso_of_fullyFaithful [G.IsGerbe J] (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.FullyFaithful) {U : C}
+    (x x' : F.obj (.mk (op U))) :
+    ∃ R ∈ J U, ∀ ⦃V : C⦄ (f : V ⟶ U), R f →
+      Nonempty ((F.map f.op.toLoc).toFunctor.obj x ≅ (F.map f.op.toLoc).toFunctor.obj x') := by
+  let e := (η.app (.mk (op U))).toFunctor
+  obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_iso (J := J) (e.obj x) (e.obj x')
+  refine ⟨R, hR, fun V f hf ↦ ?_⟩
+  obtain ⟨i⟩ := h f hf
+  exact ⟨(hη V).preimageIso (naturalityObjIso η f x ≪≫ i ≪≫ (naturalityObjIso η f x').symm)⟩
+
+/-- Let `η : F ⟶ G` be a strong transformation between stacks whose components are equivalences
+of fibre categories. Then `F` is a gerbe if and only if `G` is (Stacks, Section 06NY,
+Lemma 8.11.2, for the conditions beyond the stack condition). -/
+theorem isGerbe_iff_of_isEquivalence [F.IsStack J] [G.IsStack J] (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
+    F.IsGerbe J ↔ G.IsGerbe J := by
+  constructor
+  · intro hF
+    exact
+      { isGroupoid U := by
+          have := hη U
+          exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor.inv
+        exists_covering_nonempty U := by
+          obtain ⟨R, hR, h⟩ := hF.exists_covering_nonempty U
+          exact ⟨R, hR, fun V f hf ↦ (h f hf).map (η.app (.mk (op V))).toFunctor.obj⟩
+        exists_covering_iso x y :=
+          exists_covering_iso_of_essSurj η (fun U ↦ have := hη U; inferInstance) x y }
+  · intro hG
+    exact
+      { isGroupoid U := by
+          have := hη U
+          exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor
+        exists_covering_nonempty U := by
+          obtain ⟨R, hR, h⟩ := hG.exists_covering_nonempty U
+          exact ⟨R, hR, fun V f hf ↦ (h f hf).map (η.app (.mk (op V))).toFunctor.inv.obj⟩
+        exists_covering_iso x y :=
+          exists_covering_iso_of_fullyFaithful η
+            (fun U ↦ have := hη U; .ofFullyFaithful _) x y }
+
+end CategoryTheory.Pseudofunctor
