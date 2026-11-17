@@ -9,6 +9,7 @@ import Mathlib.Analysis.Normed.Field.Basic
 import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Simplicial
 import TauCeti.Geometry.Manifold.Gluing.Double
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Sum
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Examples: iterated submersion fibre products and local sections

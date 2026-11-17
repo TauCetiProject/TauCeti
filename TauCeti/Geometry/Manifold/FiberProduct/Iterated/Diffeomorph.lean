@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Basic
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Regrouping diffeomorphisms and submersive projections for iterated fibre products

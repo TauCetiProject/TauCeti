@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplexCategory.Basic
 public import TauCeti.Geometry.Manifold.FiberProduct.Iterated.Diffeomorph
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Smooth simplicial Čech nerve structure on iterated submersion fibre products

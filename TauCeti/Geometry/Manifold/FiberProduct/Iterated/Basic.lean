@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.Submersion.Composition
 import TauCeti.Geometry.Manifold.Diffeomorph.Pi
 import TauCeti.Geometry.Manifold.PullbackGroupoid
+import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
 /-!
 # Iterated submersion fibre products
