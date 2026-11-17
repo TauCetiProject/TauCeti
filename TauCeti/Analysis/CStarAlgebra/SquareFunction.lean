@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 
-import Mathlib.Analysis.CStarAlgebra.Module.Constructions
 import Mathlib.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Rpow.Isometric
+import TauCeti.Analysis.CStarAlgebra.CauchySchwarz
 
 /-!
 # Column and row square functions in C⋆-algebras
@@ -200,16 +200,8 @@ theorem norm_apply_le_norm_rowSquare (a : ι → A) (i : ι) : ‖a i‖ ≤ ‖
 `‖∑ k, a k * b k‖ ≤ ‖rowSquare a‖ * ‖columnSquare b‖`. -/
 theorem norm_sum_mul_le_norm_rowSquare_mul_norm_columnSquare (a b : ι → A) :
     ‖∑ k, a k * b k‖ ≤ ‖rowSquare a‖ * ‖columnSquare b‖ := by
-  open scoped CStarModule WithCStarModule in
-  let v := (WithCStarModule.equiv A (ι → A)).symm a
-  let w := (WithCStarModule.equiv A (ι → A)).symm fun k => star (b k)
-  have hinner : inner A w v = ∑ k, a k * b k := by
-    rw [WithCStarModule.pi_inner]
-    exact Finset.sum_congr rfl fun k _ => by simp [v, w, WithCStarModule.inner_def]
-  have hv : ‖v‖ = ‖rowSquare a‖ := by
-    rw [WithCStarModule.pi_norm, norm_rowSquare]; simp [v, WithCStarModule.inner_def]
-  have hw : ‖w‖ = ‖columnSquare b‖ := by
-    rw [WithCStarModule.pi_norm, norm_columnSquare]; simp [w, WithCStarModule.inner_def]
-  rw [← hinner, ← hv, ← hw, mul_comm]; exact CStarModule.norm_inner_le _
+  rw [← sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _)),
+    mul_pow, norm_rowSquare_sq, norm_columnSquare_sq]
+  exact Finset.norm_sum_mul_sq_le Finset.univ a b
 
 end TauCeti

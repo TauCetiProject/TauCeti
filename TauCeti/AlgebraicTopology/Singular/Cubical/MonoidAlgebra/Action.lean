@@ -180,6 +180,20 @@ theorem act_one_eq_self {p : ℕ} (c : NormalizedCubicalChain Y R p) :
 
 end MulAction
 
+section Self
+
+variable {G : Type*} [Mul G] [TopologicalSpace G] [ContinuousMul G] {R : Type*} [CommRing R]
+
+/-- For a topological magma acting on itself by right multiplication, the action of chains is the
+Pontryagin product. -/
+theorem act_eq_mul {p q : ℕ} (a : NormalizedCubicalChain G R p)
+    (b : NormalizedCubicalChain G R q) : act G G R p q a b = mul G R p q a b := by
+  have h : actMap G G = mulMap G :=
+    ContinuousMap.ext fun x ↦ by rw [actMap_apply, mulMap_apply, op_smul_eq_mul]
+  rw [act_def, mul_def, h]
+
+end Self
+
 end NormalizedCubicalChain
 
 open NormalizedCubicalChain
@@ -273,6 +287,18 @@ theorem cubicalChainModule.induction_on {motive : cubicalChainModule Y G R → P
     rwa [map_zero] at h
   | of n c => exact lof n c
   | add a b ha hb => exact add _ _ ha hb
+
+/-- An empty space has no cubical chains. -/
+instance [IsEmpty Y] : Subsingleton (cubicalChainModule Y G R) :=
+  subsingleton_of_forall_eq 0 fun m ↦ by
+    induction m using cubicalChainModule.induction_on with
+    | add m m' hm hm' => rw [hm, hm', add_zero]
+    | lof n c =>
+      induction c using NormalizedCubicalChain.induction_on with
+      | zero => exact map_zero _
+      | add c c' ih ih' => rw [map_add, ih, ih', add_zero]
+      | smul r c ih => rw [map_smul, ih, smul_zero]
+      | ofCube c => exact isEmptyElim (c 0)
 
 /-- The linear map given by homogeneous parts, on a homogeneous chain. -/
 @[simp]
