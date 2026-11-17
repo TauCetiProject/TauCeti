@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.FinitePresenta
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.Invertible.LocalTriviality
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.AlgebraicGeometry.Properties
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Instances
 public import TauCeti.AlgebraicGeometry.Modules.Tensor.Product
 
 /-!

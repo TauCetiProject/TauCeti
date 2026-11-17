@@ -226,8 +226,8 @@ lemma globalSectionsActionRingEquiv_symm_globalSectionsSmul (r : Γ(X, ⊤)) :
 variable {M} in
 /-- If the global functions on `X` form a field, every nonzero endomorphism of an invertible sheaf
 on `X` is an isomorphism. -/
-theorem isIso_of_ne_zero_of_isField (hX : IsField Γ(X, ⊤)) {φ : M ⟶ M} (hφ : φ ≠ 0) :
-    IsIso φ := by
+theorem Hom.isIso_of_ne_zero_of_isField_of_isInvertible (φ : M ⟶ M) (hX : IsField Γ(X, ⊤))
+    (hφ : φ ≠ 0) : IsIso φ := by
   let _ := hX.toField
   have hr : (globalSectionsActionRingEquiv M).symm (End.of φ) ≠ 0 := by
     simpa only [ne_eq, map_eq_zero_iff _ (RingEquiv.injective _), End.ext_iff,

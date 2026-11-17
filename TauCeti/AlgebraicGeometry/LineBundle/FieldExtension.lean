@@ -20,12 +20,14 @@ Let `X` be an integral scheme universally closed and quasi-separated over a fiel
 (for instance a proper integral scheme), and let `K / k` be a field extension, with
 `X_K = X ×_k K`. Pulling line bundles back along `X_K ⟶ X` is injective on line-bundle classes
 (`TauCeti.AlgebraicGeometry.LineBundleClass.pullback_injective`): a line bundle on `X` that
-becomes trivial over `K` is already trivial over `k`.
+becomes trivial over `K` is already trivial over `k`. More generally, the same holds for the base
+change `X ×_k T` along any nonempty `k`-scheme `T`, by passing to the residue field of a point
+of `T`.
 
-Flat base change in degree zero gives nonzero global sections of both the line bundle and
-its dual. Their composition is a nonzero global function, hence a unit because `Γ(X, 𝒪_X)` is
-a field. The resulting isomorphism trivializes the line bundle. No dimension bound or
-cohomological finiteness assumption is needed.
+Over a field extension, flat base change in degree zero gives nonzero global sections of both
+the line bundle and its dual. Their composition is a nonzero global function, hence a unit
+because `Γ(X, 𝒪_X)` is a field. The resulting isomorphism trivializes the line bundle. No
+dimension bound or cohomological finiteness assumption is needed.
 
 The scheme need not be smooth, geometrically integral or have a rational point, and `X_K` need
 not be reduced or irreducible. Without universal closedness the statement fails: the Picard group
@@ -87,12 +89,8 @@ private theorem exists_nonzero_unitHom_of_pullback_eq_one (L : InvertibleSheaf X
   exact hx (by simpa using this)
 
 include H in
-/-- **Line-bundle classes are detected after any extension of the base field.** Let `X` be
-integral, universally closed and quasi-separated over `k` (for instance proper), and let
-`X_K = X ×_k K`. A line bundle on `X` whose pullback to `X_K` is trivial is trivial.
-No dimension, smoothness, geometric integrality, rational-point or cohomological finiteness
-assumption is needed. -/
-theorem pullback_injective : Function.Injective (pullback g) := by
+/-- The case of `pullback_injective` where the base change is along a field extension `K / k`. -/
+private theorem pullback_injective_of_algebraMap : Function.Injective (pullback g) := by
   suffices key : ∀ a : LineBundleClass X, pullback g a = 1 → a = 1 by
     intro a b hab
     exact mul_inv_eq_one.mp (key _ (by rw [pullback_mul, pullback_inv, hab, mul_inv_cancel]))
@@ -119,11 +117,32 @@ theorem pullback_injective : Function.Injective (pullback g) := by
     apply ht
     exact (cancel_mono β).mp (hz.trans (zero_comp).symm)
   have : IsIso (t ≫ β) :=
-    Scheme.Modules.isIso_of_ne_zero_of_isField (isField_of_universallyClosed k fX) hcomp
+    (t ≫ β).isIso_of_ne_zero_of_isField_of_isInvertible (isField_of_universallyClosed k fX) hcomp
   have : Epi β := epi_of_epi t β
   have : IsIso β := isIso_of_mono_of_epi β
   have : mk L.dual = 1 := mk_eq_one_iff.mpr ⟨asIso β⟩
   simpa only [← inv_mk, inv_eq_one] using this
+
+omit [Algebra k K] in
+/-- **Line-bundle classes are detected after any nonempty base change.** Let `X` be integral,
+universally closed and quasi-separated over a field `k` (for instance proper), and let
+`Y = X ×_k T` for a nonempty `k`-scheme `T`, such as `Spec K` for a field extension `K / k`.
+A line bundle on `X` whose pullback to `Y` is trivial is trivial. No dimension, smoothness,
+geometric integrality, rational-point or cohomological finiteness assumption is needed. -/
+theorem pullback_injective {T : Scheme.{u}} {fY : Y ⟶ T} {φ : T ⟶ Spec (.of k)}
+    (H : IsPullback g fY fX φ) [Nonempty T] : Function.Injective (pullback g) := by
+  -- Base change further to the residue field `κ(t)` of a point of `T`, a field extension of `k`.
+  obtain ⟨t⟩ : Nonempty T := inferInstance
+  let ψ := T.fromSpecResidueField t
+  let _ : Algebra k (T.residueField t) := (Spec.preimage (ψ ≫ φ)).hom.toAlgebra
+  have hψ : Spec.map (CommRingCat.ofHom (algebraMap k (T.residueField t))) = ψ ≫ φ := by
+    rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Spec.map_preimage]
+  have H' := (IsPullback.of_hasPullback fY ψ).paste_horiz H
+  rw [← hψ] at H'
+  refine Function.Injective.of_comp (f := pullback (pullback.fst fY ψ)) ?_
+  intro a b hab
+  simp only [Function.comp_apply, pullback_comp] at hab
+  exact pullback_injective_of_algebraMap (K := T.residueField t) H' hab
 
 end
 

@@ -40,7 +40,10 @@ needed.
 * `TauCeti.AlgebraicGeometry.picardSheafPoints.ofLineBundleClass`: the homomorphism
   `Pic(X) → Pic_{X/S}(S)`;
 * `TauCeti.AlgebraicGeometry.picardSheafPoints.ofLineBundleClass_injective`: it is injective
-  for an integral scheme universally closed and quasi-separated over a field.
+  for an integral scheme universally closed and quasi-separated over a field;
+* `TauCeti.AlgebraicGeometry.relativePicardToFppfSheaf_app_injective`: more generally, at a
+  field-valued point `Spec k ⟶ S` whose fibre is integral, universally closed and
+  quasi-separated over `k`, the map `Pic(X_k) / Pic(Spec k) → Pic_{X/S}(Spec k)` is injective.
 
 ## References
 
@@ -76,6 +79,65 @@ def picardSheafPoints : AddCommGrpCat.{u + 1} :=
 /-- The points are the sections of the relative Picard fppf sheaf over the identity of the base. -/
 lemma picardSheafPoints_eq :
     picardSheafPoints f = (relativePicardFppfSheaf f).obj.obj (op (Over.mk (𝟙 S))) := rfl
+
+/-- If a represented section of the relative Picard presheaf over `T` vanishes in the relative
+Picard sheaf, then for every point `t` of `T` there are a field `K` and a `K`-point
+`ψ : Spec K ⟶ T` through `t` over which its line-bundle class becomes trivial on the fibre
+`Spec K ×_S X`. -/
+theorem exists_pullback_eq_one_of_relativePicardToFppfSheaf_eq_zero {T : (Over S)ᵒᵖ}
+    {a : LineBundleClass (pullback T.unop.hom f)}
+    (ha : (relativePicardToFppfSheaf f).app T (relativePicardAddPresheafMk f T a) = 0)
+    (t : T.unop.left) :
+    ∃ (K : Type u) (_ : Field K) (ψ : Spec (.of K) ⟶ T.unop.left),
+      t ∈ Set.range ψ ∧ LineBundleClass.pullback
+        ((Over.pullback f).map (Over.homMk ψ : Over.mk (ψ ≫ T.unop.hom) ⟶ T.unop)).left a = 1 := by
+  -- The represented section vanishes on an fppf covering sieve of `T`.
+  have hc := Presheaf.equalizerSieve_mem (Scheme.fppfTopology.over S)
+    (relativePicardToFppfSheaf f) (relativePicardAddPresheafMk f T a) 0 (by rwa [map_zero])
+  rw [GrothendieckTopology.mem_over_iff] at hc
+  -- Some member `g : U ⟶ T` of an fppf covering family inside this sieve has a point `u` over
+  -- `t`; pass to the residue field of `u`.
+  have : Scheme.fppfPrecoverage.HasIsos := ⟨fun f _ ↦ f.singleton_mem_fppfPrecoverage⟩
+  rw [Precoverage.mem_toGrothendieck_iff_of_isStableUnderComposition] at hc
+  obtain ⟨R, ⟨hsurj, -⟩, hRc⟩ := hc
+  obtain ⟨_, _, hg, u, hu⟩ := hsurj t
+  cases hg with
+  | @of U g hg =>
+  let ψ : Spec (.of (U.residueField u)) ⟶ T.unop.left := U.fromSpecResidueField u ≫ g
+  have hψ : (Sieve.overEquiv T.unop (Presheaf.equalizerSieve
+      (relativePicardAddPresheafMk f T a) 0)) ψ :=
+    Sieve.downward_closed _ (hRc U g hg) _
+  rw [Sieve.overEquiv_iff, Presheaf.equalizerSieve_apply, map_zero,
+    relativePicardAddPresheaf_map_mk, relativePicardAddPresheafMk_eq_zero_iff] at hψ
+  obtain ⟨p⟩ : Nonempty (Spec (U.residueField u)) := inferInstance
+  have hψt : ψ p = t := by
+    rw [Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
+    exact hu
+  refine ⟨_, inferInstance, ψ, ⟨_, hψt⟩, ?_⟩
+  -- Every line bundle on the spectrum of a field is trivial, so the class on the fibre is trivial.
+  obtain ⟨b, hb⟩ := hψ
+  rw [Subsingleton.elim (α := LineBundleClass (Spec (.of (U.residueField u)))) b 1, map_one] at hb
+  exact hb.symm
+
+/-- **Field-valued points of the relative Picard sheaf.** If `g : Spec k ⟶ S` is a point of `S`
+with values in a field and the fibre `X_k = Spec k ×_S X` is integral, universally closed and
+quasi-separated over `k`, then the canonical map `Pic(X_k) / Pic(Spec k) → Pic_{X/S}(Spec k)` is
+injective. -/
+theorem relativePicardToFppfSheaf_app_injective {k : Type u} [Field k] (g : Spec (.of k) ⟶ S)
+    [IsIntegral (pullback g f)] [UniversallyClosed (pullback.fst g f)]
+    [QuasiSeparated (pullback.fst g f)] :
+    Function.Injective ((relativePicardToFppfSheaf f).app (op (Over.mk g))) := by
+  rw [injective_iff_map_eq_zero ((relativePicardToFppfSheaf f).app (op (Over.mk g))).hom]
+  intro x hx
+  obtain ⟨a, rfl⟩ := relativePicardAddPresheafMk_surjective f _ x
+  -- `a` becomes trivial on the fibre over some `K`-point of `Spec k`, a base change of `X_k`.
+  obtain ⟨s⟩ : Nonempty (Spec (.of k)) := inferInstance
+  obtain ⟨K, _, ψ, -, hψ⟩ := exists_pullback_eq_one_of_relativePicardToFppfSheaf_eq_zero f hx s
+  have H := Over.isPullback_pullback_map_left f
+    (Over.homMk ψ : Over.mk (ψ ≫ g) ⟶ Over.mk g)
+  have ha : a = 1 := LineBundleClass.pullback_injective (X := pullback g f)
+    (fX := pullback.fst g f) (T := Spec (.of K)) H (by rw [hψ, LineBundleClass.pullback_one])
+  rw [ha, relativePicardAddPresheafMk_one]
 
 namespace picardSheafPoints
 
@@ -129,37 +191,12 @@ theorem exists_pullback_eq_one_of_ofLineBundleClass_eq_zero {a : LineBundleClass
     (ha : ofLineBundleClass f (Additive.ofMul a) = 0) (s : S) :
     ∃ (K : Type u) (_ : Field K) (ψ : Spec (.of K) ⟶ S),
       s ∈ Set.range ψ ∧ LineBundleClass.pullback (pullback.snd ψ f) a = 1 := by
-  let T₀ : (Over S)ᵒᵖ := op (Over.mk (𝟙 S))
-  let c := relativePicardAddPresheafMk f T₀ (LineBundleClass.pullback (pullback.snd (𝟙 S) f) a)
-  -- The section `c` vanishes on an fppf covering sieve of `S`.
-  have hc := Presheaf.equalizerSieve_mem (Scheme.fppfTopology.over S)
-    (relativePicardToFppfSheaf f) c 0
-    (by rw [map_zero]; rwa [ofLineBundleClass_apply, toMul_ofMul] at ha)
-  rw [GrothendieckTopology.mem_over_iff] at hc
-  -- Some member `g : U ⟶ S` of an fppf covering family inside this sieve has a point `u` over
-  -- `s`; pass to the residue field of `u`.
-  have : Scheme.fppfPrecoverage.HasIsos := ⟨fun f _ ↦ f.singleton_mem_fppfPrecoverage⟩
-  rw [Precoverage.mem_toGrothendieck_iff_of_isStableUnderComposition] at hc
-  obtain ⟨R, ⟨hsurj, -⟩, hRc⟩ := hc
-  obtain ⟨_, _, hg, u, hu⟩ := hsurj s
-  cases hg with
-  | @of U g hg =>
-  let ψ : Spec (.of (U.residueField u)) ⟶ S := U.fromSpecResidueField u ≫ g
-  have hψ : (Sieve.overEquiv (unop T₀) (Presheaf.equalizerSieve c 0)) ψ :=
-    Sieve.downward_closed _ (hRc U g hg) _
-  rw [Sieve.overEquiv_iff, Presheaf.equalizerSieve_apply, map_zero,
-    relativePicardAddPresheaf_map_mk, relativePicardAddPresheafMk_eq_zero_iff] at hψ
-  obtain ⟨p⟩ : Nonempty (Spec (U.residueField u)) := inferInstance
-  have hψs : (U.fromSpecResidueField u ≫ g) p = s := by
-    rw [Scheme.Hom.comp_apply, Scheme.fromSpecResidueField_apply]
-    exact hu
-  refine ⟨_, inferInstance, ψ, ⟨_, hψs⟩, ?_⟩
-  -- Every line bundle on the spectrum of a field is trivial, so the class on the fibre is trivial.
-  obtain ⟨b, hb⟩ := hψ
-  rw [Subsingleton.elim (α := LineBundleClass (Spec (.of (U.residueField u)))) b 1, map_one,
-    LineBundleClass.pullback_comp] at hb
+  rw [ofLineBundleClass_apply, toMul_ofMul] at ha
+  obtain ⟨K, _, (ψ : Spec (.of K) ⟶ S), hs, hψ⟩ :=
+    exists_pullback_eq_one_of_relativePicardToFppfSheaf_eq_zero f ha s
+  refine ⟨K, inferInstance, ψ, hs, ?_⟩
   have key : LineBundleClass.pullback (pullback.snd (ψ ≫ 𝟙 S) f) a = 1 := by
-    rw [hb]
+    rw [← hψ, LineBundleClass.pullback_comp]
     simp only [Over.Hom.left, Over.pullback_map_left]
     exact congrArg (LineBundleClass.pullback · a) (pullback.lift_snd _ _ _).symm
   rwa [Category.comp_id] at key
@@ -173,20 +210,12 @@ theorem ofLineBundleClass_injective {k : Type u} [Field k] (f : X ⟶ Spec (.of 
     Function.Injective (ofLineBundleClass f) := by
   rw [injective_iff_map_eq_zero, Additive.forall]
   intro a ha
-  -- `a` becomes trivial on the fibre over some `K`-point of `Spec k`.
+  -- `a` becomes trivial on the fibre over some `K`-point of `Spec k`, a base change of `X`.
   obtain ⟨s⟩ : Nonempty (Spec (.of k)) := inferInstance
   obtain ⟨K, _, ψ, -, hψ⟩ := exists_pullback_eq_one_of_ofLineBundleClass_eq_zero _ ha s
-  -- That fibre is the base change of `X` along the field extension `k → K` defined by `ψ`.
-  let _ : Algebra k K := (Spec.preimage ψ).hom.toAlgebra
-  have hξ : Spec.map (CommRingCat.ofHom (algebraMap k K)) = ψ := by
-    rw [RingHom.algebraMap_toAlgebra, CommRingCat.ofHom_hom, Spec.map_preimage]
-  have H : IsPullback (pullback.snd ψ f)
-      (pullback.fst ψ f) f
-      (Spec.map (CommRingCat.ofHom (algebraMap k K))) := by
-    rw [hξ]
-    exact (IsPullback.of_hasPullback ψ _).flip
   rw [ofMul_eq_zero]
-  exact LineBundleClass.pullback_injective H (by rw [hψ, LineBundleClass.pullback_one])
+  exact LineBundleClass.pullback_injective (IsPullback.of_hasPullback ψ f).flip
+    (by rw [hψ, LineBundleClass.pullback_one])
 
 end picardSheafPoints
 
