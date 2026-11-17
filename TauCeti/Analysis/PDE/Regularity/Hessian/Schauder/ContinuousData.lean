@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Distribution.TestFunction.Integral
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Projection
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -581,15 +582,6 @@ private theorem tendsto_integral_laplacian_smul_approx {e : Fin 2 → E} (he : O
         continuousAt_const.mul ((continuousAt_F hx2).comp (continuousAt_const.add continuousAt_id))
       exact hcont.tendsto.mono_left nhdsWithin_le_nhds
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- Integrating against a test function on `Ω` only sees the integrand on `Ω`. -/
-private theorem integral_smul_congr_of_eqOn (φ : 𝓓(Ω, ℝ)) {g₁ g₂ : E → ℝ}
-    (h : EqOn g₁ g₂ Ω) : ∫ x, (φ : E → ℝ) x • g₁ x ∂μ = ∫ x, (φ : E → ℝ) x • g₂ x ∂μ := by
-  refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
-  by_cases hx : x ∈ (Ω : Set E)
-  · simp only [h hx]
-  · simp [φ.zero_on_compl hx]
-
 omit [FiniteDimensional ℝ E] in
 /-- Dominated convergence for `∫ φ Δuₜ` as `t → 0⁺`, with the uniform bound on `Δuₜ` on the
 support of `φ`, where `‖x‖² + t ≤ s₀ < 1` for `0 < t < δ`. -/
@@ -662,7 +654,7 @@ private theorem integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball {e : 
     have hc : ContDiffOn ℝ 2 (approx e t) Ω := fun x hx ↦
       (contDiffAt_approx e (hs x hx).1 ((hs x hx).2.trans_lt hs₀)).contDiffWithinAt
     rw [hc.integral_laplacian_smul_eq_integral_smul_laplacian φ]
-    exact integral_smul_congr_of_eqOn φ fun x hx ↦
+    exact φ.integral_smul_congr_of_eqOn fun x hx ↦
       laplacian_approx he (hs x hx).1 ((hs x hx).2.trans_lt hs₀)
   exact tendsto_nhds_unique ((tendsto_integral_laplacian_smul_approx he φ).congr'
       (by filter_upwards [Ioo_mem_nhdsGT hδ] with t ht using hgreen t ht))
@@ -678,8 +670,11 @@ theorem integral_laplacian_smul_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orth
       ∫ x, (φ : E → ℝ) x • laplacianQuadraticSqrtNegLog e x ∂μ := by
   -- The compact support of `φ` lies in a smaller ball `B(0, r)`, on which `φ` is a test function.
   obtain ⟨r, hr, hφr⟩ := exists_lt_subset_ball (isClosed_tsupport _) (φ.tsupport_subset.trans hΩ)
-  exact integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball he hr
-    (Ω := ⟨ball 0 r, isOpen_ball⟩) subset_rfl ⟨φ, φ.contDiff, φ.hasCompactSupport, hφr⟩
+  let ψ : 𝓓((⟨ball (0 : E) r, isOpen_ball⟩ : Opens E), ℝ) :=
+    ⟨φ, φ.contDiff, φ.hasCompactSupport, hφr⟩
+  have hψ : (ψ : E → ℝ) = φ := TestFunction.coe_mk
+  rw [← hψ]
+  exact integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball he hr subset_rfl ψ
 
 end Distribution
 
@@ -711,7 +706,7 @@ theorem not_exists_contDiffOn_laplacian_eq_laplacianQuadraticSqrtNegLog {e : Fin
       (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) fun φ ↦ ?_
     rw [hvΩ.integral_laplacian_smul_eq_integral_smul_laplacian φ,
       integral_laplacian_smul_quadraticSqrtNegLog _ he (ball_subset_ball (min_le_right _ _)) φ]
-    exact integral_smul_congr_of_eqOn φ (hΔv.mono hΩU)
+    exact φ.integral_smul_congr_of_eqOn (hΔv.mono hΩU)
   -- By Weyl's lemma `v - u` is harmonic, hence `C²`, and then so is `u = v - (v - u)`.
   have hharm := (TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn
     (hvΩ.continuousOn.sub hu.continuousOn)).2 hw
