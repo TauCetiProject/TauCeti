@@ -12,6 +12,7 @@ import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 import Mathlib.Topology.Algebra.Group.Matrix
 import TauCeti.Analysis.Matrix.GeneralLinearGroup.Connected
 import TauCeti.Analysis.Matrix.SpecialLinearGroup.Connected
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 import TauCeti.Topology.Algebra.Group.Goursat
 
 /-!
@@ -206,30 +207,17 @@ theorem isClosed_determinantModulusOne :
       Set.ext fun g => by simp [Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply]]
   exact isClosed_eq (continuous_norm.comp Units.continuous_val.matrix_det) continuous_const
 
-private noncomputable def singleDiagUnit (i₀ : ι) (u : ℂˣ) : GL ι ℂ where
-  val := Matrix.diagonal (Function.update (fun _ => (1 : ℂ)) i₀ (u : ℂ))
-  inv := Matrix.diagonal (Function.update (fun _ => (1 : ℂ)) i₀ ((u⁻¹ : ℂˣ) : ℂ))
-  val_inv := by
-    rw [Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-    exact congrArg Matrix.diagonal (funext fun i => by by_cases hi : i = i₀ <;> simp [hi])
-  inv_val := by
-    rw [Matrix.diagonal_mul_diagonal, ← Matrix.diagonal_one]
-    exact congrArg Matrix.diagonal (funext fun i => by by_cases hi : i = i₀ <;> simp [hi])
-
-private theorem det_singleDiagUnit (i₀ : ι) (u : ℂˣ) :
-    (singleDiagUnit i₀ u : Matrix ι ι ℂ).det = (u : ℂ) := by
-  simp [singleDiagUnit, Matrix.det_diagonal, Finset.prod_update_of_mem (Finset.mem_univ i₀)]
-
-private theorem continuous_singleDiagUnit (i₀ : ι) : Continuous (singleDiagUnit i₀) :=
-  Units.continuous_iff.mpr
-    ⟨(continuous_pi fun i => by
-        by_cases hi : i = i₀
-        · subst hi; simpa [singleDiagUnit] using Units.continuous_val
-        · simp [hi, continuous_const]).matrix_diagonal,
-     (continuous_pi fun i => by
-        by_cases hi : i = i₀
-        · subst hi; simpa [singleDiagUnit] using (Units.continuous_coe_inv (M := ℂ))
-        · simp [hi, continuous_const]).matrix_diagonal⟩
+private theorem continuous_diagGL_mulSingle (i₀ : ι) :
+    Continuous fun u : ℂˣ => diagGL (Pi.mulSingle i₀ u) :=
+  (Units.continuous_iff.mpr
+    ⟨by
+      simpa only [Function.comp_def, diagGL_coe] using
+        (continuous_pi fun i => Units.continuous_val.comp (continuous_apply i)).matrix_diagonal,
+     by
+      simpa only [Function.comp_def, ← map_inv, diagGL_coe, Pi.inv_apply] using
+        (continuous_pi fun i =>
+          (Units.continuous_coe_inv (M := ℂ)).comp (continuous_apply i)).matrix_diagonal⟩).comp
+    (continuous_mulSingle i₀)
 
 instance instPathConnectedSpaceDeterminantModulusOne :
     PathConnectedSpace (determinantModulusOne ι) := by
@@ -245,23 +233,23 @@ instance instPathConnectedSpaceDeterminantModulusOne :
      by simpa [expCircle, Function.comp_def, ← Complex.exp_neg] using
        Complex.continuous_exp.comp (Complex.continuous_ofReal.mul continuous_const).neg⟩
   let param : SpecialLinearGroup ι ℂ × ℝ → (determinantModulusOne ι).goursatFst := fun p =>
-    ⟨singleDiagUnit i₀ (expCircle p.2) * SpecialLinearGroup.toGL p.1, by
-      simp [expCircle, Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply,
-        det_singleDiagUnit, Complex.norm_exp_ofReal_mul_I]⟩
+    ⟨diagGL (Pi.mulSingle i₀ (expCircle p.2)) * SpecialLinearGroup.toGL p.1, by
+      simp [expCircle, Subgroup.mem_goursatFst, Complex.norm_exp_ofReal_mul_I]⟩
   refine Function.Surjective.pathConnectedSpace (f := param) (fun ⟨g, hg⟩ => ?_)
-    ((((continuous_singleDiagUnit i₀).comp (hexp_cont.comp continuous_snd)).mul
+    ((((continuous_diagGL_mulSingle i₀).comp (hexp_cont.comp continuous_snd)).mul
       (SpecialLinearGroup.isClosedEmbedding_toGL.continuous.comp continuous_fst)).subtype_mk _)
   have hgnorm : ‖(g : Matrix ι ι ℂ).det‖ = 1 := by
     simpa [Subgroup.mem_goursatFst, GeneralLinearGroup.val_det_apply] using hg
   let θ := Complex.arg (g : Matrix ι ι ℂ).det
-  have hexp : (singleDiagUnit i₀ (expCircle θ)).det = g.det := Units.ext <| by
-    simpa [expCircle, GeneralLinearGroup.val_det_apply, det_singleDiagUnit, hgnorm] using
+  have hexp : (diagGL (Pi.mulSingle i₀ (expCircle θ))).det = g.det := Units.ext <| by
+    rw [det_diagGL, Fintype.prod_pi_mulSingle']
+    simpa [expCircle, GeneralLinearGroup.val_det_apply, hgnorm] using
       Complex.norm_mul_exp_arg_mul_I (g : Matrix ι ι ℂ).det
-  refine ⟨(⟨((singleDiagUnit i₀ (expCircle θ))⁻¹ * g : GL ι ℂ), by
+  refine ⟨(⟨((diagGL (Pi.mulSingle i₀ (expCircle θ)))⁻¹ * g : GL ι ℂ), by
     rw [← GeneralLinearGroup.val_det_apply, map_mul, map_inv, hexp, inv_mul_cancel,
       Units.val_one]⟩, θ), Subtype.ext ?_⟩
-  change singleDiagUnit i₀ (expCircle θ) * _ = g
-  rw [show SpecialLinearGroup.toGL _ = (singleDiagUnit i₀ (expCircle θ))⁻¹ * g from
+  change diagGL (Pi.mulSingle i₀ (expCircle θ)) * _ = g
+  rw [show SpecialLinearGroup.toGL _ = (diagGL (Pi.mulSingle i₀ (expCircle θ)))⁻¹ * g from
     Units.ext (SpecialLinearGroup.coe_GL_coe_matrix _), mul_inv_cancel_left]
 
 theorem determinantEqual_lt_determinantModulusOne [Nonempty ι] :
@@ -269,10 +257,11 @@ theorem determinantEqual_lt_determinantModulusOne [Nonempty ι] :
   obtain ⟨i₀⟩ := ‹Nonempty ι›
   refine lt_of_le_of_ne determinantEqual_le_determinantModulusOne fun heq => ?_
   let u : ℂˣ := Units.mk0 Complex.I Complex.I_ne_zero
-  have hmem : (singleDiagUnit i₀ u, (1 : GL ι ℂ)) ∈ determinantModulusOne ι := by
-    simp [u, mem_determinantModulusOne_iff, GeneralLinearGroup.val_det_apply, det_singleDiagUnit]
-  rw [← heq, mem_determinantEqual_iff, Units.ext_iff] at hmem
-  simpa [u, GeneralLinearGroup.val_det_apply, det_singleDiagUnit] using congrArg Complex.im hmem
+  have hmem : (diagGL (Pi.mulSingle i₀ u), (1 : GL ι ℂ)) ∈ determinantModulusOne ι := by
+    simp [u, mem_determinantModulusOne_iff]
+  rw [← heq, mem_determinantEqual_iff, det_diagGL, Fintype.prod_pi_mulSingle',
+    Units.ext_iff] at hmem
+  simpa [u] using congrArg Complex.im hmem
 
 /-- **`determinantModulusOne ι` fails complex closure** for nonempty `ι`. -/
 theorem not_forall_pairExp_complex_smul_mem_determinantModulusOne [Nonempty ι] :

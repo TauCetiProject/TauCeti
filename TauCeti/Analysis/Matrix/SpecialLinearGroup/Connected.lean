@@ -16,7 +16,7 @@ import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 `Matrix.SpecialLinearGroup n ℂ` is path connected for every finite index type `n`
 (`Matrix.SpecialLinearGroup.instPathConnectedSpace`). For `|n| ≤ 1` it is a subsingleton
-(`Matrix.SpecialLinearGroup.instSubsingletonOfSubsingleton`); for `|n| ≥ 2`,
+(`Matrix.SpecialLinearGroup.subsingleton_of_subsingleton`); for `|n| ≥ 2`,
 `Matrix.SpecialLinearGroup.diagonal_transvection_induction'` reduces connectivity to affine paths of
 elementary transvections and exponential paths `t ↦ diag2n hij (exp (t • log c)) _` of two-entry
 determinant-one diagonal matrices.
@@ -37,15 +37,6 @@ open Matrix Topology
 namespace Matrix.SpecialLinearGroup
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
-
-/-- In size zero or one, `SL(n, R)` is a subsingleton (`det [[c]] = c = 1`). -/
-instance instSubsingletonOfSubsingleton {R : Type*} [CommRing R] [Subsingleton n] :
-    Subsingleton (SpecialLinearGroup n R) :=
-  ⟨fun A B => Subtype.ext <| Matrix.ext fun i j => by
-    let : Unique n := uniqueOfSubsingleton i
-    have hdet : ∀ M : SpecialLinearGroup n R, (M : Matrix n n R) default default = 1 := fun M => by
-      simpa [Matrix.det_unique] using M.2
-    rw [Unique.eq_default i, Unique.eq_default j, hdet A, hdet B]⟩
 
 private theorem joined_one_transvection {i j : n} (hij : i ≠ j) (a : ℂ) :
     Joined (1 : SpecialLinearGroup n ℂ) (transvection hij a) := by
