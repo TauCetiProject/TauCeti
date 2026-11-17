@@ -49,7 +49,9 @@ of a fixed point of the return map over one period is a loop depending continuou
 point, and on a manifold null-homotopy of such a family of loops is locally constant
 (`isClopen_setOf_homotopic_refl`). So the initial points of the contractible solutions form a
 closed subset of the compact set of fixed points, and a compact set of nondegenerate, hence
-isolated, fixed points is finite.
+isolated, fixed points is finite; for the same reason, a `T`-periodic solution approximated
+uniformly through an inducing map by contractible `T`-periodic curves is itself contractible
+(`TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly`).
 
 ## Main definitions
 
@@ -63,6 +65,10 @@ isolated, fixed points is finite.
 
 * `TauCeti.mem_periodicSolutions_const_iff`: the periodic solutions of an autonomous field are its
   periodic integral curves.
+* `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly` and
+  `TauCeti.mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi`: a `T`-periodic solution that
+  is a uniform limit (through an inducing map) of contractible `T`-periodic loops, in particular
+  along a half-cylinder `(a, ∞) × ℝ` with one contractible slice, is contractible.
 * `TauCeti.timeDependentFlowOf_add_period_of_mem`: translating both times by a period of the field
   preserves the domain and the flow.
 * `TauCeti.mem_timeDependentFlowDomain_of_isFixedPt`: for `T ≠ 0`, the trajectory of a fixed point
@@ -70,6 +76,10 @@ isolated, fixed points is finite.
 * `TauCeti.timeDependentFlowOf_add_period` and `TauCeti.timeDependentFlowOf_add_period_eq_iff`:
   for a complete suspension, the flow over one more period is the return map followed by the flow,
   so points at times `t + T` and `t` match exactly across the inverse return map.
+* `TauCeti.exists_mem_nhds_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt` and
+  `TauCeti.IsNondegenerateFixedPt.exists_mem_nhds_forall_mem_periodicSolutions_eq`: a solution
+  whose value at time `s` is an isolated (in particular, nondegenerate) fixed point of the return
+  map is isolated among `T`-periodic solutions at time `s`.
 * `TauCeti.finite_periodicSolutions`: on a compact boundaryless finite-dimensional manifold, a
   field whose periodic solutions are all nondegenerate has finitely many of them.
 * `TauCeti.finite_contractiblePeriodicSolutions`: the same for the contractible periodic solutions,
@@ -88,8 +98,8 @@ public section
 
 noncomputable section
 
-open Function Set
-open scoped Manifold
+open Filter Function Set
+open scoped Manifold Topology
 
 namespace TauCeti
 
@@ -137,6 +147,37 @@ theorem mem_contractiblePeriodicSolutions {γ : ℝ → M} :
 theorem contractiblePeriodicSolutions_subset :
     contractiblePeriodicSolutions X T ⊆ periodicSolutions X T :=
   fun _ hγ ↦ hγ.1
+
+/-- **Uniform limits of contractible periodic curves are contractible periodic solutions**
+(`Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly` on a charted space). -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly {ι F : Type*} {l : Filter ι}
+    [UniformSpace F] {K : Set M} {e : M → F} (hT : 0 < T)
+    (he : Topology.IsInducing (K.domRestrict e)) {u : ι → ℝ → M}
+    (huc : ∀ᶠ i in l, Continuous (u i)) (huper : ∀ᶠ i in l, Periodic (u i) T)
+    (huK : ∀ᶠ i in l, ∀ t, u i t ∈ K) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hγK : ∀ t, γ t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u i t)) (e ∘ γ) l)
+    (hnull : ∃ᶠ i in l, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u i t) :
+    γ ∈ contractiblePeriodicSolutions X T :=
+  let _ := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ := I.semilocallySimplyConnectedSpace M
+  ⟨hγ, Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly hγ.2
+    (continuous_of_mem_periodicSolutions hγ) hT he huc huper huK hγK hconv hnull⟩
+
+/-- **Uniform slice limits along a half-cylinder with a contractible slice are contractible**
+(`Function.Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi` on a charted space). -/
+theorem mem_contractiblePeriodicSolutions_of_tendstoUniformly_Ioi {ι F : Type*} {l : Filter ι}
+    [l.NeBot] [UniformSpace F] [T2Space F] {K : Set M} {e : M → F} (hT : 0 < T) (he : Continuous e)
+    (hK : IsCompact K) (he_inj : InjOn e K) {a : ℝ} {u : ℝ × ℝ → M}
+    (hu : ContinuousOn u (Ioi a ×ˢ univ)) (huper : ∀ s, a < s → Periodic (fun t ↦ u (s, t)) T)
+    (huK : ∀ s, a < s → ∀ t, u (s, t) ∈ K)
+    (hnull : ∃ s > a, ∃ g : C(AddCircle T, M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = u (s, t))
+    {φ : ι → ℝ} (hφ : ∀ᶠ i in l, a < φ i) {γ : ℝ → M} (hγ : γ ∈ periodicSolutions X T)
+    (hγK : ∀ t, γ t ∈ K) (hconv : TendstoUniformly (fun i t ↦ e (u (φ i, t))) (e ∘ γ) l) :
+    γ ∈ contractiblePeriodicSolutions X T :=
+  let _ := I.locallyPathConnectedSpace_of_chartedSpace M
+  let _ := I.semilocallySimplyConnectedSpace M
+  ⟨hγ, Periodic.exists_nullhomotopic_addCircle_of_tendstoUniformly_Ioi hγ.2
+    (continuous_of_mem_periodicSolutions hγ) hT he hK he_inj hu huper huK hnull hφ hγK hconv⟩
 
 section Flow
 
@@ -273,6 +314,36 @@ theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : 
       timeDependentFlowOf X s t x :=
   (rfl)
 
+omit [CompleteSpace E] in
+/-- **A solution starting at an isolated fixed point of the return map is isolated among periodic
+solutions.** If `X` is jointly `C¹`, `γ` solves `γ' t = X t (γ t)` for all `t`, and no point
+`y ≠ γ s` near `γ s` is fixed by the return map `timeDependentFlowOf X s (s + T)`, then `γ s` has a
+neighbourhood `U` such that every `T`-periodic solution passing through `U` at time `s` equals
+`γ`. -/
+theorem exists_mem_nhds_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt
+    {γ : ℝ → M}
+    (hγ : ∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t))))
+    (hiso : ∀ᶠ y in 𝓝[≠] γ s, ¬IsFixedPt (timeDependentFlowOf X s (s + T)) y) :
+    ∃ U ∈ 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s ∈ U → η = γ := by
+  obtain ⟨U, hU, hU'⟩ := (eventually_nhdsWithin_iff.1 hiso).exists_mem
+  refine ⟨U, hU, fun η hη hηU ↦ ?_⟩
+  have hs : s ∈ Ioo (s - |T| - 1) (s + |T| + 1) :=
+    ⟨by linarith [abs_nonneg T], by linarith [abs_nonneg T]⟩
+  have hsT : s + T ∈ Ioo (s - |T| - 1) (s + |T| + 1) :=
+    ⟨by linarith [neg_abs_le T], by linarith [le_abs_self T]⟩
+  have hfix : IsFixedPt (timeDependentFlowOf X s (s + T)) (η s) :=
+    (timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hη.1 u) hs hsT).trans (hη.2 s)
+  have heq : η s = γ s := by
+    by_contra hne
+    exact hU' (η s) hηU (Set.mem_compl_singleton_iff.2 hne) hfix
+  funext t
+  have hst₁ : s ∈ Ioo (min s t - 1) (max s t + 1) :=
+    ⟨by linarith [min_le_left s t], by linarith [le_max_left s t]⟩
+  have hst₂ : t ∈ Ioo (min s t - 1) (max s t + 1) :=
+    ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
+  rw [← timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hη.1 u) hst₁ hst₂, heq,
+    timeDependentFlowOf_eq_of_hasMFDerivAt hX (fun u _ ↦ hγ u) hst₁ hst₂]
+
 section Complete
 
 variable (hc : IsCompleteVectorField (timeDependentSuspensionField X))
@@ -309,6 +380,22 @@ theorem timeDependentFlowOf_add_period_eq_iff (hT : Periodic X T) (s t : ℝ) (x
 end Complete
 
 end Flow
+
+/-- **A solution starting at a nondegenerate fixed point of the return map is isolated among
+periodic solutions.** Let `X` be a jointly `C¹` time-dependent vector field on a boundaryless
+manifold modelled on a finite-dimensional space. If `γ` solves `γ' t = X t (γ t)` for all `t` and
+`γ s` is a nondegenerate fixed point of the return map `timeDependentFlowOf X s (s + T)`, then
+`γ s` has a neighbourhood `U` such that every `T`-periodic solution passing through `U` at time `s`
+equals `γ`. -/
+theorem IsNondegenerateFixedPt.exists_mem_nhds_forall_mem_periodicSolutions_eq
+    [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
+    {γ : ℝ → M} (hnd : IsNondegenerateFixedPt I (timeDependentFlowOf X s (s + T)) (γ s))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 1
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
+    (hγ : ∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t ((1 : ℝ →L[ℝ] ℝ).smulRight (X t (γ t)))) :
+    ∃ U ∈ 𝓝 (γ s), ∀ η ∈ periodicSolutions X T, η s ∈ U → η = γ :=
+  exists_mem_nhds_forall_mem_periodicSolutions_eq_of_eventually_not_isFixedPt hX hγ
+    hnd.eventually_not_isFixedPt
 
 /-- **Finiteness of nondegenerate periodic solutions.** Let `X` be a jointly `C¹` time-dependent
 vector field on a compact boundaryless manifold modelled on a finite-dimensional space, `T`-periodic

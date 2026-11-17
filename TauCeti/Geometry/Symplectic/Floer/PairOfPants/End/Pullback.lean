@@ -14,7 +14,7 @@ import TauCeti.MeasureTheory.Function.Jacobian.Plane
 
 Let `ω` be a two-form on a manifold `M` and let `K` be a Hamiltonian perturbation on the pair of
 pants `S = ℂ ∖ {0, 1}` with values in functions on `M`, equal to `H_q(t) dt` beyond some height
-`T₀` on each end `q`. On the end `q`, the positive end chart `φ'_q(s, t) = φ_q(±s, ±t)`
+`T₀` on an end `q`. On the end `q`, the positive end chart `φ'_q(s, t) = φ_q(±s, ±t)`
 (`TauCeti.Floer.positiveEndChart`) is holomorphic, and beyond `T₀` it pulls `K` back to
 `H'_q(t) dt` for the positive end Hamiltonian `H'_q(t, x) = ±H_q(±t, x)`
 (`TauCeti.Floer.positiveEndHamiltonian`). This file transfers the Floer equation and the energy of
@@ -77,10 +77,10 @@ theorem hamiltonianVectorField_positiveEndHamiltonian_endSign_mul (q : Puncture)
 omit [IsManifold I (⊤ : ℕ∞) M] in
 /-- Beyond `T₀` on the end `q`, the components of `K` in the end coordinates are differentiable
 in the target point when the end Hamiltonian is. -/
-private theorem mdifferentiableAt_perturbation_positiveEndChart
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+private theorem mdifferentiableAt_perturbation_positiveEndChart {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t)) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1)
+    (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t)) {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1)
     (v : ℂ) (y : M) :
     MDifferentiableAt I 𝓘(ℝ)
       (fun x ↦ K (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) x v) y := by
@@ -92,15 +92,15 @@ private theorem mdifferentiableAt_perturbation_positiveEndChart
       H q (q.endCoord (Complex.equivRealProdCLM.symm (positiveEndChart q ζ))).im x *
         q.endAngularForm (Complex.equivRealProdCLM.symm (positiveEndChart q ζ)) v := by
     funext x
-    rw [hKH q _ x hre, smul_apply, smul_eq_mul]
+    rw [hKH _ x hre, smul_apply, smul_eq_mul]
   rw [h]
-  exact ((hHd q _) y).mul mdifferentiableAt_const
+  exact (hHd _ y).mul mdifferentiableAt_const
 
 /-- On the positive end beyond `T₀`, the pulled-back perturbation is `H'_q(t) dt`. -/
-private theorem perturbedMFDeriv_comp_positiveEndChart_eq
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+private theorem perturbedMFDeriv_comp_positiveEndChart_eq {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {u : ℝ × ℝ → M} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) :
+    (hH : Periodic (H q) 1) {u : ℝ × ℝ → M} {ζ : ℝ × ℝ} (hζ : T₀ ≤ ζ.1) :
     ω.perturbedMFDeriv (fun _ _ ↦ 0) (fun w ↦ positiveEndHamiltonian H q w.2)
         (u ∘ positiveEndChart q) ζ =
       ω.perturbedMFDeriv
@@ -112,23 +112,23 @@ private theorem perturbedMFDeriv_comp_positiveEndChart_eq
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag)
         (u ∘ positiveEndChart q) ζ := by
   have hs := funext fun x ↦
-    perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH (q := q) hζ x
+    perturbationPullback_positiveEndChart_stdComplexLineReal_of_le hKH hζ x
   have ht := funext fun x ↦
-    perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH hH (q := q) hζ x
+    perturbationPullback_positiveEndChart_stdComplexLineImag_of_le hKH hH hζ x
   refine ContinuousLinearMap.ext fun v ↦ ?_
   rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hs, ht]
 
-/-- **The ends of a Floer pair of pants solve the Floer equation of a half-cylinder.** Let `K` be
-equal to `H_q(t) dt` beyond `T₀` on each end `q`, for differentiable `H_q`, and let `u` solve the
-Floer equation `(du - X_K)^{0,1} = 0` for the almost complex structure `J` at the image `φ'_q(ζ)`
-of a point `ζ` with `s ≥ T₀` of the positive end chart. Then `u ∘ φ'_q` solves the Floer equation
-`∂_s v + J (∂_t v - X_{H'_q}(v)) = 0` of a half-cylinder at `ζ`, for the end Hamiltonian `H'_q` of
-the positive end. -/
-theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+/-- **An end of a Floer pair of pants solves the Floer equation of a half-cylinder.** Let `K` be
+equal to `H_q(t) dt` beyond `T₀` on the end `q`, for a `1`-periodic differentiable `H_q`, and let
+`u` solve the Floer equation `(du - X_K)^{0,1} = 0` for the almost complex structure `J` at the
+image `φ'_q(ζ)` of a point `ζ` with `s ≥ T₀` of the positive end chart. Then `u ∘ φ'_q` solves the
+Floer equation `∂_s v + J (∂_t v - X_{H'_q}(v)) = 0` of a half-cylinder at `ζ`, for the end
+Hamiltonian `H'_q` of the positive end. -/
+theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
-    {u : ℝ × ℝ → M} {q : Puncture} {ζ : ℝ × ℝ}
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
+    {u : ℝ × ℝ → M} {ζ : ℝ × ℝ}
     {J : AlmostComplexStructure (TangentSpace I (u (positiveEndChart q ζ)))} (hζ : T₀ ≤ ζ.1)
     (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (positiveEndChart q ζ))
     (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
@@ -148,15 +148,15 @@ theorem isComplexLinearMap_perturbedMFDeriv_comp_positiveEndChart
     (isComplexLinearMap_fderiv_positiveEndChart q ζ) hfloer
 
 /-- **The energy of an end of a Floer pair of pants.** Let `K` be equal to `H_q(t) dt` beyond `T₀`
-on each end `q`, for differentiable `H_q`, and let `u` be differentiable on `S`. The energy of
-`u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
+on the end `q`, for a `1`-periodic differentiable `H_q`, and let `u` be differentiable on `S`. The
+energy of `u ∘ φ'_q` for the end Hamiltonian `H'_q` over the half-cylinder `(a, ∞) × [0, 1]`, for
 `a ≥ max T₀ 0`, is at most the energy of `u` over `S`. -/
-theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le
-    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+theorem setLIntegral_floerEnergyDensity_comp_positiveEndChart_le {q : Puncture}
+    (hKH : ∀ w x, T₀ ≤ q.endSign * (q.endCoord w).re →
       K w x = H q (q.endCoord w).im x • q.endAngularForm w)
-    (hH : ∀ q, Periodic (H q) 1) (hHd : ∀ q t, MDifferentiable I 𝓘(ℝ) (H q t))
+    (hH : Periodic (H q) 1) (hHd : ∀ t, MDifferentiable I 𝓘(ℝ) (H q t))
     {u : ℝ × ℝ → M} (hu : MDifferentiableOn 𝓘(ℝ, ℝ × ℝ) I u thricePuncturedSphereReal)
-    (q : Puncture) {a : ℝ} (ha₀ : 0 ≤ a) (haT : T₀ ≤ a) :
+    {a : ℝ} (ha₀ : 0 ≤ a) (haT : T₀ ≤ a) :
     ∫⁻ z in Ioi a ×ˢ Icc 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
         (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q) z) ≤
       ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity

@@ -48,6 +48,10 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 
 ## Main results
 
+* `exists_mem_nhds_forall_mem_periodicSolutions_hamiltonianVectorField_eq`
+  (in `TauCeti.SmoothTwoForm.IsNondegenerate`): an orbit of a `C²` time-dependent Hamiltonian
+  starting at a nondegenerate fixed point of the time-`T` map is isolated among `T`-periodic orbits
+  at `t = 0`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_periodicSolutions_hamiltonianVectorField`: a
   time-dependent Hamiltonian on a closed manifold whose 1-periodic orbits are all nondegenerate has
   finitely many 1-periodic orbits.
@@ -74,7 +78,7 @@ the comparison of the Floer homology of a `C²`-small Morse function with its Mo
 public section
 
 open Function
-open scoped ContDiff Manifold
+open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
@@ -84,6 +88,26 @@ variable {E H' M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDime
   [TopologicalSpace H'] {I : ModelWithCorners ℝ E H'} [TopologicalSpace M] [ChartedSpace H' M]
   [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M] {σ : SmoothTwoForm I M}
   {H : ℝ → M → ℝ}
+
+/-- **A nondegenerate Hamiltonian orbit is isolated.** Let `σ` be a nondegenerate two-form on a
+Hausdorff boundaryless manifold modelled on a finite-dimensional space, and `H` a jointly `C²`
+time-dependent Hamiltonian. If `γ` solves `γ' t = X_{H t}(γ t)` and `γ 0` is a nondegenerate fixed
+point of the time-`T` map `timeDependentFlowOf X_H 0 T`, then `γ 0` has a neighbourhood `U` such
+that every `T`-periodic orbit of `H` passing through `U` at `t = 0` equals `γ`. -/
+theorem exists_mem_nhds_forall_mem_periodicSolutions_hamiltonianVectorField_eq
+    (h : σ.IsNondegenerate) (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry H)) {T : ℝ}
+    {γ : ℝ → M}
+    (hγ : ∀ t, HasMFDerivAt 𝓘(ℝ, ℝ) I γ t
+      ((1 : ℝ →L[ℝ] ℝ).smulRight (σ.hamiltonianVectorField (H t) (γ t))))
+    (hnd : IsNondegenerateFixedPt I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 T) (γ 0)) :
+    ∃ U ∈ 𝓝 (γ 0), ∀ η ∈ periodicSolutions (fun t ↦ σ.hamiltonianVectorField (H t)) T,
+      η 0 ∈ U → η = γ := by
+  have hnd₀ : IsNondegenerateFixedPt I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) 0 (0 + T)) (γ 0) := by
+    simpa only [zero_add] using hnd
+  exact hnd₀.exists_mem_nhds_forall_mem_periodicSolutions_eq
+    (h.contMDiff_hamiltonianVectorField_uncurry (n := 1) (by simp) (hH.of_le (by norm_num))) hγ
 
 /-- **Finiteness of nondegenerate 1-periodic orbits.** Let `σ` be a nondegenerate two-form on a
 compact boundaryless manifold modelled on a finite-dimensional space, and `H` a time-dependent
