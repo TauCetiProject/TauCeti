@@ -29,8 +29,9 @@ reduction map below.
 * **Horizontal covectors.** A covector `p` at `q` lies in `μ⁻¹(0)` exactly when it vanishes on the
   orbit directions, that is on `ker dρ_q`
   (`TauCeti.CotangentBundle.momentMap_eq_zero_iff`). Such a covector is the pullback
-  `p = p' ∘ dρ_q` of exactly one covector `p'` at `ρ q`
-  (`TauCeti.CotangentBundle.momentMap_eq_zero_iff_exists_cotangentRel`); in terms of the cotangent
+  `p = p' ∘ dρ_q` of a covector `p'` at `ρ q`
+  (`TauCeti.CotangentBundle.momentMap_eq_zero_iff_exists_cotangentRel`), and of only one
+  (`TauCeti.CotangentBundle.eq_reductionMap_of_cotangentRel`); in terms of the cotangent
   relation of `ρ`, `(q, p)` is related to `(ρ q, p')`.
 * **The reduction map.** The map `(q, p) ↦ (ρ q, p ∘ R)`, for a right inverse `R` of `dρ_q`
   (`TauCeti.CotangentBundle.reductionMap`), sends a horizontal covector to that `p'`
@@ -134,8 +135,8 @@ theorem cotangentRel_reductionMap {z : CotangentBundle I Q}
   (cotangentRel_iff I IB ρ _ _).2
     ⟨rfl, ContinuousLinearMap.ext fun v ↦ (reductionMap_snd_apply_mfderiv hρ hz v).symm⟩
 
-/-- **Uniqueness of the reduced covector.** If `dρ_q` is surjective, every covector at `ρ q` whose
-pullback is `p` is the reduced covector. -/
+/-- **Uniqueness of the reduced covector.** If `dρ_q` has a continuous right inverse, every
+covector at `ρ q` whose pullback is `p` is the reduced covector. -/
 theorem eq_reductionMap_of_cotangentRel {z : CotangentBundle I Q} {w : CotangentBundle IB B}
     (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) (h : cotangentRel I IB ρ z w) :
     w = reductionMap I IB ρ z := by
@@ -144,8 +145,8 @@ theorem eq_reductionMap_of_cotangentRel {z : CotangentBundle I Q} {w : Cotangent
   refine ext rfl fun v ↦ ?_
   rw [reductionMap_snd_apply hρ, cotangentRel_snd_apply h, hρ.rightInverse_rightInverse]
 
-/-- If `dρ_q` is surjective, a covector `p` at `q` is related to a covector at `ρ q` exactly when
-`p` vanishes on `ker dρ_q`, and that covector is then the reduced covector. -/
+/-- If `dρ_q` has a continuous right inverse, a covector `p` at `q` is related to a covector at
+`ρ q` exactly when `p` vanishes on `ker dρ_q`, and that covector is then the reduced covector. -/
 theorem cotangentRel_iff_eq_reductionMap {z : CotangentBundle I Q} {w : CotangentBundle IB B}
     (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) :
     cotangentRel I IB ρ z w ↔
@@ -303,29 +304,6 @@ theorem mpullback_reductionMap_comp_symplecticForm [IsManifold IX ∞ X] (hρ : 
 
 end Smooth
 
-/-! ### Pullbacks along an invariant map -/
-
-section Action
-
-variable {G : Type*} [Group G] [MulAction G Q] [ContMDiffConstSMul I ∞ G Q] [IsManifold I 2 Q]
-
-/-- If `ρ` is invariant under `G`, then `g • (q, p)` is related to a covector exactly when `(q, p)`
-is: the pullbacks along `ρ` do not see the action. -/
-theorem cotangentRel_smul_iff (hinv : ∀ (g : G) q, ρ (g • q) = ρ q)
-    (hρd : ∀ q, MDifferentiableAt I IB ρ q) (g : G) (z : CotangentBundle I Q)
-    (w : CotangentBundle IB B) :
-    cotangentRel I IB ρ (g • z) w ↔ cotangentRel I IB ρ z w := by
-  have hcomp : ρ ∘ (Diffeomorph.constSmul I ∞ g : Q ≃ₘ⟮I, I⟯ Q) = ρ := by
-    rw [Diffeomorph.coe_constSmul]
-    exact funext fun q ↦ hinv g q
-  have h := cotangentRel_comp_iff I I IB z w
-    ((Diffeomorph.constSmul I ∞ g).mdifferentiable (by simp) _) (hρd _)
-  rw [hcomp] at h
-  rw [h]
-  simp only [Relation.Comp, cotangentRel_diffeomorph_iff, ← smul_def, exists_eq_left']
-
-end Action
-
 /-! ### The zero level of the cotangent moment map -/
 
 section MomentMap
@@ -357,9 +335,9 @@ theorem momentMap_eq_zero_iff
     rw [InfinitesimalAction.fundamental_apply, ← hker] at hmem
     exact h _ (LinearMap.mem_ker.1 hmem)
 
-/-- **The zero level consists of pullbacks.** If `dρ_q` is surjective and the vertical tangent
-vectors of `ρ` are the orbit directions, a covector at `q` lies in `μ⁻¹(0)` exactly when it is the
-pullback of a covector at `ρ q`. -/
+/-- **The zero level consists of pullbacks.** If `dρ_q` has a continuous right inverse and the
+vertical tangent vectors of `ρ` are the orbit directions, a covector at `q` lies in `μ⁻¹(0)`
+exactly when it is the pullback of a covector at `ρ q`. -/
 theorem momentMap_eq_zero_iff_exists_cotangentRel
     (hker : ∀ q, (mfderiv I IB ρ q).ker = (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
     {z : CotangentBundle I Q} (hρ : (mfderiv I IB ρ z.proj).HasRightInverse) :
@@ -368,8 +346,9 @@ theorem momentMap_eq_zero_iff_exists_cotangentRel
   exact ⟨fun hz ↦ ⟨_, cotangentRel_reductionMap hρ hz⟩,
     fun ⟨_, h⟩ ↦ ((cotangentRel_iff_eq_reductionMap hρ).1 h).1⟩
 
-/-- **The reduction map is onto.** If `ρ` is surjective with surjective differentials, every
-covector on `B` is the reduced covector of a covector in `μ⁻¹(0)`, namely of its pullback. -/
+/-- **The reduction map is onto.** If `ρ` is surjective and its differentials have continuous
+right inverses, every covector on `B` is the reduced covector of a covector in `μ⁻¹(0)`, namely
+of its pullback. -/
 theorem exists_momentMap_eq_zero_and_reductionMap_eq
     (hker : ∀ q, (mfderiv I IB ρ q).ker = (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
     (hsurj : Surjective ρ) (hρ : ∀ q, (mfderiv I IB ρ q).HasRightInverse)
@@ -385,9 +364,9 @@ theorem exists_momentMap_eq_zero_and_reductionMap_eq
 
 variable [ContMDiffConstSMul I ∞ G Q] [IsManifold I 2 Q]
 
-/-- **The reduction map is invariant on the zero level.** For a `G`-invariant map `ρ` with
-surjective differentials whose vertical tangent vectors are the orbit directions, the reduced
-covector of `g • (q, p)` is that of `(q, p)` whenever `μ(q, p) = 0`. -/
+/-- **The reduction map is invariant on the zero level.** For a `G`-invariant map `ρ` whose
+differentials have continuous right inverses and whose vertical tangent vectors are the orbit
+directions, the reduced covector of `g • (q, p)` is that of `(q, p)` whenever `μ(q, p) = 0`. -/
 theorem reductionMap_smul
     (hker : ∀ q, (mfderiv I IB ρ q).ker = (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
     (hinv : ∀ (g : G) q, ρ (g • q) = ρ q) (hρd : ∀ q, MDifferentiableAt I IB ρ q)
@@ -397,9 +376,10 @@ theorem reductionMap_smul
   (eq_reductionMap_of_cotangentRel (hρ _) ((cotangentRel_smul_iff hinv hρd g z _).2
     (cotangentRel_reductionMap (hρ _) ((momentMap_eq_zero_iff hker z).1 hz)))).symm
 
-/-- **The fibres of the reduction map on the zero level are the orbits.** Let `ρ` have surjective
-differentials, vertical tangent vectors the orbit directions, and fibres the `G`-orbits. Two
-covectors in `μ⁻¹(0)` have the same reduced covector exactly when they lie in one `G`-orbit. -/
+/-- **The fibres of the reduction map on the zero level are the orbits.** Let the differentials
+of `ρ` have continuous right inverses, its vertical tangent vectors be the orbit directions, and
+its fibres be the `G`-orbits. Two covectors in `μ⁻¹(0)` have the same reduced covector exactly
+when they lie in one `G`-orbit. -/
 theorem reductionMap_eq_reductionMap_iff
     (hker : ∀ q, (mfderiv I IB ρ q).ker = (InfinitesimalAction.fundamental IG G I Q).orbitTangent q)
     (hfib : ∀ q q', ρ q = ρ q' ↔ ∃ g : G, g • q = q') (hρd : ∀ q, MDifferentiableAt I IB ρ q)

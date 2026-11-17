@@ -19,11 +19,14 @@ relation between `(x, p)` and `(f x, q)` given by `p = q ∘ df_x`.
 
 The relation of the identity is equality, and the relation of a composite is exactly
 the composite of the relations. For diffeomorphisms it is the graph of the existing
-cotangent lift `Diffeomorph.cotangent`. Under `TauCeti.CotangentBundle.prodDiffeomorph`,
-the cotangent relation of a product map `Prod.map i₁ i₂` splits into the cotangent
-relations of its factors (`TauCeti.CotangentBundle.cotangentRel_prodMap_iff`). For
-constant maps, all target covectors over the constant value are related to the zero
-source covector; this illustrates why a relation is necessary for general maps.
+cotangent lift `Diffeomorph.cotangent`. For a map invariant under a group action, the
+relation does not see the cotangent-lifted action
+(`TauCeti.CotangentBundle.cotangentRel_smul_iff`). Under
+`TauCeti.CotangentBundle.prodDiffeomorph`, the cotangent relation of a product map
+`Prod.map i₁ i₂` splits into the cotangent relations of its factors
+(`TauCeti.CotangentBundle.cotangentRel_prodMap_iff`). For constant maps, all target
+covectors over the constant value are related to the zero source covector; this
+illustrates why a relation is necessary for general maps.
 
 The definition uses Mathlib's `mfderiv`, with its usual zero value at points where
 the map is not differentiable. The composition and product theorems assume
@@ -188,6 +191,28 @@ theorem cotangentRel_diffeomorph_iff (h : M ≃ₘ⟮I, J⟯ N)
     exact (Diffeomorph.cotangent_snd_apply_mfderiv h z v).symm
 
 end Diffeomorph
+
+section Action
+
+variable {G : Type*} [Group G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] [IsManifold I 2 M]
+variable {I J}
+
+/-- If `f` is invariant under `G`, then `g • (x, p)` is related to a covector exactly when `(x, p)`
+is: the pullbacks along `f` do not see the cotangent-lifted action. -/
+theorem cotangentRel_smul_iff {f : M → N} (hinv : ∀ (g : G) x, f (g • x) = f x)
+    (hf : ∀ x, MDifferentiableAt I J f x) (g : G) (z : CotangentBundle I M)
+    (w : CotangentBundle J N) :
+    cotangentRel I J f (g • z) w ↔ cotangentRel I J f z w := by
+  have hcomp : f ∘ (Diffeomorph.constSmul I ∞ g : M ≃ₘ⟮I, I⟯ M) = f := by
+    rw [Diffeomorph.coe_constSmul]
+    exact funext fun x ↦ hinv g x
+  have h := cotangentRel_comp_iff I I J z w
+    ((Diffeomorph.constSmul I ∞ g).mdifferentiable (by simp) _) (hf _)
+  rw [hcomp] at h
+  rw [h]
+  simp only [Relation.Comp, cotangentRel_diffeomorph_iff, ← smul_def, exists_eq_left']
+
+end Action
 
 section ProductMap
 
