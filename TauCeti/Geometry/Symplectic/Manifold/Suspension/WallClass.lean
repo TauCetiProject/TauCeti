@@ -91,10 +91,7 @@ theorem halfCupInsertionForm_two_smul_sub_apply_eq
       a + 1 - g := by
   have h2 := o.two_mul_halfCupInsertionForm_apply hn f h hl ![aₛ, aₜ]
   rw [cupInsertionForm_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_zero,
-    hst, (o.cupPairing hn f 2 h).apply_eq_apply_of_isOfFinAddOrder_sub_left
-      (isOfFinAddOrder_two_smul_sub_sub he hκ)] at h2
-  simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, ht,
-    hvt] at h2
+    hst, apply_two_smul_sub_right_eq ht hvt he hκ] at h2
   linarith
 
 /-- **The wall class is `q νₛ νₜ`.** Under the hypotheses of
