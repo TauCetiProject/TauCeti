@@ -101,15 +101,14 @@ private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J �
       _ ≤ ‖T.toContinuousLinearMap‖ * (|M| * (‖T.symm.toContinuousLinearMap‖ * ‖T (ξ w)‖)) := by
           gcongr
       _ = _ := by ring
-  · change D z + c.symm _ (ξ z) = 0
+  · beta_reduce
     rw [hc]
     rcases eq_or_ne (ξ z) 0 with h0 | h0
     · -- At a zero of `ξ` the inequality forces `D z = 0`.
       obtain ⟨M, hM⟩ := hb z hz
-      have hDz : D z = 0 := norm_le_zero_iff.1 (by simpa [h0] using hM.self_of_nhds)
-      simp [hDz, h0]
-    · rw [rankOneDivNormSq_apply_self _ (by simpa using h0), map_neg, T.symm_apply_apply,
-        add_neg_cancel]
+      simpa [h0] using hM.self_of_nhds
+    · rw [rankOneDivNormSq_apply_self _ (by simpa using h0), map_neg, T.symm_apply_apply]
+      simp only [D, add_neg_cancel]
 
 /-- **Unique continuation for a Cauchy–Riemann differential inequality.** On a connected open set
 `Ω`, a `C¹` map `ξ` into a finite-dimensional real normed space with
