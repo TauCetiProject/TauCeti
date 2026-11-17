@@ -103,7 +103,7 @@ theorem exists_contMDiff_homotopicRel (e : SmoothEmbedding J 𝓘(ℝ, V) ∞ M 
   have hF : Continuous F := e.contMDiff.continuous.comp f.continuous
   have hFW (x : N) : F x ∈ W := heW (mem_range_self (f x))
   -- A continuous positive radius `ε` such that the `ε x`-ball about `F x` lies in `W`.
-  obtain ⟨ε, hε, -, hεpos, hεW⟩ := hW.exists_continuous_pos_forall_dist_lt hF
+  obtain ⟨ε, hε, -, hεpos, hεW⟩ := hW.exists_continuous_forall_dist_lt hF
   obtain ⟨G, hGF, hGS, -⟩ := hF.exists_contMDiff_approx_and_eqOn I n hε
     (fun x ↦ hεpos x (hFW x)) hS hU
     (e.contMDiff.of_le (WithTop.coe_le_coe.2 le_top) |>.comp_contMDiffOn hfU)

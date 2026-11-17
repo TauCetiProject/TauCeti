@@ -34,7 +34,7 @@ continuous on the whole space and smooth for `t` near the ends. Mathlib's
 `Continuous.exists_contDiff_approx_and_eqOn` (A. Dedecker and P. Massot) approximates it by a
 smooth map `g` that is unchanged near the ends, within a continuous positive precision that keeps
 `g` invertible on the unit sphere and within the prescribed precision: the minimum of that
-precision and of the margin of invertibility (`IsOpen.exists_continuous_pos_forall_dist_lt`
+precision and of the margin of invertibility (`IsOpen.exists_continuous_forall_dist_lt`
 for the open set of invertible operators) plus the distance to the unit sphere. The
 homogeneous extensions `b t = HomogeneousSymbol.ofSphere m (g t)` are the required symbols, and
 they are elliptic by `HomogeneousSymbol.isElliptic_ofSphere_iff`. No compactness of the positions
@@ -199,7 +199,7 @@ theorem exists_contDiffOn_isElliptic_homotopy [FiniteDimensional ℝ X] [FiniteD
   -- the margin of invertibility of `G`, plus the distance to the sphere to make it positive,
   -- and at most `δ`.
   obtain ⟨ε, hε_cont, hε₀, hε_pos, hε_inv⟩ :=
-    ContinuousLinearMap.isOpen_setOfPred_isInvertible.exists_continuous_pos_forall_dist_lt hG_cont
+    ContinuousLinearMap.isOpen_setOfPred_isInvertible.exists_continuous_forall_dist_lt hG_cont
   obtain ⟨g, hg, hgG, hgS, -⟩ := hG_cont.exists_contDiff_approx_and_eqOn ⊤
     ((hε_cont.add (continuous_snd.norm.sub continuous_const).abs).min
       (hδ.comp (by fun_prop : Continuous fun q : (ℝ × X) × E ↦ (q.1.1, q.1.2, q.2))))

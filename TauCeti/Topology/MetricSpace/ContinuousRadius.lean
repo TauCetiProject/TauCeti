@@ -38,7 +38,7 @@ around a noncompact hypersurface.
 
 Along a continuous map `G` into a pseudometric space, an open set `U` has a continuous margin
 `ε ≥ 0`, positive wherever `G z ∈ U`, such that every point within `ε z` of `G z` lies in `U`
-(`IsOpen.exists_continuous_pos_forall_dist_lt`). It is the distance to the complement of `U`; for
+(`IsOpen.exists_continuous_forall_dist_lt`). It is the distance to the complement of `U`; for
 the open set of invertible operators it is a margin of invertibility.
 
 Reference: J. M. Lee, *Introduction to Smooth Manifolds*, second edition,
@@ -153,7 +153,7 @@ theorem exists_continuous_pos_forall_abs_lt [NormalSpace X] [ParacompactSpace X]
 /-- **A continuous margin inside an open set.** Along a continuous map `G` into a pseudometric
 space, an open set `U` has a continuous margin `ε ≥ 0`, positive wherever `G z ∈ U`, such that
 every point within `ε z` of `G z` lies in `U`. -/
-theorem exists_continuous_pos_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {U : Set M}
+theorem exists_continuous_forall_dist_lt {M : Type*} [PseudoMetricSpace M] {U : Set M}
     (hU : IsOpen U) {G : X → M} (hG : Continuous G) :
     ∃ ε : X → ℝ, Continuous ε ∧ (∀ x, 0 ≤ ε x) ∧ (∀ x, G x ∈ U → 0 < ε x) ∧
       ∀ x y, dist y (G x) < ε x → y ∈ U := by
