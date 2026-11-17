@@ -224,6 +224,12 @@ theorem IsKnot.exists_pow_componentPerm_apply_eq {G : GridDiagram n} (hG : G.IsK
   (G.isKnot_iff_componentPerm_isCycle.mp hG).exists_pow_eq (G.componentPerm_apply_ne_self c₀)
     (G.componentPerm_apply_ne_self c)
 
+/-- On a knot grid, any two columns lie in the same cycle of the component permutation. -/
+theorem IsKnot.sameCycle_componentPerm {G : GridDiagram n} (hG : G.IsKnot) (c₀ c : Fin n) :
+    G.componentPerm.SameCycle c₀ c :=
+  (G.isKnot_iff_componentPerm_isCycle.mp hG).sameCycle (G.componentPerm_apply_ne_self c₀)
+    (G.componentPerm_apply_ne_self c)
+
 /-- The **traversal index** of a column `c` from a base column `c₀` of a knot grid: the least
 number of steps of the component permutation leading from `c₀` to `c`. -/
 def IsKnot.traversalIndex {G : GridDiagram n} (hG : G.IsKnot) (c₀ c : Fin n) : ℕ :=
