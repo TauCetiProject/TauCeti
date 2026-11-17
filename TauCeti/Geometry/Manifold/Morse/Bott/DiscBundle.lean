@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Morse.Bott.Attachment
 public import TauCeti.Geometry.Manifold.Morse.Bott.Family
 public import TauCeti.Geometry.Manifold.Morse.Bott.NormalSubbundle
 public import TauCeti.Geometry.Manifold.Morse.Bott.Tubular
+import TauCeti.Topology.Compactness.LocallyCompact
 import TauCeti.Topology.FiberBundle.Separation
 
 /-!
@@ -66,6 +67,9 @@ section, such a sublevel lies in any given compact neighbourhood of the compact 
   sizes (`IsCriticalSubmanifold.zeroSection_mem_negativeDiscBundle`), and consists of negative
   normal vectors
   (`IsCriticalSubmanifold.mem_negativeNormalSpace_of_mem_negativeDiscBundle`).
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.negativeSphereBundle`: the negative sphere bundle
+  `S_ε = {v ∈ ν⁻ | -½ Hessₛ (v, v) = ε}`, contained in the negative disc bundle of the same size
+  (`IsCriticalSubmanifold.negativeSphereBundle_subset_negativeDiscBundle`).
 
 ## Main results
 
@@ -76,6 +80,9 @@ In the namespace `TauCeti.SmoothEmbedding`:
   a strong deformation retraction.
 * `exists_sublevel_union_iUnion_negativeDiscBundle_deformation`: the same for finitely many
   disjoint compact Morse–Bott submanifolds on one level, each with its own model.
+* `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle` and
+  `IsNondegenerateCriticalSubmanifold.isCompact_negativeSphereBundle`: over a compact Morse–Bott
+  submanifold the negative disc and sphere bundles of every size are compact.
 
 In the namespace `TauCeti.IsMorseBottFamily`:
 
@@ -148,6 +155,27 @@ theorem zeroSection_mem_negativeDiscBundle {ε : ℝ} (hε : 0 ≤ ε) (s : S) :
   (mem_negativeDiscBundle hn).2 ⟨zero_mem _, by
     rw [zeroSection_snd, LinearMap.map_zero₂, mul_zero, neg_zero]
     exact hε⟩
+
+/-- The **negative sphere bundle** of a critical submanifold, of size `ε`, relative to a fibre
+metric `g` on the normal spaces: the normal vectors `v` in the negative normal space with
+`-½ Hessₛ (v, v) = ε`, where `Hessₛ` is the normal Hessian. For a Morse–Bott submanifold and
+`ε > 0` its fibres are the boundary spheres of the ellipsoids forming the negative disc bundle of
+size `ε`; it is the part of that disc bundle along which it is attached to the sublevel below the
+critical level. -/
+def negativeSphereBundle (ε : ℝ) : Set (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
+  {x | x.2 ∈ h.negativeNormalSpace hn g x.proj ∧ -(2⁻¹ * h.normalHessian hn x.proj x.2 x.2) = ε}
+
+variable {h P g} in
+@[simp]
+theorem mem_negativeSphereBundle {ε : ℝ} {x : TotalSpace P fun s ↦ i.NormalSpace s hn} :
+    x ∈ h.negativeSphereBundle hn P g ε ↔
+      x.2 ∈ h.negativeNormalSpace hn g x.proj ∧ -(2⁻¹ * h.normalHessian hn x.proj x.2 x.2) = ε :=
+  Iff.rfl
+
+/-- The negative sphere bundle lies in the negative disc bundle of the same size. -/
+theorem negativeSphereBundle_subset_negativeDiscBundle (ε : ℝ) :
+    h.negativeSphereBundle hn P g ε ⊆ h.negativeDiscBundle hn P g ε :=
+  fun _ hx ↦ ⟨hx.1, hx.2.le⟩
 
 end IsCriticalSubmanifold
 
@@ -321,6 +349,24 @@ private theorem setOf_posSq_eq_zero_and_negSq_le (ε : ℝ) :
     simp
   refine ⟨fun ⟨ht, hs⟩ ↦ ⟨h.posPart_eq_zero hn g x ht, by rwa [hH (h.posPart_eq_zero hn g x ht)]⟩,
     fun ⟨hp, hs⟩ ↦ ⟨by simp [posSq, hp], by rwa [hH hp] at hs⟩⟩
+
+/-- The sphere bundle `{t = 0, s = ε}` of the normal form is the negative sphere bundle. -/
+private theorem setOf_posSq_eq_zero_and_negSq_eq (ε : ℝ) :
+    {x | h.posSq hn g x = 0 ∧ h.negSq hn g x = ε} = h.negativeSphereBundle hn P g ε := by
+  ext x
+  have hD := Set.ext_iff.1 (h.setOf_posSq_eq_zero_and_negSq_le hn g ε) x
+  refine ⟨fun ⟨ht, hs⟩ ↦ ⟨(hD.1 ⟨ht, hs.le⟩).1, ?_⟩, fun hx ↦ ?_⟩
+  · rw [← hs, h.two_inv_mul_normalHessian hn g x, ht]
+    ring
+  · obtain ⟨ht, -⟩ := hD.2 ((h.negativeSphereBundle_subset_negativeDiscBundle hn P g ε) hx)
+    refine ⟨ht, ?_⟩
+    rw [← hx.2, h.two_inv_mul_normalHessian hn g x, ht]
+    ring
+
+private theorem rescale_rescale (a b a' b' : ℝ) :
+    h.rescale hn g a b (h.rescale hn g a' b' x) = h.rescale hn g (a * a') (b * b') x := by
+  rw [rescale_def, rescale_def, h.negPart_smul_add_smul, h.posPart_smul_add_smul, smul_smul,
+    smul_smul, rescale_def]
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -564,6 +610,94 @@ theorem exists_sublevel_union_negativeDiscBundle_deformation [T2Space M]
     Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from
       Set.ext fun _ ↦ by simp only [mem_iUnion, Unique.exists_iff]] at hr
   exact ⟨hsrc (), hr⟩
+
+/-- **The negative disc bundle of a compact Morse–Bott submanifold is compact.** Let `i : S → M`
+be a nondegenerate critical submanifold of a smooth function, with `S` compact and Hausdorff, and
+let `g` be a smooth fibre metric on its normal bundle. Then for every `ε` the negative disc bundle
+`D_ε = {v ∈ ν⁻ | -½ Hessₛ (v, v) ≤ ε}` relative to `g` is a compact subset of the total space of the
+normal bundle. -/
+theorem isCompact_negativeDiscBundle [T2Space S] [CompactSpace S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) (ε : ℝ) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    IsCompact (h.negativeDiscBundle hn P g.toRiemannianMetric ε) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  have : LocallyCompactSpace (ModelProd H' P) := (J.prod 𝓘(ℝ, P)).locallyCompactSpace
+  have : LocallyCompactSpace (TotalSpace P fun s ↦ i.NormalSpace s hn) :=
+    ChartedSpace.locallyCompactSpace (ModelProd H' P) _
+  obtain ⟨hs, ht, hσ⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
+  set gR := g.toRiemannianMetric
+  -- The rays `a ↦ (a u, a w)`, `a ∈ [0, 1]`, join each normal vector to the compact zero section.
+  obtain ⟨m, hm, -, hmK⟩ := exists_pos_setOf_lt_subset_and_isCompact
+    (isCompact_range (Bundle.contMDiff_zeroSection (n := ∞) (IB := J) _ _).continuous) isOpen_univ
+    (subset_univ _) (hs.continuous.add (continuous_const.mul ht.continuous))
+    (q := fun x ↦ h.negSq hn gR x + 2 * h.posSq hn gR x) (fun x hx ↦ ⟨x.proj,
+      h.eq_zeroSection_of_negSq_eq_zero hn gR x
+        (by linarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])
+        (by linarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])⟩)
+    (fun a ↦ h.rescale hn gR a a) (fun x ↦ (hσ.continuous.comp ((continuous_id.prodMk
+      continuous_id).prodMk continuous_const)).continuousOn)
+    (fun a ha x ↦ by
+      have ha2 : a ^ 2 ≤ 1 := pow_le_one₀ ha.1 ha.2
+      rw [h.negSq_rescale, h.posSq_rescale]
+      nlinarith [h.negSq_nonneg hn gR x, h.posSq_nonneg hn gR x])
+    (h.rescale_one_one hn gR) (fun x ↦ ⟨x.proj, (h.rescale_zero_zero hn gR x).symm⟩)
+  have hD : IsClosed (h.negativeDiscBundle hn P gR ε) := by
+    rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR ε]
+    exact (isClosed_eq ht.continuous continuous_const).inter
+      (isClosed_le hs.continuous continuous_const)
+  set δ := m / 2
+  have hK := hmK δ (half_lt_self hm)
+  -- A disc bundle of size at most `δ` lies in the compact set `{s + 2t ≤ δ}`.
+  have hDK (ε : ℝ) (hεδ : ε ≤ δ) :
+      h.negativeDiscBundle hn P gR ε ⊆ {x | h.negSq hn gR x + 2 * h.posSq hn gR x ≤ δ} := by
+    rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR ε]
+    rintro x ⟨htx, hsx⟩
+    rw [mem_ofPred_eq, htx, mul_zero, add_zero]
+    exact hsx.trans hεδ
+  rcases le_or_gt ε δ with hεδ | hεδ
+  · exact hK.of_isClosed_subset hD (hDK ε hεδ)
+  -- A larger one is the image of `D_δ` under the rescaling by `r = √(ε / δ)`.
+  have hεδ' : 0 < ε / δ := div_pos ((half_pos hm).trans hεδ) (half_pos hm)
+  set r := √(ε / δ)
+  have hr : 0 < r := Real.sqrt_pos.2 hεδ'
+  have hσr : Continuous (h.rescale hn gR r r) :=
+    hσ.continuous.comp ((continuous_const (y := ((r, r) : ℝ × ℝ))).prodMk continuous_id)
+  refine ((hK.image hσr).of_isClosed_subset hD) fun x hx ↦ ⟨h.rescale hn gR r⁻¹ r⁻¹ x,
+    hDK δ le_rfl ?_, by rw [h.rescale_rescale, mul_inv_cancel₀ hr.ne', h.rescale_one_one]⟩
+  rw [← h.setOf_posSq_eq_zero_and_negSq_le hn gR] at hx ⊢
+  have hr2 : (r⁻¹) ^ 2 * ε = δ := by
+    rw [inv_pow, Real.sq_sqrt hεδ'.le, inv_div, div_mul_cancel₀ _ ((half_pos hm).trans hεδ).ne']
+  refine ⟨by rw [h.posSq_rescale, hx.1, mul_zero], ?_⟩
+  rw [h.negSq_rescale, ← hr2]
+  exact mul_le_mul_of_nonneg_left hx.2 (sq_nonneg _)
+
+/-- **The negative sphere bundle of a compact Morse–Bott submanifold is compact.** Under the
+hypotheses of `IsNondegenerateCriticalSubmanifold.isCompact_negativeDiscBundle`, the negative
+sphere bundle `S_ε = {v ∈ ν⁻ | -½ Hessₛ (v, v) = ε}` is a compact subset of the total space of the
+normal bundle, for every `ε`. -/
+theorem isCompact_negativeSphereBundle [T2Space S] [CompactSpace S]
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) ∞ f)
+    (hdim : Module.finrank ℝ P = Module.finrank ℝ E - Module.finrank ℝ E')
+    (g : letI := i.normalSpaceFiberBundle hn hdim
+      letI := i.normalSpaceVectorBundle hn hdim
+      ContMDiffRiemannianMetric J ∞ P fun s ↦ i.NormalSpace s hn) (ε : ℝ) :
+    letI := i.normalSpaceFiberBundle hn hdim
+    letI := i.normalSpaceVectorBundle hn hdim
+    IsCompact (h.negativeSphereBundle hn P g.toRiemannianMetric ε) := by
+  let := i.normalSpaceFiberBundle hn hdim
+  let := i.normalSpaceVectorBundle hn hdim
+  obtain ⟨hs, ht, -⟩ := h.contMDiff_negSq_posSq_rescale hn hfs hdim g
+  refine (h.isCompact_negativeDiscBundle hn hfs hdim g ε).of_isClosed_subset ?_
+    (h.negativeSphereBundle_subset_negativeDiscBundle hn P _ ε)
+  rw [← h.setOf_posSq_eq_zero_and_negSq_eq hn g.toRiemannianMetric ε]
+  exact (isClosed_eq ht.continuous continuous_const).inter
+    (isClosed_eq hs.continuous continuous_const)
 
 end IsNondegenerateCriticalSubmanifold
 

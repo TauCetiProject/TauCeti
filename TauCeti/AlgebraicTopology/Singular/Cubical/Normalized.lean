@@ -249,6 +249,15 @@ theorem induction_on {n : ℕ} {P : NormalizedCubicalChain X R n → Prop}
       rw [← smul_single_one, Submodule.Quotient.mk_smul]
       exact smul a _ (ofCube c)
 
+/-- A space without points has no nonzero normalized chains. -/
+instance [IsEmpty X] {n : ℕ} : Subsingleton (NormalizedCubicalChain X R n) :=
+  subsingleton_of_forall_eq 0 fun g ↦ by
+    induction g using induction_on with
+    | zero => rfl
+    | add a b ha hb => rw [ha, hb, add_zero]
+    | smul r a ha => rw [ha, smul_zero]
+    | ofCube c => exact isEmptyElim (c 0)
+
 @[simp]
 theorem ofCube_eq_zero {n : ℕ} {c : SingularCube X n} (hc : SingularCube.IsDegenerate c) :
     ofCube X R c = 0 :=
@@ -322,6 +331,12 @@ theorem map_comp (g : C(Y, Z)) (f : C(X, Y)) (n : ℕ) :
   simp only [CubicalChain.map_comp]
   exact Submodule.mapQ_comp _ _ _ _ _ (degenerate_le_comap_map R f n)
     (degenerate_le_comap_map R g n)
+
+/-- Pushing forward along `f` and then along `g` is pushing forward along `g ∘ f`. -/
+@[simp]
+theorem map_map (g : C(Y, Z)) (f : C(X, Y)) {n : ℕ} (x : NormalizedCubicalChain X R n) :
+    map R g n (map R f n x) = map R (g.comp f) n x := by
+  rw [map_comp, LinearMap.comp_apply]
 
 /-- Normalization preserves injectivity of a map of spaces. No embedding hypothesis is needed. -/
 theorem map_injective (f : C(X, Y)) (hf : Function.Injective f) (n : ℕ) :
