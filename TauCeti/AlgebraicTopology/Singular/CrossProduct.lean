@@ -227,9 +227,9 @@ private lemma rightUnitor_inv_whiskerLeft_shuffle_f_fst (X Y : TopCat.{w}) (R S 
           (SSet.chainComplexMap (toSSet.map (CartesianMonoidalCategory.fst X Y)) (R ⊗ S)).f p =
       (((SSet.chainComplexFunctor C).map ((ρ_ R).inv ≫ R ◁ t)).app (toSSet.obj X)).f p := by
   ext x
-  rw [SSet.ιChainComplex_chainComplexFunctor_map_app_f, rightUnitor_inv_naturality_assoc,
-    ← whisker_exchange_assoc, whiskerLeft_comp_assoc, ← tensorHom_def'_assoc,
-    ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst, Category.assoc]
+  rw [← rightUnitor_inv_comp_tensorHom_assoc, ← whiskerLeft_comp_tensorHom_assoc,
+    ιChainComplex_tensorHom_ιChainComplex_shuffle_f_fst,
+    SSet.ιChainComplex_chainComplexFunctor_map_app_f, Category.assoc]
 
 /-- The cross product with the class of a point, followed by the projection to the first factor,
 is the coefficient map `r ↦ r ⊗ t`. -/
@@ -277,13 +277,14 @@ private lemma singularHomologyCross_singularHomology₀Section_map_fst (X Y : To
       apply (cancel_mono (iCycles _ p)).1
       simp only [Category.assoc, cyclesMap_i]
       rw [reassoc_of% hi, whiskerLeft_comp_tensorHom_assoc, Category.assoc, liftCycles_i,
-        tensorHom_def_assoc, ← rightUnitor_inv_naturality_assoc, comp_f,
-        ← rightUnitor_inv_whiskerLeft_shuffle_f_fst X Y R S p y t]
+        rightUnitor_inv_comp_tensorHom_assoc, comp_f,
+        rightUnitor_inv_whiskerLeft_shuffle_f_fst]
     apply (cancel_epi (((toSSet.obj X).chainComplex R).homologyπ p)).1
-    rw [Category.assoc, SSet.ιHomology₀_def, rightUnitor_inv_naturality_assoc, ← Category.assoc t,
-      whiskerLeft_comp_assoc, ← whisker_exchange_assoc, ← tensorHom_def_assoc,
-      homologyπ_tensorHom_homologyCross_assoc, homologyπ_naturality_assoc, homologyπ_naturality,
-      homologyπ_naturality, ← cyclesMap_comp_assoc, reassoc_of% hcycles]
+    rw [Category.assoc, SSet.ιHomology₀_def, ← Category.assoc t,
+      ← rightUnitor_inv_comp_tensorHom_assoc, ← whiskerLeft_comp_tensorHom_assoc,
+      homologyπ_tensorHom_homologyCross_assoc]
+    simp only [homologyπ_naturality_assoc, homologyπ_naturality]
+    rw [← cyclesMap_comp_assoc, reassoc_of% hcycles]
   rw [singularHomologyCross_def, TauCeti.singularHomology₀Section_def]
   exact key
 

@@ -180,16 +180,17 @@ private theorem sphereCrossClass_singularHomology₀Section :
   -- The coefficient map `r ↦ r ⊗ 1` followed by `ℤ ⊗ ℤ ≅ ℤ` is the identity.
   have hcoef : ((ρ_ R).inv ≫ R ◁ e.inv) ≫ uliftTensorIso.hom = 𝟙 R := by
     ext ⟨r⟩
-    -- `r ↦ r ⊗ 1 ↦ r • 1`, by the defining formulas of the unitors and of `ULift.moduleEquiv`
-    exact mul_one r
+    simp [uliftTensorIso, e, ModuleCat.MonoidalCategory.rightUnitor_inv_apply,
+      ModuleCat.MonoidalCategory.whiskerLeft_apply, ModuleCat.MonoidalCategory.tensorHom_tmul,
+      ModuleCat.MonoidalCategory.leftUnitor_hom_apply]
   -- `Ψ (g, 1)` is the constant map at `g`.
   have hΨ : i ≫ TopCat.ofHom Ψ = TopCat.ofHom ContinuousMap.const' := by
     refine TopCat.hom_ext (ContinuousMap.ext fun g ↦ ?_)
-    have hg : (i ≫ TopCat.ofHom Ψ).hom g =
-        mappingSpaceGroupHomeomorph (G := G) Sphere2.north (g, ⟨1, rfl⟩) :=
-      rfl
-    rw [hg, mappingSpaceGroupHomeomorph_apply, mul_one]
-    rfl
+    -- `i ≫ ofHom Ψ` is well typed only after unfolding `G ⊗ Y` to `of (G × Y)`, so neither
+    -- `TopCat.hom_comp` nor `TopCat.lift_apply` rewrites it. The composite sends `g` to
+    -- `Ψ (g, 1)` by these two (`rfl`) lemmas, which we state with `change`.
+    change Ψ (g, ⟨1, rfl⟩) = ContinuousMap.const' g
+    simp [Ψ, ContinuousMap.coe_const']
   -- The cross product with the class of the constant map `1` is the inclusion `g ↦ (g, 1)`,
   -- with the coefficient map `r ↦ r ⊗ 1`.
   have hF : (ρ_ _).inv ≫ (_ ◁ (e.inv ≫ singularHomology₀Section R
@@ -207,10 +208,12 @@ private theorem sphereCrossClass_singularHomology₀Section :
       ← NatTrans.naturality_assoc, ← NatTrans.comp_app_assoc, ← Functor.map_comp, hcoef,
       CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
     exact (CategoryTheory.Functor.map_comp _ i (TopCat.ofHom Ψ)).symm.trans (congrArg _ hΨ)
-  -- Evaluated at `[G]`, the left side of `hF` is `Ψ_*([G] × [1])`: the right unitor and the
-  -- whiskering send `[G]` to `[G] ⊗ₜ [1]` by their defining formulas
-  -- (`ModuleCat.MonoidalCategory.rightUnitor_inv_apply` and
-  -- `ModuleCat.MonoidalCategory.whiskerLeft_apply`, both `rfl`).
+  -- At `[G]`, the left side of `hF` is `Ψ_*([G] × [1])` definitionally: the unitor and the
+  -- whiskering send `[G]` to `[G] ⊗ₜ [1]` (`ModuleCat.MonoidalCategory.rightUnitor_inv_apply`,
+  -- `ModuleCat.MonoidalCategory.whiskerLeft_apply`), the space maps are `SSet.homologyMap`
+  -- (`singularHomologyFunctor_obj_map`), all `rfl`, and by definition of `singularHomologyFunctor`
+  -- its coefficient map is the homology map of `(SSet.chainComplexFunctor _).map`. None of these
+  -- rewrites in `hF`, whose composite with `ofHom Ψ` is well typed only up to `G ⊗ Y = of (G × Y)`.
   exact ConcreteCategory.congr_hom hF (o.fundamentalClass hn)
 
 include o hn in
