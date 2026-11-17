@@ -5,63 +5,56 @@ Authors: Tau Ceti
 -/
 module
 
-public import TauCeti.Topology.Compactification.OnePoint.CrossRatio
-import Mathlib.Analysis.Normed.Field.Lemmas
+public import TauCeti.Algebra.Field.CrossRatio
+public import TauCeti.Topology.Compactification.OnePoint.CrossRatio.Basic
 
 /-!
-# Scalar cross-ratios on a field and on its projective line
+# Scalar-valued cross-ratio on the projective line
 
-For four points `a, b, c, d` of a field `K`, the birapport
-`TauCeti.Polylog.crossRatio a b c d = (a - c) * (b - d) / ((a - d) * (b - c))` is the cross-ratio
-normalized so that `(a, 0, 1, z)` tends to `z` as `a → ∞`. Extending to the projective line
-`OnePoint K` by the four one-infinity cancellation formulas and assigning `0` when at least two
-entries are `∞` defines `TauCeti.Polylog.crossRatioSphere : OnePoint K → … → K`.
+Extending the finite cross-ratio `TauCeti.crossRatio a b c d = (a - c) * (b - d) / ((a - d) *
+(b - c))` to the projective line `OnePoint K` by the four one-infinity cancellation formulas and
+assigning `0` when at least two entries are `∞` defines
+`OnePoint.crossRatioSphere : OnePoint K → OnePoint K → OnePoint K → OnePoint K → K`.
 
 Unlike `OnePoint.crossRatio`, which takes values in `OnePoint K` and is normalized by
-`OnePoint.crossRatio 0 1 ∞ z = z`, `crossRatioSphere` takes values directly in `K` (totalising
-poles and multi-infinity degeneracies to `0 : K`) so that single-valued polylogarithms such as the
-Bloch–Wigner dilogarithm `D : ℂ → ℝ` (which vanishes at `0` and `1`) can be composed with it on
-ordered quadruples of points of the Riemann sphere without case splits on the position of `∞`. On
-pairwise distinct quadruples the two conventions are related by permuting the first three entries:
-`(crossRatioSphere a b c d : OnePoint K) = OnePoint.crossRatio b c a d`. The bracket
-`[a, b, c, d]` normalized by `[∞, 1, 0, x] = x` equals `1 - crossRatioSphere a b c d` on distinct
-quadruples.
+`OnePoint.crossRatio 0 1 ∞ z = z`, `OnePoint.crossRatioSphere` takes values directly in `K`, is
+normalized by `crossRatioSphere ∞ 0 1 z = z`, and totalises poles and multi-infinity degeneracies
+to `0 : K`. On non-degenerate quadruples the two conventions are related by permuting the first
+three entries: `(crossRatioSphere a b c d : OnePoint K) = OnePoint.crossRatio b c a d`. The
+bracket `[a, b, c, d]` normalized by `[∞, 1, 0, x] = x` equals `1 - crossRatioSphere a b c d`.
 
 ## Main definitions
 
-* `TauCeti.Polylog.crossRatio`: the finite cross-ratio `(a - c) * (b - d) / ((a - d) * (b - c))`
-  over a field `K`.
-* `TauCeti.Polylog.crossRatioSphere`: the extension of `crossRatio` to `OnePoint K`, given by the
-  four one-infinity cancellation formulas and `0` when two or more arguments equal `∞`.
+* `OnePoint.crossRatioSphere`: the scalar-valued extension of `TauCeti.crossRatio` to `OnePoint K`,
+  given by the four one-infinity cancellation formulas and `0` when two or more arguments equal
+  `∞`.
 
 ## Main results
 
-* `TauCeti.Polylog.crossRatioSphere_eq_det_div` and
-  `TauCeti.Polylog.crossRatioSphere_eq_det_div_of_injective`: expression of `crossRatioSphere` as
-  the quotient of `2 × 2` homogeneous determinants via `OnePoint.equivProjectivization`, together
-  with `TauCeti.Polylog.one_sub_crossRatioSphere_eq_det_div_of_injective` for the bracket `1 - r`.
-* `TauCeti.Polylog.crossRatioSphere_gl_smul`, `TauCeti.Polylog.crossRatioSphere_pgl_smul`, and
-  `TauCeti.Polylog.crossRatioSphere_psl_smul`: Möbius invariance under `GL (Fin 2) K`, `PGL(2, K)`,
-  and `PSL(2, K)` whenever `a ≠ b` and `c ≠ d`.
-* `TauCeti.Polylog.coe_crossRatioSphere_eq_onePoint_crossRatio`: comparison with
-  `OnePoint.crossRatio`, deduced via `OnePoint.exists_pgl_smul_eq_zero_one_infty` and
-  `OnePoint.crossRatio_eq_smul`.
-* `TauCeti.Polylog.exists_gl_smul_eq_infty_zero_one_crossRatioSphere`,
-  `TauCeti.Polylog.exists_pgl_smul_eq_infty_zero_one_crossRatioSphere`, and
-  `TauCeti.Polylog.exists_gl_smul_eq_infty_zero_one_coe_coe`: normalization of five pairwise
-  distinct points of `OnePoint K` to `![∞, 0, 1, x, y]` under `GL (Fin 2) K` and `PGL(2, K)` (built
-  from `OnePoint.exists_smul_zero_one_infty_eq`), together with the omitted-point cross-ratio
-  formulas on `![∞, 0, 1, x, y]`.
-* `TauCeti.Polylog.crossRatioSphere_swap_first_second` and its five transposition companions: the
-  anharmonic transformations `r ↦ r⁻¹`, `r ↦ 1 - r`, and `r ↦ r / (r - 1)` under permutations of
-  four distinct points.
-* `TauCeti.Polylog.crossRatioSphere_cyclic_five_bracket`: the cyclic algebraic relation
+* `OnePoint.crossRatioSphere_eq_zero_iff` and `OnePoint.crossRatioSphere_eq_one_iff`: exact
+  characterizations of when `crossRatioSphere` takes the values `0` and `1`, together with
+  `OnePoint.crossRatioSphere_ne_zero`, `OnePoint.crossRatioSphere_ne_one`, and their
+  `*_of_injective` specializations.
+* `OnePoint.crossRatioSphere_swap_first_second` and its five transposition companions: the
+  anharmonic transformations `r ↦ r⁻¹`, `r ↦ 1 - r`, and `r ↦ r / (r - 1)` under sharp
+  non-degeneracy hypotheses, together with `*_of_injective` specializations.
+* `OnePoint.crossRatioSphere_eq_det_div` and `OnePoint.one_sub_crossRatioSphere_eq_det_div`:
+  expression of `crossRatioSphere` and the bracket `1 - crossRatioSphere` as quotients of `2 × 2`
+  homogeneous determinants via `OnePoint.equivProjectivization`.
+* `OnePoint.crossRatioSphere_gl_smul`, `OnePoint.crossRatioSphere_pgl_smul`, and
+  `OnePoint.crossRatioSphere_psl_smul`: Möbius invariance under `GL (Fin 2) K`, `PGL(2, K)`, and
+  `PSL(2, K)` whenever `a ≠ b` and `c ≠ d`.
+* `OnePoint.coe_crossRatioSphere_eq_crossRatio`: comparison with `OnePoint.crossRatio` whenever
+  `a, b, c` are pairwise distinct, `a ≠ d`, and `c, d` are not both `∞`.
+* `OnePoint.exists_gl_smul_eq_infty_zero_one_crossRatioSphere`,
+  `OnePoint.exists_pgl_smul_eq_infty_zero_one_crossRatioSphere`, and
+  `OnePoint.exists_gl_smul_eq_infty_zero_one_coe_coe`: normalization of five pairwise distinct
+  points of `OnePoint K` to `![∞, 0, 1, x, y]` under `GL (Fin 2) K` and `PGL(2, K)` (built from
+  `OnePoint.exists_smul_zero_one_infty_eq`), together with the omitted-point cross-ratio formulas
+  on `![∞, 0, 1, x, y]`.
+* `OnePoint.crossRatioSphere_cyclic_five_bracket`: the cyclic algebraic relation
   `1 - bᵢ = -bᵢ / (bᵢ₊₂ * bᵢ₊₃)` for `bᵢ = 1 - crossRatioSphere (s i) (s (i + 1)) (s (i + 2))
   (s (i + 3))` on five pairwise distinct points of `OnePoint K`.
-* `TauCeti.Polylog.tendsto_crossRatio_cobounded_first` (and the other three slots) and
-  `TauCeti.Polylog.continuousAt_crossRatioSphere_infty_first` (and the other three slots):
-  convergence of `crossRatio` along `Bornology.cobounded K` to the four one-infinity values of
-  `crossRatioSphere`, and continuity at `∞` over a proper normed field.
 
 ## References
 
@@ -75,143 +68,14 @@ quadruples.
 
 public section
 
-open Bornology Filter Function Matrix OnePoint Topology
+open Function Matrix
 open scoped LinearAlgebra.Projectivization MatrixGroups
 
-namespace TauCeti.Polylog
+namespace OnePoint
 
-/-! ### The finite cross-ratio -/
+/-! ### Definition, basic identities, and anharmonic symmetries -/
 
-section Finite
-
-variable {K : Type*} [Field K]
-
-/-- The cross-ratio `(a - c) * (b - d) / ((a - d) * (b - c))` of four elements of a field `K`,
-normalized so that `(a, 0, 1, z)` tends to `z` as `a → ∞`. Poles where `a = d` or `b = c` take
-the totalised field value `0`. -/
-def crossRatio (a b c d : K) : K :=
-  (a - c) * (b - d) / ((a - d) * (b - c))
-
-/-- Explicit rational formula for `TauCeti.Polylog.crossRatio`. -/
-theorem crossRatio_def (a b c d : K) :
-    crossRatio a b c d = (a - c) * (b - d) / ((a - d) * (b - c)) :=
-  (rfl)
-
-/-- Swapping both `(a, b)` and `(c, d)` leaves `crossRatio` unchanged, including at degenerate
-tuples. -/
-theorem crossRatio_swap_pairs (a b c d : K) :
-    crossRatio b a d c = crossRatio a b c d := by
-  simp only [crossRatio_def, mul_comm (b - d) (a - c), mul_comm (b - c) (a - d)]
-
-/-- Exchanging the first pair `(a, b)` with the second pair `(c, d)` leaves `crossRatio`
-unchanged, including at degenerate tuples. -/
-theorem crossRatio_comm_pairs (a b c d : K) :
-    crossRatio c d a b = crossRatio a b c d := by
-  have hnum : (c - a) * (d - b) = (a - c) * (b - d) := by ring
-  have hden : (c - b) * (d - a) = (a - d) * (b - c) := by ring
-  rw [crossRatio_def, crossRatio_def, hnum, hden]
-
-/-- Reversing the order of all four points leaves `crossRatio` unchanged. -/
-theorem crossRatio_reverse (a b c d : K) :
-    crossRatio d c b a = crossRatio a b c d := by
-  rw [crossRatio_comm_pairs, crossRatio_swap_pairs]
-
-/-- `crossRatio a b c d` vanishes when the first and third entries coincide. -/
-@[simp]
-theorem crossRatio_self_first_third (a b d : K) : crossRatio a b a d = 0 := by
-  simp [crossRatio_def]
-
-/-- `crossRatio a b c d` vanishes when the second and fourth entries coincide. -/
-@[simp]
-theorem crossRatio_self_second_fourth (a b c : K) : crossRatio a b c b = 0 := by
-  simp [crossRatio_def]
-
-/-- `crossRatio a b c d` takes the totalised value `0` when the first and fourth entries
-coincide. -/
-@[simp]
-theorem crossRatio_self_first_fourth (a b c : K) : crossRatio a b c a = 0 := by
-  simp [crossRatio_def]
-
-/-- `crossRatio a b c d` takes the totalised value `0` when the second and third entries
-coincide. -/
-@[simp]
-theorem crossRatio_self_second_third (a b d : K) : crossRatio a b b d = 0 := by
-  simp [crossRatio_def]
-
-/-- When the first two entries coincide and are distinct from the third and fourth, `crossRatio`
-equals `1`. Both distinctness hypotheses are needed because division by zero yields `0`. -/
-theorem crossRatio_self_first_second {a c d : K} (had : a ≠ d) (hac : a ≠ c) :
-    crossRatio a a c d = 1 := by
-  rw [crossRatio_def, mul_comm (a - d) (a - c)]
-  exact div_self (mul_ne_zero (sub_ne_zero.mpr hac) (sub_ne_zero.mpr had))
-
-/-- When the last two entries coincide and are distinct from the first and second, `crossRatio`
-equals `1`. -/
-theorem crossRatio_self_third_fourth {a b c : K} (hac : a ≠ c) (hbc : b ≠ c) :
-    crossRatio a b c c = 1 := by
-  rw [← crossRatio_comm_pairs]
-  exact crossRatio_self_first_second hbc.symm hac.symm
-
-/-- On `(a, 0, 1, z)`, `crossRatio a 0 1 z = z * (a - 1) / (a - z)` for all `a, z : K` (including
-the pole `a = z`, where both sides equal `0`). -/
-theorem crossRatio_zero_one (a z : K) :
-    crossRatio a 0 1 z = z * (a - 1) / (a - z) := by
-  rw [crossRatio_def]
-  have hnum : (a - 1) * (0 - z) = -(z * (a - 1)) := by ring
-  have hden : (a - z) * (0 - 1) = -(a - z) := by ring
-  rw [hnum, hden, neg_div_neg_eq]
-
-/-- Exchanging the first two entries inverts `crossRatio` unconditionally (with `0⁻¹ = 0`). -/
-theorem crossRatio_swap_first_second (a b c d : K) :
-    crossRatio b a c d = (crossRatio a b c d)⁻¹ := by
-  rw [crossRatio_def, crossRatio_def, inv_div, mul_comm (b - c) (a - d), mul_comm (b - d) (a - c)]
-
-/-- Exchanging the last two entries inverts `crossRatio` unconditionally (with `0⁻¹ = 0`). -/
-theorem crossRatio_swap_third_fourth (a b c d : K) :
-    crossRatio a b d c = (crossRatio a b c d)⁻¹ := by
-  rw [← crossRatio_swap_pairs, crossRatio_swap_first_second]
-
-/-- Plücker relation for `crossRatio`: exchanging the middle two entries replaces `r` by `1 - r`
-whenever `a ≠ d` and `b ≠ c`. -/
-theorem crossRatio_swap_second_third {a b c d : K} (had : a ≠ d) (hbc : b ≠ c) :
-    crossRatio a c b d = 1 - crossRatio a b c d := by
-  rw [crossRatio_def, crossRatio_def]
-  field_simp [sub_ne_zero.mpr had, sub_ne_zero.mpr hbc, sub_ne_zero.mpr hbc.symm]
-  ring
-
-/-- Exchanging the first and fourth entries replaces `crossRatio` by `1 - r` whenever `a ≠ d` and
-`b ≠ c`. -/
-theorem crossRatio_swap_first_fourth {a b c d : K} (had : a ≠ d) (hbc : b ≠ c) :
-    crossRatio d b c a = 1 - crossRatio a b c d := by
-  rw [← crossRatio_reverse, crossRatio_swap_second_third had hbc]
-
-/-- Exchanging the first and third entries sends `r = crossRatio a b c d` to `r / (r - 1)`
-whenever `a ≠ c`, `b ≠ d`, `a ≠ d`, and `b ≠ c`. -/
-theorem crossRatio_swap_first_third {a b c d : K} (hac : a ≠ c) (hbd : b ≠ d) (had : a ≠ d)
-    (hbc : b ≠ c) :
-    crossRatio c b a d = crossRatio a b c d / (crossRatio a b c d - 1) := by
-  have hr0 : crossRatio a b c d ≠ 0 := by
-    rw [crossRatio_def]
-    exact div_ne_zero (mul_ne_zero (sub_ne_zero.mpr hac) (sub_ne_zero.mpr hbd))
-      (mul_ne_zero (sub_ne_zero.mpr had) (sub_ne_zero.mpr hbc))
-  rw [crossRatio_swap_first_second, crossRatio_swap_second_third hbd hac,
-    crossRatio_swap_first_second]
-  rcases eq_or_ne (crossRatio a b c d) 1 with hr1 | hr1
-  · simp [hr1]
-  · field_simp [hr0, sub_ne_zero.mpr hr1]
-
-/-- Exchanging the second and fourth entries sends `r = crossRatio a b c d` to `r / (r - 1)`
-whenever `a ≠ c`, `b ≠ d`, `a ≠ d`, and `b ≠ c`. -/
-theorem crossRatio_swap_second_fourth {a b c d : K} (hac : a ≠ c) (hbd : b ≠ d) (had : a ≠ d)
-    (hbc : b ≠ c) :
-    crossRatio a d c b = crossRatio a b c d / (crossRatio a b c d - 1) := by
-  rw [← crossRatio_swap_pairs, crossRatio_swap_first_third hbd hac hbc had, crossRatio_swap_pairs]
-
-end Finite
-
-/-! ### The projective sphere cross-ratio -/
-
-section SphereBasic
+section Basic
 
 variable {K : Type*} [Field K]
 
@@ -220,17 +84,17 @@ variable {K : Type*} [Field K]
 formulas, and equal to `0` when at least two entries equal `∞`. Normalized by
 `crossRatioSphere ∞ 0 1 z = z`. -/
 def crossRatioSphere : OnePoint K → OnePoint K → OnePoint K → OnePoint K → K
-  | .some a, .some b, .some c, .some d => (a - c) * (b - d) / ((a - d) * (b - c))
+  | .some a, .some b, .some c, .some d => TauCeti.crossRatio a b c d
   | .infty, .some b, .some c, .some d => (b - d) / (b - c)
   | .some a, .infty, .some c, .some d => (a - c) / (a - d)
   | .some a, .some b, .infty, .some d => (b - d) / (a - d)
   | .some a, .some b, .some c, .infty => (a - c) / (b - c)
   | _, _, _, _ => 0
 
-/-- On four finite points, `crossRatioSphere` restricts to `crossRatio`. -/
+/-- On four finite points, `crossRatioSphere` restricts to `TauCeti.crossRatio`. -/
 @[simp]
 theorem crossRatioSphere_coe (a b c d : K) :
-    crossRatioSphere (a : OnePoint K) b c d = crossRatio a b c d :=
+    crossRatioSphere (a : OnePoint K) b c d = TauCeti.crossRatio a b c d :=
   (rfl)
 
 /-- Cancellation formula for `crossRatioSphere` when only the first entry is `∞`. -/
@@ -294,43 +158,48 @@ theorem crossRatioSphere_infty_infty_right (a b : OnePoint K) :
   cases a <;> cases b <;> rfl
 
 /-- `crossRatioSphere` vanishes whenever two distinct entries of the quadruple equal `∞`. -/
-theorem crossRatioSphere_eq_zero_of_infty_eq {s : Fin 4 → OnePoint K} {i j : Fin 4} (hij : i ≠ j)
-    (hi : s i = ∞) (hj : s j = ∞) :
+theorem crossRatioSphere_eq_zero_of_ne_of_eq_infty_of_eq_infty {s : Fin 4 → OnePoint K}
+    {i j : Fin 4} (hij : i ≠ j) (hi : s i = ∞) (hj : s j = ∞) :
     crossRatioSphere (s 0) (s 1) (s 2) (s 3) = 0 := by
   fin_cases i <;> fin_cases j <;> simp_all
 
 /-- Swapping both `(a, b)` and `(c, d)` leaves `crossRatioSphere` unchanged on all quadruples. -/
-theorem crossRatioSphere_swap_pairs (a b c d : OnePoint K) :
+theorem crossRatioSphere_swap_within_pairs (a b c d : OnePoint K) :
     crossRatioSphere b a d c = crossRatioSphere a b c d := by
   cases a <;> cases b <;> cases c <;> cases d <;>
-    first | rfl | exact crossRatio_swap_pairs _ _ _ _
+    first | rfl | exact TauCeti.crossRatio_swap_within_pairs _ _ _ _
 
 /-- Exchanging `(a, b)` with `(c, d)` leaves `crossRatioSphere` unchanged on all quadruples. -/
-theorem crossRatioSphere_comm_pairs (a b c d : OnePoint K) :
+theorem crossRatioSphere_swap_pairs (a b c d : OnePoint K) :
     crossRatioSphere c d a b = crossRatioSphere a b c d := by
   have hneg (x y z : K) : (x - z) / (y - z) = (z - x) / (z - y) := by
     rw [← neg_sub z x, ← neg_sub z y, neg_div_neg_eq]
   cases a <;> cases b <;> cases c <;> cases d <;>
-    first | rfl | exact crossRatio_comm_pairs _ _ _ _ | exact hneg _ _ _ | exact (hneg _ _ _).symm
+    first
+    | rfl
+    | exact TauCeti.crossRatio_swap_pairs _ _ _ _
+    | exact hneg _ _ _
+    | exact (hneg _ _ _).symm
 
 /-- Reversing the order of all four points leaves `crossRatioSphere` unchanged. -/
 theorem crossRatioSphere_reverse (a b c d : OnePoint K) :
     crossRatioSphere d c b a = crossRatioSphere a b c d := by
-  rw [crossRatioSphere_comm_pairs, crossRatioSphere_swap_pairs]
+  rw [crossRatioSphere_swap_pairs, crossRatioSphere_swap_within_pairs]
 
 /-- Exchanging the first two entries inverts `crossRatioSphere` unconditionally (with `0⁻¹ = 0`). -/
 theorem crossRatioSphere_swap_first_second (a b c d : OnePoint K) :
     crossRatioSphere b a c d = (crossRatioSphere a b c d)⁻¹ := by
   cases a <;> cases b <;> cases c <;> cases d <;>
-    first | exact crossRatio_swap_first_second _ _ _ _ | simp [inv_div]
+    first | exact TauCeti.crossRatio_swap_first_second _ _ _ _ | simp [inv_div]
 
 /-- Exchanging the last two entries inverts `crossRatioSphere` unconditionally (with `0⁻¹ = 0`). -/
 theorem crossRatioSphere_swap_third_fourth (a b c d : OnePoint K) :
     crossRatioSphere a b d c = (crossRatioSphere a b c d)⁻¹ := by
-  rw [← crossRatioSphere_swap_pairs, crossRatioSphere_swap_first_second]
+  rw [← crossRatioSphere_swap_within_pairs, crossRatioSphere_swap_first_second]
 
 /-- When a finite first entry is repeated, distinct from `c` and `d`, and `c, d` are not both `∞`,
 `crossRatioSphere a a c d = 1`. -/
+@[simp]
 theorem crossRatioSphere_self_first_second {a c d : OnePoint K} (ha : a ≠ ∞) (hac : a ≠ c)
     (had : a ≠ d) (hcd : ¬(c = ∞ ∧ d = ∞)) :
     crossRatioSphere a a c d = 1 := by
@@ -351,15 +220,167 @@ theorem crossRatioSphere_self_first_second {a c d : OnePoint K} (ha : a ≠ ∞)
         exact div_self (sub_ne_zero.mpr (by simpa using hac))
       | coe w =>
         rw [crossRatioSphere_coe]
-        exact crossRatio_self_first_second (by simpa using had) (by simpa using hac)
+        exact TauCeti.crossRatio_self_first_second (by simpa using had) (by simpa using hac)
 
 /-- When a finite last entry is repeated, distinct from `a` and `b`, and `a, b` are not both `∞`,
 `crossRatioSphere a b c c = 1`. -/
+@[simp]
 theorem crossRatioSphere_self_third_fourth {a b c : OnePoint K} (hc : c ≠ ∞) (hac : a ≠ c)
     (hbc : b ≠ c) (hab : ¬(a = ∞ ∧ b = ∞)) :
     crossRatioSphere a b c c = 1 := by
-  rw [← crossRatioSphere_comm_pairs]
+  rw [← crossRatioSphere_swap_pairs]
   exact crossRatioSphere_self_first_second hc hac.symm hbc.symm hab
+
+/-- `crossRatioSphere a b c d` vanishes precisely when a pair of opposite or adjacent entries in
+the numerator/denominator coincide (`a = c`, `b = d`, `a = d`, `b = c`) or both entries of the
+first or second pair equal `∞`. -/
+@[simp]
+theorem crossRatioSphere_eq_zero_iff (a b c d : OnePoint K) :
+    crossRatioSphere a b c d = 0 ↔
+      a = c ∨ b = d ∨ a = d ∨ b = c ∨ (a = ∞ ∧ b = ∞) ∨ (c = ∞ ∧ d = ∞) := by
+  cases a <;> cases b <;> cases c <;> cases d <;> simp [sub_eq_zero]
+
+/-- `crossRatioSphere a b c d` equals `1` precisely when `a ≠ d`, `b ≠ c`, neither `(a, b)` nor
+`(c, d)` is `(∞, ∞)`, and either `a = b` or `c = d`. -/
+@[simp]
+theorem crossRatioSphere_eq_one_iff (a b c d : OnePoint K) :
+    crossRatioSphere a b c d = 1 ↔
+      a ≠ d ∧ b ≠ c ∧ ¬(a = ∞ ∧ b = ∞) ∧ ¬(c = ∞ ∧ d = ∞) ∧ (a = b ∨ c = d) := by
+  have hdiv₁ (x y z : K) : (x - y) / (x - z) = 1 ↔ x ≠ z ∧ z = y := by
+    by_cases hxz : x = z
+    · simp [hxz]
+    · rw [div_eq_one_iff_eq (sub_ne_zero.mpr hxz)]
+      exact ⟨fun h ↦ ⟨hxz, (sub_right_inj.mp h).symm⟩, fun ⟨_, hzy⟩ ↦ by rw [hzy]⟩
+  have hdiv₂ (x y z : K) : (x - z) / (y - z) = 1 ↔ y ≠ z ∧ x = y := by
+    by_cases hyz : y = z
+    · simp [hyz]
+    · rw [div_eq_one_iff_eq (sub_ne_zero.mpr hyz)]
+      exact ⟨fun h ↦ ⟨hyz, sub_left_inj.mp h⟩, fun ⟨_, hxy⟩ ↦ by rw [hxy]⟩
+  cases a <;> cases b <;> cases c <;> cases d <;>
+    first
+    | (simp [hdiv₁, hdiv₂]; done)
+    | simp [hdiv₁, hdiv₂, eq_comm]
+
+/-- `crossRatioSphere a b c d` is nonzero whenever `a ≠ c`, `b ≠ d`, `a ≠ d`, `b ≠ c`, and neither
+`(a, b)` nor `(c, d)` is `(∞, ∞)`. -/
+theorem crossRatioSphere_ne_zero {a b c d : OnePoint K} (hac : a ≠ c) (hbd : b ≠ d)
+    (had : a ≠ d) (hbc : b ≠ c) (hab : ¬(a = ∞ ∧ b = ∞)) (hcd : ¬(c = ∞ ∧ d = ∞)) :
+    crossRatioSphere a b c d ≠ 0 := by
+  simp [hac, hbd, had, hbc, hab, hcd]
+
+/-- On four pairwise distinct points of `OnePoint K`, `crossRatioSphere` is nonzero. -/
+theorem crossRatioSphere_ne_zero_of_injective {s : Fin 4 → OnePoint K} (hs : Injective s) :
+    crossRatioSphere (s 0) (s 1) (s 2) (s 3) ≠ 0 :=
+  crossRatioSphere_ne_zero (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))
+    (hs.ne (by decide))
+    (fun ⟨h0, h1⟩ ↦ hs.ne (by decide : (0 : Fin 4) ≠ 1) (h0.trans h1.symm))
+    (fun ⟨h2, h3⟩ ↦ hs.ne (by decide : (2 : Fin 4) ≠ 3) (h2.trans h3.symm))
+
+/-- `crossRatioSphere a b c d` is not equal to `1` whenever `a ≠ b` and `c ≠ d`. -/
+theorem crossRatioSphere_ne_one {a b c d : OnePoint K} (hab : a ≠ b) (hcd : c ≠ d) :
+    crossRatioSphere a b c d ≠ 1 := by
+  simp [hab, hcd]
+
+/-- On four pairwise distinct points of `OnePoint K`, `crossRatioSphere` is not equal to `1`. -/
+theorem crossRatioSphere_ne_one_of_injective {s : Fin 4 → OnePoint K} (hs : Injective s) :
+    crossRatioSphere (s 0) (s 1) (s 2) (s 3) ≠ 1 :=
+  crossRatioSphere_ne_one (hs.ne (by decide)) (hs.ne (by decide))
+
+/-- Exchanging the middle two entries replaces `crossRatioSphere` by `1 - r` whenever `a ≠ d`,
+`b ≠ c`, and at most one of `a, b, c, d` equals `∞` (so the Goncharov–Rudenko bracket
+`1 - r(a, b, c, d)` equals `r(a, c, b, d)`). -/
+theorem crossRatioSphere_swap_second_third {a b c d : OnePoint K} (had : a ≠ d) (hbc : b ≠ c)
+    (hab : ¬(a = ∞ ∧ b = ∞)) (hac : ¬(a = ∞ ∧ c = ∞)) (hbd : ¬(b = ∞ ∧ d = ∞))
+    (hcd : ¬(c = ∞ ∧ d = ∞)) :
+    crossRatioSphere a c b d = 1 - crossRatioSphere a b c d := by
+  cases a <;> cases b <;> cases c <;> cases d <;>
+    first
+    | exact TauCeti.crossRatio_swap_second_third (by simpa using had) (by simpa using hbc)
+    | (simp only [crossRatioSphere_coe_infty_coe_coe, crossRatioSphere_coe_coe_infty_coe]
+       rw [one_sub_div (sub_ne_zero.mpr (by simpa using had))]
+       congr 1; ring)
+    | (simp only [crossRatioSphere_infty_coe_coe_coe, crossRatioSphere_coe_coe_coe_infty]
+       rw [one_sub_div (sub_ne_zero.mpr (by simpa using hbc)), ← neg_div_neg_eq]
+       exact congr_arg₂ (· / ·) (by ring) (by ring))
+    | simp_all
+
+/-- Exchanging the middle two entries of an injective quadruple replaces `crossRatioSphere` by
+`1 - r`. -/
+theorem crossRatioSphere_swap_second_third_of_injective {s : Fin 4 → OnePoint K}
+    (hs : Injective s) :
+    crossRatioSphere (s 0) (s 2) (s 1) (s 3) = 1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) :=
+  crossRatioSphere_swap_second_third (hs.ne (by decide)) (hs.ne (by decide))
+    (fun ⟨h0, h1⟩ ↦ hs.ne (by decide : (0 : Fin 4) ≠ 1) (h0.trans h1.symm))
+    (fun ⟨h0, h2⟩ ↦ hs.ne (by decide : (0 : Fin 4) ≠ 2) (h0.trans h2.symm))
+    (fun ⟨h1, h3⟩ ↦ hs.ne (by decide : (1 : Fin 4) ≠ 3) (h1.trans h3.symm))
+    (fun ⟨h2, h3⟩ ↦ hs.ne (by decide : (2 : Fin 4) ≠ 3) (h2.trans h3.symm))
+
+/-- Exchanging the first and fourth entries replaces `crossRatioSphere` by `1 - r` whenever
+`a ≠ d`, `b ≠ c`, and at most one of `a, b, c, d` equals `∞`. -/
+theorem crossRatioSphere_swap_first_fourth {a b c d : OnePoint K} (had : a ≠ d) (hbc : b ≠ c)
+    (hab : ¬(a = ∞ ∧ b = ∞)) (hac : ¬(a = ∞ ∧ c = ∞)) (hbd : ¬(b = ∞ ∧ d = ∞))
+    (hcd : ¬(c = ∞ ∧ d = ∞)) :
+    crossRatioSphere d b c a = 1 - crossRatioSphere a b c d := by
+  rw [← crossRatioSphere_reverse, crossRatioSphere_swap_second_third had hbc hab hac hbd hcd]
+
+/-- Exchanging the first and fourth entries of an injective quadruple replaces `crossRatioSphere`
+by `1 - r`. -/
+theorem crossRatioSphere_swap_first_fourth_of_injective {s : Fin 4 → OnePoint K}
+    (hs : Injective s) :
+    crossRatioSphere (s 3) (s 1) (s 2) (s 0) = 1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) := by
+  rw [← crossRatioSphere_reverse, crossRatioSphere_swap_second_third_of_injective hs]
+
+/-- Exchanging the first and third entries sends `r = crossRatioSphere a b c d` to `r / (r - 1)`
+whenever `a ≠ d` and `b ≠ c` (including at numerator-zero and multi-infinity tuples). -/
+theorem crossRatioSphere_swap_first_third {a b c d : OnePoint K} (had : a ≠ d) (hbc : b ≠ c) :
+    crossRatioSphere c b a d =
+      crossRatioSphere a b c d / (crossRatioSphere a b c d - 1) := by
+  have hdiv (u v : K) (hv : v ≠ 0) : (u / v) / (u / v - 1) = u / (u - v) := by
+    rcases eq_or_ne u v with rfl | huv
+    · simp [hv]
+    · field_simp [hv, sub_ne_zero.mpr huv]
+  cases a <;> cases b <;> cases c <;> cases d <;>
+    first
+    | exact TauCeti.crossRatio_swap_first_third (by simpa using had) (by simpa using hbc)
+    | (simp only [crossRatioSphere_infty_coe_coe_coe, crossRatioSphere_coe_coe_infty_coe]
+       rw [hdiv _ _ (sub_ne_zero.mpr (by simpa using had))]
+       exact congr_arg₂ (· / ·) rfl (by ring))
+    | (simp only [crossRatioSphere_coe_infty_coe_coe]
+       rw [hdiv _ _ (sub_ne_zero.mpr (by simpa using had)), ← neg_div_neg_eq]
+       exact congr_arg₂ (· / ·) (by ring) (by ring))
+    | (simp only [crossRatioSphere_infty_coe_coe_coe, crossRatioSphere_coe_coe_infty_coe]
+       rw [hdiv _ _ (sub_ne_zero.mpr (by simpa using hbc))]
+       exact congr_arg₂ (· / ·) rfl (by ring))
+    | (simp only [crossRatioSphere_coe_coe_coe_infty]
+       rw [hdiv _ _ (sub_ne_zero.mpr (by simpa using hbc)), ← neg_div_neg_eq]
+       exact congr_arg₂ (· / ·) (by ring) (by ring))
+    | simp
+
+/-- Exchanging the first and third entries of an injective quadruple sends
+`r = crossRatioSphere (s 0) (s 1) (s 2) (s 3)` to `r / (r - 1)`. -/
+theorem crossRatioSphere_swap_first_third_of_injective {s : Fin 4 → OnePoint K}
+    (hs : Injective s) :
+    crossRatioSphere (s 2) (s 1) (s 0) (s 3) =
+      crossRatioSphere (s 0) (s 1) (s 2) (s 3) /
+        (crossRatioSphere (s 0) (s 1) (s 2) (s 3) - 1) :=
+  crossRatioSphere_swap_first_third (hs.ne (by decide)) (hs.ne (by decide))
+
+/-- Exchanging the second and fourth entries sends `r = crossRatioSphere a b c d` to
+`r / (r - 1)` whenever `a ≠ d` and `b ≠ c`. -/
+theorem crossRatioSphere_swap_second_fourth {a b c d : OnePoint K} (had : a ≠ d) (hbc : b ≠ c) :
+    crossRatioSphere a d c b =
+      crossRatioSphere a b c d / (crossRatioSphere a b c d - 1) := by
+  rw [← crossRatioSphere_swap_within_pairs, crossRatioSphere_swap_first_third hbc had,
+    crossRatioSphere_swap_within_pairs]
+
+/-- Exchanging the second and fourth entries of an injective quadruple sends
+`r = crossRatioSphere (s 0) (s 1) (s 2) (s 3)` to `r / (r - 1)`. -/
+theorem crossRatioSphere_swap_second_fourth_of_injective {s : Fin 4 → OnePoint K}
+    (hs : Injective s) :
+    crossRatioSphere (s 0) (s 3) (s 2) (s 1) =
+      crossRatioSphere (s 0) (s 1) (s 2) (s 3) /
+        (crossRatioSphere (s 0) (s 1) (s 2) (s 3) - 1) :=
+  crossRatioSphere_swap_second_fourth (hs.ne (by decide)) (hs.ne (by decide))
 
 /-- **Defining normalization of `crossRatioSphere`**: `crossRatioSphere ∞ 0 1 z = z`. -/
 theorem crossRatioSphere_infty_zero_one_coe (z : K) :
@@ -377,7 +398,7 @@ theorem crossRatioSphere_infty_one_zero_coe (z : K) :
     crossRatioSphere ∞ ((1 : K) : OnePoint K) ((0 : K) : OnePoint K) z = 1 - z := by
   simp
 
-end SphereBasic
+end Basic
 
 /-! ### Homogeneous determinants, Möbius invariance, and five-point normalization -/
 
@@ -407,7 +428,7 @@ theorem crossRatioSphere_eq_det_div {p₀ p₁ p₂ p₃ : OnePoint K} (h01 : ¬
   let u (p : OnePoint K) : Fin 2 → K := p.elim ![1, 0] fun t ↦ ![t, 1]
   have hu (p : OnePoint K) : u p ≠ 0 := by cases p <;> simp [u]
   have hmk (p : OnePoint K) : equivProjectivization K p = Projectivization.mk K (u p) (hu p) := by
-    cases p <;> rfl
+    cases p <;> simp [u]
   obtain ⟨a₀, rfl⟩ :=
     (Projectivization.mk_eq_mk_iff K v₀ (u p₀) hv₀ (hu p₀)).mp (hp₀.trans (hmk p₀))
   obtain ⟨a₁, rfl⟩ :=
@@ -432,14 +453,7 @@ theorem crossRatioSphere_eq_det_div {p₀ p₁ p₂ p₃ : OnePoint K} (h01 : ¬
         ((Matrix.of ![u p₀, u p₃]).det * (Matrix.of ![u p₁, u p₂]).det) := by ring
   rw [hnum, hden, mul_div_mul_left _ _ hunit]
   cases p₀ <;> cases p₁ <;> cases p₂ <;> cases p₃ <;>
-    first
-    | simp_all [u, crossRatio_def, Matrix.det_fin_two]
-      done
-    | simp only [u, crossRatioSphere_coe_coe_infty_coe, crossRatioSphere_coe_coe_coe_infty,
-        OnePoint.elim_infty, OnePoint.elim_some, Matrix.det_fin_two, of_apply, cons_val',
-        cons_val_zero, cons_val_one, cons_val_fin_one, empty_val']
-      rw [← neg_div_neg_eq]
-      exact congr_arg₂ (· / ·) (by ring) (by ring)
+    simp_all [u, TauCeti.crossRatio_def, Matrix.det_fin_two, -neg_sub]
 
 /-- Homogeneous determinant formula for `crossRatioSphere` on an injective quadruple. -/
 theorem crossRatioSphere_eq_det_div_of_injective {s : Fin 4 → OnePoint K} (hs : Injective s)
@@ -453,16 +467,49 @@ theorem crossRatioSphere_eq_det_div_of_injective {s : Fin 4 → OnePoint K} (hs 
     (fun ⟨h2, h3⟩ ↦ hs.ne (by decide : (2 : Fin 4) ≠ 3) (h2.trans h3.symm))
     (hv 0) (hv 1) (hv 2) (hv 3) (hrep 0) (hrep 1) (hrep 2) (hrep 3)
 
+/-- **Homogeneous bracket comparison.** Whenever `p₀ ≠ p₃`, `p₁ ≠ p₂`, and at most one of
+`p₀, p₁, p₂, p₃` is `∞`, for any nonzero homogeneous representatives `vᵢ`, the determinant
+quotient `det ![v₀, v₁] * det ![v₂, v₃] / (det ![v₀, v₃] * det ![v₂, v₁])` equals
+`1 - crossRatioSphere p₀ p₁ p₂ p₃`. -/
+theorem one_sub_crossRatioSphere_eq_det_div {p₀ p₁ p₂ p₃ : OnePoint K} (h03 : p₀ ≠ p₃)
+    (h12 : p₁ ≠ p₂) (h01 : ¬(p₀ = ∞ ∧ p₁ = ∞)) (h02 : ¬(p₀ = ∞ ∧ p₂ = ∞))
+    (h13 : ¬(p₁ = ∞ ∧ p₃ = ∞)) (h23 : ¬(p₂ = ∞ ∧ p₃ = ∞)) {v₀ v₁ v₂ v₃ : Fin 2 → K}
+    (hv₀ : v₀ ≠ 0) (hv₁ : v₁ ≠ 0) (hv₂ : v₂ ≠ 0) (hv₃ : v₃ ≠ 0)
+    (hp₀ : Projectivization.mk K v₀ hv₀ = equivProjectivization K p₀)
+    (hp₁ : Projectivization.mk K v₁ hv₁ = equivProjectivization K p₁)
+    (hp₂ : Projectivization.mk K v₂ hv₂ = equivProjectivization K p₂)
+    (hp₃ : Projectivization.mk K v₃ hv₃ = equivProjectivization K p₃) :
+    1 - crossRatioSphere p₀ p₁ p₂ p₃ =
+      (Matrix.of ![v₀, v₁]).det * (Matrix.of ![v₂, v₃]).det /
+        ((Matrix.of ![v₀, v₃]).det * (Matrix.of ![v₂, v₁]).det) := by
+  rw [← crossRatioSphere_swap_second_third h03 h12 h01 h02 h13 h23]
+  exact crossRatioSphere_eq_det_div h02 h13 hv₀ hv₂ hv₁ hv₃ hp₀ hp₂ hp₁ hp₃
+
+/-- Homogeneous bracket comparison for `1 - crossRatioSphere` on an injective quadruple. -/
+theorem one_sub_crossRatioSphere_eq_det_div_of_injective {s : Fin 4 → OnePoint K}
+    (hs : Injective s) {v : Fin 4 → Fin 2 → K} (hv : ∀ i, v i ≠ 0)
+    (hrep : ∀ i, Projectivization.mk K (v i) (hv i) = equivProjectivization K (s i)) :
+    1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) =
+      (Matrix.of ![v 0, v 1]).det * (Matrix.of ![v 2, v 3]).det /
+        ((Matrix.of ![v 0, v 3]).det * (Matrix.of ![v 2, v 1]).det) :=
+  one_sub_crossRatioSphere_eq_det_div (hs.ne (by decide)) (hs.ne (by decide))
+    (fun ⟨h0, h1⟩ ↦ hs.ne (by decide : (0 : Fin 4) ≠ 1) (h0.trans h1.symm))
+    (fun ⟨h0, h2⟩ ↦ hs.ne (by decide : (0 : Fin 4) ≠ 2) (h0.trans h2.symm))
+    (fun ⟨h1, h3⟩ ↦ hs.ne (by decide : (1 : Fin 4) ≠ 3) (h1.trans h3.symm))
+    (fun ⟨h2, h3⟩ ↦ hs.ne (by decide : (2 : Fin 4) ≠ 3) (h2.trans h3.symm))
+    (hv 0) (hv 1) (hv 2) (hv 3) (hrep 0) (hrep 1) (hrep 2) (hrep 3)
+
 /-- **Möbius invariance of `crossRatioSphere` under `GL (Fin 2) K`.** Every invertible `2 × 2`
 matrix preserves `crossRatioSphere a b c d` whenever `a ≠ b` and `c ≠ d`. -/
+@[simp]
 theorem crossRatioSphere_gl_smul (g : GL (Fin 2) K) {a b c d : OnePoint K} (hab : a ≠ b)
     (hcd : c ≠ d) :
     crossRatioSphere (g • a) (g • b) (g • c) (g • d) = crossRatioSphere a b c d := by
-  let u (p : OnePoint K) : Fin 2 → K := p.elim ![1, 0] fun t ↦ ![t, 1]
-  have hu (p : OnePoint K) : u p ≠ 0 := by cases p <;> simp [u]
+  let u (p : OnePoint K) : Fin 2 → K := (equivProjectivization K p).rep
+  have hu (p : OnePoint K) : u p ≠ 0 := (equivProjectivization K p).rep_ne_zero
   have hgu (p : OnePoint K) : g • u p ≠ 0 := (smul_ne_zero_iff_ne g).mpr (hu p)
-  have hmk (p : OnePoint K) : Projectivization.mk K (u p) (hu p) = equivProjectivization K p := by
-    cases p <;> rfl
+  have hmk (p : OnePoint K) : Projectivization.mk K (u p) (hu p) = equivProjectivization K p :=
+    (equivProjectivization K p).mk_rep
   have hgmk (p : OnePoint K) :
       Projectivization.mk K (g • u p) (hgu p) = equivProjectivization K (g • p) := by
     rw [equivProjectivization_smul, ← hmk p, Projectivization.smul_mk]
@@ -502,6 +549,7 @@ theorem crossRatioSphere_gl_smul_of_injective (g : GL (Fin 2) K) {s : Fin 4 → 
   crossRatioSphere_gl_smul g (hs.ne (by decide)) (hs.ne (by decide))
 
 /-- Möbius invariance of `crossRatioSphere` under `PGL(2, K)` whenever `a ≠ b` and `c ≠ d`. -/
+@[simp]
 theorem crossRatioSphere_pgl_smul (g : PGL(2, K)) {a b c d : OnePoint K} (hab : a ≠ b)
     (hcd : c ≠ d) :
     crossRatioSphere (g • a) (g • b) (g • c) (g • d) = crossRatioSphere a b c d := by
@@ -509,37 +557,45 @@ theorem crossRatioSphere_pgl_smul (g : PGL(2, K)) {a b c d : OnePoint K} (hab : 
   simpa using crossRatioSphere_gl_smul h hab hcd
 
 /-- Möbius invariance of `crossRatioSphere` under `PSL(2, K)` whenever `a ≠ b` and `c ≠ d`. -/
+@[simp]
 theorem crossRatioSphere_psl_smul (g : PSL(2, K)) {a b c d : OnePoint K} (hab : a ≠ b)
     (hcd : c ≠ d) :
     crossRatioSphere (g • a) (g • b) (g • c) (g • d) = crossRatioSphere a b c d := by
   simpa [ProjectiveSpecialLinearGroup.toPGL_smul] using
     crossRatioSphere_pgl_smul (ProjectiveSpecialLinearGroup.toPGL g) hab hcd
 
-/-- **Comparison with `OnePoint.crossRatio`.** When `a, b, c` are pairwise distinct and `d` is
-distinct from `a` and `c`, coercing `crossRatioSphere a b c d` to `OnePoint K` agrees with
+/-- **Comparison with `OnePoint.crossRatio`.** When `a, b, c` are pairwise distinct, `a ≠ d`, and
+`c, d` are not both `∞`, coercing `crossRatioSphere a b c d` to `OnePoint K` agrees with
 `OnePoint.crossRatio b c a d`. -/
-theorem coe_crossRatioSphere_eq_onePoint_crossRatio {a b c d : OnePoint K} (hab : a ≠ b)
-    (hac : a ≠ c) (hbc : b ≠ c) (had : a ≠ d) (hcd : c ≠ d) :
+theorem coe_crossRatioSphere_eq_crossRatio {a b c d : OnePoint K} (hab : a ≠ b)
+    (hac : a ≠ c) (hbc : b ≠ c) (had : a ≠ d) (hcd : ¬(c = ∞ ∧ d = ∞)) :
     ↑(crossRatioSphere a b c d) = OnePoint.crossRatio b c a d := by
-  obtain ⟨g, hb, hc, ha⟩ := exists_pgl_smul_eq_zero_one_infty hbc hab.symm hac.symm
-  have hgd : g • d ≠ ∞ := by
-    rw [← ha]
-    exact (MulAction.injective g).ne had.symm
-  obtain ⟨z, hz⟩ : ∃ z : K, g • d = z := by
-    cases h : g • d with
-    | infty => exact (hgd h).elim
-    | coe z => exact ⟨z, rfl⟩
-  rw [OnePoint.crossRatio_eq_smul d hb hc ha, ← crossRatioSphere_pgl_smul g hab hcd,
-    ha, hb, hc, hz, crossRatioSphere_infty_zero_one_coe]
+  by_cases hcd' : c = d
+  · subst hcd'
+    have hc : c ≠ ∞ := fun h ↦ hcd ⟨h, h⟩
+    have hab' : ¬(a = ∞ ∧ b = ∞) := fun ⟨ha, hb⟩ ↦ hab (ha.trans hb.symm)
+    rw [crossRatioSphere_self_third_fourth hc hac hbc hab',
+      OnePoint.crossRatio_fourth_eq_second hbc hab.symm hac.symm]
+  · obtain ⟨g, hb, hc, ha⟩ := exists_pgl_smul_eq_zero_one_infty hbc hab.symm hac.symm
+    have hgd : g • d ≠ ∞ := by
+      rw [← ha]
+      exact (MulAction.injective g).ne had.symm
+    obtain ⟨z, hz⟩ : ∃ z : K, g • d = z := by
+      cases h : g • d with
+      | infty => exact (hgd h).elim
+      | coe z => exact ⟨z, rfl⟩
+    rw [OnePoint.crossRatio_eq_smul d hb hc ha, ← crossRatioSphere_pgl_smul g hab hcd',
+      ha, hb, hc, hz, crossRatioSphere_infty_zero_one_coe]
 
 /-- On an injective quadruple, `↑(crossRatioSphere (s 0) (s 1) (s 2) (s 3))` equals
 `OnePoint.crossRatio (s 1) (s 2) (s 0) (s 3)`. -/
-theorem coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective {s : Fin 4 → OnePoint K}
+theorem coe_crossRatioSphere_eq_crossRatio_of_injective {s : Fin 4 → OnePoint K}
     (hs : Injective s) :
     ↑(crossRatioSphere (s 0) (s 1) (s 2) (s 3)) =
       OnePoint.crossRatio (s 1) (s 2) (s 0) (s 3) :=
-  coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
-    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))
+  coe_crossRatioSphere_eq_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
+    (hs.ne (by decide)) (hs.ne (by decide))
+    (fun ⟨h2, h3⟩ ↦ hs.ne (by decide : (2 : Fin 4) ≠ 3) (h2.trans h3.symm))
 
 /-- **Normalization of five distinct points on `OnePoint K` with explicit cross-ratio coordinates.**
 Every injective five-tuple `s : Fin 5 → OnePoint K` is carried by an element of `GL (Fin 2) K` to
@@ -560,20 +616,15 @@ theorem exists_gl_smul_eq_infty_zero_one_crossRatioSphere {s : Fin 5 → OnePoin
   have h1 : g • s 1 = (0 : K) := by rw [← h1', inv_smul_smul]
   have h2 : g • s 2 = (1 : K) := by rw [← h2', inv_smul_smul]
   have hfin (j : Fin 5) (hj0 : j ≠ 0) (hj2 : j ≠ 2) :
-      ∃ z : K, g • s j = z ∧ z = crossRatioSphere (s 0) (s 1) (s 2) (s j) := by
-    have hne : g • s j ≠ ∞ := by
-      rw [← h0]
-      exact (MulAction.injective g).ne (hs.ne hj0)
-    cases hgs : g • s j with
-    | infty => exact (hne hgs).elim
-    | coe z =>
-      refine ⟨z, rfl, ?_⟩
-      rw [← crossRatioSphere_gl_smul g (hs.ne (by decide : (0 : Fin 5) ≠ 1)) (hs.ne hj2.symm),
-        h0, h1, h2, hgs, crossRatioSphere_infty_zero_one_coe]
-  obtain ⟨x, hx, rfl⟩ := hfin 3 (by decide) (by decide)
-  obtain ⟨y, hy, rfl⟩ := hfin 4 (by decide) (by decide)
+      g • s j = ↑(crossRatioSphere (s 0) (s 1) (s 2) (s j)) := by
+    rw [coe_crossRatioSphere_eq_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
+        (hs.ne (by decide)) (hs.ne hj0.symm)
+        (fun ⟨h2j, hjj⟩ ↦ hs.ne hj2.symm (h2j.trans hjj.symm)),
+      OnePoint.crossRatio_eq_gl_smul (s j) h1 h2 h0]
   refine ⟨g, funext fun i ↦ ?_⟩
-  fin_cases i <;> simp [Pi.smul_apply, h0, h1, h2, hx, hy]
+  fin_cases i <;>
+    simp [Pi.smul_apply, h0, h1, h2, hfin 3 (by decide) (by decide),
+      hfin 4 (by decide) (by decide)]
 
 /-- Projective `PGL(2, K)` form of `exists_gl_smul_eq_infty_zero_one_crossRatioSphere`: every
 injective five-tuple `s : Fin 5 → OnePoint K` is carried by `PGL(2, K)` to `![∞, 0, 1, x, y]` with
@@ -608,95 +659,18 @@ theorem exists_gl_smul_eq_infty_zero_one_coe_coe {s : Fin 5 → OnePoint K} (hs 
 
 end Projective
 
-/-! ### Anharmonic transformations, five-point coordinates, and cyclic brackets -/
+/-! ### Five-point coordinates and cyclic brackets -/
 
-section AnharmonicAndFivePoint
+section FivePoint
 
 variable {K : Type*} [Field K]
-
-/-- On four pairwise distinct points of `OnePoint K`, `crossRatioSphere` is nonzero. -/
-theorem crossRatioSphere_ne_zero {s : Fin 4 → OnePoint K} (hs : Injective s) :
-    crossRatioSphere (s 0) (s 1) (s 2) (s 3) ≠ 0 := by
-  classical
-  intro h0
-  have hcoe := (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm
-  rw [h0, OnePoint.crossRatio_eq_zero_iff] at hcoe
-  exact hs.ne (by decide : (3 : Fin 4) ≠ 1) hcoe.2
-
-/-- On four pairwise distinct points of `OnePoint K`, `crossRatioSphere` is not equal to `1`. -/
-theorem crossRatioSphere_ne_one {s : Fin 4 → OnePoint K} (hs : Injective s) :
-    crossRatioSphere (s 0) (s 1) (s 2) (s 3) ≠ 1 := by
-  classical
-  intro h1
-  have hcoe := (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm
-  rw [h1, OnePoint.crossRatio_eq_one_iff] at hcoe
-  exact hs.ne (by decide : (3 : Fin 4) ≠ 2) hcoe.2
-
-/-- Exchanging the middle two entries of an injective quadruple replaces `crossRatioSphere` by
-`1 - r` (so the Goncharov–Rudenko bracket `1 - r(a, b, c, d)` equals `r(a, c, b, d)`). -/
-theorem crossRatioSphere_swap_second_third {s : Fin 4 → OnePoint K} (hs : Injective s) :
-    crossRatioSphere (s 0) (s 2) (s 1) (s 3) = 1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) := by
-  classical
-  have hswap := OnePoint.crossRatio_swap_first_second
-    (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm
-  rw [← coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
-    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))] at hswap
-  exact OnePoint.coe_eq_coe.mp hswap
-
-/-- **Homogeneous bracket comparison.** On an injective quadruple with nonzero homogeneous
-representatives `vᵢ`, the determinant quotient
-`det ![v 0, v 1] * det ![v 2, v 3] / (det ![v 0, v 3] * det ![v 2, v 1])` equals
-`1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3)`. -/
-theorem one_sub_crossRatioSphere_eq_det_div_of_injective [DecidableEq K] {s : Fin 4 → OnePoint K}
-    (hs : Injective s) {v : Fin 4 → Fin 2 → K} (hv : ∀ i, v i ≠ 0)
-    (hrep : ∀ i, Projectivization.mk K (v i) (hv i) = equivProjectivization K (s i)) :
-    1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) =
-      (Matrix.of ![v 0, v 1]).det * (Matrix.of ![v 2, v 3]).det /
-        ((Matrix.of ![v 0, v 3]).det * (Matrix.of ![v 2, v 1]).det) := by
-  rw [← crossRatioSphere_swap_second_third hs]
-  exact crossRatioSphere_eq_det_div
-    (fun ⟨h0, h2⟩ ↦ hs.ne (by decide : (0 : Fin 4) ≠ 2) (h0.trans h2.symm))
-    (fun ⟨h1, h3⟩ ↦ hs.ne (by decide : (1 : Fin 4) ≠ 3) (h1.trans h3.symm))
-    (hv 0) (hv 2) (hv 1) (hv 3) (hrep 0) (hrep 2) (hrep 1) (hrep 3)
-
-/-- Exchanging the first and fourth entries of an injective quadruple replaces `crossRatioSphere`
-by `1 - r`. -/
-theorem crossRatioSphere_swap_first_fourth {s : Fin 4 → OnePoint K} (hs : Injective s) :
-    crossRatioSphere (s 3) (s 1) (s 2) (s 0) = 1 - crossRatioSphere (s 0) (s 1) (s 2) (s 3) := by
-  rw [← crossRatioSphere_reverse, crossRatioSphere_swap_second_third hs]
-
-/-- Exchanging the first and third entries of an injective quadruple sends
-`r = crossRatioSphere (s 0) (s 1) (s 2) (s 3)` to `r / (r - 1)`. -/
-theorem crossRatioSphere_swap_first_third {s : Fin 4 → OnePoint K} (hs : Injective s) :
-    crossRatioSphere (s 2) (s 1) (s 0) (s 3) =
-      crossRatioSphere (s 0) (s 1) (s 2) (s 3) /
-        (crossRatioSphere (s 0) (s 1) (s 2) (s 3) - 1) := by
-  classical
-  have hswap := OnePoint.crossRatio_swap_second_third
-    (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm (crossRatioSphere_ne_one hs)
-  rw [← coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
-    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))] at hswap
-  exact OnePoint.coe_eq_coe.mp hswap
-
-/-- Exchanging the second and fourth entries of an injective quadruple sends
-`r = crossRatioSphere (s 0) (s 1) (s 2) (s 3)` to `r / (r - 1)`. -/
-theorem crossRatioSphere_swap_second_fourth {s : Fin 4 → OnePoint K} (hs : Injective s) :
-    crossRatioSphere (s 0) (s 3) (s 2) (s 1) =
-      crossRatioSphere (s 0) (s 1) (s 2) (s 3) /
-        (crossRatioSphere (s 0) (s 1) (s 2) (s 3) - 1) := by
-  classical
-  have hswap := OnePoint.crossRatio_swap_first_fourth
-    (coe_crossRatioSphere_eq_onePoint_crossRatio_of_injective hs).symm (crossRatioSphere_ne_one hs)
-  rw [← coe_crossRatioSphere_eq_onePoint_crossRatio (hs.ne (by decide)) (hs.ne (by decide))
-    (hs.ne (by decide)) (hs.ne (by decide)) (hs.ne (by decide))] at hswap
-  exact OnePoint.coe_eq_coe.mp hswap
 
 /-- On the normalized five-tuple `![∞, 0, 1, x, y]`, omitting `∞` gives
 `crossRatioSphere 0 1 x y = ((1 - x⁻¹) / (1 - y⁻¹))⁻¹` for all nonzero `x` and `y`. -/
 theorem crossRatioSphere_zero_one_coe_coe {x y : K} (hx : x ≠ 0) (hy : y ≠ 0) :
     crossRatioSphere ((0 : K) : OnePoint K) ((1 : K) : OnePoint K) x y =
       ((1 - x⁻¹) / (1 - y⁻¹))⁻¹ := by
-  rw [crossRatioSphere_coe, crossRatio_def, inv_div]
+  rw [crossRatioSphere_coe, TauCeti.crossRatio_def, inv_div]
   rcases eq_or_ne x 1 with rfl | hx1
   · simp
   rcases eq_or_ne y 1 with rfl | hy1
@@ -761,107 +735,11 @@ theorem crossRatioSphere_cyclic_five_bracket {s : Fin 5 → OnePoint K} (hs : In
   field_simp [hx0, sub_ne_zero.mpr hx1, sub_ne_zero.mpr hxy]
   ring
 
-end AnharmonicAndFivePoint
-
-/-! ### Analytic cancellation limits at infinity -/
-
-section NormedField
-
-variable {K : Type*} [NormedField K]
-
-/-- As `a` escapes bounded sets in a normed field `K`, `crossRatio a b c d` converges to the
-one-infinity cancellation value `crossRatioSphere ∞ b c d` for all `b, c, d : K`. -/
-theorem tendsto_crossRatio_cobounded_first (b c d : K) :
-    Tendsto (fun a : K ↦ crossRatio a b c d) (cobounded K)
-      (𝓝 (crossRatioSphere ∞ b c d)) := by
-  have hfactor (a : K) : crossRatio a b c d =
-      ((a - c) / (a - d)) * crossRatioSphere ∞ b c d := by
-    rw [crossRatio_def, crossRatioSphere_infty_coe_coe_coe, mul_div_mul_comm]
-  simp_rw [hfactor]
-  suffices hlim : Tendsto (fun a : K ↦ (a - c) / (a - d)) (cobounded K) (𝓝 1) by
-    simpa only [one_mul] using hlim.mul_const (crossRatioSphere ∞ b c d)
-  have hinv : Tendsto (fun a : K ↦ a⁻¹) (cobounded K) (𝓝 0) := tendsto_inv₀_cobounded
-  have h1 (w : K) : Tendsto (fun a : K ↦ 1 - w * a⁻¹) (cobounded K) (𝓝 1) := by
-    simpa using tendsto_const_nhds.sub (hinv.const_mul w)
-  have hdiv : Tendsto (fun a : K ↦ (1 - c * a⁻¹) / (1 - d * a⁻¹)) (cobounded K) (𝓝 1) := by
-    simpa [Pi.div_def] using (h1 c).div (h1 d) one_ne_zero
-  refine hdiv.congr' ?_
-  filter_upwards [tendsto_inv₀_cobounded'.eventually self_mem_nhdsWithin] with a ha
-  have ha0 : a ≠ 0 := fun h0 ↦ ha (by simp [h0])
-  have hsub (w : K) : a - w = a * (1 - w * a⁻¹) := by
-    rw [mul_sub, mul_one, mul_comm w, ← mul_assoc, mul_inv_cancel₀ ha0, one_mul]
-  rw [hsub c, hsub d, mul_div_mul_left _ _ ha0]
-
-/-- As `b` escapes bounded sets in `K`, `crossRatio a b c d` converges to
-`crossRatioSphere a ∞ c d` for all `a, c, d : K`. -/
-theorem tendsto_crossRatio_cobounded_second (a c d : K) :
-    Tendsto (fun b : K ↦ crossRatio a b c d) (cobounded K)
-      (𝓝 (crossRatioSphere a ∞ c d)) := by
-  simp_rw [← crossRatio_swap_pairs a _ c d,
-    ← crossRatioSphere_swap_pairs (a : OnePoint K) ∞ c d]
-  exact tendsto_crossRatio_cobounded_first a d c
-
-/-- As `c` escapes bounded sets in `K`, `crossRatio a b c d` converges to
-`crossRatioSphere a b ∞ d` for all `a, b, d : K`. -/
-theorem tendsto_crossRatio_cobounded_third (a b d : K) :
-    Tendsto (fun c : K ↦ crossRatio a b c d) (cobounded K)
-      (𝓝 (crossRatioSphere a b ∞ d)) := by
-  simp_rw [← crossRatio_comm_pairs a b _ d,
-    ← crossRatioSphere_comm_pairs (a : OnePoint K) b ∞ d]
-  exact tendsto_crossRatio_cobounded_first d a b
-
-/-- As `d` escapes bounded sets in `K`, `crossRatio a b c d` converges to
-`crossRatioSphere a b c ∞` for all `a, b, c : K`. -/
-theorem tendsto_crossRatio_cobounded_fourth (a b c : K) :
-    Tendsto (fun d : K ↦ crossRatio a b c d) (cobounded K)
-      (𝓝 (crossRatioSphere a b c ∞)) := by
-  simp_rw [← crossRatio_reverse a b c _,
-    ← crossRatioSphere_reverse (a : OnePoint K) b c ∞]
-  exact tendsto_crossRatio_cobounded_first c b a
-
-/-- As `a` escapes bounded sets in `K`, `crossRatio a 0 1 z` converges to `z`. -/
-theorem tendsto_crossRatio_zero_one_cobounded (z : K) :
-    Tendsto (fun a : K ↦ crossRatio a 0 1 z) (cobounded K) (𝓝 z) := by
-  simpa only [crossRatioSphere_infty_zero_one_coe] using
-    tendsto_crossRatio_cobounded_first 0 1 z
-
-/-- Over a proper normed field (such as `ℝ` or `ℂ`), `a ↦ crossRatioSphere a b c d` is continuous
-at `∞` for any finite `b, c, d : K`. -/
-theorem continuousAt_crossRatioSphere_infty_first [ProperSpace K] (b c d : K) :
-    ContinuousAt (fun a : OnePoint K ↦ crossRatioSphere a b c d) ∞ := by
-  rw [OnePoint.continuousAt_infty', coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
-  exact tendsto_crossRatio_cobounded_first b c d
-
-/-- Over a proper normed field, `b ↦ crossRatioSphere a b c d` is continuous at `∞` for any finite
-`a, c, d : K`. -/
-theorem continuousAt_crossRatioSphere_infty_second [ProperSpace K] (a c d : K) :
-    ContinuousAt (fun b : OnePoint K ↦ crossRatioSphere a b c d) ∞ := by
-  rw [OnePoint.continuousAt_infty', coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
-  exact tendsto_crossRatio_cobounded_second a c d
-
-/-- Over a proper normed field, `c ↦ crossRatioSphere a b c d` is continuous at `∞` for any finite
-`a, b, d : K`. -/
-theorem continuousAt_crossRatioSphere_infty_third [ProperSpace K] (a b d : K) :
-    ContinuousAt (fun c : OnePoint K ↦ crossRatioSphere a b c d) ∞ := by
-  rw [OnePoint.continuousAt_infty', coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
-  exact tendsto_crossRatio_cobounded_third a b d
-
-/-- Over a proper normed field, `d ↦ crossRatioSphere a b c d` is continuous at `∞` for any finite
-`a, b, c : K`. -/
-theorem continuousAt_crossRatioSphere_infty_fourth [ProperSpace K] (a b c : K) :
-    ContinuousAt (fun d : OnePoint K ↦ crossRatioSphere a b c d) ∞ := by
-  rw [OnePoint.continuousAt_infty', coclosedCompact_eq_cocompact, ← Metric.cobounded_eq_cocompact]
-  exact tendsto_crossRatio_cobounded_fourth a b c
-
-end NormedField
+end FivePoint
 
 /-! ### Checks and sharpness witnesses -/
 
 section Checks
-
--- Missing-hypothesis negative control: `crossRatio 0 0 1 2 = 1`, whereas `crossRatio 0 0 0 2 = 0`.
-example : crossRatio (0 : ℚ) 0 1 2 = 1 ∧ crossRatio (0 : ℚ) 0 0 2 = 0 :=
-  ⟨crossRatio_self_first_second (by norm_num) (by norm_num), by simp⟩
 
 -- Paired cancellation check over `ℚ`: `r(∞, 0, 1, 3) = 3` and `r(0, ∞, 1, 3) = 1 / 3`.
 example :
@@ -893,7 +771,7 @@ example :
   intro g
   have hg0 : g • ((0 : ℚ) : OnePoint ℚ) = ∞ := by simp [g]
   rw [hg0, crossRatioSphere_infty_infty, crossRatioSphere_coe,
-    crossRatio_self_first_second (by norm_num) (by norm_num)]
+    TauCeti.crossRatio_self_first_second (by norm_num) (by norm_num)]
   norm_num
 
 -- Sharpness of `a ≠ d` in the bracket relation: on `(0, 1, 2, 0)`, `1 - r = 1 ≠ 0`.
@@ -906,4 +784,4 @@ example :
 
 end Checks
 
-end TauCeti.Polylog
+end OnePoint
