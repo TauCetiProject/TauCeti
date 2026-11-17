@@ -9,9 +9,9 @@ public import Mathlib.Analysis.Calculus.LogDeriv
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Complex.LocalLogDeriv
 import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.LogDeriv
-import TauCeti.NumberTheory.LFunctions.Zeros.ZeroFreeRegion.Basic
 import TauCeti.NumberTheory.LSeries.DirichletEulerLog
 import TauCeti.NumberTheory.LSeries.RiemannZeta
 import TauCeti.NumberTheory.LSeries.RiemannZeta.LogDerivNearOne
@@ -93,7 +93,7 @@ private theorem exists_neg_re_logDeriv_riemannZeta_add_sum_le :
             (closedBall ((9 / 8 : ℝ) + t * I) ((1 / 2 : ℝ) / 2)) ρ : ℝ) *
             ((((σ : ℂ) + t * I) - ρ)⁻¹).re ≤
         A * Real.log (|t| + 3) := by
-  obtain ⟨A, hA, hLandau⟩ := exists_neg_re_logDeriv_add_sum_divisor_half_le
+  obtain ⟨A, hA, hLandau⟩ := TauCeti.exists_neg_re_logDeriv_add_sum_divisor_half_le
     (R := 1 / 2) (b := Real.exp (-(riemannZeta (9 / 8 : ℝ)).re))
     (c := 3) (K₀ := 3) (by norm_num) (Real.exp_pos _) (by norm_num)
   refine ⟨A, hA, fun {σ t} hσ1 hσ2 ht S ↦ ?_⟩
@@ -106,9 +106,7 @@ private theorem exists_neg_re_logDeriv_riemannZeta_add_sum_le :
       (1 : DirichletCharacter ℂ 1).exp_neg_re_riemannZeta_le_norm_LFunction
         (s := (9 / 8 : ℝ) + t * I) (by simp; norm_num)
   have hz : ‖((σ : ℂ) + t * I) - ((9 / 8 : ℝ) + t * I)‖ ≤ (1 / 2 : ℝ) / 4 := by
-    rw [show ((σ : ℂ) + t * I) - ((9 / 8 : ℝ) + t * I) = ((σ - 9 / 8 : ℝ) : ℂ) from
-        Complex.ext (by simp) (by simp),
-      norm_real, Real.norm_eq_abs, abs_le]
+    rw [add_sub_add_right_eq_sub, ← ofReal_sub, norm_real, Real.norm_eq_abs, abs_le]
     exact ⟨by linarith, by linarith⟩
   exact hLandau hf hb₀
     (fun w hw ↦ (norm_riemannZeta_on_closedBall ht (sphere_subset_closedBall hw)).2.2) hz
@@ -129,7 +127,7 @@ theorem exists_neg_re_logDeriv_riemannZeta_le :
   refine ⟨max A₀ (-(logDeriv riemannZeta σ₀).re / Real.log 3), lt_max_of_lt_left hA₀,
     fun {s} hs ht ↦ ?_⟩
   simpa [LFunction_modOne_eq] using
-    neg_re_logDeriv_LFunction_le_max_of_strip (1 : DirichletCharacter ℂ 1)
+    (1 : DirichletCharacter ℂ 1).neg_re_logDeriv_LFunction_le_max_of_re_le
       (σ₀ := σ₀) (by norm_num [σ₀]) hlog3
       (Real.log_le_log (by norm_num) (by linarith [abs_nonneg s.im])) fun hs9 ↦ by
         simpa [LFunction_modOne_eq, re_add_im s] using h hs hs9 ht ∅
@@ -188,7 +186,7 @@ private theorem exists_neg_re_logDeriv_riemannZeta_retained :
       have := (norm_riemannZeta_on_closedBall ht
         (closedBall_subset_closedBall (by norm_num) hw)).2.1
       subst h1; norm_num at this
-  exact neg_re_logDeriv_add_inv_sub_le hf
+  exact hf.neg_re_logDeriv_add_inv_sub_le
     (riemannZeta_ne_zero_of_one_le_re (by simp; norm_num))
     (abs_le.mpr ⟨by linarith, by linarith⟩) hζ0 (hs_lt1.le.trans hσ1) (hLandau hσ1 hσ2 ht {s})
 
@@ -217,8 +215,8 @@ private theorem exists_riemannZeta_ne_zero_of_one_le_abs_im :
     le_trans (by simpa [σ] using hpole0 (η := 4 * δ) (by positivity) (by linarith))
       (add_le_add_right (TauCeti.le_div_mul_of_le hC₁0 hlog3 hlog_ge) _)
   have hzero_t : -(logDeriv riemannZeta (σ + s.im * I)).re + (5 * δ)⁻¹ ≤ A₂ * L := by
-    simpa [show σ - s.re = 5 * δ by simp [σ, δ]; ring] using
-      hret (σ := σ) (s := s) (by linarith) (by linarith) ht (by linarith) hζ0
+    have hsub : σ - s.re = 5 * δ := by simp only [σ, δ]; ring
+    simpa [hsub] using hret (σ := σ) (s := s) (by linarith) (by linarith) ht (by linarith) hζ0
   have hzero_2t : -(logDeriv riemannZeta (σ + 2 * s.im * I)).re ≤ 2 * A₁ * L := by
     have him : ((σ : ℂ) + 2 * s.im * I).im = 2 * s.im := by simp
     have h2 := hfree (s := (σ : ℂ) + 2 * s.im * I) (by simp; linarith)

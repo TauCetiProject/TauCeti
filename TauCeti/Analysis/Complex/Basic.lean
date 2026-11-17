@@ -26,6 +26,8 @@ Inversion preserves the open right half-plane: `z⁻¹` has positive real part e
 does (`Complex.inv_re_pos`), and off the real axis its real part is bounded by `(2 |Im z|)⁻¹`
 (`Complex.inv_re_le_inv_two_mul_abs_im`). On a closed disc `closedBall z₀ r`, the real and
 imaginary parts stay within `r` of `z₀.re` and `z₀.im` and `‖z‖ ≤ |z₀.re| + |z₀.im| + r`.
+Two complex numbers with the same imaginary part differ by the real cast of their real-part
+difference (`Complex.sub_eq_ofReal_re_sub_of_im_eq`).
 
 The map `y ↦ r² / y` (inversion in the circle of radius `r` followed by conjugation) satisfies
 `‖conj x - r² / y‖ ≤ 3 ‖x - y‖` for `‖x‖ ≤ r ≤ ‖y‖` (`Complex.norm_conj_sub_sq_div_le`).
@@ -194,12 +196,18 @@ theorem norm_le_abs_re_add_abs_im_add_of_mem_closedBall {z z₀ : ℂ} {r : ℝ}
     (hz : z ∈ Metric.closedBall z₀ r) : ‖z‖ ≤ |z₀.re| + |z₀.im| + r :=
   (norm_le_of_mem_closedBall hz).trans (add_le_add_left (norm_le_abs_re_add_abs_im z₀) r)
 
+/-- Two complex numbers with the same imaginary part differ by the real cast of the difference of
+their real parts. -/
+theorem sub_eq_ofReal_re_sub_of_im_eq {z w : ℂ} (h : z.im = w.im) :
+    z - w = ((z.re - w.re : ℝ) : ℂ) :=
+  Complex.ext (by simp) (by simp [h])
+
 /-- The distance from `z` to `(σ : ℂ) + z.im * I` on the same horizontal line is `|z.re - σ|`,
 so `z ∈ closedBall (σ + z.im * I) r` iff `|z.re - σ| ≤ r`. -/
 theorem mem_closedBall_ofReal_add_im_mul_I_iff {z : ℂ} {σ r : ℝ} :
     z ∈ Metric.closedBall ((σ : ℂ) + z.im * I) r ↔ |z.re - σ| ≤ r := by
-  rw [Metric.mem_closedBall, dist_eq_norm,
-    show z - ((σ : ℂ) + z.im * I) = ((z.re - σ : ℝ) : ℂ) from Complex.ext (by simp) (by simp),
+  rw [Metric.mem_closedBall, dist_eq_norm, sub_eq_ofReal_re_sub_of_im_eq (by simp),
     norm_real, Real.norm_eq_abs]
+  simp
 
 end Complex

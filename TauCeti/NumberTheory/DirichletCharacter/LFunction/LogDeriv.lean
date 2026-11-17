@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.ProdPowDvd
 import TauCeti.Analysis.SpecialFunctions.Pow.EulerFactor
 import TauCeti.NumberTheory.DirichletCharacter.LFunction.Basic
@@ -32,8 +33,8 @@ character the logarithmic derivative is moreover real, and the prime series is t
 corresponding real series.
 
 The file also records the triangle-inequality comparison `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ))` on
-`1 < σ ≤ re s`, the classical nonnegative combinations of logarithmic derivatives
-(`Re (ζ′/ζ(re s)) + Re (L′/L(s, χ)) ≤ 0` and
+`1 < σ ≤ re s`, its tail-extension corollary from `re s ≤ σ₀` to all `s : ℂ`, the classical
+nonnegative combinations of logarithmic derivatives (`Re (ζ′/ζ(re s)) + Re (L′/L(s, χ)) ≤ 0` and
 `3 Re (ζ′/ζ(σ)) + 4 Re (L′/L(σ + i t, χ)) + Re (L′/L(σ + 2 i t, χ²)) ≤ 0`), and the level-change
 comparison `‖L′/L(s, changeLevel hMN ψ) - L′/L(s, ψ)‖ ≤ log N` on `1 ≤ re s` (specializing to
 `‖L′/L(s, 1_N) - ζ′/ζ(s)‖ ≤ log N`).
@@ -59,9 +60,11 @@ The constant's summability, `ArithmeticFunction.vonMangoldt.summable_nonprime_di
   terms of the twisted von Mangoldt series.
 * `DirichletCharacter.norm_logDeriv_LFunction_le_of_le_re`,
   `DirichletCharacter.norm_logDeriv_LFunction_le`,
+  `DirichletCharacter.neg_re_logDeriv_LFunction_le_max_of_re_le`,
   `DirichletCharacter.re_logDeriv_riemannZeta_add_re_logDeriv_LFunction_nonpos`, and
   `DirichletCharacter.threeFourOne_re_logDeriv_riemannZeta_LFunction_nonpos`: the half-plane
-  triangle inequality and the `1 + χ` and `3-4-1` logarithmic-derivative inequalities.
+  triangle inequality, its right-tail extension, and the `1 + χ` and `3-4-1` logarithmic-derivative
+  inequalities.
 * `DirichletCharacter.norm_logDeriv_LFunction_changeLevel_sub_le` and
   `DirichletCharacter.norm_logDeriv_LFunctionTrivChar_sub_logDeriv_riemannZeta_le`: the
   deleted-Euler-factor logarithmic-derivative bounds on `1 ≤ re s`.
@@ -289,6 +292,24 @@ theorem norm_logDeriv_LFunction_le_of_le_re [NeZero N] {σ : ℝ} (hσ : 1 < σ)
 theorem norm_logDeriv_LFunction_le [NeZero N] (hs : 1 < s.re) :
     ‖logDeriv (LFunction χ) s‖ ≤ -(logDeriv riemannZeta s.re).re :=
   χ.norm_logDeriv_LFunction_le_of_le_re hs le_rfl
+
+/-- Extending an upper bound `-(logDeriv (LFunction χ) s).re ≤ A₀ * M` from `s.re ≤ σ₀` (`1 < σ₀`)
+to arbitrary `s : ℂ` via the Dirichlet-series comparison `‖L′/L(s, χ)‖ ≤ -Re (ζ′/ζ(σ₀))` on
+`σ₀ ≤ s.re`. -/
+theorem neg_re_logDeriv_LFunction_le_max_of_re_le [NeZero N] {σ₀ A₀ M₀ M : ℝ}
+    (hσ₀ : 1 < σ₀) (hM₀ : 0 < M₀) (hM : M₀ ≤ M)
+    (hre : s.re ≤ σ₀ → -(logDeriv (LFunction χ) s).re ≤ A₀ * M) :
+    -(logDeriv (LFunction χ) s).re ≤ max A₀ (-(logDeriv riemannZeta σ₀).re / M₀) * M := by
+  have hMnonneg : 0 ≤ M := hM₀.le.trans hM
+  rcases le_or_gt s.re σ₀ with hs | hs
+  · exact (hre hs).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hMnonneg)
+  · have hC₀ : 0 ≤ -(logDeriv riemannZeta σ₀).re :=
+      (norm_nonneg _).trans (χ.norm_logDeriv_LFunction_le_of_le_re (s := σ₀) hσ₀ (by simp))
+    have htail : -(logDeriv (LFunction χ) s).re ≤ -(logDeriv riemannZeta σ₀).re :=
+      ((neg_le_abs _).trans (Complex.abs_re_le_norm _)).trans
+        (χ.norm_logDeriv_LFunction_le_of_le_re hσ₀ hs.le)
+    exact htail.trans ((TauCeti.le_div_mul_of_le hC₀ hM₀ hM).trans
+      (mul_le_mul_of_nonneg_right (le_max_right _ _) hMnonneg))
 
 /-- **The `1 + χ` logarithmic-derivative inequality.** For every Dirichlet character `χ` of
 positive level and `1 < s.re`, `Re (ζ′/ζ(s.re)) + Re (L′/L(s, χ)) ≤ 0`. -/
