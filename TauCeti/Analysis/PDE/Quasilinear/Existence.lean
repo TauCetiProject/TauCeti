@@ -380,7 +380,7 @@ theorem exists_sub_mem_w1p0Submodule_forall_energyFormH1_quasilinear_eq
     (continuous_value_frozenSolution hA hAm hAc hΩ g ℓ).continuousOn (mapsTo_univ _ _) hK
   obtain ⟨v, -, hv⟩ := hfix
   -- At the fixed point `v`, the value of `u = S v` is `v` itself.
-  have hv' : W1p.value (frozenSolution A g ℓ v) = v := hv
+  have hv' : W1p.value (frozenSolution A g ℓ v) = v := hv.eq
   have hspec := frozenSolution_spec hA hAm hAc hΩ g ℓ (Lp.aestronglyMeasurable v)
   refine ⟨frozenSolution A g ℓ v, hspec.1, fun φ => ?_⟩
   rw [hv']
