@@ -94,17 +94,14 @@ theorem IsRightInvariantIntegral.apply_mul_one_eq {φ ψ : H →ₗ[R] R}
   have hr := congrArg ψ (hφ.sum_smul (ℛ R a))
   have hl := congrArg φ (hψ.sum_smul (ℛ R a))
   simp only [map_sum, map_smul, smul_eq_mul] at hr hl
-  calc φ a * ψ 1 = ∑ i ∈ (ℛ R a).index, φ ((ℛ R a).left i) * ψ ((ℛ R a).right i) := hr.symm
-    _ = ∑ i ∈ (ℛ R a).index, ψ ((ℛ R a).right i) * φ ((ℛ R a).left i) :=
-      Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
-    _ = ψ a * φ 1 := hl
+  rw [← hr, ← hl]
+  exact Finset.sum_congr rfl fun _ _ ↦ mul_comm _ _
 
 /-- A normalized right invariant integral agrees with any normalized left invariant integral. -/
 theorem IsRightInvariantIntegral.eq_of_isLeftInvariantIntegral {φ ψ : H →ₗ[R] R}
     (hφ : φ.IsRightInvariantIntegral) (hψ : ψ.IsLeftInvariantIntegral)
-    (hφ1 : φ 1 = 1) (hψ1 : ψ 1 = 1) : φ = ψ := by
-  ext a
-  simpa [hφ1, hψ1] using hφ.apply_mul_one_eq hψ a
+    (hφ1 : φ 1 = 1) (hψ1 : ψ 1 = 1) : φ = ψ :=
+  LinearMap.ext fun a ↦ by simpa [hφ1, hψ1] using hφ.apply_mul_one_eq hψ a
 
 end Bialgebra
 
@@ -112,65 +109,42 @@ section Hopf
 
 variable [CommSemiring R] [Semiring H] [HopfAlgebra R H] {h : H →ₗ[R] R}
 
+private def antipodeRepr {a : H} {ι : Type*} (ra : Coalgebra.Repr R a ι) :
+    Coalgebra.Repr R (HopfAlgebra.antipode R a) ι :=
+  ⟨ra.index, fun i ↦ HopfAlgebra.antipode R (ra.right i),
+    fun i ↦ HopfAlgebra.antipode R (ra.left i), by
+      rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, ← ra.eq]; simp [map_sum]⟩
+
 /-- Precomposing a left invariant integral with an injective antipode yields a right invariant
 integral. -/
 theorem IsLeftInvariantIntegral.comp_antipode (hh : h.IsLeftInvariantIntegral)
     (hS : Function.Injective (HopfAlgebra.antipode R (A := H))) :
-    (h.comp (HopfAlgebra.antipode R)).IsRightInvariantIntegral := by
-  intro a
-  have hcomul : Coalgebra.comul (R := R) (HopfAlgebra.antipode R a) =
-      ∑ i ∈ (ℛ R a).index,
-        HopfAlgebra.antipode R ((ℛ R a).right i) ⊗ₜ[R]
-          HopfAlgebra.antipode R ((ℛ R a).left i) := by
-    rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, ← (ℛ R a).eq]
-    simp [map_sum]
-  let rS : Coalgebra.Repr R (HopfAlgebra.antipode R a) _ :=
-    ⟨(ℛ R a).index, fun i ↦ HopfAlgebra.antipode R ((ℛ R a).right i),
-      fun i ↦ HopfAlgebra.antipode R ((ℛ R a).left i), hcomul.symm⟩
-  have hleft := hh.sum_smul rS
-  have hsum : ∑ i ∈ (ℛ R a).index, h (HopfAlgebra.antipode R ((ℛ R a).left i)) • (ℛ R a).right i =
-      h (HopfAlgebra.antipode R a) • (1 : H) := by
-    apply hS
-    simpa [rS, map_sum, map_smul] using hleft
-  simpa [← (ℛ R a).eq, map_sum] using hsum
+    (h.comp (HopfAlgebra.antipode R)).IsRightInvariantIntegral := fun a ↦ by
+  simpa [← (ℛ R a).eq, map_sum] using hS <| by
+    simpa [antipodeRepr, map_sum, map_smul] using hh.sum_smul (antipodeRepr (ℛ R a))
 
 /-- Precomposing a right invariant integral with an injective antipode yields a left invariant
 integral. -/
 theorem IsRightInvariantIntegral.comp_antipode (hh : h.IsRightInvariantIntegral)
     (hS : Function.Injective (HopfAlgebra.antipode R (A := H))) :
-    (h.comp (HopfAlgebra.antipode R)).IsLeftInvariantIntegral := by
-  intro a
-  have hcomul : Coalgebra.comul (R := R) (HopfAlgebra.antipode R a) =
-      ∑ i ∈ (ℛ R a).index,
-        HopfAlgebra.antipode R ((ℛ R a).right i) ⊗ₜ[R]
-          HopfAlgebra.antipode R ((ℛ R a).left i) := by
-    rw [TauCeti.HopfAlgebra.antipode_comul_antidistrib_apply, ← (ℛ R a).eq]
-    simp [map_sum]
-  let rS : Coalgebra.Repr R (HopfAlgebra.antipode R a) _ :=
-    ⟨(ℛ R a).index, fun i ↦ HopfAlgebra.antipode R ((ℛ R a).right i),
-      fun i ↦ HopfAlgebra.antipode R ((ℛ R a).left i), hcomul.symm⟩
-  have hright := hh.sum_smul rS
-  have hsum : ∑ i ∈ (ℛ R a).index, h (HopfAlgebra.antipode R ((ℛ R a).right i)) • (ℛ R a).left i =
-      h (HopfAlgebra.antipode R a) • (1 : H) := by
-    apply hS
-    simpa [rS, map_sum, map_smul] using hright
-  simpa [← (ℛ R a).eq, map_sum] using hsum
+    (h.comp (HopfAlgebra.antipode R)).IsLeftInvariantIntegral := fun a ↦ by
+  simpa [← (ℛ R a).eq, map_sum] using hS <| by
+    simpa [antipodeRepr, map_sum, map_smul] using hh.sum_smul (antipodeRepr (ℛ R a))
 
 /-- A normalized left invariant integral on a Hopf algebra with injective antipode is
 antipode-invariant: `h (S a) = h a`. -/
 theorem IsLeftInvariantIntegral.apply_antipode (hl : h.IsLeftInvariantIntegral)
     (h1 : h 1 = 1) (hS : Function.Injective (HopfAlgebra.antipode R (A := H))) (a : H) :
-    h (HopfAlgebra.antipode R a) = h a := by
-  have hcomp := (hl.comp_antipode hS).eq_of_isLeftInvariantIntegral hl (by simp [h1]) h1
-  exact LinearMap.congr_fun hcomp a
+    h (HopfAlgebra.antipode R a) = h a :=
+  LinearMap.congr_fun ((hl.comp_antipode hS).eq_of_isLeftInvariantIntegral hl (by simp [h1]) h1) a
 
 /-- A normalized right invariant integral on a Hopf algebra with injective antipode is
 antipode-invariant: `h (S a) = h a`. -/
 theorem IsRightInvariantIntegral.apply_antipode (hr : h.IsRightInvariantIntegral)
     (h1 : h 1 = 1) (hS : Function.Injective (HopfAlgebra.antipode R (A := H))) (a : H) :
-    h (HopfAlgebra.antipode R a) = h a := by
-  have hcomp := hr.eq_of_isLeftInvariantIntegral (hr.comp_antipode hS) h1 (by simp [h1])
-  exact (LinearMap.congr_fun hcomp a).symm
+    h (HopfAlgebra.antipode R a) = h a :=
+  (LinearMap.congr_fun (hr.eq_of_isLeftInvariantIntegral (hr.comp_antipode hS) h1 (by simp [h1]))
+    a).symm
 
 /-- Strong right invariance, with the antipode moved across the integral. -/
 theorem IsRightInvariantIntegral.strong_invariance (hh : h.IsRightInvariantIntegral)

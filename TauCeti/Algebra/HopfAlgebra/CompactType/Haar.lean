@@ -12,20 +12,11 @@ public import TauCeti.Algebra.HopfAlgebra.Star
 /-!
 # Algebraic Haar states on complex bialgebras and Hopf star algebras
 
-An *algebraic Haar state* on a complex star bialgebra `A` is a normalized, positive,
-two-sided invariant linear functional `h : A →ₗ[ℂ] ℂ`:
-
-* `h 1 = 1`;
-* `(id ⊗ h) Δ(a) = h(a) 1` (`LinearMap.IsLeftInvariantIntegral`);
-* `(h ⊗ id) Δ(a) = h(a) 1` (`LinearMap.IsRightInvariantIntegral`);
-* `0 ≤ h (star a * a)` for every `a : A`.
-
-Because any normalized right invariant integral agrees with any normalized left invariant
-integral, an algebraic Haar state is unique when it exists (`Subsingleton (AlgebraicHaar A)`).
-On a complex Hopf star algebra, it is automatically strictly positive, algebraically faithful on
-both sides, antipode-invariant (`h (S a) = h a`), and forces `A` to be linearly reductive.
-
-No norm, C*-completion, or topology on `A` is assumed.
+An *algebraic Haar state* on a complex star bialgebra `A` is a normalized (`h 1 = 1`), positive
+(`0 ≤ h (star a * a)`), two-sided invariant linear functional `h : A →ₗ[ℂ] ℂ`. No norm,
+C*-completion, or topology is assumed. It is unique when it exists, and on a complex Hopf star
+algebra it is strictly positive, algebraically faithful, antipode-invariant, and forces linear
+reductivity.
 
 ## Main declarations
 
@@ -72,11 +63,7 @@ variable {A : Type u} [Semiring A] [Star A] [Bialgebra ℂ A]
 
 instance : FunLike (AlgebraicHaar A) A ℂ where
   coe h := h.functional
-  coe_injective h₁ h₂ H := by
-    cases h₁
-    cases h₂
-    congr
-    exact DFunLike.coe_injective H
+  coe_injective h₁ h₂ H := by cases h₁; cases h₂; congr; exact DFunLike.coe_injective H
 
 instance : LinearMapClass (AlgebraicHaar A) ℂ A ℂ where
   map_add h := h.functional.map_add
@@ -84,32 +71,24 @@ instance : LinearMapClass (AlgebraicHaar A) ℂ A ℂ where
 
 /-- Algebraic Haar states are determined by their values. -/
 @[ext]
-theorem ext {h₁ h₂ : AlgebraicHaar A} (H : ∀ a, h₁ a = h₂ a) : h₁ = h₂ :=
-  DFunLike.ext h₁ h₂ H
+theorem ext {h₁ h₂ : AlgebraicHaar A} (H : ∀ a, h₁ a = h₂ a) : h₁ = h₂ := DFunLike.ext h₁ h₂ H
 
 @[simp]
-theorem functional_apply (h : AlgebraicHaar A) (a : A) : h.functional a = h a :=
-  (rfl)
+theorem functional_apply (h : AlgebraicHaar A) (a : A) : h.functional a = h a := (rfl)
 
 /-- An algebraic Haar state sends `1` to `1`. -/
 @[simp]
-theorem map_one (h : AlgebraicHaar A) : h 1 = 1 :=
-  h.normalized
+theorem map_one (h : AlgebraicHaar A) : h 1 = 1 := h.normalized
 
 /-- An algebraic Haar state is nonzero. -/
-theorem functional_ne_zero (h : AlgebraicHaar A) : h.functional ≠ 0 := by
-  intro h0
-  have : (1 : ℂ) = 0 := by
-    rw [← h.normalized, h0, LinearMap.zero_apply]
-  exact one_ne_zero this
+theorem functional_ne_zero (h : AlgebraicHaar A) : h.functional ≠ 0 := fun h0 ↦
+  one_ne_zero (show (1 : ℂ) = 0 by rw [← h.normalized, h0, LinearMap.zero_apply])
 
 /-- An algebraic Haar state on a complex star bialgebra is unique when it exists. -/
 instance : Subsingleton (AlgebraicHaar A) where
-  allEq h₁ h₂ := by
-    ext a
-    exact LinearMap.congr_fun
-      (h₁.right_invariant.eq_of_isLeftInvariantIntegral h₂.left_invariant
-        h₁.normalized h₂.normalized) a
+  allEq h₁ h₂ := ext fun a ↦ LinearMap.congr_fun
+    (h₁.right_invariant.eq_of_isLeftInvariantIntegral h₂.left_invariant
+      h₁.normalized h₂.normalized) a
 
 /-- The canonical algebraic Haar state on `ℂ`, given by the identity map. -/
 def complex : AlgebraicHaar ℂ where
@@ -120,8 +99,7 @@ def complex : AlgebraicHaar ℂ where
   positive a := star_mul_self_nonneg a
 
 @[simp]
-theorem complex_apply (z : ℂ) : complex z = z :=
-  (rfl)
+theorem complex_apply (z : ℂ) : complex z = z := (rfl)
 
 end Bialgebra
 
@@ -136,8 +114,7 @@ def toStarPositiveFunctional (h : AlgebraicHaar A) : StarPositiveFunctional A wh
 
 @[simp]
 theorem toStarPositiveFunctional_apply (h : AlgebraicHaar A) (a : A) :
-    h.toStarPositiveFunctional a = h a :=
-  (rfl)
+    h.toStarPositiveFunctional a = h a := (rfl)
 
 variable [StarModule ℂ A]
 

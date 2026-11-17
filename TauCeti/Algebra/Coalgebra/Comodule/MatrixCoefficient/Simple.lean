@@ -121,12 +121,8 @@ theorem linearIndependent_coefficientMatrix {ι : Type*} [Finite ι] (b : Module
   classical
   have h : (fun p : ι × ι ↦ coefficientMatrix (C := C) b p.1 p.2) =
       (matrixCoefficientSubmodule (R := k) (C := C) (M := M)).subtype ∘
-        matrixCoefficientBasis (C := C) b := by
-    ext p
-    simp
-  rw [h]
-  exact (matrixCoefficientBasis (C := C) b).linearIndependent.map' _
-    (Submodule.ker_subtype _)
+        matrixCoefficientBasis (C := C) b := funext fun p ↦ by simp
+  exact h ▸ (matrixCoefficientBasis (C := C) b).linearIndependent.map' _ (Submodule.ker_subtype _)
 
 section Schur
 
@@ -137,8 +133,7 @@ endomorphism of a finite-dimensional simple comodule is multiplication by a scal
 theorem Hom.exists_eq_smul_id (f : Hom k C M M) :
     ∃ c : k, ∀ m : M, f m = c • m := by
   have : IsSimpleModule (WithConv (C →ₗ[k] k)) M := isSimpleModule_convolution_iff.mpr inferInstance
-  exact ⟨endAlgEquivSelfOfIsSimpleModule (k := k) f.toConvolutionLinearMap,
-    fun m ↦ by simp⟩
+  exact ⟨endAlgEquivSelfOfIsSimpleModule (k := k) f.toConvolutionLinearMap, fun _ ↦ by simp⟩
 
 end Schur
 
@@ -155,13 +150,11 @@ theorem exists_eq_smul_one_of_coefficientMatrix_comm {ι : Type*} [Fintype ι] [
       T.map (algebraMap k A) * coefficientMatrix (C := A) b) :
     ∃ c : k, T = c • 1 := by
   let f : M →ₗ[k] M := (LinearMap.toMatrix b b).symm T
-  have hf : TensorProduct.map f LinearMap.id ∘ₗ coact (R := k) (C := A) =
-      coact (R := k) (C := A) ∘ₗ f :=
-    (b.map_coact_iff_coefficientMatrix b f).mpr (by simpa [f] using hT)
-  obtain ⟨c, hc⟩ := Hom.exists_eq_smul_id (C := A) ⟨f, hf⟩
-  refine ⟨c, ?_⟩
-  have hfeq : f = c • LinearMap.id := LinearMap.ext hc
-  simpa [f] using congrArg (LinearMap.toMatrix b b) hfeq
+  obtain ⟨c, hc⟩ := Hom.exists_eq_smul_id (C := A)
+    ⟨f, (b.map_coact_iff_coefficientMatrix b f).mpr (by simpa [f] using hT)⟩
+  exact ⟨c, by
+    simpa [f] using congrArg (LinearMap.toMatrix b b)
+      (show f = c • LinearMap.id from LinearMap.ext hc)⟩
 
 /-- Two scalar matrices fix the coefficient matrix `u` of a finite simple comodule under
 two-sided multiplication `X u Y = u` exactly when they are inverse nonzero scalar matrices. -/
@@ -174,25 +167,19 @@ theorem mul_coefficientMatrix_mul_eq_self_iff {ι : Type*} [Fintype ι] [Decidab
   constructor
   · intro h
     have : Nontrivial M := Subcomodule.nontrivial_of_isSimpleOrder (R := k) (C := A)
-    have : Nonempty ι := b.index_nonempty
+    obtain ⟨i₀⟩ := b.index_nonempty
     have hcoeff (i j p q : ι) : X i p * Y q j = if (p, q) = (i, j) then 1 else 0 := by
-      have hij : ∑ p' : ι × ι, (X i p'.1 * Y p'.2 j) • u p'.1 p'.2 =
-          ∑ p' : ι × ι, (if p' = (i, j) then (1 : k) else 0) • u p'.1 p'.2 := by
-        have he := congrFun (congrFun h i) j
-        simp only [Matrix.mul_apply, Matrix.map_apply, Algebra.algebraMap_eq_smul_one,
-          smul_mul_assoc, mul_smul_comm, one_mul, mul_one, Finset.smul_sum, smul_smul] at he
-        rw [Fintype.sum_prod_type]
-        calc ∑ a, ∑ b', (X i a * Y b' j) • u a b'
-            = ∑ b', ∑ a, (X i a * Y b' j) • u a b' := Finset.sum_comm
-          _ = u i j := by
-            simpa only [mul_comm (Y _ _)] using he
-          _ = ∑ p' : ι × ι, (if p' = (i, j) then (1 : k) else 0) • u p'.1 p'.2 := by
-            simp
-      have hlin := Fintype.linearIndependent_iff.mp (linearIndependent_coefficientMatrix (C := A) b)
-        (fun p' ↦ X i p'.1 * Y p'.2 j - if p' = (i, j) then 1 else 0) (by
-          simpa [sub_smul, Finset.sum_sub_distrib, sub_eq_zero] using hij) (p, q)
-      exact sub_eq_zero.mp hlin
-    obtain ⟨i₀⟩ := ‹Nonempty ι›
+      have he := congrFun (congrFun h i) j
+      simp only [Matrix.mul_apply, Matrix.map_apply, Algebra.algebraMap_eq_smul_one,
+        smul_mul_assoc, mul_smul_comm, one_mul, mul_one, Finset.smul_sum, smul_smul] at he
+      have hij : ∑ p' : ι × ι, (X i p'.1 * Y p'.2 j - if p' = (i, j) then 1 else 0) •
+          u p'.1 p'.2 = 0 := by
+        simp only [sub_smul, Finset.sum_sub_distrib, Fintype.sum_prod_type, sub_eq_zero]
+        rw [Finset.sum_comm, show ∑ b', ∑ a, (X i a * Y b' j) • u a b' = u i j from by
+          simpa only [mul_comm (Y _ _)] using he]
+        simp [ite_and]
+      exact sub_eq_zero.mp <| Fintype.linearIndependent_iff.mp
+        (linearIndependent_coefficientMatrix (C := A) b) _ hij (p, q)
     have h1 : X i₀ i₀ * Y i₀ i₀ = 1 := by simpa using hcoeff i₀ i₀ i₀ i₀
     have hc : X i₀ i₀ ≠ 0 := left_ne_zero_of_mul_eq_one h1
     have hY0 : Y i₀ i₀ = (X i₀ i₀)⁻¹ := eq_inv_of_mul_eq_one_right h1
@@ -201,30 +188,19 @@ theorem mul_coefficientMatrix_mul_eq_self_iff {ι : Type*} [Fintype ι] [Decidab
       have hXp := hcoeff i i₀ p i₀
       simp only [Prod.mk.injEq, and_true, hY0] at hXp
       by_cases hip : p = i
-      · subst hip
-        simp only [↓reduceIte, Matrix.smul_apply, Matrix.one_apply_eq,
-          smul_eq_mul, mul_one] at hXp ⊢
-        exact mul_inv_eq_one₀ hc |>.mp hXp
-      · simp only [hip, ↓reduceIte, mul_eq_zero, inv_eq_zero, hc, or_false] at hXp
-        simp [Ne.symm hip, hXp]
+      · subst hip; simpa using (mul_inv_eq_one₀ hc).mp (by simpa using hXp)
+      · have h0 := (mul_eq_zero.mp (by simpa [hip] using hXp)).resolve_right (inv_ne_zero hc)
+        simp [Ne.symm hip, h0]
     · ext q j
       have hYq := hcoeff i₀ j i₀ q
       simp only [Prod.mk.injEq, true_and] at hYq
       by_cases hqj : q = j
-      · subst hqj
-        simp only [↓reduceIte, Matrix.smul_apply, Matrix.one_apply_eq,
-          smul_eq_mul, mul_one] at hYq ⊢
-        exact eq_inv_of_mul_eq_one_right hYq
-      · simp only [hqj, ↓reduceIte, mul_eq_zero, hc, false_or] at hYq
-        simp [hqj, hYq]
+      · subst hqj; simpa using eq_inv_of_mul_eq_one_right (by simpa using hYq)
+      · simp [hqj, (mul_eq_zero.mp (by simpa [hqj] using hYq)).resolve_left hc]
   · rintro ⟨c, hc, rfl, rfl⟩
-    have hX : (c • (1 : Matrix ι ι k)).map (algebraMap k A) = c • (1 : Matrix ι ι A) := by
-      ext i j
-      by_cases hij : i = j <;> simp [hij, Algebra.algebraMap_eq_smul_one]
-    have hY : (c⁻¹ • (1 : Matrix ι ι k)).map (algebraMap k A) = c⁻¹ • (1 : Matrix ι ι A) := by
-      ext i j
-      by_cases hij : i = j <;> simp [hij, Algebra.algebraMap_eq_smul_one]
-    rw [hX, hY, smul_mul_assoc, Matrix.one_mul, mul_smul_comm, Matrix.mul_one, smul_smul,
+    have hmap (d : k) : (d • (1 : Matrix ι ι k)).map (algebraMap k A) = d • (1 : Matrix ι ι A) := by
+      ext i j; by_cases hij : i = j <;> simp [hij, Algebra.algebraMap_eq_smul_one]
+    rw [hmap c, hmap c⁻¹, smul_mul_assoc, Matrix.one_mul, mul_smul_comm, Matrix.mul_one, smul_smul,
       inv_mul_cancel₀ hc, one_smul]
 
 end Algebra
