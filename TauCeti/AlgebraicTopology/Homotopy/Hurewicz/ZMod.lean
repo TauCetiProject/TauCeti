@@ -10,12 +10,11 @@ public import Mathlib.Topology.Homotopy.HomotopyGroup
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
+import TauCeti.AlgebraicTopology.EilenbergMacLane.UniquelyDivisible
 import TauCeti.AlgebraicTopology.Homotopy.CWApproximation.Sigma
 import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 import TauCeti.AlgebraicTopology.Homotopy.NConnectedCover
 import TauCeti.AlgebraicTopology.Singular.Coefficients.ZModCoefficientSequence
-import TauCeti.AlgebraicTopology.Singular.Fibration.Comparison
 import TauCeti.AlgebraicTopology.Singular.Homotopy.WeakHomotopyEquivalence
 import TauCeti.Topology.ContinuousMap.Sigma
 import TauCeti.Topology.Homotopy.HomotopyGroup.BasepointChange
@@ -42,13 +41,13 @@ The proof combines three ingredients.
    CW approximation of the path component of `x` identifies `π_{n + 2}` with `H_{n + 2}(-; ℤ)`,
    and the mod-`m` coefficient exact sequence makes multiplication by `m` bijective from vanishing
    in degrees `n + 2` and `n + 3` (`TauCeti.bijective_zsmul_homotopyGroup_of_isZero_zmod`).
-3. **Whitehead-tower induction**: the fibre of the `(j + 2)`-connected cover `W⟨j + 2⟩ → W` of the
-   `(j + 1)`-connected Hausdorff CW approximation `W` is a `K(π_{j + 2} W, j + 1)`. Once
+3. **Whitehead-tower induction**: every fibre of the `(j + 2)`-connected cover `W⟨j + 2⟩ → W` of
+   the `(j + 1)`-connected Hausdorff CW approximation `W` is a `K(π_{j + 2} W, j + 1)`. Once
    `π_{j + 2} W` is uniquely `m`-divisible, that fibre is acyclic modulo `m`
-   (`IsEilenbergMacLaneSpace.isZero_singularHomology_of_bijective_zsmul`), so the Serre fibration
-   comparison theorem (`TopCat.isIso_singularHomologyMap_of_isZero_fiber`) shows that
-   `W⟨j + 2⟩ → W` induces an isomorphism on `H_*(-; ℤ/m)`. Repeating the step climbs up the
-   Whitehead tower to degree `n + 2`.
+   (`IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_bijective_zsmul`), so
+   `TauCeti.isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber` shows that `W⟨j + 2⟩ → W`
+   induces an isomorphism on `H_*(-; ℤ/m)`. Repeating the step climbs up the Whitehead tower to
+   degree `n + 2`.
 
 We also record the sharp finite-range integral Hurewicz vanishing theorem
 (`TauCeti.subsingleton_homotopyGroup_of_isZero_singularHomology_int`, requiring only
@@ -242,16 +241,13 @@ private theorem bijective_zsmul_homotopyGroup_of_isZero_zmod_aux (m : ℕ) :
     have hE : ∀ k, 1 ≤ k → k < (j + 1) + 2 → Subsingleton (π_ k E e₀) := fun k _ hk ↦
       subsingleton_homotopyGroup_nConnectedCover_of_pathConnectedSpace (j + 2) (TopCat.of W) w e₀
         (by omega)
-    have hf := isEilenbergMacLaneSpace_fiber_nConnectedCoverProj (TopCat.of W) w j hW
-    have := hf.pathConnectedSpace
     have hHE : ∀ q, (j + 1) + 2 ≤ q → q ≤ (j + 1) + d + 3 →
         IsZero (((singularChains (ZMod m)).obj (TopCat.of E)).homology q) := fun q hq1 hq2 ↦ by
-      have := TopCat.isIso_singularHomologyMap_of_isZero_fiber
-        (serreFibrations_nConnectedCoverProj (j + 2) (TopCat.of W) w) w (ZMod m) q fun r _ ↦
-        IsEilenbergMacLaneSpace.isZero_singularHomology_of_bijective_zsmul
-          (ModuleCat.of (ZMod m) (ZMod m))
-          (fun a ↦ by rw [zsmul_eq_mul, Int.cast_natCast, ZMod.natCast_self, zero_mul]) hπ
-          (hf.of_mulEquiv (AddEquiv.toMultiplicativeRight (.refl _))) r
+      have := isIso_singularHomologyMap_of_isEilenbergMacLaneSpace_fiber (ZMod m) (m := m)
+        (by rw [Int.cast_natCast, ZMod.natCast_self]) hπ
+        (serreFibrations_nConnectedCoverProj (j + 2) (TopCat.of W) w)
+        (fun b ↦ (isEilenbergMacLaneSpace_fiber_nConnectedCoverProj (TopCat.of W) w j hW b).imp
+          fun _ h ↦ h.of_mulEquiv (MulEquiv.multiplicativeAdditive _).symm) q
       let e := asIso (((singularHomologyFunctor (ModuleCat.{0} (ZMod m)) q).obj
         (ModuleCat.of (ZMod m) (ZMod m))).map (nConnectedCoverProj (j + 2) (TopCat.of W) w))
       exact (isZero_singularHomology_cwApproximation_of_isZero y (ZMod m) q

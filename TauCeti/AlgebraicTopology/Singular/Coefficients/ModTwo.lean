@@ -15,7 +15,8 @@ This file specializes the mod-`m` coefficient comparison and reduction API of
 
 * `TopCat.singularHomologyModTwoIso` identifies singular homology with coefficients in the integer
   module `ℤ/2` with singular homology over `𝔽₂ = ZMod 2` with scalars restricted to `ℤ`, and
-  `TopCat.isZero_singularHomology_modTwo_iff` says one vanishes exactly when the other does;
+  `TopCat.isZero_singularHomology_modTwo_iff` (with its universe-`0` unlifted variant
+  `TopCat.isZero_singularHomology_modTwo_iff'`) says one vanishes exactly when the other does;
 * `TopCat.singularHomologyReductionModTwo` is the reduction `ρ : Hₙ(X; ℤ) ⟶ Hₙ(X; ℤ/2)`, with
   kernel `2 Hₙ(X; ℤ)` (`TopCat.ker_singularHomologyReductionModTwo`) and surjectivity in degree
   `n + 1` equivalent to injectivity of multiplication by two on `Hₙ(X; ℤ)`
@@ -88,6 +89,15 @@ theorem isZero_singularHomology_modTwo_iff (X : TopCat.{u}) (n : ℕ) :
       IsZero (((singularHomologyFunctor (ModuleCat.{u} (ZMod 2)) n).obj
         (ModuleCat.of (ZMod 2) (ULift.{u} (ZMod 2)))).obj X) :=
   X.isZero_singularHomology_zmod_iff 2 n
+
+/-- For a space in the lowest universe, singular homology with coefficients in the integer module
+`ℤ/2` vanishes exactly when singular homology with coefficients in the field `𝔽₂` does, with the
+coefficients `ℤ/2` and `𝔽₂` themselves rather than their universe lifts. -/
+theorem isZero_singularHomology_modTwo_iff' (X : TopCat.{0}) (n : ℕ) :
+    IsZero (((singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj (ModuleCat.of ℤ (ZMod 2))).obj X) ↔
+      IsZero (((singularHomologyFunctor (ModuleCat.{0} (ZMod 2)) n).obj
+        (ModuleCat.of (ZMod 2) (ZMod 2))).obj X) :=
+  X.isZero_singularHomology_zmod_iff' 2 n
 
 /-! ### The reduction modulo two -/
 
