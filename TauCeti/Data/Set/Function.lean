@@ -18,8 +18,6 @@ public import Mathlib.Data.Set.Function
   `s ∩ f ⁻¹' t`.
 * `Function.Injective.mapsTo_of_eq_self`: an injective self-map fixing every point outside a
   set `K` maps `K` into itself.
-* `Function.Surjective.eqOn_of_eqOn_comp`: two maps that agree on `f ⁻¹' s` after composing with
-  a surjective map `f` agree on `s`.
 -/
 
 public section
@@ -58,12 +56,3 @@ theorem mapsTo_of_eq_self {α : Type*} {f : α → α} (hf : Injective f) {K : S
   simpa using hs.mapsTo_compl hf
 
 end Function.Injective
-
-namespace Function.Surjective
-
-/-- Two maps that agree on `f ⁻¹' s` after composing with a surjective map `f` agree on `s`. -/
-theorem eqOn_of_eqOn_comp {α β γ : Type*} {f : α → β} (hf : Surjective f) {g₁ g₂ : β → γ}
-    {s : Set β} (h : EqOn (g₁ ∘ f) (g₂ ∘ f) (f ⁻¹' s)) : EqOn g₁ g₂ s := by
-  rwa [eqOn_comp_right_iff, hf.image_preimage] at h
-
-end Function.Surjective

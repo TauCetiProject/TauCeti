@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.Differen
 public import TauCeti.Analysis.Complex.EquivRealProd
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 import TauCeti.Analysis.Calculus.ContDiff.Prod
-import TauCeti.Data.Set.Function
 import TauCeti.Topology.Codiscrete
 
 /-!
@@ -147,10 +146,9 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_eqOn_zero (hΩ : IsOpen Ω)
     floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
   obtain ⟨z₁, hz₁⟩ := hUne
-  exact e.surjective.eqOn_of_eqOn_comp <|
-    eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb heq
-      (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
-      fun w hw ↦ h₀ hw
+  exact (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
+    heq (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
+    fun w hw ↦ h₀ hw).cancel_right e.surjective.surjOn_preimage
 
 /-- **Unique continuation from a zero of infinite order for the linearized Floer operator.** Let
 `J` be `C¹` and the Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a
@@ -169,10 +167,9 @@ theorem eqOn_zero_of_floerLinearization_eq_zero_of_forall_isBigO (hΩ : IsOpen �
   obtain ⟨hΩ', hΩc', hJ', hJJ', hξ', hCm, hCb, heq⟩ :=
     floerLinearization_eq_zero_complexCoordinate hΩ hΩc hJ hJJ hKs hKt hu hξ hD
   set e := Complex.equivRealProdCLM
-  exact e.surjective.eqOn_of_eqOn_comp <|
-    eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm hCb
-      heq (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
-      fun n ↦ isBigO_comp_equivRealProdCLM (h₀ n)
+  exact (eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ' hΩc' hJ' hJJ' hξ' hCm
+    hCb heq (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
+    fun n ↦ isBigO_comp_equivRealProdCLM (h₀ n)).cancel_right e.surjective.surjOn_preimage
 
 /-- **Isolated zeros of solutions of the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
@@ -307,10 +304,10 @@ theorem eqOn_of_floerOperator_eq_zero_of_eqOn (hΩ : IsOpen Ω) (hΩc : IsPrecon
     floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
   set e := Complex.equivRealProdCLM
   obtain ⟨z₁, hz₁⟩ := hUne
-  have h : EqOn (u - v) 0 Ω := e.surjective.eqOn_of_eqOn_comp <|
-    eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw) hξ' hb
+  have h : EqOn (u - v) 0 Ω :=
+    (eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw) hξ' hb
       (hU.preimage e.continuous) ⟨e.symm z₁, by simpa using hz₁⟩ (preimage_mono hUΩ)
-      fun w hw ↦ sub_eq_zero.2 (h₀ hw)
+      fun w hw ↦ sub_eq_zero.2 (h₀ hw)).cancel_right e.surjective.surjOn_preimage
   exact fun z hz ↦ sub_eq_zero.1 (h hz)
 
 /-- **Unique continuation from a coincidence of infinite order for Floer solutions.** Let `J` be
@@ -329,10 +326,10 @@ theorem eqOn_of_floerOperator_eq_zero_of_forall_isBigO (hΩ : IsOpen Ω)
   obtain ⟨hΩ', hΩc', hJ', hξ', hb⟩ :=
     floerOperator_eq_zero_complexCoordinate hΩ hΩc hJ hKs hKt hu hv hFu hFv
   set e := Complex.equivRealProdCLM
-  have h : EqOn (u - v) 0 Ω := e.surjective.eqOn_of_eqOn_comp <|
-    eqOn_zero_of_contDiffOn_of_forall_isBigO_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw)
+  have h : EqOn (u - v) 0 Ω :=
+    (eqOn_zero_of_contDiffOn_of_forall_isBigO_of_norm_le hΩ' hΩc' hJ' (fun w hw ↦ hJJ (e w) hw)
       hξ' hb (show e.symm z₀ ∈ e ⁻¹' Ω by rwa [mem_preimage, e.apply_symm_apply])
-      fun n ↦ isBigO_comp_equivRealProdCLM (h₀ n)
+      fun n ↦ isBigO_comp_equivRealProdCLM (h₀ n)).cancel_right e.surjective.surjOn_preimage
   exact fun z hz ↦ sub_eq_zero.1 (h hz)
 
 /-- **Isolated coincidences of Floer solutions.** Let `J` be `C¹` and the Hamiltonians `K_s`,
