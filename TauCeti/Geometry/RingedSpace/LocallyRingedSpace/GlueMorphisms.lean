@@ -13,38 +13,23 @@ import TauCeti.Geometry.RingedSpace.PresheafedSpace.GlueMorphisms
 /-!
 # Gluing morphisms out of a locally ringed space
 
-Let `X` and `Y` be locally ringed spaces, and let `U i` be a family of opens covering `X`.
-Morphisms of locally ringed spaces `f i : X|_{U i} ⟶ Y` agreeing on the overlaps glue to a unique
-morphism `X ⟶ Y` restricting to each `f i` (EGA I, Ch. I, 2.2.4 and 10.4.6).
-
-The underlying morphisms of presheafed spaces glue by
-`AlgebraicGeometry.PresheafedSpace.glueMorphisms`, using that the forgetful functor from locally
-ringed spaces to presheafed spaces preserves pullbacks along open immersions. Locality of the
-glued stalk map at a point `x ∈ U i` follows by composing with the local stalk map of the open
-inclusion `X|_{U i} ⟶ X`.
-
-We also provide the inclusion `restrictHomOfLE : X|_V ⟶ X|_W` for nested opens `V ≤ W`, and the
-canonical identification of `X|_{U ∩ V}` with the pullback of `X|_U ⟶ X` and `X|_V ⟶ X`, so that
-overlap compatibility for gluing can be checked directly on `X|_{U i ⊓ U j}`.
+Morphisms of locally ringed spaces `f i : X|_{U i} ⟶ Y` over an open cover `⨆ i, U i = ⊤`
+agreeing on overlaps glue uniquely to `X ⟶ Y` (EGA I, Ch. I, 2.2.4 and 10.4.6), via
+`AlgebraicGeometry.PresheafedSpace.glueMorphisms` and local stalk maps along open inclusions.
 
 ## Main definitions
 
 * `AlgebraicGeometry.LocallyRingedSpace.restrictHomOfLE`: the inclusion `X|_V ⟶ X|_W` for `V ≤ W`.
-* `AlgebraicGeometry.LocallyRingedSpace.restrictInfIsoPullback`: the canonical isomorphism
-  `X|_{U ⊓ V} ≅ X|_U ×_X X|_V`.
-* `AlgebraicGeometry.LocallyRingedSpace.glueMorphisms`: the morphism glued from a family of
-  morphisms out of the restrictions of `X` to an open cover, agreeing on the overlaps.
+* `AlgebraicGeometry.LocallyRingedSpace.restrictInfIsoPullback`: `X|_{U ⊓ V} ≅ X|_U ×_X X|_V`.
+* `AlgebraicGeometry.LocallyRingedSpace.glueMorphisms`: glued morphism over an open cover.
 
 ## Main results
 
-* `AlgebraicGeometry.LocallyRingedSpace.restrictHomOfLE_ofRestrict`: composing `X|_V ⟶ X|_W`
-  with `X|_W ⟶ X` gives `X|_V ⟶ X`.
-* `AlgebraicGeometry.LocallyRingedSpace.ofRestrict_glueMorphisms`: the glued morphism restricts to
-  the given morphism on each open of the cover.
-* `AlgebraicGeometry.LocallyRingedSpace.hom_ext_of_ofRestrict`: two morphisms out of `X` agreeing
-  on every open of a cover are equal.
+* `AlgebraicGeometry.LocallyRingedSpace.ofRestrict_glueMorphisms`,
+  `AlgebraicGeometry.LocallyRingedSpace.hom_ext_of_ofRestrict`: restriction and uniqueness of
+  glued morphisms.
 * `AlgebraicGeometry.LocallyRingedSpace.pullback_fst_comp_eq_of_restrictHomOfLE`: overlap
-  compatibility on the pullback follows from equality on `X|_{U ⊓ V}`.
+  compatibility checked on `X|_{U ⊓ V}`.
 
 ## References
 
@@ -69,32 +54,27 @@ def restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
     X.restrict V.isOpenEmbedding ⟶ X.restrict W.isOpenEmbedding where
   toHom := X.toPresheafedSpace.restrictHomOfLE h
   prop x := by
-    let x' : X.toPresheafedSpace.restrict V.isOpenEmbedding := x
-    have hfac := PresheafedSpace.restrictHomOfLE_ofRestrict X.toPresheafedSpace h
-    have hisoComp : IsIso ((X.toPresheafedSpace.restrictHomOfLE h ≫
-        X.toPresheafedSpace.ofRestrict W.isOpenEmbedding).stalkMap x') := by
-      rw [PresheafedSpace.stalkMap.congr_hom _ _ hfac x']
-      have : IsIso ((X.toPresheafedSpace.ofRestrict V.isOpenEmbedding).stalkMap x') :=
-        PresheafedSpace.IsOpenImmersion.stalk_iso _ _
+    let P := X.toPresheafedSpace
+    let x' : P.restrict V.isOpenEmbedding := x
+    have hcomp : IsIso ((P.restrictHomOfLE h ≫ P.ofRestrict W.isOpenEmbedding).stalkMap x') := by
+      rw [PresheafedSpace.stalkMap.congr_hom _ _ (P.restrictHomOfLE_ofRestrict h)]
+      have := PresheafedSpace.IsOpenImmersion.stalk_iso (P.ofRestrict V.isOpenEmbedding) x'
       exact IsIso.comp_isIso
-    rw [PresheafedSpace.stalkMap.comp] at hisoComp
-    have hisoW : IsIso ((X.toPresheafedSpace.ofRestrict W.isOpenEmbedding).stalkMap
-        ((X.toPresheafedSpace.restrictHomOfLE h).base x')) :=
-      PresheafedSpace.IsOpenImmersion.stalk_iso _ _
-    have : IsIso ((X.toPresheafedSpace.restrictHomOfLE h).stalkMap x') :=
-      @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ hisoW hisoComp
-    exact isLocalHom_of_isIso ((X.toPresheafedSpace.restrictHomOfLE h).stalkMap x')
+    rw [PresheafedSpace.stalkMap.comp] at hcomp
+    have hW := PresheafedSpace.IsOpenImmersion.stalk_iso (P.ofRestrict W.isOpenEmbedding)
+      ((P.restrictHomOfLE h).base x')
+    have : IsIso ((P.restrictHomOfLE h).stalkMap x') :=
+      @IsIso.of_isIso_comp_left _ _ _ _ _ _ _ hW hcomp
+    exact isLocalHom_of_isIso ((P.restrictHomOfLE h).stalkMap x')
 
 /-- The underlying presheafed-space morphism of `restrictHomOfLE`. -/
 @[simp]
 theorem restrictHomOfLE_toHom {V W : Opens X} (h : V ≤ W) :
-    (X.restrictHomOfLE h).toHom = X.toPresheafedSpace.restrictHomOfLE h :=
-  (rfl)
+    (X.restrictHomOfLE h).toHom = X.toPresheafedSpace.restrictHomOfLE h := (rfl)
 
 /-- The base map of `restrictHomOfLE` is the inclusion `V ⟶ W`. -/
 theorem restrictHomOfLE_base {V W : Opens X} (h : V ≤ W) :
-    (X.restrictHomOfLE h).base = (Opens.toTopCat X.toTopCat).map (homOfLE h) :=
-  (rfl)
+    (X.restrictHomOfLE h).base = (Opens.toTopCat X.toTopCat).map (homOfLE h) := (rfl)
 
 /-- The sheaf component of `restrictHomOfLE` is the corresponding restriction map of
 `X.presheaf`. -/
@@ -102,8 +82,7 @@ theorem restrictHomOfLE_base {V W : Opens X} (h : V ≤ W) :
 theorem restrictHomOfLE_c_app {V W : Opens X} (h : V ≤ W)
     (Q : (Opens (X.restrict W.isOpenEmbedding))ᵒᵖ) :
     (X.restrictHomOfLE h).c.app Q =
-      X.presheaf.map (homOfLE (Opens.functor_obj_map_homOfLE_obj_le h Q.unop)).op :=
-  (rfl)
+      X.presheaf.map (homOfLE (Opens.functor_obj_map_homOfLE_obj_le h Q.unop)).op := (rfl)
 
 /-- The inclusion `X|_V ⟶ X|_W` followed by `X|_W ⟶ X` is `X|_V ⟶ X`. -/
 @[reassoc (attr := simp)]
@@ -129,52 +108,39 @@ instance isOpenImmersion_restrictHomOfLE {V W : Opens X} (h : V ≤ W) :
     IsOpenImmersion (X.restrictHomOfLE h) := by
   have hr : Set.range (X.ofRestrict V.isOpenEmbedding).base ⊆
       Set.range (X.ofRestrict W.isOpenEmbedding).base := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨⟨x.1, h x.2⟩, rfl⟩
-  have heq : X.restrictHomOfLE h =
-      IsOpenImmersion.lift (X.ofRestrict W.isOpenEmbedding) (X.ofRestrict V.isOpenEmbedding) hr :=
-    IsOpenImmersion.lift_uniq _ _ hr _ (X.restrictHomOfLE_ofRestrict h)
-  rw [heq]
+    rintro _ ⟨x, rfl⟩; exact ⟨⟨x.1, h x.2⟩, rfl⟩
+  rw [IsOpenImmersion.lift_uniq (X.ofRestrict W.isOpenEmbedding) (X.ofRestrict V.isOpenEmbedding)
+    hr _ (X.restrictHomOfLE_ofRestrict h)]
   have := IsOpenImmersion.pullback_snd_isIso_of_range_subset
     (X.ofRestrict W.isOpenEmbedding) (X.ofRestrict V.isOpenEmbedding) hr
-  dsimp only [IsOpenImmersion.lift]
-  infer_instance
+  dsimp only [IsOpenImmersion.lift]; infer_instance
 
 /-- The canonical isomorphism between `X|_{U ⊓ V}` and the pullback of `X|_U ⟶ X` and `X|_V ⟶ X`. -/
 noncomputable def restrictInfIsoPullback (U V : Opens X) :
     X.restrict (U ⊓ V).isOpenEmbedding ≅
       pullback (X.ofRestrict U.isOpenEmbedding) (X.ofRestrict V.isOpenEmbedding) := by
-  have hrange : Set.range (pullback.fst (X.ofRestrict U.isOpenEmbedding)
-      (X.ofRestrict V.isOpenEmbedding) ≫ X.ofRestrict U.isOpenEmbedding).base ⊆
-      Set.range (X.ofRestrict (U ⊓ V).isOpenEmbedding).base := by
+  let fU := X.ofRestrict U.isOpenEmbedding
+  let fV := X.ofRestrict V.isOpenEmbedding
+  let fUV := X.ofRestrict (U ⊓ V).isOpenEmbedding
+  have hrange : Set.range (pullback.fst fU fV ≫ fU).base ⊆ Set.range fUV.base := by
     rintro _ ⟨z, rfl⟩
-    have hU : (pullback.fst (X.ofRestrict U.isOpenEmbedding)
-        (X.ofRestrict V.isOpenEmbedding) ≫ X.ofRestrict U.isOpenEmbedding).base z ∈ U :=
-      ((pullback.fst (X.ofRestrict U.isOpenEmbedding)
-        (X.ofRestrict V.isOpenEmbedding)).base z).2
-    have hV : (pullback.fst (X.ofRestrict U.isOpenEmbedding)
-        (X.ofRestrict V.isOpenEmbedding) ≫ X.ofRestrict U.isOpenEmbedding).base z ∈ V := by
-      rw [pullback.condition]
-      exact ((pullback.snd (X.ofRestrict U.isOpenEmbedding)
-        (X.ofRestrict V.isOpenEmbedding)).base z).2
-    exact ⟨⟨_, hU, hV⟩, rfl⟩
+    have hV : (pullback.fst fU fV ≫ fU).base z ∈ V := by
+      rw [pullback.condition]; exact ((pullback.snd fU fV).base z).2
+    exact ⟨⟨_, ((pullback.fst fU fV).base z).2, hV⟩, rfl⟩
   refine
     { hom := pullback.lift (X.restrictHomOfLE (inf_le_left : U ⊓ V ≤ U))
         (X.restrictHomOfLE (inf_le_right : U ⊓ V ≤ V)) (by simp)
-      inv := IsOpenImmersion.lift (X.ofRestrict (U ⊓ V).isOpenEmbedding)
-        (pullback.fst _ _ ≫ X.ofRestrict U.isOpenEmbedding) hrange
+      inv := IsOpenImmersion.lift fUV (pullback.fst fU fV ≫ fU) hrange
       hom_inv_id := by
-        rw [← cancel_mono (X.ofRestrict (U ⊓ V).isOpenEmbedding), Category.assoc,
-          IsOpenImmersion.lift_fac, pullback.lift_fst_assoc, restrictHomOfLE_ofRestrict,
-          Category.id_comp]
+        rw [← cancel_mono fUV, Category.assoc, IsOpenImmersion.lift_fac,
+          pullback.lift_fst_assoc, restrictHomOfLE_ofRestrict, Category.id_comp]
       inv_hom_id := by
         apply pullback.hom_ext
-        · rw [Category.assoc, pullback.lift_fst, Category.id_comp,
-            ← cancel_mono (X.ofRestrict U.isOpenEmbedding), Category.assoc,
-            restrictHomOfLE_ofRestrict, IsOpenImmersion.lift_fac]
-        · rw [Category.assoc, pullback.lift_snd, Category.id_comp,
-            ← cancel_mono (X.ofRestrict V.isOpenEmbedding), Category.assoc,
-            restrictHomOfLE_ofRestrict, IsOpenImmersion.lift_fac, pullback.condition] }
+        · rw [Category.assoc, pullback.lift_fst, Category.id_comp, ← cancel_mono fU,
+            Category.assoc, restrictHomOfLE_ofRestrict, IsOpenImmersion.lift_fac]
+        · rw [Category.assoc, pullback.lift_snd, Category.id_comp, ← cancel_mono fV,
+            Category.assoc, restrictHomOfLE_ofRestrict, IsOpenImmersion.lift_fac,
+            pullback.condition] }
 
 /-- Composing `restrictInfIsoPullback` with `pullback.fst` recovers
 `restrictHomOfLE inf_le_left`. -/
@@ -216,8 +182,6 @@ variable {X Y : LocallyRingedSpace.{u}} {ι : Type w} (U : ι → Opens X) (hU :
     (X.ofRestrict (U j).isOpenEmbedding) ≫ f i = pullback.snd _ _ ≫ f j)
 
 include hf in
-/-- The overlap condition descends to the underlying morphisms of presheafed spaces, because the
-forgetful functor preserves pullbacks along open immersions. -/
 private theorem toHom_pullback_condition (i j : ι) :
     pullback.fst (X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding)
         (X.toPresheafedSpace.ofRestrict (U j).isOpenEmbedding) ≫ (f i).toHom =
@@ -239,24 +203,19 @@ noncomputable def glueMorphisms : X ⟶ Y where
   prop x := by
     obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hU.symm ▸ trivial : x ∈ ⨆ i, U i)
     let x' : X.toPresheafedSpace.restrict (U i).isOpenEmbedding := ⟨x, hi⟩
+    let iU := X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding
     let g := PresheafedSpace.glueMorphisms X.IsSheaf U hU (fun i ↦ (f i).toHom)
       (toHom_pullback_condition U f hf)
     let fi : X.toPresheafedSpace.restrict (U i).isOpenEmbedding ⟶ Y.toPresheafedSpace := (f i).toHom
-    have hfac : X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding ≫ g = fi :=
-      PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i
-    have hloc : IsLocalHom ((X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding ≫ g).stalkMap
-        x').hom := by
+    have hfac : iU ≫ g = fi := PresheafedSpace.ofRestrict_glueMorphisms X.IsSheaf U hU _ _ i
+    have hloc : IsLocalHom ((iU ≫ g).stalkMap x').hom := by
       rw [PresheafedSpace.stalkMap.congr_hom _ _ hfac x', CommRingCat.hom_comp]
       have := isLocalHom_of_isIso (eqToHom (hfac ▸ rfl :
-        Y.presheaf.stalk ((X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding ≫ g).base x') =
-          Y.presheaf.stalk (fi.base x')))
+        Y.presheaf.stalk ((iU ≫ g).base x') = Y.presheaf.stalk (fi.base x')))
       have : IsLocalHom (fi.stalkMap x').hom := (f i).prop ⟨x, hi⟩
       exact CommRingCat.isLocalHom_comp _ _
     rw [PresheafedSpace.stalkMap.comp] at hloc
-    have : IsLocalHom (((X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding).stalkMap x').hom.comp
-        (g.stalkMap x).hom) := hloc
-    exact isLocalHom_of_comp _
-      ((X.toPresheafedSpace.ofRestrict (U i).isOpenEmbedding).stalkMap x').hom
+    exact @isLocalHom_of_comp _ _ _ _ _ _ (g.stalkMap x).hom (iU.stalkMap x').hom hloc
 
 /-- The glued morphism restricts to `f i` on `U i`. -/
 @[reassoc (attr := simp)]
