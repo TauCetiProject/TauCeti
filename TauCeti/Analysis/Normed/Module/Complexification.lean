@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
+public import Mathlib.RingTheory.TensorProduct.Finite
 public import Mathlib.Tactic.Module
 public import TauCeti.LinearAlgebra.Complex.Conjugation
 
@@ -348,13 +349,6 @@ instance instCompleteSpace [CompleteSpace X] : CompleteSpace (Complexification X
   ((equivProd X).isUniformEmbedding.isUniformInducing.completeSpace_congr
     (equivProd X).surjective).2 inferInstance
 
-/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℂ`. -/
-instance instFiniteDimensional [FiniteDimensional ℝ X] :
-    FiniteDimensional ℂ (Complexification X) :=
-  have : FiniteDimensional ℝ (Complexification X) :=
-    Module.Finite.equiv (equivProd X).symm.toLinearEquiv
-  Module.Finite.of_restrictScalars_finite ℝ ℂ _
-
 end Norm
 
 /-- The Taylor seminorm is a norm when the original real seminorm is a norm. -/
@@ -589,6 +583,11 @@ def tensorEquivComplexification (W : Type*) [AddCommGroup W] [Module ℝ W] :
     tensorEquivComplexification W (c ⊗ₜ[ℝ] w) = c • Complexification.ofReal w := by ext <;> simp
 @[simp] theorem tensorEquivComplexification_symm_apply (z : Complexification W) :
     (tensorEquivComplexification W).symm z = 1 ⊗ₜ[ℝ] z.re + Complex.I ⊗ₜ[ℝ] z.im := (rfl)
+
+/-- The complexification of a finite-dimensional real space is finite-dimensional over `ℂ`. -/
+instance Complexification.instFiniteDimensional [FiniteDimensional ℝ W] :
+    FiniteDimensional ℂ (Complexification W) :=
+  Module.Finite.equiv (tensorEquivComplexification W)
 
 /-- `tensorEquivComplexification` intertwines `tmulConj` with `Complexification.conj`. -/
 theorem tensorEquivComplexification_tmulConj (u : ℂ ⊗[ℝ] W) :

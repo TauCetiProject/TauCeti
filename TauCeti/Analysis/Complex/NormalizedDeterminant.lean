@@ -93,8 +93,8 @@ theorem normalizedDet_conjₛₗ (A : E ≃L[ℂ] E) (K : E ≃L⋆[ℂ] E) :
         (K.toLinearEquiv.symm : E →ₗ⋆[ℂ] E) :=
     LinearMap.ext fun _ ↦ rfl
   ext1
-  rw [coe_normalizedDet, h, LinearMap.det_conjₛₗ, Circle.coe_inv_eq_conj, coe_normalizedDet,
-    map_div₀, Complex.conj_ofReal, RCLike.star_def, Complex.norm_conj]
+  rw [coe_normalizedDet, h, LinearMap.det_conjₛₗ, Circle.coe_inv_eq_conj]
+  simp [coe_normalizedDet, map_div₀]
 
 end ContinuousLinearEquiv
 

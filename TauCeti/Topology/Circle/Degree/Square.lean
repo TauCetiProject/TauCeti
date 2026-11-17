@@ -180,8 +180,7 @@ continuous on the boundary is the negative of its degree. -/
 theorem squareBoundaryDegree_inv (hΓ : ContinuousOn Γ (Cube.boundary (Fin 2))) :
     squareBoundaryDegree Γ⁻¹ = -squareBoundaryDegree Γ := by
   have h := squareBoundaryDegree_mul hΓ hΓ.inv
-  rw [mul_inv_cancel, show (1 : (Fin 2 → I) → Circle) = fun _ ↦ 1 from rfl,
-    squareBoundaryDegree_const] at h
+  rw [mul_inv_cancel, Pi.one_def, squareBoundaryDegree_const] at h
   omega
 
 /-- **Homotopy invariance.** If `H` is continuous on `I × ∂I²`, the maps `H (0, ·)` and

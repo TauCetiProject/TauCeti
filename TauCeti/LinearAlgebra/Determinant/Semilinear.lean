@@ -34,6 +34,7 @@ variable {R M : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M]
 /-- **Conjugation by a conjugate-linear automorphism.** For a conjugate-linear automorphism `K`
 of `M`, the determinant of the linear map `K ∘ A ∘ K⁻¹` is the conjugate of the determinant of
 `A`. -/
+@[simp]
 theorem det_conjₛₗ (A : M →ₗ[R] M) (K : M ≃ₗ⋆[R] M) :
     LinearMap.det ((K : M →ₗ⋆[R] M) ∘ₛₗ A ∘ₛₗ (K.symm : M →ₗ⋆[R] M)) =
       star (LinearMap.det A) := by
