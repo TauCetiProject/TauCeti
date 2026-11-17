@@ -8,6 +8,8 @@ module
 public import Mathlib.LinearAlgebra.RootSystem.BaseExists
 public import TauCeti.Algebra.Lie.HighestWeight.TracePower
 public import TauCeti.Algebra.Lie.Killing.ChevalleyRestriction
+import TauCeti.Algebra.Lie.HighestWeight.CentralCharacter.OrbitSeparation
+import TauCeti.Algebra.Lie.Sl2.Weyl.Cartan
 
 /-!
 # Chevalley's restriction theorem
@@ -31,6 +33,13 @@ it restricts to an isomorphism from the invariants `S(L)^L` onto the Weyl invari
   Each such power sum is the restriction of the invariant polynomial function
   `x ↦ tr (ρ_λ(x) ^ m)` on `L`. This part uses that `K` is algebraically closed.
 
+Combining surjectivity with Weyl-orbit separation for `linearInvariants H` (transferred from
+`TauCeti.forall_mem_dotInvariants_lift_eq_iff` by translation by `-ρ`) shows that invariant
+polynomial functions on `L` separate Weyl orbits inside `H`
+(`LieSubalgebra.forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv`). Consequently,
+two elements of `H` are conjugate under `Int(L)` if and only if they lie in the same Weyl orbit
+(`LieSubalgebra.exists_mem_intLieAlgebra_smul_eq_iff_exists_coweightEquiv`).
+
 ## Main definitions
 
 * `LieSubalgebra.lieChevalleyRestrictionIso H`: the isomorphism `S(L)^L ≃ₐ[K] S(H)^W` given by
@@ -40,11 +49,17 @@ it restricts to an isomorphism from the invariants `S(L)^L` onto the Weyl invari
 
 * `TauCeti.lieCartanRestriction_mem_linearInvariants`: the restriction of an invariant is a Weyl
   invariant.
+* `TauCeti.forall_mem_linearInvariants_lift_eq_iff`: the Weyl invariants `S(H)^W` separate linear
+  Weyl orbits on `H*`.
 * `LieSubalgebra.linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants`: a homogeneous
   Weyl invariant of degree `m` is the restriction of an invariant of degree `m`.
 * `LieSubalgebra.map_lieInvariants_lieCartanRestriction`: the image of `S(L)^L` is `S(H)^W`.
 * `LieSubalgebra.lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff`: the isomorphism
   preserves degrees in both directions.
+* `LieSubalgebra.forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv`: the Lie-invariant
+  polynomial functions `S(L*)^L` separate Weyl orbits inside `H`.
+* `LieSubalgebra.exists_mem_intLieAlgebra_smul_eq_iff_exists_coweightEquiv`: two elements of `H`
+  are conjugate under `Int(L)` if and only if they lie in the same Weyl orbit.
 
 ## References
 
@@ -89,6 +104,60 @@ theorem lieCartanRestriction_mem_linearInvariants {p : _root_.SymmetricAlgebra K
     rw [hs, hlift, AlgHom.comp_apply, map_coreflection_lieCartanRestriction i hp]
   | one => simp
   | mul x y hx hy ihx ihy => rw [← MulMemClass.mk_mul_mk (hx := hx) (hy := hy), mul_smul, ihx, ihy]
+
+/-- The Killing duality `cartanEquivDual H` intertwines the coweight action of `w` with the weight
+action of `w⁻¹`. -/
+theorem cartanEquivDual_coweightEquiv (w : (rootSystem H).weylGroup) (h : H) :
+    cartanEquivDual H ((w : (rootSystem H).Aut).coweightEquiv h) =
+      w⁻¹ • cartanEquivDual H h := by
+  have heq := weylGroupCorootRep_cartanEquivDual_symm (H := H) w (cartanEquivDual H h)
+  rw [LinearEquiv.symm_apply_apply] at heq
+  apply_fun cartanEquivDual H at heq
+  rw [LinearEquiv.apply_symm_apply] at heq
+  exact heq
+
+omit [CharZero K] [IsTriangularizable K H L] in
+/-- Evaluating `killingSymmetricEquiv K L p` at an element `h : H` agrees with evaluating its
+restriction `lieCartanRestriction H p` at the dual functional `cartanEquivDual H h`. -/
+theorem lift_eval_killingSymmetricEquiv_cartan (h : H) (p : _root_.SymmetricAlgebra K L) :
+    _root_.SymmetricAlgebra.lift (Dual.eval K L (h : L)) (killingSymmetricEquiv K L p) =
+      _root_.SymmetricAlgebra.lift (cartanEquivDual H h) (lieCartanRestriction H p) := by
+  have heq :
+      (_root_.SymmetricAlgebra.lift (Dual.eval K L (h : L))).comp
+          (killingSymmetricEquiv K L).toAlgHom =
+        (_root_.SymmetricAlgebra.lift (cartanEquivDual H h)).comp (lieCartanRestriction H) := by
+    refine _root_.SymmetricAlgebra.algHom_ext (LinearMap.ext fun x ↦ ?_)
+    simp only [LinearMap.coe_comp, LinearMap.coe_ofClass, AlgHom.coe_comp, AlgEquiv.coe_toAlgHom,
+      Function.comp_apply, killingSymmetricEquiv_ι, _root_.SymmetricAlgebra.lift_ι_apply,
+      Dual.eval_apply, lieCartanRestriction_ι]
+    rw [cartanEquivDual_apply_apply_eq_killingForm,
+      traceForm_comm K L L (h : L) (killingCartanProjection H x : L),
+      killingForm_killingCartanProjection]
+  exact DFunLike.congr_fun heq p
+
+variable {H} in
+/-- **Weyl invariants separate linear Weyl orbits.** Two weights take the same value on every
+Weyl-invariant polynomial in `S(H)^W` if and only if they lie in the same Weyl orbit. -/
+theorem forall_mem_linearInvariants_lift_eq_iff {lam mu : Dual K H} :
+    (∀ q ∈ linearInvariants H,
+      _root_.SymmetricAlgebra.lift lam q = _root_.SymmetricAlgebra.lift mu q) ↔
+      ∃ w : (rootSystem H).weylGroup, w • lam = mu := by
+  constructor
+  · intro heq
+    obtain ⟨b⟩ := (rootSystem H).nonempty_base
+    set ρ := weylVector (rootSystem H) b
+    have hdot : ∀ p ∈ dotInvariants b,
+        _root_.SymmetricAlgebra.lift (lam - ρ) p = _root_.SymmetricAlgebra.lift (mu - ρ) p := by
+      intro p hp
+      have hq := heq (_root_.SymmetricAlgebra.translation (-ρ) p)
+        ((translation_neg_weylVector_mem_linearInvariants_iff b).mpr hp)
+      simpa only [_root_.SymmetricAlgebra.lift_translation, Algebra.linearMap_self,
+        LinearMap.id_comp, ← sub_eq_add_neg] using hq
+    obtain ⟨w, hw⟩ := (forall_mem_dotInvariants_lift_eq_iff (b := b)).mp hdot
+    refine ⟨w, ?_⟩
+    simpa only [dotAction_def, ρ, sub_add_cancel, sub_left_inj] using hw
+  · rintro ⟨w, rfl⟩ q hq
+    exact (mem_linearInvariants_iff.mp hq w lam).symm
 
 end Weyl
 
@@ -183,6 +252,56 @@ theorem lieChevalleyRestrictionIso_mem_homogeneousSubmodule_iff {p : lieInvarian
   obtain ⟨p', ⟨hp', hp'm⟩, hpq⟩ := linearInvariants_inf_homogeneousSubmodule_le_map_lieInvariants
     H m ⟨lieCartanRestriction_mem_linearInvariants p.2, hq⟩
   rwa [← lieCartanRestriction_injOn_lieInvariants H hp' p.2 hpq]
+
+/-- **Lie-invariant polynomials separate Weyl orbits inside a Cartan subalgebra.** Two elements of
+`H` take the same value on every invariant polynomial function in `S(L*)^L` if and only if they
+lie in the same orbit of the Weyl group of `H` acting on `H` by `coweightEquiv`. -/
+theorem forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv {h₁ h₂ : H} :
+    (∀ p ∈ lieInvariants K L (Dual K L),
+      _root_.SymmetricAlgebra.lift (Dual.eval K L (h₁ : L)) p =
+        _root_.SymmetricAlgebra.lift (Dual.eval K L (h₂ : L)) p) ↔
+      ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂ := by
+  constructor
+  · intro heq
+    have hlin : ∀ q ∈ linearInvariants H,
+        _root_.SymmetricAlgebra.lift (cartanEquivDual H h₁) q =
+          _root_.SymmetricAlgebra.lift (cartanEquivDual H h₂) q := by
+      intro q hq
+      let p : lieInvariants K L L := (lieChevalleyRestrictionIso H).symm ⟨q, hq⟩
+      have hpq : lieCartanRestriction H (p : _root_.SymmetricAlgebra K L) = q :=
+        lieCartanRestriction_lieChevalleyRestrictionIso_symm_apply H ⟨q, hq⟩
+      rw [← hpq, ← lift_eval_killingSymmetricEquiv_cartan H h₁ p,
+        ← lift_eval_killingSymmetricEquiv_cartan H h₂ p]
+      exact heq _ ((killingSymmetricEquiv_mem_lieInvariants_iff K L).mpr p.2)
+    obtain ⟨w, hw⟩ := forall_mem_linearInvariants_lift_eq_iff.mp hlin
+    refine ⟨w⁻¹, (cartanEquivDual H).injective ?_⟩
+    rw [cartanEquivDual_coweightEquiv, inv_inv, hw]
+  · rintro ⟨w, rfl⟩ p hp
+    set p' : _root_.SymmetricAlgebra K L := (killingSymmetricEquiv K L).symm p
+    have hp' : p' ∈ lieInvariants K L L := by
+      rw [← killingSymmetricEquiv_mem_lieInvariants_iff K L, AlgEquiv.apply_symm_apply]
+      exact hp
+    have hq : lieCartanRestriction H p' ∈ linearInvariants H :=
+      lieCartanRestriction_mem_linearInvariants hp'
+    have hp_eq : p = killingSymmetricEquiv K L p' :=
+      ((killingSymmetricEquiv K L).apply_symm_apply p).symm
+    rw [hp_eq, lift_eval_killingSymmetricEquiv_cartan, lift_eval_killingSymmetricEquiv_cartan,
+      cartanEquivDual_coweightEquiv]
+    exact (mem_linearInvariants_iff.mp hq w⁻¹ (cartanEquivDual H h₁)).symm
+
+/-- **Conjugacy inside a Cartan subalgebra is Weyl-group conjugacy.** Two elements of `H` are
+conjugate under `Int(L)` if and only if they lie in the same orbit of the Weyl group of `H`
+acting on `H` by `coweightEquiv`. -/
+theorem exists_mem_intLieAlgebra_smul_eq_iff_exists_coweightEquiv [LieAlgebra ℚ L] {h₁ h₂ : H} :
+    (∃ g ∈ intLieAlgebra K L, g • (h₁ : L) = h₂) ↔
+      ∃ w : (rootSystem H).weylGroup, (w : (rootSystem H).Aut).coweightEquiv h₁ = h₂ := by
+  constructor
+  · rintro ⟨g, hg, hgh⟩
+    refine (forall_mem_lieInvariants_lift_eval_eq_iff_exists_coweightEquiv H).mp fun p hp ↦ ?_
+    rw [← hgh, lift_eval_smul_of_mem_intLieAlgebra hg hp]
+  · rintro ⟨w, rfl⟩
+    obtain ⟨g, hg, hgw⟩ := exists_mem_intLieAlgebra_forall_smul_eq_coweightEquiv w
+    exact ⟨g, hg, hgw h₁⟩
 
 end Surjective
 
