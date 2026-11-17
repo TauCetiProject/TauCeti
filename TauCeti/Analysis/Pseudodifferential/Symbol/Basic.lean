@@ -36,6 +36,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order; spatial and
   frequency derivatives commute with each other (`TauCeti.Symbol.spatialDeriv_comm`,
   `TauCeti.Symbol.frequencyDeriv_comm`, `TauCeti.Symbol.spatialDeriv_frequencyDeriv_comm`);
+  a family of smooth functions indexed by symbols and closed under these derivatives satisfies
+  all symbol estimates once it satisfies the order-`m` bound
+  (`TauCeti.Symbol.exists_norm_mixedDeriv_le_of_deriv_eq`);
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
@@ -826,6 +829,54 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun y hy => hKa y hy ξ
   rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
     Pi.zero_apply]
+
+/-- Let `F a` be a family of smooth functions of the position and the frequency, indexed by the
+symbols `a` of every order, whose coordinate derivatives are again members of the family:
+`∂_{x_j} (F a) = F (S j a)` with `S j a` of the order of `a`, and `∂_{ξ_j} (F a) = F (T j a)` with
+`T j a` of one order less. If every member satisfies the order-`m` bound `C ⟨ξ⟩ ^ m` on compact
+sets of positions, then every member satisfies all symbol estimates of its order. -/
+theorem exists_norm_mixedDeriv_le_of_deriv_eq
+    (F : ∀ {m : ℝ}, Symbol n V W m → CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (S : ∀ {m : ℝ}, Fin n → Symbol n V W m → Symbol n V W m)
+    (T : ∀ {m : ℝ}, Fin n → Symbol n V W m → Symbol n V W (m - 1))
+    (hF : ∀ {m : ℝ} (a : Symbol n V W m), ContDiff ℝ ∞ (F a))
+    (hS : ∀ {m : ℝ} (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n),
+      coordinateDeriv [j] (fun y ↦ F a (y, ξ)) x = F (S j a) (x, ξ))
+    (hT : ∀ {m : ℝ} (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n),
+      coordinateDeriv [j] (fun η ↦ F a (x, η)) ξ = F (T j a) (x, ξ))
+    (hbound : ∀ {m : ℝ} (a : Symbol n V W m) {K : Set (CoordinateSpace n)}, IsCompact K →
+      ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖F a (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (a : Symbol n V W m) {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (F a) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
+  obtain ⟨D, hD⟩ : ∃ D, α.length + β.length = D := ⟨_, rfl⟩
+  induction D generalizing m α β with
+  | zero =>
+    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
+      simpa [List.length_eq_zero_iff] using hD
+    obtain ⟨C, hC0, hC⟩ := hbound a hK
+    exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+  | succ D ih =>
+    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
+    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
+      · simp at hD
+      · obtain ⟨C, hC0, hC⟩ := ih (S j a) α' [] (by simpa using hD)
+        refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+        have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+            coordinateDeriv [j] (fun y ↦ F a (y, q.2)) q.1) = F (S j a) :=
+          funext fun q ↦ hS a j q.1 q.2
+        rw [← mixedDeriv_coordinateDeriv_fst (hF a), hfun]
+        exact hC x hx ξ
+    · have hlen : α.length + β'.length = D := by
+        simp only [List.length_append, List.length_singleton] at hD
+        omega
+      obtain ⟨C, hC0, hC⟩ := ih (T j a) α β' hlen
+      refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+      have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
+          coordinateDeriv [j] (fun η ↦ F a (q.1, η)) q.2) = F (T j a) :=
+        funext fun q ↦ hT a j q.1 q.2
+      rw [← mixedDeriv_coordinateDeriv_snd, hfun, ← order_sub_one_sub_length]
+      exact hC x hx ξ
 
 end Deriv
 
