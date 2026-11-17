@@ -27,10 +27,11 @@ algebra attached to a Cartan datum is the quotient of `T` by the radical `J` of 
 `χ(αᵢ, αⱼ) = q^(dᵢ aᵢⱼ)`.
 
 This file constructs `B` and proves the properties of `J` that make `f = T / J` an algebra with
-skew derivatives, a torus action and word reversal: `J` is stable under multiplication on both
-sides, under the skew derivatives `Lᵢ` and `Rᵢ`, under every diagonal scaling and under word
-reversal. It also proves that the common kernel of the `Lᵢ` modulo `J` consists of the scalars
-modulo `J`, the basic tool for showing that an element of `f` vanishes.
+skew derivatives, a torus action and word reversal: `J` is a left ideal stable under the skew
+derivatives `Rᵢ` and every diagonal scaling, and when `χ` is symmetric it is also a right ideal
+stable under the skew derivatives `Lᵢ` and word reversal. For symmetric `χ` over a commutative
+ring, it also proves that the common kernel of the `Lᵢ` modulo `J` consists of the scalars modulo
+`J`, the basic tool for showing that an element of `f` vanishes.
 
 ## Main definitions
 
@@ -40,22 +41,24 @@ modulo `J`, the basic tool for showing that an element of `f` vanishes.
 ## Main results
 
 * `TauCeti.freePairing_ι_mul_left`, `TauCeti.freePairing_mul_ι_left`: `B(θᵢ y, z) = B(y, Lᵢ z)` and
-  `B(y θᵢ, z) = B(y, Rᵢ z)`.
+  `B(y θᵢ, z) = B(y, Rᵢ z)`, the second when `χ i j = χ j i` for all `j`.
 * `TauCeti.eq_freePairing_iff`: `B` is the unique bilinear form with `B(1, z) = ε(z)` and
   `B(θᵢ y, z) = B(y, Lᵢ z)`.
 * `TauCeti.freePairing_ι_ι`: the generators are orthonormal.
-* `TauCeti.freePairing_freeRemove_left`: `B(Lᵢ x, y) = B(x, θᵢ y)`.
+* `TauCeti.freePairing_freeRemove_left`: `B(Lᵢ x, y) = B(x, θᵢ y)` when `χ i j = χ j i` for all
+  `j`.
 * `TauCeti.isSymm_freePairing`: `B` is symmetric when `χ` is.
 * `TauCeti.freePairing_freeHalfScale_left`, `TauCeti.freePairing_star_star`: `B` is invariant
-  under diagonal scalings and under word reversal.
+  under diagonal scalings, and under word reversal when `χ` is symmetric.
 * `TauCeti.freePairing_ι_pow_ι_pow`: in rank one,
   `B(θᵢⁿ, θᵢⁿ) = ∏_(k < n) (1 + χ i i + ⋯ + χ i iᵏ)`.
-* `TauCeti.mul_mem_halfRadical_left`, `TauCeti.mul_mem_halfRadical_right`: `J` is a two-sided
-  ideal.
+* `TauCeti.mul_mem_halfRadical_left`, `TauCeti.mul_mem_halfRadical_right`: `J` is a left
+  ideal, and a two-sided ideal when `χ` is symmetric.
 * `TauCeti.freeRemove_mem_halfRadical`, `TauCeti.freeRemoveRight_mem_halfRadical`,
-  `TauCeti.freeHalfScale_mem_halfRadical`, `TauCeti.star_mem_halfRadical_iff`: stability of `J`.
-* `TauCeti.forall_freeRemove_mem_halfRadical_iff`: all `Lᵢ x` lie in `J` exactly when `x` is
-  congruent modulo `J` to its constant term.
+  `TauCeti.freeHalfScale_mem_halfRadical`, `TauCeti.star_mem_halfRadical_iff`: stability of `J`,
+  under `Lᵢ` and word reversal only for symmetric `χ`.
+* `TauCeti.forall_freeRemove_mem_halfRadical_iff`: for symmetric `χ` over a commutative ring, all
+  `Lᵢ x` lie in `J` exactly when `x` is congruent modulo `J` to its constant term.
 
 ## Implementation notes
 
