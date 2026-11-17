@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Height.NumberField
-public import TauCeti.NumberTheory.DiophantineApproximation.Roth.ApproximationFactor
+public import TauCeti.NumberTheory.DiophantineApproximation.Roth.ApproximationClass
 
 import Mathlib.Algebra.Algebra.IsSimpleRing
 import TauCeti.Analysis.AbsoluteValue.Nonarchimedean
