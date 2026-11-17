@@ -15,6 +15,7 @@ public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
@@ -1052,23 +1053,6 @@ variable {X E V W : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [NormedAdd
   [InnerProductSpace ℝ E] [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-- The formula `(y, ξ) ↦ ‖ξ‖ ^ m • g (y, ‖ξ‖⁻¹ • ξ)` of the homogeneous extension of degree `m`
-from the unit sphere of frequencies is smooth off the zero frequency when `g` is. -/
-theorem contDiffOn_norm_rpow_smul_comp_normalize {Y F : Type*} [NormedAddCommGroup Y]
-    [NormedSpace ℝ Y] [NormedAddCommGroup F] [NormedSpace ℝ F] {g : Y × E → F}
-    (hg : ContDiffOn ℝ ∞ g {q | q.2 ≠ 0}) (m : ℝ) :
-    ContDiffOn ℝ ∞ (fun q : Y × E ↦ ‖q.2‖ ^ m • g (q.1, ‖q.2‖⁻¹ • q.2)) {q | q.2 ≠ 0} := by
-  intro q hq
-  have hq' : q.2 ≠ 0 := hq
-  have hn : ‖q.2‖ ≠ 0 := norm_ne_zero_iff.mpr hq'
-  have hnorm : ContDiffAt ℝ ∞ (fun q : Y × E ↦ ‖q.2‖) q :=
-    (contDiffAt_norm ℝ hq').comp q contDiffAt_snd
-  -- The radial projection stays off the zero frequency, where `g` is smooth.
-  have hmem : (q.1, ‖q.2‖⁻¹ • q.2) ∈ {q : Y × E | q.2 ≠ 0} := smul_ne_zero (inv_ne_zero hn) hq'
-  have hg' := (hg.contDiffAt ((isOpen_ne_fun continuous_snd continuous_const).mem_nhds hmem)).comp
-    q (contDiffAt_fst.prodMk ((hnorm.inv hn).smul contDiffAt_snd))
-  exact ((hnorm.rpow_const_of_ne (p := m) hn).smul hg').contDiffWithinAt
-
 variable (m) in
 /-- The homogeneous symbol of degree `m` that agrees with `g` on the unit sphere of frequencies:
 its value at `ξ ≠ 0` is `‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ)`. Only the values of `g` on the unit sphere
@@ -1076,7 +1060,7 @@ matter (`HomogeneousSymbol.ofSphere_congr`); smoothness off the zero frequency i
 the extension is smooth. -/
 noncomputable def ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) :
     HomogeneousSymbol X E V W m :=
-  mk' (fun p ↦ ‖p.2‖ ^ m • g (p.1, ‖p.2‖⁻¹ • p.2)) (contDiffOn_norm_rpow_smul_comp_normalize hg m)
+  mk' (fun p ↦ ‖p.2‖ ^ m • g (p.1, ‖p.2‖⁻¹ • p.2)) (hg.norm_rpow_smul_comp_normalize m)
     fun x ξ _ t ht ↦ by
       have hdir : (t * ‖ξ‖)⁻¹ • (t • ξ) = ‖ξ‖⁻¹ • ξ := by
         rw [smul_smul]

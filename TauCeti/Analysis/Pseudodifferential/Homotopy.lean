@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Geometry.Manifold.SmoothApprox
+import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import TauCeti.Analysis.Normed.Operator.BoundedLinearMaps
 
 /-!
@@ -192,7 +193,7 @@ theorem exists_contDiffOn_isElliptic_homotopy [FiniteDimensional ℝ X] [FiniteD
   refine ⟨fun t ↦ ofSphere m (fun p ↦ g ((t, p.1), p.2)) (hg_slice t), ?_, fun t ↦ ?_,
     fun t ht ↦ ?_, fun t ht ↦ ?_⟩
   · -- Joint smoothness, transported from `(ℝ × X) × E` along the reassociation.
-    refine ((contDiffOn_norm_rpow_smul_comp_normalize hg.contDiffOn m).comp_continuousLinearMap
+    refine ((hg.contDiffOn.norm_rpow_smul_comp_normalize m).comp_continuousLinearMap
       (ContinuousLinearEquiv.prodAssoc ℝ ℝ X E).symm.toContinuousLinearMap).congr ?_
     rintro ⟨t, x, ξ⟩ (hξ : ξ ≠ 0)
     simp [coefficient_ofSphere _ _ hξ, ContinuousLinearEquiv.prodAssoc_symm_apply]
