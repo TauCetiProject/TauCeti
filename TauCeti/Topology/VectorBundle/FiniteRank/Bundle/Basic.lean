@@ -44,7 +44,8 @@ group, evaluation functors, and rank-invariance argument from `TauCeti.FiniteRan
 (`TauCeti.Topology.VectorBundle.FiniteRank.Atlas.{Basic,Category,Preadditive}`), we equip
 `FiniteRankBundle.{w} 𝕜 X` with its preadditive category structure, `HasZeroObject`
 (`FiniteRankBundle.zero`), forgetful/evaluation functors `totalSpaceFunctor` and `fiberFunctor x`,
-and constant-rank embedding `ofBundle` (`ofBundleHomeomorph`).
+constant-rank embedding `ofBundle` (`ofBundleHomeomorph`), and stratumwise bundle assembly
+`ofBundles` (`ofBundlesHomeomorph`).
 -/
 
 public section
@@ -53,7 +54,7 @@ open Bundle CategoryTheory CategoryTheory.Limits Topology
 
 namespace TauCeti
 
-universe w u v
+universe w w' u v
 
 variable (𝕜 : Type v) [NontriviallyNormedField 𝕜] (X : Type u) [TopologicalSpace X]
 
@@ -394,7 +395,6 @@ instance : Preadditive (FiniteRankBundle.{w} 𝕜 X) where
     Hom.fiberCLM (n • f) x = n • f.fiberCLM x := (rfl)
 
 /-- Forgetful functor sending a genuine variable-rank bundle to its global total space. -/
-@[expose]
 def totalSpaceFunctor : FiniteRankBundle.{w} 𝕜 X ⥤ TopCat.{max u w} where
   obj E := TopCat.of (TotalSpace Unit E.Fiber)
   map f := TopCat.ofHom f.totalSpaceMap
@@ -402,15 +402,21 @@ def totalSpaceFunctor : FiniteRankBundle.{w} 𝕜 X ⥤ TopCat.{max u w} where
 @[simp] theorem totalSpaceFunctor_obj (E : FiniteRankBundle.{w} 𝕜 X) :
     totalSpaceFunctor.obj E = TopCat.of (TotalSpace Unit E.Fiber) := (rfl)
 
-@[simp] theorem totalSpaceFunctor_map_apply (f : E ⟶ F) (p : TotalSpace Unit E.Fiber) :
-    totalSpaceFunctor.map f p = f.totalSpaceMap p := (rfl)
+@[simp] theorem totalSpaceFunctor_map (f : E ⟶ F) :
+    totalSpaceFunctor.map f =
+      eqToHom (totalSpaceFunctor_obj E) ≫ TopCat.ofHom f.totalSpaceMap ≫
+        eqToHom (totalSpaceFunctor_obj F).symm :=
+  (rfl)
 
 /-- `totalSpaceFunctor` is faithful because bundle morphisms act injectively via total spaces. -/
 instance : (totalSpaceFunctor.{w} (𝕜 := 𝕜) (X := X)).Faithful where
-  map_injective h := totalSpaceMap_injective (congrArg TopCat.Hom.hom h)
+  map_injective {E F} f g h := by
+    rw [totalSpaceFunctor_map, totalSpaceFunctor_map] at h
+    exact totalSpaceMap_injective <| congrArg TopCat.Hom.hom <|
+      (cancel_mono (eqToHom (totalSpaceFunctor_obj F).symm)).1 <|
+        (cancel_epi (eqToHom (totalSpaceFunctor_obj E))).1 h
 
 /-- Additive evaluation functor sending a genuine variable-rank bundle to its fibre at `x`. -/
-@[expose]
 def fiberFunctor (x : X) : FiniteRankBundle.{w} 𝕜 X ⥤ ModuleCat.{w} 𝕜 where
   obj E := ModuleCat.of 𝕜 (E.Fiber x)
   map f := ModuleCat.ofHom (f.fiberMap x)
@@ -418,12 +424,17 @@ def fiberFunctor (x : X) : FiniteRankBundle.{w} 𝕜 X ⥤ ModuleCat.{w} 𝕜 wh
 @[simp] theorem fiberFunctor_obj (x : X) (E : FiniteRankBundle.{w} 𝕜 X) :
     (fiberFunctor x).obj E = ModuleCat.of 𝕜 (E.Fiber x) := (rfl)
 
-@[simp] theorem fiberFunctor_map_apply (x : X) (f : E ⟶ F) (v : E.Fiber x) :
-    (fiberFunctor x).map f v = f.fiberMap x v := (rfl)
+@[simp] theorem fiberFunctor_map (x : X) (f : E ⟶ F) :
+    (fiberFunctor x).map f =
+      eqToHom (fiberFunctor_obj x E) ≫ ModuleCat.ofHom (f.fiberMap x) ≫
+        eqToHom (fiberFunctor_obj x F).symm :=
+  (rfl)
 
 /-- `fiberFunctor x` preserves addition of bundle morphisms. -/
 instance (x : X) : (fiberFunctor.{w} (𝕜 := 𝕜) (X := X) x).Additive where
-  map_add := by intros; rfl
+  map_add {E F f g} := by
+    simp only [fiberFunctor_map, fiberMap_add, ModuleCat.ofHom_add, Preadditive.comp_add,
+      Preadditive.add_comp]
 
 /-- Construct an isomorphism in `FiniteRankBundle.{w} 𝕜 X` from fibrewise linear equivalences with
 continuous forward and inverse total-space maps. -/
@@ -581,6 +592,78 @@ noncomputable def ofBundleHomeomorph :
 
 end OfBundle
 
+/-! ### Stratumwise bundle transfer -/
+
+section OfBundles
+
+variable (𝕜) (r : LocallyConstant X ℕ) (V : X → Type w')
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
+  (E : ∀ n : ℕ, {x : X // r x = n} → Type w)
+  [∀ n x, AddCommMonoid (E n x)] [∀ n x, Module 𝕜 (E n x)]
+  [∀ n x, TopologicalSpace (E n x)]
+  [∀ n, TopologicalSpace (TotalSpace (Fin n → 𝕜) (E n))]
+  [∀ n, FiberBundle (Fin n → 𝕜) (E n)]
+  [∀ n, VectorBundle 𝕜 (Fin n → 𝕜) (E n)]
+  (e : ∀ (n : ℕ) (x : {x : X // r x = n}), V x.1 ≃L[𝕜] E n x)
+
+/-- Assemble a `FiniteRankBundle` with fibres `V` and rank `r` by transporting stratumwise
+`VectorBundle`s `E n` along fibrewise continuous linear equivalences `e n`. -/
+@[expose] noncomputable def ofBundles : FiniteRankBundle.{w'} 𝕜 X where
+  rank := r
+  Fiber := V
+  topologicalSpaceStratum n := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+  fiberBundleStratum n :=
+    letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+    FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜) (E := E n) (e n)
+      (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
+  vectorBundleStratum n :=
+    letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+    letI := FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜) (E := E n) (e n)
+      (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
+    VectorBundle.ofContinuousLinearEquiv (Fin n → 𝕜) (E := E n) (e n)
+      (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
+
+@[simp] theorem rank_ofBundles : (ofBundles 𝕜 r V E e).rank = r := (rfl)
+
+@[simp] theorem fiber_ofBundles (x : X) : (ofBundles 𝕜 r V E e).Fiber x = V x := (rfl)
+
+private noncomputable def gluedOfBundlesHomeomorph :
+    (ofBundles 𝕜 r V E e).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
+  letI (n : ℕ) := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+  { toEquiv := Equiv.sigmaCongrRight fun n ↦
+      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
+        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).toEquiv
+    continuous_toFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
+      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
+        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).continuous
+    continuous_invFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
+      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
+        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).symm.continuous }
+
+/-- Homeomorphism over `X` between the global total space of `ofBundles 𝕜 r V E e` and the disjoint
+union of the stratum total spaces `TotalSpace (Fin n → 𝕜) (E n)`. -/
+noncomputable def ofBundlesHomeomorph :
+    TotalSpace Unit (ofBundles 𝕜 r V E e).Fiber ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
+  (ofBundles 𝕜 r V E e).totalSpaceHomeomorph.symm.trans (gluedOfBundlesHomeomorph 𝕜 r V E e)
+
+@[simp] theorem ofBundlesHomeomorph_apply (p : TotalSpace Unit (ofBundles 𝕜 r V E e).Fiber) :
+    ofBundlesHomeomorph 𝕜 r V E e p =
+      ⟨r p.proj, ⟨⟨p.proj, rfl⟩, e (r p.proj) ⟨p.proj, rfl⟩ p.2⟩⟩ :=
+  letI := totalSpaceInduced (Fin (r p.proj) → 𝕜) (E := E (r p.proj)) fun x ↦ e (r p.proj) x
+  (congrArg (gluedOfBundlesHomeomorph 𝕜 r V E e)
+    ((ofBundles 𝕜 r V E e).totalSpaceHomeomorph_symm_apply p)).trans <|
+    congrArg (Sigma.mk (r p.proj))
+      (totalSpaceHomeomorphOfContinuousLinearEquiv_apply (Fin (r p.proj) → 𝕜) (e (r p.proj)) _ _)
+
+@[simp] theorem ofBundlesHomeomorph_symm_apply (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
+    (ofBundlesHomeomorph 𝕜 r V E e).symm ⟨n, p⟩ = ⟨p.proj.1, (e n p.proj).symm p.2⟩ :=
+  letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
+  (congrArg (fun q ↦ (ofBundles 𝕜 r V E e).totalSpaceHomeomorph ⟨n, q⟩)
+    (totalSpaceHomeomorphOfContinuousLinearEquiv_symm_apply (Fin n → 𝕜) (e n) _ p)).trans
+    ((ofBundles 𝕜 r V E e).totalSpaceHomeomorph_apply _)
+
+end OfBundles
+
 /-- Every bundle of globally zero rank is a zero object in `FiniteRankBundle.{w} 𝕜 X`. -/
 theorem isZero_of_rank_eq_zero (E : FiniteRankBundle.{w} 𝕜 X) (h : ∀ x, E.rank x = 0) :
     IsZero E := by
@@ -637,8 +720,10 @@ variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
 /-- Isomorphic variable-rank vector bundles have the same locally constant rank function. -/
 theorem finiteRankBundle_rank_eq (e : E ≅ F) : E.rank = F.rank := by
   ext x
-  exact (E.finrank_fiber x).symm.trans <|
-    (((FiniteRankBundle.fiberFunctor x).mapIso e).toLinearEquiv.finrank_eq).trans
-      (F.finrank_fiber x)
+  have hfin : Module.finrank 𝕜 ((FiniteRankBundle.fiberFunctor x).obj E) =
+      Module.finrank 𝕜 ((FiniteRankBundle.fiberFunctor x).obj F) :=
+    ((FiniteRankBundle.fiberFunctor x).mapIso e).toLinearEquiv.finrank_eq
+  rw [FiniteRankBundle.fiberFunctor_obj, FiniteRankBundle.fiberFunctor_obj] at hfin
+  exact (E.finrank_fiber x).symm.trans (hfin.trans (F.finrank_fiber x))
 
 end CategoryTheory.Iso

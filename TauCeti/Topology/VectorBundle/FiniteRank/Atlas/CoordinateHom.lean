@@ -27,9 +27,10 @@ Pointwise bijectivity on fibres reflects isomorphisms in `FiniteRankAtlas 𝕜 X
 (`FiniteRankAtlas.isIso_iff_bijective`, generalizing `FiniteRankBundleCore.isIso_iff_bijective`;
 see Hatcher, *Vector Bundles and K-Theory*, §1.1). Separately, `FiniteRankAtlas.ofCoreFunctor`
 gives a full, faithful, additive embedding of constant-rank `FiniteRankBundleCore 𝕜 X` into
-`FiniteRankAtlas 𝕜 X` whose essential image consists of the atlases of globally constant rank
-(`FiniteRankAtlas.essImage_ofCoreFunctor_iff`), and `FiniteRankAtlas 𝕜 X` admits a zero object
-(`FiniteRankAtlas.isZero_of_rank_eq_zero`, `HasZeroObject (FiniteRankAtlas 𝕜 X)`).
+`FiniteRankAtlas 𝕜 X` (acting on morphisms via `FiniteRankAtlas.ofCoreMap`) whose essential image
+consists of the atlases of globally constant rank (`FiniteRankAtlas.essImage_ofCoreFunctor_iff`),
+and `FiniteRankAtlas 𝕜 X` admits a zero object (`FiniteRankAtlas.isZero_of_rank_eq_zero`,
+`HasZeroObject (FiniteRankAtlas 𝕜 X)`).
 -/
 
 public section
@@ -303,58 +304,94 @@ def ofCoreHomeomorph (C : FiniteRankBundleCore 𝕜 X) :
 @[simp] theorem ofCoreHomeomorph_symm_apply (C : FiniteRankBundleCore 𝕜 X)
     (p : C.core.TotalSpace) : (ofCoreHomeomorph C).symm p = ⟨p.proj, p.2⟩ := (rfl)
 
+/-- Transport a morphism of constant-rank point-indexed cores to a morphism of variable-rank
+bundle atlases via `ofCore`. -/
+def ofCoreMap {C₁ C₂ : FiniteRankBundleCore 𝕜 X} (f : C₁ ⟶ C₂) : ofCore C₁ ⟶ ofCore C₂ where
+  fiberMap x := (f.fiberMap x).toLinearMap
+  continuous_totalSpaceMap := ((ofCoreHomeomorph C₂).symm.continuous.comp
+    (f.continuous_totalSpaceMap.comp (ofCoreHomeomorph C₁).continuous)).congr fun p ↦ by
+      dsimp only [Function.comp_apply]
+      rw [ofCoreHomeomorph_apply, CoordinateHom.totalSpaceMap_def, ofCoreHomeomorph_symm_apply]
+      exact congrArg (TotalSpace.mk p.proj)
+        (congrFun (ContinuousLinearMap.coe_coe (f.fiberMap p.proj)).symm p.2)
+
+@[simp] theorem fiberMap_ofCoreMap {C₁ C₂ : FiniteRankBundleCore 𝕜 X} (f : C₁ ⟶ C₂) (x : X) :
+    (ofCoreMap f).fiberMap x = (f.fiberMap x).toLinearMap := (rfl)
+
+@[simp] theorem ofCoreMap_id (C : FiniteRankBundleCore 𝕜 X) :
+    ofCoreMap (𝟙 C) = 𝟙 (ofCore C) :=
+  hom_ext fun x ↦
+    congrArg ContinuousLinearMap.toLinearMap (FiniteRankBundleCore.fiberMap_id C x)
+
+@[simp] theorem ofCoreMap_comp {C₁ C₂ C₃ : FiniteRankBundleCore 𝕜 X}
+    (f : C₁ ⟶ C₂) (g : C₂ ⟶ C₃) :
+    ofCoreMap (f ≫ g) = ofCoreMap f ≫ ofCoreMap g :=
+  hom_ext fun x ↦
+    congrArg ContinuousLinearMap.toLinearMap (FiniteRankBundleCore.fiberMap_comp f g x)
+
+@[simp] theorem ofCoreMap_add {C₁ C₂ : FiniteRankBundleCore 𝕜 X} (f g : C₁ ⟶ C₂) :
+    ofCoreMap (f + g) = ofCoreMap f + ofCoreMap g :=
+  hom_ext fun x ↦
+    congrArg ContinuousLinearMap.toLinearMap (FiniteRankBundleCore.fiberMap_add f g x)
+
 variable (𝕜 X) in
 /-- Embed constant-rank point-indexed bundle cores into variable-rank bundle atlases. -/
-@[expose]
 def ofCoreFunctor : FiniteRankBundleCore 𝕜 X ⥤ FiniteRankAtlas 𝕜 X where
   obj := ofCore
-  map {C₁ C₂} f :=
-    { fiberMap x := (f.fiberMap x).toLinearMap
-      continuous_totalSpaceMap := ((ofCoreHomeomorph C₂).symm.continuous.comp
-        (f.continuous_totalSpaceMap.comp (ofCoreHomeomorph C₁).continuous)).congr fun p ↦ by
-        dsimp only [Function.comp_apply]
-        rw [ofCoreHomeomorph_apply, CoordinateHom.totalSpaceMap_def, ofCoreHomeomorph_symm_apply]
-        exact congrArg (TotalSpace.mk p.proj)
-          (congrFun (ContinuousLinearMap.coe_coe (f.fiberMap p.proj)).symm p.2) }
-  map_id C := hom_ext fun x ↦
-    congrArg ContinuousLinearMap.toLinearMap (FiniteRankBundleCore.fiberMap_id C x)
-  map_comp f g := hom_ext fun x ↦
-    congrArg ContinuousLinearMap.toLinearMap (FiniteRankBundleCore.fiberMap_comp f g x)
+  map := ofCoreMap
+  map_id := ofCoreMap_id
+  map_comp := ofCoreMap_comp
 
 @[simp] theorem ofCoreFunctor_obj (C : FiniteRankBundleCore 𝕜 X) :
     (ofCoreFunctor 𝕜 X).obj C = ofCore C := (rfl)
 
-@[simp] theorem fiberMap_ofCoreFunctor_map {C₁ C₂ : FiniteRankBundleCore 𝕜 X}
-    (f : C₁ ⟶ C₂) (x : X) :
-    ((ofCoreFunctor 𝕜 X).map f).fiberMap x = (f.fiberMap x).toLinearMap := (rfl)
+@[simp] theorem ofCoreFunctor_map {C₁ C₂ : FiniteRankBundleCore 𝕜 X} (f : C₁ ⟶ C₂) :
+    (ofCoreFunctor 𝕜 X).map f =
+      eqToHom (ofCoreFunctor_obj C₁) ≫ ofCoreMap f ≫ eqToHom (ofCoreFunctor_obj C₂).symm :=
+  (rfl)
 
 /-- `ofCoreFunctor` preserves addition of coordinate morphisms. -/
 instance : (ofCoreFunctor 𝕜 X).Additive where
-  map_add {_ _ f g} := hom_ext fun x ↦
-    congrArg ContinuousLinearMap.toLinearMap (FiniteRankBundleCore.fiberMap_add f g x)
+  map_add {C₁ C₂ f g} := by
+    simp only [ofCoreFunctor_map, ofCoreMap_add, Preadditive.comp_add, Preadditive.add_comp]
 
 /-- `ofCoreFunctor` is faithful since morphisms are determined by their fibre maps. -/
 instance : (ofCoreFunctor 𝕜 X).Faithful where
-  map_injective {C₁ C₂} _ _ h := FiniteRankBundleCore.hom_ext fun x ↦
-    ContinuousLinearMap.ext fun v ↦ congrArg (fun k : ofCore C₁ ⟶ ofCore C₂ ↦ k.fiberMap x v) h
+  map_injective {C₁ C₂} f₁ f₂ h := by
+    rw [ofCoreFunctor_map, ofCoreFunctor_map] at h
+    have h' : ofCoreMap f₁ = ofCoreMap f₂ :=
+      (cancel_mono (eqToHom (ofCoreFunctor_obj C₂).symm)).1 <|
+        (cancel_epi (eqToHom (ofCoreFunctor_obj C₁))).1 h
+    exact FiniteRankBundleCore.hom_ext fun x ↦ by
+      have hx := congrArg (fun k : ofCore C₁ ⟶ ofCore C₂ ↦ k.fiberMap x) h'
+      rw [fiberMap_ofCoreMap, fiberMap_ofCoreMap] at hx
+      exact ContinuousLinearMap.coe_inj.mp hx
 
 /-- `ofCoreFunctor` is full by descending continuous linear bundle maps to coordinate morphisms. -/
 instance : (ofCoreFunctor 𝕜 X).Full where
   map_surjective {C₁ C₂} g := by
-    let g' : ofCore C₁ ⟶ ofCore C₂ := g
-    refine ⟨CoordinateHom.ofContinuousTotalSpacePi C₁.core C₂.core (fun x ↦ g'.fiberCLM x)
-      (((ofCoreHomeomorph C₂).continuous.comp
-        (g'.continuous_totalSpaceMap.comp (ofCoreHomeomorph C₁).symm.continuous)).congr fun p ↦ by
-        dsimp only [Function.comp_apply]
-        rw [ofCoreHomeomorph_symm_apply, ofCoreHomeomorph_apply]
-        exact congrArg (TotalSpace.mk p.proj) (g'.fiberCLM_apply p.proj p.2).symm),
-      hom_ext fun x ↦ (congrArg ContinuousLinearMap.toLinearMap
+    let g' : ofCore C₁ ⟶ ofCore C₂ :=
+      eqToHom (ofCoreFunctor_obj C₁).symm ≫ g ≫ eqToHom (ofCoreFunctor_obj C₂)
+    let f : C₁ ⟶ C₂ :=
+      CoordinateHom.ofContinuousTotalSpacePi C₁.core C₂.core (fun x ↦ g'.fiberCLM x)
+        (((ofCoreHomeomorph C₂).continuous.comp
+          (g'.continuous_totalSpaceMap.comp (ofCoreHomeomorph C₁).symm.continuous)).congr
+          fun p ↦ by
+            dsimp only [Function.comp_apply]
+            rw [ofCoreHomeomorph_symm_apply, ofCoreHomeomorph_apply]
+            exact congrArg (TotalSpace.mk p.proj) (g'.fiberCLM_apply p.proj p.2).symm)
+    refine ⟨f, ?_⟩
+    have hg : ofCoreMap f = g' := hom_ext fun x ↦
+      (fiberMap_ofCoreMap f x).trans <| (congrArg ContinuousLinearMap.toLinearMap
         (CoordinateHom.fiberMap_ofContinuousTotalSpacePi C₁.core C₂.core
-          (fun x ↦ g'.fiberCLM x) _ x)).trans (g'.coe_fiberCLM x)⟩
+          (fun x ↦ g'.fiberCLM x) _ x)).trans (g'.coe_fiberCLM x)
+    rw [ofCoreFunctor_map, hg]
+    simp [g']
 
-/-- An atlas of constant rank `n` is canonically isomorphic to an image of `ofCoreFunctor`. -/
+/-- An atlas of constant rank `n` is canonically isomorphic to `ofCore` of its pulled-back `n`th
+stratum core. -/
 def ofCoreStratumIso (A : FiniteRankAtlas 𝕜 X) (n : ℕ) (hn : ∀ x, A.rank x = n) :
-    (ofCoreFunctor 𝕜 X).obj ((A.stratumCore n).pullback ⟨fun x ↦ ⟨x, hn x⟩,
+    ofCore ((A.stratumCore n).pullback ⟨fun x ↦ ⟨x, hn x⟩,
       continuous_id.subtype_mk hn⟩) ≅ A := by
   let s : C(X, {x : X // A.rank x = n}) := ⟨fun x ↦ ⟨x, hn x⟩, continuous_id.subtype_mk hn⟩
   let C := (A.stratumCore n).pullback s
@@ -398,8 +435,9 @@ def ofCoreStratumIso (A : FiniteRankAtlas 𝕜 X) (n : ℕ) (hn : ∀ x, A.rank 
 /-- `A` lies in `(ofCoreFunctor 𝕜 X).essImage` iff `A.rank` is globally constant. -/
 theorem essImage_ofCoreFunctor_iff (A : FiniteRankAtlas 𝕜 X) :
     (ofCoreFunctor 𝕜 X).essImage A ↔ ∃ n : ℕ, ∀ x : X, A.rank x = n :=
-  ⟨fun ⟨C, ⟨e⟩⟩ ↦ ⟨C.rank, fun x ↦ DFunLike.congr_fun e.finiteRankAtlas_rank_eq.symm x⟩,
-   fun ⟨n, hn⟩ ↦ ⟨_, ⟨ofCoreStratumIso A n hn⟩⟩⟩
+  ⟨fun ⟨C, ⟨e⟩⟩ ↦ ⟨C.rank, fun x ↦ DFunLike.congr_fun
+      (eqToIso (ofCoreFunctor_obj C).symm ≪≫ e).finiteRankAtlas_rank_eq.symm x⟩,
+   fun ⟨n, hn⟩ ↦ ⟨_, ⟨eqToIso (ofCoreFunctor_obj _) ≪≫ ofCoreStratumIso A n hn⟩⟩⟩
 
 /-- Every atlas of globally zero rank is a zero object in `FiniteRankAtlas 𝕜 X`. -/
 theorem isZero_of_rank_eq_zero (A : FiniteRankAtlas 𝕜 X) (h : ∀ x, A.rank x = 0) : IsZero A := by

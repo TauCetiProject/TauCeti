@@ -25,23 +25,26 @@ universe-size obstruction without losing categorical information:
 * **Coordinate presentation (unconditional):** Every `E : FiniteRankBundle.{w} 𝕜 X` induces a small
   coordinate atlas `E.toAtlas` together with `FiniteRankBundle.reconstructionFiberEquiv` and
   `FiniteRankBundle.reconstructionHomeomorph`. Conjugating fibre maps gives an additive, full, and
-  faithful functor `FiniteRankBundle.toAtlasFunctor`, from which
-  `FiniteRankBundle.isIso_iff_bijective`, `LocallySmall.{max u v}`, and
-  `EssentiallySmall.{max u v}` follow without `Small` hypotheses.
+  faithful functor `FiniteRankBundle.toAtlasFunctor` (acting on morphisms via
+  `FiniteRankBundle.toAtlasMap`), from which `FiniteRankBundle.isIso_iff_bijective`,
+  `LocallySmall.{max u v}`, and `EssentiallySmall.{max u v}` follow without `Small` hypotheses.
   For a constant-rank `VectorBundle 𝕜 (Fin n → 𝕜) V`, `FiniteRankBundle.toAtlasOfBundleIso`
   identifies `(ofBundle 𝕜 n V).toAtlas` with
-  `(FiniteRankAtlas.ofCoreFunctor 𝕜 X).obj (FiniteRankBundleCore.ofBundle 𝕜 n V)`, showing that the
-  genuine and coordinate constant-rank embeddings commute up to canonical isomorphism (with the
+  `FiniteRankAtlas.ofCore (FiniteRankBundleCore.ofBundle 𝕜 n V)` (matching
+  `(FiniteRankAtlas.ofCoreFunctor 𝕜 X).obj` via `FiniteRankAtlas.ofCoreFunctor_obj`), showing that
+  the genuine and coordinate constant-rank embeddings commute up to canonical isomorphism (with the
   constant-rank essential image characterized by `FiniteRankAtlas.essImage_ofCoreFunctor_iff`).
-* **Stratum bundle transport:** `FiniteRankBundle.ofBundles` and
-  `FiniteRankBundle.ofBundlesHomeomorph` assemble a `FiniteRankBundle` and its global total-space
-  comparison from stratumwise `VectorBundle`s and fibrewise continuous linear equivalences.
+* **Stratum bundle transport:** `FiniteRankBundle.reconstructionFiberEquiv_ofBundles` identifies
+  `reconstructionFiberEquiv` on the stratumwise transported bundle `FiniteRankBundle.ofBundles`
+  (constructed in `TauCeti.Topology.VectorBundle.FiniteRank.Bundle.Basic`).
 * **Equivalence under `[Small.{w} 𝕜]`:** Shrinking coordinate fibres into `Type w` yields the
-  additive inverse functor `FiniteRankBundle.fromAtlasFunctor` and the explicit equivalence
+  additive inverse functor `FiniteRankBundle.fromAtlasFunctor` (acting on morphisms via
+  `FiniteRankBundle.fromAtlasMap`) and the explicit equivalence
   `FiniteRankBundle.atlasEquivalence : FiniteRankBundle.{w} 𝕜 X ≌ FiniteRankAtlas 𝕜 X`.
 * **Universe polymorphism:** For arbitrary universes `w, w'`, `FiniteRankBundle.ulift` and the
-  additive, full, and faithful `FiniteRankBundle.uliftFunctor` lift fibres to `Type (max w w')` and
-  satisfy `uliftFunctor ⋙ toAtlasFunctor ≅ toAtlasFunctor`
+  additive, full, and faithful `FiniteRankBundle.uliftFunctor` (acting on morphisms via
+  `FiniteRankBundle.uliftMap`) lift fibres to `Type (max w w')` and satisfy
+  `uliftFunctor ⋙ toAtlasFunctor ≅ toAtlasFunctor`
   (`FiniteRankBundle.uliftFunctorCompToAtlasIso`), making `uliftFunctor` an equivalence when
   `[Small.{w} 𝕜]`. Under `[Small.{w₁} 𝕜] [Small.{w₂} 𝕜]`,
   `FiniteRankBundle.changeUniverseEquivalence` identifies `FiniteRankBundle.{w₁} 𝕜 X` with
@@ -110,73 +113,107 @@ theorem proj_reconstructionHomeomorph (E : FiniteRankBundle.{w} 𝕜 X)
     (p : TotalSpace Unit E.toAtlas.Fiber) : (E.reconstructionHomeomorph p).proj = p.proj := by
   rw [reconstructionHomeomorph_apply]
 
+/-- Present a morphism of genuine variable-rank bundles as a morphism of their small
+point-indexed `FiniteRankAtlas`es by conjugating along `reconstructionFiberEquiv`. -/
+noncomputable def toAtlasMap {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) :
+    E.toAtlas ⟶ F.toAtlas where
+  fiberMap x := (F.reconstructionFiberEquiv x).symm.toLinearMap.comp
+    ((f.fiberMap x).comp (E.reconstructionFiberEquiv x).toLinearMap)
+  continuous_totalSpaceMap := (F.reconstructionHomeomorph.symm.continuous.comp
+    (f.continuous_totalSpaceMap.comp E.reconstructionHomeomorph.continuous)).congr fun p ↦ by
+      rw [Function.comp_apply, Function.comp_apply, E.reconstructionHomeomorph_apply,
+        F.reconstructionHomeomorph_symm_apply]
+      rfl
+
+@[simp] theorem fiberMap_toAtlasMap {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) (x : X) :
+    (toAtlasMap f).fiberMap x =
+      (F.reconstructionFiberEquiv x).symm.toLinearMap.comp
+        ((f.fiberMap x).comp (E.reconstructionFiberEquiv x).toLinearMap) := (rfl)
+
+@[simp] theorem toAtlasMap_id (E : FiniteRankBundle.{w} 𝕜 X) :
+    toAtlasMap (𝟙 E) = 𝟙 E.toAtlas :=
+  FiniteRankAtlas.hom_ext fun x ↦
+    LinearMap.ext (E.reconstructionFiberEquiv x).symm_apply_apply
+
+@[simp] theorem toAtlasMap_comp {E F G : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) (g : F ⟶ G) :
+    toAtlasMap (f ≫ g) = toAtlasMap f ≫ toAtlasMap g :=
+  FiniteRankAtlas.hom_ext fun x ↦
+    LinearMap.ext fun _ ↦ by simp [LinearMap.comp_apply]
+
+@[simp] theorem toAtlasMap_add {E F : FiniteRankBundle.{w} 𝕜 X} (f g : E ⟶ F) :
+    toAtlasMap (f + g) = toAtlasMap f + toAtlasMap g :=
+  FiniteRankAtlas.hom_ext fun x ↦ LinearMap.ext fun _ ↦
+    (F.reconstructionFiberEquiv x).symm.map_add (f.fiberMap x _) (g.fiberMap x _)
+
 variable (𝕜 X) in
 /-- Additive, full, and faithful functor presenting genuine variable-rank vector bundles by small
 variable-rank coordinate atlases. -/
-@[expose] noncomputable def toAtlasFunctor : FiniteRankBundle.{w} 𝕜 X ⥤ FiniteRankAtlas 𝕜 X where
+noncomputable def toAtlasFunctor : FiniteRankBundle.{w} 𝕜 X ⥤ FiniteRankAtlas 𝕜 X where
   obj E := E.toAtlas
-  map {E F} f :=
-    { fiberMap x := (F.reconstructionFiberEquiv x).symm.toLinearMap.comp
-        ((f.fiberMap x).comp (E.reconstructionFiberEquiv x).toLinearMap)
-      continuous_totalSpaceMap := (F.reconstructionHomeomorph.symm.continuous.comp
-        (f.continuous_totalSpaceMap.comp E.reconstructionHomeomorph.continuous)).congr fun p ↦ by
-          rw [Function.comp_apply, Function.comp_apply, E.reconstructionHomeomorph_apply,
-            F.reconstructionHomeomorph_symm_apply]
-          rfl }
-  map_id E := FiniteRankAtlas.hom_ext fun x ↦
-    LinearMap.ext (E.reconstructionFiberEquiv x).symm_apply_apply
-  map_comp {_ F _} _ _ := FiniteRankAtlas.hom_ext fun x ↦
-    LinearMap.ext fun _ ↦ by simp [LinearMap.comp_apply]
+  map := toAtlasMap
+  map_id := toAtlasMap_id
+  map_comp := toAtlasMap_comp
 
 @[simp] theorem toAtlasFunctor_obj (E : FiniteRankBundle.{w} 𝕜 X) :
     (toAtlasFunctor.{w} 𝕜 X).obj E = E.toAtlas := (rfl)
 
-@[simp] theorem fiberMap_toAtlasFunctor_map {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) (x : X) :
-    ((toAtlasFunctor.{w} 𝕜 X).map f).fiberMap x =
-      (F.reconstructionFiberEquiv x).symm.toLinearMap.comp
-        ((f.fiberMap x).comp (E.reconstructionFiberEquiv x).toLinearMap) := (rfl)
+@[simp] theorem toAtlasFunctor_map {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) :
+    (toAtlasFunctor.{w} 𝕜 X).map f =
+      eqToHom (toAtlasFunctor_obj E) ≫ toAtlasMap f ≫
+        eqToHom (toAtlasFunctor_obj F).symm :=
+  (rfl)
 
 /-- `toAtlasFunctor` preserves addition of bundle morphisms. -/
 instance : (toAtlasFunctor.{w} 𝕜 X).Additive where
-  map_add {_ F f g} := FiniteRankAtlas.hom_ext fun x ↦ LinearMap.ext fun _ ↦
-    (F.reconstructionFiberEquiv x).symm.map_add (f.fiberMap x _) (g.fiberMap x _)
+  map_add {E F f g} := by
+    simp only [toAtlasFunctor_map, toAtlasMap_add, Preadditive.comp_add, Preadditive.add_comp]
 
 /-- `toAtlasFunctor` is faithful because `reconstructionFiberEquiv` is an equivalence on each
 fibre. -/
 instance : (toAtlasFunctor.{w} 𝕜 X).Faithful where
-  map_injective {E F} f₁ f₂ h := hom_ext fun x ↦ LinearMap.ext fun w ↦ by
-    have hx : (F.reconstructionFiberEquiv x).symm
-        (f₁.fiberMap x (E.reconstructionFiberEquiv x ((E.reconstructionFiberEquiv x).symm w))) =
-      (F.reconstructionFiberEquiv x).symm
-        (f₂.fiberMap x (E.reconstructionFiberEquiv x ((E.reconstructionFiberEquiv x).symm w))) :=
-      congrArg (fun k ↦ k.fiberMap x ((E.reconstructionFiberEquiv x).symm w)) h
-    rw [(E.reconstructionFiberEquiv x).apply_symm_apply] at hx
-    exact (F.reconstructionFiberEquiv x).symm.injective hx
+  map_injective {E F} f₁ f₂ h := by
+    rw [toAtlasFunctor_map, toAtlasFunctor_map] at h
+    have h' : toAtlasMap f₁ = toAtlasMap f₂ :=
+      (cancel_mono (eqToHom (toAtlasFunctor_obj F).symm)).1 <|
+        (cancel_epi (eqToHom (toAtlasFunctor_obj E))).1 h
+    exact hom_ext fun x ↦ LinearMap.ext fun w ↦ by
+      have hx := congrArg (fun k ↦ k.fiberMap x ((E.reconstructionFiberEquiv x).symm w)) h'
+      simp only [fiberMap_toAtlasMap, LinearMap.comp_apply, LinearEquiv.coe_coe,
+        ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.apply_symm_apply] at hx
+      exact (F.reconstructionFiberEquiv x).symm.injective hx
 
 /-- `toAtlasFunctor` is full by conjugating coordinate morphisms along
 `reconstructionHomeomorph`. -/
 instance : (toAtlasFunctor.{w} 𝕜 X).Full where
   map_surjective {E F} g := by
-    let g' : E.toAtlas ⟶ F.toAtlas := g
-    refine ⟨⟨fun x ↦ (F.reconstructionFiberEquiv x).toLinearMap.comp
-        ((g'.fiberMap x).comp (E.reconstructionFiberEquiv x).symm.toLinearMap),
-      (F.reconstructionHomeomorph.continuous.comp
-        (g'.continuous_totalSpaceMap.comp E.reconstructionHomeomorph.symm.continuous)).congr
-        fun p ↦ by
-          rw [Function.comp_apply, Function.comp_apply, E.reconstructionHomeomorph_symm_apply,
-            F.reconstructionHomeomorph_apply]
-          rfl⟩,
+    let g' : E.toAtlas ⟶ F.toAtlas :=
+      eqToHom (toAtlasFunctor_obj E).symm ≫ g ≫ eqToHom (toAtlasFunctor_obj F)
+    let f : E ⟶ F :=
+      ⟨fun x ↦ (F.reconstructionFiberEquiv x).toLinearMap.comp
+          ((g'.fiberMap x).comp (E.reconstructionFiberEquiv x).symm.toLinearMap),
+        (F.reconstructionHomeomorph.continuous.comp
+          (g'.continuous_totalSpaceMap.comp E.reconstructionHomeomorph.symm.continuous)).congr
+          fun p ↦ by
+            rw [Function.comp_apply, Function.comp_apply, E.reconstructionHomeomorph_symm_apply,
+              F.reconstructionHomeomorph_apply]
+            rfl⟩
+    refine ⟨f, ?_⟩
+    have hg : toAtlasMap f = g' :=
       FiniteRankAtlas.hom_ext (A := E.toAtlas) (D := F.toAtlas) fun x ↦ LinearMap.ext fun _ ↦ by
-        simp [g', LinearMap.comp_apply]⟩
+        simp [f, LinearMap.comp_apply]
+    rw [toAtlasFunctor_map, hg]
+    simp [g']
 
 /-- A morphism of genuine variable-rank bundles is an isomorphism iff every fibre map is
 bijective. -/
 theorem isIso_iff_bijective {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) :
     IsIso f ↔ ∀ x : X, Function.Bijective (f.fiberMap x) := by
-  rw [← isIso_iff_of_reflects_iso f (toAtlasFunctor.{w} 𝕜 X), FiniteRankAtlas.isIso_iff_bijective]
-  exact forall_congr' fun x ↦
-    ((F.reconstructionFiberEquiv x).symm.bijective.of_comp_iff' _).trans
-      ((E.reconstructionFiberEquiv x).bijective.of_comp_iff _)
+  rw [← isIso_iff_of_reflects_iso f (toAtlasFunctor.{w} 𝕜 X), toAtlasFunctor_map,
+    isIso_comp_left_iff, isIso_comp_right_iff, FiniteRankAtlas.isIso_iff_bijective]
+  refine forall_congr' fun x ↦ ?_
+  rw [fiberMap_toAtlasMap]
+  exact ((F.reconstructionFiberEquiv x).symm.bijective.of_comp_iff' _).trans
+    ((E.reconstructionFiberEquiv x).bijective.of_comp_iff _)
 
 /-- `FiniteRankBundle.{w} 𝕜 X` is locally small at `max u v` via `toAtlasFunctor`. -/
 instance : LocallySmall.{max u v} (FiniteRankBundle.{w} 𝕜 X) :=
@@ -202,10 +239,10 @@ variable (𝕜) (n : ℕ) (V : X → Type w)
         (pointIndexedCoreFiberEquiv_apply 𝕜 (Fin n → 𝕜) V x v).symm
 
 /-- Presenting `V` via `FiniteRankBundle.ofBundle` and `toAtlas` is canonically isomorphic to
-presenting `V` via `FiniteRankBundleCore.ofBundle` and `FiniteRankAtlas.ofCoreFunctor`. -/
+presenting `V` via `FiniteRankBundleCore.ofBundle` and `FiniteRankAtlas.ofCore`. -/
 noncomputable def toAtlasOfBundleIso :
     (ofBundle 𝕜 n V).toAtlas ≅
-      (FiniteRankAtlas.ofCoreFunctor 𝕜 X).obj (FiniteRankBundleCore.ofBundle 𝕜 n V) :=
+      FiniteRankAtlas.ofCore (FiniteRankBundleCore.ofBundle 𝕜 n V) :=
   let B := ofBundle 𝕜 n V
   let C := FiniteRankBundleCore.ofBundle 𝕜 n V
   let f1 := B.reconstructionHomeomorph
@@ -236,18 +273,18 @@ noncomputable def toAtlasOfBundleIso :
 @[simp] theorem fiberMap_toAtlasOfBundleIso_hom (x : X) :
     (toAtlasOfBundleIso 𝕜 n V).hom.fiberMap x = LinearMap.id :=
   FiniteRankAtlas.fiberMap_isoMk_hom (A := (ofBundle 𝕜 n V).toAtlas)
-    (D := (FiniteRankAtlas.ofCoreFunctor 𝕜 X).obj (FiniteRankBundleCore.ofBundle 𝕜 n V)) _ _ _ x
+    (D := FiniteRankAtlas.ofCore (FiniteRankBundleCore.ofBundle 𝕜 n V)) _ _ _ x
 
 @[simp] theorem fiberMap_toAtlasOfBundleIso_inv (x : X) :
     (toAtlasOfBundleIso 𝕜 n V).inv.fiberMap x = LinearMap.id :=
   FiniteRankAtlas.fiberMap_isoMk_inv (A := (ofBundle 𝕜 n V).toAtlas)
-    (D := (FiniteRankAtlas.ofCoreFunctor 𝕜 X).obj (FiniteRankBundleCore.ofBundle 𝕜 n V)) _ _ _ x
+    (D := FiniteRankAtlas.ofCore (FiniteRankBundleCore.ofBundle 𝕜 n V)) _ _ _ x
 
 end ConstantRank
 
 end ToAtlas
 
-/-! ### Stratumwise bundle transfer -/
+/-! ### Compatibility with stratumwise bundle transfer -/
 
 section OfBundles
 
@@ -261,27 +298,6 @@ variable (𝕜) (r : LocallyConstant X ℕ) (V : X → Type w')
   [∀ n, FiberBundle (Fin n → 𝕜) (E n)]
   [∀ n, VectorBundle 𝕜 (Fin n → 𝕜) (E n)]
   (e : ∀ (n : ℕ) (x : {x : X // r x = n}), V x.1 ≃L[𝕜] E n x)
-
-/-- Assemble a `FiniteRankBundle` with fibres `V` and rank `r` by transporting stratumwise
-`VectorBundle`s `E n` along fibrewise continuous linear equivalences `e n`. -/
-@[expose] noncomputable def ofBundles : FiniteRankBundle.{w'} 𝕜 X where
-  rank := r
-  Fiber := V
-  topologicalSpaceStratum n := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-  fiberBundleStratum n :=
-    letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-    FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜) (E := E n) (e n)
-      (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
-  vectorBundleStratum n :=
-    letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-    letI := FiberBundle.ofContinuousLinearEquiv (Fin n → 𝕜) (E := E n) (e n)
-      (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
-    VectorBundle.ofContinuousLinearEquiv (Fin n → 𝕜) (E := E n) (e n)
-      (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)
-
-@[simp] theorem rank_ofBundles : (ofBundles 𝕜 r V E e).rank = r := (rfl)
-
-@[simp] theorem fiber_ofBundles (x : X) : (ofBundles 𝕜 r V E e).Fiber x = V x := (rfl)
 
 @[simp] theorem reconstructionFiberEquiv_ofBundles (x : X) :
     (ofBundles 𝕜 r V E e).reconstructionFiberEquiv x =
@@ -303,41 +319,6 @@ variable (𝕜) (r : LocallyConstant X ℕ) (V : X → Type w')
           (FiberBundle.mem_baseSet_trivializationAt (Fin (r x) → 𝕜) (E (r x)) b) v).trans <|
           congrArg (e (r x) b).symm
             (pointIndexedCoreFiberEquiv_apply 𝕜 (Fin (r x) → 𝕜) (E (r x)) b v).symm
-
-private noncomputable def gluedOfBundlesHomeomorph :
-    (ofBundles 𝕜 r V E e).GluedTotalSpace ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
-  letI (n : ℕ) := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-  { toEquiv := Equiv.sigmaCongrRight fun n ↦
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).toEquiv
-    continuous_toFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).continuous
-    continuous_invFun := continuous_sigma fun n ↦ continuous_sigmaMk.comp
-      (totalSpaceHomeomorphOfContinuousLinearEquiv (Fin n → 𝕜) (e n)
-        (isInducing_totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x)).symm.continuous }
-
-/-- Homeomorphism over `X` between the global total space of `ofBundles 𝕜 r V E e` and the disjoint
-union of the stratum total spaces `TotalSpace (Fin n → 𝕜) (E n)`. -/
-noncomputable def ofBundlesHomeomorph :
-    TotalSpace Unit (ofBundles 𝕜 r V E e).Fiber ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
-  (ofBundles 𝕜 r V E e).totalSpaceHomeomorph.symm.trans (gluedOfBundlesHomeomorph 𝕜 r V E e)
-
-@[simp] theorem ofBundlesHomeomorph_apply (p : TotalSpace Unit (ofBundles 𝕜 r V E e).Fiber) :
-    ofBundlesHomeomorph 𝕜 r V E e p =
-      ⟨r p.proj, ⟨⟨p.proj, rfl⟩, e (r p.proj) ⟨p.proj, rfl⟩ p.2⟩⟩ :=
-  letI := totalSpaceInduced (Fin (r p.proj) → 𝕜) (E := E (r p.proj)) fun x ↦ e (r p.proj) x
-  (congrArg (gluedOfBundlesHomeomorph 𝕜 r V E e)
-    ((ofBundles 𝕜 r V E e).totalSpaceHomeomorph_symm_apply p)).trans <|
-    congrArg (Sigma.mk (r p.proj))
-      (totalSpaceHomeomorphOfContinuousLinearEquiv_apply (Fin (r p.proj) → 𝕜) (e (r p.proj)) _ _)
-
-@[simp] theorem ofBundlesHomeomorph_symm_apply (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
-    (ofBundlesHomeomorph 𝕜 r V E e).symm ⟨n, p⟩ = ⟨p.proj.1, (e n p.proj).symm p.2⟩ :=
-  letI := totalSpaceInduced (Fin n → 𝕜) (E := E n) fun x ↦ e n x
-  (congrArg (fun q ↦ (ofBundles 𝕜 r V E e).totalSpaceHomeomorph ⟨n, q⟩)
-    (totalSpaceHomeomorphOfContinuousLinearEquiv_symm_apply (Fin n → 𝕜) (e n) _ p)).trans
-    ((ofBundles 𝕜 r V E e).totalSpaceHomeomorph_apply _)
 
 end OfBundles
 
@@ -405,40 +386,65 @@ noncomputable def fromAtlasHomeomorph [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜
       simp only [finCongr_refl, ContinuousLinearEquiv.piCongrLeft_refl]
       rfl
 
-variable (𝕜 X) in
-/-- Additive reconstruction functor `FiniteRankAtlas 𝕜 X ⥤ FiniteRankBundle.{w} 𝕜 X` when
-`[Small.{w} 𝕜]`. -/
-@[expose] noncomputable def fromAtlasFunctor [Small.{w} 𝕜] :
-    FiniteRankAtlas 𝕜 X ⥤ FiniteRankBundle.{w} 𝕜 X where
-  obj A := fromAtlas.{w} A
-  map {A D} g :=
-    { fiberMap x := (Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm.toLinearMap.comp
-        ((g.fiberMap x).comp (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).toLinearMap)
-      continuous_totalSpaceMap := ((fromAtlasHomeomorph.{w} D).symm.continuous.comp
-        (g.continuous_totalSpaceMap.comp (fromAtlasHomeomorph.{w} A).continuous)).congr fun p ↦ by
-        rw [Function.comp_apply, Function.comp_apply, fromAtlasHomeomorph_apply,
-          fromAtlasHomeomorph_symm_apply]
-        rfl }
-  map_id A := hom_ext fun x ↦
+/-- Transport a morphism of variable-rank bundle atlases to a morphism of genuine `w`-universe
+vector bundles via `fromAtlas` under `[Small.{w} 𝕜]`. -/
+noncomputable def fromAtlasMap [Small.{w} 𝕜] {A D : FiniteRankAtlas 𝕜 X} (g : A ⟶ D) :
+    fromAtlas.{w} A ⟶ fromAtlas.{w} D where
+  fiberMap x := (Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm.toLinearMap.comp
+    ((g.fiberMap x).comp (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).toLinearMap)
+  continuous_totalSpaceMap := ((fromAtlasHomeomorph.{w} D).symm.continuous.comp
+    (g.continuous_totalSpaceMap.comp (fromAtlasHomeomorph.{w} A).continuous)).congr fun p ↦ by
+      rw [Function.comp_apply, Function.comp_apply, fromAtlasHomeomorph_apply,
+        fromAtlasHomeomorph_symm_apply]
+      rfl
+
+@[simp] theorem fiberMap_fromAtlasMap [Small.{w} 𝕜] {A D : FiniteRankAtlas 𝕜 X}
+    (g : A ⟶ D) (x : X) :
+    (fromAtlasMap.{w} g).fiberMap x =
+      (Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm.toLinearMap.comp
+        ((g.fiberMap x).comp (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).toLinearMap) := (rfl)
+
+@[simp] theorem fromAtlasMap_id [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜 X) :
+    fromAtlasMap.{w} (𝟙 A) = 𝟙 (fromAtlas.{w} A) :=
+  hom_ext fun x ↦
     LinearMap.ext (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).symm_apply_apply
-  map_comp {A B C} f g := hom_ext fun x ↦ LinearMap.ext fun v ↦
+
+@[simp] theorem fromAtlasMap_comp [Small.{w} 𝕜] {A B C : FiniteRankAtlas 𝕜 X}
+    (f : A ⟶ B) (g : B ⟶ C) :
+    fromAtlasMap.{w} (f ≫ g) = fromAtlasMap.{w} f ≫ fromAtlasMap.{w} g :=
+  hom_ext fun x ↦ LinearMap.ext fun v ↦
     congrArg (fun w ↦ (Shrink.continuousLinearEquiv 𝕜 (C.Fiber x)).symm (g.fiberMap x w))
       ((Shrink.continuousLinearEquiv 𝕜 (B.Fiber x)).apply_symm_apply
         (f.fiberMap x (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x) v))).symm
 
+@[simp] theorem fromAtlasMap_add [Small.{w} 𝕜] {A D : FiniteRankAtlas 𝕜 X} (f g : A ⟶ D) :
+    fromAtlasMap.{w} (f + g) = fromAtlasMap.{w} f + fromAtlasMap.{w} g :=
+  hom_ext fun x ↦ LinearMap.ext fun _ ↦
+    (Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm.map_add (f.fiberMap x _) (g.fiberMap x _)
+
+variable (𝕜 X) in
+/-- Additive reconstruction functor `FiniteRankAtlas 𝕜 X ⥤ FiniteRankBundle.{w} 𝕜 X` when
+`[Small.{w} 𝕜]`. -/
+noncomputable def fromAtlasFunctor [Small.{w} 𝕜] :
+    FiniteRankAtlas 𝕜 X ⥤ FiniteRankBundle.{w} 𝕜 X where
+  obj A := fromAtlas.{w} A
+  map := fromAtlasMap.{w}
+  map_id := fromAtlasMap_id.{w}
+  map_comp := fromAtlasMap_comp.{w}
+
 @[simp] theorem fromAtlasFunctor_obj [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜 X) :
     (fromAtlasFunctor.{w} 𝕜 X).obj A = fromAtlas.{w} A := (rfl)
 
-@[simp] theorem fiberMap_fromAtlasFunctor_map [Small.{w} 𝕜] {A D : FiniteRankAtlas 𝕜 X}
-    (g : A ⟶ D) (x : X) :
-    ((fromAtlasFunctor.{w} 𝕜 X).map g).fiberMap x =
-      (Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm.toLinearMap.comp
-        ((g.fiberMap x).comp (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).toLinearMap) := (rfl)
+@[simp] theorem fromAtlasFunctor_map [Small.{w} 𝕜] {A D : FiniteRankAtlas 𝕜 X} (g : A ⟶ D) :
+    (fromAtlasFunctor.{w} 𝕜 X).map g =
+      eqToHom (fromAtlasFunctor_obj.{w} A) ≫ fromAtlasMap.{w} g ≫
+        eqToHom (fromAtlasFunctor_obj.{w} D).symm :=
+  (rfl)
 
 /-- `fromAtlasFunctor` preserves addition of coordinate morphisms. -/
 instance [Small.{w} 𝕜] : (fromAtlasFunctor.{w} 𝕜 X).Additive where
-  map_add {_ D f g} := hom_ext fun x ↦ LinearMap.ext fun _ ↦
-    (Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm.map_add (f.fiberMap x _) (g.fiberMap x _)
+  map_add {A D f g} := by
+    simp only [fromAtlasFunctor_map, fromAtlasMap_add, Preadditive.comp_add, Preadditive.add_comp]
 
 /-- Component isomorphism `E ≅ fromAtlas E.toAtlas` of the unit of `atlasEquivalence`. -/
 noncomputable def atlasUnitApp [Small.{w} 𝕜] (E : FiniteRankBundle.{w} 𝕜 X) :
@@ -492,60 +498,107 @@ noncomputable def atlasCounitApp [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜 X) :
     (atlasCounitApp.{w} A).inv.fiberMap x = LinearMap.id :=
   FiniteRankAtlas.fiberMap_isoMk_inv (A := (fromAtlas.{w} A).toAtlas) (D := A) _ _ _ x
 
+private theorem atlasUnitApp_naturality [Small.{w} 𝕜] {E F : FiniteRankBundle.{w} 𝕜 X}
+    (f : E ⟶ F) :
+    f ≫ (atlasUnitApp.{w} F).hom =
+      (atlasUnitApp.{w} E).hom ≫ fromAtlasMap.{w} (toAtlasMap f) :=
+  hom_ext fun x ↦ by
+    rw [fiberMap_comp, fiberMap_comp, fiberMap_atlasUnitApp_hom, fiberMap_atlasUnitApp_hom,
+      fiberMap_fromAtlasMap, fiberMap_toAtlasMap]
+    exact LinearMap.ext fun v ↦
+      congrArg (fun w ↦ (Shrink.continuousLinearEquiv 𝕜 (F.toAtlas.Fiber x)).symm
+        ((F.reconstructionFiberEquiv x).symm (f.fiberMap x w))) <|
+        ((E.reconstructionFiberEquiv x).apply_symm_apply v).symm.trans <|
+          congrArg (E.reconstructionFiberEquiv x)
+            ((Shrink.continuousLinearEquiv 𝕜 (E.toAtlas.Fiber x)).apply_symm_apply _).symm
+
 variable (𝕜 X) in
 /-- Unit natural isomorphism `𝟭 _ ≅ toAtlasFunctor ⋙ fromAtlasFunctor`. -/
 noncomputable def atlasUnitIso [Small.{w} 𝕜] :
     𝟭 (FiniteRankBundle.{w} 𝕜 X) ≅ toAtlasFunctor.{w} 𝕜 X ⋙ fromAtlasFunctor.{w} 𝕜 X :=
-  NatIso.ofComponents (fun E ↦ atlasUnitApp.{w} E) fun {E F} f ↦
-    hom_ext fun x ↦ by
-      rw [Functor.id_map, Functor.comp_map, fiberMap_comp, fiberMap_comp,
-        fiberMap_atlasUnitApp_hom, fiberMap_atlasUnitApp_hom]
-      exact LinearMap.ext fun v ↦
-        congrArg (fun w ↦ (Shrink.continuousLinearEquiv 𝕜 (F.toAtlas.Fiber x)).symm
-          ((F.reconstructionFiberEquiv x).symm (f.fiberMap x w))) <|
-          ((E.reconstructionFiberEquiv x).apply_symm_apply v).symm.trans <|
-            congrArg (E.reconstructionFiberEquiv x)
-              ((Shrink.continuousLinearEquiv 𝕜 (E.toAtlas.Fiber x)).apply_symm_apply _).symm
+  NatIso.ofComponents
+    (fun E ↦ atlasUnitApp.{w} E ≪≫
+      eqToIso (by rw [Functor.comp_obj, toAtlasFunctor_obj, fromAtlasFunctor_obj]))
+    fun {E F} f ↦ by
+      rw [Functor.id_map, Functor.comp_map, toAtlasFunctor_map, Functor.map_comp,
+        Functor.map_comp, eqToHom_map, eqToHom_map, fromAtlasFunctor_map]
+      simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans, eqToHom_trans_assoc,
+        eqToHom_refl, Category.id_comp]
+      rw [← Category.assoc f, atlasUnitApp_naturality, Category.assoc]
 
 @[simp] theorem atlasUnitIso_app [Small.{w} 𝕜] (E : FiniteRankBundle.{w} 𝕜 X) :
-    (atlasUnitIso.{w} 𝕜 X).app E = atlasUnitApp.{w} E :=
+    (atlasUnitIso.{w} 𝕜 X).app E =
+      atlasUnitApp.{w} E ≪≫
+        eqToIso (by rw [Functor.comp_obj, toAtlasFunctor_obj, fromAtlasFunctor_obj]) :=
   Iso.ext rfl
 
 @[simp] theorem atlasUnitIso_hom_app [Small.{w} 𝕜] (E : FiniteRankBundle.{w} 𝕜 X) :
-    (atlasUnitIso.{w} 𝕜 X).hom.app E = (atlasUnitApp.{w} E).hom := (rfl)
+    (atlasUnitIso.{w} 𝕜 X).hom.app E =
+      (atlasUnitApp.{w} E).hom ≫
+        eqToHom (by rw [Functor.comp_obj, toAtlasFunctor_obj, fromAtlasFunctor_obj]) :=
+  (rfl)
 
 @[simp] theorem atlasUnitIso_inv_app [Small.{w} 𝕜] (E : FiniteRankBundle.{w} 𝕜 X) :
-    (atlasUnitIso.{w} 𝕜 X).inv.app E = (atlasUnitApp.{w} E).inv := (rfl)
+    (atlasUnitIso.{w} 𝕜 X).inv.app E =
+      eqToHom (by rw [Functor.comp_obj, toAtlasFunctor_obj, fromAtlasFunctor_obj]) ≫
+        (atlasUnitApp.{w} E).inv :=
+  (rfl)
+
+private theorem atlasCounitApp_naturality [Small.{w} 𝕜] {A D : FiniteRankAtlas 𝕜 X}
+    (g : A ⟶ D) :
+    toAtlasMap (fromAtlasMap.{w} g) ≫ (atlasCounitApp.{w} D).hom =
+      (atlasCounitApp.{w} A).hom ≫ g :=
+  FiniteRankAtlas.hom_ext (A := (fromAtlas.{w} A).toAtlas) (D := D) fun x ↦ by
+    rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_comp,
+      fiberMap_atlasCounitApp_hom, fiberMap_atlasCounitApp_hom,
+      fiberMap_toAtlasMap, fiberMap_fromAtlasMap,
+      reconstructionFiberEquiv_fromAtlas, reconstructionFiberEquiv_fromAtlas]
+    exact LinearMap.ext fun v ↦
+      ((Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).apply_symm_apply _).trans <|
+        congrArg (g.fiberMap x)
+          ((Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).apply_symm_apply v)
 
 variable (𝕜 X) in
 /-- Counit natural isomorphism `fromAtlasFunctor ⋙ toAtlasFunctor ≅ 𝟭 _`. -/
 noncomputable def atlasCounitIso [Small.{w} 𝕜] :
     fromAtlasFunctor.{w} 𝕜 X ⋙ toAtlasFunctor.{w} 𝕜 X ≅ 𝟭 (FiniteRankAtlas 𝕜 X) :=
-  NatIso.ofComponents (fun A ↦ atlasCounitApp.{w} A) fun {A D} g ↦
-    FiniteRankAtlas.hom_ext (A := (fromAtlas.{w} A).toAtlas) (D := D) fun x ↦ by
-      rw [Functor.comp_map, Functor.id_map, FiniteRankAtlas.fiberMap_comp,
-        FiniteRankAtlas.fiberMap_comp, fiberMap_atlasCounitApp_hom, fiberMap_atlasCounitApp_hom]
-      refine LinearMap.ext fun v ↦ ?_
-      -- Evaluate the exposed `fromAtlasFunctor` and `toAtlasFunctor` actions on `v`.
-      change ((fromAtlas.{w} D).reconstructionFiberEquiv x).symm
-          ((Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).symm
-            (g.fiberMap x (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)
-              ((fromAtlas.{w} A).reconstructionFiberEquiv x v)))) =
-        g.fiberMap x v
-      rw [reconstructionFiberEquiv_fromAtlas, reconstructionFiberEquiv_fromAtlas]
-      exact ((Shrink.continuousLinearEquiv 𝕜 (D.Fiber x)).apply_symm_apply _).trans <|
-        congrArg (g.fiberMap x)
-          ((Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).apply_symm_apply v)
+  NatIso.ofComponents
+    (fun A ↦ eqToIso (by rw [Functor.comp_obj, fromAtlasFunctor_obj, toAtlasFunctor_obj]) ≪≫
+      atlasCounitApp.{w} A)
+    fun {A D} g ↦ by
+      rw [Functor.comp_map, Functor.id_map, fromAtlasFunctor_map, Functor.map_comp,
+        Functor.map_comp, eqToHom_map, eqToHom_map, toAtlasFunctor_map]
+      simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans, eqToHom_trans_assoc,
+        eqToHom_refl, Category.id_comp]
+      exact congrArg (eqToHom _ ≫ ·) (atlasCounitApp_naturality.{w} g)
 
 @[simp] theorem atlasCounitIso_app [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜 X) :
-    (atlasCounitIso.{w} 𝕜 X).app A = atlasCounitApp.{w} A :=
+    (atlasCounitIso.{w} 𝕜 X).app A =
+      eqToIso (by rw [Functor.comp_obj, fromAtlasFunctor_obj, toAtlasFunctor_obj]) ≪≫
+        atlasCounitApp.{w} A :=
   Iso.ext rfl
 
 @[simp] theorem atlasCounitIso_hom_app [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜 X) :
-    (atlasCounitIso.{w} 𝕜 X).hom.app A = (atlasCounitApp.{w} A).hom := (rfl)
+    (atlasCounitIso.{w} 𝕜 X).hom.app A =
+      eqToHom (by rw [Functor.comp_obj, fromAtlasFunctor_obj, toAtlasFunctor_obj]) ≫
+        (atlasCounitApp.{w} A).hom :=
+  (rfl)
 
 @[simp] theorem atlasCounitIso_inv_app [Small.{w} 𝕜] (A : FiniteRankAtlas 𝕜 X) :
-    (atlasCounitIso.{w} 𝕜 X).inv.app A = (atlasCounitApp.{w} A).inv := (rfl)
+    (atlasCounitIso.{w} 𝕜 X).inv.app A =
+      (atlasCounitApp.{w} A).inv ≫
+        eqToHom (by rw [Functor.comp_obj, fromAtlasFunctor_obj, toAtlasFunctor_obj]) :=
+  (rfl)
+
+private theorem toAtlasMap_atlasUnitApp_comp [Small.{w} 𝕜] (E : FiniteRankBundle.{w} 𝕜 X) :
+    toAtlasMap (atlasUnitApp.{w} E).hom ≫ (atlasCounitApp.{w} E.toAtlas).hom = 𝟙 E.toAtlas :=
+  FiniteRankAtlas.hom_ext (A := E.toAtlas) (D := E.toAtlas) fun x ↦ by
+    rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_id,
+      fiberMap_atlasCounitApp_hom, fiberMap_toAtlasMap,
+      fiberMap_atlasUnitApp_hom, reconstructionFiberEquiv_fromAtlas]
+    exact LinearMap.ext fun v ↦
+      ((Shrink.continuousLinearEquiv 𝕜 (E.toAtlas.Fiber x)).apply_symm_apply _).trans
+        ((E.reconstructionFiberEquiv x).symm_apply_apply v)
 
 variable (𝕜 X) in
 /-- Explicit equivalence of categories `FiniteRankBundle.{w} 𝕜 X ≌ FiniteRankAtlas 𝕜 X` whenever
@@ -556,16 +609,16 @@ noncomputable def atlasEquivalence [Small.{w} 𝕜] :
   inverse := fromAtlasFunctor.{w} 𝕜 X
   unitIso := atlasUnitIso.{w} 𝕜 X
   counitIso := atlasCounitIso.{w} 𝕜 X
-  functor_unitIso_comp E :=
-    FiniteRankAtlas.hom_ext (A := E.toAtlas) (D := E.toAtlas) fun x ↦ by
-      rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_id,
-        atlasCounitIso_hom_app, fiberMap_atlasCounitApp_hom, atlasUnitIso_hom_app]
-      refine LinearMap.ext fun (v : E.toAtlas.Fiber x) ↦ ?_
-      change ((fromAtlas.{w} E.toAtlas).reconstructionFiberEquiv x).symm
-          ((atlasUnitApp.{w} E).hom.fiberMap x (E.reconstructionFiberEquiv x v)) = v
-      rw [reconstructionFiberEquiv_fromAtlas, fiberMap_atlasUnitApp_hom]
-      exact ((Shrink.continuousLinearEquiv 𝕜 (E.toAtlas.Fiber x)).apply_symm_apply _).trans
-        ((E.reconstructionFiberEquiv x).symm_apply_apply v)
+  functor_unitIso_comp E := by
+    rw [atlasUnitIso_hom_app, atlasCounitIso_hom_app, Functor.map_comp, eqToHom_map,
+      toAtlasFunctor_map]
+    simp only [Category.assoc, eqToHom_trans_assoc]
+    have h : ∀ {A : FiniteRankAtlas 𝕜 X} (hA : A = E.toAtlas),
+        eqToHom (by rw [hA]) ≫ (atlasCounitApp.{w} A).hom =
+          (atlasCounitApp.{w} E.toAtlas).hom ≫ eqToHom hA.symm := by
+      rintro _ rfl; simp
+    rw [h (toAtlasFunctor_obj E), ← Category.assoc (toAtlasMap _),
+      toAtlasMap_atlasUnitApp_comp, Category.id_comp, eqToHom_trans, eqToHom_refl]
 
 @[simp] theorem atlasEquivalence_functor [Small.{w} 𝕜] :
     (atlasEquivalence.{w} 𝕜 X).functor = toAtlasFunctor.{w} 𝕜 X := (rfl)
@@ -643,61 +696,97 @@ noncomputable def uliftHomeomorph (E : FiniteRankBundle.{w} 𝕜 X) :
     (ofBundlesHomeomorph_symm_apply _ _ _ _ _ _ _).trans <|
       congrArg (TotalSpace.mk p.proj) (ContinuousLinearEquiv.ulift_symm_apply p.2)
 
-variable (𝕜 X) in
-/-- Additive, full, and faithful universe-lifting functor on genuine variable-rank bundles. -/
-@[expose] noncomputable def uliftFunctor :
-    FiniteRankBundle.{w} 𝕜 X ⥤ FiniteRankBundle.{max w w'} 𝕜 X where
-  obj E := E.ulift.{w, w'}
-  map {E F} f :=
-    { fiberMap x :=
-        (ContinuousLinearEquiv.ulift : ULift.{w'} (F.Fiber x) ≃L[𝕜] F.Fiber x).symm.toLinearMap.comp
-          ((f.fiberMap x).comp
-            (ContinuousLinearEquiv.ulift : ULift.{w'} (E.Fiber x) ≃L[𝕜] E.Fiber x).toLinearMap)
-      continuous_totalSpaceMap :=
-        ((F.uliftHomeomorph.{w, w'}).symm.continuous.comp
-          (f.continuous_totalSpaceMap.comp (E.uliftHomeomorph.{w, w'}).continuous)).congr
-          fun p ↦ by
-            rw [Function.comp_apply, Function.comp_apply, uliftHomeomorph_apply,
-              uliftHomeomorph_symm_apply]
-            rfl }
-  map_id _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
-  map_comp _ _ := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+/-- Lift a morphism of genuine variable-rank bundles along `ULift` to `Type (max w w')`. -/
+noncomputable def uliftMap {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) :
+    E.ulift.{w, w'} ⟶ F.ulift.{w, w'} where
+  fiberMap x :=
+    (ContinuousLinearEquiv.ulift : ULift.{w'} (F.Fiber x) ≃L[𝕜] F.Fiber x).symm.toLinearMap.comp
+      ((f.fiberMap x).comp
+        (ContinuousLinearEquiv.ulift : ULift.{w'} (E.Fiber x) ≃L[𝕜] E.Fiber x).toLinearMap)
+  continuous_totalSpaceMap :=
+    ((F.uliftHomeomorph.{w, w'}).symm.continuous.comp
+      (f.continuous_totalSpaceMap.comp (E.uliftHomeomorph.{w, w'}).continuous)).congr
+      fun p ↦ by
+        rw [Function.comp_apply, Function.comp_apply, uliftHomeomorph_apply,
+          uliftHomeomorph_symm_apply]
+        rfl
 
-@[simp] theorem uliftFunctor_obj (E : FiniteRankBundle.{w} 𝕜 X) :
-    (uliftFunctor.{w, w'} 𝕜 X).obj E = E.ulift.{w, w'} := (rfl)
-
-@[simp] theorem fiberMap_uliftFunctor_map {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) (x : X) :
-    ((uliftFunctor.{w, w'} 𝕜 X).map f).fiberMap x =
+@[simp] theorem fiberMap_uliftMap {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) (x : X) :
+    (uliftMap.{w, w'} f).fiberMap x =
       (ContinuousLinearEquiv.ulift : ULift.{w'} (F.Fiber x) ≃L[𝕜] F.Fiber x).symm.toLinearMap.comp
         ((f.fiberMap x).comp
           (ContinuousLinearEquiv.ulift : ULift.{w'} (E.Fiber x) ≃L[𝕜] E.Fiber x).toLinearMap) :=
   (rfl)
 
+@[simp] theorem uliftMap_id (E : FiniteRankBundle.{w} 𝕜 X) :
+    uliftMap.{w, w'} (𝟙 E) = 𝟙 (E.ulift.{w, w'}) :=
+  hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+
+@[simp] theorem uliftMap_comp {E F G : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) (g : F ⟶ G) :
+    uliftMap.{w, w'} (f ≫ g) = uliftMap.{w, w'} f ≫ uliftMap.{w, w'} g :=
+  hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+
+@[simp] theorem uliftMap_add {E F : FiniteRankBundle.{w} 𝕜 X} (f g : E ⟶ F) :
+    uliftMap.{w, w'} (f + g) = uliftMap.{w, w'} f + uliftMap.{w, w'} g :=
+  hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+
+variable (𝕜 X) in
+/-- Additive, full, and faithful universe-lifting functor on genuine variable-rank bundles. -/
+noncomputable def uliftFunctor :
+    FiniteRankBundle.{w} 𝕜 X ⥤ FiniteRankBundle.{max w w'} 𝕜 X where
+  obj E := E.ulift.{w, w'}
+  map := uliftMap.{w, w'}
+  map_id := uliftMap_id.{w, w'}
+  map_comp := uliftMap_comp.{w, w'}
+
+@[simp] theorem uliftFunctor_obj (E : FiniteRankBundle.{w} 𝕜 X) :
+    (uliftFunctor.{w, w'} 𝕜 X).obj E = E.ulift.{w, w'} := (rfl)
+
+@[simp] theorem uliftFunctor_map {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) :
+    (uliftFunctor.{w, w'} 𝕜 X).map f =
+      eqToHom (uliftFunctor_obj.{w, w'} E) ≫ uliftMap.{w, w'} f ≫
+        eqToHom (uliftFunctor_obj.{w, w'} F).symm :=
+  (rfl)
+
 /-- `uliftFunctor` preserves addition of bundle morphisms. -/
 instance : (uliftFunctor.{w, w'} 𝕜 X).Additive where
-  map_add {_ _ _ _} := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+  map_add {E F f g} := by
+    simp only [uliftFunctor_map, uliftMap_add, Preadditive.comp_add, Preadditive.add_comp]
 
 /-- `uliftFunctor` is faithful because `ULift.up` and `ULift.down` are inverse equivalences. -/
 instance : (uliftFunctor.{w, w'} 𝕜 X).Faithful where
-  map_injective {_ _} _ _ h := hom_ext fun x ↦ LinearMap.ext fun v ↦
-    ULift.up_injective (congrArg (fun k ↦ k.fiberMap x (ULift.up v)) h)
+  map_injective {E F} f₁ f₂ h := by
+    rw [uliftFunctor_map, uliftFunctor_map] at h
+    have h' : uliftMap.{w, w'} f₁ = uliftMap.{w, w'} f₂ :=
+      (cancel_mono (eqToHom (uliftFunctor_obj.{w, w'} F).symm)).1 <|
+        (cancel_epi (eqToHom (uliftFunctor_obj.{w, w'} E))).1 h
+    exact hom_ext fun x ↦ LinearMap.ext fun v ↦
+      ULift.up_injective <| by
+        have hx := congrArg (fun k ↦ k.fiberMap x (ULift.up v)) h'
+        rw [fiberMap_uliftMap, fiberMap_uliftMap] at hx
+        exact hx
 
 /-- `uliftFunctor` is full by conjugating morphisms along `uliftHomeomorph`. -/
 instance : (uliftFunctor.{w, w'} 𝕜 X).Full where
   map_surjective {E F} g := by
-    let g' : E.ulift.{w, w'} ⟶ F.ulift.{w, w'} := g
-    refine ⟨⟨fun x ↦
-        (ContinuousLinearEquiv.ulift : ULift.{w'} (F.Fiber x) ≃L[𝕜] F.Fiber x).toLinearMap.comp
-          ((g'.fiberMap x).comp
-            (ContinuousLinearEquiv.ulift :
-              ULift.{w'} (E.Fiber x) ≃L[𝕜] E.Fiber x).symm.toLinearMap),
-      ((F.uliftHomeomorph.{w, w'}).continuous.comp
-        (g'.continuous_totalSpaceMap.comp (E.uliftHomeomorph.{w, w'}).symm.continuous)).congr
-        fun p ↦ by
-          rw [Function.comp_apply, Function.comp_apply, uliftHomeomorph_symm_apply,
-            uliftHomeomorph_apply]
-          rfl⟩,
-      hom_ext (E := E.ulift.{w, w'}) (F := F.ulift.{w, w'}) fun _ ↦ LinearMap.ext fun _ ↦ rfl⟩
+    let g' : E.ulift.{w, w'} ⟶ F.ulift.{w, w'} :=
+      eqToHom (uliftFunctor_obj.{w, w'} E).symm ≫ g ≫ eqToHom (uliftFunctor_obj.{w, w'} F)
+    let f : E ⟶ F :=
+      ⟨fun x ↦
+          (ContinuousLinearEquiv.ulift : ULift.{w'} (F.Fiber x) ≃L[𝕜] F.Fiber x).toLinearMap.comp
+            ((g'.fiberMap x).comp
+              (ContinuousLinearEquiv.ulift :
+                ULift.{w'} (E.Fiber x) ≃L[𝕜] E.Fiber x).symm.toLinearMap),
+        ((F.uliftHomeomorph.{w, w'}).continuous.comp
+          (g'.continuous_totalSpaceMap.comp (E.uliftHomeomorph.{w, w'}).symm.continuous)).congr
+          fun p ↦ by
+            rw [Function.comp_apply, Function.comp_apply, uliftHomeomorph_symm_apply,
+              uliftHomeomorph_apply]
+            rfl⟩
+    refine ⟨f, ?_⟩
+    have hg : uliftMap.{w, w'} f = g' := hom_ext fun _ ↦ LinearMap.ext fun _ ↦ rfl
+    rw [uliftFunctor_map, hg]
+    simp [g']
 
 /-- Component isomorphism `(E.ulift).toAtlas ≅ E.toAtlas` comparing coordinate presentations. -/
 noncomputable def uliftToAtlasApp (E : FiniteRankBundle.{w} 𝕜 X) :
@@ -727,31 +816,49 @@ noncomputable def uliftToAtlasApp (E : FiniteRankBundle.{w} 𝕜 X) :
     (uliftToAtlasApp.{w, w'} E).inv.fiberMap x = LinearMap.id :=
   FiniteRankAtlas.fiberMap_isoMk_inv (A := (E.ulift.{w, w'}).toAtlas) (D := E.toAtlas) _ _ _ x
 
+private theorem uliftToAtlasApp_naturality {E F : FiniteRankBundle.{w} 𝕜 X} (f : E ⟶ F) :
+    toAtlasMap (uliftMap.{w, w'} f) ≫ (uliftToAtlasApp.{w, w'} F).hom =
+      (uliftToAtlasApp.{w, w'} E).hom ≫ toAtlasMap f :=
+  FiniteRankAtlas.hom_ext (A := (E.ulift.{w, w'}).toAtlas) (D := F.toAtlas) fun x ↦ by
+    rw [FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_comp,
+      fiberMap_uliftToAtlasApp_hom, fiberMap_uliftToAtlasApp_hom,
+      fiberMap_toAtlasMap, fiberMap_toAtlasMap, fiberMap_uliftMap,
+      reconstructionFiberEquiv_ulift, reconstructionFiberEquiv_ulift]
+    exact LinearMap.ext fun _ ↦ rfl
+
 variable (𝕜 X) in
 /-- Natural isomorphism `uliftFunctor ⋙ toAtlasFunctor ≅ toAtlasFunctor`. -/
 noncomputable def uliftFunctorCompToAtlasIso :
     uliftFunctor.{w, w'} 𝕜 X ⋙ toAtlasFunctor.{max w w'} 𝕜 X ≅ toAtlasFunctor.{w} 𝕜 X :=
-  NatIso.ofComponents (fun E ↦ uliftToAtlasApp.{w, w'} E) fun {E F} f ↦
-    FiniteRankAtlas.hom_ext (A := (E.ulift.{w, w'}).toAtlas) (D := F.toAtlas) fun x ↦ by
-      rw [Functor.comp_map, FiniteRankAtlas.fiberMap_comp, FiniteRankAtlas.fiberMap_comp,
-        fiberMap_uliftToAtlasApp_hom, fiberMap_uliftToAtlasApp_hom]
-      refine LinearMap.ext fun v ↦ ?_
-      -- Evaluate the exposed `uliftFunctor` and `toAtlasFunctor` actions on `v`.
-      change ((F.ulift.{w, w'}).reconstructionFiberEquiv x).symm
-          (ULift.up (f.fiberMap x (((E.ulift.{w, w'}).reconstructionFiberEquiv x v).down))) =
-        (F.reconstructionFiberEquiv x).symm (f.fiberMap x (E.reconstructionFiberEquiv x v))
-      rw [reconstructionFiberEquiv_ulift, reconstructionFiberEquiv_ulift]
-      rfl
+  NatIso.ofComponents
+    (fun E ↦
+      eqToIso (by rw [Functor.comp_obj, uliftFunctor_obj, toAtlasFunctor_obj]) ≪≫
+        uliftToAtlasApp.{w, w'} E ≪≫ eqToIso (toAtlasFunctor_obj E).symm)
+    fun {E F} f ↦ by
+      rw [Functor.comp_map, uliftFunctor_map, Functor.map_comp, Functor.map_comp,
+        eqToHom_map, eqToHom_map, toAtlasFunctor_map, toAtlasFunctor_map]
+      simp only [Iso.trans_hom, eqToIso.hom, Category.assoc, eqToHom_trans, eqToHom_trans_assoc,
+        eqToHom_refl, Category.id_comp]
+      rw [← Category.assoc (toAtlasMap (uliftMap.{w, w'} f)), uliftToAtlasApp_naturality,
+        Category.assoc]
 
 @[simp] theorem uliftFunctorCompToAtlasIso_app (E : FiniteRankBundle.{w} 𝕜 X) :
-    (uliftFunctorCompToAtlasIso.{w, w'} 𝕜 X).app E = uliftToAtlasApp.{w, w'} E :=
+    (uliftFunctorCompToAtlasIso.{w, w'} 𝕜 X).app E =
+      eqToIso (by rw [Functor.comp_obj, uliftFunctor_obj, toAtlasFunctor_obj]) ≪≫
+        uliftToAtlasApp.{w, w'} E ≪≫ eqToIso (toAtlasFunctor_obj E).symm :=
   Iso.ext rfl
 
 @[simp] theorem uliftFunctorCompToAtlasIso_hom_app (E : FiniteRankBundle.{w} 𝕜 X) :
-    (uliftFunctorCompToAtlasIso.{w, w'} 𝕜 X).hom.app E = (uliftToAtlasApp.{w, w'} E).hom := (rfl)
+    (uliftFunctorCompToAtlasIso.{w, w'} 𝕜 X).hom.app E =
+      eqToHom (by rw [Functor.comp_obj, uliftFunctor_obj, toAtlasFunctor_obj]) ≫
+        (uliftToAtlasApp.{w, w'} E).hom ≫ eqToHom (toAtlasFunctor_obj E).symm :=
+  (rfl)
 
 @[simp] theorem uliftFunctorCompToAtlasIso_inv_app (E : FiniteRankBundle.{w} 𝕜 X) :
-    (uliftFunctorCompToAtlasIso.{w, w'} 𝕜 X).inv.app E = (uliftToAtlasApp.{w, w'} E).inv := (rfl)
+    (uliftFunctorCompToAtlasIso.{w, w'} 𝕜 X).inv.app E =
+      eqToHom (toAtlasFunctor_obj E) ≫ (uliftToAtlasApp.{w, w'} E).inv ≫
+        eqToHom (by rw [Functor.comp_obj, uliftFunctor_obj, toAtlasFunctor_obj]) :=
+  (rfl)
 
 /-- Under `[Small.{w} 𝕜]`, `uliftFunctor` is an equivalence of categories. -/
 instance [Small.{w} 𝕜] : (uliftFunctor.{w, w'} 𝕜 X).IsEquivalence := by
