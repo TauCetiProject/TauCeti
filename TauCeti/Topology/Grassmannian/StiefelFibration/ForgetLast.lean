@@ -39,8 +39,8 @@ nontrivial group of `V_2(ℝ^(n+2))` is `π_n`.
 * `TauCeti.finiteOrthonormalFrame.isNConnected_forgetLast`: it is an `(N - r - 1)`-connected map.
 * `TauCeti.finiteOrthonormalFrame.subsingleton_homotopyGroup`: `π_k(V_r(ℝ^N))` is trivial for
   `k + r < N`.
-* `TauCeti.finiteOrthonormalFrame.nontrivial_homotopyGroup_one`: `π_(N-1)(V_1(ℝ^N))` is nontrivial
-  for `N ≥ 3`.
+* `TauCeti.finiteOrthonormalFrame.nontrivial_homotopyGroup_oneFrame`: `π_(N-1)(V_1(ℝ^N))` is
+  nontrivial for `N ≥ 3`.
 * `TauCeti.finiteOrthonormalFrame.pathConnectedSpace`: `V_r(ℝ^N)` is path-connected for `r < N`.
 
 ## References
@@ -127,7 +127,7 @@ theorem subsingleton_homotopyGroup {M : Type*} [Finite M] (h : Nat.card M + r < 
 
 /-- The `(N - 1)`-th homotopy group of `V₁(ℝ^N) ≅ S^(N-1)` is nontrivial for `N ≥ 3`, modelled on
 any finite index type `M` of `N - 1` cube directions. -/
-theorem nontrivial_homotopyGroup_one {k : ℕ} {M : Type*} [Finite M] (hM : Nat.card M = k + 2)
+theorem nontrivial_homotopyGroup_oneFrame {k : ℕ} {M : Type*} [Finite M] (hM : Nat.card M = k + 2)
     (b : finiteOrthonormalFrame ℝ 1 (k + 3)) :
     Nontrivial (HomotopyGroup M (finiteOrthonormalFrame ℝ 1 (k + 3)) b) := by
   have := nontrivial_homotopyGroup_sphere (n := k) (by simp) (sphereHomeomorph (k + 3) b)

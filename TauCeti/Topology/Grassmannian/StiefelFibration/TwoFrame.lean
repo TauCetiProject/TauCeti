@@ -29,7 +29,7 @@ In the exact homotopy sequence
 of the sphere bundle, the boundary map is therefore injective on `π_(N-1)(S^(N-1)) ≅ ℤ`, so its
 image is a nonzero subgroup of `π_(N-2)(S^(N-2)) ≅ ℤ`. For `N ≥ 5` this makes `π_(N-2)(V₂(ℝ^N))`,
 the quotient of `ℤ` by that subgroup, a finite group
-(`TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_two`). (The boundary map is in fact
+(`TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_twoFrame`). (The boundary map is in fact
 multiplication by the Euler characteristic `2` of `S^(N-1)`, so the group is `ℤ/2`; only its
 finiteness is proved here.)
 
@@ -51,8 +51,8 @@ Proposition 6.34, and stated as their Lemma 6.35.
 
 * `TauCeti.finiteOrthonormalFrame.homotopyGroupMap_forgetLast_eq_const`: for `N` odd, forgetting
   the second vector `V₂(ℝ^N) → V₁(ℝ^N)` is trivial on `π_(N-1)`.
-* `TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_two`: for `N ≥ 5` odd, `π_(N-2)(V₂(ℝ^N))`
-  is finite.
+* `TauCeti.finiteOrthonormalFrame.finite_homotopyGroup_twoFrame`: for `N ≥ 5` odd,
+  `π_(N-2)(V₂(ℝ^N))` is finite.
 * `TauCeti.isOfFinOrder_of_homotopyGroupMap_fromBlocksOne_eq_one`: for `n ≥ 2` even, every class of
   `π_n(SO(n + 1))` that dies in `π_n(SO(n + 3))` has finite order.
 * `TauCeti.isMulTorsion_homotopyGroup_specialOrthogonalGroup_of_isMulTorsion`: for `n ≥ 2` even,
@@ -139,7 +139,7 @@ sequence of the sphere bundle `S^(N-2) → V₂(ℝ^N) → V₁(ℝ^N) ≅ S^(N-
 map `π_(N-1)(S^(N-1)) → π_(N-2)(S^(N-2)) ≅ ℤ` has nonzero image, and `π_(N-2)(V₂(ℝ^N))` is the
 quotient of `ℤ` by it. The group is modelled on any finite index type `M` of `N - 2` cube
 directions. -/
-theorem finite_homotopyGroup_two {N : ℕ} (hN : Odd N) (h5 : 5 ≤ N) {M : Type*} [Finite M]
+theorem finite_homotopyGroup_twoFrame {N : ℕ} (hN : Odd N) (h5 : 5 ≤ N) {M : Type*} [Finite M]
     (hM : Nat.card M + 2 = N) (f : finiteOrthonormalFrame ℝ 2 N) :
     Finite (HomotopyGroup M (finiteOrthonormalFrame ℝ 2 N) f) := by
   classical
@@ -164,7 +164,7 @@ theorem finite_homotopyGroup_two {N : ℕ} (hN : Odd N) (h5 : 5 ≤ N) {M : Type
     rw [map_zpow, MulEquiv.apply_symm_apply, ← ofAdd_zsmul, smul_eq_mul, mul_one, ofAdd_toAdd]
   -- A nontrivial class `a` of `π_(k+4)(V₁)` has a nontrivial boundary `∂ a`, since `a` does not
   -- come from `V₂`.
-  have := nontrivial_homotopyGroup_one (k := k + 2) (M := Option M) (by simp; omega)
+  have := nontrivial_homotopyGroup_oneFrame (k := k + 2) (M := Option M) (by simp; omega)
     (forgetLast f)
   obtain ⟨a, ha⟩ := exists_ne (α := HomotopyGroup (Option M) (finiteOrthonormalFrame ℝ 1 (k + 5))
     (forgetLast f)) ⟦GenLoop.const⟧
@@ -217,7 +217,7 @@ theorem isOfFinOrder_of_homotopyGroupMap_fromBlocksOne_eq_one {n : ℕ} [NeZero 
   obtain ⟨a, rfl⟩ := hmem
   have : Finite (HomotopyGroup (Option (Fin n)) (finiteOrthonormalFrame ℝ 2 (2 + (n + 1)))
       (specialOrthogonalFrameMap 2 (n + 1) 1)) :=
-    finiteOrthonormalFrame.finite_homotopyGroup_two ⟨j + 1, by omega⟩ (by omega)
+    finiteOrthonormalFrame.finite_homotopyGroup_twoFrame ⟨j + 1, by omega⟩ (by omega)
       (by simp; omega) _
   have ha : IsOfFinOrder a := isOfFinOrder_of_finite a
   have := (specialOrthogonalFrameBoundaryHom 2 (n + 1) (Fin n)).isOfFinOrder ha
@@ -234,6 +234,7 @@ theorem isMulTorsion_homotopyGroup_specialOrthogonalGroup_of_isMulTorsion {n : �
     IsMulTorsion (HomotopyGroup (Fin n) (specialOrthogonalGroup (Fin (n + 1)) ℝ) 1) :=
   IsMulTorsion.extension_closed (f := HomotopyGroup.mapHom (blockEmbedding n)
     (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 2 (n + 1)))) rfl h fun c ↦
-    Submonoid.isOfFinOrder_coe.1 (isOfFinOrder_of_homotopyGroupMap_fromBlocksOne_eq_one hn c.2)
+    Submonoid.isOfFinOrder_coe.1 (isOfFinOrder_of_homotopyGroupMap_fromBlocksOne_eq_one hn
+      ((HomotopyGroup.mapHom_apply _ _ _).symm.trans (MonoidHom.mem_ker.1 c.2)))
 
 end TauCeti
