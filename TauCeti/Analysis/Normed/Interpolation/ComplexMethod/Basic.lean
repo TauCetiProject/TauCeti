@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
-public import TauCeti.Analysis.Complex.VerticalStrip
+public import TauCeti.Analysis.Complex.VerticalStrip.Basic
 public import TauCeti.Analysis.Complex.VerticalStrip.Gaussian
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
