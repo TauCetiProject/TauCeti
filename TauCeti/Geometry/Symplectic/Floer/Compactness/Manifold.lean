@@ -367,16 +367,6 @@ private theorem tames_of_mem_image (hω : ω.IsNondegenerate)
     (φ.bijective_mvfderiv (by simp) (hCφ hx)).surjective (hφ x hx) (hJJ' z hz x hx)
     (hJt z hz x hx)
 
-omit [FiniteDimensional ℝ E] [IsManifold I (⊤ : ℕ∞) M] [FiniteDimensional ℝ V] in
-/-- A point `y` of the image `φ(C)` of a subset `C` of the source of `φ` is in the target of `φ`,
-and the inverse chart sends it to a point of `C` that `φ` sends back to `y`. -/
-private theorem apply_symm_and_mem_of_mem_image (φ : PartialDiffeomorph I 𝓘(ℝ, V) M V (⊤ : ℕ∞))
-    {C : Set M} (hCφ : C ⊆ φ.source) {y : V} (hy : y ∈ φ '' C) :
-    φ (φ.symm y) = y ∧ φ.symm y ∈ C ∧ y ∈ φ.target := by
-  obtain ⟨x, hx, rfl⟩ := hy
-  have h := φ.toPartialEquiv.left_inv (hCφ hx)
-  exact ⟨congrArg φ h, (congrArg (· ∈ C) h).mpr hx, φ.toPartialEquiv.map_source (hCφ hx)⟩
-
 /-- **Floer solutions of bounded energy in a symplectic chart converge off finitely many bubbling
 points.** Let `φ` be a smooth partial diffeomorphism from `M` onto an open subset of `V`, and let
 `D ⊆ ℝ × ℝ` and `C ⊆ φ.source` be compact. Let `φ` pull the symplectic form `ω₀` back to the
@@ -446,13 +436,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset (hω : ω.
     (fun k ↦ (hint k).congr_fun (fun y hy ↦ ((hpt k hy).1).symm) hΩ.measurableSet)
     (fun k ↦ (hint_eq k hΩ.measurableSet subset_rfl).trans_le (hA k))
   -- The limit in `M` is read back through the inverse of the chart.
-  have hwt (y : ℝ × ℝ) (hy : y ∈ Ω \ ↑Z) := apply_symm_and_mem_of_mem_image φ hCφ (hwC hy)
+  have hwt : MapsTo w (Ω \ ↑Z) φ.target := hwC.mono_right (φ.mapsTo.mono_left hCφ).image_subset
   refine ⟨ψ, Z, φ.symm ∘ w, hψ, hZΩ, hcard, fun z hz ε hε ↦ ?_, hbd, ?_,
-    fun y hy ↦ (hwt y hy).2.1, ?_, fun y hy ↦ ?_⟩
+    ((φ.leftInvOn.mono hCφ).mapsTo (surjOn_image _ _)).comp hwC, ?_, fun y hy ↦ ?_⟩
   · filter_upwards [hconc z hz ε hε] with n hn
     rwa [hint_eq _ (measurableSet_ball.inter hΩ.measurableSet) inter_subset_right] at hn
-  · exact φ.symm.contMDiffOn.continuousOn.comp hwc fun y hy ↦ (hwt y hy).2.2
-  · exact hlim.congr_right fun y hy ↦ ((hwt y hy).1).symm
+  · exact φ.symm.contMDiffOn.continuousOn.comp hwc hwt
+  · exact hlim.congr_right fun y hy ↦ (φ.right_inv (hwt hy)).symm
   · obtain ⟨x, hx, hxw⟩ := hwC hy
     have hcont : ContinuousAt φ.symm (w y) := by
       rw [← hxw]
@@ -528,14 +518,13 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
   set S := Ω \ (Z : Set (ℝ × ℝ))
   have hS : IsOpen S := hΩ.sdiff Z.finite_toSet.isClosed
   -- The limit in `M` is read back through the inverse of the chart.
-  have hwt (y : ℝ × ℝ) (hy : y ∈ S) := apply_symm_and_mem_of_mem_image φ hCφ (hwC hy)
+  have hwt : MapsTo w S φ.target := hwC.mono_right (φ.mapsTo.mono_left hCφ).image_subset
   set v : ℝ × ℝ → M := φ.symm ∘ w
   have hv1 : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 v S :=
-    (φ.symm.contMDiffOn.of_le (by simp)).comp (contMDiffOn_iff_contDiffOn.2 hw1)
-      fun y hy ↦ (hwt y hy).2.2
-  have hvC : MapsTo v S C := fun y hy ↦ (hwt y hy).2.1
+    (φ.symm.contMDiffOn.of_le (by simp)).comp (contMDiffOn_iff_contDiffOn.2 hw1) hwt
+  have hvC : MapsTo v S C := ((φ.leftInvOn.mono hCφ).mapsTo (surjOn_image _ _)).comp hwC
   have hφv (y : ℝ × ℝ) (hy : y ∈ S) : φ ∘ v =ᶠ[𝓝 y] w :=
-    Filter.eventually_of_mem (hS.mem_nhds hy) fun y' hy' ↦ (hwt y' hy').1
+    Filter.eventually_of_mem (hS.mem_nhds hy) fun y' hy' ↦ φ.right_inv (hwt hy')
   have hvpt (y : ℝ × ℝ) (hy : y ∈ S) :=
     hpt hy.1 (hvC hy) ((hv1.contMDiffAt (hS.mem_nhds hy)).mdifferentiableAt one_ne_zero)
   have hvE (y : ℝ × ℝ) (hy : y ∈ S) :
@@ -543,7 +532,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
         (fun z y ↦ Kt z (φ.symm y)) w y :=
     ((hvpt y hy).1).symm.trans (ω₀.floerEnergyDensity_congr_of_eventuallyEq _ _ (hφv y hy))
   refine ⟨ψ, Z, v, hψ, hZΩ, hcard, fun z hz ε hε ↦ ?_, hv1, hvC,
-    hlim.congr_right fun y hy ↦ ((hwt y hy).1).symm,
+    hlim.congr_right fun y hy ↦ (φ.right_inv (hwt hy)).symm,
     hdlim.congr_right fun y hy ↦ ((hφv y hy).fderiv_eq).symm, fun y hy ↦ ?_,
     hwint.congr_fun (fun y hy ↦ (hvE y hy).symm) hS.measurableSet,
     (setIntegral_congr_fun hS.measurableSet hvE).trans_le hwE⟩
@@ -551,7 +540,7 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_fderiv_subseq_off_finset
     rwa [setIntegral_congr_fun (measurableSet_ball.inter hΩ.measurableSet)
       fun y hy ↦ (hptu (ψ n) hy.2).1] at hn
   · refine ((hvpt y hy).2).1 ?_
-    have hvy : φ (v y) = w y := (hwt y hy).1
+    have hvy : φ (v y) = w y := φ.right_inv (hwt hy)
     rw [ω₀.perturbedFDeriv_congr_of_eventuallyEq _ _ (hφv y hy), hvy]
     exact hweq y hy
 
