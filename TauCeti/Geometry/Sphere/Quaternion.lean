@@ -33,6 +33,7 @@ Tangent vector fields on a sphere are represented, as usual in topology, by maps
 * `TauCeti.orthonormal_vecCons_quaternionFrame`: with `x`, they form an orthonormal four-frame.
 * `TauCeti.contDiff_quaternionFrame`, `TauCeti.contMDiff_quaternionFrame`: they are analytic on
   `E` and on the unit sphere.
+* `TauCeti.continuous_quaternionFrame_sphere`: they are continuous on the unit sphere.
 
 ## References
 
@@ -81,6 +82,11 @@ variable [NormedAddCommGroup E] [DistribSMul ℍᵐᵒᵖ E] [ContinuousConstSMu
 theorem contDiff_quaternionFrame [NormedSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {m : ℕ∞ω}
     (j : Fin 3) : ContDiff ℝ m fun x : E ↦ quaternionFrame x j := by
   fin_cases j <;> exact contDiff_const_smul _
+
+/-- Each vector field of the quaternionic frame is continuous on the unit sphere. -/
+theorem continuous_quaternionFrame_sphere [NormedSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E]
+    (j : Fin 3) : Continuous fun x : sphere (0 : E) 1 ↦ quaternionFrame (x : E) j :=
+  (contDiff_quaternionFrame (m := 0) j).continuous.comp continuous_subtype_val
 
 /-- Each vector field of the quaternionic frame is an analytic map on the unit sphere. -/
 theorem contMDiff_quaternionFrame [InnerProductSpace ℝ E] [SMulCommClass ℝ ℍᵐᵒᵖ E] {m : ℕ∞ω} {n : ℕ}
