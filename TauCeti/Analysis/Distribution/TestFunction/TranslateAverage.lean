@@ -31,9 +31,8 @@ average: `T (A φ) = ∫ T (L p (φ (· + v p))) ∂ν(p)`
 (`ContinuousLinearMap.apply_translateAverageCLM`). Mollification by a smooth bump is the average of
 translates with `L p = ρ p • id` and `v p = p`; contracting with the displacement along the
 straight segments `x ↦ x + t y` gives the homotopy operator between mollification and the
-identity. Both are used to mollify currents, see
-`TauCeti.Analysis.Distribution.Flat.Mollify`. The operator is only defined on the whole space,
-since translates leave a proper open subset.
+identity, see `TauCeti.Analysis.Distribution.TestFunction.Mollify`. The operator is only defined on
+the whole space, since translates leave a proper open subset.
 
 ## Main declarations
 
@@ -135,6 +134,15 @@ private theorem coe_averageCompacts (hv : Continuous v) (K : Compacts E) :
     (averageCompacts hv K : Set E) = (fun q : E × Y ↦ q.1 - v q.2) '' ((K : Set E) ×ˢ univ) :=
   rfl
 
+omit [MeasurableSpace Y] [OpensMeasurableSpace Y] in
+/-- A function vanishing off `tsupport φ - v(Y)` is supported in `averageCompacts`. -/
+private theorem tsupport_subset_averageCompacts {H : Type*} [Zero H] (hv : Continuous v)
+    (φ : 𝓓((⊤ : Opens E), F)) {g : E → H}
+    (hg : ∀ x ∉ (fun q : E × Y ↦ q.1 - v q.2) '' (tsupport φ ×ˢ univ), g x = 0) :
+    tsupport g ⊆ averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩ :=
+  closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (hg x h))
+    (averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩).isCompact.isClosed
+
 variable (ν) in
 /-- The average of translates on the tests supported in a compact `K`. -/
 private def translateAverageSupportedInCLM (hL : Continuous L)
@@ -186,9 +194,8 @@ def translateAverageCLM (hL : Continuous L) (hv : Continuous v) :
   letI A (φ : 𝓓((⊤ : Opens E), F)) : 𝓓((⊤ : Opens E), G) :=
     ⟨fun x ↦ ∫ p, L p (φ (x + v p)) ∂ν, contDiff_translateAverage φ.contDiff hL hv,
       (averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩).isCompact.of_isClosed_subset
-        (isClosed_tsupport _) (closure_minimal (fun _ hx ↦ by_contra fun h ↦
-          hx (translateAverage_eq_zero (subset_tsupport φ) h))
-          (averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩).isCompact.isClosed),
+        (isClosed_tsupport _) (tsupport_subset_averageCompacts hv φ fun _ h ↦
+          translateAverage_eq_zero (subset_tsupport φ) h),
       subset_univ _⟩
   TestFunction.limitCLM ℝ A
     (fun K _ ↦ ofSupportedInCLM ℝ (subset_univ _) ∘L translateAverageSupportedInCLM ν hL hv K)
@@ -230,18 +237,16 @@ theorem norm_translateAverageCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : �
 theorem tsupport_translateAverageCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :
     tsupport (translateAverageCLM ν hL hv φ) ⊆
       (fun q : E × Y ↦ q.1 - v q.2) '' (tsupport φ ×ˢ univ) :=
-  closure_minimal (fun _ hx ↦ by_contra fun h ↦ hx (translateAverage_eq_zero (subset_tsupport φ) h))
-    (averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩).isCompact.isClosed
+  tsupport_subset_averageCompacts hv φ fun _ h ↦ translateAverage_eq_zero (subset_tsupport φ) h
 
 omit [MeasurableSpace Y] [OpensMeasurableSpace Y] in
 /-- The test functions `f p = L p (φ (· + v p))` are supported in `tsupport φ - v(Y)`. -/
 private theorem tsupport_subset_of_apply_eq (hv : Continuous v) (φ : 𝓓((⊤ : Opens E), F))
     {f : Y → 𝓓((⊤ : Opens E), G)} (hf : ∀ p x, f p x = L p (φ (x + v p))) (p : Y) :
-    tsupport (f p) ⊆ (fun q : E × Y ↦ q.1 - v q.2) '' (tsupport φ ×ˢ univ) :=
-  closure_minimal (fun x hx ↦ by_contra fun h ↦ hx (by
+    tsupport (f p) ⊆ averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩ :=
+  tsupport_subset_averageCompacts hv φ fun x h ↦ by
     rw [hf, image_eq_zero_of_notMem_tsupport fun h' ↦ h ⟨(x + v p, p), ⟨h', mem_univ p⟩, by simp⟩,
-      map_zero]))
-    (averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩).isCompact.isClosed
+      map_zero]
 
 omit [MeasurableSpace Y] [OpensMeasurableSpace Y] in
 /-- **Continuity of a family of translates**: the test functions `f p = L p (φ (· + v p))`
@@ -279,8 +284,7 @@ theorem apply_eq_integral_of_apply_eq_apply_add (T : 𝓓((⊤ : Opens E), G) �
     T ψ = ∫ p, T (f p) ∂ν := by
   have hfun (p : Y) : ⇑(f p) = fun x ↦ L p (φ (x + v p)) := funext (hf p)
   refine T.apply_eq_integral_of_continuous_iteratedFDeriv
-    (K := ⟨_, (φ.hasCompactSupport.isCompact.prod isCompact_univ).image
-      (continuous_fst.sub (hv.comp continuous_snd))⟩) (subset_univ _)
+    (K := averageCompacts hv ⟨tsupport φ, φ.hasCompactSupport⟩) (subset_univ _)
     (tsupport_subset_of_apply_eq hv φ hf) (fun k ↦ ?_) hψ
   simp only [hfun]
   exact continuous_iteratedFDeriv_clm_comp_add φ.contDiff hL hv k
