@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 
 /-!
-# The reflexive dimension condition as a `Fact`
+# Dimension conditions as `Fact` instances
 
 Constructions whose dimension hypothesis `Module.finrank R M = Module.finrank R N` is supplied as
 an instance `Fact (Module.finrank R M = Module.finrank R N)` (such as the orthonormal frame bundle

@@ -156,13 +156,10 @@ theorem wedgePow_fst_add_snd_apply_append (hn : finrank ℝ V = 2 * n) (hm : fin
   have hv := wedgePow_apply_finProdFinEquiv ω d
     (fun i j ↦ by simpa [hω, s₁, s₂] using hd.apply_fst_fst i j)
     (fun i j ↦ by simpa [hω, s₁, s₂] using hd.apply_fst_snd i j)
-  rw [← Basis.coe_reindex_finProdFinEquiv] at hv₁ hv₂ hv
-  have hB : ⇑(d.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n + m) 2)))) =
-      fun r ↦ Fin.append
-        (fun i ↦ (d₁.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm n 2))) i, (0 : W)))
-        (fun j ↦ ((0 : V), d₂.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))) j))
-        (Fin.cast (Nat.mul_add 2 n m) r) :=
-    Basis.coe_reindex_prod_finProdFinEquiv d₁ d₂
+  rw [← Basis.coe_reindex_finProdFinEquiv _ (Nat.mul_comm _ 2)] at hv₁ hv₂ hv
+  have hB : ⇑(d.reindex (finProdFinEquiv.trans (finCongr (Nat.mul_comm (n + m) 2)))) = _ :=
+    Basis.coe_reindex_prod_finProdFinEquiv d₁ d₂ (Nat.mul_comm n 2) (Nat.mul_comm m 2) _
+      (Nat.mul_add 2 n m)
   have key := apply_append_eq_mul_of_apply_basis (Nat.mul_add 2 n m)
     (((n + m).factorial : ℝ)⁻¹ • ω.wedgePow (n + m)) (((n.factorial : ℝ)⁻¹ • ω₁.wedgePow n))
     (((m.factorial : ℝ)⁻¹ • ω₂.wedgePow m)) _ _ _ hB
