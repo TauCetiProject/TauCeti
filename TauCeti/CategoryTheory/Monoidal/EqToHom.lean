@@ -23,6 +23,7 @@ inverse tensor comparison at the transported factors.
 ## Main results
 
 * `TauCeti.eqToHom_tensorHom_eqToHom`: `eqToHom h ⊗ₘ eqToHom h' = eqToHom _`.
+* `TauCeti.eqToIso_tensorIso_eqToIso`: `eqToIso h ⊗ᵢ eqToIso h' = eqToIso _`.
 * `CategoryTheory.Functor.eqToHom_conjugate_inv_δ_comp_map`: transporting
   `inv (δ F M N) ≫ F.map φ` along equalities `M = M'`, `N = N'` and `P = P'` gives
   `inv (δ F M' N') ≫ F.map ψ`, where `ψ` is the transport of `φ`;
@@ -49,6 +50,13 @@ theorem eqToHom_tensorHom_eqToHom {X X' Y Y' : C} (h : X = X') (h' : Y = Y') :
     (eqToHom h ⊗ₘ eqToHom h') = eqToHom (congrArg₂ (· ⊗ ·) h h') := by
   subst h h'
   simp
+
+/-- The tensor product of two transport isomorphisms along object equalities is the transport
+isomorphism along the induced equality of tensor products. -/
+@[simp]
+theorem eqToIso_tensorIso_eqToIso {X X' Y Y' : C} (h : X = X') (h' : Y = Y') :
+    (eqToIso h ⊗ᵢ eqToIso h') = eqToIso (congrArg₂ (· ⊗ ·) h h') :=
+  Iso.ext (eqToHom_tensorHom_eqToHom h h')
 
 end TauCeti
 
