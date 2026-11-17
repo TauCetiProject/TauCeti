@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Spectrum.Maximal.Basic
-public import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basis
+public import TauCeti.Analysis.Normed.Field.WeaklyStable
 
 import Mathlib.LinearAlgebra.Pi
 import Mathlib.RingTheory.Artinian.Module
+import TauCeti.Analysis.Normed.Unbundled.CoordinateNorm
 import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Basic
 
 /-!

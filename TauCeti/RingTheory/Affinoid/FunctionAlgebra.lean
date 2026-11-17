@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Algebra.TransferInstance
 public import TauCeti.Analysis.Normed.Algebra.FunctionAlgebra
 public import TauCeti.RingTheory.Affinoid.QuotientNorm
 public import TauCeti.RingTheory.Affinoid.SpectralRadius
@@ -163,43 +164,17 @@ theorem ext {x y : hA.SupNormModel} (h : x.ofSupNorm = y.ofSupNorm) : x = y := b
 @[simp] theorem toSupNorm_ofSupNorm (x : hA.SupNormModel) : toSupNorm x.ofSupNorm = x := (rfl)
 @[simp] theorem ofSupNorm_toSupNorm (a : A) : (toSupNorm a : hA.SupNormModel).ofSupNorm = a := (rfl)
 
-instance : CommRing hA.SupNormModel where
-  zero := ⟨0⟩
-  one := ⟨1⟩
-  add x y := ⟨x.1 + y.1⟩
-  neg x := ⟨-x.1⟩
-  sub x y := ⟨x.1 - y.1⟩
-  mul x y := ⟨x.1 * y.1⟩
-  nsmul n x := ⟨n • x.1⟩
-  zsmul n x := ⟨n • x.1⟩
-  npow n x := ⟨x.1 ^ n⟩
-  natCast n := ⟨n⟩
-  intCast n := ⟨n⟩
-  add_assoc _ _ _ := ext (add_assoc _ _ _)
-  zero_add _ := ext (zero_add _)
-  add_zero _ := ext (add_zero _)
-  nsmul_zero _ := ext (zero_nsmul _)
-  nsmul_succ _ _ := ext (succ_nsmul _ _)
-  sub_eq_add_neg _ _ := ext (sub_eq_add_neg _ _)
-  zsmul_zero' _ := ext (zero_zsmul _)
-  zsmul_succ' _ _ := ext (SubNegMonoid.zsmul_succ' _ _)
-  zsmul_neg' _ _ := ext (SubNegMonoid.zsmul_neg' _ _)
-  neg_add_cancel _ := ext (neg_add_cancel _)
-  add_comm _ _ := ext (add_comm _ _)
-  left_distrib _ _ _ := ext (left_distrib _ _ _)
-  right_distrib _ _ _ := ext (right_distrib _ _ _)
-  zero_mul _ := ext (zero_mul _)
-  mul_zero _ := ext (mul_zero _)
-  mul_assoc _ _ _ := ext (mul_assoc _ _ _)
-  one_mul _ := ext (one_mul _)
-  mul_one _ := ext (mul_one _)
-  npow_zero _ := ext (pow_zero _)
-  npow_succ _ _ := ext (pow_succ _ _)
-  natCast_zero := ext Nat.cast_zero
-  natCast_succ _ := ext (Nat.cast_succ _)
-  intCast_ofNat _ := ext (Int.cast_natCast _)
-  intCast_negSucc _ := ext (Int.cast_negSucc _)
-  mul_comm _ _ := ext (mul_comm _ _)
+/-- The canonical bijection between `hA.SupNormModel` and `A`. -/
+def equiv (hA : IsAffinoidAlgebra K A) : hA.SupNormModel ≃ A where
+  toFun := ofSupNorm
+  invFun := toSupNorm
+  left_inv := toSupNorm_ofSupNorm
+  right_inv := ofSupNorm_toSupNorm
+
+@[simp] theorem equiv_apply (x : hA.SupNormModel) : equiv hA x = x.ofSupNorm := (rfl)
+@[simp] theorem equiv_symm_apply (a : A) : (equiv hA).symm a = toSupNorm a := (rfl)
+
+instance : CommRing hA.SupNormModel := (equiv hA).commRing
 
 @[simp] theorem toSupNorm_zero : (toSupNorm (0 : A) : hA.SupNormModel) = 0 := (rfl)
 @[simp] theorem toSupNorm_one : (toSupNorm (1 : A) : hA.SupNormModel) = 1 := (rfl)
@@ -238,16 +213,7 @@ instance : CommRing hA.SupNormModel where
 @[simp, norm_cast] theorem ofSupNorm_intCast (n : ℤ) :
     (n : hA.SupNormModel).ofSupNorm = n := (rfl)
 
-instance : Algebra K hA.SupNormModel where
-  algebraMap :=
-    { toFun := fun c ↦ ⟨algebraMap K A c⟩
-      map_one' := ext (map_one _)
-      map_mul' := fun _ _ ↦ ext (map_mul _ _ _)
-      map_zero' := ext (map_zero _)
-      map_add' := fun _ _ ↦ ext (map_add _ _ _) }
-  commutes' c x := ext (Algebra.commutes c x.1)
-  smul := fun c x ↦ ⟨c • x.1⟩
-  smul_def' c x := ext (Algebra.smul_def c x.1)
+instance : Algebra K hA.SupNormModel := Equiv.algebra K (equiv hA)
 
 @[simp] theorem toSupNorm_algebraMap (c : K) :
     (toSupNorm (algebraMap K A c) : hA.SupNormModel) = algebraMap K hA.SupNormModel c := (rfl)
@@ -259,21 +225,15 @@ instance : Algebra K hA.SupNormModel where
     (c • x).ofSupNorm = c • x.ofSupNorm := (rfl)
 
 /-- Canonical `K`-algebra isomorphism `A ≃ₐ[K] hA.SupNormModel`. -/
-def algEquiv (hA : IsAffinoidAlgebra K A) : A ≃ₐ[K] hA.SupNormModel where
-  toFun := toSupNorm
-  invFun := ofSupNorm
-  left_inv _ := rfl
-  right_inv _ := rfl
-  map_mul' _ _ := rfl
-  map_add' _ _ := rfl
-  commutes' _ := rfl
+def algEquiv (hA : IsAffinoidAlgebra K A) : A ≃ₐ[K] hA.SupNormModel :=
+  (Equiv.algEquiv K (equiv hA)).symm
 
 @[simp] theorem algEquiv_apply (a : A) : algEquiv hA a = toSupNorm a := (rfl)
 @[simp]
 theorem algEquiv_symm_apply (x : hA.SupNormModel) : (algEquiv hA).symm x = x.ofSupNorm := (rfl)
 
-instance [Subsingleton A] : Subsingleton hA.SupNormModel := (algEquiv hA).symm.toEquiv.subsingleton
-instance [Nontrivial A] : Nontrivial hA.SupNormModel := (algEquiv hA).symm.toEquiv.nontrivial
+instance [Subsingleton A] : Subsingleton hA.SupNormModel := (equiv hA).subsingleton
+instance [Nontrivial A] : Nontrivial hA.SupNormModel := (equiv hA).nontrivial
 instance [IsReduced A] : IsReduced hA.SupNormModel :=
   ⟨fun _ hx ↦ ext (hx.map (algEquiv hA).symm.toRingHom).eq_zero⟩
 
@@ -398,11 +358,15 @@ noncomputable instance : SeminormedCommRing hA.SupNormModel where
   __ := (inferInstance : CommRing hA.SupNormModel)
   __ := RingSeminorm.toSeminormedRing
     { toFun := fun x : hA.SupNormModel ↦ supSeminorm K x.ofSupNorm
-      map_zero' := supSeminorm_zero
-      add_le' := fun x y ↦ (hA.supSeminorm_add_le x.1 y.1).trans
-        (max_le_add_of_nonneg (supSeminorm_nonneg x.1) (supSeminorm_nonneg y.1))
-      neg' := fun x ↦ supSeminorm_neg x.1
-      mul_le' := fun x y ↦ hA.supSeminorm_mul_le x.1 y.1 }
+      map_zero' := by rw [ofSupNorm_zero, supSeminorm_zero]
+      add_le' := fun x y ↦ by
+        rw [ofSupNorm_add]
+        exact (hA.supSeminorm_add_le x.ofSupNorm y.ofSupNorm).trans
+          (max_le_add_of_nonneg (supSeminorm_nonneg _) (supSeminorm_nonneg _))
+      neg' := fun x ↦ by rw [ofSupNorm_neg, supSeminorm_neg]
+      mul_le' := fun x y ↦ by
+        rw [ofSupNorm_mul]
+        exact hA.supSeminorm_mul_le x.ofSupNorm y.ofSupNorm }
 
 /-- The norm on `hA.SupNormModel` is `supSeminorm K` of the underlying element. -/
 @[simp] theorem norm_def (x : hA.SupNormModel) : ‖x‖ = supSeminorm K x.ofSupNorm := (rfl)
@@ -413,18 +377,20 @@ theorem norm_toSupNorm (a : A) : ‖(toSupNorm a : hA.SupNormModel)‖ = supSemi
 noncomputable instance : NormedAlgebra K hA.SupNormModel where
   norm_smul_le c x := by
     rw [norm_def, norm_def, ofSupNorm_smul]
-    exact (supSeminorm_smul c x.1).le
+    exact (supSeminorm_smul c x.ofSupNorm).le
 
 instance : IsUltrametricDist hA.SupNormModel :=
-  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦
-    hA.supSeminorm_add_le x.1 y.1
+  IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm fun x y ↦ by
+    rw [norm_def, norm_def, norm_def, ofSupNorm_add]
+    exact hA.supSeminorm_add_le x.ofSupNorm y.ofSupNorm
 
 instance [Nontrivial A] : NormOneClass hA.SupNormModel where
-  norm_one := supSeminorm_one
+  norm_one := by rw [norm_def, ofSupNorm_one, supSeminorm_one]
 
 /-- The supremum norm on `hA.SupNormModel` is power-multiplicative. -/
-theorem isPowMul_norm : IsPowMul (norm : hA.SupNormModel → ℝ) := fun x _n hn ↦
-  supSeminorm_pow x.ofSupNorm (Nat.one_le_iff_ne_zero.mp hn)
+theorem isPowMul_norm : IsPowMul (norm : hA.SupNormModel → ℝ) := fun x _n hn ↦ by
+  rw [norm_def, norm_def, ofSupNorm_pow]
+  exact supSeminorm_pow x.ofSupNorm (Nat.one_le_iff_ne_zero.mp hn)
 
 noncomputable instance [IsReduced A] : NormedCommRing hA.SupNormModel :=
   { (inferInstance : SeminormedCommRing hA.SupNormModel) with
