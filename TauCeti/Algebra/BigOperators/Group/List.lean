@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.GroupTheory.Submonoid.Center
 
@@ -23,6 +24,12 @@ remaining first factors. Erasing an entry whose image is `1` does not change the
 images, in any monoid. Two orderings of a list have the same product of images when every pair of
 entries whose relative order differs has commuting images.
 
+In a commutative monoid (and additively in an `AddCommMonoid`), products indexed by the positions
+`i : Fin l.length` of a list split across concatenation (`List.prod_get_append`), reduce on a
+replicated list to a `Finset.range` product (`List.prod_get_replicate`), and decompose a `flatMap`
+of replicated blocks along `List.range n` by block offsets
+(`List.prod_get_flatMap_replicate_range`).
+
 ## Main results
 
 * `List.prod_map_mem_of_isChain`: along a nonempty `r`-chain `x :: l`, the product of the `f y`
@@ -32,6 +39,9 @@ entries whose relative order differs has commuting images.
 * `List.prod_map_erase_of_eq_one`: `∏_{i ∈ l.erase a} f i = ∏_{i ∈ l} f i` when `f a = 1`.
 * `List.prod_map_eq_of_perm`: two orderings of the same entries have the same product of images if
   the images of every inverted pair commute.
+* `List.prod_get_append`, `List.prod_get_replicate`, `List.prod_get_flatMap_replicate_range` (and
+  their additive counterparts): position-indexed products over appended, replicated, and
+  block-replicated lists.
 -/
 
 public section
@@ -107,5 +117,61 @@ theorem prod_map_eq_of_perm (f : ι → M) {l l' : List ι} (hp : l.Perm l')
     rw [map_cons, prod_cons, key,
       ih hp' fun x y hxy hyx => h x y (hxy.trans (sublist_cons_self a t))
         (hyx.trans ((sublist_cons_self a v).append_left u))]
+
+section Indexed
+
+variable {α N : Type*} [CommMonoid N]
+
+/-- A position-indexed product over `xs ++ ys` splits into the product over `xs` and the shifted
+product over `ys`. -/
+@[to_additive /-- A position-indexed sum over `xs ++ ys` splits into the sum over `xs` and the
+shifted sum over `ys`. -/]
+theorem prod_get_append (xs ys : List α) (f : α → ℕ → N) :
+    ∏ i : Fin (xs ++ ys).length, f ((xs ++ ys).get i) i.val =
+      (∏ i : Fin xs.length, f (xs.get i) i.val) *
+        ∏ j : Fin ys.length, f (ys.get j) (xs.length + j.val) := by
+  rw [← (finCongr List.length_append).symm.prod_comp, Fin.prod_univ_add]
+  congr 1
+  · exact Finset.prod_congr rfl fun _ _ ↦ by simp [List.getElem_append_left]
+  · exact Finset.prod_congr rfl fun _ _ ↦ by simp [List.getElem_append_right]
+
+/-- A position-indexed product over `List.replicate m a` equals the product over
+`Finset.range m`. -/
+@[to_additive /-- A position-indexed sum over `List.replicate m a` equals the sum over
+`Finset.range m`. -/]
+theorem prod_get_replicate (m : ℕ) (a : α) (f : α → ℕ → N) :
+    ∏ i : Fin (List.replicate m a).length, f ((List.replicate m a).get i) i.val =
+      ∏ r ∈ Finset.range m, f a r := by
+  rw [← (finCongr List.length_replicate).symm.prod_comp]
+  simp only [List.get_eq_getElem, List.getElem_replicate, finCongr_symm, finCongr_apply,
+    Fin.val_cast]
+  exact Fin.prod_univ_eq_prod_range (fun r ↦ f a r) m
+
+/-- A position-indexed product over a `flatMap` of replicated blocks along `List.range n` splits
+by blocks, with the `r`-th copy of `val j` sitting at index `(∑ k ∈ Finset.range j, d k) + r`. -/
+@[to_additive /-- A position-indexed sum over a `flatMap` of replicated blocks along `List.range n`
+splits by blocks, with the `r`-th copy of `val j` sitting at index
+`(∑ k ∈ Finset.range j, d k) + r`. -/]
+theorem prod_get_flatMap_replicate_range (n : ℕ) (d : ℕ → ℕ) (val : ℕ → α) (f : α → ℕ → N) :
+    ∏ i : Fin ((List.range n).flatMap fun j ↦ List.replicate (d j) (val j)).length,
+        f (((List.range n).flatMap fun j ↦ List.replicate (d j) (val j)).get i) i.val =
+      ∏ j ∈ Finset.range n,
+        ∏ r ∈ Finset.range (d j), f (val j) ((∑ k ∈ Finset.range j, d k) + r) := by
+  induction n with
+  | zero =>
+    rw [Finset.range_zero, Finset.prod_empty]
+    exact Finset.prod_eq_one fun i _ ↦ (Nat.not_lt_zero i.val (by simpa using i.isLt)).elim
+  | succ m ih =>
+    let xs := (List.range m).flatMap fun j ↦ List.replicate (d j) (val j)
+    have hflat : (List.range (m + 1)).flatMap (fun j ↦ List.replicate (d j) (val j)) =
+        xs ++ List.replicate (d m) (val m) := by
+      rw [List.range_succ, List.flatMap_append, List.flatMap_singleton]
+    have hsplit := hflat ▸ prod_get_append xs (List.replicate (d m) (val m)) f
+    rw [hsplit, ih, Finset.prod_range_succ]
+    congr 1
+    simpa [xs, List.length_flatMap, ← List.sum_toFinset _ List.nodup_range, List.toFinset_range]
+      using prod_get_replicate (d m) (val m) fun x r ↦ f x (xs.length + r)
+
+end Indexed
 
 end List
