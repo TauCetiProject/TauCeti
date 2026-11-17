@@ -117,19 +117,28 @@ theorem char_cyclicFourFaithfulRep_ofAdd (a : ZMod 4) :
     FDRep.char_ofLinearCharacter, coe_cyclicFourChar_ofAdd, coe_cyclicFourChar_ofAdd]
   simp [ZMod.val_ofNat, ZMod.val_one_eq_one_mod, pow_mul, pow_succ]
 
-private theorem char_cyclicFourFaithfulRep_ofAdd_zero :
-    cyclicFourFaithfulRep.character (.ofAdd 0) = 2 := by
-  rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num
+-- Not `@[simp]`: `FDRep.char_one` and `finrank_cyclicFourFaithfulRep` already evaluate it.
+/-- The character of `U` at the identity is `2`. -/
+theorem char_cyclicFourFaithfulRep_one : cyclicFourFaithfulRep.character 1 = 2 := by
+  rw [← ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd]; norm_num
 
-private theorem char_cyclicFourFaithfulRep_ofAdd_one :
+-- The following value lemmas have priority `high` so that `simp` prefers them to the general
+-- `char_cyclicFourFaithfulRep_ofAdd`, which leaves `ZMod.val` of a numeral unevaluated.
+/-- The character of `U` at the generator `g = ofAdd 1` is `0`. -/
+@[simp high]
+theorem char_cyclicFourFaithfulRep_ofAdd_one :
     cyclicFourFaithfulRep.character (.ofAdd 1) = 0 := by
   rw [char_cyclicFourFaithfulRep_ofAdd]; simp [ZMod.val_one_eq_one_mod]
 
-private theorem char_cyclicFourFaithfulRep_ofAdd_two :
+/-- The character of `U` at `g² = ofAdd 2` is `-2`. -/
+@[simp high]
+theorem char_cyclicFourFaithfulRep_ofAdd_two :
     cyclicFourFaithfulRep.character (.ofAdd 2) = -2 := by
   rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num [ZMod.val_ofNat, pow_succ]
 
-private theorem char_cyclicFourFaithfulRep_ofAdd_three :
+/-- The character of `U` at `g³ = ofAdd 3` is `0`. -/
+@[simp high]
+theorem char_cyclicFourFaithfulRep_ofAdd_three :
     cyclicFourFaithfulRep.character (.ofAdd 3) = 0 := by
   rw [char_cyclicFourFaithfulRep_ofAdd]; norm_num [ZMod.val_ofNat, pow_succ]
 
@@ -137,16 +146,16 @@ private theorem char_cyclicFourFaithfulRep_ofAdd_three :
 @[simp]
 theorem finrank_cyclicFourFaithfulRep : Module.finrank ℂ cyclicFourFaithfulRep = 2 := by
   have h := FDRep.char_one cyclicFourFaithfulRep
-  rw [← ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_zero] at h
+  rw [char_cyclicFourFaithfulRep_one] at h
   exact_mod_cast h.symm
 
 /-- The character values of `U` are `2`, `0` and `-2`. -/
 theorem characterValues_cyclicFourFaithfulRep :
     cyclicFourFaithfulRep.characterValues = {2, 0, -2} := by
   rw [FDRep.characterValues_eq_image, univ_multiplicative_zmod_four]
-  simp only [Finset.image_insert, Finset.image_singleton, char_cyclicFourFaithfulRep_ofAdd_zero,
-    char_cyclicFourFaithfulRep_ofAdd_one, char_cyclicFourFaithfulRep_ofAdd_two,
-    char_cyclicFourFaithfulRep_ofAdd_three]
+  simp only [Finset.image_insert, Finset.image_singleton, ofAdd_zero,
+    char_cyclicFourFaithfulRep_one, char_cyclicFourFaithfulRep_ofAdd_one,
+    char_cyclicFourFaithfulRep_ofAdd_two, char_cyclicFourFaithfulRep_ofAdd_three]
   simp [Finset.pair_comm]
 
 /-- `U` has three distinct character values. -/
@@ -161,7 +170,7 @@ theorem cyclicFourFaithfulRep_ρ_injective : Function.Injective cyclicFourFaithf
   refine (injective_iff_map_eq_one _).mpr fun g hg ↦ ?_
   have h : cyclicFourFaithfulRep.character g = cyclicFourFaithfulRep.character 1 := by
     simp [FDRep.character, hg]
-  rw [← ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_zero] at h
+  rw [char_cyclicFourFaithfulRep_one] at h
   refine (forall_multiplicative_zmod_four
     (P := fun g ↦ cyclicFourFaithfulRep.character g = 2 → g = 1)).mpr
       ⟨fun _ ↦ ofAdd_zero, fun h ↦ ?_, fun h ↦ ?_, fun h ↦ ?_⟩ g h <;>
@@ -251,7 +260,7 @@ theorem nonempty_iso_tensorPower_two_cyclicFourFaithfulRep :
           FDRep.ofLinearCharacter (cyclicFourChar 2)) := by
   refine FDRep.nonempty_iso_of_character_eq _ _
     (funext (forall_multiplicative_zmod_four.mpr ⟨?_, ?_, ?_, ?_⟩)) <;>
-    simp only [FDRep.char_tensorPower, char_cyclicFourFaithfulRep_ofAdd_zero,
+    simp only [FDRep.char_tensorPower, ofAdd_zero, char_cyclicFourFaithfulRep_one,
       char_cyclicFourFaithfulRep_ofAdd_one, char_cyclicFourFaithfulRep_ofAdd_two,
       char_cyclicFourFaithfulRep_ofAdd_three, FDRep.char_biprod, Pi.add_apply,
       FDRep.char_ofLinearCharacter, coe_cyclicFourChar_ofAdd] <;>
@@ -290,7 +299,7 @@ theorem mem_span_range_char_tensorPower_cyclicFourFaithfulRep_iff
           (cyclicFourFaithfulRep.tensorPower 2).character := by
       refine funext (forall_multiplicative_zmod_four.mpr ⟨?_, ?_, ?_, ?_⟩) <;>
         simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, FDRep.char_tensorPower,
-          char_cyclicFourFaithfulRep_ofAdd_zero, char_cyclicFourFaithfulRep_ofAdd_one,
+          ofAdd_zero, char_cyclicFourFaithfulRep_one, char_cyclicFourFaithfulRep_ofAdd_one,
           char_cyclicFourFaithfulRep_ofAdd_two, char_cyclicFourFaithfulRep_ofAdd_three, hf₃] <;>
         ring
     rw [e]
