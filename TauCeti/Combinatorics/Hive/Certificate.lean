@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Combinatorics.Hive.Fibre
 public import TauCeti.Geometry.Convex.Cone.Farkas
-import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.LinearAlgebra.Matrix.Dual
 
 /-!
@@ -24,8 +23,11 @@ hives.
   when `φ ∘ boundaryLinear` is a nonnegative combination of unit-rhombus slacks
   (`TauCeti.Hive.forall_map_boundary_nonneg_iff_exists_sum_mul_rhombusSlack`). The certificate is an
   identity of functionals on *all* lattice functions: no multiple of the normalization `f A` is
-  needed, because both sides vanish on constants. Functionals differing by a multiple of the cyclic
-  trace `∑ s, ∑ i, β s i` have the same certificate, since the trace of `boundaryLinear f` is zero.
+  needed, because both sides vanish on constants. Since the range of `boundaryLinear` is the
+  trace-zero hyperplane (`TauCeti.Hive.exists_boundaryLinear_eq_iff_sum_eq_zero`), two functionals
+  have the same pullback, hence the same certificates, exactly when they differ by a multiple of the
+  cyclic trace `∑ s, ∑ i, β s i`
+  (`TauCeti.Hive.forall_map_boundaryLinear_eq_zero_iff_exists_eq_mul_sum`).
 * A boundary triple is the boundary of a hive exactly when every such functional is nonnegative
   on it (`TauCeti.Hive.exists_boundary_eq_iff_forall_dual_nonneg`): the hive boundary cone equals
   its bipolar, with no closure taken.
@@ -53,6 +55,29 @@ open scoped Matrix
 namespace TauCeti.Hive
 
 variable {n : ℕ} {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
+/-- **Functionals determined modulo the cyclic trace.** A linear functional on boundary triples
+vanishes on the clockwise edge differences of every lattice function exactly when it is a multiple
+of the cyclic trace `∑ s, ∑ i, B s i`. -/
+theorem forall_map_boundaryLinear_eq_zero_iff_exists_eq_mul_sum {R : Type*} [CommRing R]
+    (φ : Module.Dual R (Fin 3 → Fin n → R)) :
+    (∀ f : Vertex n → R, φ (boundaryLinear ℤ n R f) = 0) ↔
+      ∃ c : R, ∀ B, φ B = c * ∑ s : Fin 3, ∑ i : Fin n, B s i := by
+  refine ⟨fun hφ => ?_, fun ⟨c, hc⟩ f => by rw [hc, sum_boundaryLinear, mul_zero]⟩
+  rcases n with _ | n
+  · exact ⟨0, fun B => by simp [Subsingleton.elim B 0]⟩
+  -- Every coordinate vector differs from the one at `(0, 0)` by a trace-zero triple.
+  let e (s : Fin 3) (i : Fin (n + 1)) : Fin 3 → Fin (n + 1) → R :=
+    fun s' i' => if s' = s ∧ i' = i then 1 else 0
+  have he (s : Fin 3) (i : Fin (n + 1)) : φ (e s i) = φ (e 0 0) := by
+    obtain ⟨f, hf⟩ := (exists_boundaryLinear_eq_iff_sum_eq_zero (e s i - e 0 0)).mpr <| by
+      simp [e, ite_and, Finset.sum_sub_distrib]
+    rw [← sub_eq_zero, ← map_sub, ← hf, hφ]
+  refine ⟨φ (e 0 0), fun B => ?_⟩
+  have hB : B = ∑ s, ∑ i, B s i • e s i := by
+    ext s i; simp [e, ite_and]
+  conv_lhs => rw [hB]
+  simp only [map_sum, map_smul, he, smul_eq_mul, ← Finset.sum_mul, mul_comm]
 
 /-- **Valid boundary functionals are rhombus certificates.** A linear functional `φ` on cyclic
 boundary triples is nonnegative on the boundary of every hive with values in `K` exactly when, for
