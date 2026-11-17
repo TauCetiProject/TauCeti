@@ -43,9 +43,9 @@ derivatives in the divisor parameters are not treated here.
 * `TauCeti.Vortex.gaugeTransform_inv_apply_eq`: where the section is `|α|` times a gauge `u`
   and solves the holomorphicity rows, its gauge transformation by `u⁻¹` is
   `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, exp (ℓ / 2) / 2, 0)` for `ℓ = log |α|²`.
-* `TauCeti.Vortex.exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField`: a globally
-  smooth surrogate field agreeing near infinity with `gaugeTransform u⁻¹ x - vacuumField` whose
-  iterated derivatives are `O(exp (-c |z|))` for every rate `c < 1 / 2`.
+* `TauCeti.Vortex.exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField`: near
+  infinity the end trivialization minus the vacuum agrees with a globally smooth field whose
+  iterated derivatives are all `O(exp (-c |z|))` for every rate `c < 1 / 2`.
 * `TauCeti.Vortex.eventually_contDiffAt_gaugeTransform_inv`: for a vortex with `C²` section,
   `|α| → 1`, and section equal to `|α|` times `u` near infinity, `gaugeTransform u⁻¹ x` is smooth
   outside a compact set without global regularity hypotheses on `u` or the connection of `x`.
@@ -167,20 +167,21 @@ private theorem contDiff_and_isBigO_iteratedFDeriv_endField {ℓ : ℂ → ℝ} 
       (fun_iteratedFDeriv_add_apply ((L₁.contDiff.comp hD).contDiffAt.of_le (by simp))
         ((L₂.contDiff.comp hE).contDiffAt.of_le (by simp))).symm
 
-/-- **Smooth exterior surrogate for an end-trivialized vortex.** Let `x` be a plane vortex with
-`C²` section and `|α| → 1` at infinity whose section is `|α|` times a gauge `u` outside a compact
-set. Then `gaugeTransform u⁻¹ x - vacuumField` agrees on a neighborhood of every point outside a
-compact set with a globally smooth field `Y` whose iterated derivatives are `O(exp (-c |z|))` at
-infinity for every rate `c < 1 / 2`. -/
-theorem exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField {u : ℂ → Circle}
+/-- **A smooth decaying model of an end trivialization.** Let `x` be a plane vortex with `C²`
+section and `|α| → 1` at infinity whose section is `|α|` times a gauge `u` outside a compact set.
+Then near every point outside a compact set, the end trivialization `u⁻¹ · x` minus the vacuum
+agrees with one globally smooth field `g` all of whose derivatives are `O(exp (-c |z|))` for every
+rate `c < 1 / 2`. Outside a compact set `g` is
+`(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)` for a smooth `ℓ` equal to `log |α|²`
+there. -/
+theorem exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField {u : ℂ → Circle}
     (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * u z) :
-    ∃ Y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ Y ∧
-      (∀ᶠ z in cocompact ℂ, (fun w ↦ gaugeTransform u⁻¹ x w - vacuumField w) =ᶠ[𝓝 z] Y) ∧
-      ∀ {c : ℝ}, c < 1 / 2 → ∀ n,
-        iteratedFDeriv ℝ n Y =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
+    ∃ g : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ ∞ g ∧
+      (∀ c < 1 / 2, ∀ n : ℕ, iteratedFDeriv ℝ n g =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖))) ∧
+      ∀ᶠ z in cocompact ℂ, (fun w ↦ gaugeTransform u⁻¹ x w - vacuumField w) =ᶠ[𝓝 z] g := by
   have hpos : ∀ᶠ z in cocompact ℂ, 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     hlim.eventually (lt_mem_nhds (by norm_num))
   -- A smooth `ℓ` on the plane which is `log |α|²` near every point outside a compact set.
@@ -191,15 +192,7 @@ theorem exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField {u : ℂ
   obtain ⟨hY_cd, hY_bigO⟩ := contDiff_and_isBigO_iteratedFDeriv_endField hℓ
   -- Outside a compact set the end trivialization minus the vacuum is
   -- `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, (exp (ℓ / 2) - 1) / 2, 0)`.
-  refine ⟨_, hY_cd, TauCeti.eventually_cocompact_nhds.2 ?_, fun {c} hc n ↦ ?_⟩
-  · filter_upwards [hagree, TauCeti.eventually_cocompact_nhds.2 hphase, hpos]
-      with w hℓw hphw hposw
-    rw [gaugeTransform_inv_apply_eq (hp.differentiable two_ne_zero w)
-      (hq.differentiable two_ne_zero w) (fun h ↦ by linarith) (by simp [hsol w])
-      (by simp [hsol w]) hphw hℓw, vacuumField_apply]
-    ext i
-    fin_cases i <;> simp
-    ring
+  refine ⟨_, hY_cd, fun c hc n ↦ ?_, TauCeti.eventually_cocompact_nhds.2 ?_⟩
   · set ρ : ℂ → ℝ := fun z ↦ Real.exp (-(max c 0 * ‖z‖))
     have hdec (j : ℕ) : iteratedFDeriv ℝ j ℓ =O[cocompact ℂ] ρ :=
       (isBigO_iteratedFDeriv_log_normSq hp hq hsol hlim (max_lt hc (by norm_num)) j).congr'
@@ -208,6 +201,14 @@ theorem exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField {u : ℂ
       simpa only [zero_mul, neg_zero, Real.exp_zero] using
         isBigO_exp_neg_mul_norm_of_le (le_max_right c 0) (cocompact ℂ)
     exact (hY_bigO hρ hdec n).trans (isBigO_exp_neg_mul_norm_of_le (le_max_left c 0) _)
+  · filter_upwards [hagree, TauCeti.eventually_cocompact_nhds.2 hphase, hpos]
+      with w hℓw hphw hposw
+    rw [gaugeTransform_inv_apply_eq (hp.differentiable two_ne_zero w)
+      (hq.differentiable two_ne_zero w) (fun h ↦ by linarith) (by simp [hsol w])
+      (by simp [hsol w]) hphw hℓw, vacuumField_apply]
+    ext i
+    fin_cases i <;> simp
+    ring
 
 /-- **Exterior smoothness of an end-trivialized vortex.** Let `x` be a plane vortex with `C²`
 section and `|α| → 1` at infinity whose section is `|α|` times a gauge `u` outside a compact set.
@@ -219,11 +220,11 @@ theorem eventually_contDiffAt_gaugeTransform_inv {u : ℂ → Circle}
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * u z) :
     ∀ᶠ z in cocompact ℂ, ContDiffAt ℝ ∞ (gaugeTransform u⁻¹ x) z := by
-  obtain ⟨Y, hY, hY_ev, -⟩ :=
-    exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
+  obtain ⟨g, hg, -, hg_ev⟩ :=
+    exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
   have hvac : ContDiff ℝ ∞ vacuumField := funext vacuumField_apply ▸ contDiff_const
-  refine hY_ev.mono fun z hz ↦
-    (hY.contDiffAt.add hvac.contDiffAt).congr_of_eventuallyEq
+  refine hg_ev.mono fun z hz ↦
+    (hg.contDiffAt.add hvac.contDiffAt).congr_of_eventuallyEq
       (hz.mono fun _ hw ↦ eq_add_of_sub_eq hw)
 
 /-- **Exponential decay of all derivatives in an end trivialization.** Let `x` be a plane vortex
@@ -234,7 +235,8 @@ for a vortex normalized at its end. Then the end trivialization `y = u⁻¹ · x
 `Dⁿ (y - vacuum)` is `O(exp (-c |z|))` at infinity.
 
 Outside a compact set the end trivialization is `(-(∂_I ℓ) / 2, (∂_1 ℓ) / 2, exp (ℓ / 2) / 2, 0)`
-for `ℓ = log |α|²`, so this follows from the decay of all derivatives of `ℓ`. -/
+for `ℓ = log |α|²`, so this follows from the decay of all derivatives of `ℓ`
+(`TauCeti.Vortex.exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField`). -/
 theorem isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField {u : ℂ → Circle}
     (hp : ContDiff ℝ 2 (fun z ↦ x z 2)) (hq : ContDiff ℝ 2 (fun z ↦ x z 3))
     (hsol : ∀ z, equation x z = 0)
@@ -243,9 +245,9 @@ theorem isBigO_iteratedFDeriv_gaugeTransform_inv_sub_vacuumField {u : ℂ → Ci
     {c : ℝ} (hc : c < 1 / 2) (n : ℕ) :
     iteratedFDeriv ℝ n (fun w ↦ gaugeTransform u⁻¹ x w - vacuumField w)
       =O[cocompact ℂ] fun z ↦ Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨_, -, hY_ev, hY_dec⟩ :=
-    exists_contDiff_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
-  exact (hY_dec hc n).congr'
-    (hY_ev.mono fun z hz ↦ (hz.iteratedFDeriv ℝ n).eq_of_nhds.symm) EventuallyEq.rfl
+  obtain ⟨g, -, hdec, hg⟩ :=
+    exists_contDiff_isBigO_eventuallyEq_gaugeTransform_inv_sub_vacuumField hp hq hsol hlim hphase
+  exact (hdec c hc n).congr' (hg.mono fun z hz ↦ (hz.iteratedFDeriv ℝ n).eq_of_nhds.symm)
+    EventuallyEq.rfl
 
 end TauCeti.Vortex

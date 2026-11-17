@@ -273,8 +273,7 @@ end DiscreteCoind
 section DiscreteAlgebraicComparison
 
 variable (G : Type u) (M : Type (max u v)) [Group G] [TopologicalSpace G] [DiscreteTopology G]
-  [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-  (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M] [ContinuousSMul G M]
+  [AddCommGroup M] (U : Subgroup G) [U.FiniteIndex] [DistribMulAction G M]
 
 open Classical in
 /-- For a discrete group `G` and a finite-index subgroup `U`, the counit of
