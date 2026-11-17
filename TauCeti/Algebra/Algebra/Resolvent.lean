@@ -76,9 +76,3 @@ theorem TauCeti.map_resolvent {F B : Type*} [Ring B] [Algebra R B] [FunLike F A 
   rw [resolvent, resolvent, Ring.mul_inverse_cancel _ h', ← map_one φ,
     ← Ring.mul_inverse_cancel _ (spectrum.mem_resolventSet_iff.mp hr), map_mul, map_sub,
     AlgHomClass.commutes]
-
-/-- Unital algebra homomorphisms preserve resolvents on the resolvent set. -/
-theorem AlgHom.map_resolvent {B : Type*} [Ring B] [Algebra R B] (φ : A →ₐ[R] B) {a : A} {r : R}
-    (hr : r ∈ resolventSet R a) :
-    φ (resolvent a r) = resolvent (φ a) r :=
-  TauCeti.map_resolvent φ hr

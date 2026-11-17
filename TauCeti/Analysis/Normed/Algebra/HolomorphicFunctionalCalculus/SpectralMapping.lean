@@ -19,8 +19,8 @@ on a complex Banach algebra `A`:
 * **Commutant preservation** (`Commute.holomorphicCalculusOn_right`,
   `Commute.holomorphicCalculus_right`): every element commuting with `a` commutes with `f(a)`.
 * **Naturality** (`TauCeti.map_holomorphicCalculusOn`, `TauCeti.map_holomorphicCalculus`,
-  `AlgHom.map_holomorphicCalculus`, `ContinuousAlgHom.map_holomorphicCalculus`): continuous unital
-  `ℂ`-algebra homomorphisms commute with the holomorphic functional calculus.
+  `ContinuousAlgHom.map_holomorphicCalculus`): continuous unital `ℂ`-algebra homomorphisms commute
+  with the holomorphic functional calculus.
 * **Scalar and nonunital unitization evaluation** (`TauCeti.holomorphicCalculusOn_algebraMap`,
   `TauCeti.holomorphicCalculus_algebraMap`, `TauCeti.holomorphicCalculus_complex`,
   `TauCeti.fst_holomorphicCalculus_toLp_inr`, `TauCeti.fst_holomorphicCalculus_unitizationInrL`,
@@ -147,38 +147,6 @@ end Naturality
 
 end TauCeti
 
-namespace AlgHom
-
-open TauCeti
-
-variable {A B : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
-  [NormedRing B] [NormedAlgebra ℂ B] [CompleteSpace B]
-
-/-- Continuous unital `ℂ`-algebra homomorphisms commute with `holomorphicCalculusOn`. -/
-theorem map_holomorphicCalculusOn (φ : A →ₐ[ℂ] B) (hφ : Continuous φ) (a : A) (U : Opens ℂ)
-    (ha : spectrum ℂ a ⊆ U) (f : holomorphicFunctions U) :
-    φ (holomorphicCalculusOn a U ha f) =
-      holomorphicCalculusOn (φ a) U ((AlgHom.spectrum_apply_subset φ a).trans ha) f :=
-  TauCeti.map_holomorphicCalculusOn φ hφ a U ha f
-
-/-- Continuous unital `ℂ`-algebra homomorphisms commute with `holomorphicCalculus`. -/
-theorem map_holomorphicCalculus (φ : A →ₐ[ℂ] B) (hφ : Continuous φ) (a : A)
-    (g : holomorphicGerms (spectrum ℂ a)) :
-    φ (holomorphicCalculus a g) =
-      holomorphicCalculus (φ a)
-        (holomorphicGerms.restrict (AlgHom.spectrum_apply_subset φ a) g) :=
-  TauCeti.map_holomorphicCalculus φ hφ a g
-
-/-- Naturality of `holomorphicCalculus` on ambient holomorphic representatives for `A →ₐ[ℂ] B`. -/
-theorem map_holomorphicCalculus_ofFun (φ : A →ₐ[ℂ] B) (hφ : Continuous φ) (a : A) (f : ℂ → ℂ)
-    (hf : AnalyticOnNhd ℂ f (spectrum ℂ a)) :
-    φ (holomorphicCalculus a (holomorphicGerms.ofFun f hf)) =
-      holomorphicCalculus (φ a)
-        (holomorphicGerms.ofFun f (hf.mono (AlgHom.spectrum_apply_subset φ a))) :=
-  TauCeti.map_holomorphicCalculus_ofFun φ hφ a f hf
-
-end AlgHom
-
 namespace ContinuousAlgHom
 
 open TauCeti
@@ -301,7 +269,7 @@ theorem fst_holomorphicCalculus_toLp_inr (a : A)
   have hφ_inr : φ (WithLp.toLp 1 (a : Unitization ℂ A)) = 0 := by
     rw [hφ_apply, WithLp.ofLp_toLp, Unitization.fst_inr]
   have hnat :=
-    AlgHom.map_holomorphicCalculus φ (map_continuous φ) (WithLp.toLp 1 (a : Unitization ℂ A)) g
+    map_holomorphicCalculus φ (map_continuous φ) (WithLp.toLp 1 (a : Unitization ℂ A)) g
   have heval : holomorphicCalculus (φ (WithLp.toLp 1 (a : Unitization ℂ A)))
       (holomorphicGerms.restrict
         (AlgHom.spectrum_apply_subset φ (WithLp.toLp 1 (a : Unitization ℂ A))) g) =
@@ -368,9 +336,9 @@ theorem spectrum_holomorphicCalculus (a : A) (g : holomorphicGerms (spectrum ℂ
     ((Complex.differentiableOn_dslope (U.isOpen.mem_nhds (ha hz₀))).mpr (differentiableOn_extend f))
   have hfac := congrArg (holomorphicCalculusOn a U ha)
     (algebraMap_sub_id_mul_of_dslope f (ha hz₀))
-  rw [hc_eq, map_mul, map_sub (holomorphicCalculusOn a U ha),
-    map_sub (holomorphicCalculusOn a U ha), AlgHom.commutes, holomorphicCalculusOn_id,
-    AlgHom.commutes, ← holomorphicCalculus_toGerm a U ha f] at hfac
+  simp only [map_mul, map_sub (holomorphicCalculusOn a U ha), AlgHom.commutes,
+    holomorphicCalculusOn_id] at hfac
+  rw [hc_eq, ← holomorphicCalculus_toGerm a U ha f] at hfac
   have hcomm : Commute (algebraMap ℂ A z₀ - a) (holomorphicCalculusOn a U ha hU) :=
     (Algebra.commute_algebraMap_left z₀ _).sub_left
       ((Commute.refl a).holomorphicCalculusOn_right U ha hU)
@@ -431,12 +399,11 @@ theorem holomorphicCalculus_comp (a : A) (f : holomorphicGerms (spectrum ℂ a))
           (HolomorphicFunctions.compRight fU (preimageOpen_le fU V)
             (mapsTo_extend_preimageOpen fU V)) := by
       ext gV
-      simp only [Ψ, AlgHom.comp_apply,
-        holomorphicGerms.compRight_toGerm hb fU gV (preimageOpen_le fU V) ha'
+      simp only [Ψ, AlgHom.comp_apply]
+      rw [holomorphicGerms.compRight_toGerm hb fU gV (preimageOpen_le fU V) ha'
           (mapsTo_extend_preimageOpen fU V)
           (spectrum_holomorphicCalculus a (toGerm ha fU)).symm.subset,
         holomorphicCalculus_toGerm]
-      rfl
     rw [hcomp]
     exact (continuous_holomorphicCalculusOn a U' ha').comp
       (HolomorphicFunctions.continuous_compRight fU (preimageOpen_le fU V)

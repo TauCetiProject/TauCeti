@@ -198,6 +198,15 @@ theorem algebraMap_sub_id_mul_of_dslope (f : holomorphicFunctions U) {z₀ : ℂ
     smul_eq_mul, mul_one, id_eq, ← extend_apply f z]
   rw [← neg_sub (z : ℂ) z₀, neg_mul, hd, neg_sub]
 
+/-- A holomorphic function nonvanishing on `U` multiplies its pointwise inverse to `1` in
+`holomorphicFunctions U`. -/
+theorem of_mul_of_inv {g : ℂ → ℂ} (hg : DifferentiableOn ℂ g U)
+    (hne : ∀ z ∈ (U : Set ℂ), g z ≠ 0) :
+    of U g hg * of U (fun z => (g z)⁻¹) (hg.inv hne) = 1 := by
+  apply Subtype.ext
+  ext z
+  simpa using mul_inv_cancel₀ (hne z z.property)
+
 end HolomorphicFunctions
 
 /-- The holomorphic functions form a closed subalgebra of the continuous functions. -/

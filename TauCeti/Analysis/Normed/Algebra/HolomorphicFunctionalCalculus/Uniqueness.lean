@@ -37,9 +37,10 @@ extended ball `Metric.eball z₀ r` containing `spectrum ℂ a`,
 
 * `TauCeti.holomorphicCalculusOn_cauchyKernel`, `TauCeti.holomorphicCalculus_inv_const_sub_id`,
   `TauCeti.holomorphicCalculus_inv_id_sub_const`: evaluation on Cauchy kernels.
-* `TauCeti.isUnit_aeval_of_forall_eval_ne_zero`, `TauCeti.holomorphicCalculusOn_div_polynomial`,
-  `TauCeti.holomorphicCalculus_div_polynomial`: invertibility of polynomial denominators
-  nonvanishing on the spectrum and compatibility with rational functions `p / q`.
+* `TauCeti.holomorphicCalculusOn_div_polynomial`, `TauCeti.holomorphicCalculus_div_polynomial`:
+  compatibility with rational functions `p / q` whose denominator does not vanish on the spectrum
+  (where `Polynomial.aeval a q` is a unit by `spectrum.map_polynomial_aeval` and
+  `spectrum.zero_notMem_iff`).
 * `HasFPowerSeriesOnBall.hasSum_holomorphicCalculus`,
   `HasFPowerSeriesOnBall.holomorphicCalculus_eq_tsum`,
   `HasFPowerSeriesOnBall.hasSum_holomorphicCalculus_zero`: unconditional norm-convergent
@@ -114,15 +115,6 @@ theorem holomorphicCalculus_inv_id_sub_const (a : A) {w : ℂ}
     simp [heq, Germ.coe_neg]
   rw [hneg, map_neg, holomorphicCalculus_inv_const_sub_id a hf']
 
-/-- If a polynomial `q` does not vanish on `spectrum ℂ a`, then `Polynomial.aeval a q` is a unit
-in `A`. -/
-theorem isUnit_aeval_of_forall_eval_ne_zero (a : A) (q : Polynomial ℂ)
-    (hq : ∀ z ∈ spectrum ℂ a, q.eval z ≠ 0) :
-    IsUnit (Polynomial.aeval a q) := by
-  let U : Opens ℂ := ⟨{z | q.eval z ≠ 0}, isOpen_compl_singleton.preimage q.continuous⟩
-  exact isUnit_aeval_of_map_id (holomorphicCalculusOn a U hq)
-    (holomorphicCalculusOn_id a U hq) q fun _ hz => hz
-
 /-- On an open neighbourhood `U` of `spectrum ℂ a` where a polynomial `q` does not vanish,
 `holomorphicCalculusOn` evaluates `p / q` as
 `Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q)`. -/
@@ -135,7 +127,9 @@ theorem holomorphicCalculusOn_div_polynomial (a : A) (U : Opens ℂ) (ha : spect
   map_of_div_polynomial (holomorphicCalculusOn a U ha) (holomorphicCalculusOn_id a U ha) p q hq
 
 /-- For polynomials `p, q` with `q` nonvanishing on `spectrum ℂ a`, the germ calculus evaluates
-`p / q` as `Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q)`. -/
+`p / q` as `Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q)` (where
+`Polynomial.aeval a q` is a unit by `spectrum.map_polynomial_aeval` and
+`spectrum.zero_notMem_iff`). -/
 theorem holomorphicCalculus_div_polynomial (a : A) (p q : Polynomial ℂ)
     (hq : ∀ z ∈ spectrum ℂ a, q.eval z ≠ 0) :
     holomorphicCalculus a

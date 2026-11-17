@@ -216,13 +216,18 @@ theorem eval_mem_of_spectrum_subset {f : holomorphicGerms s} (ht : spectrum ℂ 
     {x : ℂ} (hx : x ∈ s) : eval x hx f ∈ t :=
   ht ((spectrum_eq f).symm ▸ ⟨x, hx, rfl⟩)
 
+/-- If the spectrum of `ofFun ψ hψ` is contained in `t`, then `ψ` maps `s` into `t`. -/
+theorem mapsTo_of_spectrum_ofFun_subset {ψ : ℂ → ℂ} (hψ : AnalyticOnNhd ℂ ψ s)
+    (ht : spectrum ℂ (ofFun ψ hψ) ⊆ t) : MapsTo ψ s t := fun _ hx =>
+  eval_mem_of_spectrum_subset ht hx
+
 private theorem germ_tendsto (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
     f.val.Tendsto (𝓝ˢ t) := by
   obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
-  have hmaps : MapsTo ψ s t := mapsTo_iff_image_subset.mpr ((spectrum_ofFun ψ hψ) ▸ ht)
   have hcont : ContinuousOn ψ {z | AnalyticAt ℂ ψ z} :=
     fun _ hz => hz.continuousAt.continuousWithinAt
-  exact (hcont.tendsto_nhdsSet ((isOpen_analyticAt ℂ ψ).mem_nhdsSet.mpr hψ) hmaps).germ_tendsto
+  exact (hcont.tendsto_nhdsSet ((isOpen_analyticAt ℂ ψ).mem_nhdsSet.mpr hψ)
+    (mapsTo_of_spectrum_ofFun_subset hψ ht)).germ_tendsto
 
 /-- Right-composition by a holomorphic germ `f : holomorphicGerms s` with `spectrum ℂ f ⊆ t`
 (sending `g ↦ g ∘ f`), as a unital `ℂ`-algebra homomorphism
@@ -232,8 +237,8 @@ def compRight (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
   toFun g := ⟨g.val.compTendsto' f.val (germ_tendsto f ht), by
     obtain ⟨φ, hφ, rfl⟩ := exists_ofFun_eq g
     obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
-    have hmaps : MapsTo ψ s t := mapsTo_iff_image_subset.mpr ((spectrum_ofFun ψ hψ) ▸ ht)
-    exact coe_mem_holomorphicGerms_iff.mpr (hφ.comp hψ hmaps)⟩
+    exact coe_mem_holomorphicGerms_iff.mpr
+      (hφ.comp hψ (mapsTo_of_spectrum_ofFun_subset hψ ht))⟩
   map_one' := by
     obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq f
     rfl
@@ -259,7 +264,7 @@ def compRight (f : holomorphicGerms s) (ht : spectrum ℂ f ⊆ t) :
 theorem compRight_ofFun {φ ψ : ℂ → ℂ} (hφ : AnalyticOnNhd ℂ φ t) (hψ : AnalyticOnNhd ℂ ψ s)
     (ht : spectrum ℂ (ofFun ψ hψ) ⊆ t) :
     compRight (ofFun ψ hψ) ht (ofFun φ hφ) =
-      ofFun (φ ∘ ψ) (hφ.comp hψ (mapsTo_iff_image_subset.mpr ((spectrum_ofFun ψ hψ) ▸ ht))) :=
+      ofFun (φ ∘ ψ) (hφ.comp hψ (mapsTo_of_spectrum_ofFun_subset hψ ht)) :=
   (rfl)
 
 /-- Evaluating a composite germ evaluates the outer germ at the value of the inner germ. -/

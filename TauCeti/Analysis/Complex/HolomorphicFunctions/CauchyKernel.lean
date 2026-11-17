@@ -119,15 +119,9 @@ theorem isUnit_aeval_of_map_id (Φ : F) {b : B}
     (hid : Φ (of V id differentiableOn_id) = b) (q : Polynomial ℂ)
     (hq : ∀ z ∈ (V : Set ℂ), q.eval z ≠ 0) :
     IsUnit (Polynomial.aeval b q) := by
-  let qV := of V (fun z => q.eval z) q.differentiable.differentiableOn
-  let qInv := of V (fun z => (q.eval z)⁻¹) (q.differentiable.differentiableOn.inv hq)
-  have hmul₁ : qV * qInv = 1 := by
-    apply Subtype.ext
-    ext z
-    simpa [qV, qInv] using mul_inv_cancel₀ (hq z z.property)
-  have hmul₂ : qInv * qV = 1 := by rw [mul_comm, hmul₁]
-  have hu : IsUnit qV := ⟨⟨qV, qInv, hmul₁, hmul₂⟩, rfl⟩
-  simpa only [qV, map_of_eval_polynomial Φ hid q] using hu.map Φ
+  have hu : IsUnit (of V (fun z => q.eval z) q.differentiable.differentiableOn) :=
+    isUnit_iff_exists_inv.mpr ⟨_, of_mul_of_inv q.differentiable.differentiableOn hq⟩
+  simpa only [map_of_eval_polynomial Φ hid q] using hu.map Φ
 
 /-- Any unital `ℂ`-algebra homomorphism out of `holomorphicFunctions V` sending `id` to `b`
 evaluates `p / q` as `Polynomial.aeval b p * Ring.inverse (Polynomial.aeval b q)` whenever `q`
@@ -138,16 +132,12 @@ theorem map_of_div_polynomial (Φ : F) {b : B}
     Φ (of V (fun z => p.eval z / q.eval z)
         (p.differentiable.differentiableOn.div q.differentiable.differentiableOn hq)) =
       Polynomial.aeval b p * Ring.inverse (Polynomial.aeval b q) := by
-  let qV := of V (fun z => q.eval z) q.differentiable.differentiableOn
   let qInv := of V (fun z => (q.eval z)⁻¹) (q.differentiable.differentiableOn.inv hq)
-  have hmul : qV * qInv = 1 := by
-    apply Subtype.ext
-    ext z
-    simpa [qV, qInv] using mul_inv_cancel₀ (hq z z.property)
   have hunit : IsUnit (Polynomial.aeval b q) := isUnit_aeval_of_map_id Φ hid q hq
   have hinv : Φ qInv = Ring.inverse (Polynomial.aeval b q) := by
     refine hunit.mul_right_inj.mp ?_
-    rw [Ring.mul_inverse_cancel _ hunit, ← map_of_eval_polynomial Φ hid q, ← map_mul, hmul, map_one]
+    rw [Ring.mul_inverse_cancel _ hunit, ← map_of_eval_polynomial Φ hid q, ← map_mul,
+      of_mul_of_inv q.differentiable.differentiableOn hq, map_one]
   have hdiv : of V (fun z => p.eval z / q.eval z)
       (p.differentiable.differentiableOn.div q.differentiable.differentiableOn hq) =
       of V (fun z => p.eval z) p.differentiable.differentiableOn * qInv := by
