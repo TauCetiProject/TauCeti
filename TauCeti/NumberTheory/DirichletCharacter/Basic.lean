@@ -70,8 +70,9 @@ case the descent uses is `d = L N / p` with `p ∣ N` coprime to `L`, where the 
   read off the values of the Kronecker symbol at odd arguments.
 * `DirichletCharacter.changeLevel_trans_mul_toUnitHom`: raising a product of characters through an
   intermediate level, read on unit homomorphisms.
-* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`:
-  changing the level preserves the value at `-1`, hence parity.
+* `DirichletCharacter.changeLevel_apply_neg_one`, `DirichletCharacter.even_changeLevel_iff`,
+  `DirichletCharacter.conductor_ite_changeLevel`: changing the level preserves the value at `-1`,
+  hence parity and the signed conductor.
 * `DirichletCharacter.conductor_eq_prime_pow_of_emod_eq_of_apply_ne_apply`: a primitivity
   criterion at a prime-power level, obtained by comparing values on congruent units, and its
   specialisations `DirichletCharacter.conductor_eq_four_of_apply_one_ne_apply_three` and
@@ -493,6 +494,19 @@ value at `-1` of its lift to any multiple level. -/
 theorem even_changeLevel_iff {S : Type*} [CommRing S] {d n : ℕ} (h : d ∣ n)
     (χ : DirichletCharacter S d) : (changeLevel h χ).Even ↔ χ.Even := by
   rw [Even, Even, changeLevel_apply_neg_one]
+
+/-- Lifting a Dirichlet character to a nonzero multiple of its level preserves the signed
+conductor `if χ (-1) = 1 then χ.conductor else -χ.conductor`. -/
+theorem conductor_ite_changeLevel {S : Type*} [CommMonoidWithZero S]
+    {N M : ℕ} [NeZero M] (hNM : N ∣ M) (χ : DirichletCharacter S N)
+    [Decidable (changeLevel hNM χ (-1) = 1)] [Decidable (χ (-1) = 1)] :
+    (if changeLevel hNM χ (-1) = 1 then ((changeLevel hNM χ).conductor : ℤ)
+      else -((changeLevel hNM χ).conductor : ℤ)) =
+      if χ (-1) = 1 then (χ.conductor : ℤ) else -(χ.conductor : ℤ) := by
+  have : NeZero N := ⟨fun hN ↦ NeZero.ne M (Nat.eq_zero_of_zero_dvd (hN ▸ hNM))⟩
+  rw [conductor_changeLevel]
+  exact ite_congr (congrArg (· = 1) (changeLevel_apply_neg_one hNM χ))
+    (fun _ ↦ rfl) (fun _ ↦ rfl)
 
 /-- If a combination of the symmetrised character sums `psi i x + phi i x` vanishes against every
 pair of units, then the coefficients of the combination vanish against every pair of
