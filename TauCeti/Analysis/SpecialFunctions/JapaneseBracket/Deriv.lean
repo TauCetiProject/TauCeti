@@ -48,7 +48,8 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
   the factor `⟨y⟩ ^ (|s| + k)` from Peetre's inequality.
 * `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a symbol of order
   `m`, such as a bracket power, times a smooth cutoff `χ` localized where `1 + ‖x‖ ^ 2 ≍ R ^ 2` and
-  adapted to the scale `R`: the product is `O(R ^ m / R ^ k)` in its `k`-th derivative.
+  adapted to the scale `R`: the product is `O(R ^ m / R ^ k)` in its `k`-th derivative, with a
+  constant depending on the symbol only through the constants of its estimates.
 * `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
@@ -184,46 +185,45 @@ section NormedSpace
 
 variable [NormedSpace ℝ E]
 
-/-- **Dyadic cutoffs of a symbol of order `m` are symbols at scale `R`.** Let `w` be a `C^N`
-function with the symbol estimates `‖D^i w ξ‖ ≤ C_i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for
-`i ≤ N`, and let `a > 0`, `b` and `B : ℕ → ℝ`. There is a constant `K ≥ 0` with the following
-property. Let `R > 0` and let `χ` be a `C^N` real function such that
-`a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ` and `‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`.
-Then
+/-- **Dyadic cutoffs of a symbol of order `m` are symbols at scale `R`.** Let `W : ℕ → ℝ`,
+`a > 0`, `b` and `B : ℕ → ℝ`. There is a constant `K ≥ 0`, depending only on these data, with the
+following property. Let `w` be a `C^N` function with the symbol estimates
+`‖D^i w ξ‖ ≤ W i (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)` of order `m` for `i ≤ N`, let `R > 0` and let `χ`
+be a `C^N` real function such that `a R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ≤ b R ^ 2` on the support of `χ` and
+`‖D^k χ‖ ≤ B k / R ^ k` for `k ≤ N`. Then
 `‖D^k (χ • w)‖ ≤ K R ^ m / R ^ k` for `k ≤ N`: on the support of `χ` the symbol `w` behaves like
-the constant `R ^ m`. -/
-theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : ContDiff ℝ N w)
-    {m : ℝ} (hwm : ∀ i ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2))
-    {a b : ℝ} (ha : 0 < a) (B : ℕ → ℝ) :
-    ∃ K, 0 ≤ K ∧ ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
+the constant `R ^ m`. Since `K` depends on `w` only through the constants `W i`, the bound is
+uniform over families of symbols with common estimates. -/
+theorem exists_norm_iteratedFDeriv_cutoff_smul_le {N : ℕ} {m : ℝ} (W : ℕ → ℝ) {a b : ℝ}
+    (ha : 0 < a) (B : ℕ → ℝ) :
+    ∃ K, 0 ≤ K ∧ ∀ (w : E → G), ContDiff ℝ N w →
+      (∀ i ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ i w ξ‖ ≤ W i * (1 + ‖ξ‖ ^ 2) ^ ((m - i) / 2)) →
+      ∀ (R : ℝ) (χ : E → ℝ), 0 < R → ContDiff ℝ N χ →
       (∀ ξ ∈ tsupport χ, a * R ^ 2 ≤ 1 + ‖ξ‖ ^ 2 ∧ 1 + ‖ξ‖ ^ 2 ≤ b * R ^ 2) →
       (∀ k ≤ N, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ B k / R ^ k) → ∀ k ≤ N, ∀ ξ,
         ‖iteratedFDeriv ℝ k (fun ξ ↦ χ ξ • w ξ) ξ‖ ≤ K * R ^ m / R ^ k := by
-  choose! W hW using hwm
-  have hW0 {i : ℕ} (hi : i ≤ N) : 0 ≤ W i := by simpa using (norm_nonneg _).trans (hW i hi 0)
   set P : ℕ → ℝ := fun i ↦ max (a ^ ((m - i) / 2)) (b ^ ((m - i) / 2))
   have hP0 (i : ℕ) : 0 ≤ P i := le_max_of_le_left (by positivity)
   -- The Leibniz constant of order `k`, and their sum over `k ≤ N`.
   set S : ℕ → ℝ := fun k ↦
-    ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i))
-  have hS0 {k : ℕ} (hk : k ∈ Finset.range (N + 1)) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by
-    have := hW0 ((k.sub_le i).trans (Nat.lt_succ_iff.1 (Finset.mem_range.1 hk)))
+    ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * max (B i) 0 * (max (W (k - i)) 0 * P (k - i))
+  have hS0 (k : ℕ) : 0 ≤ S k := Finset.sum_nonneg fun i _ ↦ by
     have := hP0 (k - i); positivity
-  refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k hk ↦ hS0 hk,
-    fun R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
+  refine ⟨∑ k ∈ Finset.range (N + 1), S k, Finset.sum_nonneg fun k _ ↦ hS0 k,
+    fun w hw hW R χ hR hχ hsupp hB k hk ξ ↦ ?_⟩
   -- By the Leibniz rule, each term `D^i χ D^(k-i) w` is `O(R ^ (-i) R ^ (m - (k - i)))`, which is
   -- `O(R ^ m / R ^ k)`; it vanishes off the support of `χ`.
   have hterm (i : ℕ) (hi : i ∈ Finset.range (k + 1)) :
       (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ ξ‖ * ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤
-        (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i)) * (R ^ m / R ^ k) := by
+        (k.choose i : ℝ) * max (B i) 0 * (max (W (k - i)) 0 * P (k - i)) * (R ^ m / R ^ k) := by
     have hik : i ≤ k := Nat.lt_succ_iff.1 (Finset.mem_range.1 hi)
     have hkiN : k - i ≤ N := (k.sub_le i).trans hk
-    have := hW0 hkiN
     have := hP0 (k - i)
     by_cases hξ : ξ ∈ tsupport χ
-    · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤ W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
-        (hW (k - i) hkiN ξ).trans (mul_le_mul_of_nonneg_left
-          (one_add_norm_sq_rpow_half_le ha hR (hsupp ξ hξ) _) (hW0 hkiN))
+    · have hwi : ‖iteratedFDeriv ℝ (k - i) w ξ‖ ≤
+          max (W (k - i)) 0 * (P (k - i) * R ^ (m - (k - i : ℕ))) :=
+        (hW (k - i) hkiN ξ).trans (mul_le_mul (le_max_left _ _)
+          (one_add_norm_sq_rpow_half_le ha hR (hsupp ξ hξ) _) (by positivity) (le_max_right _ _))
       have hχi : ‖iteratedFDeriv ℝ i χ ξ‖ ≤ max (B i) 0 / R ^ i :=
         (hB i (hik.trans hk) ξ).trans (by gcongr; exact le_max_left _ _)
       have hpow : 1 / R ^ i * R ^ (m - (k - i : ℕ)) = R ^ m / R ^ k := by
@@ -231,9 +231,9 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
         field_simp
       calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i χ ξ‖ * ‖iteratedFDeriv ℝ (k - i) w ξ‖
           ≤ (k.choose i : ℝ) * (max (B i) 0 / R ^ i) *
-              (W (k - i) * (P (k - i) * R ^ (m - (k - i : ℕ)))) := by
+              (max (W (k - i)) 0 * (P (k - i) * R ^ (m - (k - i : ℕ)))) := by
             gcongr
-        _ = (k.choose i : ℝ) * max (B i) 0 * (W (k - i) * P (k - i)) *
+        _ = (k.choose i : ℝ) * max (B i) 0 * (max (W (k - i)) 0 * P (k - i)) *
               (1 / R ^ i * R ^ (m - (k - i : ℕ))) := by
             ring
         _ = _ := by rw [hpow]
@@ -244,7 +244,7 @@ theorem exists_norm_iteratedFDeriv_cutoff_smul_le {w : E → G} {N : ℕ} (hw : 
     ((Finset.sum_le_sum hterm).trans ?_)
   rw [← Finset.sum_mul, mul_div_assoc]
   gcongr
-  exact Finset.single_le_sum (fun k hk ↦ hS0 hk) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+  exact Finset.single_le_sum (fun k _ ↦ hS0 k) (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
 
 /-- Rescaling the argument by `c ≠ 0` changes `(1 + ‖x‖ ^ 2) ^ r` by at most a constant factor. -/
 theorem exists_one_add_norm_smul_sq_rpow_le {c : ℝ} (hc : c ≠ 0) (r : ℝ) :

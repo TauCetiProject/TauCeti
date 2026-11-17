@@ -55,6 +55,12 @@ derivative bounds; it localizes operators to the frequencies of a single block.
   is identically zero.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces,
   also between the partitions of two bump functions.
+* `ContDiffBump.two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero`: a piece `ψⱼ` translated
+  by `θ` meets only pieces `ψₖ` with `2^j ≤ c (1 + ‖θ‖) 2^k`.
+* `TauCeti.card_filter_two_pow_le_mul_two_pow_le`: for `Q ≥ 1`, at most `2Q + 1` indices `k` have
+  `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, and for these `2^{σ (j - k)} ≤ Q ^ |σ|`
+  (`TauCeti.two_rpow_mul_sub_le_rpow_abs`). With `Q = c (1 + ‖θ‖)`, these count and weigh the
+  pieces met by a translated piece.
 * `ContDiffBump.exists_card_filter_inhomogeneousLittlewoodPaley_ne_zero_le`: at each `ξ` at most a
   fixed number of pieces are nonzero.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
@@ -438,6 +444,35 @@ theorem exists_inhomogeneousLittlewoodPaley_mul_eq_zero (φ' : ContDiffBump (0 :
       _ ≤ 2 ^ k * φ'.rIn :=
           mul_le_mul_of_nonneg_right (pow_le_pow_right₀ one_le_two (by omega)) φ'.rIn_pos.le
 
+/-- **Translated pieces meet only pieces of comparable size.** If the translate `ψⱼ (· + θ)` and
+the piece `ψₖ` are both nonzero at `ζ`, then `2^j ≤ c (1 + ‖θ‖) 2^k` with
+`c = 2 (φ.rOut + 1) / φ.rIn`. Applied in both directions, a translation by `θ` moves the
+frequencies of `ψⱼ` only to pieces `ψₖ` with `2^|j - k| ≤ c (1 + ‖θ‖)`. -/
+theorem two_pow_le_of_inhomogeneousLittlewoodPaley_add_ne_zero {j k : ℕ} {ζ θ : E}
+    (hj : φ.inhomogeneousLittlewoodPaley j (ζ + θ) ≠ 0)
+    (hk : φ.inhomogeneousLittlewoodPaley k ζ ≠ 0) :
+    (2 : ℝ) ^ j ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ k := by
+  have hrIn := φ.rIn_pos
+  have hlt := φ.rIn_lt_rOut
+  have hk' : ‖ζ‖ < 2 ^ k * φ.rOut :=
+    lt_of_not_ge fun h ↦ hk (φ.inhomogeneousLittlewoodPaley_eq_zero_of_le_norm h)
+  have h2k : (1 : ℝ) ≤ 2 ^ k := one_le_pow₀ one_le_two
+  rcases j with _ | j
+  · have hc : 1 ≤ 2 * (φ.rOut + 1) / φ.rIn := by rw [le_div_iff₀ hrIn]; linarith
+    calc (2 : ℝ) ^ 0 = 1 * 1 * 1 := by simp
+      _ ≤ 2 * (φ.rOut + 1) / φ.rIn * (1 + ‖θ‖) * 2 ^ k := by
+          gcongr
+          exact le_add_of_nonneg_right (norm_nonneg _)
+  · have hj' : 2 ^ j * φ.rIn < ‖ζ + θ‖ :=
+      lt_of_not_ge fun h ↦ hj (φ.inhomogeneousLittlewoodPaley_succ_eq_zero_of_norm_le h)
+    have h1 : 2 ^ j * φ.rIn < 2 ^ k * (φ.rOut + 1) * (1 + ‖θ‖) := by
+      calc 2 ^ j * φ.rIn < ‖ζ‖ + ‖θ‖ := hj'.trans_le (norm_add_le _ _)
+        _ ≤ 2 ^ k * φ.rOut + ‖θ‖ := by linarith
+        _ ≤ 2 ^ k * (φ.rOut + 1) * (1 + ‖θ‖) := by
+            nlinarith [norm_nonneg θ, φ.rOut_pos, mul_le_mul_of_nonneg_right h2k (norm_nonneg θ)]
+    rw [pow_succ, div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hrIn]
+    nlinarith
+
 /-- The **enlarged Littlewood–Paley cutoff** `Ψⱼ = ∑_{j + 1 - L ≤ k < j + L} ψₖ`, the sum of the
 pieces of the inhomogeneous partition whose indices are within `L` of `j`. It is supported in the
 ball of radius `2^{j+L} φ.rOut`, and for `j ≥ L` outside the ball of radius `2^{j-L} φ.rIn`. When
@@ -800,3 +835,50 @@ theorem exists_norm_iteratedFDeriv_enlargedLittlewoodPaley_le (L k : ℕ) :
 end FiniteDimensional
 
 end ContDiffBump
+
+namespace TauCeti
+
+/-! ### Comparable dyadic scales -/
+
+/-- **Counting comparable dyadic scales.** If `Q ≥ 1`, at most `2Q + 1` indices `k` satisfy both
+`2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`. -/
+theorem card_filter_two_pow_le_mul_two_pow_le (s : Finset ℕ) (j : ℕ) {Q : ℝ} (hQ : 1 ≤ Q) :
+    ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ) ≤
+      2 * Q + 1 := by
+  set d := ⌊Q⌋₊
+  -- A power `2^i ≤ Q` has `i < 2^i ≤ Q`, so `i ≤ d`.
+  have hd {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : i - l ≤ d := by
+    refine Nat.le_floor ((Nat.cast_le.2 (Nat.lt_two_pow_self).le).trans ?_)
+    rcases le_total l i with hli | hil
+    · rw [Nat.cast_pow, Nat.cast_ofNat]
+      have h2 : (2 : ℝ) ^ (i - l) * 2 ^ l ≤ Q * 2 ^ l := by rwa [← pow_add, Nat.sub_add_cancel hli]
+      exact le_of_mul_le_mul_right h2 (by positivity)
+    · simpa [Nat.sub_eq_zero_of_le hil] using hQ
+  have hsub : (s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j) ⊆
+      Finset.Icc (j - d) (j + d) := fun k hk ↦ by
+    obtain ⟨h₁, h₂⟩ := (Finset.mem_filter.1 hk).2
+    have := hd h₁
+    have := hd h₂
+    exact Finset.mem_Icc.2 ⟨by omega, by omega⟩
+  calc ((s.filter fun k ↦ (2 : ℝ) ^ j ≤ Q * 2 ^ k ∧ (2 : ℝ) ^ k ≤ Q * 2 ^ j).card : ℝ)
+      ≤ (Finset.Icc (j - d) (j + d)).card := by exact_mod_cast Finset.card_le_card hsub
+    _ ≤ 2 * d + 1 := by
+        rw [Nat.card_Icc]
+        exact_mod_cast (by omega : j + d + 1 - (j - d) ≤ 2 * d + 1)
+    _ ≤ 2 * Q + 1 := by gcongr; exact Nat.floor_le (by linarith)
+
+/-- If `2^j ≤ Q 2^k` and `2^k ≤ Q 2^j`, then `2^{σ (j - k)} ≤ Q ^ |σ|` for every real `σ`. -/
+theorem two_rpow_mul_sub_le_rpow_abs {j k : ℕ} {Q : ℝ} (h₁ : (2 : ℝ) ^ j ≤ Q * 2 ^ k)
+    (h₂ : (2 : ℝ) ^ k ≤ Q * 2 ^ j) (σ : ℝ) :
+    (2 : ℝ) ^ (σ * ((j : ℝ) - k)) ≤ Q ^ |σ| := by
+  have hle {i l : ℕ} (h : (2 : ℝ) ^ i ≤ Q * 2 ^ l) : (2 : ℝ) ^ ((i : ℝ) - l) ≤ Q := by
+    rw [Real.rpow_sub two_pos, Real.rpow_natCast, Real.rpow_natCast, div_le_iff₀ (by positivity)]
+    exact h
+  rcases le_total 0 σ with hσ | hσ
+  · rw [abs_of_nonneg hσ, mul_comm, Real.rpow_mul zero_le_two]
+    exact Real.rpow_le_rpow (by positivity) (hle h₁) hσ
+  · rw [abs_of_nonpos hσ, show σ * ((j : ℝ) - k) = ((k : ℝ) - j) * -σ by ring,
+      Real.rpow_mul zero_le_two]
+    exact Real.rpow_le_rpow (by positivity) (hle h₂) (by linarith)
+
+end TauCeti

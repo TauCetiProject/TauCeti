@@ -17,7 +17,9 @@ A function continuous on a compact set `K` is bounded there, so it lies in `L^�
 every measurable `s ⊆ K` (`ContinuousOn.memLp_top_restrict_of_subset_isCompact`). Allowing `s ⊊ K`
 covers the usual case of an open interval `(a, b)` inside the compact interval `[a, b]`. This is the
 continuous counterpart of Mathlib's `MonotoneOn.memLp_top`, and the restricted-measure counterpart
-of `Continuous.memLp_top_of_hasCompactSupport`.
+of `Continuous.memLp_top_of_hasCompactSupport`. Conversely, for a measure charging every nonempty
+open set, a continuous function is bounded pointwise by its essential supremum
+(`Continuous.eNorm_le_eLpNormEssSup`).
 
 The same bound controls a pointwise composition `x ↦ A x ∘L B x` of operator families with `A`
 continuous on `K`: `A ∘L B` lies in `Lᵖ(s)` whenever `B` does
@@ -46,6 +48,18 @@ theorem ContinuousOn.memLp_top_restrict_of_subset_isCompact {f : X → E} {K s :
   obtain ⟨C, hC⟩ := (hK.image_of_continuousOn (continuous_nnNorm.comp_continuousOn hf)).bddAbove
   refine memLp_top_of_bound_eNorm (hf.aestronglyMeasurable_of_subset_isCompact hK hs hsK) C ?_
   filter_upwards [ae_restrict_mem hs] with x hx using eNorm_le_coe.2 <| hC ⟨x, hsK hx, rfl⟩
+
+omit [OpensMeasurableSpace X] in
+/-- For a measure charging every nonempty open set, a continuous function is bounded pointwise by
+its essential supremum: the open set where `‖f‖ₑ` exceeds it is null, hence empty. -/
+theorem Continuous.eNorm_le_eLpNormEssSup {ε : Type*} [TopologicalSpace ε]
+    [ContinuousENorm ε] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ε} (hf : Continuous f)
+    (x : X) : ‖f x‖ₑ ≤ eLpNormEssSup f μ := by
+  by_contra h
+  rw [not_le] at h
+  have hnull : μ {y | eLpNormEssSup f μ < ‖f y‖ₑ} = 0 := by
+    simpa only [not_le] using ae_iff.1 (ae_le_eLpNormEssSup (f := f) (μ := μ))
+  exact ((isOpen_lt continuous_const hf.eNorm).measure_pos μ ⟨x, h⟩).ne' hnull
 
 section CLMComp
 
