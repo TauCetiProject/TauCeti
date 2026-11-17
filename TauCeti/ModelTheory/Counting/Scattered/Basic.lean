@@ -9,6 +9,7 @@ public import TauCeti.Data.Setoid.Basic
 public import TauCeti.Data.Setoid.Countable
 public import TauCeti.ModelTheory.Counting.Stratification
 public import TauCeti.SetTheory.Descriptive.Antichain
+public import TauCeti.SetTheory.Ordinal.RankBounds
 import TauCeti.ModelTheory.Counting.Levels
 
 /-!
@@ -54,6 +55,8 @@ one-level Silver dichotomy.
   isomorphism classes meets exactly `ℵ₁` of them.
 * `TauCeti.IsIsolatingRank.countable_isoClasses_iff_bounded`: a scattered set meets countably many
   isomorphism classes exactly when the rank is bounded below `ω₁` on it.
+* `TauCeti.IsIsolatingRank.countable_image_iff_boundedRankOn`: quotient-image and
+  `TauCeti.BoundedRankOn` form of `TauCeti.IsIsolatingRank.countable_isoClasses_iff_bounded`.
 * `TauCeti.IsIsolatingRank.exists_rank_bound_iff`: on a scattered set, any two isolating ranks are
   bounded together.
 
@@ -181,6 +184,13 @@ theorem countable_isoClasses_iff_bounded (h : IsIsolatingRank ρ) (hK : BFScatte
     fun ⟨β, hβ, hb⟩ => ?_⟩
   rw [h.comap_isoSetoid_eq_bfEquivSetoid fun c hc => (hb c hc).le]
   exact hK.countable_quotient hβ
+
+/-- On a back-and-forth scattered set, meeting countably many isomorphism classes is equivalent to
+boundedness of an isolating rank below `ω₁`. -/
+theorem countable_image_iff_boundedRankOn (hρ : IsIsolatingRank ρ) (hK : BFScattered K) :
+    (Quotient.mk (isoSetoid L ℕ) '' K).Countable ↔ BoundedRankOn ρ K :=
+  Setoid.countable_quotient_comap_val_iff.symm.trans
+    ((hρ.countable_isoClasses_iff_bounded hK).trans boundedRankOn_iff.symm)
 
 /-- On a scattered set, two isolating ranks are bounded below `ω₁` together. -/
 theorem exists_rank_bound_iff (hρ : IsIsolatingRank ρ) (hσ : IsIsolatingRank σ)
