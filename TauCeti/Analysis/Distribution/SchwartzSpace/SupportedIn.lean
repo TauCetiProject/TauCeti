@@ -65,4 +65,9 @@ theorem coe_toSchwartzMapCLM (f : 𝓓_{K}(E, F)) : ⇑(toSchwartzMapCLM 𝕜 f)
 theorem toSchwartzMapCLM_apply (f : 𝓓_{K}(E, F)) (x : E) : toSchwartzMapCLM 𝕜 f x = f x :=
   rfl
 
+/-- A smooth function supported in `K`, read as a Schwartz function, is still supported in `K`. -/
+theorem tsupport_toSchwartzMapCLM_subset (f : 𝓓_{K}(E, F)) :
+    tsupport (toSchwartzMapCLM 𝕜 f) ⊆ K :=
+  f.tsupport_subset
+
 end ContDiffMapSupportedIn
