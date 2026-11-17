@@ -12,8 +12,9 @@ import TauCeti.Algebra.MvPolynomial.PolynomialOperator
 
 In two variables `x = X 0` and `y = X 1`, the raising operator is `E = x ∂_y`, the lowering
 operator is `F = y ∂_x`, and `H = x ∂_x - y ∂_y`. The values below fix these conventions in low
-degree: `E` raises the `x`-end of a weight string and `F` lowers towards the `y`-end, both kill
-constants, and the total operators on a tensor product act on both factors by the Leibniz rule.
+degree: `E` raises towards the `x`-end of a weight string and `F` lowers towards the `y`-end, both
+kill constants, and the total operators on a tensor product act on both factors by the Leibniz
+rule.
 
 In bidegree `(1, 1)` the total raising operator kills `x ⊗ x` and `x ⊗ y - y ⊗ x`, sends `y ⊗ y`
 to `x ⊗ y + y ⊗ x`, and sends the symmetric tensor `x ⊗ y + y ⊗ x` to `2 (x ⊗ x)`.

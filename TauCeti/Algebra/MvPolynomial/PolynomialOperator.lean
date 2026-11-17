@@ -143,7 +143,7 @@ noncomputable def tensorPolynomialOperator (a b : σ) :
     (polynomialOperator R a b).toLinearMap.lTensor _
 
 /-- The action on the tensor product is `X_a ∂_b ⊗ 1 + 1 ⊗ X_a ∂_b`. -/
-theorem tensorPolynomialOperator_eq (a b : σ) :
+theorem tensorPolynomialOperator_def (a b : σ) :
     tensorPolynomialOperator R a b =
       (polynomialOperator R a b).toLinearMap.rTensor _ +
         (polynomialOperator R a b).toLinearMap.lTensor _ :=
@@ -155,7 +155,7 @@ turn. -/
 theorem tensorPolynomialOperator_tmul (a b : σ) (p q : MvPolynomial σ R) :
     tensorPolynomialOperator R a b (p ⊗ₜ q) =
       polynomialOperator R a b p ⊗ₜ q + p ⊗ₜ polynomialOperator R a b q := by
-  simp [tensorPolynomialOperator_eq]
+  simp [tensorPolynomialOperator_def]
 
 /-- Multiplication of polynomials intertwines the action of `X_a ∂_b` on the tensor product with
 its action on `R[X_σ]`: this is the Leibniz rule `D (p q) = D p q + p D q`. -/
