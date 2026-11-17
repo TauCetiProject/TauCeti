@@ -33,6 +33,9 @@ taking value one on `d` detects their sum without a choice of basis.
 
 * `TauCeti.Bialgebra.comul_pow_of_primitive`: the comultiplication of a power of a primitive
   element is its binomial expansion.
+* `TauCeti.Bialgebra.comul_pow_of_primitive_of_choose_eq_zero`: a positive power `a ^ n` of a
+  primitive element is again primitive whenever all intermediate binomial coefficients `n.choose i`
+  (`0 < i < n`) vanish in `R`.
 * `TauCeti.Bialgebra.comul_dividedPower_of_primitive`: the comultiplication of a divided power
   has coefficient one on every antidiagonal term.
 * `TauCeti.Bialgebra.comul_choose_of_primitive`: the comultiplication of a binomial coefficient
@@ -70,6 +73,26 @@ theorem comul_pow_of_primitive
   rw [hcomm.add_pow']
   simp only [Algebra.TensorProduct.tmul_pow, one_pow,
     Algebra.TensorProduct.tmul_mul_tmul, mul_one, one_mul]
+
+/-- If `a` is primitive, `0 < n`, and every intermediate binomial coefficient `n.choose i`
+(`0 < i < n`) vanishes in `R`, then `a ^ n` is again primitive:
+`Δ(a ^ n) = a ^ n ⊗ 1 + 1 ⊗ a ^ n`. -/
+theorem comul_pow_of_primitive_of_choose_eq_zero
+    {R : Type u} {A : Type w} [CommSemiring R] [Semiring A] [Bialgebra R A]
+    (a : A) (h : Coalgebra.comul a = a ⊗ₜ[R] 1 + 1 ⊗ₜ[R] a) {n : ℕ} (hn : 0 < n)
+    (hchoose : ∀ ⦃i : ℕ⦄, 0 < i → i < n → (n.choose i : R) = 0) :
+    (Coalgebra.comul (R := R)) (a ^ n) = (a ^ n) ⊗ₜ[R] 1 + 1 ⊗ₜ[R] (a ^ n) := by
+  rw [comul_pow_of_primitive a h n, ← Finset.sum_subset (s₁ := {(n, 0), (0, n)})]
+  · rw [Finset.sum_pair fun heq ↦ hn.ne' (Prod.mk.inj heq).1]
+    simp
+  · intro x hx
+    rcases Finset.mem_insert.mp hx with rfl | hx
+    · exact Finset.mem_antidiagonal.mpr (add_zero n)
+    · rw [Finset.mem_singleton.mp hx]; exact Finset.mem_antidiagonal.mpr (zero_add n)
+  · rintro ⟨i, j⟩ hij hnot
+    simp only [Finset.mem_insert, Finset.mem_singleton, Prod.mk.injEq, not_or] at hnot
+    have hsum : i + j = n := Finset.mem_antidiagonal.mp hij
+    rw [← Nat.cast_smul_eq_nsmul R, hchoose (by omega) (by omega), zero_smul]
 
 end TauCeti.Bialgebra
 
