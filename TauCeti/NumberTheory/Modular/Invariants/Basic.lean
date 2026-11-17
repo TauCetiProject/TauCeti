@@ -541,16 +541,20 @@ theorem three_mul_orbitCount_σ0 (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) �
 /-- `ellipticTwo Γ' e ≡ n [MOD 2]`: the parity of order-`2` elliptic points matches the index. -/
 theorem ellipticTwo_modEq_index (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     ellipticTwo Γ' e ≡ n [MOD 2] := by
-  simpa [ellipticTwo_def, Nat.card_eq_fintype_card] using
-    (permS Γ' e).card_subtype_apply_eq_modEq_of_pow_prime_eq_one Nat.prime_two
-      (modularTriple_σ1_sq Γ' e)
+  have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
+  rw [ellipticTwo_def, card_subtype_apply_eq]
+  simpa only [Finset.card_compl, Fintype.card_fin] using
+    (permS Γ' e).card_compl_support_modEq (p := 2) (n := 1)
+      (by simpa using modularTriple_σ1_sq Γ' e)
 
 /-- `ellipticThree Γ' e ≡ n [MOD 3]`: order-`3` elliptic points match the index modulo `3`. -/
 theorem ellipticThree_modEq_index (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     ellipticThree Γ' e ≡ n [MOD 3] := by
-  simpa [ellipticThree_def, Nat.card_eq_fintype_card] using
-    (modularTriple Γ' e).σ0.card_subtype_apply_eq_modEq_of_pow_prime_eq_one Nat.prime_three
-      (modularTriple_σ0_pow_three Γ' e)
+  have : Fact (Nat.Prime 3) := ⟨Nat.prime_three⟩
+  rw [ellipticThree_def, card_subtype_apply_eq]
+  simpa only [Finset.card_compl, Fintype.card_fin] using
+    (modularTriple Γ' e).σ0.card_compl_support_modEq (p := 3) (n := 1)
+      (by simpa using modularTriple_σ0_pow_three Γ' e)
 
 /-- `ellipticTwo Γ' e ≤ n`. -/
 theorem ellipticTwo_le (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :

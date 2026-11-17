@@ -72,20 +72,9 @@ variable {n : ℕ}
 /-- The effective image in `PSL(2, ℝ)` of `Γ'.liftSL` equals `Γ'.map psl2zToPSL2R`. -/
 theorem map_liftSL_sl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
     Γ'.liftSL.map sl2zToPSL2R = Γ'.map psl2zToPSL2R := by
-  ext x; simp only [Subgroup.mem_map]; constructor
-  · rintro ⟨γ, hγ, rfl⟩; exact ⟨(γ : PSL(2, ℤ)), Subgroup.mem_liftSL.mp hγ, psl2zToPSL2R_mk γ⟩
-  · rintro ⟨g, hg, rfl⟩
-    obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
-    exact ⟨γ, Subgroup.mem_liftSL.mpr hg, (psl2zToPSL2R_mk γ).symm⟩
-
-private theorem finiteIndex_of_equiv {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    Γ'.FiniteIndex :=
-  have : Finite (PSL(2, ℤ) ⧸ Γ') := Finite.of_equiv _ e.symm
-  Subgroup.finiteIndex_of_finite_quotient
-
-private theorem index_eq_of_equiv {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
-    Γ'.index = n := by
-  rw [Subgroup.index_eq_card, Nat.card_congr e, Nat.card_fin]
+  have hcomp : psl2zToPSL2R.comp (QuotientGroup.mk' (Subgroup.center SL(2, ℤ))) = sl2zToPSL2R :=
+    MonoidHom.ext psl2zToPSL2R_mk
+  rw [← hcomp, ← Subgroup.map_map, Subgroup.map_liftSL]
 
 /-- The relative index of `Γ'.map psl2zToPSL2R` in `psl2zToPSL2R.range` equals `Γ'.index`. -/
 theorem relIndex_map_psl2zToPSL2R (Γ' : Subgroup PSL(2, ℤ)) :
@@ -137,40 +126,23 @@ theorem strictPeriods_liftSL_eq_zmultiples (Γ' : Subgroup PSL(2, ℤ))
     Subgroup.strictPeriods (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) =
       AddSubgroup.zmultiples
         (minimalPeriod (permT Γ' e) (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) : ℝ) := by
-  have h1 : (((1 : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ') =
-      ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ') := rfl
-  ext x; rw [Subgroup.mem_strictPeriods_iff, AddSubgroup.mem_zmultiples_iff]; constructor
-  · rintro ⟨γ, hγ, hmat⟩
-    have hentry (i j : Fin 2) :
-        ((γ i j : ℤ) : ℝ) = (!![1, x; 0, 1] : Matrix (Fin 2) (Fin 2) ℝ) i j := by
-      simpa only [Matrix.SpecialLinearGroup.mapGL_coe_matrix,
-        Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply,
-        algebraMap_int_eq, Int.coe_castRingHom, Matrix.GeneralLinearGroup.upperRightHom_apply]
-        using congr_fun (congr_fun (congrArg (fun g : GL (Fin 2) ℝ ↦
-          (g : Matrix (Fin 2) (Fin 2) ℝ)) hmat) i) j
-    have h00 : γ 0 0 = 1 := by exact_mod_cast (by simpa using hentry 0 0 : ((γ 0 0 : ℤ) : ℝ) = 1)
-    have h10 : γ 1 0 = 0 := by exact_mod_cast (by simpa using hentry 1 0 : ((γ 1 0 : ℤ) : ℝ) = 0)
-    have h11 : γ 1 1 = 1 := by exact_mod_cast (by simpa using hentry 1 1 : ((γ 1 1 : ℤ) : ℝ) = 1)
-    have h01 : (γ 0 1 : ℝ) = x := by simpa using hentry 0 1
-    have hγT : γ = _root_.ModularGroup.T ^ (γ 0 1) := by
-      ext i j; fin_cases i <;> fin_cases j <;> simp [h00, h10, h11, _root_.ModularGroup.coe_T_zpow]
-    have hTmem : _root_.ModularGroup.T ^ (γ 0 1).natAbs ∈ Γ'.liftSL := by
-      rcases Int.natAbs_eq (γ 0 1) with heq | heq
-      · rwa [← zpow_natCast, ← heq, ← hγT]
-      · rw [← zpow_natCast, show ((γ 0 1).natAbs : ℤ) = -(γ 0 1) by omega, _root_.zpow_neg,
-          inv_mem_iff, ← hγT]; exact hγ
-    have hdvd : minimalPeriod (permT Γ' e) (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) ∣
-        (γ 0 1).natAbs := by
-      rwa [← h1, minimalPeriod_permT_mk_dvd_iff, inv_one, one_mul, mul_one]
-    obtain ⟨k, hk⟩ := Int.natCast_dvd.mpr hdvd
-    exact ⟨k, by rw [zsmul_eq_mul, ← h01, hk, mul_comm]; push_cast; rfl⟩
-  · rintro ⟨k, rfl⟩
-    set h := minimalPeriod (permT Γ' e) (e ((1 : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'))
-    have hTpow : _root_.ModularGroup.T ^ h ∈ Γ'.liftSL := by
-      simpa using (minimalPeriod_permT_mk_dvd_iff Γ' e 1 h).mp (by rw [h1])
-    refine ⟨(_root_.ModularGroup.T ^ h) ^ k, zpow_mem hTpow k, ?_⟩
-    rw [← zpow_natCast, ← _root_.zpow_mul, ModularGroup.mapGL_T_zpow_eq_upperRightHom]
-    congr 1; rw [zsmul_eq_mul, mul_comm]; push_cast; rfl
+  rw [minimalPeriod_permT_one_eq_integerCuspWidth]
+  refine le_antisymm (fun x hx ↦ ?_)
+    (AddSubgroup.zmultiples_le.mpr TauCeti.Subgroup.integerCuspWidth_mem_strictPeriods)
+  have hxSL : x ∈ Subgroup.strictPeriods 𝒮ℒ :=
+    Subgroup.mem_strictPeriods_iff.mpr
+      (Subgroup.map_le_range (Matrix.SpecialLinearGroup.mapGL ℝ) _
+        (Subgroup.mem_strictPeriods_iff.mp hx))
+  rw [Subgroup.strictPeriods_SL2Z, AddSubgroup.mem_zmultiples_iff] at hxSL
+  obtain ⟨m, rfl⟩ := hxSL
+  rw [zsmul_eq_mul, mul_one] at hx ⊢
+  have hnat : (m.natAbs : ℝ) ∈ Subgroup.strictPeriods (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) := by
+    rcases Int.natAbs_eq m with hm | hm
+    · rwa [← Int.cast_natCast, ← hm]
+    · rw [← Int.cast_natCast, show (m.natAbs : ℤ) = -m by omega, Int.cast_neg]
+      exact neg_mem hx
+  obtain ⟨k, hk⟩ := Int.natCast_dvd.mpr (TauCeti.Subgroup.natCast_mem_strictPeriods_iff.mp hnat)
+  exact AddSubgroup.mem_zmultiples_iff.mpr ⟨k, by rw [zsmul_eq_mul, hk, mul_comm]; push_cast; rfl⟩
 
 /-- The `permT`-period of the identity coset agrees with Mathlib's `Subgroup.strictWidthInfty` of
 `Γ'.liftSL`. -/
@@ -279,29 +251,6 @@ private theorem psl2zToPSL2R_smul_boundary (a : SL(2, ℤ)) (c : OnePoint ℝ) :
     psl2zToPSL2R (a : PSL(2, ℤ)) • c = Matrix.SpecialLinearGroup.mapGL ℝ a • c := by
   rw [psl2zToPSL2R_mk, sl2zToPSL2R_apply, OnePoint.pslMk_smul]; rfl
 
-private theorem psl2zToPSL2R_smul_infty_eq_infty_iff (g : PSL(2, ℤ)) :
-    psl2zToPSL2R g • (∞ : OnePoint ℝ) = ∞ ↔
-      ∃ k : ℤ, g = (_root_.ModularGroup.T : PSL(2, ℤ)) ^ k := by
-  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
-  rw [psl2zToPSL2R_mk, TauCeti.sl2zToPSL2R_smul_infty_eq_infty_iff]; constructor
-  · intro hc
-    rcases eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc with hT | hT
-    · exact ⟨γ 0 1, by rw [← QuotientGroup.mk_zpow]; exact congrArg _ hT⟩
-    · exact ⟨-(γ 0 1), (congrArg QuotientGroup.mk hT).trans (by rw [mk_neg, QuotientGroup.mk_zpow])⟩
-  · rintro ⟨k, hk⟩
-    rw [← QuotientGroup.mk_zpow] at hk
-    rcases mk_eq_mk_iff.mp hk with hmat | hmat
-    · rw [← hmat, _root_.ModularGroup.coe_T_zpow]; rfl
-    · rw [show γ = -(_root_.ModularGroup.T ^ k) by rw [← neg_neg γ, ← hmat],
-        Matrix.SpecialLinearGroup.coe_neg, Matrix.neg_apply, _root_.ModularGroup.coe_T_zpow]; simp
-
-private theorem isCuspPoint_map_psl2zToPSL2R_smul_infty (Γ' : Subgroup PSL(2, ℤ))
-    [Γ'.FiniteIndex] (g : PSL(2, ℤ)) :
-    (Γ'.map psl2zToPSL2R).IsCuspPoint (psl2zToPSL2R g • (∞ : OnePoint ℝ)) := by
-  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
-  rw [← map_liftSL_sl2zToPSL2R, psl2zToPSL2R_mk]
-  exact Γ'.liftSL.isCuspPoint_map_sl2zToPSL2R_smul_infty γ
-
 private noncomputable def cosetRep {Γ' : Subgroup PSL(2, ℤ)} (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     (x : Fin n) : PSL(2, ℤ) := Quotient.out (e.symm x)
 
@@ -316,58 +265,54 @@ the Fuchsian cusp orbits `(Γ'.map psl2zToPSL2R).CuspOrbit`: the cycle of `e (g 
 cusp orbit of `psl2zToPSL2R g⁻¹ • ∞`. -/
 def permTCycleEquivFuchsianCuspOrbit (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     Quotient (SameCycle.setoid (permT Γ' e)) ≃ (Γ'.map psl2zToPSL2R).CuspOrbit :=
-  haveI : Γ'.FiniteIndex := finiteIndex_of_equiv e
-  have key (g₁ g₂ : PSL(2, ℤ)) :
-      (Γ'.map psl2zToPSL2R).cuspOrbitMk ⟨psl2zToPSL2R g₁⁻¹ • ∞,
-          Subgroup.mem_cuspPoints.mpr (isCuspPoint_map_psl2zToPSL2R_smul_infty Γ' g₁⁻¹)⟩ =
-        (Γ'.map psl2zToPSL2R).cuspOrbitMk ⟨psl2zToPSL2R g₂⁻¹ • ∞,
-          Subgroup.mem_cuspPoints.mpr (isCuspPoint_map_psl2zToPSL2R_smul_infty Γ' g₂⁻¹)⟩ ↔
-        SameCycle (permT Γ' e) (e (g₁ : PSL(2, ℤ) ⧸ Γ')) (e (g₂ : PSL(2, ℤ) ⧸ Γ')) := by
-    rw [Subgroup.cuspOrbitMk_eq_iff, mem_orbit_iff]; constructor
-    · rintro ⟨⟨_, h, hh, rfl⟩, hsmul⟩
-      have hfix : psl2zToPSL2R (g₁ * h * g₂⁻¹) • (∞ : OnePoint ℝ) = ∞ := by
-        rw [map_mul, map_mul, mul_smul, mul_smul]
-        rw [show psl2zToPSL2R h • psl2zToPSL2R g₂⁻¹ • (∞ : OnePoint ℝ) =
-            psl2zToPSL2R g₁⁻¹ • ∞ from hsmul,
-          ← mul_smul, ← map_mul, mul_inv_cancel, map_one, one_smul]
-      obtain ⟨k, hk⟩ := (psl2zToPSL2R_smul_infty_eq_infty_iff _).mp hfix
+  haveI : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
+  have key (γ₁ γ₂ : SL(2, ℤ)) :
+      Γ'.liftSL.cuspOrbitOfSL2Z γ₁⁻¹ = Γ'.liftSL.cuspOrbitOfSL2Z γ₂⁻¹ ↔
+        SameCycle (permT Γ' e) (e ((γ₁ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ'))
+          (e ((γ₂ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) := by
+    rw [Γ'.liftSL.cuspOrbitOfSL2Z_eq_iff, inv_inv]
+    constructor
+    · rintro ⟨h, hh, hc0⟩
+      obtain ⟨k, hk⟩ : ∃ k : ℤ, ((γ₁ * h * γ₂⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) =
+          (_root_.ModularGroup.T : PSL(2, ℤ)) ^ k := by
+        rcases eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc0 with hT | hT
+        · exact ⟨_, by rw [hT, QuotientGroup.mk_zpow]⟩
+        · exact ⟨_, by rw [hT, mk_neg, QuotientGroup.mk_zpow]⟩
       refine ⟨-k, ?_⟩
-      rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq,
-        show ((_root_.ModularGroup.T : PSL(2, ℤ)) ^ (-k) * g₁)⁻¹ * g₂ = h by
-          rw [_root_.mul_inv_rev, _root_.zpow_neg, inv_inv, mul_assoc, ← hk]; group]
-      exact hh
+      rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq]
+      rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_inv] at hk
+      rw [show ((_root_.ModularGroup.T : PSL(2, ℤ)) ^ (-k) * (γ₁ : PSL(2, ℤ)))⁻¹ *
+          (γ₂ : PSL(2, ℤ)) = (h : PSL(2, ℤ)) by
+        rw [_root_.mul_inv_rev, _root_.zpow_neg, inv_inv, mul_assoc, ← hk]; group]
+      exact Subgroup.mem_liftSL.mp hh
     · rintro ⟨k, hk⟩
       rw [permT_zpow_apply, e.apply_eq_iff_eq, QuotientGroup.eq] at hk
-      set h : PSL(2, ℤ) := ((_root_.ModularGroup.T : PSL(2, ℤ)) ^ k * g₁)⁻¹ * g₂
-      refine ⟨⟨psl2zToPSL2R h, Subgroup.mem_map_of_mem _ hk⟩, ?_⟩
-      have hfix : psl2zToPSL2R (g₁ * h * g₂⁻¹) • (∞ : OnePoint ℝ) = ∞ :=
-        (psl2zToPSL2R_smul_infty_eq_infty_iff _).mpr
-          ⟨-k, by dsimp only [h]; rw [_root_.mul_inv_rev, _root_.zpow_neg]; group⟩
-      have hinv := congrArg (psl2zToPSL2R g₁⁻¹ • ·) hfix
-      rwa [← mul_smul, ← map_mul, show g₁⁻¹ * (g₁ * h * g₂⁻¹) = h * g₂⁻¹ by group,
-        map_mul, mul_smul] at hinv
-  let toFunAux : Fin n → (Γ'.map psl2zToPSL2R).CuspOrbit := fun x ↦
-    (Γ'.map psl2zToPSL2R).cuspOrbitMk ⟨psl2zToPSL2R (cosetRep e x)⁻¹ • ∞,
-      Subgroup.mem_cuspPoints.mpr (isCuspPoint_map_psl2zToPSL2R_smul_infty Γ' _)⟩
+      refine ⟨(_root_.ModularGroup.T ^ k * γ₁)⁻¹ * γ₂, ?_, ?_⟩
+      · rwa [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv,
+          QuotientGroup.mk_mul, QuotientGroup.mk_zpow]
+      · rw [show γ₁ * ((_root_.ModularGroup.T ^ k * γ₁)⁻¹ * γ₂) * γ₂⁻¹ =
+            _root_.ModularGroup.T ^ (-k) by rw [_root_.mul_inv_rev, _root_.zpow_neg]; group,
+          _root_.ModularGroup.coe_T_zpow]; rfl
+  let toFunAux (x : Fin n) : (Γ'.liftSL.map sl2zToPSL2R).CuspOrbit :=
+    Γ'.liftSL.cuspOrbitOfSL2Z (Quotient.out (cosetRep e x))⁻¹
   have htoFunAux_eq (x y : Fin n) : toFunAux x = toFunAux y ↔ SameCycle (permT Γ' e) x y := by
-    simpa only [apply_cosetRep] using key (cosetRep e x) (cosetRep e y)
-  Equiv.ofBijective (Quotient.lift toFunAux fun _ _ h ↦ (htoFunAux_eq _ _).mpr h)
+    simpa only [Quotient.out_eq, apply_cosetRep] using
+      key (Quotient.out (cosetRep e x)) (Quotient.out (cosetRep e y))
+  (Equiv.ofBijective (Quotient.lift toFunAux fun _ _ h ↦ (htoFunAux_eq _ _).mpr h)
     ⟨fun a b hab ↦ by
       induction a using Quotient.inductionOn with | h x =>
       induction b using Quotient.inductionOn with | h y =>
       exact Quotient.sound ((htoFunAux_eq x y).mp hab),
     fun C ↦ by
-      obtain ⟨c, rfl⟩ := Subgroup.cuspOrbitMk_surjective C
-      have hc' : (Γ'.liftSL.map sl2zToPSL2R).IsCuspPoint c.1 := by
-        rw [map_liftSL_sl2zToPSL2R]; exact Subgroup.mem_cuspPoints.mp c.2
-      obtain ⟨⟨_, g, rfl⟩, hg⟩ := mem_orbit_iff.mp
-        ((Γ'.liftSL.isCuspPoint_map_sl2zToPSL2R_iff_orbit_infty c.1).mp hc')
-      let x : Fin n := e ((g⁻¹ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')
+      obtain ⟨γ, rfl⟩ := Γ'.liftSL.cuspOrbitOfSL2Z_surjective C
+      let x : Fin n := e (((γ⁻¹ : SL(2, ℤ)) : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')
       refine ⟨⟦x⟧, ?_⟩
       change toFunAux x = _
-      dsimp only [toFunAux]
-      rw [(key (cosetRep e x) g⁻¹).mpr (by rw [apply_cosetRep]), inv_inv]
-      exact congrArg _ (Subtype.ext hg)⟩
+      have hrep : ((Quotient.out (cosetRep e x) : SL(2, ℤ)) : PSL(2, ℤ)) = cosetRep e x :=
+        Quotient.out_eq _
+      rw [← inv_inv γ]
+      exact (key (Quotient.out (cosetRep e x)) γ⁻¹).mpr (by rw [hrep, apply_cosetRep])⟩).trans
+    (Equiv.cast (congrArg Subgroup.CuspOrbit (map_liftSL_sl2zToPSL2R Γ')))
 
 /-- Evaluating `permTCycleEquivFuchsianCuspOrbit` on the cycle of `e (g Γ')` gives the Fuchsian
 cusp orbit of `psl2zToPSL2R g⁻¹ • ∞`. -/
@@ -377,14 +322,24 @@ theorem permTCycleEquivFuchsianCuspOrbit_mk (Γ' : Subgroup PSL(2, ℤ))
         ⟦e (g : PSL(2, ℤ) ⧸ Γ')⟧ : (Γ'.map psl2zToPSL2R).CuspOrbit) :
         (Γ'.map psl2zToPSL2R).BoundaryOrbit) =
       Quotient.mk'' (psl2zToPSL2R g⁻¹ • (∞ : OnePoint ℝ)) := by
-  have : Γ'.FiniteIndex := finiteIndex_of_equiv e
-  set g₀ := cosetRep e (e (g : PSL(2, ℤ) ⧸ Γ'))
-  change ((Γ'.map psl2zToPSL2R).cuspOrbitMk
-      ⟨psl2zToPSL2R g₀⁻¹ • ∞, _⟩ : (Γ'.map psl2zToPSL2R).BoundaryOrbit) = _
-  rw [Subgroup.cuspOrbitMk_val, Quotient.eq'', orbitRel_apply, mem_orbit_iff]
-  have heq : g₀⁻¹ * g ∈ Γ' := QuotientGroup.eq.mp (by rw [coe_cosetRep, e.symm_apply_apply])
-  exact ⟨⟨psl2zToPSL2R (g₀⁻¹ * g), Subgroup.mem_map_of_mem _ heq⟩, by
-    rw [Subgroup.smul_def, ← mul_smul, ← map_mul, mul_inv_cancel_right]⟩
+  have : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
+  obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective g
+  have hcast : ∀ {G₁ G₂ : Subgroup PSL(2, ℝ)} (h : G₁ = G₂) (C : G₁.CuspOrbit) (c : OnePoint ℝ),
+      (C : G₁.BoundaryOrbit) = Quotient.mk'' c →
+        ((Equiv.cast (congrArg Subgroup.CuspOrbit h) C : G₂.CuspOrbit) : G₂.BoundaryOrbit) =
+          Quotient.mk'' c := by
+    rintro G _ rfl C c hC; exact hC
+  refine hcast (map_liftSL_sl2zToPSL2R Γ') _ _ ?_
+  set γ₀ : SL(2, ℤ) := Quotient.out (cosetRep e (e ((γ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')))
+  have hγ₀ : (γ₀ : PSL(2, ℤ)) = cosetRep e (e ((γ : PSL(2, ℤ)) : PSL(2, ℤ) ⧸ Γ')) :=
+    Quotient.out_eq _
+  have heq : γ₀⁻¹ * γ ∈ Γ'.liftSL := by
+    rw [Subgroup.mem_liftSL, QuotientGroup.mk_mul, QuotientGroup.mk_inv, hγ₀]
+    exact QuotientGroup.eq.mp (by rw [coe_cosetRep, e.symm_apply_apply])
+  have horb : Γ'.liftSL.cuspOrbitOfSL2Z γ₀⁻¹ = Γ'.liftSL.cuspOrbitOfSL2Z γ⁻¹ :=
+    (Γ'.liftSL.cuspOrbitOfSL2Z_eq_iff _ _).mpr ⟨γ₀⁻¹ * γ, heq, by simp⟩
+  change (Γ'.liftSL.cuspOrbitOfSL2Z γ₀⁻¹ : (Γ'.liftSL.map sl2zToPSL2R).BoundaryOrbit) = _
+  rw [horb, Subgroup.cuspOrbitOfSL2Z_val, ← QuotientGroup.mk_inv, psl2zToPSL2R_mk]
 
 /-- The combinatorial cusp count equals the number of Fuchsian cusp orbits of
 `Γ'.map psl2zToPSL2R`. -/
@@ -449,7 +404,7 @@ def fuchsianCuspOrbitEquivCuspOrbits (Γ' : Subgroup PSL(2, ℤ)) [Γ'.FiniteInd
 def permTCycleEquivCuspOrbits (Γ' : Subgroup PSL(2, ℤ)) (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n) :
     Quotient (SameCycle.setoid (permT Γ' e)) ≃
       CuspOrbits (Γ'.liftSL : Subgroup (GL (Fin 2) ℝ)) :=
-  haveI : Γ'.FiniteIndex := finiteIndex_of_equiv e
+  haveI : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
   (permTCycleEquivFuchsianCuspOrbit Γ' e).trans (fuchsianCuspOrbitEquivCuspOrbits Γ')
 
 /-- The combinatorial cusp count equals the cardinality of Mathlib's `CuspOrbits Γ'.liftSL`. -/
@@ -690,7 +645,7 @@ theorem eulerChar_compactifiedQuotient_eq_eulerChar (Γ' : Subgroup PSL(2, ℤ))
     (e : PSL(2, ℤ) ⧸ Γ' ≃ Fin n)
     [FiniteCWType (Γ'.map psl2zToPSL2R).CompactifiedQuotient] :
     eulerChar (Γ'.map psl2zToPSL2R).CompactifiedQuotient = (modularTriple Γ' e).eulerChar := by
-  have : Γ'.FiniteIndex := finiteIndex_of_equiv e
+  have : Γ'.FiniteIndex := Γ'.finiteIndex_of_equiv e
   have : (Γ'.map psl2zToPSL2R).IsFiniteRelIndex psl2zToPSL2R.range :=
     isFiniteRelIndex_map_psl2zToPSL2R Γ'
   have : CompactSpace (Γ'.map psl2zToPSL2R).CompactifiedQuotient :=
@@ -698,7 +653,7 @@ theorem eulerChar_compactifiedQuotient_eq_eulerChar (Γ' : Subgroup PSL(2, ℤ))
   have hle : Γ'.map psl2zToPSL2R ≤ psl2zToPSL2R.range := Γ'.map_le_range psl2zToPSL2R
   have hidx : ((Γ'.map psl2zToPSL2R).subgroupOf psl2zToPSL2R.range).index = n := by
     change (Γ'.map psl2zToPSL2R).relIndex psl2zToPSL2R.range = n
-    rw [relIndex_map_psl2zToPSL2R, index_eq_of_equiv e]
+    rw [relIndex_map_psl2zToPSL2R, Γ'.index_eq_of_equiv e]
   have hRH := congrArg (Int.cast (R := ℝ))
     (TauCeti.Fuchsian.eulerChar_compactifiedQuotient_eq_index_mul_sub_ramificationDegree hle)
   rw [hidx, eulerChar_compactifiedQuotient] at hRH
@@ -759,7 +714,7 @@ theorem cuspWidths_Gamma0Projective_of_prime {p : ℕ} [Fact p.Prime]
   have hcard : (cuspWidths (TauCeti.CongruenceSubgroup.Gamma0Projective p) e).card = 2 := by
     rw [← cuspCount_eq_card_cuspWidths, cuspCount_Gamma0Projective_of_prime]
   have hsum : (cuspWidths (TauCeti.CongruenceSubgroup.Gamma0Projective p) e).sum = p + 1 := by
-    rw [sum_cuspWidths, ← index_eq_of_equiv e,
+    rw [sum_cuspWidths, ← (TauCeti.CongruenceSubgroup.Gamma0Projective p).index_eq_of_equiv e,
       TauCeti.CongruenceSubgroup.Gamma0Projective_index,
       CongruenceSubgroup.Gamma0_prime_index p hp]
   obtain ⟨t, ht⟩ := Multiset.exists_cons_of_mem h1
@@ -799,7 +754,8 @@ private theorem invariants_Gamma0Projective_of_prime {p g e₂ e₃ : ℕ} (hp :
       ⟨p + 1, g, e₂, e₃, {1, p}⟩ := by
   have : Fact p.Prime := ⟨hp⟩
   have hn : n = p + 1 := by
-    rw [← index_eq_of_equiv e, TauCeti.CongruenceSubgroup.Gamma0Projective_index,
+    rw [← (TauCeti.CongruenceSubgroup.Gamma0Projective p).index_eq_of_equiv e,
+      TauCeti.CongruenceSubgroup.Gamma0Projective_index,
       CongruenceSubgroup.Gamma0_prime_index p hp]
   have he₂ : ellipticTwo (TauCeti.CongruenceSubgroup.Gamma0Projective p) e = e₂ := by
     have h := ellipticTwo_Gamma0Projective_eq_prod p e
