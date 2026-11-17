@@ -48,7 +48,7 @@ near the diagonal of properly supported operators.
 * `TauCeti.Amplitude.HasProperInputSupport`: for output positions in a compact set, the amplitude
   vanishes for input positions outside a compact set; then its estimates hold uniformly in `y`
   for `x` in a compact set (`TauCeti.Amplitude.HasProperInputSupport.exists_bound`). Amplitudes
-  supported near the diagonal have it (`TauCeti.Amplitude.hasProperInputSupport_of_dist_lt`).
+  supported near the diagonal have it (`TauCeti.Amplitude.hasProperInputSupport_of_lt_dist`).
 * `TauCeti.Amplitude.HasProperInputSupport.exists_norm_fourier_slice_le`: rapid decay
   `‖â(x, θ, ξ)‖ ≤ C ⟨ξ⟩^m ⟨θ⟩^(-r)` of the Fourier transform `â(x, θ, ξ)` of the input slice
   `y ↦ a(x, y, ξ)`, uniformly for `x` in a compact set, and
@@ -356,7 +356,8 @@ theorem iteratedFDerivAlong_amplitudeDirections_nil_ofRight (b : Symbol n V W m)
     (γ β : List (Fin n)) (x y ξ : CoordinateSpace n) :
     iteratedFDerivAlong ℝ (amplitudeDirections [] γ β) (ofRight b).coefficient (x, y, ξ) =
       mixedDeriv γ β b.coefficient y ξ := by
-  rw [show (ofRight b).coefficient = fun p ↦ b.coefficient p.2 from rfl,
+  rw [show (ofRight b).coefficient = fun p ↦ b.coefficient p.2 from
+      funext (coefficient_ofRight b),
     iteratedFDerivAlong_comp_of_hasFDerivAt (fun _ ↦ hasFDerivAt_snd) b.contDiff_coefficient _
       (by simp), map_snd_amplitudeDirections_nil,
     ← mixedDeriv_eq_iteratedFDerivAlong _ _ (b.contDiff_coefficient.of_le (by simp))]
@@ -572,7 +573,7 @@ private theorem coordinateDeriv_slice_snd (a : Amplitude n V W m) (γ : List (Fi
 vanishes at all input positions outside some compact set: the projection of its support to the
 output position is proper. This holds for the amplitude of the right quantization of a symbol with
 compact spatial support, and for every amplitude supported near the diagonal, such as those of
-properly supported operators (`TauCeti.Amplitude.hasProperInputSupport_of_dist_lt`). For each
+properly supported operators (`TauCeti.Amplitude.hasProperInputSupport_of_lt_dist`). For each
 output position the quantization is then an absolutely convergent iterated integral, and the
 amplitude reduces to a left symbol (`TauCeti.Amplitude.leftSymbol`). -/
 def HasProperInputSupport (a : Amplitude n V W m) : Prop :=
@@ -587,11 +588,20 @@ theorem hasProperInputSupport_iff {a : Amplitude n V W m} :
 
 /-- An amplitude vanishing at all pairs of positions at distance more than `R` has proper input
 support. -/
-theorem hasProperInputSupport_of_dist_lt {a : Amplitude n V W m} {R : ℝ}
+theorem hasProperInputSupport_of_lt_dist {a : Amplitude n V W m} {R : ℝ}
     (ha : ∀ x y ξ, R < dist x y → a.coefficient (x, y, ξ) = 0) : a.HasProperInputSupport :=
   fun K hK ↦ ⟨Metric.cthickening R K, hK.cthickening, fun x hx y hy ξ ↦
     ha x y ξ (lt_of_not_ge fun h ↦ hy (Metric.mem_cthickening_of_dist_le y x R K hx
       (dist_comm x y ▸ h)))⟩
+
+/-- For output positions near a compact set, an amplitude with proper input support vanishes at
+input positions outside a suitable compact set. -/
+theorem HasProperInputSupport.exists_eventually_eq_zero {a : Amplitude n V W m}
+    (ha : a.HasProperInputSupport) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ L : Set (CoordinateSpace n), IsCompact L ∧
+      ∀ᶠ x in 𝓝ˢ K, ∀ y ∉ L, ∀ ξ, a.coefficient (x, y, ξ) = 0 := by
+  obtain ⟨L, hL, hLa⟩ := ha _ (hK.cthickening (r := 1))
+  exact ⟨L, hL, Filter.mem_of_superset (Metric.cthickening_mem_nhdsSet K one_pos) hLa⟩
 
 /-- For output positions in a compact set, all derivatives of an amplitude with proper input
 support vanish at input positions outside a suitable compact set: there the amplitude vanishes
@@ -601,14 +611,12 @@ private theorem HasProperInputSupport.exists_iteratedFDerivAlong_eq_zero
     (hK : IsCompact K) :
     ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ vs, ∀ x ∈ K, ∀ y ∉ L, ∀ ξ,
       iteratedFDerivAlong ℝ vs a.coefficient (x, y, ξ) = 0 := by
-  obtain ⟨L, hL, hLa⟩ := ha _ (hK.cthickening (r := 1))
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero hK
   refine ⟨L, hL, fun vs x hx y hy ξ ↦ iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero ?_ vs⟩
-  have hU : IsOpen {p : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n |
-      p.1 ∈ Metric.thickening 1 K ∧ p.2.1 ∉ L} :=
-    (Metric.isOpen_thickening.preimage continuous_fst).inter
-      (hL.isClosed.isOpen_compl.preimage (continuous_fst.comp continuous_snd))
-  filter_upwards [hU.mem_nhds ⟨Metric.self_subset_thickening one_pos K hx, hy⟩] with p hp
-  exact hLa p.1 (Metric.thickening_subset_cthickening 1 K hp.1) p.2.1 hp.2 p.2.2
+  filter_upwards [(continuous_fst.tendsto (x, y, ξ)).eventually (hLa.filter_mono
+    (nhds_le_nhdsSet hx)), (continuous_fst.comp continuous_snd).continuousAt.preimage_mem_nhds
+    (hL.isClosed.isOpen_compl.mem_nhds hy)] with p hp hpy
+  exact hp p.2.1 hpy p.2.2
 
 private theorem HasProperInputSupport.iteratedFDerivAlong_singleton {a : Amplitude n V W m}
     (ha : a.HasProperInputSupport) (d : CoordinateSpace n × CoordinateSpace n ×
@@ -654,11 +662,11 @@ theorem HasProperInputSupport.smulPositions {a : Amplitude n V W m}
 
 /-- Multiplying by a smooth function `φ(x, y)` of the positions vanishing at distance more than `R`
 from the diagonal gives proper input support. -/
-theorem hasProperInputSupport_smulPositions_of_dist_lt
+theorem hasProperInputSupport_smulPositions_of_lt_dist
     {φ : CoordinateSpace n × CoordinateSpace n → ℂ} (hφ : ContDiff ℝ ∞ φ) {R : ℝ}
     (hR : ∀ x y, R < dist x y → φ (x, y) = 0) (a : Amplitude n V W m) :
     (a.smulPositions φ hφ).HasProperInputSupport :=
-  hasProperInputSupport_of_dist_lt fun x y ξ h ↦ by
+  hasProperInputSupport_of_lt_dist fun x y ξ h ↦ by
     rw [coefficient_smulPositions, hR x y h, zero_smul]
 
 /-- For an amplitude with proper input support, the estimates hold for all input positions,
@@ -774,12 +782,13 @@ theorem HasProperInputSupport.continuous_fourier_slice {a : Amplitude n V W m}
     Continuous fun q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun y ↦ a.coefficient (q.2.1, y, q.2.2)) q.1 := by
   refine continuous_iff_continuousAt.2 fun q₀ ↦ ?_
-  -- Near `q₀` the output position stays in a compact ball, over which the input support is
+  -- Near `q₀` the output position stays in an open set, over which the input support is
   -- compact.
-  obtain ⟨L, hL, hLa⟩ := ha _ (isCompact_closedBall q₀.2.1 1)
-  set U := {q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n |
-    q.2.1 ∈ Metric.ball q₀.2.1 1}
-  have hU : IsOpen U := Metric.isOpen_ball.preimage (continuous_fst.comp continuous_snd)
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero (isCompact_singleton (x := q₀.2.1))
+  rw [nhdsSet_singleton] at hLa
+  obtain ⟨t, ht, htopen, hq₀⟩ := eventually_nhds_iff.1 hLa
+  set U := {q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n | q.2.1 ∈ t}
+  have hU : IsOpen U := htopen.preimage (continuous_fst.comp continuous_snd)
   have h := continuousOn_integral_of_compact_support (μ := volume) (s := U) hL
     (f := fun (q : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n)
       (y : CoordinateSpace n) ↦ (𝐞 (-⟪y, q.1⟫) : ℂ) • a.coefficient (q.2.1, y, q.2.2))
@@ -787,9 +796,8 @@ theorem HasProperInputSupport.continuous_fourier_slice {a : Amplitude n V W m}
       have := a.contDiff_coefficient.continuous
       fun_prop))
     fun q y hq hy ↦ by
-      simp [hLa q.2.1 (Metric.ball_subset_closedBall hq) y hy]
-  simpa only [Real.fourier_eq, Circle.smul_def] using
-    h.continuousAt (hU.mem_nhds (Metric.mem_ball_self one_pos))
+      simp [ht q.2.1 hq y hy]
+  simpa only [Real.fourier_eq, Circle.smul_def] using h.continuousAt (hU.mem_nhds hq₀)
 
 /-- The Fourier transform of the input slices of `∂_{y_j} a` is `2πi θⱼ â(x, θ, ξ)`. -/
 theorem HasProperInputSupport.fourier_spatialDerivSnd_slice {a : Amplitude n V W m}

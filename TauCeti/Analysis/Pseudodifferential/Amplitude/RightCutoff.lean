@@ -31,7 +31,7 @@ is therefore the left quantization of a symbol `c` of order `m`, its left symbol
 `c ∼ ∑_k ((-i)^k / k!) ∑_{|w| = k} ∂_x^w ∂_ξ^w b = ∑_γ (1 / γ!) ∂_ξ^γ D_x^γ b`, `D_x = -i ∂_x`,
 
 the expansion of the left symbol of a right quantization, with an actual remainder of order
-`m - N` after `N` terms. In particular `c - b` has order `m - 1`.
+`m - N` after `N` terms. Already when `χ 0 = 1`, `c - b` has order `m - 1`.
 
 ## Main declarations
 
@@ -85,7 +85,7 @@ so it has proper input support. -/
 theorem hasProperInputSupport_ofRightCutoff (hχ : ContDiff ℝ ∞ χ) (hχs : HasCompactSupport χ)
     (b : Symbol n V W m) : (ofRightCutoff χ hχ b).HasProperInputSupport := by
   obtain ⟨R, hR⟩ := hχs.isCompact.isBounded.subset_closedBall 0
-  refine hasProperInputSupport_smulPositions_of_dist_lt _ (R := R) (fun x y hxy ↦ ?_) _
+  refine hasProperInputSupport_smulPositions_of_lt_dist _ (R := R) (fun x y hxy ↦ ?_) _
   refine image_eq_zero_of_notMem_tsupport fun hmem ↦ ?_
   have h := hR hmem
   rw [Metric.mem_closedBall, dist_zero_right, ← dist_eq_norm] at h
@@ -138,10 +138,10 @@ theorem isAsymptoticSum_leftSymbol_ofRightCutoff (hχ : ContDiff ℝ ∞ χ)
   simpa only [funext (leftTerm_ofRightCutoff hχ hχ₁ b)] using
     isAsymptoticSum_leftSymbol (hasProperInputSupport_ofRightCutoff hχ hχs b)
 
-/-- For compactly supported `χ` with `χ = 1` near `0`, the left symbol of `χ(x - y) b(y, ξ)` is `b`
-up to a symbol of order `m - 1`. -/
+/-- For compactly supported `χ` with `χ 0 = 1`, the left symbol of `χ(x - y) b(y, ξ)` is `b` up to
+a symbol of order `m - 1`. -/
 theorem leftSymbol_ofRightCutoff_eq_add_leftRemainder_one (hχ : ContDiff ℝ ∞ χ)
-    (hχs : HasCompactSupport χ) (hχ₁ : χ =ᶠ[𝓝 0] 1) (b : Symbol n V W m) :
+    (hχs : HasCompactSupport χ) (hχ0 : χ 0 = 1) (b : Symbol n V W m) :
     (ofRightCutoff χ hχ b).leftSymbol (hasProperInputSupport_ofRightCutoff hχ hχs b) =
       b + Symbol.inclusion (by simp) ((ofRightCutoff χ hχ b).leftRemainder
         (hasProperInputSupport_ofRightCutoff hχ hχs b) 1) := by
@@ -149,7 +149,7 @@ theorem leftSymbol_ofRightCutoff_eq_add_leftRemainder_one (hχ : ContDiff ℝ �
   congr 1
   ext1
   funext ⟨x, ξ⟩
-  simp [hχ₁.eq_of_nhds]
+  simp [hχ0]
 
 end Amplitude
 

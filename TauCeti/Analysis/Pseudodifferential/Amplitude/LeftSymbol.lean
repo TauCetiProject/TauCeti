@@ -79,17 +79,15 @@ namespace Amplitude
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {m : ℝ}
 
-/-- Near an output position, an amplitude with proper input support vanishes for input positions
-outside a compact set. -/
-private theorem HasProperInputSupport.exists_eventually_eq_zero {a : Amplitude n V W m}
+/-- Near an output position and frequency, an amplitude with proper input support vanishes for
+input positions outside a compact set. -/
+private theorem HasProperInputSupport.exists_eventually_nhds_eq_zero {a : Amplitude n V W m}
     (ha : a.HasProperInputSupport) (q : CoordinateSpace n × CoordinateSpace n) :
     ∃ L : Set (CoordinateSpace n), IsCompact L ∧ ∀ᶠ q' in 𝓝 q, ∀ y ∉ L,
       a.coefficient (q'.1, y, q'.2) = 0 := by
-  obtain ⟨L, hL, hLa⟩ := hasProperInputSupport_iff.mp ha _ (isCompact_closedBall q.1 1)
-  refine ⟨L, hL, ?_⟩
-  filter_upwards [continuous_fst.continuousAt.preimage_mem_nhds
-    (Metric.closedBall_mem_nhds q.1 one_pos)] with q' hq' y hy
-  exact hLa q'.1 hq' y hy q'.2
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero (isCompact_singleton (x := q.1))
+  rw [nhdsSet_singleton] at hLa
+  exact ⟨L, hL, ((continuous_fst.tendsto q).eventually hLa).mono fun q' h y hy ↦ h y hy q'.2⟩
 
 /-- Differentiation of `â(x, θ, ξ)` in the output position and the frequency under the integral
 sign. -/
@@ -100,7 +98,7 @@ theorem HasProperInputSupport.hasFDerivAt_fourier_slice {a : Amplitude n V W m}
         𝓕 (fun y ↦ a.coefficient (q.1, y, q.2)) θ)
       (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ (fun q : CoordinateSpace n × CoordinateSpace n ↦
         a.coefficient (q.1, y, q.2)) q) q := by
-  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero q
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_nhds_eq_zero q
   simpa only [Real.fourier_eq, Circle.smul_def] using hasFDerivAt_integral_fourierChar_smul
     (g := fun r : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
       a.coefficient (r.2.1, r.1, r.2.2))
@@ -114,7 +112,7 @@ theorem HasProperInputSupport.fderiv_fourier_slice_apply {a : Amplitude n V W m}
     (∫ y, (𝐞 (-⟪y, θ⟫) : ℂ) • fderiv ℝ (fun q : CoordinateSpace n × CoordinateSpace n ↦
         a.coefficient (q.1, y, q.2)) q) v =
       𝓕 (fun y ↦ fderiv ℝ a.coefficient (q.1, y, q.2) (v.1, 0, v.2)) θ := by
-  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_eq_zero q
+  obtain ⟨L, hL, hLa⟩ := ha.exists_eventually_nhds_eq_zero q
   have h := integral_fourierChar_smul_fderiv_apply
     (g := fun r : CoordinateSpace n × CoordinateSpace n × CoordinateSpace n ↦
       a.coefficient (r.2.1, r.1, r.2.2))
