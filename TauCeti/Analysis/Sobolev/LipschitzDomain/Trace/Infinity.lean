@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Trace.Frontier
 public import TauCeti.Analysis.Sobolev.W1p.BoundedContinuous
-import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 import TauCeti.MeasureTheory.Function.Lp.Norm
 

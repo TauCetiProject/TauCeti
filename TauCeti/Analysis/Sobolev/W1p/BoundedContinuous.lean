@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.W1p.Convex
-import TauCeti.Analysis.Sobolev.W1p.InteriorMorrey
 import TauCeti.MeasureTheory.Function.Lp.BoundedContinuous
 
 /-!
