@@ -138,22 +138,40 @@ theorem exists_add_neg_one_pow_mul_pow_eq (hK : Nat.card K = (p ^ n) ^ 2) (k : �
     rw [mul_pow, hc]
     linear_combination c * hb
 
-/-- **The twisted trace has a nonzero kernel element.** In a field with `q²` elements, `q = p ^ n`
-a power of the exponential characteristic, and for `ε = (-1) ^ k`, some nonzero `b` satisfies
-`b + ε b ^ q = 0`. -/
-theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero
-    (hK : Nat.card K = (p ^ n) ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ p ^ n = 0 := by
-  have := finite_of_natCard_eq_pow_sq hK
+/-- In a finite field of order `q²` (`q ≠ 0`), `q` is a power of the characteristic. -/
+private theorem exists_prime_pow_of_natCard_eq_sq {q : ℕ} (hq : q ≠ 0)
+    (hK : Nat.card K = q ^ 2) :
+    ∃ p m : ℕ, p.Prime ∧ CharP K p ∧ q = p ^ m := by
+  have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
+  let := Fintype.ofFinite K
+  obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K
+  have hdvd : q ∣ p ^ (n : ℕ) := by
+    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
+    exact dvd_pow_self q two_ne_zero
+  obtain ⟨m, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
+  exact ⟨p, m, hprime, hchar, rfl⟩
+
+/-- **The twisted trace has a nonzero kernel element.** For any field `K`, `q : ℕ` with
+`Nat.card K = q ^ 2` (in particular, a finite field of order `q²`), and `ε = (-1) ^ k`, some
+nonzero `b : K` satisfies `b + ε b ^ q = 0`. -/
+theorem exists_ne_zero_add_neg_one_pow_mul_pow_eq_zero {q : ℕ}
+    (hK : Nat.card K = q ^ 2) (k : ℕ) : ∃ b ≠ (0 : K), b + (-1) ^ k * b ^ q = 0 := by
   rcases neg_one_pow_eq_or K k with h | h <;> rw [h]
-  · -- The `q` roots of `b ^ q + b = 0` are not all zero.
-    have : Finite {b : K // b ^ p ^ n + b = 0} := Subtype.finite
-    have hq : 1 < p ^ n := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
-    have hcard : 1 < Nat.card {b : K // b ^ p ^ n + b = 0} := by
-      rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos (expChar_pos K p) n).ne')]
-    have : Nontrivial {b : K // b ^ p ^ n + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
-    have hzero : (0 : K) ^ p ^ n + 0 = 0 := by
-      rw [zero_pow (pow_pos (expChar_pos K p) n).ne', add_zero]
-    obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ n + b = 0})
+  · by_cases hq : q = 0
+    · exact ⟨-1, neg_ne_zero.mpr one_ne_zero, by simp [hq]⟩
+    have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
+    obtain ⟨p, m, hprime, hchar, rfl⟩ := exists_prime_pow_of_natCard_eq_sq hq hK
+    let : CharP K p := hchar
+    let : Fact p.Prime := ⟨hprime⟩
+    -- The `q` roots of `b ^ q + b = 0` are not all zero.
+    have : Finite {b : K // b ^ p ^ m + b = 0} := Subtype.finite
+    have hq' : 1 < p ^ m := (Nat.one_lt_pow_iff two_ne_zero).mp (hK ▸ Finite.one_lt_card)
+    have hcard : 1 < Nat.card {b : K // b ^ p ^ m + b = 0} := by
+      rwa [natCard_pow_add_self_eq hK (zero_pow (pow_pos hprime.pos m).ne')]
+    have : Nontrivial {b : K // b ^ p ^ m + b = 0} := Finite.one_lt_card_iff_nontrivial.mp hcard
+    have hzero : (0 : K) ^ p ^ m + 0 = 0 := by
+      rw [zero_pow (pow_pos hprime.pos m).ne', add_zero]
+    obtain ⟨⟨b, hb⟩, hne⟩ := exists_ne (⟨0, hzero⟩ : {b : K // b ^ p ^ m + b = 0})
     refine ⟨b, fun hb0 ↦ hne (Subtype.ext hb0), ?_⟩
     rw [one_mul, add_comm, hb]
   · exact ⟨1, one_ne_zero, by simp⟩
@@ -175,14 +193,9 @@ theorem natCard_add_pow_eq_pow_mul {q : ℕ} (hK : Nat.card K = q ^ 2) :
     simpa using (Nat.card_congr e).trans hK
   have : Finite K := Nat.finite_of_card_ne_zero (hK ▸ pow_ne_zero 2 hq)
   let := Fintype.ofFinite K
-  -- The square root of a finite field's order is a power of its characteristic.
-  obtain ⟨p, hchar, n, hprime, hcard⟩ := _root_.FiniteField.card' K
+  obtain ⟨p, n, hprime, hchar, rfl⟩ := exists_prime_pow_of_natCard_eq_sq hq hK
   let : CharP K p := hchar
   let : Fact p.Prime := ⟨hprime⟩
-  have hdvd : q ∣ p ^ (n : ℕ) := by
-    rw [← hcard, ← Nat.card_eq_fintype_card, hK]
-    exact dvd_pow_self q two_ne_zero
-  obtain ⟨n, -, rfl⟩ := (Nat.dvd_prime_pow hprime).mp hdvd
   have hpow (a : K) : a ^ (p ^ n) ^ 2 = a := by
     rw [← hK, Nat.card_eq_fintype_card]
     exact _root_.FiniteField.pow_card a
