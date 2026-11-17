@@ -25,7 +25,8 @@ complex structure `J` and `K = H dt` it is `∂s ξ + J (∂t ξ - dX_H(u) ξ)`
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
 and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
 (`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
-there (`floerLinearization_congr_of_eventuallyEq`). For `C¹` coefficients `J` and `C²`
+there (`floerLinearization_congr_of_eventuallyEq`), and on the coefficients only through their
+values at that point (`floerLinearization_congr`). For `C¹` coefficients `J` and `C²`
 Hamiltonians it is continuous wherever the map and the direction are `C¹`
 (`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
 (`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
@@ -216,6 +217,14 @@ theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     (u : ℝ × ℝ → V) {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[nhds z] η) :
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The linearization at `z` depends on the coefficients `J`, `Ks` and `Kt` only through their
+values `J z`, `Ks z` and `Kt z` at `z`. -/
+theorem floerLinearization_congr (ω : SymplecticForm V) {J J' : ℝ × ℝ → V → V →L[ℝ] V}
+    {Ks Ks' Kt Kt' : ℝ × ℝ → V → ℝ} (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ} (hJ : J z = J' z)
+    (hKs : Ks z = Ks' z) (hKt : Kt z = Kt' z) :
+    ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J' Ks' Kt' u ξ z := by
+  rw [floerLinearization_def, floerLinearization_def, hJ, hKs, hKt]
 
 /-- The zeroth-order part `ξ ↦ (dJ(u) ξ)(∂t u - X_Kt(u)) - dX_Ks(u) ξ - J(u) dX_Kt(u) ξ` of the
 linearized Floer operator at the domain point `z`. -/
