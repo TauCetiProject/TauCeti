@@ -8,8 +8,7 @@ module
 public import TauCeti.Topology.VectorBundle.FiniteRank.Atlas.Stratum
 public import TauCeti.Topology.VectorBundle.FiniteRank.Pullback
 
-import Mathlib.LinearAlgebra.Matrix.ToLin
-import Mathlib.Topology.Instances.Matrix
+import TauCeti.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 
 /-!
 # Coordinate morphisms and fixed-rank comparison for bundle atlases
@@ -25,7 +24,7 @@ embedding `ofCore`, which is an equivalence over any preconnected base.
 
 public section
 
-open Bundle CategoryTheory Matrix Set Topology VectorBundleCore
+open Bundle CategoryTheory Set Topology VectorBundleCore
 
 namespace TauCeti.FiniteRankAtlas
 
@@ -33,23 +32,13 @@ universe u v
 
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜] {X : Type u} [TopologicalSpace X]
 
-private theorem continuousOn_clm_pi {B G : Type*} [TopologicalSpace B] [NormedAddCommGroup G]
-    [NormedSpace 𝕜 G] {m : ℕ} {s : Set B} {ψ : B → (Fin m → 𝕜) →L[𝕜] G}
-    (hψ : ∀ v : Fin m → 𝕜, ContinuousOn (fun x => ψ x v) s) : ContinuousOn ψ s := by
-  have hsum : ψ = fun x => ∑ k : Fin m, ContinuousLinearMap.smulRightL 𝕜 (Fin m → 𝕜) G
-      (ContinuousLinearMap.proj k) (ψ x fun l => if k = l then 1 else 0) := by
-    ext x v; simpa [ContinuousLinearMap.smulRightL_apply_apply] using
-      (ψ x).toLinearMap.pi_apply_eq_sum_univ v
-  exact hsum ▸ continuousOn_finsetSum Finset.univ fun k _ => (ContinuousLinearMap.smulRightL 𝕜
-    (Fin m → 𝕜) G (ContinuousLinearMap.proj k)).continuous.comp_continuousOn (hψ _)
-
 private def coordinateHomOfTotalSpace {B : Type*} [TopologicalSpace B]
     {C₁ C₂ : FiniteRankBundleCore 𝕜 B} (f : B → (Fin C₁.rank → 𝕜) →ₗ[𝕜] (Fin C₂.rank → 𝕜))
     (hf : Continuous fun p : C₁.core.TotalSpace => (⟨p.proj, f p.proj p.2⟩ : C₂.core.TotalSpace)) :
     C₁ ⟶ C₂ :=
   let g (x : B) : (Fin C₁.rank → 𝕜) →L[𝕜] (Fin C₂.rank → 𝕜) := ⟨f x, (f x).continuous_on_pi⟩
   CoordinateHom.ofContinuous g <| continuous_hom_bundle_iff_forall_continuousOn.2 fun i j =>
-    continuousOn_clm_pi fun v => by
+    continuousOn_clm_pi.2 fun v => by
       have hsymm : ContinuousOn (fun x => (⟨x, (C₁.core.localTriv i).symm x v⟩ :
           C₁.core.TotalSpace)) (C₁.core.baseSet i) :=
         (C₁.core.localTriv i).continuousOn_symm.comp
@@ -234,79 +223,35 @@ theorem isIso_iff_bijective {A D : FiniteRankAtlas 𝕜 X} (f : A ⟶ D) :
         (D.rank.isLocallyConstant.isOpen_fiber _)).preimage D.continuous_proj).mem_nhds
           ⟨hrank p.proj, rfl⟩⟩) fun n => ?_
     let φ := toCoordinateHom f n n
-    let Z := (A.jointSourceCore D n n).core; let W := (A.jointTargetCore D n n).core
     have hφ (y : JointStratum A D n n) : Function.Bijective (φ.fiberMap y) := by
       have hcomp : (φ.fiberMap y : (Fin n → 𝕜) → (Fin n → 𝕜)) =
           (Equiv.arrowCongr (Fin.castOrderIso y.2.2).toEquiv (Equiv.refl 𝕜)) ∘ (f.fiberMap y.1) ∘
             (Equiv.arrowCongr (Fin.castOrderIso y.2.1.symm).toEquiv (Equiv.refl 𝕜)) :=
         funext (fiberMap_toCoordinateHom f y)
       exact hcomp ▸ (Equiv.bijective _).comp ((hbij y.1).comp (Equiv.bijective _))
-    let eφ (y : JointStratum A D n n) : (Fin n → 𝕜) ≃ₗ[𝕜] (Fin n → 𝕜) :=
-      LinearEquiv.ofBijective (φ.fiberMap y).toLinearMap (hφ y)
-    have hcore : Continuous fun q : W.TotalSpace =>
-        (⟨q.proj, (eφ q.proj).symm q.2⟩ : Z.TotalSpace) := by
-      refine continuous_iff_continuousAt.2 fun q₀ => ?_
-      let y₀ := q₀.proj; rw [FiberBundle.continuousAt_totalSpace]
-      refine ⟨W.continuous_proj.continuousAt, ?_⟩
-      let s : Set (JointStratum A D n n) := Z.baseSet y₀ ∩ W.baseSet y₀
-      have hy₀ : y₀ ∈ s := ⟨Z.mem_baseSet_at y₀, W.mem_baseSet_at y₀⟩
-      let V₀ : Set W.TotalSpace := {q | q.proj ∈ s}
-      have hV₀ : V₀ ∈ 𝓝 q₀ := (((Z.isOpen_baseSet y₀).inter (W.isOpen_baseSet y₀)).preimage
-        W.continuous_proj).mem_nhds hy₀
-      apply (continuousWithinAt_iff_continuousAt hV₀).1
-      apply (continuousWithinAt_iff_continuousAt_domRestrict _ (x := q₀) (s := V₀) hy₀).2
-      let T : C(↥s, (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜)) := φ.operator y₀ y₀
-      let M (u : ↥s) : Matrix (Fin n) (Fin n) 𝕜 := LinearMap.toMatrix' (T u).toLinearMap
-      have hM : Continuous M := continuous_matrix fun r c => (continuous_apply r).comp <|
-        ((ContinuousLinearMap.apply 𝕜 (Fin n → 𝕜) (Pi.single c 1)).continuous).comp T.continuous
-      let u₀ : ↥s := ⟨y₀, hy₀⟩
-      have hTu₀ : T u₀ = φ.fiberMap y₀ :=
-        (φ.operator_eq y₀ y₀ u₀).trans (Z.inChartCoordinates_indexAt W y₀ (φ.fiberMap y₀))
-      have hM₀ : M u₀ * LinearMap.toMatrix' (eφ y₀).symm.toLinearMap = 1 := by
-        rw [← LinearMap.toMatrix'_comp, ← LinearMap.toMatrix'_id]
-        exact congrArg LinearMap.toMatrix' <| LinearMap.ext fun v =>
-          (congrArg (fun S : (Fin n → 𝕜) →L[𝕜] (Fin n → 𝕜) => S ((eφ y₀).symm v)) hTu₀).trans
-            ((eφ y₀).apply_symm_apply v)
-      have hdet₀ : (M u₀).det ≠ 0 := fun h0 => (one_ne_zero : (1 : 𝕜) ≠ 0) <| by
-        rw [← Matrix.det_one (n := Fin n), ← hM₀, Matrix.det_mul, h0, zero_mul]
-      let u (q : ↥V₀) : ↥s := ⟨q.1.proj, q.2⟩
-      have hu : Continuous u := (W.continuous_proj.comp continuous_subtype_val).subtype_mk _
-      have hMinv : ContinuousAt (fun q : ↥V₀ => (M (u q))⁻¹) ⟨q₀, hy₀⟩ :=
-        ContinuousAt.comp (f := u) (ContinuousAt.comp (f := M) (continuousAt_matrix_inv (M u₀)
-          ((Ring.inverse_eq_inv' (G₀ := 𝕜)).symm ▸ continuousAt_inv₀ hdet₀)) hM.continuousAt)
-            hu.continuousAt
-      have hw : ContinuousAt (fun q : ↥V₀ => (W.localTriv y₀ q.1).2) ⟨q₀, hy₀⟩ :=
-        (((W.localTriv y₀).continuousOn.continuousAt ((W.localTriv y₀).open_source.mem_nhds
-          ((W.mem_localTriv_source y₀ q₀).2 hy₀.2))).comp continuous_subtype_val.continuousAt).snd
-      refine ((continuous_fst.matrix_mulVec continuous_snd).continuousAt.comp
-        (hMinv.prodMk_nhds hw)).congr_of_eventuallyEq ?_
-      filter_upwards [((hM.matrix_det.comp hu).continuousAt.eventually_ne hdet₀)] with q hq
-      let p : Z.TotalSpace := ⟨q.1.proj, (eφ q.1.proj).symm q.1.2⟩
-      have hpq : φ.totalSpaceMap p = q.1 := by
-        rw [CoordinateHom.totalSpaceMap_def]
-        exact TotalSpace.ext rfl (heq_of_eq ((eφ q.1.proj).apply_symm_apply q.1.2))
-      have htriv : (W.localTriv y₀ q.1).2 = M (u q) *ᵥ (Z.localTriv y₀ p).2 := by
-        rw [← hpq, φ.localTriv_fiberMap y₀ y₀ p q.2.1 q.2.2]
-        exact (LinearMap.toMatrix'_mulVec (T (u q)).toLinearMap ((Z.localTriv y₀ p).2)).symm
-      have hinv_vec : (M (u q))⁻¹ *ᵥ (W.localTriv y₀ q.1).2 = (Z.localTriv y₀ p).2 := by
-        rw [htriv, Matrix.mulVec_mulVec, (M (u q)).nonsing_inv_mul hq.isUnit, Matrix.one_mulVec]
-      exact (congrArg (fun t => (t p).2) (Z.trivializationAt y₀)).trans hinv_vec.symm
+    have : IsIso φ := (FiniteRankBundleCore.isIso_iff_bijective φ).2 hφ
     rw [continuousOn_iff_continuous_domRestrict]
     refine (continuous_subtype_val.comp <| (jointSourceHomeomorph A D n n).symm.continuous.comp <|
-      hcore.comp (jointTargetHomeomorph A D n n).continuous).congr fun ⟨⟨x, w⟩, hm, hn⟩ => ?_
-    have hsymm : (eφ ⟨x, hm, hn⟩).symm (fun j => w (Fin.cast hn.symm j)) =
+      (inv φ).continuous_totalSpaceMap.comp (jointTargetHomeomorph A D n n).continuous).congr
+        fun ⟨⟨x, w⟩, hm, hn⟩ => ?_
+    have hsymm : (inv φ).fiberMap ⟨x, hm, hn⟩ (fun j => w (Fin.cast hn.symm j)) =
         fun j => (e x).symm w (Fin.cast hm.symm j) := by
-      apply (eφ ⟨x, hm, hn⟩).injective
-      refine ((eφ ⟨x, hm, hn⟩).apply_symm_apply _).trans ?_
-      symm; refine (LinearEquiv.ofBijective_apply _ _).trans ?_
-      rw [ContinuousLinearMap.coe_coe, fiberMap_toCoordinateHom f ⟨x, hm, hn⟩]
+      apply (hφ ⟨x, hm, hn⟩).1
+      have hinvφ := congrArg (fun k : A.jointTargetCore D n n ⟶ A.jointTargetCore D n n =>
+        k.fiberMap ⟨x, hm, hn⟩ (fun j => w (Fin.cast hn.symm j))) (IsIso.inv_hom_id φ)
+      simp only [FiniteRankBundleCore.fiberMap_comp, FiniteRankBundleCore.fiberMap_id,
+        ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply] at hinvφ
+      refine hinvφ.trans ?_
+      symm
+      rw [fiberMap_toCoordinateHom f ⟨x, hm, hn⟩]
       have harg : ((fun k => (e x).symm w (Fin.cast hm.symm k)) ∘ Fin.cast hm) = (e x).symm w :=
         funext fun _ => by simp
       rw [harg]
       exact congrArg (· ∘ Fin.cast hn.symm)
         ((LinearEquiv.ofBijective_apply _ _).symm.trans ((e x).apply_symm_apply w))
     dsimp only [Function.comp_apply, Set.domRestrict_apply]
-    rw [jointTargetHomeomorph_apply]; dsimp only; rw [jointSourceHomeomorph_symm_apply]
+    rw [jointTargetHomeomorph_apply, CoordinateHom.totalSpaceMap_def,
+      jointSourceHomeomorph_symm_apply]
     exact congrArg (TotalSpace.mk x) <| funext fun i =>
       (congrFun hsymm (Fin.cast hm i)).trans (by simp)
   have heq : (isoMk e f.continuous_totalSpaceMap hinv).hom = f :=

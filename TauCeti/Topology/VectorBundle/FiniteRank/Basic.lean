@@ -9,6 +9,7 @@ public import TauCeti.Topology.VectorBundle.Core.Basic
 public import TauCeti.Topology.VectorBundle.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Basic
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Module.ContinuousInverse
 
 /-!
 # The category of finite-rank point-indexed vector-bundle cores
@@ -30,9 +31,9 @@ For real or complex scalars and `B : Type u`, both the objects and the morphisms
 `TauCeti.pointIndexedCoreHomeomorph`.
 
 `fiberFunctor x` evaluates at a base point as a Mathlib module. The family of these functors
-jointly detects equality of morphisms. Over a complete scalar field, `isIso_iff_bijective`
-characterizes categorical isomorphisms exactly by fibrewise bijectivity: continuous inversion
-in finite-dimensional charts supplies the inverse bundle morphism.
+jointly detects equality of morphisms. `isIso_iff_bijective` characterizes categorical
+isomorphisms exactly by fibrewise bijectivity without completeness assumptions on the scalar
+field: continuous inversion in finite-dimensional charts supplies the inverse bundle morphism.
 
 Between two cores with the same chart domains, a fixed coordinate operator intertwining their
 transition maps is a bundle map with that operator on every fibre (`constHom`), and a fixed
@@ -45,7 +46,7 @@ space: `continuous_fiberMap_trivial` gives one direction, and over a complete sc
 `toTrivial` gives the other.
 
 The construction uses Mathlib's vector-bundle cores and preadditive-category interfaces,
-and the coordinate descent and Hom-bundle inversion API in the imported modules.
+and the coordinate descent and operator-inversion API in the imported modules.
 -/
 
 public section
@@ -419,8 +420,6 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
 
 section Isomorphisms
 
-variable [CompleteSpace 𝕜]
-
 /-- A morphism of finite-rank cores is invertible exactly when it is bijective on every fibre.
 The inverse is continuous, rather than merely a family of algebraic inverses. -/
 theorem isIso_iff_bijective (f : A ⟶ D) :
@@ -439,21 +438,46 @@ theorem isIso_iff_bijective (f : A ⟶ D) :
       simpa only [fiberMap_comp, fiberMap_id, ContinuousLinearMap.comp_apply,
         ContinuousLinearMap.id_apply] using h
   · intro hf
-    let e (x : B) : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜) :=
-      (LinearEquiv.ofBijective (f.fiberMap x).toLinearMap (hf x)).toContinuousLinearEquiv
-    have he (x : B) : (f.fiberMap x).IsInvertible := ⟨e x, rfl⟩
-    let g : D ⟶ A := CoordinateHom.ofContinuous (fun x => (f.fiberMap x).inverse)
-      (f.continuous_fiberMap.clm_bundle_inverse (E₁ := A.core.Fiber) (E₂ := D.core.Fiber)
-        (b := fun x => x) he)
-    have hg (x : B) : g.fiberMap x = (f.fiberMap x).inverse :=
-      congrFun (CoordinateHom.fiberMap_ofContinuous _ _) x
-    exact ⟨g, by
-      apply hom_ext
-      intro x
-      simp only [fiberMap_comp, hg, fiberMap_id, (he x).inverse_comp_self], by
-      apply hom_ext
-      intro x
-      simp only [fiberMap_comp, hg, fiberMap_id, (he x).self_comp_inverse]⟩
+    have hfx (x : B) : (f.fiberMap x).IsInvertible :=
+      let e := LinearEquiv.ofBijective (f.fiberMap x).toLinearMap (hf x)
+      ⟨{ e with
+         continuous_toFun := (f.fiberMap x).continuous
+         continuous_invFun := e.symm.toLinearMap.continuous_on_pi },
+        ContinuousLinearMap.ext fun _ => rfl⟩
+    have hinv_op (i j : B) (x : B) (hi : x ∈ D.core.baseSet i) (hj : x ∈ A.core.baseSet j) :
+        (f.operator j i ⟨x, hj, hi⟩).IsInvertible := by
+      rw [f.operator_eq, inChartCoordinates_core]
+      have hA : (A.core.coordChange j x x).IsInvertible :=
+        ⟨(A.core.localTriv j).coordChangeL 𝕜 (A.core.localTriv x) x,
+          A.core.localTriv_coordChangeL ⟨hj, A.mem_baseSet_self x⟩⟩
+      have hD : (D.core.coordChange x i x).IsInvertible :=
+        ⟨(D.core.localTriv x).coordChangeL 𝕜 (D.core.localTriv i) x,
+          D.core.localTriv_coordChangeL ⟨D.mem_baseSet_self x, hi⟩⟩
+      exact hD.comp ((hfx x).comp hA)
+    let g : D ⟶ A :=
+      { operator i j :=
+          ⟨fun u => (f.operator j i ⟨u.1, u.2.2, u.2.1⟩).inverse,
+            ((f.operator j i).continuous.comp
+              (continuous_subtype_val.subtype_mk fun u => ⟨u.2.2, u.2.1⟩)).clm_inverse
+              fun u => hinv_op i j u.1 u.2.1 u.2.2⟩
+        compatible i i' j j' x hi hi' hj hj' v := by
+          have h' := hinv_op i' j' x hi' hj'
+          apply Function.LeftInverse.injective h'.inverse_apply_self
+          dsimp only [ContinuousMap.coe_mk]
+          rw [h'.self_apply_inverse]
+          have hcomp := f.compatible j j' i i' x hj hj' hi hi'
+            ((f.operator j i ⟨x, hj, hi⟩).inverse v)
+          rw [(hinv_op i j x hi hj).self_apply_inverse] at hcomp
+          exact hcomp.symm }
+    have hgf (x : B) : g.fiberMap x = (f.fiberMap x).inverse := by
+      rw [← operator_self g x]
+      dsimp only [g, ContinuousMap.coe_mk]
+      rw [operator_self f x]
+    exact ⟨g,
+      hom_ext fun x => by
+        simpa only [fiberMap_comp, fiberMap_id, hgf] using (hfx x).inverse_comp_self,
+      hom_ext fun x => by
+        simpa only [fiberMap_comp, fiberMap_id, hgf] using (hfx x).self_comp_inverse⟩
 
 end Isomorphisms
 end FiniteRankBundleCore
