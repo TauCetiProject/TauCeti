@@ -34,8 +34,8 @@ whose underlying morphisms are in `P`).
   `CategoryTheory.MorphismProperty.relative_overPost_iff`: relative representability with respect
   to `Over.post F` is relative representability of the underlying morphism.
 * `TauCeti.relativelyRepresentable_overYonedaEquivPresheafOver_map_iff` and
-  `TauCeti.presheaf_overYonedaEquivPresheafOver_map_iff`: the case of presheaves over a
-  representable presheaf.
+  `CategoryTheory.MorphismProperty.presheaf_overYonedaEquivPresheafOver_map_iff`: the case of
+  presheaves over a representable presheaf.
 -/
 
 public section
@@ -188,8 +188,8 @@ theorem relativelyRepresentable_overYonedaEquivPresheafOver_map_iff
 /-- A morphism of presheaves over `yoneda.obj X` is representable with base changes in `P`
 exactly when the corresponding morphism of presheaves on `Over X` is representable by objects of
 `Over X` with base changes whose underlying morphisms are in `P`. -/
-theorem presheaf_overYonedaEquivPresheafOver_map_iff (P : MorphismProperty C)
-    {A B : Over (yoneda.obj X)} (f : A ⟶ B) :
+theorem _root_.CategoryTheory.MorphismProperty.presheaf_overYonedaEquivPresheafOver_map_iff
+    (P : MorphismProperty C) {A B : Over (yoneda.obj X)} (f : A ⟶ B) :
     (P.inverseImage (Over.forget X)).presheaf ((overYonedaEquivPresheafOver X).functor.map f) ↔
       P.presheaf f.left :=
   (MorphismProperty.relative_equivalence_map_iff
@@ -200,7 +200,8 @@ theorem presheaf_overYonedaEquivPresheafOver_map_iff (P : MorphismProperty C)
 `yoneda.map Y.hom` correspond to morphisms from the representable presheaf `yoneda.obj Y` on
 `Over X`, through the equivalence `overYonedaEquivPresheafOver X`. -/
 @[expose, simps]
-noncomputable def overYonedaEquivPresheafOverHomEquiv (Y : Over X) (F : Over (yoneda.obj X)) :
+noncomputable def _root_.CategoryTheory.Over.overYonedaEquivPresheafOverHomEquiv (Y : Over X)
+    (F : Over (yoneda.obj X)) :
     (Over.mk (yoneda.map Y.hom) ⟶ F) ≃
       (yoneda.obj Y ⟶ (overYonedaEquivPresheafOver X).functor.obj F) where
   toFun g := (overYonedaEquivPresheafOverYonedaIso X).inv.app Y ≫
@@ -215,7 +216,7 @@ noncomputable def overYonedaEquivPresheafOverHomEquiv (Y : Over X) (F : Over (yo
 over `yoneda.obj X` is representable. -/
 theorem relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff {Y : Over X}
     {F : Over (yoneda.obj X)} (g : Over.mk (yoneda.map Y.hom) ⟶ F) :
-    yoneda.relativelyRepresentable (overYonedaEquivPresheafOverHomEquiv Y F g) ↔
+    yoneda.relativelyRepresentable (Over.overYonedaEquivPresheafOverHomEquiv Y F g) ↔
       yoneda.relativelyRepresentable g.left :=
   (MorphismProperty.cancel_left_of_respectsIso _ _ _).trans
     (relativelyRepresentable_overYonedaEquivPresheafOver_map_iff g)
@@ -223,11 +224,12 @@ theorem relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff {Y : Ove
 /-- A morphism from a representable presheaf on `Over X` is representable with base changes
 whose underlying morphisms are in `P` exactly when the underlying morphism of presheaves on `C`
 of the corresponding morphism over `yoneda.obj X` is representable with base changes in `P`. -/
-theorem presheaf_overYonedaEquivPresheafOverHomEquiv_iff (P : MorphismProperty C) {Y : Over X}
+theorem _root_.CategoryTheory.MorphismProperty.presheaf_overYonedaEquivPresheafOverHomEquiv_iff
+    (P : MorphismProperty C) {Y : Over X}
     {F : Over (yoneda.obj X)} (g : Over.mk (yoneda.map Y.hom) ⟶ F) :
-    (P.inverseImage (Over.forget X)).presheaf (overYonedaEquivPresheafOverHomEquiv Y F g) ↔
+    (P.inverseImage (Over.forget X)).presheaf (Over.overYonedaEquivPresheafOverHomEquiv Y F g) ↔
       P.presheaf g.left :=
   (MorphismProperty.cancel_left_of_respectsIso _ _ _).trans
-    (presheaf_overYonedaEquivPresheafOver_map_iff P g)
+    (P.presheaf_overYonedaEquivPresheafOver_map_iff g)
 
 end TauCeti

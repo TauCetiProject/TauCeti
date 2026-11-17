@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.CategoryTheory.Comma.Presheaf.OverYoneda
-public import TauCeti.CategoryTheory.Sites.Over
+public import TauCeti.CategoryTheory.Sites.Over.Basic
 
 /-!
 # Sheaves over a representable sheaf
@@ -20,21 +20,23 @@ applies `CategoryTheory.Over.isSheaf_over_iff_isSheaf_sigmaPresheaf`.
 
 ## Main declarations
 
-* `TauCeti.sigmaPresheafOverYonedaEquivPresheafOverIso F`: the presheaf on `C` assembled from
-  the presheaf on `Over X` attached to `F` is isomorphic to `F.left`.
-* `TauCeti.isSheaf_overYonedaEquivPresheafOver_iff`: `F.left` is a sheaf for `J` if and only if
-  the attached presheaf on `Over X` is a sheaf for `J.over X`.
+* `CategoryTheory.Over.sigmaPresheafOverYonedaEquivPresheafOverIso F`: the presheaf on `C`
+  assembled from the presheaf on `Over X` attached to `F` is isomorphic to `F.left`.
+* `CategoryTheory.GrothendieckTopology.isSheaf_overYonedaEquivPresheafOver_iff`: `F.left` is a
+  sheaf for `J` if and only if the attached presheaf on `Over X` is a sheaf for `J.over X`.
 -/
 
 public section
 
 universe v u
 
-namespace TauCeti
+namespace CategoryTheory
 
-open CategoryTheory Opposite
+open Opposite TauCeti
 
 variable {C : Type u} [Category.{v} C] {X : C}
+
+namespace Over
 
 /-- The presheaf `T ↦ Σ (h : T ⟶ X), P (T, h)` on `C` built from the presheaf `P` on `Over X`
 attached to a presheaf `F` over `yoneda.obj X` is isomorphic to `F.left`: a section of `F.left`
@@ -64,14 +66,17 @@ lemma sigmaPresheafOverYonedaEquivPresheafOverIso_inv_app_apply_fst (F : Over (y
     ((sigmaPresheafOverYonedaEquivPresheafOverIso F).inv.app T y).1 = F.hom.app T y :=
   (rfl)
 
+end Over
+
 /-- If `yoneda.obj X` is a sheaf for `J`, then a presheaf `F` over `yoneda.obj X` is a sheaf for
 `J` exactly when the corresponding presheaf on `Over X` is a sheaf for `J.over X`. -/
-theorem isSheaf_overYonedaEquivPresheafOver_iff (J : GrothendieckTopology C)
-    (hX : Presieve.IsSheaf J (yoneda.obj X)) (F : Over (yoneda.obj X)) :
+theorem GrothendieckTopology.isSheaf_overYonedaEquivPresheafOver_iff (J : GrothendieckTopology C)
+    (hX : Presieve.IsSheaf J (CategoryTheory.yoneda.obj X))
+    (F : Over (CategoryTheory.yoneda.obj X)) :
     Presieve.IsSheaf (J.over X) ((overYonedaEquivPresheafOver X).functor.obj F) ↔
       Presieve.IsSheaf J F.left :=
   (Over.isSheaf_over_iff_isSheaf_sigmaPresheaf J hX).trans
-    ⟨Presieve.isSheaf_iso J (sigmaPresheafOverYonedaEquivPresheafOverIso F),
-      Presieve.isSheaf_iso J (sigmaPresheafOverYonedaEquivPresheafOverIso F).symm⟩
+    ⟨Presieve.isSheaf_iso J (Over.sigmaPresheafOverYonedaEquivPresheafOverIso F),
+      Presieve.isSheaf_iso J (Over.sigmaPresheafOverYonedaEquivPresheafOverIso F).symm⟩
 
-end TauCeti
+end CategoryTheory

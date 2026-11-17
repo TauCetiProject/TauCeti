@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.AlgebraicSpace.Category
-public import TauCeti.CategoryTheory.MorphismProperty.RepresentableOver
+public import TauCeti.CategoryTheory.MorphismProperty.Representable.Over
 public import TauCeti.CategoryTheory.ObjectProperty.Over
-public import TauCeti.CategoryTheory.Sites.OverYoneda
+public import TauCeti.CategoryTheory.Sites.Over.Yoneda
 
 /-!
 # Algebraic spaces over a base scheme
@@ -23,8 +23,9 @@ the predicate `IsAlgebraicSpaceOver S`.
 Presheaves on `Over S` are presheaves on schemes lying over `h_S`
 (`TauCeti.overYonedaEquivPresheafOver`), and under this correspondence a presheaf on `Over S` is
 an algebraic space over `S` exactly when the presheaf on schemes is an algebraic space
-(`isAlgebraicSpaceOver_iff`). Hence `AlgSpace.overEquiv S` identifies algebraic spaces over the
-algebraic space `h_S` with algebraic spaces over `S` in the sense of the Stacks Project.
+(`CategoryTheory.Over.isAlgebraicSpaceOver_iff`). Hence `AlgSpace.overEquiv S` identifies
+algebraic spaces over the algebraic space `h_S` with algebraic spaces over `S` in the sense of the
+Stacks Project.
 
 ## Main definitions
 
@@ -36,7 +37,7 @@ algebraic space `h_S` with algebraic spaces over `S` in the sense of the Stacks 
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.Spaces.isAlgebraicSpaceOver_iff`: a presheaf `F` on schemes over
+* `CategoryTheory.Over.isAlgebraicSpaceOver_iff`: a presheaf `F` on schemes over
   `h_S` is an algebraic space if and only if the corresponding presheaf on `Over S` is an
   algebraic space over `S`.
 
@@ -99,17 +100,17 @@ variable {S : Scheme.{u}} (F : Over (yoneda.obj S))
 
 /-- A presheaf on schemes over `h_S` is an fppf sheaf exactly when the corresponding presheaf
 on `Over S` is. -/
-theorem isSheaf_overYonedaEquivPresheafOver_iff :
+theorem _root_.CategoryTheory.Over.isSheaf_fppfTopology_overYonedaEquivPresheafOver_iff :
     Presheaf.IsSheaf (Scheme.fppfTopology.over S)
         ((overYonedaEquivPresheafOver S).functor.obj F) ↔
       Presheaf.IsSheaf Scheme.fppfTopology F.left := by
   rw [isSheaf_iff_isSheaf_of_type, isSheaf_iff_isSheaf_of_type]
-  exact TauCeti.isSheaf_overYonedaEquivPresheafOver_iff _
+  exact GrothendieckTopology.isSheaf_overYonedaEquivPresheafOver_iff _
     ((isSheaf_iff_isSheaf_of_type _ _).1 (Scheme.fppfTopology.yoneda.obj S).property) F
 
 /-- A presheaf on schemes over `h_S` has representable diagonal exactly when the corresponding
 presheaf on `Over S` has diagonal representable by schemes over `S`. -/
-theorem representableDiagonal_overYonedaEquivPresheafOver_iff :
+theorem _root_.CategoryTheory.Over.representableDiagonal_overYonedaEquivPresheafOver_iff :
     yoneda.relativelyRepresentable (diag ((overYonedaEquivPresheafOver S).functor.obj F)) ↔
       RepresentableDiagonal F.left := by
   rw [Functor.relativelyRepresentable.diag_iff, representableDiagonal_iff]
@@ -118,36 +119,39 @@ theorem representableDiagonal_overYonedaEquivPresheafOver_iff :
     exact (relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff
       (Over.postHomMk g)).1 (h _)
   · intro h Y g
-    obtain ⟨g, rfl⟩ := (overYonedaEquivPresheafOverHomEquiv Y F).surjective g
+    obtain ⟨g, rfl⟩ := (Over.overYonedaEquivPresheafOverHomEquiv Y F).surjective g
     exact (relativelyRepresentable_overYonedaEquivPresheafOverHomEquiv_iff g).2 (h g.left)
 
 /-- A presheaf on schemes over `h_S` has an étale atlas exactly when the corresponding presheaf
 on `Over S` has an étale atlas by a scheme over `S`. -/
-theorem exists_etaleAtlas_overYonedaEquivPresheafOver_iff :
+theorem _root_.CategoryTheory.Over.exists_etaleAtlas_overYonedaEquivPresheafOver_iff :
     (∃ (U : Over S) (a : yoneda.obj U ⟶ (overYonedaEquivPresheafOver S).functor.obj F),
       MorphismProperty.presheaf (MorphismProperty.inverseImage @Etale (Over.forget S)) a ∧
         MorphismProperty.presheaf (MorphismProperty.inverseImage @Surjective (Over.forget S)) a) ↔
       ∃ (U : Scheme.{u}) (a : yoneda.obj U ⟶ F.left), EtaleAtlas a := by
   constructor
   · rintro ⟨Y, a, he, hs⟩
-    obtain ⟨g, rfl⟩ := (overYonedaEquivPresheafOverHomEquiv Y F).surjective a
-    exact ⟨Y.left, g.left, (presheaf_overYonedaEquivPresheafOverHomEquiv_iff _ g).1 he,
-      (presheaf_overYonedaEquivPresheafOverHomEquiv_iff _ g).1 hs⟩
+    obtain ⟨g, rfl⟩ := (Over.overYonedaEquivPresheafOverHomEquiv Y F).surjective a
+    exact ⟨Y.left, g.left,
+      (MorphismProperty.presheaf_overYonedaEquivPresheafOverHomEquiv_iff _ g).1 he,
+      (MorphismProperty.presheaf_overYonedaEquivPresheafOverHomEquiv_iff _ g).1 hs⟩
   · rintro ⟨U, a, ha⟩
-    exact ⟨_, _, (presheaf_overYonedaEquivPresheafOverHomEquiv_iff _ (Over.postHomMk a)).2 ha.etale,
-      (presheaf_overYonedaEquivPresheafOverHomEquiv_iff _ (Over.postHomMk a)).2 ha.surjective⟩
+    exact ⟨_, _, (MorphismProperty.presheaf_overYonedaEquivPresheafOverHomEquiv_iff _
+        (Over.postHomMk a)).2 ha.etale,
+      (MorphismProperty.presheaf_overYonedaEquivPresheafOverHomEquiv_iff _
+        (Over.postHomMk a)).2 ha.surjective⟩
 
 /-- A presheaf on schemes lying over `h_S` is an algebraic space exactly when the corresponding
 presheaf on `Over S` is an algebraic space over `S`. -/
-theorem isAlgebraicSpaceOver_iff :
+theorem _root_.CategoryTheory.Over.isAlgebraicSpaceOver_iff :
     IsAlgebraicSpaceOver S ((overYonedaEquivPresheafOver S).functor.obj F) ↔
       IsAlgebraicSpace F.left :=
-  ⟨fun h ↦ ⟨(isSheaf_overYonedaEquivPresheafOver_iff F).1 h.isSheaf,
-      (representableDiagonal_overYonedaEquivPresheafOver_iff F).1 h.representableDiagonal,
-      (exists_etaleAtlas_overYonedaEquivPresheafOver_iff F).1 h.exists_etaleAtlas⟩,
-    fun h ↦ ⟨(isSheaf_overYonedaEquivPresheafOver_iff F).2 h.isSheaf,
-      (representableDiagonal_overYonedaEquivPresheafOver_iff F).2 h.representableDiagonal,
-      (exists_etaleAtlas_overYonedaEquivPresheafOver_iff F).2 h.exists_etaleAtlas⟩⟩
+  ⟨fun h ↦ ⟨F.isSheaf_fppfTopology_overYonedaEquivPresheafOver_iff.1 h.isSheaf,
+      F.representableDiagonal_overYonedaEquivPresheafOver_iff.1 h.representableDiagonal,
+      F.exists_etaleAtlas_overYonedaEquivPresheafOver_iff.1 h.exists_etaleAtlas⟩,
+    fun h ↦ ⟨F.isSheaf_fppfTopology_overYonedaEquivPresheafOver_iff.2 h.isSheaf,
+      F.representableDiagonal_overYonedaEquivPresheafOver_iff.2 h.representableDiagonal,
+      F.exists_etaleAtlas_overYonedaEquivPresheafOver_iff.2 h.exists_etaleAtlas⟩⟩
 
 end overYoneda
 
@@ -161,14 +165,14 @@ noncomputable def overEquiv (S : Scheme.{u}) :
         (IsAlgebraicSpaceOver S : ObjectProperty ((Over S)ᵒᵖ ⥤ Type u)) :=
   (ObjectProperty.overFullSubcategoryEquiv _ (ofScheme.obj S)).trans
     ((overYonedaEquivPresheafOver S).congrFullSubcategory
-      (by ext F; exact isAlgebraicSpaceOver_iff F))
+      (by ext F; exact F.isAlgebraicSpaceOver_iff))
 
 /-- `overEquiv S` is the comparison of over categories of a full subcategory followed by the
 restriction of `TauCeti.overYonedaEquivPresheafOver S` to algebraic spaces. -/
 theorem overEquiv_def (S : Scheme.{u}) :
     overEquiv S = (ObjectProperty.overFullSubcategoryEquiv _ (ofScheme.obj S)).trans
       ((overYonedaEquivPresheafOver S).congrFullSubcategory
-        (by ext F; exact isAlgebraicSpaceOver_iff F)) :=
+        (by ext F; exact F.isAlgebraicSpaceOver_iff)) :=
   (rfl)
 
 /-- The algebraic space over `S` attached to an algebraic space `Y` over `h_S` is the presheaf on
