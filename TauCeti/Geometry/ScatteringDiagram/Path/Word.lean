@@ -559,7 +559,6 @@ theorem crossingWord_restrictPrefunctor_eq_lift [Finite ι] [Finite κ] (ν : ι
 /-- Restricting to an injectively indexed subfamily of walls along
 `WallComplement.restrictPrefunctor W f` maps `crossingWord` by
 `FreeGroup.lift (Function.extend f FreeGroup.of 1)`, killing deleted walls. -/
-@[simp]
 theorem crossingWord_restrictPrefunctor [Finite ι] [Finite κ] (ν : ι → V →ₗ[ℝ] ℝ)
     (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     {f : κ → ι} (hf : Function.Injective f)
@@ -583,28 +582,36 @@ variable {V U ι ι' : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 same index type `ι`) under pushed-forward coorientations. -/
 @[simp]
 theorem crossingWord_affineMap [Finite ι] (ν : ι → V →ₗ[ℝ] ℝ)
-    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U)
-    {hdisj' : Pairwise fun i j =>
-      Disjoint (intrinsicInterior ℝ (e '' W i)) (intrinsicInterior ℝ (e '' W j))} :
+    (hdisj' : Pairwise fun i j =>
+      Disjoint (intrinsicInterior ℝ (e '' W i)) (intrinsicInterior ℝ (e '' W j))) :
     (p.affineMap e).crossingWord
         (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
-      p.crossingWord ν hdisj :=
-  crossingWord_eq_of_signedCrossingEvents_eq _ _ hdisj' hdisj (p.affineMap e) p
+      p.crossingWord ν
+        (fun i j hij => (Set.disjoint_image_iff e.injective).mp
+          (e.intrinsicInterior_image (W i) ▸ e.intrinsicInterior_image (W j) ▸ hdisj' hij)) :=
+  crossingWord_eq_of_signedCrossingEvents_eq _ _ hdisj' _ (p.affineMap e) p
     (signedCrossingEvents_affineMap ν p e)
 
 /-- Transporting an admissible polygonal path along `e : V ≃ᴬ[ℝ] U` and a wall bijection
 `r : ι ≃ ι'` maps its crossing word by `FreeGroup.map r`. -/
 @[simp]
 theorem crossingWord_affineMapReindex [Finite ι] [Finite ι'] (ν : ι → V →ₗ[ℝ] ℝ)
-    (hdisj : Pairwise fun i j => Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)))
     (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι') (hW : ∀ i, W' (r i) = e '' W i)
-    {hdisj' : Pairwise fun i' j' =>
-      Disjoint (intrinsicInterior ℝ (W' i')) (intrinsicInterior ℝ (W' j'))}
+    (hdisj' : Pairwise fun i' j' =>
+      Disjoint (intrinsicInterior ℝ (W' i')) (intrinsicInterior ℝ (W' j')))
     (p : AdmissiblePLPath x y) :
     (p.affineMapReindex e r hW).crossingWord
         (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) hdisj' =
-      FreeGroup.map r (p.crossingWord ν hdisj) := by
+      FreeGroup.map r (p.crossingWord ν
+        (fun i j hij => (Set.disjoint_image_iff e.injective).mp
+          (e.intrinsicInterior_image (W i) ▸ e.intrinsicInterior_image (W j) ▸
+            hW i ▸ hW j ▸ hdisj' (r.injective.ne hij)))) := by
+  have hdisj : Pairwise fun i j =>
+      Disjoint (intrinsicInterior ℝ (W i)) (intrinsicInterior ℝ (W j)) :=
+    fun i j hij => (Set.disjoint_image_iff e.injective).mp
+      (e.intrinsicInterior_image (W i) ▸ e.intrinsicInterior_image (W j) ▸
+        hW i ▸ hW j ▸ hdisj' (r.injective.ne hij))
   obtain rfl := (r.eq_comp_symm W' _).mpr (funext hW)
   have hν :
       (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap) =
@@ -613,9 +620,7 @@ theorem crossingWord_affineMapReindex [Finite ι] [Finite ι'] (ν : ι → V �
     crossingWord_restrictPrefunctor_eq_lift _ (e.pairwise_disjoint_intrinsicInterior_image hdisj)
       (g := FreeGroup.of ∘ r) (fun i' => by simp)
       (fun i hi => (hi ⟨r i, r.symm_apply_apply i⟩).elim) (p.affineMap e),
-    ← FreeGroup.map_eq_lift,
-    crossingWord_affineMap ν hdisj p e
-      (hdisj' := e.pairwise_disjoint_intrinsicInterior_image hdisj)]
+    ← FreeGroup.map_eq_lift, crossingWord_affineMap]
 
 end AffineTransport
 

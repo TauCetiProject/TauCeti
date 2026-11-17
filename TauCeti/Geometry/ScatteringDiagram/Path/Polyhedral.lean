@@ -652,9 +652,9 @@ theorem crossingWord_image (C : FinitePolyhedralComplex h) (ν : C.walls → V �
   have hlin : e.toAffineEquiv.linear = e.toContinuousAffineEquiv.toAffineEquiv.linear :=
     congrArg AffineEquiv.linear e.toContinuousAffineEquiv_toAffineEquiv.symm
   simp_rw [hlin]
-  exact Quiver.Path.crossingWord_affineMapReindex ν C.pairwise_disjoint_intrinsicInterior_walls
-    e.toContinuousAffineEquiv (C.wallsEquiv e)
-    (fun w => e.coe_toContinuousAffineEquiv.symm ▸ C.coe_wallsEquiv_apply e w) p
+  exact Quiver.Path.crossingWord_affineMapReindex ν e.toContinuousAffineEquiv (C.wallsEquiv e)
+    (fun w => e.coe_toContinuousAffineEquiv.symm ▸ C.coe_wallsEquiv_apply e w)
+    (C.image e).pairwise_disjoint_intrinsicInterior_walls p
 
 end IntegralAffineTransport
 

@@ -528,29 +528,36 @@ coorientations and reindexed labels. -/
 theorem wallPathProduct_affineMapReindex {U ι' : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
     [Finite ι'] {W' : ι' → Set U} (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U) (r : ι ≃ ι')
     (hW : ∀ i, W' (r i) = e '' W i)
-    {hcomm' : ∀ i' j', affineSpan ℝ (W' i') = affineSpan ℝ (W' j') →
-      Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j')} :
+    (hcomm' : ∀ i' j', affineSpan ℝ (W' i') = affineSpan ℝ (W' j') →
+      Commute ((label ∘ r.symm) i') ((label ∘ r.symm) j')) :
     (p.affineMapReindex e r hW).wallPathProduct
         (fun i' => (ν (r.symm i')).comp e.toAffineEquiv.linear.symm.toLinearMap)
         (label ∘ r.symm) hcomm' =
-      p.wallPathProduct ν label hcomm := by
+      p.wallPathProduct ν label
+        (fun i j hij => r.symm_apply_apply i ▸ r.symm_apply_apply j ▸ hcomm' (r i) (r j)
+          (hW i ▸ hW j ▸ (AffineSubspace.map_span e.toAffineMap (W i)).symm.trans
+            (hij ▸ AffineSubspace.map_span e.toAffineMap (W j)))) := by
   induction p with
   | nil => simp
   | cons p a ih =>
-    simp [ih, segmentPathProduct_mapReindex ν label hcomm a e r hW]
+    rw [affineMapReindex_cons, wallPathProduct_cons, wallPathProduct_cons, ih,
+      segmentPathProduct_mapReindex]
 
 /-- Transporting an admissible polygonal path along a continuous affine equivalence preserves
 its wall-crossing product under pushed-forward coorientations. -/
 @[simp]
 theorem wallPathProduct_affineMap {U : Type*} [NormedAddCommGroup U] [NormedSpace ℝ U]
     (p : AdmissiblePLPath x y) (e : V ≃ᴬ[ℝ] U)
-    {hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
-      Commute (label i) (label j)} :
+    (hcomm' : ∀ i j, affineSpan ℝ (e '' W i) = affineSpan ℝ (e '' W j) →
+      Commute (label i) (label j)) :
     (p.affineMap e).wallPathProduct
         (fun i => (ν i).comp e.toAffineEquiv.linear.symm.toLinearMap) label hcomm' =
-      p.wallPathProduct ν label hcomm := by
+      p.wallPathProduct ν label
+        (fun i j hij => hcomm' i j
+          ((AffineSubspace.map_span e.toAffineMap (W i)).symm.trans
+            (hij ▸ AffineSubspace.map_span e.toAffineMap (W j)))) := by
   rw [← affineMapReindex_refl]
   exact wallPathProduct_affineMapReindex (W' := fun i => e '' W i)
-    ν label hcomm p e (Equiv.refl ι) (fun _ => rfl) (hcomm' := hcomm')
+    ν label p e (Equiv.refl ι) (fun _ => rfl) hcomm'
 
 end Quiver.Path
