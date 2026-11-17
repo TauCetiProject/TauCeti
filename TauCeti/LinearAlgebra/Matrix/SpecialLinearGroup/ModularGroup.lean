@@ -33,12 +33,37 @@ of that action are in `TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic`.
 * `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_S`,
   `TauCeti.Matrix.SpecialLinearGroup.vecMul_map_modularGroup_T`: `r S = (r₂, -r₁)` and
   `r T = (r₁, r₁ + r₂)`.
+* `Matrix.SpecialLinearGroup.coe_mul_T_zpow`, `Matrix.SpecialLinearGroup.coe_mul_S`: explicit
+  `2 × 2` matrices of `γ * T ^ n` and `γ * S` for `γ ∈ SL₂(ℤ)`.
 -/
 
 public section
 
 open Matrix
 open scoped MatrixGroups
+
+namespace Matrix.SpecialLinearGroup
+
+/-- Multiplying `γ ∈ SL₂(ℤ)` on the right by `Tⁿ` adds `n` times the first column to the second. -/
+theorem coe_mul_T_zpow (γ : SL(2, ℤ)) (n : ℤ) :
+    (↑(γ * ModularGroup.T ^ n) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![γ 0 0, γ 0 0 * n + γ 0 1; γ 1 0, γ 1 0 * n + γ 1 1] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_T_zpow, Matrix.mul_apply,
+      Fin.sum_univ_two]
+
+/-- Multiplying `γ ∈ SL₂(ℤ)` on the right by `S` swaps the columns and negates the new second
+column. -/
+theorem coe_mul_S (γ : SL(2, ℤ)) :
+    (↑(γ * ModularGroup.S) : Matrix (Fin 2) (Fin 2) ℤ) =
+      !![γ 0 1, -γ 0 0; γ 1 1, -γ 1 0] := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.coe_S, Matrix.mul_apply,
+      Fin.sum_univ_two]
+
+end Matrix.SpecialLinearGroup
 
 namespace TauCeti.Matrix.SpecialLinearGroup
 
