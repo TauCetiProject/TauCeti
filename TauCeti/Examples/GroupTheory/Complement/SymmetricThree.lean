@@ -296,11 +296,6 @@ theorem crossedTransfer_id_swap :
   rw [crossedTransfer_id_apply h,
     h.crossedProjection_coe_right ⟨swap 0 1, swap_mem_stabilizer_perm_fin_three 2⟩, one_pow]
 
-/-- The index `[S₃ : A₃] = 2` is prime to `|A₃| = 3`. -/
-theorem coprime_index_card :
-    Nat.Coprime (alternatingGroup (Fin 3)).index (Nat.card (alternatingGroup (Fin 3))) :=
-  coprime_index_card_alternatingGroup_fin_three
-
 /-- **The inverse exponent is `2`**: the inverse of `[S₃ : A₃] = 2` modulo `|A₃| = 3`. -/
 theorem val_inv_index :
     (((alternatingGroup (Fin 3)).index : ZMod (Nat.card (alternatingGroup (Fin 3))))⁻¹).val =
@@ -317,7 +312,7 @@ Gaschütz complement of the local complement `⊥` of `A₃` in itself is the st
 theorem gaschutzComplement_transversal (a : Fin 3) :
     h.gaschutzComplement (transversal a) (mk_transversal a) =
       MulAction.stabilizer (Perm (Fin 3)) a :=
-  h.gaschutzComplement_eq_of_forall_mem _ _ coprime_index_card
+  h.gaschutzComplement_eq_of_forall_mem _ _ coprime_index_card_alternatingGroup_fin_three
     (isComplement'_alternatingGroup_stabilizer_perm_fin_three a) bot_le (transversal_mem a)
 
 /-- **The Gaschütz complement depends on the transversal.** The transversals through `(0 1)` and
@@ -369,7 +364,7 @@ theorem conj_symmetricThreeChangeTransversal_two_zero_sq_smul_stabilizer :
   have hchg :=
     (alternatingGroup (Fin 3)).isLocalComplement_bot_self.gaschutzComplement_changeTransversal
       (alternatingGroupFinThreeSplittingEquiv 2) (mk_alternatingGroupFinThreeSplittingEquiv 2)
-      coprime_index_card
+      coprime_index_card_alternatingGroup_fin_three
       (alternatingGroupFinThreeSplittingEquiv 0) (mk_alternatingGroupFinThreeSplittingEquiv 0)
   rw [← symmetricThreeChangeTransversal_def, val_inv_index,
     gaschutzComplement_alternatingGroup_fin_three,
