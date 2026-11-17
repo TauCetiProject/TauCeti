@@ -36,6 +36,8 @@ completed element by `f` once its image modulo `f` vanishes.
 * `TauCeti.compatSubalgebra R S`: the subalgebra of compatible families.
 * `TauCeti.CycloCompletion R S`: the cyclotomic completion `R[q]^S`.
 * `TauCeti.CycloCompletion.proj R S f`: the projection `R[q]^S → R[q]/(f)`.
+* `TauCeti.CycloCompletion.lift`: the algebra map into `R[q]^S` induced by a compatible family of
+  algebra maps into the quotients `R[q]/(f)`.
 * `TauCeti.CycloCompletion.fromPoly R S`: the map `R[q] → R[q]^S`.
 * `TauCeti.CycloCompletion.quotientSpanEquiv R S f`: the isomorphism
   `R[q]^S / (f) ≃ₐ[R] R[q]/(f)`.
@@ -44,6 +46,8 @@ completed element by `f` once its image modulo `f` vanishes.
 
 * `TauCeti.CycloCompletion.algHomOfDvd_proj`: the transition equation for `f ∣ g`.
 * `TauCeti.CycloCompletion.ext`: an element is determined by its projections.
+* `TauCeti.CycloCompletion.proj_lift`, `TauCeti.CycloCompletion.lift_unique`: the universal
+  property of the inverse limit.
 * `TauCeti.CycloCompletion.proj_surjective`: every projection is surjective.
 * `TauCeti.CycloCompletion.fromPoly_injective_iff`: the polynomial map is injective exactly when
   `S` contains a positive order or `R` is the zero ring.
@@ -122,12 +126,47 @@ theorem ext {x y : CycloCompletion R S} (h : ∀ f, proj R S f x = proj R S f y)
   refine Subtype.ext (funext fun f ↦ ?_)
   rw [← proj_apply, ← proj_apply, h]
 
+section lift
+
+variable {A : Type*} [Semiring A] [Algebra R A]
+  {φ : ∀ f : cycloIndex R S, A →ₐ[R] AdjoinRoot (f : R[X])}
+
+/-- The universal property of the inverse limit: a family of algebra maps `A → R[q]/(f)` that is
+compatible with the reductions `AdjoinRoot.algHomOfDvd` induces an algebra map `A → R[q]^S`. -/
+noncomputable def lift (φ : ∀ f : cycloIndex R S, A →ₐ[R] AdjoinRoot (f : R[X]))
+    (hφ : ∀ (f g : cycloIndex R S) (h : (f : R[X]) ∣ g),
+      (AdjoinRoot.algHomOfDvd R (g : R[X]) (f : R[X]) h).comp (φ g) = φ f) :
+    A →ₐ[R] CycloCompletion R S :=
+  (AlgHom.pi φ).codRestrict _ fun a ↦
+    mem_compatSubalgebra.mpr fun f g h ↦ by simpa using DFunLike.congr_fun (hφ f g h) a
+
+/-- The projections of the induced map are the given maps. -/
+@[simp]
+theorem proj_lift (hφ) (f : cycloIndex R S) (a : A) : proj R S f (lift φ hφ a) = φ f a := by
+  simp [proj_apply, lift]
+
+/-- `proj_lift` as an equality of algebra maps out of `A`. -/
+theorem proj_comp_lift (hφ) (f : cycloIndex R S) : (proj R S f).comp (lift φ hφ) = φ f :=
+  AlgHom.ext (proj_lift hφ f)
+
+/-- Two algebra maps into the completion agree when all their projections agree. -/
+theorem algHom_ext {ψ₁ ψ₂ : A →ₐ[R] CycloCompletion R S}
+    (h : ∀ f, (proj R S f).comp ψ₁ = (proj R S f).comp ψ₂) : ψ₁ = ψ₂ :=
+  AlgHom.ext fun a ↦ ext fun f ↦ DFunLike.congr_fun (h f) a
+
+/-- The induced map is the only algebra map with the given projections. -/
+theorem lift_unique (hφ) (ψ : A →ₐ[R] CycloCompletion R S) (hψ : ∀ f, (proj R S f).comp ψ = φ f) :
+    ψ = lift φ hφ :=
+  algHom_ext fun f ↦ by rw [hψ, proj_comp_lift]
+
+end lift
+
 variable (R S)
 
-/-- The map `R[q] → R[q]^S` sending a polynomial to its family of residues. -/
+/-- The map `R[q] → R[q]^S` sending a polynomial to its family of residues: the map induced by the
+quotient maps `R[q] → R[q]/(f)`. -/
 noncomputable def fromPoly : R[X] →ₐ[R] CycloCompletion R S :=
-  (AlgHom.pi fun f : cycloIndex R S ↦ AdjoinRoot.mkₐ (f : R[X])).codRestrict _ fun p ↦
-    mem_compatSubalgebra.mpr fun f g h ↦ by simp
+  lift (fun f ↦ AdjoinRoot.mkₐ (f : R[X])) fun f g h ↦ AlgHom.ext fun p ↦ by simp
 
 variable {R S}
 
@@ -135,7 +174,7 @@ variable {R S}
 @[simp]
 theorem proj_fromPoly (f : cycloIndex R S) (p : R[X]) :
     proj R S f (fromPoly R S p) = AdjoinRoot.mk (f : R[X]) p := by
-  simp [proj_apply, fromPoly]
+  simp [fromPoly]
 
 /-- `proj_fromPoly` as an equality of algebra maps out of `R[q]`. -/
 theorem proj_comp_fromPoly (f : cycloIndex R S) :
@@ -274,6 +313,14 @@ noncomputable def quotientSpanEquiv (f : cycloIndex R S) :
 theorem quotientSpanEquiv_mk (f : cycloIndex R S) (x : CycloCompletion R S) :
     quotientSpanEquiv R S f (Ideal.Quotient.mk _ x) = proj R S f x := by
   simp [quotientSpanEquiv]
+
+/-- The inverse of the finite quotient isomorphism sends the residue class of a polynomial to the
+class of its image in the completion. -/
+@[simp]
+theorem quotientSpanEquiv_symm_mk (f : cycloIndex R S) (p : R[X]) :
+    (quotientSpanEquiv R S f).symm (AdjoinRoot.mk (f : R[X]) p) =
+      Ideal.Quotient.mk _ (fromPoly R S p) := by
+  rw [AlgEquiv.symm_apply_eq, quotientSpanEquiv_mk, proj_fromPoly]
 
 /-- The finite quotient isomorphisms commute with reduction to a smaller index. -/
 theorem algHomOfDvd_quotientSpanEquiv {f g : cycloIndex R S} (h : (f : R[X]) ∣ g)

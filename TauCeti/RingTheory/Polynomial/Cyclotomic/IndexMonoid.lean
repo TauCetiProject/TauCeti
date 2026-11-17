@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
 import Mathlib.Algebra.Group.Submonoid.Finsupp
+import TauCeti.RingTheory.Polynomial.Cyclotomic.Basic
 
 /-!
 # The monoid of cyclotomic products
@@ -122,11 +123,6 @@ theorem cycloIndex_eq_bot_of_subset_zero (hS : S ⊆ {0}) : cycloIndex R S = ⊥
 @[simp]
 theorem cycloIndex_empty : cycloIndex R ∅ = ⊥ :=
   cycloIndex_eq_bot_of_subset_zero (Set.empty_subset _)
-
-/-- Over a nonzero ring, a cyclotomic polynomial of positive order is not `1`, as it has positive
-degree. -/
-theorem cyclotomic_ne_one [Nontrivial R] (hn : 0 < n) : cyclotomic n R ≠ 1 := fun h ↦ by
-  simpa [h] using degree_cyclotomic_pos n R hn
 
 /-- Over a nonzero ring, the index monoid is trivial exactly when every order in `S` is zero. -/
 theorem cycloIndex_eq_bot_iff [Nontrivial R] : cycloIndex R S = ⊥ ↔ S ⊆ {0} := by
