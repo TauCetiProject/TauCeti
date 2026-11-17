@@ -9,7 +9,8 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Isotropic
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Sectional
 public import TauCeti.Geometry.Symplectic.AlmostComplex
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Compact
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
 import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 import TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis
 import TauCeti.Geometry.Symplectic.Finrank
@@ -56,24 +57,22 @@ private theorem apply_add_smul_self_mem_Icc_of_span {r : FourTensor V} {f : Fin 
     (hf : Orthonormal ℝ f) {a b : ℝ}
     (hsec : ∀ u v : V, u ∈ Submodule.span ℝ (range f) → v ∈ Submodule.span ℝ (range f) →
       Orthonormal ℝ ![u, v] → a ≤ r ![u, v, u, v] ∧ r ![u, v, u, v] ≤ b)
-    {i j k l : Fin 4} (hinj : Function.Injective ![i, j, k, l])
-    {s₁ s₂ : ℝ} (hs₁ : s₁ = 1 ∨ s₁ = -1) (hs₂ : s₂ = 1 ∨ s₂ = -1) :
+    {i j k l : Fin 4} (hinj : Function.Injective ![i, j, k, l]) (c₁ c₂ : Bool) :
+    let s₁ : ℝ := if c₁ then 1 else -1; let s₂ : ℝ := if c₂ then 1 else -1
     4 * a ≤ r ![f i + s₁ • f j, f k + s₂ • f l, f i + s₁ • f j, f k + s₂ • f l] ∧
       r ![f i + s₁ • f j, f k + s₂ • f l, f i + s₁ • f j, f k + s₂ • f l] ≤ 4 * b := by
+  intro s₁ s₂
   have hcomp : f ∘ ![i, j, k, l] = ![f i, f j, f k, f l] := by funext t; fin_cases t <;> rfl
   have hf4 : Orthonormal ℝ ![f i, f j, f k, f l] := hcomp ▸ hf.comp ![i, j, k, l] hinj
   have hfs : Orthonormal ℝ ![f i, s₁ • f j, f k, s₂ • f l] :=
     hf4.orthonormal_of_forall_eq_or_eq_neg fun t ↦ by
-      fin_cases t
-      exacts [.inl rfl, hs₁.imp (by simp [·]) (by simp [·]),
-        .inl rfl, hs₂.imp (by simp [·]) (by simp [·])]
+      fin_cases t; exacts [.inl rfl, by cases c₁ <;> simp [s₁], .inl rfl, by cases c₂ <;> simp [s₂]]
   have hmem (p q : Fin 4) (s : ℝ) : (√2)⁻¹ • (f p + s • f q) ∈ Submodule.span ℝ (range f) :=
     Submodule.smul_mem _ _ <| Submodule.add_mem _ (Submodule.subset_span ⟨p, rfl⟩)
       (Submodule.smul_mem _ _ (Submodule.subset_span ⟨q, rfl⟩))
   have hbds := hsec _ _ (hmem i j s₁) (hmem k l s₂) hfs.inv_sqrt_two_add_pair
   have hpow : (√2)⁻¹ * (√2)⁻¹ * (√2)⁻¹ * (√2)⁻¹ = 1 / 4 := by
-    have : (√2)⁻¹ * (√2)⁻¹ = 1 / 2 := by rw [← mul_inv, Real.mul_self_sqrt (by norm_num)]; norm_num
-    nlinarith
+    rw [← mul_inv, mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num)]; norm_num
   rw [r.apply_smul_first, r.apply_smul_second, r.apply_smul_third, r.apply_smul_fourth,
     ← mul_assoc, ← mul_assoc, ← mul_assoc, hpow] at hbds
   exact ⟨by linarith, by linarith⟩
@@ -93,16 +92,15 @@ theorem IsAlgebraicCurvature.abs_apply_orthonormal_le_of_span {r : FourTensor V}
   have hflip (x y : V) : r ![x, y, y, x] = -r ![x, y, x, y] := by
     linarith [hr.antisymm_last x y x y]
   simp only [toLinearMap₄_apply, hflip] at hpol
-  have bp (s₁ s₂ : ℝ) (h₁ : s₁ = 1 ∨ s₁ = -1) (h₂ : s₂ = 1 ∨ s₂ = -1) := And.intro
-    (apply_add_smul_self_mem_Icc_of_span (i := 0) (j := 3) (k := 1) (l := 2) hf hsec
-      (by decide) h₁ h₂)
-    (apply_add_smul_self_mem_Icc_of_span (i := 1) (j := 3) (k := 0) (l := 2) hf hsec
-      (by decide) h₁ h₂)
-  obtain ⟨b1, b5⟩ := bp 1 1 (.inl rfl) (.inl rfl)
-  obtain ⟨b2, b6⟩ := bp 1 (-1) (.inl rfl) (.inr rfl)
-  obtain ⟨b3, b7⟩ := bp (-1) 1 (.inr rfl) (.inl rfl)
-  obtain ⟨b4, b8⟩ := bp (-1) (-1) (.inr rfl) (.inr rfl)
-  simp only [one_smul, neg_one_smul, ← sub_eq_add_neg] at b1 b2 b3 b4 b5 b6 b7 b8
+  have bp (c₁ c₂ : Bool) := And.intro
+    (apply_add_smul_self_mem_Icc_of_span (i := 0) (j := 3) (k := 1) (l := 2) hf hsec (by decide)
+      c₁ c₂)
+    (apply_add_smul_self_mem_Icc_of_span (i := 1) (j := 3) (k := 0) (l := 2) hf hsec (by decide)
+      c₁ c₂)
+  obtain ⟨b1, b5⟩ := bp true true; obtain ⟨b2, b6⟩ := bp true false
+  obtain ⟨b3, b7⟩ := bp false true; obtain ⟨b4, b8⟩ := bp false false
+  simp only [↓reduceIte, Bool.false_eq_true, one_smul, neg_one_smul,
+    ← sub_eq_add_neg] at b1 b2 b3 b4 b5 b6 b7 b8
   rw [abs_le]; exact ⟨by linarith, by linarith⟩
 
 /-- **Berger's mixed-component estimate.** Sectional curvatures in `[a, b]` imply
@@ -128,8 +126,7 @@ theorem IsAlgebraicCurvature.le_pic2Expression_of_sectional_mem_Icc {r : FourTen
     {f : Fin 4 → V} (hf : Orthonormal ℝ f) (l m : ℝ) :
     min a ((4 * a - b) / 3) * (1 + l ^ 2) * (1 + m ^ 2) ≤ pic2Expression r f l m := by
   have hp : |l * m * r ![f 0, f 1, f 2, f 3]| ≤ |l * m| * ((2 / 3) * (b - a)) := by
-    rw [abs_mul]
-    exact mul_le_mul_of_nonneg_left (hr.abs_apply_orthonormal_le hf hsec) (abs_nonneg _)
+    rw [abs_mul]; gcongr; exact hr.abs_apply_orthonormal_le hf hsec
   have h (i j : Fin 4) (hij : i ≠ j) := hsec (f i) (f j) (hf.pair hij)
   have h02 := h 0 2 (by decide)
   have hamgm : 4 * |l * m| ≤ (1 + l ^ 2) * (1 + m ^ 2) := by
@@ -295,10 +292,9 @@ theorem fubiniStudy_sectional_mem_Icc {J : AlmostComplexStructure V}
     1 ≤ fubiniStudy J ![u, v, u, v] ∧ fubiniStudy J ![u, v, u, v] ≤ 4 := by
   have hu : ‖u‖ = 1 := huv.1 0; have hv : ‖v‖ = 1 := huv.1 1
   have h0 : ⟪u, v⟫_ℝ = 0 := huv.2 (by decide : (0 : Fin 2) ≠ 1)
-  have hcs : |⟪J u, v⟫_ℝ| ≤ 1 := by
+  have hsq : ⟪J u, v⟫_ℝ ^ 2 ≤ 1 := (sq_le_one_iff_abs_le_one _).2 <| by
     simpa only [J.norm_apply hJ, hu, hv, mul_one] using abs_real_inner_le_norm (J u) v
   rw [fubiniStudy_apply_self hJ, hu, hv, h0]
-  have hsq : ⟪J u, v⟫_ℝ ^ 2 ≤ 1 := by rw [← sq_abs]; nlinarith [abs_nonneg ⟪J u, v⟫_ℝ]
   exact ⟨by nlinarith [sq_nonneg ⟪J u, v⟫_ℝ], by linarith⟩
 
 /-- On a holomorphic unit pair `(u, J u)`, `![u, J u]` is orthonormal with curvature `4`. -/
@@ -316,11 +312,9 @@ theorem fubiniStudy_apply_unitary {J : AlmostComplexStructure V}
     (hJ : ∀ u v, ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ) {X Y : V} (hf : Orthonormal ℝ ![X, J X, Y, J Y]) :
     fubiniStudy J ![X, J X, Y, J Y] = 2 ∧
       pic2Expression (fubiniStudy J) ![X, J X, Y, J Y] 1 1 = 0 := by
-  have hX : ‖X‖ = 1 := hf.1 0; have hY : ‖Y‖ = 1 := hf.1 2
-  have hXY : ⟪X, Y⟫_ℝ = 0 := hf.2 (by decide : (0 : Fin 4) ≠ 2)
-  have hXJY : ⟪X, J Y⟫_ℝ = 0 := hf.2 (by decide : (0 : Fin 4) ≠ 3)
-  have hJXY : ⟪J X, Y⟫_ℝ = 0 := hf.2 (by decide : (1 : Fin 4) ≠ 2)
-  have hJXJY : ⟪J X, J Y⟫_ℝ = 0 := hf.2 (by decide : (1 : Fin 4) ≠ 3)
+  simp only [orthonormal_vecCons_iff, orthonormal_subsingleton_iff, Fin.forall_fin_succ,
+    Fin.forall_fin_zero, Matrix.cons_val_zero, Matrix.cons_val_succ, and_true] at hf
+  rcases hf with ⟨hX, ⟨_, hXY, hXJY⟩, _, ⟨hJXY, hJXJY⟩, hY, _, _⟩
   have hmix : fubiniStudy J ![X, J X, Y, J Y] = 2 := by
     rw [fubiniStudy_apply]; simp only [J.apply_apply, hXY, hXJY, hJXY, hJXJY, inner_neg_left,
       real_inner_self_eq_norm_sq, J.norm_apply hJ, hX, hY]; ring
@@ -345,10 +339,9 @@ theorem notMem_interior_isPIC2FourFrame_fubiniStudy {J : AlmostComplexStructure 
   obtain ⟨k, hk⟩ := J.even_finrank_real
   obtain ⟨b, hb⟩ := J.exists_adapted_orthonormalBasis (J.norm_apply hJ) k (by omega)
   let idx : Fin 4 ↪ Fin (2 * k) := Fin.castLEEmb (by omega)
-  have hf1 : b (idx 1) = J (b (idx 0)) := hb ⟨0, by omega⟩
-  have hf3 : b (idx 3) = J (b (idx 2)) := hb ⟨1, by omega⟩
   have hf : Orthonormal ℝ ![b (idx 0), J (b (idx 0)), b (idx 2), J (b (idx 2))] := by
-    convert b.orthonormal.comp idx idx.injective using 1; funext i; fin_cases i <;> simp [hf1, hf3]
+    convert b.orthonormal.comp idx idx.injective using 1
+    funext i; fin_cases i; exacts [rfl, (hb ⟨0, by omega⟩).symm, rfl, (hb ⟨1, by omega⟩).symm]
   intro hint
   linarith [(mem_interior_isPIC2FourFrame_iff_forall_pos.1 hint) _ hf 1 (by norm_num) 1
     (by norm_num), (fubiniStudy_apply_unitary hJ hf).2]
@@ -361,14 +354,13 @@ theorem exists_isPIC2FourFrame_notMem_interior_fin_four :
           1 ≤ r.1 ![u, v, u, v] ∧ r.1 ![u, v, u, v] ≤ 4) ∧
         r ∉ interior
           {q : algebraicCurvatureSubmodule (EuclideanSpace ℝ (Fin 4)) | IsPIC2FourFrame q.1} := by
-  have hdim : Module.finrank ℝ (EuclideanSpace ℝ (Fin 4)) = 4 := by simp
   obtain ⟨J, hJnorm⟩ := AlmostComplexStructure.exists_forall_norm_apply_eq
-    (V := EuclideanSpace ℝ (Fin 4)) ⟨2, by omega⟩
+    (V := EuclideanSpace ℝ (Fin 4)) ⟨2, by simp⟩
   have hJ : ∀ u v : EuclideanSpace ℝ (Fin 4), ⟪J u, J v⟫_ℝ = ⟪u, v⟫_ℝ :=
     ({ J.toLinearMap with norm_map' := hJnorm } : _ →ₗᵢ[ℝ] _).inner_map_map
   exact ⟨⟨fubiniStudy J, mem_algebraicCurvatureSubmodule.2 (isAlgebraicCurvature_fubiniStudy hJ)⟩,
     isPIC2FourFrame_fubiniStudy hJ, fun _ _ huv ↦ fubiniStudy_sectional_mem_Icc hJ huv,
-    notMem_interior_isPIC2FourFrame_fubiniStudy hJ (by omega)⟩
+    notMem_interior_isPIC2FourFrame_fubiniStudy hJ (by simp)⟩
 
 end FiniteDimensional
 

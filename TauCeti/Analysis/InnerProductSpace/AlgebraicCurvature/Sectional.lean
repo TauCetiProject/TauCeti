@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Analysis.InnerProductSpace.AlgebraicCurvature.Basic
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Basic
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Compact
 import TauCeti.Topology.MetricSpace.Lipschitz.Basic
 
@@ -69,6 +70,29 @@ theorem sectionalMin_neg (r : FourTensor V) : sectionalMin (-r) = -sectionalMax 
 theorem sectionalMax_neg (r : FourTensor V) : sectionalMax (-r) = -sectionalMin r := by
   simpa using (neg_inj.2 (sectionalMin_neg (-r))).symm
 
+/-- `sectionalMin` is homogeneous under nonnegative scalar multiplication. -/
+theorem sectionalMin_smul_of_nonneg {c : ℝ} (hc : 0 ≤ c) (r : FourTensor V) :
+    sectionalMin (c • r) = c * sectionalMin r := by
+  rw [sectionalMin_def, sectionalMin_def, ← smul_eq_mul, ← Real.sInf_smul_of_nonneg hc,
+    ← image_smul, ← image_comp]
+  exact congrArg sInf (image_congr fun _ _ ↦ by simp only [Function.comp_apply, smul_apply])
+
+/-- `sectionalMax` is homogeneous under nonnegative scalar multiplication. -/
+theorem sectionalMax_smul_of_nonneg {c : ℝ} (hc : 0 ≤ c) (r : FourTensor V) :
+    sectionalMax (c • r) = c * sectionalMax r := by
+  have h := sectionalMin_smul_of_nonneg hc (-r)
+  rwa [smul_neg, sectionalMin_neg, sectionalMin_neg, mul_neg, neg_inj] at h
+
+/-- `sectionalMin` vanishes on the zero four-tensor. -/
+@[simp]
+theorem sectionalMin_zero : sectionalMin (0 : FourTensor V) = 0 := by
+  simpa using sectionalMin_smul_of_nonneg le_rfl (0 : FourTensor V)
+
+/-- `sectionalMax` vanishes on the zero four-tensor. -/
+@[simp]
+theorem sectionalMax_zero : sectionalMax (0 : FourTensor V) = 0 := by
+  simpa using sectionalMax_smul_of_nonneg le_rfl (0 : FourTensor V)
+
 private theorem bddBelow_sectionalImage (r : FourTensor V) :
     BddBelow ((fun u : Fin 2 → V ↦ r ![u 0, u 1, u 0, u 1]) '' {u : Fin 2 → V | Orthonormal ℝ u}) :=
   ⟨-‖r‖, fun _ ⟨_, hu, h⟩ ↦ h ▸ neg_le_of_abs_le
@@ -99,17 +123,16 @@ theorem sectionalMin_le_sectionalMax (r : FourTensor V) : sectionalMin r ≤ sec
 /-- A lower bound on all orthonormal pairs bounds `sectionalMin r` below when frames exist. -/
 theorem le_sectionalMin_of_forall_le {r : FourTensor V} {c : ℝ}
     (hne : {u : Fin 2 → V | Orthonormal ℝ u}.Nonempty)
-    (hc : ∀ u v : V, Orthonormal ℝ ![u, v] → c ≤ r ![u, v, u, v]) : c ≤ sectionalMin r := by
-  obtain ⟨u₀, hu₀⟩ := hne
-  exact le_csInf ⟨_, ⟨u₀, hu₀, rfl⟩⟩ fun _ ⟨u, hu, h⟩ ↦ h ▸ hc (u 0) (u 1) (hu.pair zero_ne_one)
+    (hc : ∀ u v : V, Orthonormal ℝ ![u, v] → c ≤ r ![u, v, u, v]) : c ≤ sectionalMin r :=
+  let ⟨u₀, hu₀⟩ := hne
+  le_csInf ⟨_, ⟨u₀, hu₀, rfl⟩⟩ fun _ ⟨u, hu, h⟩ ↦ h ▸ hc (u 0) (u 1) (hu.pair zero_ne_one)
 
 /-- An upper bound on all orthonormal pairs bounds `sectionalMax r` above when frames exist. -/
 theorem sectionalMax_le_of_forall_le {r : FourTensor V} {c : ℝ}
     (hne : {u : Fin 2 → V | Orthonormal ℝ u}.Nonempty)
     (hc : ∀ u v : V, Orthonormal ℝ ![u, v] → r ![u, v, u, v] ≤ c) : sectionalMax r ≤ c := by
-  have h := le_sectionalMin_of_forall_le (r := -r) (c := -c) hne fun u v huv ↦ by
-    simpa using neg_le_neg (hc u v huv)
-  rwa [sectionalMin_neg, neg_le_neg_iff] at h
+  simpa [sectionalMin_neg] using
+    le_sectionalMin_of_forall_le (r := -r) (c := -c) hne fun u v huv ↦ by simpa using hc u v huv
 
 /-- `sectionalMin` is `1`-Lipschitz on `FourTensor V`. -/
 theorem lipschitzWith_sectionalMin : LipschitzWith 1 (sectionalMin (V := V)) :=
@@ -140,10 +163,10 @@ theorem sectionalMin_compContinuousLinearMap_linearIsometryEquiv {W : Type*}
   rw [sectionalMin_def, sectionalMin_def]; congr 1; ext y; constructor
   · rintro ⟨u, hu, rfl⟩
     exact ⟨e ∘ u, e.toLinearIsometry.orthonormal_comp_iff.2 hu,
-      (compContinuousLinearMap_apply_vec r (e : W →L[ℝ] V) (u 0) (u 1) (u 0) (u 1)).symm⟩
+      by dsimp only; rw [compContinuousLinearMap_apply_vec]; rfl⟩
   · rintro ⟨u, hu, rfl⟩
-    exact ⟨e.symm ∘ u, e.symm.toLinearIsometry.orthonormal_comp_iff.2 hu, by
-      dsimp only; rw [compContinuousLinearMap_apply_vec]; simp⟩
+    exact ⟨e.symm ∘ u, e.symm.toLinearIsometry.orthonormal_comp_iff.2 hu,
+      by dsimp only; rw [compContinuousLinearMap_apply_vec]; simp⟩
 
 /-- `sectionalMax` is invariant under pullback by linear isometric equivalences. -/
 @[simp]
@@ -176,8 +199,7 @@ theorem IsAlgebraicCurvature.exists_orthonormal_apply_self_eq_det_gram_mul {r : 
   have hu_eq : u = ‖u‖ • e₀ := by simp [e₀, smul_smul, hnu.ne']
   have hv_eq : v = ⟪e₀, v⟫_ℝ • e₀ + ‖w‖ • e₁ := by simp [e₁, smul_smul, hnw.ne', w]
   have hgram : (Matrix.gram ℝ ![u, v]).det = ‖u‖ ^ 2 * ‖w‖ ^ 2 := by
-    rw [Matrix.det_fin_two]
-    simp only [Matrix.gram_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
+    simp only [Matrix.det_fin_two, Matrix.gram_apply, Matrix.cons_val_zero, Matrix.cons_val_one]
     conv_lhs => rw [hu_eq, hv_eq]
     simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right]
     simp only [real_inner_self_eq_norm_sq, real_inner_comm e₀ e₁, he₀, he₁, he₀e₁]; ring
@@ -219,15 +241,13 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDim
 theorem exists_orthonormal_eq_sectionalMin (hn : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
     ∃ u v : V, Orthonormal ℝ ![u, v] ∧ r ![u, v, u, v] = sectionalMin r := by
   have hKne : {u : Fin 2 → V | Orthonormal ℝ u}.Nonempty :=
-    (TauCeti.nonempty_setOfPred_orthonormal_iff (ι := Fin 2) (E := V)).2 (by simpa using hn)
-  have hcont : Continuous fun u : Fin 2 → V ↦ r ![u 0, u 1, u 0, u 1] :=
-    r.cont.comp (continuous_pi fun k ↦ by fin_cases k <;> exact continuous_apply _)
-  obtain ⟨u, hu, hmin⟩ :=
-    TauCeti.isCompact_setOfPred_orthonormal.exists_isMinOn hKne hcont.continuousOn
-  have hu' : Orthonormal ℝ ![u 0, u 1] := hu.pair zero_ne_one
-  exact ⟨u 0, u 1, hu', le_antisymm
+    (TauCeti.nonempty_setOfPred_orthonormal_iff (ι := Fin 2)).2 (by simpa using hn)
+  obtain ⟨u, hu, hmin⟩ := TauCeti.isCompact_setOfPred_orthonormal.exists_isMinOn hKne
+    (r.cont.comp (f := fun u : Fin 2 → V ↦ ![u 0, u 1, u 0, u 1])
+      (continuous_pi fun k ↦ by fin_cases k <;> exact continuous_apply _)).continuousOn
+  exact ⟨u 0, u 1, hu.pair zero_ne_one, le_antisymm
     (le_sectionalMin_of_forall_le hKne fun w z hwz ↦ isMinOn_iff.1 hmin ![w, z] hwz)
-    (sectionalMin_le_of_orthonormal r hu')⟩
+    (sectionalMin_le_of_orthonormal r (hu.pair zero_ne_one))⟩
 
 /-- In dimension at least two, `sectionalMax r` is attained at an orthonormal pair `(u, v)`. -/
 theorem exists_orthonormal_eq_sectionalMax (hn : 2 ≤ Module.finrank ℝ V) (r : FourTensor V) :
