@@ -37,8 +37,8 @@ Unit triangles `TauCeti.Hive.UnitTriangle n` have two orientations (`UnitTriangl
 
 ## Main definitions and results
 
-* `TauCeti.Hive.Vertex.barycentric`, `TauCeti.Hive.barycentricSimplex`, `TauCeti.Hive.planeLinear`,
-  `TauCeti.Hive.planeInvAffine`, `TauCeti.Hive.planarSimplex`.
+* `TauCeti.Hive.barycentricSimplex`, `TauCeti.Hive.planeLinear`, `TauCeti.Hive.planeInvAffine`,
+  `TauCeti.Hive.planarSimplex`.
 * `TauCeti.Hive.UnitTriangle` (`card`, `weight`, `cell`, `isConvexPolyhedron_cell`,
   `cell_eq_convexHull`, `iUnion_cell_eq_barycentricSimplex`, `mem_range_vertex_of_weight_pos`).
 * `TauCeti.Hive.adjacentUp`, `TauCeti.Hive.adjacentCell`, `TauCeti.Hive.exists_cell_of_isUnitEdge`,
@@ -57,42 +57,11 @@ open scoped BigOperators
 
 namespace TauCeti.Hive
 
-/-! ### Real barycentric coordinates, the continuous simplex, and the Euclidean chart -/
-
-namespace Vertex
-
-variable {n : ℕ}
-
-/-- Embed a lattice vertex `p : Vertex n` into real barycentric coordinates `Fin 3 → ℝ`. -/
-def barycentric (p : Vertex n) : Fin 3 → ℝ := fun i => (p.coord i : ℝ)
-
-@[simp] theorem barycentric_apply (p : Vertex n) (i : Fin 3) : p.barycentric i = p.coord i := (rfl)
-theorem barycentric_nonneg (p : Vertex n) (i : Fin 3) : 0 ≤ p.barycentric i := Nat.cast_nonneg _
-theorem sum_barycentric (p : Vertex n) : ∑ i, p.barycentric i = (n : ℝ) := by
-  simpa [Fin.sum_univ_three] using congrArg (Nat.cast (R := ℝ)) p.sum_eq
-theorem barycentric_injective : Function.Injective (barycentric (n := n)) := fun _ _ h =>
-  ext_coord fun i => Nat.cast_injective (congrFun h i)
-@[simp] theorem barycentric_inj {p q : Vertex n} : p.barycentric = q.barycentric ↔ p = q :=
-  barycentric_injective.eq_iff
-theorem barycentric_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
-    (p.add q).barycentric = p.barycentric + q.barycentric := by ext i; fin_cases i <;> simp
-theorem barycentric_cornerA_zero : (cornerA 0).barycentric = 0 := by ext i; fin_cases i <;> simp
-theorem sqDist_eq_sum_sub_sq (p q : Vertex n) :
-    (p.sqDist q : ℝ) = ∑ i, (p.barycentric i - q.barycentric i) ^ 2 := by
-  simp [sqDist_def, Fin.sum_univ_three, add_assoc]
-
-end Vertex
+/-! ### The continuous simplex and the Euclidean chart -/
 
 section
 
 variable {n m k : ℕ}
-
-/-- Opposite corners of a unit rhombus have the same sum in real barycentric coordinates. -/
-theorem IsRhombus.midpoint_barycentric {a b c d : Vertex n} (hr : IsRhombus a b c d) :
-    a.barycentric + c.barycentric = b.barycentric + d.barycentric := by
-  ext k; fin_cases k <;> simp only [Pi.add_apply, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
-    Vertex.barycentric_apply, Vertex.coord_zero, Vertex.coord_one, Vertex.coord_two] <;>
-    [exact_mod_cast hr.midpoint_x; exact_mod_cast hr.midpoint_y; exact_mod_cast hr.midpoint_z]
 
 /-- The continuous size-`n` barycentric simplex `{x | (∀ i, 0 ≤ x i) ∧ ∑ i, x i = n}`. -/
 def barycentricSimplex (n : ℕ) : Set (Fin 3 → ℝ) := {x | (∀ i, 0 ≤ x i) ∧ ∑ i, x i = (n : ℝ)}

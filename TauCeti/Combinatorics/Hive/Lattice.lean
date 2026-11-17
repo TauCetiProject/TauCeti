@@ -20,8 +20,9 @@ import Mathlib.Tactic.Ring
 The `(n + 1) * (n + 2) / 2` vertices (`Vertex.card`) of the size-`n` triangle are nonnegative
 barycentric triples of sum `n`. `Vertex.rotate` and `Vertex.reflect` give its dihedral symmetries,
 `Vertex.edgePoint` parameterizes the three sides along the clockwise perimeter `A → B → C → A`, and
-`Vertex.ofYZ` gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. The planar embedding sends
-`(x,y,z)` to `(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
+`Vertex.ofYZ` gives the two-variable chart `(y, z) ↦ (n - y - z, y, z)`. `Vertex.barycentric` embeds
+vertices into `Fin 3 → ℝ`, and the planar embedding `Vertex.plane` sends `(x,y,z)` to
+`(z + y/2, √3*y/2)`, so the corners `(n,0,0)`, `(0,n,0)`, `(0,0,n)` occur clockwise.
 
 `IsUnitEdge` and `UnitEdge` record unit lattice edges (`sqDist = 2`, planar length `1`), and
 `IsRhombus a b c d` records a unit rhombus in perimeter order, with **obtuse** corners
@@ -192,6 +193,24 @@ theorem sqDist_comm (p q : Vertex n) : sqDist p q = sqDist q p := by
     sqDist (p.add q) (p.add r) = sqDist q r := by
   simp only [sqDist, add_x, add_y, add_z, Nat.cast_add]
   ring
+
+/-- Embed a lattice vertex `p : Vertex n` into real barycentric coordinates `Fin 3 → ℝ`. -/
+def barycentric (p : Vertex n) : Fin 3 → ℝ := fun i => (p.coord i : ℝ)
+
+@[simp] theorem barycentric_apply (p : Vertex n) (i : Fin 3) : p.barycentric i = p.coord i := (rfl)
+theorem barycentric_nonneg (p : Vertex n) (i : Fin 3) : 0 ≤ p.barycentric i := Nat.cast_nonneg _
+theorem sum_barycentric (p : Vertex n) : ∑ i, p.barycentric i = (n : ℝ) := by
+  simpa [Fin.sum_univ_three] using congrArg (Nat.cast (R := ℝ)) p.sum_eq
+theorem barycentric_injective : Function.Injective (barycentric (n := n)) := fun _ _ h =>
+  ext_coord fun i => Nat.cast_injective (congrFun h i)
+@[simp] theorem barycentric_inj {p q : Vertex n} : p.barycentric = q.barycentric ↔ p = q :=
+  barycentric_injective.eq_iff
+theorem barycentric_add {m : ℕ} (p : Vertex n) (q : Vertex m) :
+    (p.add q).barycentric = p.barycentric + q.barycentric := by ext i; fin_cases i <;> simp
+theorem barycentric_cornerA_zero : (cornerA 0).barycentric = 0 := by ext i; fin_cases i <;> simp
+theorem sqDist_eq_sum_sub_sq (p q : Vertex n) :
+    (p.sqDist q : ℝ) = ∑ i, (p.barycentric i - q.barycentric i) ^ 2 := by
+  simp [sqDist_def, Fin.sum_univ_three, add_assoc]
 
 /-- The equilateral planar realization of the triangular lattice. -/
 noncomputable def plane (p : Vertex n) : EuclideanSpace ℝ (Fin 2) :=
@@ -487,6 +506,13 @@ theorem two_le (h : IsRhombus a b c d) : 2 ≤ n := by
 theorem diagonal_dist_sq (h : IsRhombus a b c d) :
     dist a.plane c.plane ^ 2 = 1 ∧ dist b.plane d.plane ^ 2 = 3 := by
   norm_num [Vertex.dist_plane_sq, h.short, h.long]
+
+/-- Opposite corners of a unit rhombus have the same sum in real barycentric coordinates. -/
+theorem midpoint_barycentric (h : IsRhombus a b c d) :
+    a.barycentric + c.barycentric = b.barycentric + d.barycentric := by
+  ext k; fin_cases k <;> simp only [Pi.add_apply, Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk,
+    Vertex.barycentric_apply, Vertex.coord_zero, Vertex.coord_one, Vertex.coord_two] <;>
+    [exact_mod_cast h.midpoint_x; exact_mod_cast h.midpoint_y; exact_mod_cast h.midpoint_z]
 
 /-- Translating a rhombus into a larger triangle preserves it. -/
 theorem add {m : ℕ} (h : IsRhombus a b c d) (p : Vertex m) :
