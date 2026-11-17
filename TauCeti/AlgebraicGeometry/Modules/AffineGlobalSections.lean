@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Colimits
 public import Mathlib.Algebra.Category.ModuleCat.EpiMono
 public import Mathlib.Algebra.Homology.ShortComplex.ExactFunctor
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
+import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Kernels
 
 /-!
 # Global sections of quasicoherent modules on an affine scheme
@@ -23,8 +25,9 @@ sections, even when the epimorphism is taken in the category of all sheaves of m
 The same surjectivity holds over every affine open of an arbitrary scheme.
 
 Consequently, global sections preserve short exact sequences whose middle and right terms are
-quasicoherent. This is the affine exactness step used in Serre's affine acyclicity theorem; see
-Hartshorne, *Algebraic Geometry*, Chapter III, Theorem 3.5.
+quasicoherent, as well as exact short complexes whose first two terms are quasicoherent. This is
+the affine exactness step used in Serre's affine acyclicity theorem; see Hartshorne, *Algebraic
+Geometry*, Chapter III, Theorem 3.5.
 
 Global sections also detect isomorphisms: on an affine scheme, a morphism of quasicoherent
 modules that is bijective on global sections is an isomorphism, and so is a quasicoherent
@@ -32,7 +35,8 @@ submodule containing every global section. Global sections are those on the affi
 `Spec Γ(X, ⊤) ⟶ X`, an isomorphism, and on a spectrum they are the inverse of the tilde
 equivalence (Stacks, Lemma 26.7.5, Tag 01I7).
 
-The file also records the base-ring action on affine global sections and extensionality of
+The file also identifies the global sections of a free module on `Spec R` with a direct sum of
+copies of `R`, and records the base-ring action on affine global sections and extensionality of
 sections by restriction to basic opens.
 -/
 
@@ -92,6 +96,39 @@ theorem shortExact_map_moduleSpecΓFunctor_of_isQuasicoherent
     (ModuleCat.epi_iff_surjective _).mpr
       (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent S.g)
   exact { exact := h.1, mono_f := h.2, epi_g := hΓ }
+
+/-- Taking global sections on `Spec R` preserves an exact short complex in `(Spec R).Modules` as
+soon as its first two terms are quasicoherent; no condition on `S.X₃` is required. -/
+theorem exact_map_moduleSpecΓFunctor_of_isQuasicoherent
+    {S : ShortComplex (Spec R).Modules} (hS : S.Exact)
+    [S.X₁.IsQuasicoherent] [S.X₂.IsQuasicoherent] :
+    (S.map (moduleSpecΓFunctor (R := R))).Exact := by
+  let F := moduleSpecΓFunctor (R := R)
+  have : F.Additive := F.additive_of_preserves_binary_products
+  have : (Abelian.image S.f).IsQuasicoherent :=
+    inferInstanceAs (Limits.kernel (Limits.cokernel.π S.f)).IsQuasicoherent
+  have : Epi (F.map (Abelian.factorThruImage S.f)) :=
+    (ModuleCat.epi_iff_surjective _).mpr
+      (moduleSpecΓFunctor_map_surjective_of_epi_of_isQuasicoherent
+        (Abelian.factorThruImage S.f))
+  let T := ShortComplex.mk (Abelian.image.ι S.f) S.g (Abelian.image_ι_comp_eq_zero S.zero)
+  let φ : S.map F ⟶ T.map F :=
+    { τ₁ := F.map (Abelian.factorThruImage S.f)
+      τ₂ := 𝟙 _
+      τ₃ := 𝟙 _
+      comm₁₂ := by
+        dsimp [T]
+        rw [← F.map_comp, Abelian.image.fac, Category.comp_id] }
+  exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono φ).2
+    (((S.exact_iff_exact_image_ι).1 hS).map_of_mono_of_preservesKernel F
+      inferInstance inferInstance)
+
+/-- Global sections of the free `𝒪_{Spec R}`-module on `ι` are isomorphic to `ι →₀ R`. -/
+noncomputable def moduleSpecΓFunctorFreeIso (ι : Type u) :
+    (moduleSpecΓFunctor (R := R)).obj (SheafOfModules.free (R := (Spec R).ringCatSheaf) ι) ≅
+      ModuleCat.of R (ι →₀ R) :=
+  ((moduleSpecΓFunctor (R := R)).mapIso (tildeFinsupp ι)).symm ≪≫
+    ((tilde.toTildeΓNatIso (R := R)).app (ModuleCat.of R (ι →₀ R))).symm
 
 variable {X : Scheme.{u}} {P Q : X.Modules}
 

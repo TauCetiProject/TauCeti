@@ -10,6 +10,8 @@ public import TauCeti.Algebra.Module.PseudoCoherent.ChainComplex
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 
+import TauCeti.Algebra.Category.ModuleCat.Sheaf.FiniteLocallyFree
+
 /-!
 # Pseudo-coherent modules on a scheme
 
@@ -46,6 +48,8 @@ sheaves on `Spec R`.
   local on `X`.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_free`: free modules of finite rank are
   pseudo-coherent.
+* `AlgebraicGeometry.Scheme.Modules.IsPseudoCoherent.of_isFiniteLocallyFree`: locally free
+  modules of finite type are pseudo-coherent.
 * `AlgebraicGeometry.Scheme.Modules.isPseudoCoherent_tilde`: the sheaf `M~` on `Spec R`
   associated with a pseudo-coherent `R`-module `M` is pseudo-coherent.
 * `AlgebraicGeometry.Scheme.Modules.hasFiniteFreeResolution_of_isPseudoCoherentOver_moduleSpecΓ`:
@@ -208,6 +212,21 @@ theorem isPseudoCoherent_free (ι : Type u) [Finite ι] :
 /-- A zero module is pseudo-coherent. -/
 theorem IsPseudoCoherent.of_isZero (hF : IsZero F) : F.IsPseudoCoherent :=
   (HasFiniteFreeResolution.of_isZero hF).isPseudoCoherent
+
+/-- Every locally free `𝒪_X`-module of finite type is pseudo-coherent. -/
+theorem IsPseudoCoherent.of_isFiniteLocallyFree (F : X.Modules) [F.IsLocallyFree]
+    [F.IsFiniteType] : F.IsPseudoCoherent := by
+  obtain ⟨q, hq, hq'⟩ :=
+    SheafOfModules.IsLocallyFree.exists_isLocallyFreeData_isFiniteType (R := X.sheaf) F
+  refine isPseudoCoherent_iff.mpr fun x ↦ ?_
+  have hx : x ∈ ⨆ i, q.X i := by
+    rw [((Opens.coversTop_iff _ q.X).mp q.coversTop).iSup_eq_top]
+    trivial
+  obtain ⟨i, hxi⟩ := Opens.mem_iSup.mp hx
+  have := hq.isIso i
+  have : Finite (q.generators i).I := (hq'.isFiniteType i).finite
+  exact ⟨q.X i, hxi, (hasFiniteFreeResolution_free (q.generators i).I).of_iso
+    (restrictIsoFreeOfOverIsoFree F (q.X i) (asIso (q.generators i).π).symm).symm⟩
 
 section Tilde
 
