@@ -270,12 +270,10 @@ private theorem integral_floerEnergyDensity_plumbedPerturbation_inserted (ω : S
   have hP {w : ℝ × ℝ} (hw : w ∈ B) :=
     realChart_plumbingMap_mem_plumbedSphere hq (by linarith)
       (mem_thricePuncturedSphereReal_iff.1 (hB w hw).1) (hB w hw).2
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  rw [integral_image_eq_integral_abs_det_fderiv_smul volume hBm
-    (fun w _ ↦ ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero
-      w).hasFDerivAt.hasFDerivWithinAt)
-    (realChart_injective (q.plumbingMap_injective L)).injOn]
-  refine setIntegral_congr_fun hBm fun w hw ↦ ?_
+  refine integral_image_eq_integral_of_eq_abs_det_smul hBm
+    (realChart_injective (q.plumbingMap_injective L)).injOn
+    (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
+    fun w hw ↦ ?_
   rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L w), smul_eq_mul,
     ω.floerEnergyDensity_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab hL
       (mem_thricePuncturedSphereReal_iff.1 (hB w hw).1) (hB w hw).2
