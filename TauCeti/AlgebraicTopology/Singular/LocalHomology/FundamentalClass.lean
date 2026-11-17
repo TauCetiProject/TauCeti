@@ -479,16 +479,9 @@ theorem singularHomologyπ_mapFundamentalClass (f : C(M, X)) :
       (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n).hom (o.mapFundamentalClass hn f) =
       localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) f (subset_univ _) n
         (o.fundamentalClassOn hn isCompact_univ) := by
-  have h := congrArg (fun φ ↦ φ.hom (o.fundamentalClass hn))
-    (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
-      (Y := TopCat.of X) (B := (univ : Set M)ᶜ) (B' := (univ : Set X)ᶜ) (TopCat.ofHom f)
-      fun _ hx ↦ (hx (mem_univ _)).elim) (ModuleCat.of ℤ (ULift.{0} ℤ)) n)
-  -- The ambient map of `ofSubsetMap` is `f` itself; its source is read as `(ofSubset _).fst`,
-  -- which `rw` does not identify with `TopCat.of M`.
-  erw [TopPair.ofSubsetMap_fst] at h
-  rw [← o.singularHomologyπ_fundamentalClass hn, localHomologyMap_def, mapFundamentalClass_def,
-    TauCeti.singularHomologyFunctor_obj_map]
-  exact h
+  rw [← o.singularHomologyπ_fundamentalClass hn, mapFundamentalClass_def,
+    singularHomologyFunctor_obj_map_hom_apply]
+  exact singularHomologyπ_univ_singularHomologyMap _ f _
 
 /-- **Fundamental classes are natural under homeomorphisms**: a homeomorphism `e : N ≃ₜ M`
 carries the fundamental class of the pulled-back orientation `o.comap` of `N` to the fundamental
