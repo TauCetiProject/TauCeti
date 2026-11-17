@@ -93,11 +93,11 @@ variable {k A B : Type*} {M : Type u} [Field k] [Ring A] [Ring B] [Algebra k A] 
 
 variable (k A B M) [Module (A ⊗[k] B) M]
 
-/-- **Flath's finite-dimensional factorization** (the existence half of the roadmap's
-`finiteCornerFactorization`). A finite-dimensional simple module `M` over
-`A ⊗[k] B`, for algebras `A` and `B` over an algebraically closed field `k`, is the exterior tensor
-product `V ⊗[k] W` of a finite-dimensional simple `A`-module `V` and a finite-dimensional simple
-`B`-module `W`: some `k`-linear isomorphism `V ⊗[k] W ≃ M` intertwines the action
+/-- **Flath's finite-dimensional factorization** (existence of the factors). A
+finite-dimensional simple module `M` over `A ⊗[k] B`, for algebras `A` and `B` over an
+algebraically closed field `k`, is the exterior tensor product `V ⊗[k] W` of a
+finite-dimensional simple `A`-module `V` and a finite-dimensional simple `B`-module `W`: some
+`k`-linear isomorphism `V ⊗[k] W ≃ M` intertwines the action
 `TauCeti.BialgebraModule.tensorPairAction` with the action on `M`.
 
 The factors are `V`, a simple `A`-submodule of `M`, and its multiplicity space `V →ₗ[A] M`, on
