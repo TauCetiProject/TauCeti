@@ -20,8 +20,10 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Discriminant
 # The discriminant companion of Nagell–Lutz
 
 Over `ℤ`, a torsion point with integral coordinates either has `ψ₂ = 0` there or has `ψ₂²` dividing
-`4Δ`. Writing `κ = ψ₂(x₀, y₀) = 2y₀ + a₁x₀ + a₃`, that is the classical `y = 0 ∨ y² ∣ Δ` disjunct
-in the form a long Weierstrass model supports.
+`4Δ`. Writing `κ = ψ₂(x₀, y₀) = 2y₀ + a₁x₀ + a₃`, that is the discriminant form `y = 0 ∨ y² ∣ Δ`
+of the Nagell–Lutz disjunct, in the form a long Weierstrass model supports. On a short model
+`y² = x³ + Ax + B`, where `Δ = -16(4A³ + 27B²)`, the discriminant form is weaker by the factor `16`
+than the classical `y² ∣ 4A³ + 27B²`.
 
 Over the fraction field of a general unique factorisation domain the same holds **given a
 squarefreeness hypothesis**, exactly as in `NagellLutz.lean`: this route applies integrality at
@@ -56,6 +58,8 @@ the cubic's discriminant, `Δ / 16`. That sharp form is `ShortNagellLutz.lean`'s
   which is strictly stronger but is the form a caller usually has.
 * `WeierstrassCurve.evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_rat`: the `ℤ`/`ℚ` specialisation,
   assuming only that the point is torsion with integral coordinates.
+* `WeierstrassCurve.sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat`: the `ℤ`/`ℚ` form of the torsion
+  input, with no arithmetic hypothesis.
 
 ## Why the hypothesis sits at `2 • P`, and why its guard is `2 <` rather than `≠ 2`
 
@@ -189,7 +193,9 @@ omit [IsDomain R] in
 /-- **The discriminant companion of Nagell–Lutz.** For a torsion point with integral coordinates,
 either `ψ₂` vanishes there — equivalently the point is two-torsion — or its square divides `4Δ`.
 
-This is the second disjunct of the classical statement. The arithmetic hypothesis is exactly the
+This is the second disjunct in its discriminant form: on a short model, where `κ = 2y` and
+`Δ = -16(4A³ + 27B²)`, it reads `y² ∣ Δ`, weaker by the factor `16` than the classical
+`y² ∣ 4A³ + 27B²`. The arithmetic hypothesis is exactly the
 sharp disjunction `isInteger_or_order_two_of_torsion` takes, transposed to `2 • P` — the point at
 which the proof applies it — and guarded by `2 < addOrderOf (2 • P)`. Nothing weaker is available
 along this route, and nothing stronger is asked. -/
@@ -255,5 +261,21 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_rat {W : WeierstrassCurve �
     W.ψ₂.evalEval x₀ y₀ = 0 ∨ W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * W.Δ :=
   evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_of_squarefree W hns htor
     (fun _ p hp _ ↦ by simpa using (Nat.prime_iff_prime_int.mp hp).squarefree) hx hy
+
+/-- **The `Ψ₃` divisibility over `ℚ`**: for an integral long Weierstrass model, a torsion point
+over `ℚ` at which `ψ₂` does not vanish, and a point `(x₀, y₀)` of the integral model with `x₀`
+over `x`, the square of `κ = ψ₂(x₀, y₀)` divides `4·Ψ₃(x₀)`.
+
+As with `evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ_rat`, no arithmetic hypothesis survives: over `ℤ`
+every rational prime is squarefree. -/
+theorem sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat {W : WeierstrassCurve ℤ} {x y : ℚ}
+    (hns : (W.baseChange ℚ).toAffine.Nonsingular x y)
+    (htor : IsOfFinAddOrder (Affine.Point.some _ _ hns))
+    {x₀ y₀ : ℤ} (hx : algebraMap ℤ ℚ x₀ = x) (hEq : W.toAffine.Equation x₀ y₀)
+    (hκK : (W.baseChange ℚ).ψ₂.evalEval x y ≠ 0) :
+    W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * (W.Ψ₃).eval x₀ :=
+  sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ W hns htor
+    (fun h2 ↦ Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree h2 fun _ hp _ ↦
+      (Nat.prime_iff_prime_int.mp hp).squarefree) hx hEq hκK
 
 end WeierstrassCurve

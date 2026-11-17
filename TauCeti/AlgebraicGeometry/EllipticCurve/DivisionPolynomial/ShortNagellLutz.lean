@@ -10,10 +10,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Torsion
 -- Proof-only, and not reachable transitively: `Torsion/Discriminant.lean` imports this
 -- module non-publicly, so `evalEval_ψ₂_of_isCharNeTwoNF` is not re-exported through it.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
--- Proof-only: `sq_dvd_cubic_discr`, and the squarefreeness bridge that discharges the arithmetic
--- hypothesis of `sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃` over `ℤ`.
+-- Proof-only: `sq_dvd_cubic_discr`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.CubicDiscriminant
-import TauCeti.Algebra.Squarefree
 public import TauCeti.AlgebraicGeometry.EllipticCurve.NormalForms
 public import TauCeti.AlgebraicGeometry.EllipticCurve.ShortWeierstrass
 
@@ -77,7 +75,8 @@ file names them accordingly.
 `lutz_nagell_integrality_short` (`:155`) is where the order-two collapse is carried out; with no
 header to go on it is credited to the project, as the sibling ports in this chain are.
 
-**`LutzNagellTheorem/PIDMain.lean`.** Its `lutz_nagell_cubicDisc_discriminant` (`:438`) is the
+**`LutzNagellTheorem/PIDMain.lean` — no author header.** With no header to go on it is credited
+to the project, as `GeneralMain.lean` is. Its `lutz_nagell_cubicDisc_discriminant` (`:438`) is the
 discriminant half `y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`, stated there over the fraction
 field of a principal ideal domain, under a squarefreeness hypothesis on the order and with the
 curve equation over the ring as a hypothesis, and with the cubic's discriminant written out in
@@ -123,12 +122,12 @@ theorem y_eq_zero_or_sq_dvd_cubic_discr_of_torsion {x y : ℚ}
   refine or_iff_not_imp_left.mpr fun hy₀ ↦ ?_
   have hEq : W.toAffine.Equation x₀ y₀ :=
     (W.toAffine.map_equation (IsFractionRing.injective ℤ ℚ) x₀ y₀).mp (hx ▸ hy ▸ hns.left)
+  -- `ψ₂` commutes with base change, and on this model it is `2y₀`, which is nonzero.
   have hκ : (W.baseChange ℚ).ψ₂.evalEval x y ≠ 0 := by
-    simpa [← hy] using hy₀
-  -- Over `ℤ` every rational prime is squarefree, so the arithmetic hypothesis discharges.
-  have hΨ₃ := sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ W hns htor
-    (fun h2 ↦ Nat.four_dvd_or_exists_odd_prime_and_dvd_of_squarefree h2 fun p hp _ ↦ by
-      simpa using (Nat.prime_iff_prime_int.mp hp).squarefree) hx hEq hκ
+    rw [← hx, ← hy, WeierstrassCurve.baseChange, map_ψ₂, map_mapRingHom_evalEval,
+      evalEval_ψ₂_of_isCharNeTwoNF]
+    exact (map_ne_zero_iff _ (IsFractionRing.injective ℤ ℚ)).mpr (mul_ne_zero two_ne_zero hy₀)
+  have hΨ₃ := sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat hns htor hx hEq hκ
   -- `ψ₂ = 2y₀`, so the torsion input `(2y₀)² ∣ 4·Ψ₃(x₀)` is `y₀² ∣ Ψ₃(x₀)` once the `4` cancels.
   rw [evalEval_ψ₂_of_isCharNeTwoNF, mul_pow, show (2 : ℤ) ^ 2 = 4 by norm_num] at hΨ₃
   refine sq_dvd_cubic_discr W (a₁_of_isCharNeTwoNF W) (a₃_of_isCharNeTwoNF W) ?_

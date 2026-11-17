@@ -51,8 +51,8 @@ torsion.
 
 This is the algebraic step of the discriminant half of the Nagell–Lutz theorem,
 `y_eq_zero_or_sq_dvd_cubic_discr_of_torsion`, which supplies `y² ∣ Ψ₃(x)` for a torsion point with
-integral coordinates through `sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃`. On the short model it gives
-the classical `y² ∣ 4A³ + 27B²` of `lutz_nagell_sharp`.
+integral coordinates through `sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃_rat`. On the short model it
+gives the classical `y² ∣ 4A³ + 27B²` of `lutz_nagell_sharp`.
 
 ## Provenance
 
