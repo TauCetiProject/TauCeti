@@ -314,6 +314,78 @@ private theorem Rectangle.process_frozen (T : ℝ≥0) (R : Rectangle ℱ)
   · simp only [Rectangle.process, max_eq_left ((min_le_right _ _).trans (le_of_not_ge hs)),
       sub_self, mul_zero]
 
+private theorem Rectangle.process_continuous (T : ℝ≥0) (R : Rectangle ℱ) {ω : Ω}
+    (hω : ContinuousOn (fun t ↦ W t ω) (Iic T)) :
+    Continuous (fun u ↦ R.process T W u ω) := by
+  unfold Rectangle.process
+  by_cases hs : R.s ≤ T
+  · have he : max R.s (min R.t T) ≤ T := max_le hs (min_le_right _ _)
+    exact continuous_const.mul
+      ((hω.comp_continuous (continuous_const.min continuous_id)
+        (fun u ↦ (min_le_left _ u).trans he)).sub
+        (hω.comp_continuous (continuous_const.min continuous_id)
+          (fun u ↦ (min_le_left _ u).trans hs)))
+  · simp only [max_eq_left ((min_le_right R.t T).trans (le_of_not_ge hs)),
+      sub_self, mul_zero]
+    exact continuous_const
+
+private theorem linearCombination_process_properties (hW : IsFilteredPreBrownianReal ℱ W P)
+    (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
+    (c : Rectangle ℱ →₀ ℝ) :
+    let M := Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) c
+    Martingale M ℱ P ∧ (∀ u, MemLp (M u) 2 P) ∧
+      (∀ᵐ ω ∂P, Continuous (fun u ↦ M u ω)) ∧ M 0 = 0 ∧
+      ∀ u, M (min T u) = M u := by
+  let := hW.toIsPreBrownianReal.hasLaw_eval 0 |>.isProbabilityMeasure
+  classical
+  dsimp only
+  refine ⟨?_, ?_, ?_, ?_, ?_⟩
+  · dsimp only [Finsupp.linearCombination_apply, Finsupp.sum]
+    exact Finset.sum_induction _ (fun X ↦ Martingale X ℱ P)
+      (fun X Y hX hY ↦ hX.add hY) (martingale_zero ℝ ℱ P)
+      (fun R _ ↦ (R.process_martingale hW T).smul (c R))
+  · intro u
+    refine (memLp_congr_ae ?_).mp (hW.memLp_sum_mul_sub_min c.support (s := Rectangle.s)
+      (t := fun R ↦ max R.s (min R.t T)) (X := fun R ω ↦ c R * R.height ω)
+      (fun R _ ↦ le_max_left _ _)
+      (fun R _ ↦ R.height_measurable.const_mul (c R))
+      (fun R _ ↦ R.height_memLp.const_mul (c R)) u)
+    exact Eventually.of_forall fun ω ↦ by
+      simp [Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process, mul_assoc]
+  · filter_upwards [hc] with ω hω
+    simp only [Finsupp.linearCombination_apply, Finsupp.sum,
+      Finset.sum_apply, Pi.smul_apply, smul_eq_mul]
+    exact continuous_finsetSum _ fun R _ ↦ continuous_const.mul (R.process_continuous T hω)
+  · ext ω
+    simp [Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process]
+  · intro u
+    ext ω
+    simp only [Finsupp.linearCombination_apply, Finsupp.sum,
+      Pi.smul_apply, Finset.sum_apply, Rectangle.process_frozen]
+
+private theorem linearCombination_process_terminal [IsFiniteMeasure P]
+    (hW : IsFilteredPreBrownianReal ℱ W P) (T : ℝ≥0) (c : Rectangle ℱ →₀ ℝ)
+    (hmem : MemLp (Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) c T) 2 P) :
+    hmem.toLp (Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) c T) =
+      hW.l2Integral T (Finsupp.linearCombination ℝ (step (ℱ := ℱ) (P := P) T) c) := by
+  classical
+  apply Lp.ext
+  refine hmem.coeFn_toLp.trans ?_
+  have hlin := (hW.l2Integral T).toLinearMap.map_finsupp_linearCombination
+    (g := step (ℱ := ℱ) (P := P) T) c
+  simp only [LinearIsometry.coe_toLinearMap] at hlin
+  rw [hlin]
+  have hi : ∀ R ∈ c.support, R.process T W T =ᵐ[P]
+      hW.l2Integral T (step (P := P) T R) := fun R _ ↦ by
+    rw [l2Integral_step]
+    exact R.process_terminal hW T
+  filter_upwards [(eventually_all_finset c.support).mpr hi,
+    Lp.coeFn_linearCombination c (fun R ↦ hW.l2Integral T (step T R))] with ω hω hs
+  simp only [Finsupp.linearCombination_apply, Finsupp.sum, Pi.smul_apply,
+    smul_eq_mul, Finset.sum_apply, Function.comp_apply] at hs ⊢
+  rw [hs]
+  exact Finset.sum_congr rfl fun R hR ↦ congrArg ((c R) * ·) (hω R hR)
+
 private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal ℱ W P)
     (T : ℝ≥0) (hc : ∀ᵐ ω ∂P, ContinuousOn (fun t ↦ W t ω) (Iic T))
     (f : Lp ℝ 2 (ℱ.predictableMeasure P T)) :
@@ -330,68 +402,14 @@ private theorem exists_approximating_martingales (hW : IsFilteredPreBrownianReal
   have hclim : Tendsto (fun n ↦ L (c n)) atTop (𝓝 f) := by
     simpa only [L, hca] using halim
   let M (n : ℕ) := Finsupp.linearCombination ℝ (fun R : Rectangle ℱ ↦ R.process T W) (c n)
-  have hM (n : ℕ) : Martingale (M n) ℱ P := by
-    classical
-    dsimp only [M, Finsupp.linearCombination_apply, Finsupp.sum]
-    exact Finset.sum_induction _ (fun X ↦ Martingale X ℱ P)
-      (fun X Y hX hY ↦ hX.add hY) (martingale_zero ℝ ℱ P)
-      (fun R _ ↦ (R.process_martingale hW T).smul ((c n) R))
-  have hmem (n : ℕ) (u : ℝ≥0) : MemLp (M n u) 2 P := by
-    classical
-    refine (memLp_congr_ae ?_).mp (hW.memLp_sum_mul_sub_min (c n).support (s := Rectangle.s)
-      (t := fun R ↦ max R.s (min R.t T)) (X := fun R ω ↦ (c n) R * R.height ω)
-      (fun R _ ↦ le_max_left _ _)
-      (fun R _ ↦ R.height_measurable.const_mul ((c n) R))
-      (fun R _ ↦ R.height_memLp.const_mul ((c n) R)) u)
-    exact Eventually.of_forall fun ω ↦ by
-      simp [M, Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process, mul_assoc]
-  -- Identify the terminal L² classes before using any martingale completion theorem.
-  have hterm (n : ℕ) : (hmem n T).toLp (M n T) = hW.l2Integral T (L (c n)) := by
-    classical
-    apply Lp.ext
-    refine (hmem n T).coeFn_toLp.trans ?_
-    have hlin := (hW.l2Integral T).toLinearMap.map_finsupp_linearCombination
-      (g := step (ℱ := ℱ) (P := P) T) (c n)
-    simp only [LinearIsometry.coe_toLinearMap] at hlin
-    dsimp only [L]
-    rw [hlin]
-    have hi : ∀ R ∈ (c n).support, R.process T W T =ᵐ[P]
-        hW.l2Integral T (step (P := P) T R) := fun R _ ↦ by
-      rw [l2Integral_step]
-      exact R.process_terminal hW T
-    filter_upwards [(eventually_all_finset (c n).support).mpr hi,
-      Lp.coeFn_linearCombination (c n) (fun R ↦ hW.l2Integral T (step T R))] with ω hω hs
-    simp only [M, Finsupp.linearCombination_apply, Finsupp.sum, Pi.smul_apply,
-      smul_eq_mul, Finset.sum_apply, Function.comp_apply] at hs ⊢
-    rw [hs]
-    exact Finset.sum_congr rfl fun R hR ↦ congrArg (((c n) R) * ·) (hω R hR)
-  have hfrozen (n : ℕ) (u : ℝ≥0) : M n (min T u) = M n u := by
-    classical
-    ext ω
-    simp only [M, Finsupp.linearCombination_apply, Finsupp.sum,
-      Pi.smul_apply, Finset.sum_apply, Rectangle.process_frozen]
-  have htermLim : Tendsto (fun n ↦ (hmem n T).toLp (M n T)) atTop
-      (𝓝 (hW.l2Integral T f)) := by
-    simpa only [Function.comp_def, hterm] using
-      (hW.l2Integral T).continuous.continuousAt.tendsto.comp hclim
-  refine ⟨M, hmem, hM, ?_, ?_, hfrozen, htermLim⟩
-  · intro n
-    filter_upwards [hc] with ω hω
-    classical
-    have hstop : Continuous (fun t ↦ W (min T t) ω) :=
-      hω.comp_continuous (continuous_const.min continuous_id) (fun t ↦ min_le_left T t)
-    suffices Continuous (fun u ↦ M n (min T u) ω) by
-      simpa only [hfrozen] using this
-    simp only [M, Finsupp.linearCombination_apply, Finsupp.sum,
-      Finset.sum_apply, Pi.smul_apply, smul_eq_mul, Rectangle.process]
-    simpa only [Function.comp_def, min_left_comm T, Pi.mul_apply, Pi.sub_apply, id_eq] using
-      continuous_finsetSum (c n).support (fun R _ ↦ continuous_const.mul
-        (continuous_const.mul ((hstop.comp (continuous_const.min continuous_id)).sub
-          (hstop.comp (continuous_const.min continuous_id)))))
-  · intro n
-    classical
-    ext ω
-    simp [M, Finsupp.linearCombination_apply, Finsupp.sum, Rectangle.process]
+  have hprops (n : ℕ) := linearCombination_process_properties hW T hc (c n)
+  have hmem (n : ℕ) (u : ℝ≥0) : MemLp (M n u) 2 P := (hprops n).2.1 u
+  have hterm (n : ℕ) : (hmem n T).toLp (M n T) = hW.l2Integral T (L (c n)) :=
+    linearCombination_process_terminal hW T (c n) (hmem n T)
+  refine ⟨M, hmem, fun n ↦ (hprops n).1, fun n ↦ (hprops n).2.2.1,
+    fun n ↦ (hprops n).2.2.2.1, fun n ↦ (hprops n).2.2.2.2, ?_⟩
+  simpa only [Function.comp_def, hterm] using
+    (hW.l2Integral T).continuous.continuousAt.tendsto.comp hclim
 
 /-- If the Brownian paths are almost-surely continuous on `Iic T`, every predictable L²
 Brownian integral at horizon `T` is the terminal value of a predictable square-integrable
@@ -422,14 +440,9 @@ theorem exists_continuous_martingale_l2Integral (hW : IsFilteredPreBrownianReal 
     rw [he] at hm
     exact hm.symm
   have hcau (u : ℝ≥0) : CauchySeq (fun n ↦ (hmem n u).toLp (M n u)) := by
-    have h := ((lpMeas ℝ ℝ (ℱ u) 2 P).subtypeL.comp
-      (condExpL2 ℝ ℝ (ℱ.le u))).continuous
+    have h := continuous_subtype_val.comp (condExpL2 ℝ ℝ (μ := P) (ℱ.le u)).continuous
     have hlim := (h.tendsto (hW.l2Integral T f)).comp htermLim
-    have heq : (fun n ↦ (hmem n u).toLp (M n u)) =
-        fun n ↦ (condExpL2 ℝ ℝ (ℱ.le u) ((hmem n T).toLp (M n T)) : Lp ℝ 2 P) :=
-      funext fun n ↦ hcond n u
-    rw [heq]
-    exact hlim.cauchySeq
+    simpa only [Function.comp_def, ← hcond] using hlim.cauchySeq
   -- Complete the continuous martingales on the raw filtration, retaining a common path event.
   obtain ⟨I, hI, hp, hlim, -, φ, -, hpath⟩ :=
     exists_continuous_martingale_of_cauchySeq_Lp hM hcont hmem hcau
