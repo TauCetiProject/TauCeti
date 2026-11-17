@@ -379,8 +379,7 @@ theorem _root_.ContinuousOn.contDiffOn_one_Icc_of_integral_deriv_smul_add_eq_zer
     refine (_root_.intervalIntegral.integral_eq_integral_of_support_subset
       ((Function.support_smul_subset_left (deriv ψ) (f - G)).trans ((subset_tsupport _).trans
         (tsupport_deriv_subset.trans (hψs.trans Ioo_subset_Ioc_self))))).symm.trans ?_
-    change ∫ t in a..b, deriv ψ t • (f t - G t) = 0
-    simp_rw [smul_sub]
+    simp only [Pi.smul_apply', Pi.sub_apply, smul_sub]
     rw [_root_.intervalIntegral.integral_sub hdf hdG, hibp, sub_neg_eq_add,
       ← _root_.intervalIntegral.integral_add hdf hψg]
     exact h ψ hψ hψs
