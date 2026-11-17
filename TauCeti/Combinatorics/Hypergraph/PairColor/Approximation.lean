@@ -53,8 +53,6 @@ to those of `S`, and `PairColorSystem.fillDiagonal` cleans up within-cell pairs.
 * `PairColorSystem.exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le`:
   strong regular approximation of a pair-color system refining a seed equipartition, preserving
   off-diagonal coarse block densities.
-* `TauCeti.PairColorSystem.exists_refining_equipartition_lowerSkeletonRegular`: strong regular
-  approximation of a pair-color system refining a seed equipartition.
 * `TauCeti.PairSkeleton3.exists_refining_lowerSkeletonRegular`: strong regular approximation of a
   lower skeleton `PairSkeleton3 κ V` with minimum cell count `t₀` and finite palette
   `Fin (Fintype.card κ + 1)`.
@@ -891,31 +889,6 @@ theorem exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_
     card_edit_fillDiagonal_assembleOffDiag_le S hQP hP hPparts_pos eP blockSys hblock_rev
       hα hη ha₀_le hQirreg hgap hη_α fun A hA B hB hAB A' hA' hA'A B' hB' hB'B hreg ↦
         (hblock_spec hA hB hAB hA' hB' hA'A hB'B).2 hreg⟩
-
-open Classical in
-/-- **Strong regular approximation of a pair-color system.** Given an equitable partition `P₀`,
-an edit budget `α > 0`, and a positive error schedule `F`, if `V` has at least
-`pairApproximationBound (card κ) α F #P₀.parts` vertices, there exist an equitable refinement
-`P ≤ P₀` with at most `pairApproximationPartsBound (card κ) α F #P₀.parts` cells and a
-pair-color system `T` over `Option κ` with `T.rev = Option.map S.rev` such that `⟨P, T⟩` is
-`F`-regular at its lower complexity and `T` differs from `some ∘ S.color` on at most `α |V|²`
-ordered distinct pairs. -/
-theorem exists_refining_equipartition_lowerSkeletonRegular {κ V : Type*}
-    [Fintype V] [DecidableEq V] [Fintype κ] (S : PairColorSystem κ V)
-    (P₀ : Finpartition (univ : Finset V)) (hP₀ : P₀.IsEquipartition) {α : ℝ} (hα : 0 < α)
-    {F : ℕ → ℝ} (hF : ∀ n, 0 < F n)
-    (hV : pairApproximationBound (Fintype.card κ) α F #P₀.parts ≤ Fintype.card V) :
-    ∃ (P : Finpartition (univ : Finset V)) (T : PairColorSystem (Option κ) V),
-      P ≤ P₀ ∧ P.IsEquipartition ∧
-      #P.parts ≤ pairApproximationPartsBound (Fintype.card κ) α F #P₀.parts ∧
-      T.rev = Option.map S.rev ∧
-      (⟨P, T⟩ : PairSkeleton3 (Option κ) V).LowerSkeletonRegular F ∧
-      (#{p : {p : V × V // p.1 ≠ p.2} | T.color p ≠ some (S.color p)} : ℝ) ≤
-        α * (Fintype.card V : ℝ) ^ 2 := by
-  obtain ⟨P, T, hPP₀, hP, hPcard, hrev, hlower, -, -, hedit⟩ :=
-    S.exists_refining_equipartition_lowerSkeletonRegular_abs_pairColorDensity_sub_le
-      P₀ hP₀ hα hF hV
-  exact ⟨P, T, hPP₀, hP, hPcard, hrev, hlower, hedit⟩
 
 end Assembly
 

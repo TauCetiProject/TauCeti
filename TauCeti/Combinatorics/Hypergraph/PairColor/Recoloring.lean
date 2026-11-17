@@ -267,7 +267,7 @@ theorem exists_coupled_recoloring_abs_card_filter_sub_le [Fintype κ] (S : PairC
       (s ×ˢ t) x₀ hp hp1 Trect
       (fun i ↦ product_subset_product (mem_powerset.1 (mem_product.1 i.2).1)
         (mem_powerset.1 (mem_product.1 i.2).2))
-      ha ha.le (fun i c ↦ by
+      ha (fun i c ↦ by
         obtain ⟨hs', ht'⟩ := mem_product.1 i.2
         have hs's := mem_powerset.1 hs'
         have ht't := mem_powerset.1 ht'
