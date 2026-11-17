@@ -50,6 +50,11 @@ namespace Graph
 
 variable {V : Type u} {E : Type v} {G : Graph V E}
 
+/-- A nonloop link gives adjacency in the underlying simple graph. -/
+theorem IsLink.toSimpleGraph_adj {x y : V} {e : E} (h : G.IsLink e x y)
+    (hxy : x ≠ y) : G.toSimpleGraph.Adj ⟨x, h.left_mem⟩ ⟨y, h.right_mem⟩ :=
+  ⟨fun heq ↦ hxy (Subtype.mk.inj heq), h.adj⟩
+
 private theorem edgeEnds_mem_toSimpleGraph_edgeSet [G.Simple] (e : G.edgeSet) :
     G.edgeEnds e ∈ G.toSimpleGraph.edgeSet := by
   rw [← Sym2.mk_fst_out_snd_out (G.edgeEnds e), SimpleGraph.mem_edgeSet,
@@ -150,12 +155,22 @@ theorem ofSimpleGraphToSimpleGraphIso_vertexEquiv_apply (G : Graph V E) [G.Simpl
   (rfl)
 
 /-- The original edge corresponding to an edge of the reconstructed graph has exactly the
-displayed unordered pair of ends. -/
-@[simp]
+displayed unordered pair of ends. This is not a simp lemma: `Graph.Iso.edgeEnds_edgeEquiv`
+rewrites its left-hand side, and
+`Graph.map_vertexEquiv_edgeEnds_ofSimpleGraphToSimpleGraphIso` is the simp-normal form. -/
 theorem edgeEnds_ofSimpleGraphToSimpleGraphIso_edgeEquiv_apply
     (G : Graph V E) [G.Simple] (e : (ofSimpleGraph G.toSimpleGraph).edgeSet) :
     G.edgeEnds (G.ofSimpleGraphToSimpleGraphIso.edgeEquiv e) = e :=
   G.edgeEnds_edgeEndsEquiv_symm_apply (ofSimpleGraphEdgeSetEquiv G.toSimpleGraph e)
+
+/-- The reverse simple-graph round-trip isomorphism carries the ends of an edge of the
+reconstructed graph to the displayed unordered pair itself. -/
+@[simp]
+theorem map_vertexEquiv_edgeEnds_ofSimpleGraphToSimpleGraphIso
+    (G : Graph V E) [G.Simple] (e : (ofSimpleGraph G.toSimpleGraph).edgeSet) :
+    ((ofSimpleGraph G.toSimpleGraph).edgeEnds e).map G.ofSimpleGraphToSimpleGraphIso.vertexEquiv =
+      e := by
+  rw [← Iso.edgeEnds_edgeEquiv, edgeEnds_ofSimpleGraphToSimpleGraphIso_edgeEquiv_apply]
 
 /-- In the inverse round-trip isomorphism, an original edge is sent to its unordered pair of
 ends. -/

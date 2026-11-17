@@ -52,6 +52,9 @@ Hardy–Littlewood–Sobolev fails, needs the Keel–Tao argument instead.
 
 * `TauCeti.exists_lintegral_lintegral_enorm_inner_adjoint_le`: the bilinear `TT*` estimate
   `∫∫ |⟪U(s)* F(s), U(t)* G(t)⟫| ds dt ≤ C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`.
+* `TauCeti.enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm`: the truncation to
+  `s < t` of a pairing integral is bounded by the full integral of its absolute value, which
+  reduces retarded estimates to the bilinear one.
 * `TauCeti.exists_enorm_integral_adjoint_le`: the dual homogeneous estimate
   `‖∫ U(s)* F(s) ds‖ ≤ C A ^ (1 / 2) ‖F‖_{L^{q'} L^{r'}}`.
 * `TauCeti.exists_enorm_integral_inner_apply_le`: the homogeneous estimate in weak form,
@@ -91,6 +94,16 @@ private theorem enorm_inner_adjoint_le {U : ℝ → H →L[𝕜] Lp E 2 μ} {A :
         gcongr
         exact hU s t hst g
     _ = _ := by ring
+
+/-- The reduction of a retarded estimate to the bilinear one: the pairing integrated over the
+region `s < t` is bounded by the integral of its absolute value over the whole `(s, t)` plane. -/
+theorem enorm_integral_setIntegral_Iio_le_lintegral_lintegral_enorm {V : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] (f : ℝ → ℝ → V) :
+    ‖∫ t, ∫ s in Set.Iio t, f s t‖ₑ ≤ ∫⁻ t, ∫⁻ s, ‖f s t‖ₑ :=
+  calc _ ≤ ∫⁻ t, ‖∫ s in Set.Iio t, f s t‖ₑ := eNorm_integral_le_lintegral_eNorm _
+    _ ≤ ∫⁻ t, ∫⁻ s in Set.Iio t, ‖f s t‖ₑ :=
+        lintegral_mono fun _ ↦ eNorm_integral_le_lintegral_eNorm _
+    _ ≤ _ := lintegral_mono fun _ ↦ setLIntegral_le_lintegral _ _
 
 /-- **The bilinear `TT*` estimate.** Let `2 < q < ∞` with Hölder conjugate `p`, and let
 `U(t) : H → L²(X, μ)` be bounded operators whose time pairings decay from `L^{r'}` to `L^r`,

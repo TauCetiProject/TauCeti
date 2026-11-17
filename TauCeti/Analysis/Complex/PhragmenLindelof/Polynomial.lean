@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.PhragmenLindelof.VerticalStrip
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
-import TauCeti.Analysis.SpecialFunctions.Complex.LogBounds
+import TauCeti.Analysis.SpecialFunctions.Complex.Log.Bounds
 
 /-!
 # Polynomial edge bounds in the Phragmén–Lindelöf strip principle
