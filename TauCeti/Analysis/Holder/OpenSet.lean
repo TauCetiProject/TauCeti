@@ -176,9 +176,16 @@ def extendZero {G : Type*} [Zero G] (g : Ω → G) : E → G :=
 
 omit [NormedSpace ℝ E] in
 /-- The extension by zero of a field on `Ω` agrees with it on `Ω`. -/
+@[simp]
 theorem extendZero_coe {G : Type*} [Zero G] (g : Ω → G) (x : Ω) :
     extendZero g (x : E) = g x :=
   Subtype.val_injective.extend_apply g 0 x
+
+omit [NormedSpace ℝ E] in
+/-- The extension by zero of a field on `Ω` vanishes off `Ω`. -/
+theorem extendZero_of_notMem {G : Type*} [Zero G] (g : Ω → G) {x : E} (hx : x ∉ Ω) :
+    extendZero g x = 0 :=
+  Function.extend_apply' g (0 : E → G) x fun ⟨y, hy⟩ ↦ hx (hy ▸ y.2)
 
 /-- The derivative identities of a jet: each field below order `k`, extended by zero, has the
 next field, curried on the left, as its Fréchet derivative at every point of `Ω`. -/
@@ -778,8 +785,8 @@ def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
         (HolderWith.memHolder fun x y ↦
           f.holderOnWith_iteratedFDeriv_of_lt (extendZero_coe f) hconv hα k.lt_succ_self
             x x.2 y y.2)
-      map_add' f g := by ext x; simp [extendZero_coe]
-      map_smul' c f := by ext x; simp [extendZero_coe] }
+      map_add' f g := by ext x; simp
+      map_smul' c f := by ext x; simp }
     3 fun f ↦ by
       rw [LinearMap.coe_mk, AddHom.coe_mk]
       refine (norm_le_sum_add_of_norm_iteratedFDeriv_le_of_holderWith
@@ -803,7 +810,7 @@ def inclusionSuccL (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1) :
 @[simp]
 theorem inclusionSuccL_apply (hconv : Convex ℝ (Ω : Set E)) (hα : α ≤ 1)
     (f : CkHolderSpaceOn (k + 1) α Ω F) (x : Ω) : inclusionSuccL hconv hα f x = f x := by
-  simp [inclusionSuccL, extendZero_coe]
+  simp [inclusionSuccL]
 
 /-- The inclusion `C^{k+1,α}(Ω) → C^{k,α}(Ω)` keeps the derivative fields through order `k`. -/
 @[simp]
