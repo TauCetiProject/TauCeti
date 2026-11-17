@@ -339,14 +339,8 @@ theorem algHom_cauchyKernel_eq_resolvent {B : Type*} [Ring B] [Algebra ℂ B]
     rw [← Φ.commutes w, ← hΦ, ← map_sub, ← map_mul, sub_id_mul_cauchyKernel, map_one]
   have hright : Φ (cauchyKernel hw) * (algebraMap ℂ B w - b) = 1 := by
     rw [← Φ.commutes w, ← hΦ, ← map_sub, ← map_mul, cauchyKernel_mul_sub_id, map_one]
-  let u : Bˣ :=
-    { val := algebraMap ℂ B w - b
-      inv := Φ (cauchyKernel hw)
-      val_inv := hleft
-      inv_val := hright }
-  have hu : algebraMap ℂ B w - b = u := rfl
-  rw [resolvent, hu, Ring.inverse_unit]
-  rfl
+  rw [resolvent, ← Units.val_mk (algebraMap ℂ B w - b) (Φ (cauchyKernel hw)) hleft hright,
+    Ring.inverse_unit, Units.inv_mk, Units.val_mk]
 
 end Algebraic
 
@@ -390,14 +384,8 @@ theorem holomorphicCalculus_ofFun_inv (a : A) {g : ℂ → ℂ}
     filter_upwards [(hg z hz).continuousAt.eventually_ne (hg0 z hz)] with w hw
     exact inv_mul_cancel₀ hw
   have hinv_eq :
-      holomorphicGerms.ofFun (fun z ↦ (g z)⁻¹) hinv = (holomorphicGerms.ofFun g hg)⁻¹ʳ := by
-    calc holomorphicGerms.ofFun (fun z ↦ (g z)⁻¹) hinv
-        = holomorphicGerms.ofFun (fun z ↦ (g z)⁻¹) hinv *
-            (holomorphicGerms.ofFun g hg * (holomorphicGerms.ofFun g hg)⁻¹ʳ) := by
-            rw [Ring.mul_inverse_cancel _ hunit, mul_one]
-      _ = (holomorphicGerms.ofFun (fun z ↦ (g z)⁻¹) hinv * holomorphicGerms.ofFun g hg) *
-            (holomorphicGerms.ofFun g hg)⁻¹ʳ := (mul_assoc _ _ _).symm
-      _ = (holomorphicGerms.ofFun g hg)⁻¹ʳ := by rw [hmul, one_mul]
+      holomorphicGerms.ofFun (fun z ↦ (g z)⁻¹) hinv = (holomorphicGerms.ofFun g hg)⁻¹ʳ :=
+    left_inv_eq_right_inv hmul (Ring.mul_inverse_cancel _ hunit)
   rw [hinv_eq, hunit.map_ringInverse (holomorphicCalculus a)]
 
 /-- For `f` and `g` analytic near `spectrum ℂ a` with `g` nonvanishing on `spectrum ℂ a`, the
@@ -470,11 +458,8 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_holomorphicCalculus
     obtain ⟨w, hw, hw_eq⟩ := spectrum.exists_nnNorm_eq_spectralRadius b
     rw [← hw_eq]
     have hw' : w + z₀ ∈ spectrum ℂ a := by
-      rw [spectrum.mem_iff] at hw ⊢
-      convert hw using 2
-      dsimp only [b]
-      rw [map_add]
-      abel
+      rw [spectrum.add_mem_iff, neg_add_eq_sub]
+      exact hw
     simpa only [Metric.mem_eball, eDist_eq_eNorm_sub, add_sub_cancel_right, eNorm_eq_nnNorm]
       using ha hw'
   have hsum : Summable (fun n ↦ p.coeff n • b ^ n) :=

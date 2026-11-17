@@ -48,6 +48,7 @@ def comap (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V) :
         rw [extend_apply f ⟨z, hz⟩]
         exact hf ⟨z, hz⟩
 
+/-- Pointwise evaluation of the pullback `comap f hf g`. -/
 @[simp]
 theorem comap_apply (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V)
     (g : holomorphicFunctions V) (z : U) :
@@ -125,6 +126,7 @@ def preimageOpens (f : holomorphicFunctions U) (V : Opens ℂ) : Opens ℂ :=
   ⟨Subtype.val '' (f.val ⁻¹' (V : Set ℂ)),
     U.isOpen.isOpenMap_subtype_val _ (V.isOpen.preimage f.val.continuous)⟩
 
+/-- Membership in `preimageOpens f V` means lying in `U` with image in `V`. -/
 @[simp]
 theorem mem_preimageOpens {f : holomorphicFunctions U} {V : Opens ℂ} {z : ℂ} :
     z ∈ preimageOpens f V ↔ ∃ hz : z ∈ U, f.val ⟨z, hz⟩ ∈ V := by
@@ -134,11 +136,13 @@ theorem mem_preimageOpens {f : holomorphicFunctions U} {V : Opens ℂ} {z : ℂ}
   · rintro ⟨hz, hfz⟩
     exact ⟨⟨z, hz⟩, hfz, rfl⟩
 
+/-- `preimageOpens f V` is an open subset of `U`. -/
 theorem preimageOpens_le (f : holomorphicFunctions U) (V : Opens ℂ) :
     preimageOpens f V ≤ U := by
   intro z hz
   exact (mem_preimageOpens.mp hz).1
 
+/-- The restriction of `f` to `preimageOpens f V` takes values in `V`. -/
 theorem restrict_preimageOpens_mem (f : holomorphicFunctions U) (V : Opens ℂ)
     (z : preimageOpens f V) : (restrict (preimageOpens_le f V) f).val z ∈ V := by
   obtain ⟨hz, hfz⟩ := mem_preimageOpens.mp z.property

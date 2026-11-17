@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Composition
-public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniqueness
+public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
+
+import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniqueness
 
 /-!
 # Spectral mapping and composition for the holomorphic functional calculus
@@ -166,7 +168,7 @@ theorem holomorphicCalculus_comp (a : A) (g : holomorphicGerms (spectrum ℂ a))
     exact (continuous_holomorphicCalculusOn a U' haU').comp
       (continuous_comap (restrict hle f) (restrict_preimageOpens_mem f V))
   have huniq : Ψ = holomorphicCalculus b := holomorphicCalculus_unique b Ψ hΨ_id hΨ_cont
-  exact congrFun (congrArg DFunLike.coe huniq.symm) k
+  exact AlgHom.congr_fun huniq.symm k
 
 /-- **Composition theorem for represented germs.** If `f` is analytic near `spectrum ℂ a` and `ψ`
 is analytic near `f '' spectrum ℂ a`, then `ψ(f(a)) = (ψ ∘ f)(a)`. -/

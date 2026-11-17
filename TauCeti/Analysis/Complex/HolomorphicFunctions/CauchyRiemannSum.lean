@@ -101,17 +101,14 @@ private theorem exists_curve_riemann_approx (f : holomorphicFunctions U)
   let : CompactSpace K₀ := isCompact_iff_compactSpace.mp hK₀
   let γU : C(uIcc γ.a γ.b, U) :=
     ⟨fun t ↦ ⟨γ t.val, hγU t.val t.property⟩,
-      (continuousOn_iff_continuous_domRestrict.mp γ.continuousOn).subtype_mk
-        fun t ↦ hγU t.val t.property⟩
-  have hγU_apply (t : uIcc γ.a γ.b) : γU t = ⟨γ t.val, hγU t.val t.property⟩ := rfl
-  have hsub_cont : Continuous (fun p : uIcc γ.a γ.b × K₀ ↦ (γU p.1 : ℂ) - (p.2.val : ℂ)) :=
-    (continuous_subtype_val.comp (γU.continuous.comp continuous_fst)).sub
-      (continuous_subtype_val.comp (continuous_subtype_val.comp continuous_snd))
+      (continuousOn_iff_continuous_domRestrict.mp γ.continuousOn).subtype_mk _⟩
+  have hγU_apply (t : uIcc γ.a γ.b) : γU t = ⟨γ t.val, hγU t.val t.property⟩ :=
+    congrFun (ContinuousMap.coe_mk _ _) t
   have hsub_ne : ∀ p : uIcc γ.a γ.b × K₀, (γU p.1 : ℂ) - (p.2.val : ℂ) ≠ 0 := fun p ↦
     sub_ne_zero.mpr (ne_of_mem_of_not_mem p.2.val.property (hγV p.1.val p.1.property)).symm
   let Ψ : C(uIcc γ.a γ.b × K₀, ℂ) :=
     ⟨fun p ↦ f.val (γU p.1) * ((γU p.1 : ℂ) - (p.2.val : ℂ))⁻¹,
-      (f.val.continuous.comp (γU.continuous.comp continuous_fst)).mul (hsub_cont.inv₀ hsub_ne)⟩
+      by fun_prop (disch := exact hsub_ne)⟩
   let φ : ℝ → C(K₀, ℂ) := fun t ↦
     if ht : t ∈ uIcc γ.a γ.b then Ψ.curry ⟨t, ht⟩ else 0
   have hφ_eq (t : ℝ) (ht : t ∈ uIcc γ.a γ.b) : φ t = Ψ.curry ⟨t, ht⟩ := by simp [φ, ht]
@@ -165,7 +162,7 @@ private theorem exists_mem_span_cauchyKernel_curve_approx (f : holomorphicFuncti
     Cycle.isIn_iff.mp hΓU (hγ_trace t ht)
   have hγV : ∀ t ∈ uIcc γ.a γ.b, γ t ∉ (V : Set ℂ) := fun t ht ↦
     hVΓ.notMem_of_mem_right (hγ_trace t ht)
-  let α : ℂ := (2 * π * I)⁻¹ * (FreeAbelianGroup.coeff γ Γ : ℂ)
+  set α : ℂ := (2 * π * I)⁻¹ * (FreeAbelianGroup.coeff γ Γ : ℂ)
   have hα_pos : 0 < ‖α‖ + 1 := by positivity
   obtain ⟨N, w, hw_img, c, happrox⟩ :=
     exists_curve_riemann_approx f γ hγU hγV hK₀ (div_pos hδ hα_pos)
@@ -179,8 +176,7 @@ private theorem exists_mem_span_cauchyKernel_curve_approx (f : holomorphicFuncti
       (hVΓ.notMem_of_mem_right (hw_trace i))).val z =
       α * ∑ i, c i * (w i - (z : ℂ))⁻¹ := by
     simp [Finset.mul_sum, mul_assoc]
-  let Iγ : ℂ := ∫ t in γ.a..γ.b, deriv γ t * (extend f (γ t) / (γ t - (z : ℂ)))
-  change ‖_ - α * Iγ‖ < δ
+  set Iγ : ℂ := ∫ t in γ.a..γ.b, deriv γ t * (extend f (γ t) / (γ t - (z : ℂ)))
   rw [hval, ← mul_sub, norm_mul, mul_comm ‖α‖, norm_sub_rev]
   calc ‖Iγ - ∑ i, c i * (w i - (z : ℂ))⁻¹‖ * ‖α‖
       ≤ ‖Iγ - ∑ i, c i * (w i - (z : ℂ))⁻¹‖ * (‖α‖ + 1) := by gcongr; linarith

@@ -181,6 +181,7 @@ private theorem differentiableOn_cauchyKernel (hw : w ∉ (V : Set ℂ)) :
 noncomputable def cauchyKernel (hw : w ∉ (V : Set ℂ)) : holomorphicFunctions V :=
   of V (fun z ↦ (w - z)⁻¹) (differentiableOn_cauchyKernel hw)
 
+/-- Pointwise evaluation of the Cauchy kernel `cauchyKernel hw`. -/
 @[simp]
 theorem cauchyKernel_apply (hw : w ∉ (V : Set ℂ)) (z : V) :
     (cauchyKernel hw).val z = (w - (z : ℂ))⁻¹ :=

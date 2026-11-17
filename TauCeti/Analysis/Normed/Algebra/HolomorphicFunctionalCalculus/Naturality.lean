@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniqueness
+public import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Basic
 public import TauCeti.Analysis.Normed.Algebra.Unitization.Basic
+
+import TauCeti.Analysis.Normed.Algebra.HolomorphicFunctionalCalculus.Uniqueness
 
 /-!
 # Naturality, scalar and character evaluation, and unitized nonunital holomorphic calculus
@@ -120,7 +122,7 @@ theorem holomorphicCalculus_complex (z : ℂ) (g : holomorphicGerms (spectrum �
       exact eval_toGerm hU z hz f
     rw [hfun]
     exact (continuous_eval_const (⟨z, hU hz⟩ : U)).comp continuous_subtype_val
-  exact congrFun (congrArg DFunLike.coe huniq.symm) g
+  exact AlgHom.congr_fun huniq.symm g
 
 /-- On `ℂ`, `holomorphicCalculusOn z U hz` evaluates a holomorphic function at `z`. -/
 @[simp]

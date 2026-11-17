@@ -34,23 +34,6 @@ namespace TauCeti.holomorphicGerms
 
 variable {r s t u : Set ℂ}
 
-private def compTendsto'AlgHom {l : Filter ℂ} {l' : Filter ℂ}
-    (g : Germ l ℂ) (hg : g.Tendsto l') : Germ l' ℂ →ₐ[ℂ] Germ l ℂ where
-  toFun k := k.compTendsto' g hg
-  map_one' := Germ.const_compTendsto' (1 : ℂ) hg
-  map_mul' k₁ k₂ :=
-    Germ.inductionOn g (fun _ _ ↦ Germ.inductionOn₂ k₁ k₂ fun _ _ ↦ rfl) hg
-  map_zero' := Germ.const_compTendsto' (0 : ℂ) hg
-  map_add' k₁ k₂ :=
-    Germ.inductionOn g (fun _ _ ↦ Germ.inductionOn₂ k₁ k₂ fun _ _ ↦ rfl) hg
-  commutes' c := by
-    rw [Germ.algebraMap_eq, Germ.algebraMap_eq]
-    exact Germ.const_compTendsto' (algebraMap ℂ ℂ c) hg
-
-private theorem compTendsto'AlgHom_apply {l : Filter ℂ} {l' : Filter ℂ}
-    (g : Germ l ℂ) (hg : g.Tendsto l') (k : Germ l' ℂ) :
-    compTendsto'AlgHom g hg k = k.compTendsto' g hg := (rfl)
-
 private theorem germ_tendsto_nhdsSet (g : holomorphicGerms s) (hg : spectrum ℂ g ⊆ t) :
     g.val.Tendsto (𝓝ˢ t) := by
   obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
@@ -64,10 +47,10 @@ private theorem germ_tendsto_nhdsSet (g : holomorphicGerms s) (hg : spectrum ℂ
 whose spectrum is contained in `t`. -/
 def comap (g : holomorphicGerms s) (hg : spectrum ℂ g ⊆ t) :
     holomorphicGerms t →ₐ[ℂ] holomorphicGerms s :=
-  ((compTendsto'AlgHom g.val (germ_tendsto_nhdsSet g hg)).comp
+  ((Germ.compTendsto'AlgHom (R := ℂ) g.val (germ_tendsto_nhdsSet g hg)).comp
     (holomorphicGerms t).val).codRestrict (holomorphicGerms s) fun k ↦ by
     obtain ⟨ψ, hψ, rfl⟩ := exists_ofFun_eq k
-    rw [AlgHom.comp_apply, Subalgebra.coe_val, compTendsto'AlgHom_apply, coe_ofFun,
+    rw [AlgHom.comp_apply, Subalgebra.coe_val, Germ.compTendsto'AlgHom_apply, coe_ofFun,
       Germ.coe_compTendsto']
     obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq g
     rw [coe_ofFun, Germ.map_coe]
@@ -90,8 +73,9 @@ theorem comap_ofFun {f : ℂ → ℂ} (hf : AnalyticOnNhd ℂ f s)
       ofFun (ψ ∘ f)
         (hψ.comp hf (mapsTo_iff_image_subset.mpr ((spectrum_ofFun f hf).symm ▸ hg))) := by
   apply Subtype.ext
-  change (ofFun ψ hψ).val.compTendsto' (ofFun f hf).val (germ_tendsto_nhdsSet (ofFun f hf) hg) = _
-  rw [coe_ofFun ψ hψ, Germ.coe_compTendsto', coe_ofFun, coe_ofFun, Germ.map_coe]
+  rw [comap, AlgHom.coe_codRestrict, AlgHom.comp_apply, Subalgebra.coe_val,
+    Germ.compTendsto'AlgHom_apply, coe_ofFun ψ hψ, Germ.coe_compTendsto', coe_ofFun, coe_ofFun,
+    Germ.map_coe]
 
 /-- Pulling back the coordinate germ along `g` recovers `g`. -/
 @[simp]

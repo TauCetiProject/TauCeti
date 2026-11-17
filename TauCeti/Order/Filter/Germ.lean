@@ -11,10 +11,11 @@ public import Mathlib.Order.Filter.Germ.Basic
 /-!
 # Algebras of germs
 
-Composition along a map tending to a filter is a ring homomorphism on germs.
-Germs of algebra-valued functions inherit the pointwise scalar algebra structure.
-The projection from functions to germs is an algebra homomorphism. This lets subalgebras
-of germs retain the same scalars as their representatives.
+Composition along a map tending to a filter is a ring homomorphism on germs, and composition
+along a germ tending to a filter is an algebra homomorphism. Germs of algebra-valued functions
+inherit the pointwise scalar algebra structure. The projection from functions to germs is an
+algebra homomorphism. This lets subalgebras of germs retain the same scalars as their
+representatives.
 -/
 
 public section
@@ -62,5 +63,27 @@ def coeAlgHom (l : Filter α) : (α → A) →ₐ[R] Germ l A where
 
 @[simp]
 theorem coeAlgHom_apply (f : α → A) : coeAlgHom (R := R) l f = (f : Germ l A) := (rfl)
+
+/-- Composition of germs along a germ tending to the target filter, as an algebra homomorphism. -/
+def compTendsto'AlgHom {β : Type*} {l' : Filter β} (g : Germ l β) (hg : g.Tendsto l') :
+    Germ l' A →ₐ[R] Germ l A where
+  toFun k := k.compTendsto' g hg
+  map_one' := const_compTendsto' (1 : A) hg
+  map_mul' k₁ k₂ :=
+    -- On representatives, composition preserves pointwise multiplication by definition.
+    inductionOn g (fun _ _ ↦ inductionOn₂ k₁ k₂ fun _ _ ↦ rfl) hg
+  map_zero' := const_compTendsto' (0 : A) hg
+  map_add' k₁ k₂ :=
+    -- On representatives, composition preserves pointwise addition by definition.
+    inductionOn g (fun _ _ ↦ inductionOn₂ k₁ k₂ fun _ _ ↦ rfl) hg
+  commutes' r := by
+    rw [algebraMap_eq, algebraMap_eq]
+    exact const_compTendsto' (algebraMap R A r) hg
+
+/-- The algebra homomorphism on germs acts by composition along a germ. -/
+@[simp]
+theorem compTendsto'AlgHom_apply {β : Type*} {l' : Filter β} (g : Germ l β)
+    (hg : g.Tendsto l') (k : Germ l' A) :
+    compTendsto'AlgHom (R := R) g hg k = k.compTendsto' g hg := (rfl)
 
 end Filter.Germ
