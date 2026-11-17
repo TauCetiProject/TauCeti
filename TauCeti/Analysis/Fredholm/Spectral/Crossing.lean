@@ -337,19 +337,6 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
   rw [spectralFlow_eq_of_isSpectralCutOn hab hcont hsab hcut]
   omega
 
-/-- The zero form is symmetric. -/
-private theorem isSymm_toBilinForm_of_eq_zero {B : E →L[ℝ] E →L[ℝ] ℝ} (hB : B = 0) :
-    B.toBilinForm.IsSymm := by
-  subst hB
-  exact ⟨fun x y ↦ by simp⟩
-
-/-- The zero form has negative index `0`. -/
-private theorem sigNeg_toBilinForm_of_eq_zero [FiniteDimensional ℝ E] {B : E →L[ℝ] E →L[ℝ] ℝ}
-    (hB : B = 0) :
-    sigNeg B.toBilinForm.toQuadraticMap = 0 := by
-  subst hB
-  exact (QuadraticForm.forall_nonneg_iff_sigNeg_eq_zero _).1 fun x ↦ by simp
-
 /-- **The compressed path at a crossing.** Let `s` contain `t₀`, and let `A` be continuous within
 `s` and self-adjoint at the times of `s` near `t₀`, with `A t₀` Fredholm. The kernel `K` of the
 form `⟪A t₀ ·, ·⟫` is finite-dimensional, and there are a cut `c` and `ε > 0` such that the
@@ -385,7 +372,7 @@ private theorem exists_compressedForm_of_crossing {s : Set ℝ} (ht₀ : t₀ �
   have hV₀ := compressedForm_self (c := c) (ι := K.subtypeL) hK₀
   refine ⟨this, c, ε, hε, fun hd ↦ hasDerivWithinAt_compressedForm hK₀ hPK hPc hd,
     fun hs hd ↦ hasDerivAt_compressedForm hK₀ hPK (hPc.continuousAt hs) hd,
-    isSymm_toBilinForm_of_eq_zero hV₀, sigNeg_toBilinForm_of_eq_zero hV₀,
+    hV₀ ▸ LinearMap.BilinForm.isSymm_zero, hV₀ ▸ QuadraticForm.sigNeg_zero,
     (crossingForm_equivalent_of_eq_zero hV₀).trans ?_, hSF⟩
   refine ⟨{ toLinearEquiv := LinearEquiv.ofEq _ _ hK, map_app' := fun v ↦ ?_ }⟩
   calc crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A') (LinearEquiv.ofEq _ _ hK v)
