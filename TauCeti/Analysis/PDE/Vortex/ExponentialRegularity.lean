@@ -11,8 +11,10 @@ import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Exp
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
@@ -66,10 +68,11 @@ then raises its regularity one step at a time up to `H^(k+1)`.
   `H¹` estimate `‖exp(c ρ) Q f‖_(H¹) ≤ K ‖exp(c ρ) f‖₂` at a bounded `C¹` plane vortex with
   `|α| → 1` and `∇₁ α → 0` at infinity, with `K` depending only on the vortex and `c`.
 
-The first three are membership statements. The weighted `H¹` estimate is their quantitative form
-at the lowest order: `exp(c ρ) Q f` is a weak solution of `L_x w = exp(c ρ) f + σ(d exp(c ρ)) Q f`,
-whose right side has `L²` norm at most `(1 + |c| K₀) ‖exp(c ρ) f‖₂` by the weighted `L²` estimate
-with constant `K₀`, and the coercive estimate of the `H¹` realization of `L_x`
+The second to fourth are membership statements. The weighted `H¹` estimate is their
+quantitative form at the lowest order: `exp(c ρ) Q f` is a weak solution of
+`L_x w = exp(c ρ) f + σ(d exp(c ρ)) Q f`, whose right side has `L²` norm at most
+`(1 + |c| K₀) ‖exp(c ρ) f‖₂` by the weighted `L²` estimate with constant `K₀`, and the coercive
+estimate of the `H¹` realization of `L_x`
 (`exists_norm_sq_le_mul_norm_sobolevGaugeFixedOperator_sq_add`) turns this into an `H¹` bound. The
 norm estimates `‖exp(c ρ) Q f‖_(H^(k+1)) ≤ K ‖exp(c ρ) f‖_(H^k)` for `k ≥ 1` are not proved here.
 
@@ -326,17 +329,13 @@ private theorem memLp_and_lpNorm_gaugeFixedOperatorSymbol_le {c : ℝ}
     have h := mulVec_mem_sobolevFields_natCast 0 (contDiff_weightCoeff c)
       (fun i j ↦ exists_norm_iteratedFDeriv_weightCoeff_le c i j 0) (by simpa using hy)
     simpa only [gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt] using memLp_of_mem_sobolevFields h
-  refine ⟨hGL, ?_⟩
-  rw [← toReal_eLpNorm, ← toReal_eLpNorm, ← ENNReal.toReal_ofReal (abs_nonneg c),
-    ← ENNReal.toReal_mul]
-  exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hy.eLpNorm_ne_top)
-    (eLpNorm_le_mul_eLpNorm_of_ae_le_mul hGL.aestronglyMeasurable
-      (.of_forall fun z ↦ norm_gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_le c z (y z)) 2)
+  exact ⟨hGL, lpNorm_le_mul_lpNorm_of_ae_le_mul hGL.aestronglyMeasurable hy
+    (.of_forall fun z ↦ norm_gaugeFixedOperatorSymbol_fderiv_exp_mul_sqrt_le c z (y z))⟩
 
 /-- The arithmetic closing the weighted `H¹` estimate: if `N² ≤ C (F² + S)` with
 `F ≤ (1 + b K) A`, `S ≤ 4 B²` and `B ≤ K A`, then `N ≤ √(C ((1 + b K)² + 4 K²)) A`. -/
-private theorem le_sqrt_mul_of_sq_le_mul_add {N C F S B A b K : ℝ} (hN : 0 ≤ N) (hC : 0 ≤ C)
-    (hF₀ : 0 ≤ F) (hB₀ : 0 ≤ B) (hA : 0 ≤ A)
+private theorem le_sqrt_mul_of_sq_le_mul_add {N C F S B A b K : ℝ} (hC : 0 ≤ C) (hF₀ : 0 ≤ F)
+    (hB₀ : 0 ≤ B) (hA : 0 ≤ A)
     (h : N ^ 2 ≤ C * (F ^ 2 + S)) (hF : F ≤ (1 + b * K) * A) (hS : S ≤ 4 * B ^ 2)
     (hB : B ≤ K * A) : N ≤ √(C * ((1 + b * K) ^ 2 + 4 * K ^ 2)) * A := by
   have hF2 := pow_le_pow_left₀ hF₀ hF 2
@@ -344,9 +343,7 @@ private theorem le_sqrt_mul_of_sq_le_mul_add {N C F S B A b K : ℝ} (hN : 0 ≤
   have hN2 : N ^ 2 ≤ C * ((1 + b * K) ^ 2 + 4 * K ^ 2) * A ^ 2 :=
     h.trans <| (mul_le_mul_of_nonneg_left (b := F ^ 2 + S)
       (c := ((1 + b * K) * A) ^ 2 + 4 * (K * A) ^ 2) (by linarith) hC).trans_eq (by ring)
-  calc N = √(N ^ 2) := (Real.sqrt_sq hN).symm
-    _ ≤ _ := Real.sqrt_le_sqrt hN2
-    _ = _ := by rw [Real.sqrt_mul (by positivity), Real.sqrt_sq hA]
+  exact Real.le_sqrt_mul_of_sq_le_mul hA hN2
 
 /-- **The weighted `H¹` estimate for the right inverse.** Let `x` be a bounded `C¹` solution of the
 plane vortex equations with `|α| → 1` and `∇₁ α → 0` at infinity, let `ρ(z) = √(1 + |z|²)` and
@@ -418,7 +415,7 @@ theorem exists_norm_le_mul_lpNorm_exp_mul_smul_of_integral_inner_gaugeFixedAdjoi
     rw [Lp.norm_toLp, toReal_eLpNorm, ← htop]
     refine (lpNorm_add_le hwf (by norm_num)).trans ?_
     nlinarith [abs_nonneg c, hB, hG]
-  exact le_sqrt_mul_of_sq_le_mul_add (norm_nonneg _) hC (norm_nonneg _) lpNorm_nonneg
+  exact le_sqrt_mul_of_sq_le_mul_add hC (norm_nonneg _) lpNorm_nonneg
     lpNorm_nonneg (hLw ▸ hcoer w) hF (sum_setIntegral_value_sq_le hwy hwval R)
     hB
 
