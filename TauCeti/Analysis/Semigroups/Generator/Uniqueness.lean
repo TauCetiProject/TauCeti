@@ -38,6 +38,9 @@ operator `A` is `t ↦ exp (t • A)` (`TauCeti/Analysis/Semigroups/BoundedGener
 
 ## Main results
 
+* `hasDerivAt_realOperator_sub` (in the `TauCeti.Semigroups.StronglyContinuousSemigroup`
+  namespace): at `s < t`, the orbit `u ↦ S (t - u) y` of a generator-domain vector `y` read
+  backwards from `t` has derivative `-S (t - s) (A y)`.
 * `hasDerivWithinAt_realOperator_apply_realOperator` (in the
   `TauCeti.Semigroups.StronglyContinuousSemigroup` namespace): the right derivative of a composite
   orbit `u ↦ S (f u) (T u x)` is the generator contribution of `T`, pushed through `S (f s)`, plus
@@ -78,7 +81,7 @@ namespace StronglyContinuousSemigroup
 /-- **The backwards orbit of a domain point.** Reading the orbit of `y ∈ D(A)` backwards from a
 fixed time `t`, the derivative at `s < t` is the negative of the generator transported along the
 remaining time `t - s`. -/
-private theorem hasDerivAt_realOperator_sub {S : StronglyContinuousSemigroup X} {t s : ℝ}
+theorem hasDerivAt_realOperator_sub {S : StronglyContinuousSemigroup X} {t s : ℝ}
     (hrpos : 0 < t - s) {y a : X} (hy : y ∈ S.generator.domain)
     (hSa : S.generator ⟨y, hy⟩ = a) :
     HasDerivAt (fun u : ℝ => S.realOperator (t - u) y) (-(S.realOperator (t - s) a)) s := by
