@@ -13,6 +13,8 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Map.B
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.GeneratedByY
 -- Proof-only: a nontrivial valuation bounded by `1` on a Dedekind domain is adic up to equivalence.
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Basic
+-- Proof-only: intermediate field where two field homomorphisms agree modulo a valuation.
+import TauCeti.RingTheory.Valuation.EqMod
 
 /-!
 # The reduction of the generic point
@@ -61,57 +63,6 @@ public section
 open Polynomial TauCeti
 
 namespace WeierstrassCurve.Affine
-
-/-- For a valuation `v` on `L` trivial on `E`, the elements of `E` where a ring homomorphism
-`μ : E →+* L` (agreeing with `algebraMap E L` on `F`) agrees with `algebraMap E L` modulo `v < 1`
-form an intermediate field of `E / F`. -/
-private def eqModValuationIntermediateField {F E L Γ : Type*} [Field F] [Field E] [Field L]
-    [Algebra F E] [Algebra E L] [LinearOrderedCommGroupWithZero Γ]
-    (v : Valuation L Γ) [v.IsTrivialOn E] (μ : E →+* L)
-    (hμ : ∀ c : F, μ (algebraMap F E c) = algebraMap E L (algebraMap F E c)) :
-    IntermediateField F E where
-  carrier := {x : E | v (μ x - algebraMap E L x) < 1}
-  algebraMap_mem' c := by
-    rw [Set.mem_ofPred_eq, hμ, sub_self, map_zero]
-    exact zero_lt_one
-  add_mem' {x y} hx hy := by
-    rw [Set.mem_ofPred_eq, _root_.map_add, _root_.map_add, add_sub_add_comm]
-    exact v.map_add_lt hx hy
-  mul_mem' {x y} hx hy := by
-    have hμx : v (μ x) ≤ 1 := by
-      have hκ : v (algebraMap E L x) ≤ 1 := Valuation.IsTrivialOn.valuation_algebraMap_le_one v x
-      simpa only [sub_add_cancel] using
-        (v.map_add (μ x - algebraMap E L x) (algebraMap E L x)).trans (max_le hx.le hκ)
-    have hmul : μ x * μ y - algebraMap E L x * algebraMap E L y =
-        (μ x - algebraMap E L x) * algebraMap E L y + μ x * (μ y - algebraMap E L y) := by ring
-    rw [Set.mem_ofPred_eq, map_mul, map_mul, hmul]
-    refine v.map_add_lt ?_ ?_
-    · rw [map_mul]
-      exact mul_lt_one_of_lt_of_le hx (Valuation.IsTrivialOn.valuation_algebraMap_le_one v y)
-    · rw [map_mul]
-      exact mul_lt_of_le_one_of_lt hμx hy
-  inv_mem' x hx := by
-    rcases eq_or_ne x 0 with rfl | hx0
-    · simp
-    have hx' : v (μ x - algebraMap E L x) < 1 := hx
-    have hκx : v (algebraMap E L x) = 1 := Valuation.IsTrivialOn.eq_one (v := v) x hx0
-    have hμx : v (μ x) = 1 := by
-      simpa only [sub_add_cancel, hκx] using
-        Valuation.map_add_eq_of_lt_right v (hx'.trans_eq hκx.symm)
-    have hμx0 : μ x ≠ 0 := (map_ne_zero_iff μ μ.injective).mpr hx0
-    have hκx0 : algebraMap E L x ≠ 0 :=
-      (map_ne_zero_iff (algebraMap E L) (algebraMap E L).injective).mpr hx0
-    rw [Set.mem_ofPred_eq, map_inv₀, map_inv₀, inv_sub_inv hμx0 hκx0, map_div₀, map_mul,
-      hμx, hκx, mul_one, div_one, ← neg_sub, Valuation.map_neg]
-    exact hx'
-
-@[simp]
-private theorem mem_eqModValuationIntermediateField {F E L Γ : Type*} [Field F] [Field E] [Field L]
-    [Algebra F E] [Algebra E L] [LinearOrderedCommGroupWithZero Γ]
-    (v : Valuation L Γ) [v.IsTrivialOn E] (μ : E →+* L)
-    (hμ : ∀ c : F, μ (algebraMap F E c) = algebraMap E L (algebraMap F E c)) {x : E} :
-    x ∈ eqModValuationIntermediateField v μ hμ ↔ v (μ x - algebraMap E L x) < 1 :=
-  Iff.rfl
 
 variable {F : Type*} [Field F] (W : Affine F) [W.IsElliptic]
 
@@ -189,18 +140,21 @@ theorem valuation_pointPlace_genericX_genericY_map_sub_algebraMap_lt_one
   let ι := algebraMap F W.FunctionField
   let v := (Place.ofPrime W.FunctionField (W.map ι).FunctionField
     (CoordinateRing.pointPlace (W := W.map ι) W.equation_genericX_genericY)).valuation
-  let S := eqModValuationIntermediateField v (FunctionField.map W ι)
-    (fun c ↦ FunctionField.map_algebraMap W ι c)
+  let S := v.eqModIntermediateField F (FunctionField.map W ι) (algebraMap W.FunctionField _)
+    (Valuation.IsTrivialOn.valuation_algebraMap_le_one v)
+    fun c ↦ by
+      rw [FunctionField.map_algebraMap, sub_self, map_zero]
+      exact zero_lt_one
   have hX : W.genericX ∈ S := by
-    rw [mem_eqModValuationIntermediateField, FunctionField.map_genericX]
+    rw [Valuation.mem_eqModIntermediateField, FunctionField.map_genericX]
     exact valuation_pointPlace_genericX_sub_lt_one (W.map ι) W.equation_genericX_genericY
   have hY : W.genericY ∈ S := by
-    rw [mem_eqModValuationIntermediateField, FunctionField.map_genericY]
+    rw [Valuation.mem_eqModIntermediateField, FunctionField.map_genericY]
     exact valuation_pointPlace_genericY_sub_lt_one (W.map ι) W.equation_genericX_genericY
   have htop : S = ⊤ :=
     top_unique (W.adjoin_genericX_genericY_eq_top ▸
       IntermediateField.adjoin_le_iff.mpr (Set.pair_subset hX hY))
-  exact (mem_eqModValuationIntermediateField v _ _).mp (htop ▸ IntermediateField.mem_top)
+  exact Valuation.mem_eqModIntermediateField.mp (htop ▸ IntermediateField.mem_top)
 
 end BaseChange
 
