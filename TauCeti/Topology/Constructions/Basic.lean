@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Constructions
-public import Mathlib.Topology.ContinuousMap.Defs
+public import Mathlib.Topology.ContinuousMap.Basic
+import Mathlib.Topology.SeparatedMap
 
 /-!
 # Quotients by setoids and fibre products of topological spaces
@@ -26,8 +27,9 @@ the topology of the fibre product `Function.Pullback f g`, a subspace of the pro
 * `Topology.IsInducing.isOpenMap_rangeFactorization_snd_comp`: open maps are stable under
   pullback; the projection of a fibre product to one factor is open onto its range when the map
   from the other factor is.
-* `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`: the projections of the fibre product,
-  bundled as continuous maps.
+* `ContinuousMap.pullbackFst`, `ContinuousMap.pullbackSnd`, `ContinuousMap.mapPullback`,
+  `ContinuousMap.mapPullbackSnd`, `Homeomorph.pullbackComm`: bundled projections, functoriality,
+  and symmetry of the fibre product.
 -/
 
 public section
@@ -134,12 +136,106 @@ def ContinuousMap.pullbackFst : C(f.Pullback g, X) :=
 def ContinuousMap.pullbackSnd : C(f.Pullback g, Z) :=
   ⟨Function.Pullback.snd, Function.Pullback.continuous_snd⟩
 
-@[simp]
-theorem ContinuousMap.coe_pullbackFst : ⇑(pullbackFst f g) = Function.Pullback.fst :=
-  (rfl)
+@[simp] theorem ContinuousMap.coe_pullbackFst : ⇑(pullbackFst f g) = Function.Pullback.fst := (rfl)
 
-@[simp]
-theorem ContinuousMap.coe_pullbackSnd : ⇑(pullbackSnd f g) = Function.Pullback.snd :=
-  (rfl)
+@[simp] theorem ContinuousMap.coe_pullbackSnd : ⇑(pullbackSnd f g) = Function.Pullback.snd := (rfl)
+
+/-- Swapping the two factors of a fibre product is a homeomorphism `X ×_Y Z ≃ₜ Z ×_Y X`. -/
+def Homeomorph.pullbackComm : f.Pullback g ≃ₜ g.Pullback f where
+  toFun x := ⟨x.1.swap, x.2.symm⟩
+  invFun y := ⟨y.1.swap, y.2.symm⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun :=
+    ((_root_.continuous_snd.comp continuous_subtype_val).prodMk
+      (_root_.continuous_fst.comp continuous_subtype_val)).subtype_mk _
+  continuous_invFun :=
+    ((_root_.continuous_snd.comp continuous_subtype_val).prodMk
+      (_root_.continuous_fst.comp continuous_subtype_val)).subtype_mk _
+
+@[simp] theorem Homeomorph.coe_pullbackComm_apply (x : f.Pullback g) :
+    (Homeomorph.pullbackComm f g x).1 = x.1.swap := (rfl)
+
+@[simp] theorem Homeomorph.pullbackComm_symm :
+    (Homeomorph.pullbackComm f g).symm = Homeomorph.pullbackComm g f := (rfl)
+
+@[simp] theorem Homeomorph.pullbackComm_pullbackComm (x : f.Pullback g) :
+    Homeomorph.pullbackComm g f (Homeomorph.pullbackComm f g x) = x := (rfl)
+
+@[simp] theorem Homeomorph.pullbackComm_trans_pullbackComm :
+    (Homeomorph.pullbackComm f g).trans (Homeomorph.pullbackComm g f) = .refl (f.Pullback g) := by
+  ext : 1; rfl
+
+@[simp] theorem ContinuousMap.pullbackFst_comp_pullbackComm :
+    (ContinuousMap.pullbackFst g f).comp
+      (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) =
+      ContinuousMap.pullbackSnd f g := by
+  ext : 1; rfl
+
+@[simp] theorem ContinuousMap.pullbackSnd_comp_pullbackComm :
+    (ContinuousMap.pullbackSnd g f).comp
+      (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) =
+      ContinuousMap.pullbackFst f g := by
+  ext : 1; rfl
+
+@[simp] theorem ContinuousMap.pullbackComm_comp_pullbackComm :
+    (Homeomorph.pullbackComm g f : C(g.Pullback f, f.Pullback g)).comp
+      (Homeomorph.pullbackComm f g : C(f.Pullback g, g.Pullback f)) = .id (f.Pullback g) := by
+  ext : 1; rfl
+
+section MapPullback
+
+variable {X₁ X₂ Y₁ Y₂ Z₁ Z₂ : Type*}
+  [TopologicalSpace X₁] [TopologicalSpace X₂] [TopologicalSpace Z₁] [TopologicalSpace Z₂]
+  {f₁ : X₁ → Y₁} {g₁ : Z₁ → Y₁} {f₂ : X₂ → Y₂} {g₂ : Z₂ → Y₂}
+  (mapX : C(X₁, X₂)) (mapY : Y₁ → Y₂) (mapZ : C(Z₁, Z₂))
+  (commX : f₂ ∘ ⇑mapX = mapY ∘ f₁) (commZ : g₂ ∘ ⇑mapZ = mapY ∘ g₁)
+
+/-- Bundled continuous map between fibre products induced by compatible maps on the factors. -/
+def ContinuousMap.mapPullback : C(f₁.Pullback g₁, f₂.Pullback g₂) :=
+  ⟨Function.mapPullback mapX mapY mapZ commX commZ, mapX.continuous.mapPullback mapZ.continuous⟩
+
+@[simp] theorem ContinuousMap.coe_mapPullback_apply (x : f₁.Pullback g₁) :
+    (ContinuousMap.mapPullback mapX mapY mapZ commX commZ x).1 = (mapX x.1.1, mapZ x.1.2) := (rfl)
+
+@[simp] theorem ContinuousMap.pullbackFst_comp_mapPullback :
+    (ContinuousMap.pullbackFst f₂ g₂).comp
+      (ContinuousMap.mapPullback mapX mapY mapZ commX commZ) =
+      mapX.comp (ContinuousMap.pullbackFst f₁ g₁) := by
+  ext : 1; rfl
+
+@[simp] theorem ContinuousMap.pullbackSnd_comp_mapPullback :
+    (ContinuousMap.pullbackSnd f₂ g₂).comp
+      (ContinuousMap.mapPullback mapX mapY mapZ commX commZ) =
+      mapZ.comp (ContinuousMap.pullbackSnd f₁ g₁) := by
+  ext : 1; rfl
+
+end MapPullback
+
+section MapPullbackSnd
+
+variable {X Y Z₁ Z₂ : Type*}
+  [TopologicalSpace X] [TopologicalSpace Z₁] [TopologicalSpace Z₂]
+  (f : X → Y) {p : Z₁ → Y} {q : Z₂ → Y} (g : C(Z₁, Z₂)) (hg : q ∘ ⇑g = p)
+
+/-- Bundled continuous map `f.Pullback p → f.Pullback q` over `X` induced by a map
+`g : C(Z₁, Z₂)` over `Y` (`q ∘ g = p`). -/
+def ContinuousMap.mapPullbackSnd : C(f.Pullback p, f.Pullback q) :=
+  ContinuousMap.mapPullback (f₁ := f) (f₂ := f) (.id X) id g rfl hg
+
+@[simp] theorem ContinuousMap.coe_mapPullbackSnd_apply (x : f.Pullback p) :
+    (ContinuousMap.mapPullbackSnd f g hg x).1 = (x.1.1, g x.1.2) := (rfl)
+
+@[simp] theorem ContinuousMap.pullbackFst_comp_mapPullbackSnd :
+    (ContinuousMap.pullbackFst f q).comp (ContinuousMap.mapPullbackSnd f g hg) =
+      ContinuousMap.pullbackFst f p := by
+  ext : 1; rfl
+
+@[simp] theorem ContinuousMap.pullbackSnd_comp_mapPullbackSnd :
+    (ContinuousMap.pullbackSnd f q).comp (ContinuousMap.mapPullbackSnd f g hg) =
+      g.comp (ContinuousMap.pullbackSnd f p) := by
+  ext : 1; rfl
+
+end MapPullbackSnd
 
 end Pullback
