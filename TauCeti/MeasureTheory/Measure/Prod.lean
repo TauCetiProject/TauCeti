@@ -274,6 +274,35 @@ theorem measure_fst_singleton_eq_zero_of_ae_edist_lt {α : Type*} [PseudoEMetric
 
 end MeasureTheory
 
+namespace MeasureTheory
+
+/-- Swapping two added coordinates preserves the product measure. No condition is imposed on the
+old factor or on dependence within it. -/
+theorem measurePreserving_prodRightSwap
+    {α β γ : Type*} [MeasurableSpace α] [MeasurableSpace β] [MeasurableSpace γ]
+    (μ : Measure α) (ν : Measure β) (η : Measure γ) [SFinite ν] [SFinite η] :
+    MeasurePreserving (fun z : α × (β × γ) ↦ (z.1, (z.2.2, z.2.1)))
+      (μ.prod (ν.prod η)) (μ.prod (η.prod ν)) := by
+  refine ⟨measurable_fst.prodMk (measurable_swap.comp measurable_snd), ?_⟩
+  have hmap : (fun z : α × (β × γ) ↦ (z.1, (z.2.2, z.2.1))) =
+      Prod.map id Prod.swap := by
+    funext z
+    rfl
+  rw [hmap, ← Measure.map_prod_map_of_aemeasurable μ (ν.prod η)
+    measurable_id.aemeasurable measurable_swap.aemeasurable]
+  simp only [Measure.map_id, Measure.prod_swap]
+
+/-- Adjoining a coordinate with a Dirac law is the canonical measure-preserving embedding
+`x ↦ (x, y)` of the old space. -/
+theorem measurePreserving_prodMk_right_dirac
+    {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] (μ : Measure α) [SFinite μ]
+    (y : β) :
+    MeasurePreserving (fun x : α ↦ (x, y)) μ (μ.prod (Measure.dirac y)) := by
+  rw [Measure.prod_dirac]
+  exact ⟨measurable_prodMk_right, rfl⟩
+
+end MeasureTheory
+
 /-- Almost every section of an almost-everywhere measurable function on `μ.prod ν` is
 almost-everywhere measurable. This is the counterpart for `AEMeasurable` of
 `MeasureTheory.AEStronglyMeasurable.prodMk_left`. -/
