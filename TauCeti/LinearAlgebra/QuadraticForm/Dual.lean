@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Dual
+public import TauCeti.LinearAlgebra.Dual.Lemmas
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
 
@@ -35,24 +36,6 @@ of `S¹ × Y` and `θ ∈ H¹(S¹)` dual to the standard generator
 -/
 
 public section
-
-namespace LinearMap
-
-variable {K V₁ V₂ : Type*} [Field K] [AddCommGroup V₁] [Module K V₁] [AddCommGroup V₂]
-  [Module K V₂] [Module.IsReflexive K V₂]
-
-/-- **A pairing and its transpose have the same rank**: for `B : V₁ →ₗ[K] V₂ →ₗ[K] K` with `V₂`
-reflexive, the transposed pairing `B.flip : V₂ →ₗ[K] Module.Dual K V₁` is `B.dualMap` composed
-with the evaluation isomorphism of `V₂`, so its rank is that of `B`
-(`LinearMap.finrank_range_dualMap_eq_finrank_range`). -/
-theorem finrank_range_flip (B : V₁ →ₗ[K] V₂ →ₗ[K] K) :
-    Module.finrank K (range B.flip) = Module.finrank K (range B) := by
-  -- `B.flip` is definitionally `B.dualMap ∘ₗ evalEquiv`, as in Mathlib's
-  -- `LinearMap.dualAnnihilator_ker_eq_range_flip`
-  change Module.finrank K (range (B.dualMap ∘ₗ (Module.evalEquiv K V₂).toLinearMap)) = _
-  rw [range_comp_of_range_eq_top _ (LinearEquiv.range _), finrank_range_dualMap_eq_finrank_range]
-
-end LinearMap
 
 namespace TauCeti
 
