@@ -49,6 +49,9 @@ dimensions of its kernel and cokernel (`LinearMap.detLineCongr_neg_apply`).
 
 ## Main results
 
+* `LinearMap.detLineRestrictScalarsEquiv_eq_congr`,
+  `LinearMap.detLineRestrictScalarsEquiv_symm_eq_congr`: the identification is the transport along
+  the identifications of the real and complex kernels and cokernels.
 * `LinearMap.detLineRestrictScalarsEquiv_detLineCongr`: transport along a commuting square is
   transport along the induced isomorphisms of complex kernels and cokernels.
 * `LinearMap.IsComplexPositiveDetLine.exists_pos_smul_eq`,
@@ -118,6 +121,23 @@ theorem detLineRestrictScalarsEquiv_symm_tmul (x : TauCeti.detLine ℝ (ker f))
   rw [LinearEquiv.symm_apply_eq, detLineRestrictScalarsEquiv_tmul,
     ← LinearEquiv.detLineCongr_symm, LinearEquiv.symm_apply_apply]
   simp [comp_assoc, ← LinearEquiv.detLineCongr_symm]
+
+/-- `LinearMap.detLineRestrictScalarsEquiv` is the transport along the identifications of the
+real kernel and cokernel with the complex ones. -/
+theorem detLineRestrictScalarsEquiv_eq_congr :
+    f.detLineRestrictScalarsEquiv = TensorProduct.congr
+      (f.kerRestrictScalarsEquiv ℝ).symm.detLineCongr
+      (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.dualMap :=
+  (rfl)
+
+/-- The inverse of `LinearMap.detLineRestrictScalarsEquiv` is the transport along the
+identifications of the complex kernel and cokernel with the real ones. -/
+theorem detLineRestrictScalarsEquiv_symm_eq_congr :
+    f.detLineRestrictScalarsEquiv.symm = TensorProduct.congr
+      (f.kerRestrictScalarsEquiv ℝ).detLineCongr
+      (f.cokerRestrictScalarsEquiv ℝ).symm.detLineCongr.symm.dualMap := by
+  rw [detLineRestrictScalarsEquiv_eq_congr, TensorProduct.congr_symm,
+    LinearEquiv.detLineCongr_symm, LinearEquiv.symm_symm, LinearEquiv.dualMap_symm]
 
 /-- An element of the real determinant line of a complex-linear map `f` is **complex positive** if
 it corresponds to a complex positive element of `det (ker f) ⊗ (det (coker f))^*`, that is, to
