@@ -127,10 +127,14 @@ theorem fderiv_mpullbackWithin_fundamentalVectorField_apply_eq_zero_iff
   have hφ0 : φ 0 = 1 := Subtype.ext (by simp [φ, mulInvariantExp_zero])
   have hφadd (s t : ℝ) : φ (s + t) = φ s * φ t := Subtype.ext (mulInvariantExp_add_smul ξ s t)
   have hrep (t : ℝ) := tangentRepresentation_apply hd (φ t)
+  -- `ContinuousLinearMap.one_def` and `ContinuousLinearMap.mul_def` turn `1` and `*` into the
+  -- identity and composition. The closing `rfl`s only unfold `TangentSpace I' p` to `E'`, which
+  -- holds by definition, and the coercion of `φ t` to `mulInvariantExp (t • ξ)`.
   exact HasDerivAt.apply_eq_zero_iff_forall_apply_eq_self (F := E')
     (hasDerivAt_mfderiv_mulInvariantExp_smul_smul hp)
-    ((hrep 0).symm.trans (by rw [hφ0, map_one]; rfl))
-    (fun s t ↦ (hrep (s + t)).symm.trans (by rw [hφadd, map_mul, hrep, hrep]; rfl)) (v : E')
+    ((hrep 0).symm.trans (by rw [hφ0, map_one, ContinuousLinearMap.one_def]; rfl))
+    (fun s t ↦ (hrep (s + t)).symm.trans
+      (by rw [hφadd, map_mul, ContinuousLinearMap.mul_def, hrep, hrep]; rfl)) (v : E')
 
 omit [I'.Boundaryless] [IsManifold I' 2 M] [ContMDiffSMul I I' 3 G M] [CompleteSpace E'] in
 /-- **Vectors fixed by a closed one-parameter subgroup.** Let every `exp (t ξ)` fix `p`. A tangent
