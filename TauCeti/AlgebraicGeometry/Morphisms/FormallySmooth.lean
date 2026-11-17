@@ -170,29 +170,6 @@ instance pullback_fst (f : X ⟶ S) (g : Y ⟶ S) [FormallyEtale g] :
 
 end FormallyEtale
 
-/-- The closed immersion `Spec (B ⧸ I) ⟶ Spec B` of a square-zero ideal `I` is a first-order
-thickening. -/
-theorem IsFirstOrderThickening.SpecMap_quotient_mk {B : CommRingCat.{u}} {I : Ideal B}
-    (hI : I ^ 2 = ⊥) :
-    IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I))) :=
-  (IsFirstOrderThickening.SpecMap_iff _ Ideal.Quotient.mk_surjective).2 <| by
-    rwa [CommRingCat.hom_ofHom, Ideal.mk_ker, ← pow_two]
-
-/-- A first-order thickening `i : T ⟶ T'` with `T'` affine is, up to isomorphisms of source and
-target, the closed immersion `Spec (B ⧸ I) ⟶ Spec B` for `B = Γ(T', ⊤)` and an ideal `I` of `B`
-with `I ^ 2 = ⊥`. -/
-theorem IsFirstOrderThickening.exists_iso_quotient {T T' : Scheme.{u}} [IsAffine T']
-    (i : T ⟶ T') [IsFirstOrderThickening i] :
-    ∃ (I : Ideal Γ(T', ⊤)) (e : T ≅ Spec (.of (Γ(T', ⊤) ⧸ I))), I ^ 2 = ⊥ ∧
-      i ≫ T'.isoSpec.hom = e.hom ≫ Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) := by
-  obtain ⟨I, e, he⟩ := (IsClosedImmersion.Spec_iff (f := i ≫ T'.isoSpec.hom)).1 inferInstance
-  refine ⟨I, e, ?_, he⟩
-  have : IsFirstOrderThickening (Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I))) := by
-    rw [← (Iso.inv_comp_eq _).2 he]
-    infer_instance
-  have := (IsFirstOrderThickening.SpecMap_iff _ Ideal.Quotient.mk_surjective).1 this
-  rwa [CommRingCat.hom_ofHom, Ideal.mk_ker, ← pow_two] at this
-
 /-- Formal smoothness can be tested on the first-order thickenings `Spec (B ⧸ I) ⟶ Spec B` with
 `I ^ 2 = ⊥`. -/
 theorem formallySmooth_iff_exists_lift_quotient (f : X ⟶ S) :
@@ -231,30 +208,6 @@ theorem formallyEtale_iff_existsUnique_lift_quotient (f : X ⟶ S) :
 section Algebra
 
 variable {R A B : Type u} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
-
-/-- Every morphism `Spec B ⟶ Spec A` over `Spec R` is `Spec.map` of an `R`-algebra map
-`A →ₐ[R] B`: the surjectivity half of Mathlib's `Spec.homEquivAlgHom`, in the form used to
-rewrite a morphism of affine schemes. -/
-theorem exists_algHom_SpecMap_eq (l : Spec (.of B) ⟶ Spec (.of A))
-    (hl : l ≫ Spec.algebraMap R A = Spec.algebraMap R B) :
-    ∃ f : A →ₐ[R] B, Spec.map (CommRingCat.ofHom f.toRingHom) = l :=
-  ⟨Spec.homEquivAlgHom ⟨l, hl⟩, by
-    rw [← Spec.homEquivAlgHom_symm_apply_val, Equiv.symm_apply_apply]⟩
-
-/-- Restricting `Spec B ⟶ Spec A` along `Spec (B ⧸ I) ⟶ Spec B` composes the `R`-algebra map with
-the quotient map. -/
-theorem SpecMap_quotient_mk_comp_SpecMap_algHom (I : Ideal B) (f : A →ₐ[R] B) :
-    Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.map (CommRingCat.ofHom f.toRingHom) =
-      Spec.map (CommRingCat.ofHom ((Ideal.Quotient.mkₐ R I).comp f).toRingHom) := by
-  rw [← Spec.map_comp]
-  rfl
-
-/-- The lifting problem for `Spec (B ⧸ I) ⟶ Spec B` over `Spec R` coming from an `R`-algebra map
-`A →ₐ[R] B ⧸ I`. -/
-theorem SpecMap_algHom_comp_quotient (I : Ideal B) (f : A →ₐ[R] B ⧸ I) :
-    Spec.map (CommRingCat.ofHom f.toRingHom) ≫ Spec.algebraMap R A =
-      Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I)) ≫ Spec.algebraMap R B := by
-  exact (Spec.homEquivAlgHom.symm f).2.trans (by rw [← Spec.map_comp]; rfl)
 
 /-- For an `R`-algebra `A`, the morphism `Spec A ⟶ Spec R` is formally smooth if and only if `A` is
 formally smooth over `R` (Stacks, 00TI, for the ring-theoretic notion). -/
