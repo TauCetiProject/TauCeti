@@ -32,10 +32,8 @@ recovers Mathlib's `SemidirectProduct.mulEquivSubgroup`, identifying the inverse
   product decomposition `(leftProjection, rightProjection)`.
 * `Subgroup.IsLocalComplement.inclusion_comp_semidirectProductMulEquiv_restrict`: compatibility of
   the local semidirect-product decomposition with restriction to an intermediate subgroup.
-* `Subgroup.IsLocalComplement.semidirectProductMulEquiv_top_trans_topEquiv` and
-  `Subgroup.IsComplement'.mulEquivSubgroup_eq_semidirectProductMulEquiv_trans_topEquiv`: for
-  `H = ⊤`, the local semidirect-product isomorphism agrees with
-  `SemidirectProduct.mulEquivSubgroup`.
+* `Subgroup.IsLocalComplement.semidirectProductMulEquiv_top_trans_topEquiv`: for `H = ⊤`, the
+  local semidirect-product isomorphism agrees with `SemidirectProduct.mulEquivSubgroup`.
 -/
 
 public section
@@ -206,13 +204,6 @@ end IsLocalComplement
 namespace IsComplement'
 
 variable [N.Normal] {D : Subgroup G} (h : N.IsComplement' D)
-
-/-- `SemidirectProduct.mulEquivSubgroup` factors through the local semidirect-product isomorphism
-on `⊤` followed by `Subgroup.topEquiv`. -/
-theorem mulEquivSubgroup_eq_semidirectProductMulEquiv_trans_topEquiv :
-    SemidirectProduct.mulEquivSubgroup h =
-      (isLocalComplement_top_iff.mpr h).semidirectProductMulEquiv.trans topEquiv :=
-  ((isLocalComplement_top_iff.mpr h).semidirectProductMulEquiv_top_trans_topEquiv).symm
 
 /-- The left component of `(SemidirectProduct.mulEquivSubgroup h).symm` is the local left
 projection on `⊤`. -/
