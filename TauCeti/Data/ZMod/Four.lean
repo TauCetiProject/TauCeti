@@ -78,26 +78,15 @@ def unitsFourMulEquiv : (ZMod 4)ˣ ≃* Multiplicative (ZMod 2) where
   map_mul' := by decide
 
 /-- `unitsFourMulEquiv` sends `-1 : (ZMod 4)ˣ` to the generator `Multiplicative.ofAdd 1`. -/
-@[simp]
-theorem unitsFourMulEquiv_neg_one :
-    unitsFourMulEquiv (-1 : (ZMod 4)ˣ) = Multiplicative.ofAdd 1 := by
-  decide
-
+@[simp] theorem unitsFourMulEquiv_neg_one :
+    unitsFourMulEquiv (-1 : (ZMod 4)ˣ) = Multiplicative.ofAdd 1 := by decide
 /-- The inverse of `unitsFourMulEquiv` sends `Multiplicative.ofAdd 1` to `-1 : (ZMod 4)ˣ`. -/
-@[simp]
-theorem unitsFourMulEquiv_symm_ofAdd_one :
-    unitsFourMulEquiv.symm (Multiplicative.ofAdd 1) = -1 := by
-  decide
-
+@[simp] theorem unitsFourMulEquiv_symm_ofAdd_one :
+    unitsFourMulEquiv.symm (Multiplicative.ofAdd 1) = -1 := by decide
 /-- Every unit of `ZMod 4` is either `1` or `-1`. -/
-theorem unitsFour_eq_one_or_neg_one (u : (ZMod 4)ˣ) : u = 1 ∨ u = -1 := by
-  revert u
-  decide
-
+theorem unitsFour_eq_one_or_neg_one (u : (ZMod 4)ˣ) : u = 1 ∨ u = -1 := by revert u; decide
 /-- The two units `-1` and `1` of `ZMod 4` are distinct. -/
-theorem neg_one_ne_one_unitsFour : (-1 : (ZMod 4)ˣ) ≠ 1 := by
-  decide
-
+theorem neg_one_ne_one_unitsFour : (-1 : (ZMod 4)ˣ) ≠ 1 := by decide
 /-- The unit group `(ZMod 4)ˣ` has order `2`, hence is a `2`-group. -/
 theorem isPGroup_unitsFour : IsPGroup 2 (ZMod 4)ˣ :=
   IsPGroup.of_card (n := 1) (by rw [Nat.card_eq_fintype_card]; decide)

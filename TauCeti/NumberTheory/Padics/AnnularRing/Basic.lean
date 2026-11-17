@@ -346,10 +346,7 @@ instance : Nontrivial (AnnularRing p) :=
 
 /-- `AnnularRing p` has characteristic zero, inherited from the constant-term map to `ℤ_p`. -/
 instance instCharZero : CharZero (AnnularRing p) where
-  cast_injective _ _ h := by
-    have h0 := congr_arg (coeff · 0) h
-    simp only [coeff_natCast, ite_true] at h0
-    exact Nat.cast_injective h0
+  cast_injective _ _ h := by simpa using congr_arg (coeff · 0) h
 
 /-! ### The elements `T` and `U = p / T` -/
 
@@ -413,11 +410,7 @@ theorem coeff_U_pow (n : ℕ) (m : ℤ) :
 theorem coeff_T_pow_mul_U_pow (i j : ℕ) (m : ℤ) :
     ((T : AnnularRing p) ^ i * U ^ j).coeff m =
       if m = (i : ℤ) - j then (p : ℤ_[p]) ^ j else 0 := by
-  rw [coeff_mul_of_coeff_eq_zero (k := (i : ℤ)) fun r hr ↦ by simp [coeff_T_pow, hr],
-    coeff_T_pow, ite_eq_left rfl, one_mul, coeff_U_pow]
-  by_cases hm : m = (i : ℤ) - j
-  · rw [ite_eq_left hm, ite_eq_left (by omega)]
-  · rw [ite_eq_right hm, ite_eq_right (by omega)]
+  rw [coeff_T_pow_mul, coeff_U_pow]; exact if_congr (by omega) rfl rfl
 
 /-- The defining relation `T U = p` of the annular coefficient ring. -/
 @[simp] theorem T_mul_U : (T : AnnularRing p) * U = (p : AnnularRing p) := by

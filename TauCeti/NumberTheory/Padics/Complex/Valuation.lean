@@ -41,7 +41,8 @@ For example a cube root of `p` has valuation `1 / 3`.
   `PadicComplex.eq_addValuation`: uniqueness of the rational valuation with this property.
 * `PadicComplex.addValuation_algebraMap`: on `ℚ_[p]` the valuation is `Padic.addValuation`.
 * `PadicComplex.addValuation_eq_of_pow_eq_zpow`: a root of `x ^ n = p ^ m` has valuation `m / n`.
-* `PadicComplex.addValuation_surjective`: every rational number is a value.
+* `PadicComplex.addValuation_surjective`, `PadicComplex.exists_norm_eq_rpow`: every rational
+  number is a value, and every rational power `p ^ (-q)` is attained as a norm.
 
 ## References
 
@@ -154,5 +155,10 @@ theorem addValuation_surjective : Function.Surjective (addValuation p) := by
   | coe q =>
     obtain ⟨x, hx⟩ := IsAlgClosed.exists_pow_nat_eq ((p : ℂ_[p]) ^ q.num) q.pos
     exact ⟨x, by rw [addValuation_eq_of_pow_eq_zpow q.pos hx, Rat.num_div_den]⟩
+
+/-- Every rational power `p ^ (-q)` (`q : ℚ`) is attained as the norm of an element of `ℂ_[p]`. -/
+theorem exists_norm_eq_rpow (q : ℚ) : ∃ t : ℂ_[p], ‖t‖ = (p : ℝ) ^ (-(q : ℝ)) :=
+  let ⟨t, ht⟩ := addValuation_surjective (p := p) (q : WithTop ℚ)
+  ⟨t, (addValuation_eq_coe_iff (p := p)).1 ht⟩
 
 end PadicComplex
