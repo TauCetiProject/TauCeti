@@ -272,12 +272,13 @@ if and only if `X.ring` is trivial. -/
 theorem isRationalLocalization_id_zero_iff (X : CAff.{u}) (T : Finset X.ring)
     (hT : IsOpen (Ideal.span (T : Set X.ring) : Set X.ring)) :
     IsRationalLocalization (𝟙 X) T 0 ↔ Subsingleton X.ring := by
-  refine ⟨fun h ↦ (isEmpty_spa_iff X).mp ⟨fun w ↦ ?_⟩, fun hsub ↦
+  refine ⟨fun h ↦ (isEmpty_spa_iff X).mp ?_, fun hsub ↦
     ⟨hT, fun w ↦ ((isEmpty_spa_iff X).mpr hsub).elim w, fun {Z} ψ _ ↦
       ⟨ψ, Category.id_comp ψ, fun χ hχ ↦ by simpa using hχ⟩⟩⟩
+  rw [spa_obj]
+  refine ⟨fun w ↦ ?_⟩
   have hw := h.mapsTo_spaComap w
-  change ((Pair.Hom.id X.pair).spaComap w).1 ∈ rationalSubset X.pair.plus T 0 at hw
-  rw [Pair.Hom.spaComap_id] at hw
+  rw [id_spaComap, id_eq] at hw
   exact ((mem_rationalSubset_iff X.pair.plus T 0 w.1).mp hw).2.2 (w.1.toValuativeRel.vle_refl 0)
 
 /-! ### Rational coverings, the rational coverage, and `ratTopology` -/
@@ -617,7 +618,8 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
       exact (ConcreteCategory.bijective_of_isIso
         (TopCommRingCat.isCompleteSeparated.ι.map
           (presentationLimitMap (P := P) hUij.symm.le))).injective hinj
-    · obtain ⟨T', s', hT', r₁, r₂, hUij, hr₁, hr₂⟩ := hoverlap i j
+    · rcases Z with ⟨Z⟩
+      obtain ⟨T', s', hT', r₁, r₂, hUij, hr₁, hr₂⟩ := hoverlap i j
       let h₁ := g₁.unop; let h₂ := g₂.unop
       have hcomm : Y.rationalLocalizationHom (T i) (s i) (hT i) ≫ h₁ =
           Y.rationalLocalizationHom (T j) (s j) (hT j) ≫ h₂ := Quiver.Hom.op_inj hg
@@ -634,12 +636,16 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
       have hh₂ : r₂ ≫ χ = h₂ := (hφj.existsUnique_factorization _ fun w ↦ by
         rw [comp_spaComap]; exact hφj.mapsTo_spaComap _).unique
           (by rw [← Category.assoc, hr₂, hχ, hcomm]) rfl
-      change h₁.toRingHom (ePiece i (x i)) = h₂.toRingHom (ePiece j (x j))
-      rw [← hh₁, ← hh₂, comp_toRingHom, comp_toRingHom, RingHom.comp_apply, RingHom.comp_apply]
-      refine congrArg χ.toRingHom ?_
-      rw [hoverlap_hom hT' (hUij.symm.le.trans inf_le_left) r₁ hr₁ (x i),
-        hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) r₂ hr₂ (x j),
-        hmap_comp hUij.symm.le inf_le_left, hmap_comp hUij.symm.le inf_le_right, hcompat i j]
+      have heq : h₁.toRingHom (ePiece i (x i)) = h₂.toRingHom (ePiece j (x j)) := by
+        rw [← hh₁, ← hh₂, comp_toRingHom, comp_toRingHom, RingHom.comp_apply, RingHom.comp_apply]
+        refine congrArg χ.toRingHom ?_
+        rw [hoverlap_hom hT' (hUij.symm.le.trans inf_le_left) r₁ hr₁ (x i),
+          hoverlap_hom hT' (hUij.symm.le.trans inf_le_right) r₂ hr₂ (x j),
+          hmap_comp hUij.symm.le inf_le_left, hmap_comp hUij.symm.le inf_le_right, hcompat i j]
+      -- `globalSections` is `@[expose]`, so `globalSections.obj (op (op Z))` is definitionally
+      -- `Z.ring` (`globalSections_obj`) and `globalSections.map g.op` is `g.unop.toRingHom`
+      -- (`globalSections_map_apply`).
+      exact heq
   -- Assemble the `IsSheafFor` equivalence using `eTop` and `ePiece`.
   rw [rationalCoverPresieve, Presieve.isSheafFor_arrows_iff,
     isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap P (fun i ↦ (le_top : U i ≤ ⊤))]
@@ -648,8 +654,7 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
     refine ⟨eTop b, fun i ↦ (ePiece i).injective ((hePiece_top i b).trans (hb i)), fun a ha ↦ ?_⟩
     rw [← eTop.apply_symm_apply a]
     refine congrArg eTop (hbu (eTop.symm a) fun i ↦ ?_)
-    change (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom (eTop.symm a) = ePiece i (x i)
-    rw [← hePiece_top, eTop.apply_symm_apply, ha i]
+    rw [globalSections_map_apply, ← hePiece_top, eTop.apply_symm_apply, ha i]
   · let y' : ∀ i, (Y.rationalLocalization (T i) (s i) (hT i)).ring := y
     have hy_eq : (fun i ↦ (ePiece i ((ePiece i).symm (y' i)) :
         globalSections.obj (op (op (Y.rationalLocalization (T i) (s i) (hT i)))))) = y :=
@@ -657,13 +662,16 @@ theorem isSheafFor_globalSections_rationalCoverPresieve_iff (Y : CAff.{u}) {ι :
     obtain ⟨a, ha, hau⟩ := hLim (fun i ↦ (ePiece i).symm (y' i))
       ((hcompat_iff (fun i ↦ (ePiece i).symm (y' i))).mp (hy_eq.symm ▸ hy))
     refine ⟨(eTop.symm a : Y.ring), fun i ↦ ?_, fun b hb ↦ ?_⟩
-    · change (Y.rationalLocalizationHom (T i) (s i) (hT i)).toRingHom (eTop.symm a) = y' i
-      rw [← hePiece_top, eTop.apply_symm_apply, ha i, Equiv.apply_symm_apply]
+    · rw [globalSections_map_apply, ← hePiece_top, eTop.apply_symm_apply, ha i,
+        Equiv.apply_symm_apply]
     · let b₀ : Y.ring := b
-      change b₀ = eTop.symm a
-      rw [← eTop.symm_apply_apply b₀]
-      refine congrArg eTop.symm (hau (eTop b₀) fun i ↦ (ePiece i).injective ?_)
-      rw [hePiece_top, Equiv.apply_symm_apply]; exact hb i
+      have hb₀ : b₀ = eTop.symm a := by
+        rw [← eTop.symm_apply_apply b₀]
+        refine congrArg eTop.symm (hau (eTop b₀) fun i ↦ (ePiece i).injective ?_)
+        rw [hePiece_top, Equiv.apply_symm_apply]
+        exact (globalSections_map_apply _ b₀).symm.trans (hb i)
+      -- `globalSections.obj (op (op Y))` is definitionally `Y.ring` (`globalSections_obj Y`).
+      exact hb₀
 
 /-- Topological sheafiness (`IsSheafyForEveryPresentation`) passes along any rational localization
 `φ : X ⟶ Y` in `CAff`, without any Tate hypothesis. -/

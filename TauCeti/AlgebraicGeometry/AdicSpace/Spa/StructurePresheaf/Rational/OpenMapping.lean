@@ -29,24 +29,24 @@ presheaf of sets is a sheaf — and in fact as soon as its underlying presheaf o
 sheaf condition for every finite rational cover of every rational open.
 
 The mechanism is the open mapping theorem over a Tate ring
-(`LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`). For a finite cover `(V k)` of a rational
-open `W = R(T₀/s₀)` by rational opens, `presentationLimitRationalIso` identifies the sections over
-`W` with the completed rational localization `B = A⟨T₀/s₀⟩` — which is again a complete Hausdorff
-first-countable Tate ring — and the sections over each `V k` with its completed coordinate ring
-`B k`, which is completely metrizable. When the set-level presheaf satisfies the sheaf condition for
-`(V k)`, the product restriction map `B → ∏ k, B k` is injective and its range is cut out by
-pairwise overlap equalities in the Hausdorff rings of sections over `V k ⊓ V l`, hence is closed.
-Henkel's open mapping theorem then makes the product restriction map strict and therefore a
-topological embedding. Since rational opens are quasi-compact, arbitrary rational covers reduce to
-finite subcovers, and `TauCeti.TopCommRingCat.isSheafFor_of_isSheafFor_forget` upgrades set-level
-gluing to topological-ring gluing on the basis of rational opens.
+(`LinearMap.isStrictMap_of_isClosed_range_of_isTateRing`). For a countable family `(V k)` of
+rational open subsets of a rational open `W = R(T₀/s₀)`, `presentationLimitRationalIso` identifies
+the sections over `W` with the completed rational localization `B = A⟨T₀/s₀⟩` — which is again a
+complete Hausdorff first-countable Tate ring — and the sections over each `V k` with its completed
+coordinate ring `B k`, which is completely metrizable. When the set-level presheaf satisfies the
+sheaf condition for `(V k)`, the product restriction map `B → ∏ k, B k` is injective and its range
+is cut out by pairwise overlap equalities in the Hausdorff rings of sections over `V k ⊓ V l`,
+hence is closed. Henkel's open mapping theorem then makes the product restriction map strict and
+therefore a topological embedding. Since rational opens are quasi-compact, arbitrary rational
+covers reduce to finite subcovers, and `TauCeti.TopCommRingCat.isSheafFor_of_isSheafFor_forget`
+upgrades set-level gluing to topological-ring gluing on the basis of rational opens.
 
 ## Main results
 
 * `TauCeti.ValuationSpectrum.isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens`:
-  over a Tate ring, if the underlying presheaf of sets satisfies the sheaf condition for a finite
-  rational cover of a rational open, then the product restriction map on presentation limits is
-  inducing.
+  over a Tate ring, if the underlying presheaf of sets satisfies the sheaf condition for a
+  countable family of rational open subsets of a rational open, then the product restriction map
+  on presentation limits is inducing.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_of_isSheafFor_finite_rationalOpens`:
   over a Tate ring with `A⁺ ⊆ A°`, set-level gluing for finite rational covers of rational opens
   implies that `presentationLimitPresheaf P Aplus` is a sheaf of complete separated topological
@@ -104,13 +104,13 @@ private noncomputable def rationalLimitRingIso (hAplus : ∀ ⦃a⦄, a ∈ Aplu
       presentationLimitRationalIso Aplus hAplus p hT) ≪≫
     eqToIso (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)
 
-/-- **Strictness of restriction on a finite rational cover.** Over a Tate ring `A`, if `A⁺ ⊆ A°`
-and the underlying presheaf of sets satisfies the sheaf condition for a finite cover `(V k)` of a
-rational open `W` by rational opens, then the product restriction map on presentation limits is
-inducing. -/
+/-- **Strictness of restriction on a countable rational family.** Over a Tate ring `A`, if
+`A⁺ ⊆ A°` and the underlying presheaf of sets satisfies the sheaf condition for a countable family
+`(V k)` of rational open subsets of a rational open `W`, then the product restriction map on
+presentation limits is inducing. -/
 theorem isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
-    (hW : W ∈ spaRationalOpens Aplus) {κ : Type*} [Finite κ] {V : κ → Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) {κ : Type*} [Countable κ] {V : κ → Opens ↥(spa Aplus)}
     (hV : ∀ k, V k ∈ spaRationalOpens Aplus) (hVW : ∀ k, V k ≤ W)
     (hSheaf : (Presieve.ofArrows V fun k ↦ homOfLE (hVW k)).IsSheafFor
       (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
@@ -118,7 +118,6 @@ theorem isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens
     IsInducing fun (x : presentationLimit (P := P) Aplus W) (k : κ) ↦
       (presentationLimitMap (P := P) (hVW k)).hom.1 x := by
   have _ : IsHuberRing A := ⟨⟨P⟩⟩
-  have _ : Countable κ := Finite.to_countable
   -- Extract the coordinate ring `B ≃ presentationLimit W` and `B_k ≃ presentationLimit (V k)`.
   obtain ⟨pW, isoW⟩ := rationalLimitRingIso P hAplus hW
   let _ := locUniformSpace P pW.num pW.den _ pW.hasDenominatorPower
@@ -155,10 +154,11 @@ theorem isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens
   let modV (k : κ) : Module B (Bk k) := RingHom.toModule (φHom k).1
   -- Package the product map `L : B →ₗ[B] ∀ k, Bk k`.
   let N := ∀ k : κ, Bk k
+  have hsmul (k : κ) (b : B) (y : N) : (b • y) k = (φHom k).1 b * y k := rfl
   have _ : ContinuousConstSMul B N :=
-    { continuous_const_smul b := continuous_pi fun k ↦
-        show Continuous fun y : N ↦ (φHom k).1 b * y k from
-          continuous_const.mul (continuous_apply k) }
+    { continuous_const_smul b := continuous_pi fun k ↦ by
+        simp_rw [hsmul]
+        exact continuous_const.mul (continuous_apply k) }
   have _ : IsCompletelyMetrizableSpace N := IsCompletelyMetrizableSpace.pi_countable
   let L : B →ₗ[B] N :=
     { toFun b k := (φHom k).1 b

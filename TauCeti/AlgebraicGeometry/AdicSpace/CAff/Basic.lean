@@ -11,12 +11,10 @@ public import Mathlib.CategoryTheory.Yoneda
 public import Mathlib.Topology.Category.TopCat.Basic
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.HuberPair
 
-import Mathlib.Algebra.Polynomial.Eval.Subring
-import Mathlib.Algebra.Polynomial.Monic
-import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 import Mathlib.Topology.Algebra.IsUniformGroup.Constructions
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Emptiness
 import TauCeti.RingTheory.Huber.RingOfDefinition
+import TauCeti.RingTheory.Polynomial.IsIntegral
 
 /-!
 # The category of complete Hausdorff Huber pairs
@@ -203,8 +201,7 @@ theorem coe_spa_map {X Y : CAff.{u}} (f : X ⟶ Y) :
 `X : CAff` is empty if and only if `X.ring` is trivial. -/
 theorem isEmpty_spa_iff (X : CAff.{u}) :
     IsEmpty (spa.obj (op X)) ↔ Subsingleton X.ring := by
-  change IsEmpty ↥(ValuationSpectrum.spa X.pair.plus) ↔ Subsingleton X.ring
-  rw [Set.isEmpty_coe_sort,
+  rw [spa_obj, Set.isEmpty_coe_sort,
     spa_eq_empty_iff_subsingleton X.pair.plus X.pair.isRingOfIntegralElements]
 
 /-! ### The global-ring presheaves on `CAffᵒᵖ` -/
@@ -247,36 +244,6 @@ theorem ringPresheaf_comp_forget :
 
 section AffineLine
 
-/-- Over an integral domain `R`, the subring `Polynomial.C.range` of constant polynomials is
-integrally closed in `R[X]`. -/
-private theorem isIntegrallyClosedIn_range_C {R : Type u} [CommRing R] [IsDomain R] :
-    IsIntegrallyClosedIn (Polynomial.C (R := R)).range R[X] := by
-  refine Subring.isIntegrallyClosedIn_iff.mpr fun {f} ⟨q, hq_monic, hq_eval⟩ ↦ ?_
-  by_cases hf : f.natDegree = 0
-  · exact ⟨f.coeff 0, (eq_C_of_natDegree_eq_zero hf).symm⟩
-  exfalso
-  by_cases hq_deg : q.natDegree = 0
-  · rw [eq_one_of_monic_natDegree_zero hq_monic hq_deg, eval₂_one] at hq_eval
-    exact one_ne_zero hq_eval
-  have hf_pos : 0 < f.natDegree := Nat.pos_of_ne_zero hf
-  rw [eval₂_eq_sum_range, Finset.sum_range_succ, hq_monic.coeff_natDegree,
-    map_one, one_mul] at hq_eval
-  have heq := eq_neg_of_add_eq_zero_right hq_eval
-  have hdeg_rhs :
-      (-∑ i ∈ Finset.range q.natDegree, (q.coeff i : R[X]) * f ^ i).natDegree <
-        q.natDegree * f.natDegree := by
-    rw [natDegree_neg]
-    refine (natDegree_sum_le (Finset.range q.natDegree) _).trans_lt ?_
-    rw [Finset.fold_max_lt]
-    refine ⟨Nat.mul_pos (Nat.pos_of_ne_zero hq_deg) hf_pos, fun i hi ↦ ?_⟩
-    obtain ⟨r, hr⟩ := (q.coeff i).2
-    calc ((q.coeff i : R[X]) * f ^ i).natDegree
-        ≤ (q.coeff i : R[X]).natDegree + (f ^ i).natDegree := natDegree_mul_le
-      _ ≤ 0 + i * f.natDegree := by rw [← hr, natDegree_C, Polynomial.natDegree_pow]
-      _ < q.natDegree * f.natDegree := by
-        rw [zero_add]; exact Nat.mul_lt_mul_of_pos_right (Finset.mem_range.mp hi) hf_pos
-  exact hdeg_rhs.ne (congrArg Polynomial.natDegree heq ▸ Polynomial.natDegree_pow f q.natDegree)
-
 /-- Underlying pair `(ℤ[T], ℤ)` in universe `u` with the discrete topology on `(ULift ℤ)[X]`. -/
 private noncomputable def affineLinePair :
     letI : UniformSpace (ULift.{u} ℤ)[X] := ⊥
@@ -289,7 +256,7 @@ private noncomputable def affineLinePair :
   { plus := (Polynomial.C (R := ULift.{u} ℤ)).range
     isRingOfIntegralElements :=
       { isOpen := isOpen_discrete _
-        isIntegrallyClosedIn := isIntegrallyClosedIn_range_C
+        isIntegrallyClosedIn := TauCeti.isIntegrallyClosedIn_range_C
         le_powerBoundedSubring := by simp } }
 
 /-- The discrete polynomial ring `ℤ[T]` in universe `u` paired with the constant subring `ℤ` as its
@@ -303,18 +270,28 @@ noncomputable def affineLine : CAff.{u} :=
   { ring := (ULift.{u} ℤ)[X]
     pair := affineLinePair.{u} }
 
-/-- Private cast between `affineLine.ring` and `(ULift ℤ)[X]` inside this module. -/
-private theorem affineLine_ring_eq : affineLine.{u}.ring = (ULift.{u} ℤ)[X] := rfl
+/-- Private ring isomorphism encapsulating the single definitional unfolding
+`affineLine.{u}.ring = (ULift.{u} ℤ)[X]` inside this module. -/
+private noncomputable def affineLineRingEquiv : (ULift.{u} ℤ)[X] ≃+* affineLine.{u}.ring :=
+  RingEquiv.refl _
 
 /-- The indeterminate `T` in `CAff.affineLine.ring`. -/
 noncomputable def affineLineVar : affineLine.{u}.ring :=
-  cast affineLine_ring_eq.symm Polynomial.X
+  affineLineRingEquiv Polynomial.X
+
+private theorem affineLineVar_eq :
+    affineLineVar.{u} = affineLineRingEquiv Polynomial.X := rfl
+
+private theorem mem_affineLine_plus_iff (p : (ULift.{u} ℤ)[X]) :
+    affineLineRingEquiv p ∈ affineLine.{u}.pair.plus ↔
+      p ∈ (Polynomial.C (R := ULift.{u} ℤ)).range :=
+  Iff.rfl
 
 /-- The indeterminate `T` does not lie in the plus ring `ℤ` of `CAff.affineLine = (ℤ[T], ℤ)`,
 reflecting that morphisms `(ℤ[T], ℤ) ⟶ (A, A⁺)` may evaluate `T` at arbitrary (not necessarily
 power-bounded) elements of `A`. -/
 theorem affineLineVar_notMem_plus : affineLineVar.{u} ∉ affineLine.{u}.pair.plus := by
-  change (Polynomial.X : (ULift.{u} ℤ)[X]) ∉ (Polynomial.C (R := ULift.{u} ℤ)).range
+  rw [affineLineVar_eq, mem_affineLine_plus_iff]
   rintro ⟨c, hc⟩
   simpa using congrArg (fun p : (ULift.{u} ℤ)[X] ↦ p.coeff 1) hc
 
@@ -322,32 +299,44 @@ theorem affineLineVar_notMem_plus : affineLineVar.{u} ∉ affineLine.{u}.pair.pl
 `CAff.affineLine ⟶ X` in `CAff`. Continuity is automatic because `ℤ[T]` carries the discrete
 topology, and plus-ring compatibility holds because `ℤ` maps into every subring `X.pair.plus`. -/
 noncomputable def eval (X : CAff.{u}) (a : X.ring) : affineLine.{u} ⟶ X :=
-  letI : UniformSpace (ULift.{u} ℤ)[X] := ⊥
-  haveI : DiscreteTopology (ULift.{u} ℤ)[X] := ⟨rfl⟩
-  (show Pair.Hom affineLinePair.{u} X.pair from
-    { toRingHom :=
-        Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a
-      continuous_toRingHom := continuous_of_discreteTopology
-      map_mem_plus := by
-        rintro _ ⟨c, rfl⟩
-        simp only [coe_eval₂RingHom, eval₂_C, RingHom.coe_comp, Function.comp_apply, eq_intCast]
-        exact intCast_mem X.pair.plus _ })
+  letI : DiscreteTopology affineLine.{u}.ring := ⟨rfl⟩
+  { toRingHom :=
+      (Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a).comp
+        affineLineRingEquiv.symm.toRingHom
+    continuous_toRingHom := continuous_of_discreteTopology
+    map_mem_plus := by
+      intro p hp
+      rw [← affineLineRingEquiv.apply_symm_apply p, mem_affineLine_plus_iff] at hp
+      obtain ⟨c, hc⟩ := hp
+      simp only [RingHom.coe_comp, Function.comp_apply, RingEquiv.toRingHom_eq_coe,
+        RingEquiv.coe_toRingHom, ← hc, coe_eval₂RingHom, eval₂_C, eq_intCast]
+      exact intCast_mem X.pair.plus _ }
+
+private theorem eval_toRingHom_apply_affineLineRingEquiv (X : CAff.{u}) (a : X.ring)
+    (p : (ULift.{u} ℤ)[X]) :
+    (eval X a).toRingHom (affineLineRingEquiv p) =
+      eval₂ ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a p := by
+  simp [eval]
+
+private theorem eval_toRingHom_comp_affineLineRingEquiv (X : CAff.{u}) (a : X.ring) :
+    (eval X a).toRingHom.comp affineLineRingEquiv.toRingHom =
+      Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a :=
+  RingHom.ext fun p ↦ eval_toRingHom_apply_affineLineRingEquiv X a p
 
 @[simp]
 theorem eval_affineLineVar (X : CAff.{u}) (a : X.ring) :
     (eval X a).toRingHom affineLineVar = a := by
-  change eval₂ ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a Polynomial.X = a
+  rw [affineLineVar_eq, eval_toRingHom_apply_affineLineRingEquiv]
   exact eval₂_X _ a
 
 @[simp]
 theorem eval_comp {X Y : CAff.{u}} (a : X.ring) (f : X ⟶ Y) :
     eval X a ≫ f = eval Y (f.toRingHom a) := by
   apply hom_ext
-  rw [comp_toRingHom]
-  change f.toRingHom.comp
-      (Polynomial.eval₂RingHom ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) a) =
-      Polynomial.eval₂RingHom ((Int.castRingHom Y.ring).comp ULift.ringEquiv.toRingHom)
-        (f.toRingHom a)
+  refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
+    affineLineRingEquiv.surjective).mp ?_
+  rw [comp_toRingHom, RingHom.comp_assoc, eval_toRingHom_comp_affineLineRingEquiv,
+    eval_toRingHom_comp_affineLineRingEquiv]
   exact Polynomial.ringHom_ext' (by ext ⟨n⟩; simp) (by simp)
 
 /-- Morphisms `CAff.affineLine ⟶ X` in `CAff` correspond bijectively to elements of `X.ring` via
@@ -358,14 +347,14 @@ noncomputable def evalEquiv (X : CAff.{u}) : X.ring ≃ (affineLine.{u} ⟶ X) w
   left_inv a := eval_affineLineVar X a
   right_inv f := by
     apply hom_ext
-    let g : (ULift.{u} ℤ)[X] →+* X.ring := f.toRingHom
-    change Polynomial.eval₂RingHom
-      ((Int.castRingHom X.ring).comp ULift.ringEquiv.toRingHom) (g Polynomial.X) = g
-    refine Polynomial.ringHom_ext' ?_ (by simp)
+    refine (RingHom.cancel_right (f := affineLineRingEquiv.toRingHom)
+      affineLineRingEquiv.surjective).mp ?_
+    rw [eval_toRingHom_comp_affineLineRingEquiv]
+    refine Polynomial.ringHom_ext' ?_ (by simp [affineLineVar_eq])
     ext ⟨n⟩
     have hn : Polynomial.C (⟨n⟩ : ULift.{u} ℤ) = (n : (ULift.{u} ℤ)[X]) := by
       rw [← Polynomial.C_eq_intCast]; rfl
-    rw [RingHom.comp_apply, RingHom.comp_apply, hn, map_intCast, map_intCast]
+    simp only [RingHom.comp_apply, hn, map_intCast]
 
 @[simp]
 theorem evalEquiv_apply (X : CAff.{u}) (a : X.ring) : evalEquiv X a = eval X a := (rfl)
@@ -382,10 +371,10 @@ theorem eval_bijective (X : CAff.{u}) : Function.Bijective (eval X) :=
 noncomputable def globalSectionsRepresentableBy :
     globalSections.{u}.RepresentableBy (op affineLine.{u}) where
   homEquiv {Z} := Quiver.Hom.opEquiv.symm.trans (evalEquiv (unop Z)).symm
-  homEquiv_comp {Z₁ Z₂} g f := by
-    change (f.unop ≫ g.unop).toRingHom affineLineVar =
-      g.unop.toRingHom (f.unop.toRingHom affineLineVar)
-    rw [comp_toRingHom, RingHom.comp_apply]
+  homEquiv_comp g f :=
+    -- `globalSections` is `@[expose]`, so both sides reduce definitionally via
+    -- `evalEquiv_symm_apply` and `globalSections_map_apply` to `comp_toRingHom` at `affineLineVar`.
+    RingHom.congr_fun (comp_toRingHom f.unop g.unop) affineLineVar
 
 /-- **Representability of the global-ring presheaf on `CAffᵒᵖ`.** Sending `a ∈ A` to the opposite of
 the evaluation morphism `CAff.eval (A, A⁺) a : (ℤ[T], ℤ) ⟶ (A, A⁺)` defines a natural isomorphism

@@ -11,6 +11,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.OpenMa
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Rational.StableUniform
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
 import TauCeti.RingTheory.Huber.Padic.TateAlgebra
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Tests for `CAff`, the rational-covering site, and `OpenMapping`
@@ -26,6 +27,7 @@ Concrete positive checks, degenerate boundary checks, and sharpness non-examples
 -/
 
 open CategoryTheory Opposite TopologicalSpace
+open scoped Topology
 
 namespace TauCeti.CAff
 
@@ -117,8 +119,8 @@ example (p m : ℕ) [Fact p.Prime] (S : Pair ℚ_[p])
 
 /-- *stablyUniform_isRationalSheafy_and_inducing*: every complete Hausdorff stably uniform Tate
 Huber pair is rational-sheafy, its topological structure presheaf sheafiness is equivalent to
-set-level sheafiness, and on any finite rational cover of a rational open the product restriction
-map is a topological embedding (`IsInducing`). -/
+set-level sheafiness, and on any countable rational cover of a rational open the product
+restriction map on presentation limits is inducing (`Topology.IsInducing`). -/
 example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopologicalRing A]
     [CompleteSpace A] [T0Space A] [IsTateRing A] [IsStablyUniform A] (S : Pair A)
     (P : PairOfDefinition A) (hP : P.ringOfDefinition ≤ S.plus) :
@@ -128,15 +130,14 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
         Presheaf.IsSheaf (Opens.grothendieckTopology ↥(ValuationSpectrum.spa S.plus))
           (presentationLimitPresheaf P S.plus ⋙
             TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat)) ∧
-      Topology.IsInducing (fun x : presentationLimit (P := P) S.plus ⊤ ↦
-        fun _ : Unit ↦ (presentationLimitMap (P := P) (le_rfl : (⊤ : Opens _) ≤ ⊤)).hom.1 x) := by
+      ∀ {W : Opens ↥(ValuationSpectrum.spa S.plus)} {κ : Type} [Countable κ]
+        {V : κ → Opens ↥(ValuationSpectrum.spa S.plus)},
+        W ∈ spaRationalOpens S.plus → (∀ k, V k ∈ spaRationalOpens S.plus) →
+        ∀ hcov : ⨆ k, V k = W,
+        Topology.IsInducing (fun (x : presentationLimit (P := P) S.plus W) (k : κ) ↦
+          (presentationLimitMap (P := P) ((le_iSup V k).trans_eq hcov)).hom.1 x) := by
   have hsheaf : IsSheafyForEveryPresentation S.plus :=
     isSheafyForEveryPresentation_of_isStablyUniform S.isRingOfIntegralElements
-  have htop_eq : spaBasicOpen S.plus {1} 1 = ⊤ :=
-    le_antisymm le_top fun x _ ↦ mem_spaBasicOpen.mpr
-      (by rw [rationalSubset_singleton_one]; exact x.2)
-  have htop_rat : (⊤ : Opens ↥(ValuationSpectrum.spa S.plus)) ∈ spaRationalOpens S.plus :=
-    htop_eq ▸ spaBasicOpen_mem_spaRationalOpens (by simp)
   have hset : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(ValuationSpectrum.spa S.plus))
       (presentationLimitPresheaf P S.plus ⋙
         TopCommRingCat.isCompleteSeparated.ι ⋙ forget _root_.TopCommRingCat) :=
@@ -145,11 +146,13 @@ example {A : Type} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopolo
   refine ⟨.of_isSheafyForEveryPresentation hsheaf,
     isSheaf_presentationLimitPresheaf_iff_isSheaf_forget P
       S.isRingOfIntegralElements.isPowerBounded_of_mem,
-    isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens P
-      S.isRingOfIntegralElements.isPowerBounded_of_mem htop_rat (fun _ : Unit ↦ htop_rat)
-      (fun _ : Unit ↦ le_rfl) ?_⟩
+    fun {W} {κ} _ {V} hW hV hcov ↦ isInducing_presentationLimitMap_of_isSheafFor_spaRationalOpens P
+      S.isRingOfIntegralElements.isPowerBounded_of_mem hW hV
+      (fun k ↦ (le_iSup V k).trans_eq hcov) ?_⟩
   rw [Presieve.isSheafFor_iff_generate]
-  exact hset.isSheafFor _ fun _ _ ↦ ⟨⊤, homOfLE le_rfl, Sieve.ofArrows_mk _ _ (), trivial⟩
+  refine hset.isSheafFor _ fun x hx ↦ ?_
+  obtain ⟨k, hxk⟩ := Opens.mem_iSup.mp (hcov ▸ hx)
+  exact ⟨_, homOfLE ((le_iSup V k).trans_eq hcov), Sieve.ofArrows_mk _ _ k, hxk⟩
 
 /-! ### Sharpness non-examples on `(ℤ_p, ℤ_p)` -/
 
@@ -176,18 +179,13 @@ example (p : ℕ) [Fact p.Prime] :
       ((mem_rationalSubset_iff _ {1} 1 w.1).mp hw1).2.2⟩
   · have hopen : IsOpen ({0} : Set ℤ_[p]) := by
       simpa only [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] using h.isOpen_span
-    obtain ⟨n, -, hn⟩ := (PadicInt.isAdic_maximalIdeal (p := p)).hasBasis_nhds_zero.mem_iff.mp
-      (hopen.mem_nhds rfl)
-    have hp0 : (p : ℤ_[p]) ≠ 0 := mod_cast (Fact.out : p.Prime).ne_zero
-    have hmem : (p : ℤ_[p]) ^ n ∈ (IsLocalRing.maximalIdeal ℤ_[p] ^ n : Ideal ℤ_[p]) :=
-      Ideal.pow_mem_pow (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact
-        Ideal.mem_span_singleton_self _) n
-    exact pow_ne_zero n hp0 (Set.mem_singleton_iff.mp (hn hmem))
+    have : (𝓝[≠] (0 : ℤ_[p])).NeBot :=
+      (_root_.PadicInt.isOpenEmbedding_coe.toOpenPartialHomeomorph _).nhdsNE_neBot trivial
+    exact not_isOpen_singleton (0 : ℤ_[p]) hopen
 
 /-- *isRationalLocalization_mapsTo_sharp*: on `Zp = (ℤ_[p], ℤ_[p])`, `(T, s) = ({1}, p)` has open
-span `Ideal.span {1} = ⊤` and `𝟙 Zp` satisfies unique factorization, yet
-`¬ IsRationalLocalization (𝟙 Zp) {1} p` because the non-analytic closed point of `Spa(ℤ_[p], ℤ_[p])`
-sends `p` to `0` and therefore lies outside `R({1}/p)`. -/
+span `Ideal.span {1} = ⊤`, yet `¬ IsRationalLocalization (𝟙 Zp) {1} p` because the non-analytic
+closed point of `Spa(ℤ_[p], ℤ_[p])` sends `p` to `0` and therefore lies outside `R({1}/p)`. -/
 example (p : ℕ) [Fact p.Prime] :
     IsOpen (Ideal.span ({1} : Set ℤ_[p]) : Set ℤ_[p]) ∧
       ¬ IsRationalLocalization (𝟙 (CAff.of (Pair.powerBounded ℤ_[p]))) {1} (p : ℤ_[p]) := by
@@ -199,8 +197,7 @@ example (p : ℕ) [Fact p.Prime] :
   have hrat := h.mapsTo_spaComap ⟨trivialSection (⊤ : PrimeSpectrum ℤ_[p]), hmem_spa⟩
   rw [id_spaComap, id_eq, mem_rationalSubset_iff] at hrat
   refine hrat.2.2 ((trivialSection_vle_iff _ _ _).mpr (Or.inl ?_))
-  change (p : ℤ_[p]) ∈ IsLocalRing.maximalIdeal ℤ_[p]
-  rw [_root_.PadicInt.maximalIdeal_eq_span_p]
+  rw [IsLocalRing.PrimeSpectrum.asIdeal_top, _root_.PadicInt.maximalIdeal_eq_span_p]
   exact Ideal.mem_span_singleton_self _
 
 /-- *nonAdic_pullback_sharp*: the canonical morphism `ψ : discrete ℤ ⟶ (ℤ_[p], ℤ_[p])` is not adic;
@@ -234,25 +231,19 @@ example (p : ℕ) [Fact p.Prime] :
         exact (mem_rationalSubset_iff _ ∅ 1 v.1).mpr
           ⟨v.2, fun t ht ↦ absurd ht (Finset.notMem_empty t),
             ((mem_rationalSubset_iff _ {1} 1 v.1).mp hv1).2.2⟩⟩ }
-  have hnot_open : ¬ IsOpen ({0} : Set ℤ_[p]) := fun hopen ↦ by
-    obtain ⟨n, -, hn⟩ := (PadicInt.isAdic_maximalIdeal (p := p)).hasBasis_nhds_zero.mem_iff.mp
-      (hopen.mem_nhds rfl)
-    have hp0 : (p : ℤ_[p]) ≠ 0 := mod_cast (Fact.out : p.Prime).ne_zero
-    have hmem : (p : ℤ_[p]) ^ n ∈ (IsLocalRing.maximalIdeal ℤ_[p] ^ n : Ideal ℤ_[p]) :=
-      Ideal.pow_mem_pow (by rw [_root_.PadicInt.maximalIdeal_eq_span_p]; exact
-        Ideal.mem_span_singleton_self _) n
-    exact pow_ne_zero n hp0 (Set.mem_singleton_iff.mp (hn hmem))
+  have : (𝓝[≠] (0 : ℤ_[p])).NeBot :=
+    (_root_.PadicInt.isOpenEmbedding_coe.toOpenPartialHomeomorph _).nhdsNE_neBot trivial
   refine ⟨ψ, hcovZ, rfl, fun hadic ↦ ?_, fun hcovZp ↦ ?_, ?_⟩
   · have hopen_bot : IsOpen (Ideal.span (ψ.toRingHom ''
         (((⊥ : Ideal (discrete ℤ).ring) : Set (discrete ℤ).ring))) : Set ℤ_[p]) :=
       hadic.isOpen_map (isOpen_discrete _)
     rw [Submodule.bot_coe, Set.image_singleton, map_zero,
       Ideal.span_singleton_eq_bot.mpr rfl, Submodule.bot_coe] at hopen_bot
-    exact hnot_open hopen_bot
+    exact not_isOpen_singleton (0 : ℤ_[p]) hopen_bot
   · have hopen_emp : IsOpen (Ideal.span ((∅ : Finset ℤ_[p]) : Set ℤ_[p]) : Set ℤ_[p]) :=
       hcovZp.isOpen_span ()
     rw [Finset.coe_empty, Ideal.span_empty, Submodule.bot_coe] at hopen_emp
-    exact hnot_open hopen_emp
+    exact not_isOpen_singleton (0 : ℤ_[p]) hopen_emp
   · exact ratTopology.pullback_stable ψ.op (generate_rationalCoverPresieve_mem_ratTopology hcovZ)
 
 end TauCeti.CAff
