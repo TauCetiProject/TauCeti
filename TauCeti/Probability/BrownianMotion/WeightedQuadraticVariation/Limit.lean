@@ -76,44 +76,43 @@ theorem integral_sq_sum_mul_sq_sub_sub_le (hB : IsFilteredPreBrownianReal ℱ B 
         (by positivity)
     _ = _ := by ring
 
-/-- Centered quadratic sums on a bounded time horizon converge to zero in mean square when
-the predictable heights have uniformly bounded second moments and the deterministic mesh
+/-- Centered quadratic sums with uniformly bounded elapsed times converge to zero in mean square
+when the predictable heights have uniformly bounded second moments and the deterministic mesh
 vanishes. -/
 theorem tendsto_integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {ι : Type*} {l : Filter ι} {n : ι → ℕ} {t : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (t k) (Iic (n k))) {H : ι → ℕ → Ω → ℝ}
     (hH : ∀ k i, i < n k → Measurable[ℱ (t k i)] (H k i))
-    (hHi : ∀ k i, i < n k → MemLp (H k i) 2 P) {M : ℝ} {T : ℝ≥0}
+    (hHi : ∀ k i, i < n k → MemLp (H k i) 2 P) {M L : ℝ}
     (hM : ∀ k i, i < n k → (∫ ω, H k i ω ^ 2 ∂P) ≤ M)
-    (hT : ∀ k, t k (n k) ≤ T) {δ : ι → ℝ}
+    (hL : ∀ k, (t k (n k) : ℝ) - t k 0 ≤ L) {δ : ι → ℝ}
     (hmesh : ∀ k i, i < n k → (t k (i + 1) : ℝ) - t k i ≤ δ k)
     (hlim : Tendsto δ l (𝓝 0)) :
     Tendsto (fun k ↦ ∫ ω, (∑ i ∈ range (n k), H k i ω *
       ((B (t k (i + 1)) ω - B (t k i) ω) ^ 2 - ((t k (i + 1) : ℝ) - t k i))) ^ 2 ∂P)
       l (𝓝 0) := by
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using (hlim.max (tendsto_const_nhds (x := (0 : ℝ)))).const_mul (2 * max M 0 * T))
+    (by simpa using
+      (hlim.max (tendsto_const_nhds (x := (0 : ℝ)))).const_mul (2 * max M 0 * max L 0))
     (fun k ↦ integral_nonneg fun ω ↦ sq_nonneg _) ?_
   intro k
   refine (hB.integral_sq_sum_mul_sq_sub_sub_le (ht k) (hH k) (hHi k)
     (fun i hi ↦ (hM k i hi).trans (le_max_left M 0))
     (fun i hi ↦ (hmesh k i hi).trans (le_max_left (δ k) 0))).trans ?_
-  have hend : (t k (n k) : ℝ) - t k 0 ≤ T := by
-    have := NNReal.coe_le_coe.mpr (hT k)
-    linarith [NNReal.coe_nonneg (t k 0)]
   dsimp only
   gcongr
+  exact (hL k).trans (le_max_left L 0)
 
 /-- Centered predictable quadratic errors vanish in probability along vanishing-mesh deterministic
-grids on a bounded time horizon, under a uniform second-moment bound on the heights.
+grids with uniformly bounded elapsed times, under a uniform second-moment bound on the heights.
 No sample-path regularity of the heights is required. -/
 theorem tendstoInMeasure_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {ι : Type*} {l : Filter ι} {n : ι → ℕ} {t : ι → ℕ → ℝ≥0}
     (ht : ∀ k, MonotoneOn (t k) (Iic (n k))) {H : ι → ℕ → Ω → ℝ}
     (hH : ∀ k i, i < n k → Measurable[ℱ (t k i)] (H k i))
-    (hHi : ∀ k i, i < n k → MemLp (H k i) 2 P) {M : ℝ} {T : ℝ≥0}
+    (hHi : ∀ k i, i < n k → MemLp (H k i) 2 P) {M L : ℝ}
     (hM : ∀ k i, i < n k → (∫ ω, H k i ω ^ 2 ∂P) ≤ M)
-    (hT : ∀ k, t k (n k) ≤ T) {δ : ι → ℝ}
+    (hL : ∀ k, (t k (n k) : ℝ) - t k 0 ≤ L) {δ : ι → ℝ}
     (hmesh : ∀ k i, i < n k → (t k (i + 1) : ℝ) - t k i ≤ δ k)
     (hlim : Tendsto δ l (𝓝 0)) :
     TendstoInMeasure P (fun k ω ↦ ∑ i ∈ range (n k), H k i ω *
@@ -128,7 +127,7 @@ theorem tendstoInMeasure_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ 
         (hH k i (mem_range.mp hi)) (hHi k i (mem_range.mp hi))
     simpa only [sub_zero] using hZ.norm.integrable_sq
   · simpa only [sub_zero, Real.norm_eq_abs, sq_abs] using
-      hB.tendsto_integral_sq_sum_mul_sq_sub_sub ht hH hHi hM hT hmesh hlim
+      hB.tendsto_integral_sq_sum_mul_sq_sub_sub ht hH hHi hM hL hmesh hlim
 
 /-- Left-weighted Brownian quadratic sums converge in probability to the samplewise time
 integral of an adapted almost surely continuous process with uniformly bounded second moments.
@@ -164,7 +163,7 @@ theorem tendstoInMeasure_sum_mul_sq_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     (fun k i hi ↦ hH _ (hmem k i hi.le))
     (fun k i hi ↦ hHi _ (hmem k i hi.le))
     (fun k i hi ↦ hM _ (hmem k i hi.le))
-    (fun k ↦ (hb k).le) hmesh hlim
+    (L := (b : ℝ) - a) (fun k ↦ by rw [ha k, hb k]) hmesh hlim
   intro ε hε
   apply tendsto_of_seq_tendsto
   intro ks hks
