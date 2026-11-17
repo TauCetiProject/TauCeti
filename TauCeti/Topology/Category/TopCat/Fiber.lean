@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.CommSq
 public import Mathlib.Topology.Category.TopCat.Basic
+public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv.Basic
 
 /-!
 # Fibres of morphisms in `TopCat`
@@ -16,7 +17,9 @@ The fibre `TopCat.Hom.fiber p b` of a morphism `p : E ⟶ B` over a point `b` is
 A commutative square from `p` to `p'`, such as a map of fibrations, induces maps between the
 fibres (`CategoryTheory.CommSq.fiberMap`), functorially in horizontal composition of squares.
 More generally, a map `f` over `B` restricts to maps between the parts over any subset of `B`
-(`TopCat.Hom.preimageMap`).
+(`TopCat.Hom.preimageMap`). For a continuous map `p : E → B` and a point `y` of a subset `Y` of `B`,
+`ContinuousMap.preimageInclusion` is the inclusion `p⁻¹(y) → p⁻¹(Y)`, which is the fibre inclusion
+of the restriction `p⁻¹(Y) → Y` (`ContinuousMap.preimageInclusion_eq`).
 
 The names and the dot-notation shape follow Mathlib's scheme-theoretic fibres
 `AlgebraicGeometry.Scheme.Hom.fiber` and `AlgebraicGeometry.Scheme.Hom.fiberι`.
@@ -60,21 +63,20 @@ lemma mapsTo_preimage_of_comp_eq {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} 
   exact he
 
 /-- The restriction `p⁻¹(S) ⟶ p'⁻¹(S)` of a map `f` over `B`, that is with `f ≫ p' = p`, to the
-parts over a subset `S` of `B`. -/
+parts over a subset `S` of `B`: the morphism of `TauCeti.restrictPreimageMap`. -/
 def preimageMap {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
     (hf : f ≫ p' = p) (S : Set B) : TopCat.of (p ⁻¹' S) ⟶ TopCat.of (p' ⁻¹' S) :=
-  TopCat.ofHom ⟨(f.mapsTo_preimage_of_comp_eq hf S).restrict,
-    f.hom.continuous.restrict (f.mapsTo_preimage_of_comp_eq hf S)⟩
+  TopCat.ofHom (TauCeti.restrictPreimageMap S (congrArg TopCat.Hom.hom hf))
 
 @[simp]
 lemma coe_preimageMap_apply {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
     (hf : f ≫ p' = p) (S : Set B) (x : TopCat.of (p ⁻¹' S)) : (f.preimageMap hf S x : E') = f x :=
-  (rfl)
+  TauCeti.coe_restrictPreimageMap S _ x
 
 @[simp]
 lemma preimageMap_id {p : E ⟶ B} (hf : 𝟙 E ≫ p = p) (S : Set B) :
     preimageMap (𝟙 E) hf S = 𝟙 _ :=
-  (rfl)
+  congrArg TopCat.ofHom (TauCeti.restrictPreimageMap_id S)
 
 /-- Restrictions of maps over `B` compose. It is stated in this direction so that `simp` can use
 it: the middle map `p'` cannot be recovered from the composite. -/
@@ -84,13 +86,13 @@ lemma preimageMap_comp_preimageMap {E' E'' : TopCat.{u}} (f : E ⟶ E') (f' : E'
     (S : Set B) :
     f.preimageMap hf S ≫ f'.preimageMap hf' S =
       preimageMap (f ≫ f') (by rw [Category.assoc, hf', hf]) S :=
-  (rfl)
+  congrArg TopCat.ofHom (TauCeti.restrictPreimageMap_comp S _ _)
 
 /-- On fibres, the restriction of a map `f` over `B` commutes with the inclusions of the fibres. -/
 @[reassoc (attr := simp)]
 lemma preimageMap_comp_fiberι {E' : TopCat.{u}} (f : E ⟶ E') {p : E ⟶ B} {p' : E' ⟶ B}
     (hf : f ≫ p' = p) (b : B) : f.preimageMap hf {b} ≫ p'.fiberι b = p.fiberι b ≫ f :=
-  (rfl)
+  TopCat.ext (f.coe_preimageMap_apply hf {b})
 
 /-- The composite of two maps with finite fibres has finite fibres. -/
 theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
@@ -101,6 +103,61 @@ theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
     Set.finite_coe_iff.mp (hfinp b)).to_subtype
 
 end TopCat.Hom
+
+/-! ### The fibre inside the part over a subset -/
+
+namespace ContinuousMap
+
+variable {E' B' : Type u} [TopologicalSpace E'] [TopologicalSpace B'] {Y : Set B'} {y : B'}
+
+/-- The inclusion `p⁻¹(y) → p⁻¹(Y)` of the fibre over a point `y ∈ Y` into the preimage of `Y`. -/
+def preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
+    TopCat.of (p ⁻¹' {y}) ⟶ TopCat.of (p ⁻¹' Y) :=
+  TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)))
+
+@[simp]
+theorem hom_preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
+    (p.preimageInclusion hy).hom =
+      ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)) :=
+  (rfl)
+
+theorem coe_preimageInclusion_apply (p : C(E', B')) (hy : y ∈ Y) (x : p ⁻¹' {y}) :
+    ((p.preimageInclusion hy).hom x : E') = x :=
+  (rfl)
+
+/-- The fibre `p⁻¹(y)` is the fibre over `y` of the restriction `p⁻¹(Y) → Y`. -/
+def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
+    (p ⁻¹' {y}) ≃ₜ (p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) where
+  toFun e := ⟨⟨e.1, Set.mem_preimage.2 ((Set.mem_singleton_iff.1 e.2).symm ▸ hy)⟩,
+    Subtype.ext e.2⟩
+  invFun e := ⟨e.1.1, congrArg Subtype.val e.2⟩
+  left_inv _ := rfl
+  right_inv _ := rfl
+  continuous_toFun := by fun_prop
+  continuous_invFun := by fun_prop
+
+@[simp]
+theorem coe_coe_preimageSingletonHomeomorphFiber_apply (p : C(E', B')) (hy : y ∈ Y)
+    (e : p ⁻¹' {y}) : ((p.preimageSingletonHomeomorphFiber hy e).1 : E') = e :=
+  (rfl)
+
+@[simp]
+theorem coe_preimageSingletonHomeomorphFiber_symm_apply (p : C(E', B')) (hy : y ∈ Y)
+    (e : p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) :
+    ((p.preimageSingletonHomeomorphFiber hy).symm e : E') = e.1.1 :=
+  (rfl)
+
+/-- The inclusion `p⁻¹(y) → p⁻¹(Y)` is the fibre inclusion of the restriction `p⁻¹(Y) → Y`, up to
+`ContinuousMap.preimageSingletonHomeomorphFiber`. -/
+theorem preimageInclusion_eq (p : C(E', B')) (hy : y ∈ Y) :
+    p.preimageInclusion hy =
+      (TopCat.isoOfHomeo (p.preimageSingletonHomeomorphFiber hy)).hom ≫
+        (TopCat.ofHom (p.restrictPreimage Y)).fiberι ⟨y, hy⟩ :=
+  TopCat.ext fun x ↦ by
+    rw [ConcreteCategory.comp_apply, TopCat.Hom.fiberι_apply]
+    exact Subtype.ext (p.coe_coe_preimageSingletonHomeomorphFiber_apply hy x).symm
+
+end ContinuousMap
 
 namespace CategoryTheory.CommSq
 

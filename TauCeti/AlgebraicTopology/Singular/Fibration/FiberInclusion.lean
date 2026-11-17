@@ -91,61 +91,6 @@ theorem epi_singularHomologyMap_fiberι (hp : serreFibrations p)
 
 end TauCeti.TopCat
 
-/-! ### The part of a fibration over a subspace -/
-
-namespace ContinuousMap
-
-variable {E' B' : Type u} [TopologicalSpace E'] [TopologicalSpace B'] {Y : Set B'} {y : B'}
-
-/-- The inclusion `p⁻¹(y) → p⁻¹(Y)` of the fibre over a point `y ∈ Y` into the preimage of `Y`. -/
-def preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
-    TopCat.of (p ⁻¹' {y}) ⟶ TopCat.of (p ⁻¹' Y) :=
-  TopCat.ofHom (ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)))
-
-@[simp]
-theorem hom_preimageInclusion (p : C(E', B')) (hy : y ∈ Y) :
-    (p.preimageInclusion hy).hom =
-      ContinuousMap.inclusion (Set.preimage_mono (Set.singleton_subset_iff.2 hy)) :=
-  (rfl)
-
-theorem coe_preimageInclusion_apply (p : C(E', B')) (hy : y ∈ Y) (x : p ⁻¹' {y}) :
-    ((p.preimageInclusion hy).hom x : E') = x :=
-  (rfl)
-
-/-- The fibre `p⁻¹(y)` is the fibre over `y` of the restriction `p⁻¹(Y) → Y`. -/
-def preimageSingletonHomeomorphFiber (p : C(E', B')) (hy : y ∈ Y) :
-    (p ⁻¹' {y}) ≃ₜ (p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) where
-  toFun e := ⟨⟨e.1, Set.mem_preimage.2 ((Set.mem_singleton_iff.1 e.2).symm ▸ hy)⟩,
-    Subtype.ext e.2⟩
-  invFun e := ⟨e.1.1, congrArg Subtype.val e.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
-
-@[simp]
-theorem coe_coe_preimageSingletonHomeomorphFiber_apply (p : C(E', B')) (hy : y ∈ Y)
-    (e : p ⁻¹' {y}) : ((p.preimageSingletonHomeomorphFiber hy e).1 : E') = e :=
-  (rfl)
-
-@[simp]
-theorem coe_preimageSingletonHomeomorphFiber_symm_apply (p : C(E', B')) (hy : y ∈ Y)
-    (e : p.restrictPreimage Y ⁻¹' {⟨y, hy⟩}) :
-    ((p.preimageSingletonHomeomorphFiber hy).symm e : E') = e.1.1 :=
-  (rfl)
-
-/-- The inclusion `p⁻¹(y) → p⁻¹(Y)` is the fibre inclusion of the restriction `p⁻¹(Y) → Y`, up to
-`ContinuousMap.preimageSingletonHomeomorphFiber`. -/
-theorem preimageInclusion_eq (p : C(E', B')) (hy : y ∈ Y) :
-    p.preimageInclusion hy =
-      (TopCat.isoOfHomeo (p.preimageSingletonHomeomorphFiber hy)).hom ≫
-        (TopCat.ofHom (p.restrictPreimage Y)).fiberι ⟨y, hy⟩ :=
-  TopCat.ext fun x ↦ by
-    rw [ConcreteCategory.comp_apply, TopCat.Hom.fiberι_apply]
-    exact Subtype.ext (p.coe_coe_preimageSingletonHomeomorphFiber_apply hy x).symm
-
-end ContinuousMap
-
 namespace TauCeti.TopCat
 
 section Preimage

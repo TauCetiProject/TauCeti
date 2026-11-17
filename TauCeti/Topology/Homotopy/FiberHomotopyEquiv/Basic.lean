@@ -333,12 +333,12 @@ def restrictPreimage {p : C(E, B)} {q : C(E', B)} (Φ : FiberHomotopyEquiv p q) 
   invFun := restrictPreimageMap S Φ.comp_invFun
   comp_toFun := ContinuousMap.ext fun e ↦ Subtype.ext congr($(Φ.comp_toFun) e)
   comp_invFun := ContinuousMap.ext fun e ↦ Subtype.ext congr($(Φ.comp_invFun) e)
-  left_inv := Φ.left_inv.map fun H ↦ (restrictPreimageHomotopyWith S H
-    (by rw [← ContinuousMap.comp_assoc, Φ.comp_invFun, Φ.comp_toFun]) p.comp_id).cast
-      (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)
-  right_inv := Φ.right_inv.map fun H ↦ (restrictPreimageHomotopyWith S H
-    (by rw [← ContinuousMap.comp_assoc, Φ.comp_toFun, Φ.comp_invFun]) q.comp_id).cast
-      (ContinuousMap.ext fun _ ↦ rfl) (ContinuousMap.ext fun _ ↦ rfl)
+  left_inv := by
+    rw [restrictPreimageMap_comp, ← restrictPreimageMap_id S]
+    exact Φ.left_inv.map fun H ↦ restrictPreimageHomotopyWith S H _ _
+  right_inv := by
+    rw [restrictPreimageMap_comp, ← restrictPreimageMap_id S]
+    exact Φ.right_inv.map fun H ↦ restrictPreimageHomotopyWith S H _ _
 
 @[simp]
 theorem coe_restrictPreimage_toFun_apply {p : C(E, B)} {q : C(E', B)}
