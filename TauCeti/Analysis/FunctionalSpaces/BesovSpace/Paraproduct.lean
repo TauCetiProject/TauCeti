@@ -83,6 +83,9 @@ constants depend only on the bump function, the gap and the regularities.
   radius `2^m φ.rOut`.
 * `TauCeti.BesovSpace.exists_littlewoodPaleyBlock_lowPass_eq_zero`: the blocks of `S_m u` vanish
   from index `m + L` on, for an `L` depending only on the bump function.
+* `TauCeti.BesovSpace.memBesov_lowPass`: `S_m u` lies in every `B^{s'}_{p,q'}`.
+* `TauCeti.BesovSpace.exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass`: the blocks of
+  `u - S_{N+1} u` vanish below index `N + 1 - L` and are at most `(1 + ‖𝓕⁻ φ‖₁)` times those of `u`.
 * `TauCeti.BesovSpace.isVanishingOn_fourier_lowPass_smul_block` and
   `TauCeti.BesovSpace.isVanishingOn_fourier_block_smul_lowPass`: the terms of the two paraproducts
   have spectra in dyadic annuli.
@@ -207,6 +210,44 @@ theorem exists_littlewoodPaleyBlock_lowPass_eq_zero :
   · simp
   · rw [coe_lowPass]
     exact (hL k N).2 (by omega) u.toDistr
+
+/-- **The low-frequency cut-offs lie in every Besov space.** The `Lᵖ` function
+`S_m u = ∑_{k < m} Δₖ u` has only finitely many nonzero blocks, so it lies in `B^{s'}_{p,q'}` for
+every smoothness `s'` and every fine index `q'`. -/
+theorem memBesov_lowPass (u : BesovSpace F φ s p q) (m : ℕ) (s' : ℝ) (q' : ℝ≥0∞) :
+    (u.lowPass m : 𝓢'(E, F)).MemBesov φ s' p q' := by
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
+  obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
+  obtain ⟨x, hx, -⟩ := hC s' (m + L) (u.lowPass m) fun k hk ↦ hL u m k hk
+  -- Only the blocks of index below `m + L` are nonzero, so the weighted blocks lie in `ℓ⁰`.
+  refine (memBesov_iff.2 ⟨x.block, fun k ↦ by rw [coe_block, hx], memℓp_zero ?_⟩).mono le_rfl
+    bot_le
+  refine (Set.finite_lt_nat (m + L)).subset fun k hk ↦ Set.mem_ofPred.2 <| not_le.1 fun hkL ↦ ?_
+  have h0 : x.block k = 0 := Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, hx, hL u m k hkL, Lp.toTemperedDistribution_zero]
+  simp [h0] at hk
+
+/-- **The blocks of `u - S_{N+1} u`.** There is `L`, depending only on `φ`, such that for every
+`v` with tempered distribution `S_{N+1} u` the block `Δₖ (u - v) = Δₖ u - S_{N+1} Δₖ u` vanishes
+for `k + L ≤ N`, and has `Lᵖ` norm at most `(1 + ‖𝓕⁻ φ‖₁) ‖Δₖ u‖_p` for every `k`. -/
+theorem exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass :
+    ∃ L : ℕ, ∀ {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] (u v : BesovSpace F φ s p q) (N k : ℕ),
+      v.toDistr = u.lowPass (N + 1) →
+        (k + L ≤ N → (u - v).block k = 0) ∧
+          ‖(u - v).block k‖ ≤ (1 + ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖) * ‖u.block k‖ := by
+  obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+  refine ⟨L, fun u v N k hv ↦ ?_⟩
+  -- The block `Δₖ v = S_{N+1} Δₖ u` is the `Lᵖ` function `g`.
+  obtain ⟨g, hg, hgu⟩ := exists_sum_littlewoodPaleyBlock_eq_and_norm_le φ N (u.block k)
+  have hvk : v.block k = g := Lp.toTemperedDistribution_injective <| by
+    simp only [coe_block, hv, coe_lowPass, map_sum, ← hg]
+    exact Finset.sum_congr rfl fun j _ ↦ littlewoodPaleyBlock_comm φ k j u.toDistr
+  rw [block_sub, hvk]
+  refine ⟨fun hkN ↦ sub_eq_zero.2 ?_, (norm_sub_le _ _).trans (by linarith)⟩
+  -- Low frequencies: `S_{N+1}` fixes `Δₖ u`.
+  refine Lp.toTemperedDistribution_injective ?_
+  simp only [← hg, coe_block]
+  exact ((hL k N).1 hkN u.toDistr).symm
 
 /-- **The low-frequency cut-offs of an `Lᵖ` function are uniformly bounded.** If the tempered
 distribution of `u` is an `Lᵖ` function `f`, then `‖S_m u‖_p ≤ ‖𝓕⁻ φ‖₁ ‖f‖_p` for every `m`. -/

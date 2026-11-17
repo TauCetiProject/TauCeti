@@ -49,8 +49,6 @@ the Schwartz functions in `B^s_{p,q}`, and so does the limit `u` of the `S_m u`.
 
 ## Main declarations
 
-* `TauCeti.BesovSpace.memBesov_lowPass`: the low-frequency cut-off `S_m u` lies in every
-  `B^{s'}_{p,q'}`.
 * `TauCeti.BesovSpace.tendsto_of_toDistr_eq_lowPass`: for `q < ∞`, `S_m u → u` in `B^s_{p,q}`.
 * `TauCeti.BesovSpace.mem_closure_range_toBesovSpaceCLM_iff`: for `q < ∞`, `u` is a limit of
   Schwartz functions in `B^s_{p,q}` exactly when its blocks are limits of Schwartz functions in
@@ -81,22 +79,6 @@ namespace BesovSpace
 
 variable {φ : ContDiffBump (0 : E)} {s : ℝ} {p q : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- **The low-frequency cut-offs lie in every Besov space.** The `Lᵖ` function
-`S_m u = ∑_{k < m} Δₖ u` has only finitely many nonzero blocks, so it lies in `B^{s'}_{p,q'}` for
-every smoothness `s'` and every fine index `q'`. -/
-theorem memBesov_lowPass (u : BesovSpace F φ s p q) (m : ℕ) (s' : ℝ) (q' : ℝ≥0∞) :
-    (u.lowPass m : 𝓢'(E, F)).MemBesov φ s' p q' := by
-  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
-  obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
-  obtain ⟨x, hx, -⟩ := hC s' (m + L) (u.lowPass m) fun k hk ↦ hL u m k hk
-  -- Only the blocks of index below `m + L` are nonzero, so the weighted blocks lie in `ℓ⁰`.
-  refine (memBesov_iff.2 ⟨x.block, fun k ↦ by rw [coe_block, hx], memℓp_zero ?_⟩).mono le_rfl
-    bot_le
-  refine (Set.finite_lt_nat (m + L)).subset fun k hk ↦ Set.mem_ofPred.2 <| not_le.1 fun hkL ↦ ?_
-  have h0 : x.block k = 0 := Lp.toTemperedDistribution_injective <| by
-    simp only [coe_block, hx, hL u m k hkL, Lp.toTemperedDistribution_zero]
-  simp [h0] at hk
-
 variable [Fact (1 ≤ q)]
 
 /-- **The weighted blocks of `u - S_m u` lie below a tail of those of `u`.** With `L` the
@@ -108,10 +90,9 @@ private theorem exists_norm_sub_le_norm_tail (u : BesovSpace F φ s p q) :
       ∀ (N : ℕ) (v : BesovSpace F φ s p q), v.toDistr = u.lowPass (N + 1) →
         ‖u - v‖ ≤ (1 + K) *
           ‖a - ∑ i ∈ Finset.range (N + 1 - L), lp.single q i (a i)‖ := by
-  obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+  obtain ⟨L, hL⟩ := exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass (F := F) (φ := φ)
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hK0 : 0 ≤ K := integral_nonneg fun _ ↦ norm_nonneg _
-  have hK := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (p := p)
   obtain ⟨a, ha, -⟩ := exists_lp_eq_rpow_mul_norm_block_and_norm_le u
   refine ⟨L, K, a, fun N v hv ↦ ?_⟩
   set n := N + 1 - L
@@ -126,25 +107,16 @@ private theorem exists_norm_sub_le_norm_tail (u : BesovSpace F φ s p q) :
   obtain ⟨x, hx, hxb⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq
     (u - v).block ((1 + K) • t) (fun k ↦ (coe_block (u - v) k).symm) fun k ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, ht]
-      -- The block `Δₖ v = S_{N+1} Δₖ u` is the `Lᵖ` function `g`.
-      obtain ⟨g, hg, hgu⟩ := hK N (u.block k)
-      have hvk : v.block k = g := Lp.toTemperedDistribution_injective <| by
-        simp only [coe_block, hv, coe_lowPass, map_sum, ← hg]
-        exact Finset.sum_congr rfl fun j _ ↦ littlewoodPaleyBlock_comm φ k j u.toDistr
-      rw [block_sub, hvk]
+      obtain ⟨h0, hle⟩ := hL u v N k hv
       rcases le_or_gt (k + L) N with hkN | hkN
-      · -- Low frequencies: `S_{N+1}` fixes `Δₖ u`.
-        have hgk : g = u.block k := Lp.toTemperedDistribution_injective <| by
-          simp only [← hg, coe_block]
-          exact (hL k N).1 hkN u.toDistr
+      · -- Low frequencies: the block of `u - v` vanishes.
         have hak : 0 ≤ a k := by rw [ha]; positivity
-        rw [hgk, sub_self, norm_zero, mul_zero]
+        rw [h0 hkN, norm_zero, mul_zero]
         exact mul_nonneg (by linarith) (by split_ifs <;> simp [hak])
       · -- High frequencies: the weighted block of `u - v` is at most `(1 + K)` times that of `u`.
         simp only [show n ≤ k by omega, ↓reduceIte, ha]
-        calc 2 ^ (s * k) * ‖u.block k - g‖ ≤ 2 ^ (s * k) * ((1 + K) * ‖u.block k‖) := by
+        calc 2 ^ (s * k) * ‖(u - v).block k‖ ≤ 2 ^ (s * k) * ((1 + K) * ‖u.block k‖) := by
               gcongr
-              exact (norm_sub_le _ _).trans (by linarith)
           _ = (1 + K) * (2 ^ (s * k) * ‖u.block k‖) := by ring
   rw [ext hx, norm_smul, Real.norm_of_nonneg (by linarith)] at hxb
   exact hxb

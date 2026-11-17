@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.BesselPotential.Besov
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.FunctionalSpaces.BesovSpace.Paraproduct
 
 /-!
 # The little Besov spaces
@@ -166,49 +167,32 @@ theorem block_mem_closure_of_mem_littleBesov {u : BesovSpace F φ s p ∞}
   exact ⟨_, (block_toBesovSpaceCLM f j).symm⟩
 
 /-- **Truncation.** If the weighted blocks of `u` tend to zero, then `u` is within `ε` of the
-low-pass truncation `S_N u = ∑_{j ≤ N} Δⱼ u` for some `N`: away from the transition range the
-blocks of `u - S_N u` are either zero or the small high-frequency blocks of `u`, and in the
-transition range they are at most `(1 + K)` times those of `u`. -/
-private theorem exists_toDistr_eq_sum_block_and_norm_sub_le {u : BesovSpace F φ s p ∞}
+low-pass truncation `S_{N+1} u = ∑_{j ≤ N} Δⱼ u` (`TauCeti.BesovSpace.lowPass`) for some `N`: away
+from the transition range the blocks of `u - S_{N+1} u` are either zero or the small
+high-frequency blocks of `u`, and in the transition range they are at most `(1 + K)` times those
+of `u`. -/
+private theorem exists_toDistr_eq_lowPass_and_norm_sub_le {u : BesovSpace F φ s p ∞}
     (hdecay : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0)) {ε : ℝ} (hε : 0 < ε) :
-    ∃ N : ℕ, ∃ v : BesovSpace F φ s p ∞,
-      v.toDistr = ((∑ j ∈ Finset.range (N + 1), u.block j : Lp F p (volume : Measure E)) :
-        𝓢'(E, F)) ∧ ‖u - v‖ ≤ ε := by
-  obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+    ∃ N : ℕ, ∃ v : BesovSpace F φ s p ∞, v.toDistr = u.lowPass (N + 1) ∧ ‖u - v‖ ≤ ε := by
+  obtain ⟨L, hL⟩ := exists_block_sub_eq_zero_and_norm_le_of_toDistr_eq_lowPass (F := F) (φ := φ)
+  obtain ⟨L', hL'⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
   set K : ℝ := ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ ξ : ℂ)) x‖
   have hK0 : 0 ≤ K := integral_nonneg fun _ ↦ norm_nonneg _
-  have hK := exists_sum_littlewoodPaleyBlock_eq_and_norm_le (F := F) φ (p := p)
   obtain ⟨C, -, hC⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq_zero F φ
   -- Past `N₀` the weighted blocks are at most `ε / (1 + K)`.
   obtain ⟨N₀, hN₀⟩ := Metric.tendsto_atTop.1 hdecay (ε / (1 + K)) (by positivity)
   set N := N₀ + L
-  set w : Lp F p (volume : Measure E) := ∑ j ∈ Finset.range (N + 1), u.block j
-  have hw : (w : 𝓢'(E, F)) =
-      ∑ j ∈ Finset.range (N + 1), littlewoodPaleyBlock F φ j u.toDistr := by
-    simp only [w, Lp.toTemperedDistribution_sum, coe_block]
-  obtain ⟨v, hvw, -⟩ := hC s (N + L) w fun k hk ↦ by
-    rw [hw]
-    exact (hL k N).2 hk u.toDistr
+  obtain ⟨v, hvw, -⟩ := hC s (N + 1 + L') (u.lowPass (N + 1)) fun k hk ↦ hL' u (N + 1) k hk
   refine ⟨N, v, hvw, (norm_eq_ciSup _).trans_le (ciSup_le fun k ↦ ?_)⟩
-  -- The block `Δₖ v = S_N Δₖ u` is the `Lᵖ` function `g`.
-  obtain ⟨g, hg, hgu⟩ := hK N (u.block k)
-  have hvk : v.block k = g := Lp.toTemperedDistribution_injective <| by
-    simp only [coe_block, hvw, hw, map_sum, ← hg]
-    exact Finset.sum_congr rfl fun j _ ↦ littlewoodPaleyBlock_comm φ k j u.toDistr
-  rw [block_sub, hvk]
+  obtain ⟨h0, hle⟩ := hL u v N k hvw
   rcases le_or_gt (k + L) N with hkN | hkN
-  · -- Low frequencies: `S_N` fixes `Δₖ u`.
-    have hgk : g = u.block k := Lp.toTemperedDistribution_injective <| by
-      simp only [← hg, coe_block]
-      exact (hL k N).1 hkN u.toDistr
-    rw [hgk, sub_self, norm_zero, mul_zero]
+  · -- Low frequencies: the block of `u - v` vanishes.
+    rw [h0 hkN, norm_zero, mul_zero]
     positivity
   · -- High frequencies: the weighted block of `u` is small.
     have hak := hN₀ k (by omega)
     rw [Real.dist_0_eq_abs, abs_of_nonneg (by positivity)] at hak
-    calc 2 ^ (s * k) * ‖u.block k - g‖ ≤ 2 ^ (s * k) * ((1 + K) * ‖u.block k‖) := by
-          gcongr
-          exact (norm_sub_le _ _).trans (by linarith)
+    calc 2 ^ (s * k) * ‖(u - v).block k‖ ≤ 2 ^ (s * k) * ((1 + K) * ‖u.block k‖) := by gcongr
       _ = (1 + K) * (2 ^ (s * k) * ‖u.block k‖) := by ring
       _ ≤ (1 + K) * (ε / (1 + K)) := by gcongr
       _ = ε := by field_simp
@@ -264,17 +248,16 @@ theorem mem_littleBesov_of_tendsto {u : BesovSpace F φ s p ∞}
     (hdecay : Tendsto (fun j : ℕ ↦ 2 ^ (s * j) * ‖u.block j‖) atTop (𝓝 0))
     (hblock : ∀ j, u.block j ∈ closure (Set.range fun f : 𝓢(E, F) ↦ f.toLp p)) :
     u ∈ littleBesov F φ s p := by
-  obtain ⟨L, hL⟩ := exists_sum_littlewoodPaleyBlock_littlewoodPaleyBlock (F := F) φ
+  obtain ⟨L, hL⟩ := exists_littlewoodPaleyBlock_lowPass_eq_zero (F := F) (φ := φ)
   -- The `Lᵖ` closure of the Schwartz functions is a subspace.
   have hS := SchwartzMap.closure_range_toLp_eq (F := F) (μ := (volume : Measure E)) p
   rw [← SetLike.mem_coe, ← isClosed_littleBesov.closure_eq]
   refine Metric.mem_closure_iff.2 fun ε hε ↦ ?_
-  obtain ⟨N, v, hvw, huv⟩ := exists_toDistr_eq_sum_block_and_norm_sub_le hdecay (half_pos hε)
-  refine ⟨v, mem_littleBesov_of_toDistr_eq hvw ?_ (M := N + L) fun k hk ↦ ?_, ?_⟩
-  · rw [hS]
+  obtain ⟨N, v, hvw, huv⟩ := exists_toDistr_eq_lowPass_and_norm_sub_le hdecay (half_pos hε)
+  refine ⟨v, mem_littleBesov_of_toDistr_eq hvw ?_ (M := N + 1 + L) fun k hk ↦ hL u (N + 1) k hk,
+    ?_⟩
+  · rw [hS, lowPass_eq_sum]
     exact Submodule.sum_mem _ fun j _ ↦ by rw [← SetLike.mem_coe, ← hS]; exact hblock j
-  · simp only [Lp.toTemperedDistribution_sum, coe_block]
-    exact (hL k N).2 hk u.toDistr
   · rw [dist_eq_norm]
     linarith
 
