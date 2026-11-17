@@ -308,7 +308,7 @@ private theorem two_mul_bilinInterp_le_of_penalizedConvex {X : Type*} [PseudoMet
   simp only [gronwallBound_K0, zero_mul, add_zero] at hgr
   have hG0 : G 0 = dist (U 0) (V 0) ^ 2 / 2 := by
     simp only [G, mul_zero, exp_zero, one_mul,
-      gridBilinearInterpolant_zero (NNReal.coe_pos.2 hτ).ne' (NNReal.coe_pos.2 hη).ne',
+      gridBilinearInterpolant_apply_zero (NNReal.coe_pos.2 hτ).ne' (NNReal.coe_pos.2 hη).ne',
       energyPrim_zero (τ := τ) hτ, energyPrim_zero (τ := η) hη, sub_zero, halfDistSq]
   have hcan : exp (K * t) * exp (-K * t) = 1 := by rw [← exp_add]; simp [neg_mul]
   have hmul := mul_le_mul_of_nonneg_left (by

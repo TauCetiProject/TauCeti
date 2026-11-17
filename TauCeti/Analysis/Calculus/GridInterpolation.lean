@@ -48,10 +48,12 @@ Using the cell barycentric weight `TauCeti.stepWeight τ n t = ((n + 1) τ - t) 
 * `TauCeti.continuousOn_piecewiseStep`, `TauCeti.hasDerivWithinAt_piecewiseStep_iff`: continuity
   and right-hand derivative of `piecewiseStep` on `[0, ∞)`.
 * `TauCeti.continuousOn_gridLinearInterpolant`, `TauCeti.hasDerivWithinAt_gridLinearInterpolant`:
-  continuity and right-hand derivative of `gridLinearInterpolant` on `[0, ∞)`.
+  continuity and right-hand derivative of `gridLinearInterpolant` on `[0, ∞)`, alongside its
+  linearity lemmas (`gridLinearInterpolant_add`, `gridLinearInterpolant_smul`, etc.).
 * `TauCeti.continuousOn_gridBilinearInterpolant`,
   `TauCeti.hasDerivWithinAt_gridBilinearInterpolant_diag`: joint continuity on `[0, ∞) × [0, ∞)`
-  and diagonal right-hand derivative of `gridBilinearInterpolant`.
+  and diagonal right-hand derivative of `gridBilinearInterpolant`, alongside its linearity lemmas
+  (`gridBilinearInterpolant_add`, `gridBilinearInterpolant_smul`, etc.).
 -/
 
 public section
@@ -259,15 +261,51 @@ theorem gridLinearInterpolant_natCast_mul {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ �
 
 /-- At `0` (with `τ ≠ 0`), `gridLinearInterpolant τ c` takes the value `c 0`. -/
 @[simp]
-theorem gridLinearInterpolant_zero {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) :
+theorem gridLinearInterpolant_apply_zero {τ : ℝ} (hτ : τ ≠ 0) (c : ℕ → E) :
     gridLinearInterpolant τ c 0 = c 0 := by
   simpa using gridLinearInterpolant_natCast_mul hτ c 0
+
+/-- The piecewise linear interpolant of the zero sequence is `0`. -/
+@[simp]
+theorem gridLinearInterpolant_zero (τ t : ℝ) :
+    gridLinearInterpolant τ (0 : ℕ → E) t = 0 := by
+  simp [gridLinearInterpolant_def]
 
 /-- The piecewise linear interpolant of a constant sequence is constant. -/
 @[simp]
 theorem gridLinearInterpolant_const (τ : ℝ) (x : E) (t : ℝ) :
     gridLinearInterpolant τ (fun _ ↦ x) t = x := by
   rw [gridLinearInterpolant_def, ← add_smul, add_sub_cancel, one_smul]
+
+/-- `gridLinearInterpolant τ` is additive in the interpolated sequence. -/
+@[simp]
+theorem gridLinearInterpolant_add (τ : ℝ) (c d : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (c + d) t =
+      gridLinearInterpolant τ c t + gridLinearInterpolant τ d t := by
+  simp only [gridLinearInterpolant_def, Pi.add_apply, smul_add]
+  exact add_add_add_comm _ _ _ _
+
+/-- Pointwise form of `gridLinearInterpolant_add`. -/
+@[simp]
+theorem gridLinearInterpolant_fun_add (τ : ℝ) (c d : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ c n + d n) t =
+      gridLinearInterpolant τ c t + gridLinearInterpolant τ d t := by
+  simpa only [Pi.add_def] using gridLinearInterpolant_add τ c d t
+
+/-- `gridLinearInterpolant τ` commutes with scalar multiplication by any action commuting with
+`ℝ`. -/
+@[simp]
+theorem gridLinearInterpolant_smul {R : Type*} [DistribSMul R E] [SMulCommClass ℝ R E]
+    (τ : ℝ) (r : R) (c : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (r • c) t = r • gridLinearInterpolant τ c t := by
+  simp only [gridLinearInterpolant_def, Pi.smul_apply, smul_comm _ r, smul_add]
+
+/-- Pointwise form of `gridLinearInterpolant_smul`. -/
+@[simp]
+theorem gridLinearInterpolant_fun_smul {R : Type*} [DistribSMul R E] [SMulCommClass ℝ R E]
+    (τ : ℝ) (r : R) (c : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ r • c n) t = r • gridLinearInterpolant τ c t := by
+  simpa only [Pi.smul_def] using gridLinearInterpolant_smul τ r c t
 
 /-- On the closed cell `[n τ, (n + 1) τ]` with `τ > 0`, `gridLinearInterpolant τ c` is the affine
 combination of `c n` and `c (n + 1)` with weight `stepWeight τ n t`. -/
@@ -283,6 +321,58 @@ theorem continuousOn_gridLinearInterpolant [TopologicalSpace E] [ContinuousAdd E
   continuousOn_piecewiseStep hτ (fun _ ↦ by simp [hτ.ne']) fun _ ↦ by fun_prop
 
 end Module
+
+section Mul
+
+variable {A : Type*} [NonUnitalNonAssocSemiring A] [Module ℝ A]
+
+/-- `gridLinearInterpolant τ` commutes with left multiplication by a constant. -/
+@[simp]
+theorem gridLinearInterpolant_const_mul [SMulCommClass ℝ A A] (τ : ℝ) (r : A) (c : ℕ → A)
+    (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ r * c n) t = r * gridLinearInterpolant τ c t := by
+  simpa only [smul_eq_mul] using gridLinearInterpolant_fun_smul τ r c t
+
+/-- `gridLinearInterpolant τ` commutes with right multiplication by a constant. -/
+@[simp]
+theorem gridLinearInterpolant_mul_const [IsScalarTower ℝ A A] (τ : ℝ) (c : ℕ → A) (r : A)
+    (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ c n * r) t = gridLinearInterpolant τ c t * r := by
+  simp only [gridLinearInterpolant_def, add_mul, smul_mul_assoc]
+
+end Mul
+
+section Group
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- `gridLinearInterpolant τ` commutes with negation of the interpolated sequence. -/
+@[simp]
+theorem gridLinearInterpolant_neg (τ : ℝ) (c : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (-c) t = -gridLinearInterpolant τ c t := by
+  simpa only [neg_one_smul] using gridLinearInterpolant_smul τ (-1 : ℝ) c t
+
+/-- Pointwise form of `gridLinearInterpolant_neg`. -/
+@[simp]
+theorem gridLinearInterpolant_fun_neg (τ : ℝ) (c : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ -c n) t = -gridLinearInterpolant τ c t := by
+  simpa only [Pi.neg_def] using gridLinearInterpolant_neg τ c t
+
+/-- `gridLinearInterpolant τ` preserves subtraction of interpolated sequences. -/
+@[simp]
+theorem gridLinearInterpolant_sub (τ : ℝ) (c d : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (c - d) t =
+      gridLinearInterpolant τ c t - gridLinearInterpolant τ d t := by
+  simp only [sub_eq_add_neg, gridLinearInterpolant_add, gridLinearInterpolant_neg]
+
+/-- Pointwise form of `gridLinearInterpolant_sub`. -/
+@[simp]
+theorem gridLinearInterpolant_fun_sub (τ : ℝ) (c d : ℕ → E) (t : ℝ) :
+    gridLinearInterpolant τ (fun n ↦ c n - d n) t =
+      gridLinearInterpolant τ c t - gridLinearInterpolant τ d t := by
+  simpa only [Pi.sub_def] using gridLinearInterpolant_sub τ c d t
+
+end Group
 
 /-- For `τ > 0` and `t ≥ 0`, `gridLinearInterpolant τ c` has right-hand derivative
 `τ⁻¹ • (c (⌊t / τ⌋₊ + 1) - c ⌊t / τ⌋₊)` at `t`. -/
@@ -355,27 +445,65 @@ theorem gridBilinearInterpolant_natCast_mul {τ η : ℝ} (hτ : τ ≠ 0) (hη 
 /-- Along `s = 0` (with `τ ≠ 0`), `gridBilinearInterpolant τ η a` reduces to
 `gridLinearInterpolant η (a 0)`. -/
 @[simp]
-theorem gridBilinearInterpolant_zero_left {τ : ℝ} (hτ : τ ≠ 0) (η : ℝ) (a : ℕ → ℕ → E) (t : ℝ) :
+theorem gridBilinearInterpolant_apply_zero_left {τ : ℝ} (hτ : τ ≠ 0) (η : ℝ) (a : ℕ → ℕ → E)
+    (t : ℝ) :
     gridBilinearInterpolant τ η a 0 t = gridLinearInterpolant η (a 0) t := by
   simp [gridBilinearInterpolant_def, hτ]
 
 /-- Along `t = 0` (with `η ≠ 0`), `gridBilinearInterpolant τ η a` reduces to
 `gridLinearInterpolant τ (a · 0)`. -/
 @[simp]
-theorem gridBilinearInterpolant_zero_right (τ : ℝ) {η : ℝ} (hη : η ≠ 0) (a : ℕ → ℕ → E) (s : ℝ) :
+theorem gridBilinearInterpolant_apply_zero_right (τ : ℝ) {η : ℝ} (hη : η ≠ 0) (a : ℕ → ℕ → E)
+    (s : ℝ) :
     gridBilinearInterpolant τ η a s 0 = gridLinearInterpolant τ (a · 0) s := by
   simp [gridBilinearInterpolant_def, hη]
 
 /-- At `(0, 0)` (with `τ ≠ 0`, `η ≠ 0`), `gridBilinearInterpolant τ η a` recovers `a 0 0`. -/
-theorem gridBilinearInterpolant_zero {τ η : ℝ} (hτ : τ ≠ 0) (hη : η ≠ 0) (a : ℕ → ℕ → E) :
+theorem gridBilinearInterpolant_apply_zero {τ η : ℝ} (hτ : τ ≠ 0) (hη : η ≠ 0) (a : ℕ → ℕ → E) :
     gridBilinearInterpolant τ η a 0 0 = a 0 0 := by
   simp [hτ, hη]
+
+/-- The piecewise bilinear interpolant of the zero family is `0`. -/
+@[simp]
+theorem gridBilinearInterpolant_zero (τ η s t : ℝ) :
+    gridBilinearInterpolant τ η (0 : ℕ → ℕ → E) s t = 0 := by
+  simp [gridBilinearInterpolant_def]
 
 /-- The piecewise bilinear interpolant of a constant family is constant. -/
 @[simp]
 theorem gridBilinearInterpolant_const (τ η : ℝ) (x : E) (s t : ℝ) :
     gridBilinearInterpolant τ η (fun _ _ ↦ x) s t = x := by
   simp [gridBilinearInterpolant_def]
+
+/-- `gridBilinearInterpolant τ η` is additive in the interpolated family. -/
+@[simp]
+theorem gridBilinearInterpolant_add (τ η : ℝ) (a b : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (a + b) s t =
+      gridBilinearInterpolant τ η a s t + gridBilinearInterpolant τ η b s t := by
+  simp only [gridBilinearInterpolant_def, Pi.add_apply, gridLinearInterpolant_fun_add]
+
+/-- Pointwise form of `gridBilinearInterpolant_add`. -/
+@[simp]
+theorem gridBilinearInterpolant_fun_add (τ η : ℝ) (a b : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n k ↦ a n k + b n k) s t =
+      gridBilinearInterpolant τ η a s t + gridBilinearInterpolant τ η b s t := by
+  simp only [gridBilinearInterpolant_def, gridLinearInterpolant_fun_add]
+
+/-- `gridBilinearInterpolant τ η` commutes with scalar multiplication by any action commuting with
+`ℝ`. -/
+@[simp]
+theorem gridBilinearInterpolant_smul {R : Type*} [DistribSMul R E] [SMulCommClass ℝ R E]
+    (τ η : ℝ) (r : R) (a : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (r • a) s t = r • gridBilinearInterpolant τ η a s t := by
+  simp only [gridBilinearInterpolant_def, Pi.smul_apply, gridLinearInterpolant_fun_smul]
+
+/-- Pointwise form of `gridBilinearInterpolant_smul`. -/
+@[simp]
+theorem gridBilinearInterpolant_fun_smul {R : Type*} [DistribSMul R E] [SMulCommClass ℝ R E]
+    (τ η : ℝ) (r : R) (a : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n k ↦ r • a n k) s t =
+      r • gridBilinearInterpolant τ η a s t := by
+  simp only [gridBilinearInterpolant_def, gridLinearInterpolant_fun_smul]
 
 /-- Swapping the two coordinates commutes with `gridBilinearInterpolant`. -/
 theorem gridBilinearInterpolant_swap (τ η : ℝ) (a : ℕ → ℕ → E) (s t : ℝ) :
@@ -435,6 +563,60 @@ theorem continuousOn_gridBilinearInterpolant [TopologicalSpace E] [ContinuousAdd
     fun _ hp ↦ gridBilinearInterpolant_eq_of_mem_Icc hτ hη a hp.1 hp.2
 
 end Module
+
+section Mul
+
+variable {A : Type*} [NonUnitalNonAssocSemiring A] [Module ℝ A]
+
+/-- `gridBilinearInterpolant τ η` commutes with left multiplication by a constant. -/
+@[simp]
+theorem gridBilinearInterpolant_const_mul [SMulCommClass ℝ A A] (τ η : ℝ) (r : A)
+    (a : ℕ → ℕ → A) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n k ↦ r * a n k) s t =
+      r * gridBilinearInterpolant τ η a s t := by
+  simpa only [smul_eq_mul] using gridBilinearInterpolant_fun_smul τ η r a s t
+
+/-- `gridBilinearInterpolant τ η` commutes with right multiplication by a constant. -/
+@[simp]
+theorem gridBilinearInterpolant_mul_const [IsScalarTower ℝ A A] (τ η : ℝ) (a : ℕ → ℕ → A)
+    (r : A) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n k ↦ a n k * r) s t =
+      gridBilinearInterpolant τ η a s t * r := by
+  simp only [gridBilinearInterpolant_def, gridLinearInterpolant_mul_const]
+
+end Mul
+
+section Group
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- `gridBilinearInterpolant τ η` commutes with negation of the interpolated family. -/
+@[simp]
+theorem gridBilinearInterpolant_neg (τ η : ℝ) (a : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (-a) s t = -gridBilinearInterpolant τ η a s t := by
+  simpa only [neg_one_smul] using gridBilinearInterpolant_smul τ η (-1 : ℝ) a s t
+
+/-- Pointwise form of `gridBilinearInterpolant_neg`. -/
+@[simp]
+theorem gridBilinearInterpolant_fun_neg (τ η : ℝ) (a : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n k ↦ -a n k) s t = -gridBilinearInterpolant τ η a s t := by
+  simp only [gridBilinearInterpolant_def, gridLinearInterpolant_fun_neg]
+
+/-- `gridBilinearInterpolant τ η` preserves subtraction of interpolated families. -/
+@[simp]
+theorem gridBilinearInterpolant_sub (τ η : ℝ) (a b : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (a - b) s t =
+      gridBilinearInterpolant τ η a s t - gridBilinearInterpolant τ η b s t := by
+  simp only [sub_eq_add_neg, gridBilinearInterpolant_add, gridBilinearInterpolant_neg]
+
+/-- Pointwise form of `gridBilinearInterpolant_sub`. -/
+@[simp]
+theorem gridBilinearInterpolant_fun_sub (τ η : ℝ) (a b : ℕ → ℕ → E) (s t : ℝ) :
+    gridBilinearInterpolant τ η (fun n k ↦ a n k - b n k) s t =
+      gridBilinearInterpolant τ η a s t - gridBilinearInterpolant τ η b s t := by
+  simp only [gridBilinearInterpolant_def, gridLinearInterpolant_fun_sub]
+
+end Group
 
 section Normed
 
