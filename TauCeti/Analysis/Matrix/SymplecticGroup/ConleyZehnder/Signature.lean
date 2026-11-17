@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Lie.Subgroup.Symplectic
 public import TauCeti.LinearAlgebra.Matrix.Signature
 import TauCeti.Analysis.Matrix.Exponential.Spectrum
 import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
-import TauCeti.Analysis.Matrix.L2OpNorm
+import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -59,13 +59,6 @@ public section
 
 open Matrix NormedSpace Set
 open scoped unitInterval Matrix.Norms.L2Operator
-
-/-- Multiplying by the canonical skew-symmetric matrix `J` preserves the `ℓ²` operator norm, as `J`
-is unitary. -/
-@[simp]
-theorem Matrix.l2_opNorm_J_mul {l 𝕜 : Type*} [Fintype l] [DecidableEq l] [RCLike 𝕜]
-    (S : Matrix (l ⊕ l) (l ⊕ l) 𝕜) : ‖J l 𝕜 * S‖ = ‖S‖ :=
-  CStarRing.norm_mem_unitary_mul S (J_mem_unitaryGroup l 𝕜)
 
 namespace TauCeti
 
@@ -117,8 +110,8 @@ private theorem hasDerivAt_cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     rw [zero_smul, NormedSpace.exp_zero, sub_self, Matrix.mul_zero]
   have hi : Ring.inverse (1 + exp ((0 : ℝ) • X)) = (2⁻¹ : ℝ) • 1 := by
     rw [zero_smul, NormedSpace.exp_zero, ← nonsing_inv_eq_ringInverse, inv_eq_right_inv hhalf]
-  rw [hz, Matrix.zero_mul, add_zero, hi, hX, Matrix.mul_smul, Matrix.mul_one, Matrix.mul_neg,
-    ← Matrix.mul_assoc, J_squared, neg_mul, Matrix.one_mul, neg_neg]
+  rw [hz, hi]
+  simp [hX, ← Matrix.mul_assoc, J_squared]
 
 /-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` is continuous where
 `1 + exp (t J S)` is invertible. -/
@@ -152,9 +145,8 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
     isUnit_exp_sub_one ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
       (by rw [norm_smul_J_mul, abs_of_nonneg ht.1]
           nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
-  rw [det_mul, det_mul]
-  exact mul_ne_zero (mul_ne_zero (isUnit_det_J n ℝ).ne_zero
-    ((isUnit_iff_isUnit_det _).1 (IsUnit.sub_iff.1 h1)).ne_zero)
+  rw [det_mul]
+  exact mul_ne_zero ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero
     ((isUnit_iff_isUnit_det _).1 (isUnit_nonsing_inv_iff.2
       (isUnit_one_add_exp_smul_J_mul hSπ ht))).ne_zero
 

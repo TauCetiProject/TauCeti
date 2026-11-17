@@ -201,9 +201,9 @@ theorem diagonalStraightening_mul_graphFrame_eq_mul {A : Matrix (n ⊕ n) (n ⊕
         ((√2 : ℝ)⁻¹ • (1 + A)).map ((↑) : ℝ → ℂ) := by
   have hP : IsUnit (1 + A).det := (isUnit_iff_isUnit_det _).1 h1
   rw [diagonalStraightening_mul_graphFrame, Matrix.map_smul' _ _ _ Complex.ofReal_mul,
-    Matrix.mul_smul, Matrix.add_mul, Matrix.one_mul, Matrix.smul_mul, ← map_ofReal_mul,
-    Matrix.mul_assoc,
-    nonsing_inv_mul _ hP, Matrix.mul_one, Complex.ofReal_inv]
+    Complex.ofReal_inv, Matrix.mul_smul]
+  congr 1
+  simp [Matrix.add_mul, ← map_ofReal_mul, Matrix.mul_assoc, nonsing_inv_mul _ hP]
 
 /-- The diagonal straightening of the graph frame of the identity, whose columns span the
 diagonal, is the real matrix `√2 • 1`. -/
@@ -301,12 +301,9 @@ theorem souriau_graphUnitaryFrame_eq_cayley (A : GLSymplectic n ℝ)
   have hlag : ((F : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ * F).map Complex.im = 0 := by
     have hFF : (F : Matrix (n ⊕ n) (n ⊕ n) ℂ)ᴴ * F = (1 + B * B).map ((↑) : ℝ → ℂ) := by
       rw [hF, conjTranspose_add, conjTranspose_one, conjTranspose_smul, hBc.eq, Complex.star_def,
-        Complex.conj_I, Matrix.map_add _ Complex.ofReal_add, Matrix.map_one _ Complex.ofReal_zero
-          Complex.ofReal_one]
-      rw [map_ofReal_mul B B]
-      rw [Matrix.add_mul, Matrix.one_mul, Matrix.mul_add, Matrix.mul_one, Matrix.smul_mul,
-        Matrix.mul_smul, smul_smul, neg_mul, Complex.I_mul_I, neg_neg, one_smul, neg_smul]
-      abel
+        Complex.conj_I]
+      simp [Matrix.add_mul, Matrix.mul_add, smul_smul, Matrix.map_add _ Complex.ofReal_add,
+        map_ofReal_mul]
     rw [hFF]
     ext i j
     simp
@@ -412,11 +409,9 @@ theorem not_isRoot_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n �
   have hIm : ((G : Matrix (n ⊕ n) (n ⊕ n) ℂ) * O.map ((↑) : ℝ → ℂ)).map Complex.im =
       (G : Matrix (n ⊕ n) (n ⊕ n) ℂ).map Complex.im * O :=
     map_mul_algebraMap Complex.imLm O _
-  rw [isRoot_one_charpoly_souriau_iff, ← hU, hO, hIm, hImG, det_mul, det_smul,
-    det_mul]
+  rw [isRoot_one_charpoly_souriau_iff, ← hU, hO, hIm, hImG, det_mul, det_smul]
   exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (inv_ne_zero (Real.sqrt_pos.2 two_pos).ne'))
-    (mul_ne_zero (isUnit_det_J n ℝ).ne_zero
-      ((isUnit_iff_isUnit_det _).1 (IsUnit.sub_iff.1 h1)).ne_zero)) hdetO
+    ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero) hdetO
 
 /-- **The zero axiom.** A path of symplectic matrices none of which has the eigenvalue `1` has
 Conley–Zehnder index zero. -/
