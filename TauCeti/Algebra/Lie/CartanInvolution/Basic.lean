@@ -15,6 +15,8 @@ public import TauCeti.Algebra.Lie.Subalgebra.Fixed.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.PosDef
 import TauCeti.Algebra.Lie.InvariantForm.Positive
 import TauCeti.Algebra.Lie.Killing.Basic
+import TauCeti.Algebra.Lie.Reductive.Fixed
+import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.LinearAlgebra.BilinearForm.Basic
 import TauCeti.LinearAlgebra.Eigenspace.Semisimple
@@ -68,6 +70,8 @@ involution.
 
 ## Main results
 
+* `LieEquiv.map_maximal_abelian_cartanP`: intertwining Lie equivalences transport maximal abelian
+  subspaces of `θ.cartanP`.
 * `LieEquiv.isCompl_fixedSubalgebra_cartanP_of_involutive`: the Cartan decomposition `L = 𝔨 ⊕ 𝔭`.
 * `LieEquiv.IsCartanInvolution.isKilling`, `LieEquiv.IsCartanInvolution.finite`,
   `LieEquiv.IsCartanInvolution.isSemisimple`: a Lie algebra admitting a Cartan involution is
@@ -147,6 +151,39 @@ theorem map_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'} (e : L 
 theorem cartanP_conj (θ : L ≃ₗ⁅R⁆ L) (e : L ≃ₗ⁅R⁆ L') :
     (e.symm.trans (θ.trans e)).cartanP = θ.cartanP.map (e : L →ₗ[R] L') :=
   (map_cartanP e fun x ↦ by simp).symm
+
+/-- An intertwining Lie equivalence `e : L ≃ₗ⁅R⁆ L'` maps maximal abelian subspaces of
+`θ.cartanP` to maximal abelian subspaces of `θ'.cartanP`. -/
+theorem map_maximal_abelian_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'}
+    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, θ' (e x) = e (θ x)) {𝔞 : Submodule R L}
+    (h𝔞 : Maximal
+      (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞) :
+    Maximal
+      (fun 𝔟 : Submodule R L' ↦ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
+      (𝔞.map (e : L →ₗ[R] L')) := by
+  have hmapP : θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := map_cartanP e he
+  refine ⟨⟨?_, ?_⟩, fun 𝔟' ⟨h𝔟'P, h𝔟'ab⟩ hle ↦ ?_⟩
+  · rw [← hmapP]
+    exact Submodule.map_mono h𝔞.prop.1
+  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+    simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.map_lie, h𝔞.prop.2 x hx y hy,
+      map_zero]
+  · let 𝔟 : Submodule R L := 𝔟'.map (e.symm : L' →ₗ[R] L)
+    have he_symm : ∀ y, θ (e.symm y) = e.symm (θ' y) := fun y ↦ e.injective <| by
+      simp only [coe_toLieHom]
+      rw [← he, e.apply_symm_apply, e.apply_symm_apply]
+    have h𝔟P : 𝔟 ≤ θ.cartanP := by
+      rw [← map_cartanP e.symm he_symm]
+      exact Submodule.map_mono h𝔟'P
+    have h𝔟ab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0 := by
+      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
+      simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.symm.map_lie, h𝔟'ab x hx y hy,
+        map_zero]
+    have h𝔞_le : 𝔞 ≤ 𝔟 := fun x hx ↦
+      ⟨e x, hle ⟨x, hx, rfl⟩, by simp⟩
+    have h𝔟_le : 𝔟 ≤ 𝔞 := h𝔞.le_of_ge ⟨h𝔟P, h𝔟ab⟩ h𝔞_le
+    intro y hy
+    refine ⟨e.symm y, h𝔟_le ⟨y, hy, rfl⟩, by simp⟩
 
 /-- The inverse of a Lie automorphism has the same `-1`-eigenspace. -/
 @[simp]
@@ -255,16 +292,18 @@ section InvertibleTwo
 
 variable [Invertible (2 : R)]
 
+private theorem eq_zero_of_eq_neg {M : Type*} [AddCommGroup M] [Module R M] {x : M}
+    (hx : x = -x) : x = 0 :=
+  (isUnit_of_invertible (2 : R)).smul_eq_zero.mp <| by
+    rw [two_smul]
+    exact eq_neg_iff_add_eq_zero.mp hx
+
 /-- The identity automorphism has trivial `-1`-eigenspace when `2` is invertible. -/
 @[simp]
 theorem cartanP_refl : (LieEquiv.refl : L ≃ₗ⁅R⁆ L).cartanP = ⊥ := by
   ext x
   simp only [mem_cartanP, refl_apply, Submodule.mem_bot]
-  refine ⟨fun hx ↦ ?_, fun hx ↦ by simp [hx]⟩
-  have h2 : (2 : R) • x = 0 := by
-    rw [two_smul]
-    exact eq_neg_iff_add_eq_zero.mp hx
-  simpa [smul_smul] using congrArg ((⅟(2 : R)) • ·) h2
+  exact ⟨eq_zero_of_eq_neg (R := R), fun hx ↦ by simp [hx]⟩
 
 /-- **The Cartan decomposition `L = 𝔨 ⊕ 𝔭`**: for an involutive Lie automorphism over a ring
 where `2` is invertible, the fixed subalgebra and `-1`-eigenspace are complementary submodules. -/
@@ -275,11 +314,7 @@ theorem isCompl_fixedSubalgebra_cartanP_of_involutive {θ : L ≃ₗ⁅R⁆ L}
   · rw [Submodule.disjoint_def]
     intro x hxk hxp
     have h1 : θ x = x := LieHom.mem_fixedSubalgebra.mp hxk
-    have h2 : θ x = -x := mem_cartanP.mp hxp
-    have htwo : (2 : R) • x = 0 := by
-      rw [two_smul]
-      exact eq_neg_iff_add_eq_zero.mp (h1.symm.trans h2)
-    simpa [smul_smul] using congrArg ((⅟(2 : R)) • ·) htwo
+    exact eq_zero_of_eq_neg (R := R) (h1.symm.trans (mem_cartanP.mp hxp))
   · rw [codisjoint_iff, eq_top_iff]
     intro x _
     have hk : ⅟(2 : R) • (x + θ x) ∈ θ.toLieHom.fixedSubalgebra.toSubmodule := by
@@ -298,15 +333,11 @@ theorem killingForm_eq_zero_of_mem_fixedSubalgebra_of_mem_cartanP {θ : L ≃ₗ
     (hx : x ∈ θ.toLieHom.fixedSubalgebra) (hy : y ∈ θ.cartanP) :
     killingForm R L x y = 0 := by
   have hx' : θ x = x := LieHom.mem_fixedSubalgebra.mp hx
-  have hneg : killingForm R L x y = -killingForm R L x y := by
-    calc killingForm R L x y = killingForm R L (θ x) (θ y) :=
-          (LieAlgebra.killingForm_of_equiv_apply θ x y).symm
-      _ = killingForm R L x (-y) := by rw [hx', mem_cartanP.mp hy]
-      _ = -killingForm R L x y := map_neg _ y
-  have h2 : (2 : R) * killingForm R L x y = 0 := by
-    rw [two_mul]
-    exact eq_neg_iff_add_eq_zero.mp hneg
-  simpa [mul_assoc] using congrArg (⅟(2 : R) * ·) h2
+  refine eq_zero_of_eq_neg (R := R) ?_
+  calc killingForm R L x y = killingForm R L (θ x) (θ y) :=
+        (LieAlgebra.killingForm_of_equiv_apply θ x y).symm
+    _ = killingForm R L x (-y) := by rw [hx', mem_cartanP.mp hy]
+    _ = -killingForm R L x y := map_neg _ y
 
 /-- The fixed subalgebra and `θ.cartanP` are orthogonal for the Cartan form when `2` is
 invertible. -/
@@ -542,6 +573,21 @@ private theorem neg_killingForm_restrict_fixedSubalgebra_spec (hθ : θ.IsCartan
 
 end IsCartanInvolution
 
+/-- A nontrivial abelian Lie algebra admits no Cartan involution. -/
+theorem not_isCartanInvolution_of_isLieAbelian [IsLieAbelian L] [Nontrivial L]
+    (θ : L ≃ₗ⁅R⁆ L) :
+    ¬ θ.IsCartanInvolution := by
+  intro hθ
+  obtain ⟨x, hx⟩ := exists_ne (0 : L)
+  have had : LieAlgebra.ad R L x = 0 := by
+    ext y
+    exact trivial_lie_zero L L x y
+  have hkill : killingForm R L x (θ x) = 0 := by
+    rw [killingForm_apply_apply, had, LinearMap.zero_comp, map_zero]
+  have hpos := hθ.neg_killingForm_pos x hx
+  rw [hkill, neg_zero] at hpos
+  exact lt_irrefl 0 hpos
+
 end Predicate
 
 /-! ### Semisimplicity and compactness of `𝔨` over a field -/
@@ -586,16 +632,6 @@ theorem hasCentralRadical_fixedSubalgebra (hθ : θ.IsCartanInvolution) :
     hpos.anisotropic hinv
 
 end IsCartanInvolution
-
-/-- A nontrivial abelian Lie algebra over a partially ordered field admits no Cartan involution. -/
-theorem not_isCartanInvolution_of_isLieAbelian [IsLieAbelian L] [Nontrivial L]
-    (θ : L ≃ₗ⁅K⁆ L) :
-    ¬ θ.IsCartanInvolution := by
-  intro hθ
-  have := hθ.isKilling
-  have := hθ.finite
-  have hsub : Subsingleton L := (IsKilling.isLieAbelian_iff_subsingleton K L).mp inferInstance
-  exact not_subsingleton L hsub
 
 end Field
 
@@ -699,17 +735,7 @@ theorem IsReductiveCartanInvolution.conj {θ : L ≃ₗ⁅R⁆ L}
   involutive y := by simp [hθ.involutive _]
   derivedSeries_isCartanInvolution := by
     obtain ⟨θD, hθD_eq, hθD⟩ := hθ.derivedSeries_isCartanInvolution
-    let eD : derivedSeries R L 1 ≃ₗ⁅R⁆ derivedSeries R L' 1 :=
-      { toFun x :=
-          ⟨e x, LieIdeal.derivedSeries_map_le (f := e.toLieHom) 1 (LieIdeal.mem_map x.property)⟩
-        invFun y :=
-          ⟨e.symm y,
-            LieIdeal.derivedSeries_map_le (f := e.symm.toLieHom) 1 (LieIdeal.mem_map y.property)⟩
-        left_inv x := Subtype.ext (e.symm_apply_apply x)
-        right_inv y := Subtype.ext (e.apply_symm_apply y)
-        map_add' _ _ := Subtype.ext (map_add e _ _)
-        map_smul' _ _ := Subtype.ext (map_smul e _ _)
-        map_lie' := Subtype.ext (e.map_lie _ _) }
+    let eD := e.restrictDerivedSeries 1
     refine ⟨eD.symm.trans (θD.trans eD), fun y ↦ ?_, hθD.conj eD⟩
     simp [eD, hθD_eq]
 
@@ -770,38 +796,15 @@ theorem disjoint_cartanP_inf_center_derivedSeries (θ : L ≃ₗ⁅K⁆ L) :
 theorem sup_cartanP_inf_center_derivedSeries (θ : L ≃ₗ⁅K⁆ L) :
     (θ.cartanP ⊓ (center K L).toSubmodule) ⊔
       (θ.cartanP ⊓ (derivedSeries K L 1).toSubmodule) = θ.cartanP := by
-  have hc := LieSubmodule.isCompl_toSubmodule.mpr (TauCeti.isCompl_center_derivedSeries K L)
-  have hmemZ {z : L} (hz : z ∈ center K L) : θ z ∈ center K L := by
-    rw [LieModule.mem_maxTrivSubmodule] at hz ⊢
-    intro y
-    have h1 := congrArg θ (hz (θ.symm y))
-    simp only [θ.map_lie, apply_symm_apply, map_zero] at h1
-    exact h1
-  have hmemD {d : L} (hd : d ∈ derivedSeries K L 1) : θ d ∈ derivedSeries K L 1 :=
-    LieIdeal.derivedSeries_map_le (f := θ.toLieHom) 1 (LieIdeal.mem_map hd)
   refine le_antisymm (sup_le inf_le_left inf_le_left) fun x hx ↦ ?_
-  let a := Submodule.prodEquivOfIsCompl (center K L).toSubmodule
-    (derivedSeries K L 1).toSubmodule hc
-  obtain ⟨p, hp⟩ := a.surjective x
-  have hsum : (p.1 : L) + p.2 = x := by
-    simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hp
-  have hneg :
-      (⟨θ p.1, hmemZ p.1.property⟩, ⟨θ p.2, hmemD p.2.property⟩) = (-p.1, -p.2) := by
-    apply a.injective
-    calc
-      a (⟨θ p.1, hmemZ p.1.property⟩, ⟨θ p.2, hmemD p.2.property⟩)
-        = θ p.1 + θ p.2 := Submodule.coe_prodEquivOfIsCompl' _ _ _ _
-      _ = θ ((p.1 : L) + p.2) := (map_add θ _ _).symm
-      _ = -x := by rw [hsum, mem_cartanP.mp hx]
-      _ = -((p.1 : L) + p.2) := by rw [hsum]
-      _ = (-(p.1 : L)) + (-(p.2 : L)) := neg_add _ _
-      _ = a (-p.1, -p.2) := (Submodule.coe_prodEquivOfIsCompl' _ _ _ (-p.1, -p.2)).symm
-  have hz : (p.1 : L) ∈ θ.cartanP ⊓ (center K L).toSubmodule :=
-    ⟨mem_cartanP.mpr (congrArg (fun q ↦ (q.1 : L)) hneg), p.1.property⟩
-  have hd : (p.2 : L) ∈ θ.cartanP ⊓ (derivedSeries K L 1).toSubmodule :=
-    ⟨mem_cartanP.mpr (congrArg (fun q ↦ (q.2 : L)) hneg), p.2.property⟩
+  obtain ⟨⟨z, d⟩, ⟨hz, hd, hsum⟩, _⟩ :=
+    θ.existsUnique_center_add_derivedSeries_of_apply_eq_smul
+      (TauCeti.isCompl_center_derivedSeries K L) (c := (-1 : K))
+      (by simpa only [neg_one_smul] using mem_cartanP.mp hx)
   rw [← hsum]
-  exact Submodule.add_mem_sup hz hd
+  exact Submodule.add_mem_sup
+    ⟨mem_cartanP.mpr (by simpa only [neg_one_smul] using hz), z.property⟩
+    ⟨mem_cartanP.mpr (by simpa only [neg_one_smul] using hd), d.property⟩
 
 end ReductiveCartanP
 
@@ -816,22 +819,13 @@ theorem IsCartanInvolution.isReductiveCartanInvolution {θ : L ≃ₗ⁅K⁆ L}
   involutive := hθ.involutive
   derivedSeries_isCartanInvolution := by
     have := hθ.finite
-    have hmem {x : L} (hx : x ∈ derivedSeries K L 1) : θ x ∈ derivedSeries K L 1 :=
-      LieIdeal.derivedSeries_map_le (f := θ.toLieHom) 1 (LieIdeal.mem_map hx)
-    let θD : derivedSeries K L 1 ≃ₗ⁅K⁆ derivedSeries K L 1 :=
-      { toFun x := ⟨θ x, hmem x.property⟩
-        invFun x := ⟨θ x, hmem x.property⟩
-        left_inv x := Subtype.ext (hθ.involutive x)
-        right_inv x := Subtype.ext (hθ.involutive x)
-        map_add' _ _ := Subtype.ext (map_add θ _ _)
-        map_smul' _ _ := Subtype.ext (map_smul θ _ _)
-        map_lie' := Subtype.ext (θ.map_lie _ _) }
-    refine ⟨θD, fun _ ↦ rfl, ⟨fun x ↦ Subtype.ext (hθ.involutive x), fun x hx ↦ ?_⟩⟩
+    let θD := θ.restrictDerivedSeries 1
+    refine ⟨θD, fun x ↦ θ.coe_restrictDerivedSeries 1 x,
+      ⟨fun x ↦ Subtype.ext (by simp [θD, hθ.involutive x]), fun x hx ↦ ?_⟩⟩
     have hval : killingForm K (derivedSeries K L 1) x (θD x) = killingForm K L x (θ x) := by
       rw [LieIdeal.killingForm_eq]
-      exact (LinearMap.congr_fun
-        (LinearMap.BilinForm.restrict_apply (killingForm K L) (derivedSeries K L 1).toSubmodule
-          ⟨x.1, x.2⟩) ⟨θ x.1, hmem x.2⟩).trans (LinearMap.domRestrict_apply _ _ _)
+      change killingForm K L x (θD x) = killingForm K L x (θ x)
+      rw [θ.coe_restrictDerivedSeries]
     rw [hval]
     exact hθ.neg_killingForm_pos x (fun h ↦ hx (Subtype.ext h))
 

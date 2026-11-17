@@ -13,10 +13,14 @@ import Mathlib.LinearAlgebra.Projection
 /-!
 # Central and derived parts of fixed reductive Lie algebras
 
-An automorphism of a finite-dimensional reductive Lie algebra in characteristic zero preserves
-its centre and derived ideal. Consequently a fixed vector has a unique decomposition into a
-fixed central vector and a fixed vector of the ambient derived ideal. Addition gives a Lie
-algebra equivalence from the product of these two fixed subalgebras to the full fixed algebra.
+An automorphism of a Lie algebra preserves its centre and derived ideal. Whenever the Lie algebra
+splits as the direct sum of its centre and derived ideal — in particular, for every
+finite-dimensional reductive Lie algebra in characteristic zero — every eigenvector of the
+automorphism decomposes uniquely into a central eigenvector and a derived-ideal eigenvector with
+the same eigenvalue (`LieEquiv.existsUnique_center_add_derivedSeries_of_apply_eq_smul`).
+Specialising to eigenvalue `1` gives the unique decomposition of a fixed vector into a fixed
+central vector and a fixed vector of the ambient derived ideal, and addition gives a Lie algebra
+equivalence from the product of these two fixed subalgebras to the full fixed algebra.
 
 This keeps the fixed central summand separate from a presentation of the remaining fixed
 algebra. The latter is the fixed part of the **ambient** derived ideal, not by definition the
@@ -36,6 +40,55 @@ open LieAlgebra
 
 namespace LieEquiv
 
+section CommRing
+
+variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R L']
+
+/-- A Lie algebra equivalence maps central elements to central elements. -/
+theorem apply_mem_center (e : L ≃ₗ⁅R⁆ L') {z : L} (hz : z ∈ center R L) :
+    e z ∈ center R L' := by
+  rw [LieModule.mem_maxTrivSubmodule] at hz ⊢
+  intro y
+  obtain ⟨y, rfl⟩ := e.surjective y
+  simp only [coe_toLieHom]
+  rw [← e.map_lie, hz y, map_zero]
+
+/-- When a Lie algebra splits as the direct sum of its centre and its derived ideal, every
+eigenvector of a Lie algebra automorphism decomposes uniquely into a central eigenvector and a
+derived-ideal eigenvector with the same eigenvalue. -/
+theorem existsUnique_center_add_derivedSeries_of_apply_eq_smul (e : L ≃ₗ⁅R⁆ L)
+    (hc : IsCompl (center R L) (derivedSeries R L 1)) {c : R} {x : L} (hx : e x = c • x) :
+    ∃! p : (center R L) × derivedSeries R L 1,
+      e p.1 = c • p.1 ∧ e p.2 = c • p.2 ∧ (p.1 : L) + p.2 = x := by
+  let a := Submodule.prodEquivOfIsCompl (center R L).toSubmodule
+    (derivedSeries R L 1).toSubmodule (LieSubmodule.isCompl_toSubmodule.mpr hc)
+  obtain ⟨p, hp⟩ := a.surjective x
+  have hsum : (p.1 : L) + p.2 = x := by
+    simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hp
+  -- Uniqueness of the centre/derived decomposition makes both components `c`-eigenvectors.
+  have hz : e p.1 ∈ center R L := e.apply_mem_center p.1.property
+  have hd : e p.2 ∈ derivedSeries R L 1 :=
+    (LieIdeal.derivedSeries_map_le (f := e.toLieHom) 1) (LieIdeal.mem_map p.2.property)
+  have hsmul : (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = (c • p.1, c • p.2) := by
+    apply a.injective
+    calc
+      a (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = e p.1 + e p.2 :=
+        Submodule.coe_prodEquivOfIsCompl' _ _ _ _
+      _ = e ((p.1 : L) + p.2) := (map_add e _ _).symm
+      _ = c • x := by rw [hsum, hx]
+      _ = c • ((p.1 : L) + p.2) := by rw [hsum]
+      _ = (c • (p.1 : L)) + (c • (p.2 : L)) := smul_add c _ _
+      _ = a (c • p.1, c • p.2) :=
+        (Submodule.coe_prodEquivOfIsCompl' _ _ _ (c • p.1, c • p.2)).symm
+  refine ⟨p, ⟨congrArg (fun q => (q.1 : L)) hsmul,
+    congrArg (fun q => (q.2 : L)) hsmul, hsum⟩, ?_⟩
+  intro q hq
+  apply a.injective
+  simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hq.2.2.trans hsum.symm
+
+end CommRing
+
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] [HasCentralRadical K L]
 
@@ -45,36 +98,11 @@ theorem existsUnique_fixed_center_add_fixed_derivedSeries (e : L ≃ₗ⁅K⁆ L
     (x : e.toLieHom.fixedSubalgebra) :
     ∃! p : (center K L) × derivedSeries K L 1,
       e p.1 = p.1 ∧ e p.2 = p.2 ∧ (p.1 : L) + p.2 = x := by
-  have hc := LieSubmodule.isCompl_toSubmodule.mpr
-    (TauCeti.isCompl_center_derivedSeries K L)
-  let a := Submodule.prodEquivOfIsCompl (center K L).toSubmodule
-    (derivedSeries K L 1).toSubmodule hc
-  obtain ⟨p, hp⟩ := a.surjective (x : L)
-  have hsum : (p.1 : L) + p.2 = x := by
-    simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hp
-  -- Uniqueness of the centre/derived decomposition makes both components fixed.
-  have hz : e p.1 ∈ center K L := by
-    rw [LieModule.mem_maxTrivSubmodule]
-    intro y
-    obtain ⟨y, rfl⟩ := e.surjective y
-    simp only [coe_toLieHom]
-    rw [← e.map_lie, (LieModule.mem_maxTrivSubmodule K L L p.1).mp p.1.property y,
-      map_zero]
-  have hd : e p.2 ∈ derivedSeries K L 1 :=
-    (LieIdeal.derivedSeries_map_le (f := e.toLieHom) 1) (LieIdeal.mem_map p.2.property)
-  have hfixed : (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = p := by
-    apply a.injective
-    calc
-      a (⟨e p.1, hz⟩, ⟨e p.2, hd⟩) = e p.1 + e p.2 :=
-        Submodule.coe_prodEquivOfIsCompl' _ _ _ _
-      _ = e ((p.1 : L) + p.2) := (map_add e _ _).symm
-      _ = x := by rw [hsum]; exact LieHom.mem_fixedSubalgebra.mp x.property
-      _ = a p := hp.symm
-  refine ⟨p, ⟨congrArg (fun q => (q.1 : L)) hfixed,
-    congrArg (fun q => (q.2 : L)) hfixed, hsum⟩, ?_⟩
-  intro q hq
-  apply a.injective
-  simpa only [a, Submodule.coe_prodEquivOfIsCompl'] using hq.2.2.trans hsum.symm
+  simpa only [one_smul] using
+    e.existsUnique_center_add_derivedSeries_of_apply_eq_smul
+      (TauCeti.isCompl_center_derivedSeries K L) (c := (1 : K))
+      (by simpa only [one_smul, LieEquiv.coe_toLieHom] using
+        LieHom.mem_fixedSubalgebra.mp x.property)
 
 /-- Addition identifies the fixed algebra with the product of its fixed central part and the
 fixed part of the ambient derived ideal. The factors are subalgebras of the ambient algebra,

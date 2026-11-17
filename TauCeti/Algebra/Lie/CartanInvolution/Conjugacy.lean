@@ -13,6 +13,7 @@ import Mathlib.Algebra.Lie.Derivation.Killing
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.InnerProductSpace.Spectral.Relative
 import TauCeti.Analysis.Normed.Operator.Exponential
+import TauCeti.LinearAlgebra.Eigenspace.DiagonalBasis
 
 /-!
 # Uniqueness and conjugacy of Cartan involutions
@@ -39,9 +40,6 @@ Cor. 6.19):
 * `LieEquiv.IsCartanInvolution.exists_conj_exp_ad`: topological operator-exponential form showing
   that `θ' (exp (ad Z) y) = exp (ad Z) (θ y)` for all `y : L`.
 
-Finally, `LieEquiv.map_maximal_abelian_cartanP` records that any intertwining Lie equivalence maps
-maximal abelian subspaces of `θ.cartanP` to maximal abelian subspaces of `θ'.cartanP`.
-
 ## References
 
 * A. W. Knapp, *Lie Groups Beyond an Introduction*, 2nd ed., Birkhäuser (2002), Chapter VI, §2,
@@ -56,48 +54,6 @@ open LieAlgebra Module
 open scoped InnerProductSpace
 
 namespace LieEquiv
-
-/-! ### Transport of maximal abelian subspaces of `𝔭` -/
-
-section MaximalAbelian
-
-variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
-  [LieRing L'] [LieAlgebra R L']
-
-/-- An intertwining Lie equivalence `e : L ≃ₗ⁅R⁆ L'` maps maximal abelian subspaces of
-`θ.cartanP` to maximal abelian subspaces of `θ'.cartanP`. -/
-theorem map_maximal_abelian_cartanP {θ : L ≃ₗ⁅R⁆ L} {θ' : L' ≃ₗ⁅R⁆ L'}
-    (e : L ≃ₗ⁅R⁆ L') (he : ∀ x, θ' (e x) = e (θ x)) {𝔞 : Submodule R L}
-    (h𝔞 : Maximal
-      (fun 𝔟 : Submodule R L ↦ 𝔟 ≤ θ.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0) 𝔞) :
-    Maximal
-      (fun 𝔟 : Submodule R L' ↦ 𝔟 ≤ θ'.cartanP ∧ ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0)
-      (𝔞.map (e : L →ₗ[R] L')) := by
-  have hmapP : θ.cartanP.map (e : L →ₗ[R] L') = θ'.cartanP := map_cartanP e he
-  refine ⟨⟨?_, ?_⟩, fun 𝔟' ⟨h𝔟'P, h𝔟'ab⟩ hle ↦ ?_⟩
-  · rw [← hmapP]
-    exact Submodule.map_mono h𝔞.prop.1
-  · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-    simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.map_lie, h𝔞.prop.2 x hx y hy,
-      map_zero]
-  · let 𝔟 : Submodule R L := 𝔟'.map (e.symm : L' →ₗ[R] L)
-    have he_symm : ∀ y, θ (e.symm y) = e.symm (θ' y) := fun y ↦ e.injective <| by
-      simp only [coe_toLieHom]
-      rw [← he, e.apply_symm_apply, e.apply_symm_apply]
-    have h𝔟P : 𝔟 ≤ θ.cartanP := by
-      rw [← map_cartanP e.symm he_symm]
-      exact Submodule.map_mono h𝔟'P
-    have h𝔟ab : ∀ x ∈ 𝔟, ∀ y ∈ 𝔟, ⁅x, y⁆ = 0 := by
-      rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩
-      simp only [LinearEquiv.coe_coe, coe_toLinearEquiv, ← e.symm.map_lie, h𝔟'ab x hx y hy,
-        map_zero]
-    have h𝔞_le : 𝔞 ≤ 𝔟 := fun x hx ↦
-      ⟨e x, hle ⟨x, hx, rfl⟩, by simp⟩
-    have h𝔟_le : 𝔟 ≤ 𝔞 := h𝔞.le_of_ge ⟨h𝔟P, h𝔟ab⟩ h𝔞_le
-    intro y hy
-    refine ⟨e.symm y, h𝔟_le ⟨y, hy, rfl⟩, by simp⟩
-
-end MaximalAbelian
 
 /-! ### Uniqueness of Cartan involutions -/
 
@@ -150,9 +106,7 @@ theorem eq_of_commute [IsOrderedAddMonoid R] (hθ : θ.IsCartanInvolution)
       simp only [u, w, two_smul]
       abel
     rw [heq, hu0, hw0, sub_self]
-  have hdiff : θ x - θ' x = 0 := by
-    simpa [smul_smul] using congrArg ((⅟(2 : R)) • ·) h2mul
-  exact sub_eq_zero.mp hdiff
+  exact sub_eq_zero.mp ((isUnit_of_invertible (2 : R)).smul_eq_zero.mp h2mul)
 
 /-- A Cartan involution is uniquely determined by its fixed subalgebra `𝔨`: two Cartan
 involutions with the same fixed subalgebra are equal. -/
@@ -208,6 +162,12 @@ section RealConjugacy
 
 variable {L : Type*} [LieRing L] [LieAlgebra ℝ L]
 
+/-- The inverse of the composition `θ.trans θ'` of two involutions is `y ↦ θ (θ' y)`. -/
+private theorem trans_symm_apply_of_involutive {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ') (y : L) :
+    (θ.trans θ').symm y = θ (θ' y) :=
+  (θ.trans θ').symm_apply_eq.mpr (by rw [trans_apply, hθ (θ' y), hθ' y])
+
 /-- For two Cartan involutions `θ` and `θ'` of a real Lie algebra, `P = (θ' ∘ θ)²` admits a
 basis of eigenvectors with strictly positive eigenvalues. -/
 private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
@@ -257,180 +217,232 @@ private theorem exists_pos_eigenbasis_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
     rw [hP_E_apply, map_smul] at h2
     simpa [b, P, ω] using h2
 
-/-- Given two Cartan involutions `θ` and `θ'` of a real Lie algebra, `P = (θ' ∘ θ)²` admits a
-one-parameter group `Ppow : ℝ → (L ≃ₗ⁅ℝ⁆ L)` of real powers and a logarithmic derivation
-`D : LieDerivation ℝ L L` satisfying the intertwining and spectral relations of Knapp, Ch. VI,
-Theorem 6.16. -/
-private theorem exists_rpow_log_trans_sq {θ θ' : L ≃ₗ⁅ℝ⁆ L}
-    (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution) :
-    let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
-    let P : L ≃ₗ⁅ℝ⁆ L := ω.trans ω
-    ∃ (Ppow : ℝ → (L ≃ₗ⁅ℝ⁆ L)) (D : LieDerivation ℝ L L),
-      (∀ y, Ppow 1 y = P y) ∧
-      (∀ s t y, Ppow s (Ppow t y) = Ppow (s + t) y) ∧
-      (∀ s y, (Ppow s).symm y = Ppow (-s) y) ∧
-      (∀ s y, Ppow s (θ y) = θ (Ppow (-s) y)) ∧
-      (∀ s y, ω (Ppow s y) = Ppow s (ω y)) ∧
-      (∀ y, D (θ y) = -θ (D y)) ∧
-      (∀ s μ y, s • D y = μ • y → Ppow s y = Real.exp μ • y) := by
-  intro ω P
-  obtain ⟨B, lam, hlam_pos, hB_eig0⟩ := exists_pos_eigenbasis_trans_sq hθ hθ'
-  have hB_eig (i : Fin (finrank ℝ L)) : P (B i) = lam i • B i := hB_eig0 i
-  -- Diagonal operators on the `P`-eigenbasis `B` (kept opaque via `obtain`).
-  obtain ⟨diag, hdiag_basis⟩ :
-      ∃ diag : (ℝ → ℝ) → (L →ₗ[ℝ] L), ∀ f i, diag f (B i) = f (lam i) • B i :=
-    ⟨fun f ↦ B.constr ℝ fun i ↦ f (lam i) • B i, fun f i ↦ B.constr_basis ℝ _ i⟩
-  have hrepr (f : ℝ → ℝ) (y : L) (i : Fin (finrank ℝ L)) :
-      B.repr (diag f y) i = f (lam i) * B.repr y i := by
-    suffices h : (B.coord i).comp (diag f) = f (lam i) • B.coord i from congr($h y)
-    refine B.ext fun j ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.smul_apply, Basis.coord_apply, hdiag_basis,
-      map_smul, smul_eq_mul, Basis.repr_self, Finsupp.single_apply]
-    split_ifs with hij
-    · subst hij; ring
-    · ring
-  have hdiag_eq_smul {f g : ℝ → ℝ} {y : L} {μ c : ℝ} (hy : diag f y = μ • y)
-      (hfg : ∀ i, f (lam i) = μ → g (lam i) = c) : diag g y = c • y := by
-    apply B.repr.injective
-    ext i
-    rw [hrepr, map_smul, Finsupp.smul_apply, smul_eq_mul]
-    by_cases h0 : B.repr y i = 0
-    · simp [h0]
-    · have hfi : f (lam i) * B.repr y i = μ * B.repr y i := by
-        simpa [hrepr] using congrArg (fun v : L ↦ B.repr v i) hy
-      rw [hfg i (mul_right_cancel₀ h0 hfi)]
-  have hdiag_id : diag id = (P : L →ₗ[ℝ] L) := B.ext fun i ↦ by
-    simp [hdiag_basis, hB_eig]
-  have hdiag_P_eig (g : ℝ → ℝ) {y : L} {μ : ℝ} (hy : P y = μ • y) :
-      diag g y = g μ • y :=
-    hdiag_eq_smul (f := id) (by simpa [hdiag_id] using hy) (fun _ h ↦ congrArg g h)
-  -- Real powers `P^s` as Lie algebra automorphisms.
-  have hB_lie_eig (i j : Fin (finrank ℝ L)) :
-      P ⁅B i, B j⁆ = (lam i * lam j) • ⁅B i, B j⁆ := by
-    rw [P.map_lie, hB_eig i, hB_eig j, smul_lie, lie_smul, smul_smul]
-  have hPpow_add (s t : ℝ) (y : L) :
-      diag (· ^ s) (diag (· ^ t) y) = diag (· ^ (s + t)) y := by
-    suffices h : (diag (· ^ s)).comp (diag (· ^ t)) = diag (· ^ (s + t)) from congr($h y)
-    refine B.ext fun i ↦ ?_
-    simp [hdiag_basis, smul_smul, Real.rpow_add (hlam_pos i), mul_comm]
-  have hPpow_zero (y : L) : diag (· ^ (0 : ℝ)) y = y := by
-    suffices h : diag (· ^ (0 : ℝ)) = LinearMap.id from congr($h y)
-    refine B.ext fun i ↦ by simp [hdiag_basis]
-  have hPpow_one (y : L) : diag (· ^ (1 : ℝ)) y = P y := by
-    suffices h : diag (· ^ (1 : ℝ)) = (P : L →ₗ[ℝ] L) from congr($h y)
-    refine B.ext fun i ↦ by simp [hdiag_basis, hB_eig]
-  have hPpow_lie (s : ℝ) (x y : L) :
-      diag (· ^ s) ⁅x, y⁆ = ⁅diag (· ^ s) x, diag (· ^ s) y⁆ := by
-    have hBi (i : Fin (finrank ℝ L)) (w : L) :
-        diag (· ^ s) ⁅B i, w⁆ = ⁅diag (· ^ s) (B i), diag (· ^ s) w⁆ := by
-      suffices h : (diag (· ^ s)).comp (LieAlgebra.ad ℝ L (B i)) =
-          (LieAlgebra.ad ℝ L (diag (· ^ s) (B i))).comp (diag (· ^ s)) from congr($h w)
-      refine B.ext fun j ↦ ?_
-      simp only [LinearMap.comp_apply, LieAlgebra.ad_apply]
-      rw [hdiag_P_eig _ (hB_lie_eig i j), hdiag_basis, hdiag_basis, smul_lie, lie_smul, smul_smul,
-        Real.mul_rpow (hlam_pos i).le (hlam_pos j).le]
-    suffices h : (diag (· ^ s)).comp (LieAlgebra.ad ℝ L y) =
-        (LieAlgebra.ad ℝ L (diag (· ^ s) y)).comp (diag (· ^ s)) by
-      have h1 : diag (· ^ s) ⁅y, x⁆ = ⁅diag (· ^ s) y, diag (· ^ s) x⁆ := congr($h x)
-      rw [← lie_skew x y, map_neg, h1, lie_skew]
-    refine B.ext fun i ↦ ?_
-    simp only [LinearMap.comp_apply, LieAlgebra.ad_apply]
-    rw [← lie_skew y (B i), map_neg, hBi i y, lie_skew]
-  let Ppow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L :=
-    { diag (· ^ s) with
-      invFun := diag (· ^ (-s))
-      left_inv y := by
-        rw [LinearMap.toFun_eq_coe, hPpow_add, neg_add_cancel, hPpow_zero]
-      right_inv y := by
-        rw [LinearMap.toFun_eq_coe, hPpow_add, add_neg_cancel, hPpow_zero]
-      map_lie' := hPpow_lie s _ _ }
-  have hPpow_apply (s : ℝ) (y : L) : Ppow s y = diag (· ^ s) y := rfl
-  have hPpow_symm_apply (s : ℝ) (y : L) : (Ppow s).symm y = Ppow (-s) y := rfl
-  -- Logarithmic derivation `D = log P`.
-  have hD_leibniz (x y : L) :
-      diag Real.log ⁅x, y⁆ = ⁅x, diag Real.log y⁆ - ⁅y, diag Real.log x⁆ := by
-    have hBi (i : Fin (finrank ℝ L)) (w : L) :
-        diag Real.log ⁅B i, w⁆ = ⁅B i, diag Real.log w⁆ - ⁅w, diag Real.log (B i)⁆ := by
-      suffices h : (diag Real.log).comp (LieAlgebra.ad ℝ L (B i)) =
-          (LieAlgebra.ad ℝ L (B i)).comp (diag Real.log) +
-            LieAlgebra.ad ℝ L (diag Real.log (B i)) by
-        have h1 :
-            diag Real.log ⁅B i, w⁆ = ⁅B i, diag Real.log w⁆ + ⁅diag Real.log (B i), w⁆ :=
-          congr($h w)
-        rw [h1, ← lie_skew w (diag Real.log (B i)), sub_neg_eq_add]
-      refine B.ext fun j ↦ ?_
-      simp only [LinearMap.comp_apply, LinearMap.add_apply, LieAlgebra.ad_apply]
-      rw [hdiag_P_eig _ (hB_lie_eig i j), hdiag_basis, hdiag_basis,
-        Real.log_mul (hlam_pos i).ne' (hlam_pos j).ne', add_smul, lie_smul, smul_lie, add_comm]
-    suffices h : (diag Real.log).comp (LieAlgebra.ad ℝ L y) =
-        LieAlgebra.ad ℝ L (diag Real.log y) + (LieAlgebra.ad ℝ L y).comp (diag Real.log) by
-      have h1 :
-          diag Real.log ⁅y, x⁆ = ⁅diag Real.log y, x⁆ + ⁅y, diag Real.log x⁆ := congr($h x)
-      rw [← lie_skew x y, map_neg, h1, ← lie_skew (diag Real.log y) x, neg_add, neg_neg,
-        sub_eq_add_neg]
-    refine B.ext fun i ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.add_apply, LieAlgebra.ad_apply]
-    rw [← lie_skew y (B i), map_neg, hBi i y, ← lie_skew (B i) (diag Real.log y)]
-    abel
-  let D : LieDerivation ℝ L L := { toLinearMap := diag Real.log, leibniz' := hD_leibniz }
-  have hD_apply (y : L) : D y = diag Real.log y := rfl
-  -- Intertwining of `θ` and `ω` with `Ppow` and `D`.
-  have hω_symm (y : L) : ω.symm y = θ (θ' y) :=
-    ω.symm_apply_eq.mpr (by rw [trans_apply, hθ.involutive (θ' y), hθ'.involutive y])
-  have hθ_B_eig (i : Fin (finrank ℝ L)) : P (θ (B i)) = (lam i)⁻¹ • θ (B i) := by
-    have hθ_P (x : L) : θ (P x) = P.symm (θ x) := by
-      have hsymm : P.symm = ω.symm.trans ω.symm := rfl
-      rw [hsymm]
-      simp only [P, trans_apply, hω_symm, ω]
-    have hPsymm : P.symm (B i) = (lam i)⁻¹ • B i := by
-      have h1 := congrArg P.symm (hB_eig i)
-      rw [P.symm_apply_apply, map_smul] at h1
-      simpa only [smul_smul, inv_mul_cancel₀ (hlam_pos i).ne', one_smul] using
-        congrArg ((lam i)⁻¹ • ·) h1.symm
-    have hPθ : P (θ (B i)) = θ (P.symm (B i)) := by
-      have h1 := congrArg P (hθ_P (P.symm (B i)))
-      rw [P.apply_symm_apply, P.apply_symm_apply] at h1
-      exact h1
-    rw [hPθ, hPsymm, map_smul]
-  have hθ_Ppow (s : ℝ) (y : L) : Ppow s (θ y) = θ (Ppow (-s) y) := by
-    rw [hPpow_apply, hPpow_apply]
-    suffices h :
-        (diag (· ^ s)).comp (θ : L →ₗ[ℝ] L) = (θ : L →ₗ[ℝ] L).comp (diag (· ^ (-s))) from
-      congr($h y)
-    refine B.ext fun i ↦ ?_
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
-    rw [hdiag_P_eig _ (hθ_B_eig i), hdiag_basis, map_smul,
-      Real.inv_rpow (hlam_pos i).le, Real.rpow_neg (hlam_pos i).le]
-  have hω_Ppow (s : ℝ) (y : L) : ω (Ppow s y) = Ppow s (ω y) := by
-    rw [hPpow_apply, hPpow_apply]
-    suffices h :
-        (ω : L →ₗ[ℝ] L).comp (diag (· ^ s)) = (diag (· ^ s)).comp (ω : L →ₗ[ℝ] L) from
-      congr($h y)
-    refine B.ext fun i ↦ ?_
-    have hω_eig : P (ω (B i)) = lam i • ω (B i) := by
-      have hcomm : P (ω (B i)) = ω (P (B i)) := rfl
-      rw [hcomm, hB_eig i, map_smul]
-    simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
-    rw [hdiag_basis, map_smul, hdiag_P_eig _ hω_eig]
-  have hD_θ (y : L) : D (θ y) = -θ (D y) := by
-    rw [hD_apply, hD_apply]
-    suffices h :
-        (diag Real.log).comp (θ : L →ₗ[ℝ] L) = -(θ : L →ₗ[ℝ] L).comp (diag Real.log) from
-      congr($h y)
-    refine B.ext fun i ↦ ?_
-    simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
-    rw [hdiag_P_eig _ (hθ_B_eig i), hdiag_basis, Real.log_inv, neg_smul, map_smul]
-  have hspec (s μ : ℝ) (y : L) (hy : s • D y = μ • y) : Ppow s y = Real.exp μ • y := by
-    rw [hPpow_apply]
-    have hlin : diag (fun t ↦ s * Real.log t) y = μ • y := by
-      have heq : diag (fun t ↦ s * Real.log t) = s • diag Real.log :=
-        B.ext fun i ↦ by simp [hdiag_basis, mul_smul]
-      simpa [heq, hD_apply] using hy
-    exact hdiag_eq_smul hlin fun i hi ↦ by
-      rw [Real.rpow_def_of_pos (hlam_pos i), mul_comm, hi]
-  exact ⟨Ppow, D, fun y ↦ (hPpow_apply 1 y).trans (hPpow_one y),
-    fun s t y ↦ by rw [hPpow_apply, hPpow_apply, hPpow_apply, hPpow_add],
-    hPpow_symm_apply, hθ_Ppow, hω_Ppow, hD_θ, hspec⟩
+/-- A diagonal operator `B.diagEnd (fun i ↦ g (lam i))` acts by `g μ` on any `μ`-eigenvector of an
+automorphism diagonalized by `B` with eigenvalues `lam`. -/
+private theorem diagEnd_comp_apply_of_eigenvector {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hB : ∀ i, P (B i) = lam i • B i)
+    (g : ℝ → ℝ) {y : L} {μ : ℝ} (hy : P y = μ • y) :
+    B.diagEnd (fun i ↦ g (lam i)) y = g μ • y :=
+  B.apply_eq_smul_of_apply_basis (f := (P : L →ₗ[ℝ] L)) (g := B.diagEnd (fun i ↦ g (lam i)))
+    hB (B.diagEnd_apply_self _) hy fun _ hi ↦ congrArg g hi
+
+/-- Composing diagonal real powers `lam ^ s` and `lam ^ t` yields `lam ^ (s + t)`. -/
+private theorem diagEnd_rpow_comp {ι : Type*} (B : Basis ι ℝ L) {lam : ι → ℝ}
+    (hlam : ∀ i, 0 < lam i) (s t : ℝ) :
+    (B.diagEnd (fun i ↦ lam i ^ s)).comp (B.diagEnd (fun i ↦ lam i ^ t)) =
+      B.diagEnd (fun i ↦ lam i ^ (s + t)) := by
+  rw [B.diagEnd_comp]
+  congr 1
+  ext i
+  rw [← Real.rpow_add (hlam i)]
+
+/-- Diagonal real powers of a positively diagonalizable Lie automorphism preserve the bracket. -/
+private theorem diagEnd_rpow_map_lie {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (s : ℝ) (x y : L) :
+    B.diagEnd (fun i ↦ lam i ^ s) ⁅x, y⁆ =
+      ⁅B.diagEnd (fun i ↦ lam i ^ s) x, B.diagEnd (fun i ↦ lam i ^ s) y⁆ := by
+  have hbasis (i j : ι) :
+      B.diagEnd (fun k ↦ lam k ^ s) ⁅B i, B j⁆ =
+        ⁅B.diagEnd (fun k ↦ lam k ^ s) (B i), B.diagEnd (fun k ↦ lam k ^ s) (B j)⁆ := by
+    have hlie : P ⁅B i, B j⁆ = (lam i * lam j) • ⁅B i, B j⁆ := by
+      rw [P.map_lie, hB i, hB j, smul_lie, lie_smul, smul_smul]
+    rw [diagEnd_comp_apply_of_eigenvector B hB (· ^ s) hlie, B.diagEnd_apply_self,
+      B.diagEnd_apply_self, smul_lie, lie_smul, smul_smul,
+      Real.mul_rpow (hlam i).le (hlam j).le]
+  have hleft (i : ι) (w : L) :
+      B.diagEnd (fun k ↦ lam k ^ s) ⁅B i, w⁆ =
+        ⁅B.diagEnd (fun k ↦ lam k ^ s) (B i), B.diagEnd (fun k ↦ lam k ^ s) w⁆ := by
+    suffices h : (B.diagEnd (fun k ↦ lam k ^ s)).comp (LieAlgebra.ad ℝ L (B i)) =
+        (LieAlgebra.ad ℝ L (B.diagEnd (fun k ↦ lam k ^ s) (B i))).comp
+          (B.diagEnd (fun k ↦ lam k ^ s)) from congr($h w)
+    exact B.ext fun j ↦ hbasis i j
+  suffices h : (B.diagEnd (fun k ↦ lam k ^ s)).comp (LieAlgebra.ad ℝ L y) =
+      (LieAlgebra.ad ℝ L (B.diagEnd (fun k ↦ lam k ^ s) y)).comp
+        (B.diagEnd (fun k ↦ lam k ^ s)) by
+    have h1 : B.diagEnd (fun k ↦ lam k ^ s) ⁅y, x⁆ =
+        ⁅B.diagEnd (fun k ↦ lam k ^ s) y, B.diagEnd (fun k ↦ lam k ^ s) x⁆ := congr($h x)
+    rw [← lie_skew x y, map_neg, h1, lie_skew]
+  refine B.ext fun i ↦ ?_
+  simp only [LinearMap.comp_apply, LieAlgebra.ad_apply]
+  rw [← lie_skew y (B i), map_neg, hleft i y, lie_skew]
+
+/-- Real power `P^s` of a positively diagonalizable Lie automorphism as a Lie automorphism. -/
+private noncomputable def rpowLieEquiv {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (s : ℝ) : L ≃ₗ⁅ℝ⁆ L where
+  __ := B.diagEnd (fun i ↦ lam i ^ s)
+  invFun := B.diagEnd (fun i ↦ lam i ^ (-s))
+  left_inv y := by
+    have h := LinearMap.congr_fun (diagEnd_rpow_comp B hlam (-s) s) y
+    have hone : (fun i : ι ↦ lam i ^ (-s + s)) = 1 := by ext i; simp
+    simpa only [LinearMap.toFun_eq_coe, LinearMap.comp_apply, hone, B.diagEnd_one,
+      LinearMap.id_apply] using h
+  right_inv y := by
+    have h := LinearMap.congr_fun (diagEnd_rpow_comp B hlam s (-s)) y
+    have hone : (fun i : ι ↦ lam i ^ (s + -s)) = 1 := by ext i; simp
+    simpa only [LinearMap.toFun_eq_coe, LinearMap.comp_apply, hone, B.diagEnd_one,
+      LinearMap.id_apply] using h
+  map_lie' := diagEnd_rpow_map_lie B hlam hB s _ _
+
+private theorem rpowLieEquiv_symm_apply {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (s : ℝ) (y : L) :
+    (rpowLieEquiv B hlam hB s).symm y = rpowLieEquiv B hlam hB (-s) y :=
+  rfl
+
+private theorem rpowLieEquiv_one {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (y : L) :
+    rpowLieEquiv B hlam hB 1 y = P y := by
+  suffices h : B.diagEnd (fun i ↦ lam i ^ (1 : ℝ)) = (P : L →ₗ[ℝ] L) from congr($h y)
+  exact B.ext fun i ↦ by simp [hB]
+
+private theorem rpowLieEquiv_add {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (s t : ℝ) (y : L) :
+    rpowLieEquiv B hlam hB s (rpowLieEquiv B hlam hB t y) =
+      rpowLieEquiv B hlam hB (s + t) y :=
+  LinearMap.congr_fun (diagEnd_rpow_comp B hlam s t) y
+
+/-- The diagonal logarithm of a positively diagonalizable Lie automorphism satisfies the Leibniz
+rule. -/
+private theorem diagEnd_log_leibniz {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (x y : L) :
+    B.diagEnd (fun i ↦ Real.log (lam i)) ⁅x, y⁆ =
+      ⁅x, B.diagEnd (fun i ↦ Real.log (lam i)) y⁆ -
+        ⁅y, B.diagEnd (fun i ↦ Real.log (lam i)) x⁆ := by
+  have hbasis (i j : ι) :
+      B.diagEnd (fun k ↦ Real.log (lam k)) ⁅B i, B j⁆ =
+        ⁅B i, B.diagEnd (fun k ↦ Real.log (lam k)) (B j)⁆ +
+          ⁅B.diagEnd (fun k ↦ Real.log (lam k)) (B i), B j⁆ := by
+    have hlie : P ⁅B i, B j⁆ = (lam i * lam j) • ⁅B i, B j⁆ := by
+      rw [P.map_lie, hB i, hB j, smul_lie, lie_smul, smul_smul]
+    rw [diagEnd_comp_apply_of_eigenvector B hB Real.log hlie, B.diagEnd_apply_self,
+      B.diagEnd_apply_self, Real.log_mul (hlam i).ne' (hlam j).ne', add_smul, lie_smul,
+      smul_lie, add_comm]
+  have hleft (i : ι) (w : L) :
+      B.diagEnd (fun k ↦ Real.log (lam k)) ⁅B i, w⁆ =
+        ⁅B i, B.diagEnd (fun k ↦ Real.log (lam k)) w⁆ -
+          ⁅w, B.diagEnd (fun k ↦ Real.log (lam k)) (B i)⁆ := by
+    suffices h : (B.diagEnd (fun k ↦ Real.log (lam k))).comp (LieAlgebra.ad ℝ L (B i)) =
+        (LieAlgebra.ad ℝ L (B i)).comp (B.diagEnd (fun k ↦ Real.log (lam k))) +
+          LieAlgebra.ad ℝ L (B.diagEnd (fun k ↦ Real.log (lam k)) (B i)) by
+      have h1 : B.diagEnd (fun k ↦ Real.log (lam k)) ⁅B i, w⁆ =
+          ⁅B i, B.diagEnd (fun k ↦ Real.log (lam k)) w⁆ +
+            ⁅B.diagEnd (fun k ↦ Real.log (lam k)) (B i), w⁆ :=
+        congr($h w)
+      rw [h1, ← lie_skew w (B.diagEnd (fun k ↦ Real.log (lam k)) (B i)), sub_neg_eq_add]
+    exact B.ext fun j ↦ hbasis i j
+  suffices h : (B.diagEnd (fun k ↦ Real.log (lam k))).comp (LieAlgebra.ad ℝ L y) =
+      LieAlgebra.ad ℝ L (B.diagEnd (fun k ↦ Real.log (lam k)) y) +
+        (LieAlgebra.ad ℝ L y).comp (B.diagEnd (fun k ↦ Real.log (lam k))) by
+    have h1 : B.diagEnd (fun k ↦ Real.log (lam k)) ⁅y, x⁆ =
+        ⁅B.diagEnd (fun k ↦ Real.log (lam k)) y, x⁆ +
+          ⁅y, B.diagEnd (fun k ↦ Real.log (lam k)) x⁆ := congr($h x)
+    rw [← lie_skew x y, map_neg, h1, ← lie_skew (B.diagEnd (fun k ↦ Real.log (lam k)) y) x,
+      neg_add, neg_neg, sub_eq_add_neg]
+  refine B.ext fun i ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.add_apply, LieAlgebra.ad_apply]
+  rw [← lie_skew y (B i), map_neg, hleft i y,
+    ← lie_skew (B i) (B.diagEnd (fun k ↦ Real.log (lam k)) y)]
+  abel
+
+/-- Logarithmic derivation `log P` of a positively diagonalizable Lie automorphism. -/
+private noncomputable def logLieDerivation {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) : LieDerivation ℝ L L where
+  toLinearMap := B.diagEnd (fun i ↦ Real.log (lam i))
+  leibniz' := diagEnd_log_leibniz B hlam hB
+
+private theorem logLieDerivation_apply {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) (y : L) :
+    logLieDerivation B hlam hB y = B.diagEnd (fun i ↦ Real.log (lam i)) y :=
+  rfl
+
+/-- On any `μ`-eigenvector of `s • log P`, the power `P^s` acts by `Real.exp μ`. -/
+private theorem rpowLieEquiv_apply_of_log_eq_smul {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {P : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, P (B i) = lam i • B i) {s μ : ℝ} {y : L}
+    (hy : s • logLieDerivation B hlam hB y = μ • y) :
+    rpowLieEquiv B hlam hB s y = Real.exp μ • y := by
+  have hlin : B.diagEnd (fun i ↦ s * Real.log (lam i)) y = μ • y := by
+    have heq : B.diagEnd (fun i ↦ s * Real.log (lam i)) =
+        s • B.diagEnd (fun i ↦ Real.log (lam i)) :=
+      B.ext fun i ↦ by simp [mul_smul]
+    simpa [heq, logLieDerivation_apply] using hy
+  exact B.apply_eq_smul_of_apply_basis (B.diagEnd_apply_self _) (B.diagEnd_apply_self _)
+    hlin fun i hi ↦ by rw [Real.rpow_def_of_pos (hlam i), mul_comm, hi]
+
+/-- Applying `θ` sends a `c`-eigenvector of `(θ' ∘ θ)²` to a `c⁻¹`-eigenvector. -/
+private theorem trans_sq_apply_involutive {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+    {v : L} {c : ℝ} (hc : c ≠ 0)
+    (hv : ((θ.trans θ').trans (θ.trans θ')) v = c • v) :
+    ((θ.trans θ').trans (θ.trans θ')) (θ v) = c⁻¹ • θ v := by
+  let P : L ≃ₗ⁅ℝ⁆ L := (θ.trans θ').trans (θ.trans θ')
+  have hθ_P (x : L) : θ (P x) = P.symm (θ x) := by
+    symm
+    rw [LieEquiv.symm_apply_eq]
+    simp only [P, trans_apply, hθ _, hθ' _]
+  have hPsymm : P.symm v = c⁻¹ • v := by
+    rw [LieEquiv.symm_apply_eq, map_smul, hv, smul_smul, inv_mul_cancel₀ hc, one_smul]
+  have hPθ : P (θ v) = θ (P.symm v) := by
+    simpa only [P.apply_symm_apply] using congrArg P (hθ_P (P.symm v))
+  rw [hPθ, hPsymm, map_smul]
+
+/-- Intertwining `P^s (θ y) = θ (P^{-s} y)` for `P = (θ' ∘ θ)²`. -/
+private theorem rpowLieEquiv_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+    (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i)
+    (s : ℝ) (y : L) :
+    rpowLieEquiv B hlam hB s (θ y) = θ (rpowLieEquiv B hlam hB (-s) y) := by
+  suffices h : (B.diagEnd (fun i ↦ lam i ^ s)).comp (θ : L →ₗ[ℝ] L) =
+      (θ : L →ₗ[ℝ] L).comp (B.diagEnd (fun i ↦ lam i ^ (-s))) from congr($h y)
+  refine B.ext fun i ↦ ?_
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
+  rw [diagEnd_comp_apply_of_eigenvector B hB (· ^ s)
+      (trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i)),
+    B.diagEnd_apply_self, map_smul, Real.inv_rpow (hlam i).le, Real.rpow_neg (hlam i).le]
+
+/-- `θ.trans θ'` commutes with all real powers of `P = (θ.trans θ')²`. -/
+private theorem rpowLieEquiv_comm_trans {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i)
+    (s : ℝ) (y : L) :
+    (θ.trans θ') (rpowLieEquiv B hlam hB s y) =
+      rpowLieEquiv B hlam hB s ((θ.trans θ') y) := by
+  suffices h : ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L).comp (B.diagEnd (fun i ↦ lam i ^ s)) =
+      (B.diagEnd (fun i ↦ lam i ^ s)).comp ((θ.trans θ' : L ≃ₗ⁅ℝ⁆ L) : L →ₗ[ℝ] L) from
+    congr($h y)
+  refine B.ext fun i ↦ ?_
+  have hω_eig : ((θ.trans θ').trans (θ.trans θ')) ((θ.trans θ') (B i)) =
+      lam i • (θ.trans θ') (B i) := by
+    have hcomm : ((θ.trans θ').trans (θ.trans θ')) ((θ.trans θ') (B i)) =
+        (θ.trans θ') (((θ.trans θ').trans (θ.trans θ')) (B i)) := by
+      simp only [trans_apply]
+    rw [hcomm, hB i, map_smul]
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
+  rw [B.diagEnd_apply_self, map_smul, diagEnd_comp_apply_of_eigenvector B hB (· ^ s) hω_eig]
+
+/-- `log P` anticommutes with `θ` for `P = (θ' ∘ θ)²`. -/
+private theorem logLieDerivation_apply_involutive {ι : Type*} (B : Basis ι ℝ L)
+    {lam : ι → ℝ} {θ θ' : L ≃ₗ⁅ℝ⁆ L}
+    (hθ : Function.Involutive θ) (hθ' : Function.Involutive θ')
+    (hlam : ∀ i, 0 < lam i)
+    (hB : ∀ i, ((θ.trans θ').trans (θ.trans θ')) (B i) = lam i • B i) (y : L) :
+    logLieDerivation B hlam hB (θ y) = -θ (logLieDerivation B hlam hB y) := by
+  suffices h : (B.diagEnd (fun i ↦ Real.log (lam i))).comp (θ : L →ₗ[ℝ] L) =
+      -(θ : L →ₗ[ℝ] L).comp (B.diagEnd (fun i ↦ Real.log (lam i))) from congr($h y)
+  refine B.ext fun i ↦ ?_
+  simp only [LinearMap.comp_apply, LinearMap.neg_apply, LinearEquiv.coe_coe, coe_toLinearEquiv]
+  rw [diagEnd_comp_apply_of_eigenvector B hB Real.log
+      (trans_sq_apply_involutive hθ hθ' (hlam i).ne' (hB i)),
+    B.diagEnd_apply_self, Real.log_inv, neg_smul, map_smul]
 
 /-- **Conjugacy of Cartan involutions (spectral form)** (Knapp, Ch. VI, Thm. 6.16): for any two
 Cartan involutions `θ` and `θ'` of a real Lie algebra `L`, there exist a Lie automorphism `φ`
@@ -444,10 +456,13 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   have := hθ.isKilling
   have := hθ.finite
   let ω : L ≃ₗ⁅ℝ⁆ L := θ.trans θ'
-  obtain ⟨Ppow, D, hPpow_one, hPpow_add, hPpow_symm, hθ_Ppow, hω_Ppow, hD_θ, hspec⟩ :=
-    exists_rpow_log_trans_sq hθ hθ'
-  have hω_symm (y : L) : ω.symm y = θ (θ' y) :=
-    ω.symm_apply_eq.mpr (by rw [trans_apply, hθ.involutive (θ' y), hθ'.involutive y])
+  obtain ⟨B, lam, hlam_pos, hB_eig⟩ := exists_pos_eigenbasis_trans_sq hθ hθ'
+  let Ppow (s : ℝ) : L ≃ₗ⁅ℝ⁆ L := rpowLieEquiv B hlam_pos hB_eig s
+  let D : LieDerivation ℝ L L := logLieDerivation B hlam_pos hB_eig
+  have hθ_Ppow (s : ℝ) (y : L) : Ppow s (θ y) = θ (Ppow (-s) y) :=
+    rpowLieEquiv_apply_involutive B hθ.involutive hθ'.involutive hlam_pos hB_eig s y
+  have hω_Ppow (s : ℝ) (y : L) : ω (Ppow s y) = Ppow s (ω y) :=
+    rpowLieEquiv_comm_trans B hlam_pos hB_eig s y
   have hθ'_Ppow (s : ℝ) (y : L) : θ' (Ppow s y) = Ppow (-s) (θ' y) := by
     have hθ'_eq (z : L) : θ' z = ω (θ z) := by simp only [ω, trans_apply, hθ.involutive z]
     have hθP : θ (Ppow s y) = Ppow (-s) (θ y) := by
@@ -457,19 +472,20 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   let φ : L ≃ₗ⁅ℝ⁆ L := Ppow (1 / 4)
   let θ'' : L ≃ₗ⁅ℝ⁆ L := φ.symm.trans (θ.trans φ)
   have hθ''_apply (y : L) : θ'' y = Ppow (1 / 2) (θ y) := by
-    simp only [θ'', trans_apply, φ, hPpow_symm]
-    rw [← hθ_Ppow (1 / 4) y, hPpow_add]
+    simp only [θ'', trans_apply, φ, Ppow, rpowLieEquiv_symm_apply]
+    rw [← hθ_Ppow (1 / 4) y, rpowLieEquiv_add]
     norm_num
   have hcomm_θ' : ∀ y, θ' (θ'' y) = θ'' (θ' y) := fun y ↦ by
     have hω_eq : ω y = Ppow 1 (ω.symm y) := by
-      rw [hPpow_one]
+      rw [rpowLieEquiv_one]
       simp [ω]
     calc
       θ' (θ'' y) = θ' (Ppow (1 / 2) (θ y)) := by rw [hθ''_apply]
       _ = Ppow (-(1 / 2)) (θ' (θ y)) := hθ'_Ppow (1 / 2) (θ y)
-      _ = Ppow (-(1 / 2)) (Ppow 1 (ω.symm y)) := by rw [← hω_eq]; rfl
-      _ = Ppow (1 / 2) (ω.symm y) := by rw [hPpow_add]; norm_num
-      _ = Ppow (1 / 2) (θ (θ' y)) := by rw [hω_symm]
+      _ = Ppow (-(1 / 2)) (Ppow 1 (ω.symm y)) := by rw [← trans_apply θ θ' y, hω_eq]
+      _ = Ppow (1 / 2) (ω.symm y) := by dsimp only [Ppow]; rw [rpowLieEquiv_add]; norm_num
+      _ = Ppow (1 / 2) (θ (θ' y)) := by
+          rw [trans_symm_apply_of_involutive hθ.involutive hθ'.involutive]
       _ = θ'' (θ' y) := (hθ''_apply (θ' y)).symm
   have hθ'_eq_θ'' : θ' = θ'' := by
     let _ : Invertible (2 : ℝ) := invertibleOfNonzero two_ne_zero
@@ -492,7 +508,8 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
           ⁅θ Z₀, w⁆ = ⁅θ Z₀, θ (θ w)⁆ := by rw [hθ.involutive]
           _ = θ ⁅Z₀, θ w⁆ := (θ.map_lie Z₀ (θ w)).symm
           _ = θ (D (θ w)) := by rw [hZ₀_apply]
-          _ = θ (-θ (D w)) := by rw [hD_θ]
+          _ = θ (-θ (D w)) := by
+              rw [logLieDerivation_apply_involutive B hθ.involutive hθ'.involutive]
           _ = -D w := by rw [map_neg, hθ.involutive]
           _ = -⁅Z₀, w⁆ := by rw [hZ₀_apply]
       rw [h1, neg_neg, add_neg_cancel]
@@ -501,22 +518,23 @@ theorem exists_conj_spectral {θ θ' : L ≃ₗ⁅ℝ⁆ L}
   refine ⟨φ, hφ_intertwine, (1 / 4 : ℝ) • Z₀, θ.cartanP.smul_mem _ hZ₀_cartanP,
     fun μ y hy ↦ ?_⟩
   rw [smul_lie, hZ₀_apply] at hy
-  exact hspec (1 / 4) μ y hy
+  exact rpowLieEquiv_apply_of_log_eq_smul B hlam_pos hB_eig hy
 
 /-- **Conjugacy of Cartan involutions (operator exponential form)** (Knapp, Ch. VI, Cor. 6.19):
-for any two Cartan involutions `θ` and `θ'` of a finite-dimensional real Lie algebra `L` equipped
-with Hausdorff topological vector space structures on `L` and `L →L[ℝ] L` (with topological ring
-multiplication on `L →L[ℝ] L`), there exists `Z ∈ θ.cartanP` such that `exp (ad Z)` conjugates
-`θ` to `θ'`. -/
+for any two Cartan involutions `θ` and `θ'` of a real Lie algebra `L` equipped with Hausdorff
+topological vector space structures on `L` and `L →L[ℝ] L` (with topological ring multiplication
+on `L →L[ℝ] L`), there exists `Z ∈ θ.cartanP` such that `exp (ad Z)` conjugates `θ` to `θ'`. -/
 theorem exists_conj_exp_ad
     [TopologicalSpace L] [IsTopologicalAddGroup L] [ContinuousSMul ℝ L] [T2Space L]
-    [FiniteDimensional ℝ L]
     [TopologicalSpace (L →L[ℝ] L)] [IsTopologicalRing (L →L[ℝ] L)]
     [ContinuousSMul ℝ (L →L[ℝ] L)] [T2Space (L →L[ℝ] L)]
     {θ θ' : L ≃ₗ⁅ℝ⁆ L} (hθ : θ.IsCartanInvolution) (hθ' : θ'.IsCartanInvolution) :
+    let _ : FiniteDimensional ℝ L := hθ.finite
     ∃ Z ∈ θ.cartanP, ∀ y : L,
       θ' (NormedSpace.exp (LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L Z)) y) =
         NormedSpace.exp (LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L Z)) (θ y) := by
+  have := hθ.finite
+  dsimp only
   obtain ⟨φ, hφ, Z, hZ, hspec⟩ := hθ.exists_conj_spectral hθ'
   refine ⟨Z, hZ, fun y ↦ ?_⟩
   let A : L →L[ℝ] L := LinearMap.toContinuousLinearMap (LieAlgebra.ad ℝ L Z)
@@ -526,25 +544,13 @@ theorem exists_conj_exp_ad
   let B :
       EuclideanSpace ℝ (Fin (finrank ℝ L)) →L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ L)) :=
     e.symm.toContinuousLinearMap.comp (A.comp e.toContinuousLinearMap)
-  let conj :
-      (EuclideanSpace ℝ (Fin (finrank ℝ L)) →L[ℝ]
-        EuclideanSpace ℝ (Fin (finrank ℝ L))) →ₐ[ℝ] (L →L[ℝ] L) :=
-    { toFun S := e.toContinuousLinearMap.comp (S.comp e.symm.toContinuousLinearMap)
-      map_one' := by ext x; simp
-      map_mul' S T := by ext x; simp [mul_apply_eq_comp]
-      map_zero' := by ext x; simp
-      map_add' S T := by ext x; simp
-      commutes' r := by ext x; simp [Algebra.algebraMap_eq_smul_one] }
-  have hconj_B : conj B = A := by ext x; simp [conj, B]
-  have hconj_add (S) : conj.toAddMonoidHom S = conj S := rfl
-  have hA_sum : HasSum (fun n : ℕ ↦ ((Nat.factorial n : ℝ)⁻¹) • A ^ n)
-      (conj (NormedSpace.exp B)) := by
-    have h1 := (NormedSpace.exp_series_hasSum_exp' (𝕂 := ℝ) B).map conj.toAddMonoidHom
-      conj.toLinearMap.continuous_of_finiteDimensional
-    simpa only [Function.comp_def, hconj_add, map_smul, map_pow, hconj_B] using h1
-  have hexpA : NormedSpace.exp A = conj (NormedSpace.exp B) := by
-    rw [NormedSpace.exp_eq_tsum ℝ]
-    exact hA_sum.tsum_eq
+  have hconj_B : e.toContinuousLinearMap.comp (B.comp e.symm.toContinuousLinearMap) = A := by
+    ext x
+    simp [B]
+  have hexpA : NormedSpace.exp A =
+      e.toContinuousLinearMap.comp ((NormedSpace.exp B).comp e.symm.toContinuousLinearMap) := by
+    rw [← hconj_B]
+    exact NormedSpace.exp_conj_continuousLinearEquiv_of_finiteDimensional e B
   have hexp_eq : ∀ w : L, NormedSpace.exp A w = φ w := by
     have htop : LinearMap.eqLocus (NormedSpace.exp A).toLinearMap (φ : L →ₗ[ℝ] L) = ⊤ := by
       rw [eq_top_iff, ← hθ.iSup_eigenspace_ad_eq_top hZ]
@@ -559,8 +565,7 @@ theorem exists_conj_exp_ad
         simpa only [← Real.exp_eq_exp_ℝ] using B.exp_apply_of_apply_eq_smul hBw
       rw [LinearMap.mem_eqLocus, ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe,
         LieEquiv.coe_toLinearEquiv, hexpA]
-      simp only [conj, AlgHom.coe_mk, RingHom.coe_mk, MonoidHom.coe_mk, OneHom.coe_mk,
-        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, h1, map_smul,
+      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, h1, map_smul,
         e.apply_symm_apply, hspec μ w hw]
     intro w
     exact LinearMap.mem_eqLocus.mp (htop ▸ Submodule.mem_top)
