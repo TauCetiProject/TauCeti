@@ -204,6 +204,45 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
   rw [hz]
   exact_mod_cast div_neg_of_pos_of_neg (mul_pos h₀ hg) hc
 
+/-- Euler–Maclaurin representation of `riemannZeta₀` on the convergent half-plane `Re s > 1`,
+proved by subtracting the partial-summation integral of `ζ(s)` from
+`∫_{t > 1} t ^ (-s) dt = (s - 1)⁻¹`. -/
+private theorem riemannZeta₀_eq_one_sub_mul_integral_of_one_lt_re {s : ℂ} (hs : 1 < s.re) :
+    riemannZeta₀ s =
+      1 - s * ∫ t in Set.Ioi (1 : ℝ), ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)) := by
+  have hs1 : s ≠ 1 := fun h ↦ by simp [h] at hs
+  have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (1 : ℕ → ℂ) k) =O[atTop] fun n ↦ (n : ℝ) ^ (1 : ℝ) :=
+    Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by simp⟩
+  have hint₁ : MeasureTheory.IntegrableOn
+      (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(s + 1))) (Set.Ioi 1) :=
+    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ hO hs
+  have hint₂ : MeasureTheory.IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-s)) (Set.Ioi 1) :=
+    integrableOn_Ioi_cpow_of_lt (by simpa using hs) zero_lt_one
+  have hdiff_eq : Set.EqOn (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(s + 1)))
+      (fun t : ℝ ↦ (t : ℂ) ^ (-s) - (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(s + 1)))
+      (Set.Ioi 1) := fun t ht ↦ by
+    dsimp only
+    have ht0 : 0 < t := zero_lt_one.trans ht
+    have htc : (t : ℂ) ≠ 0 := mod_cast ht0.ne'
+    have hfl : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (t : ℂ) - ((Int.fract t : ℝ) : ℂ) := by
+      have hsum : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (⌊t⌋₊ : ℂ) := by simp
+      rw [hsum, Int.fract, ofReal_sub, ← Int.natCast_floor_eq_floor ht0.le]
+      push_cast; ring
+    have hexp : -s = 1 + -(s + 1) := by ring
+    rw [hfl, hexp, cpow_add _ _ htc, cpow_one]; ring
+  have hI₂ : ∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-s) = (s - 1)⁻¹ := by
+    have hsub : -s + 1 = -(s - 1) := by ring
+    rw [integral_Ioi_cpow_of_lt (by simpa using hs) zero_lt_one, ofReal_one, one_cpow,
+      hsub, neg_div_neg_eq, one_div]
+  have hI₁ : s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) *
+      (t : ℂ) ^ (-(s + 1)) = (s - 1)⁻¹ + riemannZeta₀ s := by
+    rw [← LSeries_eq_mul_integral _ zero_le_one hs (LSeriesSummable_one_iff.mpr hs) hO,
+      LSeries_one_eq_riemannZeta hs, riemannZeta_eq_inv_sub_add hs1]
+  rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hdiff_eq,
+    MeasureTheory.integral_sub hint₂ hint₁, mul_sub, hI₂, hI₁]
+  field_simp [sub_ne_zero.mpr hs1]
+  ring
+
 /-- **Euler–Maclaurin representation of `riemannZeta₀`.** On the open right half-plane `Re s > 0`,
 the regular part `riemannZeta₀ s = ζ(s) - (s - 1)⁻¹` equals
 `1 - s ∫_{t > 1} {t} t ^ (-(s + 1)) dt`. -/
@@ -225,40 +264,7 @@ theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
   have heq : riemannZeta₀ =ᶠ[𝓝 2] F := by
     filter_upwards [(isOpen_lt continuous_const continuous_re).mem_nhds
       (by norm_num : (2 : ℂ) ∈ {z : ℂ | 1 < z.re})] with z hz
-    have hz1 : z ≠ 1 := fun h ↦ by simp [h] at hz
-    have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (1 : ℕ → ℂ) k) =O[atTop] fun n ↦ (n : ℝ) ^ (1 : ℝ) :=
-      Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by simp⟩
-    have hint₁ : MeasureTheory.IntegrableOn
-        (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1))) (Set.Ioi 1) :=
-      TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO _ hO hz
-    have hint₂ : MeasureTheory.IntegrableOn (fun t : ℝ ↦ (t : ℂ) ^ (-z)) (Set.Ioi 1) :=
-      integrableOn_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one
-    have hdiff_eq : Set.EqOn (fun t : ℝ ↦ ((Int.fract t : ℝ) : ℂ) * (t : ℂ) ^ (-(z + 1)))
-        (fun t : ℝ ↦ (t : ℂ) ^ (-z) - (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1)))
-        (Set.Ioi 1) := fun t ht ↦ by
-      dsimp only
-      have ht0 : 0 < t := zero_lt_one.trans ht
-      have htc : (t : ℂ) ≠ 0 := mod_cast ht0.ne'
-      have hfl : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (t : ℂ) - ((Int.fract t : ℝ) : ℂ) := by
-        have hsum : (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) = (⌊t⌋₊ : ℂ) := by simp
-        rw [hsum, Int.fract, ofReal_sub, ← Int.natCast_floor_eq_floor ht0.le]
-        push_cast; ring
-      have hexp : -z = 1 + -(z + 1) := by ring
-      rw [hfl, hexp, cpow_add _ _ htc, cpow_one]; ring
-    have hI₂ : (z - 1) * ∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z) = 1 := by
-      have hsub : -z + 1 = -(z - 1) := by ring
-      rw [integral_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one, ofReal_one, one_cpow,
-        hsub, neg_div_neg_eq, mul_div_cancel₀ _ (sub_ne_zero.mpr hz1)]
-    have hI₁ : z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) *
-        (t : ℂ) ^ (-(z + 1)) = (z - 1)⁻¹ + riemannZeta₀ z := by
-      rw [← LSeries_eq_mul_integral _ zero_le_one hz (LSeriesSummable_one_iff.mpr hz) hO,
-        LSeries_one_eq_riemannZeta hz, riemannZeta_eq_inv_sub_add hz1]
-    have hF_eq : F z = 1 - z * (∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z)) +
-        z * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, (1 : ℕ → ℂ) k) * (t : ℂ) ^ (-(z + 1)) := by
-      simp only [F]
-      rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hdiff_eq,
-        MeasureTheory.integral_sub hint₂ hint₁]; ring
-    rw [hF_eq, hI₁, eq_inv_of_mul_eq_one_right hI₂]; field_simp [sub_ne_zero.mpr hz1]; ring
+    exact riemannZeta₀_eq_one_sub_mul_integral_of_one_lt_re hz
   exact hZ.eqOn_of_preconnected_of_eventuallyEq hF (convex_halfSpace_re_gt 0).isPreconnected
     (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) heq hs
 
