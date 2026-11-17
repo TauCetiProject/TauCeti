@@ -29,6 +29,12 @@ by `tangentSpaceCast`.
   vector space.
 * `TauCeti.heq_tangentSpaceCast`: over equal base points, `tangentSpaceCast` is heterogeneously
   the identity.
+* `TauCeti.tangentSpaceCast_self`: identifying a tangent space with itself is the identity.
+* `TauCeti.tangentSpaceCast_trans`: composing two `tangentSpaceCast` identifications across equal
+  base points gives the direct identification.
+* `TauCeti.eq_tangentSpaceCast_iff_tangentSpaceCast_eq`: tangent vectors over base points equal to
+  a common point agree under direct transport if and only if they agree after transport to that
+  common point.
 -/
 
 public section
@@ -76,5 +82,26 @@ theorem heq_tangentSpaceCast {x y : M} (hxy : x = y) (w : TangentSpace I x) :
     HEq (tangentSpaceCast I x y w) w := by
   subst hxy
   rfl
+
+/-- Identifying a tangent space with itself via `tangentSpaceCast` is the identity. -/
+@[simp]
+theorem tangentSpaceCast_self {x : M} (w : TangentSpace I x) :
+    tangentSpaceCast I x x w = w :=
+  (rfl)
+
+/-- Composing two `tangentSpaceCast` identifications across equal base points gives the direct
+identification. -/
+theorem tangentSpaceCast_trans {x y z : M} (hxy : x = y) (hyz : y = z) (w : TangentSpace I x) :
+    tangentSpaceCast I y z (tangentSpaceCast I x y w) = tangentSpaceCast I x z w := by
+  subst hxy; subst hyz
+  rfl
+
+/-- Two tangent vectors over base points equal to a common point `z` agree under direct transport
+between their base points if and only if they agree after transport to `z`. -/
+theorem eq_tangentSpaceCast_iff_tangentSpaceCast_eq {x y z : M} (hxz : x = z) (hyz : y = z)
+    {u : TangentSpace I x} {v : TangentSpace I y} :
+    u = tangentSpaceCast I y x v ↔ tangentSpaceCast I x z u = tangentSpaceCast I y z v := by
+  subst hxz; subst hyz
+  simp only [tangentSpaceCast_self]
 
 end TauCeti
