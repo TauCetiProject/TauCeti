@@ -34,7 +34,7 @@ when the action is locally free at `x`, that is, `𝔤_x = 0`
 (`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
 `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
 is discrete; in particular, where the stabilizer is trivial, `𝔤_x = 0`
-(`TauCeti.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`), `𝔤 · x` has dimension `dim G`
+(`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`), `𝔤 · x` has dimension `dim G`
 (`TauCeti.finrank_orbitTangent_fundamental_of_stabilizer_eq_bot`), and the orbit map is an
 immersion (`TauCeti.isImmersion_smul_const_of_stabilizer_eq_bot`). For a proper action the orbit map
 is moreover a closed topological embedding at such a point
@@ -61,19 +61,46 @@ namespace TauCeti
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
+section OrbitDimension
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [I'.Boundaryless]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
   [ContMDiffSMul I I' ∞ G M]
+
+/-- **Dimension of the orbit tangent space at a free point.** Where the stabilizer of `x` is
+trivial, the orbit tangent space `𝔤 · x` of a smooth action on a boundaryless Hausdorff manifold
+has dimension `dim G`. -/
+theorem finrank_orbitTangent_fundamental_of_stabilizer_eq_bot [FiniteDimensional ℝ E] [T2Space M]
+    [BoundarylessManifold I' M] {x : M} (hx : MulAction.stabilizer G x = ⊥) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) =
+      Module.finrank ℝ E := by
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  exact (InfinitesimalAction.fundamental I G I' M).finrank_orbitTangent_of_isotropy_eq_bot x
+    (Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx)
+
+end OrbitDimension
+
+section OrbitImmersion
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [CompleteSpace E]
+  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
+  {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [MulAction G M]
+  [ContMDiffSMul I I' ∞ G M]
+
+variable [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless]
 
 /-- **Orbit maps of locally free points are immersions.** The orbit map `g ↦ g • x` of a smooth
 action is an immersion exactly when the isotropy algebra `𝔤_x` is trivial, that is, when the
 action is locally free at `x`. -/
-theorem isImmersion_smul_const_iff [CompleteSpace E] [CompleteSpace E']
-    [FiniteDimensional ℝ E'] [I.Boundaryless] {x : M} :
+theorem isImmersion_smul_const_iff {x : M} :
     IsImmersion I I' ∞ (fun g : G ↦ g • x) ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   constructor
@@ -86,33 +113,16 @@ theorem isImmersion_smul_const_iff [CompleteSpace E] [CompleteSpace E']
 
 variable [FiniteDimensional ℝ E]
 
-/-- **Free points have trivial isotropy Lie algebra.** Where the stabilizer of `x` is trivial, the
-isotropy Lie algebra `𝔤_x` of a smooth action on a Hausdorff manifold vanishes. -/
-theorem isotropy_fundamental_eq_bot_of_stabilizer_eq_bot [CompleteSpace E'] [T2Space M] {x : M}
-    (hx : MulAction.stabilizer G x = ⊥) :
-    (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
-  have : T2Space G := I.t2Space_of_lieGroup ∞
-  have : Subsingleton (MulAction.stabilizer G x) := hx ▸ inferInstance
-  exact (Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot (I := I) (I' := I')).1 inferInstance
-
-/-- **Dimension of the orbit tangent space at a free point.** Where the stabilizer of `x` is
-trivial, the orbit tangent space `𝔤 · x` of a smooth action on a Hausdorff manifold has dimension
-`dim G`. -/
-theorem finrank_orbitTangent_fundamental_of_stabilizer_eq_bot [CompleteSpace E'] [T2Space M]
-    {x : M} (hx : MulAction.stabilizer G x = ⊥) :
-    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).orbitTangent x) =
-      Module.finrank ℝ E :=
-  (InfinitesimalAction.fundamental I G I' M).finrank_orbitTangent_of_isotropy_eq_bot x
-    (isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
-
-variable [FiniteDimensional ℝ E'] [I.Boundaryless]
-
+omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Orbit maps of free points are immersions.** Where the stabilizer of `x` is trivial, the
 orbit map `g ↦ g • x` of a smooth action on a Hausdorff manifold is an immersion. -/
 theorem isImmersion_smul_const_of_stabilizer_eq_bot [T2Space M] {x : M}
-    (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) :=
-  isImmersion_smul_const_iff.2 (isotropy_fundamental_eq_bot_of_stabilizer_eq_bot hx)
+    (hx : MulAction.stabilizer G x = ⊥) : IsImmersion I I' ∞ (fun g : G ↦ g • x) := by
+  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
+  have : T2Space G := I.t2Space_of_lieGroup ∞
+  exact isImmersion_smul_const_iff.2 (Lie.isotropy_eq_bot_of_stabilizer_eq_bot hx)
 
+omit [CompleteSpace E] [CompleteSpace E'] in
 /-- **Free orbits of proper smooth actions are closed embedded submanifolds.** Where the stabilizer
 of `x` is trivial, the orbit map `g ↦ g • x` of a proper smooth action is a smooth embedding. Its
 image, the orbit of `x`, is closed (`ProperSMul.isClosed_orbit`). -/
@@ -122,5 +132,7 @@ theorem isSmoothEmbedding_smul_const [ProperSMul G M] {x : M}
   have : T2Space M := t2Space_of_properSMul_of_t1Group (G := G)
   exact ⟨isImmersion_smul_const_of_stabilizer_eq_bot hx,
     (ProperSMul.isClosedEmbedding_smul_const hx).isEmbedding⟩
+
+end OrbitImmersion
 
 end TauCeti

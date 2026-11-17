@@ -44,6 +44,9 @@ conversely a nondegenerate critical point lies on no critical submanifold of pos
   function which is `C²` along it.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isLocallyConstant_comp`: a function is locally
   constant along each of its critical submanifolds.
+* `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc`: a
+  critical submanifold carrying every critical point of a compact band around its level is
+  compact.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.normalHessian`: the normal Hessian.
 * `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`: Morse–Bott critical submanifolds.
 * `TauCeti.SmoothEmbedding.IsCriticalSubmanifold.isNondegenerateCriticalSubmanifold_iff`:
@@ -133,6 +136,20 @@ theorem IsCriticalSubmanifold.isLocallyConstant_comp [IsManifold J 1 S]
   rw [mfderiv_comp s (hf s) (hi s),
     mem_criticalPoints_iff_mfderiv_eq_zero.1 (h.mem_criticalPoints s),
     ContinuousLinearMap.zero_comp]
+
+/-- A critical submanifold on the level `c` which carries every critical point of a compact band
+`f⁻¹[a, b]` around `c` is compact: its image is the closed set of critical points of the band. -/
+theorem IsCriticalSubmanifold.compactSpace_of_isCompact_preimage_Icc [IsManifold I 1 M]
+    (h : i.IsCriticalSubmanifold f) (hfs : ContMDiff I 𝓘(ℝ) 1 f) {a b c : ℝ}
+    (hc : ∀ s, f (i s) = c) (hac : a ≤ c) (hcb : c ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hcrit : criticalPoints I f ∩ f ⁻¹' Icc a b ⊆ range i) : CompactSpace S := by
+  have hrange : range i = criticalPoints I f ∩ f ⁻¹' Icc a b :=
+    (hcrit.antisymm (range_subset_iff.2 fun s ↦
+      ⟨h.mem_criticalPoints s, by rw [mem_preimage, hc s]; exact ⟨hac, hcb⟩⟩)).symm
+  have hK : IsCompact (range i) := hrange ▸ hcompact.of_isClosed_subset
+    ((isClosed_criticalPoints hfs).inter (isClosed_Icc.preimage hfs.continuous))
+    inter_subset_right
+  exact isCompact_univ_iff.1 (i.isEmbedding.isInducing.isCompact_iff.2 (by rwa [image_univ]))
 
 namespace IsCriticalSubmanifold
 
@@ -356,6 +373,15 @@ theorem IsNondegenerateCriticalSubmanifold.neg (h : i.IsNondegenerateCriticalSub
 theorem isNondegenerateCriticalSubmanifold_neg_iff :
     i.IsNondegenerateCriticalSubmanifold (-f) ↔ i.IsNondegenerateCriticalSubmanifold f :=
   ⟨fun h ↦ by simpa only [neg_neg] using h.neg, IsNondegenerateCriticalSubmanifold.neg⟩
+
+/-- Being a Morse–Bott critical submanifold depends on the embedding only through its underlying
+map, so it passes to an embedding with the same map and possibly another order of smoothness. -/
+theorem IsNondegenerateCriticalSubmanifold.congr {n' : ℕ∞ω} {i' : SmoothEmbedding J I n' S M}
+    (h : i.IsNondegenerateCriticalSubmanifold f) (hi : ⇑i' = ⇑i) :
+    i'.IsNondegenerateCriticalSubmanifold f where
+  contMDiffAt s := hi ▸ h.contMDiffAt s
+  mem_criticalPoints s := hi ▸ h.mem_criticalPoints s
+  ker_criticalHessian_le s := hi ▸ h.ker_criticalHessian_le s
 
 section Boundaryless
 
