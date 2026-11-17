@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Spectral.WLocal
+import TauCeti.Topology.Compactification.OnePoint.Basic
 import TauCeti.Topology.ConnectedComponents
 import TauCeti.Topology.Order.Sierpinski
 import TauCeti.Topology.Spectral.Limits.Basic
-import Mathlib.Topology.Compactification.OnePoint.Basic
 import Mathlib.Topology.Separation.Regular
 import Mathlib.Topology.UnitInterval
 
@@ -89,9 +89,6 @@ example : OpenCoversSplit ℕ ∧ IsClosed (closedPoints ℕ) ∧ ¬ IsWLocalSpa
   have hc : CompactSpace ℕ := h.spectralSpace.toCompactSpace
   exact infinite_univ (isCompact_iff_finite.1 hc.isCompact_univ)
 
-private theorem isOpen_singleton_coe_nat (n : ℕ) : IsOpen ({(n : OnePoint ℕ)} : Set (OnePoint ℕ)) :=
-  by simpa using OnePoint.isOpen_image_coe.2 (isOpen_discrete {n})
-
 /-- The pro-constructible comb `({∞} ×ˢ univ) ∪ (univ ×ˢ {True})` inside `OnePoint ℕ × Prop`. -/
 private def combSpace : Set (OnePoint ℕ × Prop) :=
   ({(∞ : OnePoint ℕ)} ×ˢ Set.univ) ∪ (Set.univ ×ˢ {True})
@@ -118,7 +115,8 @@ private theorem isClopen_combSpace_coe (n : ℕ) :
     simp only [mem_singleton_iff, Subtype.ext_iff, Prod.ext_iff, mem_preimage, mem_prod, mem_univ,
       and_true]
     exact ⟨fun h ↦ h.1, fun ha ↦ ⟨ha, snd_eq_true_of_mem_combSpace (ha ▸ hz)⟩⟩
-  · convert ((isOpen_singleton_coe_nat n).prod isOpen_singleton_true).preimage
+  · convert ((OnePoint.isOpen_singleton_coe.2 (isOpen_discrete {n})).prod
+        isOpen_singleton_true).preimage
       (continuous_subtype_val (p := (· ∈ combSpace)))
     ext ⟨⟨a, p⟩, _⟩
     simp [Subtype.ext_iff]
