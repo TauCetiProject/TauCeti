@@ -15,11 +15,11 @@ import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 import Mathlib.Probability.Process.Kolmogorov
 import TauCeti.MeasureTheory.Constructions.BorelSpace.ContinuousMap
 import TauCeti.MeasureTheory.Measure.ContinuousMap
+import TauCeti.Probability.BrownianMotion.Basic
 import TauCeti.Probability.BrownianMotion.Countable
 import TauCeti.Probability.BrownianMotion.Regularity
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Continuity
-import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Process.Kolmogorov.Chentsov
 import TauCeti.Topology.Instances.NNReal.DyadicGrid
 
@@ -34,17 +34,16 @@ coordinate evaluation process `t ↦ (ω ↦ ω t)` is a standard real Brownian 
 We also record path-space pushforward characterizations, singleton non-atomicity, symmetries
 (reflection, increment-shift, and diffusive Brownian rescaling invariance), scalar-rescaling
 rigidity, local `< 1 / 2`-Hölder regularity, and marginal moments of `wienerMeasure`. General
-Brownian path-regularity results (`isAEKolmogorovProcess_two_mul`,
-`exists_continuous_modification`, `ae_exists_holderOnWith`) live upstream in
-`TauCeti.Probability.BrownianMotion.Regularity`.
+pre-Brownian singleton non-atomicity (`ProbabilityTheory.IsPreBrownianReal.nullSingletonClass`)
+lives upstream in `TauCeti.Probability.BrownianMotion.Basic`, and general Brownian path-regularity
+results (`isAEKolmogorovProcess_two_mul`, `exists_continuous_modification`,
+`ae_exists_holderOnWith`) live upstream in `TauCeti.Probability.BrownianMotion.Regularity`.
 
 ## Main definitions and results
 
 * `ProbabilityTheory.IsPreBrownianReal.isBrownianReal_eval_map` and
   `ProbabilityTheory.IsPreBrownianReal.map_eq_wienerMeasure`: pushing forward along any
   `F : Ω → C(ℝ≥0, ℝ)` with pre-Brownian coordinate evaluations produces `wienerMeasure`.
-* `ProbabilityTheory.IsPreBrownianReal.nullSingletonClass`: any measure supporting a pre-Brownian
-  motion assigns zero mass to singletons.
 * `TauCeti.wienerMeasure`: Wiener measure on `C(ℝ≥0, ℝ)`, with `NullSingletonClass` instance giving
   `∀ f, wienerMeasure {f} = 0`.
 * `TauCeti.exists_wienerMeasure`: existence of a Borel probability measure on `C(ℝ≥0, ℝ)` whose
@@ -76,7 +75,7 @@ open scoped ENNReal Nat NNReal Topology
 
 namespace ProbabilityTheory
 
-variable {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω} {B : ℝ≥0 → Ω → ℝ}
+variable {Ω : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω}
 
 /-- If `F : Ω → C(ℝ≥0, ℝ)` has pre-Brownian coordinate evaluations, then pushing `P` forward along
 `F` yields a probability measure under which coordinate evaluation on `C(ℝ≥0, ℝ)` is
@@ -93,13 +92,6 @@ theorem IsPreBrownianReal.isBrownianReal_eval_map {F : Ω → C(ℝ≥0, ℝ)}
   refine ⟨hres_meas.aemeasurable, ?_⟩
   rw [AEMeasurable.map_map_of_aemeasurable hres_meas.aemeasurable hF_meas]
   exact (hF.hasLaw I).map_eq
-
-/-- Any measure supporting a pre-Brownian motion assigns zero mass to every single sample point. -/
-theorem IsPreBrownianReal.nullSingletonClass (hB : IsPreBrownianReal B P) :
-    NullSingletonClass P where
-  measure_singleton ω := by
-    have := nullSingletonClass_gaussianReal (μ := 0) one_ne_zero
-    exact (hB.hasLaw_eval 1).measure_singleton_eq_zero ω
 
 end ProbabilityTheory
 
