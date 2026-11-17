@@ -31,8 +31,9 @@ When `A` satisfies the three axioms of a generalized Cartan matrix (`A i i = 2`,
 
 ## Main definitions
 
-* `TauCeti.KacMoody.cartanEquiv`: the linear equivalence `H ≃ₗ[K] cartanSubalgebra R` when `A` is
-  a generalized Cartan matrix.
+* `TauCeti.KacMoody.cartanEquiv`: the linear equivalence `H ≃ₗ[K] cartanSubalgebra R` whenever
+  `cartanElement R` is injective (in particular for any generalized Cartan matrix via
+  `TauCeti.KacMoody.cartanElement_injective`).
 
 ## Main results
 
@@ -42,9 +43,10 @@ When `A` satisfies the three axioms of a generalized Cartan matrix (`A i i = 2`,
   `TauCeti.KacMoody.cartanElement_cartanEquiv_symm`: `@[simp]` API for `cartanEquiv`.
 * `TauCeti.KacMoody.positiveGenerator_ne_zero`, `TauCeti.KacMoody.negativeGenerator_ne_zero`, and
   `TauCeti.KacMoody.linearIndependent_cartanElement_coroot`: nonvanishing of Chevalley generators
-  and linear independence of simple coroots in `PresentedLieAlgebra R`.
-* `TauCeti.KacMoody.cartanElement_mem_center_iff`: `cartanElement R x` is central in `𝔤` if and
-  only if `x ∈ R.cartanCenter`.
+  and linear independence of simple coroots in `PresentedLieAlgebra R`, assuming only injectivity
+  of `cartanElement R`.
+* `TauCeti.KacMoody.cartanElement_mem_center_iff`: assuming injectivity of `cartanElement R`,
+  `cartanElement R x` is central in `𝔤` if and only if `x ∈ R.cartanCenter`.
 
 ## References
 
@@ -66,46 +68,26 @@ variable {I K H : Type*} [Field K] [AddCommGroup H] [Module K H] {A : Matrix I I
 
 /-! ## The auxiliary Chevalley presentation and Kac's word representation -/
 
-open _root_.FreeLieAlgebra Generator in
-/-- The Chevalley relators of `R`, omitting Serre's relations. -/
-private inductive IsAuxRelator : FreeLieAlgebra K (Generator I H) → Prop
-  | cartan_add (x y : H) :
-      IsAuxRelator (of K (cartan (x + y)) - of K (cartan x) - of K (cartan y))
-  | cartan_smul (c : K) (x : H) : IsAuxRelator (of K (cartan (c • x)) - c • of K (cartan x))
-  | lie_cartan_cartan (x y : H) :
-      IsAuxRelator ⁅of K (cartan x : Generator I H), of K (cartan y)⁆
-  | lie_cartan_positive (x : H) (j : I) :
-      IsAuxRelator (⁅of K (cartan x : Generator I H), of K (positive j)⁆ -
-        R.root j x • of K (positive j))
-  | lie_cartan_negative (x : H) (j : I) :
-      IsAuxRelator (⁅of K (cartan x : Generator I H), of K (negative j)⁆ +
-        R.root j x • of K (negative j))
-  | lie_positive_negative_self (i : I) :
-      IsAuxRelator (⁅of K (positive i : Generator I H), of K (negative i)⁆ -
-        of K (cartan (R.coroot i)))
-  | lie_positive_negative_of_ne (i j : I) (hij : i ≠ j) :
-      IsAuxRelator ⁅of K (positive i : Generator I H), of K (negative j)⁆
-
 private noncomputable def auxIdeal : LieIdeal K (FreeLieAlgebra K (Generator I H)) :=
-  LieSubmodule.lieSpan K _ {x | IsAuxRelator R x}
+  LieSubmodule.lieSpan K _ {x | IsChevalleyRelator R x}
 
 private abbrev AuxLieAlgebra : Type _ := FreeLieAlgebra K (Generator I H) ⧸ auxIdeal R
 
 private noncomputable def auxMk : FreeLieAlgebra K (Generator I H) →ₗ⁅K⁆ AuxLieAlgebra R :=
   LieIdeal.mkQ (auxIdeal R)
 
-private theorem auxMk_eq_zero_of_isAuxRelator {x : FreeLieAlgebra K (Generator I H)}
-    (hx : IsAuxRelator R x) : auxMk R x = 0 :=
+private theorem auxMk_eq_zero_of_isChevalleyRelator {x : FreeLieAlgebra K (Generator I H)}
+    (hx : IsChevalleyRelator R x) : auxMk R x = 0 :=
   (LieIdeal.mkQ_apply _ x).trans
     (LieSubmodule.Quotient.mk_eq_zero'.mpr (LieSubmodule.subset_lieSpan hx))
 
 private noncomputable def auxCartan : H →ₗ[K] AuxLieAlgebra R where
   toFun x := auxMk R (FreeLieAlgebra.of K (Generator.cartan x))
   map_add' x y := by
-    have h := auxMk_eq_zero_of_isAuxRelator R (.cartan_add x y)
+    have h := auxMk_eq_zero_of_isChevalleyRelator R (.cartan_add x y)
     rwa [map_sub, map_sub, sub_sub, sub_eq_zero] at h
   map_smul' c x := by
-    have h := auxMk_eq_zero_of_isAuxRelator R (.cartan_smul c x)
+    have h := auxMk_eq_zero_of_isChevalleyRelator R (.cartan_smul c x)
     rwa [map_sub, map_smul, sub_eq_zero] at h
 
 private noncomputable def auxE (i : I) : AuxLieAlgebra R :=
@@ -117,76 +99,40 @@ private noncomputable def auxF (i : I) : AuxLieAlgebra R :=
 private theorem lieSpan_auxGenerators_eq_top :
     lieSpan K (AuxLieAlgebra R)
       (Set.range (auxCartan R) ∪ Set.range (auxE R) ∪ Set.range (auxF R)) = ⊤ := by
-  set S := lieSpan K (AuxLieAlgebra R)
-    (Set.range (auxCartan R) ∪ Set.range (auxE R) ∪ Set.range (auxF R))
-  have hle : lieSpan K (FreeLieAlgebra K (Generator I H))
-      (Set.range (FreeLieAlgebra.of K)) ≤ S.comap (auxMk R) := lieSpan_le.mpr <| by
-    rintro _ ⟨g, rfl⟩; cases g with
-    | cartan x => exact subset_lieSpan (Or.inl (Or.inl ⟨x, rfl⟩))
-    | positive i => exact subset_lieSpan (Or.inl (Or.inr ⟨i, rfl⟩))
-    | negative i => exact subset_lieSpan (Or.inr ⟨i, rfl⟩)
-  refine eq_top_iff.2 fun y _ => ?_
-  obtain ⟨x, rfl⟩ := (auxIdeal R).surjective_mkQ y
-  exact hle (by rw [FreeLieAlgebra.lieSpan_range_of_eq_top]; trivial)
-
-/-- Data in a Lie algebra satisfying the Chevalley relations of `R`, without Serre's relations. -/
-private structure SatisfiesChevalley {L : Type*} [LieRing L] [LieAlgebra K L]
-    (φ : H →ₗ[K] L) (E F : I → L) : Prop where
-  lie_cartan_cartan : ∀ x y, ⁅φ x, φ y⁆ = 0
-  lie_cartan_positive : ∀ x j, ⁅φ x, E j⁆ = R.root j x • E j
-  lie_cartan_negative : ∀ x j, ⁅φ x, F j⁆ = -(R.root j x • F j)
-  lie_positive_negative_self : ∀ i, ⁅E i, F i⁆ = φ (R.coroot i)
-  lie_positive_negative_of_ne : ∀ i j, i ≠ j → ⁅E i, F j⁆ = 0
+  have hH : ∀ x, auxMk R (FreeLieAlgebra.of K (Generator.cartan x)) = auxCartan R x := fun _ => rfl
+  have hE : ∀ i, auxMk R (FreeLieAlgebra.of K (Generator.positive i)) = auxE R i := fun _ => rfl
+  have hF : ∀ i, auxMk R (FreeLieAlgebra.of K (Generator.negative i)) = auxF R i := fun _ => rfl
+  simpa only [hH, hE, hF] using
+    lieSpan_image_generators_eq_top (f := auxMk R) (auxIdeal R).surjective_mkQ
 
 private theorem satisfiesChevalley_aux :
     SatisfiesChevalley R (auxCartan R) (auxE R) (auxF R) where
   lie_cartan_cartan x y := by
-    simpa [auxCartan] using auxMk_eq_zero_of_isAuxRelator R (.lie_cartan_cartan x y)
+    simpa [auxCartan] using auxMk_eq_zero_of_isChevalleyRelator R (.lie_cartan_cartan x y)
   lie_cartan_positive x j := by
     simpa [auxCartan, auxE, sub_eq_zero] using
-      auxMk_eq_zero_of_isAuxRelator R (.lie_cartan_positive x j)
+      auxMk_eq_zero_of_isChevalleyRelator R (.lie_cartan_positive x j)
   lie_cartan_negative x j := by
     simpa [auxCartan, auxF, add_eq_zero_iff_eq_neg] using
-      auxMk_eq_zero_of_isAuxRelator R (.lie_cartan_negative x j)
+      auxMk_eq_zero_of_isChevalleyRelator R (.lie_cartan_negative x j)
   lie_positive_negative_self i := by
     simpa [auxCartan, auxE, auxF, sub_eq_zero] using
-      auxMk_eq_zero_of_isAuxRelator R (.lie_positive_negative_self i)
+      auxMk_eq_zero_of_isChevalleyRelator R (.lie_positive_negative_self i)
   lie_positive_negative_of_ne i j hij := by
-    simpa [auxE, auxF] using auxMk_eq_zero_of_isAuxRelator R (.lie_positive_negative_of_ne i j hij)
+    simpa [auxE, auxF] using
+      auxMk_eq_zero_of_isChevalleyRelator R (.lie_positive_negative_of_ne i j hij)
 
 section AuxLift
 
 variable {L : Type*} [LieRing L] [LieAlgebra K L] {φ : H →ₗ[K] L} {E F : I → L}
 
-private theorem SatisfiesChevalley.lie_negative_positive_self
-    {R : CartanRealization (A.map (Int.cast : ℤ → K)) H}
-    (h : SatisfiesChevalley R φ E F) (i : I) : ⁅F i, E i⁆ = -φ (R.coroot i) := by
-  rw [← lie_skew, h.lie_positive_negative_self]
-
-private theorem SatisfiesChevalley.lie_negative_positive_of_ne
-    {R : CartanRealization (A.map (Int.cast : ℤ → K)) H}
-    (h : SatisfiesChevalley R φ E F) {i j : I} (hij : i ≠ j) : ⁅F i, E j⁆ = 0 := by
-  rw [← lie_skew, h.lie_positive_negative_of_ne j i hij.symm, neg_zero]
-
-private theorem SatisfiesChevalley.neg_swap (h : SatisfiesChevalley R φ E F) :
-    SatisfiesChevalley R (-φ) (-F) (-E) where
-  lie_cartan_cartan x y := by simp [h.lie_cartan_cartan x y]
-  lie_cartan_positive x j := by simp [h.lie_cartan_negative x j]
-  lie_cartan_negative x j := by simp [h.lie_cartan_positive x j]
-  lie_positive_negative_self i := by simp [h.lie_negative_positive_self i]
-  lie_positive_negative_of_ne i j hij := by simp [h.lie_negative_positive_of_ne hij]
-
 private noncomputable def auxLift (h : SatisfiesChevalley R φ E F) : AuxLieAlgebra R →ₗ⁅K⁆ L :=
   let g : Generator I H → L := fun | .cartan x => φ x | .positive i => E i | .negative i => F i
-  (auxIdeal R).liftQ (FreeLieAlgebra.lift K g) <| LieSubmodule.lieSpan_le.mpr fun x hx => by
-    rw [SetLike.mem_coe, LieHom.mem_ker]
-    induction hx with
-    | cartan_add _ _ | cartan_smul _ _ => simp [g]
-    | lie_cartan_cartan x y => simpa [g] using h.lie_cartan_cartan x y
-    | lie_cartan_positive x j => simpa [g, sub_eq_zero] using h.lie_cartan_positive x j
-    | lie_cartan_negative x j => simpa [g, add_eq_zero_iff_eq_neg] using h.lie_cartan_negative x j
-    | lie_positive_negative_self i => simpa [g, sub_eq_zero] using h.lie_positive_negative_self i
-    | lie_positive_negative_of_ne i j hij => simpa [g] using h.lie_positive_negative_of_ne i j hij
+  (auxIdeal R).liftQ (FreeLieAlgebra.lift K g) <| LieSubmodule.lieSpan_le.mpr fun _ hx =>
+    h.map_eq_zero_of_isChevalleyRelator
+      (fun _ => FreeLieAlgebra.lift_of_apply _ _)
+      (fun _ => FreeLieAlgebra.lift_of_apply _ _)
+      (fun _ => FreeLieAlgebra.lift_of_apply _ _) hx
 
 private theorem auxLift_auxCartan (h : SatisfiesChevalley R φ E F) (x : H) :
     auxLift R h (auxCartan R x) = φ x :=
@@ -352,13 +298,11 @@ private theorem lie_F_self_ad_pow_lie_E_E {L : Type*} [LieRing L] [LieAlgebra K 
     rw [← LieRing.of_associative_ring_bracket, ← LieHom.map_lie, h.lie_cartan_positive,
       R.root_coroot, Matrix.map_apply, hdiag i]
     simp [two_smul]
-  have hrel := LinearMap.congr_fun (Sl2.f_mul_e_pow_succ hef hhe m) (E j)
-  have hnat : ((m : Module.End K L) (E j)) = (m : K) • E j := by
-    rw [← nsmul_one m, LinearMap.smul_apply, _root_.one_apply_eq_self, ← Nat.cast_smul_eq_nsmul K]
-  simp only [LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.add_apply,
-    _root_.mul_apply_eq_comp, ad_apply, ad_pow_succ_apply,
-    h.lie_negative_positive_of_ne hij, h.lie_cartan_positive, R.root_coroot, Matrix.map_apply,
-    hnat, map_zero, zero_sub, map_add, map_smul] at hrel
+  have hrel : ⁅F i, (ad K L (E i) ^ m) ⁅E i, E j⁆⁆ =
+      -((m + 1) • (((A i j : K) • (ad K L (E i) ^ m) (E j)) + m • (ad K L (E i) ^ m) (E j))) := by
+    simpa [ad_pow_succ_apply, h.lie_negative_positive_of_ne hij, h.lie_cartan_positive,
+      succ_nsmul, add_comm, add_left_comm, add_assoc] using
+      LinearMap.congr_fun (Sl2.f_mul_e_pow_succ hef hhe m) (E j)
   rw [hrel, ← Nat.cast_smul_eq_nsmul K, ← Int.cast_smul_eq_zsmul K]
   push_cast
   module
@@ -425,21 +369,32 @@ private theorem serreWordSubmodule_le_lieSpan (E : I → AuxLieAlgebra R) :
   | nil => exact hrel
   | cons l w ih => rw [serreWord_cons]; exact lie_mem _ (subset_lieSpan ⟨l, rfl⟩) ih
 
+private theorem lie_mem_serreWordSubmodule_of_forall (E : I → AuxLieAlgebra R)
+    (a : AuxLieAlgebra R)
+    (hword : ∀ (i j : I) (w : List I), ⁅a, serreWord R E i j w⁆ ∈ serreWordSubmodule R E)
+    {y : AuxLieAlgebra R} (hy : y ∈ serreWordSubmodule R E) :
+    ⁅a, y⁆ ∈ serreWordSubmodule R E := by
+  have hle : serreWordSubmodule R E ≤
+      (serreWordSubmodule R E).comap (ad K (AuxLieAlgebra R) a) := by
+    rw [serreWordSubmodule, Submodule.span_le]
+    rintro _ ⟨i, j, w, rfl⟩
+    rw [SetLike.mem_coe, Submodule.mem_comap, ad_apply]
+    exact hword i j w
+  have hy' := hle hy
+  rwa [Submodule.mem_comap, ad_apply] at hy'
+
 private theorem lie_E_mem_serreWordSubmodule (E : I → AuxLieAlgebra R) (l : I)
     {y : AuxLieAlgebra R} (hy : y ∈ serreWordSubmodule R E) :
-    ⁅E l, y⁆ ∈ serreWordSubmodule R E := by
-  induction hy using Submodule.span_induction with
-  | mem _ hz => obtain ⟨i, j, w, rfl⟩ := hz; exact Submodule.subset_span ⟨i, j, l :: w, rfl⟩
-  | zero => simp
-  | add _ _ _ _ ha hb => rw [lie_add]; exact add_mem ha hb
-  | smul c _ _ ha => rw [lie_smul]; exact Submodule.smul_mem _ c ha
+    ⁅E l, y⁆ ∈ serreWordSubmodule R E :=
+  lie_mem_serreWordSubmodule_of_forall R E (E l)
+    (fun i j w => Submodule.subset_span ⟨i, j, l :: w, rfl⟩) hy
 
 private theorem lie_cartan_mem_serreWordSubmodule {φ : H →ₗ[K] AuxLieAlgebra R}
     {E F : I → AuxLieAlgebra R} (h : SatisfiesChevalley R φ E F) (x : H)
     {y : AuxLieAlgebra R} (hy : y ∈ serreWordSubmodule R E) :
     ⁅φ x, y⁆ ∈ serreWordSubmodule R E := by
-  have hwt_word : ∀ (i j : I) (w : List I), ∃ c : K,
-      ⁅φ x, serreWord R E i j w⁆ = c • serreWord R E i j w := fun i j w => by
+  refine lie_mem_serreWordSubmodule_of_forall R E (φ x) (fun i j w => ?_) hy
+  have hwt : ∃ c : K, ⁅φ x, serreWord R E i j w⁆ = c • serreWord R E i j w := by
     induction w with
     | nil =>
       refine ⟨R.root j x + (((-A i j).toNat + 1 : ℕ) : K) * R.root i x, ?_⟩
@@ -449,13 +404,8 @@ private theorem lie_cartan_mem_serreWordSubmodule {φ : H →ₗ[K] AuxLieAlgebr
       obtain ⟨c, hc⟩ := ih
       exact ⟨R.root l x + c, by
         rw [serreWord_cons, leibniz_lie, h.lie_cartan_positive, hc, smul_lie, lie_smul, add_smul]⟩
-  induction hy using Submodule.span_induction with
-  | mem _ hz =>
-    obtain ⟨i, j, w, rfl⟩ := hz; obtain ⟨c, hc⟩ := hwt_word i j w
-    exact hc ▸ Submodule.smul_mem _ c (Submodule.subset_span ⟨i, j, w, rfl⟩)
-  | zero => simp
-  | add _ _ _ _ ha hb => rw [lie_add]; exact add_mem ha hb
-  | smul c _ _ ha => rw [lie_smul]; exact Submodule.smul_mem _ c ha
+  obtain ⟨c, hc⟩ := hwt
+  exact hc ▸ Submodule.smul_mem _ c (Submodule.subset_span ⟨i, j, w, rfl⟩)
 
 private theorem lie_F_mem_serreWordSubmodule {φ : H →ₗ[K] AuxLieAlgebra R}
     {E F : I → AuxLieAlgebra R} (h : SatisfiesChevalley R φ E F)
@@ -463,22 +413,17 @@ private theorem lie_F_mem_serreWordSubmodule {φ : H →ₗ[K] AuxLieAlgebra R}
     (hzero : ∀ i j, A i j = 0 ↔ A j i = 0) (k : I)
     {y : AuxLieAlgebra R} (hy : y ∈ serreWordSubmodule R E) :
     ⁅F k, y⁆ ∈ serreWordSubmodule R E := by
-  induction hy using Submodule.span_induction with
-  | mem _ hz =>
-    obtain ⟨i, j, w, rfl⟩ := hz
-    induction w with
-    | nil => rw [serreWord_nil, lie_F_ad_pow_lie_E_E R h hdiag hoff hzero k i j]; exact zero_mem _
-    | cons l w ih =>
-      rw [serreWord_cons, leibniz_lie]
-      refine add_mem ?_ (lie_E_mem_serreWordSubmodule R E l ih)
-      rcases eq_or_ne k l with rfl | hkl
-      · rw [h.lie_negative_positive_self, neg_lie]
-        exact neg_mem (lie_cartan_mem_serreWordSubmodule R h (R.coroot k)
-          (Submodule.subset_span ⟨i, j, w, rfl⟩))
-      · rw [h.lie_negative_positive_of_ne hkl, zero_lie]; exact zero_mem _
-  | zero => simp
-  | add _ _ _ _ ha hb => rw [lie_add]; exact add_mem ha hb
-  | smul c _ _ ha => rw [lie_smul]; exact Submodule.smul_mem _ c ha
+  refine lie_mem_serreWordSubmodule_of_forall R E (F k) (fun i j w => ?_) hy
+  induction w with
+  | nil => rw [serreWord_nil, lie_F_ad_pow_lie_E_E R h hdiag hoff hzero k i j]; exact zero_mem _
+  | cons l w ih =>
+    rw [serreWord_cons, leibniz_lie]
+    refine add_mem ?_ (lie_E_mem_serreWordSubmodule R E l ih)
+    rcases eq_or_ne k l with rfl | hkl
+    · rw [h.lie_negative_positive_self, neg_lie]
+      exact neg_mem (lie_cartan_mem_serreWordSubmodule R h (R.coroot k)
+        (Submodule.subset_span ⟨i, j, w, rfl⟩))
+    · rw [h.lie_negative_positive_of_ne hkl, zero_lie]; exact zero_mem _
 
 /-- In `AuxLieAlgebra R`, the Lie ideal generated by the Serre relators of `(φ, E, F)` lies inside
 the Lie subalgebra generated by `E`. -/
@@ -519,28 +464,12 @@ private noncomputable def auxSerreIdeal : LieIdeal K (AuxLieAlgebra R) :=
       {z | ∃ i j : I,
         (ad K (AuxLieAlgebra R) (auxE R i) ^ (-A i j).toNat) ⁅auxE R i, auxE R j⁆ = z}
 
-private theorem SatisfiesChevalley.map {L L' : Type*} [LieRing L] [LieAlgebra K L]
-    [LieRing L'] [LieAlgebra K L'] {φ : H →ₗ[K] L} {E F : I → L}
-    (h : SatisfiesChevalley R φ E F) (f : L →ₗ⁅K⁆ L') :
-    SatisfiesChevalley R (f.toLinearMap ∘ₗ φ) (f ∘ E) (f ∘ F) where
-  lie_cartan_cartan u v := by simp [← LieHom.map_lie, h.lie_cartan_cartan]
-  lie_cartan_positive u j := by simp [← LieHom.map_lie, h.lie_cartan_positive]
-  lie_cartan_negative u j := by simp [← LieHom.map_lie, h.lie_cartan_negative]
-  lie_positive_negative_self i := by simp [← LieHom.map_lie, h.lie_positive_negative_self]
-  lie_positive_negative_of_ne i j hij := by
-    simp [← LieHom.map_lie, h.lie_positive_negative_of_ne i j hij]
-
 private theorem satisfiesRelations_auxSerreQuotient :
     SatisfiesRelations R ((LieIdeal.mkQ (auxSerreIdeal R)).toLinearMap ∘ₗ auxCartan R)
       (LieIdeal.mkQ (auxSerreIdeal R) ∘ auxE R)
       (LieIdeal.mkQ (auxSerreIdeal R) ∘ auxF R) := by
   let q := LieIdeal.mkQ (auxSerreIdeal R)
-  have hq := SatisfiesChevalley.map R (satisfiesChevalley_aux R) q
-  refine
-    { lie_cartan_cartan := hq.lie_cartan_cartan, lie_cartan_positive := hq.lie_cartan_positive
-      lie_cartan_negative := hq.lie_cartan_negative
-      lie_positive_negative_self := hq.lie_positive_negative_self
-      lie_positive_negative_of_ne := hq.lie_positive_negative_of_ne
+  refine { (satisfiesChevalley_aux R).map q with
       serre_positive := fun i j => ?_, serre_negative := fun i j => ?_ }
   · simp only [Function.comp_apply, ← LieHom.map_lie, ← LieHom.map_ad_pow]
     exact (LieIdeal.mkQ_apply _ _).trans <| LieSubmodule.Quotient.mk_eq_zero'.2 <|
@@ -555,6 +484,8 @@ private theorem satisfiesRelations_auxSerreQuotient :
     have hpos := ad_neg_pow_apply_eq_zero hneg; rwa [neg_neg] at hpos
 
 /-! ## Cartan injectivity and consequences -/
+
+section GeneralizedCartan
 
 variable (hdiag : ∀ i, A i i = 2) (hoff : ∀ i j, i ≠ j → A i j ≤ 0)
   (hzero : ∀ i j, A i j = 0 ↔ A j i = 0)
@@ -590,49 +521,57 @@ theorem cartanElement_injective : Function.Injective (cartanElement R) := by
     LieSubmodule.Quotient.mk_eq_zero'.1 ((LieIdeal.mkQ_apply _ _).symm.trans hq0)
   exact eq_zero_of_auxCartan_mem_sup R (auxSerreIdeal_le_sup R hdiag hoff hzero hmem)
 
+end GeneralizedCartan
+
+section CartanInjective
+
+variable (hinj : Function.Injective (cartanElement R))
+
 /-- The linear equivalence between the realization `H` and `TauCeti.KacMoody.cartanSubalgebra R`
-induced by `TauCeti.KacMoody.cartanElement` for a generalized Cartan matrix. -/
+induced by `TauCeti.KacMoody.cartanElement` whenever `cartanElement R` is injective (in particular
+for any generalized Cartan matrix via `TauCeti.KacMoody.cartanElement_injective`). -/
 noncomputable def cartanEquiv : H ≃ₗ[K] cartanSubalgebra R :=
-  (LinearEquiv.ofInjective (cartanElement R) (cartanElement_injective R hdiag hoff hzero)).trans
+  (LinearEquiv.ofInjective (cartanElement R) hinj).trans
     (LinearEquiv.ofEq _ _ (cartanSubalgebra_toSubmodule R).symm)
 
 /-- Coercing `TauCeti.KacMoody.cartanEquiv` to the ambient Lie algebra gives
 `TauCeti.KacMoody.cartanElement`. -/
 @[simp] theorem coe_cartanEquiv_apply (x : H) :
-    (cartanEquiv R hdiag hoff hzero x : PresentedLieAlgebra R) = cartanElement R x := by
+    (cartanEquiv R hinj x : PresentedLieAlgebra R) = cartanElement R x := by
   rw [cartanEquiv, LinearEquiv.trans_apply]
   exact (LinearEquiv.coe_ofEq_apply _ _).trans (LinearEquiv.ofInjective_apply (cartanElement R) x)
 
 /-- The inverse of `TauCeti.KacMoody.cartanEquiv` recovers `x` from `cartanElement R x`. -/
 @[simp] theorem cartanEquiv_symm_cartanElement (x : H) :
-    (cartanEquiv R hdiag hoff hzero).symm
+    (cartanEquiv R hinj).symm
         ⟨cartanElement R x, cartanElement_mem_cartanSubalgebra R x⟩ = x :=
-  (cartanEquiv R hdiag hoff hzero).injective (Subtype.ext (by simp))
+  (cartanEquiv R hinj).injective (Subtype.ext (by simp))
 
-/-- Applying `TauCeti.KacMoody.cartanElement` to `(cartanEquiv R hdiag hoff hzero).symm y`
-recovers `(y : PresentedLieAlgebra R)`. -/
+/-- Applying `TauCeti.KacMoody.cartanElement` to `(cartanEquiv R hinj).symm y` recovers
+`(y : PresentedLieAlgebra R)`. -/
 @[simp] theorem cartanElement_cartanEquiv_symm (y : cartanSubalgebra R) :
-    cartanElement R ((cartanEquiv R hdiag hoff hzero).symm y) = y := by
-  conv_rhs => rw [← (cartanEquiv R hdiag hoff hzero).apply_symm_apply y, coe_cartanEquiv_apply]
+    cartanElement R ((cartanEquiv R hinj).symm y) = y := by
+  conv_rhs => rw [← (cartanEquiv R hinj).apply_symm_apply y, coe_cartanEquiv_apply]
 
-/-- For a generalized Cartan matrix, every raising generator `eᵢ` is nonzero. -/
+include hinj
+
+/-- Whenever `cartanElement R` is injective, every raising generator `eᵢ` is nonzero. -/
 theorem positiveGenerator_ne_zero (i : I) : positiveGenerator R i ≠ 0 := fun h0 =>
-  R.coroot_linearIndependent.ne_zero i <| cartanElement_injective R hdiag hoff hzero <| by
+  R.coroot_linearIndependent.ne_zero i <| hinj <| by
     simpa [h0] using (lie_positiveGenerator_negativeGenerator_self R i).symm
 
-/-- For a generalized Cartan matrix, every lowering generator `fᵢ` is nonzero. -/
+/-- Whenever `cartanElement R` is injective, every lowering generator `fᵢ` is nonzero. -/
 theorem negativeGenerator_ne_zero (i : I) : negativeGenerator R i ≠ 0 := fun h0 =>
-  R.coroot_linearIndependent.ne_zero i <| cartanElement_injective R hdiag hoff hzero <| by
+  R.coroot_linearIndependent.ne_zero i <| hinj <| by
     simpa [h0] using (lie_positiveGenerator_negativeGenerator_self R i).symm
 
-/-- For a generalized Cartan matrix, the images of the simple coroots in
+/-- Whenever `cartanElement R` is injective, the images of the simple coroots in
 `TauCeti.KacMoody.PresentedLieAlgebra R` are linearly independent. -/
 theorem linearIndependent_cartanElement_coroot :
     LinearIndependent K (fun i => cartanElement R (R.coroot i)) :=
-  R.coroot_linearIndependent.map' (cartanElement R)
-    (LinearMap.ker_eq_bot.2 (cartanElement_injective R hdiag hoff hzero))
+  R.coroot_linearIndependent.map' (cartanElement R) (LinearMap.ker_eq_bot.2 hinj)
 
-/-- For a generalized Cartan matrix, `cartanElement R x` lies in the center of
+/-- Whenever `cartanElement R` is injective, `cartanElement R x` lies in the center of
 `TauCeti.KacMoody.PresentedLieAlgebra R` if and only if `x` lies in `R.cartanCenter`. -/
 theorem cartanElement_mem_center_iff {x : H} :
     cartanElement R x ∈ LieAlgebra.center K (PresentedLieAlgebra R) ↔ x ∈ R.cartanCenter := by
@@ -641,7 +580,9 @@ theorem cartanElement_mem_center_iff {x : H} :
   have h0 : ⁅cartanElement R x, positiveGenerator R i⁆ = 0 := by
     rw [← lie_skew, (LieModule.mem_maxTrivSubmodule K _ _ _).1 hx (positiveGenerator R i), neg_zero]
   rw [lie_cartanElement_positiveGenerator] at h0
-  exact (smul_eq_zero.1 h0).resolve_right (positiveGenerator_ne_zero R hdiag hoff hzero i)
+  exact (smul_eq_zero.1 h0).resolve_right (positiveGenerator_ne_zero R hinj i)
+
+end CartanInjective
 
 end KacMoody
 

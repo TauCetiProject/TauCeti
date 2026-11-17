@@ -8,6 +8,9 @@ module
 public import TauCeti.Algebra.Lie.KacMoody.Basic
 public import TauCeti.Algebra.Lie.Presentation.Serre.Automorphism
 import Mathlib.Algebra.Lie.Loop
+import TauCeti.Algebra.Lie.BaseChange.Basic
+import TauCeti.Algebra.Lie.BaseChange.Hom
+import TauCeti.Algebra.Lie.Graded.Sign
 import TauCeti.Algebra.Lie.Presentation.Serre.Triangular
 import TauCeti.Algebra.Lie.Subalgebra.Automorphism
 
@@ -311,17 +314,6 @@ theorem negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top :
 
 section PrincipalGrading
 
-private theorem ad_pow_single_tmul {L : Type*} [LieRing L] [LieAlgebra K L]
-    (d c : ℤ) (u v : L) (m : ℕ) :
-    ((ad K (LieAlgebra.loopAlgebra K ℤ L) (AddMonoidAlgebra.single d 1 ⊗ₜ[K] u)) ^ m)
-        (AddMonoidAlgebra.single c 1 ⊗ₜ[K] v) =
-      AddMonoidAlgebra.single (m • d + c) 1 ⊗ₜ[K] ((ad K L u ^ m) v) := by
-  induction m with
-  | zero => simp
-  | succ m ih =>
-    rw [ad_pow_succ'_apply, ih, ad_pow_succ'_apply, LieAlgebra.ExtendScalars.bracket_tmul,
-      AddMonoidAlgebra.single_mul_single, one_mul, ← add_assoc, ← succ_nsmul']
-
 private theorem satisfiesRelations_principalGrading :
     SatisfiesRelations R
       ((TensorProduct.mk K (AddMonoidAlgebra K ℤ) (PresentedLieAlgebra R)
@@ -331,122 +323,105 @@ private theorem satisfiesRelations_principalGrading :
   lie_cartan_cartan x y := by simp
   lie_cartan_positive x j := by simp
   lie_cartan_negative x j := by simp [TensorProduct.tmul_neg, TensorProduct.tmul_smul]
-  lie_positive_negative_self i := by
-    simp only [LinearMap.comp_apply, TensorProduct.mk_apply, LieAlgebra.ExtendScalars.bracket_tmul,
-      AddMonoidAlgebra.single_mul_single, one_mul, add_neg_cancel,
-      lie_positiveGenerator_negativeGenerator_self]
+  lie_positive_negative_self i := by simp [-LaurentPolynomial.single_eq_C_mul_T]
   lie_positive_negative_of_ne i j hij := by
     rw [LieAlgebra.ExtendScalars.bracket_tmul, lie_positiveGenerator_negativeGenerator_of_ne R hij,
       TensorProduct.tmul_zero]
   serre_positive i j := by
-    rw [LieAlgebra.ExtendScalars.bracket_tmul, AddMonoidAlgebra.single_mul_single, one_mul,
-      ad_pow_single_tmul, ad_pow_lie_positiveGenerator_positiveGenerator, TensorProduct.tmul_zero]
+    rw [LieAlgebra.ExtendScalars.bracket_tmul, LieAlgebra.ExtendScalars.ad_pow_tmul,
+      ad_pow_lie_positiveGenerator_positiveGenerator, TensorProduct.tmul_zero]
   serre_negative i j := by
-    rw [LieAlgebra.ExtendScalars.bracket_tmul, AddMonoidAlgebra.single_mul_single, one_mul,
-      ad_pow_single_tmul, ad_pow_lie_negativeGenerator_negativeGenerator, TensorProduct.tmul_zero]
+    rw [LieAlgebra.ExtendScalars.bracket_tmul, LieAlgebra.ExtendScalars.ad_pow_tmul,
+      ad_pow_lie_negativeGenerator_negativeGenerator, TensorProduct.tmul_zero]
 
 private noncomputable def principalGrading :
     PresentedLieAlgebra R →ₗ⁅K⁆ LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R) :=
   lift (satisfiesRelations_principalGrading R)
-private noncomputable def loopAug :
-    LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R) →ₗ⁅K⁆ K ⊗[K] PresentedLieAlgebra R :=
-  LieAlgebra.ExtendScalars.map (AddMonoidAlgebra.lift K K ℤ 1) LieHom.id
-private noncomputable def scalarIncl : PresentedLieAlgebra R →ₗ⁅K⁆ K ⊗[K] PresentedLieAlgebra R :=
-  { TensorProduct.mk K K (PresentedLieAlgebra R) 1 with map_lie' := by simp }
-@[simp] private theorem scalarIncl_apply (z : PresentedLieAlgebra R) :
-    scalarIncl R z = 1 ⊗ₜ[K] z := rfl
-private theorem loopAug_comp_principalGrading :
-    (loopAug R).comp (principalGrading R) = scalarIncl R := by
-  ext <;> simp only [loopAug, principalGrading, scalarIncl_apply, LieHom.comp_apply,
-    lift_cartanElement, lift_positiveGenerator, lift_negativeGenerator, LinearMap.comp_apply,
-    TensorProduct.mk_apply, LieAlgebra.ExtendScalars.map_apply_tmul, LieHom.id_apply,
-    AddMonoidAlgebra.lift_single, MonoidHom.one_apply, one_smul]
+
+private noncomputable def principalGradingLeftInv :
+    LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R) →ₗ⁅K⁆ PresentedLieAlgebra R :=
+  ((LieHom.id : PresentedLieAlgebra R →ₗ⁅K⁆ PresentedLieAlgebra R).liftBaseChange K).comp
+    (LieAlgebra.ExtendScalars.map (AddMonoidAlgebra.lift K K ℤ 1) LieHom.id)
+
+private theorem principalGradingLeftInv_comp :
+    (principalGradingLeftInv R).comp (principalGrading R) = LieHom.id := by
+  ext <;> simp [principalGradingLeftInv, principalGrading, -LaurentPolynomial.single_eq_C_mul_T]
+
 private theorem principalGrading_injective : Function.Injective (principalGrading R) :=
-  Function.LeftInverse.injective
-    (g := fun w => TensorProduct.lid K (PresentedLieAlgebra R) (loopAug R w)) fun z => by
-      simpa using congrArg (TensorProduct.lid K (PresentedLieAlgebra R))
-        (DFunLike.congr_fun (loopAug_comp_principalGrading R) z)
-private noncomputable def principalDeg : PresentedLieAlgebra R →ₗ[K] ℤ →₀ PresentedLieAlgebra R :=
-  (LieAlgebra.LoopAlgebra.toFinsupp K ℤ (PresentedLieAlgebra R)).toLinearMap.comp
-    (principalGrading R).toLinearMap
-private theorem principalDeg_injective : Function.Injective (principalDeg R) :=
-  (LieAlgebra.LoopAlgebra.toFinsupp K ℤ (PresentedLieAlgebra R)).injective.comp
-    (principalGrading_injective R)
+  Function.LeftInverse.injective (g := principalGradingLeftInv R) fun z => by
+    simpa using DFunLike.congr_fun (principalGradingLeftInv_comp R) z
 
-private noncomputable def spanClosedSubalgebra {M : Type*} [LieRing M] [LieAlgebra K M]
-    (s : Set M) (hs : ∀ x ∈ s, ∀ y ∈ s, ⁅x, y⁆ ∈ Submodule.span K s) : LieSubalgebra K M where
-  toSubmodule := Submodule.span K s
-  lie_mem' {x y} hx hy := by
-    rw [Submodule.mem_carrier] at hx hy ⊢
-    exact Submodule.span_induction₂ (p := fun x y _ _ => ⁅x, y⁆ ∈ Submodule.span K s)
-      (fun x y hx hy => hs x hx y hy) (fun _ _ => by simp) (fun _ _ => by simp)
-      (fun _ _ _ _ _ _ h1 h2 => by rw [add_lie]; exact add_mem h1 h2)
-      (fun _ _ _ _ _ _ h1 h2 => by rw [lie_add]; exact add_mem h1 h2)
-      (fun c _ _ _ _ h1 => by rw [smul_lie]; exact Submodule.smul_mem _ c h1)
-      (fun c _ _ _ _ h1 => by rw [lie_smul]; exact Submodule.smul_mem _ c h1) hx hy
+private noncomputable abbrev loopGrade :
+    ℤ → Submodule K (LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)) :=
+  fun a => DirectSum.decomposeTensor (AddMonoidAlgebra.grade K) (PresentedLieAlgebra R) a
 
-private noncomputable def loopDegSubalgebra (P : ℤ → Prop) (hP : ∀ {a b}, P a → P b → P (a + b)) :
-    LieSubalgebra K (LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)) :=
-  spanClosedSubalgebra
-    {w | ∃ n : ℤ, P n ∧ ∃ u : PresentedLieAlgebra R, AddMonoidAlgebra.single n 1 ⊗ₜ[K] u = w}
-    (by
-      rintro _ ⟨a, ha, u, rfl⟩ _ ⟨b, hb, v, rfl⟩
-      rw [LieAlgebra.ExtendScalars.bracket_tmul, AddMonoidAlgebra.single_mul_single, one_mul]
-      exact Submodule.subset_span ⟨a + b, hP ha hb, ⁅u, v⁆, rfl⟩)
+private theorem single_tmul_mem_loopGrade (d : ℤ) (u : PresentedLieAlgebra R) :
+    AddMonoidAlgebra.single d (1 : K) ⊗ₜ[K] u ∈ loopGrade R d := by
+  rw [loopGrade, DirectSum.decomposeTensor_apply]
+  exact ⟨⟨AddMonoidAlgebra.single d 1, AddMonoidAlgebra.single_mem_grade d 1⟩ ⊗ₜ[K] u, rfl⟩
 
-private theorem principalDeg_eq_zero_of_mem_lieSpan (P : ℤ → Prop)
-    (hP : ∀ {a b}, P a → P b → P (a + b)) {d : ℤ} (hd : P d) (g : I → PresentedLieAlgebra R)
-    (hg : ∀ i, principalGrading R (g i) = AddMonoidAlgebra.single d 1 ⊗ₜ[K] g i)
-    {x : PresentedLieAlgebra R} (hx : x ∈ lieSpan K (PresentedLieAlgebra R) (Set.range g))
-    {n : ℤ} (hn : ¬ P n) : principalDeg R x n = 0 := by
-  have hle : lieSpan K (PresentedLieAlgebra R) (Set.range g) ≤
-      (loopDegSubalgebra R P hP).comap (principalGrading R) := by
-    rw [lieSpan_le]; rintro _ ⟨i, rfl⟩
-    rw [SetLike.mem_coe, LieSubalgebra.mem_comap, ← LieSubalgebra.mem_toSubmodule, hg i]
-    exact Submodule.subset_span ⟨d, hd, g i, rfl⟩
-  have hw : principalGrading R x ∈ Submodule.span K {w | ∃ m : ℤ, P m ∧
-      ∃ u : PresentedLieAlgebra R, AddMonoidAlgebra.single m 1 ⊗ₜ[K] u = w} := hle hx
-  simp only [principalDeg, LinearMap.comp_apply, LieHom.coe_toLinearMap, LinearEquiv.coe_coe]
-  refine Submodule.span_induction
-    (p := fun w _ => LieAlgebra.LoopAlgebra.toFinsupp K ℤ (PresentedLieAlgebra R) w n = 0)
-    ?_ (by simp) (fun _ _ _ _ h1 h2 => by simp [h1, h2]) (fun _ _ _ h1 => by simp [h1]) hw
-  rintro _ ⟨a, ha, u, rfl⟩
-  rw [LieAlgebra.LoopAlgebra.toFinsupp_single_tmul, Finsupp.single_eq_of_ne]
-  rintro rfl; exact hn ha
+private theorem negativeSubalgebra_le_comap_signSubalgebra :
+    negativeSubalgebra R ≤
+      (signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) .neg).comap (principalGrading R) := by
+  rw [negativeSubalgebra_def, lieSpan_le]
+  rintro _ ⟨i, rfl⟩
+  rw [SetLike.mem_coe, LieSubalgebra.mem_comap, principalGrading, lift_negativeGenerator]
+  exact le_signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) (-1 : ℤ)
+    (single_tmul_mem_loopGrade R (-1) (negativeGenerator R i))
 
-private theorem principalDeg_eq_zero_of_mem_cartanSubalgebra {y : PresentedLieAlgebra R}
-    (hy : y ∈ cartanSubalgebra R) {n : ℤ} (hn : n ≠ 0) : principalDeg R y n = 0 := by
+private theorem cartanSubalgebra_le_comap_signSubalgebra :
+    cartanSubalgebra R ≤
+      (signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) .zero).comap (principalGrading R) := by
+  intro y hy
   obtain ⟨x, rfl⟩ := (mem_cartanSubalgebra_iff R).1 hy
-  simp only [principalDeg, principalGrading, LinearMap.comp_apply, LieHom.coe_toLinearMap,
-    LinearEquiv.coe_coe, lift_cartanElement, TensorProduct.mk_apply,
-    LieAlgebra.LoopAlgebra.toFinsupp_single_tmul, Finsupp.single_eq_of_ne hn]
+  rw [LieSubalgebra.mem_comap, principalGrading, lift_cartanElement]
+  exact le_signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) (0 : ℤ)
+    (single_tmul_mem_loopGrade R 0 (cartanElement R x))
+
+private theorem positiveSubalgebra_le_comap_signSubalgebra :
+    positiveSubalgebra R ≤
+      (signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) .pos).comap (principalGrading R) := by
+  rw [positiveSubalgebra_def, lieSpan_le]
+  rintro _ ⟨i, rfl⟩
+  rw [SetLike.mem_coe, LieSubalgebra.mem_comap, principalGrading, lift_positiveGenerator]
+  exact le_signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) (1 : ℤ)
+    (single_tmul_mem_loopGrade R 1 (positiveGenerator R i))
 
 private theorem eq_zero_of_add_add_eq_zero {x y w : PresentedLieAlgebra R}
     (hx : x ∈ negativeSubalgebra R) (hy : y ∈ cartanSubalgebra R) (hw : w ∈ positiveSubalgebra R)
     (hsum : x + y + w = 0) : x = 0 ∧ y = 0 ∧ w = 0 := by
-  have hneg : ∀ {n : ℤ}, ¬ n < 0 → principalDeg R x n = 0 := fun hn =>
-    principalDeg_eq_zero_of_mem_lieSpan R (· < 0) add_neg (by omega) (negativeGenerator R)
-      (lift_negativeGenerator _) hx hn
-  have hpos : ∀ {n : ℤ}, ¬ 0 < n → principalDeg R w n = 0 := fun hn =>
-    principalDeg_eq_zero_of_mem_lieSpan R (0 < ·) add_pos (by omega) (positiveGenerator R)
-      (lift_positiveGenerator _) hw hn
-  have hdeg : ∀ n : ℤ, principalDeg R x n + principalDeg R y n + principalDeg R w n = 0 := fun n =>
-    by simpa [map_add] using DFunLike.congr_fun (congrArg (principalDeg R) hsum) n
-  refine ⟨principalDeg_injective R (Finsupp.ext fun n => ?_),
-    principalDeg_injective R (Finsupp.ext fun n => ?_),
-    principalDeg_injective R (Finsupp.ext fun n => ?_)⟩ <;>
-    rw [map_zero, Finsupp.coe_zero, Pi.zero_apply]
-  · by_cases hn : n < 0
-    · simpa [principalDeg_eq_zero_of_mem_cartanSubalgebra R hy (ne_of_lt hn),
-        hpos (not_lt.2 (le_of_lt hn))] using hdeg n
-    · exact hneg hn
-  · by_cases hn : n = 0
-    · subst hn; simpa [hneg (lt_irrefl 0), hpos (lt_irrefl 0)] using hdeg 0
-    · exact principalDeg_eq_zero_of_mem_cartanSubalgebra R hy hn
-  · by_cases hn : 0 < n
-    · simpa [hneg (not_lt.2 (le_of_lt hn)),
-        principalDeg_eq_zero_of_mem_cartanSubalgebra R hy (ne_of_gt hn)] using hdeg n
-    · exact hpos hn
+  have hindep :=
+    (isInternal_signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ)).submodule_iSupIndep
+  have hcomp : ∀ {s t₁ t₂ : SignType}, t₁ ≠ s → t₂ ≠ s →
+      ∀ {a b c : LieAlgebra.loopAlgebra K ℤ (PresentedLieAlgebra R)},
+        a ∈ signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) s →
+        b ∈ signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) t₁ →
+        c ∈ signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) t₂ →
+        a + b + c = 0 → a = 0 := by
+    intro s t₁ t₂ ht₁ ht₂ a b c ha hb hc heq
+    have ha' : a ∈ ⨆ (t) (_ : t ≠ s),
+        (signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) t).toSubmodule := by
+      have hneg : a = -(b + c) := eq_neg_of_add_eq_zero_left (by rwa [← add_assoc])
+      rw [hneg]
+      exact neg_mem (add_mem (Submodule.mem_iSup_of_mem t₁ (Submodule.mem_iSup_of_mem ht₁ hb))
+        (Submodule.mem_iSup_of_mem t₂ (Submodule.mem_iSup_of_mem ht₂ hc)))
+    exact Submodule.disjoint_def.1 (hindep s) a ha ha'
+  have hx' : principalGrading R x ∈ signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) .neg :=
+    negativeSubalgebra_le_comap_signSubalgebra R hx
+  have hy' : principalGrading R y ∈ signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) .zero :=
+    cartanSubalgebra_le_comap_signSubalgebra R hy
+  have hw' : principalGrading R w ∈ signSubalgebra (loopGrade R) (AddMonoidHom.id ℤ) .pos :=
+    positiveSubalgebra_le_comap_signSubalgebra R hw
+  have hmap : principalGrading R x + principalGrading R y + principalGrading R w = 0 := by
+    rw [← map_add, ← map_add, hsum, map_zero]
+  refine ⟨principalGrading_injective R <|
+      (hcomp (by decide) (by decide) hx' hy' hw' hmap).trans (map_zero _).symm,
+    principalGrading_injective R <|
+      (hcomp (by decide) (by decide) hy' hx' hw'
+        (by rw [add_comm (principalGrading R y), hmap])).trans (map_zero _).symm,
+    principalGrading_injective R <|
+      (hcomp (by decide) (by decide) hw' hx' hy'
+        (by rw [← hmap]; abel)).trans (map_zero _).symm⟩
 
 end PrincipalGrading
 
@@ -487,35 +462,23 @@ theorem disjoint_positiveSubalgebra_cartanSubalgebra :
 
 private noncomputable def triangularLinearMap :
     (negativeSubalgebra R × cartanSubalgebra R × positiveSubalgebra R) →ₗ[K]
-      PresentedLieAlgebra R :=
-  (negativeSubalgebra R).toSubmodule.subtype.coprod
-    ((cartanSubalgebra R).toSubmodule.subtype.coprod (positiveSubalgebra R).toSubmodule.subtype)
-
-private theorem triangularLinearMap_apply
-    (p : negativeSubalgebra R × cartanSubalgebra R × positiveSubalgebra R) :
-    triangularLinearMap R p = (p.1 : PresentedLieAlgebra R) + p.2.1 + p.2.2 := by
-  simp only [triangularLinearMap, LinearMap.coprod_apply, Submodule.subtype_apply, add_assoc]
-  exact congrArg _ (congrArg _ (Submodule.subtype_apply _))
+      PresentedLieAlgebra R where
+  toFun p := (p.1 : PresentedLieAlgebra R) + p.2.1 + p.2.2
+  map_add' p q := by simp; abel
+  map_smul' c p := by
+    simp only [Prod.smul_fst, Prod.smul_snd, SetLike.val_smul, smul_add, RingHom.id_apply]
 
 private theorem triangularLinearMap_bijective : Function.Bijective (triangularLinearMap R) := by
-  have h1 : Disjoint (LinearMap.range (cartanSubalgebra R).toSubmodule.subtype)
-      (LinearMap.range (positiveSubalgebra R).toSubmodule.subtype) := by
-    rw [Submodule.range_subtype, Submodule.range_subtype]
-    exact (disjoint_positiveSubalgebra_cartanSubalgebra R).symm
-  have h2 : Disjoint (LinearMap.range (negativeSubalgebra R).toSubmodule.subtype)
-      (LinearMap.range ((cartanSubalgebra R).toSubmodule.subtype.coprod
-        (positiveSubalgebra R).toSubmodule.subtype)) := by
-    rw [LinearMap.range_coprod, Submodule.range_subtype, Submodule.range_subtype,
-      Submodule.range_subtype]
-    exact disjoint_negativeSubalgebra_cartanSubalgebra_sup_positiveSubalgebra R
-  refine ⟨?_, ?_⟩
-  · rw [← LinearMap.ker_eq_bot, triangularLinearMap, LinearMap.ker_coprod_of_disjoint_range _ _ h2,
-      LinearMap.ker_coprod_of_disjoint_range _ _ h1, Submodule.ker_subtype, Submodule.ker_subtype,
-      Submodule.ker_subtype, Submodule.prod_bot, Submodule.prod_bot]
-  · rw [← LinearMap.range_eq_top, triangularLinearMap, LinearMap.range_coprod,
-      LinearMap.range_coprod, Submodule.range_subtype, Submodule.range_subtype,
-      Submodule.range_subtype, ← sup_assoc,
-      negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top R]
+  refine ⟨(injective_iff_map_eq_zero _).2 fun ⟨x, y, w⟩ h => ?_, fun z => ?_⟩
+  · obtain ⟨hx, hy, hw⟩ := eq_zero_of_add_add_eq_zero R x.2 y.2 w.2 h
+    exact Prod.ext (Subtype.ext hx) (Prod.ext (Subtype.ext hy) (Subtype.ext hw))
+  · have hz : z ∈ (negativeSubalgebra R).toSubmodule ⊔ (cartanSubalgebra R).toSubmodule ⊔
+        (positiveSubalgebra R).toSubmodule := by
+      rw [negativeSubalgebra_sup_cartanSubalgebra_sup_positiveSubalgebra_eq_top]
+      exact Submodule.mem_top
+    obtain ⟨ab, hab, w, hw, rfl⟩ := Submodule.mem_sup.1 hz
+    obtain ⟨x, hx, y, hy, rfl⟩ := Submodule.mem_sup.1 hab
+    exact ⟨(⟨x, hx⟩, ⟨y, hy⟩, ⟨w, hw⟩), rfl⟩
 
 /-- **The direct-sum triangular decomposition**: over any field `K` and for any integer matrix `A`,
 addition gives a `K`-linear isomorphism `n⁻ ⊕ 𝔥 ⊕ n⁺ ≃ₗ[K] PresentedLieAlgebra R`. -/
@@ -527,8 +490,8 @@ noncomputable def triangularEquiv :
 /-- `TauCeti.KacMoody.triangularEquiv` acts by adding the three components. -/
 @[simp] theorem triangularEquiv_apply
     (p : negativeSubalgebra R × cartanSubalgebra R × positiveSubalgebra R) :
-    triangularEquiv R p = (p.1 : PresentedLieAlgebra R) + p.2.1 + p.2.2 := by
-  simp [triangularEquiv, triangularLinearMap_apply]
+    triangularEquiv R p = (p.1 : PresentedLieAlgebra R) + p.2.1 + p.2.2 :=
+  (rfl)
 
 /-- `TauCeti.KacMoody.triangularEquiv.symm` sends an element of `n⁻` to `(x, 0, 0)`. -/
 @[simp] theorem triangularEquiv_symm_coe_negative (x : negativeSubalgebra R) :
@@ -543,6 +506,24 @@ noncomputable def triangularEquiv :
 /-- `TauCeti.KacMoody.triangularEquiv.symm` sends an element of `n⁺` to `(0, 0, z)`. -/
 @[simp] theorem triangularEquiv_symm_coe_positive (z : positiveSubalgebra R) :
     (triangularEquiv R).symm (z : PresentedLieAlgebra R) = (0, 0, z) :=
+  (triangularEquiv R).injective (by simp)
+
+/-- `TauCeti.KacMoody.triangularEquiv.symm` sends the lowering generator `fᵢ` to `(fᵢ, 0, 0)`. -/
+@[simp] theorem triangularEquiv_symm_negativeGenerator (i : I) :
+    (triangularEquiv R).symm (negativeGenerator R i) =
+      (⟨negativeGenerator R i, negativeGenerator_mem_negativeSubalgebra R i⟩, 0, 0) :=
+  (triangularEquiv R).injective (by simp)
+
+/-- `TauCeti.KacMoody.triangularEquiv.symm` sends `cartanElement R x` to `(0, x, 0)`. -/
+@[simp] theorem triangularEquiv_symm_cartanElement (x : H) :
+    (triangularEquiv R).symm (cartanElement R x) =
+      (0, ⟨cartanElement R x, cartanElement_mem_cartanSubalgebra R x⟩, 0) :=
+  (triangularEquiv R).injective (by simp)
+
+/-- `TauCeti.KacMoody.triangularEquiv.symm` sends the raising generator `eᵢ` to `(0, 0, eᵢ)`. -/
+@[simp] theorem triangularEquiv_symm_positiveGenerator (i : I) :
+    (triangularEquiv R).symm (positiveGenerator R i) =
+      (0, 0, ⟨positiveGenerator R i, positiveGenerator_mem_positiveSubalgebra R i⟩) :=
   (triangularEquiv R).injective (by simp)
 
 /-- **Intersection of the derived algebra with the Cartan subalgebra**: the image of Serre's
