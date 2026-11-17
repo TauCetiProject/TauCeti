@@ -11,8 +11,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
-import TauCeti.Analysis.SpecialFunctions.Gamma.IntegralComplexRate
-import TauCeti.MeasureTheory.Integral.Exp.Decay
+import TauCeti.MeasureTheory.Integral.Exp.Complex
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
 
 /-!
@@ -38,25 +37,17 @@ the integral to `z`.
 * Scaling, shifts, and half-plane convergence: `hasLaplace_cexp_mul_smul_iff` (frequency shift),
   `HasLaplace.comp_mul_left` and `hasLaplace_comp_mul_left_iff` (positive time dilation),
   `HasLaplace.indicator_Ici_comp_sub_right` (right-shift on `[a, ∞)` for `0 ≤ a`),
-  `integrable_cexp_neg_mul_smul_of_re_le` and `HasLaplace.integrableOn_of_re_le` (monotonicity of
-  convergence in `Re s`), and `exists_hasLaplace_neg_smul_and_hasDerivAt`,
-  `hasDerivAt_of_hasLaplace`, `differentiableOn_of_hasLaplace`, and
-  `differentiableOn_of_hasLaplace_re_gt` (holomorphic differentiation under the integral sign with
-  respect to `s`, producing the transform of `t ↦ -(t : ℂ) • f t`).
-* Exponential-kernel helpers and transform of a derivative:
-  `intervalIntegrable_cexp_neg_mul_smul_iff`,
-  `intervalIntegrable_of_integrableOn_cexp_neg_mul_smul_Ioi`,
-  `intervalIntegral_const_mul_cexp_neg_mul`, and
-  `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`;
-  `TauCeti.hasLaplace_of_eq_add_intervalIntegral` proves `HasLaplace g s (s • z - f 0)` for a
-  primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming only `HasLaplace f s z` and
-  integrability of `exp (-s * t) • g t` on `(0, ∞)`, with no growth bound and no sign condition on
-  `Re s`; `TauCeti.hasLaplace_of_hasDerivAt` deduces the rule for functions continuous at `0` from
-  the right and differentiable on `(0, ∞)`.
-* Elementary transforms: `hasLaplace_const`, `hasLaplace_one`,
-  `not_hasLaplace_const_of_re_nonpos`, `not_hasLaplace_one_of_re_nonpos`,
-  `hasLaplace_indicator_Ici_one`, `hasLaplace_cexp_mul`, `hasLaplace_pow`,
-  `hasLaplace_cexp_mul_pow`, and `hasLaplace_exp_mul_pow`.
+  `HasLaplace.integrableOn_of_re_le` (monotonicity of convergence in `Re s`), and
+  `exists_hasLaplace_neg_smul_and_hasDerivAt`, `hasDerivAt_of_hasLaplace`,
+  `differentiableOn_of_hasLaplace`, and `differentiableOn_of_hasLaplace_re_gt` (holomorphic
+  differentiation under the integral sign with respect to `s`, producing the transform of
+  `t ↦ -(t : ℂ) • f t`).
+* Transform of a derivative: `intervalIntegral_cexp_neg_mul_smul_of_eq_add_intervalIntegral`
+  establishes the finite-cutoff identity on `[0, T]`; `TauCeti.hasLaplace_deriv_of_primitive` proves
+  `HasLaplace g s (s • z - f 0)` for a primitive `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, ∞)` assuming
+  only `HasLaplace f s z` and integrability of `exp (-s * t) • g t` on `(0, ∞)`, with no growth
+  bound and no sign condition on `Re s`; `TauCeti.hasLaplace_deriv` deduces the rule for functions
+  continuous at `0` from the right and differentiable on `(0, ∞)`.
 
 ## References
 
@@ -67,7 +58,7 @@ the integral to `z`.
   (1954), 213–242, for the ordinary Laplace-integral formulation and parameter differentiation on
   open half-planes.
 * Jiří Lebl, *Notes on Diffy Qs: Differential Equations for Engineers*, version 6.11 (2026),
-  §6.2.1 and Table 6.2, for the Laplace transform of a derivative and elementary transforms.
+  §6.2.1, for the Laplace transform of a derivative.
 -/
 
 public section
@@ -185,6 +176,7 @@ theorem hasLaplace_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [
     HasLaplace (0 : ℝ → E) s 0 μ := by
   simp [HasLaplace]
 
+/-- Functional form of `hasLaplace_zero`: the constant zero function has Laplace transform `0`. -/
 @[simp, grind .]
 theorem hasLaplace_fun_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [SMulZeroClass ℂ E]
     (s : ℂ) (μ : Measure ℝ := volume.restrict (Ioi 0)) :
@@ -271,7 +263,8 @@ theorem hasLaplace_cexp_mul_smul_iff {E : Type*} [NormedAddCommGroup E] [NormedS
       fun t : ℝ ↦ Complex.exp (-(s - w) * t) • f t := by
     ext t
     rw [← mul_smul, ← Complex.exp_add]
-    ring_nf
+    congr 2
+    ring
   simp only [HasLaplace, heq]
 
 /-- Multiplying `f(t)` by `exp (w * t)` transforms `HasLaplace f (s - w) z μ` into
@@ -300,8 +293,8 @@ theorem HasLaplace.comp_mul_left {E : Type*} [NormedAddCommGroup E] [NormedSpace
   refine ⟨?_, ?_⟩
   · rw [hfun, ← IntegrableOn, integrableOn_Ioi_comp_mul_left_iff g 0 hc, mul_zero]
     exact hf.1
-  · rw [hfun, integral_comp_mul_left_Ioi g 0 hc, mul_zero, hf.2, ← Complex.ofReal_inv]
-    conv_lhs => rw [← one_smul ℂ z, ← smul_assoc, Complex.real_smul, mul_one]
+  · rw [hfun, integral_comp_mul_left_Ioi g 0 hc, mul_zero, hf.2, ← Complex.ofReal_inv,
+      ← Complex.coe_algebraMap, IsScalarTower.algebraMap_smul]
 
 /-- Equivalence form of positive time dilation for the one-sided Laplace transform. -/
 theorem hasLaplace_comp_mul_left_iff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -368,25 +361,6 @@ end Algebra
 
 section HalfPlane
 
-/-- If `t ↦ exp (-s₀ * t) • f t` is integrable with respect to a measure `μ` supported on
-`[0, ∞)` (i.e. `0 ≤ t` `μ`-a.e.), then `t ↦ exp (-s * t) • f t` is also `μ`-integrable for
-every `s` with `s₀.re ≤ s.re`. -/
-theorem integrable_cexp_neg_mul_smul_of_re_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {f : ℝ → E} {s₀ s : ℂ} {μ : Measure ℝ}
-    (hf : Integrable (fun t : ℝ ↦ Complex.exp (-s₀ * t) • f t) μ)
-    (hμ : ∀ᵐ t ∂μ, 0 ≤ t) (hs : s₀.re ≤ s.re) :
-    Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • f t) μ := by
-  have heq : (fun t : ℝ ↦ Complex.exp (-s * t) • f t) =
-      fun t : ℝ ↦ Complex.exp (-(s - s₀) * t) • (Complex.exp (-s₀ * t) • f t) := by
-    ext t
-    rw [smul_smul, ← Complex.exp_add]
-    ring_nf
-  rw [heq]
-  refine hf.bdd_smul 1 (Measurable.aestronglyMeasurable (by fun_prop)) ?_
-  filter_upwards [hμ] with t ht
-  rw [Complex.norm_exp, Complex.re_mul_ofReal, Complex.neg_re, Complex.sub_re]
-  exact Real.exp_le_one_iff.mpr (mul_nonpos_of_nonpos_of_nonneg (by linarith) ht)
-
 /-- If the one-sided Laplace integral of `f` converges at `s₀`, then it converges at every `s` with
 `s₀.re ≤ s.re`. -/
 theorem HasLaplace.integrableOn_of_re_le {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
@@ -404,14 +378,14 @@ private theorem norm_cexp_neg_mul_smul_neg_smul_le {E : Type*}
     ‖Complex.exp (-w * t) • (-(t : ℂ) • v)‖ ≤ δ⁻¹ * ‖Complex.exp (-s₀ * t) • v‖ := by
   simp only [norm_smul, norm_neg, Complex.norm_exp, Complex.norm_real,
     Real.norm_of_nonneg ht.le, Complex.re_mul_ofReal, Complex.neg_re]
+  have hexp : -(w.re - (s₀.re + δ)) * t + -(δ * t) + -s₀.re * t = -w.re * t := by ring
   have hsplit : Real.exp (-w.re * t) * (t * ‖v‖) =
       δ⁻¹ * (Real.exp (-(w.re - (s₀.re + δ)) * t) * (δ * t * Real.exp (-(δ * t))) *
         (Real.exp (-s₀.re * t) * ‖v‖)) := by
     calc Real.exp (-w.re * t) * (t * ‖v‖)
         = (Real.exp (-(w.re - (s₀.re + δ)) * t) * Real.exp (-(δ * t)) *
             Real.exp (-s₀.re * t)) * (δ⁻¹ * (δ * t)) * ‖v‖ := by
-          simp only [← Real.exp_add, inv_mul_cancel_left₀ hδ.ne']
-          ring_nf
+          rw [← Real.exp_add, ← Real.exp_add, hexp, inv_mul_cancel_left₀ hδ.ne', mul_assoc]
       _ = _ := by ring
   rw [hsplit]
   have hexp1 : Real.exp (-(w.re - (s₀.re + δ)) * t) ≤ 1 :=
@@ -517,39 +491,7 @@ end HalfPlane
 
 section LaplaceDeriv
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- Multiplying by the scalar exponential `t ↦ exp (-s * t)` preserves `IntervalIntegrable` for
-vector-valued functions with respect to any measure `μ`. -/
-theorem intervalIntegrable_cexp_neg_mul_smul_iff {g : ℝ → E} {a b : ℝ} {μ : Measure ℝ} (s : ℂ) :
-    IntervalIntegrable (fun t : ℝ ↦ Complex.exp (-s * t) • g t) μ a b ↔
-      IntervalIntegrable g μ a b := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.continuousOn_smul (by fun_prop)⟩
-  have h' := h.continuousOn_smul (f := fun t : ℝ ↦ Complex.exp (s * t)) (by fun_prop)
-  simpa only [smul_smul, ← Complex.exp_add, neg_mul, add_neg_cancel, Complex.exp_zero, one_smul]
-    using h'
-
-/-- If `t ↦ exp (-s * t) • g t` is integrable on `(a, ∞)` with respect to `μ`, then `g` is
-interval-integrable on `[a, b]` for every `b ≥ a`. -/
-theorem intervalIntegrable_of_integrableOn_cexp_neg_mul_smul_Ioi {g : ℝ → E} {s : ℂ} {a b : ℝ}
-    {μ : Measure ℝ}
-    (hg : IntegrableOn (fun t : ℝ ↦ Complex.exp (-s * t) • g t) (Ioi a) μ) (hab : a ≤ b) :
-    IntervalIntegrable g μ a b :=
-  (intervalIntegrable_cexp_neg_mul_smul_iff s).mp
-    ((intervalIntegrable_iff_integrableOn_Ioc_of_le hab).mpr (hg.mono_set Ioc_subset_Ioi_self))
-
-/-- For every `s : ℂ` and `a b : ℝ`,
-`∫ r in a..b, s * exp (-s * r) = exp (-s * a) - exp (-s * b)`. -/
-theorem intervalIntegral_const_mul_cexp_neg_mul (s : ℂ) (a b : ℝ) :
-    ∫ r in a..b, s * Complex.exp (-s * r) =
-      Complex.exp (-s * a) - Complex.exp (-s * b) := by
-  by_cases hs : s = 0
-  · simp [hs]
-  · rw [intervalIntegral.integral_const_mul, integral_exp_mul_complex (neg_ne_zero.mpr hs)]
-    field_simp [hs]
-    ring
-
-variable [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 
 /-- **Finite-cutoff Laplace identity for a primitive.** If `g` is integrable on `[0, T]` (`0 ≤ T`)
 and `f(t) = f(0) + ∫₀ᵗ g(u) du` on `[0, T]`, then for every `s : ℂ`,
@@ -601,7 +543,7 @@ every `t ≥ 0`, `HasLaplace f s z`, and `t ↦ exp (-s * t) • g t` is integra
 `HasLaplace g s (s • z - f 0)`. Neither a sign condition on `Re s` nor an exponential growth bound
 on `f` is assumed: `exp (-s * T) • f T → 0` follows from the two integrabilities (compare Lebl,
 *Notes on Diffy Qs*, version 6.11, §6.2.1, under exponential order). -/
-theorem hasLaplace_of_eq_add_intervalIntegral {f g : ℝ → E} {s : ℂ} {z : E}
+theorem hasLaplace_deriv_of_primitive {f g : ℝ → E} {s : ℂ} {z : E}
     (hfg : ∀ t ∈ Ici (0 : ℝ), f t = f 0 + ∫ u in (0 : ℝ)..t, g u)
     (hf : HasLaplace f s z)
     (hg : Integrable (fun t : ℝ ↦ Complex.exp (-s * t) • g t) (volume.restrict (Ioi 0))) :
@@ -638,7 +580,7 @@ theorem hasLaplace_of_eq_add_intervalIntegral {f g : ℝ → E} {s : ℂ} {z : E
 derivative `f' t` at every `t > 0`, satisfies `HasLaplace f s z`, and `t ↦ exp (-s * t) • f' t`
 is integrable on `(0, ∞)`, then `HasLaplace f' s (s • z - f 0)` (compare Lebl, *Notes on Diffy Qs*,
 version 6.11, §6.2.1, under exponential order). -/
-theorem hasLaplace_of_hasDerivAt {f f' : ℝ → E} {s : ℂ} {z : E}
+theorem hasLaplace_deriv {f f' : ℝ → E} {s : ℂ} {z : E}
     (hf0 : ContinuousWithinAt f (Ici 0) 0)
     (hderiv : ∀ t ∈ Ioi (0 : ℝ), HasDerivAt f (f' t) t)
     (hf : HasLaplace f s z)
@@ -649,100 +591,11 @@ theorem hasLaplace_of_hasDerivAt {f f' : ℝ → E} {s : ℂ} {z : E}
     rcases ht.out.eq_or_lt with rfl | hpos
     · exact hf0
     · exact (hderiv t hpos).continuousAt.continuousWithinAt
-  refine hasLaplace_of_eq_add_intervalIntegral (fun t (ht : 0 ≤ t) ↦ ?_) hf hf'
+  refine hasLaplace_deriv_of_primitive (fun t (ht : 0 ≤ t) ↦ ?_) hf hf'
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt_of_le ht
     (hf_cont.mono Icc_subset_Ici_self) (fun u hu ↦ hderiv u hu.1)
     (intervalIntegrable_of_integrableOn_cexp_neg_mul_smul_Ioi hf' ht), add_sub_cancel]
 
 end LaplaceDeriv
-
-/-! ### Elementary Laplace transforms -/
-
-section Elementary
-
-/-- For `0 < s.re`, the constant function `v` in a complex Banach space has Laplace transform
-`s⁻¹ • v`. -/
-theorem hasLaplace_const {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
-    (v : E) {s : ℂ} (hs : 0 < s.re) :
-    HasLaplace (fun _ : ℝ ↦ v) s (s⁻¹ • v) := by
-  have hsneg : (-s).re < 0 := by simpa using hs
-  refine ⟨(integrableOn_exp_mul_complex_Ioi hsneg 0).smul_const v, ?_⟩
-  rw [integral_smul_const, integral_exp_mul_complex_Ioi hsneg 0, Complex.ofReal_zero, mul_zero,
-    Complex.exp_zero, neg_div_neg_eq, one_div]
-
-/-- For `0 < s.re`, the constant function `1 : ℝ → ℂ` has Laplace transform `s⁻¹ = 1 / s`. -/
-theorem hasLaplace_one {s : ℂ} (hs : 0 < s.re) :
-    HasLaplace (fun _ : ℝ ↦ (1 : ℂ)) s s⁻¹ := by
-  simpa using hasLaplace_const (1 : ℂ) hs
-
-/-- For `s.re ≤ 0` and any nonzero vector `v`, the constant function `v` has no convergent
-one-sided Laplace transform, even though the totalized Bochner integral at `s = 0` equals `0`. -/
-theorem not_hasLaplace_const_of_re_nonpos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    {v : E} (hv : v ≠ 0) {s : ℂ} (hs : s.re ≤ 0) (z : E) :
-    ¬ HasLaplace (fun _ : ℝ ↦ v) s z := by
-  rintro ⟨hint, -⟩
-  have hexp : IntegrableOn (fun t : ℝ ↦ Complex.exp (-s * t)) (Ioi 0) :=
-    (integrable_smul_const hv).mp hint
-  have hnorm : IntegrableOn (fun t : ℝ ↦ Real.exp (-s.re * t)) (Ioi 0) :=
-    hexp.norm.congr (.of_forall fun t ↦ by simp [Complex.norm_exp, neg_mul])
-  have hlt : -s.re < 0 := integrableOn_exp_mul_Ioi_iff.mp hnorm
-  linarith
-
-/-- For `s.re ≤ 0`, the constant function `1 : ℝ → ℂ` has no convergent one-sided Laplace
-transform, even though the totalized Bochner integral at `s = 0` equals `0`. -/
-theorem not_hasLaplace_one_of_re_nonpos {s : ℂ} (hs : s.re ≤ 0) (z : ℂ) :
-    ¬ HasLaplace (fun _ : ℝ ↦ (1 : ℂ)) s z :=
-  not_hasLaplace_const_of_re_nonpos one_ne_zero hs z
-
-/-- For `0 ≤ a` and `0 < s.re`, the indicator of `[a, ∞)` has Laplace transform
-`exp (-s * a) / s`. -/
-theorem hasLaplace_indicator_Ici_one {a : ℝ} (ha : 0 ≤ a) {s : ℂ} (hs : 0 < s.re) :
-    HasLaplace ((Ici a).indicator fun _ ↦ (1 : ℂ)) s (Complex.exp (-s * a) / s) := by
-  simpa [div_eq_mul_inv] using (hasLaplace_one hs).indicator_Ici_comp_sub_right ha
-
-/-- For `w.re < s.re`, `t ↦ exp (w * t)` has Laplace transform `(s - w)⁻¹`. -/
-theorem hasLaplace_cexp_mul {w s : ℂ} (hws : w.re < s.re) :
-    HasLaplace (fun t : ℝ ↦ Complex.exp (w * t)) s (s - w)⁻¹ := by
-  have hs : 0 < (s - w).re := by
-    rw [Complex.sub_re]
-    linarith
-  simpa using (hasLaplace_one hs).cexp_mul_smul
-
-/-- For `0 < s.re` and `k : ℕ`, `t ↦ (t : ℂ) ^ k` has Laplace transform `k! / s ^ (k + 1)`. -/
-theorem hasLaplace_pow (k : ℕ) {s : ℂ} (hs : 0 < s.re) :
-    HasLaplace (fun t : ℝ ↦ (t : ℂ) ^ k) s ((k.factorial : ℂ) / s ^ (k + 1)) := by
-  have hk : 0 < ((k : ℂ) + 1).re := by
-    simp only [Complex.add_re, Complex.natCast_re, Complex.one_re]
-    positivity
-  have hfun : (fun t : ℝ ↦ Complex.exp (-s * t) • (t : ℂ) ^ k) =
-      fun t : ℝ ↦ (t : ℂ) ^ (((k : ℂ) + 1) - 1) * Complex.exp (-(s * t)) := by
-    ext t
-    rw [add_sub_cancel_right, Complex.cpow_natCast, smul_eq_mul, neg_mul, mul_comm]
-  refine ⟨?_, ?_⟩
-  · rw [hfun]
-    exact Complex.integrableOn_cpow_mul_exp_neg_mul_Ioi hk hs
-  · rw [hfun, Complex.integral_cpow_mul_exp_neg_mul_Ioi_of_re_pos hk hs,
-      Complex.Gamma_nat_eq_factorial, Complex.cpow_neg, ← Nat.cast_add_one, Complex.cpow_natCast,
-      div_eq_mul_inv]
-
-/-- For `w.re < s.re` and `k : ℕ`, `t ↦ exp (w * t) * (t : ℂ) ^ k` has Laplace transform
-`k! / (s - w) ^ (k + 1)`. -/
-theorem hasLaplace_cexp_mul_pow (k : ℕ) {w s : ℂ} (hws : w.re < s.re) :
-    HasLaplace (fun t : ℝ ↦ Complex.exp (w * t) * (t : ℂ) ^ k) s
-      ((k.factorial : ℂ) / (s - w) ^ (k + 1)) := by
-  have hs : 0 < (s - w).re := by
-    rw [Complex.sub_re]
-    linarith
-  exact (hasLaplace_pow k hs).cexp_mul_smul
-
-/-- For `a < s.re` and `k : ℕ`, the real damped monomial `t ↦ exp (a * t) * t ^ k` (cast to `ℂ`)
-has Laplace transform `k! / (s - a) ^ (k + 1)`. -/
-theorem hasLaplace_exp_mul_pow (k : ℕ) {a : ℝ} {s : ℂ} (has : a < s.re) :
-    HasLaplace (fun t : ℝ ↦ ((Real.exp (a * t) * t ^ k : ℝ) : ℂ)) s
-      ((k.factorial : ℂ) / (s - a) ^ (k + 1)) := by
-  refine (hasLaplace_cexp_mul_pow k (w := (a : ℂ)) (by simpa using has)).congr_ae ?_
-  exact .of_forall fun t ↦ by simp [Complex.ofReal_exp]
-
-end Elementary
 
 end TauCeti

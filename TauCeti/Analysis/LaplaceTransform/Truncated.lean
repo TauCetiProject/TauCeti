@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ParametricIntervalIntegral
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 public import Mathlib.MeasureTheory.Integral.ExpDecay
 import TauCeti.Analysis.LaplaceTransform.Basic
+import TauCeti.MeasureTheory.Integral.Exp.Complex
 
 /-!
 # Truncated Laplace transforms of bounded functions
