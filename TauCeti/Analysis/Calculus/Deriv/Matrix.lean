@@ -10,8 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Linear
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.Calculus.Deriv.Mul
-import TauCeti.Analysis.Calculus.FDeriv.Adjugate
+import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
 import TauCeti.Analysis.Matrix.Normed
 
@@ -31,8 +30,7 @@ derivatives of scalar functions, so no norm on matrices appears in the statement
 
 public section
 
-open Filter
-open scoped Topology Matrix.Norms.Operator
+open scoped Matrix.Norms.Operator
 
 /-- The derivative of the trace of a matrix curve is the trace of its derivative. -/
 theorem HasDerivAt.matrix_trace {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι]
@@ -53,30 +51,8 @@ theorem HasDerivAt.matrix_inv {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [
     [DecidableEq ι] {A : 𝕜 → Matrix ι ι 𝕜} {A' : Matrix ι ι 𝕜} {a : 𝕜}
     (hA : HasDerivAt A A' a) (hdet : IsUnit (A a).det) :
     HasDerivAt (fun t ↦ (A t)⁻¹) (-((A a)⁻¹ * A' * (A a)⁻¹)) a := by
-  have hd := hA.matrix_det hdet
-  have hne := hd.continuousAt.eventually_ne hdet.ne_zero
-  -- Entrywise adjugate calculus gives differentiability of the inverse without a Banach
-  -- algebra assumption. Differentiating A * A⁻¹ = 1 then determines its derivative.
-  have hAdj : DifferentiableAt 𝕜 (fun t ↦ (A t).adjugate) a := by
-    apply differentiableAt_pi.mpr
-    intro i
-    apply differentiableAt_pi.mpr
-    intro j
-    exact Matrix.differentiableAt_adjugate_apply A a
-      (fun k l ↦ (differentiableAt_pi.mp (differentiableAt_pi.mp hA.differentiableAt k) l)) i j
-  have hInv : DifferentiableAt 𝕜 (fun t ↦ (A t)⁻¹) a := by
-    simpa only [Matrix.inv_def, Ring.inverse_eq_inv] using!
-      (hd.differentiableAt.inv hdet.ne_zero).fun_smul hAdj
-  have hmul : (fun t ↦ A t * (A t)⁻¹) =ᶠ[𝓝 a] fun _ ↦ 1 := by
-    filter_upwards [hne] with t ht
-    exact Matrix.mul_nonsing_inv (A t) ht.isUnit
-  have hzero := (hA.fun_mul hInv.hasDerivAt).congr_of_eventuallyEq hmul.symm
-  apply hInv.hasDerivAt.congr_deriv
-  have hz : A' * (A a)⁻¹ + A a * _root_.deriv (fun t ↦ (A t)⁻¹) a = 0 := by
-    simpa using! hzero.unique (hasDerivAt_const a (1 : Matrix ι ι 𝕜))
-  have hz' := congrArg (fun M ↦ (A a)⁻¹ * M) hz
-  simpa [mul_add, ← Matrix.mul_assoc, Matrix.nonsing_inv_mul _ hdet,
-    eq_neg_iff_add_eq_zero, add_comm] using! hz'
+  simpa only [Function.comp_def, neg_apply, ContinuousLinearMap.mulLeftRight_apply] using!
+    (Matrix.hasFDerivAt_inv hdet).comp_hasDerivAt a hA
 
 namespace Matrix
 
