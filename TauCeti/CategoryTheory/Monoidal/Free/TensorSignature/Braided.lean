@@ -262,7 +262,7 @@ theorem liftCoupon_crossingInv (X Y : FreeMonoidalCategory S.Obj) :
 
 /-- The interpretation `liftCoupon fo fc` sends a formal crossing to the braiding. -/
 @[simp]
-theorem lift_liftCoupon_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
+theorem freeMonoidalLift_liftCoupon_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map (crossing X Y) =
       (β_ (projectObj fo X.as) (projectObj fo Y.as)).hom :=
   FreeMonoidal.lift_map_coupon _ _ _
@@ -270,7 +270,7 @@ theorem lift_liftCoupon_map_crossing (X Y : S.withCrossings.FreeMonoidal) :
 /-- The interpretation `liftCoupon fo fc` sends a formal reverse crossing to the inverse
 braiding. -/
 @[simp]
-theorem lift_liftCoupon_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
+theorem freeMonoidalLift_liftCoupon_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map (crossingInv X Y) =
       (β_ (projectObj fo X.as) (projectObj fo Y.as)).inv :=
   FreeMonoidal.lift_map_coupon _ _ _
@@ -286,30 +286,30 @@ theorem map_eq_map_of_braidingRel ⦃X Y : S.withCrossings.FreeMonoidal⦄ ⦃f 
   -- `(FreeMonoidal.lift fo _).obj X` and `projectObj fo X.as`.
   induction h with
   | hom_inv_id X Y =>
-    rw [Functor.map_comp, lift_liftCoupon_map_crossing, lift_liftCoupon_map_crossingInv,
-      Functor.map_id]
+    rw [Functor.map_comp, freeMonoidalLift_liftCoupon_map_crossing,
+      freeMonoidalLift_liftCoupon_map_crossingInv, Functor.map_id]
     exact Iso.hom_inv_id _
   | inv_hom_id X Y =>
-    rw [Functor.map_comp, lift_liftCoupon_map_crossing, lift_liftCoupon_map_crossingInv,
-      Functor.map_id]
+    rw [Functor.map_comp, freeMonoidalLift_liftCoupon_map_crossing,
+      freeMonoidalLift_liftCoupon_map_crossingInv, Functor.map_id]
     exact Iso.inv_hom_id _
   | naturality_right X f =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_liftCoupon_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, freeMonoidalLift_liftCoupon_map_crossing]
     exact BraidedCategory.braiding_naturality_right _ _
   | naturality_left f Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
-      FreeMonoidal.lift_map_whiskerRight, lift_liftCoupon_map_crossing]
+      FreeMonoidal.lift_map_whiskerRight, freeMonoidalLift_liftCoupon_map_crossing]
     exact BraidedCategory.braiding_naturality_left _ _
   | hexagon_forward X Y Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
       FreeMonoidal.lift_map_whiskerRight, FreeMonoidal.lift_map_associator_hom,
-      lift_liftCoupon_map_crossing]
+      freeMonoidalLift_liftCoupon_map_crossing]
     exact BraidedCategory.hexagon_forward _ _ _
   | hexagon_reverse X Y Z =>
     simp only [Functor.map_comp, FreeMonoidal.lift_map_whiskerLeft,
       FreeMonoidal.lift_map_whiskerRight, FreeMonoidal.lift_map_associator_inv,
-      lift_liftCoupon_map_crossing]
+      freeMonoidalLift_liftCoupon_map_crossing]
     exact BraidedCategory.hexagon_reverse _ _ _
 
 variable {fo fc} in
@@ -356,7 +356,8 @@ theorem lift_map_braiding_hom (X Y : S.BraidedPresented R) :
   -- The chain is stated up to the definitional equality between `(lift fo fc h).obj (X ⊗ Y)` and
   -- `(lift fo fc h).obj X ⊗ (lift fo fc h).obj Y`, which `rw` cannot see through.
   (congrArg (lift fo fc h).map (braiding_hom_obj X.as Y.as)).trans
-    ((Presented.lift_map _ _ _ _).trans (lift_liftCoupon_map_crossing fo fc X.as Y.as))
+    ((Presented.lift_map _ _ _ _).trans
+      (freeMonoidalLift_liftCoupon_map_crossing fo fc X.as Y.as))
 
 /-- The inverse braiding of two words goes to the inverse braiding of their images. -/
 @[simp]
@@ -365,7 +366,8 @@ theorem lift_map_braiding_inv (X Y : S.BraidedPresented R) :
   -- The chain is stated up to the definitional equality between `(lift fo fc h).obj (X ⊗ Y)` and
   -- `(lift fo fc h).obj X ⊗ (lift fo fc h).obj Y`, which `rw` cannot see through.
   (congrArg (lift fo fc h).map (braiding_inv_obj X.as Y.as)).trans
-    ((Presented.lift_map _ _ _ _).trans (lift_liftCoupon_map_crossingInv fo fc X.as Y.as))
+    ((Presented.lift_map _ _ _ _).trans
+      (freeMonoidalLift_liftCoupon_map_crossingInv fo fc X.as Y.as))
 
 instance : (lift fo fc h).Braided where
   braided X Y := by
@@ -420,7 +422,7 @@ include he in
 /-- If the isomorphisms which isomorphisms `e` at the generating objects induce on all tensor
 words are compatible with every coupon of `S`, then they are compatible with every coupon of
 `S.withCrossings`, crossings included. -/
-theorem map_coupon_comp_wordIso_hom (g : S.withCrossings.Coupon) :
+theorem map_withCrossingsCoupon_comp_wordIso_hom (g : S.withCrossings.Coupon) :
     F.map ((Presented.quotientFunctor _).map (FreeMonoidal.coupon g)) ≫
         (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
           e (S.withCrossings.tgt g)).hom =
@@ -440,10 +442,10 @@ a monoidal natural isomorphism extending `e`: the isomorphism `Presented.monoida
 components (`Presented.monoidalNatIso_hom_app`, `Presented.monoidalNatIso_hom_app_of`) and
 monoidality apply directly. The compatibility is stated with the isomorphisms
 `FreeMonoidal.wordIso` which `e` induces on all tensor words; compatibility with the crossings
-holds automatically (`map_coupon_comp_wordIso_hom`). Taking one of the functors to be
-`lift fo fc h`, this is the uniqueness of the lift. -/
+holds automatically (`map_withCrossingsCoupon_comp_wordIso_hom`). Taking one of the functors to
+be `lift fo fc h`, this is the uniqueness of the lift. -/
 abbrev monoidalNatIso : F ≅ G :=
-  Presented.monoidalNatIso F G e (map_coupon_comp_wordIso_hom he)
+  Presented.monoidalNatIso F G e (map_withCrossingsCoupon_comp_wordIso_hom he)
 
 end Uniqueness
 
