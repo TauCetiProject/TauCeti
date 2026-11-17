@@ -69,16 +69,13 @@ theorem entropy_zero_measure {α : Type*} {mα : MeasurableSpace α} (g : α →
 /-- Functions equal almost everywhere have equal entropy. -/
 theorem entropy_congr_ae {α : Type*} {mα : MeasurableSpace α} {μ : Measure α} {g₁ g₂ : α → ℝ}
     (h : g₁ =ᵐ[μ] g₂) : entropy μ g₁ = entropy μ g₂ := by
-  have hlog : (fun x ↦ g₁ x * Real.log (g₁ x)) =ᵐ[μ] fun x ↦ g₂ x * Real.log (g₂ x) :=
-    h.mono fun _ hx ↦ by dsimp; rw [hx]
-  simp only [entropy, integral_congr_ae h, integral_congr_ae hlog]
+  simp only [entropy, integral_congr_ae h]
+  congr 1; exact integral_congr_ae (h.mono fun _ hx ↦ by simp [hx])
 
 /-- Under a probability measure, any constant function has entropy zero. -/
 @[simp]
 theorem entropy_const {α : Type*} {mα : MeasurableSpace α} (μ : Measure α)
-    [IsProbabilityMeasure μ] (c : ℝ) :
-    entropy μ (fun _ ↦ c) = 0 := by
-  simp [entropy]
+    [IsProbabilityMeasure μ] (c : ℝ) : entropy μ (fun _ ↦ c) = 0 := by simp [entropy]
 
 /-- Entropy is homogeneous of degree one under scalar multiplication whenever `g` and `g log g`
 are integrable: `Ent_μ(c * g) = c * Ent_μ(g)` for every `c : ℝ` (including `c ≤ 0`, since
@@ -88,12 +85,9 @@ theorem entropy_const_mul {α : Type*} {mα : MeasurableSpace α} {μ : Measure 
     (hglog : Integrable (fun x ↦ g x * Real.log (g x)) μ) :
     entropy μ (fun x ↦ c * g x) = c * entropy μ g := by
   have hmul (t : ℝ) : (c * t) * Real.log (c * t) = c * (t * Real.log t) + (c * Real.log c) * t := by
-    by_cases hc : c = 0
-    · simp [hc]
-    by_cases ht : t = 0
-    · simp [ht]
-    rw [Real.log_mul hc ht]
-    ring
+    by_cases hc : c = 0; · simp [hc]
+    by_cases ht : t = 0; · simp [ht]
+    rw [Real.log_mul hc ht]; ring
   simp only [entropy_def, hmul, integral_const_mul]
   rw [integral_add (hglog.const_mul c) (hg.const_mul (c * Real.log c)),
     integral_const_mul, integral_const_mul]
@@ -113,20 +107,16 @@ theorem _root_.MeasureTheory.MeasurePreserving.entropy_comp {α β : Type*}
     {φ : α → β} (hφ : MeasurePreserving φ μ ν) {g : β → ℝ} (hg : AEStronglyMeasurable g ν) :
     entropy μ (g ∘ φ) = entropy ν g := by
   have hg' : AEStronglyMeasurable g (μ.map φ) := hφ.map_eq.symm ▸ hg
-  have hglog' : AEStronglyMeasurable (fun y ↦ g y * Real.log (g y)) (μ.map φ) :=
-    Real.continuous_mul_log.comp_aestronglyMeasurable hg'
   simp only [entropy_def, Function.comp_def]
   rw [← hφ.map_eq, integral_map hφ.measurable.aemeasurable hg',
-    integral_map hφ.measurable.aemeasurable hglog']
+    integral_map hφ.measurable.aemeasurable (Real.continuous_mul_log.comp_aestronglyMeasurable hg')]
 
 /-- **Nonnegativity of functional entropy.** Under a probability measure, any a.e. nonnegative
 integrable function `g` with `g log g` integrable satisfies `0 ≤ Ent_μ(g)`. -/
 theorem entropy_nonneg {α : Type*} {mα : MeasurableSpace α} {μ : Measure α}
     [IsProbabilityMeasure μ] {g : α → ℝ} (hg0 : 0 ≤ᵐ[μ] g) (hg : Integrable g μ)
-    (hglog : Integrable (fun x ↦ g x * Real.log (g x)) μ) :
-    0 ≤ entropy μ g := by
-  rw [entropy_def, sub_nonneg]
-  exact Real.convexOn_mul_log.map_integral_le Real.continuous_mul_log.continuousOn
+    (hglog : Integrable (fun x ↦ g x * Real.log (g x)) μ) : 0 ≤ entropy μ g := by
+  exact sub_nonneg.2 <| Real.convexOn_mul_log.map_integral_le Real.continuous_mul_log.continuousOn
     isClosed_Ici hg0 hg hglog
 
 end MeasureTheory.Measure

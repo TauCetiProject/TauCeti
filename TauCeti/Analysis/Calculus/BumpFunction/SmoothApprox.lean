@@ -97,47 +97,26 @@ theorem LipschitzWith.exists_contDiff_lipschitzWith_abs_le_tendsto {f : E → �
   classical
   let R : ℕ → ℝ := fun n ↦ (n : ℝ) + 1
   let ftr : ℕ → E → ℝ := fun n x ↦ max (-R n) (min (R n) (f x))
-  have hR_pos (n : ℕ) : 0 < R n := by positivity
-  have hftr_lip (n : ℕ) : LipschitzWith K (ftr n) := (hf.const_min (R n)).const_max (-R n)
-  have hftr_mem (n : ℕ) (x : E) : ftr n x ∈ Icc (-R n) (R n) :=
-    ⟨le_max_left _ _, max_le (by linarith [hR_pos n]) (min_le_left _ _)⟩
+  have hR (n : ℕ) : 0 < R n := by positivity
   have hftr_abs (n : ℕ) (x : E) : |ftr n x| ≤ |f x| := by
-    rcases le_total (f x) (-R n) with hlo | hlo
-    · have hfx_neg : f x ≤ 0 := hlo.trans (by linarith [hR_pos n])
-      have heq : ftr n x = -R n := max_eq_left (min_le_of_right_le hlo)
-      rw [heq, abs_neg, abs_of_pos (hR_pos n), abs_of_nonpos hfx_neg]
-      linarith
-    · rcases le_total (R n) (f x) with hhi | hhi
-      · have hfx_pos : 0 ≤ f x := (hR_pos n).le.trans hhi
-        have heq : ftr n x = R n := by
-          simp only [ftr, min_eq_left hhi]
-          exact max_eq_right (by linarith [hR_pos n])
-        rw [heq, abs_of_pos (hR_pos n), abs_of_nonneg hfx_pos]
-        exact hhi
-      · have heq : ftr n x = f x := by
-          simp only [ftr, min_eq_right hhi, max_eq_right hlo]
-        rw [heq]
-  have hε (n : ℕ) : 0 < 1 / ((n : ℝ) + 1) := by positivity
-  have hex (n : ℕ) :=
-    ((hftr_lip n).lipschitzOnWith (s := univ)).exists_contDiff_lipschitzWith_mem_Icc_dist_lt
-      (a := -R n) (b := R n) (by linarith [hR_pos n]) (fun x _ ↦ hftr_mem n x) (hε n)
+    refine abs_le.2 ⟨?_, ?_⟩
+    · exact le_max_of_le_right (le_min (by linarith [hR n, abs_nonneg (f x)]) (neg_abs_le (f x)))
+    · exact max_le (by linarith [hR n, abs_nonneg (f x)]) (min_le_of_right_le (le_abs_self (f x)))
+  have hex (n : ℕ) := (((hf.const_min (R n)).const_max (-R n)).lipschitzOnWith
+    (s := univ)).exists_contDiff_lipschitzWith_mem_Icc_dist_lt (a := -R n) (b := R n)
+      (by linarith [hR n])
+      (fun x _ ↦ ⟨le_max_left _ _, max_le (by linarith [hR n]) (min_le_left _ _)⟩)
+      (by positivity : 0 < 1 / ((n : ℝ) + 1))
   choose g hgs hgK hg_mem hgf using hex
   refine ⟨g, hgs, hgK, fun n ↦ ⟨R n, fun x ↦ abs_le.2 (hg_mem n x)⟩, fun n x ↦ ?_, fun x ↦ ?_⟩
-  · have hdist : |g n x - ftr n x| ≤ 1 := by
-      have h1 : 1 / ((n : ℝ) + 1) ≤ 1 :=
-        (div_le_one (by positivity)).2 (by linarith [Nat.cast_nonneg (α := ℝ) n])
-      exact (Real.dist_eq _ _ ▸ (hgf n x (mem_univ x)).le).trans h1
+  · have h1 : 1 / ((n : ℝ) + 1) ≤ 1 :=
+      (div_le_one (by positivity)).2 (by linarith [Nat.cast_nonneg (α := ℝ) n])
+    have hdist : |g n x - ftr n x| ≤ 1 := (Real.dist_eq _ _ ▸ (hgf n x (mem_univ x)).le).trans h1
     linarith [abs_sub_abs_le_abs_sub (g n x) (ftr n x), hftr_abs n x]
-  · apply tendsto_iff_dist_tendsto_zero.2
-    refine squeeze_zero' (Eventually.of_forall fun _ ↦ dist_nonneg) ?_
+  · refine tendsto_iff_dist_tendsto_zero.2 <| squeeze_zero' (.of_forall fun _ ↦ dist_nonneg) ?_
       (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
     filter_upwards [eventually_ge_atTop (Nat.ceil |f x|)] with n hn
-    have hfx_le : |f x| ≤ R n := by
-      have hceil : |f x| ≤ (Nat.ceil |f x| : ℝ) := Nat.le_ceil |f x|
-      have hcast : (Nat.ceil |f x| : ℝ) ≤ n := Nat.cast_le.2 hn
-      dsimp only [R]
-      linarith
-    obtain ⟨hlo, hhi⟩ := abs_le.1 hfx_le
-    have heq : ftr n x = f x := by simp only [ftr, min_eq_right hhi, max_eq_right hlo]
-    rw [← heq]
-    exact (hgf n x (mem_univ x)).le
+    obtain ⟨hlo, hhi⟩ := abs_le.1 (show |f x| ≤ R n by
+      have : (Nat.ceil |f x| : ℝ) ≤ n := Nat.cast_le.2 hn
+      linarith [Nat.le_ceil |f x|])
+    simpa [ftr, min_eq_right hhi, max_eq_right hlo] using (hgf n x (mem_univ x)).le

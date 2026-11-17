@@ -66,16 +66,13 @@ namespace TauCeti.Probability
 constant `1`. -/
 theorem logSobolevInequality_gaussianReal_zero_one :
     (gaussianReal 0 1).LogSobolevInequality 1 := by
-  apply Measure.logSobolevInequality_iff_forall_hasCompactSupport.mpr
-  intro f hf hc
+  refine Measure.logSobolevInequality_iff_forall_hasCompactSupport.mpr fun f hf hc ↦ ?_
   obtain ⟨A, hA⟩ := hc.exists_bound_of_continuous hf.continuous
-  obtain ⟨B, hB⟩ := (hc.fderiv ℝ).exists_bound_of_continuous
-    (hf.continuous_fderiv (by simp))
-  have hfb : ∃ A, ∀ x, |f x| ≤ A := ⟨A, by simpa only [Real.norm_eq_abs] using hA⟩
-  have hdb : ∃ B, ∀ x, |deriv f x| ≤ B := ⟨B, by
-    simpa only [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs] using hB⟩
+  obtain ⟨B, hB⟩ := (hc.fderiv ℝ).exists_bound_of_continuous (hf.continuous_fderiv (by simp))
   simpa only [mul_one, ← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs, sq_abs] using
-    entropy_sq_le_two_mul_integral_deriv_sq_gaussianReal (hf.of_le (by simp)) hfb hdb
+    entropy_sq_le_two_mul_integral_deriv_sq_gaussianReal (hf.of_le (by simp))
+      ⟨A, by simpa only [Real.norm_eq_abs] using hA⟩
+      ⟨B, by simpa only [← norm_deriv_eq_norm_fderiv, Real.norm_eq_abs] using hB⟩
 
 /-- The standard Gaussian on `ℝ` satisfies the logarithmic Sobolev inequality with constant `C`
 if and only if `1 ≤ C`. -/
@@ -90,16 +87,12 @@ theorem logSobolevInequality_gaussianReal (m : ℝ) (v : ℝ≥0) :
     (gaussianReal m v).LogSobolevInequality v := by
   have hscaled :=
     (logSobolevInequality_gaussianReal_zero_one.map_smul (a := √(v : ℝ))).map_add_right m
-  have hmap : ((gaussianReal 0 1).map (fun x : ℝ ↦ √(v : ℝ) • x)).map (· + m) =
-      gaussianReal m v := by
-    have hmul : (gaussianReal 0 1).map (fun x : ℝ ↦ √(v : ℝ) • x) = gaussianReal 0 v := by
-      have hv : NNReal.mk (√(v : ℝ) ^ 2) (sq_nonneg _) * 1 = v := by
-        ext
-        simp [Real.sq_sqrt v.coe_nonneg]
-      simpa only [smul_eq_mul, mul_zero, hv] using
-        gaussianReal_map_const_mul (μ := 0) (v := 1) √(v : ℝ)
-    rw [hmul, gaussianReal_map_add_const, zero_add]
-  rwa [hmap, Real.sq_sqrt v.coe_nonneg, mul_one] at hscaled
+  have hv : NNReal.mk (√(v : ℝ) ^ 2) (sq_nonneg _) * 1 = v :=
+    NNReal.eq (by simp [Real.sq_sqrt v.coe_nonneg])
+  have hmul : (gaussianReal 0 1).map (fun x : ℝ ↦ √(v : ℝ) • x) = gaussianReal 0 v := by
+    simpa only [smul_eq_mul, mul_zero, hv] using
+      gaussianReal_map_const_mul (μ := 0) (v := 1) √(v : ℝ)
+  rwa [hmul, gaussianReal_map_add_const, zero_add, Real.sq_sqrt v.coe_nonneg, mul_one] at hscaled
 
 variable (E : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -110,22 +103,21 @@ theorem logSobolevInequality_stdGaussian : (stdGaussian E).LogSobolevInequality 
   have hpi :
       (stdGaussian (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).LogSobolevInequality 1 := by
     rw [← map_pi_eq_stdGaussian]
-    exact Measure.LogSobolevInequality.piLp (fun _ ↦ gaussianReal 0 1) 1
-      (fun _ ↦ logSobolevInequality_gaussianReal_zero_one)
+    exact Measure.LogSobolevInequality.piLp _ 1 fun _ ↦ logSobolevInequality_gaussianReal_zero_one
   simpa only [stdGaussian_map] using
     hpi.map_linearIsometryEquiv (stdOrthonormalBasis ℝ E).repr.symm
 
 /-- On a nontrivial finite-dimensional real inner product space, the standard Gaussian has
 logarithmic Sobolev constant `C` if and only if `1 ≤ C`. -/
 theorem logSobolevInequality_stdGaussian_iff [Nontrivial E] {C : ℝ} :
-    (stdGaussian E).LogSobolevInequality C ↔ 1 ≤ C := by
-  refine ⟨fun h ↦ ?_, fun h ↦ (logSobolevInequality_stdGaussian E).mono h⟩
-  have hpi :
-      (stdGaussian (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).LogSobolevInequality C := by
-    simpa only [stdGaussian_map] using
-      h.map_linearIsometryEquiv (stdOrthonormalBasis ℝ E).repr
-  rw [← map_pi_eq_stdGaussian] at hpi
-  exact one_le_of_logSobolevInequality_gaussianReal (hpi.of_piLp ⟨0, Module.finrank_pos⟩)
+    (stdGaussian E).LogSobolevInequality C ↔ 1 ≤ C :=
+  ⟨fun h ↦ by
+    have hpi :
+        (stdGaussian (EuclideanSpace ℝ (Fin (Module.finrank ℝ E)))).LogSobolevInequality C := by
+      simpa only [stdGaussian_map] using h.map_linearIsometryEquiv (stdOrthonormalBasis ℝ E).repr
+    rw [← map_pi_eq_stdGaussian] at hpi
+    exact one_le_of_logSobolevInequality_gaussianReal (hpi.of_piLp ⟨0, Module.finrank_pos⟩),
+    fun h ↦ (logSobolevInequality_stdGaussian E).mono h⟩
 
 /-- **Gaussian Lipschitz MGF bound**: for any `K`-Lipschitz function `f : E → ℝ` on a
 finite-dimensional real inner product space, `f - ∫ f ∂stdGaussian E` is sub-Gaussian with sharp
@@ -136,8 +128,7 @@ theorem hasSubgaussianMGF_stdGaussian_sub_integral_of_lipschitzWith
     {K : ℝ≥0} {f : E → ℝ} (hf : LipschitzWith K f) :
     HasSubgaussianMGF (fun x ↦ f x - ∫ y, f y ∂stdGaussian E) (K ^ 2) (stdGaussian E) := by
   simpa only [one_mul] using
-    (logSobolevInequality_stdGaussian E).hasSubgaussianMGF_sub_integral_of_lipschitzWith
-      (C := 1) hf
+    (logSobolevInequality_stdGaussian E).hasSubgaussianMGF_sub_integral_of_lipschitzWith (C := 1) hf
 
 /-- **Gaussian Lipschitz concentration**: for any `K`-Lipschitz function `f : E → ℝ` on a
 finite-dimensional real inner product space and `0 ≤ t`,

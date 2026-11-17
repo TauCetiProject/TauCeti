@@ -98,34 +98,27 @@ theorem PoincareInequality.of_piLp {μ : ∀ i, Measure (E i)}
 theorem LogSobolevInequality.of_piLp {μ : ∀ i, Measure (E i)}
     [∀ i, IsProbabilityMeasure (μ i)] {C : ℝ}
     (h : LogSobolevInequality ((Measure.pi μ).map (WithLp.toLp 2)) C) (i : ι) :
-    LogSobolevInequality (μ i) C := by
+    LogSobolevInequality (μ i) C :=
+  (LogSobolevInequality_def _ _).2 fun f hf hdf hf2 hf2log ↦ by
   classical
   let ρ := (Measure.pi μ).map (WithLp.toLp 2)
   let q := (PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i)
-  have hm : MeasurePreserving q ρ (μ i) := by
-    refine ⟨q.continuous.measurable, ?_⟩
-    dsimp only [ρ]
-    rw [Measure.map_map q.continuous.measurable (WithLp.measurable_toLp 2 _)]
-    exact (measurePreserving_eval μ i).map_eq
-  rw [LogSobolevInequality_def]
-  intro f hf hdf hf2 hf2log
-  have hn (x : PiLp 2 E) :
-      ‖fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x‖ = ‖fderiv ℝ f (q x)‖ :=
+  have hm : MeasurePreserving q ρ (μ i) :=
+    ⟨q.continuous.measurable, by
+      rw [Measure.map_map q.continuous.measurable (WithLp.measurable_toLp 2 _)]
+      exact (measurePreserving_eval μ i).map_eq⟩
+  have hn (x : PiLp 2 E) : ‖fderiv ℝ (fun y : PiLp 2 E ↦ f (q y)) x‖ = ‖fderiv ℝ f (q x)‖ :=
     PiLp.norm_fderiv_comp_proj (hf.differentiable (by simp) _)
-  have hd : MemLp (fun x : PiLp 2 E ↦ ‖fderiv ℝ (fun y ↦ f (q y)) x‖) 2 ρ := by
-    simp only [hn]
-    exact hdf.comp_measurePreserving hm
-  have hv := h.apply (fun x ↦ f (q x)) (hf.comp q.contDiff) hd
+  have hv := h.apply (fun x ↦ f (q x)) (hf.comp q.contDiff)
+    (by simpa only [hn, Function.comp_def] using hdf.comp_measurePreserving hm)
     (hm.integrable_comp_of_integrable hf2) (hm.integrable_comp_of_integrable hf2log)
-  have hent : entropy ρ (fun x ↦ f (q x) ^ 2) = entropy (μ i) (fun y ↦ f y ^ 2) :=
-    hm.entropy_comp (hf.continuous.pow 2).aestronglyMeasurable
-  have he : (∫ x, ‖fderiv ℝ (fun y ↦ f (q y)) x‖ ^ 2 ∂ρ) =
-      ∫ y, ‖fderiv ℝ f y‖ ^ 2 ∂μ i := by
-    simp only [hn]
-    have hint : AEStronglyMeasurable (fun y ↦ ‖fderiv ℝ f y‖ ^ 2) (ρ.map q) :=
-      hm.map_eq.symm ▸ hdf.integrable_sq.aestronglyMeasurable
-    rw [← hm.map_eq, integral_map hm.measurable.aemeasurable hint]
-  rwa [hent, he] at hv
+  have hent := hm.entropy_comp (g := fun y ↦ f y ^ 2) (hf.continuous.pow 2).aestronglyMeasurable
+  rw [show (fun x ↦ f (q x) ^ 2) = (fun y ↦ f y ^ 2) ∘ q from rfl, hent,
+    show (∫ x, ‖fderiv ℝ (fun y ↦ f (q y)) x‖ ^ 2 ∂ρ) = ∫ y, ‖fderiv ℝ f y‖ ^ 2 ∂μ i by
+      simp only [hn]
+      rw [← hm.map_eq, integral_map hm.measurable.aemeasurable
+        (hm.map_eq.symm ▸ hdf.integrable_sq.aestronglyMeasurable)]] at hv
+  exact hv
 
 end Marginals
 
@@ -239,10 +232,9 @@ theorem PoincareInequality.piLp_sup (μ : ∀ i, Measure (E i))
 constant satisfies the same logarithmic Sobolev inequality. -/
 theorem LogSobolevInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilityMeasure (μ i)]
     (C : ℝ≥0) (hμ : ∀ i, (μ i).LogSobolevInequality C) :
-    ((Measure.pi μ).map (WithLp.toLp 2)).LogSobolevInequality C := by
+    ((Measure.pi μ).map (WithLp.toLp 2)).LogSobolevInequality C :=
+  (LogSobolevInequality_def _ _).2 fun f hf hD hf2 hf2log ↦ by
   classical
-  rw [LogSobolevInequality_def]
-  intro f hf hD hf2 hf2log
   let ρ := (Measure.pi μ).map (WithLp.toLp 2)
   let F := f ∘ WithLp.toLp 2
   let g : (∀ i, E i) → ℝ := fun x ↦ F x ^ 2
@@ -251,18 +243,16 @@ theorem LogSobolevInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabil
     ⟨WithLp.measurable_toLp 2 _, rfl⟩
   have hg0 : 0 ≤ᵐ[Measure.pi μ] g := .of_forall fun _ ↦ sq_nonneg _
   have hg_int : Integrable g (Measure.pi μ) := hm.integrable_comp_of_integrable hf2
-  have hglog_int : Integrable (fun x ↦ g x * Real.log (g x)) (Measure.pi μ) :=
-    hm.integrable_comp_of_integrable hf2log
+  have hglog_int := hm.integrable_comp_of_integrable hf2log
   have hGm : Measurable G := (TauCeti.measurable_gradient f).comp hm.measurable
   have hGL : MemLp (fun x ↦ ‖G x‖) 2 (Measure.pi μ) := by
     simpa only [G, Function.comp_def, TauCeti.norm_gradient_eq_norm_fderiv] using
       hD.comp_measurePreserving hm
-  have hGim (i : ι) : Measurable (fun x ↦ ‖G x i‖) :=
-    ((PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i).continuous.measurable.comp hGm).norm
-  have hGiL (i : ι) : MemLp (fun x ↦ ‖G x i‖) 2 (Measure.pi μ) :=
-    hGL.mono' (hGim i).aestronglyMeasurable
-      (ae_of_all _ fun x ↦ by
-        simpa only [Real.norm_of_nonneg (norm_nonneg _)] using (PiLp.norm_apply_le (G x) i))
+  have hGiL (i : ι) : MemLp (fun x ↦ ‖G x i‖) 2 (Measure.pi μ) := hGL.mono'
+    ((PiLp.proj 2 E i : PiLp 2 E →L[ℝ] E i).continuous.measurable.comp
+      hGm).norm.aestronglyMeasurable
+    (ae_of_all _ fun x ↦ by
+      simpa only [Real.norm_of_nonneg (norm_nonneg _)] using PiLp.norm_apply_le (G x) i)
   have hcoord (i : ι) :
       (∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ) ≤
         2 * (C : ℝ) * ∫ x, ‖G x i‖ ^ 2 ∂Measure.pi μ := by
@@ -270,45 +260,33 @@ theorem LogSobolevInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabil
         entropy (μ i) (fun y ↦ g (Function.update x i y)) ≤
           2 * (C : ℝ) * ∫ y, ‖G (Function.update x i y) i‖ ^ 2 ∂μ i := by
       filter_upwards [ae_integrable_mul_log_pi_update μ i hg0 hg_int hglog_int,
-        TauCeti.ae_memLp_pi_update μ i (hGiL i)]
-        with x ⟨_, hxg, hxglog⟩ hxG
-      have hs : ContDiff ℝ ∞ (fun y ↦ F (Function.update x i y)) :=
-        hf.comp (PiLp.contDiff_toLp.comp (contDiff_update ∞ x i))
-      have hnorm (y : E i) :
-          ‖fderiv ℝ (fun z ↦ F (Function.update x i z)) y‖ =
-            ‖G (Function.update x i y) i‖ :=
+        TauCeti.ae_memLp_pi_update μ i (hGiL i)] with x ⟨_, hxg, hxglog⟩ hxG
+      have hnorm (y : E i) : ‖fderiv ℝ (fun z ↦ F (Function.update x i z)) y‖ =
+          ‖G (Function.update x i y) i‖ :=
         PiLp.norm_fderiv_update f x i y (hf.differentiable (by simp) _)
-      have hsecD : MemLp (fun y ↦ ‖fderiv ℝ (fun z ↦ F (Function.update x i z)) y‖)
-          2 (μ i) := by simpa only [hnorm] using hxG
-      simpa only [hnorm] using (hμ i).apply _ hs hsecD hxg hxglog
-    have h_rhs_int : Integrable
-        (fun x ↦ 2 * (C : ℝ) * ∫ y, ‖G (Function.update x i y) i‖ ^ 2 ∂μ i) (Measure.pi μ) :=
-      ((TauCeti.measurePreserving_update_prod_pi μ i).integrable_comp_of_integrable
-        (hGiL i).integrable_sq).integral_prod_left.const_mul (2 * (C : ℝ))
-    calc (∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ)
-        ≤ ∫ x, (2 * (C : ℝ) * ∫ y, ‖G (Function.update x i y) i‖ ^ 2 ∂μ i) ∂Measure.pi μ :=
+      simpa only [hnorm] using (hμ i).apply (fun z ↦ F (Function.update x i z))
+        (hf.comp (PiLp.contDiff_toLp.comp (contDiff_update ∞ x i)))
+        (by simpa only [hnorm] using hxG) hxg hxglog
+    have h_rhs_int := ((TauCeti.measurePreserving_update_prod_pi μ i).integrable_comp_of_integrable
+      (hGiL i).integrable_sq).integral_prod_left.const_mul (2 * (C : ℝ))
+    calc _ ≤ ∫ x, (2 * (C : ℝ) * ∫ y, ‖G (Function.update x i y) i‖ ^ 2 ∂μ i) ∂Measure.pi μ :=
           integral_mono_ae (integrable_entropy_update_pi μ i hg0 hg_int hglog_int) h_rhs_int hsec
       _ = 2 * (C : ℝ) * ∫ x, ‖G x i‖ ^ 2 ∂Measure.pi μ := by
           rw [integral_const_mul, TauCeti.integral_integral_update_pi μ i (hGiL i).integrable_sq]
-  have hent : entropy ρ (fun z ↦ f z ^ 2) = entropy (Measure.pi μ) g :=
-    (hm.entropy_comp (hf.continuous.pow 2).aestronglyMeasurable).symm
-  have henergy : (∫ x, ‖G x‖ ^ 2 ∂Measure.pi μ) = ∫ z, ‖fderiv ℝ f z‖ ^ 2 ∂ρ := by
-    rw [← hm.map_eq, integral_map hm.measurable.aemeasurable
-      (hm.map_eq.symm ▸ hD.integrable_sq.aestronglyMeasurable)]
-    simp only [G, Function.comp_def, TauCeti.norm_gradient_eq_norm_fderiv]
   calc entropy ρ (fun z ↦ f z ^ 2)
-      = entropy (Measure.pi μ) g := hent
+      = entropy (Measure.pi μ) g :=
+        (hm.entropy_comp (hf.continuous.pow 2).aestronglyMeasurable).symm
     _ ≤ ∑ i, ∫ x, entropy (μ i) (fun y ↦ g (Function.update x i y)) ∂Measure.pi μ :=
         entropy_pi_le_sum μ hg0 hg_int hglog_int
-    _ ≤ ∑ i, 2 * (C : ℝ) * ∫ x, ‖G x i‖ ^ 2 ∂Measure.pi μ :=
-        Finset.sum_le_sum fun i _ ↦ hcoord i
+    _ ≤ ∑ i, 2 * (C : ℝ) * ∫ x, ‖G x i‖ ^ 2 ∂Measure.pi μ := Finset.sum_le_sum fun i _ ↦ hcoord i
     _ = 2 * (C : ℝ) * ∫ x, (∑ i, ‖G x i‖ ^ 2) ∂Measure.pi μ := by
         rw [← Finset.mul_sum, ← integral_finsetSum _ fun i _ ↦ (hGiL i).integrable_sq]
     _ = 2 * (C : ℝ) * ∫ x, ‖G x‖ ^ 2 ∂Measure.pi μ := by
-        congr 1
-        refine integral_congr_ae (.of_forall fun x ↦ ?_)
-        exact (PiLp.norm_sq_eq_of_L2 E (G x)).symm
-    _ = 2 * (C : ℝ) * ∫ z, ‖fderiv ℝ f z‖ ^ 2 ∂ρ := by rw [henergy]
+        congr 1; exact integral_congr_ae (.of_forall fun x ↦ (PiLp.norm_sq_eq_of_L2 E (G x)).symm)
+    _ = 2 * (C : ℝ) * ∫ z, ‖fderiv ℝ f z‖ ^ 2 ∂ρ := by
+        rw [← hm.map_eq, integral_map hm.measurable.aemeasurable
+          (hm.map_eq.symm ▸ hD.integrable_sq.aestronglyMeasurable)]
+        simp only [G, Function.comp_def, TauCeti.norm_gradient_eq_norm_fderiv]
 
 /-- A finite Hilbert product satisfies the logarithmic Sobolev inequality with the maximum of its
 nonnegative factor constants. For an empty family the maximum is zero. -/
@@ -317,8 +295,7 @@ theorem LogSobolevInequality.piLp_sup (μ : ∀ i, Measure (E i))
     (hμ : ∀ i, (μ i).LogSobolevInequality (C i)) :
     ((Measure.pi μ).map (WithLp.toLp 2)).LogSobolevInequality (Finset.univ.sup C : ℝ≥0) := by
   classical
-  apply LogSobolevInequality.piLp μ (Finset.univ.sup C)
-  intro i
-  exact (hμ i).mono (by exact_mod_cast Finset.le_sup (f := C) (Finset.mem_univ i))
+  exact LogSobolevInequality.piLp μ (Finset.univ.sup C) fun i ↦
+    (hμ i).mono (by exact_mod_cast Finset.le_sup (f := C) (Finset.mem_univ i))
 
 end MeasureTheory.Measure

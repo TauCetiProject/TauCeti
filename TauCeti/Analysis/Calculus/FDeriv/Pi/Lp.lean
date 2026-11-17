@@ -59,13 +59,11 @@ theorem opNorm_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace �
     ‖L.comp (PiLp.proj p E i : PiLp p E →L[𝕜] E i)‖ = ‖L‖ := by
   classical
   let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
-  apply le_antisymm
-  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun y ↦ ?_
-    simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply] using
-      (L.le_opNorm (y i)).trans
-        (mul_le_mul_of_nonneg_left (PiLp.norm_apply_le y i) (norm_nonneg _))
-  · refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (L.comp q)) fun y ↦ ?_
-    simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply,
+  refine le_antisymm (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg L) fun y ↦ ?_)
+    (ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg (L.comp q)) fun y ↦ ?_)
+  · simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply] using
+      (L.le_opNorm (y i)).trans (mul_le_mul_of_nonneg_left (PiLp.norm_apply_le y i) (norm_nonneg _))
+  · simpa only [ContinuousLinearMap.comp_apply, q, PiLp.proj_apply,
       PiLp.ofLp_single, Pi.single_eq_same, PiLp.norm_single] using
       (L.comp q).le_opNorm (PiLp.single p i y)
 
@@ -77,9 +75,9 @@ theorem norm_fderiv_comp_proj [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSp
     ‖fderiv 𝕜 (fun y : PiLp p E ↦ f ((PiLp.proj p E i : PiLp p E →L[𝕜] E i) y)) x‖ =
       ‖fderiv 𝕜 f (x i)‖ := by
   let q := (PiLp.proj p E i : PiLp p E →L[𝕜] E i)
-  have hderiv : fderiv 𝕜 (fun y : PiLp p E ↦ f (q y)) x = (fderiv 𝕜 f (x i)).comp q := by
-    simpa only [Function.comp_def] using (hf.hasFDerivAt.comp x q.hasFDerivAt).fderiv
-  rw [hderiv, opNorm_comp_proj]
+  rw [show fderiv 𝕜 (fun y : PiLp p E ↦ f (q y)) x = (fderiv 𝕜 f (x i)).comp q by
+    simpa only [Function.comp_def] using (hf.hasFDerivAt.comp x q.hasFDerivAt).fderiv,
+    opNorm_comp_proj]
 
 end Proj
 

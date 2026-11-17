@@ -72,17 +72,13 @@ preserves the operator norm of the derivative of every test function. -/
 private theorem LogSobolevInequality.map_of_norm_fderiv_comp (h : LogSobolevInequality μ C)
     {φ : E → F} (hφ : MeasurableEmbedding φ) (hφs : ContDiff ℝ ∞ φ)
     (hφd : ∀ (f : F → ℝ) (x : E), ‖fderiv ℝ (fun y ↦ f (φ y)) x‖ = ‖fderiv ℝ f (φ x)‖) :
-    LogSobolevInequality (μ.map φ) C := by
-  rw [LogSobolevInequality_def]
-  intro f hf hdf hf2 hf2log
-  have hg : ContDiff ℝ ∞ (fun x ↦ f (φ x)) := hf.comp hφs
+    LogSobolevInequality (μ.map φ) C :=
+  (LogSobolevInequality_def _ _).2 fun f hf hdf hf2 hf2log ↦ by
   have hdg : MemLp (fun x ↦ ‖fderiv ℝ (fun y ↦ f (φ y)) x‖) 2 μ := by
-    simp only [hφd]
-    exact hφ.memLp_map_measure_iff.1 hdf
+    simpa only [hφd, Function.comp_def] using hφ.memLp_map_measure_iff.1 hdf
   rw [entropy_map hφ, hφ.integral_map]
-  calc _ ≤ 2 * C * ∫ x, ‖fderiv ℝ (fun y ↦ f (φ y)) x‖ ^ 2 ∂μ :=
-        h.apply _ hg hdg (hφ.integrable_map_iff.1 hf2) (hφ.integrable_map_iff.1 hf2log)
-    _ = 2 * C * ∫ x, ‖fderiv ℝ f (φ x)‖ ^ 2 ∂μ := by simp only [hφd]
+  simpa only [hφd, Function.comp_def] using h.apply (fun y ↦ f (φ y)) (hf.comp hφs) hdg
+    (hφ.integrable_map_iff.1 hf2) (hφ.integrable_map_iff.1 hf2log)
 
 section LinearIsometryEquiv
 
@@ -114,19 +110,19 @@ theorem LogSobolevInequality.map_linearIsometryEquiv (h : LogSobolevInequality �
     (e : E ≃ₗᵢ[ℝ] F) : LogSobolevInequality (μ.map e) C :=
   h.map_of_norm_fderiv_comp e.toHomeomorph.measurableEmbedding e.contDiff fun f x ↦ by
     have := e.toContinuousLinearEquiv.comp_right_fderiv (𝕜 := ℝ) (f := f) (x := x)
-    simp only [Function.comp_def, LinearIsometryEquiv.coe_toContinuousLinearEquiv] at this
-    rw [this]
+    rw [show fderiv ℝ (fun y ↦ f (e y)) x = (fderiv ℝ f (e x)).comp _ from this]
     exact ContinuousLinearMap.opNorm_comp_linearIsometryEquiv _ e
 
 /-- The logarithmic Sobolev inequality with constant `C` is invariant under pushing the measure
 forward along a linear isometry equivalence. -/
 @[simp]
 theorem logSobolevInequality_map_linearIsometryEquiv_iff (e : E ≃ₗᵢ[ℝ] F) :
-    LogSobolevInequality (μ.map e) C ↔ LogSobolevInequality μ C := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map_linearIsometryEquiv e⟩
-  have := h.map_linearIsometryEquiv e.symm
-  rwa [Measure.map_map e.symm.continuous.measurable e.continuous.measurable,
-    LinearIsometryEquiv.symm_comp_self, Measure.map_id] at this
+    LogSobolevInequality (μ.map e) C ↔ LogSobolevInequality μ C :=
+  ⟨fun h ↦ by
+    have := h.map_linearIsometryEquiv e.symm
+    rwa [Measure.map_map e.symm.continuous.measurable e.continuous.measurable,
+      LinearIsometryEquiv.symm_comp_self, Measure.map_id] at this,
+    fun h ↦ h.map_linearIsometryEquiv e⟩
 
 end LinearIsometryEquiv
 
@@ -155,19 +151,19 @@ theorem poincareInequality_map_add_right_iff (a : E) :
 theorem LogSobolevInequality.map_add_right (h : LogSobolevInequality μ C) (a : E) :
     LogSobolevInequality (μ.map (· + a)) C :=
   h.map_of_norm_fderiv_comp (Homeomorph.addRight a).measurableEmbedding
-    (contDiff_id.add contDiff_const) fun f x ↦ by rw [fderiv_comp_add_right]
+    (contDiff_id.add contDiff_const) fun _ _ ↦ by rw [fderiv_comp_add_right]
 
 /-- The logarithmic Sobolev inequality with constant `C` is invariant under translating the
 measure. -/
 @[simp]
 theorem logSobolevInequality_map_add_right_iff (a : E) :
-    LogSobolevInequality (μ.map (· + a)) C ↔ LogSobolevInequality μ C := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h.map_add_right a⟩
-  have h' := h.map_add_right (-a)
-  have hcancel : ((· + -a) ∘ (· + a) : E → E) = id :=
-    funext fun x ↦ add_neg_cancel_right x a
-  rwa [Measure.map_map (measurable_add_const _) (measurable_add_const _),
-    hcancel, Measure.map_id] at h'
+    LogSobolevInequality (μ.map (· + a)) C ↔ LogSobolevInequality μ C :=
+  ⟨fun h ↦ by
+    have h' := h.map_add_right (-a)
+    rwa [Measure.map_map (measurable_add_const _) (measurable_add_const _),
+      show ((· + -a) ∘ (· + a) : E → E) = id from funext fun x ↦ add_neg_cancel_right x a,
+      Measure.map_id] at h',
+    fun h ↦ h.map_add_right a⟩
 
 end Translation
 

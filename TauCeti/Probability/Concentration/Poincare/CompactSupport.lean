@@ -103,94 +103,71 @@ theorem logSobolevInequality_iff_forall_hasCompactSupport :
     LogSobolevInequality μ C ↔
       ∀ f : E → ℝ, ContDiff ℝ ∞ f → HasCompactSupport f →
         entropy μ (fun x ↦ f x ^ 2) ≤ 2 * C * ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ := by
-  constructor
-  · intro h f hf hc
-    have hdf : MemLp (fun x ↦ ‖fderiv ℝ f x‖) 2 μ :=
-      (hf.continuous_fderiv (by simp)).norm.memLp_of_hasCompactSupport (hc.fderiv ℝ).norm
-    have hc2 : HasCompactSupport (fun x ↦ f x ^ 2) := hc.comp_left (zero_pow two_ne_zero)
-    have hf2 : Integrable (fun x ↦ f x ^ 2) μ :=
-      memLp_one_iff_integrable.1 <| (hf.continuous.pow 2).memLp_of_hasCompactSupport hc2
-    have hf2log : Integrable (fun x ↦ f x ^ 2 * Real.log (f x ^ 2)) μ :=
-      memLp_one_iff_integrable.1 <|
+  refine ⟨fun h f hf hc ↦ ?_, fun h ↦ (LogSobolevInequality_def _ _).2 fun f hf hdf hf2 hf2log ↦ ?_⟩
+  · have hc2 : HasCompactSupport (fun x ↦ f x ^ 2) := hc.comp_left (zero_pow two_ne_zero)
+    exact h.apply f hf
+      ((hf.continuous_fderiv (by simp)).norm.memLp_of_hasCompactSupport (hc.fderiv ℝ).norm)
+      (memLp_one_iff_integrable.1 <| (hf.continuous.pow 2).memLp_of_hasCompactSupport hc2)
+      (memLp_one_iff_integrable.1 <|
         (Real.continuous_mul_log.comp (hf.continuous.pow 2)).memLp_of_hasCompactSupport
-          (hc2.comp_left (g := fun t : ℝ ↦ t * Real.log t) (zero_mul _))
-    exact h.apply f hf hdf hf2 hf2log
-  · intro h
-    rw [LogSobolevInequality_def]
-    intro f hf hdf hf2 hf2log
-    have hfL : MemLp f 2 μ := (memLp_two_iff_integrable_sq hf.continuous.aestronglyMeasurable).2 hf2
-    have hmem : ∀ i ≤ 1, MemLp (iteratedFDeriv ℝ i f) 2 μ := by
-      intro i hi
+          (hc2.comp_left (g := fun t : ℝ ↦ t * Real.log t) (zero_mul _)))
+  · have hmem : ∀ i ≤ 1, MemLp (iteratedFDeriv ℝ i f) 2 μ := fun i hi ↦ by
       interval_cases i
-      · exact hfL.congr_norm
+      · exact ((memLp_two_iff_integrable_sq hf.continuous.aestronglyMeasurable).2 hf2).congr_norm
           (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
-          (.of_forall fun x ↦ norm_iteratedFDeriv_zero.symm)
-      · exact hdf.congr_norm
-          (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
-          (.of_forall fun x ↦ by simp only [norm_norm, norm_iteratedFDeriv_one])
+          (.of_forall fun _ ↦ norm_iteratedFDeriv_zero.symm)
+      · exact hdf.congr_norm (hf.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
+          (.of_forall fun _ ↦ by simp only [norm_norm, norm_iteratedFDeriv_one])
     -- Expanding `[0, 1]`-valued smooth cutoffs dominate `(g n)²` by `f²` and converge in `H¹`.
     let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
     let g : ℕ → E → ℝ := fun n x ↦ χ (((n : ℝ) + 1)⁻¹ • x) • f x
-    have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B :=
+    choose B hB using fun i : ℕ ↦
       (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
         (χ.hasCompactSupport.iteratedFDeriv i)
-    choose B hB using hbdd
     have hscaled (n i : ℕ) (x : E) :
         ‖iteratedFDeriv ℝ i (fun y ↦ χ (((n : ℝ) + 1)⁻¹ • y)) x‖ ≤ B i := by
       have hn : (0 : ℝ) < (n : ℝ) + 1 := by positivity
       rw [iteratedFDeriv_comp_const_smul _ (χ.contDiff.of_le (mod_cast le_top)),
         norm_smul, norm_pow, norm_inv, Real.norm_of_nonneg hn.le]
-      have hpow : (((n : ℝ) + 1)⁻¹) ^ i ≤ 1 :=
-        pow_le_one₀ (by positivity)
-          (inv_le_one_of_one_le₀ (by linarith [Nat.cast_nonneg (α := ℝ) n]))
+      have hpow : (((n : ℝ) + 1)⁻¹) ^ i ≤ 1 := pow_le_one₀ (by positivity)
+        (inv_le_one_of_one_le₀ (by linarith [Nat.cast_nonneg (α := ℝ) n]))
       simpa only [one_mul] using mul_le_mul hpow (hB i _) (norm_nonneg _) zero_le_one
-    have hgs (n : ℕ) : ContDiff ℝ ∞ (g n) :=
-      (χ.contDiff.comp (contDiff_const_smul _)).smul hf
+    have hgs (n : ℕ) : ContDiff ℝ ∞ (g n) := (χ.contDiff.comp (contDiff_const_smul _)).smul hf
     have hgc (n : ℕ) : HasCompactSupport (g n) :=
       (χ.hasCompactSupport.comp_smul (by positivity : ((n : ℝ) + 1)⁻¹ ≠ 0)).smul_right
-    have hg1L (n : ℕ) : MemLp (iteratedFDeriv ℝ 1 (g n)) 2 μ :=
-      TauCeti.memLp_iteratedFDeriv_smul_of_bounded
+    have henergy := tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub (hmem 1 le_rfl)
+      (fun n ↦ TauCeti.memLp_iteratedFDeriv_smul_of_bounded
         ((χ.contDiff.comp (contDiff_const_smul _)).of_le (mod_cast le_top))
-        (fun j _ x ↦ hscaled n j x) (hf.of_le (by simp)) hmem
-    have hlim1 : Tendsto (fun n ↦
-        eLpNorm (iteratedFDeriv ℝ 1 (g n) - iteratedFDeriv ℝ 1 f) 2 μ) atTop (𝓝 0) :=
-      TauCeti.tendsto_eLpNorm_iteratedFDeriv_cutoff_sub ENNReal.ofNat_ne_top
+        (fun j _ x ↦ hscaled n j x) (hf.of_le (by simp)) hmem)
+      (TauCeti.tendsto_eLpNorm_iteratedFDeriv_cutoff_sub ENNReal.ofNat_ne_top
         (r := fun n : ℕ ↦ (n : ℝ) + 1)
-        (tendsto_atTop_mono (fun n : ℕ ↦ by linarith) tendsto_natCast_atTop_atTop)
+        (tendsto_atTop_mono (fun n ↦ by linarith) tendsto_natCast_atTop_atTop)
         (χ.contDiff.of_le (mod_cast le_top)) χ.eventuallyEq_one
-        (fun j _ x ↦ hB j x) (hf.of_le (by simp)) hmem
-    have henergy := tendsto_integral_norm_sq_of_tendsto_eLpNorm_sub (hmem 1 le_rfl) hg1L hlim1
+        (fun j _ x ↦ hB j x) (hf.of_le (by simp)) hmem)
     simp only [norm_iteratedFDeriv_one] at henergy
-    -- Pointwise convergence and monotone domination of `(g n)²` and `(g n)² log ((g n)²)`.
-    have hgsq_le (n : ℕ) (x : E) : g n x ^ 2 ≤ f x ^ 2 := by
-      have habs : |g n x| ≤ |f x| := by
-        simp only [g, smul_eq_mul, abs_mul, abs_of_nonneg χ.nonneg]
-        exact mul_le_of_le_one_left (abs_nonneg _) χ.le_one
-      exact (sq_le_sq.2 habs)
+    have hgsq_le (n : ℕ) (x : E) : g n x ^ 2 ≤ f x ^ 2 := sq_le_sq.2 <| by
+      simp only [g, smul_eq_mul, abs_mul, abs_of_nonneg χ.nonneg]
+      exact mul_le_of_le_one_left (abs_nonneg _) χ.le_one
     have hgpt (x : E) : Tendsto (fun n ↦ g n x) atTop (𝓝 (f x)) := by
       have ht : Tendsto (fun n : ℕ ↦ ((n : ℝ) + 1)⁻¹ • x) atTop (𝓝 0) := by
-        have h0 := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const x
-        rw [zero_smul] at h0
-        simpa only [one_div] using h0
+        simpa only [one_div, zero_smul] using
+          (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).smul_const x
       refine (tendsto_congr' ?_).2 tendsto_const_nhds
-      filter_upwards [ht.eventually χ.eventuallyEq_one] with n hn
-      simp [g, hn]
-    have hlim_sq : Tendsto (fun n ↦ ∫ x, g n x ^ 2 ∂μ) atTop (𝓝 (∫ x, f x ^ 2 ∂μ)) := by
-      refine tendsto_integral_of_dominated_convergence (fun x ↦ f x ^ 2)
+      filter_upwards [ht.eventually χ.eventuallyEq_one] with n hn using by simp [g, hn]
+    have hlim_sq : Tendsto (fun n ↦ ∫ x, g n x ^ 2 ∂μ) atTop (𝓝 (∫ x, f x ^ 2 ∂μ)) :=
+      tendsto_integral_of_dominated_convergence (fun x ↦ f x ^ 2)
         (fun n ↦ ((hgs n).continuous.pow 2).aestronglyMeasurable) hf2
-        (fun n ↦ .of_forall fun x ↦ ?_) (.of_forall fun x ↦ (hgpt x).pow 2)
-      rw [Real.norm_of_nonneg (sq_nonneg _)]
-      exact hgsq_le n x
+        (fun n ↦ .of_forall fun x ↦ by rw [Real.norm_of_nonneg (sq_nonneg _)]; exact hgsq_le n x)
+        (.of_forall fun x ↦ (hgpt x).pow 2)
     have hlim_mul_log : Tendsto (fun n ↦ ∫ x, g n x ^ 2 * Real.log (g n x ^ 2) ∂μ) atTop
-        (𝓝 (∫ x, f x ^ 2 * Real.log (f x ^ 2) ∂μ)) := by
-      refine tendsto_integral_of_dominated_convergence
-        (fun x ↦ 1 + ‖f x ^ 2 * Real.log (f x ^ 2)‖)
+        (𝓝 (∫ x, f x ^ 2 * Real.log (f x ^ 2) ∂μ)) :=
+      tendsto_integral_of_dominated_convergence (fun x ↦ 1 + ‖f x ^ 2 * Real.log (f x ^ 2)‖)
         (fun n ↦ (Real.continuous_mul_log.comp
           ((hgs n).continuous.pow 2)).aestronglyMeasurable)
-        ((integrable_const 1).add hf2log.norm) (fun n ↦ .of_forall fun x ↦ ?_)
+        ((integrable_const 1).add hf2log.norm)
+        (fun n ↦ .of_forall fun x ↦ by simpa only [Real.norm_eq_abs] using
+          TauCeti.abs_mul_log_le_one_add_abs_mul_log (sq_nonneg _) (hgsq_le n x))
         (.of_forall fun x ↦ Real.continuous_mul_log.continuousAt.tendsto.comp ((hgpt x).pow 2))
-      simpa only [Real.norm_eq_abs] using
-        TauCeti.abs_mul_log_le_one_add_abs_mul_log (sq_nonneg _) (hgsq_le n x)
     have hent : Tendsto (fun n ↦ entropy μ (fun x ↦ g n x ^ 2)) atTop
         (𝓝 (entropy μ (fun x ↦ f x ^ 2))) := by
       simp_rw [entropy_def]
