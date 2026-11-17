@@ -56,7 +56,7 @@ read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection
 The coset space `G ⧸ K` is by definition the orbit space of the right multiplication action of
 `K.op` (`QuotientGroup.mk_eq_quotient_mk_orbitRel`), and that action is free: right
 multiplication of a cancellative monoid on itself is free
-(`TauCeti.MulOpposite.instIsCancelSMul`), and so is its restriction to `K.op`.
+(`TauCeti.instIsCancelSMulMulOpposite`), and so is its restriction to `K.op`.
 -/
 
 public section
@@ -360,7 +360,7 @@ free. It restricts to the right multiplication action of `K.op` for a subgroup `
 are the left cosets of `K`. -/
 @[to_additive /-- Right addition of a cancellative additive monoid on itself,
 `AddOpposite.op a +ᵥ b = b + a`, is free. -/]
-instance MulOpposite.instIsCancelSMul {M : Type*} [CancelMonoid M] : IsCancelSMul Mᵐᵒᵖ M where
+instance instIsCancelSMulMulOpposite {M : Type*} [CancelMonoid M] : IsCancelSMul Mᵐᵒᵖ M where
   left_cancel' _ _ _ h := mul_right_cancel h
   right_cancel' _ _ _ h := MulOpposite.unop_injective (mul_left_cancel h)
 

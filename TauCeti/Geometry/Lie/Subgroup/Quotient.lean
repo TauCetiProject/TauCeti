@@ -30,7 +30,7 @@ acting on `G` by `MulOpposite.op k • g = g * k`. So the acting group is `K.op`
 charts by pulling back the charts of `K` along the continuous isomorphism
 `Subgroup.opInvContinuousMulEquiv : K.op ≃ₜ* K`, `a ↦ (MulOpposite.unop a)⁻¹`. This is the left
 action `k • g = g * k⁻¹` of `K` on `G`, transported to `K.op`. The action is free
-(`TauCeti.MulOpposite.instIsCancelSMul`).
+(`TauCeti.instIsCancelSMulMulOpposite`).
 
 ## Main definitions
 
