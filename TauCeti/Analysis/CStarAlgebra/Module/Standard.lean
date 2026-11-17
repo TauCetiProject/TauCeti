@@ -95,12 +95,13 @@ theorem summable_star_mul (x y : StandardHilbertModule A) :
 `star (x n) * y n`. -/
 theorem hasSum_unop_inner (x y : StandardHilbertModule A) :
     HasSum (fun n ↦ star (x n) * y n) (unop (inner Aᵐᵒᵖ x y)) := by
-  simpa only [CStarModule.unop_inner_mulOpposite] using HilbertDirectSum.hasSum_unop_inner x y
+  simpa only [CStarModule.unop_inner_mulOpposite] using (HilbertDirectSum.hasSum_inner x y).unop
 
 /-- The `A`-valued inner product on `StandardHilbertModule A` is `∑' n, star (x n) * y n`. -/
 theorem unop_inner_eq_tsum (x y : StandardHilbertModule A) :
     unop (inner Aᵐᵒᵖ x y) = ∑' n, star (x n) * y n := by
-  simpa only [CStarModule.unop_inner_mulOpposite] using HilbertDirectSum.unop_inner_eq_tsum x y
+  rw [HilbertDirectSum.inner_def, ← tsum_unop]
+  simp
 
 /-- The norm on `StandardHilbertModule A` is `√‖∑' n, star (x n) * x n‖`. -/
 theorem norm_eq_sqrt_norm_tsum (x : StandardHilbertModule A) :
@@ -115,7 +116,7 @@ theorem norm_sq_eq_norm_tsum (x : StandardHilbertModule A) :
 /-- The right `A`-action on `StandardHilbertModule A` multiplies each coordinate on the right. -/
 theorem op_smul_apply (a : A) (x : StandardHilbertModule A) (n : ℕ) :
     (op a • x) n = x n * a := by
-  simp [MulOpposite.smul_eq_mul_unop]
+  simp
 
 /-- The `A`-valued inner products on `StandardHilbertModule A` form a dense subset of `A`. -/
 theorem dense_range_unop_inner :

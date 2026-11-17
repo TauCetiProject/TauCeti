@@ -79,7 +79,7 @@ public section
 
 noncomputable section
 
-open Filter Topology Finset MulOpposite
+open Filter Topology Finset
 open scoped ENNReal NNReal WithCStarModule
 
 /-! ### Coordinate inclusions, projections, and coherence for finite orthogonal sums -/
@@ -207,12 +207,14 @@ section ProdOpNorm
 variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
   [NormedAddCommGroup E] [SMul A E] [NormedAddCommGroup F] [SMul A F]
 
+/-- The first coordinate projection on `C⋆ᵐᵒᵈ(A, E × F)` is a contraction. -/
 theorem norm_fstCLM_le [NormedSpace ℂ E] [CStarModule A E] [Module ℂ F] [CStarModule A F] :
     ‖fstCLM A E F‖ ≤ 1 :=
   (fstCLM A E F).opNorm_le_bound zero_le_one fun z ↦ by
     simpa only [one_mul, fstCLM_apply] using
       (le_max_left ‖z.fst‖ ‖z.snd‖).trans (max_le_prod_norm z)
 
+/-- The second coordinate projection on `C⋆ᵐᵒᵈ(A, E × F)` is a contraction. -/
 theorem norm_sndCLM_le [Module ℂ E] [CStarModule A E] [NormedSpace ℂ F] [CStarModule A F] :
     ‖sndCLM A E F‖ ≤ 1 :=
   (sndCLM A E F).opNorm_le_bound zero_le_one fun z ↦ by
@@ -250,6 +252,7 @@ def single [DecidableEq ι] (i : ι) : E i →ₗᵢ[ℂ] C⋆ᵐᵒᵈ(A, Π j,
   toLinearMap := (linearEquiv ℂ A (Π j, E j)).symm.toLinearMap.comp (LinearMap.single ℂ E i)
   norm_map' _ := by simp
 
+/-- Evaluating `WithCStarModule.single A E i y` at coordinate `j` gives `Pi.single i y j`. -/
 theorem single_apply [DecidableEq ι] (i : ι) (y : E i) (j : ι) :
     single A E i y j = Pi.single i y j := (rfl)
 
@@ -263,11 +266,13 @@ theorem single_apply_of_ne [DecidableEq ι] {i j : ι} (h : j ≠ i) (y : E i) :
     single A E i y j = 0 := by
   simp [single_apply, h]
 
+/-- Bundled `WithCStarModule.single` counterpart of `WithCStarModule.inner_single_left`. -/
 @[simp]
 theorem inner_single_left' [DecidableEq ι] (i : ι) (y : E i) (z : C⋆ᵐᵒᵈ(A, Π j, E j)) :
     inner A (single A E i y) z = inner A y (z i) := by
   simp [single]
 
+/-- Bundled `WithCStarModule.single` counterpart of `WithCStarModule.inner_single_right`. -/
 @[simp]
 theorem inner_single_right' [DecidableEq ι] (z : C⋆ᵐᵒᵈ(A, Π j, E j)) (i : ι) (y : E i) :
     inner A z (single A E i y) = inner A (z i) y := by
@@ -285,8 +290,9 @@ theorem single_smul [DecidableEq ι] (i : ι) (a : A) (y : E i) :
     single A E i (a • y) = a • single A E i y :=
   (isAdjointPair_single_evalCLM i).map_smul_coeff_cstarModule a y
 
+/-- Every element of `C⋆ᵐᵒᵈ(A, Π j, E j)` is the finite sum of its coordinate inclusions. -/
 @[simp]
-theorem sum_single_apply [DecidableEq ι] (z : C⋆ᵐᵒᵈ(A, Π j, E j)) :
+theorem univ_sum_single [DecidableEq ι] (z : C⋆ᵐᵒᵈ(A, Π j, E j)) :
     ∑ i, single A E i (z i) = z := by
   apply CStarModule.ext_inner_left (A := A)
   intro w
@@ -303,6 +309,7 @@ variable {A ι : Type*} {E : ι → Type*} [Fintype ι]
   [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
   [∀ i, SMul A (E i)] [∀ i, CStarModule A (E i)]
 
+/-- Every coordinate projection `evalCLM A E i` on `C⋆ᵐᵒᵈ(A, Π j, E j)` is a contraction. -/
 theorem norm_evalCLM_le (i : ι) : ‖evalCLM A E i‖ ≤ 1 :=
   (evalCLM A E i).opNorm_le_bound zero_le_one fun z ↦ by
     simpa only [one_mul, evalCLM_apply] using norm_apply_le_norm z i
@@ -534,14 +541,9 @@ theorem summable_inner_self (x : HilbertDirectSum A E) :
 instance instInner : Inner A (HilbertDirectSum A E) where
   inner x y := ∑' i, inner A (x i) (y i)
 
+/-- The `A`-valued inner product `⟪x, y⟫_A` is the unconditional sum `∑' i, ⟪x i, y i⟫_A`. -/
 theorem inner_def (x y : HilbertDirectSum A E) :
     inner A x y = ∑' i, inner A (x i) (y i) := (rfl)
-
-theorem unop_inner_eq_tsum {B : Type*} {F : ι → Type*}
-    [TopologicalSpace B] [T2Space B] [AddCommMonoid B] [∀ i, Inner Bᵐᵒᵖ (F i)]
-    (x y : HilbertDirectSum Bᵐᵒᵖ F) :
-    unop (inner Bᵐᵒᵖ x y) = ∑' i, unop (inner Bᵐᵒᵖ (x i) (y i)) :=
-  tsum_unop.symm
 
 end DFunLike
 
@@ -553,6 +555,7 @@ variable {A ι : Type*} {E : ι → Type*}
 instance instNorm : Norm (HilbertDirectSum A E) where
   norm x := √‖inner A x x‖
 
+/-- The norm on `HilbertDirectSum A E` is `√‖∑' i, ⟪x i, x i⟫_A‖`. -/
 theorem norm_def (x : HilbertDirectSum A E) :
     ‖x‖ = √‖∑' i, inner A (x i) (x i)‖ := (rfl)
 
@@ -655,16 +658,10 @@ theorem sum_apply {κ : Type*} (s : Finset κ) (f : κ → HilbertDirectSum A E)
 instance instModuleComplex : Module ℂ (HilbertDirectSum A E) :=
   DFunLike.coe_injective.module ℂ ⟨⟨DFunLike.coe, rfl⟩, fun _ _ ↦ rfl⟩ fun _ _ ↦ rfl
 
+/-- The coordinatewise inner products `⟪x i, y i⟫_A` have unconditional sum `⟪x, y⟫_A`. -/
 theorem hasSum_inner (x y : HilbertDirectSum A E) :
     HasSum (fun i ↦ inner A (x i) (y i)) (inner A x y) :=
   (summable_inner x y).hasSum
-
-theorem hasSum_unop_inner {B : Type*} {F : ι → Type*}
-    [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
-    [∀ i, AddCommGroup (F i)] [∀ i, Norm (F i)] [∀ i, Module ℂ (F i)]
-    [∀ i, SMul Bᵐᵒᵖ (F i)] [∀ i, CStarModule Bᵐᵒᵖ (F i)] (x y : HilbertDirectSum Bᵐᵒᵖ F) :
-    HasSum (fun i ↦ unop (inner Bᵐᵒᵖ (x i) (y i))) (unop (inner Bᵐᵒᵖ x y)) :=
-  (hasSum_inner x y).unop
 
 instance instCStarModule : CStarModule A (HilbertDirectSum A E) where
   inner_add_right {x y z} := by
@@ -751,6 +748,18 @@ theorem _root_.Memℓp.summable_inner_self {x : ∀ i, E i} (hx : Memℓp x 2) :
     Summable fun i ↦ inner A (x i) (x i) :=
   (hx.summable_norm_inner_self (A := A)).of_norm
 
+variable (A E) in
+/-- Coordinate projection from `HilbertDirectSum A E` onto the `i`-th summand `E i`. -/
+def evalCLM (i : ι) : HilbertDirectSum A E →L[ℂ] E i :=
+  LinearMap.mkContinuous
+    { toFun := fun x ↦ x i
+      map_add' := fun x y ↦ add_apply x y i
+      map_smul' := fun c x ↦ smul_complex_apply c x i }
+    1 fun x ↦ by simpa only [LinearMap.coe_mk, AddHom.coe_mk, one_mul] using norm_apply_le x i
+
+@[simp]
+theorem evalCLM_apply (i : ι) (x : HilbertDirectSum A E) : evalCLM A E i x = x i := (rfl)
+
 /-! #### Completeness -/
 
 /-- If `u n i → lim i` for each coordinate `i` and `‖u m - u n‖ ≤ r` eventually in `n`, then
@@ -821,13 +830,8 @@ private theorem summable_inner_self_of_cauchySeq
 instance instCompleteSpace [∀ i, CompleteSpace (E i)] :
     CompleteSpace (HilbertDirectSum A E) := by
   refine Metric.complete_of_cauchySeq_tendsto fun u hu ↦ ?_
-  have hu_coord : ∀ i, CauchySeq (fun n ↦ u n i) := fun i ↦ by
-    rw [Metric.cauchySeq_iff] at hu ⊢
-    intro ε hε
-    obtain ⟨N, hN⟩ := hu ε hε
-    exact ⟨N, fun m hm n hn ↦ (by
-      rw [dist_eq_norm, ← sub_apply]
-      exact (norm_apply_le (u m - u n) i).trans_lt (dist_eq_norm (u m) (u n) ▸ hN m hm n hn))⟩
+  have hu_coord : ∀ i, CauchySeq (fun n ↦ u n i) := fun i ↦
+    (evalCLM A E i).uniformContinuous.comp_cauchySeq hu
   choose lim hlim using fun i ↦ cauchySeq_tendsto_of_complete (hu_coord i)
   let y : HilbertDirectSum A E := ⟨lim, summable_inner_self_of_cauchySeq hu hlim⟩
   refine ⟨y, Metric.tendsto_atTop.mpr fun ε hε ↦ ?_⟩
@@ -861,21 +865,6 @@ variable {A ι : Type*} {E : ι → Type*}
 /-! #### Coordinate inclusions, projections, truncations, and finite-support density -/
 
 variable (A E) in
-/-- Coordinate projection from `HilbertDirectSum A E` onto the `i`-th summand `E i`. -/
-def evalCLM (i : ι) : HilbertDirectSum A E →L[ℂ] E i where
-  toLinearMap :=
-    { toFun := fun x ↦ x i
-      map_add' := fun x y ↦ add_apply x y i
-      map_smul' := fun c x ↦ smul_complex_apply c x i }
-  cont := Metric.continuous_iff.mpr fun x ε hε ↦
-    ⟨ε, hε, fun y hy ↦ by
-      rw [dist_eq_norm, ← sub_apply]
-      exact (norm_apply_le (y - x) i).trans_lt (dist_eq_norm y x ▸ hy)⟩
-
-@[simp]
-theorem evalCLM_apply (i : ι) (x : HilbertDirectSum A E) : evalCLM A E i x = x i := (rfl)
-
-variable (A E) in
 /-- Coordinate inclusion of the `i`-th summand `E i` into `HilbertDirectSum A E` as a complex
 linear isometry. -/
 def single [DecidableEq ι] (i : ι) : E i →ₗᵢ[ℂ] HilbertDirectSum A E where
@@ -889,6 +878,7 @@ def single [DecidableEq ι] (i : ι) : E i →ₗᵢ[ℂ] HilbertDirectSum A E w
     rw [norm_def, tsum_eq_single i (fun j hj ↦ by simp [Pi.single_eq_of_ne hj])]
     simp [CStarModule.norm_eq_sqrt_norm_inner_self (A := A) y]
 
+/-- Evaluating `HilbertDirectSum.single A E i y` at coordinate `j` gives `Pi.single i y j`. -/
 theorem single_apply [DecidableEq ι] (i : ι) (y : E i) (j : ι) :
     single A E i y j = Pi.single i y j := (rfl)
 
@@ -936,6 +926,8 @@ def trunc [DecidableEq ι] (s : Finset ι) : HilbertDirectSum A E →L[ℂ] Hilb
 theorem trunc_empty [DecidableEq ι] : trunc A E ∅ = 0 := by
   simp [trunc]
 
+/-- The finite-coordinate truncation `trunc A E s x` is the finite sum
+`∑ i ∈ s, single A E i (x i)`. -/
 theorem trunc_eq_sum_single [DecidableEq ι] (s : Finset ι) (x : HilbertDirectSum A E) :
     trunc A E s x = ∑ i ∈ s, single A E i (x i) := by
   simp [trunc]
@@ -948,23 +940,15 @@ theorem trunc_apply [DecidableEq ι] (s : Finset ι) (x : HilbertDirectSum A E) 
 @[simp]
 theorem trunc_single [DecidableEq ι] (s : Finset ι) (i : ι) (y : E i) :
     trunc A E s (single A E i y) = if i ∈ s then single A E i y else 0 := by
-  by_cases hi : i ∈ s
-  · simp only [hi, ↓reduceIte]
-    ext j
-    rcases eq_or_ne j i with rfl | hj
-    · simp [hi]
-    · simp [hj]
-  · simp only [hi, ↓reduceIte]
-    ext j
-    rcases eq_or_ne j i with rfl | hj
-    · simp [hi]
-    · simp [hj]
+  by_cases hi : i ∈ s <;> ext j <;> rcases eq_or_ne j i with rfl | hj <;> simp [*]
 
+/-- Pairing a finite-coordinate truncation on the left restricts the inner-product sum to `s`. -/
 theorem inner_trunc_left [DecidableEq ι] (s : Finset ι) (x y : HilbertDirectSum A E) :
     inner A (trunc A E s x) y = ∑ i ∈ s, inner A (x i) (y i) := by
   rw [trunc_eq_sum_single, CStarModule.inner_sum_left (A := A)]
   simp
 
+/-- Pairing a finite-coordinate truncation on the right restricts the inner-product sum to `s`. -/
 theorem inner_trunc_right [DecidableEq ι] (s : Finset ι) (x y : HilbertDirectSum A E) :
     inner A x (trunc A E s y) = ∑ i ∈ s, inner A (x i) (y i) := by
   rw [trunc_eq_sum_single, CStarModule.inner_sum_right (A := A)]
@@ -988,15 +972,18 @@ theorem trunc_trunc [DecidableEq ι] (s t : Finset ι) (x : HilbertDirectSum A E
   ext i
   by_cases hs : i ∈ s <;> by_cases ht : i ∈ t <;> simp [hs, ht]
 
+/-- Pairing two finite-coordinate truncations restricts the inner-product sum to `s ∩ t`. -/
 theorem inner_trunc_trunc [DecidableEq ι] (s t : Finset ι) (x y : HilbertDirectSum A E) :
     inner A (trunc A E s x) (trunc A E t y) = ∑ i ∈ s ∩ t, inner A (x i) (y i) := by
   rw [(isAdjointPair_trunc s).inner_eq_cstarModule, trunc_trunc, inner_trunc_right]
 
+/-- Every finite-coordinate truncation does not increase the norm of a vector. -/
 theorem norm_trunc_apply_le [DecidableEq ι] (s : Finset ι) (x : HilbertDirectSum A E) :
     ‖trunc A E s x‖ ≤ ‖x‖ := by
   rw [CStarModule.norm_eq_sqrt_norm_inner_self (A := A), inner_trunc_trunc, Finset.inter_self]
   exact sqrt_norm_sum_inner_self_le_norm s x
 
+/-- Every finite-coordinate truncation `trunc A E s` is a contraction. -/
 theorem norm_trunc_le [DecidableEq ι] (s : Finset ι) : ‖trunc A E s‖ ≤ 1 :=
   (trunc A E s).opNorm_le_bound zero_le_one fun x ↦ by
     simpa only [one_mul] using norm_trunc_apply_le s x
@@ -1145,9 +1132,9 @@ variable {A ι : Type*} {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace ℂ (E i)]
   [∀ i, SMul A (E i)] [∀ i, CStarModule A (E i)]
 
+/-- Every coordinate projection `evalCLM A E i` on `HilbertDirectSum A E` is a contraction. -/
 theorem norm_evalCLM_le (i : ι) : ‖evalCLM A E i‖ ≤ 1 :=
-  (evalCLM A E i).opNorm_le_bound zero_le_one fun x ↦ by
-    simpa only [one_mul, evalCLM_apply] using norm_apply_le x i
+  LinearMap.mkContinuous_norm_le _ zero_le_one _
 
 /-! #### Contractive dense embedding of the Banach `ℓ²` sum `lp E 2` -/
 
@@ -1219,19 +1206,13 @@ section Memℓp
 variable {ι : Type*} {E : ι → Type*}
   [∀ i, NormedAddCommGroup (E i)] [∀ i, Module ℂ (E i)] [∀ i, CStarModule ℂ (E i)]
 
-private theorem inner_self_complex {i : ι} (y : E i) :
-    inner ℂ y y = ((‖y‖ ^ 2 : ℝ) : ℂ) := by
-  have hnn : (0 : ℂ) ≤ inner ℂ y y := CStarModule.inner_self_nonneg
-  rw [Complex.eq_re_of_ofReal_le (r := 0) (z := inner ℂ y y) (by simpa using hnn),
-    Complex.re_eq_norm.mpr hnn, CStarModule.norm_sq_eq ℂ]
-
 /-- Over `A = ℂ`, every element of `HilbertDirectSum ℂ E` lies in the Banach `ℓ²` space `lp E 2`
 (`Memℓp ⇑x 2`). -/
 theorem memℓp_two (x : HilbertDirectSum ℂ E) : Memℓp ⇑x 2 := by
   have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
   refine (memℓp_gen_iff h2).mpr ?_
   have hsum : Summable fun i ↦ ((‖x i‖ ^ 2 : ℝ) : ℂ) := by
-    simpa only [inner_self_complex] using x.summable_inner_self
+    simpa only [CStarModule.inner_self_eq_norm_sq_complex] using x.summable_inner_self
   simpa using Complex.summable_ofReal.mp hsum
 
 end Memℓp
@@ -1256,14 +1237,13 @@ def equivLp : HilbertDirectSum ℂ E ≃ₗᵢ[ℂ] lp E 2 where
   left_inv _ := by ext i; simp
   right_inv _ := by ext i; simp
   norm_map' x := by
-    let z : lp E 2 := ⟨⇑x, memℓp_two x⟩
-    change ‖z‖ = ‖x‖
     have h2 : 0 < (2 : ℝ≥0∞).toReal := by norm_num
+    set z : lp E 2 := ⟨⇑x, memℓp_two x⟩
     have htsum : ∑' i, ‖x i‖ ^ 2 = ‖z‖ ^ 2 := by
       simpa [z] using (lp.norm_rpow_eq_tsum (p := 2) h2 z).symm
     have hinner : inner ℂ x x = ((‖z‖ ^ 2 : ℝ) : ℂ) := by
       rw [inner_def]
-      simp_rw [inner_self_complex]
+      simp_rw [CStarModule.inner_self_eq_norm_sq_complex]
       rw [← Complex.ofReal_tsum, htsum]
     have hsq : ‖z‖ ^ 2 = ‖x‖ ^ 2 := by
       rw [CStarModule.norm_sq_eq ℂ (x := x), hinner, Complex.norm_real,
@@ -1276,6 +1256,7 @@ theorem equivLp_apply (x : HilbertDirectSum ℂ E) (i : ι) : equivLp E x i = x 
 @[simp]
 theorem equivLp_symm_apply (x : lp E 2) (i : ι) : (equivLp E).symm x i = x i := (rfl)
 
+/-- As a continuous linear map, `(equivLp E).symm` coincides with `ofLp ℂ E`. -/
 theorem equivLp_symm_toContinuousLinearMap :
     (equivLp E).symm.toLinearIsometry.toContinuousLinearMap = ofLp ℂ E := by
   ext x i

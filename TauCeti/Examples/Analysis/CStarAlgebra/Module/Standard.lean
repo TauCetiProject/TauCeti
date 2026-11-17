@@ -116,14 +116,7 @@ private theorem hasSum_star_mul_self_harmonicCoord :
   rw [HasSum, SummationFilter.unconditional_filter, tendsto_subtype_rng]
   refine (lp.tendsto_diagonalTruncation (p := 2) harmonicDiag tendsto_norm_harmonicDiag).congr'
     (Eventually.of_forall fun s ↦ ?_)
-  let diagHom : ℓ^∞(ℕ, ℂ) →+ (ℓ^2(ℕ, ℂ) →L[ℂ] ℓ^2(ℕ, ℂ)) :=
-    ⟨⟨lp.diagonalCLM (p := 2), lp.diagonalCLM_zero⟩, lp.diagonalCLM_add⟩
-  exact (lp.diagonalTruncation_eq_diagonalCLM (p := 2) harmonicDiag s).trans <|
-    (map_sum diagHom (fun n ↦ lp.single ∞ n (harmonicDiag n)) s).trans <|
-      (Finset.sum_congr rfl fun n _ ↦ (star_mul_self_harmonicCoord n).symm).trans
-        (map_sum (AddSubmonoidClass.subtype
-          (TauCeti.compactOperatorStarSubalgebra ℂ ℓ^2(ℕ, ℂ)))
-          (fun n ↦ star (harmonicCoord n) * harmonicCoord n) s).symm
+  simp [lp.diagonalTruncation_eq_diagonalCLM, star_mul_self_harmonicCoord]
 
 private theorem norm_harmonicCoord_sq (n : ℕ) :
     ‖harmonicCoord n‖ ^ 2 = 1 / ((n + 1 : ℕ) : ℝ) := by
