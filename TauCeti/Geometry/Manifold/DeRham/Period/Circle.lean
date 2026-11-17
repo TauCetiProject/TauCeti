@@ -39,30 +39,6 @@ open scoped Manifold
 
 namespace TauCeti.deRhamCohomology
 
-/-- Two classes on the circle with the same period on `Circle.expLoop` have the same period on
-every loop at `1`. -/
-private theorem period_eq_of_expLoop {c d : deRhamCohomology (𝓡 1) Circle 1}
-    (h : period (I := 𝓡 1) (1 : Circle) c
-        (Additive.ofMul (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))) =
-      period (I := 𝓡 1) (1 : Circle) d
-        (Additive.ofMul (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))))
-    (q : Additive (FundamentalGroup Circle 1)) :
-    period (I := 𝓡 1) (1 : Circle) c q = period (I := 𝓡 1) (1 : Circle) d q := by
-  let e : ℤ ≃+ Additive (FundamentalGroup Circle 1) :=
-    (AddEquiv.additiveMultiplicative ℤ).symm.trans
-      ((Circle.fundamentalGroupMulEquiv 1).toAdditive).symm
-  have he : e 1 =
-      Additive.ofMul (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)) := by
-    apply (Circle.fundamentalGroupMulEquiv 1).injective
-    change (Circle.fundamentalGroupMulEquiv 1)
-      ((Circle.fundamentalGroupMulEquiv 1).symm (Multiplicative.ofAdd 1)) = _
-    rw [MulEquiv.apply_symm_apply]
-    exact Circle.fundamentalGroupMulEquiv_expLoop.symm
-  have hext : (period (I := 𝓡 1) (1 : Circle) c).comp e.toAddMonoidHom =
-      (period (I := 𝓡 1) (1 : Circle) d).comp e.toAddMonoidHom :=
-    AddMonoidHom.ext_int (by simpa [he] using h)
-  simpa using congrArg (fun F : ℤ →+ ℝ ↦ F (e.symm q)) hext
-
 /-- A first de Rham class on the circle is determined by its period on the counterclockwise loop
 `Circle.expLoop`. -/
 theorem eq_of_period_expLoop_eq {c d : deRhamCohomology (𝓡 1) Circle 1}
@@ -70,8 +46,12 @@ theorem eq_of_period_expLoop_eq {c d : deRhamCohomology (𝓡 1) Circle 1}
         (Additive.ofMul (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop))) =
       period (I := 𝓡 1) (1 : Circle) d
         (Additive.ofMul (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk Circle.expLoop)))) :
-    c = d :=
-  period_injective (I := 𝓡 1) (1 : Circle) (AddMonoidHom.ext (period_eq_of_expLoop h))
+    c = d := by
+  apply period_injective (I := 𝓡 1) (1 : Circle)
+  refine AddMonoidHom.ext fun q ↦ ?_
+  obtain ⟨k, hk⟩ := Subgroup.mem_zpowers_iff.mp
+    (Circle.zpowers_fromPath_expLoop ▸ Subgroup.mem_top (Additive.toMul q))
+  rw [← ofMul_toMul q, ← hk, ofMul_zpow, map_zsmul, map_zsmul, h]
 
 /-- The angular class `[dθ]` has period `2π` on the counterclockwise loop. -/
 theorem period_mk_circleAngularClosedForm_expLoop :
