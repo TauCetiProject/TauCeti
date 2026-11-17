@@ -62,11 +62,12 @@ Its character basis is the standard basis of fundamental weights. -/
       (by simpa only [cartanMatrix_D, rank_D, CartanMatrix.D_transpose]
           using weightTable_cartanMatrix) := (rfl)
 
+-- Pre-simplify these equations before rewriting the dependent representation projection.
 /-- A numbered Cartan generator acts by the tripled diagonal weight matrix. -/
 @[simp↓] theorem chevalleyDatum_representation_h (i : Fin (DynkinType.D 4).rank) :
     chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.D 4).lieBasis (by decide)).h i)) =
-      Matrix.toLin' (weightTable.cartanGeneratorMatrixQ (Fin.cast (rank_D 4) i)) := by
+      Matrix.toLin' (weightTable.cartanGeneratorMatrixQ i) := by
   rw [chevalleyDatum_representation]
   exact weightTable.pinnedRep_h (t := .D 4) (by decide) _ i
 
@@ -74,7 +75,7 @@ Its character basis is the standard basis of fundamental weights. -/
 @[simp↓] theorem chevalleyDatum_representation_e (i : Fin (DynkinType.D 4).rank) :
     chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.D 4).lieBasis (by decide)).e i)) =
-      Matrix.toLin' (weightTable.raisingMatrixQ (Fin.cast (rank_D 4) i)) := by
+      Matrix.toLin' (weightTable.raisingMatrixQ i) := by
   rw [chevalleyDatum_representation]
   exact weightTable.pinnedRep_e (t := .D 4) (by decide) _ i
 
@@ -82,7 +83,7 @@ Its character basis is the standard basis of fundamental weights. -/
 @[simp↓] theorem chevalleyDatum_representation_f (i : Fin (DynkinType.D 4).rank) :
     chevalleyDatum.representation
       (_root_.UniversalEnvelopingAlgebra.ι ℚ (((DynkinType.D 4).lieBasis (by decide)).f i)) =
-      Matrix.toLin' (weightTable.loweringMatrixQ (Fin.cast (rank_D 4) i)) := by
+      Matrix.toLin' (weightTable.loweringMatrixQ i) := by
   rw [chevalleyDatum_representation]
   exact weightTable.pinnedRep_f (t := .D 4) (by decide) _ i
 
@@ -91,25 +92,25 @@ Its character basis is the standard basis of fundamental weights. -/
 
 /-- The tripled datum uses the existing coordinate basis. -/
 @[simp] theorem chevalleyDatum_basis : chevalleyDatum.basis = latticeBasis := by
+  refine (weightTable.chevalleyDatum_basis (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)).trans ?_
+  rw [Module.Basis.reindex_refl]
   apply Module.Basis.eq_of_apply_eq
   intro i
   apply Subtype.ext
-  exact (weightTable.coe_chevalleyDatum_basis (t := .D 4) (by decide)
-    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _) i).trans
-      (coe_latticeBasis i).symm
+  rw [coe_coordinateLatticeBasis, Pi.basisFun_apply]
+  exact (coe_latticeBasis i).symm
 
 /-- The tripled datum retains the numbered tripled weights. -/
 @[simp] theorem chevalleyDatum_weight :
-    chevalleyDatum.weight = fun a i => d4TripledWeight a (Fin.cast (rank_D 4) i) := by
-  -- Normalize the inherited dimension before rewriting the table's numbered weights.
-  change weightTable.weight ∘ (Equiv.refl _).symm = _
-  rw [weightTable_weight]
-  rfl
+    chevalleyDatum.weight = d4TripledWeight := by
+  exact (weightTable.chevalleyDatum_weight (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)).trans weightTable_weight
 
 /-- The tripled datum has the full simply connected weight lattice. -/
 @[simp] theorem chevalleyDatum_weightLattice : chevalleyDatum.weightLattice = ⊤ := by
-  rw [ChevalleyDatum.weightLattice_def, chevalleyDatum_weight]
-  exact span_range_d4TripledWeight_eq_top
+  exact weightTable.chevalleyDatum_weightLattice (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)
 
 /-- The character basis is the standard fundamental-weight basis. -/
 @[simp↓] theorem coe_chevalleyDatum_weightLatticeBasis (i : Fin (DynkinType.D 4).rank) :
@@ -119,20 +120,16 @@ Its character basis is the standard basis of fundamental weights. -/
 
 /-- The torus coordinates of the tripled datum are its original fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateWeight :
-    chevalleyDatum.coordinateWeight = fun a i => d4TripledWeight a (Fin.cast (rank_D 4) i) := by
-  ext j i
-  have h := congrFun (chevalleyDatum.sum_coordinateWeight_smul j) i
-  simpa only [coe_chevalleyDatum_weightLatticeBasis, ← Pi.single_smul', smul_eq_mul,
-    mul_one, Finset.univ_sum_single, chevalleyDatum_weight] using h
+    chevalleyDatum.coordinateWeight = d4TripledWeight := by
+  exact (weightTable.chevalleyDatum_coordinateWeight (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _)).trans weightTable_weight
 
 /-- The coordinate roots are the original roots in fundamental-weight coordinates. -/
 @[simp] theorem chevalleyDatum_coordinateRoot (γ : Fin (DynkinType.D 4).numRoots) :
     chevalleyDatum.coordinateRoot γ =
       ((DynkinType.D 4).simplyConnectedRootDatum (by decide)).root γ := by
-  ext i
-  have h := congrFun (chevalleyDatum.sum_coordinateRoot_smul γ) i
-  simpa only [coe_chevalleyDatum_weightLatticeBasis, ← Pi.single_smul', smul_eq_mul,
-    mul_one, Finset.univ_sum_single] using h
+  exact weightTable.chevalleyDatum_coordinateRoot (t := .D 4) (by decide)
+    weightTable_pinnedCartanMatrix weightTable_span (Equiv.refl _) γ
 
 end
 
