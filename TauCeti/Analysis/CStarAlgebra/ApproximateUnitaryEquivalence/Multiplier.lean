@@ -127,9 +127,8 @@ theorem precomp (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ) (ρ : C �
   exact ApproximatelyUnitarilyEquivalent.precomp h ρ
 
 /-- Postcomposition with a nondegenerate star homomorphism `ρ : B → 𝓜(ℂ, C)` carries the
-multiplier-unitary relation to approximate unitary equivalence with unitaries of `𝓜(ℂ, C)`: the
-unital extension of `ρ` to `𝓜(ℂ, B)` carries implementing unitaries to implementing unitaries.
-Without nondegeneracy, unitary multipliers of `B` need not induce unitaries of `𝓜(ℂ, C)`. -/
+multiplier-unitary relation to approximate unitary equivalence with unitaries of `𝓜(ℂ, C)`.
+Nondegeneracy is what lets `ρ` extend unitally to `𝓜(ℂ, B)`. -/
 theorem postcomp_multiplier (h : MultiplierApproximatelyUnitarilyEquivalent φ ψ)
     {ρ : B →⋆ₙₐ[ℂ] 𝓜(ℂ, C)} (hρ : ρ.IsMultiplierNondegenerate) :
     ApproximatelyUnitarilyEquivalent (ρ.comp φ) (ρ.comp ψ) :=
