@@ -21,7 +21,7 @@ import TauCeti.Probability.BrownianMotion.Regularity
 import TauCeti.Probability.Distributions.Gaussian.Affine
 import TauCeti.Probability.Distributions.Gaussian.Continuity
 import TauCeti.Probability.Process.Kolmogorov.Chentsov
-import TauCeti.Topology.Instances.NNReal.DyadicGrid
+import TauCeti.Topology.Instances.NNReal.Dyadic.Grid
 
 /-!
 # Wiener measure on continuous path space

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.MetricSpace.Holder
-public import TauCeti.Topology.Instances.NNReal.DyadicGrid
+public import TauCeti.Topology.Instances.NNReal.Dyadic.Grid
 
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.Topology.MetricSpace.Holder

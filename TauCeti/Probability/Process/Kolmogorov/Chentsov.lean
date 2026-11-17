@@ -12,8 +12,8 @@ import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
 import Mathlib.Topology.Instances.Rat
 import TauCeti.Probability.Process.Kolmogorov.Edges
 import TauCeti.Topology.Instances.NNRat
-import TauCeti.Topology.Instances.NNReal.DyadicGrid
-import TauCeti.Topology.Instances.NNReal.DyadicHolder
+import TauCeti.Topology.Instances.NNReal.Dyadic.Grid
+import TauCeti.Topology.Instances.NNReal.Dyadic.Holder
 
 /-!
 # The one-dimensional Kolmogorov–Chentsov continuous modification theorem
@@ -33,8 +33,8 @@ exponents `p > 0` and `q > 1` on each compact horizon `[0, N]`,
 No finiteness or completeness hypothesis on `P` and no separability hypothesis on `E` is required.
 The construction builds on Mathlib's `ProbabilityTheory.IsKolmogorovProcess` and
 `IsAEKolmogorovProcess` together with `TauCeti.Probability.Process.Kolmogorov.Edges`,
-`TauCeti.Topology.Instances.NNReal.DyadicGrid`, and
-`TauCeti.Topology.Instances.NNReal.DyadicHolder`.
+`TauCeti.Topology.Instances.NNReal.Dyadic.Grid`, and
+`TauCeti.Topology.Instances.NNReal.Dyadic.Holder`.
 
 ## Main results
 
