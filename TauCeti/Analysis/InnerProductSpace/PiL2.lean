@@ -34,6 +34,8 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
+* `PiLp.inner_single_left`: the inner product with a vector of an `L²` sum supported at `i` reads
+  off the `i`-th component.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
@@ -74,6 +76,19 @@ public section
 noncomputable section
 
 open scoped BigOperators
+
+namespace PiLp
+
+open scoped InnerProductSpace in
+/-- The inner product with a vector of the Hilbert sum supported at `i` reads off the `i`-th
+component, as `lp.inner_single_left` does for `lp`. -/
+theorem inner_single_left {𝕜 ι : Type*} [RCLike 𝕜] [Fintype ι] [DecidableEq ι] {β : ι → Type*}
+    [∀ i, NormedAddCommGroup (β i)] [∀ i, InnerProductSpace 𝕜 (β i)] (i : ι) (a : β i)
+    (w : PiLp 2 β) : ⟪PiLp.single 2 i a, w⟫_𝕜 = ⟪a, w i⟫_𝕜 := by
+  rw [PiLp.inner_apply, Finset.sum_eq_single i (fun b _ hb => by simp [hb]) (by simp)]
+  simp
+
+end PiLp
 
 namespace EuclideanSpace
 
