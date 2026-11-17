@@ -14,6 +14,10 @@ public import TauCeti.RingTheory.Derivation.Basic
 public import TauCeti.RingTheory.Derivation.BaseChange
 public import TauCeti.RingTheory.Derivation.Localization
 public import TauCeti.RingTheory.Kaehler.DualDerivation
+-- Non-public: `Module.End.instExpChar` and `Derivation.toLinearMapLieHom` carry `ad_pPow` into
+-- the associative algebra `Module.End R A`.
+import TauCeti.Algebra.CharP.LinearMaps
+import TauCeti.RingTheory.Derivation.Lie
 
 /-!
 # The `p`-th power of a derivation
@@ -95,9 +99,8 @@ variable (p : ℕ) [ExpChar A p]
 `(D : Module.End R A) ^ p` (`toLinearMap_pPow`). -/
 def pPow (D : Derivation R A A) : Derivation R A A where
   toLinearMap := (D : Module.End R A) ^ p
-  map_one_eq_zero' := by
-    obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero (expChar_ne_zero A p)
-    simp [hn, pow_apply_eq_iterate, Function.iterate_succ_apply]
+  map_one_eq_zero' :=
+    Module.End.pow_map_zero_of_le (Nat.one_le_iff_ne_zero.mpr (expChar_ne_zero A p)) (by simp)
   leibniz' a b := by
     simpa [pow_apply_eq_iterate, smul_eq_mul] using iterate_leibniz p D a b
 
@@ -112,12 +115,23 @@ theorem toLinearMap_pPow (D : Derivation R A A) :
     (D.pPow p : Module.End R A) = (D : Module.End R A) ^ p :=
   LinearMap.ext fun a ↦ by simp [pow_apply_eq_iterate]
 
+/-- An element killed by `D` is killed by the `p`-th power of `D`. -/
+theorem pPow_apply_eq_zero_of_apply_eq_zero (D : Derivation R A A) {a : A} (h : D a = 0) :
+    D.pPow p a = 0 :=
+  Module.End.pow_map_zero_of_le (Nat.one_le_iff_ne_zero.mpr (expChar_ne_zero A p)) (by simpa)
+
+/-- If `p ≠ 1`, so that `p` is a prime, an element killed by `D ∘ D` is killed by the `p`-th
+power of `D`. -/
+theorem pPow_apply_eq_zero_of_apply_apply_eq_zero (hp : p ≠ 1) (D : Derivation R A A) {a : A}
+    (h : D (D a) = 0) : D.pPow p a = 0 :=
+  Module.End.pow_map_zero_of_le (k := 2) (by have := expChar_ne_zero A p; omega)
+    (by simpa [sq] using h)
+
 /-- The `p`-th power of the zero derivation is zero. -/
 @[simp]
 theorem pPow_zero : (0 : Derivation R A A).pPow p = 0 := by
-  obtain ⟨n, hn⟩ := Nat.exists_eq_add_one_of_ne_zero (expChar_ne_zero A p)
   ext a
-  rw [pPow_apply, hn, Function.iterate_succ_apply, zero_apply, iterate_map_zero]
+  exact pPow_apply_eq_zero_of_apply_eq_zero p 0 (zero_apply a)
 
 /-- **Homogeneity of the `p`-th power for constant scalars.** For `c : R`,
 `(c • D)^[p] = c ^ p • D^[p]`. -/
@@ -147,25 +161,13 @@ with `E`. -/
 theorem ad_pPow (D : Derivation R A A) :
     LieAlgebra.ad R (Derivation R A A) (D.pPow p) = LieAlgebra.ad R (Derivation R A A) D ^ p := by
   let := LieRing.ofAssociativeRing (A := Module.End R A)
-  have : ExpChar (Module.End R A) p :=
-    expChar_of_injective_ringHom
-      (f := (Algebra.lmul R A : A →ₐ[R] Module.End R A).toRingHom) Algebra.lmul_injective p
-  -- The inclusion of derivations into `R`-linear endomorphisms, as a morphism of Lie algebras.
-  let ι : Derivation R A A →ₗ⁅R⁆ Module.End R A :=
-    { toFun := (↑)
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl
-      map_lie' := commutator_coe_linear_map }
-  -- `ι` is the coercion by construction.
-  have hι_apply (D' : Derivation R A A) : ι D' = (D' : Module.End R A) := rfl
-  have hι : Function.Injective ι := fun _ _ h ↦ ext fun a ↦ LinearMap.congr_fun h a
   ext E : 1
-  apply hι
+  apply toLinearMapLieHom_injective
   rw [LieHom.map_ad_pow, LieAlgebra.ad_apply, LieHom.map_lie]
-  have h := TauCeti.LieAlgebra.ad_pow_expChar_pow (R := R) p (ι D) 1
+  have h := TauCeti.LieAlgebra.ad_pow_expChar_pow (R := R) p (toLinearMapLieHom R A D) 1
   rw [pow_one] at h
   rw [← h, LieAlgebra.ad_apply]
-  simp only [hι_apply, toLinearMap_pPow]
+  simp only [toLinearMapLieHom_apply, toLinearMap_pPow]
 
 /-- **The `p`-th power commutes with localization.** If `T` is a localization of `A`, extending
 `D^[p]` from `A` to `T` gives the `p`-th power of the extension of `D`. -/
@@ -194,12 +196,10 @@ differentials of `Ω[A⁄R]` and `A` has characteristic `p`, the derivation `∂
 satisfies `∂_i^[p] = 0`. -/
 theorem pPow_dualDerivation_eq_zero {b : Module.Basis ι A Ω[A⁄R]} {s : ι → A}
     (hs : ∀ i, KaehlerDifferential.D R A (s i) = b i) (p : ℕ) [Fact p.Prime] [CharP A p] (i : ι) :
-    (b.dualDerivation i).pPow p = 0 := by
-  obtain ⟨n, hn⟩ : ∃ n, p = n + 2 := ⟨p - 2, by have := (Fact.out : p.Prime).two_le; omega⟩
-  refine ext_of_kaehlerD_eq_basis hs fun k ↦ ?_
-  rw [pPow_apply, hn, Function.iterate_succ_apply, Function.iterate_succ_apply,
-    Module.Basis.dualDerivation_apply_dualDerivation_apply_of_kaehlerD_eq hs, zero_apply,
-    iterate_map_zero]
+    (b.dualDerivation i).pPow p = 0 :=
+  ext_of_kaehlerD_eq_basis hs fun k ↦ pPow_apply_eq_zero_of_apply_apply_eq_zero p
+    (Fact.out : p.Prime).ne_one _
+    (Module.Basis.dualDerivation_apply_dualDerivation_apply_of_kaehlerD_eq hs i i k)
 
 end Basis
 
@@ -209,19 +209,20 @@ section Polynomial
 
 open Polynomial
 
-variable {R : Type*} [CommSemiring R] (p : ℕ) [Fact p.Prime] [CharP R p]
+variable {R : Type*} [CommSemiring R] (p : ℕ)
 
 /-- In characteristic `p`, the `p`-th power of `d/dx` on `R[X]` vanishes. -/
 @[simp]
-theorem pPow_derivative' : (derivative' : Derivation R R[X] R[X]).pPow p = 0 := by
-  obtain ⟨n, hn⟩ : ∃ n, p = n + 2 := ⟨p - 2, by have := (Fact.out : p.Prime).two_le; omega⟩
-  ext
-  simp [hn, Function.iterate_succ_apply]
+theorem pPow_derivative' [Fact p.Prime] [CharP R p] :
+    (derivative' : Derivation R R[X] R[X]).pPow p = 0 := by
+  ext : 1
+  exact pPow_apply_eq_zero_of_apply_apply_eq_zero p (Fact.out : p.Prime).ne_one _ (by simp)
 
-/-- In characteristic `p`, the derivation `x • d/dx` of `R[X]` is its own `p`-th power, since it
-fixes `X`. In particular `pPow` is not linear for the scalars of `R[X]`. -/
+/-- In exponential characteristic `p`, the derivation `x • d/dx` of `R[X]` is its own `p`-th
+power, since it fixes `X`. With `pPow_derivative'`, this shows that in prime characteristic `pPow`
+is not linear for the scalars of `R[X]`. -/
 @[simp]
-theorem pPow_X_smul_derivative' :
+theorem pPow_X_smul_derivative' [ExpChar R p] :
     ((X : R[X]) • (derivative' : Derivation R R[X] R[X])).pPow p =
       (X : R[X]) • (derivative' : Derivation R R[X] R[X]) := by
   have hX : ((X : R[X]) • (derivative' : Derivation R R[X] R[X])) X = X := by simp
