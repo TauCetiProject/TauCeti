@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.Counting.Scattered.Thin
-public import TauCeti.ModelTheory.RelationalConfiguration.SentenceSpectrum
+public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Spectrum
 import TauCeti.Data.Setoid.Countable
 
 /-!
@@ -158,9 +158,10 @@ theorem isThinOnNatModels_of_countable_image_sentenceTheory [∀ n, Countable (L
   isThinOnNatModels_iff_isThinOn.2 (isThinOn_of_countable_image_sentenceTheory h)
 
 /-- A thin countable-branching sentence realizes only countably many truth-value patterns on `ℕ`
-along any countable sequence of `L_{ω₁ω}` sentences. -/
+along any countable sequence of countable-branching sentences. -/
 theorem IsThinOnNatModels.countable_image_sentenceTheory [∀ n, Countable (L.Relations n)]
-    [Countable ι] {φ : L.SentenceInf ι} (h : IsThinOnNatModels φ) (θ : ℕ → L.Sentenceω) :
+    [Countable ι] {ι' : Type uι'} [Countable ι'] {φ : L.SentenceInf ι} (h : IsThinOnNatModels φ)
+    (θ : ℕ → L.SentenceInf ι') :
     (sentenceTheory θ '' modelsOf (V := ℕ) φ).Countable :=
   countable_image_sentenceTheory_of_isThinOn (measurableSet_modelsOf φ)
     (isThinOnNatModels_iff_isThinOn.1 h) θ

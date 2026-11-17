@@ -9,7 +9,6 @@ public import TauCeti.ModelTheory.Interpolation.Craig
 public import TauCeti.ModelTheory.RelationalConfiguration.Isomorphism
 public import TauCeti.ModelTheory.RelationalConfiguration.ModelsOf
 import TauCeti.ModelTheory.Infinitary.CodedConnectives
-import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
 import TauCeti.Topology.Instances.CantorSpace
 
 /-!

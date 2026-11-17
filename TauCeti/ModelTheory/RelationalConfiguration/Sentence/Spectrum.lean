@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.ModelTheory.RelationalConfiguration.LopezEscobar
-public import TauCeti.ModelTheory.RelationalConfiguration.SentenceTheory
+public import TauCeti.ModelTheory.RelationalConfiguration.Sentence.Theory
 public import TauCeti.SetTheory.Descriptive.Silver
 import TauCeti.Data.Set.Countable
 
@@ -166,11 +166,11 @@ theorem isThinOn_of_countable_image_sentenceTheory [∀ n, Countable (L.Relation
   exact not_countable_univ huniv
 
 /-- **Thin Borel sets have countable sentence spectra.** In a countable relational vocabulary on a
-countable carrier `V`, if a Borel set `C` is thin for isomorphism, every countable `L_{ω₁ω}`
-sentence sequence takes only countably many truth-value patterns on `C`. -/
+countable carrier `V`, if a Borel set `C` is thin for isomorphism, every countable sequence of
+countable-branching sentences takes only countably many truth-value patterns on `C`. -/
 theorem countable_image_sentenceTheory_of_isThinOn [∀ n, Countable (L.Relations n)] [Countable V]
-    {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C)
-    (hthin : (isoSetoid L V).IsThinOn C) (θ : ℕ → L.Sentenceω) :
+    [Countable ι] {C : Set (RelationalConfiguration L V)} (hC : MeasurableSet C)
+    (hthin : (isoSetoid L V).IsThinOn C) (θ : ℕ → L.SentenceInf ι) :
     (sentenceTheory θ '' C).Countable := by
   let g : C → ℕ → Bool := fun c => sentenceTheory θ c.1
   have hg : Measurable g := (measurable_sentenceTheory θ).comp measurable_subtype_coe
@@ -178,9 +178,8 @@ theorem countable_image_sentenceTheory_of_isThinOn [∀ n, Countable (L.Relation
   have hF : MeasurableSet {p : C × C | F p.1 p.2} :=
     measurableSet_eq_fun (hg.comp measurable_fst) (hg.comp measurable_snd)
   have hcountF : Countable (Quotient F) :=
-    (Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hC (isoSetoid L V) F
-      (fun x y hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF).resolve_right
-      (Setoid.isThinOn_iff_not_hasCantorAntichainOn.1 hthin)
+    hthin.countable_quotient_of_measurableSet hC F
+      (fun x y hxy => sentenceTheory_eq_of_isoSetoid hxy θ) hF
   let qmap : Quotient F → ℕ → Bool := Quotient.lift g fun _ _ h => h
   refine (countable_range qmap).mono ?_
   rintro _ ⟨c, hc, rfl⟩
@@ -304,7 +303,7 @@ theorem isSmooth_comap_isoSetoid_of_countablySeparated
     [CountablySeparated Y] {g : C → Y} (hg : Measurable g)
     (hsep : ∀ c d : C, isoSetoid L V c.1 d.1 ↔ g c = g d) :
     ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth :=
-  (Setoid.borelReducible_iff.2 ⟨g, hg, hsep⟩).isSmooth (Setoid.isSmooth_bot_iff.2 inferInstance)
+  Setoid.isSmooth_of_countablySeparated hg hsep
 
 /-- **Thin Borel sets with smooth isomorphism meet countably many isomorphism classes.** On a
 countable carrier in a countable relational vocabulary, if a Borel set `C` is thin for isomorphism
@@ -316,9 +315,7 @@ theorem countable_quotient_comap_isoSetoid_of_isThinOn_of_isSmooth
     (hthin : (isoSetoid L V).IsThinOn C)
     (hsmooth : ((isoSetoid L V).comap (Subtype.val : C → _)).IsSmooth) :
     Countable (Quotient ((isoSetoid L V).comap (Subtype.val : C → _))) :=
-  (Setoid.countable_or_hasCantorAntichainOn_of_measurableSet hC (isoSetoid L V)
-    ((isoSetoid L V).comap Subtype.val) (fun _ _ h => h) hsmooth.measurableSet_setOf).resolve_right
-    (Setoid.isThinOn_iff_not_hasCantorAntichainOn.1 hthin)
+  hthin.countable_quotient_comap_of_isSmooth hC hsmooth
 
 /-- A thin Borel set of configurations admitting a measurable complete isomorphism invariant into a
 countably separated space meets only countably many isomorphism classes. -/
@@ -329,7 +326,6 @@ theorem countable_quotient_comap_isoSetoid_of_isThinOn_of_countablySeparated
     {g : C → Y} (hg : Measurable g)
     (hsep : ∀ c d : C, isoSetoid L V c.1 d.1 ↔ g c = g d) :
     Countable (Quotient ((isoSetoid L V).comap (Subtype.val : C → _))) :=
-  countable_quotient_comap_isoSetoid_of_isThinOn_of_isSmooth hC hthin
-    (isSmooth_comap_isoSetoid_of_countablySeparated hg hsep)
+  hthin.countable_quotient_comap_of_countablySeparated hC hg hsep
 
 end TauCeti.RelationalConfiguration

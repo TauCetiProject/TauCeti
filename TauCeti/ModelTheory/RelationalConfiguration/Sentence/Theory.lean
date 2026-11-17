@@ -38,8 +38,6 @@ configurations.
 * `TauCeti.RelationalConfiguration.measurable_sentenceTheory` and
   `TauCeti.RelationalConfiguration.measurableSet_setOf_sentenceTheory_eq`: on a countable carrier
   the truth sequence is measurable and its equality graph is measurable.
-* `TauCeti.RelationalConfiguration.isomorphismInvariant_modelsOf`: model classes of infinitary
-  sentences are isomorphism invariant.
 * `FirstOrder.Language.Equiv.sentenceTheory_eq` and
   `TauCeti.RelationalConfiguration.sentenceTheory_eq_of_isoSetoid`: configurations with isomorphic
   decoded structures have the same truth sequence; in particular relabelling by a permutation of
@@ -130,14 +128,6 @@ end FirstOrder.Language.Equiv
 namespace TauCeti.RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] {V : Type w} {ι : Type uι}
-
-/-- The model class of an infinitary sentence is invariant under isomorphism of configurations. -/
-theorem isomorphismInvariant_modelsOf (φ : L.SentenceInf ι) :
-    IsomorphismInvariant (modelsOf (V := V) φ) := by
-  rw [isomorphismInvariant_iff]
-  rintro c d h hc
-  obtain ⟨e⟩ := isoSetoid_apply.1 h
-  exact (Language.Equiv.mem_modelsOf_iff e φ).mp hc
 
 /-- Isomorphic configurations on one carrier have the same truth sequence. -/
 theorem sentenceTheory_eq_of_isoSetoid {c d : RelationalConfiguration L V}
