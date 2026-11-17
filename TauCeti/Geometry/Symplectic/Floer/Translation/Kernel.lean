@@ -97,7 +97,8 @@ theorem floerLinearization_fderiv_apply_eq_zero {z : ℝ × ℝ}
     have ht : Tendsto (fun c : ℝ ↦ z + c • v) (𝓝 0) (𝓝 z) := by
       simpa using ((continuous_id.smul continuous_const).const_add z).tendsto (0 : ℝ)
     filter_upwards [ht.eventually hF, hJv, hKsv, hKtv] with c hc hJc hKsc hKtc
-    rw [ω.floerOperator_comp_add_right u hJc hKsc hKtc, hc, Pi.zero_apply]
+    rw [Pi.zero_apply, ← hc, ← ω.floerOperator_comp_add_right]
+    simp only [floerOperator_def, hJc, hKsc, hKtc]
   -- The direction field of the family is `du(v)` near `z`: at each point it is the derivative
   -- of `c ↦ u(y + c v)` at `0`, which is by definition the line derivative `lineDeriv ℝ u y v`.
   have hdir : (fun y ↦ fderiv ℝ (fun c : ℝ ↦ u (y + c • v)) 0 1) =ᶠ[𝓝 z]
