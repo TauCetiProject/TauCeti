@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Matrix.Basic
 
 /-!
@@ -170,6 +171,16 @@ theorem mapCoeffs_pow (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
   induction n with
   | zero => simp
   | succ n ih => rw [pow_succ, mapCoeffs_mul, ih, pow_succ]
+
+/-- Coefficient extension commutes with polynomial evaluation. -/
+@[simp]
+theorem mapCoeffs_aeval (u : C₀(J, R) →L[R] C₀(J, R)) (f : R →+* S)
+    (hf : ∃ C : ℝ≥0, ∀ r, ‖f r‖ ≤ C * ‖r‖) (P : Polynomial R) :
+    (Polynomial.aeval u P).mapCoeffs f hf =
+      Polynomial.aeval (u.mapCoeffs f hf) (P.map f) := by
+  induction P using Polynomial.induction_on' with
+  | add p q hp hq => simp [hp, hq]
+  | monomial n r => simp [Algebra.algebraMap_eq_smul_one]
 
 section Topology
 

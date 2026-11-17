@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Group.Irreducible.Lemmas
+public import Mathlib.Algebra.Polynomial.AlgebraMap
+public import Mathlib.Algebra.Polynomial.Inductions
 public import Mathlib.RingTheory.Ideal.Defs
 import Mathlib.Algebra.Polynomial.Div
 
@@ -20,7 +21,10 @@ Since `x - c` divides `p(x) - p(c)`, a congruence `(x - c) e ≡ 0` modulo an id
 `(p(x) - p(c)) e ≡ 0` for every polynomial `p` (`Polynomial.aeval_sub_algebraMap_eval_mul_mem`).
 
 A monic polynomial of positive degree dividing every polynomial that vanishes at `f : B` forces
-`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`).
+`A` to act faithfully on `B` (`Polynomial.Monic.faithfulSMul_of_dvd`). When `p.coeff 0 = 0`,
+`aeval x p.divX` multiplies on either side by `x` to recover `aeval x p`
+(`Polynomial.mul_aeval_divX_of_coeff_zero`, `Polynomial.aeval_divX_mul_of_coeff_zero`), making `x` a
+unit whenever `aeval x p = 1` (`Polynomial.isUnit_of_aeval_eq_one_of_coeff_zero`).
 -/
 
 public section
@@ -41,6 +45,26 @@ theorem irreducible_map_iff_of_algEquiv {F K K' : Type*} [CommSemiring F] [Semir
 end TauCeti
 
 namespace Polynomial
+
+/-- For a polynomial `p` with zero constant term, `x * aeval x p.divX = aeval x p`. -/
+theorem mul_aeval_divX_of_coeff_zero {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (x : A) {p : R[X]} (hp : p.coeff 0 = 0) :
+    x * aeval x p.divX = aeval x p := by
+  simpa [hp] using congrArg (aeval x) (X_mul_divX_add p)
+
+/-- For a polynomial `p` with zero constant term, `aeval x p.divX * x = aeval x p`. -/
+theorem aeval_divX_mul_of_coeff_zero {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+    (x : A) {p : R[X]} (hp : p.coeff 0 = 0) :
+    aeval x p.divX * x = aeval x p := by
+  simpa [hp] using congrArg (aeval x) (divX_mul_X_add p)
+
+/-- If a polynomial `p` with zero constant term evaluates to `1` at `x`, then `x` is a unit with
+inverse `aeval x p.divX`. -/
+theorem isUnit_of_aeval_eq_one_of_coeff_zero {R A : Type*} [CommSemiring R] [Semiring A]
+    [Algebra R A] {x : A} {p : R[X]} (hp : p.coeff 0 = 0) (hx : aeval x p = 1) :
+    IsUnit x :=
+  isUnit_iff_exists.mpr ⟨aeval x p.divX, (mul_aeval_divX_of_coeff_zero x hp).trans hx,
+    (aeval_divX_mul_of_coeff_zero x hp).trans hx⟩
 
 /-- If `(x - c) e` lies in an ideal `K`, then so does `(p(x) - p(c)) e` for every polynomial `p`,
 since `x - c` divides `p(x) - p(c)`. -/

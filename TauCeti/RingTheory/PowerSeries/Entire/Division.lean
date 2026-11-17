@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.PowerSeries.Entire.Eval
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Division
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Tactic.LinearCombination
+import TauCeti.Algebra.Polynomial.RingDivision
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.PowerSeries.Inverse
 import TauCeti.RingTheory.PowerSeries.Trunc
@@ -94,6 +95,9 @@ operators, whose Fredholm determinants are entire series.
 * `TauCeti.PowerSeries.eq_and_eq_of_entire_mul_add_eq` and
   `TauCeti.PowerSeries.existsUnique_entire_mul_add_eq`: uniqueness over an ultrametric ring
   with `‖1‖ = 1`.
+* `TauCeti.PowerSeries.polynomialHom_dvd_iff` and
+  `TauCeti.PowerSeries.eq_of_polynomialHom_dvd_of_natDegree_le`: polynomial divisibility reflection
+  from `PowerSeries.IsEntire.subring R` for divisors with invertible leading coefficient.
 
 ## References
 
@@ -769,5 +773,30 @@ theorem existsUnique_entire_mul_add_eq (hf : f.IsEntire) (hp : IsUnit p.leadingC
   refine ⟨(q, b), ⟨hq, hb, h⟩, fun qb ⟨hq', hb', h'⟩ ↦ ?_⟩
   obtain ⟨rfl, rfl⟩ := eq_and_eq_of_entire_mul_add_eq hp hq' hq hb' hb h' h
   rfl
+
+/-- Over a complete ultrametric norm-one ring, a polynomial `p` with invertible leading coefficient
+divides a polynomial `q` in the subring of entire power series if and only if `p ∣ q` as
+polynomials. -/
+theorem polynomialHom_dvd_iff {p q : Polynomial R} (hp : IsUnit p.leadingCoeff) :
+    IsEntire.polynomialHom p ∣ IsEntire.polynomialHom q ↔ p ∣ q := by
+  refine ⟨fun ⟨⟨H, hH⟩, hqH⟩ ↦ ?_, map_dvd IsEntire.polynomialHom⟩
+  let u := hp.unit
+  have hm : (u⁻¹ • p).Monic := Polynomial.monic_of_isUnit_leadingCoeff_inv_smul hp
+  have hmk : AdjoinRoot.mk (u⁻¹ • p) q = 0 := by
+    rw [← IsEntire.mkAdjoinRoot_coe hm q, IsEntire.mkAdjoinRoot_eq_zero_iff hm]
+    refine ⟨u • H, (IsEntire.mem_subring.mp hH).smul _, ?_⟩
+    have hq_eq : (q : R⟦X⟧) = (p : R⟦X⟧) * H := by simpa using congrArg Subtype.val hqH
+    simp only [hq_eq, Units.smul_def, Polynomial.coe_smul, smul_mul_smul_comm, u.inv_mul, one_smul]
+  obtain ⟨k, hk⟩ := AdjoinRoot.mk_eq_zero.mp hmk
+  exact ⟨u⁻¹ • k, by rw [hk, smul_mul_assoc, mul_smul_comm]⟩
+
+/-- Over a complete ultrametric norm-one ring, if a polynomial `p` with invertible leading and
+constant coefficients divides `q` in `IsEntire.subring R`, with `q.natDegree ≤ p.natDegree` and
+`q.coeff 0 = p.coeff 0`, then `q = p`. -/
+theorem eq_of_polynomialHom_dvd_of_natDegree_le {p q : Polynomial R} (hp : IsUnit p.leadingCoeff)
+    (hp0 : IsUnit (p.coeff 0)) (hdvd : IsEntire.polynomialHom p ∣ IsEntire.polynomialHom q)
+    (hdeg : q.natDegree ≤ p.natDegree) (h0 : q.coeff 0 = p.coeff 0) : q = p :=
+  Polynomial.eq_of_dvd_of_natDegree_le_of_coeff_zero hp hp0 ((polynomialHom_dvd_iff hp).mp hdvd)
+    hdeg h0
 
 end TauCeti.PowerSeries
