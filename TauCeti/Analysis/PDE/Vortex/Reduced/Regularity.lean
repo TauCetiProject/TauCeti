@@ -140,12 +140,6 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
   have hS : MemLp (reducedSource P f) 2 volume := memLp_reducedSource hm u
   have hR : MemLp (f - reducedSource P f) 2 volume := hf.sub hS
   set T : 𝓢'(ℂ, ℂ) := Lp.toTemperedDistribution (ofRealCLM.compLp (hf.toLp f))
-  -- Pairing a real Schwartz function with the distribution of a real `L²` function.
-  have hpair {g : ℂ → ℝ} (hg : MemLp g 2 volume) (φ : 𝓢(ℂ, ℝ)) :
-      Lp.toTemperedDistribution (ofRealCLM.compLp (hg.toLp g)) (φ.postcompCLM ofRealCLM) =
-        ((∫ z, φ z * g z : ℝ) : ℂ) := by
-    rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
-      integral_congr_ae (hg.coeFn_toLp.mono fun z hz ↦ by rw [hz])]
   -- The weak equation, after integrating the gradient term by parts once more.
   have hweak (φ : 𝓢(ℂ, ℝ)) (hφ : HasCompactSupport φ) :
       ∫ z, Δ (φ : ℂ → ℝ) z * f z = ∫ z, φ z * reducedSource P f z := by
@@ -168,7 +162,9 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
     refine ext_real fun φ hφ ↦ ?_
     have hφ2 := φ.memLp 2 (μ := volume)
     rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-      hpair hf, hpair hf, hpair hR, one_smul]
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hf.coeFn_toLp,
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hf.coeFn_toLp,
+      Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq hR.coeFn_toLp, one_smul]
     simp only [SchwartzMap.laplacian_apply]
     rw [hweak φ hφ]
     simp_rw [Pi.sub_apply, mul_sub]

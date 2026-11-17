@@ -83,6 +83,8 @@ derivatives of every order is
 * `TauCeti.Vortex.sub_referenceField_apply_zero_of_equation_eq_zero`,
   `TauCeti.Vortex.sub_referenceField_apply_one_of_equation_eq_zero`: its connection is
   `a_ref + (i / 2) ⋆ d log |α|²` outside the cutoff disc.
+* `TauCeti.Vortex.sub_referenceField_apply_two_and_three`: outside the cutoff disc, the section
+  of `x - x_ref` is the reference section times `|α| - 1`.
 * `TauCeti.Vortex.exists_eventually_norm_fderiv_gaugeTransform_inv_windingPhase_le_mul_exp`,
   `TauCeti.Vortex.exists_eventually_norm_fderiv_sub_referenceField_le_mul_exp`: the first
   derivatives of the end trivialization and of `x - x_ref` decay exponentially.
@@ -509,6 +511,29 @@ theorem sub_referenceField_apply_one_of_equation_eq_zero (f : ContDiffBump (0 : 
   exact gaugeTransform_inv_windingPhase_apply_one_of_equation_eq_zero
     (ne_zero_of_rOut_le_norm_sq f hrOut) hp hq h₁ h₂ hphase hα
 
+/-- **The section of an end-normalized vortex.** At a point `z` outside the cutoff disc at which
+the section of `x` is `|α|` times the winding phase, the section coordinates of `x - x_ref` are
+those of the reference field times `|α| - 1`. -/
+theorem sub_referenceField_apply_two_and_three (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hrOut : f.rOut ≤ ‖z‖ ^ 2)
+    (hphase : sectionValue x z = ‖sectionValue x z‖ * windingPhase m z) :
+    (x - referenceField f m) z 2 = referenceField f m z 2 * (‖sectionValue x z‖ - 1) ∧
+      (x - referenceField f m) z 3 = referenceField f m z 3 * (‖sectionValue x z‖ - 1) := by
+  have hsx := congrArg (fun w ↦ (w.re, w.im)) hphase
+  set a := ‖sectionValue x z‖
+  simp only [sectionValue_apply, Prod.mk.injEq, mul_re, mul_im, add_re, add_im, ofReal_re,
+    ofReal_im, I_re, I_im, re_ofNat, im_ofNat] at hsx
+  have hrs : referenceSection f m z = windingPhase m z := by
+    rw [referenceSection_eq_phase f m hrOut,
+      coe_windingPhase m (ne_zero_of_rOut_le_norm_sq f hrOut)]
+  constructor
+  · simp only [Pi.sub_apply, PiLp.sub_apply, referenceField_apply, Fin.isValue, Matrix.cons_val,
+      hrs]
+    linear_combination hsx.1 / 2
+  · simp only [Pi.sub_apply, PiLp.sub_apply, referenceField_apply, Fin.isValue, Matrix.cons_val,
+      hrs]
+    linear_combination hsx.2 / 2
+
 /-! ### Exponential decay of the first derivatives -/
 
 /-- Outside a disc beyond which the section of a vortex `x` is `|α|` times the winding phase and
@@ -823,17 +848,14 @@ theorem exists_framedGaugeGroup_norm_smul_sub_referenceField_le_mul_exp (hx : Co
       ∀ c < 1 / 2, ∃ K, ∀ z, ‖(u • x) z - referenceField f m z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   obtain ⟨u, hu⟩ := exists_framedGaugeGroup_sectionValue_smul_eq hx hframe
   refine ⟨u, hu, fun c hc ↦ ?_⟩
-  have huc := ((mem_framedGaugeGroup _).1 u.property).1
-  have hy : ContDiff ℝ ∞ (u • x) := contDiff_gaugeTransform (by simpa using huc) hx
-  have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) := contDiff_euclidean.1 hy i
+  have hcd (i : Fin 4) : ContDiff ℝ ∞ (fun z ↦ (u • x) z i) :=
+    contDiff_euclidean.1 (contDiff_framedGaugeGroup_smul u hx) i
   have hsol' (z : ℂ) : equation (u • x) z = 0 :=
-    (equation_gaugeTransform_eq_zero_iff ((huc.of_le (by norm_cast)).contDiffAt)
+    (equation_framedGaugeGroup_smul_eq_zero_iff u
       fun i ↦ (contDiff_euclidean.1 hx i).differentiable (by simp) z).2 (hsol z)
-  have hlim : Tendsto (fun z ↦ 4 * ((u • x) z 2 ^ 2 + (u • x) z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-    refine (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ ?_
-    rw [← sq_norm_sectionValue, ← sq_norm_sectionValue, framedGaugeGroup_smul,
-      sectionValue_gaugeTransform, norm_mul, Circle.norm_coe, one_mul]
   exact exists_norm_sub_referenceField_le_mul_exp (hcd 0).continuous (hcd 1).continuous
-    ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol' hlim hu f hc
+    ((hcd 2).of_le (by norm_cast)) ((hcd 3).of_le (by norm_cast)) hsol'
+    ((tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe).congr fun z ↦ by
+      simp [framedGaugeGroup_smul]) hu f hc
 
 end TauCeti.Vortex

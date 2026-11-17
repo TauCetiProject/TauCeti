@@ -58,7 +58,9 @@ function by a function of temperate growth multiplies the function pointwise
 * `MeasureTheory.Lp.toTemperedDistribution_ofRealCLM_compLp_apply`: the complex tempered
   distribution of a real `Lᵖ` function `u` is integration against `u`.
 * `MeasureTheory.Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM`: on a real
-  Schwartz function it is a real integral.
+  Schwartz function it is a real integral, and
+  `MeasureTheory.Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq` computes
+  it through any almost-everywhere representative.
 * `SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply`: the same for the values of a
   Schwartz function.
 * `MeasureTheory.Lp.fourier_toTemperedDistribution_apply`: the Fourier transform of the tempered
@@ -219,6 +221,17 @@ theorem toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM {μ : Measure 
   rw [toTemperedDistribution_ofRealCLM_compLp_apply, ← integral_complex_ofReal]
   refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
   simp only [SchwartzMap.postcompCLM_apply, Complex.ofRealCLM_apply, Complex.ofReal_mul]
+
+omit [FiniteDimensional ℝ E] in
+/-- On a real Schwartz function `φ`, the complex tempered distribution of a real `Lᵖ` function `u`
+that agrees almost everywhere with `f` is the real integral of `φ f`. -/
+theorem toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM_of_ae_eq {μ : Measure E}
+    [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)] {u : Lp ℝ p μ} {f : E → ℝ}
+    (hu : u =ᵐ[μ] f) (φ : 𝓢(E, ℝ)) :
+    ((Complex.ofRealCLM.compLp u : Lp ℂ p μ) : 𝓢'(E, ℂ)) (φ.postcompCLM Complex.ofRealCLM) =
+      ((∫ x, φ x * f x ∂μ : ℝ) : ℂ) := by
+  rw [toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+    integral_congr_ae (hu.mono fun x hx ↦ by rw [hx])]
 
 end NormedSpace
 
