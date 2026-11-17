@@ -72,8 +72,8 @@ equilibria, since the effective potential at the equator is `V_j(0) = j² / 2 < 
 theorem mem_sphericalPendulumTurningPointDomain_of_sq_lt {h j : ℝ} (hj : j ≠ 0)
     (hjh : j ^ 2 < 2 * h) : (h, j) ∈ sphericalPendulumTurningPointDomain :=
   ⟨hj, 0, ⟨by norm_num, by norm_num⟩, by
-    rw [sphericalPendulumEffectivePotential_def]
-    norm_num
+    rw [sphericalPendulumEffectivePotential_def,
+      show j ^ 2 / (2 * (1 - (0 : ℝ) ^ 2)) + 0 = j ^ 2 / 2 by ring]
     linarith⟩
 
 /-- The **lower turning point** `z₋` of the spherical pendulum at energy `h` and vertical angular
