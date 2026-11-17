@@ -644,15 +644,11 @@ theorem exists_toDistr_eq_and_norm_le_of_block {F' : Type*} [NormedAddCommGroup 
     (hgn : ∀ j : ℕ, 2 ^ (s' * j) * ‖g j‖ ≤ B * (2 ^ (s * j) * ‖u.block j‖)) :
     ∃ v : BesovSpace F' φ' s' p' q, v.toDistr = w ∧ ‖v‖ ≤ B * ‖u‖ := by
   -- The weighted block norms of `u` as an element of `ℓ^q`.
-  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
-  -- The entries of the anonymous `lp` element `b` are its defining sequence by definition.
-  have hbj (j : ℕ) : b j = ‖u.weightedBlocks j‖ := rfl
-  have hb : ‖b‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun k ↦ (norm_norm _).le
+  set b := lp.normSeq u.weightedBlocks
+  have hb : ‖b‖ ≤ ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks]
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq g (B • b) hg
     fun j ↦ by
-      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hbj, norm_weightedBlocks_apply]
+      rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.normSeq_apply, norm_weightedBlocks_apply]
       exact hgn j
   refine ⟨v, hv, hvn.trans ?_⟩
   rw [norm_smul, Real.norm_of_nonneg hB]
@@ -1040,21 +1036,17 @@ private theorem exists_norm_toBesovSpace_of_bump_le (φ' : ContDiffBump (0 : E))
   refine ⟨K * (2 * L), fun u ↦ ?_⟩
   obtain ⟨f', hf', hle⟩ := hKL u.block fun k ↦ (coe_block u k).symm
   -- The weighted block norms of `u`, and their window sums, as elements of `ℓ^q`.
-  set b : lp (fun _ : ℕ ↦ ℝ) q := ⟨fun k ↦ ‖u.weightedBlocks k‖, (lp.memℓp _).norm⟩
+  set b := lp.normSeq u.weightedBlocks
   set w : lp (fun _ : ℕ ↦ ℝ) q :=
     ⟨fun j ↦ ∑ k ∈ Finset.Ico (j - L) (j + L), b k, (lp.memℓp b).sum_Ico_sub_add L⟩
-  -- The entries of the anonymous `lp` elements `b` and `w` are their defining sequences by
-  -- definition: `lp` coerces through `Subtype.val` and has no lemma evaluating an anonymous
-  -- constructor.
-  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), ‖u.weightedBlocks k‖ := rfl
-  have hp : q ≠ 0 := (zero_lt_one.trans_le Fact.out).ne'
-  have hb : ‖b‖ ≤ ‖u‖ := by
-    rw [← norm_weightedBlocks]
-    exact lp.norm_mono hp fun k ↦ (norm_norm _).le
+  -- The entries of the anonymous `lp` element `w` are its defining sequence by definition: `lp`
+  -- coerces through `Subtype.val` and has no lemma evaluating an anonymous constructor.
+  have hw (j : ℕ) : w j = ∑ k ∈ Finset.Ico (j - L) (j + L), b k := rfl
+  have hb : ‖b‖ ≤ ‖u‖ := by rw [lp.norm_normSeq, norm_weightedBlocks]
   obtain ⟨v, hv, hvn⟩ := exists_toDistr_eq_and_norm_le_of_littlewoodPaleyBlock_eq f' (K • w) hf'
     fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hw]
-      simpa only [norm_weightedBlocks_apply] using hle j
+      simpa only [b, lp.normSeq_apply, norm_weightedBlocks_apply] using hle j
   rw [← ext (hv.trans (MemBesov.toDistr_toBesovSpace _).symm)]
   calc ‖v‖ ≤ ‖K • w‖ := hvn
     _ = K * ‖w‖ := by rw [norm_smul, Real.norm_of_nonneg hK]

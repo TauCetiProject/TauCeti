@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 import TauCeti.Algebra.BigOperators.Group.Finset.Indicator
 import TauCeti.Algebra.BigOperators.Intervals
+import TauCeti.Analysis.Normed.Lp.Basic
 
 /-!
 # Reindexing sequences in `ℓᵖ`
@@ -176,14 +177,15 @@ theorem lp.exists_hasSum_and_norm_le_of_summable [Fact (1 ≤ p)] [CompleteSpace
   have hT (d : ℤ) : ‖T d‖ ≤ c * ‖x‖ * a d := by
     -- Compare with the real sequence of the norms of `z d`.
     have had := ha0 d
-    set n : lp (fun _ : ℕ ↦ ℝ) p := ⟨fun j ↦ ‖(z d : ℕ → G) j‖, (lp.memℓp (z d)).norm⟩
+    set n := lp.normSeq (z d)
     calc ‖T d‖ ≤ ‖(c * a d) • n‖ := lp.norm_mono hp fun j ↦ by
-          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
+          rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, lp.normSeq_apply,
+            Real.norm_of_nonneg (by positivity)]
           exact ht d j
       _ ≤ c * a d * ‖x‖ := by
           rw [lp.norm_const_smul hp, Real.norm_of_nonneg (by positivity)]
           gcongr
-          exact (lp.norm_mono hp fun j ↦ (norm_norm _).le).trans (hz d)
+          exact (lp.norm_normSeq _).le.trans (hz d)
       _ = _ := by ring
   have hTs : Summable T := Summable.of_norm_bounded (ha.mul_left (c * ‖x‖)) hT
   refine ⟨∑' d, T d, fun j ↦ ?_, ?_⟩
