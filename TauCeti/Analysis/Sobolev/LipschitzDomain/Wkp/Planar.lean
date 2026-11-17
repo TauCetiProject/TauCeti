@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Euclidean.Plane
+public import TauCeti.Analysis.Complex.ReImTopology
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Ball.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.HalfDisc.Basic
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.Wkp.ContDiff
@@ -35,10 +36,16 @@ stated for `TauCeti.MemWkpLoc` in `TauCeti.Analysis.Sobolev.Local.Compactness`,
 Finally, for `p > 2`, members of `W^{j+1,p}` have `Cʲ` representatives whose derivatives of order
 at most `j` are Hölder of exponent `1 - 2/p` up to the boundary.
 
+The compactness statement also holds on the translates `{z | |z - x| < r, 0 < Im z}` of the
+half-disc by real points `x`, the upper halves of the discs centred on the real axis, since a
+translation is an affine isometry. These cover the closed upper half-plane near the axis, which is
+how they enter the local compactness statement up to the axis.
+
 ## Main declarations
 
 * `TauCeti.Wkp.isCompactOperator_lowerOrderL_complexBall`,
-  `TauCeti.Wkp.isCompactOperator_lowerOrderL_complexHalfDisc`: Rellich–Kondrachov.
+  `TauCeti.Wkp.isCompactOperator_lowerOrderL_complexHalfDisc`,
+  `TauCeti.Wkp.isCompactOperator_lowerOrderL_ball_upperHalf`: Rellich–Kondrachov.
 * `TauCeti.Wkp.exists_morreyEmbeddingL_complexBall`,
   `TauCeti.Wkp.exists_morreyEmbeddingL_complexHalfDisc`: the Morrey embedding
   `W^{k+1,p} → C^{0,1-2/q}` for `1/p - k/2 ≤ 1/q ≤ 1/p` and `2 < q < ∞`.
@@ -115,6 +122,32 @@ theorem isCompactOperator_lowerOrderL_complexHalfDisc (r : ℝ) (k : ℕ) :
   obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_image_complexHalfDisc r
   exact isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image (L := L)
     Complex.equivRealProdL2Swap hL (isBounded_complexHalfDisc r) k
+
+/-- **Rellich–Kondrachov on a half-disc centred on the real axis.** On the upper half
+`ball x r ∩ {0 < im}` of a disc of `ℂ` centred at a real point `x`, forgetting the highest weak
+derivative is a compact operator `W^{k+1,p} → W^{k,p}` for every `k` and every `1 ≤ p ≤ ∞`. -/
+theorem isCompactOperator_lowerOrderL_ball_upperHalf (x r : ℝ) (k : ℕ) :
+    IsCompactOperator (lowerOrderL (mu := volume) (p := p)
+      (Omega := (⟨ball (x : ℂ) r, isOpen_ball⟩ : Opens ℂ).upperHalf) k) := by
+  obtain ⟨L, hL⟩ := exists_isLipschitzDomainWith_halfDisc r
+  -- In the coordinates `(im z, re z)` the half-disc is the model half-disc translated by `(0, x)`.
+  have himage : Complex.equivRealProdL2Swap ''
+      ((⟨ball (x : ℂ) r, isOpen_ball⟩ : Opens ℂ).upperHalf : Set ℂ) =
+        AffineIsometryEquiv.constVAdd ℝ (WithLp 2 (ℝ × ℝ)) (Complex.equivRealProdL2Swap x) ''
+          (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) := by
+    rw [AffineIsometryEquiv.coe_constVAdd, image_vadd, ← preimage_vadd_neg,
+      Complex.equivRealProdL2Swap.image_eq_preimage_symm]
+    ext y
+    simp only [mem_preimage, Opens.coe_upperHalf, Opens.coe_mk, mem_inter_iff, mem_ball,
+      mem_ofPred_eq, SetLike.mem_coe, mem_halfDisc, vadd_eq_add]
+    rw [dist_eq_norm, ← Complex.equivRealProdL2Swap.norm_map, map_sub,
+      LinearIsometryEquiv.apply_symm_apply, neg_add_eq_sub]
+    simp
+  refine isCompactOperator_lowerOrderL_of_isLipschitzDomainWith_image (L := L)
+    Complex.equivRealProdL2Swap ?_
+    (isBounded_ball.subset fun _ hz => (Opens.mem_upperHalf.1 hz).1) k
+  rw [himage]
+  exact hL.image_affineIsometryEquiv _
 
 /-- **Morrey's embedding on a disc.** On a disc `Metric.ball c r` of `ℂ`, if
 `1/p - k/2 ≤ 1/q ≤ 1/p` with `2 < q < ∞`, every `u ∈ W^{k+1,p}` agrees almost everywhere with a
