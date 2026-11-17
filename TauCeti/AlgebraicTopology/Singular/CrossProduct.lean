@@ -292,6 +292,7 @@ private lemma singularHomologyCross_singularHomology₀Section_map_fst (X Y : To
 `t : 𝟙_ C ⟶ S`, which selects a coefficient of `S`, the cross product `a × t[y]` of a class
 `a ∈ Hₚ(X; R)` with the class of `y` weighted by `t` is the image of `a` under the coefficient map
 `R ≅ R ⊗ 𝟙_ C ⟶ R ⊗ S`, `r ↦ r ⊗ t`, followed by the inclusion `X → X × Y`, `x ↦ (x, y)`. -/
+@[reassoc]
 lemma singularHomologyCross_singularHomology₀Section (X Y : TopCat.{w}) (R S : C) (p : ℕ)
     [PreservesColimitsOfShape WalkingParallelPair
       (tensorLeft (((toSSet.obj X).chainComplex R).homology p))]

@@ -203,8 +203,8 @@ private theorem sphereCrossClass_singularHomology₀Section :
         (TopCat.ofHom Ψ) =
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj R).map
         (TopCat.ofHom ContinuousMap.const') := by
-    rw [reassoc_of% (TopCat.singularHomologyCross_singularHomology₀Section (TopCat.of G)
-      (TopCat.of (BasedMap Sphere2 G Sphere2.north 1)) R R n ⟨1, rfl⟩ e.inv),
+    rw [TopCat.singularHomologyCross_singularHomology₀Section_assoc (TopCat.of G)
+      (TopCat.of (BasedMap Sphere2 G Sphere2.north 1)) R R n ⟨1, rfl⟩ e.inv,
       ← NatTrans.naturality_assoc, ← NatTrans.comp_app_assoc, ← Functor.map_comp, hcoef,
       CategoryTheory.Functor.map_id, NatTrans.id_app, Category.id_comp]
     exact (CategoryTheory.Functor.map_comp _ i (TopCat.ofHom Ψ)).symm.trans (congrArg _ hΨ)
