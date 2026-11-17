@@ -52,6 +52,10 @@ factor, so `(1 + ‖c x‖ ^ 2) ^ r` satisfies the same bounds.
 * `TauCeti.exists_norm_iteratedFDeriv_cutoff_smul_le`: the derivative bounds for a symbol of order
   `m`, such as a bracket power, times a smooth cutoff `χ` localized where `1 + ‖x‖ ^ 2 ≍ R ^ 2` and
   adapted to the scale `R`: the product is `O(R ^ m / R ^ k)` in its `k`-th derivative.
+* `TauCeti.exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow`,
+  `TauCeti.exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow`: symbol estimates of orders
+  `a` and `b` give estimates of order `a + b` for products and `N a` for `N`-th powers, uniformly
+  in a parameter.
 * `TauCeti.one_add_norm_sq_rpow_half_le_one_add_norm_rpow`: for `p ≥ 0`,
   `(1 + ‖x‖ ^ 2) ^ (p / 2) ≤ (1 + ‖x‖) ^ p`.
 * `TauCeti.exists_one_add_norm_smul_sq_rpow_le`,
@@ -281,6 +285,71 @@ theorem one_add_norm_smul_sq_rpow_half_le {c d t : ℝ} (hc : 0 < c) (ht : 1 ≤
   have hhi := mul_self_le_mul_self (by positivity) (mul_le_mul_of_nonneg_left hζ.2 ht0.le)
   exact one_add_norm_sq_rpow_half_le (by positivity) ht0
     ⟨by rw [htζ]; nlinarith, by rw [htζ]; nlinarith [one_le_pow₀ (n := 2) ht]⟩ u
+
+/-- **Symbol estimates for products, uniformly in a parameter.** If the first `k` derivatives of
+two families of `C^k` functions with values in a normed algebra satisfy the symbol estimates
+`‖D^i f t x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((a - i) / 2)` and `‖D^i g t x‖ ≤ C (1 + ‖x‖ ^ 2) ^ ((b - i) / 2)`
+of orders `a` and `b`, with constants independent of the parameter `t`, then by the Leibniz rule
+the `k`-th derivative of the product `f t * g t` satisfies the estimate of order `a + b`, again
+uniformly in `t`. -/
+theorem exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
+    [NormedAlgebra ℝ 𝔸] {f g : ι → E → 𝔸} {k : ℕ} (hf : ∀ t, ContDiff ℝ k (f t))
+    (hg : ∀ t, ContDiff ℝ k (g t)) {a b : ℝ}
+    (hfk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (hgk : ∀ i ≤ k, ∃ C, ∀ t x, ‖iteratedFDeriv ℝ i (g t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((b - i) / 2)) :
+    ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x * g t x) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+  choose! A hA using hfk
+  choose! B hB using hgk
+  refine ⟨∑ i ∈ Finset.range (k + 1), k.choose i * |A i| * |B (k - i)|, fun t x ↦ ?_⟩
+  refine (norm_iteratedFDeriv_mul_le (hf t) (hg t) x le_rfl).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun i hi ↦ ?_
+  -- The `i`-th Leibniz term carries `D^i f` and `D^(k - i) g`, whose orders add up to
+  -- `a + b - k`.
+  have hik : i ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+  have hw : 0 < 1 + ‖x‖ ^ 2 := by positivity
+  have hexp : (1 + ‖x‖ ^ 2) ^ ((a - i) / 2) * (1 + ‖x‖ ^ 2) ^ ((b - (k - i : ℕ)) / 2) =
+      (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+    rw [← Real.rpow_add hw, Nat.cast_sub hik]
+    ring_nf
+  calc (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (f t) x‖ * ‖iteratedFDeriv ℝ (k - i) (g t) x‖
+      ≤ k.choose i * (|A i| * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2)) *
+          (|B (k - i)| * (1 + ‖x‖ ^ 2) ^ ((b - (k - i : ℕ)) / 2)) := by
+        gcongr
+        · exact (hA i hik t x).trans (by gcongr; exact le_abs_self _)
+        · exact (hB (k - i) (Nat.sub_le k i) t x).trans (by gcongr; exact le_abs_self _)
+    _ = k.choose i * |A i| * |B (k - i)| * (1 + ‖x‖ ^ 2) ^ ((a + b - k) / 2) := by
+        rw [← hexp]
+        ring
+
+/-- **Symbol estimates for powers, uniformly in a parameter.** If a family of smooth functions
+with values in a normed algebra satisfies the symbol estimates of order `a`, with constants
+independent of the parameter `t`, then its `N`-th powers satisfy those of order `N a`. -/
+theorem exists_norm_iteratedFDeriv_pow_le_one_add_norm_sq_rpow {ι 𝔸 : Type*} [NormedRing 𝔸]
+    [NormOneClass 𝔸] [NormedAlgebra ℝ 𝔸] {f : ι → E → 𝔸} (hf : ∀ t, ContDiff ℝ ∞ (f t)) {a : ℝ}
+    (hfk : ∀ i : ℕ, ∃ C, ∀ t x,
+      ‖iteratedFDeriv ℝ i (f t) x‖ ≤ C * (1 + ‖x‖ ^ 2) ^ ((a - i) / 2))
+    (N k : ℕ) :
+    ∃ C, ∀ t x, ‖iteratedFDeriv ℝ k (fun x ↦ f t x ^ N) x‖ ≤
+      C * (1 + ‖x‖ ^ 2) ^ ((N * a - k) / 2) := by
+  induction N generalizing k with
+  | zero =>
+    refine ⟨1, fun t x ↦ ?_⟩
+    rcases eq_or_ne k 0 with rfl | hk
+    · simp
+    · simp only [pow_zero, iteratedFDeriv_const_of_ne hk, Pi.zero_apply, norm_zero, one_mul]
+      positivity
+  | succ N ih =>
+    obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_mul_le_one_add_norm_sq_rpow
+      (fun t ↦ ((hf t).pow N).of_le (mod_cast le_top)) (fun t ↦ (hf t).of_le (mod_cast le_top))
+      (fun i _ ↦ ih i) (fun i _ ↦ hfk i) (k := k)
+    refine ⟨C, fun t x ↦ ?_⟩
+    simp only [pow_succ]
+    refine (hC t x).trans_eq ?_
+    congr 2
+    push_cast
+    ring
 
 end NormedSpace
 
