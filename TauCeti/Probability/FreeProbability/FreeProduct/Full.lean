@@ -8,8 +8,6 @@ module
 public import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Analysis.InnerProductSpace.l2Space
-public import Mathlib.Analysis.Normed.Module.Seminorm.Basic
-public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.CStarAlgebra.Completion
 public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.LinearAlgebra.FreeProduct.Star
@@ -38,11 +36,11 @@ representations (`FullFreeProduct.norm_representation_le_seminorm`) and hence al
 (`FullFreeProduct.norm_starAlgHom_le_seminorm`). On each algebraic element it is finite by
 structural induction from contractivity of the factor restrictions.
 
-Equipping the type synonym `FullAlgebraicFreeProduct A` with this C⋆-seminorm and taking its
-Hausdorff uniform completion yields the *full unital C⋆-free product* `FullFreeProduct A`, a unital
-C⋆-algebra in universe `max u v`. It satisfies the coproduct universal property
-`FullFreeProduct.lift : ((i : I) → A i →⋆ₐ[ℂ] B) ≃ (FullFreeProduct A →⋆ₐ[ℂ] B)` for any unital
-C⋆-algebra `B` in any universe `w`.
+Taking the C⋆-completion `TauCeti.CStarSeminorm.Completion` of `LinearAlgebra.FreeProduct ℂ A` in
+the C⋆-seminorm `FullFreeProduct.seminorm A` yields the *full unital C⋆-free product*
+`FullFreeProduct A`, a unital C⋆-algebra in universe `max u v`. It satisfies the coproduct universal
+property `FullFreeProduct.lift : ((i : I) → A i →⋆ₐ[ℂ] B) ≃ (FullFreeProduct A →⋆ₐ[ℂ] B)` for any
+unital C⋆-algebra `B` in any universe `w`.
 
 When every factor `A i` is nontrivial, no faithful state on any `A i` is required to embed the
 factors isometrically: for a given `a : A i₀`, choosing a norm-attaining state on `star a * a` at
@@ -54,18 +52,17 @@ injective (`FullFreeProduct.isometry_factor`, `FullFreeProduct.factor_injective`
 The empty full C⋆-free product is canonically `⋆`-isomorphic to `ℂ`
 (`FullFreeProduct.isEmptyEquiv`). Factorwise `⋆`-homomorphisms, index relabelings, sigma
 associativity, and fiber grouping lift to `FullFreeProduct.map`, `FullFreeProduct.mapEquiv`,
-`FullFreeProduct.reindexEquiv`, `FullFreeProduct.sigmaEquiv`, and `FullFreeProduct.fiberEquiv`.
-Given normalized positive functionals `φ i` on the factors, `FullFreeProduct.toReduced φ hφ` is a
-surjective unital `⋆`-homomorphism onto `ReducedFreeProduct.algebra φ hφ`, exhibiting the reduced
-C⋆-free product as a quotient of `FullFreeProduct A` (`FullFreeProduct.quotientKerToReducedEquiv`)
-and pulling the vacuum state and freeness of the factors back to `FullFreeProduct A`.
+`FullFreeProduct.reindexHom`, `FullFreeProduct.reindexEquiv`, `FullFreeProduct.sigmaEquiv`, and
+`FullFreeProduct.fiberEquiv`. Given normalized positive functionals `φ i` on the factors,
+`FullFreeProduct.toReduced φ hφ` is a surjective unital `⋆`-homomorphism onto
+`ReducedFreeProduct.algebra φ hφ`, exhibiting the reduced C⋆-free product as a quotient of
+`FullFreeProduct A` (`FullFreeProduct.quotientKerToReducedEquiv`) and pulling the vacuum state and
+freeness of the factors back to `FullFreeProduct A`.
 
 ## Main definitions
 
 * `TauCeti.FullFreeProduct.seminorm`: the universal C⋆-seminorm on
-  `LinearAlgebra.FreeProduct ℂ A`.
-* `TauCeti.FullAlgebraicFreeProduct`: type synonym of `LinearAlgebra.FreeProduct ℂ A` carrying the
-  universal C⋆-seminorm.
+  `LinearAlgebra.FreeProduct ℂ A`, bundled as a `TauCeti.CStarSeminorm`.
 * `TauCeti.FullFreeProduct`: the full unital C⋆-free product of `A`, a unital C⋆-algebra.
 * `TauCeti.FullFreeProduct.ofAlgebraic` and `TauCeti.FullFreeProduct.factor`: the canonical dense
   unital `⋆`-homomorphism from `LinearAlgebra.FreeProduct ℂ A` and the canonical factor maps.
@@ -73,9 +70,10 @@ and pulling the vacuum state and freeness of the factors back to `FullFreeProduc
   `TauCeti.FullFreeProduct.lift`: universal properties with respect to unital C⋆-algebras and
   Hilbert-space representations in any universe.
 * `TauCeti.FullFreeProduct.isEmptyEquiv`, `TauCeti.FullFreeProduct.map`,
-  `TauCeti.FullFreeProduct.mapEquiv`, `TauCeti.FullFreeProduct.reindexEquiv`,
-  `TauCeti.FullFreeProduct.sigmaEquiv`, and `TauCeti.FullFreeProduct.fiberEquiv`: empty product,
-  functoriality, relabeling, and associativity/grouping.
+  `TauCeti.FullFreeProduct.mapEquiv`, `TauCeti.FullFreeProduct.reindexHom`,
+  `TauCeti.FullFreeProduct.reindexEquiv`, `TauCeti.FullFreeProduct.sigmaEquiv`, and
+  `TauCeti.FullFreeProduct.fiberEquiv`: empty product, functoriality, relabeling, and
+  associativity/grouping.
 * `TauCeti.FullFreeProduct.reducedRepresentation`, `TauCeti.FullFreeProduct.toReduced`,
   `TauCeti.FullFreeProduct.quotientKerToReducedEquiv`, and `TauCeti.FullFreeProduct.state`:
   extended reduced representation, canonical quotient onto `ReducedFreeProduct.algebra φ hφ`, and
@@ -108,7 +106,7 @@ public section
 
 noncomputable section
 
-open LinearAlgebra.FreeProduct UniformSpace
+open LinearAlgebra.FreeProduct
 open scoped ComplexOrder InnerProductSpace
 
 namespace TauCeti
@@ -168,71 +166,31 @@ private theorem bddAbove_representationSeminorms : BddAbove (representationSemin
   rintro _ ⟨_, ⟨ι, π, rfl⟩, rfl⟩ x
   exact hbound x ι π
 
-/-- The universal C⋆-seminorm on `LinearAlgebra.FreeProduct ℂ A`: the supremum of `‖π x‖` over all
-unital `⋆`-representations `π` on `lp (fun _ : ι => ℂ) 2` with `ι : Type (max u v)`. -/
-def seminorm : Seminorm ℂ (LinearAlgebra.FreeProduct ℂ A) :=
+private def seminormAux : Seminorm ℂ (LinearAlgebra.FreeProduct ℂ A) :=
   sSup (representationSeminorms A)
 
-section SeminormAPI
-
-variable {A}
-
-theorem seminorm_apply (x : LinearAlgebra.FreeProduct ℂ A) :
-    seminorm A x =
-      sSup {r : ℝ | ∃ (ι : Type (max u v))
-        (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
-          (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2)), ‖π x‖ = r} := by
-  rw [seminorm, Seminorm.sSup_apply (bddAbove_representationSeminorms A), iSup]
-  congr 1
-  ext r
-  simp [representationSeminorms]
-
-/-- Every unital Hilbert-space representation of `LinearAlgebra.FreeProduct ℂ A`, on a Hilbert space
-in *any* universe `w`, is bounded by `FullFreeProduct.seminorm A`. -/
-theorem norm_representation_le_seminorm {H : Type w} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H]
-    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H))
+private theorem norm_lp_le_seminormAux {A : I → Type v} [∀ i, CStarAlgebra (A i)]
+    {ι : Type (max u v)}
+    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
+      (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2))
     (x : LinearAlgebra.FreeProduct ℂ A) :
-    ‖π x‖ ≤ seminorm A x := by
-  refine (π x).opNorm_le_bound (apply_nonneg (seminorm A) x) fun ξ => ?_
-  obtain ⟨ι, V, hV, η, rfl⟩ :=
-    StarAlgHom.exists_linearIsometry_mapsTo_mem_range.{max u v, _, _, _} π ξ
+    ‖π x‖ ≤ seminormAux A x := by
   let p : Seminorm ℂ (LinearAlgebra.FreeProduct ℂ A) :=
     (normSeminorm ℂ (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2)).comp
-      (π.restrictLinearIsometry hV : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ]
+      (π : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ]
         (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2))
-  have hp : p ∈ representationSeminorms A := ⟨ι, π.restrictLinearIsometry hV, rfl⟩
-  have hle : p ≤ seminorm A := le_csSup (bddAbove_representationSeminorms A) hp
-  have hι : ‖π.restrictLinearIsometry hV x‖ ≤ seminorm A x := hle x
-  rw [← π.restrictLinearIsometry_apply hV x η, V.norm_map, V.norm_map]
-  exact (π.restrictLinearIsometry hV x).le_of_opNorm_le hι η
+  have hp : p ∈ representationSeminorms A := ⟨ι, π, rfl⟩
+  have hle : p ≤ seminormAux A := le_csSup (bddAbove_representationSeminorms A) hp
+  exact hle x
 
-/-- Every unital `⋆`-homomorphism from `LinearAlgebra.FreeProduct ℂ A` into any unital C⋆-algebra
-`B` (in any universe `w`) is bounded by `FullFreeProduct.seminorm A`. -/
-theorem norm_starAlgHom_le_seminorm {B : Type w} [CStarAlgebra B]
-    (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) (x : LinearAlgebra.FreeProduct ℂ A) :
-    ‖ρ x‖ ≤ seminorm A x := by
-  refine TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate.2 fun H _ _ _ σ hσ => ?_
-  have hσ1 : σ 1 = 1 := hσ.ext fun b => by rw [← map_mul, one_mul, one_mul]
-  let σu : B →⋆ₐ[ℂ] (H →L[ℂ] H) :=
-    { toFun := σ
-      map_one' := hσ1
-      map_mul' := map_mul σ
-      map_zero' := map_zero σ
-      map_add' := map_add σ
-      commutes' c := by
-        rw [Algebra.algebraMap_eq_smul_one, map_smul, hσ1, Algebra.algebraMap_eq_smul_one]
-      map_star' := map_star σ }
-  exact norm_representation_le_seminorm (σu.comp ρ) x
-
-/-- Characterization of `seminorm A x ≤ c` via `ℓ²` representations in universe `max u v`. -/
-theorem seminorm_le_iff_lp {x : LinearAlgebra.FreeProduct ℂ A} {c : ℝ} :
-    seminorm A x ≤ c ↔
+private theorem seminormAux_le_iff_lp {A : I → Type v} [∀ i, CStarAlgebra (A i)]
+    {x : LinearAlgebra.FreeProduct ℂ A} {c : ℝ} :
+    seminormAux A x ≤ c ↔
       ∀ (ι : Type (max u v))
         (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
           (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2)), ‖π x‖ ≤ c :=
-  ⟨fun h ι π => (norm_representation_le_seminorm π x).trans h, fun h => by
-    rw [seminorm, Seminorm.sSup_apply (bddAbove_representationSeminorms A)]
+  ⟨fun h ι π => (norm_lp_le_seminormAux π x).trans h, fun h => by
+    rw [seminormAux, Seminorm.sSup_apply (bddAbove_representationSeminorms A)]
     have hc : 0 ≤ c := by
       let π₀ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
           (lp (fun _ : PEmpty.{max u v + 1} => ℂ) 2 →L[ℂ]
@@ -247,6 +205,72 @@ theorem seminorm_le_iff_lp {x : LinearAlgebra.FreeProduct ℂ A} {c : ℝ} :
             map_star' _ := Subsingleton.elim _ _ }
       exact (norm_nonneg _).trans (h PEmpty.{max u v + 1} π₀)
     exact Real.iSup_le (fun ⟨_, ι, π, hp⟩ => hp ▸ h ι π) hc⟩
+
+/-- The universal C⋆-seminorm on `LinearAlgebra.FreeProduct ℂ A`: the supremum of `‖π x‖` over all
+unital `⋆`-representations `π` on `lp (fun _ : ι => ℂ) 2` with `ι : Type (max u v)`. -/
+def seminorm : CStarSeminorm (LinearAlgebra.FreeProduct ℂ A) where
+  __ := seminormAux A
+  map_mul_le' x y := seminormAux_le_iff_lp.2 fun ι π => by
+    rw [map_mul]
+    exact (norm_mul_le _ _).trans (mul_le_mul (norm_lp_le_seminormAux π x)
+      (norm_lp_le_seminormAux π y) (norm_nonneg _) (apply_nonneg (seminormAux A) x))
+  mul_self_le_star_mul_self' x := by
+    have hsqrt : seminormAux A x ≤ √(seminormAux A (star x * x)) := by
+      refine seminormAux_le_iff_lp.2 fun ι π => ?_
+      refine Real.le_sqrt_of_sq_le ?_
+      rw [sq, ← CStarRing.norm_star_mul_self, ← map_star, ← map_mul]
+      exact norm_lp_le_seminormAux π (star x * x)
+    calc seminormAux A x * seminormAux A x
+        ≤ √(seminormAux A (star x * x)) * √(seminormAux A (star x * x)) :=
+          mul_le_mul hsqrt hsqrt (apply_nonneg _ x) (Real.sqrt_nonneg _)
+      _ = seminormAux A (star x * x) := Real.mul_self_sqrt (apply_nonneg _ _)
+
+section SeminormAPI
+
+variable {A}
+
+theorem seminorm_apply (x : LinearAlgebra.FreeProduct ℂ A) :
+    seminorm A x =
+      sSup {r : ℝ | ∃ (ι : Type (max u v))
+        (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
+          (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2)), ‖π x‖ = r} := by
+  change seminormAux A x = _
+  rw [seminormAux, Seminorm.sSup_apply (bddAbove_representationSeminorms A), iSup]
+  congr 1
+  ext r
+  simp [representationSeminorms]
+
+/-- Every unital Hilbert-space representation of `LinearAlgebra.FreeProduct ℂ A`, on a Hilbert space
+in *any* universe `w`, is bounded by `FullFreeProduct.seminorm A`. -/
+theorem norm_representation_le_seminorm {H : Type w} [NormedAddCommGroup H]
+    [InnerProductSpace ℂ H] [CompleteSpace H]
+    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H))
+    (x : LinearAlgebra.FreeProduct ℂ A) :
+    ‖π x‖ ≤ seminorm A x := by
+  refine (π x).opNorm_le_bound (apply_nonneg (seminorm A) x) fun ξ => ?_
+  obtain ⟨ι, V, hV, η, rfl⟩ :=
+    StarAlgHom.exists_linearIsometry_mapsTo_mem_range.{max u v, _, _, _} π ξ
+  have hι : ‖π.restrictLinearIsometry hV x‖ ≤ seminorm A x :=
+    norm_lp_le_seminormAux (π.restrictLinearIsometry hV) x
+  rw [← π.restrictLinearIsometry_apply hV x η, V.norm_map, V.norm_map]
+  exact (π.restrictLinearIsometry hV x).le_of_opNorm_le hι η
+
+/-- Every unital `⋆`-homomorphism from `LinearAlgebra.FreeProduct ℂ A` into any unital C⋆-algebra
+`B` (in any universe `w`) is bounded by `FullFreeProduct.seminorm A`. -/
+theorem norm_starAlgHom_le_seminorm {B : Type w} [CStarAlgebra B]
+    (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) (x : LinearAlgebra.FreeProduct ℂ A) :
+    ‖ρ x‖ ≤ seminorm A x :=
+  TauCeti.CStarAlgebra.norm_le_iff_forall_isNondegenerate.2 fun _ _ _ _ _ hσ => by
+    simpa only [StarAlgHom.comp_apply, hσ.toStarAlgHom_apply] using
+      norm_representation_le_seminorm (hσ.toStarAlgHom.comp ρ) x
+
+/-- Characterization of `seminorm A x ≤ c` via `ℓ²` representations in universe `max u v`. -/
+theorem seminorm_le_iff_lp {x : LinearAlgebra.FreeProduct ℂ A} {c : ℝ} :
+    seminorm A x ≤ c ↔
+      ∀ (ι : Type (max u v))
+        (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ]
+          (lp (fun _ : ι => ℂ) 2 →L[ℂ] lp (fun _ : ι => ℂ) 2)), ‖π x‖ ≤ c :=
+  seminormAux_le_iff_lp
 
 /-- Characterization of `seminorm A x ≤ c` via all Hilbert-space representations in universe
 `max u v`. -/
@@ -265,35 +289,6 @@ theorem seminorm_le_iff {x : LinearAlgebra.FreeProduct ℂ A} {c : ℝ} :
         (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B), ‖ρ x‖ ≤ c :=
   ⟨fun h _ _ ρ => (norm_starAlgHom_le_seminorm ρ x).trans h,
     fun h => seminorm_le_iff_lp.2 fun _ π => h _ π⟩
-
-theorem seminorm_mul_le (x y : LinearAlgebra.FreeProduct ℂ A) :
-    seminorm A (x * y) ≤ seminorm A x * seminorm A y := by
-  refine seminorm_le_iff_lp.2 fun ι π => ?_
-  rw [map_mul]
-  exact (norm_mul_le _ _).trans (mul_le_mul (norm_representation_le_seminorm π x)
-    (norm_representation_le_seminorm π y) (norm_nonneg _) (apply_nonneg (seminorm A) x))
-
-@[simp]
-theorem seminorm_star (x : LinearAlgebra.FreeProduct ℂ A) :
-    seminorm A (star x) = seminorm A x := by
-  have hle (y : LinearAlgebra.FreeProduct ℂ A) : seminorm A (star y) ≤ seminorm A y := by
-    refine seminorm_le_iff_lp.2 fun ι π => ?_
-    rw [map_star, ContinuousLinearMap.star_eq_adjoint, LinearIsometryEquiv.norm_map]
-    exact norm_representation_le_seminorm π y
-  exact le_antisymm (hle x) (by simpa using hle (star x))
-
-theorem seminorm_star_mul_self (x : LinearAlgebra.FreeProduct ℂ A) :
-    seminorm A (star x * x) = seminorm A x * seminorm A x := by
-  refine le_antisymm ((seminorm_mul_le _ _).trans_eq (by rw [seminorm_star])) ?_
-  have hsqrt : seminorm A x ≤ √(seminorm A (star x * x)) := by
-    refine seminorm_le_iff_lp.2 fun ι π => ?_
-    refine Real.le_sqrt_of_sq_le ?_
-    rw [sq, ← CStarRing.norm_star_mul_self, ← map_star, ← map_mul]
-    exact norm_representation_le_seminorm π (star x * x)
-  calc seminorm A x * seminorm A x
-      ≤ √(seminorm A (star x * x)) * √(seminorm A (star x * x)) :=
-        mul_le_mul hsqrt hsqrt (apply_nonneg _ x) (Real.sqrt_nonneg _)
-    _ = seminorm A (star x * x) := Real.mul_self_sqrt (apply_nonneg _ _)
 
 theorem seminorm_one_le : seminorm A 1 ≤ 1 :=
   seminorm_le_iff_lp.2 fun _ π => by
@@ -351,173 +346,23 @@ end SeminormAPI
 
 end FullFreeProduct
 
-/-- Type synonym of `LinearAlgebra.FreeProduct ℂ A` equipped with the universal C⋆-seminorm
-`FullFreeProduct.seminorm A`. Its Hausdorff uniform completion is `FullFreeProduct A`. -/
-@[expose] def FullAlgebraicFreeProduct : Type (max u v) :=
-  LinearAlgebra.FreeProduct ℂ A
-
-namespace FullAlgebraicFreeProduct
-
-variable {A}
-
-/-- Regard an algebraic free-product element as an element of `FullAlgebraicFreeProduct A`. -/
-def toFull : LinearAlgebra.FreeProduct ℂ A ≃ FullAlgebraicFreeProduct A :=
-  Equiv.refl _
-
-/-- Underlying element of `LinearAlgebra.FreeProduct ℂ A`. -/
-def ofFull : FullAlgebraicFreeProduct A ≃ LinearAlgebra.FreeProduct ℂ A :=
-  Equiv.refl _
-
-@[simp]
-theorem toFull_symm : (toFull (A := A)).symm = ofFull :=
-  (rfl)
-
-@[simp]
-theorem ofFull_symm : (ofFull (A := A)).symm = toFull :=
-  (rfl)
-
-@[simp]
-theorem ofFull_toFull (x : LinearAlgebra.FreeProduct ℂ A) : ofFull (toFull x) = x :=
-  (rfl)
-
-@[simp]
-theorem toFull_ofFull (x : FullAlgebraicFreeProduct A) : toFull (ofFull x) = x :=
-  (rfl)
-
-instance : Ring (FullAlgebraicFreeProduct A) :=
-  inferInstanceAs (Ring (LinearAlgebra.FreeProduct ℂ A))
-
-instance : Algebra ℂ (FullAlgebraicFreeProduct A) :=
-  inferInstanceAs (Algebra ℂ (LinearAlgebra.FreeProduct ℂ A))
-
-instance : StarRing (FullAlgebraicFreeProduct A) :=
-  inferInstanceAs (StarRing (LinearAlgebra.FreeProduct ℂ A))
-
-instance : StarModule ℂ (FullAlgebraicFreeProduct A) :=
-  inferInstanceAs (StarModule ℂ (LinearAlgebra.FreeProduct ℂ A))
-
-@[simp] theorem toFull_zero : toFull (0 : LinearAlgebra.FreeProduct ℂ A) = 0 := (rfl)
-@[simp] theorem toFull_one : toFull (1 : LinearAlgebra.FreeProduct ℂ A) = 1 := (rfl)
-@[simp] theorem toFull_add (x y : LinearAlgebra.FreeProduct ℂ A) :
-    toFull (x + y) = toFull x + toFull y := (rfl)
-@[simp] theorem toFull_neg (x : LinearAlgebra.FreeProduct ℂ A) :
-    toFull (-x) = -toFull x := (rfl)
-@[simp] theorem toFull_sub (x y : LinearAlgebra.FreeProduct ℂ A) :
-    toFull (x - y) = toFull x - toFull y := (rfl)
-@[simp] theorem toFull_mul (x y : LinearAlgebra.FreeProduct ℂ A) :
-    toFull (x * y) = toFull x * toFull y := (rfl)
-@[simp] theorem toFull_smul (c : ℂ) (x : LinearAlgebra.FreeProduct ℂ A) :
-    toFull (c • x) = c • toFull x := (rfl)
-@[simp] theorem toFull_star (x : LinearAlgebra.FreeProduct ℂ A) :
-    toFull (star x) = star (toFull x) := (rfl)
-
-@[simp] theorem ofFull_zero : ofFull (0 : FullAlgebraicFreeProduct A) = 0 := (rfl)
-@[simp] theorem ofFull_one : ofFull (1 : FullAlgebraicFreeProduct A) = 1 := (rfl)
-@[simp] theorem ofFull_add (x y : FullAlgebraicFreeProduct A) :
-    ofFull (x + y) = ofFull x + ofFull y := (rfl)
-@[simp] theorem ofFull_neg (x : FullAlgebraicFreeProduct A) :
-    ofFull (-x) = -ofFull x := (rfl)
-@[simp] theorem ofFull_sub (x y : FullAlgebraicFreeProduct A) :
-    ofFull (x - y) = ofFull x - ofFull y := (rfl)
-@[simp] theorem ofFull_mul (x y : FullAlgebraicFreeProduct A) :
-    ofFull (x * y) = ofFull x * ofFull y := (rfl)
-@[simp] theorem ofFull_smul (c : ℂ) (x : FullAlgebraicFreeProduct A) :
-    ofFull (c • x) = c • ofFull x := (rfl)
-@[simp] theorem ofFull_star (x : FullAlgebraicFreeProduct A) :
-    ofFull (star x) = star (ofFull x) := (rfl)
-
-variable (A) in
-/-- `FullAlgebraicFreeProduct.toFull` as a unital `⋆`-algebra equivalence. -/
-def toFullStarAlgEquiv : LinearAlgebra.FreeProduct ℂ A ≃⋆ₐ[ℂ] FullAlgebraicFreeProduct A where
-  __ := toFull
-  map_mul' _ _ := (rfl)
-  map_add' _ _ := (rfl)
-  map_smul' _ _ := (rfl)
-  map_star' _ := (rfl)
-
-@[simp]
-theorem toFullStarAlgEquiv_apply (x : LinearAlgebra.FreeProduct ℂ A) :
-    toFullStarAlgEquiv A x = toFull x :=
-  (rfl)
-
-@[simp]
-theorem toFullStarAlgEquiv_symm_apply (x : FullAlgebraicFreeProduct A) :
-    (toFullStarAlgEquiv A).symm x = ofFull x :=
-  (rfl)
-
-instance : SeminormedAddCommGroup (FullAlgebraicFreeProduct A) :=
-  @AddGroupSeminorm.toSeminormedAddCommGroup (FullAlgebraicFreeProduct A) _
-    (FullFreeProduct.seminorm A).toAddGroupSeminorm
-
-@[simp]
-theorem norm_toFull (x : LinearAlgebra.FreeProduct ℂ A) :
-    ‖toFull x‖ = FullFreeProduct.seminorm A x :=
-  (rfl)
-
-theorem norm_def (x : FullAlgebraicFreeProduct A) :
-    ‖x‖ = FullFreeProduct.seminorm A (ofFull x) :=
-  (rfl)
-
-instance : SeminormedRing (FullAlgebraicFreeProduct A) where
-  __ : SeminormedAddCommGroup (FullAlgebraicFreeProduct A) := inferInstance
-  __ : Ring (FullAlgebraicFreeProduct A) := inferInstance
-  norm_mul_le x y := by
-    simpa only [norm_def, ofFull_mul] using
-      FullFreeProduct.seminorm_mul_le (ofFull x) (ofFull y)
-
-instance : NormedAlgebra ℂ (FullAlgebraicFreeProduct A) where
-  __ : Algebra ℂ (FullAlgebraicFreeProduct A) := inferInstance
-  norm_smul_le c x := by
-    simp only [norm_def, ofFull_smul]
-    exact (map_smul_eq_mul _ _ _).le
-
-instance : NormedStarGroup (FullAlgebraicFreeProduct A) where
-  norm_star_le x := by
-    simp only [norm_def, ofFull_star, FullFreeProduct.seminorm_star, le_refl]
-
-instance [∀ i, Nontrivial (A i)] : NormOneClass (FullAlgebraicFreeProduct A) where
-  norm_one := FullFreeProduct.seminorm_one
-
-theorem norm_star_mul_self (x : FullAlgebraicFreeProduct A) : ‖star x * x‖ = ‖x‖ * ‖x‖ := by
-  simpa only [norm_def, ofFull_mul, ofFull_star] using
-    FullFreeProduct.seminorm_star_mul_self (ofFull x)
-
-end FullAlgebraicFreeProduct
-
 /-- The full unital C⋆-free product `*_{i : I} A i` of a family of unital C⋆-algebras `A i`: the
-Hausdorff completion of `LinearAlgebra.FreeProduct ℂ A` in its universal C⋆-seminorm. -/
+Hausdorff C⋆-completion of `LinearAlgebra.FreeProduct ℂ A` in its universal C⋆-seminorm. -/
 @[expose] def FullFreeProduct : Type (max u v) :=
-  Completion (FullAlgebraicFreeProduct A)
+  (FullFreeProduct.seminorm A).Completion
 
 namespace FullFreeProduct
 
-open FullAlgebraicFreeProduct
-
-instance : CStarAlgebra (Completion (FullAlgebraicFreeProduct A)) where
-  norm_smul_le := norm_smul_le
-  toCStarRing := Completion.cstarRing fun x => (FullAlgebraicFreeProduct.norm_star_mul_self x).ge
-
 instance : CStarAlgebra (FullFreeProduct A) :=
-  inferInstanceAs (CStarAlgebra (Completion (FullAlgebraicFreeProduct A)))
+  inferInstanceAs (CStarAlgebra (seminorm A).Completion)
 
 instance [∀ i, Nontrivial (A i)] : NormOneClass (FullFreeProduct A) :=
-  inferInstanceAs (NormOneClass (Completion (FullAlgebraicFreeProduct A)))
+  (seminorm A).normOneClass_completion seminorm_one
 
 /-- The canonical unital `⋆`-algebra homomorphism from the algebraic free product into the full
 C⋆-free product, with dense range. -/
-def ofAlgebraic : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] FullFreeProduct A where
-  toFun x := (toFull x : Completion (FullAlgebraicFreeProduct A))
-  map_one' := by
-    rw [toFull_one]
-    exact Completion.coe_one _
-  map_mul' x y := Completion.coe_mul (toFull x) (toFull y)
-  map_zero' := Completion.coe_zero
-  map_add' x y := Completion.coe_add (toFull x) (toFull y)
-  commutes' c := by
-    rw [Algebra.algebraMap_eq_smul_one, toFull_smul, toFull_one, Completion.coe_smul,
-      Completion.coe_one, ← Algebra.algebraMap_eq_smul_one]
-    rfl
-  map_star' x := Completion.coe_star (toFull x)
+def ofAlgebraic : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] FullFreeProduct A :=
+  (seminorm A).of
 
 section CoreAPI
 
@@ -526,18 +371,18 @@ variable {A}
 @[simp]
 theorem norm_ofAlgebraic (x : LinearAlgebra.FreeProduct ℂ A) :
     ‖ofAlgebraic A x‖ = seminorm A x :=
-  Completion.norm_coe (toFull x)
+  (seminorm A).norm_of x
 
 /-- The image of the algebraic free product is norm dense in `FullFreeProduct A`. -/
 theorem denseRange_ofAlgebraic : DenseRange (ofAlgebraic A) :=
-  Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
+  (seminorm A).denseRange_of
 
 /-- Closed properties on `FullFreeProduct A` follow from their restriction to
 `LinearAlgebra.FreeProduct ℂ A`. -/
 @[elab_as_elim]
 theorem induction_on {p : FullFreeProduct A → Prop} (x : FullFreeProduct A)
     (hp : IsClosed {x | p x}) (ih : ∀ a, p (ofAlgebraic A a)) : p x :=
-  Completion.induction_on (p := p) x hp fun a => ih (ofFull a)
+  CStarSeminorm.induction_on x hp ih
 
 /-- The canonical unital `⋆`-homomorphism from the `i`-th factor C⋆-algebra into
 `FullFreeProduct A`. -/
@@ -552,6 +397,11 @@ theorem factor_apply (i : I) (a : A i) : factor i a = ofAlgebraic A (ι ℂ A i 
 @[simp]
 theorem ofAlgebraic_comp_ιStar (i : I) : (ofAlgebraic A).comp (ιStar ℂ A i) = factor i :=
   (rfl)
+
+@[simp]
+theorem factor_toAlgHom (i : I) :
+    (factor (A := A) i).toAlgHom = (ofAlgebraic A).toAlgHom.comp (ι ℂ A i) :=
+  AlgHom.ext fun a => factor_apply i a
 
 theorem norm_factor_le (i : I) (a : A i) : ‖factor (A := A) i a‖ ≤ ‖a‖ :=
   NonUnitalStarAlgHom.norm_apply_le (factor i).toNonUnitalStarAlgHom a
@@ -620,16 +470,14 @@ theorem nontrivial_iff : Nontrivial (FullFreeProduct A) ↔ ∀ i, Nontrivial (A
 theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
     [Module ℂ E] {S T : FullFreeProduct A →L[ℂ] E}
     (h : ∀ a, S (ofAlgebraic A a) = T (ofAlgebraic A a)) : S = T :=
-  ContinuousLinearMap.ext fun x => induction_on x (isClosed_eq S.continuous T.continuous) h
+  CStarSeminorm.continuousLinearMap_ext h
 
-open scoped _root_.CStarAlgebra in
 /-- Unital `⋆`-homomorphisms from `FullFreeProduct A` into a C⋆-algebra are determined on
 `ofAlgebraic A`. -/
 theorem starAlgHom_ext_ofAlgebraic {B : Type w} [CStarAlgebra B]
     {Φ Ψ : FullFreeProduct A →⋆ₐ[ℂ] B} (h : Φ.comp (ofAlgebraic A) = Ψ.comp (ofAlgebraic A)) :
     Φ = Ψ :=
-  StarAlgHom.ext fun x =>
-    induction_on x (isClosed_eq (map_continuous Φ) (map_continuous Ψ)) fun a => congr($h a)
+  CStarSeminorm.starAlgHom_ext h
 
 /-- Unital `⋆`-homomorphisms from `FullFreeProduct A` into a C⋆-algebra are determined by their
 restrictions to the factors `factor i`. -/
@@ -639,59 +487,23 @@ theorem starAlgHom_ext {B : Type w} [CStarAlgebra B] {Φ Ψ : FullFreeProduct A 
   starAlgHom_ext_ofAlgebraic <| LinearAlgebra.FreeProduct.starAlgHom_ext fun i a => by
     simpa only [StarAlgHom.comp_apply, ← factor_apply] using h i a
 
-private def liftAlgebraicCLM {B : Type w} [CStarAlgebra B]
-    (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) : FullAlgebraicFreeProduct A →L[ℂ] B :=
-  ((ρ : LinearAlgebra.FreeProduct ℂ A →ₗ[ℂ] B).comp
-    ((toFullStarAlgEquiv A).symm :
-      FullAlgebraicFreeProduct A →ₗ[ℂ] LinearAlgebra.FreeProduct ℂ A)).mkContinuous 1 fun x => by
-    simpa [FullAlgebraicFreeProduct.norm_def] using norm_starAlgHom_le_seminorm ρ (ofFull x)
-
-private theorem fromCompletion_liftAlgebraicCLM_ofAlgebraic {B : Type w} [CStarAlgebra B]
-    (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) (a : LinearAlgebra.FreeProduct ℂ A) :
-    (liftAlgebraicCLM ρ).fromCompletion (ofAlgebraic A a) = ρ a :=
-  (ContinuousLinearMap.fromCompletion_apply_coe (liftAlgebraicCLM ρ) (toFull a)).trans
-    (by simp [liftAlgebraicCLM])
-
-private def liftAlgebraicHom {B : Type w} [CStarAlgebra B]
-    (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) : FullFreeProduct A →⋆ₐ[ℂ] B where
-  toFun := (liftAlgebraicCLM ρ).fromCompletion
-  map_one' := by
-    rw [← map_one (ofAlgebraic A), fromCompletion_liftAlgebraicCLM_ofAlgebraic, map_one]
-  map_mul' x y := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih a =>
-      induction y using induction_on with
-      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih b => simp only [← map_mul, fromCompletion_liftAlgebraicCLM_ofAlgebraic]
-  map_zero' := map_zero _
-  map_add' := map_add _
-  commutes' c := by
-    rw [← AlgHomClass.commutes (ofAlgebraic A) c, fromCompletion_liftAlgebraicCLM_ofAlgebraic,
-      AlgHomClass.commutes]
-  map_star' x := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih a => simp only [← map_star, fromCompletion_liftAlgebraicCLM_ofAlgebraic]
-
 /-- `FullFreeProduct A` is the universal unital C⋆-envelope of `LinearAlgebra.FreeProduct ℂ A`:
 unital `⋆`-homomorphisms out of `LinearAlgebra.FreeProduct ℂ A` into any unital C⋆-algebra `B`
 (in any universe `w`) correspond bijectively to unital `⋆`-homomorphisms out of
 `FullFreeProduct A`. -/
 def liftAlgebraic {B : Type w} [CStarAlgebra B] :
     (LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) ≃ (FullFreeProduct A →⋆ₐ[ℂ] B) where
-  toFun := liftAlgebraicHom
+  toFun ρ := (seminorm A).lift ρ (norm_starAlgHom_le_seminorm ρ)
   invFun Φ := Φ.comp (ofAlgebraic A)
-  left_inv ρ := StarAlgHom.ext (fromCompletion_liftAlgebraicCLM_ofAlgebraic ρ)
-  right_inv Φ :=
-    starAlgHom_ext_ofAlgebraic
-      (StarAlgHom.ext (fromCompletion_liftAlgebraicCLM_ofAlgebraic (Φ.comp (ofAlgebraic A))))
+  left_inv ρ := (seminorm A).lift_comp_of ρ (norm_starAlgHom_le_seminorm ρ)
+  right_inv Φ := starAlgHom_ext_ofAlgebraic
+    ((seminorm A).lift_comp_of (Φ.comp (ofAlgebraic A)) _)
 
 @[simp]
 theorem liftAlgebraic_ofAlgebraic {B : Type w} [CStarAlgebra B]
     (ρ : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] B) (a : LinearAlgebra.FreeProduct ℂ A) :
     liftAlgebraic ρ (ofAlgebraic A a) = ρ a :=
-  fromCompletion_liftAlgebraicCLM_ofAlgebraic ρ a
+  (seminorm A).lift_of ρ (norm_starAlgHom_le_seminorm ρ) a
 
 @[simp]
 theorem liftAlgebraic_comp_ofAlgebraic {B : Type w} [CStarAlgebra B]
@@ -725,35 +537,23 @@ theorem liftRepresentation_factor {H : Type w} [NormedAddCommGroup H] [InnerProd
   rw [factor_apply, liftRepresentation_ofAlgebraic]
 
 open scoped _root_.CStarAlgebra in
-theorem continuous_liftRepresentation {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    [CompleteSpace H] (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) :
-    Continuous (liftRepresentation π) :=
-  map_continuous (liftRepresentation π)
-
-theorem isClosed_setRange_liftRepresentation {H : Type w} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H]
-    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) :
-    IsClosed (Set.range (liftRepresentation π)) :=
-  (liftRepresentation π).isClosed_setRange
-
-theorem coe_range_liftRepresentation {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    [CompleteSpace H] (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) :
-    ((liftRepresentation π).range : Set (H →L[ℂ] H)) = Set.range (liftRepresentation π) :=
-  (liftRepresentation π).toAlgHom.coe_range
-
 /-- The range of `liftRepresentation π` is the norm closure of the algebraic image `π.range`. -/
 theorem range_liftRepresentation {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
     [CompleteSpace H] (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) :
     (liftRepresentation π).range = π.range.topologicalClosure := by
   apply SetLike.ext'
+  have hcoeL : ((liftRepresentation π).range : Set (H →L[ℂ] H)) =
+      Set.range (liftRepresentation π) :=
+    (liftRepresentation π).toAlgHom.coe_range
   have hcoe : (π.range : Set (H →L[ℂ] H)) = Set.range π := π.toAlgHom.coe_range
-  rw [coe_range_liftRepresentation, StarSubalgebra.topologicalClosure_coe, hcoe]
+  rw [hcoeL, StarSubalgebra.topologicalClosure_coe, hcoe]
   refine Set.Subset.antisymm ?_ ?_
   · rintro _ ⟨x, rfl⟩
-    refine induction_on x (isClosed_closure.preimage (continuous_liftRepresentation π)) fun a => ?_
+    refine induction_on x (isClosed_closure.preimage (map_continuous (liftRepresentation π)))
+      fun a => ?_
     rw [liftRepresentation_ofAlgebraic]
     exact subset_closure ⟨a, rfl⟩
-  · refine (isClosed_setRange_liftRepresentation π).closure_subset_iff.mpr ?_
+  · refine (liftRepresentation π).isClosed_setRange.closure_subset_iff.mpr ?_
     rintro _ ⟨a, rfl⟩
     exact ⟨ofAlgebraic A a, liftRepresentation_ofAlgebraic π a⟩
 
@@ -765,29 +565,6 @@ theorem mem_range_liftRepresentation_iff {H : Type w} [NormedAddCommGroup H]
     T ∈ (liftRepresentation π).range ↔ T ∈ closure (Set.range π) := by
   have hcoe : (π.range : Set (H →L[ℂ] H)) = Set.range π := π.toAlgHom.coe_range
   rw [range_liftRepresentation, ← SetLike.mem_coe, StarSubalgebra.topologicalClosure_coe, hcoe]
-
-instance isClosed_ker_liftRepresentation {H : Type w} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H]
-    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) :
-    IsClosed (TwoSidedIdeal.ker (liftRepresentation π) : Set (FullFreeProduct A)) :=
-  NonUnitalStarAlgHom.isClosed_ker (liftRepresentation π)
-
-/-- First isometric `⋆`-isomorphism theorem for the extended Hilbert-space representation
-`liftRepresentation π`. -/
-def quotientKerEquivRangeLiftRepresentation {H : Type w} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H]
-    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) :
-    FullFreeProduct A ⧸ TwoSidedIdeal.ker (liftRepresentation π) ≃⋆ₐ[ℂ]
-      (liftRepresentation π).range :=
-  (liftRepresentation π).quotientKerEquivRange
-
-theorem coe_quotientKerEquivRangeLiftRepresentation_mk {H : Type w} [NormedAddCommGroup H]
-    [InnerProductSpace ℂ H] [CompleteSpace H]
-    (π : LinearAlgebra.FreeProduct ℂ A →⋆ₐ[ℂ] (H →L[ℂ] H)) (x : FullFreeProduct A) :
-    (quotientKerEquivRangeLiftRepresentation π
-      (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (liftRepresentation π)) x) : H →L[ℂ] H) =
-      liftRepresentation π x :=
-  (liftRepresentation π).coe_quotientKerEquivRange_mk x
 
 /-- Universal coproduct property of the full unital C⋆-free product: families of unital
 `⋆`-homomorphisms `f : (i : I) → A i →⋆ₐ[ℂ] B` into any unital C⋆-algebra `B` (in any universe `w`)
@@ -992,10 +769,23 @@ def mapEquiv {A' : I → Type*} [∀ i, CStarAlgebra (A' i)]
   congrAlgebraic (mapStarEquiv e)
 
 @[simp]
+theorem mapEquiv_ofAlgebraic {A' : I → Type*} [∀ i, CStarAlgebra (A' i)]
+    (e : (i : I) → A i ≃⋆ₐ[ℂ] A' i) (x : LinearAlgebra.FreeProduct ℂ A) :
+    mapEquiv e (ofAlgebraic A x) = ofAlgebraic A' (mapStarEquiv e x) :=
+  congrAlgebraic_ofAlgebraic (mapStarEquiv e) x
+
+@[simp]
+theorem mapEquiv_toStarAlgHom {A' : I → Type*} [∀ i, CStarAlgebra (A' i)]
+    (e : (i : I) → A i ≃⋆ₐ[ℂ] A' i) :
+    (mapEquiv e).toStarAlgHom = map fun i => (e i).toStarAlgHom := by
+  ext i a
+  simp [mapEquiv, factor_apply]
+
+@[simp]
 theorem mapEquiv_factor {A' : I → Type*} [∀ i, CStarAlgebra (A' i)]
     (e : (i : I) → A i ≃⋆ₐ[ℂ] A' i) (i : I) (a : A i) :
     mapEquiv e (factor i a) = factor i (e i a) := by
-  simp [mapEquiv, factor_apply]
+  simp [factor_apply]
 
 @[simp]
 theorem mapEquiv_symm {A' : I → Type*} [∀ i, CStarAlgebra (A' i)]
@@ -1015,6 +805,17 @@ theorem reindexHom_factor {J : Type*} [DecidableEq J] (f : J → I) (j : J) (a :
     reindexHom A f (factor (A := fun k => A (f k)) j a) = factor (A := A) (f j) a := by
   rw [reindexHom, lift_factor]
 
+@[simp]
+theorem reindexHom_ofAlgebraic {J : Type*} [DecidableEq J] (f : J → I)
+    (x : LinearAlgebra.FreeProduct ℂ fun j => A (f j)) :
+    reindexHom A f (ofAlgebraic (fun j => A (f j)) x) =
+      ofAlgebraic A (reindexStarHom ℂ A f x) := by
+  have h : (reindexHom A f).comp (ofAlgebraic (fun j => A (f j))) =
+      (ofAlgebraic A).comp (reindexStarHom ℂ A f) := by
+    ext j a
+    simp [← factor_apply]
+  exact DFunLike.congr_fun h x
+
 /-- Relabeling the index type along an equivalence `σ : J ≃ I` induces an isometric `⋆`-isomorphism
 of full C⋆-free products. -/
 def reindexEquiv {J : Type*} [DecidableEq J] (σ : J ≃ I) :
@@ -1022,9 +823,22 @@ def reindexEquiv {J : Type*} [DecidableEq J] (σ : J ≃ I) :
   congrAlgebraic (reindexStarAlgEquiv ℂ A σ)
 
 @[simp]
+theorem reindexEquiv_ofAlgebraic {J : Type*} [DecidableEq J] (σ : J ≃ I)
+    (x : LinearAlgebra.FreeProduct ℂ fun j => A (σ j)) :
+    reindexEquiv A σ (ofAlgebraic (fun j => A (σ j)) x) =
+      ofAlgebraic A (reindexStarAlgEquiv ℂ A σ x) :=
+  congrAlgebraic_ofAlgebraic (reindexStarAlgEquiv ℂ A σ) x
+
+@[simp]
+theorem reindexEquiv_toStarAlgHom {J : Type*} [DecidableEq J] (σ : J ≃ I) :
+    (reindexEquiv A σ).toStarAlgHom = reindexHom A σ := by
+  ext j a
+  simp [reindexEquiv, factor_apply]
+
+@[simp]
 theorem reindexEquiv_factor {J : Type*} [DecidableEq J] (σ : J ≃ I) (j : J) (a : A (σ j)) :
     reindexEquiv A σ (factor (A := fun k => A (σ k)) j a) = factor (A := A) (σ j) a := by
-  simp [reindexEquiv, factor_apply]
+  simp [factor_apply]
 
 @[simp]
 theorem reindexEquiv_symm_factor {J : Type*} [DecidableEq J] (σ : J ≃ I) (j : J) (a : A (σ j)) :
@@ -1124,10 +938,9 @@ theorem reducedRepresentation_ofAlgebraic (x : LinearAlgebra.FreeProduct ℂ A) 
 /-- The range of `reducedRepresentation φ hφ` is the reduced C⋆-free product
 `ReducedFreeProduct.algebra φ hφ`. -/
 theorem range_reducedRepresentation :
-    (reducedRepresentation φ hφ).range = ReducedFreeProduct.algebra φ hφ :=
-  SetLike.ext fun T =>
-    (mem_range_liftRepresentation_iff (ReducedFreeProduct.representation φ hφ) T).trans
-      (ReducedFreeProduct.mem_algebra_iff φ hφ T).symm
+    (reducedRepresentation φ hφ).range = ReducedFreeProduct.algebra φ hφ := by
+  ext T
+  rw [reducedRepresentation, mem_range_liftRepresentation_iff, ReducedFreeProduct.mem_algebra_iff]
 
 /-- The canonical unital `⋆`-homomorphism from `FullFreeProduct A` onto the reduced C⋆-free product
 `ReducedFreeProduct.algebra φ hφ` associated to normalized factor functionals `φ`. -/
@@ -1145,17 +958,14 @@ theorem coe_toReduced (x : FullFreeProduct A) :
 
 @[simp]
 theorem toReduced_ofAlgebraic (x : LinearAlgebra.FreeProduct ℂ A) :
-    toReduced φ hφ (ofAlgebraic A x) = ReducedFreeProduct.ofAlgebraic φ hφ x :=
-  Subtype.ext <| (coe_toReduced φ hφ (ofAlgebraic A x)).trans <|
-    (reducedRepresentation_ofAlgebraic φ hφ x).trans
-      (ReducedFreeProduct.coe_ofAlgebraic φ hφ x).symm
+    toReduced φ hφ (ofAlgebraic A x) = ReducedFreeProduct.ofAlgebraic φ hφ x := by
+  ext
+  simp [ReducedFreeProduct.coe_ofAlgebraic]
 
 @[simp]
 theorem toReduced_factor (i : I) (a : A i) :
-    toReduced φ hφ (factor i a) = ReducedFreeProduct.factor φ hφ i a :=
-  (congrArg (toReduced φ hφ) (factor_apply i a)).trans <|
-    (toReduced_ofAlgebraic φ hφ (ι ℂ A i a)).trans
-      (ReducedFreeProduct.factor_apply φ hφ i a).symm
+    toReduced φ hφ (factor i a) = ReducedFreeProduct.factor φ hφ i a := by
+  simp [factor_apply, ReducedFreeProduct.factor_apply]
 
 /-- The canonical `⋆`-homomorphism `toReduced φ hφ` onto `ReducedFreeProduct.algebra φ hφ` is
 surjective: every reduced C⋆-free product is a C⋆-quotient of the full C⋆-free product. -/
@@ -1170,38 +980,17 @@ theorem ker_toReduced :
   SetLike.ext fun _ => (TwoSidedIdeal.mem_ker (toReduced φ hφ)).trans <|
     Subtype.ext_iff.trans (TwoSidedIdeal.mem_ker (reducedRepresentation φ hφ)).symm
 
-instance isClosed_ker_reducedRepresentation :
-    IsClosed (TwoSidedIdeal.ker (reducedRepresentation φ hφ) : Set (FullFreeProduct A)) :=
-  isClosed_ker_liftRepresentation (ReducedFreeProduct.representation φ hφ)
-
-instance isClosed_ker_toReduced :
-    IsClosed (TwoSidedIdeal.ker (toReduced φ hφ) : Set (FullFreeProduct A)) :=
-  (ker_toReduced φ hφ).symm ▸ isClosed_ker_reducedRepresentation φ hφ
-
 /-- First `⋆`-isomorphism theorem identifying `ReducedFreeProduct.algebra φ hφ` with the
 C⋆-quotient of `FullFreeProduct A` by `TwoSidedIdeal.ker (toReduced φ hφ)`. -/
 def quotientKerToReducedEquiv :
     FullFreeProduct A ⧸ TwoSidedIdeal.ker (toReduced φ hφ) ≃⋆ₐ[ℂ]
       ReducedFreeProduct.algebra φ hφ :=
-  ((TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq (ker_toReduced φ hφ)).trans
-    (quotientKerEquivRangeLiftRepresentation (ReducedFreeProduct.representation φ hφ))).trans
-    { toFun x := ⟨x.1, range_reducedRepresentation φ hφ ▸ x.2⟩
-      invFun x := ⟨x.1, (range_reducedRepresentation φ hφ).symm ▸ x.2⟩
-      left_inv _ := rfl
-      right_inv _ := rfl
-      map_mul' _ _ := rfl
-      map_add' _ _ := rfl
-      map_smul' _ _ := rfl
-      map_star' _ := rfl }
+  StarAlgHom.quotientKerEquivOfSurjective (toReduced_surjective φ hφ)
 
 theorem quotientKerToReducedEquiv_mk (x : FullFreeProduct A) :
     quotientKerToReducedEquiv φ hφ
       (TwoSidedIdeal.Quotient.mk (TwoSidedIdeal.ker (toReduced φ hφ)) x) = toReduced φ hφ x :=
-  Subtype.ext <|
-    (congrArg Subtype.val (congrArg
-      (quotientKerEquivRangeLiftRepresentation (ReducedFreeProduct.representation φ hφ))
-      (TwoSidedIdeal.Quotient.quotStarAlgEquivOfEq_mk (ker_toReduced φ hφ) x))).trans
-      (coe_quotientKerEquivRangeLiftRepresentation_mk (ReducedFreeProduct.representation φ hφ) x)
+  StarAlgHom.quotientKerEquivOfSurjective_mk (toReduced_surjective φ hφ) x
 
 /-- The vacuum positive functional on `FullFreeProduct A` pulled back along
 `reducedRepresentation φ hφ`, agreeing with `ReducedFreeProduct.state φ hφ` along
@@ -1212,35 +1001,21 @@ def state : StarPositiveFunctional (FullFreeProduct A) :=
     (reducedRepresentation φ hφ)
 
 theorem state_apply_eq_reduced (x : FullFreeProduct A) :
-    state φ hφ x = ReducedFreeProduct.state φ hφ (toReduced φ hφ x) :=
-  ((StarPositiveFunctional.ofPositiveLinearMap
-    (ContinuousLinearMap.innerPositiveLinearMap ℂ (ReducedFreeProduct.vacuum φ hφ))).comp_apply
-    (reducedRepresentation φ hφ) x).trans <|
-    (StarPositiveFunctional.ofPositiveLinearMap_apply _ _).trans <|
-      (ContinuousLinearMap.innerPositiveLinearMap_apply
-        (ReducedFreeProduct.vacuum φ hφ) (reducedRepresentation φ hφ x)).trans <|
-        (congrArg (fun T : ReducedFreeProduct.HilbertSpace φ hφ →L[ℂ]
-            ReducedFreeProduct.HilbertSpace φ hφ =>
-            ⟪ReducedFreeProduct.vacuum φ hφ, T (ReducedFreeProduct.vacuum φ hφ)⟫_ℂ)
-          (coe_toReduced φ hφ x).symm).trans
-          (ReducedFreeProduct.state_apply φ hφ (toReduced φ hφ x)).symm
+    state φ hφ x = ReducedFreeProduct.state φ hφ (toReduced φ hφ x) := by
+  simp [state, ReducedFreeProduct.state_apply]
 
 @[simp]
 theorem state_ofAlgebraic (x : LinearAlgebra.FreeProduct ℂ A) :
-    state φ hφ (ofAlgebraic A x) = freeProductPositiveFunctional φ hφ x :=
-  (state_apply_eq_reduced φ hφ (ofAlgebraic A x)).trans <|
-    (congrArg (ReducedFreeProduct.state φ hφ) (toReduced_ofAlgebraic φ hφ x)).trans
-      (ReducedFreeProduct.state_ofAlgebraic φ hφ x)
+    state φ hφ (ofAlgebraic A x) = freeProductPositiveFunctional φ hφ x := by
+  simp [state_apply_eq_reduced]
 
 @[simp]
-theorem state_one : state φ hφ 1 = 1 :=
-  (congrArg (state φ hφ) (ofAlgebraic A).map_one.symm).trans <|
-    (state_ofAlgebraic φ hφ 1).trans (freeProductPositiveFunctional_one φ hφ)
+theorem state_one : state φ hφ 1 = 1 := by
+  rw [← map_one (ofAlgebraic A), state_ofAlgebraic, freeProductPositiveFunctional_one]
 
 @[simp]
-theorem state_factor (i : I) (a : A i) : state φ hφ (factor i a) = φ i a :=
-  (congrArg (state φ hφ) (factor_apply i a)).trans <|
-    (state_ofAlgebraic φ hφ (ι ℂ A i a)).trans (freeProductPositiveFunctional_ι φ hφ i a)
+theorem state_factor (i : I) (a : A i) : state φ hφ (factor i a) = φ i a := by
+  simp [factor_apply]
 
 /-- The canonical factor subalgebras `(factor i).toAlgHom.range` in `FullFreeProduct A` are freely
 independent with respect to `FullFreeProduct.state φ hφ`. -/
@@ -1252,13 +1027,12 @@ theorem isFreelyIndependent_factor :
     (φ' := (state φ hφ).toLinearMap)
     (by
       ext x
-      exact (state_ofAlgebraic φ hφ x).trans (freeProductPositiveFunctional_apply φ hφ x))
+      simp [freeProductPositiveFunctional_apply])
   have hranges : (fun i => (factor (A := A) i).toAlgHom.range) =
       (fun i => ((ι ℂ A i).range).map (ofAlgebraic A).toAlgHom) := by
     funext i
-    simpa only [factor, StarAlgHom.comp, ιStar_toAlgHom] using
-      AlgHom.range_comp (ι ℂ A i) (ofAlgebraic A).toAlgHom
-  simpa only [← hranges] using h
+    rw [factor_toAlgHom, AlgHom.range_comp]
+  rwa [← hranges] at h
 
 end ReducedQuotientAndState
 

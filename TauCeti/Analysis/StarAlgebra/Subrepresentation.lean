@@ -7,10 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.l2Space
 public import TauCeti.Analysis.InnerProductSpace.Compression
-import Mathlib.RingTheory.Finiteness.Small
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Small
 import TauCeti.Analysis.InnerProductSpace.PartialIsometry
-import TauCeti.Topology.Sequences.Small
+import TauCeti.Topology.Algebra.Module.Span
 
 /-!
 # Hilbert subrepresentations and universe bounds for star-algebra representations
@@ -115,34 +114,19 @@ theorem exists_linearIsometry_mapsTo_mem_range {𝕜 A H : Type*} [RCLike 𝕜]
     ∃ (ι : Type w) (V : lp (fun _ : ι => 𝕜) 2 →ₗᵢ[𝕜] H),
       (∀ a, Set.MapsTo (π a) (Set.range V) (Set.range V)) ∧ ξ ∈ Set.range V := by
   let gen : Option A → H := fun o => o.elim ξ fun a => π a ξ
-  let S : Submodule 𝕜 H := Submodule.span 𝕜 (Set.range gen)
-  let W : Submodule 𝕜 H := S.topologicalClosure
-  have hS (a : A) : Set.MapsTo (π a) S S := by
-    have hmap : S.map (π a : H →ₗ[𝕜] H) ≤ S := by
-      rw [Submodule.map_span]
-      refine Submodule.span_mono ?_
-      rintro _ ⟨_, ⟨o, rfl⟩, rfl⟩
-      cases o with
-      | none => exact ⟨some a, rfl⟩
-      | some b => exact ⟨some (a * b), by simp [gen, map_mul]⟩
-    exact fun x hx => hmap ⟨x, hx, rfl⟩
-  have hW (a : A) : Set.MapsTo (π a) W W := by
-    simpa [W, Submodule.topologicalClosure_coe] using (hS a).closure (π a).continuous
   have : Small.{w} (Option A) := ⟨Option (Shrink.{w} A), ⟨Equiv.optionCongr (equivShrink.{w} A)⟩⟩
   have : Small.{w} (Set.range gen) := small_range.{w} gen
-  have : Small.{w} S := Submodule.small_span.{w} _
-  have hW_small : Small.{w} (W : Set H) := by
-    rw [Submodule.topologicalClosure_coe]
-    exact Set.small_closure.{w} _
-  have : Small.{w} W := hW_small
-  obtain ⟨ι, ⟨b⟩⟩ := TauCeti.exists_hilbertBasis_of_small.{w} 𝕜 W
-  let V : lp (fun _ : ι => 𝕜) 2 →ₗᵢ[𝕜] H := W.subtypeₗᵢ.comp b.repr.symm.toLinearIsometry
-  have hV : Set.range V = W := by
-    simp [V, Set.range_comp, b.repr.symm.surjective.range_eq]
+  obtain ⟨ι, V, hV⟩ :=
+    TauCeti.exists_linearIsometry_range_eq_topologicalClosure_span.{w} 𝕜 (Set.range gen)
   refine ⟨ι, V, fun a => ?_, ?_⟩
-  · simpa [hV] using hW a
   · rw [hV]
-    exact S.le_topologicalClosure (Submodule.subset_span ⟨none, rfl⟩)
+    refine LinearMap.mapsTo_topologicalClosure_span (f := (π a : H →ₗ[𝕜] H)) (π a).continuous ?_
+    rintro _ ⟨o, rfl⟩
+    cases o with
+    | none => exact Submodule.subset_span ⟨some a, rfl⟩
+    | some b => exact Submodule.subset_span ⟨some (a * b), by simp [gen, map_mul]⟩
+  · rw [hV]
+    exact Submodule.le_topologicalClosure _ (Submodule.subset_span ⟨none, rfl⟩)
 
 end NonUnitalStarAlgHom
 

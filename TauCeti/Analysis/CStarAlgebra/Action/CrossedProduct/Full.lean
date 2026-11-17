@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
-public import Mathlib.Topology.Algebra.LinearMapCompletion
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.FullSeminorm
 public import TauCeti.Analysis.CStarAlgebra.Completion
 import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Nondegenerate
@@ -20,13 +19,11 @@ product* `A ⋊_α G` is the completion of the twisted convolution algebra `C_c(
 C⋆-seminorm `‖f‖ᵤ = sup ‖(π ⋊ U)(f)‖`, the supremum over covariant representations `(π, U)` on
 Hilbert spaces in the universe `max u v`.
 
-The twisted convolution algebra already carries its L¹ norm, so the full seminorm lives on the
-type synonym `FullConvolutionAlgebra α μ`. Since the full seminorm is a submultiplicative,
-star-invariant seminorm satisfying the C⋆-identity, the completion
-`FullCrossedProduct α μ` is a nonunital C⋆-algebra. The canonical ⋆-homomorphism
-`FullCrossedProduct.of` from the twisted convolution algebra has dense range, and
-`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation and `μ` is inner
-regular for compact sets on sets of finite measure
+Bundling the full seminorm as `ConvolutionAlgebra.fullCStarSeminorm α μ : TauCeti.CStarSeminorm`
+and taking its C⋆-completion `TauCeti.CStarSeminorm.Completion` yields the nonunital C⋆-algebra
+`FullCrossedProduct α μ`. The canonical ⋆-homomorphism `FullCrossedProduct.of` from the twisted
+convolution algebra has dense range, and `‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a
+faithful representation and `μ` is inner regular for compact sets on sets of finite measure
 (`μ.InnerRegularCompactLTTop`).
 
 Every integrated form `π ⋊ U` of a covariant representation, on a Hilbert space in any universe,
@@ -37,8 +34,8 @@ assumed.
 
 ## Main definitions
 
-* `TauCeti.CStarAction.FullConvolutionAlgebra`: the twisted convolution algebra with the full
-  C⋆-seminorm.
+* `TauCeti.CStarAction.ConvolutionAlgebra.fullCStarSeminorm`: the full C⋆-seminorm on the twisted
+  convolution algebra, bundled as a `TauCeti.CStarSeminorm`.
 * `TauCeti.CStarAction.FullCrossedProduct`: the full crossed product `A ⋊_α G`, a nonunital
   C⋆-algebra.
 * `TauCeti.CStarAction.FullCrossedProduct.of`: the canonical ⋆-homomorphism from the twisted
@@ -73,7 +70,7 @@ public section
 
 noncomputable section
 
-open MeasureTheory UniformSpace
+open MeasureTheory
 
 namespace TauCeti.CStarAction
 
@@ -81,236 +78,45 @@ universe u v w
 
 variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure]
 
 variable (α μ) in
-/-- The twisted convolution algebra `C_c(G, A)` of `(A, G, α)`, with the full C⋆-seminorm
-`ConvolutionAlgebra.fullSeminorm α μ` in place of the L¹ norm. Its completion is the full crossed
-product `FullCrossedProduct α μ`. Use `FullConvolutionAlgebra.toFull` and
-`FullConvolutionAlgebra.ofFull` to pass to and from `ConvolutionAlgebra α μ`. -/
-@[expose] def FullConvolutionAlgebra : Type (max u v) :=
-  ConvolutionAlgebra α μ
-
-namespace FullConvolutionAlgebra
-
-/-- Regard an element of the twisted convolution algebra as an element with the full seminorm. -/
-def toFull : ConvolutionAlgebra α μ ≃ FullConvolutionAlgebra α μ :=
-  Equiv.refl _
-
-/-- The element of the twisted convolution algebra underlying an element with the full
-seminorm. -/
-def ofFull : FullConvolutionAlgebra α μ ≃ ConvolutionAlgebra α μ :=
-  Equiv.refl _
+/-- The full C⋆-seminorm on the twisted convolution algebra, bundled as a
+`TauCeti.CStarSeminorm`. -/
+def ConvolutionAlgebra.fullCStarSeminorm : CStarSeminorm (ConvolutionAlgebra α μ) where
+  __ := ConvolutionAlgebra.fullSeminorm α μ
+  map_mul_le' := ConvolutionAlgebra.fullSeminorm_mul_le
+  mul_self_le_star_mul_self' f := (ConvolutionAlgebra.fullSeminorm_star_mul_self f).ge
 
 @[simp]
-theorem toFull_symm : (toFull (α := α) (μ := μ)).symm = ofFull :=
+theorem ConvolutionAlgebra.fullCStarSeminorm_apply (f : ConvolutionAlgebra α μ) :
+    ConvolutionAlgebra.fullCStarSeminorm α μ f = ConvolutionAlgebra.fullSeminorm α μ f :=
   (rfl)
-
-@[simp]
-theorem ofFull_symm : (ofFull (α := α) (μ := μ)).symm = toFull :=
-  (rfl)
-
-@[simp]
-theorem ofFull_toFull (f : ConvolutionAlgebra α μ) : ofFull (toFull f) = f :=
-  (rfl)
-
-@[simp]
-theorem toFull_ofFull (f : FullConvolutionAlgebra α μ) : toFull (ofFull f) = f :=
-  (rfl)
-
-variable [IsTopologicalGroup G] [BorelSpace G] [μ.IsHaarMeasure]
-
-instance : NonUnitalRing (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (NonUnitalRing (ConvolutionAlgebra α μ))
-
-instance : Module ℂ (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (Module ℂ (ConvolutionAlgebra α μ))
-
-instance : IsScalarTower ℂ (FullConvolutionAlgebra α μ) (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (IsScalarTower ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ))
-
-instance : SMulCommClass ℂ (FullConvolutionAlgebra α μ) (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (SMulCommClass ℂ (ConvolutionAlgebra α μ) (ConvolutionAlgebra α μ))
-
-@[simp]
-theorem toFull_zero : toFull (0 : ConvolutionAlgebra α μ) = 0 :=
-  (rfl)
-
-@[simp]
-theorem toFull_add (f g : ConvolutionAlgebra α μ) : toFull (f + g) = toFull f + toFull g :=
-  (rfl)
-
-@[simp]
-theorem toFull_neg (f : ConvolutionAlgebra α μ) : toFull (-f) = -toFull f :=
-  (rfl)
-
-@[simp]
-theorem toFull_sub (f g : ConvolutionAlgebra α μ) : toFull (f - g) = toFull f - toFull g :=
-  (rfl)
-
-@[simp]
-theorem toFull_mul (f g : ConvolutionAlgebra α μ) : toFull (f * g) = toFull f * toFull g :=
-  (rfl)
-
-@[simp]
-theorem toFull_smul (c : ℂ) (f : ConvolutionAlgebra α μ) : toFull (c • f) = c • toFull f :=
-  (rfl)
-
-@[simp]
-theorem ofFull_zero : ofFull (0 : FullConvolutionAlgebra α μ) = 0 :=
-  (rfl)
-
-@[simp]
-theorem ofFull_add (f g : FullConvolutionAlgebra α μ) : ofFull (f + g) = ofFull f + ofFull g :=
-  (rfl)
-
-@[simp]
-theorem ofFull_neg (f : FullConvolutionAlgebra α μ) : ofFull (-f) = -ofFull f :=
-  (rfl)
-
-@[simp]
-theorem ofFull_sub (f g : FullConvolutionAlgebra α μ) : ofFull (f - g) = ofFull f - ofFull g :=
-  (rfl)
-
-@[simp]
-theorem ofFull_mul (f g : FullConvolutionAlgebra α μ) : ofFull (f * g) = ofFull f * ofFull g :=
-  (rfl)
-
-@[simp]
-theorem ofFull_smul (c : ℂ) (f : FullConvolutionAlgebra α μ) : ofFull (c • f) = c • ofFull f :=
-  (rfl)
-
-variable [LocallyCompactSpace G]
-
-instance : StarRing (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (StarRing (ConvolutionAlgebra α μ))
-
-instance : StarModule ℂ (FullConvolutionAlgebra α μ) :=
-  inferInstanceAs (StarModule ℂ (ConvolutionAlgebra α μ))
-
-@[simp]
-theorem toFull_star (f : ConvolutionAlgebra α μ) : toFull (star f) = star (toFull f) :=
-  (rfl)
-
-@[simp]
-theorem ofFull_star (f : FullConvolutionAlgebra α μ) : ofFull (star f) = star (ofFull f) :=
-  (rfl)
-
-variable (α μ) in
-/-- `FullConvolutionAlgebra.toFull` as an isomorphism of ⋆-algebras. -/
-def toFullStarAlgEquiv : ConvolutionAlgebra α μ ≃⋆ₐ[ℂ] FullConvolutionAlgebra α μ where
-  __ := toFull
-  map_mul' _ _ := (rfl)
-  map_add' _ _ := (rfl)
-  map_smul' _ _ := (rfl)
-  map_star' _ := (rfl)
-
-@[simp]
-theorem toFullStarAlgEquiv_apply (f : ConvolutionAlgebra α μ) :
-    toFullStarAlgEquiv α μ f = toFull f :=
-  (rfl)
-
-@[simp]
-theorem toFullStarAlgEquiv_symm_apply (f : FullConvolutionAlgebra α μ) :
-    (toFullStarAlgEquiv α μ).symm f = ofFull f :=
-  (rfl)
-
-/-- The full seminorm makes the twisted convolution algebra a seminormed group. -/
-instance : SeminormedAddCommGroup (FullConvolutionAlgebra α μ) :=
-  @AddGroupSeminorm.toSeminormedAddCommGroup (FullConvolutionAlgebra α μ) _
-    (ConvolutionAlgebra.fullSeminorm α μ).toAddGroupSeminorm
-
-/-- The norm of an element of the full convolution algebra is its full seminorm. -/
-@[simp]
-theorem norm_toFull (f : ConvolutionAlgebra α μ) :
-    ‖toFull f‖ = ConvolutionAlgebra.fullSeminorm α μ f :=
-  (rfl)
-
-/-- The norm of an element of the full convolution algebra is the full seminorm of the underlying
-element of the twisted convolution algebra. -/
-theorem norm_def (f : FullConvolutionAlgebra α μ) :
-    ‖f‖ = ConvolutionAlgebra.fullSeminorm α μ (ofFull f) :=
-  (rfl)
-
-instance : NormedSpace ℂ (FullConvolutionAlgebra α μ) where
-  __ : Module ℂ (FullConvolutionAlgebra α μ) := inferInstance
-  norm_smul_le c f := by
-    simp only [norm_def, ofFull_smul]
-    exact (map_smul_eq_mul _ _ _).le
-
-/-- The full seminorm is submultiplicative, so the twisted convolution algebra is a seminormed
-ring for it. -/
-instance : NonUnitalSeminormedRing (FullConvolutionAlgebra α μ) where
-  __ : SeminormedAddCommGroup (FullConvolutionAlgebra α μ) := inferInstance
-  __ : NonUnitalRing (FullConvolutionAlgebra α μ) := inferInstance
-  norm_mul_le f g := by
-    simpa only [norm_def, ofFull_mul] using
-      ConvolutionAlgebra.fullSeminorm_mul_le (ofFull f) (ofFull g)
-
-/-- The twisted involution is isometric for the full seminorm. -/
-instance : NormedStarGroup (FullConvolutionAlgebra α μ) where
-  norm_star_le f := by
-    simp only [norm_def, ofFull_star, ConvolutionAlgebra.fullSeminorm_star, le_refl]
-
-/-- The full seminorm satisfies the C⋆-identity on the twisted convolution algebra. -/
-theorem norm_star_mul_self (f : FullConvolutionAlgebra α μ) : ‖star f * f‖ = ‖f‖ * ‖f‖ := by
-  simpa only [norm_def, ofFull_mul, ofFull_star] using
-    ConvolutionAlgebra.fullSeminorm_star_mul_self (ofFull f)
-
-end FullConvolutionAlgebra
-
-open FullConvolutionAlgebra
-
-variable [IsTopologicalGroup G] [LocallyCompactSpace G] [BorelSpace G] [μ.IsHaarMeasure]
 
 variable (α μ) in
 /-- The full crossed product `A ⋊_α G` of the C⋆-dynamical system `(A, G, α)`: the completion of
 the twisted convolution algebra in the full C⋆-seminorm. It is a nonunital C⋆-algebra, and
 the canonical map `FullCrossedProduct.of` from the twisted convolution algebra has dense range. -/
 @[expose] def FullCrossedProduct : Type (max u v) :=
-  Completion (FullConvolutionAlgebra α μ)
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).Completion
 
 namespace FullCrossedProduct
 
-/-- The completion of the twisted convolution algebra in the full seminorm is a C⋆-algebra. -/
-instance : NonUnitalCStarAlgebra (Completion (FullConvolutionAlgebra α μ)) where
-  toCStarRing := Completion.cstarRing fun f => (norm_star_mul_self f).ge
-
 /-- The full crossed product is a nonunital C⋆-algebra. -/
 instance : NonUnitalCStarAlgebra (FullCrossedProduct α μ) :=
-  inferInstanceAs (NonUnitalCStarAlgebra (Completion (FullConvolutionAlgebra α μ)))
+  inferInstanceAs (NonUnitalCStarAlgebra (ConvolutionAlgebra.fullCStarSeminorm α μ).Completion)
 
 variable (α μ) in
 /-- The canonical ⋆-homomorphism from the twisted convolution algebra into the full crossed
 product. -/
-def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ where
-  toFun f := (toFullStarAlgEquiv α μ f : Completion (FullConvolutionAlgebra α μ))
-  map_smul' c f := by
-    rw [map_smul]
-    exact Completion.coe_smul c _
-  map_zero' := by
-    rw [map_zero]
-    exact Completion.coe_zero
-  map_add' f g := by
-    rw [map_add]
-    exact Completion.coe_add _ _
-  map_mul' f g := by
-    rw [map_mul]
-    exact Completion.coe_mul' _ _
-  map_star' f := by
-    rw [map_star]
-    exact Completion.coe_star _
-
-/-- The image of `f` under the completion map of `FullConvolutionAlgebra α μ` is `of α μ f`. -/
-@[simp]
-theorem coe_toFull_eq_of (f : ConvolutionAlgebra α μ) :
-    ((toFull f : Completion (FullConvolutionAlgebra α μ)) : FullCrossedProduct α μ) = of α μ f :=
-  (rfl)
+@[expose] def of : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] FullCrossedProduct α μ :=
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).ofNonUnital
 
 /-- The norm of the image of `f` in the full crossed product is its full seminorm `‖f‖ᵤ`. -/
 @[simp]
 theorem norm_of (f : ConvolutionAlgebra α μ) :
     ‖of α μ f‖ = ConvolutionAlgebra.fullSeminorm α μ f :=
-  Completion.norm_coe (toFull f)
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).norm_ofNonUnital f
 
 /-- The image of `f` in the full crossed product has norm at most its L¹ norm. -/
 theorem norm_of_le (f : ConvolutionAlgebra α μ) : ‖of α μ f‖ ≤ ‖f‖ :=
@@ -323,7 +129,7 @@ theorem continuous_of : Continuous (of α μ) :=
 
 /-- The twisted convolution algebra is dense in the full crossed product. -/
 theorem denseRange_of : DenseRange (of α μ) :=
-  Completion.denseRange_coe.comp toFull.surjective.denseRange (Completion.continuous_coe _)
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).denseRange_ofNonUnital
 
 /-- Compactly supported continuous functions `C_c(G, A)` map densely into
 `FullCrossedProduct α μ`. -/
@@ -337,7 +143,7 @@ prove it on the twisted convolution algebra. -/
 @[elab_as_elim]
 theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedProduct α μ)
     (hp : IsClosed {x | p x}) (ih : ∀ f, p (of α μ f)) : p x :=
-  Completion.induction_on (p := p) x hp fun f => coe_toFull_eq_of (ofFull f) ▸ ih (ofFull f)
+  CStarSeminorm.induction_on x hp ih
 
 /-- If `A` has a faithful representation on a Hilbert space `H` and `μ` is inner regular for compact
 sets on sets of finite measure, the canonical map from the twisted convolution algebra into the full
@@ -348,15 +154,13 @@ theorem of_injective [μ.InnerRegularCompactLTTop] {H : Type w} [NormedAddCommGr
   (injective_iff_map_eq_zero (of α μ)).2 fun f hf =>
     (ConvolutionAlgebra.fullSeminorm_eq_zero_iff hρ).1 (by rw [← norm_of, hf, norm_zero])
 
-open scoped CStarAlgebra in
 /-- ⋆-homomorphisms from the full crossed product into a C⋆-algebra are determined by their
 values on the twisted convolution algebra. -/
 @[ext]
 theorem starAlgHom_ext {B : Type*} [NonUnitalCStarAlgebra B]
     {φ ψ : FullCrossedProduct α μ →⋆ₙₐ[ℂ] B} (h : φ.comp (of α μ) = ψ.comp (of α μ)) :
     φ = ψ :=
-  NonUnitalStarAlgHom.ext fun x => induction_on x (isClosed_eq (map_continuous φ)
-    (map_continuous ψ)) fun f => congr($h f)
+  CStarSeminorm.nonUnitalStarAlgHom_ext h
 
 /-- Continuous linear maps out of the full crossed product are determined by their values on
 the twisted convolution algebra. -/
@@ -364,53 +168,27 @@ the twisted convolution algebra. -/
 theorem continuousLinearMap_ext {E : Type*} [TopologicalSpace E] [T2Space E] [AddCommMonoid E]
     [Module ℂ E] {S T : FullCrossedProduct α μ →L[ℂ] E}
     (h : ∀ f, S (of α μ f) = T (of α μ f)) : S = T :=
-  ContinuousLinearMap.ext fun x => induction_on x (isClosed_eq S.continuous T.continuous) h
+  CStarSeminorm.continuousLinearMap_ext h
 
 variable {D : Type*} [NonUnitalCStarAlgebra D]
   (ρ : ConvolutionAlgebra α μ →⋆ₙₐ[ℂ] D)
   (hρ : ∀ f, ‖ρ f‖ ≤ ConvolutionAlgebra.fullSeminorm α μ f)
 
-/-- A ⋆-homomorphism bounded by the full seminorm is continuous for that seminorm. -/
-private def liftCLM : FullConvolutionAlgebra α μ →L[ℂ] D :=
-  ((ρ : ConvolutionAlgebra α μ →ₗ[ℂ] D).comp
-    ((toFullStarAlgEquiv α μ).symm :
-      FullConvolutionAlgebra α μ →ₗ[ℂ] ConvolutionAlgebra α μ)).mkContinuous 1 fun f => by
-      simpa [norm_def] using hρ (ofFull f)
-
-private theorem fromCompletion_liftCLM_of (f : ConvolutionAlgebra α μ) :
-    (liftCLM ρ hρ).fromCompletion (of α μ f) = ρ f := by
-  simpa [liftCLM] using
-    ContinuousLinearMap.fromCompletion_apply_coe (liftCLM ρ hρ) (toFull f)
-
 /-- Extend a ⋆-homomorphism bounded by the full seminorm to the full crossed product.
 Its values on compactly supported coefficients are given by `lift_of`, and these determine
 it uniquely by `starAlgHom_ext`. -/
-def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D where
-  toFun := (liftCLM ρ hρ).fromCompletion
-  map_smul' := map_smul _
-  map_zero' := map_zero _
-  map_add' := map_add _
-  map_mul' x y := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f =>
-      induction y using induction_on with
-      | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-      | ih g => simp only [← map_mul, fromCompletion_liftCLM_of]
-  map_star' x := by
-    induction x using induction_on with
-    | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
-    | ih f => simp only [← map_star, fromCompletion_liftCLM_of]
+def lift : FullCrossedProduct α μ →⋆ₙₐ[ℂ] D :=
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).liftNonUnital ρ hρ
 
 /-- The extension agrees with the original ⋆-homomorphism on compactly supported coefficients. -/
 @[simp]
 theorem lift_of (f : ConvolutionAlgebra α μ) : lift ρ hρ (of α μ f) = ρ f :=
-  fromCompletion_liftCLM_of ρ hρ f
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).liftNonUnital_ofNonUnital ρ hρ f
 
 /-- Composing the extension with the canonical map recovers the original ⋆-homomorphism. -/
 @[simp]
 theorem lift_comp_of : (lift ρ hρ).comp (of α μ) = ρ :=
-  NonUnitalStarAlgHom.ext (lift_of ρ hρ)
+  (ConvolutionAlgebra.fullCStarSeminorm α μ).liftNonUnital_comp_ofNonUnital ρ hρ
 
 end FullCrossedProduct
 

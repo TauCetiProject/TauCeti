@@ -350,6 +350,19 @@ private def castFactor (A : J → Type*) [∀ j, Semiring (A j)]
     {j₁ j₂ : J} (h : j₁ = j₂) : A j₁ →⋆ₐ[R] A j₂ :=
   h ▸ StarAlgHom.id R (A j₁)
 
+private def reindexStarInv (A : J → Type*) [∀ j, Semiring (A j)]
+    [∀ j, Algebra R (A j)] [∀ j, StarRing (A j)] [∀ j, StarModule R (A j)]
+    (σ : I ≃ J) : FreeProduct R A →⋆ₐ[R] FreeProduct R (fun i ↦ A (σ i)) :=
+  liftStar fun {j} ↦
+    (ιStar R (fun i ↦ A (σ i)) (σ.symm j)).comp (castFactor R A (σ.apply_symm_apply j).symm)
+
+private theorem reindexStarInv_ι (A : J → Type*) [∀ j, Semiring (A j)]
+    [∀ j, Algebra R (A j)] [∀ j, StarRing (A j)] [∀ j, StarModule R (A j)]
+    (σ : I ≃ J) (j : J) (a : A j) :
+    reindexStarInv R A σ (ι R A j a) =
+      ι R (fun i ↦ A (σ i)) (σ.symm j) (castFactor R A (σ.apply_symm_apply j).symm a) := by
+  simp [reindexStarInv]
+
 /-- Relabeling the index type along an equivalence `σ : I ≃ J` induces a star-algebra equivalence
 of free products. -/
 def reindexStarAlgEquiv (A : J → Type*) [∀ j, Semiring (A j)]
@@ -357,30 +370,18 @@ def reindexStarAlgEquiv (A : J → Type*) [∀ j, Semiring (A j)]
     (σ : I ≃ J) : FreeProduct R (fun i ↦ A (σ i)) ≃⋆ₐ[R] FreeProduct R A :=
   StarAlgEquiv.ofStarAlgHom
     (reindexStarHom R A σ)
-    (liftStar fun {j} ↦
-      (ιStar R (fun i ↦ A (σ i)) (σ.symm j)).comp (castFactor R A (σ.apply_symm_apply j).symm))
+    (reindexStarInv R A σ)
     (starAlgHom_ext fun i a ↦ by
-      -- Unfold composition of the forward and inverse `liftStar` homomorphisms on `ι`.
-      change (liftStar fun {j} ↦
-          (ιStar R (fun k ↦ A (σ k)) (σ.symm j)).comp
-            (castFactor R A (σ.apply_symm_apply j).symm))
-        (reindexStarHom R A σ (ι R (fun k ↦ A (σ k)) i a)) = ι R (fun k ↦ A (σ k)) i a
-      rw [reindexStarHom_ι, liftStar_ι]
+      rw [StarAlgHom.comp_apply, reindexStarHom_ι, reindexStarInv_ι, StarAlgHom.coe_id, id_eq]
       have hkey : ∀ (k : I) (_ : k = i) (hk : σ k = σ i),
-          ((ιStar R (fun m ↦ A (σ m)) k).comp (castFactor R A hk.symm)) a =
+          ι R (fun m ↦ A (σ m)) k (castFactor R A hk.symm a) =
             ι R (fun m ↦ A (σ m)) i a := by
         rintro k rfl hk
         cases Subsingleton.elim hk rfl
         rfl
       exact hkey (σ.symm (σ i)) (σ.symm_apply_apply i) (σ.apply_symm_apply (σ i)))
     (starAlgHom_ext fun j a ↦ by
-      -- Unfold composition of the inverse and forward `liftStar` homomorphisms on `ι`.
-      change reindexStarHom R A σ
-          ((liftStar fun {j'} ↦
-            (ιStar R (fun k ↦ A (σ k)) (σ.symm j')).comp
-              (castFactor R A (σ.apply_symm_apply j').symm)) (ι R A j a)) =
-        ι R A j a
-      rw [liftStar_ι, StarAlgHom.comp_apply, ιStar_apply, reindexStarHom_ι]
+      rw [StarAlgHom.comp_apply, reindexStarInv_ι, reindexStarHom_ι, StarAlgHom.coe_id, id_eq]
       have hkey : ∀ (k : I) (hk : σ k = j),
           ι R A (σ k) (castFactor R A hk.symm a) = ι R A j a := by
         rintro k rfl
