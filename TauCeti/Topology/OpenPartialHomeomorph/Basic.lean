@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.LocallyClosed
 public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import TauCeti.Topology.PartialHomeomorph.Basic
+import Mathlib.Topology.OpenPartialHomeomorph.Basic
 
 /-!
 # Basic properties of open partial homeomorphisms
@@ -21,9 +23,11 @@ built by pulling back sets from the model space, as `φ.symm '' K` for some `K �
 Mayer–Vietoris sequence for the local homology groups `Hₖ(M, M ∖ A)`, whose complements must be
 open) be applied to compact convex pieces of a chart.
 
-Both statements hold for partial homeomorphisms whose source and target need not be open, and are
-proved in that generality in `TauCeti.Topology.PartialHomeomorph.Basic`. They are restated here
-in terms of the coercion and inverse of an open partial homeomorphism.
+The two closed-image statements hold for partial homeomorphisms whose source and target need not be
+open, and are proved in that generality in `TauCeti.Topology.PartialHomeomorph.Basic`. They are
+restated here in terms of the coercion and inverse of an open partial homeomorphism. Because the
+source and target of an open partial homeomorphism are open, locally closed subsets of the source
+or target are also sent to locally closed subsets of the ambient space.
 
 ## Main statements
 
@@ -31,6 +35,9 @@ in terms of the coercion and inverse of an open partial homeomorphism.
   homeomorphism from a Hausdorff space maps compact subsets of its target to closed sets.
 * `OpenPartialHomeomorph.isClosed_image_of_closure_subset_target`: the image of a closed subset
   of the source is closed if its closure stays inside the target, without a compactness assumption.
+* `OpenPartialHomeomorph.isLocallyClosed_image_of_subset_source`,
+  `OpenPartialHomeomorph.isLocallyClosed_image_symm_of_subset_target`: an open partial homeomorphism
+  and its inverse preserve locally closed subsets contained in their source or target.
 -/
 
 public section
@@ -51,5 +58,19 @@ theorem isClosed_image_of_closure_subset_target {s : Set X} (hs : IsClosed s)
     (hse : s ⊆ e.source) (hclosure : closure (e '' s) ⊆ e.target) :
     IsClosed (e '' s) :=
   e.toPartialHomeomorph.isClosed_image_of_closure_subset_target hs hse hclosure
+
+/-- The image under an open partial homeomorphism of a locally closed subset of its source is
+locally closed in the ambient target space. -/
+theorem isLocallyClosed_image_of_subset_source {s : Set X} (hs : IsLocallyClosed s)
+    (hse : s ⊆ e.source) : IsLocallyClosed (e '' s) := by
+  rw [← Set.inter_eq_right.2 hse, ← Subtype.image_preimage_val, ← Set.image_comp]
+  exact (hs.preimage continuous_subtypeVal).image e.isOpenEmbedding_restrict.isInducing
+    e.isOpenEmbedding_restrict.isOpen_range.isLocallyClosed
+
+/-- The image under `e.symm` of a locally closed subset of `e.target` is locally closed in the
+ambient source space. -/
+theorem isLocallyClosed_image_symm_of_subset_target {s : Set Y} (hs : IsLocallyClosed s)
+    (hst : s ⊆ e.target) : IsLocallyClosed (e.symm '' s) :=
+  e.symm.isLocallyClosed_image_of_subset_source hs hst
 
 end OpenPartialHomeomorph

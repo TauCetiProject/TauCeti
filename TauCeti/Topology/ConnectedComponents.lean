@@ -12,8 +12,11 @@ public import Mathlib.Topology.Connected.LocallyConnected
 public import Mathlib.Topology.Irreducible
 public import Mathlib.SetTheory.Cardinal.Finite
 public import TauCeti.Topology.PathComponent
+public import Mathlib.Topology.LocallyFinite
 public import Mathlib.Topology.Order.OrderClosed
 public import Mathlib.Topology.Sets.Closeds
+public import Mathlib.Topology.Sets.Opens
+import Mathlib.Topology.Compactness.LocallyFinite
 import Mathlib.Topology.DiscreteSubset
 import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Order.IntermediateValue
@@ -106,6 +109,15 @@ space by them.
   components is split into two disjoint nonempty open sets, these are its components.
 * `IsPreconnected.connectedComponentIn_union_eq_left`: a preconnected open set `u`, separated by a
   disjoint open set `v`, is a connected component of `u ∪ v`.
+* `TauCeti.locallyFinite_connectedComponentIn_iff`: the distinct nonempty connected components of
+  `s` are locally finite if and only if every point has a neighborhood meeting only finitely many
+  components.
+* `LocallyFinite.finite_image_connectedComponentIn_of_isCompact`: if the distinct nonempty
+  connected components of `s` are locally finite, only finitely many meet any compact set.
+* `Set.Finite.isOpen_preimage_connectedComponentIn_inter`,
+  `Set.Finite.connectedComponentIn_inter_mem_nhdsWithin`: when `s ∩ U` has finitely many connected
+  components, each component is relatively open in `s` (for open `U`) and belongs to `𝓝[s] x` (for
+  `U ∈ 𝓝 x`).
 
 ## Attribution
 
@@ -1064,5 +1076,62 @@ theorem _root_.IsPreconnected.connectedComponentIn_union_eq_left {u v : Set X}
   (isPreconnected_connectedComponentIn.subset_left_of_subset_union hu hv huv
       (connectedComponentIn_subset _ x) ⟨x, mem_connectedComponentIn (Or.inl hx), hx⟩).antisymm
     (hu'.subset_connectedComponentIn hx subset_union_left)
+
+/-- The family of distinct nonempty connected components of a set `s` is locally finite in the
+ambient space if and only if every point has a neighborhood meeting only finitely many components
+of `s`. -/
+theorem locallyFinite_connectedComponentIn_iff {s : Set X} :
+    LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)) ↔
+      ∀ x, ∃ U ∈ 𝓝 x, (connectedComponentIn s '' (s ∩ U)).Finite := by
+  refine ⟨fun hlf x ↦ ?_, fun h x ↦ ?_⟩
+  · obtain ⟨U, hU, hfin⟩ := hlf x
+    refine ⟨U, hU, (hfin.image Subtype.val).subset ?_⟩
+    rintro _ ⟨y, ⟨hys, hyU⟩, rfl⟩
+    exact ⟨⟨connectedComponentIn s y, y, hys, rfl⟩, ⟨y, mem_connectedComponentIn hys, hyU⟩, rfl⟩
+  · obtain ⟨U, hU, hfin⟩ := h x
+    refine ⟨U, hU, (hfin.preimage Subtype.val_injective.injOn).subset ?_⟩
+    rintro C ⟨y, hyC, hyU⟩
+    obtain ⟨z, _, hzC⟩ := C.property
+    have hy : y ∈ connectedComponentIn s z := hzC ▸ hyC
+    exact ⟨y, ⟨connectedComponentIn_subset s z hy, hyU⟩,
+      (connectedComponentIn_eq hy).symm.trans hzC⟩
+
+/-- If the distinct nonempty connected components of `s` form a locally finite family, then only
+finitely many of them meet any compact set `K`. -/
+theorem _root_.LocallyFinite.finite_image_connectedComponentIn_of_isCompact {s K : Set X}
+    (hlf : LocallyFinite (fun C : (connectedComponentIn s '' s) ↦ (C : Set X)))
+    (hK : IsCompact K) :
+    (connectedComponentIn s '' (s ∩ K)).Finite := by
+  refine ((hlf.finite_nonempty_inter_compact hK).image Subtype.val).subset ?_
+  rintro _ ⟨x, ⟨hxs, hxK⟩, rfl⟩
+  exact ⟨⟨connectedComponentIn s x, x, hxs, rfl⟩,
+    ⟨x, mem_connectedComponentIn hxs, hxK⟩, rfl⟩
+
+/-- If `U` is a neighborhood of `x ∈ s` such that `s ∩ U` has only finitely many connected
+components, then the connected component of `x` in `s ∩ U` belongs to `𝓝[s] x`. -/
+theorem _root_.Set.Finite.connectedComponentIn_inter_mem_nhdsWithin {s U : Set X}
+    (hfin : (connectedComponentIn (s ∩ U) '' (s ∩ U)).Finite) {x : X} (hx : x ∈ s)
+    (hU : U ∈ 𝓝 x) :
+    connectedComponentIn (s ∩ U) x ∈ 𝓝[s] x := by
+  obtain ⟨O, hOo, hO⟩ := isOpen_induced_iff.1 (hfin.isOpen_preimage_connectedComponentIn x)
+  have hCeq : connectedComponentIn (s ∩ U) x = s ∩ (U ∩ O) := by
+    apply Set.eq_of_preimage_val_eq_of_subset (connectedComponentIn_subset _ _)
+      (inter_subset_inter_right s inter_subset_left)
+    simpa only [← inter_assoc, Subtype.preimage_coe_self_inter] using hO.symm
+  have hxC : x ∈ connectedComponentIn (s ∩ U) x :=
+    mem_connectedComponentIn ⟨hx, mem_of_mem_nhds hU⟩
+  rw [hCeq]
+  exact inter_mem_nhdsWithin s (Filter.inter_mem hU (hOo.mem_nhds (hCeq ▸ hxC).2.2))
+
+/-- If `s ∩ U` has finitely many connected components for an open set `U`, then every connected
+component of `s ∩ U` is relatively open in `s`. -/
+theorem _root_.Set.Finite.isOpen_preimage_connectedComponentIn_inter {s U : Set X}
+    (hfin : (connectedComponentIn (s ∩ U) '' (s ∩ U)).Finite) (hUo : IsOpen U) (x : X) :
+    IsOpen ((Subtype.val : s → X) ⁻¹' connectedComponentIn (s ∩ U) x) := by
+  refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
+  rw [mem_preimage] at hy
+  rw [nhds_subtype_eq_comap_nhdsWithin, connectedComponentIn_eq hy]
+  exact Filter.preimage_mem_comap (hfin.connectedComponentIn_inter_mem_nhdsWithin y.property
+    (hUo.mem_nhds (connectedComponentIn_subset _ _ hy).2))
 
 end TauCeti
