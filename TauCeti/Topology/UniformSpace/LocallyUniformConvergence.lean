@@ -31,7 +31,9 @@ continuous function by `m` gives a sequence tending to `0` locally uniformly
 
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
-(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`). Locally uniform
+convergence passes to subsequences, and more generally along any map of filters
+(`TendstoLocallyUniformlyOn.comp_tendsto`).
 
 A family `Φ : α → δ → γ` that is jointly continuous at every point of `α × {q}` converges locally
 uniformly in its first argument as the second tends to `q`
@@ -58,6 +60,14 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- Locally uniform convergence along `p` passes to any filter `q` that `g` maps into `p`; for
+instance, from a sequence to a subsequence. -/
+theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {p : Filter ι} {s : Set α} {g : ι' → ι}
+    {q : Filter ι'} (h : TendstoLocallyUniformlyOn F f p s) (hg : Tendsto g q p) :
+    TendstoLocallyUniformlyOn (F ∘ g) f q s :=
+  fun u hu x hx ↦ (h u hu x hx).imp fun _ ⟨ht, hev⟩ ↦ ⟨ht, hg.eventually hev⟩
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
