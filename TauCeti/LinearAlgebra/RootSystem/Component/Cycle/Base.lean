@@ -457,18 +457,9 @@ private theorem coe_basisPermFixedBasis_apply [DecidableEq (Quotient (SameCycle.
     (basisPermFixedBasis B e π he o : U) =
       ∑ j ∈ Finset.univ.filter (fun j ↦ (⟦j⟧ : Quotient _) = o), B j := by
   classical
-  apply B.equivFun.injective; ext j
   simp only [basisPermFixedBasis, Module.Basis.map_apply, LinearEquiv.trans_apply,
     LinearEquiv.coe_ofEq_apply, LinearEquiv.fixedSubmoduleCongr_symm_apply,
-    LinearEquiv.apply_symm_apply, Perm.permutationFixedBasis_apply, map_sum, Finset.sum_apply,
-    Module.Basis.equivFun_apply, Module.Basis.repr_self]
-  symm; by_cases hj : (⟦j⟧ : Quotient _) = o
-  · simp only [hj, ↓reduceIte]
-    rw [Finset.sum_eq_single j (fun _ _ h ↦ Finsupp.single_eq_of_ne' h) (by simp [hj]),
-      Finsupp.single_eq_same]
-  · simp only [hj, ↓reduceIte]
-    exact Finset.sum_eq_zero fun c hc ↦
-      Finsupp.single_eq_of_ne' fun (h : c = j) ↦ hj (h ▸ (Finset.mem_filter.mp hc).2)
+    Perm.permutationFixedBasis_eq_sum, map_sum, Basis.equivFun_symm_single]
 
 end BasisPerm
 

@@ -426,11 +426,6 @@ section Empty
 
 variable [IsEmpty ι]
 
-variable {P} in
-/-- An empty root index type has an empty type of irreducible components. -/
-instance isEmpty_component : IsEmpty P.Component :=
-  ⟨fun C ↦ C.exists_rep.elim (IsEmpty.elim ‹IsEmpty ι›)⟩
-
 @[simp] theorem foldedIndices_eq_empty : P.foldedIndices σ = ∅ := by ext x; simp
 
 theorem subsingleton_fixedSubmodule_of_isEmpty [P.IsRootSystem] :
