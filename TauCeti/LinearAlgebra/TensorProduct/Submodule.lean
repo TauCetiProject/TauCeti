@@ -28,7 +28,9 @@ Multiplication of tensor products of submodules is compatible with multiplicatio
 factor (`Submodule.map₂_tmul_mul_le`). If a scalar extension is finitely generated, some finitely
 generated submodule of the original module already spans that scalar extension
 (`Submodule.exists_fg_baseChange_eq_top`). A linear map of scalar factors carries one scalar
-extension of a submodule into another (`Submodule.map_mem_baseChange`).
+extension of a submodule into another (`Submodule.map_mem_baseChange`), and for an algebra map
+`f : A →ₐ[R] B` the `B`-span of the image of `span A s` under `f ⊗ id` equals the `B`-span of the
+image of `s` (`Submodule.span_rTensor_image_span`).
 -/
 
 public section
@@ -101,6 +103,21 @@ theorem map_mem_baseChange (p : Submodule R M) (f : A →ₗ[R] B) {x : A ⊗[R]
   induction y using TensorProduct.inductionOn with
   | tmul a m => simp
   | add y z hy hz => simp only [map_add, hy, hz]
+
+/-- For an `R`-algebra map `f : A →ₐ[R] B`, the `B`-span of the image of `span A s` under `f ⊗ id`
+equals the `B`-span of the image of `s`. -/
+theorem span_rTensor_image_span (f : A →ₐ[R] B) (s : Set (A ⊗[R] M)) :
+    span B (f.toLinearMap.rTensor M '' (span A s : Set (A ⊗[R] M))) =
+      span B (f.toLinearMap.rTensor M '' s) := by
+  let φ : A ⊗[R] M →ₛₗ[f.toRingHom] B ⊗[R] M :=
+    { toFun := f.toLinearMap.rTensor M
+      map_add' := map_add _
+      map_smul' a x := by
+        induction x using TensorProduct.inductionOn with
+        | tmul a' m => simp [TensorProduct.smul_tmul', map_mul]
+        | add x y hx hy => rw [smul_add, map_add, hx, hy, map_add, smul_add] }
+  exact le_antisymm (span_le.mpr (image_span_subset_span φ s))
+    (span_mono (Set.image_mono subset_span))
 
 end ScalarMap
 
