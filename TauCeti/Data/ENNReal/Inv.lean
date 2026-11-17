@@ -27,6 +27,7 @@ is at most `2 b`.
 * `ENNReal.toReal_one_sub_div`: `(1 - a / b).toReal = 1 - a.toReal / b.toReal` for `a ≤ b`.
 * `ENNReal.one_sub_one_div_toReal_nonneg`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal`
   is nonnegative.
+* `ENNReal.one_le_toReal_sub_one`: a finite exponent `2 ≤ r` has `1 ≤ r.toReal - 1`.
 * `ENNReal.one_div_toReal_sub_one_div_toReal_nonneg`: for `0 < p ≤ q`, the exponent
   `1 / p.toReal - 1 / q.toReal` is nonnegative.
 * `ENNReal.toNNReal_one_sub_div_pos`: `0 < (1 - a / b).toNNReal` for `a < b`.
@@ -89,6 +90,12 @@ theorem one_sub_one_div_toReal_nonneg {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 
   · have h1p : (1 : ℝ) ≤ p.toReal := by
       simpa using ENNReal.toReal_mono hp_top hp
     exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
+
+/-- A finite exponent `2 ≤ r` has `1 ≤ r - 1`, read in `ℝ`. -/
+theorem one_le_toReal_sub_one {r : ℝ≥0∞} (hr : r ≠ ∞) (hr2 : 2 ≤ r) : 1 ≤ r.toReal - 1 := by
+  have := toReal_mono hr hr2
+  simp only [toReal_ofNat] at this
+  linarith
 
 /-- For `0 < p ≤ q`, the difference `1 / p - 1 / q` of reciprocal exponents is nonnegative (with
 `1 / ∞` read as `0`). It is the exponent of the measure factor in the inclusion `L^q ⊆ Lᵖ` on a
