@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Convex.StdSimplex
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import Mathlib.Topology.Algebra.Module.Basic
 import TauCeti.Analysis.Analytic.Submanifold.Transport
+import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.OpenSimplex
 
 /-!
@@ -26,9 +27,9 @@ in both directions because `Fin n → 𝕜` carries the product topology (`Linea
 
 Over `ℝ`, this equips every nonempty open simplex — the intrinsic interior of the convex hull of a
 nonempty finite affinely independent family — with the structure of an analytic submanifold of
-dimension one less than its number of vertices, and in particular makes the open standard simplex
-in `Fin m → ℝ` (`m ≥ 1`) an `(m - 1)`-dimensional analytic submanifold and each of its open facets
-(`m ≥ 2`) an `(m - 2)`-dimensional analytic submanifold.
+dimension one less than its number of vertices, and in particular makes `TauCeti.openStdSimplex ℝ`
+in `Fin m → ℝ` (`m ≥ 1`) an `(m - 1)`-dimensional analytic submanifold and each open facet
+`TauCeti.openStdSimplexFacet ℝ i` (`m ≥ 2`) an `(m - 2)`-dimensional analytic submanifold.
 
 ## Main results
 
@@ -42,8 +43,8 @@ in `Fin m → ℝ` (`m ≥ 1`) an `(m - 1)`-dimensional analytic submanifold and
 * `AffineIndependent.isAnalyticSubmanifold_intrinsicInterior_convexHull`: open simplices in
   `Fin n → ℝ` are analytic submanifolds of dimension `Fintype.card ι - 1`.
 * `TauCeti.isAnalyticSubmanifold_openStdSimplex`,
-  `TauCeti.isAnalyticSubmanifold_openStdSimplexFacet`: the open standard simplex in `Fin m → ℝ`
-  and its open facets are analytic submanifolds of dimensions `m - 1` and `m - 2`.
+  `TauCeti.isAnalyticSubmanifold_openStdSimplexFacet`: `TauCeti.openStdSimplex ℝ (Fin m)` and
+  `TauCeti.openStdSimplexFacet ℝ i` are analytic submanifolds of dimensions `m - 1` and `m - 2`.
 
 ## References
 
@@ -61,10 +62,14 @@ section NormedField
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n d : ℕ}
 
-/-- Every linear subspace `W` of `Fin n → 𝕜` is an analytic submanifold of dimension
-`Module.finrank 𝕜 W`. -/
-theorem Submodule.isAnalyticSubmanifold (W : Submodule 𝕜 (Fin n → 𝕜)) :
-    TauCeti.IsAnalyticSubmanifold (Module.finrank 𝕜 W) (W : Set (Fin n → 𝕜)) := by
+/-- Every linear subspace `W` of `Fin n → 𝕜` is the preimage of the coordinate subspace
+`{y | ∀ i : Fin n, Module.finrank 𝕜 W ≤ i.val → y i = 0}` under a continuous linear equivalence
+of `Fin n → 𝕜`. -/
+private theorem exists_continuousLinearEquiv_preimage_coordSubspace
+    (W : Submodule 𝕜 (Fin n → 𝕜)) :
+    ∃ e : (Fin n → 𝕜) ≃L[𝕜] Fin n → 𝕜,
+      e ⁻¹' {y : Fin n → 𝕜 | ∀ i : Fin n, Module.finrank 𝕜 W ≤ i.val → y i = 0} =
+        (W : Set (Fin n → 𝕜)) := by
   set d := Module.finrank 𝕜 W
   have hd : d ≤ n := by simpa using W.finrank_le
   obtain ⟨Q, hWQ⟩ := W.exists_isCompl
@@ -74,62 +79,52 @@ theorem Submodule.isAnalyticSubmanifold (W : Submodule 𝕜 (Fin n → 𝕜)) :
     omega
   let bW : Module.Basis (Fin d) 𝕜 W := Module.finBasis 𝕜 W
   let bQ : Module.Basis (Fin (n - d)) 𝕜 Q := Module.finBasisOfFinrankEq 𝕜 Q hdimQ
-  -- Decompose `Fin n → 𝕜` along `W × Q` and place `W` in the first `d` coordinates and `Q` in the
+  -- Decompose `Fin n → 𝕜` along `W × Q`, placing `W` in the first `d` coordinates and `Q` in the
   -- remaining `n - d` coordinates.
   let σ : Fin d ⊕ Fin (n - d) ≃ Fin n :=
     finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hd))
   let joinCoords : ((Fin d → 𝕜) × (Fin (n - d) → 𝕜)) ≃ₗ[𝕜] Fin n → 𝕜 :=
     (LinearEquiv.sumPiEquivProdPi 𝕜 (Fin d) (Fin (n - d)) (fun _ ↦ 𝕜)).symm ≪≫ₗ
       LinearEquiv.funCongrLeft 𝕜 𝕜 σ.symm
+  let p := Submodule.prodEquivOfIsCompl W Q hWQ
   let L : (Fin n → 𝕜) ≃ₗ[𝕜] Fin n → 𝕜 :=
-    (Submodule.prodEquivOfIsCompl W Q hWQ).symm ≪≫ₗ
-      (bW.equivFun.prodCongr bQ.equivFun) ≪≫ₗ joinCoords
+    p.symm ≪≫ₗ (bW.equivFun.prodCongr bQ.equivFun) ≪≫ₗ joinCoords
   let e : (Fin n → 𝕜) ≃L[𝕜] Fin n → 𝕜 :=
     { L with
       continuous_toFun := L.toLinearMap.continuous_on_pi
       continuous_invFun := L.symm.toLinearMap.continuous_on_pi }
-  have hpre : e ⁻¹' {y : Fin n → 𝕜 | ∀ i : Fin n, d ≤ i.val → y i = 0} =
-      (W : Set (Fin n → 𝕜)) := by
-    ext x
-    simp only [mem_preimage, mem_ofPred_eq, SetLike.mem_coe]
-    constructor
-    · intro hx
-      have hQ0 : bQ.equivFun ((Submodule.prodEquivOfIsCompl W Q hWQ).symm x).2 = 0 := by
-        ext k
-        have hk : d ≤ (σ (Sum.inr k)).val := by simp [σ]
-        simpa [e, L, joinCoords] using hx (σ (Sum.inr k)) hk
-      have hxQ : ((Submodule.prodEquivOfIsCompl W Q hWQ).symm x).2 = 0 :=
-        bQ.equivFun.injective (by simpa using hQ0)
-      have hrepr : x = (((Submodule.prodEquivOfIsCompl W Q hWQ).symm x).1 : Fin n → 𝕜) +
-          (((Submodule.prodEquivOfIsCompl W Q hWQ).symm x).2 : Fin n → 𝕜) := by
-        simpa using ((Submodule.prodEquivOfIsCompl W Q hWQ).apply_symm_apply x).symm
-      rw [hrepr, hxQ, ZeroMemClass.coe_zero, add_zero]
-      exact ((Submodule.prodEquivOfIsCompl W Q hWQ).symm x).1.2
-    · intro hxW i hi
-      obtain ⟨s, rfl⟩ := σ.surjective i
-      cases s with
-      | inl j =>
-        have : (σ (Sum.inl j)).val < d := by simp [σ]
-        omega
-      | inr k =>
-        have hpair : (Submodule.prodEquivOfIsCompl W Q hWQ).symm x = (⟨x, hxW⟩, 0) :=
-          (Submodule.prodEquivOfIsCompl W Q hWQ).symm_apply_eq.2 (by simp)
-        simp [e, L, joinCoords, hpair]
-  rw [← hpre]
-  exact (TauCeti.isAnalyticSubmanifold_coordSubspace hd).preimage_continuousLinearEquiv e
+  refine ⟨e, ?_⟩
+  ext x
+  simp only [mem_preimage, mem_ofPred_eq, SetLike.mem_coe]
+  rw [← σ.forall_congr_right, Sum.forall]
+  have hinl : ∀ j : Fin d, d ≤ (σ (Sum.inl j)).val → e x (σ (Sum.inl j)) = 0 := fun j hj ↦ by
+    have : (σ (Sum.inl j)).val < d := by simp [σ]
+    omega
+  have hinr : (∀ k : Fin (n - d), d ≤ (σ (Sum.inr k)).val → e x (σ (Sum.inr k)) = 0) ↔
+      (p.symm x).2 = 0 := by
+    have hcoord (k : Fin (n - d)) : e x (σ (Sum.inr k)) = bQ.equivFun (p.symm x).2 k := by
+      simp [e, L, joinCoords]
+    simp_rw [show ∀ k : Fin (n - d), d ≤ (σ (Sum.inr k)).val from fun k ↦ by simp [σ],
+      true_implies, hcoord, ← funext_iff, ← Pi.zero_def, ← map_zero bQ.equivFun,
+      bQ.equivFun.injective.eq_iff]
+  rw [and_iff_right hinl, hinr]
+  constructor
+  · intro hxQ
+    have hrepr : x = ((p.symm x).1 : Fin n → 𝕜) + ((p.symm x).2 : Fin n → 𝕜) := by
+      simpa [p] using (p.apply_symm_apply x).symm
+    rw [hrepr, hxQ, ZeroMemClass.coe_zero, add_zero]
+    exact (p.symm x).1.2
+  · intro hxW
+    have hpair : p.symm x = (⟨x, hxW⟩, 0) := p.symm_apply_eq.2 (by simp [p])
+    simp [hpair]
 
-/-- Translating an analytic submanifold of `Fin n → 𝕜` preserves its analytic submanifold
-structure and dimension. -/
-theorem TauCeti.IsAnalyticSubmanifold.add_left {S : Set (Fin n → 𝕜)}
-    (hS : TauCeti.IsAnalyticSubmanifold d S) (a : Fin n → 𝕜) :
-    TauCeti.IsAnalyticSubmanifold d ((a + ·) '' S) := by
-  have himg : (a + ·) '' S = (Homeomorph.addLeft (-a)) ⁻¹' S := by
-    ext y
-    simp
-  rw [himg]
-  exact hS.preimage (Homeomorph.addLeft (-a))
-    (fun _ _ ↦ analyticAt_const.add analyticAt_id)
-    (fun _ _ ↦ analyticAt_const.add analyticAt_id)
+/-- Every linear subspace `W` of `Fin n → 𝕜` is an analytic submanifold of dimension
+`Module.finrank 𝕜 W`. -/
+theorem Submodule.isAnalyticSubmanifold (W : Submodule 𝕜 (Fin n → 𝕜)) :
+    TauCeti.IsAnalyticSubmanifold (Module.finrank 𝕜 W) (W : Set (Fin n → 𝕜)) := by
+  obtain ⟨e, he⟩ := exists_continuousLinearEquiv_preimage_coordSubspace W
+  exact he ▸ (TauCeti.isAnalyticSubmanifold_coordSubspace
+    (by simpa using W.finrank_le)).preimage_continuousLinearEquiv e
 
 /-- Every nonempty affine subspace `A` of `Fin n → 𝕜` is an analytic submanifold of dimension
 `Module.finrank 𝕜 A.direction`. -/
@@ -139,14 +134,12 @@ theorem AffineSubspace.isAnalyticSubmanifold {A : AffineSubspace 𝕜 (Fin n →
   obtain ⟨x₀, hx₀⟩ := hA
   have htran : (A : Set (Fin n → 𝕜)) = (x₀ + ·) '' (A.direction : Set (Fin n → 𝕜)) := by
     ext x
-    constructor
-    · intro hx
-      refine ⟨x - x₀, ?_, add_sub_cancel x₀ x⟩
-      simpa [vsub_eq_sub] using AffineSubspace.vsub_mem_direction hx hx₀
-    · rintro ⟨v, hv, rfl⟩
-      simpa [vadd_eq_add, add_comm x₀ v] using AffineSubspace.vadd_mem_of_mem_direction hv hx₀
+    refine ⟨fun hx ↦ ⟨x - x₀, (AffineSubspace.vsub_right_mem_direction_iff_mem hx₀ x).2 hx,
+      add_sub_cancel x₀ x⟩, ?_⟩
+    rintro ⟨v, hv, rfl⟩
+    simpa using (AffineSubspace.vsub_right_mem_direction_iff_mem hx₀ (x₀ + v)).1 (by simpa using hv)
   rw [htran]
-  exact A.direction.isAnalyticSubmanifold.add_left x₀
+  exact A.direction.isAnalyticSubmanifold.translate x₀
 
 /-- Every nonempty intrinsic interior `intrinsicInterior 𝕜 s` in `Fin n → 𝕜` is an analytic
 submanifold of dimension `Module.finrank 𝕜 (vectorSpan 𝕜 s)`. -/
@@ -154,17 +147,13 @@ theorem TauCeti.isAnalyticSubmanifold_intrinsicInterior {s : Set (Fin n → 𝕜
     (hne : (intrinsicInterior 𝕜 s).Nonempty) :
     TauCeti.IsAnalyticSubmanifold (Module.finrank 𝕜 (vectorSpan 𝕜 s))
       (intrinsicInterior 𝕜 s) := by
-  have hsub : intrinsicInterior 𝕜 s ⊆ (affineSpan 𝕜 s : Set (Fin n → 𝕜)) := by
-    rintro _ ⟨y, -, rfl⟩
-    exact y.2
+  have hsub : intrinsicInterior 𝕜 s ⊆ (affineSpan 𝕜 s : Set (Fin n → 𝕜)) :=
+    TauCeti.intrinsicInterior_subset_affineSpan
   have hA : TauCeti.IsAnalyticSubmanifold (Module.finrank 𝕜 (vectorSpan 𝕜 s))
       (affineSpan 𝕜 s : Set (Fin n → 𝕜)) := by
     rw [← direction_affineSpan]
     exact (affineSpan 𝕜 s).isAnalyticSubmanifold (hne.mono hsub)
-  refine hA.of_isOpen_preimage_val hsub ?_ hne
-  convert isOpen_interior (s := ((↑) : affineSpan 𝕜 s → Fin n → 𝕜) ⁻¹' s) using 1
-  ext y
-  simp [intrinsicInterior]
+  exact hA.of_isOpen_preimage_val hsub TauCeti.isOpen_preimage_val_intrinsicInterior hne
 
 end NormedField
 
@@ -197,29 +186,23 @@ theorem isAnalyticSubmanifold_intrinsicInterior_convexHull_pi_single
       (intrinsicInterior ℝ
         (convexHull ℝ ((fun i : Fin m => (Pi.single i 1 : Fin m → ℝ)) '' t))) := by
   have : Nonempty (t : Set (Fin m)) := ht.coe_sort
-  have himg : (fun i : Fin m => (Pi.single i 1 : Fin m → ℝ)) '' (t : Set (Fin m)) =
-      range (fun j : (t : Set (Fin m)) => (Pi.single (j : Fin m) 1 : Fin m → ℝ)) := by
-    ext x
-    simp
   have hcard : Fintype.card (t : Set (Fin m)) = t.card := Fintype.card_coe t
-  rw [himg, ← hcard]
+  rw [Set.image_eq_range, ← hcard]
   exact (affineIndependent_pi_single ℝ
     (t : Set (Fin m))).isAnalyticSubmanifold_intrinsicInterior_convexHull
 
-/-- The open standard simplex `{x ∈ range weights | ∀ i, 0 < x i}` in `Fin m → ℝ` (`m ≥ 1`) is an
-`(m - 1)`-dimensional analytic submanifold. -/
+/-- The open standard simplex `openStdSimplex ℝ (Fin m)` (`m ≥ 1`) is an `(m - 1)`-dimensional
+analytic submanifold. -/
 theorem isAnalyticSubmanifold_openStdSimplex [NeZero m] :
-    IsAnalyticSubmanifold (m - 1)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i} := by
+    IsAnalyticSubmanifold (m - 1) (openStdSimplex ℝ (Fin m)) := by
   rw [← intrinsicInterior_range_stdSimplex_weights, ← convexHull_range_pi_single, ← image_univ]
   simpa using isAnalyticSubmanifold_intrinsicInterior_convexHull_pi_single
     (t := (Finset.univ : Finset (Fin m))) Finset.univ_nonempty
 
-/-- For `m ≥ 2`, the `i`-th open facet `{y ∈ range weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}` of the
-standard simplex in `Fin m → ℝ` is an `(m - 2)`-dimensional analytic submanifold. -/
+/-- For `m ≥ 2`, the `i`-th open facet `openStdSimplexFacet ℝ i` of the standard simplex in
+`Fin m → ℝ` is an `(m - 2)`-dimensional analytic submanifold. -/
 theorem isAnalyticSubmanifold_openStdSimplexFacet [Nontrivial (Fin m)] (i : Fin m) :
-    IsAnalyticSubmanifold (m - 2)
-      {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j} := by
+    IsAnalyticSubmanifold (m - 2) (openStdSimplexFacet ℝ i) := by
   obtain ⟨j, hj⟩ := exists_ne i
   have hne : (Finset.univ.erase i).Nonempty := ⟨j, Finset.mem_erase.2 ⟨hj, Finset.mem_univ j⟩⟩
   have hcard : (Finset.univ.erase i).card - 1 = m - 2 := by

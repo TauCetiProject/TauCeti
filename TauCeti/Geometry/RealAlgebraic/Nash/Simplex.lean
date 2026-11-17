@@ -29,28 +29,24 @@ regularity properties are needed alongside continuity and strict ordering:
    then `stdSimplexGapExtension a b c α` is semialgebraic on the closed standard simplex without
    any non-collapse hypothesis (`TauCeti.isSemialgebraicOn_stdSimplexGapExtension`).
 2. **Nashness on the open simplex:** for every `m : ℕ`, if `g` is a Nash function in dimension
-   `m - 2` on each open facet `{y ∈ range weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}` of the standard
-   simplex in `Fin m → ℝ` (with no regularity required on faces of codimension at least two), then
+   `m - 2` on each open facet `TauCeti.openStdSimplexFacet ℝ i` of the standard simplex in
+   `Fin m → ℝ` (with no regularity required on faces of codimension at least two), then
    `stdSimplexExtension α g` is a Nash function in dimension `m - 1` on the open standard simplex
-   `{x ∈ range weights | ∀ i, 0 < x i}` (`TauCeti.nashOnSubmanifold_stdSimplexExtension`).
-   Consequently, if `a` and `b` are Nash on the open standard simplex and `a`, `b`, `c` are Nash on
-   each open facet with `a ≠ b` on open facets — allowing the gap `a ≤ b` to collapse on faces of
-   codimension at least two as well as inside the open simplex — then
-   `stdSimplexGapExtension a b c α` is Nash in dimension `m - 1` on the open standard simplex
-   (`TauCeti.nashOnSubmanifold_stdSimplexGapExtension`).
+   `TauCeti.openStdSimplex ℝ (Fin m)` (`TauCeti.nashOnSubmanifold_stdSimplexExtension`).
+   Consequently, if `a` and `b` are Nash on `TauCeti.openStdSimplex ℝ (Fin m)` and `a`, `b`, `c`
+   are Nash on each open facet `TauCeti.openStdSimplexFacet ℝ i` with `a ≠ b` on open facets —
+   allowing the gap `a ≤ b` to collapse on faces of codimension at least two as well as inside the
+   open simplex — then `stdSimplexGapExtension a b c α` is Nash in dimension `m - 1` on
+   `TauCeti.openStdSimplex ℝ (Fin m)` (`TauCeti.nashOnSubmanifold_stdSimplexGapExtension`).
 
-To transport Nash regularity between the open standard simplex and an arbitrary open geometric
-simplex `intrinsicInterior ℝ (convexHull ℝ (range p))` in `Fin n → ℝ`, we also show that affine maps
-are Nash on every semialgebraic analytic submanifold (`AffineMap.nashOnSubmanifold`), deduce the
-Nashness of barycentric combinations (`TauCeti.nashOnSubmanifold_sum_smul`), and characterize Nash
-maps on an open geometric simplex via pullback along `w ↦ ∑ i, w i • p i` to the open standard
-simplex (`AffineIndependent.nashOnSubmanifold_intrinsicInterior_convexHull_iff`).
+To transport Nash regularity between `TauCeti.openStdSimplex ℝ (Fin m)` and an arbitrary open
+geometric simplex `intrinsicInterior ℝ (convexHull ℝ (range p))` in `Fin n → ℝ`, we also
+characterize Nash maps on an open geometric simplex via pullback along `w ↦ ∑ i, w i • p i` to the
+open standard simplex (`AffineIndependent.nashOnSubmanifold_intrinsicInterior_convexHull_iff`).
 
 ## Main results
 
-* `AffineMap.nashOnSubmanifold`, `TauCeti.nashOnSubmanifold_sum_smul`,
-  `AffineIndependent.nashOnSubmanifold_intrinsicInterior_convexHull_iff`: affine maps and
-  barycentric combinations are Nash on semialgebraic analytic submanifolds, and a map on an open
+* `AffineIndependent.nashOnSubmanifold_intrinsicInterior_convexHull_iff`: a map on an open
   geometric simplex is Nash if and only if its barycentric pullback to the open standard simplex is
   Nash.
 * `TauCeti.isSemialgebraicMap_stdSimplexFacetProjection`,
@@ -75,39 +71,21 @@ public section
 
 open MvPolynomial Set Finset Convexity
 
-/-! ### Affine Nash maps and barycentric coordinates -/
+/-! ### Barycentric characterization of Nash maps on open simplices -/
 
 section Barycentric
 
-variable {n m d : ℕ} {τ : Type*} [Fintype τ] {S : Set (Fin n → ℝ)}
-
-/-- Every affine map `A : (Fin n → ℝ) →ᵃ[ℝ] (τ → ℝ)` is a Nash map on every `d`-dimensional
-semialgebraic analytic submanifold `S ⊆ Fin n → ℝ`. -/
-theorem AffineMap.nashOnSubmanifold (A : (Fin n → ℝ) →ᵃ[ℝ] (τ → ℝ))
-    (hS : TauCeti.IsAnalyticSubmanifold d S) (hS' : TauCeti.IsSemialgebraic S) :
-    TauCeti.NashOnSubmanifold d A S := by
-  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
-  exact (TauCeti.nashOnSubmanifold_eval p hS hS').congr fun x _ => (hp x).symm
-
-/-- For any family of vectors `p : Fin n → τ → ℝ`, the linear combination map `w ↦ ∑ i, w i • p i`
-is a Nash map on every `d`-dimensional semialgebraic analytic submanifold `S ⊆ Fin n → ℝ`. -/
-theorem TauCeti.nashOnSubmanifold_sum_smul (p : Fin n → τ → ℝ)
-    (hS : TauCeti.IsAnalyticSubmanifold d S) (hS' : TauCeti.IsSemialgebraic S) :
-    TauCeti.NashOnSubmanifold d (fun w : Fin n → ℝ => ∑ i, w i • p i) S := by
-  let L : (Fin n → ℝ) →ₗ[ℝ] (τ → ℝ) := ∑ i : Fin n, (LinearMap.proj i).smulRight (p i)
-  exact (L.toAffineMap.nashOnSubmanifold hS hS').congr fun w _ => by
-    ext j
-    simp [L, LinearMap.sum_apply, Finset.sum_apply]
+variable {n m : ℕ} {τ : Type*} [Fintype τ]
 
 /-- **Barycentric characterization of Nash maps on an open simplex.** For `m ≥ 1` and affinely
 independent vertices `p : Fin m → Fin n → ℝ`, a map `g : (Fin n → ℝ) → τ → ℝ` is Nash in dimension
 `m - 1` on `intrinsicInterior ℝ (convexHull ℝ (range p))` if and only if its barycentric pullback
-`w ↦ g (∑ i, w i • p i)` is Nash in dimension `m - 1` on the open standard simplex. -/
+`w ↦ g (∑ i, w i • p i)` is Nash in dimension `m - 1` on `TauCeti.openStdSimplex ℝ (Fin m)`. -/
 theorem AffineIndependent.nashOnSubmanifold_intrinsicInterior_convexHull_iff [NeZero m]
     {p : Fin m → Fin n → ℝ} (hp : AffineIndependent ℝ p) {g : (Fin n → ℝ) → τ → ℝ} :
     TauCeti.NashOnSubmanifold (m - 1) g (intrinsicInterior ℝ (convexHull ℝ (range p))) ↔
       TauCeti.NashOnSubmanifold (m - 1) (fun w : Fin m → ℝ => g (∑ i, w i • p i))
-        {w ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < w i} := by
+        (TauCeti.openStdSimplex ℝ (Fin m)) := by
   constructor
   · intro hg
     exact hg.comp
@@ -170,15 +148,16 @@ theorem nashOnSubmanifold_stdSimplexFacetProjection_of_ne_one {m d : ℕ} {S : S
   · simp [hj]
 
 /-- For `m ≥ 2`, the facet projection `stdSimplexFacetProjection i` is a Nash map in dimension
-`m - 1` on the open standard simplex in `Fin m → ℝ`. -/
+`m - 1` on `openStdSimplex ℝ (Fin m)`. -/
 theorem nashOnSubmanifold_stdSimplexFacetProjection {m : ℕ} [Nontrivial (Fin m)] (i : Fin m) :
-    NashOnSubmanifold (m - 1) (stdSimplexFacetProjection i)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ j, 0 < x j} := by
-  have : NeZero m := ⟨by rintro rfl; exact not_subsingleton (Fin 0) inferInstance⟩
+    NashOnSubmanifold (m - 1) (stdSimplexFacetProjection i) (openStdSimplex ℝ (Fin m)) := by
+  have : NeZero m := i.neZero
   obtain ⟨k, hk⟩ := exists_ne i
   exact nashOnSubmanifold_stdSimplexFacetProjection_of_ne_one i
     isAnalyticSubmanifold_openStdSimplex isSemialgebraic_openStdSimplex
-    fun x hx => (StdSimplex.apply_lt_one_of_mem_range_weights hx.1 hk (hx.2 k)).ne
+    fun x hx =>
+      let hx' := mem_openStdSimplex_iff.1 hx
+      (StdSimplex.apply_lt_one_of_mem_range_weights hx'.1 hk (hx'.2 k)).ne
 
 end FacetProjection
 
@@ -191,18 +170,9 @@ private theorem isSemialgebraicOn_stdSimplexExtension_of_subsingleton {ι : Type
     IsSemialgebraicOn (fun x (_ : Unit) => stdSimplexExtension α g x)
       (range fun s : StdSimplex ℝ ι => ⇑s.weights) := by
   rcases isEmpty_or_nonempty ι with _ | ⟨⟨i₀⟩⟩
-  · have hempty : (range fun s : StdSimplex ℝ ι => ⇑s.weights) = ∅ := by
-      ext x
-      rw [StdSimplex.mem_range_toFun_comp_weights_iff]
-      simp
-    exact hempty ▸ isSemialgebraicOn_empty _
+  · simp
   · have : Unique ι := uniqueOfSubsingleton i₀
-    have hsing : (range fun s : StdSimplex ℝ ι => ⇑s.weights) = {fun _ => 1} := by
-      rw [Set.range_unique]
-      congr 1
-      ext
-      simp
-    rw [hsing]
+    rw [StdSimplex.range_toFun_comp_weights_of_unique]
     exact (isSemialgebraicOn_const (fun _ : Unit => stdSimplexExtension α g (fun _ => 1))
       (isSemialgebraic_singleton _)).congr fun x hx => by rw [mem_singleton_iff.1 hx]
 
@@ -224,7 +194,10 @@ theorem isSemialgebraicOn_stdSimplexExtension {ι : Type*} [Fintype ι] [Decidab
       refine ⟨fun ⟨hx, hnot⟩ =>
         mem_stdSimplexBoundary.1 ((mem_stdSimplexBoundary_or_forall_pos hx).resolve_right hnot),
         fun ⟨hx, i, hi⟩ => ⟨hx, fun h => (h i).ne' hi⟩⟩
-    have hS : IsSemialgebraic (Δ ∩ P) := isSemialgebraic_openStdSimplex
+    have hopen : Δ ∩ P = openStdSimplex ℝ ι := by
+      ext x
+      simp [Δ, P]
+    have hS : IsSemialgebraic (Δ ∩ P) := hopen ▸ isSemialgebraic_openStdSimplex
     have hinv (i : ι) : IsSemialgebraicOn (fun x (_ : Unit) => (x i)⁻¹) (Δ ∩ P) :=
       (isSemialgebraicOn_eval (fun _ : Unit => (X i : MvPolynomial ι ℝ)) hS).inv.congr
         fun x _ => by ext; simp
@@ -249,62 +222,48 @@ theorem isSemialgebraicOn_stdSimplexExtension {ι : Type*} [Fintype ι] [Decidab
     · intro x hx; ext; exact stdSimplexExtension_of_not_forall_pos hx.2
 
 private theorem nashOnSubmanifold_stdSimplexExtension_of_subsingleton {m : ℕ}
-    [hsub : Subsingleton (Fin m)] {g : (Fin m → ℝ) → ℝ} (α : ℝ) :
+    [Subsingleton (Fin m)] {g : (Fin m → ℝ) → ℝ} (α : ℝ) :
     NashOnSubmanifold (m - 1) (fun x (_ : Unit) => stdSimplexExtension α g x)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i} := by
+      (openStdSimplex ℝ (Fin m)) := by
   rcases eq_zero_or_neZero m with rfl | _
-  · have hempty : {x ∈ range fun s : StdSimplex ℝ (Fin 0) => ⇑s.weights | ∀ i, 0 < x i} = ∅ := by
-      ext x
-      simp only [mem_ofPred_eq, StdSimplex.mem_range_toFun_comp_weights_iff, mem_empty_iff_false,
-        iff_false]
-      rintro ⟨⟨_, hsum⟩, _⟩
-      simp at hsum
-    rw [hempty]
+  · rw [openStdSimplex_of_isEmpty]
     exact ⟨analyticOnSubmanifold_iff.2 (by simp), isSemialgebraicOn_empty _⟩
   · have : Unique (Fin m) := uniqueOfSubsingleton 0
     have hm1 : m - 1 = 0 := by
       have hm : m = 1 := (Fintype.card_fin m).symm.trans Fintype.card_unique
       omega
-    have hsing : {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i} =
-        {fun _ => 1} := by
-      ext x
-      simp only [mem_ofPred_eq, Set.mem_range, mem_singleton_iff]
-      refine ⟨?_, fun hx => ⟨⟨default, funext fun _ => by simp [hx]⟩, fun _ => hx ▸ zero_lt_one⟩⟩
-      rintro ⟨⟨s, rfl⟩, _⟩
-      ext
-      simp
-    rw [hm1, hsing]
+    rw [hm1, openStdSimplex_of_unique]
     exact (nashOnSubmanifold_const (fun _ : Unit => stdSimplexExtension α g (fun _ => 1))
       (isAnalyticSubmanifold_singleton _) (isSemialgebraic_singleton _)).congr
       fun x hx => by rw [mem_singleton_iff.1 hx]
 
 /-- **Nashness of the rational simplex extension on the open simplex.** For any `m : ℕ`, if the
 boundary data `g` restrict to a Nash map in dimension `m - 2` on each open facet
-`{y ∈ range weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}` of the standard simplex in `Fin m → ℝ`
-(requiring no regularity on faces of codimension at least two), then `stdSimplexExtension α g` is
-a Nash map in dimension `m - 1` on the open standard simplex
-`{x ∈ range weights | ∀ i, 0 < x i}`. -/
+`openStdSimplexFacet ℝ i` of the standard simplex in `Fin m → ℝ` (requiring no regularity on faces
+of codimension at least two), then `stdSimplexExtension α g` is a Nash map in dimension `m - 1` on
+`openStdSimplex ℝ (Fin m)`. -/
 theorem nashOnSubmanifold_stdSimplexExtension {m : ℕ} {g : (Fin m → ℝ) → ℝ} (α : ℝ)
     (hg : ∀ i : Fin m, NashOnSubmanifold (m - 2) (fun x (_ : Unit) => g x)
-      {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}) :
+      (openStdSimplexFacet ℝ i)) :
     NashOnSubmanifold (m - 1) (fun x (_ : Unit) => stdSimplexExtension α g x)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i} := by
+      (openStdSimplex ℝ (Fin m)) := by
   rcases subsingleton_or_nontrivial (Fin m) with _ | _
   · exact nashOnSubmanifold_stdSimplexExtension_of_subsingleton α
-  · set U : Set (Fin m → ℝ) :=
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i}
-    have : NeZero m := ⟨by rintro rfl; exact not_subsingleton (Fin 0) inferInstance⟩
+  · set U : Set (Fin m → ℝ) := openStdSimplex ℝ (Fin m)
+    have : NeZero m := Nonempty.elim inferInstance Fin.neZero
     have hM : IsAnalyticSubmanifold (m - 1) U := isAnalyticSubmanifold_openStdSimplex
     have hS : IsSemialgebraic U := isSemialgebraic_openStdSimplex
     have hinv (i : Fin m) : NashOnSubmanifold (m - 1) (fun x (_ : Unit) => (x i)⁻¹) U := by
       refine ((nashOnSubmanifold_eval (fun _ : Unit => (X i : MvPolynomial (Fin m) ℝ)) hM hS).inv
-        fun x hx _ => by simpa using (hx.2 i).ne').congr fun x _ => ?_
+        fun x hx _ => by simpa using ((mem_openStdSimplex_iff.1 hx).2 i).ne').congr fun x _ => ?_
       ext
       simp
     have hgp (i : Fin m) :
         NashOnSubmanifold (m - 1) (fun x (_ : Unit) => g (stdSimplexFacetProjection i x)) U :=
       (hg i).comp (nashOnSubmanifold_stdSimplexFacetProjection i)
-        fun x hx => stdSimplexFacetProjection_mem_openStdSimplexFacet hx.1 fun j _ => hx.2 j
+        fun x hx =>
+          let hx' := mem_openStdSimplex_iff.1 hx
+          stdSimplexFacetProjection_mem_openStdSimplexFacet hx'.1 fun j _ => hx'.2 j
     have hnum : NashOnSubmanifold (m - 1)
         (fun x (_ : Unit) => α + ∑ i : Fin m, (x i)⁻¹ * g (stdSimplexFacetProjection i x)) U :=
       ((nashOnSubmanifold_const (fun _ : Unit => α) hM hS).add
@@ -315,9 +274,10 @@ theorem nashOnSubmanifold_stdSimplexExtension {m : ℕ} {g : (Fin m → ℝ) →
         (Finset.univ.nashOnSubmanifold_sum hM hS fun i _ => hinv i)).congr
         fun x _ => by ext; simp [Finset.sum_apply]
     refine (hnum.div hden fun x hx _ =>
-      (one_add_sum_inv_pos fun i _ => (hx.2 i).le).ne').congr fun x hx => ?_
+      (one_add_sum_inv_pos fun i _ => ((mem_openStdSimplex_iff.1 hx).2 i).le).ne').congr
+      fun x hx => ?_
     ext
-    exact (stdSimplexExtension_of_forall_pos hx.2).symm
+    exact (stdSimplexExtension_of_forall_pos (mem_openStdSimplex_iff.1 hx).2).symm
 
 end Extension
 
@@ -345,29 +305,25 @@ theorem isSemialgebraicOn_stdSimplexGapExtension {ι : Type*} [Fintype ι] [Deci
     fun x _ => by ext; simp [stdSimplexGapExtension_def]
 
 /-- **Nashness of gap-height extensions on the open simplex.** Let `a` and `b` be Nash functions in
-dimension `m - 1` on the open standard simplex in `Fin m → ℝ`, and on each open facet
-`{y ∈ range weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}` let `a`, `b`, and `c` be Nash functions in
-dimension `m - 2` with `a y ≠ b y`. Then `stdSimplexGapExtension a b c α` is a Nash function in
-dimension `m - 1` on the open standard simplex; the gap `a ≤ b` may collapse on faces of
-codimension at least two as well as inside the open simplex. -/
+dimension `m - 1` on `openStdSimplex ℝ (Fin m)`, and on each open facet `openStdSimplexFacet ℝ i`
+let `a`, `b`, and `c` be Nash functions in dimension `m - 2` with `a y ≠ b y`. Then
+`stdSimplexGapExtension a b c α` is a Nash function in dimension `m - 1` on
+`openStdSimplex ℝ (Fin m)`; the gap `a ≤ b` may collapse on faces of codimension at least two as
+well as inside the open simplex. -/
 theorem nashOnSubmanifold_stdSimplexGapExtension {m : ℕ} {a b c : (Fin m → ℝ) → ℝ} (α : ℝ)
-    (ha : NashOnSubmanifold (m - 1) (fun x (_ : Unit) => a x)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i})
-    (hb : NashOnSubmanifold (m - 1) (fun x (_ : Unit) => b x)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i})
+    (ha : NashOnSubmanifold (m - 1) (fun x (_ : Unit) => a x) (openStdSimplex ℝ (Fin m)))
+    (hb : NashOnSubmanifold (m - 1) (fun x (_ : Unit) => b x) (openStdSimplex ℝ (Fin m)))
     (haf : ∀ i : Fin m, NashOnSubmanifold (m - 2) (fun y (_ : Unit) => a y)
-      {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j})
+      (openStdSimplexFacet ℝ i))
     (hbf : ∀ i : Fin m, NashOnSubmanifold (m - 2) (fun y (_ : Unit) => b y)
-      {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j})
+      (openStdSimplexFacet ℝ i))
     (hcf : ∀ i : Fin m, NashOnSubmanifold (m - 2) (fun y (_ : Unit) => c y)
-      {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j})
-    (hne : ∀ (i : Fin m),
-      ∀ y ∈ {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j},
-        a y ≠ b y) :
+      (openStdSimplexFacet ℝ i))
+    (hne : ∀ (i : Fin m), ∀ y ∈ openStdSimplexFacet ℝ i, a y ≠ b y) :
     NashOnSubmanifold (m - 1) (fun x (_ : Unit) => stdSimplexGapExtension a b c α x)
-      {x ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | ∀ i, 0 < x i} := by
+      (openStdSimplex ℝ (Fin m)) := by
   have hr (i : Fin m) : NashOnSubmanifold (m - 2) (fun y (_ : Unit) => (c y - a y) / (b y - a y))
-      {y ∈ range fun s : StdSimplex ℝ (Fin m) => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j} :=
+      (openStdSimplexFacet ℝ i) :=
     (((hcf i).sub (haf i)).div ((hbf i).sub (haf i))
       fun y hy _ => sub_ne_zero.2 (hne i y hy).symm).congr fun y _ => by ext; simp
   exact (ha.add ((hb.sub ha).mul (nashOnSubmanifold_stdSimplexExtension α hr))).congr

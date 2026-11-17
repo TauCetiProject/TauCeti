@@ -36,8 +36,8 @@ neighbourhood of a semialgebraic analytic submanifold is a Nash map on it.
 The class is closed under the operations of the category:
 
 * restriction to open semialgebraic subsets and to smaller semialgebraic analytic submanifolds;
-* polynomial maps, pointwise ring operations, finite sums, reciprocals and quotients
-  of nonvanishing maps, and polynomial postcomposition;
+* polynomial maps, affine maps, linear combinations, pointwise ring operations, finite sums,
+  reciprocals and quotients of nonvanishing maps, and polynomial postcomposition;
 * pairing, and products of maps on products of submanifolds;
 * composition;
 * analytic left inverses: if `g` is analytic and inverts a Nash map `f` on `S`, then `g` is a Nash
@@ -51,6 +51,8 @@ The class is closed under the operations of the category:
 * `TauCeti.NashOnSubmanifold d f S`: `f` is a Nash map on `S` in dimension `d`.
 * `IsOpen.nashOnSubmanifold_iff`: on open sets, Nash maps are the maps with Nash coordinate germs.
 * `TauCeti.nashOnSubmanifold_of_forall_isNashAt`: restrictions of ambient Nash maps.
+* `AffineMap.nashOnSubmanifold`, `TauCeti.nashOnSubmanifold_sum_smul`: affine maps and linear
+  combinations on semialgebraic analytic submanifolds.
 * `Finset.nashOnSubmanifold_sum`, `TauCeti.NashOnSubmanifold.inv`,
   `TauCeti.NashOnSubmanifold.div`: finite sums, and pointwise reciprocals and quotients where no
   denominator coordinate vanishes.
@@ -158,7 +160,7 @@ theorem nashOnSubmanifold_of_forall_isNashAt (hU : IsOpen U) (hU' : IsSemialgebr
     (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S) : NashOnSubmanifold d f S :=
   (hU.nashOnSubmanifold_iff.2 ⟨hU', hf⟩).mono hSU hS hS'
 
-/-! ### Polynomial maps -/
+/-! ### Polynomial and affine maps -/
 
 /-- Polynomial maps are Nash maps on every semialgebraic analytic submanifold. -/
 theorem nashOnSubmanifold_eval (p : τ → MvPolynomial (Fin n) ℝ) (hS : IsAnalyticSubmanifold d S)
@@ -176,6 +178,24 @@ theorem nashOnSubmanifold_const (c : τ → ℝ) (hS : IsAnalyticSubmanifold d S
 theorem nashOnSubmanifold_id (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S) :
     NashOnSubmanifold d id S :=
   (nashOnSubmanifold_eval (fun i ↦ X i) hS hS').congr fun _ _ ↦ by ext; simp
+
+/-- Every affine map `A : (Fin n → ℝ) →ᵃ[ℝ] (τ → ℝ)` is a Nash map on every `d`-dimensional
+semialgebraic analytic submanifold `S ⊆ Fin n → ℝ`. -/
+theorem _root_.AffineMap.nashOnSubmanifold (A : (Fin n → ℝ) →ᵃ[ℝ] (τ → ℝ))
+    (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S) :
+    NashOnSubmanifold d A S := by
+  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
+  exact (nashOnSubmanifold_eval p hS hS').congr fun x _ ↦ (hp x).symm
+
+/-- For any family of vectors `p : Fin n → τ → ℝ`, the linear combination map `w ↦ ∑ i, w i • p i`
+is a Nash map on every `d`-dimensional semialgebraic analytic submanifold `S ⊆ Fin n → ℝ`. -/
+theorem nashOnSubmanifold_sum_smul (p : Fin n → τ → ℝ)
+    (hS : IsAnalyticSubmanifold d S) (hS' : IsSemialgebraic S) :
+    NashOnSubmanifold d (fun w : Fin n → ℝ ↦ ∑ i, w i • p i) S := by
+  let L : (Fin n → ℝ) →ₗ[ℝ] (τ → ℝ) := ∑ i : Fin n, (LinearMap.proj i).smulRight (p i)
+  exact (L.toAffineMap.nashOnSubmanifold hS hS').congr fun w _ ↦ by
+    ext j
+    simp [L, LinearMap.sum_apply, Finset.sum_apply]
 
 namespace NashOnSubmanifold
 

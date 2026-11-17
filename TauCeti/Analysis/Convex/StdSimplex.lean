@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
 public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import Mathlib.LinearAlgebra.AffineSpace.Independent
 public import Mathlib.Topology.Algebra.Ring.Real
 public import Mathlib.Topology.Order.Compact
 public import Mathlib.Analysis.Normed.Group.Constructions
@@ -17,6 +18,7 @@ import Mathlib.Algebra.BigOperators.Pi
 import Mathlib.Analysis.Convex.Combination
 import Mathlib.Analysis.Normed.MulAction
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import Mathlib.LinearAlgebra.StdBasis
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -50,12 +52,19 @@ likewise separated by at least `(card ι)⁻¹`.
   simplex are the vectors with nonnegative coordinates summing to one.
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
+* `Convexity.StdSimplex.range_toFun_comp_weights_of_isEmpty`,
+  `Convexity.StdSimplex.range_toFun_comp_weights_of_unique`: the empty and one-point standard
+  simplices.
 * `LinearMap.sum_apply_eq_of_mapsTo_range_weights`: a linear map carrying the standard simplex
   into a standard simplex preserves coordinate sums.
 * `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
   the standard simplex, the points with some vanishing coordinate, and its compactness.
-* `TauCeti.mem_convexHull_pi_single_iff`: membership in the face of the standard simplex spanned
-  by a set of vertices, in coordinates.
+* `TauCeti.openStdSimplex`, `TauCeti.openStdSimplexFacet`: the open standard simplex (positive
+  weights) and its open facets (one vanishing coordinate, all others positive).
+* `TauCeti.affineIndependent_pi_single`, `TauCeti.mem_convexHull_pi_single_iff`,
+  `TauCeti.convexHull_range_pi_single`, `TauCeti.convexHull_pi_single_compl_singleton`: affine
+  independence of coordinate vertices, coordinate membership in a coordinate face, and the standard
+  simplex and its facets as convex hulls of standard basis vectors.
 * `TauCeti.norm_sub_le_one_of_mem_convexHull_pi_single`: points of faces of the standard
   simplex are within distance one.
 * `TauCeti.exists_mem_convexHull_inter_norm_sub_le`: a point `x` of one coordinate face has a
@@ -113,6 +122,30 @@ theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [LinearOrder 
   have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
   rw [sum_pair hij.symm, hx1] at this
   exact (lt_add_of_pos_right (x i) hxj).trans_le this
+
+/-- Over a nontrivial ordered semiring, the standard simplex on an empty index type is empty. -/
+@[simp]
+theorem range_toFun_comp_weights_of_isEmpty {R : Type*} [Semiring R] [PartialOrder R]
+    [Nontrivial R] {ι : Type*} [IsEmpty ι] :
+    (range fun s : StdSimplex R ι => ⇑s.weights) = ∅ := by
+  have := Fintype.ofFinite ι
+  ext x
+  rw [mem_range_toFun_comp_weights_iff]
+  simp
+
+/-- On a one-element index type, the standard simplex consists of the single constant-one weight
+vector. -/
+@[simp]
+theorem range_toFun_comp_weights_of_unique {R : Type*} [Semiring R] [PartialOrder R]
+    [ZeroLEOneClass R] {ι : Type*} [Unique ι] :
+    (range fun s : StdSimplex R ι => ⇑s.weights) = {fun _ => 1} := by
+  have := Fintype.ofFinite ι
+  ext x
+  rw [mem_range_toFun_comp_weights_iff]
+  simp only [Fintype.sum_unique, Unique.forall_iff, mem_singleton_iff, funext_iff,
+    and_iff_right_iff_imp]
+  intro h
+  simp [h]
 
 end Convexity.StdSimplex
 
@@ -186,6 +219,71 @@ theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
 
 end Boundary
 
+section OpenSimplex
+
+variable {R : Type*} [Semiring R] [PartialOrder R]
+
+/-- The open standard simplex over `R` on index type `ι`: the weight vectors of
+`Convexity.StdSimplex R ι` with all coordinates strictly positive. -/
+def openStdSimplex (R : Type*) [Semiring R] [PartialOrder R] (ι : Type*) : Set (ι → R) :=
+  {x ∈ range fun s : StdSimplex R ι => ⇑s.weights | ∀ i, 0 < x i}
+
+/-- Membership in the open standard simplex. -/
+@[simp]
+theorem mem_openStdSimplex_iff {x : ι → R} :
+    x ∈ openStdSimplex R ι ↔ x ∈ (range fun s : StdSimplex R ι => ⇑s.weights) ∧ ∀ i, 0 < x i :=
+  Iff.rfl
+
+/-- The open standard simplex lies in the closed standard simplex. -/
+theorem openStdSimplex_subset :
+    openStdSimplex R ι ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
+  fun _ hx => hx.1
+
+/-- Over a nontrivial ordered semiring, the open standard simplex on an empty index type is
+empty. -/
+@[simp]
+theorem openStdSimplex_of_isEmpty [Nontrivial R] [IsEmpty ι] : openStdSimplex R ι = ∅ :=
+  subset_empty_iff.1
+    (openStdSimplex_subset.trans StdSimplex.range_toFun_comp_weights_of_isEmpty.subset)
+
+/-- On a one-element index type, the open standard simplex consists of the single constant-one
+weight vector. -/
+@[simp]
+theorem openStdSimplex_of_unique [ZeroLEOneClass R] [Nontrivial R] [Unique ι] :
+    openStdSimplex R ι = {fun _ => 1} := by
+  ext x
+  simp only [mem_openStdSimplex_iff, StdSimplex.range_toFun_comp_weights_of_unique,
+    mem_singleton_iff, and_iff_left_iff_imp]
+  rintro rfl _
+  exact zero_lt_one
+
+/-- The `i`-th open facet of the standard simplex over `R`: the weight vectors of
+`Convexity.StdSimplex R ι` whose `i`-th coordinate vanishes and whose remaining coordinates are
+strictly positive. -/
+def openStdSimplexFacet (R : Type*) [Semiring R] [PartialOrder R] {ι : Type*} (i : ι) :
+    Set (ι → R) :=
+  {y ∈ range fun s : StdSimplex R ι => ⇑s.weights | y i = 0 ∧ ∀ j ≠ i, 0 < y j}
+
+/-- Membership in the `i`-th open facet of the standard simplex. -/
+@[simp]
+theorem mem_openStdSimplexFacet_iff {i : ι} {y : ι → R} :
+    y ∈ openStdSimplexFacet R i ↔
+      y ∈ (range fun s : StdSimplex R ι => ⇑s.weights) ∧ y i = 0 ∧ ∀ j ≠ i, 0 < y j :=
+  Iff.rfl
+
+/-- Each open facet lies in the closed standard simplex. -/
+theorem openStdSimplexFacet_subset (i : ι) :
+    openStdSimplexFacet R i ⊆ range fun s : StdSimplex R ι => ⇑s.weights :=
+  fun _ hy => hy.1
+
+end OpenSimplex
+
+/-- The standard basis vectors `Pi.single i 1` over a ring `R` are affinely independent on any
+subset of `ι`. -/
+theorem affineIndependent_pi_single (R : Type*) {ι : Type*} [Ring R] [DecidableEq ι] (t : Set ι) :
+    AffineIndependent R (fun j : t => (Pi.single (j : ι) 1 : ι → R)) :=
+  ((Pi.linearIndependent_single_one ι R).comp Subtype.val Subtype.val_injective).affineIndependent
+
 /-- A face of the standard simplex, the convex hull of a set of vertices `Pi.single i 1`,
 consists of weight vectors of `Convexity.StdSimplex`. -/
 theorem convexHull_pi_single_subset_range_toFun_comp_weights [DecidableEq ι] (s : Set ι) :
@@ -224,6 +322,27 @@ theorem mem_convexHull_pi_single_iff [DecidableEq ι] {s : Set ι} {x : ι → �
     rw [← hrepr]
     exact (convex_convexHull ℝ _).sum_mem (fun i _ => hnonneg i) hsums
       (fun i hi => subset_convexHull ℝ _ ⟨i, (mem_filter.mp hi).2, rfl⟩)
+
+omit [Fintype ι] in
+/-- The convex hull of all standard basis vectors `Pi.single i 1` is the standard simplex. -/
+theorem convexHull_range_pi_single [Finite ι] [DecidableEq ι] :
+    convexHull ℝ (range fun i : ι => (Pi.single i 1 : ι → ℝ)) =
+      range fun s : StdSimplex ℝ ι => ⇑s.weights := by
+  cases nonempty_fintype ι
+  rw [← image_univ]
+  ext x
+  rw [mem_convexHull_pi_single_iff, StdSimplex.mem_range_toFun_comp_weights_iff]
+  simp
+
+omit [Fintype ι] in
+/-- The convex hull of the standard basis vectors other than `i` is the facet opposite `i`. -/
+theorem convexHull_pi_single_compl_singleton [Finite ι] [DecidableEq ι] (i : ι) :
+    convexHull ℝ ((fun j : ι => (Pi.single j 1 : ι → ℝ)) '' {i}ᶜ) =
+      {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | y i = 0} := by
+  cases nonempty_fintype ι
+  ext y
+  rw [mem_convexHull_pi_single_iff, mem_sep_iff, StdSimplex.mem_range_toFun_comp_weights_iff]
+  simp [and_assoc]
 
 section Faces
 

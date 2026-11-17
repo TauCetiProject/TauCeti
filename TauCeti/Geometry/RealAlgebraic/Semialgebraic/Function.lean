@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.AffineSpace.AffineMap
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Basic
+import Mathlib.Algebra.BigOperators.Pi
+import Mathlib.LinearAlgebra.AffineSpace.AffineEquiv
 
 /-!
 # Semialgebraic functions
@@ -17,20 +20,23 @@ useful before projection closure is available: semialgebraicity of a graph alone
 us recover its projection onto the input coordinates.
 
 This file gives the graph predicate its basic API.  It proves restriction, congruence, and
-piecewise-gluing laws and shows that polynomial maps, and more generally functions whose graph
-over a semialgebraic domain is cut out by polynomial equations
-(`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the
-operations whose graphs are inverse images of the given graphs, so that no coordinate has to be
-eliminated: pairing two functions on the same domain (`TauCeti.IsSemialgebraicOn.sumElim`),
-assembling a function from its coordinates (`TauCeti.IsSemialgebraicOn.pi`),
-precomposition with a polynomial map (`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise
-negation (`TauCeti.IsSemialgebraicOn.neg`), coordinatewise reciprocal over a field
-(`TauCeti.isSemialgebraicOn_inv`, `TauCeti.isSemialgebraicMap_inv`), and bijective changes of the
-input or output coordinates (`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`,
-`TauCeti.isSemialgebraicOn_comp_equiv_iff`).  It deliberately does not assert closure under
-arbitrary composition, whose graph generally requires eliminating the intermediate coordinates;
-images, inverse images, composition, and pointwise sums, products, differences, reciprocals, and
-quotients are derived from projection closure in
+piecewise-gluing laws and shows that polynomial maps, linear and affine maps on finite-dimensional
+coordinate spaces (`LinearMap.exists_mvPolynomial_eval_eq`, `AffineMap.exists_mvPolynomial_eval_eq`,
+`AffineMap.isSemialgebraicOn`, `AffineMap.isSemialgebraicMap`,
+`TauCeti.IsSemialgebraic.preimage_affineMap`, `AffineMap.isSemialgebraic_pos`), and more generally
+functions whose graph over a semialgebraic domain is cut out by polynomial equations
+(`TauCeti.isSemialgebraicOn_of_forall_eq_iff`), are semialgebraic.  It also proves the operations
+whose graphs are inverse images of the given graphs, so that no coordinate has to be eliminated:
+pairing two functions on the same domain
+(`TauCeti.IsSemialgebraicOn.sumElim`), assembling a function from its coordinates
+(`TauCeti.IsSemialgebraicOn.pi`), precomposition with a polynomial map
+(`TauCeti.IsSemialgebraicOn.comp_eval`), pointwise negation (`TauCeti.IsSemialgebraicOn.neg`),
+coordinatewise reciprocal over a field (`TauCeti.isSemialgebraicOn_inv`,
+`TauCeti.isSemialgebraicMap_inv`), and bijective changes of the input or output coordinates
+(`TauCeti.isSemialgebraicOn_preimage_comp_equiv_iff`, `TauCeti.isSemialgebraicOn_comp_equiv_iff`).
+It deliberately does not assert closure under arbitrary composition, whose graph generally requires
+eliminating the intermediate coordinates; images, inverse images, composition, and pointwise sums,
+products, differences, reciprocals, and quotients are derived from projection closure in
 `TauCeti.Geometry.RealAlgebraic.Semialgebraic.Image`.
 
 ## References
@@ -233,6 +239,61 @@ theorem isSemialgebraicMap_id [Finite σ] :
   simp
 
 end PolynomialMap
+
+section AffineMap
+
+/-- Every linear map out of a finite-dimensional coordinate space `σ → S` over a commutative
+semiring has homogeneous linear polynomial coordinates. -/
+theorem _root_.LinearMap.exists_mvPolynomial_eval_eq {σ τ S : Type*} [CommSemiring S] [Finite σ]
+    (L : (σ → S) →ₗ[S] (τ → S)) :
+    ∃ p : τ → MvPolynomial σ S, ∀ x, L x = fun i => eval x (p i) := by
+  classical
+  cases nonempty_fintype σ
+  refine ⟨fun i => ∑ j : σ, C (L (Pi.single j 1) i) * X j, fun x => funext fun i => ?_⟩
+  conv_lhs => rw [pi_eq_sum_univ' x]
+  simp [map_sum, Finset.sum_apply, mul_comm]
+
+omit [LinearOrder R] in
+/-- Every affine map out of a finite-dimensional coordinate space `σ → R` has degree-at-most-one
+polynomial coordinates. -/
+theorem _root_.AffineMap.exists_mvPolynomial_eval_eq [Finite σ] (A : (σ → R) →ᵃ[R] (τ → R)) :
+    ∃ p : τ → MvPolynomial σ R, ∀ x, A x = fun i => eval x (p i) := by
+  obtain ⟨p, hp⟩ := A.linear.exists_mvPolynomial_eval_eq
+  refine ⟨fun i => p i + C (A 0 i), fun x => funext fun i => ?_⟩
+  have hx : A x = A.linear x + A 0 := by
+    simpa [vadd_eq_add] using A.map_vadd (0 : σ → R) x
+  simp [hx, hp]
+
+/-- An affine map between finite-dimensional coordinate spaces is semialgebraic on every
+semialgebraic domain. -/
+theorem _root_.AffineMap.isSemialgebraicOn [Finite σ] [Finite τ] (A : (σ → R) →ᵃ[R] (τ → R))
+    {s : Set (σ → R)} (hs : IsSemialgebraic s) : IsSemialgebraicOn A s := by
+  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
+  exact (isSemialgebraicOn_eval p hs).congr fun x _ => (hp x).symm
+
+/-- An affine map between finite-dimensional coordinate spaces is semialgebraic. -/
+theorem _root_.AffineMap.isSemialgebraicMap [Finite σ] [Finite τ] (A : (σ → R) →ᵃ[R] (τ → R)) :
+    IsSemialgebraicMap A :=
+  isSemialgebraicOn_univ.1 (A.isSemialgebraicOn isSemialgebraic_univ)
+
+/-- The inverse image of a semialgebraic set under an affine map out of a finite-dimensional
+coordinate space is semialgebraic, without assuming projection closure. -/
+theorem IsSemialgebraic.preimage_affineMap [Finite σ] {s : Set (τ → R)}
+    (hs : IsSemialgebraic s) (A : (σ → R) →ᵃ[R] (τ → R)) :
+    IsSemialgebraic (A ⁻¹' s) := by
+  obtain ⟨p, hp⟩ := A.exists_mvPolynomial_eval_eq
+  have hfun : (A : (σ → R) → τ → R) = fun x i => eval x (p i) := funext hp
+  rw [hfun]
+  exact hs.preimage_eval p
+
+/-- Strict scalar affine positivity conditions on `σ → R` (`Finite σ`) cut out semialgebraic open
+half-spaces. -/
+theorem _root_.AffineMap.isSemialgebraic_pos [Finite σ] (f : (σ → R) →ᵃ[R] R) :
+    IsSemialgebraic {x : σ → R | 0 < f x} := by
+  simpa using (isSemialgebraic_eval_pos (X () : MvPolynomial Unit R)).preimage_affineMap
+    ((LinearEquiv.funUnique Unit R R).symm.toAffineEquiv.toAffineMap.comp f)
+
+end AffineMap
 
 section Operations
 
