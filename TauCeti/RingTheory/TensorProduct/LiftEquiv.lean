@@ -12,8 +12,10 @@ public import Mathlib.RingTheory.TensorProduct.Basic
 
 For an `R`-algebra `A`, an `R`-algebra `S` and an `S`-algebra map `q : S →ₐ[S] T`,
 `AlgHom.liftEquiv` identifies `R`-algebra maps `A → S` and `A → T` with `S`-algebra maps out of
-`S ⊗[R] A`, compatibly with composition by `q`. So composing with `q` is bijective on `R`-algebra
-maps out of `A` if and only if it is bijective on `S`-algebra maps out of `S ⊗[R] A`
+`S ⊗[R] A`, compatibly with composition by `q`. We record the left-inverse identity
+`AlgHom.liftEquiv_comp_includeRight` (composing `f.liftEquiv R S A B` with
+`Algebra.TensorProduct.includeRight` recovers `f`) and show that composing with `q` is bijective on
+`R`-algebra maps out of `A` if and only if it is bijective on `S`-algebra maps out of `S ⊗[R] A`
 (`AlgHom.restrictScalars_comp_bijective_iff`). This reduces lifting problems for algebras over an
 arbitrary base `R` to lifting problems over `S` itself.
 -/
@@ -23,6 +25,14 @@ public section
 open scoped TensorProduct
 
 namespace AlgHom
+
+/-- Composing `f.liftEquiv R S A B` with `Algebra.TensorProduct.includeRight` recovers `f`. -/
+@[simp]
+theorem liftEquiv_comp_includeRight {R S A B : Type*} [CommSemiring R] [CommSemiring S]
+    [Algebra R S] [Semiring A] [Algebra R A] [Semiring B] [Algebra R B] [Algebra S B]
+    [IsScalarTower R S B] (f : A →ₐ[R] B) :
+    ((f.liftEquiv R S A B).restrictScalars R).comp Algebra.TensorProduct.includeRight = f :=
+  (AlgHom.liftEquiv R S A B).left_inv f
 
 variable (R : Type*) {S T : Type*} (A : Type*) [CommSemiring R] [CommSemiring S] [Semiring T]
   [Semiring A] [Algebra R S] [Algebra S T] [Algebra R T] [IsScalarTower R S T] [Algebra R A]
