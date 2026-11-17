@@ -76,44 +76,6 @@ theorem isBounded_re_divisor_support_dirichletData_entireCompletion (hne : χ �
     (dirichletData_hasMeromorphicContinuation χ hχ) (B := 1) fun _ hρ ↦
       (re_mem_Ioo_of_dirichletData_entireCompletion_eq_zero χ hχ hne hρ).2.le
 
-/-- Absolute summability of the paired complex partial-fraction series for a nonprincipal primitive
-Dirichlet entire completion off its zeros. -/
-theorem summable_norm_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div
-    (hne : χ ≠ 1) {s : ℂ} (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
-    Summable (fun ρ :
-        (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
-      ‖((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
-        (1 / (s - ρ) + 1 / ρ)‖) :=
-  OrderLE.summable_norm_divisor_mul_one_div_sub_add_one_div
-    (dirichletData_entireCompletion_orderLE_one χ hχ hne)
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ) (by norm_num) hs
-
-/-- Complex summability companion to `logDeriv_dirichletData_entireCompletion_eq_add_tsum` for a
-nonprincipal primitive Dirichlet entire completion off its zeros. -/
-theorem summable_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div
-    (hne : χ ≠ 1) {s : ℂ} (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
-    Summable (fun ρ :
-        (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support ↦
-      ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
-        (1 / (s - ρ) + 1 / ρ)) :=
-  (summable_norm_divisor_dirichletData_entireCompletion_mul_one_div_sub_add_one_div χ hχ hne
-    hs).of_norm
-
-/-- **Paired complex partial fractions for a nonprincipal primitive Dirichlet completion.** Off the
-zeros of `Λ₀(s, χ)`, its logarithmic derivative expands as
-`Λ₀'/Λ₀(0, χ) + ∑' ρ, m_ρ (1 / (s - ρ) + 1 / ρ)`. -/
-theorem logDeriv_dirichletData_entireCompletion_eq_add_tsum (hne : χ ≠ 1) {s : ℂ}
-    (hs : (dirichletData χ hχ).entireCompletion s ≠ 0) :
-    logDeriv (dirichletData χ hχ).entireCompletion s =
-      logDeriv (dirichletData χ hχ).entireCompletion 0 +
-        ∑' ρ : (MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ).support,
-          ((MeromorphicOn.divisor (dirichletData χ hχ).entireCompletion Set.univ ρ).toNat : ℂ) *
-            (1 / (s - ρ) + 1 / ρ) :=
-  (dirichletData_entireCompletion_orderLE_one χ hχ hne).logDeriv_eq_add_tsum
-    (dirichletData_hasMeromorphicContinuation χ hχ).differentiable_entireCompletion
-    (dirichletData_entireCompletion_zero_ne_zero χ hχ) hs
-
 /-- Absolute summability of `(analyticOrderNatAt Λ₀ ρ) * Re (1 / (s - ρ))` over `ℂ` for a
 nonprincipal primitive Dirichlet entire completion. -/
 theorem summable_norm_analyticOrderNatAt_dirichletData_entireCompletion_mul_re_one_div_sub

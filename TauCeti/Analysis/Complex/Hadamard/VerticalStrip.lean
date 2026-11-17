@@ -41,7 +41,7 @@ all zeros. Multiply `f` by `exp (c z)` for real `c ≠ 0` to see that the antisy
 * `TauCeti.OrderLE.re_logDeriv_zero_eq_neg_tsum` and `TauCeti.OrderLE.re_logDeriv_eq_tsum`:
   cancellation of `(logDeriv f 0).re` under reflection symmetry across `Re s = a / 2`.
 * `Differentiable.isBounded_re_divisor_support_of_le`,
-  `Differentiable.analyticOrderNatAt_mul_re_one_div_sub_nonneg`,
+  `TauCeti.analyticOrderNatAt_mul_re_one_div_sub_nonneg`,
   `TauCeti.OrderLE.re_logDeriv_nonneg`,
   `TauCeti.OrderLE.sum_analyticOrderNatAt_mul_re_one_div_sub_le`, and
   `TauCeti.OrderLE.re_one_div_sub_le_re_logDeriv`: strip boundedness from a one-sided zero bound,
@@ -245,19 +245,16 @@ theorem _root_.Differentiable.isBounded_re_divisor_support_of_le (hf : Different
   simp only [sub_re, ofReal_re, conj_re] at hsymm_le
   exact ⟨by linarith, hle ρ (apply_eq_zero_of_analyticOrderNatAt_ne_zero hρ)⟩
 
-/-- For an entire function `f`, at a point `z` whose real part is at least the real part of every
-zero of `f`, every summand `(analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re` is nonnegative. -/
-theorem _root_.Differentiable.analyticOrderNatAt_mul_re_one_div_sub_nonneg
-    (hf : Differentiable ℂ f) {z : ℂ} (hle : ∀ ρ, f ρ = 0 → ρ.re ≤ z.re) (ρ : ℂ) :
+/-- For any function `f : ℂ → ℂ`, if `f ρ = 0` implies `ρ.re ≤ z.re`, then
+`(analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re` is nonnegative. -/
+theorem analyticOrderNatAt_mul_re_one_div_sub_nonneg {z ρ : ℂ} (hle : f ρ = 0 → ρ.re ≤ z.re) :
     0 ≤ (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re := by
-  by_cases hρ : f ρ = 0
-  · have hsub : 0 ≤ (z - ρ).re := by
-      rw [sub_re]
-      linarith [hle ρ hρ]
-    rw [one_div, Complex.inv_re]
-    exact mul_nonneg (Nat.cast_nonneg _) (div_nonneg hsub (Complex.normSq_nonneg _))
-  · rw [analyticOrderNatAt, (hf.analyticAt ρ).analyticOrderAt_eq_zero.mpr hρ, ENat.toNat_zero,
-      Nat.cast_zero, zero_mul]
+  by_cases hord : analyticOrderNatAt f ρ = 0
+  · simp [hord]
+  · rw [one_div, Complex.inv_re]
+    refine mul_nonneg (Nat.cast_nonneg _) (div_nonneg ?_ (Complex.normSq_nonneg _))
+    rw [sub_re, sub_nonneg]
+    exact hle (apply_eq_zero_of_analyticOrderNatAt_ne_zero hord)
 
 /-- For an entire function `f` of order at most one with `f 0 ≠ 0`, zero multiplicities symmetric
 under `s ↦ a - conj s`, and `(logDeriv f a).re = -(logDeriv f 0).re`, `(logDeriv f z).re` is
@@ -270,7 +267,7 @@ theorem OrderLE.re_logDeriv_nonneg (h : OrderLE f 1) (hf : Differentiable ℂ f)
     0 ≤ (logDeriv f z).re := by
   have hre := hf.isBounded_re_divisor_support_of_le hord hle
   rw [h.re_logDeriv_eq_tsum hf hf0 hre hord hlog hz]
-  exact tsum_nonneg (hf.analyticOrderNatAt_mul_re_one_div_sub_nonneg hle)
+  exact tsum_nonneg fun ρ ↦ analyticOrderNatAt_mul_re_one_div_sub_nonneg (hle ρ)
 
 /-- **Finite-subset retention.** For an entire function `f` of order at most one with `f 0 ≠ 0`,
 zero multiplicities symmetric under `s ↦ a - conj s`, and `(logDeriv f a).re = -(logDeriv f 0).re`,
@@ -284,7 +281,7 @@ theorem OrderLE.sum_analyticOrderNatAt_mul_re_one_div_sub_le (h : OrderLE f 1)
     (∑ ρ ∈ S, (analyticOrderNatAt f ρ : ℝ) * (1 / (z - ρ)).re) ≤ (logDeriv f z).re := by
   have hre := hf.isBounded_re_divisor_support_of_le hord hle
   rw [h.re_logDeriv_eq_tsum hf hf0 hre hord hlog hz]
-  exact Summable.sum_le_tsum S (fun ρ _ ↦ hf.analyticOrderNatAt_mul_re_one_div_sub_nonneg hle ρ)
+  exact Summable.sum_le_tsum S (fun ρ _ ↦ analyticOrderNatAt_mul_re_one_div_sub_nonneg (hle ρ))
     (h.summable_analyticOrderNatAt_mul_re_one_div_sub hf (by norm_num) hre z)
 
 /-- **Single-zero retention.** For an entire function `f` of order at most one with `f 0 ≠ 0`, zero
