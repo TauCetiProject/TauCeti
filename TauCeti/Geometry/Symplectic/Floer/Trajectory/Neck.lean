@@ -13,16 +13,17 @@ import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!
-# Necks between the levels of sequences of Floer trajectories
+# Necks in breaking sequences of Floer trajectories
 
 Let `(V, ω)` be a symplectic vector space, `H : ℝ → V → ℝ` a `C¹` Hamiltonian, `1`-periodic in
 time, and `K ⊆ V` a compact set. Let `u_k` be Floer trajectories, solutions of
 `∂_s u + J_k (∂_t u - X_{H_t}(u)) = 0` with `1`-periodic loops in `K`, uniformly tame almost
 complex structures and a common Lipschitz constant. When such a sequence breaks, its energy splits
 into levels which drift apart in `s`
-(`TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`). This file shows that the levels are
-joined by necks along which the trajectories converge to stationary cylinders over `1`-periodic
-orbits, and that these orbits are located by the action.
+(`TauCeti.Geometry.Symplectic.Floer.Trajectory.Level`). This file shows that loops of the
+trajectories which drift apart in `s` are separated by necks along which the trajectories converge
+to stationary cylinders over `1`-periodic orbits, and that these orbits are located by the action;
+this is the step that separates levels. Assembling the levels themselves is not done here.
 
 * **Necks are stationary cylinders.** If the translates `(s, t) ↦ u_k(s + σ_k, t)` converge
   locally uniformly to `g` along windows `[a + σ_k, b + σ_k] × [0, 1]` whose energy tends to zero,
