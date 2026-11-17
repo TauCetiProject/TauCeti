@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
 public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Analysis.Complex.EvenReflection
+import TauCeti.Analysis.Complex.ReImTopology
 import TauCeti.Analysis.Sobolev.Local.Basic
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
@@ -124,8 +124,8 @@ limit of points of its interior. -/
 theorem halfClosedImage_subset_closure_halfImage (i : Fin A.n) :
     A.halfClosedImage i ⊆ closure (A.halfImage i : Set ℂ) := by
   have hO := (A.image i).isOpen.preimage closedUpperHalfPlaneModel.continuous_symm
-  have h := subset_closure_interior_setOfPred_le_im_inter hO
-  rwa [inter_comm, interior_inter_setOf_im_nonneg hO] at h
+  have h := subset_closure_interior_inter_setOf_im_nonneg hO
+  rwa [interior_inter_setOf_im_nonneg hO] at h
 
 /-- The overlap of the domains of charts `i` and `i'`, read in chart `i'`, at points of positive
 imaginary part. -/

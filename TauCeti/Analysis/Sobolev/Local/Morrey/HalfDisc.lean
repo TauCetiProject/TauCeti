@@ -279,13 +279,9 @@ theorem eqOn_iteratedFDeriv_inter_setOf_im_nonneg_of_ae_eq {V₁ V₂ : Set ℂ}
     (hUV₂ : (Ω : Set ℂ) ∩ {z | 0 ≤ z.im} ⊆ V₂) (hg₁ : ContDiffOn ℝ k g₁ V₁)
     (hg₂ : ContDiffOn ℝ k g₂ V₂) (h : g₁ =ᵐ[volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})] g₂)
     {i : ℕ} (hi : i ≤ k) :
-    EqOn (iteratedFDeriv ℝ i g₁) (iteratedFDeriv ℝ i g₂) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) := by
-  -- The half-disc lies in the closure of its interior, the upper half `Ω ∩ {0 < im}`.
-  refine eqOn_iteratedFDeriv_of_ae_eq (fun z hz => ?_) hV₁ hV₂ hUV₁ hUV₂ hg₁ hg₂ h hi
-  rw [interior_inter_setOf_im_nonneg Ω.isOpen]
-  refine Ω.isOpen.inter_closure ⟨hz.1, ?_⟩
-  rw [Complex.closure_setOfPred_lt_im]
-  exact hz.2
+    EqOn (iteratedFDeriv ℝ i g₁) (iteratedFDeriv ℝ i g₂) ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im}) :=
+  eqOn_iteratedFDeriv_of_ae_eq (subset_closure_interior_inter_setOf_im_nonneg Ω.isOpen) hV₁ hV₂
+    hUV₁ hUV₂ hg₁ hg₂ h hi
 
 /-- The reflection of `u ∈ MemWkpLoc p (Ω ∩ {0 ≤ im}) (k + 1)` lies in `W^{k+1,p}_loc` of an open
 set `V` between `Ω ∩ {0 ≤ im}` and `Ω`, and has a `Cᵏ` representative on `V`, which is also a
