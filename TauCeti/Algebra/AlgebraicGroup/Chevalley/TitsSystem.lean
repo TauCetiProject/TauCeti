@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Torus.Weyl
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Weyl.Borel
 public import TauCeti.GroupTheory.TitsSystem.Basic
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.RankOne
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Length
 import TauCeti.GroupTheory.TitsSystem.Comap
 
@@ -58,15 +59,10 @@ private theorem mem_doubleCoset_subgroupOf_iff (A : Type v) [CommRing A]
         ((D.borelSubgroup A).subgroupOf (D.extendedElementarySubgroup A)) ↔
       (z : D.points A) ∈ DoubleCoset.doubleCoset (x : D.points A)
         (D.borelSubgroup A) (D.borelSubgroup A) := by
-  constructor
-  · intro hz
-    obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hz
-    exact DoubleCoset.mem_doubleCoset.mpr ⟨b₁.val, hb₁, b₂.val, hb₂, rfl⟩
-  · intro hz
-    obtain ⟨b₁, hb₁, b₂, hb₂, hmul⟩ := DoubleCoset.mem_doubleCoset.mp hz
-    exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨⟨b₁, D.borelSubgroup_le_extendedElementarySubgroup A hb₁⟩, hb₁,
-        ⟨b₂, D.borelSubgroup_le_extendedElementarySubgroup A hb₂⟩, hb₂, Subtype.ext hmul⟩
+  rw [← DoubleCoset.mem_doubleCoset_image_iff (D.extendedElementarySubgroup A).subtype_injective,
+    ← Subgroup.coe_map,
+    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup A),
+    Subgroup.coe_subtype]
 
 /-! ### The Tits system on the extended elementary subgroup -/
 

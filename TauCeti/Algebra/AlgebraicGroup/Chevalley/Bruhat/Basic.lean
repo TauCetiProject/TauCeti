@@ -9,6 +9,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Chevalley.TitsSystem
 public import TauCeti.LinearAlgebra.RootSystem.Inversions.Basic
 import Mathlib.Tactic.Group
 import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Parabolic
+import TauCeti.GroupTheory.DoubleCoset.Map
 import TauCeti.GroupTheory.TitsSystem.Bruhat.Uniqueness
 import TauCeti.LinearAlgebra.RootSystem.Inversions.StrongExchange
 
@@ -84,20 +85,11 @@ theorem bruhatCell_weylProjection (n : D.weylSubgroup k) :
         QuotientGroup.mk n' :=
     (MulEquiv.symm_apply_eq _).mpr
       (D.extendedElementaryTitsSystemWeylGroupMulEquiv_mk k n').symm
-  ext g
-  simp only [bruhatCell, hsymm, TitsSystem.bruhatCell_mk,
-    D.extendedElementaryTitsSystem_subgroupB k, Set.mem_image, Subgroup.coe_subtype]
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
-    exact DoubleCoset.mem_doubleCoset.mpr ⟨b₁.val, hb₁, b₂.val, hb₂, rfl⟩
-  · intro hg
-    obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
-    have hb₁E := D.borelSubgroup_le_extendedElementarySubgroup k hb₁
-    have hb₂E := D.borelSubgroup_le_extendedElementarySubgroup k hb₂
-    have hnE := D.weylSubgroup_le_extendedElementarySubgroup k n.2
-    exact ⟨⟨b₁ * n.val * b₂, mul_mem (mul_mem hb₁E hnE) hb₂E⟩,
-      DoubleCoset.mem_doubleCoset.mpr ⟨⟨b₁, hb₁E⟩, hb₁, ⟨b₂, hb₂E⟩, hb₂, rfl⟩, rfl⟩
+  rw [bruhatCell, hsymm, TitsSystem.bruhatCell_mk,
+    D.extendedElementaryTitsSystem_subgroupB k, DoubleCoset.image_doubleCoset,
+    ← Subgroup.coe_map,
+    Subgroup.map_subgroupOf_eq_of_le (D.borelSubgroup_le_extendedElementarySubgroup k),
+    Subgroup.coe_subtype]
 
 /-- A point belongs to the Bruhat cell of `w` iff it lies in `B(k) n B(k)` for a lift `n` of `w`. -/
 theorem mem_bruhatCell_iff {w : (t.simplyConnectedRootDatum ht).weylGroup} {g : D.points k} :
@@ -465,12 +457,9 @@ theorem existsUnique_bruhatNormalForm_of_mem_doubleCoset (n : D.weylSubgroup k) 
       (p.1 : D.points k) * (n : D.points k) * (p.2 : D.points k) = g := by
   obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hg
   obtain ⟨x, hx, s, rfl⟩ := (D.mem_borelSubgroup_iff k).mp hb₁
-  have ht'_bor : (n : D.points k)⁻¹ * D.torusPoints k s * (n : D.points k) ∈ D.borelSubgroup k := by
-    let ts : D.weylSubgroup k := ⟨D.torusPoints k s, D.torusPoints_mem_weylSubgroup k s⟩
-    have hconj : n⁻¹ * ts * n⁻¹⁻¹ ∈ ((D.torusPoints k).range).subgroupOf (D.weylSubgroup k) :=
-      (D.normal_torusPoints_subgroupOf_weylSubgroup k).conj_mem ts ⟨s, rfl⟩ n⁻¹
-    rw [inv_inv] at hconj
-    exact D.range_torusPoints_le_borelSubgroup k hconj
+  have ht'_bor : (n : D.points k)⁻¹ * D.torusPoints k s * (n : D.points k) ∈ D.borelSubgroup k :=
+    D.range_torusPoints_le_borelSubgroup k
+      (D.inv_conj_torusPoints_mem_range_torusPoints_of_mem_weylSubgroup k n.property s)
   obtain ⟨u, hu, b₀, hb₀, hxn⟩ :=
     D.exists_mem_iSup_inversions_mul_borelSubgroup_of_ncard k _ rfl n rfl hx
   have hu_inf := D.iSup_inversions_le_positivePoints_inf_conj_negativePoints k n hu

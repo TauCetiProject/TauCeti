@@ -186,11 +186,9 @@ theorem doubleCoset_weylElement_mul_eq_of_mem_posRoots (i : Fin t.rank) (n : D.w
       (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints k i u).mp hu
     have hv_conj : ni * v * ni⁻¹ ∈ B :=
       D.weylElement_conj_mem_borelSubgroup_of_mem_diff_singleton k i hv
-    have ht_conj : (n : D.points k)⁻¹ * D.torusPoints k s * (n : D.points k) ∈ B := by
-      have hn_inv : (n : D.points k)⁻¹ ∈ Subgroup.normalizer (D.torusPoints k).range :=
-        D.weylSubgroup_le_normalizer_range_torusPoints k (inv_mem n.property)
-      exact D.range_torusPoints_le_borelSubgroup k
-        (by simpa using (Subgroup.mem_normalizer_iff.mp hn_inv _).mp ⟨s, rfl⟩)
+    have ht_conj : (n : D.points k)⁻¹ * D.torusPoints k s * (n : D.points k) ∈ B :=
+      D.range_torusPoints_le_borelSubgroup k
+        (D.inv_conj_torusPoints_mem_range_torusPoints_of_mem_weylSubgroup k n.property s)
     obtain ⟨c, hc⟩ := D.exists_unit_conj_rootSubgroupPoints k n⁻¹ (t.simpleIndex ht i)
     have hx_conj : (n : D.points k)⁻¹ * D.rootSubgroupPoints (t.simpleIndex ht i) k a *
         (n : D.points k) ∈ B := by
@@ -268,11 +266,10 @@ theorem doubleCoset_weylElement_mul_self_subset (i : Fin t.rank) :
     (D.mem_positivePoints_iff_exists_mul_rootSubgroupPoints k i u).mp hu
   have hv_conj : ni * v * ni⁻¹ ∈ B :=
     D.weylElement_conj_mem_borelSubgroup_of_mem_diff_singleton k i hv
-  have ht_conj : ni⁻¹ * D.torusPoints k s * ni ∈ B := by
-    have hni_inv : ni⁻¹ ∈ Subgroup.normalizer (D.torusPoints k).range :=
-      inv_mem (D.weylElement_mem_normalizer_range_torusPoints i k)
-    exact D.range_torusPoints_le_borelSubgroup k
-      (by simpa using (Subgroup.mem_normalizer_iff.mp hni_inv _).mp ⟨s, rfl⟩)
+  have ht_conj : ni⁻¹ * D.torusPoints k s * ni ∈ B :=
+    D.range_torusPoints_le_borelSubgroup k
+      (D.inv_conj_torusPoints_mem_range_torusPoints_of_mem_weylSubgroup k
+        (D.weylElement_mem_weylSubgroup k i) s)
   have hmid : (b₁ * ni * b) * (b' * ni * b₂) =
       (b₁ * (ni * v * ni⁻¹)) * (ni * D.rootSubgroupPoints (t.simpleIndex ht i) k a * ni) *
         ((ni⁻¹ * D.torusPoints k s * ni) * b₂) := by
