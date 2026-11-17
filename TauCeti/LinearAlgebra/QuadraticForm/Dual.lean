@@ -30,7 +30,7 @@ the hyperbolic form on `Module.Dual K C × C`, whose indices are both `dim C`
 
 The intersection form of `S¹ × Y`, for a closed three-manifold `Y`, has this shape: in the
 decomposition `H²(S¹ × Y) ≅ H²(Y) × H¹(Y)` its quadratic form is `(b, c) ↦ 2 ⟨b ⌣ c, -⟩`
-(`TopCat.sigPos_singularCupKroneckerForm_sphere`).
+(`TopCat.sigPos_singularCupPairing_sphere`).
 -/
 
 public section

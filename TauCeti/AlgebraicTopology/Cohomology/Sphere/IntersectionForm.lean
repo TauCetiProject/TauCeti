@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Cap.Kronecker
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Product
 public import TauCeti.LinearAlgebra.QuadraticForm.Dual
 
@@ -13,9 +14,9 @@ public import TauCeti.LinearAlgebra.QuadraticForm.Dual
 
 Let `k` be a linearly ordered field, such as `ℝ`, and write `Hⁿ(Z)` for the singular cohomology
 of `Z` with coefficients in `k`. For a homology class `z ∈ Hₙ(X; k)` and `p + p = n`, the cup
-pairing `(x, y) ↦ ⟨x ⌣ y, z⟩` is a bilinear form on `Hᵖ(X)` (`TopCat.singularCupKroneckerForm`).
-For a closed oriented four-manifold `X`, `p = 2` and `z` its fundamental class, this is the real
-intersection form, and its positive index of inertia is `b₂⁺(X)`.
+pairing `(x, y) ↦ ⟨x ⌣ y, z⟩` is a bilinear form on `Hᵖ(X)` (`TopCat.singularCupPairing` with
+`q = p`). For a closed oriented four-manifold `X`, `p = 2` and `z` its fundamental class, this is
+the real intersection form, and its positive index of inertia is `b₂⁺(X)`.
 
 This file computes both indices of inertia of this form on a product `X = Sᵈ⁺¹ × Y` with a compact
 manifold `Y` of dimension below `2 (p + d + 1)`, in degree `p + d + 1` even. Write a class `x` as
@@ -27,15 +28,15 @@ quadratic form of the cup pairing is
 
 `⟨x ⌣ x, z⟩ = 2 ψ_z(b, c)`,  `ψ_z(b, c) = ⟨pr₁^* θ ⌣ pr₂^* (b ⌣ c), z⟩`
 
-(`TopCat.singularCupKroneckerForm_apply_self_sphere`), with `ψ_z` the pairing of `Hᵖ⁺ᵈ⁺¹(Y)` with
+(`TopCat.singularCupPairing_apply_self_sphere`), with `ψ_z` the pairing of `Hᵖ⁺ᵈ⁺¹(Y)` with
 `Hᵖ(Y)` given by `TopCat.sphereProdCupPairing`. This is twice the quadratic form of a pairing, so
 when `Hᵖ⁺ᵈ⁺¹(Y)` and `Hᵖ(Y)` are finite dimensional both of its indices of inertia are the rank of
 `ψ_z` (`TauCeti.sigPos_dualProd_comp_prodMap`):
 
-* `TopCat.sigPos_singularCupKroneckerForm_sphere`, `TopCat.sigNeg_singularCupKroneckerForm_sphere`:
+* `TopCat.sigPos_singularCupPairing_sphere`, `TopCat.sigNeg_singularCupPairing_sphere`:
   both indices of inertia of the cup pairing against `z` are the rank of `ψ_z`;
-* `TopCat.sigPos_singularCupKroneckerForm_sphere_of_injective`,
-  `TopCat.sigNeg_singularCupKroneckerForm_sphere_of_injective`: if every nonzero `c ∈ Hᵖ(Y)` pairs
+* `TopCat.sigPos_singularCupPairing_sphere_of_injective`,
+  `TopCat.sigNeg_singularCupPairing_sphere_of_injective`: if every nonzero `c ∈ Hᵖ(Y)` pairs
   nontrivially with some `b` under `ψ_z`, both indices are `dim Hᵖ(Y)`.
 
 For a closed oriented three-manifold `Y`, `d = 0`, `p = 1`, `k = ℝ` and `z` the fundamental class
@@ -68,40 +69,18 @@ section CommRing
 
 variable [CommRing k]
 
-/-- **The cup pairing against a homology class**: for `z ∈ Hₙ(X; k)` and `p + p = n`, the bilinear
-form `(x, y) ↦ ⟨x ⌣ y, z⟩` on `Hᵖ(X; k)`. For a closed oriented four-manifold, `p = 2` and `z` its
-fundamental class, it is the intersection form. -/
-def singularCupKroneckerForm (X : TopCat.{w}) {p n : ℕ} (h : p + p = n)
-    (z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X) :
-    LinearMap.BilinForm k (X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k
-      (𝟙_ (ModuleCat.{w} k)) p) :=
-  (X.singularCup k (λ_ _).inv (λ_ _).hom p p n h).compr₂
-    (LinearMap.applyₗ z ∘ₗ ModuleCat.homLinearEquiv.toLinearMap ∘ₗ X.singularKronecker k n)
-
-@[simp]
-lemma singularCupKroneckerForm_apply (X : TopCat.{w}) {p n : ℕ} (h : p + p = n)
-    (z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj X)
-    (x y : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
-    singularCupKroneckerForm X h z x y =
-      (X.singularKronecker k n (X.singularCup k (λ_ _).inv (λ_ _).hom p p n h x y)).hom z :=
-  (rfl)
-
 /-- **The pairing of `Hᵖ⁺ᵈ⁺¹(Y)` with `Hᵖ(Y)` cut out by a class of `Sᵈ⁺¹ × Y`**: for a homology
 class `z` of `Sᵈ⁺¹ × Y` of degree `2 (p + d + 1)`, the pairing
 `(b, c) ↦ ⟨pr₁^* θ ⌣ pr₂^* (b ⌣ c), z⟩`, where `θ ∈ Hᵈ⁺¹(Sᵈ⁺¹; k)` is dual to the standard
 generator. Twice its value at the slant components `(b, c)` of a class `x` is `⟨x ⌣ x, z⟩`
-(`TopCat.singularCupKroneckerForm_apply_self_sphere`). -/
+(`TopCat.singularCupPairing_apply_self_sphere`). -/
 def sphereProdCupPairing (Y : TopCat.{w}) (d p : ℕ)
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ Y)) :
     Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)) →ₗ[k]
       Dual k (Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :=
   (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) p (p + p + (d + 1)) (by omega)).compr₂
-    (LinearMap.applyₗ z ∘ₗ ModuleCat.homLinearEquiv.toLinearMap ∘ₗ
-      (sphere.{w} (d + 1) ⊗ Y).singularKronecker k (p + p + (d + 1) + (d + 1)) ∘ₗ
-      (sphere.{w} (d + 1) ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-        (λ_ (𝟙_ (ModuleCat.{w} k))).hom (d + 1) (p + p + (d + 1)) (p + p + (d + 1) + (d + 1))
-        (by omega)
+    ((sphere.{w} (d + 1) ⊗ Y).singularCupPairing k (by omega) z
         (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) (d + 1)
           (TauCeti.singularCohomologyTopCatSphereGenerator k d)) ∘ₗ
       (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (p + p + (d + 1))).hom)
@@ -113,15 +92,12 @@ lemma sphereProdCupPairing_apply (Y : TopCat.{w}) (d p : ℕ)
     (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))
     (c : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p) :
     sphereProdCupPairing Y d p z b c =
-      ((sphere.{w} (d + 1) ⊗ Y).singularKronecker k (p + p + (d + 1) + (d + 1))
-        ((sphere.{w} (d + 1) ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv
-          (λ_ (𝟙_ (ModuleCat.{w} k))).hom (d + 1) (p + p + (d + 1)) (p + p + (d + 1) + (d + 1))
-          (by omega)
-          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) (d + 1)
-            (TauCeti.singularCohomologyTopCatSphereGenerator k d))
-          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (p + p + (d + 1))
-            (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) p (p + p + (d + 1)) (by omega)
-              b c)))).hom z :=
+      (sphere.{w} (d + 1) ⊗ Y).singularCupPairing k (by omega) z
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) (d + 1)
+          (TauCeti.singularCohomologyTopCatSphereGenerator k d))
+        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (p + p + (d + 1))
+          (Y.singularCup k (λ_ _).inv (λ_ _).hom (p + (d + 1)) p (p + p + (d + 1)) (by omega)
+            b c)) :=
   (rfl)
 
 variable {M E : Type w} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E]
@@ -131,20 +107,21 @@ variable {M E : Type w} [TopologicalSpace M] [T2Space M] [NormedAddCommGroup E]
 dimension below `2 (p + d + 1)` and `p + d + 1` is even, then for every class `x` of
 `Sᵈ⁺¹ × Y` of degree `p + d + 1`, with slant components `(b, c)` at any point `x₀`,
 `⟨x ⌣ x, z⟩ = 2 ψ_z(b, c)`. -/
-theorem singularCupKroneckerForm_apply_self_sphere
+theorem singularCupPairing_apply_self_sphere
     [∀ V : ModuleCat.{w} k, HasProjectiveDimensionLE V 1] {d n p : ℕ} (x₀ : sphere.{w} (d + 1))
     (hn : finrank ℝ E = n) (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ TopCat.of M))
     (x : (sphere.{w} (d + 1) ⊗ TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1))) :
-    singularCupKroneckerForm _ (by omega) z x x =
+    (sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (by omega) z x x =
       2 * sphereProdCupPairing (TopCat.of M) d p z
         (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).1
         (singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) _ x₀ p x).2 := by
-  rw [singularCupKroneckerForm_apply, singularCup_self_eq_two_smul_of_compactSpace x₀ hn hnp hp x,
+  rw [singularCupPairing_apply, singularCup_self_eq_two_smul_of_compactSpace x₀ hn hnp hp x,
     singularCohomologySphereProdSlantEquiv_symm_apply, map_zero, zero_add, map_smul,
-    ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, sphereProdCupPairing_apply]
+    ModuleCat.hom_smul, LinearMap.smul_apply, smul_eq_mul, sphereProdCupPairing_apply,
+    singularCupPairing_apply]
 
 end CommRing
 
@@ -158,11 +135,13 @@ variable [Field k] [LinearOrder k] [IsStrictOrderedRing k]
 omit [LinearOrder k] [IsStrictOrderedRing k] in
 /-- The quadratic form of the cup pairing on `Sᵈ⁺¹ × Y` is equivalent to twice the quadratic form
 `(b, c) ↦ ψ_z(b, c)` of the pairing `ψ_z`. -/
-private theorem equivalent_toQuadraticMap_singularCupKroneckerForm_sphere {d n p : ℕ}
+private theorem equivalent_toQuadraticMap_singularCupPairing_sphere {d n p : ℕ}
     (hn : finrank ℝ E = n) (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ TopCat.of M)) :
-    (singularCupKroneckerForm (p := p + (d + 1)) _ (by omega) z).toQuadraticMap.Equivalent
+    (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega) z)).Equivalent
       ((2 : k) • (QuadraticForm.dualProd k _).comp
         ((sphereProdCupPairing (TopCat.of M) d p z).prodMap LinearMap.id)) := by
   obtain ⟨x₀⟩ : Nonempty (sphere.{w} (d + 1)) := inferInstance
@@ -170,14 +149,14 @@ private theorem equivalent_toQuadraticMap_singularCupKroneckerForm_sphere {d n p
   refine ⟨{ toLinearEquiv := e, map_app' := fun x ↦ ?_ }⟩
   rw [smul_apply, QuadraticMap.comp_apply, LinearMap.prodMap_apply,
     QuadraticForm.dualProd_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    singularCupKroneckerForm_apply_self_sphere x₀ hn hnp hp z x, LinearMap.id_apply, smul_eq_mul]
+    singularCupPairing_apply_self_sphere x₀ hn hnp hp z x, LinearMap.id_apply, smul_eq_mul]
   rfl
 
 /-- **The positive index of inertia of the cup pairing on `Sᵈ⁺¹ × Y`**: if `Y` is a compact
 manifold of dimension below `2 (p + d + 1)`, `p + d + 1` is even and `Hᵖ⁺ᵈ⁺¹(Y)` and `Hᵖ(Y)` are
 finite dimensional, the cup pairing `(x, y) ↦ ⟨x ⌣ y, z⟩` on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has positive
 index of inertia the rank of the pairing `ψ_z` of `Hᵖ⁺ᵈ⁺¹(Y)` with `Hᵖ(Y)`. -/
-theorem sigPos_singularCupKroneckerForm_sphere {d n p : ℕ} (hn : finrank ℝ E = n)
+theorem sigPos_singularCupPairing_sphere {d n p : ℕ} (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
@@ -185,15 +164,17 @@ theorem sigPos_singularCupKroneckerForm_sphere {d n p : ℕ} (hn : finrank ℝ E
       (𝟙_ (ModuleCat.{w} k)) p)]
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ TopCat.of M)) :
-    sigPos (singularCupKroneckerForm (p := p + (d + 1)) _ (by omega) z).toQuadraticMap =
+    sigPos (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega) z)) =
       finrank k (LinearMap.range (sphereProdCupPairing (TopCat.of M) d p z)) := by
-  rw [(equivalent_toQuadraticMap_singularCupKroneckerForm_sphere hn hnp hp z).sigPos_eq,
+  rw [(equivalent_toQuadraticMap_singularCupPairing_sphere hn hnp hp z).sigPos_eq,
     QuadraticForm.sigPos_smul_of_pos _ two_pos, TauCeti.sigPos_dualProd_comp_prodMap]
 
 /-- **The negative index of inertia of the cup pairing on `Sᵈ⁺¹ × Y`**: under the hypotheses of
-`TopCat.sigPos_singularCupKroneckerForm_sphere`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has
+`TopCat.sigPos_singularCupPairing_sphere`, the cup pairing on `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has
 negative index of inertia the rank of the pairing `ψ_z`. -/
-theorem sigNeg_singularCupKroneckerForm_sphere {d n p : ℕ} (hn : finrank ℝ E = n)
+theorem sigNeg_singularCupPairing_sphere {d n p : ℕ} (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
@@ -201,18 +182,20 @@ theorem sigNeg_singularCupKroneckerForm_sphere {d n p : ℕ} (hn : finrank ℝ E
       (𝟙_ (ModuleCat.{w} k)) p)]
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ TopCat.of M)) :
-    sigNeg (singularCupKroneckerForm (p := p + (d + 1)) _ (by omega) z).toQuadraticMap =
+    sigNeg (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega) z)) =
       finrank k (LinearMap.range (sphereProdCupPairing (TopCat.of M) d p z)) := by
-  rw [(equivalent_toQuadraticMap_singularCupKroneckerForm_sphere hn hnp hp z).sigNeg_eq,
+  rw [(equivalent_toQuadraticMap_singularCupPairing_sphere hn hnp hp z).sigNeg_eq,
     QuadraticForm.sigNeg_smul_of_pos _ two_pos, TauCeti.sigNeg_dualProd_comp_prodMap]
 
 /-- **Positive index `dim Hᵖ(Y)` for a nondegenerate pairing**: under the hypotheses of
-`TopCat.sigPos_singularCupKroneckerForm_sphere`, if every nonzero `c ∈ Hᵖ(Y)` pairs nontrivially
+`TopCat.sigPos_singularCupPairing_sphere`, if every nonzero `c ∈ Hᵖ(Y)` pairs nontrivially
 with some `b ∈ Hᵖ⁺ᵈ⁺¹(Y)` under `ψ_z`, as Poincaré duality gives for the fundamental class `z` of
 `S¹ × Y` with `Y` a closed oriented three-manifold, `d = 0` and `p = 1`, then the cup pairing on
 `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has positive index of inertia `dim Hᵖ(Y)`; for `S¹ × Y` this is
 `b₂⁺(S¹ × Y) = b₁(Y)`. -/
-theorem sigPos_singularCupKroneckerForm_sphere_of_injective {d n p : ℕ} (hn : finrank ℝ E = n)
+theorem sigPos_singularCupPairing_sphere_of_injective {d n p : ℕ} (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
@@ -221,16 +204,18 @@ theorem sigPos_singularCupKroneckerForm_sphere_of_injective {d n p : ℕ} (hn : 
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ TopCat.of M))
     (hz : Function.Injective (sphereProdCupPairing (TopCat.of M) d p z).flip) :
-    sigPos (singularCupKroneckerForm (p := p + (d + 1)) _ (by omega) z).toQuadraticMap =
+    sigPos (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega) z)) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) p) := by
-  rw [sigPos_singularCupKroneckerForm_sphere hn hnp hp z, ← TauCeti.sigPos_dualProd_comp_prodMap,
+  rw [sigPos_singularCupPairing_sphere hn hnp hp z, ← TauCeti.sigPos_dualProd_comp_prodMap,
     TauCeti.sigPos_dualProd_comp_prodMap_eq_finrank_range_flip, LinearMap.finrank_range_of_inj hz]
 
 /-- **Negative index `dim Hᵖ(Y)` for a nondegenerate pairing**: under the hypotheses of
-`TopCat.sigPos_singularCupKroneckerForm_sphere_of_injective`, the cup pairing on
+`TopCat.sigPos_singularCupPairing_sphere_of_injective`, the cup pairing on
 `Hᵖ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y)` has negative index of inertia `dim Hᵖ(Y)`. -/
-theorem sigNeg_singularCupKroneckerForm_sphere_of_injective {d n p : ℕ} (hn : finrank ℝ E = n)
+theorem sigNeg_singularCupPairing_sphere_of_injective {d n p : ℕ} (hn : finrank ℝ E = n)
     (hnp : n < p + p + (d + 1) + (d + 1)) (hp : Even (p + (d + 1)))
     [FiniteDimensional k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
       (𝟙_ (ModuleCat.{w} k)) (p + (d + 1)))]
@@ -239,10 +224,12 @@ theorem sigNeg_singularCupKroneckerForm_sphere_of_injective {d n p : ℕ} (hn : 
     (z : ((singularHomologyFunctor (ModuleCat.{w} k) (p + p + (d + 1) + (d + 1))).obj
       (𝟙_ (ModuleCat.{w} k))).obj (sphere.{w} (d + 1) ⊗ TopCat.of M))
     (hz : Function.Injective (sphereProdCupPairing (TopCat.of M) d p z).flip) :
-    sigNeg (singularCupKroneckerForm (p := p + (d + 1)) _ (by omega) z).toQuadraticMap =
+    sigNeg (LinearMap.BilinMap.toQuadraticMap
+      ((sphere.{w} (d + 1) ⊗ TopCat.of M).singularCupPairing k (p := p + (d + 1))
+        (q := p + (d + 1)) (by omega) z)) =
       finrank k ((TopCat.of M).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
         (𝟙_ (ModuleCat.{w} k)) p) := by
-  rw [sigNeg_singularCupKroneckerForm_sphere hn hnp hp z, ← TauCeti.sigPos_dualProd_comp_prodMap,
+  rw [sigNeg_singularCupPairing_sphere hn hnp hp z, ← TauCeti.sigPos_dualProd_comp_prodMap,
     TauCeti.sigPos_dualProd_comp_prodMap_eq_finrank_range_flip, LinearMap.finrank_range_of_inj hz]
 
 end Signature
