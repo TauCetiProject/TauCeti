@@ -52,8 +52,10 @@ and fullness of its range. A discrete subgroup containing a full lattice is a fu
   space over a normed field forces the space to be finite-dimensional.
 * `ZLattice.discreteTopology_of_norm_sq_mem_int_mul`: a lattice whose squared norms are all
   multiples of a positive constant `c` by integers is discrete.
+* `ZLattice.instDiscreteTopologySpanSingleton`, `ZLattice.instIsZLatticeSpanSingleton`: the
+  `ℤ`-span of a single vector in a real normed space is discrete, and `c ℤ ⊆ ℝ` (`c ≠ 0`) is a
+  full lattice.
 * `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
-* `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
 public section
@@ -61,12 +63,6 @@ public section
 open MeasureTheory Module Set
 
 namespace TauCeti
-
-/-- The integer lattice in the real line has the discrete topology. -/
-instance discreteTopology_span_one :
-    DiscreteTopology (Submodule.span ℤ {1} : Submodule ℤ ℝ) := by
-  rw [← Set.range_eq_singleton (Module.Basis.singleton_apply Unit ℝ)]
-  infer_instance
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ι : Type*}
 
@@ -235,6 +231,25 @@ theorem discreteTopology_of_norm_sq_mem_int_mul {E : Type*} [NormedAddCommGroup 
     exact_mod_cast (Int.cast_pos.1 hmpos : 0 < m)
   have h1 : c ≤ ‖(y : E)‖ ^ 2 := by nlinarith
   exact (Real.sqrt_le_iff.2 ⟨hy0.le, h1⟩).trans_eq (Submodule.norm_coe y).symm
+
+/-- The `ℤ`-span of a single vector in a real normed space is discrete. -/
+instance instDiscreteTopologySpanSingleton {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (v : E) : DiscreteTopology (Submodule.span ℤ {v}) := by
+  have : NormedSpace ℚ E := NormedSpace.restrictScalars ℚ ℝ E
+  have h : ((Submodule.span ℤ {v} : Submodule ℤ E) : Set E) =
+      (AddSubgroup.zmultiples v : Set E) := by
+    rw [← Submodule.coe_toAddSubgroup, Submodule.span_singleton_toAddSubgroup_eq_zmultiples]
+  exact (Homeomorph.setCongr h).discreteTopology_iff.mpr
+    (NormedSpace.discreteTopology_zmultiples v)
+
+/-- For a nonzero real number `c`, `c ℤ ⊆ ℝ` spans `ℝ` and is therefore a full lattice. -/
+instance instIsZLatticeSpanSingleton (c : ℝ) [NeZero c] :
+    IsZLattice ℝ (Submodule.span ℤ {c} : Submodule ℤ ℝ) where
+  span_top := by
+    rw [Submodule.span_span_of_tower, eq_top_iff]
+    intro x _
+    exact Submodule.mem_span_singleton.mpr
+      ⟨x * c⁻¹, by simp [smul_eq_mul, inv_mul_cancel_right₀ (NeZero.ne c)]⟩
 
 /-- A discrete subgroup containing a full lattice is a full lattice. -/
 theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
