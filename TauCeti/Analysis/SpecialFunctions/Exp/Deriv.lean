@@ -31,6 +31,8 @@ at `exp y`, so the chain rule `(f ∘ exp)'(y) = e^y f'(e^y)` holds with no hypo
 * `TauCeti.deriv_comp_exp`: `(f ∘ exp)'(y) = e^y • f'(e^y)`, unconditionally.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
+* `TauCeti.iteratedDeriv_cexp_const_mul_ofReal`: the `n`-th real derivative of
+  `s ↦ Complex.exp (z * s)` is `s ↦ z ^ n * Complex.exp (z * s)`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
   `n`-th derivative of `x ↦ exp (ℓ x)` has norm at most `‖exp (ℓ x)‖ ‖ℓ‖ ^ n`.
 * `ContDiff.isBigO_iteratedFDeriv_succ_exp`: along any filter, the derivative of order `n + 1` of
@@ -72,6 +74,25 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
       (𝕜 := ℝ),
     Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
+
+/-- The `n`-th real derivative of `s ↦ Complex.exp (z * s)` is
+`s ↦ z ^ n * Complex.exp (z * s)`. -/
+@[simp]
+theorem iteratedDeriv_cexp_const_mul_ofReal (n : ℕ) (z : ℂ) :
+    iteratedDeriv n (fun s : ℝ => Complex.exp (z * s)) =
+      fun s : ℝ => z ^ n * Complex.exp (z * s) := by
+  induction n with
+  | zero =>
+    ext s
+    simp
+  | succ n ih =>
+    ext s
+    rw [iteratedDeriv_succ, ih]
+    have hlin : HasDerivAt (fun t : ℝ => z * (t : ℂ)) z s := by
+      simpa using ((hasDerivAt_id s).ofReal_comp).const_mul z
+    refine ((hlin.cexp.const_mul (z ^ n)).congr_deriv ?_).deriv
+    rw [pow_succ]
+    ring
 
 section ExpComp
 
