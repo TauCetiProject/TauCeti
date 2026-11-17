@@ -17,7 +17,8 @@ Connections on `V` and `W` induce a connection on the native bundle `Hom(V, W)`.
 Its evaluation rule is `((∇ A)(X)) s = ∇_X (A s) - A (∇_X s)`.
 This rule uniquely determines the induced connection on differentiable sections,
 and makes the identity endomorphism parallel. Iterating this construction supplies
-the connections on covariant tensors needed to differentiate curvature.
+the connections on covariant tensors needed to differentiate curvature, with
+bilinear evaluation rule `CovariantDerivative.hom_hom_apply`.
 
 The source bundle has finite rank; the target bundle need not. The construction
 uses Mathlib's tensoriality criterion, rather than a choice of bundle frame.
@@ -189,6 +190,47 @@ theorem hom_eq_of_apply {A : Π x : M, V x →L[𝕜] W x} {x : M}
   · simp [hom_eq_zero_of_not_mdifferentiableAt covV covV hA]
 
 end General
+
+section Bilinear
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul 𝕜 (V x)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [ContMDiffVectorBundle 1 F V I]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G] [FiniteDimensional 𝕜 G]
+  {W : M → Type*} [TopologicalSpace (TotalSpace G W)]
+  [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, IsTopologicalAddGroup (W x)]
+  [∀ x, ContinuousSMul 𝕜 (W x)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [ContMDiffVectorBundle 1 G W I]
+  {K : Type*} [NormedAddCommGroup K] [NormedSpace 𝕜 K]
+  {U : M → Type*} [TopologicalSpace (TotalSpace K U)]
+  [∀ x, AddCommGroup (U x)] [∀ x, Module 𝕜 (U x)]
+  [∀ x, TopologicalSpace (U x)] [∀ x, IsTopologicalAddGroup (U x)]
+  [∀ x, ContinuousSMul 𝕜 (U x)] [FiberBundle K U] [VectorBundle 𝕜 K U]
+
+/-- Evaluation of the iterated induced Hom connection on a differentiable bilinear bundle section
+and two differentiable sections. -/
+theorem hom_hom_apply (covV : CovariantDerivative I F V) (covW : CovariantDerivative I G W)
+    (covU : CovariantDerivative I K U)
+    {A : Π x : M, V x →L[𝕜] W x →L[𝕜] U x} {s : Π x : M, V x} {t : Π x : M, W x} {x : M}
+    (hA : MDiffAt
+      (fun y ↦ TotalSpace.mk' (F →L[𝕜] G →L[𝕜] K)
+        (E := fun z ↦ V z →L[𝕜] W z →L[𝕜] U z) y (A y)) x)
+    (hs : MDiffAt (T% s) x) (ht : MDiffAt (T% t) x) (v : TangentSpace I x) :
+    covV.hom (covW.hom covU) A x v (s x) (t x) =
+      covU (fun y ↦ A y (s y) (t y)) x v - A x (covV s x v) (t x) - A x (s x) (covW t x v) := by
+  rw [hom_apply covV (covW.hom covU) hA hs v, sub_apply,
+    hom_apply covW covU (hA.clm_bundle_apply hs) ht v]
+  abel
+
+end Bilinear
 
 section Smooth
 
