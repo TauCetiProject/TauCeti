@@ -14,9 +14,9 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 
 Sections of a trivial bundle with fibre `V` over the strip `ℝ × [0, 1]` are maps
 `ξ : ℝ × ℝ → V`. This file collects the measure and the jets shared by the Sobolev spaces built
-over the strip: the Sobolev space with boundary conditions in `TauCeti.Analysis.Sobolev.Strip`
-and the Sobolev space of the cylinder `ℝ × S¹`, whose fundamental domain is the strip, in
-`TauCeti.Analysis.Sobolev.Cylinder`.
+over the strip: the Sobolev space with boundary conditions in
+`TauCeti.Analysis.Sobolev.Strip.Basic` and the Sobolev space of the cylinder `ℝ × S¹`, whose
+fundamental domain is the strip, in `TauCeti.Analysis.Sobolev.Cylinder`.
 
 * `TauCeti.StripSobolev.stripMeasure` is Lebesgue measure on `ℝ × [0, 1]`; it is the product of
   Lebesgue measure on `ℝ` and on `[0, 1]` (`TauCeti.StripSobolev.stripMeasure_eq_prod`).
@@ -48,7 +48,7 @@ theorem stripMeasure_eq_prod :
   rw [Measure.volume_eq_prod, ← Measure.prod_restrict, Measure.restrict_univ]
 
 /-- The jet `(ξ, ∂s ξ, ∂t ξ)` of a map `ξ : ℝ × ℝ → V`. -/
-@[expose] def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
+def jet (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) : V × V × V :=
   (ξ z, fderiv ℝ ξ z (1, 0), fderiv ℝ ξ z (0, 1))
 
 /-- The components of the jet. -/

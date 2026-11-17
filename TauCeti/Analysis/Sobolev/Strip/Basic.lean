@@ -207,6 +207,14 @@ theorem H1_induction {P : H1 F₀ F₁ → Prop} (hP : IsClosed {x | P x})
     (h : ∀ ξ : testSection F₀ F₁, P (jetH1 F₀ F₁ ξ)) (x : H1 F₀ F₁) : P x :=
   denseRange_jetH1.induction_on x hP h
 
+/-- A closed relation on `H1` holding for the jets of all pairs of test sections holds for all
+pairs. -/
+theorem H1_induction₂ {P : H1 F₀ F₁ → H1 F₀ F₁ → Prop}
+    (hP : IsClosed {p : H1 F₀ F₁ × H1 F₀ F₁ | P p.1 p.2})
+    (h : ∀ ξ η : testSection F₀ F₁, P (jetH1 F₀ F₁ ξ) (jetH1 F₀ F₁ η)) (x y : H1 F₀ F₁) :
+    P x y :=
+  denseRange_jetH1.induction_on₂ hP h x y
+
 /-- Weakening the boundary conditions enlarges `H1`. -/
 theorem H1_mono (h₀ : F₀ ≤ F₀') (h₁ : F₁ ≤ F₁') : H1 F₀ F₁ ≤ H1 F₀' F₁' := by
   refine Submodule.topologicalClosure_mono ?_
@@ -304,31 +312,30 @@ theorem jet_comp_add (a : ℝ) (z : ℝ × ℝ) :
     jet (fun w ↦ ξ (w + (a, 0))) z = jet ξ (z + (a, 0)) := by
   simp only [jet_apply, fderiv_comp_add_right]
 
-/-- Translation by `a` in the `s` direction, on `L²` of the strip, as a linear isometric
+section
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- Translation by `a` in the `s` direction, on `Lᵖ` of the strip, as a linear isometric
 equivalence with inverse the translation by `-a`. -/
-def translateLp {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (a : ℝ) :
-    Lp E 2 stripMeasure ≃ₗᵢ[ℝ] Lp E 2 stripMeasure :=
+def translateLp (a : ℝ) : Lp E p stripMeasure ≃ₗᵢ[ℝ] Lp E p stripMeasure :=
   Lp.compMeasurePreservingₗᵢEquiv ℝ (measurePreserving_add_strip a)
     (measurePreserving_add_strip (-a)) (EventuallyEq.of_eq (funext fun z ↦ by ext <;> simp))
 
-section
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
 /-- `translateLp a` is the composition with the translation by `a`. -/
-theorem translateLp_apply (a : ℝ) (x : Lp E 2 stripMeasure) :
+theorem translateLp_apply (a : ℝ) (x : Lp E p stripMeasure) :
     translateLp a x = Lp.compMeasurePreserving _ (measurePreserving_add_strip a) x :=
   Lp.compMeasurePreservingₗᵢEquiv_apply ℝ _ _ _ x
 
-/-- The translate of an `L²` class is represented by the translate of its representative. -/
-theorem coeFn_translateLp (a : ℝ) (x : Lp E 2 stripMeasure) :
+/-- The translate of an `Lᵖ` class is represented by the translate of its representative. -/
+theorem coeFn_translateLp (a : ℝ) (x : Lp E p stripMeasure) :
     translateLp a x =ᵐ[stripMeasure] fun z ↦ x (z + (a, 0)) := by
   rw [translateLp_apply]
   exact Lp.coeFn_compMeasurePreserving _ _
 
 /-- Translation by `a`, then by `b`, is translation by `a + b`. -/
 @[simp]
-theorem translateLp_translateLp (a b : ℝ) (x : Lp E 2 stripMeasure) :
+theorem translateLp_translateLp (a b : ℝ) (x : Lp E p stripMeasure) :
     translateLp a (translateLp b x) = translateLp (a + b) x := by
   refine Lp.ext ?_
   filter_upwards [coeFn_translateLp a (translateLp b x), coeFn_translateLp (a + b) x,
@@ -340,14 +347,14 @@ theorem translateLp_translateLp (a b : ℝ) (x : Lp E 2 stripMeasure) :
 
 /-- Translation by `0` is the identity. -/
 @[simp]
-theorem translateLp_zero (x : Lp E 2 stripMeasure) : translateLp 0 x = x := by
+theorem translateLp_zero (x : Lp E p stripMeasure) : translateLp 0 x = x := by
   refine Lp.ext ?_
   filter_upwards [coeFn_translateLp 0 x] with z hz
   rwa [Prod.mk_zero_zero, add_zero] at hz
 
 /-- The inverse of translation by `a` is translation by `-a`. -/
 @[simp]
-theorem translateLp_symm (a : ℝ) : (translateLp (E := E) a).symm = translateLp (-a) :=
+theorem translateLp_symm (a : ℝ) : (translateLp (E := E) (p := p) a).symm = translateLp (-a) :=
   LinearIsometryEquiv.ext fun x ↦ (LinearIsometryEquiv.symm_apply_eq _).2 <| by
     rw [translateLp_translateLp, add_neg_cancel, translateLp_zero]
 
@@ -617,20 +624,35 @@ theorem integral_inner_fderiv_add_inner_fderiv_eq_zero (hξ : ContDiff ℝ 1 ξ)
       (HasCompactSupport.intro (isCompact_Icc (a := -R) (b := R)) fun s hs ↦ ?_)
     simp [(hK s hs).1]
 
+/-- For test sections `ξ`, `η` and an operator `D` on `H1` acting on jets as the derivative in a
+direction `v`, `⟪D ξ, η⟫ + ⟪ξ, D η⟫` in `L²` is the integral over the strip of the integrable
+function `⟪∂_v ξ, η⟫ + ⟪ξ, ∂_v η⟫`. -/
+private theorem inner_add_inner_jetH1_eq_integral {D : H1 F₀ F₁ →L[ℝ] Lp V 2 stripMeasure}
+    {v : ℝ × ℝ} (hD : ∀ ξ : testSection F₀ F₁,
+      D (jetH1 F₀ F₁ ξ) =ᵐ[stripMeasure] fun z ↦ fderiv ℝ (ξ : ℝ × ℝ → V) z v)
+    (ξ η : testSection F₀ F₁) :
+    Integrable (fun z ↦ ⟪fderiv ℝ (ξ : ℝ × ℝ → V) z v, (η : ℝ × ℝ → V) z⟫_ℝ +
+        ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z v⟫_ℝ) stripMeasure ∧
+      ⟪D (jetH1 F₀ F₁ ξ), valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
+          ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ), D (jetH1 F₀ F₁ η)⟫_ℝ =
+        ∫ z, (⟪fderiv ℝ (ξ : ℝ × ℝ → V) z v, (η : ℝ × ℝ → V) z⟫_ℝ +
+          ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z v⟫_ℝ) ∂stripMeasure := by
+  have hae : (fun z ↦ ⟪D (jetH1 F₀ F₁ ξ) z, valueL F₀ F₁ (jetH1 F₀ F₁ η) z⟫_ℝ +
+      ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ) z, D (jetH1 F₀ F₁ η) z⟫_ℝ) =ᵐ[stripMeasure]
+        fun z ↦ ⟪fderiv ℝ (ξ : ℝ × ℝ → V) z v, (η : ℝ × ℝ → V) z⟫_ℝ +
+          ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z v⟫_ℝ := by
+    filter_upwards [hD ξ, valueL_jetH1 η, valueL_jetH1 ξ, hD η] with z h₁ h₂ h₃ h₄
+    rw [h₁, h₂, h₃, h₄]
+  refine ⟨((L2.integrable_inner (𝕜 := ℝ) _ _).add (L2.integrable_inner _ _)).congr hae, ?_⟩
+  rw [L2.inner_def, L2.inner_def, ← integral_add (L2.integrable_inner _ _)
+    (L2.integrable_inner _ _), integral_congr_ae hae]
+
 /-- Green's formula in the `s` direction for test sections. -/
 private theorem inner_derivSL_add_inner_derivSL_jetH1 (ξ η : testSection F₀ F₁) :
     ⟪derivSL F₀ F₁ (jetH1 F₀ F₁ ξ), valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
         ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ), derivSL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ = 0 := by
-  have hae : (fun z ↦ ⟪derivSL F₀ F₁ (jetH1 F₀ F₁ ξ) z, valueL F₀ F₁ (jetH1 F₀ F₁ η) z⟫_ℝ +
-      ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ) z, derivSL F₀ F₁ (jetH1 F₀ F₁ η) z⟫_ℝ) =ᵐ[stripMeasure]
-        fun z ↦ ⟪fderiv ℝ (ξ : ℝ × ℝ → V) z (1, 0), (η : ℝ × ℝ → V) z⟫_ℝ +
-          ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z (1, 0)⟫_ℝ := by
-    filter_upwards [derivSL_jetH1 ξ, valueL_jetH1 η, valueL_jetH1 ξ, derivSL_jetH1 η]
-      with z h₁ h₂ h₃ h₄
-    rw [h₁, h₂, h₃, h₄]
-  have hint := ((L2.integrable_inner (𝕜 := ℝ) _ _).add (L2.integrable_inner _ _)).congr hae
-  rw [L2.inner_def, L2.inner_def, ← integral_add (L2.integrable_inner _ _)
-    (L2.integrable_inner _ _), integral_congr_ae hae]
+  obtain ⟨hint, heq⟩ := inner_add_inner_jetH1_eq_integral derivSL_jetH1 ξ η
+  rw [heq]
   -- Integrate over each line `ℝ × {t}` first.
   rw [stripMeasure_eq_prod] at hint ⊢
   rw [integral_prod_symm _ hint]
@@ -643,15 +665,9 @@ private theorem inner_derivSL_add_inner_derivSL_jetH1 (ξ η : testSection F₀ 
 `⟪∂s x, y⟫ + ⟪x, ∂s y⟫ = 0` in `L²`: the strip has no boundary in the `s` direction. -/
 theorem inner_derivSL_add_inner_derivSL (x y : H1 F₀ F₁) :
     ⟪derivSL F₀ F₁ x, valueL F₀ F₁ y⟫_ℝ + ⟪valueL F₀ F₁ x, derivSL F₀ F₁ y⟫_ℝ = 0 := by
-  -- Extend from jets to `H1`, first in `x` with `y` a jet, then in `y`.
-  have hx : ∀ (η : testSection F₀ F₁) (x : H1 F₀ F₁),
-      ⟪derivSL F₀ F₁ x, valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
-          ⟪valueL F₀ F₁ x, derivSL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ = 0 := fun η ↦
-    H1_induction (isClosed_eq (by fun_prop) (by fun_prop))
-      fun ξ ↦ inner_derivSL_add_inner_derivSL_jetH1 ξ η
-  exact H1_induction (P := fun y ↦
-      ⟪derivSL F₀ F₁ x, valueL F₀ F₁ y⟫_ℝ + ⟪valueL F₀ F₁ x, derivSL F₀ F₁ y⟫_ℝ = 0)
-    (isClosed_eq (by fun_prop) (by fun_prop)) (hx · x) y
+  induction x, y using H1_induction₂ with
+  | hP => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | h ξ η => exact inner_derivSL_add_inner_derivSL_jetH1 ξ η
 
 variable [CompleteSpace V]
 
@@ -661,18 +677,8 @@ private theorem inner_derivTL_add_inner_derivTL_jetH1 (ξ η : testSection F₀ 
         ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ), derivTL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ =
       ⟪(traceL F₀ F₁ (jetH1 F₀ F₁ ξ)).2, (traceL F₀ F₁ (jetH1 F₀ F₁ η)).2⟫_ℝ -
         ⟪(traceL F₀ F₁ (jetH1 F₀ F₁ ξ)).1, (traceL F₀ F₁ (jetH1 F₀ F₁ η)).1⟫_ℝ := by
-  set f : ℝ × ℝ → ℝ := fun z ↦ ⟪fderiv ℝ (ξ : ℝ × ℝ → V) z (0, 1), (η : ℝ × ℝ → V) z⟫_ℝ +
-    ⟪(ξ : ℝ × ℝ → V) z, fderiv ℝ (η : ℝ × ℝ → V) z (0, 1)⟫_ℝ
-  -- The left side is the integral of `f` over the strip.
-  have hae : (fun z ↦ ⟪derivTL F₀ F₁ (jetH1 F₀ F₁ ξ) z, valueL F₀ F₁ (jetH1 F₀ F₁ η) z⟫_ℝ +
-      ⟪valueL F₀ F₁ (jetH1 F₀ F₁ ξ) z, derivTL F₀ F₁ (jetH1 F₀ F₁ η) z⟫_ℝ) =ᵐ[stripMeasure] f := by
-    filter_upwards [derivTL_jetH1 ξ, valueL_jetH1 η, valueL_jetH1 ξ, derivTL_jetH1 η]
-      with z h₁ h₂ h₃ h₄
-    rw [h₁, h₂, h₃, h₄]
-  have hint : Integrable f stripMeasure :=
-    ((L2.integrable_inner _ _).add (L2.integrable_inner _ _)).congr hae
-  rw [L2.inner_def, L2.inner_def, ← integral_add (L2.integrable_inner _ _)
-    (L2.integrable_inner _ _), integral_congr_ae hae, L2.inner_def, L2.inner_def,
+  obtain ⟨hint, heq⟩ := inner_add_inner_jetH1_eq_integral derivTL_jetH1 ξ η
+  rw [heq, L2.inner_def, L2.inner_def,
     ← integral_sub (L2.integrable_inner _ _) (L2.integrable_inner _ _), traceL_jetH1,
     traceL_jetH1]
   -- Integrate the fundamental theorem of calculus on the segments `{s} × [0, 1]` over `s`.
@@ -691,18 +697,9 @@ being the traces. This is the boundary term in the formal adjoint of `∂s + J �
 theorem inner_derivTL_add_inner_derivTL (x y : H1 F₀ F₁) :
     ⟪derivTL F₀ F₁ x, valueL F₀ F₁ y⟫_ℝ + ⟪valueL F₀ F₁ x, derivTL F₀ F₁ y⟫_ℝ =
       ⟪(traceL F₀ F₁ x).2, (traceL F₀ F₁ y).2⟫_ℝ - ⟪(traceL F₀ F₁ x).1, (traceL F₀ F₁ y).1⟫_ℝ := by
-  -- Extend from jets to `H1`, first in `x` with `y` a jet, then in `y`.
-  have hx : ∀ (η : testSection F₀ F₁) (x : H1 F₀ F₁),
-      ⟪derivTL F₀ F₁ x, valueL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ +
-          ⟪valueL F₀ F₁ x, derivTL F₀ F₁ (jetH1 F₀ F₁ η)⟫_ℝ =
-        ⟪(traceL F₀ F₁ x).2, (traceL F₀ F₁ (jetH1 F₀ F₁ η)).2⟫_ℝ -
-          ⟪(traceL F₀ F₁ x).1, (traceL F₀ F₁ (jetH1 F₀ F₁ η)).1⟫_ℝ := fun η ↦
-    H1_induction (isClosed_eq (by fun_prop) (by fun_prop))
-      fun ξ ↦ inner_derivTL_add_inner_derivTL_jetH1 ξ η
-  exact H1_induction (P := fun y ↦
-      ⟪derivTL F₀ F₁ x, valueL F₀ F₁ y⟫_ℝ + ⟪valueL F₀ F₁ x, derivTL F₀ F₁ y⟫_ℝ =
-        ⟪(traceL F₀ F₁ x).2, (traceL F₀ F₁ y).2⟫_ℝ - ⟪(traceL F₀ F₁ x).1, (traceL F₀ F₁ y).1⟫_ℝ)
-    (isClosed_eq (by fun_prop) (by fun_prop)) (hx · x) y
+  induction x, y using H1_induction₂ with
+  | hP => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | h ξ η => exact inner_derivTL_add_inner_derivTL_jetH1 ξ η
 
 end Green
 
