@@ -17,10 +17,10 @@ Let `p : E → B` be a Serre fibration over a `T₁` space `B` and `b` a point o
 of an open partial homeomorphism `e : B → V` to a real normed space of finite dimension `r`, such
 as a chart of a topological manifold modelled on `V`. The **local homology of `E` along the
 fibre** `F = p⁻¹(b)` is the relative singular homology `Hₖ(E, E ∖ F)`. This file computes it,
-with coefficients in a ring `R`:
+with coefficients in a module `M` over a ring `R`:
 
-* `Hₘ(E, E ∖ F; R) = 0` for `m < r` (`TauCeti.TopCat.isZero_singularHomology_complFiber`);
-* `Hₙ₊ᵣ(E, E ∖ F; R) ≅ Hₙ(F; R)` (`TauCeti.TopCat.singularHomologyComplFiberIso`).
+* `Hₘ(E, E ∖ F; M) = 0` for `m < r` (`TauCeti.TopCat.isZero_singularHomology_complFiber`);
+* `Hₙ₊ᵣ(E, E ∖ F; M) ≅ Hₙ(F; M)` (`TauCeti.TopCat.singularHomologyComplFiberIso`).
 
 For the identity of `B` this is the local homology of `B` at `b`
 (`TauCeti.singularHomologyComplSingletonFinrankIso`). The composite
@@ -183,7 +183,8 @@ namespace TopCat
 section Chart
 
 variable {V : Type u} [NormedAddCommGroup V] {E B : _root_.TopCat.{u}}
-  {p : E ⟶ B} (R : Type u) [Ring R] (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
+  {p : E ⟶ B} {R : Type*} [Ring R] (M : ModuleCat.{u} R) (e : OpenPartialHomeomorph B V) {b : B}
+  (hb : b ∈ e.source)
   {ε : ℝ} (hε : ball (e b) ε ⊆ e.target)
 
 variable [T1Space B]
@@ -191,10 +192,9 @@ variable [T1Space B]
 /-- Excision onto the part of `E` over `e.chartBall b ε`, followed by
 `OpenPartialHomeomorph.chartBallComplFiberPairIso`. -/
 private def excisionIso (hε₀ : 0 < ε) (m : ℕ) :
-    (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m ≅
-      (TopPair.ofSubset (e.chartBallProj hε p ⁻¹' {x | (x : V) ≠ 0})).singularHomology
-        (ModuleCat.of R R) m :=
-  haveI := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset (ModuleCat.of R R)
+    (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology M m ≅
+      (TopPair.ofSubset (e.chartBallProj hε p ⁻¹' {x | (x : V) ≠ 0})).singularHomology M m :=
+  haveI := TopPair.isIso_singularHomologyMap_excisionMap_of_isClosed_subset M
     (X := E) ((e.isOpen_chartBall b ε).preimage p.hom.continuous)
     (isClosed_singleton.preimage p.hom.continuous)
     (preimage_mono (singleton_subset_iff.2 (e.mem_chartBall_self hb hε₀))) m
@@ -208,19 +208,19 @@ include e hb in
 /-- **The homology of a Serre fibration modulo the complement of a fibre vanishes below the
 dimension.** Let `p : E ⟶ B` be a Serre fibration over a `T₁` space, and let `b` lie in the source
 of an open partial homeomorphism `e : B → V` to a finite-dimensional real normed space. Then
-`Hₘ(E, E ∖ p⁻¹(b); R) = 0` for every `m < dim V`. -/
+`Hₘ(E, E ∖ p⁻¹(b); M) = 0` for every `m < dim V`. -/
 theorem isZero_singularHomology_complFiber (hp : serreFibrations p) {m : ℕ}
     (hm : m < finrank ℝ V) :
-    IsZero ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m) := by
+    IsZero ((TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology M m) := by
   obtain ⟨ε, hε₀, hε⟩ := Metric.isOpen_iff.1 e.open_target (e b) (e.map_source hb)
-  exact (isZero_singularHomology_preimage_ne_zero R (e.mem_serreFibrations_chartBallProj hε hp)
-    (convex_ball 0 _) (ball_mem_nhds 0 hε₀) hm).of_iso (excisionIso R e hb hε hε₀ m)
+  exact (isZero_singularHomology_preimage_ne_zero M (e.mem_serreFibrations_chartBallProj hε hp)
+    (convex_ball 0 _) (ball_mem_nhds 0 hε₀) hm).of_iso (excisionIso M e hb hε hε₀ m)
 
 /-- **The homology of a Serre fibration modulo the complement of a fibre is the shifted homology
 of the fibre.** Let `p : E ⟶ B` be a Serre fibration over a `T₁` space, and let `b` lie in the
 source of an open partial homeomorphism `e : B → V` to a real normed space of finite dimension `r`,
 such as the chart `chartAt V b` of a topological manifold modelled on `V`. Then
-`Hₘ(E, E ∖ p⁻¹(b); R) ≅ Hₙ(p⁻¹(b); R)` for `m = n + r`.
+`Hₘ(E, E ∖ p⁻¹(b); M) ≅ Hₙ(p⁻¹(b); M)` for `m = n + r`.
 
 The isomorphism depends on `e`, and is constructed from a ball of radius `ε` about `e b` inside
 the target of `e`: it is excision onto the part of `E` over
@@ -229,14 +229,13 @@ the target of `e`: it is excision onto the part of `E` over
 (`TauCeti.TopCat.singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom`). -/
 def singularHomologyComplFiberIso (hε₀ : 0 < ε) (hp : serreFibrations p) (n m : ℕ)
     (h : n + finrank ℝ V = m) :
-    (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology (ModuleCat.of R R) m ≅
+    (TopPair.ofSubset (p ⁻¹' {b})ᶜ).singularHomology M m ≅
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-        (ModuleCat.of R R)).obj (_root_.TopCat.of (p ⁻¹' {b})) :=
-  excisionIso R e hb hε hε₀ m ≪≫
-    singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartBallProj hε hp)
+        M).obj (_root_.TopCat.of (p ⁻¹' {b})) :=
+  excisionIso M e hb hε hε₀ m ≪≫
+    singularHomologyPreimageNeZeroIso M (e.mem_serreFibrations_chartBallProj hε hp)
       (convex_ball 0 _) (ball_mem_nhds 0 hε₀) n m h ≪≫
-    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-      (ModuleCat.of R R)).mapIso
+    ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).mapIso
         (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀))
 
 /-- The isomorphism `TauCeti.TopCat.singularHomologyComplFiberIso` commutes with excision
@@ -248,14 +247,13 @@ lemma singularHomologyMap_excisionMap_comp_singularHomologyComplFiberIso_hom
     (hε₀ : 0 < ε) (hp : serreFibrations p) (n m : ℕ) (h : n + finrank ℝ V = m) :
     TopPair.singularHomologyMap
         (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
-        (ModuleCat.of R R) m ≫
-        (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom =
+        M m ≫
+        (singularHomologyComplFiberIso M e hb hε hε₀ hp n m h).hom =
       TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).hom
-          (ModuleCat.of R R) m ≫
-        (singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartBallProj hε hp)
+          M m ≫
+        (singularHomologyPreimageNeZeroIso M (e.mem_serreFibrations_chartBallProj hε hp)
           (convex_ball 0 _) (ball_mem_nhds 0 hε₀) n m h).hom ≫
-        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map
+        ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀)).hom := by
   simp [singularHomologyComplFiberIso, excisionIso]
 
@@ -267,17 +265,16 @@ restricted fibration with the fibre over `b`, followed by the inverse of
 @[reassoc]
 lemma singularHomologyComplFiberIso_inv
     (hε₀ : 0 < ε) (hp : serreFibrations p) (n m : ℕ) (h : n + finrank ℝ V = m) :
-    (singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).inv =
-      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj
-          (ModuleCat.of R R)).map
+    (singularHomologyComplFiberIso M e hb hε hε₀ hp n m h).inv =
+      ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} R) n).obj M).map
           (_root_.TopCat.isoOfHomeo (e.chartBallProjFiberHomeomorph hb hε p hε₀)).inv ≫
-        (singularHomologyPreimageNeZeroIso R (e.mem_serreFibrations_chartBallProj hε hp)
+        (singularHomologyPreimageNeZeroIso M (e.mem_serreFibrations_chartBallProj hε hp)
           (convex_ball 0 _) (ball_mem_nhds 0 hε₀) n m h).inv ≫
         TopPair.singularHomologyMap (e.chartBallComplFiberPairIso hb hε p).inv
-          (ModuleCat.of R R) m ≫
+          M m ≫
         TopPair.singularHomologyMap
           (TopPair.excisionMap (X := E) (p ⁻¹' e.chartBall b ε) (p ⁻¹' {b})ᶜ)
-          (ModuleCat.of R R) m := by
+          M m := by
   simp [singularHomologyComplFiberIso, excisionIso]
 
 end Chart
@@ -287,24 +284,24 @@ end TopCat
 /-! ### Classes living over the fundamental class -/
 
 variable {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
-  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {R : Type u} [Ring R]
+  {E B : _root_.TopCat.{u}} [T1Space B] {p : E ⟶ B} {R : Type*} [Ring R] {M : ModuleCat.{u} R}
   (e : OpenPartialHomeomorph B V) {b : B} (hb : b ∈ e.source)
 
 /-- **Living over the fundamental class through the shriek map.** For a Serre fibration over a
-`T₁` space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; R)` lives over the
+`T₁` space with a chart `e` of dimension `r` at `b`, a class `α ∈ Hₙ₊ᵣ(E; M)` lives over the
 fundamental class at `b` exactly when its image under the shriek map
 `Hₙ₊ᵣ(E) → Hₙ₊ᵣ(E, E ∖ p⁻¹(b)) ≅ Hₙ(p⁻¹(b))` of the inclusion of `b` is nonzero, for any ball about
 `e b` inside the target of `e`. -/
 theorem livesOverFundamentalClass_iff_singularHomologyComplFiberIso_hom_ne_zero
     {ε : ℝ} (hε : ball (e b) ε ⊆ e.target) (hε₀ : 0 < ε) (hp : TopCat.serreFibrations p)
     {n m : ℕ} (h : n + finrank ℝ V = m)
-    (α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) m : ModuleCat.{u} R)) :
-    LivesOverFundamentalClass (ModuleCat.of R R) p b α ↔
-      (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).hom.hom
-        ((fiberLocalization (ModuleCat.of R R) p b m).hom α) ≠ 0 := by
+    (α : ((_root_.TopCat.toSSet.obj E).homology M m : ModuleCat.{u} R)) :
+    LivesOverFundamentalClass M p b α ↔
+      (TopCat.singularHomologyComplFiberIso M e hb hε hε₀ hp n m h).hom.hom
+        ((fiberLocalization M p b m).hom α) ≠ 0 := by
   rw [livesOverFundamentalClass_iff, not_iff_not]
   exact ⟨fun hα ↦ by rw [hα, map_zero], fun hα ↦ by
-    simpa using congrArg (TopCat.singularHomologyComplFiberIso R e hb hε hε₀ hp n m h).inv.hom hα⟩
+    simpa using congrArg (TopCat.singularHomologyComplFiberIso M e hb hε hε₀ hp n m h).inv.hom hα⟩
 
 include hb in
 /-- **A class living over the fundamental class has degree at least the dimension of the base.**
@@ -312,10 +309,10 @@ For a Serre fibration over a `T₁` space with a chart of dimension `r` at `b`, 
 `Hₖ(E, E ∖ p⁻¹(b))` vanishes for `k < r`, so no class of degree below `r` lives over the
 fundamental class at `b`. -/
 theorem LivesOverFundamentalClass.finrank_le (hp : TopCat.serreFibrations p) {d : ℕ}
-    {α : ((_root_.TopCat.toSSet.obj E).homology (ModuleCat.of R R) d : ModuleCat.{u} R)}
-    (h : LivesOverFundamentalClass (ModuleCat.of R R) p b α) : finrank ℝ V ≤ d := by
+    {α : ((_root_.TopCat.toSSet.obj E).homology M d : ModuleCat.{u} R)}
+    (h : LivesOverFundamentalClass M p b α) : finrank ℝ V ≤ d := by
   by_contra hd
-  have := ModuleCat.isZero_iff_subsingleton.1 (TopCat.isZero_singularHomology_complFiber R e hb hp
+  have := ModuleCat.isZero_iff_subsingleton.1 (TopCat.isZero_singularHomology_complFiber M e hb hp
     (not_le.1 hd))
   exact (livesOverFundamentalClass_iff _ _ _ _).1 h (Subsingleton.elim _ _)
 
