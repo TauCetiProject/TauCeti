@@ -30,6 +30,8 @@ symmetric form of a simply-laced Cartan matrix.
   root `j ≠ -s` in the direction `s` never reaches `-s`.
 * `RootPairing.root_ne_and_root_ne_neg_of_root_eq_add`: in a reduced root pairing, a summand of a
   root that is a sum of two roots is neither that root nor its negative.
+* `RootPairing.root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add`:
+  if `γ = α + β` and `δ = α + γ` are roots, then `β + δ` is neither a root nor zero.
 -/
 
 public section
@@ -91,6 +93,22 @@ theorem root_ne_and_root_ne_neg_of_root_eq_add [CharZero R] {i j k : ι}
   have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
     rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
   exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
+
+omit [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- The sum of the initial and last roots of a double chain is twice its middle root,
+and hence is neither a root nor zero. No bound on Cartan integers is needed. -/
+theorem root_add_root_notMem_range_root_and_ne_zero_of_root_eq_add_of_root_eq_add [CharZero R]
+    {α β γ δ : ι}
+    (hγ : P.root γ = P.root α + P.root β)
+    (hδ : P.root δ = P.root α + P.root γ) :
+    P.root β + P.root δ ∉ Set.range P.root ∧ P.root β + P.root δ ≠ 0 := by
+  let : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  let : HasUniqueDiv M := .of_isTorsionFree R M
+  have heq : P.root β + P.root δ = 2 • P.root γ := by
+    rw [hδ, hγ]
+    abel
+  rw [heq]
+  exact ⟨P.nsmul_notMem_range_root, smul_ne_zero (by decide : (2 : ℕ) ≠ 0) (P.ne_zero γ)⟩
 
 end Sum
 
