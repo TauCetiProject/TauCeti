@@ -9,9 +9,9 @@ public import TauCeti.Probability.Distributions.Semicircle.Moments
 public import TauCeti.Probability.RandomMatrix.MomentBounds
 public import TauCeti.Analysis.Matrix.SpectralMeasure.Basic
 public import Mathlib.Probability.Moments.Variance
-import TauCeti.Analysis.RCLike.Sum
 import TauCeti.Combinatorics.TreeWalk.ConnectedPair
 import TauCeti.Probability.Moments.Chebyshev
+import TauCeti.Probability.Moments.Variance
 
 /-!
 # Expected spectral moments and variance bounds for Wigner matrices
@@ -257,25 +257,6 @@ private theorem norm_integral_prod_mul_star_prod_sub_le [IsProbabilityMeasure P]
 
 end PrivateBounds
 
-private theorem ofReal_variance_eq_mul_sum_cov {ι : Type*} [IsProbabilityMeasure P] [Fintype ι]
-    {X : Ω → ℝ} (hX2 : MemLp X 2 P) {c : ℂ} (hc : star c = c) {T : ι → Ω → ℂ}
-    (hX : ∀ ω, ((X ω : ℝ) : ℂ) = c * ∑ i, T i ω) (hT : ∀ i, Integrable (T i) P)
-    (hTT : ∀ i j, Integrable (fun ω ↦ T i ω * star (T j ω)) P) :
-    ((Var[X; P] : ℝ) : ℂ) = c ^ 2 * ∑ p : ι × ι,
-      ((∫ ω, T p.1 ω * star (T p.2 ω) ∂P) - (∫ ω, T p.1 ω ∂P) * star (∫ ω, T p.2 ω ∂P)) := by
-  have hsqOf {Y : ℝ} {S : ι → ℂ} (hY : ((Y : ℝ) : ℂ) = c * ∑ i, S i) :
-      ((Y ^ 2 : ℝ) : ℂ) = c ^ 2 * ∑ p : ι × ι, S p.1 * star (S p.2) := by
-    simpa only [RCLike.ofReal_eq_complex_ofReal] using
-      RCLike.ofReal_sq_eq_mul_sum_mul_star (𝕜 := ℂ) hc (by simpa using hY)
-  have hmean : ((∫ ω, X ω ∂P : ℝ) : ℂ) = c * ∑ i, ∫ ω, T i ω ∂P := by
-    rw [← integral_complex_ofReal]; simp_rw [hX]
-    rw [integral_const_mul, integral_finsetSum _ fun i _ ↦ hT i]
-  rw [variance_eq_sub hX2]; simp only [Pi.pow_apply, Complex.ofReal_sub]
-  rw [← integral_complex_ofReal, show (fun ω ↦ ((X ω ^ 2 : ℝ) : ℂ)) =
-      fun ω ↦ c ^ 2 * ∑ p : ι × ι, T p.1 ω * star (T p.2 ω) from funext fun ω ↦ hsqOf (hX ω),
-    integral_const_mul, integral_finsetSum _ fun p _ ↦ hTT p.1 p.2, hsqOf hmean, ← mul_sub,
-    ← Finset.sum_sub_distrib]
-
 private theorem integral_prod_mul_star_prod_sub_eq_zero_of_not_isConnectedPair {k n : ℕ}
     (hξm : ∀ ij, ij.1.2 < n → AEMeasurable (ξ ij) P)
     (hηm : ∀ i, i < n → AEMeasurable (η i) P)
@@ -356,9 +337,6 @@ theorem variance_integral_pow_spectralMeasure_wignerMatrix_le :
       (∫ ω, T p.1 ω * star (T p.2 ω) ∂P) - (∫ ω, T p.1 ω ∂P) * star (∫ ω, T p.2 ω ∂P)
     let G : Finset ((Fin k → Fin (n + 1)) × (Fin k → Fin (n + 1))) :=
       {p | TreeWalk.IsConnectedPair p.1 p.2}
-    have hX2 : MemLp X 2 P := memLp_integral_pow_spectralMeasure_wignerMatrix
-      (fun ij hij ↦ by simpa [Nat.cast_mul] using hξp ij hij)
-      (fun i hi ↦ by simpa [Nat.cast_mul] using hηp i hi)
     have hξpk {ij} (hij : ij.1.2 < n + 1) : MemLp (ξ ij) (k : ℕ) P :=
       (hξp ij hij).mono_exponent (by norm_cast; omega)
     have hηpk {i} (hi : i < n + 1) : MemLp (η i) (k : ℕ) P :=
@@ -373,11 +351,15 @@ theorem variance_integral_pow_spectralMeasure_wignerMatrix_le :
       exact memLp_one_iff_integrable.mp (memLp_prod_wignerMatrix_apply
         (fun ij hij ↦ by simpa [hcard] using hξp ij hij)
         (fun i hi ↦ by simpa [hcard] using hηp i hi) _ _)
-    have hXeq (ω : Ω) : ((X ω : ℝ) : ℂ) = ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ w, T w ω := by
+    have hXeq (ω : Ω) : (X ω : ℂ) = ((n + 1 : ℕ) : ℂ)⁻¹ * ∑ w, T w ω := by
       simpa only [RCLike.ofReal_eq_complex_ofReal, Fintype.card_fin,
         trace_pow_eq_sum_prod _ hk] using Matrix.ofReal_integral_pow_spectralMeasure
           (wignerMatrix ξ η (n + 1) ω) (wignerMatrix_isHermitian ξ η ω (n + 1)) k
-    have hvarC := ofReal_variance_eq_mul_sum_cov hX2 (by simp) hXeq hintT hintTT
+    have hvarC : ((Var[X; P] : ℝ) : ℂ) = ((n + 1 : ℕ) : ℂ)⁻¹ ^ 2 * ∑ p, covTerm p := by
+      simpa only [RCLike.ofReal_eq_complex_ofReal] using
+        ofReal_variance_eq_mul_sum_integral_mul_star_sub (𝕜 := ℂ) (by simp)
+          (.of_forall fun ω ↦ by simpa only [RCLike.ofReal_eq_complex_ofReal] using hXeq ω)
+          hintT hintTT
     have hsumG : (∑ p, covTerm p) = ∑ p ∈ G, covTerm p :=
       (Finset.sum_subset (Finset.subset_univ G) fun p _ hpG ↦
         integral_prod_mul_star_prod_sub_eq_zero_of_not_isConnectedPair

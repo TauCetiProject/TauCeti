@@ -58,6 +58,9 @@ range, so the value is a `dite` rather than a plain application.
   determined by whether the index plus one equals `n`.
 * `Fin.finRotate_add_right` and `Fin.finRotate_add_left`: `finRotate n` commutes with addition on
   `Fin n`.
+* `Fin.cast_finRotate`: casting along `m = n` commutes with `finRotate`.
+* `Fin.append_comp_finRotate_of_eq_zero`: rotating an appended tuple whose halves agree at `0`
+  rotates each half separately.
 * `Finset.sum_range_const_sub_succ`: the sum of a reversed initial segment of natural numbers.
 * `Finset.card_filter_castSucc_lt_succ`: counting the elements of a set of indices below `i.succ`
   rather than `i.castSucc` adds `1` exactly when `i` belongs to it.
@@ -792,6 +795,46 @@ theorem finRotate_add_left {n : ℕ} (a b : Fin n) :
     finRotate n (a + b) = a + finRotate n b := by
   have := a.neZero
   rw [finRotate_apply, finRotate_apply, add_assoc]
+
+/-- Casting along `m = n` commutes with the cyclic rotation `finRotate`. -/
+theorem cast_finRotate {m n : ℕ} (h : m = n) (i : Fin m) :
+    (finRotate m i).cast h = finRotate n (i.cast h) := by
+  subst h; rfl
+
+/-- Rotating an appended tuple whose two halves agree at index `0` rotates each half
+separately. -/
+theorem append_comp_finRotate_of_eq_zero {α : Type*} {m n : ℕ} [NeZero m] [NeZero n]
+    (u : Fin m → α) (v : Fin n → α) (h0 : u 0 = v 0) :
+    Fin.append u v ∘ finRotate (m + n) =
+      Fin.append (u ∘ finRotate m) (v ∘ finRotate n) := by
+  have := NeZero.pos n
+  funext x
+  induction x using Fin.addCases with
+  | left i =>
+    have := i.isLt
+    by_cases hi : (i : ℕ) + 1 = m
+    · have h1 : finRotate (m + n) (castAdd n i) = natAdd m 0 := by
+        ext
+        simp only [coe_finRotate_eq_ite, val_castAdd, val_natAdd, val_zero]
+        split_ifs <;> omega
+      have h2 : finRotate m i = 0 :=
+        Fin.ext (by simp only [coe_finRotate_eq_ite, hi, ↓reduceIte, val_zero])
+      simp [h1, h2, h0]
+    · have h1 : finRotate (m + n) (castAdd n i) = castAdd n (finRotate m i) := by
+        ext; simp only [coe_finRotate_eq_ite, val_castAdd]; split_ifs <;> omega
+      simp [h1]
+  | right j =>
+    by_cases hj : (j : ℕ) + 1 = n
+    · have h1 : finRotate (m + n) (natAdd m j) = castAdd n 0 := by
+        ext
+        simp only [coe_finRotate_eq_ite, val_natAdd, val_castAdd, val_zero]
+        split_ifs <;> omega
+      have h2 : finRotate n j = 0 :=
+        Fin.ext (by simp only [coe_finRotate_eq_ite, hj, ↓reduceIte, val_zero])
+      simp [h1, h2, h0]
+    · have h1 : finRotate (m + n) (natAdd m j) = natAdd m (finRotate n j) := by
+        ext; simp only [coe_finRotate_eq_ite, val_natAdd]; split_ifs <;> omega
+      simp [h1]
 
 end Fin
 

@@ -192,7 +192,7 @@ theorem integral_prod_wignerMatrix_apply_eq_zero_of_lt {ι : Type*} [Fintype ι]
     (fun s : {s // s ≠ t} ↦ u s.1) (fun s : {s // s ≠ t} ↦ v s.1)
     fun s₁ s₂ h ↦ s₂.2 (ht s₂.1 (h.symm.trans (by rw [s₁.2])))]
   simp_rw [Fintype.prod_unique]
-  rw [show (default : {s // s = t}).1 = t from rfl,
+  rw [(default : {s // s = t}).property,
     integral_wignerMatrix_apply_eq_zero_of_lt hξ hη (u t) (v t), zero_mul]
 
 /-- **Singleton edges vanish.** Let the entries of the array be independent and centred. For a

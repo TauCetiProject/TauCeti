@@ -13,6 +13,7 @@ public import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 public import TauCeti.MeasureTheory.Function.Lp.Norm
 public import TauCeti.MeasureTheory.Integral.Lebesgue.SetOfEqZero
 public import TauCeti.Probability.Moments.Mixture
+import TauCeti.Analysis.RCLike.Sum
 
 /-!
 # The mean squared distance between two independent copies and nonzero-variance bounds
@@ -54,6 +55,9 @@ variable on a probability space.
 * `TauCeti.Probability.variance_weighted_coordinate_sum` and
   `TauCeti.Probability.measure_weighted_coordinate_sum_sub_mean_ge`: variance and Chebyshev
   bounds for weighted sums of pairwise independent variables.
+* `TauCeti.Probability.ofReal_variance_eq_mul_sum_integral_mul_star_sub`: expands the variance of
+  a real random variable represented a.e. as a self-adjoint multiple of a finite `RCLike`-valued
+  sum into the double sum of pairwise covariances.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
   random variable with nonzero variance has strictly positive expectation.
 * `TauCeti.measure_setOf_eq_zero_lt_one_of_variance_ne_zero`: on a probability space, a
@@ -340,5 +344,40 @@ theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → T
     (f := fun p : (∀ i, α i) × α i =>
       ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
     ((hu.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
+
+/-- Expanding the variance of a real random variable written a.e. as a self-adjoint multiple of a
+finite `RCLike`-valued sum into the double sum of pairwise covariances. -/
+theorem ofReal_variance_eq_mul_sum_integral_mul_star_sub {Ω ι 𝕜 : Type*}
+    [MeasurableSpace Ω] [Fintype ι] [RCLike 𝕜] {P : Measure Ω} [IsProbabilityMeasure P]
+    {X : Ω → ℝ} {c : 𝕜} (hc : star c = c) {T : ι → Ω → 𝕜}
+    (hX : ∀ᵐ ω ∂P, (X ω : 𝕜) = c * ∑ i, T i ω) (hT : ∀ i, Integrable (T i) P)
+    (hTT : ∀ i j, Integrable (fun ω ↦ T i ω * star (T j ω)) P) :
+    (Var[X; P] : 𝕜) = c ^ 2 * ∑ p : ι × ι,
+      ((∫ ω, T p.1 ω * star (T p.2 ω) ∂P) -
+        (∫ ω, T p.1 ω ∂P) * star (∫ ω, T p.2 ω ∂P)) := by
+  have hXsq_ae : ∀ᵐ ω ∂P, ((X ω ^ 2 : ℝ) : 𝕜) =
+      c ^ 2 * ∑ p : ι × ι, T p.1 ω * star (T p.2 ω) :=
+    hX.mono fun ω hω ↦ RCLike.ofReal_sq_eq_mul_sum_mul_star hc hω
+  have hXm : AEStronglyMeasurable X P := by
+    have h1 : AEStronglyMeasurable (fun ω ↦ (X ω : 𝕜)) P :=
+      ((integrable_finsetSum Finset.univ fun i _ ↦ hT i).const_mul c).aestronglyMeasurable.congr
+        (hX.mono fun _ ↦ Eq.symm)
+    simpa only [Function.comp_def, RCLike.reCLM_apply, RCLike.ofReal_re] using
+      (RCLike.reCLM (K := 𝕜)).continuous.comp_aestronglyMeasurable h1
+  have hXsq : Integrable (fun ω ↦ ‖X ω‖ ^ 2) P := by
+    have h1 : Integrable (fun ω ↦ ((X ω ^ 2 : ℝ) : 𝕜)) P :=
+      ((integrable_finsetSum Finset.univ fun (p : ι × ι) _ ↦ hTT p.1 p.2).const_mul
+        (c ^ 2)).congr (hXsq_ae.mono fun _ ↦ Eq.symm)
+    simpa only [Function.comp_def, RCLike.reCLM_apply, RCLike.ofReal_re, Real.norm_eq_abs,
+      sq_abs] using (RCLike.reCLM (K := 𝕜)).integrable_comp h1
+  have hX2 : MemLp X 2 P := (memLp_two_iff_integrable_sq_norm hXm).2 hXsq
+  have hmean : ((∫ ω, X ω ∂P : ℝ) : 𝕜) = c * ∑ i, ∫ ω, T i ω ∂P := by
+    rw [← integral_ofReal, integral_congr_ae hX, integral_const_mul,
+      integral_finsetSum _ fun i _ ↦ hT i]
+  rw [variance_eq_sub hX2]
+  simp only [Pi.pow_apply, RCLike.ofReal_sub]
+  rw [← integral_ofReal, integral_congr_ae hXsq_ae, integral_const_mul,
+    integral_finsetSum _ fun p _ ↦ hTT p.1 p.2,
+    RCLike.ofReal_sq_eq_mul_sum_mul_star hc hmean, ← mul_sub, ← Finset.sum_sub_distrib]
 
 end TauCeti.Probability

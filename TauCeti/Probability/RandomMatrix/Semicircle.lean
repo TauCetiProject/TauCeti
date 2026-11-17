@@ -47,12 +47,6 @@ private theorem semicircleReal_compl_Icc_eq_zero :
       (Set.Icc ((0 : ℝ) - 2 * Real.sqrt (1 : ℝ≥0)) ((0 : ℝ) + 2 * Real.sqrt (1 : ℝ≥0)))ᶜ = 0 :=
   ae_iff.mp (ae_mem_Icc_semicircleReal 0 1)
 
-private theorem integral_norm_pow_eq_of_identDistrib {Ω Ω₀ E : Type*} [MeasurableSpace Ω]
-    [MeasurableSpace Ω₀] [NormedAddCommGroup E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    {P : Measure Ω} {P₀ : Measure Ω₀} {X : Ω → E} {Y : Ω₀ → E} (h : IdentDistrib X Y P P₀)
-    (m : ℕ) : ∫ ω, ‖X ω‖ ^ m ∂P = ∫ ω, ‖Y ω‖ ^ m ∂P₀ :=
-  (h.comp (by fun_prop : Measurable fun z : E ↦ ‖z‖ ^ m)).integral_eq
-
 /-- **Wigner's semicircle law (almost surely, sequence of arrays).** Empirical spectral measures of
 `(n + 1) × (n + 1)` Wigner matrices with independent centered corners, unit off-diagonal second
 moments, and uniformly bounded even moments converge weakly a.s. to `semicircleReal 0 1`. -/
@@ -122,10 +116,10 @@ theorem ae_tendsto_spectralMeasure_wignerMatrix_of_identDistrib
       atTop (𝓝 ⟨semicircleReal 0 1, inferInstance⟩) :=
   ae_tendsto_spectralMeasure_wignerMatrix hindep
     (fun ij ↦ (hξid ij).integral_eq.trans hξzero) (fun i ↦ (hηid i).integral_eq.trans hηzero)
-    (fun ij ↦ (integral_norm_pow_eq_of_identDistrib (hξid ij) 2).trans hsecond)
+    (fun ij ↦ (hξid ij).norm.sq.integral_eq.trans hsecond)
     (fun k ij ↦ (hξid ij).memLp_iff.mpr (hξp k)) (fun k i ↦ (hηid i).memLp_iff.mpr (hηp k))
-    (fun k ↦ ⟨_, fun ij ↦ (integral_norm_pow_eq_of_identDistrib (hξid ij) (2 * k)).le⟩)
-    (fun k ↦ ⟨_, fun i ↦ (integral_norm_pow_eq_of_identDistrib (hηid i) (2 * k)).le⟩)
+    (fun _ ↦ ⟨_, fun ij ↦ (hξid ij).norm.pow.integral_eq.le⟩)
+    (fun _ ↦ ⟨_, fun i ↦ (hηid i).norm.pow.integral_eq.le⟩)
 
 /-- **Wigner's semicircle law (in probability).** On possibly varying probability spaces, bounded
 continuous linear statistics `f : ℝ →ᵇ ℝ` of `(n + 1) × (n + 1)` Wigner empirical spectral measures
@@ -183,11 +177,11 @@ theorem tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probabi
   tendsto_integral_spectralMeasure_wignerMatrix_sub_semicircleReal_probability hindep
     (fun n ij hij ↦ (hξid n ij hij).integral_eq.trans hξzero)
     (fun n i hi ↦ (hηid n i hi).integral_eq.trans hηzero)
-    (fun n ij hij ↦ (integral_norm_pow_eq_of_identDistrib (hξid n ij hij) 2).trans hsecond)
+    (fun n ij hij ↦ (hξid n ij hij).norm.sq.integral_eq.trans hsecond)
     (fun k n ij hij ↦ (hξid n ij hij).memLp_iff.mpr (hξp k))
     (fun k n i hi ↦ (hηid n i hi).memLp_iff.mpr (hηp k))
-    (fun k ↦ ⟨_, fun n ij hij ↦ (integral_norm_pow_eq_of_identDistrib (hξid n ij hij) (2 * k)).le⟩)
-    (fun k ↦ ⟨_, fun n i hi ↦ (integral_norm_pow_eq_of_identDistrib (hηid n i hi) (2 * k)).le⟩)
+    (fun _ ↦ ⟨_, fun n ij hij ↦ (hξid n ij hij).norm.pow.integral_eq.le⟩)
+    (fun _ ↦ ⟨_, fun n i hi ↦ (hηid n i hi).norm.pow.integral_eq.le⟩)
     f hε
 
 end TauCeti.Probability

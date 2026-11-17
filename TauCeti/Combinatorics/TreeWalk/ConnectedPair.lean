@@ -8,7 +8,6 @@ module
 public import TauCeti.Combinatorics.TreeWalk.Leading
 public import TauCeti.Data.Fintype.SmallRange
 import TauCeti.Data.Fin.Basic
-import TauCeti.GroupTheory.Perm.SumCongr
 
 /-!
 # Vertex and counting bounds for connected pairs of trace words
@@ -44,17 +43,6 @@ abbrev IsConnectedPair {k₁ k₂ : ℕ} (w₁ : Fin k₁ → α) (w₂ : Fin k�
       Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate k₁ t)))
         (fun t ↦ s(w₂ t, w₂ (finRotate k₂ t))) x
 
-private theorem append_comp_finRotate_of_eq_zero {m₁ m₂ : ℕ}
-    (u : Fin (m₁ + 1) → α) (v : Fin (m₂ + 1) → α) (h0 : u 0 = v 0) :
-    Fin.append u v ∘ finRotate ((m₁ + 1) + (m₂ + 1)) =
-      Fin.append (u ∘ finRotate (m₁ + 1)) (v ∘ finRotate (m₂ + 1)) := by
-  have hswap : Fin.append u v ∘
-      Equiv.swap (Fin.castAdd (m₂ + 1) 0) (Fin.natAdd (m₁ + 1) 0) = Fin.append u v := by
-    funext x; rw [Function.comp_apply, Equiv.swap_apply_def]
-    split_ifs with hx₁ hx₂ <;> simp [*]
-  rw [Equiv.Perm.finRotate_add_eq_swap_mul_finSumPerm, Equiv.Perm.coe_mul, ← Function.comp_assoc,
-    hswap, Fin.append_comp_finSumPerm]
-
 private def spliceWord {m₁ m₂ : ℕ} (w₁ : Fin (m₁ + 1) → α) (w₂ : Fin (m₂ + 1) → α)
     (r₁ : Fin (m₁ + 1)) (r₂ : Fin (m₂ + 1)) : Fin ((m₁ + 1) + (m₂ + 1)) → α :=
   Fin.append (fun i ↦ w₁ (i + r₁)) (fun j ↦ w₂ (j + r₂))
@@ -76,7 +64,7 @@ private theorem spliceWord_edge_stepEquiv {m₁ m₂ : ℕ}
       spliceWord w₁ w₂ r₁ r₂ (finRotate ((m₁ + 1) + (m₂ + 1)) a) =
         Fin.append (fun i ↦ w₁ (finRotate (m₁ + 1) i + r₁))
           (fun j ↦ w₂ (finRotate (m₂ + 1) j + r₂)) a :=
-    congrFun (append_comp_finRotate_of_eq_zero (fun i ↦ w₁ (i + r₁))
+    congrFun (Fin.append_comp_finRotate_of_eq_zero (fun i ↦ w₁ (i + r₁))
       (fun j ↦ w₂ (j + r₂)) (by simpa using hr)) a
   cases x <;> dsimp only <;> rw [hrot] <;>
     simp only [spliceWord, spliceStepEquiv, Equiv.trans_apply, Equiv.sumCongr_apply, Sum.map_inl,
@@ -93,9 +81,6 @@ private theorem image_spliceWord {m₁ m₂ : ℕ} (w₁ : Fin (m₁ + 1) → α
   refine ⟨fun ⟨a, ha⟩ ↦ ha ▸ Fin.addCases (fun i ↦ ⟨.inl (i + r₁), by simp [spliceWord]⟩)
       (fun j ↦ ⟨.inr (j + r₂), by simp [spliceWord]⟩) a,
     fun ⟨x, hx⟩ ↦ hx ▸ ⟨spliceStepEquiv r₁ r₂ x, by cases x <;> simp [spliceWord, spliceStepEquiv]⟩⟩
-
-private theorem finCongr_symm_finRotate {n₁ n₂ : ℕ} (h : n₁ = n₂) (a : Fin n₂) :
-    (finCongr h).symm (finRotate n₂ a) = finRotate n₁ ((finCongr h).symm a) := by cases h; rfl
 
 /-- Two cyclic words `w₁` and `w₂` of total length `k₁ + k₂ = 2 * m` sharing an unordered edge
 without combined singleton unordered edges visit at most `m` distinct vertices together. -/
@@ -120,8 +105,8 @@ theorem card_image_sumElim_le_of_add_eq_two_mul {k₁ k₂ m : ℕ}
       s(W (stepEquiv x), W (finRotate (2 * m) (stepEquiv x))) =
         Sum.elim (fun t ↦ s(w₁ t, w₁ (finRotate (m₁ + 1) t)))
           (fun t ↦ s(w₂ t, w₂ (finRotate (m₂ + 1) t))) x := by
-    simp only [W, stepEquiv, Function.comp_apply, finCongr_symm_finRotate hk, Equiv.trans_apply,
-      Equiv.symm_apply_apply]
+    simp only [W, stepEquiv, Function.comp_apply, Equiv.trans_apply, finCongr_symm_apply,
+      finCongr_apply, Fin.cast_finRotate hk.symm, Fin.cast_cast, Fin.cast_refl]
     exact spliceWord_edge_stepEquiv w₁ w₂ hr₁₂ x
   have hW_ns : ∀ a : Fin (2 * m), ∃ b ≠ a,
       s(W b, W (finRotate (2 * m) b)) = s(W a, W (finRotate (2 * m) a)) := fun a ↦ by
