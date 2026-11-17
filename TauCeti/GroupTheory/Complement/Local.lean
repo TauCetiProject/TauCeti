@@ -223,6 +223,10 @@ theorem isLocalComplement_self_left : H.IsLocalComplement K H ↔ K = ⊥ := by
   · rintro rfl
     exact ⟨inf_bot_eq _, sup_bot_eq _⟩
 
+/-- The trivial subgroup `⊥` is a local complement of any subgroup `H` inside `H` itself. -/
+theorem isLocalComplement_bot_self (H : Subgroup G) : H.IsLocalComplement ⊥ H :=
+  isLocalComplement_self_left.mpr rfl
+
 namespace IsLocalComplement
 
 variable [(N.subgroupOf H).Normal] (h : N.IsLocalComplement K H)
