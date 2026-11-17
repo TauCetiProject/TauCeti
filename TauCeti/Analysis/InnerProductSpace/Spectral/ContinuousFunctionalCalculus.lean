@@ -153,6 +153,13 @@ theorem cfc_indicator_cfc_indicator_apply (Ω : Set ℝ) (y : H) :
       cfc (Ω.indicator (1 : ℝ → ℝ)) S y := by
   simpa using congr($((TauCeti.isStarProjection_cfc_indicator S Ω).isIdempotentElem.eq) y)
 
+/-- A self-adjoint operator times its spectral projection for `Ω` is the functional calculus of
+`y ↦ y 1_Ω(y)`. -/
+private theorem mul_cfc_indicator (hS : IsSelfAdjoint S)
+    (hf : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ S)) :
+    S * cfc (Ω.indicator (1 : ℝ → ℝ)) S = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := by
+  rw [cfc_mul (fun y ↦ y) _ S (by fun_prop) hf, cfc_id' ℝ S]
+
 /-- **The form of a self-adjoint operator on a nonnegative spectral subspace.** On the range of
 the spectral projection `cfc (Ω.indicator 1) S` of an operator `S` for a set `Ω` of nonnegative
 numbers, the quadratic form `x ↦ re ⟪S x, x⟫` is nonnegative. (When `S` is not self-adjoint, or
@@ -172,8 +179,7 @@ theorem re_inner_apply_self_nonneg_of_mem_range_cfc_indicator (hΩ : Ω ⊆ Ici 
       Real.continuous_sqrt.continuousWithinAt
   have hSE : S * cfc (Ω.indicator (1 : ℝ → ℝ)) S = cfc r S * cfc r S := by
     calc S * cfc (Ω.indicator (1 : ℝ → ℝ)) S
-        = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := by
-          rw [cfc_mul (fun y ↦ y) _ S (by fun_prop) hf, cfc_id' ℝ S]
+        = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := mul_cfc_indicator S hS hf
       _ = cfc (fun y ↦ r y * r y) S := cfc_congr fun y _ ↦ by
           by_cases hy : y ∈ Ω
           · simp [r, hy, Real.mul_self_sqrt (hΩ hy)]
@@ -216,8 +222,7 @@ theorem re_inner_apply_self_neg_of_mem_range_cfc_indicator (hΩ : Ω ⊆ Iio 0)
         (Real.sqrt_pos.2 (neg_pos.2 (hΩ hy.1))).ne').continuousWithinAt
   have hSE : S * cfc (Ω.indicator (1 : ℝ → ℝ)) S = -(cfc r S * cfc r S) := by
     calc S * cfc (Ω.indicator (1 : ℝ → ℝ)) S
-        = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := by
-          rw [cfc_mul (fun y ↦ y) _ S (by fun_prop) hf, cfc_id' ℝ S]
+        = cfc (fun y ↦ y * Ω.indicator (1 : ℝ → ℝ) y) S := mul_cfc_indicator S hS hf
       _ = cfc (fun y ↦ -(r y * r y)) S := cfc_congr fun y _ ↦ by
           by_cases hy : y ∈ Ω
           · simp [r, hy, Real.mul_self_sqrt (neg_nonneg.2 (hΩ hy).le)]

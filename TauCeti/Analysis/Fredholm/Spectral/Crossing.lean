@@ -370,9 +370,10 @@ private theorem exists_compressedForm_of_crossing {s : Set ℝ} (ht₀ : t₀ �
   obtain ⟨c, -, hPK, hPc, ε, hε, hSF⟩ :=
     exists_spectralFlow_eq_sigNeg_sub_sigNeg ht₀ hKer hA hsa hF
   have hV₀ := compressedForm_self (c := c) (ι := K.subtypeL) hK₀
+  have hB₀ : (compressedForm A c K.subtypeL t₀).toBilinForm = 0 := by ext; simp [hV₀]
   refine ⟨this, c, ε, hε, fun hd ↦ hasDerivWithinAt_compressedForm hK₀ hPK hPc hd,
     fun hs hd ↦ hasDerivAt_compressedForm hK₀ hPK (hPc.continuousAt hs) hd,
-    hV₀ ▸ LinearMap.BilinForm.isSymm_zero, hV₀ ▸ QuadraticForm.sigNeg_zero,
+    hB₀ ▸ LinearMap.BilinForm.isSymm_zero, by simp [hB₀],
     (crossingForm_equivalent_of_eq_zero hV₀).trans ?_, hSF⟩
   refine ⟨{ toLinearEquiv := LinearEquiv.ofEq _ _ hK, map_app' := fun v ↦ ?_ }⟩
   calc crossingForm ((innerSL ℝ).comp (A t₀)) ((innerSL ℝ).comp A') (LinearEquiv.ofEq _ _ hK v)
