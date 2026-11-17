@@ -440,10 +440,11 @@ theorem isDysonSolution_of_subsingleton {Ω : Type*} [MeasurableSpace Ω] (β : 
   refine hB.mono fun ω hω ↦ isDysonPath_of_subsingleton x ?_
   exact continuous_pi fun i ↦ continuous_const.mul (hω i)
 
-/-- **Explicit two-particle zero-noise Dyson trajectory** from initial configuration
-`x : Fin 2 → ℝ`:
+/-- **Explicit two-particle zero-noise Dyson trajectory** associated to `x : Fin 2 → ℝ`:
 `t ↦ ![(x 0 + x 1) / 2 + √(((x 0 - x 1) / 2)² + t / 2),
-       (x 0 + x 1) / 2 - √(((x 0 - x 1) / 2)² + t / 2)]`. -/
+       (x 0 + x 1) / 2 - √(((x 0 - x 1) / 2)² + t / 2)]`.
+For `Antitone x`, this trajectory starts at `x` (`dysonZeroNoiseTwo_zero`); in general it starts at
+the decreasing rearrangement `![max (x 0) (x 1), min (x 0) (x 1)]` of `x`. -/
 noncomputable def dysonZeroNoiseTwo (x : Fin 2 → ℝ) (t : ℝ≥0) : Fin 2 → ℝ :=
   ![(x 0 + x 1) / 2 + Real.sqrt (((x 0 - x 1) / 2) ^ 2 + (t : ℝ) / 2),
     (x 0 + x 1) / 2 - Real.sqrt (((x 0 - x 1) / 2) ^ 2 + (t : ℝ) / 2)]

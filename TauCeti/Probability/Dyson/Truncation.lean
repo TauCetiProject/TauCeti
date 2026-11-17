@@ -152,6 +152,15 @@ theorem dysonTruncPath_eq_integral (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin 
   simp only [dysonTruncPath, Pi.add_apply]
   ring
 
+private theorem toNNReal_mem_Icc {s : ℝ} {T : ℝ≥0} (hs : s ∈ Icc (0 : ℝ) T) :
+    s.toNNReal ∈ Icc (0 : ℝ≥0) T :=
+  ⟨zero_le, Real.toNNReal_le_iff_le_coe.2 hs.2⟩
+
+private theorem toNNReal_mem_Ioo {s : ℝ} {t T : ℝ≥0} (hs : s ∈ Ioo (0 : ℝ) t) (ht : t ≤ T) :
+    s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
+  ⟨Real.toNNReal_pos.2 hs.1,
+    (Real.toNNReal_lt_iff_lt_coe hs.1.le).2 (hs.2.trans_le (NNReal.coe_le_coe.2 ht))⟩
+
 /-- **Local uniqueness for the `δ`-truncated Dyson integral equation.** Any trajectory `γ`
 continuous on `[0, T]` that satisfies the coordinatewise `δ`-truncated integral equation on
 `[0, T]` equals `dysonTruncPath n hδ x hw` on `[0, T]`. -/
@@ -162,8 +171,7 @@ theorem eqOn_dysonTruncPath {n : ℕ} {δ : ℝ} (hδ : 0 < δ) {x : Fin n → �
       γ t i = x i + w t i + ∫ s in (0 : ℝ)..t, dysonDriftTrunc n δ (γ s.toNNReal) i) :
     EqOn γ (dysonTruncPath n hδ x hw) (Icc 0 T) := by
   set g : ℝ → Fin n → ℝ := fun s i ↦ x i + ∫ r in (0 : ℝ)..s, dysonDriftTrunc n δ (γ r.toNNReal) i
-  have hmap : MapsTo Real.toNNReal (Icc 0 (T : ℝ)) (Icc (0 : ℝ≥0) T) :=
-    fun _ hs ↦ ⟨zero_le, Real.toNNReal_le_iff_le_coe.2 hs.2⟩
+  have hmap : MapsTo Real.toNNReal (Icc 0 (T : ℝ)) (Icc (0 : ℝ≥0) T) := fun _ ↦ toNNReal_mem_Icc
   have hdr : ContinuousOn (fun r : ℝ ↦ dysonDriftTrunc n δ (γ r.toNNReal)) (Icc 0 (T : ℝ)) :=
     (continuous_dysonDriftTrunc n hδ).comp_continuousOn
       (hγc.comp continuous_real_toNNReal.continuousOn hmap)
@@ -242,14 +250,13 @@ theorem dist_dysonTruncPath_le {n : ℕ} {δ : ℝ} (hδ : 0 < δ) {x₁ x₂ : 
       (continuous_dysonTruncSmooth n hδ x₂ hw₂).continuousOn
       (fun s _ ↦ (hasDerivAt_dysonTruncSmooth n hδ x₂ hw₂ s).hasDerivWithinAt)
       (fun s hs ↦ ?_) (by simp [u₁, u₂, dysonTruncSmooth_zero])
-    have hs_nn : s.toNNReal ∈ Icc (0 : ℝ≥0) T :=
-      ⟨zero_le, Real.toNNReal_le_iff_le_coe.2 hs.2.le⟩
     calc dist (dysonTruncField n δ w₂ s (u₂ s)) (dysonTruncField n δ w₁ s (u₂ s))
         ≤ (K : ℝ) * dist (u₂ s + w₂ s.toNNReal) (u₂ s + w₁ s.toNNReal) :=
           (lipschitzWith_dysonDriftTrunc n hδ).dist_le_mul _ _
       _ = (K : ℝ) * dist (w₁ s.toNNReal) (w₂ s.toNNReal) := by
           rw [dist_add_left, dist_comm]
-      _ ≤ (K : ℝ) * ε := mul_le_mul_of_nonneg_left (hw s.toNNReal hs_nn) K.2
+      _ ≤ (K : ℝ) * ε :=
+        mul_le_mul_of_nonneg_left (hw s.toNNReal (toNNReal_mem_Icc (Ico_subset_Icc_self hs))) K.2
   have ht' : (t : ℝ) ∈ Icc (0 : ℝ) T := ⟨NNReal.coe_nonneg t, NNReal.coe_le_coe.2 ht.2⟩
   have hu_t := hu_dist t ht'
   rw [gronwallBound_of_K_ne_0 hK_ne, zero_add, sub_zero, mul_div_cancel_left₀ ε hK_ne,
@@ -287,11 +294,6 @@ theorem sum_dysonTruncPath (n : ℕ) {δ : ℝ} (hδ : 0 < δ) (x : Fin n → �
   simp [sum_dysonDriftTrunc]
 
 /-! ### Local compatibility and pasting before chamber exit -/
-
-private theorem toNNReal_mem_Ioo {s : ℝ} {t T : ℝ≥0} (hs : s ∈ Ioo (0 : ℝ) t) (ht : t ≤ T) :
-    s.toNNReal ∈ Ioo (0 : ℝ≥0) T :=
-  ⟨Real.toNNReal_pos.2 hs.1,
-    (Real.toNNReal_lt_iff_lt_coe hs.1.le).2 (hs.2.trans_le (NNReal.coe_le_coe.2 ht))⟩
 
 /-- **Threshold compatibility up to chamber exit.** For `0 < δ₁ ≤ δ₂`, if `dysonTruncPath` at
 threshold `δ₂` stays inside `{z | ∀ i < j, δ₂ ≤ z i - z j}` on `(0, T)`, then `dysonTruncPath` at
@@ -349,8 +351,6 @@ theorem isDysonPath_of_forall_exists_eq_dysonTruncPath {n : ℕ} {x : Fin n → 
     exact sub_pos.1 (hδ.trans_le (hgap t ⟨zero_le, le_rfl⟩ hij))
   refine isDysonPath_iff.2 ⟨hγ_cont, hγ_strict, fun t i ↦ ?_⟩
   obtain ⟨δ, hδ, heq, hgap⟩ := hloc t
-  have hs_mem : ∀ {s : ℝ}, s ∈ Icc (0 : ℝ) t → s.toNNReal ∈ Icc (0 : ℝ≥0) t :=
-    fun hs ↦ ⟨zero_le, Real.toNNReal_le_iff_le_coe.2 hs.2⟩
   have hsum_cont : ContinuousOn
       (fun s : ℝ ↦ ∑ j ∈ univ.erase i, (γ s.toNNReal i - γ s.toNNReal j)⁻¹) (Icc 0 (t : ℝ)) := by
     refine continuousOn_finsetSum _ fun j hj ↦ ?_
@@ -358,14 +358,15 @@ theorem isDysonPath_of_forall_exists_eq_dysonTruncPath {n : ℕ} {x : Fin n → 
       ((continuous_apply j).comp (hγ_cont.comp continuous_real_toNNReal))).continuousOn.inv₀
         fun s hs ↦ sub_ne_zero.2 ?_
     rcases lt_or_gt_of_ne (ne_of_mem_erase hj).symm with hij | hji
-    · exact (sub_pos.1 (hδ.trans_le (hgap s.toNNReal (hs_mem hs) hij))).ne'
-    · exact (sub_pos.1 (hδ.trans_le (hgap s.toNNReal (hs_mem hs) hji))).ne
+    · exact (sub_pos.1 (hδ.trans_le (hgap s.toNNReal (toNNReal_mem_Icc hs) hij))).ne'
+    · exact (sub_pos.1 (hδ.trans_le (hgap s.toNNReal (toNNReal_mem_Icc hs) hji))).ne
   refine ⟨hsum_cont.intervalIntegrable_of_Icc (NNReal.coe_nonneg t), ?_⟩
   rw [heq t ⟨zero_le, le_rfl⟩, dysonTruncPath_eq_integral]
   congr 1
   refine _root_.intervalIntegral.integral_congr fun s hs ↦ ?_
   rw [uIcc_of_le (NNReal.coe_nonneg t)] at hs
-  rw [← heq s.toNNReal (hs_mem hs), dysonDriftTrunc_eq_dysonDrift (hgap s.toNNReal (hs_mem hs))]
+  rw [← heq s.toNNReal (toNNReal_mem_Icc hs),
+    dysonDriftTrunc_eq_dysonDrift (hgap s.toNNReal (toNNReal_mem_Icc hs))]
 
 /-- **Pasting truncated trajectories into a global `IsDysonPath`.** If for every finite horizon
 `T : ℝ≥0` there exists `δ > 0` such that `dysonTruncPath n hδ x hw` remains in the `δ`-chamber on

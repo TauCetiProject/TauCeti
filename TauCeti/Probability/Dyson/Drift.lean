@@ -11,6 +11,7 @@ public import Mathlib.Data.Fin.Basic
 public import Mathlib.Order.Interval.Finset.Fin
 public import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Analysis.Normed.Group.Uniform
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
@@ -142,26 +143,13 @@ theorem continuousAt_dysonDrift {n : ℕ} {x : Fin n → ℝ} (hx : Function.Inj
   exact ((continuous_apply i).continuousAt.sub (continuous_apply j).continuousAt).inv₀
     (sub_ne_zero.2 (hx.ne (ne_of_mem_erase hj).symm))
 
-/-- Folding an off-diagonal pairing against an antisymmetric kernel onto strictly increasing pairs
-`i < j`. Only off-diagonal antisymmetry (`i < j → k j i = -k i j`) is required, since the diagonal
-is excluded from `univ.erase i`. -/
-private theorem sum_mul_sum_erase_eq_sum_Ioi {ι R : Type*} [Fintype ι] [LinearOrder ι]
-    [LocallyFiniteOrderTop ι] [LocallyFiniteOrderBot ι] [NonUnitalNonAssocRing R]
-    (u : ι → R) (k : ι → ι → R) (hk : ∀ ⦃i j : ι⦄, i < j → k j i = -k i j) :
-    ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ Ioi i, (u i - u j) * k i j := by
-  have hpull : ∑ i, u i * ∑ j ∈ univ.erase i, k i j = ∑ i, ∑ j ∈ {i}ᶜ, u i * k i j :=
-    sum_congr rfl fun i _ ↦ by rw [compl_singleton, mul_sum]
-  rw [hpull, ← sum_sum_Ioi_add_eq_sum_sum_off_diag (fun j i ↦ u i * k i j)]
-  refine sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_
-  rw [hk (mem_Ioi.1 hj), mul_neg, ← sub_eq_add_neg, ← sub_mul]
-
 /-- **Off-diagonal pairing identity.** Pairing `dysonDrift n x` against any vector `u` folds onto
 strictly increasing index pairs `i < j`. -/
 theorem sum_mul_dysonDrift (n : ℕ) (u x : Fin n → ℝ) :
     ∑ i, u i * dysonDrift n x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * (x i - x j)⁻¹ := by
   simp_rw [dysonDrift, mul_left_comm (u _)]
-  rw [← mul_sum, sum_mul_sum_erase_eq_sum_Ioi]
+  rw [← mul_sum, TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi]
   intro i j _
   rw [← neg_sub (x i) (x j), inv_neg]
 
@@ -293,7 +281,7 @@ theorem sum_mul_dysonDriftTrunc (n : ℕ) (δ : ℝ) (u x : Fin n → ℝ) :
     ∑ i, u i * dysonDriftTrunc n δ x i =
       (n : ℝ)⁻¹ * ∑ i, ∑ j ∈ Ioi i, (u i - u j) * (max (x i - x j) δ)⁻¹ := by
   simp_rw [dysonDriftTrunc, mul_left_comm (u _)]
-  rw [← mul_sum, sum_mul_sum_erase_eq_sum_Ioi]
+  rw [← mul_sum, TauCeti.sum_mul_sum_erase_eq_sum_sum_Ioi]
   · refine congrArg _ (sum_congr rfl fun i _ ↦ sum_congr rfl fun j hj ↦ ?_)
     simp [mem_Ioi.1 hj]
   · intro i j hij
