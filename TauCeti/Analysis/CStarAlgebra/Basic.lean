@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.Star.Unitary
 public import Mathlib.Topology.MetricSpace.ProperSpace
 
 /-!
-# Normed star subgroups, unitary conjugation norms, and compact unitary groups
+# Normed star subgroups, unit and unitary norms, and compact unitary groups
 
 In a C⋆-ring, left and right multiplication by a unitary element preserve the norm
 (`CStarRing.norm_coe_unitary_mul`, `CStarRing.norm_mul_coe_unitary`), so unitary conjugation
@@ -29,6 +29,8 @@ Any additive subgroup closed under the involution of a `NormedStarGroup` inherit
 ## Main results
 
 * `StarMemClass.instNormedStarGroup`: `NormedStarGroup` instance on star-closed additive subgroups.
+* `CStarRing.norm_one_le`: `‖1‖ ≤ 1` in any unital C⋆-ring, including the trivial one, where
+  Mathlib's `CStarRing.norm_one` (which needs `Nontrivial`) does not apply.
 * `CStarRing.norm_unitary_conj`: unitary conjugation preserves the norm in a C⋆-ring.
 * `CStarRing.norm_unitary_conj_sub`: unitary conjugation preserves the norm of a difference in a
   C⋆-ring.
@@ -47,9 +49,13 @@ instance StarMemClass.instNormedStarGroup {S E : Type*} [SeminormedAddCommGroup 
 
 namespace CStarRing
 
-section Unitary
-
 variable {E : Type*} [NormedRing E] [StarRing E] [CStarRing E]
+
+/-- The unit of a C⋆-ring has norm at most `1`; it is `0` in the trivial ring and `1` otherwise. -/
+theorem norm_one_le : ‖(1 : E)‖ ≤ 1 := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · simp [Subsingleton.elim (1 : E) 0]
+  · exact norm_one.le
 
 /-- Conjugation by a unitary element in a C⋆-ring preserves the norm. -/
 @[simp]
@@ -63,11 +69,7 @@ theorem norm_unitary_conj_sub (u : unitary E) (x y : E) :
     ‖(u : E) * x * star (u : E) - (u : E) * y * star (u : E)‖ = ‖x - y‖ := by
   rw [← sub_mul, ← mul_sub, norm_unitary_conj]
 
-end Unitary
-
-section Compact
-
-variable {E : Type*} [NormedRing E] [StarRing E] [CStarRing E] [ProperSpace E]
+variable [ProperSpace E]
 
 /-- The unitary elements of a C⋆-ring with compact closed balls form a compact set. -/
 theorem isCompact_unitary : IsCompact (unitary E : Set E) := by
@@ -79,7 +81,5 @@ theorem isCompact_unitary : IsCompact (unitary E : Set E) := by
 /-- The unitary group of a C⋆-ring with compact closed balls is compact. -/
 instance instCompactSpaceUnitary : CompactSpace (unitary E) :=
   isCompact_iff_compactSpace.1 isCompact_unitary
-
-end Compact
 
 end CStarRing

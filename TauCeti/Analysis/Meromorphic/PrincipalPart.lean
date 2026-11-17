@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Reverse
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Data.Multiset.Fintype
 public import TauCeti.Algebra.Polynomial.BigOperators
 public import TauCeti.Analysis.Analytic.ExtractZeros
 public import TauCeti.Analysis.Calculus.DSlope.Basic
@@ -44,6 +45,11 @@ splitting is `TauCeti.holomorphicStructureSheaf.regularPart` in
 
 * `Polynomial.meromorphicAt_eval_inv_sub`: a polynomial in `(z - a)⁻¹` is meromorphic at `a`.
 * `TauCeti.meromorphicOrderAt_eval_inv_sub`: the order at `a` of `z ↦ P((z - a)⁻¹)`.
+* `TauCeti.eq_zero_of_eval_inv_sub_eventuallyEq`: a polynomial without constant term in
+  `(z - a)⁻¹` that agrees near `a` with a function continuous at `a` is zero.
+* `TauCeti.eq_zero_of_sum_div_sub_pow_eq`: polar terms `c / (z - a) ^ (j + 1)` at the points of
+  a multiset whose sum agrees off those points with a function continuous there have zero
+  coefficients.
 * `TauCeti.meromorphicGerms.evalInvSub`: the ring homomorphism `P ↦ P((z - a)⁻¹)` into the
   meromorphic germs at `a`; it is injective (`evalInvSub_injective`).
 * `TauCeti.meromorphicGerms.principalPart`: the principal part, a `𝕜`-linear map to polynomials.
@@ -100,17 +106,61 @@ theorem meromorphicOrderAt_eval_inv_sub {P : 𝕜[X]} (hP : P ≠ 0) (a : 𝕜) 
     rw [← h, smul_eq_mul, zpow_neg, zpow_natCast, inv_pow, mul_comm]
 
 /-- A polynomial without constant term in the inverse coordinate `(z - a)⁻¹` agrees with a function
-analytic at `a` on a punctured neighbourhood of `a` only if it is zero: otherwise it has a pole at
-`a`. -/
+continuous at `a` on a punctured neighbourhood of `a` only if it is zero: otherwise it has a pole at
+`a`, so it tends to infinity there. -/
 theorem eq_zero_of_eval_inv_sub_eventuallyEq {P : 𝕜[X]} (hP : P.coeff 0 = 0) {g : 𝕜 → 𝕜}
-    (hg : AnalyticAt 𝕜 g a) (h : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] g) : P = 0 := by
+    (hg : ContinuousAt g a) (h : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] g) : P = 0 := by
   by_contra hP0
-  have hord := hg.meromorphicOrderAt_nonneg
-  rw [← meromorphicOrderAt_congr h, meromorphicOrderAt_eval_inv_sub hP0] at hord
-  have hd : P.natDegree = 0 := by
-    have : (0 : ℤ) ≤ -(P.natDegree : ℤ) := mod_cast hord
-    omega
-  exact hP0 (by rw [eq_C_of_natDegree_eq_zero hd, hP, C_0])
+  have hd : P.natDegree ≠ 0 := fun hd ↦ hP0 (by rw [eq_C_of_natDegree_eq_zero hd, hP, C_0])
+  have hord : meromorphicOrderAt (fun z ↦ P.eval (z - a)⁻¹) a < 0 := by
+    rw [meromorphicOrderAt_eval_inv_sub hP0]
+    exact_mod_cast (by omega : -(P.natDegree : ℤ) < 0)
+  exact ((tendsto_cobounded_of_meromorphicOrderAt_neg hord).congr' h).not_tendsto
+    (Metric.disjoint_cobounded_nhds (g a)) (hg.tendsto.mono_left nhdsWithin_le_nhds)
+
+/-- **Polar terms are independent modulo continuous functions.** Let `D` be a multiset of points of
+`𝕜` and let `c` assign a coefficient to each point `⟨a, j⟩` of `D`, `j` below the multiplicity of
+`a` in `D`. If the sum of the polar terms `c ⟨a, j⟩ / (z - a) ^ (j + 1)` agrees off the points of
+`D` with a function continuous at the points of `D`, then every coefficient vanishes. -/
+theorem eq_zero_of_sum_div_sub_pow_eq [DecidableEq 𝕜] {D : Multiset 𝕜} {c : D.ToType → 𝕜}
+    {g : 𝕜 → 𝕜} (hg : ∀ a ∈ D, ContinuousAt g a)
+    (h : ∀ z ∉ D, ∑ i : D.ToType, c i / (z - i.1) ^ ((i.2 : ℕ) + 1) = g z) : c = 0 := by
+  funext i₀
+  set a := i₀.1
+  -- The polar part at `a`, a polynomial in `(z - a)⁻¹` without constant term, agrees off `a`
+  -- with `g` minus the polar terms at the other points of `D`, which is continuous at `a`.
+  set P : 𝕜[X] := ∑ i ∈ Finset.univ.filter (fun i : D.ToType ↦ i.1 = a),
+    C (c i) * X ^ ((i.2 : ℕ) + 1)
+  have hP₀ : P.coeff 0 = 0 := by
+    simp [P]
+  have hG : ContinuousAt (fun z ↦ g z - ∑ i ∈ Finset.univ.filter (fun i : D.ToType ↦ ¬i.1 = a),
+      c i / (z - i.1) ^ ((i.2 : ℕ) + 1)) a := by
+    refine (hg a Multiset.coe_mem).sub (tendsto_finsetSum _ fun i hi ↦ ?_)
+    exact continuousAt_const.div ((continuousAt_id.sub continuousAt_const).pow _)
+      (pow_ne_zero _ (sub_ne_zero.2 fun h ↦ (Finset.mem_filter.1 hi).2 h.symm))
+  have hPG : (fun z ↦ P.eval (z - a)⁻¹) =ᶠ[𝓝[≠] a] fun z ↦ g z -
+      ∑ i ∈ Finset.univ.filter (fun i : D.ToType ↦ ¬i.1 = a),
+        c i / (z - i.1) ^ ((i.2 : ℕ) + 1) := by
+    have hD : ((D.toFinset.erase a : Finset 𝕜) : Set 𝕜)ᶜ ∈ 𝓝 a :=
+      (D.toFinset.erase a).finite_toSet.isClosed.isOpen_compl.mem_nhds (by simp)
+    filter_upwards [nhdsWithin_le_nhds hD, self_mem_nhdsWithin] with z hz (hza : z ≠ a)
+    have hzD := h z fun hz' ↦ hz (by simp [hza, hz'])
+    rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (fun i : D.ToType ↦ i.1 = a)] at hzD
+    rw [eq_sub_iff_add_eq, ← hzD, eval_finsetSum]
+    congr 1
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [show z - i.1 = z - a by rw [(Finset.mem_filter.1 hi).2], eval_mul, eval_C, eval_pow, eval_X,
+      inv_pow, div_eq_mul_inv]
+  -- Hence `P = 0`, and its coefficient of `X ^ (j + 1)` is `c ⟨a, j⟩`.
+  have hP := congrArg (·.coeff ((i₀.2 : ℕ) + 1)) (eq_zero_of_eval_inv_sub_eventuallyEq hP₀ hG hPG)
+  simp only [P, finsetSum_coeff, coeff_zero] at hP
+  rwa [Finset.sum_eq_single_of_mem (s := Finset.univ.filter fun i : D.ToType ↦ i.1 = a) i₀
+    (by simp [a]) fun i hi hne ↦ by
+      rw [coeff_C_mul_X_pow, ite_eq_right]
+      refine fun hk ↦ hne (D.coeEmbedding.injective ?_)
+      simp only [Multiset.coeEmbedding_apply, Prod.mk.injEq]
+      exact ⟨(Finset.mem_filter.1 hi).2, by simpa using hk.symm⟩,
+    coeff_C_mul_X_pow, ite_eq_left rfl] at hP
 
 /-- **Principal part splitting of `(z - a)⁻ᴺ h`.** For every function `h` and every `N`, off `a`,
 `(z - a)⁻ᴺ h z = P((z - a)⁻¹) + q z` with `P = Σ_{j<N} c_j X ^ (N - j)`, where
@@ -179,7 +229,7 @@ private theorem eq_of_coe_sub_evalInvSub_eq {φ : meromorphicGerms 𝕜 a} {P Q 
     (hφP : ((φ - evalInvSub a P : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g)
     (hφQ : ((φ - evalInvSub a Q : meromorphicGerms 𝕜 a) : Germ (𝓝[≠] a) 𝕜) = g') : P = Q := by
   refine sub_eq_zero.1 <| eq_zero_of_eval_inv_sub_eventuallyEq (by rw [coeff_sub, hP, hQ, sub_zero])
-    (hg'.sub hg) (Germ.coe_eq.1 ?_)
+    (hg'.sub hg).continuousAt (Germ.coe_eq.1 ?_)
   rw [← coe_evalInvSub, Germ.coe_sub, ← hφP, ← hφQ, ← AddSubgroupClass.coe_sub, map_sub]
   congr 1
   abel
