@@ -217,6 +217,36 @@ theorem perturbationPullback_plumbedPerturbation_of_mem_truncation (hq : q ≠ i
   rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _),
     plumbedPerturbation_plumbingMap hq hab (mem_truncation.1 hw).1 (by linarith)]
 
+omit [TopologicalSpace M] [ChartedSpace G M] in
+/-- The plumbing chart maps a point of the inserted pair of pants outside the circle `s_∞ = -L/2`
+into the plumbed four-punctured sphere. -/
+theorem realChart_plumbingMap_mem_plumbedSphere (hq : q ≠ inf) (hL : 0 < L)
+    {w : ℝ × ℝ} (hw : Complex.equivRealProdCLM.symm w ≠ 0 ∧ Complex.equivRealProdCLM.symm w ≠ 1)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) :
+    (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 0 ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ 1) ∧
+      Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w) ≠ q.plumbingMap L 1 := by
+  rw [TauCeti.Complex.equivRealProdCLM_symm_realChart]
+  exact plumbingMap_mem_plumbedSphere_of_endSign_mul_re_endCoord_le hq hL hw hwL
+
+omit [TopologicalSpace M] [ChartedSpace G M] in
+/-- Outside the circle `s_∞ = -L/2` of the inserted pair of pants, the pullback of the plumbed
+perturbation along the plumbing chart is the perturbation of the inserted pair of pants. -/
+theorem perturbationPullback_realChart_plumbedPerturbation (hq : q ≠ inf)
+    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ} (hw₀ : Complex.equivRealProdCLM.symm w ≠ 0)
+    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) (x : M)
+    (v : ℝ × ℝ) :
+    perturbationPullback (realChart (q.plumbingMap L))
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      v w x =
+        pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm w) x
+          (Complex.equivRealProdCLM.symm v) := by
+  rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _)]
+  refine plumbedPerturbation_plumbingMap hq hab hw₀ ?_ x _
+  rw [endSign_inf, neg_one_mul] at hwL
+  linarith
+
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm
