@@ -5,37 +5,36 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
+public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
+public import TauCeti.Combinatorics.SimpleGraph.CutMinimal
+public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
+import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.SimpleGraph.Staircase
-import TauCeti.Combinatorics.SimpleGraph.OddTriangles
 import TauCeti.Algebra.BigOperators.Sym
 import TauCeti.GroupTheory.Perm.ParityRetract
 import Mathlib.GroupTheory.Perm.Cycle.Basic
 import Mathlib.Tactic.Linarith
-import Mathlib.Tactic.Ring
+import Mathlib.Tactic.Positivity
 
 /-!
-# Moved-point counts for Kozlov's staircase cochains
+# The `Sym(3)` coboundary constant along Kozlov's staircase graphs
 
-On `K_{2t+1}` with vertices numbered `0, 1, …, 2t`, the staircase cochain `Sym3.stair`, read on the
-positively oriented pairs `p < q` (as `Sym3.val` and `Cochain.ofLt` do), puts the transposition
-`t01` on the pairs with `p` odd and `q` even and `1` on the others. Writing
-`vᵢ = 2i - 1` and `y_j = 2j`, its `t01`-edges join `vᵢ` to `y_j` exactly when `i ≤ j`: this is
-Kozlov's staircase graph of the partition `(t, t - 1, …, 1)` with one isolated vertex `0`
-(`SimpleGraph.staircase 1 t` up to relabelling).
+For a graph `G` on a finite linear order `V`, the cochain `Cochain.ofLt (complete V) f` with
+`f u v = swap 0 1` on the edges of `G` and `1` elsewhere has defect `2 * #G.oddTriangleFinset`
+(`Sym3.defect_ofLt_ite_adj`). When `G` is cut-minimal every gauge costs at least
+`2 * #G.edgeFinset`: the parity retraction onto `{1, swap 0 1}`
+(`Equiv.Perm.parityRetract`, which fixes the cochain and does not increase the moved-point norm,
+`Cochain.cost_map_le`) turns any gauge into a cut `S`, whose cost is twice the size of the
+symmetric difference of the edges of `G` with the cut edges of `S`. Hence:
 
-The relabelling is an explicit graph isomorphism from `SimpleGraph.staircase 1 t`, along which
-Kozlov's cut-minimality, edge count and odd-triangle count are transported:
-
-* `Sym3.cost_stair_ge`: every `Sym(3)` gauge costs at least `t (t + 1)`. The parity retraction
-  onto `{1, t01}` (`Equiv.Perm.movedNorm_parityRetract_le`) bounds the cost below by twice the
-  `𝔽₂` cost of the sign pattern of the gauge, and cut-minimality of the staircase
-  (`SimpleGraph.isCutMinimal_staircase`) bounds that below by the number `t (t + 1) / 2` of
-  staircase edges (`SimpleGraph.two_mul_card_edgeFinset_staircase`).
-* `Sym3.three_mul_defect_stair`: `3 N = (2 t + 1) · t (t + 1)` for the moved-point defect
-  `N = defect (stair (2 t + 1))`. Each odd triangle (one with an odd number of staircase edges)
-  contributes `2` to `N` and every other triangle `0`, so `N` is twice the odd-triangle count
-  `1² + 2² + ⋯ + t²` (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`).
+* `h1_complete_movedNorm_fin_three_le_of_isCutMinimal`: for a cut-minimal `G` with an edge,
+  `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTriangleFinset / #G.edgeFinset`.
+* `h1_complete_movedNorm_fin_three_le_of_card_eq_mul`: applied to Kozlov's staircase graph
+  `SimpleGraph.staircase q t` on `q (2 t + 1)` vertices, which is cut-minimal
+  (`SimpleGraph.isCutMinimal_staircase`) with
+  `3 * #oddTriangleFinset = q (2 t + 1) * #edgeFinset`
+  (`SimpleGraph.three_mul_card_oddTriangleFinset_staircase`), this gives
+  `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` whenever `card V = q (2 t + 1)`, `q, t ≥ 1`.
 
 ## References
 
@@ -52,227 +51,122 @@ Kozlov's cut-minimality, edge count and odd-triangle count are transported:
 
 public section
 
-namespace TauCeti.Sym3
+namespace TauCeti
 
-open Finset
+open Finset Equiv TwoComplex
 
-/-! ## Parity and the staircase -/
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
-/-- The staircase edge predicate: `p` is odd and `q` is even. It does not compare `p` and `q`; it is
-only read on pairs `p < q`. -/
-def stEdge (p q : ℕ) : Bool := decide (p % 2 = 1) && decide (q % 2 = 0)
+namespace Sym3
 
-/-- **Kozlov's staircase cochain** on `K_k`, as a function read on positively oriented pairs
-`p < q` (`Sym3.val`, `Cochain.ofLt`): `t01` when `p` is odd and `q` is even, the identity
-otherwise. For `k = 2t + 1` this is the staircase of the partition `(t, …, 1)` with one loose
-vertex `0`. -/
-def stair (k : ℕ) : Fin k → Fin k → S3 := fun p q => if stEdge p.val q.val then t01 else 1
+/-- A `{1, swap 0 1}`-gauged edge term moves `2` points exactly when an odd number of the edge
+label and the two gauge values are `swap 0 1`. -/
+private theorem card_support_inv_mul_ite_mul {x y : Perm (Fin 3)} (hx : x = 1 ∨ x = swap 0 1)
+    (hy : y = 1 ∨ y = swap 0 1) (p : Prop) [Decidable p] :
+    #(x⁻¹ * (if p then swap 0 1 else 1) * y).support =
+      if Xor p (Xor (x = swap 0 1) (y = swap 0 1)) then 2 else 0 := by
+  have key : ∀ x y : Perm (Fin 3), x = 1 ∨ x = swap 0 1 → y = 1 ∨ y = swap 0 1 → ∀ b : Bool,
+      #(x⁻¹ * (if b = true then swap 0 1 else 1) * y).support =
+        if Xor (b = true) (Xor (x = swap 0 1) (y = swap 0 1)) then 2 else 0 := by
+    decide
+  by_cases hp : p
+  · simpa [hp] using key x y hx hy true
+  · simpa [hp] using key x y hx hy false
 
-/-- `stEdge p q` holds exactly when `p` is odd and `q` is even. -/
-@[simp]
-theorem stEdge_eq_true_iff (p q : ℕ) : stEdge p q = true ↔ p % 2 = 1 ∧ q % 2 = 0 := by
-  simp [stEdge]
-
-/-- The value of `stair k` on a pair: `t01` when `p` is odd and `q` is even, `1` otherwise. -/
-@[simp]
-theorem stair_apply (k : ℕ) (p q : Fin k) :
-    stair k p q = if p.val % 2 = 1 ∧ q.val % 2 = 0 then t01 else 1 := by
-  simp only [stair, ← stEdge_eq_true_iff]
-
-/-- The sign of a permutation of three points, as a Boolean (`true` for an odd permutation). -/
-private def oddPerm (σ : S3) : Bool := decide (Equiv.Perm.sign σ = -1)
-
-/-- The sign of a permutation as a Boolean is additive (`xor`) along products. -/
-private theorem oddPerm_mul (σ τ : S3) : oddPerm (σ * τ) = xor (oddPerm σ) (oddPerm τ) := by
-  rw [oddPerm, oddPerm, oddPerm, Equiv.Perm.sign_mul]
-  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ <;>
-    rcases Int.units_eq_one_or (Equiv.Perm.sign τ) with hτ | hτ <;> simp [hσ, hτ, Units.ext_iff]
-
-/-- `t01` is a transposition. -/
-private theorem t01_isSwap : t01.IsSwap := Equiv.Perm.swap_isSwap_iff.mpr (by decide)
-
-/-- The parity retraction onto `{1, t01}` moves `2` points on odd permutations and none on even
-ones. -/
-private theorem movedNorm_parityRetract_t01 (σ : S3) :
-    Equiv.Perm.movedNorm (Fin 3) (Equiv.Perm.parityRetract t01_isSwap σ) =
-      2 * (Bool.toNat (oddPerm σ) : ℝ) := by
-  have ht := t01_isSwap
-  rw [oddPerm]
-  rcases Int.units_eq_one_or (Equiv.Perm.sign σ) with hσ | hσ
-  · rw [Equiv.Perm.parityRetract_of_sign_eq_one ht hσ, hσ]
-    simp [Units.ext_iff]
-  · rw [Equiv.Perm.parityRetract_of_sign_eq_neg_one ht hσ, ht.movedNorm, hσ]
-    simp
-
-/-- **Parity retraction, one edge.** An odd edge term moves at least two points
-(`Equiv.Perm.movedNorm_parityRetract_le`). -/
-private theorem st_par_bound (a b : S3) (e : Bool) :
-    2 * Bool.toNat (xor (xor (oddPerm a) (oddPerm b)) e) ≤
-      moved (a⁻¹ * (if e then t01 else 1) * b) := by
-  have hodd :
-      xor (xor (oddPerm a) (oddPerm b)) e = oddPerm (a⁻¹ * (if e then t01 else 1) * b) := by
-    have ha : oddPerm a⁻¹ = oddPerm a := by
-      rw [oddPerm, oddPerm, Equiv.Perm.sign_inv]
-    have he : oddPerm (if e then t01 else 1) = e := by cases e <;> decide
-    rw [oddPerm_mul, oddPerm_mul, ha, he]
-    cases oddPerm a <;> cases oddPerm b <;> cases e <;> rfl
-  rw [hodd]
-  have h := Equiv.Perm.movedNorm_parityRetract_le t01_isSwap (a⁻¹ * (if e then t01 else 1) * b)
-  rw [movedNorm_parityRetract_t01, ← moved_eq_movedNorm] at h
-  exact_mod_cast h
-
-/-- The holonomy of a triangle with `{1, t01}` labels moves `2` points exactly when an odd
-number of its edges carry `t01`. -/
-private theorem st_moved_tri (a b c : Bool) :
-    moved ((if a then t01 else 1) * (if b then t01 else 1) * (if c then t01 else 1)⁻¹) =
-      2 * Bool.toNat (xor (xor a b) c) := by
-  cases a <;> cases b <;> cases c <;> decide
-
-/-! ## The staircase graph on positions -/
-
-/-- The staircase as a graph on `Fin n`: `p < q` are adjacent when `stEdge p q` holds. -/
-private def stGraph (n : ℕ) : SimpleGraph (Fin n) :=
-  SimpleGraph.fromRel fun p q => p < q ∧ stEdge p.val q.val = true
-
-/-- Adjacency in `stGraph` is decidable. -/
-private instance (n : ℕ) : DecidableRel (stGraph n).Adj := fun p q => by
-  unfold stGraph
-  infer_instance
-
-/-- On a pair `p < q`, adjacency in `stGraph` is `stEdge`. -/
-private theorem stGraph_adj_of_lt {n : ℕ} {p q : Fin n} (h : p < q) :
-    decide ((stGraph n).Adj p q) = stEdge p.val q.val := by
-  have hn : ¬ q < p := not_lt.mpr h.le
-  rw [Bool.eq_iff_iff, decide_eq_true_iff]
-  simp [stGraph, SimpleGraph.fromRel_adj, h, h.ne, hn]
-
-/-- The relabelling of `SimpleGraph.staircase 1 t` onto the positions `0, …, 2t`: the rows go to
-the odd positions, the columns to the nonzero even positions, the loose vertex to `0`. -/
-private def stRelabel (t : ℕ) : Fin (1 * t) ⊕ Fin (1 * t) ⊕ Fin 1 → Fin (2 * t + 1)
-  | .inl i => ⟨2 * i.val + 1, by have := i.isLt; omega⟩
-  | .inr (.inl j) => ⟨2 * (t - j.val), by omega⟩
-  | .inr (.inr _) => ⟨0, by omega⟩
-
-/-- `stRelabel` is a bijection: odd positions are rows, nonzero even positions are columns. -/
-private theorem stRelabel_bijective (t : ℕ) : Function.Bijective (stRelabel t) := by
-  refine ⟨?_, fun p => ?_⟩
-  · rintro (i | j | k) (i' | j' | k') h <;>
-      simp only [stRelabel, Fin.ext_iff, Sum.inl.injEq, Sum.inr.injEq,
-        reduceCtorEq] at h ⊢ <;>
-      first
-        | (have := i.isLt; have := i'.isLt; omega)
-        | (have := j.isLt; have := j'.isLt; omega)
-        | (have := k.isLt; have := k'.isLt; omega)
-        | (have := i.isLt; have := j'.isLt; omega)
-        | (have := j.isLt; have := i'.isLt; omega)
-        | (have := j.isLt; omega)
-        | (have := j'.isLt; omega)
-  · have hp := p.isLt
-    by_cases h0 : p.val = 0
-    · exact ⟨.inr (.inr 0), Fin.ext (by simp [stRelabel, h0])⟩
-    by_cases hodd : p.val % 2 = 1
-    · exact ⟨.inl ⟨p.val / 2, by omega⟩, Fin.ext (by simp only [stRelabel]; omega)⟩
-    · exact ⟨.inr (.inl ⟨t - p.val / 2, by omega⟩), Fin.ext (by simp only [stRelabel]; omega)⟩
-
-/-- `stRelabel` carries the staircase adjacency `i + j < t` to `stEdge` on positions. -/
-private theorem stRelabel_adj (t : ℕ) (a b : Fin (1 * t) ⊕ Fin (1 * t) ⊕ Fin 1) :
-    (stGraph (2 * t + 1)).Adj (stRelabel t a) (stRelabel t b) ↔
-      (SimpleGraph.staircase 1 t).Adj a b := by
-  rcases a with i | j | k <;> rcases b with i' | j' | k' <;>
-    simp [stGraph, SimpleGraph.fromRel_adj, stRelabel, stEdge, Fin.ext_iff] <;>
-    omega
-
-/-- `stGraph (2 t + 1)` is `SimpleGraph.staircase 1 t`, relabelled. -/
-private noncomputable def stIso (t : ℕ) : SimpleGraph.staircase 1 t ≃g stGraph (2 * t + 1) where
-  toEquiv := Equiv.ofBijective (stRelabel t) (stRelabel_bijective t)
-  map_rel_iff' {a b} := stRelabel_adj t a b
-
-/-- `2 · #edges = t (t + 1)`, from `SimpleGraph.two_mul_card_edgeFinset_staircase`. -/
-private theorem two_mul_card_edgeFinset_stGraph (t : ℕ) :
-    2 * #(stGraph (2 * t + 1)).edgeFinset = t * (t + 1) := by
-  rw [← (stIso t).card_edgeFinset_eq, SimpleGraph.two_mul_card_edgeFinset_staircase]
-  ring
-
-/-! ## The staircase cochain: gauge distance and defect -/
-
-/-- **Cut-minimality, transported.** Every `Sym(3)` gauge `β` on `Fin (2 t + 1)` has cost at least
-`t (t + 1)` against the staircase cochain `stair (2 t + 1)`. -/
-theorem cost_stair_ge (t : ℕ) (β : Fin (2 * t + 1) → S3) :
-    t * (t + 1) ≤ cost (stair (2 * t + 1)) β := by
-  let S : Set (Fin (2 * t + 1)) := {u | oddPerm (β u) = true}
-  have hcm := (SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff (stGraph (2 * t + 1))).mp
-    ((stIso t).isCutMinimal_iff.mp (SimpleGraph.isCutMinimal_staircase 1 t)) S
-  set F := symmDiff (stGraph (2 * t + 1)).edgeFinset
-    ((⊤ : SimpleGraph (Fin (2 * t + 1))).between S Sᶜ).edgeFinset
-  have hF : #F = ∑ u, ∑ v, if u < v then
-      Bool.toNat (xor (xor (oddPerm (β u)) (oddPerm (β v))) (stEdge u.val v.val)) else 0 := by
+/-- **Parity retraction against a cut-minimal graph.** Every gauge costs at least
+`2 * #G.edgeFinset` against the cochain equal to `swap 0 1` on the edges of a cut-minimal `G`. -/
+private theorem two_mul_card_edgeFinset_le_cost (G : SimpleGraph V) [DecidableRel G.Adj]
+    (hG : G.IsCutMinimal) (β : V → Perm (Fin 3)) :
+    (2 * #G.edgeFinset : ℝ) ≤
+      (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).cost
+        (Perm.movedNorm (Fin 3)) β := by
+  set α := Cochain.ofLt (complete V) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
+  have ht : (swap 0 1 : Perm (Fin 3)).IsSwap := Perm.swap_isSwap_iff.mpr (by decide)
+  have hφα : α.map (Perm.parityRetract ht) = α := by
+    refine Cochain.ext fun u v _ => ?_
+    rw [Cochain.map_apply, Perm.parityRetract_eq_self_iff]
+    rcases lt_trichotomy u v with h | rfl | h
+    · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr h.ne) h]
+      split_ifs <;> simp
+    · simp
+    · rw [Cochain.ofLt_apply_of_gt _ ((adj_complete u v).mpr h.ne') h]
+      split_ifs <;> simp
+  refine le_trans ?_ (Cochain.cost_map_le (Perm.movedNorm_parityRetract_le ht) α β)
+  rw [hφα]
+  set γ := Perm.parityRetract ht ∘ β
+  have hγ : ∀ u, γ u = 1 ∨ γ u = swap 0 1 := fun u =>
+    (Perm.mem_range_parityRetract ht _).mp ⟨β u, rfl⟩
+  let S : Set V := {u | γ u = swap 0 1}
+  have hcm := (SimpleGraph.isCutMinimal_iff_card_le_card_symmDiff G).mp hG S
+  set F := symmDiff G.edgeFinset ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset
+  have hF : (#F : ℝ) = ∑ u, ∑ v,
+      if u < v ∧ Xor (G.Adj u v) (Xor (γ u = swap 0 1) (γ v = swap 0 1)) then 1 else 0 := by
     rw [card_eq_sum_sum_ite_lt_of_forall_mk_notMem F (fun u => by simp [F, mem_symmDiff])]
-    refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
+    push_cast
+    refine sum_congr rfl fun u _ => sum_congr rfl fun v _ => ?_
     by_cases huv : u < v
-    · have he := stGraph_adj_of_lt huv
-      rw [Bool.eq_iff_iff, decide_eq_true_iff] at he
-      simp only [huv, true_and, ↓reduceIte, F, mem_symmDiff, SimpleGraph.mem_edgeFinset,
-        SimpleGraph.mem_edgeSet, SimpleGraph.between_adj, SimpleGraph.top_adj, he, huv.ne, ne_eq,
-        not_false_eq_true, S, Set.mem_ofPred_eq, Set.mem_compl_iff]
-      cases oddPerm (β u) <;> cases oddPerm (β v) <;> cases stEdge u.val v.val <;> simp
+    · have hne := huv.ne
+      by_cases ha : G.Adj u v <;> by_cases hu : γ u = swap 0 1 <;>
+        by_cases hv : γ v = swap 0 1 <;>
+        simp [huv, hne, ha, hu, hv, F, S, mem_symmDiff, SimpleGraph.between_adj]
     · simp [huv]
-  calc t * (t + 1) = 2 * #(stGraph (2 * t + 1)).edgeFinset :=
-        (two_mul_card_edgeFinset_stGraph t).symm
-    _ ≤ 2 * #F := Nat.mul_le_mul_left 2 hcm
-    _ = ∑ u, ∑ v, if u < v then
-          2 * (xor (xor (oddPerm (β u)) (oddPerm (β v))) (stEdge u.val v.val)).toNat
-        else 0 := by
-        rw [hF, Finset.mul_sum]
-        refine Finset.sum_congr rfl fun u _ => ?_
-        rw [Finset.mul_sum]
-        exact Finset.sum_congr rfl fun v _ => by split_ifs <;> simp
-    _ ≤ ∑ u, ∑ v, if u < v then moved ((β u)⁻¹ * stair (2 * t + 1) u v * β v) else 0 := by
-        gcongr with u _ v _
-        split_ifs
-        · exact st_par_bound (β u) (β v) (stEdge u.val v.val)
-        · exact le_rfl
-    _ = cost (stair (2 * t + 1)) β := (cost_eq_sum _ _).symm
+  rw [Cochain.cost_complete, sum_filter, Fintype.sum_prod_type]
+  calc (2 * #G.edgeFinset : ℝ) ≤ 2 * #F := by exact_mod_cast Nat.mul_le_mul_left 2 hcm
+    _ = ∑ u, ∑ v, if u < v then Perm.movedNorm (Fin 3) ((γ u)⁻¹ * α u v * γ v) else 0 := by
+      rw [hF, mul_sum]
+      refine sum_congr rfl fun u _ => ?_
+      rw [mul_sum]
+      refine sum_congr rfl fun v _ => ?_
+      by_cases huv : u < v
+      · rw [Cochain.ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv, Perm.movedNorm_apply,
+          card_support_inv_mul_ite_mul (hγ u) (hγ v)]
+        by_cases hx : Xor (G.Adj u v) (Xor (γ u = swap 0 1) (γ v = swap 0 1)) <;> simp [huv, hx]
+      · simp [huv]
 
-/-- The term of a triangle `u < v < w` in the staircase defect, as a parity of edge labels. -/
-private theorem stair_tri_term (n : ℕ) (u v w : Fin n) :
-    (if u < v ∧ v < w then
-      moved (val (stair n) u v * val (stair n) v w * val (stair n) w u) else 0) =
-      if u < v ∧ v < w then
-        2 * Bool.toNat (xor (xor (decide ((stGraph n).Adj u v)) (decide ((stGraph n).Adj v w)))
-          (decide ((stGraph n).Adj u w)))
-      else 0 := by
-  by_cases h : u < v ∧ v < w
-  · rw [ite_eq_left h, ite_eq_left h, stGraph_adj_of_lt h.1, stGraph_adj_of_lt h.2,
-      stGraph_adj_of_lt (h.1.trans h.2)]
-    have huw : ¬ w < u := not_lt.mpr (h.1.trans h.2).le
-    unfold Sym3.val
-    rw [ite_eq_left h.1, ite_eq_left h.2, ite_eq_right huw]
-    exact st_moved_tri (stEdge u.val v.val) (stEdge v.val w.val) (stEdge u.val w.val)
-  · rw [ite_eq_right h, ite_eq_right h]
+end Sym3
 
-/-- The defect of the staircase is twice its number of odd triangles. -/
-private theorem stair_defect (n : ℕ) : defect (stair n) = 2 * #(stGraph n).oddTriangleFinset := by
-  rw [defect_eq_sum, SimpleGraph.card_oddTriangleFinset_eq_sum, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun u _ => ?_
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun v _ => ?_
-  rw [Finset.mul_sum]
-  refine Finset.sum_congr rfl fun w _ => ?_
-  rw [stair_tri_term]
-  by_cases h : u < v ∧ v < w
-  · by_cases x : (stGraph n).Adj u v <;> by_cases y : (stGraph n).Adj v w <;>
-      by_cases z : (stGraph n).Adj u w <;> simp [h, x, y, z]
-  · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩, Nat.mul_zero]
+/-- **Cut-minimal graphs bound the `Sym(3)` constant.** For a cut-minimal graph `G` on `V` with at
+least one edge, `h1 (complete V) (movedNorm (Fin 3)) ≤ #G.oddTriangleFinset / #G.edgeFinset`. -/
+theorem h1_complete_movedNorm_fin_three_le_of_isCutMinimal (G : SimpleGraph V)
+    [DecidableRel G.Adj] (hG : G.IsCutMinimal) (hE : 0 < #G.edgeFinset) :
+    h1 (complete V) (Perm.movedNorm (Fin 3)) ≤
+      (#G.oddTriangleFinset : ℝ) / #G.edgeFinset := by
+  set α := Cochain.ofLt (complete V) fun u v => if G.Adj u v then (swap 0 1 : Perm (Fin 3)) else 1
+  have hE' : (0 : ℝ) < 2 * #G.edgeFinset := by positivity
+  have hgd : (2 * #G.edgeFinset : ℝ) ≤ α.gaugeDist (Perm.movedNorm (Fin 3)) :=
+    (α.le_gaugeDist_iff _).mpr (Sym3.two_mul_card_edgeFinset_le_cost G hG)
+  refine (h1_le_div (hE'.trans_le hgd)).trans ?_
+  rw [Sym3.defect_ofLt_ite_adj]
+  calc (2 * #G.oddTriangleFinset : ℝ) / α.gaugeDist (Perm.movedNorm (Fin 3)) ≤
+        2 * #G.oddTriangleFinset / (2 * #G.edgeFinset) :=
+        div_le_div_of_nonneg_left (by positivity) hE' hgd
+    _ = #G.oddTriangleFinset / #G.edgeFinset := mul_div_mul_left _ _ two_ne_zero
 
-/-- **Defect of the staircase.** The moved-point defect of `stair (2 t + 1)` satisfies
-`3 * defect (stair (2 t + 1)) = (2 t + 1) * (t (t + 1))`, where `t (t + 1)` is the gauge lower bound
-of `Sym3.cost_stair_ge`. -/
-theorem three_mul_defect_stair (t : ℕ) :
-    3 * defect (stair (2 * t + 1)) = (2 * t + 1) * (t * (t + 1)) := by
-  have h := SimpleGraph.three_mul_card_oddTriangleFinset_staircase 1 t
-  rw [(stIso t).card_oddTriangleFinset_eq, (stIso t).card_edgeFinset_eq] at h
-  have hE := two_mul_card_edgeFinset_stGraph t
-  rw [stair_defect]
-  nlinarith
+/-- **The staircase upper bound.** If `card V = q (2 t + 1)` with `q, t ≥ 1`, then
+`h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3`, witnessed by Kozlov's staircase graph
+`SimpleGraph.staircase q t`. -/
+theorem h1_complete_movedNorm_fin_three_le_of_card_eq_mul {q t : ℕ} (hq : 0 < q) (ht : 0 < t)
+    (hV : Fintype.card V = q * (2 * t + 1)) :
+    h1 (complete V) (Perm.movedNorm (Fin 3)) ≤ (Fintype.card V : ℝ) / 3 := by
+  let W := Fin (q * t) ⊕ Fin (q * t) ⊕ Fin q
+  let _ : LinearOrder W := LinearOrder.lift' (Fintype.equivFin W) (Fintype.equivFin W).injective
+  have hW : Fintype.card W = q * (2 * t + 1) := by
+    simp only [W, Fintype.card_sum, Fintype.card_fin]
+    ring
+  rw [h1_complete_eq_of_card_eq Perm.isConjInvariant_movedNorm (hV.trans hW.symm)]
+  have hE2 := SimpleGraph.two_mul_card_edgeFinset_staircase q t
+  have hO := SimpleGraph.three_mul_card_oddTriangleFinset_staircase q t
+  have hE : 0 < #(SimpleGraph.staircase q t).edgeFinset := by
+    have : 0 < q ^ 2 * t * (t + 1) := by positivity
+    omega
+  refine (h1_complete_movedNorm_fin_three_le_of_isCutMinimal _
+    (SimpleGraph.isCutMinimal_staircase q t) hE).trans_eq ?_
+  have hE' : (0 : ℝ) < #(SimpleGraph.staircase q t).edgeFinset := by exact_mod_cast hE
+  rw [hV, div_eq_div_iff hE'.ne' (by norm_num)]
+  have h := congrArg (Nat.cast (R := ℝ)) hO
+  push_cast at h ⊢
+  -- the two odd-triangle counts differ only in their `DecidableEq W` instances
+  refine (mul_comm _ _).trans ?_
+  convert h
 
-end TauCeti.Sym3
+end TauCeti

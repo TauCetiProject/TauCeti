@@ -5,35 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.BigOperators.Fin
-public import Mathlib.Data.Fintype.Perm
+public import Mathlib.Order.Prod.Lex.Basic
 public import TauCeti.Combinatorics.CoboundaryExpansion.Cochain.Basic
+public import TauCeti.Combinatorics.SimpleGraph.OddTriangles
 public import TauCeti.GroupTheory.Perm.MovedNorm
-import Mathlib.Algebra.BigOperators.Group.List.Basic
-import TauCeti.Combinatorics.Optimization.Replication
-import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.Data.Fin.Basic
-import Mathlib.Tactic.GCongr
+import Mathlib.Data.Fintype.Card
+import Mathlib.Data.Fintype.Prod
 
 /-!
-# Moved-point counts of `Sym(3)`-valued cochains on `K_k`
+# Defects of `Sym(3)`-valued cochains on the complete complex
 
-This file supplies kernel-computable natural-number forms of the triangle defect and the gauge
-cost of a `Sym(3)`-valued 1-cochain on the complete complex on `Fin k`, given by a bare function
-`α : Fin k → Fin k → Sym(3)` read on positively oriented pairs `u < v`:
+Two triangle-defect counts for cochains `Cochain.ofLt (complete V) f` built from values on the
+positively oriented pairs `u < v`:
 
-* `Sym3.moved σ` is the number of points of `Fin 3` moved by `σ`, equal to
-  `Equiv.Perm.movedNorm (Fin 3) σ` (`Sym3.moved_eq_movedNorm`);
-* `Sym3.defect α` and `Sym3.cost α β` are the moved-point counts of the triangle holonomies and of
-  the gauged edge terms, summed over the triangles `u < v < w` and the edges `u < v`.
-
-`Sym3.defect_ofLt` and `Sym3.cost_ofLt` identify them with `Cochain.defect` and `Cochain.cost` of
-the cochain `Cochain.ofLt (complete (Fin k)) α` under `movedNorm (Fin 3)`, so that bounds proved by
-finite computation or by counting transfer to the gauge distance `Cochain.gaugeDist` and the
-Cheeger constant `TauCeti.h1`.
-
-`Sym3.cost_rep_ge` and `Sym3.defect_rep` are the two counts of balanced replication that the upper
-bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
+* `Sym3.defect_ofLt_ite_adj`: for a graph `G` on `V`, the cochain that is the transposition
+  `swap 0 1` on the edges of `G` and `1` elsewhere has moved-point defect twice the number of
+  odd triangles of `G` (the triangles spanning one or three edges of `G`).
+* `Cochain.defect_ofLt_lex`: balanced replication. Replacing each vertex of `V` by a cluster
+  `ι`, with value `1` inside clusters and the seed value between them, on `V ×ₗ ι`, multiplies
+  the defect by `(Fintype.card ι) ^ 3`, for any group and any group norm.
 
 ## References
 
@@ -44,263 +34,104 @@ bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` needs.
   balanced replication of `CoboundaryK3/Replication.lean`.
 -/
 
--- `moved`, `triangles`, `val` and `defect` are evaluated by `decide +kernel` for the `k = 4` seed;
--- `edges` and `cost` are their list-form companions, kept evaluable in the same way.
-@[expose] public section
-
-open Finset Equiv
-
-namespace TauCeti.Sym3
-
-/-- Permutations of three points. -/
-abbrev S3 := Perm (Fin 3)
-
-/-- The Hamming count: how many of the three points `σ` moves. -/
-def moved (σ : S3) : ℕ := (List.finRange 3).countP fun i => σ i ≠ i
-
-/-- `moved σ` is the number of points of `Fin 3` moved by `σ`, i.e. the size of its support. -/
-theorem moved_eq_card_support : ∀ σ : S3, moved σ = σ.support.card := by decide
-
-/-- The Hamming count is the moved-point norm `Equiv.Perm.movedNorm (Fin 3)`. -/
-theorem moved_eq_movedNorm (σ : S3) : (moved σ : ℝ) = Perm.movedNorm (Fin 3) σ := by
-  rw [Perm.movedNorm_apply, moved_eq_card_support]
-
-/-- The transposition of `0` and `1`. -/
-def t01 : S3 := swap 0 1
-
-/-- The transposition of `1` and `2`. -/
-def t12 : S3 := swap 1 2
-
-/-- The transposition of `0` and `2`. -/
-def t02 : S3 := swap 0 2
-
-variable {k : ℕ}
-
-/-- Oriented edges `u < v` of `K_k`. -/
-def edges (k : ℕ) : List (Fin k × Fin k) :=
-  (List.finRange k).flatMap fun u => ((List.finRange k).filter fun v => u < v).map fun v => (u, v)
-
-/-- Triangles `u < v < w` of `K_k`. -/
-def triangles (k : ℕ) : List (Fin k × Fin k × Fin k) :=
-  (List.finRange k).flatMap fun u => (List.finRange k).flatMap fun v =>
-    ((List.finRange k).filter fun w => u < v ∧ v < w).map fun w => (u, v, w)
-
-/-- The value on an oriented pair: `α u v` for `u < v` and `(α v u)⁻¹` for `v ≤ u`. -/
-def val (α : Fin k → Fin k → S3) (u v : Fin k) : S3 := if u < v then α u v else (α v u)⁻¹
-
-/-- The triangle defect: moved points of the holonomy, summed over triangles `u < v < w`. -/
-def defect (α : Fin k → Fin k → S3) : ℕ :=
-  ((triangles k).map fun t => moved (val α t.1 t.2.1 * val α t.2.1 t.2.2 * val α t.2.2 t.1)).sum
-
-/-- The cost of a gauge `β`: moved points of `β(u)⁻¹ α(u,v) β(v)`, summed over edges `u < v`. -/
-def cost (α : Fin k → Fin k → S3) (β : Fin k → S3) : ℕ :=
-  ((edges k).map fun e => moved ((β e.1)⁻¹ * α e.1 e.2 * β e.2)).sum
-
-/-! ### Cost and defect as sums over vertices -/
-
-private theorem sum_edges (g : Fin k → Fin k → ℕ) :
-    ((edges k).map fun e => g e.1 e.2).sum =
-      ∑ u : Fin k, ∑ v : Fin k, if u < v then g u v else 0 := by
-  rw [edges, Fin.sum_map_flatMap_finRange]
-  refine Finset.sum_congr rfl fun u _ => ?_
-  simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
-
-private theorem sum_triangles (g : Fin k → Fin k → Fin k → ℕ) :
-    ((triangles k).map fun t => g t.1 t.2.1 t.2.2).sum =
-      ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k, if u < v ∧ v < w then g u v w else 0 := by
-  rw [triangles, Fin.sum_map_flatMap_finRange]
-  refine Finset.sum_congr rfl fun u _ => ?_
-  rw [Fin.sum_map_flatMap_finRange]
-  refine Finset.sum_congr rfl fun v _ => ?_
-  simp [Fin.sum_univ_def, List.sum_map_ite, Function.comp_def]
-
-/-- The cost of a gauge as a double sum over ordered vertex pairs `u < v`. -/
-theorem cost_eq_sum (α : Fin k → Fin k → S3) (β : Fin k → S3) :
-    cost α β = ∑ u : Fin k, ∑ v : Fin k,
-      if u < v then moved ((β u)⁻¹ * α u v * β v) else 0 :=
-  sum_edges fun u v => moved ((β u)⁻¹ * α u v * β v)
-
-/-- The triangle defect as a triple sum over vertex triples `u < v < w`. -/
-theorem defect_eq_sum (α : Fin k → Fin k → S3) :
-    defect α = ∑ u : Fin k, ∑ v : Fin k, ∑ w : Fin k,
-      if u < v ∧ v < w then moved (val α u v * val α v w * val α w u) else 0 :=
-  sum_triangles fun u v w => moved (val α u v * val α v w * val α w u)
-
-/-! ### The counts are those of `Cochain.ofLt` -/
-
-/-- `Sym3.cost` is `Cochain.cost` of `Cochain.ofLt` under the moved-point norm. -/
-theorem cost_ofLt (α : Fin k → Fin k → S3) (β : Fin k → S3) :
-    (Cochain.ofLt (TwoComplex.complete (Fin k)) α).cost (Perm.movedNorm (Fin 3)) β =
-      cost α β := by
-  rw [Cochain.cost_complete, Finset.sum_filter, Fintype.sum_prod_type, cost_eq_sum]
-  push_cast
-  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
-  split_ifs with h
-  · rw [Cochain.ofLt_apply_of_lt _ ((TwoComplex.adj_complete u v).mpr h.ne) h, moved_eq_movedNorm]
-  · rfl
-
-/-- `Sym3.defect` is `Cochain.defect` of `Cochain.ofLt` under the moved-point norm. -/
-theorem defect_ofLt (α : Fin k → Fin k → S3) :
-    (Cochain.ofLt (TwoComplex.complete (Fin k)) α).defect (Perm.movedNorm (Fin 3)) = defect α := by
-  rw [Cochain.defect_complete, Finset.sum_filter, Fintype.sum_prod_type, defect_eq_sum]
-  simp only [Fintype.sum_prod_type]
-  push_cast
-  refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ =>
-    Finset.sum_congr rfl fun w _ => ?_
-  split_ifs with h
-  · have huw : u < w := h.1.trans h.2
-    rw [Cochain.holonomy_def, Cochain.ofLt_apply_of_lt _ ((TwoComplex.adj_complete u v).mpr h.1.ne)
-      h.1, Cochain.ofLt_apply_of_lt _ ((TwoComplex.adj_complete v w).mpr h.2.ne) h.2,
-      Cochain.ofLt_apply_of_gt _ ((TwoComplex.adj_complete w u).mpr huw.ne') huw,
-      ← moved_eq_movedNorm]
-    simp [val, h.1, h.2, not_lt.mpr huw.le]
-  · rfl
-
-
-end TauCeti.Sym3
-
-end
-
-/-! ### Balanced replication
-
-Replace each vertex of `K_k` by a block of `q` consecutive vertices of `K_{kq}`
-(`finProdFinEquiv`), put `1` on the pairs inside a block and the seed value between blocks.
-Replication multiplies the defect by `q ^ 3` (`Sym3.defect_rep`) and the gauge lower bound by
-`q ^ 2` (`Sym3.cost_rep_ge`). The bodies of `blk`, `vert` and `rep` are not exposed; use their
-defining lemmas. -/
-
 public section
 
 open Finset Equiv
 
-namespace TauCeti.Sym3
+namespace TauCeti
 
-variable {k : ℕ}
+open TwoComplex
 
-section Replication
+variable {V : Type*} [Fintype V] [LinearOrder V]
 
-variable {q : ℕ}
+namespace Cochain
 
-/-- The block of a vertex of `K_{kq}`. -/
-def blk (q : ℕ) (x : Fin (k * q)) : Fin k := (finProdFinEquiv.symm x).1
+variable {G : Type*} [Group G]
 
-/-- Vertex `a` of block `i`. -/
-def vert (q : ℕ) (i : Fin k) (a : Fin q) : Fin (k * q) := finProdFinEquiv (i, a)
+/-- The holonomy of `Cochain.ofLt` around an increasing triple `u < v < w`. -/
+theorem holonomy_ofLt_complete (f : V → V → G) {u v w : V} (huv : u < v) (hvw : v < w) :
+    (ofLt (complete V) f).holonomy u v w = f u v * f v w * (f u w)⁻¹ := by
+  have huw := huv.trans hvw
+  rw [holonomy_def, ofLt_apply_of_lt _ ((adj_complete u v).mpr huv.ne) huv,
+    ofLt_apply_of_lt _ ((adj_complete v w).mpr hvw.ne) hvw,
+    ofLt_apply_of_gt _ ((adj_complete w u).mpr huw.ne') huw]
 
-/-- The defining equation of `blk`. -/
-theorem blk_def (q : ℕ) (x : Fin (k * q)) : blk q x = (finProdFinEquiv.symm x).1 := by
-  rw [blk]
-
-/-- The defining equation of `vert`. -/
-theorem vert_def (q : ℕ) (i : Fin k) (a : Fin q) : vert q i a = finProdFinEquiv (i, a) := by
-  rw [vert]
-
-/-- Vertex `a` of block `i` is the number `a + q i`. -/
-@[simp] theorem val_vert (i : Fin k) (a : Fin q) : (vert q i a : ℕ) = a + q * i := by
-  simp [vert, finProdFinEquiv_apply_val]
-
-@[simp] theorem blk_vert (i : Fin k) (a : Fin q) : blk q (vert q i a) = i := by simp [blk, vert]
-
-private theorem sum_blocks (F : Fin (k * q) → ℕ) : ∑ x, F x = ∑ i, ∑ a, F (vert q i a) := by
-  rw [← Equiv.sum_comp finProdFinEquiv F, Fintype.sum_prod_type]
-  rfl
-
-/-- Vertices are ordered block first, then position. -/
-theorem vert_lt_iff (i j : Fin k) (a b : Fin q) :
-    vert q i a < vert q j b ↔ i < j ∨ (i = j ∧ a < b) :=
-  finProdFinEquiv_lt_finProdFinEquiv_iff (i, a) (j, b)
-
-/-- The `q`-fold balanced replication of `α`. -/
-def rep (q : ℕ) (α : Fin k → Fin k → S3) : Fin (k * q) → Fin (k * q) → S3 :=
-  fun x y => if blk q x = blk q y then 1 else val α (blk q x) (blk q y)
-
-/-- The defining equation of `rep`. -/
-theorem rep_apply (α : Fin k → Fin k → S3) (x y : Fin (k * q)) :
-    rep q α x y = if blk q x = blk q y then 1 else val α (blk q x) (blk q y) := by
-  rw [rep]
-
-/-- Inside a block the replication is `1`. -/
-@[simp] theorem rep_of_blk_eq (α : Fin k → Fin k → S3) {x y : Fin (k * q)}
-    (h : blk q x = blk q y) : rep q α x y = 1 := by
-  simp [rep_apply, h]
-
-/-- Between distinct blocks the replication is the seed value. -/
-@[simp] theorem rep_of_blk_ne (α : Fin k → Fin k → S3) {x y : Fin (k * q)}
-    (h : blk q x ≠ blk q y) : rep q α x y = val α (blk q x) (blk q y) := by
-  simp [rep_apply, h]
-
-private theorem moved_one : moved (1 : S3) = 0 := by decide
-
-private theorem rep_tri (α : Fin k → Fin k → S3) (i j l : Fin k) (a b c : Fin q) :
-    (if vert q i a < vert q j b ∧ vert q j b < vert q l c then
-        moved (val (rep q α) (vert q i a) (vert q j b) * val (rep q α) (vert q j b) (vert q l c) *
-          val (rep q α) (vert q l c) (vert q i a)) else 0) =
-      if i < j ∧ j < l then moved (val α i j * val α j l * val α l i) else 0 := by
-  by_cases hijl : i < j ∧ j < l
-  · have h1 : vert q i a < vert q j b := (vert_lt_iff _ _ _ _).2 (Or.inl hijl.1)
-    have h2 : vert q j b < vert q l c := (vert_lt_iff _ _ _ _).2 (Or.inl hijl.2)
-    have hil : i < l := lt_trans hijl.1 hijl.2
-    have h3 : ¬ vert q l c < vert q i a := not_lt.2 (lt_trans h1 h2).le
-    simp only [h1, h2, hijl, and_self, ↓reduceIte]
-    simp [val, rep, h1, h2, h3, hijl.1, hijl.2, hil, hijl.1.ne, hijl.2.ne, hil.ne, not_lt.2 hil.le]
-  · simp only [hijl, ↓reduceIte]
-    split_ifs with hord
-    · have h3 : ¬ vert q l c < vert q i a := not_lt.2 (lt_trans hord.1 hord.2).le
-      rcases (vert_lt_iff _ _ _ _).1 hord.1 with hij | ⟨rfl, _⟩
-      · rcases (vert_lt_iff _ _ _ _).1 hord.2 with hjl | ⟨rfl, _⟩
-        · exact absurd ⟨hij, hjl⟩ hijl
-        · simp [val, rep, hord.1, hord.2, h3, hij.ne, moved_one]
-      · simp [val, rep, hord.1, hord.2, h3, moved_one]
-    · rfl
-
-/-- Replication multiplies the defect by `q ^ 3`. -/
-theorem defect_rep (q : ℕ) (α : Fin k → Fin k → S3) : defect (rep q α) = q ^ 3 * defect α := by
-  rw [defect_eq_sum, defect_eq_sum]
-  simp only [sum_blocks (q := q), rep_tri, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
-    smul_eq_mul, ← Finset.mul_sum]
+/-- **Balanced replication of the defect.** Replicating each vertex of `V` by a cluster `ι` (value
+`1` inside clusters, the seed value `α i j` between clusters `i < j`) multiplies the defect by
+`(Fintype.card ι) ^ 3`. -/
+theorem defect_ofLt_lex {ι : Type*} [Fintype ι] [LinearOrder ι] (ℓ : GroupNorm G)
+    (α : V → V → G) :
+    (ofLt (complete (V ×ₗ ι)) fun x y =>
+        if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1).defect ℓ =
+      (Fintype.card ι : ℝ) ^ 3 * (ofLt (complete V) α).defect ℓ := by
+  set f : V ×ₗ ι → V ×ₗ ι → G := fun x y =>
+    if (ofLex x).1 = (ofLex y).1 then 1 else α (ofLex x).1 (ofLex y).1
+  have hterm : ∀ (i j l : V) (a b c : ι),
+      (if toLex (i, a) < toLex (j, b) ∧ toLex (j, b) < toLex (l, c) then
+        ℓ ((ofLt (complete (V ×ₗ ι)) f).holonomy (toLex (i, a)) (toLex (j, b)) (toLex (l, c)))
+        else 0) =
+      if i < j ∧ j < l then ℓ ((ofLt (complete V) α).holonomy i j l) else 0 := by
+    intro i j l a b c
+    by_cases hlex : toLex (i, a) < toLex (j, b) ∧ toLex (j, b) < toLex (l, c)
+    · rw [ite_eq_left hlex, holonomy_ofLt_complete _ hlex.1 hlex.2]
+      have h1 := Prod.Lex.toLex_lt_toLex.mp hlex.1
+      have h2 := Prod.Lex.toLex_lt_toLex.mp hlex.2
+      simp only at h1 h2
+      by_cases hijl : i < j ∧ j < l
+      · rw [ite_eq_left hijl, holonomy_ofLt_complete _ hijl.1 hijl.2]
+        simp [f, hijl.1.ne, hijl.2.ne, (hijl.1.trans hijl.2).ne]
+      · rw [ite_eq_right hijl]
+        rcases h1 with h1 | ⟨rfl, -⟩ <;> rcases h2 with h2 | ⟨rfl, -⟩
+        · exact absurd ⟨h1, h2⟩ hijl
+        · simp [f, h1.ne]
+        · simp [f, h2.ne]
+        · simp [f]
+    · rw [ite_eq_right hlex]
+      by_cases hijl : i < j ∧ j < l
+      · exact absurd ⟨Prod.Lex.toLex_lt_toLex.mpr (Or.inl hijl.1),
+          Prod.Lex.toLex_lt_toLex.mpr (Or.inl hijl.2)⟩ hlex
+      · rw [ite_eq_right hijl]
+  rw [defect_complete, defect_complete, sum_filter, sum_filter, Fintype.sum_prod_type,
+    Fintype.sum_prod_type]
+  simp only [Fintype.sum_prod_type]
+  rw [← (toLex : V × ι ≃ V ×ₗ ι).sum_comp]
+  simp only [← (toLex : V × ι ≃ V ×ₗ ι).sum_comp _, Fintype.sum_prod_type, hterm]
+  simp only [sum_const, card_univ, nsmul_eq_mul, ← mul_sum]
   ring
 
-private theorem rep_edge_le (α : Fin k → Fin k → S3) (γ : Fin (k * q) → S3) (i j : Fin k)
-    (a b : Fin q) :
-    (if i < j then moved ((γ (vert q i a))⁻¹ * α i j * γ (vert q j b)) else 0) ≤
-      if vert q i a < vert q j b then
-        moved ((γ (vert q i a))⁻¹ * rep q α (vert q i a) (vert q j b) * γ (vert q j b)) else 0 := by
-  by_cases hij : i < j
-  · simp only [(vert_lt_iff _ _ _ _).2 (Or.inl hij), hij, ↓reduceIte]
-    simp [rep, val, hij, hij.ne]
-  · simp only [hij, ↓reduceIte]
-    exact Nat.zero_le _
+end Cochain
 
-/-- If every gauge of `α` costs at least `D`, every gauge of the `q`-fold replication `rep q α`
-costs at least `q ^ 2 * D`. -/
-theorem cost_rep_ge (α : Fin k → Fin k → S3) (D : ℕ) (hD : ∀ β : Fin k → S3, D ≤ cost α β)
-    (γ : Fin (k * q) → S3) : q ^ 2 * D ≤ cost (rep q α) γ := by
-  -- Each section (one vertex per block) restricts `γ` to a gauge of `α`
-  -- (`Finset.card_sq_nsmul_le_sum_of_forall_le_sum`); pairs inside a block cost at least `0`.
-  set E := univ.filter fun e : Fin k × Fin k => e.1 < e.2
-  set w : Fin k × Fin k → Fin q → Fin q → ℕ := fun e a b =>
-    moved ((γ (vert q e.1 a))⁻¹ * α e.1 e.2 * γ (vert q e.2 b))
-  have hsum (F : Fin k → Fin k → ℕ) :
-      ∑ e ∈ E, F e.1 e.2 = ∑ i, ∑ j, if i < j then F i j else 0 := by
-    rw [Finset.sum_filter, Fintype.sum_prod_type]
-  have h := Finset.card_sq_nsmul_le_sum_of_forall_le_sum E
-    (fun e he => (Finset.mem_filter.mp he).2.ne) w (d := D) fun s => by
-      rw [hsum fun i j => w (i, j) (s i) (s j)]
-      simpa only [w, cost_eq_sum] using hD fun i => γ (vert q i (s i))
-  rw [Fintype.card_fin, smul_eq_mul] at h
-  refine h.trans ?_
-  rw [cost_eq_sum]
-  simp only [sum_blocks (q := q)]
-  calc ∑ e ∈ E, ∑ a, ∑ b, w e a b = ∑ i, ∑ j, ∑ a, ∑ b, if i < j then w (i, j) a b else 0 := by
-        rw [hsum (fun i j => ∑ a, ∑ b, w (i, j) a b)]
-        refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-        split_ifs <;> simp
-    _ = ∑ i, ∑ a, ∑ j, ∑ b, if i < j then w (i, j) a b else 0 :=
-        Finset.sum_congr rfl fun i _ => Finset.sum_comm
-    _ ≤ _ := by
-        gcongr with i _ a _ j _ b _
-        exact rep_edge_le α γ i j a b
+namespace Sym3
 
-end Replication
+/-- The holonomy of a triangle with `{1, swap 0 1}` labels moves `2` points exactly when an odd
+number of its edges carry `swap 0 1`. -/
+private theorem card_support_ite_mul_ite_mul_ite_inv (p r s : Prop) [Decidable p] [Decidable r]
+    [Decidable s] :
+    #((if p then swap 0 1 else 1 : Perm (Fin 3)) * (if r then swap 0 1 else 1) *
+        (if s then swap 0 1 else 1)⁻¹).support = if Xor p (Xor s r) then 2 else 0 := by
+  by_cases hp : p <;> by_cases hr : r <;> by_cases hs : s <;> simp [hp, hr, hs]
 
-end TauCeti.Sym3
+/-- **Defect of a graph cochain.** The cochain equal to `swap 0 1` on the edges of `G` and `1`
+elsewhere has moved-point defect `2 * #G.oddTriangleFinset`. -/
+theorem defect_ofLt_ite_adj (G : SimpleGraph V) [DecidableRel G.Adj] :
+    (Cochain.ofLt (complete V) fun u v => if G.Adj u v then swap 0 1 else 1).defect
+        (Perm.movedNorm (Fin 3)) = 2 * #G.oddTriangleFinset := by
+  rw [Cochain.defect_complete, sum_filter, SimpleGraph.card_oddTriangleFinset_eq_sum]
+  simp only [Fintype.sum_prod_type]
+  push_cast
+  rw [mul_sum]
+  refine sum_congr rfl fun u _ => ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun v _ => ?_
+  rw [mul_sum]
+  refine sum_congr rfl fun w _ => ?_
+  by_cases h : u < v ∧ v < w
+  · rw [ite_eq_left h, Cochain.holonomy_ofLt_complete _ h.1 h.2, Perm.movedNorm_apply,
+      card_support_ite_mul_ite_mul_ite_inv]
+    by_cases hx : Xor (G.Adj u v) (Xor (G.Adj u w) (G.Adj v w)) <;> simp [h, hx]
+  · rw [ite_eq_right h, ite_eq_right fun h' => h ⟨h'.1, h'.2.1⟩]
+    simp
+
+end Sym3
+
+end TauCeti

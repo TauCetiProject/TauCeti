@@ -7,9 +7,11 @@ module
 
 public import TauCeti.Combinatorics.CoboundaryExpansion.CheegerConstant
 import TauCeti.Combinatorics.CoboundaryExpansion.StarBound
+import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Basic
 import TauCeti.Combinatorics.CoboundaryExpansion.Sym3.Staircase
 import TauCeti.Combinatorics.CoboundaryExpansion.CrossDegree
 import TauCeti.GroupTheory.Perm.FinThree.Basic
+import Mathlib.Data.Fintype.Card
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Ring
@@ -25,12 +27,18 @@ For every finite linearly ordered `V` with `3 ≤ Fintype.card V`:
 * `h1_complete_fin_four`: the seed value `h1 (complete (Fin 4)) (movedNorm (Fin 3)) = 4 / 3`.
 
 The lower bound is the star bound `card_div_three_le_h1_of_nontrivial`.
-For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`. The seeds are a
-private `k = 4` witness (defect `8` by `decide +kernel`; every gauge costs at least `6` by
-`two_le_sum_distErr_fin_four_of_eq_setOf_isSwap`) and Kozlov's staircase `Sym3.stair (2 t + 1)`
-(defect `t (t + 1) (2 t + 1) / 3`, every gauge costs at least `t (t + 1)`). Balanced replication
-multiplies the defect by `q ^ 3` and the gauge lower bound by `q ^ 2`, so `K_k` carries a cochain
-with `3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
+For the upper bound, every `k ≥ 3` is `4 q` or `(2 t + 1) q` with `t, q ≥ 1`.
+
+* `k = (2 t + 1) q`: Kozlov's staircase graph `SimpleGraph.staircase q t`
+  (`h1_complete_movedNorm_fin_three_le_of_card_eq_mul`).
+* `k = 4 q`: a private `k = 4` seed `w4`, with the three transpositions on the pairs `(1, 2)`,
+  `(1, 3)`, `(2, 3)`, replicated on `Fin 4 ×ₗ Fin q`. Its defect is `8 q ^ 3`
+  (`Cochain.defect_ofLt_lex`; `8` by `decide` for the seed), and every gauge costs at least
+  `6 q ^ 2`: the cost is `3` times the cross-degree pair cost
+  (`Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`), replication multiplies its infimum by at least
+  `q ^ 2` (`card_sq_mul_ciInf_le_ciInf_sum_distErr_lex`) and the seed infimum is `2`
+  (`ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap`). So `h1_le_div` gives
+  `h1 ≤ 8 q ^ 3 / (6 q ^ 2) = 4 q / 3`.
 
 ## References
 
@@ -46,82 +54,99 @@ with `3 N ≤ k D` and `0 < D`, and `h1_le_div` applies.
 
 public section
 
-open Equiv Equiv.Perm TauCeti.TwoComplex
-
 namespace TauCeti
+
+open Finset Equiv Equiv.Perm TwoComplex
 
 namespace Sym3
 
-/-- The `k = 4` seed of Proposition 5: `t12`, `t01`, `t02` on the ordered pairs `(1, 2)`,
-`(1, 3)`, `(2, 3)` and `1` on all other ordered pairs; it is read on `u < v` (via `Sym3.val` and
+/-- The `k = 4` seed of Proposition 5: `swap 1 2`, `swap 0 1`, `swap 0 2` on the ordered pairs
+`(1, 2)`, `(1, 3)`, `(2, 3)` and `1` on all other ordered pairs; it is read on `u < v` (via
 `Cochain.ofLt`). -/
-private def w4 (u v : Fin 4) : S3 :=
-  if u = 1 ∧ v = 2 then t12 else if u = 1 ∧ v = 3 then t01 else if u = 2 ∧ v = 3 then t02 else 1
+private def w4 (u v : Fin 4) : Perm (Fin 3) :=
+  if u = 1 ∧ v = 2 then swap 1 2 else if u = 1 ∧ v = 3 then swap 0 1
+  else if u = 2 ∧ v = 3 then swap 0 2 else 1
 
-private theorem defect_w4 : defect w4 = 8 := by decide +kernel
+private theorem defect_w4 :
+    (Cochain.ofLt (complete (Fin 4)) w4).defect (movedNorm (Fin 3)) = 8 := by
+  rw [Cochain.defect_complete]
+  have h : ∀ p ∈ (univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      movedNorm (Fin 3) ((Cochain.ofLt (complete (Fin 4)) w4).holonomy p.1 p.2.1 p.2.2) =
+        ((#(w4 p.1 p.2.1 * w4 p.2.1 p.2.2 * (w4 p.1 p.2.2)⁻¹).support : ℕ) : ℝ) := by
+    intro p hp
+    rw [mem_filter] at hp
+    rw [Cochain.holonomy_ofLt_complete _ hp.2.1 hp.2.2, movedNorm_apply]
+  rw [sum_congr rfl h, ← Nat.cast_sum]
+  have h8 : ∑ p ∈ (univ.filter fun p : Fin 4 × Fin 4 × Fin 4 => p.1 < p.2.1 ∧ p.2.1 < p.2.2),
+      #(w4 p.1 p.2.1 * w4 p.2.1 p.2.2 * (w4 p.1 p.2.2)⁻¹).support = 8 := by
+    decide
+  rw [h8]
+  norm_num
 
-/-- `w4` is the three-transposition configuration of
-`two_le_sum_distErr_fin_four_of_eq_setOf_isSwap` in degree `3`, whose pair cost is
-`cost w4 β / 3` (`Equiv.Perm.mul_distErr_mul_inv_eq_movedNorm`). -/
-private theorem cost_w4_ge (β : Fin 4 → S3) : 6 ≤ cost w4 β := by
+/-- Every gauge costs at least `6 q ^ 2` against the replication of `w4` on `Fin 4 ×ₗ Fin q`. -/
+private theorem six_mul_sq_le_gaugeDist_lex (q : ℕ) :
+    (6 * q ^ 2 : ℝ) ≤ (Cochain.ofLt (complete (Fin 4 ×ₗ Fin q)) fun x y =>
+      if (ofLex x).1 = (ofLex y).1 then 1 else w4 (ofLex x).1 (ofLex y).1).gaugeDist
+        (movedNorm (Fin 3)) := by
   have h0 : ∀ v : Fin 4, 0 < v → w4 0 v = 1 := by decide
-  have hsw : ({w4 1 2, w4 1 3, w4 2 3} : Set S3) = {σ | σ.IsSwap} := by
+  have hsw : ({w4 1 2, w4 1 3, w4 2 3} : Set (Perm (Fin 3))) = {σ | σ.IsSwap} := by
     rw [setOf_isSwap_perm_fin_three]
     ext σ
-    simp only [w4, t01, t12, t02, Set.mem_insert_iff, Set.mem_singleton_iff]
+    simp only [w4, Set.mem_insert_iff, Set.mem_singleton_iff]
     decide +revert
-  have h := two_le_sum_distErr_fin_four_of_eq_setOf_isSwap w4 h0 hsw β
-  have hc : (cost w4 β : ℝ) = 3 * ∑ e ∈ ({p : Fin 4 × Fin 4 | p.1 < p.2} : Finset (Fin 4 × Fin 4)),
-      distErr (w4 e.1 e.2) (β e.1 * (β e.2)⁻¹) := by
-    rw [Finset.mul_sum, cost_eq_sum, Finset.sum_filter, Fintype.sum_prod_type]
-    push_cast
-    refine Finset.sum_congr rfl fun u _ => Finset.sum_congr rfl fun v _ => ?_
-    split_ifs
-    · rw [moved_eq_movedNorm, ← mul_distErr_mul_inv_eq_movedNorm]
-      norm_num
-    · simp
-  have h6 : (6 : ℝ) ≤ cost w4 β := by rw [hc]; linarith
-  exact_mod_cast h6
+  have hinf := card_sq_mul_ciInf_le_ciInf_sum_distErr_lex (ι := Fin q) w4 3
+  rw [ciInf_sum_distErr_fin_four_three_of_eq_setOf_isSwap w4 h0 hsw, Fintype.card_fin] at hinf
+  refine (Cochain.le_gaugeDist_iff _ _).mpr fun β => ?_
+  rw [Cochain.cost_complete]
+  have hterm : ∀ e ∈ (univ.filter fun p : (Fin 4 ×ₗ Fin q) × (Fin 4 ×ₗ Fin q) => p.1 < p.2),
+      movedNorm (Fin 3) ((β e.1)⁻¹ * (Cochain.ofLt (complete (Fin 4 ×ₗ Fin q)) fun x y =>
+        if (ofLex x).1 = (ofLex y).1 then 1 else w4 (ofLex x).1 (ofLex y).1) e.1 e.2 * β e.2) =
+      3 * distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else w4 (ofLex e.1).1 (ofLex e.2).1)
+        (β e.1 * (β e.2)⁻¹) := by
+    intro e he
+    rw [mem_filter] at he
+    rw [Cochain.ofLt_apply_of_lt _ ((adj_complete _ _).mpr he.2.ne) he.2,
+      ← mul_distErr_mul_inv_eq_movedNorm]
+    norm_num
+  rw [sum_congr rfl hterm, ← mul_sum]
+  have hle := ciInf_le (⟨0, Set.forall_mem_range.2 fun β' => sum_nonneg fun _ _ =>
+    distErr_nonneg _ _⟩ : BddBelow (Set.range fun β' : (Fin 4 ×ₗ Fin q) → Perm (Fin 3) =>
+      ∑ e ∈ (univ.filter fun p : (Fin 4 ×ₗ Fin q) × (Fin 4 ×ₗ Fin q) => p.1 < p.2),
+        distErr (if (ofLex e.1).1 = (ofLex e.2).1 then 1 else w4 (ofLex e.1).1 (ofLex e.2).1)
+          (β' e.1 * (β' e.2)⁻¹))) β
+  linarith
 
-/-- For every `k ≥ 3`, some `Sym(3)` cochain on `K_k` has a positive gauge lower bound `D` with
-`3 N ≤ k D`. -/
-private theorem exists_seed (k : ℕ) (hk : 3 ≤ k) : ∃ (α : Fin k → Fin k → S3) (D : ℕ),
-    0 < D ∧ (∀ β, D ≤ cost α β) ∧ 3 * defect α ≤ k * D := by
-  -- `k = 4 q` or `k = (2 t + 1) q` with `t ≥ 1`
-  obtain ⟨m, q, hq, rfl, hm⟩ : ∃ m q, 0 < q ∧ k = m * q ∧ (m = 4 ∨ ∃ t, 1 ≤ t ∧ m = 2 * t + 1) := by
-    rcases Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt (by omega : 2 < k) with
-      ⟨q, rfl⟩ | ⟨p, hp, ⟨q, rfl⟩, t, rfl⟩
-    · exact ⟨4, q, by omega, rfl, Or.inl rfl⟩
-    · refine ⟨2 * t + 1, q, Nat.pos_of_ne_zero ?_, rfl, Or.inr ⟨t, ?_, rfl⟩⟩
-      · rintro rfl; simp at hk
-      · have := hp.one_lt; omega
-  obtain ⟨α, D, hD, hcost, hN⟩ : ∃ (α : Fin m → Fin m → S3) (D : ℕ),
-      0 < D ∧ (∀ β, D ≤ cost α β) ∧ 3 * defect α ≤ m * D := by
-    rcases hm with rfl | ⟨t, ht, rfl⟩
-    · exact ⟨w4, 6, by norm_num, cost_w4_ge, by rw [defect_w4]⟩
-    · exact ⟨stair (2 * t + 1), t * (t + 1), Nat.mul_pos (by omega) (by omega),
-        cost_stair_ge t, (three_mul_defect_stair t).le⟩
-  refine ⟨rep q α, q ^ 2 * D, Nat.mul_pos (pow_pos hq 2) hD, cost_rep_ge α D hcost, ?_⟩
-  rw [defect_rep]
-  calc 3 * (q ^ 3 * defect α) = q ^ 3 * (3 * defect α) := by ring
-    _ ≤ q ^ 3 * (m * D) := Nat.mul_le_mul_left _ hN
-    _ = m * q * (q ^ 2 * D) := by ring
+/-- The upper bound when `card V = 4 q`. -/
+private theorem h1_complete_le_of_card_eq_four_mul {V : Type*} [Fintype V] [LinearOrder V]
+    {q : ℕ} (hq : 0 < q) (hV : Fintype.card V = 4 * q) :
+    h1 (complete V) (movedNorm (Fin 3)) ≤ (Fintype.card V : ℝ) / 3 := by
+  rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (W := Fin 4 ×ₗ Fin q)
+    (by rw [hV, Fintype.card_lex, Fintype.card_prod, Fintype.card_fin, Fintype.card_fin])]
+  have hgd := six_mul_sq_le_gaugeDist_lex q
+  have hpos : (0 : ℝ) < 6 * q ^ 2 := by positivity
+  refine (h1_le_div (hpos.trans_le hgd)).trans ?_
+  rw [Cochain.defect_ofLt_lex, defect_w4, Fintype.card_fin, hV]
+  calc (q : ℝ) ^ 3 * 8 / _ ≤ (q : ℝ) ^ 3 * 8 / (6 * q ^ 2) :=
+        div_le_div_of_nonneg_left (by positivity) hpos hgd
+    _ = ((4 * q : ℕ) : ℝ) / 3 := by
+        have hq' : (q : ℝ) ≠ 0 := by positivity
+        push_cast
+        field_simp
+        ring
 
 end Sym3
 
-/-- The upper bound on `K_k` for every `k ≥ 3`. -/
-private theorem h1_complete_fin_le (k : ℕ) (hk : 3 ≤ k) :
-    h1 (complete (Fin k)) (movedNorm (Fin 3)) ≤ (k : ℝ) / 3 := by
-  obtain ⟨α, D, hD, hcost, hN⟩ := Sym3.exists_seed k hk
-  set c := Cochain.ofLt (complete (Fin k)) α
-  have hDc : (D : ℝ) ≤ c.gaugeDist (movedNorm (Fin 3)) :=
-    (c.le_gaugeDist_iff _).mpr fun β => by rw [Sym3.cost_ofLt]; exact_mod_cast hcost β
-  have hD' : (0 : ℝ) < D := by exact_mod_cast hD
-  refine (h1_le_div (hD'.trans_le hDc)).trans ?_
-  rw [Sym3.defect_ofLt]
-  refine (div_le_div_of_nonneg_left (Nat.cast_nonneg _) hD' hDc).trans ?_
-  rw [div_le_div_iff₀ hD' (by norm_num)]
-  exact_mod_cast (by omega : Sym3.defect α * 3 ≤ k * D)
+/-- The upper bound `h1 (complete V) (movedNorm (Fin 3)) ≤ card V / 3` for `3 ≤ card V`: write
+`card V` as `4 q` or `(2 t + 1) q` with `t, q ≥ 1`. -/
+private theorem h1_complete_movedNorm_fin_three_le {V : Type*} [Fintype V] [LinearOrder V]
+    (hV : 3 ≤ Fintype.card V) :
+    h1 (complete V) (movedNorm (Fin 3)) ≤ (Fintype.card V : ℝ) / 3 := by
+  rcases Nat.four_dvd_or_exists_odd_prime_and_dvd_of_two_lt (by omega : 2 < Fintype.card V) with
+    ⟨q, hq⟩ | ⟨p, hp, ⟨q, hq⟩, t, rfl⟩
+  · exact Sym3.h1_complete_le_of_card_eq_four_mul (by omega) hq
+  · have ht : 0 < t := by have := hp.one_lt; omega
+    have hq0 : 0 < q := Nat.pos_of_ne_zero fun h => by simp [h] at hq; omega
+    exact h1_complete_movedNorm_fin_three_le_of_card_eq_mul hq0 ht (by rw [hq]; ring)
 
 variable {V : Type*} [Fintype V] [LinearOrder V]
 
@@ -131,8 +156,7 @@ equals `Fintype.card V / 3` whenever `3 ≤ Fintype.card V` (Beasley, Theorem 8,
 theorem h1_complete_movedNorm_fin_three (hV : 3 ≤ Fintype.card V) :
     h1 (complete V) (movedNorm (Fin 3)) = (Fintype.card V : ℝ) / 3 := by
   refine le_antisymm ?_ (card_div_three_le_h1_of_nontrivial hV _ isConjInvariant_movedNorm)
-  rw [h1_complete_eq_of_card_eq isConjInvariant_movedNorm (Fintype.card_fin _).symm]
-  exact h1_complete_fin_le _ hV
+  exact h1_complete_movedNorm_fin_three_le hV
 
 /-- The normalized `Sym(3)` coboundary constant `h1Norm (complete V) (movedNorm (Fin 3))` of the
 complete complex equals `k / (k - 2)` for `k = Fintype.card V ≥ 3`. -/
