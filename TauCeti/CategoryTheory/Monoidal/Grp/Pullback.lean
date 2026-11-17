@@ -53,11 +53,11 @@ theorem exists_grpObj_isMonHom_pullback_iff (i : H ⟶ G) [Mono i] :
   · rintro ⟨h, hi⟩
     let := h
     let := hi
-    obtain ⟨e, he⟩ := (Over.exists_factor_thru_pullback_iff p i η[G]).1
+    obtain ⟨e, he⟩ := (Over.exists_comp_pullback_map_eq_iff p i η[G]).1
       ⟨Functor.OplaxMonoidal.η F ≫ η[F.obj H], by simp [F]⟩
-    obtain ⟨m, hm⟩ := (Over.exists_factor_thru_pullback_iff p i ((i ⊗ₘ i) ≫ μ[G])).1
+    obtain ⟨m, hm⟩ := (Over.exists_comp_pullback_map_eq_iff p i ((i ⊗ₘ i) ≫ μ[G])).1
       ⟨Functor.OplaxMonoidal.δ F H H ≫ μ[F.obj H], by simp [F]⟩
-    obtain ⟨j, hj⟩ := (Over.exists_factor_thru_pullback_iff p i (i ≫ ι[G])).1
+    obtain ⟨j, hj⟩ := (Over.exists_comp_pullback_map_eq_iff p i (i ≫ ι[G])).1
       ⟨ι[F.obj H], by simp⟩
     exact ⟨grpObjOfMono i e m j he hm hj, isMonHom_grpObjOfMono i e m j he hm hj⟩
   · rintro ⟨h, hi⟩

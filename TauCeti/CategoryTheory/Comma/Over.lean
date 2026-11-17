@@ -34,7 +34,7 @@ to the source is a strong epimorphism. This uses Mathlib's `StrongEpi.llp` and `
   an isomorphism.
 * `CategoryTheory.Over.isPullback_pullback_map_left`: base change of a morphism over `S` is a
   pullback of it.
-* `CategoryTheory.Over.exists_factor_thru_pullback_iff`: factorization through a monomorphism
+* `CategoryTheory.Over.exists_comp_pullback_map_eq_iff`: factorization through a monomorphism
   can be checked after base change if the projection to the source is a strong epimorphism.
 * `CategoryTheory.Over.pullbackRightPullbackFstIso_inv_comp_pullback_map`: the identification
   `T ×_S X ≅ T ×_{S'} (S' ×_S X)` is natural in `T` over `S'`.
@@ -82,7 +82,7 @@ theorem pullbackRightPullbackFstIso_inv_comp_pullback_map {C : Type u} [Category
 
 /-- A morphism over `S` factors through a monomorphism if and only if its base change along
 `p` does, provided the projection to its source is a strong epimorphism. -/
-theorem exists_factor_thru_pullback_iff {C : Type u} [Category.{v} C]
+theorem exists_comp_pullback_map_eq_iff {C : Type u} [Category.{v} C]
     {S S' : C} (p : S' ⟶ S) [HasPullbacksAlong p]
     {X Y Z : Over S} [StrongEpi (pullback.fst Z.hom p)]
     (i : X ⟶ Y) [Mono i] (f : Z ⟶ Y) :
@@ -97,7 +97,7 @@ theorem exists_factor_thru_pullback_iff {C : Type u} [Category.{v} C]
     refine ⟨Over.homMk sq.lift ?_, ?_⟩
     · simpa only [Category.assoc, i.w, f.w] using congr($(sq.fac_right) ≫ Y.hom)
     · ext1
-      exact sq.fac_right
+      simpa only [comp_left, homMk_left] using sq.fac_right
   · rintro ⟨g, rfl⟩
     exact ⟨(Over.pullback p).map g, ((Over.pullback p).map_comp g i).symm⟩
 

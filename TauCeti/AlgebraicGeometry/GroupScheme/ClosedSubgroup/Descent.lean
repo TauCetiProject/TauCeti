@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Descent.OverBaseChange
-public import TauCeti.CategoryTheory.EffectiveEpi.Subgroup
+public import TauCeti.CategoryTheory.Monoidal.Grp.Pullback
 
 /-!
 # Effective fpqc descent of closed subgroup schemes
@@ -41,12 +41,12 @@ namespace TauCeti.DescentDatum
 universe u
 
 variable {S S' : Scheme.{u}} {p : S' ⟶ S} [Surjective p] [Flat p] [QuasiCompact p]
-  {G : Grp (Over S)} {H : Over S'} [GrpObj H] (D : DescentDatum p H)
+  {G : Grp (Over S)} {H : Over S'} [GrpObj H] {D : DescentDatum p H}
 
 /-- **Effective fpqc descent of a stable closed subgroup.** A closed subgroup of the base change
 of `G`, whose inclusion respects a descent datum, descends to a closed subgroup of `G`.
 The comparison is simultaneously an isomorphism of descent data and a group homomorphism. -/
-theorem exists_closedSubgroup_baseChange_hom_isIso
+theorem Hom.exists_grp_baseChange_hom_isIso_of_isClosedImmersion
     (i : Hom D (baseChange p G.X)) [IsClosedImmersion i.hom.left] [IsMonHom i.hom] :
     ∃ (K : Grp (Over S)) (j : K ⟶ G) (e : Hom (baseChange p K.X) D),
       IsClosedImmersion j.hom.hom.left ∧ IsIso e.hom ∧ IsMonHom e.hom ∧
@@ -54,7 +54,8 @@ theorem exists_closedSubgroup_baseChange_hom_isIso
   obtain ⟨W, e, he, hfac, hW⟩ := i.exists_baseChange_hom_isIso_of_isClosedImmersion
   let K₀ : Over S := Over.mk (W.hom ≫ G.X.hom)
   let j₀ : K₀ ⟶ G.X := Over.homMk W.hom
-  have : IsClosedImmersion j₀.left := hW
+  have hj₀ : IsClosedImmersion j₀.left := by
+    simpa only [j₀, Over.homMk_left] using hW
   have : Mono j₀ := Over.mono_of_mono_left j₀
   have heq : e.hom ≫ i.hom = (Over.pullback p).map j₀ := by
     simpa only [Hom.comp_hom, baseChangeHom_hom] using congr(Hom.hom $hfac)
@@ -62,7 +63,8 @@ theorem exists_closedSubgroup_baseChange_hom_isIso
   let hlocal : GrpObj ((Over.pullback p).obj K₀) := GrpObj.ofIso (asIso e.hom).symm
   have hcomp : IsMonHom e.hom := by
     have := isMonHom_ofIso (asIso e.hom).symm
-    exact inferInstanceAs (IsMonHom ((asIso e.hom).symm.inv))
+    rw [← asIso_hom e.hom, ← Iso.symm_inv]
+    infer_instance
   have hjlocal : IsMonHom ((Over.pullback p).map j₀) := by
     rw [← heq]
     infer_instance
@@ -76,12 +78,14 @@ theorem exists_closedSubgroup_baseChange_hom_isIso
       (Functor.grpObjObj (F := Over.pullback p) (G := K₀)).toMonObj inferInstance e.hom := by
     rw [hstructures]
     exact hcomp
-  exact ⟨Grp.mk K₀, Grp.ofHom j₀, e, hW, he, hehom, hfac⟩
+  refine ⟨Grp.mk K₀, Grp.homMk j₀, e, ?_, he, hehom, ?_⟩
+  · simpa only [Grp.homMk_hom_hom] using hj₀
+  · simpa only [Grp.homMk_hom_hom, j₀] using hfac
 
 /-- **Effective fpqc descent of finite locally free subgroup schemes, with rank.** A stable
 closed subgroup which is finite, flat and locally of finite presentation over the cover descends
 with these three properties. Its finite-flat rank is pulled back from the descended subgroup. -/
-theorem exists_finiteLocallyFree_closedSubgroup_baseChange_hom_isIso
+theorem Hom.exists_finiteLocallyFree_grp_baseChange_hom_isIso_of_isClosedImmersion
     [IsFinite H.hom] [Flat H.hom] [LocallyOfFinitePresentation H.hom]
     (i : Hom D (baseChange p G.X)) [IsClosedImmersion i.hom.left] [IsMonHom i.hom] :
     ∃ (K : Grp (Over S)) (j : K ⟶ G) (e : Hom (baseChange p K.X) D),
@@ -89,7 +93,7 @@ theorem exists_finiteLocallyFree_closedSubgroup_baseChange_hom_isIso
         i.comp e = baseChangeHom p j.hom.hom ∧
         IsFinite K.X.hom ∧ Flat K.X.hom ∧ LocallyOfFinitePresentation K.X.hom ∧
         H.hom.finrank = K.X.hom.finrank ∘ p := by
-  obtain ⟨K, j, e, hj, he, hehom, hfac⟩ := D.exists_closedSubgroup_baseChange_hom_isIso i
+  obtain ⟨K, j, e, hj, he, hehom, hfac⟩ := i.exists_grp_baseChange_hom_isIso_of_isClosedImmersion
   have : IsFinite K.X.hom := e.mem_of_descendsAlong (P := @IsFinite) inferInstance
   have : Flat K.X.hom := e.mem_of_descendsAlong (P := @Flat) inferInstance
   have : LocallyOfFinitePresentation K.X.hom :=
