@@ -163,6 +163,12 @@ theorem preimage_range (h : IsBicollar f b) : b ⁻¹' range f = univ ×ˢ ({0} 
   have hb : b (z, 0) = b (y, t) := by rw [h.apply_zero z, ← hz]
   exact ((Prod.ext_iff.1 (h.isOpenEmbedding.injective hb)).2).symm
 
+/-- A point of a bicollar lies in the collared image exactly at depth zero. -/
+theorem apply_mem_range_iff (h : IsBicollar f b) {p : N × ℝ} :
+    b p ∈ range f ↔ p.2 = 0 := by
+  simpa only [mem_preimage, mem_prod, mem_univ, true_and, mem_singleton_iff] using
+    Set.ext_iff.mp h.preimage_range p
+
 /-- Inside a bicollar the complement of the collared image splits into the two sides `t > 0` and
 `t < 0` of the collar. This is what makes the collar two-sided, and it is exactly what fails for
 a wild embedding. -/

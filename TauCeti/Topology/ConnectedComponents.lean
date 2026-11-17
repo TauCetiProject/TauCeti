@@ -44,6 +44,9 @@ space by them.
   closure of that component only inside `U`.
 * `IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdiff`: a component of `U \ S`
   that is not all of a preconnected `U` has closure meeting `S ∩ U`.
+* `Set.closure_connectedComponentIn_inter_self`: a component is closed relative to its set.
+* `TauCeti.connectedComponent_eq_or_eq_of_forall_isClopen`: two points meeting every nonempty
+  clopen set represent all connected components.
 * `IsClosed.connectedComponentIn`: a connected component of a closed set is closed.
 * `TauCeti.exists_isClopen_between_connectedComponent`: in a compact Hausdorff space, a clopen set
   sits between the connected component of a point and any open set containing it.
@@ -271,6 +274,51 @@ theorem _root_.IsPreconnected.exists_mem_inter_closure_connectedComponentIn_sdif
   by_contra! h
   exact huz (hU.subset_connectedComponentIn_of_inter_closure_subset hUS hz.1 hz
     (fun p hp => ⟨hp.1, fun hpS => h p ⟨hpS, hp.1⟩ hp.2⟩) hu)
+
+/-- The closure of a connected component in a set meets that set exactly in the component. -/
+@[simp]
+theorem _root_.Set.closure_connectedComponentIn_inter_self (s : Set X) (x : X) :
+    closure (connectedComponentIn s x) ∩ s = connectedComponentIn s x := by
+  by_cases hx : x ∈ s
+  · refine Subset.antisymm (fun y hy ↦ ?_)
+      (subset_inter subset_closure (connectedComponentIn_subset s x))
+    have hcc : (⟨y, hy.2⟩ : s) ∈ closure (connectedComponent (⟨x, hx⟩ : s)) := by
+      rw [closure_subtype, ← connectedComponentIn_eq_image hx]
+      exact hy.1
+    rw [connectedComponentIn_eq_image hx]
+    exact ⟨⟨y, hy.2⟩, isClosed_connectedComponent.closure_subset hcc, rfl⟩
+  · simp [connectedComponentIn_eq_empty hx]
+
+/-- If every nonempty clopen set contains one of two fixed points, every connected component
+is the component of one of those points. -/
+theorem connectedComponent_eq_or_eq_of_forall_isClopen (a b x : X)
+    (h : ∀ s : Set X, IsClopen s → s.Nonempty → a ∈ s ∨ b ∈ s) :
+    connectedComponent x = connectedComponent a ∨ connectedComponent x = connectedComponent b := by
+  by_cases hc : IsPreconnected (univ : Set X)
+  · let : PreconnectedSpace X := ⟨hc⟩
+    simp
+  obtain ⟨s, t, hs, ht, hsn, htn, hst, hstU⟩ := isClopen_univ.not_isPreconnected_iff.mp hc
+  have hconn {s t : Set X} (hs : IsClopen s) (ht : IsClopen t) (htn : t.Nonempty)
+      (hst : Disjoint s t) : IsPreconnected s := by
+    refine hs.isPreconnected_iff.mpr fun u v hu hv hun hvn huv heq ↦ ?_
+    have h₁ := h u hu hun
+    have h₂ := h v hv hvn
+    have h₃ := h t ht htn
+    simp only [disjoint_left] at hst huv
+    grind
+  have hsC {y : X} (hy : y ∈ s) : connectedComponent y = s :=
+    (hs.connectedComponent_subset hy).antisymm ((hconn hs ht htn hst).subset_connectedComponent hy)
+  have htC {y : X} (hy : y ∈ t) : connectedComponent y = t :=
+    (ht.connectedComponent_subset hy).antisymm
+      ((hconn ht hs hsn hst.symm).subset_connectedComponent hy)
+  have hx : x ∈ s ∪ t := hstU ▸ mem_univ x
+  rcases hx with hx | hx
+  · rcases h s hs hsn with ha | hb
+    · exact .inl ((hsC hx).trans (hsC ha).symm)
+    · exact .inr ((hsC hx).trans (hsC hb).symm)
+  · rcases h t ht htn with ha | hb
+    · exact .inl ((htC hx).trans (htC ha).symm)
+    · exact .inr ((htC hx).trans (htC hb).symm)
 
 /-- A connected component of a closed set is closed. -/
 protected theorem _root_.IsClosed.connectedComponentIn {F : Set X} {x : X} (hF : IsClosed F) :
