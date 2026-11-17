@@ -5,13 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.CharP.Invertible
+public import Mathlib.LinearAlgebra.QuadraticForm.TensorProduct
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.Gram
+public import TauCeti.LinearAlgebra.IntegralLattice.OrthogonalGroup
 public import TauCeti.LinearAlgebra.IntegralLattice.Rationalization
 public import TauCeti.NumberTheory.Padics.LocalGlobalLattice
 public import TauCeti.RingTheory.TensorProduct.IsBaseChange
+import TauCeti.Algebra.Module.Submodule.Map
 import TauCeti.LinearAlgebra.BilinearForm.Isometry.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Polar
 
 /-!
 # Localizing an integral lattice at a prime
@@ -58,6 +63,8 @@ local data of the genus over to the rational quadratic spaces.
   localized integral form to `ℚ_p` is the completed rational form.
 * `TauCeti.IntegralLattice.completedIsometryEquiv`: an isometry `L_p ≅ M_p` of the localized
   integral forms extends to an isometry `V_p ≅ W_p` of the completed rational forms.
+* `TauCeti.IntegralLattice.localIsometryEquivOfMapsRange`: conversely, an isometry `V_p ≅ W_p`
+  carrying the image of `L_p` onto that of `M_p` restricts to an isometry `L_p ≅ M_p`.
 
 ## Main results
 
@@ -78,8 +85,13 @@ local data of the genus over to the rational quadratic spaces.
 * `TauCeti.IntegralLattice.nondegenerate_localIntegralForm_iff` and
   `TauCeti.IntegralLattice.nondegenerate_completedRationalForm_iff`: both local forms are
   nondegenerate exactly when the rational form of `L` is.
+* `TauCeti.IntegralLattice.orthogonalGroup_norm_baseChange`: the local orthogonal group `O(V_p)`
+  of the completed norm form is the isometry group of the completed rational form.
 * `TauCeti.IntegralLattice.Isometry.localizationToCompletion_localCarrierIsometry`: the canonical
   map is natural in isometries.
+* `TauCeti.IntegralLattice.localIntegralForm_equivalent_iff_exists_isometryEquiv`: the integral
+  localizations are isometric exactly when an isometry of the completions carries one image onto
+  the other.
 * `TauCeti.IntegralLattice.completedRationalForm_equivalent_of_localIntegralForm_equivalent`:
   isometric integral localizations have isometric completed rational spaces.
 
@@ -151,6 +163,20 @@ theorem isSymm_completedRationalForm : (L.completedRationalForm p).IsSymm :=
   LinearMap.BilinForm.isSymm_iff.mpr
     (LinearMap.BilinForm.IsSymm.baseChange ℚ_[p]
       (LinearMap.BilinForm.isSymm_iff.mp L.isSymm))
+
+/-- The completed norm form is the norm form of the completed rational form. -/
+theorem norm_baseChange :
+    L.norm.baseChange ℚ_[p] = (L.completedRationalForm p).toQuadraticMap := by
+  ext v
+  simp [norm_apply]
+
+/-- The local orthogonal group `O(V_p)` is the isometry group of the completed rational form. -/
+theorem orthogonalGroup_norm_baseChange :
+    QuadraticMap.orthogonalGroup (L.norm.baseChange ℚ_[p]) =
+      (L.completedRationalForm p).isometryGroup := by
+  rw [norm_baseChange]
+  exact QuadraticMap.orthogonalGroup_toQuadraticMap_eq_isometryGroup
+    ((isUnit_of_invertible (2 : ℚ_[p])).isSMulRegular ℚ_[p]) (L.isSymm_completedRationalForm p)
 
 /-- The canonical `ℤ_p`-linear map from the integral localization of `L` to the completion of its
 ambient space, sending `a ⊗ x` to `a ⊗ x`. -/
@@ -348,6 +374,77 @@ theorem completedIsometryEquiv_localizationToCompletion
   simp only [LinearMap.BilinForm.IsometryEquiv.trans_apply,
     LinearMap.BilinForm.IsometryEquiv.symm_apply_apply]
   simp
+
+/-- The linear equivalence `L_p ≃ M_p` underlying `localIsometryEquivOfMapsRange`. -/
+private noncomputable def localLinearEquivOfMapsRange
+    (φ : (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p))
+    (hφ : ∀ x, φ x ∈ LinearMap.range (M.localizationToCompletion p) ↔
+      x ∈ LinearMap.range (L.localizationToCompletion p)) :
+    L.LocalCarrier p ≃ₗ[ℤ_[p]] M.LocalCarrier p :=
+  have hmap : (LinearMap.range (L.localizationToCompletion p)).map
+      (φ.toLinearEquiv.restrictScalars ℤ_[p] : _ →ₗ[ℤ_[p]] _) =
+        LinearMap.range (M.localizationToCompletion p) :=
+    Submodule.map_equiv_eq_iff.mpr hφ
+  (LinearEquiv.ofInjective _ (L.localizationToCompletion_injective p)).trans
+    ((LinearEquiv.ofSubmodules (φ.toLinearEquiv.restrictScalars ℤ_[p]) _ _ hmap).trans
+      (LinearEquiv.ofInjective _ (M.localizationToCompletion_injective p)).symm)
+
+private theorem localizationToCompletion_localLinearEquivOfMapsRange
+    (φ : (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p))
+    (hφ : ∀ x, φ x ∈ LinearMap.range (M.localizationToCompletion p) ↔
+      x ∈ LinearMap.range (L.localizationToCompletion p)) (x : L.LocalCarrier p) :
+    M.localizationToCompletion p (localLinearEquivOfMapsRange p φ hφ x) =
+      φ (L.localizationToCompletion p x) := by
+  simp [localLinearEquivOfMapsRange, LinearEquiv.ofInjective_apply]
+
+private theorem localLinearEquivOfMapsRange_map_app
+    (φ : (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p))
+    (hφ : ∀ x, φ x ∈ LinearMap.range (M.localizationToCompletion p) ↔
+      x ∈ LinearMap.range (L.localizationToCompletion p)) (x y : L.LocalCarrier p) :
+    M.localIntegralForm p (localLinearEquivOfMapsRange p φ hφ x)
+        (localLinearEquivOfMapsRange p φ hφ y) = L.localIntegralForm p x y := by
+  apply FaithfulSMul.algebraMap_injective ℤ_[p] ℚ_[p]
+  rw [← completedRationalForm_localizationToCompletion,
+    ← completedRationalForm_localizationToCompletion,
+    localizationToCompletion_localLinearEquivOfMapsRange,
+    localizationToCompletion_localLinearEquivOfMapsRange, φ.map_app]
+
+/-- An isometry of the completed rational spaces which carries the image of `L_p` onto that of
+`M_p` restricts to an isometry of the integral localizations. -/
+noncomputable def localIsometryEquivOfMapsRange
+    (φ : (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p))
+    (hφ : ∀ x, φ x ∈ LinearMap.range (M.localizationToCompletion p) ↔
+      x ∈ LinearMap.range (L.localizationToCompletion p)) :
+    (L.localIntegralForm p).IsometryEquiv (M.localIntegralForm p) where
+  toLinearEquiv := localLinearEquivOfMapsRange p φ hφ
+  map_app' := localLinearEquivOfMapsRange_map_app p φ hφ
+
+/-- The restricted isometry agrees with the completed one along the canonical maps. -/
+@[simp]
+theorem localizationToCompletion_localIsometryEquivOfMapsRange
+    (φ : (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p))
+    (hφ : ∀ x, φ x ∈ LinearMap.range (M.localizationToCompletion p) ↔
+      x ∈ LinearMap.range (L.localizationToCompletion p)) (x : L.LocalCarrier p) :
+    M.localizationToCompletion p (localIsometryEquivOfMapsRange p φ hφ x) =
+      φ (L.localizationToCompletion p x) :=
+  localizationToCompletion_localLinearEquivOfMapsRange p φ hφ x
+
+/-- **Integral local isometry is completed isometry preserving the integral lattices.** The
+integral localizations of `L` and `M` at `p` are isometric exactly when some isometry of their
+completed rational spaces carries the image of `L_p` onto that of `M_p`. -/
+theorem localIntegralForm_equivalent_iff_exists_isometryEquiv :
+    (L.localIntegralForm p).Equivalent (M.localIntegralForm p) ↔
+      ∃ φ : (L.completedRationalForm p).IsometryEquiv (M.completedRationalForm p),
+        ∀ x, φ x ∈ LinearMap.range (M.localizationToCompletion p) ↔
+          x ∈ LinearMap.range (L.localizationToCompletion p) := by
+  refine ⟨fun ⟨e⟩ ↦ ⟨completedIsometryEquiv p e, fun x ↦ ⟨?_, ?_⟩⟩,
+    fun ⟨φ, hφ⟩ ↦ ⟨localIsometryEquivOfMapsRange p φ hφ⟩⟩
+  · rintro ⟨y, hy⟩
+    have h := completedIsometryEquiv_localizationToCompletion p e (e.symm y)
+    rw [e.apply_symm_apply] at h
+    exact ⟨e.symm y, (completedIsometryEquiv p e).injective (h.trans hy)⟩
+  · rintro ⟨y, rfl⟩
+    exact ⟨e y, (completedIsometryEquiv_localizationToCompletion p e y).symm⟩
 
 /-- **Integral local isometry implies rational local isometry**: if the integral localizations of
 `L` and `M` at `p` are isometric, then so are their completed rational spaces. -/
