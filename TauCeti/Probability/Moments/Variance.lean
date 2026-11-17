@@ -47,6 +47,9 @@ variances and Borel--Cantelli almost-sure convergence to the mean from summable 
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
+* `MeasureTheory.MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul`: on a probability
+  space, the `k`-th absolute moment of a function in `L^(2k)` is at most the square root of its
+  `2k`-th absolute moment.
 * `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
   composition with a measure-preserving measurable embedding.
 * `ProbabilityTheory.tendsto_variance_of_tendsto_eLpNorm_sub`: variance is continuous under
@@ -131,6 +134,22 @@ theorem integral_le_sqrt_integral_sq {Ω : Type*} [MeasurableSpace Ω] {μ : Mea
   have h := ProbabilityTheory.variance_nonneg g μ
   rw [ProbabilityTheory.variance_eq_sub hg] at h
   simpa only [Pi.pow_apply, sub_nonneg] using h
+
+/-- On a probability space, the `k`-th absolute moment of a function in `L^(2k)` is at most the
+square root of its `2k`-th absolute moment. -/
+theorem MemLp.integral_norm_pow_le_sqrt_integral_norm_pow_two_mul
+    {Ω E : Type*} [MeasurableSpace Ω] [NormedAddCommGroup E] {μ : Measure Ω}
+    [IsProbabilityMeasure μ] {f : Ω → E} {k : ℕ} (hf : MemLp f (2 * k : ℕ) μ) :
+    ∫ x, ‖f x‖ ^ k ∂μ ≤ √(∫ x, ‖f x‖ ^ (2 * k) ∂μ) := by
+  rcases eq_or_ne k 0 with rfl | hk
+  · simp
+  have hk0 : (k : ENNReal) ≠ 0 := Nat.cast_ne_zero.mpr hk
+  have hmem : MemLp (fun x ↦ ‖f x‖ ^ k) 2 μ := by
+    have h := hf.norm_rpow_div (k : ℕ)
+    rw [Nat.cast_mul, Nat.cast_ofNat,
+      ENNReal.mul_div_cancel_right hk0 (ENNReal.natCast_ne_top _)] at h
+    simpa only [ENNReal.toReal_natCast, Real.rpow_natCast] using h
+  simpa only [← pow_mul, mul_comm k 2] using integral_le_sqrt_integral_sq hmem
 
 end MeasureTheory
 

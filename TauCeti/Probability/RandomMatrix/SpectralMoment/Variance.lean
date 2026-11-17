@@ -304,23 +304,15 @@ theorem tendsto_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix_probab
     ∫ x, x ^ (2 * m + 1) ∂((wignerMatrix (ξ n) (η n) (n + 1) ω).spectralMeasure
       (wignerMatrix_isHermitian (ξ n) (η n) ω (n + 1)) : Measure ℝ)
   have hle : ((2 * m + 1 : ℕ) : ℝ≥0∞) ≤ (2 * (2 * m + 1) : ℕ) := by exact_mod_cast (by omega)
-  have hr0 : ((2 * m + 1 : ℕ) : ℝ≥0∞) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
-  have hsq {n : ℕ} {E : Type} [NormedAddCommGroup E] {f : Ω n → E}
-      (hfp : MemLp f (2 * (2 * m + 1) : ℕ) (P n))
-      (hf : ∫ ω, ‖f ω‖ ^ (2 * (2 * m + 1)) ∂P n ≤ B) :
-      ∫ ω, ‖f ω‖ ^ (2 * m + 1) ∂P n ≤ √B :=
-    (integral_le_sqrt_integral_sq (by
-      have h := hfp.norm_rpow_div (2 * m + 1 : ℕ)
-      rw [Nat.cast_mul, Nat.cast_ofNat,
-        ENNReal.mul_div_cancel_right hr0 (ENNReal.natCast_ne_top _)] at h
-      simpa only [ENNReal.toReal_natCast, Real.rpow_natCast] using h)).trans <|
-      Real.sqrt_le_sqrt (by simpa only [← pow_mul, mul_comm _ 2] using hf)
   have hmean : Tendsto (fun n ↦ |∫ ω', M n ω' ∂P n|) atTop (𝓝 0) := by
     simpa only [abs_zero] using
       (tendsto_integral_integral_pow_two_mul_add_one_spectralMeasure_wignerMatrix
         hindep hξzero hηzero (fun n ij ↦ (hξp n ij).mono_exponent hle)
         (fun n i ↦ (hηp n i).mono_exponent hle)
-        (fun n ij ↦ hsq (hξp n ij) (hξ n ij)) (fun n i ↦ hsq (hηp n i) (hη n i))).abs
+        (fun n ij ↦ (hξp n ij).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
+          (Real.sqrt_le_sqrt (hξ n ij)))
+        (fun n i ↦ (hηp n i).integral_norm_pow_le_sqrt_integral_norm_pow_two_mul.trans
+          (Real.sqrt_le_sqrt (hη n i)))).abs
   have hev : ∀ᶠ n in atTop,
       P n {ω | ε ≤ |M n ω|} ≤ P n {ω | ε / 2 ≤ |M n ω - ∫ ω', M n ω' ∂P n|} := by
     filter_upwards [hmean.eventually (gt_mem_nhds (half_pos hε))] with n hn
