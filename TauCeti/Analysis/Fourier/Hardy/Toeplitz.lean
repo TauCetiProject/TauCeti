@@ -132,8 +132,10 @@ theorem inner_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, Submodule.subtypeL_apply,
     Lp.multiplicationOperator_apply]
 
-/-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`. -/
-@[simp]
+/-- The Hardy coordinates of `T_a f` are the nonnegative Fourier coefficients of `a f`.
+
+Not a `simp` lemma: on the right-hand side, `simp` tries `SetLike.val_smul`, whose search for an
+`SMul` of `L^∞` on almost-everywhere-equal functions times out in large environments. -/
 theorem hardyBasis_repr_toeplitz_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1)))
     (f : HardySpace) (i : ℕ) :
     hardyBasis.repr (toeplitz a f) i =
@@ -373,7 +375,7 @@ private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAd
     rw [inner_toeplitz_apply, Submodule.coe_mk, Submodule.coe_mk, ← hcomm]
     simp only [← Lp.multiplicationOperator_apply]
     exact ((LinearMap.norm_map_iff_inner_map_map
-      (Lp.multiplicationOperator (E := ℂ) (fourierLp (T := 1) ∞ N))).1
+      (Lp.multiplicationOperator (E := ℂ) (p := 2) (fourierLp (T := 1) ∞ N)).toLinearMap).1
         (Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one hu) f
           (Lp.multiplicationOperator a g)).symm
   have hnorm (h : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) :
@@ -391,7 +393,7 @@ private theorem norm_inner_smul_le_of_mem_span (a : Lp ℂ ∞ (AddCircle.haarAd
 /-- Multiplication by `a` on circle `L²` has norm at most the norm of `T_a`. -/
 private theorem norm_multiplicationOperator_le_norm_toeplitz
     (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
-    ‖Lp.multiplicationOperator (E := ℂ) a‖ ≤ ‖toeplitz a‖ := by
+    ‖Lp.multiplicationOperator (E := ℂ) (p := 2) a‖ ≤ ‖toeplitz a‖ := by
   have hD : Dense (Submodule.span ℂ (Set.range (fourierBasis (T := 1))) :
       Set (Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))) :=
     Submodule.dense_iff_topologicalClosure_eq_top.2 (fourierBasis (T := 1)).dense_span
@@ -417,7 +419,7 @@ symbol. -/
 theorem norm_toeplitz (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
     ‖toeplitz a‖ = ‖a‖ := by
   refine le_antisymm (norm_toeplitz_le a) ?_
-  rw [← Lp.norm_multiplicationOperator (E := ℂ) a]
+  rw [← Lp.norm_multiplicationOperator (E := ℂ) (p := 2) a]
   exact norm_multiplicationOperator_le_norm_toeplitz a
 
 /-- The Toeplitz symbol map `a ↦ T_a` is an isometry. -/
