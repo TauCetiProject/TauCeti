@@ -77,11 +77,15 @@ namespace TauCeti
 
 namespace Symbol
 
-variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
-  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
-  {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
+variable {n : ℕ}
 
 /-! ### The commutator on Schwartz functions -/
+
+section Normed
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+  {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
 
 /-- **The commutator of the Bessel potential with a multiplication operator.** For a smooth
 compactly supported `f`, the commutator `J^s M_f - M_f J^s` of Mathlib's Bessel potential `J^s`
@@ -101,14 +105,17 @@ theorem besselPotentialCLM_comp_quantizeUniformCLM_ofSpatial_sub
           (h.isUniform.comp (isUniform_besselPotential s)) +
         quantizeUniformCLM ((besselPotential s).sharpRemainder (ofSpatial f hf) h 1)
           ((isUniform_besselPotential s).sharpRemainder h 1) := by
-    ext u x
-    rw [add_apply, add_apply, quantizeUniformCLM_apply, quantizeUniformCLM_apply,
-      quantizeUniformCLM_apply, sharp_eq_comp_add_sharpRemainder_one, coefficient_add,
-      quantizeSchwartzValue_coefficient_add, coefficient_inclusion]
-    congr 2
-    ext1 p
-    simp [coefficient_comp, coefficient_ofSpatial, ContinuousLinearMap.comp_smul,
-      ContinuousLinearMap.smul_comp]
+    -- The scalar weight `⟨ξ / 2π⟩ ^ s` commutes with `f(x)`, so the leading term `J ∘ f` of the
+    -- expansion is also the product `f ∘ J` in the other order.
+    have hc := (isUniform_besselPotential s).comp h.isUniform
+    have hr := (isUniform_besselPotential s).sharpRemainder h 1
+    have hr' := hr.inclusion (sub_le_self _ (Nat.cast_nonneg 1))
+    rw [quantizeUniformCLM_congr _ (hc.add hr')
+        (congrArg coefficient (sharp_eq_comp_add_sharpRemainder_one h)),
+      quantizeUniformCLM_add hc hr', quantizeUniformCLM_inclusion hr,
+      quantizeUniformCLM_congr hc (h.isUniform.comp (isUniform_besselPotential s))
+        (funext fun p ↦ by
+          simp [coefficient_comp, ContinuousLinearMap.comp_smul, ContinuousLinearMap.smul_comp])]
   have hleft : SchwartzMap.besselPotentialCLM (E := CoordinateSpace n) (F := W) (s : ℂ) ∘L
       quantizeUniformCLM (ofSpatial f hf) h.isUniform =
       quantizeUniformCLM ((besselPotential s).sharp (ofSpatial f hf) h)
@@ -121,6 +128,14 @@ theorem besselPotentialCLM_comp_quantizeUniformCLM_ofSpatial_sub
     rw [HasCompactSupport.toSchwartzMap_toFun, quantizeUniformCLM_apply]
   rw [hleft, hsharp, SchwartzMap.besselPotentialCLM_ofReal,
     quantizeUniformCLM_comp_besselMultiplier, add_sub_cancel_left]
+
+end Normed
+
+section Hilbert
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+  {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f)
 
 /-- **The commutator of the Bessel potential with a multiplication operator has order `s - 1`.**
 For a smooth compactly supported `f`, the commutator `J^s M_f - M_f J^s` extends to a bounded
@@ -157,27 +172,7 @@ theorem exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_ofSpatial_le
     (hasSobolevExtension_besselPotentialCLM_comp_quantizeUniformCLM_ofSpatial_sub hf h s
       (s - 1))
   rw [show s - 1 - s + 1 = 0 by ring] at hC
-  have hfc : HasCompactSupport f := (hasCompactSpatialSupport_ofSpatial_iff hf).1 h
-  have hbdd : BddAbove (Set.range fun x ↦ ‖f x‖) :=
-    hf.continuous.norm.bddAbove_range_of_hasCompactSupport hfc.norm
   set M := quantizeUniformCLM (ofSpatial f hf) h.isUniform
-  -- Multiplication by `f` is bounded on `L²` by the supremum of `‖f‖`.
-  have hM (v : 𝓢(CoordinateSpace n, V)) :
-      ‖SchwartzMap.toBesselPotentialSpaceCLM 0 2 (M v)‖ ≤
-        (⨆ x, ‖f x‖) * ‖SchwartzMap.toBesselPotentialSpaceCLM 0 2 v‖ := by
-    have hS : 0 ≤ ⨆ x, ‖f x‖ := Real.iSup_nonneg fun x ↦ norm_nonneg (f x)
-    rw [SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
-      SchwartzMap.norm_toBesselPotentialSpaceCLM_zero, ← ENNReal.toReal_ofReal hS,
-      ← ENNReal.toReal_mul]
-    refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      (v.memLp 2).eLpNorm_ne_top) (eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-        (M v).continuous.aestronglyMeasurable (.of_forall fun x ↦ ?_) 2)
-    have hMx : M v x = f x (v x) := by
-      rw [quantizeUniformCLM_apply, funext (coefficient_ofSpatial f hf)]
-      exact quantizeSchwartzValue_comp_fst f v x
-    rw [hMx]
-    exact ((f x).le_opNorm (v x)).trans
-      (mul_le_mul_of_nonneg_right (le_ciSup hbdd x) (norm_nonneg _))
   refine ⟨C, hC0, fun u ↦ ?_⟩
   set J := SchwartzMap.besselPotentialCLM (E := CoordinateSpace n) (F := W) (s : ℂ)
   set J' := SchwartzMap.besselPotentialCLM (E := CoordinateSpace n) (F := V) (s : ℂ)
@@ -194,7 +189,8 @@ theorem exists_norm_toBesselPotentialSpaceCLM_quantizeUniformCLM_ofSpatial_le
     _ ≤ (⨆ x, ‖f x‖) * ‖SchwartzMap.toBesselPotentialSpaceCLM s 2 u‖ +
           C * ‖SchwartzMap.toBesselPotentialSpaceCLM (s - 1) 2 u‖ := by
         gcongr
-        · refine (hM _).trans_eq ?_
+        · refine (norm_toBesselPotentialSpaceCLM_zero_quantizeUniformCLM_ofSpatial_le hf
+            h.isUniform 2 _).trans_eq ?_
           rw [SchwartzMap.norm_toBesselPotentialSpaceCLM_besselPotentialCLM, Complex.ofReal_re,
             zero_add]
         · exact hC u
@@ -223,18 +219,20 @@ theorem exists_norm_quantizeSobolev_ofSpatial_le (h : (ofSpatial f hf).HasCompac
       ((continuous_const.mul continuous_norm).add (continuous_const.mul
         (continuous_norm.comp (BesselPotentialSpace.inclusion _).continuous)))
   | ih u =>
+    -- `Op(f)` lands in `H^{s - 0}`; transport back to `H^s` along the inclusion for `s - 0 ≤ s`.
     have hq : (ofSpatial f hf).quantizeSobolev h s (SchwartzMap.toBesselPotentialSpaceCLM s 2 u) =
-        SchwartzMap.toBesselPotentialSpaceCLM (s - 0) 2
-          (quantizeUniformCLM (ofSpatial f hf) h.isUniform u) := by
+        BesselPotentialSpace.inclusion (sub_zero s).le (SchwartzMap.toBesselPotentialSpaceCLM s 2
+          (quantizeUniformCLM (ofSpatial f hf) h.isUniform u)) := by
+      rw [BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM]
       refine BesselPotentialSpace.ext ?_
       ext φ
       rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply,
         SchwartzMap.toDistr_toBesselPotentialSpaceCLM]
       simp
-    rw [hq, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM,
-      SchwartzMap.norm_toBesselPotentialSpaceCLM, sub_zero,
-      ← SchwartzMap.norm_toBesselPotentialSpaceCLM]
-    exact hC u
+    rw [hq, BesselPotentialSpace.inclusion_toBesselPotentialSpaceCLM (sub_le_self s zero_le_one)]
+    exact (BesselPotentialSpace.norm_inclusion_apply_le _ _).trans (hC u)
+
+end Hilbert
 
 end Symbol
 
