@@ -62,10 +62,9 @@ the factors are contractions, and fixing one coordinate embeds the other factor 
 * `ContinuousLinearMap.norm_withLpProdMap` — `‖f ⊕ g‖ = max ‖f‖ ‖g‖`.
 * `WithLp.inlL`, `WithLp.inrL` — continuous linear inclusions of the factors into
   `WithLp p (α × β)`.
-* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`,
-  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inl_le_one`,
-  `WithLp.norm_prodContinuousLinearEquiv_symm_comp_inr_le_one` — the projections onto and the
-  inclusions of the factors are contractions.
+* `WithLp.norm_fstL_le_one`, `WithLp.norm_sndL_le_one`, `WithLp.norm_inlL_le_one`,
+  `WithLp.norm_inrL_le_one` — the projections onto and the inclusions of the factors are
+  contractions.
 * `WithLp.isometry_toLp_prodMk_left`, `WithLp.isometry_toLp_prodMk_right` — fixing one coordinate
   embeds the other factor isometrically into `WithLp p (α × β)`.
 -/
@@ -521,18 +520,6 @@ theorem norm_inlL_le_one : ‖inlL p 𝕜 α β‖ ≤ 1 :=
 /-- The inclusion of the second factor into `WithLp p (α × β)` is a contraction. -/
 theorem norm_inrL_le_one : ‖inrL p 𝕜 α β‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by simp
-
-/-- The inclusion of the first factor into `WithLp p (α × β)` is a contraction. -/
-theorem norm_prodContinuousLinearEquiv_symm_comp_inl_le_one :
-    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.inl 𝕜 α β‖ ≤ 1 :=
-  norm_inlL_le_one p 𝕜 α β
-
-/-- The inclusion of the second factor into `WithLp p (α × β)` is a contraction. -/
-theorem norm_prodContinuousLinearEquiv_symm_comp_inr_le_one :
-    ‖(prodContinuousLinearEquiv p 𝕜 α β).symm.toContinuousLinearMap ∘L
-      ContinuousLinearMap.inr 𝕜 α β‖ ≤ 1 :=
-  norm_inrL_le_one p 𝕜 α β
 
 end Contraction
 

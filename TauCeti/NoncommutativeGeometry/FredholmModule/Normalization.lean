@@ -17,6 +17,7 @@ import Mathlib.Analysis.Calculus.DSlope
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import TauCeti.Algebra.Algebra.Unitization
 
 /-!
 # Normalization, doubling, and forced unitization of Fredholm modules
@@ -224,36 +225,21 @@ theorem isDegenerate_zeroRep (F : H →L[ℂ] H) (hF : IsSelfAdjoint F) :
   commutator_eq_zero _ := by simp
   mul_self_sub_one_mul_eq_zero _ := by simp
 
-/-- The orthogonal direct sum of two `⋆`-representations on `WithLp 2 (H₁ × H₂)`. -/
-def prodStarRep (π₁ : A →⋆ₙₐ[ℂ] H₁ →L[ℂ] H₁) (π₂ : A →⋆ₙₐ[ℂ] H₂ →L[ℂ] H₂) :
-    A →⋆ₙₐ[ℂ] WithLp 2 (H₁ × H₂) →L[ℂ] WithLp 2 (H₁ × H₂) where
-  toFun a := (π₁ a).withLpProdMap 2 (π₂ a)
-  map_smul' c a := by simp [ContinuousLinearMap.withLpProdMap_smul]
-  map_zero' := by simp
-  map_add' a b := by simp [ContinuousLinearMap.withLpProdMap_add]
-  map_mul' a b := by simp [ContinuousLinearMap.withLpProdMap_mul]
-  map_star' a := by simp [map_star]
-
-@[simp]
-theorem prodStarRep_apply (π₁ : A →⋆ₙₐ[ℂ] H₁ →L[ℂ] H₁) (π₂ : A →⋆ₙₐ[ℂ] H₂ →L[ℂ] H₂) (a : A) :
-    prodStarRep π₁ π₂ a = (π₁ a).withLpProdMap 2 (π₂ a) :=
-  (rfl)
-
 /-- **Orthogonal direct sum** of two odd Fredholm modules on `WithLp 2 (H₁ × H₂)`. -/
 def prod (M₁ : FredholmModule A H₁) (M₂ : FredholmModule A H₂) :
     FredholmModule A (WithLp 2 (H₁ × H₂)) where
-  rep := prodStarRep M₁.rep M₂.rep
+  rep := M₁.rep.prodStarRep M₂.rep
   operator := M₁.operator.withLpProdMap 2 M₂.operator
   isSelfAdjoint_operator :=
     ContinuousLinearMap.isSelfAdjoint_withLpProdMap_iff.mpr
       ⟨M₁.isSelfAdjoint_operator, M₂.isSelfAdjoint_operator⟩
   isCompactOperator_commutator a := by
-    rw [prodStarRep_apply, ContinuousLinearMap.withLpProdMap_mul,
+    rw [NonUnitalStarAlgHom.prodStarRep_apply, ContinuousLinearMap.withLpProdMap_mul,
       ContinuousLinearMap.withLpProdMap_mul, ← ContinuousLinearMap.withLpProdMap_sub,
       ContinuousLinearMap.isCompactOperator_withLpProdMap_iff]
     exact ⟨M₁.isCompactOperator_commutator a, M₂.isCompactOperator_commutator a⟩
   isCompactOperator_mul_self_sub_one_mul a := by
-    rw [prodStarRep_apply, ContinuousLinearMap.withLpProdMap_mul,
+    rw [NonUnitalStarAlgHom.prodStarRep_apply, ContinuousLinearMap.withLpProdMap_mul,
       ← ContinuousLinearMap.withLpProdMap_one, ← ContinuousLinearMap.withLpProdMap_sub,
       ContinuousLinearMap.withLpProdMap_mul,
       ContinuousLinearMap.isCompactOperator_withLpProdMap_iff]
@@ -263,7 +249,7 @@ def prod (M₁ : FredholmModule A H₁) (M₂ : FredholmModule A H₂) :
 @[simp]
 theorem prod_rep_apply (M₁ : FredholmModule A H₁) (M₂ : FredholmModule A H₂) (a : A) :
     (M₁.prod M₂).rep a = (M₁.rep a).withLpProdMap 2 (M₂.rep a) :=
-  (rfl)
+  NonUnitalStarAlgHom.prodStarRep_apply M₁.rep M₂.rep a
 
 @[simp]
 theorem prod_operator (M₁ : FredholmModule A H₁) (M₂ : FredholmModule A H₂) :
@@ -989,16 +975,6 @@ variable {A : Type*} [NonUnitalSemiring A] [StarRing A] [Module ℂ A]
   [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
 
-private theorem starLift_inr (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (a : A) :
-    Unitization.starLift π (Unitization.inr a) = π a :=
-  DFunLike.congr_fun (Unitization.starLift.symm_apply_apply π) a
-
-private theorem starLift_rep_inl_add_inr (π : A →⋆ₙₐ[ℂ] H →L[ℂ] H) (c : ℂ) (a : A) :
-    Unitization.starLift π (Unitization.inl c + Unitization.inr a) = c • 1 + π a := by
-  have hinl : Unitization.starLift π (Unitization.inl c) = c • 1 := by
-    rw [← Unitization.algebraMap_eq_inl, AlgHomClass.commutes, Algebra.algebraMap_eq_smul_one]
-  rw [map_add, hinl, starLift_inr]
-
 namespace FredholmModule
 
 /-- **Forced unitization.** A Fredholm module over a non-unital `*`-algebra `A` whose defect
@@ -1017,8 +993,8 @@ def unitize (M : FredholmModule A H) (hK : IsCompactOperator ⇑(M.operator * M.
           M.operator * Unitization.starLift M.rep (Unitization.inl c + Unitization.inr a) -
             Unitization.starLift M.rep (Unitization.inl c + Unitization.inr a) * M.operator =
             M.operator * M.rep a - M.rep a * M.operator := by
-        rw [starLift_rep_inl_add_inr, mul_add, add_mul, mul_smul_comm, smul_mul_assoc, mul_one,
-          one_mul, add_sub_add_left_eq_sub]
+        rw [Unitization.starLift_inl_add_inr, Algebra.algebraMap_eq_smul_one, mul_add, add_mul,
+          mul_smul_comm, smul_mul_assoc, mul_one, one_mul, add_sub_add_left_eq_sub]
       rw [hcomm]
       exact M.isCompactOperator_commutator a
   isCompactOperator_mul_self_sub_one_mul x :=
@@ -1044,7 +1020,7 @@ theorem unitize_rep_one (M : FredholmModule A H)
 theorem unitize_rep_inr (M : FredholmModule A H)
     (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) (a : A) :
     (M.unitize hK).rep (Unitization.inr a) = M.rep a :=
-  starLift_inr M.rep a
+  Unitization.starLift_inr M.rep a
 
 theorem unitize_rep_algebraMap (M : FredholmModule A H)
     (hK : IsCompactOperator ⇑(M.operator * M.operator - 1)) (c : ℂ) :
@@ -1072,7 +1048,7 @@ def unitize (M : EvenFredholmModule A H) (hK : IsCompactOperator ⇑(M.operator 
     rw [FredholmModule.unitize_rep_apply]
     induction x with
     | inl_add_inr c a =>
-      rw [starLift_rep_inl_add_inr]
+      rw [Unitization.starLift_inl_add_inr, Algebra.algebraMap_eq_smul_one]
       exact ((Commute.one_right M.grading).smul_right c).add_right (M.commute_grading_rep a)
   grading_mul_operator := M.grading_mul_operator
 

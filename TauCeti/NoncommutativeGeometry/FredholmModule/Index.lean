@@ -629,7 +629,9 @@ theorem evenIndex_conj (U : H ≃ₗᵢ[ℂ] H') (e : A) :
     (M.conj U).evenIndex e = M.evenIndex e := by
   let eU : H ≃L[ℂ] H' := U.toContinuousLinearEquiv
   have hconj (T : H →L[ℂ] H) :
-      U.conjStarAlgEquiv T = (eU : H →L[ℂ] H') ∘L T ∘L (eU.symm : H' →L[ℂ] H) := rfl
+      U.conjStarAlgEquiv T = (eU : H →L[ℂ] H') ∘L T ∘L (eU.symm : H' →L[ℂ] H) := by
+    rw [LinearIsometryEquiv.conjStarAlgEquiv_apply,
+      ← LinearIsometryEquiv.toContinuousLinearEquiv_symm]
   have hpos : (M.conj U).evenProjPos e =
       (eU : H →L[ℂ] H') ∘L M.evenProjPos e ∘L (eU.symm : H' →L[ℂ] H) := by
     rw [← hconj]
@@ -1207,13 +1209,15 @@ theorem oddIndex_conj (U : H ≃ₗᵢ[ℂ] H') (u : Aˣ) :
   let eU : H ≃L[ℂ] H' := U.toContinuousLinearEquiv
   have hconj (T : H →L[ℂ] H) :
       U.conjStarAlgEquiv T =
-        ((eU : H →L[ℂ] H').comp T).comp (eU.symm : H' →L[ℂ] H) := rfl
+        ((eU : H →L[ℂ] H').comp T).comp (eU.symm : H' →L[ℂ] H) := by
+    rw [LinearIsometryEquiv.conjStarAlgEquiv_apply,
+      ← LinearIsometryEquiv.toContinuousLinearEquiv_symm, ContinuousLinearMap.comp_assoc]
   have hT : (M.conj U).oddToeplitz u =
       ((eU : H →L[ℂ] H').comp (M.oddToeplitz u)).comp (eU.symm : H' →L[ℂ] H) := by
     rw [← hconj]
     simp [oddToeplitz_def, oddToeplitzElem_def, posProj_def, map_add, map_mul, map_smul, map_one]
-  rw [oddIndex, hT, ContinuousLinearMap.index_comp_equiv, ContinuousLinearMap.index_equiv_comp]
-  rfl
+  rw [oddIndex_def, oddIndex_def, hT, ContinuousLinearMap.index_comp_equiv,
+    ContinuousLinearMap.index_equiv_comp]
 
 /-- Orthogonal direct sums add odd indices. -/
 @[simp]

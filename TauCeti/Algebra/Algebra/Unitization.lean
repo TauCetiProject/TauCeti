@@ -8,11 +8,17 @@ module
 public import Mathlib.Algebra.Algebra.Unitization
 
 /-!
-# Functoriality of the forced unitization
+# Functoriality and star-lift evaluation of the forced unitization
 
 A homomorphism of nonunital algebras `f : A →ₙₐ[R] B` induces a unital algebra homomorphism
 `Unitization R A →ₐ[R] Unitization R B`, sending `(r, a)` to `(r, f a)`. This is the non-star
 counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
+
+For a nonunital star-algebra homomorphism `φ : A →⋆ₙₐ[R] C` into a unital star `R`-algebra `C`,
+Mathlib's `Unitization.starLift φ` lifts `φ` to `Unitization R A →⋆ₐ[R] C`. This file also records
+pre-pass `@[simp↓]` evaluation lemmas for `Unitization.starLift` on `inr`, `inl`, and `inl + inr`
+(pre-pass is required because Mathlib's `Unitization.starLift_apply` otherwise unfolds `starLift φ`
+to an anonymous structure literal before the argument is inspected).
 
 ## Main declarations
 
@@ -20,11 +26,15 @@ counterpart of Mathlib's `Unitization.starMap`, and it is functorial.
 * `Unitization.map_id`, `Unitization.map_comp`: functoriality.
 * `Unitization.fstHom_comp_map`: the induced map preserves the augmentation.
 * `Unitization.map_surjective`: the induced map of a surjective homomorphism is surjective.
+* `Unitization.starLift_inr`, `Unitization.starLift_inl`, `Unitization.starLift_inl_add_inr`:
+  evaluation of `Unitization.starLift` on the canonical inclusions and decomposition.
 -/
 
 public section
 
 namespace Unitization
+
+section Map
 
 variable {R A B C : Type*} [CommSemiring R]
   [NonUnitalSemiring A] [Module R A] [IsScalarTower R A A] [SMulCommClass R A A]
@@ -77,5 +87,38 @@ theorem map_id : map (NonUnitalAlgHom.id R A) = AlgHom.id R (Unitization R A) :=
 /-- Unitization preserves composition of nonunital algebra homomorphisms. -/
 theorem map_comp (f : A →ₙₐ[R] B) (g : B →ₙₐ[R] C) : map (g.comp f) = (map g).comp (map f) :=
   algHom_ext'' fun _ ↦ by simp
+
+end Map
+
+section StarLift
+
+variable {R A C : Type*} [CommSemiring R] [StarRing R] [NonUnitalSemiring A] [StarRing A]
+  [Module R A] [SMulCommClass R A A] [IsScalarTower R A A]
+  [Semiring C] [Algebra R C] [StarRing C] [StarModule R C]
+
+-- Use pre-pass `@[simp↓]` so these fire before Mathlib's `Unitization.starLift_apply` unfolds
+-- `starLift φ` into an anonymous `StarAlgHom` structure literal.
+
+/-- The star-algebra lift of a nonunital star-algebra homomorphism restricts to the original
+homomorphism on `Unitization.inr`. -/
+@[simp↓]
+theorem starLift_inr (φ : A →⋆ₙₐ[R] C) (a : A) :
+    starLift φ (inr a) = φ a :=
+  DFunLike.congr_fun (starLift.symm_apply_apply φ) a
+
+/-- The star-algebra lift of a nonunital star-algebra homomorphism sends `Unitization.inl r` to
+`algebraMap R C r`. -/
+@[simp↓]
+theorem starLift_inl (φ : A →⋆ₙₐ[R] C) (r : R) :
+    starLift φ (inl r) = algebraMap R C r := by
+  rw [← algebraMap_eq_inl, AlgHomClass.commutes]
+
+/-- Evaluation of `Unitization.starLift φ` on the canonical decomposition `inl r + inr a`. -/
+@[simp↓]
+theorem starLift_inl_add_inr (φ : A →⋆ₙₐ[R] C) (r : R) (a : A) :
+    starLift φ (inl r + inr a) = algebraMap R C r + φ a := by
+  rw [map_add, starLift_inl, starLift_inr]
+
+end StarLift
 
 end Unitization

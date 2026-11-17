@@ -18,9 +18,6 @@ sends `w ∈ p.range` to `q (T w)`. Its integer index `ContinuousLinearMap.compr
 is invariant under conjugation by continuous linear equivalences (`compressionIndex_conj`),
 invariant under extension along continuous linear retracts (`compressionIndex_retract`), and
 additive under `WithLp` block sums of Fredholm compressions (`compressionIndex_withLpProdMap`).
-
-For an idempotent continuous linear map `p` on a complete separated topological additive group,
-`p.range` is complete (`ContinuousLinearMap.IsIdempotentElem.completeSpace_range`).
 -/
 
 public section
@@ -28,13 +25,6 @@ public section
 open scoped ENNReal
 
 namespace ContinuousLinearMap
-
-/-- The range of an idempotent continuous linear map on a complete T1 topological additive group
-is complete. -/
-theorem IsIdempotentElem.completeSpace_range {R M : Type*} [Ring R] [UniformSpace M] [T1Space M]
-    [CompleteSpace M] [AddCommGroup M] [IsTopologicalAddGroup M] [Module R M]
-    {p : M →L[R] M} (hp : IsIdempotentElem p) : CompleteSpace p.range :=
-  (IsIdempotentElem.isClosed_range hp).isComplete.completeSpace_coe
 
 section Ring
 
@@ -104,25 +94,16 @@ theorem compressionIndex_conj (e₁ : E ≃L[𝕜] E') (e₂ : F ≃L[𝕜] F')
       ((e₂ : F →L[𝕜] F') ∘L q ∘L (e₂.symm : F' →L[𝕜] F))
       ((e₂ : F →L[𝕜] F') ∘L T ∘L (e₁.symm : E' →L[𝕜] E)) =
       compressionIndex p q T := by
-  let p' := (e₁ : E →L[𝕜] E') ∘L p ∘L (e₁.symm : E' →L[𝕜] E)
-  let q' := (e₂ : F →L[𝕜] F') ∘L q ∘L (e₂.symm : F' →L[𝕜] F)
-  let T' := (e₂ : F →L[𝕜] F') ∘L T ∘L (e₁.symm : E' →L[𝕜] E)
-  let ep := p.rangeConjEquiv e₁
-  let eq_ := q.rangeConjEquiv e₂
-  have intertwine :
-      (rangeCompression p' q' T').comp (ep : p.range →L[𝕜] p'.range) =
-        (eq_ : q.range →L[𝕜] q'.range).comp (rangeCompression p q T) := by
-    ext w
-    simp only [comp_apply, ContinuousLinearEquiv.coe_coe, coe_rangeCompression_apply,
-      coe_rangeConjEquiv_apply, ep, eq_, p', q', T', ContinuousLinearEquiv.symm_apply_apply]
-  rw [compressionIndex_def, compressionIndex_def]
-  calc
-    (rangeCompression p' q' T').index
-      = ((rangeCompression p' q' T').comp (ep : p.range →L[𝕜] p'.range)).index :=
-          ((rangeCompression p' q' T').index_comp_equiv ep).symm
-    _ = ((eq_ : q.range →L[𝕜] q'.range).comp (rangeCompression p q T)).index := by
-          rw [intertwine]
-    _ = (rangeCompression p q T).index := (rangeCompression p q T).index_equiv_comp eq_
+  have h₁ : (e₁.symm : E' →L[𝕜] E).comp (e₁ : E →L[𝕜] E') = .id 𝕜 E := by
+    ext x
+    simp
+  have h₂ : (e₂.symm : F' →L[𝕜] F).comp (e₂ : F →L[𝕜] F') = .id 𝕜 F := by
+    ext y
+    simp
+  rw [compressionIndex_retract h₁ h₂]
+  congr 1
+  ext x
+  simp
 
 end Ring
 
