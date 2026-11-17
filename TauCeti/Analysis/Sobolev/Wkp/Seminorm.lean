@@ -92,7 +92,6 @@ theorem toOrderL_succ_apply {j k : ℕ} (h : j ≤ k) (u : Wkp mu Omega p (k + 1
   rw [Nat.leRec_succ _ _ h, ContinuousLinearMap.comp_apply, lowerOrderL_apply]
 
 /-- Truncating to one order lower is `TauCeti.Wkp.lowerOrder`. -/
-@[simp]
 theorem toOrderL_succ_self_apply (k : ℕ) (u : Wkp mu Omega p (k + 1)) :
     toOrderL k.le_succ u = lowerOrder k u := by
   rw [toOrderL_succ_apply le_rfl, toOrderL_self, ContinuousLinearMap.id_apply]
@@ -215,14 +214,7 @@ theorem seminorm_eq_lpNorm_iteratedFDeriv_of_contDiffOn (k j : ℕ) (h : j ≤ k
     (hu : (value k u : E → ℝ) =ᵐ[mu.restrict Omega] f) :
     seminorm k j h u = lpNorm (iteratedFDeriv ℝ j f) p (mu.restrict Omega) := by
   cases j with
-  | zero =>
-      have hfm : AEStronglyMeasurable f (mu.restrict Omega) :=
-        (Lp.aestronglyMeasurable (value k u)).congr hu
-      rw [seminorm_zero_apply, Lp.norm_def, lpNorm, eLpNorm_congr_ae hu]
-      refine congrArg ENNReal.toReal (eLpNorm_congr_norm_ae hfm ?_
-        (Filter.Eventually.of_forall fun _ => norm_iteratedFDeriv_zero.symm))
-      rw [iteratedFDeriv_zero_eq_comp]
-      exact (continuousMultilinearCurryFin0 ℝ E ℝ).symm.continuous.comp_aestronglyMeasurable hfm
+  | zero => rw [seminorm_zero_apply]; exact norm_value_eq_lpNorm_iteratedFDeriv_zero k u hu
   | succ j =>
       rw [seminorm_succ_apply]
       exact norm_iteratedGradient_eq_lpNorm_of_contDiffOn j _ hf (by rwa [value_toOrderL])
