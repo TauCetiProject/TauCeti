@@ -177,6 +177,13 @@ theorem SporadicName.presentation_M24 : SporadicName.M24.presentation = Sporadic
 theorem SporadicName.presentation_McL : SporadicName.McL.presentation = Sporadic.mclPresentation :=
   (rfl)
 
+/-- The presentation selected for `Co₃` is Djoković's transcribed presentation
+`TauCeti.Sporadic.co3Presentation`. The body of `TauCeti.SporadicName.presentation` is not exposed
+to importing modules, so this equation is how they reach it. -/
+@[simp]
+theorem SporadicName.presentation_Co3 : SporadicName.Co3.presentation = Sporadic.co3Presentation :=
+  (rfl)
+
 /-- The presentation selected for `J₂` is Stoytchev's transcribed presentation
 `TauCeti.Sporadic.j2Presentation`. -/
 @[simp]
