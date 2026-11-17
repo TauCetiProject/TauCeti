@@ -50,8 +50,9 @@ Each layer assumes only the hypotheses it genuinely uses:
    (`star (L_g f) = R_g (star f)`).
 6. **Haar-normalization comparison (`smulMeasureStarAlgEquiv`, `haarStarAlgEquiv`):** Rescaling by
    `MeasureTheory.Measure.haarScalarFactor μ' μ` yields a canonical isometric `⋆`-algebra
-   isomorphism `GroupAlgebraL1 𝕜 μ' ≃⋆ₐ[𝕜] GroupAlgebraL1 𝕜 μ` between any two regular left Haar
-   measures `μ'` and `μ` on `G`, with no second-countability or `σ`-compactness assumption.
+   isomorphism `GroupAlgebraL1 𝕜 μ' ≃⋆ₐ[𝕜] GroupAlgebraL1 𝕜 μ` intertwining both left and right
+   translations between any two regular left Haar measures `μ'` and `μ` on `G`, with no
+   second-countability or `σ`-compactness assumption.
 
 ## Main definitions and statements
 
@@ -655,7 +656,9 @@ section RescaleGroup
 variable {G 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [MeasurableSpace G] [BorelSpace G] [RCLike 𝕜] {μ' μ : Measure G}
 
-private theorem rescaleLinearIsometryEquiv_leftTranslation [μ'.IsMulLeftInvariant]
+/-- `rescaleLinearIsometryEquiv` intertwines left translations on `μ'` and `μ`. -/
+@[simp]
+theorem rescaleLinearIsometryEquiv_leftTranslation [μ'.IsMulLeftInvariant]
     [μ.IsMulLeftInvariant] {c : ℝ≥0} (hc : c ≠ 0) (hμ : μ' = c • μ) (g : G)
     (f : GroupAlgebraL1 𝕜 μ') :
     rescaleLinearIsometryEquiv 𝕜 c hc hμ (leftTranslation 𝕜 μ' g f) =
@@ -668,7 +671,9 @@ private theorem rescaleLinearIsometryEquiv_leftTranslation [μ'.IsMulLeftInvaria
       (ofConv_rescaleLinearIsometryEquiv_ae_eq hc hμ f)] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, h₄]
 
-private theorem rescaleLinearIsometryEquiv_mul [μ'.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ']
+/-- `rescaleLinearIsometryEquiv` preserves convolution multiplication. -/
+@[simp]
+theorem rescaleLinearIsometryEquiv_mul [μ'.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ']
     [μ'.InnerRegularCompactLTTop] [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ]
     [μ.InnerRegularCompactLTTop] {c : ℝ≥0} (hc : c ≠ 0) (hμ : μ' = c • μ)
     (f g : GroupAlgebraL1 𝕜 μ') :
@@ -706,7 +711,9 @@ private theorem rescaleLinearIsometryEquiv_mul [μ'.IsMulLeftInvariant] [IsLocal
   filter_upwards [ofConv_rescaleLinearIsometryEquiv_ae_eq hc hμ f] with y hy
   rw [hy, smul_assoc]
 
-private theorem rescaleLinearIsometryEquiv_star [LocallyCompactSpace G] [μ'.IsHaarMeasure]
+/-- `rescaleLinearIsometryEquiv` preserves the modular involution. -/
+@[simp]
+theorem rescaleLinearIsometryEquiv_star [LocallyCompactSpace G] [μ'.IsHaarMeasure]
     [μ'.Regular] [μ.IsHaarMeasure] [μ.Regular] {c : ℝ≥0} (hc : c ≠ 0) (hμ : μ' = c • μ)
     (f : GroupAlgebraL1 𝕜 μ') :
     rescaleLinearIsometryEquiv 𝕜 c hc hμ (star f) =
@@ -719,6 +726,17 @@ private theorem rescaleLinearIsometryEquiv_star [LocallyCompactSpace G] [μ'.IsH
       (ofConv_rescaleLinearIsometryEquiv_ae_eq hc hμ f)] with x h₁ h₂ h₃ h₄
   rw [h₁, h₂, h₃, h₄, star_smul, star_trivial (_ : ℝ),
     smul_comm (c : ℝ) (modularCharacter x : ℝ)]
+
+/-- `rescaleLinearIsometryEquiv` intertwines right translations on `μ'` and `μ`. -/
+@[simp]
+theorem rescaleLinearIsometryEquiv_rightTranslation [LocallyCompactSpace G] [μ'.IsHaarMeasure]
+    [μ'.Regular] [μ.IsHaarMeasure] [μ.Regular] {c : ℝ≥0} (hc : c ≠ 0) (hμ : μ' = c • μ)
+    (g : G) (f : GroupAlgebraL1 𝕜 μ') :
+    rescaleLinearIsometryEquiv 𝕜 c hc hμ (rightTranslation 𝕜 μ' g f) =
+      rightTranslation 𝕜 μ g (rescaleLinearIsometryEquiv 𝕜 c hc hμ f) := by
+  rw [← star_star (rightTranslation 𝕜 μ' g f), star_rightTranslation,
+    rescaleLinearIsometryEquiv_star hc hμ, rescaleLinearIsometryEquiv_leftTranslation hc hμ,
+    rescaleLinearIsometryEquiv_star hc hμ, star_leftTranslation, star_star]
 
 /-- Rescaling by `(c : ℝ)` yields an isometric `⋆`-algebra isomorphism
 `GroupAlgebraL1 𝕜 (c • μ) ≃⋆ₐ[𝕜] GroupAlgebraL1 𝕜 μ` for any `c : ℝ≥0` (`c ≠ 0`) and regular left
@@ -754,6 +772,24 @@ theorem ofConv_smulMeasureStarAlgEquiv_ae_eq [LocallyCompactSpace G] (𝕜 : Typ
     (smulMeasureStarAlgEquiv 𝕜 μ c hc f).ofConv =ᵐ[μ] fun x => (c : ℝ) • f.ofConv x :=
   ofConv_rescaleLinearIsometryEquiv_ae_eq hc rfl f
 
+/-- `smulMeasureStarAlgEquiv 𝕜 μ c hc` intertwines left translations on `c • μ` and `μ`. -/
+@[simp]
+theorem smulMeasureStarAlgEquiv_leftTranslation [LocallyCompactSpace G] (𝕜 : Type*) [RCLike 𝕜]
+    (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] (c : ℝ≥0) (hc : c ≠ 0) (g : G)
+    (f : GroupAlgebraL1 𝕜 (c • μ)) :
+    smulMeasureStarAlgEquiv 𝕜 μ c hc (leftTranslation 𝕜 (c • μ) g f) =
+      leftTranslation 𝕜 μ g (smulMeasureStarAlgEquiv 𝕜 μ c hc f) :=
+  rescaleLinearIsometryEquiv_leftTranslation hc rfl g f
+
+/-- `smulMeasureStarAlgEquiv 𝕜 μ c hc` intertwines right translations on `c • μ` and `μ`. -/
+@[simp]
+theorem smulMeasureStarAlgEquiv_rightTranslation [LocallyCompactSpace G] (𝕜 : Type*) [RCLike 𝕜]
+    (μ : Measure G) [μ.IsHaarMeasure] [μ.Regular] (c : ℝ≥0) (hc : c ≠ 0)
+    [(c • μ).IsHaarMeasure] (g : G) (f : GroupAlgebraL1 𝕜 (c • μ)) :
+    smulMeasureStarAlgEquiv 𝕜 μ c hc (rightTranslation 𝕜 (c • μ) g f) =
+      rightTranslation 𝕜 μ g (smulMeasureStarAlgEquiv 𝕜 μ c hc f) :=
+  rescaleLinearIsometryEquiv_rightTranslation hc rfl g f
+
 end RescaleGroup
 
 section RegularHaar
@@ -770,6 +806,24 @@ is needed. -/
 def haarLinearIsometryEquiv : GroupAlgebraL1 𝕜 μ' ≃ₗᵢ[𝕜] GroupAlgebraL1 𝕜 μ :=
   rescaleLinearIsometryEquiv 𝕜 (haarScalarFactor μ' μ)
     (haarScalarFactor_pos_of_isHaarMeasure μ' μ).ne' (isMulLeftInvariant_eq_smul_of_regular μ' μ)
+
+/-- `haarLinearIsometryEquiv 𝕜 μ' μ` intertwines left translations on `μ'` and `μ`. -/
+@[simp]
+theorem haarLinearIsometryEquiv_leftTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ') :
+    haarLinearIsometryEquiv 𝕜 μ' μ (leftTranslation 𝕜 μ' g f) =
+      leftTranslation 𝕜 μ g (haarLinearIsometryEquiv 𝕜 μ' μ f) :=
+  rescaleLinearIsometryEquiv_leftTranslation
+    (haarScalarFactor_pos_of_isHaarMeasure μ' μ).ne'
+    (isMulLeftInvariant_eq_smul_of_regular μ' μ) g f
+
+/-- `haarLinearIsometryEquiv 𝕜 μ' μ` intertwines right translations on `μ'` and `μ`. -/
+@[simp]
+theorem haarLinearIsometryEquiv_rightTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ') :
+    haarLinearIsometryEquiv 𝕜 μ' μ (rightTranslation 𝕜 μ' g f) =
+      rightTranslation 𝕜 μ g (haarLinearIsometryEquiv 𝕜 μ' μ f) :=
+  rescaleLinearIsometryEquiv_rightTranslation
+    (haarScalarFactor_pos_of_isHaarMeasure μ' μ).ne'
+    (isMulLeftInvariant_eq_smul_of_regular μ' μ) g f
 
 /-- **Canonical `⋆`-algebra isomorphism between `L¹` group algebras for any two regular left Haar
 measures `μ'` and `μ` on `G`**. Together with `norm_haarStarAlgEquiv`, this shows that the
@@ -799,6 +853,20 @@ theorem ofConv_haarStarAlgEquiv_ae_eq (f : GroupAlgebraL1 𝕜 μ') :
       fun x => (haarScalarFactor μ' μ : ℝ) • f.ofConv x :=
   ofConv_rescaleLinearIsometryEquiv_ae_eq
     (haarScalarFactor_pos_of_isHaarMeasure μ' μ).ne' (isMulLeftInvariant_eq_smul_of_regular μ' μ) f
+
+/-- `haarStarAlgEquiv 𝕜 μ' μ` intertwines left translations on `μ'` and `μ`. -/
+@[simp]
+theorem haarStarAlgEquiv_leftTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ') :
+    haarStarAlgEquiv 𝕜 μ' μ (leftTranslation 𝕜 μ' g f) =
+      leftTranslation 𝕜 μ g (haarStarAlgEquiv 𝕜 μ' μ f) :=
+  haarLinearIsometryEquiv_leftTranslation 𝕜 μ' μ g f
+
+/-- `haarStarAlgEquiv 𝕜 μ' μ` intertwines right translations on `μ'` and `μ`. -/
+@[simp]
+theorem haarStarAlgEquiv_rightTranslation (g : G) (f : GroupAlgebraL1 𝕜 μ') :
+    haarStarAlgEquiv 𝕜 μ' μ (rightTranslation 𝕜 μ' g f) =
+      rightTranslation 𝕜 μ g (haarStarAlgEquiv 𝕜 μ' μ f) :=
+  haarLinearIsometryEquiv_rightTranslation 𝕜 μ' μ g f
 
 @[simp]
 theorem haarStarAlgEquiv_self (f : GroupAlgebraL1 𝕜 μ) :

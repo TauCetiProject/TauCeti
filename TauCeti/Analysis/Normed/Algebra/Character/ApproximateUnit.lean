@@ -12,10 +12,10 @@ public import TauCeti.Topology.ApproximateUnit
 # Nonunital characters and approximate units
 
 On a complete normed algebra `A` over a normed field `𝕜`, every algebraic nonunital character
-`φ : A →ₙₐ[𝕜] 𝕜` is automatically contractive and hence continuous
-(`NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`). This file
-bundles `φ` as an element `φ.toContinuousLinearMap` of `StrongDual 𝕜 A` (the nonunital counterpart
-of `AlgHom.toContinuousLinearMap`) and determines its behavior along approximate identities:
+`φ : A →ₙₐ[𝕜] 𝕜` is automatically contractive and hence continuous, bundled as
+`φ.toContinuousLinearMap : StrongDual 𝕜 A` with `‖φ.toContinuousLinearMap‖ ≤ 1` in
+`TauCeti.Analysis.Normed.Algebra.Character.Basic`. This file determines the behavior of `φ` along
+approximate identities:
 
 * Along any left, right, or two-sided approximate identity, a nonzero character converges to `1`:
   choosing `a` with `φ a ≠ 0`, continuity gives `φ (e * a) = φ e * φ a → φ a`, and canceling `φ a`
@@ -41,41 +41,7 @@ namespace NonUnitalAlgHom
 section NormedField
 
 variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
-  [CompleteSpace A]
-
-/-- A nonunital algebra homomorphism from a complete normed algebra into its scalar field, bundled
-as a continuous linear functional in `StrongDual 𝕜 A`. No continuity hypothesis on `φ` is needed. -/
-def toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : StrongDual 𝕜 A where
-  toFun := φ
-  map_add' := map_add φ
-  map_smul' := map_smul φ
-  cont := map_continuous φ
-
-@[simp]
-theorem coe_toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : ⇑φ.toContinuousLinearMap = φ :=
-  (rfl)
-
-@[simp]
-theorem toContinuousLinearMap_apply (φ : A →ₙₐ[𝕜] 𝕜) (a : A) :
-    φ.toContinuousLinearMap a = φ a :=
-  (rfl)
-
-theorem toContinuousLinearMap_injective :
-    Function.Injective (toContinuousLinearMap (𝕜 := 𝕜) (A := A)) := fun φ ψ h =>
-  DFunLike.ext φ ψ fun a => congrArg (fun f : StrongDual 𝕜 A => f a) h
-
-@[simp]
-theorem toContinuousLinearMap_inj {φ ψ : A →ₙₐ[𝕜] 𝕜} :
-    φ.toContinuousLinearMap = ψ.toContinuousLinearMap ↔ φ = ψ :=
-  toContinuousLinearMap_injective.eq_iff
-
-@[simp]
-theorem toContinuousLinearMap_eq_zero {φ : A →ₙₐ[𝕜] 𝕜} :
-    φ.toContinuousLinearMap = 0 ↔ φ = 0 :=
-  ⟨fun h => DFunLike.ext φ 0 fun a => congrArg (fun f : StrongDual 𝕜 A => f a) h,
-    fun h => by subst h; ext; simp⟩
-
-variable [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
+  [CompleteSpace A] [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
 
 /-- Along any left approximate identity `e i * a → a`, a nonzero character `φ` tends to `1`. -/
 theorem tendsto_one_of_tendsto_mul_right {ι : Type*} {l : Filter ι} {e : ι → A} {φ : F}
@@ -106,11 +72,6 @@ section NontriviallyNormedField
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [CompleteSpace A]
-
-/-- Every nonunital character of a complete normed algebra has operator norm at most `1`. -/
-theorem norm_toContinuousLinearMap_le (φ : A →ₙₐ[𝕜] 𝕜) : ‖φ.toContinuousLinearMap‖ ≤ 1 :=
-  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by
-    simpa only [one_mul, toContinuousLinearMap_apply] using norm_apply_le_self φ a
 
 /-- If `A` has a left approximate identity eventually in the closed unit ball, every nonzero
 character `φ : A →ₙₐ[𝕜] 𝕜` has operator norm `1`. -/

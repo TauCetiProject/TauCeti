@@ -103,59 +103,6 @@ theorem integrable_approximateIdentity (U : OpenNhdsOf (1 : G)) :
   (μ.approximateIdentity U).continuous.integrable_of_hasCompactSupport
     (μ.approximateIdentity U).hasCompactSupport
 
-/-- By the Haar inversion formula on compactly supported integrands,
-`∫ z, c(z) * u_U(z) ∂μ = ∫ z, u_U(z⁻¹) ∂μ` without any regularity hypothesis on `μ`. -/
-theorem integral_modularCharacter_mul_approximateIdentity (U : OpenNhdsOf (1 : G)) :
-    ∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ =
-      ∫ z, μ.approximateIdentity U z⁻¹ ∂μ := by
-  simpa only [smul_eq_mul] using
-    (TauCeti.integral_inv_eq_integral_modularCharacter_smul
-      (map_continuous (μ.approximateIdentity U))
-      (μ.approximateIdentity U).hasCompactSupport).symm
-
-/-- Along `atBot` on open identity neighborhoods, the modular-weighted integrals
-`∫ z, c(z) * u_U(z) ∂μ` converge to `1` by continuity of the modular character at `1` and shrinking
-support. -/
-theorem tendsto_integral_modularCharacter_mul_approximateIdentity :
-    Tendsto (fun U => ∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ)
-      atBot (𝓝 1) := by
-  refine Metric.tendsto_nhds.2 fun ε hε => ?_
-  have hmc : Continuous fun z : G => (modularCharacter z : ℝ) :=
-    NNReal.continuous_coe.comp TauCeti.continuous_modularCharacter
-  have hnhds : {z : G | dist (modularCharacter z : ℝ) 1 < ε / 2} ∈ 𝓝 (1 : G) :=
-    (hmc.tendsto 1 |>.eventually (Metric.ball_mem_nhds _ (half_pos hε))).mono fun z hz => by
-      simpa only [map_one, NNReal.coe_one] using hz
-  obtain ⟨V, -, hV⟩ := OpenNhdsOf.basis_nhds.mem_iff.1 hnhds
-  filter_upwards [eventually_le_atBot V] with U hUV
-  have hu0 : ∀ z, 0 ≤ μ.approximateIdentity U z :=
-    CompactlySupportedContinuousMap.le_def.1 (μ.approximateIdentity_nonneg U)
-  have hcu : Integrable (fun z => (modularCharacter z : ℝ) * μ.approximateIdentity U z) μ :=
-    (hmc.mul (map_continuous (μ.approximateIdentity U))).integrable_of_hasCompactSupport
-      (μ.approximateIdentity U).hasCompactSupport.mul_left
-  have hdiff : (∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ) - 1 =
-      ∫ z, ((modularCharacter z : ℝ) - 1) * μ.approximateIdentity U z ∂μ := by
-    simp_rw [sub_mul, one_mul]
-    rw [integral_sub hcu (μ.integrable_approximateIdentity U), μ.integral_approximateIdentity U]
-  rw [Real.dist_eq, hdiff, ← Real.norm_eq_abs]
-  refine (norm_integral_le_of_norm_le ((μ.integrable_approximateIdentity U).const_mul (ε / 2))
-    (.of_forall fun z => ?_)).trans_lt ?_
-  · rw [Real.norm_eq_abs, abs_mul, abs_of_nonneg (hu0 z)]
-    by_cases hz : z ∈ tsupport (μ.approximateIdentity U)
-    · have hzV : dist (modularCharacter z : ℝ) 1 < ε / 2 :=
-        hV (hUV (μ.tsupport_approximateIdentity_subset U hz))
-      rw [← Real.dist_eq]
-      exact mul_le_mul_of_nonneg_right hzV.le (hu0 z)
-    · simp [image_eq_zero_of_notMem_tsupport hz]
-  · rw [integral_const_mul, μ.integral_approximateIdentity U, mul_one]
-    exact half_lt_self hε
-
-/-- Along `atBot` on open identity neighborhoods, the inverted-kernel integrals
-`∫ z, u_U(z⁻¹) ∂μ` converge to `1`, even when `G` is not unimodular. -/
-theorem tendsto_integral_inv_approximateIdentity :
-    Tendsto (fun U => ∫ z, μ.approximateIdentity U z⁻¹ ∂μ) atBot (𝓝 1) := by
-  simpa only [← μ.integral_modularCharacter_mul_approximateIdentity] using
-    μ.tendsto_integral_modularCharacter_mul_approximateIdentity
-
 section RCLike
 
 variable (𝕜 : Type*) [RCLike 𝕜]
@@ -258,5 +205,51 @@ theorem tendsto_convolutionL_approximateIdentityL1 [μ.Regular] (f : Lp 𝕜 1 �
     (fun _ hS => μ.eventually_approximateIdentityL1_ae_eq_zero hS) f
 
 end RCLike
+
+/-- By the Haar inversion formula on compactly supported integrands,
+`∫ z, c(z) * u_U(z) ∂μ = ∫ z, u_U(z⁻¹) ∂μ` without any regularity hypothesis on `μ`. -/
+theorem integral_modularCharacter_mul_approximateIdentity (U : OpenNhdsOf (1 : G)) :
+    ∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ =
+      ∫ z, μ.approximateIdentity U z⁻¹ ∂μ := by
+  simpa only [smul_eq_mul] using
+    (TauCeti.integral_inv_eq_integral_modularCharacter_smul
+      (map_continuous (μ.approximateIdentity U))
+      (μ.approximateIdentity U).hasCompactSupport).symm
+
+/-- Along `atBot` on open identity neighborhoods, the modular-weighted integrals
+`∫ z, c(z) * u_U(z) ∂μ` converge to `1` by continuity of the modular character at `1` and shrinking
+support. -/
+theorem tendsto_integral_modularCharacter_mul_approximateIdentity :
+    Tendsto (fun U => ∫ z, (modularCharacter z : ℝ) * μ.approximateIdentity U z ∂μ)
+      atBot (𝓝 1) := by
+  have hmc : Continuous fun z : G => (modularCharacter z : ℝ) :=
+    NNReal.continuous_coe.comp TauCeti.continuous_modularCharacter
+  have hφ : Tendsto (fun z : G => (modularCharacter z : ℝ)) (𝓝 1) (𝓝 1) := by
+    simpa only [map_one, NNReal.coe_one] using hmc.tendsto 1
+  have hmeas : ∀ U : OpenNhdsOf (1 : G),
+      AEStronglyMeasurable (fun z => μ.approximateIdentityL1 ℝ U z • (modularCharacter z : ℝ))
+        μ := fun U => by
+    have hint : Integrable (fun z => μ.approximateIdentity U z * (modularCharacter z : ℝ)) μ :=
+      ((map_continuous (μ.approximateIdentity U)).mul hmc).integrable_of_hasCompactSupport
+        (μ.approximateIdentity U).hasCompactSupport.mul_right
+    refine hint.aestronglyMeasurable.congr ?_
+    filter_upwards [μ.coeFn_approximateIdentityL1 (𝕜 := ℝ) U] with z hz
+    simp only [smul_eq_mul, hz, RCLike.ofReal_real_eq_id, id_eq]
+  have hlim := TauCeti.tendsto_integral_smul_of_tendsto (C := 1)
+    (f := μ.approximateIdentityL1 ℝ) (φ := fun z => (modularCharacter z : ℝ))
+    (.of_forall μ.integral_approximateIdentityL1)
+    (.of_forall fun U => (μ.norm_approximateIdentityL1 U).le)
+    (fun _ hS => μ.eventually_approximateIdentityL1_ae_eq_zero hS)
+    (.of_forall hmeas) hφ
+  refine hlim.congr fun U => integral_congr_ae ?_
+  filter_upwards [μ.coeFn_approximateIdentityL1 (𝕜 := ℝ) U] with z hz
+  simp only [smul_eq_mul, hz, RCLike.ofReal_real_eq_id, id_eq, mul_comm]
+
+/-- Along `atBot` on open identity neighborhoods, the inverted-kernel integrals
+`∫ z, u_U(z⁻¹) ∂μ` converge to `1`, even when `G` is not unimodular. -/
+theorem tendsto_integral_inv_approximateIdentity :
+    Tendsto (fun U => ∫ z, μ.approximateIdentity U z⁻¹ ∂μ) atBot (𝓝 1) := by
+  simpa only [← μ.integral_modularCharacter_mul_approximateIdentity] using
+    μ.tendsto_integral_modularCharacter_mul_approximateIdentity
 
 end MeasureTheory.Measure

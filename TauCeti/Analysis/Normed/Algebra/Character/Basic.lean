@@ -35,6 +35,9 @@ Banach algebras are automatically continuous.
 
 * `NonUnitalAlgHom.norm_apply_le_self`, `NonUnitalAlgHom.instContinuousLinearMapClass`: nonunital
   characters of Banach algebras are contractive, hence continuous.
+* `NonUnitalAlgHom.toContinuousLinearMap`, `NonUnitalAlgHom.norm_toContinuousLinearMap_le`: bundling
+  a nonunital character as a continuous linear functional in `StrongDual 𝕜 A` of operator norm at
+  most `1`.
 * `TauCeti.Ring.mem_jacobson_iff_forall_algHom_apply_eq_zero`,
   `TauCeti.ker_gelfandTransform`: in a commutative unital complex Banach algebra the radical is
   the common kernel of the characters, which is the kernel of the Gelfand transform.
@@ -51,6 +54,8 @@ Banach algebras are automatically continuous.
 public section
 
 namespace NonUnitalAlgHom
+
+section FunLike
 
 variable {𝕜 A F : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [CompleteSpace A] [FunLike F A 𝕜] [NonUnitalAlgHomClass F 𝕜 A 𝕜]
@@ -74,6 +79,63 @@ instance (priority := 100) instContinuousLinearMapClass : ContinuousLinearMapCla
   { NonUnitalAlgHomClass.instLinearMapClass with
     map_continuous := fun φ =>
       AddMonoidHomClass.continuous_of_bound φ 1 fun a => by simpa using norm_apply_le_self φ a }
+
+end FunLike
+
+section NormedField
+
+variable {𝕜 A : Type*} [NormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [CompleteSpace A]
+
+/-- A nonunital algebra homomorphism from a complete normed algebra into its scalar field, bundled
+as a continuous linear functional in `StrongDual 𝕜 A`. No continuity hypothesis on `φ` is needed. -/
+def toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : StrongDual 𝕜 A where
+  toFun := φ
+  map_add' := map_add φ
+  map_smul' := map_smul φ
+  cont := map_continuous φ
+
+@[simp]
+theorem coe_toContinuousLinearMap (φ : A →ₙₐ[𝕜] 𝕜) : ⇑φ.toContinuousLinearMap = φ :=
+  (rfl)
+
+@[simp]
+theorem toContinuousLinearMap_apply (φ : A →ₙₐ[𝕜] 𝕜) (a : A) :
+    φ.toContinuousLinearMap a = φ a :=
+  (rfl)
+
+theorem toContinuousLinearMap_injective :
+    Function.Injective (toContinuousLinearMap (𝕜 := 𝕜) (A := A)) := fun φ ψ h =>
+  DFunLike.ext φ ψ fun a => congrArg (fun f : StrongDual 𝕜 A => f a) h
+
+@[simp]
+theorem toContinuousLinearMap_inj {φ ψ : A →ₙₐ[𝕜] 𝕜} :
+    φ.toContinuousLinearMap = ψ.toContinuousLinearMap ↔ φ = ψ :=
+  toContinuousLinearMap_injective.eq_iff
+
+@[simp]
+theorem toContinuousLinearMap_zero :
+    (0 : A →ₙₐ[𝕜] 𝕜).toContinuousLinearMap = 0 :=
+  DFunLike.ext _ _ fun _ => rfl
+
+@[simp]
+theorem toContinuousLinearMap_eq_zero {φ : A →ₙₐ[𝕜] 𝕜} :
+    φ.toContinuousLinearMap = 0 ↔ φ = 0 := by
+  rw [← toContinuousLinearMap_zero, toContinuousLinearMap_inj]
+
+end NormedField
+
+section NontriviallyNormedField
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [CompleteSpace A]
+
+/-- Every nonunital character of a complete normed algebra has operator norm at most `1`. -/
+theorem norm_toContinuousLinearMap_le (φ : A →ₙₐ[𝕜] 𝕜) : ‖φ.toContinuousLinearMap‖ ≤ 1 :=
+  ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun a => by
+    simpa only [one_mul, toContinuousLinearMap_apply] using norm_apply_le_self φ a
+
+end NontriviallyNormedField
 
 end NonUnitalAlgHom
 
