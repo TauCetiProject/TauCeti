@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Basic
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import TauCeti.CategoryTheory.Abelian.LeftDerived
 import Mathlib.CategoryTheory.Abelian.Exact
+import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HomologyFunctorAccessible
 import TauCeti.CategoryTheory.Monoidal.Preadditive
 import TauCeti.CategoryTheory.ObjectProperty.KilledBy
 
@@ -37,6 +39,11 @@ If `e • 𝟙 X = 0` for a natural number `e`, then `e` kills every `Torₙ(X, 
 (`CategoryTheory.nsmul_id_Tor_eq_zero`): the objects killed by `e`
 (`CategoryTheory.ObjectProperty.isKilledBy`) are closed under subobjects and quotients and contain
 every `X ⊗ P`.
+
+When colimits of shape `J` are exact and preserved by tensoring on the right, `Torₙ(-, Y)`
+preserves colimits of shape `J` (`CategoryTheory.preservesColimitsOfShape_Tor_flip_obj`), and in
+particular vanishes on a colimit when it vanishes on the terms of the diagram
+(`CategoryTheory.isZero_Tor_of_isColimit`).
 
 For Mathlib's `CategoryTheory.Tor' C n`, which derives the first variable instead,
 `((Tor' C n).obj X).obj Y` is `Lₙ(- ⊗ Y)(X)`. The file records two facts about it in the
@@ -136,5 +143,46 @@ lemma isZero_Tor'_succ_tensorUnit (X : C) (n : ℕ) :
     Functor.preservesHomology_of_map_exact _ fun S hS ↦
       ShortComplex.exact_of_iso (S.mapNatIso (rightUnitorNatIso C)).symm hS
   exact Functor.isZero_leftDerived_succ _ X n
+
+/-- The functor sending `X` to the complex `X ⊗ P` for a projective resolution `P` of `Y`. -/
+private def tensorResolutionFunctor {Y : C} (P : ProjectiveResolution Y) :
+    C ⥤ ChainComplex C ℕ where
+  obj X := (((tensoringLeft C).obj X).mapHomologicalComplex _).obj P.complex
+  map f := (NatTrans.mapHomologicalComplex ((tensoringLeft C).map f) _).app P.complex
+
+/-- When colimits of shape `J` are exact and preserved by tensoring on the right, `Torₙ(-, Y)`
+preserves colimits of shape `J`: it is the homology of `X ⊗ P` for a projective resolution `P` of
+`Y`, and both `X ↦ X ⊗ P` and homology preserve colimits of shape `J`. -/
+instance preservesColimitsOfShape_Tor_flip_obj {J : Type*} [Category* J] [HasColimitsOfShape J C]
+    [HasExactColimitsOfShape J C] [∀ Z : C, PreservesColimitsOfShape J (tensorRight Z)] (Y : C)
+    (n : ℕ) : PreservesColimitsOfShape J ((Tor C n).flip.obj Y) := by
+  let P := projectiveResolution Y
+  have : PreservesColimitsOfShape J (tensorResolutionFunctor P) :=
+    HomologicalComplex.preservesColimitsOfShape_of_eval _ fun k ↦
+      inferInstanceAs (PreservesColimitsOfShape J (tensorRight (P.complex.X k)))
+  have : PreservesColimitsOfShape J
+      (HomologicalComplex.homologyFunctor C (ComplexShape.down ℕ) n) :=
+    inferInstanceAs (PreservesColimitsOfShape J
+      (HomologicalComplex.shortComplexFunctor C _ n ⋙ ShortComplex.homologyFunctor C))
+  let e : (Tor C n).flip.obj Y ≅
+      tensorResolutionFunctor P ⋙ HomologicalComplex.homologyFunctor C _ n :=
+    NatIso.ofComponents (fun X ↦ P.isoLeftDerivedObj ((tensoringLeft C).obj X) n) fun {X₁ X₂} f ↦ by
+      -- Unfold `Tor` to `leftDerived` of `tensoringLeft` so `isoLeftDerivedObj` cancels.
+      change (NatTrans.leftDerived ((tensoringLeft C).map f) n).app Y ≫
+        (P.isoLeftDerivedObj ((tensoringLeft C).obj X₂) n).hom = _
+      rw [P.leftDerived_app_eq, Category.assoc, Category.assoc, Iso.inv_hom_id, Category.comp_id]
+      rfl
+  exact preservesColimitsOfShape_of_natIso e.symm
+
+/-- If colimits of shape `J` are exact and preserved by tensoring on the right, and `Torₙ(-, Y)`
+vanishes on every term of a diagram `F : J ⥤ C`, then it vanishes on the colimit of `F`. -/
+lemma isZero_Tor_of_isColimit {J : Type*} [Category* J] [HasColimitsOfShape J C]
+    [HasExactColimitsOfShape J C] [∀ Z : C, PreservesColimitsOfShape J (tensorRight Z)]
+    {F : J ⥤ C} {c : Cocone F} (hc : IsColimit c) (Y : C) {n : ℕ}
+    (h : ∀ j, IsZero (((Tor C n).obj (F.obj j)).obj Y)) :
+    IsZero (((Tor C n).obj c.pt).obj Y) :=
+  (IsZero.iff_id_eq_zero _).2 <|
+    (isColimitOfPreserves ((Tor C n).flip.obj Y) hc).hom_ext fun j ↦ by
+      simpa using (h j).eq_of_src _ _
 
 end CategoryTheory
