@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Gluing
 public import TauCeti.Analysis.Distribution.Support
+import TauCeti.MeasureTheory.Function.LocalRepresentative
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
 /-!
@@ -220,19 +221,13 @@ theorem exists_contDiffOn_apply_eq_integral (T : 𝓓'(Ω, F)) :
       locallyIntegrableOn_zero (fun x hx ↦ ⟨U ⟨x, hx⟩, hU _, hxU _, fun ψ hψ ↦ ?_⟩) hφ⟩
     simp [hT _ ψ hψ, integral_of_not_completeSpace hF]
   -- The local representatives agree on overlaps, so they glue to `g`.
-  have hcompat (x y : W) : EqOn (f x) (f y) (U x ∩ U y) :=
-    ((hU x).inter (hU y)).eqOn_of_integral_smul_eq
-      ((inter_subset_left.trans (hUW x)).trans sdiff_subset)
-      ((hf x).continuousOn.mono inter_subset_left) ((hf y).continuousOn.mono inter_subset_right)
-      fun φ hφ ↦ (hT x φ (hφ.trans inter_subset_left)).symm.trans
-        (hT y φ (hφ.trans inter_subset_right))
-  let g : E → F := fun y ↦ if hy : y ∈ W then f ⟨y, hy⟩ y else 0
-  have hg (x : W) : EqOn g (f x) (U x) := fun y hy ↦ by
-    simp only [g, show y ∈ W from hUW x hy, ↓reduceDIte]
-    exact hcompat ⟨y, hUW x hy⟩ x ⟨hxU _, hy⟩
-  have hgW : ContDiffOn ℝ ∞ g W := fun x hx ↦
-    (((hf ⟨x, hx⟩).contDiffAt ((hU _).mem_nhds (hxU _))).congr_of_eventuallyEq
-      (Filter.eventually_of_mem ((hU _).mem_nhds (hxU _)) (hg ⟨x, hx⟩))).contDiffWithinAt
+  obtain ⟨g, hgW, hg, -⟩ := TauCeti.exists_contDiffOn_eqOn_of_locally hU
+    (fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hxU _⟩) hf (fun x y z hz ↦
+      ((hU x).inter (hU y)).eqOn_of_integral_smul_eq
+        ((inter_subset_left.trans (hUW x)).trans sdiff_subset)
+        ((hf x).continuousOn.mono inter_subset_left) ((hf y).continuousOn.mono inter_subset_right)
+        (fun φ hφ ↦ (hT x φ (hφ.trans inter_subset_left)).symm.trans
+          (hT y φ (hφ.trans inter_subset_right))) ⟨hz.1.2, hz.2⟩) 0
   refine ⟨g, hgW, fun φ hφ ↦ apply_eq_integral_of_locally hW
     (hgW.continuousOn.locallyIntegrableOn hW.measurableSet)
     (fun x hx ↦ ⟨U ⟨x, hx⟩, hU _, hxU _, fun ψ hψ ↦ ?_⟩) hφ⟩
@@ -240,7 +235,8 @@ theorem exists_contDiffOn_apply_eq_integral (T : 𝓓'(Ω, F)) :
   refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
   by_cases hy : ψ y = 0
   · simp [hy]
-  · simp only [hg _ (hψ (subset_tsupport _ hy))]
+  · have hyU := hψ (subset_tsupport _ hy)
+    simp only [hg _ ⟨hUW _ hyU, hyU⟩]
 
 /-- A distribution has empty singular support exactly when it is a function smooth on `Ω`. -/
 theorem singularSupport_eq_empty_iff {T : 𝓓'(Ω, F)} :
