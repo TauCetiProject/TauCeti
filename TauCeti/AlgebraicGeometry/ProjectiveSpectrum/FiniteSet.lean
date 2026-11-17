@@ -9,6 +9,7 @@ public import Mathlib.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.Immersion
 import TauCeti.AlgebraicGeometry.AffineScheme
 import TauCeti.Algebra.DirectSum.Component
 import TauCeti.RingTheory.Ideal.Operations
@@ -26,14 +27,20 @@ The homogeneous prime-avoidance argument raises two sections to a common degree 
 them, so it applies over finite fields as well.
 
 These neighborhoods supply affine charts around finite divisor supports and the finite
-orbits used in descent of projective Picard charts.
+group orbits in projective and quasi-projective quotients.
 
 ## Main results
 
+* `ProjectiveSpectrum.exists_homogeneous_mem_notMem_of_finset`: a homogeneous ideal not contained
+  in any of finitely many relevant primes contains a positive-degree element avoiding them all.
 * `ProjectiveSpectrum.exists_homogeneous_notMem_of_finset`: one positive-degree homogeneous
   section avoiding every point in a finite set.
-* `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_proj`: common affine
-  neighborhoods under an affine morphism to a projective spectrum.
+* `ProjectiveSpectrum.exists_basicOpen_superset_le` and
+  `AlgebraicGeometry.Proj.exists_homogeneous_basicOpen_superset_le`: a positive-degree homogeneous
+  basic open around a finite set inside a prescribed open.
+* `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom_proj` and
+  `AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion_proj`: common affine
+  neighbourhoods inside prescribed source opens for affine morphisms and immersions into `Proj`.
 
 -/
 
@@ -48,7 +55,8 @@ variable [AddSubmonoidClass σ A] {𝒜 : ℕ → σ} [GradedRing 𝒜]
 namespace ProjectiveSpectrum
 
 /-- A homogeneous ideal missing `x` contains a positive-degree homogeneous element vanishing
-at every point of a finite set none of whose primes is contained in the prime of `x`. -/
+at every point of a finite set none of whose primes is contained in the prime of `x`,
+while not vanishing at `x`. -/
 theorem exists_homogeneous_mem_notMem_of_finset_not_le (x : ProjectiveSpectrum 𝒜)
     (points : Finset (ProjectiveSpectrum 𝒜)) (hsep : ∀ y ∈ points, ¬ y ≤ x)
     {I : HomogeneousIdeal 𝒜} (hI : ¬ I ≤ x.asHomogeneousIdeal) :
@@ -57,11 +65,14 @@ theorem exists_homogeneous_mem_notMem_of_finset_not_le (x : ProjectiveSpectrum �
   classical
   have hother (y : points) : ∃ n, ∃ a ∈ 𝒜 n,
       a ∈ y.1.asHomogeneousIdeal ∧ a ∉ x.asHomogeneousIdeal :=
-    y.1.asHomogeneousIdeal.isHomogeneous.exists_mem_notMem_of_not_subset (hsep y y.2)
+    y.1.asHomogeneousIdeal.isHomogeneous.exists_mem_notMem_of_not_subset (by
+      simpa only [coe_toIdeal, SetLike.coe_subset_coe,
+        ProjectiveSpectrum.as_ideal_le_as_ideal] using hsep y y.2)
   choose d a ha hay hax using hother
   obtain ⟨n, hn, b, hb, hbx⟩ := x.exists_le_mem_notMem 1
   obtain ⟨m, c, hc, hcI, hcx⟩ :=
-    I.isHomogeneous.exists_mem_notMem_of_not_subset hI
+    I.isHomogeneous.exists_mem_notMem_of_not_subset (q := x.asHomogeneousIdeal.toIdeal)
+      (SetLike.coe_subset_coe.not.mpr (toIdeal_le_toIdeal_iff.not.mpr hI))
   let q := b * c * ∏ y ∈ points.attach, a y
   refine ⟨n + m + ∑ y ∈ points.attach, d y, by omega, q, ?_, ?_, ?_, ?_⟩
   · exact SetLike.mul_mem_graded (SetLike.mul_mem_graded hb hc)
@@ -117,8 +128,37 @@ theorem exists_homogeneous_notMem_of_finset (points : Finset (ProjectiveSpectrum
     ∃ n > 0, ∃ a ∈ 𝒜 n, ∀ x ∈ points, a ∉ x.asHomogeneousIdeal := by
   obtain ⟨n, hn, a, ha, _, havoid⟩ :=
     exists_homogeneous_mem_notMem_of_finset (I := ⊤) points
-      (fun x _ h ↦ x.isPrime.ne_top (top_le_iff.mp h))
+      (fun x _ h ↦ x.isPrime.ne_top (by
+        rw [top_le_iff.mp h, HomogeneousIdeal.toIdeal_top]))
   exact ⟨n, hn, a, ha, havoid⟩
+
+/-- A finite set in a projective spectrum has a positive-degree homogeneous basic-open
+neighbourhood inside any prescribed open containing it. -/
+theorem exists_basicOpen_superset_le
+    {s : Set (ProjectiveSpectrum 𝒜)}
+    {W : TopologicalSpace.Opens (ProjectiveSpectrum 𝒜)} (hs : s.Finite) (hsW : s ⊆ W) :
+    ∃ n > 0, ∃ a ∈ 𝒜 n, s ⊆ basicOpen 𝒜 a ∧ basicOpen 𝒜 a ≤ W := by
+  classical
+  let I := ProjectiveSpectrum.vanishingIdeal (𝒜 := 𝒜) (W : Set (ProjectiveSpectrum 𝒜))ᶜ
+  have hI (x : ProjectiveSpectrum 𝒜) (hx : x ∈ hs.toFinset) :
+      ¬ I ≤ x.asHomogeneousIdeal := by
+    intro h
+    have hxzero := (ProjectiveSpectrum.mem_zeroLocus 𝒜 x (I : Set A)).mpr
+      (SetLike.coe_subset_coe.mpr h)
+    rw [ProjectiveSpectrum.zeroLocus_vanishingIdeal_eq_closure] at hxzero
+    have hxclosure : x ∈ closure ((W : Set (ProjectiveSpectrum 𝒜))ᶜ) := hxzero
+    rw [W.isOpen.isClosed_compl.closure_eq] at hxclosure
+    exact hxclosure (hsW (hs.mem_toFinset.mp hx))
+  obtain ⟨n, hn, a, ha, haI, havoid⟩ :=
+    ProjectiveSpectrum.exists_homogeneous_mem_notMem_of_finset hs.toFinset hI
+  refine ⟨n, hn, a, ha, ?_, ?_⟩
+  · intro x hx
+    rw [SetLike.mem_coe, ProjectiveSpectrum.mem_basicOpen]
+    exact havoid x (hs.mem_toFinset.mpr hx)
+  · intro x hx
+    by_contra hxW
+    exact (ProjectiveSpectrum.mem_basicOpen 𝒜 a x).mp hx
+      ((ProjectiveSpectrum.mem_vanishingIdeal _ _).mp haI x hxW)
 
 end ProjectiveSpectrum
 
@@ -129,51 +169,23 @@ open scoped AlgebraicGeometry
 
 variable [AddSubgroupClass σ A] {𝒜 : ℕ → σ} [GradedRing 𝒜]
 
-/-- A finite set of a projective spectrum admits a common affine basic open inside any
-prescribed open containing the set. No field or finiteness assumption on the graded ring is
-needed. -/
-theorem AlgebraicGeometry.Proj.exists_isAffineOpen_basicOpen_superset
+/-- A finite set of `Proj` has a basic-open neighbourhood defined by a homogeneous element
+of positive degree inside any prescribed open containing the set. -/
+theorem AlgebraicGeometry.Proj.exists_homogeneous_basicOpen_superset_le
     {s : Set (Proj 𝒜)} {W : (Proj 𝒜).Opens} (hs : s.Finite) (hsW : s ⊆ W) :
-    ∃ n > 0, ∃ a ∈ 𝒜 n, s ⊆ Proj.basicOpen 𝒜 a ∧ Proj.basicOpen 𝒜 a ≤ W := by
-  classical
-  let I := ProjectiveSpectrum.vanishingIdeal (𝒜 := 𝒜) (W : Set (Proj 𝒜))ᶜ
-  have hI (x : ProjectiveSpectrum 𝒜) (hx : x ∈ hs.toFinset) :
-      ¬ I ≤ x.asHomogeneousIdeal := by
-    intro h
-    have hxzero : x ∈ ProjectiveSpectrum.zeroLocus 𝒜 (I : Set A) := h
-    rw [ProjectiveSpectrum.zeroLocus_vanishingIdeal_eq_closure] at hxzero
-    -- The scheme and projective spectrum have the same underlying topological space.
-    have hxclosure : x ∈ closure ((W : Set (Proj 𝒜))ᶜ) := hxzero
-    rw [W.isOpen.isClosed_compl.closure_eq] at hxclosure
-    exact hxclosure (hsW (hs.mem_toFinset.mp hx))
-  obtain ⟨n, hn, a, ha, haI, havoid⟩ :=
-    ProjectiveSpectrum.exists_homogeneous_mem_notMem_of_finset hs.toFinset hI
-  refine ⟨n, hn, a, ha, ?_, ?_⟩
-  · intro x hx
-    rw [SetLike.mem_coe, Proj.mem_basicOpen]
-    exact havoid x (hs.mem_toFinset.mpr hx)
-  · intro x hx
-    by_contra hxW
-    exact (Proj.mem_basicOpen 𝒜 a x).mp hx
-      ((ProjectiveSpectrum.mem_vanishingIdeal _ _).mp haI x hxW)
+    ∃ n > 0, ∃ a ∈ 𝒜 n, s ⊆ Proj.basicOpen 𝒜 a ∧ Proj.basicOpen 𝒜 a ≤ W :=
+  ProjectiveSpectrum.exists_basicOpen_superset_le hs hsW
 
 /-- A finite set in the source of an affine morphism to a projective spectrum lies in a
 common affine open inside any prescribed open containing it. The graded ring is arbitrary. -/
-theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_proj
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom_proj
     {X : Scheme} (f : X ⟶ Proj 𝒜) [IsAffineHom f]
     {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
     ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
-  classical
-  obtain ⟨n, hn, a, ha, havoid⟩ :=
-    ProjectiveSpectrum.exists_homogeneous_notMem_of_finset (𝒜 := 𝒜) (hs.image f).toFinset
-  let V := f ⁻¹ᵁ Proj.basicOpen 𝒜 a
-  have hV : IsAffineOpen V := (Proj.isAffineOpen_basicOpen 𝒜 a ha hn).preimage f
-  have hsV : s ⊆ V := by
-    intro x hx
-    rw [SetLike.mem_coe, f.mem_preimage, Proj.mem_basicOpen]
-    exact havoid (f x) ((hs.image f).mem_toFinset.mpr (Set.mem_image_of_mem f hx))
-  obtain ⟨r, hsr, hrW⟩ := hV.exists_basicOpen_superset_le hs hsV hsW
-  exact ⟨X.basicOpen r, hV.basicOpen r, hsr, hrW⟩
+  obtain ⟨n, hn, a, ha, hsa, _⟩ := Proj.exists_homogeneous_basicOpen_superset_le
+    (hs.image f) (W := ⊤) (fun _ _ ↦ TopologicalSpace.Opens.mem_top _)
+  exact f.exists_isAffineOpen_superset_of_isAffineHom hs hsW
+    ⟨Proj.basicOpen 𝒜 a, Proj.isAffineOpen_basicOpen 𝒜 a ha hn, hsa⟩
 
 /-- A finite set in a locally closed subscheme of a projective spectrum lies in a common
 affine open inside any prescribed open. This includes quasi-projective open subschemes. -/
@@ -181,20 +193,9 @@ theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isImmersion
     {X : Scheme} (f : X ⟶ Proj 𝒜) [IsImmersion f]
     {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W) :
     ∃ U : X.Opens, IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
-  obtain ⟨n, hn, a, ha, hsa, haV⟩ := Proj.exists_isAffineOpen_basicOpen_superset
-    (W := f.coborderRange)
-    (hs.image f) (by
+  obtain ⟨n, hn, a, ha, hsa, haV⟩ := Proj.exists_homogeneous_basicOpen_superset_le
+    (W := f.coborderRange) (hs.image f) (by
       rintro _ ⟨x, _, rfl⟩
       exact subset_coborder (Set.mem_range_self x))
-  have hA : IsAffineOpen (f.coborderRange.ι ⁻¹ᵁ Proj.basicOpen 𝒜 a) :=
-    (Proj.isAffineOpen_basicOpen 𝒜 a ha hn).preimage_of_isOpenImmersion
-      f.coborderRange.ι (by simpa only [Scheme.Opens.opensRange_ι] using haV)
-  let V := f ⁻¹ᵁ Proj.basicOpen 𝒜 a
-  have hV : IsAffineOpen V := by
-    dsimp only [V]
-    rw [← f.liftCoborder_ι, Scheme.Hom.comp_preimage]
-    exact hA.preimage f.liftCoborder
-  have hsV : s ⊆ V := fun x hx ↦ f.mem_preimage.mpr
-    (hsa (Set.mem_image_of_mem f hx))
-  obtain ⟨r, hsr, hrW⟩ := hV.exists_basicOpen_superset_le hs hsV hsW
-  exact ⟨X.basicOpen r, hV.basicOpen r, hsr, hrW⟩
+  exact f.exists_isAffineOpen_superset_of_isImmersion hs hsW
+    ⟨Proj.basicOpen 𝒜 a, Proj.isAffineOpen_basicOpen 𝒜 a ha hn, hsa, haV⟩

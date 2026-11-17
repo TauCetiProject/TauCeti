@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.AffineScheme
+public import Mathlib.AlgebraicGeometry.Morphisms.Affine
 public import Mathlib.AlgebraicGeometry.Properties
 public import Mathlib.CategoryTheory.Sites.Spaces
 public import Mathlib.RingTheory.Ideal.Pointwise
@@ -489,3 +490,17 @@ theorem AlgebraicGeometry.IsAffineOpen.exists_basicOpen_superset_le
       Set.mem_iUnion.mpr ⟨Set.mem_range_self _, h⟩⟩
   · exact (hV.basicOpen_le_iSup_basicOpen_iff.mpr
       (Ideal.le_radical hrI)).trans (iSup₂_le fun r hr ↦ hr)
+
+/-- An affine morphism transfers a finite affine neighbourhood from the target, and the source
+neighbourhood can be chosen inside any prescribed open containing the finite set. -/
+theorem AlgebraicGeometry.Scheme.Hom.exists_isAffineOpen_superset_of_isAffineHom
+    {X Y : AlgebraicGeometry.Scheme} (f : X ⟶ Y) [AlgebraicGeometry.IsAffineHom f]
+    {s : Set X} {W : X.Opens} (hs : s.Finite) (hsW : s ⊆ W)
+    (hY : ∃ V : Y.Opens, AlgebraicGeometry.IsAffineOpen V ∧ f '' s ⊆ V) :
+    ∃ U : X.Opens, AlgebraicGeometry.IsAffineOpen U ∧ s ⊆ U ∧ U ≤ W := by
+  obtain ⟨V, hV, hsV⟩ := hY
+  have hpre := hV.preimage f
+  have hsPre : s ⊆ f ⁻¹ᵁ V := fun x hx ↦ f.mem_preimage.mpr
+    (hsV (Set.mem_image_of_mem f hx))
+  obtain ⟨r, hsr, hrW⟩ := hpre.exists_basicOpen_superset_le hs hsPre hsW
+  exact ⟨X.basicOpen r, hpre.basicOpen r, hsr, hrW⟩
