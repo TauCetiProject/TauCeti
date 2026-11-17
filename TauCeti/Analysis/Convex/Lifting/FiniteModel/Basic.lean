@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Comp
-public import Mathlib.Data.Fin.Tuple.Basic
+public import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Mul
@@ -24,9 +24,10 @@ and finite real lower and upper bounds on the integer block.
 Enlarging the continuous block from `n` to `n + q` is managed by `project` (forgetting the
 appended coordinates while retaining the integer block), `height` (reading the appended
 coordinates), and `insertHeight` (appending a height vector to an original point), packaged
-together as the equivalence `pointEquiv`. Affine expressions `affineArgument` evaluate linear
-combinations of both coordinate blocks plus an offset, and support exact Fréchet derivative
-transport when univariate component derivatives are supplied at the evaluated argument.
+together as the equivalence `pointEquiv` built from `Fin.appendEquiv`. Affine expressions
+`affineArgument` evaluate linear combinations of both coordinate blocks plus an offset, and support
+exact Fréchet derivative transport when univariate component derivatives are supplied at the
+evaluated argument.
 
 ## Main definitions
 
@@ -38,9 +39,12 @@ transport when univariate component derivatives are supplied at the evaluated ar
   projection, height extraction, insertion, and splitting equivalence for `Point (n + q) m`.
 * `TauCeti.ConvexLifting.affineArgument` and `TauCeti.ConvexLifting.affineArgumentCLM` — affine
   expressions on `Point n m` and their linear parts.
-* `TauCeti.ConvexLifting.FiniteModel.objective`, `TauCeti.ConvexLifting.FiniteModel.feasibleOn`,
-  and `TauCeti.ConvexLifting.FiniteModel.relaxationOn` — linear objective, mixed-integer feasible
-  set, and continuous relaxation.
+* `TauCeti.ConvexLifting.FiniteModel.objective`,
+  `TauCeti.ConvexLifting.FiniteModel.affineFeasibleWith`,
+  `TauCeti.ConvexLifting.FiniteModel.feasibleWith`,
+  `TauCeti.ConvexLifting.FiniteModel.feasibleOn`, and
+  `TauCeti.ConvexLifting.FiniteModel.relaxationOn` — linear objective, parameterized affine and
+  nonlinear feasible-set constructors, mixed-integer feasible set, and continuous relaxation.
 
 ## References
 
@@ -129,48 +133,12 @@ theorem insertHeight_fst_natAdd (x : Point n m) (y : Fin q → ℝ) (j : Fin q) 
 theorem insertHeight_snd (x : Point n m) (y : Fin q → ℝ) :
     (insertHeight x y).2 = x.2 := (rfl)
 
-/-- Projecting after height insertion recovers the original point. -/
-@[simp]
-theorem project_insertHeight (x : Point n m) (y : Fin q → ℝ) :
-    project (insertHeight x y) = x := by
-  ext i
-  · exact insertHeight_fst_castAdd x y i
-  · rfl
-
-/-- Reading the height after height insertion recovers the inserted vector. -/
-@[simp]
-theorem height_insertHeight (x : Point n m) (y : Fin q → ℝ) :
-    height (insertHeight x y) = y := by
-  ext j
-  exact insertHeight_fst_natAdd x y j
-
-/-- Reconstructing an enlarged point from its projection and height recovers the point. -/
-@[simp]
-theorem insertHeight_project_height (z : Point (n + q) m) :
-    insertHeight (project z) (height z) = z := by
-  ext i
-  · exact congrFun (Fin.append_castAdd_natAdd (f := z.1)) i
-  · rfl
-
-/-- With `q = 0` appended coordinates, projection is the identity. -/
-@[simp]
-theorem project_zero (z : Point (n + 0) m) : project z = z := by
-  ext i
-  · simp [project]
-  · rfl
-
-/-- With `q = 0` appended coordinates, height insertion adds no coordinates. -/
-@[simp]
-theorem insertHeight_zero (x : Point n m) (y : Fin 0 → ℝ) : insertHeight x y = x := by
-  rw [← project_zero (insertHeight x y), project_insertHeight]
-
-/-- The splitting equivalence `Point (n + q) m ≃ Point n m × (Fin q → ℝ)` given by `project` and
-`height`. -/
-def pointEquiv (n m q : ℕ) : Point (n + q) m ≃ Point n m × (Fin q → ℝ) where
-  toFun z := (project z, height z)
-  invFun p := insertHeight p.1 p.2
-  left_inv := insertHeight_project_height
-  right_inv p := Prod.ext (project_insertHeight p.1 p.2) (height_insertHeight p.1 p.2)
+/-- The splitting equivalence `Point (n + q) m ≃ Point n m × (Fin q → ℝ)` built from
+`Fin.appendEquiv`, separating `project z` from the `q` appended coordinates `height z`. -/
+def pointEquiv (n m q : ℕ) : Point (n + q) m ≃ Point n m × (Fin q → ℝ) :=
+  (((Fin.appendEquiv n q).symm.prodCongr (Equiv.refl _)).trans
+    (Equiv.prodAssoc _ _ _)).trans <|
+    ((Equiv.refl _).prodCongr (Equiv.prodComm _ _)).trans (Equiv.prodAssoc _ _ _).symm
 
 /-- Forward evaluation of `pointEquiv`. -/
 @[simp]
@@ -185,6 +153,39 @@ theorem pointEquiv_symm_apply (p : Point n m × (Fin q → ℝ)) :
 /-- Composing `pointEquiv` with `Prod.fst` gives `project`. -/
 @[simp]
 theorem fst_comp_pointEquiv : Prod.fst ∘ pointEquiv n m q = project := (rfl)
+
+/-- Projecting after height insertion recovers the original point. -/
+@[simp]
+theorem project_insertHeight (x : Point n m) (y : Fin q → ℝ) :
+    project (insertHeight x y) = x := by
+  simpa only [pointEquiv_apply, pointEquiv_symm_apply] using
+    congrArg Prod.fst ((pointEquiv n m q).apply_symm_apply (x, y))
+
+/-- Reading the height after height insertion recovers the inserted vector. -/
+@[simp]
+theorem height_insertHeight (x : Point n m) (y : Fin q → ℝ) :
+    height (insertHeight x y) = y := by
+  simpa only [pointEquiv_apply, pointEquiv_symm_apply] using
+    congrArg Prod.snd ((pointEquiv n m q).apply_symm_apply (x, y))
+
+/-- Reconstructing an enlarged point from its projection and height recovers the point. -/
+@[simp]
+theorem insertHeight_project_height (z : Point (n + q) m) :
+    insertHeight (project z) (height z) = z := by
+  simpa only [pointEquiv_apply, pointEquiv_symm_apply] using
+    (pointEquiv n m q).symm_apply_apply z
+
+/-- With `q = 0` appended coordinates, projection is the identity. -/
+@[simp]
+theorem project_zero (z : Point (n + 0) m) : project z = z := by
+  ext i
+  · simp [project]
+  · rfl
+
+/-- With `q = 0` appended coordinates, height insertion adds no coordinates. -/
+@[simp]
+theorem insertHeight_zero (x : Point n m) (y : Fin 0 → ℝ) : insertHeight x y = x := by
+  rw [← project_zero (insertHeight x y), project_insertHeight]
 
 /-- Splitting a continuous-block inner product with appended coefficients into its original and
 height parts. -/
@@ -293,25 +294,77 @@ theorem objective_zero_dim (d : FiniteModel 0 0 l r) (x : Point 0 0) :
 `project`. -/
 theorem objective_eq_comp_project {l' r' : ℕ} {d : FiniteModel n m l r}
     {d' : FiniteModel (n + q) m l' r'}
-    (hc1 : d'.c1 = Fin.append d.c1 0) (hc2 : d'.c2 = d.c2) (z : Point (n + q) m) :
-    d'.objective z = d.objective (project z) := by
-  simp only [objective_apply, hc1, hc2, project_snd]
+    (hc1 : d'.c1 = Fin.append d.c1 0) (hc2 : d'.c2 = d.c2) :
+    d'.objective = d.objective ∘ project := by
+  ext z
+  simp only [Function.comp_apply, objective_apply, hc1, hc2, project_snd]
   rw [sum_append_zero_right_mul_fst]
+
+/-- Points `x ∈ D` satisfying all affine inequality rows of `d` together with a predicate `P` on
+the integer-block coordinates `x.2`, excluding the nonlinear residuals `d.g`. -/
+def affineFeasibleWith (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) : Set (Point n m) :=
+  {x | x ∈ D ∧ (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧ P x.2}
+
+/-- Membership in `FiniteModel.affineFeasibleWith`. -/
+@[simp]
+theorem mem_affineFeasibleWith_iff (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) (x : Point n m) :
+    x ∈ d.affineFeasibleWith D P ↔
+      x ∈ D ∧ (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧ P x.2 :=
+  (Iff.rfl)
+
+/-- Points `x ∈ D` satisfying all nonlinear residuals `d.g j x ≤ 0`, all affine inequality rows of
+`d`, and a predicate `P` on the integer-block coordinates `x.2`. Both `feasibleOn` and
+`relaxationOn` are instances of `feasibleWith`. -/
+def feasibleWith (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) : Set (Point n m) :=
+  {x ∈ d.affineFeasibleWith D P | ∀ j, d.g j x ≤ 0}
+
+/-- Membership in `FiniteModel.feasibleWith`. -/
+@[simp]
+theorem mem_feasibleWith_iff (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) (x : Point n m) :
+    x ∈ d.feasibleWith D P ↔
+      x ∈ D ∧ (∀ j, d.g j x ≤ 0) ∧
+        (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧ P x.2 :=
+  ⟨fun ⟨⟨hxD, hA, hP⟩, hg⟩ => ⟨hxD, hg, hA, hP⟩,
+    fun ⟨hxD, hg, hA, hP⟩ => ⟨⟨hxD, hA, hP⟩, hg⟩⟩
+
+/-- Every point of `d.feasibleWith D P` lies in `D`. -/
+theorem feasibleWith_subset_domain (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) : d.feasibleWith D P ⊆ D :=
+  fun _ hx => hx.1.1
+
+/-- Monotonicity of `d.feasibleWith D` in the integer-block predicate. -/
+theorem feasibleWith_mono (d : FiniteModel n m l r) (D : Set (Point n m))
+    {P Q : (Fin m → ℝ) → Prop} (hPQ : ∀ v, P v → Q v) :
+    d.feasibleWith D P ⊆ d.feasibleWith D Q :=
+  fun _ ⟨⟨hxD, hA, hP⟩, hg⟩ => ⟨⟨hxD, hA, hPQ _ hP⟩, hg⟩
 
 /-- The mixed-integer feasible set on domain `D`: points `x ∈ D` satisfying every nonlinear
 residual `d.g j x ≤ 0`, every affine row, and boundedness and integrality of `x.2`. -/
 def feasibleOn (d : FiniteModel n m l r) (D : Set (Point n m)) : Set (Point n m) :=
-  {x | x ∈ D ∧ (∀ j, d.g j x ≤ 0) ∧
-    (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧
+  d.feasibleWith D fun v =>
     ∃ y : Fin m → ℤ, (∀ j, d.lo j ≤ (y j : ℝ) ∧ (y j : ℝ) ≤ d.hi j) ∧
-      x.2 = fun j => (y j : ℝ)}
+      v = fun j => (y j : ℝ)
 
 /-- The continuous relaxation on domain `D`: the same domain, nonlinear residuals, affine rows, and
 coordinate bounds on `x.2`, without requiring `x.2` to be integral. -/
 def relaxationOn (d : FiniteModel n m l r) (D : Set (Point n m)) : Set (Point n m) :=
-  {x | x ∈ D ∧ (∀ j, d.g j x ≤ 0) ∧
-    (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧
-    ∀ j, d.lo j ≤ x.2 j ∧ x.2 j ≤ d.hi j}
+  d.feasibleWith D fun v => ∀ j, d.lo j ≤ v j ∧ v j ≤ d.hi j
+
+/-- `feasibleOn` expressed as an instance of `feasibleWith`. -/
+theorem feasibleOn_eq_feasibleWith (d : FiniteModel n m l r) (D : Set (Point n m)) :
+    d.feasibleOn D = d.feasibleWith D fun v =>
+      ∃ y : Fin m → ℤ, (∀ j, d.lo j ≤ (y j : ℝ) ∧ (y j : ℝ) ≤ d.hi j) ∧
+        v = fun j => (y j : ℝ) :=
+  (rfl)
+
+/-- `relaxationOn` expressed as an instance of `feasibleWith`. -/
+theorem relaxationOn_eq_feasibleWith (d : FiniteModel n m l r) (D : Set (Point n m)) :
+    d.relaxationOn D = d.feasibleWith D fun v => ∀ j, d.lo j ≤ v j ∧ v j ≤ d.hi j :=
+  (rfl)
 
 /-- Membership in `FiniteModel.feasibleOn`. -/
 @[simp]
@@ -321,7 +374,7 @@ theorem mem_feasibleOn_iff (d : FiniteModel n m l r) (D : Set (Point n m)) (x : 
         (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧
         ∃ y : Fin m → ℤ, (∀ j, d.lo j ≤ (y j : ℝ) ∧ (y j : ℝ) ≤ d.hi j) ∧
           x.2 = fun j => (y j : ℝ) :=
-  (Iff.rfl)
+  d.mem_feasibleWith_iff D _ x
 
 /-- Membership in `FiniteModel.relaxationOn`. -/
 @[simp]
@@ -330,32 +383,29 @@ theorem mem_relaxationOn_iff (d : FiniteModel n m l r) (D : Set (Point n m)) (x 
       x ∈ D ∧ (∀ j, d.g j x ≤ 0) ∧
         (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧
         ∀ j, d.lo j ≤ x.2 j ∧ x.2 j ≤ d.hi j :=
-  (Iff.rfl)
+  d.mem_feasibleWith_iff D _ x
 
 /-- Every point of `d.feasibleOn D` lies in `D`. -/
 theorem feasibleOn_subset_domain (d : FiniteModel n m l r) (D : Set (Point n m)) :
     d.feasibleOn D ⊆ D :=
-  fun _ hx => hx.1
+  d.feasibleWith_subset_domain D _
 
 /-- Every point of `d.relaxationOn D` lies in `D`. -/
 theorem relaxationOn_subset_domain (d : FiniteModel n m l r) (D : Set (Point n m)) :
     d.relaxationOn D ⊆ D :=
-  fun _ hx => hx.1
+  d.feasibleWith_subset_domain D _
 
 /-- Mixed-integer feasibility is contained in the continuous relaxation. -/
 theorem feasibleOn_subset_relaxationOn (d : FiniteModel n m l r) (D : Set (Point n m)) :
-    d.feasibleOn D ⊆ d.relaxationOn D := by
-  rintro x ⟨hxD, hg, hA, y, hbd, hx2⟩
-  refine ⟨hxD, hg, hA, fun j => ?_⟩
-  simpa only [hx2] using hbd j
+    d.feasibleOn D ⊆ d.relaxationOn D :=
+  d.feasibleWith_mono D fun _ ⟨y, hbd, hv⟩ j => by simpa only [hv] using hbd j
 
 /-- With `m = 0` integer-block coordinates, mixed-integer feasibility coincides with the
 continuous relaxation. -/
 theorem feasibleOn_eq_relaxationOn_of_zero (d : FiniteModel n 0 l r) (D : Set (Point n 0)) :
-    d.feasibleOn D = d.relaxationOn D := by
-  refine Subset.antisymm (d.feasibleOn_subset_relaxationOn D) ?_
-  rintro x ⟨hxD, hg, hA, _⟩
-  exact ⟨hxD, hg, hA, Fin.elim0, fun j => j.elim0, funext fun j => j.elim0⟩
+    d.feasibleOn D = d.relaxationOn D :=
+  Subset.antisymm (d.feasibleOn_subset_relaxationOn D) <|
+    d.feasibleWith_mono D fun _ _ => ⟨Fin.elim0, fun j => j.elim0, funext fun j => j.elim0⟩
 
 end FiniteModel
 

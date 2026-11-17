@@ -12,7 +12,8 @@ public import Mathlib.Order.Filter.Extr
 
 A minimum on a sublevel transfers to the full admissible set, and at a minimizer the sublevel at
 the minimum value is exactly the set of all minimizers. Pullback objectives along a map `p` also
-transfer `IsMinOn` and attained-minimum existence identically between `s` and `p '' s`.
+transfer `IsMinOn`, feasible minimizers, and attained-minimum existence identically between `s` and
+`p '' s`.
 -/
 
 public section
@@ -36,6 +37,14 @@ theorem isMinOn_image_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y �
     {s : Set X} {z : X} :
     IsMinOn f (p '' s) (p z) ↔ IsMinOn (f ∘ p) s z := by
   simp only [isMinOn_iff, forall_mem_image, Function.comp_apply]
+
+/-- A point `z` is a feasible minimizer of `f ∘ p` on `s` if and only if `z ∈ s` and `p z` is a
+feasible minimizer of `f` on `p '' s`. -/
+theorem mem_and_isMinOn_comp_iff {X Y β : Type*} [Preorder β] {p : X → Y} {f : Y → β}
+    {s : Set X} {z : X} :
+    (z ∈ s ∧ IsMinOn (f ∘ p) s z) ↔ z ∈ s ∧ p z ∈ p '' s ∧ IsMinOn f (p '' s) (p z) := by
+  rw [isMinOn_image_iff]
+  exact ⟨fun ⟨hz, hmin⟩ ↦ ⟨hz, mem_image_of_mem p hz, hmin⟩, fun ⟨hz, _, hmin⟩ ↦ ⟨hz, hmin⟩⟩
 
 /-- An attained minimum of `f` on `p '' s` exists if and only if an attained minimum of `f ∘ p`
 on `s` exists. -/

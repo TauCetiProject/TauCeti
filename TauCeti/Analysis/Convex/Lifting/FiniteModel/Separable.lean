@@ -66,9 +66,12 @@ namespace TauCeti.ConvexLifting.FiniteModel
 variable {n m l r q : ℕ}
 
 /-- Lift a `FiniteModel` by appending `q` free continuous height coordinates `y_j` with component
-epigraph rows `component j (project z) - y_j ≤ 0` and weighted affine budget rows
-`∑ j, weight i j * y_j ≤ 0`. Original affine rows, integer-block bounds, and the linear objective
-are retained, with zero objective coefficients on the appended height coordinates. -/
+epigraph residuals `component j (project z) - y_j ≤ 0` and weighted affine budget rows
+`∑ j, weight i j * y_j ≤ 0`. The original nonlinear residuals `d.g` are not carried over; they are
+discarded and replaced by the `q` component-epigraph residuals, so the lifted model matches `d`
+only when `d.g` satisfies the assumed separable decomposition `hg` (with nonnegative weights `hw`).
+Original affine rows, integer-block bounds, and the linear objective are retained, with zero
+objective coefficients on the appended height coordinates. -/
 def separableLift (d : FiniteModel n m l r)
     (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
     FiniteModel (n + q) m q (r + l) where
@@ -93,13 +96,13 @@ theorem separableLift_c2 (d : FiniteModel n m l r)
     (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
     (d.separableLift component weight).c2 = d.c2 := (rfl)
 
-/-- The separable lift evaluates the original linear objective on `project z`. -/
+/-- The objective of `separableLift` is the pullback of `d.objective` along `project`. -/
 @[simp]
 theorem separableLift_objective (d : FiniteModel n m l r)
-    (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) (z : Point (n + q) m) :
-    (d.separableLift component weight).objective z = d.objective (project z) :=
+    (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
+    (d.separableLift component weight).objective = d.objective ∘ project :=
   objective_eq_comp_project (separableLift_c1 d component weight)
-    (separableLift_c2 d component weight) z
+    (separableLift_c2 d component weight)
 
 /-- Nonlinear residual evaluation of `separableLift`. -/
 @[simp]
@@ -174,92 +177,57 @@ theorem separableLift_nonlinear_rows_iff (d : FiniteModel n m l r)
       ∀ j, component j (project z) ≤ height z j :=
   forall_congr' fun _ => sub_nonpos
 
-/-- Domain, affine-row, and bounded-integer constraints of `d` (excluding the nonlinear rows
-`d.g`). -/
-private def feasibleBase (d : FiniteModel n m l r) (D : Set (Point n m)) : Set (Point n m) :=
-  {x | x ∈ D ∧ (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧
-    ∃ y : Fin m → ℤ, (∀ j, d.lo j ≤ (y j : ℝ) ∧ (y j : ℝ) ≤ d.hi j) ∧
-      x.2 = fun j => (y j : ℝ)}
-
-/-- Domain, affine-row, and relaxed box-bound constraints of `d` (excluding the nonlinear rows
-`d.g`). -/
-private def relaxationBase (d : FiniteModel n m l r) (D : Set (Point n m)) : Set (Point n m) :=
-  {x | x ∈ D ∧ (∀ k, (∑ i, d.A k i * x.1 i) + (∑ j, d.B k j * x.2 j) ≤ d.rhs k) ∧
-    ∀ j, d.lo j ≤ x.2 j ∧ x.2 j ≤ d.hi j}
-
-private theorem feasibleOn_eq_originalSet (d : FiniteModel n m l r) (D : Set (Point n m))
-    (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
+private theorem feasibleWith_eq_originalSet (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) :
-    d.feasibleOn D =
-      originalSet (d.feasibleBase D) (fun x j => component j x)
+    d.feasibleWith D P =
+      originalSet (d.affineFeasibleWith D P) (fun x j => component j x)
         (fun y i => ∑ j, weight i j * y j) 0 := by
   ext x
-  simp only [mem_feasibleOn_iff, mem_originalSet_iff, feasibleBase, mem_ofPred_eq, Pi.le_def,
+  simp only [mem_feasibleWith_iff, mem_originalSet_iff, mem_affineFeasibleWith_iff, Pi.le_def,
     Pi.zero_apply, hg]
   tauto
 
-private theorem relaxationOn_eq_originalSet (d : FiniteModel n m l r) (D : Set (Point n m))
+private theorem separableLift_feasibleWith_eq_preimage_liftedSet (d : FiniteModel n m l r)
+    (D : Set (Point n m)) (P : (Fin m → ℝ) → Prop)
+    (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
+    (d.separableLift component weight).feasibleWith (project ⁻¹' D) P =
+      pointEquiv n m q ⁻¹'
+        liftedSet (d.affineFeasibleWith D P) univ (fun x j => component j x)
+          (fun y i => ∑ j, weight i j * y j) 0 := by
+  ext z
+  simp only [mem_feasibleWith_iff, mem_preimage, separableLift_nonlinear_rows_iff,
+    separableLift_affine_rows_iff, mem_liftedSet_iff, pointEquiv_apply,
+    mem_affineFeasibleWith_iff, mem_univ, true_and, Pi.le_def, Pi.zero_apply, project_snd]
+  tauto
+
+/-- Inserting the actual component values lifts any `feasibleWith D P` point of `d` into
+`separableLift`, without needing nonnegativity of `weight`. -/
+theorem insertHeight_component_mem_separableLift_feasibleWith (d : FiniteModel n m l r)
+    (D : Set (Point n m)) {P : (Fin m → ℝ) → Prop}
     (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
+    (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x)
+    {x : Point n m} (hx : x ∈ d.feasibleWith D P) :
+    insertHeight x (fun j => component j x) ∈
+      (d.separableLift component weight).feasibleWith (project ⁻¹' D) P := by
+  rw [separableLift_feasibleWith_eq_preimage_liftedSet]
+  rw [feasibleWith_eq_originalSet d D P component weight hg] at hx
+  simpa only [mem_preimage, pointEquiv_apply, project_insertHeight, height_insertHeight] using
+    graph_mem_liftedSet (mapsTo_univ _ _) hx
+
+/-- Exact projection for separable-height lifting under nonnegative weights and any integer-block
+predicate `P`. -/
+theorem separable_feasibleWith_projection (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
+    (hw : ∀ i j, 0 ≤ weight i j)
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) :
-    d.relaxationOn D =
-      originalSet (d.relaxationBase D) (fun x j => component j x)
-        (fun y i => ∑ j, weight i j * y j) 0 := by
-  ext x
-  simp only [mem_relaxationOn_iff, mem_originalSet_iff, relaxationBase, mem_ofPred_eq, Pi.le_def,
-    Pi.zero_apply, hg]
-  tauto
-
-private theorem separableLift_feasibleOn_eq_preimage_liftedSet (d : FiniteModel n m l r)
-    (D : Set (Point n m)) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
-    (d.separableLift component weight).feasibleOn (project ⁻¹' D) =
-      pointEquiv n m q ⁻¹'
-        liftedSet (d.feasibleBase D) univ (fun x j => component j x)
-          (fun y i => ∑ j, weight i j * y j) 0 := by
-  ext z
-  simp only [mem_feasibleOn_iff, mem_preimage, separableLift_nonlinear_rows_iff,
-    separableLift_affine_rows_iff, separableLift_lo, separableLift_hi, mem_liftedSet_iff,
-    pointEquiv_apply, feasibleBase, mem_ofPred_eq, mem_univ, true_and, Pi.le_def, Pi.zero_apply,
-    project_snd]
-  tauto
-
-private theorem separableLift_relaxationOn_eq_preimage_liftedSet (d : FiniteModel n m l r)
-    (D : Set (Point n m)) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ) :
-    (d.separableLift component weight).relaxationOn (project ⁻¹' D) =
-      pointEquiv n m q ⁻¹'
-        liftedSet (d.relaxationBase D) univ (fun x j => component j x)
-          (fun y i => ∑ j, weight i j * y j) 0 := by
-  ext z
-  simp only [mem_relaxationOn_iff, mem_preimage, separableLift_nonlinear_rows_iff,
-    separableLift_affine_rows_iff, separableLift_lo, separableLift_hi, mem_liftedSet_iff,
-    pointEquiv_apply, relaxationBase, mem_ofPred_eq, mem_univ, true_and, Pi.le_def, Pi.zero_apply,
-    project_snd]
-  tauto
-
-/-- Inserting the actual component values lifts a mixed-integer feasible point of `d` into
-`separableLift`, without needing nonnegativity of `weight`. -/
-theorem insertHeight_component_mem_separableLift_feasibleOn (d : FiniteModel n m l r)
-    (D : Set (Point n m)) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
-    (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x)
-    {x : Point n m} (hx : x ∈ d.feasibleOn D) :
-    insertHeight x (fun j => component j x) ∈
-      (d.separableLift component weight).feasibleOn (project ⁻¹' D) := by
-  rw [separableLift_feasibleOn_eq_preimage_liftedSet]
-  rw [feasibleOn_eq_originalSet d D component weight hg] at hx
-  simpa only [mem_preimage, pointEquiv_apply, project_insertHeight, height_insertHeight] using
-    graph_mem_liftedSet (mapsTo_univ _ _) hx
-
-/-- Inserting the actual component values lifts a relaxed feasible point of `d` into
-`separableLift`, without needing nonnegativity of `weight`. -/
-theorem insertHeight_component_mem_separableLift_relaxationOn (d : FiniteModel n m l r)
-    (D : Set (Point n m)) (component : Fin q → Point n m → ℝ) (weight : Fin l → Fin q → ℝ)
-    (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x)
-    {x : Point n m} (hx : x ∈ d.relaxationOn D) :
-    insertHeight x (fun j => component j x) ∈
-      (d.separableLift component weight).relaxationOn (project ⁻¹' D) := by
-  rw [separableLift_relaxationOn_eq_preimage_liftedSet]
-  rw [relaxationOn_eq_originalSet d D component weight hg] at hx
-  simpa only [mem_preimage, pointEquiv_apply, project_insertHeight, height_insertHeight] using
-    graph_mem_liftedSet (mapsTo_univ _ _) hx
+    project '' (d.separableLift component weight).feasibleWith (project ⁻¹' D) P =
+      d.feasibleWith D P := by
+  rw [separableLift_feasibleWith_eq_preimage_liftedSet,
+    feasibleWith_eq_originalSet d D P component weight hg,
+    ← fst_comp_pointEquiv (n := n) (m := m) (q := q), image_comp, Equiv.image_preimage]
+  exact projection_eq (mapsTo_univ _ _) fun _ _ _ _ hle i =>
+    Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hle j) (hw i j)
 
 /-- **Exact mixed-integer projection for separable-height lifting.** Under nonnegative weights
 and the separable decomposition `hg`, projecting `(d.separableLift component weight).feasibleOn`
@@ -270,11 +238,8 @@ theorem separable_projection (d : FiniteModel n m l r) (D : Set (Point n m))
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) :
     project '' (d.separableLift component weight).feasibleOn (project ⁻¹' D) =
       d.feasibleOn D := by
-  rw [separableLift_feasibleOn_eq_preimage_liftedSet, feasibleOn_eq_originalSet d D component
-    weight hg, ← fst_comp_pointEquiv (n := n) (m := m) (q := q), image_comp,
-    Equiv.image_preimage]
-  exact projection_eq (mapsTo_univ _ _) fun _ _ _ _ hle i =>
-    Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hle j) (hw i j)
+  simp only [feasibleOn_eq_feasibleWith, separableLift_lo, separableLift_hi]
+  exact separable_feasibleWith_projection d D _ component weight hw hg
 
 /-- **Exact continuous-relaxation projection for separable-height lifting.** -/
 theorem separable_relaxation_projection (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -283,11 +248,8 @@ theorem separable_relaxation_projection (d : FiniteModel n m l r) (D : Set (Poin
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * component j x) :
     project '' (d.separableLift component weight).relaxationOn (project ⁻¹' D) =
       d.relaxationOn D := by
-  rw [separableLift_relaxationOn_eq_preimage_liftedSet, relaxationOn_eq_originalSet d D component
-    weight hg, ← fst_comp_pointEquiv (n := n) (m := m) (q := q), image_comp,
-    Equiv.image_preimage]
-  exact projection_eq (mapsTo_univ _ _) fun _ _ _ _ hle i =>
-    Finset.sum_le_sum fun j _ => mul_le_mul_of_nonneg_left (hle j) (hw i j)
+  simp only [relaxationOn_eq_feasibleWith, separableLift_lo, separableLift_hi]
+  exact separable_feasibleWith_projection d D _ component weight hw hg
 
 /-- **Feasible minimum equivalence for separable-height lifting (mixed-integer problem).** -/
 theorem separable_minimum_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -299,10 +261,8 @@ theorem separable_minimum_iff (d : FiniteModel n m l r) (D : Set (Point n m))
         ((d.separableLift component weight).feasibleOn (project ⁻¹' D)) z) ↔
       z ∈ (d.separableLift component weight).feasibleOn (project ⁻¹' D) ∧
         project z ∈ d.feasibleOn D ∧ IsMinOn d.objective (d.feasibleOn D) (project z) := by
-  have hobj : (d.separableLift component weight).objective = d.objective ∘ project :=
-    funext (separableLift_objective d component weight)
-  rw [hobj, ← separable_projection d D component weight hw hg, isMinOn_image_iff]
-  exact ⟨fun ⟨hz, hmin⟩ => ⟨hz, mem_image_of_mem project hz, hmin⟩, fun ⟨hz, _, hmin⟩ => ⟨hz, hmin⟩⟩
+  rw [separableLift_objective, ← separable_projection d D component weight hw hg,
+    mem_and_isMinOn_comp_iff]
 
 /-- **Attainment equivalence for separable-height lifting (mixed-integer problem).** -/
 theorem separable_attainment_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -313,9 +273,8 @@ theorem separable_attainment_iff (d : FiniteModel n m l r) (D : Set (Point n m))
       IsMinOn (d.separableLift component weight).objective
         ((d.separableLift component weight).feasibleOn (project ⁻¹' D)) z) ↔
       ∃ x ∈ d.feasibleOn D, IsMinOn d.objective (d.feasibleOn D) x := by
-  have hobj : (d.separableLift component weight).objective = d.objective ∘ project :=
-    funext (separableLift_objective d component weight)
-  rw [hobj, ← separable_projection d D component weight hw hg, exists_mem_image_isMinOn_iff]
+  rw [separableLift_objective, ← separable_projection d D component weight hw hg,
+    exists_mem_image_isMinOn_iff]
 
 /-- **Feasible minimum equivalence for separable-height lifting (continuous relaxation).** -/
 theorem separable_relaxation_minimum_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -327,10 +286,8 @@ theorem separable_relaxation_minimum_iff (d : FiniteModel n m l r) (D : Set (Poi
         ((d.separableLift component weight).relaxationOn (project ⁻¹' D)) z) ↔
       z ∈ (d.separableLift component weight).relaxationOn (project ⁻¹' D) ∧
         project z ∈ d.relaxationOn D ∧ IsMinOn d.objective (d.relaxationOn D) (project z) := by
-  have hobj : (d.separableLift component weight).objective = d.objective ∘ project :=
-    funext (separableLift_objective d component weight)
-  rw [hobj, ← separable_relaxation_projection d D component weight hw hg, isMinOn_image_iff]
-  exact ⟨fun ⟨hz, hmin⟩ => ⟨hz, mem_image_of_mem project hz, hmin⟩, fun ⟨hz, _, hmin⟩ => ⟨hz, hmin⟩⟩
+  rw [separableLift_objective, ← separable_relaxation_projection d D component weight hw hg,
+    mem_and_isMinOn_comp_iff]
 
 /-- **Attainment equivalence for separable-height lifting (continuous relaxation).** -/
 theorem separable_relaxation_attainment_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -341,9 +298,7 @@ theorem separable_relaxation_attainment_iff (d : FiniteModel n m l r) (D : Set (
       IsMinOn (d.separableLift component weight).objective
         ((d.separableLift component weight).relaxationOn (project ⁻¹' D)) z) ↔
       ∃ x ∈ d.relaxationOn D, IsMinOn d.objective (d.relaxationOn D) x := by
-  have hobj : (d.separableLift component weight).objective = d.objective ∘ project :=
-    funext (separableLift_objective d component weight)
-  rw [hobj, ← separable_relaxation_projection d D component weight hw hg,
+  rw [separableLift_objective, ← separable_relaxation_projection d D component weight hw hg,
     exists_mem_image_isMinOn_iff]
 
 end TauCeti.ConvexLifting.FiniteModel

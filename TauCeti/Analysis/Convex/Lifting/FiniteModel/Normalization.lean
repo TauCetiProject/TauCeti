@@ -65,8 +65,11 @@ variable {n m l r q : ℕ}
 
 /-- Normalize affine arguments of a `FiniteModel` by appending `q` continuous coordinates `u_j`
 and imposing `u_j = affineArgument (a j) (b j) (offset j) (project z)` via two opposite affine
-inequalities per coordinate. The original affine rows, integer-block bounds, and objective are
-retained, with zero objective coefficients on the added coordinates. -/
+inequalities per coordinate. The original nonlinear residuals `d.g` are not carried over; they are
+discarded and replaced by `fun i z => ∑ j, weight i j * phi j (height z j)`, so the lifted model
+matches `d` only when `d.g` satisfies the assumed decomposition hypothesis `hg`. The original
+affine rows, integer-block bounds, and objective are retained, with zero objective coefficients on
+the added coordinates. -/
 def normalizedLift (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) :
@@ -96,14 +99,14 @@ theorem normalizedLift_c2 (d : FiniteModel n m l r)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) :
     (d.normalizedLift a b offset phi weight).c2 = d.c2 := (rfl)
 
-/-- The normalized model evaluates the original linear objective on `project z`. -/
+/-- The objective of `normalizedLift` is the pullback of `d.objective` along `project`. -/
 @[simp]
 theorem normalizedLift_objective (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
-    (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) (z : Point (n + q) m) :
-    (d.normalizedLift a b offset phi weight).objective z = d.objective (project z) :=
+    (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) :
+    (d.normalizedLift a b offset phi weight).objective = d.objective ∘ project :=
   objective_eq_comp_project (normalizedLift_c1 d a b offset phi weight)
-    (normalizedLift_c2 d a b offset phi weight) z
+    (normalizedLift_c2 d a b offset phi weight)
 
 /-- Nonlinear residual evaluation of `normalizedLift`. -/
 @[simp]
@@ -144,10 +147,12 @@ theorem normalizedLift_rhs_upper (d : FiniteModel n m l r)
   simp [normalizedLift]
 
 /-- Right-hand side of a lower argument-equality row in `normalizedLift`. -/
+@[simp]
 theorem normalizedLift_rhs_lower (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) (j : Fin q) :
-    (d.normalizedLift a b offset phi weight).rhs ((j.natAdd q).natAdd r) = -offset j := by
+    (d.normalizedLift a b offset phi weight).rhs ((j.addNat q).natAdd r) = -offset j := by
+  rw [← Fin.natAdd_eq_addNat]
   simp only [normalizedLift, Fin.append_right, Pi.neg_apply]
 
 /-- Evaluation of a retained original affine row in `normalizedLift`. -/
@@ -174,9 +179,10 @@ theorem normalizedLift_row_upper (d : FiniteModel n m l r)
 theorem normalizedLift_row_lower (d : FiniteModel n m l r)
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ) (j : Fin q) (z : Point (n + q) m) :
-    (∑ i, (d.normalizedLift a b offset phi weight).A ((j.natAdd q).natAdd r) i * z.1 i) +
-        (∑ s, (d.normalizedLift a b offset phi weight).B ((j.natAdd q).natAdd r) s * z.2 s) =
+    (∑ i, (d.normalizedLift a b offset phi weight).A ((j.addNat q).natAdd r) i * z.1 i) +
+        (∑ s, (d.normalizedLift a b offset phi weight).B ((j.addNat q).natAdd r) s * z.2 s) =
       (∑ i, a j i * (project z).1 i) + (∑ s, b j s * (project z).2 s) - height z j := by
+  rw [← Fin.natAdd_eq_addNat]
   simp only [normalizedLift, Fin.append_right]
   simp [sum_append_mul_fst, Pi.single_apply]
   ring
@@ -193,75 +199,61 @@ theorem normalizedLift_affine_rows_iff (d : FiniteModel n m l r)
       (∀ k, (∑ i, d.A k i * (project z).1 i) + (∑ s, d.B k s * (project z).2 s) ≤ d.rhs k) ∧
         ∀ j, height z j = affineArgument (a j) (b j) (offset j) (project z) := by
   rw [Fin.forall_fin_add, Fin.forall_fin_add]
-  simp only [normalizedLift_row_orig, normalizedLift_row_upper, normalizedLift_row_lower,
-    normalizedLift_rhs_orig, normalizedLift_rhs_upper, normalizedLift_rhs_lower, ← forall_and]
+  simp only [Fin.natAdd_eq_addNat, normalizedLift_row_orig, normalizedLift_row_upper,
+    normalizedLift_row_lower, normalizedLift_rhs_orig, normalizedLift_rhs_upper,
+    normalizedLift_rhs_lower, ← forall_and]
   refine and_congr_right fun _ => forall_congr' fun j => ?_
   rw [affineArgument_apply, le_antisymm_iff]
   constructor <;> rintro ⟨h₁, h₂⟩ <;> exact ⟨by linarith, by linarith⟩
 
-/-- Mixed-integer feasibility in `normalizedLift` is equivalent to mixed-integer feasibility of
-`project z` in `d` together with the argument equalities. -/
-theorem mem_normalizedLift_feasibleOn_iff (d : FiniteModel n m l r) (D : Set (Point n m))
+/-- Feasibility in `normalizedLift` under any integer-block predicate `P` is equivalent to
+feasibility of `project z` in `d` under `P` together with the argument equalities. -/
+theorem mem_normalizedLift_feasibleWith_iff (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ)
+    (offset : Fin q → ℝ) (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
+    (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x))
+    (z : Point (n + q) m) :
+    z ∈ (d.normalizedLift a b offset phi weight).feasibleWith (project ⁻¹' D) P ↔
+      project z ∈ d.feasibleWith D P ∧
+        ∀ j, height z j = affineArgument (a j) (b j) (offset j) (project z) := by
+  simp only [mem_feasibleWith_iff, mem_preimage, normalizedLift_g, normalizedLift_affine_rows_iff,
+    project_snd]
+  constructor
+  · rintro ⟨hzD, hgn, ⟨hA, heq⟩, hP⟩
+    refine ⟨⟨hzD, fun i => ?_, hA, hP⟩, heq⟩
+    simpa only [hg i (project z), ← heq] using hgn i
+  · rintro ⟨⟨hzD, hgd, hA, hP⟩, heq⟩
+    refine ⟨hzD, fun i => ?_, ⟨hA, heq⟩, hP⟩
+    simpa only [heq, ← hg i (project z)] using hgd i
+
+/-- Inserting the evaluated affine arguments lifts any `feasibleWith D P` point of `d` into
+`normalizedLift`. -/
+theorem insertHeight_affineArgument_mem_normalizedLift_feasibleWith (d : FiniteModel n m l r)
+    (D : Set (Point n m)) {P : (Fin m → ℝ) → Prop}
     (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
     (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x))
-    (z : Point (n + q) m) :
-    z ∈ (d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D) ↔
-      project z ∈ d.feasibleOn D ∧
-        ∀ j, height z j = affineArgument (a j) (b j) (offset j) (project z) := by
-  simp only [mem_feasibleOn_iff, mem_preimage, normalizedLift_g, normalizedLift_lo,
-    normalizedLift_hi, normalizedLift_affine_rows_iff, project_snd]
-  constructor
-  · rintro ⟨hzD, hgn, ⟨hA, heq⟩, hy⟩
-    refine ⟨⟨hzD, fun i => ?_, hA, hy⟩, heq⟩
-    simpa only [hg i (project z), ← heq] using hgn i
-  · rintro ⟨⟨hzD, hgd, hA, hy⟩, heq⟩
-    refine ⟨hzD, fun i => ?_, ⟨hA, heq⟩, hy⟩
-    simpa only [heq, ← hg i (project z)] using hgd i
-
-/-- Continuous-relaxation feasibility in `normalizedLift` is equivalent to relaxation feasibility
-of `project z` in `d` together with the argument equalities. -/
-theorem mem_normalizedLift_relaxationOn_iff (d : FiniteModel n m l r) (D : Set (Point n m))
-    (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
-    (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
-    (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x))
-    (z : Point (n + q) m) :
-    z ∈ (d.normalizedLift a b offset phi weight).relaxationOn (project ⁻¹' D) ↔
-      project z ∈ d.relaxationOn D ∧
-        ∀ j, height z j = affineArgument (a j) (b j) (offset j) (project z) := by
-  simp only [mem_relaxationOn_iff, mem_preimage, normalizedLift_g, normalizedLift_lo,
-    normalizedLift_hi, normalizedLift_affine_rows_iff, project_snd]
-  constructor
-  · rintro ⟨hzD, hgn, ⟨hA, heq⟩, hbd⟩
-    refine ⟨⟨hzD, fun i => ?_, hA, hbd⟩, heq⟩
-    simpa only [hg i (project z), ← heq] using hgn i
-  · rintro ⟨⟨hzD, hgd, hA, hbd⟩, heq⟩
-    refine ⟨hzD, fun i => ?_, ⟨hA, heq⟩, hbd⟩
-    simpa only [heq, ← hg i (project z)] using hgd i
-
-/-- Inserting the evaluated affine arguments lifts a mixed-integer feasible point of `d` into
-`normalizedLift`. -/
-theorem insertHeight_affineArgument_mem_normalizedLift_feasibleOn (d : FiniteModel n m l r)
-    (D : Set (Point n m)) (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
-    (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
-    (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x))
-    {x : Point n m} (hx : x ∈ d.feasibleOn D) :
+    {x : Point n m} (hx : x ∈ d.feasibleWith D P) :
     insertHeight x (fun j => affineArgument (a j) (b j) (offset j) x) ∈
-      (d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D) := by
-  rw [mem_normalizedLift_feasibleOn_iff d D a b offset phi weight hg]
+      (d.normalizedLift a b offset phi weight).feasibleWith (project ⁻¹' D) P := by
+  rw [mem_normalizedLift_feasibleWith_iff d D P a b offset phi weight hg]
   simp [hx]
 
-/-- Inserting the evaluated affine arguments lifts a relaxed feasible point of `d` into
-`normalizedLift`. -/
-theorem insertHeight_affineArgument_mem_normalizedLift_relaxationOn (d : FiniteModel n m l r)
-    (D : Set (Point n m)) (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ) (offset : Fin q → ℝ)
-    (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
-    (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x))
-    {x : Point n m} (hx : x ∈ d.relaxationOn D) :
-    insertHeight x (fun j => affineArgument (a j) (b j) (offset j) x) ∈
-      (d.normalizedLift a b offset phi weight).relaxationOn (project ⁻¹' D) := by
-  rw [mem_normalizedLift_relaxationOn_iff d D a b offset phi weight hg]
-  simp [hx]
+/-- Exact projection for affine-argument normalization under any integer-block predicate `P`. -/
+theorem normalization_feasibleWith_projection (d : FiniteModel n m l r) (D : Set (Point n m))
+    (P : (Fin m → ℝ) → Prop) (a : Fin q → Fin n → ℝ) (b : Fin q → Fin m → ℝ)
+    (offset : Fin q → ℝ) (phi : Fin q → ℝ → ℝ) (weight : Fin l → Fin q → ℝ)
+    (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x)) :
+    project '' (d.normalizedLift a b offset phi weight).feasibleWith (project ⁻¹' D) P =
+      d.feasibleWith D P := by
+  ext x
+  constructor
+  · rintro ⟨z, hz, rfl⟩
+    exact ((mem_normalizedLift_feasibleWith_iff d D P a b offset phi weight hg z).1 hz).1
+  · intro hx
+    exact ⟨insertHeight x (fun j => affineArgument (a j) (b j) (offset j) x),
+      insertHeight_affineArgument_mem_normalizedLift_feasibleWith d D a b offset phi weight hg hx,
+      project_insertHeight _ _⟩
 
 /-- **Exact mixed-integer projection for affine-argument normalization.** Normalization is exact
 substitution and requires no sign assumption on `weight`. -/
@@ -271,14 +263,8 @@ theorem normalization_projection (d : FiniteModel n m l r) (D : Set (Point n m))
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x)) :
     project '' (d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D) =
       d.feasibleOn D := by
-  ext x
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    exact ((mem_normalizedLift_feasibleOn_iff d D a b offset phi weight hg z).1 hz).1
-  · intro hx
-    exact ⟨insertHeight x (fun j => affineArgument (a j) (b j) (offset j) x),
-      insertHeight_affineArgument_mem_normalizedLift_feasibleOn d D a b offset phi weight hg hx,
-      project_insertHeight _ _⟩
+  simp only [feasibleOn_eq_feasibleWith, normalizedLift_lo, normalizedLift_hi]
+  exact normalization_feasibleWith_projection d D _ a b offset phi weight hg
 
 /-- **Exact continuous-relaxation projection for affine-argument normalization.** -/
 theorem normalization_relaxation_projection (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -287,14 +273,8 @@ theorem normalization_relaxation_projection (d : FiniteModel n m l r) (D : Set (
     (hg : ∀ i x, d.g i x = ∑ j, weight i j * phi j (affineArgument (a j) (b j) (offset j) x)) :
     project '' (d.normalizedLift a b offset phi weight).relaxationOn (project ⁻¹' D) =
       d.relaxationOn D := by
-  ext x
-  constructor
-  · rintro ⟨z, hz, rfl⟩
-    exact ((mem_normalizedLift_relaxationOn_iff d D a b offset phi weight hg z).1 hz).1
-  · intro hx
-    exact ⟨insertHeight x (fun j => affineArgument (a j) (b j) (offset j) x),
-      insertHeight_affineArgument_mem_normalizedLift_relaxationOn d D a b offset phi weight hg hx,
-      project_insertHeight _ _⟩
+  simp only [relaxationOn_eq_feasibleWith, normalizedLift_lo, normalizedLift_hi]
+  exact normalization_feasibleWith_projection d D _ a b offset phi weight hg
 
 /-- **Feasible minimum equivalence for affine-argument normalization (mixed-integer problem).** -/
 theorem normalization_minimum_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -307,10 +287,8 @@ theorem normalization_minimum_iff (d : FiniteModel n m l r) (D : Set (Point n m)
         ((d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D)) z) ↔
       z ∈ (d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D) ∧
         project z ∈ d.feasibleOn D ∧ IsMinOn d.objective (d.feasibleOn D) (project z) := by
-  have hobj : (d.normalizedLift a b offset phi weight).objective = d.objective ∘ project :=
-    funext (normalizedLift_objective d a b offset phi weight)
-  rw [hobj, ← normalization_projection d D a b offset phi weight hg, isMinOn_image_iff]
-  exact ⟨fun ⟨hz, hmin⟩ => ⟨hz, mem_image_of_mem project hz, hmin⟩, fun ⟨hz, _, hmin⟩ => ⟨hz, hmin⟩⟩
+  rw [normalizedLift_objective, ← normalization_projection d D a b offset phi weight hg,
+    mem_and_isMinOn_comp_iff]
 
 /-- **Attainment equivalence for affine-argument normalization (mixed-integer problem).** -/
 theorem normalization_attainment_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -321,9 +299,8 @@ theorem normalization_attainment_iff (d : FiniteModel n m l r) (D : Set (Point n
       IsMinOn (d.normalizedLift a b offset phi weight).objective
         ((d.normalizedLift a b offset phi weight).feasibleOn (project ⁻¹' D)) z) ↔
       ∃ x ∈ d.feasibleOn D, IsMinOn d.objective (d.feasibleOn D) x := by
-  have hobj : (d.normalizedLift a b offset phi weight).objective = d.objective ∘ project :=
-    funext (normalizedLift_objective d a b offset phi weight)
-  rw [hobj, ← normalization_projection d D a b offset phi weight hg, exists_mem_image_isMinOn_iff]
+  rw [normalizedLift_objective, ← normalization_projection d D a b offset phi weight hg,
+    exists_mem_image_isMinOn_iff]
 
 /-- **Feasible minimum equivalence for affine-argument normalization (continuous relaxation).** -/
 theorem normalization_relaxation_minimum_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -336,10 +313,8 @@ theorem normalization_relaxation_minimum_iff (d : FiniteModel n m l r) (D : Set 
         ((d.normalizedLift a b offset phi weight).relaxationOn (project ⁻¹' D)) z) ↔
       z ∈ (d.normalizedLift a b offset phi weight).relaxationOn (project ⁻¹' D) ∧
         project z ∈ d.relaxationOn D ∧ IsMinOn d.objective (d.relaxationOn D) (project z) := by
-  have hobj : (d.normalizedLift a b offset phi weight).objective = d.objective ∘ project :=
-    funext (normalizedLift_objective d a b offset phi weight)
-  rw [hobj, ← normalization_relaxation_projection d D a b offset phi weight hg, isMinOn_image_iff]
-  exact ⟨fun ⟨hz, hmin⟩ => ⟨hz, mem_image_of_mem project hz, hmin⟩, fun ⟨hz, _, hmin⟩ => ⟨hz, hmin⟩⟩
+  rw [normalizedLift_objective,
+    ← normalization_relaxation_projection d D a b offset phi weight hg, mem_and_isMinOn_comp_iff]
 
 /-- **Attainment equivalence for affine-argument normalization (continuous relaxation).** -/
 theorem normalization_relaxation_attainment_iff (d : FiniteModel n m l r) (D : Set (Point n m))
@@ -350,9 +325,8 @@ theorem normalization_relaxation_attainment_iff (d : FiniteModel n m l r) (D : S
       IsMinOn (d.normalizedLift a b offset phi weight).objective
         ((d.normalizedLift a b offset phi weight).relaxationOn (project ⁻¹' D)) z) ↔
       ∃ x ∈ d.relaxationOn D, IsMinOn d.objective (d.relaxationOn D) x := by
-  have hobj : (d.normalizedLift a b offset phi weight).objective = d.objective ∘ project :=
-    funext (normalizedLift_objective d a b offset phi weight)
-  rw [hobj, ← normalization_relaxation_projection d D a b offset phi weight hg,
+  rw [normalizedLift_objective,
+    ← normalization_relaxation_projection d D a b offset phi weight hg,
     exists_mem_image_isMinOn_iff]
 
 end TauCeti.ConvexLifting.FiniteModel

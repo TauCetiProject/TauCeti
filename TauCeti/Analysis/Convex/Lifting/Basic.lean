@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Function
+public import Mathlib.Analysis.Convex.Quasiconvex
 public import Mathlib.Order.Filter.Extr
 import TauCeti.Analysis.Convex.Function.Basic
 import TauCeti.Order.Filter.Extr
@@ -22,11 +22,14 @@ satisfying `g x ≤ y` and `h y ≤ b` defines the lifted set
 
 Whenever `g` maps `D` into `E` and `h` is monotone on `E`, projecting onto the original variable
 recovers `{x ∈ D | h (g x) ≤ b}` exactly (`TauCeti.ConvexLifting.projection_eq`), without
-requiring convexity, differentiability, or compactness. Specializing to a varying threshold `t`
-yields the epigraph lifting criterion (`TauCeti.ConvexLifting.mem_epigraph_comp_iff`), and when
-`g` and `h` are convex on `D` and `E` respectively, Mathlib's convex-epigraph and sublevel APIs
-show that both the lifted set and the original feasible set are convex without requiring `g '' D`
-to be convex (`TauCeti.ConvexLifting.convex_liftedSet`, `TauCeti.ConvexLifting.convex_originalSet`).
+requiring convexity, differentiability, or compactness. Specializing the pointwise existential
+characterization (`TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet`) to a varying
+budget `b` yields the epigraph lifting criterion via `mem_originalSet_iff` and `mem_liftedSet_iff`.
+When `g` is convex on `D` and `h` is quasiconvex on `E` (in particular, when `h` is convex on `E`),
+the lifted set is convex with no `MapsTo g D E` or monotonicity requirement
+(`TauCeti.ConvexLifting.convex_liftedSet`). When additionally `h` is convex and monotone on `E` and
+`MapsTo g D E` holds, the original feasible set is also convex without requiring `g '' D` to be
+convex (`TauCeti.ConvexLifting.convex_originalSet`).
 
 Because any objective `f : X → α` lifted by pullback `f ∘ Prod.fst` is independent of the height
 variable, feasible lower bounds, objective-value witnesses, feasible minimizers, and existence of
@@ -42,10 +45,12 @@ attained minima transfer identically between the lifted and original sets
 
 * `TauCeti.ConvexLifting.projection_eq` — `Prod.fst '' liftedSet D E g h b = originalSet D g h b`
   under `MapsTo g D E` and `MonotoneOn h E`.
-* `TauCeti.ConvexLifting.mem_epigraph_comp_iff` — the epigraph specialization for an arbitrary
-  threshold `t`.
-* `TauCeti.ConvexLifting.convex_liftedSet` and `TauCeti.ConvexLifting.convex_originalSet` —
-  convexity of the lifted and original sets when `g` is convex on `D` and `h` is convex on `E`.
+* `TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSet` — pointwise existential (and,
+  for varying budget `b`, epigraph) characterization of `originalSet` via `liftedSet`.
+* `TauCeti.ConvexLifting.convex_liftedSet` — convexity of `liftedSet` assuming only
+  `ConvexOn 𝕜 D g` and `QuasiconvexOn 𝕜 E h` (no `MapsTo` or monotonicity needed).
+* `TauCeti.ConvexLifting.convex_originalSet` — convexity of `originalSet` under `ConvexOn 𝕜 D g`,
+  `ConvexOn 𝕜 E h`, `MapsTo g D E`, and `MonotoneOn h E`.
 * `TauCeti.ConvexLifting.feasible_minimum_iff` and `TauCeti.ConvexLifting.attainment_iff` — exact
   transfer of feasible minima and attainment for any pullback objective `f ∘ Prod.fst`.
 
@@ -197,18 +202,6 @@ theorem liftedSet_eq_empty_iff (hg : MapsTo g D E) (hm : MonotoneOn h E) :
     liftedSet D E g h b = ∅ ↔ originalSet D g h b = ∅ := by
   rw [← projection_eq (b := b) hg hm, image_eq_empty]
 
-/-- **Epigraph lifting criterion.** For any threshold `t`, the composed epigraph condition
-`x ∈ D ∧ h (g x) ≤ t` holds if and only if there is an admissible height `y ∈ E` with
-`g x ≤ y`, `h y ≤ t`, and `x ∈ D`. -/
-theorem mem_epigraph_comp_iff (hg : MapsTo g D E) (hm : MonotoneOn h E) (x : X) (t : β) :
-    (x ∈ D ∧ h (g x) ≤ t) ↔ ∃ y ∈ E, g x ≤ y ∧ h y ≤ t ∧ x ∈ D := by
-  rw [← mem_originalSet_iff, mem_originalSet_iff_exists_mem_liftedSet hg hm]
-  constructor
-  · rintro ⟨y, hx, hy, hgy, hyt⟩
-    exact ⟨y, hy, hgy, hyt, hx⟩
-  · rintro ⟨y, hy, hgy, hyt, hx⟩
-    exact ⟨y, hx, hy, hgy, hyt⟩
-
 end Projection
 
 section Convex
@@ -216,13 +209,13 @@ section Convex
 variable {𝕜 X Y β : Type*} [Semiring 𝕜] [PartialOrder 𝕜]
 variable [AddCommMonoid X] [SMul 𝕜 X]
 variable [AddCommMonoid Y] [PartialOrder Y]
-variable [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β] [Module 𝕜 β] [PosSMulMono 𝕜 β]
 
-/-- When `g` is convex on `D` and `h` is convex on `E`, the lifted set `liftedSet D E g h b` is
-convex. Neither `MapsTo g D E` nor monotonicity of `h` is required here. -/
-theorem convex_liftedSet [IsOrderedAddMonoid Y] [Module 𝕜 Y] [PosSMulMono 𝕜 Y]
+/-- When `g` is convex on `D` and `h` is quasiconvex on `E` (in particular, when `h` is convex on
+`E`, via `ConvexOn.quasiconvexOn`), the lifted set `liftedSet D E g h b` is convex. Neither
+`MapsTo g D E` nor monotonicity of `h` is required here. -/
+theorem convex_liftedSet [LE β] [IsOrderedAddMonoid Y] [Module 𝕜 Y] [PosSMulMono 𝕜 Y]
     {D : Set X} {E : Set Y} {g : X → Y} {h : Y → β} {b : β}
-    (hg : ConvexOn 𝕜 D g) (hh : ConvexOn 𝕜 E h) : Convex 𝕜 (liftedSet D E g h b) := by
+    (hg : ConvexOn 𝕜 D g) (hh : QuasiconvexOn 𝕜 E h) : Convex 𝕜 (liftedSet D E g h b) := by
   have hEq :
       liftedSet D E g h b =
         {p : X × Y | p.1 ∈ D ∧ g p.1 ≤ p.2} ∩ ((univ : Set X) ×ˢ {y ∈ E | h y ≤ b}) := by
@@ -230,11 +223,12 @@ theorem convex_liftedSet [IsOrderedAddMonoid Y] [Module 𝕜 Y] [PosSMulMono �
     simp only [mem_liftedSet_iff, mem_inter_iff, mem_ofPred_eq, mem_prod, mem_univ, true_and]
     tauto
   rw [hEq]
-  exact hg.convex_epigraph.inter (convex_univ.prod (hh.convex_le b))
+  exact hg.convex_epigraph.inter (convex_univ.prod (hh b))
 
 /-- When `g` is convex on `D`, `h` is convex and monotone on `E`, and `g` maps `D` into `E`, the
 original feasible set `originalSet D g h b` is convex (even when `g '' D` itself is not convex). -/
-theorem convex_originalSet [SMul 𝕜 Y] {D : Set X} {E : Set Y} {g : X → Y} {h : Y → β} {b : β}
+theorem convex_originalSet [SMul 𝕜 Y] [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β]
+    [Module 𝕜 β] [PosSMulMono 𝕜 β] {D : Set X} {E : Set Y} {g : X → Y} {h : Y → β} {b : β}
     (hg : ConvexOn 𝕜 D g) (hh : ConvexOn 𝕜 E h) (hDE : MapsTo g D E) (hm : MonotoneOn h E) :
     Convex 𝕜 (originalSet D g h b) := by
   have hEq : originalSet D g h b = {x ∈ D | (h ∘ g) x ≤ b} := by
@@ -295,9 +289,7 @@ theorem feasible_minimum_iff (hg : MapsTo g D E) (hm : MonotoneOn h E) (f : X �
     (p ∈ liftedSet D E g h b ∧ IsMinOn (f ∘ Prod.fst) (liftedSet D E g h b) p) ↔
       p ∈ liftedSet D E g h b ∧ p.1 ∈ originalSet D g h b ∧
         IsMinOn f (originalSet D g h b) p.1 := by
-  rw [← projection_eq (b := b) hg hm, isMinOn_image_iff]
-  exact ⟨fun ⟨hp, hmin⟩ => ⟨hp, mem_image_of_mem Prod.fst hp, hmin⟩,
-    fun ⟨hp, _, hmin⟩ => ⟨hp, hmin⟩⟩
+  rw [← projection_eq (b := b) hg hm, mem_and_isMinOn_comp_iff]
 
 /-- **Attainment equivalence.** An attained feasible minimum exists on `liftedSet` for
 `f ∘ Prod.fst` if and only if one exists on `originalSet` for `f`. Neither direction assumes that
