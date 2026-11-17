@@ -37,9 +37,10 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 * `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0`:
   `Θ_{D₄} ∣[2] A = Θ_{D₄}` for every `A ∈ Γ₀(2)`.
 * `TauCeti.IntegralLattice.thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2`,
-  `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four`: equality of `Θ_{D₄}`
-  with `-EisensteinSeries.correctedE2 2` (`2 E₂(2τ) - E₂(τ)`), as modular forms in `M₂(Γ₀(2))` and
-  as functions on `ℍ`.
+  `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four`,
+  `TauCeti.IntegralLattice.thetaSeries_realModel_checkerboardLattice_four_apply`: equality of
+  `Θ_{D₄}` with `-EisensteinSeries.correctedE2 2` (`2 E₂(2τ) - E₂(τ)`), as modular forms in
+  `M₂(Γ₀(2))`, as functions on `ℍ`, and pointwise at `τ ∈ ℍ`.
 * `TauCeti.IntegralLattice.representationNumber_checkerboardLattice_four_two_mul`,
   `TauCeti.IntegralLattice.representationNumber_checkerboardLattice_four_two`:
   `r_{D₄}(2m) = 24 ∑_{d ∣ m, d odd} d` for `m ≠ 0`, and `r_{D₄}(2) = 24`.
@@ -52,17 +53,17 @@ lattice and the convergent `q`-series expansion of `Θ_{D₄}`.
 * J. H. Conway and N. J. A. Sloane, *Sphere Packings, Lattices and Groups*, Chapter 2, §2.3.
 -/
 
-public section
+public noncomputable section
 
 open Module ModularForm UpperHalfPlane Matrix.SpecialLinearGroup CongruenceSubgroup
-open scoped MatrixGroups ArithmeticFunction.sigma
+open scoped MatrixGroups ModularForm ArithmeticFunction.sigma
 
 namespace TauCeti.IntegralLattice
 
 /-- **Modularity of `Θ_{D₄}` on `Γ₀(2)`**: the theta series of the real model of `D₄`, bundled as a
 weight-two modular form on `Γ₀(2)` via `ZLattice.thetaFormGamma0` from the lattice invariants
 `level D₄ = 2` and `signedDiscr D₄ = 4 = 2²`. -/
-noncomputable def thetaFormRealModelCheckerboardLatticeFour :
+def thetaFormRealModelCheckerboardLatticeFour :
     ModularForm ((Gamma0 2).map (mapGL ℝ)) 2 :=
   (ZLattice.thetaFormGamma0
     ((isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr (isEven_checkerboardLattice 4))
@@ -88,10 +89,15 @@ theorem thetaSeries_realModel_checkerboardLattice_four_slash_of_mem_Gamma0 {A : 
         ∣[(2 : ℤ)] A =
       ZLattice.thetaSeries
         ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) := by
-  rw [← coe_thetaFormRealModelCheckerboardLatticeFour, ModularForm.SL_slash,
-    Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
-  exact thetaFormRealModelCheckerboardLatticeFour.slash_action_eq' _
-    (Subgroup.mem_map_of_mem _ hA)
+  have hL : ZLattice.IsEven
+      ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) :=
+    (isEven_realModel_iff _ (isPosDef_checkerboardLattice 4)).mpr (isEven_checkerboardLattice 4)
+  have hA' : A ∈ Gamma0
+      (ZLattice.level ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4))) := by
+    rwa [level_realModel_checkerboardLattice_four]
+  exact hL.thetaSeries_slash_of_mem_Gamma0_of_isSquare
+    (by simp [RealModelSpace.finrank_eq, finrank_carrier])
+    ⟨2, by rw [signedDiscr_realModel_checkerboardLattice_four]; norm_num⟩ hA'
 
 /-- As weight-two modular forms on `Γ₀(2)`, the theta form of the real model of `D₄` equals
 `-EisensteinSeries.correctedE2 2`, namely `2 E₂(2τ) - E₂(τ)`. -/
@@ -119,7 +125,16 @@ theorem thetaSeries_realModel_checkerboardLattice_four :
   rw [← coe_thetaFormRealModelCheckerboardLatticeFour,
     thetaFormRealModelCheckerboardLatticeFour_eq_neg_correctedE2]
 
-/-- For `m ≠ 0`, the number of vectors of norm `2m` in D₄ is `24` times the sum of the
+/-- Pointwise on the upper half-plane, `Θ_{D₄}(τ) = 2 E₂(2τ) - E₂(τ)`. -/
+theorem thetaSeries_realModel_checkerboardLattice_four_apply (τ : ℍ) :
+    ZLattice.thetaSeries ((checkerboardLattice 4).realModel (isPosDef_checkerboardLattice 4)) τ =
+      2 * _root_.EisensteinSeries.E2 (scaleGL 2 • τ) - _root_.EisensteinSeries.E2 τ := by
+  rw [thetaSeries_realModel_checkerboardLattice_four, FunLike.coe_neg, Pi.neg_apply,
+    EisensteinSeries.correctedE2_apply]
+  push_cast
+  ring
+
+/-- For `m ≠ 0`, the number of vectors of norm `2m` in `D₄` is `24` times the sum of the
 odd divisors of `m`. -/
 theorem representationNumber_checkerboardLattice_four_two_mul {m : ℕ} (hm : m ≠ 0) :
     (checkerboardLattice 4).representationNumber (2 * m) =
@@ -149,7 +164,7 @@ theorem representationNumber_checkerboardLattice_four_two_mul {m : ℕ} (hm : m 
   push_cast at hs ⊢
   linear_combination -hc + 24 * hs
 
-/-- D₄ has `24` vectors of norm `2` (its minimal vectors). -/
+/-- `D₄` has `24` vectors of norm `2` (its minimal vectors). -/
 theorem representationNumber_checkerboardLattice_four_two :
     (checkerboardLattice 4).representationNumber 2 = 24 := by
   have h := representationNumber_checkerboardLattice_four_two_mul (m := 1) one_ne_zero
