@@ -326,9 +326,7 @@ theorem exists_isIso_singularHomologyMap_negativeDiscBundle [T2Space M]
       Subsingleton.pairwise (fun _ ↦ hdim) (fun _ ↦ g)
   refine ⟨Θ (), hΘz (), hΘi (), hΘf (), ε₀, hε₀, fun ε hε hεε₀ hcompact hcrit ↦ ?_⟩
   obtain ⟨hD, hmain⟩ := hmain ε hε hεε₀ hcompact (by rwa [iUnion_const])
-  rw [show (⋃ j, Θ j '' h.negativeDiscBundle hn P g.toRiemannianMetric ε) =
-    Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from
-      Set.ext fun _ ↦ by simp only [mem_iUnion, Unique.exists_iff]] at hmain
+  rw [show ⋃ j, Θ j '' _ = _ from iSup_unique _] at hmain
   exact ⟨hD (), hmain⟩
 
 /-- **The relative homology of a critical band of a Morse–Bott submanifold.** Let `i : S → M` be
@@ -377,9 +375,7 @@ theorem nonempty_singularHomology_sublevelPair_iso_negativeDiscBundle [T2Space M
       (fun _ ↦ hdim) (fun _ ↦ g)
   refine ⟨Θ (), hΘz (), hΘi (), hΘf (), ε₀, hε₀, fun ε hε ↦ ?_⟩
   obtain ⟨hD, hmain⟩ := hmain ε hε
-  rw [show (⋃ j, Θ j '' h.negativeDiscBundle hn P g.toRiemannianMetric ε) =
-    Θ () '' h.negativeDiscBundle hn P g.toRiemannianMetric ε from
-      Set.ext fun _ ↦ by simp only [mem_iUnion, Unique.exists_iff]] at hmain
+  rw [show ⋃ j, Θ j '' _ = _ from iSup_unique _] at hmain
   exact ⟨hD (), hmain⟩
 
 end IsNondegenerateCriticalSubmanifold
