@@ -13,6 +13,7 @@ public import TauCeti.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Distributions.Gaussian.Pi
 
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The density of a multivariate Gaussian measure
@@ -270,7 +271,7 @@ theorem ae_exists_sub_eq_mul_multivariateGaussian_vecMulVec_self (m : EuclideanS
     (c : ι → ℝ) :
     ∀ᵐ x ∂multivariateGaussian m (vecMulVec c c), ∃ t : ℝ, ∀ j, x j - m j = t * c j := by
   filter_upwards [ae_mem_affineRange_multivariateGaussian
-    (by simpa using posSemidef_vecMulVec_self_star c) m] with x hx
+    (posSemidef_vecMulVec_self c) m] with x hx
   simp only [SetLike.mem_coe, AffineSubspace.mem_mk', vsub_eq_sub, LinearMap.mem_range] at hx
   obtain ⟨y, hy⟩ := hx
   refine ⟨c ⬝ᵥ y, fun j ↦ ?_⟩

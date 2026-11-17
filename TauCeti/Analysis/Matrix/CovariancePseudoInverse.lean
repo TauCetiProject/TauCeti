@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.MoorePenrose
 public import TauCeti.Analysis.SpecificLimits.RegularizedInverse
 import TauCeti.Topology.Instances.Matrix
 import TauCeti.Analysis.Matrix.Sqrt
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # The pseudoinverse of a covariance matrix
@@ -181,10 +182,9 @@ theorem covariancePseudoInverse_vecMulVec_self (c : ι → ℝ) :
     simp
   have hsq : vecMulVec c c * vecMulVec c c = (c ⬝ᵥ c) • vecMulVec c c := by
     rw [vecMulVec_mul_vecMulVec, vecMulVec_smul]
-  have hherm : (vecMulVec c c).IsHermitian := by
-    simpa using (posSemidef_vecMulVec_self_star c).isHermitian
+  have hherm : (vecMulVec c c).IsHermitian := (posSemidef_vecMulVec_self c).isHermitian
   refine (eq_covariancePseudoInverse_of_penrose
-    (by simpa using posSemidef_vecMulVec_self_star c) ?_ ?_ ?_ ?_).symm <;>
+    (posSemidef_vecMulVec_self c) ?_ ?_ ?_ ?_).symm <;>
     simp only [Matrix.mul_smul, Matrix.smul_mul, hsq, smul_smul]
   · rw [show ((c ⬝ᵥ c) ^ 2)⁻¹ * c ⬝ᵥ c * c ⬝ᵥ c = 1 by field_simp, one_smul]
   · congr 1

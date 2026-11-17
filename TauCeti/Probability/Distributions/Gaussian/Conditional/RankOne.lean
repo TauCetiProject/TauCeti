@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
 import TauCeti.Analysis.InnerProductSpace.PiL2
 import TauCeti.Data.Matrix.Mul
+import TauCeti.LinearAlgebra.Matrix.PosSemidef
 import TauCeti.Probability.Distributions.Gaussian.Density
 
 /-!
@@ -152,7 +153,7 @@ theorem condDistrib_multivariateGaussian_vecMulVec_self {Ω : Type*} [Measurable
   have hpos : 0 < ∑ j, c (Sum.inr j) ^ 2 :=
     Finset.sum_pos' (fun j _ ↦ sq_nonneg _) ⟨k, Finset.mem_univ k, by positivity⟩
   filter_upwards [condDistrib_multivariateGaussian X m hX
-    (by simpa using posSemidef_vecMulVec_self_star c), hobs] with x₂ hx₂ hprop
+    (posSemidef_vecMulVec_self c), hobs] with x₂ hx₂ hprop
   rw [hx₂, EuclideanSpace.gaussianCondKernel_vecMulVec_self m ⟨k, hk⟩]
   congr 1
   ext i
