@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.Compression
+public import TauCeti.Analysis.InnerProductSpace.Projection.ExtendByZero
 public import TauCeti.Analysis.InnerProductSpace.UltraweakTopology
 public import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 public import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
@@ -16,7 +17,6 @@ import Mathlib.Analysis.Normed.Operator.Extend
 import TauCeti.Algebra.Star.Subalgebra
 import TauCeti.Analysis.InnerProductSpace.Amplification
 import TauCeti.Analysis.InnerProductSpace.Modulus
-import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Spatial corners and reduced von Neumann algebras
@@ -87,17 +87,15 @@ section Private
 
 /-- When `U.starProjection ∈ M`, an operator on `U` is the compression of an element of `M` if and
 only if its extension by zero belongs to `M`. -/
-private theorem mem_image_compression_iff_cornerEmbedding_mem {M : VonNeumannAlgebra H}
+private theorem mem_image_compression_iff_extendByZero_mem {M : VonNeumannAlgebra H}
     {U : Submodule ℂ H} [CompleteSpace U] (hp : U.starProjection ∈ M) {T : U →L[ℂ] U} :
-    T ∈ (·.compression U.subtypeL) '' (M : Set (H →L[ℂ] H)) ↔
-      U.subtypeₗᵢ.cornerEmbedding T ∈ M := by
+    T ∈ (·.compression U.subtypeL) '' (M : Set (H →L[ℂ] H)) ↔ U.extendByZero T ∈ M := by
   constructor
   · rintro ⟨x, hx, rfl⟩
-    rw [U.cornerEmbedding_subtypeₗᵢ_compression_subtypeL]
+    rw [U.extendByZero_compression_subtypeL]
     exact mul_mem (mul_mem hp hx) hp
   · intro hT
-    refine ⟨U.subtypeₗᵢ.cornerEmbedding T, hT, ?_⟩
-    simpa [U.subtypeₗᵢ_toContinuousLinearMap] using U.subtypeₗᵢ.compression_cornerEmbedding T
+    exact ⟨U.extendByZero T, hT, U.compression_extendByZero_subtypeL T⟩
 
 /-- Step A of Dixmier's corner theorem: when `U.starProjection ∈ M`, the centralizer of the
 compressed commutant `(·.compression U.subtypeL) '' M.commutant` is the compressed algebra
@@ -110,7 +108,7 @@ private theorem centralizer_image_compression_commutant_of_mem {M : VonNeumannAl
   rw [U.mem_centralizer_image_compression_subtypeL_iff_of_commute
       (fun y hy ↦ mem_commutant_iff.mp hy U.starProjection hp),
     ← coe_commutant, SetLike.mem_coe, M.commutant_commutant,
-    mem_image_compression_iff_cornerEmbedding_mem hp]
+    mem_image_compression_iff_extendByZero_mem hp]
 
 /-- Norm bound in Dixmier's commutant-induction proof: if `S` commutes with all compressions to `U`
 of operators in `N.commutant`, then `‖∑ i, x i (S (u i))‖ ≤ ‖S‖ * ‖∑ i, x i (u i)‖` for every
@@ -306,33 +304,26 @@ private theorem centralizer_image_compression_commutant_of_mem_commutant {N : Vo
     set K := commutantOrbitClosure N U
     obtain ⟨Y, hY⟩ := exists_apply_commutantOrbitCodRestrict_eq_of_mem_centralizer hS
     -- Extend `Y` by zero to `y ∈ N'' = N` on `H`.
-    let y : H →L[ℂ] H := K.subtypeₗᵢ.cornerEmbedding Y
+    let y : H →L[ℂ] H := K.extendByZero Y
     have hyN : y ∈ N := by
       rw [← N.commutant_commutant, mem_commutant_iff]
       intro z hz
-      exact (K.commute_cornerEmbedding_subtypeₗᵢ_iff_of_commute Y
+      exact (K.commute_extendByZero_iff_of_commute Y
         (mem_commutant_iff.mp hz K.starProjection
           (starProjection_commutantOrbitClosure_mem N U))).mpr
         (commute_compression_of_forall_apply_commutantOrbitCodRestrict hY hz)
     -- On `U ⊆ K` (`x = 1`), `y` agrees with `S`, so `y.compression U.subtypeL = S`.
-    refine ⟨y, hyN, ?_⟩
-    dsimp only
-    refine ContinuousLinearMap.ext fun u ↦ ext_inner_left ℂ fun v ↦ ?_
+    refine ⟨y, hyN, compression_eq_of_isometry_of_forall_apply_eq U.subtypeₗᵢ.isometry fun u ↦ ?_⟩
     let d₀ : N.commutant →₀ U := Finsupp.single ⟨1, N.commutant.one_mem⟩ u
-    have hΦ₀ : commutantOrbitMap N U d₀ = u := by simp [commutantOrbitMap, d₀]
-    have hΨ₀ : commutantOrbitMap N U (d₀.mapRange S S.map_zero) = S u := by
-      simp [commutantOrbitMap, d₀]
-    have hyu : y u = S u := by
-      have huK : (u : H) ∈ K := hΦ₀ ▸ (commutantOrbitCodRestrict N U d₀).2
-      have heK₀ : K.subtypeL.adjoint (u : H) = commutantOrbitCodRestrict N U d₀ := by
-        rw [K.adjoint_subtypeL]
-        apply Subtype.ext
-        rw [K.coe_orthogonalProjectionOnto_apply, K.starProjection_eq_self_iff.mpr huK,
-          commutantOrbitCodRestrict, LinearMap.codRestrict_apply, hΦ₀]
-      rw [LinearIsometry.cornerEmbedding_apply_apply, K.subtypeₗᵢ_toContinuousLinearMap,
-        heK₀, hY, K.coe_subtypeₗᵢ, Submodule.coe_subtype, commutantOrbitCodRestrict,
-        LinearMap.codRestrict_apply, hΨ₀]
-    rw [inner_compression_apply, U.coe_subtypeL, Submodule.coe_subtype, hyu, Submodule.coe_inner]
+    have hΦ₀ : (commutantOrbitCodRestrict N U d₀ : H) = u := by
+      simp [commutantOrbitCodRestrict, commutantOrbitMap, d₀]
+    have hΨ₀ : (commutantOrbitCodRestrict N U (d₀.mapRange S S.map_zero) : H) = S u := by
+      simp [commutantOrbitCodRestrict, commutantOrbitMap, d₀]
+    calc
+      y (U.subtypeL u) = y (commutantOrbitCodRestrict N U d₀) := by
+        rw [U.coe_subtypeL, Submodule.coe_subtype, hΦ₀]
+      _ = (Y (commutantOrbitCodRestrict N U d₀) : H) := K.extendByZero_apply_coe Y _
+      _ = U.subtypeL (S u) := by rw [hY, hΨ₀, U.coe_subtypeL, Submodule.coe_subtype]
   · -- Conversely, compressing any `y ∈ N` commutes with compressing `N.commutant` since `U`
     -- reduces `N`.
     rintro _ ⟨y, hy, rfl⟩
@@ -350,11 +341,6 @@ private theorem centralizer_image_compression_commutant {M : VonNeumannAlgebra H
       (·.compression U.subtypeL) '' (M : Set (H →L[ℂ] H)) :=
   hU.elim centralizer_image_compression_commutant_of_mem
     centralizer_image_compression_commutant_of_mem_commutant
-
-private theorem star_image_compression (s : Set (H →L[ℂ] H)) (U : Submodule ℂ H)
-    [CompleteSpace U] :
-    star ((·.compression U.subtypeL) '' s) = (·.compression U.subtypeL) '' star s := by
-  simp_rw [← Set.image_star, Set.image_image, compression_star]
 
 end Private
 
@@ -402,12 +388,12 @@ theorem compression_mem_corner {M : VonNeumannAlgebra H} {U : Submodule ℂ H} [
   mem_corner_iff.mpr ⟨x, hx, rfl⟩
 
 /-- When `U.starProjection ∈ M`, an operator `T : U →L[ℂ] U` belongs to `M.corner U (.inl hp)` if
-and only if its extension by zero `U.subtypeₗᵢ.cornerEmbedding T` belongs to `M`. -/
-theorem mem_corner_iff_cornerEmbedding_mem {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
+and only if its extension by zero `U.extendByZero T` belongs to `M`. -/
+theorem mem_corner_iff_extendByZero_mem {M : VonNeumannAlgebra H} {U : Submodule ℂ H}
     [CompleteSpace U] (hp : U.starProjection ∈ M) {T : U →L[ℂ] U} :
-    T ∈ M.corner U (.inl hp) ↔ U.subtypeₗᵢ.cornerEmbedding T ∈ M := by
+    T ∈ M.corner U (.inl hp) ↔ U.extendByZero T ∈ M := by
   rw [← SetLike.mem_coe, coe_corner]
-  exact mem_image_compression_iff_cornerEmbedding_mem hp
+  exact mem_image_compression_iff_extendByZero_mem hp
 
 /-- **Dixmier's commutant-induction theorem (`(pMp)' = pM'p`).** For any closed subspace `U` whose
 orthogonal projection lies in `M` or in `M.commutant`, the commutant of `M.corner U hU` is the
@@ -449,8 +435,7 @@ theorem corner_top (U : Submodule ℂ H) [CompleteSpace U]
   rw [coe_corner, coe_top, coe_top]
   ext T
   simp only [Set.mem_image, Set.mem_univ, true_and, iff_true]
-  refine ⟨U.subtypeₗᵢ.cornerEmbedding T, ?_⟩
-  simpa [U.subtypeₗᵢ_toContinuousLinearMap] using U.subtypeₗᵢ.compression_cornerEmbedding T
+  exact ⟨U.extendByZero T, U.compression_extendByZero_subtypeL T⟩
 
 /-- Passing to a corner on `U` is monotone in the von Neumann algebra. -/
 theorem corner_mono {M N : VonNeumannAlgebra H} {U : Submodule ℂ H} [CompleteSpace U]
@@ -539,16 +524,13 @@ private theorem corner_inf_commutant_of_mem {M : VonNeumannAlgebra H} {U : Submo
       rw [hb_z, hz_b, eqOnL _ (L.starProjection_apply_mem ξ)]
     -- Since `U ⊆ L`, `z` and `y` have the same compression to `U`.
     rw [mem_corner_iff]
-    refine ⟨z, mem_inf.mpr ⟨hzM, hzM'⟩, ?_⟩
-    refine ContinuousLinearMap.ext fun u ↦ ext_inner_left ℂ fun v ↦ ?_
+    refine ⟨z, mem_inf.mpr ⟨hzM, hzM'⟩, compression_eq_of_forall_apply_eq fun u ↦ ?_⟩
     have huL : (u : H) ∈ L := Submodule.le_topologicalClosure _
       (Submodule.subset_span ⟨1, M.one_mem, u, u.2, one_apply_eq_self _⟩)
-    have hzu : z u = y u := by
-      have hyL : L.starProjection * y = y * L.starProjection :=
-        mem_commutant_iff.mp hy L.starProjection hL_M'
-      rw [hz_def, hyL, mul_apply_eq_comp, L.starProjection_eq_self_iff.mpr huL]
-    rw [inner_compression_apply, inner_compression_apply, U.coe_subtypeL, Submodule.coe_subtype,
-      hzu]
+    have hyL : L.starProjection * y = y * L.starProjection :=
+      mem_commutant_iff.mp hy L.starProjection hL_M'
+    rw [U.coe_subtypeL, Submodule.coe_subtype, hz_def, hyL, mul_apply_eq_comp,
+      L.starProjection_eq_self_iff.mpr huL]
   · refine le_inf (corner_mono inf_le_left) ?_
     rw [commutant_corner]
     exact corner_mono inf_le_right
@@ -567,8 +549,7 @@ theorem corner_inf_commutant (M : VonNeumannAlgebra H) (U : Submodule ℂ H) [Co
       rw [← hcomm, commutant_commutant]
     rw [hcomm2, inf_comm] at h1
     rw [hcomm, h1]
-    apply SetLike.coe_injective
-    simp [coe_corner, Set.inter_comm]
+    exact corner_congr (by rw [M.commutant_commutant, inf_comm])
 
 /-- **Corners preserve having scalar center:** if `M ⊓ M.commutant = ⊥`, then any corner
 `M.corner U hU` also has scalar center `M.corner U hU ⊓ (M.corner U hU).commutant = ⊥` (so
@@ -648,7 +629,7 @@ theorem compressionStarAlgHom_injective {M : VonNeumannAlgebra H} (hM : M ⊓ M.
   have hprod : (x : H →L[ℂ] H) * U.starProjection = 0 := by
     have hpx : Commute U.starProjection (x : H →L[ℂ] H) :=
       (mem_commutant_iff.mp hp x x.2).symm
-    have hce := U.cornerEmbedding_subtypeₗᵢ_compression_subtypeL (x : H →L[ℂ] H)
+    have hce := U.extendByZero_compression_subtypeL (x : H →L[ℂ] H)
     rw [hx, map_zero, hpx.eq, mul_assoc, U.isIdempotentElem_starProjection.eq] at hce
     exact hce.symm
   exact Subtype.ext
@@ -668,8 +649,10 @@ noncomputable def cornerStarAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.com
 theorem coe_cornerStarAlgEquiv_apply {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
     (U : Submodule ℂ H) [CompleteSpace U] [Nontrivial U] (hp : U.starProjection ∈ M.commutant)
     (x : M.toStarSubalgebra) :
-    (cornerStarAlgEquiv hM U hp x : U →L[ℂ] U) = (x : H →L[ℂ] H).compression U.subtypeL :=
-  M.compressionStarAlgHom_apply U hp x
+    (cornerStarAlgEquiv hM U hp x : U →L[ℂ] U) = (x : H →L[ℂ] H).compression U.subtypeL := by
+  rw [cornerStarAlgEquiv, StarAlgEquiv.trans_apply, StarSubalgebra.equivOfEq_apply,
+    Subtype.coe_mk, StarAlgEquiv.ofInjective_apply, StarAlgHom.coe_rangeRestrict,
+    compressionStarAlgHom_apply]
 
 /-- **Commutant restriction isomorphism for factor corners.** If `M ⊓ M.commutant = ⊥` and `U` is a
 nontrivial closed subspace with `U.starProjection ∈ M`, then compression along `U.subtypeL` gives a
@@ -691,8 +674,9 @@ theorem coe_commutantCornerStarAlgEquiv_apply {M : VonNeumannAlgebra H} (hM : M 
     (U : Submodule ℂ H) [CompleteSpace U] [Nontrivial U] (hp : U.starProjection ∈ M)
     (y : M.commutant.toStarSubalgebra) :
     (commutantCornerStarAlgEquiv hM U hp y : U →L[ℂ] U) =
-      (y : H →L[ℂ] H).compression U.subtypeL :=
-  M.commutant.compressionStarAlgHom_apply U (M.commutant_commutant.symm ▸ hp) y
+      (y : H →L[ℂ] H).compression U.subtypeL := by
+  rw [commutantCornerStarAlgEquiv, StarAlgEquiv.trans_apply, StarSubalgebra.equivOfEq_apply,
+    Subtype.coe_mk, coe_cornerStarAlgEquiv_apply]
 
 /-! ### Generating sets of corners -/
 
@@ -711,7 +695,7 @@ theorem adjoin_image_compression_of_mem_commutant {s : Set (H →L[ℂ] H)} {U :
   rw [coe_commutant_adjoin, star_image_compression, ← Set.image_union,
     U.mem_centralizer_image_compression_subtypeL_iff_of_commute (fun y hy ↦ (hp' y hy).symm),
     ← coe_commutant_adjoin, SetLike.mem_coe, SetLike.mem_coe,
-    mem_corner_iff_cornerEmbedding_mem (by simpa using hp)]
+    mem_corner_iff_extendByZero_mem (by simpa using hp)]
 
 /-- **Generating sets of spatial corners.** If `s` is closed under adjoints and multiplication and
 `U.starProjection` lies in `adjoin s` or in `(adjoin s).commutant`, then the compressed set

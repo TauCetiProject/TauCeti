@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.LinearDisjoint
-public import Mathlib.RingTheory.TensorProduct.Maps
-public import TauCeti.Algebra.Star.Subalgebra
+public import TauCeti.Algebra.Star.TensorProduct
 public import TauCeti.Analysis.VonNeumannAlgebra.Density
 public import TauCeti.Analysis.VonNeumannAlgebra.Lattice
 import Mathlib.LinearAlgebra.Basis.VectorSpace
@@ -266,25 +264,6 @@ theorem toSubmodule_sup_of_subset_commutant {M : VonNeumannAlgebra H}
   StarSubalgebra.toSubmodule_sup_of_commute fun a ha _ hb =>
     mem_commutant_iff.mp (hB hb) a (hA ha)
 
-/-- Auxiliary unital `ℂ`-algebra equivalence `A ⊗[ℂ] B ≃ₐ[ℂ] ↥(A ⊔ B)` induced by multiplication. -/
-private noncomputable def mulAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
-    {A B : StarSubalgebra ℂ (H →L[ℂ] H)} (hA : (A : Set (H →L[ℂ] H)) ⊆ M)
-    (hB : (B : Set (H →L[ℂ] H)) ⊆ M.commutant) :
-    A ⊗[ℂ] B ≃ₐ[ℂ] ↥(A ⊔ B) :=
-  Algebra.TensorProduct.algEquivOfLinearEquivTensorProduct
-    ((linearDisjoint_of_subset_commutant hM hA hB).mulMap.trans
-      (LinearEquiv.ofEq _ _ (toSubmodule_sup_of_subset_commutant hA hB).symm))
-    (fun a₁ a₂ b₁ b₂ => Subtype.ext <|
-      have hcomm : Commute (a₂ : H →L[ℂ] H) b₁ := mem_commutant_iff.mp (hB b₁.2) a₂ (hA a₂.2)
-      hcomm.mul_mul_mul_comm a₁ b₂)
-    (Subtype.ext <| mul_one (1 : H →L[ℂ] H))
-
-private theorem coe_mulAlgEquiv_tmul {M : VonNeumannAlgebra H} (hM : M ⊓ M.commutant = ⊥)
-    {A B : StarSubalgebra ℂ (H →L[ℂ] H)} (hA : (A : Set (H →L[ℂ] H)) ⊆ M)
-    (hB : (B : Set (H →L[ℂ] H)) ⊆ M.commutant) (a : A) (b : B) :
-    (mulAlgEquiv hM hA hB (a ⊗ₜ[ℂ] b) : H →L[ℂ] H) = (a : H →L[ℂ] H) * b :=
-  (rfl)
-
 /-- **Star-subalgebra multiplication equivalence.** When `M ⊓ M.commutant = ⊥`, multiplication
 induces a unital `⋆`-algebra isomorphism from the algebraic tensor product `A ⊗[ℂ] B` of any unital
 `⋆`-subalgebras `A ≤ M` and `B ≤ M.commutant` onto `A ⊔ B` (whose underlying vector space is the
@@ -294,16 +273,9 @@ noncomputable def mulStarAlgEquiv {M : VonNeumannAlgebra H} (hM : M ⊓ M.commut
     {A B : StarSubalgebra ℂ (H →L[ℂ] H)} (hA : (A : Set (H →L[ℂ] H)) ⊆ M)
     (hB : (B : Set (H →L[ℂ] H)) ⊆ M.commutant) :
     A ⊗[ℂ] B ≃⋆ₐ[ℂ] ↥(A ⊔ B) :=
-  StarAlgEquiv.ofAlgEquiv (mulAlgEquiv hM hA hB) fun t => by
-    induction t using TensorProduct.inductionOn with
-    | tmul a b =>
-      apply Subtype.ext
-      rw [TensorProduct.star_tmul, coe_mulAlgEquiv_tmul,
-        StarMemClass.coe_star (x := mulAlgEquiv hM hA hB (a ⊗ₜ[ℂ] b)),
-        coe_mulAlgEquiv_tmul, star_mul, ← StarMemClass.coe_star, ← StarMemClass.coe_star]
-      exact mem_commutant_iff.mp (hB (star b).2) (star a) (hA (star a).2)
-    | add x y hx hy =>
-      rw [star_add, map_add, hx, hy, map_add, star_add]
+  A.mulStarAlgEquivOfCommute B
+    (fun a ha _ hb => mem_commutant_iff.mp (hB hb) a (hA ha))
+    (linearDisjoint_of_subset_commutant hM hA hB)
 
 /-- `mulStarAlgEquiv` sends a pure tensor `a ⊗ₜ b` to the operator product `a * b`. -/
 @[simp]
@@ -311,7 +283,7 @@ theorem coe_mulStarAlgEquiv_tmul {M : VonNeumannAlgebra H} (hM : M ⊓ M.commuta
     {A B : StarSubalgebra ℂ (H →L[ℂ] H)} (hA : (A : Set (H →L[ℂ] H)) ⊆ M)
     (hB : (B : Set (H →L[ℂ] H)) ⊆ M.commutant) (a : A) (b : B) :
     (mulStarAlgEquiv hM hA hB (a ⊗ₜ[ℂ] b) : H →L[ℂ] H) = (a : H →L[ℂ] H) * b :=
-  coe_mulAlgEquiv_tmul hM hA hB a b
+  StarSubalgebra.coe_mulStarAlgEquivOfCommute_tmul _ _ a b
 
 /-- When `M ⊓ M.commutant = ⊥`, multiplication gives a unital `⋆`-algebra equivalence from
 `M ⊗[ℂ] M.commutant` onto `M.toStarSubalgebra ⊔ M.commutant.toStarSubalgebra`. -/

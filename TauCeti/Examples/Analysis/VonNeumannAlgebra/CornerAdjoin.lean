@@ -137,22 +137,15 @@ theorem starProjection_cornerSubspace_mem_adjoin :
 /-- Every generator in `generatingSet` compresses to `0` on `cornerSubspace = (ℂ ∙ e₂)ᗮ`. -/
 theorem compression_eq_zero_of_mem_generatingSet {x : H →L[ℂ] H} (hx : x ∈ generatingSet) :
     ContinuousLinearMap.compression (F := cornerSubspace) x cornerSubspace.subtypeL = 0 := by
-  let b := EuclideanSpace.basisFun (Fin 3) ℂ
   refine ContinuousLinearMap.ext fun v ↦ ext_inner_left ℂ fun u ↦ ?_
-  have hu : ⟪(u : H), b 2⟫_ℂ = 0 :=
-    Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self (b 2)) u.2
-  have hv : ⟪b 2, (v : H)⟫_ℂ = 0 :=
-    Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self (b 2)) v.2
+  have hu : ⟪(u : H), EuclideanSpace.basisFun (Fin 3) ℂ 2⟫_ℂ = 0 :=
+    Submodule.inner_left_of_mem_orthogonal (Submodule.mem_span_singleton_self _) u.2
+  have hv : ⟪EuclideanSpace.basisFun (Fin 3) ℂ 2, (v : H)⟫_ℂ = 0 :=
+    Submodule.inner_right_of_mem_orthogonal (Submodule.mem_span_singleton_self _) v.2
   rw [inner_compression_apply, zero_apply, inner_zero_right]
-  rcases hx with rfl | rfl | rfl | rfl
-  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
-      InnerProductSpace.inner_right_rankOne_apply, hv, mul_zero]
-  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
-      InnerProductSpace.inner_right_rankOne_apply, hu, zero_mul]
-  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
-      InnerProductSpace.inner_right_rankOne_apply, hv, mul_zero]
-  · rw [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
-      InnerProductSpace.inner_right_rankOne_apply, hu, zero_mul]
+  rcases hx with rfl | rfl | rfl | rfl <;>
+    simp only [matrixUnit, cornerSubspace.coe_subtypeL, Submodule.coe_subtype,
+      InnerProductSpace.inner_right_rankOne_apply, hu, hv, mul_zero, zero_mul]
 
 /-- The compressed generators generate only the scalar von Neumann algebra `⊥` on
 `cornerSubspace`. -/
