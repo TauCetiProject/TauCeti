@@ -53,6 +53,9 @@ coprime, coprimality can be read off a unit resultant: against `X - C a` this is
   arguments, at the actual degrees.
 * `Polynomial.resultant_reflect`: reversing both arguments at their degree bounds multiplies the
   resultant by `(-1) ^ (m * n)`.
+* `Polynomial.resultant_taylor_of_natDegree_le`, `Polynomial.resultant_taylor_deriv`: translating
+  the indeterminate preserves resultants at arbitrary valid degree bounds and in particular the
+  formal derivative resultant `Res_{d, d - 1}(f, f')`.
 * `Polynomial.resultant_map_of_natDegree_eq`: resultants at the actual degrees commute with a
   coefficient map that preserves both degrees.
 * `Polynomial.Monic.resultant_of_le`: for a monic left argument, the resultant is independent of
@@ -253,6 +256,34 @@ theorem resultant_reflect (f g : R[X]) (m n : ℕ) :
       resultant_C_left, resultant_C_right] at h
     simpa using h.symm
   rw [resultant_reflect_eq_sign_mul, hsign, Int.cast_pow, Int.cast_neg, Int.cast_one]
+
+/-- Translating both polynomials preserves the resultant at any valid degree bounds `m` and `n`,
+extending `Polynomial.resultant_taylor` from the actual degrees. -/
+theorem resultant_taylor_of_natDegree_le (f g : R[X]) (r : R) {m n : ℕ}
+    (hf : f.natDegree ≤ m) (hg : g.natDegree ≤ n) :
+    resultant (taylor r f) (taylor r g) m n = resultant f g m n := by
+  obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_le hf
+  obtain ⟨l, rfl⟩ := Nat.exists_eq_add_of_le hg
+  have hcoeff_g : (taylor r g).coeff (g.natDegree + l) = g.coeff (g.natDegree + l) := by
+    rcases Nat.eq_zero_or_pos l with rfl | hl
+    · simp
+    · rw [coeff_eq_zero_of_natDegree_lt (by simp; omega),
+        coeff_eq_zero_of_natDegree_lt (by omega)]
+  have hbase : resultant (taylor r f) (taylor r g) f.natDegree g.natDegree =
+      resultant f g f.natDegree g.natDegree := by
+    simpa only [natDegree_taylor] using resultant_taylor f g r
+  rw [resultant_add_left_deg _ _ _ _ _ (by simp), resultant_add_right_deg _ _ _ _ _ (by simp),
+    resultant_add_left_deg _ _ _ _ _ le_rfl, resultant_add_right_deg _ _ _ _ _ le_rfl,
+    hcoeff_g, coeff_taylor_natDegree, coeff_natDegree, hbase]
+
+/-- Translating the indeterminate preserves the formal derivative resultant
+`Res_{d, d - 1}(f, f')` over any commutative ring. -/
+theorem resultant_taylor_deriv (f : R[X]) (r : R) :
+    resultant (taylor r f) (taylor r f).derivative f.natDegree (f.natDegree - 1) =
+      resultant f f.derivative f.natDegree (f.natDegree - 1) := by
+  have hder : (taylor r f).derivative = taylor r f.derivative := by
+    simp [taylor_apply, derivative_comp]
+  rw [hder, resultant_taylor_of_natDegree_le f f.derivative r le_rfl (natDegree_derivative_le f)]
 
 end Polynomial
 

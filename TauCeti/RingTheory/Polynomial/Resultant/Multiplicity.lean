@@ -10,10 +10,12 @@ public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 import Mathlib.Algebra.Polynomial.FieldDivision
-import Mathlib.Algebra.Polynomial.Taylor
 import Mathlib.RingTheory.Polynomial.Content
 import Mathlib.RingTheory.Polynomial.UniqueFactorization
+import TauCeti.Algebra.Polynomial.Roots
+import TauCeti.LinearAlgebra.Matrix.Determinant.IdealDivisibility
 import TauCeti.LinearAlgebra.Matrix.Polynomial
+import TauCeti.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
 /-!
@@ -141,46 +143,6 @@ end SwapAndDegree
 
 section ResultantMultiplicity
 
-/-- Translating the indeterminate preserves the formal resultant `Res_{d, d - 1}(f, f')` over any
-commutative ring, without canceling the leading coefficient. -/
-private theorem resultant_taylor_deriv_eq {S : Type*} [CommRing S] (f : S[X]) (a : S) :
-    (taylor a f).resultant (taylor a f).derivative f.natDegree (f.natDegree - 1) =
-      f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
-  have hder : (taylor a f).derivative = taylor a f.derivative := by
-    simp [taylor_apply, derivative_comp]
-  rw [hder]
-  calc
-    resultant (taylor a f) (taylor a f.derivative) f.natDegree (f.natDegree - 1)
-      = f.leadingCoeff ^ (f.natDegree - 1 - f.derivative.natDegree) *
-          resultant (taylor a f) (taylor a f.derivative) := by
-        conv_lhs => rw [← Nat.add_sub_of_le (natDegree_derivative_le f)]
-        rw [resultant_add_right_deg _ _ _ _ _ (by simp), coeff_taylor_natDegree]
-        simp only [natDegree_taylor]
-    _ = f.leadingCoeff ^ (f.natDegree - 1 - f.derivative.natDegree) *
-          resultant f f.derivative := by rw [resultant_taylor]
-    _ = resultant f f.derivative f.natDegree (f.natDegree - 1) := by
-        conv_rhs => rw [← Nat.add_sub_of_le (natDegree_derivative_le f)]
-        rw [resultant_add_right_deg _ _ _ _ _ le_rfl, coeff_natDegree]
-
-/-- If `r` divides every entry in a set `s` of rows of a square matrix `M`, then `r ^ #s` divides
-`M.det`. -/
-private theorem pow_card_dvd_det_of_forall_dvd_row {S ι : Type*} [CommRing S] [Fintype ι]
-    [DecidableEq ι] {M : Matrix ι ι S} {r : S} {s : Finset ι}
-    (h : ∀ i ∈ s, ∀ j, r ∣ M i j) : r ^ s.card ∣ M.det := by
-  classical
-  have hrow (i : ι) (j : ι) : ∃ c : S, M i j = (if i ∈ s then r else 1) * c := by
-    by_cases hi : i ∈ s
-    · obtain ⟨c, hc⟩ := h i hi j
-      exact ⟨c, by simp [hi, hc]⟩
-    · exact ⟨M i j, by simp [hi]⟩
-  choose B hB using hrow
-  have hM : M = Matrix.diagonal (fun i ↦ if i ∈ s then r else 1) * Matrix.of B := by
-    ext i j
-    simpa [Matrix.diagonal_mul] using hB i j
-  refine ⟨(Matrix.of B).det, ?_⟩
-  rw [hM, Matrix.det_mul, Matrix.det_diagonal, Finset.prod_ite, Finset.filter_mem_eq_inter,
-    Finset.univ_inter, Finset.prod_const, Finset.prod_const_one, mul_one]
-
 /-- **Resultant bound on fiber root multiplicities.** Over an integral domain `R`, if `Q : R[X][X]`
 has positive outer degree and nonzero formal derivative resultant
 `Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1)`, then the multiplicity of `α` as a root of
@@ -235,27 +197,25 @@ theorem rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero {R : Type*} [Co
       simp only [sylvester, Matrix.of_apply, Fin.addCases_right, Fin.val_castLE]
       split_ifs <;> [exact hdvd_P (by omega); exact dvd_zero _]
   have hdvd_res : (X - C β) ^ (m - 1) ∣ Q.resultant Q.derivative d (d - 1) := by
-    rw [← resultant_taylor_deriv_eq Q (C α), ← hs_card]
-    exact pow_card_dvd_det_of_forall_dvd_row hs_dvd
+    rw [← resultant_taylor_deriv Q (C α), resultant, ← hs_card]
+    have hprod : (X - C β) ^ s.card =
+        ∏ i : Fin (d + (d - 1)), if i ∈ s then X - C β else 1 := by
+      rw [Finset.prod_ite, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.prod_const,
+        Finset.prod_const_one, mul_one]
+    rw [hprod]
+    exact Matrix.prod_dvd_det_of_dvd_row _ _ fun i j ↦ by
+      split_ifs with hi
+      · exact hs_dvd i hi j
+      · exact one_dvd _
   have hle := (le_rootMultiplicity_iff hres).mpr hdvd_res
   omega
-
-/-- Over a characteristic-zero integral domain, the derivative of a polynomial of positive degree
-has degree `p.natDegree - 1`. -/
-private theorem natDegree_derivative_eq_sub_one {D : Type*} [CommRing D] [IsDomain D] [CharZero D]
-    {p : D[X]} (hp : 0 < p.natDegree) : p.derivative.natDegree = p.natDegree - 1 := by
-  refine le_antisymm (natDegree_derivative_le p) (le_natDegree_of_ne_zero ?_)
-  rw [coeff_derivative, Nat.sub_add_cancel hp, coeff_natDegree, ← Nat.cast_add_one]
-  have hp0 : p ≠ 0 := ne_zero_of_natDegree_gt hp
-  exact mul_ne_zero (leadingCoeff_ne_zero.mpr hp0)
-    (Nat.cast_ne_zero.mpr (by omega : p.natDegree - 1 + 1 ≠ 0))
 
 /-- A squarefree polynomial of positive degree over a GCD domain of characteristic zero has
 nonzero resultant with its derivative. -/
 theorem _root_.Squarefree.resultant_deriv_ne_zero {D : Type*} [CommRing D] [IsDomain D]
     [IsGCDMonoid D] [CharZero D] {p : D[X]} (hp : Squarefree p) (hdeg : 0 < p.natDegree) :
     p.resultant p.derivative ≠ 0 := by
-  rw [resultant, natDegree_derivative_eq_sub_one hdeg, ← resultant,
+  rw [resultant, natDegree_derivative, ← resultant,
     resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg)]
   exact mul_ne_zero
     (mul_ne_zero (pow_ne_zero _ (by norm_num)) (leadingCoeff_ne_zero.mpr hp.ne_zero))
@@ -270,10 +230,9 @@ theorem _root_.Squarefree.rootMultiplicity_map_evalRingHom_le {R : Type*} [CommR
     (hdeg : 0 < Q.natDegree) (α β : R) :
     (Q.map (evalRingHom β)).rootMultiplicity α ≤
       1 + (Q.resultant Q.derivative).rootMultiplicity β := by
-  have hder : Q.derivative.natDegree = Q.natDegree - 1 := natDegree_derivative_eq_sub_one hdeg
   have hres :
       Q.resultant Q.derivative Q.natDegree (Q.natDegree - 1) = Q.resultant Q.derivative := by
-    rw [← hder]
+    rw [← natDegree_derivative]
   rw [← hres]
   exact rootMultiplicity_map_evalRingHom_le_of_resultant_ne_zero hdeg
     (hres ▸ hQ.resultant_deriv_ne_zero hdeg) α β
@@ -317,24 +276,6 @@ private theorem cappedFiberMult_mul_le {K : Type*} [Field K] (α β : K) (N : �
   have hAB : A.map (evalRingHom β) * B.map (evalRingHom β) ≠ 0 := mul_ne_zero hA hB
   simp only [hA, hB, hAB, ↓reduceIte, rootMultiplicity_mul hAB]
   omega
-
-/-- Over a field, the sum of root multiplicities of a polynomial over any image of an injective
-map is at most its degree. -/
-private theorem sum_rootMultiplicity_le_natDegree {K ι : Type*} [Field K] (s : Finset ι)
-    {β : ι → K} (hβ : Function.Injective β) (p : K[X]) :
-    ∑ i ∈ s, p.rootMultiplicity (β i) ≤ p.natDegree := by
-  classical
-  calc ∑ i ∈ s, p.rootMultiplicity (β i)
-      = ∑ b ∈ s.image β, p.rootMultiplicity b :=
-        (Finset.sum_image (f := fun b ↦ p.rootMultiplicity b) fun _ _ _ _ h ↦ hβ h).symm
-    _ = ∑ b ∈ s.image β, p.roots.count b := by simp_rw [count_roots]
-    _ ≤ ∑ b ∈ (s.image β ∪ p.roots.toFinset), p.roots.count b :=
-        Finset.sum_le_sum_of_subset Finset.subset_union_left
-    _ = ∑ b ∈ p.roots.toFinset, p.roots.count b := by
-        refine (Finset.sum_subset Finset.subset_union_right fun b _ hb ↦ ?_).symm
-        exact Multiset.count_eq_zero.mpr (Multiset.mem_toFinset.not.mp hb)
-    _ = p.roots.card := p.roots.toFinset_sum_count_eq
-    _ ≤ p.natDegree := card_roots' p
 
 /-- An irreducible bivariate polynomial of positive outer degree cannot vanish identically on any
 vertical fiber `X = β`. -/
@@ -380,7 +321,9 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
       calc Z.card = ∑ i ∈ Z, 1 := by simp
         _ ≤ ∑ i ∈ Z, q.rootMultiplicity (β i) := Finset.sum_le_sum fun i hi ↦
             Nat.succ_le_of_lt ((rootMultiplicity_pos hq0).mpr (Finset.mem_filter.mp hi).2)
-        _ ≤ q.natDegree := sum_rootMultiplicity_le_natDegree Z hβ q
+        _ = ∑ b ∈ Z.image β, q.rootMultiplicity b :=
+            (Finset.sum_image (f := fun b ↦ q.rootMultiplicity b) fun _ _ _ _ h ↦ hβ h).symm
+        _ ≤ q.natDegree := q.sum_rootMultiplicity_le_natDegree (Z.image β)
     simp_rw [hterm]
     rw [Finset.sum_ite, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.sum_const,
       Finset.sum_const_zero, add_zero, smul_eq_mul, natDegree_C, hswap, zero_add, mul_zero,
@@ -407,7 +350,9 @@ private theorem sum_cappedFiberMult_le_of_irreducible {K ι : Type*} [Field K] [
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
             (Q.resultant Q.derivative).natDegree :=
           add_le_add (hzero Q hQ.ne_zero)
-            (sum_rootMultiplicity_le_natDegree Z hβ (Q.resultant Q.derivative))
+            (by rw [← Finset.sum_image (f := fun b ↦ (Q.resultant Q.derivative).rootMultiplicity b)
+                  fun _ _ _ _ h ↦ hβ h]
+                exact (Q.resultant Q.derivative).sum_rootMultiplicity_le_natDegree (Z.image β))
       _ ≤ N * (Q.natDegree + (Bivariate.swap Q).natDegree) +
             2 * Q.natDegree * (Bivariate.swap Q).natDegree :=
           Nat.add_le_add_left (natDegree_resultant_deriv_le Q) _
