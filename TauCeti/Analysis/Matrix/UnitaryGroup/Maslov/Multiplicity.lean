@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Matrix.Normal
 public import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+import TauCeti.LinearAlgebra.Matrix.MulVec
 
 /-!
 # The eigenvalue `1` of the Souriau map and the zero axiom
@@ -61,7 +62,8 @@ private theorem souriau_mulVec_eq_self_iff (U : unitaryGroup n ℂ) {x : n → �
   · intro h
     refine ⟨_, ?_, h⟩
     calc star ((U : Matrix n n ℂ)ᵀ *ᵥ x) = (U : Matrix n n ℂ)ᴴ *ᵥ x := by
-          rw [star_mulVec, conjTranspose, transpose_map, vecMul_transpose, hx, conjTranspose]
+          rw [star_mulVec, hx, conjTranspose_transpose_eq_transpose_conjTranspose,
+            vecMul_transpose]
       _ = (U : Matrix n n ℂ)ᵀ *ᵥ x := by
           conv_lhs => rw [← h]
           rw [mulVec_mulVec, ← star_eq_conjTranspose, Unitary.star_mul_self_of_mem U.2,
@@ -71,7 +73,7 @@ private theorem souriau_mulVec_eq_self_iff (U : unitaryGroup n ℂ) {x : n → �
     calc (U : Matrix n n ℂ)ᵀ *ᵥ ((U : Matrix n n ℂ) *ᵥ y)
         = (U : Matrix n n ℂ)ᵀ *ᵥ star ((U : Matrix n n ℂ) *ᵥ y) := by rw [hx]
       _ = y := by
-          rw [star_mulVec, conjTranspose, transpose_map, vecMul_transpose, hy, mulVec_mulVec,
+          rw [star_mulVec_eq_map_star_mulVec, hy, mulVec_mulVec,
             transpose_mul_map_star, one_mulVec]
 
 /-- The entrywise conjugate of the Souriau map `U Uᵀ` is its inverse `conj(U) Uᴴ`. -/
@@ -89,8 +91,8 @@ private theorem mul_map_star_souriau (U : unitaryGroup n ℂ) :
 private theorem souriau_mulVec_star_eq_star (U : unitaryGroup n ℂ) {x : n → ℂ}
     (hx : (souriau U : Matrix n n ℂ) *ᵥ x = x) :
     (souriau U : Matrix n n ℂ) *ᵥ star x = star x := by
-  conv_lhs => rw [← hx, star_mulVec, conjTranspose, transpose_map, vecMul_transpose,
-    mulVec_mulVec, mul_map_star_souriau, one_mulVec]
+  conv_lhs => rw [← hx, star_mulVec_eq_map_star_mulVec, mulVec_mulVec, mul_map_star_souriau,
+    one_mulVec]
 
 /-- A vector of `ℂⁿ` lies in `U ℝⁿ ∩ ℝⁿ` exactly when it is real and fixed by the Souriau map. -/
 private theorem mem_realImage_inf_realSubspace_iff (U : unitaryGroup n ℂ)

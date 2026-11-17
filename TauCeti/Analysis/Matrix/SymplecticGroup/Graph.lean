@@ -206,18 +206,8 @@ theorem mem_graphSubspace_iff {A : Matrix (n ⊕ n) (n ⊕ n) ℝ} {w : Euclidea
     w ∈ graphSubspace A ↔ ∃ x : n ⊕ n → ℝ,
       WithLp.toLp 2 (Sum.elim (fun i => conj ((x (.inl i) : ℂ) + x (.inr i) * Complex.I))
         (fun i => ((A *ᵥ x) (.inl i) : ℂ) + (A *ᵥ x) (.inr i) * Complex.I)) = w := by
-  rw [graphSubspace, mem_realImage]
-  constructor
-  · rintro ⟨v, hv, rfl⟩
-    have hv' : WithLp.ofLp v = fun k => ((v k).re : ℂ) :=
-      funext fun k => Complex.ext rfl (by simp [mem_realSubspace.1 hv k])
-    refine ⟨fun k => (v k).re, ?_⟩
-    refine (congrArg (WithLp.toLp 2) (graphFrame_mulVec A fun k => (v k).re).symm).trans ?_
-    rw [toEuclideanCLM_apply, toLpLin_apply, ← hv']
-  · rintro ⟨x, rfl⟩
-    refine ⟨WithLp.toLp 2 fun k => (x k : ℂ), mem_realSubspace.2 fun _ => by simp, ?_⟩
-    rw [toEuclideanCLM_apply]
-    exact congrArg (WithLp.toLp 2) (graphFrame_mulVec A x)
+  rw [graphSubspace, mem_realImage_iff_exists_mulVec]
+  simp_rw [graphFrame_mulVec]
 
 /-- The graph frame of `A`, as a real-linear map on the real vectors: `x ↦ (conj (φ x), φ (A x))`.
 -/
@@ -257,7 +247,7 @@ theorem graphFrame_mulVec_eq_iff (A B : Matrix (n ⊕ n) (n ⊕ n) ℝ) (x y : n
     rw [h]
 
 /-- The graph frame of `A` is injective on real vectors. -/
-theorem injective_graphFrameLin (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
+theorem graphFrameLin_injective (A : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     Function.Injective (graphFrameLin A) := fun x y h ↦
   ((graphFrame_mulVec_eq_iff A A x y).1 (by simpa [graphFrameLin_apply] using h)).1
 

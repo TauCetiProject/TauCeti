@@ -78,7 +78,7 @@ theorem finrank_realImage_diagonalStraightening_mul_graphFrame_inf_realSubspace
     ← Submodule.map_inf T hT, realImage_graphFrame_inf_realImage_graphFrame_one,
     ← Submodule.map_comp]
   exact (Submodule.equivMapOfInjective (T ∘ₗ graphFrameLin A)
-    (hT.comp (injective_graphFrameLin A)) _).finrank_eq.symm
+    (hT.comp (graphFrameLin_injective A)) _).finrank_eq.symm
 
 end Matrix
 
