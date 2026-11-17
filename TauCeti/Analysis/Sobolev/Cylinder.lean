@@ -163,11 +163,12 @@ abbrev H1 : Submodule ℝ (Lp (V × V × V) 2 stripMeasure) :=
 /-- `H1` is the closure of the set of jets of test sections. -/
 theorem coe_H1 :
     (H1 V : Set (Lp (V × V × V) 2 stripMeasure)) = closure (Set.range (jetₗ V)) := by
-  rw [StripSobolev.coe_H1, show (jetₗ V : testSection V → _) =
-      StripSobolev.jetₗ V ∘ Submodule.inclusion testSection_le_testMap from
-    funext jetₗ_eq_stripJetₗ, Set.range_comp, ← LinearMap.coe_range, Submodule.range_inclusion,
-    Submodule.comap_coe, Submodule.coe_subtype]
-  simp only [Set.preimage, SetLike.mem_coe]
+  rw [StripSobolev.coe_H1]
+  congr 1
+  ext x
+  simp only [Set.mem_image, Set.mem_range, jetₗ_eq_stripJetₗ, Submodule.inclusion_apply,
+    Subtype.exists, Set.mem_ofPred_eq]
+  exact ⟨fun ⟨ξ, _, hξ, h⟩ ↦ ⟨ξ, hξ, h⟩, fun ⟨ξ, hξ, h⟩ ↦ ⟨ξ, testSection_le_testMap hξ, hξ, h⟩⟩
 
 /-- The jet of a test section lies in `H1`. -/
 theorem jetₗ_mem_H1 (ξ : testSection V) : jetₗ V ξ ∈ H1 V := by

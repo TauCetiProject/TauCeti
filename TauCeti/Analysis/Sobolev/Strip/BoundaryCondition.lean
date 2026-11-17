@@ -150,6 +150,14 @@ theorem integral_apply_fderiv_add_eq_integral_sub (hψ : ContDiff ℝ 1 ψ) (hξ
     have hξd := ((hξ1.differentiable one_ne_zero) (s, t)).hasFDerivAt.comp_hasDerivAt t hl
     simpa [Function.comp_def, add_comm] using hψd.clm_apply hξd
 
+/-- The coefficients `ψ` and `∂t ψ` of Green's formula lie in `L²` when `ψ` is `C¹` with compact
+support. -/
+private theorem memLp_and_memLp_fderiv_apply (hψ : ContDiff ℝ 1 ψ) (hψs : HasCompactSupport ψ) :
+    MemLp ψ 2 stripMeasure ∧ MemLp (fun z ↦ fderiv ℝ ψ z (0, 1)) 2 stripMeasure :=
+  ⟨hψ.continuous.memLp_of_hasCompactSupport hψs,
+    ((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
+      (hψs.fderiv_apply (𝕜 := ℝ) (0, 1))⟩
+
 /-- Green's formula read on the `L²` jet of a test map: for a `C¹` map `ψ` into the dual of `V`
 with compact support, `∫ ψ (x_t) + ∫ (∂t ψ) (x₁)` at the jet `x` of a test map `ξ` is the
 integral of the difference of the boundary values of `ψ ξ`. -/
@@ -158,11 +166,9 @@ private theorem integral_jetₗ_add_eq_integral_sub (hψ : ContDiff ℝ 1 ψ)
     ∫ z, ψ z (jetₗ V ξ z).2.2 ∂stripMeasure +
         ∫ z, fderiv ℝ ψ z (0, 1) (jetₗ V ξ z).1 ∂stripMeasure =
       ∫ s, (ψ (s, 1) ((ξ : ℝ × ℝ → V) (s, 1)) - ψ (s, 0) ((ξ : ℝ × ℝ → V) (s, 0))) := by
+  obtain ⟨h₁, h₂⟩ := memLp_and_memLp_fderiv_apply hψ hψs
   have h := integral_jetₗ_add_eq_integral (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ))
-    ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)))
-    (hψ.continuous.memLp_of_hasCompactSupport hψs)
-    (((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
-      (hψs.fderiv_apply (𝕜 := ℝ) (0, 1))) ξ
+    ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V))) h₁ h₂ ξ
   simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.coe_snd', jet_apply] at h
   rw [h, integral_apply_fderiv_add_eq_integral_sub hψ ξ.2]
@@ -177,16 +183,14 @@ theorem integral_apply_add_eq_zero_of_mem_H1 {x : Lp (V × V × V) 2 stripMeasur
     (hx : x ∈ H1 (boundaryCondition Λ₀ Λ₁)) (hψ : ContDiff ℝ 1 ψ) (hψs : HasCompactSupport ψ)
     (hψ₀ : ∀ s, ∀ v ∈ Λ₀, ψ (s, 0) v = 0) (hψ₁ : ∀ s, ∀ v ∈ Λ₁, ψ (s, 1) v = 0) :
     ∫ z, ψ z (x z).2.2 ∂stripMeasure + ∫ z, fderiv ℝ ψ z (0, 1) (x z).1 ∂stripMeasure = 0 := by
-  have h := integral_add_eq_zero_of_mem_H1 (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ))
-    ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V)))
-    (hψ.continuous.memLp_of_hasCompactSupport hψs)
-    (((hψ.continuous_fderiv one_ne_zero).clm_apply continuous_const).memLp_of_hasCompactSupport
-      (hψs.fderiv_apply (𝕜 := ℝ) (0, 1))) (fun ξ hbc ↦ ?_) hx
-  · simpa only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearMap.coe_snd'] using h
-  -- The boundary terms of Green's formula vanish on the maps satisfying the boundary conditions.
+  obtain ⟨h₁, h₂⟩ := memLp_and_memLp_fderiv_apply hψ hψs
+  have h := integral_add_eq_zero_of_mem_H1 (S := boundaryCondition Λ₀ Λ₁)
+    (ContinuousLinearMap.id ℝ (V →L[ℝ] ℝ))
+    ((ContinuousLinearMap.snd ℝ V V).comp (ContinuousLinearMap.snd ℝ V (V × V))) h₁ h₂
   simp only [ContinuousLinearMap.id_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.coe_snd', jet_apply]
+    ContinuousLinearMap.coe_snd', jet_apply] at h
+  refine h (fun ξ hbc ↦ ?_) hx
+  -- The boundary terms of Green's formula vanish on the maps satisfying the boundary conditions.
   rw [integral_apply_fderiv_add_eq_integral_sub hψ ξ.2]
   have h0 : ∀ s, ψ (s, 1) ((ξ : ℝ × ℝ → V) (s, 1)) - ψ (s, 0) ((ξ : ℝ × ℝ → V) (s, 0)) = 0 :=
     fun s ↦ by rw [hψ₁ s _ (hbc s).2, hψ₀ s _ (hbc s).1, sub_zero]
