@@ -62,8 +62,8 @@ orbit in `K`.
   energy and its ends have actions `a₀ < a₁`
   (`TauCeti.SymplecticForm.exists_lt_tendsto_hamiltonianAction_of_floer`).
 * **Trajectories spend a bounded time in a regular action window.** If an interval `[a, b]`
-  contains no action of a `1`-periodic orbit in `K`, there is a time `T`, depending only on the
-  data `ω`, `H`, `K`, the tameness constants and the Lipschitz constant, such that the loops of
+  contains no action of a `1`-periodic orbit in `K`, there is a time `T`, depending only on `ω`,
+  `H`, `K`, `[a, b]`, the tameness constants and the Lipschitz constant, such that the loops of
   every Floer trajectory with actions in `[a, b]` lie within an interval of `s`-values of length at
   most `T` (`SymplecticForm.exists_forall_sub_le_of_floer`). Otherwise, windows of length tending
   to infinity in which the action stays in `[a, b]` would contain windows of vanishing energy, and
@@ -451,15 +451,7 @@ constants `0 < c` and `M` and a Lipschitz constant `L`. Then there is a time `T`
 `1`-periodic loops in `K` and almost complex structures satisfying `c ‖v‖² ≤ ω(v, J z v)` and
 `‖J z v‖ ≤ M ‖v‖` satisfies `s₁ - s₀ ≤ T` whenever `a ≤ A_H(u(s₀, ·))` and `A_H(u(s₁, ·)) ≤ b`.
 Since the action increases along `u`, this says that the loops of `u` with actions in `[a, b]`
-form an interval of `s`-values of length at most `T`, uniformly in `u`.
-
-Otherwise, some trajectories would keep actions in `[a, b]` along windows of length `2 (n + 1)`
-carrying energy at most `(b - a) / (n + 1)`. Their translates centred in these windows converge, by
-the Arzelà–Ascoli theorem, to a limit that is stationary, since the energy of the translates over
-every window tends to zero (`TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`),
-but also not stationary, since the actions at the centres converge to a value in `[a, b]`, which is
-not the action of an orbit in `K`
-(`TauCeti.SymplecticForm.exists_apply_ne_apply_zero_of_tendstoLocallyUniformly`). -/
+form an interval of `s`-values of length at most `T`, uniformly in `u`. -/
 theorem exists_forall_sub_le_of_floer (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1)
     (hK : IsCompact K) (hc : 0 < c) {a b : ℝ}
     (hreg : Disjoint (Icc a b) (ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
