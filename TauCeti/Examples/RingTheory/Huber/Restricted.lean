@@ -94,11 +94,12 @@ theorem geometricSeries_not_mem_restricted :
       geom ∉ weightedRestrictedSubring (fun _ : Fin 1 ↦ ({1} : Set ℤ_[p]))
         isWeightFamily_one_weight := by
   intro geom
-  have hnot : geom ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) :=
-    fun hmem ↦ Set.infinite_range_of_injective (Finsupp.single_injective (0 : Fin 1)) <|
-      (show {ν : Fin 1 →₀ ℕ | (1 : ℝ) ≤ ‖MvPowerSeries.coeff ν geom‖}.Finite by
-        simpa [eventually_cofinite, not_lt] using hmem.eventually (gt_mem_nhds zero_lt_one)).subset
-        (by rintro _ ⟨n, rfl⟩; rw [Set.mem_ofPred_eq, MvPowerSeries.coeff_apply]; simp [geom])
+  have hnot : geom ∉ MvPowerSeries.IsRestricted.subring (R := ℤ_[p]) (fun _ : Fin 1 ↦ 1) := by
+    intro hmem
+    have hfin : {ν : Fin 1 →₀ ℕ | (1 : ℝ) ≤ ‖MvPowerSeries.coeff ν geom‖}.Finite := by
+      simpa [eventually_cofinite, not_lt] using hmem.eventually (gt_mem_nhds zero_lt_one)
+    refine Set.infinite_range_of_injective (Finsupp.single_injective (0 : Fin 1)) (hfin.subset ?_)
+    rintro _ ⟨n, rfl⟩; rw [Set.mem_ofPred_eq, MvPowerSeries.coeff_apply]; simp [geom]
   exact ⟨hnot, by rwa [weightedRestrictedSubring_eq_isRestricted_subring]⟩
 
 /-! ### 5. Linearly topologised vs normed universal property over `ℤ_[p]` -/
@@ -187,8 +188,9 @@ example : T2Space ThreeAdicInt ∧ ¬ CompleteSpace ThreeAdicInt ∧
   have hemp : IsEmpty (restrictedMvPowerSeriesCompletion 0 ThreeAdicInt ≃+* ThreeAdicInt) :=
     ⟨fun e ↦ by
       have hu4 : IsUnit (4 : restrictedMvPowerSeriesCompletion 0 ThreeAdicInt) := by
-        rw [show (4 : restrictedMvPowerSeriesCompletion 0 ThreeAdicInt) =
-          1 + algebraMap ThreeAdicInt _ 3 by rw [map_ofNat]; norm_num]
+        have h4 : (4 : restrictedMvPowerSeriesCompletion 0 ThreeAdicInt) =
+            1 + algebraMap ThreeAdicInt _ 3 := by rw [map_ofNat]; norm_num
+        rw [h4]
         exact ((WithIdeal.isTopologicallyNilpotent_of_mem
           (Ideal.mem_span_singleton_self (3 : ThreeAdicInt))).map
             (continuous_algebraMap_restrictedMvPowerSeriesCompletion 0 ThreeAdicInt)).isUnit_one_add

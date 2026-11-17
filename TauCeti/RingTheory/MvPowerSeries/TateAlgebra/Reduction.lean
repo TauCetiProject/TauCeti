@@ -43,8 +43,9 @@ private theorem finite_support_mk_coeff_isRestricted (J : Ideal R) (hJ : IsOpen 
       Ideal.Quotient.mk J (MvPowerSeries.coeff ν (f : MvPowerSeries σ R))).Finite := by
   obtain ⟨ε, hε, hball⟩ :=
     NormedAddGroup.nhds_zero_basis_norm_lt.mem_iff.mp (hJ.mem_nhds J.zero_mem)
-  refine (show {ν | ε ≤ ‖MvPowerSeries.coeff ν (f : MvPowerSeries σ R)‖}.Finite by
-    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds hε)).subset fun ν hν ↦ ?_
+  have hfin : {ν | ε ≤ ‖MvPowerSeries.coeff ν (f : MvPowerSeries σ R)‖}.Finite := by
+    simpa [eventually_cofinite, not_lt] using f.2.eventually (gt_mem_nhds hε)
+  refine hfin.subset fun ν hν ↦ ?_
   rw [Function.mem_support, Ne, Ideal.Quotient.eq_zero_iff_mem] at hν
   exact not_lt.mp fun hlt ↦ hν (hball (Set.mem_ofPred_eq.mpr hlt))
 
