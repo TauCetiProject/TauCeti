@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Matrix.Nonsingular
+public import Mathlib.LinearAlgebra.SymplecticGroup
 
 /-!
 # Linear independence from the Gram matrix of a bilinear form
@@ -26,6 +27,8 @@ ring a matrix is nonsingular exactly when its determinant is a non-zero-divisor
   divisors, a family whose Gram matrix has nonzero determinant is linearly independent.
 * `LinearMap.BilinForm.linearIndependent_of_isUnit_det`: a family whose Gram matrix is a
   non-zero-divisor times a matrix of unit determinant is linearly independent.
+* `LinearMap.BilinForm.linearIndependent_of_apply_eq_J`: a family whose Gram matrix is the
+  standard symplectic matrix `Matrix.J` is linearly independent.
 -/
 
 public section
@@ -69,6 +72,15 @@ theorem linearIndependent_of_isUnit_det {B : BilinForm R M} {a : R} {v : ι → 
   refine B.linearIndependent_of_nonsingular <| nonsingular_iff_det_mem_nonZeroDivisors.mpr ?_
   rw [show (Matrix.of fun i j => B (v i) (v j)) = a • G by ext; simp [hG], det_smul]
   exact mul_mem (pow_mem ha _) hdet.mem_nonZeroDivisors
+
+/-- A family `d` indexed by `l ⊕ l` whose Gram matrix with respect to a bilinear form is the
+standard symplectic matrix `Matrix.J`, of unit determinant, is linearly independent. -/
+theorem linearIndependent_of_apply_eq_J {l : Type*} [Finite l] [DecidableEq l]
+    (B : BilinForm R M) {d : l ⊕ l → M} (h : ∀ x y, B (d x) (d y) = J l R x y) :
+    LinearIndependent R d := by
+  have := Fintype.ofFinite l
+  exact linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem
+    (fun x y => by rw [one_mul, h]) (isUnit_det_J l R)
 
 end CommRing
 
