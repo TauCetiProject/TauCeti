@@ -95,6 +95,8 @@ constants depend only on the bump function, the gap and the regularities.
   `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_toDistr_eq` and
   `TauCeti.BesovSpace.exists_hasSum_block_smul_lowPass_and_norm_le_of_neg` are the same estimates
   for `T_v u`, whose low-frequency factor is vector-valued.
+* `TauCeti.BesovSpace.rpow_mul_norm_block_smul_sum_block_le`: the weighted bound on the terms of
+  the resonant part, and on their sub-sums.
 * `TauCeti.BesovSpace.exists_hasSum_block_smul_sum_block_and_norm_le`: the resonant estimate.
 
 ## References
@@ -577,32 +579,32 @@ theorem exists_hasSum_block_smul_lowPass_and_norm_le_of_neg (α : ℝ) {β : ℝ
         _ = _ := mul_comm _ _
   exact ⟨w, hw, hwn.trans_eq (by ring)⟩
 
-/-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}` and `v ∈ B^β_{p₂,q}`, the `j`-th term
-of `R(u, v)` with gap `N` satisfies, with `L = N + 1`,
-`2^{j(α+β)} ‖Δⱼ u · ∑_{|k - j| ≤ N} Δₖ v‖_r ≤ ‖u‖ 2^{|β| L} ∑_{j - L ≤ k < j + L} 2^{kβ} ‖Δₖ v‖`,
-since `2^{jα} ‖Δⱼ u‖_{p₁} ≤ ‖u‖` and `2^{jβ} ≤ 2^{|β| L} 2^{kβ}` for `|k - j| ≤ N`. -/
-private theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r q q₁ : ℝ≥0∞}
+/-- **The terms of the resonant part.** For `u ∈ B^α_{p₁,q₁}`, `v ∈ B^β_{p₂,q}` and a set `t` of
+block indices with `|k - j| ≤ N` for `k ∈ t`, with `L = N + 1`,
+`2^{j(α+β)} ‖Δⱼ u · ∑_{k ∈ t} Δₖ v‖_r ≤ ‖u‖ 2^{|β| L} ∑_{j - L ≤ k < j + L} 2^{kβ} ‖Δₖ v‖`.
+For `t = [j - N, j + N]` this bounds the `j`-th term of `R(u, v)` with gap `N`. -/
+theorem rpow_mul_norm_block_smul_sum_block_le {α β : ℝ} {p₁ p₂ r q q₁ : ℝ≥0∞}
     [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ q₁)] [p₁.HolderTriple p₂ r]
-    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q) (N j : ℕ) :
-    2 ^ ((α + β) * j) *
-      ‖(u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k : Lp F r (volume : Measure E))‖ ≤
-        ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
-          ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖) := by
-  have hsub : Finset.Icc (j - N) (j + N) ⊆ Finset.Ico (j - (N + 1)) (j + (N + 1)) := fun k hk ↦ by
-    simp only [Finset.mem_Icc, Finset.mem_Ico] at hk ⊢
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q) {N j : ℕ} {t : Finset ℕ}
+    (ht : t ⊆ Finset.Icc (j - N) (j + N)) :
+    2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖ ≤
+      ‖u‖ * (2 ^ (|β| * (N + 1 : ℕ)) *
+        ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖) := by
+  -- This combines `2^{jα} ‖Δⱼ u‖_{p₁} ≤ ‖u‖` with `2^{jβ} ≤ 2^{|β| L} 2^{kβ}` for `|k - j| ≤ N`.
+  have hsub : t ⊆ Finset.Ico (j - (N + 1)) (j + (N + 1)) := fun k hk ↦ by
+    have := ht hk
+    simp only [Finset.mem_Icc, Finset.mem_Ico] at this ⊢
     omega
-  have hv : 2 ^ (β * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖ ≤
+  have hv : 2 ^ (β * j) * ‖∑ k ∈ t, v.block k‖ ≤
       2 ^ (|β| * (N + 1 : ℕ)) *
         ∑ k ∈ Finset.Ico (j - (N + 1)) (j + (N + 1)), 2 ^ (β * k) * ‖v.block k‖ := by
-    -- Extend the sum over `Icc (j - N) (j + N)` by zero to the window `Ico (j - L) (j + L)`.
+    -- Extend the sum over `t` by zero to the window `Ico (j - L) (j + L)`.
     rw [← Finset.inter_eq_right.2 hsub, ← Finset.sum_ite_mem]
     refine (TauCeti.two_rpow_mul_norm_sum_Ico_le β (C := 1) (x := v.block)
       (fun k ↦ by split_ifs <;> simp) j (N + 1)).trans_eq ?_
     rw [max_eq_left zero_le_one, one_mul]
-  calc 2 ^ ((α + β) * j) *
-        ‖(u.block j • ∑ k ∈ Finset.Icc (j - N) (j + N), v.block k : Lp F r (volume : Measure E))‖
-      ≤ 2 ^ (α * j) * ‖u.block j‖ *
-          (2 ^ (β * j) * ‖∑ k ∈ Finset.Icc (j - N) (j + N), v.block k‖) := by
+  calc 2 ^ ((α + β) * j) * ‖(u.block j • ∑ k ∈ t, v.block k : Lp F r (volume : Measure E))‖
+      ≤ 2 ^ (α * j) * ‖u.block j‖ * (2 ^ (β * j) * ‖∑ k ∈ t, v.block k‖) := by
         rw [add_mul, Real.rpow_add two_pos, mul_mul_mul_comm]
         gcongr
         exact Lp.norm_smul_le _ _
@@ -634,7 +636,7 @@ theorem exists_hasSum_block_smul_sum_block_and_norm_le {α β : ℝ} (hαβ : 0 
     (fun j ↦ isVanishingOn_fourier_block_smul_sum_block N j
       (fun k hk ↦ (Finset.mem_Icc.1 hk).2) u v) fun j ↦ by
       rw [lp.coeFn_smul, Pi.smul_apply, smul_eq_mul, hW, mul_assoc]
-      have h := rpow_mul_norm_block_smul_sum_block_le (r := r) u v N j
+      have h := rpow_mul_norm_block_smul_sum_block_le (r := r) (N := N) (j := j) u v subset_rfl
       simp only [← hc] at h
       exact h
   refine ⟨w, hw, hwn.trans ?_⟩
