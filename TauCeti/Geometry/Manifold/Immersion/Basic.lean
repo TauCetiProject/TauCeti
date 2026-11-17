@@ -62,6 +62,9 @@ both sides, in order to apply the rule to `e.symm` as well.
 * `Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend_eq`: in the charts of
   immersion data, a point `b` of the source chart is sent by `f` to the point read as
   `h.equiv (b, 0)` in the target chart.
+* `ContMDiffWithinAt.iff_comp_isImmersionAt`, `ContMDiffOn.iff_comp_isImmersion`, and their
+  `OfComplement` counterparts: within-a-set and on-a-set smoothness can be tested after composing
+  with an immersion, given continuity in the same sense.
 
 `Manifold.IsImmersion` asks for one complement serving every point, so it is not obviously a
 local property; Mathlib's docstring of `Manifold.IsImmersion.isImmersionAt` explains that the
@@ -430,5 +433,75 @@ theorem _root_.Manifold.IsImmersionAtOfComplement.mem_codChart_source_and_extend
     h.writtenInCharts hb
   refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
   rw [← hw, (h.codChart.extend J).left_inv (by simpa using hy)]
+
+section CompIsImmersion
+
+variable {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace 𝕜 E'']
+  {G' : Type*} [TopologicalSpace G'] {J' : ModelWithCorners 𝕜 E'' G'}
+  {N' : Type*} [TopologicalSpace N'] [ChartedSpace G' N']
+
+/-- A function `f : M → N` is `C^n` within `s` at `x` if and only if it is continuous within `s` at
+`x` and its composite `φ ∘ f` with a `C^n` immersion `φ : N → N'` at `f x` (with complement `F`) is
+`C^n` within `s` at `x`. -/
+theorem _root_.ContMDiffWithinAt.iff_comp_isImmersionAtOfComplement {φ : N → N'} {s : Set M} {x : M}
+    (hφ : IsImmersionAtOfComplement F J J' n φ (f x)) :
+    ContMDiffWithinAt I J n f s x ↔
+      ContinuousWithinAt f s x ∧ ContMDiffWithinAt I J' n (φ ∘ f) s x := by
+  refine ⟨fun hf ↦ ⟨hf.continuousWithinAt, hφ.contMDiffAt.comp_contMDiffWithinAt x hf⟩,
+    fun ⟨hf, h'⟩ ↦ ?_⟩
+  set u := s ∩ f ⁻¹' hφ.domChart.source
+  have hu : f ⁻¹' hφ.domChart.source ∈ nhdsWithin x s :=
+    hf (hφ.domChart.open_source.mem_nhds hφ.mem_domChart_source)
+  rw [← contMDiffWithinAt_inter' hu,
+    contMDiffWithinAt_iff_of_mem_maximalAtlas' hφ.domChart_mem_maximalAtlas hφ.mem_domChart_source]
+  refine ⟨hf.mono Set.inter_subset_left, ?_⟩
+  have h'u : ContMDiffWithinAt I J' n (φ ∘ f) u x := (contMDiffWithinAt_inter' hu).2 h'
+  rw [contMDiffWithinAt_iff_of_mem_maximalAtlas' (f := φ ∘ f)
+    hφ.codChart_mem_maximalAtlas hφ.mem_codChart_source] at h'u
+  let proj : E'' →L[𝕜] E' :=
+    (ContinuousLinearMap.fst 𝕜 E' F).comp hφ.equiv.symm.toContinuousLinearMap
+  have hproj := proj.contDiff.contDiffWithinAt.comp (extChartAt I x x) h'u.2 (Set.mapsTo_univ _ _)
+  have key {z : M} (hz : f z ∈ hφ.domChart.source) :
+      proj (hφ.codChart.extend J' (φ (f z))) = hφ.domChart.extend J (f z) := by
+    have hb : hφ.domChart.extend J (f z) ∈ (hφ.domChart.extend J).target :=
+      (hφ.domChart.extend J).map_source (by simpa using hz)
+    have hinv : (hφ.domChart.extend J).symm (hφ.domChart.extend J (f z)) = f z :=
+      (hφ.domChart.extend J).left_inv (by simpa using hz)
+    have hw := hφ.writtenInCharts hb
+    simp only [Function.comp_apply, hinv] at hw
+    rw [hw]
+    simp [proj]
+  refine hproj.congr (fun y hy ↦ (key hy.1.2).symm) ?_
+  simpa [(extChartAt I x).left_inv (mem_extChartAt_source x)] using
+    (key hφ.mem_domChart_source).symm
+
+/-- A function `f : M → N` is `C^n` within `s` at `x` if and only if it is continuous within `s` at
+`x` and its composite `φ ∘ f` with a `C^n` immersion `φ : N → N'` at `f x` is `C^n` within `s` at
+`x`. -/
+theorem _root_.ContMDiffWithinAt.iff_comp_isImmersionAt {φ : N → N'} {s : Set M} {x : M}
+    (hφ : IsImmersionAt J J' n φ (f x)) :
+    ContMDiffWithinAt I J n f s x ↔
+      ContinuousWithinAt f s x ∧ ContMDiffWithinAt I J' n (φ ∘ f) s x :=
+  ContMDiffWithinAt.iff_comp_isImmersionAtOfComplement hφ.isImmersionAtOfComplement_complement
+
+/-- A function `f : M → N` is `C^n` on `s` if and only if it is continuous on `s` and its composite
+`φ ∘ f` with a `C^n` immersion `φ : N → N'` (with complement `F`) is `C^n` on `s`. -/
+theorem _root_.ContMDiffOn.iff_comp_isImmersionOfComplement {φ : N → N'} {s : Set M}
+    (hφ : IsImmersionOfComplement F J J' n φ) :
+    ContMDiffOn I J n f s ↔ ContinuousOn f s ∧ ContMDiffOn I J' n (φ ∘ f) s :=
+  ⟨fun hf ↦ ⟨hf.continuousOn, hφ.contMDiff.comp_contMDiffOn hf⟩,
+    fun ⟨hf, h'⟩ x hx ↦
+      (ContMDiffWithinAt.iff_comp_isImmersionAtOfComplement (hφ (f x))).2 ⟨hf x hx, h' x hx⟩⟩
+
+/-- A function `f : M → N` is `C^n` on `s` if and only if it is continuous on `s` and its composite
+`φ ∘ f` with a `C^n` immersion `φ : N → N'` is `C^n` on `s`. -/
+theorem _root_.ContMDiffOn.iff_comp_isImmersion {φ : N → N'} {s : Set M}
+    (hφ : IsImmersion J J' n φ) :
+    ContMDiffOn I J n f s ↔ ContinuousOn f s ∧ ContMDiffOn I J' n (φ ∘ f) s :=
+  ⟨fun hf ↦ ⟨hf.continuousOn, hφ.contMDiff.comp_contMDiffOn hf⟩,
+    fun ⟨hf, h'⟩ x hx ↦
+      (ContMDiffWithinAt.iff_comp_isImmersionAt (hφ.isImmersionAt (f x))).2 ⟨hf x hx, h' x hx⟩⟩
+
+end CompIsImmersion
 
 end TauCeti
