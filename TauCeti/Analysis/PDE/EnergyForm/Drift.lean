@@ -49,38 +49,6 @@ theorem energyFormH1_zero_ofTestFunctionₗ (c : EuclideanSpace ℝ ι → ℝ) 
     dotProduct_zero, driftForm_apply, jetField_apply, massForm_apply, hx]
   ring
 
-/-- The test vector field `φ b`, for a test function `φ` and a vector field `b` smooth on `Ω`. -/
-private def smulTestField (hb : ContDiffOn ℝ ∞ b Omega) (φ : 𝓓(Omega, ℝ)) :
-    𝓓(Omega, EuclideanSpace ℝ ι) :=
-  ⟨fun x ↦ φ x • b x, hb.contDiff_smul_of_tsupport_subset Omega.isOpen φ.contDiff.contDiffOn
-    φ.tsupport_subset, φ.hasCompactSupport.smul_right,
-    (tsupport_smul_subset_left _ _).trans φ.tsupport_subset⟩
-
-private theorem smulTestField_apply (hb : ContDiffOn ℝ ∞ b Omega) (φ : 𝓓(Omega, ℝ))
-    (x : EuclideanSpace ℝ ι) : smulTestField hb φ x = φ x • b x :=
-  rfl
-
-/-- The jet of a test function, as an element of `W^{1,2}(Ω)`, is its value and gradient. -/
-private theorem jetField_ofTestFunctionₗ_ae (φ : 𝓓(Omega, ℝ)) :
-    ∀ᵐ x ∂mu.restrict Omega,
-      jetField (W1p.ofTestFunctionₗ mu Omega 2 φ) x = (φ x, ∇ (φ : EuclideanSpace ℝ ι → ℝ) x) := by
-  filter_upwards [W1p.value_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ,
-    gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x h1 h2
-  rw [jetField_apply, h1, W1p.gradient_ofTestFunctionₗ, h2]
-
-/-- On `Ω`, the divergence of `φ b` is `φ div b + ⟪∇φ, b⟫`. -/
-private theorem divergenceCLM_smulTestField (hb : ContDiffOn ℝ ∞ b Omega) (φ : 𝓓(Omega, ℝ))
-    {x : EuclideanSpace ℝ ι} (hx : x ∈ Omega) :
-    TestFunction.divergenceCLM (smulTestField hb φ) x =
-      φ x * LinearMap.trace ℝ (EuclideanSpace ℝ ι)
-        (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) +
-        ⟪∇ (φ : EuclideanSpace ℝ ι → ℝ) x, b x⟫_ℝ := by
-  rw [TestFunction.divergenceCLM_apply, show (smulTestField hb φ : EuclideanSpace ℝ ι → _) =
-    fun y ↦ φ y • b y from rfl, trace_fderiv_smul
-      (φ.contDiff.differentiable (by simp) x)
-      ((hb.contDiffAt (Omega.isOpen.mem_nhds hx)).differentiableAt (by simp)), gradient,
-    InnerProductSpace.toDual_symm_apply]
-
 /-- The drift form of a test function against `u`, as an integral over `Ω` involving the
 divergence of `φ b`. -/
 private theorem energyFormH1_drift_ofTestFunctionₗ_eq_integral (hb : ContDiffOn ℝ ∞ b Omega)
@@ -90,7 +58,7 @@ private theorem energyFormH1_drift_ofTestFunctionₗ_eq_integral (hb : ContDiffO
         φ x * LinearMap.trace ℝ (EuclideanSpace ℝ ι)
           (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) * W1p.value u x) ∂mu := by
   rw [energyFormH1_def]
-  refine integral_congr_ae (((jetField_ofTestFunctionₗ_ae φ).and
+  refine integral_congr_ae (((jetField_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ).and
     (ae_restrict_mem Omega.isOpen.measurableSet)).mono fun x hx ↦ ?_)
   dsimp only
   rw [hx.1, divergenceCLM_smulTestField hb φ hx.2]
@@ -110,7 +78,7 @@ private theorem energyFormH1_neg_ofTestFunctionₗ_eq_integral (hb : ContDiffOn 
         φ x * LinearMap.trace ℝ (EuclideanSpace ℝ ι)
           (fderiv ℝ b x : EuclideanSpace ℝ ι →ₗ[ℝ] EuclideanSpace ℝ ι) * W1p.value u x) ∂mu := by
   rw [energyFormH1_def]
-  refine integral_congr_ae ((jetField_ofTestFunctionₗ_ae φ).mono fun x hx ↦ ?_)
+  refine integral_congr_ae ((jetField_ofTestFunctionₗ_ae (mu := mu) (p := 2) φ).mono fun x hx ↦ ?_)
   dsimp only
   rw [hx]
   simp only [Pi.zero_apply, Pi.neg_apply, energyIntegrand_apply, matrixBilinearForm_apply,
