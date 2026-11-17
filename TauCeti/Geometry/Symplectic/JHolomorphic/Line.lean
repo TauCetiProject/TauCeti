@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Basic
 public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.LinearAlgebra.Determinant
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
+import TauCeti.LinearAlgebra.Determinant.Prod
 
 /-!
 # The standard complex line as a source for constant-structure `J`-holomorphic maps
@@ -36,8 +38,8 @@ energy and elliptic estimates.
   `TauCeti.equivRealProdCLM_I`.
 * `TauCeti.fderiv_comp_equivRealProdCLM_one` and `TauCeti.fderiv_comp_equivRealProdCLM_I`: read
   in the complex coordinate, the derivatives in the directions `1` and `i` are `∂s` and `∂t`.
-* `LinearMap.apply_stdComplexLine`: a real-linear map is determined by its values on the
-  coordinate vectors.
+* `LinearMap.apply_stdComplexLine` and `ContinuousLinearMap.apply_stdComplexLine`: a real-linear
+  map is determined by its values on the coordinate vectors.
 * `TauCeti.isComplexLinearMap_stdComplexLine_iff`: complex-linearity out of the standard
   complex line is equivalent to the coordinate Cauchy--Riemann equation
   `F (0, 1) = J (F (1, 0))`.
@@ -45,6 +47,10 @@ energy and elliptic estimates.
   `F : ℝ × ℝ →ₗ[ℝ] V`, `F (0, 1) = J (F (1, 0))`.
 * `TauCeti.IsComplexLinearMap.apply_stdComplexLine`: such an `F` is determined by
   `F (1, 0)`, via `F (s, t) = s • v + t • J v`.
+* `TauCeti.IsComplexLinearMap.apply_stdComplexLineImag_eq` and
+  `TauCeti.IsComplexLinearMap.det_eq_sq_add_sq`: a complex-linear endomorphism of the standard
+  complex line is multiplication by `a + i b`, where `(a, b) = F (1, 0)`; so `F (0, 1) = (-b, a)`
+  and `det F = a² + b²`.
 * `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLineImag` and
   `TauCeti.IsConstStructureJHolomorphicAt.fderiv_stdComplexLine_apply`: the corresponding statements
   for Frechet derivatives of constant-structure `J`-holomorphic maps.
@@ -161,6 +167,14 @@ lemma _root_.LinearMap.apply_stdComplexLine (F : (ℝ × ℝ) →ₗ[ℝ] V) (z 
   simpa only [map_add, map_smul] using
     congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
 
+/-- A continuous real-linear map out of `ℝ × ℝ` is determined by its values on the real and
+imaginary coordinate vectors. -/
+lemma _root_.ContinuousLinearMap.apply_stdComplexLine [TopologicalSpace V]
+    (F : (ℝ × ℝ) →L[ℝ] V) (z : ℝ × ℝ) :
+    F z = z.1 • F stdComplexLineReal + z.2 • F stdComplexLineImag := by
+  simpa only [map_add, map_smul] using
+    congrArg F (stdComplexLine_eq_smul_real_add_smul_imag z)
+
 /-- Complex-linearity for a real-linear map out of the standard complex line is exactly the
 coordinate Cauchy--Riemann equation `F(0,1) = J(F(1,0))`. -/
 lemma isComplexLinearMap_stdComplexLine_iff (F : (ℝ × ℝ) →ₗ[ℝ] V) :
@@ -269,6 +283,30 @@ lemma symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_pos
 end IsComplexLinearMap
 
 end Linear
+
+namespace IsComplexLinearMap
+
+variable {L : ℝ × ℝ →ₗ[ℝ] ℝ × ℝ}
+
+/-- A complex-linear endomorphism of the standard complex line is multiplication by the complex
+number `a + i b`, where `(a, b)` is the image of `(1, 0)`, so it sends `(0, 1)` to `(-b, a)`. -/
+lemma apply_stdComplexLineImag_eq
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    L stdComplexLineImag = (-(L stdComplexLineReal).2, (L stdComplexLineReal).1) := by
+  rw [hL.apply_stdComplexLineImag, AlmostComplexStructure.product_apply]
+
+/-- A complex-linear endomorphism of the standard complex line is multiplication by the complex
+number `a + i b`, where `(a, b)` is the image of `(1, 0)`, so its determinant is `a² + b²`. -/
+lemma det_eq_sq_add_sq
+    (hL : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (AlmostComplexStructure.product ℝ) L) :
+    LinearMap.det L = (L stdComplexLineReal).1 ^ 2 + (L stdComplexLineReal).2 ^ 2 := by
+  rw [LinearMap.det_finTwoProd, ← stdComplexLineReal_eq, ← stdComplexLineImag_eq,
+    hL.apply_stdComplexLineImag_eq]
+  ring
+
+end IsComplexLinearMap
 
 namespace IsConstStructureJHolomorphicAt
 

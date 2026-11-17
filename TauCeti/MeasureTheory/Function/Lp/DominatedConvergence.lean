@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.Function.LpSeminorm.Indicator
+import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
@@ -19,6 +21,7 @@ and the errors `‖f n - g‖ₑ` are eventually dominated by a fixed nonnegativ
 enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
 when truncating a function by cutoffs that are eventually `1` on every bounded set.
 The dominating function's codomain only needs a topology and an extended norm.
+In `Lp`, functions dominated by the norm of their almost everywhere limit converge to it.
 
 The file also records the reverse Fatou lemma for `Lᵖ` seminorms over sets: the `Lᵖ` seminorms of
 a function over measurable sets `s n` have limit superior at most its `Lᵖ` seminorm over
@@ -27,6 +30,8 @@ a function over measurable sets `s n` have limit superior at most its `Lᵖ` sem
 ## Main declarations
 
 * `TauCeti.tendsto_eLpNorm_sub_of_ae_tendsto`: the convergence `eLpNorm (f n - g) q m → 0`.
+* `TauCeti.tendsto_toLp_of_ae_tendsto_of_norm_le`: if `uₙ → u` almost everywhere with
+  `‖uₙ‖ ≤ ‖u‖`, then the `Lp` classes of `uₙ` converge to any representative of `u`.
 * `TauCeti.tendsto_eLpNorm_restrict_Ioo`: for a finite exponent, the `Lᵖ` norm of a function on
   the unit interval `(t, t + 1)` tends to zero as `t` tends to infinity in either direction.
 * `TauCeti.limsup_eLpNorm_restrict_le`: `limsup ‖g‖_{Lᵖ(s n)} ≤ ‖g‖_{Lᵖ(limsup s n)}` for
@@ -84,6 +89,26 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
         simpa [hr] using (hx.sub (tendsto_const_nhds (x := g x))).eNorm.ennrpow_const q.toReal)
   simpa only [ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)] using
     hlint.ennrpow_const (1 / q.toReal)
+
+/-- **Dominated convergence in `Lp`.** For a finite exponent `p ≥ 1`, if `uₙ → u` almost
+everywhere with `‖uₙ‖ ≤ ‖u‖` almost everywhere, and `v ∈ Lp` is a representative of `u`, then the
+`Lp` classes of the `uₙ` converge to `v`. -/
+theorem tendsto_toLp_of_ae_tendsto_of_norm_le {α ι E : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup E] {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {l : Filter ι} [l.IsCountablyGenerated] {us : ι → α → E} (hus : ∀ n, MemLp (us n) p μ)
+    {v : Lp E p μ} {u : α → E} (hv : v =ᵐ[μ] u) (hle : ∀ n, ∀ᵐ x ∂μ, ‖us n x‖ ≤ ‖u x‖)
+    (hlim : ∀ᵐ x ∂μ, Tendsto (fun n => us n x) l (𝓝 (u x))) :
+    Tendsto (fun n => (hus n).toLp (us n)) l (𝓝 v) := by
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm']
+  refine (tendsto_eLpNorm_sub_of_ae_tendsto (C := 2) hp
+    (.of_forall fun n => (hus n).aestronglyMeasurable) ((Lp.memLp v).ae_eq hv)
+    (.of_forall fun n => (hle n).mono fun x hx => ?_) hlim).congr
+    fun n => eLpNorm_congr_ae ((hus n).coeFn_toLp.sub hv).symm
+  calc ‖us n x - u x‖ₑ ≤ ‖us n x‖ₑ + ‖u x‖ₑ := eNorm_sub_le
+    _ ≤ (2 : ℝ≥0) * ‖u x‖ₑ := by
+      rw [ENNReal.coe_ofNat, two_mul]
+      gcongr
+      exact eNorm_le_iff_norm_le.2 hx
 
 /-- For a finite exponent `q`, the `Lᵖ` norm of a function on the unit interval `(t, t + 1)`
 tends to zero as `t` tends to infinity in either direction. -/

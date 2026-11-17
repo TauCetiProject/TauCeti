@@ -119,6 +119,11 @@ blocks `Δⱼ u`.
 * `ContDiffBump.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ` and
   `ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`: the
   `k`-th moments of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jk})`.
+* `exists_integrable_and_integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`,
+  in the namespace `ContDiffBump`: the moments of real order `α ≥ 0` of the kernels `𝓕⁻ ψⱼ` are
+  `O(2^{-jα})`.
+* `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the kernels `𝓕⁻ ψⱼ`,
+  `j ≥ 1`, have integral zero.
 * `TemperedDistribution.littlewoodPaleyBlock_delta_zero`: the blocks of the Dirac mass `δ₀` are
   the kernels `𝓕⁻ ψⱼ`.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
@@ -156,6 +161,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 namespace ContDiffBump
 
 variable (φ : ContDiffBump (0 : E))
+
+/-- The Schwartz kernel `𝓕⁻ ψⱼ`, as a function, is the inverse Fourier transform of the function
+`ψⱼ`. -/
+theorem coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz (j : ℕ) :
+    ⇑(𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j) : 𝓢(E, ℂ)) =
+      𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
+  rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
 
 /-- **The moments of the dyadic kernels scale with `j`.** Since `𝓕⁻ ψ_{j+1}` is the
 `L¹`-normalised dilate `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, its `k`-th moment
@@ -195,6 +207,73 @@ theorem exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPale
           rw [pow_succ, mul_pow, mul_inv, mul_assoc, inv_mul_cancel_left₀ (by positivity)]
           exact φ.integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ k j
       _ ≤ _ := by gcongr; exact le_max_right _ _
+
+open MeasureTheory in
+/-- **The moments of order `α ≥ 0` of the kernels `𝓕⁻ ψⱼ` are `O(2^{-jα})`.** There is `C`,
+depending only on `φ` and `α`, such that `x ↦ ‖x‖ ^ α ‖𝓕⁻ ψⱼ x‖` is integrable with
+`∫ ‖x‖ ^ α ‖𝓕⁻ ψⱼ x‖ ≤ 2^{-jα} C` for every `j`. This is the real-exponent form of
+`ContDiffBump.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le`. -/
+theorem exists_integrable_and_integral_norm_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le
+    {α : ℝ} (hα : 0 ≤ α) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ j : ℕ,
+      Integrable (fun x ↦ ‖x‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) x‖) ∧
+      ∫ x, ‖x‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) x‖ ≤
+        ((2 : ℝ) ^ (α * j))⁻¹ * C := by
+  -- With `n = ⌈α⌉₊`, the scaled weight satisfies `(2^j ‖x‖) ^ α ≤ 1 + (2^j ‖x‖) ^ n`, which
+  -- reduces the claim to the moments of orders `0` and `n`.
+  set n := ⌈α⌉₊
+  obtain ⟨C₀, hC₀⟩ :=
+    φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le 0
+  obtain ⟨Cₙ, hCₙ⟩ :=
+    φ.exists_integral_norm_pow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_le n
+  refine ⟨C₀ + Cₙ, by positivity, fun j ↦ ?_⟩
+  set κ : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
+  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+    φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz j
+  rw [← hκ, mul_comm α, Real.rpow_mul zero_le_two, Real.rpow_natCast]
+  set c : ℝ := 2 ^ j
+  have hle (x : E) : ‖x‖ ^ α * ‖κ x‖ ≤ (c ^ α)⁻¹ * (‖κ x‖ + c ^ n * (‖x‖ ^ n * ‖κ x‖)) := by
+    have hy : 0 ≤ c * ‖x‖ := by positivity
+    have h : (c * ‖x‖) ^ α ≤ 1 + (c * ‖x‖) ^ n := by
+      rcases le_total (c * ‖x‖) 1 with h1 | h1
+      · linarith [Real.rpow_le_one hy h1 hα, pow_nonneg hy n]
+      · linarith [Real.rpow_natCast (c * ‖x‖) n ▸
+          Real.rpow_le_rpow_of_exponent_le h1 (Nat.le_ceil α)]
+    rw [Real.mul_rpow (by positivity) (norm_nonneg x), mul_pow] at h
+    calc ‖x‖ ^ α * ‖κ x‖ = (c ^ α)⁻¹ * (c ^ α * ‖x‖ ^ α * ‖κ x‖) := by
+          rw [mul_assoc (c ^ α), inv_mul_cancel_left₀ (by positivity)]
+      _ ≤ (c ^ α)⁻¹ * ((1 + c ^ n * ‖x‖ ^ n) * ‖κ x‖) := by gcongr
+      _ = _ := by ring
+  have hint₀ : Integrable fun x ↦ ‖κ x‖ := κ.integrable.norm
+  have hintₙ : Integrable fun x ↦ ‖x‖ ^ n * ‖κ x‖ := κ.integrable_pow_mul volume n
+  have hdom : Integrable fun x ↦ (c ^ α)⁻¹ * (‖κ x‖ + c ^ n * (‖x‖ ^ n * ‖κ x‖)) :=
+    (hint₀.add (hintₙ.const_mul _)).const_mul _
+  have hint : Integrable fun x ↦ ‖x‖ ^ α * ‖κ x‖ :=
+    hdom.mono' ((continuous_norm.rpow_const fun _ ↦ Or.inr hα).mul
+      κ.continuous.norm).aestronglyMeasurable
+      (Filter.Eventually.of_forall fun x ↦ (Real.norm_of_nonneg (by positivity)).trans_le (hle x))
+  refine ⟨hint, (integral_mono hint hdom hle).trans ?_⟩
+  have h₀ : ∫ x, ‖κ x‖ ≤ C₀ := by simpa [hκ] using hC₀ j
+  have hₙ : ∫ x, ‖x‖ ^ n * ‖κ x‖ ≤ (c ^ n)⁻¹ * Cₙ := by simpa [hκ, c] using hCₙ j
+  rw [integral_const_mul, integral_add hint₀ (hintₙ.const_mul _), integral_const_mul]
+  calc (c ^ α)⁻¹ * ((∫ x, ‖κ x‖) + c ^ n * ∫ x, ‖x‖ ^ n * ‖κ x‖)
+      ≤ (c ^ α)⁻¹ * (C₀ + c ^ n * ((c ^ n)⁻¹ * Cₙ)) := by gcongr
+    _ = (c ^ α)⁻¹ * (C₀ + Cₙ) := by rw [mul_inv_cancel_left₀ (by positivity)]
+
+open MeasureTheory in
+/-- **The dyadic kernels have integral zero.** For `j ≥ 1` the symbol `ψⱼ` vanishes at the
+origin, so its kernel `𝓕⁻ ψⱼ` has integral `ψⱼ 0 = 0`: the blocks `Δⱼ` with `j ≥ 1` annihilate
+constants. -/
+theorem integral_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
+    ∫ x, 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x = 0 := by
+  set σ : 𝓢(E, ℂ) := φ.inhomogeneousLittlewoodPaleySchwartz (j + 1) with hσ
+  -- The integral of `𝓕⁻ σ` is the value at `0` of its Fourier transform `𝓕 (𝓕⁻ σ) = σ`.
+  have h0 : (𝓕 (𝓕⁻ σ : 𝓢(E, ℂ)) : 𝓢(E, ℂ)) 0 = σ 0 := by rw [fourier_fourierInv_eq]
+  simp only [SchwartzMap.fourier_coe, Real.fourier_eq, inner_zero_right, neg_zero,
+    AddChar.map_zero_eq_one, one_smul, SchwartzMap.fourierInv_coe, hσ,
+    φ.coe_inhomogeneousLittlewoodPaleySchwartz] at h0
+  rw [h0, φ.inhomogeneousLittlewoodPaley_succ_apply]
+  simp
 
 open MeasureTheory in
 /-- **The `Lʳ` norms of the dyadic kernels.** Since `𝓕⁻ ψ_{j+1} = 2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in
@@ -671,8 +750,8 @@ theorem exists_eLpNorm_littlewoodPaleyBlock_smul_sub_smul_le [CompleteSpace F] :
   refine ⟨C, fun {p q r s} _ _ _ _ j f K hf g fg u w hfg hu hw ↦ ?_⟩
   -- The kernel `κ = 𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz function.
   set κ : 𝓢(E, ℂ) := 𝓕⁻ (φ.inhomogeneousLittlewoodPaleySchwartz j)
-  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) := by
-    rw [SchwartzMap.fourierInv_coe, φ.coe_inhomogeneousLittlewoodPaleySchwartz]
+  have hκ : (κ : E → ℂ) = 𝓕⁻ fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+    φ.coe_fourierInv_inhomogeneousLittlewoodPaleySchwartz j
   -- Both convolutions with `κ` exist everywhere, by Hölder's inequality, so the commutator is
   -- the integral of `MeasureTheory.eLpNorm_integral_sub_smul_smul_le`.
   have hex {e : ℝ≥0∞} (he : 1 ≤ e) {h : E → F} (hh : MemLp h e volume) (x : E) :

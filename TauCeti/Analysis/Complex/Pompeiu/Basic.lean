@@ -15,6 +15,7 @@ import Mathlib.Analysis.SpecialFunctions.PolarCoord
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.MeasureTheory.Function.L1Space.Integrable
@@ -90,11 +91,14 @@ integrable `f` it is holomorphic off the closed support `tsupport f`, with compl
   `HasCompactSupport.tendsto_cauchyTransform_cobounded`: the normalized transform of compactly
   supported smooth data is smooth, and that of compactly supported integrable data tends to `0`
   at infinity.
+* `TauCeti.eq_pi_inv_smul_setIntegral_of_differentiableOn`: cutoff Cauchy–Pompeiu representation of
+  a holomorphic function on `V` as a set integral over `tsupport α \ V`.
 
 ## References
 
 * L. Hörmander, *An Introduction to Complex Analysis in Several Variables*, 3rd ed.,
   North-Holland, 1990, Theorem 1.2.1 and Theorem 1.2.2.
+* A. Rainer, *Advanced Complex Analysis*, Theorem 10.3.
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
   Colloquium Publications **52**, 2012, Appendix B.2 (the Calderón–Zygmund inequality).
 -/
@@ -652,5 +656,61 @@ theorem _root_.HasCompactSupport.tendsto_cauchyTransform_cobounded (hc : HasComp
   exact squeeze_zero_norm' hbound hlim
 
 end Regularity
+
+/-- **Cutoff Cauchy–Pompeiu representation.** For an open set `V`, a compactly supported `C¹`
+cutoff `α : ℂ → ℝ` equal to `1` on `V` with `tsupport α ⊆ U` (`U` open), and any function
+`f : ℂ → F` holomorphic on `U` into a complex Banach space, the values of `f` on `V` are given by
+`π⁻¹` times the area integral over `tsupport α \ V` of
+`(w - z)⁻¹ • conjWirtingerDeriv (fun y ↦ (α y : ℂ)) z 1 • f z`. -/
+theorem eq_pi_inv_smul_setIntegral_of_differentiableOn {V U : Set ℂ} {α : ℂ → ℝ}
+    (hV : IsOpen V) (hU : IsOpen U) (hα : ContDiff ℝ 1 α) (hα_cpt : HasCompactSupport α)
+    (hα_one : EqOn α 1 V) (hα_U : tsupport α ⊆ U) {f : ℂ → F}
+    (hf : DifferentiableOn ℂ f U) {w : ℂ} (hw : w ∈ V) :
+    f w = (Real.pi : ℂ)⁻¹ • ∫ z in tsupport α \ V,
+      (w - z)⁻¹ • conjWirtingerDeriv (fun y ↦ (α y : ℂ)) z 1 • f z := by
+  let : NormedSpace ℝ F := NormedSpace.restrictScalars ℝ ℂ F
+  let u : ℂ → F := fun z ↦ α z • f z
+  have hfc : ContDiffOn ℝ 1 f U := ((hf.contDiffOn hU).of_le le_top).restrict_scalars ℝ
+  have hu_1 : ContDiff ℝ 1 u := hfc.contDiff_smul_of_tsupport_subset hU hα.contDiffOn hα_U
+  have hu_cpt : HasCompactSupport u := hα_cpt.smul_right
+  have huw : u w = f w := by
+    have h1 : α w = 1 := hα_one hw
+    simp [u, h1]
+  have hcp := hu_cpt.cauchyTransform_conjWirtingerDeriv hu_1 w
+  rw [huw, cauchyTransform_apply] at hcp
+  rw [← hcp]
+  congr 1
+  have hmeas : MeasurableSet (tsupport α \ V) :=
+    (isClosed_tsupport α).measurableSet.diff hV.measurableSet
+  rw [← integral_indicator hmeas]
+  congr 1 with z
+  by_cases hz : z ∈ tsupport α \ V
+  · rw [indicator_of_mem hz]
+    have hfd : DifferentiableAt ℂ f z := hf.differentiableAt (hU.mem_nhds (hα_U hz.1))
+    have hαd : DifferentiableAt ℝ (fun y ↦ (α y : ℂ)) z :=
+      Complex.ofRealCLM.differentiableAt.comp z (hα.differentiable one_ne_zero z)
+    have hud := conjWirtingerDeriv_smul_apply hαd (hfd.restrictScalars ℝ) 1
+    have hu_eq : (fun y ↦ (α y : ℂ) • f y) = u := funext fun y ↦ Complex.coe_smul (α y) (f y)
+    rw [hu_eq, hfd.conjWirtingerDeriv_eq_zero] at hud
+    simp [hud]
+  · rw [indicator_of_notMem hz]
+    suffices conjWirtingerDeriv u z 1 = 0 by simp [this]
+    by_cases hzV : z ∈ V
+    · have hne : u =ᶠ[𝓝 z] f := by
+        filter_upwards [hV.mem_nhds hzV] with y hy
+        have hy1 : α y = 1 := hα_one hy
+        simp [u, hy1]
+      have hzU : z ∈ U := by
+        have hz1 : α z = 1 := hα_one hzV
+        exact hα_U (subset_tsupport α (by simp [hz1]))
+      have hfd : DifferentiableAt ℂ f z := hf.differentiableAt (hU.mem_nhds hzU)
+      rw [hne.conjWirtingerDeriv_eq, hfd.conjWirtingerDeriv_eq_zero]
+      simp
+    · have hnt : z ∉ tsupport α := fun h ↦ hz ⟨h, hzV⟩
+      have hne : u =ᶠ[𝓝 z] fun _ ↦ 0 := by
+        filter_upwards [notMem_tsupport_iff_eventuallyEq.mp hnt] with y hy
+        simp [u, hy]
+      rw [hne.conjWirtingerDeriv_eq, (differentiableAt_const (0 : F)).conjWirtingerDeriv_eq_zero]
+      simp
 
 end TauCeti
