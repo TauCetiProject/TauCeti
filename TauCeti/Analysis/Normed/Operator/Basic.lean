@@ -46,7 +46,9 @@ Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`), its lower and upper bounds satisfy
 `1 ≤ ‖f‖ M` on a nontrivial space (`ContinuousLinearMap.one_le_opNorm_mul_of_forall_norm_le`),
 it stays nonzero under a sufficiently small perturbation
-(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and it is invertible if it is also
+(`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), a sufficiently small perturbation of it
+is still bounded below (`ContinuousLinearMap.norm_le_two_mul_mul_norm_apply_of_forall_norm_le`),
+and it is invertible if it is also
 surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
@@ -269,6 +271,22 @@ theorem apply_add_ne_zero_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup 
   have hpos : 0 < ‖x‖ := norm_pos_iff.2 hx
   have hM : 0 < M := pos_of_mul_pos_left (hpos.trans_le (h x)) (norm_nonneg _)
   nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM.le]
+
+/-- An operator bounded below, `‖x‖ ≤ M ‖f x‖`, stays bounded below by `2 M` under a perturbation
+`g` of `f` with `M ‖g - f‖ ≤ 1 / 2`. -/
+theorem norm_le_two_mul_mul_norm_apply_of_forall_norm_le {F : Type*} [SeminormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {f g : E →L[𝕜] F} {M : ℝ} (h : ∀ x, ‖x‖ ≤ M * ‖f x‖)
+    (hfg : M * ‖g - f‖ ≤ 1 / 2) (x : E) : ‖x‖ ≤ 2 * M * ‖g x‖ := by
+  rcases lt_or_ge M 0 with hM | hM
+  · -- A negative lower bound only holds on the zero space.
+    have hx : x = 0 := norm_le_zero_iff.1 ((h x).trans (mul_nonpos_of_nonpos_of_nonneg hM.le
+      (norm_nonneg _)))
+    simp [hx]
+  have hfx : ‖f x‖ ≤ ‖g x‖ + ‖g - f‖ * ‖x‖ :=
+    calc ‖f x‖ = ‖g x - (g - f) x‖ := by rw [sub_apply, sub_sub_cancel]
+      _ ≤ ‖g x‖ + ‖(g - f) x‖ := norm_sub_le _ _
+      _ ≤ ‖g x‖ + ‖g - f‖ * ‖x‖ := by gcongr; exact (g - f).le_opNorm x
+  nlinarith [h x, mul_le_mul_of_nonneg_left hfx hM, mul_le_mul_of_nonneg_right hfg (norm_nonneg x)]
 
 /-- On a nontrivial space, an operator bounded below, `‖x‖ ≤ M ‖f x‖`, satisfies
 `1 ≤ ‖f‖ M`. -/

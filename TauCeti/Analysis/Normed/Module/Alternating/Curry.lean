@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
 public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
+public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
+import TauCeti.Analysis.Normed.Operator.Basic
 
 /-!
 # Comparing normed and topological interior products
@@ -20,7 +22,11 @@ A continuous alternating map of one vector is read as a continuous linear functi
 `ContinuousAlternatingMap.toDual`. Currying a continuous alternating map of two vectors in its
 first slot and reading the result as a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a
 continuous linear map `ContinuousAlternatingMap.flatL`, an alternating bilinear map
-(`ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL`).
+(`ContinuousAlternatingMap.isAlt_toLinearMap₁₂_flatL`) whose value at `v` has norm at most
+`‖f‖ ‖v‖` (`ContinuousAlternatingMap.norm_flatL_apply_le`). Invertibility of flat maps is an open
+condition with uniform bounds: a continuous family of such maps with invertible flat map at one
+point has flat maps uniformly bounded below nearby
+(`ContinuousAlternatingMap.exists_eventually_norm_le_mul_norm_flatL_apply`).
 -/
 
 public section
@@ -84,6 +90,40 @@ theorem ofSubsingleton_flatL_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v : E) :
 @[simp]
 theorem flatL_apply_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v w : E) : flatL 𝕜 E F f v w = f ![v, w] :=
   DFunLike.congr_fun (ofSubsingleton_flatL_apply f v) ![w]
+
+/-- The flat map of `f` at `v` has norm at most `‖f‖ ‖v‖`. -/
+theorem norm_flatL_apply_le (f : E [⋀^Fin 2]→L[𝕜] F) (v : E) :
+    ‖flatL 𝕜 E F f v‖ ≤ ‖f‖ * ‖v‖ :=
+  ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ by
+    rw [flatL_apply_apply, mul_assoc]
+    simpa [Fin.prod_univ_two] using f.le_opNorm ![v, w]
+
+open Filter Topology in
+/-- A family of continuous alternating maps of two vectors, continuous at `z₀` and with invertible
+flat map at `z₀`, has flat maps uniformly bounded below near `z₀`. -/
+theorem exists_eventually_norm_le_mul_norm_flatL_apply {X : Type*} [TopologicalSpace X]
+    {ω : X → E [⋀^Fin 2]→L[𝕜] F} {z₀ : X} (hω : ContinuousAt ω z₀)
+    (h : (flatL 𝕜 E F (ω z₀)).IsInvertible) :
+    ∃ C, 0 < C ∧ ∀ᶠ z in 𝓝 z₀, ∀ v, ‖v‖ ≤ C * ‖flatL 𝕜 E F (ω z) v‖ := by
+  set S : X → E →L[𝕜] E →L[𝕜] F := fun z ↦ flatL 𝕜 E F (ω z)
+  obtain ⟨e, he⟩ : (S z₀).IsInvertible := h
+  obtain ⟨C, hC, hCb⟩ := (e.symm : (E →L[𝕜] F) →L[𝕜] E).bound
+  have h₀ (v : E) : ‖v‖ ≤ C * ‖S z₀ v‖ := by
+    rw [← he]
+    simpa using hCb (e v)
+  refine ⟨2 * C, by positivity, ?_⟩
+  filter_upwards [(tendsto_iff_norm_sub_tendsto_zero.1 hω.tendsto).eventually
+    (gt_mem_nhds (inv_pos.2 (mul_pos two_pos hC)))] with z hz
+  refine ContinuousLinearMap.norm_le_two_mul_mul_norm_apply_of_forall_norm_le h₀ ?_
+  -- `S z - S z₀` is the flat map of `ω z - ω z₀`.
+  have hd : ‖S z - S z₀‖ ≤ ‖ω z - ω z₀‖ :=
+    ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ by
+      have h : (S z - S z₀) v = flatL 𝕜 E F (ω z - ω z₀) v := by
+        simp only [S, map_sub, _root_.sub_apply]
+      rw [h]
+      exact norm_flatL_apply_le _ v
+  calc C * ‖S z - S z₀‖ ≤ C * (2 * C)⁻¹ := by gcongr; exact hd.trans hz.le
+    _ = 1 / 2 := by field_simp
 
 /-- The flat map of a continuous alternating map of two vectors, read as a bilinear map, is
 alternating. -/

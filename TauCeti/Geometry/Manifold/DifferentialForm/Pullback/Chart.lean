@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.ExtDeriv
 
+import TauCeti.Analysis.Calculus.FDeriv.Basic
 import TauCeti.Geometry.Manifold.DifferentialForm.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Coordinate expressions of actual manifold pullback
@@ -169,6 +171,63 @@ theorem eventuallyEq_mpullback_compContinuousLinearMap [I.Boundaryless] [IsManif
     I.range_eq_univ, fderivWithin_univ]
   -- The two coordinate expressions of `ψᵤ` differ only by unfolding `Function.comp`.
   rfl
+
+/-- **Pullback preserves zero first jets.** Let `ω` vanish at `y` with zero derivative there in the
+preferred chart at `y`, within the range of the model. If `f` is `C¹` at a point `x` with
+`f x = y`, then the coordinate expression of `f^* ω` in the preferred chart at `x` has zero
+derivative at the chart point of `x`, within the range of the model. -/
+theorem hasFDerivWithinAt_inChartAt_mpullback_of_apply_eq_zero [IsManifold I' 1 M']
+    (ω : RoughForm I' M' F k) {f : M → M'} {x : M} {y : M'} (hf : ContMDiffAt I I' 1 f x)
+    (hfx : f x = y) (hω₀ : ω y = 0)
+    (hω : HasFDerivWithinAt (ω.inChartAt y) (0 : E' →L[ℝ] E' [⋀^Fin k]→L[ℝ] F) (range I')
+      (extChartAt I' y y)) :
+    HasFDerivWithinAt ((mpullback I I' f ω).inChartAt x) (0 : E →L[ℝ] E [⋀^Fin k]→L[ℝ] F)
+      (range I) (extChartAt I x x) := by
+  subst hfx
+  set z₀ := extChartAt I x x
+  set g := writtenInExtChartAt I I' x f
+  have hg : ContDiffWithinAt ℝ 1 g (range I) z₀ := (contMDiffAt_iff.1 hf).2
+  have hz₀ : z₀ ∈ range I := extChartAt_target_subset_range x (mem_extChartAt_target x)
+  have hgz₀ : g z₀ = extChartAt I' (f x) (f x) := by
+    simp only [g, z₀, writtenInExtChartAt, Function.comp_apply, extChartAt_to_inv]
+  -- The coordinate expression of `ω` read along the coordinate expression `g` of `f` has a zero
+  -- first jet, by the chain rule.
+  have hcomp : HasFDerivWithinAt (ω.inChartAt (f x) ∘ g) (0 : E →L[ℝ] E' [⋀^Fin k]→L[ℝ] F)
+      (range I) z₀ := by
+    have h := (hgz₀ ▸ hω).comp z₀ (hg.differentiableWithinAt one_ne_zero).hasFDerivWithinAt
+      fun z _ ↦ by
+        simp only [g, writtenInExtChartAt, Function.comp_apply, extChartAt_coe]
+        exact mem_range_self _
+    rwa [ContinuousLinearMap.zero_comp] at h
+  have hcomp₀ : (ω.inChartAt (f x) ∘ g) z₀ = 0 := by
+    rw [Function.comp_apply, hgz₀, inChartAt_extChartAt_self]
+    exact hω₀
+  -- Near `z₀`, the coordinate expression of `f^* ω` is that of `ω` along `g`, composed with the
+  -- derivative of `g`, whose norm stays bounded.
+  have hsym : ContinuousAt (extChartAt I x).symm z₀ := continuousAt_extChartAt_symm x
+  have hsrc : ∀ᶠ z in 𝓝[range I] z₀, f ((extChartAt I x).symm z) ∈ (extChartAt I' (f x)).source :=
+    nhdsWithin_le_nhds <| (ContinuousAt.comp (by rw [extChartAt_to_inv]; exact hf.continuousAt)
+      hsym).preimage_mem_nhds (by
+        rw [Function.comp_apply, extChartAt_to_inv]
+        exact extChartAt_source_mem_nhds (f x))
+  have hdiff : ∀ᶠ z in 𝓝[range I] z₀, MDifferentiableAt I I' f ((extChartAt I x).symm z) := by
+    have h := hsym.eventually
+      ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (extChartAt_to_inv (I := I) x ▸ hf))
+    filter_upwards [nhdsWithin_le_nhds h] with z hz
+    exact hz.mdifferentiableAt one_ne_zero
+  have hbound : ∀ᶠ z in 𝓝[range I] z₀,
+      ‖fderivWithin ℝ g (range I) z‖ ≤ ‖fderivWithin ℝ g (range I) z₀‖ + 1 := by
+    have hc := (hg.fderivWithin_right (m := 0) I.uniqueDiffOn (by simp) hz₀).continuousWithinAt
+    filter_upwards [Filter.Tendsto.eventually hc.norm
+      (gt_mem_nhds (lt_add_one ‖fderivWithin ℝ g (range I) z₀‖))] with z hz using hz.le
+  refine (Asymptotics.IsBigO.of_bound ((‖fderivWithin ℝ g (range I) z₀‖ + 1) ^ k) ?_)
+    |>.hasFDerivWithinAt_zero hcomp hcomp₀ hz₀
+  filter_upwards [extChartAt_target_mem_nhdsWithin x, hsrc, hdiff, hbound] with z hz hzs hzd hzb
+  rw [inChartAt_mpullback_eq_compContinuousLinearMap ω x (f x) hz hzd hzs]
+  refine (ContinuousAlternatingMap.norm_compContinuousLinearMap_le _ _).trans ?_
+  rw [Fintype.card_fin, mul_comm]
+  -- The coordinate expressions of `f` agree after unfolding `writtenInExtChartAt`.
+  exact mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (norm_nonneg _) hzb k) (norm_nonneg _)
 
 end TauCeti.RoughForm
 
