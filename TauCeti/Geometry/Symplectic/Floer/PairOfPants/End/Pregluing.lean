@@ -119,12 +119,11 @@ variable {q : Puncture} {x : ℝ → V} {u v : ℝ × ℝ → V} {R : ℝ} {z : 
 
 /-- **Away from the neck the pre-glued pair of pants is `u`.** At a point whose signed
 longitudinal coordinate on the end `q` is at most `R - 1`, the pre-glued pair of pants is `u`. -/
-theorem preglueEnd_of_le
-    (h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ R - 1) :
-    preglueEnd q x u v R z = u z := by
+theorem preglueEnd_of_le (h : endHeight q z ≤ R - 1) : preglueEnd q x u v R z = u z := by
   rw [preglueEnd_def]
   split_ifs with h₀
-  · rw [preglue_of_le_neg_one (by dsimp only; linarith), Prod.mk_add_mk, sub_add_cancel, add_zero,
+  · rw [endHeight_apply] at h
+    rw [preglue_of_le_neg_one (by dsimp only; linarith), Prod.mk_add_mk, sub_add_cancel, add_zero,
       comp_apply, positiveEndChart_endSign_mul_endCoord
         (ne_endCenter_of_re_endCoord_ne_zero q fun h ↦ by simp [h] at h₀)]
   · rfl
@@ -133,14 +132,9 @@ theorem preglueEnd_of_le
 is less than `R - 1`, such as a point of `S` away from the neck, the pre-glued pair of pants agrees
 with `u`. -/
 theorem preglueEnd_eventuallyEq_of_lt (hz : Complex.equivRealProdCLM.symm z ≠ q.endCenter)
-    (h : q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < R - 1) :
-    preglueEnd q x u v R =ᶠ[𝓝 z] u := by
-  have hc : ContinuousAt
-      (fun w : ℝ × ℝ ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm w)).re) z :=
-    continuousAt_const.mul
-      ((q.contDiffAt_re_endCoord hz (n := 0)).continuousAt.comp
-        Complex.equivRealProdCLM.symm.continuous.continuousAt)
-  exact (hc.eventually_lt continuousAt_const h).mono fun _ hw ↦ preglueEnd_of_le hw.le
+    (h : endHeight q z < R - 1) : preglueEnd q x u v R =ᶠ[𝓝 z] u :=
+  ((contDiffAt_endHeight q hz (n := 0)).continuousAt.eventually_lt continuousAt_const h).mono
+    fun _ hw ↦ preglueEnd_of_le hw.le
 
 /-- **The pre-glued pair of pants on the end.** At the image under the positive end chart of a
 point `(s, t)` with `s > 0`, the pre-glued pair of pants is the pre-glued map at `(s - R, t)`,
@@ -168,10 +162,9 @@ theorem preglueEnd_comp_positiveEndChart (hx : Periodic x 1)
   rw [comp_apply, Prod.mk_sub_mk, sub_zero]
   rcases lt_or_ge 0 s with hs | hs
   · exact preglueEnd_positiveEndChart hx hv hs t
-  · obtain ⟨k, h₁, -⟩ := exists_endCoord_positiveEndChart q (s, t)
-    rw [endHeight_apply] at h₁
-    rw [preglueEnd_of_le (by rw [h₁]; linarith), preglue_of_le_neg_one (by dsimp only; linarith),
-      Prod.mk_add_mk, sub_add_cancel, add_zero, comp_apply]
+  · rw [preglueEnd_of_le (by rw [endHeight_positiveEndChart]; linarith),
+      preglue_of_le_neg_one (by dsimp only; linarith), Prod.mk_add_mk, sub_add_cancel, add_zero,
+      comp_apply]
 
 /-- **Far out on the end the pre-glued pair of pants is the cylinder.** If the loop `x` and the
 map `v` have period one in `t` and `R ≥ 0`, then at the image under the positive end chart of a

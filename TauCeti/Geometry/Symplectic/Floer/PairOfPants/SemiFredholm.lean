@@ -558,21 +558,13 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     (hc : ∀ z ∈ thricePuncturedSphereReal, ω.Compatible (J z (u z))) {C R : Puncture → ℝ}
     (hend : ∀ q ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < endHeight q z} →
-      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1,
-          (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
-            ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +
-            ‖ξ (positiveEndChart q ζ)‖ ^ 2) ≤
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
         C q * ∫ z, ‖ω.floerLinearization
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) :
     ∃ C', 0 ≤ C' ∧ ∃ T, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ thricePuncturedSphereReal →
-      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1,
-          (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
-            ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +
-            ‖ξ (positiveEndChart q ζ)‖ ^ 2)) +
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T,
-          (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
-            ‖ξ z‖ ^ 2) ≤
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤
         C' * ((∫ z, ‖ω.floerLinearization
           (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2) +
           ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (T + 1), ‖ξ z‖ ^ 2) := by
@@ -584,17 +576,10 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
     have := (le_abs_self (R q)).trans
       (Finset.single_le_sum (fun r _ ↦ abs_nonneg (R r)) (Finset.mem_univ q))
     linarith
-  -- The end estimates, with their integrands written as energy densities.
-  have hend' (q : Puncture) ⦃ξ : ℝ × ℝ → V⦄ (hξ : ContDiff ℝ 2 ξ) (hξc : HasCompactSupport ξ)
-      (hξR : tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R q < endHeight q z}) :
-      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
-        C q * ∫ z, ‖ω.floerLinearization
-          (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap) Ks Kt u ξ z‖ ^ 2 := by
-    simpa only [sobolevDensity_apply, Function.comp_apply] using hend q hξ hξc hξR
   obtain ⟨C₁, hC₁, h₁⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend' (by linarith) hR
+    hKt hu hc (C := C) (R := R) hend (by linarith) hR
   obtain ⟨C₂, hC₂, h₂⟩ := ω.exists_forall_sum_setIntegral_add_setIntegral_le_of_ends_aux hJ hKs
-    hKt hu hc (C := C) (R := R) hend' (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
+    hKt hu hc (C := C) (R := R) hend (R₀ := R₀ + 1) (by linarith) fun q ↦ (hR q).trans
       (lt_add_one _)
   refine ⟨C₁ + C₂, by positivity, R₀ + 1, fun ξ hξ hξc hξS ↦ ?_⟩
   have e₁ := h₁ hξ hξc hξS
@@ -616,8 +601,6 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
       sobolevDensity (ξ ∘ positiveEndChart q) ζ :=
     Finset.sum_nonneg fun q _ ↦ setIntegral_nonneg (measurableSet_Ioi.prod measurableSet_Icc)
       fun ζ _ ↦ sobolevDensity_nonneg _ ζ
-  -- The integrands of the statement are the energy densities `sobolevDensity`.
-  simp only [sobolevDensity_apply, Function.comp_apply] at e₁ e₂ hcore₀ hends₀
   nlinarith [mul_le_mul_of_nonneg_left hY hC₁, mul_nonneg hC₂ hX]
 
 /-- **The semi-Fredholm estimate along a Floer pair of pants.** Let `H_q` be jointly `C²`
@@ -668,13 +651,8 @@ theorem exists_forall_sum_setIntegral_add_setIntegral_le_mul_integral_floerLinea
         (s, t)) 0 atTop (Icc 0 1)) :
     ∃ C, 0 ≤ C ∧ ∃ T, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ thricePuncturedSphereReal →
-      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1,
-          (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
-            ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +
-            ‖ξ (positiveEndChart q ζ)‖ ^ 2)) +
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T,
-          (‖fderiv ℝ ξ z stdComplexLineReal‖ ^ 2 + ‖fderiv ℝ ξ z stdComplexLineImag‖ ^ 2 +
-            ‖ξ z‖ ^ 2) ≤
+      (∑ q, ∫ ζ in Ioi T ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ) +
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation T, sobolevDensity ξ z ≤
         C * ((∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)

@@ -111,8 +111,9 @@ apply to all three ends.
   `TauCeti.Floer.endHeight_positiveEndChart`, `TauCeti.Floer.endHeight_nonpos_of_ne`: the end
   height is smooth away from the center of the end, in particular on `S`, is `s` at `φ'_q(s, t)`,
   and is positive on at most one end.
-* `TauCeti.Floer.mem_preimage_truncation_iff`: a point lies in the truncation `S_T` exactly when it
-  lies in `S` and its end heights are at most `T`.
+* `TauCeti.Floer.mem_preimage_truncation_iff`, `TauCeti.Floer.mem_preimage_truncationAt_iff`: a
+  point lies in the truncation `S_T`, or in the truncation at heights `R`, exactly when it lies in
+  `S` and its end height on each end `q` is at most `T`, or at most `R q`.
 * `TauCeti.Floer.exists_forall_comp_positiveEndChart_eventuallyEq_zero`: a function with compact
   support in `S` vanishes in the positive end chart beyond some height.
 * `TauCeti.Floer.perturbationPullback_positiveEndChart_stdComplexLineReal_of_le`,
@@ -189,6 +190,14 @@ theorem mem_preimage_truncation_iff {T : ℝ} {z : ℝ × ℝ} :
     z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation T ↔
       z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ T := by
   simp only [mem_preimage, mem_truncation, mem_thricePuncturedSphereReal_iff, endHeight_apply,
+    and_assoc]
+
+/-- In real coordinates, a point lies in the truncation at heights `R` exactly when it lies in `S`
+and its end height on every end `q` is at most `R q`. -/
+theorem mem_preimage_truncationAt_iff {R : Puncture → ℝ} {z : ℝ × ℝ} :
+    z ∈ Complex.equivRealProdCLM.symm ⁻¹' truncationAt R ↔
+      z ∈ thricePuncturedSphereReal ∧ ∀ q, endHeight q z ≤ R q := by
+  simp only [mem_preimage, mem_truncationAt, mem_thricePuncturedSphereReal_iff, endHeight_apply,
     and_assoc]
 
 /-- A point lies beyond `0` on at most one end. -/
@@ -558,10 +567,10 @@ theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) :=
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/
 theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    {q : Puncture} (hq : 1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re) :
+    {q : Puncture} (hq : 1 / 2 < endHeight q z) :
     z ∈ endChart q '' endStrip q := by
   refine ⟨Complex.equivRealProdCLM (q.endCoord (Complex.equivRealProdCLM.symm z)),
-    ⟨by simpa using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
+    ⟨by simpa [endHeight_apply] using hq, by simpa using q.im_endCoord_mem_Ico _⟩, ?_⟩
   rw [endChart_apply, ContinuousLinearEquiv.symm_apply_apply,
     q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
@@ -815,6 +824,7 @@ theorem exists_endCoord_positiveEndChart (q : Puncture) (y : ℝ × ℝ) :
   · exact ⟨-k, by simp [h, add_comm]⟩
 
 /-- The end height at the image of a cylinder point is its signed longitudinal coordinate. -/
+@[simp]
 theorem endHeight_endChart (q : Puncture) (ζ : ℝ × ℝ) :
     endHeight q (endChart q ζ) = q.endSign * ζ.1 := by
   rw [endHeight, re_endCoord_endChart]

@@ -605,7 +605,7 @@ private theorem fderiv_truncation_eq_zero {T : ℝ} (hT : 2 ≤ T) {z : ℝ × �
   by_cases hzS : z ∈ thricePuncturedSphereReal
   · have hT' (q : Puncture) : endHeight q z < T := by
       by_contra h
-      rw [not_lt, endHeight_apply] at h
+      rw [not_lt] at h
       exact hz (mem_iUnion.2 ⟨q, mem_image_endChart hzS (by linarith)⟩)
     rw [(truncation_eventuallyEq_one hzS hT').fderiv_eq, fderiv_const_apply]
   · simp only [mem_thricePuncturedSphereReal_iff, not_and_or, not_not] at hzS

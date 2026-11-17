@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.EndLinearization
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Linearization
+public import TauCeti.Geometry.Symplectic.Floer.Sobolev.Density
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import TauCeti.Topology.Instances.Real.TSupport
 import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
@@ -265,10 +266,7 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
         (s, t)) 0 atTop (Icc 0 1)) :
     ∃ C R : ℝ, ∀ ⦃ξ : ℝ × ℝ → V⦄, ContDiff ℝ 2 ξ → HasCompactSupport ξ →
       tsupport ξ ⊆ {z | z ∈ thricePuncturedSphereReal ∧ R < endHeight q z} →
-      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1,
-          (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
-            ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +
-            ‖ξ (positiveEndChart q ζ)‖ ^ 2) ≤
+      ∫ ζ in Ioi 0 ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ ≤
         C * ∫ z, ‖ω.floerLinearization (fun w y ↦ (J w y).toLinearMap.toContinuousLinearMap)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -293,21 +291,21 @@ theorem exists_forall_setIntegral_comp_positiveEndChart_le_mul_integral_floerLin
   have hξ' : ContDiff ℝ 2 (ξ ∘ positiveEndChart q) := hξ.comp (contDiff_positiveEndChart q 2)
   -- The section vanishes in the end chart outside a finite band `[R, b] × ℝ`.
   obtain ⟨b, hRb, hvan⟩ := exists_forall_comp_positiveEndChart_eq_zero hξc hξR
-  calc _ = ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1,
-        (‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineReal‖ ^ 2 +
-          ‖fderiv ℝ (ξ ∘ positiveEndChart q) ζ stdComplexLineImag‖ ^ 2 +
-          ‖ξ (positiveEndChart q ζ)‖ ^ 2) := by
+  calc _ = ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, sobolevDensity (ξ ∘ positiveEndChart q) ζ := by
         refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
           (measurableSet_Ioi.prod measurableSet_Icc)
           (prod_mono (fun s hs ↦ lt_of_lt_of_le (by linarith) hs.1) subset_rfl) fun ζ hζ ↦ ?_
         have h := eventuallyEq_zero_of_forall_notMem_Ioo_of_fst_notMem_Icc hvan
           fun h ↦ hζ.2 ⟨h, hζ.1.2⟩
-        simpa [h.fderiv_eq] using h.eq_of_nhds
+        rw [sobolevDensity_congr h, sobolevDensity_apply]
+        simp
+    -- The cylinder estimate `hest` is stated with the density written out.
     _ ≤ C₁ * ∫ ζ in Icc R b ×ˢ Icc (0 : ℝ) 1, ‖ω.floerLinearization
           (fun w y ↦ (Je w.2 y).toLinearMap.toContinuousLinearMap) (fun _ _ ↦ 0)
           (fun w ↦ positiveEndHamiltonian H q w.2) (u ∘ positiveEndChart q)
-          (ξ ∘ positiveEndChart q) ζ‖ ^ 2 :=
-        hest hξ' (fun s t ↦ by simp only [Function.comp_apply, positiveEndChart_add_one]) hRb
+          (ξ ∘ positiveEndChart q) ζ‖ ^ 2 := by
+        simp only [funext (sobolevDensity_apply (ξ ∘ positiveEndChart q))]
+        exact hest hξ' (fun s t ↦ by simp only [Function.comp_apply, positiveEndChart_add_one]) hRb
           (fun s hs ↦ hR₂ s ((le_max_left _ _).trans ((le_max_left _ _).trans hs.1)))
           (fun t ↦ hvan R t fun h ↦ lt_irrefl _ h.1) (fun t ↦ hvan b t fun h ↦ lt_irrefl _ h.2)
     _ ≤ max C₁ 0 * (2 * (1 + B) ^ 2 * ∫ z, ‖ω.floerLinearization

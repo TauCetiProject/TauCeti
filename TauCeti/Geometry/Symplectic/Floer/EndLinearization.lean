@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator.Estimate
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
+import TauCeti.Topology.UniformSpace.UniformConvergence.Bounded
 
 /-!
 # The linearized Floer operator on a cylindrical end
@@ -262,24 +263,15 @@ theorem tendstoUniformlyOn_sliceDefect_of_floerOperator_eq_zero (ω : Symplectic
     (hs : TendstoUniformlyOn (fun s t ↦ fderiv ℝ u (s, t) stdComplexLineReal) 0 l T) :
     TendstoUniformlyOn
       (fun s t ↦ sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t)) 0 l T := by
-  set Jc : ℝ × V → V →L[ℝ] V := fun p ↦ (J p.1 p.2).toLinearMap.toContinuousLinearMap
-  have hK := hT.image_of_continuousOn ((continuousOn_id' T).prodMk hx)
-  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hJ.continuousOn
+  obtain ⟨C, hC⟩ := exists_eventually_forall_norm_le_of_tendstoUniformlyOn hT hx hJ hu
   have hM : 0 < |C| + 1 := by positivity
-  have h₁ := Metric.tendstoUniformlyOn_iff.1
-    (hK.comp_tendstoUniformlyOn (fun _ _ ↦ hJ.continuousAt) hu.graph) 1 one_pos
   rw [Metric.tendstoUniformlyOn_iff] at hs ⊢
   intro ε hε
-  filter_upwards [hF, h₁, hs (ε / (|C| + 1)) (by positivity)] with s hsF hs₁ hs₂ t ht
-  have e₁ := hs₁ t ht
+  filter_upwards [hF, hC, hs (ε / (|C| + 1)) (by positivity)] with s hsF hsC hs₂ t ht
   have e₂ := hs₂ t ht
-  simp only [dist_eq_norm', Pi.zero_apply, sub_zero, Jc] at e₁ e₂ ⊢
-  have hCt := hC _ (mem_image_of_mem _ ht)
-  simp only [Jc] at hCt
-  have hJu : ‖(J t (u (s, t))).toLinearMap.toContinuousLinearMap‖ ≤ |C| + 1 := by
-    have := norm_le_insert' ((J t (u (s, t))).toLinearMap.toContinuousLinearMap)
-      ((J t (x t)).toLinearMap.toContinuousLinearMap)
-    linarith [le_abs_self C]
+  simp only [dist_eq_norm', Pi.zero_apply, sub_zero] at e₂ ⊢
+  have hJu : ‖(J t (u (s, t))).toLinearMap.toContinuousLinearMap‖ ≤ |C| + 1 :=
+    (hsC t ht).trans (by linarith [le_abs_self C])
   -- Applying `J` to the equation `∂s u + J δ = 0` gives `δ = J ∂s u`.
   have hδ : sliceDefect (fun t ↦ ω.hamiltonianVectorField (H t)) u (s, t) =
       (J t (u (s, t))).toLinearMap.toContinuousLinearMap

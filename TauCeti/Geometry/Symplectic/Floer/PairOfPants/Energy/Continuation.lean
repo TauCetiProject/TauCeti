@@ -194,7 +194,6 @@ theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
     (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL 1)
     (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL Complex.I)]
-  rw [endHeight_apply] at h₂
   exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs
     (mem_thricePuncturedSphereReal_iff.1 hz) h₂ x
 
@@ -292,7 +291,7 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
     z (u z)) fun z hz q hq ↦
       hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt ω hH hHs
-        (mem_thricePuncturedSphereReal_iff.1 hz) (by rw [← endHeight_apply]; linarith) _
+        (mem_thricePuncturedSphereReal_iff.1 hz) (by linarith) _
   have hP := integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hu hR
   beta_reduce at hRc hRp

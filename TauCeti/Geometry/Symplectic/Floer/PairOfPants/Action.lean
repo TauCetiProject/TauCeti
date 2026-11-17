@@ -157,8 +157,7 @@ theorem setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_eq_truncation
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) :=
   setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation fun z hz q hq ↦
-    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz
-      (by rw [← endHeight_apply]; linarith) _
+    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz (by linarith) _
 
 /-- **The energy identity on the truncated pair of pants, in terms of actions.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of
@@ -615,9 +614,7 @@ private theorem exists_contDiffOn_eventuallyEq (q : Puncture) {c : ℝ} {u : ℝ
         v =ᶠ[𝓝 z] u := by
   set σ : ℝ × ℝ → ℝ := fun z ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
   have hσ {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) : ContDiffAt ℝ 2 σ z :=
-    contDiffAt_const.mul ((q.contDiffAt_re_endCoord
-      (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)).comp z
-        Complex.equivRealProdCLM.symm.contDiff.contDiffAt)
+    (funext (endHeight_apply q) : endHeight q = σ) ▸ contDiffAt_endHeight_of_mem q hz
   set v : ℝ × ℝ → V := fun z ↦ (1 - smoothTransition (2 * (σ z - c) - 1 / 2)) • u z
   have hv_eq {z : ℝ × ℝ} (hz : σ z ≤ c + 1 / 4) : v z = u z := by
     simp only [v, smoothTransition.zero_of_nonpos (by linarith : 2 * (σ z - c) - 1 / 2 ≤ 0),
@@ -668,7 +665,8 @@ private theorem setIntegral_hamiltonianCurvature_eq_inter (ω : SymplecticForm V
       2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re := by
     by_contra! h
     exact hz.2 ⟨mem_truncation.2 ⟨hz.1.1, hz.1.2, fun r ↦ (h r).trans hR⟩, (h q).trans hc⟩
-  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1 hr _
+  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1
+    (hr.trans_eq (endHeight_apply r z).symm) _
 
 /-- **The energy identity on a truncated pair of pants with one end cut short.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_r`, and let `2 ≤ c ≤ R`. Cut the
