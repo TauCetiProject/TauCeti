@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.FieldTower
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.Matrix
-public import TauCeti.AlgebraicGeometry.SpecialFiber.Weight
 
 /-!
 # Weights of the components of the special fibre divide the intersection matrix

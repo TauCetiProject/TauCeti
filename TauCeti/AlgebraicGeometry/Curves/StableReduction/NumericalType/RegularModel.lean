@@ -136,7 +136,9 @@ def specialFiberNumericalType : NumericalType.{u} where
   fiber_relation i := by
     have h := congrFun
       (toBase.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity hX hη h₀ h₁ hπ hreg) i
-    simpa [Matrix.mulVec, dotProduct, mul_comm] using h
+    rw [Matrix.mulVec_apply_eq_sum, Pi.zero_apply] at h
+    rw [← h]
+    exact Finset.sum_congr rfl fun j _ ↦ mul_comm _ _
   weight_dvd := toBase.specialFiberWeight_dvd_specialFiberIntersectionMatrix hX hη
   genus i := Module.finrank
     Γ((vanishingIdeal ⟨closure {((i : CodimensionOnePoint X) : X)}, isClosed_closure⟩).subscheme, ⊤)

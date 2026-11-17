@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.ZMod
-public import TauCeti.Algebra.Module.Torsion.Snake
+public import TauCeti.Algebra.Module.Torsion.ZMod
 public import TauCeti.AlgebraicGeometry.LineBundle.Functoriality
 
 /-!
@@ -17,7 +16,7 @@ For every natural number `N`, the `N`-torsion subgroup
 group of a scheme `X` carries the canonical `ZMod N`-module structure
 `AddSubgroup.torsionBy.zmodModule`, and the `ℤ`-linear pullback `LineBundleClass.pullbackLinearMap`
 along a morphism `f : X ⟶ Y` restricts to a `ZMod N`-linear map
-`LineBundleClass.pullbackTorsionLinearMap f N` via `TauCeti.torsionByMap`.
+`LineBundleClass.pullbackTorsionLinearMap f N` via `AddMonoidHom.torsionByZModLinearMap`.
 
 ## Main definitions
 
@@ -50,18 +49,17 @@ instance torsionByModule (X : Scheme.{u}) (N : ℕ) :
 def pullbackTorsionLinearMap (f : X ⟶ Y) (N : ℕ) :
     AddSubgroup.torsionBy (Additive (LineBundleClass Y)) (N : ℤ) →ₗ[ZMod N]
       AddSubgroup.torsionBy (Additive (LineBundleClass X)) (N : ℤ) :=
-  AddMonoidHom.toZModLinearMap N
-    (M := AddSubgroup.torsionBy (Additive (LineBundleClass Y)) (N : ℤ))
-    (M₁ := AddSubgroup.torsionBy (Additive (LineBundleClass X)) (N : ℤ))
-    (TauCeti.torsionByMap (N : ℤ) (pullbackLinearMap f)).toAddMonoidHom
+  (pullbackLinearMap f).toAddMonoidHom.torsionByZModLinearMap N
 
 /-- On underlying additive Picard classes, `pullbackTorsionLinearMap f N` acts as
 `pullbackLinearMap f`. -/
 @[simp]
 lemma coe_pullbackTorsionLinearMap_apply (f : X ⟶ Y) (N : ℕ)
     (a : AddSubgroup.torsionBy (Additive (LineBundleClass Y)) (N : ℤ)) :
-    (pullbackTorsionLinearMap f N a : Additive (LineBundleClass X)) = pullbackLinearMap f a.val :=
-  TauCeti.coe_torsionByMap_apply (N : ℤ) (pullbackLinearMap f) a
+    (pullbackTorsionLinearMap f N a : Additive (LineBundleClass X)) =
+      pullbackLinearMap f a.val := by
+  rw [pullbackTorsionLinearMap, AddMonoidHom.coe_torsionByZModLinearMap_apply,
+    LinearMap.toAddMonoidHom_coe]
 
 /-- Pullback of `N`-torsion along the identity morphism is the identity `ZMod N`-linear map. -/
 @[simp]

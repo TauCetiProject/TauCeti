@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.SpecialFiber
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Dimension
+public import TauCeti.AlgebraicGeometry.SpecialFiber.Weight
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
 import TauCeti.Topology.Connected.Basic
 
@@ -52,8 +53,6 @@ is a rational multiple of the special fibre `Σᵢ mᵢ Cᵢ`.
 
 ## Main declarations
 
-* `AlgebraicGeometry.Scheme.Hom.FiniteDimensionalComponentCohomology`: finiteness over the residue
-  field of `Hⁿ(Cᵢ, 𝒪_{Cᵢ})` on every reduced codimension-one component `Cᵢ` of the special fibre.
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`: the intersection matrix of the
   components of the special fibre, with entries given by
   `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_apply`.
@@ -99,16 +98,6 @@ open AlgebraicGeometry.Scheme.IdealSheafData (vanishingIdeal
 universe u
 
 namespace AlgebraicGeometry.Scheme.Hom
-
-/-- Finiteness over the residue field of `R` of the `n`-th sheaf cohomology `Hⁿ(Cᵢ, 𝒪_{Cᵢ})` of
-every reduced codimension-one component `Cᵢ` of the special fibre of `toBase`. -/
-abbrev FiniteDimensionalComponentCohomology {R : Type u} [CommRing R] [IsLocalRing R]
-    {X : Scheme.{u}} (toBase : X ⟶ Spec (.of R)) (n : ℕ) : Prop :=
-  ∀ (η : CodimensionOnePoint X) (hc : toBase η = closedPoint R),
-    letI := subschemeOverResidueField
-      (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hc)
-    FiniteDimensional (ResidueField R) (Cohomology (InvertibleSheaf.trivial
-      (vanishingIdeal ⟨closure {(η : X)}, isClosed_closure⟩).subscheme).obj n)
 
 section Matrix
 
