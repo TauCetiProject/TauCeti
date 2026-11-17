@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.VectorBundle.Riemannian
+import TauCeti.Topology.VectorBundle.Bilinear
 
 /-!
 # Compactness of norm-bounded parts of a Riemannian vector bundle
@@ -29,8 +30,8 @@ vectors converge too.
 
 ## Main results
 
-* `ContinuousOn.bilin_bundle_self`: diagonal evaluation of a bilinear field is continuous over
-  its domain, with `Bundle.ContinuousRiemannianMetric.continuous_inner_self` the metric case.
+* `Bundle.ContinuousRiemannianMetric.continuous_inner`: evaluation of a continuous metric on two
+  continuous maps into its fibres is continuous; `continuous_inner_self` is the diagonal case.
 * `Continuous.norm_bundle`: the fiber norm of a continuous map into the fibers of a continuous
   Riemannian bundle is continuous, with `TauCeti.continuous_norm_bundle` its tautological case.
 * `IsCompact.norm_le_bundle`: the vectors of norm at most `r` over a compact set form a compact
@@ -56,27 +57,50 @@ section Evaluation
 variable [∀ x, TopologicalSpace (E x)] [∀ x, AddCommGroup (E x)]
   [∀ x, Module ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
 
-/-- Diagonal evaluation of a continuous bilinear field is continuous over its domain in the
-base. No fibre norm instances are required. -/
-theorem ContinuousOn.bilin_bundle_self {K : Set B}
-    {b : ∀ x, E x →L[ℝ] E x →L[ℝ] ℝ}
-    (hb : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (b x)) K) :
-    ContinuousOn (fun z : TotalSpace F E ↦ b z.proj z.2 z.2) (TotalSpace.proj ⁻¹' K) := by
-  have h : ContinuousOn (fun z : TotalSpace F E ↦
-      TotalSpace.mk' ℝ (E := Bundle.Trivial B ℝ) z.proj (b z.proj z.2 z.2))
-      (TotalSpace.proj ⁻¹' K) :=
-    (hb.comp (FiberBundle.continuous_proj F E).continuousOn (fun _ hz ↦ hz)).clm_bundle_apply₂
-      continuousOn_id continuousOn_id
-  exact continuous_snd.comp_continuousOn
-    ((Bundle.Trivial.homeomorphProd B ℝ).continuous.comp_continuousOn h)
+variable {X : Type*} [TopologicalSpace X] {f : X → B} {v w : ∀ x, E (f x)}
+  {s : Set X} {x : X}
+
+/-- Evaluation of a continuous metric on two fibre maps is continuous within a set. -/
+theorem Bundle.ContinuousRiemannianMetric.continuousWithinAt_inner
+    (g : ContinuousRiemannianMetric F E)
+    (hv : ContinuousWithinAt (fun x ↦ (v x : TotalSpace F E)) s x)
+    (hw : ContinuousWithinAt (fun x ↦ (w x : TotalSpace F E)) s x) :
+    ContinuousWithinAt (fun x ↦ g.inner (f x) (v x) (w x)) s x :=
+  (g.continuous.continuousAt.comp_continuousWithinAt
+    ((FiberBundle.continuous_proj F E).continuousAt.comp_continuousWithinAt hv)).bilin_bundle_apply
+    hv hw
+
+/-- Evaluation of a continuous metric on two fibre maps is continuous at a point. -/
+theorem Bundle.ContinuousRiemannianMetric.continuousAt_inner
+    (g : ContinuousRiemannianMetric F E)
+    (hv : ContinuousAt (fun x ↦ (v x : TotalSpace F E)) x)
+    (hw : ContinuousAt (fun x ↦ (w x : TotalSpace F E)) x) :
+    ContinuousAt (fun x ↦ g.inner (f x) (v x) (w x)) x := by
+  simp only [← continuousWithinAt_univ] at hv hw ⊢
+  exact g.continuousWithinAt_inner hv hw
+
+/-- Evaluation of a continuous metric on two fibre maps is continuous on a set. -/
+theorem Bundle.ContinuousRiemannianMetric.continuousOn_inner
+    (g : ContinuousRiemannianMetric F E)
+    (hv : ContinuousOn (fun x ↦ (v x : TotalSpace F E)) s)
+    (hw : ContinuousOn (fun x ↦ (w x : TotalSpace F E)) s) :
+    ContinuousOn (fun x ↦ g.inner (f x) (v x) (w x)) s :=
+  fun x hx ↦ g.continuousWithinAt_inner (hv x hx) (hw x hx)
+
+/-- Evaluation of a continuous metric on two continuous fibre maps is continuous. -/
+theorem Bundle.ContinuousRiemannianMetric.continuous_inner
+    (g : ContinuousRiemannianMetric F E)
+    (hv : Continuous (fun x ↦ (v x : TotalSpace F E)))
+    (hw : Continuous (fun x ↦ (w x : TotalSpace F E))) :
+    Continuous (fun x ↦ g.inner (f x) (v x) (w x)) :=
+  continuous_iff_continuousAt.2 fun _ ↦ g.continuousAt_inner hv.continuousAt hw.continuousAt
 
 /-- The diagonal value of a continuous metric is continuous on the total space, without
 requiring fibre norm or `RiemannianBundle` instances. -/
 theorem Bundle.ContinuousRiemannianMetric.continuous_inner_self
     (g : ContinuousRiemannianMetric F E) :
-    Continuous (fun z : TotalSpace F E ↦ g.inner z.proj z.2 z.2) := by
-  simpa only [preimage_univ, continuousOn_univ] using
-    (g.continuous.continuousOn (s := univ)).bilin_bundle_self
+    Continuous (fun z : TotalSpace F E ↦ g.inner z.proj z.2 z.2) :=
+  g.continuous_inner continuous_id continuous_id
 
 end Evaluation
 

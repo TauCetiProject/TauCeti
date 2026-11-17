@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Riemannian.Basic
-import Mathlib.Analysis.Normed.Module.Normalize
+import TauCeti.Topology.VectorBundle.Bilinear
 
 /-!
 # Uniform comparison of bundle metrics
@@ -16,10 +16,11 @@ reference metric over every compact subset of the base, with no finite-rank assu
 comparison is on all vectors and uses strictly positive constants. This lets estimates made
 using different metrics be transferred without changing the topology of the fibres.
 
-The metric comparison proof bounds each metric locally against the squared coordinate norm,
-then combines these bounds by compact induction. For a positive bilinear field on a finite-rank
-bundle, a separate result takes extrema on the reference unit sphere bundle and uses quadratic
-homogeneity. Adjoining the value one handles empty compact sets and rank-zero bundles.
+The compact-set and compact-base metric comparisons require no fibre norm instances. Against
+the squared fibre norm of an `IsContinuousRiemannianBundle`, a continuous metric likewise has
+uniform positive two-sided bounds in arbitrary rank. A bilinear field continuous and positive
+on a compact set has the same squared-norm bounds when the model fibre is finite-dimensional,
+without symmetry or positivity elsewhere. Empty compact sets and rank-zero bundles are allowed.
 -/
 
 public section
@@ -37,50 +38,21 @@ variable [∀ x, NormedAddCommGroup (E x)] [∀ x, InnerProductSpace ℝ (E x)]
   [FiberBundle F E] [VectorBundle ℝ F E]
   [FiniteDimensional ℝ F] [IsContinuousRiemannianBundle F E]
 
-/-- A bilinear field continuous and positive on a compact set has positive uniform two-sided
-bounds against the squared fibre norm of a continuous Riemannian bundle. Neither symmetry nor
-positivity outside the compact set is required, and the compact set and unit sphere fibres may
-be empty. -/
+/-- On a continuous Riemannian bundle with finite-dimensional model fibre, a bilinear field
+continuous and positive on a compact set has positive uniform two-sided bounds against the
+squared fibre norm. Neither symmetry nor positivity outside the compact set is required;
+empty compact sets and rank-zero bundles are allowed. -/
 theorem IsCompact.exists_pos_mul_norm_sq_le_bilin_self_and_le {K : Set B} (hK : IsCompact K)
     {b : ∀ x, E x →L[ℝ] E x →L[ℝ] ℝ}
     (hb : ContinuousOn (fun x ↦ TotalSpace.mk' (F →L[ℝ] F →L[ℝ] ℝ) x (b x)) K)
     (hpos : ∀ x ∈ K, ∀ v : E x, v ≠ 0 → 0 < b x v v) :
     ∃ c C : ℝ, 0 < c ∧ 0 < C ∧ ∀ x ∈ K, ∀ v : E x,
       c * ‖v‖ ^ 2 ≤ b x v v ∧ b x v v ≤ C * ‖v‖ ^ 2 := by
-  let S : Set (TotalSpace F E) := {z | z.proj ∈ K ∧ ‖z.2‖ = 1}
-  have hS : IsCompact S := by
-    convert (hK.norm_le_bundle (F := F) 1).inter_right
-      (isClosed_eq (TauCeti.continuous_norm_bundle F E) (continuous_const (y := (1 : ℝ))))
-      using 1
-    ext z
-    simp only [S, mem_inter_iff, mem_ofPred_eq]
-    grind
-  let q : TotalSpace F E → ℝ := fun z ↦ b z.proj z.2 z.2
-  have hq : ContinuousOn q S := hb.bilin_bundle_self.mono fun _ hz ↦ hz.1
-  have hvalues : IsCompact (insert 1 (q '' S)) :=
-    (hS.image_of_continuousOn hq).insert 1
-  have hvalues_pos : ∀ a ∈ insert 1 (q '' S), 0 < a := by
-    rintro a (rfl | ⟨z, hz, rfl⟩)
-    · exact zero_lt_one
-    · exact hpos _ hz.1 _ (fun h ↦ by simpa [h] using hz.2)
-  obtain ⟨c, hc⟩ := hvalues.exists_isLeast (by simp)
-  obtain ⟨C, hC⟩ := hvalues.exists_isGreatest (by simp)
-  refine ⟨c, C, hvalues_pos _ hc.1, hvalues_pos _ hC.1, fun x hx v ↦ ?_⟩
-  by_cases hv : v = 0
-  · simp [hv]
-  · have hu : (⟨x, NormedSpace.normalize v⟩ : TotalSpace F E) ∈ S :=
-      ⟨hx, NormedSpace.norm_normalize hv⟩
-    have hmem : b x (NormedSpace.normalize v) (NormedSpace.normalize v) ∈
-        insert 1 (q '' S) := Or.inr ⟨_, hu, rfl⟩
-    have heq : b x v v = ‖v‖ ^ 2 *
-        b x (NormedSpace.normalize v) (NormedSpace.normalize v) := by
-      conv_lhs => rw [← NormedSpace.norm_smul_normalize v]
-      simp only [map_smul, smul_apply, smul_eq_mul]
-      ring
-    rw [heq]
-    constructor
-    · nlinarith [mul_le_mul_of_nonneg_left (hc.2 hmem) (sq_nonneg ‖v‖)]
-    · nlinarith [mul_le_mul_of_nonneg_left (hC.2 hmem) (sq_nonneg ‖v‖)]
+  obtain ⟨b₀, hb₀, hinner⟩ := IsContinuousRiemannianBundle.exists_continuous (F := F) (E := E)
+  have hpos₀ (x : B) (_ : x ∈ K) (v : E x) (hv : v ≠ 0) : 0 < b₀ x v v := by
+    simpa only [← hinner] using real_inner_self_pos.mpr hv
+  simpa only [← hinner, real_inner_self_eq_norm_sq] using
+    hK.exists_pos_mul_bilin_self_le_and_le hb hb₀.continuousOn hpos hpos₀
 
 end NormedReference
 
@@ -89,8 +61,8 @@ namespace Bundle.ContinuousRiemannianMetric
 variable [∀ x, TopologicalSpace (E x)] [∀ x, AddCommGroup (E x)]
   [∀ x, Module ℝ (E x)] [FiberBundle F E] [VectorBundle ℝ F E]
 
-/-- Local comparison with the squared coordinate norm. The metric supplies a compatible fibre
-norm, so Mathlib's local bounds on a trivialization and its inverse apply in arbitrary rank. -/
+/-- Near a base point, a continuous metric has positive uniform two-sided bounds against the
+squared norm in the preferred trivialization at that point, in arbitrary rank. -/
 private theorem eventually_inner_self_bounds (g : ContinuousRiemannianMetric F E) (x : B) :
     ∃ A > 0, ∃ D > 0, ∀ᶠ y in 𝓝 x, ∀ v : E y,
       ‖(trivializationAt F E x).continuousLinearMapAt ℝ y v‖ ^ 2 ≤ A * g.inner y v v ∧
