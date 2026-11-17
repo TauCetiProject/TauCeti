@@ -65,8 +65,13 @@ pole (`HomotopyGroup.mk_eq_one_iff_nullhomotopic_toSphere`).
   injective exactly when `p` identifies only boundary points, and surjective exactly when `p` is.
 * `TauCeti.exists_cubeToSphere_eq_of_ne`: `TauCeti.cubeToSphere` covers the sphere off the north
   pole in every dimension, including `n = 0`.
+* `TauCeti.diskBoundaryNorthPole` and `TauCeti.diskBoundaryGenLoop`: the universe-lifted north pole
+  and tautological generalized loop on `TopCat.diskBoundary (n + 1)`.
 * `GenLoop.diskBoundaryMap`: the map `GenLoop.toSphere p` with its source written as
-  Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`.
+  Mathlib's sphere `TopCat.diskBoundary (n + 1)`, the attaching map of a cell killing `⟦p⟧`,
+  sending `TauCeti.diskBoundaryNorthPole` to the base point
+  (`GenLoop.diskBoundaryMap_diskBoundaryNorthPole`) and factoring `p` through
+  `TauCeti.diskBoundaryGenLoop` (`GenLoop.map_diskBoundaryMap_diskBoundaryGenLoop`).
 * `GenLoop.diskMap`: a generalized loop `γ` of dimension `n` read on the disk `𝔻 n`, the map onto
   `γ` of a sphere formed by attaching an `n`-cell along a constant map.
 * `GenLoop.homotopic_iff_toSphere` and `HomotopyGroup.sphereEquiv`: homotopy relative to the
@@ -619,7 +624,36 @@ theorem homotopic_toSphere {γ : Path x y} {f : Ω^ (Fin n) X x} {g : Ω^ (Fin n
 
 end TauCeti.GenLoop.HomotopyAlong
 
+namespace TauCeti
+
+/-- The north pole of the universe-lifted sphere `TopCat.diskBoundary.{u} (n + 1)`. -/
+def diskBoundaryNorthPole (n : ℕ) : TopCat.diskBoundary.{u} (n + 1) :=
+  ULift.up (sphereNorthPole n)
+
+/-- Projecting `TauCeti.diskBoundaryNorthPole` down to `Type 0` gives `TauCeti.sphereNorthPole`. -/
+@[simp]
+theorem diskBoundaryNorthPole_down (n : ℕ) :
+    (diskBoundaryNorthPole.{u} n).down = sphereNorthPole n :=
+  (rfl)
+
+/-- **The tautological generalized loop of the universe-lifted sphere**
+`TopCat.diskBoundary.{u} (n + 1)`, obtained by lifting `TauCeti.sphereGenLoop n`. -/
+def diskBoundaryGenLoop (n : ℕ) :
+    Ω^ (Fin n) (TopCat.diskBoundary.{u} (n + 1)) (diskBoundaryNorthPole.{u} n) :=
+  GenLoop.map ⟨ULift.up, continuous_uliftUp⟩ rfl (sphereGenLoop n)
+
+/-- Evaluating `TauCeti.diskBoundaryGenLoop` and projecting down recovers `sphereGenLoop`. -/
+@[simp]
+theorem diskBoundaryGenLoop_apply_down (n : ℕ) (y : Fin n → I) :
+    (diskBoundaryGenLoop.{u} n y).down = sphereGenLoop n y := by
+  rw [diskBoundaryGenLoop]
+  exact congrArg ULift.down (DFunLike.congr_fun (GenLoop.coe_map _ _ _) y)
+
+end TauCeti
+
 namespace GenLoop
+
+open TauCeti
 
 variable {n : ℕ} [NeZero n] {X : TopCat.{u}} {x : X}
 
@@ -642,6 +676,26 @@ theorem diskBoundaryMap_map {Y : TopCat.{u}} (f : X ⟶ Y) {y : Y} (hf : f x = y
     (p : Ω^ (Fin n) X x) : diskBoundaryMap (GenLoop.map f.hom hf p) = diskBoundaryMap p ≫ f := by
   ext s
   simp
+
+/-- The attaching map `GenLoop.diskBoundaryMap p` sends the north pole of `∂𝔻 (n + 1)` to the base
+point `x`. -/
+theorem diskBoundaryMap_diskBoundaryNorthPole (p : Ω^ (Fin n) X x) :
+    diskBoundaryMap p (diskBoundaryNorthPole.{u} n) = x := by
+  rw [diskBoundaryMap_apply, diskBoundaryNorthPole_down, toSphere_sphereNorthPole]
+
+/-- Every generalized loop factors through `TauCeti.diskBoundaryGenLoop` via
+`GenLoop.diskBoundaryMap`. -/
+@[simp]
+theorem map_diskBoundaryMap_diskBoundaryGenLoop (p : Ω^ (Fin n) X x) :
+    GenLoop.map (diskBoundaryMap p).hom
+        (diskBoundaryMap_diskBoundaryNorthPole p) (diskBoundaryGenLoop.{u} n) = p := by
+  apply Subtype.ext
+  refine ContinuousMap.ext fun y ↦ ?_
+  rw [DFunLike.congr_fun (GenLoop.coe_map _ _ _) y, ContinuousMap.comp_apply, GenLoop.coe_coe]
+  exact (diskBoundaryMap_apply p (diskBoundaryGenLoop.{u} n y)).trans
+    ((congrArg (toSphere p)
+      ((diskBoundaryGenLoop_apply_down.{u} n y).trans (sphereGenLoop_apply y))).trans
+      (toSphere_cubeToSphere p y))
 
 end GenLoop
 
