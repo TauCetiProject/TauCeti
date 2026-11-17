@@ -7,9 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Actions
 public import TauCeti.LinearAlgebra.TensorProduct.Balanced.Pi
-public import TauCeti.Algebra.Module.Projective.Semilinear
 public import TauCeti.LinearAlgebra.Matrix.Idempotent
-public import Mathlib.RingTheory.Finiteness.Cardinality
+
+import TauCeti.Algebra.Module.Projective.Semilinear
 
 /-!
 # Extension of scalars along a ring homomorphism of noncommutative rings
@@ -123,7 +123,15 @@ namespace BalancedExtension
 
 variable (f : R →+* S) (P : Type v) [AddCommGroup P] [Module R P]
 
-/-- The left `S`-module structure of `S ⊗_R P`, by multiplication on the first factor. -/
+/-- The left `S`-module structure of `S ⊗_R P`, by multiplication on the first factor.
+
+When `S = ℤ` (extension along a ring homomorphism `R →+* ℤ`, such as an augmentation) this is a
+second `Module ℤ` structure on `ℤ ⊗_R P`, besides `AddCommGroup.toIntModule`, and the two are not
+definitionally equal: `rfl` does not identify them, although `Subsingleton.elim` does, and
+elementwise `int_smul_eq_zsmul` rewrites this action to `zsmul`. Instance search for
+`Module ℤ (BalancedExtension f P)` finds `AddCommGroup.toIntModule`, so the `Module.Finite S` and
+`Module.Projective S` instances below, which are stated for this structure, do not fire at `S = ℤ`
+unless this instance is supplied by hand. -/
 instance : Module S (BalancedExtension f P) :=
   BalancedTensorProduct.leftModule (k := ℤ) (A := R) (M := Scalars f) (N := P) S
 
@@ -445,10 +453,10 @@ variable (f) {ι : Type*} [Fintype ι] {e : Matrix ι ι R}
 
 /-- The `S`-linear map `Sⁿ f(e) → S ⊗_R (Rⁿ e)`, `w ↦ ∑ i, wᵢ ⊗ eᵢ`, through the rows `eᵢ`
 of `e`. -/
-private def rangeVecMulLinearInv (he : IsIdempotentElem e) :
+private def rangeVecMulLinearInv :
     LinearMap.range (e.map f).vecMulLinear →ₗ[S]
       BalancedExtension f (LinearMap.range e.vecMulLinear) :=
-  Fintype.linearCombination S (fun i ↦ tmul f 1 ⟨e i, he.row_mem_range_vecMulLinear i⟩) ∘ₗ
+  Fintype.linearCombination S (fun i ↦ tmul f 1 ⟨e i, e.row_mem_range_vecMulLinear i⟩) ∘ₗ
     (LinearMap.range _).subtype
 
 /-- **Extension of the image of an idempotent matrix.** For an idempotent matrix `e` over `R`,
@@ -460,7 +468,7 @@ module, the extension of scalars along `f` is the image `Sⁿ f(e)` of the matri
 noncomputable def rangeVecMulLinearEquiv (he : IsIdempotentElem e) :
     BalancedExtension f (LinearMap.range e.vecMulLinear) ≃ₗ[S]
       LinearMap.range (e.map f).vecMulLinear :=
-  LinearEquiv.ofLinearMap (lift (e.rangeVecMulLinearMap f)) (rangeVecMulLinearInv f he)
+  LinearEquiv.ofLinearMap (lift (e.rangeVecMulLinearMap f)) (rangeVecMulLinearInv f)
     (LinearMap.ext fun w ↦ by
       conv_rhs => rw [LinearMap.id_apply, (he.matrix_map f).eq_sum_smul_row w]
       simp only [rangeVecMulLinearInv, LinearMap.comp_apply, Fintype.linearCombination_apply,
@@ -484,7 +492,7 @@ theorem coe_rangeVecMulLinearEquiv_tmul (he : IsIdempotentElem e) (s : S)
 theorem rangeVecMulLinearEquiv_symm_apply (he : IsIdempotentElem e)
     (w : LinearMap.range (e.map f).vecMulLinear) :
     (rangeVecMulLinearEquiv f he).symm w =
-      ∑ i, tmul f ((w : ι → S) i) ⟨e i, he.row_mem_range_vecMulLinear i⟩ := by
+      ∑ i, tmul f ((w : ι → S) i) ⟨e i, e.row_mem_range_vecMulLinear i⟩ := by
   simp [rangeVecMulLinearEquiv, rangeVecMulLinearInv, Fintype.linearCombination_apply, smul_tmul]
 
 end Idempotent

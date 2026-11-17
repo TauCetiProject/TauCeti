@@ -183,7 +183,7 @@ theorem fixedSubgroupCongr_trans (ψ : G ≃* G')
 theorem fixedSubgroupCongr_symm (ψ : G ≃* G')
     (hψ : (ψ : G →* G').comp F = F'.comp (ψ : G →* G')) :
     (fixedSubgroupCongr ψ hψ).symm =
-      fixedSubgroupCongr ψ.symm (ψ.symm_comp_eq_comp_symm_of_comp_eq_comp hψ) :=
+      fixedSubgroupCongr ψ.symm (ψ.symm_comp_eq_comp_symm_iff.2 hψ) :=
   Subgroup.congrOfMapEq_symm _ _
 
 end TauCeti

@@ -25,9 +25,10 @@ These are the analytic inputs Dixon's proof of the homology Cauchy theorem needs
 ## Main results
 
 * `TauCeti.continuousOn_dslope_prod` — joint continuity of `(c, w) ↦ dslope f c w` on `U ×ˢ U`.
-* `TauCeti.continuousOn_dslope_first_arg` — continuity of `c ↦ dslope f c w₀` on a neighbourhood
-  `U` of `w₀`, for `f` continuous on `U` and differentiable at `w₀` (over any nontrivially normed
-  field).
+* `TauCeti.continuousOn_dslope_first_arg` — continuity of `c ↦ dslope f c w₀` on a set `U`, for
+  `f` continuous on `U` and differentiable at `w₀` (over any nontrivially normed field).
+* `TauCeti.dslope_dslope_dslope_zero_apply` — closed form of the third divided difference at `0`
+  in terms of the limit of the second one, with no continuity hypothesis.
 * `TauCeti.deriv_dslope_bounded_on_compact` — for holomorphic `f`, a uniform bound on
   `‖deriv (dslope f c) w‖` for `c` in a compact subset of `U` and `w` near a point of `U`.
 
@@ -47,13 +48,52 @@ section NontriviallyNormedField
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f : 𝕜 → E}
 
-/-- **Continuity of `c ↦ dslope f c w₀` on `U`** for `f` continuous on a neighbourhood `U` of `w₀`
-and differentiable at `w₀`. -/
-theorem continuousOn_dslope_first_arg {U : Set 𝕜} {w₀ : 𝕜} (hU : U ∈ 𝓝 w₀)
+/-- **Continuity of `c ↦ dslope f c w₀` on `U`** for `f` continuous on `U` and differentiable
+at `w₀`. -/
+theorem continuousOn_dslope_first_arg {U : Set 𝕜} {w₀ : 𝕜}
     (hf : ContinuousOn f U) (hd : DifferentiableAt 𝕜 f w₀) :
     ContinuousOn (fun c ↦ dslope f c w₀) U := by
   simp_rw [dslope_comm f _ w₀]
-  exact (continuousOn_dslope hU).mpr ⟨hf, hd⟩
+  intro c hc
+  rcases eq_or_ne c w₀ with rfl | hne
+  · exact (continuousAt_dslope_same.2 hd).continuousWithinAt
+  · exact (continuousWithinAt_dslope_of_ne hne).2 (hf c hc)
+
+/-- Closed form of the third divided difference at `0`: if
+`(q w - q 0 - M * w) / w ^ 2` tends to `C` as `w` tends to `0`, then the third divided difference of
+`q` at `w ≠ 0` is `(q w - q 0 - M * w - C * w ^ 2) / w ^ 3`. The limit identifies the value `C` of
+the second divided difference at `0`, which is the derivative of the first one, and forces `q` to
+have derivative `M` at `0`. -/
+theorem dslope_dslope_dslope_zero_apply {q : 𝕜 → 𝕜} {M C : 𝕜}
+    (hlim : Tendsto (fun w => (q w - q 0 - M * w) / w ^ 2) (𝓝[≠] (0 : 𝕜)) (𝓝 C)) {w : 𝕜}
+    (hw : w ≠ 0) :
+    dslope (dslope (dslope q 0) 0) 0 w = (q w - q 0 - M * w - C * w ^ 2) / w ^ 3 := by
+  have hq' : HasDerivAt q M 0 := by
+    rw [hasDerivAt_iff_tendsto_slope]
+    have h : Tendsto (fun w => M + w * ((q w - q 0 - M * w) / w ^ 2)) (𝓝[≠] (0 : 𝕜))
+        (𝓝 (M + 0 * C)) :=
+      tendsto_const_nhds.add ((tendsto_id.mono_left nhdsWithin_le_nhds).mul hlim)
+    rw [zero_mul, add_zero] at h
+    refine h.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with w hw
+    have hw0 : w ≠ 0 := hw
+    rw [slope_def_field, sub_zero]
+    field_simp
+    ring
+  have hD₁w (w : 𝕜) (hw : w ≠ 0) : dslope q 0 w = (q w - q 0) / w := by
+    rw [dslope_of_ne _ hw, slope_def_field, sub_zero]
+  have hD₂w (w : 𝕜) (hw : w ≠ 0) : dslope (dslope q 0) 0 w = (dslope q 0 w - M) / w := by
+    rw [dslope_of_ne _ hw, slope_def_field, dslope_same, hq'.deriv, sub_zero]
+  have hd : HasDerivAt (dslope q 0) C 0 := by
+    rw [hasDerivAt_iff_tendsto_slope]
+    refine hlim.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with w hw
+    have hw0 : w ≠ 0 := hw
+    rw [slope_def_field, dslope_same, hq'.deriv, sub_zero, hD₁w w hw0]
+    field_simp
+  have hD₂0 : dslope (dslope q 0) 0 0 = C := by rw [dslope_same, hd.deriv]
+  rw [dslope_of_ne _ hw, slope_def_field, hD₂0, sub_zero, hD₂w w hw, hD₁w w hw]
+  field_simp
 
 end NontriviallyNormedField
 

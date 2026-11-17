@@ -205,16 +205,16 @@ theorem unitLogRepresentation_mem_fullUnitLattice (σ : Gal(K/k))
 /-- The integral Galois representation on the full unit logarithmic lattice, obtained by
 restricting the permutation representation on the logarithmic hyperplane. -/
 def fullUnitLatticeRepresentation : Representation ℤ Gal(K/k) (fullUnitLattice K) :=
-  (unitLogRepresentation K k).restrictScalarsInt.subrepresentation (fullUnitLattice K)
+  ((unitLogRepresentation K k).restrictScalars ℤ).subrepresentation (fullUnitLattice K)
     fun σ _ hx => by
-      simpa only [Submodule.mem_comap, Representation.restrictScalarsInt_apply] using
+      simpa only [Submodule.mem_comap, Representation.restrictScalars_apply] using
         unitLogRepresentation_mem_fullUnitLattice K k σ hx
 
 /-- The integral action on the full unit lattice agrees with the ambient permutation action. -/
 @[simp] theorem fullUnitLatticeRepresentation_apply (σ : Gal(K/k)) (x : fullUnitLattice K) :
     (fullUnitLatticeRepresentation K k σ x).val = unitLogRepresentation K k σ x.val := by
   simp only [fullUnitLatticeRepresentation, Representation.subrepresentation_apply,
-    LinearMap.restrict_apply, Representation.restrictScalarsInt_apply]
+    LinearMap.restrict_apply, Representation.restrictScalars_apply]
 
 end GaloisAction
 

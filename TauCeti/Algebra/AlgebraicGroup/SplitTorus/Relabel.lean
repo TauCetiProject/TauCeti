@@ -73,6 +73,13 @@ theorem characterRelabel_ofAdd (τ : Equiv.Perm sigma) (f : sigma →₀ ℤ) :
     characterRelabel τ (Multiplicative.ofAdd f) =
       Multiplicative.ofAdd (Finsupp.equivMapDomain τ f) := (rfl)
 
+/-- Relabelling sends a multiple of the coordinate character of `a` to the same multiple of the
+coordinate character of `τ a`. -/
+theorem characterRelabel_ofAdd_single (τ : Equiv.Perm sigma) (a : sigma) (n : ℤ) :
+    characterRelabel τ (Multiplicative.ofAdd (Finsupp.single a n)) =
+      Multiplicative.ofAdd (Finsupp.single (τ a) n) := by
+  rw [characterRelabel_ofAdd, Finsupp.equivMapDomain_single]
+
 /-- Relabelling is multiplicative in the permutation. -/
 @[simp]
 theorem characterRelabel_comp (τ ν : Equiv.Perm sigma) :
@@ -165,8 +172,7 @@ theorem pointsMulEquiv_mapDomain_relabelCoordinateMap
     WithConv.ofConv_toConv, AlgHom.comp_apply, BialgHom.coe_toAlgHom,
     hom_relabelCoordinateMap]
   rw [MonoidAlgebra.mapDomainBialgHom_single]
-  have h := characterRelabel_ofAdd τ (Finsupp.single i (1 : ℤ))
-  rw [Finsupp.equivMapDomain_single] at h
+  have h := characterRelabel_ofAdd_single τ i 1
   exact congrArg (fun x => p.ofConv (MonoidAlgebra.single x 1)) h
 
 /-- Coordinate relabelling is multiplicative in the permutation. -/

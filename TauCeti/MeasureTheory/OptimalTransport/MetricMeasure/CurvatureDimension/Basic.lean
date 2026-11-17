@@ -159,12 +159,12 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
     have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
         ‖edist x y‖ₑ ≤ ENNReal.ofReal r :=
       hμ ▸ (ae_cond_mem hs).mono fun y hy ↦ by
-        rw [enorm_eq_self, edist_comm, edist_dist]
+        rw [eNorm_eq_self, edist_comm, edist_dist]
         exact ENNReal.ofReal_le_ofReal ((mem_ball.1 hy).le.trans (min_le_left r ρ))
     calc wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X)
         ≤ ENNReal.ofReal r • ((μ : ProbabilityMeasure X) : Measure X) univ ^ p.toReal⁻¹ := by
           rw [wassersteinEDist_dirac_left measurable_edist]
-          exact eLpNorm_le_of_ae_enorm_bound (by fun_prop) hbound
+          exact eLpNorm_le_of_ae_eNorm_bound (by fun_prop) hbound
       _ = ENNReal.ofReal r := by simp
   -- The entropy is `c log c * m s`, the integral of a constant over `s`.
   have hV : (fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ) *
@@ -235,7 +235,6 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   set d := dist x₀ x₁
   -- Choose `r > 0` with `2 (d / 2 + 2 r)² ≤ d² / 2 + ε`.
   set r := min 1 (ε / (4 * d + 8))
-  have hd : 0 ≤ d := dist_nonneg
   have hr : 0 < r := lt_min one_pos (by positivity)
   have hrε : 4 * d * r + 8 * r ^ 2 ≤ ε := by
     have h1 : r ≤ 1 := min_le_left _ _
@@ -255,19 +254,13 @@ theorem CurvatureDimensionInfinity.exists_dist_sq_add_dist_sq_le
   -- `W₂(μ₀, μ₁) ≤ d + 2 r`, so the midpoint is within `d / 2 + 2 r` of both `δ_{x₀}` and `δ_{x₁}`.
   have hW : dist μ₀ μ₁ ≤ d + 2 * r := by
     rw [← edist_le_ofReal (by positivity), WassersteinSpace.edist_def]
-    calc wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X) (μ₁ : ProbabilityMeasure X)
-        ≤ wassersteinEDist 2 ((μ₀ : ProbabilityMeasure X) : Measure X) (Measure.dirac x₀) +
-          (wassersteinEDist 2 (Measure.dirac x₀) (Measure.dirac x₁) +
-            wassersteinEDist 2 (Measure.dirac x₁) ((μ₁ : ProbabilityMeasure X) : Measure X)) :=
-          (wassersteinEDist_triangle measurable_edist one_le_two _ _ _).trans
-            (add_le_add le_rfl (wassersteinEDist_triangle measurable_edist one_le_two _ _ _))
-      _ ≤ ENNReal.ofReal r + (ENNReal.ofReal d + ENNReal.ofReal r) := by
-          rw [wassersteinEDist_comm measurable_edist, wassersteinEDist_dirac_dirac two_ne_zero,
-            edist_dist]
-          gcongr
-      _ = ENNReal.ofReal (d + 2 * r) := by
-          rw [← ENNReal.ofReal_add hd hr.le, ← ENNReal.ofReal_add hr.le (by positivity)]
-          ring_nf
+    refine (wassersteinEDist_le_add_edist_add_of_wassersteinEDist_dirac_le measurable_edist
+      one_le_two hW₀ hW₁).trans_eq ?_
+    rw [edist_dist, ← ENNReal.ofReal_add hr.le dist_nonneg,
+      ← ENNReal.ofReal_add (by positivity) hr.le]
+    congr 1
+    simp only [d]
+    ring
   have hmid (x : X) (μ : WassersteinSpace 2 X)
       (hx : wassersteinEDist 2 (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
         ENNReal.ofReal r) (hμ : dist μ (γ (1 / 2)) = 1 / 2 * dist μ₀ μ₁) :
@@ -374,8 +367,8 @@ theorem CurvatureDimension.mono (h : M.CurvatureDimension K N) (hK : K' ≤ K) :
   refine ⟨hac, hb, fun N' hN' ↦ (hS N' hN').trans ?_⟩
   rw [EReal.neg_le_neg_iff, EReal.coe_ennreal_le_coe_ennreal_iff]
   refine lintegral_mono fun z ↦ add_le_add (mul_le_mul_left ?_ _) (mul_le_mul_left ?_ _)
-  · exact distortionTau_left_monotone (sub_nonneg.2 ht.2) (sub_le_self _ ht.1) hK
-  · exact distortionTau_left_monotone ht.1 ht.2 hK
+  · exact distortionTau_left_monotone (sub_le_self _ ht.1) hK
+  · exact distortionTau_left_monotone ht.2 hK
 
 /-- `CD(K, N)` implies `CD(K, N')` for every `N' ≥ N`: the defining inequality is required for
 every dimension bound above `N`. -/

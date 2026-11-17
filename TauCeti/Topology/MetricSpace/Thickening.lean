@@ -5,10 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.ProperSpace
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Topology.Compactness.LocallyFinite
-import Mathlib.Topology.MetricSpace.ProperSpace
+import Mathlib.Topology.Order.AtTopBotIxx
 import Mathlib.Topology.Order.DenselyOrdered
 
 /-!
@@ -27,12 +28,31 @@ points at distance at most `δ` from it (`TauCeti.mem_cthickening_iff_infDist_le
 closed counterpart of Mathlib's `Metric.mem_thickening_iff_infDist_lt`, and describes closed
 thickenings as sublevel sets of the distance function, and their complements as strict
 superlevel sets (`TauCeti.compl_cthickening_eq_setOf_lt_infDist`).
+
+A closed set in a pseudometric space is the intersection of an antitone sequence of open sets
+inside any set whose interior contains it, namely the intersections of that interior with
+thickenings of radii `1 / (n + 1)` (`IsClosed.exists_antitone_isOpen_iInter_eq`).
+
+On the real line, the terms of an injective two-sided sequence tending to `-∞` and `+∞` at its two
+ends have pairwise disjoint closed intervals around them forming a locally finite family
+(`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
+a vertical line contains a tube around it, whose radius is locally bounded below by positive
+constants (`IsOpen.exists_tube_subset`).
+
+For an open set `s` with nonempty complement and `δ → 0`, the sets `{y | δ < infDist y sᶜ}`
+exhaust `s` from the inside, eventually containing a ball around each point of `s`
+(`IsOpen.exists_eventually_closedBall_subset_setOf_lt_infDist`). If `s` is moreover bounded in a
+proper space, a function continuous on `closure s` and at most `m` on `frontier s` is below
+`m + η` near the complement of `s` (`IsOpen.exists_pos_forall_lt_add_of_infDist_lt`).
+Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
+`R`-thickening (`LipschitzWith.thickening_preimage_subset_preimage_thickening`), and likewise for
+closed thickenings (`LipschitzWith.cthickening_preimage_subset_preimage_cthickening`).
 -/
 
 public section
 
 open Set Metric Function
-open scoped Topology
+open scoped Topology NNReal ENNReal
 
 namespace TauCeti
 
@@ -67,7 +87,69 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
 
+/-- Under a `K`-Lipschitz map, the `R / K`-thickening of a preimage lies in the preimage of the
+`R`-thickening. -/
+theorem _root_.LipschitzWith.thickening_preimage_subset_preimage_thickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ}
+    (hf : LipschitzWith K f) (S : Set Y) : thickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' thickening R S := by
+  rcases eq_or_ne K 0 with rfl | hK
+  · simp [thickening_of_nonpos]
+  intro y hy
+  obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
+  refine mem_thickening_iff.2 ⟨f z, mem_preimage.1 hz, (hf.dist_le_mul y z).trans_lt ?_⟩
+  calc (K : ℝ) * dist y z < K * (R / K) := by gcongr
+    _ = R := by field_simp
+
+/-- Under a `K`-Lipschitz map, the closed `R / K`-thickening of a preimage lies in the preimage of
+the closed `R`-thickening. -/
+theorem _root_.LipschitzWith.cthickening_preimage_subset_preimage_cthickening
+    {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ}
+    (hf : LipschitzWith K f) (S : Set Y) :
+    cthickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' cthickening R S := by
+  intro x hx
+  rcases eq_or_ne K 0 with rfl | hK
+  · -- `f` is constant, so `f x ∈ S` as soon as the preimage of `S` is nonempty.
+    obtain ⟨y, hy⟩ : (f ⁻¹' S).Nonempty := by
+      by_contra h
+      rw [not_nonempty_iff_eq_empty] at h
+      simp [h] at hx
+    have h0 : f x ∈ cthickening 0 S :=
+      mem_cthickening_of_dist_le (f x) (f y) 0 S hy (by simpa using hf.dist_le_mul x y)
+    rcases le_total 0 R with hR | hR
+    · exact cthickening_mono hR S h0
+    · rw [cthickening_zero] at h0
+      rwa [mem_preimage, cthickening_of_nonpos hR]
+  rw [mem_cthickening_iff] at hx
+  rw [mem_preimage, mem_cthickening_iff]
+  have hK0 : (K : ℝ≥0∞) ≠ 0 := by simpa using hK
+  have hle : infEDist (f x) S ≤ K * infEDist x (f ⁻¹' S) := by
+    simp only [infEDist, ENNReal.mul_iInf_of_ne hK0 ENNReal.coe_ne_top]
+    refine le_iInf₂ fun y hy ↦ ?_
+    exact (infEDist_le_edist_of_mem (mem_preimage.1 hy)).trans (hf.edist_le_mul x y)
+  refine hle.trans ((mul_le_mul' le_rfl hx).trans ?_)
+  rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul K.coe_nonneg,
+    mul_div_cancel₀ _ (by simpa using hK)]
+
 end TauCeti
+
+/-- A closed set `K` in a pseudometric space contained in the interior of a set `L` is the
+intersection of an antitone sequence of open sets `W n` with `K ⊆ W n ⊆ L`. -/
+theorem IsClosed.exists_antitone_isOpen_iInter_eq {X : Type*} [PseudoMetricSpace X]
+    {K L : Set X} (hK : IsClosed K) (hKL : K ⊆ interior L) :
+    ∃ W : ℕ → Set X, (∀ n, IsOpen (W n)) ∧ (∀ n, W n ⊆ L) ∧ (∀ n, K ⊆ W n) ∧ Antitone W ∧
+      ⋂ n, W n = K := by
+  set W : ℕ → Set X := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
+  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
+  refine ⟨W, fun n => isOpen_interior.inter isOpen_thickening,
+    fun n => inter_subset_left.trans interior_subset, hKW, fun m n hmn =>
+    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
+      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K), ?_⟩
+  refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
+  rw [← hK.closure_eq, Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
+  exact ⟨y, hy, hxy.trans hn⟩
 
 namespace LocallyFinite
 
@@ -111,3 +193,98 @@ protected theorem cthickening [PseudoMetricSpace X] [ProperSpace X] {f : ι → 
   linarith [dist_triangle z y x, dist_comm z y, mem_ball.1 hyx]
 
 end LocallyFinite
+
+section
+
+open Filter
+
+namespace TauCeti
+
+/-- Around the terms of an injective two-sided sequence of reals tending to `-∞` and to `+∞` at
+its two ends, there are closed intervals of positive radii at most `1` which are pairwise disjoint
+and form a locally finite family. -/
+theorem exists_closedBall_pairwiseDisjoint_locallyFinite (x : ℤ → ℝ) (hx : Injective x)
+    (htop : Tendsto x atTop atTop) (hbot : Tendsto x atBot atBot) :
+    ∃ ε : ℤ → ℝ, (∀ ν, 0 < ε ν ∧ ε ν ≤ 1) ∧
+      Pairwise (Disjoint on fun ν ↦ closedBall (x ν) (ε ν)) ∧
+      LocallyFinite fun ν ↦ closedBall (x ν) (ε ν) := by
+  have hlf : LocallyFinite fun ν ↦ ({x ν} : Set ℝ) := by
+    simpa only [Icc_self] using locallyFinite_Icc_of_tendsto htop hbot
+  obtain ⟨δ, hδ, hdisj⟩ := hlf.exists_cthickenings_pairwiseDisjoint (fun _ ↦ isCompact_singleton)
+    fun ν μ h ↦ disjoint_singleton.2 (hx.ne h)
+  refine ⟨fun ν ↦ min (δ ν) 1, fun ν ↦ ⟨lt_min (hδ ν) one_pos, min_le_right _ _⟩,
+    fun ν μ h ↦ Disjoint.mono ?_ ?_ (hdisj h), ?_⟩
+  · exact (closedBall_subset_closedBall (min_le_left _ _)).trans
+      (cthickening_singleton _ (hδ ν).le).ge
+  · exact (closedBall_subset_closedBall (min_le_left _ _)).trans
+      (cthickening_singleton _ (hδ μ).le).ge
+  · have := hlf.cthickening (δ := fun ν ↦ min (δ ν) 1) (R := 1) fun ν ↦ min_le_right _ _
+    simpa only [cthickening_singleton _ (lt_min (hδ _) one_pos).le] using this
+
+end TauCeti
+
+/-- **Tubes around a vertical line.** An open subset `W` of `X × ℝ` containing the vertical line
+through `c` contains a tube `{(u, t) | dist u c ≤ γ t}` around that line, whose radius `γ` is
+locally bounded below by positive constants. -/
+theorem IsOpen.exists_tube_subset {X : Type*} [PseudoMetricSpace X] {c : X}
+    {W : Set (X × ℝ)} (hW : IsOpen W) (hcW : ∀ t, (c, t) ∈ W) :
+    ∃ γ : ℝ → ℝ, (∀ x, ∃ r > 0, ∀ᶠ y in 𝓝 x, r ≤ γ y) ∧
+      ∀ u t, dist u c ≤ γ t → (u, t) ∈ W := by
+  -- Over each interval `[n, n + 1]`, the compact segment of the line has a thickening in `W`.
+  have hK (n : ℤ) : IsCompact ({c} ×ˢ Icc (n : ℝ) (n + 1)) := isCompact_singleton.prod isCompact_Icc
+  choose δ hδ hδW using fun n : ℤ ↦ (hK n).exists_thickening_subset_open hW
+    (by rintro ⟨u, t⟩ ⟨hu : u = c, -⟩; exact hu ▸ hcW t)
+  refine ⟨fun t ↦ δ ⌊t⌋ / 2, fun x ↦ ⟨min (δ ⌊x⌋) (δ (⌊x⌋ - 1)) / 2,
+    half_pos (lt_min (hδ _) (hδ _)), ?_⟩, fun u t hut ↦ hδW ⌊t⌋ ?_⟩
+  · have hx : Ioo ((⌊x⌋ : ℝ) - 1) (⌊x⌋ + 1) ∈ 𝓝 x :=
+      Ioo_mem_nhds (by linarith [Int.floor_le x]) (Int.lt_floor_add_one x)
+    filter_upwards [hx] with y hy
+    have h₁ : ⌊x⌋ - 1 ≤ ⌊y⌋ := Int.le_floor.2 (by push_cast; exact hy.1.le)
+    have h₂ : ⌊y⌋ < ⌊x⌋ + 1 := Int.floor_lt.2 (by push_cast; exact hy.2)
+    obtain h | h : ⌊y⌋ = ⌊x⌋ ∨ ⌊y⌋ = ⌊x⌋ - 1 := by omega
+    · rw [h]
+      exact div_le_div_of_nonneg_right (min_le_left _ _) zero_le_two
+    · rw [h]
+      exact div_le_div_of_nonneg_right (min_le_right _ _) zero_le_two
+  · refine mem_thickening_iff.2 ⟨(c, t), ⟨mem_singleton c, Int.floor_le t,
+      (Int.lt_floor_add_one t).le⟩, ?_⟩
+    rw [Prod.dist_eq, dist_self, max_eq_left dist_nonneg]
+    exact hut.trans_lt (half_lt_self (hδ _))
+
+/-- **Interior exhaustion by the distance to the complement.** If `δ` tends to `0`, then every
+point `z` of an open set `s` with nonempty complement has a closed ball around it which eventually
+lies in `{y | δ i < infDist y sᶜ}`. -/
+theorem IsOpen.exists_eventually_closedBall_subset_setOf_lt_infDist {X ι : Type*}
+    [PseudoMetricSpace X] {s : Set X} (hs : IsOpen s) (hc : sᶜ.Nonempty) {l : Filter ι}
+    {δ : ι → ℝ} (hδ : Tendsto δ l (𝓝 0)) {z : X} (hz : z ∈ s) :
+    ∃ r > 0, ∀ᶠ i in l, closedBall z r ⊆ {y | δ i < infDist y sᶜ} := by
+  have hd := (hs.isClosed_compl.notMem_iff_infDist_pos hc).1 (not_not_intro hz)
+  refine ⟨infDist z sᶜ / 2, half_pos hd, ?_⟩
+  filter_upwards [hδ.eventually (gt_mem_nhds (half_pos hd))] with i hi w hw
+  have := infDist_le_infDist_add_dist (x := z) (y := w) (s := sᶜ)
+  rw [dist_comm] at this
+  simp only [mem_ofPred_eq]
+  linarith [mem_closedBall.1 hw]
+
+/-- **Values near the frontier.** Let `f` be continuous on the closure of a bounded open set `s`
+with nonempty complement in a proper space, and at most `m` on the frontier of `s`. Then for every
+`η > 0`, `f < m + η` at the points of `s` close enough to the complement of `s`. -/
+theorem IsOpen.exists_pos_forall_lt_add_of_infDist_lt {X : Type*} [PseudoMetricSpace X]
+    [ProperSpace X] {s : Set X} (hs : IsOpen s) (hb : Bornology.IsBounded s) (hc : sᶜ.Nonempty)
+    {f : X → ℝ} (hf : ContinuousOn f (closure s)) {m : ℝ} (hm : ∀ z ∈ frontier s, f z ≤ m)
+    {η : ℝ} (hη : 0 < η) : ∃ δ > 0, ∀ z ∈ s, infDist z sᶜ < δ → f z < m + η := by
+  -- The points of `closure s` where `f ≥ m + η` form a compact subset of `s`.
+  set K := closure s ∩ f ⁻¹' Ici (m + η)
+  have hK : IsCompact K := hb.isCompact_closure.of_isClosed_subset
+    (hf.preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici) inter_subset_left
+  have hKs : K ⊆ s := fun z ⟨hz, hzη⟩ => by
+    by_contra hzs
+    have := hm z ⟨hz, by rwa [hs.interior_eq]⟩
+    simp only [mem_preimage, mem_Ici] at hzη
+    linarith
+  obtain ⟨δ, hδ, hδK⟩ := hK.exists_cthickening_subset_open hs hKs
+  refine ⟨δ, hδ, fun z hz hzδ => lt_of_not_ge fun hzη => hzδ.not_ge ?_⟩
+  refine (le_infDist hc).2 fun w hw => le_of_not_gt fun hwz => hw (hδK ?_)
+  exact mem_cthickening_of_dist_le w z δ K ⟨subset_closure hz, hzη⟩ (dist_comm w z ▸ hwz.le)
+
+end

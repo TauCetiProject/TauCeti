@@ -461,6 +461,28 @@ lemma Bialgebra.CounitAlgebra.toAlgHom_eq_one_ofConv :
 
 end BialgebraCommTargetPoint
 
+section InclusionComponents
+
+variable {R A C : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A] [CommSemiring C]
+  [Algebra R C]
+
+/-- The first component of the inclusion of a point `g` into the dual-number points is `g`. -/
+lemma _root_.WithConv.fstHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.fstHom R C C).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap =
+      g.ofConv.toLinearMap := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+/-- The second component of the inclusion of a point into the dual-number points is `0`. -/
+lemma _root_.WithConv.sndHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.sndHom C C).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap = 0 := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+end InclusionComponents
+
 section Hopf
 
 open TrivSqZeroExt WithConv _root_.Bialgebra Bialgebra.CounitAlgebra
@@ -614,6 +636,31 @@ lemma derivationMulEquivTangentKer_symm_apply
   simp [derivationMulEquivTangentKer,
     derivationToTrivSqZeroExtEquivLift_symm_apply]
 
+/-- The counit coefficient of the dual-number point of a tangent vector `d` is the counit. -/
+@[simp]
+theorem _root_.Derivation.fstHom_comp_derivationMulEquivTangentKer
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (fstHom R (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).toLinearMap ∘ₗ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      (1 : WithConv (A →ₗ[R] Bialgebra.CounitAlgebra R A B)).ofConv := by
+  ext x
+  simpa only [LinearMap.comp_apply, AlgHom.toLinearMap_apply, fstHom_apply,
+    LinearMap.convOne_apply, Bialgebra.CounitAlgebra.algebraMap_apply,
+    Bialgebra.CounitAlgebra.algebraMap_base] using
+      derivationMulEquivTangentKer_apply_fst (Multiplicative.ofAdd d) x
+
+/-- The infinitesimal coefficient of the dual-number point of a tangent vector `d` is `d`. -/
+@[simp]
+theorem _root_.Derivation.sndHom_comp_derivationMulEquivTangentKer
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    ((sndHom (Bialgebra.CounitAlgebra R A B) (Bialgebra.CounitAlgebra R A B)).restrictScalars
+        R) ∘ₗ
+        (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val.ofConv.toLinearMap =
+      d.toLinearMap := by
+  ext x
+  dsimp
+  exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
+
 /-- The tangent subgroup is abelian: first-order infinitesimal points commute, because
 multiplication corresponds to addition of derivations under
 `derivationMulEquivTangentKer`. -/
@@ -702,6 +749,23 @@ lemma tangentKer_smul_apply_snd
     _ = _ := (Bialgebra.CounitAlgebra.algEquivSelf R A B).apply_symm_apply _ |>.symm
 
 end Hopf
+
+section HopfRing
+
+open WithConv
+
+variable {R A B : Type*} [CommRing R] [CommRing A] [HopfAlgebra R A] [CommRing B]
+  [Algebra R B]
+
+/-- The inverse of the dual-number point of `d` is the dual-number point of `-d`. -/
+theorem _root_.Derivation.derivationMulEquivTangentKer_val_inv
+    (d : Derivation R A (Bialgebra.CounitAlgebra R A B)) :
+    (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd d)).val⁻¹ =
+      (derivationMulEquivTangentKer R A B (Multiplicative.ofAdd (-d))).val := by
+  simpa only [← Subgroup.coe_inv, ← ofAdd_neg] using congrArg Subtype.val
+    (map_inv (derivationMulEquivTangentKer R A B) (Multiplicative.ofAdd d)).symm
+
+end HopfRing
 
 end TauCeti
 

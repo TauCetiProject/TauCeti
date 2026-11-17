@@ -11,6 +11,10 @@ public import Mathlib.Topology.Algebra.Group.Matrix
 public import TauCeti.Analysis.Matrix.L2OpNorm
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.Cartan
 public import TauCeti.Geometry.Lie.Exponential.Matrix.SpecialLinear
+public import TauCeti.Geometry.Manifold.Instances.Unitary
+import TauCeti.Analysis.Matrix.Polar.Deformation
+import TauCeti.Analysis.Calculus.ContDiff.Star
+import TauCeti.Geometry.Manifold.Instances.UnitsOfNormedAlgebra
 
 /-!
 # The Cartan decomposition of `GL(n, 𝕜)` and `SL(n, 𝕜)` for `𝕜 = ℝ` or `ℂ`
@@ -21,6 +25,11 @@ depend continuously on `g`. In Lie-theoretic terms, `𝔤𝔩(n, 𝕜) = 𝔨 �
 decomposition of the Cartan involution `X ↦ -Xᴴ`, with `𝔨` the skew-Hermitian and `𝔭` the Hermitian
 matrices, and the map `K × 𝔭 → G`, `(k, X) ↦ k * exp X`, is a homeomorphism from the product of the
 maximal compact subgroup `K = U(n, 𝕜)` and the vector space `𝔭` onto `G = GL(n, 𝕜)`.
+
+The general linear Cartan map is also a global real smooth diffeomorphism. Its unitary factor
+has the native embedded-subgroup atlas, and its Hermitian factor has its usual real vector-space
+smooth structure. For smooth statements, use the ℓ² operator norm scope and the local
+`Matrix.l2OpNormedAlgebraReal` instance.
 
 This file specializes `TauCeti.cartanHomeomorph`, stated for complete normed real algebras with an
 isometric continuous functional calculus, to matrices. Those structures exist on `Matrix n n 𝕜` only
@@ -43,6 +52,10 @@ under conjugate transpose and contains the whole line `exp (t X)` once it contai
   `Matrix.GeneralLinearGroup.coe_cartanHomeomorph_symm_apply_snd`: the map and its inverse, whose
   factors are the unitary polar factor `g.polarUnitary` and the logarithm `log √(gᴴ g)` of the
   positive polar factor, written `cfc Real.log`.
+* `Matrix.GeneralLinearGroup.cartanDiffeomorph`: the global real smooth diffeomorphism with
+  the native unitary-group manifold structure, with `cartanDiffeomorph_toHomeomorph`,
+  `val_cartanDiffeomorph_apply`, `cartanDiffeomorph_symm_apply_fst` and
+  `coe_cartanDiffeomorph_symm_apply_snd` identifying the underlying homeomorphism and coordinates.
 * `Matrix.SpecialLinearGroup.cartanHomeomorph`: the homeomorphism
   `specialUnitaryGroup n 𝕜 × {X ∈ selfAdjoint (Matrix n n 𝕜) | trace X = 0} ≃ₜ SL n 𝕜`,
   `(k, X) ↦ k * exp X`, with `Matrix.SpecialLinearGroup.val_cartanHomeomorph_apply`,
@@ -54,7 +67,7 @@ under conjugate transpose and contains the whole line `exp (t X)` once it contai
 * Anthony W. Knapp, *Lie Groups Beyond an Introduction*, second edition, Progress in Mathematics
   140, Birkhäuser, 2002, Chapter VI, Section 1.
 * Brian C. Hall, *Lie Groups, Lie Algebras, and Representations*, second edition, Graduate Texts
-  in Mathematics 222, Springer, 2015, Section 2.5.
+  in Mathematics 222, Springer, 2015, Section 2.5, Theorem 2.17.
 -/
 
 public section
@@ -104,6 +117,91 @@ theorem coe_cartanHomeomorph_symm_apply_snd (g : GL n 𝕜) :
   -- `CFC.log` is `cfc Real.log`; it is only defined for normed algebras, and matrices carry a
   -- norm only in the `ℓ²` operator norm scope, so the statement uses `cfc Real.log` directly.
   exact TauCeti.coe_cartanHomeomorph_symm_apply_snd g
+
+section Smooth
+
+open scoped ContDiff Manifold Matrix.Norms.L2Operator ComplexOrder
+attribute [local instance] Matrix.l2OpNormedAlgebraReal
+
+private theorem contMDiff_cartanHomeomorph :
+    ContMDiff ((Unitary.model (Matrix n n 𝕜)).prod 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)))
+      𝓘(ℝ, Matrix n n 𝕜) ∞ (cartanHomeomorph n 𝕜) := by
+  have hexp : ContMDiff 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)) 𝓘(ℝ, Matrix n n 𝕜) ∞
+      (fun X : selfAdjoint (Matrix n n 𝕜) ↦ NormedSpace.exp (X : Matrix n n 𝕜)) :=
+    ((NormedSpace.contDiff_exp ℝ).comp (selfAdjoint.contDiff_subtype_val ℝ)).contMDiff
+  apply ContMDiff.of_comp_isOpenEmbedding Units.isOpenEmbedding_val
+  exact (contDiff_mul.comp_contMDiff
+    (((Units.contMDiff_val.comp Unitary.contMDiff_toUnits).comp contMDiff_fst).prodMk_space
+      (hexp.comp contMDiff_snd))).congr fun p ↦ val_cartanHomeomorph_apply p
+
+private theorem contMDiff_cartanHomeomorph_symm :
+    ContMDiff 𝓘(ℝ, Matrix n n 𝕜)
+      ((Unitary.model (Matrix n n 𝕜)).prod 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜))) ∞
+      (cartanHomeomorph n 𝕜).symm := by
+  apply ContMDiff.prodMk
+  · apply (ContMDiff.iff_comp_isImmersion Unitary.isImmersion_toUnits).mpr
+    refine ⟨continuous_fst.comp (cartanHomeomorph n 𝕜).symm.continuous, ?_⟩
+    exact (contMDiff_toUnits_polarUnitary (k := ∞)).congr fun g ↦
+      congrArg Unitary.toUnits (cartanHomeomorph_symm_apply_fst g)
+  · have hsqrt : ContMDiff 𝓘(ℝ, Matrix n n 𝕜) 𝓘(ℝ, Matrix n n 𝕜) ∞
+        (fun g : GL n 𝕜 ↦ CFC.sqrt (star (g : Matrix n n 𝕜) * (g : Matrix n n 𝕜))) := by
+      simpa only [Function.comp_def, Units.coe_star, star_star] using
+        (contMDiff_sqrt_mul_star (n := n) (𝕜 := 𝕜) (k := ∞)).comp
+          (Units.contMDiff_star (𝕜 := ℝ) (R := Matrix n n 𝕜) (k := ∞))
+    have hpos (g : GL n 𝕜) : (CFC.sqrt (star (g : Matrix n n 𝕜) * (g : Matrix n n 𝕜))).PosDef := by
+      simpa only [Units.coe_star, star_star] using posDef_sqrt_mul_star (star g)
+    have hlog := ((Matrix.contDiffOn_cfc_log (n := n) (𝕜 := 𝕜) (k := ∞)).restrict_scalars
+      ℝ).contMDiffOn.comp_contMDiff hsqrt hpos
+    have h := (selfAdjointPartL ℝ (Matrix n n 𝕜)).contDiff.contMDiff.comp hlog
+    refine h.congr fun g ↦ ?_
+    apply Subtype.ext
+    have hsa := cfc_predicate Real.log
+      (CFC.sqrt (star (g : Matrix n n 𝕜) * (g : Matrix n n 𝕜)))
+    exact (coe_cartanHomeomorph_symm_apply_snd g).trans
+      (congrArg Subtype.val (hsa.selfAdjointPart_apply ℝ).symm)
+
+variable (n 𝕜) in
+/-- The global real smooth Cartan diffeomorphism `(k, X) ↦ k * exp X` for invertible real or
+complex matrices. The unitary group carries its native embedded-subgroup smooth structure;
+the Hermitian space carries the real vector-space structure from the ℓ² operator norm.
+
+To use this diffeomorphism, open the `Matrix.Norms.L2Operator` scope and enable
+`Matrix.l2OpNormedAlgebraReal` as a local instance. -/
+def cartanDiffeomorph : (unitaryGroup n 𝕜 × selfAdjoint (Matrix n n 𝕜)) ≃ₘ^∞⟮
+    (Unitary.model (Matrix n n 𝕜)).prod 𝓘(ℝ, selfAdjoint (Matrix n n 𝕜)),
+    𝓘(ℝ, Matrix n n 𝕜)⟯ GL n 𝕜 where
+  toEquiv := (cartanHomeomorph n 𝕜).toEquiv
+  contMDiff_toFun := contMDiff_cartanHomeomorph
+  contMDiff_invFun := contMDiff_cartanHomeomorph_symm
+
+/-- The Cartan diffeomorphism has the existing Cartan homeomorphism as its underlying map. -/
+@[simp]
+theorem cartanDiffeomorph_toHomeomorph :
+    (cartanDiffeomorph n 𝕜).toHomeomorph = cartanHomeomorph n 𝕜 := by
+  apply Homeomorph.ext
+  intro p
+  exact congrFun (Diffeomorph.coe_toHomeomorph (cartanDiffeomorph n 𝕜)) p
+
+/-- The Cartan diffeomorphism sends `(k, X)` to `k * exp X`. -/
+@[simp]
+theorem val_cartanDiffeomorph_apply (p : unitaryGroup n 𝕜 × selfAdjoint (Matrix n n 𝕜)) :
+    (cartanDiffeomorph n 𝕜 p : Matrix n n 𝕜) = p.1 * NormedSpace.exp (p.2 : Matrix n n 𝕜) :=
+  val_cartanHomeomorph_apply p
+
+/-- The unitary coordinate of the inverse Cartan diffeomorphism is the polar unitary factor. -/
+@[simp]
+theorem cartanDiffeomorph_symm_apply_fst (g : GL n 𝕜) :
+    ((cartanDiffeomorph n 𝕜).symm g).1 = g.polarUnitary :=
+  cartanHomeomorph_symm_apply_fst g
+
+/-- The Hermitian coordinate of the inverse Cartan diffeomorphism is `log √(gᴴ g)`. -/
+@[simp]
+theorem coe_cartanDiffeomorph_symm_apply_snd (g : GL n 𝕜) :
+    (((cartanDiffeomorph n 𝕜).symm g).2 : Matrix n n 𝕜) =
+      cfc Real.log (CFC.sqrt (star (g : Matrix n n 𝕜) * g)) :=
+  coe_cartanHomeomorph_symm_apply_snd g
+
+end Smooth
 
 end Matrix.GeneralLinearGroup
 

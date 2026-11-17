@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Rational
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.CoordinateLattice
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Serre
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.Matrix.MulVec
 

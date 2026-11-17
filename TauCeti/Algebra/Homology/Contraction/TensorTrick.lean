@@ -199,7 +199,7 @@ end Core
 
 /-- On words of length `n`, the letterwise extension of `d` is
 `∑_p τ^{⊗ p} ⊗ d ⊗ 1^{⊗ (n - p - 1)}`. -/
-private theorem gradedCoderiv_comp_letter_comp_of (G : InternalGrading R M) (d : Module.End R M)
+private theorem gradedCoderiv_comp_letter_comp_of (G : InternalGrading R M ℤ) (d : Module.End R M)
     (n : {n : ℕ // 0 < n}) :
     gradedCoderiv G (d ∘ₗ letter R M) 1 ∘ₗ of R M n =
       of R M n ∘ₗ slotSum n.1 (G.koszulTwist 1) d LinearMap.id := by
@@ -212,7 +212,7 @@ private theorem gradedCoderiv_comp_letter_comp_of (G : InternalGrading R M) (d :
   simp only [slotFamily_apply]
   split_ifs <;> rfl
 
-private theorem gradedCoderiv_comp_letter_of (G : InternalGrading R M) (d : Module.End R M)
+private theorem gradedCoderiv_comp_letter_of (G : InternalGrading R M ℤ) (d : Module.End R M)
     (n : {n : ℕ // 0 < n}) (z : TensorPower R n.1 M) :
     gradedCoderiv G (d ∘ₗ letter R M) 1 (of R M n z) =
       of R M n (slotSum n.1 (G.koszulTwist 1) d LinearMap.id z) :=
@@ -220,7 +220,7 @@ private theorem gradedCoderiv_comp_letter_of (G : InternalGrading R M) (d : Modu
 
 /-- Letterwise extensions of two odd maps intertwined by a degree-zero map are intertwined by its
 tensor powers. -/
-private theorem slotSum_comp_map {G : InternalGrading R M} {H : InternalGrading R N}
+private theorem slotSum_comp_map {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
     {f : N →ₗ[R] M} (hf : LinearMap.IsHomogeneous f H.piece G.piece 0) {dM : Module.End R M}
     {dN : Module.End R N} (hd : dM ∘ₗ f = f ∘ₗ dN) (n : ℕ) :
     slotSum n (G.koszulTwist 1) dM LinearMap.id ∘ₗ PiTensorProduct.map (fun _ ↦ f) =
@@ -244,13 +244,13 @@ variable {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContracti
 /-- The tensor-trick homotopy on reduced tensor words: on words of length `n` it is
 `∑_j τ^{⊗ j} ⊗ h ⊗ (i p)^{⊗ (n - j - 1)}`, where `τ` is the Koszul twist of parameter one for
 the grading `G`. -/
-noncomputable def reducedTensorWordsHomotopy (G : InternalGrading R M) :
+noncomputable def reducedTensorWordsHomotopy (G : InternalGrading R M ℤ) :
     Module.End R (ReducedTensorWords R M) :=
   DirectSum.toModule R {n : ℕ // 0 < n} _ fun n ↦
     of R M n ∘ₗ ∑ j ∈ Finset.range n.1, PiTensorProduct.map fun i : Fin n.1 ↦
       if i.val < j then G.koszulTwist 1 else if i.val = j then c.homotopy else c.incl ∘ₗ c.proj
 
-private theorem reducedTensorWordsHomotopy_of_slotSum (G : InternalGrading R M)
+private theorem reducedTensorWordsHomotopy_of_slotSum (G : InternalGrading R M ℤ)
     (n : {n : ℕ // 0 < n})
     (z : TensorPower R n.1 M) :
     c.reducedTensorWordsHomotopy G (of R M n z) =
@@ -260,7 +260,7 @@ private theorem reducedTensorWordsHomotopy_of_slotSum (G : InternalGrading R M)
 /-- The tensor-trick homotopy on an arbitrary word of length `n`, expanded as the sum of its
 single-slot actions. -/
 @[simp]
-theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M) (n : {n : ℕ // 0 < n})
+theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M ℤ) (n : {n : ℕ // 0 < n})
     (z : TensorPower R n.1 M) :
     c.reducedTensorWordsHomotopy G (of R M n z) =
       of R M n ((∑ j ∈ Finset.range n.1, PiTensorProduct.map fun i : Fin n.1 ↦
@@ -271,7 +271,7 @@ theorem reducedTensorWordsHomotopy_of (G : InternalGrading R M) (n : {n : ℕ //
 
 /-- The tensor-trick homotopy on a pure tensor word: the sum over positions `j` of the word with
 the letters before `j` Koszul-twisted, `h` applied at `j`, and `i p` applied after `j`. -/
-theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M) (n : {n : ℕ // 0 < n})
+theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M ℤ) (n : {n : ℕ // 0 < n})
     (x : Fin n.1 → M) :
     c.reducedTensorWordsHomotopy G (of R M n (PiTensorProduct.tprod R x)) =
       ∑ j ∈ Finset.range n.1, of R M n (PiTensorProduct.tprod R fun i ↦
@@ -284,14 +284,14 @@ theorem reducedTensorWordsHomotopy_of_tprod (G : InternalGrading R M) (n : {n : 
 
 /-- On a single letter the tensor-trick homotopy is the homotopy of the contraction. -/
 @[simp]
-theorem reducedTensorWordsHomotopy_ofLetter (G : InternalGrading R M) (a : M) :
+theorem reducedTensorWordsHomotopy_ofLetter (G : InternalGrading R M ℤ) (a : M) :
     c.reducedTensorWordsHomotopy G (ofLetter R M a) = ofLetter R M (c.homotopy a) := by
   rw [ofLetter_eq_of_tprod, ofLetter_eq_of_tprod, c.reducedTensorWordsHomotopy_of_tprod G 1]
   simp
 
 /-- On a two-letter word the tensor-trick homotopy is `h ⊗ i p + τ ⊗ h`, where `τ` is the Koszul
 twist of parameter one. -/
-theorem reducedTensorWordsHomotopy_of_two (G : InternalGrading R M) (a b : M) :
+theorem reducedTensorWordsHomotopy_of_two (G : InternalGrading R M ℤ) (a b : M) :
     c.reducedTensorWordsHomotopy G (of R M (2 : ℕ+) (PiTensorProduct.tprod R ![a, b])) =
       of R M (2 : ℕ+) (PiTensorProduct.tprod R ![c.homotopy a, c.incl (c.proj b)]) +
         of R M (2 : ℕ+) (PiTensorProduct.tprod R ![G.koszulTwist 1 a, c.homotopy b]) := by
@@ -302,8 +302,8 @@ theorem reducedTensorWordsHomotopy_of_two (G : InternalGrading R M) (a b : M) :
 
 /-- The tensor-trick homotopy lowers the total degree of words by one when the homotopy of the
 contraction has degree `-1` and its inclusion and projection have degree zero. -/
-theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
-    {H : InternalGrading R N} (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
+theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M ℤ)
+    {H : InternalGrading R N ℤ} (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
     (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
     (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
     LinearMap.IsHomogeneous (c.reducedTensorWordsHomotopy G) (gradedPiece G) (gradedPiece G)
@@ -311,7 +311,7 @@ theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
   rw [LinearMap.isHomogeneous_def]
   intro D z hz
   refine gradedPiece_induction
-    (motive := fun w ↦ c.reducedTensorWordsHomotopy G w ∈ gradedPiece G (D + -1)) hz ?_ ?_ ?_ ?_
+    (motive := fun w ↦ c.reducedTensorWordsHomotopy G w ∈ gradedPiece G (D + -1)) hz ?_ ?_ ?_
   · intro n hn 𝒟 x hx hD
     rw [c.reducedTensorWordsHomotopy_of_tprod G ⟨n, hn⟩ x]
     refine Submodule.sum_mem _ fun j hj ↦ ?_
@@ -327,8 +327,6 @@ theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
     · simpa [sub_eq_add_neg] using hh.map_mem (hx i)
     · simpa using G.koszulTwist_mem_piece (hx i) 1
     · simpa using hincl.map_mem (hproj.map_mem (hx i))
-  · rw [map_zero]
-    exact zero_mem _
   · intro u v _ _ hu hv
     rw [map_add]
     exact add_mem hu hv
@@ -339,13 +337,14 @@ theorem isHomogeneous_reducedTensorWordsHomotopy (G : InternalGrading R M)
 /-! ### The tensor-trick homotopy and deconcatenation -/
 
 /-- The letters of the summand of the tensor-trick homotopy acting by `h` at position `J`. -/
-private noncomputable def slotTuple (G : InternalGrading R M) {n : ℕ} (x : Fin n → M) (J : ℕ) :
+private noncomputable def slotTuple (G : InternalGrading R M ℤ) {n : ℕ} (x : Fin n → M) (J : ℕ) :
     Fin n → M := fun i ↦
   if i.val < J then G.koszulTwist 1 (x i) else if i.val = J then c.homotopy (x i)
   else c.incl (c.proj (x i))
 
 /-- The tensor-trick homotopy on a block of a pure tensor word. -/
-private theorem reducedTensorWordsHomotopy_subword (G : InternalGrading R M) {n : ℕ} (x : Fin n → M)
+private theorem reducedTensorWordsHomotopy_subword (G : InternalGrading R M ℤ) {n : ℕ}
+    (x : Fin n → M)
     (a b : ℕ) :
     c.reducedTensorWordsHomotopy G (subword R x a b) =
       ∑ j ∈ Finset.range b, subword R (c.slotTuple G x (a + j)) a b := by
@@ -366,7 +365,7 @@ right of the letter carrying `h`, where the letters already carry `i p`, or cuts
 where the letters passed by `h` carry the Koszul twist:
 
 `Δ H = (H ⊗ (i p)) Δ + (τ ⊗ H) Δ`. -/
-theorem deconcatenation_comp_reducedTensorWordsHomotopy (G : InternalGrading R M) :
+theorem deconcatenation_comp_reducedTensorWordsHomotopy (G : InternalGrading R M ℤ) :
     deconcatenation R M ∘ₗ c.reducedTensorWordsHomotopy G =
       (TensorProduct.map (c.reducedTensorWordsHomotopy G)
           (ReducedTensorWords.map (R := R) (c.incl ∘ₗ c.proj)) +
@@ -403,8 +402,8 @@ theorem deconcatenation_comp_reducedTensorWordsHomotopy (G : InternalGrading R M
 
 /-- The tensor-trick homotopy anticommutes with the letterwise Koszul twist: it moves one odd map
 `h` past the letters it acts on. -/
-theorem map_koszulTwist_comp_reducedTensorWordsHomotopy (G : InternalGrading R M)
-    (H : InternalGrading R N)
+theorem map_koszulTwist_comp_reducedTensorWordsHomotopy (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ)
     (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
     (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
     (hproj : LinearMap.IsHomogeneous c.proj G.piece H.piece 0) :
@@ -441,7 +440,7 @@ theorem map_koszulTwist_comp_reducedTensorWordsHomotopy (G : InternalGrading R M
 
 /-- The contraction identity for the tensor-trick homotopy against the letterwise differential,
 on words of each length. -/
-private theorem slotSum_contraction (G : InternalGrading R M) (H : InternalGrading R N)
+private theorem slotSum_contraction (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hdM : LinearMap.IsHomogeneous dM G.piece G.piece 1)
     (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
     (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
@@ -475,7 +474,7 @@ expected degrees induces a special contraction of the reduced tensor coalgebras,
 endomorphisms are the letterwise extensions of `dM` and `dN` with the Koszul signs of `G` and `H`.
 When `dM` and `dN` square to zero, these extensions are differentials.  The inclusion and
 projection act letterwise, and the homotopy is `reducedTensorWordsHomotopy`. -/
-noncomputable def reducedTensorWords (G : InternalGrading R M) (H : InternalGrading R N)
+noncomputable def reducedTensorWords (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (hdM : LinearMap.IsHomogeneous dM G.piece G.piece 1)
     (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
     (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)
@@ -527,7 +526,7 @@ noncomputable def reducedTensorWords (G : InternalGrading R M) (H : InternalGrad
     · rw [(PiTensorProduct.tprod R).map_coord_zero ⟨k, hk⟩ (by simp [hkj.not_gt, hkj.ne']),
         map_zero]
 
-variable (G : InternalGrading R M) (H : InternalGrading R N)
+variable (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
   (hdM : LinearMap.IsHomogeneous dM G.piece G.piece 1)
   (hh : LinearMap.IsHomogeneous c.homotopy G.piece G.piece (-1))
   (hincl : LinearMap.IsHomogeneous c.incl H.piece G.piece 0)

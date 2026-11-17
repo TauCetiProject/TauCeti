@@ -100,11 +100,12 @@ instance free_singularHomology_torus (ι : Type w) [Finite ι] (m : ℕ) :
   · intro α _ ih m
     exact .of_equiv (singularHomologyTorusOptionLinearEquiv M α m).symm
 
-variable [Nontrivial k] [Module.Finite k M]
+variable [Module.Finite k M]
 
 /-- The induction behind `ModuleCat.finite_singularHomology_torus` and
-`ModuleCat.finrank_singularHomology_torus`, splitting off one circle at a time. -/
-private lemma finite_singularHomology_torus_aux (ι : Type w) [Fintype ι] (m : ℕ) :
+`ModuleCat.finrank_singularHomology_torus`, splitting off one circle at a time. The rank
+computation reads the ranks of the circle and of a point, which need a nontrivial ring. -/
+private lemma finite_singularHomology_torus_aux [Nontrivial k] (ι : Type w) [Fintype ι] (m : ℕ) :
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
         (TopCat.of (ι → TopCat.sphere.{w} 1))) ∧
       Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
@@ -155,19 +156,23 @@ private lemma finite_singularHomology_torus_aux (ι : Type w) [Fintype ι] (m : 
 
 variable (ι : Type w) [Finite ι]
 
-/-- Over a nontrivial commutative ring, the singular homology of a torus with coefficients in a free
-module of finite rank has finite rank. -/
+/-- The singular homology of a torus with coefficients in a free module of finite rank has finite
+rank; over the zero ring every module is trivial. -/
 instance finite_singularHomology_torus (m : ℕ) :
     Module.Finite k (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
-      (TopCat.of (ι → TopCat.sphere.{w} 1))) :=
-  have := Fintype.ofFinite ι
-  (finite_singularHomology_torus_aux M ι m).1
+      (TopCat.of (ι → TopCat.sphere.{w} 1))) := by
+  rcases subsingleton_or_nontrivial k with _ | _
+  · have : Subsingleton (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
+        (TopCat.of (ι → TopCat.sphere.{w} 1))) := Module.subsingleton k _
+    exact Module.Finite.of_finite
+  · have := Fintype.ofFinite ι
+    exact (finite_singularHomology_torus_aux M ι m).1
 
 /-- **The ranks of the homology of a torus**: over a nontrivial commutative ring, with coefficients
 in a free module `M` of finite rank, `rank H_m(Tⁿ; M) = (n choose m) · rank M`, where `Tⁿ` is the
-product of `n` circles. -/
+product of `n` circles. Nontriviality is needed: over the zero ring every module has rank one. -/
 @[simp]
-theorem finrank_singularHomology_torus (m : ℕ) :
+theorem finrank_singularHomology_torus [Nontrivial k] (m : ℕ) :
     Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) m).obj M).obj
       (TopCat.of (ι → TopCat.sphere.{w} 1))) = (Nat.card ι).choose m * Module.finrank k M := by
   have := Fintype.ofFinite ι

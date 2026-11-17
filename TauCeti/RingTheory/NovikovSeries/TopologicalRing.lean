@@ -42,7 +42,10 @@ and in the complete nonarchimedean Novikov ring the geometric series `∑ aⁿ` 
 two-sided inverse of `1 - a` in the nonnegative subring. For a monomial `e^g` with `N g > 0` this
 is the expansion `(1 - e^g)⁻¹ = ∑ₖ e^(k • g)`. Such geometric series are the factors in the
 product formula for dynamical zeta functions, and they appear in the torsion of circle-valued
-Morse complexes.
+Morse complexes. They also show that the completed ring has no augmentation: a ring homomorphism
+to a nontrivial ring cannot send a monomial `e^g` of nonzero period to `1`, since it would send
+the unit `1 - e^g` (or `1 - e^(-g)`) to `0`, although the group ring of finitely supported
+series maps every monomial to `1`.
 
 The nonnegative subring is closed, hence complete, and the traces of the subgroups `U_C` are
 ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients it is an
@@ -83,6 +86,10 @@ ideals of it, so it is linearly topologized. For an `S`-algebra of coefficients 
 * `TauCeti.NovikovSeries.one_sub_single_mul_tsum` and
   `TauCeti.NovikovSeries.tsum_mul_one_sub_single`: the two inverse identities of the monomial
   geometric series `∑ₖ rᵏ e^(k • g)` for `N g > 0`.
+* `TauCeti.NovikovSeries.isUnit_one_sub_single`: `1 - r e^g` is a unit for `N g > 0`.
+* `TauCeti.NovikovSeries.map_single_one_ne_one_of_pos` and
+  `TauCeti.NovikovSeries.map_single_one_ne_one`: a ring homomorphism to a nontrivial ring does
+  not send a monomial `e^g` of nonzero period to `1`.
 * `TauCeti.NovikovSeries.unitsOneSubSingle_mem_principalUnitGroup_posIdeal` and
   `TauCeti.NovikovSeries.unitsOneSubSingle_mem_principalUnitGroup_periodIdeal`: `1 - r e^g` is a
   principal unit for the positive ideal and for the ideal of series above the period `N g`.
@@ -366,6 +373,21 @@ theorem unitsOneSubSingle_mem_principalUnitGroup_posIdeal {g : H} (hg : 0 < N g)
   rw [Ideal.mem_principalUnitGroup, val_unitsOneSubSingle, sub_sub_cancel_left]
   exact neg_mem (single_mem_posIdeal hg r)
 
+/-- For `N g > 0`, the series `1 - r e^g` is a unit of the ring of Novikov series. -/
+theorem isUnit_one_sub_single {g : H} (hg : 0 < N g) (r : R) :
+    IsUnit (1 - single g r : NovikovSeries R H N) := by
+  simpa using (unitsOneSubSingle hg r).isUnit.map (nonnegSubring R N).subtype
+
+/-- A ring homomorphism out of the Novikov series to a nontrivial ring does not send a
+monomial `e^g` of positive period to `1`: it would send the unit `1 - e^g` to `0`. -/
+theorem map_single_one_ne_one_of_pos {F A : Type*} [Ring A] [Nontrivial A]
+    [FunLike F (NovikovSeries R H N) A] [RingHomClass F (NovikovSeries R H N) A] (φ : F) {g : H}
+    (hg : 0 < N g) : φ (single g 1) ≠ 1 := by
+  intro h
+  have hu := (isUnit_one_sub_single hg (1 : R)).map φ
+  rw [map_sub, map_one, h, sub_self] at hu
+  exact not_isUnit_zero hu
+
 /-! ### The nonnegative subring as a complete linearly topologized algebra -/
 
 /-- The nonnegative subring is complete, being closed in the complete ring of Novikov series. -/
@@ -509,6 +531,29 @@ theorem single_mul_mem_periodFiltration_iff (g : H) (u : Rˣ) {C : ℝ}
   simpa only [coeff_single_mul_add, Units.mul_right_eq_zero] using hzero
 
 end IsLeftCancelAdd
+
+section AddGroup
+
+variable [AddGroup H] {N : H →+ ℝ} [Ring R]
+
+/-- **No augmentation of a completed Novikov ring.** A ring homomorphism out of the Novikov
+series to a nontrivial ring does not send a monomial `e^g` of nonzero period to `1`. For
+`N g > 0` it would send the unit `1 - e^g` to `0`; for `N g < 0` it would also send the inverse
+monomial `e^(-g)`, of positive period, to `1`. In particular, as soon as the period map is
+nonzero, no ring homomorphism to a nontrivial ring sends every monomial to `1`, even though
+the group ring of finitely supported series has such a homomorphism. -/
+theorem map_single_one_ne_one {F A : Type*} [Ring A] [Nontrivial A]
+    [FunLike F (NovikovSeries R H N) A] [RingHomClass F (NovikovSeries R H N) A] (φ : F) {g : H}
+    (hg : N g ≠ 0) : φ (single g 1) ≠ 1 := by
+  rcases hg.lt_or_gt with hg | hg
+  · intro h
+    refine map_single_one_ne_one_of_pos φ (g := -g) (by simpa using hg) ?_
+    calc φ (single (-g) 1) = φ (single (-g) 1) * φ (single g 1) := by rw [h, mul_one]
+      _ = 1 := by
+        rw [← map_mul, single_mul_single, neg_add_cancel, mul_one, single_zero_one, map_one]
+  · exact map_single_one_ne_one_of_pos φ hg
+
+end AddGroup
 
 end NovikovSeries
 

@@ -8,11 +8,14 @@ module
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Basic
 public import TauCeti.Geometry.Manifold.Instances.AddCircle
+import TauCeti.Geometry.Manifold.Diffeomorph.Prod
+import Mathlib.Geometry.Manifold.Algebra.Structures
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
 import TauCeti.Topology.Instances.AddCircle.Lift
@@ -25,8 +28,8 @@ An orientation-preserving diffeomorphism `φ` of the circle `AddCircle T` is pre
 `x ↦ x + w (F x - x)` is again such a lift: its derivative `(1 - w) + w F'` is positive. So the
 lifts interpolate between the identity and `F` through circle diffeomorphisms. This file makes the
 interpolation smooth in all variables at once, including the inverses, and uses it to extend `φ`
-across a product collar `ℝ × AddCircle T`: equal to `φ` on one side of the collar and to the
-identity on the other. This is the step that extends a prescribed boundary-circle diffeomorphism
+across a product collar `N × AddCircle T` with a smooth real depth function: equal to `φ` on one
+side of the collar and to the identity on the other. This extends a boundary-circle diffeomorphism
 of a surface into a collar of that boundary circle.
 
 The general construction is `AddCircle.prodDiffeomorphOfLift`. Let `L : ℝ × ℝ → ℝ` be a `C^n`
@@ -50,8 +53,10 @@ reflection `θ ↦ -θ`.
   `(a, [x]) ↦ (a, [L (κ a, x)])` of `N × AddCircle T`.
 * `AddCircle.diffeotopyOfLift`: the diffeotopy of `AddCircle T` which at time `t` is the circle
   map with lift `x ↦ x + sin (π t / 2) ^ 2 (F x - x)`, from the identity to the map with lift `F`.
-* `AddCircle.collarDiffeomorphOfLift`: the level-preserving diffeomorphism of `ℝ × AddCircle T`
-  which is `(r, [x]) ↦ (r, [x + smoothTransition (1 - r) (F x - x)])`.
+* `AddCircle.collarDiffeomorphOfLift`: the level-preserving diffeomorphism of `N × AddCircle T`
+  with lift `x ↦ x + smoothTransition (1 - depth r) (F x - x)` at parameter `r`.
+* `AddCircle.halfCylinderDiffeotopyOfLift`: a motion on an inward half-cylinder, fixed beyond
+  depth two and agreeing with the prescribed circle map through depth one at the final time.
 
 ## Main results
 
@@ -61,7 +66,8 @@ reflection `θ ↦ -θ`.
   the circle, `n ≠ 0`, is the final map of a diffeotopy, or `φ ∘ (θ ↦ -θ)` is.
 * `AddCircle.collarDiffeomorphOfLift_apply_coe_of_nonpos` and
   `AddCircle.collarDiffeomorphOfLift_apply_of_one_le`: the collar diffeomorphism is
-  `(r, θ) ↦ (r, φ θ)` for `r ≤ 0` and the identity for `r ≥ 1`; similarly for its inverse
+  `(r, θ) ↦ (r, φ θ)` at depths at most zero and the identity at depths at least one; likewise
+  for its inverse
   (`AddCircle.collarDiffeomorphOfLift_symm_apply_coe_of_nonpos`,
   `AddCircle.collarDiffeomorphOfLift_symm_apply_of_one_le`).
 
@@ -91,20 +97,13 @@ section Plane
 variable (hL : ContDiff ℝ n L) (hn : n ≠ 0) (hper : ∀ s x, L (s, x + T) = L (s, x) + T)
   (hpos : ∀ s x, 0 < deriv (fun y ↦ L (s, y)) x)
 
-include hL hn in
-/-- The derivative of a slice `y ↦ L (s, y)` is the partial derivative of `L` in its second
-variable. -/
-private theorem hasDerivAt_slice (s x : ℝ) :
-    HasDerivAt (fun y ↦ L (s, y)) (fderiv ℝ L (s, x) (0, 1)) x :=
-  ((hL.differentiable hn) (s, x)).hasFDerivAt.comp_hasDerivAt x
-    ((hasDerivAt_const x s).prodMk (hasDerivAt_id x))
-
 include hL hn hper hpos in
 /-- The map `(s, x) ↦ (s, L (s, x))` is a bijection of the plane: each slice is a lift with
 positive derivative, hence a bijection of `ℝ`. -/
 private theorem bijective_plane : Bijective fun p : ℝ × ℝ ↦ (p.1, L p) := by
-  have h (s : ℝ) := exists_lift_inverse
-    (fun x ↦ (hasDerivAt_slice hL hn s x).differentiableAt.hasDerivAt) (hper s) (hpos s)
+  have hd (s x : ℝ) : DifferentiableAt ℝ (fun y ↦ L (s, y)) x :=
+    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) (s, x))).differentiableAt
+  have h (s : ℝ) := exists_lift_inverse (fun x ↦ (hd s x).hasDerivAt) (hper s) (hpos s)
   refine ⟨fun ⟨s, x⟩ ⟨s', x'⟩ hpq ↦ ?_, fun ⟨s, y⟩ ↦ ?_⟩
   · obtain ⟨rfl, hx⟩ := Prod.ext_iff.1 hpq
     obtain ⟨G, hl, -⟩ := h s
@@ -121,7 +120,8 @@ private theorem injective_planeDeriv (p : ℝ × ℝ) : Injective (planeDeriv (L
   refine (injective_iff_map_eq_zero _).2 fun ⟨u, v⟩ h ↦ ?_
   obtain ⟨rfl, h⟩ : u = 0 ∧ fderiv ℝ L p (u, v) = 0 := by simpa [planeDeriv] using h
   -- The second component is `v` times the positive partial derivative in the second variable.
-  have hd : 0 < fderiv ℝ L p (0, 1) := (hasDerivAt_slice hL hn p.1 p.2).deriv ▸ hpos p.1 p.2
+  have hd : 0 < fderiv ℝ L p (0, 1) :=
+    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) p)).deriv ▸ hpos p.1 p.2
   have hv : fderiv ℝ L p (0, v) = v * fderiv ℝ L p (0, 1) := by
     simpa using map_smul (fderiv ℝ L p) v ((0 : ℝ), (1 : ℝ))
   rw [hv, mul_eq_zero] at h
@@ -333,64 +333,137 @@ end Interpolation
 
 section Collar
 
-variable {F : ℝ → ℝ} {n : ℕ∞} (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+variable {N E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  {J : ModelWithCorners ℝ E H} [TopologicalSpace N] [ChartedSpace H N]
+  {F : ℝ → ℝ} {n : ℕ∞} (hF : ContDiff ℝ n F) (hn : n ≠ 0)
   (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
+  (depth : N → ℝ) (hdepth : ContMDiff J 𝓘(ℝ) n depth)
 
 /-- **Extension of a circle diffeomorphism across a product collar.** For a `C^n` lift `F`,
-`n ≠ 0`, with `F (x + T) = F x + T` and `F' > 0`, the level-preserving `C^n` diffeomorphism
-`(r, [x]) ↦ (r, [x + smoothTransition (1 - r) (F x - x)])` of `ℝ × AddCircle T`. It is the circle
-diffeomorphism with lift `F` for `r ≤ 0` and the identity for `r ≥ 1`. -/
+`n ≠ 0`, with `F (x + T) = F x + T` and `F' > 0`, and a smooth depth function on `N`, this is
+`(r, [x]) ↦ (r, [x + smoothTransition (1 - depth r) (F x - x)])`.
+It is the circle diffeomorphism with lift `F` at depths at most zero and the identity at depths
+at least one. The parameter manifold may have boundary, allowing inward half-collars. -/
 def collarDiffeomorphOfLift :
-    (ℝ × AddCircle T) ≃ₘ^n⟮𝓘(ℝ).prod 𝓘(ℝ), 𝓘(ℝ).prod 𝓘(ℝ)⟯ ℝ × AddCircle T :=
+    (N × AddCircle T) ≃ₘ^n⟮J.prod 𝓘(ℝ), J.prod 𝓘(ℝ)⟯ N × AddCircle T :=
   prodDiffeomorphOfLift (L := interpolate Real.smoothTransition F)
     (contDiff_interpolate Real.smoothTransition.contDiff hF) (by exact_mod_cast hn)
     (fun _ ↦ interpolate_add_period hper _)
     (deriv_interpolate_pos (fun s ↦ ⟨Real.smoothTransition.nonneg s,
       Real.smoothTransition.le_one s⟩) hF (by exact_mod_cast hn) hpos)
-    (fun r ↦ 1 - r) (contDiff_const.sub contDiff_id).contMDiff
+    (fun r ↦ 1 - depth r) (contMDiff_const.sub hdepth)
 
 @[simp]
-theorem collarDiffeomorphOfLift_apply_coe (r x : ℝ) :
-    collarDiffeomorphOfLift hF hn hper hpos (r, (x : AddCircle T)) =
-      (r, ((x + Real.smoothTransition (1 - r) * (F x - x) : ℝ) : AddCircle T)) := (rfl)
+theorem collarDiffeomorphOfLift_apply_coe (r : N) (x : ℝ) :
+    collarDiffeomorphOfLift hF hn hper hpos depth hdepth (r, (x : AddCircle T)) =
+      (r, ((x + Real.smoothTransition (1 - depth r) * (F x - x) : ℝ) : AddCircle T)) :=
+  (rfl)
 
 @[simp]
-theorem fst_collarDiffeomorphOfLift (p : ℝ × AddCircle T) :
-    (collarDiffeomorphOfLift hF hn hper hpos p).1 = p.1 := (rfl)
+theorem fst_collarDiffeomorphOfLift (p : N × AddCircle T) :
+    (collarDiffeomorphOfLift hF hn hper hpos depth hdepth p).1 = p.1 := (rfl)
 
 @[simp]
-theorem fst_collarDiffeomorphOfLift_symm (p : ℝ × AddCircle T) :
-    ((collarDiffeomorphOfLift hF hn hper hpos).symm p).1 = p.1 := (rfl)
+theorem fst_collarDiffeomorphOfLift_symm (p : N × AddCircle T) :
+    ((collarDiffeomorphOfLift hF hn hper hpos depth hdepth).symm p).1 = p.1 := (rfl)
 
-/-- On the side `r ≤ 0` of the collar, `collarDiffeomorphOfLift` is the circle diffeomorphism with
-lift `F`. -/
-theorem collarDiffeomorphOfLift_apply_coe_of_nonpos {r : ℝ} (hr : r ≤ 0) (x : ℝ) :
-    collarDiffeomorphOfLift hF hn hper hpos (r, (x : AddCircle T)) = (r, (F x : AddCircle T)) := by
+/-- At nonpositive depth, the collar map is the circle diffeomorphism with lift `F`. -/
+theorem collarDiffeomorphOfLift_apply_coe_of_nonpos {r : N} (hr : depth r ≤ 0) (x : ℝ) :
+    collarDiffeomorphOfLift hF hn hper hpos depth hdepth (r, (x : AddCircle T)) =
+      (r, (F x : AddCircle T)) := by
   rw [collarDiffeomorphOfLift_apply_coe, Real.smoothTransition.one_of_one_le (by linarith),
     one_mul, add_sub_cancel]
 
-/-- On the side `r ≥ 1` of the collar, `collarDiffeomorphOfLift` is the identity. -/
-theorem collarDiffeomorphOfLift_apply_of_one_le {r : ℝ} (hr : 1 ≤ r) (θ : AddCircle T) :
-    collarDiffeomorphOfLift hF hn hper hpos (r, θ) = (r, θ) := by
+/-- At depth at least one, the collar map is the identity. -/
+theorem collarDiffeomorphOfLift_apply_of_one_le {r : N} (hr : 1 ≤ depth r) (θ : AddCircle T) :
+    collarDiffeomorphOfLift hF hn hper hpos depth hdepth (r, θ) = (r, θ) := by
   induction θ using QuotientAddGroup.induction_on with
   | H x => rw [collarDiffeomorphOfLift_apply_coe,
       Real.smoothTransition.zero_of_nonpos (by linarith), zero_mul, add_zero]
 
-/-- On the side `r ≤ 0` of the collar, the inverse of `collarDiffeomorphOfLift` undoes `F`. -/
-theorem collarDiffeomorphOfLift_symm_apply_coe_of_nonpos {r : ℝ} (hr : r ≤ 0) (x : ℝ) :
-    (collarDiffeomorphOfLift hF hn hper hpos).symm (r, (F x : AddCircle T)) =
+/-- At nonpositive depth, the inverse collar map undoes the lift `F`. -/
+theorem collarDiffeomorphOfLift_symm_apply_coe_of_nonpos {r : N} (hr : depth r ≤ 0) (x : ℝ) :
+    (collarDiffeomorphOfLift hF hn hper hpos depth hdepth).symm (r, (F x : AddCircle T)) =
       (r, (x : AddCircle T)) := by
-  rw [← collarDiffeomorphOfLift_apply_coe_of_nonpos hF hn hper hpos hr x,
+  rw [← collarDiffeomorphOfLift_apply_coe_of_nonpos hF hn hper hpos depth hdepth hr x,
     Diffeomorph.symm_apply_apply]
 
-/-- On the side `r ≥ 1` of the collar, the inverse of `collarDiffeomorphOfLift` is the
-identity. -/
-theorem collarDiffeomorphOfLift_symm_apply_of_one_le {r : ℝ} (hr : 1 ≤ r) (θ : AddCircle T) :
-    (collarDiffeomorphOfLift hF hn hper hpos).symm (r, θ) = (r, θ) := by
-  conv_lhs => rw [← collarDiffeomorphOfLift_apply_of_one_le hF hn hper hpos hr θ]
+/-- At depth at least one, the inverse collar map is the identity. -/
+theorem collarDiffeomorphOfLift_symm_apply_of_one_le {r : N} (hr : 1 ≤ depth r)
+    (θ : AddCircle T) :
+    (collarDiffeomorphOfLift hF hn hper hpos depth hdepth).symm (r, θ) = (r, θ) := by
+  conv_lhs => rw [← collarDiffeomorphOfLift_apply_of_one_le hF hn hper hpos depth hdepth hr θ]
   exact Diffeomorph.symm_apply_apply _ _
 
 end Collar
+
+/-! ### Motion on an inward half-cylinder -/
+
+section HalfCylinder
+
+variable {T : ℝ} [Fact (0 < T)] {n : ℕ∞} {F : ℝ → ℝ}
+
+/-- A circle lift interpolated on an inward half-cylinder, stationary beyond depth two.
+At time one it agrees with the prescribed circle map through depth one. -/
+def halfCylinderDiffeotopyOfLift (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+    (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x) :
+    TauCeti.Diffeotopy ((𝓡∂ 1).prod 𝓘(ℝ)) n (EuclideanHalfSpace 1 × AddCircle T) := by
+  let depth (p : unitInterval × EuclideanHalfSpace 1) : ℝ :=
+    1 - (p.1 : ℝ) * Real.smoothTransition (2 - p.2.1 0)
+  have hd : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n depth := by
+    have ht : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
+        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ (p.1 : ℝ)) :=
+      contMDiff_subtypeVal_Icc.comp contMDiff_fst
+    have hr : ContMDiff ((𝓡∂ 1).prod (𝓡∂ 1)) 𝓘(ℝ) n
+        (fun p : unitInterval × EuclideanHalfSpace 1 ↦ p.2.1 0) :=
+      (EuclideanSpace.proj 0).contDiff.contMDiff.comp
+        ((𝓡∂ 1).contMDiff.comp contMDiff_snd)
+    exact contMDiff_const.sub (ht.mul
+      (Real.smoothTransition.contDiff.contMDiff.comp (contMDiff_const.sub hr)))
+  let Λ := collarDiffeomorphOfLift hF hn hper hpos depth hd
+  let e := Diffeomorph.prodAssocOfModels (𝓡∂ 1) (𝓡∂ 1) 𝓘(ℝ)
+    unitInterval (EuclideanHalfSpace 1) (AddCircle T) n
+  refine ⟨e.symm.trans (Λ.trans e), fun p ↦ ?_, fun p ↦ ?_⟩
+  · simpa only [e, Λ, Diffeomorph.coe_trans, Function.comp_apply,
+      Diffeomorph.prodAssocOfModels_apply, Diffeomorph.prodAssocOfModels_symm_apply] using
+      congrArg (fun q : unitInterval × EuclideanHalfSpace 1 ↦ q.1)
+        (fst_collarDiffeomorphOfLift hF hn hper hpos depth hd ((p.1, p.2.1), p.2.2))
+  · have hz := collarDiffeomorphOfLift_apply_of_one_le hF hn hper hpos depth hd
+      (r := (0, p.1)) (by simp [depth]) p.2
+    simpa only [e, Λ, Diffeomorph.coe_trans, Function.comp_apply,
+      Diffeomorph.prodAssocOfModels_apply, Diffeomorph.prodAssocOfModels_symm_apply] using
+      congrArg (fun q : (unitInterval × EuclideanHalfSpace 1) × AddCircle T ↦
+        (q.1.2, q.2)) hz
+
+/-- The half-cylinder motion in lifted circle coordinates. -/
+@[simp]
+theorem halfCylinderDiffeotopyOfLift_apply_coe (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+    (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
+    (t : unitInterval) (r : EuclideanHalfSpace 1) (x : ℝ) :
+    halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, (x : AddCircle T)) =
+      (r, ((x + Real.smoothTransition
+        ((t : ℝ) * Real.smoothTransition (2 - r.1 0)) *
+          (F x - x) : ℝ) : AddCircle T)) := by
+  simp [halfCylinderDiffeotopyOfLift, collarDiffeomorphOfLift_apply_coe]
+
+/-- The half-cylinder motion fixes every point at depth at least two, at every time. -/
+theorem halfCylinderDiffeotopyOfLift_apply_of_two_le (hF : ContDiff ℝ n F) (hn : n ≠ 0)
+    (hper : ∀ x, F (x + T) = F x + T) (hpos : ∀ x, 0 < deriv F x)
+    (t : unitInterval) {r : EuclideanHalfSpace 1} (hr : 2 ≤ r.1 0) (θ : AddCircle T) :
+    halfCylinderDiffeotopyOfLift hF hn hper hpos (t, r, θ) = (r, θ) := by
+  obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective θ
+  simp [Real.smoothTransition.zero_of_nonpos (by linarith : 2 - r.1 0 ≤ 0)]
+
+/-- Through depth one, the final half-cylinder map is the product map of the prescribed lift. -/
+theorem halfCylinderDiffeotopyOfLift_final_apply_coe_of_le_one
+    (hF : ContDiff ℝ n F) (hn : n ≠ 0) (hper : ∀ x, F (x + T) = F x + T)
+    (hpos : ∀ x, 0 < deriv F x) {r : EuclideanHalfSpace 1} (hr : r.1 0 ≤ 1) (x : ℝ) :
+    (halfCylinderDiffeotopyOfLift hF hn hper hpos).final (r, (x : AddCircle T)) =
+      (r, (F x : AddCircle T)) := by
+  simp [TauCeti.Diffeotopy.final_apply, Real.smoothTransition.one_of_one_le
+    (by linarith : 1 ≤ 2 - r.1 0)]
+
+end HalfCylinder
 
 end AddCircle
 

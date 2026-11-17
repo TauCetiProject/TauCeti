@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.Orientation.ThomClass
+public import TauCeti.Topology.VectorBundle.Orientation.PositiveSection
 
 /-!
 # The Euler class of an oriented vector bundle
@@ -30,6 +31,11 @@ Its basic laws follow from those of the Thom class.
   vanish integrally.
 * It vanishes when the bundle has a nowhere-zero continuous section
   (`TauCeti.VectorBundleOrientation.eulerClass_eq_zero_of_forall_ne_zero`).
+* In rank one it vanishes over a normal paracompact base
+  (`TauCeti.VectorBundleOrientation.eulerClass_eq_zero_of_finrank_eq_one`): an oriented line
+  bundle has a positive, hence nowhere-zero, continuous section
+  (`TauCeti.VectorBundleOrientation.exists_continuous_section_ne_zero`). Since one is odd, this
+  strengthens `2 • e(E, o) = 0` to `e(E, o) = 0`.
 
 Integral coefficients are `ULift ℤ`, as for the Thom class.
 
@@ -108,5 +114,21 @@ theorem eulerClass_eq_zero_of_forall_ne_zero {s : ∀ b, E b}
     o.eulerClass hF = 0 := by
   rw [eulerClass_def, TauCeti.eulerClass_eq_zero_of_forall_ne_zero F E hs hs₀]
   simp
+
+section LineBundle
+
+variable {B : Type w} [TopologicalSpace B] {F : Type w} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {E : B → Type w} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- **The Euler class of an oriented line bundle vanishes.** For an oriented real vector bundle of
+rank one over a normal paracompact base, `e(E, o) = 0` in `H¹(B; ℤ)`: the bundle has a positive,
+hence nowhere-zero, continuous section. -/
+theorem eulerClass_eq_zero_of_finrank_eq_one [NormalSpace B] [ParacompactSpace B]
+    (o : VectorBundleOrientation F E (Fin 1)) (hF : finrank ℝ F = 1) : o.eulerClass hF = 0 := by
+  obtain ⟨s, hs, hs₀⟩ := o.exists_continuous_section_ne_zero (by rw [hF, Fintype.card_fin])
+  exact o.eulerClass_eq_zero_of_forall_ne_zero hF hs hs₀
+
+end LineBundle
 
 end TauCeti.VectorBundleOrientation

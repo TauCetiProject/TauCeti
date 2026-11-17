@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Modules.GlobalSections
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 
 /-!
 # Global sections of the twisting sheaves on projective space
@@ -105,7 +106,7 @@ takes the value `q / 1` at every point. -/
 private theorem exists_forall_apply_eq (b : Module.Basis κ R M) [Nontrivial κ] {n : ℤ}
     (i : κ) (s : Γ(Proj.twistingSheaf 𝒜 n, ⊤)) :
     ∃ (k j : ℕ) (_ : (j : ℤ) = k + n) (q : _root_.SymmetricAlgebra R M),
-      ι R M (b i) ^ k * q ∈ 𝒜 j ∧ ∀ y, s.1 y = Localization.mk q 1 := by
+      ι R M (b i) ^ k * q ∈ 𝒜 j ∧ ∀ y : (⊤ : (Proj 𝒜).Opens), s.1 y = Localization.mk q 1 := by
   -- on each chart `D₊(Xₗ)`, the section is a fraction `r l / Xₗ ^ k l`
   choose k j h r hr H using fun l : κ ↦ Proj.twistingSheaf.exists_eq_const_basicOpen
     (ι_mem_homogeneousSubmodule R M (b l)) one_pos
@@ -147,8 +148,7 @@ theorem twistingSheaf_top_eq_zero_of_neg {n : ℤ} (hn : n < 0) (b : Module.Basi
     rw [← DirectSum.decompose_of_mem_same 𝒜 hq,
       DirectSum.coe_decompose_mul_of_left_mem_of_not_le 𝒜 hpow (by omega)]
   ext y
-  rw [hs, ((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
-  exact (Proj.twistingSheaf.zero_apply y).symm
+  simp [hs, ((isRegular_ι_basis b i).pow k).left.mul_left_eq_zero_iff.mp hq0, Localization.mk_zero]
 
 /-- **The global sections of `𝒪(j)` on projective space are the forms of degree `j`**: for
 `M` free of rank at least two, the map `r ↦ r / 1` from the homogeneous elements of degree `j` of
@@ -184,9 +184,8 @@ theorem val_baseRingToGlobalSections_apply (c : R) (x : (⊤ : (Proj 𝒜).Opens
     ((Scheme.Modules.baseRingToGlobalSections R (Proj 𝒜) c).1 x).val =
       Localization.mk (algebraMap R (_root_.SymmetricAlgebra R M) c) 1 := by
   rw [Scheme.Modules.baseRingToGlobalSections_apply, over_eq_projToSpec, projToSpec_def,
-    Scheme.Hom.comp_appTop, CommRingCat.comp_apply, ← CommRingCat.comp_apply _ (Spec.map _).appTop,
-    ← Scheme.ΓSpecIso_inv_naturality, CommRingCat.comp_apply, Proj.val_toSpecZero_appTop_apply,
-    CommRingCat.ofHom_apply, SetLike.GradeZero.coe_algebraMap]
+    ← Proj.toSpecCoeff_def]
+  exact Proj.val_toSpecCoeff_appTop_apply _ c x
 
 /-- The global sections `r / 1` of `𝒪(n)` on `Proj (Sym M)` are linear over the base ring. -/
 theorem toTwistingSheaf_top_smul {n : ℤ} {j : ℕ} (h : (j : ℤ) = n) (c : R) (r : 𝒜 j) :

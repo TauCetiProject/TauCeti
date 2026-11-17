@@ -80,7 +80,7 @@ theorem finite_preimage_left_singleton_inter
     (hf : ∀ ⦃K : Set C⦄, IsCompact K →
       IsCompact (Quiver.Total.left ⁻¹' K ∩ Quiver.Total.right ⁻¹' tsupport f))
     (x : C) : (Quiver.Total.left ⁻¹' {x} ∩ Quiver.Total.right ⁻¹' tsupport f).Finite := by
-  simpa only [inter_assoc] using hs.finite_preimage_singleton_inter
+  simpa only [inter_assoc] using hs.isLocallyInjective.finite_preimage_singleton_inter
     (by simpa only [inter_assoc] using hf isCompact_singleton)
 
 /-- If the arrows with source in a compact set `K` and target in the support of `f` form a compact

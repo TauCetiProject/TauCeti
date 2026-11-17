@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Real.Cardinality
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+public import TauCeti.SetTheory.Descriptive.BorelReducibility
 public import TauCeti.SetTheory.Descriptive.GenericErgodicity
 import Mathlib.Topology.Algebra.Module.PerfectSpace
 import Mathlib.Topology.Baire.LocallyCompactRegular
+import TauCeti.SetTheory.Descriptive.Silver
 import TauCeti.Topology.Baire.Perfect
 
 /-!
@@ -28,9 +30,11 @@ smooth:
   rational translation is meagre or comeagre, because `ℚ` is a countable dense subgroup of `ℝ`;
 * hence its quotient, with Mathlib's quotient σ-algebra, is not countably separated: no countable
   family of invariant Borel sets separates its classes, since its classes are countable, hence
-  meagre;
+  meagre; equivalently, it is not smooth;
 * it has continuum many classes, since `ℝ` is the union of the classes and each class is
-  countable.
+  countable;
+* by Silver's theorem, it therefore has a continuous Cantor antichain, so equality on Cantor space
+  is Borel reducible to it, and since it is not smooth, not conversely.
 
 ## Main definitions
 
@@ -42,8 +46,12 @@ smooth:
 * `TauCeti.countable_setOf_vitaliRel`: every class is countable.
 * `TauCeti.isMeagre_or_mem_residual_of_vitaliRel_invariant`: generic ergodicity.
 * `TauCeti.not_countablySeparated_quotient_vitaliRel`: no countable family of invariant Borel sets
-  separates the classes, so the Vitali relation is not smooth.
+  separates the classes.
+* `TauCeti.not_isSmooth_vitaliRel`: the Vitali relation is not smooth.
 * `TauCeti.mk_quotient_vitaliRel`: the Vitali relation has continuum many classes.
+* `TauCeti.hasCantorAntichainOn_vitaliRel`: the Vitali relation has a continuous Cantor antichain.
+* `TauCeti.borelReducible_bot_vitaliRel`: equality on Cantor space is Borel reducible to the
+  Vitali relation.
 
 ## References
 
@@ -52,6 +60,8 @@ smooth:
   Springer, 1995, Section 8.J (generic ergodicity).
 * S. Gao, *Invariant Descriptive Set Theory*, Chapman & Hall/CRC, 2009, Section 6.1 (non-smooth
   equivalence relations).
+* J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
+  relations*, Annals of Mathematical Logic 18 (1980), 1–28.
 -/
 
 public section
@@ -107,6 +117,11 @@ theorem not_countablySeparated_quotient_vitaliRel : ¬ CountablySeparated (Quoti
         (measurableSet_quotient.1 hs).baireMeasurableSet
         (by rw [image_preimage_eq s Quotient.mk_surjective])
 
+/-- **The Vitali relation is not smooth**: no Borel map into Cantor space has the classes of the
+Vitali relation as its fibres. -/
+theorem not_isSmooth_vitaliRel : ¬ vitaliRel.IsSmooth :=
+  Setoid.isSmooth_iff_countablySeparated.not.2 not_countablySeparated_quotient_vitaliRel
+
 /-- The Vitali relation has exactly continuum many classes. -/
 theorem mk_quotient_vitaliRel : #(Quotient vitaliRel) = 𝔠 := by
   refine le_antisymm (mk_quotient_le.trans_eq mk_real) ?_
@@ -122,5 +137,18 @@ theorem mk_quotient_vitaliRel : #(Quotient vitaliRel) = 𝔠 := by
   by_contra hlt
   exact absurd (h.trans (mul_le_max _ _)) <| not_le.2 <|
     max_lt (max_lt (not_le.1 hlt) aleph0_lt_continuum) aleph0_lt_continuum
+
+/-- The Vitali relation has a continuous **Cantor antichain**: a continuous map of Cantor space
+into `ℝ` sending distinct points to points whose difference is irrational. It is given by Silver's
+theorem, since the Vitali relation is Borel with uncountably many classes. -/
+theorem hasCantorAntichainOn_vitaliRel : vitaliRel.HasCantorAntichainOn univ :=
+  (vitaliRel.silver_dichotomy measurableSet_vitaliRel).resolve_left fun h =>
+    aleph0_lt_continuum.not_ge (mk_quotient_vitaliRel ▸ mk_le_aleph0_iff.2 h)
+
+/-- Equality on Cantor space is Borel reducible to the Vitali relation, through its Cantor
+antichain. Since the Vitali relation is not smooth (`TauCeti.not_isSmooth_vitaliRel`), the converse
+reduction fails. -/
+theorem borelReducible_bot_vitaliRel : (⊥ : Setoid (ℕ → Bool)).BorelReducible vitaliRel :=
+  hasCantorAntichainOn_vitaliRel.borelReducible_bot
 
 end TauCeti

@@ -37,9 +37,6 @@ hypothesis enters only where an *integral* is transported, as in
 
 ## References
 
-* Roadmap: `TauCetiRoadmap/DenseGraphLimits/README.md`, Layer 1 — the basic API of the `Graphon`
-  object, and the cross-carrier reading of two graphons through a coupling that the
-  coupling-primary `cutDist` rests on.
 * S. Janson, *Graphons, cut norm and distance, couplings and rearrangements*, NYJM Monographs 4
   (2013), §6.
 -/

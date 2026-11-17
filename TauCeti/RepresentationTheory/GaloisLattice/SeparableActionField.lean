@@ -20,7 +20,9 @@ The original action field is purely inseparable over this subextension. Conseque
 induces an isomorphism between their automorphism groups: an automorphism of the action field is
 uniquely determined on the separable subextension, and every automorphism of the latter extends by
 normality. Transporting the lattice action across this isomorphism gives a realization over a
-finite Galois extension of the base field.
+finite Galois extension of the base field. This is the finite Galois splitting field along which
+`TauCeti.TorusCommHopfAlgCat.characterLatticeFunctor_essSurj` descends a split torus to realize a
+Galois lattice as a character lattice.
 
 ## Main declarations
 
@@ -36,10 +38,6 @@ finite Galois extension of the base field.
 ## References
 
 * J. S. Milne, *Algebraic Groups* (2017), Theorem 12.23 and Corollary 12.24.
-
-This supplies the finite Galois splitting field needed before constructing the semilinear descent
-datum on the split coordinate Hopf algebra in Layer 4, "Tori: split and non-split", of the
-ReductiveGroups roadmap.
 -/
 
 public section

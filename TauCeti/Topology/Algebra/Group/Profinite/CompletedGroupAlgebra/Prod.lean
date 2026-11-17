@@ -26,7 +26,7 @@ coefficient at the class of `γ` of the level `U` of the coefficient at `c`
 (`coeff_proj_monoidAlgebraProdHom`); this makes it injective for every discrete `C` and every
 `Γ`. When `C` is finite it is also surjective, for every coefficient ring and every `Γ`: the levels
 `{1} × U` are cofinal among the open normal subgroups of `C × Γ`
-(`ext_of_proj_openNormalSubgroupBot_prod`), and reading the coefficients of an element of
+(`ext_of_proj_bot_prod`), and reading the coefficients of an element of
 `R[[C × Γ]]` at these levels along the classes of the `(c, γ)` for fixed `c` gives, for each
 `c`, a compatible family of elements of the levels of `R[[Γ]]`, that is, an element of `R[[Γ]]`.
 The resulting isomorphism is `TauCeti.completedGroupAlgebra.monoidAlgebraProdEquiv`.
@@ -77,23 +77,23 @@ variable {R C Γ} [DiscreteTopology C]
 
 /-- Membership in the level `{1} × U` of `C × Γ`, for `C` discrete and `U` an open normal subgroup
 of `Γ`. -/
-theorem mem_openNormalSubgroupBot_prod (U : OpenNormalSubgroup Γ) (x : C × Γ) :
-    x ∈ ((openNormalSubgroupBot C).prod U).toSubgroup ↔ x.1 = 1 ∧ x.2 ∈ U.toSubgroup := by
-  rw [OpenNormalSubgroup.toSubgroup_prod, Subgroup.mem_prod, openNormalSubgroupBot_toSubgroup,
+theorem mem_bot_prod (U : OpenNormalSubgroup Γ) (x : C × Γ) :
+    x ∈ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup ↔ x.1 = 1 ∧ x.2 ∈ U.toSubgroup := by
+  rw [OpenNormalSubgroup.toSubgroup_prod, Subgroup.mem_prod, OpenNormalSubgroup.toSubgroup_bot,
     Subgroup.mem_bot]
 
 /-- Two classes modulo the level `{1} × U` of `C × Γ` agree iff their `C`-coordinates agree and
 their `Γ`-coordinates agree modulo `U`. -/
-theorem mk_eq_mk_iff_openNormalSubgroupBot_prod (U : OpenNormalSubgroup Γ) {c c' : C}
+theorem mk_eq_mk_iff_bot_prod (U : OpenNormalSubgroup Γ) {c c' : C}
     {γ γ' : Γ} :
-    ((c, γ) : (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup) = (c', γ') ↔
+    ((c, γ) : (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup) = (c', γ') ↔
       c = c' ∧ (γ : Γ ⧸ U.toSubgroup) = γ' := by
-  simp only [QuotientGroup.eq, mem_openNormalSubgroupBot_prod, Prod.inv_mk, Prod.mk_mul_mk,
+  simp only [QuotientGroup.eq, mem_bot_prod, Prod.inv_mk, Prod.mk_mul_mk,
     inv_mul_eq_one]
 
 /-- The levels `{1} × U` grow with `U`. -/
-theorem openNormalSubgroupBot_prod_mono {U V : OpenNormalSubgroup Γ} (hUV : U ≤ V) :
-    (openNormalSubgroupBot C).prod U ≤ (openNormalSubgroupBot C).prod V := by
+theorem bot_prod_mono {U V : OpenNormalSubgroup Γ} (hUV : U ≤ V) :
+    (⊥ : OpenNormalSubgroup C).prod U ≤ (⊥ : OpenNormalSubgroup C).prod V := by
   rw [← OpenNormalSubgroup.toSubgroup_le, OpenNormalSubgroup.toSubgroup_prod,
     OpenNormalSubgroup.toSubgroup_prod]
   exact Subgroup.prod_mono le_rfl (OpenNormalSubgroup.toSubgroup_le.mpr hUV)
@@ -105,15 +105,15 @@ a group `C` with the discrete topology and an open normal subgroup `U` of `Γ`. 
 quotient; they are how the level `{1} × U` of `R[[C × Γ]]` is read off the level `U` of
 `R[[Γ]]`. -/
 def botProdMk (U : OpenNormalSubgroup Γ) (c : C) :
-    Γ ⧸ U.toSubgroup → (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup :=
+    Γ ⧸ U.toSubgroup → (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup :=
   Quotient.map' (fun γ ↦ (c, γ)) fun _ _ h ↦
-    Quotient.exact ((mk_eq_mk_iff_openNormalSubgroupBot_prod U).mpr ⟨rfl, Quotient.sound h⟩)
+    Quotient.exact ((mk_eq_mk_iff_bot_prod U).mpr ⟨rfl, Quotient.sound h⟩)
 
 /-- `botProdMk U c` sends the class of `γ` to the class of `(c, γ)`. -/
 @[simp]
 theorem botProdMk_mk (U : OpenNormalSubgroup Γ) (c : C) (γ : Γ) :
     botProdMk U c (γ : Γ ⧸ U.toSubgroup) =
-      ((c, γ) : (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup) :=
+      ((c, γ) : (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup) :=
   (rfl)
 
 /-- `botProdMk U c` is injective. -/
@@ -122,17 +122,17 @@ theorem botProdMk_injective (U : OpenNormalSubgroup Γ) (c : C) :
   intro q q' h
   obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective q
   obtain ⟨γ', rfl⟩ := QuotientGroup.mk_surjective q'
-  rw [botProdMk_mk, botProdMk_mk, mk_eq_mk_iff_openNormalSubgroupBot_prod] at h
+  rw [botProdMk_mk, botProdMk_mk, mk_eq_mk_iff_bot_prod] at h
   exact h.2
 
 /-- The class of `(c', γ)` is in the range of `botProdMk U c` iff `c' = c`. -/
 theorem mem_range_botProdMk_iff (U : OpenNormalSubgroup Γ) {c c' : C} (γ : Γ) :
-    ((c', γ) : (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup) ∈
+    ((c', γ) : (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup) ∈
       Set.range (botProdMk U c) ↔ c' = c := by
   constructor
   · rintro ⟨q, hq⟩
     obtain ⟨δ, rfl⟩ := QuotientGroup.mk_surjective q
-    rw [botProdMk_mk, mk_eq_mk_iff_openNormalSubgroupBot_prod] at hq
+    rw [botProdMk_mk, mk_eq_mk_iff_bot_prod] at hq
     exact hq.1.symm
   · rintro rfl
     exact ⟨γ, botProdMk_mk U c' γ⟩
@@ -140,11 +140,11 @@ theorem mem_range_botProdMk_iff (U : OpenNormalSubgroup Γ) {c c' : C} (γ : Γ)
 /-- Reading the coefficients of an element of `R[(C × Γ) ⧸ ({1} × U)]` along the classes of the
 `(c, γ)` is compatible with passing to a larger level `V ≥ U`. -/
 theorem mapDomain_mapOfLE_comapDomain_botProdMk {U V : OpenNormalSubgroup Γ} (hUV : U ≤ V) (c : C)
-    (z : MonoidAlgebra R ((C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup)) :
+    (z : MonoidAlgebra R ((C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup)) :
     MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE hUV)
         (MonoidAlgebra.comapDomain (botProdMk U c) (botProdMk_injective U c) z) =
       MonoidAlgebra.comapDomain (botProdMk V c) (botProdMk_injective V c)
-        (MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE (openNormalSubgroupBot_prod_mono hUV))
+        (MonoidAlgebra.mapDomain (QuotientGroup.mapOfLE (bot_prod_mono hUV))
           z) := by
   induction z using MonoidAlgebra.induction_linear with
   | zero => simp
@@ -177,24 +177,24 @@ variable {C Γ}
 
 /-- Every open normal subgroup `W` of `C × Γ`, for `C` discrete, contains the level `{1} × U` for
 `U` the preimage of `W` under `γ ↦ (1, γ)`: the levels `{1} × U` are cofinal. -/
-theorem openNormalSubgroupBot_prod_comap_inr_le [DiscreteTopology C]
+theorem bot_prod_comap_inr_le [DiscreteTopology C]
     (W : OpenNormalSubgroup (C × Γ)) :
-    (openNormalSubgroupBot C).prod (W.comap (MonoidHom.inr C Γ) (continuous_inr C Γ)) ≤ W := by
+    (⊥ : OpenNormalSubgroup C).prod (W.comap (MonoidHom.inr C Γ) (continuous_inr C Γ)) ≤ W := by
   rw [← OpenNormalSubgroup.toSubgroup_le]
   intro x hx
-  obtain ⟨hc, hγ⟩ := (mem_openNormalSubgroupBot_prod _ x).mp hx
+  obtain ⟨hc, hγ⟩ := (mem_bot_prod _ x).mp hx
   rw [OpenNormalSubgroup.toSubgroup_comap, Subgroup.mem_comap, MonoidHom.inr_apply, ← hc] at hγ
   exact hγ
 
 variable {R} in
 /-- Two elements of `R[[C × Γ]]`, for `C` discrete, agreeing at every level `{1} × U` are equal:
 these levels are cofinal. -/
-theorem ext_of_proj_openNormalSubgroupBot_prod [DiscreteTopology C]
+theorem ext_of_proj_bot_prod [DiscreteTopology C]
     {x y : completedGroupAlgebra R (C × Γ)}
-    (h : ∀ U : OpenNormalSubgroup Γ, proj R (C × Γ) ((openNormalSubgroupBot C).prod U) x =
-      proj R (C × Γ) ((openNormalSubgroupBot C).prod U) y) : x = y :=
+    (h : ∀ U : OpenNormalSubgroup Γ, proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U) x =
+      proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U) y) : x = y :=
   ext fun W ↦ by
-    rw [← mapDomain_mapOfLE_proj (openNormalSubgroupBot_prod_comap_inr_le W) x, h,
+    rw [← mapDomain_mapOfLE_proj (bot_prod_comap_inr_le W) x, h,
       mapDomain_mapOfLE_proj]
 
 /-- The elements of `R[[C × Γ]]` coming from `R[[Γ]]` along `γ ↦ (1, γ)` commute with the group
@@ -247,30 +247,30 @@ theorem monoidAlgebraProdHom_single_one (x : completedGroupAlgebra R Γ) :
 variable {C Γ} [DiscreteTopology C]
 
 /-- The level `U` of `R[[Γ]]` maps into the level `{1} × U` of `R[[C × Γ]]` along `γ ↦ (1, γ)`. -/
-theorem le_comap_inr_openNormalSubgroupBot_prod (U : OpenNormalSubgroup Γ) :
-    U.toSubgroup ≤ ((openNormalSubgroupBot C).prod U).toSubgroup.comap (MonoidHom.inr C Γ) :=
-  fun _ hγ ↦ (mem_openNormalSubgroupBot_prod U _).mpr ⟨rfl, hγ⟩
+theorem le_comap_inr_bot_prod (U : OpenNormalSubgroup Γ) :
+    U.toSubgroup ≤ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup.comap (MonoidHom.inr C Γ) :=
+  fun _ hγ ↦ (mem_bot_prod U _).mpr ⟨rfl, hγ⟩
 
 /-- At the level `{1} × U`, the image of `x ∈ R[[Γ]]` along `γ ↦ (1, γ)` is the level `U` of `x`
 pushed along `botProdMk U 1`, the class of `γ` going to the class of `(1, γ)`. -/
 theorem proj_map_inr (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ) :
-    proj R (C × Γ) ((openNormalSubgroupBot C).prod U)
+    proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U)
         (map R (MonoidHom.inr C Γ) (continuous_inr C Γ) x) =
       MonoidAlgebra.mapDomain (botProdMk U 1) (proj R Γ U x) := by
-  have h : ⇑(QuotientGroup.map U.toSubgroup ((openNormalSubgroupBot C).prod U).toSubgroup
-      (MonoidHom.inr C Γ) (le_comap_inr_openNormalSubgroupBot_prod U)) = botProdMk U 1 :=
+  have h : ⇑(QuotientGroup.map U.toSubgroup ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup
+      (MonoidHom.inr C Γ) (le_comap_inr_bot_prod U)) = botProdMk U 1 :=
     funext fun q ↦ by
       obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective q
       rw [QuotientGroup.map_mk, MonoidHom.inr_apply, botProdMk_mk]
-  rw [proj_map_of_le R _ _ U _ (le_comap_inr_openNormalSubgroupBot_prod U), h]
+  rw [proj_map_of_le R _ _ U _ (le_comap_inr_bot_prod U), h]
 
 /-- At the level `{1} × U`, the image of `x ∈ R[[Γ]]` along `γ ↦ (1, γ)` has, at the class of
 `(1, γ)`, the coefficient of the level `U` of `x` at the class of `γ`. -/
 theorem coeff_proj_map_inr_one (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ)
     (γ : Γ) :
-    (proj R (C × Γ) ((openNormalSubgroupBot C).prod U)
+    (proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U)
         (map R (MonoidHom.inr C Γ) (continuous_inr C Γ) x)).coeff
-        (((1 : C), γ) : (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup) =
+        (((1 : C), γ) : (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup) =
       (proj R Γ U x).coeff (γ : Γ ⧸ U.toSubgroup) := by
   rw [proj_map_inr, MonoidAlgebra.coeff_mapDomain, ← botProdMk_mk U 1 γ,
     Finsupp.mapDomain_apply_of_injective (botProdMk_injective U 1)]
@@ -279,9 +279,9 @@ theorem coeff_proj_map_inr_one (U : OpenNormalSubgroup Γ) (x : completedGroupAl
 the class of `(c, γ)` for `c ≠ 1`. -/
 theorem coeff_proj_map_inr_of_ne_one (U : OpenNormalSubgroup Γ) (x : completedGroupAlgebra R Γ)
     {c : C} (hc : c ≠ 1) (γ : Γ) :
-    (proj R (C × Γ) ((openNormalSubgroupBot C).prod U)
+    (proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U)
         (map R (MonoidHom.inr C Γ) (continuous_inr C Γ) x)).coeff
-        ((c, γ) : (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup) = 0 := by
+        ((c, γ) : (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup) = 0 := by
   rw [proj_map_inr, MonoidAlgebra.coeff_mapDomain]
   exact Finsupp.mapDomain_of_notMem_range _ _ (mt (mem_range_botProdMk_iff U γ).mp hc)
 
@@ -290,8 +290,8 @@ the class of `(c, γ)` of the image of `f` is the coefficient at the class of `�
 of the coefficient of `f` at `c`. -/
 theorem coeff_proj_monoidAlgebraProdHom (f : MonoidAlgebra (completedGroupAlgebra R Γ) C)
     (U : OpenNormalSubgroup Γ) (c : C) (γ : Γ) :
-    (proj R (C × Γ) ((openNormalSubgroupBot C).prod U) (monoidAlgebraProdHom R C Γ f)).coeff
-        ((c, γ) : (C × Γ) ⧸ ((openNormalSubgroupBot C).prod U).toSubgroup) =
+    (proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U) (monoidAlgebraProdHom R C Γ f)).coeff
+        ((c, γ) : (C × Γ) ⧸ ((⊥ : OpenNormalSubgroup C).prod U).toSubgroup) =
       (proj R Γ U (f.coeff c)).coeff (γ : Γ ⧸ U.toSubgroup) := by
   classical
   induction f using MonoidAlgebra.induction_linear with
@@ -328,8 +328,8 @@ theorem monoidAlgebraProdHom_surjective : Function.Surjective (monoidAlgebraProd
   intro y
   refine ⟨MonoidAlgebra.ofCoeff (Finsupp.equivFunOnFinite.symm fun c ↦ mk R Γ
     (fun U ↦ MonoidAlgebra.comapDomain (botProdMk U c) (botProdMk_injective U c)
-      (proj R (C × Γ) ((openNormalSubgroupBot C).prod U) y)) fun U V hUV ↦ ?_),
-    ext_of_proj_openNormalSubgroupBot_prod fun U ↦ MonoidAlgebra.coeff_injective
+      (proj R (C × Γ) ((⊥ : OpenNormalSubgroup C).prod U) y)) fun U V hUV ↦ ?_),
+    ext_of_proj_bot_prod fun U ↦ MonoidAlgebra.coeff_injective
       (Finsupp.ext fun q ↦ ?_)⟩
   · rw [mapDomain_mapOfLE_comapDomain_botProdMk, mapDomain_mapOfLE_proj]
   · obtain ⟨⟨c, γ⟩, rfl⟩ := QuotientGroup.mk_surjective q

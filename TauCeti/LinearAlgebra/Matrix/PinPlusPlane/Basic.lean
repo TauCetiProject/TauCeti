@@ -472,43 +472,14 @@ section IsDomain
 
 variable {R : Type*} [CommRing R] [IsDomain R] [NeZero (2 : R)]
 
-/-- The `Pin⁺` lifts of the identity are `±1`: of determinant `1` such a lift commutes with `e₁` and
-`e₂` and is a scalar, and of determinant `−1` it would anticommute with both, which no orthogonal
-matrix does when `2 ≠ 0`. -/
-private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2) R}
-    (h : IsPinLift z 1) : z = 1 ∨ z = -1 := by
-  obtain ⟨hz, h1, h2⟩ := isPinLift_iff.1 h
-  have hzz := (mem_orthogonalGroup_iff' _ _).1 hz
-  have hzz' := (mem_orthogonalGroup_iff _ _).1 hz
-  rw [eta_fin_two z] at h1 h2 hzz hzz' ⊢
-  set a := z 0 0
-  set b := z 0 1
-  set c := z 1 0
-  set d := z 1 1
-  -- The entries of the two generator equations and of orthogonality.
-  have e1 : (a * d - b * c) * (a * a - b * b) = 1 := by
-    have := congrFun (congrFun h1 0) 0
-    simp [pinE1, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two] at this
-    linear_combination this
-  have e2 : (a * d - b * c) * (2 * (a * b)) = 0 := by
-    have := congrFun (congrFun h2 0) 0
-    simp [pinE2, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two, -mul_eq_zero]
-      at this
-    linear_combination this
-  have e3 : (a * d - b * c) * (a * d + b * c) = 1 := by
-    have := congrFun (congrFun h2 0) 1
-    simp [pinE2, pinVec_eq, det_fin_two, vecMul, dotProduct, Fin.sum_univ_two] at this
-    linear_combination this
-  have o1 : a * a + c * c = 1 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 0) 0
-  have o2 : a * a + b * b = 1 := by
-    simpa [vecMul, dotProduct, Fin.sum_univ_two] using congrFun (congrFun hzz' 0) 0
-  have o3 : a * c + b * d = 0 := by
-    simpa [vecMul, dotProduct, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz' 0) 1
-  have o4 : b * b + d * d = 1 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 1) 1
-  have o5 : a * b + c * d = 0 := by
-    simpa [Matrix.mul_apply, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz 0) 1
+/-- The entry equations for a `Pin⁺` lift of the identity: from the `e₁`, `e₂` generator
+equations and the orthogonality equations on the entries `a b c d` of a `2 × 2` matrix, the matrix
+is the scalar `a` with `a * a = 1`. -/
+private theorem entries_eq_of_pin_equations {a b c d : R}
+    (e1 : (a * d - b * c) * (a * a - b * b) = 1) (e2 : (a * d - b * c) * (2 * (a * b)) = 0)
+    (e3 : (a * d - b * c) * (a * d + b * c) = 1) (o1 : a * a + c * c = 1)
+    (o2 : a * a + b * b = 1) (o3 : a * c + b * d = 0) (o4 : b * b + d * d = 1)
+    (o5 : a * b + c * d = 0) : b = 0 ∧ c = 0 ∧ d = a ∧ a * a = 1 := by
   -- The determinant `δ = a d − b c` squares to one, and `δ (a d + b c) = 1`, so `b c = 0`.
   have hδ : (a * d - b * c) * (a * d - b * c) = 1 := by
     linear_combination (b * b + d * d) * o1 + o4 - (a * b + c * d) * o5
@@ -529,9 +500,53 @@ private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2
   have had : a * d = 1 := by
     rw [hb, zero_mul, sub_zero, mul_zero, sub_zero, o2, mul_one] at e1
     exact e1
-  have hd : d = a := by linear_combination (-d) * o2 + a * had
+  exact ⟨hb, hc, by linear_combination (-d) * o2 + a * had, o2⟩
+
+/-- The `Pin⁺` lifts of the identity are `±1`: of determinant `1` such a lift commutes with `e₁` and
+`e₂` and is a scalar, and of determinant `−1` it would anticommute with both, which no orthogonal
+matrix does when `2 ≠ 0`. -/
+private theorem eq_one_or_eq_neg_one_of_isPinLift_one {z : Matrix (Fin 2) (Fin 2) R}
+    (h : IsPinLift z 1) : z = 1 ∨ z = -1 := by
+  obtain ⟨hz, h1, h2⟩ := isPinLift_iff.1 h
+  have hzz := (mem_orthogonalGroup_iff' _ _).1 hz
+  have hzz' := (mem_orthogonalGroup_iff _ _).1 hz
+  rw [eta_fin_two z] at h1 h2 hzz hzz' ⊢
+  set a := z 0 0
+  set b := z 0 1
+  set c := z 1 0
+  set d := z 1 1
+  -- The entries of the two generator equations and of orthogonality.
+  have e1 : (a * d - b * c) * (a * a - b * b) = 1 := by
+    have := congrFun (congrFun h1 0) 0
+    simp [pinE1, pinVec_eq, det_fin_two, Function.swap, Matrix.vecHead,
+      Matrix.vecTail] at this
+    linear_combination this
+  have e2 : (a * d - b * c) * (2 * (a * b)) = 0 := by
+    have := congrFun (congrFun h2 0) 0
+    simp [pinE2, pinVec_eq, det_fin_two, Function.swap, Matrix.vecHead,
+      Matrix.vecTail, -mul_eq_zero] at this
+    linear_combination this
+  have e3 : (a * d - b * c) * (a * d + b * c) = 1 := by
+    have := congrFun (congrFun h2 0) 1
+    simp [pinE2, pinVec_eq, det_fin_two, Function.swap, Matrix.vecHead,
+      Matrix.vecTail] at this
+    linear_combination this
+  have o1 : a * a + c * c = 1 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 0) 0
+  have o2 : a * a + b * b = 1 := by
+    simpa [dotProduct, Function.swap, Matrix.vecHead, Matrix.vecTail, Fin.sum_univ_two] using
+      congrFun (congrFun hzz' 0) 0
+  have o3 : a * c + b * d = 0 := by
+    simpa [dotProduct, Function.swap, Matrix.vecHead, Matrix.vecTail, Fin.sum_univ_two,
+      -mul_eq_zero] using
+      congrFun (congrFun hzz' 0) 1
+  have o4 : b * b + d * d = 1 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two] using congrFun (congrFun hzz 1) 1
+  have o5 : a * b + c * d = 0 := by
+    simpa [Matrix.mul_apply, Fin.sum_univ_two, -mul_eq_zero] using congrFun (congrFun hzz 0) 1
+  obtain ⟨hb, hc, hd, ha⟩ := entries_eq_of_pin_equations e1 e2 e3 o1 o2 o3 o4 o5
   rw [hb, hc, hd]
-  rcases mul_self_eq_one_iff.1 o2 with ha1 | ha1 <;> rw [ha1]
+  rcases mul_self_eq_one_iff.1 ha with ha1 | ha1 <;> rw [ha1]
   · exact Or.inl (one_fin_two (α := R)).symm
   · exact Or.inr (by ext i j; fin_cases i <;> fin_cases j <;> simp)
 

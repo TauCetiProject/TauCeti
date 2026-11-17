@@ -112,48 +112,31 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
   -- representation of `T` across that split extension, and check the two Ado-stage conditions on
   -- `T'`: the centre lies in `I`, and the nilradical either lies in `I` or contains all of `T'`.
   obtain ⟨V, _, _, _, σ, hσZ, hσN⟩ := hT
-  have hmemsup {y : L} (hy : y ∈ T') : y ∈ T.toSubmodule ⊔ H.toSubmodule := by
-    rw [hsup]
-    exact hy
-  have hTT' : ∀ t ∈ T, t ∈ T' := fun t ht ↦ by
-    rw [← LieSubalgebra.mem_toSubmodule, ← hsup]
-    exact Submodule.mem_sup_left ht
-  have hHT' : ∀ h ∈ H, h ∈ T' := fun h hh ↦ by
-    rw [← LieSubalgebra.mem_toSubmodule, ← hsup]
-    exact Submodule.mem_sup_right hh
-  -- `T`, read inside `T'`, is an ideal of `T'` complemented by `H`.
-  let I : LieIdeal K T' :=
-    { T.toSubmodule.comap T'.toSubmodule.subtype with
-      lie_mem := fun {x m} hm ↦ by
-        obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
-        -- membership in the comap is membership of the underlying element of `L` in `T`
-        change ⁅(x : L), (m : L)⁆ ∈ T
-        rw [← hx, add_lie]
-        exact T.add_mem (T.lie_mem ht hm) (hHT h hh _ hm).1 }
-  have hmemI {x : T'} : x ∈ I ↔ (x : L) ∈ T := Iff.rfl
+  have hTT' : T ≤ T' := (LieSubalgebra.toSubmodule_le_toSubmodule _ _).mp (hsup ▸ le_sup_left)
+  have hHT' : H ≤ T' := (LieSubalgebra.toSubmodule_le_toSubmodule _ _).mp (hsup ▸ le_sup_right)
+  -- `T`, read inside `T'`, is an ideal `I` of `T'` complemented by `H`.
+  let I : LieIdeal K T' := T.idealOfLeNormalizer
+    (LieSubalgebra.le_normalizer_of_le_sup hsup.ge fun h hh ↦
+      (LieSubalgebra.mem_normalizer_iff T h).mpr fun t ht ↦ (hHT h hh t ht).1)
+  have hmemI {x : T'} : x ∈ I ↔ (x : L) ∈ T := T.mem_idealOfLeNormalizer _
   let H' : LieSubalgebra K T' := H.comap T'.incl
-  have hc : IsCompl I.toSubmodule H'.toSubmodule := by
-    refine ⟨Submodule.disjoint_def.mpr fun x hxI hxH ↦ Subtype.ext ?_,
-      codisjoint_iff.mpr (Submodule.eq_top_iff'.mpr fun x ↦ ?_)⟩
-    · exact (Submodule.disjoint_def.mp hdisj) _ hxI hxH
-    · obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
-      refine Submodule.mem_sup.mpr ⟨⟨t, hTT' t ht⟩, ht, ⟨h, hHT' h hh⟩, hh, Subtype.ext hx⟩
+  have hc : IsCompl I.toSubmodule H'.toSubmodule :=
+    LieSubalgebra.isCompl_idealOfLeNormalizer_comap_incl _ hsup hdisj
   let e := I.semiDirectSumEquiv H' hc
   let ψ := (LieIdeal.ad I).comp H'.incl
   -- The representation `σ` of `T`, read on the ideal `I` of `T'`.
   let ι : I →ₗ⁅K⁆ T :=
-    { toFun := fun y ↦ ⟨((y : T') : L), y.2⟩
+    { toFun := fun y ↦ ⟨((y : T') : L), hmemI.mp y.2⟩
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl
       map_lie' := fun {_ _} ↦ rfl }
   let NI : LieIdeal K I := (LieAlgebra.nilradical K L).comap (T'.incl.comp I.incl)
   have hNI {y : I} : y ∈ NI ↔ ((y : T') : L) ∈ LieAlgebra.nilradical K L := Iff.rfl
-  have hψ (h : H') (s : I) : (((ψ h s : I) : T') : L) = ⁅((h : T') : L), ((s : T') : L)⁆ := by
-    simp only [ψ, LieHom.coe_comp, Function.comp_apply, LieIdeal.ad_apply_apply]
-    rfl
   obtain ⟨W, _, _, _, ρ, hker, hiff, hall⟩ := exists_semiDirectSum_rep_of_forall_mem ψ NI
     (σ.comp ι) (fun s hs ↦ hσN _ (hNI.mp hs))
-    fun h s ↦ hNI.mpr (by rw [hψ]; exact (hHT _ h.2 _ s.2).2)
+    fun h s ↦ hNI.mpr (by
+      simp only [ψ, LieHom.comp_apply, LieIdeal.ad_apply_apply]
+      exact (hHT _ h.2 _ (hmemI.mp s.2)).2)
   have he (z : T') (hz : (z : L) ∈ T) :
       e.symm z = LieAlgebra.SemiDirectSum.inl ψ ⟨z, hmemI.mpr hz⟩ :=
     LieIdeal.semiDirectSumEquiv_symm_of_mem_left I H' hc (hmemI.mpr hz)
@@ -172,17 +155,14 @@ private theorem isAdoStage_of_sup {T T' H : LieSubalgebra K L}
       exact hσN _ hzN
     · -- every component in `H` is `ad`-nilpotent, so its derivation of `I` is nilpotent
       have hloc (r : H') (s : I) : ∃ n : ℕ, ((ψ r).toLinearMap ^ n) s = 0 := by
-        obtain ⟨n, hn⟩ : IsNilpotent (LieAlgebra.ad K L ((r : T') : L)) :=
-          LieAlgebra.isNilpotent_ad_of_mem_nilradical (hN _ (hHT' _ r.2))
-        -- `ψ r` is intertwined with `ad r` by the inclusion `I → L`, hence so are their powers
-        let f : I →ₗ[K] L := T'.incl.toLinearMap ∘ₗ I.incl.toLinearMap
-        have hf : (LieAlgebra.ad K L ((r : T') : L)).comp f = f.comp (ψ r).toLinearMap :=
-          LinearMap.ext fun s ↦ (hψ r s).symm
-        refine ⟨n, Subtype.ext (Subtype.ext ?_)⟩
-        have hpow := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf n) s
-        rw [hn, LinearMap.zero_comp] at hpow
-        exact hpow.symm
-      exact hall (fun s ↦ hσN _ (hN _ (hTT' _ (ι s).2))) _ fun s ↦ hloc _ s
+        -- restrict the `ad`-nilpotence of `r` in `T'` to the ideal `I`
+        obtain ⟨n, hn⟩ := LieSubmodule.toEnd_restrict_eq_toEnd I (H'.incl r) ▸
+          Module.End.isNilpotent.restrict _ (T'.isNilpotent_ad_of_isNilpotent_ad
+            (LieAlgebra.isNilpotent_ad_of_mem_nilradical (hN _ (hHT' r.2))))
+        have hψr : (ψ r).toLinearMap = LieModule.toEnd K T' I (H'.incl r) :=
+          LinearMap.ext fun s ↦ LieIdeal.ad_apply_apply I _ s
+        exact ⟨n, by rw [hψr]; exact LinearMap.congr_fun hn s⟩
+      exact hall (fun s ↦ hσN _ (hN _ (hTT' ((ι s).2)))) _ fun s ↦ hloc _ s
 
 /-- **A codimension-one step of the Ado flag.** An Ado stage at `T` extends to the Lie span
 `K ∙ x ⊔ T` of `x` and `T`, for an element `x ∉ T` whose brackets with `T` lie in `T ⊓ N`, provided

@@ -65,6 +65,99 @@ local notation "SpecialOrthogonalLieModel(" n ")" =>
     (I := modelWithCornersSelf ℝ (Matrix (Fin n) (Fin n) ℝ))
     (SpecialOrthogonalUnitsRange(n)))
 
+/-- The special-orthogonal projection of the Lie exponential curve of `x` in the Spin group is the
+matrix exponential of the coordinate differential of `x`, given that the projection is computed by
+the differential `Y` of the smooth projection. -/
+private theorem coe_smoothRange_lieExp_smul_eq_exp (n : ℕ)
+    (x : quadraticLieSubalgebra (realCliffordForm n 0)) (t : ℝ) :
+    let X := (realCliffordSpinLieEquivQuadratic n).symm x
+    let Y := lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n) X
+    let A := ((realCliffordSpinToSpecialOrthogonalCoordinateLieHom n x :
+      LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)
+    Y = realCliffordSpinToSpecialOrthogonalRangeLieMap n X →
+    realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X)) = lieExp (t • Y) →
+    (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).1 :
+        (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ) =
+      NormedSpace.exp (t • A) := by
+  intro X Y A hY hmap
+  calc
+    _ = (((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).subtypeVal
+        (lieExp (t • Y)) : (Matrix (Fin n) (Fin n) ℝ)ˣ) :
+          Matrix (Fin n) (Fin n) ℝ) := by
+      simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using congrArg
+        (fun z : SpecialOrthogonalUnitsRange(n) ↦
+          ((z.1 : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
+    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
+        ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y)) :=
+      (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).coe_lieExp_smul Y t
+    _ = NormedSpace.exp (t • A) := by
+      congr 2
+      calc
+        unitsLieAlgebraEquiv
+            ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y) =
+            TauCeti.Lie.unitsLieAlgebraLieEquiv
+              ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y) :=
+          (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
+        _ =
+            ((realCliffordSpecialOrthogonalLieEquivSo n Y :
+              LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) :=
+          (coe_realCliffordSpecialOrthogonalLieEquivSo_apply n Y).symm
+        _ = ((realCliffordSpecialOrthogonalLieEquivSo n
+              (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) :
+            LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) := by
+          exact congrArg
+            (fun z ↦ ((realCliffordSpecialOrthogonalLieEquivSo n z :
+                LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)) hY
+        _ = A := by
+          simpa only [A, X] using congrArg
+            (fun z : LieAlgebra.Orthogonal.so (Fin n) ℝ ↦
+              (z : Matrix (Fin n) (Fin n) ℝ))
+            (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm
+
+/-- The Lie exponential curve of `x` in the Spin group is the Clifford exponential `exp (t x)`. -/
+private theorem coe_symm_lieExp_smul_eq_exp (n : ℕ)
+    (x : quadraticLieSubalgebra (realCliffordForm n 0)) (t : ℝ) :
+    let Q := realCliffordForm n 0
+    let X := (realCliffordSpinLieEquivQuadratic n).symm x
+    let s := (realCliffordSpinContinuousMulEquivUnitsRange n).symm (lieExp (t • X))
+    (s : CliffordAlgebra Q) = NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
+  intro Q X s
+  have hequiv := (realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply
+    (lieExp (t • X))
+  have hsval : (s : CliffordAlgebra Q) =
+      ((((realCliffordSpinContinuousMulEquivUnitsRange n s).1 :
+        (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
+    rw [realCliffordSpinContinuousMulEquivUnitsRange_apply]
+    rfl
+  calc
+    (s : CliffordAlgebra Q) =
+        ((((realCliffordSpinContinuousMulEquivUnitsRange n s).1 :
+          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := hsval
+    _ =
+        ((((lieExp (t • X) : SpinUnitsRange(n)).1 :
+          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
+      exact congrArg
+        (fun z : SpinUnitsRange(n) ↦
+          ((z.1 : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hequiv
+    _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
+        ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X)) :=
+      by simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using
+        (realCliffordSpinEmbeddedLieSubgroupData n).coe_lieExp_smul X t
+    _ = NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
+      congr 2
+      calc
+        unitsLieAlgebraEquiv
+            ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) =
+            TauCeti.Lie.unitsLieAlgebraLieEquiv
+              ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) :=
+          (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
+        _ =
+            ((realCliffordSpinLieEquivQuadratic n X :
+              quadraticLieSubalgebra Q) : CliffordAlgebra Q) :=
+          (coe_realCliffordSpinLieEquivQuadratic_apply n X).symm
+        _ = (x : CliffordAlgebra Q) := by
+          simp only [X, LieEquiv.apply_symm_apply]
+
 private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
     (x : quadraticLieSubalgebra (realCliffordForm n 0)) (v : Fin n → ℝ) (t : ℝ) :
     let Q := realCliffordForm n 0
@@ -91,80 +184,8 @@ private theorem coordinate_exp_mulVec_eq_conjugation (n : ℕ)
       _ = lieExp (t • Y) := by
         congr 1
         exact (lieMap (realCliffordSpinToSpecialOrthogonalSmoothRange n)).map_smul t X
-  have htarget :
-      (((realCliffordSpinToSpecialOrthogonalSmoothRange n (lieExp (t • X))).1 :
-          (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ) =
-        NormedSpace.exp (t • A) := by
-    calc
-      _ = (((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).subtypeVal
-          (lieExp (t • Y)) : (Matrix (Fin n) (Fin n) ℝ)ˣ) :
-            Matrix (Fin n) (Fin n) ℝ) := by
-        simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using congrArg
-          (fun z : SpecialOrthogonalUnitsRange(n) ↦
-            ((z.1 : (Matrix (Fin n) (Fin n) ℝ)ˣ) : Matrix (Fin n) (Fin n) ℝ)) hmap
-      _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
-          ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y)) :=
-        (realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).coe_lieExp_smul Y t
-      _ = NormedSpace.exp (t • A) := by
-        congr 2
-        calc
-          unitsLieAlgebraEquiv
-              ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y) =
-              TauCeti.Lie.unitsLieAlgebraLieEquiv
-                ((realCliffordSpecialOrthogonalEmbeddedLieSubgroupData n).lieMapSubtypeVal Y) :=
-            (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
-          _ =
-              ((realCliffordSpecialOrthogonalLieEquivSo n Y :
-                LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) :=
-            (coe_realCliffordSpecialOrthogonalLieEquivSo_apply n Y).symm
-          _ = ((realCliffordSpecialOrthogonalLieEquivSo n
-                (realCliffordSpinToSpecialOrthogonalRangeLieMap n X) :
-              LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) := by
-            exact congrArg
-              (fun z ↦ ((realCliffordSpecialOrthogonalLieEquivSo n z :
-                  LieAlgebra.Orthogonal.so (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ)) hY
-          _ = A := by
-            simpa only [A, X] using congrArg
-              (fun z : LieAlgebra.Orthogonal.so (Fin n) ℝ ↦
-                (z : Matrix (Fin n) (Fin n) ℝ))
-              (realCliffordSpinToSpecialOrthogonalCoordinateLieHom_apply n x).symm
-  have hsource : (s : CliffordAlgebra Q) =
-      NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
-    have hequiv := (realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply
-      (lieExp (t • X))
-    have hsval : (s : CliffordAlgebra Q) =
-        ((((realCliffordSpinContinuousMulEquivUnitsRange n s).1 :
-          (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
-      rw [realCliffordSpinContinuousMulEquivUnitsRange_apply]
-      rfl
-    calc
-      (s : CliffordAlgebra Q) =
-          ((((realCliffordSpinContinuousMulEquivUnitsRange n s).1 :
-            (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := hsval
-      _ =
-          ((((lieExp (t • X) : SpinUnitsRange(n)).1 :
-            (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) := by
-        exact congrArg
-          (fun z : SpinUnitsRange(n) ↦
-            ((z.1 : (CliffordAlgebra Q)ˣ) : CliffordAlgebra Q)) hequiv
-      _ = NormedSpace.exp (t • unitsLieAlgebraEquiv
-          ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X)) :=
-        by simpa only [TauCeti.Lie.EmbeddedLieSubgroupData.subtypeVal_apply] using
-          (realCliffordSpinEmbeddedLieSubgroupData n).coe_lieExp_smul X t
-      _ = NormedSpace.exp (t • (x : CliffordAlgebra Q)) := by
-        congr 2
-        calc
-          unitsLieAlgebraEquiv
-              ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) =
-              TauCeti.Lie.unitsLieAlgebraLieEquiv
-                ((realCliffordSpinEmbeddedLieSubgroupData n).lieMapSubtypeVal X) :=
-            (TauCeti.Lie.unitsLieAlgebraLieEquiv_apply _).symm
-          _ =
-              ((realCliffordSpinLieEquivQuadratic n X :
-                quadraticLieSubalgebra Q) : CliffordAlgebra Q) :=
-            (coe_realCliffordSpinLieEquivQuadratic_apply n X).symm
-          _ = (x : CliffordAlgebra Q) := by
-            simp only [X, LieEquiv.apply_symm_apply]
+  have htarget := coe_smoothRange_lieExp_smul_eq_exp n x t hY hmap
+  have hsource := coe_symm_lieExp_smul_eq_exp n x t
   have hmatrix : NormedSpace.exp (t • A) *ᵥ v = spinVectorAction Q s v := by
     rw [← htarget]
     rw [realCliffordSpinToSpecialOrthogonalSmoothRange_apply,

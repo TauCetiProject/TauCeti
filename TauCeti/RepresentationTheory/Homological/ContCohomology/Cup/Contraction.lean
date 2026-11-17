@@ -198,18 +198,6 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
       (P.cupCochain p q ((c₁.comparison.f p).hom.mapInvariants a) β) = 0 := by
     rw [P.cupCochain_leibniz, hα, hβ, LinearMap.map_zero₂, map_zero, map_zero, smul_zero,
       add_zero]
-  -- the two composites carry `a` to the comparison of `a · b` and to the cup product
-  have e₁ : (L p ≫ c₃.comparison.f (p + q)).hom.mapInvariants a =
-      (c₃.comparison.f (p + q)).hom.mapInvariants
-        ⟨μ p q a b, fun g ↦ by rw [← hρ, a.2 g, b.2 g]⟩ :=
-    Subtype.ext (by
-      rw [ContIntertwiningMap.mapInvariants_apply, ContIntertwiningMap.mapInvariants_apply]
-      exact ConcreteCategory.comp_apply _ _ _)
-  have e₂ : (c₁.comparison.f p ≫ R p).hom.mapInvariants a =
-      P.cupCochain p q ((c₁.comparison.f p).hom.mapInvariants a) β :=
-    Subtype.ext (by
-      rw [ContIntertwiningMap.mapInvariants_apply, P.coe_cupCochain, ← hRv]
-      exact ConcreteCategory.comp_apply _ _ _)
   rw [cohomologyClass_def, cohomologyClass_def, cohomologyClass_def,
     P.cup_cochainClass p q _ hα _ hβ hab']
   convert c₁.cochainClass_eq_of_ι_comp_eq (n := q) (fun r ↦ L r ≫ c₃.comparison.f (r + q))
@@ -217,8 +205,12 @@ theorem cohomologyClass_pairing [LocallyCompactSpace G]
     (fun r ↦ by rw [Category.assoc, c₃.comparison.comm, ← Category.assoc, hL, Category.assoc])
     (fun r ↦ by rw [Category.assoc, hR, ← Category.assoc, c₁.comparison.comm, Category.assoc])
     h0 a ha using 2
-  · exact e₁.symm
-  · exact e₂.symm
+  · refine (Subtype.ext ?_).symm
+    rw [ContIntertwiningMap.mapInvariants_apply, ContIntertwiningMap.mapInvariants_apply]
+    exact ConcreteCategory.comp_apply _ _ _
+  · refine (Subtype.ext ?_).symm
+    rw [ContIntertwiningMap.mapInvariants_apply, P.coe_cupCochain, ← hRv]
+    exact ConcreteCategory.comp_apply _ _ _
 
 end Pairing
 

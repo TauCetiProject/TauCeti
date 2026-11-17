@@ -10,6 +10,8 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Ideal
 public import Mathlib.RingTheory.Norm.Transitivity
 public import TauCeti.LinearAlgebra.Determinant.Projective
 public import TauCeti.RingTheory.TensorProduct.Maps
+-- `baseChangeTowerAlgEquiv` is used only in the proof of `Algebra.projectiveNorm_rTensor`.
+import TauCeti.Algebra.TensorProduct.BaseChange
 
 /-!
 # The norm of a finite locally free algebra
@@ -40,6 +42,8 @@ sections, required after every base change (Katz–Mazur, *Arithmetic Moduli of 
   `Algebra.norm`.
 * `Algebra.projectiveNorm_baseChange_tmul`: the norm commutes with base change along any ring
   homomorphism.
+* `Algebra.projectiveNorm_rTensor`: the norm commutes with the base change map
+  `A ⊗[R] S → A' ⊗[R] S` of an `R`-algebra map `A →ₐ[R] A'`.
 * `Algebra.projectiveNorm_eq_of_algEquiv`: the norm is invariant under isomorphisms of algebras.
 * `Algebra.isUnit_projectiveNorm_iff`: an element is a unit if and only if its norm is.
 * `Algebra.projectiveNorm_mem_iff`: for a commutative algebra, the norm of `x` lies in a prime `p`
@@ -113,6 +117,32 @@ theorem projectiveNorm_eq_norm [Module.Free R S] (x : S) : projectiveNorm R x = 
   rw [projectiveNorm_apply, LinearMap.projectiveDet_eq_det, norm_apply]
 
 end Algebra
+
+section BaseChange
+
+variable {R S : Type*} [CommRing R] [Ring S] [Algebra R S] [Module.Finite R S]
+  [Module.Projective R S]
+
+/-- The norm of a finite projective algebra commutes with base change along an `R`-algebra map
+`φ : A →ₐ[R] A'`: the norm over `A'` of the image of `x ∈ A ⊗[R] S` in `A' ⊗[R] S` is the image
+under `φ` of the norm of `x` over `A`. -/
+theorem Algebra.projectiveNorm_rTensor {A A' : Type*} [CommRing A] [Algebra R A] [CommRing A']
+    [Algebra R A'] (φ : A →ₐ[R] A') (x : A ⊗[R] S) :
+    projectiveNorm A' (Algebra.TensorProduct.rTensor S φ x) = φ (projectiveNorm A x) := by
+  let := φ.toRingHom.toAlgebra
+  have : IsScalarTower R A A' := .of_algebraMap_eq fun a ↦ (φ.commutes a).symm
+  -- `A' ⊗[R] S` is the base change of `A ⊗[R] S` along `φ`
+  let e := (TauCeti.Algebra.TensorProduct.baseChangeTowerAlgEquiv R A S A').symm
+  have hx : e (Algebra.TensorProduct.rTensor S φ x) = (1 : A') ⊗ₜ[A] x := by
+    induction x using TensorProduct.inductionOn with
+    | tmul a b =>
+      have : φ a = a • (1 : A') := by simp [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+      simp [e, this, TensorProduct.smul_tmul, TensorProduct.smul_tmul']
+    | add x y hx hy => simp only [map_add, tmul_add, hx, hy]
+  rw [← projectiveNorm_eq_of_algEquiv e, hx, projectiveNorm_baseChange_tmul,
+    RingHom.algebraMap_toAlgebra, AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom]
+
+end BaseChange
 
 section Primes
 

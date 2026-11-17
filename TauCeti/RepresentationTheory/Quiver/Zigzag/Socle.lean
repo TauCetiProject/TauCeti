@@ -143,9 +143,11 @@ end CommRing
 
 section Field
 
-variable (k : Type w) [Field k] (G : SimpleGraph V) [Finite V]
+variable {k : Type w} [Field k] {G : SimpleGraph V}
 
-variable {k G}
+section Finite
+
+variable [Finite V]
 
 /-- **The line spanned by a volume class is a simple left module.**  It is a one-dimensional
 `k`-subspace by `TauCeti.restrictScalars_span_singleton_zigzagVolume`, and a left ideal by
@@ -243,6 +245,8 @@ theorem restrictScalars_socle_nonisolatedZigzagQuotient_eq_zigzagVolumeSpan
   rw [socle_nonisolatedZigzagQuotient_eq_jacobson_sq hns,
     restrictScalars_jacobson_sq_nonisolatedZigzagQuotient_eq_zigzagVolumeSpan hns]
 
+end Finite
+
 /-- **The socle of a zigzag algebra has one dimension for each vertex.** -/
 theorem finrank_restrictScalars_socle_nonisolatedZigzagQuotient [Fintype V]
     (hns : ∀ i : V, ∃ j, G.Adj i j) :
@@ -256,6 +260,10 @@ theorem finrank_restrictScalars_socle_nonisolatedZigzagQuotient [Fintype V]
 /-! ### The top -/
 
 variable (k)
+
+section Finite
+
+variable [Finite V]
 
 /-- **The top of a zigzag algebra.**  The quotient by the Jacobson radical is the product of one
 copy of the ground field for each vertex, the vertex coefficients of an element being its
@@ -285,6 +293,8 @@ theorem isSemisimpleRing_quotient_jacobson_nonisolatedZigzagQuotient
       (nonisolatedZigzagQuotient k G ⧸ Ring.jacobson (nonisolatedZigzagQuotient k G)) :=
   (zigzagTopEquiv k hns).symm.toRingEquiv.isSemisimpleRing
 
+end Finite
+
 /-- **The top of a zigzag algebra has one dimension for each vertex**, matching the socle. -/
 theorem finrank_quotient_jacobson_nonisolatedZigzagQuotient [Fintype V]
     (hns : ∀ i : V, ∃ j, G.Adj i j) :
@@ -295,6 +305,5 @@ theorem finrank_quotient_jacobson_nonisolatedZigzagQuotient [Fintype V]
   exact Fintype.card_congr (vertexEquiv G).symm
 
 end Field
-
 
 end TauCeti

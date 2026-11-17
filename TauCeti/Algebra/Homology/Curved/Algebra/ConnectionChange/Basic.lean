@@ -103,6 +103,53 @@ end Decomposition
 
 variable {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {w : A}
 
+/-- The graded Leibniz rule for the twisted differential `d + [a, -]`. -/
+private theorem connectionChange_leibniz (h : IsCurvedDGAlgebra 𝒜 d w) (a : A) {q : ℤ} {b : A}
+    (hb : b ∈ 𝒜 q) (c : A) :
+    connectionChange 𝒜 d a (b * c) =
+      connectionChange 𝒜 d a b * c + q.negOnePow • (b * connectionChange 𝒜 d a c) := by
+  induction c using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous r c =>
+    obtain ⟨c, hc⟩ := c
+    simp only
+    rw [connectionChange_apply_of_mem 𝒜 (SetLike.mul_mem_graded hb hc),
+      connectionChange_apply_of_mem 𝒜 hb, connectionChange_apply_of_mem 𝒜 hc, h.leibniz hb c,
+      Int.negOnePow_add]
+    simp only [Units.smul_def, Units.val_mul]
+    rcases Int.units_eq_one_or q.negOnePow with hq | hq <;>
+      rcases Int.units_eq_one_or r.negOnePow with hr | hr <;>
+      simp only [hq, hr, Units.val_one, Units.val_neg, one_zsmul, neg_one_zsmul, one_mul,
+        neg_one_mul, neg_neg] <;>
+      noncomm_ring
+  | add c c' hc hc' =>
+    simp only [mul_add, map_add, hc, hc', smul_add]
+    abel
+
+/-- The square of the twisted differential is the commutator with the new curvature. -/
+private theorem connectionChange_sq_eq (h : IsCurvedDGAlgebra 𝒜 d w) {a : A} (ha : a ∈ 𝒜 1)
+    (b : A) : connectionChange 𝒜 d a (connectionChange 𝒜 d a b) =
+      b * (w - d a - a * a) - (w - d a - a * a) * b := by
+  induction b using DirectSum.Decomposition.inductionOn 𝒜 with
+  | zero => simp
+  | @homogeneous q b =>
+    obtain ⟨b, hb⟩ := b
+    simp only
+    have hab : a * b ∈ 𝒜 (q + 1) := by
+      rw [add_comm]
+      exact SetLike.mul_mem_graded ha hb
+    rw [connectionChange_apply_of_mem 𝒜 hb, Units.smul_def, map_sub, map_add, map_zsmul,
+      connectionChange_apply_of_mem 𝒜 (h.map_mem hb), connectionChange_apply_of_mem 𝒜 hab,
+      connectionChange_apply_of_mem 𝒜 (SetLike.mul_mem_graded hb ha), h.sq_eq, h.leibniz ha b,
+      h.leibniz hb a, Int.negOnePow_one, Units.neg_smul, one_smul, Int.negOnePow_succ]
+    simp only [Units.smul_def, Units.val_neg]
+    rcases Int.units_eq_one_or q.negOnePow with hq | hq <;>
+      simp only [hq, Units.val_one, Units.val_neg, one_zsmul, neg_one_zsmul, neg_neg] <;>
+      noncomm_ring
+  | add b b' hb hb' =>
+    rw [map_add, map_add, hb, hb', add_mul, mul_add]
+    abel
+
 /-- **Change of connection.** Twisting the differential of a curved differential graded algebra
 by a connection form `a` of degree one changes the curvature to `w - d a - a * a`. -/
 theorem IsCurvedDGAlgebra.connectionChange (h : IsCurvedDGAlgebra 𝒜 d w) {a : A}
@@ -112,48 +159,12 @@ theorem IsCurvedDGAlgebra.connectionChange (h : IsCurvedDGAlgebra 𝒜 d w) {a :
     refine sub_mem (add_mem (h.map_mem hb) ?_) (zsmul_mem (SetLike.mul_mem_graded hb ha) _)
     rw [add_comm]
     exact SetLike.mul_mem_graded ha hb
-  leibniz {q b} hb c := by
-    induction c using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous r c =>
-      obtain ⟨c, hc⟩ := c
-      simp only
-      rw [connectionChange_apply_of_mem 𝒜 (SetLike.mul_mem_graded hb hc),
-        connectionChange_apply_of_mem 𝒜 hb, connectionChange_apply_of_mem 𝒜 hc, h.leibniz hb c,
-        Int.negOnePow_add]
-      simp only [Units.smul_def, Units.val_mul]
-      rcases Int.units_eq_one_or q.negOnePow with hq | hq <;>
-        rcases Int.units_eq_one_or r.negOnePow with hr | hr <;>
-        simp only [hq, hr, Units.val_one, Units.val_neg, one_zsmul, neg_one_zsmul, one_mul,
-          neg_one_mul, neg_neg] <;>
-        noncomm_ring
-    | add c c' hc hc' =>
-      simp only [mul_add, map_add, hc, hc', smul_add]
-      abel
+  leibniz hb c := connectionChange_leibniz h a hb c
   curvature_mem := by
     refine sub_mem (sub_mem h.curvature_mem ?_) ?_
     · simpa using h.map_mem ha
     · simpa using SetLike.mul_mem_graded ha ha
-  sq_eq b := by
-    induction b using DirectSum.Decomposition.inductionOn 𝒜 with
-    | zero => simp
-    | @homogeneous q b =>
-      obtain ⟨b, hb⟩ := b
-      simp only
-      have hab : a * b ∈ 𝒜 (q + 1) := by
-        rw [add_comm]
-        exact SetLike.mul_mem_graded ha hb
-      rw [connectionChange_apply_of_mem 𝒜 hb, Units.smul_def, map_sub, map_add, map_zsmul,
-        connectionChange_apply_of_mem 𝒜 (h.map_mem hb), connectionChange_apply_of_mem 𝒜 hab,
-        connectionChange_apply_of_mem 𝒜 (SetLike.mul_mem_graded hb ha), h.sq_eq, h.leibniz ha b,
-        h.leibniz hb a, Int.negOnePow_one, Units.neg_smul, one_smul, Int.negOnePow_succ]
-      simp only [Units.smul_def, Units.val_neg]
-      rcases Int.units_eq_one_or q.negOnePow with hq | hq <;>
-        simp only [hq, Units.val_one, Units.val_neg, one_zsmul, neg_one_zsmul, neg_neg] <;>
-        noncomm_ring
-    | add b b' hb hb' =>
-      rw [map_add, map_add, hb, hb', add_mul, mul_add]
-      abel
+  sq_eq b := connectionChange_sq_eq h ha b
   map_curvature := by
     rw [connectionChange_apply_of_mem 𝒜 (sub_mem (sub_mem h.curvature_mem
       (by simpa using h.map_mem ha)) (by simpa using SetLike.mul_mem_graded ha ha)),

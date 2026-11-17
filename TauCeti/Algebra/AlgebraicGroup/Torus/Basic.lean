@@ -141,7 +141,7 @@ theorem torusCommHopfAlgProperty.isCocomm
     let e := _root_.CommHopfAlgCat.ofIso <|
       (forget₂ (FiniteTypeCommHopfAlgCat.{u, u} (AlgebraicClosure k))
         (_root_.CommHopfAlgCat.{u} (AlgebraicClosure k))).mapIso i
-    e.toCoalgEquiv.toCoalgHom.isCocomm_of_surjective e.toCoalgEquiv.surjective (hA := hsplit)
+    Coalgebra.IsCocomm.of_surjective e e.surjective (hA := hsplit)
   exact Coalgebra.IsCocomm.of_baseChange (h := hbase)
 
 /-- The category of finite-type torus coordinate Hopf algebras over a field.

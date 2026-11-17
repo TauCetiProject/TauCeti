@@ -73,10 +73,7 @@ theorem rowBump_append (x : α) (before row : List α)
       (before ++ (rowBump x row).1, (rowBump x row).2) := by
   induction before with
   | nil => simp
-  | cons z before ih =>
-    rw [List.cons_append, rowBump_cons_of_le _ (h z (by simp)),
-      ih (fun a ha => h a (by simp [ha]))]
-    rfl
+  | cons z before ih => simp_all
 
 /-- If the letter `x` bumps an entry of `row`, letters after the end of `row` are untouched. -/
 theorem rowBump_append_of_snd_eq_some {x y : α} {row : List α} (h : (rowBump x row).2 = some y)
@@ -84,13 +81,7 @@ theorem rowBump_append_of_snd_eq_some {x y : α} {row : List α} (h : (rowBump x
   induction row with
   | nil => simp at h
   | cons z row ih =>
-    by_cases hxz : x < z
-    · rw [rowBump_cons_of_lt row hxz] at h ⊢
-      rw [List.cons_append, rowBump_cons_of_lt _ hxz]
-      simpa using h
-    · rw [rowBump_cons_of_le row (not_lt.mp hxz)] at h ⊢
-      rw [List.cons_append, rowBump_cons_of_le _ (not_lt.mp hxz), ih h]
-      simp
+    rcases lt_or_ge x z with hxz | hxz <;> simp_all
 
 /-- Appending occurs precisely when all existing letters are at most the inserted letter. -/
 @[simp]
@@ -119,20 +110,14 @@ theorem rowBump_eq_some_iff (x y : α) (row result : List α) :
     | nil => simp
     | cons z row ih =>
       intro h
-      by_cases hxz : x < z
-      · rw [rowBump_cons_of_lt row hxz] at h
-        have hr : result = x :: row := (congrArg Prod.fst h).symm
-        have hy : z = y := Option.some.inj (congrArg Prod.snd h)
-        subst y
-        exact ⟨[], row, by simp, hr, by simp, hxz⟩
-      · rw [rowBump_cons_of_le row (not_lt.mp hxz)] at h
-        have hs : (rowBump x row).2 = some y := congrArg Prod.snd h
-        obtain ⟨before, after, hp, hr, hle, hxy⟩ :=
-          ih (rowBump x row).1 (Prod.ext rfl hs)
-        refine ⟨z :: before, after, by simp [hp], ?_, ?_, hxy⟩
-        · simpa [hr] using (congrArg Prod.fst h).symm
-        · simp only [List.mem_cons, forall_eq_or_imp]
-          exact ⟨not_lt.mp hxz, hle⟩
+      rcases lt_or_ge x z with hxz | hxz
+      · simp only [rowBump_cons_of_lt row hxz, Prod.mk.injEq, Option.some.injEq] at h
+        obtain ⟨rfl, rfl⟩ := h
+        exact ⟨[], row, rfl, rfl, by simp, hxz⟩
+      · simp only [rowBump_cons_of_le row hxz, Prod.mk.injEq] at h
+        obtain ⟨before, after, hp, hr, hle, hxy⟩ := ih _ (Prod.ext rfl h.2)
+        exact ⟨z :: before, after, by simp [hp], by simp [← h.1, hr],
+          List.forall_mem_cons.mpr ⟨hxz, hle⟩, hxy⟩
   · rintro ⟨before, after, rfl, rfl, hle, hxy⟩
     rw [rowBump_append x before _ hle, rowBump_cons_of_lt after hxy]
 
@@ -180,8 +165,7 @@ theorem rowBump_perm (x : α) (row : List α) :
 /-- A bump preserves row length; appending increases it by one. -/
 theorem length_rowBump (x : α) (row : List α) :
     (rowBump x row).1.length + (rowBump x row).2.toList.length = row.length + 1 := by
-  have h := (rowBump_perm x row).length_eq
-  simpa using h
+  simpa using (rowBump_perm x row).length_eq
 
 /-- Inserting into a weakly increasing row preserves weak increase. -/
 theorem sortedLE_rowBump (x : α) {row : List α} (hrow : row.SortedLE) :
@@ -190,25 +174,18 @@ theorem sortedLE_rowBump (x : α) {row : List α} (hrow : row.SortedLE) :
   | none =>
     have hle := (rowBump_snd_eq_none_iff x row).mp hs
     rw [rowBump_of_forall_le x row hle]
-    exact List.sortedLE_append.mpr
-      ⟨hrow, List.sortedLE_cons.mpr ⟨by simp, List.sortedLE_nil⟩, by simpa⟩
+    simp_all [List.sortedLE_append, List.sortedLE_cons, List.sortedLE_nil]
   | some y =>
-    obtain ⟨before, after, hr, hout, hle, hxy⟩ :=
-      (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl hs)
+    obtain ⟨before, after, rfl, hout, hle, hxy⟩ :=
+      (rowBump_eq_some_iff x y _ (rowBump x _).1).mp (Prod.ext rfl hs)
     rw [hout]
-    rw [hr, List.sortedLE_append, List.sortedLE_cons] at hrow
-    rw [List.sortedLE_append, List.sortedLE_cons]
-    refine ⟨hrow.1, ⟨fun z hz => hxy.le.trans (hrow.2.1.1 z hz), hrow.2.1.2⟩, ?_⟩
-    intro a ha z hz
-    rcases List.mem_cons.mp hz with rfl | hz
-    · exact hle a ha
-    · exact hrow.2.2 a ha z (by simp [hz])
+    simp only [List.sortedLE_append, List.sortedLE_cons, List.mem_cons] at hrow ⊢
+    grind
 
 /-- Inserting a new letter into a row without repetitions introduces no repetition. -/
 theorem nodup_rowBump (x : α) {row : List α} (hrow : row.Nodup) (hx : x ∉ row) :
     (rowBump x row).1.Nodup :=
-  (List.nodup_append.mp ((rowBump_perm x row).nodup_iff.mpr
-    (List.nodup_cons.mpr ⟨hx, hrow⟩))).1
+  ((rowBump_perm x row).nodup_iff.mpr (hrow.cons hx)).of_append_left
 
 /-- Inserting a new letter into a strictly increasing row preserves strict increase. -/
 theorem sortedLT_rowBump (x : α) {row : List α} (hrow : row.SortedLT) (hx : x ∉ row) :
@@ -220,20 +197,13 @@ increasing. This is the one-row comparison used to propagate the order of bumpin
 theorem rowBump_bumped_le_of_le {x x' y y' : α} {row : List α} (hrow : row.SortedLE)
     (hxx' : x ≤ x') (hfirst : (rowBump x row).2 = some y)
     (hsecond : (rowBump x' (rowBump x row).1).2 = some y') : y ≤ y' := by
-  obtain ⟨before, after, hr, hout, hle, _⟩ :=
-    (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl hfirst)
-  rw [hr, List.sortedLE_append, List.sortedLE_cons] at hrow
-  have hpassed : ∀ z ∈ before ++ [x], z ≤ x' := by
-    intro z hz
-    rcases List.mem_append.mp hz with hz | hz
-    · exact (hle z hz).trans hxx'
-    · simp only [List.mem_singleton] at hz
-      exact hz ▸ hxx'
-  have hbump : (rowBump x' after).2 = some y' := by
-    rw [hout, ← List.singleton_append, ← List.append_assoc,
-      rowBump_append x' _ _ hpassed] at hsecond
-    exact hsecond
-  exact hrow.2.1.1 y' (mem_of_rowBump_snd_eq_some hbump)
+  obtain ⟨before, after, rfl, hout, hle, _⟩ :=
+    (rowBump_eq_some_iff x y _ (rowBump x _).1).mp (Prod.ext rfl hfirst)
+  rw [List.sortedLE_append, List.sortedLE_cons] at hrow
+  rw [hout, ← List.singleton_append, ← List.append_assoc,
+    rowBump_append x' _ _ (List.forall_mem_append.mpr
+      ⟨fun z hz => (hle z hz).trans hxx', by simpa⟩)] at hsecond
+  exact hrow.2.1.1 y' (mem_of_rowBump_snd_eq_some hsecond)
 
 /-- Inserting a strictly smaller letter after `x` always bumps a letter at most `x`.
 No ordering hypothesis on the original row is needed. -/
@@ -361,12 +331,9 @@ theorem exists_set_of_reverseRowBump_snd_eq_some {x y : α} {row : List α}
   rw [hres]
   subst hrow
   refine ⟨before.length, by simp, by simp, by simp, fun i hi hdi => ?_, hxy⟩
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_lt hdi
-  have hm : m < after.length := by simp at hi; omega
-  have hidx : before.length + m + 1 - before.length = m + 1 := by omega
-  rw [List.getElem_append_right (by omega)]
-  simp only [hidx, List.getElem_cons_succ]
-  exact hle _ (List.getElem_mem hm)
+  rw [List.getElem_append_right hdi.le]
+  simp only [List.getElem_cons, show i - before.length ≠ 0 by omega, ↓reduceDIte]
+  exact hle _ (List.getElem_mem _)
 
 /-- Reverse insertion conserves the letters: the changed row together with the returned letter
 has the content of the original row together with the incoming letter. -/
@@ -394,8 +361,7 @@ theorem sortedLE_reverseRowBump (y : α) {row : List α} (hrow : row.SortedLE) :
 /-- Reverse inserting a new letter into a row without repetitions introduces no repetition. -/
 theorem nodup_reverseRowBump (y : α) {row : List α} (hrow : row.Nodup) (hy : y ∉ row) :
     (reverseRowBump y row).1.Nodup :=
-  (List.nodup_append.mp ((reverseRowBump_perm y row).nodup_iff.mpr
-    (List.nodup_cons.mpr ⟨hy, hrow⟩))).1
+  ((reverseRowBump_perm y row).nodup_iff.mpr (hrow.cons hy)).of_append_left
 
 /-- Reverse inserting a new letter into a strictly increasing row preserves strict increase. -/
 theorem sortedLT_reverseRowBump (y : α) {row : List α} (hrow : row.SortedLT) (hy : y ∉ row) :
@@ -407,20 +373,19 @@ theorem sortedLT_reverseRowBump (y : α) {row : List α} (hrow : row.SortedLT) (
 theorem reverseRowBump_rowBump_of_sortedLE (x y : α) {row : List α}
     (hrow : row.SortedLE) (hbump : (rowBump x row).2 = some y) :
     reverseRowBump y (rowBump x row).1 = (row, some x) := by
-  obtain ⟨before, after, hr, hout, hle, hxy⟩ :=
-    (rowBump_eq_some_iff x y row (rowBump x row).1).mp (Prod.ext rfl hbump)
-  rw [hr, List.sortedLE_append, List.sortedLE_cons] at hrow
-  exact (reverseRowBump_eq_some_iff x y _ row).mpr
-    ⟨before, after, hout, hr, hrow.2.1.1, hxy⟩
+  obtain ⟨before, after, rfl, hout, -, hxy⟩ :=
+    (rowBump_eq_some_iff x y _ (rowBump x _).1).mp (Prod.ext rfl hbump)
+  rw [List.sortedLE_append, List.sortedLE_cons] at hrow
+  exact (reverseRowBump_eq_some_iff x y _ _).mpr ⟨before, after, hout, rfl, hrow.2.1.1, hxy⟩
 
 /-- Forward insertion recovers a reverse bump in a weakly increasing row. -/
 theorem rowBump_reverseRowBump_of_sortedLE (x y : α) {row : List α}
     (hrow : row.SortedLE) (hbump : (reverseRowBump y row).2 = some x) :
     rowBump x (reverseRowBump y row).1 = (row, some y) := by
-  obtain ⟨before, after, hr, hout, hle, hxy⟩ :=
-    (reverseRowBump_eq_some_iff x y row (reverseRowBump y row).1).mp (Prod.ext rfl hbump)
-  rw [hr, List.sortedLE_append] at hrow
-  exact (rowBump_eq_some_iff x y _ row).mpr
-    ⟨before, after, hout, hr, fun z hz => hrow.2.2 z hz x (by simp), hxy⟩
+  obtain ⟨before, after, rfl, hout, -, hxy⟩ :=
+    (reverseRowBump_eq_some_iff x y _ (reverseRowBump y _).1).mp (Prod.ext rfl hbump)
+  rw [List.sortedLE_append] at hrow
+  exact (rowBump_eq_some_iff x y _ _).mpr
+    ⟨before, after, hout, rfl, fun z hz => hrow.2.2 z hz x (by simp), hxy⟩
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Computability.Primrec.List
 public import Mathlib.Data.List.Rotate
+public import Mathlib.Data.List.Sections
 
 /-!
 # Primitive-recursive list operations
@@ -17,7 +18,15 @@ cyclic reductions of trivial free-group words.
 
 Searching a list for its first element passing a test, `List.find?`, is primitive recursive.
 Over `List.range n` this is the bounded least-witness search of finite-stage constructions,
-returning `none` when no number below `n` passes the test.
+returning `none` when no number below `n` passes the test. A relation searched over all numbers
+up to the length of a primitive-recursively computed list stays primitive recursive
+(`PrimrecRel.exists_le_length`).
+
+Repeating an element and enumerating the sections of a list of lists (`List.sections`, all
+ways of choosing one entry from each list) are primitive recursive. Together they enumerate
+the tuples of a given length over a finite list of choices, which is the search space of
+bounded exhaustive searches. The product of two lists (`l₁ ×ˢ l₂`) and, when addition is
+primitive recursive, the sum of a list are primitive recursive as well.
 -/
 
 public section
@@ -41,7 +50,48 @@ theorem list_find? {β : Type*} [Primcodable β] {f : α → List β} {p : α �
   (list_getElem?.comp hf (list_findIdx hf hp)).of_eq fun _ =>
     List.find?_eq_getElem?_findIdx.symm
 
+/-- The list of `n` copies of an element is primitive recursive in `n` and the element. -/
+theorem list_replicate : Primrec₂ (List.replicate : ℕ → α → List α) :=
+  (nat_rec' fst (const []) (list_cons.comp (snd.comp fst) (snd.comp snd)).to₂).to₂.of_eq
+    fun n a => by induction n <;> simp_all [List.replicate_succ]
+
+/-- The sections of a list of lists, all ways of choosing one entry from each list, are
+primitive recursive. -/
+theorem list_sections : Primrec (List.sections : List (List α) → List (List α)) := by
+  have step : Primrec₂ fun (_ : List (List α)) (q : List α × List (List α)) =>
+      q.2.flatMap fun s => q.1.map fun a => a :: s :=
+    (list_flatMap (snd.comp snd) (list_map (fst.comp (snd.comp fst))
+      (list_cons.comp snd (snd.comp fst)).to₂).to₂).to₂
+  exact (list_foldr .id (const [[]]) step).of_eq fun L => by
+    induction L <;> simp_all [List.sections]
+
+/-- The product `l₁ ×ˢ l₂` of two lists, all pairs of an entry of `l₁` and an entry of `l₂`, is
+primitive recursive. -/
+theorem list_product {β : Type*} [Primcodable β] :
+    Primrec₂ ((· ×ˢ ·) : List α → List β → List (α × β)) :=
+  (list_flatMap fst (list_map (snd.comp fst) (pair (snd.comp fst) snd).to₂).to₂).to₂.of_eq
+    fun _ _ => rfl
+
+/-- The sum of a list is primitive recursive when addition is. -/
+theorem list_sum [Add α] [Zero α] (hadd : Primrec₂ ((· + ·) : α → α → α)) :
+    Primrec (List.sum : List α → α) :=
+  (list_foldr .id (const 0) (hadd.comp (fst.comp snd) (snd.comp snd)).to₂).of_eq fun l => by
+    induction l <;> simp_all
+
 end Primrec
+
+namespace PrimrecRel
+
+/-- A relation searched over all `n ≤ (f b).length`, for `f` primitive recursive, stays
+primitive recursive. -/
+theorem exists_le_length {β γ : Type*} [Primcodable β] [Primcodable γ]
+    {f : β → List γ} {R : ℕ → β → Prop} (hR : PrimrecRel R) (hf : Primrec f) :
+    PrimrecPred fun b => ∃ n ≤ (f b).length, R n b :=
+  (hR.exists_mem_list.comp
+    (Primrec.list_range.comp (Primrec.succ.comp (Primrec.list_length.comp hf)))
+    Primrec.id).of_eq fun _ => by simp only [List.mem_range, Nat.lt_succ_iff, id_eq]
+
+end PrimrecRel
 
 namespace List
 

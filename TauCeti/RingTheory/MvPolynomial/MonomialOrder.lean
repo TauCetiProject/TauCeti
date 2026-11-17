@@ -7,6 +7,8 @@ module
 
 public import Mathlib.RingTheory.AlgebraicIndependent.Defs
 public import Mathlib.RingTheory.MvPolynomial.MonomialOrder
+public import TauCeti.Algebra.MvPolynomial.Variables
+public import TauCeti.Data.Finsupp.MonomialOrder.Refinement
 
 /-!
 # Leading monomials for a monomial order
@@ -17,8 +19,9 @@ multiple, the cancellation of leading terms by an S-polynomial, the behaviour of
 under a change of coefficients, leading data of the weighted homogeneous component containing
 the leading monomial, the top weighted part of a binomial lifted by terms of lower weight, leading
 data of renamed polynomials, elimination orders and the lexicographic ones among them, agreement
-of leading exponents under two monomial orders, normalization to leading coefficient one over a
-field, leading exponents of substitutions of nonzero families, leading data of substitutions of
+of leading exponents under two monomial orders, leading data for nonnegative weight refinements,
+normalization to leading coefficient one over a field, leading exponents of substitutions of
+nonzero families, leading data of substitutions of
 monic families, cancellation of substituted monic binomials, and algebraic independence from
 leading monomials.
 
@@ -39,7 +42,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
 
 * `MonomialOrder.degree_eq_of_forall_lt`, `MonomialOrder.degree_eq_of_forall_mem_lt`: strict
   comparisons preserving the leading exponent, including comparisons on a set containing the
-  support and original leading exponent.
+  support.
 * `MonomialOrder.leadingCoeff_eq_of_degree_eq`, `MonomialOrder.leadingTerm_eq_of_degree_eq`,
   `MonomialOrder.sPolynomial_eq_of_degree_eq`: orders agreeing on leading exponents also agree
   on the corresponding leading coefficients, leading terms and S-polynomials.
@@ -76,6 +79,10 @@ the images of the generators of the Lazard ring in a polynomial ring.
   polynomial whose leading monomial only involves the variables `e τ` is a renamed polynomial.
 * `MonomialOrder.coe_support_subset_of_lex_le`: monomials supported in an upper set of variables
   form a lower set for the lexicographic order.
+* `MonomialOrder.weight_degree_weightRefinement`: the refined leading exponent has maximal
+  weight. `MonomialOrder.degree_weightRefinement`, `MonomialOrder.leadingCoeff_weightRefinement`
+  and `MonomialOrder.leadingTerm_weightRefinement` identify its leading data with those of the
+  maximal-weight component in the original order.
 * `MonomialOrder.monicNormalize`: over a field, a polynomial divided by its leading coefficient,
   monic with the same leading exponent when the polynomial is nonzero
   (`MonomialOrder.monic_monicNormalize`, `MonomialOrder.degree_monicNormalize`).
@@ -85,7 +92,7 @@ the images of the generators of the Lazard ring in a polynomial ring.
 * `MonomialOrder.coeff_aeval_of_forall_le`, `MonomialOrder.degree_aeval_le_of_forall_le`: if all
   exponents `w` of `P` have `A w ≼ e`, then the coefficient of `X^e` in `aeval c P` is the sum of
   the coefficients of `P` at the `w` with `A w = e`, and `aeval c P` has leading exponent at
-  most `e`.
+  most `e` (the latter for any family `c`, monic or not).
 * `MonomialOrder.algebraicIndependent_of_degree_eq_single`: polynomials `yᵢ` whose leading
   monomial is `Xᵢ` are algebraically independent.
 -/
@@ -126,15 +133,18 @@ theorem degree_eq_of_forall_lt [CommSemiring R] (n : MonomialOrder σ)
   · exact le_rfl
   · exact (h a ha hne).le
 
-/-- Orders preserving strict comparisons on a set containing the support and original leading
-exponent of a polynomial give it the same leading exponent. -/
+/-- Orders preserving strict comparisons on a set containing the support of a polynomial give it
+the same leading exponent. -/
 theorem degree_eq_of_forall_mem_lt [CommSemiring R] (n : MonomialOrder σ)
     (f : MvPolynomial σ R) {s : Set (σ →₀ ℕ)}
     (h : ∀ a ∈ s, ∀ b ∈ s, a ≺[m] b → a ≺[n] b)
-    (hf : ↑f.support ⊆ s) (hd : m.degree f ∈ s) : n.degree f = m.degree f := by
+    (hf : ↑f.support ⊆ s) : n.degree f = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
   apply m.degree_eq_of_forall_lt n f
   intro a ha hne
-  exact h a (hf ha) _ hd (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
+  exact h a (hf ha) _ (hf (m.degree_mem_support hf0))
+    (lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne))
 
 /-- Orders agreeing on the leading exponent of a polynomial agree on its leading coefficient. -/
 theorem leadingCoeff_eq_of_degree_eq [CommSemiring R] (n : MonomialOrder σ)
@@ -336,6 +346,82 @@ theorem isWeightedHomogeneous_weightedHomogeneousComponent_weight_degree (f : Mv
 
 end WeightedHomogeneous
 
+section WeightRefinement
+
+variable [CommSemiring R] (w : σ → ℕ)
+
+/-- The leading exponent for a weight-refined order has maximal weight. This includes the
+zero polynomial, whose degree and weighted total degree are both totalized at zero. -/
+@[simp]
+theorem weight_degree_weightRefinement (f : MvPolynomial σ R) :
+    Finsupp.weight w ((m.weightRefinement w).degree f) = f.weightedTotalDegree w := by
+  classical
+  rcases eq_or_ne f 0 with rfl | hf
+  · simp [weightedTotalDegree_zero]
+  apply le_antisymm
+  · exact le_weightedTotalDegree w ((m.weightRefinement w).degree_mem_support hf)
+  · exact Finset.sup_le fun a ha ↦
+      m.weight_le_of_weightRefinement_le w ((m.weightRefinement w).le_degree ha)
+
+/-- Refining by weight does not change the leading exponent of a weighted homogeneous
+polynomial: all comparisons in its support are ties in weight. -/
+theorem degree_weightRefinement_of_isWeightedHomogeneous {f : MvPolynomial σ R} {d : ℕ}
+    (hf : f.IsWeightedHomogeneous w d) : (m.weightRefinement w).degree f = m.degree f := by
+  rcases eq_or_ne f 0 with rfl | hf0
+  · simp
+  apply m.degree_eq_of_forall_lt
+  intro a ha hne
+  apply (m.weightRefinement_lt_iff_of_weight_eq w
+    ((hf (mem_support_iff.1 ha)).trans
+      (hf (mem_support_iff.1 (m.degree_mem_support hf0))).symm)).2
+  exact lt_of_le_of_ne (m.le_degree ha) (m.toSyn.injective.ne hne)
+
+/-- The refined leading exponent is the original-order leading exponent of the maximal-weight
+component. This is the polynomial comparison underlying refinement of weight initials. -/
+theorem degree_weightRefinement (f : MvPolynomial σ R) :
+    (m.weightRefinement w).degree f =
+      m.degree (weightedHomogeneousComponent w (f.weightedTotalDegree w) f) := by
+  have h := (m.weightRefinement w).degree_weightedHomogeneousComponent_weight_degree w f
+  rw [weight_degree_weightRefinement] at h
+  rw [← h]
+  exact m.degree_weightRefinement_of_isWeightedHomogeneous w
+    (weightedHomogeneousComponent_isWeightedHomogeneous _ _)
+
+/-- The leading coefficient for a weight-refined order is the leading coefficient, in the
+original order, of the maximal-weight component. -/
+theorem leadingCoeff_weightRefinement (f : MvPolynomial σ R) :
+    (m.weightRefinement w).leadingCoeff f =
+      m.leadingCoeff (weightedHomogeneousComponent w (f.weightedTotalDegree w) f) := by
+  have h := (m.weightRefinement w).leadingCoeff_weightedHomogeneousComponent_weight_degree w f
+  rw [weight_degree_weightRefinement] at h
+  rw [← h]
+  exact m.leadingCoeff_eq_of_degree_eq (m.weightRefinement w)
+    (m.degree_weightRefinement_of_isWeightedHomogeneous w
+      (weightedHomogeneousComponent_isWeightedHomogeneous _ _))
+
+/-- The leading term for a weight-refined order is the leading term, in the original order,
+of the maximal-weight component. In particular, tied maximal-weight terms are not discarded
+until the original monomial order is applied. -/
+theorem leadingTerm_weightRefinement (f : MvPolynomial σ R) :
+    (m.weightRefinement w).leadingTerm f =
+      m.leadingTerm (weightedHomogeneousComponent w (f.weightedTotalDegree w) f) := by
+  have h := (m.weightRefinement w).leadingTerm_weightedHomogeneousComponent_weight_degree w f
+  rw [weight_degree_weightRefinement] at h
+  rw [← h]
+  exact m.leadingTerm_eq_of_degree_eq (m.weightRefinement w)
+    (m.degree_weightRefinement_of_isWeightedHomogeneous w
+      (weightedHomogeneousComponent_isWeightedHomogeneous _ _))
+
+/-- Zero-weight refinement leaves polynomial leading exponents unchanged. -/
+@[simp]
+theorem degree_weightRefinement_zero (f : MvPolynomial σ R) :
+    (m.weightRefinement 0).degree f = m.degree f :=
+  m.degree_weightRefinement_of_isWeightedHomogeneous 0 (d := 0) (by
+    intro a _
+    simp [Finsupp.weight_apply])
+
+end WeightRefinement
+
 section Relation
 
 variable {m} {ι : Type*} [CommRing R] {a : ι → σ →₀ ℕ} {u v : ι →₀ ℕ} {Q : MvPolynomial ι R}
@@ -423,12 +509,13 @@ leading monomial only involves the variables `e τ` is the renaming of a polynom
 variables `τ`. -/
 theorem exists_rename_eq_of_coe_support_degree_subset
     (helim : ∀ a b : σ →₀ ℕ, a ≼[m] b → ↑b.support ⊆ Set.range e → ↑a.support ⊆ Set.range e)
-    (he : Function.Injective e) {g : MvPolynomial σ R}
+    {g : MvPolynomial σ R}
     (hg : ↑(m.degree g).support ⊆ Set.range e) : ∃ g' : MvPolynomial τ R, rename e g' = g := by
   classical
-  refine exists_rename_eq_of_vars_subset_range g e he fun i hi ↦ ?_
-  obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
-  exact helim d _ (m.le_degree hd) hg hid
+  have hvars : ↑g.vars ⊆ Set.range e := fun i hi ↦ by
+    obtain ⟨d, hd, hid⟩ := (mem_vars_iff_mem_support i).1 hi
+    exact helim d _ (m.le_degree hd) hg hid
+  exact exists_rename_eq_of_vars_subset_range' g e hvars
 
 end Rename
 
@@ -528,6 +615,15 @@ theorem monicNormalize_mem_iff {S : Type*} [SetLike S (MvPolynomial σ k)]
 
 end MonicNormalize
 
+/-- Substituting nonzero polynomials into a coefficient-one monomial gives a nonzero
+polynomial over a nontrivial semiring without zero divisors. -/
+theorem _root_.MvPolynomial.aeval_monomial_one_ne_zero [CommSemiring R] [Nontrivial R]
+    [NoZeroDivisors R] {ι : Type*} {b : ι → MvPolynomial σ R}
+    (hb : ∀ i, b i ≠ 0) (u : ι →₀ ℕ) : aeval b (monomial u (1 : R)) ≠ 0 := by
+  classical
+  simp only [aeval_monomial, map_one, one_mul]
+  exact Finset.prod_ne_zero_iff.2 fun i _ ↦ pow_ne_zero _ (hb i)
+
 /-- Substituting nonzero polynomials into a coefficient-one monomial adds their leading
 exponents, with the multiplicities prescribed by the monomial. -/
 theorem degree_aeval_monomial_one_of_ne_zero [CommSemiring R] [NoZeroDivisors R]
@@ -548,13 +644,13 @@ theorem monic_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ)
   rw [aeval_monomial, map_one, one_mul, Finsupp.prod]
   exact Monic.prod fun i _ ↦ (hc i).pow
 
-variable [Nontrivial R]
-
 /-- The image of the monomial `Y^w` under the substitution of a monic family `c` has leading
 exponent `∑ i, w i • m.degree (c i)`. -/
 theorem degree_aeval_monomial_one (hc : ∀ i, m.Monic (c i)) (w : ι →₀ ℕ) :
     m.degree (aeval c (monomial w (1 : R))) =
       Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w := by
+  rcases subsingleton_or_nontrivial R with hR | hR
+  · simp [Finsupp.linearCombination_apply, Finsupp.sum]
   rw [aeval_monomial, map_one, one_mul, Finsupp.prod,
     m.degree_prod_of_regular fun i _ ↦ by rw [(hc i).pow.leadingCoeff_eq_one]; exact isRegular_one,
     Finsupp.linearCombination_apply, Finsupp.sum]
@@ -583,18 +679,20 @@ theorem coeff_aeval_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial �
     rw [degree_aeval_monomial_one hc]
     exact lt_of_le_of_ne (hP w hw) fun h' ↦ h (m.toSyn.injective h')
 
-/-- Let `c` be a monic family and write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of
-`P` satisfies `A w ≼ e`, then `aeval c P` has leading exponent at most `e`. -/
-theorem degree_aeval_le_of_forall_le (hc : ∀ i, m.Monic (c i)) {P : MvPolynomial ι R}
-    {e : σ →₀ ℕ}
+/-- Write `A w = ∑ i, w i • m.degree (c i)`. If every exponent `w` of `P` satisfies `A w ≼ e`,
+then `aeval c P` has leading exponent at most `e`. The family `c` need not be monic. -/
+theorem degree_aeval_le_of_forall_le {P : MvPolynomial ι R} {e : σ →₀ ℕ}
     (hP : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] e) :
     m.degree (aeval c P) ≼[m] e := by
   classical
-  refine m.degree_le_iff.2 fun d hd ↦ le_of_not_gt fun hlt ↦ ?_
-  rw [mem_support_iff, coeff_aeval_of_forall_le hc fun w hw ↦ (hP w hw).trans hlt.le] at hd
-  refine hd (Finset.sum_eq_zero fun w hw ↦ ?_)
-  rw [Finset.mem_filter] at hw
-  exact absurd (hP w hw.1) (by rw [hw.2]; exact not_le_of_gt hlt)
+  conv_lhs => rw [P.as_sum, map_sum]
+  refine m.degree_sum_le.trans (Finset.sup_le fun w hw ↦ ?_)
+  rw [aeval_monomial, algebraMap_eq]
+  refine (m.degree_mul_le.trans ?_).trans (hP w hw)
+  rw [degree_C, zero_add, Finsupp.prod, Finsupp.linearCombination_apply, Finsupp.sum, map_sum]
+  refine m.degree_prod_le.trans ?_
+  rw [map_sum]
+  exact Finset.sum_le_sum fun i _ ↦ m.degree_pow_le _
 
 end Substitution
 
@@ -603,7 +701,7 @@ variable [CommRing R]
 /-- The substituted value of a coefficient-one binomial relation of a monic family vanishes
 or has leading exponent strictly below the common exponent of its two terms. -/
 theorem aeval_monomial_sub_monomial_eq_zero_or_degree_lt
-    {ι : Type*} {b : ι → MvPolynomial σ R} [Nontrivial R]
+    {ι : Type*} {b : ι → MvPolynomial σ R}
     (hb : ∀ i, m.Monic (b i)) (u v : ι →₀ ℕ)
     (huv : Finsupp.linearCombination ℕ (m.degree ∘ b) u =
       Finsupp.linearCombination ℕ (m.degree ∘ b) v) :

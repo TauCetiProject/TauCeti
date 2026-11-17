@@ -85,9 +85,6 @@ noncomputable def toEllipticCurveGeom : EllipticCurveGeom (Spec (.of R)) where
   carrier := W.projModel
   structureMap := W.projModelOver
   zero := W.projModelZero
-  zero_comp := W.projModelZero_projModelOver
-  smooth := inferInstance
-  proper := inferInstance
   localModel := ⟨{
     index := PUnit
     chart _ := {

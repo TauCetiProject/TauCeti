@@ -37,8 +37,6 @@ omit [FiniteDimensional ℚ_[2] K] in
 theorem range_localCyclotomicCharacter_of_odd_finrank
     (hodd : Odd (Module.finrank ℚ_[2] K)) :
     (localCyclotomicCharacter 2 K).range = ⊤ := by
-  let _ : CharZero K :=
-    charZero_of_injective_algebraMap (algebraMap ℚ_[2] K).injective
   rw [MonoidHom.range_eq_top]
   apply localCyclotomicCharacter_surjective_of_irreducible
   intro n

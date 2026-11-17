@@ -75,7 +75,8 @@ theorem norm_convolutionL_sub_le {k : Lp ℝ 1 μ} (hk : 0 ≤ k) (hk1 : ∫ y, 
     (hu : ∀ y ∈ S, ‖leftTranslation μ p ℝ y u - u‖ ≤ ε) :
     ‖convolutionL μ p hp k u - u‖ ≤ ε := by
   have h := norm_integral_smul_sub_le hk1 hkS
-    (integrable_smul_leftTranslation hp (L1.integrable_coeFn k) u).aestronglyMeasurable hu
+    (integrable_smul_leftTranslation hp (L1.integrable_coeFn k) u).aestronglyMeasurable
+    (ae_of_all _ hu)
   rwa [(L1.norm_eq_integral_of_nonneg hk).trans hk1, mul_one, ← convolutionL_apply] at h
 
 /-- **Left approximate identity.** Convolution on the left with nonnegative kernels of integral

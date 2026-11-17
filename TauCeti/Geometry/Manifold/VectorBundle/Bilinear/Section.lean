@@ -10,7 +10,10 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.LinearAlgebra.Projection
 
 /-!
-# Symmetrization of `C^n` bilinear fields
+# `C^n` bilinear fields
+
+Pairing two `C^n` sections with a `C^n` bilinear field gives a `C^n` function
+(`ContMDiffWithinAt.clm_bundle_apply₂_trivial` and its variant on a set).
 
 The transpose of a `C^n` bilinear field is `C^n`. When two is nonzero in the scalar field,
 averaging a field with its transpose defines a linear projection onto the symmetric `C^n`
@@ -65,7 +68,7 @@ theorem contMDiffAt_flip_section
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y)) x) :
     ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n
       (fun y ↦ TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) y (b y).flip) x := by
-  rw [contMDiffAt_section] at hb ⊢
+  rw [contMDiffAt_section_iff] at hb ⊢
   -- The unbundled bound avoids identifying the normed and seminormed structures on hom spaces.
   have hflip : IsBoundedLinearMap 𝕜 (fun c : F →L[𝕜] F →L[𝕜] G ↦ c.flip) :=
     { map_add := fun c d ↦ by ext v w; simp
@@ -206,3 +209,120 @@ theorem range_symmetrizeBilinearSection :
     exact ⟨b, (symmetrizeBilinearSection_eq_self_iff b).mpr hb⟩
 
 end TauCeti.Manifold
+
+section Pairing
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EM : Type*} [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  {HM : Type*} [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace HM M]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F₁ : Type*} [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  {V₁ : B → Type*} [TopologicalSpace (TotalSpace F₁ V₁)]
+  [∀ x, TopologicalSpace (V₁ x)] [∀ x, AddCommGroup (V₁ x)] [∀ x, Module 𝕜 (V₁ x)]
+  [FiberBundle F₁ V₁] [VectorBundle 𝕜 F₁ V₁]
+  {F₂ : Type*} [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂]
+  {V₂ : B → Type*} [TopologicalSpace (TotalSpace F₂ V₂)]
+  [∀ x, TopologicalSpace (V₂ x)] [∀ x, AddCommGroup (V₂ x)] [∀ x, Module 𝕜 (V₂ x)]
+  [FiberBundle F₂ V₂] [VectorBundle 𝕜 F₂ V₂]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω} {b : M → B} {s : Set M} {x : M}
+
+/-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
+function, within a set at a point. -/
+theorem ContMDiffWithinAt.clm_bundle_apply₂_trivial
+    {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
+    {W : ∀ x : M, V₂ (b x)}
+    (hβ : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] G)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] G) (b y) (β y)) s x)
+    (hU : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ (b y) (U y)) s x)
+    (hW : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ (b y) (W y)) s x) :
+    ContMDiffWithinAt IM 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s x :=
+  (contMDiffWithinAt_totalSpace_iff.mp (hβ.clm_bundle_apply₂ (F₃ := G)
+    (E₃ := Bundle.Trivial B G) hU hW)).2
+
+/-- Pairing two `C^n` sections with a `C^n` bilinear field, over a base map `b`, gives a `C^n`
+function on a set. -/
+theorem ContMDiffOn.clm_bundle_apply₂_trivial
+    {β : ∀ x : M, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] G} {U : ∀ x : M, V₁ (b x)}
+    {W : ∀ x : M, V₂ (b x)}
+    (hβ : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂ →L[𝕜] G)
+        (E := fun z ↦ V₁ z →L[𝕜] V₂ z →L[𝕜] G) (b y) (β y)) s)
+    (hU : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₁)) n (fun y ↦ TotalSpace.mk' F₁ (b y) (U y)) s)
+    (hW : ContMDiffOn IM (IB.prod 𝓘(𝕜, F₂)) n (fun y ↦ TotalSpace.mk' F₂ (b y) (W y)) s) :
+    ContMDiffOn IM 𝓘(𝕜, G) n (fun y ↦ β y (U y) (W y)) s :=
+  fun y hy ↦ (hβ y hy).clm_bundle_apply₂_trivial (hU y hy) (hW y hy)
+
+end Pairing
+
+section BilinearComp
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V] [∀ x, IsNormableSpace 𝕜 (V x)]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {W : B → Type*} [TopologicalSpace (TotalSpace F' W)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, AddCommGroup (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul 𝕜 (W x)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W] [∀ x, IsNormableSpace 𝕜 (W x)]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {n : ℕ∞ω}
+
+/-- Precomposing both arguments of a bilinear field on `W` that is `C^n` at `x` with a field of
+continuous linear maps `V x → W x` that is `C^n` at `x` gives a bilinear field on `V` that is
+`C^n` at `x`. -/
+theorem ContMDiffAt.bilinearComp_bundle {x : B}
+    {β : ∀ x, W x →L[𝕜] W x →L[𝕜] G}
+    (hβ : ContMDiffAt IB (IB.prod 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F' →L[𝕜] F' →L[𝕜] G) (E := fun y ↦ W y →L[𝕜] W y →L[𝕜] G) x (β x)) x)
+    {A : ∀ x, V x →L[𝕜] W x}
+    (hA : ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F')) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F') (E := fun y ↦ V y →L[𝕜] W y) x (A x)) x) :
+    ContMDiffAt IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x
+        ((β x).bilinearComp (A x) (A x))) x := by
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨contMDiffAt_id, ?_⟩
+  let a (y : B) := ContinuousLinearMap.inCoordinates F V F' W x y x y (A y)
+  let q (y : B) := ContinuousLinearMap.inCoordinates F' W (F' →L[𝕜] G)
+    (fun z ↦ W z →L[𝕜] G) x y x y (β y)
+  have ha : ContMDiffAt IB 𝓘(𝕜, F →L[𝕜] F') n a x :=
+    ((contMDiffAt_hom_bundle _).mp hA).2
+  have hq : ContMDiffAt IB 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G) n q x :=
+    ((contMDiffAt_hom_bundle _).mp hβ).2
+  have hc := (ha.clm_precomp (F₃ := G)).clm_comp (hq.clm_comp ha)
+  apply hc.congr_of_eventuallyEq
+  filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F V x),
+    (trivializationAt F' W x).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F' W x)] with y hyV hyW
+  dsimp only [a, q]
+  ext v w
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
+  rw [inCoordinates_apply_eq₂ hyV hyV (by simp), inCoordinates_apply_eq₂ hyW hyW (by simp)]
+  simp [ContinuousLinearMap.inCoordinates, hyV, hyW]
+
+/-- Precomposing both arguments of a `C^n` bilinear field on `W` with a `C^n` field of
+continuous linear maps `V x → W x` gives a `C^n` bilinear field on `V`. -/
+theorem ContMDiff.bilinearComp_bundle
+    {β : ∀ x, W x →L[𝕜] W x →L[𝕜] G}
+    (hβ : ContMDiff IB (IB.prod 𝓘(𝕜, F' →L[𝕜] F' →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F' →L[𝕜] F' →L[𝕜] G) (E := fun y ↦ W y →L[𝕜] W y →L[𝕜] G) x (β x)))
+    {A : ∀ x, V x →L[𝕜] W x}
+    (hA : ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F')) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F') (E := fun y ↦ V y →L[𝕜] W y) x (A x))) :
+    ContMDiff IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
+      TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x
+        ((β x).bilinearComp (A x) (A x))) :=
+  fun x ↦ (hβ x).bilinearComp_bundle (hA x)
+
+end BilinearComp

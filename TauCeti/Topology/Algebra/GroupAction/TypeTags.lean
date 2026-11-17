@@ -56,12 +56,12 @@ end Multiplicative
 
 namespace MulDistribMulActionHom
 
-variable {M A B : Type*} [Monoid M] [Monoid A] [Monoid B] [MulDistribMulAction M A]
-  [MulDistribMulAction M B] [TopologicalSpace A] [TopologicalSpace B]
+variable {M N A B : Type*} [Monoid M] [Monoid N] {φ : M →* N} [Monoid A] [Monoid B]
+  [MulDistribMulAction M A] [MulDistribMulAction N B] [TopologicalSpace A] [TopologicalSpace B]
 
 /-- An equivariant monoid homomorphism read additively, `MulDistribMulActionHom.toAdditive`, is
 continuous when the homomorphism is: it is the same map between the same topological spaces. -/
-theorem continuous_toAdditive (f : A →*[M] B) (hf : Continuous f) : Continuous f.toAdditive :=
+theorem continuous_toAdditive (f : A →ₑ*[φ] B) (hf : Continuous f) : Continuous f.toAdditive :=
   (continuous_ofMul.comp (hf.comp continuous_toMul)).congr fun x => (f.toAdditive_apply x).symm
 
 end MulDistribMulActionHom

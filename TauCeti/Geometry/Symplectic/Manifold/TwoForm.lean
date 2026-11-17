@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.TwoForm.Closed
+public import TauCeti.Geometry.Manifold.TwoForm.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
@@ -41,6 +42,8 @@ example.
 * `TauCeti.SmoothTwoForm.IsNondegenerate`: fiberwise nondegeneracy of a smooth two-form.
 * `TauCeti.SmoothTwoForm.IsSymplectic`: a closed, fiberwise nondegenerate smooth two-form.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt`: the symplectic form on a tangent fiber.
+* `TauCeti.SmoothTwoForm.inChartAt_extChartAt_self_nondegenerate`: nondegeneracy at a point passes
+  to the coordinate expression in the preferred chart at that point.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.symplecticFormAt_transport`: transport of tangent-fiber
   symplectic forms by the differential of a symplectomorphism.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isNondegenerate_mpullback_of_isLocalDiffeomorph`: a local
@@ -49,10 +52,20 @@ example.
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
   two-form back to a symplectic form exactly when the form is symplectic.
+* `TauCeti.SmoothTwoForm.isNondegenerate_iff_forall_ker_bilinFormAt_mpullback`: nondegeneracy
+  characterized by pullback kernels along a surjective smooth map with surjective derivatives.
+* `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of such a map is
+  symplectic exactly when its pullback is closed and has kernel equal to the derivative’s kernel.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
   relations characterized fiber by fiber through the linear theory.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.injective_mvfderiv`: a map into a vector space pulling a
+  constant symplectic form back to a nondegenerate form at a point, such as a Darboux chart, is an
+  immersion there.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv`: such a map with
+  surjective differential carries a tamed almost complex structure to one tamed by the constant
+  form.
 * `TauCeti.SymplecticForm.constSmooth`: a symplectic form as a constant smooth two-form, which is
   symplectic (`TauCeti.SymplecticForm.isSymplectic_constSmooth`), together with its `mvfderiv` and
   partial-diffeomorphism pullback characterizations
@@ -104,6 +117,13 @@ lemma isNondegenerate_iff_separatingLeft :
     intro w
     simpa only [SmoothForm.bilinFormAt_apply] using hv w
 
+/-- Fiberwise nondegeneracy says that the null space `{v | ∀ w, form x v w = 0}` of the form is
+zero at every point. -/
+lemma isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot :
+    form.IsNondegenerate ↔ ∀ x, LinearMap.ker (form.bilinFormAt x) = ⊥ := by
+  simp only [isNondegenerate_iff_separatingLeft, LinearMap.ker_eq_bot', LinearMap.ext_iff,
+    SmoothForm.bilinFormAt_apply, LinearMap.zero_apply]
+
 /-- On a manifold of positive dimension, a fiberwise nondegenerate smooth two-form vanishes
 nowhere. -/
 theorem IsNondegenerate.apply_ne_zero [Nontrivial E] (h : form.IsNondegenerate) (x : M) :
@@ -145,6 +165,20 @@ lemma IsNondegenerate.symplecticFormAt_apply (h : form.IsNondegenerate) (x : M)
 lemma IsNondegenerate.nondegenerate_bilinFormAt (h : form.IsNondegenerate) (x : M) :
     (form.bilinFormAt x).Nondegenerate :=
   h x
+
+/-- A two-form nondegenerate at `x` has a nondegenerate coordinate expression in the preferred
+chart at `x`, at the chart point of `x`. -/
+theorem inChartAt_extChartAt_self_nondegenerate (form : SmoothTwoForm I M) {x : M}
+    (hnd : (form.bilinFormAt x).Nondegenerate) :
+    ∀ v, (∀ w, RoughForm.inChartAt form.1 x (extChartAt I x x) ![v, w] = 0) → v = 0 :=
+  fun v hv ↦ hnd.1 v fun w ↦ by
+    have h := hv w
+    rw [RoughForm.inChartAt_extChartAt_self] at h
+    -- `TangentSpace I x` is the model space `E` by definition.
+    let v' : TangentSpace I x := v
+    let w' : TangentSpace I x := w
+    exact (SmoothForm.bilinFormAt_apply form x v' w').trans
+      ((SmoothBundleForm.eval₂_apply form x v' w').trans h)
 
 /-- The bilinear form underlying the tangent-space symplectic form is the value of the two-form. -/
 lemma IsNondegenerate.toBilinForm_symplecticFormAt (h : form.IsNondegenerate) (x : M) :
@@ -211,6 +245,43 @@ theorem _root_.IsLocalDiffeomorph.isSymplectic_mpullback_iff {f : M₂ → M}
       (hf.isNondegenerate_mpullback_iff hsurj).2 h.isNondegenerate⟩⟩
 
 end Transport
+
+section Pullback
+
+open Function
+
+variable {E H Z E' H' Q : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace Z] [ChartedSpace H Z] [IsManifold I ∞ Z]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
+  {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
+
+/-- For a surjective `p` with surjective derivatives, `η` is nondegenerate exactly when, at every
+point `z`, the null space of the pullback `p^* η` is the kernel of the derivative of `p`. -/
+theorem isNondegenerate_iff_forall_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p)
+    (hsurj : Surjective p) (hdp : ∀ z, Surjective (mfderiv I J p z)) :
+    η.IsNondegenerate ↔ ∀ z, LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
+      (mfderiv I J p z).ker := by
+  simp only [ker_bilinFormAt_mpullback hp η (hdp _), ← Submodule.comap_bot,
+    isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
+  refine ⟨fun h z ↦ by rw [h], fun h y ↦ ?_⟩
+  obtain ⟨z, rfl⟩ := hsurj y
+  exact Submodule.comap_injective_of_surjective (hdp z) (h z)
+
+/-- **Symplectic forms through a smooth surjection.** If `p` is a surjective smooth map with
+surjective derivatives and `p^* η = σ`, then `η` is symplectic exactly when `σ` is closed and its
+null space at every point is the kernel of the derivative of `p`. -/
+theorem isSymplectic_iff_of_mpullback_eq (hp : ContMDiff I J ∞ p) (hsurj : Surjective p)
+    (hdp : ∀ z, Surjective (mfderiv I J p z)) (hη : SmoothForm.mpullback p hp η = σ) :
+    η.IsSymplectic ↔
+      σ.IsClosed ∧ ∀ z, LinearMap.ker (σ.bilinFormAt z) = (mfderiv I J p z).ker := by
+  subst hη
+  rw [SmoothForm.isClosed_mpullback_iff_of_surjective hp hsurj hdp,
+    ← isNondegenerate_iff_forall_ker_bilinFormAt_mpullback hp hsurj hdp]
+  exact ⟨fun h ↦ ⟨h.isClosed, h.isNondegenerate⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+end Pullback
 
 /-- A smooth two-form tames a smooth almost complex structure when
 `form_x(v, J_x v) > 0` for every nonzero tangent vector. -/
@@ -297,6 +368,43 @@ space. -/
 lemma Compatible.compatibleAt (h : form.Compatible J) (x : M) :
     (h.isNondegenerate.symplecticFormAt x).Compatible (J.almostComplexStructureAt x) :=
   h.isNondegenerate.compatible_iff.mp h x
+
+section Chart
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {ω₀ : SymplecticForm V} {φ : M → V}
+  {x : M}
+
+/-- **A symplectic chart is an immersion.** If `φ` pulls the symplectic form `ω₀` back to the
+nondegenerate form `form` at `x`, its differential at `x` is injective. -/
+theorem IsNondegenerate.injective_mvfderiv (h : form.IsNondegenerate)
+    (hform : ∀ v w : TangentSpace I x,
+      form.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w)) :
+    Function.Injective (mvfderiv I φ x) := by
+  refine (injective_iff_map_eq_zero _).2 fun v hv ↦ ?_
+  -- `v` pairs to zero with every tangent vector, so it vanishes by nondegeneracy of `form_x`.
+  refine (h.symplecticFormAt x).separatingLeft v fun w ↦ ?_
+  have hvw := (h.symplecticFormAt_apply x v w).trans (hform v w)
+  rw [hv] at hvw
+  exact hvw.trans (LinearMap.map_zero₂ _ _)
+
+/-- **Taming in a symplectic chart.** Let `φ` have surjective differential at `x` and pull the
+symplectic form `ω₀` back to the nondegenerate form `form` at `x`. If `J` is tamed by `form_x` and
+`J'` is `J` read in the chart, `dφ ∘ J = J' ∘ dφ`, then `J'` is tamed by `ω₀`. -/
+theorem IsNondegenerate.tames_of_isComplexLinearMap_mvfderiv (h : form.IsNondegenerate)
+    (hsurj : Function.Surjective (mvfderiv I φ x))
+    (hform : ∀ v w : TangentSpace I x,
+      form.eval₂ x v w = ω₀ (mvfderiv I φ x v) (mvfderiv I φ x w))
+    {J : AlmostComplexStructure (TangentSpace I x)} {J' : AlmostComplexStructure V}
+    (hJ : IsComplexLinearMap J J' (mvfderiv I φ x).toLinearMap)
+    (hJt : (h.symplecticFormAt x).Tames J) : ω₀.Tames J' := by
+  intro w hw
+  obtain ⟨v, rfl⟩ := hsurj w
+  have hJv := LinearMap.congr_fun hJ v
+  simp only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe] at hJv
+  rw [← hJv, ← hform, ← IsNondegenerate.symplecticFormAt_apply]
+  exact hJt v fun hv ↦ hw (by rw [hv, map_zero])
+
+end Chart
 
 end SmoothTwoForm
 

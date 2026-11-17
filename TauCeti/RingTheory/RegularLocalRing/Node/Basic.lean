@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.RegularLocalRing.Polynomial
-public import TauCeti.RingTheory.LocalRing.Polynomial
+public import TauCeti.RingTheory.LocalRing.Localization
 public import TauCeti.RingTheory.Node.Localization
 public import TauCeti.RingTheory.RegularLocalRing.Basic
 public import TauCeti.RingTheory.Smooth.Regular
@@ -126,7 +126,7 @@ theorem isRegularLocalRing_quotient_X_mul_X_sub_C_pow_iff (hπ : π ∈ maximalI
       (pow_le_pow_right (by omega) (pow_mem_pow hπ n))
   · -- for `n = 1` the constant coefficient `-π` of the equation does not lie in `𝔪_R²`
     rintro rfl
-    exact algebraMap_notMem_maximalIdeal_sq (by simpa using hπ2)
+    exact algebraMap_notMem_maximalIdeal_pow (by simpa using hπ2)
 
 /-- **The local ring of `R[x, y] ⧸ (xy - πⁿ)` at the origin of its special fibre is regular exactly
 when `n = 1`.** Here `π ∈ 𝔪_R \ 𝔪_R²` for a regular local ring `R`, and the origin is the image of

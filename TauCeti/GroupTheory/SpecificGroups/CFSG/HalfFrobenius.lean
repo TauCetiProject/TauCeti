@@ -15,8 +15,7 @@ The Steinberg endomorphism of a Suzuki, Ree or Tits group is not a Frobenius but
 a half-Frobenius*: the exceptional isogeny `τ` of the pinned ambient group, which squares to the
 prime-field Frobenius, raised to the odd exponent `2 * m + 1`. This file takes that odd power on
 root data, where `τ` already lives as
-`TauCeti.SuzukiReeIndex.datumSpecialIsogeny`, and proves the relation the CFSG roadmap requires of
-it,
+`TauCeti.SuzukiReeIndex.datumSpecialIsogeny`, and proves the relation
 
 ```text
 steinberg (m) ^ 2 = Frob_(p ^ (2 * m + 1)).
@@ -29,7 +28,7 @@ map is `τ` itself. So `TauCeti.SuzukiReeIndex.halfExponent` reads off the `m` t
 share, `fieldExponent_eq_two_mul_halfExponent_add_one` is the odd decomposition, and the Steinberg
 map is the `fieldExponent`-th power throughout. Squaring it then lands on the scaling by
 `TauCeti.LieTypeIndex.fieldOrder` rather than on some separately tabulated field order, which is
-the check that the exponent convention of milestone L2 and the numeric data of milestone I0 agree.
+the check that the exponent convention and the field-order data of the index agree.
 
 The odd power is genuinely a new map and not a rescaled identity: it is a scaling times `τ`, so it
 permutes the roots exactly as `τ` does, by the length-exchanging permutation
@@ -72,11 +71,6 @@ work.
   the numbered simple roots and coroots.
 
 ## References
-
-The odd half-Frobenius power and the relation `steinberg (m) ^ 2 = Frob_(p ^ (2 * m + 1))` are
-milestone L2 of `TauCetiRoadmap/CFSGStatement/README.md`, which fixes the convention followed here,
-including the Tits index as the `m = 0` member. The upstream exceptional isogeny is the Layer 9
-target of `TauCetiRoadmap/ReductiveGroups/README.md`.
 
 * R. Steinberg, *Endomorphisms of linear algebraic groups*, Memoirs AMS 80 (1968), §11.
 * R. W. Carter, *Simple Groups of Lie Type*, §13.
@@ -176,6 +170,15 @@ noncomputable def datumSteinberg (e : SuzukiReeIndex) :
       (e.1.dynkinType.simplyConnectedRootDatum e.1.dynkinType_valid) :=
   e.datumSpecialIsogeny ^ e.1.fieldExponent
 
+/-- The root-datum Steinberg map is the index's field-exponent power of its special isogeny. -/
+theorem datumSteinberg_def (e : SuzukiReeIndex) :
+    e.datumSteinberg = e.datumSpecialIsogeny ^ e.1.fieldExponent := (rfl)
+
+/-- The Steinberg character map is the recorded power of the special-isogeny character map. -/
+theorem datumSteinberg_weightMap_eq_pow (e : SuzukiReeIndex) :
+    e.datumSteinberg.weightMap = e.datumSpecialIsogeny.weightMap ^ e.1.fieldExponent := by
+  rw [datumSteinberg, RootPairingIsogeny.weightMap_pow]
+
 /-- **The Steinberg map is a scaling times the special isogeny**, by `p ^ m`. Every computation
 below is read off this decomposition. -/
 theorem datumSteinberg_eq_smulId_mul (e : SuzukiReeIndex) :
@@ -225,9 +228,10 @@ scaling separating the two fixes every index. -/
 that node, so this is `p ^ m` at a short simple root and `p ^ (m + 1)` at a long one.
 
 The `exponent` field is indexed by the source of the character map, which is the image node of the
-group-scheme isogeny, so this indexing is the one exchanged against the simple-root relation below:
-the factor there is `TauCeti.SuzukiReeIndex.exponent i`, the squared length of the node paired with
-`i`, and is therefore `p ^ m` at a long node and `p ^ (m + 1)` at a short one. -/
+group-scheme isogeny, so the sentence above is about that image node. The simple-root relation
+below instead uses `TauCeti.SuzukiReeIndex.exponent i` at the node `i` it starts from, which is `1`
+at a long node and the characteristic at a short one. Hence the factor there is `p ^ m` at a long
+`i` and `p ^ (m + 1)` at a short `i`: the two nodes are exchanged by the length permutation. -/
 @[simp] theorem datumSteinberg_exponent (e : SuzukiReeIndex)
     (i : Fin e.1.dynkinType.numRoots) :
     e.datumSteinberg.exponent i =

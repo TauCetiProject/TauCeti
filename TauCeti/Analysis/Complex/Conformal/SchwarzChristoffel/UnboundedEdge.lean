@@ -48,6 +48,10 @@ is approached but not reached at a finite parameter.
   left-hand edge when the total exponent is `-2`, run in the positive real direction: their
   finite endpoints lie respectively left and right of the vertex at infinity on a horizontal line
   (in the order `ComplexOrder`).
+* `TauCeti.schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first` and
+  `TauCeti.schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le` -- for strictly ordered
+  prevertices, the unbounded arcs to the left of the first and to the right of the last
+  prevertex lie respectively right and left of the vertex at infinity.
 
 ## References
 
@@ -179,60 +183,29 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
     exact tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x (hsum hx)
   have hdl : Tendsto d atTop (𝓝 D) := by
     simpa [d, D] using (hBtop.sub tendsto_const_nhds).norm
-  have hdcont : ContinuousOn d (Ici p) := by
-    exact (hcont.sub continuousOn_const).norm
+  have hdcont : ContinuousOn d (Ici p) := (hcont.sub continuousOn_const).norm
   have hdmono : StrictMonoOn d (Ici p) := by
     intro x hx y hy hxy
     have hsumxy := norm_schwarzChristoffelBoundary_sub_add a e z₀ (hfree hy) hp (hsum hy)
       (x := p) (y := x) (z := y) ⟨le_rfl, hy⟩ ⟨hx, hxy.le⟩ ⟨hy, le_rfl⟩ hx hxy.le
     have hinj := schwarzChristoffelBoundary_injOn_Ici a e z₀ hp ha
-    have hne : B y ≠ B x := by
-      intro h
-      have : y = x := hinj hy hx h
-      exact hxy.ne this.symm
-    have hpos : 0 < ‖B y - B x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne)
-    have hsumxy' : d y = d x + ‖B y - B x‖ := by simpa [d, B] using hsumxy
-    rw [hsumxy']
-    exact lt_add_of_pos_right _ hpos
+    have hpos : 0 < ‖B y - B x‖ :=
+      norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hxy.ne (hinj hx hy h.symm))
+    linarith
   -- Strict monotonicity and the limit at infinity identify the distance parameter's image.
-  have hdimage : d '' Ici p = Ico 0 D := by
-    simpa [d] using hdcont.image_Ici_of_strictMonoOn_of_tendsto hdmono hdl
+  have himage : d '' Ici p = Ico (d p) D := hdcont.image_Ici_of_strictMonoOn_of_tendsto hdmono hdl
+  have hd0 : d p = 0 := by simp [d]
   have hDpos : 0 < D := by
-    have hp1 : p + 1 ∈ Ici p := by
-      exact mem_Ici.mpr (le_add_of_nonneg_right (by norm_num))
-    have hpp1 : p < p + 1 := by linarith
-    have hstrict := hdmono self_mem_Ici hp1
-      hpp1
-    have hle : d (p + 1) ≤ D := by
-      apply ge_of_tendsto hdl
-      filter_upwards [eventually_ge_atTop (p + 1)] with y hxy
-      have hy : y ∈ Ici p := hp1.trans hxy
-      exact hdmono.monotoneOn hp1 hy hxy
-    simpa [d, D] using hstrict.trans_le hle
+    have hp1 : p + 1 ∈ Ici p := mem_Ici.mpr (by linarith)
+    have hlt := (himage ▸ mem_image_of_mem d hp1).2
+    exact hd0 ▸ (hdmono self_mem_Ici hp1 (by linarith)).trans hlt
   have hVdir : V - B p = ((D : ℝ) : ℂ) * u := by
     simpa [B, V, D, u] using
       schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul a e z₀ hp ha hS
-  -- Convert the half-open scalar interval into the geometric segment with its terminal point
-  -- removed.
-  have hscalar : (fun t : ℝ => B p + (t : ℂ) * u) '' Ico 0 D =
-      segment ℝ (B p) V \ {V} := by
-    simpa only [Complex.real_smul] using image_add_smul_Ico hDpos
-      (Complex.exp_ne_zero (schwarzChristoffelEdgeAngle a e p * Complex.I)) hVdir
-  have hBimage : B '' Ici p = (fun t : ℝ => B p + (t : ℂ) * u) '' (d '' Ici p) := by
-    apply Set.Subset.antisymm
-    · rintro z ⟨x, hx, rfl⟩
-      have h : B p + ((d x : ℝ) : ℂ) * u = B x := by
-        calc
-          B p + ((d x : ℝ) : ℂ) * u = B p + (B x - B p) := by rw [hformula hx]
-          _ = B x := by abel
-      exact ⟨d x, mem_image_of_mem d hx, h⟩
-    · rintro z ⟨t, ⟨x, hx, rfl⟩, rfl⟩
-      have h : B x = B p + ((d x : ℝ) : ℂ) * u := by
-        calc
-          B x = B p + (B x - B p) := by abel
-          _ = B p + ((d x : ℝ) : ℂ) * u := by rw [hformula hx]
-      exact ⟨x, hx, h⟩
-  rw [hBimage, hdimage, hscalar]
+  exact image_eq_segment_sdiff_of_forall_eq_add_smul hDpos (Complex.exp_ne_zero _)
+    (hd0 ▸ himage) (fun x hx => by simpa only [Complex.real_smul] using
+      (by linear_combination hformula hx : B x = B p + (d x : ℂ) * u))
+    (by simpa only [Complex.real_smul] using hVdir)
 
 /-- The right-hand unbounded edge based at a prevertex starts at its corresponding
 Schwarz--Christoffel vertex. -/
@@ -416,66 +389,34 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
     exact tendsto_schwarzChristoffelPrimitive_boundary a e z₀ x (hsum hx)
   have hdl : Tendsto d atBot (nhds D) := by
     simpa [d, D] using (tendsto_const_nhds.sub hBbot).norm
-  have hdcont : ContinuousOn d (Iic p) := by
-    exact (continuousOn_const.sub hcont).norm
+  have hdcont : ContinuousOn d (Iic p) := (continuousOn_const.sub hcont).norm
   have hdanti : StrictAntiOn d (Iic p) := by
     intro x hx y hy hxy
     have hsumxy := norm_schwarzChristoffelBoundary_sub_add a e z₀ (hfree hx) (hsum hx) hp
       (x := x) (y := y) (z := p) ⟨le_rfl, hx⟩ ⟨hxy.le, hy⟩ ⟨hx, le_rfl⟩ hxy.le hy
     have hinj := schwarzChristoffelBoundary_injOn_Iic a e z₀ hp ha
-    have hne : B y ≠ B x := by
-      intro h
-      have : y = x := hinj hy hx h
-      exact hxy.ne this.symm
-    have hpos : 0 < ‖B y - B x‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hne)
-    have hsumxy' : d x = ‖B y - B x‖ + d y := by simpa [d, B] using hsumxy
-    rw [hsumxy']
-    exact lt_add_of_pos_left _ hpos
+    have hpos : 0 < ‖B y - B x‖ :=
+      norm_pos_iff.mpr (sub_ne_zero.mpr fun h => hxy.ne (hinj hx hy h.symm))
+    linarith
   -- Strict antitonicity and the limit at infinity identify the distance parameter's image.
-  have hdimage : d '' Iic p = Ico 0 D := by
-    have himage : d '' Iic p = Ico (d p) D := by
-      exact ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto (α := OrderDual ℝ)
-        hdcont (fun x hx y hy hxy => hdanti hy hx hxy) hdl
-    simpa [d] using himage
+  have himage : d '' Iic p = Ico (d p) D :=
+    ContinuousOn.image_Ici_of_strictMonoOn_of_tendsto (α := OrderDual ℝ)
+      hdcont (fun x hx y hy hxy => hdanti hy hx hxy) hdl
+  have hd0 : d p = 0 := by simp [d]
   have hDpos : 0 < D := by
-    have hp1 : p - 1 ∈ Iic p := by
-      exact mem_Iic.mpr (sub_le_self p (by norm_num))
-    have hp1p : p - 1 < p := by linarith
-    have hstrict := hdanti hp1 self_mem_Iic hp1p
-    have hle : d (p - 1) ≤ D := by
-      apply ge_of_tendsto hdl
-      filter_upwards [eventually_le_atBot (p - 1)] with y hxy
-      have hy : y ∈ Iic p := hxy.trans hp1
-      exact hdanti.antitoneOn hy hp1 hxy
-    simpa [d, D] using hstrict.trans_le hle
+    have hp1 : p - 1 ∈ Iic p := mem_Iic.mpr (by linarith)
+    have hlt := (himage ▸ mem_image_of_mem d hp1).2
+    exact hd0 ▸ (hdanti hp1 self_mem_Iic (by linarith)).trans hlt
   have hVdir : V - B p = ((D : ℝ) : ℂ) * (-u) := by
     have hleft : B p - V = ((D : ℝ) : ℂ) * u := by
       simpa [B, V, D, u] using
         schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul a e z₀ hp ha hS
-    calc
-      V - B p = -(B p - V) := by abel
-      _ = -(((D : ℝ) : ℂ) * u) := congrArg Neg.neg hleft
-      _ = ((D : ℝ) : ℂ) * (-u) := by ring
-  have hscalar : (fun t : ℝ => B p + (t : ℂ) * (-u)) '' Ico 0 D =
-      segment ℝ (B p) V \ {V} := by
-    simpa only [Complex.real_smul] using image_add_smul_Ico hDpos
-      (neg_ne_zero.mpr (Complex.exp_ne_zero ((Real.pi * ∑ i, e i) * Complex.I))) hVdir
-  have hBimage : B '' Iic p = (fun t : ℝ => B p + (t : ℂ) * (-u)) '' (d '' Iic p) := by
-    apply Set.Subset.antisymm
-    · rintro z ⟨x, hx, rfl⟩
-      have h : B p + ((d x : ℝ) : ℂ) * (-u) = B x := by
-        calc
-          B p + ((d x : ℝ) : ℂ) * (-u) = B p - ((d x : ℝ) : ℂ) * u := by ring
-          _ = B x := by rw [← hformula hx]; abel
-      exact ⟨d x, mem_image_of_mem d hx, h⟩
-    · rintro z ⟨t, ⟨x, hx, rfl⟩, rfl⟩
-      have h : B x = B p + ((d x : ℝ) : ℂ) * (-u) := by
-        calc
-          B x = B p - (B p - B x) := by abel
-          _ = B p - ((d x : ℝ) : ℂ) * u := by rw [hformula hx]
-          _ = B p + ((d x : ℝ) : ℂ) * (-u) := by ring
-      exact ⟨x, hx, h⟩
-  rw [hBimage, hdimage, hscalar]
+    linear_combination -hleft
+  exact image_eq_segment_sdiff_of_forall_eq_add_smul hDpos
+    (neg_ne_zero.mpr (Complex.exp_ne_zero _)) (hd0 ▸ himage)
+    (fun x hx => by simpa only [Complex.real_smul] using
+      (by linear_combination -hformula hx : B x = B p + (d x : ℂ) * -u))
+    (by simpa only [Complex.real_smul] using hVdir)
 
 /-- The left-hand unbounded edge based at a prevertex starts at its corresponding
 Schwarz--Christoffel vertex. -/
@@ -545,5 +486,33 @@ theorem schwarzChristoffelVertexAtInfinity_lt_boundary (a e : ι → ℝ)
     ⟨hx.le, le_rfl⟩ ⟨le_rfl, hx.le⟩ hx.le
   rw [hangle hx, mul_one] at h
   exact sub_nonneg.mp (h ▸ Complex.zero_le_real.mpr (norm_nonneg _))
+
+open scoped ComplexOrder in
+/-- The unbounded arc to the left of the first prevertex lies strictly to the right of the vertex
+at infinity, on the closing line. -/
+theorem schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first {n : ℕ}
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : -1 < e 0) (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ≤ a 0) :
+    schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelBoundary a e z₀ x := by
+  have hfin : -1 < ∑ l with a l = a 0, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he
+  exact schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
+    (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ) Finset.univ
+      (by norm_num) hfin
+      (fun i _ _ ↦ ha.monotone i.zero_le) hx)
+    (fun i _ ↦ hx.trans (ha.monotone i.zero_le)) hsum
+
+open scoped ComplexOrder in
+/-- The unbounded arc to the right of the last prevertex lies strictly to the left of the vertex
+at infinity, on the closing line. -/
+theorem schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le {n : ℕ}
+    (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
+    (he : -1 < e (Fin.last n)) (hsum : ∑ k, e k < -1) {x : ℝ} (hx : a (Fin.last n) ≤ x) :
+    schwarzChristoffelBoundary a e z₀ x < schwarzChristoffelVertexAtInfinity a e z₀ :=
+  schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀
+    (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ (by norm_num)
+      (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using he)
+      (fun i _ _ ↦ ha.monotone i.le_last) hx)
+    (fun i _ ↦ (ha.monotone i.le_last).trans hx) hsum
 
 end TauCeti

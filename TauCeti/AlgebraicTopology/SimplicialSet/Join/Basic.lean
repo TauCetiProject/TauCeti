@@ -48,6 +48,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
 
 ## Main results
 
+* `SSet.join.hom_ext_stdSimplex`: maps from a join to a standard simplex are determined by
+  their restrictions to the two factors.
 * `SSet.join.homEquiv`: maps `X ⟶ K ⋆ L` correspond to join data on `X`, naturally in `X`
   (`SSet.join.homEquiv_comp`); this is the representability `SSet.join.representableBy`.
 * `SSet.join.edge_mem_joinFiber_zero`: an edge of `K ⋆ L` ending over the vertex `0` lies over
@@ -62,6 +64,8 @@ on standard simplices, and `SSet.join.homEquiv` identifies its maps from `X` wit
   `K ⋆ B` along `A ⋆ B`.
 * `SSet.join.isoOfIsTerminal`: the join of two terminal simplicial sets, such as
   `Δ[0] ⋆ Δ[0]`, is `Δ[1]`.
+* `SSet.join.isIso_inl`, `SSet.join.isIso_inr`: the join with an empty simplicial set is the other
+  factor.
 * `SSet.join.quasicategory`: the join of two quasicategories is a quasicategory (Joyal).
 
 ## Implementation notes
@@ -700,6 +704,27 @@ lemma inr_app_univ_right_app {n : SimplexCategoryᵒᵖ} (x : (join K L).obj n)
   -- Elaborated without the expected type, which is only definitionally equal.
   (ConcreteCategory.congr_hom (NatTrans.congr_app (univ_right_comp_inr K L) n) ⟨x, hx⟩ :)
 
+/-- Maps from a join to a standard simplex are determined by their restrictions to the two
+factors: every vertex of the join comes from one of them. -/
+theorem hom_ext_stdSimplex {K L : SSet.{u}} {k : ℕ} {σ σ' : join K L ⟶ Δ[k]}
+    (h₀ : inl K L ≫ σ = inl K L ≫ σ') (h : inr K L ≫ σ = inr K L ≫ σ') : σ = σ' := by
+  refine stdSimplex.hom_ext fun y ↦ ?_
+  by_cases hy : (univ K L).p.app _ y 0 = 0
+  · have hy' : y ∈ (joinFiber (univ K L).p 0).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact hy
+    rw [← inl_app_univ_left_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h₀ _) _
+  · have hy' : y ∈ (joinFiber (univ K L).p 1).obj _ := by
+      rw [mem_joinFiber_iff]
+      intro j
+      fin_cases j
+      exact Fin.eq_one_of_ne_zero _ hy
+    rw [← inr_app_univ_right_app y hy']
+    exact ConcreteCategory.congr_hom (NatTrans.congr_app h _) _
+
 variable (K L) in
 /-- The inclusion of `K` lands in the part of the join over the vertex `0`. -/
 lemma range_inl_le_joinFiber : Subcomplex.range (inl K L) ≤ joinFiber (univ K L).p 0 := by
@@ -794,6 +819,52 @@ def isoOfIsTerminal (hK : Limits.IsTerminal K) (hL : Limits.IsTerminal L) : join
 lemma isoOfIsTerminal_hom (hK : Limits.IsTerminal K) (hL : Limits.IsTerminal L) :
     (isoOfIsTerminal hK hL).hom = π K L :=
   (rfl)
+
+/-- If a vertex `j` of a simplex `x` of `K ⋆ L` lies over the vertex `e` of `Δ[1]`, then the vertex
+`j` of `x` lies in the part of the join over `e`. -/
+private lemma vertex_mem_joinFiber {n : ℕ} (x : (join K L) _⦋n⦌) (j : Fin (n + 1)) (e : Fin 2)
+    (h : (π K L).app _ x j = e) :
+    (join K L).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ j).op x ∈ (joinFiber (univ K L).p e).obj _ := by
+  rw [mem_joinFiber_iff, univ_p, NatTrans.naturality_apply]
+  exact fun _ ↦ h
+
+/-- When `L` is empty, the whole join `K ⋆ L` lies over the vertex `0`: a vertex over `1` would
+be a vertex of `L`. -/
+lemma joinFiber_univ_p_zero_eq_top (hL : ¬ L.Nonempty) : joinFiber (univ K L).p 0 = ⊤ := by
+  ext ⟨n⟩ x
+  induction n using SimplexCategory.rec with | _ n
+  simp only [Subfunctor.top_obj, Set.mem_univ, iff_true, mem_joinFiber_iff, univ_p]
+  intro j
+  by_contra h
+  exact hL ⟨(univ K L).right.app _
+    ⟨_, vertex_mem_joinFiber x j 1 (Fin.eq_one_of_ne_zero _ h)⟩⟩
+
+/-- When `K` is empty, the whole join `K ⋆ L` lies over the vertex `1`: a vertex over `0` would
+be a vertex of `K`. -/
+lemma joinFiber_univ_p_one_eq_top (hK : ¬ K.Nonempty) : joinFiber (univ K L).p 1 = ⊤ := by
+  ext ⟨n⟩ x
+  induction n using SimplexCategory.rec with | _ n
+  simp only [Subfunctor.top_obj, Set.mem_univ, iff_true, mem_joinFiber_iff, univ_p]
+  intro j
+  by_contra h
+  exact hK ⟨(univ K L).left.app _
+    ⟨_, vertex_mem_joinFiber x j 0 (by_contra fun h' ↦ h (Fin.eq_one_of_ne_zero _ h'))⟩⟩
+
+/-- When `L` is empty, the inclusion `K ⟶ K ⋆ L` is an isomorphism. -/
+lemma isIso_inl (hL : ¬ L.Nonempty) : IsIso (inl K L) := by
+  rw [← joinFiberZeroIso_inv_ι]
+  have : IsIso (joinFiber (univ K L).p 0).ι := by
+    rw [joinFiber_univ_p_zero_eq_top hL]
+    infer_instance
+  infer_instance
+
+/-- When `K` is empty, the inclusion `L ⟶ K ⋆ L` is an isomorphism. -/
+lemma isIso_inr (hK : ¬ K.Nonempty) : IsIso (inr K L) := by
+  rw [← joinFiberOneIso_inv_ι]
+  have : IsIso (joinFiber (univ K L).p 1).ι := by
+    rw [joinFiber_univ_p_one_eq_top hK]
+    infer_instance
+  infer_instance
 
 /-- The edge of the join `K ⋆ L` from a vertex `x` of `K` to a vertex `y` of `L`: the join data on
 `Δ[1]` splitting its vertices as `{0}` and `{1}`, with the constant maps at `x` and `y`. -/

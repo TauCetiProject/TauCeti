@@ -247,13 +247,12 @@ theorem exceptional_route_prediction_mass_le_countingSchedule [DecidableEq κ] {
   have hreg' : C.skeleton.IsPairColorRegular (inducedCountingSchedule3 F.k ε n) := by
     simpa [PairSkeleton3.lowerSkeletonRegular_iff, n] using hreg
   have hmass := topRegularOverMostPolyads_iff.1 htop
-  have hsched0 := inducedCountingSchedule3_nonneg F.k hε n
   have htriple : F.k.choose 3 * H.exceptionalPolyadMass C η r ≤ ε / 6 := by
     calc _ ≤ (F.k.choose 3 : ℝ) * inducedCountingParameter3 F.k ε :=
         mul_le_mul_of_nonneg_left hmass (Nat.cast_nonneg _)
       _ ≤ _ := inducedCountingParameter3_choose_charge F.k hε
   have hpair := pairColorCount_pow_mul_choose_two_mul_inducedCountingSchedule3_le C F.k hε hn
-  refine (exceptional_route_prediction_mass_le hsched0 hreg' η r).trans ?_
+  refine (exceptional_route_prediction_mass_le hreg' η r).trans ?_
   apply mul_le_mul_of_nonneg_right _ (by positivity)
   linarith only [htriple, hpair, hε]
 

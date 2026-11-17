@@ -457,80 +457,57 @@ private theorem eq_zero_of_commute [IsDomain K]
     (h₁ : M ![Sum.inl i₀, Sum.inr i₀] ![Sum.inl i₀, Sum.inr i₀] = 0)
     (h₂ : M ![Sum.inr i₀, Sum.inl i₀] ![Sum.inl i₀, Sum.inr i₀] = 0)
     (h₃ : ∀ j, j ≠ i₀ → M ![Sum.inl j, Sum.inr j] ![Sum.inl i₀, Sum.inr i₀] = 0) : M = 0 := by
-  have hzero {p q r s : Fin n ⊕ Fin n}
-      (h : ¬((r = p ∧ s = q) ∨ (r = q ∧ s = p) ∨ (q = p.swap ∧ s = r.swap))) :
-      M ![p, q] ![r, s] = 0 :=
-    apply_eq_zero_of_not_pattern hM ht h
   -- the normal forms of the patterns vanish, by the unipotent relations
   have hγ : M ![Sum.inl i₀, Sum.inl i₀] ![Sum.inl i₀, Sum.inl i₀] = 0 := by
-    rw [relation_transvection hM i₀, h₁, h₂, hzero (by simp)]
-    simp
+    simp [relation_transvection hM i₀, h₁, h₂, apply_eq_zero_of_not_pattern hM ht]
   have hdc (j : Fin n) (hj : j ≠ i₀) :
       M ![Sum.inr j, Sum.inl j] ![Sum.inl i₀, Sum.inr i₀] = 0 := by
     refine apply_eq_zero_of_apply_eq_zero hM (isSympMonomial_swap (K := K) j) ?_
     simpa [Equiv.swap_apply_of_ne_of_ne, hj.symm] using h₃ j hj
   have hα (j : Fin n) (hj : j ≠ i₀) :
       M ![Sum.inl i₀, Sum.inl j] ![Sum.inl i₀, Sum.inl j] = 0 := by
-    rw [(relation_mixed hM hj.symm).1, h₁, hdc j hj, hzero (by simp)]
-    simp
+    simp [(relation_mixed hM hj.symm).1, h₁, hdc j hj, apply_eq_zero_of_not_pattern hM ht]
   have hβ (j : Fin n) (hj : j ≠ i₀) :
       M ![Sum.inl j, Sum.inl i₀] ![Sum.inl i₀, Sum.inl j] = 0 := by
-    rw [(relation_mixed hM hj.symm).2, h₂, h₃ j hj, hzero (by simp)]
-    simp
-  ext v u
-  rw [Matrix.zero_apply]
-  obtain ⟨p, q, rfl⟩ : ∃ p q, v = ![p, q] := ⟨v 0, v 1, by ext i; fin_cases i <;> rfl⟩
-  obtain ⟨r, s, rfl⟩ : ∃ r s, u = ![r, s] := ⟨u 0, u 1, by ext i; fin_cases i <;> rfl⟩
-  by_cases hpat : (r = p ∧ s = q) ∨ (r = q ∧ s = p) ∨ (q = p.swap ∧ s = r.swap)
-  swap
-  · exact hzero hpat
-  -- the word `(x, x)`, moved to `(inl i₀, inl i₀)`
-  have hdiag (x : Fin n ⊕ Fin n) : M ![x, x] ![x, x] = 0 := by
+    simp [(relation_mixed hM hj.symm).2, h₂, h₃ j hj, apply_eq_zero_of_not_pattern hM ht]
+  -- the words `(x, x)` and `(x, x.swap)`, moved to `(inl i₀, inl i₀)` and `(inl i₀, inr i₀)`
+  have hdiag (x : Fin n ⊕ Fin n) : M ![x, x] ![x, x] = 0 ∧ M ![x, x.swap] ![x, x.swap] = 0 := by
     obtain ⟨π, d, hπ, hx⟩ := exists_isSympMonomial_apply_eq (K := K) x i₀
-    exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hx]; exact hγ)
-  -- the pair words, moved to `(inl i₀, inr i₀)` and its reversal
-  have hpair (x : Fin n ⊕ Fin n) : M ![x, x.swap] ![x, x.swap] = 0 := by
-    obtain ⟨π, d, hπ, hx⟩ := exists_isSympMonomial_apply_eq (K := K) x i₀
-    exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hπ.apply_swap, hx]; exact h₁)
+    constructor <;> refine apply_eq_zero_of_apply_eq_zero hM hπ ?_ <;>
+      simp [hπ.apply_swap, hx, hγ, h₁]
+  -- the reversed pair word, moved to `(inr i₀, inl i₀)` against `(inl i₀, inr i₀)`
   have hpair' (x : Fin n ⊕ Fin n) : M ![x, x.swap] ![x.swap, x] = 0 := by
     obtain ⟨π, d, hπ, hx⟩ := exists_isSympMonomial_apply_eq (K := K) x.swap i₀
-    refine apply_eq_zero_of_apply_eq_zero hM hπ ?_
-    have hx' : π x = Sum.inr i₀ := by
-      rw [← Sum.swap_swap x, hπ.apply_swap, hx, Sum.swap_inl]
-    rw [hx, hx']
-    exact h₂
+    have hx' : π x = Sum.inr i₀ := by simpa [hx] using hπ.apply_swap x.swap
+    exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hx, hx']; exact h₂)
+  -- two labels from distinct pairs, moved to `inl i₀` and `inl j`
+  have hcase {x y : Fin n ⊕ Fin n} (h : y ≠ x) (h' : y ≠ x.swap) : M ![x, y] ![x, y] = 0 ∧
+      M ![y, x] ![x, y] = 0 ∧ M ![y, y.swap] ![x, x.swap] = 0 := by
+    have := Sum.nontrivial_of_ne_of_ne_swap h h'
+    obtain ⟨j, hj⟩ := exists_ne i₀
+    obtain ⟨π, d, hπ, hx, hy⟩ := exists_isSympMonomial_apply_eq_apply_eq (K := K) h h' (Ne.symm hj)
+    refine ⟨?_, ?_, ?_⟩ <;> refine apply_eq_zero_of_apply_eq_zero hM hπ ?_ <;>
+      simp [hπ.apply_swap, hx, hy, hα j hj, hβ j hj, h₃ j hj]
+  ext v u
+  obtain ⟨p, q, rfl⟩ : ∃ p q, v = ![p, q] := ⟨v 0, v 1, by ext i; fin_cases i <;> rfl⟩
+  obtain ⟨r, s, rfl⟩ : ∃ r s, u = ![r, s] := ⟨u 0, u 1, by ext i; fin_cases i <;> rfl⟩
+  refine (em' _).elim (apply_eq_zero_of_not_pattern hM ht) fun hpat => ?_
   rcases hpat with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · by_cases hqp : r = s
-    · rw [hqp]; exact hdiag s
+    · rw [hqp]; exact (hdiag s).1
     by_cases hqp' : s = r.swap
-    · rw [hqp']; exact hpair r
-    have := Sum.nontrivial_of_ne_of_ne_swap (Ne.symm hqp) hqp'
-    obtain ⟨j, hj⟩ := exists_ne i₀
-    obtain ⟨π, d, hπ, hr, hs⟩ :=
-      exists_isSympMonomial_apply_eq_apply_eq (K := K) (Ne.symm hqp) hqp' (Ne.symm hj)
-    exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hr, hs]; exact hα j hj)
+    · rw [hqp']; exact (hdiag r).2
+    exact (hcase (Ne.symm hqp) hqp').1
   · by_cases hqp : r = s
-    · rw [hqp]; exact hdiag s
+    · rw [hqp]; exact (hdiag s).1
     by_cases hqp' : r = s.swap
     · rw [hqp']; exact hpair' s
-    have hsr : s ≠ r.swap := fun e => hqp' (by rw [e, Sum.swap_swap])
-    have := Sum.nontrivial_of_ne_of_ne_swap (Ne.symm hqp) hsr
-    obtain ⟨j, hj⟩ := exists_ne i₀
-    obtain ⟨π, d, hπ, hr, hs⟩ :=
-      exists_isSympMonomial_apply_eq_apply_eq (K := K) (Ne.symm hqp) hsr (Ne.symm hj)
-    exact apply_eq_zero_of_apply_eq_zero hM hπ (by rw [hr, hs]; exact hβ j hj)
+    exact (hcase (Ne.symm hqp) fun e => hqp' (by rw [e, Sum.swap_swap])).2.1
   · by_cases hrp : r = p
-    · rw [hrp]; exact hpair p
+    · rw [hrp]; exact (hdiag p).2
     by_cases hrp' : r = p.swap
     · rw [hrp', Sum.swap_swap]; exact hpair' p
-    have hpr : p ≠ r.swap := fun e => hrp' (by rw [e, Sum.swap_swap])
-    have := Sum.nontrivial_of_ne_of_ne_swap hrp hrp'
-    obtain ⟨j, hj⟩ := exists_ne i₀
-    obtain ⟨π, d, hπ, hr, hp⟩ :=
-      exists_isSympMonomial_apply_eq_apply_eq (K := K) (Ne.symm hrp) hpr (Ne.symm hj)
-    refine apply_eq_zero_of_apply_eq_zero hM hπ ?_
-    rw [hπ.apply_swap, hπ.apply_swap, hr, hp]
-    exact h₃ j hj
+    exact (hcase (Ne.symm hrp) fun e => hrp' (by rw [e, Sum.swap_swap])).2.2
 
 end Commutant
 

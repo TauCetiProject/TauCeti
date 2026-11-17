@@ -15,7 +15,7 @@ under any group homomorphism generate its range. These carrier-independent facts
 the rank-one subgroup constructions for the E₇ minuscule and F₄ short-root carriers.
 
 The argument generalizes the containment and image proofs in
-`TauCeti.Algebra.Lie.E7.Minuscule.RankOne`, using `Matrix.SL2.transvection_induction`.
+`TauCeti.Algebra.Lie.E7.Minuscule.RankOne.Basic`, using `Matrix.SL2.transvection_induction`.
 -/
 
 public section

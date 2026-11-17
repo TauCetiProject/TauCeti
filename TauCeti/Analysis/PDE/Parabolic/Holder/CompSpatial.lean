@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Two
 public import TauCeti.Analysis.Holder.Bilinear
+public import TauCeti.Analysis.Holder.CompLinear
+public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
 
 /-!
 # Linear changes of spatial variables on order-two parabolic Hölder spaces
@@ -171,6 +173,14 @@ theorem compSpatialL_apply (e : E →L[ℝ] E') (u : ParabolicC2HolderSpace α E
     (p : slab (E := E) a b) : compSpatialL α F hab e u p = u (slabSpaceMap e p) := by
   rw [compSpatialL_eq_compSpatial, compSpatial_apply]
 
+/-- Taking a spatial trace commutes with a linear change of spatial variables. -/
+@[simp]
+theorem spatialTrace_compSpatialL (e : E →L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
+    (t : Icc a b) :
+    (compSpatialL α F hab e u).spatialTrace t = CkHolderSpace.compLinearL e (u.spatialTrace t) := by
+  ext x
+  simp
+
 /-- The spatial gradient of `u ∘ (e × id)` is the gradient of `u`, pulled back by `e`. -/
 @[simp]
 theorem spatialFDerivL_compSpatialL (e : E →L[ℝ] E') (u : ParabolicC2HolderSpace α E' F hab)
@@ -206,6 +216,16 @@ theorem norm_compSpatialL_le (e : E →L[ℝ] E') :
     fun u ↦ by
       rw [LinearMap.coe_mk, AddHom.coe_mk]
       exact norm_compSpatial_le e u
+
+variable (α F hab) in
+/-- If `‖e‖ ≤ K` with `1 ≤ K`, the change of spatial variables by `e` has operator norm at most
+`K ^ (2 + α)`. -/
+theorem norm_compSpatialL_le_of_norm_le {e : E →L[ℝ] E'} {K : ℝ} (hK : 1 ≤ K) (he : ‖e‖ ≤ K) :
+    ‖compSpatialL α F hab e‖ ≤ K ^ 2 * K ^ (α : ℝ) := by
+  exact (norm_compSpatialL_le α F hab e).trans
+    (mul_le_mul (pow_le_pow_left₀ (by positivity) (max_le he hK) 2)
+      (Real.rpow_le_rpow (by positivity) (max_le he hK) (by positivity))
+      (by positivity) (by positivity))
 
 /-- The change of spatial variables by the identity does nothing. -/
 @[simp]

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -61,7 +62,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
   extension of bounded real operators and equivalences, with
-  `ContinuousLinearMap.norm_complexify` and `ContinuousLinearMap.complexifyAlgHom`.
+  `ContinuousLinearMap.norm_complexify` and the continuous algebra homomorphism
+  `ContinuousLinearMap.complexifyAlgHom` (`ContinuousLinearMap.continuous_complexifyAlgHom`).
 * `TauCeti.Complexification.ext_ofReal`: complex-linear maps out of `X_ℂ` are determined on `X`,
   so `T.complexify` is the unique complex-linear extension of `T`.
 
@@ -129,6 +131,9 @@ def ofReal [Zero X] (x : X) : Complexification X := ⟨x, 0⟩
 
 @[simp] theorem ofReal_re [Zero X] (x : X) : (ofReal x).re = x := (rfl)
 @[simp] theorem ofReal_im [Zero X] (x : X) : (ofReal x).im = 0 := (rfl)
+
+/-- The real embedding sends zero to zero. -/
+@[simp] theorem ofReal_zero [Zero X] : ofReal (0 : X) = 0 := (rfl)
 
 variable [AddCommGroup X] [Module ℝ X]
 
@@ -436,6 +441,20 @@ theorem complexify_ofReal (T : X →L[ℝ] Y) (x : X) :
     T.complexify (ofReal x) = ofReal (T x) := by
   ext <;> simp
 
+/-- Complexification preserves finite rank. -/
+theorem hasFiniteRange_complexify (T : X →L[ℝ] Y) (hT : T.toLinearMap.HasFiniteRange) :
+    T.complexify.toLinearMap.HasFiniteRange := by
+  let i := (ofRealLI Y).toLinearMap
+  let J := (LinearMap.lsmul ℂ (Complexification Y) Complex.I).restrictScalars ℝ
+  have hreal : T.complexify.toLinearMap.restrictScalars ℝ =
+      (i.comp T.toLinearMap).comp (reCLM X).toLinearMap +
+        (J.comp (i.comp T.toLinearMap)).comp (imCLM X).toLinearMap := by
+    ext z <;> simp [i, J]
+  apply Submodule.FG.of_restrictScalars ℝ
+  rw [← LinearMap.range_restrictScalars, hreal]
+  exact ((hT.comp_left i).comp_right (reCLM X).toLinearMap).add
+    (((hT.comp_left i).comp_left J).comp_right (imCLM X).toLinearMap)
+
 /-- The complexification is the unique complex-linear extension of `T`. -/
 theorem eq_complexify_iff (T : X →L[ℝ] Y) (S : Complexification X →L[ℂ] Complexification Y) :
     S = T.complexify ↔ ∀ x, S (ofReal x) = ofReal (T x) := by
@@ -486,6 +505,10 @@ theorem complexifyₗᵢ_apply (T : X →L[ℝ] Y) : complexifyₗᵢ X Y T = T.
 
 @[simp]
 theorem complexifyAlgHom_apply (T : X →L[ℝ] X) : complexifyAlgHom X T = T.complexify := (rfl)
+
+/-- Complexification of bounded endomorphisms is continuous, being an isometry. -/
+theorem continuous_complexifyAlgHom : Continuous (complexifyAlgHom X) :=
+  (complexifyₗᵢ X X).continuous
 
 /-- Complexification preserves natural powers of bounded endomorphisms. -/
 @[simp]

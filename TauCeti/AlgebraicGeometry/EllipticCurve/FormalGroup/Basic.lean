@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Fin2
 public import Mathlib.RingTheory.FormalGroup.Basic
-public import TauCeti.RingTheory.FormalGroup.AddInv
+public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Inverse
 import TauCeti.RingTheory.MvPowerSeries.Rename
@@ -34,6 +34,8 @@ power-series-valued points whose constant coefficient is nilpotent.
 * `WeierstrassCurve.isComm_formalGroup`: the elliptic formal group law is commutative.
 * `WeierstrassCurve.map_formalGroup`: the construction commutes with base change.
 * `WeierstrassCurve.formalGroup_addInvX`: the abstract inverse is the geometric inverse parameter.
+* `WeierstrassCurve.nsmulSeries_two_formalGroup`: doubling is the inverse of the third
+  intersection parameter of the tangent.
 
 ## References
 
@@ -113,5 +115,24 @@ theorem formalGroup_addInvX (W : WeierstrassCurve R) :
   rcases i with i | i <;> cases i <;> simp
   -- The one-variable `PowerSeries.X` is `MvPowerSeries.X ()`.
   rfl
+
+/-- The doubling series is the geometric inverse of the tangent's third intersection parameter.
+This identity holds for every Weierstrass curve over a commutative ring. -/
+theorem nsmulSeries_two_formalGroup (W : WeierstrassCurve R) :
+    (formalGroup W).nsmulSeries 2 = PowerSeries.subst
+      (subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) W.formalThirdRoot)
+      W.formalInverse := by
+  have hX : HasSubst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) :=
+    hasSubst_of_constantCoeff_zero fun _ => PowerSeries.constantCoeff_X
+  rw [FormalGroup.nsmulSeries_succ, FormalGroup.nsmulSeries_one,
+    formalGroup_toPowerSeries, subst_rename _ _ (PowerSeries.hasSubst_pair
+      PowerSeries.constantCoeff_X PowerSeries.constantCoeff_X)]
+  have hfamily : (![PowerSeries.X, PowerSeries.X] : Fin 2 → PowerSeries R) ∘
+      unitSumUnitEquivFinTwo = fun _ => PowerSeries.X := by
+    funext s
+    rcases s with ⟨⟨⟩⟩ | ⟨⟨⟩⟩ <;> simp
+  rw [hfamily, formalAdd_def, ← PowerSeries.subst_def,
+    subst_powerSeriesSubst hX
+      (PowerSeries.HasSubst.of_constantCoeff_zero W.constantCoeff_formalThirdRoot)]
 
 end WeierstrassCurve

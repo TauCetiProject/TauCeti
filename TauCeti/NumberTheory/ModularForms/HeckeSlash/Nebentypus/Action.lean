@@ -54,7 +54,7 @@ right-coset composition theorem first exposes the reversed, inverted multiplicit
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup DoubleCoset TauCeti
   HeckeRing.GLn
 open scoped MatrixGroups ModularForm HeckeCosetModule Pointwise
 

@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Algebra.NatCast
 import Mathlib.Algebra.Module.BigOperators
 import Mathlib.Data.Multiset.Fintype
 import Mathlib.Tactic.Ring
+import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 
 /-!
 # Newton's identities for a multiset and the variation of Newton coefficients
@@ -48,6 +49,8 @@ Seiberg–Witten solutions near a pseudoholomorphic curve.
 ## Main results
 
 * `Multiset.mul_esymm_eq_sum`: **Newton's identities** for the elements of a multiset.
+* `Multiset.sum_map_pow_two_eq_esymm`, `Multiset.sum_map_pow_three_eq_esymm`: the power sums
+  `p₂ = e₁² - 2e₂` and `p₃ = e₁³ - 3e₁e₂ + 3e₃` of a multiset.
 * `Multiset.esymm_mem_of_sum_map_pow_mem`: the elementary symmetric functions of `s` lie in every
   subalgebra containing its first `card s` power sums.
 * `Multiset.sum_map_pow_mem_of_sum_map_pow_mem`: so do all the power sums of `s`.
@@ -85,6 +88,26 @@ theorem _root_.Multiset.mul_esymm_eq_sum {R : Type*} [CommRing R] (s : Multiset 
   simp only [map_mul, map_sum, map_pow, map_neg, map_one, map_natCast,
     MvPolynomial.aeval_esymm_eq_multiset_esymm, Multiset.map_univ_coe, hpsum] at h
   exact h
+
+/-- The second power sum of a multiset in terms of its elementary symmetric functions:
+`p₂ = e₁² - 2e₂`. -/
+theorem _root_.Multiset.sum_map_pow_two_eq_esymm {R : Type*} [CommRing R] (s : Multiset R) :
+    (s.map (· ^ 2)).sum = s.esymm 1 ^ 2 - 2 * s.esymm 2 := by
+  induction s using Multiset.induction_on with
+  | empty => simp [Multiset.esymm, Multiset.powersetCard_zero_right]
+  | cons x s ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.esymm_cons, Multiset.esymm_zero, ih]
+    ring
+
+/-- The third power sum of a multiset in terms of its elementary symmetric functions:
+`p₃ = e₁³ - 3e₁e₂ + 3e₃`. -/
+theorem _root_.Multiset.sum_map_pow_three_eq_esymm {R : Type*} [CommRing R] (s : Multiset R) :
+    (s.map (· ^ 3)).sum = s.esymm 1 ^ 3 - 3 * s.esymm 1 * s.esymm 2 + 3 * s.esymm 3 := by
+  induction s using Multiset.induction_on with
+  | empty => simp [Multiset.esymm, Multiset.powersetCard_zero_right]
+  | cons x s ih =>
+    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.esymm_cons, Multiset.esymm_zero, ih]
+    ring
 
 section Subalgebra
 

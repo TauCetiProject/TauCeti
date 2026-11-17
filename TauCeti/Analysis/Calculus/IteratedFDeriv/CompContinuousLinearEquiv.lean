@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 public import Mathlib.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -18,9 +19,16 @@ derivative of `f` at `e y` precomposed with `e` in every slot. Hence the norm of
 derivative of `f ∘ e` at `y` is at most `‖e‖ ^ i` times that of `f` at `e y`, and the norm of the
 `i`-th derivative of `f` at `e y` is at most `‖e⁻¹‖ ^ i` times that of `f ∘ e` at `y`. A Hölder
 bound for the `i`-th derivative of `f ∘ e` transfers to one for the `i`-th derivative of `f`, at
-the cost of the factor `‖e⁻¹‖ ^ (i + r)`. When `e` takes values in the scalar field, the second
-derivative of `f ∘ e` applied to `v` and `w` is `e v * e w` times the second derivative of `f`.
-No differentiability of `f` is needed.
+the cost of the factor `‖e⁻¹‖ ^ (i + r)`. The second Fréchet derivative of `f ∘ e` at `y`, applied
+to `v` and `w`, is that of `f` at `e y` applied to `e v` and `e w`; when `e` takes values in the
+scalar field, it is `e v * e w` times the second derivative of `f`. No differentiability of `f`
+is needed.
+
+In particular, for a rescaling `z ↦ f (a • z)` the `i`-th derivative at `x` is `a ^ i` times that
+of `f` at `a • x`, again without any differentiability of `f`
+(`TauCeti.iteratedFDeriv_comp_const_smul_apply`). A Hölder bound on a set `t` for the `i`-th
+derivative of `f` transfers to the rescaled map on any set that rescaling maps into `t`
+(`HolderOnWith.iteratedFDeriv_comp_const_smul`).
 -/
 
 public section
@@ -38,9 +46,20 @@ precomposed with `e` in every slot. Unlike `ContinuousLinearMap.iteratedFDeriv_c
 differentiability of `f` is needed. -/
 theorem iteratedFDeriv_comp_right (e : G ≃L[𝕜] E) (f : E → F) (x : G) (i : ℕ) :
     iteratedFDeriv 𝕜 i (f ∘ e) x =
-      (iteratedFDeriv 𝕜 i f (e x)).compContinuousLinearMap fun _ => (e : G →L[𝕜] E) := by
-  simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ] using
-    e.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ (Set.mem_univ _) i
+      (iteratedFDeriv 𝕜 i f (e x)).compContinuousLinearMap fun _ => (e : G →L[𝕜] E) :=
+  (e : G →L[𝕜] E).iteratedFDeriv_comp_right_of_rightInverse (e.symm : E →L[𝕜] G)
+    e.apply_symm_apply f x
+
+/-- **Second derivatives under a linear change of variables.** For a continuous linear
+equivalence `e`, the second derivative of `f ∘ e` at `z`, applied to `v` and `w`, is the second
+derivative of `f` at `e z` applied to `e v` and `e w`. No differentiability of `f` is needed. -/
+theorem fderiv_fderiv_comp_right_apply_apply (e : G ≃L[𝕜] E) (f : E → F) (z v w : G) :
+    fderiv 𝕜 (fderiv 𝕜 (f ∘ e)) z v w = fderiv 𝕜 (fderiv 𝕜 f) (e z) (e v) (e w) := by
+  have h := iteratedFDeriv_two_apply (𝕜 := 𝕜) (f ∘ e) z ![v, w]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at h
+  rw [← h, e.iteratedFDeriv_comp_right, ContinuousMultilinearMap.compContinuousLinearMap_apply,
+    iteratedFDeriv_two_apply]
+  simp
 
 /-- **Second derivatives along a one-dimensional linear change of variables.** For a continuous
 linear equivalence `e` onto the scalar field and a function `f` of one variable, the second
@@ -107,3 +126,112 @@ theorem holderOnWith_iteratedFDeriv_of_comp_right (e : G ≃L[𝕜] E) {f : E �
     _ = _ := by ring
 
 end ContinuousLinearEquiv
+
+section Rescaling
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+open scoped NNReal
+
+namespace TauCeti
+
+/-- **Iterated derivatives of a rescaling.** The `i`-th derivative of `z ↦ f (a • z)` at `x` is
+`a ^ i` times the `i`-th derivative of `f` at `a • x`. Unlike Mathlib's
+`iteratedFDeriv_comp_const_smul`, no differentiability of `f` is needed. -/
+theorem iteratedFDeriv_comp_const_smul_apply (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x = a ^ i • iteratedFDeriv 𝕜 i f (a • x) := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · rcases eq_or_ne i 0 with rfl | hi
+    · ext
+      simp
+    · simp only [zero_smul, zero_pow hi, iteratedFDeriv_const_of_ne hi, Pi.zero_apply]
+  · have h := (ContinuousLinearEquiv.smulLeft (Units.mk0 a ha) : E ≃L[𝕜] E)
+      |>.iteratedFDeriv_comp_right f x i
+    ext v
+    simpa [Function.comp_def, ContinuousMultilinearMap.map_smul_univ] using
+      congrArg (fun L ↦ L v) h
+
+/-- The norm of the `i`-th derivative of `z ↦ f (a • z)` at `x` is `‖a‖ ^ i` times that of the
+`i`-th derivative of `f` at `a • x`. No differentiability of `f` is needed. -/
+theorem norm_iteratedFDeriv_comp_const_smul (f : E → F) (a : 𝕜) (x : E) (i : ℕ) :
+    ‖iteratedFDeriv 𝕜 i (fun z ↦ f (a • z)) x‖ = ‖a‖ ^ i * ‖iteratedFDeriv 𝕜 i f (a • x)‖ := by
+  rw [iteratedFDeriv_comp_const_smul_apply, norm_smul, norm_pow]
+
+end TauCeti
+
+namespace HolderOnWith
+
+/-- If the `i`-th derivative of `f` is `r`-Hölder with constant `C` on `t` and rescaling by `a`
+maps `s` into `t`, then the `i`-th derivative of `z ↦ f (a • z)` is `r`-Hölder on `s` with
+constant `‖a‖ ^ i C ‖a‖ ^ r`. No differentiability of `f` is needed. -/
+theorem iteratedFDeriv_comp_const_smul {f : E → F} {i : ℕ} {C r : ℝ≥0}
+    {s t : Set E} (hf : HolderOnWith C r (iteratedFDeriv 𝕜 i f) t) (a : 𝕜)
+    (hst : Set.MapsTo (a • ·) s t) :
+    HolderOnWith (‖a‖₊ ^ i * (C * ‖a‖₊ ^ (r : ℝ))) r
+      (iteratedFDeriv 𝕜 i fun z ↦ f (a • z)) s := by
+  have h := hf.comp_const_smul a hst
+  refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
+  simp only [TauCeti.iteratedFDeriv_comp_const_smul_apply, dist_eq_norm, ← smul_sub, norm_smul,
+    norm_pow]
+  push_cast [mul_assoc]
+  gcongr
+  simpa [dist_eq_norm, mul_assoc] using h.dist_le hx hy
+
+end HolderOnWith
+
+end Rescaling
+
+namespace LinearIsometryEquiv
+
+/-- Linear isometries on either side preserve differences of iterated derivative fields,
+without any differentiability assumption on the function. -/
+theorem norm_iteratedFDeriv_sub_comp
+    {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    (e : E' ≃ₗᵢ[𝕜] E) (t : F ≃ₗᵢ[𝕜] F') (f : E → F) (j : ℕ) (x y : E') :
+    ‖iteratedFDeriv 𝕜 j (t ∘ f ∘ e) x - iteratedFDeriv 𝕜 j (t ∘ f ∘ e) y‖ =
+      ‖iteratedFDeriv 𝕜 j f (e x) - iteratedFDeriv 𝕜 j f (e y)‖ := by
+  have hr (z : E') : iteratedFDeriv 𝕜 j (f ∘ e) z =
+      (iteratedFDeriv 𝕜 j f (e z)).compContinuousLinearMap fun _ => (e : E' →L[𝕜] E) := by
+    simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ, LinearIsometryEquiv.coe_coe] using
+      e.toContinuousLinearEquiv.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ
+        (Set.mem_univ z) j
+  have htjet (z : E') : iteratedFDeriv 𝕜 j (t ∘ f ∘ e) z =
+      (t : F →L[𝕜] F').compContinuousMultilinearMap (iteratedFDeriv 𝕜 j (f ∘ e) z) := by
+    simpa only [LinearIsometryEquiv.coe_coe, Function.comp_assoc] using
+      t.toContinuousLinearEquiv.iteratedFDeriv_comp_left (f := f ∘ e) (x := z) (i := j)
+  rw [htjet, htjet]
+  have ht : (t : F →L[𝕜] F').compContinuousMultilinearMap
+      (iteratedFDeriv 𝕜 j (f ∘ e) x) -
+      (t : F →L[𝕜] F').compContinuousMultilinearMap (iteratedFDeriv 𝕜 j (f ∘ e) y) =
+      (t : F →L[𝕜] F').compContinuousMultilinearMap
+        (iteratedFDeriv 𝕜 j (f ∘ e) x - iteratedFDeriv 𝕜 j (f ∘ e) y) := by ext; simp
+  rw [ht, ← t.toContinuousLinearMap_toLinearIsometry,
+    t.toLinearIsometry.norm_compContinuousMultilinearMap, hr, hr]
+  have he : (iteratedFDeriv 𝕜 j f (e x)).compContinuousLinearMap (fun _ => (e : E' →L[𝕜] E)) -
+      (iteratedFDeriv 𝕜 j f (e y)).compContinuousLinearMap (fun _ => (e : E' →L[𝕜] E)) =
+      (iteratedFDeriv 𝕜 j f (e x) - iteratedFDeriv 𝕜 j f (e y)).compContinuousLinearMap
+        (fun _ => (e : E' →L[𝕜] E)) := by ext; simp
+  rw [he, ContinuousMultilinearMap.norm_compContinuous_linearIsometryEquiv]
+
+
+open scoped NNReal in
+/-- Composing with linear isometries preserves a local Hölder bound on an actual derivative
+field, including at points where the function need not be differentiable. -/
+theorem holderOnWith_iteratedFDeriv_comp {E E' T Tu : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup T] [NormedSpace ℝ T] [NormedAddCommGroup Tu] [NormedSpace ℝ Tu]
+    (e : E' ≃ₗᵢ[ℝ] E) (t : T ≃ₗᵢ[ℝ] Tu) (v : E → T)
+    {C α : ℝ≥0} (j : ℕ) {S : Set E} (hv : HolderOnWith C α (iteratedFDeriv ℝ j v) S) :
+    HolderOnWith C α (iteratedFDeriv ℝ j (t ∘ v ∘ e)) (e ⁻¹' S) := by
+  rw [holderOnWith_iff_dist_le] at hv ⊢
+  intro x hx y hy
+  rw [dist_eq_norm, LinearIsometryEquiv.norm_iteratedFDeriv_sub_comp]
+  have hxy := hv (e x) hx (e y) hy
+  rw [e.dist_map] at hxy
+  simpa only [dist_eq_norm] using hxy
+
+end LinearIsometryEquiv

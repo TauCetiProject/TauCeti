@@ -117,18 +117,13 @@ theorem continuous_starProjection_toEuclidean :
   -- Test continuity on orthonormal frames `f`, where the projection onto the span is
   -- `x ↦ ∑ i, ⟪f i, x⟫ • f i`; the Grassmannian is a quotient of the orthonormal frames.
   refine isQuotientMap_frameSpan_toFullRankFrame.continuous_iff.2 <|
-    continuous_clm_apply.2 fun x ↦ ?_
-  have he (i : Fin r) : Continuous fun f : finiteOrthonormalFrame 𝕜 r N ↦
-      (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)) :=
-    (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val)
-  have hsum (f : finiteOrthonormalFrame 𝕜 r N) :
-      (frameSpan f.toFullRankFrame).toEuclidean.starProjection x =
-        ∑ i, inner 𝕜 (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)) x •
-          WithLp.toLp 2 (f.1 i) :=
-    f.2.starProjection_apply_eq_sum (by
-      rw [toEuclidean_frameSpan, finiteOrthonormalFrame.coe_toFullRankFrame]) x
-  simp only [Function.comp_def, hsum]
-  exact continuous_finsetSum _ fun i _ ↦ by have := he i; fun_prop
+    Orthonormal.continuous_starProjection
+      (f := fun f : finiteOrthonormalFrame 𝕜 r N ↦ fun i ↦
+        (WithLp.toLp 2 (f.1 i) : EuclideanSpace 𝕜 (Fin N)))
+      (continuous_pi fun i ↦
+        (PiLp.continuous_toLp 2 _).comp ((continuous_apply i).comp continuous_subtype_val))
+      (fun f ↦ f.2) fun f ↦ ?_
+  rw [toEuclidean_frameSpan, finiteOrthonormalFrame.coe_toFullRankFrame]
 
 /-- The range of the complementary projection is the orthogonal complement. -/
 theorem range_one_sub_starProjection_toEuclidean (V : finiteGrassmannian 𝕜 r N) :
@@ -147,6 +142,20 @@ of the orthogonal projection onto `V`, that is, `V` itself as a subspace of
 `EuclideanSpace 𝕜 (Fin N)` (`Submodule.range_starProjection`). -/
 abbrev Tautological : finiteGrassmannian 𝕜 r N → Type _ :=
   fun V ↦ V.toEuclidean.starProjection.range
+
+/-- The tautological fibre identified with the original coordinate subspace. -/
+noncomputable def tautologicalEquiv (V : finiteGrassmannian 𝕜 r N) :
+    Tautological 𝕜 r N V ≃ₗ[𝕜] V.1 :=
+  (LinearEquiv.ofEq _ _ (Submodule.range_starProjection V.toEuclidean)).trans
+    ((WithLp.linearEquiv 2 𝕜 (Fin N → 𝕜)).ofSubmodule' V.1)
+
+@[simp] theorem tautologicalEquiv_apply (V : finiteGrassmannian 𝕜 r N)
+    (v : Tautological 𝕜 r N V) : (tautologicalEquiv 𝕜 r N V v : Fin N → 𝕜) =
+      WithLp.ofLp v.1 := (rfl)
+
+@[simp] theorem tautologicalEquiv_symm_apply (V : finiteGrassmannian 𝕜 r N) (v : V.1) :
+    ((tautologicalEquiv 𝕜 r N V).symm v : EuclideanSpace 𝕜 (Fin N)) =
+      WithLp.toLp 2 v.1 := (rfl)
 
 /-- The orthogonal complement `γ⊥` of the tautological bundle over the finite Grassmannian: its
 fibre over `V` is the range of `1 - p`, for `p` the orthogonal projection onto `V`, that is, the

@@ -40,23 +40,19 @@ variable {σ R S : Type*} [NormedRing R] [IsUltrametricDist R]
 
 variable [∀ i, Fact (0 < c i)]
 
-/-- A nonnegative bound on coefficient lifts is also a bound on lifts for the Gauss norm. -/
-theorem exists_restrictedMap_eq_and_norm_le {L : ℝ} (hL : 0 ≤ L)
+/-- A bound on coefficient lifts is also a bound on lifts for the Gauss norm. -/
+theorem exists_restrictedMap_eq_and_norm_le {L : ℝ}
     (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖)
     (g : IsRestricted.subring (R := S) c) :
     ∃ f, restrictedMap φ hφ f = g ∧ ‖f‖ ≤ L * ‖g‖ := by
   obtain ⟨f, hf, hcoeff⟩ := exists_restrictedMap_eq_and_norm_coeff_le φ hφ hlift g
-  exact ⟨f, hf, norm_le_mul_of_norm_coeff_le hL hcoeff⟩
+  exact ⟨f, hf, norm_le_mul_of_norm_coeff_le hcoeff⟩
 
 /-- Uniformly bounded coefficient lifts make the induced map of restricted series open. -/
 theorem isOpenMap_restrictedMap {L : ℝ}
     (hlift : ∀ b, ∃ a, φ a = b ∧ ‖a‖ ≤ L * ‖b‖) :
-    IsOpenMap (restrictedMap (c := c) φ hφ) := by
-  apply isOpenMap_of_exists_norm_le (restrictedMap (c := c) φ hφ) (K := max L 0)
-  apply exists_restrictedMap_eq_and_norm_le φ hφ (le_max_right L 0)
-  intro b
-  obtain ⟨a, ha, hnorm⟩ := hlift b
-  exact ⟨a, ha, hnorm.trans (mul_le_mul_of_nonneg_right (le_max_left L 0) (norm_nonneg b))⟩
+    IsOpenMap (restrictedMap (c := c) φ hφ) :=
+  isOpenMap_of_exists_norm_le _ (exists_restrictedMap_eq_and_norm_le φ hφ hlift)
 
 /-- A bounded coefficient homomorphism with uniformly bounded lifts induces a quotient map
 for the Gauss norm topologies at arbitrary positive polyradii. -/

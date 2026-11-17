@@ -272,10 +272,10 @@ instance : T2Space (NovikovModule R F) :=
 
 /-- An additive map between completed combinations is continuous for the potential-cutoff
 topologies when, for every cutoff `E`, it sends some `U_D` into `U_E`. -/
-theorem continuous_of_forall_mem_potentialFiltration {S' 𝓕 : Type*} {F' : S' → ℝ}
-    [FunLike 𝓕 (NovikovModule R F) (NovikovModule R F')]
-    [AddMonoidHomClass 𝓕 (NovikovModule R F) (NovikovModule R F')] (f : 𝓕)
-    (hf : ∀ E, ∃ D, ∀ a ∈ potentialFiltration R F D, f a ∈ potentialFiltration R F' E) :
+theorem continuous_of_forall_mem_potentialFiltration {R' S' 𝓕 : Type*} [Ring R'] {F' : S' → ℝ}
+    [FunLike 𝓕 (NovikovModule R F) (NovikovModule R' F')]
+    [AddMonoidHomClass 𝓕 (NovikovModule R F) (NovikovModule R' F')] (f : 𝓕)
+    (hf : ∀ E, ∃ D, ∀ a ∈ potentialFiltration R F D, f a ∈ potentialFiltration R' F' E) :
     Continuous f :=
   continuous_of_continuousAt_zero f <| by
     rw [ContinuousAt, map_zero]
@@ -284,10 +284,10 @@ theorem continuous_of_forall_mem_potentialFiltration {S' 𝓕 : Type*} {F' : S' 
 
 /-- An additive map between completed combinations with potential shift `C`, that is, sending
 each `U_D` into `U_(D + C)`, is continuous for the potential-cutoff topologies. -/
-theorem continuous_of_mem_potentialFiltration_add {S' 𝓕 : Type*} {F' : S' → ℝ} {C : ℝ}
-    [FunLike 𝓕 (NovikovModule R F) (NovikovModule R F')]
-    [AddMonoidHomClass 𝓕 (NovikovModule R F) (NovikovModule R F')] {f : 𝓕}
-    (hf : ∀ D a, a ∈ potentialFiltration R F D → f a ∈ potentialFiltration R F' (D + C)) :
+theorem continuous_of_mem_potentialFiltration_add {R' S' 𝓕 : Type*} [Ring R'] {F' : S' → ℝ}
+    {C : ℝ} [FunLike 𝓕 (NovikovModule R F) (NovikovModule R' F')]
+    [AddMonoidHomClass 𝓕 (NovikovModule R F) (NovikovModule R' F')] {f : 𝓕}
+    (hf : ∀ D a, a ∈ potentialFiltration R F D → f a ∈ potentialFiltration R' F' (D + C)) :
     Continuous f :=
   continuous_of_forall_mem_potentialFiltration f fun E =>
     ⟨E - C, fun a ha => by simpa using hf _ a ha⟩

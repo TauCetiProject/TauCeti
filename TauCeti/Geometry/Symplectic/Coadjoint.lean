@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.Lie.Coadjoint
 public import TauCeti.Geometry.Symplectic.ExistsCompatible
+public import TauCeti.Geometry.Symplectic.Prod.Basic
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 /-!
 # Coadjoint tangent spaces are symplectic
@@ -17,7 +19,16 @@ For a real Lie algebra `L` and `ν ∈ L*`, the Kirillov–Kostant–Souriau for
 `TauCeti.SymplecticForm` (`Module.Dual.kksSymplecticForm ν`). When `L` is the Lie algebra of a Lie
 group whose coadjoint orbit through `ν` is a smooth homogeneous space, this is the pointwise value
 at `ν` of the symplectic form of the orbit. When `L ⧸ L_ν` is finite-dimensional, its dimension is
-even (`Module.Dual.even_finrank_quotient_lieAnnihilator`).
+even (`Module.Dual.even_finrank_quotient_lieAnnihilator`). On a complement `𝔮` of `L_ν` in `L`,
+the Kirillov form `ν ⁅ξ, η⁆` itself is symplectic (`Module.Dual.kirillovSymplecticForm`).
+
+The algebraic naturality of the KKS form becomes a statement about symplectomorphisms: along a
+surjective Lie algebra map `f : L → L'` with `ν = ν' ∘ f`, the equivalence `[ξ] ↦ [f ξ]` is a
+symplectomorphism from `ω_ν` to `ω_ν'`
+(`Module.Dual.isSymplectomorphism_quotientLieAnnihilatorEquiv`), and for a product functional
+`(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂` on `L₁ × L₂` the equivalence `[(ξ₁, ξ₂)] ↦ ([ξ₁], [ξ₂])` is a
+symplectomorphism onto the direct sum of `ω_ν₁` and `ω_ν₂`
+(`Module.Dual.isSymplectomorphism_quotientLieAnnihilatorProdEquiv`).
 
 ## References
 
@@ -50,5 +61,49 @@ theorem even_finrank_quotient_lieAnnihilator
     [FiniteDimensional ℝ (L ⧸ (lieAnnihilator ℝ L ν).toSubmodule)] :
     Even (finrank ℝ (L ⧸ (lieAnnihilator ℝ L ν).toSubmodule)) :=
   ν.kksSymplecticForm.even_finrank
+
+/-- The Kirillov form `ν ⁅ξ, η⁆` restricted to a complement `𝔮` of the stabilizer `L_ν`, as a
+linear symplectic form on `𝔮`: the transport of `ω_ν` along the identification `L ⧸ L_ν ≃ 𝔮`. -/
+noncomputable def kirillovSymplecticForm {𝔮 : Submodule ℝ L}
+    (h𝔮 : IsCompl (lieAnnihilator ℝ L ν).toSubmodule 𝔮) : SymplecticForm 𝔮 :=
+  ν.kksSymplecticForm.transport (Submodule.quotientEquivOfIsCompl _ 𝔮 h𝔮)
+
+@[simp]
+theorem kirillovSymplecticForm_apply {𝔮 : Submodule ℝ L}
+    (h𝔮 : IsCompl (lieAnnihilator ℝ L ν).toSubmodule 𝔮) (ξ η : 𝔮) :
+    ν.kirillovSymplecticForm h𝔮 ξ η = ν ⁅(ξ : L), η⁆ := by
+  simp [kirillovSymplecticForm]
+
+/-! ### Naturality and products -/
+
+section Map
+
+variable {L' : Type*} [LieRing L'] [LieAlgebra ℝ L'] {ν} (ν' : Dual ℝ L') {f : L →ₗ⁅ℝ⁆ L'}
+  (hf : Function.Surjective f) (hν : ν'.comp (f : L →ₗ[ℝ] L') = ν)
+
+/-- **Naturality of the Kirillov–Kostant–Souriau symplectic form.** Along a surjective Lie algebra
+map `f : L → L'` with `ν = ν' ∘ f`, the equivalence `[ξ] ↦ [f ξ]` of algebraic tangent models is a
+symplectomorphism from `ω_ν` to `ω_ν'`. -/
+theorem isSymplectomorphism_quotientLieAnnihilatorEquiv :
+    SymplecticForm.IsSymplectomorphism ν.kksSymplecticForm ν'.kksSymplecticForm
+      (quotientLieAnnihilatorEquiv ν' hf hν) :=
+  SymplecticForm.isSymplectomorphism_iff.mpr (kksForm_quotientLieAnnihilatorEquiv ν' hf hν)
+
+end Map
+
+section Prod
+
+variable {L₁ L₂ : Type*} [LieRing L₁] [LieAlgebra ℝ L₁] [LieRing L₂] [LieAlgebra ℝ L₂]
+  (ν₁ : Dual ℝ L₁) (ν₂ : Dual ℝ L₂)
+
+/-- **The Kirillov–Kostant–Souriau symplectic form of a product.** The equivalence
+`[(ξ₁, ξ₂)] ↦ ([ξ₁], [ξ₂])` is a symplectomorphism from the KKS form of
+`(η₁, η₂) ↦ ν₁ η₁ + ν₂ η₂` on `L₁ × L₂` to the direct sum of `ω_ν₁` and `ω_ν₂`. -/
+theorem isSymplectomorphism_quotientLieAnnihilatorProdEquiv :
+    SymplecticForm.IsSymplectomorphism (kksSymplecticForm (ν₁.coprod ν₂))
+      (ν₁.kksSymplecticForm.prod ν₂.kksSymplecticForm) (ν₁.quotientLieAnnihilatorProdEquiv ν₂) :=
+  SymplecticForm.isSymplectomorphism_iff.mpr fun x y ↦ (kksForm_coprod ν₁ ν₂ x y).symm
+
+end Prod
 
 end Module.Dual

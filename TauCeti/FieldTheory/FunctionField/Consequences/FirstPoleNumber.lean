@@ -93,7 +93,7 @@ theorem riemannRochSpace_zsmul_ofPoint_eq_span_pair (hF : IsFunctionField k F)
   have hgaps : P.gapNumbersUpTo m = Finset.Icc 1 (m - 1) := by
     ext n
     simp only [mem_gapNumbersUpTo_iff, Finset.mem_Icc]
-    refine ⟨fun ⟨h1, hn, hng⟩ ↦ ⟨h1, ?_⟩, fun ⟨h1, hn⟩ ↦ ⟨h1, by omega, hgap n h1 (by omega)⟩⟩
+    refine ⟨fun ⟨h1, hn, hng⟩ ↦ ⟨h1, ?_⟩, fun ⟨h1, _⟩ ↦ ⟨h1, by omega, hgap n h1 (by omega)⟩⟩
     rcases hn.lt_or_eq with hn | rfl
     · omega
     · exact absurd ((P.isPoleNumber_iff n).mpr ⟨z, hz0, hzP, hz⟩)
@@ -113,7 +113,7 @@ theorem riemannRochSpace_zsmul_ofPoint_eq_span_pair (hF : IsFunctionField k F)
   · rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
     refine ⟨one_mem_riemannRochSpace_iff.mpr ?_,
       (mem_riemannRochSpace_zsmul_ofPoint_iff hz0).mpr ⟨by omega, hz⟩⟩
-    exact zsmul_nonneg (WeilDivisor.isEffective_iff_zero_le.mp (WeilDivisor.isEffective_ofPoint P))
+    exact zsmul_nonneg (WeilDivisor.ofPoint_nonneg P)
       (by omega)
   · rw [hspan, ← Divisor.dim_def]
     omega

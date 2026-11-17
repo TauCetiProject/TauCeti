@@ -22,9 +22,13 @@ condition below. The weights give positive target areas for the regions, with ze
 for every periodic domain. Applying the result to diagrams requires a separate construction of
 their periodic-domain subgroup.
 
-## Main result
+## Main results
 
 * `AddSubgroup.exists_pos_dotProduct_eq_zero_iff`.
+* `AddSubgroup.exists_pos_sum_mul_intCast_eq_zero_iff`: the same with weights in an ordered
+  field.
+* `TauCeti.sum_mul_intCast_eq_of_sub_mem`: weights orthogonal to a subgroup of `ι → ℤ` pair
+  equally with all vectors of a coset.
 
 ## Reference
 
@@ -84,5 +88,27 @@ theorem _root_.AddSubgroup.exists_pos_dotProduct_eq_zero_iff [Fintype ι] (P : A
           AddMonoidHom.compLeft_apply, Function.comp_apply, Int.coe_castAddHom, mul_assoc]
       rw [hcp, mul_zero] at this
       exact_mod_cast this
+
+/-- A subgroup `P` of `ι → ℤ` contains no nonzero nonnegative vector exactly when some vector of
+strictly positive weights in an ordered field `K` is orthogonal to all of `P`. -/
+theorem _root_.AddSubgroup.exists_pos_sum_mul_intCast_eq_zero_iff [Fintype ι] {K : Type*}
+    [Field K] [LinearOrder K] [IsStrictOrderedRing K] (P : AddSubgroup (ι → ℤ)) :
+    (∃ w : ι → K, (∀ i, 0 < w i) ∧ ∀ p ∈ P, ∑ i, w i * p i = 0) ↔
+      ∀ p ∈ P, 0 ≤ p → p = 0 := by
+  refine ⟨fun ⟨w, hw, hwP⟩ p hp hp₀ => ?_, fun h => ?_⟩
+  · have hp₀' : (0 : ι → K) ≤ fun i => (p i : K) := fun i => Int.cast_nonneg (hp₀ i)
+    have := (dotProduct_eq_zero_iff_of_pos hw hp₀').1 (hwP p hp)
+    exact funext fun i => by simpa using congrFun this i
+  · -- Integer weights are weights in `K`.
+    obtain ⟨c, hc, hcP⟩ := P.exists_pos_dotProduct_eq_zero_iff.2 h
+    refine ⟨fun i => c i, fun i => Int.cast_pos.2 (hc i), fun p hp => ?_⟩
+    simpa [dotProduct] using congrArg (Int.cast : ℤ → K) (hcP p hp)
+
+/-- Weights `w` orthogonal to every element of a subgroup `P` of `ι → ℤ` pair equally with any two
+vectors that differ by an element of `P`. -/
+theorem sum_mul_intCast_eq_of_sub_mem [Fintype ι] {R : Type*} [CommRing R]
+    {P : AddSubgroup (ι → ℤ)} {w : ι → R} (hw : ∀ p ∈ P, ∑ i, w i * p i = 0) {v v' : ι → ℤ}
+    (h : v' - v ∈ P) : ∑ i, w i * v' i = ∑ i, w i * v i := by
+  simpa [mul_sub, Finset.sum_sub_distrib, sub_eq_zero] using hw _ h
 
 end TauCeti

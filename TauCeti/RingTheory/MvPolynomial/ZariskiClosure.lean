@@ -30,9 +30,11 @@ the closure is still the smallest real zero locus of real equations containing `
 
 A box `∏ᵢ sᵢ` whose sides are infinite subsets of `K` is Zariski dense, since only the zero
 polynomial vanishes on it; for instance the closed half-line `[0, ∞)` is Zariski dense in `ℝ`.
-Polynomial maps send the closure of a set into the closure of its image, and over finitely many
-coordinates an invertible `K`-linear change of coordinates commutes with the closure and
-preserves closedness. Extension by zero along an injective map of coordinate types, such as the
+Polynomial maps send the closure of a set into the closure of its image. Over finitely many
+coordinates kernels of `K`-linear maps are closed, so a `K`-linear map `f` with a `K`-linear left
+inverse on a set `S` keeps that left inverse on the closure of `S`, commutes with the closure of
+`S`, and preserves and reflects closedness of `S`; invertible `K`-linear changes of coordinates
+are a special case. Extension by zero along an injective map of coordinate types, such as the
 zero-padding of coefficient vectors when a degree bound is raised, also commutes with the closure
 and preserves and reflects closedness, for any number of coordinates; the padding coordinates
 vanish on the closure.
@@ -52,6 +54,9 @@ field in which `0` is not isolated: then `x` is the limit of the points `x + t �
 * `MvPolynomial.zariskiClosure_pi_eq_univ`: a box with infinite sides is Zariski dense.
 * `MvPolynomial.image_zariskiClosure_subset_zariskiClosure_image`: polynomial maps are
   continuous for the Zariski closure.
+* `MvPolynomial.zariskiClosure_isClosed_ker`: kernels of linear maps are closed.
+* `MvPolynomial.zariskiClosure_image_linearMap_of_leftInvOn`: a linear map with a linear left
+  inverse on `S` commutes with the closure of `S`.
 * `MvPolynomial.zariskiClosure_image_linearEquiv`: invariance under linear coordinate changes.
 * `MvPolynomial.zariskiClosure_image_extendByZero`: invariance under extension by zero along an
   injective map of coordinate types.
@@ -163,19 +168,57 @@ theorem image_zariskiClosure_subset_zariskiClosure_image_linearMap [Finite σ]
   rw [hf]
   exact image_zariskiClosure_subset_zariskiClosure_image _ S
 
+/-- Over finitely many source coordinates, the kernel of a `K`-linear map is Zariski closed. -/
+theorem zariskiClosure_isClosed_ker [Finite σ] (u : (σ → K) →ₗ[K] (τ → K)) :
+    (zariskiClosure K).IsClosed (LinearMap.ker u : Set (σ → K)) := by
+  refine ClosureOperator.isClosed_iff_closure_le.2 fun x hx => LinearMap.mem_ker.2 ?_
+  -- `u x` lies in the closure of `{0}`, where every coordinate function vanishes.
+  have hux := image_zariskiClosure_subset_zariskiClosure_image_linearMap u _ ⟨x, hx, rfl⟩
+  funext t
+  simpa using mem_zariskiClosure_iff.1 hux (X t) (by rintro _ ⟨y, hy, rfl⟩; simp_all)
+
+/-- Over finitely many coordinates, if `K`-linear maps `f` and `g` satisfy `g (f x) = x` for
+every `x ∈ S`, then they do so on the Zariski closure of `S`. -/
+theorem leftInvOn_zariskiClosure [Finite σ] (f : (σ → K) →ₗ[K] (τ → K))
+    (g : (τ → K) →ₗ[K] (σ → K)) {S : Set (σ → K)} (h : Set.LeftInvOn g f S) :
+    Set.LeftInvOn g f (zariskiClosure K S) := by
+  -- The fixed points of `g ∘ f` form the kernel of `g ∘ f - id`, a Zariski closed set.
+  have hS : S ⊆ LinearMap.ker (g ∘ₗ f - LinearMap.id) := fun x hx => by simp [h hx]
+  intro x hx
+  simpa [sub_eq_zero] using (zariskiClosure_isClosed_ker _).closure_le_iff.2 hS hx
+
+/-- Over finitely many coordinates, a `K`-linear map `f` admitting a `K`-linear left inverse on
+`S` commutes with the Zariski closure of `S`. -/
+theorem zariskiClosure_image_linearMap_of_leftInvOn [Finite σ] [Finite τ]
+    (f : (σ → K) →ₗ[K] (τ → K)) (g : (τ → K) →ₗ[K] (σ → K)) {S : Set (σ → K)}
+    (h : Set.LeftInvOn g f S) : zariskiClosure K (f '' S) = f '' zariskiClosure K S := by
+  refine subset_antisymm (fun y hy => ⟨g y, ?_, ?_⟩)
+    (image_zariskiClosure_subset_zariskiClosure_image_linearMap f S)
+  · have hgy := image_zariskiClosure_subset_zariskiClosure_image_linearMap g _ ⟨y, hy, rfl⟩
+    rwa [h.image_image] at hgy
+  · exact leftInvOn_zariskiClosure g f h.rightInvOn_image hy
+
+/-- Over finitely many coordinates, a `K`-linear map `f` admitting a `K`-linear left inverse on
+`S` preserves and reflects Zariski closedness of `S`. -/
+theorem zariskiClosure_isClosed_image_linearMap_iff_of_leftInvOn [Finite σ] [Finite τ]
+    (f : (σ → K) →ₗ[K] (τ → K)) (g : (τ → K) →ₗ[K] (σ → K)) {S : Set (σ → K)}
+    (h : Set.LeftInvOn g f S) :
+    (zariskiClosure K).IsClosed (f '' S) ↔ (zariskiClosure K).IsClosed S := by
+  rw [ClosureOperator.isClosed_iff_closure_le, ClosureOperator.isClosed_iff_closure_le,
+    zariskiClosure_image_linearMap_of_leftInvOn f g h,
+    (leftInvOn_zariskiClosure f g h).injOn.image_subset_image_iff le_rfl
+      ((zariskiClosure K).le_closure S)]
+
 /-- An invertible `K`-linear change of finitely many coordinates commutes with the Zariski
 closure. -/
 theorem zariskiClosure_image_linearEquiv [Finite σ] (e : (σ → K) ≃ₗ[K] (τ → K))
     (S : Set (σ → K)) : zariskiClosure K (e '' S) = e '' zariskiClosure K S := by
-  -- The target coordinates are finite too, so `e.symm` is also a polynomial map.
+  -- The target coordinates are finite too.
   have : Module.Finite K (τ → K) := .equiv e
   have : Module.Finite K (τ →₀ K) := .of_injective Finsupp.lcoeFun DFunLike.coe_injective
   have : Finite τ := Module.Finite.finite_basis (Finsupp.basisSingleOne (R := K) (ι := τ))
-  refine subset_antisymm (fun x hx => ⟨e.symm x, ?_, e.apply_symm_apply x⟩)
-    (image_zariskiClosure_subset_zariskiClosure_image_linearMap e.toLinearMap S)
-  have h := image_zariskiClosure_subset_zariskiClosure_image_linearMap e.symm.toLinearMap
-    (e '' S) ⟨x, hx, rfl⟩
-  simpa [Set.image_image] using h
+  exact zariskiClosure_image_linearMap_of_leftInvOn e.toLinearMap e.symm.toLinearMap
+    fun x _ => e.symm_apply_apply x
 
 /-- An invertible `K`-linear change of finitely many coordinates preserves and reflects
 Zariski closedness. -/

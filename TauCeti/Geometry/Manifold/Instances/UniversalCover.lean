@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.AlgebraicTopology.UniversalCover.Group
 public import TauCeti.AlgebraicTopology.UniversalCover.Classification.Existence
 public import TauCeti.Geometry.Manifold.Instances.Comap
+import TauCeti.Geometry.Manifold.Algebra.LieGroup
 
 /-!
 # Universal covers of Lie groups and subgroup covers of manifolds
@@ -140,11 +141,8 @@ variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [Char
 
 /-- The universal cover of a Lie group, based at the identity, is a Lie group: its multiplication
 and inversion are continuous and lie over the `C^n` multiplication and inversion of `G`. -/
-instance instLieGroup : LieGroup I n (UniversalCover (1 : G)) where
-  contMDiff_mul := contMDiff_iff.2 ⟨continuous_mul,
-    ((contMDiff_proj (1 : G)).comp contMDiff_fst).mul ((contMDiff_proj (1 : G)).comp contMDiff_snd)⟩
-  contMDiff_inv :=
-    contMDiff_iff.2 ⟨continuous_inv, ((contMDiff_proj (1 : G)).comp contMDiff_id).inv⟩
+instance instLieGroup : LieGroup I n (UniversalCover (1 : G)) :=
+  (isCoveringMap (1 : G)).isLocalHomeomorph.lieGroup_chartedSpaceComap proj_mul
 
 end LieGroup
 

@@ -9,7 +9,7 @@ public import TauCeti.CommutativeAlgebra.MatrixFactorization.BaseChange.Basic
 public import TauCeti.CommutativeAlgebra.MatrixFactorization.Polynomial.Basic
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Adjunction
-public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
+public import TauCeti.Algebra.Homology.Periodic.ModuleCat
 
 /-!
 # Polynomial matrix factorizations modulo their potential
@@ -135,39 +135,20 @@ theorem powerXPeriodicComplex_d_one_zero (hi : i ≤ n) :
     (powerXPeriodicComplex R hi).d 1 0 = rootPowHom R n (n - i) := rfl
 
 /-- The image of multiplication by `x ^ (n - i)` is the annihilator of `x ^ i`. -/
-private theorem range_rootPowHom_sub_eq_ker (hi : i ≤ n) :
+private theorem range_rootPowHom_sub_eq_ker :
     LinearMap.range (rootPowHom R n (n - i)).hom = LinearMap.ker (rootPowHom R n i).hom := by
   ext a
-  simp [rootPowHom, AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff hi, dvd_def, eq_comm]
+  simp [rootPowHom, AdjoinRoot.root_X_pow_pow_mul_eq_zero_iff, dvd_def, eq_comm]
 
 /-- The two-periodic complex with alternating maps `x ^ i` and `x ^ (n - i)` is exact in every
 degree. No field or positivity hypothesis is needed. -/
 theorem powerXPeriodicComplex_acyclic (hi : i ≤ n) :
     (powerXPeriodicComplex R hi).Acyclic := by
-  intro j
-  rcases (by decide : ∀ j : ZMod 2, j = 0 ∨ j = 1) j with rfl | rfl
-  · rw [HomologicalComplex.exactAt_iff' _ 1 0 1
-        ((ComplexShape.up (ZMod 2)).prev_eq'
-          (ComplexShape.up_mk 1 0 (by decide)))
-        ((ComplexShape.up (ZMod 2)).next_eq'
-          (ComplexShape.up_mk 0 1 (by decide))),
-      ShortComplex.moduleCat_exact_iff_range_eq_ker]
-    -- The maps of `sc' 1 0 1` are `d 1 0` and `d 0 1`, i.e. `rootPowHom R n (n - i)` and
-    -- `rootPowHom R n i` by the `rfl` lemmas `powerXPeriodicComplex_d_one_zero`/`_d_zero_one`;
-    -- rewriting with them is blocked because the submodule's carrier `(sc' 1 0 1).X₂` is
-    -- not syntactically the regular module.
-    exact range_rootPowHom_sub_eq_ker R hi
-  · rw [HomologicalComplex.exactAt_iff' _ 0 1 0
-        ((ComplexShape.up (ZMod 2)).prev_eq'
-          (ComplexShape.up_mk 0 1 (by decide)))
-        ((ComplexShape.up (ZMod 2)).next_eq'
-          (ComplexShape.up_mk 1 0 (by decide))),
-      ShortComplex.moduleCat_exact_iff_range_eq_ker]
-    have h := range_rootPowHom_sub_eq_ker R (Nat.sub_le n i)
-    rw [Nat.sub_sub_self hi] at h
-    -- As in the even case, the maps of `sc' 0 1 0` are `rootPowHom R n i` and
-    -- `rootPowHom R n (n - i)` by `rfl`.
-    exact h
+  rw [HomologicalComplex.acyclic_iff_range_eq_ker_zmod_two, powerXPeriodicComplex_d_zero_one,
+    powerXPeriodicComplex_d_one_zero]
+  refine ⟨range_rootPowHom_sub_eq_ker R, ?_⟩
+  have h := range_rootPowHom_sub_eq_ker R (n := n) (i := n - i)
+  rwa [Nat.sub_sub_self hi] at h
 
 /-! ### Comparison with reduction of the matrix factorization -/
 

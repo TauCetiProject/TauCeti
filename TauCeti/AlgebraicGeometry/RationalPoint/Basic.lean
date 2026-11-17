@@ -54,7 +54,8 @@ No external mathematics is vendored; the proofs reuse Mathlib's `Scheme.Hom.resi
 `Scheme.residueFieldCongr` and `Scheme.Hom.residueDegree` API, `CategoryTheory.asIso` and
 `CategoryTheory.Iso.inv_ext` for the isomorphism, Mathlib's `Scheme.descResidueField`,
 `Scheme.stalkClosedPointTo` and `Scheme.residue_descResidueField` for the rational-point
-evaluation map, and Tau Ceti's `residueDegree_comp` and `residueDegree_eq_one_iff`.
+evaluation map, and Tau Ceti's `Scheme.Hom.residueDegree_comp` and
+`Scheme.Hom.residueDegree_eq_one_iff`.
 -/
 
 public section
@@ -87,7 +88,7 @@ lemma section_apply (hs : s ≫ f = 𝟙 S) (y : S) : f (s y) = y :=
 `κ(y) → κ(s y) → κ(y)` compose to the identity of `κ(y)`. -/
 private lemma residueDegree_mul_residueDegree_of_section (hs : s ≫ f = 𝟙 S) (y : S) :
     f.residueDegree (s y) * s.residueDegree y = 1 := by
-  rw [← residueDegree_comp s f y, hs, Scheme.Hom.residueDegree_id]
+  rw [← s.residueDegree_comp f y, hs, Scheme.Hom.residueDegree_id]
 
 /-- The residue degree of `f` at a point in the image of a section is one.
 
@@ -114,19 +115,20 @@ theorem residueDegree_section_eq_one (hs : s ≫ f = 𝟙 S) (y : S) :
 section of `f : X ⟶ S`, the residue degree of `f ≫ g` agrees with that of `g : S ⟶ Z`. -/
 theorem residueDegree_comp_of_section (hs : s ≫ f = 𝟙 S) (g : S ⟶ Z) (y : S) :
     (f ≫ g).residueDegree (s y) = g.residueDegree y := by
-  rw [residueDegree_comp, residueDegree_eq_one_of_section hs, Nat.mul_one, section_apply hs]
+  rw [Scheme.Hom.residueDegree_comp, residueDegree_eq_one_of_section hs, Nat.mul_one,
+    section_apply hs]
 
 /-! ### Residue fields at a section -/
 
 /-- The residue-field map of `f` at a point in the image of a section is bijective. -/
 theorem residueFieldMap_bijective_of_section (hs : s ≫ f = 𝟙 S) (y : S) :
     Function.Bijective (f.residueFieldMap (s y)) :=
-  (residueDegree_eq_one_iff f (s y)).mp (residueDegree_eq_one_of_section hs y)
+  (f.residueDegree_eq_one_iff (s y)).mp (residueDegree_eq_one_of_section hs y)
 
 /-- The residue-field map of a section is bijective at every point of the base. -/
 theorem residueFieldMap_section_bijective (hs : s ≫ f = 𝟙 S) (y : S) :
     Function.Bijective (s.residueFieldMap y) :=
-  (residueDegree_eq_one_iff s y).mp (residueDegree_section_eq_one hs y)
+  (s.residueDegree_eq_one_iff y).mp (residueDegree_section_eq_one hs y)
 
 /-- The residue-field map of `f` at a point in the image of a section is an isomorphism. -/
 lemma isIso_residueFieldMap_of_section (hs : s ≫ f = 𝟙 S) (y : S) :

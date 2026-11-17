@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Basic
-public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
-public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Pullback of rough bundle-valued differential forms
@@ -249,6 +248,15 @@ theorem mpullback_apply (f : M → M') (ω : RoughForm I' M' F k)
     mpullback I I' f ω x v = ω (f x) (fun i ↦ mfderiv I I' f x (v i)) :=
   bundleMpullback_apply f ω x v
 
+/-- Evaluation of the pullback of a two-form on a pair of tangent vectors. -/
+theorem mpullback_apply_pair (f : M → M') (ω : RoughForm I' M' F 2) (x : M)
+    (a b : TangentSpace I x) :
+    mpullback I I' f ω x ![a, b] = ω (f x) ![mfderiv I I' f x a, mfderiv I I' f x b] := by
+  rw [mpullback_apply]
+  congr 1
+  funext i
+  fin_cases i <;> rfl
+
 /-- Pullback within the whole manifold is ordinary pullback. -/
 @[simp]
 theorem mpullbackWithin_univ (f : M → M') (ω : RoughForm I' M' F k) :
@@ -306,6 +314,12 @@ theorem mpullback_apply_eq_mpullback_apply_iff {f : M → M'} {x : M}
   · refine ContinuousAlternatingMap.ext fun v ↦ ?_
     rw [mpullback_apply, mpullback_apply, h]
 
+/-- A pullback vanishes at every point where the form vanishes at the image point. -/
+theorem mpullback_apply_eq_zero {f : M → M'} {ω : RoughForm I' M' F k} {x : M}
+    (h : ω (f x) = 0) : mpullback I I' f ω x = 0 := by
+  ext v
+  simp [mpullback_apply, h]
+
 /-- Pullback along a surjective map whose derivatives are all surjective is injective. -/
 theorem mpullback_injective_of_surjective {f : M → M'} (hsurj : Function.Surjective f)
     (hf : ∀ x, Function.Surjective (mfderiv I I' f x)) :
@@ -339,6 +353,14 @@ theorem mpullbackWithin_add [ContinuousAdd F] (f : M → M') (s : Set M)
 theorem mpullback_add [ContinuousAdd F] (f : M → M') (ω η : RoughForm I' M' F k) :
     mpullback I I' f (ω + η) = mpullback I I' f ω + mpullback I I' f η :=
   bundleMpullback_add f ω η
+
+/-- Pullback preserves subtraction. -/
+@[simp]
+theorem mpullback_sub [IsTopologicalAddGroup F] (f : M → M') (ω η : RoughForm I' M' F k) :
+    mpullback I I' f (ω - η) = mpullback I I' f ω - mpullback I I' f η := by
+  funext x
+  ext v
+  simp only [mpullback_apply, Pi.sub_apply, ContinuousAlternatingMap.sub_apply]
 
 /-- Within-set pullback respects scalar multiplication of the coefficients, by any scalars
 acting continuously on the coefficient space and commuting with the real action. -/
@@ -423,6 +445,23 @@ theorem mpullback_comp {f : M → M'} {g : M' → M''}
     mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) :=
   bundleMpullback_comp hf hg ω
 
+/-- Pullback reverses composition with a differentiable map `g` that does not change where the
+inner map `f` is differentiable. At points where `f` is not differentiable, the pullbacks of a
+form of positive degree both vanish, as the derivative is taken to be zero there; for a form of
+degree zero the pullbacks agree by composition of functions. -/
+theorem mpullback_comp_of_mdifferentiableAt_comp_iff {f : M → M'} {g : M' → M''}
+    (hg : MDifferentiable I' I'' g)
+    (hfg : ∀ x, MDifferentiableAt I I'' (g ∘ f) x ↔ MDifferentiableAt I I' f x)
+    (ω : RoughForm I'' M'' F k) :
+    mpullback I I'' (g ∘ f) ω = mpullback I I' f (mpullback I' I'' g ω) := by
+  funext x
+  by_cases hfx : MDifferentiableAt I I' f x
+  · exact mpullback_comp_at hfx (hg _) ω
+  · have hgf : ¬MDifferentiableAt I I'' (g ∘ f) x := (hfg x).not.mpr hfx
+    ext v
+    simp only [mpullback_apply, Function.comp_apply, mfderiv_zero_of_not_mdifferentiableAt hfx,
+      mfderiv_zero_of_not_mdifferentiableAt hgf, zero_apply, map_zero]
+
 /-- Pullback of a degree-zero form is composition of its underlying function. -/
 @[simp]
 theorem mpullback_ofFunction (f : M → M') (a : M' → F) :
@@ -456,6 +495,19 @@ theorem mpullback_eq_flat (f : E → E') (ω : RoughForm 𝓘(ℝ, E') E' F k) :
   -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
   rfl
 
+/-- The within-set chain rule for precomposition by a map of normed spaces: the within-set
+pullback along `u ∘ L`, for a map `L` carrying `s` into `t` with derivative `A` within `s` at `y`,
+is the within-set pullback along `u` at `L y` precomposed with `A`. -/
+theorem mpullbackWithin_comp_apply_of_hasFDerivWithinAt {u : E' → M} {L : E'' → E'}
+    {A : E'' →L[ℝ] E'} {s : Set E''} {t : Set E'} {y : E''}
+    (hL : HasFDerivWithinAt L A s y) (hu : MDifferentiableWithinAt 𝓘(ℝ, E') I u t (L y))
+    (hst : MapsTo L s t) (hs : UniqueDiffWithinAt ℝ s y) (ω : RoughForm I M F k) :
+    mpullbackWithin 𝓘(ℝ, E'') I (u ∘ L) s ω y =
+      (mpullbackWithin 𝓘(ℝ, E') I u t ω (L y)).compContinuousLinearMap A := by
+  rw [mpullbackWithin_comp_at hL.differentiableWithinAt.mdifferentiableWithinAt hu hst
+    (uniqueMDiffWithinAt_iff_uniqueDiffWithinAt.2 hs), mpullbackWithin_eq_flat]
+  exact congrArg _ (hL.fderivWithin hs)
+
 /-- The chain rule for precomposition by a map of normed spaces: the pullback along `u ∘ L`, for a
 map `L` with derivative `A` at `y`, is the pullback along `u` at `L y` precomposed with `A`. -/
 theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A : E'' →L[ℝ] E'}
@@ -466,32 +518,32 @@ theorem mpullback_comp_apply_of_hasFDerivAt {u : E' → M} {L : E'' → E'} {A :
   rw [mpullback_comp_at hL.differentiableAt.mdifferentiableAt hu, mpullback_eq_flat]
   exact congrArg _ hL.fderiv
 
-/-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces with a
-section `j` that is differentiable at `P z` and passes through `z`, vanishes at `z` on every family
-of vectors one of which lies in the kernel of `P`. Where `γ` is differentiable this is the chain
-rule; where it is not, neither is `γ ∘ P`, since `γ = (γ ∘ P) ∘ j`, and the pullback is zero. -/
+/-- The pullback of a form along `γ ∘ P`, for a continuous linear map `P` of normed spaces,
+vanishes on every family of vectors one of which lies in the kernel of `P`. -/
 theorem mpullback_comp_clm_apply_eq_zero (ω : RoughForm I M F k) (γ : E' → M)
-    (P : E'' →L[ℝ] E') {j : E' → E''} {z : E''} (hj : DifferentiableAt ℝ j (P z))
-    (hjP : ∀ t, P (j t) = t) (hjz : j (P z) = z) {v : Fin k → E''} {i : Fin k}
-    (hv : P (v i) = 0) :
-    mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z v = 0 := by
-  by_cases hγ : MDifferentiableAt 𝓘(ℝ, E') I γ (P z)
-  · rw [mpullback_comp_apply_of_hasFDerivAt P.hasFDerivAt hγ]
-    exact (mpullback 𝓘(ℝ, E') I γ ω (P z)).map_coord_zero i hv
-  · have hnd : ¬ MDifferentiableAt 𝓘(ℝ, E'') I (γ ∘ P) z := by
-      intro h
-      refine hγ ?_
-      have hγ' : γ = (γ ∘ P) ∘ j := funext fun t ↦ by simp [hjP]
-      rw [hγ']
-      exact (hjz ▸ h).comp (P z) hj.mdifferentiableAt
-    have h0 : mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z = 0 := by
-      ext w
-      rw [mpullback_apply, mfderiv_zero_of_not_mdifferentiableAt hnd,
-        ContinuousAlternatingMap.coe_zero, Pi.zero_apply]
-      exact (ω _).map_coord_zero i (zero_apply _)
-    -- The zero alternating map evaluates to zero.
-    rw [h0]
-    rfl
+    (P : E'' →L[ℝ] E') {z : E''} {v : Fin k → E''} {i : Fin k} (hv : P (v i) = 0) :
+    mpullback 𝓘(ℝ, E'') I (γ ∘ P) ω z v = 0 :=
+  (mpullback_apply _ ω z v).trans
+    ((ω _).map_coord_zero i (mfderiv_apply_eq_zero_of_const_line fun t ↦ by simp [hv]))
 
 end FixedCoefficients
+
+section NormedCoefficients
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- The pullback of a form at `x` is the form at `f x` composed with the differential of `f`,
+read as an operator on alternating maps of the model spaces. The two sides agree up to unfolding
+the tangent spaces to the model spaces; this is the form in which pullbacks are differentiated. -/
+theorem mpullback_apply_eq_compContinuousLinearMapCLM (f : M → M') (η : RoughForm I' M' F k)
+    (x : M) :
+    mpullback I I' f η x =
+      ContinuousAlternatingMap.compContinuousLinearMapCLM (ι := Fin k) (F := F)
+        (mfderiv I I' f x : E →L[ℝ] E') (η (f x)) := by
+  ext v
+  rw [mpullback_apply]
+  -- The right side is `η (f x)` evaluated on the vectors `mfderiv I I' f x (v i)`, up to unfolding.
+  rfl
+
+end NormedCoefficients
 end TauCeti

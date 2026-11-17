@@ -7,10 +7,11 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import Mathlib.Analysis.ODE.Gronwall
+public import TauCeti.Analysis.ODE.Gronwall.Interior
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.DerivIntegrable
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -34,7 +35,8 @@ For a monotone `g` the differential form needs neither continuity nor differenti
 
 It also writes Mathlib's `gronwallBound` with a negative rate `-λ` in terms of the exponential
 integral `E_λ(T) = ∫₀ᵀ e^{λr} dr` (`TauCeti.exp_mul_gronwallBound_neg`), and records that
-`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`) and `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`
+`E_λ(T) > 0` for `T > 0` (`TauCeti.integral_exp_mul_pos`), that `z ↦ E_λ(z - t)` has derivative `1`
+at `t` (`TauCeti.hasDerivAt_integral_exp_mul_sub`), and `E_λ(T) ≤ T e^{|λ|T}`
 (`TauCeti.integral_exp_mul_le`).
 
 Finally, it specializes Mathlib's inequality to exponential decay: a function whose derivative
@@ -46,7 +48,13 @@ Mathlib's uniqueness statement `eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_
 the vanishing of a function with `‖f'‖ ≤ K ‖f‖` forward from the left endpoint of an interval.
 Reversing time gives the two-sided version: on `[a, b]` such a function vanishes identically as
 soon as it vanishes at one point (`TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc`).
-This is the uniqueness argument for linear differential equations by energy estimates.
+The general closed-interval bound is supplied by
+`TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le`; its interior-derivative variant is
+`TauCeti.norm_le_gronwallBound_of_norm_deriv_le`. This is the uniqueness argument for linear
+differential equations by energy estimates.
+Averaging the reversed Grönwall bound over `[s, s + 1]` shows that such a function, if it is
+square integrable on the line, is bounded by its `L²` norm: `‖f s‖² ≤ exp (2 K) ∫ ‖f‖²`
+(`TauCeti.norm_sq_le_exp_mul_integral_norm_sq`).
 
 ## References
 
@@ -102,13 +110,18 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K : ℝ}
           ring
 
 /-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
-on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, for an interval
-integrable `k`, then `g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. -/
+on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, then
+`g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. If `k` is not interval integrable, the
+integral is the junk value `0` and the bound is just monotonicity. -/
 theorem mul_exp_integral_le_of_mul_le_deriv {g k : ℝ → ℝ} {s t : ℝ} (hst : s ≤ t)
-    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s) (hk : IntervalIntegrable k volume s t)
+    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s)
     (h : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ) :
     g s * Real.exp (∫ σ in s..t, k σ) ≤ g t := by
   have hgst : g s ≤ g t := hg ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst
+  by_cases hk : IntervalIntegrable k volume s t
+  swap
+  · rw [intervalIntegral.integral_undef hk, Real.exp_zero, mul_one]
+    exact hgst
   rcases hgs.eq_or_lt with hgs0 | hgs0
   · rw [← hgs0, zero_mul]
     exact hgs.trans hgst
@@ -160,14 +173,33 @@ theorem integral_exp_mul_pos (lam : ℝ) {T : ℝ} (hT : 0 < T) :
     ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
     (fun _ _ ↦ exp_pos _) hT
 
-/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}` for `T ≥ 0`. -/
-theorem integral_exp_mul_le (lam : ℝ) {T : ℝ} (hT : 0 ≤ T) :
+/-- The map `z ↦ ∫ r in 0..(z - t), exp (lam * r)` has derivative `1` at `t`. -/
+theorem hasDerivAt_integral_exp_mul_sub (lam t : ℝ) :
+    HasDerivAt (fun z ↦ ∫ r in 0..(z - t), exp (lam * r)) 1 t := by
+  have hsub : HasDerivAt (fun z : ℝ ↦ z - t) 1 t := (hasDerivAt_id t).sub_const t
+  simpa [Function.comp_def] using ((by fun_prop : Continuous fun r ↦
+    exp (lam * r)).integral_hasStrictDerivAt 0 (t - t)).hasDerivAt.comp (h := fun z ↦ z - t) t
+      hsub
+
+/-- The function `E_λ(T) = ∫₀ᵀ e^{λr} dr` satisfies `E_λ(T) ≤ T e^{|λ|T}`. -/
+theorem integral_exp_mul_le (lam T : ℝ) :
     ∫ r in 0..T, exp (lam * r) ≤ T * exp (|lam| * T) := by
-  have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
-    ((by fun_prop : Continuous fun r ↦ exp (lam * r)).intervalIntegrable _ _)
-    (intervalIntegrable_const (μ := volume)) fun r hr ↦ exp_le_exp.2 <| by
-      nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
-  simpa using this
+  have hc : Continuous fun r ↦ exp (lam * r) := by fun_prop
+  rcases le_total 0 T with hT | hT
+  · have := intervalIntegral.integral_mono_on (g := fun _ ↦ exp (|lam| * T)) hT
+      (hc.intervalIntegrable _ _) (intervalIntegrable_const (μ := volume))
+      fun r hr ↦ exp_le_exp.2 <| by
+        nlinarith [le_abs_self lam, abs_nonneg lam, hr.1, hr.2]
+    simpa using this
+  · rw [intervalIntegral.integral_symm]
+    have := intervalIntegral.integral_mono_on (f := fun _ ↦ exp (|lam| * T)) hT
+      (intervalIntegrable_const (μ := volume)) (hc.intervalIntegrable _ _)
+      fun r hr ↦ exp_le_exp.2 <| by
+        rcases le_total 0 lam with h | h
+        · rw [abs_of_nonneg h]; nlinarith [hr.1, hr.2]
+        · rw [abs_of_nonpos h]; nlinarith [hr.1, hr.2]
+    simp only [intervalIntegral.integral_const, smul_eq_mul, zero_sub] at this
+    linarith
 
 /-- **Exponential decay from a differential inequality.** If `g' ≤ -lam * g` on `[T, ∞)`, then
 `g t ≤ g T * exp (-(lam * (t - T)))` for every `t ≥ T`. -/
@@ -207,27 +239,43 @@ theorem eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc {E : Type*} [NormedAdd
     (bound : ∀ x ∈ Icc a b, ‖f' x‖ ≤ K * ‖f x‖) (hc : c ∈ Icc a b) (hfc : f c = 0) :
     ∀ x ∈ Icc a b, f x = 0 := by
   intro x hx
-  rcases le_total c x with hcx | hxc
-  · have hsub : Icc c b ⊆ Icc a b := Icc_subset_Icc_left hc.1
-    exact eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_right
-      (fun y hy ↦ (hf y (hsub hy)).continuousWithinAt.mono hsub)
-      (fun y hy ↦ (hf y (hsub (Ico_subset_Icc_self hy))).mono_of_mem_nhdsWithin
-        (Icc_mem_nhdsGE_of_mem ⟨hc.1.trans hy.1, hy.2⟩))
-      hfc (fun y hy ↦ bound y (hsub (Ico_subset_Icc_self hy))) x ⟨hcx, hx.2⟩
-  · -- Reverse time and run the forward argument on `[-c, -a]`.
-    have hsub : Icc (-c) (-a) ⊆ -Icc a b := fun y hy ↦
-      ⟨by linarith [hy.2], by linarith [hy.1, hc.2]⟩
-    have key := eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_right
-      (f := fun y ↦ f (-y)) (f' := fun y ↦ -f' (-y)) (K := K) (a := -c) (b := -a)
-      (fun y hy ↦ (hf (-y) (hsub hy)).continuousWithinAt.comp continuous_neg.continuousWithinAt
-        fun z hz ↦ hsub hz)
-      (fun y hy ↦ by
-        have h := ((hf (-y) (hsub (Ico_subset_Icc_self hy))).mono_of_mem_nhdsWithin
-          (Icc_mem_nhdsLE_of_mem ⟨by linarith [hy.2], by linarith [hy.1, hc.2]⟩)).scomp y
-          (hasDerivWithinAt_neg y (Ici y)) fun z hz ↦ neg_le_neg_iff.2 hz
-        simpa [Function.comp_def] using h)
-      (by simpa using hfc) (fun y hy ↦ by simpa using bound (-y) (hsub (Ico_subset_Icc_self hy)))
-      (-x) ⟨by linarith, by linarith [hx.1]⟩
-    simpa using key
+  have h := norm_le_gronwallBound_of_norm_derivWithin_le hc hf
+    (δ := 0) (ε := 0) (by simp only [hfc, norm_zero, le_refl])
+    (fun y hy ↦ by simpa only [add_zero] using bound y hy) x hx
+  simpa only [gronwallBound_ε0_δ0, norm_le_zero_iff] using h
+
+/-- **A square-integrable path with derivative controlled by its norm is bounded.** If
+`‖u'‖ ≤ K ‖u‖` with `K ≥ 0` and `u` is square integrable on the line, then
+`‖u s‖² ≤ exp (2 K) ∫ ‖u‖²` for every `s`. -/
+theorem norm_sq_le_exp_mul_integral_norm_sq {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u u' : ℝ → F} {K : ℝ} (hK : 0 ≤ K)
+    (hu : ∀ s, HasDerivAt u (u' s) s) (hu' : ∀ s, ‖u' s‖ ≤ K * ‖u s‖) (hu2 : MemLp u 2)
+    (s : ℝ) : ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 := by
+  -- Grönwall backwards in time: `‖u s‖ ≤ exp K ‖u t‖` for `t ∈ [s, s + 1]`.
+  have hback (t : ℝ) (ht : t ∈ Icc s (s + 1)) :
+      ‖u s‖ ^ 2 ≤ Real.exp (2 * K) * ‖u t‖ ^ 2 := by
+    have hrev (r : ℝ) : HasDerivAt (fun r ↦ u (-r)) (-u' (-r)) r := by
+      simpa [Function.comp_def] using (hu (-r)).scomp r (hasDerivAt_neg r)
+    have hg := norm_le_gronwallBound_of_norm_deriv_right_le (f := fun r ↦ u (-r))
+      (f' := fun r ↦ -u' (-r)) (δ := ‖u t‖) (K := K) (ε := 0) (a := -t) (b := -s)
+      (fun r _ ↦ (hrev r).continuousAt.continuousWithinAt)
+      (fun r _ ↦ (hrev r).hasDerivWithinAt) (by simp)
+      (fun r _ ↦ by simpa using hu' (-r)) (-s) ⟨by linarith [ht.1], le_rfl⟩
+    rw [gronwallBound_ε0, neg_neg] at hg
+    have hexp : Real.exp (K * (-s - -t)) ≤ Real.exp K :=
+      Real.exp_le_exp.2 (by nlinarith [ht.1, ht.2])
+    have hle : ‖u s‖ ≤ ‖u t‖ * Real.exp K := hg.trans (by gcongr)
+    calc ‖u s‖ ^ 2 ≤ (‖u t‖ * Real.exp K) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hle 2
+      _ = Real.exp (2 * K) * ‖u t‖ ^ 2 := by rw [two_mul, Real.exp_add]; ring
+  -- Average the pointwise bound over `[s, s + 1]`.
+  have hint : Integrable fun t ↦ ‖u t‖ ^ 2 :=
+    (memLp_two_iff_integrable_sq_norm hu2.aestronglyMeasurable).1 hu2
+  calc ‖u s‖ ^ 2 = ∫ _ in Icc s (s + 1), ‖u s‖ ^ 2 := by simp
+    _ ≤ ∫ t in Icc s (s + 1), Real.exp (2 * K) * ‖u t‖ ^ 2 :=
+      setIntegral_mono_on (by simp) (hint.integrableOn.const_mul _) measurableSet_Icc hback
+    _ = Real.exp (2 * K) * ∫ t in Icc s (s + 1), ‖u t‖ ^ 2 := integral_const_mul _ _
+    _ ≤ Real.exp (2 * K) * ∫ t, ‖u t‖ ^ 2 :=
+      mul_le_mul_of_nonneg_left (setIntegral_le_integral hint (.of_forall fun _ ↦ by positivity))
+        (Real.exp_pos _).le
 
 end TauCeti

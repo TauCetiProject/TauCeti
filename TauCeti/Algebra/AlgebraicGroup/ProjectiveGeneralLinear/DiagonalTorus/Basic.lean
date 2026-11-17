@@ -93,9 +93,10 @@ theorem comap_upperTriangularIdeal_le_ker_diagonalTorusCoordinateMap :
       RingHom.ker (diagonalTorusCoordinateMap r R).hom.toAlgHom := by
   intro x hx
   exact GeneralLinear.UpperTriangular.definingHopfIdeal_toIdeal_le_ker R (r + 1)
-    (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom.toAlgHom
+    (GeneralLinear.weightTorusCoordinateMap (R := R) (diagonalLiftWeight r)).hom.toAlgHom.toRingHom
     (fun i j hji ↦ by
-      rw [BialgHom.coe_toAlgHom, GeneralLinear.weightTorusCoordinateMap_X]
+      rw [AlgHom.toRingHom_eq_coe, RingHom.coe_coe, BialgHom.coe_toAlgHom,
+        GeneralLinear.weightTorusCoordinateMap_X]
       simp [ne_of_gt hji]) hx
 
 private theorem map_inv_genericMatrix_diagonalLift :

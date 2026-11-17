@@ -108,6 +108,11 @@ theorem kaehlerBasisRatFunc_apply (i : Unit) :
   rw [kaehlerBasisRatFunc, kaehlerBasisOfFormallyEtale_apply]
   simp [KaehlerDifferential.map_D, RatFunc.algebraMap_X]
 
+/-- The differential of the variable of a rational function field is nonzero. -/
+@[simp]
+theorem _root_.RatFunc.D_X_ne_zero : D k (RatFunc k) RatFunc.X ≠ 0 := by
+  simpa only [kaehlerBasisRatFunc_apply] using (kaehlerBasisRatFunc k).ne_zero ()
+
 variable {k} {F : Type*} [Field F] [Algebra k F] {x : F}
 
 /-- The differentials of `F` over `k` are free of rank one on `d x`, for `x` a separating

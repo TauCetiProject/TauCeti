@@ -29,6 +29,8 @@ homeomorphism is what is available.
 * `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_refl`,
   `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans`: the construction respects
   identities and composition of homotopy equivalences.
+* `ContinuousMap.HomotopyEquiv.subsingleton_fundamentalGroup`: trivial fundamental groups pull
+  back along a homotopy equivalence.
 * `ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective`: the homomorphism
   `FundamentalGroup.map e.toFun x` induced by the forward map itself is bijective.
 * `ContinuousMap.HomotopyEquiv.nonempty_fundamentalGroupMulEquiv`: over a path connected
@@ -38,14 +40,14 @@ homeomorphism is what is available.
 public section
 noncomputable section
 
-namespace TauCeti
+namespace ContinuousMap.HomotopyEquiv
 
 open scoped ContinuousMap
 
 variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y]
 
 /-- **A homotopy equivalence induces an isomorphism of fundamental groups.** -/
-def _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv (e : X ≃ₕ Y) (x : X) :
+def fundamentalGroupMulEquiv (e : X ≃ₕ Y) (x : X) :
     _root_.FundamentalGroup X x ≃* _root_.FundamentalGroup Y (e.toFun x) :=
   _root_.HomotopyGroup.pi1MulEquivFundamentalGroup.symm.trans
     ((_root_.HomotopyGroup.mulEquivOfHomotopyEquiv (N := Fin 1) e x).trans
@@ -54,7 +56,7 @@ def _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv (e : X ≃ₕ Y)
 /-- Read through `π_ 1`, the isomorphism induced by a homotopy equivalence `e` is the map that
 `e.toFun` induces on homotopy groups. -/
 @[simp]
-theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_apply (e : X ≃ₕ Y) (x : X)
+theorem fundamentalGroupMulEquiv_apply (e : X ≃ₕ Y) (x : X)
     (a : _root_.FundamentalGroup X x) :
     e.fundamentalGroupMulEquiv x a =
       _root_.HomotopyGroup.pi1MulEquivFundamentalGroup
@@ -67,11 +69,11 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_apply (e : X
 the map that `e.invFun` induces on homotopy groups, followed by base-point change along the trace
 of the round trip `e.invFun ∘ e.toFun ≃ id`. -/
 @[simp]
-theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_symm_apply (e : X ≃ₕ Y)
+theorem fundamentalGroupMulEquiv_symm_apply (e : X ≃ₕ Y)
     (x : X) (b : _root_.FundamentalGroup Y (e.toFun x)) :
     (e.fundamentalGroupMulEquiv x).symm b =
       _root_.HomotopyGroup.pi1MulEquivFundamentalGroup
-        (homotopyGroupTransport
+        (TauCeti.homotopyGroupTransport
           ((e.left_inv.some.evalAt x).cast (ContinuousMap.comp_apply e.invFun e.toFun x).symm
             (ContinuousMap.id_apply x).symm)
           (_root_.HomotopyGroup.map e.invFun rfl
@@ -82,7 +84,7 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_symm_apply (
 
 /-- The identity homotopy equivalence induces the identity isomorphism of fundamental groups. -/
 @[simp]
-theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_refl (x : X) :
+theorem fundamentalGroupMulEquiv_refl (x : X) :
     (ContinuousMap.HomotopyEquiv.refl X).fundamentalGroupMulEquiv x = MulEquiv.refl _ :=
   MulEquiv.ext fun a => by
     rw [ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv, MulEquiv.trans_apply,
@@ -92,7 +94,7 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_refl (x : X)
 /-- The isomorphism of fundamental groups induced by a composite of homotopy equivalences is the
 composite of the induced isomorphisms. -/
 @[simp]
-theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans {Z : Type*}
+theorem fundamentalGroupMulEquiv_trans {Z : Type*}
     [TopologicalSpace Z] (e : X ≃ₕ Y) (e' : Y ≃ₕ Z) (x : X) :
     (e.trans e').fundamentalGroupMulEquiv x =
       (e.fundamentalGroupMulEquiv x).trans (e'.fundamentalGroupMulEquiv (e.toFun x)) :=
@@ -112,12 +114,18 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv_trans {Z : T
         (e.fundamentalGroupMulEquiv_apply x a).symm).trans
         (e'.fundamentalGroupMulEquiv_apply (e.toFun x) _).symm))
 
+/-- If the fundamental group of `Y` at `e x` is trivial, then so is the fundamental group of `X`
+at `x`, for a homotopy equivalence `e : X ≃ₕ Y`. -/
+theorem _root_.ContinuousMap.HomotopyEquiv.subsingleton_fundamentalGroup (e : X ≃ₕ Y) (x : X)
+    [Subsingleton (_root_.FundamentalGroup Y (e x))] : Subsingleton (_root_.FundamentalGroup X x) :=
+  (e.fundamentalGroupMulEquiv x).injective.subsingleton
+
 /-- **The forward map of a homotopy equivalence is bijective on fundamental groups.** Unlike
 `ContinuousMap.HomotopyEquiv.fundamentalGroupMulEquiv`, this is stated for Mathlib's
 `FundamentalGroup.map` of `e.toFun`, so it computes on loop classes by mapping representatives.
 It is the full faithfulness of Mathlib's equivalence of fundamental groupoids
 `FundamentalGroupoidFunctor.equivOfHomotopyEquiv`, read on endomorphisms of `x`. -/
-theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective (e : X ≃ₕ Y) (x : X) :
+theorem fundamentalGroup_map_bijective (e : X ≃ₕ Y) (x : X) :
     Function.Bijective (_root_.FundamentalGroup.map e.toFun x) :=
   (CategoryTheory.End.homEquiv.symm.bijective.comp
     ((FundamentalGroupoidFunctor.equivOfHomotopyEquiv e).fullyFaithfulFunctor.map_bijective
@@ -126,11 +134,11 @@ theorem _root_.ContinuousMap.HomotopyEquiv.fundamentalGroup_map_bijective (e : X
 
 /-- Over a path connected space, homotopy equivalence identifies the fundamental groups at *any*
 pair of base points, by composing with base-point change. -/
-theorem _root_.ContinuousMap.HomotopyEquiv.nonempty_fundamentalGroupMulEquiv
+theorem nonempty_fundamentalGroupMulEquiv
     [PathConnectedSpace X] (e : X ≃ₕ Y) (x : X) (y : Y) :
     Nonempty (_root_.FundamentalGroup X x ≃* _root_.FundamentalGroup Y y) := by
   have : PathConnectedSpace Y := e.pathConnectedSpace
   exact ⟨(e.fundamentalGroupMulEquiv x).trans
     (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPathConnected (e.toFun x) y)⟩
 
-end TauCeti
+end ContinuousMap.HomotopyEquiv

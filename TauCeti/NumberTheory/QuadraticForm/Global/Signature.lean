@@ -125,13 +125,24 @@ theorem realNegativeIndex_eq_sigNeg (Q : _root_.QuadraticForm K V)
 
 /-- The positive and negative indices of a nondegenerate form at a real place add to its global
 rank. -/
-theorem realPositiveIndex_add_realNegativeIndex_eq_finrank [FiniteDimensional K V]
+theorem realPositiveIndex_add_realNegativeIndex_eq_finrank
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) :
     Q.realPositiveIndex w + Q.realNegativeIndex w = Module.finrank K V := by
   let : CharZero K := RingHom.charZero w.1.embedding
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
   let : Algebra K ℝ := (embedding_of_isReal w.2).toAlgebra
+  by_cases hV : FiniteDimensional K V
+  swap
+  · -- infinite rank: both indices are bounded by the rank `0` of the localized form
+    have hbc : Module.finrank ℝ (TensorProduct K ℝ V) = 0 := by
+      rw [Module.finrank_baseChange, Module.finrank_of_not_finite hV]
+    have h1 := sigPos_le_finrank (Q.atRealPlace w)
+    have h2 := sigPos_le_finrank (-Q.atRealPlace w)
+    rw [sigPos_neg] at h2
+    rw [hbc] at h1 h2
+    rw [Module.finrank_of_not_finite hV, realPositiveIndex_eq_sigPos, realNegativeIndex_eq_sigNeg]
+    omega
   have hlocal : (Q.atRealPlace w).Nondegenerate := by
     rw [atRealPlace_def]
     exact QuadraticForm.Nondegenerate.baseChange hQ

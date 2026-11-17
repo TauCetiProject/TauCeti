@@ -201,7 +201,7 @@ theorem relativeDegree_map_of_branchPointAut [IsScalarTower k (RatFunc k) F]
     [IsScalarTower k (RatFunc k) F'] [Algebra.IsIntegral (RatFunc k) F]
     [Algebra.IsIntegral (RatFunc k) F'] (P : Place k F) :
     relativeDegree k (RatFunc k) (P.map e) = relativeDegree k (RatFunc k) P :=
-  relativeDegree_map e (branchPointAut k ρ⁻¹) (commute_branchPointAut_inv ρ e he) P
+  relativeDegree_map e (branchPointAut k ρ⁻¹).toRingEquiv (commute_branchPointAut_inv ρ e he) P
 
 /-- **Reordering the branch points permutes the local data**: when `e : F ≃ₐ[k] F'` replaces
 the Belyi function `t` of `F` by `m(t)`, the multiset of pairs `(e, f)` of ramification indices

@@ -45,10 +45,13 @@ them, and the containment of the closed ball of radius `√ε` in their targets.
 
 * `TauCeti.finite_morseRelCWComplex`: the relative CW complex `TauCeti.morseRelCWComplex` is
   finite.
+* `TauCeti.cellFrontier_morseRelCWComplex_subset`: each of its cells is attached along the base
+  `M_{c-ε}`.
 * `TauCeti.IsMorse.exists_relCWComplex_sublevel_deformation`: **Milnor's cell attachment theorem
   in CW form.** Across a value `c` of a Morse function with a compact band around it, the
   sublevel `M_{c+ε}` strong deformation retracts onto a finite CW complex relative to `M_{c-ε}`
-  whose `m`-cells correspond to the critical points of index `m` on the level `c`.
+  whose `m`-cells correspond to the critical points of index `m` on the level `c`, each attached
+  along `M_{c-ε}`.
 
 ## References
 
@@ -170,6 +173,18 @@ private theorem image_morseCellPartialEquiv_ball_subset_source (hε : 0 < ε) (h
   ((image_mono ball_subset_closedBall).trans
     (image_morseCellPartialEquiv_closedBall hball hε hm).subset).trans inter_subset_left
 
+/-- Where `f` has the normal form `c - Σ_{j < m} yⱼ² + Σ_{j ≥ m} yⱼ²` in the chart, the
+characteristic map of the cell of `φ` sends the boundary sphere of the sup-norm ball to the level
+`f = c - ε`, in the lower sublevel. -/
+private theorem mapsTo_morseCellPartialEquiv_sphere {f : M → ℝ} {c : ℝ}
+    (hf : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < m then -1 else 1) * φ y j ^ 2) (hε : 0 < ε)
+    (hm : m ≤ n) : MapsTo (morseCellPartialEquiv φ hball hε hm) (sphere 0 1) {x | f x ≤ c - ε} := by
+  intro x hx
+  rw [mem_ofPred_eq, coe_morseCellPartialEquiv, comp_apply,
+    OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq hball hf _ hε.le
+      (norm_unitBallHomeomorph_symm_eq_one hx).le, norm_unitBallHomeomorph_symm_eq_one hx]
+  linarith
+
 end MorseCell
 
 section RelCWComplex
@@ -217,11 +232,7 @@ def morseRelCWComplex (hfc : Continuous f)
       linarith)
     (by
       rintro _ ⟨i, rfl⟩ x hx
-      refine Or.inl ?_
-      rw [mem_ofPred_eq, coe_morseCellPartialEquiv, comp_apply,
-        OpenPartialHomeomorph.apply_morseCellMap_eq_sub_mul_norm_sq (hball i) (hf i) _ hε.le
-          (norm_unitBallHomeomorph_symm_eq_one hx).le, norm_unitBallHomeomorph_symm_eq_one hx]
-      linarith)
+      exact Or.inl (mapsTo_morseCellPartialEquiv_sphere (hball i) (hf i) hε _ hx))
     (isClosed_le hfc continuous_const)
     (by
       congr 1
@@ -281,6 +292,16 @@ theorem coe_cellDiskHom_morseRelCWComplex [T2Space M] (m : ℕ)
   rw [coe_cellDiskHom_apply, coe_map_morseRelCWComplex, comp_apply,
     coe_diskHomeomorphClosedBall_apply, Homeomorph.symm_apply_apply]
 
+/-- Every cell of `TauCeti.morseRelCWComplex` is attached along the base: the boundary sphere of
+each cell lies on the level `f = c - ε`, in the lower sublevel `{f ≤ c - ε}`. -/
+theorem cellFrontier_morseRelCWComplex_subset (m : ℕ)
+    (j : @cell M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m) :
+    @cellFrontier M _ _ _ (morseRelCWComplex hfc φ hφ k hk hε hball hf) m j ⊆
+      {x | f x ≤ c - ε} := by
+  rcases j with ⟨i, rfl⟩
+  rintro _ ⟨x, hx, rfl⟩
+  exact mapsTo_morseCellPartialEquiv_sphere (hball i) (hf i) hε _ hx
+
 end RelCWComplex
 
 section IsMorse
@@ -301,11 +322,12 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation (hf : IsMorse I f) (hδ
       (_ : RelCWComplex.Finite C) (hC : C ⊆ {x | f x ≤ c + ε}),
       (∀ m, Nonempty (cell C m ≃
         {p : ↥(criticalPoints I f ∩ f ⁻¹' {c}) // manifoldMorseIndex I f p = m})) ∧
+      (∀ m (j : cell C m), cellFrontier m j ⊆ {x | f x ≤ c - ε}) ∧
       ∃ r : C({x | f x ≤ c + ε}, C), (∀ x, r (ContinuousMap.inclusion hC x) = x) ∧
         Nonempty (((ContinuousMap.inclusion hC).comp r).HomotopyRel (ContinuousMap.id _)
           {x | (x : M) ∈ C}) := by
-  obtain ⟨ε, hε, hεδ, ψ, hψ, hψp, r, hr, ⟨G⟩⟩ :=
-    hf.exists_sublevel_union_cells_deformation hδ hcompact
+  obtain ⟨ε, hε, hεδ, ψ, hψ, hψp, h⟩ := hf.exists_sublevel_union_cells_deformation hδ hcompact
+  obtain ⟨r, hr, ⟨G⟩⟩ := h ε hε le_rfl
   have hk : ∀ p : ↥(criticalPoints I f ∩ f ⁻¹' {c}),
       manifoldMorseIndex I f p ≤ Module.finrank ℝ E := fun _ ↦ manifoldMorseIndex_le_finrank
   have hball : ∀ p, closedBall 0 √ε ⊆ (ψ p).target := fun p ↦
@@ -332,6 +354,7 @@ theorem IsMorse.exists_relCWComplex_sublevel_deformation (hf : IsMorse I f) (hδ
     (fun p ↦ (ψ p).toOpenPartialHomeomorph) hψ (manifoldMorseIndex I f ·) hk hε hball
     (fun p ↦ (hψp p).2.2.2), finite_morseRelCWComplex _ _ _ _ _ _ _ _, hS,
     fun m ↦ ⟨morseRelCWComplexCellEquiv _ _ _ _ _ _ _ _ m⟩,
+    cellFrontier_morseRelCWComplex_subset _ _ _ _ _ _ _ _,
     (ContinuousMap.inclusion inter_subset_right).comp r, fun x ↦ ?_,
     ⟨G.cast (by ext; rfl) rfl⟩⟩
   exact congrArg (ContinuousMap.inclusion inter_subset_right) (hr ⟨x, hS x.2, x.2⟩)

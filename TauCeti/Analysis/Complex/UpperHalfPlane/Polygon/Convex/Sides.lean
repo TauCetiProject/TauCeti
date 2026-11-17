@@ -146,6 +146,26 @@ private theorem geodesicLine_notMem_range_sideGeodesic {k j : Fin n} (hjk : j �
       (P.carrier_subset_closure_leftHalfPlane j ha) (P.carrier_subset_closure_leftHalfPlane j hb)
       (P.range_sideGeodesic_ne hjk.symm))
 
+/-- **A point of the polygon on the supporting geodesic of a side running from an ideal point to a
+finite vertex lies on the side.** If the side `ξ → w` of the polygon, where `w` is the finite
+endpoint and lies on the supporting geodesic of the next side, is contained in the polygon, then
+every point of the polygon on the supporting geodesic of the side belongs to the side. This is the
+case of a backward ray `(-∞, t]` in `carrier_inter_range_sideGeodesic`. -/
+private theorem mem_extGeodesicSegment_inr_inl_of_mem_carrier {k : Fin n} (hk₁ : k + 1 ≠ k)
+    {ξ : OnePoint ℝ} {w : ℍ} {u : ℝ}
+    (hg : IsGeodesicFromTo (P.sideGeodesic k) (.inr ξ) (.inl w))
+    (hside : extGeodesicSegment (.inr ξ) (.inl w) ⊆ P.carrier)
+    (hx : geodesicLine (P.sideGeodesic k) u ∈ P.carrier)
+    (hnext : w ∈ range (geodesicLine (P.sideGeodesic (k + 1)))) :
+    geodesicLine (P.sideGeodesic k) u ∈ extGeodesicSegment (.inr ξ) (.inl w) := by
+  obtain ⟨rfl, t, rfl⟩ := isGeodesicFromTo_inr_inl.1 hg
+  -- the side is the backward ray `(-∞, t]`; a parameter `u > t` would put the finite endpoint,
+  -- a point of the line of the next side, strictly between two points of the polygon
+  rw [← geodesicLine_image_Iic] at hside ⊢
+  refine ⟨u, le_of_not_gt fun htu ↦ ?_, rfl⟩
+  exact P.geodesicLine_notMem_range_sideGeodesic hk₁ (sub_one_lt t) htu
+    (hside (mem_image_of_mem _ (sub_one_lt t).le)) hx hnext
+
 /-- The points of the polygon on the supporting geodesic of a side are exactly the points of
 that side. -/
 @[simp]
@@ -190,23 +210,8 @@ theorem carrier_inter_range_sideGeodesic (k : Fin n) :
       rw [add_sub_cancel]⟩
     exact P.geodesicLine_notMem_range_sideGeodesic hk₀ hus (lt_add_one s) hx
       (hside (mem_image_of_mem _ (mem_Ici.2 zero_le_one))) (hs ▸ hprev hp)
-  · -- a backward ray `(-∞, t]`, the forward ray of the reversed line
-    obtain ⟨hξ, ⟨t, ht⟩⟩ := isGeodesicFromTo_inr_inl.1 hg
-    have hξ' : ξ = (P.sideGeodesic k * pslS) • (∞ : OnePoint ℝ) := by
-      rw [mul_smul, pslS_smul_infty, hξ]
-    have hw : w = geodesicLine (P.sideGeodesic k * pslS) (-t) := by
-      rw [geodesicLine_mul_pslS, neg_neg, ht]
-    rw [extGeodesicSegment_inr_inl, hξ', hw] at hside ⊢
-    simp only [rayToward_geodesicLine_inr_smul_infty, geodesicLine_mul_dilation] at hside ⊢
-    simp only [geodesicLine_mul_pslS] at hside ⊢
-    refine ⟨t - u, mem_Ici.2 (sub_nonneg.2 (le_of_not_gt fun htu ↦ ?_)), by
-      dsimp only
-      congr 1
-      ring⟩
-    refine P.geodesicLine_notMem_range_sideGeodesic hk₁ (sub_one_lt t) htu ?_ hx (ht ▸ hnext hq)
-    have := hside (mem_image_of_mem _ (mem_Ici.2 zero_le_one))
-    convert this using 2
-    ring
+  · -- a backward ray `(-∞, t]`
+    exact P.mem_extGeodesicSegment_inr_inl_of_mem_carrier hk₁ hg hside hx (hnext hq)
   · -- the whole line
     obtain ⟨hξ, hη⟩ := isGeodesicFromTo_inr_inr.1 hg
     have hξη : ξ ≠ η := fun h ↦ (isGeodesicFromTo_inr_inr.2 ⟨hξ, hη⟩).ne (congrArg _ h)

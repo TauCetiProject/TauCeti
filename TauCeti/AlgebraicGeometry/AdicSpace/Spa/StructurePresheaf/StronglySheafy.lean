@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.StronglyNoetherian
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Iterate.Basic
 public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.RingTheory.Huber.LocalizationTopology.Trivial
 
 /-!
 # Strongly sheafy Huber rings
@@ -32,9 +33,13 @@ separated completion, it only depends on the completion of `A`, and so does stro
   `n = 0`.
 * `TauCeti.Huber.IsStronglySheafy.restrictedMvPowerSeriesCompletion`: `A⟨X₁, …, Xₘ⟩` is strongly
   sheafy when `A` is, by the iteration isomorphism `A⟨X₁, …, Xₘ⟩⟨Y₁, …, Yₙ⟩ ≅ A⟨X, Y⟩`.
-* `IsDenseInducing.isStronglySheafy_iff`, `TauCeti.Huber.isStronglySheafy_congr` and
-  `TauCeti.Huber.isStronglySheafy_completion_iff`: strong sheafiness is invariant under dense
-  inducing ring maps, under isomorphisms of topological rings, and under completion.
+* `IsDenseInducing.isStronglySheafy_iff`, `TauCeti.Huber.isStronglySheafy_congr`,
+  `TauCeti.Huber.isStronglySheafy_congr_topology`,
+  `TauCeti.Huber.isStronglySheafy_completion_iff` and
+  `TauCeti.Huber.PairOfDefinition.isStronglySheafy_completion_locTopology_denom_one`: strong
+  sheafiness is invariant under dense inducing ring maps, under isomorphisms of topological rings,
+  under equal topologies, and under completion (in particular at the trivial localisation
+  `A⟨T/1⟩`).
 * `TauCeti.Huber.IsStronglySheafy.of_isStronglyNoetherian`: strongly noetherian Tate rings, in
   particular complete nonarchimedean fields and their affinoid algebras, are strongly sheafy.
 * `TauCeti.Huber.IsStronglySheafy.of_isStablySheafyRing`: stably sheafy rings are strongly
@@ -107,6 +112,15 @@ theorem isStronglySheafy_congr (e : A ≃+* B) (he : Continuous e) (he' : Contin
   IsDenseInducing.isStronglySheafy_iff (φ := (e : A →+* B))
     (Homeomorph.mk e.toEquiv he he').isDenseEmbedding.isDenseInducing
 
+/-- **Strong sheafiness is invariant under equality of topologies.** -/
+theorem isStronglySheafy_congr_topology {R : Type u} [CommRing R]
+    {t₁ t₂ : TopologicalSpace R} [ht₁ : @IsTopologicalRing R t₁ _]
+    [hh₁ : @IsHuberRing R _ t₁ ht₁] [ht₂ : @IsTopologicalRing R t₂ _]
+    [hh₂ : @IsHuberRing R _ t₂ ht₂] (ht : t₁ = t₂) :
+    @IsStronglySheafy R _ t₁ ht₁ hh₁ ↔ @IsStronglySheafy R _ t₂ ht₂ hh₂ := by
+  subst ht
+  rfl
+
 end Transport
 
 /-! ### Uniform Huber rings -/
@@ -143,6 +157,30 @@ theorem IsStronglySheafy.of_isStablySheafyRing (h : IsStablySheafyRing.{u, u} A)
       (ψ := (e.symm : _ →+* _)) he).isTopologicallyFiniteType
 
 end Uniform
+
+/-- **The completed trivial localisation `A⟨T/1⟩` of a strongly sheafy Huber ring is strongly
+sheafy** whenever the numerators `T` are power-bounded. -/
+theorem PairOfDefinition.isStronglySheafy_completion_locTopology_denom_one
+    {A : Type u} [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) (T : Finset A) (hTpb : ∀ t ∈ T, IsPowerBounded t)
+    (hA : IsStronglySheafy A) :
+    letI hden := P.hasDenominatorPower_denom_one T A
+    letI := P.locUniformSpace T 1 A hden
+    letI := P.isUniformAddGroup_locUniformSpace T 1 A hden
+    letI := P.isTopologicalRing_locUniformSpace T 1 A hden
+    letI := P.isHuberRing_completion_locTopology T 1 A hden
+    IsStronglySheafy (Completion A) := by
+  let hden := P.hasDenominatorPower_denom_one T A
+  have htop : (P.locUniformSpace T 1 A hden).toTopologicalSpace = ‹TopologicalSpace A› :=
+    (P.locUniformSpace_toTopologicalSpace T 1 A hden).trans (P.locTopology_denom_one T hTpb)
+  have hu_ss := (isStronglySheafy_congr_topology
+    (ht₁ := P.isTopologicalRing_locUniformSpace T 1 A hden)
+    (hh₁ := P.isHuberRing_locUniformSpace T 1 A hden) htop).mpr hA
+  let _ := P.locUniformSpace T 1 A hden
+  have _ := P.isUniformAddGroup_locUniformSpace T 1 A hden
+  have _ := P.isTopologicalRing_locUniformSpace T 1 A hden
+  have _ := P.isHuberRing_locUniformSpace T 1 A hden
+  exact isStronglySheafy_completion_iff.mpr hu_ss
 
 /-! ### Strongly noetherian Tate rings -/
 

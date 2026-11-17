@@ -54,8 +54,6 @@ that `Lᵛ` is again a full lattice.  It also identifies the natural pairing map
 
 * V. V. Nikulin, *Integral symmetric bilinear forms and some of their applications*, §1.1.
 * W. Ebeling, *Lattices and Codes*, Chapter 1.
-* `TauCetiRoadmap/IntegralLattices/README.md` (Layer 2)
-* `TauCetiRoadmap/IntegralLattices/Suggested.lean`
 -/
 
 public section
@@ -104,7 +102,7 @@ noncomputable instance instIsLatticeDualCarrier (L : IntegralLattice V) [L.IsNon
 /-- The dual carrier has the same rank as the ambient rational space. -/
 theorem finrank_dualCarrier (L : IntegralLattice V) [L.IsNondegenerate] :
     Module.finrank ℤ L.dualCarrier = Module.finrank ℚ V :=
-  Submodule.finrank_eq_finrank L.dualCarrier
+  Submodule.finrank_eq_finrank ℚ L.dualCarrier Submodule.IsLattice.span_eq_top
 
 /-- The pairing of a dual-lattice vector with a lattice vector, valued in `ℤ`. -/
 noncomputable def dualPairing (L : IntegralLattice V) :

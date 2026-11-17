@@ -18,7 +18,7 @@ This identifies a rank-one subgroup, not the full carrier with an independently 
 simply connected group. No finiteness or simplicity assertion is made.
 
 The subgroup-containment and range arguments follow
-`TauCeti.Algebra.Lie.E7.Minuscule.RankOne` and use Mathlib's
+`TauCeti.Algebra.Lie.E7.Minuscule.RankOne.Basic` and use Mathlib's
 `Matrix.SL2.transvection_induction`.
 
 ## References

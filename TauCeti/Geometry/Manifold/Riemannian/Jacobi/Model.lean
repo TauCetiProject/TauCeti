@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature
+public import TauCeti.Analysis.SpecialFunctions.Trigonometric.Curvature.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.ConstantCurvature
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Tangential
 
@@ -69,8 +69,8 @@ theorem IsJacobiFieldOn.exists_eq_curvatureCosine_smul_add_curvatureSine_smul
     ∃ P Q : ∀ t, TangentSpace I (γ t),
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ P s t = 0) ∧
       (∀ t ∈ s, alongCurveWithin (leviCivitaConnection I M) γ Q s t = 0) ∧
-      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ P (γ t)) s t) ∧
-      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord (F := E) γ Q (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ P (γ t)) s t) ∧
+      (∀ t ∈ s, DifferentiableWithinAt ℝ (sectionCoord ℝ (F := E) γ Q (γ t)) s t) ∧
       P a = V a ∧ Q a = alongCurveWithin (leviCivitaConnection I M) γ V s a ∧
       ∀ t ∈ s, V t =
         curvatureCosine (κ * ‖curveVelocityWithin I γ s a‖ ^ 2) (t - a) • P t +

@@ -25,10 +25,14 @@ The chains are the module
 `TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Action`, whose left action is that of
 `TauCeti.AlgebraicTopology.Singular.Cubical.MonoidAlgebra.Bimodule`.
 
+## Main definitions
+
+* `TauCeti.pathChainPoint`: the `0`-chain of a single Moore path.
+
 ## Main results
 
 * `TauCeti.pathChain_isDGBimodule`: the chains `C_*(P_{b→b'} B; R)` form a DG
-  `(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodule.
+  `(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodule, bundled as `TauCeti.pathChainBimodule`.
 
 ## References
 
@@ -52,5 +56,42 @@ theorem pathChain_isDGBimodule :
       (cubicalChainModuleDifferential (MoorePathBetween B b b') (MooreLoopSpace B b') R) :=
   cubicalChainModule_isDGBimodule (MooreLoopSpace B b) (MoorePathBetween B b b')
     (MooreLoopSpace B b') R
+
+/-- **The chains of Moore paths from `b` to `b'`**, as an object of the category of DG
+`(C_*(Ω_b B), C_*(Ω_{b'} B))`-bimodules. -/
+noncomputable abbrev pathChainBimodule :
+    DGBimoduleCat (loopChain_isDGAlgebra B b R) (loopChain_isDGAlgebra B b' R) :=
+  DGBimoduleCat.of (pathChain_isDGBimodule B b b' R)
+
+section Point
+
+variable {B b b' R}
+
+variable (R) in
+/-- The `0`-chain of a path. -/
+noncomputable def pathChainPoint (δ : MoorePathBetween B b b') :
+    cubicalChainModule (MoorePathBetween B b b') (MooreLoopSpace B b') R :=
+  cubicalChainModuleLof _ _ R 0 (NormalizedCubicalChain.ofCube _ R (SingularCube.point δ))
+
+/-- The `0`-chain of a path is the class of the constant `0`-cube at the path. -/
+theorem pathChainPoint_def (δ : MoorePathBetween B b b') :
+    pathChainPoint R δ =
+      cubicalChainModuleLof (MoorePathBetween B b b') (MooreLoopSpace B b') R 0
+        (NormalizedCubicalChain.ofCube (MoorePathBetween B b b') R (SingularCube.point δ)) :=
+  (rfl)
+
+/-- The `0`-chain of a path has degree `0`. -/
+theorem pathChainPoint_mem (δ : MoorePathBetween B b b') :
+    pathChainPoint R δ ∈
+      cubicalChainModuleGrading (MoorePathBetween B b b') (MooreLoopSpace B b') R 0 :=
+  mem_cubicalChainModuleGrading_iff.2 (Or.inr ⟨0, _, by simp, rfl⟩)
+
+/-- The `0`-chain of a path is a cycle. -/
+@[simp]
+theorem cubicalChainModuleDifferential_pathChainPoint (δ : MoorePathBetween B b b') :
+    cubicalChainModuleDifferential _ _ R (pathChainPoint R δ) = 0 :=
+  cubicalChainModuleDifferential_lof_zero _
+
+end Point
 
 end TauCeti

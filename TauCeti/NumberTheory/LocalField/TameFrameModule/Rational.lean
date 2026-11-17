@@ -111,19 +111,10 @@ theorem nonempty_tameFrameModule_linearEquiv_of_relationMap_injective [Group G] 
     [NeZero (Nat.card G : k)]
     (σ τ : G) (a b : k) (hinj : Function.Injective (tameFrameRelationMap k G σ τ a b)) :
     Nonempty (TameFrameModule k G σ τ a b ≃ₗ[MonoidAlgebra k G] MonoidAlgebra k G) := by
-  let A := MonoidAlgebra k G
-  let v : Fin 2 →₀ A := (tameFrameRelations k G σ τ a b).relation ()
-  have hmap : tameFrameRelationMap k G σ τ a b = LinearMap.toSpanSingleton A (Fin 2 →₀ A) v :=
-    LinearMap.ext fun x ↦ by rw [tameFrameRelationMap_apply, LinearMap.toSpanSingleton_apply]
-  obtain ⟨e⟩ := nonempty_quotient_span_singleton_linearEquiv_of_injective v
-    (hmap ▸ hinj)
-  -- `TameFrameModule` is the quotient by the span of the relations, which is the range of the
-  -- relation map.
-  have hspan :
-      Submodule.span A (Set.range (tameFrameRelations k G σ τ a b).relation) =
-        Submodule.span A {v} := by
-    rw [← range_tameFrameRelationMap, hmap, LinearMap.range_toSpanSingleton]
-  exact ⟨(Submodule.quotEquivOfEq _ _ hspan).trans e⟩
+  rw [tameFrameRelationMap_def] at hinj
+  obtain ⟨e⟩ := nonempty_quotient_span_singleton_linearEquiv_of_injective _ hinj
+  -- `TameFrameModule` is the quotient by the span of the range of the single relation.
+  exact ⟨(Submodule.quotEquivOfEq _ _ (by rw [Set.range_unique])).trans e⟩
 
 /-- **The base change of the tame-frame module to a field is the regular representation.** Let
 `G` be finite, `R` a commutative ring and `k` a flat `R`-algebra which is a field in which the
@@ -136,18 +127,13 @@ theorem nonempty_tameFrameModule_tensor_linearEquiv_of_relationMap_injective [Gr
     (hinj : Function.Injective (tameFrameRelationMap R G σ τ a b)) :
     Nonempty ((TameFrameModule R G σ τ a b ⊗[R] k) ≃ₗ[MonoidAlgebra R G]
       (MonoidAlgebra R G ⊗[R] k)) := by
-  let A := MonoidAlgebra R G
-  let v : Fin 2 →₀ A := (tameFrameRelations R G σ τ a b).relation ()
-  have hmap : tameFrameRelationMap R G σ τ a b = LinearMap.toSpanSingleton A (Fin 2 →₀ A) v :=
-    LinearMap.ext fun x ↦ by rw [tameFrameRelationMap_apply, LinearMap.toSpanSingleton_apply]
-  obtain ⟨e⟩ := nonempty_quotient_span_singleton_tensor_linearEquiv_of_injective (R := R) k v
-    (hmap ▸ hinj)
-  -- `TameFrameModule` is the quotient by the span of the relations, which is the range of the
-  -- relation map.
+  rw [tameFrameRelationMap_def] at hinj
+  obtain ⟨e⟩ := nonempty_quotient_span_singleton_tensor_linearEquiv_of_injective (R := R) k _ hinj
+  -- `TameFrameModule` is the quotient by the span of the range of the single relation.
   have hspan :
-      Submodule.span A (Set.range (tameFrameRelations R G σ τ a b).relation) =
-        Submodule.span A {v} := by
-    rw [← range_tameFrameRelationMap, hmap, LinearMap.range_toSpanSingleton]
+      Submodule.span (MonoidAlgebra R G) (Set.range (tameFrameRelations R G σ τ a b).relation) =
+        Submodule.span _ {(tameFrameRelations R G σ τ a b).relation ()} := by
+    rw [Set.range_unique]
   exact ⟨(AlgebraTensorModule.congr (Submodule.quotEquivOfEq _ _ hspan)
     (LinearEquiv.refl R k)).trans e⟩
 

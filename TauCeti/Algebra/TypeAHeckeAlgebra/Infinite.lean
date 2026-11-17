@@ -62,8 +62,9 @@ on, so the two commute (`TauCeti.InfiniteTypeAHeckeAlgebra.commute_shift_of_mem_
 placing an element of the stage `a` on the first `a` strands and an element of the stage `b` on
 the next `b` strands is an algebra map from the tensor product
 (`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl`). These are the disjoint block maps along which
-Markov traces are multiplicative; that they are injective, so embeddings, needs the basis
-theorem and is not proved here.
+Markov traces are multiplicative; that they are injective, so embeddings, is
+`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl_injective`, proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Block`.
 
 ## Main definitions
 
@@ -141,8 +142,8 @@ them. -/
 instance : Ring (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Ring (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
 
-/-- The infinite type-A Hecke algebra over `R` is an algebra over every ring that `R` is an
-algebra over. -/
+/-- The infinite type-A Hecke algebra over `R` is an algebra over every commutative semiring that
+`R` is an algebra over. -/
 instance (priority := 900) InfiniteTypeAHeckeAlgebra.instAlgebra' {S : Type*} [CommSemiring S]
     [Algebra S R] : Algebra S (InfiniteTypeAHeckeAlgebra R q) :=
   inferInstanceAs (Algebra S (RingQuot (InfiniteTypeAHeckeAlgebra.Rel R q)))
@@ -192,8 +193,9 @@ theorem T_mul_self (i : ℕ) : T q i * T q i = ((q : R) - ↑q⁻¹) • T q i +
 roots `q` and `-q⁻¹`. -/
 theorem T_sub_algebraMap_mul_T_add_algebraMap_eq_zero (i : ℕ) :
     (T q i - algebraMap R _ (q : R)) * (T q i + algebraMap R _ (↑q⁻¹ : R)) = 0 := by
-  have hq : algebraMap R (InfiniteTypeAHeckeAlgebra R q) (q : R) * algebraMap R _ (↑q⁻¹ : R) = 1 :=
-    by simp [← map_mul]
+  have hq : algebraMap R (InfiniteTypeAHeckeAlgebra R q) (q : R) *
+      algebraMap R _ (↑q⁻¹ : R) = 1 := by
+    simp [← map_mul]
   simp only [sub_mul, mul_add, T_mul_self, ← Algebra.commutes _ (T q i), hq,
     Algebra.smul_def, map_sub]
   abel
@@ -394,36 +396,42 @@ private theorem stageSplit_le_iff {n : ℕ} {P : Submodule R (InfiniteTypeAHecke
   obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
   exact h a ha b hb
 
+/-- `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` is stable under left multiplication by the stage `n + 1`. -/
+private theorem toSubmodule_stage_mul_stageSplit (n : ℕ) :
+    Subalgebra.toSubmodule (stage R q (n + 1)) * stageSplit R q n = stageSplit R q n := by
+  simp only [stageSplit, Submodule.mul_sup, ← mul_assoc,
+    (Subalgebra.isIdempotentElem_toSubmodule (stage R q (n + 1))).eq]
+
+/-- `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` is stable under right multiplication by the stage `n + 1`. -/
+private theorem stageSplit_mul_toSubmodule_stage (n : ℕ) :
+    stageSplit R q n * Subalgebra.toSubmodule (stage R q (n + 1)) = stageSplit R q n := by
+  simp only [stageSplit, Submodule.sup_mul, mul_assoc,
+    (Subalgebra.isIdempotentElem_toSubmodule (stage R q (n + 1))).eq]
+
+/-- `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` is stable under left multiplication by the last generator
+`Tₙ` as soon as `Tₙ Hₙ₊₁ Tₙ` lies in it. -/
+private theorem T_mul_mem_stageSplit_of_forall {n : ℕ}
+    (hT : ∀ a ∈ stage R q (n + 1), T q n * a * T q n ∈ stageSplit R q n)
+    {m : InfiniteTypeAHeckeAlgebra R q} (hm : m ∈ stageSplit R q n) :
+    T q n * m ∈ stageSplit R q n := by
+  obtain ⟨m₁, hm₁, m₂, hm₂, rfl⟩ := Submodule.mem_sup.1 hm
+  clear hm
+  rw [mul_add]
+  refine add_mem ?_ ?_
+  · simpa only [one_mul] using mul_T_mul_mem_stageSplit (one_mem _) hm₁
+  · induction hm₂ using Submodule.mul_induction_on' with
+    | mem_mul_mem y hy b hb =>
+      obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
+      rw [← stageSplit_mul_toSubmodule_stage, ← mul_assoc, ← mul_assoc]
+      exact Submodule.mul_mem_mul (hT a ha) hb
+    | add y _ y' _ hy hy' =>
+      rw [mul_add]
+      exact add_mem hy hy'
+
 /-- The stage `n + 2` lies in `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁` as soon as `Tₙ Hₙ₊₁ Tₙ` does. -/
 private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     (hT : ∀ a ∈ stage R q (n + 1), T q n * a * T q n ∈ stageSplit R q n) :
     Subalgebra.toSubmodule (stage R q (n + 2)) ≤ stageSplit R q n := by
-  have hS : Subalgebra.toSubmodule (stage R q (n + 1)) *
-      Subalgebra.toSubmodule (stage R q (n + 1)) = Subalgebra.toSubmodule (stage R q (n + 1)) :=
-    (Subalgebra.isIdempotentElem_toSubmodule _).eq
-  -- The submodule is stable under multiplication by the stage `n + 1` on either side.
-  have hleft : Subalgebra.toSubmodule (stage R q (n + 1)) * stageSplit R q n =
-      stageSplit R q n := by
-    simp only [stageSplit, Submodule.mul_sup, ← mul_assoc, hS]
-  have hright : stageSplit R q n * Subalgebra.toSubmodule (stage R q (n + 1)) =
-      stageSplit R q n := by
-    simp only [stageSplit, Submodule.sup_mul, mul_assoc, hS]
-  -- It is also stable under left multiplication by the last generator `T n`.
-  have hTmul : ∀ m ∈ stageSplit R q n, T q n * m ∈ stageSplit R q n := by
-    intro m hm
-    obtain ⟨m₁, hm₁, m₂, hm₂, rfl⟩ := Submodule.mem_sup.1 hm
-    clear hm
-    rw [mul_add]
-    refine add_mem ?_ ?_
-    · simpa only [one_mul] using mul_T_mul_mem_stageSplit (one_mem _) hm₁
-    · induction hm₂ using Submodule.mul_induction_on' with
-      | mem_mul_mem y hy b hb =>
-        obtain ⟨a, ha, rfl⟩ := Submodule.mem_mul_span_singleton.1 hy
-        rw [← hright, ← mul_assoc, ← mul_assoc]
-        exact Submodule.mul_mem_mul (hT a ha) hb
-      | add y _ y' _ hy hy' =>
-        rw [mul_add]
-        exact add_mem hy hy'
   -- Hence it is stable under left multiplication by the stage `n + 2`, and contains `1`.
   intro x hx
   rw [Subalgebra.mem_toSubmodule, stage] at hx
@@ -435,11 +443,11 @@ private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     dsimp only
     rcases (show (i : ℕ) < n ∨ (i : ℕ) = n by omega) with hi | hi
     · intro m hm
-      rw [← hleft]
+      rw [← toSubmodule_stage_mul_stageSplit]
       exact Submodule.mul_mem_mul (T_mem_stage (by omega)) hm
     · intro m hm
       rw [hi]
-      exact hTmul m hm
+      exact T_mul_mem_stageSplit_of_forall hT hm
   | algebraMap r =>
     intro m hm
     rw [← Algebra.smul_def]
@@ -452,6 +460,17 @@ private theorem toSubmodule_stage_add_two_le_stageSplit {n : ℕ}
     intro m hm
     rw [mul_assoc]
     exact hx _ (hy m hm)
+
+/-- The braid relation moves `Tₘ₊₁` past `d * Tₘ * e` when `d` and `e` commute with `Tₘ₊₁`. -/
+private theorem T_succ_mul_mul_T_succ (m : ℕ) {d e : InfiniteTypeAHeckeAlgebra R q}
+    (hd : T q (m + 1) * d = d * T q (m + 1)) (he : T q (m + 1) * e = e * T q (m + 1)) :
+    T q (m + 1) * (d * T q m * e) * T q (m + 1) =
+      d * T q m * T q (m + 1) * (T q m * e) := by
+  calc _ = T q (m + 1) * d * T q m * (e * T q (m + 1)) := by simp only [mul_assoc]
+    _ = d * (T q m * T q (m + 1) * T q m) * e := by
+      rw [hd, ← he, T_braid]
+      simp only [mul_assoc]
+    _ = _ := by simp only [mul_assoc]
 
 /-- **The bimodule decomposition of the stages.** As a submodule, the stage of the first `n + 2`
 strands is `Hₙ₊₁ + Hₙ₊₁ Tₙ Hₙ₊₁`: it is spanned by the stage `Hₙ₊₁` of the first `n + 1` strands
@@ -489,16 +508,8 @@ theorem toSubmodule_stage_add_two (n : ℕ) :
       refine add_mem (Submodule.smul_mem _ _ ?_)
         (Submodule.mem_sup_left (stage_mono (by omega) hd))
       simpa only [mul_one] using mul_T_mul_mem_stageSplit (stage_mono (by omega) hd) (one_mem _)
-    · have hd' := (commute_T_of_mem_stage le_rfl hd).eq
-      have he' := (commute_T_of_mem_stage le_rfl he).eq
-      have h : T q (m + 1) * (d * T q m * e) * T q (m + 1) =
-          d * T q m * T q (m + 1) * (T q m * e) := by
-        calc _ = T q (m + 1) * d * T q m * (e * T q (m + 1)) := by simp only [mul_assoc]
-          _ = d * (T q m * T q (m + 1) * T q m) * e := by
-            rw [hd', ← he', T_braid]
-            simp only [mul_assoc]
-          _ = _ := by simp only [mul_assoc]
-      rw [h]
+    · rw [T_succ_mul_mul_T_succ m (commute_T_of_mem_stage le_rfl hd).eq
+        (commute_T_of_mem_stage le_rfl he).eq]
       exact mul_T_mul_mem_stageSplit
         (mul_mem (stage_mono (by omega) hd) (T_mem_stage (by omega)))
         (mul_mem (T_mem_stage (by omega)) (stage_mono (by omega) he))
@@ -683,22 +694,21 @@ theorem shift_mem_stage {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
 the image under the shift, restricted to an algebra map between the stages. -/
 theorem isUnit_mk_shift {n : ℕ} (k : ℕ) {x : InfiniteTypeAHeckeAlgebra R q}
     {hx : x ∈ stage R q n} (h : IsUnit (⟨x, hx⟩ : stage R q n)) :
-    IsUnit (⟨shift R q k x, shift_mem_stage k hx⟩ : stage R q (n + k)) := by
-  let f : stage R q n →ₐ[R] stage R q (n + k) :=
-    ((shift R q k).comp (stage R q n).val).codRestrict _ fun y ↦ shift_mem_stage k y.2
-  have e : f ⟨x, hx⟩ = ⟨shift R q k x, shift_mem_stage k hx⟩ :=
-    Subtype.ext ((AlgHom.coe_codRestrict _ _ _ _).trans (AlgHom.comp_apply _ _ _))
-  exact e ▸ h.map f
+    IsUnit (⟨shift R q k x, shift_mem_stage k hx⟩ : stage R q (n + k)) :=
+  h.map (((shift R q k).comp (stage R q n).val).codRestrict _ fun y ↦ shift_mem_stage k y.2)
 
-/-- The image of the strand shift by `k` is generated by the generators `T (i + k)`. -/
+/-- The image of the strand shift by `k` is the subalgebra generated by the generators
+`T (i + k)`. -/
+theorem range_shift (k : ℕ) :
+    (shift R q k).range = Algebra.adjoin R (Set.range fun i ↦ T q (i + k)) := by
+  rw [← funext (shift_T (R := R) (q := q) k), Set.range_comp', ← AlgHom.map_adjoin,
+    adjoin_range_T, Algebra.map_top]
+
+/-- The strand shift by `k` sends every element into the subalgebra generated by the generators
+`T (i + k)`. -/
 theorem shift_mem_adjoin (k : ℕ) (x : InfiniteTypeAHeckeAlgebra R q) :
-    shift R q k x ∈ Algebra.adjoin R (Set.range fun i ↦ T q (i + k)) := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (T q)) := by
-    rw [adjoin_range_T]
-    trivial
-  have hmap : shift R q k x ∈ (Algebra.adjoin R (Set.range (T q))).map (shift R q k) :=
-    Subalgebra.mem_map.2 ⟨x, hx, rfl⟩
-  rwa [AlgHom.map_adjoin, ← Set.range_comp, Function.comp_def, funext (shift_T k)] at hmap
+    shift R q k x ∈ Algebra.adjoin R (Set.range fun i ↦ T q (i + k)) :=
+  (range_shift (R := R) (q := q) k).le (AlgHom.mem_range_self _ x)
 
 /-- **Disjoint blocks commute.** An element of the stage `a`, living on the first `a` strands,
 commutes with the shift by `a` of any element, which lives on the strands from `a` on. -/
@@ -713,8 +723,9 @@ theorem commute_shift_of_mem_stage {a : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
 variable (R q) in
 /-- The disjoint block map: the algebra map from the tensor product of the stages `a` and `b` to
 the stage `a + b` that places the first factor on the first `a` strands and the second factor,
-shifted by `a`, on the next `b` strands. Its injectivity, which would make it an embedding,
-needs the basis theorem and is not proved here. -/
+shifted by `a`, on the next `b` strands. It is injective by
+`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl_injective`, proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Block`. -/
 def blockIncl (a b : ℕ) : stage R q a ⊗[R] stage R q b →ₐ[R] stage R q (a + b) :=
   (Algebra.TensorProduct.lift (stage R q a).val ((shift R q a).comp (stage R q b).val)
     fun x y ↦ by

@@ -93,14 +93,15 @@ lemma LocalOrientation.coe_neg {M : Type w} [TopologicalSpace M] {x : M} {d : �
       (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d) = -z.val :=
   (rfl)
 
-/-- An isomorphism of integral local homology groups preserves the generator condition. -/
+/-- An isomorphism of integral local homology groups preserves the generator condition. The two
+groups may sit in different degrees. -/
 theorem IsLocalOrientation.map {M N : Type w} [TopologicalSpace M] [TopologicalSpace N]
-    {x : M} {y : N} {d : ℕ}
+    {x : M} {y : N} {d d' : ℕ}
     {z : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d}
     (hz : IsLocalOrientation x d z)
     (e : localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({x} : Set M) d ≅
-      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d) :
-    IsLocalOrientation y d (e.hom z) := by
+      localHomology (A := ModuleCat.{w} ℤ) (ModuleCat.of ℤ (ULift.{w} ℤ)) ({y} : Set N) d') :
+    IsLocalOrientation y d' (e.hom z) := by
   intro a
   obtain ⟨c, hc⟩ := hz (e.inv a)
   refine ⟨c, ?_⟩
@@ -271,8 +272,10 @@ def localOrientationOfZeroDimChart {M E : Type w} [TopologicalSpace M] [T2Space 
 
 /-- Every point of a zero-dimensional finite-dimensional charted space has a local orientation. -/
 theorem exists_localOrientation_of_zero_dim_chart {M E : Type w} [TopologicalSpace M]
-    [T2Space M] [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     [ChartedSpace E M] (x : M) (hn : finrank ℝ E = 0) : Nonempty (LocalOrientation M x 0) :=
+  haveI : Subsingleton E := Module.finrank_zero_iff.1 hn
+  haveI : DiscreteTopology M := ChartedSpace.discreteTopology (H := E) M
   ⟨localOrientationOfZeroDimChart (chartAt E x) (mem_chart_source E x) hn⟩
 
 end TauCeti

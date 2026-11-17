@@ -27,16 +27,18 @@ from Mathlib's maps of barycentric simplices. The bridge reuses
 last coordinate to the zeroth position. Every map of barycentric simplices induced by a map of
 vertices, read on full-dimensional simplices, is the restriction of the continuous affine map
 `simplexMapAmbient` of the ambient Euclidean spaces; the face inclusions are the case of the
-coface vertex maps `Fin.succAbove`. In coordinates, the face map omitting the vertex `e_j` inserts a
-zero `j`-th coordinate, and the face map omitting the origin puts the missing barycentric weight in
-front; a permutation of the vertices induces an affine symmetry of the simplex. Cycling the
-vertices relates the two readings of the face opposite the origin: through the coordinates other
-than the `j`-th one, and through the last coordinates as the face map does. The simplex is a
-compact convex set with nonempty interior, so derivatives within it are unique at every point
-(`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for derivatives and integrals
-of forms. The face maps are injective, hence closed embeddings of the ambient Euclidean spaces
-(`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back along them preserves
-compact supports.
+coface vertex maps `Fin.succAbove`. More generally, every affine map of barycentric simplices with
+arbitrary vertices is the restriction of a continuous affine map of the ambient spaces
+(`TauCeti.exists_continuousAffineMap_eq_affineMapMk`). In coordinates, the face map omitting the
+vertex `e_j` inserts a zero `j`-th coordinate, and the face map omitting the origin puts the
+missing barycentric weight in front; a permutation of the vertices induces an affine symmetry of
+the simplex. Cycling the vertices relates the two readings of the face opposite the origin:
+through the coordinates other than the `j`-th one, and through the last coordinates as the face
+map does. The simplex is a compact convex set with nonempty interior, so derivatives within it are
+unique at every point (`TauCeti.uniqueDiffOn_fullSimplex`); this is what makes it a domain for
+derivatives and integrals of forms. The face maps are injective, hence closed embeddings of the
+ambient Euclidean spaces (`TauCeti.isClosedEmbedding_simplexMapAmbient_succAbove`), so pulling back
+along them preserves compact supports.
 
 This is the full-dimensional simplex convention used in Lee, *Introduction to Smooth Manifolds*,
 Chapter 18. The barycentric simplex, its topology, and its maps are those of Mathlib.
@@ -63,6 +65,12 @@ theorem mem_fullSimplex_iff {p : ℕ} {x : EuclideanSpace ℝ (Fin p)} :
 theorem zero_mem_fullSimplex (p : ℕ) : 0 ∈ fullSimplex p := by
   simp
 
+/-- Each standard basis vector is a vertex of the full-dimensional simplex. -/
+theorem single_one_mem_fullSimplex {p : ℕ} (i : Fin p) :
+    EuclideanSpace.single i 1 ∈ fullSimplex p := by
+  simp only [mem_fullSimplex_iff, PiLp.single_apply]
+  refine ⟨fun j ↦ by split_ifs <;> norm_num, by simp⟩
+
 /-- The full-dimensional simplex is convex. -/
 theorem convex_fullSimplex (p : ℕ) : Convex ℝ (fullSimplex p) :=
   (convex_coordinateSimplex (Fin p)).linear_preimage (EuclideanSpace.equiv (Fin p) ℝ).toLinearMap
@@ -85,10 +93,27 @@ theorem nonempty_interior_fullSimplex (p : ℕ) : (interior (fullSimplex p)).Non
   exact (nonempty_interior_coordinateSimplex (Fin p)).preimage
     (EuclideanSpace.equiv (Fin p) ℝ).surjective
 
+/-- The full-dimensional simplex is the closure of its interior. -/
+theorem closure_interior_fullSimplex (p : ℕ) :
+    closure (interior (fullSimplex p)) = fullSimplex p := by
+  rw [(convex_fullSimplex p).closure_interior_eq_closure_of_nonempty_interior
+    (nonempty_interior_fullSimplex p), (isClosed_fullSimplex p).closure_eq]
+
 /-- Derivatives within the full-dimensional simplex are unique at each of its points, including
 the points of its faces and corners. -/
 theorem uniqueDiffOn_fullSimplex (p : ℕ) : UniqueDiffOn ℝ (fullSimplex p) :=
   uniqueDiffOn_convex (convex_fullSimplex p) (nonempty_interior_fullSimplex p)
+
+/-- In dimension zero, the full-dimensional simplex is the whole single-point ambient space. -/
+theorem fullSimplex_zero_eq_univ : fullSimplex 0 = Set.univ :=
+  Set.eq_univ_of_forall fun _ ↦ by simp
+
+/-- In dimension one, the full-dimensional simplex is the unit interval read through the unique
+coordinate. -/
+theorem fullSimplex_one_eq_preimage_proj_zero_Icc :
+    fullSimplex 1 = (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0) ⁻¹' Set.Icc 0 1 := by
+  ext x
+  simp
 
 /-- The point of `ℝᵖ⁺¹` obtained by inserting `t` as the `j`-th coordinate of `y` lies in the
 full-dimensional simplex exactly when `y` lies in the coordinate simplex and `t` lies between `0`
@@ -225,6 +250,13 @@ theorem simplexMapAmbient_coe {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1)) (x :
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   cases i using Fin.cases <;> simp
 
+/-- At a point of the full-dimensional simplex, the `j`-th coordinate of the affine ambient
+extension of `f` is the barycentric weight at the vertex `j + 1` of the image point. -/
+theorem simplexMapAmbient_coe_apply {m n : ℕ} (f : Fin (m + 1) → Fin (n + 1))
+    (x : fullSimplex m) (j : Fin n) :
+    simplexMapAmbient f x.val j = ((fullSimplexEquivStdSimplex m x).map f).weights j.succ := by
+  rw [simplexMapAmbient_coe, fullSimplexEquivStdSimplex_symm_apply]
+
 /-- The ambient extension of the `i`-th coface vertex map restricts to the face inclusion. -/
 theorem simplexMapAmbient_succAbove_coe {p : ℕ} (i : Fin (p + 2)) (x : fullSimplex p) :
     simplexMapAmbient i.succAbove x.val = (simplexFace p i x).val :=
@@ -265,6 +297,23 @@ theorem image_simplexMapAmbient_perm {m : ℕ} (σ : Equiv.Perm (Fin (m + 1))) :
   exact congrArg Subtype.val ((congrArg _ (StdSimplex.map_id _)).trans
     ((fullSimplexEquivStdSimplex m).symm_apply_apply _))
 
+/-- Every affine map of barycentric simplices, given by its vertices `v`, read on full-dimensional
+simplices, is the restriction of a continuous affine map of the ambient Euclidean spaces. This
+extends `simplexMapAmbient_coe` from vertex maps to arbitrary vertices, such as the barycenters
+used in barycentric subdivision. -/
+theorem exists_continuousAffineMap_eq_affineMapMk {k m : ℕ}
+    (v : Fin (k + 1) → StdSimplex ℝ (Fin (m + 1))) :
+    ∃ A : EuclideanSpace ℝ (Fin k) →ᴬ[ℝ] EuclideanSpace ℝ (Fin m), ∀ x : fullSimplex k,
+      A x = ((fullSimplexEquivStdSimplex m).symm
+        (StdSimplex.affineMapMk v (fullSimplexEquivStdSimplex k x))).val := by
+  -- In coordinates, `x ↦ c₀ + ∑ⱼ xⱼ • (cⱼ₊₁ - c₀)` with `cᵢ` the vertex `v i`.
+  let c (i : Fin (k + 1)) := ((fullSimplexEquivStdSimplex m).symm (v i)).val
+  refine ⟨(∑ j, (EuclideanSpace.proj j).smulRight (c j.succ - c 0)).toContinuousAffineMap +
+    ContinuousAffineMap.const ℝ _ (c 0), fun x ↦ ?_⟩
+  ext j
+  simp [c, Fin.sum_univ_succ, mul_sub, Finset.sum_sub_distrib, ← Finset.sum_mul]
+  ring
+
 /-! ### The faces in coordinates -/
 
 section Faces
@@ -291,6 +340,30 @@ theorem simplexMapAmbient_succAbove_zero (y : EuclideanSpace ℝ (Fin p)) :
   ext m
   rw [simplexMapAmbient_apply_of_injective (Fin.succAbove_right_injective) _
     (Fin.succAbove_zero_apply m)]
+
+/-- The `0`-th face inclusion of `Δ¹` omits the origin and sends `Δ⁰` to the vertex `e₀`. -/
+@[simp]
+theorem simplexFace_zero_zero (x : fullSimplex 0) :
+    simplexFace 0 0 x = ⟨EuclideanSpace.single 0 1, single_one_mem_fullSimplex 0⟩ := by
+  apply Subtype.ext
+  rw [← simplexMapAmbient_succAbove_coe, simplexMapAmbient_succAbove_zero]
+  ext i
+  cases i using Fin.cases with
+  | zero => simp
+  | succ j => exact j.elim0
+
+/-- The `1`-st face inclusion of `Δ¹` omits `e₀` and sends `Δ⁰` to the origin. -/
+@[simp]
+theorem simplexFace_zero_one (x : fullSimplex 0) :
+    simplexFace 0 1 x = ⟨0, zero_mem_fullSimplex 1⟩ := by
+  apply Subtype.ext
+  rw [← simplexMapAmbient_succAbove_coe]
+  have h := simplexMapAmbient_succAbove_succ (0 : Fin 1) x.val
+  simpa only [Fin.succ_zero_eq_one] using h.trans (by
+    ext i
+    cases i using Fin.cases with
+    | zero => simp
+    | succ j => exact j.elim0)
 
 /-- The affine symmetry of `Δᵖ` cycling the vertices `0, …, j` reads the face of `Δᵖ⁺¹` opposite
 the origin in the coordinates obtained by deleting the `j`-th one. -/

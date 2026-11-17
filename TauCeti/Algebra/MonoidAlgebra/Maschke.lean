@@ -1,0 +1,106 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Algebra.Exact.Basic
+public import Mathlib.LinearAlgebra.TensorProduct.Tower
+public import Mathlib.RepresentationTheory.Maschke
+public import Mathlib.RingTheory.Flat.Basic
+import Mathlib.LinearAlgebra.TensorProduct.Prod
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
+
+/-!
+# Exact sequences of group-algebra modules split after a flat division-ring extension
+
+Let `R` be a commutative ring, `Q` a division ring that is a flat `R`-algebra, and `G` a finite
+group whose order is nonzero in `Q`. A short exact sequence `0 → M → N → P → 0` of
+`R[G]`-modules need not split, but it does after tensoring with `Q`: this is Maschke's theorem
+over `Q`. This file proves it in the form used for integral representations, where the
+rationalizations are written `M ⊗[R] Q` and remain modules over `R[G]` rather than over `Q[G]`.
+The main example is a domain `R` with field of fractions `Q`, where the order of `G` is nonzero
+in `Q` as soon as it is nonzero in `R`.
+
+No finiteness or projectivity is needed. Since `Q` is flat over `R`, the sequence stays exact
+after tensoring with `Q`, and `P ⊗[R] Q` is a free `Q`-module, so `N ⊗ Q → P ⊗ Q` has an
+`R`-linear section `s`. Averaged over `G`, `t = ∑_g g⁻¹ s g` is `R[G]`-linear and satisfies
+`g ∘ t = #G`. As `#G` is invertible on `P ⊗[R] Q`, the map `(m, x) ↦ f m + t x` from
+`(M ⊗ Q) × (P ⊗ Q)` to `N ⊗ Q` is then an `R[G]`-linear bijection.
+
+For `R = ℤ_p` and `Q = ℚ_p` this computes the rational representation of an extension of
+`ℤ_p[G]`-lattices from those of its two ends.
+
+## Main results
+
+* `TauCeti.MonoidAlgebra.nonempty_tensor_linearEquiv_prod_of_exact`: for an exact sequence
+  `0 → M → N → P → 0` of `R[G]`-modules, the scalar extension `N ⊗[R] Q` is `R[G]`-linearly
+  isomorphic to `(M × P) ⊗[R] Q`.
+
+## References
+
+* J.-P. Serre, *Linear Representations of Finite Groups*, Springer GTM 42 (1977), §1.3 and §15.
+-/
+
+public section
+
+namespace TauCeti.MonoidAlgebra
+
+open scoped TensorProduct
+
+variable {R : Type*} [CommRing R] (Q : Type*) [DivisionRing Q] [Algebra R Q]
+  [Module.Flat R Q] {G : Type*} [Group G] [Finite G]
+  {M N P : Type*} [AddCommGroup M] [Module R M] [Module (MonoidAlgebra R G) M]
+  [IsScalarTower R (MonoidAlgebra R G) M]
+  [AddCommGroup N] [Module R N] [Module (MonoidAlgebra R G) N]
+  [IsScalarTower R (MonoidAlgebra R G) N]
+  [AddCommGroup P] [Module R P] [Module (MonoidAlgebra R G) P]
+  [IsScalarTower R (MonoidAlgebra R G) P]
+
+/-- **Short exact sequences of group-algebra modules split after a flat division-ring
+extension.** Let `Q` be a division ring that is a flat `R`-algebra and `G` a finite group whose
+order is nonzero in `Q`. For an exact sequence `0 → M → N → P → 0` of `R[G]`-modules, the scalar
+extension `N ⊗[R] Q` is `R[G]`-linearly isomorphic to `(M × P) ⊗[R] Q`. -/
+theorem nonempty_tensor_linearEquiv_prod_of_exact [NeZero (Nat.card G : Q)]
+    {f : M →ₗ[MonoidAlgebra R G] N} {g : N →ₗ[MonoidAlgebra R G] P}
+    (hfg : Function.Exact f g) (hf : Function.Injective f) (hg : Function.Surjective g) :
+    Nonempty ((N ⊗[R] Q) ≃ₗ[MonoidAlgebra R G] ((M × P) ⊗[R] Q)) := by
+  have := Fintype.ofFinite G
+  -- `Q` is flat over `R`, so `0 → M ⊗ Q → N ⊗ Q → P ⊗ Q → 0` is exact.
+  set f' := TensorProduct.AlgebraTensorModule.rTensor R Q f
+  set g' := TensorProduct.AlgebraTensorModule.rTensor R Q g
+  have hf' : Function.Injective f' :=
+    Module.Flat.rTensor_preserves_injective_linearMap (f.restrictScalars R) hf
+  have hfg' : Function.Exact f' g' :=
+    rTensor_exact Q (f := f.restrictScalars R) (g := g.restrictScalars R) hfg hg
+  -- An `R`-linear section `s` of `g ⊗ 𝟙 Q`.
+  obtain ⟨s, hs'⟩ : ∃ s : P ⊗[R] Q →ₗ[R] N ⊗[R] Q, ∀ x, g' (s x) = x :=
+    TensorProduct.exists_rTensor_section Q (g := g.restrictScalars R) hg
+  -- Averaging `s` over `G` gives an `R[G]`-linear map `t` with `g' ∘ t = #G`.
+  let t := s.sumOfConjugatesEquivariant G
+  have ht (x : P ⊗[R] Q) : g' (t x) = (Nat.card G : R) • x := by
+    rw [LinearMap.sumOfConjugatesEquivariant_apply, map_sum]
+    simp only [LinearMap.conjugate_apply, map_smul, hs', smul_smul,
+      MonoidAlgebra.single_mul_single, inv_mul_cancel, one_mul, Finset.sum_const,
+      Finset.card_univ, Fintype.card_eq_nat_card, ← Nat.cast_smul_eq_nsmul R]
+    rw [← MonoidAlgebra.one_def, one_smul]
+  -- Multiplication by `#G` is invertible on `P ⊗ Q`.
+  obtain ⟨u, hu⟩ : ∃ u : P ⊗[R] Q →ₗ[R] P ⊗[R] Q, ∀ x, (Nat.card G : R) • u x = x :=
+    TensorProduct.exists_smul_linearMap_eq_self Q (by rw [map_natCast]; exact (NeZero.ne _).isUnit)
+  -- So `(m, x) ↦ f' m + t x` is bijective.
+  let Φ : (M ⊗[R] Q) × (P ⊗[R] Q) →ₗ[MonoidAlgebra R G] N ⊗[R] Q :=
+    f' ∘ₗ LinearMap.fst _ _ _ + t ∘ₗ LinearMap.snd _ _ _
+  have hΦ : Function.Bijective Φ := by
+    refine ⟨?_, fun n ↦ ?_⟩
+    · rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+      rintro ⟨m, x⟩ h
+      have hx : (Nat.card G : R) • x = 0 := by
+        simpa [Φ, ht, hfg'.apply_apply_eq_zero] using congrArg g' h
+      obtain rfl : x = 0 := by rw [← hu x, ← map_smul, hx, map_zero]
+      simpa [Φ, map_eq_zero_iff f' hf'] using h
+    · obtain ⟨m, hm⟩ := (hfg' (n - t (u (g' n)))).mp (by rw [map_sub, ht, hu, sub_self])
+      exact ⟨(m, u (g' n)), by simp [Φ, hm]⟩
+  exact ⟨(LinearEquiv.ofBijective Φ hΦ).symm ≪≫ₗ (TensorProduct.prodLeft _ _ _ _ _).symm⟩
+
+end TauCeti.MonoidAlgebra

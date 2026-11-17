@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.SmoothSeries
+public import Mathlib.Analysis.Complex.LocallyUniformLimit
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-public import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # The regularized hypergeometric function `₀F₁`
@@ -26,7 +27,11 @@ Because `1 / Γ` vanishes at the poles of `Γ`, none of these statements needs a
 ## Main results
 
 * `Complex.hasSum_regularizedHGFun` — the power series of `regularizedHGFun a b` converges to it
-  everywhere when `a.card ≤ b.card`.
+  everywhere when `a.card ≤ b.card`, absolutely by `Complex.summable_norm_regularizedHGFun`.
+* `Complex.hasSum_deriv_regularizedHGFun` — the termwise differentiated series converges to the
+  derivative.
+* `Complex.regularizedHGFunCoeff_one_singleton` — the coefficients `1 / Γ(b + n)` of the Kummer
+  function `𝐌(1, b, z) = ∑ zⁿ / Γ(b + n)`.
 * `Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re` — the real series of `₀F₁` at real
   arguments.
 * `Complex.continuous_regularizedHGFun_zero_singleton_ofReal_re` — joint continuity in `(b, y)`.
@@ -65,6 +70,46 @@ theorem hasSum_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z 
     (by simp [radius_regularizedHGFunSeries_eq_top h])
   simpa [regularizedHGFun, regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq,
     mul_comm] using this
+
+/-- When there are at most as many upper as lower parameters, the regularized hypergeometric
+series converges absolutely at every `z`. -/
+theorem summable_norm_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
+    Summable fun n => ‖regularizedHGFunCoeff a b n * z ^ n‖ := by
+  have := (regularizedHGFunSeries a b).summable_norm_apply (x := z)
+    (by simp [radius_regularizedHGFunSeries_eq_top h])
+  simpa [regularizedHGFunSeries, FormalMultilinearSeries.ofScalars_apply_eq, mul_comm] using this
+
+/-- When there are at most as many upper as lower parameters, the derivative of
+`regularizedHGFun a b` is the sum of its termwise differentiated power series. -/
+theorem hasSum_deriv_regularizedHGFun {a b : Multiset ℂ} (h : a.card ≤ b.card) (z : ℂ) :
+    HasSum (fun n : ℕ => ((n : ℂ) + 1) * regularizedHGFunCoeff a b (n + 1) * z ^ n)
+      (deriv (regularizedHGFun a b) z) := by
+  set R : ℝ := ‖z‖ + 1
+  have hfun : regularizedHGFun a b = fun w => ∑' n, regularizedHGFunCoeff a b n * w ^ n :=
+    funext fun w => (hasSum_regularizedHGFun h w).tsum_eq.symm
+  have hd := hasSum_deriv_of_summable_norm (summable_norm_regularizedHGFun h (R : ℂ))
+    (F := fun n w => regularizedHGFunCoeff a b n * w ^ n) (U := Metric.ball 0 R)
+    (fun n => ((differentiable_pow n).const_mul _).differentiableOn) Metric.isOpen_ball
+    (fun n w hw => ?_) (z := z) (by simp [R])
+  · rw [hfun]
+    convert (hasSum_nat_add_iff' 1).mpr hd using 1
+    · ext n
+      simp only [deriv_const_mul_field', deriv_pow_field, add_tsub_cancel_right]
+      push_cast
+      ring
+    · simp
+  · rw [Metric.mem_ball, dist_zero_right] at hw
+    rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_real,
+      Real.norm_of_nonneg (by positivity)]
+    gcongr
+
+/-- The coefficients of the Kummer function `𝐌(1, b, z) = ₁F₁(1; b; z) / Γ(b)` are
+`1 / Γ(b + n)`. -/
+@[simp]
+theorem regularizedHGFunCoeff_one_singleton (b : ℂ) (n : ℕ) :
+    regularizedHGFunCoeff {1} {b} n = (Gamma (b + n))⁻¹ := by
+  simpa [regularizedHGFunCoeff] using div_mul_cancel_left₀ (Nat.cast_ne_zero.2 n.factorial_ne_zero)
+    (Gamma (b + n))
 
 /-- The complex-valued `₀F₁` series at real parameters and arguments sums to its regularized
 hypergeometric value. -/

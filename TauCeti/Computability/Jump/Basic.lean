@@ -41,6 +41,8 @@ of the set oracles.
   one-one equivalent.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
 * `Set.not_jump_turingReducible`: the jump of `Z` is not computable relative to `Z`.
+* `Set.not_computablePred_mem_jump`: in particular, no jump is computable.
+* `Set.rePred_mem_jump_empty`: the halting set `(∅ : Set ℕ).jump` is c.e.
 * `Set.oneOneReducible_jump_jump`, `Set.turingReducible_jump_jump`: if `A` is Turing reducible to
   `B`, then `A'` reduces one-one, and hence Turing, to `B'`.
 * `Set.oneOneEquiv_jump_jump`, `Set.turingEquivalent_jump_jump`: Turing equivalent sets have
@@ -189,6 +191,24 @@ theorem not_jump_turingReducible : ¬TuringReducible Z.jump.oracle Z.oracle := b
   rw [ofNat_encode, hc] at this
   by_cases he : encode c ∈ Z.jump <;> simp [he, Part.bind_eq_bind] at this
 
+/-- **No jump is computable:** membership in `Z'` is not a computable predicate. -/
+theorem not_computablePred_mem_jump : ¬ComputablePred (· ∈ Z.jump) := fun h =>
+  Z.not_jump_turingReducible <| ((turingReducible_empty_iff _).2 h).trans (empty_turingReducible _)
+
+/-- Diagonal evaluation of the oracle-program numbering is recursive in the oracle of `Z`. -/
+theorem recursiveIn_eval_diag :
+    Nat.RecursiveIn {Z.oracle} fun e => Code.eval Z.oracle (ofNat Code e) e := by
+  have hZ : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
+  exact ((Code.recursiveIn_eval Z.oracle Code.universal).comp_primrec
+    (Primrec.nat_iff.1 (Primrec₂.natPair.comp Primrec.id Primrec.id))).of_eq fun e => by
+      rw [hZ, Code.eval_universal, id_eq]
+
+/-- **The halting set is c.e.:** membership in `(∅ : Set ℕ).jump` is an `REPred`. -/
+theorem rePred_mem_jump_empty : REPred (· ∈ (∅ : Set ℕ).jump) :=
+  (Partrec.nat_iff.2 <| (∅ : Set ℕ).recursiveIn_eval_diag.partrec_of_oracle fun g hg => by
+    rw [Set.mem_singleton_iff.1 hg, oracle_empty]
+    exact Partrec.nat_iff.1 (Partrec.const' _)).dom_re.of_eq fun _ => mem_jump.symm
+
 variable {A B : Set ℕ}
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then `A'` reduces one-one to
@@ -197,13 +217,7 @@ theorem oneOneReducible_jump_jump (h : TuringReducible A.oracle B.oracle) :
     OneOneReducible (· ∈ A.jump) (· ∈ B.jump) := by
   -- the diagonal computations relative to `A` are recursive in `A`, hence in `B`, so `A'` is c.e.
   -- in `B`
-  have hA : A.oracle = ((A.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) := funext fun n => by simp
-  -- run the universal program on `Nat.pair e e`
-  have hdiag : Nat.RecursiveIn {A.oracle} fun e => Code.eval A.oracle (ofNat Code e) e :=
-    ((Code.recursiveIn_eval A.oracle Code.universal).comp_primrec
-      (Primrec.nat_iff.1 (Primrec₂.natPair.comp Primrec.id Primrec.id))).of_eq fun e => by
-        rw [hA, Code.eval_universal, id_eq]
-  exact oneOneReducible_jump_of_recursiveIn B <| hdiag.subst fun g hg =>
+  exact oneOneReducible_jump_of_recursiveIn B <| A.recursiveIn_eval_diag.subst fun g hg =>
     (Set.mem_singleton_iff.1 hg) ▸ RecursiveIn.iff_nat.1 h
 
 /-- **The jump is monotone:** if `A` is Turing reducible to `B`, then so is `A'` to `B'`. -/

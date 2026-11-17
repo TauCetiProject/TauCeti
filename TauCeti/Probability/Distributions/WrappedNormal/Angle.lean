@@ -79,7 +79,7 @@ theorem wrappedNormalAngleMeasure_eq_withDensity (hv : v ≠ 0) :
     wrappedNormalAngleMeasure m v = (volume.restrict (Ico (-π) π)).withDensity
       (fun t : ℝ ↦ ENNReal.ofReal (wrappedNormalPDFReal m v t / (2 * π))) := by
   rw [wrappedNormalAngleMeasure_def, wrappedNormalMeasure_eq_withDensity m hv,
-    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π) (measurable_wrappedNormalPDF m v)]
+    AddCircle.map_coe_equivIco_withDensity_haarAddCircle (-π)]
   have hπ : -π + 2 * π = π := by ring
   rw [hπ]
   congr 1
@@ -144,7 +144,7 @@ theorem cdf_wrappedNormalAngleMeasure_eq_integral (hv : v ≠ 0) (hx : x ∈ Icc
     Measure.restrict_congr_set Ico_ae_eq_Ioc,
     measureReal_withDensity_ofReal
       (ae_of_all _ fun t ↦ (div_pos (wrappedNormalPDFReal_pos _ hv _) two_pi_pos).le)
-      measurableSet_Iic ((hf.integrableOn_Icc.mono_set Ioc_subset_Icc_self).integrableOn),
+      measurableSet_Iic hf.aemeasurable,
     Measure.restrict_restrict measurableSet_Iic, Iic_inter_Ioc_of_le hx.2,
     ← intervalIntegral.integral_of_le hx.1, intervalIntegral.integral_div]
 

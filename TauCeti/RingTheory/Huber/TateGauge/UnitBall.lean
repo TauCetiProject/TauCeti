@@ -62,7 +62,7 @@ theorem tateGauge_unitClosedBall_eq_zpowCeil (ϖ : NormedRing.PseudoUniformizer 
   refine ⟨⟨n, (hmem n).2 hxn, by simp⟩, ?_⟩
   rintro _ ⟨m, hm, rfl⟩
   simpa [← hn] using
-    (zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ hc₁ m)).2 ((hmem m).1 hm)
+    (zpowCeil_le_iff hc₀ hc₁ (zpowCeil_zpow hc₀ m)).2 ((hmem m).1 hm)
 
 /-- The unit-ball gauge dominates the given norm. -/
 theorem norm_le_tateGauge_unitClosedBall (ϖ : NormedRing.PseudoUniformizer R) (x : R) :
@@ -90,7 +90,7 @@ theorem tateGauge_unitClosedBall_eq_norm_iff (ϖ : NormedRing.PseudoUniformizer 
     tateGauge (Subring.unitClosedBall R) ϖ.unit ‖(ϖ.unit : R)‖⁻¹ x = ‖x‖ ↔
       ‖x‖ = 0 ∨ ∃ n : ℤ, ‖(ϖ.unit : R)‖ ^ n = ‖x‖ := by
   rw [tateGauge_unitClosedBall_eq_zpowCeil]
-  exact zpowCeil_eq_self_iff ϖ.norm_pos ϖ.norm_lt_one (norm_nonneg x)
+  exact zpowCeil_eq_self_iff ϖ.norm_pos
 
 /-- With any base greater than one, the unit-ball gauge is a power of the discretely
 rounded norm. Equal topology need not give linear equivalence for this other base. -/

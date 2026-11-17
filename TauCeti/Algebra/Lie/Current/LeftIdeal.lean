@@ -91,6 +91,8 @@ nonzero element of `U(t⁻¹ L[t⁻¹])` never maps into `I₀`
   `∀ b N, ∃ M, I_M b ⊆ I_N`.
 * `TauCeti.CurrentAlgebra.smoothModules_orderLeftIdeal_iff`: smoothness for the family `I_N` is
   smoothness of the current action.
+* `TauCeti.CurrentAlgebra.smoothModules_orderLeftIdeal_natCast`: smoothness for the `I_n` of
+  natural orders is smoothness for all the `I_N`.
 * `TauCeti.CurrentAlgebra.smoothModules_quotient_orderLeftIdeal`: each `U / I_N` is smooth.
 * `TauCeti.CurrentAlgebra.levelEnvelopingEquiv_mem_orderLeftIdeal_iff`: the level comparison
   matches the left ideals.
@@ -232,6 +234,16 @@ theorem smoothModules_orderLeftIdeal_iff {M : ModuleCat.{v} UK} :
   have hle : orderLeftIdeal Φ hΦ hΦs a N ≤ LinearMap.ker (LinearMap.toSpanSingleton UK M m) :=
     orderLeftIdeal_le_iff.2 h
   exact hle hx
+
+variable (Φ hΦ hΦs a) in
+/-- Smoothness for the left ideals `I_n` of natural orders is smoothness for all the left ideals
+`I_N`, since the natural numbers are cofinal among the orders. -/
+theorem smoothModules_orderLeftIdeal_natCast :
+    smoothModules.{v} (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) =
+      smoothModules (orderLeftIdeal Φ hΦ hΦs a) :=
+  le_antisymm (smoothModules_le_of_forall_exists_le fun n ↦ ⟨n, le_rfl⟩)
+    (smoothModules_le_of_forall_exists_le fun N ↦
+      ⟨N.toNat, orderLeftIdeal_antitone Φ hΦ hΦs a (Int.self_le_toNat N)⟩)
 
 variable (Φ hΦ hΦs a) in
 /-- **Each quotient `U / I_N` is smooth** for the family of left ideals `I_M`: the class of `b` is

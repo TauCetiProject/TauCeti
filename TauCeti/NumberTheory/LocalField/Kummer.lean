@@ -39,13 +39,16 @@ open ContCohomology
 /-- **`H¹` of a cyclic trivial module over a local field.** Let `K` be a nonarchimedean local field
 containing a primitive `n`th root of unity, and `H` a topological group isomorphic to `G_K`. Then
 `H¹(H, M)` is finite for every cyclic discrete `H`-module `M` of order dividing `n` on which `H`
-acts trivially. -/
+acts trivially. Continuity of the action, needed to state `H¹(H, M)`, holds automatically because
+the action is trivial; the final argument defaults to that proof, so callers never need to supply
+it. -/
 theorem finite_H1_of_isPrimitiveRoot_of_natCard_dvd (K : Type*) [Field K] [ValuativeRel K]
     [TopologicalSpace K] [IsNonarchimedeanLocalField K] {n : ℕ} [NeZero n] {ζ : K}
     (hζ : IsPrimitiveRoot ζ n) {H : Type*} [Group H] [TopologicalSpace H]
     (φ : AbsoluteGaloisGroup K ≃ₜ* H) (M : Type*) [AddCommGroup M] [TopologicalSpace M]
-    [DiscreteTopology M] [DistribMulAction H M] [ContinuousSMul H M] [IsAddCyclic M]
-    (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m) :
+    [DiscreteTopology M] [DistribMulAction H M] [IsAddCyclic M]
+    (hMn : Nat.card M ∣ n) (htriv : ∀ (h : H) (m : M), h • m = m)
+    (_ : ContinuousSMul H M := continuousSMul_of_forall_smul_eq_self htriv) :
     Finite (H1 H M) := by
   have : NeZero (Nat.card M) := ⟨fun h ↦ NeZero.ne n (Nat.eq_zero_of_zero_dvd (h ▸ hMn))⟩
   -- `ζ ^ (n / ℓ)` is a primitive `ℓ`th root of unity in `K`, for `ℓ = Nat.card M`

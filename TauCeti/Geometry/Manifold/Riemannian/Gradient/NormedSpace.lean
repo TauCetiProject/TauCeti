@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.IntegralCurve.Maximal
+public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 import TauCeti.Topology.Algebra.Module.BilinearForm
 
@@ -19,6 +21,11 @@ with Mathlib's `gradient`; the squared norm therefore has the expected radial gr
 arbitrary Riemannian metric on a normed space, the gradient is read in linear coordinates through
 its pairing with constant vectors, and its squared length is `|dφ|² = dφ(g⁻¹ dφ)` for the metric
 coefficient field `g`.
+
+The standard metric is analytic (`IsContMDiffRiemannianBundle.vectorSpace`), so the manifold
+results on gradient flows apply to it, and a classical solution of `γ' = -∇ f (γ)` on an open
+interval around `0` is the maximal integral curve of `-grad f` there
+(`TauCeti.Manifold.eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt`).
 -/
 
 public section
@@ -142,5 +149,22 @@ theorem norm_mgradient_sq_model_space {F : Type*} [NormedAddCommGroup F] [Normed
     rw [← inner_mgradient_model_space f x v, hg]
     simp
   rw [← h, hinv.inverse_apply_self, ← real_inner_self_eq_norm_sq, hg]
+
+/-- **Negative gradient trajectories of a flat space.** On a finite-dimensional real inner product
+space with its standard metric, let `f` be `C²` and let `γ` solve `γ' = -∇ f (γ)` on an open
+interval around `0`. Then `γ` is the maximal integral curve of `-grad f` through `γ 0` on that
+interval. -/
+theorem eqOn_maximalIntegralCurve_neg_mgradient_of_hasDerivAt {F : Type*} [NormedAddCommGroup F]
+    [InnerProductSpace ℝ F] [FiniteDimensional ℝ F] {f : F → ℝ} (hf : ContDiff ℝ 2 f)
+    {γ : ℝ → F} {a b : ℝ} (h0 : (0 : ℝ) ∈ Ioo a b)
+    (hγ : ∀ t ∈ Ioo a b, HasDerivAt γ (-gradient f (γ t)) t) :
+    EqOn (maximalIntegralCurve (-mgradient 𝓘(ℝ, F) f) (γ 0)) γ (Ioo a b) := by
+  refine IsMIntegralCurveOn.eqOn_maximalIntegralCurve
+    (contMDiff_neg_mgradient_one hf.contMDiff) ?_ h0 rfl
+  rw [isMIntegralCurveOn_iff_isIntegralCurveOn]
+  intro t ht
+  -- The tangent space of `F` at `γ t` is `F` itself, with the same negation.
+  exact (hγ t ht).hasDerivWithinAt.congr_deriv
+    (congrArg (fun w : F ↦ -w) (mgradient_eq_gradient_of_eq rfl f (γ t))).symm
 
 end TauCeti.Manifold

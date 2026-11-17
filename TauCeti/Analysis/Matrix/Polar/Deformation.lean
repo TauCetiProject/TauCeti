@@ -161,6 +161,11 @@ theorem polarDeformation_unitary_mul_mul_unitary (t : ℝ) (A : GL n 𝕜)
         (star (U : Matrix n n 𝕜) * U) * A.polarUnitary * V := by noncomm_ring
     _ = _ := by rw [Unitary.star_mul_self_of_mem U.2, mul_one]; simp only [mul_assoc]
 
+/-- The polar deformation is equivariant under right multiplication by unitary matrices. -/
+theorem polarDeformation_mul_toUnits (t : ℝ) (A : GL n 𝕜) (V : unitaryGroup n 𝕜) :
+    polarDeformation (A * Unitary.toUnits V) t = polarDeformation A t * Unitary.toUnits V := by
+  simpa using polarDeformation_unitary_mul_mul_unitary t A 1 V
+
 /-- The polar deformation preserves the determinant-one locus for every real time. -/
 theorem det_polarDeformation_of_det_eq_one {A : GL n 𝕜}
     (hA : (A : Matrix n n 𝕜).det = 1) (t : ℝ) :

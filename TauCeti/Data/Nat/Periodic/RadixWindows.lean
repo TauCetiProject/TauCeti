@@ -88,7 +88,6 @@ example : ∃ p, 0 < p ∧ 6 * p ≤ 6 ∧ ∀ t, (2 + 1) * 6 ≤ t →
   intro x hx
   refine ⟨1, by omega, by omega, ?_⟩
   intro t ht _
-  have hxB : 2 * 6 ≤ x * 6 := Nat.mul_le_mul_right 6 hx
   split_ifs <;> omega
 
 end TauCeti.Nat

@@ -40,8 +40,9 @@ of the plumbed three-manifold.
 
 * `TauCeti.PlumbingGraph.latticeAugmentation_comp_latticeDifferential`: the augmentation kills
   boundaries.
-* `TauCeti.PlumbingGraph.exists_cycle_latticeAugmentation_eq_one`: a lattice point of minimal
-  characteristic weight is a cycle with augmentation `1`.
+* `TauCeti.PlumbingGraph.exists_cycle_latticeAugmentation_eq_one`: on every plumbing there is a
+  cycle with augmentation `1`, namely a lattice point of weight `sInfCharacteristicWeight` (a
+  minimum of the characteristic weight when it is bounded below, and the origin otherwise).
 * `TauCeti.PlumbingGraph.exists_cycle_eq_zero_of_smul_mem_range_latticeDifferential`: that cycle
   satisfies the chain-level nonboundary criterion for the `U`-tower.
 * `TauCeti.PlumbingGraph.exists_injective_latticeHomologyCycleMap`: the resulting map from
@@ -119,6 +120,51 @@ theorem latticeAugmentation_eq_zero_of_mem_degreePart (P : PlumbingGraph V)
     exact hq hdim.symm
   simp [P.latticeAugmentationCoefficient_of_directions_ne_empty k hne]
 
+/-- The two faces of an edge carry the same `U`-power in the augmentation: the face exponent plus
+the drop from the face weight to the minimal weight is the same for the lower and the upper face. -/
+private theorem characteristicFaceExponent_add_toNat_eq (P : PlumbingGraph V)
+    (h : P.IsNegativeDefinite) (k : P.characteristicVectors) (C : PlumbingCube V)
+    (v : C.directions)
+    (hlower : (C.lowerFace v.val v.property).directions = ∅)
+    (hupper : (C.upperFace v.val v.property).directions = ∅) :
+    PlumbingCube.characteristicLowerFaceExponent P k C v.val +
+        (P.characteristicWeight k (C.lowerFace v.val v.property).base -
+          P.sInfCharacteristicWeight k).toNat =
+      PlumbingCube.characteristicUpperFaceExponent P k C v.property +
+        (P.characteristicWeight k (C.upperFace v.val v.property).base -
+          P.sInfCharacteristicWeight k).toNat := by
+  have hlowerbase :
+      P.characteristicWeight k (C.lowerFace v.val v.property).base =
+        PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
+    rw [PlumbingCube.characteristicWeight_def, hlower,
+      PlumbingGraph.characteristicCubeWeight_empty]
+  have hupperbase :
+      P.characteristicWeight k (C.upperFace v.val v.property).base =
+        PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) := by
+    rw [PlumbingCube.characteristicWeight_def, hupper,
+      PlumbingGraph.characteristicCubeWeight_empty]
+  have hlowerexp :
+      (PlumbingCube.characteristicLowerFaceExponent P k C v.val : ℤ) =
+        PlumbingCube.characteristicWeight P k C -
+          PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
+    rw [PlumbingCube.characteristicLowerFaceExponent_natCast, PlumbingCube.lowerFace_def]
+  have hupperexp :
+      (PlumbingCube.characteristicUpperFaceExponent P k C v.property : ℤ) =
+        PlumbingCube.characteristicWeight P k C -
+          PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) :=
+    PlumbingCube.characteristicUpperFaceExponent_natCast P k C v.property
+  have hlowermin :
+      P.sInfCharacteristicWeight k ≤
+        P.characteristicWeight k (C.lowerFace v.val v.property).base :=
+    P.sInfCharacteristicWeight_le h k _
+  have huppermin :
+      P.sInfCharacteristicWeight k ≤
+        P.characteristicWeight k (C.upperFace v.val v.property).base :=
+    P.sInfCharacteristicWeight_le h k _
+  rw [hlowerbase] at hlowermin ⊢
+  rw [hupperbase] at huppermin ⊢
+  omega
+
 /-- The augmentation kills the differential of a single cube.
 
 A cube of dimension at least two has every codimension-one face of positive dimension, so all the
@@ -142,45 +188,7 @@ theorem latticeAugmentation_latticeDifferentialOnGenerator (P : PlumbingGraph V)
     rw [P.latticeAugmentationCoefficient_of_directions_eq_empty k hlower,
       P.latticeAugmentationCoefficient_of_directions_eq_empty k hupper,
       ← pow_add, ← pow_add]
-    have hlowerbase :
-        P.characteristicWeight k (C.lowerFace v.val v.property).base =
-          PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
-      rw [PlumbingCube.characteristicWeight_def, hlower,
-        PlumbingGraph.characteristicCubeWeight_empty]
-    have hupperbase :
-        P.characteristicWeight k (C.upperFace v.val v.property).base =
-          PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) := by
-      rw [PlumbingCube.characteristicWeight_def, hupper,
-        PlumbingGraph.characteristicCubeWeight_empty]
-    have hlowerexp :
-        (PlumbingCube.characteristicLowerFaceExponent P k C v.val : ℤ) =
-          PlumbingCube.characteristicWeight P k C -
-            PlumbingCube.characteristicWeight P k (C.lowerFace v.val v.property) := by
-      rw [PlumbingCube.characteristicLowerFaceExponent_natCast, PlumbingCube.lowerFace_def]
-    have hupperexp :
-        (PlumbingCube.characteristicUpperFaceExponent P k C v.property : ℤ) =
-          PlumbingCube.characteristicWeight P k C -
-            PlumbingCube.characteristicWeight P k (C.upperFace v.val v.property) :=
-      PlumbingCube.characteristicUpperFaceExponent_natCast P k C v.property
-    have hlowermin :
-        P.sInfCharacteristicWeight k ≤
-          P.characteristicWeight k (C.lowerFace v.val v.property).base :=
-      P.sInfCharacteristicWeight_le h k _
-    have huppermin :
-        P.sInfCharacteristicWeight k ≤
-          P.characteristicWeight k (C.upperFace v.val v.property).base :=
-      P.sInfCharacteristicWeight_le h k _
-    have hexp :
-        PlumbingCube.characteristicLowerFaceExponent P k C v.val +
-            (P.characteristicWeight k (C.lowerFace v.val v.property).base -
-              P.sInfCharacteristicWeight k).toNat =
-          PlumbingCube.characteristicUpperFaceExponent P k C v.property +
-            (P.characteristicWeight k (C.upperFace v.val v.property).base -
-              P.sInfCharacteristicWeight k).toNat := by
-      rw [hlowerbase] at hlowermin ⊢
-      rw [hupperbase] at huppermin ⊢
-      omega
-    rw [hexp]
+    rw [characteristicFaceExponent_add_toNat_eq P h k C v hlower hupper]
     exact CharTwo.add_self_eq_zero (R := PlumbingCoefficient) _
   · -- The cube has dimension at least two, so neither face is a lattice point.
     have hlower : (C.lowerFace v.val v.property).directions ≠ ∅ := by
@@ -211,11 +219,13 @@ theorem latticeAugmentation_eq_zero_of_mem_range (P : PlumbingGraph V)
   obtain ⟨b, rfl⟩ := hc
   exact congrFun (congrArg DFunLike.coe (P.latticeAugmentation_comp_latticeDifferential h k)) b
 
-/-- A lattice point of minimal characteristic weight gives a cycle whose augmentation is `1`. -/
+/-- A lattice point of weight `sInfCharacteristicWeight` gives a cycle whose augmentation is `1`:
+such a point is a minimum of the characteristic weight when it is bounded below, and the origin
+otherwise. -/
 theorem exists_cycle_latticeAugmentation_eq_one (P : PlumbingGraph V)
-    (h : P.IsNegativeDefinite) (k : P.characteristicVectors) :
+    (k : P.characteristicVectors) :
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧ P.latticeAugmentation k c = 1 := by
-  obtain ⟨x, hx⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight h k
+  obtain ⟨x, hx⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight k
   refine ⟨Finsupp.single ({ base := x, directions := ∅ } : PlumbingCube V) 1, ?_, ?_⟩
   · rw [latticeDifferential_single,
       P.latticeDifferentialOnGenerator_eq_zero_of_directions_eq_empty k rfl, smul_zero]
@@ -230,7 +240,7 @@ theorem exists_cycle_eq_zero_of_smul_mem_range_latticeDifferential (P : Plumbing
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧
       ∀ a : PlumbingCoefficient,
         a • c ∈ LinearMap.range (P.latticeDifferential k) → a = 0 := by
-  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   refine ⟨c, hcycle, fun a ha => ?_⟩
   have := P.latticeAugmentation_eq_zero_of_mem_range h k ha
   rwa [map_smul, hone, smul_eq_mul, mul_one] at this
@@ -254,7 +264,7 @@ theorem exists_injective_latticeHomologyCycleMap (P : PlumbingGraph V)
     ∃ (c : PlumbingChain V) (hc : P.latticeDifferential k c = 0),
       P.latticeAugmentation k c = 1 ∧
         Function.Injective (P.latticeHomologyCycleMap k c hc) := by
-  obtain ⟨c, hc, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hc, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   exact ⟨c, hc, hone, P.latticeHomologyCycleMap_injective h k c hc hone⟩
 
 /-! ### Nonvanishing of lattice homology -/
@@ -263,7 +273,7 @@ theorem exists_injective_latticeHomologyCycleMap (P : PlumbingGraph V)
 minimal-weight lattice point is a cycle that is not a boundary. -/
 theorem not_exact_latticeShortComplex (P : PlumbingGraph V) (h : P.IsNegativeDefinite)
     (k : P.characteristicVectors) : ¬ (P.latticeShortComplex k).Exact := by
-  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   rw [P.latticeShortComplex_exact_iff_range_eq_ker k]
   intro hexact
   have hzero := P.latticeAugmentation_eq_zero_of_mem_range h k

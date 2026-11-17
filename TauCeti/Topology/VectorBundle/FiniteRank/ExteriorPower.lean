@@ -32,6 +32,11 @@ In low degrees the exterior powers are identified explicitly:
 * `FiniteRankBundleCore.isZero_exteriorPower_obj`: `⋀^j A` is a zero object when `j` exceeds the
   rank of `A`.
 
+In the top degree, the rank `r` of `A`, the exterior power is the determinant line
+`FiniteRankBundleCore.det A = ⋀^r A`. It has rank one (`FiniteRankBundleCore.rank_det`), and its
+transitions are multiplication by the determinants of the transitions of `A`
+(`FiniteRankBundleCore.coordChange_det`).
+
 These are the bundle operations whose classes form the coefficients of `λ_t(E) = Σ [⋀^j E] tʲ`
 in topological K-theory.
 
@@ -229,6 +234,31 @@ noncomputable def exteriorPowerOneNatIso :
 
 @[simp] theorem exteriorPowerOneNatIso_app (A : FiniteRankBundleCore 𝕜 B) :
     (exteriorPowerOneNatIso 𝕜 B).app A = exteriorPowerOneIso A := (rfl)
+
+/-! ### The top degree -/
+
+/-- The determinant line of a finite-rank core of rank `r`: its exterior power `⋀^r A` in the top
+degree, with fibres the top exterior powers of the fibres of `A`. -/
+noncomputable def det (A : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 𝕜 B :=
+  (exteriorPower 𝕜 B A.rank).obj A
+
+/-- The determinant line is the exterior power in the degree of the rank. -/
+theorem det_def (A : FiniteRankBundleCore 𝕜 B) : A.det = (exteriorPower 𝕜 B A.rank).obj A := (rfl)
+
+/-- The determinant line has rank one. -/
+@[simp] theorem rank_det (A : FiniteRankBundleCore 𝕜 B) : A.det.rank = 1 := by
+  rw [det_def, rank_exteriorPower_obj, Nat.choose_self]
+
+@[simp] theorem localTriv_baseSet_det (A : FiniteRankBundleCore 𝕜 B) (i : B) :
+    (A.det.core.localTriv i).baseSet = A.core.baseSet i := (rfl)
+
+/-- The transitions of the determinant line are multiplication by the determinants of the
+transitions of the core. -/
+@[simp] theorem coordChange_det (A : FiniteRankBundleCore 𝕜 B) (i i' x : B) :
+    A.det.core.coordChange i i' x =
+      (A.core.coordChange i i' x).det • ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜) := by
+  rw [det_def, coordChange_exteriorPower_obj]
+  exact ContinuousLinearMap.exteriorPowerCoords_self _
 
 end FiniteRankBundleCore
 end TauCeti

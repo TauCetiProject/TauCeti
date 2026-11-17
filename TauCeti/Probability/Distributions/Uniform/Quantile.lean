@@ -122,28 +122,30 @@ theorem quantile_map_uniformOn_univ_eq_iff [Fintype α] [Nonempty α] (label : �
 
 /-- As the level tends to zero from above, labelled finite-uniform quantiles tend to a least
 supplied label. -/
-theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero [Finite α] [Nonempty α]
+theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero [Finite α]
     (label : α → ℝ) (i : α) (hmin : ∀ j, label i ≤ label j) :
     Tendsto ((uniformOn (Set.univ : Set α)).map label).quantile (𝓝[>] 0)
       (𝓝 (label i)) := by
   let _ := Fintype.ofFinite α
+  have : Nonempty α := ⟨i⟩
   apply Measure.tendsto_quantile_map_finite_nhdsGT_zero
     (uniformOn (Set.univ : Set α)) label i
-  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+  · rw [measureReal_def, uniformOn_univ, Measure.count_singleton, one_div]
     simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
     exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
   · exact fun j _ ↦ hmin j
 
 /-- As the level tends to one from below, labelled finite-uniform quantiles tend to a greatest
 supplied label. -/
-theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one [Finite α] [Nonempty α]
+theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one [Finite α]
     (label : α → ℝ) (i : α) (hmax : ∀ j, label j ≤ label i) :
     Tendsto ((uniformOn (Set.univ : Set α)).map label).quantile (𝓝[<] 1)
       (𝓝 (label i)) := by
   let _ := Fintype.ofFinite α
+  have : Nonempty α := ⟨i⟩
   apply Measure.tendsto_quantile_map_finite_nhdsLT_one
     (uniformOn (Set.univ : Set α)) label i
-  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+  · rw [measureReal_def, uniformOn_univ, Measure.count_singleton, one_div]
     simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
     exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
   · exact fun j _ ↦ hmax j

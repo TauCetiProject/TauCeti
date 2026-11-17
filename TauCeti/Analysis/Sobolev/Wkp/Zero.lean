@@ -45,9 +45,7 @@ Sobolev functions and density results comparing different domains are not proved
 
 ## References
 
-This is the arbitrary-order `C_c^∞(Ω)`-closure part of Lane A.2 in
-`TauCetiRoadmap/PDE/README.md`.  The construction follows L. C. Evans, *Partial Differential
-Equations*, Section 5.2.
+The construction follows L. C. Evans, *Partial Differential Equations*, Section 5.2.
 -/
 
 public section
@@ -215,7 +213,6 @@ theorem hasWeakFDerivOn_iteratedGradientTestFunctionLp (k : ℕ)
   have hclassical : HasWeakFDerivOn mu Omega (iteratedGradientTestFunction phi k)
       (fderiv ℝ (iteratedGradientTestFunction phi k)) :=
     hasWeakFDerivOn_of_differentiableOn
-      ((hsmooth.continuous.locallyIntegrable (μ := mu)).locallyIntegrableOn (Omega : Set E))
       (((contDiff_infty_iff_fderiv.mp hsmooth).2.continuous.locallyIntegrable
         (μ := mu)).locallyIntegrableOn (Omega : Set E))
       fun x _ => (hsmooth.differentiable (by simp)) x
@@ -323,7 +320,7 @@ theorem Wkp.enorm_iteratedGradient_ofTestFunctionₗ (k : ℕ) (phi : 𝓓(Omega
   have hm : AEStronglyMeasurable (iteratedFDeriv ℝ (k + 1) (phi : E → ℝ)) mu :=
     (phi.contDiff.continuous_iteratedFDeriv (by simp)).aestronglyMeasurable
   -- The restriction is dropped on the pointwise norms, since `phi` vanishes outside `Omega`.
-  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.enorm_def, ← eLpNorm_norm _ hm,
+  rw [Wkp.iteratedGradient_ofTestFunctionₗ, Lp.eNorm_def, ← eLpNorm_norm _ hm,
     ← eLpNorm_restrict_eq_of_support_subset (s := Omega) hm.norm
       (by simpa using (support_iteratedFDeriv_subset _).trans phi.tsupport_subset)]
   refine eLpNorm_congr_norm_ae (Lp.aestronglyMeasurable _) hm.norm.restrict ?_

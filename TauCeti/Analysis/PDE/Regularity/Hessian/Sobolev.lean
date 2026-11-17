@@ -11,10 +11,10 @@ public import TauCeti.Analysis.Matrix.Contraction
 public import TauCeti.Topology.Algebra.Module.Trace
 public import TauCeti.Analysis.PDE.Regularity.Hessian.ConstantCoefficient
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.Wkp.Density
 import TauCeti.Analysis.Sobolev.Wkp.Laplacian
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # The Calderón–Zygmund estimate for strong solutions in `W^{2,p}` of the whole space
@@ -88,8 +88,7 @@ private theorem contraction_compLpL_iteratedGradient_ofTestFunctionₗ_ae_eq
   rw [hx, Matrix.contraction_apply, Wkp.iteratedGradient_ofTestFunctionₗ 1 φ, hHx,
     iteratedGradientTestFunction_def]
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
-  rw [smul_eq_mul, iteratedGradientChain_succ, iteratedGradientChain_zero, fderiv_gradient,
-    inner_hessianOperator_left]
+  rw [smul_eq_mul, inner_iteratedGradientChain_one_apply]
 
 /-- An `Lᵖ` bound on the classical Hessian of a test function `φ` bounds the weak Hessian of `φ`,
 regarded as an element of `W^{2,p}(ℝⁿ)`. -/
@@ -169,7 +168,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq
     rwa [hcoe, ← hL] at this
   have hTH : ‖T.compLpL p _ (Wkp.iteratedGradient 1
       (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ))‖ = lpNorm L p volume := by
-    rw [Lp.norm_def, eLpNorm_congr_ae hae, hvol, lpNorm]
+    rw [Lp.norm_eq_lpNorm_of_ae_eq hae, hvol]
   rw [hTH]
   exact norm_iteratedGradient_ofTestFunctionₗ_le (by positivity) hLfin φ h
 
@@ -227,7 +226,7 @@ theorem exists_norm_iteratedGradient_le_mul_norm_of_traceCLM_compLpL_eq
     exact hC ψ
   have hTH : ‖T (Wkp.iteratedGradient 1 (Wkp.ofTestFunctionₗ (mu := volume) (p := p) 2 φ))‖ =
       lpNorm (Δ (φ : V → ℝ)) p volume := by
-    rw [Lp.norm_def, eLpNorm_congr_ae hae, hvol, lpNorm]
+    rw [Lp.norm_eq_lpNorm_of_ae_eq hae, hvol]
   rw [hTH]
   exact norm_iteratedGradient_ofTestFunctionₗ_le C.coe_nonneg hLfin φ h
 

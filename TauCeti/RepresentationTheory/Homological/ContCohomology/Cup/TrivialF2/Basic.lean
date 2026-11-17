@@ -284,6 +284,7 @@ theorem trivialF2TopPairing_cup_one_one_explicitH1 (x y : H1 G (trivialF2 G).V) 
   -- application of morphisms of topological modules
   convert key.symm using 2
 
+omit [LocallyCompactSpace G] in
 /-- **The `(1,1)` projection formula with trivial `𝔽₂` coefficients**: degree-two
 corestriction of the cup of a restricted ambient class with a subgroup class is the cup of the
 ambient class with its degree-one corestriction. -/

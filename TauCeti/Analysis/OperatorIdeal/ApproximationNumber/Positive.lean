@@ -40,6 +40,7 @@ operators, and hence Dixmier traces additive on the positive part of the logarit
   operators.
 * `ContinuousLinearMap.IsPositive.kyFanGauge_add_kyFanGauge_le`: `Kₖ(S) + Kₗ(T) ≤ Kₖ₊ₗ(S + T)`
   for positive `S` and `T`.
+* `ContinuousLinearMap.IsPositive.kyFanGauge_mono`: `Kₖ(S) ≤ Kₖ(T)` when `0 ≤ S ≤ T`.
 
 ## References
 
@@ -155,5 +156,16 @@ theorem IsPositive.kyFanGauge_add_kyFanGauge_le {S T : E →L[𝕜] E}
       _ ≤ (S + T).kyFanGauge (k + l) := by
           exact_mod_cast (S + T).monotone_kyFanGauge (by simpa using hU)
   linarith
+
+/-- **Loewner monotonicity of Ky Fan gauges.** If `0 ≤ S ≤ T`, then `Kₖ(S) ≤ Kₖ(T)`. -/
+theorem IsPositive.kyFanGauge_mono {S T : E →L[𝕜] E} (hS : S.IsPositive) (hST : S ≤ T) (k : ℕ) :
+    S.kyFanGauge k ≤ T.kyFanGauge k := by
+  have hT : T.IsPositive := by simpa using hS.add (le_def.1 hST)
+  rw [← NNReal.coe_le_coe, hS.kyFanGauge_le_iff]
+  intro m hm v hv
+  refine (Finset.sum_le_sum fun i _ ↦ ?_).trans ((hT.kyFanGauge_le_iff.1 le_rfl) m hm v hv)
+  have hsub := (le_def.1 hST).re_inner_nonneg_right (v i)
+  simp only [sub_apply, inner_sub_right, map_sub, sub_nonneg] at hsub
+  exact hsub
 
 end ContinuousLinearMap

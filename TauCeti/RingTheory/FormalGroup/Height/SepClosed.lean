@@ -44,8 +44,8 @@ theorem exists_coeff_nsmulSeries_homothety_smul_eq_one {K : Type*} [Field K] [Is
     ∃ u : Kˣ, PowerSeries.coeff (p ^ h)
       ((TauCeti.FormalCoordinate.homothety u • F).nsmulSeries p) = 1 := by
   set a := PowerSeries.coeff (p ^ h) (F.nsmulSeries p)
-  have ha : a ≠ 0 := (PowerSeries.order_eq_nat.mp (F.height_eq_natCast_iff.mp hF)).1
-  have hh : 1 ≤ h := by exact_mod_cast hF ▸ F.one_le_height
+  have ha : a ≠ 0 := F.coeff_nsmulSeries_ne_zero_of_height_eq hF
+  have hh : 1 ≤ h := Nat.one_le_iff_ne_zero.mpr (F.ne_zero_of_height_eq_natCast hF)
   have hq : 1 < p ^ h := Nat.one_lt_pow (by omega) hp.out.one_lt
   -- `p ^ h - 1` is `-1` in `K`, so `X ^ (p ^ h - 1) - a` is separable and has a root `z`
   have : NeZero ((p ^ h - 1 : ℕ) : K) := ⟨by

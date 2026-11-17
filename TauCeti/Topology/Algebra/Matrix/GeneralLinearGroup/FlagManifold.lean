@@ -13,7 +13,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperTriangular.Ba
 import Mathlib.Topology.Homeomorph.Quotient
 import TauCeti.Algebra.Group.Subgroup.Map
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.QR
-import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular
+import TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic
 import TauCeti.Topology.Algebra.UnitaryGroup
 
 /-!
@@ -44,7 +44,7 @@ equivariant for the left actions of `U(n)`. It rests on two facts.
 
 The quotient `U(n) ⧸ T` is compact and `GL n 𝕜 ⧸ B` is Hausdorff because `B` is closed
 (`TauCeti.isClosed_upperTriangularGroup`, from
-`TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular`), so the continuous
+`TauCeti.Topology.Algebra.Matrix.GeneralLinearGroup.UpperTriangular.Basic`), so the continuous
 bijection between them is a homeomorphism.
 
 ## Main definitions
@@ -101,8 +101,7 @@ def unitaryQuotientHomeomorph :
   Continuous.homeoOfEquivCompactToT2 (f := QuotientGroup.congrComapOfSurjectiveMk Unitary.toUnits
       (upperTriangularGroup ι 𝕜) (toUnits_mk_surjective ι 𝕜)) <| by
     rw [(QuotientGroup.isQuotientMap_mk _).continuous_iff]
-    exact (continuous_quotient_mk'.comp <| Units.continuous_iff.2
-      ⟨continuous_subtype_val, continuous_subtype_val.star⟩).congr fun U =>
+    exact (continuous_quotient_mk'.comp Unitary.continuous_toUnits).congr fun U =>
         (QuotientGroup.congrComapOfSurjectiveMk_mk _ _ _ U).symm
 
 @[simp]

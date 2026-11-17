@@ -324,7 +324,6 @@ theorem gammaPDFReal_mul_multivariateGaussianPDFReal (a : EuclideanSpace ℝ ι)
   have hinv : (τ⁻¹ • R)⁻¹ = τ • R⁻¹ := by
     simpa [Units.smul_def] using
       Matrix.inv_smul' R (Units.mk0 _ (inv_pos.mpr hτ).ne') hD.ne'.isUnit
-  have hΓ : 0 < Real.Gamma (ν / 2) := Real.Gamma_pos_of_pos (by positivity)
   have hΓ' : 0 < Real.Gamma ((ν + d) / 2) := Real.Gamma_pos_of_pos (by positivity)
   -- Collect the powers of `τ` and the exponentials on the left.
   have e1 : (τ⁻¹ ^ Fintype.card ι * R.det) ^ (-(1 : ℝ) / 2) =

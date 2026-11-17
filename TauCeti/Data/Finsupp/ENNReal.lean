@@ -44,14 +44,17 @@ theorem weight_inv_natCast_eq_ofReal_sum_div [Fintype σ] {r : σ → ℕ}
 
 /-- On blocks `κ × ι`, the weight that is `(d h)⁻¹` at the coordinate `(h, i₀ h)` of each block
 and `0` elsewhere is the sum `∑ h, n (h, i₀ h) / d h` in `ℝ≥0∞`. -/
-theorem weight_ite_inv_natCast_eq_sum_div {κ ι : Type*} [Fintype κ] [Finite ι] [DecidableEq ι]
+theorem weight_ite_inv_natCast_eq_sum_div {κ ι : Type*} [Fintype κ] [DecidableEq ι]
     (i₀ : κ → ι) (d : κ → ℕ) (n : κ × ι →₀ ℕ) :
     n.weight (fun p ↦ if p.2 = i₀ p.1 then (d p.1 : ℝ≥0∞)⁻¹ else 0) =
       ∑ h, (n (h, i₀ h) : ℝ≥0∞) / d h := by
-  have := Fintype.ofFinite ι
-  rw [Finsupp.weight_apply, Finsupp.sum_fintype _ _ (by simp), Fintype.sum_prod_type]
-  refine Finset.sum_congr rfl fun h _ ↦ ?_
-  rw [Fintype.sum_eq_single (i₀ h) fun i hi ↦ by simp [hi]]
-  simp [div_eq_mul_inv]
+  classical
+  have hinj : Function.Injective fun h ↦ (h, i₀ h) := fun _ _ h ↦ (Prod.ext_iff.1 h).1
+  rw [Finsupp.weight_apply, Finsupp.sum_of_support_subset n Finset.subset_union_left _ (by simp),
+    ← Finset.sum_subset (s₁ := Finset.univ.image fun h ↦ (h, i₀ h)) Finset.subset_union_right
+      fun p _ hp ↦ ?_, Finset.sum_image fun _ _ _ _ h ↦ hinj h]
+  · simp [div_eq_mul_inv]
+  · have : p.2 ≠ i₀ p.1 := fun h ↦ hp (Finset.mem_image.2 ⟨p.1, Finset.mem_univ _, by simp [← h]⟩)
+    simp [this]
 
 end Finsupp

@@ -52,6 +52,9 @@ extensions invariant under a commuting family of operators.
 * `TauCeti.GeneralizedLimit.abs_apply_le_norm`: `|ω f| ≤ ‖f‖`.
 * `TauCeti.GeneralizedLimit.exists_isDilationInvariant`: a dilation-invariant generalized limit
   exists.
+* `TauCeti.GeneralizedLimit.exists_isDilationInvariant_le_apply`,
+  `TauCeti.GeneralizedLimit.exists_isDilationInvariant_apply_le`: dilation-uniform frequent bounds
+  are realized by dilation-invariant generalized limits.
 
 ## References
 
@@ -305,14 +308,28 @@ private theorem dilationUpperBound_zero_nonneg : 0 ≤ dilationUpperBound 0 :=
   le_csInf (nonempty_dilationUpperBounds 0) fun _ hc ↦ by
     simpa using neg_norm_le_of_mem_dilationUpperBounds hc
 
-/-- **Existence of dilation-invariant generalized limits.** -/
-theorem exists_isDilationInvariant : ∃ ω : GeneralizedLimit, ω.IsDilationInvariant := by
-  let f₀ : (ℕ →ᵇ ℝ) →ₗ.[ℝ] ℝ := { domain := ⊥, toFun := 0 }
+private theorem dilationUpperBound_zero : dilationUpperBound 0 = 0 :=
+  le_antisymm (dilationUpperBound_le_of_eventually_le (Eventually.of_forall fun _ ↦ le_rfl))
+    dilationUpperBound_zero_nonneg
+
+private theorem exists_isDilationInvariant_apply_eq_dilationUpperBound (g : ℕ →ᵇ ℝ) :
+    ∃ ω : GeneralizedLimit, ω.IsDilationInvariant ∧ ω g = dilationUpperBound g := by
+  have hg₀ : ∀ r : ℝ, r • g = 0 → r • dilationUpperBound g = 0 := by
+    intro r hr
+    rcases smul_eq_zero.1 hr with rfl | rfl <;> simp [dilationUpperBound_zero]
+  let f₀ : (ℕ →ᵇ ℝ) →ₗ.[ℝ] ℝ := LinearPMap.mkSpanSingleton' g (dilationUpperBound g) hg₀
   have h₀ (x : f₀.domain) : f₀ x ≤ dilationUpperBound x := by
     obtain ⟨x, hx⟩ := x
-    obtain rfl : x = 0 := (Submodule.mem_bot ℝ).1 hx
-    exact dilationUpperBound_zero_nonneg
-  obtain ⟨φ, -, hφ⟩ := exists_extension_of_le_sublinear f₀ dilationUpperBound
+    obtain ⟨r, rfl⟩ := Submodule.mem_span_singleton.1 hx
+    rw [LinearPMap.mkSpanSingleton'_apply, RingHom.id_apply, smul_eq_mul]
+    rcases lt_trichotomy r 0 with hr | rfl | hr
+    · have hadd := dilationUpperBound_add_le ((-r) • g) (r • g)
+      rw [← add_smul, neg_add_cancel, zero_smul, dilationUpperBound_zero,
+        dilationUpperBound_smul (neg_pos.2 hr)] at hadd
+      linarith
+    · simp [dilationUpperBound_zero]
+    · exact (dilationUpperBound_smul hr g).symm.le
+  obtain ⟨φ, hφ₀, hφ⟩ := exists_extension_of_le_sublinear f₀ dilationUpperBound
     (fun r hr f ↦ dilationUpperBound_smul hr f) dilationUpperBound_add_le h₀
   have hle {f : ℕ →ᵇ ℝ} {c : ℝ} (h : ∀ᶠ n in atTop, f n ≤ c) : φ f ≤ c :=
     (hφ f).trans (dilationUpperBound_le_of_eventually_le h)
@@ -321,7 +338,7 @@ theorem exists_isDilationInvariant : ∃ ω : GeneralizedLimit, ω.IsDilationInv
     rw [map_neg] at this
     linarith
   refine ⟨mk₀ φ (fun f hf ↦ hge (Eventually.of_forall hf)) fun f c hf ↦ ?_,
-    isDilationInvariant_iff.2 fun f k hk ↦ ?_⟩
+    isDilationInvariant_iff.2 fun f k hk ↦ ?_, ?_⟩
   · refine le_antisymm (le_of_forall_pos_le_add fun ε hε ↦ hle ?_)
       (le_of_forall_pos_le_add fun ε hε ↦ ?_)
     · exact hf.eventually (Iic_mem_nhds (lt_add_of_pos_right c hε))
@@ -332,6 +349,39 @@ theorem exists_isDilationInvariant : ∃ ω : GeneralizedLimit, ω.IsDilationInv
     simp only [map_sub, map_neg, BoundedContinuousFunction.neg_dilate] at h₁ h₂
     simp only [mk₀_apply]
     linarith
+  · rw [mk₀_apply, (hφ₀ ⟨g, Submodule.mem_span_singleton_self g⟩)]
+    exact LinearPMap.mkSpanSingleton'_apply_self _ _ _ _
+
+/-- **Existence of dilation-invariant generalized limits.** -/
+theorem exists_isDilationInvariant : ∃ ω : GeneralizedLimit, ω.IsDilationInvariant :=
+  let ⟨ω, hω, _⟩ := exists_isDilationInvariant_apply_eq_dilationUpperBound 0
+  ⟨ω, hω⟩
+
+/-- If for every dilation bound `S ≥ 1` there are arbitrarily large `n` such that `c ≤ g (n / k)`
+for all `1 ≤ k ≤ S`, then some dilation-invariant generalized limit assigns `g` a value at least
+`c`. -/
+theorem exists_isDilationInvariant_le_apply {g : ℕ →ᵇ ℝ} {c : ℝ}
+    (h : ∀ S > 0, ∃ᶠ n in atTop, ∀ k, 0 < k → k ≤ S → c ≤ g (n / k)) :
+    ∃ ω : GeneralizedLimit, ω.IsDilationInvariant ∧ c ≤ ω g := by
+  obtain ⟨ω, hω, hωg⟩ := exists_isDilationInvariant_apply_eq_dilationUpperBound g
+  refine ⟨ω, hω, hωg.symm ▸ le_csInf (nonempty_dilationUpperBounds g) fun d hd ↦ ?_⟩
+  obtain ⟨ι, _, _, s, hs, hd⟩ := hd
+  let S := Finset.univ.sup s
+  have hS : 0 < S :=
+    (hs (Classical.arbitrary ι)).trans_le (Finset.le_sup (Finset.mem_univ _))
+  obtain ⟨n, hn, hdn⟩ := ((h S hS).and_eventually hd).exists
+  exact (Finset.le_expect Finset.univ_nonempty fun i _ ↦
+    hn (s i) (hs i) (Finset.le_sup (Finset.mem_univ i))).trans hdn
+
+/-- If for every dilation bound `S ≥ 1` there are arbitrarily large `n` such that `g (n / k) ≤ c`
+for all `1 ≤ k ≤ S`, then some dilation-invariant generalized limit assigns `g` a value at most
+`c`. -/
+theorem exists_isDilationInvariant_apply_le {g : ℕ →ᵇ ℝ} {c : ℝ}
+    (h : ∀ S > 0, ∃ᶠ n in atTop, ∀ k, 0 < k → k ≤ S → g (n / k) ≤ c) :
+    ∃ ω : GeneralizedLimit, ω.IsDilationInvariant ∧ ω g ≤ c := by
+  obtain ⟨ω, hω, hc⟩ := exists_isDilationInvariant_le_apply (g := -g) (c := -c) fun S hS ↦
+    (h S hS).mono fun n hn k hk hkS ↦ by simpa using hn k hk hkS
+  exact ⟨ω, hω, by simpa using hc⟩
 
 end Existence
 

@@ -9,7 +9,7 @@ public import Mathlib.FieldTheory.Galois.IsGaloisGroup
 public import Mathlib.RepresentationTheory.Basic
 public import Mathlib.RingTheory.TensorProduct.Basic
 import Mathlib.RingTheory.Flat.Basic
-import Mathlib.RingTheory.Trace.Basic
+import TauCeti.FieldTheory.Galois.Trace
 
 /-!
 # Injectivity in semilinear Galois descent
@@ -55,10 +55,8 @@ theorem liftBaseChange_injective_of_invariant
   have hnorm (a : L) (w : W) :
       ρ.norm (a • f w) = Algebra.trace k L a • f w := by
     simp only [Representation.norm, LinearMap.sum_apply, hsemi]
-    rw [← Finset.sum_smul, ← IsScalarTower.algebraMap_smul L (Algebra.trace k L a),
-      trace_eq_sum_automorphisms]
-    congr 1
-    exact Fintype.sum_equiv (IsGaloisGroup.mulEquivAlgEquiv G k L).toEquiv _ _ fun _ ↦ rfl
+    rw [← Finset.sum_smul, ← IsGaloisGroup.algebraMap_trace_eq_sum G k,
+      IsScalarTower.algebraMap_smul]
   let p : V →ₗ[k] L ⊗[k] V := ∑ i,
     (TensorProduct.mk k L V (b i)).comp
       (ρ.norm.comp ((LinearMap.lsmul L V (b.traceDual i)).restrictScalars k))

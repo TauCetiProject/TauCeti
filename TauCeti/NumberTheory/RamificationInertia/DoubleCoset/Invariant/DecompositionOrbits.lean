@@ -159,6 +159,7 @@ variable [Finite G] [IsDomain A] [IsDomain B] [Module.Finite A B] [Module.Flat A
   (H : Subgroup G) (C : Type*) [CommRing C] [IsDomain C] [Algebra A C] [Algebra C B]
   [IsScalarTower A C B] [Module.Flat C B] [IsGaloisGroup H C B]
 
+omit [Finite G] in
 /-- **Orbit sizes are local degrees.** The orbit of a coset under the decomposition group of `Q`
 has as many elements as the ramification index times the residue degree of the prime of `C`
 attached to the coset. No hypothesis on the residue fields is needed. -/

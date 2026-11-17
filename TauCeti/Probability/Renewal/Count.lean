@@ -140,6 +140,27 @@ lemma monotone_renewalCountNat (ω : Ω) : Monotone fun t ↦ renewalCountNat T 
   · simp only [renewalCountNat_eq_zero_of_not_tendsto T hω]
     exact monotone_const
 
+variable {T} in
+/-- Before the observation time, the natural count is the finite sum over the
+completed arrivals at that time. The artificial arrival at index zero is omitted.
+On explosive paths both sides are zero by the count's exceptional-path convention. -/
+theorem renewalCountNat_eq_sum_range_of_le {ω : Ω} {s t : ℝ≥0} (hst : s ≤ t) :
+    renewalCountNat T s ω = ∑ k ∈ Finset.range (renewalCountNat T t ω),
+      if arrival T (k + 1) ω ≤ s then 1 else 0 := by
+  classical
+  by_cases hω : Tendsto (fun n ↦ arrival T n ω) atTop atTop
+  · have hsum (n : ℕ) :
+        (∑ k ∈ Finset.range n, if k + 1 ≤ renewalCountNat T s ω then 1 else 0) =
+          min n (renewalCountNat T s ω) := by
+      induction n with
+      | zero => simp
+      | succ n hn =>
+        rw [Finset.sum_range_succ, hn]
+        split_ifs with h <;> omega
+    simp_rw [← le_renewalCountNat_iff hω]
+    rw [hsum, min_eq_right (monotone_renewalCountNat T ω hst)]
+  · simp [hω]
+
 /-- The natural count is locally constant to the right, even on the exceptional event. -/
 lemma eventually_renewalCountNat_eq_nhdsGE (t : ℝ≥0) (ω : Ω) :
     ∀ᶠ s in 𝓝[≥] t, renewalCountNat T s ω = renewalCountNat T t ω := by
@@ -210,7 +231,7 @@ theorem map_renewalCountNat_eq_of_nonexplosion
 /-- The entire natural-count process has the same law in any i.i.d. realization as on the
 canonical product space. This includes its exceptional-path convention and all finite-time
 joint distributions. -/
-theorem map_renewalCountNat_eq_infinitePi_map (hT : ∀ n, Measurable (T n))
+theorem map_renewalCountNat_eq_infinitePi_map
     (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
     P.map (fun ω t ↦ renewalCountNat T t ω) =
       (Measure.infinitePi fun _ : ℕ ↦ P.map (T 0)).map
@@ -220,9 +241,11 @@ theorem map_renewalCountNat_eq_infinitePi_map (hT : ∀ n, Measurable (T n))
         (fun ω n ↦ T n ω) := by
     funext ω t
     exact renewalCountNat_comp (fun n w ↦ w n) (fun ω n ↦ T n ω) t ω
-  rw [hcomp, ← Measure.map_map
-    (measurable_pi_iff.2 fun t ↦ measurable_renewalCountNat (fun n ↦ measurable_pi_apply n) t)
-    (measurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map hT]
+  have hT : ∀ n, AEMeasurable (T n) P := fun n ↦ (hid n).aemeasurable_fst
+  rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable
+    (measurable_pi_iff.2 fun t ↦
+      measurable_renewalCountNat (fun n ↦ measurable_pi_apply n) t).aemeasurable
+    (aemeasurable_pi_iff.2 hT), hindep.map_fun_eq_infinitePi_map₀' hT]
   simp_rw [fun n ↦ (hid n).map_eq]
 
 end TauCeti.Probability

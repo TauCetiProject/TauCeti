@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basis
 public import TauCeti.KnotTheory.Khovanov.EnhancedState
 public import TauCeti.KnotTheory.Khovanov.QuantumGrading
+public import TauCeti.RingTheory.PiTensorProduct.Equiv
 public import TauCeti.RingTheory.PiTensorProduct.FiberwiseMul
 
 /-!
@@ -189,7 +190,7 @@ variable {σ τ : Type*} [Fintype σ] [DecidableEq τ]
 
 /-- The merge map along `f` sends the basis vector of a labelling `l` to the pure tensor carrying,
 on each circle `j`, the power of `ε` counting the `X`-labels of `l` on the fibre of `j`. -/
-theorem fiberwiseMul_circleBasis_eq_tprod [Finite τ] (f : σ → τ) (l : σ → Bool) :
+theorem fiberwiseMul_circleBasis_eq_tprod (f : σ → τ) (l : σ → Bool) :
     fiberwiseMul (R := R) (A := fun _ ↦ R[ε]) f (circleBasis R σ l) =
       ⨂ₜ[R] j, (ε : R[ε]) ^ #{i | f i = j ∧ l i = true} := by
   rw [circleBasis_apply, fiberwiseMul_tprod_eq_tprod_prod]
@@ -268,13 +269,11 @@ theorem fiberwiseMul_circleX [Fintype σ] (f : σ → τ) (i : σ) (x : CircleTe
   rw [circleX_apply, circleX_apply, map_mul, fiberwiseMul_singleAlgHom]
 
 /-- Reindexing along `e` carries `X` on the circle `i` to `X` on the circle `e i`. -/
-theorem reindex_circleX [Finite σ] (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
+theorem reindex_circleX (e : σ ≃ τ) (i : σ) (x : CircleTensor R σ) :
     reindex R (fun _ ↦ R[ε]) e (circleX R i x) =
       circleX R (e i) (reindex R (fun _ ↦ R[ε]) e x) := by
-  have := Fintype.ofFinite σ
-  have h := toLinearMap_fiberwiseMul_equiv (R := R) (B := R[ε]) e
-  rw [← LinearEquiv.coe_coe, ← h, AlgHom.toLinearMap_apply, AlgHom.toLinearMap_apply,
-    fiberwiseMul_circleX]
+  simp only [← reindexAlgEquiv_toLinearEquiv, AlgEquiv.toLinearEquiv_apply, circleX_apply,
+    map_mul, reindexAlgEquiv_singleAlgHom]
 
 end X
 
@@ -287,7 +286,7 @@ variable (R : Type u) [CommRing R] (ι : Type*) [Fintype ι]
 /-- The **quantum grading** of the circle tensor: the basis vector of a labelling `l` spans its
 degree `TauCeti.Khovanov.labelingQuantumDegree ι l`. It is the grading of the free module on the
 labellings, transported along `TauCeti.Khovanov.circleBasis`. -/
-noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) :=
+noncomputable def circleQuantumGrading : InternalGrading R (CircleTensor R ι) ℤ :=
   (InternalGrading.finsupp R (labelingQuantumDegree ι)).map (circleBasis R ι).repr.symm
 
 variable {R ι}
@@ -474,6 +473,64 @@ theorem isHomogeneous_circleX [DecidableEq ι] (i : ι) :
   · rw [← hx l hl, ← sub_eq_add_neg,
       ← labelingQuantumDegree_update_true (by simpa using h)]
     exact circleBasis_mem_circleQuantumGrading_piece _
+
+private noncomputable def circleXSection [DecidableEq ι] (i : ι) :
+    CircleTensor R ι →ₗ[R] CircleTensor R ι :=
+  (circleBasis R ι).constr R fun l ↦
+    if l i then circleBasis R ι (Function.update l i false) else 0
+
+private theorem circleXSection_circleBasis [DecidableEq ι] (i : ι) (l : ι → Bool) :
+    circleXSection i (circleBasis R ι l) =
+      if l i then circleBasis R ι (Function.update l i false) else 0 :=
+  (circleBasis R ι).constr_basis R _ l
+
+private theorem circleXSection_circleX_add_circleX_circleXSection [DecidableEq ι] (i : ι)
+    (x : CircleTensor R ι) :
+    circleXSection i (circleX R i x) + circleX R i (circleXSection i x) = x := by
+  have h : (circleXSection i).comp (circleX R i) +
+      (circleX R i).comp (circleXSection i) = LinearMap.id := by
+    apply (circleBasis R ι).ext
+    intro l
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.id_apply]
+    cases hi : l i <;>
+      simp only [circleX_circleBasis, circleXSection_circleBasis, hi,
+        Bool.false_eq_true, ↓reduceIte, Function.update_self, Function.update_idem,
+        map_zero, add_zero, zero_add]
+    · rw [← hi, Function.update_eq_self]
+    · rw [← hi, Function.update_eq_self]
+  exact DFunLike.congr_fun h x
+
+private theorem circleXSection_mem [DecidableEq ι] (i : ι) {q : ℤ}
+    {x : CircleTensor R ι} (hx : x ∈ (circleQuantumGrading R ι).piece q) :
+    circleXSection i x ∈ (circleQuantumGrading R ι).piece (q + 2) := by
+  rw [mem_circleQuantumGrading_piece_iff] at hx
+  rw [← (circleBasis R ι).sum_repr x, map_sum]
+  refine Submodule.sum_mem _ fun l _ ↦ ?_
+  rw [map_smul, circleXSection_circleBasis]
+  by_cases hl : (circleBasis R ι).repr x l = 0
+  · simp [hl]
+  split_ifs with hi
+  · apply Submodule.smul_mem
+    have hdeg := labelingQuantumDegree_update_true (ι := ι)
+      (l := Function.update l i false) (i := i) (by simp)
+    have hup : Function.update (Function.update l i false) i true = l := by
+      rw [Function.update_idem]
+      rw [← hi, Function.update_eq_self]
+    rw [hup, hx l hl] at hdeg
+    have heq : q + 2 = labelingQuantumDegree ι (Function.update l i false) := by omega
+    rw [heq]
+    exact circleBasis_mem_circleQuantumGrading_piece _
+  · simp
+
+/-- On a quantum piece, every tensor annihilated by `X` on a selected circle is `X` times a
+homogeneous tensor of degree two higher. This holds over every commutative ring, including the
+zero ring; it is the graded image/kernel identity behind marked-component reduction. -/
+theorem exists_circleX_eq_of_mem_piece_of_circleX_eq_zero [DecidableEq ι] (i : ι) {q : ℤ}
+    {x : CircleTensor R ι} (hx : x ∈ (circleQuantumGrading R ι).piece q)
+    (hX : circleX R i x = 0) :
+    ∃ y ∈ (circleQuantumGrading R ι).piece (q + 2), circleX R i y = x := by
+  refine ⟨circleXSection i x, circleXSection_mem i hx, ?_⟩
+  simpa [hX] using circleXSection_circleX_add_circleX_circleXSection i x
 
 omit [DecidableEq τ] in
 /-- Reindexing the circle factors preserves their total quantum degree. -/

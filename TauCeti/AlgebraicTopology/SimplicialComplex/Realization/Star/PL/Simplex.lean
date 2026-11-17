@@ -183,7 +183,8 @@ theorem IsCombinatorialSphere.exists_homeomorph_closedStarRealization_top
   have hS : convexJoin ℝ (range fun y : geometricLink K v => f (y.1.1 : ι → ℝ)) {b} =
       range fun y : Realization (⊤ : AbstractSimplicialComplex (Fin (n + 2))) =>
         (y.1 : Fin (n + 2) → ℝ) := by
-    rw [hT, convexJoin_boundary_stdSimplex_barycenter, range_realization_coe_top]
+    rw [hT, ← stdSimplexBoundary_def, convexJoin_boundary_stdSimplex_barycenter,
+      range_realization_coe_top]
   obtain ⟨φ, hapex, hheight, hPL⟩ :=
     exists_homeomorph_top_of_convexJoin hK hf hg hgf hh hhF hS
   have hc : c = (n : ℝ) + 2 := by simp [c]

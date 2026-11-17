@@ -20,6 +20,28 @@ the two extension classes. The construction reuses Mathlib's `ShortComplex.pull`
 `ShortComplex.push`, together with `CategoryTheory.ShortComplex.biprod`; the comparison uses
 `ShortComplex.ShortExact.extClass_naturality`. This identifies the geometric pullback and pushout
 construction with addition in the derived-category definition of `Ext¹`.
+
+## Main definitions
+
+* `CategoryTheory.ShortComplex.baerSum`: the Baer sum of two short complexes with common
+  endpoints.
+
+## Main results
+
+* `CategoryTheory.ShortComplex.ShortExact.baerSum`: the Baer sum of short exact sequences is
+  short exact.
+* `CategoryTheory.ShortComplex.ShortExact.extClass_pull`,
+  `CategoryTheory.ShortComplex.ShortExact.extClass_push` and
+  `CategoryTheory.ShortComplex.ShortExact.extClass_biprod`: the extension class of a pullback,
+  a pushout and a componentwise direct sum.
+* `CategoryTheory.ShortComplex.ShortExact.extClass_baerSum`: the extension class of the Baer sum
+  is the sum of the extension classes.
+
+## References
+
+* Charles A. Weibel, *An Introduction to Homological Algebra*, Cambridge Studies in Advanced
+  Mathematics 38, Cambridge University Press (1994), Section 3.4.
+* Saunders Mac Lane, *Homology*, Springer (1963), Chapter III, Section 2.
 -/
 
 public section
@@ -30,10 +52,16 @@ open Limits Abelian
 
 universe w v u
 
-variable {C : Type u} [Category.{v} C] [Abelian C]
+variable {C : Type u} [Category.{v} C]
+
+section
+
+variable [HasZeroMorphisms C] [HasBinaryBiproducts C] [HasPullbacks C] [HasPushouts C]
 
 /-- The Baer sum of `S` and `S.X₁ ⟶ E ⟶ S.X₃`, formed by pulling the componentwise
-sum back along the diagonal and then pushing out along the codiagonal.
+sum back along the diagonal and then pushing out along the codiagonal. The construction
+needs only zero morphisms, binary biproducts, pullbacks and pushouts; that it is again an
+extension and realises the group law of `Ext¹` is proved below for abelian categories.
 
 The body is exposed because the literal endpoint and middle-object carriers are
 needed when composing the canonical pullback and pushout maps. -/
@@ -43,11 +71,15 @@ noncomputable def baerSum (S : ShortComplex C) {E : C}
   ((S.biprod (ShortComplex.mk i p w)).pull
     (biprod.lift (𝟙 _) (𝟙 _))).push (biprod.desc (𝟙 _) (𝟙 _))
 
-/-- The Baer sum retains the common quotient object. -/
+/-- The Baer sum retains the common right endpoint `S.X₃`. -/
 @[simp]
 lemma baerSum_X₃ (S : ShortComplex C) {E : C}
     (i : S.X₁ ⟶ E) (p : E ⟶ S.X₃) (w : i ≫ p = 0) :
     (S.baerSum i p w).X₃ = S.X₃ := rfl
+
+end
+
+variable [Abelian C]
 
 /-- The pullback and pushout defining a Baer sum preserve short exactness. -/
 lemma ShortExact.baerSum {S : ShortComplex C} (hS : S.ShortExact)

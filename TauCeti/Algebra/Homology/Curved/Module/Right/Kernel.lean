@@ -5,7 +5,7 @@ Authors: Wentao Li
 -/
 module
 
-public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded
+public import TauCeti.Algebra.Homology.Curved.Module.Right.Graded.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 
 /-!

@@ -35,6 +35,21 @@ universe u
 
 namespace TauCeti.Topology
 
+/-- Global sections of the skyscraper sheaf at `p₀` are its coefficient object. -/
+noncomputable def skyscraperSheafGlobalSectionsIso {X : TopCat} (p₀ : X)
+    [∀ U : Opens X, Decidable (p₀ ∈ U)] {C : Type*} [Category* C] [HasTerminal C] (A : C) :
+    (skyscraperSheaf p₀ A).obj.obj (op ⊤) ≅ A :=
+  eqToIso ((skyscraperSheaf_obj_obj p₀ A (op ⊤)).trans
+    (ite_eq_left (show p₀ ∈ (⊤ : Opens X) from trivial)))
+
+/-- The global-section identification is the canonical transport from the value on `⊤`. -/
+@[simp]
+theorem skyscraperSheafGlobalSectionsIso_hom {X : TopCat} (p₀ : X)
+    [∀ U : Opens X, Decidable (p₀ ∈ U)] {C : Type*} [Category* C] [HasTerminal C] (A : C) :
+    (skyscraperSheafGlobalSectionsIso p₀ A).hom =
+      eqToHom ((skyscraperSheaf_obj_obj p₀ A (op ⊤)).trans
+        (ite_eq_left (show p₀ ∈ (⊤ : Opens X) from trivial))) := by rfl
+
 /-- If the unique morphism `A ⟶ ⊤_ C` is a split epimorphism, then the restriction maps of a
 skyscraper presheaf with value `A` are split epimorphisms: each is an identity or a morphism to a
 terminal object. -/

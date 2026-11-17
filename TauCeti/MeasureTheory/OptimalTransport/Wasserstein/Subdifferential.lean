@@ -274,7 +274,6 @@ private theorem exists_le_apply_of_mem_wassersteinSubdifferential {ν : Wasserst
   obtain ⟨δ, hδ, hball⟩ := Metric.eventually_nhds_iff.1 (hξ.2.2 ε hε)
   set d := dist μ ν
   set t := min (min 1 ε) (δ / (d + 1)) / 2
-  have hd : 0 ≤ d := dist_nonneg
   have ht₀ : 0 < t := by positivity
   have ht₁ : t ≤ min (min 1 ε) (δ / (d + 1)) := half_le_self (by positivity)
   have htd : t * d < δ := by
@@ -301,7 +300,9 @@ theorem ConvexAlongGeodesics.mem_wassersteinSubdifferential_iff {m : ℝ}
   by_cases hν : φ ν = ⊤
   · rw [hν]
     exact le_top
-  obtain ⟨c, hc, hopt⟩ := WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling hγ
+  obtain ⟨c, hc, hopt⟩ := WassersteinSpace.exists_isGeodesicSegment_isOptimalCoupling (p := 2)
+    ENNReal.ofNat_ne_top (by rwa [ENNReal.toReal_ofNat])
+  simp only [ENNReal.toReal_ofNat] at hopt
   have hconv := hc.convexAlong_iff.1 (convexAlongGeodesics_def.1 hφ htop hν hc)
   obtain ⟨r, hr⟩ : ∃ r : ℝ, φ μ = r := ⟨(φ μ).toReal, (EReal.coe_toReal htop hbot).symm⟩
   -- The convexity inequality along `μ_t` rules out `φ ν = ⊥`.

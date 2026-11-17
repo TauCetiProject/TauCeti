@@ -347,9 +347,11 @@ theorem rationalFunctionsHom_app_injective
 
 end Hom
 
-/-- The restriction maps of `𝒦_X` between nonempty open subsets are bijective. -/
-theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
+/-- The restriction maps of `𝒦_X` to a nonempty open subset are bijective. -/
+theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctions X).presheaf.map i.op) := by
+  have : Nonempty V :=
+    ⟨⟨(Classical.arbitrary U : U).1, leOfHom i (Classical.arbitrary U : U).2⟩⟩
   constructor
   · intro a b hab
     refine (rationalFunctionsEquiv V).injective ?_
@@ -359,14 +361,13 @@ theorem rationalFunctions_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V
     refine (rationalFunctionsEquiv U).injective ?_
     rw [rationalFunctionsEquiv_map, LinearEquiv.apply_symm_apply]
 
-/-- The restriction maps of `𝒦_X` between nonempty open subsets are isomorphisms. -/
-instance isIso_rationalFunctions_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
+/-- The restriction maps of `𝒦_X` to a nonempty open subset are isomorphisms. -/
+instance isIso_rationalFunctions_map {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     IsIso ((rationalFunctions X).presheaf.map i.op) :=
   (ConcreteCategory.isIso_iff_bijective _).mpr (rationalFunctions_map_bijective i)
 
-/-- The restriction maps of the ring sheaf `𝒦_X` between nonempty open subsets are bijective. -/
-theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] [Nonempty V]
-    (i : U ⟶ V) :
+/-- The restriction maps of the ring sheaf `𝒦_X` to a nonempty open subset are bijective. -/
+theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     Function.Bijective ((rationalFunctionsRing X).presheaf.map i.op) := by
   have h : ⇑((rationalFunctionsRing X).presheaf.map i.op) =
       rationalFunctionsSectionsEquiv X U ∘ (rationalFunctions X).presheaf.map i.op ∘
@@ -378,9 +379,9 @@ theorem rationalFunctionsRing_map_bijective {U V : X.Opens} [Nonempty U] [Nonemp
   exact (rationalFunctionsSectionsEquiv X U).bijective.comp
     ((rationalFunctions_map_bijective i).comp (rationalFunctionsSectionsEquiv X V).symm.bijective)
 
-/-- The restriction maps of the ring sheaf `𝒦_X` between nonempty open subsets are
+/-- The restriction maps of the ring sheaf `𝒦_X` to a nonempty open subset are
 isomorphisms. -/
-instance isIso_rationalFunctionsRing_map {U V : X.Opens} [Nonempty U] [Nonempty V] (i : U ⟶ V) :
+instance isIso_rationalFunctionsRing_map {U V : X.Opens} [Nonempty U] (i : U ⟶ V) :
     IsIso ((rationalFunctionsRing X).presheaf.map i.op) :=
   (ConcreteCategory.isIso_iff_bijective _).mpr (rationalFunctionsRing_map_bijective i)
 
@@ -657,7 +658,15 @@ lemma rationalFunctionsMul_inv_app_rationalFunctionsMul_app (g : X.functionField
 
 end Mul
 
-variable [IsIntegral X]
+end Scheme
+
+namespace Scheme
+
+/-! On an integral scheme `IrreducibleSpace X` is automatic
+(`AlgebraicGeometry.irreducibleSpace_of_isIntegral`), so the statements below assume only
+integrality. -/
+
+variable {X : Scheme.{u}} [IsIntegral X]
 
 /-- The inclusion `𝒪_X ⟶ 𝒦_X` is injective on sections over every open subset: over a nonempty
 one because the germ map to the function field of an integral scheme is injective, and over an

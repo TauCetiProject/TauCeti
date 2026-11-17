@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.GradientFlow.Slope
+public import TauCeti.Analysis.GradientFlow.RelaxedSlope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
 import TauCeti.Topology.Instances.EReal
@@ -43,7 +43,8 @@ The inequality `≤` holds for every energy (`TauCeti.descendingSlope_le_iSup`);
 gives `≥`, by comparing `φ` with its convexity bound near `x` along a geodesic towards `y`. As a
 supremum of lower semicontinuous functions, the descending slope of a lower semicontinuous
 geodesically convex energy is lower semicontinuous on its effective domain `{x | φ x ≠ ⊤}`
-(`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`).
+(`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`), so it is also the relaxed
+slope there (`TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`).
 
 The three notions are stable under the usual operations, as far as each allows. Convexity along a
 fixed curve passes to sums (adding the parameters), to nonnegative multiples, to pointwise suprema
@@ -70,6 +71,8 @@ curve need no such assumption.
 * `TauCeti.ConvexAlongGeodesics.geodesicallyConvex`: in a geodesic space, convexity along every
   geodesic implies geodesic convexity.
 * `TauCeti.ConvexAlong.apply_ne_top`: the effective domain is convex along a curve of convexity.
+* `TauCeti.ConvexAlong.apply_add_le_of_forall_le`: an `m`-convex energy grows at least like
+  `(m / 2) d(γ 0, γ 1)²` away from a minimum at the start of the curve.
 * `TauCeti.ConvexAlong.add`, `TauCeti.ConvexAlong.const_mul`, `TauCeti.ConvexAlong.iSup` and
   `TauCeti.ConvexAlong.of_tendsto`: convexity along a curve is stable under sums, nonnegative
   multiples, suprema and pointwise limits; `TauCeti.ConvexAlongGeodesics.add`,
@@ -85,6 +88,8 @@ curve need no such assumption.
 * `TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`: the descending slope of a
   lower semicontinuous `m`-geodesically convex energy is lower semicontinuous on its effective
   domain.
+* `TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`: for such an energy the relaxed
+  and the descending slopes agree on the effective domain.
 
 ## References
 
@@ -198,6 +203,39 @@ theorem ConvexAlong.reverse (h : ConvexAlong m φ γ) : ConvexAlong m φ fun t �
   simp only [sub_zero, sub_self]
   rw [add_comm, dist_comm, mul_right_comm (m / 2) t]
   exact h'
+
+/-- **Quadratic growth away from a minimum along a curve of convexity.** If `φ` is `m`-convex
+along `γ` and its smallest value along `γ` on `[0, 1]` is attained at `γ 0`, then
+`φ (γ 0) + (m / 2) d(γ 0, γ 1)² ≤ φ (γ 1)`. Comparing `φ (γ 0)` with the convexity bound at time
+`t` and letting `t → 0` gives the inequality; `m` may be negative. -/
+theorem ConvexAlong.apply_add_le_of_forall_le (h : ConvexAlong m φ γ)
+    (hmin : ∀ t ∈ Icc (0 : ℝ) 1, φ (γ 0) ≤ φ (γ t)) :
+    φ (γ 0) + ((m / 2 * dist (γ 0) (γ 1) ^ 2 : ℝ) : EReal) ≤ φ (γ 1) := by
+  set D := dist (γ 0) (γ 1) ^ 2
+  have h₁ := hmin 1 (right_mem_Icc.2 zero_le_one)
+  induction hb : φ (γ 1) using EReal.rec with
+  | top => exact le_top
+  | bot =>
+    rw [hb, le_bot_iff] at h₁
+    simp [h₁]
+  | coe b =>
+    induction ha : φ (γ 0) using EReal.rec with
+    | bot => simp
+    | top => simp [ha, hb] at h₁
+    | coe a =>
+      -- For `t ∈ (0, 1)`, dividing the convexity bound at time `t` by `t` gives
+      -- `a + (m / 2) (1 - t) D ≤ b`.
+      have key : ∀ t ∈ Ioo (0 : ℝ) 1, a + m / 2 * (1 - t) * D ≤ b := by
+        intro t ht
+        have h' := (hmin t (Ioo_subset_Icc_self ht)).trans (h t (Ioo_subset_Icc_self ht))
+        rw [ha, hb] at h'
+        have h'' : a ≤ (1 - t) * a + t * b - m / 2 * t * (1 - t) * D := by exact_mod_cast h'
+        exact le_of_mul_le_mul_left (by linarith) ht.1
+      have hlim : Tendsto (fun t : ℝ ↦ a + m / 2 * (1 - t) * D) (𝓝[>] 0)
+          (𝓝 (a + m / 2 * D)) := by
+        have : Continuous fun t : ℝ ↦ a + m / 2 * (1 - t) * D := by fun_prop
+        simpa using (this.tendsto 0).mono_left nhdsWithin_le_nhds
+      exact_mod_cast le_of_tendsto hlim (eventually_of_mem (Ioo_mem_nhdsGT zero_lt_one) key)
 
 /-- **Sum of convex energies.** If `φ` is `m`-convex and `ψ` is `m'`-convex along the same curve,
 then `φ + ψ` is `(m + m')`-convex along it. -/
@@ -344,39 +382,31 @@ section MetricSpace
 
 variable {X : Type*} [MetricSpace X] {m : ℝ} {φ : X → EReal} {x : X}
 
-/-- **Lower bound for the slope of a geodesically convex energy.** At a point `x` with `φ x ≠ ⊤`
-of an `m`-geodesically convex energy, each term `(φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)` of the
-global slope is at most the descending slope. -/
-theorem GeodesicallyConvex.le_descendingSlope (hφ : GeodesicallyConvex m φ) (hx : φ x ≠ ⊤)
-    (y : X) : (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y ≤
-      descendingSlope φ x := by
-  -- If `y = x`, `φ y = ⊤` or `φ x = ⊥`, the left side is `0`. Otherwise compare `φ` near `x`, along
-  -- a geodesic from `x` to `y`, with its convexity bound.
-  rcases eq_or_ne y x with rfl | hyx
-  · rw [dist_self, EReal.toENNReal_of_nonpos (by simpa using EReal.sub_self_le_zero)]
-    simp
-  rcases eq_or_ne (φ y) ⊤ with hy | hy
-  · simp [hy]
-  rcases eq_or_ne (φ x) ⊥ with hxb | hxb
-  · simp [hxb]
-  obtain ⟨γ, hγ, hconv⟩ := hφ hx hy
+/-- If `φ y = ⊥` at the end of a geodesic segment from `x`, the slope at `x` is infinite. -/
+private theorem top_le_descendingSlope_of_eq_bot {γ : ℝ → X} {y : X}
+    (hγ : IsGeodesicSegment γ x y) (hconv : ConvexAlong m φ γ) (hd : 0 < dist x y)
+    (hx : φ x ≠ ⊤) (hxb : φ x ≠ ⊥) (hyb : φ y = ⊥) : ⊤ ≤ descendingSlope φ x := by
   rw [hγ.convexAlong_iff] at hconv
-  have hd : 0 < dist x y := dist_pos.2 hyx.symm
   have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioo (0 : ℝ) 1 := Ioo_mem_nhdsGT one_pos
-  have hedist {t : ℝ} (ht : t ∈ Ioo (0 : ℝ) 1) :
-      edist x (γ t) = ENNReal.ofReal (t * dist x y) := by
-    rw [edist_dist, hγ.dist_source_apply ⟨ht.1.le, ht.2.le⟩]
+  have hr : φ x = (φ x).toReal := (EReal.coe_toReal hx hxb).symm
+  refine le_descendingSlope_of_tendsto (hγ.tendsto_nhdsGT_zero hd) tendsto_const_nhds ?_
+  filter_upwards [hmem] with t ht
+  have h := hconv t ⟨ht.1.le, ht.2.le⟩
+  rw [hyb, EReal.coe_mul_bot_of_pos ht.1, EReal.add_bot, EReal.bot_sub, le_bot_iff] at h
+  rw [h, hr, EReal.sub_bot (EReal.coe_ne_bot _), EReal.toENNReal_top,
+    hγ.edist_source_apply ⟨ht.1.le, ht.2.le⟩, ENNReal.top_div_of_ne_top ENNReal.ofReal_ne_top]
+
+/-- The term of the global slope at a finite-valued `y`, at the end of a geodesic segment from `x`,
+is at most the descending slope at `x`. -/
+private theorem term_le_descendingSlope_of_finite {γ : ℝ → X} {y : X}
+    (hγ : IsGeodesicSegment γ x y) (hconv : ConvexAlong m φ γ) (hd : 0 < dist x y)
+    (hx : φ x ≠ ⊤) (hxb : φ x ≠ ⊥) (hy : φ y ≠ ⊤) (hyb : φ y ≠ ⊥) :
+    (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y ≤
+      descendingSlope φ x := by
+  rw [hγ.convexAlong_iff] at hconv
+  have hmem : ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioo (0 : ℝ) 1 := Ioo_mem_nhdsGT one_pos
   set r := (φ x).toReal
   have hr : φ x = r := (EReal.coe_toReal hx hxb).symm
-  rcases eq_or_ne (φ y) ⊥ with hyb | hyb
-  · -- If `φ y = ⊥`, then `φ = ⊥` along the geodesic and the slope at `x` is infinite.
-    refine le_top.trans <| le_descendingSlope_of_tendsto (hγ.tendsto_nhdsGT_zero hd)
-      tendsto_const_nhds ?_
-    filter_upwards [hmem] with t ht
-    have h := hconv t ⟨ht.1.le, ht.2.le⟩
-    rw [hyb, EReal.coe_mul_bot_of_pos ht.1, EReal.add_bot, EReal.bot_sub, le_bot_iff] at h
-    rw [h, hr, EReal.sub_bot (EReal.coe_ne_bot r), EReal.toENNReal_top, hedist ht,
-      ENNReal.top_div_of_ne_top ENNReal.ofReal_ne_top]
   set s := (φ y).toReal
   have hs : φ y = s := (EReal.coe_toReal hy hyb).symm
   -- Along the geodesic, the rate of decrease at time `t` is at least
@@ -399,7 +429,7 @@ theorem GeodesicallyConvex.le_descendingSlope (hφ : GeodesicallyConvex m φ) (h
           ENNReal.ofReal (t * dist x y) := by
         rw [← ENNReal.ofReal_div_of_pos (mul_pos ht.1 hd), mul_div_mul_left _ _ ht.1.ne']
     _ ≤ (φ x - φ (γ t)).toENNReal / edist x (γ t) := by
-        rw [hedist ht]
+        rw [hγ.edist_source_apply ⟨ht.1.le, ht.2.le⟩]
         refine ENNReal.div_le_div_right ?_ _
         rw [hr]
         calc ENNReal.ofReal (t * (r - s + m / 2 * (1 - t) * dist x y ^ 2))
@@ -411,6 +441,27 @@ theorem GeodesicallyConvex.le_descendingSlope (hφ : GeodesicallyConvex m φ) (h
           _ ≤ ((r : EReal) - φ (γ t)).toENNReal :=
               EReal.toENNReal_le_toENNReal (EReal.sub_le_sub le_rfl hu)
 
+/-- **Lower bound for the slope of a geodesically convex energy.** At a point `x` with `φ x ≠ ⊤`
+of an `m`-geodesically convex energy, each term `(φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)` of the
+global slope is at most the descending slope. -/
+theorem GeodesicallyConvex.le_descendingSlope (hφ : GeodesicallyConvex m φ) (hx : φ x ≠ ⊤)
+    (y : X) : (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y ≤
+      descendingSlope φ x := by
+  -- If `y = x`, `φ y = ⊤` or `φ x = ⊥`, the left side is `0`. Otherwise compare `φ` near `x`, along
+  -- a geodesic from `x` to `y`, with its convexity bound.
+  rcases eq_or_ne y x with rfl | hyx
+  · rw [dist_self, EReal.toENNReal_of_nonpos (by simpa using EReal.sub_self_le_zero)]
+    simp
+  rcases eq_or_ne (φ y) ⊤ with hy | hy
+  · simp [hy]
+  rcases eq_or_ne (φ x) ⊥ with hxb | hxb
+  · simp [hxb]
+  obtain ⟨γ, hγ, hconv⟩ := hφ hx hy
+  have hd : 0 < dist x y := dist_pos.2 hyx.symm
+  rcases eq_or_ne (φ y) ⊥ with hyb | hyb
+  · exact le_top.trans (top_le_descendingSlope_of_eq_bot hγ hconv hd hx hxb hyb)
+  · exact term_le_descendingSlope_of_finite hγ hconv hd hx hxb hy hyb
+
 /-- **The slope of a geodesically convex energy is its global slope.** If `φ` is `m`-geodesically
 convex and `φ x ≠ ⊤`, then
 `|∂φ|(x) = sup_y (φ x - φ y + (m / 2) d(x, y)²)⁺ / d(x, y)`,
@@ -420,44 +471,17 @@ theorem GeodesicallyConvex.descendingSlope_eq_iSup (hφ : GeodesicallyConvex m �
       ⨆ y, (φ x - φ y + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal / edist x y :=
   le_antisymm (descendingSlope_le_iSup m φ x) (iSup_le (hφ.le_descendingSlope hx))
 
-/-- **The slope of a lower semicontinuous geodesically convex energy is lower semicontinuous** on
-its effective domain `{x | φ x ≠ ⊤}`, being a supremum of lower semicontinuous functions there. -/
-theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : GeodesicallyConvex m φ)
-    (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) :
-    LowerSemicontinuousOn (descendingSlope φ) {x | φ x ≠ ⊤} := by
-  -- If `M` is below the slope at `x₀`, it is below one term of the global slope at `x₀`, and that
-  -- term stays above `M` near `x₀`; at nearby points it is still at most the slope.
-  intro x₀ hx₀ M hM
-  have hx₀ : φ x₀ ≠ ⊤ := hx₀
-  have hM : M < descendingSlope φ x₀ := hM
-  rw [hφ.descendingSlope_eq_iSup hx₀, lt_iSup_iff] at hM
-  obtain ⟨y, hyM⟩ := hM
-  have hne : (φ x₀ - φ y + ((m / 2 * dist x₀ y ^ 2 : ℝ) : EReal)).toENNReal ≠ 0 := by
-    rintro h
-    rw [h, ENNReal.zero_div] at hyM
-    exact absurd hyM (by simp)
-  have hyx : y ≠ x₀ := by
-    rintro rfl
-    exact hne <| EReal.toENNReal_of_nonpos (by simpa using EReal.sub_self_le_zero)
-  have hy : φ y ≠ ⊤ := by
-    rintro h
-    simp [h] at hne
-  have hxb : φ x₀ ≠ ⊥ := by
-    rintro h
-    simp [h] at hne
-  have hd : 0 < dist x₀ y := dist_pos.2 hyx.symm
+/-- The finite-valued case of `GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`: if a term
+of the global slope at `x₀` exceeds `M`, then the slope exceeds `M` near `x₀`. -/
+private theorem eventually_lt_descendingSlope_of_finite (hφ : GeodesicallyConvex m φ)
+    (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) {x₀ y : X} {M : ℝ≥0∞} (hx₀ : φ x₀ ≠ ⊤)
+    (hxb : φ x₀ ≠ ⊥) (hy : φ y ≠ ⊤) (hyb : φ y ≠ ⊥) (hd : 0 < dist x₀ y)
+    (hyM : M < (φ x₀ - φ y + ((m / 2 * dist x₀ y ^ 2 : ℝ) : EReal)).toENNReal / edist x₀ y) :
+    ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, M < descendingSlope φ x := by
   have hev : ∀ᶠ x in 𝓝[{x | φ x ≠ ⊤}] x₀, φ x ≠ ⊤ ∧ x ≠ y :=
-    eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (eventually_ne_nhds hyx.symm))
+    eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (eventually_ne_nhds (dist_pos.1 hd)))
   set r := (φ x₀).toReal
   have hr : φ x₀ = r := (EReal.coe_toReal hx₀ hxb).symm
-  rcases eq_or_ne (φ y) ⊥ with hyb | hyb
-  · -- If `φ y = ⊥`, the term at `y` is infinite at every point near `x₀` where `φ ≠ ⊥`.
-    have hM : M < ⊤ := hyM.trans_le le_top
-    filter_upwards [hev, hlsc x₀ hx₀ ⊥ (bot_lt_iff_ne_bot.2 hxb)]
-      with x ⟨hx, hxy⟩ hxb'
-    refine hM.trans_le <| le_trans ?_ (hφ.le_descendingSlope hx y)
-    rw [hyb, EReal.sub_bot hxb'.ne', EReal.top_add_coe, EReal.toENNReal_top,
-      ENNReal.top_div_of_ne_top (edist_ne_top x y)]
   set s := (φ y).toReal
   have hs : φ y = s := (EReal.coe_toReal hy hyb).symm
   rw [hr, hs, ← EReal.coe_sub, ← EReal.coe_add, EReal.real_coe_toENNReal, edist_dist,
@@ -498,6 +522,49 @@ theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : Geodesic
               ring
           _ ≤ (φ x - s + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal :=
               EReal.toENNReal_le_toENNReal (add_le_add_left (EReal.sub_le_sub hhx' le_rfl) _)
+
+/-- **The slope of a lower semicontinuous geodesically convex energy is lower semicontinuous** on
+its effective domain `{x | φ x ≠ ⊤}`, being a supremum of lower semicontinuous functions there. -/
+theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : GeodesicallyConvex m φ)
+    (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) :
+    LowerSemicontinuousOn (descendingSlope φ) {x | φ x ≠ ⊤} := by
+  -- If `M` is below the slope at `x₀`, it is below one term of the global slope at `x₀`, and that
+  -- term stays above `M` near `x₀`; at nearby points it is still at most the slope.
+  intro x₀ hx₀ M hM
+  have hx₀ : φ x₀ ≠ ⊤ := hx₀
+  have hM : M < descendingSlope φ x₀ := hM
+  rw [hφ.descendingSlope_eq_iSup hx₀, lt_iSup_iff] at hM
+  obtain ⟨y, hyM⟩ := hM
+  have hne : (φ x₀ - φ y + ((m / 2 * dist x₀ y ^ 2 : ℝ) : EReal)).toENNReal ≠ 0 := by
+    rintro h
+    rw [h, ENNReal.zero_div] at hyM
+    exact absurd hyM (by simp)
+  have hyx : y ≠ x₀ := by
+    rintro rfl
+    exact hne <| EReal.toENNReal_of_nonpos (by simpa using EReal.sub_self_le_zero)
+  have hy : φ y ≠ ⊤ := by
+    rintro h
+    simp [h] at hne
+  have hxb : φ x₀ ≠ ⊥ := by
+    rintro h
+    simp [h] at hne
+  have hd : 0 < dist x₀ y := dist_pos.2 hyx.symm
+  rcases eq_or_ne (φ y) ⊥ with hyb | hyb
+  · -- If `φ y = ⊥`, the term at `y` is infinite at every point near `x₀` where `φ ≠ ⊥`.
+    have hM : M < ⊤ := hyM.trans_le le_top
+    filter_upwards [eventually_mem_nhdsWithin, hlsc x₀ hx₀ ⊥ (bot_lt_iff_ne_bot.2 hxb)]
+      with x hx hxb'
+    refine hM.trans_le <| le_trans ?_ (hφ.le_descendingSlope hx y)
+    rw [hyb, EReal.sub_bot hxb'.ne', EReal.top_add_coe, EReal.toENNReal_top,
+      ENNReal.top_div_of_ne_top (edist_ne_top x y)]
+  exact eventually_lt_descendingSlope_of_finite hφ hlsc hx₀ hxb hy hyb hd hyM
+
+/-- **The relaxed slope of a lower semicontinuous geodesically convex energy is its descending
+slope** at every point of its effective domain `{x | φ x ≠ ⊤}`. -/
+theorem GeodesicallyConvex.relaxedSlope_eq_descendingSlope (hφ : GeodesicallyConvex m φ)
+    (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) (hx : φ x ≠ ⊤) :
+    relaxedSlope φ x = descendingSlope φ x :=
+  TauCeti.relaxedSlope_eq_descendingSlope hx (hφ.lowerSemicontinuousOn_descendingSlope hlsc x hx)
 
 end MetricSpace
 

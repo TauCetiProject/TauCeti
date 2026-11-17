@@ -123,21 +123,11 @@ principal ray class of `β`. -/
 theorem exists_idealClass_eq_principalRayClass {𝔪 : Modulus K} {J : integralIdealsPrimeTo 𝔪}
     {β : 𝓞 K} (hJ : (J : Ideal (𝓞 K)) = Ideal.span {β}) :
     ∃ x : primeToSubgroup 𝔪, ((x : Kˣ) : K) = β ∧ idealClass 𝔪 J = principalRayClass 𝔪 x := by
-  have hβ : (β : K) ≠ 0 := by
-    simpa using ne_zero_of_coe_eq_span_singleton hJ
-  have hI : toPrincipalIdeal (𝓞 K) K (Units.mk0 _ hβ) =
-      (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support J :
-        (FractionalIdeal (𝓞 K)⁰ K)ˣ) := by
-    refine Units.ext ?_
-    rw [coe_toPrincipalIdeal, NumberFieldArithmetic.coe_integralIdealsAwayHom, hJ,
-      FractionalIdeal.coeIdeal_span_singleton, Units.val_mk0]
-  have hx : Units.mk0 _ hβ ∈ primeToSubgroup 𝔪 :=
-    NumberFieldArithmetic.toPrincipalIdeal_mem_idealsAway_iff.mp
-      (hI ▸ (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support J).2)
-  refine ⟨⟨_, hx⟩, rfl, ?_⟩
-  rw [idealClass_apply, principalRayClass_apply]
-  exact congrArg _
-    (Subtype.ext (by rw [NumberFieldArithmetic.coe_principalIdealAway]; exact hI.symm))
+  obtain ⟨x, hx⟩ := Modulus.isCoprimeTo_span_singleton_iff.mp
+    (hJ ▸ Modulus.mem_integralIdealsPrimeTo.mp J.2)
+  refine ⟨x, hx, ?_⟩
+  rw [idealClass_apply, principalRayClass_apply,
+    NumberFieldArithmetic.integralIdealsAwayHom_eq_principalIdealAway hJ hx.symm]
 
 /-- The map from a ray class to its underlying ordinary ideal class. -/
 noncomputable def rayClassToClassGroup (m : Modulus K) :
@@ -165,6 +155,27 @@ theorem rayClassToClassGroup_eq_oneEquivClassGroup_comp_classMap (m : Modulus K)
     MulEquiv.coe_toMonoidHom, oneEquivClassGroup_rayClassMk,
     NumberFieldArithmetic.coe_idealsAwayInclusion]
 
+/-- Multiplying an ideal prime to `𝔪` by the principal ideal of a unit `x` congruent to one
+modulo `𝔪` and with prescribed valuations `exp (count I)` at the other primes of `𝔫.support`
+gives an ideal prime to `𝔫`. -/
+private theorem mul_toPrincipalIdeal_mem_idealsAway {𝔪 𝔫 : Modulus K} (I : idealsPrimeTo 𝔪)
+    {x : Kˣ} (hxm : IsCongrOne 𝔪 x)
+    (hval : ∀ v ∈ 𝔫.support, v ∉ 𝔪.support →
+      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.1.1)) :
+    I.1 * toPrincipalIdeal (RingOfIntegers K) K x ∈
+      NumberFieldArithmetic.idealsAway K 𝔫.support :=
+  NumberFieldArithmetic.mem_idealsAway_iff.mpr (by
+    intro v hv
+    rw [Units.val_mul, FractionalIdeal.count_mul K v (Units.ne_zero I)
+      (Units.ne_zero (toPrincipalIdeal (RingOfIntegers K) K x)),
+      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation]
+    by_cases hvm : v ∈ 𝔪.support
+    · rw [NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v hvm,
+        hxm.valuation_eq_one ((Modulus.mem_support_iff 𝔪 v).mp hvm)]
+      simp
+    · rw [hval v hv hvm, WithZero.log_exp]
+      ring)
+
 /-- Transition from a larger modulus to any divisor is surjective. -/
 theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
     Function.Surjective (classMap h) := by
@@ -191,28 +202,19 @@ theorem classMap_surjective {𝔪 𝔫 : Modulus K} (h : 𝔪 ∣ 𝔫) :
         (hx v (Modulus.support_mono h hvm)).le
     · rw [← signHom_apply_eq_one_iff x w, hsign]
       rfl
+  have hval : ∀ v ∈ 𝔫.support, v ∉ 𝔪.support →
+      v.valuation K (x : K) = WithZero.exp (FractionalIdeal.count K v I.1.1) := by
+    intro v hv hvm
+    calc
+      v.valuation K (x : K) = v.valuation K (p v) :=
+        Valuation.map_eq_of_sub_lt _ (by
+          have hlt := hx v hv
+          simp only [a, γ, ite_eq_right hvm] at hlt
+          rw [hp v]
+          exact hlt)
+      _ = _ := hp v
   let J : idealsPrimeTo 𝔫 := ⟨I.1 * toPrincipalIdeal (RingOfIntegers K) K x,
-    NumberFieldArithmetic.mem_idealsAway_iff.mpr (by
-    intro v hv
-    rw [Units.val_mul, FractionalIdeal.count_mul K v (Units.ne_zero I)
-      (Units.ne_zero (toPrincipalIdeal (RingOfIntegers K) K x)),
-      FractionalIdeal.count_toPrincipalIdeal_eq_neg_log_valuation]
-    by_cases hvm : v ∈ 𝔪.support
-    · rw [NumberFieldArithmetic.mem_idealsAway_iff.mp I.2 v hvm,
-        hxm.valuation_eq_one ((Modulus.mem_support_iff 𝔪 v).mp hvm)]
-      simp
-    · have hval : v.valuation K (x : K) = WithZero.exp
-          (FractionalIdeal.count K v I.1.1) := by
-        calc
-          v.valuation K (x : K) = v.valuation K (p v) :=
-            Valuation.map_eq_of_sub_lt _ (by
-              have hlt := hx v hv
-              simp only [a, γ, ite_eq_right hvm] at hlt
-              rw [hp v]
-              exact hlt)
-          _ = _ := hp v
-      rw [hval, WithZero.log_exp]
-      ring)⟩
+    mul_toPrincipalIdeal_mem_idealsAway I hxm hval⟩
   refine ⟨rayClassMk 𝔫 J, ?_⟩
   rw [classMap_rayClassMk]
   let xm : primeToSubgroup 𝔪 :=

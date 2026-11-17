@@ -169,6 +169,49 @@ noncomputable def smoothTensorInducedMackeyIso (A : SmoothDiscreteTopRep.{u, v, 
   (toSmoothDiscrete R V).mapIso
     (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A))
 
+/-- The smooth Mackey comparison acts on arbitrary tensors by the algebraic Mackey comparison. -/
+theorem smoothTensorInducedMackeyIso_hom_apply
+    (A : SmoothDiscreteTopRep.{u, v, w} R U)
+    (z : ⨂[R] D : DoubleCoset.Quotient (V : Set G) (U : Set G),
+      ⨂[R] _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V, A.obj.V) :
+    (smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom z =
+      Subgroup.tensorInducedMackey U V r hr t ((ofSmoothDiscrete R U).obj A).ρ s z := by
+  unfold smoothTensorInducedMackeyIso
+  exact (toSmoothDiscrete_map_hom_hom_apply R V
+    (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A)).hom z).trans
+    (LinearMap.congr_fun (DiscreteRep.tensorInducedMackeyIso_hom_toLinearMap
+      U V hU r hr t s ((ofSmoothDiscrete R U).obj A)) z)
+
+/-- The inverse smooth Mackey comparison acts on arbitrary tensors by the inverse algebraic
+Mackey comparison. -/
+theorem smoothTensorInducedMackeyIso_inv_apply
+    (A : SmoothDiscreteTopRep.{u, v, w} R U) (z : ⨂[R] _ : G ⧸ U, A.obj.V) :
+    (smoothTensorInducedMackeyIso U V hU r hr t s A).inv.hom.hom z =
+      (Subgroup.tensorInducedMackey U V r hr t ((ofSmoothDiscrete R U).obj A).ρ s).symm z := by
+  unfold smoothTensorInducedMackeyIso
+  exact (toSmoothDiscrete_map_hom_hom_apply R V
+    (DiscreteRep.tensorInducedMackeyIso U V hU r hr t s ((ofSmoothDiscrete R U).obj A)).inv z).trans
+    (LinearMap.congr_fun (DiscreteRep.tensorInducedMackeyIso_inv_toLinearMap
+      U V hU r hr t s ((ofSmoothDiscrete R U).obj A)) z)
+
+/-- On arbitrary tensors, applying a coefficient map in every factor commutes with the smooth
+Mackey comparison. -/
+theorem smoothTensorInducedMackeyIso_hom_naturality_apply
+    {A B : SmoothDiscreteTopRep.{u, v, w} R U} (f : A ⟶ B)
+    (z : ⨂[R] D : DoubleCoset.Quotient (V : Set G) (U : Set G),
+      ⨂[R] _ : V ⧸ (mackeySubgroup (r D) U V).subgroupOf V, A.obj.V) :
+    (smoothTensorInducedMackeyIso U V hU r hr t s B).hom.hom.hom
+        (PiTensorProduct.map (fun _ ↦ PiTensorProduct.map (fun _ ↦ f.hom.hom.toLinearMap)) z) =
+      PiTensorProduct.map (fun _ ↦ f.hom.hom.toLinearMap)
+        ((smoothTensorInducedMackeyIso U V hU r hr t s A).hom.hom.hom z) := by
+  rw [smoothTensorInducedMackeyIso_hom_apply, smoothTensorInducedMackeyIso_hom_apply,
+    ← ofSmoothDiscrete_map_toLinearMap R U f]
+  have h := Subgroup.tensorInducedMackey_naturality U V r hr t
+    ((ofSmoothDiscrete R U).obj A).ρ ((ofSmoothDiscrete R U).map f) s z
+  rw [← Representation.IntertwiningMap.toLinearMap_apply,
+    Representation.IntertwiningMap.tensorInduced_toLinearMap] at h
+  exact h
+
 /-- On orbitwise pure tensors, the smooth Mackey comparison reads the Mackey coordinates of each
 coset and corrects the factor by the difference between `s` and the Mackey-adapted transversal. -/
 @[simp] theorem smoothTensorInducedMackeyIso_hom_apply_tprod

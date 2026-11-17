@@ -20,8 +20,8 @@ import Mathlib.RingTheory.Ideal.Operations
 Let `L` be an integral lattice, `p` a positive integer and `v ∈ L` a vector whose norm is
 divisible by `p²`. Keep the vectors of `L` whose pairing with `v` is divisible by `p`, and adjoin
 `v / p`. The result `L.neighbor p v` is again an integral lattice on the same rational quadratic
-space. When some lattice vector pairs with `v` coprimely to `p`, the kept vectors are exactly
-`L ∩ L.neighbor p v` and have index `p` in both lattices, so `L.neighbor p v` is a Kneser
+space. The kept vectors are exactly `L ∩ L.neighbor p v`; when some lattice vector pairs with `v`
+coprimely to `p`, they have index `p` in both lattices, so `L.neighbor p v` is a Kneser
 `p`-neighbor of `L`. It is even when `L` is even and the norm of `v` is divisible by `2p²`.
 
 A vector which is only isotropic modulo an odd `p` can be corrected: if `w ∈ L` pairs with `v`
@@ -329,16 +329,28 @@ private theorem zsmul_inv_smul_mem_neighborKernel (m : ℤ) :
   exact Submodule.smul_mem _ m
     (L.coe_mem_neighborKernel_self p (dvd_trans (dvd_pow_self _ two_ne_zero) hv))
 
-/-- With a pairing coprime to `p`, the neighbor meets `L` exactly in the neighbor kernel. -/
-theorem carrier_inf_neighbor_carrier {w : L} (hvw : IsCoprime (L.integralForm v w) p) :
+/-- The neighbor meets `L` exactly in the neighbor kernel. -/
+theorem carrier_inf_neighbor_carrier :
     L.carrier ⊓ (L.neighbor p v hv).carrier = L.neighborKernel p v := by
   refine le_antisymm ?_ (le_inf (L.neighborKernel_le p v) (L.neighborKernel_le_neighbor_carrier hv))
   rintro x ⟨hxL, hxM⟩
   obtain ⟨y, hy, n, rfl⟩ := (L.mem_neighbor_carrier_iff hv x).mp hxM
   have hn : n • ((p : ℚ)⁻¹ • (v : V)) ∈ L.carrier := by
     simpa using L.carrier.sub_mem hxL (L.neighborKernel_le p v hy)
-  obtain ⟨m, rfl⟩ := (zsmul_inv_smul_mem_carrier_iff hvw n).mp hn
-  exact add_mem hy (L.zsmul_inv_smul_mem_neighborKernel hv m)
+  refine add_mem hy ?_
+  obtain ⟨c, hc⟩ := hv
+  rw [mem_neighborKernel_iff]
+  refine ⟨⟨_, hn⟩, rfl, n * c, ?_⟩
+  apply Int.cast_injective (α := ℚ)
+  have hp : (p : ℚ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne p)
+  have hvv : L.form v v = (p : ℚ) ^ 2 * c := by
+    rw [← norm_apply, ← integralNorm_cast, hc]
+    push_cast
+    ring
+  rw [integralForm_cast]
+  simp only [map_zsmul, map_smul, smul_eq_mul, zsmul_eq_mul, hvv]
+  push_cast
+  field_simp
 
 /-- With a pairing coprime to `p`, the neighbor kernel has index `p` in the neighbor. -/
 theorem relIndex_neighborKernel_neighbor {w : L} (hvw : IsCoprime (L.integralForm v w) p) :
@@ -368,10 +380,10 @@ theorem isNeighbor_neighbor {w : L} (hvw : IsCoprime (L.integralForm v w) p) :
     L.IsNeighbor (L.neighbor p v hv) p where
   form_eq := (L.neighbor_form hv).symm
   relIndex_inf_left := by
-    rw [L.carrier_inf_neighbor_carrier hv hvw]
+    rw [L.carrier_inf_neighbor_carrier hv]
     exact L.relIndex_neighborKernel p hvw
   relIndex_inf_right := by
-    rw [L.carrier_inf_neighbor_carrier hv hvw]
+    rw [L.carrier_inf_neighbor_carrier hv]
     exact L.relIndex_neighborKernel_neighbor hv hvw
 
 omit [NeZero p] hv in
@@ -403,7 +415,7 @@ theorem exists_isNeighbor_of_dvd_integralNorm (hp : Odd p) {v w : L}
     rw [integralForm_add_smul_apply]
     exact hvw.add_mul_left_left _
   refine ⟨L.neighbor p v' ht, L.isNeighbor_neighbor ht hvw', ?_, fun hL ↦ ?_⟩
-  · rw [L.carrier_inf_neighbor_carrier ht hvw', neighborKernel_add_smul]
+  · rw [L.carrier_inf_neighbor_carrier ht, neighborKernel_add_smul]
   · refine L.isEven_neighbor ht hL ?_
     have h2 : (2 : ℤ) ∣ L.integralNorm v' := even_iff_two_dvd.mp
       ((L.even_integralNorm_iff v').mpr (hL.exists_norm_eq_two_mul v'))
@@ -411,10 +423,10 @@ theorem exists_isNeighbor_of_dvd_integralNorm (hp : Odd p) {v w : L}
 
 omit [NeZero p] hv in
 /-- **Kneser neighbors at a prime not dividing the discriminant.** Let `p` be an odd prime not
-dividing the discriminant of a nondegenerate lattice `L`, and let `v ∈ L ∖ p L` be isotropic
-modulo `p`. Then `L` has a `p`-neighbor `M` meeting `L` in the vectors whose pairing with `v` is
-divisible by `p`. If `L` is even, so is `M`. -/
-theorem exists_isNeighbor_of_not_dvd_discriminant [L.IsNondegenerate] (hp : p.Prime) (hp₂ : p ≠ 2)
+dividing the discriminant of a lattice `L` (which makes `L` nondegenerate), and let `v ∈ L ∖ p L`
+be isotropic modulo `p`. Then `L` has a `p`-neighbor `M` meeting `L` in the vectors whose pairing
+with `v` is divisible by `p`. If `L` is even, so is `M`. -/
+theorem exists_isNeighbor_of_not_dvd_discriminant (hp : p.Prime) (hp₂ : p ≠ 2)
     (hdisc : ¬p ∣ L.discriminant) {v : L} (hv : (p : ℤ) ∣ L.integralNorm v)
     (hv₀ : (p : ℚ)⁻¹ • (v : V) ∉ L.carrier) :
     ∃ M : IntegralLattice V, L.IsNeighbor M p ∧ L.carrier ⊓ M.carrier = L.neighborKernel p v ∧

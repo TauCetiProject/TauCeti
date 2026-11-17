@@ -145,7 +145,7 @@ theorem range_hcProjectionLinear : (hcProjectionLinear b).range = linearInvarian
     fun q hq ↦ ?_
   -- every element of `S(H)` has finite degree
   obtain ⟨n, hn⟩ := exists_mem_wordFiltration_of_iSup_eq_top (_root_.SymmetricAlgebra.ι K H)
-    (by rw [iSup_wordFiltration_eq_adjoin, TauCeti.SymmetricAlgebra.adjoin_range_ι]; rfl) q
+    (by rw [iSup_wordFiltration_eq_adjoin, SymmetricAlgebra.adjoin_range_ι]; rfl) q
   obtain ⟨z, -, hz⟩ := exists_mem_pbwFiltration_hcProjectionLinear_eq b hq hn
   exact (AlgHom.mem_range _).2 ⟨z, hz⟩
 

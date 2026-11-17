@@ -107,4 +107,17 @@ theorem exists_lipschitzOnWith_rescale_graph {a : F → A} {b : F → B} {a' : F
   · filter_upwards [hΦ.eventually_left_inverse] with z hz
     exact (congrArg (fun w ↦ (ε / ‖a w‖) • a w) hz).symm
 
+omit [CompleteSpace F] [NormedSpace ℝ F] [NormedSpace ℝ A] in
+/-- Near `0`, the first component `a z` of a pair continuous at `0` with `‖a 0‖ = ε > 0` is nonzero,
+and, when the second component `b` is continuous at `0` with `b 0 = 0`, the radially rescaled second
+component `(‖a z‖ / ε) • b z` has norm at most `r₀ * ε` for any `r₀ > 0`. -/
+theorem eventually_ne_zero_and_norm_rescale_smul_le {a : F → A} {b : F → B}
+    (ha : ContinuousAt a 0) (hb : ContinuousAt b 0) (ha₀ : ‖a 0‖ = ε) (hb₀ : b 0 = 0)
+    (hε : 0 < ε) {r₀ : ℝ} (hr₀ : 0 < r₀) :
+    (∀ᶠ z in 𝓝 (0 : F), a z ≠ 0) ∧ ∀ᶠ z in 𝓝 (0 : F), ‖(‖a z‖ / ε) • b z‖ ≤ r₀ * ε := by
+  refine ⟨ha.eventually_ne (by simpa [← norm_pos_iff, ha₀] using hε), ?_⟩
+  have h : Tendsto (fun z ↦ (‖a z‖ / ε) • b z) (𝓝 0) (𝓝 0) := by
+    simpa [hb₀] using (ha.norm.div_const ε).tendsto.smul hb.tendsto
+  simpa [dist_zero_right] using h.eventually (closedBall_mem_nhds 0 (by positivity : 0 < r₀ * ε))
+
 end TauCeti

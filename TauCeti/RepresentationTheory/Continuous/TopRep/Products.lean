@@ -15,6 +15,14 @@ public import Mathlib.CategoryTheory.Action.Limits
 The product of a family of topological representations carries the pointwise action and product
 topology. This construction exposes that representation as an object of `TopRep`, so it can be
 used with the full-subcategory constructions built on topological representations.
+
+## Main declarations
+
+* `TopRep.pi`: the pointwise product representation, with projections `TopRep.piπ` and
+  universal maps `TopRep.piLift`.
+* `TopRep.piFanIsLimit`: the fan of projections from `TopRep.pi` is a limit fan.
+* `TopRep` has all limits, transported from `Action (TopModuleCat R) G`.
+* `TopRep.piIsoPi`: the categorical product is isomorphic to the pointwise product.
 -/
 
 public section
@@ -51,8 +59,8 @@ theorem pi_V {ι : Type w} (X : ι → TopRep R G) :
 
 /-- The action on a product representation is pointwise. -/
 @[simp]
-theorem pi_ρ_apply {ι : Type w} (X : ι → TopRep R G) (g : G) (x : ∀ i, (X i).V) (i : ι) :
-    (pi X).ρ g x i = (X i).ρ g (x i) := by
+theorem pi_ρ_apply {ι : Type w} (X : ι → TopRep R G) (g : G) (x : (pi X).V) (i : ι) :
+    (pi X).ρ g x i = (X i).ρ g (x i) :=
   rfl
 
 /-- The stabilizer of a point in a pointwise product is the intersection of its coordinate
@@ -62,23 +70,14 @@ theorem pi_stabilizer_eq_iInter {ι : Type w} (X : ι → TopRep R G)
     {g : G | (pi X).ρ g x = x} = ⋂ i, {g : G | (X i).ρ g (x i) = x i} := by
   ext g
   simp only [Set.mem_ofPred_eq, Set.mem_iInter]
-  constructor
-  · intro hg i
-    exact (pi_ρ_apply X g x i).symm.trans (congrFun hg i)
-  · intro hg
-    funext i
-    exact (pi_ρ_apply X g x i).trans (hg i)
+  -- Equality in `pi X` is coordinatewise, and `pi_ρ_apply` holds by `rfl`.
+  exact funext_iff
 
 /-- The product representation has a discrete underlying topology when the index type is finite
 and each factor has a discrete underlying topology. -/
-theorem pi_discreteTopology {ι : Type w} [Finite ι] (X : ι → TopRep R G)
-    (h : ∀ i, DiscreteTopology (X i).V) : DiscreteTopology (pi X).V := by
-  -- The carrier unfolds to the product type; `pi_V` records this equality for API use.
-  change DiscreteTopology (∀ i, (X i).V)
-  refine discreteTopology_iff_isOpen_singleton.mpr fun x => ?_
-  rw [← Set.univ_pi_singleton]
-  exact isOpen_set_pi Set.finite_univ fun i _ =>
-    (discreteTopology_iff_isOpen_singleton.mp (h i)) (x i)
+instance pi_discreteTopology {ι : Type w} [Finite ι] (X : ι → TopRep R G)
+    [∀ i, DiscreteTopology (X i).V] : DiscreteTopology (pi X).V :=
+  Pi.discreteTopology
 
 /-- The projection from a product representation to one of its factors. -/
 def piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) : pi X ⟶ X i :=
@@ -110,8 +109,8 @@ def piLift {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
     (piLift X f).hom a i = (f i).hom a := by rfl
 
 /-- The component of `piLift` at any factor is the specified map. -/
-@[simp]
-theorem piLift_comp_piπ {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
+@[reassoc (attr := simp)]
+theorem piLift_piπ {ι : Type w} {A : TopRep R G} (X : ι → TopRep R G)
     (f : ∀ i, A ⟶ X i) (i : ι) : piLift X f ≫ piπ X i = f i := by
   ext x
   rfl
@@ -128,18 +127,17 @@ abbrev piFan {ι : Type w} (X : ι → TopRep R G) : Fan X :=
   Fan.mk (pi X) (piπ X)
 
 /-- The cone point of the pointwise product fan is the pointwise product representation. -/
-@[simp] theorem piFan_pt {ι : Type w} (X : ι → TopRep R G) : (piFan X).pt = pi X := by rfl
+@[simp] theorem piFan_pt {ι : Type w} (X : ι → TopRep R G) : (piFan X).pt = pi X := rfl
 
 /-- The projections of the pointwise product fan are the product projections. -/
 @[simp] theorem piFan_proj {ι : Type w} (X : ι → TopRep R G) (i : ι) :
-    (piFan X).proj i = piπ X i := by rfl
+    (piFan X).proj i = piπ X i := rfl
 
 /-- The pointwise product fan is a limit. -/
 def piFanIsLimit {ι : Type w} (X : ι → TopRep R G) : IsLimit (piFan X) :=
   Fan.IsLimit.mk _ (fun s => piLift X s.proj)
-    (fun s i => piLift_comp_piπ X s.proj i)
-    (fun s _ hm => pi_hom_ext X (fun i => (hm i).trans
-      (piLift_comp_piπ X s.proj i).symm))
+    (fun s i => piLift_piπ X s.proj i)
+    (fun s _ hm => pi_hom_ext X fun i => (hm i).trans (piLift_piπ X s.proj i).symm)
 
 /-- Topological representations admit all limits, by equivalence with continuous actions on
 topological modules. -/
@@ -153,14 +151,14 @@ noncomputable def piIsoPi {ι : Type w} (X : ι → TopRep R G) : ∏ᶜ X ≅ p
 /-- The comparison from the categorical product to the pointwise product intertwines the
 projections. -/
 @[reassoc (attr := simp)]
-theorem piIsoPi_hom_comp_piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) :
-    (piIsoPi X).hom ≫ piπ X i = Pi.π X i := by
-  exact limit.isoLimitCone_hom_π ⟨piFan X, piFanIsLimit X⟩ ⟨i⟩
+theorem piIsoPi_hom_piπ {ι : Type w} (X : ι → TopRep R G) (i : ι) :
+    (piIsoPi X).hom ≫ piπ X i = Pi.π X i :=
+  limit.isoLimitCone_hom_π ⟨piFan X, piFanIsLimit X⟩ ⟨i⟩
 
 /-- The inverse comparison from the pointwise product intertwines the categorical projections. -/
 @[reassoc (attr := simp)]
-theorem piIsoPi_inv_comp_π {ι : Type w} (X : ι → TopRep R G) (i : ι) :
-    (piIsoPi X).inv ≫ Pi.π X i = piπ X i := by
-  exact limit.isoLimitCone_inv_π ⟨piFan X, piFanIsLimit X⟩ ⟨i⟩
+theorem piIsoPi_inv_π {ι : Type w} (X : ι → TopRep R G) (i : ι) :
+    (piIsoPi X).inv ≫ Pi.π X i = piπ X i :=
+  limit.isoLimitCone_inv_π ⟨piFan X, piFanIsLimit X⟩ ⟨i⟩
 
 end TopRep

@@ -60,7 +60,7 @@ local notation "a" => C.column
 /-! ### Promoting a repartition to a counted composite -/
 
 /-- The counted composites are the counted hexagons and unblocked rectangles, in either order. -/
-private theorem mem_hexagonCompositeDecompositions_iff_mem_disjSum {x z : GridState n}
+theorem mem_hexagonCompositeDecompositions_iff_mem_disjSum {x z : GridState n}
     (F : GridHexagonCompositeDecomposition a C.turnRow C.oppositeTurnRow x z) :
     F ∈ G.hexagonCompositeDecompositions C x z ↔
       F ∈ (GridTwoStepDecomposition.decompositionsOf (G.commutationHexagons C)

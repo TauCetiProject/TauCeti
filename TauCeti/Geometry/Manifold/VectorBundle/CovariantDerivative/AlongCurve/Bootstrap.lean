@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.AlongCurve.Regularity
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 
 /-!
 # Recovering regularity from a tangent-bundle covariant derivative
@@ -46,6 +47,59 @@ variable
   [ContMDiffVectorBundle (n + 1 : ℕ) E (TangentSpace I : M → Type _) I]
   [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
 
+/-- **The connection candidate for the derivative.** At a point `t` of the parameter set, solving
+the fixed-chart connection formula `DV = v' + Γ(v, γ')` for `v'` gives a `C^n` function of the
+parameter: the coordinates of `DV`, minus the Christoffel term of the coordinates of `V` and
+`γ'`. -/
+private theorem contDiffWithinAt_alongCurveWithin_sub_christoffel
+    (cov : CovariantDerivative I E (fun x : M ↦ TangentSpace I x))
+    (γ : 𝕜 → M) (V : ∀ t, TangentSpace I (γ t)) {s : Set 𝕜}
+    (hcov : ∀ t ∈ s, ContMDiffCovariantDerivativeOn E n cov.toFun
+      (trivializationAt E (TangentSpace I) (γ t)).baseSet)
+    (hs : UniqueDiffOn 𝕜 s)
+    (hγ : ContMDiffOn 𝓘(𝕜, 𝕜) I (n + 1 : ℕ) γ s)
+    (hV : ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s)
+    (hDV : ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent n
+      (fun r ↦ TotalSpace.mk' E (γ r) (alongCurveWithin cov γ V s r)) s)
+    {t : 𝕜} (ht : t ∈ s) :
+    ContDiffWithinAt 𝕜 n
+      (fun r ↦ sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) (γ t) r
+        - christoffelMap (Module.finBasis 𝕜 E)
+          (cov.isCovariantDerivativeOn
+            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ r)
+          (sectionCoord 𝕜 (F := E) γ V (γ t) r)
+          (derivWithin (extChartAt I (γ t) ∘ γ) s r)) s t := by
+  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
+    ContMDiffVectorBundle.of_le (n := (n + 1 : ℕ)) (by exact_mod_cast Nat.le_succ n)
+  let : ContMDiffVectorBundle ((n : ℕ∞ω) + 1) E (TangentSpace I : M → Type _) I := by
+    simpa using (inferInstance : ContMDiffVectorBundle (n + 1 : ℕ) E (TangentSpace I) I)
+  let : IsManifold I ((n : ℕ∞ω) + 1) M := by
+    simpa using (inferInstance : IsManifold I (n + 1 : ℕ) M)
+  let e := trivializationAt E (TangentSpace I) (γ t)
+  let Γ := christoffelMap (Module.finBasis 𝕜 E)
+    (cov.isCovariantDerivativeOn (s := e.baseSet))
+  let v := sectionCoord 𝕜 (F := E) γ V (γ t)
+  let d := sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) (γ t)
+  let u := extChartAt I (γ t) ∘ γ
+  have hx : γ t ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
+  have hγn : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ s t :=
+    (hγ t ht).of_le (by exact_mod_cast Nat.le_succ n)
+  have hv : ContDiffWithinAt 𝕜 n v s t :=
+    (contDiffWithinAt_sectionCoord_iff γ V hγn hx).2 (hV t ht)
+  have hd : ContDiffWithinAt 𝕜 n d s t :=
+    (contDiffWithinAt_sectionCoord_iff γ _ hγn hx).2 (hDV t ht)
+  have hu : ContDiffWithinAt 𝕜 (n + 1 : ℕ) u s t :=
+    ((contMDiffAt_extChartAt' (by
+      simpa only [e, TangentBundle.trivializationAt_baseSet] using hx)).comp_contMDiffWithinAt
+        t (hγ t ht)).contDiffWithinAt
+  let := hcov t ht
+  have hΓ : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E →L[𝕜] E) n Γ (γ t) :=
+    (contMDiffOn_christoffelMap (Module.finBasis 𝕜 E)
+      (cov.isCovariantDerivativeOn (s := e.baseSet))).contMDiffAt (e.open_baseSet.mem_nhds hx)
+  exact hd.sub (((hΓ.comp_contMDiffWithinAt t hγn).contDiffWithinAt.clm_apply hv).clm_apply
+      (hu.derivWithin hs (by simp) ht))
+
 /-- For a tangent-bundle connection that is `C^n` on the trivialization at each point
 of a `C^(n + 1)` curve in the parameter set, a section along the curve of class `C^n`,
 with `n ≥ 1`, whose covariant derivative is `C^n` is of class `C^(n + 1)`.
@@ -64,46 +118,25 @@ theorem contMDiffOn_succ_of_alongCurveWithin
       (fun r ↦ TotalSpace.mk' E (γ r) (alongCurveWithin cov γ V s r)) s) :
     ContMDiffOn 𝓘(𝕜, 𝕜) I.tangent (n + 1 : ℕ)
       (fun r ↦ TotalSpace.mk' E (γ r) (V r)) s := by
-  let : ContMDiffVectorBundle n E (TangentSpace I : M → Type _) I :=
-    ContMDiffVectorBundle.of_le (n := (n + 1 : ℕ)) (by exact_mod_cast Nat.le_succ n)
-  let : ContMDiffVectorBundle ((n : ℕ∞ω) + 1) E (TangentSpace I : M → Type _) I := by
-    simpa using (inferInstance : ContMDiffVectorBundle (n + 1 : ℕ) E (TangentSpace I) I)
-  let : IsManifold I ((n : ℕ∞ω) + 1) M := by
-    simpa using (inferInstance : IsManifold I (n + 1 : ℕ) M)
   have hn' : n ≠ 0 := by omega
   have hn0 : (n : ℕ∞ω) ≠ 0 := by exact_mod_cast hn'
   intro t ht
   let e := trivializationAt E (TangentSpace I) (γ t)
   let Γ := christoffelMap (Module.finBasis 𝕜 E)
     (cov.isCovariantDerivativeOn (s := e.baseSet))
-  let v := sectionCoord (F := E) γ V (γ t)
-  let d := sectionCoord (F := E) γ (alongCurveWithin cov γ V s) (γ t)
+  let v := sectionCoord 𝕜 (F := E) γ V (γ t)
+  let d := sectionCoord 𝕜 (F := E) γ (alongCurveWithin cov γ V s) (γ t)
   let u := extChartAt I (γ t) ∘ γ
   have hx : γ t ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt _ _ _
-  have hγn : ContMDiffWithinAt 𝓘(𝕜, 𝕜) I n γ s t :=
-    (hγ t ht).of_le (by exact_mod_cast Nat.le_succ n)
-  have hv : ContDiffWithinAt 𝕜 n v s t :=
-    (contDiffWithinAt_sectionCoord_iff γ V hγn hx).2 (hV t ht)
-  have hd : ContDiffWithinAt 𝕜 n d s t :=
-    (contDiffWithinAt_sectionCoord_iff γ _ hγn hx).2 (hDV t ht)
-  have hu : ContDiffWithinAt 𝕜 (n + 1 : ℕ) u s t :=
-    ((contMDiffAt_extChartAt' (by
-      simpa only [e, TangentBundle.trivializationAt_baseSet] using hx)).comp_contMDiffWithinAt
-        t (hγ t ht)).contDiffWithinAt
-  let := hcov t ht
-  have hΓ : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] E →L[𝕜] E) n Γ (γ t) :=
-    (contMDiffOn_christoffelMap (Module.finBasis 𝕜 E)
-      (cov.isCovariantDerivativeOn (s := e.baseSet))).contMDiffAt (e.open_baseSet.mem_nhds hx)
   -- Solving the fixed-chart connection formula gives a C^n candidate for v'.
   have hderiv : ContDiffWithinAt 𝕜 n
       (fun r ↦ d r - Γ (γ r) (v r) (derivWithin u s r)) s t :=
-    hd.sub (((hΓ.comp_contMDiffWithinAt t hγn).contDiffWithinAt.clm_apply hv).clm_apply
-      (hu.derivWithin hs (by simp) ht))
+    contDiffWithinAt_alongCurveWithin_sub_christoffel cov γ V hcov hs hγ hV hDV ht
   apply (contDiffWithinAt_sectionCoord_iff γ V (hγ t ht) hx).1
   rw [Nat.cast_add, Nat.cast_one, contDiffWithinAt_succ_iff_hasFDerivWithinAt' (by simp)]
   have hbase : ∀ᶠ r in 𝓝[s] t, γ r ∈ e.baseSet :=
     (hγ t ht).continuousWithinAt.preimage_mem_nhdsWithin (e.open_baseSet.mem_nhds hx)
-  have hdeq := eventuallyEq_sectionCoord_alongCurveWithin cov γ V hs ht hx
+  have hdeq := eventuallyEq_sectionCoord_alongCurveWithin cov γ V hx
     ((hV t ht).of_le (by exact_mod_cast hn))
   refine ⟨{r | r ∈ s ∧ γ r ∈ e.baseSet ∧
     d r = alongCurveInChartWithin cov γ V s (γ t) r}, ?_, ?_, by simp, fun r ↦

@@ -78,14 +78,14 @@ variable {p : ℕ} {k : Type u} {G : Type v} [Ring k] [TopologicalSpace k] [Grou
 /-- **Restriction to an open subgroup of index prime to `p` is injective** on the cohomology of a
 discrete `p`-primary torsion representation `X` of a compact group `G`, in every degree. -/
 theorem res_injective_of_not_dvd_index [DiscreteTopology X.V] (hp : p.Prime)
-    (hX : IsPPrimaryTorsion p X.V) (U : OpenSubgroup G) (hU : ¬ p ∣ U.toSubgroup.index) (n : ℕ) :
+    (hX : IsAddPGroup p X.V) (U : OpenSubgroup G) (hU : ¬ p ∣ U.toSubgroup.index) (n : ℕ) :
     Function.Injective (res U.toSubgroup X n).hom := by
   -- in degree zero restriction is the inclusion of invariants
   rcases n with _ | n
   · exact res_zero_injective U.toSubgroup X
   refine (injective_iff_map_eq_zero _).2 fun x hx ↦ ?_
   -- a class killed by restriction to `U` is killed by `[G : U]` and by a power of `p`
-  obtain ⟨m, hm⟩ := isPPrimaryTorsion_iff.1 (isPPrimaryTorsion_continuousCohomology X hX (n + 1)) x
+  obtain ⟨m, hm⟩ := isAddPGroup_continuousCohomology X hX (n + 1) x
   exact (nsmul_eq_zero_iff_of_coprime ((hp.coprime_iff_not_dvd.2 hU).pow_left m)).1
     ⟨hm, index_nsmul_eq_zero_of_res_eq_zero U.isOpen hx⟩
 
@@ -95,7 +95,7 @@ variable [TotallyDisconnectedSpace G]
 injective** on the cohomology of a smooth discrete `p`-primary torsion representation `X` of a
 profinite group `G`, in every degree. -/
 theorem res_injective_of_forall_not_dvd_index (hp : p.Prime) (hX : IsSmoothDiscrete k X)
-    (hX' : IsPPrimaryTorsion p X.V) {H : Subgroup G} (hH : IsClosed (H : Set G))
+    (hX' : IsAddPGroup p X.V) {H : Subgroup G} (hH : IsClosed (H : Set G))
     (hind : ∀ V : OpenSubgroup G, H ≤ V → ¬ p ∣ V.toSubgroup.index) (n : ℕ) :
     Function.Injective (res H X n).hom := by
   have := hX.discreteTopology

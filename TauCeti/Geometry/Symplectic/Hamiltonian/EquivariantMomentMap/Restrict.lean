@@ -72,16 +72,15 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [LieGroup J 1 K]
   {M : Type*} [MulAction G M] [MulAction K M] {μ : M → Module.Dual 𝕜 (GroupLieAlgebra I G)}
 
-/-- **The defect of a restricted map.** If `K` acts through a homomorphism `φ : K →* G` that is
-differentiable at the identity, the defect from coadjoint equivariance of `x ↦ μ x ∘ dφ` is the
-defect of `μ` at `φ k`, restricted along `dφ`. -/
+/-- **The defect of a restricted map.** If `K` acts through a homomorphism `φ : K →* G`, the defect
+from coadjoint equivariance of `x ↦ μ x ∘ dφ` is the defect of `μ` at `φ k`, restricted along
+`dφ`. -/
 theorem momentDefect_comp_groupLieAlgebraMap {φ : K →* G}
-    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (hφ : MDifferentiableAt J I φ 1) (k : K)
-    (x : M) :
+    (hsmul : ∀ (k : K) (x : M), k • x = φ k • x) (k : K) (x : M) :
     momentDefect (fun y ↦ (μ y).comp (φ.groupLieAlgebraMap J I).toLinearMap) k x =
       (momentDefect μ (φ k) x).comp (φ.groupLieAlgebraMap J I).toLinearMap := by
   ext ξ
-  have hAd := φ.groupLieAlgebraMap_adjointContinuousLinearMap hφ k⁻¹ ξ
+  have hAd := φ.groupLieAlgebraMap_adjointContinuousLinearMap (I := I) (J := J) k⁻¹ ξ
   rw [map_inv] at hAd
   simp only [momentDefect_def, LinearMap.sub_apply, LinearMap.comp_apply,
     Lie.coadjointRepresentation_apply, ContinuousLinearMap.coe_coe, hsmul, hAd]
@@ -137,7 +136,7 @@ theorem comp_monoidHom (h : σ.IsEquivariantMomentMap μ) (φ : K →* G)
   have hμ := (isEquivariantMomentMap_iff_momentDefect_eq_zero.1 h).2
   refine isEquivariantMomentMap_iff_momentDefect_eq_zero.2
     ⟨h.toIsMomentMap.comp_monoidHom φ hφ hsmul, fun k x ↦ ?_⟩
-  rw [momentDefect_comp_groupLieAlgebraMap hsmul hφ, hμ, LinearMap.zero_comp]
+  rw [momentDefect_comp_groupLieAlgebraMap hsmul, hμ, LinearMap.zero_comp]
 
 /-- **Restriction of a group-level moment map to a Lie subgroup.** If a subgroup `L` of `G` carries
 a Lie group structure for which the inclusion is differentiable at the identity, a

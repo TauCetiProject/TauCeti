@@ -181,7 +181,7 @@ private theorem exists_finsupp_E₄_discriminant (φ : K →+* ℂ) {k : ℤ} (f
       rw [hgf, qExpansion_sub_smul, hmq, PowerSeries.map_C, ha₀]
     have hgK : qExpansion 1 g ∈ (PowerSeries.map φ).range := hgq ▸ sub_mem hf
       (mul_mem (RingHom.mem_range_self _ _)
-        (pow_mem (TauCeti.ModularForm.qExpansion_E_mem_range_map φ _ ⟨2, rfl⟩) n))
+        (pow_mem (TauCeti.ModularForm.qExpansion_E_mem_range_map φ _) n))
     obtain ⟨c, hc, hgc⟩ := ih (4 * n - 12) (by omega) (CuspForm.discriminantEquiv g)
       ⟨(n : ℤ) - 3, by ring⟩ (mem_range_map_of_qExpansion_discriminant_mul_mem φ (hΔg ▸ hgK))
     refine ⟨.single (n, 0) (F.coeff 0) +

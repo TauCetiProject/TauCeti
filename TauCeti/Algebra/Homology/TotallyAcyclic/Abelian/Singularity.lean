@@ -46,6 +46,12 @@ vanishing of `δₘ ≫ f` descend to `δ₁ ≫ f = 0`, which says that `f` fac
 * `CategoryTheory.GorensteinProjective.fullyFaithfulToSingularityCategory`: **Chen's theorem**,
   the functor from the stable category of Gorenstein-projective objects to the singularity
   category is fully faithful.
+* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`: a
+  Gorenstein-projective object placed in any degree is isomorphic in the singularity category to a
+  cycle of its complete resolution placed in degree zero
+  (`TauCeti.SingularityCategory.nonempty_iso_Q_obj_singleFunctor_cycles`), so
+  `CategoryTheory.GorensteinProjective.mem_essImage_toSingularityCategory`: it lies in the essential
+  image of Chen's functor.
 
 ## References
 
@@ -71,19 +77,12 @@ section Cycles
 variable {P : CochainComplex C ℤ} (hP : P.IsTotallyAcyclicProjective)
 include hP
 
-omit [HasDerivedCategory C] in
-/-- `HomologicalComplex.cyclesShortComplex_shortExact` with the short complex of cycles written out,
-via `HomologicalComplex.cyclesShortComplex_def`, so that its terms are the cycles themselves. -/
-private lemma shortExact_mk_cycles (m m' : ℤ) (hm : m + 1 = m') :
-    (ShortComplex.mk (P.iCycles m) (P.toCycles m m') (P.iCycles_toCycles m m')).ShortExact :=
-  P.cyclesShortComplex_def m m' ▸ P.cyclesShortComplex_shortExact m m' hm (hP.acyclic m')
-
 /-- The triangle `Zᵐ ⟶ Pᵐ ⟶ Zᵐ' ⟶ Zᵐ[1]` of the short exact sequence of cycles, with its vertices
 placed in degree `m` by `singleFunctor C m`: the triangle `triangleOfSES` transported along
 `singleFunctorIsoCompQ`. -/
 private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
     Triangle (DerivedCategory C) :=
-  let T := triangleOfSES ((shortExact_mk_cycles hP m m' hm).map_of_exact
+  let T := triangleOfSES ((P.shortExact_mk_iCycles_toCycles m m' hm (hP.acyclic m')).map_of_exact
     (CochainComplex.singleFunctor C m))
   let e := singleFunctorIsoCompQ C m
   Triangle.mk ((e.app (P.cycles m)).hom ≫ T.mor₁ ≫ (e.app (P.X m)).inv)
@@ -93,7 +92,8 @@ private noncomputable abbrev cyclesSESTriangle (m m' : ℤ) (hm : m + 1 = m') :
 private lemma cyclesSESTriangle_distinguished (m m' : ℤ) (hm : m + 1 = m') :
     cyclesSESTriangle hP m m' hm ∈ distTriang _ :=
   distinguished_mk_of_iso (triangleOfSES_distinguished
-    ((shortExact_mk_cycles hP m m' hm).map_of_exact (CochainComplex.singleFunctor C m)))
+    ((P.shortExact_mk_iCycles_toCycles m m' hm (hP.acyclic m')).map_of_exact
+      (CochainComplex.singleFunctor C m)))
     ((singleFunctorIsoCompQ C m).app (P.cycles m)).symm
     ((singleFunctorIsoCompQ C m).app (P.X m)).symm
     ((singleFunctorIsoCompQ C m).app (P.cycles m')).symm
@@ -334,6 +334,25 @@ theorem map_eq_zero_iff_of_isGorensteinProjective {G Y : C} (hG : isGorensteinPr
   · rw [hpq, Functor.map_comp, Functor.map_comp,
       (isZero_Q_obj_singleFunctor_obj hP).eq_of_src ((Q C).map _) 0, comp_zero]
 
+section Shift
+
+open _root_.DerivedCategory
+
+/-- **Gorenstein-projective objects in every degree**: in the singularity category, a
+Gorenstein-projective object placed in any degree is isomorphic to a Gorenstein-projective object
+placed in degree zero, namely a cycle of its complete resolution. -/
+theorem exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective {G : C}
+    (hG : isGorensteinProjective C G) (n : ℤ) :
+    ∃ G' : C, isGorensteinProjective C G' ∧
+      Nonempty ((Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj G) ≅
+        (Q C).obj ((DerivedCategory.Bounded.singleFunctor C 0).obj G')) := by
+  obtain ⟨P, hP, ⟨e⟩⟩ := (isGorensteinProjective_iff G).1 hG
+  obtain ⟨e'⟩ := nonempty_iso_Q_obj_singleFunctor_cycles hP.projective hP.acyclic n 0
+  exact ⟨P.cycles (0 - n), hP.isGorensteinProjective_cycles _,
+    ⟨(Q C).mapIso ((DerivedCategory.Bounded.singleFunctor C n).mapIso e.symm) ≪≫ e'⟩⟩
+
+end Shift
+
 end TauCeti.SingularityCategory
 
 namespace CategoryTheory.GorensteinProjective
@@ -449,5 +468,15 @@ instance : (toSingularityCategory C).Faithful where
 abelian category to its singularity category is fully faithful. -/
 noncomputable def fullyFaithfulToSingularityCategory : (toSingularityCategory C).FullyFaithful :=
   .ofFullyFaithful _
+
+variable {C} in
+/-- A Gorenstein-projective object placed in any degree lies in the essential image of Chen's
+functor (`TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective`). -/
+theorem mem_essImage_toSingularityCategory {G : C} (hG : isGorensteinProjective C G) (n : ℤ) :
+    (toSingularityCategory C).essImage ((TauCeti.SingularityCategory.Q C).obj
+      ((DerivedCategory.Bounded.singleFunctor C n).obj G)) := by
+  obtain ⟨G', hG', ⟨e⟩⟩ :=
+    TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_of_isGorensteinProjective hG n
+  exact ⟨(exactStructure C).projectiveStableFunctor.obj ⟨G', hG'⟩, ⟨e.symm⟩⟩
 
 end CategoryTheory.GorensteinProjective

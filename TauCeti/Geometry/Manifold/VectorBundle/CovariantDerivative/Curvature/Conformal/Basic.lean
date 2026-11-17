@@ -269,7 +269,6 @@ private theorem leviCivitaConnection_conformalConnectionTensor_exp {φ : M → �
       inner ℝ (Z x) (Y x) •
         CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x (X x) := by
   let _ : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  have hφ' : MDiff φ := hφ.mdifferentiable (by simp)
   have hG : CMDiff ∞ (T% (mgradient I φ)) := contMDiff_mgradient hφ
   have hinner {U W : Π x : M, TangentSpace I x} (hU : CMDiff ∞ (T% U)) (hW : CMDiff ∞ (T% W)) :
       MDiffAt (fun y ↦ inner ℝ (U y) (W y)) x :=
@@ -283,7 +282,7 @@ private theorem leviCivitaConnection_conformalConnectionTensor_exp {φ : M → �
       (fun y ↦ mvfderiv I φ y (Y y)) • Z + (fun y ↦ mvfderiv I φ y (Z y)) • Y +
         (fun y ↦ -inner ℝ (Z y) (Y y)) • mgradient I φ := by
     funext y
-    simp only [conformalConnectionTensor_exp_two_mul_apply (hφ' y), Pi.add_apply,
+    simp only [conformalConnectionTensor_exp_two_mul_apply, Pi.add_apply,
       Pi.smul_apply', neg_smul, sub_eq_add_neg]
   have hYx := hY.mdifferentiableAt (x := x) (by simp)
   have hZx := hZ.mdifferentiableAt (x := x) (by simp)
@@ -305,7 +304,7 @@ private theorem leviCivitaConnection_conformalConnectionTensor_exp {φ : M → �
   have hm := (CovariantDerivative.isMetricCompatible_leviCivitaConnection I).mvfderiv_inner_eq
       X hZx hYx
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, mvfderiv_fun_neg,
-    neg_apply, conformalConnectionTensor_exp_two_mul_apply (hφ' x), hHY, hHZ, hm]
+    neg_apply, conformalConnectionTensor_exp_two_mul_apply, hHY, hHZ, hm]
   module
 
 /-- The derivative of `P^g - Hess φ + dφ ⊗ dφ - (|dφ|² / 2) g`, the Schouten tensor of `e^(2φ) g`
@@ -423,13 +422,12 @@ theorem curvatureTensor_leviCivitaConnection_rescale
     exact CovariantDerivative.curvatureTensor_apply _ x hX hY hZ
   rw [h₁, curvatureOperator_leviCivitaConnection_rescale_of_contMDiff g hf hf_pos hX hY hZ x]
   let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩
-  have hφx : MDiffAt φ x := hφ.mdifferentiableAt (by simp)
   rw [CovariantDerivative.curvatureTensor_apply _ x hX hY hZ]
   have hXYZ := leviCivitaConnection_conformalConnectionTensor_exp hφ (X := X) hY hZ x
   have hYXZ := leviCivitaConnection_conformalConnectionTensor_exp hφ (X := Y) hX hZ x
   have hφ2 : ContMDiff I 𝓘(ℝ) 2 φ := hφ.of_le (by simp)
   rw [hXYZ, hYXZ, hessian_symm x hφ2.contMDiffAt (Y x) (X x)]
-  simp only [conformalConnectionTensor_exp_two_mul_apply hφx, map_add, map_sub, map_smul,
+  simp only [conformalConnectionTensor_exp_two_mul_apply, map_add, map_sub, map_smul,
     add_apply, sub_apply, smul_apply, inner_mgradient, mvfderiv_apply_mgradient,
     real_inner_self_eq_norm_sq]
   simp only [real_inner_comm (X x) (Z x), real_inner_comm (Y x) (Z x),
@@ -685,22 +683,9 @@ private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
   have hZx : MDiffAt (T% Z) x := hZ.mdifferentiableAt (by simp)
   -- Step 1: write the Cotton tensor of `e^(2φ) g` on the vector fields through its Schouten
   -- tensor and Levi-Civita connection, and express both through `g` and `φ`.
-  have hC : (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
-      (CovariantDerivative.leviCivitaConnection I M).cottonTensor x (X x) (Y x) (Z x)) =
-      (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-        ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩;
-      letI cov := CovariantDerivative.leviCivitaConnection I M
-      mvfderiv I (fun y ↦ cov.schoutenTensor y (X y) (Y y)) x (Z x) -
-        mvfderiv I (fun y ↦ cov.schoutenTensor y (X y) (Z y)) x (Y x) -
-        cov.schoutenTensor x (cov X x (Z x)) (Y x) - cov.schoutenTensor x (X x) (cov Y x (Z x)) +
-        cov.schoutenTensor x (cov X x (Y x)) (Z x) +
-        cov.schoutenTensor x (X x) (cov Z x (Y x))) := by
-    let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
-      ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
-    exact CovariantDerivative.cottonTensor_apply_of_mdifferentiableAt _ hXx hYx hZx
-  rw [hC]
-  simp only [hP]
+  let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(g.rescale _ hf hf_pos).toRiemannianMetric⟩
+  simp only [CovariantDerivative.cottonTensor_apply_of_mdifferentiableAt _ hXx hYx hZx, hP]
   rw [leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hXx,
     leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hXx,
     leviCivitaConnection_rescale_apply g (by simp) hf hf_pos hYx,
@@ -715,10 +700,9 @@ private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
   rw [(CovariantDerivative.leviCivitaConnection I M).curvatureTensor_antisymm x (Z x) (Y x)] at hR
   -- Step 4: expand everything into the pointwise quantities `P`, `Hess φ`, `dφ`, `g` and `R`,
   -- normalize the order of the arguments of the symmetric tensors, and compare.
-  have hφx : MDiffAt φ x := hφ.mdifferentiableAt (by simp)
   simp only [CovariantDerivative.weylTensor_apply, CovariantDerivative.riemannCurvatureTensor_apply,
     LinearMap.BilinForm.kulkarniNomizu_apply, innerₗ_apply_apply,
-    conformalConnectionTensor_exp_two_mul_apply hφx, hessian_def] at hR ⊢
+    conformalConnectionTensor_exp_two_mul_apply, hessian_def] at hR ⊢
   simp only [map_add, map_sub, map_smul, smul_eq_mul, inner_add_left, inner_add_right,
     inner_sub_left, inner_sub_right, inner_smul_left, inner_smul_right, LinearMap.add_apply,
     LinearMap.sub_apply, LinearMap.smul_apply, LinearMap.neg_apply, inner_neg_left,
@@ -731,12 +715,10 @@ private theorem cottonTensor_leviCivitaConnection_rescale_of_three_le
       mvfderiv I φ x (CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a) =
         ⟪CovariantDerivative.leviCivitaConnection I M (mgradient I φ) x a, mgradient I φ x⟫ :=
     (inner_mgradient_right _).symm
-  have hPs (a b : TangentSpace I x) :
-      (CovariantDerivative.leviCivitaConnection I M).schoutenTensor x a b =
-        (CovariantDerivative.leviCivitaConnection I M).schoutenTensor x b a :=
-    (CovariantDerivative.IsMetricCompatible.schoutenTensor_isSymm _
-      (CovariantDerivative.isMetricCompatible_leviCivitaConnection I)
-      (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I) x).eq a b
+  have hPs := (CovariantDerivative.IsMetricCompatible.schoutenTensor_isSymm _
+    (CovariantDerivative.isMetricCompatible_leviCivitaConnection I)
+    (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I) x).eq
+  simp only [RingHom.id_apply] at hPs
   simp only [mvfderiv_apply_mgradient, real_inner_self_eq_norm_sq, hdG, real_inner_comm (Y x) (Z x),
     real_inner_comm (X x) (Z x), real_inner_comm (X x) (Y x), hH (Z x) (X x), hH (Y x) (X x),
     hH (Z x) (Y x), hH (mgradient I φ x) (Y x), hH (mgradient I φ x) (Z x), hPs (Z x) (X x),

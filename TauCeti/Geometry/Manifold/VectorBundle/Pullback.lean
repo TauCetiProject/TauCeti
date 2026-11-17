@@ -7,6 +7,9 @@ module
 
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
+public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
+public import TauCeti.Topology.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 
 /-!
@@ -48,6 +51,15 @@ makes `f *ᵖ E` when `E` is one.
 
 * D. Husemoller, *Fibre Bundles*, 3rd ed., Graduate Texts in Mathematics 20, Springer, 1994,
   Chapter 2 (induced bundles).
+
+The native Hom section between two pullbacks by the same map is `Cⁿ` exactly when its original
+Hom field along that map is `Cⁿ` (`Bundle.Pullback.contMDiff_hom_section_iff`). This dictionary
+requires neither finite rank nor a smooth bundle structure on the fibres.
+
+The pullback of a `C^n` vector bundle along a `C^n` map `f`, given as an element of any
+`ContinuousMapClass` rather than as a bundled `C^n` map, is a `C^n` vector bundle
+(`Bundle.Pullback.contMDiffVectorBundle`).
+
 -/
 
 public section
@@ -72,6 +84,19 @@ variable {𝕜 F EM EM' EX H H' HX B B' X K : Type*} [NontriviallyNormedField �
   [∀ x, TopologicalSpace (E x)] [TopologicalSpace (TotalSpace F E)]
   [FiberBundle F E] [FunLike K B' B] [ContinuousMapClass K B' B] {m n : WithTop ℕ∞}
 
+/-- A map into a pullback bundle is `C^n` within a set at a point exactly when its base
+projection and its lift to the original total space are `C^n` within that set there. -/
+theorem contMDiffWithinAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)} {s : Set X}
+    {x : X} (hf : ContMDiffAt I' I n f (q x).proj) :
+    ContMDiffWithinAt IX (I'.prod 𝓘(𝕜, F)) n q s x ↔
+      ContMDiffWithinAt IX I' n (fun y => (q y).proj) s x ∧
+        ContMDiffWithinAt IX (I.prod 𝓘(𝕜, F)) n
+          (fun y => Pullback.lift f (q y)) s x := by
+  simp only [Bundle.contMDiffWithinAt_totalSpace_iff, trivializationAt,
+    FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
+  exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp_contMDiffWithinAt x hq, hcoord⟩,
+    fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩
+
 /-- A map into a pullback bundle is `C^n` at a point exactly when its base projection and its
 lift to the original total space are `C^n` there. -/
 theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)} {x : X}
@@ -79,11 +104,8 @@ theorem contMDiffAt_iff (f : K) {q : X → TotalSpace F ((f : B' → B) *ᵖ E)}
     ContMDiffAt IX (I'.prod 𝓘(𝕜, F)) n q x ↔
       ContMDiffAt IX I' n (fun y => (q y).proj) x ∧
         ContMDiffAt IX (I.prod 𝓘(𝕜, F)) n
-          (fun y => Pullback.lift f (q y)) x := by
-  simp only [Bundle.contMDiffAt_totalSpace, trivializationAt,
-    FiberBundle.pullback_trivializationAt', Trivialization.pullback_apply, Pullback.lift_proj]
-  exact ⟨fun ⟨hq, hcoord⟩ => ⟨hq, hf.comp x hq, hcoord⟩,
-    fun ⟨hq, _, hcoord⟩ => ⟨hq, hcoord⟩⟩
+          (fun y => Pullback.lift f (q y)) x :=
+  contMDiffWithinAt_iff f hf
 
 /-- A map into a pullback bundle is `C^n` exactly when its base projection and its lift to the
 original total space are `C^n`. -/
@@ -166,10 +188,10 @@ def compDiffeomorph (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯) 
   right_inv _ := rfl
   -- Both total spaces are charted at `p` by the trivialization of `E` at `g (f p.proj)`, so in
   -- these coordinates the map is the identity, whatever the regularity of `f` and `g`.
-  contMDiff_toFun p := contMDiffAt_totalSpace.2
-    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
-  contMDiff_invFun p := contMDiffAt_totalSpace.2
-    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_toFun p := contMDiffAt_totalSpace_iff.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2⟩
+  contMDiff_invFun p := contMDiffAt_totalSpace_iff.2
+    ⟨contMDiffAt_proj _, (contMDiffAt_totalSpace_iff.1 (contMDiffAt_id (x := p))).2⟩
 
 @[simp]
 theorem compDiffeomorph_apply (g : C^m⟮I', B'; I, B⟯) (f : C^m⟮I'', B''; I', B'⟯)
@@ -215,3 +237,75 @@ theorem _root_.IsLocalDiffeomorph.contMDiff_section_iff_pullback {f : K}
   exact ((hf x).contMDiffAt_section_iff_pullback hm).2 (h x)
 
 end Bundle.Pullback
+
+section HomSection
+
+open Bundle
+
+variable {𝕜 B X F G K EB HB EX HX : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EX] [NormedSpace 𝕜 EX] [TopologicalSpace HX]
+  {IX : ModelWithCorners 𝕜 EX HX} [TopologicalSpace X] [ChartedSpace HX X]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  {V W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [∀ b, IsTopologicalAddGroup (W b)] [∀ b, ContinuousSMul 𝕜 (W b)]
+  [TopologicalSpace (TotalSpace F V)] [FiberBundle F V] [VectorBundle 𝕜 F V]
+  [TopologicalSpace (TotalSpace G W)] [FiberBundle G W] [VectorBundle 𝕜 G W]
+  [FunLike K X B] [ContinuousMapClass K X B] {n : WithTop ℕ∞}
+
+/-- A section of Hom between two pullbacks is `Cⁿ` exactly when its field of maps along the
+base map is `Cⁿ` in the original hom bundle. No rank or smooth-bundle assumption is needed. -/
+theorem Bundle.Pullback.contMDiff_hom_section_iff (f : K) (hf : ContMDiff IX IB n f)
+    (A : ∀ x, V (f x) →L[𝕜] W (f x)) :
+    ContMDiff IX (IX.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+          (E := fun x ↦ ((f : X → B) *ᵖ V) x →L[𝕜] ((f : X → B) *ᵖ W) x) x (A x)) ↔
+      ContMDiff IX (IB.prod 𝓘(𝕜, F →L[𝕜] G)) n
+        (fun x ↦ TotalSpace.mk' (F →L[𝕜] G)
+          (E := fun b ↦ V b →L[𝕜] W b) (f x) (A x)) := by
+  have heq (x : X) :
+      (fun y ↦ ContinuousLinearMap.inCoordinates F ((f : X → B) *ᵖ V)
+        G ((f : X → B) *ᵖ W) x y x y (A y)) =ᶠ[nhds x]
+      (fun y ↦ ContinuousLinearMap.inCoordinates F V G W (f x) (f y) (f x) (f y) (A y)) := by
+    filter_upwards [hf.continuous.continuousAt.preimage_mem_nhds
+      ((trivializationAt F V (f x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt F V (f x))),
+      hf.continuous.continuousAt.preimage_mem_nhds
+      ((trivializationAt G W (f x)).open_baseSet.mem_nhds
+        (FiberBundle.mem_baseSet_trivializationAt G W (f x)))] with y hyV hyW
+    exact ContinuousLinearMap.inCoordinates_pullback_of_mem f f x y (A y) hyV hyW
+  constructor
+  · intro h x
+    have hx := (contMDiffAt_hom_bundle _).mp (h x)
+    rw [contMDiffAt_hom_bundle]
+    exact ⟨hf x, hx.2.congr_of_eventuallyEq (heq x).symm⟩
+  · intro h x
+    have hx := (contMDiffAt_hom_bundle _).mp (h x)
+    rw [contMDiffAt_hom_bundle]
+    exact ⟨contMDiffAt_id, hx.2.congr_of_eventuallyEq (heq x)⟩
+
+end HomSection
+
+section ContMDiffVectorBundle
+
+variable {𝕜 B B' F K EB HB EB' HB' : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup EB] [NormedSpace 𝕜 EB] [TopologicalSpace HB]
+  {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B] [ChartedSpace HB B]
+  [NormedAddCommGroup EB'] [NormedSpace 𝕜 EB'] [TopologicalSpace HB']
+  {IB' : ModelWithCorners 𝕜 EB' HB'} [TopologicalSpace B'] [ChartedSpace HB' B']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)] [∀ b, TopologicalSpace (E b)]
+  [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [FunLike K B' B] [ContinuousMapClass K B' B] {n : WithTop ℕ∞}
+
+/-- The pullback of a `C^n` vector bundle along a `C^n` map `f` is a `C^n` vector bundle. This is
+`ContMDiffVectorBundle.pullback` for `f` in any `ContinuousMapClass`, with the regularity of `f`
+supplied as a hypothesis. -/
+theorem Bundle.Pullback.contMDiffVectorBundle [ContMDiffVectorBundle n F E IB] {f : K}
+    (hf : ContMDiff IB' IB n f) : ContMDiffVectorBundle n F ((f : B' → B) *ᵖ E) IB' :=
+  ContMDiffVectorBundle.pullback F E IB' (⟨f, hf⟩ : C^n⟮IB', B'; IB, B⟯)
+
+end ContMDiffVectorBundle

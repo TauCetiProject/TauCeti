@@ -23,8 +23,9 @@ local ring.
 
 ## Proof
 
-The depth statement rests on the following property of the maximal ideal `𝔪`: for `b ≠ 0`, it is
-not an associated prime of `R ⧸ (b)`, unless `𝔪` is principal. Indeed, let `𝔪 c ⊆ (b)` and put
+The depth statement rests on the following property of the maximal ideal `𝔪`: it is
+not an associated prime of `R ⧸ (b)`, unless `𝔪` is principal. For `b = 0` this holds because `R`
+is a domain and `𝔪 ≠ 0`. For `b ≠ 0`, let `𝔪 c ⊆ (b)` and put
 `t = c / b` in the fraction field, so that `t 𝔪 ⊆ R`. If `t 𝔪 ⊆ 𝔪`, then `t` is integral over `R`
 (Mathlib's `isIntegral_of_smul_mem_submodule`), hence lies in `R`, and `c ∈ (b)`. Otherwise
 `t u` is a unit for some `u ∈ 𝔪`, and then `𝔪 = (u)`. A principal maximal ideal forces dimension
@@ -34,10 +35,9 @@ regular on `R ⧸ (x)` (Mathlib's `IsSMulRegular.subsingleton_linearMap_iff`).
 ## Main results
 
 * `TauCeti.IsIntegrallyClosed.mem_span_singleton_of_forall_mul_mem`: in a Noetherian integrally
-  closed local domain whose maximal ideal is not principal, `𝔪 c ⊆ (b)` with `b ≠ 0` forces
-  `c ∈ (b)`.
+  closed local domain whose maximal ideal is not principal, `𝔪 c ⊆ (b)` forces `c ∈ (b)`.
 * `TauCeti.IsIntegrallyClosed.isSMulRegular_quotient_span_singleton_of_radical_span_pair`:
-  if `(x, y)` has maximal radical, `x ≠ 0` and the maximal ideal is nonprincipal, then `y` is
+  if `(x, y)` has maximal radical and the maximal ideal is nonprincipal, then `y` is
   regular on `R ⧸ (x)`.
 * `IsLocalRing.two_le_depth_of_isIntegrallyClosed`: a Noetherian integrally closed local domain of
   dimension at least two has depth at least two.
@@ -61,10 +61,16 @@ variable {R : Type*} [CommRing R] [IsLocalRing R] [IsNoetherianRing R] [IsDomain
   [IsIntegrallyClosed R]
 
 /-- In a Noetherian integrally closed local domain whose maximal ideal is not principal, the
-maximal ideal is not an associated prime of `R ⧸ (b)` for `b ≠ 0`: if `z c ∈ (b)` for every `z` in
+maximal ideal is not an associated prime of `R ⧸ (b)`: if `z c ∈ (b)` for every `z` in
 the maximal ideal, then `c ∈ (b)`. -/
 theorem mem_span_singleton_of_forall_mul_mem (hm : ¬ (maximalIdeal R).IsPrincipal) {b c : R}
-    (hb : b ≠ 0) (hc : ∀ z ∈ maximalIdeal R, z * c ∈ span {b}) : c ∈ span {b} := by
+    (hc : ∀ z ∈ maximalIdeal R, z * c ∈ span {b}) : c ∈ span {b} := by
+  by_cases hb : b = 0
+  · obtain ⟨z, hz, hz0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot (p := maximalIdeal R)
+      fun h ↦ hm (h ▸ bot_isPrincipal)
+    subst hb
+    have hzc : z * c = 0 := by simpa using hc z hz
+    simp [(mul_eq_zero.1 hzc).resolve_left hz0]
   have hc' : ∀ z ∈ maximalIdeal R, ∃ w, z * c = b * w := fun z hz ↦ by
     obtain ⟨w, hw⟩ := mem_span_singleton'.mp (hc z hz)
     exact ⟨w, by rw [← hw, mul_comm]⟩
@@ -104,9 +110,9 @@ theorem mem_span_singleton_of_forall_mul_mem (hm : ¬ (maximalIdeal R).IsPrincip
       linear_combination -(↑hv.unit⁻¹ : R) * this + z * hv.val_inv_mul⟩
 
 /-- In a Noetherian normal local domain with nonprincipal maximal ideal, if `(x, y)` has maximal
-radical and `x ≠ 0`, then `y` is a nonzerodivisor on `R ⧸ (x)`. -/
+radical, then `y` is a nonzerodivisor on `R ⧸ (x)`. -/
 theorem isSMulRegular_quotient_span_singleton_of_radical_span_pair
-    (hm : ¬ (maximalIdeal R).IsPrincipal) {x y : R} (hx : x ≠ 0)
+    (hm : ¬ (maximalIdeal R).IsPrincipal) {x y : R}
     (hxy : (span {x, y}).radical = maximalIdeal R) :
     IsSMulRegular (R ⧸ span {x}) y := by
   rw [isSMulRegular_quotient_iff_mem_of_smul_mem]
@@ -124,7 +130,7 @@ theorem isSMulRegular_quotient_span_singleton_of_radical_span_pair
     exact hprime.radical_le_iff.mpr (span_le.mpr (by rintro z (rfl | rfl) <;> assumption))
   obtain ⟨_, u, hu⟩ := isAssociatedPrime_iff.mp hP
   obtain ⟨d, rfl⟩ := Ideal.Quotient.mk_surjective u
-  have hd : d ∈ span {x} := mem_span_singleton_of_forall_mul_mem hm hx fun z hz ↦
+  have hd : d ∈ span {x} := mem_span_singleton_of_forall_mul_mem hm fun z hz ↦
     Ideal.Quotient.mem_colon_singleton_mk.mp (hu ▸ hPm.symm ▸ hz)
   have hone : (1 : R) ∈ P := by
     rw [hu]
@@ -159,7 +165,7 @@ theorem two_le_depth_of_isIntegrallyClosed [IsDomain R] [IsIntegrallyClosed R]
       obtain ⟨c, hc⟩ := Submodule.Quotient.mk_surjective _ (f (Ideal.Quotient.mk _ 1))
       simp only [← hc, ← Submodule.Quotient.mk_smul, Submodule.Quotient.mk_eq_zero,
         ← Submodule.ideal_span_singleton_smul, smul_eq_mul, mul_top] at hkill ⊢
-      exact TauCeti.IsIntegrallyClosed.mem_span_singleton_of_forall_mul_mem hm hx0 hkill
+      exact TauCeti.IsIntegrallyClosed.mem_span_singleton_of_forall_mul_mem hm hkill
     refine LinearMap.ext fun q ↦ ?_
     obtain ⟨r, rfl⟩ := Ideal.Quotient.mk_surjective q
     rw [hmk, map_smul, key, smul_zero, LinearMap.zero_apply]

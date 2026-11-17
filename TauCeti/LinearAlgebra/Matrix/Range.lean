@@ -18,6 +18,7 @@ submodule.
 ## Main result
 
 * `Matrix.col_mem_range_mulVecLin`: every column of `L` lies in the range of `L.mulVecLin`.
+* `Matrix.row_mem_range_vecMulLinear`: every row of `e` lies in the range of `e.vecMulLinear`.
 * `Matrix.exists_mul_eq_of_range_le`: construct the right factor from column preimages.
 * `Matrix.mul_left_cancel_of_mulVec_injective`: cancel an injective left factor even for
   matrices with an empty output-column index type.
@@ -96,5 +97,19 @@ theorem range_mulVecLin_eq_of_succ {n : ℕ} {L : Submodule R (Fin (n + 1) → R
   simpa using add_mem hmem (LinearMap.mem_range_self H.mulVecLin c)
 
 end Succ
+
+section RowRange
+
+variable {A ι κ : Type*} [Semiring A] [Fintype ι]
+
+open LinearMap in
+/-- Each row of a matrix lies in the range of right multiplication by it: it is the image of the
+corresponding standard basis vector. -/
+theorem row_mem_range_vecMulLinear (e : Matrix ι κ A) (i : ι) :
+    e i ∈ range e.vecMulLinear := by
+  classical
+  exact ⟨Pi.single i 1, Matrix.single_one_vecMul i e⟩
+
+end RowRange
 
 end Matrix

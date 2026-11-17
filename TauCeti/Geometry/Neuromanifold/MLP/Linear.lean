@@ -17,7 +17,8 @@ layers with nothing between them. Its bias-free realizations are linear networks
 
 For bias-free parameters `w` of any specification, `MLPSpec.weightProduct A w i` is the product
 `Wᵢ ⋯ W₁` of the first `i` weight matrices, with the identity matrix at layer `0`. It depends only
-on the widths of `A`. For `MLPSpec.linear d`:
+on the widths of `A`. The two prefix formulas below hold for every specification whose hidden
+activations are all `id`, and are specialised to `MLPSpec.linear d`. For `MLPSpec.linear d`:
 
 * the bias-free prefix at layer `i` is `x ↦ (Wᵢ ⋯ W₁) x`, so the bias-free realization is
   `Matrix.mulVec` of the full weight product, and the bias-free neuromanifold is the image of
@@ -72,6 +73,30 @@ theorem weightProduct_succ (A : MLPSpec K L) (w : A.Weights) (i : Fin L) :
 
 /-! ### Identity activations -/
 
+/-- With identity hidden activations, each bias-free prefix evaluates the product of the weight
+matrices below it. -/
+theorem evalPrefix_zeroBias_eq_mulVec_of_activation_eq_id (A : MLPSpec K L)
+    (h : ∀ j, A.activation j = id) (w : A.Weights) (x : Fin (A.width 0) → K)
+    (i : Fin (L + 1)) :
+    A.evalPrefix (A.zeroBias w) x i = A.weightProduct w i *ᵥ x := by
+  induction i using Fin.induction with
+  | zero => simp
+  | succ i ih =>
+    funext j
+    simp [A.layerActivation_eq_id_of_activation_eq_id h, ih, mulVec_mulVec]
+
+/-- With identity hidden activations, each prefix with biases is affine: its linear part is the
+product of the weight matrices below it, and its translation is the prefix at the zero input. -/
+theorem evalPrefix_eq_mulVec_add_of_activation_eq_id (A : MLPSpec K L)
+    (h : ∀ j, A.activation j = id) (θ : A.Parameters) (x : Fin (A.width 0) → K)
+    (i : Fin (L + 1)) :
+    A.evalPrefix θ x i = A.weightProduct (fun j => (θ j).1) i *ᵥ x + A.evalPrefix θ 0 i := by
+  induction i using Fin.induction with
+  | zero => simp
+  | succ i ih =>
+    funext j
+    simp [A.layerActivation_eq_id_of_activation_eq_id h, ih, mulVec_add, mulVec_mulVec, add_assoc]
+
 variable (d : Fin (L + 1) → ℕ)
 
 /-- Each bias-free prefix of a linear network evaluates the product of the weight matrices
@@ -79,24 +104,16 @@ below it. -/
 @[simp]
 theorem evalPrefix_zeroBias_linear (w : (linear d : MLPSpec K L).Weights)
     (x : Fin ((linear d : MLPSpec K L).width 0) → K) (i : Fin (L + 1)) :
-    (linear d).evalPrefix ((linear d).zeroBias w) x i = (linear d).weightProduct w i *ᵥ x := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    funext j
-    simp [ih, mulVec_mulVec]
+    (linear d).evalPrefix ((linear d).zeroBias w) x i = (linear d).weightProduct w i *ᵥ x :=
+  (linear d).evalPrefix_zeroBias_eq_mulVec_of_activation_eq_id (linear_activation d) w x i
 
 /-- Each prefix of a linear network with biases is affine: its linear part is the product of
 the weight matrices below it, and its translation is the prefix at the zero input. -/
 theorem evalPrefix_linear (θ : (linear d : MLPSpec K L).Parameters)
     (x : Fin ((linear d : MLPSpec K L).width 0) → K) (i : Fin (L + 1)) :
     (linear d).evalPrefix θ x i =
-      (linear d).weightProduct (fun j => (θ j).1) i *ᵥ x + (linear d).evalPrefix θ 0 i := by
-  induction i using Fin.induction with
-  | zero => simp
-  | succ i ih =>
-    funext j
-    simp [ih, mulVec_add, mulVec_mulVec, add_assoc]
+      (linear d).weightProduct (fun j => (θ j).1) i *ᵥ x + (linear d).evalPrefix θ 0 i :=
+  (linear d).evalPrefix_eq_mulVec_add_of_activation_eq_id (linear_activation d) θ x i
 
 /-- A linear network realizes evaluation at the product of its weight matrices. -/
 @[simp]

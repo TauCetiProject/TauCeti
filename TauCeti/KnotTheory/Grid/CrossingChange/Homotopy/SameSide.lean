@@ -141,6 +141,112 @@ private theorem terminalPair_squares {u v u' v' : GridState n} (S : GridRectangl
     obtain ⟨h₁, h₂⟩ := Grid.mem_cIoo_or_mem_cIco_iff_mem_cIoo (r := r) hrow ht hs
     exact ⟨or_comm.trans h₁, fun h => h₂ h.symm⟩
 
+/-- The recut of the rectangles of a counted terminal-side pentagon pair whose first initial side
+lies inside the columns of the second rectangle underlies a counted composite of the weight of
+the pair. -/
+private theorem terminalPair_exists_of_first_left_mem_cIoo
+    (hone : GridRectangleDecomposition.HasOneCommonSide
+      (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ : GridRectangleDecomposition x z))
+    (hp : P.IsEmpty) (hq : Q.IsEmpty) (hpX : Disjoint P.coveredSquares G.XSet)
+    (hqX' : Disjoint
+      (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet)
+    (hrow : P.bottom ∈ Grid.cIoo Q.bottom P.top) (htop : Q.top = P.bottom)
+    (hlower : t ∈ Grid.cIco Q.bottom P.top) (hupper : C.turnRow ∈ Grid.cIoo t P.top)
+    (hcol : P.left ∈ Grid.cIoo Q.left P.right) :
+    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧
+        F.toRectangleDecomposition =
+          GridRectangleDecomposition.recut ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+            hone hp hq ∧
+        G.crossingChangeHexagonCompositeWeight C t R F =
+          rename (Equiv.swap a b) (G.pentagonWeight R C P) *
+            (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q := by
+  let D : GridRectangleDecomposition x z := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+  have hcommon : D.first.right = D.second.right := P.right_eq.trans Q.right_eq.symm
+  let E := D.recut hone hp hq
+  have hrecut := D.isRecut_recut hone hp hq
+  rw [rename_pentagonWeight, G.pentagonWeight_swapColumns R (C.withTurnRow t)]
+  -- The first initial side lies inside the second rectangle's columns: the recut is a rectangle
+  -- followed by a rectangle spanning the rows of both, with terminal side `b`.
+  obtain ⟨-, -, -, -, hsb, hst⟩ :=
+    D.recut_geometry_of_right_eq_right_of_mem_cIoo hcommon hcol hp hq
+  have hsr : E.second.right = b := by
+    rcases (D.isRecutOfRightEqRight_recut hcommon hone hp hq).recut_branch with h | h
+    · exact h.2.2.2.trans P.right_eq
+    · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hcol
+        (Grid.mem_cIoo_cyclic_right h.1)).elim
+  let H : GridHexagonBetween a t C.turnRow E.middle z :=
+    { toGridRectangleBetween := E.second
+      right_eq := hsr
+      lower_mem := by
+        rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hsb, hst]
+        exact hlower
+      upper_mem := by
+        rw [← GridRectangleBetween.top_def, hst]
+        exact hupper }
+  have hkey := terminalPair_squares P Q E.first H hrecut.isRepartition.coveredSquares_union_eq
+    hrecut.isRepartition.disjoint_coveredSquares_right
+    hrecut.isRepartition.disjoint_coveredSquares_left hrow htop hsb hst
+  rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inl] at hkey
+  obtain ⟨hSX, hHX, hw⟩ :=
+    disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.first
+      (.inl H) hkey hpX hqX'
+  rw [← hw]
+  exact exists_inr_mem_crossingChangeHexagonCompositeDecompositions R (.inl H)
+    (GridCommutationHexagonBetween.toGridRectangleBetween_inl H) hrecut.isEmpty_first
+    hrecut.isEmpty_second hSX hHX
+
+/-- The recut of the rectangles of a counted terminal-side pentagon pair whose second initial side
+lies inside the columns of the first rectangle underlies a counted composite of the weight of
+the pair. -/
+private theorem terminalPair_exists_of_second_left_mem_cIoo
+    (hone : GridRectangleDecomposition.HasOneCommonSide
+      (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ : GridRectangleDecomposition x z))
+    (hp : P.IsEmpty) (hq : Q.IsEmpty) (hpX : Disjoint P.coveredSquares G.XSet)
+    (hqX' : Disjoint
+      (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet)
+    (hrow : P.bottom ∈ Grid.cIoo Q.bottom P.top) (htop : Q.top = P.bottom)
+    (hlower : t ∈ Grid.cIco Q.bottom P.top) (hupper : C.turnRow ∈ Grid.cIoo t P.top)
+    (hcol : Q.left ∈ Grid.cIoo P.left P.right) :
+    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧
+        F.toRectangleDecomposition =
+          GridRectangleDecomposition.recut ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+            hone hp hq ∧
+        G.crossingChangeHexagonCompositeWeight C t R F =
+          rename (Equiv.swap a b) (G.pentagonWeight R C P) *
+            (G.swapColumns a b).pentagonWeight R (C.withTurnRow t) Q := by
+  let D : GridRectangleDecomposition x z := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+  have hcommon : D.first.right = D.second.right := P.right_eq.trans Q.right_eq.symm
+  let E := D.recut hone hp hq
+  have hrecut := D.isRecut_recut hone hp hq
+  rw [rename_pentagonWeight, G.pentagonWeight_swapColumns R (C.withTurnRow t)]
+  -- The second initial side lies inside the first rectangle's columns: the recut is a rectangle
+  -- spanning the rows of both, with terminal side `b`, followed by a rectangle.
+  obtain ⟨hfr, -, hfb, hft, -, -⟩ :=
+    D.recut_geometry_of_right_eq_right_of_second_left_mem_cIoo hcommon hcol hp hq
+  let H : GridHexagonBetween a t C.turnRow x E.middle :=
+    { toGridRectangleBetween := E.first
+      right_eq := hfr.trans P.right_eq
+      lower_mem := by
+        rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hfb, hft]
+        exact hlower
+      upper_mem := by
+        rw [← GridRectangleBetween.top_def, hft]
+        exact hupper }
+  have hkey := terminalPair_squares P Q E.second H
+    (by rw [Finset.union_comm]; exact hrecut.isRepartition.coveredSquares_union_eq)
+    hrecut.isRepartition.disjoint_coveredSquares_right.symm
+    hrecut.isRepartition.disjoint_coveredSquares_left hrow htop hfb hft
+  rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inl] at hkey
+  obtain ⟨hSX, hHX, hw⟩ :=
+    disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.second
+      (.inl H) hkey hpX hqX'
+  rw [← hw, mul_comm]
+  exact exists_inl_mem_crossingChangeHexagonCompositeDecompositions R (.inl H)
+    (GridCommutationHexagonBetween.toGridRectangleBetween_inl H) hrecut.isEmpty_first
+    hrecut.isEmpty_second hHX hSX
+
 /-- The recut of the rectangles of a counted terminal-side pentagon pair with distinct initial
 sides underlies a counted composite of the weight of the pair. -/
 private theorem terminalPair_exists (hP : P ∈ G.pentagons C x y)
@@ -167,64 +273,11 @@ private theorem terminalPair_exists (hP : P ∈ G.pentagons C x y)
   have ht : t ∈ Grid.cIco Q.bottom P.bottom := htop ▸ Q.turn_mem_cIco_bottom_top
   obtain ⟨hlower, hupper⟩ :=
     Grid.mem_cIco_and_mem_cIoo_of_mem_cIco_of_mem_cIco hrow ht P.turn_mem_cIco_bottom_top
-  let E := D.recut hone hp hq
-  have hrecut := D.isRecut_recut hone hp hq
-  rw [rename_pentagonWeight, G.pentagonWeight_swapColumns R (C.withTurnRow t)]
   rcases (D.cyclicOrder_of_isEmpty_of_right_eq_right hcommon hne hp hq).1 with hcol | hcol
-  · -- The first initial side lies inside the second rectangle's columns: the recut is a rectangle
-    -- followed by a rectangle spanning the rows of both, with terminal side `b`.
-    obtain ⟨-, -, -, -, hsb, hst⟩ :=
-      D.recut_geometry_of_right_eq_right_of_mem_cIoo hcommon hcol hp hq
-    have hsr : E.second.right = b := by
-      rcases (D.isRecutOfRightEqRight_recut hcommon hone hp hq).recut_branch with h | h
-      · exact h.2.2.2.trans P.right_eq
-      · exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap _ _) hcol
-          (Grid.mem_cIoo_cyclic_right h.1)).elim
-    let H : GridHexagonBetween a t C.turnRow E.middle z :=
-      { toGridRectangleBetween := E.second
-        right_eq := hsr
-        lower_mem := by
-          rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hsb, hst]
-          exact hlower
-        upper_mem := by
-          rw [← GridRectangleBetween.top_def, hst]
-          exact hupper }
-    have hkey := terminalPair_squares P Q E.first H hrecut.isRepartition.coveredSquares_union_eq
-      hrecut.isRepartition.disjoint_coveredSquares_right
-      hrecut.isRepartition.disjoint_coveredSquares_left hrow htop hsb hst
-    rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inl] at hkey
-    obtain ⟨hSX, hHX, hw⟩ :=
-      disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.first
-        (.inl H) hkey hpX hqX'
-    rw [← hw]
-    exact exists_inr_mem_crossingChangeHexagonCompositeDecompositions R (.inl H)
-      (GridCommutationHexagonBetween.toGridRectangleBetween_inl H) hrecut.isEmpty_first
-      hrecut.isEmpty_second hSX hHX
-  · -- The second initial side lies inside the first rectangle's columns: the recut is a rectangle
-    -- spanning the rows of both, with terminal side `b`, followed by a rectangle.
-    obtain ⟨hfr, -, hfb, hft, -, -⟩ :=
-      D.recut_geometry_of_right_eq_right_of_second_left_mem_cIoo hcommon hcol hp hq
-    let H : GridHexagonBetween a t C.turnRow x E.middle :=
-      { toGridRectangleBetween := E.first
-        right_eq := hfr.trans P.right_eq
-        lower_mem := by
-          rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hfb, hft]
-          exact hlower
-        upper_mem := by
-          rw [← GridRectangleBetween.top_def, hft]
-          exact hupper }
-    have hkey := terminalPair_squares P Q E.second H
-      (by rw [Finset.union_comm]; exact hrecut.isRepartition.coveredSquares_union_eq)
-      hrecut.isRepartition.disjoint_coveredSquares_right.symm
-      hrecut.isRepartition.disjoint_coveredSquares_left hrow htop hfb hft
-    rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inl] at hkey
-    obtain ⟨hSX, hHX, hw⟩ :=
-      disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.second
-        (.inl H) hkey hpX hqX'
-    rw [← hw, mul_comm]
-    exact exists_inl_mem_crossingChangeHexagonCompositeDecompositions R (.inl H)
-      (GridCommutationHexagonBetween.toGridRectangleBetween_inl H) hrecut.isEmpty_first
-      hrecut.isEmpty_second hHX hSX
+  · exact terminalPair_exists_of_first_left_mem_cIoo R P Q hone hp hq hpX hqX' hrow htop hlower
+      hupper hcol
+  · exact terminalPair_exists_of_second_left_mem_cIoo R P Q hone hp hq hpX hqX' hrow htop hlower
+      hupper hcol
 
 end TerminalPair
 
@@ -345,6 +398,109 @@ private theorem initialPair_squares {u v u' v' : GridState n} (S : GridRectangle
     simp only [true_and, hab.symm, false_and, or_false]
     exact Grid.mem_cIco_or_mem_cIoo_iff_mem_cIco_and_notMem_insert_cIco hrow hs ht
 
+/-- The recut of the rectangles of a counted initial-side pentagon pair whose first terminal side
+lies inside the columns of the second rectangle underlies a counted composite of the weight of
+the pair. -/
+private theorem initialPair_exists_of_first_right_mem_cIoo
+    (hone : GridRectangleDecomposition.HasOneCommonSide
+      (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ : GridRectangleDecomposition x z))
+    (hp : P.IsEmpty) (hq : Q.IsEmpty) (hpX : Disjoint P.coveredSquares G.XSet)
+    (hqX' : Disjoint
+      (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet)
+    (hrow : P.top ∈ Grid.cIoo P.bottom Q.top) (hbottom : Q.bottom = P.top)
+    (hlower : C.turnRow ∈ Grid.cIco P.bottom Q.top) (hupper : t ∈ Grid.cIoo C.turnRow Q.top)
+    (hcol : P.right ∈ Grid.cIoo P.left Q.right) :
+    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧
+        F.toRectangleDecomposition =
+          GridRectangleDecomposition.recut ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+            hone hp hq ∧
+        G.crossingChangeHexagonCompositeWeight C t R F =
+          rename (Equiv.swap a b) (G.initialPentagonWeight R C P) *
+            (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q := by
+  let D : GridRectangleDecomposition x z := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+  have hcommon : D.first.left = D.second.left := P.left_eq.trans Q.left_eq.symm
+  let E := D.recut hone hp hq
+  have hrecut := D.isRecut_recut hone hp hq
+  rw [rename_initialPentagonWeight, G.initialPentagonWeight_swapColumns R (C.withTurnRow t)]
+  -- The first terminal side lies inside the second rectangle's columns: the recut is a
+  -- rectangle followed by a rectangle spanning the rows of both, with initial side `b`.
+  obtain ⟨-, -, hsl, -⟩ :=
+    D.recut_sides_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hp hq
+  obtain ⟨hsb, hst⟩ :=
+    D.recut_second_bottom_top_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hp hq
+  let H : GridInitialHexagonBetween a C.turnRow t E.middle z :=
+    { toGridRectangleBetween := E.second
+      left_eq := hsl.trans P.left_eq
+      lower_mem := by
+        rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hsb, hst]
+        exact hlower
+      upper_mem := by
+        rw [← GridRectangleBetween.top_def, hst]
+        exact hupper }
+  have hkey := initialPair_squares P Q E.first H hrecut.isRepartition.coveredSquares_union_eq
+    hrecut.isRepartition.disjoint_coveredSquares_right
+    hrecut.isRepartition.disjoint_coveredSquares_left hrow hbottom hsb hst
+  rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inr] at hkey
+  obtain ⟨hSX, hHX, hw⟩ :=
+    disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.first
+      (.inr H) hkey hpX hqX'
+  rw [← hw]
+  exact exists_inr_mem_crossingChangeHexagonCompositeDecompositions R (.inr H)
+    (GridCommutationHexagonBetween.toGridRectangleBetween_inr H) hrecut.isEmpty_first
+    hrecut.isEmpty_second hSX hHX
+
+/-- The recut of the rectangles of a counted initial-side pentagon pair whose second terminal side
+lies inside the columns of the first rectangle underlies a counted composite of the weight of
+the pair. -/
+private theorem initialPair_exists_of_second_right_mem_cIoo
+    (hone : GridRectangleDecomposition.HasOneCommonSide
+      (⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩ : GridRectangleDecomposition x z))
+    (hp : P.IsEmpty) (hq : Q.IsEmpty) (hpX : Disjoint P.coveredSquares G.XSet)
+    (hqX' : Disjoint
+      (Q.coveredSquares.map ((Equiv.swap a b).prodCongr (Equiv.refl (Fin n))).toEmbedding) G.XSet)
+    (hrow : P.top ∈ Grid.cIoo P.bottom Q.top) (hbottom : Q.bottom = P.top)
+    (hlower : C.turnRow ∈ Grid.cIco P.bottom Q.top) (hupper : t ∈ Grid.cIoo C.turnRow Q.top)
+    (hcol : Q.right ∈ Grid.cIoo P.left P.right) :
+    ∃ F : GridHexagonCompositeDecomposition a C.turnRow t x z,
+      F ∈ G.crossingChangeHexagonCompositeDecompositions C t x z ∧
+        F.toRectangleDecomposition =
+          GridRectangleDecomposition.recut ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+            hone hp hq ∧
+        G.crossingChangeHexagonCompositeWeight C t R F =
+          rename (Equiv.swap a b) (G.initialPentagonWeight R C P) *
+            (G.swapColumns a b).initialPentagonWeight R (C.withTurnRow t) Q := by
+  let D : GridRectangleDecomposition x z := ⟨y, P.toGridRectangleBetween, Q.toGridRectangleBetween⟩
+  have hcommon : D.first.left = D.second.left := P.left_eq.trans Q.left_eq.symm
+  let E := D.recut hone hp hq
+  have hrecut := D.isRecut_recut hone hp hq
+  rw [rename_initialPentagonWeight, G.initialPentagonWeight_swapColumns R (C.withTurnRow t)]
+  -- The second terminal side lies inside the first rectangle's columns: the recut is a
+  -- rectangle spanning the rows of both, with initial side `b`, followed by a rectangle.
+  obtain ⟨hfl, -, -, -⟩ := D.recut_sides_of_left_eq_left_of_mem_cIoo hcommon hcol hp hq
+  obtain ⟨hfb, hft⟩ := D.recut_first_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hp hq
+  let H : GridInitialHexagonBetween a C.turnRow t x E.middle :=
+    { toGridRectangleBetween := E.first
+      left_eq := hfl.trans P.left_eq
+      lower_mem := by
+        rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hfb, hft]
+        exact hlower
+      upper_mem := by
+        rw [← GridRectangleBetween.top_def, hft]
+        exact hupper }
+  have hkey := initialPair_squares P Q E.second H
+    (by rw [Finset.union_comm]; exact hrecut.isRepartition.coveredSquares_union_eq)
+    hrecut.isRepartition.disjoint_coveredSquares_right.symm
+    hrecut.isRepartition.disjoint_coveredSquares_left hrow hbottom hfb hft
+  rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inr] at hkey
+  obtain ⟨hSX, hHX, hw⟩ :=
+    disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.second
+      (.inr H) hkey hpX hqX'
+  rw [← hw, mul_comm]
+  exact exists_inl_mem_crossingChangeHexagonCompositeDecompositions R (.inr H)
+    (GridCommutationHexagonBetween.toGridRectangleBetween_inr H) hrecut.isEmpty_first
+    hrecut.isEmpty_second hHX hSX
+
 /-- The recut of the rectangles of a counted initial-side pentagon pair with distinct terminal
 sides underlies a counted composite of the weight of the pair. -/
 private theorem initialPair_exists (hP : P ∈ G.initialPentagons C x y)
@@ -371,61 +527,11 @@ private theorem initialPair_exists (hP : P ∈ G.initialPentagons C x y)
   have ht : t ∈ Grid.cIco P.top Q.top := hbottom ▸ Q.turn_mem_cIco_bottom_top
   obtain ⟨hlower, hupper⟩ :=
     Grid.mem_cIco_and_mem_cIoo_of_mem_cIco_of_mem_cIco hrow P.turn_mem_cIco_bottom_top ht
-  let E := D.recut hone hp hq
-  have hrecut := D.isRecut_recut hone hp hq
-  rw [rename_initialPentagonWeight, G.initialPentagonWeight_swapColumns R (C.withTurnRow t)]
   rcases (D.cyclicOrder_of_isEmpty_of_left_eq_left hcommon hne hp hq).1 with hcol | hcol
-  · -- The first terminal side lies inside the second rectangle's columns: the recut is a
-    -- rectangle followed by a rectangle spanning the rows of both, with initial side `b`.
-    obtain ⟨-, -, hsl, -⟩ :=
-      D.recut_sides_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hp hq
-    obtain ⟨hsb, hst⟩ :=
-      D.recut_second_bottom_top_of_left_eq_left_of_first_right_mem_cIoo hcommon hcol hp hq
-    let H : GridInitialHexagonBetween a C.turnRow t E.middle z :=
-      { toGridRectangleBetween := E.second
-        left_eq := hsl.trans P.left_eq
-        lower_mem := by
-          rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hsb, hst]
-          exact hlower
-        upper_mem := by
-          rw [← GridRectangleBetween.top_def, hst]
-          exact hupper }
-    have hkey := initialPair_squares P Q E.first H hrecut.isRepartition.coveredSquares_union_eq
-      hrecut.isRepartition.disjoint_coveredSquares_right
-      hrecut.isRepartition.disjoint_coveredSquares_left hrow hbottom hsb hst
-    rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inr] at hkey
-    obtain ⟨hSX, hHX, hw⟩ :=
-      disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.first
-        (.inr H) hkey hpX hqX'
-    rw [← hw]
-    exact exists_inr_mem_crossingChangeHexagonCompositeDecompositions R (.inr H)
-      (GridCommutationHexagonBetween.toGridRectangleBetween_inr H) hrecut.isEmpty_first
-      hrecut.isEmpty_second hSX hHX
-  · -- The second terminal side lies inside the first rectangle's columns: the recut is a
-    -- rectangle spanning the rows of both, with initial side `b`, followed by a rectangle.
-    obtain ⟨hfl, -, -, -⟩ := D.recut_sides_of_left_eq_left_of_mem_cIoo hcommon hcol hp hq
-    obtain ⟨hfb, hft⟩ := D.recut_first_bottom_top_of_left_eq_left_of_mem_cIoo hcommon hcol hp hq
-    let H : GridInitialHexagonBetween a C.turnRow t x E.middle :=
-      { toGridRectangleBetween := E.first
-        left_eq := hfl.trans P.left_eq
-        lower_mem := by
-          rw [← GridRectangleBetween.bottom_def, ← GridRectangleBetween.top_def, hfb, hft]
-          exact hlower
-        upper_mem := by
-          rw [← GridRectangleBetween.top_def, hft]
-          exact hupper }
-    have hkey := initialPair_squares P Q E.second H
-      (by rw [Finset.union_comm]; exact hrecut.isRepartition.coveredSquares_union_eq)
-      hrecut.isRepartition.disjoint_coveredSquares_right.symm
-      hrecut.isRepartition.disjoint_coveredSquares_left hrow hbottom hfb hft
-    rw [← GridCommutationHexagonBetween.crossingCoveredSquares_inr] at hkey
-    obtain ⟨hSX, hHX, hw⟩ :=
-      disjoint_XSet_and_OMonomial_mul_crossingChangeCommutationHexagonWeight_eq R E.second
-        (.inr H) hkey hpX hqX'
-    rw [← hw, mul_comm]
-    exact exists_inl_mem_crossingChangeHexagonCompositeDecompositions R (.inr H)
-      (GridCommutationHexagonBetween.toGridRectangleBetween_inr H) hrecut.isEmpty_first
-      hrecut.isEmpty_second hHX hSX
+  · exact initialPair_exists_of_first_right_mem_cIoo R P Q hone hp hq hpX hqX' hrow hbottom hlower
+      hupper hcol
+  · exact initialPair_exists_of_second_right_mem_cIoo R P Q hone hp hq hpX hqX' hrow hbottom hlower
+      hupper hcol
 
 end InitialPair
 

@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.ForkCorner
-import all TauCeti.RepresentationTheory.Quiver.Preprojective.ADE.TypeD.Basic
 import TauCeti.RepresentationTheory.Quiver.Representation.AsModule
 
 /-!
@@ -64,7 +63,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver CategoryTheory
 
 variable (k : Type*) [Field k] {n : ℕ}
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### The word operators -/
 

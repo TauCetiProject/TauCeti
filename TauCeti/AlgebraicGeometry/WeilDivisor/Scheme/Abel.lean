@@ -50,12 +50,12 @@ variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
 include hφ in
 /-- If `deg B ≥ g`, every degree-zero line-bundle class `a` equals `𝒪_X(E) / 𝒪_X(B)` for some
 effective Weil divisor `E` with `deg E = deg B`. -/
-theorem exists_isEffective_toLineBundleClass_div_eq (B : SchemeWeilDivisor X)
+theorem exists_nonneg_toLineBundleClass_div_eq (B : SchemeWeilDivisor X)
     (hB : (finrank k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1) : ℤ) ≤
       relativeDegree (X ↘ Spec (.of k)) B)
     (a : LineBundleClass X) (ha : LineBundleClass.eulerDegree k a = 0) :
     letI : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
-    ∃ E : SchemeWeilDivisor X, WeilDivisor.IsEffective E ∧
+    ∃ E : SchemeWeilDivisor X, 0 ≤ E ∧
       relativeDegree (X ↘ Spec (.of k)) E = relativeDegree (X ↘ Spec (.of k)) B ∧
         toLineBundleClass hdim E / toLineBundleClass hdim B = a := by
   have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
@@ -65,7 +65,7 @@ theorem exists_isEffective_toLineBundleClass_div_eq (B : SchemeWeilDivisor X)
       LineBundleClass.eulerDegree_mul k hdim, ha,
       LineBundleClass.eulerDegree_toLineBundleClass, zero_add]
   obtain ⟨E, hE, -, hdegE, hclass⟩ :=
-    InvertibleSheaf.exists_isEffective_iso_sheaf_of_genus_le_eulerDegree hdim hφ L
+    InvertibleSheaf.exists_nonneg_iso_sheaf_of_genus_le_eulerDegree hdim hφ L
       (hdegree.symm ▸ hB)
   refine ⟨E, hE, hdegE.trans hdegree, ?_⟩
   rw [hclass, hL, mul_div_cancel_right]

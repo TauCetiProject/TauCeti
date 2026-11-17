@@ -7,9 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Basic
 public import TauCeti.Analysis.BoundedVariation.MinkowskiContent
-import TauCeti.Analysis.BoundedVariation.Convex
-import TauCeti.Analysis.Convex.Measure
-import TauCeti.Analysis.BoundedVariation.ParallelVolume
+import TauCeti.Analysis.BoundedVariation.SmoothApproximation
+import TauCeti.Analysis.Sobolev.W1p.LevelSet
 
 /-!
 # Steiner symmetrization, parallel sets and perimeter
@@ -34,12 +33,18 @@ symmetral of a closed set `s` of finite volume is at most the lower outer Minkow
 
 (`TauCeti.perimeter_steinerSymmetrization_le_liminf`). In particular, if the volume of the
 parallel sets `K + t • closedBall 0 1` of a compact set `K` has right derivative `D` at `t = 0`,
-then `P(S K) ≤ D` (`TauCeti.perimeter_steinerSymmetrization_le_of_hasDerivWithinAt`). For a
-compact convex set with nonempty interior this derivative is the perimeter
-(`Convex.hasDerivWithinAt_measureReal_add_smul_closedBall`), while a convex set with empty
-interior is null. Since a bounded convex set agrees almost everywhere with its closure,
-**Steiner symmetrization does not increase the perimeter of a bounded convex set**
-(`TauCeti.perimeter_steinerSymmetrization_le_of_convex`).
+then `P(S K) ≤ D` (`TauCeti.perimeter_steinerSymmetrization_le_of_hasDerivWithinAt`).
+
+**Steiner symmetrization does not increase perimeter**: `P(S s) ≤ P(s)` for every null-measurable
+set `s` of finite volume (`TauCeti.perimeter_steinerSymmetrization_le`). The closed regular
+superlevel sets `{u ≥ t}` of compactly supported smooth functions have outer Minkowski content
+equal to their perimeter (`ContDiff.tendsto_volume_thickening_sdiff_div`), so the bound above
+gives `P(S F) ≤ P(F)` for them. Every set of finite volume is approximated by such sets in volume
+and in perimeter (`MeasureTheory.NullMeasurableSet.exists_smooth_perimeter_approximation`), and
+regular levels are null. Steiner symmetrization contracts the volume of symmetric differences
+(`TauCeti.volume_steinerSymmetrization_symmDiff_le`), so the symmetrals of the approximations
+converge in measure to `S s`, and lower semicontinuity of the perimeter
+(`TauCeti.perimeter_le_liminf`) concludes.
 
 The inclusion is proved line by line. If `p` lies in the symmetral and `x` is within `r` of `p`,
 write `x - p = q + c • e` with `q` orthogonal to `e`. The section of `thickening r s` through
@@ -61,22 +66,22 @@ along `e`.
 public section
 
 open MeasureTheory Metric Filter Set TopologicalSpace
-open scoped ENNReal Pointwise RealInnerProductSpace Topology
+open scoped ENNReal Pointwise RealInnerProductSpace Topology symmDiff
 
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-- The open `r`-neighbourhood of a Steiner symmetral lies in the symmetral of the open
-`r`-neighbourhood. No measurability or finiteness hypothesis is needed. -/
-theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : Set E) (r : ℝ) :
-    thickening r (steinerSymmetrization e he s) ⊆
-      steinerSymmetrization e he (thickening r s) := by
-  intro x hx
-  obtain ⟨p, hp, hxp⟩ := mem_thickening_iff.1 hx
-  rw [mem_steinerSymmetrization_iff, mem_eball, edist_zero_right,
-    Real.enorm_eq_ofReal_abs] at hp ⊢
-  set A := {t : ℝ | p + t • e ∈ s}
+/-- Line sections of open neighbourhoods along a unit vector `e`: write `c = ⟪e, x - p⟫` for the
+component of `x - p` along `e`. If `0 ≤ r` and `ρ ^ 2 + ‖x - p‖ ^ 2 ≤ r ^ 2 + c ^ 2`, then the
+open `ρ`-neighbourhood of the line section of `s` through `p` lies in the preimage under
+`t ↦ t - c` of the line section of `thickening r s` through `x`. In other words, its translate
+by `-c` lies in the line section of `thickening r s` through `x`. -/
+theorem thickening_lineSection_subset_preimage_sub_lineSection_thickening (e : E)
+    (he : ‖e‖ = 1) (s : Set E) {x p : E} {r ρ : ℝ} (hr : 0 ≤ r)
+    (hρ : ρ ^ 2 + ‖x - p‖ ^ 2 ≤ r ^ 2 + ⟪e, x - p⟫ ^ 2) :
+    thickening ρ {t : ℝ | p + t • e ∈ s} ⊆
+      (· - ⟪e, x - p⟫) ⁻¹' {t : ℝ | x + t • e ∈ thickening r s} := by
   -- Split the displacement `x - p` into its components along and orthogonal to `e`.
   set c := ⟪e, x - p⟫
   set q := x - p - c • e
@@ -86,44 +91,55 @@ theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : 
   have hnorm (σ : ℝ) : ‖q + σ • e‖ ^ 2 = ‖q‖ ^ 2 + σ ^ 2 := by
     rw [norm_add_sq_real, inner_smul_right, hqe, norm_smul, he]
     simp
-  have hxp' : ‖q‖ ^ 2 + c ^ 2 < r ^ 2 := by
-    rw [← hnorm c, show q + c • e = x - p by simp [q], ← dist_eq_norm]
-    exact pow_lt_pow_left₀ hxp dist_nonneg two_ne_zero
-  set ρ := √(r ^ 2 - ‖q‖ ^ 2)
-  have hcρ : |c| < ρ := Real.lt_sqrt (abs_nonneg c) |>.2 (by rw [sq_abs]; linarith)
-  have hρ : 0 < ρ := (abs_nonneg c).trans_lt hcρ
-  have hA : A.Nonempty := nonempty_iff_ne_empty.2 fun h ↦ by simp [A, h] at hp
-  -- A translate of the `ρ`-neighbourhood of the section through `p` lies in the section of the
-  -- `r`-neighbourhood through `x`.
-  have hsub : thickening ρ A ⊆ (· + -c) ⁻¹' {t : ℝ | x + t • e ∈ thickening r s} := by
-    intro σ hσ
-    obtain ⟨a, ha, hσa⟩ := mem_thickening_iff.1 hσ
-    refine mem_thickening_iff.2 ⟨p + a • e, ha, ?_⟩
-    have hsq : (σ - a) ^ 2 < ρ ^ 2 := by
-      rw [← sq_abs, ← Real.dist_eq]
-      exact pow_lt_pow_left₀ hσa dist_nonneg two_ne_zero
-    rw [Real.sq_sqrt (by nlinarith [sq_nonneg c])] at hsq
-    rw [dist_eq_norm, show x + (σ + -c) • e - (p + a • e) = q + (σ - a) • e by
-      simp only [q]; module]
-    have hr : 0 ≤ r := dist_nonneg.trans hxp.le
-    exact lt_of_pow_lt_pow_left₀ 2 hr (by rw [hnorm]; linarith)
+  have hxp : ‖x - p‖ ^ 2 = ‖q‖ ^ 2 + c ^ 2 := by
+    rw [← hnorm c, show q + c • e = x - p by simp [q]]
+  intro σ hσ
+  obtain ⟨a, ha, hσa⟩ := mem_thickening_iff.1 hσ
+  refine mem_thickening_iff.2 ⟨p + a • e, ha, ?_⟩
+  have hsq : (σ - a) ^ 2 < ρ ^ 2 := by
+    rw [← sq_abs, ← Real.dist_eq]
+    exact pow_lt_pow_left₀ hσa dist_nonneg two_ne_zero
+  rw [dist_eq_norm, show x + (σ - c) • e - (p + a • e) = q + (σ - a) • e by
+    simp only [q]; module]
+  exact lt_of_pow_lt_pow_left₀ 2 hr (by rw [hnorm]; linarith)
+
+/-- The open `r`-neighbourhood of a Steiner symmetral lies in the symmetral of the open
+`r`-neighbourhood. No measurability or finiteness hypothesis is needed. -/
+theorem thickening_steinerSymmetrization_subset (e : E) (he : ‖e‖ = 1) (s : Set E) (r : ℝ) :
+    thickening r (steinerSymmetrization e he s) ⊆
+      steinerSymmetrization e he (thickening r s) := by
+  intro x hx
+  obtain ⟨p, hp, hxp⟩ := mem_thickening_iff.1 hx
+  have hr : 0 ≤ r := dist_nonneg.trans hxp.le
+  have hxp' : ‖x - p‖ ^ 2 < r ^ 2 := by
+    rw [← dist_eq_norm]; exact pow_lt_pow_left₀ hxp dist_nonneg two_ne_zero
+  set ρ := √(r ^ 2 - ‖x - p‖ ^ 2 + ⟪e, x - p⟫ ^ 2)
+  have hρsq : ρ ^ 2 = r ^ 2 - ‖x - p‖ ^ 2 + ⟪e, x - p⟫ ^ 2 :=
+    Real.sq_sqrt (by nlinarith [sq_nonneg ⟪e, x - p⟫])
+  have hcρ : |⟪e, x - p⟫| < ρ := Real.lt_sqrt (abs_nonneg _) |>.2 (by rw [sq_abs]; linarith)
+  have hsub := thickening_lineSection_subset_preimage_sub_lineSection_thickening e he s hr
+    (ρ := ρ) (by linarith)
+  rw [mem_steinerSymmetrization_iff, mem_eball, edist_zero_right,
+    Real.eNorm_eq_ofReal_abs] at hp ⊢
+  have hρ : 0 < ρ := (abs_nonneg _).trans_lt hcρ
+  have hA : {t : ℝ | p + t • e ∈ s}.Nonempty := nonempty_iff_ne_empty.2 fun h ↦ by simp [h] at hp
   calc ENNReal.ofReal |⟪e, x⟫|
-      ≤ ENNReal.ofReal |⟪e, p⟫| + ENNReal.ofReal |c| := by
+      ≤ ENNReal.ofReal |⟪e, p⟫| + ENNReal.ofReal |⟪e, x - p⟫| := by
         rw [← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
         refine ENNReal.ofReal_le_ofReal ?_
-        rw [show ⟪e, x⟫ = ⟪e, p⟫ + c by simp [c, inner_sub_right]]
+        rw [show ⟪e, x⟫ = ⟪e, p⟫ + ⟪e, x - p⟫ by simp [inner_sub_right]]
         exact abs_add_le _ _
-    _ < volume A / 2 + ENNReal.ofReal ρ :=
+    _ < volume {t : ℝ | p + t • e ∈ s} / 2 + ENNReal.ofReal ρ :=
         ENNReal.add_lt_add hp ((ENNReal.ofReal_lt_ofReal_iff hρ).2 hcρ)
-    _ = (volume A + ENNReal.ofReal (2 * ρ)) / 2 := by
+    _ = (volume {t : ℝ | p + t • e ∈ s} + ENNReal.ofReal (2 * ρ)) / 2 := by
         rw [ENNReal.add_div, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
           mul_comm, ENNReal.mul_div_cancel_right two_ne_zero ENNReal.ofNat_ne_top]
-    _ ≤ volume (thickening ρ A) / 2 := by
+    _ ≤ volume (thickening ρ {t : ℝ | p + t • e ∈ s}) / 2 := by
         gcongr
         exact Real.volume_add_le_volume_thickening hA hρ
     _ ≤ volume {t : ℝ | x + t • e ∈ thickening r s} / 2 :=
-        ENNReal.div_le_div_right ((measure_mono hsub).trans_eq
-          (measure_preimage_add_right _ _ _)) 2
+        ENNReal.div_le_div_right ((measure_mono hsub).trans_eq <| by
+          simpa only [sub_eq_add_neg] using measure_preimage_add_right _ _ _) 2
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
@@ -216,27 +232,57 @@ theorem perimeter_steinerSymmetrization_le_of_hasDerivWithinAt (e : E) (he : ‖
           (measure_mono (sdiff_subset_sdiff_left (thickening_subset_cthickening ε K))) _)
     _ = ENNReal.ofReal D := (hK.tendsto_measure_cthickening_sdiff_div hD).liminf_eq
 
-/-- **Steiner symmetrization does not increase the perimeter of a bounded convex set.** -/
-theorem perimeter_steinerSymmetrization_le_of_convex (e : E) (he : ‖e‖ = 1) {s : Set E}
-    (hc : Convex ℝ s) (hb : Bornology.IsBounded s) :
+/-- **Steiner symmetrization does not increase perimeter.** For every null-measurable set `s` of
+finite volume and every unit vector `e`, the Steiner symmetral of `s` in direction `e` has
+perimeter at most that of `s`. No boundedness or regularity is assumed, and the perimeter of `s`
+may be infinite. -/
+theorem perimeter_steinerSymmetrization_le (e : E) (he : ‖e‖ = 1) {s : Set E}
+    (hs : NullMeasurableSet s volume) (hfin : volume s ≠ ∞) :
     perimeter volume ⊤ (steinerSymmetrization e he s) ≤ perimeter volume ⊤ s := by
-  -- Both sides are unchanged when `s` is replaced by its compact convex closure.
-  have hae : closure s =ᵐ[volume] s := closure_ae_eq_of_null_frontier (hc.addHaar_frontier volume)
-  rw [← perimeter_congr_ae (ae_restrict_of_ae hae),
-    ← perimeter_congr_ae (ae_restrict_of_ae (steinerSymmetrization_ae_eq e he hae))]
-  have hKc : Convex ℝ (closure s) := hc.closure
-  have hK : IsCompact (closure s) := hb.isCompact_closure
-  rcases (interior (closure s)).eq_empty_or_nonempty with hKi | hKi
-  · -- A convex set with empty interior is null, and so is its symmetral.
-    have h0 : volume (steinerSymmetrization e he (closure s)) = 0 := by
-      rw [volume_steinerSymmetrization e he isClosed_closure.measurableSet.nullMeasurableSet,
-        hKc.addHaar_eq_zero_iff_interior_eq_empty]
-      exact hKi
-    rw [perimeter_congr_ae (ae_restrict_of_ae (ae_eq_empty.2 h0)), perimeter_empty]
-    exact zero_le
-  · have hP : perimeter volume ⊤ (closure s) ≠ ∞ := (hKc.perimeter_lt_top hK.isBounded).ne
-    simpa [ENNReal.ofReal_toReal hP] using perimeter_steinerSymmetrization_le_of_hasDerivWithinAt
-      e he hK ((hKc.hasDerivWithinAt_measureReal_add_smul_closedBall hK hKi).mono
-        Ioi_subset_Ici_self)
+  obtain ⟨u, t, hprop, hsymm, hP⟩ := hs.exists_smooth_perimeter_approximation hfin
+  -- Approximate `s` by the closed regular superlevel sets `F k = {u k ≥ t k}`, which agree almost
+  -- everywhere with the open ones `{u k > t k}` since regular levels are null.
+  set F : ℕ → Set E := fun k => {x | t k ≤ u k x}
+  have hreg (k : ℕ) (x : E) (hx : u k x = t k) : fderiv ℝ (u k) x ≠ 0 := fun h0 => by
+    obtain ⟨v, hv⟩ := (hprop k).2.2.2.1 x hx 1
+    simp [h0] at hv
+  have hFae (k : ℕ) : F k =ᵐ[volume] {x | t k < u k x} := by
+    have hnull := ((hprop k).1.of_le (by simp)).measure_setOf_eq_eq_zero_of_fderiv_ne_zero
+      (mu := volume) (hreg k)
+    have hF : F k = {x | t k < u k x} ∪ {x | u k x = t k} := by
+      ext x
+      simp [F, le_iff_lt_or_eq, eq_comm]
+    rw [hF]
+    exact union_ae_eq_left_of_ae_eq_empty (ae_eq_empty.2 hnull)
+  have hFc (k : ℕ) : IsClosed (F k) := isClosed_le continuous_const (hprop k).1.continuous
+  have hFm (k : ℕ) : NullMeasurableSet (F k) volume := (hFc k).measurableSet.nullMeasurableSet
+  have hFfin (k : ℕ) : volume (F k) ≠ ∞ := by
+    rw [measure_congr (hFae k)]
+    exact ne_top_of_le_ne_top (hprop k).2.2.2.2.1.measure_lt_top.ne (measure_mono subset_closure)
+  -- Each `F k` has outer Minkowski content `P(F k)`, which bounds the perimeter of its symmetral.
+  have hstep (k : ℕ) : perimeter volume ⊤ (steinerSymmetrization e he (F k)) ≤
+      perimeter volume ⊤ (F k) :=
+    (perimeter_steinerSymmetrization_le_liminf e he (hFc k) (hFfin k)).trans_eq
+      ((hprop k).1.tendsto_volume_thickening_sdiff_div (hprop k).2.1 (hprop k).2.2.1.1
+        (hreg k)).liminf_eq
+  have hPF : Tendsto (fun k => perimeter volume ⊤ (F k)) atTop (𝓝 (perimeter volume ⊤ s)) :=
+    hP.congr fun k => (perimeter_congr_ae (ae_restrict_of_ae (hFae k))).symm
+  -- The symmetrals converge in measure, and the perimeter is lower semicontinuous.
+  have hconv : Tendsto (fun k => volume (steinerSymmetrization e he (F k) ∆
+      steinerSymmetrization e he s)) atTop (𝓝 0) := by
+    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsymm
+      (fun _ => zero_le) fun k => ?_
+    exact (volume_steinerSymmetrization_symmDiff_le e he (hFm k) hs).trans_eq
+      (measure_congr ((hFae k).symmDiff .rfl))
+  calc perimeter volume ⊤ (steinerSymmetrization e he s)
+      ≤ liminf (fun k => perimeter volume ⊤ (steinerSymmetrization e he (F k))) atTop :=
+        perimeter_le_liminf
+          (.of_forall fun k => nullMeasurableSet_steinerSymmetrization e he (hFm k))
+          (nullMeasurableSet_steinerSymmetrization e he hs) fun K _ _ =>
+            tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hconv
+              (fun _ => zero_le) fun _ => measure_mono inter_subset_left
+    _ ≤ liminf (fun k => perimeter volume ⊤ (F k)) atTop :=
+        liminf_le_liminf (.of_forall hstep)
+    _ = perimeter volume ⊤ s := hPF.liminf_eq
 
 end TauCeti

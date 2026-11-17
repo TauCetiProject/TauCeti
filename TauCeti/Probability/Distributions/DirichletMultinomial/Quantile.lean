@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: Codex, Claude
 -/
 module
 
@@ -30,7 +30,7 @@ public section
 
 noncomputable section
 
-open Filter MeasureTheory Set Topology
+open Filter MeasureTheory ProbabilityTheory Set Topology
 
 namespace TauCeti.Probability
 
@@ -48,6 +48,18 @@ theorem quantile_map_cast_eval_dirichletMultinomialMeasure [DecidableEq ι] [Non
       (Nat.cast : ℕ → ℝ) ∘ fun k ↦ k i by rfl,
     ← Measure.map_map (by fun_prop) (by fun_prop),
     map_eval_dirichletMultinomialMeasure ha n i]
+
+/-- For at least two categories, a natural number is the coordinate quantile exactly when it is
+the least count whose beta-binomial cumulative mass reaches the level. -/
+theorem quantile_map_cast_eval_dirichletMultinomialMeasure_eq_iff [DecidableEq ι]
+    [Nontrivial ι] (ha : ∀ i, 0 < a i) (n : ℕ) (i : ι) {u : ℝ}
+    (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    ((dirichletMultinomialMeasure n a).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
+      IsLeast {m : ℕ | u ≤ ∑ j ∈ Finset.Iic m,
+        n.choose j * beta (a i + j) ((∑ l with l ≠ i, a l) + (n - j)) /
+          beta (a i) (∑ l with l ≠ i, a l)} k := by
+  rw [quantile_map_cast_eval_dirichletMultinomialMeasure ha n i,
+    quantile_map_cast_betaBinomialMeasure_eq_iff (ha i) (Finset.sum_filter_ne_pos ha i) hu]
 
 /-- With one category, every coordinate quantile at a level in `(0, 1]` is the trial count. -/
 @[simp]

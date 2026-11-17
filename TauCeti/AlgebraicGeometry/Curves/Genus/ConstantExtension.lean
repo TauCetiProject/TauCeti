@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Geometrically.FunctionField
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Regular
 public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.RelativeDimension
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.SerreDuality
+public import TauCeti.FieldTheory.FunctionField.ConstantExtension.Genus.Change
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Equiv
 import TauCeti.AlgebraicGeometry.Curves.Smooth
 
@@ -39,6 +40,14 @@ identify the function field of `X_{k'}` with `F · k'`, which holds for every ge
 `X` (`TauCeti.AlgebraicGeometry.nonempty_functionField_algEquiv_of_isPullback`): both are the
 fraction field of `A ⊗[k] k'` for a nonempty affine open `U = Spec A` of `X`.
 
+For a finite extension `k' / k` the divisor theory of `F` carries over as well. Since `F ⊗[k] k'`
+is a field, `[F · k' : F] = [k' : k]`, and `k'` is the exact constant field of `F · k'`. With the
+genus unchanged, no place of `F` becomes singular after extending the constants
+(`TauCeti.genus_eq_genus_iff_forall_constantSpanIntegers_eq`). So `L(Con D) = L(D) · k'` and
+`ℓ(Con D) = ℓ(D)` for every divisor `D`, the conorm carries the canonical class to the canonical
+class, and it is injective on divisor classes. These are Stichtenoth's Theorem 3.6.3(d)–(f), which
+he proves for perfect `k`; here `k' / k` may be inseparable.
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.genus_eq_genus_functionField_of_smooth`: the genus
@@ -54,6 +63,12 @@ fraction field of `A ⊗[k] k'` for a nonempty affine open `U = Spec A` of `X`.
 * `TauCeti.AlgebraicGeometry.isEmpty_algEquiv_functionField_of_genus_lt`: a field whose genus drops
   under some algebraic constant field extension is not the function field of a smooth proper
   geometrically integral curve.
+* `TauCeti.AlgebraicGeometry.riemannRochSpace_conorm_eq_span_of_smooth` and
+  `TauCeti.AlgebraicGeometry.dim_conorm_of_smooth`: `L(Con D) = L(D) · k'` and
+  `ℓ(Con D) = ℓ(D)` for a finite extension `k' / k`.
+* `TauCeti.AlgebraicGeometry.conormClassGroup_canonicalClass_of_smooth` and
+  `TauCeti.AlgebraicGeometry.conormClassGroup_injective_of_smooth`: the conorm preserves the
+  canonical class and is injective on divisor classes.
 
 ## References
 
@@ -176,6 +191,71 @@ theorem isEmpty_algEquiv_functionField_of_genus_lt [IsIntegral X]
     (h : constantCompositum F k' F' = ⊤) (hlt : genus k' F' < genus k F) :
     IsEmpty (F ≃ₐ[k] X.functionField) :=
   ⟨fun e ↦ hlt.ne (genus_eq_genus_of_constantCompositum_eq_top_of_algEquiv e h)⟩
+
+/-! ### Divisors of a smooth curve under finite constant field extensions -/
+
+section Divisor
+
+variable [IsIntegral X] [IsProper (X ↘ Spec (.of k))]
+  [SmoothOfRelativeDimension 1 (X ↘ Spec (.of k))] [GeometricallyIntegral (X ↘ Spec (.of k))]
+  {k' : Type u} [Field k'] [Algebra k k'] [FiniteDimensional k k'] {F' : Type*} [Field F']
+  [Algebra k' F'] [Algebra X.functionField F'] [Algebra k F'] [IsScalarTower k k' F']
+  [IsScalarTower k X.functionField F'] [FiniteDimensional X.functionField F']
+  (h : constantCompositum X.functionField k' F' = ⊤)
+
+omit [Algebra k K] [Y.Over (Spec (.of K))]
+
+include h
+
+/-- **Riemann–Roch spaces of a smooth curve under a finite constant field extension.** Let `X` be a
+smooth proper geometrically integral curve over `k` with function field `F = k(X)`, and let
+`F' = F · k'` for a finite extension `k' / k`, separable or not. Then for every divisor `D` of
+`F / k`, `L(Con D)` is the `k'`-span of the image of `L(D)`. -/
+theorem riemannRochSpace_conorm_eq_span_of_smooth (D : Divisor k X.functionField) :
+    riemannRochSpace (Divisor.conorm k' F' D) =
+      Submodule.span k' (algebraMap X.functionField F' '' riemannRochSpace D) :=
+  have := Scheme.IsCurveOver.of_smooth k X
+  riemannRochSpace_conorm_eq_span_of_genus_eq h
+    (finrank_eq_finrank_of_constantCompositum_eq_top (k := k) h)
+    Scheme.IsCurveOver.isFunctionField isIntegrallyClosedIn_functionField_of_geometricallyIntegral
+    (isIntegrallyClosedIn_of_constantCompositum_eq_top (k := k) h)
+    (genus_eq_genus_functionField_of_constantCompositum_eq_top h) D
+
+/-- **`ℓ(Con D) = ℓ(D)` on a smooth curve under a finite constant field extension**, separable or
+not: the Riemann–Roch dimensions of the function field of a smooth proper geometrically integral
+curve over `k` do not change when the constants are extended to a finite `k' / k`. -/
+theorem dim_conorm_of_smooth (D : Divisor k X.functionField) :
+    (Divisor.conorm k' F' D).dim = D.dim :=
+  have := Scheme.IsCurveOver.of_smooth k X
+  Divisor.dim_conorm_of_genus_eq h (finrank_eq_finrank_of_constantCompositum_eq_top (k := k) h)
+    Scheme.IsCurveOver.isFunctionField isIntegrallyClosedIn_functionField_of_geometricallyIntegral
+    (isIntegrallyClosedIn_of_constantCompositum_eq_top (k := k) h)
+    (genus_eq_genus_functionField_of_constantCompositum_eq_top h) D
+
+/-- **The canonical class of a smooth curve under a finite constant field extension**, separable
+or not: the conorm sends the canonical class of the function field `F = k(X)` of a smooth proper
+geometrically integral curve to the canonical class of `F' = F · k'`. -/
+theorem conormClassGroup_canonicalClass_of_smooth (hF : IsFunctionField k X.functionField) :
+    Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)
+        (canonicalClass hF isIntegrallyClosedIn_functionField_of_geometricallyIntegral) =
+      canonicalClass (hF.of_constantCompositum_eq_top h)
+        (isIntegrallyClosedIn_of_constantCompositum_eq_top (k := k) h) :=
+  conormClassGroup_canonicalClass_of_genus_eq h
+    (finrank_eq_finrank_of_constantCompositum_eq_top (k := k) h) hF _ _
+    (genus_eq_genus_functionField_of_constantCompositum_eq_top h)
+
+/-- **Divisor classes of a smooth curve under a finite constant field extension**, separable or
+not: the conorm on divisor classes of the function field of a smooth proper geometrically integral
+curve over `k` is injective, so a divisor that becomes principal over `k'` is already principal. -/
+theorem conormClassGroup_injective_of_smooth (hF : IsFunctionField k X.functionField) :
+    Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) :=
+  conormClassGroup_injective_of_genus_eq h
+    (finrank_eq_finrank_of_constantCompositum_eq_top (k := k) h) hF
+    isIntegrallyClosedIn_functionField_of_geometricallyIntegral
+    (isIntegrallyClosedIn_of_constantCompositum_eq_top (k := k) h)
+    (genus_eq_genus_functionField_of_constantCompositum_eq_top h)
+
+end Divisor
 
 end AlgebraicGeometry
 

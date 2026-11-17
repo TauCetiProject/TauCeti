@@ -406,17 +406,14 @@ private theorem exists_append_unbounded [Countable A] {F : (ℕ → ℕ) → tre
     exact (Order.lt_succ (0 : Ordinal.{u})).not_ge
       (hle.trans' (Order.succ_le_succ zero_le))
 
-/-- **Boundedness on Baire space.** Let `F : (ℕ → ℕ) → tree A` be a family of well-founded trees
-over a countable alphabet `A` such that `{z | u ∈ F z}` is closed in `ℕ → ℕ` for every finite
-sequence `u : List A`. Then some countable ordinal `β < ω₁` strictly bounds `rank (F z)` across all
-`z : ℕ → ℕ`. -/
-theorem exists_rank_lt_omega_one_of_nat_nat [Countable A] (F : (ℕ → ℕ) → tree A)
-    (hwf : ∀ z, IsWellFounded (F z)) (hcl : ∀ u : List A, IsClosed {z : ℕ → ℕ | u ∈ F z}) :
-    ∃ β : Ordinal.{u}, β < ω₁ ∧ ∀ z, rank (F z) < β := by
-  by_contra! hunb_root
-  have hroot : RankUnboundedOnCylinder F (fun _ => 0) 0 [] := fun β hβ => by
-    obtain ⟨w, hw⟩ := hunb_root β hβ
-    exact ⟨w, by simp, by simpa using hw⟩
+/-- **A branch with unbounded witnesses.** If the subtree ranks of a family of well-founded trees
+are unbounded on the whole Baire space at the root, there are a point `zStar` and a branch `branch`
+such that, for every `m`, the `m`-th cylinder of `zStar` contains a point whose tree holds the
+`m`-th prefix of `branch`. -/
+private theorem exists_branch_of_rankUnboundedOnCylinder [Countable A] {F : (ℕ → ℕ) → tree A}
+    (hwf : ∀ z, IsWellFounded (F z)) (hroot : RankUnboundedOnCylinder F (fun _ => 0) 0 []) :
+    ∃ (zStar : ℕ → ℕ) (branch : ℕ → A), ∀ m : ℕ,
+      ∃ w ∈ PiNat.cylinder zStar m, List.ofFn (fun i : Fin m => branch i) ∈ F w := by
   -- Simultaneously refine the Baire cylinder and extend the tree node one step at a time.
   let State := {q : (ℕ → ℕ) × ℕ × List A // RankUnboundedOnCylinder F q.1 q.2.1 q.2.2}
   have hstep : ∀ s : State,
@@ -469,6 +466,20 @@ theorem exists_rank_lt_omega_one_of_nat_nat [Countable A] (F : (ℕ → ℕ) →
     · by_contra hnot
       rw [rank_subAt_eq_zero_of_notMem hnot] at hle
       exact zero_lt_one.not_ge hle
+  exact ⟨zStar, branch, hwit⟩
+
+/-- **Boundedness on Baire space.** Let `F : (ℕ → ℕ) → tree A` be a family of well-founded trees
+over a countable alphabet `A` such that `{z | u ∈ F z}` is closed in `ℕ → ℕ` for every finite
+sequence `u : List A`. Then some countable ordinal `β < ω₁` strictly bounds `rank (F z)` across all
+`z : ℕ → ℕ`. -/
+theorem exists_rank_lt_omega_one_of_nat_nat [Countable A] (F : (ℕ → ℕ) → tree A)
+    (hwf : ∀ z, IsWellFounded (F z)) (hcl : ∀ u : List A, IsClosed {z : ℕ → ℕ | u ∈ F z}) :
+    ∃ β : Ordinal.{u}, β < ω₁ ∧ ∀ z, rank (F z) < β := by
+  by_contra! hunb_root
+  have hroot : RankUnboundedOnCylinder F (fun _ => 0) 0 [] := fun β hβ => by
+    obtain ⟨w, hw⟩ := hunb_root β hβ
+    exact ⟨w, by simp, by simpa using hw⟩
+  obtain ⟨zStar, branch, hwit⟩ := exists_branch_of_rankUnboundedOnCylinder hwf hroot
   choose w hw_cyl hw_mem using hwit
   have htend : Tendsto w atTop (𝓝 zStar) :=
     tendsto_pi_nhds.mpr fun i => tendsto_atTop_of_eventually_const (i₀ := i + 1)

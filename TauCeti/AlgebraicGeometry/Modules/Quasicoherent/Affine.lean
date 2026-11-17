@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Tilde.Basic
 public import Mathlib.AlgebraicGeometry.Modules.Tilde
+public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.Algebra.Category.ModuleCat.EnoughInjectives
 public import Mathlib.CategoryTheory.Abelian.Transfer
 
@@ -19,7 +20,9 @@ injectives. Pullback along `X.isoSpec` and Mathlib's tilde equivalence identify 
 `ModuleCat Γ(X, ⊤)`. These are the category theoretic inputs for deriving exact global sections.
 
 Under the tilde equivalence, pullback along `Spec φ` for a ring map `φ : R ⟶ S` is extension of
-scalars along `φ` (`tildeEquivFunctorCompPullbackIso`).
+scalars along `φ` (`tildeEquivFunctorCompPullbackIso`). Hence pullback along `Spec φ` preserves
+finite limits when `φ` is flat (`preservesFiniteLimits_pullback_specMap`) and reflects
+isomorphisms when `φ` is faithfully flat (`reflectsIsomorphisms_pullback_specMap`).
 -/
 
 public section
@@ -122,6 +125,29 @@ theorem tildeEquivFunctorCompPullbackIso_inv_app_hom (M : ModuleCat.{u} R) :
   refine h.trans ?_
   exact (congrArg (_ ≫ ·) ((Category.comp_id _).trans
     (pullbackCompιIso_inv_app (Spec.map φ) ((tildeEquiv (R := R)).functor.obj M))))
+
+/-- Pullback of quasi-coherent modules along `Spec φ` is extension of scalars along `φ`,
+conjugated by `tildeEquiv`. -/
+private noncomputable def extendScalarsConjIso :
+    (tildeEquiv (R := R)).inverse ⋙ ModuleCat.extendScalars φ.hom ⋙
+      (tildeEquiv (R := S)).functor ≅ pullback (Spec.map φ) :=
+  Functor.isoWhiskerLeft _ (tildeEquivFunctorCompPullbackIso φ).symm ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (tildeEquiv (R := R)).counitIso _ ≪≫ Functor.leftUnitor _
+
+/-- For a flat ring map `φ`, pullback of quasi-coherent modules along `Spec φ` preserves finite
+limits, as extension of scalars along `φ` does. -/
+theorem preservesFiniteLimits_pullback_specMap (hφ : φ.hom.Flat) :
+    Limits.PreservesFiniteLimits (pullback (Spec.map φ)) := by
+  have := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ
+  exact Limits.preservesFiniteLimits_of_natIso (extendScalarsConjIso φ)
+
+/-- For a faithfully flat ring map `φ`, pullback of quasi-coherent modules along `Spec φ` reflects
+isomorphisms, as extension of scalars along `φ` does. -/
+theorem reflectsIsomorphisms_pullback_specMap (hφ : φ.hom.FaithfullyFlat) :
+    (pullback (Spec.map φ)).ReflectsIsomorphisms := by
+  have := ModuleCat.reflectsIsomorphisms_extendScalars_of_faithfullyFlat hφ
+  exact reflectsIsomorphisms_of_iso (extendScalarsConjIso φ)
 
 end Pullback
 

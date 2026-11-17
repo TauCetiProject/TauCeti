@@ -240,6 +240,55 @@ theorem grpObjMap_productMapOfNormal
   rw [productMapOfNormal_comp_normalSemidirectProductIso_hom]
   exact grpObjMap_normalSemidirectMultiplicationCoordinateMap H I J hI
 
+/-- A Hopf-algebra morphism dual to normal semidirect multiplication sends a point `q` of the
+semidirect product to the product of the images of its two coordinates under the quotient
+inclusions on points. -/
+theorem mapPointsFunctor_app_grpObjPointsMulEquiv_normalSemidirect
+    (H : _root_.CommHopfAlgCat.{u} R) (I J : HopfIdeal R H) (hI : I.IsNormal)
+    [IsMonHom.Normal (quotientGrpObjInclusion H I)] (A : CommAlgCat.{u} R)
+    (φ : H ⟶ (quotientNormalConjugation H I J hI).coordinateHopfAlgebra)
+    (hφ : CommHopfAlgCat.Hom.grpObjMap φ =
+      (GrpObj.Action.normalSemidirectMul
+        (quotientGrpObjInclusion H I)
+        (quotientGrpObjInclusion H J)).hom.hom)
+    (q : op A ⟶ (quotientNormalConjugation H I J hI).semidirectProduct.toMon.X) :
+    (CommHopfAlgCat.Hom.mapPointsFunctor φ).app A
+        (grpObjPointsMulEquiv (quotientNormalConjugation H I J hI).coordinateHopfAlgebra (op A) q) =
+      quotientPointsHom H I A
+          (grpObjPointsMulEquiv _ (op A)
+            (q ≫ CartesianMonoidalCategory.fst (CommHopfAlgCat.grpObj (quotient H I))
+              (CommHopfAlgCat.grpObj (quotient H J)))) *
+        quotientPointsHom H J A
+          (grpObjPointsMulEquiv _ (op A)
+            (q ≫ CartesianMonoidalCategory.snd (CommHopfAlgCat.grpObj (quotient H I))
+              (CommHopfAlgCat.grpObj (quotient H J)))) := by
+  calc
+    _ = grpObjPointsMulEquiv H (op A)
+        (q ≫ CommHopfAlgCat.Hom.grpObjMap φ) := by
+      have hcomp := grpObjPointsMulEquiv_comp_grpObjMap φ (op A) q
+      rw [CommHopfAlgCat.Hom.mapPointsFunctor_app_apply] at hcomp ⊢
+      exact hcomp.symm
+    _ = grpObjPointsMulEquiv H (op A)
+        (q ≫ (GrpObj.Action.normalSemidirectMul
+          (quotientGrpObjInclusion H I)
+          (quotientGrpObjInclusion H J)).hom.hom) := by
+      rw [hφ]
+    _ = grpObjPointsMulEquiv H (op A)
+        ((q ≫ CartesianMonoidalCategory.fst _ _ ≫
+            quotientGrpObjInclusion H I) *
+          (q ≫ CartesianMonoidalCategory.snd _ _ ≫
+            quotientGrpObjInclusion H J)) := by
+      rw [GrpObj.Action.comp_normalSemidirectMul]
+    _ = _ := by
+      rw [map_mul]
+      have hleft := grpObjPointsMulEquiv_comp_quotientGrpObjInclusion
+        H I (op A) (q ≫ CartesianMonoidalCategory.fst (CommHopfAlgCat.grpObj (quotient H I))
+          (CommHopfAlgCat.grpObj (quotient H J)))
+      have hright := grpObjPointsMulEquiv_comp_quotientGrpObjInclusion
+        H J (op A) (q ≫ CartesianMonoidalCategory.snd (CommHopfAlgCat.grpObj (quotient H I))
+          (CommHopfAlgCat.grpObj (quotient H J)))
+      simpa only [Category.assoc] using congrArg₂ (· * ·) hleft hright
+
 variable {k : Type u} [Field k]
 
 /-- The coordinate Hopf algebra of the scheme-theoretic multiplication image. -/

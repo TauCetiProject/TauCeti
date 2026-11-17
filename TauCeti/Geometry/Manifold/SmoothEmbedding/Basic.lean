@@ -14,14 +14,14 @@ import TauCeti.Geometry.Manifold.Immersion.Basic
 
 Mathlib provides the predicate `Manifold.IsSmoothEmbedding I J n f`, saying that a map between
 manifolds is a `C^n` immersion and a topological embedding, but it does not bundle maps satisfying
-that predicate. This file adds the small bundled type needed by the geometric-topology roadmap's
-first-class geometric knot/link presentations: a smooth presentation is a smooth embedding of the
-circle into an ambient manifold, and later files should traffic in the embedding as data rather
-than in a bare function plus detached hypotheses.
+that predicate. This file adds that small bundled type, in which geometric knot and link
+presentations are phrased: a smooth presentation is a smooth embedding of the circle into an
+ambient manifold, and it is handled as data rather than as a bare function plus detached
+hypotheses.
 
-The file deliberately stays at the general manifold level. The roadmap's circle presentations are
-special cases of this type, while the same bundled smooth embeddings are also the right inputs for
-later tubular-neighbourhood and surgery interfaces.
+The file deliberately stays at the general manifold level. Smooth knot presentations, embeddings
+of the circle, are special cases of this type, while the same bundled smooth embeddings are also
+the inputs of the tubular-neighbourhood and surgery constructions.
 
 ## Main definitions
 
@@ -44,6 +44,10 @@ later tubular-neighbourhood and surgery interfaces.
 * `Manifold.IsImmersion.isSmoothEmbedding_of_isProperMap`: an injective proper immersion is a
   smooth embedding.
 * `Manifold.IsSmoothEmbedding.of_le`: lowering the regularity order preserves smooth embeddings.
+* `ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding`,
+  `ContinuousLinearMap.isSmoothEmbedding_of_injective`: a continuous linear map with a continuous
+  linear left inverse, for instance an injective one into a finite-dimensional space over a
+  complete field, is a `C^n` embedding.
 
 The construction is a thin wrapper around Mathlib's
 `Manifold.IsSmoothEmbedding` API, especially `IsSmoothEmbedding.id`, `of_opens`, `prodMap`,
@@ -156,19 +160,6 @@ theorem isImmersion (f : SmoothEmbedding I J n M N) : Manifold.IsImmersion I J n
 /-- A bundled smooth embedding is a topological embedding. -/
 theorem isEmbedding (f : SmoothEmbedding I J n M N) : IsEmbedding f :=
   f.isSmoothEmbedding.isEmbedding
-
-/-- The coordinate differential of an embedding remains split-injective on the overlap
-of its tangent charts, including for infinite-dimensional models. -/
-theorem hasLeftInverse_inTangentCoordinates_mfderiv [IsManifold I 1 M] [IsManifold J 1 N]
-    (f : SmoothEmbedding I J n M N)
-    (hn : n ≠ 0) {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
-    (hy : f x ∈ (chartAt H' (f x₀)).source) :
-    (inTangentCoordinates I J _root_.id (f : M → N)
-      (mfderiv I J (f : M → N)) x₀ x).HasLeftInverse := by
-  rw [inTangentCoordinates,
-    ContinuousLinearMap.inCoordinates_eq (by simpa using hx) (by simpa using hy)]
-  exact ((isDiffImmersionAt_iff.mp (f.isImmersion.isDiffImmersionAt hn x)).comp
-    (ContinuousLinearEquiv.hasLeftInverse _)).continuousLinearEquivalence_comp
 
 /-- Bundle a map satisfying Mathlib's smooth-embedding predicate as a smooth embedding. -/
 def ofIsSmoothEmbedding (f : M → N) (hf : Manifold.IsSmoothEmbedding I J n f) :
@@ -327,5 +318,17 @@ theorem _root_.Manifold.IsSmoothEmbedding.of_le {m : ℕ∞ω} {f : M → N}
     (h : Manifold.IsSmoothEmbedding I J m f) (hnm : n ≤ m) :
     Manifold.IsSmoothEmbedding I J n f :=
   ⟨h.isImmersion.of_le hnm, h.isEmbedding⟩
+
+/-- A continuous linear map with a continuous linear left inverse is a `C^n` embedding. -/
+theorem _root_.ContinuousLinearMap.HasLeftInverse.isSmoothEmbedding {f : E →L[𝕜] E'}
+    (hf : f.HasLeftInverse) : Manifold.IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n f :=
+  ⟨hf.isImmersion, hf.leftInverse_leftInverse.isEmbedding hf.leftInverse.continuous f.continuous⟩
+
+/-- An injective continuous linear map into a finite-dimensional space over a complete field is a
+`C^n` embedding. -/
+theorem _root_.ContinuousLinearMap.isSmoothEmbedding_of_injective [CompleteSpace 𝕜]
+    [FiniteDimensional 𝕜 E'] {f : E →L[𝕜] E'} (hf : Function.Injective f) :
+    Manifold.IsSmoothEmbedding 𝓘(𝕜, E) 𝓘(𝕜, E') n f :=
+  (ContinuousLinearMap.HasLeftInverse.of_injective_of_finiteDimensional hf).isSmoothEmbedding
 
 end TauCeti

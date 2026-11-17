@@ -150,15 +150,20 @@ private theorem baseChangeExp_tmul_lie (D : LieDerivation ℚ L L) (M : LieSubal
 
 /-- The integral divided-power exponential preserves the Lie bracket after an arbitrary base
 change. No finite-dimensionality, flatness, or characteristic assumption is needed on the new
-base ring. -/
+base ring, and no nilpotency assumption on the derivation: without it the exponential is the empty
+sum (nilpotency class zero) and both sides vanish. -/
 theorem baseChangeExp_lie (D : LieDerivation ℚ L L) (M : LieSubalgebra ℤ L)
     (hM : ∀ n, ∀ x ∈ M, Associative.dividedPower n D.toLinearMap x ∈ M)
-    (hD : IsNilpotent D.toLinearMap) (t : R) (x y : R ⊗[ℤ] M) :
+    (t : R) (x y : R ⊗[ℤ] M) :
     baseChangeExp D.toLinearMap M hM t ⁅x, y⁆ =
       ⁅baseChangeExp D.toLinearMap M hM t x,
         baseChangeExp D.toLinearMap M hM t y⁆ := by
   let _ : LieRing (R ⊗[ℤ] M) := LieAlgebra.ExtendScalars.instLieRing ℤ R M
   let _ : LieAlgebra R (R ⊗[ℤ] M) := LieAlgebra.ExtendScalars.instLieAlgebra ℤ R M
+  by_cases hD : IsNilpotent D.toLinearMap
+  swap
+  · -- A non-nilpotent derivation has nilpotency class zero, so the exponential is the empty sum.
+    simp [baseChangeExp_eq_zero_of_not_isNilpotent hD M hM t]
   induction x using TensorProduct.inductionOn with
   | tmul a x =>
       induction y using TensorProduct.inductionOn with
@@ -183,7 +188,7 @@ noncomputable def baseChangeExpLieEquiv (D : LieDerivation ℚ L L) (M : LieSuba
       -- `toLinearMap`; expose it so the named underlying-map theorem can rewrite the goal.
       change (baseChangeExpLinearEquiv D.toLinearMap M hM hD t).toLinearMap ⁅x, y⁆ = _
       rw [baseChangeExpLinearEquiv_toLinearMap]
-      exact baseChangeExp_lie D M hM hD t x y }
+      exact baseChangeExp_lie D M hM t x y }
 
 /-- The underlying action of the base-changed Lie exponential is the existing divided-power
 exponential. -/

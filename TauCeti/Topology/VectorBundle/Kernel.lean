@@ -111,6 +111,12 @@ noncomputable def kernelFiberBundle : FiberBundle G fun x ↦ (A x).ker where
   mem_baseSet_trivializationAt' x := mem_univ x
   trivialization_mem_atlas' _ := mem_singleton _
 
+/-- The split-kernel atlas consists of its single global trivialization. -/
+theorem trivializationAtlas_kernelFiberBundle :
+    letI := kernelFiberBundle hA h
+    trivializationAtlas G (fun x ↦ (A x).ker) = {kernelTrivialization hA h} :=
+  (rfl)
+
 /-- The chosen trivialization of the kernel bundle is its split-kernel chart. -/
 theorem trivializationAt_kernelFiberBundle (x : X) :
     letI := kernelFiberBundle hA h

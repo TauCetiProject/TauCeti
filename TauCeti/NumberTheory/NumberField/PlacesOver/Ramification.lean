@@ -73,8 +73,8 @@ theorem localDegree_pos (w : FinitePlace F) : 0 < w.localDegree K :=
 /-- Restricting a finite place to the base raises the base place to the local degree. -/
 theorem apply_algebraMap (w : FinitePlace F) (v : FinitePlace K) [w.LiesOver v] (x : K) :
     w (algebraMap K F x) = v x ^ w.localDegree K := by
-  simpa only [mk_maximalIdeal, localDegree_def] using
-    mk_apply_algebraMap v.maximalIdeal w.maximalIdeal x
+  simpa only [mk_maximalIdeal, localDegree_def, ← mk_apply, equivHeightOneSpectrum_symm_apply] using
+    equivHeightOneSpectrum_symm_apply_algebraMap v.maximalIdeal w.maximalIdeal x
 
 variable (F) in
 /-- The finite places of `F` lying over a given finite place of `K`. -/

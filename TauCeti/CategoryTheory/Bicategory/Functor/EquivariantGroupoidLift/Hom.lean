@@ -247,6 +247,13 @@ lemma isoMk_inv_joint {φ ψ : L.Hom L'} (e : φ.joint ≅ ψ.joint)
     (isoMk e comm).inv.joint = e.inv :=
   (rfl)
 
+/-- A compatible modification is invertible if its underlying joint modification is. -/
+lemma isIso_of_isIso_joint {φ ψ : L.Hom L'} (Θ : φ ⟶ ψ) [IsIso Θ.joint] : IsIso Θ := by
+  let e : φ ≅ ψ := isoMk (asIso Θ.joint) Θ.comm
+  have he : e.hom = Θ := hom₂_ext (by simp [e])
+  rw [← he]
+  infer_instance
+
 /-- The joint modification of an isomorphism of morphisms of lifts is an isomorphism. -/
 def jointIso {φ ψ : L.Hom L'} (e : φ ≅ ψ) : φ.joint ≅ ψ.joint where
   hom := e.hom.joint

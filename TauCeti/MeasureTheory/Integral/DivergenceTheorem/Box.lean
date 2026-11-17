@@ -42,6 +42,14 @@ theorem boxBoundarySum_def (a b : Fin (n + 1) → ℝ)
       ∑ i, ((∫ x in Icc (a ∘ i.succAbove) (b ∘ i.succAbove), F i (i.insertNth (b i) x)) -
         ∫ x in Icc (a ∘ i.succAbove) (b ∘ i.succAbove), F i (i.insertNth (a i) x)) := (rfl)
 
+/-- On the unit cube, the boundary flux is the sum of front-minus-back integrals over
+unit cubes of one lower dimension. -/
+theorem boxBoundarySum_zero_one (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) :
+    boxBoundarySum 0 1 F =
+      ∑ i, ((∫ x in Icc (0 : Fin n → ℝ) 1, F i (i.insertNth 1 x)) -
+        ∫ x in Icc (0 : Fin n → ℝ) 1, F i (i.insertNth 0 x)) := by
+  simp only [boxBoundarySum_def, Function.comp_def, Pi.zero_def, Pi.one_def]
+
 @[simp]
 theorem boxBoundarySum_zero (a b : Fin (n + 1) → ℝ) :
     boxBoundarySum a b (fun _ _ ↦ (0 : E)) = 0 := by

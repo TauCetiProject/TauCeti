@@ -52,6 +52,11 @@ theorem norm_le_norm_fst_of_norm_sq_sub (u : E) : ‖u‖ ≤ ‖(L u).1‖ := b
   have := hL u
   nlinarith [sq_nonneg ‖(L u).2‖, norm_nonneg u, norm_nonneg (L u).1]
 
+/-- An isometric negative column is injective. -/
+theorem injective_of_norm_sq_sub : Function.Injective L :=
+  (injective_iff_map_eq_zero L).2 fun u hu ↦ norm_le_zero_iff.1 <| by
+    simpa [hu] using L.norm_le_norm_fst_of_norm_sq_sub hL u
+
 /-- Away from zero, the positive block of an isometric negative column has strictly
 smaller norm than its negative block. -/
 theorem norm_snd_lt_norm_fst_of_norm_sq_sub {u : E} (hu : u ≠ 0) :

@@ -8,7 +8,7 @@ module
 public import TauCeti.NumberTheory.LocalField.Exponential
 public import TauCeti.NumberTheory.LocalField.Logarithm
 import Mathlib.Topology.Algebra.Polynomial
-import TauCeti.Algebra.Order.GroupWithZero.Pow
+import TauCeti.Algebra.Order.Monoid.Unbundled.Pow
 import TauCeti.RingTheory.PowerSeries.Log
 import TauCeti.RingTheory.Valuation.Polynomial
 import TauCeti.Topology.Algebra.ValuativeRel.HasSum

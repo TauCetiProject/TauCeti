@@ -7,7 +7,9 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.CoverBond
 
+import TauCeti.Data.Finset.Max
 import TauCeti.Data.Rat.NumDenDvd
+import TauCeti.LinearAlgebra.RootSystem.Reduced
 
 /-!
 # Bond gcds and `a`-chains of saturated chains in `W / W_λ`
@@ -335,8 +337,6 @@ theorem bondGcd_snoc_singleton_simple_one {i : b.support} (hi : P.coroot' i lam 
   rw [bondGcd_singleton, Nat.gcd_zero_left, RelSeries.last_singleton,
     reflectionBond_simple_smul_one_smul i]
 
-variable [P.flip.IsReduced]
-
 /-- **The `a`-chain condition in Littelmann's form.** A saturated chain `x₀ ⋗ x₁ ⋗ ⋯ ⋗ x_l` of
 `W / W_λ` is an `a`-chain exactly when `a ⟨x_{h-1} λ, β^∨⟩` is an integer for every cover
 `x_h ⋖ x_{h-1}` and every positive root `β` with `x_h λ = s_β (x_{h-1} λ)`. Such a root exists and
@@ -363,7 +363,6 @@ theorem isAChain_iff_forall_coroot' (hlam : lam ∈ dominantChamber P b)
     push_cast at hz ⊢
     linarith
 
-omit [P.flip.IsReduced] in
 /-- A saturated chain of `W / W_λ` of length `0` has bond gcd `0`, the gcd of no bonds. -/
 theorem bondGcd_eq_zero_of_length_eq_zero
     {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)} (h : C.length = 0) :
@@ -415,6 +414,48 @@ theorem IsAChain.exists_mul_sub_eq_intCast (hlam : lam ∈ dominantChamber P b)
     ((Int.natCast_dvd_natCast.mpr (isAChain_iff_den_dvd_bondGcd.mp hC)).trans
       (bondGcd_dvd_sub hlam C f))
 
+/-- Along an `a`-chain, the scaled difference of its endpoint weights is an actual root-lattice
+vector, in every characteristic-zero linear realization. This retains the lattice information,
+not only its values under integral linear forms. -/
+theorem IsAChain.exists_mem_rootSpan_smul_sub_eq
+    (hlam : lam ∈ dominantChamber P b)
+    {C : (weylCoxeterSystem P b).MinimalCosetRepChain (P.wallIndices b lam)}
+    (hC : IsAChain a lam C) {𝕜 V : Type*} [Field 𝕜] [CharZero 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] (f : M →+ V) :
+    ∃ m ∈ P.rootSpan ℤ, (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) = f m := by
+  induction C using RelSeries.inductionOn' with
+  | singleton y => exact ⟨0, Submodule.zero_mem _, by simp⟩
+  | snoc C y hy ih =>
+    obtain ⟨hC, z, hz⟩ := (isAChain_snoc_iff hy).mp hC
+    obtain ⟨m, hm, heq⟩ := ih hC
+    obtain ⟨β, ⟨hβ, hβx⟩, -⟩ :=
+      existsUnique_isPos_reflection_smul_eq_of_minimalCosetRepCovBy hlam hy
+    have hb := reflectionBond_eq_neg_coroot' hβ hβx
+      (smul_ne_smul_of_minimalCosetRepCovBy hlam hy)
+    have hz' : (a : 𝕜) * (P.coroot' β (C.last.1 • lam) : 𝕜) = (-z : ℤ) := by
+      rw [hb] at hz
+      exact_mod_cast (by push_cast at hz ⊢; linarith :
+        a * (P.coroot' β (C.last.1 • lam) : ℚ) = (-z : ℤ))
+    have hdiff : C.last.1 • lam - y.1 • lam =
+        P.coroot' β (C.last.1 • lam) • P.root β := by
+      rw [← hβx, RootPairing.reflection_apply]
+      abel
+    have hedge : (a : 𝕜) • (f (C.last.1 • lam) - f (y.1 • lam)) =
+        f ((-z) • P.root β) := by
+      rw [← map_sub, hdiff, map_zsmul]
+      simpa only [map_zsmul, ← Int.cast_smul_eq_zsmul 𝕜, smul_smul] using
+        congrArg (fun t : 𝕜 ↦ t • f (P.root β)) hz'
+    refine ⟨m + (-z) • P.root β, Submodule.add_mem _ hm
+      (Submodule.smul_mem _ _ (Submodule.subset_span ⟨β, rfl⟩)), ?_⟩
+    simp only [RelSeries.head_snoc, RelSeries.last_snoc]
+    calc
+      (a : 𝕜) • (f (C.head.1 • lam) - f (y.1 • lam)) =
+          (a : 𝕜) • (f (C.head.1 • lam) - f (C.last.1 • lam)) +
+          (a : 𝕜) • (f (C.last.1 • lam) - f (y.1 • lam)) := by
+            rw [← smul_add, sub_add_sub_cancel]
+      _ = f m + f ((-z) • P.root β) := by rw [heq, hedge]
+      _ = f (m + (-z) • P.root β) := (map_add f _ _).symm
+
 /-- **Littelmann's integrality at a simple wall.** Let `C : x₀ ⋗ ⋯ ⋗ x_l` be an `a`-chain of
 `W / W_λ` and `αᵢ` a simple root with `⟨x₀ λ, αᵢ^∨⟩ < 0 ≤ ⟨x_l λ, αᵢ^∨⟩`. Then `a ⟨x₀ λ, αᵢ^∨⟩`
 is an integer. At the first cover `x_h ⋖ x_{h-1}` crossing the wall, the root label is `αᵢ`
@@ -425,6 +466,7 @@ theorem IsAChain.exists_mul_coroot'_eq_intCast (hlam : lam ∈ dominantChamber P
     (hC : IsAChain a lam C) (i : b.support) (hhead : P.coroot' i (C.head.1 • lam) < 0)
     (hlast : 0 ≤ P.coroot' i (C.last.1 • lam)) :
     ∃ z : ℤ, a * P.coroot' i (C.head.1 • lam) = z := by
+  have := P.flip_isReduced
   -- The first index `h` at which the pairing is nonnegative.
   have hex : ∃ k, ∃ hk : k ≤ C.length,
       0 ≤ P.coroot' i ((C ⟨k, Nat.lt_succ_of_le hk⟩).1 • lam) := ⟨C.length, le_rfl, hlast⟩
@@ -658,7 +700,6 @@ theorem sum_coroot'_lt_sum_coroot'_succ_of_isAChain (hlam : lam ∈ dominantCham
     obtain ⟨q, hq, hqj | ⟨n, hn⟩⟩ :=
       exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i hjs.le
     · have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
-      have hqj' : q = H j := hqj
       linarith
     · obtain ⟨k, ⟨hjk, hks⟩, hkq⟩ := hq.1
       have hqle : q ≤ H (j + 1) := hq.2 ⟨j + 1, ⟨by omega, by omega⟩, rfl⟩
@@ -697,7 +738,6 @@ theorem add_one_le_sum_coroot'_of_isAChain (hlam : lam ∈ dominantChamber P b)
   obtain ⟨q, hq, hqk | ⟨n, hn⟩⟩ :=
     exists_isLeast_sum_coroot'_Icc_of_isAChain hlam ht hchain hmono hs i (hk₁j.trans hjs)
   · have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩
-    have hqk' : q = H k₁ := hqk
     linarith
   · obtain ⟨k, ⟨hk₁k, hks⟩, hkq⟩ := hq.1
     have hqj : q ≤ H j := hq.2 ⟨j, ⟨hk₁j, hjs⟩, rfl⟩
@@ -742,14 +782,13 @@ theorem exists_strictly_rising_of_isAChain (hlam : lam ∈ dominantChamber P b)
   -- The integral minimum `z` of `H`, and the last vertex `k₀` where it is attained.
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam ht hchain hmono hs i
   obtain ⟨k, hk, hkz⟩ := hz.1
-  classical
-  set k₀ := Nat.findGreatest (fun k ↦ H k = z) s
-  have hk₀s : k₀ ≤ s := Nat.findGreatest_le s
-  have hk₀z : H k₀ = z := Nat.findGreatest_spec (P := fun k ↦ H k = z) (Set.mem_Iic.mp hk) hkz
-  have habove : ∀ k, k₀ < k → k ≤ s → H k₀ < H k := by
-    intro k hk₀k hks
-    rw [hk₀z]
-    exact lt_of_le_of_ne (hz.2 ⟨k, hks, rfl⟩) (Ne.symm (Nat.findGreatest_is_greatest hk₀k hks))
+  obtain ⟨k₀, hk₀s, hmin, hlast⟩ :=
+    (Finset.Iic s).exists_last_min_image H ⟨0, by simp⟩
+  simp only [Finset.mem_Iic] at hk₀s hmin hlast
+  have hk₀z : H k₀ = z := le_antisymm
+    ((hmin k hk).trans_eq hkz) (hz.2 ⟨k₀, hk₀s, rfl⟩)
+  have habove : ∀ k, k₀ < k → k ≤ s → H k₀ < H k :=
+    fun k hk₀k hks ↦ hlast k hks hk₀k
   -- The first vertex `k₁` after `k₀` at which the height is at least `H k₀ + 1`.
   have hHs : H k₀ + 1 ≤ H s := by
     obtain ⟨j, hj, hjs⟩ := hgap

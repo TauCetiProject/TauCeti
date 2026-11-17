@@ -80,6 +80,22 @@ theorem subgroupTensorEquiv_symm_single (q : G ⧸ H) (n : N) :
       BalancedTensorProduct.tmul k (Algebra (c.comap H.subtype)) (basis c q.out) n := by
   simp [subgroupTensorEquiv]
 
+/-- A coefficient multiple of a basis tensor has one nonzero coset coordinate.
+The coefficient is untwisted by the chosen representative's automorphism and factor. -/
+@[simp]
+theorem subgroupTensorEquiv_smul_basis_tmul (q : G ⧸ H) (h : H) (d : D) (n : N) :
+    subgroupTensorEquiv c H N
+        (BalancedTensorProduct.tmul k (Algebra (c.comap H.subtype))
+          (d • basis c (q.out * h)) n) =
+      Finsupp.single q
+        (((c.action q.out).symm (d * ↑(c.factor q.out h)⁻¹) •
+          basis (c.comap H.subtype) h) • n) := by
+  classical
+  ext r
+  simp only [subgroupTensorEquiv_tmul_apply, rightSubgroupBasis_repr_smul_basis,
+    Finsupp.single_apply]
+  split_ifs with hr <;> simp [hr]
+
 /-- At finite subgroup index, extension of scalars preserves ground-ring finite generation. -/
 instance moduleFinite_subgroupTensor [H.FiniteIndex] [Module.Finite k N] :
     Module.Finite k

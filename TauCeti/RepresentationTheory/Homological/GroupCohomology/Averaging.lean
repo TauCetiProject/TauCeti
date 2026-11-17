@@ -166,19 +166,19 @@ variable (A : Rep k G)
 complex of inhomogeneous cochains: it is `Representation.averageMap` on `0`-cochains and zero in
 positive degrees. -/
 def averageCochainMap : inhomogeneousCochains A ⟶ inhomogeneousCochains A :=
-  ofDegreeZero (ModuleCat.ofHom (A.ρ.averageMap.compLeft (Fin 0 → G)))
+  CochainComplex.ofDegreeZero _ (ModuleCat.ofHom (A.ρ.averageMap.compLeft (Fin 0 → G)))
     (comp_d_zero_eq_zero (d_comp_averageLast A) (d_zero_comp_averageLast A))
 
 /-- In degree `0`, `TauCeti.groupCohomology.averageCochainMap` is the averaging projection. -/
 @[simp]
 theorem averageCochainMap_f_zero :
     (averageCochainMap A).f 0 = ModuleCat.ofHom (A.ρ.averageMap.compLeft (Fin 0 → G)) :=
-  ofDegreeZero_f_zero _
+  CochainComplex.ofDegreeZero_f_zero _
 
 /-- In positive degrees, `TauCeti.groupCohomology.averageCochainMap` is zero. -/
 @[simp]
 theorem averageCochainMap_f_succ (n : ℕ) : (averageCochainMap A).f (n + 1) = 0 :=
-  ofDegreeZero_f_succ _ n
+  CochainComplex.ofDegreeZero_f_succ _ n
 
 /-- **The averaging contraction.** The identity of the complex of inhomogeneous cochains is
 homotopic to the averaging projection onto the invariants placed in degree `0`, through the
@@ -192,6 +192,6 @@ def averagingHomotopy : Homotopy (𝟙 (inhomogeneousCochains A)) (averageCochai
 @[simp]
 theorem averagingHomotopy_hom_succ (n : ℕ) :
     (averagingHomotopy A).hom (n + 1) n = (-1 : k) ^ (n + 1) • averageLast A n :=
-  homotopyOfDCompEq_hom_succ _ _ n
+  homotopyOfDCompEq_hom_succ (d_comp_averageLast A) (d_zero_comp_averageLast A) n
 
 end TauCeti.groupCohomology

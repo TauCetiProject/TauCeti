@@ -115,10 +115,9 @@ theorem exists_le_mul_and_le_mul_of_jacobson_eq_bot (f g : AlgebraNorm ℂ A)
     (hf : letI := f.toAddGroupNorm.toNormedAddCommGroup; CompleteSpace A)
     (hg : letI := g.toAddGroupNorm.toNormedAddCommGroup; CompleteSpace A)
     (hA : Ring.jacobson A = ⊥) :
-    ∃ (C₁ C₂ : ℝ) (_ : 0 < C₁) (_ : 0 < C₂), ∀ x : A, f x ≤ C₁ * g x ∧ g x ≤ C₂ * f x := by
-  refine f.toRingNorm.exists_le_mul_and_le_mul_of_nonUnitalJacobson_eq_bot g.toRingNorm
-    (fun c x ↦ (map_smul_eq_mul f c x).le) (fun c x ↦ (map_smul_eq_mul g c x).le) hf hg ?_
-  ext a
-  simp [TauCeti.nonUnitalJacobson_eq_toTwoSided_jacobson, hA]
+    ∃ (C₁ C₂ : ℝ) (_ : 0 < C₁) (_ : 0 < C₂), ∀ x : A, f x ≤ C₁ * g x ∧ g x ≤ C₂ * f x :=
+  f.toRingNorm.exists_le_mul_and_le_mul_of_nonUnitalJacobson_eq_bot g.toRingNorm
+    (fun c x ↦ (map_smul_eq_mul f c x).le) (fun c x ↦ (map_smul_eq_mul g c x).le) hf hg
+    (TauCeti.nonUnitalJacobson_eq_bot_iff.2 hA)
 
 end AlgebraNorm

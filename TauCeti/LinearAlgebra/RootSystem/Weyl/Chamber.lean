@@ -20,7 +20,8 @@ nontrivial Weyl-group element, indeed out of the closed dominant chamber
 (`TauCeti.eq_one_of_smul_mem_dominantChamber`); and every weight is Weyl-conjugate into the closed
 dominant chamber (`RootPairing.exists_mem_dominantChamber`). The first says an open chamber meets
 the closed chamber of no other Weyl-group element, so the labelling `w ↦ w • openDominantChamber` is
-injective as soon as the open dominant chamber has a point to distinguish two labels by; the set of
+injective, a point of the open dominant chamber distinguishing two labels (such a point exists:
+`TauCeti.openDominantChamber_nonempty`, twice the Weyl vector); the set of
 open chambers is by definition the range of that labelling, so surjectivity is free, and the two
 together make it a bijection from the Weyl group onto the set of open chambers, which is what simple
 transitivity means here. The second fact is what covers the weights: it is how every *regular*
@@ -34,11 +35,9 @@ weights, and `TauCeti.existsUnique_mem_openWeylChamber` puts each regular weight
 them.
 
 Unlike the uniqueness statements, the bijection needs the open dominant chamber to be *nonempty*,
-which is a genuine hypothesis rather than a formality: the open chambers are cut out by strict
-inequalities, and over a coefficient ring where `2` is not invertible a base may have no strictly
-dominant weight to offer. So it is carried as an explicit argument, and
-`TauCeti.openDominantChamber_nonempty` discharges it whenever `2` is invertible, the Weyl vector
-`ρ` being strictly dominant there.
+because the open chambers are cut out by strict inequalities. Over a linearly ordered coefficient
+ring, for a reduced crystallographic pairing, this holds by
+`TauCeti.openDominantChamber_nonempty`: twice the Weyl vector is strictly dominant.
 
 ## Main definitions
 
@@ -77,7 +76,7 @@ group be finite, and the root-system forms are read off from those using
 
 Existence of a dominant representative is `RootPairing.exists_mem_dominantChamber`; for an
 interior dominant weight, `TauCeti.eq_one_of_smul_mem_dominantChamber` gives uniqueness and a
-trivial stabilizer. Together these yield simple transitivity on the nonempty open chambers.
+trivial stabilizer. Together these yield simple transitivity on the open chambers.
 
 ## References
 
@@ -255,69 +254,66 @@ theorem pairwise_disjoint_openWeylChamber :
     Pairwise fun v w : P.weylGroup ↦ Disjoint (openWeylChamber P b v) (openWeylChamber P b w) :=
   fun _ _ h ↦ Set.disjoint_left.mpr fun _ hv hw ↦ h (eq_of_mem_openWeylChamber P b hv hw)
 
-/-- **Distinct Weyl-group elements give distinct open chambers**, provided the open dominant
-chamber has a point at all. -/
-theorem openWeylChamber_injective (hne : (openDominantChamber P b).Nonempty) :
+/-- **Distinct Weyl-group elements give distinct open chambers**: the point of the open dominant
+chamber supplied by `TauCeti.openDominantChamber_nonempty` separates the labels. -/
+theorem openWeylChamber_injective :
     Function.Injective (openWeylChamber P b) := by
   intro v w h
-  obtain ⟨x, hx⟩ := hne
+  obtain ⟨x, hx⟩ := openDominantChamber_nonempty P b
   have hv : v • x ∈ openWeylChamber P b v := ⟨x, hx, rfl⟩
   exact eq_of_mem_openWeylChamber P b hv (h ▸ hv)
 
 /-- Two open chambers agree exactly when their labels do. -/
-theorem openWeylChamber_inj (hne : (openDominantChamber P b).Nonempty) {v w : P.weylGroup} :
+theorem openWeylChamber_inj {v w : P.weylGroup} :
     openWeylChamber P b v = openWeylChamber P b w ↔ v = w :=
-  (openWeylChamber_injective P b hne).eq_iff
+  (openWeylChamber_injective P b).eq_iff
 
 /-- **The Weyl group acts freely on the open chambers**: only the identity fixes one. -/
-theorem eq_one_of_smul_openWeylChamber_eq (hne : (openDominantChamber P b).Nonempty)
-    {v w : P.weylGroup} (h : v • openWeylChamber P b w = openWeylChamber P b w) : v = 1 := by
+theorem eq_one_of_smul_openWeylChamber_eq {v w : P.weylGroup}
+    (h : v • openWeylChamber P b w = openWeylChamber P b w) : v = 1 := by
   rw [smul_openWeylChamber] at h
-  simpa using openWeylChamber_injective P b hne h
+  simpa using openWeylChamber_injective P b h
 
 /-- **The stabilizer of an open Weyl chamber is trivial.** -/
-theorem stabilizer_openWeylChamber_eq_bot (hne : (openDominantChamber P b).Nonempty)
-    (w : P.weylGroup) :
+theorem stabilizer_openWeylChamber_eq_bot (w : P.weylGroup) :
     MulAction.stabilizer P.weylGroup (openWeylChamber P b w) = ⊥ := by
   ext v
   rw [MulAction.mem_stabilizer_iff, Subgroup.mem_bot]
-  exact ⟨eq_one_of_smul_openWeylChamber_eq P b hne, fun h ↦ by rw [h, one_smul]⟩
+  exact ⟨eq_one_of_smul_openWeylChamber_eq P b, fun h ↦ by rw [h, one_smul]⟩
 
 /-- **The Weyl group acts freely on the open chambers**: the stabilizer of a chamber, as an element
 of `TauCeti.openWeylChambers`, is trivial. Together with the transitivity instance above this is
 simple transitivity of the action on the chambers. -/
-theorem openWeylChambers.stabilizer_eq_bot (hne : (openDominantChamber P b).Nonempty)
-    (C : openWeylChambers P b) : MulAction.stabilizer P.weylGroup C = ⊥ := by
+theorem openWeylChambers.stabilizer_eq_bot (C : openWeylChambers P b) :
+    MulAction.stabilizer P.weylGroup C = ⊥ := by
   obtain ⟨w, hw⟩ := C.2
   ext v
   rw [MulAction.mem_stabilizer_iff, ← Subtype.coe_inj, openWeylChambers.coe_smul, ← hw,
     Subgroup.mem_bot]
-  exact ⟨eq_one_of_smul_openWeylChamber_eq P b hne, fun h ↦ by rw [h, one_smul]⟩
+  exact ⟨eq_one_of_smul_openWeylChamber_eq P b, fun h ↦ by rw [h, one_smul]⟩
 
 /-- **The Weyl group acts simply transitively on the open Weyl chambers**: labelling a chamber by
 the Weyl-group element carrying the dominant one to it is a bijection.
 
 Transitivity of the action is `TauCeti.exists_smul_eq_of_mem_openWeylChambers` and freeness is
 `TauCeti.stabilizer_openWeylChamber_eq_bot`; this packages the two as an equivalence. -/
-noncomputable def weylGroupEquivOpenWeylChambers (hne : (openDominantChamber P b).Nonempty) :
+noncomputable def weylGroupEquivOpenWeylChambers :
     P.weylGroup ≃ openWeylChambers P b :=
-  Equiv.ofInjective (openWeylChamber P b) (openWeylChamber_injective P b hne)
+  Equiv.ofInjective (openWeylChamber P b) (openWeylChamber_injective P b)
 
 @[simp]
-lemma weylGroupEquivOpenWeylChambers_apply (hne : (openDominantChamber P b).Nonempty)
-    (w : P.weylGroup) :
-    (weylGroupEquivOpenWeylChambers P b hne w : Set M) = openWeylChamber P b w := (rfl)
+lemma weylGroupEquivOpenWeylChambers_apply (w : P.weylGroup) :
+    (weylGroupEquivOpenWeylChambers P b w : Set M) = openWeylChamber P b w := (rfl)
 
 end Regular
 
-/-! ### Nonemptiness, from the Weyl vector -/
+/-! ### Nonemptiness, from twice the Weyl vector -/
 
 section Nonempty
 
-variable [IsStrictOrderedRing R] [Invertible (2 : R)] [Finite ι] [P.IsCrystallographic]
-  [P.IsReduced]
+variable [IsStrictOrderedRing R] [Finite ι] [P.IsCrystallographic] [P.IsReduced]
 
-/-- Every open Weyl chamber is nonempty once `2` is invertible. -/
+/-- Every open Weyl chamber is nonempty. -/
 theorem openWeylChamber_nonempty (w : P.weylGroup) : (openWeylChamber P b w).Nonempty :=
   (openDominantChamber_nonempty P b).image _
 

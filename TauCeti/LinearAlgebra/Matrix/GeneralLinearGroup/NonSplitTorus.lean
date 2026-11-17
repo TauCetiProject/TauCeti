@@ -47,13 +47,13 @@ Deligne–Lusztig construction, which is *not* ordinary induction (the induced r
 characters give the principal series by ordinary induction from the Borel subgroup.
 
 The word *torus* is the algebraic-group one only when `E/F` is separable, which over a finite
-field — the setting of the roadmap target — it always is. Degree `2` alone also admits a purely
-inseparable `E/F` (characteristic `2` only), where the *algebra* `E ⊗[F] F̄` is the nonreduced
-`F̄[X]/(X²)` rather than `F̄ × F̄`. The image of `Eˣ` is then not a torus: after base change to
-`F̄` it is the unit group of `F̄[X]/(X²)`, which is `Gₘ × Gₐ` — still smooth and reduced as a
-group, but with a nontrivial unipotent part — and its non-scalar elements are not semisimple.
-Everything stated below, non-splitness included, is true in that case too: no proof here uses
-separability, so no statement assumes it.
+field — the setting of the representation theory of `GL₂(𝔽_q)` — it always is. Degree `2` alone
+also admits a purely inseparable `E/F` (characteristic `2` only), where the *algebra* `E ⊗[F] F̄`
+is the nonreduced `F̄[X]/(X²)` rather than `F̄ × F̄`. The image of `Eˣ` is then not a torus: after
+base change to `F̄` it is the unit group of `F̄[X]/(X²)`, which is `Gₘ × Gₐ` — still smooth and
+reduced as a group, but with a nontrivial unipotent part — and its non-scalar elements are not
+semisimple. Everything stated below, non-splitness included, is true in that case too: no proof
+here uses separability, so no statement assumes it.
 
 "Non-split" is the assertion that, away from the scalars, the torus is not conjugate into the Borel
 subgroup: `TauCeti.GL2NonSplitTorus.conj_notMem_gl2Borel` says that if `x : Eˣ` does not lie in `F`
@@ -64,8 +64,7 @@ these the **elliptic** conjugacy classes of `GL₂(𝔽_q)`. The proof is that t
 
 The construction depends on the chosen basis `TauCeti.nonSplitTorusBasis`; a different choice
 conjugates the subgroup, so the statements that are not conjugation-invariant are stated for this
-choice, following the convention of
-`TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md`.
+choice.
 
 ## Main definitions
 
@@ -92,8 +91,6 @@ choice, following the convention of
 
 ## References
 
-* [Character theory roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/CharacterTheory/README.md),
-  Layer 9.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Lecture 5.2.
 * C. Bonnafé, *Representations of `SL₂(𝔽_q)`* (2011), Chapter 1.
 -/
@@ -271,7 +268,7 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
   -- conjugation does not change the determinant of `g - a`
   have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
-    rw [Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
+    rw [Units.val_mul, Units.val_mul, Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
   -- so the norm of `v - a` vanishes, forcing `v` into `F`
   have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
     rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E), map_sub,

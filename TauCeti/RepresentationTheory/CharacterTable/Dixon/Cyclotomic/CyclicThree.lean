@@ -213,8 +213,7 @@ theorem cyclicGroupThree_centralCharacterSearch :
     (cyclicClassData 3).centralCharacterSearch (F := ZMod 7) =
       cyclicGroupThreeModularCentralRows := by
   rw [cyclicGroupThreeModularCentralRows]
-  apply (cyclicClassData 3).centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_cyclicGroup_three_seven
+  apply (cyclicClassData 3).centralCharacterSearch_eq_rowsOfMap
     (Cyclotomic.reduce 7 cyclicGroupThreeDixonPrimeData.root)
     cyclicGroupThreeExactCharacterTable
   · intro i

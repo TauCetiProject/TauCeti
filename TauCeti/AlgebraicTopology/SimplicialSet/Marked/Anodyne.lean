@@ -11,6 +11,8 @@ public import Mathlib.AlgebraicTopology.SimplicialSet.AnodyneExtensions.Inner.Ba
 public import Mathlib.AlgebraicTopology.SimplicialSet.HornColimits
 public import Mathlib.CategoryTheory.LiftingProperties.Adjunction
 
+import TauCeti.AlgebraicTopology.SimplicialSet.Horn
+
 /-!
 # Marked anodyne extensions
 
@@ -335,14 +337,12 @@ private lemma exists_δ_eq_of_isCompatible (hX : markedAnodyneExtensions.rlp (to
           (Fin.le_last _)) := by
       refine injective_of_mono (SSet.Subcomplex.ι.{u} _ |>.app _) (ht.trans ?_)
       rw [← NatTrans.comp_app_apply, SSet.horn.ι_ι, stdSimplex_δ_zero_app_edge]
-    rwa [← NatTrans.comp_app_apply, SSet.horn.IsCompatible.ι_desc]
+    rwa [hf.desc_app_ι_app]
   obtain ⟨b, hb⟩ := exists_lift hX (.lastEdgeHorn (n + 1)) (ofEdgesHom hf.desc hmarked)
   obtain ⟨s, hs⟩ := SSet.yonedaEquiv.symm.surjective b.hom
   have hι : Λ[n + 2, Fin.last (n + 2)].ι ≫ SSet.yonedaEquiv.symm s = hf.desc := by
     simpa [hs] using congrArg Hom.hom hb
-  refine ⟨s, fun j hj ↦ ?_⟩
-  rw [← SSet.yonedaEquiv.apply_symm_apply s, ← SSet.stdSimplex.yonedaEquiv_δ_comp,
-    ← SSet.horn.ι_ι_assoc _ j hj, hι, SSet.horn.IsCompatible.ι_desc]
+  exact ⟨s, fun j hj ↦ by simpa using hf.δ_yonedaEquiv_of_desc_eq hι.symm j hj⟩
 
 /-- In a fibrant marked simplicial set, a marked edge `e : x₀ ⟶ x₁` has a right inverse up to a
 `2`-simplex: filling the horn `Λ[2, 2]` with faces `e` (from `1` to `2`) and `id x₁` (from `0`

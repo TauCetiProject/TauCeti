@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp
+public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 public import TauCeti.Topology.Category.TopTriple
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 
@@ -29,7 +30,10 @@ functorial as well, and the connecting morphism is natural for morphisms of trip
 
 The short exact sequence and its connecting morphism use an abelian coefficient category.  The
 zero composite and the degree-zero epimorphism also hold for preadditive coefficients with
-coproducts and homology.
+coproducts and homology.  Exactness at `Hₙ(X, B)` propagates vanishing from `(A, B)` and `(X, A)`
+to `(X, B)` (`TopTriple.isZero_singularHomology_totalPair`), and when `H_{d+1}(X, A) = 0` it
+propagates projectivity over hereditary coefficient categories
+(`TopTriple.projective_singularHomology_totalPair`).
 
 The source is Eilenberg--Steenrod, *Foundations of Algebraic Topology*, Chapters I--III.
 -/
@@ -221,6 +225,32 @@ theorem isZero_singularHomology_totalPair (n : ℕ)
     IsZero ((totalPair.obj T).singularHomology R n) :=
   (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
 
+/-- **Enlarging the subspace by an acyclic pair**: if `Hₙ(A, B)` vanishes, and so does `Hₘ(A, B)`
+for `m + 1 = n`, then `Hₙ(X, B) ⟶ Hₙ(X, A)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_totalToOuter_of_isZero (n : ℕ)
+    (hn : IsZero ((innerPair.obj T).singularHomology R n))
+    (hm : ∀ m, m + 1 = n → IsZero ((innerPair.obj T).singularHomology R m)) :
+    IsIso (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+  have : Mono (TopPair.singularHomologyMap (totalToOuter.app T) R n) :=
+    (T.singularHomology_exact_total R n).mono_g (hn.eq_of_src _ _)
+  have : Epi (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+    cases n with
+    | zero => infer_instance
+    | succ m => exact (T.singularHomology_exact_outer R (m + 1) m).epi_f ((hm m rfl).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- **Removing an acyclic outer pair**: if `Hₙ(X, A)` and `Hₙ₊₁(X, A)` vanish, then
+`Hₙ(A, B) ⟶ Hₙ(X, B)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_innerToTotal_of_isZero (n : ℕ)
+    (hn : IsZero ((outerPair.obj T).singularHomology R n))
+    (hn' : IsZero ((outerPair.obj T).singularHomology R (n + 1))) :
+    IsIso (TopPair.singularHomologyMap (innerToTotal.app T) R n) := by
+  have : Epi (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_total R n).epi_f (hn.eq_of_tgt _ _)
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_inner R (n + 1) n).mono_g (hn'.eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
+
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
 connecting morphisms of a filtration compose to zero. -/
@@ -250,6 +280,19 @@ lemma singularHomologyδ_naturality {T T' : TopTriple.{w}} (φ : T ⟶ T') (R : 
     (singularChainComplexShortComplexMap φ R)
     (T.shortExact_singularChainComplexShortComplex R)
     (T'.shortExact_singularChainComplexShortComplex R) n m (by simpa)
+
+/-- **Projectivity of top relative homology glues across a triple** in a hereditary abelian
+category: if `H_{d+1}(X, A)` vanishes and both `H_d(A, B)` and `H_d(X, A)` are projective, then
+`0 ⟶ H_d(A, B) ⟶ H_d(X, B) ⟶ H_d(X, A)` is exact with projective image, so `H_d(X, B)` splits as
+a direct sum of two projectives and is projective. -/
+theorem projective_singularHomology_totalPair [∀ V : A, HasProjectiveDimensionLE V 1]
+    (d : ℕ) (h : IsZero ((outerPair.obj T).singularHomology R (d + 1)))
+    [Projective ((innerPair.obj T).singularHomology R d)]
+    [Projective ((outerPair.obj T).singularHomology R d)] :
+    Projective ((totalPair.obj T).singularHomology R d) := by
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R d) :=
+    (T.singularHomology_exact_inner R (d + 1) d rfl).mono_g (h.eq_of_src _ 0)
+  exact (T.singularHomology_exact_total R d).projective_X₂_of_mono_f
 
 end
 

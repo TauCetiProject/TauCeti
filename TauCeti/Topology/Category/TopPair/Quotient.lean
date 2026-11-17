@@ -164,7 +164,7 @@ lemma ordinaryPairQuotient_hom_ext {P : TopPair.{u}} {Y : TopCat.{u}}
     (hπ : P.ordinaryPairQuotientπ ≫ f = P.ordinaryPairQuotientπ ≫ g)
     (hpoint : f P.ordinaryPairQuotientBasepoint = g P.ordinaryPairQuotientBasepoint) : f = g := by
   apply pushout.hom_ext hπ
-  ext x
+  ext _
   exact hpoint
 
 /-- Descend an ambient map constant on the subspace, with specified value at the added point.
@@ -214,7 +214,7 @@ def ordinaryPairQuotientEmptyHomeomorph (P : TopPair.{u}) [IsEmpty P.snd] :
       rw [ordinaryPairQuotientπ_desc]
       rfl
     · exact congrArg (fun z ↦ g z) (ordinaryPairQuotientDesc_basepoint _ _ _ _)
-  · ext (x | x)
+  · ext (x | _)
     · exact ordinaryPairQuotientπ_desc_apply _ _ _ _ x
     · exact ordinaryPairQuotientDesc_basepoint _ _ _ _
 

@@ -55,11 +55,10 @@ field of moduli of the pair.
 ## Main results
 
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_smul`: `M(σ • c) = σ(M(c))`.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.fixingSubgroup_fieldOfModuli`: over a finite extension of
+  `ℚ`, the automorphisms fixing the field of moduli are the stabilizer of the class.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.fieldOfModuli_le_of_fixingSubgroup_le`: the field of
   moduli lies in every subfield `K` with `k / K` Galois whose automorphisms fix the class.
-* `TauCeti.AlgebraicBelyiPair.IsoClass.finrank_fieldOfModuli_eq_trueOrbitSize`: over a Galois
-  extension of `ℚ`, and for a class with closed stabilizer, the degree of the field of moduli is
-  the true orbit size.
 * `TauCeti.AlgebraicBelyiPair.curveStabilizer_eq_of_algEquiv`: the stabilizer of the curve depends
   only on the function field over `k`.
 * `TauCeti.AlgebraicBelyiPair.curveFieldOfModuli_le_fieldOfModuli`: the field of moduli of the
@@ -111,6 +110,20 @@ theorem fieldOfModuli_smul (g : k ≃ₐ[ℚ] k) (c : IsoClass k) :
   rw [fieldOfModuli_def, MulAction.stabilizer_smul_eq_stabilizer_map_conj,
     MulEquiv.toMonoidHom_eq_coe, Subgroup.fixedField_map_conj, fieldOfModuli_def]
 
+/-- Over a finite extension `k` of `ℚ`, the automorphisms of `k` fixing the field of moduli of a
+class are exactly those fixing the class. -/
+@[simp]
+theorem fixingSubgroup_fieldOfModuli [FiniteDimensional ℚ k] (c : IsoClass k) :
+    c.fieldOfModuli.fixingSubgroup = MulAction.stabilizer (k ≃ₐ[ℚ] k) c := by
+  rw [fieldOfModuli_def, IntermediateField.fixingSubgroup_fixedField]
+
+/-- A finite extension `k` of `ℚ` is Galois over the field of moduli of every class, as over the
+fixed field of any group of automorphisms. -/
+instance isGalois_fieldOfModuli [FiniteDimensional ℚ k] (c : IsoClass k) :
+    IsGalois c.fieldOfModuli k := by
+  rw [fieldOfModuli_def]
+  infer_instance
+
 /-- The field of moduli of a class `c` is contained in every subfield `K` of `k` over which `k`
 is Galois, such as any subfield of `AlgebraicClosure ℚ`, and such that every automorphism of `k`
 fixing `K` pointwise also fixes `c`. A field of definition of `c` is such a subfield, since the
@@ -119,16 +132,6 @@ theorem fieldOfModuli_le_of_fixingSubgroup_le {c : IsoClass k} {K : Intermediate
     [IsGalois K k] (h : K.fixingSubgroup ≤ MulAction.stabilizer (k ≃ₐ[ℚ] k) c) :
     c.fieldOfModuli ≤ K :=
   (IntermediateField.fixedField_le h).trans (IntermediateField.fixedField_fixingSubgroup K).le
-
-/-- Over a Galois extension `k` of `ℚ`, such as `AlgebraicClosure ℚ`, the degree of the field of
-moduli of a class over `ℚ` is its true orbit size, provided its stabilizer is closed in the Krull
-topology on `Gal(k/ℚ)`. Both sides are `0` when the orbit is infinite. Without closedness the
-statement fails in general: the fixed field only sees the closure of the stabilizer. -/
-theorem finrank_fieldOfModuli_eq_trueOrbitSize [IsGalois ℚ k] {c : IsoClass k}
-    (hc : IsClosed (MulAction.stabilizer (k ≃ₐ[ℚ] k) c : Set (k ≃ₐ[ℚ] k))) :
-    Module.finrank ℚ c.fieldOfModuli = c.trueOrbitSize := by
-  rw [IntermediateField.finrank_eq_fixingSubgroup_index, fieldOfModuli_def,
-    InfiniteGalois.fixingSubgroup_fixedField ⟨_, hc⟩, trueOrbitSize_eq_index]
 
 end IsoClass
 

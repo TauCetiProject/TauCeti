@@ -150,15 +150,16 @@ theorem range_transitionOfLE_le {m n k : ℕ} (hmn : m ≤ n) (hnk : n ≤ k) :
   rw [← F.transitionOfLE_comp_transitionOfLE hmn hnk]
   exact LinearMap.range_comp_le_range _ _
 
-/-- If every transition map of a tower is surjective, then so is every composite transition. -/
-theorem transitionOfLE_surjective (h : ∀ n, Function.Surjective (F.transition n)) {n k : ℕ}
-    (hnk : n ≤ k) : Function.Surjective (F.transitionOfLE hnk) := by
-  induction k, hnk using Nat.le_induction with
+/-- If every transition map `F.transition n` with `m ≤ n` is surjective, then so is every
+composite transition `Aₖ → Aₘ`. -/
+theorem transitionOfLE_surjective {m k : ℕ} (h : ∀ n, m ≤ n → Function.Surjective (F.transition n))
+    (hmk : m ≤ k) : Function.Surjective (F.transitionOfLE hmk) := by
+  induction k, hmk using Nat.le_induction with
   | base => simpa using Function.surjective_id
-  | succ k hnk ih =>
-    rw [← F.transitionOfLE_comp_transitionOfLE hnk (Nat.le_succ k), transitionOfLE_succ,
+  | succ k hmk ih =>
+    rw [← F.transitionOfLE_comp_transitionOfLE hmk (Nat.le_succ k), transitionOfLE_succ,
       LinearMap.coe_comp]
-    exact ih.comp (h k)
+    exact ih.comp (h k hmk)
 
 /-- The shift map `δ : ∏ₙ Aₙ → ∏ₙ Aₙ`, `δ(x)ₙ = xₙ - φₙ(xₙ₊₁)`. -/
 def shift : F.Product →ₗ[R] F.Product :=

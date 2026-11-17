@@ -5,11 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.ProdIcc
 
 /-!
 # Restrictions of Riemannian metrics
@@ -34,6 +33,9 @@ pullback along the inclusion, whose differential is invertible also at the bound
 * `TauCeti.Manifold.instRiemannianBundleOpen`,
   `TauCeti.Manifold.instIsContinuousRiemannianBundleOpen`, and
   `TauCeti.Manifold.instIsContMDiffRiemannianBundleOpen`: the corresponding scoped instances.
+* `Bundle.ContMDiffRiemannianMetric.riemannianBundle_restrictOpenTangentSpace_eq`: restricting the
+  ambient `RiemannianBundle` of a bundled metric `g` to an open submanifold agrees with installing
+  `g.restrictOpenTangentSpace`.
 * `TauCeti.Manifold.pathELength_subtypeVal_comp`: the length of a curve in an open submanifold
   equals the length of its composition with the inclusion into the ambient manifold.
 * `TopologicalSpace.Opens.riemannianEDist_le_riemannianEDist_subtype`: restriction to an open
@@ -301,9 +303,20 @@ theorem enorm_tangentSpace_open
     (x : U) (v : TangentSpace I x) :
     letI := instRiemannianBundleOpen (I := I) U
     ‖v‖ₑ = ‖tangentSpaceOpenEquiv (I := I) x v‖ₑ := by
-  simp only [enorm, nnnorm, norm_tangentSpace_open]
+  simp only [eNorm, nnNorm, norm_tangentSpace_open]
 
 end Manifold
+
+/-- Installing a bundled `C^n` Riemannian metric `g` as the ambient `RiemannianBundle` instance and
+restricting to an open submanifold `U` gives the same `RiemannianBundle` instance on `U` as
+installing `g.restrictOpenTangentSpace U`. -/
+theorem _root_.Bundle.ContMDiffRiemannianMetric.riemannianBundle_restrictOpenTangentSpace_eq
+    {n : ℕ∞ω} [IsManifold I 1 M]
+    (g : ContMDiffRiemannianMetric I n E (fun x : M ↦ TangentSpace I x)) (U : Opens M) :
+    (letI : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨g.toRiemannianMetric⟩;
+      TauCeti.Manifold.instRiemannianBundleOpen (I := I) U) =
+      ⟨(g.restrictOpenTangentSpace U).toRiemannianMetric⟩ := by
+  rfl
 
 end TauCeti
 
@@ -319,16 +332,19 @@ variable
   {U : Opens M}
 
 /-- Path length is intrinsic: restricting the metric of `M` to an open submanifold `U` does not
-change the length of a differentiable curve read in `U`. -/
+change the length of a curve read in `U`. (Where the curve is not differentiable both integrands
+take the junk value `0`.) -/
 @[simp]
-theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ}
-    (hγ : MDiff[Icc a b] γ) :
+theorem pathELength_subtypeVal_comp {γ : ℝ → U} {a b : ℝ} :
     pathELength I γ a b = pathELength I ((Subtype.val : U → M) ∘ γ) a b := by
   rw [pathELength_eq_lintegral_mfderiv_Icc, pathELength_eq_lintegral_mfderiv_Icc,
     ← MeasureTheory.restrict_Ioo_eq_restrict_Icc]
-  refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t ht ↦ ?_
-  have hd : MDiffAt γ t :=
-    (hγ t (Set.Ioo_subset_Icc_self ht)).mdifferentiableAt (Icc_mem_nhds ht.1 ht.2)
+  refine MeasureTheory.setLIntegral_congr_fun measurableSet_Ioo fun t _ ↦ ?_
+  by_cases hd : MDiffAt γ t
+  swap
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hd, mfderiv_zero_of_not_mdifferentiableAt
+      (fun h ↦ hd ((ChartedSpace.liftPropWithinAt_subtypeVal_comp_iff γ Set.univ t).1 h))]
+    simp
   have hv : MDiffAt (Subtype.val : U → M) (γ t) :=
     (contMDiff_subtype_val (γ t)).mdifferentiableAt one_ne_zero
   rw [(HasMFDerivAt.comp t hv.hasMFDerivAt hd.hasMFDerivAt).mfderiv, mfderiv_subtype_val]
@@ -352,7 +368,7 @@ theorem riemannianEDist_le_riemannianEDist_subtype (U : Opens M) (x y : U) :
     riemannianEDist I (x : M) (y : M) ≤ riemannianEDist I x y := by
   refine TauCeti.Manifold.le_riemannianEDist_of_forall_le_pathELength (M := U)
     (I := I) fun γ h0 h1 hγ ↦ ?_
-  rw [TauCeti.Manifold.pathELength_subtypeVal_comp (hγ.mdifferentiableOn one_ne_zero)]
+  rw [TauCeti.Manifold.pathELength_subtypeVal_comp]
   exact Manifold.riemannianEDist_le_pathELength
     (contMDiff_subtype_val.comp_contMDiffOn hγ)
     (congrArg Subtype.val h0) (congrArg Subtype.val h1) zero_le_one

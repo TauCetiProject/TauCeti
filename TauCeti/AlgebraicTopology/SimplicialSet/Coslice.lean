@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.SimplicialSet.Discrete
 public import TauCeti.AlgebraicTopology.SimplicialSet.Join.Op
+public import TauCeti.AlgebraicTopology.SimplicialSet.Join.StdSimplex
 public import TauCeti.AlgebraicTopology.SimplicialSet.Slice
 
 /-!
@@ -23,6 +25,12 @@ The coslice is dual to the slice `C_{/p}` of `SSet.slice`: it is defined as the 
 correspond to maps `K ⋆ X ⟶ C` extending `p`, naturally in `X`, is deduced from that of the slice
 through the isomorphism `(K ⋆ X)ᵒᵖ ≅ Xᵒᵖ ⋆ Kᵒᵖ` (`SSet.join.opIso`).
 
+For the inclusion of a vertex `x : Δ[0] ⟶ C`, the fibre `{x} ×_C C_{y/}` over a vertex `y` of the
+projection from the coslice under `y` is the left mapping space `Hom^L_C(y, x)`: maps to it are the
+maps `Δ[0] ⋆ Z ⟶ C` sending the cone point to `y` and `Z` to `x`, and its vertices are the edges
+from `y` to `x`. If `C` is strict Segal, for instance the nerve of a category, it is the discrete
+simplicial set on these edges.
+
 ## Main definitions
 
 * `SSet.coslice.functor p`: the maps `K ⋆ X ⟶ C` extending `p`, as a presheaf in `X`.
@@ -32,6 +40,13 @@ through the isomorphism `(K ⋆ X)ᵒᵖ ≅ Xᵒᵖ ⋆ Kᵒᵖ` (`SSet.join.op
 * `SSet.coslice.map i g h`: the map of coslices `C_{p/} ⟶ D_{q/}` induced by `i : L ⟶ K` and
   `g : C ⟶ D` with `i ≫ p ≫ g = q`, restricting along `i` and composing with `g`; it is functorial
   (`SSet.coslice.map_id`, `SSet.coslice.map_comp`).
+* `SSet.coslice.pullbackConstHomEquiv x y`: maps to the fibre `{x} ×_C C_{y/}` are the maps
+  `Δ[0] ⋆ Z ⟶ C` sending the cone point to `y` and `Z` to `x`.
+* `SSet.coslice.pullbackConstObj₀Equiv x y`: the vertices of this fibre are the edges from `y`
+  to `x`.
+* `SSet.coslice.constEdgeIso x y`: for a strict Segal `C`, this fibre is the discrete simplicial
+  set on the edges from `y` to `x`.
+* `SSet.coslice.opSliceIso p`: the identification of `C_{p/}` with `(Cᵒᵖ_{/pᵒᵖ})ᵒᵖ`.
 
 ## Main results
 
@@ -42,10 +57,11 @@ through the isomorphism `(K ⋆ X)ᵒᵖ ≅ Xᵒᵖ ⋆ Kᵒᵖ` (`SSet.join.op
   restrictions of the corresponding map `K ⋆ X ⟶ C`.
 * `SSet.coslice.comp_π`: under the universal property, the projection to `C` is the restriction to
   `X`.
+* `SSet.coslice.isIso_π`: the coslice under the empty diagram is the whole simplicial set.
 
 ## References
 
-* J. Lurie, *Higher Topos Theory*, §1.2.9.
+* J. Lurie, *Higher Topos Theory*, §1.2.2 (left mapping spaces) and §1.2.9.
 -/
 
 public section
@@ -91,6 +107,11 @@ def coslice : SSet.{u} :=
   (slice (opFunctor.map p)).op
 
 namespace coslice
+
+/-- The coslice `C_{p/}` is the opposite of the slice `Cᵒᵖ_{/pᵒᵖ}`. Through this isomorphism,
+statements about the coslice are deduced from the dual statements about slices. -/
+def opSliceIso : coslice p ≅ (slice (opFunctor.map p)).op :=
+  Iso.refl _
 
 variable {p}
 
@@ -198,6 +219,17 @@ along the inclusion `X ⟶ K ⋆ X`. -/
 lemma comp_π (F : X ⟶ coslice p) : F ≫ π p = join.inr K X ≫ (homEquiv F).1 := by
   rw [π, ← join.inr_map_assoc (𝟙 K) F, ← homEquiv_comp_coe, Category.comp_id]
 
+variable (p) in
+/-- The coslice under the empty diagram is the whole simplicial set: when `K` is empty, the
+projection `C_{p/} ⟶ C` is an isomorphism. -/
+lemma isIso_π (hK : ¬ K.Nonempty) : IsIso (π p) := by
+  refine isIso_of_yoneda_map_bijective _ fun X ↦ ⟨fun F G h ↦ hom_ext ?_, fun g ↦ ?_⟩
+  · have := join.isIso_inr (L := X) hK
+    simpa only [comp_π, cancel_epi] using h
+  · have := join.isIso_inr (L := X) hK
+    refine ⟨homEquiv.symm ⟨inv (join.inr K X) ≫ g, (isInitialOfNotNonempty hK).hom_ext _ _⟩, ?_⟩
+    simp
+
 /-- The projection to `C` sends a simplex `σ : K ⋆ Δ[n] ⟶ C` of the coslice to its restriction to
 `Δ[n]`. -/
 @[simp]
@@ -246,6 +278,131 @@ lemma map_comp {M E : SSet.{u}} {r : M ⟶ E} (i : L ⟶ K) (g : C ⟶ D) (h : i
 lemma map_π (i : L ⟶ K) (g : C ⟶ D) (h : i ≫ p ≫ g = q) : map i g h ≫ π q = π p ≫ g := by
   rw [comp_π, ← Category.id_comp (map i g h), homEquiv_comp_map_coe, join.inr_map_assoc,
     Category.id_comp, π, Category.assoc]
+
+end coslice
+
+/-! ### Fibres of the inclusion of a vertex -/
+
+namespace coslice
+
+open Limits
+
+variable {L Z : SSet.{u}} (x y : L _⦋0⦌)
+
+/-- Maps from `Z` to the fibre `{x} ×_L L_{y/}` over `y` of the inclusion of the vertex `x` are
+the maps `Δ[0] ⋆ Z ⟶ L` sending the cone point to `y` and `Z` to `x`. This is the universal
+property of the left mapping space `Hom^L_L(y, x)`. -/
+noncomputable def pullbackConstHomEquiv :
+    (Z ⟶ pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) ≃
+      {τ : join Δ[0] Z ⟶ L // join.inl _ _ ≫ τ = const y ∧ join.inr _ _ ≫ τ = const x} where
+  toFun g := ⟨(homEquiv (g ≫ pullback.snd _ _)).1, (homEquiv _).2, by
+    rw [← comp_π, Category.assoc, ← pullback.condition, comp_const, comp_const]⟩
+  invFun τ := pullback.lift (stdSimplex.isTerminalObj₀.from Z) (homEquiv.symm ⟨τ.1, τ.2.1⟩) (by
+    rw [comp_π, Equiv.apply_symm_apply, τ.2.2, comp_const])
+  left_inv g := pullback.hom_ext stdSimplex.ext₀ (by
+    rw [pullback.lift_snd]
+    exact homEquiv.symm_apply_apply _)
+  right_inv τ := Subtype.ext (by simp)
+
+/-- The universal property of the fibre `{x} ×_L L_{y/}` is natural: precomposing with
+`g : Z' ⟶ Z` corresponds to precomposing with `Δ[0] ⋆ g`. -/
+@[simp]
+lemma pullbackConstHomEquiv_comp_coe {Z' : SSet.{u}} (g : Z' ⟶ Z)
+    (h : Z ⟶ pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) :
+    (pullbackConstHomEquiv x y (g ≫ h)).1 = join.map (𝟙 _) g ≫ (pullbackConstHomEquiv x y h).1 := by
+  simp only [pullbackConstHomEquiv, Equiv.coe_fn_mk, homEquiv_comp_coe]
+  rw [← join.map_comp_assoc, Category.comp_id]
+
+/-- The map `Δ[0] ⋆ Z ⟶ L` attached to `g : Z ⟶ {x} ×_L L_{y/}` is the map attached by the
+universal property of the coslice to the projection `g ≫ pullback.snd _ _` of `g` to `L_{y/}`. -/
+lemma pullbackConstHomEquiv_apply_coe
+    (g : Z ⟶ pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) :
+    (pullbackConstHomEquiv x y g).1 = (homEquiv (g ≫ pullback.snd _ _)).1 :=
+  (rfl)
+
+/-- The projection to the coslice `L_{y/}` of the map to the fibre `{x} ×_L L_{y/}` attached to
+`τ : Δ[0] ⋆ Z ⟶ L` is the map attached to `τ` by the universal property of the coslice. -/
+@[simp]
+lemma pullbackConstHomEquiv_symm_comp_snd
+    (τ : {τ : join Δ[0] Z ⟶ L // join.inl _ _ ≫ τ = const y ∧ join.inr _ _ ≫ τ = const x}) :
+    (pullbackConstHomEquiv x y).symm τ ≫ pullback.snd _ _ = homEquiv.symm ⟨τ.1, τ.2.1⟩ :=
+  pullback.lift_snd _ _ _
+
+/-- The vertices of the fibre `{x} ×_L L_{y/}` over `y` of the inclusion of the vertex `x` are the
+edges from `y` to `x`. -/
+noncomputable def pullbackConstObj₀Equiv :
+    (pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) _⦋0⦌ ≃ Edge y x :=
+  yonedaEquiv.symm.trans ((pullbackConstHomEquiv x y).trans (join.coneEdgeEquiv x y))
+
+/-- The edge attached to a vertex `s` of the fibre `{x} ×_L L_{y/}` is the map
+`Δ[1] ≅ Δ[0] ⋆ Δ[0] ⟶ L` corresponding to `s`. -/
+@[simp]
+lemma pullbackConstObj₀Equiv_apply_edge
+    (s : (pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) _⦋0⦌) :
+    (pullbackConstObj₀Equiv x y s).edge =
+      yonedaEquiv ((join.stdSimplexIso 0 0).inv ≫
+        (pullbackConstHomEquiv x y (yonedaEquiv.symm s)).1) :=
+  join.coneEdgeEquiv_apply_edge x y _
+
+/-- The map `Δ[0] ⋆ Δ[0] ⟶ L` attached to the vertex of the fibre `{x} ×_L L_{y/}` corresponding to
+an edge `e` from `y` to `x` is the map attached to `e` by `SSet.join.coneEdgeEquiv`. -/
+@[simp]
+lemma pullbackConstHomEquiv_const_pullbackConstObj₀Equiv_symm (e : Edge y x) :
+    pullbackConstHomEquiv x y (const ((pullbackConstObj₀Equiv x y).symm e)) =
+      (join.coneEdgeEquiv x y).symm e := by
+  simpa [pullbackConstObj₀Equiv] using congrArg (pullbackConstHomEquiv x y)
+    (yonedaEquiv_symm_zero ((pullbackConstObj₀Equiv x y).symm e)).symm
+
+/-- If `L` is strict Segal, every simplex of the fibre `{x} ×_L L_{y/}` is totally degenerate: a
+map `Δ[0] ⋆ Δ[n] ⟶ L` sending `Δ[n]` to `x` is determined by its edge from the cone point to the
+vertex `0`. -/
+private lemma surjective_pullback_map_const [L.IsStrictSegal] (n : ℕ) :
+    Function.Surjective ((pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))).map
+      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op) := by
+  intro s
+  refine ⟨(pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))).map
+    (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op s, ?_⟩
+  apply yonedaEquiv.symm.injective
+  rw [← (pullbackConstHomEquiv x y).apply_eq_iff_eq, Subtype.ext_iff]
+  simp only [← yonedaEquiv_symm_naturality_left, pullbackConstHomEquiv_comp_coe]
+  apply join.hom_ext_of_isStrictSegal
+  · -- The vertex `0` is fixed by the operator collapsing `⦋n⦌` onto its vertex `0`.
+    simp only [← join.map_comp_assoc, Category.comp_id, ← Functor.map_comp,
+      SimplexCategory.const_comp, SimplexCategory.const_apply]
+  · simp only [join.inr_map_assoc, (pullbackConstHomEquiv x y _).2.2, comp_const]
+
+/-- If `L` is strict Segal, sending an edge from `y` to `x` to the totally degenerate simplices at
+the corresponding vertex of the fibre `{x} ×_L L_{y/}` is an isomorphism from the discrete
+simplicial set on these edges. -/
+instance isIso_constHomEquiv_symm [L.IsStrictSegal] :
+    IsIso ((constHomEquiv (Edge y x)).symm (pullbackConstObj₀Equiv x y).symm) :=
+  SSet.isIso_constHomEquiv_symm (pullbackConstObj₀Equiv x y).symm.bijective
+    (surjective_pullback_map_const x y)
+
+/-- If `L` is strict Segal, for instance the nerve of a category, the fibre `{x} ×_L L_{y/}` over
+`y` of the inclusion of the vertex `x` is the discrete simplicial set on the edges from `y`
+to `x`. -/
+noncomputable def constEdgeIso [L.IsStrictSegal] :
+    (Functor.const SimplexCategoryᵒᵖ).obj (Edge y x) ≅
+      pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L)) :=
+  asIso ((constHomEquiv (Edge y x)).symm (pullbackConstObj₀Equiv x y).symm)
+
+/-- On vertices, the discreteness isomorphism sends an edge from `y` to `x` to the corresponding
+vertex of the fibre `{x} ×_L L_{y/}`. -/
+@[simp]
+lemma constEdgeIso_hom_app_zero [L.IsStrictSegal] (e : Edge y x) :
+    dsimp% (constEdgeIso x y).hom.app (op ⦋0⦌) e = (pullbackConstObj₀Equiv x y).symm e :=
+  constHomEquiv_symm_app_zero (Edge y x) (pullbackConstObj₀Equiv x y).symm e
+
+/-- On vertices, the inverse of the discreteness isomorphism sends a vertex of the fibre
+`{x} ×_L L_{y/}` to the corresponding edge from `y` to `x`. -/
+@[simp]
+lemma constEdgeIso_inv_app_zero [L.IsStrictSegal]
+    (s : (pullback (const x : Δ[0] ⟶ L) (π (const y : Δ[0] ⟶ L))) _⦋0⦌) :
+    dsimp% (constEdgeIso x y).inv.app (op ⦋0⦌) s = pullbackConstObj₀Equiv x y s := by
+  apply (pullbackConstObj₀Equiv x y).symm.injective
+  rw [Equiv.symm_apply_apply, ← constEdgeIso_hom_app_zero]
+  simp
 
 end coslice
 

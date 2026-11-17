@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Prod.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Prod
@@ -23,7 +23,8 @@ algebras of `Q₁` and `Q₂`, given by algebra maps `ρ₁` and `ρ₂`.
 
 When `n` is even and `Q₁ v = -‖v‖²`, the normalized complex volume element `Γ_V`
 (`CliffordAlgebra.complexVolume`) is an involution anticommuting with every vector of `V`, so it
-grades `E`. The graded tensor product of `TauCeti/LinearAlgebra/CliffordAlgebra/Prod.lean` then
+grades `E`. The graded tensor product from
+`TauCeti/LinearAlgebra/CliffordAlgebra/Prod/Basic.lean` then
 makes `E ⊗ F` a module over the complexified Clifford algebra of `V ⊕ W`
 (`CliffordAlgebra.complexProdTensor`), on which
 
@@ -115,21 +116,10 @@ variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [AddCommGroup F] [Module 
   (ρ₂ : CliffordAlgebra (Q₂.baseChange ℂ) →ₐ[ℂ] Module.End ℂ F)
 
 include hQ₁ in
-private theorem map_complexVolume_mul_self :
-    ρ₁ (complexVolume Q₁ o₁) * ρ₁ (complexVolume Q₁ o₁) = 1 := by
-  rw [← map_mul, complexVolume_mul_self o₁ hQ₁, map_one]
-
-include hQ₁ in
 private theorem map_complexVolume_pow_of_even {k : ℕ} (hk : Even k) :
     ρ₁ (complexVolume Q₁ o₁) ^ k = 1 := by
   obtain ⟨j, rfl⟩ := hk
   rw [← two_mul, pow_mul, sq, map_complexVolume_mul_self o₁ hQ₁ ρ₁, one_pow]
-
-include hn in
-private theorem map_complexVolume_mul_map_ι (w : ℂ ⊗[ℝ] V) :
-    ρ₁ (complexVolume Q₁ o₁) * ρ₁ (ι (Q₁.baseChange ℂ) w) =
-      -(ρ₁ (ι (Q₁.baseChange ℂ) w) * ρ₁ (complexVolume Q₁ o₁)) := by
-  rw [← map_mul, ← map_mul, complexVolume_mul_ι_of_even o₁ hn, map_neg]
 
 include hQ in
 /-- **The graded tensor product of Clifford modules of `V` and `W`.** For `V` of even dimension

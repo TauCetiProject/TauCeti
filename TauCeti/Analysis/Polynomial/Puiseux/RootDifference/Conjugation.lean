@@ -75,39 +75,23 @@ theorem exists_root_sub_eq_zpow_mul_unit_conj {d a c : ℕ}
   let w : Fin d → Fin d → E × ℂ → ℂ := fun i j ↦
     if hij : i ≠ j then w₀ i j hij else fun _ ↦ 0
   let T : E × ℂ → E × ℂ := fun p ↦ (τ p.1, conj p.2)
-  have hTt : Tendsto T (𝓝 (x₀, (0 : ℂ))) (𝓝 (x₀, (0 : ℂ))) := by
-    simpa only [T, Prod.map_def, hτ0, map_zero] using hτ.tendsto.prodMap_nhds
-      (Complex.continuous_conj.tendsto (0 : ℂ))
   -- Compare the two forms for each pair using conjugation of the roots.
   have hcompat (i j : Fin d) (hij : i ≠ j) (hσij : σ i ≠ σ j) :
       e₀ (σ i) (σ j) hσij = e₀ i j hij ∧
         ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)),
           w₀ (σ i) (σ j) hσij p =
             conj (w₀ i j hij (T p)) := by
-    have hrelation : ∀ᶠ p in 𝓝 (x₀, (0 : ℂ)), p.2 ≠ 0 →
-        p.2 ^ e₀ (σ i) (σ j) hσij *
-            w₀ (σ i) (σ j) hσij p =
-          conj ((conj p.2) ^ e₀ i j hij * w₀ i j hij (T p)) := by
-      filter_upwards [hform (σ i) (σ j) hσij,
-        hTt.eventually (hform i j hij), hσ] with p hp hTp hsigma hp0
-      have hTp0 : (T p).2 ≠ 0 := by simpa [T] using hp0
-      have h1 : r (σ i) p - r (σ j) p = p.2 ^
-          e₀ (σ i) (σ j) hσij *
-            w₀ (σ i) (σ j) hσij p := by
-        simpa only [sub_zero] using hp.2 hp0
-      have h2 : r i (T p) - r j (T p) = (T p).2 ^ e₀ i j hij * w₀ i j hij (T p) := by
-        simpa only [sub_zero] using hTp.2 hTp0
-      calc
-        _ = r (σ i) p - r (σ j) p := h1.symm
-        _ = conj (r i (T p) - r j (T p)) := by
-          rw [hsigma hp0 i, hsigma hp0 j]
-          exact (map_sub (starRingEnd ℂ) (r i (T p)) (r j (T p))).symm
-        _ = conj ((T p).2 ^ e₀ i j hij * w₀ i j hij (T p)) :=
-          congrArg conj h2
-        _ = _ := by simp [T, map_mul, map_zpow₀]
-    exact (hw (σ i) (σ j) hσij).restrictScalars (𝕜 := ℝ) |>.laurent_eq_of_conj
-      (hw0 (σ i) (σ j) hσij) (by simpa only [hτ0] using (hw i j hij).restrictScalars (𝕜 := ℝ))
-      (by simpa only [hτ0] using hw0 i j hij) hτ hrelation
+    have hform₁ := hform (σ i) (σ j) hσij
+    have hform₂ := hform i j hij
+    refine AnalyticAt.laurent_eq_of_conj_of_forms
+      ((hw (σ i) (σ j) hσij).restrictScalars (𝕜 := ℝ)) (hw0 (σ i) (σ j) hσij)
+      (by simpa only [hτ0] using (hw i j hij).restrictScalars (𝕜 := ℝ))
+      (by simpa only [hτ0] using hw0 i j hij) hτ
+      (by simpa only [sub_zero] using hform₁.mono fun p hp ↦ hp.2)
+      (by rw [hτ0]; simpa only [sub_zero] using hform₂.mono fun p hp ↦ hp.2) ?_
+    filter_upwards [hσ] with p hsigma hp0
+    rw [hsigma hp0 i, hsigma hp0 j]
+    exact (map_sub (starRingEnd ℂ) (r i (T p)) (r j (T p))).symm
   -- Assemble the paired forms into the indexed result.
   refine ⟨e, w, ?_, ?_, ?_, ?_⟩
   · intro i j hij

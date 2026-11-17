@@ -56,6 +56,10 @@ The proof has three steps.
   for a `P`-resolution `K` of `X`, and
   `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap`, its
   characterization through any injective resolution.
+* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_naturality`: compatibility with
+  morphisms of augmented resolutions.
+* `CategoryTheory.Functor.rightDerivedIsoOfResolution`: the natural isomorphism for a
+  functorial adapted resolution.
 
 ## References
 
@@ -315,5 +319,61 @@ lemma rightDerivedObjIsoOfResolution_hom_comp_homologyMap (n : ℕ) (I : Injecti
   -- the composite `(isoOfQuasiIsoAt _ n).inv ≫ Hⁿ(F(φ₀))` cancels
   exact (Category.assoc _ _ _).trans
     (_ ≫= isoOfQuasiIsoAt_inv_hom_id_assoc ((F.mapHomologicalComplex _).map φ₀) n _)
+
+/-- The computation by adapted resolutions is natural in a morphism of augmented resolutions.
+The map on the resolutions need not be a quasi-isomorphism. -/
+@[reassoc]
+lemma rightDerivedObjIsoOfResolution_hom_naturality {Y : C} {L : CochainComplex C ℕ}
+    (κ : (single₀ C).obj Y ⟶ L) [QuasiIso κ] (hL : ∀ n, P (L.X n))
+    (f : X ⟶ Y) (φ : K ⟶ L) (hφ : ι ≫ φ = (single₀ C).map f ≫ κ) (n : ℕ) :
+    (F.rightDerived n).map f ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF κ hL n).hom =
+      (F.rightDerivedObjIsoOfResolution P hinj hP hF ι hK n).hom ≫
+        (F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map φ := by
+  let I := injectiveResolution X
+  let J := injectiveResolution Y
+  let a := InjectiveResolution.descOfQuasiIso (𝟙 X) I ι
+  let b := InjectiveResolution.descOfQuasiIso (𝟙 Y) J κ
+  let c := InjectiveResolution.desc f J I
+  have hb : QuasiIso ((F.mapHomologicalComplex _).map b) :=
+    InjectiveResolution.quasiIso_map_of_comp_eq F P hinj hP hF κ hL J b (by simp [b])
+  -- The two routes from K to J lift the same map f, hence induce the same homology map.
+  have h : (F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map
+      (φ ≫ b) =
+      (F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map (a ≫ c) :=
+    (F.mapHomotopy (InjectiveResolution.homotopyOfQuasiIso ι (φ ≫ b) (a ≫ c)
+      (by simp [reassoc_of% hφ, a, b, c]))).homologyMap_eq n
+  have : IsIso
+      ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map b) :=
+    inferInstanceAs (IsIso (HomologicalComplex.homologyMap
+      ((F.mapHomologicalComplex _).map b) n))
+  -- After the comparison from L to J, naturality is the native injective-resolution formula.
+  apply (cancel_mono
+    ((F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n).map b)).1
+  rw [Category.assoc, rightDerivedObjIsoOfResolution_hom_comp_homologyMap
+    F P hinj hP hF κ hL n J b (by simp [b])]
+  rw [Category.assoc, ← Functor.map_comp, h, Functor.map_comp, ← Category.assoc,
+    rightDerivedObjIsoOfResolution_hom_comp_homologyMap
+      F P hinj hP hF ι hK n I a (by simp [a])]
+  exact InjectiveResolution.isoRightDerivedObj_hom_naturality f I J c
+    (InjectiveResolution.desc_commutes_zero f J I) F n
+
+/-- A functorial resolution by objects of a class adapted to `F` computes `RⁿF`, naturally in
+its argument. The components are the comparisons through arbitrary injective resolutions given
+by `rightDerivedObjIsoOfResolution_hom_comp_homologyMap`. -/
+noncomputable def rightDerivedIsoOfResolution (K : C ⥤ CochainComplex C ℕ)
+    (ι : single₀ C ⟶ K) [∀ X, QuasiIso (ι.app X)] (hK : ∀ X n, P ((K.obj X).X n)) (n : ℕ) :
+    F.rightDerived n ≅ K ⋙ F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n :=
+  NatIso.ofComponents (fun X ↦ F.rightDerivedObjIsoOfResolution P hinj hP hF (ι.app X) (hK X) n)
+    (fun f ↦ F.rightDerivedObjIsoOfResolution_hom_naturality P hinj hP hF
+      (ι.app _) (hK _) (ι.app _) (hK _) f (K.map f) (ι.naturality f).symm n)
+
+/-- Components of the natural comparison are the comparisons for the individual resolutions. -/
+@[simp]
+lemma rightDerivedIsoOfResolution_app (K : C ⥤ CochainComplex C ℕ)
+    (ι : single₀ C ⟶ K) [∀ X, QuasiIso (ι.app X)] (hK : ∀ X n, P ((K.obj X).X n))
+    (n : ℕ) (X : C) :
+    (F.rightDerivedIsoOfResolution P hinj hP hF K ι hK n).app X =
+      F.rightDerivedObjIsoOfResolution P hinj hP hF (ι.app X) (hK X) n :=
+  (rfl)
 
 end CategoryTheory.Functor

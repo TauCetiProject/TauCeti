@@ -15,9 +15,10 @@ import TauCeti.RingTheory.IntegralClosure.Quotient
 A monic relation modulo a two-sided ideal `I` gives a monic relation modulo every power `I^n`:
 raise the original polynomial to the `n`-th power. This works in noncommutative algebras because
 polynomials in a single element with central coefficients can be evaluated multiplicatively.
-Likewise, monic relations modulo two two-sided ideals `I` and `J` multiply to a monic relation
-modulo `I * J`. These allow finiteness arguments using integral generators to
-survive passage to smaller ideals.
+Likewise, an element is integral modulo a product `I * J` of two-sided ideals exactly when it is
+integral modulo `I` and modulo `J`: two monic relations multiply to a monic relation modulo
+`I * J`. These allow finiteness arguments using integral generators to survive passage to smaller
+ideals.
 -/
 
 public section
@@ -28,24 +29,22 @@ variable {R A : Type*} [CommRing R] [Ring A] [Algebra R A]
 
 /-- Integrality of an element modulo a two-sided ideal implies integrality modulo every power
 of that ideal. No commutativity of the ambient algebra is needed. -/
-theorem isIntegral_quotient_pow_of_isIntegral_quotient {I : Ideal A} [I.IsTwoSided]
-    (x : A) (hx : IsIntegral R (Ideal.Quotient.mk I x)) (n : ℕ) :
+theorem isIntegral_quotient_pow_of_isIntegral_quotient {I : Ideal A} [I.IsTwoSided] {x : A}
+    (hx : IsIntegral R (Ideal.Quotient.mk I x)) (n : ℕ) :
     IsIntegral R (Ideal.Quotient.mk (I ^ n) x) := by
   obtain ⟨p, hp, hpI⟩ := (isIntegral_quotient_iff x I).1 hx
   refine (isIntegral_quotient_iff x (I ^ n)).2 ⟨p ^ n, hp.pow n, ?_⟩
   rw [map_pow]
   exact Ideal.pow_mem_pow hpI n
 
-/-- Integrality of an element modulo two two-sided ideals implies integrality modulo their
-product: the product of the two monic relations is a monic relation. No commutativity of the
-ambient algebra is needed. -/
-theorem isIntegral_quotient_mul_of_isIntegral_quotient {I J : Ideal A} [I.IsTwoSided]
-    [J.IsTwoSided] (x : A) (hI : IsIntegral R (Ideal.Quotient.mk I x))
-    (hJ : IsIntegral R (Ideal.Quotient.mk J x)) :
-    IsIntegral R (Ideal.Quotient.mk (I * J) x) := by
-  obtain ⟨p, hp, hpI⟩ := (isIntegral_quotient_iff x I).1 hI
-  obtain ⟨q, hq, hqJ⟩ := (isIntegral_quotient_iff x J).1 hJ
-  refine (isIntegral_quotient_iff x (I * J)).2 ⟨p * q, hp.mul hq, ?_⟩
+/-- An element is integral modulo the product of two two-sided ideals if and only if it is
+integral modulo each of them. No commutativity of the ambient algebra is needed. -/
+theorem isIntegral_quotient_mul_iff {I J : Ideal A} [I.IsTwoSided] [J.IsTwoSided] (x : A) :
+    IsIntegral R (Ideal.Quotient.mk (I * J) x) ↔
+      IsIntegral R (Ideal.Quotient.mk I x) ∧ IsIntegral R (Ideal.Quotient.mk J x) := by
+  simp only [isIntegral_quotient_iff]
+  refine ⟨fun ⟨p, hp, hpx⟩ ↦ ⟨⟨p, hp, Ideal.mul_le_left hpx⟩, ⟨p, hp, Ideal.mul_le_right hpx⟩⟩,
+    fun ⟨⟨p, hp, hpI⟩, ⟨q, hq, hqJ⟩⟩ ↦ ⟨p * q, hp.mul hq, ?_⟩⟩
   rw [map_mul]
   exact Ideal.mul_mem_mul hpI hqJ
 

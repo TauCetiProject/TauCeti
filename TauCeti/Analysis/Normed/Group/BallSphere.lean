@@ -12,7 +12,8 @@ public import Mathlib.Analysis.Normed.Group.BallSphere
 
 On a sphere of nonzero radius in a torsion-free seminormed additive group, a point and its
 antipode are distinct. Their complements therefore cover the sphere. This cover is useful for
-decomposing spheres into punctured spheres.
+decomposing spheres into punctured spheres. Two points of a sphere centred at zero that are not
+antipodal have nonzero sum (`TauCeti.coe_add_coe_ne_zero`).
 
 An open subset of a closed ball contained in the corresponding open ball embeds openly into the
 ambient space.
@@ -23,6 +24,9 @@ to a vector of norm less than `‖y‖ + ε` (`TauCeti.exists_apply_eq_norm_lt_a
 Under an injective map, the image of `v` lies outside the image of the closed ball of radius `r`
 centred at zero exactly when `r < ‖v‖`
 (`Function.Injective.apply_notMem_image_closedBall_zero_iff`).
+
+Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` whenever `r + ‖h‖ ≤ s`
+(`TauCeti.image_sub_const_setOf_lt_norm_subset`).
 
 A bijection of the closed unit ball preserving the unit sphere restricts to a bijection of the
 unit sphere (`Equiv.restrictUnitSphere`).
@@ -45,6 +49,11 @@ lemma compl_singleton_union_compl_singleton_neg {E : Type*} [SeminormedAddCommGr
     apply ne_zero_of_mem_sphere hr p
     apply self_eq_neg.mp
     simpa only [coe_neg_sphere] using congrArg Subtype.val h
+
+/-- Two points of a sphere centred at zero that are not antipodal have nonzero sum. -/
+theorem coe_add_coe_ne_zero {E : Type*} [SeminormedAddCommGroup E] {r : ℝ}
+    {b y : sphere (0 : E) r} (h : y ≠ -b) : (b : E) + (y : E) ≠ 0 := fun h0 ↦
+  h (Subtype.ext (by rw [coe_neg_sphere]; exact eq_neg_of_add_eq_zero_right h0))
 
 /-- An open subset of a closed ball centered at zero whose points have norm strictly less than
 the radius embeds openly into the ambient space. -/
@@ -78,6 +87,13 @@ theorem _root_.Function.Injective.apply_notMem_image_closedBall_zero_iff {E X : 
     [SeminormedAddGroup E] {e : E → X} (he : Function.Injective e) {r : ℝ} {v : E} :
     e v ∉ e '' closedBall 0 r ↔ r < ‖v‖ := by
   rw [he.mem_set_image, mem_closedBall_zero_iff, not_le]
+
+/-- Translating by `-h` maps `{x | s < ‖x‖}` into `{x | r < ‖x‖}` when `r + ‖h‖ ≤ s`. -/
+theorem image_sub_const_setOf_lt_norm_subset {E : Type*} [SeminormedAddGroup E] {h : E}
+    {r s : ℝ} (hrs : r + ‖h‖ ≤ s) : (· - h) '' {x : E | s < ‖x‖} ⊆ {x | r < ‖x‖} := by
+  rintro _ ⟨x, hx, rfl⟩
+  have := norm_le_norm_sub_add x h
+  grind
 
 /-! ### Bijections of the closed ball preserving the unit sphere -/
 

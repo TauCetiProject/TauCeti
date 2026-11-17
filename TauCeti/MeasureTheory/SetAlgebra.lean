@@ -95,4 +95,13 @@ theorem isSetRing_nullMeasurableSet {μ : Measure α} :
   union_mem _ _ hs ht := NullMeasurableSet.union hs ht
   sdiff_mem _ _ hs ht := NullMeasurableSet.diff hs ht
 
+/-- A finite union of sets from a family containing `∅` lies in the family `supClosure C` of
+finite unions of its members. -/
+theorem sUnion_finset_mem_supClosure {β : Type*} {C : Set (Set β)} (hC : ∅ ∈ C)
+    {I : Finset (Set β)} (hI : ∀ r ∈ I, r ∈ C) : ⋃₀ (I : Set (Set β)) ∈ supClosure C := by
+  rw [← Finset.sup_id_set_eq_sUnion]
+  rcases I.eq_empty_or_nonempty with rfl | hne
+  · simpa using subset_supClosure hC
+  · exact supClosed_supClosure.finsetSup_mem hne fun r hr => subset_supClosure (hI r hr)
+
 end MeasureTheory

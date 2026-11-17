@@ -14,6 +14,7 @@ import TauCeti.NumberTheory.ClassFieldTheory.Local.CyclicClass
 import TauCeti.NumberTheory.ClassFieldTheory.Local.TameSymbol
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.Completion
 import TauCeti.RingTheory.DedekindDomain.SelmerGroup
+import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 
 /-!
 # The cohomological Hilbert invariants at all places
@@ -243,15 +244,9 @@ theorem infiniteHilbertInvariantAt_eq_ite (w : InfinitePlace K) (a b : Kˣ)
   · rw [ite_eq_left hx, hx]
     simp
   · rw [ite_eq_right hx]
-    rcases w.isReal_or_isComplex with hw | hw
-    · rw [infiniteInvMap_apply_of_isReal w hw]
-      simpa [realInv_apply, map_eq_zero_iff _ hinj, hx] using
-        (ZMod.toRatAddCircle_natCast 2 1).symm
-    · have h : (kummerCupPairing (-1) hζ).cup 1 1
-          (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) a))
-          (kummerClass _ h2 (Units.map (algebraMap K w.Completion : K →* w.Completion) b)) = 0 :=
-        hinj ((brCompletion_eq_zero_of_isComplex w hw _).trans (map_zero _).symm)
-      exact (hx h).elim
+    rw [infiniteInvMap_apply_eq_ite w]
+    simpa [realInv_apply, map_eq_zero_iff _ hinj, hx] using
+      (ZMod.toRatAddCircle_natCast 2 1).symm
 
 /-- The Hilbert invariant at an infinite place vanishes exactly when the cup product of the
 localized Kummer classes does. -/
@@ -281,7 +276,7 @@ theorem infiniteHilbertInvariantAt_eq_ite_of_isReal {w : InfinitePlace K} (hw : 
   have he (x : Kˣ) : Completion.ringEquivRealOfIsReal hw
       (Units.map (algebraMap K w.Completion : K →* w.Completion) x : w.Completion) =
       embedding_of_isReal hw (x : K) := by
-    simp
+    simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe]
   rw [he, he] at key
   have ha := (map_ne_zero (embedding_of_isReal hw)).2 a.ne_zero
   have hb := (map_ne_zero (embedding_of_isReal hw)).2 b.ne_zero

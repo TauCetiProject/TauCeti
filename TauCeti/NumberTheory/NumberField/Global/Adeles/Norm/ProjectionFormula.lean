@@ -53,6 +53,7 @@ theorem finiteAdeleNorm_smul (a : FiniteAdeleRing (𝓞 K) K)
   rw [Algebra.smul_def, algebraMap_finiteAdeleExtensionAlgebra, map_mul,
     finiteAdeleNorm_finiteAdeleExtension]
 
+omit [NumberField K] in
 /-- **The infinite-adele projection formula.** The relative norm of an infinite adele multiplied
 by an extended base adele is the norm of the original adele multiplied by the field-degree power
 of the base adele. -/

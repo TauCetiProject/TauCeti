@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Module.GradedModule.Internal
+public import TauCeti.Algebra.Module.GradedModule.Shift
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
 
@@ -38,6 +39,10 @@ degrees. This grading is used by tensor products of differential graded objects.
 * `TauCeti.InternalGrading.tmul_mem_tensorProduct`: degrees add on pure tensors.
 * `TauCeti.InternalGrading.tensorProduct_piece_le`: a submodule containing every homogeneous pure
   tensor of total degree `n` contains the degree-`n` piece.
+* `TauCeti.InternalGrading.shift_tensorProduct_piece`: shifting the first factor shifts the total
+  grading.
+* `TauCeti.InternalGrading.span_range_tmul_piece_eq_top`: pure tensors of homogeneous elements
+  span the tensor product.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
@@ -68,7 +73,7 @@ variable {N : Type w} [AddCommMonoid N] [Module R N]
 
 /-- Two linear maps from a tensor product of a finite family of internally graded modules agree
 if they agree on pure tensors of homogeneous elements. -/
-theorem piTensorProduct_ext (G : ∀ i, InternalGrading R (M i))
+theorem piTensorProduct_ext (G : ∀ i, InternalGrading R (M i) ℤ)
     {f g : PiTensorProduct R M →ₗ[R] N}
     (h : ∀ q : ∀ i, Σ d : ℤ, (G i).piece d,
       f (PiTensorProduct.tprod R fun i ↦ (q i).2) =
@@ -90,16 +95,16 @@ variable {M : Type v} {N : Type w}
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- The bidegree-`(p, q)` submodule in a tensor product of internally graded modules. -/
-private def tensorProductBidegreePiece (G : InternalGrading R M) (H : InternalGrading R N)
+private def tensorProductBidegreePiece (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     (d : ℤ × ℤ) : Submodule R (M ⊗[R] N) :=
   Submodule.map₂ (TensorProduct.mk R M N) (G.piece d.1) (H.piece d.2)
 
-private def tensorProductPiece (G : InternalGrading R M) (H : InternalGrading R N) (n : ℤ) :
+private def tensorProductPiece (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (n : ℤ) :
     Submodule R (M ⊗[R] N) :=
   ⨆ d : ℤ × ℤ, ⨆ _ : d.1 + d.2 = n, tensorProductBidegreePiece G H d
 
-private theorem tensorProductPiece_eq_iSup (G : InternalGrading R M)
-    (H : InternalGrading R N) (n : ℤ) :
+private theorem tensorProductPiece_eq_iSup (G : InternalGrading R M ℤ)
+    (H : InternalGrading R N ℤ) (n : ℤ) :
     tensorProductPiece G H n =
       ⨆ p : ℤ, Submodule.map₂ (TensorProduct.mk R M N) (G.piece p) (H.piece (n - p)) := by
   apply le_antisymm
@@ -123,31 +128,26 @@ variable {M : Type v} {N : Type w}
 variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- The tensor product of internally graded modules, graded by total degree. -/
-noncomputable def tensorProduct (G : InternalGrading R M) (H : InternalGrading R N) :
-    InternalGrading R (M ⊗[R] N) where
+noncomputable def tensorProduct (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
+    InternalGrading R (M ⊗[R] N) ℤ where
   piece := tensorProductPiece G H
-  isInternal := by
-    classical
-    apply DirectSum.IsInternal.iSup_fiber
-    -- Unfold the private bidegree wrapper to match the tensor-product decomposition.
-    change DirectSum.IsInternal fun d : ℤ × ℤ ↦
-      Submodule.map₂ (TensorProduct.mk R M N) (G.piece d.1) (H.piece d.2)
-    -- The reused theorem uses classical decidable equality; `convert` transports the
-    -- decompositions across the proof-irrelevant choice of decidable equality on `ℤ`.
-    convert DirectSum.IsInternal.tensorProduct G.piece H.piece ?_ ?_ using 1
-    · convert G.isInternal
-    · convert H.isInternal
+  -- `tensorProductPiece` is by definition the supremum of the bidegree pieces over each fiber of
+  -- the total-degree map, which is the form produced by `DirectSum.IsInternal.iSup_fiber`.
+  isInternal :=
+    (DirectSum.IsInternal.tensorProduct G.piece H.piece G.isInternal H.isInternal).iSup_fiber
+      fun d ↦ d.1 + d.2
 
 /-- The degree-`n` piece of the tensor-product grading is the sum of the tensor-product images
 whose first degree is `p` and whose second degree is `n - p`. -/
-theorem tensorProduct_piece_eq_iSup (G : InternalGrading R M) (H : InternalGrading R N) (n : ℤ) :
+theorem tensorProduct_piece_eq_iSup (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
+    (n : ℤ) :
     (G.tensorProduct H).piece n =
       ⨆ p : ℤ, Submodule.map₂ (TensorProduct.mk R M N) (G.piece p) (H.piece (n - p)) :=
   tensorProductPiece_eq_iSup G H n
 
 /-- A pure tensor of elements of degrees `p` and `q` is homogeneous of degree `p + q` in the
 tensor-product grading. -/
-theorem tmul_mem_tensorProduct (G : InternalGrading R M) (H : InternalGrading R N)
+theorem tmul_mem_tensorProduct (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ)
     {p q : ℤ} {x : M} {y : N} (hx : x ∈ G.piece p) (hy : y ∈ H.piece q) :
     x ⊗ₜ[R] y ∈ (G.tensorProduct H).piece (p + q) := by
   rw [tensorProduct_piece_eq_iSup]
@@ -157,16 +157,40 @@ theorem tmul_mem_tensorProduct (G : InternalGrading R M) (H : InternalGrading R 
 
 /-- A submodule containing every pure tensor of homogeneous elements of total degree `n` contains
 the whole degree-`n` piece of the tensor-product grading. -/
-theorem tensorProduct_piece_le (G : InternalGrading R M) (H : InternalGrading R N) {n : ℤ}
+theorem tensorProduct_piece_le (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) {n : ℤ}
     {C : Submodule R (M ⊗[R] N)}
     (h : ∀ p : ℤ, ∀ x ∈ G.piece p, ∀ y ∈ H.piece (n - p), x ⊗ₜ[R] y ∈ C) :
     (G.tensorProduct H).piece n ≤ C := by
   rw [tensorProduct_piece_eq_iSup]
   exact iSup_le fun p ↦ Submodule.map₂_le.2 fun x hx y hy ↦ h p x hx y hy
 
+/-- Shifting the grading of the first factor by `c` shifts the total grading of the tensor product
+by `c`. -/
+theorem shift_tensorProduct_piece (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (c : ℤ) :
+    ((G.shift c).tensorProduct H).piece = ((G.tensorProduct H).shift c).piece := by
+  funext d
+  refine le_antisymm (tensorProduct_piece_le _ _ fun p x hx y hy ↦ ?_) ?_
+  · rw [shift_piece] at hx ⊢
+    simpa [show p + c + (d - p) = d + c by ring] using tmul_mem_tensorProduct G H hx hy
+  · rw [shift_piece]
+    refine tensorProduct_piece_le _ _ fun p x hx y hy ↦ ?_
+    have hx' : x ∈ (G.shift c).piece (p - c) := by
+      rwa [shift_piece, sub_add_cancel]
+    simpa [show p - c + (d + c - p) = d by ring] using tmul_mem_tensorProduct (G.shift c) H hx' hy
+
+/-- Pure tensors of homogeneous elements span the tensor product of internally graded modules. -/
+theorem span_range_tmul_piece_eq_top (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) :
+    Submodule.span R (Set.range fun z : Σ pq : ℤ × ℤ, G.piece pq.1 × H.piece pq.2 ↦
+      (z.2.1 : M) ⊗ₜ[R] (z.2.2 : N)) = ⊤ := by
+  refine top_unique ?_
+  rw [← TensorProduct.map₂_mk_top_top_eq_top, ← G.span_setOf_exists_mem_piece_eq_top R,
+    ← H.span_setOf_exists_mem_piece_eq_top R, Submodule.map₂_span_span, Submodule.span_le]
+  rintro _ ⟨x, ⟨p, hx⟩, y, ⟨q, hy⟩, rfl⟩
+  exact Submodule.subset_span ⟨⟨(p, q), ⟨x, hx⟩, ⟨y, hy⟩⟩, rfl⟩
+
 /-- Reassociating a triple tensor product preserves total degree. -/
 theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]
-    (G : InternalGrading R M) (H : InternalGrading R N) (K : InternalGrading R P) :
+    (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (K : InternalGrading R P ℤ) :
     LinearMap.IsHomogeneous (TensorProduct.assoc R M N P).symm.toLinearMap
       (G.tensorProduct (H.tensorProduct K)).piece ((G.tensorProduct H).tensorProduct K).piece
       0 := by
@@ -187,7 +211,7 @@ theorem isHomogeneous_assoc_symm {P : Type w'} [AddCommMonoid P] [Module R P]
 
 /-- Reassociating a triple tensor product preserves total degree. -/
 theorem isHomogeneous_assoc {P : Type w'} [AddCommMonoid P] [Module R P]
-    (G : InternalGrading R M) (H : InternalGrading R N) (K : InternalGrading R P) :
+    (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (K : InternalGrading R P ℤ) :
     LinearMap.IsHomogeneous (TensorProduct.assoc R M N P).toLinearMap
       ((G.tensorProduct H).tensorProduct K).piece (G.tensorProduct (H.tensorProduct K)).piece
       0 := by
@@ -203,7 +227,7 @@ variable [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
 
 /-- The Koszul twist for the total grading of a tensor product is the tensor product of the
 Koszul twists of the factors. -/
-theorem koszulTwist_tensorProduct (G : InternalGrading R M) (H : InternalGrading R N) (q : ℤ) :
+theorem koszulTwist_tensorProduct (G : InternalGrading R M ℤ) (H : InternalGrading R N ℤ) (q : ℤ) :
     (G.tensorProduct H).koszulTwist q = TensorProduct.map (G.koszulTwist q) (H.koszulTwist q) := by
   refine TensorProduct.ext (G.linearMap_ext fun p x hx ↦ H.linearMap_ext fun r y hy ↦ ?_)
   simp only [LinearMap.compr₂ₛₗ_apply, TensorProduct.mk_apply, TensorProduct.map_tmul,
@@ -224,8 +248,8 @@ variable [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
 
 /-- Tensoring homogeneous linear maps adds their degrees for the total tensor-product gradings. -/
 @[grind →]
-theorem tensorProduct {G : InternalGrading R M} {H : InternalGrading R N}
-    {G' : InternalGrading R M'} {H' : InternalGrading R N'} {f : M →ₗ[R] M'} {g : N →ₗ[R] N'}
+theorem tensorProduct {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+    {G' : InternalGrading R M' ℤ} {H' : InternalGrading R N' ℤ} {f : M →ₗ[R] M'} {g : N →ₗ[R] N'}
     {a b : ℤ} (hf : LinearMap.IsHomogeneous f G.piece G'.piece a)
     (hg : LinearMap.IsHomogeneous g H.piece H'.piece b) :
     LinearMap.IsHomogeneous (TensorProduct.map f g) (G.tensorProduct H).piece
@@ -254,8 +278,8 @@ theorem tensorProduct {G : InternalGrading R M} {H : InternalGrading R N}
   exact hle hz
 
 /-- Tensoring a homogeneous map with the identity on the right preserves its degree. -/
-theorem rTensor {G : InternalGrading R M} {G' : InternalGrading R M'} {f : M →ₗ[R] M'}
-    {a : ℤ} (hf : LinearMap.IsHomogeneous f G.piece G'.piece a) (H : InternalGrading R N) :
+theorem rTensor {G : InternalGrading R M ℤ} {G' : InternalGrading R M' ℤ} {f : M →ₗ[R] M'}
+    {a : ℤ} (hf : LinearMap.IsHomogeneous f G.piece G'.piece a) (H : InternalGrading R N ℤ) :
     LinearMap.IsHomogeneous (f.rTensor N) (G.tensorProduct H).piece
       (G'.tensorProduct H).piece a := by
   simpa only [LinearMap.rTensor_def, add_zero] using

@@ -39,8 +39,9 @@ construction of the Langlands dual group with its Galois action.
 
 * `RootPairing.pairingIn_flip`: flipping transposes the *chosen* preimage of a pairing in
   the coefficient ring `S`, not only the pairing itself.
-* `RootPairing.Base.cartanMatrix_flip`: the Cartan matrix of the flipped base is the
-  transpose of the Cartan matrix of the base.
+* `RootPairing.Base.cartanMatrixIn_flip`: the Cartan matrix of the flipped base is the
+  transpose of the Cartan matrix of the base, with entries in any `S` injecting into `R`;
+  `RootPairing.Base.cartanMatrix_flip` is the case of integer entries.
 * `RootPairing.Equiv.flip_mul`: flipping reverses products of automorphisms, and
   `RootPairing.Equiv.flip_mul_eq_flip_mul_flip_iff` shows that it preserves the product of two
   automorphisms only when they commute; so the inversion in `autFlip` cannot be omitted.
@@ -64,62 +65,54 @@ root datum and the inverse-transpose action of its automorphisms are as in
 -/
 public section
 
-namespace TauCeti
+namespace RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
-
-section
 
 /-- **Flipping a root pairing transposes its integral pairing.** The pairing of the flipped pairing
 is transposed by definition (`RootPairing.pairing_flip`); the content here is that the *chosen*
 preimage in `S` is transposed too, which needs `algebraMap S R` to be injective. -/
-@[simp] lemma _root_.RootPairing.pairingIn_flip
+@[simp] lemma pairingIn_flip
     (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R]
     (P : RootPairing ι R M N) [P.IsValuedIn S] (i j : ι) :
     P.flip.pairingIn S i j = P.pairingIn S j i :=
   FaithfulSMul.algebraMap_injective S R <| by simp
 
-section
+namespace Base
+
+variable {P : RootPairing ι R M N} (b : P.Base)
 
 /-- A base of `P` is a base of `P.flip` supported on the same simple indices
 (`RootPairing.Base.flip`); this is the resulting identification of the two index types, which the
 Cartan matrices of the base and of its flip are indexed by. -/
-def _root_.RootPairing.Base.flipSupportEquiv
-    {P : RootPairing ι R M N} (b : P.Base) : b.flip.support ≃ b.support :=
-  Equiv.subtypeEquivRight fun _ ↦ by rw [RootPairing.Base.flip_support]
+def flipSupportEquiv : b.flip.support ≃ b.support :=
+  Equiv.subtypeEquivRight fun _ ↦ by rw [flip_support]
 
-@[simp] lemma _root_.RootPairing.Base.coe_flipSupportEquiv_apply
-    {P : RootPairing ι R M N} (b : P.Base)
-    (i : b.flip.support) :
-    (RootPairing.Base.flipSupportEquiv b i : ι) = i := (rfl)
+/-- `RootPairing.Base.flipSupportEquiv` does not change the underlying root index. -/
+@[simp] lemma coe_flipSupportEquiv_apply (i : b.flip.support) :
+    (b.flipSupportEquiv i : ι) = i := (rfl)
 
-/-- **The Cartan matrix of the flipped base is the transpose of the Cartan matrix of the base.** -/
-@[simp] lemma _root_.RootPairing.Base.cartanMatrix_flip
-    [CharZero R] {P : RootPairing ι R M N} [P.IsCrystallographic]
-    (b : P.Base) (i j : b.flip.support) :
-    b.flip.cartanMatrix i j = b.cartanMatrix (RootPairing.Base.flipSupportEquiv b j)
-      (RootPairing.Base.flipSupportEquiv b i) := by
-  have h₁ : b.flip.cartanMatrix i j = P.flip.pairingIn ℤ (i : ι) (j : ι) :=
-    RootPairing.Base.cartanMatrixIn_def _ _ _ _
-  have h₂ : b.cartanMatrix (RootPairing.Base.flipSupportEquiv b j)
-      (RootPairing.Base.flipSupportEquiv b i)
-      = P.pairingIn ℤ (j : ι) (i : ι) := RootPairing.Base.cartanMatrixIn_def _ _ _ _
-  rw [h₁, h₂, RootPairing.pairingIn_flip]
+/-- **The Cartan matrix of the flipped base is the transpose of the Cartan matrix of the base**,
+for Cartan matrices with entries in any coefficient ring `S` injecting into `R`. -/
+@[simp] lemma cartanMatrixIn_flip
+    (S : Type*) [CommRing S] [Algebra S R] [FaithfulSMul S R] [P.IsValuedIn S]
+    (i j : b.flip.support) :
+    b.flip.cartanMatrixIn S i j =
+      b.cartanMatrixIn S (b.flipSupportEquiv j) (b.flipSupportEquiv i) := by
+  simp [cartanMatrixIn_def]
+
+/-- **The Cartan matrix of the flipped base is the transpose of the Cartan matrix of the base.**
+This is `RootPairing.Base.cartanMatrixIn_flip` for integer entries. -/
+lemma cartanMatrix_flip [CharZero R] [P.IsCrystallographic] (i j : b.flip.support) :
+    b.flip.cartanMatrix i j = b.cartanMatrix (b.flipSupportEquiv j) (b.flipSupportEquiv i) :=
+  b.cartanMatrixIn_flip ℤ i j
 
 /-- Flipping a base twice returns the original base. -/
-@[simp] lemma _root_.RootPairing.Base.flip_flip
-    {P : RootPairing ι R M N} (b : P.Base) : b.flip.flip = b := rfl
+@[simp] lemma flip_flip : b.flip.flip = b := rfl
 
-end
+end Base
 
-end
-
-end TauCeti
-
-namespace RootPairing
-
-variable {ι ι₂ ι₃ R M N M₂ N₂ M₃ N₃ : Type*} [CommRing R]
-  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+variable {ι₂ ι₃ M₂ N₂ M₃ N₃ : Type*}
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   [AddCommGroup M₃] [Module R M₃] [AddCommGroup N₃] [Module R N₃]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂} {S : RootPairing ι₃ R M₃ N₃}

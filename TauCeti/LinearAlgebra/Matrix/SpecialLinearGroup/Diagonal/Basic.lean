@@ -67,6 +67,20 @@ theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_coe {R : Type u} [CommRing R
       if r = i then (a : R) else if r = j then ((a⁻¹ : Rˣ) : R) else 1) :=
   by rw [Matrix.SpecialLinearGroup.diag2nUnit]
 
+/-- Forgetting determinant one identifies a two-coordinate unit diagonal with its `GL`
+diagonal matrix. -/
+@[simp]
+theorem _root_.Matrix.SpecialLinearGroup.toGL_diag2nUnit {R : Type u} [CommRing R]
+    {m : Type v} [Fintype m] [DecidableEq m] {i j : m} (hij : i ≠ j) (a : Rˣ) :
+    Matrix.SpecialLinearGroup.toGL (Matrix.SpecialLinearGroup.diag2nUnit hij a) =
+      diagGL (fun r ↦ if r = i then a else if r = j then a⁻¹ else 1) := by
+  apply Units.ext
+  rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix,
+    Matrix.SpecialLinearGroup.diag2nUnit_coe, diagGL_coe]
+  congr 1
+  funext r
+  split_ifs <;> rfl
+
 /-- Inverting a two-coordinate unit diagonal matrix inverts its defining unit. -/
 @[simp]
 theorem _root_.Matrix.SpecialLinearGroup.diag2nUnit_inv {R : Type u} [CommRing R]

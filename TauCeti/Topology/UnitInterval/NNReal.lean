@@ -11,9 +11,9 @@ public import Mathlib.Topology.UnitInterval
 # The unit interval inside the nonnegative reals
 
 Two facts about `unitInterval.toNNReal : I → ℝ≥0`, the inclusion of the unit interval into the
-nonnegative reals: its values are at most one, and clamping a nonnegative real `t` to the unit
-interval with `Set.projIcc` and reading it back in `ℝ≥0` gives `min t 1`.  They let paths
-parametrized by the unit interval be reparametrized by a nonnegative time, as in
+nonnegative reals: its values are at most one, and clamping a real `t` to the unit interval with
+`Set.projIcc` and reading it back in `ℝ≥0` gives `min t.toNNReal 1` (so `min t 1` for `t : ℝ≥0`).
+They let paths parametrized by the unit interval be reparametrized by a nonnegative time, as in
 `TauCeti.Topology.PathSpace.Moore.Comparison.Basic`.
 -/
 
@@ -24,15 +24,17 @@ open Set
 
 namespace unitInterval
 
+/-- The inclusion of the unit interval into `ℝ≥0` takes values at most one. -/
+@[simp]
 theorem toNNReal_le_one (s : I) : toNNReal s ≤ 1 :=
-  NNReal.coe_le_coe.1 s.2.2
+  NNReal.coe_le_one.1 (le_one s)
 
-/-- Clamping a nonnegative real to the unit interval, read back in `ℝ≥0`, is `min t 1`. -/
-theorem toNNReal_projIcc (t : ℝ≥0) : toNNReal (projIcc 0 1 zero_le_one t) = min t 1 := by
-  rcases le_total t 1 with ht | ht
-  · rw [min_eq_left ht, projIcc_of_mem zero_le_one ⟨NNReal.coe_nonneg t, by exact_mod_cast ht⟩]
-    rfl
-  · rw [min_eq_right ht, projIcc_of_right_le zero_le_one (by exact_mod_cast ht)]
-    rfl
+/-- Clamping a real `t` to the unit interval, read back in `ℝ≥0`, is `min t.toNNReal 1`. -/
+@[simp]
+theorem toNNReal_projIcc (t : ℝ) :
+    toNNReal (projIcc 0 1 zero_le_one t) = min t.toNNReal 1 := by
+  ext
+  simp only [coe_toNNReal, coe_projIcc, NNReal.coe_min, Real.coe_toNNReal', NNReal.coe_one]
+  grind
 
 end unitInterval

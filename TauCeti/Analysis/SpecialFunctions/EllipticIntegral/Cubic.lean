@@ -182,6 +182,29 @@ theorem lintegral_Ioo_inv_sqrt_cubic_eq_legendreK (h₃₂ : e₃ < e₂) (h₂�
   rw [lintegral_Ioo_inv_sqrt_cubic_eq_agmIntegral h₃₂ h₂₁,
     agmIntegral_sqrt_sub_eq_legendreK h₃₂.le h₂₁]
 
+/-- For `b ≠ 0`, or `b = 0` with `a < e₁`, the squared modulus `(A + a - e₁) / (2A)` of the cubic
+`4 (x - e₁)((x - a)² + b²)`, where `A = √((e₁ - a)² + b²)`, lies in `[0, 1)`: indeed
+`|e₁ - a| ≤ A`, with strict inequality when `b ≠ 0`. -/
+theorem sqrt_add_sub_div_two_mul_sqrt_mem_Ico {e₁ a b : ℝ} (hb : b ≠ 0 ∨ a < e₁) :
+    (√((e₁ - a) ^ 2 + b ^ 2) + a - e₁) / (2 * √((e₁ - a) ^ 2 + b ^ 2)) ∈ Ico 0 1 := by
+  have hpos : 0 < (e₁ - a) ^ 2 + b ^ 2 := by
+    rcases hb with hb | hb
+    · positivity
+    · have : e₁ - a ≠ 0 := by linarith
+      positivity
+  set A := √((e₁ - a) ^ 2 + b ^ 2)
+  have hA2 : A ^ 2 = (e₁ - a) ^ 2 + b ^ 2 := sq_sqrt hpos.le
+  have hA : 0 < A := sqrt_pos.2 hpos
+  have hpA₁ : e₁ - a ≤ A :=
+    (le_abs_self _).trans (abs_le_of_sq_le_sq (by nlinarith) hA.le)
+  have hpA₂ : a - e₁ < A := by
+    rcases hb with hb | hb
+    · have hb2 : 0 < b ^ 2 := by positivity
+      have : |e₁ - a| < A := abs_lt_of_sq_lt_sq (by linarith) hA.le
+      linarith [neg_abs_le (e₁ - a)]
+    · linarith
+  exact ⟨div_nonneg (by linarith) (by positivity), (div_lt_one (by positivity)).2 (by linarith)⟩
+
 /-- **The integral over `(e₁, ∞)` for a cubic with one real root.** For `b ≠ 0`, put
 `A = √((e₁ - a)² + b²)` and `k = √((A + a - e₁)/(2A))`. Then
 `∫_{(e₁, ∞)} (4(x - e₁)((x - a)² + b²))^(-1/2) dx = K(k) / √A`. In particular the integral
@@ -196,22 +219,13 @@ theorem lintegral_Ioi_inv_sqrt_mul_sq_add_sq_eq_legendreK {e₁ a b : ℝ} (hb :
     · positivity
     · have : e₁ - a ≠ 0 := by linarith
       positivity
+  -- The modulus: `0 ≤ k² < 1`.
+  obtain ⟨hq₀, hq₁⟩ := sqrt_add_sub_div_two_mul_sqrt_mem_Ico hb
   set A := √((e₁ - a) ^ 2 + b ^ 2)
   have hA2 : A ^ 2 = (e₁ - a) ^ 2 + b ^ 2 := sq_sqrt hpos.le
   have hA : 0 < A := sqrt_pos.2 hpos
   clear_value A
-  -- The modulus: `0 ≤ k² < 1` because `e₁ - a ≤ A` and `a - e₁ < A`.
   set q := (A + a - e₁) / (2 * A)
-  have hpA₁ : e₁ - a ≤ A :=
-    (le_abs_self _).trans (abs_le_of_sq_le_sq (by nlinarith) hA.le)
-  have hpA₂ : a - e₁ < A := by
-    rcases hb with hb | hb
-    · have hb2 : 0 < b ^ 2 := by positivity
-      have : |e₁ - a| < A := abs_lt_of_sq_lt_sq (by linarith) hA.le
-      linarith [neg_abs_le (e₁ - a)]
-    · linarith
-  have hq₀ : 0 ≤ q := div_nonneg (by linarith) (by positivity)
-  have hq₁ : q < 1 := (div_lt_one (by positivity)).2 (by linarith)
   have hk : √q ^ 2 = q := sq_sqrt hq₀
   have hF := lintegral_Ioo_zero_pi_legendreF_integrand (k := √q) (by rwa [hk])
   rw [hk] at hF

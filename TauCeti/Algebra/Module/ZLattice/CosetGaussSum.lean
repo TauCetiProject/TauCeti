@@ -118,7 +118,7 @@ theorem cosetGaussSum_eq_of_sub_mem (a : ℤ) (c : ℕ)
 /-- If the level divides `c`, the coset Gauss sum vanishes unless the twisting vector
 `m` lies in the class `-a • γ` modulo `L`. -/
 theorem cosetGaussSum_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
-    (a : ℤ) {c : ℕ} [NeZero c] [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
+    (a : ℤ) {c : ℕ} [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
     (hc : level L ∣ c) (γ m : dual L) (hm : ((a • γ + m : dual L) : E) ∉ L) :
     cosetGaussSum L hL a c γ m = 0 := by
   rw [cosetGaussSum_eq_mul, gaussSumTwisted_eq_zero hL a hc hm, mul_zero]
@@ -126,7 +126,7 @@ theorem cosetGaussSum_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [Is
 /-- For `a ≡ 1` modulo the level, the surviving twisting vectors lie in the class `-γ`.
 This is the support condition for a principal-congruence modular substitution. -/
 theorem cosetGaussSum_eq_zero_of_modEq [FiniteDimensional ℝ E] [DiscreteTopology L]
-    [IsZLattice ℝ L] {a : ℤ} {c : ℕ} [NeZero c]
+    [IsZLattice ℝ L] {a : ℤ} {c : ℕ}
     [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
     (ha : a ≡ 1 [ZMOD level L]) (hc : level L ∣ c) (γ m : dual L)
     (hm : ((γ + m : dual L) : E) ∉ L) :

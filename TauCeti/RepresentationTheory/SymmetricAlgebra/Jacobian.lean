@@ -111,18 +111,27 @@ variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] (ρ : Representation K G V)
   {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- **The hyperplane multiplicity in the Jacobian.** If `g` fixes the hyperplane
-`ker ℓ` pointwise and `det (ρ g)` is a primitive `e`-th root of unity, then
+/-- **The hyperplane multiplicity in the Jacobian.** If `g` fixes the kernel `ker ℓ`
+pointwise and `det (ρ g)` is a primitive `e`-th root of unity, then
 `ℓ ^ (e - 1)` divides the Jacobian of every family of invariant polynomial functions.
-This applies to a generator of the cyclic pointwise stabilizer, with `e` the order
-of its determinant character; no order-two assumption is made. -/
+For `ℓ ≠ 0` the kernel is a hyperplane and `e - 1` is a lower bound for its multiplicity in the
+Jacobian; for `ℓ = 0` the kernel is the whole space, so `ρ g` is the identity, `e = 1`, and the
+statement is trivial. This applies to a generator of the cyclic pointwise stabilizer, with `e` the
+order of its determinant character; no order-two assumption is made. -/
 theorem dual_ι_pow_sub_one_dvd_jacobian (b : Module.Basis n K (Module.Dual K V))
-    {g : G} {ℓ : Module.Dual K V} (hℓ : ℓ ≠ 0)
+    {g : G} {ℓ : Module.Dual K V}
     (hfix : LinearMap.ker ℓ ≤ (ρ g).fixedSubmodule)
     {e : ℕ} (he : 0 < e) (hζ : IsPrimitiveRoot (LinearMap.det (ρ g)) e)
     {f : n → SymmetricAlgebra K (Module.Dual K V)}
     (hf : ∀ i, f i ∈ ρ.dual.symmetricAlgebraInvariants) :
     ι K (Module.Dual K V) ℓ ^ (e - 1) ∣ jacobian b f := by
+  by_cases hℓ : ℓ = 0
+  · have hg : ρ g = LinearMap.id := by
+      rw [← LinearMap.fixedSubmodule_eq_top_iff, eq_top_iff]
+      simpa only [hℓ, LinearMap.ker_zero] using hfix
+    rw [hg, LinearMap.det_id] at hζ
+    rw [IsPrimitiveRoot.one_left_iff.1 hζ]
+    simp
   apply ι_pow_sub_one_dvd_jacobian b hℓ
     (ρ.sub_dual_apply_mem_span_singleton (by
       simpa only [LinearMap.fixedSubmodule_eq_ker, Module.End.one_eq_id] using hfix)) he

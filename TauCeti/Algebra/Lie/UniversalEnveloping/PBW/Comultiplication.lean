@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Bialgebra
 public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Basic
-public import TauCeti.LinearAlgebra.TensorProduct.Filtration
+public import TauCeti.LinearAlgebra.TensorProduct.Filtration.Basic
 
 /-!
 # Comultiplication preserves total PBW degree

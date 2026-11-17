@@ -51,7 +51,7 @@ On the one-row and the one-column shape the Specht ideal is a line, by the dimen
 visible without any of the above; there is nothing extra to say about them here.  The
 identification of this representation with the span of the polytabloids inside the Young
 permutation module, and the classification saying that these exhaust the irreducibles of `Sₙ` and
-are pairwise non-isomorphic across shapes, are separate targets and are not claimed here.
+are pairwise non-isomorphic across shapes, are separate results and are not claimed here.
 
 ## Main results
 
@@ -66,8 +66,6 @@ are pairwise non-isomorphic across shapes, are separate targets and are not clai
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.2, Theorem 5.
 * W. Fulton and J. Harris, *Representation Theory: A First Course* (1991), Theorem 4.3.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 4, "irreducibility".
 -/
 
 public section

@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
+public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.SpecialFunctions.Exp
+public import Mathlib.Analysis.SpecialFunctions.Pow.Complex
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.Gaussian.FourierTransform
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
 
@@ -19,7 +21,9 @@ For `b : ℂ` with `0 < b.re`, the Gaussian `x ↦ exp (-b ‖x‖²)` on a real
 Schwartz function, `SchwartzMap.gaussian`. The parameter is complex, so this covers both the real
 heat-kernel Gaussians and the oscillating Gaussians `x ↦ exp (π i τ ‖x‖²)`, `0 < τ.im`, whose
 lattice sums are theta series. The normalisation `-b * ‖x‖ ^ 2` is the one of Mathlib's
-`fourier_gaussian_innerProductSpace`, which computes the Fourier transform of this function.
+`fourier_gaussian_innerProductSpace`, which computes the Fourier transform of this function;
+`SchwartzMap.fourierInv_gaussian` restates it for the inverse Fourier transform of the Schwartz
+Gaussian.
 Translates of the Gaussian are Schwartz functions through Mathlib's
 `SchwartzMap.compSubConstCLM`.
 
@@ -34,7 +38,12 @@ and `TauCeti.Analysis.SpecialFunctions.Gaussian.Basic`.
 ## Main declarations
 
 * `SchwartzMap.gaussian`: the Gaussian `x ↦ exp (-b ‖x‖²)`, `0 < b.re`, as a Schwartz function.
-* `SchwartzMap.gaussian_apply`: its values.
+* `SchwartzMap.gaussian_apply`, `SchwartzMap.coe_gaussian`, `SchwartzMap.coe_gaussian_ofReal`:
+  its values.
+* `SchwartzMap.fourierInv_gaussian`: its inverse Fourier transform
+  `(π / b)^(n/2) exp (-π² ‖x‖² / b)`, where `n` is the dimension.
+* `Function.hasTemperateGrowth_exp_neg_mul_norm_sq`: the real Gaussian `x ↦ exp (-c ‖x‖²)`,
+  `0 ≤ c`, has temperate growth, so it is a Fourier multiplier symbol on tempered distributions.
 -/
 
 public section
@@ -42,7 +51,7 @@ public section
 noncomputable section
 
 open Complex Function
-open scoped ContDiff Nat SchwartzMap
+open scoped ContDiff FourierTransform Nat SchwartzMap
 
 namespace SchwartzMap
 
@@ -96,7 +105,7 @@ def gaussian {b : ℂ} (hb : 0 < b.re) : 𝓢(V, ℂ) where
           simp only [m, mul_pow, ← pow_mul, pow_add]
           ring
       _ ≤ _ := mul_le_mul_of_nonneg_left
-          (one_add_pow_mul_exp_neg_mul_sq_le hb m (norm_nonneg x)) (by positivity)
+          (one_add_pow_mul_exp_neg_mul_sq_le hb m) (by positivity)
 
 /-- The value of the Schwartz Gaussian at `x` is `exp (-b ‖x‖²)`. -/
 @[simp]
@@ -104,4 +113,42 @@ theorem gaussian_apply {b : ℂ} (hb : 0 < b.re) (x : V) :
     gaussian hb x = cexp (-b * ‖x‖ ^ 2) :=
   (rfl)
 
+/-- The Schwartz Gaussian, as a function, is `x ↦ exp (-b ‖x‖²)`. -/
+theorem coe_gaussian {b : ℂ} (hb : 0 < b.re) :
+    ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun x ↦ cexp (-b * ‖x‖ ^ 2) :=
+  funext (gaussian_apply hb)
+
+/-- At a real parameter `c`, the Schwartz Gaussian is the real Gaussian `x ↦ exp (-c ‖x‖²)`,
+viewed as a complex function. -/
+theorem coe_gaussian_ofReal {c : ℝ} (hb : 0 < (c : ℂ).re) :
+    ((gaussian hb : 𝓢(V, ℂ)) : V → ℂ) = fun x ↦ ((Real.exp (-(c * ‖x‖ ^ 2)) : ℝ) : ℂ) := by
+  funext x
+  rw [gaussian_apply, Complex.ofReal_exp]
+  push_cast
+  ring_nf
+
+/-- The inverse Fourier transform of the Schwartz Gaussian `exp (-b ‖ξ‖²)`, `0 < b.re`, on a
+real inner product space of dimension `n` is the Gaussian `(π / b)^(n/2) exp (-π² ‖x‖² / b)`. -/
+theorem fourierInv_gaussian [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] {b : ℂ}
+    (hb : 0 < b.re) (x : V) :
+    𝓕⁻ (gaussian hb : 𝓢(V, ℂ)) x =
+      (Real.pi / b) ^ (Module.finrank ℝ V / 2 : ℂ) * cexp (-Real.pi ^ 2 * ‖x‖ ^ 2 / b) := by
+  rw [fourierInv_coe, Real.fourierInv_eq_fourier_neg, coe_gaussian,
+    fourier_gaussian_innerProductSpace hb, norm_neg]
+
 end SchwartzMap
+
+/-- The real Gaussian `x ↦ exp (-c ‖x‖²)`, `0 ≤ c`, has temperate growth: for `c > 0` it is the
+real part of the Schwartz function `SchwartzMap.gaussian`, and for `c = 0` it is constant.
+Composed with `Complex.ofReal`, this is the symbol of the heat semigroup as a Fourier
+multiplier. -/
+theorem Function.hasTemperateGrowth_exp_neg_mul_norm_sq {V : Type*}
+    [NormedAddCommGroup V] [InnerProductSpace ℝ V] {c : ℝ} (hc : 0 ≤ c) :
+    (fun x : V ↦ Real.exp (-(c * ‖x‖ ^ 2))).HasTemperateGrowth := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp
+  · have hb : 0 < (c : ℂ).re := by simpa using hc
+    have h := Complex.hasTemperateGrowth_re.comp
+      (SchwartzMap.gaussian (V := V) hb).hasTemperateGrowth
+    rw [SchwartzMap.coe_gaussian_ofReal] at h
+    exact h

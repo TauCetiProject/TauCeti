@@ -130,8 +130,8 @@ theorem exists_isAnalyticChart_of_injective_fderiv {T : Set (Fin n → 𝕜)}
   have hV : ι ⁻¹' Θ.source ∈ 𝓝 u₀ :=
     ι.continuous.continuousAt.preimage_mem_nhds (Θ.open_source.mem_nhds hy₀)
   obtain ⟨W, hW, hpW, hWT⟩ := mem_nhdsWithin.1 (himage _ hV)
-  have hΘι {u : Fin d → 𝕜} (hu : ι u ∈ Θ.source) : Θ (ι u) = p u := by rw [hΘ, hGι]
-  have hpu₀ : Θ (ι u₀) = p u₀ := hΘι hy₀
+  have hΘι (u : Fin d → 𝕜) : Θ (ι u) = p u := by rw [hΘ, hGι]
+  have hpu₀ : Θ (ι u₀) = p u₀ := hΘι u₀
   have hsource : (Θ.symm.restrOpen W hW).source = Θ.target ∩ W := by
     rw [OpenPartialHomeomorph.restrOpen_source, OpenPartialHomeomorph.symm_source]
   have htarget : (Θ.symm.restrOpen W hW).target ⊆ Θ.source := by
@@ -152,17 +152,16 @@ theorem exists_isAnalyticChart_of_injective_fderiv {T : Set (Fin n → 𝕜)}
     · -- A point of the slice is `(u, 0)`, and `Θ (u, 0) = p u` lies in `T`.
       intro hslice
       have hzι : ι (π (Θ.symm y)) = Θ.symm y := firstCoords_firstCoords_of_forall hslice
-      have hz' : ι (π (Θ.symm y)) ∈ Θ.source := by rwa [hzι]
-      have : p (π (Θ.symm y)) = y := by rw [← hΘι hz', hzι, Θ.right_inv hyt]
+      have : p (π (Θ.symm y)) = y := by rw [← hΘι (π (Θ.symm y)), hzι, Θ.right_inv hyt]
       exact this ▸ hV₀T _ (hΘs hz)
     · -- A point of `T` near `p u₀` is `p u = Θ (u, 0)` with `(u, 0)` in the source.
       intro hyT
       obtain ⟨u, hu, rfl⟩ := hWT ⟨hyW, hyT⟩
-      rw [← hΘι hu, Θ.left_inv hu]
+      rw [← hΘι u, Θ.left_inv hu]
       exact fun i hi ↦ firstCoords_apply_of_le u hi
   · rw [OpenPartialHomeomorph.coe_restrOpen, ← hpu₀, Θ.left_inv hy₀, hπι]
-  · filter_upwards [hV] with u hu
+  · filter_upwards [] with u
     rw [OpenPartialHomeomorph.coe_restrOpen_symm, OpenPartialHomeomorph.symm_symm]
-    exact hΘι hu
+    exact hΘι u
 
 end TauCeti

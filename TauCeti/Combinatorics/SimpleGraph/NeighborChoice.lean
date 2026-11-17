@@ -57,26 +57,23 @@ theorem exists_forall_adj_and_apply_apply_ne_of_forall_reachable (G : SimpleGrap
     | nil => exact absurd hs hu
     | cons h q =>
       have hq : q.length + 1 = d u := (Walk.length_cons h q).symm.trans hp
-      exact ⟨_, h, lt_of_le_of_lt (Nat.find_min' (hP _) ⟨s, hs, q, rfl⟩) (by omega)⟩
-  let f : V → V := fun u => if hu : u ∈ S then g u else (hstep u hu).choose
-  have hfS : ∀ s ∈ S, f s = g s := fun s hs => by simp only [f, hs, ↓reduceDIte]
-  have hfn : ∀ u (hu : u ∉ S), G.Adj u (f u) ∧ d (f u) < d u := fun u hu => by
-    simp only [f, hu, ↓reduceDIte]
-    exact (hstep u hu).choose_spec
-  refine ⟨f, hfS, fun u => ?_⟩
+      exact ⟨_, h, (Nat.find_min' (hP _) ⟨s, hs, q, rfl⟩).trans_lt (by omega)⟩
+  choose! w hw using hstep
+  refine ⟨S.piecewise g w, fun s hs => S.piecewise_eq_of_mem _ _ hs, fun u => ?_⟩
   by_cases hu : u ∈ S
   · obtain ⟨hadj, hgS, hne⟩ := hg u hu
-    rw [hfS u hu, hfS _ hgS]
+    rw [S.piecewise_eq_of_mem _ _ hu, S.piecewise_eq_of_mem _ _ hgS]
     exact ⟨hadj, hne⟩
-  · obtain ⟨hadj, hlt⟩ := hfn u hu
+  · obtain ⟨hadj, hlt⟩ := hw u hu
+    rw [S.piecewise_eq_of_notMem _ _ hu]
     refine ⟨hadj, fun heq => ?_⟩
-    by_cases hw : f u ∈ S
+    by_cases hwS : w u ∈ S
     · -- The choice at a vertex of `S` stays in `S`, which does not contain `u`.
-      exact hu (heq ▸ hfS _ hw ▸ (hg _ hw).2.1)
+      rw [S.piecewise_eq_of_mem _ _ hwS] at heq
+      exact hu (heq ▸ (hg _ hwS).2.1)
     · -- Two steps outside `S` bring `u` strictly closer to `S`.
-      have := (hfn _ hw).2
-      rw [heq] at this
-      exact lt_asymm hlt this
+      rw [S.piecewise_eq_of_notMem _ _ hwS] at heq
+      exact lt_asymm hlt (by simpa only [heq] using (hw _ hwS).2)
 
 namespace Walk
 
@@ -93,35 +90,25 @@ cycle `p` have a choice `g` of neighbours on `p` such that no two of them choose
 sends `p.getVert i` to `p.getVert (i + 1)`. -/
 theorem IsCycle.exists_forall_adj_and_apply_apply_ne {u : V} {p : G.Walk u u} (hp : p.IsCycle) :
     ∃ g : V → V, ∀ s ∈ p.support, G.Adj s (g s) ∧ g s ∈ p.support ∧ g (g s) ≠ s := by
-  classical
   have hl := hp.three_le_length
   -- The index of a vertex of the cycle, counted from `u` and before the end of the cycle.
-  let idx : V → ℕ := fun s => if hs : s ∈ p.support then (hp.exists_getVert_eq hs).choose else 0
-  have hidx : ∀ s ∈ p.support, idx s < p.length ∧ p.getVert (idx s) = s := fun s hs => by
-    simp only [idx, hs, ↓reduceDIte]
-    exact (hp.exists_getVert_eq hs).choose_spec
-  -- Two indices before the end of the cycle with the same vertex agree.
+  choose! idx hidx using fun s (hs : s ∈ p.support) => hp.exists_getVert_eq hs
   have hinj : ∀ i < p.length, idx (p.getVert i) = i := fun i hi => by
     obtain ⟨hlt, heq⟩ := hidx _ (p.getVert_mem_support i)
     exact hp.getVert_injOn' (by simp only [Set.mem_ofPred_eq]; omega)
       (by simp only [Set.mem_ofPred_eq]; omega) heq
   refine ⟨fun s => p.getVert (idx s + 1), fun s hs => ?_⟩
-  beta_reduce
-  obtain ⟨hlt, hs'⟩ := hidx s hs
-  refine ⟨by simpa only [hs'] using p.adj_getVert_succ hlt, p.getVert_mem_support _, ?_⟩
-  set i := idx s
-  rw [← hs']
-  rcases (Nat.succ_le_of_lt hlt).lt_or_eq with hi | hi
+  obtain ⟨i, hi, rfl⟩ := hp.exists_getVert_eq hs
+  simp only [hinj i hi]
+  refine ⟨p.adj_getVert_succ hi, p.getVert_mem_support _, ?_⟩
+  obtain hi' | hi' : i + 1 < p.length ∨ i + 1 = p.length := by omega
   · -- Away from the end, the second successor of `p.getVert i` is `p.getVert (i + 2)`.
-    rw [hinj _ hi]
-    exact (hp.getVert_sub_one_ne_getVert_add_one (i := i + 1) hi.le).symm
+    rw [hinj _ hi']
+    exact (hp.getVert_sub_one_ne_getVert_add_one (i := i + 1) hi'.le).symm
   · -- At the end, the successor is `u = p.getVert 0`, whose successor is `p.snd`.
-    have h0 : p.getVert (i + 1) = p.getVert 0 := by
-      rw [Nat.succ_eq_add_one] at hi
-      rw [hi, getVert_length, getVert_zero]
-    rw [h0, hinj 0 (by omega), zero_add]
-    have h1 : i = p.length - 1 := by omega
-    rw [h1]
+    have h0 : idx u = 0 := by simpa using hinj 0 (by omega)
+    have hi'' : i = p.length - 1 := by omega
+    rw [hi', getVert_length, h0, hi'']
     exact hp.snd_ne_penultimate
 
 end Walk
@@ -131,8 +118,7 @@ choices**: some `f` sends every vertex `u` to a neighbour `f u` with `f (f u) �
 `G` has an orientation without sinks. -/
 theorem Preconnected.exists_forall_adj_and_apply_apply_ne_of_not_isAcyclic (hG : G.Preconnected)
     (hc : ¬G.IsAcyclic) : ∃ f : V → V, ∀ u, G.Adj u (f u) ∧ f (f u) ≠ u := by
-  simp only [IsAcyclic, not_forall, not_not] at hc
-  obtain ⟨w, p, hp⟩ := hc
+  obtain ⟨w, p, hp⟩ := not_isAcyclic_iff_exists_isCycle.1 hc
   obtain ⟨g, hg⟩ := hp.exists_forall_adj_and_apply_apply_ne
   obtain ⟨f, -, hf⟩ := G.exists_forall_adj_and_apply_apply_ne_of_forall_reachable
     (S := {s | s ∈ p.support}) g hg fun u => ⟨w, p.start_mem_support, hG u w⟩

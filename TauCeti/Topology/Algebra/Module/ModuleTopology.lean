@@ -22,8 +22,8 @@ For a module over a topological semiring with a finite basis, the module topolog
 coordinate topology through that basis. This identifies the canonical topology used on quadratic
 spaces and their endomorphisms with a finite product of copies of the scalars. In particular, over
 a Hausdorff locally compact division ring equipped with a topological semiring structure, the
-module topology of a finite-dimensional space is Hausdorff and locally compact, and every subspace
-of a finite-dimensional space is closed; over σ-compact scalars it is σ-compact. No norm or
+module topology of a finite-dimensional space is Hausdorff and locally compact; every subspace of
+a module with the module topology is closed; over σ-compact scalars it is σ-compact. No norm or
 completeness hypothesis on the scalars is needed.
 
 Separation of the scalars cannot be dropped from the Hausdorff and closed-subspace statements:
@@ -32,7 +32,10 @@ over a semiring with the indiscrete topology, the module topology of every modul
 separation of the scalars.
 
 Without a basis, any linear equivalence between modules with the module topology is a continuous
-linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`). The module topology
+linear equivalence (`LinearEquiv.toContinuousLinearEquivOfIsModuleTopology`), and a tensor product
+`M ⊗[𝕜] N` carrying the `𝕜`-module topology (equipped by default on opening
+`TauCeti.ModuleTopology`) is a topological additive group
+(`TauCeti.instIsTopologicalAddGroupTensorProductOfIsModuleTopology`). The module topology
 on `M` is the quotient topology along any linear surjection `q : F → M` from a module with its
 module topology (`LinearMap.quotKerContinuousLinearEquivOfSurjective`), so any two presentations of
 an untopologised module from modules with the module topology induce topologically isomorphic
@@ -41,11 +44,54 @@ exactly when `ker q` is closed (`TauCeti.t2Space_moduleTopology_iff_isClosed_ker
 linear map out of a module with the module topology is strict whenever its range carries the module
 topology for the subspace topology (`LinearMap.isStrictMap_of_isModuleTopology_range`).
 
+Restriction of scalars along a finite algebra carrying the module topology preserves the
+module topology (`IsModuleTopology.restrictScalars`). No finiteness of the module is needed.
+
 The basis-dependent API is grouped in `TauCeti.ModuleTopology`, alongside Mathlib's
 organizational `ModuleTopology` namespace.
 -/
 
 public section
+
+namespace IsModuleTopology
+
+/-- In a continuous scalar tower, the module topology over the smaller scalar semiring is
+also the module topology over the larger scalar semiring, provided the larger scalar action
+is continuous for the given topology. No finiteness assumption is needed. -/
+theorem of_restrictScalars {R S M : Type*} [Semiring R] [Semiring S]
+    [TopologicalSpace R] [TopologicalSpace S] [SMul R S] [ContinuousSMul R S]
+    [AddCommMonoid M] [Module R M] [Module S M] [IsScalarTower R S M]
+    [TopologicalSpace M] [IsModuleTopology R M] [ContinuousSMul S M] :
+    IsModuleTopology S M := by
+  have := IsModuleTopology.toContinuousAdd R M
+  refine ⟨le_antisymm ?_ (moduleTopology_le S M)⟩
+  rw [eq_moduleTopology R M]
+  let := moduleTopology S M
+  have := IsModuleTopology.toContinuousAdd S M
+  have : ContinuousSMul R M := IsScalarTower.continuousSMul S
+  exact moduleTopology_le R M
+
+/-- Restricting scalars along a finite algebra with its natural topology preserves the module
+topology, even for modules that are not finitely generated. -/
+theorem restrictScalars (R S M : Type*) [CommRing R] [Ring S] [Algebra R S]
+    [TopologicalSpace R] [IsTopologicalRing R] [TopologicalSpace S]
+    [IsModuleTopology R S] [Module.Finite R S] [AddCommGroup M]
+    [Module S M] [Module R M] [IsScalarTower R S M]
+    [τM : TopologicalSpace M] [hM : IsModuleTopology S M] : IsModuleTopology R M := by
+  have : ContinuousAdd M := IsModuleTopology.toContinuousAdd S M
+  have : ContinuousSMul R M := IsScalarTower.continuousSMul S
+  apply IsModuleTopology.of_continuous_id
+  let τ := moduleTopology R M
+  have : @ContinuousSMul S M _ _ τ := by
+    let _ : TopologicalSpace M := τ
+    have : IsModuleTopology R M := inferInstance
+    exact ⟨IsModuleTopology.continuous_bilinear_of_finite_left
+      (Algebra.lsmul R (A := S) R M).toLinearMap⟩
+  -- The source keeps its given topology; only the target has the `R`-module topology.
+  exact @IsModuleTopology.continuous_of_linearMap S _ _ M _ _ τM hM
+    M _ _ τ (ModuleTopology.continuousAdd R M) this (LinearMap.id : M →ₗ[S] M)
+
+end IsModuleTopology
 
 namespace LinearEquiv
 
@@ -270,11 +316,12 @@ theorem sigmaCompactSpace_moduleTopology [SigmaCompactSpace K] :
   let b := Module.finBasis K V
   exact ModuleTopology.sigmaCompactSpace b
 
-/-- Every subspace of a finite-dimensional space over a Hausdorff division ring equipped with a
-topological semiring structure is closed for the module topology. -/
+omit [FiniteDimensional K V] in
+/-- Every subspace of a space over a Hausdorff division ring equipped with a topological semiring
+structure is closed for the module topology. -/
 theorem _root_.Submodule.isClosed_of_isModuleTopology [T2Space K] [TopologicalSpace V]
     [IsModuleTopology K V] (W : Submodule K V) : IsClosed (W : Set V) := by
-  have : T2Space (V ⧸ W) := ModuleTopology.t2Space (Module.finBasis K (V ⧸ W))
+  have : T2Space (V ⧸ W) := ModuleTopology.t2Space (Module.Free.chooseBasis K (V ⧸ W))
   have : ContinuousAdd (V ⧸ W) := IsModuleTopology.toContinuousAdd K (V ⧸ W)
   have hW : (W : Set V) = W.mkQ ⁻¹' {0} := by
     ext x
@@ -293,4 +340,35 @@ theorem _root_.IndiscreteTopology.of_continuousSMul (R M : Type*) [MonoidWithZer
     simpa using (Inseparable.all (0 : R) 1).smul (.refl x)
   exact .of_forall_inseparable fun x y ↦ (h x).symm.trans (h y)
 
+/-- A tensor product `M ⊗[𝕜] N` carrying the `𝕜`-module topology is a topological additive group;
+unlike `IsModuleTopology.isTopologicalAddGroup`, this can be an instance because `𝕜` appears in the
+type `TensorProduct 𝕜 M N`. -/
+instance instIsTopologicalAddGroupTensorProductOfIsModuleTopology
+    {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+    [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+    [TopologicalSpace (TensorProduct 𝕜 M N)] [IsModuleTopology 𝕜 (TensorProduct 𝕜 M N)] :
+    IsTopologicalAddGroup (TensorProduct 𝕜 M N) :=
+  IsModuleTopology.isTopologicalAddGroup 𝕜 (TensorProduct 𝕜 M N)
+
 end TauCeti
+
+section
+open scoped TensorProduct
+
+namespace TauCeti.ModuleTopology
+
+variable {𝕜 M N : Type*} [CommRing 𝕜] [TopologicalSpace 𝕜]
+  [AddCommGroup M] [Module 𝕜 M] [AddCommGroup N] [Module 𝕜 N]
+
+-- Scoped in `TauCeti.ModuleTopology` so `open scoped TensorProduct` stays unambiguous in `TauCeti`.
+/-- Scoped default topology on `M ⊗[𝕜] N`, given by `moduleTopology 𝕜 (M ⊗[𝕜] N)`. -/
+scoped instance instTopologicalSpaceTensorProduct : TopologicalSpace (M ⊗[𝕜] N) :=
+  moduleTopology 𝕜 (M ⊗[𝕜] N)
+
+/-- Under the scoped default topology `TauCeti.ModuleTopology`, `M ⊗[𝕜] N` carries the `𝕜`-module
+topology. -/
+scoped instance instIsModuleTopologyTensorProduct : IsModuleTopology 𝕜 (M ⊗[𝕜] N) := ⟨rfl⟩
+
+end TauCeti.ModuleTopology
+
+end

@@ -25,8 +25,18 @@ function transported along a homeomorphism, next to Mathlib's `mulTSupport_comp_
 * `Homeomorph.tsupport_comp_symm_subset_interior_image`: support in the interior of a set is
   transported to support in the interior of its image, with multiplicative version
   `Homeomorph.mulTSupport_comp_symm_subset_interior_image`.
+* `Continuous.smul_of_continuousOn_of_tsupport_subset`: a continuous function supported
+  in `U`, times a function continuous on `U`, is continuous.
 * `TauCeti.tsupport_snd_smul_fst_subset`: the topological support of `(x, y) ↦ f y • g x` lies in
   `tsupport g ×ˢ tsupport f`.
+* `HasCompactSupport.comp_of_forall_mem_imp_mem`: a function of `Ψ y` that vanishes outside `T` is
+  compactly supported when the preimage of `T` under `Ψ` lies in a compact set.
+* `HasCompactSupport.mono_of_eq_zero`: a function vanishing wherever a compactly supported
+  function vanishes is compactly supported, with multiplicative version
+  `HasCompactMulSupport.mono_of_eq_one`.
+* `TauCeti.hasCompactSupport_pi_iff`: a function with values in a finite product is compactly
+  supported exactly when every coordinate is, with multiplicative version
+  `TauCeti.hasCompactMulSupport_pi_iff`.
 -/
 
 public section
@@ -66,6 +76,26 @@ end Prod
 
 end TauCeti
 
+namespace Continuous
+
+/-- A function `b` continuous with topological support in `U`, times a function `a` continuous
+on `U`, is continuous. The function `a` need not be continuous off `U`, and `U` need not be
+open. -/
+theorem smul_of_continuousOn_of_tsupport_subset {Z 𝕜 F : Type*} [TopologicalSpace Z]
+    [TopologicalSpace 𝕜] [Zero F] [TopologicalSpace F] [SMulZeroClass 𝕜 F]
+    [ContinuousSMul 𝕜 F] {a : Z → 𝕜} {b : Z → F} {U : Set Z} (hb : Continuous b)
+    (hbU : tsupport b ⊆ U) (ha : ContinuousOn a U) : Continuous fun x ↦ a x • b x := by
+  have hzero : ∀ x ∈ Uᶜ, b x = 0 := fun x hx ↦
+    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hbU h)
+  refine continuous_of_tsupport fun x hx ↦ ?_
+  have hxU : x ∈ U := hbU (tsupport_smul_subset_right _ _ hx)
+  rw [← continuousWithinAt_univ, ← Set.union_compl_self U, continuousWithinAt_union]
+  refine ⟨(ha x hxU).smul hb.continuousAt.continuousWithinAt, ?_⟩
+  exact (continuousWithinAt_const.smul hb.continuousAt.continuousWithinAt).congr
+    (fun y hy ↦ by simp [hzero y hy]) rfl
+
+end Continuous
+
 namespace Homeomorph
 
 variable {X Y α : Type*} [TopologicalSpace X] [TopologicalSpace Y] [One α]
@@ -88,3 +118,33 @@ theorem mulTSupport_comp_symm_subset_interior_image (e : X ≃ₜ Y) {F : X → 
   exact Set.image_mono h
 
 end Homeomorph
+
+/-- A function of `Ψ y` that vanishes outside `T` is compactly supported when the preimage under
+`Ψ` of `T` lies in a compact set. -/
+theorem HasCompactSupport.comp_of_forall_mem_imp_mem {X Y Z : Type*} [TopologicalSpace X]
+    [R1Space X] [Zero Z] {Ψ : X → Y} {T : Set Y} {K : Set X} (hK : IsCompact K)
+    (hΨK : ∀ y, Ψ y ∈ T → y ∈ K) {k : Y → Z}
+    (hkz : ∀ z ∉ T, k z = 0) : HasCompactSupport fun y ↦ k (Ψ y) :=
+  HasCompactSupport.intro hK fun y hy ↦ hkz _ fun h ↦ hy (hΨK y h)
+
+/-- A function equal to `1` wherever a function with compact multiplicative support is equal to
+`1` has compact multiplicative support. -/
+@[to_additive /-- A function vanishing wherever a compactly supported function vanishes is
+compactly supported. -/]
+theorem HasCompactMulSupport.mono_of_eq_one {X β γ : Type*} [TopologicalSpace X] [One β] [One γ]
+    {f : X → β} {g : X → γ} (hf : HasCompactMulSupport f) (hg : ∀ x, f x = 1 → g x = 1) :
+    HasCompactMulSupport g :=
+  hf.mono <| Function.mulSupport_subset_iff'.2 fun x hx ↦ hg x (Function.notMem_mulSupport.1 hx)
+
+namespace TauCeti
+
+/-- A function with values in a finite product has compact multiplicative support exactly when
+each coordinate has compact multiplicative support. -/
+@[to_additive /-- A function with values in a finite product is compactly supported exactly when
+each coordinate is compactly supported. -/]
+theorem hasCompactMulSupport_pi_iff {X ι : Type*} [TopologicalSpace X] [Finite ι]
+    {M : ι → Type*} [∀ i, One (M i)] {f : X → ∀ i, M i} :
+    HasCompactMulSupport f ↔ ∀ i, HasCompactMulSupport (f · i) := by
+  simp [hasCompactMulSupport_iff_eventuallyEq, Filter.EventuallyEq, funext_iff]
+
+end TauCeti

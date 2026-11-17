@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Bubbling
 public import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Topology.ContinuousMap.Ascoli
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Topology.Sequences
 
 /-!
 # Compact convergence away from bubbling points
@@ -62,44 +60,25 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
           ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  classical
   obtain ⟨δ, hδ, hδprop⟩ :=
     exists_pos_forall_exists_strictMono_finset_norm_fderiv_le hW hJ hK hKW hJsq
   refine ⟨δ, hδ, fun Ω u E hΩ hu hCR huK hint hE ↦ ?_⟩
   obtain ⟨ψ, hψ, Z, hZΩ, hZE, hconc, hb⟩ := hδprop hΩ hu hCR huK hint hE
   let D : Set ℂ := Ω \ ↑Z
   have hD : IsOpen D := hΩ.sdiff Z.finite_toSet.isClosed
-  let : LocallyCompactSpace D := hD.locallyCompactSpace
   have hequi : EquicontinuousOn (fun n ↦ u (ψ n)) D :=
     equicontinuousOn_of_forall_isCompact_norm_fderiv_le hD
       (fun n ↦ ((hu (ψ n)).differentiableOn (by norm_num)).mono sdiff_subset) hb
-  let U : ℕ → C(D, V) := fun n ↦
-    ⟨D.domRestrict (u (ψ n)), (hequi.continuousOn n).domRestrict⟩
-  have hcompact : IsCompact (closure (range U)) :=
-    ArzelaAscoli.isCompact_closure_of_equicontinuous (by
-      rw [← Set.comp_rangeSplitting U]
-      exact (equicontinuous_restrict_iff _).mpr hequi |>.comp (Set.rangeSplitting U))
-      (fun x ↦ ⟨K, hK, by
-        rintro _ ⟨n, rfl⟩
-        exact huK (ψ n) x.2.1⟩)
-  obtain ⟨a, -, χ, hχ, hlim⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ subset_closure (mem_range_self n))
-  -- Extend by zero only to express convergence on a subset of the original domain.
-  let v : ℂ → V := fun z ↦ if hz : z ∈ D then a ⟨z, hz⟩ else 0
-  have hv : v ∘ (Subtype.val : D → ℂ) = fun x : D ↦ a x := by
-    funext x
-    simp [v, x.2]
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ u (ψ (χ n))) v atTop D := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hv]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlim
+  obtain ⟨χ, hχ, v, hvc, hconv⟩ :=
+    exists_strictMono_tendstoLocallyUniformlyOn_of_equicontinuousOn hD hequi
+      fun z hz ↦ ⟨K, hK, fun n ↦ huK (ψ n) hz.1⟩
   refine ⟨ψ ∘ χ, Z, v, hψ.comp hχ, hZΩ, hZE, ?_, ?_, ?_, ?_, hconv⟩
   · intro z hz ε hε
     exact hχ.tendsto_atTop.eventually (hconc z hz ε hε)
   · intro C hC hCD
     obtain ⟨M, hM⟩ := hb C hC hCD
     exact ⟨M, fun n ↦ hM (χ n)⟩
-  · exact hconv.continuousOn (Eventually.of_forall fun n ↦
-      (hu (ψ (χ n))).continuousOn.mono sdiff_subset).frequently
+  · exact hvc
   · intro z hz
     exact hK.isClosed.mem_of_tendsto (hconv.tendsto_at hz)
       (Eventually.of_forall fun n ↦ huK (ψ (χ n)) hz.1)

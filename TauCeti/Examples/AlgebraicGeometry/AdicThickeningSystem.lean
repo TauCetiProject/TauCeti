@@ -16,7 +16,7 @@ public import TauCeti.RingTheory.AdicCompletion.Topology
 public import TauCeti.RingTheory.PowerSeries.AdicComplete
 public import TauCeti.RingTheory.RegularLocalRing.PowerSeries
 public import TauCeti.RingTheory.Spectrum.Prime.Finite
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Examples of adic thickening systems and formal spectra

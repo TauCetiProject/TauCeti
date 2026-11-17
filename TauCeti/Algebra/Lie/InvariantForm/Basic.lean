@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Lie.TraceForm
 public import TauCeti.Algebra.Lie.Dual
 
 /-!
-# Invariant bilinear forms on irreducible Lie modules
+# Invariant bilinear forms on Lie modules
 
 A bilinear form `Φ` on a Lie module `M` is invariant when `Φ ⁅x, y⁆ z = -Φ y ⁅x, z⁆`
 (`LinearMap.BilinForm.lieInvariant`). On a Lie algebra, a symmetric invariant form satisfies the
@@ -18,7 +18,11 @@ submodule `TauCeti.LieModule.invariantForms R L M` and shows that on a finite-di
 irreducible module over an algebraically closed field there is at most one invariant form up to
 scalars.
 
-The reason is Schur's lemma. Invariance of `Φ` says exactly that `Φ`, read as a linear map
+For a right-separating invariant form on a Lie algebra, the orthogonal complement of its
+derived ideal is its centre. This criterion needs no positivity or finite-dimensionality.
+
+The irreducible-module uniqueness result follows from Schur's lemma. Invariance of `Φ` says
+exactly that `Φ`, read as a linear map
 `M → M*`, is a morphism of Lie modules (`LinearMap.BilinForm.lieInvariant_iff` together with
 `LieModule.maxTrivLinearMapEquivLieModuleHom`), and the morphism space between the irreducible
 modules `M` and `M*` is at most a line (`TauCeti.LieModule.finrank_lieModuleHom_le_one`, with
@@ -34,6 +38,10 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 ## Main results
 
+* `LinearMap.BilinForm.orthogonal_derivedSeries_one_eq_center`: for a right-separating invariant
+  form, the orthogonal complement of the derived ideal is the centre.
+* `LinearMap.BilinForm.lieInvariant.compl₁₂`: pullback along a Lie homomorphism preserves
+  invariance.
 * `LinearMap.BilinForm.lieInvariant.apply_lie_cyclic`: a symmetric invariant form satisfies
   `Φ ⁅b, c⁆ a = Φ ⁅a, b⁆ c`.
 * `TauCeti.LieModule.traceForm_mem_invariantForms`: the trace form of a Lie module, in particular
@@ -53,9 +61,20 @@ Killing form; that consequence is `TauCeti/Algebra/Lie/Killing/InvariantForm.lea
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §6.1 for
   Schur's lemma.
+* J. Hilgert and K.-H. Neeb, *Structure and Geometry of Lie Groups*, Springer (2012),
+  Lemma 12.1.2, for the centre/derived orthogonality criterion.
 -/
 
 public section
+
+/-- Pullback along a Lie homomorphism preserves invariance of a bilinear form. -/
+theorem LinearMap.BilinForm.lieInvariant.compl₁₂ {R L L' : Type*} [CommRing R]
+    [LieRing L] [LieAlgebra R L] [LieRing L'] [LieAlgebra R L']
+    {B : LinearMap.BilinForm R L} (hB : B.lieInvariant L) (f : L' →ₗ⁅R⁆ L) :
+    LinearMap.BilinForm.lieInvariant L' (B.compl₁₂ f.toLinearMap f.toLinearMap) := by
+  intro x y z
+  simpa only [LinearMap.compl₁₂_apply, LieHom.map_lie, LieHom.coe_toLinearMap] using
+    hB (f x) (f y) (f z)
 
 open Module (Dual finrank)
 
@@ -72,6 +91,37 @@ theorem apply_lie_cyclic (hΦ : Φ.lieInvariant L) (hΦs : Φ.IsSymm) (a b c : L
   rw [hΦ, ← lie_skew a b, map_neg, LinearMap.neg_apply, hΦs.eq]
 
 end LinearMap.BilinForm.lieInvariant
+
+namespace LinearMap.BilinForm
+
+open LieAlgebra
+
+variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L]
+
+/-- The orthogonal complement of the derived ideal for a right-separating invariant form
+is the centre. -/
+theorem orthogonal_derivedSeries_one_eq_center (B : LinearMap.BilinForm K L)
+    (hB : B.SeparatingRight) (hinv : B.lieInvariant L) :
+    LieAlgebra.InvariantForm.orthogonal B hinv (derivedSeries K L 1) = center K L := by
+  ext z
+  rw [LieAlgebra.InvariantForm.mem_orthogonal, LieModule.mem_maxTrivSubmodule]
+  constructor
+  · intro hz x
+    apply hB
+    intro y
+    have hxy : ⁅x, y⁆ ∈ derivedSeries K L 1 :=
+      LieSubmodule.lie_mem_lie (LieSubmodule.mem_top x) (LieSubmodule.mem_top y)
+    exact neg_eq_zero.mp ((hinv x y z).symm.trans (hz _ hxy))
+  · intro hz d hd
+    have hker : (derivedSeries K L 1).toSubmodule ≤ LinearMap.ker (B.flip z) := by
+      rw [← LieIdeal.toLieSubalgebra_toSubmodule, coe_derivedSeries_one_eq]
+      refine Submodule.span_le.mpr ?_
+      rintro _ ⟨x, y, rfl⟩
+      rw [SetLike.mem_coe, LinearMap.mem_ker, LinearMap.BilinForm.flip_apply, hinv, hz x,
+        map_zero, neg_zero]
+    simpa only [LinearMap.mem_ker, LinearMap.BilinForm.flip_apply] using hker hd
+
+end LinearMap.BilinForm
 
 namespace TauCeti.LieModule
 

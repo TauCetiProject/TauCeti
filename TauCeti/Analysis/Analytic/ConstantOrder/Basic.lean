@@ -104,7 +104,8 @@ theorem AnalyticAt.exists_eventuallyEq_sub_smul {G : E × 𝕜 → F} {x₀ : E}
     rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg ht.1]
     exact mul_le_of_le_one_left (norm_nonneg _) ht.2
   refine ⟨fun z ↦ ∫ t in (0 : ℝ)..1, K ((x₀, y₀) + L t (z - (x₀, y₀))),
-    (hKa hG).intervalIntegral_comp hLc.continuousOn hL1, ?_⟩
+    (hKa hG).intervalIntegral_comp hLc.aestronglyMeasurable (.of_forall fun t ht ↦
+      hL1 t <| Ioc_subset_Icc_self <| by rwa [uIoc_of_le zero_le_one] at ht), ?_⟩
   -- on a ball about `(x₀, y₀)`, `G` is analytic and vanishes on the hyperplane
   have hev : ∀ᶠ z in 𝓝 (x₀, y₀), AnalyticAt 𝕜 G z ∧ G (z.1, y₀) = 0 :=
     hG.eventually_analyticAt.and ((continuous_fst.tendsto (x₀, y₀)).eventually h0)

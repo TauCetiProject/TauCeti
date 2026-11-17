@@ -57,6 +57,9 @@ combination of the simple coroots.
   weight.
 * `TauCeti.IsHighestWeightVector.map` and `TauCeti.IsHighestWeightVector.congr`: morphisms with
   nonzero image, and in particular equivalences, preserve highest weight vectors and their weights.
+* `TauCeti.IsHighestWeightVector.exists_isHighestWeightVector_apply_eq`: highest weight vectors
+  lift along a surjection out of a completely reducible module, so a quotient of such a module has
+  no highest weights beyond those of the module itself.
 * `TauCeti.isHighestWeightVector_coe_iff`: a vector of a Lie submodule is a highest weight vector
   there exactly when it is one in the ambient module.
 * `TauCeti.IsHighestWeightVector.mem_genWeightSpace` and
@@ -70,28 +73,22 @@ combination of the simple coroots.
 
 ## Implementation notes
 
-`TauCeti.IsHighestWeightVector` is stated as the conjunction pinned by the roadmap rather than as a
-structure, and `TauCeti.isHighestWeightVector_iff` together with the three projections
+`TauCeti.IsHighestWeightVector` is stated as a conjunction rather than as a structure, and
+`TauCeti.isHighestWeightVector_iff` together with the three projections
 `TauCeti.IsHighestWeightVector.ne_zero`, `TauCeti.IsHighestWeightVector.lie_eq_smul` and
 `TauCeti.IsHighestWeightVector.lie_eq_zero_of_mem_positiveNilradical` is its elimination API; no
 consumer needs to take the conjunction apart by hand.
 
-The canonical public helper `TauCeti.lieAnnihilator` in `TauCeti.Algebra.Lie.Basic` packages the
-elements annihilating a vector as a Lie subalgebra. Here it lets
-`TauCeti.positiveNilradical_le_iff` extend positive-root-space annihilation to the positive
-nilradical; `TauCeti.IsHighestWeightVector.lie_eq_zero_of_weight_zero` uses the same helper with
-`TauCeti.negativeNilradical_le_iff` for the negative nilradical.
+The criterion `TauCeti.isHighestWeightVector_of_forall_rootSpace` reduces annihilation by the
+positive nilradical to annihilation by each positive root space, because the positive nilradical
+is the additive closure of those root spaces; it needs no compatibility between the scalar actions
+of `K` on `L` and on `M`.
 
 Finite-dimensionality of `M` is a hypothesis of the dominance theorem alone: the definitions and
-the elimination API are stated for an arbitrary `L`-module, since the Verma modules that Layer 3 of
-the roadmap builds next are infinite-dimensional and carry highest weight vectors all the same.
+the elimination API are stated for an arbitrary `L`-module, since Verma modules are
+infinite-dimensional and carry highest weight vectors all the same.
 
 ## References
-
-This file supplies the "highest weight vectors" item of Layer 3 and the `IsDominantIntegral`
-definition of Layer 4 of
-`TauCetiRoadmap/RepresentationTheory/LieHighestWeight/README.md`, whose target signatures
-`IsHighestWeightVector` and `IsDominantIntegral` are pinned in the accompanying `Suggested.lean`.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, GTM 9, §20.2.
 -/
@@ -165,6 +162,29 @@ theorem congr (hv : IsHighestWeightVector b lam v) (e : M ≃ₗ⁅K,L⁆ N) :
   hv.map (e : M →ₗ⁅K,L⁆ N) fun h =>
     hv.ne_zero (e.injective (h.trans (map_zero e).symm))
 
+/-- **Highest weight vectors lift along a surjection out of a completely reducible module.** If
+the Lie submodules of `M` form a complemented lattice, every highest weight vector of `N` is the
+image, under a surjective morphism `f : M → N`, of a highest weight vector of `M` of the same
+weight. -/
+theorem exists_isHighestWeightVector_apply_eq
+    [ComplementedLattice (LieSubmodule K L M)] {w : N} (hw : IsHighestWeightVector b lam w)
+    {f : M →ₗ⁅K,L⁆ N} (hf : Function.Surjective f) :
+    ∃ u : M, IsHighestWeightVector b lam u ∧ f u = w := by
+  obtain ⟨C, hC⟩ := exists_isCompl f.ker
+  obtain ⟨m, rfl⟩ := hf w
+  have hm : m ∈ f.ker ⊔ C := by rw [hC.sup_eq_top]; exact LieSubmodule.mem_top m
+  obtain ⟨k, hk, u, hu, rfl⟩ := (LieSubmodule.mem_sup f.ker C m).mp hm
+  rw [map_add, LieModuleHom.mem_ker.mp hk, zero_add] at hw ⊢
+  -- `f` is injective on the complement `C` of its kernel
+  have hinj : ∀ y ∈ C, f y = 0 → y = 0 := fun y hy hfy ↦ (LieSubmodule.mem_bot y).mp
+    (hC.disjoint.le_bot ((LieSubmodule.mem_inf _ _ y).mpr ⟨LieModuleHom.mem_ker.mpr hfy, hy⟩))
+  refine ⟨u, isHighestWeightVector_iff.mpr
+    ⟨fun h ↦ hw.ne_zero (by rw [h, map_zero]), fun x ↦ ?_, fun x hx ↦ ?_⟩, rfl⟩
+  · refine sub_eq_zero.mp (hinj _ (sub_mem (C.lie_mem hu) (C.smul_mem _ hu)) ?_)
+    rw [map_sub, LieModuleHom.map_lie, map_smul, hw.lie_eq_smul x, sub_self]
+  · exact hinj _ (C.lie_mem hu)
+      (by rw [LieModuleHom.map_lie, hw.lie_eq_zero_of_mem_positiveNilradical hx])
+
 /-- Every positive root space annihilates a highest weight vector. -/
 theorem lie_eq_zero_of_mem_rootSpace (hv : IsHighestWeightVector b lam v) {α : H.root}
     (hα : α ∈ posRoots (IsKilling.rootSystem H) b) {x : L} (hx : x ∈ rootSpace H (α : H → K)) :
@@ -202,21 +222,22 @@ theorem isHighestWeightVector_coe_iff {lam : Dual K H} {P : LieSubmodule K L M} 
 
 variable [LieModule K L M]
 
+omit [LieModule K L M] in
 /-- **Positive root spaces suffice.** A nonzero `H`-eigenvector annihilated by the root space of
-every positive root is a highest weight vector: the positive nilradical is spanned by those root
-spaces, and the annihilator of a vector is a Lie subalgebra, so the universal property
-`TauCeti.positiveNilradical_le_iff` applies. -/
+every positive root is a highest weight vector. -/
 theorem isHighestWeightVector_of_forall_rootSpace {lam : Dual K H} {v : M} (hv0 : v ≠ 0)
     (hcartan : ∀ x : H, ⁅(x : L), v⁆ = lam x • v)
     (hpos : ∀ α ∈ posRoots (IsKilling.rootSystem H) b,
       ∀ x ∈ rootSpace H (α : H → K), ⁅x, v⁆ = 0) :
     IsHighestWeightVector b lam v := by
+  -- The positive nilradical is the additive closure of the positive root spaces, and
+  -- `x ↦ ⁅x, v⁆` is additive, so it suffices to check the root spaces.
   refine isHighestWeightVector_iff.mpr ⟨hv0, hcartan, fun x hx => ?_⟩
-  have hle : positiveNilradical H b ≤ lieAnnihilator K L v :=
-    (positiveNilradical_le_iff H b).mpr fun α hα y hy =>
-      (mem_lieAnnihilator K L).mpr (hpos α hα y hy)
-  exact (mem_lieAnnihilator K L).mp (hle hx)
+  rw [mem_positiveNilradical, rootSpaceSpan_eq_iSup] at hx
+  exact LieSubmodule.iSup_induction _ (motive := fun x => ⁅x, v⁆ = 0) hx
+    (fun α _ hy => hpos α α.2 _ hy) (by simp) (fun y z hy hz => by rw [add_lie, hy, hz, add_zero])
 
+omit [LieModule K L M] in
 /-- Being a highest weight vector is exactly being a nonzero `H`-eigenvector annihilated by every
 positive root space. -/
 theorem isHighestWeightVector_iff_forall_rootSpace {lam : Dual K H} {v : M} :

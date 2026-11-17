@@ -45,7 +45,8 @@ for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing 
 ## Main results
 
 * `Submodule.instCompactSpaceOrbitRelQuotient`: the translation orbit space is compact.
-* `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
+* `QuotientAddGroup.instCompactSpaceOfIsZLattice`,
+  `Submodule.instCompactSpaceQuotientToAddSubgroup`: the additive quotient is compact.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
 * `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
@@ -85,6 +86,15 @@ instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCom
   -- by L: toIntSubmodule retains L as its underlying additive subgroup.
   L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
     (map_continuous L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv)
+
+/-- The additive quotient of a finite-dimensional real normed space by the additive subgroup of a
+full lattice `L : Submodule ℤ E` is compact. -/
+instance Submodule.instCompactSpaceQuotientToAddSubgroup {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] : CompactSpace (E ⧸ L.toAddSubgroup) :=
+  -- The quotient by L.toAddSubgroup is the quotient module by L, with the same topology.
+  L.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
+    (map_continuous L.orbitRelQuotientContinuousAddEquiv)
 
 noncomputable section
 
@@ -333,6 +343,17 @@ theorem _root_.Module.Basis.quotientSmulEquivPiZMod_mk {ι : Type*} [Finite ι] 
     b.quotientSmulEquivPiZMod c (Submodule.Quotient.mk v) i = (b.repr v i : ZMod c) := by
   rw [Module.Basis.quotientSmulEquivPiZMod, LinearEquiv.trans_apply, quotEquivOfEq_mk,
     LinearEquiv.restrictScalars_apply, Basis.equivFun_apply, ModN.basis_repr_mk]
+
+/-- The class in `L / cL` with coordinates `x` modulo `c` in `b` is the class of
+`∑ i, (x i).val • b i`, the combination of `b` with the least natural representatives of the
+coordinates. -/
+@[simp]
+theorem _root_.Module.Basis.quotientSmulEquivPiZMod_symm_apply {ι : Type*} [Fintype ι]
+    (b : Basis ι ℤ L) (c : ℕ) [NeZero c] (x : ι → ZMod c) :
+    (b.quotientSmulEquivPiZMod c).symm x = Submodule.Quotient.mk (∑ i, ((x i).val : ℤ) • b i) := by
+  refine (b.quotientSmulEquivPiZMod c).symm_apply_eq.mpr (funext fun i ↦ ?_)
+  rw [Module.Basis.quotientSmulEquivPiZMod_mk, b.repr_sum_self, Int.cast_natCast,
+    ZMod.natCast_zmod_val]
 
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 

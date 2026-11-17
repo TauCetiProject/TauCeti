@@ -31,51 +31,11 @@ universe u
 
 variable {X Y S : Scheme.{u}}
 
-/-- A closed immersion between schemes finite and flat over the same base is an isomorphism
-exactly when their rank functions over the base agree. -/
-theorem Scheme.Hom.isIso_iff_finrank_comp_eq (i : X ⟶ Y) (g : Y ⟶ S)
-    [IsClosedImmersion i] [IsFinite g] [Flat g] [Flat (i ≫ g)] :
-    IsIso i ↔ (i ≫ g).finrank = g.finrank := by
-  refine ⟨fun _ ↦ Scheme.Hom.finrank_comp_left_of_isIso i g, fun h ↦ ?_⟩
-  -- Isomorphisms are local on the target; pull back a cover of the common base.
-  wlog hS : ∃ R, S = Spec R generalizing X Y S with H
-  · rw [← MorphismProperty.isomorphisms.iff,
-      IsZariskiLocalAtTarget.iff_of_openCover
-        (P := .isomorphisms Scheme) (S.affineCover.pullback₁ g)]
-    intro a
-    let j := S.affineCover.f a
-    let e := pullbackRightPullbackFstIso g j i
-    have he : pullback.snd i (pullback.fst g j) ≫ pullback.snd g j =
-        e.hom ≫ pullback.snd (i ≫ g) j :=
-      (pullbackRightPullbackFstIso_hom_snd g j i).symm
-    have : Flat (pullback.snd i (pullback.fst g j) ≫ pullback.snd g j) := by
-      rw [he]; infer_instance
-    refine H (pullback.snd i (pullback.fst g j)) (pullback.snd g j) ?_ ⟨_, rfl⟩
-    ext s
-    rw [he, Scheme.Hom.finrank_comp_left_of_isIso, Scheme.Hom.finrank_pullback_snd,
-      Scheme.Hom.finrank_pullback_snd, h]
-  obtain ⟨R, rfl⟩ := hS
-  -- Finite morphisms to an affine scheme have affine sources, so use their spectra.
-  wlog hY : ∃ A, Y = Spec A generalizing X Y with H
-  · have : IsAffine Y := isAffine_of_isAffineHom g
-    rw [← isIso_comp_right_iff i Y.isoSpec.hom]
-    have : Flat ((i ≫ Y.isoSpec.hom) ≫ Y.isoSpec.inv ≫ g) := by
-      simpa using (inferInstance : Flat (i ≫ g))
-    refine H (i ≫ Y.isoSpec.hom) (Y.isoSpec.inv ≫ g) ?_ ⟨_, rfl⟩
-    rw [Category.assoc, Iso.hom_inv_id_assoc,
-      Scheme.Hom.finrank_comp_left_of_isIso Y.isoSpec.inv g]
-    exact h
-  obtain ⟨A, rfl⟩ := hY
-  wlog hX : ∃ B, X = Spec B generalizing X with H
-  · have : IsAffine X := isAffine_of_isAffineHom i
-    rw [← isIso_comp_left_iff X.isoSpec.inv i]
-    have : Flat ((X.isoSpec.inv ≫ i) ≫ g) := by
-      rw [Category.assoc]; infer_instance
-    refine H (X.isoSpec.inv ≫ i) ?_ ⟨_, rfl⟩
-    rw [Category.assoc, Scheme.Hom.finrank_comp_left_of_isIso X.isoSpec.inv (i ≫ g)]
-    exact h
-  obtain ⟨B, rfl⟩ := hX
-  -- On coordinates a closed immersion is surjective, and equal ranks force injectivity.
+/-- The affine case of `Scheme.Hom.isIso_iff_finrank_comp_eq`: on coordinates a closed immersion is
+surjective, and equal ranks force injectivity. -/
+private theorem isIso_of_finrank_comp_eq_spec {R A B : CommRingCat.{u}} (i : Spec B ⟶ Spec A)
+    (g : Spec A ⟶ Spec R) [IsClosedImmersion i] [IsFinite g] [Flat g] [Flat (i ≫ g)]
+    (h : (i ≫ g).finrank = g.finrank) : IsIso i := by
   obtain ⟨φ, rfl⟩ := Spec.map_surjective i
   obtain ⟨ψ, rfl⟩ := Spec.map_surjective g
   have hs : Function.Surjective φ.hom := by
@@ -109,5 +69,56 @@ theorem Scheme.Hom.isIso_iff_finrank_comp_eq (i : X ⟶ Y) (g : Y ⟶ S)
     ← RingHom.algebraMap_toAlgebra (ψ ≫ φ).hom, RingHom.finrank_algebraMap,
     RingHom.finrank_algebraMap] at hm
   exact hm.symm
+
+/-- Reduction of `Scheme.Hom.isIso_iff_finrank_comp_eq` over an affine base to the case of affine
+source and target: finite morphisms to an affine scheme have affine sources. -/
+private theorem isIso_of_finrank_comp_eq_of_target_spec (i : X ⟶ Y) (g : Y ⟶ S)
+    [IsClosedImmersion i] [IsFinite g] [Flat g] [Flat (i ≫ g)]
+    (h : (i ≫ g).finrank = g.finrank) (hS : ∃ R, S = Spec R) : IsIso i := by
+  obtain ⟨R, rfl⟩ := hS
+  wlog hY : ∃ A, Y = Spec A generalizing X Y with H
+  · have : IsAffine Y := isAffine_of_isAffineHom g
+    rw [← isIso_comp_right_iff i Y.isoSpec.hom]
+    have : Flat ((i ≫ Y.isoSpec.hom) ≫ Y.isoSpec.inv ≫ g) := by
+      simpa using (inferInstance : Flat (i ≫ g))
+    refine H (i ≫ Y.isoSpec.hom) (Y.isoSpec.inv ≫ g) ?_ ⟨_, rfl⟩
+    rw [Category.assoc, Iso.hom_inv_id_assoc,
+      Scheme.Hom.finrank_comp_left_of_isIso Y.isoSpec.inv g]
+    exact h
+  obtain ⟨A, rfl⟩ := hY
+  wlog hX : ∃ B, X = Spec B generalizing X with H
+  · have : IsAffine X := isAffine_of_isAffineHom i
+    rw [← isIso_comp_left_iff X.isoSpec.inv i]
+    have : Flat ((X.isoSpec.inv ≫ i) ≫ g) := by
+      rw [Category.assoc]; infer_instance
+    refine H (X.isoSpec.inv ≫ i) ?_ ⟨_, rfl⟩
+    rw [Category.assoc, Scheme.Hom.finrank_comp_left_of_isIso X.isoSpec.inv (i ≫ g)]
+    exact h
+  obtain ⟨B, rfl⟩ := hX
+  exact isIso_of_finrank_comp_eq_spec i g h
+
+/-- A closed immersion between schemes finite and flat over the same base is an isomorphism
+exactly when their rank functions over the base agree. -/
+theorem Scheme.Hom.isIso_iff_finrank_comp_eq (i : X ⟶ Y) (g : Y ⟶ S)
+    [IsClosedImmersion i] [IsFinite g] [Flat g] [Flat (i ≫ g)] :
+    IsIso i ↔ (i ≫ g).finrank = g.finrank := by
+  refine ⟨fun _ ↦ Scheme.Hom.finrank_comp_left_of_isIso i g, fun h ↦ ?_⟩
+  -- Isomorphisms are local on the target; pull back a cover of the common base.
+  rw [← MorphismProperty.isomorphisms.iff,
+    IsZariskiLocalAtTarget.iff_of_openCover
+      (P := .isomorphisms Scheme) (S.affineCover.pullback₁ g)]
+  intro a
+  let j := S.affineCover.f a
+  let e := pullbackRightPullbackFstIso g j i
+  have he : pullback.snd i (pullback.fst g j) ≫ pullback.snd g j =
+      e.hom ≫ pullback.snd (i ≫ g) j :=
+    (pullbackRightPullbackFstIso_hom_snd g j i).symm
+  have : Flat (pullback.snd i (pullback.fst g j) ≫ pullback.snd g j) := by
+    rw [he]; infer_instance
+  refine isIso_of_finrank_comp_eq_of_target_spec (pullback.snd i (pullback.fst g j))
+    (pullback.snd g j) ?_ ⟨_, rfl⟩
+  ext s
+  rw [he, Scheme.Hom.finrank_comp_left_of_isIso, Scheme.Hom.finrank_pullback_snd,
+    Scheme.Hom.finrank_pullback_snd, h]
 
 end AlgebraicGeometry

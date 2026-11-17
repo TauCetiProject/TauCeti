@@ -59,7 +59,8 @@ All almost vanishing statements about almost modules, such as the almost acyclic
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.2, (2.2.2).
 * P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4, Definition 4.3.
-* B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1, Proposition 4.1.7.
+* B. Bhatt, *Lecture notes for a class on perfectoid spaces*, §4.1, Construction 4.1.5 and
+  Proposition 4.1.7.
 -/
 
 public section

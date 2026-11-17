@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import TauCeti.Analysis.Calculus.Morse.Basic
-import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Morse functions on smooth manifolds
@@ -33,6 +33,7 @@ manifold, rather than to a function on one global coordinate space.
 
 * `TauCeti.IsManifoldNondegenerateCriticalPoint`: a nondegenerate critical point of a
   real-valued function on a smooth manifold.
+* `TauCeti.IsManifoldNondegenerateCriticalPoint.contMDiffAt`: such a function is `C²` at the point.
 * `TauCeti.IsMorseOn`: a smooth function whose critical points in a set are nondegenerate.
 * `TauCeti.IsMorse`: a Morse function on the whole manifold.
 * `TauCeti.isManifoldNondegenerateCriticalPoint_modelSpace_iff` and
@@ -67,6 +68,12 @@ theorem isManifoldNondegenerateCriticalPoint_iff (I : ModelWithCorners ℝ E H) 
     IsManifoldNondegenerateCriticalPoint I f x ↔
       IsNondegenerateCriticalPoint (f ∘ (extChartAt I x).symm) (extChartAt I x x) :=
   Iff.rfl
+
+/-- A function with a nondegenerate critical point is `C²` there. -/
+theorem IsManifoldNondegenerateCriticalPoint.contMDiffAt {I : ModelWithCorners ℝ E H}
+    (h : IsManifoldNondegenerateCriticalPoint I f x) : ContMDiffAt I 𝓘(ℝ) 2 f x :=
+  contMDiffAt_iff_source.2 <| contMDiffWithinAt_iff_contDiffWithinAt.2
+    (((isManifoldNondegenerateCriticalPoint_iff I).mp h).contDiffAt.contDiffWithinAt)
 
 /-- Negating a function preserves its nondegenerate critical points. -/
 theorem IsManifoldNondegenerateCriticalPoint.neg {I : ModelWithCorners ℝ E H}
@@ -249,13 +256,12 @@ theorem IsMorse.isManifoldNondegenerateCriticalPoint {I : ModelWithCorners ℝ E
 
 /-- A point where the derivative of a Morse function vanishes is a nondegenerate critical
 point. -/
-theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero [ChartedSpace E M]
-    [IsManifold 𝓘(ℝ, E) ∞ M] (hf : IsMorse 𝓘(ℝ, E) f) {x : M}
-    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
-    IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x :=
+theorem IsMorse.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    {I : ModelWithCorners ℝ E H} [I.Boundaryless] (hf : IsMorse I f)
+    (hx : mfderiv I 𝓘(ℝ) f x = 0) :
+    IsManifoldNondegenerateCriticalPoint I f x :=
   hf.isManifoldNondegenerateCriticalPoint
-    ((mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm
-      (hf.contMDiff.mdifferentiableAt (by simp))).1 hx)
+    (mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm.1 hx)
 
 /-- A Morse function is Morse on every subset. -/
 theorem IsMorse.isMorseOn {I : ModelWithCorners ℝ E H}

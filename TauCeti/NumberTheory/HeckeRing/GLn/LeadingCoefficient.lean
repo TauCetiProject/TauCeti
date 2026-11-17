@@ -107,10 +107,6 @@ private lemma natDiagGL_inv_mul_mul_mem_SLnZ_of_eq {a b : Fin n → ℕ} (ha : �
   rw [hint, diagonal_mul, Pi.mul_apply]
   exact ⟨γ' i j, by push_cast; ring⟩
 
--- The multiplicities below are those of the Hecke ring, whose finiteness instances need the
--- arithmetic Hecke triple, which carries `NeZero n`.
-variable [NeZero n]
-
 /-- `T(a b)` occurs in `T(a) · T(b)` at most once. -/
 private lemma multiplicity_diagCoset_mul_le_one {a b : Fin n → ℕ} (ha : ∀ i, 0 < a i)
     (ha' : IsDvdChain a) (hb : ∀ i, 0 < b i) (hb' : IsDvdChain b) :

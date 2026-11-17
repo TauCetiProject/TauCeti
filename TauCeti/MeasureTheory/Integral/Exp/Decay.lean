@@ -1,0 +1,363 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.Analysis.Asymptotics.Defs
+public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Constructions.HaarToSphere
+import Mathlib.MeasureTheory.Measure.Prod
+import TauCeti.Analysis.SpecialFunctions.Exp.Overlap
+import TauCeti.Analysis.SpecialFunctions.Exp.Shift
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
+
+/-!
+# Exponential integrals on the real line and radial exponentials
+
+This file records integrability and evaluation of exponential integrands: on a half-line or the
+whole real line, natural powers multiplied by an exponentially decaying factor, the exact rate at
+which a bare exponential is integrable on a right half-line, and integrability and the integral
+of the two-sided exponential; and, on a finite-dimensional real normed space, integrability of the
+radial exponential `exp (-a ‖x‖)` for every additive Haar measure, by integrating in polar
+coordinates, and the resulting `Lᵖ` membership of continuous functions decaying at that rate.
+The radial exponential then bounds the overlap of two functions that decay exponentially about two
+points: it decays exponentially in the distance between the points.
+
+Mathlib supplies the *sufficient* direction of the right-half-line integrability criterion,
+`integrableOn_exp_mul_Ioi`, for a negative rate.  `integrableOn_exp_mul_Ioi_iff` adds the converse,
+which is what lets a caller describe an exponential-moment domain as an exact set rather than an
+inclusion.
+
+## Main results
+
+* `TauCeti.integrableOn_pow_mul_exp_neg_mul_Ioi`: integrability on `(0, ∞)`.
+* `TauCeti.integral_pow_mul_exp_neg_mul_Ioi`: evaluation in terms of a factorial.
+* `TauCeti.lintegral_ofReal_exp_neg_mul_mul_lintegral`: an iterated exponential integral is a
+  Stieltjes-kernel integral.
+* `TauCeti.integrableOn_exp_mul_Ioi_iff`: `exp (a * ·)` is integrable on `(c, ∞)` exactly when
+  `a < 0`.
+* `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
+  `0 < a`.
+* `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.integral_exp_neg_mul_abs`: its integral is `2 / a`.
+* `TauCeti.lintegral_ofReal_mul_exp_neg_mul_abs`: the same evaluation as a lower Lebesgue integral
+  of `c * exp (-(a * |·|))`.
+* `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
+  `exp (b * x * I)`.
+* `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
+  space when `0 < a`.
+* `TauCeti.memLp_exp_neg_mul_norm`: it lies in every `Lᵖ`.
+* `Continuous.memLp_of_isBigO_exp_neg_mul_norm`: so does every continuous function which is
+  `O(exp (-(a * ‖·‖)))` at infinity.
+* `TauCeti.integral_norm_mul_norm_le_mul_exp_neg_mul_norm`: two functions decaying
+  exponentially at rates `c₁` and `c₂` about points at distance `‖a‖` overlap, after integration,
+  by `O(exp (-(c' ‖a‖)))` for every `0 ≤ c'` with `c' < c₁` and `c' ≤ c₂`, with an explicit
+  constant depending only on the two decay constants.
+  `TauCeti.exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt` restates the bound for
+  nonnegative functions decaying at every rate below a threshold. The pointwise overlap bounds
+  are in `TauCeti.Analysis.SpecialFunctions.Exp.Overlap`.
+* `TauCeti.integrable_norm_mul_norm_comp_add`, `TauCeti.integrable_mul_comp_add`: the overlap of
+  an exponentially decaying function with a translate of a bounded one is integrable, and
+  `TauCeti.integrable_mul_comp_add_of_forall_lt` restates this for nonnegative functions decaying
+  at every rate below a threshold.
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory Set
+open scoped ENNReal NNReal
+
+namespace TauCeti
+
+/-- Natural powers times an exponentially decaying factor are integrable on `(0, ∞)`. -/
+theorem integrableOn_pow_mul_exp_neg_mul_Ioi (n : ℕ) {b : ℝ} (hb : 0 < b) :
+    IntegrableOn (fun t : ℝ => t ^ n * Real.exp (-(b * t))) (Set.Ioi 0) := by
+  have h := integrableOn_rpow_mul_exp_neg_mul_rpow
+    (p := (1 : ℝ)) (s := (n : ℝ)) (b := b)
+    (lt_of_lt_of_le (by norm_num) (Nat.cast_nonneg n)) one_pos hb
+  simpa only [Real.rpow_one, Real.rpow_natCast, neg_mul] using h
+
+/-- The integral of a natural power times an exponentially decaying factor on `(0, ∞)`. -/
+theorem integral_pow_mul_exp_neg_mul_Ioi (n : ℕ) {a : ℝ} (ha : 0 < a) :
+    ∫ t : ℝ in Set.Ioi 0, t ^ n * Real.exp (-(a * t)) = n.factorial / a ^ (n + 1) := by
+  have h := Real.integral_rpow_mul_exp_neg_mul_Ioi
+    (a := ((n + 1 : ℕ) : ℝ)) (r := a) (by positivity) ha
+  simp only [Nat.cast_add, Nat.cast_one, add_sub_cancel_right,
+    Real.Gamma_nat_eq_factorial] at h
+  have hcast : (n : ℝ) + 1 = ((n + 1 : ℕ) : ℝ) := by norm_num
+  rw [hcast, Real.rpow_natCast] at h
+  have h' : ∫ t : ℝ in Set.Ioi 0, t ^ n * Real.exp (-(a * t)) =
+      (1 / a) ^ (n + 1) * n.factorial := by
+    rw [← h]
+    apply MeasureTheory.setIntegral_congr_fun measurableSet_Ioi
+    intro t _
+    dsimp
+    rw [Real.rpow_natCast t n]
+  rw [h', one_div, div_eq_mul_inv, inv_pow]
+  ring
+
+/-- **The Stieltjes kernel is an iterated exponential integral.** Swapping the two integrations
+turns the outer Laplace integral of the inner one into the Stieltjes integral of `ν`. -/
+theorem lintegral_ofReal_exp_neg_mul_mul_lintegral (ν : Measure ℝ≥0) [SFinite ν] {t : ℝ}
+    (ht : 0 < t) :
+    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(t * s))) *
+        ∫⁻ x : ℝ≥0, ENNReal.ofReal (Real.exp (-(s * (x : ℝ)))) ∂ν
+      = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
+  have hmeas : AEMeasurable (Function.uncurry fun (s : ℝ) (x : ℝ≥0) =>
+      ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s))))
+      ((volume.restrict (Ioi (0 : ℝ))).prod ν) := by
+    refine Measurable.aemeasurable ?_
+    simp only [Function.uncurry_def]
+    fun_prop
+  calc
+    ∫⁻ s in Ioi (0 : ℝ), ENNReal.ofReal (Real.exp (-(t * s))) *
+          ∫⁻ x : ℝ≥0, ENNReal.ofReal (Real.exp (-(s * (x : ℝ)))) ∂ν
+        = ∫⁻ s in Ioi (0 : ℝ), ∫⁻ x : ℝ≥0,
+            ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s))) ∂ν := by
+          refine lintegral_congr fun s => ?_
+          rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+          refine lintegral_congr fun x => ?_
+          rw [← ENNReal.ofReal_mul (Real.exp_pos _).le, ← Real.exp_add]
+          congr 2
+          ring
+    _ = ∫⁻ x : ℝ≥0, (∫⁻ s in Ioi (0 : ℝ),
+          ENNReal.ofReal (Real.exp (-((t + (x : ℝ)) * s)))) ∂ν := lintegral_lintegral_swap hmeas
+    _ = ∫⁻ x : ℝ≥0, ENNReal.ofReal (t + (x : ℝ))⁻¹ ∂ν := by
+          refine lintegral_congr fun x => ?_
+          have htx : 0 < t + (x : ℝ) := add_pos_of_pos_of_nonneg ht x.coe_nonneg
+          have hint : IntegrableOn
+              (fun s : ℝ => Real.exp (-((t + (x : ℝ)) * s))) (Ioi 0) := by
+            simpa only [pow_zero, one_mul] using
+              integrableOn_pow_mul_exp_neg_mul_Ioi 0 htx
+          rw [← ofReal_integral_eq_lintegral_ofReal hint
+            (.of_forall fun s => (Real.exp_pos _).le)]
+          simpa using congrArg ENNReal.ofReal
+            (integral_pow_mul_exp_neg_mul_Ioi 0 htx)
+
+/-- The radial exponential `exp (-(a * ‖x‖))` is integrable for every additive Haar measure on a
+finite-dimensional real normed space, when `0 < a`. -/
+theorem integrable_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {a : ℝ} (ha : 0 < a) :
+    Integrable (fun x : E ↦ Real.exp (-(a * ‖x‖))) μ := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have : CompactSpace E := Finite.compactSpace
+    exact (integrable_const (1 : ℝ)).congr (.of_forall fun x ↦ by simp [Subsingleton.elim x 0])
+  · refine (integrable_fun_norm_addHaar μ (f := fun t ↦ Real.exp (-(a * t)))).mpr ?_
+    simpa only [smul_eq_mul] using integrableOn_pow_mul_exp_neg_mul_Ioi _ ha
+
+/-- The radial exponential `exp (-a ‖x‖)` lies in every `Lᵖ` for every additive Haar measure on a
+finite-dimensional real normed space, when `0 < a`: its `p`-th power is the radial exponential
+with rate `p a`. -/
+theorem memLp_exp_neg_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
+    MemLp (fun x : E ↦ Real.exp (-(a * ‖x‖))) p μ := by
+  have hm : AEStronglyMeasurable (fun x : E ↦ Real.exp (-(a * ‖x‖))) μ :=
+    (by fun_prop : Continuous fun x : E ↦ Real.exp (-(a * ‖x‖))).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · refine memLp_top_of_bound hm 1 (.of_forall fun x ↦ ?_)
+    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), Real.exp_le_one_iff, neg_nonpos]
+    positivity
+  · rw [← integrable_norm_rpow_iff hm hp0 hptop]
+    refine (integrable_exp_neg_mul_norm μ (mul_pos (ENNReal.toReal_pos hp0 hptop) ha)).congr
+      (.of_forall fun x ↦ ?_)
+    dsimp only
+    rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _), ← Real.exp_mul]
+    ring_nf
+
+/-- A continuous function which is `O(exp (-a ‖x‖))` at infinity, for some `0 < a`, lies in every
+`Lᵖ` for every additive Haar measure on a finite-dimensional real normed space. -/
+theorem _root_.Continuous.memLp_of_isBigO_exp_neg_mul_norm {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E]
+    [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure] [NormedAddCommGroup F] {f : E → F}
+    (hf : Continuous f) {a : ℝ} (ha : 0 < a)
+    (hdec : f =O[Filter.cocompact E] fun x ↦ Real.exp (-(a * ‖x‖))) (p : ℝ≥0∞) :
+    MemLp f p μ := by
+  obtain ⟨C, hC⟩ := hdec.bound
+  obtain ⟨K, hK⟩ := exists_forall_le_mul_exp_of_eventually_le hf.norm
+    (hC.mono fun x hx ↦ by rwa [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)] at hx)
+  refine ((memLp_exp_neg_mul_norm μ ha p).const_mul K).of_le hf.aestronglyMeasurable
+    (.of_forall fun x ↦ (hK x).trans ?_)
+  rw [Real.norm_eq_abs]
+  exact le_abs_self _
+
+section Overlap
+
+variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+  [SeminormedAddCommGroup F] [SeminormedAddCommGroup G] {K L c : ℝ}
+
+/-- **Overlap of exponentially decaying functions, integrated.** If `‖f z‖ ≤ K exp (-(c₁ ‖z‖))`
+and `‖g z‖ ≤ L exp (-(c₂ ‖z‖))` on a finite-dimensional space, then for every rate `0 ≤ c'` with
+`c' < c₁` and `c' ≤ c₂` the overlap integral `∫ ‖f z‖ ‖g (z + a)‖` of `f` with the translate
+`g (· + a)` is at most `K L (∫ exp (-((c₁ - c') ‖z‖))) exp (-(c' ‖a‖))`, for every additive Haar
+measure. The constant depends on `f` and `g` only through `K` and `L`. -/
+theorem integral_norm_mul_norm_le_mul_exp_neg_mul_norm {f : E → F} {g : E → G} {c₁ c₂ c' : ℝ}
+    (hc'₀ : 0 ≤ c') (hc'₁ : c' < c₁) (hc'₂ : c' ≤ c₂)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c₁ * ‖z‖)))
+    (hg : ∀ z, ‖g z‖ ≤ L * Real.exp (-(c₂ * ‖z‖))) (a : E) :
+    ∫ z, ‖f z‖ * ‖g (z + a)‖ ∂μ ≤
+      K * L * (∫ z, Real.exp (-((c₁ - c') * ‖z‖)) ∂μ) * Real.exp (-(c' * ‖a‖)) := by
+  have hint := integrable_exp_neg_mul_norm μ (sub_pos.2 hc'₁)
+  calc ∫ z, ‖f z‖ * ‖g (z + a)‖ ∂μ
+      ≤ ∫ z, K * L * Real.exp (-(c' * ‖a‖)) * Real.exp (-((c₁ - c') * ‖z‖)) ∂μ :=
+        integral_mono_of_nonneg (.of_forall fun z ↦ by positivity) (hint.const_mul _)
+          (.of_forall fun z ↦ norm_mul_norm_le_mul_exp_mul_exp hc'₀ hc'₂ hf hg z a)
+    _ = K * L * Real.exp (-(c' * ‖a‖)) * ∫ z, Real.exp (-((c₁ - c') * ‖z‖)) ∂μ :=
+        integral_const_mul _ _
+    _ = _ := by ring
+
+/-- **Integrability of the overlap of an exponentially decaying function with a bounded one.**
+If `f` and `g` are almost everywhere strongly measurable with `‖f z‖ ≤ K exp (-(c ‖z‖))` for some
+`0 < c` on a finite-dimensional space and `‖g z‖ ≤ L`, then the overlap `‖f z‖ ‖g (z + a)‖` of
+`f` with the translate `g (· + a)` is integrable for every additive Haar measure. -/
+theorem integrable_norm_mul_norm_comp_add {f : E → F} {g : E → G} (hc : 0 < c)
+    (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖))) (hg : ∀ z, ‖g z‖ ≤ L) (a : E) :
+    Integrable (fun z ↦ ‖f z‖ * ‖g (z + a)‖) μ := by
+  refine ((integrable_exp_neg_mul_norm μ hc).const_mul (K * L)).mono'
+    (hfm.norm.mul (hgm.comp_quasiMeasurePreserving
+      (measurePreserving_add_right μ a).quasiMeasurePreserving).norm)
+    (.of_forall fun z ↦ ?_)
+  have hK : 0 ≤ K * Real.exp (-(c * ‖z‖)) := (norm_nonneg _).trans (hf z)
+  rw [Real.norm_of_nonneg (by positivity)]
+  calc ‖f z‖ * ‖g (z + a)‖ ≤ K * Real.exp (-(c * ‖z‖)) * L :=
+        mul_le_mul (hf z) (hg _) (norm_nonneg _) hK
+    _ = K * L * Real.exp (-(c * ‖z‖)) := by ring
+
+/-- **Integrability of the product of an exponentially decaying function with a bounded one.**
+In a normed ring, if `f` and `g` are almost everywhere strongly measurable with
+`‖f z‖ ≤ K exp (-(c ‖z‖))` for some `0 < c` on a finite-dimensional space and `‖g z‖ ≤ L`, then
+the product `f z * g (z + a)` of `f` with the translate `g (· + a)` is integrable for every
+additive Haar measure. -/
+theorem integrable_mul_comp_add {R : Type*} [NonUnitalNormedRing R] {f g : E → R} (hc : 0 < c)
+    (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
+    (hf : ∀ z, ‖f z‖ ≤ K * Real.exp (-(c * ‖z‖))) (hg : ∀ z, ‖g z‖ ≤ L) (a : E) :
+    Integrable (fun z ↦ f z * g (z + a)) μ :=
+  (integrable_norm_mul_norm_comp_add μ hc hfm hgm hf hg a).mono'
+    (hfm.mul (hgm.comp_quasiMeasurePreserving
+      (measurePreserving_add_right μ a).quasiMeasurePreserving))
+    (.of_forall fun _ ↦ norm_mul_le _ _)
+
+/-- **Overlap of nonnegative functions decaying at every rate below `r`, integrated.** If
+`0 ≤ f`, `0 ≤ g` and both are at most `K exp (-(c ‖z‖))` for every rate `c < r`, with `K`
+depending on `c`, then `∫ f z g (z + a) ≤ K exp (-(c ‖a‖))` for every rate `c < r`, on a
+finite-dimensional space with an additive Haar measure. -/
+theorem exists_integral_mul_le_mul_exp_neg_mul_norm_of_forall_lt {f g : E → ℝ} {r : ℝ}
+    (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ c < r, ∃ K, ∀ z, f z ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ c < r, ∃ K, ∀ z, g z ≤ K * Real.exp (-(c * ‖z‖))) (hr : 0 < r) (hc : c < r) :
+    ∃ K, ∀ a, ∫ z, f z * g (z + a) ∂μ ≤ K * Real.exp (-(c * ‖a‖)) := by
+  -- Spend a rate strictly between `max c 0` and `r` on the decay of `f` and `g`.
+  obtain ⟨c₁, hc₁, hc₁r⟩ := exists_between (max_lt hc hr)
+  obtain ⟨Kf, hKf⟩ := hf c₁ hc₁r
+  obtain ⟨Kg, hKg⟩ := hg c₁ hc₁r
+  refine ⟨Kf * Kg * ∫ z, Real.exp (-((c₁ - max c 0) * ‖z‖)) ∂μ, fun a ↦ ?_⟩
+  have h := integral_norm_mul_norm_le_mul_exp_neg_mul_norm μ (le_max_right c 0) hc₁ hc₁.le
+    (f := f) (g := g) (fun w ↦ (Real.norm_of_nonneg (hf₀ w)).trans_le (hKf w))
+    (fun w ↦ (Real.norm_of_nonneg (hg₀ w)).trans_le (hKg w)) a
+  simp only [Real.norm_of_nonneg (hf₀ _), Real.norm_of_nonneg (hg₀ _)] at h
+  have hKfg : 0 ≤ Kf * Kg * ∫ z, Real.exp (-((c₁ - max c 0) * ‖z‖)) ∂μ :=
+    nonneg_of_mul_nonneg_left ((integral_nonneg fun z ↦ mul_nonneg (hf₀ z) (hg₀ _)).trans h)
+      (Real.exp_pos _)
+  refine h.trans (mul_le_mul_of_nonneg_left ?_ hKfg)
+  exact Real.exp_le_exp.2 (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
+    (norm_nonneg a)))
+
+/-- **Integrability of the overlap of nonnegative functions decaying at every rate below `r`.**
+If `f` and `g` are nonnegative and almost everywhere strongly measurable, and both are at most
+`K exp (-(c ‖z‖))` for every rate `c < r`, with `K` depending on `c`, then for `0 < r` the overlap
+`f z g (z + a)` is integrable on a finite-dimensional space with an additive Haar measure. -/
+theorem integrable_mul_comp_add_of_forall_lt {f g : E → ℝ} {r : ℝ}
+    (hfm : AEStronglyMeasurable f μ) (hgm : AEStronglyMeasurable g μ)
+    (hf₀ : ∀ z, 0 ≤ f z) (hg₀ : ∀ z, 0 ≤ g z)
+    (hf : ∀ c < r, ∃ K, ∀ z, f z ≤ K * Real.exp (-(c * ‖z‖)))
+    (hg : ∀ c < r, ∃ K, ∀ z, g z ≤ K * Real.exp (-(c * ‖z‖))) (hr : 0 < r) (a : E) :
+    Integrable (fun z ↦ f z * g (z + a)) μ := by
+  obtain ⟨Kf, hKf⟩ := hf (r / 2) (half_lt_self hr)
+  obtain ⟨Kg, hKg⟩ := hg 0 hr
+  exact integrable_mul_comp_add μ (half_pos hr) hfm hgm
+    (fun z ↦ (Real.norm_of_nonneg (hf₀ z)).trans_le (hKf z))
+    (fun z ↦ (Real.norm_of_nonneg (hg₀ z)).trans_le (by simpa using hKg z)) a
+
+end Overlap
+
+/-- The two-sided exponential is integrable on the line. -/
+theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
+    Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
+  simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
+    (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- The two-sided exponential `exp (-(a * |x|))` has integral `2 / a` when `0 < a`. -/
+theorem integral_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
+    ∫ x : ℝ, Real.exp (-(a * |x|)) = 2 / a := by
+  rw [integral_comp_abs (f := fun x ↦ Real.exp (-(a * x)))]
+  simp only [← neg_mul]
+  rw [integral_exp_mul_Ioi (neg_neg_of_pos ha), mul_zero, Real.exp_zero, neg_div_neg_eq]
+  ring
+
+/-- The lower Lebesgue integral of a constant multiple of the two-sided exponential:
+`∫⁻ x, ofReal (c * exp (-(a * |x|))) = ofReal (2 * c / a)` when `0 < a`. For `c ≤ 0` both sides
+vanish. -/
+theorem lintegral_ofReal_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (c : ℝ) :
+    ∫⁻ x : ℝ, ENNReal.ofReal (c * Real.exp (-(a * |x|))) = ENNReal.ofReal (2 * c / a) := by
+  rcases le_total 0 c with hc | hc
+  · rw [← ofReal_integral_eq_lintegral_ofReal ((integrable_exp_neg_mul_abs ha).const_mul c)
+      (.of_forall fun _ ↦ by positivity), integral_const_mul, integral_exp_neg_mul_abs ha]
+    ring_nf
+  · have hc' : 2 * c / a ≤ 0 := div_nonpos_of_nonpos_of_nonneg (by linarith) ha.le
+    simp only [ENNReal.ofReal_of_nonpos hc',
+      ENNReal.ofReal_of_nonpos (mul_nonpos_of_nonpos_of_nonneg hc (Real.exp_pos _).le),
+      lintegral_zero]
+
+/-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
+the line. -/
+theorem integrable_exp_mul_I_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (b : ℝ) :
+    Integrable
+      (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ)) :=
+  ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
+    (.of_forall fun x ↦ by simp [Complex.norm_exp])
+
+
+/-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set
+of infinite measure, so it is not integrable there. -/
+private theorem not_integrableOn_exp_mul_Ioi {a c : ℝ} (ha : 0 ≤ a) :
+    ¬ IntegrableOn (fun x : ℝ => Real.exp (a * x)) (Set.Ioi c) := by
+  intro h
+  have hsub : Set.Ioi c ⊆ {x : ℝ | Real.exp (a * c) ≤ Real.exp (a * x)} := by
+    intro x hx
+    exact Real.exp_le_exp.2 (by nlinarith [le_of_lt (Set.mem_Ioi.mp hx)])
+  have h1 : (volume.restrict (Set.Ioi c)) (Set.Ioi c) < ⊤ :=
+    lt_of_le_of_lt (measure_mono hsub) (h.measure_ge_lt_top (Real.exp_pos (a * c)))
+  rw [Measure.restrict_apply_self, Real.volume_Ioi] at h1
+  exact absurd h1 (by simp)
+
+/-- **The exact integrability rate.**  `fun x => exp (a * x)` is integrable on `(c, ∞)` precisely
+when the rate is negative.  Mathlib's `integrableOn_exp_mul_Ioi` is the `←` direction. -/
+@[simp]
+theorem integrableOn_exp_mul_Ioi_iff {a c : ℝ} :
+    IntegrableOn (fun x : ℝ => Real.exp (a * x)) (Set.Ioi c) ↔ a < 0 := by
+  refine ⟨fun h => ?_, fun ha => integrableOn_exp_mul_Ioi ha c⟩
+  by_contra hne
+  exact not_integrableOn_exp_mul_Ioi (not_lt.mp hne) h
+
+/-- **The exact integrability rate on a left half-line.** `fun x => exp (a * x)` is integrable
+on `(-∞, c]` precisely when the rate is positive. -/
+@[simp]
+theorem integrableOn_exp_mul_Iic_iff {a c : ℝ} :
+    IntegrableOn (fun x : ℝ => Real.exp (a * x)) (Set.Iic c) ↔ 0 < a := by
+  rw [integrableOn_Iic_iff_integrableOn_Iio,
+    ← (Measure.measurePreserving_neg (volume : Measure ℝ)).integrableOn_comp_preimage
+      (Homeomorph.neg ℝ).measurableEmbedding]
+  simpa only [Function.comp_def, neg_preimage, neg_Iio, neg_neg, mul_neg, neg_mul,
+    neg_lt_zero] using (integrableOn_exp_mul_Ioi_iff (a := -a) (c := -c))
+
+end TauCeti

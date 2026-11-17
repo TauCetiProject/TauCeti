@@ -19,8 +19,8 @@ occur as soon as the index type is nonempty: the diagonal reflection negating on
 orthogonal matrix of determinant `-1`.
 
 Permutation matrices are orthogonal, and a matrix is orthogonal exactly when it preserves the dot
-product. For a trivial star operation the unitary elements of the
-general linear group are the orthogonal matrices.
+product. The columns of an orthogonal matrix are orthonormal for the dot product. For a trivial
+star operation the unitary elements of the general linear group are the orthogonal matrices.
 
 ## Main definitions
 
@@ -36,6 +36,8 @@ general linear group are the orthogonal matrices.
 * `Matrix.permMatrix_mem_orthogonalGroup`: a permutation matrix is orthogonal.
 * `Matrix.mem_orthogonalGroup_iff_dotProduct_mulVec`: a matrix is orthogonal exactly when it
   preserves the dot product.
+* `Matrix.col_dotProduct_col_of_mem_orthogonalGroup`: the columns of an orthogonal matrix are
+  orthonormal.
 * `Matrix.GeneralLinearGroup.mem_unitarySubgroup_iff_mem_orthogonalGroup`: for a trivial star
   operation, the unitary elements of `GL n R` are the orthogonal matrices.
 -/
@@ -98,12 +100,12 @@ end TauCeti
 
 namespace Matrix
 
-/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitaryGroup` for the
+/-- A permutation matrix is orthogonal. This is `Matrix.permMatrix_mem_unitary` for the
 trivial star operation `starRingOfComm`, which defines `Matrix.orthogonalGroup`. -/
 theorem permMatrix_mem_orthogonalGroup {n : Type*} [Fintype n] [DecidableEq n] (R : Type*)
     [CommRing R] (σ : Equiv.Perm n) : σ.permMatrix R ∈ orthogonalGroup n R :=
   letI := starRingOfComm (R := R)
-  permMatrix_mem_unitaryGroup σ
+  permMatrix_mem_unitary σ
 
 /-- A square matrix is orthogonal exactly when it preserves the dot product. -/
 theorem mem_orthogonalGroup_iff_dotProduct_mulVec {n R : Type*} [Fintype n] [DecidableEq n]
@@ -116,6 +118,14 @@ theorem mem_orthogonalGroup_iff_dotProduct_mulVec {n R : Type*} [Fintype n] [Dec
     simp only [mulVec_single_one, single_dotProduct, one_mul] at hij
     rw [Matrix.mul_apply, Matrix.one_apply]
     simpa [dotProduct, Pi.single_apply, eq_comm] using hij
+
+/-- The columns of an orthogonal matrix are orthonormal for the dot product: the dot product of
+columns `i` and `j` is the `(i, j)` entry of the identity matrix. -/
+theorem col_dotProduct_col_of_mem_orthogonalGroup {n R : Type*} [Fintype n] [DecidableEq n]
+    [CommRing R] {A : Matrix n n R} (hA : A ∈ orthogonalGroup n R) (i j : n) :
+    A.col i ⬝ᵥ A.col j = (1 : Matrix n n R) i j := by
+  rw [← (mem_orthogonalGroup_iff' _ _).1 hA, mul_apply']
+  rfl
 
 end Matrix
 

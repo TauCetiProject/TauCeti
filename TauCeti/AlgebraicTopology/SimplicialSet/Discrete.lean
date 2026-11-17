@@ -25,6 +25,8 @@ the number of nondegenerate simplices, such as cardinal filteredness.
 ## Main declarations
 
 * `SSet.constHomEquiv`: maps from the discrete simplicial set on `ι` are families of vertices.
+* `SSet.isIso_constHomEquiv_symm`: a simplicial set whose simplices are all totally degenerate is
+  the discrete simplicial set on its vertices.
 * `SSet.constNEquiv`: the nondegenerate simplices of the discrete simplicial set on `ι` are the
   elements of `ι`.
 * `SSet.kanComplex_const`: discrete simplicial sets are Kan complexes.
@@ -64,6 +66,32 @@ lemma constHomEquiv_symm_app_zero (x : ι → X _⦋0⦌) (i : ι) :
     ConcreteCategory.hom (X := ι) (Y := X _⦋0⦌) (((constHomEquiv ι).symm x).app (op ⦋0⦌)) i =
       x i :=
   congrFun ((constHomEquiv ι).apply_symm_apply x) i
+
+variable {ι} in
+/-- A simplicial set all of whose simplices are totally degenerate is discrete: if every simplex
+of `X` is the degenerate simplex at a vertex, then the map from the discrete simplicial set on
+`ι` given by a bijection `v : ι → X _⦋0⦌` is an isomorphism. -/
+lemma isIso_constHomEquiv_symm {v : ι → X _⦋0⦌} (hv : Function.Bijective v)
+    (h : ∀ n : ℕ, Function.Surjective (X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op)) :
+    IsIso ((constHomEquiv ι).symm v) := by
+  rw [NatTrans.isIso_iff_isIso_app]
+  rintro ⟨⟨n⟩⟩
+  rw [isIso_iff_bijective]
+  -- The comparison sends `i` to the totally degenerate simplex at the vertex `v i`.
+  have happ (i : ι) : ((constHomEquiv ι).symm v).app (op ⦋n⦌) i =
+      X.map (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op (v i) := by
+    rw [← constHomEquiv_symm_app_zero ι v i]
+    exact NatTrans.naturality_apply ((constHomEquiv ι).symm v)
+      (SimplexCategory.const ⦋n⦌ ⦋0⦌ 0).op (i : ((Functor.const SimplexCategoryᵒᵖ).obj ι).obj _)
+  refine ⟨fun i j hij ↦ hv.1 ?_, fun s ↦ ?_⟩
+  · -- Any vertex of the totally degenerate simplex at a vertex is that vertex.
+    have h' := congrArg (X.map (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0).op)
+      ((happ i).symm.trans (hij.trans (happ j)))
+    simpa [← Functor.map_comp_apply, ← op_comp, Subsingleton.elim
+      (SimplexCategory.const ⦋0⦌ ⦋n⦌ 0 ≫ SimplexCategory.const ⦋n⦌ ⦋0⦌ 0) (𝟙 _)] using h'
+  · obtain ⟨y, rfl⟩ := h n s
+    obtain ⟨i, rfl⟩ := hv.2 y
+    exact ⟨i, happ i⟩
 
 /-- Every simplex of positive dimension of a discrete simplicial set is degenerate. -/
 @[simp]

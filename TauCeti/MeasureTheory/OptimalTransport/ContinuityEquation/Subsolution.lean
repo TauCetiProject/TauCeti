@@ -116,7 +116,7 @@ private theorem ofReal_integral_convolution_sub_le_lintegral
   refine h.ofReal_integral_sub_integral_le_lintegral_of_fderiv_le hν hab
     (β.hasCompactSupport_normed.contDiff_convolution_left _ β.contDiff_normed hu)
     (fun _ ↦ norm_convolution_lsmul_le_of_forall_norm_le β.support_normed_eq.subset
-      β.nonneg_normed β.integral_normed hu.aestronglyMeasurable fun q _ ↦ huM q)
+      β.nonneg_normed β.integral_normed fun q _ ↦ huM q)
     (β.hasCompactSupport_normed.norm_fderiv_convolution_left_le β.contDiff_normed hu huM)
     fun t ht x w ↦ β.hasCompactSupport_normed.fderiv_convolution_left_apply_le β.contDiff_normed
       β.nonneg_normed β.integral_normed hu ?_
@@ -158,7 +158,7 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
   have hψM (n : ℕ) (q : ℝ × E) : |ψ n q| ≤ M := by
     simpa [Real.norm_eq_abs] using norm_convolution_lsmul_le_of_forall_norm_le
       (β n).support_normed_eq.subset (β n).nonneg_normed (β n).integral_normed
-      hloc.aestronglyMeasurable fun q _ ↦ huM q
+      fun q _ ↦ huM q
   have huM' (q : ℝ × E) : |u q| ≤ M := by simpa [Real.norm_eq_abs] using huM q
   have hψmeas (n : ℕ) (t : ℝ) : Measurable fun x : E ↦ ψ n (t, x) :=
     (((β n).hasCompactSupport_normed.continuous_convolution_left _ (β n).continuous_normed
@@ -191,17 +191,16 @@ theorem ofReal_integral_sub_integral_le_lintegral_of_add_smul_le
     (fun n ↦ ae_of_all _ (haM n))
     (hua.mono fun _ hx ↦
       tendsto_max_convolution_lsmul_of_upperSemicontinuousAt hρ0 hρ1 hρs (hconv _) hx)
-  have hint {t : ℝ} {f : E → ℝ} (hf : Measurable f) (hfM : ∀ x, ‖f x‖ ≤ M) :
-      Integrable f (ν t : Measure E) :=
-    .of_bound hf.aestronglyMeasurable M (ae_of_all _ hfM)
   refine le_of_tendsto (ENNReal.tendsto_ofReal (hlimb.sub hlima)) (.of_forall fun n ↦ ?_)
   refine (ENNReal.ofReal_le_ofReal (sub_le_sub ?_ ?_)).trans
     (ofReal_integral_convolution_sub_le_lintegral h hν hab hloc huM hsub (β n)
       (div_lt_self hr (by linarith [n.cast_nonneg (α := ℝ)])))
-  · exact integral_mono (hint ((hψmeas n b).min (hmeas b)) (hbM n))
-      (hint (hψmeas n b) fun x ↦ by simpa [Real.norm_eq_abs] using hψM n _) fun x ↦ min_le_left _ _
-  · exact integral_mono (hint (hψmeas n a) fun x ↦ by simpa [Real.norm_eq_abs] using hψM n _)
-      (hint ((hψmeas n a).max (hmeas a)) (haM n)) fun x ↦ le_max_left _ _
+  · exact MeasureTheory.integral_min_le_left
+      (.of_bound (hψmeas n b).aestronglyMeasurable M (ae_of_all _ fun _ ↦ hψM n _))
+      (.of_bound (hmeas b).aestronglyMeasurable M (ae_of_all _ fun _ ↦ huM' _))
+  · exact MeasureTheory.integral_le_integral_max
+      (.of_bound (hψmeas n a).aestronglyMeasurable M (ae_of_all _ fun _ ↦ hψM n _))
+      (.of_bound (hmeas a).aestronglyMeasurable M (ae_of_all _ fun _ ↦ huM' _))
 
 end IsContinuityEquation
 

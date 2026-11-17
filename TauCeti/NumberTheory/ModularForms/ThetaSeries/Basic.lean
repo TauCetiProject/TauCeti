@@ -39,8 +39,8 @@ half-planes and locally uniformly on `ℍ`, and are holomorphic, both as functio
 `{z | 0 < im z}` and in the manifold sense on `ℍ`, which is what a bundled modular form requires.
 
 The series `θ_{γ+L}` depends only on the class of `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`. For a
-subgroup `M ≤ L`, splitting `L` into the classes of `L` modulo `M` writes `Θ_L` as the sum of the
-series `θ_{y+M}` over those classes.
+subgroup `M ≤ L`, splitting `L` into the classes of `L` modulo `M` writes `θ_{γ+L}` as the sum of
+the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum of the `θ_{y+M}`.
 
 ## Main definitions
 
@@ -55,8 +55,9 @@ series `θ_{y+M}` over those classes.
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
   absolutely at every `τ : ℍ`.
-* `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `Θ_L` is the sum of the `θ_{y+M}` over the classes
-  `y` of `L` modulo `M`.
+* `ZLattice.hasSum_thetaCoset_add_out`, `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `θ_{γ+L}`
+  is the sum of the `θ_{γ+y+M}`, and `Θ_L` the sum of the `θ_{y+M}`, over the classes `y` of `L`
+  modulo `M`.
 * `ZLattice.hasSumUniformlyOn_thetaCoset`: uniform convergence on `{τ | y ≤ im τ}` for `0 < y`.
 * `ZLattice.hasSumLocallyUniformly_thetaCoset`: locally uniform convergence on `ℍ`.
 * `ZLattice.differentiableOn_thetaCoset`, `ZLattice.mdifferentiable_thetaCoset`: holomorphy.
@@ -122,6 +123,19 @@ theorem thetaCoset_apply (γ : E) (τ : ℍ) :
     thetaCoset L γ τ = ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
+/-- If the Gaussian `exp (-π y ‖γ + v‖²)` is summable over `v ∈ L` for no height `y > 0`, then the
+series defining `θ_{γ+L}(τ)` is not summable for any `τ`, so `θ_{γ+L}` is identically `0` (the value
+of a `tsum` that is not summable). -/
+theorem thetaCoset_eq_zero_of_forall_not_summable (γ : E)
+    (h : ∀ y : ℝ, 0 < y → ¬ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
+    thetaCoset L γ = 0 :=
+  funext fun τ => by
+    rw [thetaCoset_apply, Pi.zero_apply]
+    refine tsum_eq_zero_of_not_summable fun hs => h τ.im τ.im_pos <| hs.norm.congr fun v => ?_
+    rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
+    congr 1
+    ring
+
 /-- The theta series of the translate `0 + L` is the theta series of `L`. -/
 @[simp]
 theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
@@ -155,13 +169,13 @@ theorem thetaCoset_neg (γ : E) : thetaCoset L (-γ) = thetaCoset L γ := by
   refine tsum_congr fun v => ?_
   rw [Equiv.neg_apply, Submodule.coe_neg, ← neg_add, norm_neg]
 
-/-- The sum of theta terms over the fiber of the quotient map `L → L / M` is the theta
-series of the translate of `M` by a representative of that class. -/
-theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
+/-- The sum of the terms of `θ_{γ+L}` over the fiber of the quotient map `L → L / M` is the theta
+series of the translate of `M` by `γ` plus a representative of that class. -/
+theorem tsum_thetaCosetTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L) (γ : E)
     (y : L ⧸ M.submoduleOf L) (τ : ℍ) :
     ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L),
-      cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
-        thetaCoset M (Quotient.out y : L) τ := by
+      cexp (π * I * (‖γ + ((b : L) : E)‖ ^ 2 : ℝ) * τ) =
+        thetaCoset M (γ + (Quotient.out y : L)) τ := by
   -- The fiber is identified with the kernel `M.submoduleOf L`, and then with `M`.
   let f := (M.submoduleOf L).mkQ.toAddMonoidHom
   have hker (x : L) : x ∈ M.submoduleOf L ↔ x ∈ f.ker := by simp [f]
@@ -175,7 +189,16 @@ theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
     have hv : (((Submodule.submoduleOfEquivOfLe hML).symm v : L) : E) = v := rfl
     simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
   rw [thetaCoset_apply, ← e.tsum_eq]
-  exact tsum_congr fun v => by rw [he]
+  exact tsum_congr fun v => by rw [he, add_assoc]
+
+/-- The sum of theta terms over the fiber of the quotient map `L → L / M` is the theta
+series of the translate of `M` by a representative of that class. -/
+theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
+    (y : L ⧸ M.submoduleOf L) (τ : ℍ) :
+    ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L),
+      cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
+        thetaCoset M (Quotient.out y : L) τ := by
+  simpa using tsum_thetaCosetTerm_fiber L hML 0 y τ
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
@@ -199,15 +222,23 @@ theorem summable_thetaSeries (τ : ℍ) :
     Summable fun v : L => cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ) := by
   simpa using summable_thetaCoset L 0 τ
 
+/-- **Splitting the theta series of a translate into cosets.** For `M ≤ L` and `γ : E`, the theta
+series of `γ + L` is the sum of the theta series of the translates `γ + y + M` over the classes `y`
+of `L` modulo `M`, each class represented by `Quotient.out` (by `thetaCoset_eq_of_sub_mem` the
+representative does not matter). The sum is finite when `M` has finite index in `L`. -/
+theorem hasSum_thetaCoset_add_out {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) (τ : ℍ) :
+    HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M (γ + ((Quotient.out y : L) : E)) τ)
+      (thetaCoset L γ τ) := by
+  rw [← funext (fun y ↦ tsum_thetaCosetTerm_fiber L hML γ y τ), thetaCoset_apply]
+  exact (summable_thetaCoset L γ τ).hasSum.tsum_fiberwise _
+
 /-- **Splitting a theta series into cosets.** For `M ≤ L`, the theta series of `L` is the sum of
 the theta series of the translates `y + M` over the classes `y` of `L` modulo `M`, each class
-represented by `Quotient.out` (by `thetaCoset_eq_of_sub_mem` the representative does not matter).
-The sum is finite when `M` has finite index in `L`. -/
+represented by `Quotient.out`. The sum is finite when `M` has finite index in `L`. -/
 theorem hasSum_thetaCoset_out {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ) :
     HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M ((Quotient.out y : L) : E) τ)
       (thetaSeries L τ) := by
-  rw [← funext (fun y ↦ tsum_thetaTerm_fiber L hML y τ), thetaSeries_apply]
-  exact (summable_thetaSeries L τ).hasSum.tsum_fiberwise _
+  simpa using hasSum_thetaCoset_add_out L hML 0 τ
 
 /-- The theta series of a translate converges uniformly on each half-plane `{τ | y ≤ im τ}` with
 `0 < y`. -/
@@ -239,37 +270,50 @@ theorem hasSumLocallyUniformly_thetaSeries :
       (thetaSeries L) := by
   simpa using hasSumLocallyUniformly_thetaCoset L 0
 
+omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane, as a function of
 `z : ℂ`. -/
 theorem differentiableOn_thetaCoset (γ : E) :
     DifferentiableOn ℂ (thetaCoset L γ ∘ ofComplex) {z : ℂ | 0 < z.im} := by
-  intro z hz
-  set U : Set ℂ := {w : ℂ | z.im / 2 < w.im}
-  have hU : IsOpen U := isOpen_lt continuous_const Complex.continuous_im
-  have hzU : z ∈ U := by
-    simp only [U, Set.mem_ofPred_eq]
-    exact half_lt_self hz
-  have hdiff : DifferentiableOn ℂ
-      (fun w : ℂ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * w)) U :=
-    differentiableOn_tsum_of_summable_norm (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
-      (mul_pos Real.pi_pos (half_pos hz)) γ)
-      (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
-      fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
-  refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
-    |>.differentiableWithinAt
-  filter_upwards [hU.mem_nhds hzU] with w hw
-  have hw' : 0 < w.im := lt_trans (half_pos hz) hw
-  simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
+  by_cases hL : DiscreteTopology L
+  · have := hL
+    intro z hz
+    set U : Set ℂ := {w : ℂ | z.im / 2 < w.im}
+    have hU : IsOpen U := isOpen_lt continuous_const Complex.continuous_im
+    have hzU : z ∈ U := by
+      simp only [U, Set.mem_ofPred_eq]
+      exact half_lt_self hz
+    have hdiff : DifferentiableOn ℂ
+        (fun w : ℂ => ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * w)) U :=
+      differentiableOn_tsum_of_summable_norm
+        (summable_exp_neg_mul_norm_add_sq L (c := π * (z.im / 2))
+          (mul_pos Real.pi_pos (half_pos hz)) γ)
+        (fun v => ((differentiable_id.const_mul _).cexp).differentiableOn) hU
+        fun v w hw => norm_exp_pi_mul_I_mul_ofReal_mul_le (by positivity) (le_of_lt hw)
+    refine ((hdiff z hzU).differentiableAt (hU.mem_nhds hzU)).congr_of_eventuallyEq ?_
+      |>.differentiableWithinAt
+    filter_upwards [hU.mem_nhds hzU] with w hw
+    have hw' : 0 < w.im := lt_trans (half_pos hz) hw
+    simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
+  · have h0 : thetaCoset L γ = 0 :=
+      thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs =>
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ (c := π * y)
+          (by positivity) hs)
+    rw [h0]
+    exact differentiableOn_const 0
 
+omit [DiscreteTopology L] in
 /-- The theta series is holomorphic on the upper half-plane, as a function of `z : ℂ`. -/
 theorem differentiableOn_thetaSeries :
     DifferentiableOn ℂ (thetaSeries L ∘ ofComplex) {z : ℂ | 0 < z.im} := by
   simpa using differentiableOn_thetaCoset L 0
 
+omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane `ℍ`. -/
 theorem mdifferentiable_thetaCoset (γ : E) : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaCoset L γ) :=
   mdifferentiable_iff.mpr (differentiableOn_thetaCoset L γ)
 
+omit [DiscreteTopology L] in
 /-- The theta series is holomorphic on the upper half-plane `ℍ`. -/
 theorem mdifferentiable_thetaSeries : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) (thetaSeries L) :=
   mdifferentiable_iff.mpr (differentiableOn_thetaSeries L)

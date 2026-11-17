@@ -5,8 +5,9 @@ Authors: Tau Ceti
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
+public import TauCeti.Geometry.Manifold.Algebra.SmoothFunctions
 public import Mathlib.Analysis.Complex.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Complex-valued smooth functions on real manifolds
@@ -15,7 +16,10 @@ Complex-valued functions on a real manifold are real smooth maps, not holomorphi
 This file equips their native `ContMDiffMap` carrier with the complex algebra structure
 induced by constant functions. The native real scalar action agrees with restriction of
 scalars. Real and imaginary parts identify this real vector space with a pair of real
-function spaces, and conjugation is a real algebra involution.
+function spaces, and conjugation is a real algebra involution. Differentiation commutes with
+real and imaginary parts at every nonzero differentiability order. Precomposition with a
+smooth map is a complex algebra homomorphism (`ContMDiffMap.compRightComplexAlgHom`), used
+to pull back complex-valued differential data.
 
 The constructions use Mathlib's pointwise smooth-function ring, `compLeftRingHom`, and
 its continuous real-linear maps `Complex.reCLM`, `Complex.imCLM`, `Complex.ofRealCLM`
@@ -76,6 +80,44 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 theorem complex_smul_apply (z : ℂ) (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (x : M) :
     (z • f) x = z * f x := by
   rfl
+
+section Pullback
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- Pullback of real-smooth complex-valued functions as a complex algebra homomorphism. -/
+def compRightComplexAlgHom (φ : C^n⟮J, N; I, M⟯) :
+    C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ →ₐ[ℂ] C^n⟮J, N; 𝓘(ℝ, ℂ), ℂ⟯ :=
+  AlgHom.mk' (compRightAlgHom ℝ ℂ φ).toRingHom (fun c f ↦ by
+    ext x
+    simp)
+
+@[simp]
+theorem compRightComplexAlgHom_apply (φ : C^n⟮J, N; I, M⟯)
+    (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) : compRightComplexAlgHom φ f = f.comp φ := by
+  simp [compRightComplexAlgHom]
+
+/-- Pullback along the identity is the identity algebra homomorphism. -/
+@[simp]
+theorem compRightComplexAlgHom_id :
+    compRightComplexAlgHom (ContMDiffMap.id : C^n⟮I, M; I, M⟯) = AlgHom.id ℂ _ := by
+  ext f x
+  simp only [compRightComplexAlgHom_apply, AlgHom.id_apply, comp_apply]
+  rfl
+
+/-- Pullback along a composite reverses the order of the algebra homomorphisms. -/
+theorem compRightComplexAlgHom_comp {E'' H'' P : Type*}
+    [NormedAddCommGroup E''] [NormedSpace ℝ E''] [TopologicalSpace H'']
+    {K : ModelWithCorners ℝ E'' H''} [TopologicalSpace P] [ChartedSpace H'' P]
+    (φ : C^n⟮J, N; I, M⟯) (ψ : C^n⟮K, P; J, N⟯) :
+    compRightComplexAlgHom (φ.comp ψ) =
+      (compRightComplexAlgHom ψ).comp (compRightComplexAlgHom φ) := by
+  ext f x
+  simp
+
+end Pullback
 
 /-- Restricting complex scalars recovers the native real scalar action. -/
 instance complexSmoothFunctions_isScalarTower :
@@ -327,5 +369,41 @@ theorem ofReal_restrictRingHom (h : U ≤ V) (f : C^n⟮I, V; ℝ⟯) :
       restrictRingHom I 𝓘(ℝ, ℂ) ℂ h (ofReal f) := by
   ext x
   rfl
+
+/-- Differentiation of a complex-valued real-smooth function commutes with taking real parts. -/
+@[simp]
+theorem mvfderiv_re (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x : M) :
+    mvfderiv I f.re x = Complex.reCLM.comp (mvfderiv I f x) := by
+  have hre : ⇑f.re = Complex.reCLM ∘ f := by ext y; simp
+  rw [hre]
+  ext v
+  exact Complex.reCLM.mvfderiv_comp_apply (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
+
+/-- Differentiation of a complex-valued real-smooth function commutes with taking imaginary
+parts. -/
+@[simp]
+theorem mvfderiv_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x : M) :
+    mvfderiv I f.im x = Complex.imCLM.comp (mvfderiv I f x) := by
+  have him : ⇑f.im = Complex.imCLM ∘ f := by ext y; simp
+  rw [him]
+  ext v
+  exact Complex.imCLM.mvfderiv_comp_apply (f.contMDiff.mdifferentiable hn).mdifferentiableAt v
+
+/-- The differential of a complex function vanishes exactly when the differentials of both
+real components vanish. -/
+theorem mvfderiv_eq_zero_iff_re_im (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (hn : n ≠ 0) (x : M) :
+    mvfderiv I f x = 0 ↔ mvfderiv I f.re x = 0 ∧ mvfderiv I f.im x = 0 := by
+  constructor
+  · intro h
+    simp [mvfderiv_re f hn, mvfderiv_im f hn, h]
+  · rintro ⟨hr, hi⟩
+    ext v
+    apply Complex.ext
+    · simpa only [mvfderiv_re f hn, ContinuousLinearMap.comp_apply,
+        Complex.reCLM_apply, zero_apply, Complex.zero_re] using
+        congrArg (fun L ↦ L v) hr
+    · simpa only [mvfderiv_im f hn, ContinuousLinearMap.comp_apply,
+        Complex.imCLM_apply, zero_apply, Complex.zero_im] using
+        congrArg (fun L ↦ L v) hi
 
 end ContMDiffMap

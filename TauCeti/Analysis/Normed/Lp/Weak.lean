@@ -26,7 +26,8 @@ finite without completeness or finite dimensionality assumptions on `E`.
 `weakLpNorm` is bundled as a `Seminorm`, providing homogeneity and the triangle
 inequality through the existing seminorm API. Over real or complex scalars it
 dominates each coordinate norm, and is therefore a norm on finite families in a
-normed space. We prove the strong `Lᵖ` bound, invariance under reindexing, the
+normed space. We prove the bound on sums of `p`-th powers of scalar evaluations, the strong `Lᵖ`
+bound, invariance under reindexing, the
 bounded-operator estimate, the exact value on scalar multiples of one vector, its agreement
 with the strong norm at exponent `∞`, and Hölder's inequality for scalar weights:
 the weak `p`-norm of `(cᵢ xᵢ)ᵢ` is at most `‖c‖ₛ` times the weak `q`-norm of `x` when
@@ -91,6 +92,16 @@ theorem norm_eval_le_weakLpNorm (x : ι → E) (f : StrongDual 𝕜 E) :
     ‖WithLp.toLp p (fun i ↦ f (x i))‖ ≤ weakLpNorm (𝕜 := 𝕜) p x * ‖f‖ := by
   simpa only [dualEvalLp_apply, weakLpNorm_apply] using (dualEvalLp (𝕜 := 𝕜) p x).le_opNorm f
 
+/-- For finite `p`, the `p`-th powers of scalar evaluations sum to at most the `p`-th power of
+the weak `Lᵖ` norm times the functional norm. -/
+theorem sum_norm_eval_rpow_le_weakLpNorm (hp : p ≠ ∞) (x : ι → E) (f : StrongDual 𝕜 E) :
+    ∑ i, ‖f (x i)‖ ^ p.toReal ≤ (weakLpNorm (𝕜 := 𝕜) p x * ‖f‖) ^ p.toReal := by
+  have hq : 0 < p.toReal := ENNReal.toReal_pos (one_pos.trans_le Fact.out).ne' hp
+  have h := norm_eval_le_weakLpNorm p x f
+  rw [PiLp.norm_eq_sum hq, one_div, Real.rpow_inv_le_iff_of_pos
+    (Finset.sum_nonneg fun _ _ ↦ by positivity) (by positivity) hq] at h
+  simpa using h
+
 /-- An upper bound on the weak norm is equivalent to the homogeneous evaluation bound. -/
 theorem weakLpNorm_le_iff (x : ι → E) {C : ℝ} (hC : 0 ≤ C) :
     weakLpNorm (𝕜 := 𝕜) p x ≤ C ↔
@@ -103,7 +114,7 @@ theorem weakLpNorm_le_norm (x : ι → E) :
   apply (weakLpNorm_le_iff p x (norm_nonneg _)).2
   intro f
   rw [mul_comm]
-  exact PiLp.norm_toLp_comp_le (norm_nonneg f) f.le_opNorm x
+  exact PiLp.norm_toLp_comp_le f.le_opNorm x
 
 /-- Applying a bounded operator to a family multiplies its weak norm by at most the
 operator norm. -/

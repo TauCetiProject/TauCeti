@@ -174,20 +174,6 @@ private theorem barycentricSubdivisionRealizationMap_chamberMap
     (sum_chamberOrderedCoord σ e x) (chamberOrderedCoord_card σ e x) x.1
     (fun i => chamberOrderedCoord_of_lt σ e x i.2)
 
-private theorem continuousOn_iUnion_finset_of_isClosed {α β κ : Type*}
-    [TopologicalSpace α] [TopologicalSpace β] {f : α → β} (s : Finset κ) (u : κ → Set α)
-    (hu : ∀ i ∈ s, IsClosed (u i)) (hf : ∀ i ∈ s, ContinuousOn f (u i)) :
-    ContinuousOn f (⋃ i ∈ s, u i) := by
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s _ ih =>
-      rw [Finset.set_biUnion_insert]
-      exact (hf i (Finset.mem_insert_self i s)).union_of_isClosed
-        (ih (fun j hj => hu j (Finset.mem_insert_of_mem hj))
-          (fun j hj => hf j (Finset.mem_insert_of_mem hj)))
-        (hu i (Finset.mem_insert_self i s))
-        (isClosed_biUnion_finset fun j hj => hu j (Finset.mem_insert_of_mem hj))
-
 private theorem continuous_inverse_barycentricSubdivisionRealizationMap
     (K : AbstractSimplicialComplex ι) :
     let e := Equiv.ofBijective (barycentricSubdivisionRealizationMap K)
@@ -210,11 +196,8 @@ private theorem continuous_inverse_barycentricSubdivisionRealizationMap
           (barycentricSubdivisionRealizationMap_chamberMap σ o x).symm)
     rw [heq]
     exact continuous_chamberMap σ o
-  let _ : Fintype (VertexOrder σ) := Fintype.ofFinite (VertexOrder σ)
-  simpa only [Finset.mem_univ, Set.iUnion_true] using
-    continuousOn_iUnion_finset_of_isClosed
-      (Finset.univ : Finset (VertexOrder σ)) (orderChamber σ)
-      (fun o _ => isClosed_orderChamber σ o) (fun o _ => hpiece o)
+  exact (locallyFinite_of_finite (orderChamber σ)).continuousOn_iUnion
+    (isClosed_orderChamber σ) hpiece
 
 /-- The canonical homeomorphism from the realization of the barycentric subdivision of `K` to
 the realization of `K`. It sends every face-vertex to the barycenter of that face. -/

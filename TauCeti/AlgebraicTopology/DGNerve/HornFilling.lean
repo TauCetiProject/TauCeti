@@ -9,13 +9,18 @@ public import TauCeti.AlgebraicTopology.DGNerve.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
-# Filling inner horns of coherences in the differential graded nerve
+# Filling inner horns and boundaries of coherences in the differential graded nerve
 
 An `n`-simplex of the differential graded nerve is a string of objects with coherences satisfying
 the dg nerve equation `d f = TauCeti.DGNerve.boundary f` (`TauCeti.DGNerve.Simplex`). This file
 shows that coherences satisfying the equation on an inner horn `Λ[n, k]`, `0 < k < n`, are the
 coherences on the horn of an `n`-simplex. This is the algebraic content of the statement that the
 differential graded nerve is a quasicategory.
+
+On the boundary `∂Δ[n + 1]` only the coherence through all interior vertices is missing. The
+right-hand side of the equation for it is then a cycle, and the coherences on the boundary are
+those of a simplex exactly when this cycle is a boundary. This computes the obstruction to
+extending maps out of `∂Δ[n + 1]`, as needed for terminal vertices.
 
 Only two coherences do not belong to the horn: the one through all interior vertices, which is
 taken to be zero, and the one omitting `k`, which is then chosen so that the equation holds on the
@@ -29,6 +34,12 @@ ordered pairs of interior vertices, using the Leibniz rule and associativity.
 
 * `TauCeti.DGNerve.Coherences.exists_simplex_of_horn`: coherences satisfying the dg nerve equation
   on an inner horn are those of a simplex.
+* `TauCeti.DGNerve.Coherences.dgDifferential_boundary_eq_zero`: for coherences satisfying the dg
+  nerve equation on the boundary, the obstruction to filling is a cycle.
+* `TauCeti.DGNerve.Coherences.exists_simplex_iff_of_boundary`: such coherences are those of a
+  simplex if and only if this cycle is a boundary.
+* `TauCeti.DGNerve.Coherences.boundaryFace` and `TauCeti.DGNerve.Coherences.boundaryFace_map_δ`:
+  the faces of such coherences, which agree on their common faces.
 
 ## References
 
@@ -460,12 +471,33 @@ private lemma defect_get_eq_zero {f : Coherences R X} {i j : Fin (n + 1)}
   rw [defect, sub_eq_zero, f.get_eq hij hS hp, h,
     boundary_eq_bd f.get f (fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm)]
 
+/-- The coherence indexed by `i`, `S` and `j` misses a vertex satisfying `P`: some vertex `l` with
+`P l` does not belong to `{i} ∪ S ∪ {j}`. The coherences of the horn `Λ[n, k]` are those missing a
+vertex other than `k`, and the coherences of the boundary `∂Δ[n]` are those missing some vertex. -/
+private def MissesVertex (P : Fin (n + 1) → Prop) (i j : Fin (n + 1))
+    (S : Finset (Fin (n + 1))) : Prop :=
+  ∃ l, P l ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S
+
+/-- The coherences involved in the boundary of a coherence missing a vertex satisfying `P` miss
+such a vertex too. -/
+private lemma MissesVertex.bd {P : Fin (n + 1) → Prop} {i j : Fin (n + 1)}
+    {S : Finset (Fin (n + 1))} (h : MissesVertex P i j S) :
+    ∀ t ∈ S, MissesVertex P i j (S.erase t) ∧ MissesVertex P i t {s ∈ S | s < t} ∧
+      MissesVertex P t j {s ∈ S | t < s} := by
+  obtain ⟨l, hlk, hli, hlj, hlS⟩ := h
+  intro t ht
+  refine ⟨⟨l, hlk, hli, hlj, fun hl ↦ hlS (mem_of_mem_erase hl)⟩,
+    ⟨l, hlk, hli, ?_, fun hl ↦ hlS (mem_filter.1 hl).1⟩,
+    ⟨l, hlk, ?_, hlj, fun hl ↦ hlS (mem_filter.1 hl).1⟩⟩ <;>
+  · rintro rfl
+    exact hlS ht
+
 variable (k : Fin (n + 1))
 
 /-- The coherence indexed by `i`, `S` and `j` belongs to the horn `Λ[n, k]`: some vertex other
 than `k` is missing from `{i} ∪ S ∪ {j}`. -/
-private def IsHornFace (i j : Fin (n + 1)) (S : Finset (Fin (n + 1))) : Prop :=
-  ∃ l, l ≠ k ∧ l ≠ i ∧ l ≠ j ∧ l ∉ S
+private abbrev IsHornFace (i j : Fin (n + 1)) (S : Finset (Fin (n + 1))) : Prop :=
+  MissesVertex (· ≠ k) i j S
 
 /-- A coherence outside an inner horn joins the first vertex to the last one through all interior
 vertices except possibly `k`. -/
@@ -473,7 +505,7 @@ private lemma eq_zero_and_eq_last_of_not_isHornFace {k : Fin (n + 1)} (hk₀ : 0
     (hkn : k < Fin.last n) {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (hij : i ≤ j)
     (hS : S ⊆ Ioo i j) (h : ¬ IsHornFace k i j S) :
     i = 0 ∧ j = Fin.last n ∧ ∀ l ∈ Ioo i j, l ≠ k → l ∈ S := by
-  simp only [IsHornFace, not_exists, not_and, not_not] at h
+  simp only [IsHornFace, MissesVertex, not_exists, not_and, not_not] at h
   have hi : i = 0 := by
     by_contra hi
     have h0 := hS (h 0 hk₀.ne (Ne.symm hi) fun h0 ↦ hi (le_antisymm (h0 ▸ hij) (Fin.zero_le _)))
@@ -508,19 +540,6 @@ private lemma bd_fill {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} (e : ℤ)
   refine sum_congr rfl fun t ht ↦ ?_
   rw [fill_of_isHornFace F k _ (h t ht).1, fill_of_isHornFace F k _ (h t ht).2.1,
     fill_of_isHornFace F k _ (h t ht).2.2]
-
-/-- The coherences involved in the boundary of a coherence of the horn belong to the horn. -/
-private lemma IsHornFace.bd {k i j : Fin (n + 1)} {S : Finset (Fin (n + 1))}
-    (h : IsHornFace k i j S) :
-    ∀ t ∈ S, IsHornFace k i j (S.erase t) ∧ IsHornFace k i t {s ∈ S | s < t} ∧
-      IsHornFace k t j {s ∈ S | t < s} := by
-  obtain ⟨l, hlk, hli, hlj, hlS⟩ := h
-  intro t ht
-  refine ⟨⟨l, hlk, hli, hlj, fun hl ↦ hlS (mem_of_mem_erase hl)⟩,
-    ⟨l, hlk, hli, ?_, fun hl ↦ hlS (mem_filter.1 hl).1⟩,
-    ⟨l, hlk, ?_, hlj, fun hl ↦ hlS (mem_filter.1 hl).1⟩⟩ <;>
-  · rintro rfl
-    exact hlS ht
 
 variable {k}
 
@@ -561,7 +580,7 @@ private lemma dgDifferential_fill (hk₀ : 0 < k) (hkn : k < Fin.last n) {f : Co
     (hd : d + #S = 0) :
     dgDifferential R d (fill f.get k i j S d) = bd (fill f.get k) i j S (d + 1) := by
   by_cases hH : IsHornFace k i j S
-  · rw [fill_of_isHornFace _ _ _ hH, bd_fill _ _ _ hH.bd, f.get_eq hij hS hd,
+  · rw [fill_of_isHornFace _ _ _ hH, bd_fill _ _ _ (MissesVertex.bd hH), f.get_eq hij hS hd,
       heq i j S d hij hS hd hH, boundary_eq_bd f.get f fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm]
   obtain ⟨rfl, rfl, hsub⟩ := eq_zero_and_eq_last_of_not_isHornFace hk₀ hkn hij hS hH
   have hk : k ∈ Ioo 0 (Fin.last n) := mem_Ioo.2 ⟨hk₀, hkn⟩
@@ -651,6 +670,281 @@ theorem Coherences.exists_simplex_of_horn (f : Coherences R X) {k : Fin (n + 1)}
       x.coh i j S d hij hS hd ≍ f i j S d hij hS hd :=
   ⟨hornExtension k hk₀ hkn f hself heq, rfl, fun _ _ _ _ hij hS hd h ↦
     heq_of_eq (hornExtension_coh hk₀ hkn f hself heq hij hS hd h)⟩
+
+/-! ### Filling a boundary -/
+
+section Boundary
+
+variable {Y : Fin (n + 2) → C}
+
+/-- The coherence indexed by `i`, `S` and `j` belongs to the boundary `∂Δ[n]`: some vertex is
+missing from `{i} ∪ S ∪ {j}`. -/
+private abbrev IsBoundaryFace (i j : Fin (n + 1)) (S : Finset (Fin (n + 1))) : Prop :=
+  MissesVertex (fun _ ↦ True) i j S
+
+private lemma isBoundaryFace_iff {i j : Fin (n + 1)} {S : Finset (Fin (n + 1))} :
+    IsBoundaryFace i j S ↔ ∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S :=
+  ⟨fun ⟨l, _, hl⟩ ↦ ⟨l, hl⟩, fun ⟨l, hl⟩ ↦ ⟨l, trivial, hl⟩⟩
+
+/-- The only coherence outside the boundary `∂Δ[n + 1]` joins the first vertex to the last one
+through all interior vertices. -/
+private lemma eq_top_of_not_isBoundaryFace {i j : Fin (n + 2)} {S : Finset (Fin (n + 2))}
+    (hij : i ≤ j) (hS : S ⊆ Ioo i j) (h : ¬ IsBoundaryFace i j S) :
+    i = 0 ∧ j = Fin.last (n + 1) ∧ S = Ioo i j := by
+  simp only [isBoundaryFace_iff, not_exists, not_and, not_not] at h
+  have hi : i = 0 := by
+    by_contra hi
+    have h0 := hS (h 0 (Ne.symm hi) fun h0 ↦ hi (le_antisymm (h0 ▸ hij) (Fin.zero_le _)))
+    exact (Fin.zero_le i).not_gt (mem_Ioo.1 h0).1
+  have hj : j = Fin.last (n + 1) := by
+    by_contra hj
+    have hl := hS (h (Fin.last (n + 1)) (fun hl ↦ hj (le_antisymm (Fin.le_last _) (hl ▸ hij)))
+      (Ne.symm hj))
+    exact (Fin.le_last j).not_gt (mem_Ioo.1 hl).2
+  exact ⟨hi, hj, subset_antisymm hS fun l hl ↦ h l (mem_Ioo.1 hl).1.ne' (mem_Ioo.1 hl).2.ne⟩
+
+/-- The coherences involved in the boundary of the coherence through all interior vertices belong
+to the boundary `∂Δ[n + 1]`. -/
+private lemma isBoundaryFace_of_mem_Ioo {t : Fin (n + 2)} (ht : t ∈ Ioo 0 (Fin.last (n + 1))) :
+    IsBoundaryFace 0 (Fin.last (n + 1)) ((Ioo 0 (Fin.last (n + 1))).erase t) ∧
+      IsBoundaryFace 0 t {s ∈ Ioo 0 (Fin.last (n + 1)) | s < t} ∧
+      IsBoundaryFace t (Fin.last (n + 1)) {s ∈ Ioo 0 (Fin.last (n + 1)) | t < s} :=
+  ⟨⟨t, trivial, (mem_Ioo.1 ht).1.ne', (mem_Ioo.1 ht).2.ne, notMem_erase _ _⟩,
+    ⟨Fin.last (n + 1), trivial, Fin.last_pos.ne', (mem_Ioo.1 ht).2.ne', by simp⟩,
+    ⟨0, trivial, (mem_Ioo.1 ht).1.ne, Fin.last_pos.ne, by simp⟩⟩
+
+/-- The boundary of the coherence through all interior vertices only involves coherences of the
+boundary `∂Δ[n + 1]`. -/
+private lemma bd_top_congr {G G' : ∀ i j : Fin (n + 2), Finset (Fin (n + 2)) → ∀ p : ℤ,
+      DGHom R p (Y i) (Y j)}
+    (h : ∀ i j S p, IsBoundaryFace i j S → G i j S p = G' i j S p) (e : ℤ) :
+    bd G 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) e =
+      bd G' 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) e := by
+  refine sum_congr rfl fun t ht ↦ ?_
+  obtain ⟨h₁, h₂, h₃⟩ := isBoundaryFace_of_mem_Ioo ht
+  rw [h _ _ _ _ h₁, h _ _ _ _ h₂, h _ _ _ _ h₃]
+
+/-- **The obstruction to filling a boundary is closed**: for coherences satisfying the dg nerve
+equation on the boundary `∂Δ[n + 1]`, the right-hand side of the equation for the coherence through
+all interior vertices is a cycle. -/
+theorem Coherences.dgDifferential_boundary_eq_zero (f : Coherences R Y)
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    {d : ℤ} (hd : d + #(Ioo 0 (Fin.last (n + 1))) = 0) :
+    dgDifferential R (d + 1) (boundary R f 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) d
+      (Fin.zero_le _) subset_rfl hd) = 0 := by
+  have hdef : ∀ i' j' S' (p : ℤ), i' ≤ j' → S' ⊆ Ioo i' j' → p + #S' = 0 →
+      IsBoundaryFace i' j' S' → defect f.get i' j' S' p = 0 := fun i' j' S' p hij' hS' hp hB ↦
+    defect_get_eq_zero hij' hS' hp (heq i' j' S' p hij' hS' hp (isBoundaryFace_iff.1 hB))
+  rw [boundary_eq_bd f.get f (fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm), dgDifferential_bd]
+  refine sum_eq_zero fun t ht ↦ ?_
+  obtain ⟨h₁, h₂, h₃⟩ := isBoundaryFace_of_mem_Ioo ht
+  rw [hdef _ _ _ _ (Fin.zero_le _) (erase_subset _ _)
+      (by have := card_erase_add_one ht; omega) h₁,
+    hdef _ _ _ _ (Fin.zero_le _) (filter_lt_subset_Ioo subset_rfl) (neg_add_cancel _) h₂,
+    hdef _ _ _ _ (Fin.le_last _) (filter_gt_subset_Ioo subset_rfl)
+      (by have := card_filter_lt_add_card_filter_gt_add_one ht; omega) h₃]
+  simp
+
+open Classical in
+/-- The family agreeing with `G` except for the coherence through all interior vertices in degree
+`d`, which is replaced by `g`. -/
+private noncomputable def cap
+    (G : ∀ i j : Fin (n + 2), Finset (Fin (n + 2)) → ∀ p : ℤ, DGHom R p (Y i) (Y j)) {d : ℤ}
+    (g : DGHom R d (Y 0) (Y (Fin.last (n + 1)))) (i j : Fin (n + 2)) (S : Finset (Fin (n + 2)))
+    (p : ℤ) : DGHom R p (Y i) (Y j) :=
+  if h : i = 0 ∧ j = Fin.last (n + 1) ∧ S = Ioo i j ∧ p = d then
+    cast (by rw [h.1, h.2.1, h.2.2.2]) g
+  else G i j S p
+
+private lemma cap_of_isBoundaryFace
+    (G : ∀ i j : Fin (n + 2), Finset (Fin (n + 2)) → ∀ p : ℤ, DGHom R p (Y i) (Y j)) {d : ℤ}
+    (g : DGHom R d (Y 0) (Y (Fin.last (n + 1)))) {i j : Fin (n + 2)} {S : Finset (Fin (n + 2))}
+    {p : ℤ} (h : IsBoundaryFace i j S) : cap G g i j S p = G i j S p := by
+  refine dite_eq_right ?_
+  rintro ⟨rfl, rfl, rfl, -⟩
+  obtain ⟨l, -, hl₀, hll, hlS⟩ := h
+  exact hlS (mem_Ioo.2 ⟨Fin.pos_iff_ne_zero.2 hl₀, Fin.lt_last_iff_ne_last.2 hll⟩)
+
+private lemma cap_top
+    (G : ∀ i j : Fin (n + 2), Finset (Fin (n + 2)) → ∀ p : ℤ, DGHom R p (Y i) (Y j)) {d : ℤ}
+    (g : DGHom R d (Y 0) (Y (Fin.last (n + 1)))) :
+    cap G g 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) d = g := by
+  rw [cap, dite_eq_left ⟨rfl, rfl, rfl, rfl⟩, cast_eq]
+
+/-- **Filling a boundary of coherences**: normalized coherences satisfying the dg nerve equation on
+the boundary `∂Δ[n + 1]` and a solution `g` of the equation for the coherence through all interior
+vertices form an `(n + 1)`-simplex. -/
+private noncomputable def boundaryExtension (f : Coherences R Y)
+    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    {d : ℤ} (hd : d + #(Ioo 0 (Fin.last (n + 1))) = 0) (g : DGHom R d (Y 0) (Y (Fin.last (n + 1))))
+    (hg : dgDifferential R d g = boundary R f 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) d
+      (Fin.zero_le _) subset_rfl hd) :
+    Simplex R C (n + 1) where
+  obj := Y
+  coh i j S p _ _ _ := cap f.get g i j S p
+  coh_self i := by
+    obtain ⟨l, hl⟩ := exists_ne i
+    rw [cap_of_isBoundaryFace _ _ ⟨l, trivial, hl, hl, notMem_empty _⟩,
+      f.get_eq le_rfl (empty_subset _) (by simp), hself]
+  dgDifferential_coh i j S p hij hS hp := by
+    rw [boundary_eq_bd (cap f.get g) _ fun _ _ _ _ _ _ _ ↦ rfl]
+    by_cases hB : IsBoundaryFace i j S
+    · rw [cap_of_isBoundaryFace _ _ hB, f.get_eq hij hS hp,
+        heq i j S p hij hS hp (isBoundaryFace_iff.1 hB),
+        boundary_eq_bd f.get f (fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm)]
+      refine sum_congr rfl fun t ht ↦ ?_
+      obtain ⟨h₁, h₂, h₃⟩ := MissesVertex.bd hB t ht
+      rw [cap_of_isBoundaryFace _ _ h₁, cap_of_isBoundaryFace _ _ h₂, cap_of_isBoundaryFace _ _ h₃]
+    · obtain ⟨rfl, rfl, rfl⟩ := eq_top_of_not_isBoundaryFace hij hS hB
+      obtain rfl : p = d := by omega
+      rw [cap_top, hg, boundary_eq_bd f.get f (fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm),
+        bd_top_congr fun _ _ _ _ h ↦ cap_of_isBoundaryFace _ _ h]
+
+/-- The filling simplex agrees with the given coherences on the boundary. -/
+private lemma boundaryExtension_coh (f : Coherences R Y)
+    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    {d : ℤ} (hd : d + #(Ioo 0 (Fin.last (n + 1))) = 0) (g : DGHom R d (Y 0) (Y (Fin.last (n + 1))))
+    (hg : dgDifferential R d g = boundary R f 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) d
+      (Fin.zero_le _) subset_rfl hd)
+    {i j : Fin (n + 2)} {S : Finset (Fin (n + 2))} {p : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j)
+    (hp : p + #S = 0) (h : IsBoundaryFace i j S) :
+    (boundaryExtension f hself heq hd g hg).coh i j S p hij hS hp = f i j S p hij hS hp := by
+  dsimp only [boundaryExtension]
+  rw [cap_of_isBoundaryFace _ _ h, f.get_eq hij hS hp]
+
+/-- **Boundary filling for coherences**: normalized coherences satisfying the dg nerve equation on
+the boundary `∂Δ[n + 1]`, that is, for every coherence missing some vertex, are the coherences on
+the boundary of an `(n + 1)`-simplex if and only if the right-hand side of the equation for the
+coherence through all interior vertices, which is always a cycle
+(`TauCeti.DGNerve.Coherences.dgDifferential_boundary_eq_zero`), is a boundary. -/
+theorem Coherences.exists_simplex_iff_of_boundary (f : Coherences R Y)
+    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    {d : ℤ} (hd : d + #(Ioo 0 (Fin.last (n + 1))) = 0) :
+    (∃ x : Simplex R C (n + 1), x.obj = Y ∧ ∀ i j S d hij hS hd,
+        (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) → x.coh i j S d hij hS hd ≍ f i j S d hij hS hd) ↔
+      ∃ g : DGHom R d (Y 0) (Y (Fin.last (n + 1))), dgDifferential R d g =
+        boundary R f 0 (Fin.last (n + 1)) (Ioo 0 (Fin.last (n + 1))) d (Fin.zero_le _) subset_rfl
+          hd := by
+  constructor
+  · rintro ⟨x, rfl, hx⟩
+    refine ⟨x.coh 0 _ _ d (Fin.zero_le _) subset_rfl hd, ?_⟩
+    rw [x.dgDifferential_coh, boundary_eq_bd x.coh.get x.coh
+        (fun _ _ _ _ _ _ _ ↦ (x.coh.get_eq _ _ _).symm),
+      boundary_eq_bd f.get f (fun _ _ _ _ _ _ _ ↦ (f.get_eq _ _ _).symm)]
+    refine bd_top_congr (fun i j S p hB ↦ ?_) _
+    simp only [Coherences.get]
+    split_ifs with h
+    · exact eq_of_heq (hx _ _ _ _ _ _ _ (isBoundaryFace_iff.1 hB))
+    · rfl
+  · rintro ⟨g, hg⟩
+    exact ⟨boundaryExtension f hself heq hd g hg, rfl, fun i j S p hij hS hp hl ↦
+      heq_of_eq (boundaryExtension_coh f hself heq hd g hg hij hS hp (isBoundaryFace_iff.2 hl))⟩
+
+end Boundary
+
+/-! ### Faces of coherences on a boundary -/
+
+section Faces
+
+variable {Y : Fin (n + 3) → C}
+
+/-- The face opposite to the vertex `l` of normalized coherences satisfying the dg nerve equation
+on the boundary `∂Δ[n + 2]`, that is, for every coherence missing some vertex: the
+`(n + 1)`-simplex on the objects `Y ∘ l.succAbove` whose coherences are pulled back along
+`l.succAbove`. -/
+noncomputable def Coherences.boundaryFace (f : Coherences R Y)
+    (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+    (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+      dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+    (l : Fin (n + 3)) : Simplex R C (n + 1) where
+  obj := Y ∘ l.succAbove
+  coh := f.comap (Fin.strictMono_succAbove l)
+  coh_self i := by
+    rw [Coherences.comap_apply f _ le_rfl (empty_subset _) (by simp) le_rfl (by simp) (by simp)]
+    exact (Coherences.congr _ (image_empty _)).trans (hself _)
+  dgDifferential_coh i j S d hij hS hd := by
+    have he := Fin.strictMono_succAbove l
+    have hd' : d + #(S.image l.succAbove) = 0 := by
+      rwa [card_image_of_injective _ he.injective]
+    rw [Coherences.comap_apply f he hij hS hd (he.monotone hij) (he.image_subset_Ioo hS) hd',
+      boundary_comap f he hij hS hd (he.monotone hij) (he.image_subset_Ioo hS) hd']
+    exact heq _ _ _ _ _ _ _ ⟨l, (Fin.succAbove_ne l i).symm, (Fin.succAbove_ne l j).symm,
+      by simp [Fin.succAbove_ne]⟩
+
+section
+
+variable (f : Coherences R Y)
+  (hself : ∀ i, f i i ∅ 0 le_rfl (empty_subset _) (by simp) = dgId R (Y i))
+  (heq : ∀ i j S d hij hS hd, (∃ l, l ≠ i ∧ l ≠ j ∧ l ∉ S) →
+    dgDifferential R d (f i j S d hij hS hd) = boundary R f i j S d hij hS hd)
+
+/-- The objects of the face opposite to `l` are those at the vertices other than `l`. -/
+@[simp]
+theorem Coherences.boundaryFace_obj (l : Fin (n + 3)) :
+    (f.boundaryFace hself heq l).obj = Y ∘ l.succAbove :=
+  (rfl)
+
+/-- The coherence of the face opposite to `l` indexed by `i`, `S` and `j` is the coherence of `f`
+indexed by their images under `l.succAbove`. -/
+theorem Coherences.boundaryFace_coh (l : Fin (n + 3)) {i j : Fin (n + 2)}
+    {S : Finset (Fin (n + 2))} {d : ℤ} (hij : i ≤ j) (hS : S ⊆ Ioo i j) (hd : d + #S = 0)
+    (h₁ : l.succAbove i ≤ l.succAbove j)
+    (h₂ : S.image l.succAbove ⊆ Ioo (l.succAbove i) (l.succAbove j))
+    (h₃ : d + #(S.image l.succAbove) = 0) :
+    (f.boundaryFace hself heq l).coh i j S d hij hS hd ≍
+      f (l.succAbove i) (l.succAbove j) (S.image l.succAbove) d h₁ h₂ h₃ :=
+  heq_of_eq (Coherences.comap_apply f _ hij hS hd h₁ h₂ h₃)
+
+/-- The faces `TauCeti.DGNerve.Coherences.boundaryFace` agree on their common faces, so they form
+a map out of the boundary `∂Δ[n + 2]`. -/
+theorem Coherences.boundaryFace_map_δ {a b : Fin (n + 3)} (hab : a < b) :
+    (f.boundaryFace hself heq a).map
+        (SimplexCategory.δ (b.pred (Fin.ne_zero_of_lt hab))).toOrderHom =
+      (f.boundaryFace hself heq b).map
+        (SimplexCategory.δ (a.castPred (Fin.ne_last_of_lt hab))).toOrderHom := by
+  set a' := a.castPred (Fin.ne_last_of_lt hab)
+  set b' := b.pred (Fin.ne_zero_of_lt hab)
+  -- The first simplicial identity, evaluated at a vertex.
+  have hδδ : ∀ w, a.succAbove (b'.succAbove w) = b.succAbove (a'.succAbove w) := fun w ↦ by
+    have := congrArg (fun f : SimplexCategory.mk n ⟶ SimplexCategory.mk (n + 2) ↦ f.toOrderHom w)
+      (SimplexCategory.δ_comp_δ' (i := a') (j := b) (by simpa [a'] using hab))
+    simpa [SimplexCategory.δ, a', b'] using this.symm
+  -- A coherence of the face of `f.boundaryFace hself heq l` opposite to `k` is a coherence of `f`.
+  have hcoh : ∀ (l : Fin (n + 3)) (k : Fin (n + 2)) {i j S d hij hS hd},
+      ((f.boundaryFace hself heq l).map (SimplexCategory.δ k).toOrderHom).coh i j S d hij hS hd ≍
+        f (l.succAbove (k.succAbove i)) (l.succAbove (k.succAbove j))
+          ((S.image k.succAbove).image l.succAbove) d
+          ((Fin.strictMono_succAbove l).monotone ((Fin.strictMono_succAbove k).monotone hij))
+          ((Fin.strictMono_succAbove l).image_subset_Ioo
+            ((Fin.strictMono_succAbove k).image_subset_Ioo hS)) (by
+            rwa [card_image_of_injective _ (Fin.strictMono_succAbove l).injective,
+              card_image_of_injective _ (Fin.strictMono_succAbove k).injective]) := by
+    intro l k i j S d hij hS hd
+    rw [Simplex.map_coh_of_strictMono (α := (SimplexCategory.δ k).toOrderHom) _
+      (Fin.strictMono_succAbove k) hij hS hd ((Fin.strictMono_succAbove k).image_subset_Ioo hS)]
+    exact Coherences.boundaryFace_coh _ _ _ _ _ _ _ _ _ _
+  have hf : ∀ {i i' j j' : Fin (n + 3)} {S S' : Finset (Fin (n + 3))} {d : ℤ} {h₁ : i ≤ j}
+      {h₂ : S ⊆ Ioo i j} {h₃ : d + #S = 0} {h₁' : i' ≤ j'} {h₂' : S' ⊆ Ioo i' j'}
+      {h₃' : d + #S' = 0}, i = i' → j = j' → S = S' →
+        f i j S d h₁ h₂ h₃ ≍ f i' j' S' d h₁' h₂' h₃' := by
+    rintro _ _ _ _ _ _ _ _ _ _ _ _ _ rfl rfl rfl
+    rfl
+  refine Simplex.ext (funext fun w ↦ ?_) fun i j S d hij hS hd ↦ ?_
+  · simpa [SimplexCategory.δ, a', b'] using congrArg Y (hδδ w)
+  · refine (hcoh a b').trans (HEq.trans (hf (hδδ i) (hδδ j) ?_) (hcoh b a').symm)
+    rw [image_image, image_image]
+    exact image_congr fun w _ ↦ hδδ w
+
+end
+
+end Faces
 
 end DGNerve
 
