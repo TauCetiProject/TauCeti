@@ -97,6 +97,37 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
 
 variable [MeasurableSpace E] [BorelSpace E]
 
+/-- Chart coefficients that satisfy the absolute Jacobian law on a chart overlap have equal
+integrals over the coordinate images of a subset of the overlap, and are integrable there
+together. This is the change of variables shared by top forms and densities; the derivatives are
+taken within `range I`, so boundary and corner models are included. -/
+theorem _root_.TauCeti.setIntegral_image_extChartAt_changeChart [IsManifold I 1 M]
+    [FiniteDimensional ℝ E] {f g : E → ℝ} (α β : M) {s : Set M}
+    (hsub : s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source)
+    (hs : MeasurableSet ((extChartAt I α) '' s))
+    (hfg : ∀ x ∈ s, |(fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I)
+        (extChartAt I α x)).toLinearMap.det| * g (extChartAt I β x) = f (extChartAt I α x))
+    (μ : Measure E) [μ.IsAddHaarMeasure] :
+    (∫ y in (extChartAt I α) '' s, f y ∂μ) = (∫ y in (extChartAt I β) '' s, g y ∂μ) ∧
+      (IntegrableOn f ((extChartAt I α) '' s) μ ↔ IntegrableOn g ((extChartAt I β) '' s) μ) := by
+  let A := (extChartAt I α) '' s
+  let e := (extChartAt I α).symm ≫ extChartAt I β
+  let D := fun y ↦ fderivWithin ℝ (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
+  have himage := TauCeti.extChartAt_coordChange_image α β hsub
+  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
+  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
+  have hcoef : ∀ y ∈ A, |(D y).toLinearMap.det| • g (e y) = f y := by
+    rintro _ ⟨x, hx, rfl⟩
+    have he : e (extChartAt I α x) = extChartAt I β x :=
+      congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
+    rw [he, smul_eq_mul]
+    exact hfg x hx
+  constructor
+  · rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul μ hs hderiv hinj]
+    exact setIntegral_congr_fun hs fun y hy ↦ (hcoef y hy).symm
+  · rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hderiv hinj]
+    exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
+
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The
 compatibility condition is the signed transition Jacobian, not an assumed integral identity.
 The derivatives are taken within `range I`, so the result includes boundary and corner models. -/
@@ -118,36 +149,15 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
       (IntegrableOn (φ.signedInChartAt b α σα) ((extChartAt I α) '' s) μ ↔
         IntegrableOn (φ.signedInChartAt b β σβ) ((extChartAt I β) '' s) μ) := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b
-  let A := (extChartAt I α) '' s
-  let e := (extChartAt I α).symm ≫ extChartAt I β
-  let D := fun y ↦ fderivWithin ℝ
-    (extChartAt I β ∘ (extChartAt I α).symm) (range I) y
-  have himage := TauCeti.extChartAt_coordChange_image α β hsub
-  have hinj := TauCeti.injOn_extChartAt_coordChange α β hsub
-  have hderiv := TauCeti.hasFDerivWithinAt_extChartAt_coordChange α β hsub
-  have hcoef : ∀ y ∈ A,
-      |(D y).toLinearMap.det| • φ.signedInChartAt b β σβ (e y) =
-        φ.signedInChartAt b α σα y := by
-    rintro _ ⟨x, hx, rfl⟩
-    have he : e (extChartAt I α x) = extChartAt I β x := by
-      exact congrArg (extChartAt I β) ((extChartAt I α).left_inv (hsub hx).1)
-    rw [he, signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1,
-      signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2]
-    have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
-      rw [(extChartAt I α).left_inv (hsub hx).1]
-      exact (hsub hx).2
-    have hc := φ.inChartAt_apply_basis_eq_det_mul b
-      ((extChartAt I α).map_source (hsub hx).1)
-      hβ
-    rw [(extChartAt I α).left_inv (hsub hx).1] at hc
-    rw [hc, smul_eq_mul, ← mul_assoc, ← mul_assoc, hσ x hx]
-  constructor
-  · rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul μ hs hderiv
-      hinj]
-    exact setIntegral_congr_fun hs fun y hy ↦ (hcoef y hy).symm
-  · rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hs hderiv
-      hinj]
-    exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
+  refine TauCeti.setIntegral_image_extChartAt_changeChart α β hsub hs (fun x hx ↦ ?_) μ
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1,
+    signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2]
+  have hβ : (extChartAt I α).symm (extChartAt I α x) ∈ (extChartAt I β).source := by
+    rw [(extChartAt I α).left_inv (hsub hx).1]
+    exact (hsub hx).2
+  have hc := φ.inChartAt_apply_basis_eq_det_mul b ((extChartAt I α).map_source (hsub hx).1) hβ
+  rw [(extChartAt I α).left_inv (hsub hx).1] at hc
+  rw [hc, ← mul_assoc, ← mul_assoc, hσ x hx]
 
 /-- Actual integrability of unsigned top-form coefficients is invariant under a chart change.
 The absolute Jacobian theorem and a measurable determinant sign preserve both strong

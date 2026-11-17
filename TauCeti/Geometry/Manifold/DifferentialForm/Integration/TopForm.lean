@@ -15,6 +15,7 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Operations
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Linear
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OrientationLift
 import TauCeti.Geometry.Manifold.ExtChartAt
+import TauCeti.Geometry.Manifold.ExtChartAt.Integral
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Order.Disjointed
 
@@ -82,78 +83,6 @@ private theorem ChartCover.piece_covers {s : Set M} (c : ChartCover (I := I) s) 
 
 private theorem ChartCover.pairwise_disjoint {s : Set M} (c : ChartCover (I := I) s) :
     Pairwise (fun i j ↦ Disjoint (c.piece i) (c.piece j)) := disjoint_disjointed c.domain
-
-/-- An integral over the coordinate image of a chart-measurable subset `u` of a chart source
-splits along the disjointed pieces of a finite chart-measurable family `v`, when the integrand
-vanishes at the coordinates of the points of `u` outside that family. -/
-public theorem setIntegral_image_extChartAt_eq_sum_disjointed [MeasurableSpace E]
-    {ν : Measure E} {f : E → ℝ} (hf : Integrable f ν) (α : M) {u : Set M}
-    (hu : IsChartMeasurable I u) (hus : u ⊆ (extChartAt I α).source) {n : ℕ}
-    {v : Fin n → Set M} (hv : ∀ j, IsChartMeasurable I (v j))
-    (hz : ∀ x ∈ u, x ∉ ⋃ j, v j → f (extChartAt I α x) = 0) :
-    (∫ y in (extChartAt I α) '' u, f y ∂ν) =
-      ∑ j, ∫ y in (extChartAt I α) '' (u ∩ disjointed v j), f y ∂ν := by
-  let e := extChartAt I α
-  let w : Fin n → Set E := fun j ↦ e '' (u ∩ disjointed v j)
-  have hw (j : Fin n) : MeasurableSet (w j) :=
-    (hu.inter (IsChartMeasurable.disjointed hv j)).image_extChartAt α
-      (inter_subset_left.trans hus)
-  have hws : (⋃ j, w j) ⊆ e '' u := iUnion_subset fun _ ↦ image_mono inter_subset_left
-  have hdisj : Pairwise (fun i j ↦ Disjoint (w i) (w j)) := fun i j hij ↦
-    ((disjoint_disjointed v hij).mono inter_subset_right inter_subset_right).image e.injOn
-      (inter_subset_left.trans hus) (inter_subset_left.trans hus)
-  have hw0 : ∀ y ∈ e '' u \ ⋃ j, w j, f y = 0 := by
-    rintro y ⟨⟨x, hx, rfl⟩, hn⟩
-    refine hz x hx fun hxv ↦ hn ?_
-    rw [← iUnion_disjointed] at hxv
-    obtain ⟨j, hj⟩ := mem_iUnion.mp hxv
-    exact mem_iUnion.mpr ⟨j, mem_image_of_mem e ⟨hx, hj⟩⟩
-  exact (setIntegral_eq_of_subset_of_forall_sdiff_eq_zero (hu.image_extChartAt α hus) hws
-    hw0).trans (integral_iUnion_fintype hw hdisj fun _ ↦ hf.integrableOn)
-
-/-- Two finite chart-measurable covers of a set `S` give the same sum of chart integrals over
-their disjointed pieces, for chart coefficients `f α` that are integrable, vanish at the
-coordinates of points outside `S`, and have equal integrals over the coordinate images of
-chart-measurable subsets of chart overlaps. -/
-public theorem sum_setIntegral_image_extChartAt_disjointed_eq [MeasurableSpace E]
-    {ν : Measure E} {f : M → E → ℝ} {S : Set M} (hf : ∀ α, Integrable (f α) ν)
-    (hz : ∀ α, ∀ x ∈ (extChartAt I α).source, x ∉ S → f α (extChartAt I α x) = 0)
-    (hchange : ∀ (α β : M) (s : Set M), s ⊆ (extChartAt I α).source ∩ (extChartAt I β).source →
-      IsChartMeasurable I s →
-        (∫ y in (extChartAt I α) '' s, f α y ∂ν) = ∫ y in (extChartAt I β) '' s, f β y ∂ν)
-    {n n' : ℕ} (α : Fin n → M) (u : Fin n → Set M) (hu : ∀ i, IsChartMeasurable I (u i))
-    (hus : ∀ i, u i ⊆ (extChartAt I (α i)).source) (hc : S ⊆ ⋃ i, u i)
-    (β : Fin n' → M) (v : Fin n' → Set M) (hv : ∀ j, IsChartMeasurable I (v j))
-    (hvs : ∀ j, v j ⊆ (extChartAt I (β j)).source) (hd : S ⊆ ⋃ j, v j) :
-    ∑ i, (∫ y in (extChartAt I (α i)) '' disjointed u i, f (α i) y ∂ν) =
-      ∑ j, ∫ y in (extChartAt I (β j)) '' disjointed v j, f (β j) y ∂ν := by
-  have hsplit (γ : M) {w : Set M} (hw : IsChartMeasurable I w)
-      (hwγ : w ⊆ (extChartAt I γ).source) {k : ℕ} {t : Fin k → Set M}
-      (ht : ∀ j, IsChartMeasurable I (t j)) (hS : S ⊆ ⋃ j, t j) :
-      (∫ y in (extChartAt I γ) '' w, f γ y ∂ν) =
-        ∑ j, ∫ y in (extChartAt I γ) '' (w ∩ disjointed t j), f γ y ∂ν :=
-    setIntegral_image_extChartAt_eq_sum_disjointed (hf γ) γ hw hwγ ht
-      fun x hx hn ↦ hz γ x (hwγ hx) fun hxS ↦ hn (hS hxS)
-  have hpu (i : Fin n) : disjointed u i ⊆ (extChartAt I (α i)).source :=
-    (disjointed_subset u i).trans (hus i)
-  have hpv (j : Fin n') : disjointed v j ⊆ (extChartAt I (β j)).source :=
-    (disjointed_subset v j).trans (hvs j)
-  calc
-    ∑ i, (∫ y in (extChartAt I (α i)) '' disjointed u i, f (α i) y ∂ν) =
-        ∑ i, ∑ j, ∫ y in (extChartAt I (α i)) '' (disjointed u i ∩ disjointed v j),
-          f (α i) y ∂ν :=
-      Finset.sum_congr rfl fun i _ ↦
-        hsplit (α i) (IsChartMeasurable.disjointed hu i) (hpu i) hv hd
-    _ = ∑ j, ∑ i, ∫ y in (extChartAt I (β j)) '' (disjointed v j ∩ disjointed u i),
-          f (β j) y ∂ν := by
-      rw [Finset.sum_comm]
-      refine Finset.sum_congr rfl fun j _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [inter_comm (disjointed v j)]
-      exact hchange (α i) (β j) _ (fun x hx ↦ ⟨hpu i hx.1, hpv j hx.2⟩)
-        ((IsChartMeasurable.disjointed hu i).inter (IsChartMeasurable.disjointed hv j))
-    _ = ∑ j, ∫ y in (extChartAt I (β j)) '' disjointed v j, f (β j) y ∂ν :=
-      (Finset.sum_congr rfl fun j _ ↦
-        hsplit (β j) (IsChartMeasurable.disjointed hv j) (hpv j) hu hc).symm
 
 section WithMeasure
 
@@ -394,7 +323,8 @@ private theorem integral_chart_piece_refine [FiniteDimensional ℝ E]
     (∫ y in (extChartAt I α) '' u, φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar) =
       ∑ i, ∫ y in (extChartAt I α) '' (u ∩ c.piece i),
         φ.signedInChartAt b α (fun x ↦ l.signAt α x) y ∂b.addHaar :=
-  setIntegral_image_extChartAt_eq_sum_disjointed (signed_coefficient_integrable l hi b α) α hu hus
+  setIntegral_image_extChartAt_eq_sum_disjointed α
+    (signed_coefficient_integrable l hi b α).integrableOn hu hus
     (fun j ↦ (c.isOpen_domain j).isChartMeasurable) fun _ hx hn ↦
       signedInChartAt_eq_zero_of_notMem_tsupport l φ b α (hus hx) fun ht ↦ hn (c.covers (hc ht))
 
@@ -409,11 +339,12 @@ private theorem coverIntegral_eq [FiniteDimensional ℝ E] [IsManifold I 1 M]
   apply congrArg (fun r : ℝ ↦ (Orientation.signBasis l.modelOrientation b : ℝ) * r)
   exact sum_setIntegral_image_extChartAt_disjointed_eq
     (f := fun γ ↦ φ.signedInChartAt b γ (fun x ↦ l.signAt γ x))
-    (signed_coefficient_integrable l hi b) (signedInChartAt_eq_zero_of_notMem_tsupport l φ b)
+    (signedInChartAt_eq_zero_of_notMem_tsupport l φ b)
     (fun γ δ _ hsub hs ↦ signed_changeChart l φ b γ δ hsub hs)
     c.center c.domain (fun i ↦ (c.isOpen_domain i).isChartMeasurable) c.domain_subset
-    (hc.trans c.covers) d.center d.domain (fun j ↦ (d.isOpen_domain j).isChartMeasurable)
-    d.domain_subset (hd.trans d.covers)
+    (hc.trans c.covers) (fun i ↦ (signed_coefficient_integrable l hi b _).integrableOn)
+    d.center d.domain (fun j ↦ (d.isOpen_domain j).isChartMeasurable) d.domain_subset
+    (hd.trans d.covers) (fun j ↦ (signed_coefficient_integrable l hi b _).integrableOn)
 
 private theorem coverIntegral_eq_chartIntegral_of_ae_support
     [FiniteDimensional ℝ E] [IsManifold I 1 M]

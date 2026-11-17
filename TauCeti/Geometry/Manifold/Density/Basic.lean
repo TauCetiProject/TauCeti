@@ -152,6 +152,7 @@ theorem toDensity_injective (o : Manifold.Orientation I M (Fin m)) :
     ((Orientation.densityEquiv (o.orientationAt x)).injective hx)
 
 /-- The density of a top form has the topological support of the form. -/
+@[simp]
 theorem tsupport_toDensity (o : Manifold.Orientation I M (Fin m)) (φ : RoughForm I M ℝ m) :
     _root_.tsupport (α := Density E m) (φ.toDensity o) =
       _root_.tsupport (α := E [⋀^Fin m]→L[ℝ] ℝ) φ := by
