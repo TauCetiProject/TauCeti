@@ -55,6 +55,10 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `⟨x⟩ ^ (-k) ≤ ‖x‖ ^ (-k)`.
 * `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
   `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
+* `TauCeti.norm_pow_two_mul_succ_mul_eq_sum`: expanding one factor `‖v‖²` of `‖v‖ ^ (2 (N + 1))`
+  in the coordinates of `EuclideanSpace`.
+* `TauCeti.le_mul_one_add_norm_sq_pow_inv`: bounds on `F` and on `‖v‖ ^ (2N) F` combine to a
+  bound on `F` with the weight `(1 + ‖v‖²) ^ (-N)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_add_norm_rpow_neg`, `TauCeti.integral_add_norm_rpow_neg`: integrability
@@ -130,6 +134,26 @@ theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc
     ring_nf
   rw [hsqrt, ← mul_pow]
   exact pow_le_pow_left₀ (by positivity) hle i
+
+/-- Expanding one factor `‖v‖²` in coordinates:
+`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
+theorem norm_pow_two_mul_succ_mul_eq_sum {n : ℕ} (v : EuclideanSpace ℝ (Fin n)) (N : ℕ) (F : ℝ) :
+    ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
+  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
+  ring
+
+/-- Bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
+`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
+theorem le_mul_one_add_norm_sq_pow_inv {E : Type*} [SeminormedAddCommGroup E] {v : E} {N : ℕ}
+    {F C₀ C₁ w : ℝ} (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :
+    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + ‖v‖ ^ 2) ^ N)⁻¹ := by
+  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]
+  calc (1 + ‖v‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖v‖ ^ 2) ^ N) * F :=
+        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) hF
+    _ = 2 ^ (N - 1) * (F + ‖v‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
+    _ ≤ 2 ^ (N - 1) * (C₀ * w + C₁ * w) :=
+        mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
+    _ = 2 ^ (N - 1) * (C₀ + C₁) * w := by ring
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
