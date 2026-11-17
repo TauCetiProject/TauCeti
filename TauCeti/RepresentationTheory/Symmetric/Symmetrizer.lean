@@ -264,23 +264,15 @@ theorem youngSymmetrizer_coeff_one (t : YoungTableau μ) :
   simp only [Finsupp.finsetSum_apply, MonoidAlgebra.coeff_single_mul_apply,
     MonoidAlgebra.coeff_smul_apply, MonoidAlgebra.coeff_single,
     Finsupp.single_apply, one_mul]
-  have hmul (p : rowSubgroup t) (q : colSubgroup t) :
-      (p : Equiv.Perm (Fin μ.card)) * q = 1 ↔ p = 1 ∧ q = 1 := by
-    constructor
-    · intro hpq
-      have hpq' := Subgroup.disjoint_iff_mul_eq_one.mp
-        (disjoint_rowSubgroup_colSubgroup t) p.property q.property hpq
-      exact ⟨Subtype.ext hpq'.1, Subtype.ext hpq'.2⟩
-    · rintro ⟨rfl, rfl⟩
-      simp
   have heq (p : rowSubgroup t) (q : colSubgroup t) :
       (q : Equiv.Perm (Fin μ.card)) =
           (p : Equiv.Perm (Fin μ.card))⁻¹ * 1 ↔ p = 1 ∧ q = 1 := by
-    simpa only [mul_one] using
-      ((mul_eq_one_iff_eq_inv' :
-        (p : Equiv.Perm (Fin μ.card)) * q = 1 ↔
-          (q : Equiv.Perm (Fin μ.card)) =
-            (p : Equiv.Perm (Fin μ.card))⁻¹).symm.trans (hmul p q))
+    refine ⟨fun h ↦ ?_, ?_⟩
+    · have hpq := Subgroup.disjoint_iff_mul_eq_one.mp
+        (disjoint_rowSubgroup_colSubgroup t) p.property q.property (by simp [h])
+      exact ⟨Subtype.ext hpq.1, Subtype.ext hpq.2⟩
+    · rintro ⟨rfl, rfl⟩
+      simp
   simp_rw [heq]
   rw [Finset.sum_eq_single (1 : rowSubgroup t)]
   · rw [Finset.sum_eq_single (1 : colSubgroup t)]
