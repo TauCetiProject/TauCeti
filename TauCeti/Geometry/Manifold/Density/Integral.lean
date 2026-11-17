@@ -162,6 +162,8 @@ theorem tsupport_add_subset (μ ν : RoughDensity I M m) :
   rw [mem_union, not_or] at h
   have hμ : μ x = 0 := image_eq_zero_of_notMem_tsupport (α := Density E m) h.1
   have hν : ν x = 0 := image_eq_zero_of_notMem_tsupport (α := Density E m) h.2
+  -- The final `rfl` identifies the zero of `Density (TangentSpace I x) m` with that of
+  -- `Density E m`, the codomain used for the support.
   exact Function.mem_support.mp hx (by rw [Pi.add_apply, hμ, hν, add_zero]; rfl)
 
 /-- Scalar multiplication does not enlarge the support of a density. -/
@@ -170,6 +172,7 @@ theorem tsupport_smul_subset (c : ℝ) (μ : RoughDensity I M m) :
   refine closure_minimal (fun x hx ↦ ?_) (isClosed_tsupport (α := Density E m) μ)
   by_contra h
   have hμ : μ x = 0 := image_eq_zero_of_notMem_tsupport (α := Density E m) h
+  -- As in `tsupport_add_subset`, `rfl` identifies the zeros of the two density codomains.
   exact Function.mem_support.mp hx (by rw [Pi.smul_apply, hμ, smul_zero]; rfl)
 
 /-- Multiplication by a nonzero scalar preserves the support of a density. -/
@@ -205,6 +208,7 @@ theorem inChartAt_self [IsManifold I 1 M] (μ : RoughDensity I M m) (b : Basis (
     (x : M) : μ.inChartAt b x (extChartAt I x x) = μ x b := by
   rw [inChartAt_of_mem_target μ b x (mem_extChartAt_target x), mfderivWithin_range_extChartAt_symm,
     extChartAt_to_inv]
+  -- The derivative of the inverse chart at the chart point is the identity, applied pointwise.
   rfl
 
 /-- On an overlap of two preferred charts, the chart coefficients of a density differ by the
