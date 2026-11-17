@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.Discriminant
 import TauCeti.Analysis.Complex.Sqrt
+import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.Analysis.Complex.UpperHalfPlane.Sqrt
 import TauCeti.Data.Int.GCD
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
@@ -472,6 +473,15 @@ theorem etaMultiplier_of_c_eq_zero_of_d_neg {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) 
     etaMultiplier γ = -I * cexp (-(π * I * γ 0 1 / 12)) := by
   rw [etaMultiplier_of_c_eq_zero hc, ite_eq_right hd.not_gt]
 
+/-- The `GL(2, ℝ)` automorphy factor of a mapped `SL(2, ℤ)` matrix in terms of its bottom row. -/
+private theorem denom_mapGL_coe (γ : SL(2, ℤ)) (τ : ℍ) :
+    UpperHalfPlane.denom (Matrix.SpecialLinearGroup.mapGL ℝ (γ : SL(2, ℝ))) τ =
+      (γ 1 0 : ℂ) * τ + γ 1 1 := by
+  have h : Matrix.SpecialLinearGroup.mapGL ℝ (γ : SL(2, ℝ)) = (γ : GL (Fin 2) ℝ) := by
+    ext i j
+    simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
+  rw [h, ModularGroup.denom_apply]
+
 /-- Explicit inversion law for `etaMultiplier` across all of `SL(2, ℤ)`: `ε(γ⁻¹) = ε(γ)⁻¹` except
 on the negative upper-triangular coset `γ = -T⁻ᵇ` (`γ 1 0 = 0` and `γ 1 1 < 0`), where the
 automorphy factor `-1` sits on the negative real branch cut and `ε(γ⁻¹) = -ε(γ)⁻¹`. -/
@@ -484,19 +494,20 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
   set z : ℂ := ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℂ) * UpperHalfPlane.I + (γ⁻¹ : SL(2, ℤ)) 1 1
   set w : ℂ := (γ 1 0 : ℂ) * (γ⁻¹ • UpperHalfPlane.I : ℍ) + γ 1 1
   have hw : w = z⁻¹ := by
-    have hcoc := UpperHalfPlane.denom_cocycle_σ (Matrix.SpecialLinearGroup.mapGL ℝ γ)
-      (Matrix.SpecialLinearGroup.mapGL ℝ γ⁻¹) UpperHalfPlane.I
-    rw [← map_mul, mul_inv_cancel, map_one, UpperHalfPlane.denom_one] at hcoc
-    refine eq_inv_of_mul_eq_one_left ?_
-    simpa [-map_inv, w, z, UpperHalfPlane.denom, UpperHalfPlane.σ,
-      MulAction.compHom_smul_def, Matrix.adjugate_fin_two] using hcoc.symm
+    have hcoc := Matrix.SpecialLinearGroup.denom_mapGL_mul
+      (γ : SL(2, ℝ)) (γ : SL(2, ℝ))⁻¹ UpperHalfPlane.I
+    rw [mul_inv_cancel, map_one, UpperHalfPlane.denom_one, ← map_inv,
+      ← Matrix.SpecialLinearGroup.toGL_smul, ← ModularGroup.sl_moeb,
+      denom_mapGL_coe, denom_mapGL_coe] at hcoc
+    exact eq_inv_of_mul_eq_one_left hcoc.symm
   have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 ∧ (γ 1 1 = 1 ∨ γ 1 1 = -1) := by
     have hdet := γ.fin_two_mul_sub_mul_eq_one
     rw [hc, mul_zero, sub_zero] at hdet
     rcases Int.mul_eq_one_iff_eq_one_or_neg_one.mp hdet with ⟨ha, hd⟩ | ⟨ha, hd⟩ <;> omega
   have harg : z.arg = π ↔ γ 1 0 = 0 ∧ γ 1 1 < 0 := by
-    rw [Complex.arg_eq_pi_iff, show z.re = (γ 0 0 : ℝ) by simp [z],
-      show z.im = -(γ 1 0 : ℝ) by simp [z], neg_eq_zero, Int.cast_eq_zero, Int.cast_lt_zero,
+    have hz_re : z.re = (γ 0 0 : ℝ) := by simp [z]
+    have hz_im : z.im = -(γ 1 0 : ℝ) := by simp [z]
+    rw [Complex.arg_eq_pi_iff, hz_re, hz_im, neg_eq_zero, Int.cast_eq_zero, Int.cast_lt_zero,
       and_comm]
     exact and_congr_right fun hc ↦ by rw [(hdiag hc).1]
   have hroot : Complex.sqrt w * Complex.sqrt z =
