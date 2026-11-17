@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Lie.Subgroup.Embedded
 public import TauCeti.Geometry.Manifold.GroupAction.Quotient
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 public import TauCeti.Topology.Algebra.Group.Quotient.RightRel
+import TauCeti.Geometry.Manifold.Algebra.LieGroup
+import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Geometry.Manifold.Submersion.Basic
 import TauCeti.Geometry.Manifold.Submersion.LocalDiffeomorph
 
@@ -172,23 +174,18 @@ theorem isSubmersion_quotientMk (hK : IsClosed (K : Set G)) :
     𝓘(ℝ, QuotientModelSpace I K) ∞).symm.isLocalDiffeomorph
   rw [Homeomorph.coe_pullbackDiffeomorph_symm, Homeomorph.symm_symm] at he
   have hF := (isManifold_and_isSubmersion_right I hK).2.isSubmersionOfComplement_complement
-  -- Inversion is a diffeomorphism of `G`, being its own smooth inverse.
-  let inv : G ≃ₘ^∞⟮I, I⟯ G :=
-    { toEquiv := Equiv.inv G
-      contMDiff_toFun := contMDiff_inv I ∞
-      contMDiff_invFun := contMDiff_inv I ∞ }
+  -- The projection is inversion of `G`, then the projection onto `K \ G`, then the homeomorphism.
   have hmk : (QuotientGroup.mk : G → G ⧸ K) =
       QuotientGroup.quotientRightRelHomeomorphQuotientLeftRel K ∘
-        (Quotient.mk (QuotientGroup.rightRel K) ∘ inv) :=
-    -- `inv g` is `g⁻¹` by definition, and the homeomorphism inverts again.
+        (Quotient.mk (QuotientGroup.rightRel K) ∘ Lie.invDiffeomorph I ∞ G) :=
     funext fun g ↦ by
-      rw [comp_apply, comp_apply, QuotientGroup.quotientRightRelHomeomorphQuotientLeftRel_mk]
-      exact congrArg QuotientGroup.mk (inv_inv g).symm
+      rw [comp_apply, comp_apply, Lie.invDiffeomorph_apply,
+        QuotientGroup.quotientRightRelHomeomorphQuotientLeftRel_mk, inv_inv]
   refine (isSubmersionOfComplement_iff
     (F := (isManifold_and_isSubmersion_right I hK).2.complement).2 fun g ↦ ?_).isSubmersion
   rw [hmk]
   exact (he _).comp_isSubmersionAtOfComplement
-    ((inv.isLocalDiffeomorph g).isSubmersionAtOfComplement_comp
+    (((Lie.invDiffeomorph I ∞ G).isLocalDiffeomorph g).isSubmersionAtOfComplement_comp
       (isSubmersionOfComplement_iff.1 hF _))
 
 /-- The projection onto the homogeneous space is smooth. -/
@@ -261,32 +258,16 @@ theorem ker_mfderiv_quotientMk (hK : IsClosed (K : Set G)) (g : G) :
   let _ := d.chartedSpace
   have := isManifold_quotientOfIsClosed (I := I) hK
   have hπ := isSubmersion_quotientMk (I := I) hK
-  have hφ := mdifferentiableAt_mul_left_subtypeVal (I := I) hK g
-  -- `R` is the tangent space at `g` of the coset `g K`, and `N` the vertical space at `g`.
-  set R : Submodule ℝ (TangentSpace I g) := LinearMap.range (mfderiv
-    𝓘(ℝ, (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule) I (fun k : K ↦ g * k)
-      1).toLinearMap
-  set N : Submodule ℝ (TangentSpace I g) := LinearMap.ker (mfderiv I
-    𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g).toLinearMap
-  -- The projection is constant on the coset `g K`, so its tangent directions are vertical.
-  have hle : R ≤ N := by
-    rintro _ ⟨v, rfl⟩
-    have hconst : (QuotientGroup.mk : G → G ⧸ K) ∘ (fun k : K ↦ g * k) = fun _ ↦ (g : G ⧸ K) :=
-      funext fun k ↦ QuotientGroup.eq.2 (by simp)
-    have h := mfderiv_comp_apply_of_eq (1 : K)
-      (hπ.contMDiff.mdifferentiableAt (x := g) (by simp)) hφ (by simp) v
-    rw [hconst, mfderiv_const] at h
-    exact h.symm
-  -- Both have the dimension of `K`: `R` by injectivity, `N` by surjectivity of the differentials.
-  have hRdim : finrank ℝ R = finrank ℝ (Lie.lieSubalgebraOfSubgroup (I := I) K).toSubmodule :=
-    LinearMap.finrank_range_of_inj (injective_mfderiv_mul_left_subtypeVal hK g)
-  have hNdim : finrank ℝ (QuotientModelSpace I K) + finrank ℝ N = finrank ℝ E := by
-    have h := LinearMap.finrank_range_add_finrank_ker (mfderiv I
-      𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K) g).toLinearMap
-    rw [LinearMap.range_eq_top.2 (hπ.surjective_mfderiv (by simp) g), finrank_top] at h
-    exact h
-  have hdim := finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I K hK
-  exact (Submodule.eq_of_le_of_finrank_eq hle (by omega)).symm
+  -- `g = g * 1` is a regular point of the projection, which is constant on the coset `g K`, and
+  -- the dimensions of `K` and `G ⧸ K` add up to that of `G`.
+  have hreg : IsRegularPoint I 𝓘(ℝ, QuotientModelSpace I K) (QuotientGroup.mk : G → G ⧸ K)
+      (g * ((1 : K) : G)) :=
+    isRegularPoint_iff.2 (hπ.surjective_mfderiv (by simp) _)
+  have h := hreg.range_mfderiv_eq_ker_mfderiv (g := fun k : K ↦ g * k) (y := (g : G ⧸ K))
+    (.of_forall fun k ↦ QuotientGroup.eq.2 (by simp)) (injective_mfderiv_mul_left_subtypeVal hK g)
+    (by rw [add_comm]; exact finrank_quotientModelSpace_add_finrank_lieSubalgebraOfSubgroup I K hK)
+  rw [OneMemClass.coe_one, mul_one] at h
+  exact h.symm
 
 /-- **`G` acts smoothly on its homogeneous space** `G ⧸ K` by left multiplication. The action
 lifts along the submersion `(g, h) ↦ (g, [h])` to the multiplication of `G`, followed by the
