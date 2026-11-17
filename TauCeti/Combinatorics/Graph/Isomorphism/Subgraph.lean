@@ -373,18 +373,6 @@ theorem mapSubgraph_restrict (f : Iso G H) (S : Set.Iic G) (F : Set β) :
   · simp
   · simp
 
-/-- Transport of the whole source graph is the whole target graph. -/
-@[simp, grind =]
-theorem mapSubgraph_self (f : Iso G H) (h : G ≤ G) :
-    f.mapSubgraph ⟨G, h⟩ = H := by
-  apply (Compatible.of_le_le (f.mapSubgraph_le _) le_rfl).ext <;> simp
-
-/-- Transport of the empty graph is empty. -/
-@[simp, grind =]
-theorem mapSubgraph_mk_bot (f : Iso G H) (h : (⊥ : Graph α β) ≤ G) :
-    f.mapSubgraph ⟨⊥, h⟩ = ⊥ := by
-  apply (Compatible.of_le_le (f.mapSubgraph_le _) bot_le).ext <;> simp
-
 /-- The greatest subgraph is transported to the whole target graph. -/
 @[simp, grind =]
 theorem mapSubgraph_top (f : Iso G H) : f.mapSubgraph ⊤ = H := by
@@ -567,11 +555,5 @@ theorem mapSubgraph_inf (f : Iso G H) (S T : Set.Iic G) :
     f.mapSubgraph (S ⊓ T) = f.mapSubgraph S ⊓ f.mapSubgraph T := by
   simpa only [coe_subgraphOrderIso_apply, Iic.coe_inf] using
     congrArg Subtype.val (f.subgraphOrderIso.map_inf S T)
-
-/-- Transport preserves an unbundled intersection of subgraphs. -/
-@[simp, grind =]
-theorem mapSubgraph_mk_inf (f : Iso G H) (S T : Set.Iic G) (h : S.val ⊓ T.val ≤ G) :
-    f.mapSubgraph ⟨S.val ⊓ T.val, h⟩ = f.mapSubgraph S ⊓ f.mapSubgraph T :=
-  f.mapSubgraph_inf S T
 
 end Graph.Iso
