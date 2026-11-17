@@ -8,8 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Bubbling
 public import TauCeti.Analysis.Calculus.Equicontinuity
 import TauCeti.Topology.ContinuousMap.Ascoli
-import Mathlib.Topology.ContinuousMap.SecondCountableSpace
-import Mathlib.Topology.Sequences
 
 /-!
 # Compact convergence away from bubbling points
@@ -69,25 +67,11 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset
   obtain ⟨ψ, hψ, Z, hZΩ, hZE, hconc, hb⟩ := hδprop hΩ hu hCR huK hint hE
   let D : Set ℂ := Ω \ ↑Z
   have hD : IsOpen D := hΩ.sdiff Z.finite_toSet.isClosed
-  let : LocallyCompactSpace D := hD.locallyCompactSpace
   have hequi : EquicontinuousOn (fun n ↦ u (ψ n)) D :=
     equicontinuousOn_of_forall_isCompact_norm_fderiv_le hD
       (fun n ↦ ((hu (ψ n)).differentiableOn (by norm_num)).mono sdiff_subset) hb
-  let U : ℕ → C(D, V) := fun n ↦
-    ⟨D.domRestrict (u (ψ n)), (hequi.continuousOn n).domRestrict⟩
-  have hcompact : IsCompact (closure (range U)) :=
-    ArzelaAscoli.isCompact_closure_range_of_equicontinuous
-      ((equicontinuous_restrict_iff _).mpr hequi) fun x ↦ ⟨K, hK, fun n ↦ huK (ψ n) x.2.1⟩
-  obtain ⟨a, -, χ, hχ, hlim⟩ := hcompact.tendsto_subseq (x := U)
-    (fun n ↦ subset_closure (mem_range_self n))
-  -- Extend by zero only to express convergence on a subset of the original domain.
-  let v : ℂ → V := fun z ↦ if hz : z ∈ D then a ⟨z, hz⟩ else 0
-  have hv : v ∘ (Subtype.val : D → ℂ) = fun x : D ↦ a x := by
-    funext x
-    simp [v, x.2]
-  have hconv : TendstoLocallyUniformlyOn (fun n ↦ u (ψ (χ n))) v atTop D := by
-    rw [tendstoLocallyUniformlyOn_iff_tendstoLocallyUniformly_comp_coe, hv]
-    exact ContinuousMap.tendsto_iff_tendstoLocallyUniformly.mp hlim
+  obtain ⟨χ, hχ, v, hconv⟩ := hequi.exists_strictMono_tendstoLocallyUniformlyOn hD
+    fun x hx ↦ ⟨K, hK, fun n ↦ huK (ψ n) hx.1⟩
   refine ⟨ψ ∘ χ, Z, v, hψ.comp hχ, hZΩ, hZE, ?_, ?_, ?_, ?_, hconv⟩
   · intro z hz ε hε
     exact hχ.tendsto_atTop.eventually (hconc z hz ε hε)
