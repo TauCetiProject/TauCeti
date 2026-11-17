@@ -219,14 +219,6 @@ theorem pointsPresheaf_obj (H : _root_.CommHopfAlgCat.{v} R)
     (pointsPresheaf H).obj A = WithConv (H →ₐ[R] A.unop.unop) :=
   rfl
 
-/-- Restricting a point in `pointsPresheaf H` along a morphism applies `mapPoints` along the
-underlying algebra morphism. -/
-theorem pointsPresheaf_map_apply (H : _root_.CommHopfAlgCat.{v} R)
-    {A B : ((CommAlgCat.{v} R)ᵒᵖ)ᵒᵖ} (f : A ⟶ B)
-    (x : points (R := R) (H := H) A.unop.unop) :
-    (pointsPresheaf H).map f x = mapPoints (H := H) f.unop.unop x :=
-  (rfl)
-
 -- The two component lemmas below are deliberately not `@[simp]`: their left-hand sides carry
 -- the value type `(pointsFunctor ⋙ forget GrpCat).obj A` of the corepresented functor, which
 -- `Functor.comp_obj` rewrites, so they are not in `simp` normal form. `pointsHomEquiv_apply`

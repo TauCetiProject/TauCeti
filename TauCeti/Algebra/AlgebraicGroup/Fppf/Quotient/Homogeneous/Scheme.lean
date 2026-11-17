@@ -10,6 +10,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Fppf.SchemePoints
 public import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.RationalPoints
 public import TauCeti.Algebra.AlgebraicGroup.Hopf.LeftTranslation
 import Mathlib.CategoryTheory.Comma.Over.Pullback
+import TauCeti.Algebra.AlgebraicGroup.Fppf.Quotient.Homogeneous.Torsor
 
 /-!
 # Universal property and functoriality of represented homogeneous quotients
@@ -143,63 +144,13 @@ theorem mapMulEquiv_comp_representedQuotientProjection_eq_iff
     Spec.mapMulEquiv g ≫ representedQuotientProjection H I e =
         Spec.mapMulEquiv g' ≫ representedQuotientProjection H I e ↔
       g⁻¹ * g' ∈ quotientPointsSubgroup H I A := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
-  · rw [mapMulEquiv_comp_representedQuotientProjection,
-      mapMulEquiv_comp_representedQuotientProjection] at h
-    have : IsIso (e.hom.hom.app (op (op A))) :=
-      inferInstanceAs (IsIso ((((sheafToPresheaf _ _).mapIso e).app (op (op A))).hom))
-    have hproj : (fppfHomogeneousQuotientProjection H I).app (op (op A)) (ULift.up g) =
-        (fppfHomogeneousQuotientProjection H I).app (op (op A)) (ULift.up g') :=
-      (ConcreteCategory.bijective_of_isIso (e.hom.hom.app (op (op A)))).injective (ULift.ext h)
-    rw [fppfHomogeneousQuotientProjection_def] at hproj
-    simp only [NatTrans.comp_app, eqToHom_app, ConcreteCategory.comp_apply] at hproj
-    rw [homogeneousQuotientPresheafProjection_app_apply,
-      homogeneousQuotientPresheafProjection_app_apply] at hproj
-    replace hproj := (ConcreteCategory.bijective_of_isIso _).injective hproj
-    let S : Sieve (op A) := Presheaf.equalizerSieve (CD := fun X ↦ X)
-      (F := homogeneousQuotientPresheaf H I)
-      (X := op (op A)) (homogeneousQuotientPresheafMk H I (op (op A)) g)
-      (homogeneousQuotientPresheafMk H I (op (op A)) g')
-    have hS : S ∈ CommAlgCat.fppfTopology R (op A) :=
-      Presheaf.equalizerSieve_mem (CD := fun X ↦ X) (CommAlgCat.fppfTopology R)
-        (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I)) _ _ hproj
-    have hmem : ∀ ⦃B : (CommAlgCat.{u} R)ᵒᵖ⦄ (ψ : B ⟶ op A), S ψ →
-        ∀ x ∈ I, (HopfAlgebra.mapPoints (H := H) ψ.unop (g⁻¹ * g')).ofConv x = 0 := by
-      intro B ψ hψ
-      have hcoset : (homogeneousQuotientPresheaf H I).map ψ.op
-          (homogeneousQuotientPresheafMk H I (op (op A)) g) =
-          (homogeneousQuotientPresheaf H I).map ψ.op
-            (homogeneousQuotientPresheafMk H I (op (op A)) g') := hψ
-      rw [homogeneousQuotientPresheaf_map_mk, homogeneousQuotientPresheaf_map_mk,
-        ← homogeneousQuotientPresheafProjection_app_apply,
-        ← homogeneousQuotientPresheafProjection_app_apply,
-        homogeneousQuotientPresheafProjection_eq_iff, ← map_inv, ← map_mul] at hcoset
-      exact (mem_quotientPointsSubgroup_iff H I B.unop _).mp hcoset
-    let fam : Presieve.FamilyOfElements
-        (HopfAlgebra.pointsPresheaf (_root_.CommHopfAlgCat.quotient H I)) S.arrows :=
-      fun B ψ hψ ↦ liftQuotientPoint H I B.unop
-        (HopfAlgebra.mapPoints (H := H) ψ.unop (g⁻¹ * g')) (hmem ψ hψ)
-    have hcompat : fam.Compatible := by
-      rw [Presieve.compatible_iff_sieveCompatible]
-      intro B C ψ χ hψ
-      apply quotientPointsHom_injective H I C.unop
-      rw [HopfAlgebra.pointsPresheaf_map_apply, Quiver.Hom.unop_op, ← mapPoints_quotientPointsHom,
-        quotientPointsHom_liftQuotientPoint, quotientPointsHom_liftQuotientPoint, unop_comp,
-        HopfAlgebra.mapPoints_comp, ConcreteCategory.comp_apply]
-    obtain ⟨(t : HopfAlgebra.points (R := R) (H := _root_.CommHopfAlgCat.quotient H I) A), ht, -⟩ :=
-      ((isSheaf_iff_isSheaf_of_type _ _).mp
-        (HopfAlgebra.pointsPresheaf_isSheaf (_root_.CommHopfAlgCat.quotient H I))) S hS fam hcompat
-    have ht_eq : quotientPointsHom H I A t = g⁻¹ * g' := by
-      refine (((isSheaf_iff_isSheaf_of_type _ _).mp
-        (HopfAlgebra.pointsPresheaf_isSheaf H)) S hS).isSeparatedFor.ext fun B ψ hψ ↦ ?_
-      have htψ := ht ψ hψ
-      rw [HopfAlgebra.pointsPresheaf_map_apply, Quiver.Hom.unop_op] at htψ
-      rw [HopfAlgebra.pointsPresheaf_map_apply, HopfAlgebra.pointsPresheaf_map_apply,
-        Quiver.Hom.unop_op, mapPoints_quotientPointsHom, htψ,
-        quotientPointsHom_liftQuotientPoint]
-    exact ht_eq ▸ quotientPointsHom_mem_quotientPointsSubgroup H I A t
-  · simpa only [mul_inv_cancel_left] using
-      (mapMulEquiv_mul_comp_representedQuotientProjection H I e g ⟨g⁻¹ * g', h⟩).symm
+  rw [mapMulEquiv_comp_representedQuotientProjection,
+    mapMulEquiv_comp_representedQuotientProjection]
+  have : IsIso (e.hom.hom.app (op (op A))) :=
+    inferInstanceAs (IsIso ((((sheafToPresheaf _ _).mapIso e).app (op (op A))).hom))
+  exact (ULift.ext_iff.symm.trans
+    (ConcreteCategory.bijective_of_isIso (e.hom.hom.app (op (op A)))).injective.eq_iff).trans
+    (fppfHomogeneousQuotientProjection_eq_iff H I (op (op A)) g g')
 
 /-- **Universal property of a represented homogeneous quotient (Milne, Proposition 5.22).**
 Morphisms `X ⟶ Y` over `Spec R` correspond bijectively, via precomposition with
