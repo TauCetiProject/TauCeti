@@ -588,6 +588,14 @@ theorem coe_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (hodgeStar o hkl φ : RoughForm I M ℝ l) = RoughForm.hodgeStar o hkl φ :=
   (rfl)
 
+omit [FiniteDimensional ℝ E]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The smooth real wedge at a point is the wedge of the values. -/
+theorem coe_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M) :
+    (wedge φ ψ).1 x = (φ.1 x).wedge (ψ.1 x) := by
+  rw [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ContinuousAlternatingMap.wedge_def]
+
 /-- **The square of the Hodge star of smooth forms**: `⋆⋆α = (-1) ^ (k l) α`. -/
 theorem hodgeStar_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (hlk : l + k = m) (α : SmoothForm I M ℝ k) :
@@ -604,8 +612,7 @@ theorem inner_smul_riemannianVolumeForm_eq_wedge_hodgeStar (o : Manifold.Orienta
         (wedge α (hodgeStar o hkl β)) : RoughForm I M ℝ m) := by
   funext x
   ext v
-  rw [cast_apply, coe_wedge, coe_hodgeStar, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ← ContinuousAlternatingMap.wedge_def, RoughForm.wedge_hodgeStar_apply,
+  rw [cast_apply, coe_wedge_apply, coe_hodgeStar, RoughForm.wedge_hodgeStar_apply,
     ContinuousAlternatingMap.smul_apply, smul_eq_mul]
   simp only [Function.comp_def, finCongr_apply, Fin.cast_cast, Fin.cast_eq_self]
 
@@ -658,9 +665,7 @@ theorem innerZeroForm_apply (o : Manifold.Orientation I M (Fin (k + l)))
   have hw : (wedge α (hodgeStar o rfl β)).1 x =
       (α.1 x).wedge ((o.orientationAt x).formHodgeStar
         (o.fact_finrank_tangentSpace x).out.symm (β.1 x)) := by
-    ext w
-    rw [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-      ← ContinuousAlternatingMap.wedge_def, coe_hodgeStar, RoughForm.hodgeStar_apply]
+    rw [coe_wedge_apply, coe_hodgeStar, RoughForm.hodgeStar_apply]
   rw [hw]
   exact (o.orientationAt x).formHodgeStar_wedge_formHodgeStar_apply_zero _ _ (α.1 x) (β.1 x)
 
