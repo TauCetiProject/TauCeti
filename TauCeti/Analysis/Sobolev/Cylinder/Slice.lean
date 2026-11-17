@@ -214,7 +214,8 @@ theorem slice_re_inner_ae_eq_zero_of_hilbertBasis [FiniteDimensional ℂ F] {η 
 everywhere, then `η` vanishes almost everywhere on the strip: by separability of the space of
 loops, for almost every `s` the slice pairing vanishes for all loops at once, so the slice
 `η(s, ·)` vanishes, and Fubini's theorem applies. -/
-theorem ae_eq_zero_of_forall_slice_re_inner_ae_eq_zero [FiniteDimensional ℂ F] {η : ℝ × ℝ → F}
+theorem ae_eq_zero_of_forall_slice_re_inner_ae_eq_zero [SecondCountableTopology F]
+    {η : ℝ × ℝ → F}
     (hη : MemLp η 2 stripMeasure)
     (h : ∀ ψ : C(AddCircle (1 : ℝ), F),
       (fun s ↦ ∫ t in Icc (0 : ℝ) 1, (inner ℂ (ψ t) (η (s, t))).re) =ᵐ[volume] 0) :
