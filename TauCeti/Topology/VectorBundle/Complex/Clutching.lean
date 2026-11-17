@@ -51,7 +51,10 @@ and any trivialization near `x`. It is invariant under homotopies relative to th
 restricting a frame along the homotopy (`TauCeti.clutchingNumber_eq_of_homotopic`), and it is
 additive under the concatenation `GenLoop.transAt 0` that defines the product of `π₂(X, x)`,
 because a frame along the concatenation restricts to frames along both halves
-(`TauCeti.clutchingNumber_transAt`).
+(`TauCeti.clutchingNumber_transAt`). Isomorphic complex vector bundles, possibly with different
+model fibres, have the same clutching numbers, because an isomorphism carries a frame of one to a
+frame of the other and changes the transition at the base point only by a conjugation
+(`TauCeti.clutchingNumber_eq_of_continuous_equiv`).
 
 The bundle may be the tangent bundle `(TX, J)` of a manifold with an almost complex structure `J`,
 made a complex vector bundle by
@@ -71,6 +74,8 @@ number of the almost complex tangent bundle on spheres.
   frame and any trivialization near `x`.
 * `TauCeti.clutchingNumber_eq_of_homotopic`: homotopy invariance.
 * `TauCeti.clutchingNumber_transAt`: additivity under concatenation.
+* `TauCeti.clutchingNumber_eq_of_continuous_equiv`: invariance under isomorphisms of complex vector
+  bundles.
 
 ## References
 
@@ -345,6 +350,62 @@ def clutchingNumberHom : Additive (π_ 2 X x) →+ ℤ :=
 theorem clutchingNumberHom_apply_mk (p : Ω^ (Fin 2) X x) :
     clutchingNumberHom F E x (Additive.ofMul (Quotient.mk _ p)) = clutchingNumber F E p :=
   (rfl)
+
+/-! ### Isomorphic bundles -/
+
+section Equiv
+
+variable {F' : Type*} [NormedAddCommGroup F'] [NormedSpace ℂ F'] [FiniteDimensional ℂ F']
+  {E' : X → Type*} [∀ x, AddCommGroup (E' x)] [∀ x, Module ℂ (E' x)] [∀ x, TopologicalSpace (E' x)]
+  [TopologicalSpace (TotalSpace F' E')] [FiberBundle F' E'] [VectorBundle ℂ F' E']
+  [∀ x, IsTopologicalAddGroup (E' x)] [∀ x, ContinuousSMul ℂ (E' x)]
+
+/-- **Isomorphic bundles have the same clutching numbers.** If `Φ` is a family of complex-linear
+isomorphisms `E y ≃ E' y` that is continuous as a map of total spaces, then `E` and `E'` have the
+same clutching number on every sphere. The model fibres of `E` and `E'` may differ. -/
+theorem clutchingNumber_eq_of_continuous_equiv (Φ : ∀ y, E y ≃L[ℂ] E' y)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj (Φ v.proj v.2))
+    (p : Ω^ (Fin 2) X x) : clutchingNumber F' E' p = clutchingNumber F E p := by
+  obtain ⟨φ, hφ⟩ := exists_continuous_frame (𝕜 := ℂ) (F := F) (E := E) (map_continuous p)
+  set e := trivializationAt F E x
+  set e' := trivializationAt F' E' x
+  have hx : x ∈ e.baseSet := mem_baseSet_trivializationAt F E x
+  have hx' : x ∈ e'.baseSet := mem_baseSet_trivializationAt F' E' x
+  -- `M` reads `Φ x` in the two trivializations; the frame `φ'` of `E'` is `Φ ∘ φ ∘ M⁻¹`.
+  set M : F ≃L[ℂ] F' := ((e.continuousLinearEquivAt ℂ x hx).symm.trans (Φ x)).trans
+    (e'.continuousLinearEquivAt ℂ x hx')
+  set φ' : ∀ y, F' ≃L[ℂ] E' (p y) := fun y ↦ M.symm.trans ((φ y).trans (Φ (p y)))
+  have hφ' : Continuous fun q : (Fin 2 → I) × F' ↦ TotalSpace.mk' F' (p q.1) (φ' q.1 q.2) :=
+    hΦ.comp (hφ.comp (continuous_fst.prodMk (M.symm.continuous.comp continuous_snd)))
+  rw [clutchingNumber_eq_squareBoundaryDegree p e' hx' hφ',
+    clutchingNumber_eq_squareBoundaryDegree p e hx hφ]
+  -- At the base point, the transition of `φ'` in `e'` is that of `φ` in `e`, conjugated by `M`.
+  have key (z : X) (hz : z = x) (ψ : F ≃L[ℂ] E z) (hze : z ∈ e.baseSet)
+      (hze' : z ∈ e'.baseSet) :
+      ((M.symm.trans (ψ.trans (Φ z))).trans (e'.continuousLinearEquivAt ℂ z hze')).normalizedDet =
+        (ψ.trans (e.continuousLinearEquivAt ℂ z hze)).normalizedDet := by
+    subst hz
+    rw [← ContinuousLinearEquiv.normalizedDet_conj (ψ.trans (e.continuousLinearEquivAt ℂ z hze)) M]
+    congr 1
+    ext v
+    simp [M, e.symm_apply_apply_mk hze]
+  refine squareBoundaryDegree_congr fun y hy ↦ ?_
+  have hpy := GenLoop.boundary p y hy
+  rw [clutchingFunction_of_mem (mem_of_eq_of_mem hpy hx'),
+    clutchingFunction_of_mem (mem_of_eq_of_mem hpy hx)]
+  exact congrArg (·⁻¹) (key (p y) hpy (φ y) _ _)
+
+variable (F F' x) in
+/-- Isomorphic bundles have the same clutching number homomorphism `π₂(X, x) → ℤ`. -/
+theorem clutchingNumberHom_eq_of_continuous_equiv (Φ : ∀ y, E y ≃L[ℂ] E' y)
+    (hΦ : Continuous fun v : TotalSpace F E ↦ TotalSpace.mk' F' v.proj (Φ v.proj v.2)) :
+    clutchingNumberHom F' E' x = clutchingNumberHom F E x := by
+  refine AddMonoidHom.ext fun a ↦ ?_
+  obtain ⟨p, hp⟩ := Quotient.exists_rep a.toMul
+  rw [← ofMul_toMul a, ← hp, clutchingNumberHom_apply_mk, clutchingNumberHom_apply_mk,
+    clutchingNumber_eq_of_continuous_equiv Φ hΦ]
+
+end Equiv
 
 end ClutchingNumber
 
