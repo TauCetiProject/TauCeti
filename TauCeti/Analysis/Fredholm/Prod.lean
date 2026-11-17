@@ -77,10 +77,10 @@ lemma IsFredholm.of_prodMap_left (h : IsFredholm (T.prodMap S)) : IsFredholm T :
   have hker := h.finite_ker
   have hcoker := h.finite_coker
   have hrange := h.isClosed_range
-  rw [coe_prodMap, LinearMap.ker_prodMap] at hker
-  rw [coe_prodMap, LinearMap.range_prodMap] at hcoker hrange
-  have := (Submodule.prodEquiv T.ker S.ker).finiteDimensional
-  have := (Submodule.quotientProdEquiv T.range S.range).finiteDimensional
+  rw [coe_prodMap] at hker hcoker
+  rw [coe_prodMap, LinearMap.range_prodMap] at hrange
+  have := (LinearMap.kerProdMapEquiv (T : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂)).finiteDimensional
+  have := (LinearMap.cokerProdMapEquiv (T : E₁ →ₗ[K] F₁) (S : E₂ →ₗ[K] F₂)).finiteDimensional
   refine ⟨?_, ?_, ?_, ?_, ?_⟩
   · -- `LinearMap.isStrictMap_prodMap_iff` is stated for the underlying linear maps.
     exact (LinearMap.isStrictMap_prodMap_iff (fₗ := (T : E₁ →ₗ[K] F₁))
