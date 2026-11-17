@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.Minpoly.IsIntegrallyClosedIn
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 import TauCeti.FieldTheory.IntermediateField.LinearDisjoint
+import TauCeti.FieldTheory.IntermediateField.Map
 
 /-!
 # The geometric degree of an extension of function fields
@@ -59,6 +60,8 @@ closure of `k`, this is Stichtenoth's splitting `[F' : F] = [F' · K : F · K] �
   the image of `F` in `F'`.
 * `TauCeti.constantCompositum_eq_top_of_eq_top`: if `F' = F · k'`, then `F' = E · k'` for every
   intermediate field `E` of `F' / F`.
+* `TauCeti.constantCompositum_tower_eq_top`: if `F' = F · k'` and `F'' = F' · k''` in a compatible
+  square of extensions, then `F'' = F · k''`.
 * `TauCeti.constantCompositum_eq_top_of_adjoin_eq_top`: `F'` is the compositum `F · k'` as soon
   as the image of `F` generates `F'` over a field `k'`.
 * `TauCeti.finrank_constantCompositum_mul_geometricDegree`: the tower law
@@ -191,6 +194,28 @@ theorem constantCompositum_eq_top_of_eq_top (E : IntermediateField F F')
     (constantCompositum_le_iff F k' F').2 fun c ↦ algebraMap_mem_constantCompositum E k' F' c
   rw [h] at hle
   exact eq_top_iff.2 fun z _ ↦ hle IntermediateField.mem_top
+
+variable {F k' F'} in
+/-- **Transitivity of constant composita in a tower**: if `F' = F · k'` and `F'' = F' · k''` in a
+compatible square of extensions, then `F'' = F · k''`. -/
+theorem constantCompositum_tower_eq_top {k'' F'' : Type*} [CommSemiring k''] [Field F'']
+    [Algebra k' k''] [Algebra k' F''] [Algebra k'' F''] [Algebra F F''] [Algebra F' F'']
+    [IsScalarTower F F' F''] [IsScalarTower k' F' F''] [IsScalarTower k' k'' F'']
+    (h₁ : constantCompositum F k' F' = ⊤) (h₂ : constantCompositum F' k'' F'' = ⊤) :
+    constantCompositum F k'' F'' = ⊤ := by
+  let M := constantCompositum F k'' F''
+  have hF' : ∀ y : F', algebraMap F' F'' y ∈ M := by
+    have hle : constantCompositum F k' F' ≤ M.comap (IsScalarTower.toAlgHom F F' F'') :=
+      (constantCompositum_le_iff F k' F').mpr fun a ↦ by
+        rw [IntermediateField.mem_comap, IsScalarTower.toAlgHom_apply,
+          ← IsScalarTower.algebraMap_apply k' F' F'', IsScalarTower.algebraMap_apply k' k'' F'']
+        exact algebraMap_mem_constantCompositum F k'' F'' (algebraMap k' k'' a)
+    exact fun y ↦ hle (h₁ ▸ IntermediateField.mem_top)
+  have hle₂ : constantCompositum F' k'' F'' ≤ M.toSubfield.toIntermediateField hF' :=
+    (constantCompositum_le_iff F' k'' F'').mpr fun w ↦
+      algebraMap_mem_constantCompositum F k'' F'' w
+  rw [h₂] at hle₂
+  exact eq_top_iff.mpr fun z _ ↦ hle₂ IntermediateField.mem_top
 
 /-- The `k'`-algebra structure on the compositum `F · k'` formed inside `F'`, through which `k'`
 maps into `F · k'`. It is not an instance: `F · k'` may carry another `k'`-algebra structure, for
