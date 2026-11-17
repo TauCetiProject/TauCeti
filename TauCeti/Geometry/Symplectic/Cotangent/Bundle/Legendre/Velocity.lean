@@ -32,7 +32,7 @@ is not hyperregular (`TauCeti.not_isHyperregularLagrangian_exp_snd`), and the Ha
 
 ## Main declarations
 
-* `TauCeti.contMDiff_comp_snd`: `f(v)` is as smooth as `f`.
+* `ContDiff.contMDiff_comp_snd_tangentBundle_modelSpace`: `f(v)` is as smooth as `f`.
 * `TauCeti.legendreMap_comp_snd`, `TauCeti.fiberHessian_comp_snd`,
   `TauCeti.lagrangianEnergy_comp_snd`: the Legendre map, fibre Hessian and energy of `f(v)`.
 * `TauCeti.isRegularLagrangian_comp_snd_iff`, `TauCeti.isHyperregularLagrangian_comp_snd_iff`:
@@ -61,7 +61,8 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] 
   (f : E → 𝕜)
 
 /-- A Lagrangian `f(v)` depending only on the velocity is as smooth as `f`. -/
-theorem contMDiff_comp_snd {n : WithTop ℕ∞} {f : E → 𝕜} (hf : ContDiff 𝕜 n f) :
+theorem _root_.ContDiff.contMDiff_comp_snd_tangentBundle_modelSpace {n : WithTop ℕ∞} {f : E → 𝕜}
+    (hf : ContDiff 𝕜 n f) :
     ContMDiff 𝓘(𝕜, E).tangent 𝓘(𝕜, 𝕜) n (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) :=
   hf.contMDiff.comp (contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E))
 
