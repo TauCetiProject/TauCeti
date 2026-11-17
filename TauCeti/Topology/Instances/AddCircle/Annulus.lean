@@ -1,0 +1,261 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Topology.Algebra.Group.Basic
+public import Mathlib.Topology.Instances.AddCircle.Real
+import Mathlib.Topology.Algebra.Group.Quotient
+import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Algebra.Order.Archimedean.Basic
+import TauCeti.Topology.Instances.AddCircle.Lift
+
+/-!
+# Maps of the strip commuting with the deck translation
+
+The annulus `AddCircle ℓ × Y` is the quotient of the strip `ℝ × Y` by the deck translation
+`(x, y) ↦ (x + ℓ, y)`. This file studies maps `F` of the strip that commute with it,
+`F (x + ℓ, y) = (F₁(x, y) + ℓ, F₂(x, y))`. They commute with every integer power of the deck
+translation, and a homeomorphism of the strip commuting with it induces a homeomorphism of the
+annulus. For a nonzero period, a continuous such map takes every real value in the first
+coordinate along every horizontal line, so a homeomorphism mapping a horizontal line into itself
+maps it onto itself, increasingly.
+
+## Main definitions
+
+* `TauCeti.stripDeck ℓ m Y`: the deck translation `(x, y) ↦ (x + m ℓ, y)` of the strip.
+* `Homeomorph.annulusHomeomorphOfLift F hF`: the homeomorphism of the annulus `AddCircle ℓ × Y`
+  induced by a homeomorphism `F` of the strip commuting with the deck translation.
+
+## Main results
+
+* `TauCeti.apply_add_int_mul_of_apply_add`: a map commuting with the deck translation commutes
+  with all of its integer powers.
+* `TauCeti.surjective_fst_apply_of_apply_add`, `TauCeti.strictMono_fst_of_mapsTo_line`,
+  `TauCeti.snd_symm_apply_of_mapsTo_line`: for `ℓ ≠ 0`, a homeomorphism of the strip commuting
+  with the deck translation and mapping a horizontal line into itself restricts to an increasing
+  homeomorphism of that line.
+* `Homeomorph.image_annulusHomeomorphOfLift_of_mapsTo_line`: the induced homeomorphism of the
+  annulus then maps the corresponding circle onto itself.
+-/
+
+public section
+
+open Function Set
+
+namespace TauCeti
+
+variable {Y : Type*} {ℓ : ℝ}
+
+/-- A map of the strip commuting with the deck translation `(x, y) ↦ (x + ℓ, y)` commutes with all
+of its integer powers. -/
+theorem apply_add_int_mul_of_apply_add {F : ℝ × Y → ℝ × Y}
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (n : ℤ) (x : ℝ) (y : Y) :
+    F (x + n * ℓ, y) = ((F (x, y)).1 + n * ℓ, (F (x, y)).2) :=
+  Prod.ext
+    (AddCircle.lift_add_int_mul (F := fun x ↦ (F (x, y)).1)
+      (fun x ↦ congrArg Prod.fst (hF (x, y))) x n)
+    (Periodic.int_mul (f := fun x ↦ (F (x, y)).2)
+      (fun x ↦ by simpa using congrArg Prod.snd (hF (x, y))) n x)
+
+/-- For a nonzero period, the first coordinate of a map of the strip commuting with the deck
+translation and continuous along a horizontal line takes every real value along that line. -/
+theorem surjective_fst_apply_of_apply_add {F : ℝ × Y → ℝ × Y} (hℓ : ℓ ≠ 0)
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
+    (hc : Continuous fun x : ℝ => (F (x, y)).1) :
+    Surjective fun x : ℝ => (F (x, y)).1 := by
+  intro z
+  have hg (n : ℤ) : (F (n * ℓ, y)).1 = (F (0, y)).1 + n * ℓ := by
+    simpa using congrArg Prod.fst (apply_add_int_mul_of_apply_add hF n 0 y)
+  obtain ⟨k, hk⟩ := exists_int_mul_gt hℓ |z - (F (0, y)).1|
+  have hk' := hg (-k)
+  have hkk := hg k
+  push_cast at hk'
+  have hk0 : 0 ≤ (k : ℝ) * ℓ := (abs_nonneg _).trans hk.le
+  obtain ⟨x, -, hx⟩ := intermediate_value_Icc (show (-k : ℝ) * ℓ ≤ k * ℓ by linarith)
+    hc.continuousOn (show z ∈ Icc (F (-k * ℓ, y)).1 (F (k * ℓ, y)).1 by
+      rw [hk', hkk]
+      constructor <;> linarith [neg_abs_le (z - (F (0, y)).1), le_abs_self (z - (F (0, y)).1)])
+  exact ⟨x, hx⟩
+
+/-- A map of the strip commuting with the deck translation induces, for each height, a map of the
+strip into the annulus that is periodic in the first coordinate. -/
+theorem periodic_coe_apply_of_apply_add {F : ℝ × Y → ℝ × Y}
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (y : Y) :
+    Periodic (fun x : ℝ => Prod.map ((↑) : ℝ → AddCircle ℓ) id (F (x, y))) ℓ := by
+  intro x
+  refine Prod.ext ?_ ?_ <;> simp [hF (x, y)]
+
+variable [TopologicalSpace Y]
+
+/-- The inverse of a homeomorphism of the strip commuting with the deck translation commutes with
+it too. -/
+theorem symm_apply_add_of_apply_add {F : ℝ × Y ≃ₜ ℝ × Y}
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (p : ℝ × Y) :
+    F.symm (p.1 + ℓ, p.2) = ((F.symm p).1 + ℓ, (F.symm p).2) := by
+  apply F.injective
+  rw [F.apply_symm_apply, hF, F.apply_symm_apply]
+
+variable (ℓ) in
+/-- The deck translation `(x, y) ↦ (x + m ℓ, y)` of the strip `ℝ × Y`. -/
+def stripDeck (m : ℤ) (Y : Type*) [TopologicalSpace Y] : ℝ × Y ≃ₜ ℝ × Y :=
+  (Homeomorph.addRight ((m : ℝ) * ℓ)).prodCongr (Homeomorph.refl Y)
+
+/-- The deck translation shifts the first coordinate by `m ℓ`. -/
+@[simp]
+theorem stripDeck_apply (m : ℤ) (p : ℝ × Y) : stripDeck ℓ m Y p = (p.1 + m * ℓ, p.2) :=
+  (rfl)
+
+/-- The inverse deck translation shifts the first coordinate by `-m ℓ`. -/
+@[simp]
+theorem stripDeck_symm_apply (m : ℤ) (p : ℝ × Y) :
+    (stripDeck ℓ m Y).symm p = (p.1 - m * ℓ, p.2) := by
+  rw [Homeomorph.symm_apply_eq, stripDeck_apply, sub_add_cancel]
+
+variable (ℓ Y) in
+/-- The deck translation by `0` is the identity. -/
+@[simp]
+theorem stripDeck_zero : stripDeck ℓ 0 Y = Homeomorph.refl (ℝ × Y) :=
+  Homeomorph.ext fun p ↦ by simp
+
+/-- The inverse of the deck translation by `m` is the deck translation by `-m`. -/
+theorem stripDeck_symm (m : ℤ) : (stripDeck ℓ m Y).symm = stripDeck ℓ (-m) Y :=
+  Homeomorph.ext fun p ↦ by simp [sub_eq_add_neg]
+
+/-- Successive deck translations by `m` and `m'` are the deck translation by `m + m'`. -/
+@[simp]
+theorem stripDeck_trans_stripDeck (m m' : ℤ) :
+    (stripDeck ℓ m Y).trans (stripDeck ℓ m' Y) = stripDeck ℓ (m + m') Y :=
+  Homeomorph.ext fun p ↦ by simp [add_mul, add_assoc]
+
+/-- For a nonzero period, a homeomorphism of the strip commuting with the deck translation and
+mapping the horizontal line at height `y` into itself is strictly increasing along that line. -/
+theorem strictMono_fst_of_mapsTo_line {F : ℝ × Y ≃ₜ ℝ × Y} (hℓ : ℓ ≠ 0)
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
+    (hy : ∀ x : ℝ, (F (x, y)).2 = y) : StrictMono fun x : ℝ => (F (x, y)).1 := by
+  have hc : Continuous fun x : ℝ => (F (x, y)).1 := by fun_prop
+  have hi : Injective fun x : ℝ => (F (x, y)).1 := by
+    intro x x' h
+    have : F (x, y) = F (x', y) := Prod.ext h (by rw [hy, hy])
+    simpa using F.injective this
+  refine (hc.strictMono_of_inj hi).resolve_right fun hanti => ?_
+  have h1 := apply_add_int_mul_of_apply_add hF 1 0 y
+  simp only [Int.cast_one, one_mul, zero_add] at h1
+  have h2 : (F (ℓ, y)).1 = (F (0, y)).1 + ℓ := by rw [h1]
+  rcases hℓ.lt_or_gt with h | h
+  · have := hanti h
+    simp only at this
+    linarith
+  · have := hanti h
+    simp only at this
+    linarith
+
+/-- For a nonzero period, the inverse of a homeomorphism of the strip commuting with the deck
+translation and mapping the horizontal line at height `y` into itself maps that line into itself. -/
+theorem snd_symm_apply_of_mapsTo_line {F : ℝ × Y ≃ₜ ℝ × Y} (hℓ : ℓ ≠ 0)
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
+    (hy : ∀ x : ℝ, (F (x, y)).2 = y) (x : ℝ) : (F.symm (x, y)).2 = y := by
+  obtain ⟨x', hx'⟩ := surjective_fst_apply_of_apply_add hℓ hF (y := y) (by fun_prop) x
+  rw [show (x, y) = F (x', y) from Prod.ext hx'.symm (hy x').symm, F.symm_apply_apply]
+
+/-- A continuous map of the strip commuting with the deck translation induces a continuous map
+of the annulus. -/
+private theorem continuous_lift_periodic_coe_apply {G : ℝ × Y → ℝ × Y}
+    (hG : ∀ p : ℝ × Y, G (p.1 + ℓ, p.2) = ((G p).1 + ℓ, (G p).2)) (hc : Continuous G) :
+    Continuous fun z : AddCircle ℓ × Y => (periodic_coe_apply_of_apply_add hG z.2).lift z.1 := by
+  rw [← (QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
+  have : (fun z : AddCircle ℓ × Y => (periodic_coe_apply_of_apply_add hG z.2).lift z.1) ∘
+      Prod.map QuotientAddGroup.mk id = Prod.map ((↑) : ℝ → AddCircle ℓ) id ∘ G := by
+    ext p <;> simp
+  rw [this]
+  exact (continuous_quotient_mk'.prodMap continuous_id).comp hc
+
+end TauCeti
+
+namespace Homeomorph
+
+open TauCeti
+
+variable {Y : Type*} [TopologicalSpace Y] {ℓ : ℝ}
+
+/-- The homeomorphism of the annulus `AddCircle ℓ × Y` induced by a homeomorphism `F` of the strip
+`ℝ × Y` commuting with the deck translation `(x, y) ↦ (x + ℓ, y)`: it sends the class of `(x, y)`
+to the class of `F (x, y)` (`Homeomorph.annulusHomeomorphOfLift_coe`). -/
+def annulusHomeomorphOfLift (F : ℝ × Y ≃ₜ ℝ × Y)
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) :
+    AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y where
+  toFun z := (periodic_coe_apply_of_apply_add hF z.2).lift z.1
+  invFun z := (periodic_coe_apply_of_apply_add (symm_apply_add_of_apply_add hF) z.2).lift z.1
+  left_inv := by
+    rintro ⟨θ, y⟩
+    induction θ using QuotientAddGroup.induction_on with | H x => ?_
+    simp
+  right_inv := by
+    rintro ⟨θ, y⟩
+    induction θ using QuotientAddGroup.induction_on with | H x => ?_
+    simp
+  continuous_toFun := continuous_lift_periodic_coe_apply hF F.continuous
+  continuous_invFun :=
+    continuous_lift_periodic_coe_apply (symm_apply_add_of_apply_add hF) F.symm.continuous
+
+variable {F : ℝ × Y ≃ₜ ℝ × Y}
+
+/-- The induced homeomorphism of the annulus sends the class of `(x, y)` to the class of
+`F (x, y)`. -/
+@[simp]
+theorem annulusHomeomorphOfLift_coe
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (x : ℝ) (y : Y) :
+    F.annulusHomeomorphOfLift hF ((x : AddCircle ℓ), y) =
+      (((F (x, y)).1 : AddCircle ℓ), (F (x, y)).2) :=
+  (rfl)
+
+/-- The inverse of the induced homeomorphism of the annulus is induced by the inverse of `F`. -/
+@[simp]
+theorem annulusHomeomorphOfLift_symm_coe
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (x : ℝ) (y : Y) :
+    (F.annulusHomeomorphOfLift hF).symm ((x : AddCircle ℓ), y) =
+      (((F.symm (x, y)).1 : AddCircle ℓ), (F.symm (x, y)).2) :=
+  (rfl)
+
+/-- For a nonzero period, if `F` maps the horizontal line at height `y` into itself, the induced
+homeomorphism of the annulus maps the circle at height `y` onto itself. -/
+theorem image_annulusHomeomorphOfLift_of_mapsTo_line (hℓ : ℓ ≠ 0)
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
+    (hy : ∀ x : ℝ, (F (x, y)).2 = y) :
+    F.annulusHomeomorphOfLift hF '' {z | z.2 = y} = {z | z.2 = y} := by
+  ext ⟨θ, y'⟩
+  induction θ using QuotientAddGroup.induction_on with | H x => ?_
+  simp only [Set.mem_image, Set.mem_ofPred_eq]
+  constructor
+  · rintro ⟨⟨θ', y''⟩, rfl, hz⟩
+    induction θ' using QuotientAddGroup.induction_on with | H x' => ?_
+    rw [annulusHomeomorphOfLift_coe] at hz
+    rw [← (Prod.mk.inj hz).2]
+    exact hy x'
+  · rintro rfl
+    refine ⟨(F.annulusHomeomorphOfLift hF).symm ((x : AddCircle ℓ), y'), ?_, by simp⟩
+    rw [annulusHomeomorphOfLift_symm_coe]
+    exact snd_symm_apply_of_mapsTo_line hℓ hF hy x
+
+/-- For a nonzero period, if at most one height `y` satisfies `p y` and `F` maps the horizontal
+lines at such heights into themselves, the induced homeomorphism of the annulus maps the set of
+points at such heights onto itself. -/
+theorem image_annulusHomeomorphOfLift_setOf_of_subsingleton (hℓ : ℓ ≠ 0)
+    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {p : Y → Prop}
+    (hp : ∀ y y', p y → p y' → y = y') (hy : ∀ x y, p y → p (F (x, y)).2) :
+    F.annulusHomeomorphOfLift hF '' {z | p z.2} = {z | p z.2} := by
+  by_cases h : ∃ y, p y
+  · obtain ⟨y, hy₀⟩ := h
+    have hs : {z : AddCircle ℓ × Y | p z.2} = {z | z.2 = y} :=
+      Set.ext fun z ↦ ⟨fun hz ↦ hp _ _ hz hy₀, fun hz ↦ by
+        simp only [Set.mem_ofPred_eq] at hz ⊢
+        exact hz ▸ hy₀⟩
+    rw [hs]
+    exact image_annulusHomeomorphOfLift_of_mapsTo_line hℓ hF fun x ↦ hp _ _ (hy x y hy₀) hy₀
+  · have hs : {z : AddCircle ℓ × Y | p z.2} = ∅ :=
+      Set.eq_empty_of_forall_notMem fun z hz ↦ h ⟨z.2, hz⟩
+    simp [hs]
+
+end Homeomorph

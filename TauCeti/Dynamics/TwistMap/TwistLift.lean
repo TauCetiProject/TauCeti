@@ -5,10 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Group.Basic
-public import Mathlib.Topology.Instances.AddCircle.Real
-import Mathlib.Topology.Algebra.Group.Quotient
+public import TauCeti.Topology.Instances.AddCircle.Annulus
 import Mathlib.Topology.Order.IntermediateValue
+import TauCeti.Algebra.Order.Archimedean.Basic
 
 /-!
 # Twist lifts of the annulus
@@ -24,21 +23,18 @@ lift* is the same with strictly decreasing; it is described here through its inv
 ## Main definitions
 
 * `TauCeti.IsTwistLift ℓ F`: `F` is a positive twist lift with period `ℓ`.
-* `TauCeti.annulusHomeomorphOfLift F hF`: the homeomorphism of the annulus `AddCircle ℓ × Y`
-  induced by a homeomorphism `F` of the strip `ℝ × Y` commuting with the deck translation.
-* `TauCeti.stripDeck ℓ m Y`: the deck translation `(x, y) ↦ (x + m ℓ, y)` of the strip.
 
 ## Main results
 
-* `TauCeti.strictMono_fst_of_mapsTo_line`, `TauCeti.surjective_fst_apply_of_apply_add`: for
-  `ℓ ≠ 0`, a homeomorphism of the strip commuting with the deck translation and mapping a
-  horizontal line into itself restricts to an increasing homeomorphism of that line. In particular
-  a twist lift maps each boundary line onto itself preserving its direction
-  (`TauCeti.IsTwistLift.strictMono_fst`), and so does the induced homeomorphism of the annulus on
-  each boundary circle (`TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_left`,
-  `TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_right`).
-* `TauCeti.IsTwistLift.strictAnti_fst_symm`: the inverse of a positive twist lift is a negative
-  twist lift, and `TauCeti.isTwistLift_symm_iff`: a homeomorphism is a negative twist lift exactly
+* `TauCeti.IsTwistLift.strictMono_fst_apply_of_mem_boundary`: for `ℓ ≠ 0`, a twist lift maps each
+  boundary line onto itself preserving its direction, and so does the induced homeomorphism of the
+  annulus `Homeomorph.annulusHomeomorphOfLift` on each boundary circle
+  (`TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_left`,
+  `TauCeti.IsTwistLift.image_annulusHomeomorphOfLift_eq_right`). The general facts about
+  homeomorphisms of the strip commuting with the deck translation are in
+  `TauCeti.Topology.Instances.AddCircle.Annulus`.
+* `TauCeti.IsTwistLift.strictAnti_fst_symm_apply`: the inverse of a positive twist lift twists
+  negatively, and `TauCeti.isTwistLift_symm_iff`: a homeomorphism is a negative twist lift exactly
   when its inverse is a positive one.
 * `TauCeti.IsTwistLift.trans_stripDeck`: composing with a deck translation keeps the twist property.
 
@@ -58,207 +54,6 @@ open Function Set
 namespace TauCeti
 
 variable {Y : Type*} [TopologicalSpace Y] {ℓ : ℝ}
-
-/-! ### Homeomorphisms of the strip commuting with the deck translation -/
-
-section Deck
-
-variable {F : ℝ × Y ≃ₜ ℝ × Y}
-
-/-- A homeomorphism of the strip commuting with the deck translation `(x, y) ↦ (x + ℓ, y)` commutes
-with all of its integer powers. -/
-theorem apply_add_int_mul_of_apply_add (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
-    (n : ℤ) (x : ℝ) (y : Y) :
-    F (x + n * ℓ, y) = ((F (x, y)).1 + n * ℓ, (F (x, y)).2) := by
-  induction n using Int.induction_on generalizing x with
-  | zero => simp
-  | succ n ih =>
-    simp only [Int.cast_natCast] at ih
-    have h := hF (x + n * ℓ, y)
-    rw [ih x] at h
-    rw [show x + ((n + 1 : ℤ) : ℝ) * ℓ = x + n * ℓ + ℓ by push_cast; ring, h]
-    ext
-    · simp only
-      push_cast
-      ring
-    · rfl
-  | pred n ih =>
-    have h := hF (x + (-(n : ℤ) - 1 : ℤ) * ℓ, y)
-    rw [show x + ((-(n : ℤ) - 1 : ℤ) : ℝ) * ℓ + ℓ = x + (-(n : ℤ) : ℤ) * ℓ by push_cast; ring,
-      ih] at h
-    ext
-    · have := congrArg Prod.fst h
-      simp only at this
-      push_cast at this ⊢
-      linarith
-    · simpa using (congrArg Prod.snd h).symm
-
-/-- The inverse of a homeomorphism of the strip commuting with the deck translation commutes with
-it too. -/
-theorem symm_apply_add_of_apply_add (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2))
-    (p : ℝ × Y) :
-    F.symm (p.1 + ℓ, p.2) = ((F.symm p).1 + ℓ, (F.symm p).2) := by
-  apply F.injective
-  rw [F.apply_symm_apply, hF, F.apply_symm_apply]
-
-/-- The deck translation `(x, y) ↦ (x + m ℓ, y)` of the strip `ℝ × Y`. -/
-def stripDeck (ℓ : ℝ) (m : ℤ) (Y : Type*) [TopologicalSpace Y] : ℝ × Y ≃ₜ ℝ × Y :=
-  (Homeomorph.addRight ((m : ℝ) * ℓ)).prodCongr (Homeomorph.refl Y)
-
-/-- The deck translation shifts the first coordinate by `m ℓ`. -/
-@[simp]
-theorem stripDeck_apply (m : ℤ) (p : ℝ × Y) : stripDeck ℓ m Y p = (p.1 + m * ℓ, p.2) := by
-  rfl
-
-/-- There is an integer multiple of a nonzero period exceeding any given real number. -/
-private theorem exists_int_mul_gt (hℓ : ℓ ≠ 0) (r : ℝ) : ∃ k : ℤ, r < k * ℓ := by
-  rcases hℓ.lt_or_gt with h | h
-  · obtain ⟨k, hk⟩ := exists_int_lt (r / ℓ)
-    exact ⟨k, (lt_div_iff_of_neg h).1 hk⟩
-  · obtain ⟨k, hk⟩ := exists_int_gt (r / ℓ)
-    exact ⟨k, (div_lt_iff₀ h).1 hk⟩
-
-/-- For a nonzero period, a homeomorphism of the strip commuting with the deck translation and
-mapping the horizontal line at height `y` into itself is strictly increasing along that line. -/
-theorem strictMono_fst_of_mapsTo_line (hℓ : ℓ ≠ 0)
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
-    (hy : ∀ x : ℝ, (F (x, y)).2 = y) : StrictMono fun x : ℝ => (F (x, y)).1 := by
-  have hc : Continuous fun x : ℝ => (F (x, y)).1 := by fun_prop
-  have hi : Injective fun x : ℝ => (F (x, y)).1 := by
-    intro x x' h
-    have : F (x, y) = F (x', y) := Prod.ext h (by rw [hy, hy])
-    simpa using F.injective this
-  refine (hc.strictMono_of_inj hi).resolve_right fun hanti => ?_
-  have h1 := apply_add_int_mul_of_apply_add hF 1 0 y
-  simp only [Int.cast_one, one_mul, zero_add] at h1
-  have h2 : (F (ℓ, y)).1 = (F (0, y)).1 + ℓ := by rw [h1]
-  rcases hℓ.lt_or_gt with h | h
-  · have := hanti h
-    simp only at this
-    linarith
-  · have := hanti h
-    simp only at this
-    linarith
-
-/-- For a nonzero period, the first coordinate of a homeomorphism of the strip commuting with the
-deck translation takes every real value along every horizontal line. So if it maps a horizontal
-line into itself, it maps it onto itself. -/
-theorem surjective_fst_apply_of_apply_add (hℓ : ℓ ≠ 0)
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y} :
-    Surjective fun x : ℝ => (F (x, y)).1 := by
-  intro z
-  have hc : Continuous fun x : ℝ => (F (x, y)).1 := by fun_prop
-  have hg (n : ℤ) : (F (n * ℓ, y)).1 = (F (0, y)).1 + n * ℓ := by
-    simpa using congrArg Prod.fst (apply_add_int_mul_of_apply_add hF n 0 y)
-  obtain ⟨k, hk⟩ := exists_int_mul_gt hℓ |z - (F (0, y)).1|
-  have hk' := hg (-k)
-  have hkk := hg k
-  push_cast at hk'
-  have hk0 : 0 ≤ (k : ℝ) * ℓ := (abs_nonneg _).trans hk.le
-  obtain ⟨x, -, hx⟩ := intermediate_value_Icc (show (-k : ℝ) * ℓ ≤ k * ℓ by linarith)
-    hc.continuousOn (show z ∈ Icc (F (-k * ℓ, y)).1 (F (k * ℓ, y)).1 by
-      rw [hk', hkk]
-      constructor <;> linarith [neg_abs_le (z - (F (0, y)).1), le_abs_self (z - (F (0, y)).1)])
-  exact ⟨x, hx⟩
-
-/-- For a nonzero period, the inverse of a homeomorphism of the strip commuting with the deck
-translation and mapping the horizontal line at height `y` into itself maps that line into itself. -/
-theorem snd_symm_apply_of_mapsTo_line (hℓ : ℓ ≠ 0)
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
-    (hy : ∀ x : ℝ, (F (x, y)).2 = y) (x : ℝ) : (F.symm (x, y)).2 = y := by
-  obtain ⟨x', hx'⟩ := surjective_fst_apply_of_apply_add hℓ hF (y := y) x
-  rw [show (x, y) = F (x', y) from Prod.ext hx'.symm (hy x').symm, F.symm_apply_apply]
-
-/-! ### The homeomorphism of the annulus -/
-
-/-- A homeomorphism of the strip commuting with the deck translation induces, for each height, a
-map of the strip into the annulus that is periodic in the first coordinate. -/
-theorem periodic_coe_apply_of_apply_add
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (y : Y) :
-    Periodic (fun x : ℝ => Prod.map ((↑) : ℝ → AddCircle ℓ) id (F (x, y))) ℓ := by
-  intro x
-  simp [hF (x, y)]
-  rfl
-
-/-- The homeomorphism of the annulus `AddCircle ℓ × Y` induced by a homeomorphism `F` of the strip
-`ℝ × Y` commuting with the deck translation `(x, y) ↦ (x + ℓ, y)`: it sends the class of `(x, y)`
-to the class of `F (x, y)` (`TauCeti.annulusHomeomorphOfLift_coe`). -/
-def annulusHomeomorphOfLift (F : ℝ × Y ≃ₜ ℝ × Y)
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) :
-    AddCircle ℓ × Y ≃ₜ AddCircle ℓ × Y where
-  toFun z := (periodic_coe_apply_of_apply_add hF z.2).lift z.1
-  invFun z := (periodic_coe_apply_of_apply_add (symm_apply_add_of_apply_add hF) z.2).lift z.1
-  left_inv := by
-    rintro ⟨θ, y⟩
-    induction θ using QuotientAddGroup.induction_on with | H x => ?_
-    simp
-  right_inv := by
-    rintro ⟨θ, y⟩
-    induction θ using QuotientAddGroup.induction_on with | H x => ?_
-    simp
-  continuous_toFun := by
-    rw [← (QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
-    have : (fun z : AddCircle ℓ × Y => (periodic_coe_apply_of_apply_add hF z.2).lift z.1) ∘
-        Prod.map QuotientAddGroup.mk id = Prod.map ((↑) : ℝ → AddCircle ℓ) id ∘ F := by
-      ext p <;> simp
-    rw [this]
-    exact (continuous_quotient_mk'.prodMap continuous_id).comp F.continuous
-  continuous_invFun := by
-    rw [← (QuotientAddGroup.isOpenQuotientMap_mk.prodMap IsOpenQuotientMap.id).continuous_comp_iff]
-    have : (fun z : AddCircle ℓ × Y =>
-        (periodic_coe_apply_of_apply_add (symm_apply_add_of_apply_add hF) z.2).lift z.1) ∘
-        Prod.map QuotientAddGroup.mk id = Prod.map ((↑) : ℝ → AddCircle ℓ) id ∘ F.symm := by
-      ext p <;> simp
-    rw [this]
-    exact (continuous_quotient_mk'.prodMap continuous_id).comp F.symm.continuous
-
-/-- The induced homeomorphism of the annulus sends the class of `(x, y)` to the class of
-`F (x, y)`. -/
-@[simp]
-theorem annulusHomeomorphOfLift_coe
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (x : ℝ) (y : Y) :
-    annulusHomeomorphOfLift F hF ((x : AddCircle ℓ), y) =
-      (((F (x, y)).1 : AddCircle ℓ), (F (x, y)).2) := by
-  simp [annulusHomeomorphOfLift]
-  rfl
-
-/-- The inverse of the induced homeomorphism of the annulus is induced by the inverse of `F`. -/
-@[simp]
-theorem annulusHomeomorphOfLift_symm_coe
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) (x : ℝ) (y : Y) :
-    (annulusHomeomorphOfLift F hF).symm ((x : AddCircle ℓ), y) =
-      (((F.symm (x, y)).1 : AddCircle ℓ), (F.symm (x, y)).2) := by
-  simp [annulusHomeomorphOfLift]
-  rfl
-
-/-- For a nonzero period, if `F` maps the horizontal line at height `y` into itself, the induced
-homeomorphism of the annulus maps the circle at height `y` onto itself. -/
-theorem image_annulusHomeomorphOfLift_of_mapsTo_line (hℓ : ℓ ≠ 0)
-    (hF : ∀ p : ℝ × Y, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {y : Y}
-    (hy : ∀ x : ℝ, (F (x, y)).2 = y) :
-    annulusHomeomorphOfLift F hF '' {z | z.2 = y} = {z | z.2 = y} := by
-  ext ⟨θ, y'⟩
-  induction θ using QuotientAddGroup.induction_on with | H x => ?_
-  constructor
-  · rintro ⟨⟨θ', y''⟩, hy'', hz⟩
-    induction θ' using QuotientAddGroup.induction_on with | H x' => ?_
-    change y'' = y at hy''
-    change y' = y
-    subst hy''
-    rw [annulusHomeomorphOfLift_coe] at hz
-    have h₂ := congrArg Prod.snd hz
-    simp only at h₂
-    rw [← h₂]
-    exact hy x'
-  · intro h
-    change y' = y at h
-    subst h
-    refine ⟨(annulusHomeomorphOfLift F hF).symm ((x : AddCircle ℓ), y'), ?_, by simp⟩
-    change ((annulusHomeomorphOfLift F hF).symm ((x : AddCircle ℓ), y')).2 = y'
-    rw [annulusHomeomorphOfLift_symm_coe]
-    exact snd_symm_apply_of_mapsTo_line hℓ hF hy x
-
-end Deck
 
 /-! ### Twist lifts -/
 
@@ -294,53 +89,36 @@ theorem snd_apply_of_mem_boundary {y : Icc a b} (hy : (y : ℝ) = a ∨ (y : ℝ
 
 /-- For a nonzero period, a twist lift is strictly increasing along each boundary line: the induced
 map of each boundary circle preserves its direction. -/
-theorem strictMono_fst (hℓ : ℓ ≠ 0) {y : Icc a b} (hy : (y : ℝ) = a ∨ (y : ℝ) = b) :
-    StrictMono fun x : ℝ => (F (x, y)).1 :=
+theorem strictMono_fst_apply_of_mem_boundary (hℓ : ℓ ≠ 0) {y : Icc a b}
+    (hy : (y : ℝ) = a ∨ (y : ℝ) = b) : StrictMono fun x : ℝ => (F (x, y)).1 :=
   strictMono_fst_of_mapsTo_line hℓ hF.apply_add_period (hF.snd_apply_of_mem_boundary hy)
 
 /-- The homeomorphism of the annulus `AddCircle ℓ × [a, b]` induced by a twist lift with nonzero
 period maps the lower boundary circle onto itself. -/
 theorem image_annulusHomeomorphOfLift_eq_left (hℓ : ℓ ≠ 0) :
-    annulusHomeomorphOfLift F hF.apply_add_period '' {z | (z.2 : ℝ) = a} =
-      {z | (z.2 : ℝ) = a} := by
-  rcases isEmpty_or_nonempty {y : Icc a b // (y : ℝ) = a} with h | ⟨⟨y, hy⟩⟩
-  · have : {z : AddCircle ℓ × Icc a b | (z.2 : ℝ) = a} = ∅ :=
-      eq_empty_of_forall_notMem fun z hz => h.elim ⟨z.2, hz⟩
-    simp [this]
-  · have hs : {z : AddCircle ℓ × Icc a b | (z.2 : ℝ) = a} = {z | z.2 = y} := by
-      ext z
-      exact ⟨fun h => Subtype.ext (h.trans hy.symm), fun h => by
-        change (z.2 : ℝ) = a
-        rw [h, hy]⟩
-    rw [hs]
-    exact image_annulusHomeomorphOfLift_of_mapsTo_line hℓ hF.apply_add_period
-      (hF.snd_apply_of_mem_boundary (Or.inl hy))
+    F.annulusHomeomorphOfLift hF.apply_add_period '' {z | (z.2 : ℝ) = a} =
+      {z | (z.2 : ℝ) = a} :=
+  F.image_annulusHomeomorphOfLift_setOf_of_subsingleton hℓ hF.apply_add_period
+    (p := fun y : Icc a b => (y : ℝ) = a) (fun _ _ h h' => Subtype.ext (h.trans h'.symm))
+    fun x y hy => hF.snd_apply_of_eq_left (x, y) hy
 
 /-- The homeomorphism of the annulus `AddCircle ℓ × [a, b]` induced by a twist lift with nonzero
 period maps the upper boundary circle onto itself. -/
 theorem image_annulusHomeomorphOfLift_eq_right (hℓ : ℓ ≠ 0) :
-    annulusHomeomorphOfLift F hF.apply_add_period '' {z | (z.2 : ℝ) = b} =
-      {z | (z.2 : ℝ) = b} := by
-  rcases isEmpty_or_nonempty {y : Icc a b // (y : ℝ) = b} with h | ⟨⟨y, hy⟩⟩
-  · have : {z : AddCircle ℓ × Icc a b | (z.2 : ℝ) = b} = ∅ :=
-      eq_empty_of_forall_notMem fun z hz => h.elim ⟨z.2, hz⟩
-    simp [this]
-  · have hs : {z : AddCircle ℓ × Icc a b | (z.2 : ℝ) = b} = {z | z.2 = y} := by
-      ext z
-      exact ⟨fun h => Subtype.ext (h.trans hy.symm), fun h => by
-        change (z.2 : ℝ) = b
-        rw [h, hy]⟩
-    rw [hs]
-    exact image_annulusHomeomorphOfLift_of_mapsTo_line hℓ hF.apply_add_period
-      (hF.snd_apply_of_mem_boundary (Or.inr hy))
+    F.annulusHomeomorphOfLift hF.apply_add_period '' {z | (z.2 : ℝ) = b} =
+      {z | (z.2 : ℝ) = b} :=
+  F.image_annulusHomeomorphOfLift_setOf_of_subsingleton hℓ hF.apply_add_period
+    (p := fun y : Icc a b => (y : ℝ) = b) (fun _ _ h h' => Subtype.ext (h.trans h'.symm))
+    fun x y hy => hF.snd_apply_of_eq_right (x, y) hy
 
 /-- For a nonzero period, the inverse of a twist lift maps each boundary line into itself. -/
 theorem snd_symm_apply_of_mem_boundary (hℓ : ℓ ≠ 0) {y : Icc a b}
     (hy : (y : ℝ) = a ∨ (y : ℝ) = b) (x : ℝ) : (F.symm (x, y)).2 = y :=
   snd_symm_apply_of_mapsTo_line hℓ hF.apply_add_period (hF.snd_apply_of_mem_boundary hy) x
 
-/-- The key step for `TauCeti.IsTwistLift.strictAnti_fst_symm`: the preimage under a twist lift of
-a point `(x, y)` above the lower boundary lies strictly to the left of the preimage of `(x, a)`. -/
+/-- The key step for `TauCeti.IsTwistLift.strictAnti_fst_symm_apply`: the preimage under a twist
+lift of a point `(x, y)` above the lower boundary lies strictly to the left of the preimage of
+`(x, a)`. -/
 private theorem fst_symm_apply_lt (hℓ : ℓ ≠ 0) (x : ℝ) {y₀ y : Icc a b} (hy₀ : (y₀ : ℝ) = a)
     (hy : a < y) : (F.symm (x, y)).1 < (F.symm (x, y₀)).1 := by
   set u := (F.symm (x, y₀)).1
@@ -374,8 +152,9 @@ private theorem fst_symm_apply_lt (hℓ : ℓ ≠ 0) (x : ℝ) {y₀ y : Icc a b
   refine key t (F.symm (t, y)).2 ht.2 ?_
   rw [← htu, F.apply_symm_apply]
 
-/-- **The inverse of a positive twist lift is a negative twist lift**: for a nonzero period, the
-first coordinate of `F⁻¹` is strictly decreasing on every vertical. -/
+/-- **The inverse of a positive twist lift twists negatively**: for a nonzero period, the first
+coordinate of `F⁻¹` is strictly decreasing on every vertical. Together with the deck and boundary
+properties of `F⁻¹`, this makes `F⁻¹` a negative twist lift (`TauCeti.isTwistLift_symm_iff`). -/
 theorem strictAnti_fst_symm_apply (hℓ : ℓ ≠ 0) (x : ℝ) :
     StrictAnti fun y : Icc a b => (F.symm (x, y)).1 := by
   rcases isEmpty_or_nonempty (Icc a b) with h | ⟨⟨y₀, hy₀⟩⟩
@@ -420,6 +199,15 @@ private theorem stripReflect_apply (p : ℝ × Y) : stripReflect Y p = (-p.1, p.
 private theorem stripReflect_symm_apply (p : ℝ × Y) : (stripReflect Y).symm p = (-p.1, p.2) :=
   rfl
 
+/-- For a nonzero period, if a homeomorphism of `ℝ × [a, b]` commuting with the deck translation
+maps the horizontal line at height `c` into itself, so does its inverse. -/
+private theorem snd_symm_apply_of_forall_eq (hℓ : ℓ ≠ 0)
+    (hd : ∀ p : ℝ × Icc a b, F (p.1 + ℓ, p.2) = ((F p).1 + ℓ, (F p).2)) {c : ℝ}
+    (hc : ∀ p : ℝ × Icc a b, (p.2 : ℝ) = c → ((F p).2 : ℝ) = c) (p : ℝ × Icc a b)
+    (hp : (p.2 : ℝ) = c) : ((F.symm p).2 : ℝ) = c :=
+  (congrArg Subtype.val (snd_symm_apply_of_mapsTo_line hℓ hd
+    (fun x => Subtype.ext ((hc (x, p.2) hp).trans hp.symm)) p.1)).trans hp
+
 /-- **Negative twist lifts are the inverses of positive ones.** For a nonzero period, the inverse
 of a homeomorphism `F` of `ℝ × [a, b]` is a positive twist lift exactly when `F` is a negative twist
 lift: it commutes with the deck translation, maps each boundary line into itself, and
@@ -435,12 +223,8 @@ theorem isTwistLift_symm_iff (hℓ : ℓ ≠ 0) :
     have hd := symm_apply_add_of_apply_add h.apply_add_period
     simp only [Homeomorph.symm_symm] at hd
     refine ⟨hd, fun p hp => ?_, fun p hp => ?_, fun x => ?_⟩
-    · have := h.snd_symm_apply_of_mem_boundary hℓ (y := p.2) (Or.inl hp) p.1
-      simp only [Homeomorph.symm_symm, Prod.mk.eta] at this
-      rw [this, hp]
-    · have := h.snd_symm_apply_of_mem_boundary hℓ (y := p.2) (Or.inr hp) p.1
-      simp only [Homeomorph.symm_symm, Prod.mk.eta] at this
-      rw [this, hp]
+    · simpa using snd_symm_apply_of_forall_eq hℓ h.apply_add_period h.snd_apply_of_eq_left p hp
+    · simpa using snd_symm_apply_of_forall_eq hℓ h.apply_add_period h.snd_apply_of_eq_right p hp
     · simpa using h.strictAnti_fst_symm_apply hℓ x
   · rintro ⟨hd, hl, hr, hanti⟩
     -- Conjugate by the reflection `(x, y) ↦ (-x, y)` to obtain a positive twist lift.
@@ -455,13 +239,8 @@ theorem isTwistLift_symm_iff (hℓ : ℓ ≠ 0) :
       · simpa [G, stripReflect_apply] using hl (-p.1, p.2) hp
       · simpa [G, stripReflect_apply] using hr (-p.1, p.2) hp
       · simpa [G, stripReflect_apply, Function.comp_def] using (hanti (-x)).neg
-    refine ⟨symm_apply_add_of_apply_add hd, fun p hp => ?_, fun p hp => ?_, fun x => ?_⟩
-    · exact congrArg Subtype.val
-        (snd_symm_apply_of_mapsTo_line hℓ hd (fun x => Subtype.ext ((hl (x, p.2) hp).trans hp.symm))
-          p.1) |>.trans hp
-    · exact congrArg Subtype.val
-        (snd_symm_apply_of_mapsTo_line hℓ hd (fun x => Subtype.ext ((hr (x, p.2) hp).trans hp.symm))
-          p.1) |>.trans hp
+    refine ⟨symm_apply_add_of_apply_add hd, snd_symm_apply_of_forall_eq hℓ hd hl,
+      snd_symm_apply_of_forall_eq hℓ hd hr, fun x => ?_⟩
     · have := (hG.strictAnti_fst_symm_apply hℓ (-x)).neg
       simpa [G, stripReflect_symm_apply, Function.comp_def] using this
 
