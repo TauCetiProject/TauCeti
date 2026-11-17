@@ -13,9 +13,9 @@ import Mathlib.Analysis.SpecialFunctions.Log.Monotone
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.MeasureTheory.OuterMeasure.BorelCantelli
 import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
-import TauCeti.Probability.BrownianMotion.Increments
 import TauCeti.Probability.BrownianMotion.NormalizedIncrements
 import TauCeti.Probability.Distributions.Gaussian.Cdf
+import TauCeti.Probability.Moments.SubGaussian
 
 /-!
 # Lévy's exact uniform modulus of continuity for Brownian motion
@@ -242,8 +242,9 @@ private lemma measure_dyadicBadEvent_pair_le {Ω : Type*} [MeasurableSpace Ω] {
     (mul_nonneg (Nat.cast_nonneg _) (Real.log_nonneg one_le_two)).trans hlog_ge
   set u : ℝ := (1 + ε) * √(2 * Δ * Real.log ((2 : ℝ) ^ n / k))
   have hu_nn : 0 ≤ u := mul_nonneg (by positivity) (Real.sqrt_nonneg _)
-  have hdist : dist (((i + k : ℕ) : ℝ≥0) / 2 ^ n) (((i : ℕ) : ℝ≥0) / 2 ^ n) = Δ := by
-    rw [NNReal.dist_eq]; push_cast
+  have hdist :
+      ((nndist (((i + k : ℕ) : ℝ≥0) / 2 ^ n).1 ((i : ℝ≥0) / 2 ^ n).1 : ℝ≥0) : ℝ) = Δ := by
+    rw [coe_nndist, NNReal.val_eq_coe, NNReal.val_eq_coe, Real.dist_eq]; push_cast
     rw [show ((i : ℝ) + k) / (2 : ℝ) ^ n - (i : ℝ) / (2 : ℝ) ^ n = Δ by dsimp [Δ]; ring]
     exact abs_of_pos hΔ_pos
   have hexp_le : Real.exp (-u ^ 2 / (2 * Δ)) ≤ ((2 : ℝ) ^ (-((1 + ε) ^ 2))) ^ (n - n / p) := by
@@ -253,7 +254,8 @@ private lemma measure_dyadicBadEvent_pair_le {Ω : Type*} [MeasurableSpace Ω] {
     rw [← Real.le_log_iff_exp_le (by positivity), hu_sq, Real.log_pow, Real.log_rpow zero_lt_two]
     nlinarith [sq_nonneg (1 + ε)]
   refine le_trans (measure_mono fun _ hω ↦ hω.2)
-    ((hB.measure_lt_abs_sub_le _ _ hu_nn).trans (ENNReal.ofReal_le_ofReal ?_))
+    (((hB.hasLaw_sub _ _).hasSubgaussianMGF.measure_lt_abs_le hu_nn).trans
+      (ENNReal.ofReal_le_ofReal ?_))
   rw [hdist]; exact mul_le_mul_of_nonneg_left hexp_le zero_le_two
 
 private lemma dyadic_union_exponent_le {q n : ℕ} (hq : 2 ≤ q) :
