@@ -323,6 +323,26 @@ def reSubOne (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
 def imPart (u : SobolevTopologicalGaugeGroup hs) : H^{s}(ℂ) :=
   (-(Complex.I / 2)) • (subOne u - subOne u⁻¹)
 
+/-- `Re u - 1` is the average `((u - 1) + (u⁻¹ - 1)) / 2` in `H^s(ℂ)`. -/
+theorem reSubOne_def (u : SobolevTopologicalGaugeGroup hs) :
+    reSubOne u = (2 : ℂ)⁻¹ • (subOne u + subOne u⁻¹) :=
+  (rfl)
+
+/-- `Im u` is `-i ((u - 1) - (u⁻¹ - 1)) / 2` in `H^s(ℂ)`. -/
+theorem imPart_def (u : SobolevTopologicalGaugeGroup hs) :
+    imPart u = (-(Complex.I / 2)) • (subOne u - subOne u⁻¹) :=
+  (rfl)
+
+/-- The identity gauge has `Re u - 1 = 0`. -/
+@[simp]
+theorem reSubOne_one : reSubOne (1 : SobolevTopologicalGaugeGroup hs) = 0 := by
+  simp [reSubOne_def]
+
+/-- The identity gauge has `Im u = 0`. -/
+@[simp]
+theorem imPart_one : imPart (1 : SobolevTopologicalGaugeGroup hs) = 0 := by
+  simp [imPart_def]
+
 /-- `u ↦ Re u - 1` is continuous from `G_s` to `H^s(ℂ)`. -/
 @[fun_prop, continuity]
 theorem continuous_reSubOne :

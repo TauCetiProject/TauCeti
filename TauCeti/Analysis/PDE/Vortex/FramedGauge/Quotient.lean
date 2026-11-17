@@ -132,7 +132,9 @@ private theorem finrank_lt : (finrank ℝ ℂ : ℝ) < 2 * (k : ℝ) :=
 variable (f m) in
 /-- **The coordinates of the transformed field.** The coordinates of `u · x - x_m` in `H^k(ℂ)⁴`,
 in terms of `R = Re u - 1` and `J = Im u` in `H^(k+1)(ℂ)` and the coordinates `y` of `x - x_m`
-(`TauCeti.Vortex.SobolevFieldSpace.subRef_smul`). -/
+(`TauCeti.Vortex.SobolevFieldSpace.subRef_smul`). Its entries are given by
+`TauCeti.Vortex.SobolevFieldSpace.smulCoord_zero` to
+`TauCeti.Vortex.SobolevFieldSpace.smulCoord_three`. -/
 def smulCoord (R J : H^{(k : ℝ) + 1}(ℂ)) (y : Fin 4 → H^{(k : ℝ)}(ℂ)) :
     Fin 4 → H^{(k : ℝ)}(ℂ) :=
   let ι : H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) := inclusion (lt_add_one _).le
@@ -145,6 +147,55 @@ def smulCoord (R J : H^{(k : ℝ) + 1}(ℂ)) (y : Fin 4 → H^{(k : ℝ)}(ℂ)) 
       referenceMulCLM f m k 3 (ι J),
     y 3 + M (ι J) (y 2) + M (ι R) (y 3) + referenceMulCLM f m k 2 (ι J) +
       referenceMulCLM f m k 3 (ι R)]
+
+section smulCoord
+
+variable (hs' : (finrank ℝ ℂ : ℝ) < 2 * (k : ℝ)) (R J : H^{(k : ℝ) + 1}(ℂ))
+  (y : Fin 4 → H^{(k : ℝ)}(ℂ))
+
+/-- The first connection coordinate of the transformed field is
+`y_0 - (∂_1 J + R ∂_1 J - J ∂_1 R)`. -/
+theorem smulCoord_zero :
+    smulCoord f m R J y 0 = y 0 -
+      (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 J +
+        mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le R)
+          (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 J) -
+        mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le J)
+          (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top 1 R)) :=
+  (rfl)
+
+/-- The second connection coordinate of the transformed field is
+`y_1 - (∂_i J + R ∂_i J - J ∂_i R)`. -/
+theorem smulCoord_one :
+    smulCoord f m R J y 1 = y 1 -
+      (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I J +
+        mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le R)
+          (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I J) -
+        mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le J)
+          (lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top I R)) :=
+  (rfl)
+
+/-- The first section coordinate of the transformed field is
+`y_2 + R y_2 - J y_3 + p_m R - q_m J`. -/
+theorem smulCoord_two :
+    smulCoord f m R J y 2 =
+      y 2 + mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le R) (y 2) -
+        mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le J) (y 3) +
+        referenceMulCLM f m k 2 (inclusion (lt_add_one (k : ℝ)).le R) -
+        referenceMulCLM f m k 3 (inclusion (lt_add_one (k : ℝ)).le J) :=
+  (rfl)
+
+/-- The second section coordinate of the transformed field is
+`y_3 + J y_2 + R y_3 + p_m J + q_m R`. -/
+theorem smulCoord_three :
+    smulCoord f m R J y 3 =
+      y 3 + mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le J) (y 2) +
+        mulCLM hs' (inclusion (lt_add_one (k : ℝ)).le R) (y 3) +
+        referenceMulCLM f m k 2 (inclusion (lt_add_one (k : ℝ)).le J) +
+        referenceMulCLM f m k 3 (inclusion (lt_add_one (k : ℝ)).le R) :=
+  (rfl)
+
+end smulCoord
 
 /-- The coordinates `smulCoord` of the transformed field depend continuously on `Re u - 1`, `Im u`
 and the coordinates of `x - x_m`. -/
@@ -252,6 +303,25 @@ private theorem coeFn_inclusionLp_connectionCoord (u : SobolevTopologicalGaugeGr
   push_cast
   ring
 
+omit [Fact (1 < k)] in
+/-- The `L²` function of a sum in `H^k(ℂ)` is almost everywhere the sum of the `L²` functions. -/
+private theorem coeFn_inclusionLp_add_ae_eq {a b : H^{(k : ℝ)}(ℂ)} {F G : ℂ → ℂ}
+    (ha : ⇑(inclusionLp k.cast_nonneg a) =ᵐ[volume] F)
+    (hb : ⇑(inclusionLp k.cast_nonneg b) =ᵐ[volume] G) :
+    ⇑(inclusionLp k.cast_nonneg (a + b)) =ᵐ[volume] fun z ↦ F z + G z := by
+  rw [map_add]
+  exact (Lp.coeFn_add _ _).trans (ha.add hb)
+
+omit [Fact (1 < k)] in
+/-- The `L²` function of a difference in `H^k(ℂ)` is almost everywhere the difference of the `L²`
+functions. -/
+private theorem coeFn_inclusionLp_sub_ae_eq {a b : H^{(k : ℝ)}(ℂ)} {F G : ℂ → ℂ}
+    (ha : ⇑(inclusionLp k.cast_nonneg a) =ᵐ[volume] F)
+    (hb : ⇑(inclusionLp k.cast_nonneg b) =ᵐ[volume] G) :
+    ⇑(inclusionLp k.cast_nonneg (a - b)) =ᵐ[volume] fun z ↦ F z - G z := by
+  rw [map_sub]
+  exact (Lp.coeFn_sub _ _).trans (ha.sub hb)
+
 /-- **The section coordinates of the transformed field.** With `R = Re u - 1`, `J = Im u` and
 `y = x - x_m`, the `L²` functions of `y_p + R y_p - J y_q + p_m R - q_m J` and of
 `y_q + J y_p + R y_q + p_m J + q_m R` are the section coordinates `Re u · p - Im u · q` and
@@ -268,26 +338,19 @@ private theorem coeFn_inclusionLp_sectionCoord (u : SobolevTopologicalGaugeGroup
   have hM (a b : H^{(k : ℝ)}(ℂ)) := coeFn_toLp_inclusion_mulCLM finrank_lt k.cast_nonneg a b
   have href (a : Fin 4) (b : H^{(k : ℝ)}(ℂ)) :=
     coeFn_inclusionLp_referenceMulCLM_ae_eq (f := f) (m := m) a b
-  simp only [smulCoord, Fin.isValue, Matrix.cons_val, map_add, map_sub]
-  set ιR := inclusion (lt_add_one (k : ℝ)).le (reSubOne u)
-  set ιJ := inclusion (lt_add_one (k : ℝ)).le (imPart u)
-  constructor
-  · refine (Lp.coeFn_sub _ _).trans <| (((Lp.coeFn_add _ _).trans <| ((Lp.coeFn_sub _ _).trans <|
-      (Lp.coeFn_add _ _).sub .rfl).add .rfl).sub .rfl).trans ?_
-    filter_upwards [hM ιR (subRef x 2), hM ιJ (subRef x 3), href 2 ιR, href 3 ιJ, hy 2, hy 3, hR,
-      hJ] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈
-    simp only [toLp_inclusion] at h₁ h₂ h₅ h₆
-    simp only [h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, Pi.sub_apply, Pi.add_apply]
-    simp [gaugeTransform_apply]
-    ring
-  · refine (Lp.coeFn_add _ _).trans <| (((Lp.coeFn_add _ _).trans <| ((Lp.coeFn_add _ _).trans <|
-      (Lp.coeFn_add _ _).add .rfl).add .rfl).add .rfl).trans ?_
-    filter_upwards [hM ιJ (subRef x 2), hM ιR (subRef x 3), href 2 ιJ, href 3 ιR, hy 2, hy 3, hR,
-      hJ] with z h₁ h₂ h₃ h₄ h₅ h₆ h₇ h₈
-    simp only [toLp_inclusion] at h₁ h₂ h₅ h₆
-    simp only [h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, Pi.add_apply]
-    simp [gaugeTransform_apply]
-    ring
+  simp only [toLp_inclusion] at hy hM
+  rw [smulCoord_two finrank_lt, smulCoord_three finrank_lt]
+  -- Split each coordinate into its summands, whatever their order, and read off the `L²` function
+  -- of each summand; then compare the two sides pointwise.
+  constructor <;>
+  · apply EventuallyEq.trans
+    · repeat' with_reducible first
+        | exact hy _ | exact hM _ _ | exact href _ _
+        | apply coeFn_inclusionLp_add_ae_eq | apply coeFn_inclusionLp_sub_ae_eq
+    · filter_upwards [hy 2, hy 3, hR, hJ] with z h₁ h₂ h₃ h₄
+      simp only [h₁, h₂, h₃, h₄, coe_smul, gaugeTransform_apply, Fin.isValue, Matrix.cons_val]
+      push_cast
+      ring
 
 /-- **The coordinates of the transformed field.** For `u ∈ G_(k+1)` and a continuous field `x` of
 `A_m^k`, the coordinates of `u · x - x_m` in `H^k(ℂ)` are `smulCoord` of `Re u - 1`, `Im u` and
@@ -296,9 +359,11 @@ theorem subRef_smul (u : SobolevTopologicalGaugeGroup hs) (x : SobolevFieldSpace
     subRef (u • x) = smulCoord f m (reSubOne u) (imPart u) (subRef x) := by
   funext j
   rw [subRef_eq_iff k.cast_nonneg, toLp_inclusion]
-  fin_cases j
-  · exact coeFn_inclusionLp_connectionCoord u x fun z ↦ by simp [gaugeTransform_apply]
-  · exact coeFn_inclusionLp_connectionCoord u x fun z ↦ by simp [gaugeTransform_apply]
+  fin_cases j <;> simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk]
+  · rw [smulCoord_zero finrank_lt]
+    exact coeFn_inclusionLp_connectionCoord u x fun z ↦ by simp [gaugeTransform_apply]
+  · rw [smulCoord_one finrank_lt]
+    exact coeFn_inclusionLp_connectionCoord u x fun z ↦ by simp [gaugeTransform_apply]
   · exact (coeFn_inclusionLp_sectionCoord u x).1
   · exact (coeFn_inclusionLp_sectionCoord u x).2
 
