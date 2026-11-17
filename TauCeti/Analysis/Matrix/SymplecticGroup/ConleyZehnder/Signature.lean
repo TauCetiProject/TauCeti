@@ -39,10 +39,10 @@ A symplectic matrix `A` without eigenvalue `-1` has the Cayley generator
 (`SymplecticGroup.isSymm_J_mul_one_sub_mul_inv_one_add`), and the straightened graph `T Γ(A)` is
 the graph `{x + i B x}` of `B`, so its Souriau map is the Cayley transform of `B`
 (`TauCeti.GLSymplectic.souriau_graphUnitaryFrame_eq_cayley`). Along `t ↦ exp (t J S)` with
-`‖S‖ < π` there is no eigenvalue `-1` (`Matrix.isUnit_exp_add_one`), and the crossing form formula
-`Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley` applies to
+`‖S‖ < π` there is no eigenvalue `-1` (`Matrix.isUnit_exp_add_one_real`), and the crossing form
+formula `Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley` applies to
 `B t = J (1 - exp (t J S)) (1 + exp (t J S))⁻¹`. Its only crossing is at `t = 0`, since
-`exp (t J S)` has no eigenvalue `1` for `0 < t ≤ 1` (`Matrix.isUnit_exp_sub_one`). There
+`exp (t J S)` has no eigenvalue `1` for `0 < t ≤ 1` (`Matrix.isUnit_exp_sub_one_real`). There
 `B 0 = 0` and `B' 0 = S / 2`, so the crossing contributes half the signature of `S`. For
 `‖S‖ < 2π` the path is the catenation of the path of `S / 2` with a path along which
 `exp (t J S)` has no eigenvalue `1`, whose index vanishes by the zero axiom
@@ -130,7 +130,7 @@ private theorem isUnit_one_add_exp_smul_J_mul {S : Matrix (n ⊕ n) (n ⊕ n) �
     (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) :
     IsUnit (1 + exp (t • (J n ℝ * S))) := by
   rw [add_comm]
-  refine isUnit_exp_add_one (lt_of_le_of_lt ?_ hSπ)
+  refine isUnit_exp_add_one_real (lt_of_le_of_lt ?_ hSπ)
   rw [norm_smul_J_mul, abs_of_nonneg ht.1]
   exact mul_le_of_le_one_left (norm_nonneg S) ht.2
 
@@ -149,7 +149,7 @@ private theorem det_cayleyGen_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet
     (hSπ : ‖S‖ < Real.pi) {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (ht0 : t ≠ 0) :
     (cayleyGen S t).det ≠ 0 := by
   have h1 : IsUnit (exp (t • (J n ℝ * S)) - 1) :=
-    isUnit_exp_sub_one ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
+    isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [ht0, hdet]))
       (by rw [norm_smul_J_mul, abs_of_nonneg ht.1]
           nlinarith [norm_nonneg S, ht.2, Real.pi_pos])
   rw [cayleyGen, det_mul]
@@ -249,7 +249,7 @@ theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two {S : Matrix (n
     fun s ↦ ?_, add_zero]
   have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]
   rw [hδ]
-  refine isUnit_exp_sub_one ((isUnit_iff_isUnit_det _).2 (by simp [X, hs.ne', hdet])) ?_
+  refine isUnit_exp_sub_one_real ((isUnit_iff_isUnit_det _).2 (by simp [X, hs.ne', hdet])) ?_
   rw [norm_smul_J_mul, abs_of_pos hs]
   nlinarith [s.2.2, norm_nonneg S]
 
