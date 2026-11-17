@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Boundary.Derivative
 public import TauCeti.Geometry.Manifold.Boundary.Orientation
 public import TauCeti.Geometry.Manifold.Boundary.SmoothMap
-public import Mathlib.Analysis.InnerProductSpace.PiL2
+public import TauCeti.Analysis.InnerProductSpace.PiL2
 
 /-!
 # Tangent, inward and outward directions at the boundary
@@ -23,13 +23,12 @@ zero-insertion map, so `T_q∂M` is the coordinate hyperplane `{v⁰ = 0}`. More
 `T_q∂M` is the kernel of the differential at `q` of the normal coordinate `x⁰` of every chart of the
 maximal atlas around `q`. Each tangent vector at `q` is then exactly one of: outward
 (`TauCeti.IsOutwardPointing`, `v⁰ < 0`), tangent (`v ∈ T_q∂M`), or inward (`-v` outward,
-`v⁰ > 0`), and none of these classes depends on the chart. The inward and the outward vectors form
-disjoint open half-spaces of `T_qM` with common frontier `T_q∂M`.
+`v⁰ > 0`), and none of these classes depends on the chart. The inward and the outward vectors
+(open half-spaces by `Boundary/Orientation.lean`) have common frontier `T_q∂M`.
 
-The velocity at `0` of a curve `c` on `[0, ∞)`, taken within `[0, ∞)`, is never outward, and the
-velocity at `0` of a curve `c` on `ℝ` with `c 0 ∈ ∂M` is tangent to the boundary. A diffeomorphism
-of class `C^k`, `k ≠ 0`, carries `T_q∂M` onto the tangent space of the boundary at the image
-point.
+The velocity at `0` of a curve `c` on `ℝ` with `c 0 ∈ ∂M` is tangent to the boundary. A
+diffeomorphism of class `C^k`, `k ≠ 0`, carries `T_q∂M` onto the tangent space of the boundary at
+the image point.
 
 ## Main declarations
 
@@ -38,13 +37,16 @@ point.
   coordinate hyperplane; `TauCeti.finrank_boundaryTangentSpace`: it has dimension `n`.
 * `TauCeti.boundaryTangentSpace_eq_ker_of_mem_maximalAtlas`: it is the kernel of the differential
   of the normal coordinate of any chart of the maximal atlas.
+* `TauCeti.mem_boundaryTangentSpace_iff_proj`: `v ∈ T_q∂M` exactly when its normal coordinate in
+  the preferred chart vanishes; `TauCeti.mem_boundaryTangentSpace_iff_tangentCoordChange`: the
+  same in any preferred chart.
 * `TauCeti.isOutwardPointing_or_mem_boundaryTangentSpace_or_isOutwardPointing_neg`, with
   `TauCeti.IsOutwardPointing.notMem_boundaryTangentSpace` and
-  `TauCeti.IsOutwardPointing.not_isOutwardPointing_neg`: the trichotomy.
+  `TauCeti.IsOutwardPointing.not_isOutwardPointing_neg` (in `Boundary/Orientation.lean`): the
+  trichotomy.
 * `TauCeti.frontier_setOf_isOutwardPointing`, `TauCeti.frontier_setOf_isOutwardPointing_neg`:
-  the outward and inward half-spaces are open with frontier `T_q∂M`.
-* `TauCeti.not_isOutwardPointing_mfderivWithin_Ici`,
-  `TauCeti.mfderiv_apply_one_mem_boundaryTangentSpace`: velocities of curves.
+  the outward and inward half-spaces have frontier `T_q∂M`.
+* `TauCeti.mfderiv_apply_one_mem_boundaryTangentSpace`: velocities of curves through the boundary.
 * `TauCeti.map_mfderiv_boundaryTangentSpace`: naturality under diffeomorphisms.
 
 ## References
@@ -66,94 +68,6 @@ open scoped Manifold Topology ContDiff
 namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-
-/-! ### Outward and inward vectors in the preferred chart -/
-
-/-- At a boundary point, a vector is outward exactly when its normal coordinate in the preferred
-chart is negative. -/
-private theorem isOutwardPointing_iff_proj {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
-    {v : TangentSpace (𝓡∂ (n + 1)) x} :
-    IsOutwardPointing x v ↔ EuclideanSpace.proj (0 : Fin (n + 1)) v < 0 := by
-  rw [isOutwardPointing_iff, and_iff_right hx, (hasMFDerivAt_extChartAt_self x).mfderiv]
-  rfl
-
-/-- At a boundary point, a vector is inward exactly when its normal coordinate in the preferred
-chart is positive. -/
-private theorem isOutwardPointing_neg_iff_proj {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
-    {v : TangentSpace (𝓡∂ (n + 1)) x} :
-    IsOutwardPointing x (-v) ↔ 0 < EuclideanSpace.proj (0 : Fin (n + 1)) v := by
-  rw [isOutwardPointing_iff_proj hx,
-    show EuclideanSpace.proj (0 : Fin (n + 1)) (-v) = -EuclideanSpace.proj (0 : Fin (n + 1)) v from
-      map_neg _ _, neg_lt_zero]
-
-/-- An outward vector is not inward: its negative is not outward. -/
-theorem IsOutwardPointing.not_isOutwardPointing_neg {x : M} {v : TangentSpace (𝓡∂ (n + 1)) x}
-    (hv : IsOutwardPointing x v) : ¬IsOutwardPointing x (-v) := by
-  have hx := hv.mem_boundary
-  rw [isOutwardPointing_iff_proj hx] at hv
-  rw [isOutwardPointing_neg_iff_proj hx]
-  exact hv.asymm
-
-/-- The outward vectors at a point form an open set (empty away from the boundary). -/
-theorem isOpen_setOf_isOutwardPointing (x : M) :
-    IsOpen {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} := by
-  by_cases hx : x ∈ (𝓡∂ (n + 1)).boundary M
-  · simp_rw [isOutwardPointing_iff_proj hx]
-    exact isOpen_lt (EuclideanSpace.proj (0 : Fin (n + 1))).continuous continuous_const
-  · have h : {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x v} = ∅ :=
-      eq_empty_of_forall_notMem fun _ hv ↦ hx (IsOutwardPointing.mem_boundary hv)
-    rw [h]
-    exact isOpen_empty
-
-/-- The inward vectors at a point form an open set (empty away from the boundary). -/
-theorem isOpen_setOf_isOutwardPointing_neg (x : M) :
-    IsOpen {v : TangentSpace (𝓡∂ (n + 1)) x | IsOutwardPointing x (-v)} :=
-  (isOpen_setOf_isOutwardPointing x).preimage continuous_neg
-
-/-- The preferred chart at a boundary point `x` reads every point with nonnegative normal
-coordinate, and reads `x` itself with normal coordinate zero. -/
-private theorem isMinOn_extChartAt_apply_zero {x : M} (hx : x ∈ (𝓡∂ (n + 1)).boundary M)
-    (s : Set M) : IsMinOn (fun y ↦ extChartAt (𝓡∂ (n + 1)) x y 0) s x := by
-  have h0 : 0 = extChartAt (𝓡∂ (n + 1)) x x 0 := by
-    have h := (𝓡∂ (n + 1)).isBoundaryPoint_iff.mp hx
-    rw [frontier_range_modelWithCornersEuclideanHalfSpace] at h
-    exact h
-  intro y _
-  simp only [mem_ofPred_eq, ← h0]
-  simp only [extChartAt_coe, Function.comp_apply, modelWithCornersEuclideanHalfSpace_toFun]
-  exact (chartAt (EuclideanHalfSpace (n + 1)) x y).2
-
-/-- The normal coordinate, in the preferred chart at `c 0`, of the velocity of a curve `c` within
-`s` at `0` is the derivative of the normal coordinate of `c`. -/
-private theorem hasFDerivWithinAt_extChartAt_comp_apply_zero {c : ℝ → M} {s : Set ℝ}
-    (hc : MDifferentiableWithinAt 𝓘(ℝ) (𝓡∂ (n + 1)) c s 0) :
-    HasFDerivWithinAt (fun t ↦ extChartAt (𝓡∂ (n + 1)) (c 0) (c t) 0)
-      ((EuclideanSpace.proj (0 : Fin (n + 1))).comp
-        (mfderivWithin 𝓘(ℝ) (𝓡∂ (n + 1)) c s 0)) s 0 := by
-  have hd := (hasMFDerivAt_extChartAt_self (I := 𝓡∂ (n + 1)) (c 0)).comp_hasMFDerivWithinAt
-    (0 : ℝ) hc.hasMFDerivWithinAt
-  rw [hasMFDerivWithinAt_iff_hasFDerivWithinAt] at hd
-  exact (EuclideanSpace.proj (0 : Fin (n + 1))).hasFDerivAt.comp_hasFDerivWithinAt (0 : ℝ) hd
-
-/-- The velocity at `0` of a curve `c` on `[0, ∞)`, taken within `[0, ∞)`, is not outward. When
-`c 0 ∈ ∂M` it is therefore tangent to the boundary or inward. (Without differentiability the
-velocity is `0` by convention, which is not outward either.) -/
-theorem not_isOutwardPointing_mfderivWithin_Ici (c : ℝ → M) :
-    ¬IsOutwardPointing (c 0) (mfderivWithin 𝓘(ℝ) (𝓡∂ (n + 1)) c (Ici 0) 0 (1 : ℝ)) := by
-  intro hv
-  by_cases hc : MDifferentiableWithinAt 𝓘(ℝ) (𝓡∂ (n + 1)) c (Ici 0) 0
-  swap
-  · rw [mfderivWithin_zero_of_not_mdifferentiableWithinAt hc] at hv
-    exact hv.ne_zero rfl
-  have hmin : IsLocalMinOn (fun t ↦ extChartAt (𝓡∂ (n + 1)) (c 0) (c t) 0) (Ici 0) 0 :=
-    ((isMinOn_extChartAt_apply_zero hv.mem_boundary univ).comp_of_mapsTo
-      (mapsTo_univ c (Ici 0)) rfl).isLocalMinOn
-  have hcone : (1 : ℝ) ∈ posTangentConeAt (Ici (0 : ℝ)) 0 :=
-    mem_posTangentConeAt_of_segment_subset ((convex_Ici 0).segment_subset self_mem_Ici
-      (by norm_num))
-  have h := hmin.hasFDerivWithinAt_nonneg (hasFDerivWithinAt_extChartAt_comp_apply_zero hc) hcone
-  rw [isOutwardPointing_iff_proj hv.mem_boundary] at hv
-  exact (not_lt.mpr h) hv
 
 /-! ### The tangent space of the boundary -/
 
@@ -220,6 +134,9 @@ theorem boundaryTangentSpace_eq_ker_of_mem_maximalAtlas
       (EuclideanSpace.single (0 : Fin (n + 1)) (1 : ℝ))
     have h1 := LinearMap.congr_fun h0 u
     rw [ContinuousLinearMap.coe_coe, hφ, LinearMap.zero_apply] at h1
+    -- The differential of `e.extend` lands in a `TangentSpace` of the model space, a type synonym
+    -- of `EuclideanSpace`, so `π.comp _` is not type-correct at instance transparency and
+    -- `rw [ContinuousLinearMap.comp_apply]` finds no match; `change` unfolds the composition.
     change π (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
       (e.extend (𝓡∂ (n + 1))) q u) = 0 at h1
     rw [hu] at h1
@@ -252,7 +169,8 @@ theorem boundaryTangentSpace_eq_ker_of_mem_maximalAtlas
 
 /-- A vector at a boundary point is tangent to the boundary exactly when its normal coordinate in
 the preferred chart vanishes. -/
-private theorem mem_boundaryTangentSpace_iff_proj {q : (𝓡∂ (n + 1)).boundary M}
+@[simp]
+theorem mem_boundaryTangentSpace_iff_proj {q : (𝓡∂ (n + 1)).boundary M}
     {v : TangentSpace (𝓡∂ (n + 1)) (q : M)} :
     v ∈ boundaryTangentSpace q ↔ EuclideanSpace.proj (0 : Fin (n + 1)) v = 0 := by
   rw [boundaryTangentSpace_eq_euclideanHalfSpaceBoundary]
@@ -267,16 +185,6 @@ theorem mem_boundaryTangentSpace_iff_tangentCoordChange {q : (𝓡∂ (n + 1)).b
       (tangentCoordChange (𝓡∂ (n + 1)) (q : M) α (q : M) v) 0 = 0 := by
   obtain ⟨a, ha, hnormal⟩ := tangentCoordChange_normal_pos q.2 (mem_extChartAt_source _) hα
   rw [mem_boundaryTangentSpace_iff_proj, hnormal v, mul_eq_zero, or_iff_right ha.ne']
-  rfl
-
-/-- Inwardness, that is outwardness of the negative, can be tested in any preferred chart
-containing the boundary point: the normal coordinate is positive. -/
-theorem isOutwardPointing_neg_iff_tangentCoordChange {x α : M}
-    (hx : x ∈ (𝓡∂ (n + 1)).boundary M) (hα : x ∈ (extChartAt (𝓡∂ (n + 1)) α).source)
-    (v : TangentSpace (𝓡∂ (n + 1)) x) :
-    IsOutwardPointing x (-v) ↔ 0 < (tangentCoordChange (𝓡∂ (n + 1)) x α x v) 0 := by
-  obtain ⟨a, ha, hnormal⟩ := tangentCoordChange_normal_pos hx (mem_extChartAt_source _) hα
-  rw [isOutwardPointing_neg_iff_proj hx, hnormal v, mul_pos_iff_of_pos_left ha]
   rfl
 
 /-- **Trichotomy.** A tangent vector at a boundary point is outward, tangent to the boundary, or
@@ -298,11 +206,6 @@ theorem IsOutwardPointing.notMem_boundaryTangentSpace {q : (𝓡∂ (n + 1)).bou
   rw [mem_boundaryTangentSpace_iff_proj]
   exact hv.ne
 
-/-- The normal coordinate of the half-space model is surjective. -/
-private theorem surjective_proj_zero :
-    Surjective (EuclideanSpace.proj (𝕜 := ℝ) (0 : Fin (n + 1))) :=
-  fun r ↦ ⟨EuclideanSpace.single 0 r, by simp⟩
-
 /-- The frontier of the open half-space of outward vectors at a boundary point is the tangent
 space of the boundary. -/
 theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
@@ -313,7 +216,8 @@ theorem frontier_setOf_isOutwardPointing (q : (𝓡∂ (n + 1)).boundary M) :
     ext v
     exact isOutwardPointing_iff_proj q.2
   rw [h]
-  refine (ContinuousLinearMap.frontier_preimage _ surjective_proj_zero _).trans ?_
+  refine (ContinuousLinearMap.frontier_preimage _
+    (EuclideanSpace.surjective_proj (𝕜 := ℝ) (0 : Fin (n + 1))) _).trans ?_
   rw [frontier_Iio]
   ext v
   exact mem_boundaryTangentSpace_iff_proj.symm
@@ -328,7 +232,8 @@ theorem frontier_setOf_isOutwardPointing_neg (q : (𝓡∂ (n + 1)).boundary M) 
     ext v
     exact isOutwardPointing_neg_iff_proj q.2
   rw [h]
-  refine (ContinuousLinearMap.frontier_preimage _ surjective_proj_zero _).trans ?_
+  refine (ContinuousLinearMap.frontier_preimage _
+    (EuclideanSpace.surjective_proj (𝕜 := ℝ) (0 : Fin (n + 1))) _).trans ?_
   rw [frontier_Ioi]
   ext v
   exact mem_boundaryTangentSpace_iff_proj.symm

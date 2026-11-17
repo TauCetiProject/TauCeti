@@ -37,6 +37,7 @@ Borel measurable structure on the scalar field.
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
 * `EuclideanSpace.sqrt_card_pos`: the square root of the dimension is positive.
+* `EuclideanSpace.surjective_proj`: every coordinate projection is surjective.
 * `EuclideanSpace.toLp_mem_sphere_zero_one_iff`: a real vector lies on the unit sphere exactly
   when its dot product with itself is `1`.
 * `EuclideanSpace.sum_mul_dist_basisFun_le_sqrt`: a point of the standard simplex is, on average
@@ -208,6 +209,12 @@ theorem piLpExtendByZero_castLEEmb_take (hm : m ≤ n) {x : EuclideanSpace 𝕜 
 end take
 
 variable [RCLike 𝕜]
+
+omit [Fintype ι] in
+/-- Every coordinate projection of Euclidean space is surjective. -/
+theorem surjective_proj (i : ι) : Function.Surjective (EuclideanSpace.proj (𝕜 := 𝕜) i) := by
+  classical
+  exact fun r ↦ ⟨EuclideanSpace.single i r, by simp⟩
 
 variable (𝕜) in
 /-- Splitting off the first coordinate identifies `𝕜ⁿ⁺¹` with `𝕜 × 𝕜ⁿ`: the continuous linear
