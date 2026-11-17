@@ -42,7 +42,9 @@ Every class `x = a v + c t` (modulo torsion) also has even square `x · x = 2ac`
 square `-1`.
 
 The statements are about an arbitrary `ℤ`-valued bilinear form `B` on an abelian group `H`,
-playing the role of the intersection form on `H²(X; ℤ)`. Torsion is retained: the classes `e`
+playing the role of the intersection form on `H²(X; ℤ)`. The `ℤ`-module structure on `H` is
+arbitrary, such as that of a cohomology group, rather than the one every abelian group
+carries. Torsion is retained: the classes `e`
 and `κ` are only assumed to agree with their coordinate expressions up to elements of finite
 order, which every `ℤ`-valued bilinear form annihilates.
 
@@ -71,8 +73,9 @@ namespace TauCeti
 
 namespace SmoothMappingTorus
 
-variable {H : Type*} [AddCommGroup H] {B : BilinForm ℤ H} {v t e κ : H} {a c g : ℤ}
+variable {H : Type*} [AddCommGroup H] [Module ℤ H] {B : BilinForm ℤ H} {v t e κ : H} {a c g : ℤ}
 
+omit [Module ℤ H] in
 /-- The determinant class `l = 2e - κ` of the label `e = a v + c t` is `2q v + 2c t` modulo
 torsion, where `κ = (2g - 2) v` and `q = a + 1 - g`. -/
 theorem isOfFinAddOrder_two_smul_sub_sub (he : IsOfFinAddOrder (e - (a • v + c • t)))
@@ -90,6 +93,7 @@ theorem apply_self_sub_apply_canonical_eq (hv : B v v = 0) (ht : B t t = 0) (hvt
     (htv : B t v = 1) (he : IsOfFinAddOrder (e - (a • v + c • t)))
     (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
     B e e - B κ e = 2 * c * (a + 1 - g) := by
+  obtain rfl := Subsingleton.elim ‹Module ℤ H› (AddCommGroup.toIntModule H)
   rw [B.apply_self_eq_two_mul_mul_of_isOfFinAddOrder_sub hv ht hvt htv he,
     B.apply_eq_apply_of_isOfFinAddOrder_sub_left hκ,
     B.apply_eq_apply_of_isOfFinAddOrder_sub_right he]
@@ -98,10 +102,9 @@ theorem apply_self_sub_apply_canonical_eq (hv : B v v = 0) (ht : B t t = 0) (hvt
 
 /-- The pairing of the determinant class `l = 2e - κ` with `t` is `l · t = 2q`, where
 `e = a v + c t`, `κ = (2g - 2) v` and `q = a + 1 - g`. Only `t · t = 0` and `v · t = 1` are
-needed, and `H` may carry any `ℤ`-module structure, such as that of a cohomology group. -/
-theorem apply_two_smul_sub_right_eq [Module ℤ H] {B : BilinForm ℤ H} (ht : B t t = 0)
-    (hvt : B v t = 1) (he : IsOfFinAddOrder (e - (a • v + c • t)))
-    (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
+needed. -/
+theorem apply_two_smul_sub_right_eq (ht : B t t = 0) (hvt : B v t = 1)
+    (he : IsOfFinAddOrder (e - (a • v + c • t))) (hκ : IsOfFinAddOrder (κ - (2 * g - 2) • v)) :
     B ((2 : ℤ) • e - κ) t = 2 * (a + 1 - g) := by
   rw [B.apply_eq_apply_of_isOfFinAddOrder_sub_left (isOfFinAddOrder_two_smul_sub_sub he hκ)]
   simp only [map_add, map_zsmul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, ht, hvt]
