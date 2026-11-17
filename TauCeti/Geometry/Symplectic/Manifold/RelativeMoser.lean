@@ -536,9 +536,12 @@ theorem exists_diffeomorph_fix_embedding_eventually_mpullback_eq [SecondCountabl
   · -- The point `g q` of `W` lies over `f q`.
     exact (hΦW (g q)).trans (congrArg Subtype.val (hΨK _ (mem_range_self q)))
   · -- On `W`, `Φ` is `Ψ`, whose differential at `g q` is the identity.
+    have h (v : TangentSpace I (g q)) : mfderiv I I Ψ (g q) v = mfderiv I I Φ (g q) v := by
+      have h := Manifold.tangentSpaceOpenEquiv_mfderiv_apply (I' := I) hcomp.symm v
+      rw [Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply] at h
+      exact h
     exact ContinuousLinearMap.ext fun v ↦
-      (Manifold.mfderiv_apply_of_comp_subtype_val_eq hcomp (g q) v).symm.trans
-        (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))) v)
+      (h v).symm.trans (DFunLike.congr_fun (hΨ1 (g q) (mem_range_self q) (hβW1 q (hη q))) v)
   -- On `W`, the pullback by `Φ` is the pullback by `Ψ` of the restricted forms.
   obtain ⟨U, ⟨hU, hKU⟩, hUΨ⟩ := (hasBasis_nhdsSet (range g)).mem_iff.1 hΨ
   refine mem_of_superset ((W.isOpen.isOpenEmbedding_subtypeVal.isOpenMap U hU).mem_nhdsSet.2 ?_)
@@ -583,10 +586,13 @@ theorem exists_diffeomorph_opens_of_eq_along [SecondCountableTopology M]
   refine ⟨U₀, U₁, Φ.subtype hU₀₁, fun q ↦
     ⟨hfU (mem_range_self q), (Φ.subtype_apply_coe hU₀₁ _).trans (hΦf q), ?_⟩, ?_⟩
   · -- The restriction `φ` of `Φ` has the differential of `Φ`, the identity along `f(Q)`.
-    ext v
-    exact (Manifold.mfderiv_apply_of_comp_subtype_val_eq
-      (funext fun x ↦ (Φ.subtype_apply_coe hU₀₁ x).symm) _ v).trans
-        (DFunLike.congr_fun (hΦ1 q) v)
+    have h (v : TangentSpace I (⟨f q, hfU (mem_range_self q)⟩ : U₀)) :
+        mfderiv I I (Φ.subtype hU₀₁) _ v = mfderiv I I Φ (f q) v := by
+      have h := Manifold.tangentSpaceOpenEquiv_mfderiv_apply (I' := I)
+        (funext fun x ↦ Φ.subtype_apply_coe hU₀₁ x) v
+      rw [Manifold.tangentSpaceOpenEquiv_apply, Manifold.tangentSpaceOpenEquiv_apply] at h
+      exact h
+    exact ContinuousLinearMap.ext fun v ↦ (h v).trans (DFunLike.congr_fun (hΦ1 q) v)
   apply Subtype.ext
   funext z
   rw [SmoothForm.mpullback_mpullback_of_comp_eq _ _ contMDiff_subtype_val Φ.contMDiff
