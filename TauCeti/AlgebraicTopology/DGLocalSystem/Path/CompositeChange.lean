@@ -43,6 +43,8 @@ of the retractions needs to be linear over the loops at `c`.
 
 * `TauCeti.tensorPathChainConcat`: the composite change of basepoint
   `(M ⊗ C_*(P_{a→b} B)) ⊗ C_*(P_{b→c} B) ⟶ M ⊗ C_*(P_{a→c} B)`.
+* `TauCeti.tensorPathChainConcatNatTrans`: the composite change of basepoint, as a natural
+  transformation from changing along `a → b` and then `b → c` to changing along `a → c`.
 
 ## Main results
 
@@ -259,5 +261,35 @@ theorem isQuasiIso_tensorPathChainConcat (h : Nonempty (MoorePathBetween B a b))
         differential_tensorPathChainPoint]
 
 end CompositeChange
+
+section Naturality
+
+attribute [local instance 100] BalancedTensorProduct.rightModule
+  BalancedTensorProduct.rightIsScalarTower
+
+variable {a : B}
+
+variable (B R)
+
+/-- **The composite change of basepoint as a natural transformation**: changing the basepoint of
+DG local systems along the paths from `a` to `b` and then along the paths from `b` to `c` maps to
+changing it along the paths from `a` to `c`, by `(m ⊗ σ) ⊗ τ ↦ m ⊗ (σ ⋆ τ)`. -/
+def tensorPathChainConcatNatTrans (a b c : B) :
+    tensorBimoduleFunctor.{w, max u w, max u w, max u w v, max u w}.flip.obj
+          (pathChainBimodule B a b R) ⋙
+        tensorBimoduleFunctor.flip.obj (pathChainBimodule B b c R) ⟶
+      tensorBimoduleFunctor.flip.obj (pathChainBimodule B a c R) where
+  app M := tensorPathChainConcat M b c
+  naturality _ _ f := tensorPathChainConcat_naturality _ f b c
+
+/-- The components of `TauCeti.tensorPathChainConcatNatTrans` are
+`TauCeti.tensorPathChainConcat`. -/
+@[simp]
+theorem tensorPathChainConcatNatTrans_app (a b c : B)
+    (M : DGRightModuleCat.{w, max u w, max u w v} (loopChain_isDGAlgebra B a R)) :
+    (tensorPathChainConcatNatTrans.{u, w, v} B R a b c).app M = tensorPathChainConcat M b c :=
+  (rfl)
+
+end Naturality
 
 end TauCeti
