@@ -174,7 +174,7 @@ theorem alongCurveWithin_leviCivitaConnection_model_space (γ V : ℝ → F) (s 
   change alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s t = _
   rw [alongCurveWithin_apply, alongCurveInChartWithin_apply]
   simp only [christoffelMap_leviCivita_model_space, zero_apply, add_zero]
-  have hcoord : sectionCoord γ W (γ t) = V := by
+  have hcoord : sectionCoord (𝕜 := ℝ) γ W (γ t) = V := by
     funext r
     rw [sectionCoord_apply, TangentBundle.continuousLinearMapAt_model_space]
     rfl
