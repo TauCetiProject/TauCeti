@@ -11,14 +11,17 @@ public import TauCeti.Data.Sum.Basic
 /-!
 # Residual networks under network isomorphisms
 
-A bounded-network isomorphism induces an isomorphism of the residual networks of corresponding
-feasible assignments. Forward copies remain forward copies and reverse copies remain reverse
-copies, even for loops and antiparallel arrows. Transport commutes with residual capacities, net
-changes, updates, and canonical differences. Thus relabelling a bounded problem before making a
-residual adjustment gives the same assignment as relabelling afterwards.
+A bounded-network isomorphism transports residual assignments via
+`Network.Iso.residualAssignmentEquiv`, requiring only an order relation on the bound coefficients
+and no feasible assignment. At corresponding feasible assignments, `Network.Iso.residual` bundles
+an isomorphism of residual networks. Forward copies remain forward copies and reverse copies
+remain reverse copies, even for loops and antiparallel arrows. Transport commutes with residual
+capacities, net changes, updates, and canonical differences. Thus relabelling a bounded problem
+before making a residual adjustment gives the same assignment as relabelling afterwards.
 
-The arrowwise identities require no finite vertex or arrow types. Excess and conservation can
-then be transported using the existing network-isomorphism API.
+The arrowwise identities require no finite vertex or arrow types. Under finiteness, this file
+also transports residual excess and circulations. The existing `Network.Iso` API supplies walk,
+subnetwork, and bundled flow transport along `e.residual f hf`.
 -/
 
 public section
@@ -40,7 +43,7 @@ def residualAssignmentEquiv (e : N ≃ₙ M) (R : Type w') :
   e.vertexEquiv.piCongr fun x ↦ e.vertexEquiv.piCongr fun y ↦
     (Equiv.sumCongr (e.homEquiv x y) (e.homEquiv y x)).arrowCongr (Equiv.refl R)
 
-/-- A transported residual assignment evaluates on any transported residual arrow. -/
+/-- A transported residual assignment has its original value on any transported residual arrow. -/
 @[simp]
 theorem residualAssignmentEquiv_apply {R : Type w'} (e : N ≃ₙ M)
     (r : TauCeti.Assignment (ResidualHom N.Hom) R) {x y : V}
@@ -266,7 +269,7 @@ theorem residual_homEquiv (e : N ≃ₙ M) (f : N.Assignment K)
 
 /-- Bundled residual transport agrees with assignment transport independent of feasibility. -/
 @[simp]
-theorem residual_assignmentEquiv (e : N ≃ₙ M) (f : N.Assignment K)
+theorem assignmentEquiv_residual (e : N ≃ₙ M) (f : N.Assignment K)
     (hf : f ∈ Set.Icc N.lower N.upper) (R : Type w') :
     (e.residual f hf).assignmentEquiv R = e.residualAssignmentEquiv R := by
   apply Equiv.ext

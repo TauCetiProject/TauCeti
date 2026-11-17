@@ -67,7 +67,7 @@ example : relabel.assignmentEquiv ℤ
     residualUpdate (relabel.assignmentEquiv ℤ assignment)
       ((relabel.residual assignment assignment_feasible).assignmentEquiv ℤ
         (residualDifference assignment 0)) :=
-  by simpa only [Network.Iso.residual_assignmentEquiv] using
+  by simpa only [Network.Iso.assignmentEquiv_residual] using
     relabel.assignmentEquiv_residualUpdate assignment (residualDifference assignment 0)
 
 example :
