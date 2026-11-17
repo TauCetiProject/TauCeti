@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Dual.Defs
 import Mathlib.LinearAlgebra.LinearIndependent.BaseChange
+import TauCeti.LinearAlgebra.Dual.Lemmas
 import TauCeti.LinearAlgebra.LinearIndependent.BaseChange
 
 /-!
@@ -26,10 +27,10 @@ square system is mapped by the homomorphism. These facts allow a system of indep
 algebraic linear forms to be extended to a larger coefficient field and then conjugated.
 
 The construction uses Mathlib's `Module.Basis.constr`; independence is transferred to the
-coefficient vectors of the forms and then through Mathlib's
-`linearIndependent_algebraMap_comp_iff` or, for a field source,
-`TauCeti.linearIndependent_algebraMap_comp_iff_of_field`, which adapts Oliver Nash's proof in
-Mathlib's `Mathlib/LinearAlgebra/LinearIndependent/BaseChange.lean`.
+coefficient vectors of the forms by `Module.Dual.linearIndependent_iff_apply_basis` and then
+through Mathlib's `linearIndependent_algebraMap_comp_iff` or, for a field source,
+`TauCeti.linearIndependent_algebraMap_comp_iff_of_field`, which adapts part of Oliver Nash's
+proof in Mathlib's `Mathlib/LinearAlgebra/LinearIndependent/BaseChange.lean`.
 
 ## References
 
@@ -157,13 +158,8 @@ theorem compRingHom_injective (f : R →+* S) (hf : Function.Injective f) :
 
 /-- Transport along an injective homomorphism detects the zero form. -/
 theorem compRingHom_eq_zero_iff_of_injective {L : Dual R (ι → R)} {f : R →+* S}
-    (hf : Function.Injective f) : L.compRingHom f = 0 ↔ L = 0 := by
-  constructor
-  · intro h
-    apply compRingHom_injective f hf
-    simpa using h
-  · rintro rfl
-    exact compRingHom_zero f
+    (hf : Function.Injective f) : L.compRingHom f = 0 ↔ L = 0 :=
+  (compRingHom_injective f hf).eq_iff' (compRingHom_zero f)
 
 /-- Transport along an injective homomorphism detects equality of forms. -/
 theorem compRingHom_inj_of_injective {L M : Dual R (ι → R)} {f : R →+* S}
@@ -212,7 +208,7 @@ end Ring
 
 section CommSemiring
 
-variable {R S ι κ : Type*} [CommSemiring R] [CommSemiring S] [Finite ι]
+variable {R S ι : Type*} [CommSemiring R] [CommSemiring S] [Finite ι]
 
 /-- Transport applies the coefficient homomorphism to scalars. -/
 @[simp]
@@ -220,17 +216,6 @@ theorem compRingHom_smul (L : Dual R (ι → R)) (f : R →+* S) (a : R) :
     (a • L).compRingHom f = f a • L.compRingHom f := by
   classical
   exact (Pi.basisFun S ι).ext fun i ↦ by simp [smul_eq_mul]
-
-/-- A family of forms on a finite coordinate module is linearly independent exactly when the
-family of their coefficient vectors, the values on the standard basis, is. -/
-theorem linearIndependent_iff_apply_basisFun {L : κ → Dual R (ι → R)} :
-    LinearIndependent R L ↔ LinearIndependent R (fun i j ↦ L i (Pi.basisFun R ι j)) := by
-  let e : Dual R (ι → R) ≃ₗ[R] (ι → R) := ((Pi.basisFun R ι).constr R).symm
-  have he : (fun i j ↦ L i (Pi.basisFun R ι j)) = e ∘ L := by
-    ext
-    simp [e]
-  rw [he]
-  exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).symm
 
 end CommSemiring
 
@@ -336,7 +321,8 @@ theorem linearIndependent_compRingHom_iff_of_injective [IsDomain S]
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
   let := f.toAlgebra
   have : FaithfulSMul R S := (faithfulSMul_iff_algebraMap_injective R S).2 hf
-  rw [linearIndependent_iff_apply_basisFun, linearIndependent_iff_apply_basisFun]
+  rw [linearIndependent_iff_apply_basis (Pi.basisFun R ι),
+    linearIndependent_iff_apply_basis (Pi.basisFun S ι)]
   simp only [compRingHom_basisFun]
   rw [← f.algebraMap_toAlgebra]
   exact linearIndependent_algebraMap_comp_iff
@@ -352,7 +338,8 @@ variable {R S ι κ : Type*} [Field R] [CommSemiring S] [Nontrivial S] [Finite �
 theorem linearIndependent_compRingHom_iff {L : κ → Dual R (ι → R)} {f : R →+* S} :
     LinearIndependent S (fun i ↦ (L i).compRingHom f) ↔ LinearIndependent R L := by
   let := f.toAlgebra
-  rw [linearIndependent_iff_apply_basisFun, linearIndependent_iff_apply_basisFun]
+  rw [linearIndependent_iff_apply_basis (Pi.basisFun R ι),
+    linearIndependent_iff_apply_basis (Pi.basisFun S ι)]
   simp only [compRingHom_basisFun]
   rw [← f.algebraMap_toAlgebra]
   exact TauCeti.linearIndependent_algebraMap_comp_iff_of_field

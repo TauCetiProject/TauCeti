@@ -9,8 +9,8 @@ public import Mathlib.Algebra.Algebra.Defs
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 import Mathlib.Algebra.Algebra.Pi
 import Mathlib.LinearAlgebra.Basis.VectorSpace
-import Mathlib.LinearAlgebra.TensorProduct.Basis
 import Mathlib.LinearAlgebra.TensorProduct.Pi
+import Mathlib.RingTheory.Flat.Basic
 import Mathlib.RingTheory.SimpleRing.Basic
 
 /-!
@@ -24,11 +24,10 @@ removes every hypothesis on the target beyond nontriviality.
 
 ## References
 
-* The proof adapts Oliver Nash's private Mathlib lemma
-  `LinearIndependent.linearIndependent_algebraMap_comp_aux` and the converse direction of
-  `linearIndependent_algebraMap_comp_iff`, both in
-  `Mathlib/LinearAlgebra/LinearIndependent/BaseChange.lean`: extend the family to a basis and
-  base change that basis along `Module.Basis.baseChange`.
+* The reflecting direction adapts the converse direction of Oliver Nash's Mathlib lemma
+  `linearIndependent_algebraMap_comp_iff` in
+  `Mathlib/LinearAlgebra/LinearIndependent/BaseChange.lean`. The preserving direction uses
+  flatness of `S` over the field `K`, through Mathlib's `Module.Flat.linearIndependent_one_tmul`.
 -/
 
 public section
@@ -54,14 +53,12 @@ theorem linearIndependent_algebraMap_comp_iff_of_field {K S ι ι' : Type*} [Fie
   · intro h
     classical
     cases nonempty_fintype ι'
-    let I : Set (ι' → K) := h.linearIndepOn_id.extend (Set.subset_univ _)
-    let b : Module.Basis I K (ι' → K) := .extend h.linearIndepOn_id
-    let b' := (b.baseChange S).map (TensorProduct.piScalarRight K S S ι')
-    let w (i : ι) : I := ⟨v i, h.linearIndepOn_id.subset_extend _ (Set.mem_range_self i)⟩
-    have hw : b' ∘ w = fun i ↦ algebraMap K S ∘ v i := by
-      ext
-      simp [b', b, w, Module.Basis.extend, Algebra.algebraMap_eq_smul_one]
-    rw [← hw]
-    exact b'.linearIndependent.comp w (fun i j hij ↦ h.injective (congrArg Subtype.val hij))
+    let := Module.addCommMonoidToAddCommGroup K (M := S)
+    let e := TensorProduct.piScalarRight K S S ι'
+    have h' := (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).2
+      (Module.Flat.linearIndependent_one_tmul (S := S) h)
+    convert h' using 1
+    ext
+    simp [e, Algebra.algebraMap_eq_smul_one]
 
 end TauCeti

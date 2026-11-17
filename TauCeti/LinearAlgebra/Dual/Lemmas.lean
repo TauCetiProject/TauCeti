@@ -27,6 +27,8 @@ and so separate points.
 
 * `Module.Dual.ker_id_sub_smulRight`: if `f x = 1`, the kernel of `id - f(·) • x` is the line
   through `x`.
+* `Module.Dual.linearIndependent_iff_apply_basis`: a family of forms is linearly independent
+  exactly when the family of its coefficient vectors with respect to a basis is.
 * `Module.Dual.apply_eq_mul_apply_of_nonneg`: over an ordered ring, if `f x = 1`, a functional `g`
   nonnegative on the half-space `{v | 0 ≤ f v}` is the multiple `g x • f` of `f`.
 * `Module.Dual.finrank_ker_inf_add_one`: if `f` does not vanish on a finite-dimensional subspace
@@ -84,6 +86,23 @@ theorem ker_id_sub_smulRight (f : Dual K V) {x : V} (hfx : f x = 1) :
   exact ⟨fun h => ⟨f y, h.symm⟩, by rintro ⟨c, rfl⟩; simp [hfx]⟩
 
 end Semiring
+
+section CommSemiring
+
+variable {R M ι κ : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
+
+/-- A family of forms is linearly independent exactly when the family of their coefficient
+vectors, the values on a basis, is. -/
+theorem linearIndependent_iff_apply_basis (b : Basis ι R M) {L : κ → Dual R M} :
+    LinearIndependent R L ↔ LinearIndependent R (fun i j ↦ L i (b j)) := by
+  let e : Dual R M ≃ₗ[R] (ι → R) := (b.constr R).symm
+  have he : (fun i j ↦ L i (b j)) = e ∘ L := by
+    ext
+    simp [e]
+  rw [he]
+  exact (e.toLinearMap.linearIndependent_iff_of_injOn e.injective.injOn).symm
+
+end CommSemiring
 
 section OrderedCommRing
 
