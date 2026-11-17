@@ -178,7 +178,6 @@ theorem exists_minimal_vanishing_subsum {ι M : Type*} [Fintype ι] [AddCommMono
     exact (by simpa [s] using hIs (mem_singleton_self i) : f i ≠ 0) (by simpa using hI0)
   · exact (card_lt_card hJI).not_ge (hImin J (by simpa [F, hJ, hJ0] using hJI.subset.trans hIs))
 
-
 /-- A sum over the subsets with at least two elements of an `(n + 2)`-element type, of a function
 of the cardinality, grouped by cardinality. -/
 theorem sum_filter_two_le_card {ι M : Type*} [Fintype ι] [AddCommMonoid M] {n : ℕ}
