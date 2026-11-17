@@ -67,7 +67,7 @@ support.
   `TauCeti.spectralNorm_eq_rpow_neg_spectralAddValuation`, and
   `AddValuation.eq_spectralAddValuation_of_spectralNorm_eq_rpow`: spectral norm recovery and
   uniqueness at a fixed base `b > 1`.
-* `TauCeti.spectralAddValuation_algebraMap`, `TauCeti.spectralAddValuation_algebraMap_eq`,
+* `TauCeti.spectralAddValuation_algebraMap`, `AddValuation.spectralAddValuation_algebraMap_eq`,
   `AlgHom.spectralAddValuation_map`, and `TauCeti.spectralAddValuation_eq_ofNorm`: compatibility
   with scalars, `K`-algebra maps, towers, and normed `K`-algebra extensions.
 -/
@@ -284,8 +284,8 @@ theorem comap_spectralAddValuation {b : ℝ} (hb : 1 < b) :
 
 /-- On `K`, `TauCeti.spectralAddValuation` restricts to any real additive valuation `v` recovering
 the norm of `K` at base `b`. -/
-theorem spectralAddValuation_algebraMap_eq (v : AddValuation K (WithTop ℝ)) {b : ℝ} (hb : 1 < b)
-    (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (c : K) :
+theorem _root_.AddValuation.spectralAddValuation_algebraMap_eq (v : AddValuation K (WithTop ℝ))
+    {b : ℝ} (hb : 1 < b) (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) (c : K) :
     spectralAddValuation K L b hb (algebraMap K L c) = v c := by
   rw [spectralAddValuation_algebraMap, ← v.eq_ofNorm_of_norm_eq_rpow hb hv]
 

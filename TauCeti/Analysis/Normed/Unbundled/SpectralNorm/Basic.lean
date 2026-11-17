@@ -437,12 +437,7 @@ theorem norm_eq_spectralNorm (K : Type*) {L : Type*} [NormedField K] [IsUltramet
       simpa only [MulAlgebraNorm.coe_AlgebraNorm, NormedAlgebra.toMulAlgebraNorm_apply] using
         norm_le_spectralNorm (f := (NormedAlgebra.toMulAlgebraNorm K L).toAlgebraNorm)
           (MulRingNorm.isPowMul (NormedAlgebra.toMulAlgebraNorm K L).toMulRingNorm) hna hy
-    have hxinv : IsAlgebraic K x⁻¹ := by
-      have : FiniteDimensional K K⟮x⟯ := IntermediateField.adjoin.finiteDimensional hx.isIntegral
-      have hmem : x⁻¹ ∈ K⟮x⟯ := inv_mem (IntermediateField.mem_adjoin_simple_self K x)
-      simpa only [IsScalarTower.coe_toAlgHom', IntermediateField.algebraMap_apply] using
-        ((Algebra.IsIntegral.isIntegral (R := K) (⟨x⁻¹, hmem⟩ : K⟮x⟯)).map
-          (IsScalarTower.toAlgHom K K⟮x⟯ L)).isAlgebraic
+    have hxinv : IsAlgebraic K x⁻¹ := hx.inv
     have hspec : spectralNorm K L x = 1 :=
       spectralNorm_eq_one_of_forall_norm_le_one h hx.isIntegral hx0
     have hinv : ‖x⁻¹‖ ≤ 1 := (hle hxinv).trans_eq <|

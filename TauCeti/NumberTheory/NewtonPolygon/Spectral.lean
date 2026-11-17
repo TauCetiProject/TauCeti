@@ -83,7 +83,7 @@ theorem newtonPolygon_map_spectralAddValuation {K L : Type*} [NormedField K] [Is
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) :
     (map (algebraMap K L) f).newtonPolygon (spectralAddValuation K L b hb) =
       f.newtonPolygon v :=
-  f.newtonPolygon_map v (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv)
+  f.newtonPolygon_map v (algebraMap K L) (v.spectralAddValuation_algebraMap_eq hb hv)
 
 end PowerSeries
 
@@ -101,7 +101,7 @@ theorem newtonPolygon_map_spectralAddValuation (f : K[X])
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) :
     (f.map (algebraMap K L)).newtonPolygon (spectralAddValuation K L b hb) =
       f.newtonPolygon v :=
-  f.newtonPolygon_map v (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv)
+  f.newtonPolygon_map v (algebraMap K L) (v.spectralAddValuation_algebraMap_eq hb hv)
 
 /-- Mapping a polynomial from `K` to an algebraic extension `L` equipped with
 `TauCeti.spectralAddValuation K L b hb` preserves its finite slope multiset. -/
@@ -110,7 +110,7 @@ theorem newtonSlopes_map_spectralAddValuation (f : K[X])
     (hv : ∀ x ≠ 0, ‖x‖ = b ^ (-(v x).untop₀)) :
     (f.map (algebraMap K L)).newtonSlopes (spectralAddValuation K L b hb) =
       f.newtonSlopes v :=
-  f.newtonSlopes_map v (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv)
+  f.newtonSlopes_map v (algebraMap K L) (v.spectralAddValuation_algebraMap_eq hb hv)
 
 /-- If `f : K[X]` splits in an algebraic extension `L` of `K`, its finite slope multiset equals the
 multiset of negated `TauCeti.spectralAddValuation` values of its nonzero roots in `L`. -/
@@ -121,7 +121,7 @@ theorem newtonSlopes_eq_map_roots_map_spectralAddValuation [DecidableEq L]
     f.newtonSlopes v = ((f.map (algebraMap K L)).roots.filter (· ≠ 0)).map fun α ↦
       -(spectralAddValuation K L b hb α).untop₀ :=
   newtonSlopes_eq_map_roots_map (fun _ ↦ (spectralAddValuation K L b hb).top_iff.mp)
-    (algebraMap K L) (spectralAddValuation_algebraMap_eq v hb hv) hf
+    (algebraMap K L) (v.spectralAddValuation_algebraMap_eq hb hv) hf
 
 end SpectralAddValuation
 
