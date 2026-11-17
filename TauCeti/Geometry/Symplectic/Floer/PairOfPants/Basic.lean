@@ -325,6 +325,20 @@ theorem smoothTransition_neg_endCoord_inf_eq_zero_of_norm_le {w : ℂ}
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
 
+/-- Away from the center of the end `q`, the cutoff `β(±s_q - c)` is `C^n` along a `C^n` family `f`
+of points of `ℂ` and a `C^n` family `c` of shifts. -/
+theorem contMDiffAt_smoothTransition_endCoord_comp_sub {F G' N : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] [TopologicalSpace G'] {I' : ModelWithCorners ℝ F G'} [TopologicalSpace N]
+    [ChartedSpace G' N] {n : WithTop ℕ∞} [ENat.LEInfty n] (q : Puncture) {f : N → ℂ} {c : N → ℝ}
+    {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hc : ContMDiffAt I' 𝓘(ℝ) n c y₀)
+    (hq : f y₀ ≠ q.endCenter) :
+    ContMDiffAt I' 𝓘(ℝ) n
+      (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c y)) y₀ :=
+  ContMDiffAt.comp (g := fun p : ℂ × ℝ => smoothTransition (q.endSign * (q.endCoord p.1).re - p.2))
+    y₀ (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀, c y₀)
+      ((contDiffAt_const.mul ((q.contDiffAt_re_endCoord hq).comp (f y₀, c y₀)
+        contDiffAt_fst)).sub contDiffAt_snd)).contMDiffAt (hf.prodMk_space hc)
+
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` along a `C^n`
 family `f` of points of `ℂ`. -/
 theorem contMDiffAt_smoothTransition_endCoord_comp {F G' N : Type*} [NormedAddCommGroup F]
@@ -333,9 +347,7 @@ theorem contMDiffAt_smoothTransition_endCoord_comp {F G' N : Type*} [NormedAddCo
     {y₀ : N} (hf : ContMDiffAt I' 𝓘(ℝ, ℂ) n f y₀) (hq : f y₀ ≠ q.endCenter) :
     ContMDiffAt I' 𝓘(ℝ) n (fun y => smoothTransition (q.endSign * (q.endCoord (f y)).re - c))
       y₀ :=
-  (((smoothTransition.contDiff (n := ⊤)).of_le ENat.LEInfty.out).contDiffAt.comp (f y₀)
-    ((contDiffAt_const.mul (q.contDiffAt_re_endCoord hq)).sub contDiffAt_const)).contMDiffAt.comp
-    y₀ hf
+  contMDiffAt_smoothTransition_endCoord_comp_sub q hf contMDiffAt_const hq
 
 /-- Away from the center of the end `q`, the shifted cutoff `β(±s_q - c)` is `C^n` as a function
 on `ℂ × M` which ignores the point of `M`. -/
