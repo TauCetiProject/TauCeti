@@ -66,8 +66,11 @@ universe w
 
 namespace TauCeti
 
-variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ)
-  {M E : Type w} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {M E : Type w} [TopologicalSpace M] [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+section Closure
+
+variable {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
 
 /-- **The local classes of a class vanish on the closure of the set where they vanish.** If the
 image of `μ ∈ Hₖ(M; N)` in the local homology `Hₖ(M, M ∖ {y}; N)` vanishes at every point `y` of
@@ -130,6 +133,12 @@ theorem isFundamentalClass_of_dense [T2Space M] [ChartedSpace E M] [FiniteDimens
   (isFundamentalClass_iff μ).2 fun x ↦
     span_singularHomologyToLocalHomology_eq_top_of_mem_closure (E := E) N (hD x) hμ
 
+end Closure
+
+section Compact
+
+variable {Λ : Type w} [Ring Λ] (N : ModuleCat.{w} Λ)
+
 /-- **Top-dimensional classes of a compact manifold are determined on a dense set.** On a compact
 manifold of dimension `n`, two classes of `Hₙ(M; N)` whose images in the local homology
 `Hₙ(M, M ∖ {y}; N)` agree at every point `y` of a dense set are equal. -/
@@ -167,5 +176,7 @@ theorem singularHomology_ext_of_dense_iUnion [T2Space M] [CompactSpace M] [Chart
   obtain ⟨i, hi⟩ := mem_iUnion.1 hy
   rw [singularHomologyToLocalHomology_eq_localHomologyRestriction N hi,
     singularHomologyToLocalHomology_eq_localHomologyRestriction N hi, h i]
+
+end Compact
 
 end TauCeti
