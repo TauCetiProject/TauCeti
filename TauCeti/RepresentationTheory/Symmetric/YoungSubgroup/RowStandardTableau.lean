@@ -16,16 +16,14 @@ Every `μ`-tableau `t` determines its conjugator `TauCeti.YoungTableau.rowYoungC
 permutation of `Fin μ.card` carrying the consecutive-block labeling of `shapePartition μ` to `t`.
 This file proves that:
 
-1. on the row-superstandard tableau `StandardYoungTableau.rowSuperstandard μ`, the conjugator is `1`
-   and the row group is `youngSubgroup (shapePartition μ)` on the nose;
-2. `rowYoungConjugator` identifies row-standard `μ`-tableaux bijectively with the minimal
+1. `rowYoungConjugator` identifies row-standard `μ`-tableaux bijectively with the minimal
    left-coset representatives of `(permCoxeterSystem μ.card).parabolic
    (youngParabolicSet (shapePartition μ))` (`TauCeti.RowStandardTableau.minimalCosetRepEquiv`);
-3. `YoungTableau.tabloid` identifies row-standard `μ`-tableaux
+2. `YoungTableau.tabloid` identifies row-standard `μ`-tableaux
    `Equiv.Perm (Fin μ.card)`-equivariantly with the left cosets
    `Equiv.Perm (Fin μ.card) ⧸ youngSubgroup (shapePartition μ)`
    (`TauCeti.RowStandardTableau.tabloidEquiv`);
-4. for a row-standard tableau `t` and a simple reflection `s_i`, `s_i * rowYoungConjugator t` is
+3. for a row-standard tableau `t` and a simple reflection `s_i`, `s_i * rowYoungConjugator t` is
    minimal in its left coset if and only if `i` and `i + 1` lie in distinct rows of `t`, and `i` is
    a left descent of `rowYoungConjugator t` if and only if `i + 1` lies in a strictly higher
    (smaller-numbered) row of `t` than `i`.
@@ -45,9 +43,6 @@ row-standard-tableau basis of Dipper–James and Mathas.
 
 ## Main results
 
-* `TauCeti.YoungTableau.rowYoungConjugator_rowSuperstandard` and
-  `TauCeti.YoungTableau.rowSubgroup_rowSuperstandard`: normalization on the row-superstandard
-  tableau.
 * `TauCeti.RowStandardTableau.rowYoungConjugator_smul`: `rowYoungConjugator` intertwines the
   `S_n`-action on `RowStandardTableau μ` with `CoxeterSystem.minimalCosetRep`.
 * `TauCeti.RowStandardTableau.isMinimalCosetRep_transposition_mul_rowYoungConjugator_iff` and
@@ -67,64 +62,6 @@ public section
 namespace TauCeti
 
 open BraidGroup
-
-namespace YoungTableau
-
-/-- **The row-superstandard tableau has trivial Young conjugator:** reading order agrees on the nose
-with the consecutive-block enumeration of `shapePartition μ`. -/
-@[simp]
-theorem rowYoungConjugator_rowSuperstandard (μ : YoungDiagram) :
-    rowYoungConjugator (StandardYoungTableau.rowSuperstandard μ).toTableau = 1 := by
-  ext k
-  obtain ⟨x, rfl⟩ := (youngBlocksEquiv (shapePartition μ)).surjective k
-  rw [rowYoungConjugator_youngBlocksEquiv, StandardYoungTableau.toTableau_apply,
-    StandardYoungTableau.rowSuperstandard_apply_val, Equiv.Perm.one_apply,
-    YoungDiagram.readingIndex_def, youngBlocksEquiv_apply]
-  congr 1
-  have hpart : ∀ j : Fin ((shapePartition μ).parts.sort (· ≥ ·)).length,
-      ((shapePartition μ).parts.sort (· ≥ ·)).get j = μ.rowLen j.1 := fun j => by
-    rw [List.get_eq_getElem, ← List.getD_eq_getElem _ 0 j.2, ← YoungDiagram.rowLen_ofPartition,
-      ofPartition_shapePartition]
-  calc
-    ∑ i ∈ Finset.range x.1, μ.rowLen i
-        = ∑ i : Fin x.1, μ.rowLen (i : ℕ) := (Fin.sum_univ_eq_sum_range μ.rowLen x.1).symm
-    _ = ∑ i : Fin x.1,
-          ((shapePartition μ).parts.sort (· ≥ ·)).get (Fin.castLE x.1.2.le i) :=
-        Finset.sum_congr rfl fun i _ => (hpart (Fin.castLE x.1.2.le i)).symm
-
-/-- Every `μ`-tableau is obtained from the row-superstandard tableau by relabeling with its
-`rowYoungConjugator`. -/
-@[simp]
-theorem relabel_rowYoungConjugator_rowSuperstandard {μ : YoungDiagram} (t : YoungTableau μ) :
-    relabel (rowYoungConjugator t) (StandardYoungTableau.rowSuperstandard μ).toTableau = t :=
-  rowYoungConjugator_injective <| by
-    rw [rowYoungConjugator_relabel, rowYoungConjugator_rowSuperstandard, mul_one]
-
-/-- In the row-superstandard tableau, the row index of each label is its consecutive-block index in
-`shapePartition μ`. -/
-@[simp]
-theorem rowIndex_rowSuperstandard (μ : YoungDiagram) (k : Fin μ.card) :
-    rowIndex (StandardYoungTableau.rowSuperstandard μ).toTableau k =
-      youngBlock (shapePartition μ) k := by
-  have h := rowIndex_rowYoungConjugator (StandardYoungTableau.rowSuperstandard μ).toTableau k
-  rwa [rowYoungConjugator_rowSuperstandard, Equiv.Perm.one_apply] at h
-
-/-- **The row group of the row-superstandard tableau is `youngSubgroup (shapePartition μ)`.** -/
-@[simp]
-theorem rowSubgroup_rowSuperstandard (μ : YoungDiagram) :
-    rowSubgroup (StandardYoungTableau.rowSuperstandard μ).toTableau =
-      youngSubgroup (shapePartition μ) := by
-  ext σ
-  simp [← youngSubgroup_map_conj_eq_rowSubgroup]
-
-/-- The tabloid of the row-superstandard tableau is the identity coset of
-`youngSubgroup (shapePartition μ)`. -/
-@[simp]
-theorem tabloid_rowSuperstandard (μ : YoungDiagram) :
-    tabloid (StandardYoungTableau.rowSuperstandard μ).toTableau = QuotientGroup.mk 1 := by
-  rw [tabloid_def, rowYoungConjugator_rowSuperstandard]
-
-end YoungTableau
 
 namespace RowStandardTableau
 

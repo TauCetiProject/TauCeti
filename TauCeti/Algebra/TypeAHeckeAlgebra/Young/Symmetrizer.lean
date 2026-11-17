@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.GroupAlgebra
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Symmetrizer.Basic
-public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.RowStandardTableau
+public import TauCeti.RepresentationTheory.Symmetric.Symmetrizer
+public import TauCeti.RepresentationTheory.Symmetric.TableauSubgroupConjugacy
+public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.Parabolic
 
 /-!
 # Young `q`-symmetrizers and `q`-antisymmetrizers in type-`A` Hecke algebras

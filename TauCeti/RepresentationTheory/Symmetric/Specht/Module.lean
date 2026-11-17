@@ -113,6 +113,13 @@ theorem tabloid_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
   rw [tabloid_def, tabloid_def, rowYoungConjugator_relabel, MulAction.Quotient.smul_coe,
     smul_eq_mul]
 
+/-- The tabloid of the row-superstandard tableau is the identity coset of
+`youngSubgroup (shapePartition μ)`. -/
+@[simp]
+theorem tabloid_rowSuperstandard (μ : YoungDiagram) :
+    tabloid (StandardYoungTableau.rowSuperstandard μ).toTableau = QuotientGroup.mk 1 := by
+  rw [tabloid_def, rowYoungConjugator_rowSuperstandard]
+
 /-- Every `μ`-tabloid is the tabloid of a tableau. -/
 theorem tabloid_surjective : Function.Surjective (tabloid (μ := μ)) := by
   obtain ⟨t⟩ := YoungTableau.nonempty μ

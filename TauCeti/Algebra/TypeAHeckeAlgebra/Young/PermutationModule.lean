@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Parabolic.PermutationModule
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Young.Symmetrizer
+public import TauCeti.RepresentationTheory.Symmetric.YoungSubgroup.RowStandardTableau
 
 /-!
 # Young permutation modules of type-`A` Iwahori–Hecke algebras
