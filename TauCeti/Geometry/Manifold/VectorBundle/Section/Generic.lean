@@ -265,30 +265,39 @@ namespace TauCeti
 open ContMDiffSection
 
 variable {X M F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-  [FiniteDimensional ℝ X] [TopologicalSpace M] [ChartedSpace X M]
+  [TopologicalSpace M] [ChartedSpace X M]
   [T2Space M] [CompactSpace M] [IsManifold 𝓘(ℝ, X) ∞ M]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V] [ContMDiffVectorBundle ∞ F V 𝓘(ℝ, X)]
 
-/-- A smooth real vector bundle of finite rank exceeding the dimension of its compact
-finite-dimensional base manifold has a smooth nowhere-zero section. -/
+/-- A smooth real vector bundle of finite rank exceeding the dimension of its compact Hausdorff
+base manifold has a smooth nowhere-zero section. The model space `X` of the base is not assumed
+finite-dimensional: compactness forces this whenever the base is nonempty. -/
 theorem exists_contMDiffSection_forall_ne_zero_of_finrank_lt (hdim : finrank ℝ X < finrank ℝ F) :
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F ∞ V, ∀ x, s x ≠ 0 := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact ⟨0, fun x ↦ isEmptyElim x⟩
+  have : FiniteDimensional ℝ X := .of_locallyCompact_manifold M 𝓘(ℝ, X)
   have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (pos_of_gt hdim)
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨n, s, hspan⟩ := exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V)
   obtain ⟨a, ha⟩ := (dense_setOf_affineFamily_ne_zero 0 s hspan hdim).nonempty
   exact ⟨affineFamily 0 s a, ha⟩
 
-/-- A compact smooth bundle of equal finite base and fiber dimensions has a smooth section with
-surjective intrinsic linearization at every zero and finitely many zeros. -/
+/-- A smooth bundle over a compact Hausdorff base, of finite rank equal to the `finrank` of the
+model space `X` of the base, has a smooth section with surjective intrinsic linearization at every
+zero and finitely many zeros. The model space `X` is not assumed finite-dimensional: compactness
+forces this whenever the base is nonempty. -/
 theorem exists_contMDiffSection_regular_finite_zero_of_finrank_eq [FiniteDimensional ℝ F]
     (hdim : finrank ℝ X = finrank ℝ F) :
     ∃ s : ContMDiffSection 𝓘(ℝ, X) F ∞ V,
       (∀ x, s x = 0 → Surjective (TauCeti.sectionLinearization (F := F) 𝓘(ℝ, X) id s x)) ∧
         {x | s x = 0}.Finite := by
+  rcases isEmpty_or_nonempty M with _ | _
+  · exact ⟨0, fun x ↦ isEmptyElim x, toFinite _⟩
+  have : FiniteDimensional ℝ X := .of_locallyCompact_manifold M 𝓘(ℝ, X)
   let : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact X M
   obtain ⟨n, s, hspan⟩ := exists_fin_spanning_contMDiffSection (I := 𝓘(ℝ, X)) (F := F) (V := V)
   obtain ⟨a, ha⟩ := (dense_of_mem_residual

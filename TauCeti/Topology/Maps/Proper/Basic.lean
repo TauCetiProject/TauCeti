@@ -24,8 +24,10 @@ The nonemptiness hypotheses cannot be dropped: a map out of an empty space is pr
 
 ## Main declarations
 
-* `IsProperMap.compactSpace` and `IsProperMap.sigmaCompactSpace`: the domain of a proper map to a
-  compact (respectively sigma-compact) space is compact (respectively sigma-compact).
+* `IsProperMap.compactSpace`, `IsProperMap.sigmaCompactSpace` and
+  `IsProperMap.weaklyLocallyCompactSpace`: the domain of a proper map to a compact (respectively
+  sigma-compact, weakly locally compact) space is compact (respectively sigma-compact, weakly
+  locally compact).
 * `Homeomorph.comp_isProperMap_iff` and `Homeomorph.comp_isProperMap_iff'`: properness is
   invariant under composition with a homeomorphism.
 * `IsProperMap.of_prodMap_left` and `IsProperMap.of_prodMap_right`: the factors of a proper
@@ -79,6 +81,15 @@ theorem IsProperMap.sigmaCompactSpace [SigmaCompactSpace Y] (hf : IsProperMap f)
   refine ⟨⟨fun n ↦ f ⁻¹' compactCovering Y n,
     fun n ↦ hf.isCompact_preimage (isCompact_compactCovering Y n), ?_⟩⟩
   rw [← Set.preimage_iUnion, iUnion_compactCovering, Set.preimage_univ]
+
+/-- The domain of a proper map to a weakly locally compact space is weakly locally compact: the
+preimage of a compact neighbourhood of `f x` is a compact neighbourhood of `x`. No separation axiom
+is needed. -/
+theorem IsProperMap.weaklyLocallyCompactSpace [WeaklyLocallyCompactSpace Y] (hf : IsProperMap f) :
+    WeaklyLocallyCompactSpace X := by
+  refine ⟨fun x ↦ ?_⟩
+  obtain ⟨K, hK, hKx⟩ := exists_compact_mem_nhds (f x)
+  exact ⟨f ⁻¹' K, hf.isCompact_preimage hK, hf.continuous.continuousAt.preimage_mem_nhds hKx⟩
 
 /-- If a product map `Prod.map f g` is proper and the source of `g` is nonempty, then `f` is
 proper. -/

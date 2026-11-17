@@ -13,7 +13,7 @@ import TauCeti.Geometry.Manifold.VectorBundle.Scalar
 /-!
 # Splitting a complex bundle into a trivial bundle and a line bundle
 
-Over a compact boundaryless finite-dimensional manifold of real dimension less than four, a smooth
+Over a compact Hausdorff boundaryless manifold of real dimension less than four, a smooth
 complex bundle `V` of finite complex rank `n + 1` with a smooth Hermitian metric has `n` pointwise
 orthonormal smooth sections
 (`Bundle.ContMDiffRiemannianMetric.exists_orthonormal_contMDiffSection_of_finrank_lt`): the
@@ -27,6 +27,10 @@ Their orthogonal complement `L`
 `Riemannian/OrthogonalComplement.lean`. This is the splitting step of the proof of the Riemann–Roch
 theorem for Cauchy–Riemann operators over a closed surface.
 
+The model space `X` of the base is not assumed finite-dimensional: a nonempty compact Hausdorff
+manifold is locally compact, which forces this, and over the empty base the statements are vacuous.
+The dimension bounds are stated with `finrank ℝ X`.
+
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS (2012),
@@ -39,7 +43,7 @@ public noncomputable section
 open Bundle Module Set TauCeti
 open scoped Manifold ContDiff InnerProductSpace Topology
 
-variable {X B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X]
+variable {X B F : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
   [TopologicalSpace B] [ChartedSpace X B] [T2Space B] [CompactSpace B]
   [IsManifold 𝓘(ℝ, X) ∞ B]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
@@ -58,7 +62,7 @@ namespace Bundle.ContMDiffRiemannianMetric
 
 /-- **Orthonormal smooth sections.** Let `V` be a smooth Hermitian bundle with
 `finrank ℂ F = k + r` (hence of finite complex rank `k + r` whenever `k > 0`) over a compact
-boundaryless finite-dimensional manifold of real dimension less than `2 (r + 1)`. Then `V` has `k`
+Hausdorff boundaryless manifold of real dimension less than `2 (r + 1)`. Then `V` has `k`
 smooth sections that are orthonormal at every point. -/
 theorem exists_orthonormal_contMDiffSection_of_finrank_lt
     (g : ContMDiffRiemannianMetric 𝓘(ℝ, X) ∞ F V)
@@ -129,7 +133,7 @@ end Bundle.ContMDiffRiemannianMetric
 namespace TauCeti
 
 /-- **Splitting off a trivial bundle.** A smooth complex vector bundle `V` of finite complex rank
-`n + 1` over a compact boundaryless finite-dimensional manifold of real dimension less than four, in
+`n + 1` over a compact Hausdorff boundaryless manifold of real dimension less than four, in
 particular over a closed surface, has a smooth Hermitian metric `g` and `n` pointwise orthonormal
 smooth sections `s` whose orthogonal complement `L = s^⊥` is a smooth complex line subbundle, and
 `V ≅ (B × ℂⁿ) ⊕ L` as smooth bundles, by `(x, c, w) ↦ ∑ i, c i • s i x + w`
@@ -152,8 +156,15 @@ theorem exists_trivialProdLineSubbundle_diffeomorph [∀ x, ContinuousConstSMul 
             (Bundle.Trivial B (Fin n → ℂ) ×ᵇ fun x ↦ g.orthogonalSpanFamily hI s x))
           (TotalSpace F V) ∞) := by
   have : FiniteDimensional ℂ F := Module.finite_of_finrank_pos (by omega)
-  obtain ⟨g, hI⟩ := exists_contMDiffRiemannianMetric_inner_smul_I (IB := 𝓘(ℝ, X)) (n := ⊤)
-    (F := F) (V := V)
+  -- Over the empty base every fiberwise datum is vacuous; a nonempty compact base forces `X` to be
+  -- finite-dimensional, so that a Hermitian metric exists by a partition of unity.
+  obtain ⟨g, hI⟩ : ∃ g : ContMDiffRiemannianMetric 𝓘(ℝ, X) ∞ F V,
+      ∀ x (v w : V x), g.inner x (Complex.I • v) (Complex.I • w) = g.inner x v w := by
+    rcases isEmpty_or_nonempty B with _ | _
+    · exact ⟨⟨fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x,
+        fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x⟩, fun x ↦ isEmptyElim x⟩
+    · have : FiniteDimensional ℝ X := .of_locallyCompact_manifold B 𝓘(ℝ, X)
+      exact exists_contMDiffRiemannianMetric_inner_smul_I
   obtain ⟨s, hs, hon⟩ := g.exists_orthonormal_contMDiffSection_of_finrank_lt hI hn (r := 1)
     (by omega)
   have hL := g.hasLocalContMDiffSubbundleFrames_orthogonalSpanFamily hI s hs hon (r := 1)

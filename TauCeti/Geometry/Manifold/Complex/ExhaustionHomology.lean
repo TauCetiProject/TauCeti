@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.Morse.Generic.Strong
 public import TauCeti.Geometry.Manifold.Morse.TopHomology
 
 import TauCeti.AlgebraicTopology.Cohomology.Point
+import TauCeti.AlgebraicTopology.Singular.Basic
+import TauCeti.Geometry.Manifold.Exhaustion
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
@@ -91,27 +93,8 @@ universe u v w
 
 namespace TauCeti
 
-variable {M : Type u} [TopologicalSpace M]
-
-private theorem isZero_singularHomologyFunctor_of_isEmpty [IsEmpty M]
-    {𝒜 : Type v} [Category.{w} 𝒜] [Abelian 𝒜] [HasCoproducts.{u} 𝒜] (R : 𝒜) (n : ℕ) :
-    IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) := by
-  have : (TopCat.toSSet.obj (TopCat.of M)).HasDimensionLT 0 :=
-    (SSet.notNonempty_iff_hasDimensionLT_zero _).mp fun ⟨σ⟩ ↦
-      isEmptyElim (TopCat.toSSetObj₀Equiv σ)
-  exact (HomologicalComplex.homologyFunctor _ _ n).map_isZero
-    ((TopCat.toSSet.obj (TopCat.of M)).isZero_chainComplex R)
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [ChartedSpace E M] [T2Space M]
-
-private theorem finiteDimensional_of_isProperMap [Nonempty M] {f : M → ℝ}
-    (hp : IsProperMap f) : FiniteDimensional ℂ E := by
-  have : WeaklyLocallyCompactSpace M :=
-    ⟨fun x ↦ ⟨f ⁻¹' Icc (f x - 1) (f x + 1), hp.isCompact_preimage isCompact_Icc,
-      hp.continuous.continuousAt.preimage_mem_nhds (Icc_mem_nhds (by linarith) (by linarith))⟩⟩
-  exact .of_locallyCompact_manifold (M := M) 𝓘(ℂ, E)
-
-variable [IsManifold 𝓘(ℂ, E) ∞ M]
+variable {E : Type*} {M : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M] [T2Space M]
 
 local instance : IsManifold 𝓘(ℝ, E) ∞ M :=
   IsManifold.restrictScalars ℝ (inferInstance : IsManifold 𝓘(ℂ, E) ∞ M)
@@ -235,8 +218,8 @@ theorem isZero_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharm
     (hn : finrank ℂ E < n) :
     IsZero (((singularHomologyFunctor 𝒜 n).obj R).obj (TopCat.of M)) := by
   rcases isEmpty_or_nonempty M with _ | _
-  · exact isZero_singularHomologyFunctor_of_isEmpty R n
-  · have := finiteDimensional_of_isProperMap (E := E) hp
+  · exact isZero_singularHomology_of_isEmpty R (TopCat.of M) n
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
     exact isZero_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp
       hbdd (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) R (by omega)
 
@@ -255,9 +238,9 @@ theorem free_singularHomology_of_isProperMap_of_isManifoldStrictlyPlurisubharmon
       (TopCat.of M)) := by
   rcases isEmpty_or_nonempty M with _ | _
   · have := ModuleCat.isZero_iff_subsingleton.mp
-      (isZero_singularHomologyFunctor_of_isEmpty (M := M) V (finrank ℂ E))
+      (isZero_singularHomology_of_isEmpty V (TopCat.of M) (finrank ℂ E))
     infer_instance
-  · have := finiteDimensional_of_isProperMap (E := E) hp
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
     exact free_singularHomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf hp
       hbdd (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) V
 
@@ -275,7 +258,7 @@ theorem isZero_singularCohomology_of_isProperMap_of_isManifoldStrictlyPlurisubha
     IsZero ((TopCat.of M).singularCohomology V k N n) := by
   rcases isEmpty_or_nonempty M with _ | _
   · exact isZero_singularCohomology_of_isEmpty V k N (TopCat.of M) n
-  · have := finiteDimensional_of_isProperMap (E := E) hp
+  · have := hp.finiteDimensional_of_manifold 𝓘(ℂ, E)
     exact isZero_singularCohomology_of_isProperMap_of_isManifoldStronglyPseudoconvexAt (q := 0) hf
       hp hbdd (fun x ↦ (hpsh x).isManifoldStronglyPseudoconvexAt 0) V N (by omega)
 
