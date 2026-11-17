@@ -6,10 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicTopology.SingularHomology.HomotopyInvariance
-public import TauCeti.AlgebraicTopology.Singular.Pontryagin.Basic
+public import TauCeti.AlgebraicTopology.Singular.Pontryagin.MooreLoop
 public import TauCeti.AlgebraicTopology.Sphere.Stiefel.DoubleLoop
 public import TauCeti.Topology.Homotopy.Path
-public import TauCeti.Topology.PathSpace.Moore.Comparison.Trans
 
 /-!
 # The meridian loops of a sphere as a Pontryagin product
@@ -31,11 +30,13 @@ is the step of Barraud–Damian–Humilière–Oancea's proof of their Propositi
 
 Concatenation of loops on the unit interval is only associative up to homotopy, so the Pontryagin
 product is read on the Moore loop space `Ωᴹ_pSⁿ`, a topological monoid, through the homotopy
-equivalence `MooreLoopSpace.homotopyEquivPath`, which is multiplicative up to homotopy
-(`Path.transMooreLoopHomotopy`). In Moore loops, the map `(w, u) ↦ γ_w · γ_u⁻¹`
-(`TauCeti.mooreMeridianLoop`, the departure direction first) is homotopic to
-`(w, u) ↦ λ(w) * λ'(u)` (`TauCeti.homotopic_mooreMeridianLoop_mul`). Hence, for classes `a, b` of
-the singular homology of `S` with coefficients in a commutative ring `k`,
+equivalence `MooreLoopSpace.homotopyEquivPath`, which is multiplicative up to homotopy, also for
+families of loops (`Path.homotopic_mooreLoopTrans_comp_prodMap`). In Moore loops, the map
+`(w, u) ↦ γ_w · γ_u⁻¹` (`TauCeti.mooreMeridianLoop`, the departure direction first) is homotopic
+to `(w, u) ↦ λ(w) * λ'(u)` (`TauCeti.homotopic_mooreMeridianLoop_mul`). Hence, since a product of
+two families of loops carries a cross product to a Pontryagin product
+(`TauCeti.map_mulMooreLoop_comp_prodMap_singularHomologyCross`), for classes `a, b` of the singular
+homology of `S` with coefficients in a commutative ring `k`,
 
 `mooreMeridianLoop_* (a × b) = λ_* a · λ'_* b`
 
@@ -158,28 +159,14 @@ theorem mooreMeridianLoopFixedMul_apply
         (meridianLoopFixedDeparture p u₀ x.2).toMooreLoop :=
   Path.mulMooreLoop_apply _
 
-/-- The map `(w, u) ↦ λ(w) * λ'(u)` is the tensor product of `λ` and `λ'`, read in the Moore loops,
-followed by the multiplication of the Moore loop space. -/
-theorem tensorHom_comp_mul_eq_mooreMeridianLoopFixedMul :
-    (ofHom ((MooreLoopSpace.homotopyEquivPath p).symm.toFun.comp
-        (meridianLoopFixedReturn p u₀)) ⊗ₘ
-      ofHom ((MooreLoopSpace.homotopyEquivPath p).symm.toFun.comp
-        (meridianLoopFixedDeparture p u₀))) ≫ μ[TopCat.of (MooreLoopSpace _ p)] =
-      ofHom (mooreMeridianLoopFixedMul p u₀) := by
-  refine ConcreteCategory.hom_ext _ _ fun x ↦ ?_
-  rw [ConcreteCategory.comp_apply, of_mul_apply, TopCat.tensor_apply]
-  exact (congrArg₂ (· * ·) (MooreLoopSpace.homotopyEquivPath_symm_apply _)
-    (MooreLoopSpace.homotopyEquivPath_symm_apply _)).trans
-      (mooreMeridianLoopFixedMul_apply p u₀ x).symm
-
 /-- **In Moore loops, the meridian loops are a product up to homotopy**: the map
 `(w, u) ↦ γ_w · γ_u⁻¹` into the Moore loops at `p` is homotopic to `(w, u) ↦ λ(w) * λ'(u)`. -/
 theorem homotopic_mooreMeridianLoop_mul :
     (mooreMeridianLoop p).Homotopic (mooreMeridianLoopFixedMul p u₀) := by
   have h₁ := (ContinuousMap.Homotopic.refl (MooreLoopSpace.homotopyEquivPath p).symm.toFun).comp
     ((homotopic_meridianLoop_trans p u₀).comp (.refl ⟨Prod.swap, continuous_swap⟩))
-  have h₂ : ContinuousMap.Homotopic _ _ := ⟨(Path.transMooreLoopHomotopy p).compContinuousMap
-    ((meridianLoopFixedReturn p u₀).prodMap (meridianLoopFixedDeparture p u₀))⟩
+  have h₂ := Path.homotopic_mooreLoopTrans_comp_prodMap (meridianLoopFixedReturn p u₀)
+    (meridianLoopFixedDeparture p u₀)
   have e : (MooreLoopSpace.homotopyEquivPath p).symm.toFun.comp
       ((meridianLoopFixedTrans p u₀).comp ⟨Prod.swap, continuous_swap⟩) =
       (Path.mooreLoopTrans p).comp
@@ -224,7 +211,7 @@ theorem map_mooreMeridianLoop_singularHomologyCross (k : Type u) [CommRing k] {i
         (ofHom (mooreMeridianLoop p)) :=
     TopCat.Homotopy.congr_homologyMap_singularChainComplexFunctor (C := ModuleCat.{u} k)
       (f := ofHom _) (g := ofHom (mooreMeridianLoop p)) H.symm (𝟙_ _) n
-  rw [pontryaginMul_map_map, tensorHom_comp_mul_eq_mooreMeridianLoopFixedMul]
+  rw [← map_mulMooreLoop_comp_prodMap_singularHomologyCross]
   exact (ConcreteCategory.congr_hom hH _).symm
 
 /-- **The meridian loops `α` carry a cross product to a signed Pontryagin product.** For classes
@@ -262,7 +249,14 @@ theorem map_meridianLoop_singularHomologyCross (k : Type u) [CommRing k] {i j n 
           (ofHom (mooreMeridianLoop p) : TopCat.of (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) ⊗
             TopCat.of (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) ⟶ _) :=
     -- `β_` swaps the two factors, and `mooreMeridianLoop` swaps them back
-    ConcreteCategory.hom_ext _ _ fun _ ↦ MooreLoopSpace.homotopyEquivPath_symm_apply _
+    ConcreteCategory.hom_ext _ _ fun ⟨u, w⟩ ↦
+      calc _ = (MooreLoopSpace.homotopyEquivPath p).symm (meridianLoop p (u, w)) := ofHom_apply _ _
+        _ = (meridianLoop p (u, w)).toMooreLoop := MooreLoopSpace.homotopyEquivPath_symm_apply _
+        _ = mooreMeridianLoop p (w, u) := (mooreMeridianLoop_apply p (w, u)).symm
+        _ = ofHom (mooreMeridianLoop p) ((β_ (TopCat.of (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1))
+              (TopCat.of (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1))).hom (u, w)) := by
+          rw [TopCat.braiding_hom_apply, ofHom_apply]
+        _ = _ := (ConcreteCategory.comp_apply _ _ _).symm
   have hswap := ConcreteCategory.congr_hom
     (singularHomologyCross_comp_map_leftUnitor_comp_map_braiding (C := ModuleCat.{u} k)
       (TopCat.of (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1)) (TopCat.of (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1))
