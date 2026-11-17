@@ -12,9 +12,12 @@ public import Mathlib.RingTheory.Binomial
 import Mathlib.Analysis.Asymptotics.Lemmas
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.Data.Nat.Cast.SetInterval
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
+import TauCeti.RingTheory.Binomial
 
 /-!
 # Euler–Maclaurin expansion of sums of real powers
@@ -65,26 +68,6 @@ private theorem hasDerivAt_descPochhammer_mul_rpow (α : ℝ) (i : ℕ) {x : ℝ
     Polynomial.eval_X, Polynomial.eval_natCast, Nat.cast_add, Nat.cast_one]
   ring_nf
 
-/-- Evaluation of `descPochhammer ℤ k` via `smeval` on `ℝ` agrees with `Polynomial.eval`. -/
-private theorem descPochhammer_smeval_real (a : ℝ) (k : ℕ) :
-    (descPochhammer ℤ k).smeval a = (descPochhammer ℝ k).eval a := by
-  induction k with
-  | zero => simp
-  | succ k ih =>
-    simp [descPochhammer_succ_right, Polynomial.smeval_mul, Polynomial.smeval_sub,
-      Polynomial.smeval_X, Polynomial.smeval_natCast, ih]
-
-/-- Identity relating `Ring.choose (α + 1) (k + 1)` to `(descPochhammer ℝ k).eval α`. -/
-private theorem ringChoose_add_one_succ (α : ℝ) (k : ℕ) :
-    Ring.choose (α + 1) (k + 1) = (α + 1) / (k + 1)! * (descPochhammer ℝ k).eval α := by
-  rw [Ring.choose_eq_smul, descPochhammer_smeval_real, smul_eq_mul,
-    descPochhammer_eval_eq_prod_range, prod_range_succ', Nat.cast_zero, sub_zero,
-    descPochhammer_eval_eq_prod_range]
-  have hprod : ∏ i ∈ range k, (α + 1 - ((i + 1 : ℕ) : ℝ)) = ∏ i ∈ range k, (α - i) :=
-    prod_congr rfl fun i _ => by push_cast; ring
-  rw [hprod]
-  ring
-
 /-- Rewrite the Euler–Maclaurin boundary polynomial in `n` as the DLMF 2.10.7 sum over
 `range (2 * m)` with `Ring.choose (α + 1) s`. -/
 private theorem eulerMaclaurin_rpow_poly_eq_sum_range {α : ℝ} (hα : α ≠ -1) {m n : ℕ}
@@ -122,7 +105,7 @@ private theorem eulerMaclaurin_rpow_poly_eq_sum_range {α : ℝ} (hα : α ≠ -
           (Ring.choose (α + 1) (2 * m) * (bernoulli (2 * m) : ℝ) *
             (n : ℝ) ^ (-((2 * m : ℕ) : ℤ))) := by
       have h2m : 2 * m = (2 * m - 1) + 1 := by omega
-      conv_rhs => rw [h2m, ringChoose_add_one_succ, ← h2m]
+      conv_rhs => rw [h2m, Ring.choose_add_one_succ_eq_div_mul_descPochhammer_eval, ← h2m]
       rw [← hpow]
       field_simp
     rw [sum_Ico_succ_top hm, ← add_assoc, ih, show 2 * (m + 1) = 2 * m + 1 + 1 by ring,
@@ -156,10 +139,8 @@ theorem sum_Ico_rpow_eq_eulerMaclaurin {α : ℝ} (hα : α ≠ -1) {m n : ℕ} 
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hn))
   have hsum : ∑ j ∈ Ico 1 n, (j : ℝ) ^ α + (n : ℝ) ^ α = ∑ j ∈ Icc (1 : ℤ) n, g 0 j := by
     rw [← sum_Ico_succ_top hn, Finset.Ico_add_one_right_eq_Icc]
-    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n := by
-      ext z; simp only [mem_image, mem_Icc]
-      exact ⟨fun ⟨k, hk, hkz⟩ => hkz ▸ ⟨by exact_mod_cast hk.1, by exact_mod_cast hk.2⟩,
-        fun hz => ⟨z.toNat, ⟨by omega, by omega⟩, by omega⟩⟩
+    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n :=
+      Finset.coe_injective (by simpa using Nat.image_cast_int_Icc 1 n)
     rw [← himg, Finset.sum_image (f := fun j : ℤ => g 0 (j : ℝ)) Nat.cast_injective.injOn]
     exact sum_congr rfl fun j _ => by simp [g]
   have hint0 : ∫ x in (1 : ℝ)..n, g 0 x = (n : ℝ) ^ (α + 1) / (α + 1) + -1 / (α + 1) := by
@@ -268,18 +249,12 @@ private theorem exists_Ioo_sum_Ico_rpow_sub_of_lt {α : ℝ} (hα : α ≠ -1) {
     rw [pow_succ, mul_assoc, neg_one_mul, mul_neg, neg_pos] at h1
     exact mul_neg_of_pos_of_neg
       (mul_pos (mul_pos (by linarith) (by linarith)) (by linarith)) h1
-  have hu_term : 0 < u * term := by linarith [congrArg (u * ·) hstep]
-  have hu_lt : u * rem m < u * term := by linarith [congrArg (u * ·) hstep]
-  have hu_ne : u ≠ 0 := div_ne_zero (pow_ne_zero _ (by norm_num)) hQ
-  have ht_ne : term ≠ 0 := fun h => by simp [h] at hu_term
-  refine ⟨rem m / term, ⟨?_, ?_⟩, ?_⟩
-  · rw [← mul_div_mul_left (rem m) term hu_ne]; exact div_pos hu_rem hu_term
-  · rw [← mul_div_mul_left (rem m) term hu_ne, div_lt_one hu_term]; exact hu_lt
-  · have hsub : ∑ j ∈ Ico 1 n, (j : ℝ) ^ α - ((riemannZeta (-α : ℂ)).re +
-        (n : ℝ) ^ (α + 1) / (α + 1) * ∑ s ∈ range (2 * m),
-          Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ))) = rem m := by
-      dsimp only [rem]; linarith [hm_eq]
-    rw [hsub, div_mul_cancel₀ _ ht_ne]
+  have hsub : ∑ j ∈ Ico 1 n, (j : ℝ) ^ α - ((riemannZeta (-α : ℂ)).re +
+      (n : ℝ) ^ (α + 1) / (α + 1) * ∑ s ∈ range (2 * m),
+        Ring.choose (α + 1) s * (bernoulli s : ℝ) * (n : ℝ) ^ (-(s : ℤ))) = rem m := by
+    dsimp only [rem]; linarith [hm_eq]
+  rw [hsub]
+  exact exists_mem_Ioo_eq_mul_of_eq_add hstep hu_rem hu_rem1
 
 /-- **DLMF 2.10.7 remainder theorem**: for `α ≠ -1`, `m ≥ 1` with `α ≤ 2 * m - 1` (i.e.
 `(α + 1) / 2 ≤ m`), and `n ≥ 1`, there exists `θ ∈ [0, 1]` such that the error after `2m` terms

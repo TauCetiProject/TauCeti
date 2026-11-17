@@ -10,6 +10,7 @@ public import Mathlib.NumberTheory.Harmonic.EulerMascheroni
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
 
@@ -231,24 +232,14 @@ theorem exists_Ioo_harmonic_sub_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m) (hn : 
     simpa [rem, pow_succ] using
       neg_one_pow_succ_mul_setIntegral_bernoulli_sub_bernoulliFun_fract_mul_pos
         (k := k) (by omega) hw_int hw_cont (fun x hx => zpow_pos (hn_pos.trans hx) _)
-  have hr_pos : 0 < (-1 : ℝ) ^ m * rem m := hsign m hm
-  have hr1_neg : (-1 : ℝ) ^ m * rem (m + 1) < 0 := by
+  have hsub : (harmonic n : ℝ) -
+      (Real.log n + Real.eulerMascheroniConstant + 1 / (2 * (n : ℝ)) -
+        ∑ s ∈ Ico 1 m, (bernoulli (2 * s) : ℝ) / (2 * s) * (n : ℝ) ^ (-(2 * s : ℤ))) =
+      rem m := by linarith [hm_eq]
+  rw [hsub]
+  exact exists_mem_Ioo_eq_mul_of_eq_add (u := (-1 : ℝ) ^ m) hstep (hsign m hm) <| by
     have h := hsign (m + 1) (by omega)
     rw [pow_succ, mul_assoc, neg_one_mul, mul_neg] at h; linarith
-  have ht_pos : 0 < (-1 : ℝ) ^ m * term := by linarith [congrArg ((-1 : ℝ) ^ m * ·) hstep]
-  have hrt_lt : (-1 : ℝ) ^ m * rem m < (-1 : ℝ) ^ m * term := by
-    linarith [congrArg ((-1 : ℝ) ^ m * ·) hstep]
-  have ht_ne : term ≠ 0 := fun h => by simp [h] at ht_pos
-  have hθ_eq : rem m / term = ((-1 : ℝ) ^ m * rem m) / ((-1 : ℝ) ^ m * term) :=
-    (mul_div_mul_left _ _ (pow_ne_zero m (by norm_num))).symm
-  refine ⟨rem m / term, ⟨?_, ?_⟩, ?_⟩
-  · rw [hθ_eq]; exact div_pos hr_pos ht_pos
-  · rw [hθ_eq, div_lt_one ht_pos]; exact hrt_lt
-  · have hrem_sub : (harmonic n : ℝ) -
-        (Real.log n + Real.eulerMascheroniConstant + 1 / (2 * (n : ℝ)) -
-          ∑ s ∈ Ico 1 m, (bernoulli (2 * s) : ℝ) / (2 * s) * (n : ℝ) ^ (-(2 * s : ℤ))) =
-        rem m := by linarith [hm_eq]
-    rw [hrem_sub, div_mul_cancel₀ _ ht_ne]
 
 /-- **DLMF 2.10.8** for `∑_{j=1}^{n-1} j⁻¹`: for `m ≥ 1` and `n ≥ 1`, there exists `θ ∈ (0, 1)`
 such that

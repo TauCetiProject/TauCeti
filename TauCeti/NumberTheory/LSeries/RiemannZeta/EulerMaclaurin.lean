@@ -9,12 +9,12 @@ public import Mathlib.NumberTheory.Harmonic.GammaDeriv
 public import Mathlib.NumberTheory.Harmonic.ZetaAsymp
 public import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.RingTheory.Polynomial.Pochhammer
-import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.MellinTransform
 import Mathlib.Analysis.PSeriesComplex
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
+import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.MeasureTheory.Function.Floor
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
@@ -38,9 +38,6 @@ without differentiating under the integral sign. Differentiating the functional 
 
 ## Main results
 
-* `TauCeti.deriv_riemannZeta_conj`, `TauCeti.riemannZeta_im_ofReal`, and
-  `TauCeti.deriv_riemannZeta_im_ofReal`: conjugation symmetry of `deriv riemannZeta` and reality
-  of `riemannZeta` and `deriv riemannZeta` on `ℝ`.
 * `TauCeti.riemannZeta_eq_eulerMaclaurin`: the order-`2m` Euler–Maclaurin representation of
   `riemannZeta s` on `1 - 2m < Re s`, `s ≠ 1`, together with its real specialization
   `TauCeti.riemannZeta_neg_ofReal_re_eq_eulerMaclaurin`.
@@ -63,28 +60,6 @@ open Complex Filter Finset intervalIntegral MeasureTheory
 open scoped Nat Real Topology
 
 namespace TauCeti
-
-/-! ### Conjugation symmetry and real arguments -/
-
-/-- Complex conjugation commutes with `deriv riemannZeta`. -/
-@[simp]
-theorem deriv_riemannZeta_conj (s : ℂ) :
-    deriv riemannZeta (starRingEnd ℂ s) = starRingEnd ℂ (deriv riemannZeta s) := by
-  have hfn : (starRingEnd ℂ ∘ riemannZeta ∘ starRingEnd ℂ) = riemannZeta :=
-    funext fun z => by simp [riemannZeta_conj]
-  have h := congrFun (deriv_conj_conj (f := riemannZeta)) s
-  rw [hfn] at h
-  simpa using congrArg (starRingEnd ℂ) h.symm
-
-/-- At every real argument `x`, `riemannZeta x` has zero imaginary part. -/
-@[simp]
-theorem riemannZeta_im_ofReal (x : ℝ) : (riemannZeta x).im = 0 :=
-  Complex.conj_eq_iff_im.mp (by simpa using (riemannZeta_conj x).symm)
-
-/-- At every real argument `x`, `deriv riemannZeta x` has zero imaginary part. -/
-@[simp]
-theorem deriv_riemannZeta_im_ofReal (x : ℝ) : (deriv riemannZeta x).im = 0 :=
-  Complex.conj_eq_iff_im.mp (by simpa using (deriv_riemannZeta_conj x).symm)
 
 /-! ### Holomorphy of the Euler–Maclaurin tail integral -/
 
@@ -201,10 +176,8 @@ private theorem sum_Icc_one_div_cpow_eq_eulerMaclaurin {s : ℂ} (hs₁ : s ≠ 
       (zero_lt_one.trans (by simpa using hx.1)))
     ((hcont (2 * m)).intervalIntegrable_of_Icc (by exact_mod_cast hN1))
   have hsum_cast : ∑ j ∈ Icc 1 N, (1 / (j : ℂ) ^ s) = ∑ j ∈ Icc (1 : ℤ) N, g 0 j := by
-    have himg : (Icc 1 N).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) N := by
-      ext z; simp only [mem_image, mem_Icc]
-      exact ⟨fun ⟨k, hk, hkz⟩ => hkz ▸ ⟨by exact_mod_cast hk.1, by exact_mod_cast hk.2⟩,
-        fun hz => ⟨z.toNat, ⟨by omega, by omega⟩, by omega⟩⟩
+    have himg : (Icc 1 N).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) N :=
+      Finset.coe_injective (by simpa using Nat.image_cast_int_Icc 1 N)
     rw [← himg, Finset.sum_image (f := fun j : ℤ => g 0 (j : ℝ)) Nat.cast_injective.injOn]
     exact sum_congr rfl fun j _ => by simp [g, cpow_neg, one_div]
   have hint0 : ∫ x in (1 : ℝ)..N, g 0 x = ((N : ℂ) ^ (-s + 1) - 1) / (-s + 1) := by

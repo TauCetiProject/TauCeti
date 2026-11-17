@@ -64,7 +64,9 @@ solve the second estimate for `Y` and substitute it into the first.
 It also records that the normalized position `(c - a) / (b - a)` of a point `c ∈ [a, b]` lies in
 `[0, 1]`, also when the interval is degenerate, and that for a finite family of nonnegative
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
-Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`.
+Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and if
+`r = t + r'` where `r` and `r'` have strict opposite signs after scaling by `u`, then `r = θ * t`
+for some `θ ∈ (0, 1)`.
 
 ## Main results
 
@@ -106,6 +108,8 @@ Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 �
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
+* `TauCeti.exists_mem_Ioo_eq_mul_of_eq_add`: if `r = t + r'` and a common factor `u` gives `r` and
+  `r'` strict opposite signs (`0 < u * r` and `u * r' < 0`), then `r = θ * t` for some `θ ∈ (0, 1)`.
 -/
 
 public section
@@ -412,6 +416,21 @@ theorem nonneg_of_le_div_pow {α : Type*} [Field α] [LinearOrder α] [IsStrictO
 theorem pos_of_mem_Ioo_neg_one_div {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
     {s t : K} (ht : t ∈ Set.Ioo (-1 / s) (1 / s)) : 0 < s :=
   one_div_pos.1 (neg_lt_self_iff.1 (by simpa only [neg_div] using ht.1.trans ht.2))
+
+/-- If `r = t + r'` and a common factor `u` gives `r` and `r'` strict opposite signs (`0 < u * r`
+and `u * r' < 0`), then `r = θ * t` for some `θ ∈ (0, 1)`. -/
+theorem exists_mem_Ioo_eq_mul_of_eq_add {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] {r t r' u : K} (h : r = t + r') (hr : 0 < u * r)
+    (hr' : u * r' < 0) :
+    ∃ θ ∈ Set.Ioo (0 : K) 1, r = θ * t := by
+  have hu : u ≠ 0 := left_ne_zero_of_mul hr.ne'
+  have hmul : u * r = u * t + u * r' := by rw [h, mul_add]
+  have hlt : u * r < u * t := by linarith
+  have ht : 0 < u * t := hr.trans hlt
+  have ht0 : t ≠ 0 := right_ne_zero_of_mul ht.ne'
+  refine ⟨r / t, ⟨?_, ?_⟩, (div_mul_cancel₀ r ht0).symm⟩
+  · rw [← mul_div_mul_left r t hu]; exact div_pos hr ht
+  · rw [← mul_div_mul_left r t hu, div_lt_one ht]; exact hlt
 
 end TauCeti
 

@@ -11,7 +11,9 @@ public import Mathlib.NumberTheory.LSeries.RiemannZeta
 public import Mathlib.NumberTheory.ZetaValues
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
+import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.Asymptotics.Sum.EulerMaclaurin
 import TauCeti.NumberTheory.LSeries.RiemannZeta.EulerMaclaurin
 import TauCeti.NumberTheory.ZetaValues
@@ -182,10 +184,8 @@ private theorem sum_Icc_mul_log_eq_finite_eulerMaclaurin {m n : ℕ} (hm : 1 ≤
       (by exact_mod_cast hn))
   have hsum : ∑ j ∈ Icc 1 n, (j : ℝ) * Real.log j =
       ∑ j ∈ Icc (1 : ℤ) n, mulLogIteratedDeriv 0 j := by
-    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n := by
-      ext z; simp only [mem_image, mem_Icc]
-      exact ⟨fun ⟨k, hk, hkz⟩ => hkz ▸ ⟨by exact_mod_cast hk.1, by exact_mod_cast hk.2⟩,
-        fun hz => ⟨z.toNat, ⟨by omega, by omega⟩, by omega⟩⟩
+    have himg : (Icc 1 n).image (Nat.cast : ℕ → ℤ) = Icc (1 : ℤ) n :=
+      Finset.coe_injective (by simpa using Nat.image_cast_int_Icc 1 n)
     rw [← himg, Finset.sum_image (f := fun j : ℤ => mulLogIteratedDeriv 0 (j : ℝ))
       Nat.cast_injective.injOn]
     exact sum_congr rfl fun j _ => by simp [mulLogIteratedDeriv]
@@ -376,27 +376,18 @@ theorem exists_Ioo_sum_Icc_mul_log_sub_eulerMaclaurin {m n : ℕ} (hm : 1 ≤ m)
     have hterm : term = -((bernoulli (2 * m + 2) : ℝ) / (2 * m * (2 * m + 1) * (2 * m + 2)) *
         (n : ℝ) ^ (-(2 * m : ℤ))) := by dsimp only [term]; ring
     rw [hrem m, hrem (m + 1), hterm]; linarith [hm_eq, hm1_eq]
-  have hr_pos : 0 < (-1 : ℝ) ^ (m + 1) * rem m := neg_one_pow_succ_mul_mulLog_rem_pos hm hn
-  have hr1_neg : (-1 : ℝ) ^ (m + 1) * rem (m + 1) < 0 := by
-    have h : 0 < (-1 : ℝ) ^ ((m + 1) + 1) * rem (m + 1) :=
-      neg_one_pow_succ_mul_mulLog_rem_pos (k := m + 1) (by omega) hn
-    rw [pow_succ ((-1 : ℝ)) (m + 1), mul_assoc, neg_one_mul, mul_neg, neg_pos] at h; exact h
-  have ht_pos : 0 < (-1 : ℝ) ^ (m + 1) * term := by
-    linarith [congrArg ((-1 : ℝ) ^ (m + 1) * ·) hstep]
-  have hrt_lt : (-1 : ℝ) ^ (m + 1) * rem m < (-1 : ℝ) ^ (m + 1) * term := by
-    linarith [congrArg ((-1 : ℝ) ^ (m + 1) * ·) hstep]
-  have hu_ne : (-1 : ℝ) ^ (m + 1) ≠ 0 := pow_ne_zero _ (by norm_num)
-  have ht_ne : term ≠ 0 := fun h => by simp [h] at ht_pos
-  refine ⟨rem m / term, ⟨?_, ?_⟩, ?_⟩
-  · rw [← mul_div_mul_left (rem m) term hu_ne]; exact div_pos hr_pos ht_pos
-  · rw [← mul_div_mul_left (rem m) term hu_ne, div_lt_one ht_pos]; exact hrt_lt
-  · have hsub : ∑ j ∈ Icc 1 n, (j : ℝ) * Real.log j -
-        ((n : ℝ) ^ 2 / 2 * Real.log n - (n : ℝ) ^ 2 / 4 + n / 2 * Real.log n + Real.log n / 12 +
-          (1 / 12 - (deriv riemannZeta (-1)).re) -
-          ∑ k ∈ Ico 1 m, (bernoulli (2 * k + 2) : ℝ) / (2 * k * (2 * k + 1) * (2 * k + 2)) *
-            (n : ℝ) ^ (-(2 * k : ℤ))) = rem m := by
-      rw [hrem m]; linarith [hm_eq]
-    rw [hsub, div_mul_cancel₀ _ ht_ne]
+  have hsub : ∑ j ∈ Icc 1 n, (j : ℝ) * Real.log j -
+      ((n : ℝ) ^ 2 / 2 * Real.log n - (n : ℝ) ^ 2 / 4 + n / 2 * Real.log n + Real.log n / 12 +
+        (1 / 12 - (deriv riemannZeta (-1)).re) -
+        ∑ k ∈ Ico 1 m, (bernoulli (2 * k + 2) : ℝ) / (2 * k * (2 * k + 1) * (2 * k + 2)) *
+          (n : ℝ) ^ (-(2 * k : ℤ))) = rem m := by
+    rw [hrem m]; linarith [hm_eq]
+  rw [hsub]
+  exact exists_mem_Ioo_eq_mul_of_eq_add (u := (-1 : ℝ) ^ (m + 1)) hstep
+    (neg_one_pow_succ_mul_mulLog_rem_pos hm hn) <| by
+      have h : 0 < (-1 : ℝ) ^ ((m + 1) + 1) * rem (m + 1) :=
+        neg_one_pow_succ_mul_mulLog_rem_pos (k := m + 1) (by omega) hn
+      rw [pow_succ ((-1 : ℝ)) (m + 1), mul_assoc, neg_one_mul, mul_neg, neg_pos] at h; exact h
 
 /-- **DLMF 2.10.5** for `∑_{j=1}^{n-1} j log j`: for `m ≥ 1` and `n ≥ 1`, there exists `θ ∈ (0, 1)`
 such that the remainder equals `θ` times `-(B_{2m+2} / (2m(2m+1)(2m+2))) n ^ (-2m)`. -/

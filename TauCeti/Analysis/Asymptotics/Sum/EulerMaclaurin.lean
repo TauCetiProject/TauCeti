@@ -85,8 +85,8 @@ omit [CompleteSpace E] in
 /-- Multiplying an integrable function on `s` by the bounded periodic Bernoulli function
 `Bₖ({x})` preserves `IntegrableOn`. -/
 theorem MeasureTheory.IntegrableOn.bernoulliFun_fract_smul {u : ℝ → E} {s : Set ℝ}
-    (hu : IntegrableOn u s) (k : ℕ) :
-    IntegrableOn (fun x => bernoulliFun k (Int.fract x) • u x) s := by
+    {μ : Measure ℝ} (hu : IntegrableOn u s μ) (k : ℕ) :
+    IntegrableOn (fun x => bernoulliFun k (Int.fract x) • u x) s μ := by
   obtain ⟨C, hC⟩ := (isCompact_Icc (a := (0 : ℝ)) (b := 1)).exists_bound_of_continuousOn
     (continuous_bernoulliFun k).continuousOn
   exact Integrable.bdd_smul hu C
@@ -98,8 +98,8 @@ omit [CompleteSpace E] in
 /-- Multiplying an integrable function on `s` by the Euler–Maclaurin kernel
 `Bₖ - Bₖ({x})` preserves `IntegrableOn`. -/
 theorem MeasureTheory.IntegrableOn.bernoulli_sub_bernoulliFun_fract_smul {u : ℝ → E} {s : Set ℝ}
-    (hu : IntegrableOn u s) (k : ℕ) :
-    IntegrableOn (fun x => ((bernoulli k : ℝ) - bernoulliFun k (Int.fract x)) • u x) s := by
+    {μ : Measure ℝ} (hu : IntegrableOn u s μ) (k : ℕ) :
+    IntegrableOn (fun x => ((bernoulli k : ℝ) - bernoulliFun k (Int.fract x)) • u x) s μ := by
   have hsub : (fun x => ((bernoulli k : ℝ) - bernoulliFun k (Int.fract x)) • u x) =
       fun x => (bernoulli k : ℝ) • u x - bernoulliFun k (Int.fract x) • u x :=
     funext fun _ => sub_smul _ _ _
