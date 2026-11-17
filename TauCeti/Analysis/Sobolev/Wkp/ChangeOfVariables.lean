@@ -880,13 +880,13 @@ private theorem hasWeakLineDerivOn_inner_iteratedGradient_comp
     (hG.clm_comp (innerSL ℝ a)).hasWeakLineDerivOn f
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The coefficients `⟪a, DΦ(x) c⟫` are `C¹` on `U`, with derivative `⟪a, D²Φ(x) f c⟫` in the
-direction `f`. -/
+/-- The coefficients `⟪a, DΦ(x) e⟫` are `C¹` on `U`. -/
 private theorem contDiffOn_inner_fderiv_apply (h : IsChangeOfVariables 2 U V Φ L c) (a e : E) :
     ContDiffOn ℝ 1 (fun x => ⟪a, fderiv ℝ Φ x e⟫_ℝ) U :=
   contDiffOn_const.inner ℝ (h.contDiffOn_fderiv.clm_apply contDiffOn_const)
 
 omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- The derivative of the coefficient `⟪a, DΦ(x) e⟫` in the direction `f` is `⟪a, D²Φ(x) f e⟫`. -/
 private theorem fderiv_inner_fderiv_apply (h : IsChangeOfVariables 2 U V Φ L c) (a e f : E)
     {x : E} (hx : x ∈ (U : Set E)) :
     fderiv ℝ (fun y => ⟪a, fderiv ℝ Φ y e⟫_ℝ) x f = ⟪a, fderiv ℝ (fderiv ℝ Φ) x f e⟫_ℝ := by

@@ -73,13 +73,12 @@ private theorem traceCLM_comp_adjoint_comp_comp {M N A D : E →L[ℝ] E}
     traceCLM ℝ E ((N ∘L A ∘L N.adjoint) ∘L (M.adjoint ∘L D ∘L M)) = traceCLM ℝ E (A ∘L D) := by
   have hNM : N.adjoint ∘L M.adjoint = ContinuousLinearMap.id ℝ E := by
     rw [← ContinuousLinearMap.adjoint_comp, hMN, ContinuousLinearMap.adjoint_id]
-  rw [ContinuousLinearMap.comp_assoc, ContinuousLinearMap.traceCLM_comp_comm]
+  rw [← ContinuousLinearMap.traceCLM_comp_comp_of_comp_eq_id hMN (A ∘L D)]
   congr 1
   ext z
-  have h1 : M (N z) = z := by simpa using congrArg (fun T => T z) hMN
   have h2 : ∀ y, N.adjoint (M.adjoint y) = y := fun y => by
     simpa using congrArg (fun T => T y) hNM
-  simp [h1, h2]
+  simp [h2]
 
 omit [MeasurableSpace E] [BorelSpace E] in
 /-- The trace of `A' ∘ H` for `H f = (T f)† g` is the first-order term `⟪∑ᵢ T eᵢ (A'† eᵢ), g⟫`. -/
