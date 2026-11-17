@@ -23,13 +23,18 @@ the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. Conjugated by an
 exponential weight `e^{δ s}` it becomes `floerLinearization - δ` (`floerLinearization_exp_smul`),
-and on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
-(`floerLinearization_smul_fst`). Its value at a point depends only on the germ of the direction
-there (`floerLinearization_congr_of_eventuallyEq`), and on the Floer data only through their
-values at that point (`floerLinearization_congr_data`). For `C¹` coefficients `J` and `C²`
-Hamiltonians it is continuous wherever the map and the direction are `C¹`
-(`continuousAt_floerLinearization`), and continuous everywhere when they are so everywhere
-(`continuous_floerLinearization`), so its `L²` norms over compact sets are finite.
+on a direction multiplied by a cutoff `β(s)` it acts as `β D ξ + β' ξ`
+(`floerLinearization_smul_fst`), and on a direction multiplied by a function `f` of both
+variables as `f D ξ + (∂s f) ξ + (∂t f) J ξ` (`floerLinearization_fun_smul`). Its value at a point
+depends only on the germ of the direction there (`floerLinearization_congr_of_eventuallyEq`), so
+it vanishes off the support of the direction (`floerLinearization_of_notMem_tsupport`), and on
+the Floer data only through their values at that point (`floerLinearization_congr_data`). For
+`C¹` coefficients `J` and `C²` Hamiltonians it is continuous wherever the map and the direction
+are `C¹` (`continuousAt_floerLinearization`), and continuous everywhere when they are so
+everywhere (`continuous_floerLinearization`), or when the direction is supported in an open set
+on which the data are regular (`continuous_floerLinearization_of_tsupport_subset`), so its `L²`
+norms over compact sets are finite. A compactly supported direction has a compactly supported
+image (`hasCompactSupport_floerLinearization`).
 It is `∂s ξ + J(z, u z) ∂t ξ` plus a zeroth-order term `floerLinearizationCoeff`
 (`floerLinearization_eq_add`), whose coefficient is continuous in `z` where the data are `C¹`
 (`continuousAt_floerLinearizationCoeff`, `continuousOn_floerLinearizationCoeff`).
@@ -208,12 +213,33 @@ theorem floerLinearization_smul_fst (ω : SymplecticForm V)
     Function.comp_apply, toSpanSingleton_apply, one_smul, zero_smul, add_zero, map_sub]
   module
 
+/-- **Multiplying by a function.** If `f` and `ξ` are differentiable at `z`, the linearized Floer
+operator at `z` sends `f ξ` to `f D ξ + (∂s f) ξ + (∂t f) J ξ`. -/
+theorem floerLinearization_fun_smul (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u ξ : ℝ × ℝ → V) {z : ℝ × ℝ}
+    {f : ℝ × ℝ → ℝ} (hf : DifferentiableAt ℝ f z) (hξ : DifferentiableAt ℝ ξ z) :
+    ω.floerLinearization J Ks Kt u (fun w ↦ f w • ξ w) z =
+      f z • ω.floerLinearization J Ks Kt u ξ z + fderiv ℝ f z stdComplexLineReal • ξ z +
+        fderiv ℝ f z stdComplexLineImag • J z (u z) (ξ z) := by
+  rw [floerLinearization_def, fderiv_fun_smul hf hξ, floerLinearization_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, map_smul, map_add,
+    map_sub]
+  module
+
 /-- The linearization at `z` depends only on the germ of the direction at `z`. -/
 theorem floerLinearization_congr_of_eventuallyEq (ω : SymplecticForm V)
     (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
     (u : ℝ × ℝ → V) {ξ η : ℝ × ℝ → V} {z : ℝ × ℝ} (h : ξ =ᶠ[nhds z] η) :
     ω.floerLinearization J Ks Kt u ξ z = ω.floerLinearization J Ks Kt u η z := by
   rw [floerLinearization_def, floerLinearization_def, h.fderiv_eq, h.eq_of_nhds]
+
+/-- The linearized Floer operator vanishes off the support of the direction. -/
+theorem floerLinearization_of_notMem_tsupport (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {ξ : ℝ × ℝ → V}
+    {z : ℝ × ℝ} (hz : z ∉ tsupport ξ) : ω.floerLinearization J Ks Kt u ξ z = 0 := by
+  rw [ω.floerLinearization_congr_of_eventuallyEq J Ks Kt u
+    (notMem_tsupport_iff_eventuallyEq.1 hz)]
+  exact ω.floerLinearization_zero J Ks Kt u z
 
 /-- The linearization at `z` depends on the Floer data `J`, `Ks`, `Kt` only through their values
 at `z`, as functions of the target point. -/
@@ -325,6 +351,30 @@ theorem continuous_floerLinearization (ω : SymplecticForm V)
     (hξ : ContDiff ℝ 1 ξ) : Continuous (ω.floerLinearization J Ks Kt u ξ) :=
   continuous_iff_continuousAt.2 fun z ↦
     ω.continuousAt_floerLinearization (hJ z) (hKs z) (hKt z) hu.contDiffAt hξ.contDiffAt
+
+/-- The linearized Floer operator in a direction `ξ` supported in an open set `U` is continuous
+when the data are regular along `u` on `U`. -/
+theorem continuous_floerLinearization_of_tsupport_subset (ω : SymplecticForm V)
+    {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ} {u ξ : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
+    (hJ : ∀ z ∈ U, ContDiffAt ℝ 1 (Function.uncurry J) (z, u z))
+    (hKs : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Ks) (z, u z))
+    (hKt : ∀ z ∈ U, ContDiffAt ℝ 2 (Function.uncurry Kt) (z, u z))
+    (hu : ∀ z ∈ U, ContDiffAt ℝ 1 u z) (hξ : ContDiff ℝ 1 ξ) (hξU : tsupport ξ ⊆ U) :
+    Continuous (ω.floerLinearization J Ks Kt u ξ) := by
+  refine continuous_iff_continuousAt.2 fun z ↦ ?_
+  by_cases hz : z ∈ U
+  · exact ω.continuousAt_floerLinearization (hJ z hz) (hKs z hz) (hKt z hz) (hu z hz)
+      hξ.contDiffAt
+  · have h : ω.floerLinearization J Ks Kt u ξ =ᶠ[nhds z] fun _ ↦ 0 :=
+      Filter.mem_of_superset ((isClosed_tsupport ξ).isOpen_compl.mem_nhds fun h ↦ hz (hξU h))
+        fun w hw ↦ ω.floerLinearization_of_notMem_tsupport J Ks Kt u hw
+    exact continuousAt_const.congr h.symm
+
+/-- The linearized Floer operator in a compactly supported direction is compactly supported. -/
+theorem hasCompactSupport_floerLinearization (ω : SymplecticForm V)
+    (J : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) {ξ : ℝ × ℝ → V}
+    (hξ : HasCompactSupport ξ) : HasCompactSupport (ω.floerLinearization J Ks Kt u ξ) :=
+  hξ.mono' fun _ hz ↦ by_contra fun h ↦ hz (ω.floerLinearization_of_notMem_tsupport J Ks Kt u h)
 
 section Families
 
