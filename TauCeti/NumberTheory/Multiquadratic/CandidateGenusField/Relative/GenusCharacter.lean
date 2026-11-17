@@ -195,7 +195,7 @@ noncomputable def autCandidateGenusFieldEquivElementaryTwoQuotient (hd : Squaref
     (hneg : d < 0) :
     (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) ≃*
       Multiplicative
-        (TauCeti.ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) :=
+        (ClassGroup.ElementaryTwoQuotient (𝓞 (candidateGenusFieldBase hd))) :=
   have hnsq : ¬ IsSquare ((d : ℤ) : ℚ) := fun h =>
     absurd h.nonneg (not_le.mpr (by exact_mod_cast hneg))
   haveI : NumberField.IsTotallyComplex (candidateGenusFieldBase hd) :=
