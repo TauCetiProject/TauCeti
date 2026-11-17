@@ -49,6 +49,9 @@ this compares base change to the fibre ring `B ⊗[R] κ(p)` with base change to
   whose image in `Q` is a unit has an `R`-linear right inverse.
 * `TensorProduct.AlgebraTensorModule.cancelBaseChangeTensor`: tensoring with two
   scalar-extended modules cancels both copies of the extended coefficient ring.
+* `TensorProduct.baseChangeTowerSemilinearEquiv`: semilinear identification
+  `D ⊗[A] M ≃ₛₗ[(e : D →+* C)] C ⊗[B] (B ⊗[A] M)` induced by a ring equivalence `e : D ≃+* C`
+  compatible with `A → D` and `A → B → C`.
 -/
 
 public section
@@ -318,5 +321,62 @@ theorem exists_smul_linearMap_eq_self {P : Type*} [AddCommMonoid P] [Module R P]
   | add x y hx hy => simp_all
 
 end Invertible
+
+section BaseChangeTower
+
+/-- Given a ring equivalence `e : D ≃+* C` intertwining `algebraMap A D` with the composite
+`A → B → C`, base change along `A → D` is `e`-semilinearly equivalent to iterated base change
+`C ⊗[B] (B ⊗[A] M)`. No `[Algebra A C]` instance is assumed, avoiding scalar-tower diamonds when
+`C` is constructed over `B`. -/
+def baseChangeTowerSemilinearEquiv (A B : Type*) {C D : Type*} (M : Type*)
+    [CommSemiring A] [CommSemiring B] [Algebra A B] [Semiring C] [Algebra B C] [Semiring D]
+    [Algebra A D] [AddCommMonoid M] [Module A M] (e : D ≃+* C)
+    (he : ∀ a : A, e (algebraMap A D a) = algebraMap B C (algebraMap A B a)) :
+    haveI := RingHomInvPair.of_ringEquiv e
+    haveI := RingHomInvPair.symm (e : D →+* C) (e.symm : C →+* D)
+    D ⊗[A] M ≃ₛₗ[(e : D →+* C)] C ⊗[B] (B ⊗[A] M) :=
+  haveI := RingHomInvPair.of_ringEquiv e
+  haveI := RingHomInvPair.symm (e : D →+* C) (e.symm : C →+* D)
+  letI : Algebra A C := Algebra.compHom C (algebraMap A B)
+  haveI : IsScalarTower A B C := IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  let eₐ : D ≃ₐ[A] C := AlgEquiv.ofRingEquiv (f := e) he
+  let f : D ⊗[A] M ≃ₗ[A] C ⊗[B] (B ⊗[A] M) :=
+    eₐ.toLinearEquiv.rTensor M ≪≫ₗ
+      (AlgebraTensorModule.cancelBaseChange A B C C M).symm.restrictScalars A
+  { toFun := f
+    invFun := f.symm
+    left_inv := f.left_inv
+    right_inv := f.right_inv
+    map_add' := f.map_add
+    map_smul' d x := by
+      simp only [RingHom.coe_coe]
+      induction x using TensorProduct.inductionOn with
+      | add x y hx hy => simp [smul_add, hx, hy]
+      | tmul d' m =>
+        simp [f, eₐ, smul_tmul', smul_eq_mul, map_mul] }
+
+/-- On pure tensors, `baseChangeTowerSemilinearEquiv` sends `d ⊗ₜ m` to `e d ⊗ₜ (1 ⊗ₜ m)`. -/
+@[simp]
+theorem baseChangeTowerSemilinearEquiv_tmul {A B C D M : Type*} [CommSemiring A] [CommSemiring B]
+    [Algebra A B] [Semiring C] [Algebra B C] [Semiring D] [Algebra A D] [AddCommMonoid M]
+    [Module A M] (e : D ≃+* C)
+    (he : ∀ a : A, e (algebraMap A D a) = algebraMap B C (algebraMap A B a)) (d : D) (m : M) :
+    baseChangeTowerSemilinearEquiv A B M e he (d ⊗ₜ[A] m) =
+      e d ⊗ₜ[B] ((1 : B) ⊗ₜ[A] m) := by
+  simp [baseChangeTowerSemilinearEquiv]
+
+/-- On pure tensors, `(baseChangeTowerSemilinearEquiv ...).symm` sends `c ⊗ₜ (b ⊗ₜ m)` to
+`e.symm (b • c) ⊗ₜ m`. -/
+@[simp]
+theorem baseChangeTowerSemilinearEquiv_symm_tmul {A B C D M : Type*} [CommSemiring A]
+    [CommSemiring B] [Algebra A B] [Semiring C] [Algebra B C] [Semiring D] [Algebra A D]
+    [AddCommMonoid M] [Module A M] (e : D ≃+* C)
+    (he : ∀ a : A, e (algebraMap A D a) = algebraMap B C (algebraMap A B a)) (c : C) (b : B)
+    (m : M) :
+    (baseChangeTowerSemilinearEquiv A B M e he).symm (c ⊗ₜ[B] (b ⊗ₜ[A] m)) =
+      e.symm (b • c) ⊗ₜ[A] m := by
+  simp [baseChangeTowerSemilinearEquiv]
+
+end BaseChangeTower
 
 end TensorProduct

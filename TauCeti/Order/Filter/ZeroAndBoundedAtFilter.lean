@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Order.Filter.ZeroAndBoundedAtFilter
+import Mathlib.LinearAlgebra.Pi
+import TauCeti.Order.Filter.Cofinite.Basic
 
 /-!
 # Gaps in Mathlib's `ZeroAtFilter` / `BoundedAtFilter` API
@@ -29,6 +31,12 @@ continuous negation. The subgroup below uses exactly the carrier of Mathlib's
 `Filter.zeroAtFilterAddSubmonoid` and `Filter.zeroAtFilterSubmodule`; it supplies additive
 inverses independently of any scalar ring.
 
+Along `Filter.cofinite`, functions vanishing into a `T1Space` with countably generated
+neighbourhoods of `0` have countable support (`Filter.ZeroAtFilter.countable_support`), and
+`Filter.zeroAtFilterSubmodule` supports pullback (`Filter.zeroAtFilterComap`), reindexing
+(`Filter.zeroAtFilterCofiniteCongr`), extension by zero (`Filter.zeroAtFilterExtend`), and
+retractions from countable indices into `ℕ` (`Filter.exists_retract_zeroAtFilterSubmodule_nat`).
+
 ## Main results
 
 * `Filter.zeroAtFilterAddSubgroup`: the additive subgroup of functions vanishing along a filter.
@@ -36,6 +44,12 @@ inverses independently of any scalar ring.
 * `Filter.BoundedAtFilter.sum`: a finite sum of functions bounded along `l` is bounded along `l`.
 * `Filter.ZeroAtFilter.comp`: a function vanishing along `l`, composed with a zero-preserving map
   continuous at `0`, still vanishes along `l`.
+* `Filter.ZeroAtFilter.countable_support`: a family vanishing along `cofinite` into a `T1Space`
+  with countably generated neighbourhoods of `0` has countable support.
+* `Filter.zeroAtFilterComap`, `Filter.zeroAtFilterCofiniteCongr`, and `Filter.zeroAtFilterExtend`:
+  pullback, reindexing equivalence, and extension by zero on `Filter.zeroAtFilterSubmodule`.
+* `Filter.exists_retract_zeroAtFilterSubmodule_nat`: for countable `ι`, `c₀(ι, M)` is a linear
+  retract of `c₀(ℕ, M)`.
 
 ## Provenance
 
@@ -52,6 +66,7 @@ modular forms.
 public section
 
 open Finset
+open scoped Topology
 
 namespace Filter
 
@@ -113,6 +128,115 @@ theorem ZeroAtFilter.of_eventually_eq_or_eq_zero [Zero β] [TopologicalSpace β]
       rcases ha.2 with he | he
       · simpa [he] using ha.1
       · simpa [he] using mem_of_mem_nhds hU)
+
+/-- A family tending to zero along `Filter.cofinite` into a `T1Space` with countably generated
+neighbourhoods of `0` has countable support. -/
+theorem ZeroAtFilter.countable_support [Zero β] [TopologicalSpace β] [T1Space β]
+    [(𝓝 (0 : β)).IsCountablyGenerated] {g : α → β} (hg : ZeroAtFilter cofinite g) :
+    (Function.support g).Countable := by
+  have h := hg.countable_compl_preimage_ker; rw [ker_nhds] at h; exact h.mono fun _ hx ↦ hx
+
+section SubmoduleMaps
+
+variable (A M : Type*) [Semiring A] [AddCommMonoid M] [TopologicalSpace M]
+  [Module A M] [ContinuousAdd M] [ContinuousConstSMul A M]
+
+/-- Precomposition along `j : κ → ι` tending from `l₁` to `l₂` pulls `M`-valued functions vanishing
+along `l₂` back to functions vanishing along `l₁`. -/
+def zeroAtFilterComap {κ ι : Type*} {l₁ : Filter κ} {l₂ : Filter ι} {j : κ → ι}
+    (hj : Tendsto j l₁ l₂) :
+    zeroAtFilterSubmodule (β := M) A l₂ →ₗ[A] zeroAtFilterSubmodule (β := M) A l₁ where
+  toFun g := ⟨(g : ι → M) ∘ j, Tendsto.comp g.2 hj⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+variable {A M} in
+/-- The underlying function of `zeroAtFilterComap` is precomposition with `j`. -/
+@[simp]
+theorem coe_zeroAtFilterComap {κ ι : Type*} {l₁ : Filter κ} {l₂ : Filter ι} {j : κ → ι}
+    (hj : Tendsto j l₁ l₂) (g : zeroAtFilterSubmodule (β := M) A l₂) :
+    (zeroAtFilterComap A M hj g : κ → M) = (g : ι → M) ∘ j := (rfl)
+
+/-- Pullback of vanishing functions is contravariantly functorial in the map. -/
+theorem zeroAtFilterComap_comp {κ ι γ : Type*} {l₁ : Filter κ} {l₂ : Filter ι} {l₃ : Filter γ}
+    {j₁ : κ → ι} {j₂ : ι → γ} (hj₁ : Tendsto j₁ l₁ l₂) (hj₂ : Tendsto j₂ l₂ l₃) :
+    zeroAtFilterComap A M hj₁ ∘ₗ zeroAtFilterComap A M hj₂ =
+      zeroAtFilterComap A M (hj₂.comp hj₁) := (rfl)
+
+/-- Reindexing along an equivalence `e : ι ≃ κ` identifies the `A`-modules of `M`-valued null
+families along `Filter.cofinite`. -/
+def zeroAtFilterCofiniteCongr {ι κ : Type*} (e : ι ≃ κ) :
+    zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι) ≃ₗ[A]
+      zeroAtFilterSubmodule (β := M) A (cofinite : Filter κ) :=
+  LinearEquiv.ofLinearMap
+    (zeroAtFilterComap A M e.symm.injective.tendsto_cofinite)
+    (zeroAtFilterComap A M e.injective.tendsto_cofinite)
+    (LinearMap.ext fun g ↦ Subtype.ext <| funext fun k ↦
+      congrArg (g : κ → M) (e.apply_symm_apply k))
+    (LinearMap.ext fun f ↦ Subtype.ext <| funext fun i ↦
+      congrArg (f : ι → M) (e.symm_apply_apply i))
+
+variable {A M} in
+/-- Applying `zeroAtFilterCofiniteCongr` evaluates at `e.symm k`. -/
+@[simp]
+theorem coe_zeroAtFilterCofiniteCongr_apply {ι κ : Type*} (e : ι ≃ κ)
+    (f : zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι)) (k : κ) :
+    (zeroAtFilterCofiniteCongr A M e f : κ → M) k = (f : ι → M) (e.symm k) := (rfl)
+
+variable {A M} in
+/-- Applying `(zeroAtFilterCofiniteCongr A M e).symm` evaluates at `e i`. -/
+@[simp]
+theorem coe_zeroAtFilterCofiniteCongr_symm_apply {ι κ : Type*} (e : ι ≃ κ)
+    (g : zeroAtFilterSubmodule (β := M) A (cofinite : Filter κ)) (i : ι) :
+    ((zeroAtFilterCofiniteCongr A M e).symm g : ι → M) i = (g : κ → M) (e i) := (rfl)
+
+/-- Extending a null family along `j : κ → ι` by `0` outside the range of `j` yields a null family
+along `Filter.cofinite`. -/
+noncomputable def zeroAtFilterExtend {κ ι : Type*} (j : κ → ι) :
+    zeroAtFilterSubmodule (β := M) A (cofinite : Filter κ) →ₗ[A]
+      zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι) :=
+  ((Function.ExtendByZero.linearMap A M j).comp
+      (zeroAtFilterSubmodule (β := M) A cofinite).subtype).codRestrict
+    (zeroAtFilterSubmodule (β := M) A cofinite) fun f ↦
+      f.2.extend_cofinite j (pure_le_nhds 0)
+
+variable {A M} in
+/-- The underlying function of `zeroAtFilterExtend` is `Function.extend` by `0`. -/
+@[simp]
+theorem coe_zeroAtFilterExtend {κ ι : Type*} (j : κ → ι)
+    (f : zeroAtFilterSubmodule (β := M) A (cofinite : Filter κ)) :
+    (zeroAtFilterExtend A M j f : ι → M) = Function.extend j (f : κ → M) 0 := (rfl)
+
+/-- Extension by zero composes along injective maps. -/
+theorem zeroAtFilterExtend_comp {κ ι γ : Type*} {j₁ : κ → ι} {j₂ : ι → γ}
+    (hj₁ : Function.Injective j₁) (hj₂ : Function.Injective j₂) :
+    zeroAtFilterExtend A M j₂ ∘ₗ zeroAtFilterExtend A M j₁ =
+      zeroAtFilterExtend A M (j₂ ∘ j₁) :=
+  LinearMap.ext fun f ↦ Subtype.ext <| by
+    simp only [LinearMap.comp_apply, coe_zeroAtFilterExtend]
+    exact (hj₁.extend_comp hj₂ (f : κ → M) 0).symm
+
+/-- Pulling back along an injective map `j` after extending by zero recovers the original family. -/
+theorem zeroAtFilterComap_comp_extend {κ ι : Type*} {j : κ → ι} (hj : Function.Injective j) :
+    zeroAtFilterComap A M hj.tendsto_cofinite ∘ₗ zeroAtFilterExtend A M j = LinearMap.id :=
+  LinearMap.ext fun f ↦ Subtype.ext <| by
+    simpa only [LinearMap.comp_apply, LinearMap.id_apply, coe_zeroAtFilterComap,
+      coe_zeroAtFilterExtend] using Function.extend_comp hj (f : κ → M) 0
+
+/-- For any countable index type `ι`, the module of `ι`-indexed null families is an `A`-linear
+retract of the module of `ℕ`-indexed null families: choose an injection `ι → ℕ`, extend outside
+its image by `0`, and pull back along the injection. -/
+theorem exists_retract_zeroAtFilterSubmodule_nat (ι : Type*) [Countable ι] :
+    ∃ (emb : zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι) →ₗ[A]
+          zeroAtFilterSubmodule (β := M) A (cofinite : Filter ℕ))
+      (proj : zeroAtFilterSubmodule (β := M) A (cofinite : Filter ℕ) →ₗ[A]
+          zeroAtFilterSubmodule (β := M) A (cofinite : Filter ι)),
+      proj ∘ₗ emb = LinearMap.id := by
+  obtain ⟨j, hj⟩ := Countable.exists_injective_nat ι
+  exact ⟨zeroAtFilterExtend A M j, zeroAtFilterComap A M hj.tendsto_cofinite,
+    zeroAtFilterComap_comp_extend A M hj⟩
+
+end SubmoduleMaps
 
 end Filter
 

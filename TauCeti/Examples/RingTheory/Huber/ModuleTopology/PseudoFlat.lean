@@ -138,8 +138,8 @@ example (p : ℕ) [Fact p.Prime] :
     (one_ne_zero : (1 : ℚ_[p]) ≠ 0) (by simpa [h0] using hX_coeff1.symm)
   have hX_reg : IsSMulRegular A X := fun a b (hab : X * a = X * b) ↦ mul_left_cancel₀ hX_ne hab
   have hX_not_unit : ¬ IsUnit X := fun ⟨u, hu⟩ ↦ by
-    have heq := congrArg (restrictedMvPowerSeriesCompletionEquiv 1 ℚ_[p])
-      (show X * (u⁻¹ : Units A) = 1 by simp [← hu])
+    have hX_inv : X * (u⁻¹ : Units A) = 1 := by simp [← hu]
+    have heq := congrArg (restrictedMvPowerSeriesCompletionEquiv 1 ℚ_[p]) hX_inv
     rw [map_mul, map_one, restrictedMvPowerSeriesCompletionEquiv_coe] at heq
     have hc := congrArg (fun f : weightedRestrictedSubring _ _ ↦
       MvPowerSeries.coeff (0 : Fin 1 →₀ ℕ) f.1) heq
@@ -252,6 +252,9 @@ private instance : AddCommGroup (WeightedC0 p) where
   neg_add_cancel _ := ext fun _ ↦ neg_add_cancel _
   add_comm f g := ext fun k ↦ add_comm (f.toFun k) (g.toFun k)
 
+private theorem add_toFun (f g : WeightedC0 p) (k : ℕ) : (f + g).toFun k = f.toFun k + g.toFun k :=
+  rfl
+
 private theorem sub_toFun (f g : WeightedC0 p) (k : ℕ) : (f - g).toFun k = f.toFun k - g.toFun k :=
   by rw [sub_eq_add_neg]; exact (sub_eq_add_neg _ _).symm
 
@@ -265,6 +268,9 @@ private instance : Module (Tate2 p) (WeightedC0 p) where
   smul_add _ _ _ := ext fun _ ↦ mul_add _ _ _
   add_smul _ _ _ := ext fun _ ↦ add_mul _ _ _
   zero_smul _ := ext fun _ ↦ zero_mul _
+
+private theorem smul_toFun (a : Tate2 p) (f : WeightedC0 p) (k : ℕ) :
+    (a • f).toFun k = a * f.toFun k := rfl
 
 private def supNorm (f : WeightedC0 p) : ℝ := ⨆ k, evalNorm p k (f.toFun k)
 
@@ -298,6 +304,8 @@ private instance : NormedAddCommGroup (WeightedC0 p) :=
           (le_max_right _ _).trans (hf ▸ evalNorm_le_supNorm f k)
         exact norm_eq_zero.mp <| le_antisymm
           (nonpos_of_mul_nonpos_right hle (norm_p_pow_pos p k)) (norm_nonneg _) }
+
+private theorem norm_eq_supNorm (f : WeightedC0 p) : ‖f‖ = supNorm f := rfl
 
 private instance : IsUltrametricDist (WeightedC0 p) :=
   IsUltrametricDist.isUltrametricDist_of_forall_norm_add_le_max_norm supNorm_add_le_max
@@ -363,32 +371,27 @@ private def truncProj (n : ℕ) : WeightedC0 p →ₗ[Tate2 p] WeightedC0 p wher
     tendsto_atTop_of_eventually_const (i₀ := n) fun k hk ↦ by
       simp [Nat.not_lt.mpr hk, evalNorm_zero]⟩
   map_add' f g := ext fun k ↦ by
-    change (if k < n then f.toFun k + g.toFun k else 0) =
-      (if k < n then f.toFun k else 0) + (if k < n then g.toFun k else 0)
-    split_ifs <;> simp
+    dsimp only; rw [add_toFun, add_toFun]; by_cases hk : k < n <;> simp [hk]
   map_smul' a f := ext fun k ↦ by
-    change (if k < n then a * f.toFun k else 0) = a * (if k < n then f.toFun k else 0)
-    split_ifs <;> simp
+    dsimp only; rw [smul_toFun, smul_toFun]; by_cases hk : k < n <;> simp [hk]
 
-private theorem norm_truncProj_le (n : ℕ) (f : WeightedC0 p) : ‖truncProj n f‖ ≤ ‖f‖ :=
-  supNorm_le_iff.mpr fun k ↦ by
-    change evalNorm p k (if k < n then f.toFun k else 0) ≤ supNorm f
-    split_ifs
-    · exact evalNorm_le_supNorm f k
-    · rw [evalNorm_zero]; exact supNorm_nonneg f
+private theorem truncProj_toFun (n : ℕ) (f : WeightedC0 p) (k : ℕ) :
+    (truncProj n f).toFun k = if k < n then f.toFun k else 0 := rfl
+
+private theorem norm_truncProj_le (n : ℕ) (f : WeightedC0 p) : ‖truncProj n f‖ ≤ ‖f‖ := by
+  rw [norm_eq_supNorm, norm_eq_supNorm]
+  refine supNorm_le_iff.mpr fun k ↦ ?_
+  rw [truncProj_toFun]; split_ifs
+  · exact evalNorm_le_supNorm f k
+  · rw [evalNorm_zero]; exact supNorm_nonneg f
 
 private theorem truncProj_comp_of_le {k l : ℕ} (hkl : k ≤ l) :
     truncProj (p := p) l ∘ₗ truncProj k = truncProj k ∧
       truncProj (p := p) k ∘ₗ truncProj l = truncProj k := by
   constructor <;> refine LinearMap.ext fun f ↦ ext fun m ↦ ?_
-  · change (if m < l then (if m < k then f.toFun m else 0) else 0) =
-      if m < k then f.toFun m else 0
-    by_cases h1 : m < k <;> by_cases h2 : m < l <;> simp [h1, h2]
-    omega
-  · change (if m < k then (if m < l then f.toFun m else 0) else 0) =
-      if m < k then f.toFun m else 0
-    by_cases h1 : m < k <;> by_cases h2 : m < l <;> simp [h1, h2]
-    omega
+  all_goals
+    simp only [LinearMap.comp_apply, truncProj_toFun]
+    by_cases h1 : m < k <;> by_cases h2 : m < l <;> simp [h1, h2]; omega
 
 private def rangeTruncProjEquiv (n : ℕ) :
     LinearMap.range (truncProj (p := p) n) ≃ₗ[Tate2 p] (Fin n → Tate2 p) where
@@ -398,14 +401,9 @@ private def rangeTruncProjEquiv (n : ℕ) :
       tendsto_atTop_of_eventually_const (i₀ := n) fun k hk ↦ by
         simp [Nat.not_lt.mpr hk, evalNorm_zero]⟩
     ⟨w, ⟨w, ext fun k ↦ by
-      change (if k < n then (if h : k < n then v ⟨k, h⟩ else 0) else 0) =
-        if h : k < n then v ⟨k, h⟩ else 0
-      by_cases hk : k < n <;> simp [hk]⟩⟩
+      rw [truncProj_toFun]; dsimp only [w]; by_cases hk : k < n <;> simp [hk]⟩⟩
   left_inv := fun ⟨g, ⟨f, hf⟩⟩ ↦ Subtype.ext <| ext fun k ↦ by
-    subst hf
-    change (if _ : k < n then (if k < n then f.toFun k else 0) else 0) =
-      if k < n then f.toFun k else 0
-    by_cases hk : k < n <;> simp [hk]
+    subst hf; dsimp only; rw [truncProj_toFun]; by_cases hk : k < n <;> simp [hk]
   right_inv v := funext fun ⟨k, hk⟩ ↦ by simp [hk]
   map_add' _ _ := rfl
   map_smul' _ _ := rfl
@@ -415,10 +413,9 @@ private theorem tendsto_truncProj (b : WeightedC0 p) :
   refine Metric.tendsto_atTop.mpr fun ε hε ↦ ?_
   obtain ⟨N, hN⟩ := eventually_atTop.mp (b.tendsto_zero.eventually (gt_mem_nhds (half_pos hε)))
   refine ⟨N, fun n hn ↦ ?_⟩
-  rw [dist_eq_norm]
+  rw [dist_eq_norm, norm_eq_supNorm]
   refine (supNorm_le_iff.mpr fun k ↦ ?_).trans_lt (half_lt_self hε)
-  rw [sub_toFun]
-  change evalNorm p k ((if k < n then b.toFun k else 0) - b.toFun k) ≤ ε / 2
+  rw [sub_toFun, truncProj_toFun]
   by_cases hk : k < n
   · simp [hk, evalNorm_zero, (half_pos hε).le]
   · simp only [hk, ↓reduceIte, zero_sub, evalNorm_neg]
@@ -460,10 +457,7 @@ private theorem koszul_relation (u v : Tate2 p) (h : u * tateVar 0 + v * tateVar
     refine MvPowerSeries.ext fun t ↦ ?_
     rw [MvPowerSeries.X_def, MvPowerSeries.coeff_mul_monomial, mul_one]
     by_cases h1 : Finsupp.single (1 : Fin 2) 1 ≤ t
-    · rw [ite_eq_left h1]
-      change MvPowerSeries.coeff t (u : MvPowerSeries (Fin 2) ℚ_[p]) =
-        MvPowerSeries.coeff (t - Finsupp.single 1 1 + Finsupp.single 1 1)
-          (u : MvPowerSeries (Fin 2) ℚ_[p])
+    · rw [ite_eq_left h1, MvPowerSeries.coeff_apply aps]; dsimp only [aps]
       rw [tsub_add_cancel_of_le h1]
     · rw [ite_eq_right h1]
       have h0 := congrArg (MvPowerSeries.coeff (t + Finsupp.single 0 1)) hps
@@ -525,36 +519,41 @@ private theorem not_isPseudoFlat (m : ℕ∞) : ¬ IsPseudoFlat (Tate2 p) (Weigh
   let ψ₀ : (Fin 2 → A) →ₗ[A] B →ₗ[A] Q :=
     { toFun v := q ∘ₗ LinearMap.prod (LinearMap.lsmul A B (v 0)) (LinearMap.lsmul A B (v 1))
       map_add' v w := LinearMap.ext fun b ↦ by
-        change q ((v 0 + w 0) • b, (v 1 + w 1) • b) =
-          q (v 0 • b, v 1 • b) + q (w 0 • b, w 1 • b)
+        simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.prod_apply,
+          Function.prod_apply, LinearMap.lsmul_apply, Pi.add_apply]
         rw [← map_add, Prod.mk_add_mk, add_smul, add_smul]
       map_smul' a v := LinearMap.ext fun b ↦ by
-        change q ((a * v 0) • b, (a * v 1) • b) = a • q (v 0 • b, v 1 • b)
+        simp only [RingHom.id_apply, LinearMap.smul_apply, LinearMap.comp_apply,
+          LinearMap.prod_apply, Function.prod_apply, LinearMap.lsmul_apply, Pi.smul_apply,
+          smul_eq_mul]
         rw [← map_smul, Prod.smul_mk, mul_smul, mul_smul] }
   have hker : LinearMap.ker φ ≤ LinearMap.ker ψ₀ := fun v hv ↦ by
     obtain ⟨a, hu, hv'⟩ := koszul_relation (v 0) (v 1) (congrArg Subtype.val hv)
     refine LinearMap.ext fun b ↦ ?_
-    change Submodule.Quotient.mk (p := LinearMap.range relMap) (v 0 • b, v 1 • b) = 0
-    rw [Submodule.Quotient.mk_eq_zero]
+    simp only [ψ₀, LinearMap.coe_mk, AddHom.coe_mk, LinearMap.comp_apply, LinearMap.prod_apply,
+      Function.prod_apply, LinearMap.lsmul_apply, LinearMap.zero_apply]
+    dsimp only [q]; rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
     refine ⟨a • b, Prod.ext ?_ ?_⟩
-    · change Y • (a • b) = v 0 • b; rw [hu, mul_comm, mul_smul]
-    · change -(X • (a • b)) = v 1 • b; rw [hv', neg_smul, mul_comm, mul_smul]
+    · simp only [relMap, LinearMap.prod_apply, Function.prod_apply, LinearMap.lsmul_apply]
+      rw [hu, mul_comm, mul_smul]
+    · simp only [relMap, LinearMap.prod_apply, Function.prod_apply, LinearMap.neg_apply,
+        LinearMap.lsmul_apply]
+      rw [hv', neg_smul, mul_comm, mul_smul]
   let eI : ((Fin 2 → A) ⧸ LinearMap.ker φ) ≃ₗ[A] I := φ.quotKerEquivOfSurjective hφ_surj
   let ψ : I →ₗ[A] B →ₗ[A] Q :=
     (Submodule.liftQ (LinearMap.ker φ) ψ₀ hker).comp eI.symm.toLinearMap
-  have hψ_x (b : B) : ψ xI b = q (b, 0) := by
-    rw [show xI = eI (Submodule.Quotient.mk ![1, 0]) from Subtype.ext (by simp [eI, φ, xI])]
-    simp only [ψ, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply,
-      Submodule.liftQ_apply]
-    change q ((1 : A) • b, (0 : A) • b) = q (b, 0); simp
-  have hψ_y (b : B) : ψ yI b = q (0, b) := by
-    rw [show yI = eI (Submodule.Quotient.mk ![0, 1]) from Subtype.ext (by simp [eI, φ, yI])]
-    simp only [ψ, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap, LinearEquiv.symm_apply_apply,
-      Submodule.liftQ_apply]
-    change q ((0 : A) • b, (1 : A) • b) = q (0, b); simp
+  have hψ (v : Fin 2 → A) (b : B) : ψ (φ v) b = q (v 0 • b, v 1 • b) := by
+    have hv : φ v = eI (Submodule.Quotient.mk v) := rfl
+    rw [hv]
+    simp only [ψ, ψ₀, LinearMap.comp_apply, LinearEquiv.coe_toLinearMap,
+      LinearEquiv.symm_apply_apply, Submodule.liftQ_apply, LinearMap.coe_mk, AddHom.coe_mk,
+      LinearMap.prod_apply, Function.prod_apply, LinearMap.lsmul_apply]
+  have hxI : xI = φ ![1, 0] := Subtype.ext (by simp [φ, xI])
+  have hyI : yI = φ ![0, 1] := Subtype.ext (by simp [φ, yI])
   have hQ_zero : q (ySeq, -xSeq) = 0 := by
     have hlift := congrArg (TensorProduct.lift ψ) hz_zero
-    simp only [z, map_sub, TensorProduct.lift.tmul, map_zero, hψ_x, hψ_y] at hlift
+    simp only [z, hxI, hyI, map_sub, TensorProduct.lift.tmul, map_zero, hψ, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val_fin_one, one_smul, zero_smul] at hlift
     calc
       q (ySeq, -xSeq) = q ((ySeq, 0) - (0, xSeq)) := by simp [Prod.mk_sub_mk]
       _ = q (ySeq, 0) - q (0, xSeq) := map_sub q _ _

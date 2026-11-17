@@ -9,9 +9,9 @@ public import Mathlib.RingTheory.Flat.Basic
 public import TauCeti.RingTheory.Huber.ModuleTopology.StablyPseudoCoherent
 import Mathlib.LinearAlgebra.TensorProduct.Pi
 import Mathlib.LinearAlgebra.TensorProduct.RightExactness
-import Mathlib.LinearAlgebra.TensorProduct.Tower
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.CompletedRationalSubset
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PresentationIndependence
+import TauCeti.LinearAlgebra.TensorProduct.ScalarExtension
 import TauCeti.RingTheory.Huber.LocalizationTopology.Iterated
 import TauCeti.RingTheory.Huber.OpenIdeal
 
@@ -211,17 +211,6 @@ theorem isPseudoFlat_iff_injective_rTensor {A : Type u} [CommRing A] [Topologica
 
 namespace IsPseudoFlat
 
-private theorem injective_baseChange_of_injective_rTensor {A B : Type*} [CommRing A] [CommRing B]
-    [Algebra A B] {M N : Type*} [AddCommGroup M] [Module A M] [AddCommGroup N] [Module A N]
-    {f : M →ₗ[A] N} (hf : Function.Injective (f.rTensor B)) :
-    Function.Injective (f.baseChange B) := by
-  rw [LinearMap.baseChange_eq_lTensor]
-  have hconj : (TensorProduct.comm A B N).toLinearMap ∘ₗ LinearMap.lTensor B f =
-      f.rTensor B ∘ₗ (TensorProduct.comm A B M).toLinearMap := by ext; rfl
-  exact Function.Injective.of_comp (f := (TensorProduct.comm A B N).toLinearMap) <| by
-    rw [← LinearMap.coe_comp, hconj]
-    exact hf.comp (TensorProduct.comm A B M).injective
-
 /-- **Algebraic half of Kedlaya–Liu II, Remark 2.4.5.** If `B` is an `m`-pseudoflat commutative
 `A`-algebra with `2 ≤ m` and `M` is stably `m`-pseudocoherent over `A`, then `B ⊗[A] M` is
 `2`-pseudocoherent over `B`. -/
@@ -233,9 +222,10 @@ theorem isPseudoCoherentOver_two_of_le {A : Type*} [CommRing A] [TopologicalSpac
   obtain ⟨n₀, ε, hε, hK₀⟩ := IsPseudoCoherentOver.succ_iff.mp
     (hM.isPseudoCoherentOver.mono hm : IsPseudoCoherentOver A M ((1 : ℕ∞) + 1))
   set K₀ := LinearMap.ker ε
-  have hinj_base : Function.Injective (K₀.subtype.baseChange B) :=
-    injective_baseChange_of_injective_rTensor
-      (hB n₀ K₀ (hM.of_equiv (ε.quotKerEquivOfSurjective hε).symm))
+  have hinj_base : Function.Injective (K₀.subtype.baseChange B) := by
+    simpa only [LinearMap.baseChange_eq_lTensor] using
+      (K₀.subtype.lTensor_inj_iff_rTensor_inj B).2
+        (hB n₀ K₀ (hM.of_equiv (ε.quotKerEquivOfSurjective hε).symm))
   obtain ⟨n₁, q, hq, hK₁⟩ :=
     IsPseudoCoherentOver.succ_iff.mp (by simpa using hK₀ : IsPseudoCoherentOver A K₀ ((0 : ℕ∞) + 1))
   have := IsPseudoCoherentOver.zero_iff.mp hK₁
@@ -262,8 +252,8 @@ theorem isPseudoCoherentOver_two_of_le {A : Type*} [CommRing A] [TopologicalSpac
   · rcases i with _ | i
     · dsimp only [rk, diff]
       rw [← LinearMap.comp_assoc, LinearEquiv.precomp_exact_iff_exact,
-        LinearEquiv.postcomp_exact_iff_exact, LinearEquiv.conj_exact_iff_exact,
-        show d₀.baseChange B = _ from LinearMap.baseChange_comp _ _]
+        LinearEquiv.postcomp_exact_iff_exact, LinearEquiv.conj_exact_iff_exact]
+      dsimp only [d₀]; rw [LinearMap.baseChange_comp q K₀.subtype]
       refine hinj_base.comp_exact_iff_exact.mpr ?_
       simpa only [LinearMap.baseChange_eq_lTensor] using lTensor_exact B hex₁ hq
     · exact absurd ((Nat.cast_le.mpr (by omega : 3 ≤ i + 1 + 2)).trans hi) (by decide)
@@ -380,75 +370,12 @@ theorem IsStablyPseudoCoherent.ratLoc_of_isPseudoCoherentOver {A : Type*} [CommR
     (hcoh : IsPseudoCoherentOver (ratLoc P T s hden) (ratLoc P T s hden ⊗[A] M) m) :
     IsStablyPseudoCoherent (ratLoc P T s hden) (ratLoc P T s hden ⊗[A] M) m := by
   refine ⟨hcoh, fun P_B T_B s_B hden_B hT_B ↦ ?_⟩
-  let B := ratLoc P T s hden; let C := ratLoc P_B T_B s_B hden_B
   obtain ⟨T'', s'', hden'', hT'', e, he, he_symm, halg⟩ :=
     exists_ratLoc_ringEquiv_ratLoc P T s hden hT P_B T_B s_B hden_B hT_B
-  let D := ratLoc P T'' s'' hden''
-  have halg_symm (a : A) : e.symm (algebraMap B C (algebraMap A B a)) = algebraMap A D a := by
-    rw [← halg a, e.symm_apply_apply]
-  let fwdAdd : D ⊗[A] M →+ C ⊗[B] (B ⊗[A] M) := TensorProduct.liftAddHom
-    (AddMonoidHom.mk' (fun d ↦ AddMonoidHom.mk' (fun x ↦ e d ⊗ₜ[B] ((1 : B) ⊗ₜ[A] x))
-      fun x y ↦ by rw [TensorProduct.tmul_add, TensorProduct.tmul_add])
-      fun d₁ d₂ ↦ AddMonoidHom.ext fun x ↦ by simp [map_add, TensorProduct.add_tmul])
-    fun a d x ↦ by
-      simp only [AddMonoidHom.mk'_apply]
-      rw [Algebra.smul_def, map_mul, halg a, ← Algebra.smul_def, TensorProduct.smul_tmul,
-        TensorProduct.smul_tmul', smul_eq_mul, ← Algebra.smul_def, TensorProduct.smul_tmul]
-  let bwdInner (c : C) : B ⊗[A] M →+ D ⊗[A] M := TensorProduct.liftAddHom
-    (AddMonoidHom.mk' (fun b ↦ AddMonoidHom.mk'
-      (fun x ↦ (e.symm c * e.symm (algebraMap B C b)) ⊗ₜ[A] x) (TensorProduct.tmul_add _))
-      fun b₁ b₂ ↦ AddMonoidHom.ext fun x ↦ by simp [map_add, mul_add, TensorProduct.add_tmul])
-    fun a b x ↦ by
-      simp only [AddMonoidHom.mk'_apply]; rw [Algebra.smul_def, map_mul, map_mul, halg_symm a,
-        ← mul_assoc, mul_comm (e.symm c), mul_assoc, ← Algebra.smul_def, TensorProduct.smul_tmul]
-  have hbwdI (c : C) (b : B) (x : M) :
-      bwdInner c (b ⊗ₜ[A] x) = (e.symm c * e.symm (algebraMap B C b)) ⊗ₜ[A] x := by simp [bwdInner]
-  let bwdAdd : C ⊗[B] (B ⊗[A] M) →+ D ⊗[A] M := TensorProduct.liftAddHom
-    (AddMonoidHom.mk' bwdInner fun c₁ c₂ ↦ AddMonoidHom.ext fun z ↦ by
-      rw [AddMonoidHom.add_apply]; induction z using TensorProduct.inductionOn with
-      | tmul b x => rw [hbwdI, hbwdI, hbwdI, map_add, add_mul, TensorProduct.add_tmul]
-      | add z₁ z₂ ih₁ ih₂ => rw [map_add, map_add, map_add, ih₁, ih₂]; abel)
-    fun b c z ↦ by
-      simp only [AddMonoidHom.mk'_apply]; induction z using TensorProduct.inductionOn with
-      | tmul b' x =>
-        rw [TensorProduct.smul_tmul', hbwdI, hbwdI]; congr 1
-        rw [Algebra.smul_def, smul_eq_mul, map_mul, map_mul, map_mul]; ring
-      | add z₁ z₂ ih₁ ih₂ => rw [smul_add, map_add, map_add, ih₁, ih₂]
-  have hfwd (d : D) (x : M) : fwdAdd (d ⊗ₜ[A] x) = e d ⊗ₜ[B] ((1 : B) ⊗ₜ[A] x) := by simp [fwdAdd]
-  have hbwd (c : C) (b : B) (x : M) :
-      bwdAdd (c ⊗ₜ[B] (b ⊗ₜ[A] x)) = (e.symm c * e.symm (algebraMap B C b)) ⊗ₜ[A] x := by
-    simp [bwdAdd, hbwdI]
-  let fwdₛ : D ⊗[A] M →ₛₗ[(e : D →+* C)] C ⊗[B] (B ⊗[A] M) :=
-    { toFun := fwdAdd, map_add' := map_add fwdAdd, map_smul' := fun d z ↦ by
-        simp only [RingHom.coe_coe]; induction z using TensorProduct.inductionOn with
-        | tmul d' x =>
-          rw [TensorProduct.smul_tmul', smul_eq_mul, hfwd, hfwd, map_mul,
-            TensorProduct.smul_tmul', smul_eq_mul]
-        | add z₁ z₂ ih₁ ih₂ => simp [smul_add, map_add, ih₁, ih₂] }
-  let bwdₛ : C ⊗[B] (B ⊗[A] M) →ₛₗ[(e.symm : C →+* D)] D ⊗[A] M :=
-    { toFun := bwdAdd, map_add' := map_add bwdAdd, map_smul' := fun c z ↦ by
-        simp only [RingHom.coe_coe]; induction z using TensorProduct.inductionOn with
-        | tmul c' w => induction w using TensorProduct.inductionOn with
-          | tmul b x =>
-            rw [TensorProduct.smul_tmul', smul_eq_mul, hbwd, hbwd, map_mul, mul_assoc,
-              TensorProduct.smul_tmul', smul_eq_mul]
-          | add w₁ w₂ ih₁ ih₂ =>
-            rw [TensorProduct.tmul_add, smul_add, map_add, map_add, smul_add, ih₁, ih₂]
-        | add z₁ z₂ ih₁ ih₂ => simp [smul_add, map_add, ih₁, ih₂] }
-  have hfwdₛ (z) : fwdₛ z = fwdAdd z := rfl; have hbwdₛ (w) : bwdₛ w = bwdAdd w := rfl
-  refine (hM.isNaturallyComplete_tensor P T'' s'' hden'' hT'').of_semilinear
-    he he_symm fwdₛ bwdₛ (fun z ↦ ?_) (fun z ↦ ?_)
-  · induction z using TensorProduct.inductionOn with
-    | tmul d x => rw [hfwdₛ, hfwd, hbwdₛ, hbwd, e.symm_apply_apply, map_one, map_one, mul_one]
-    | add z₁ z₂ ih₁ ih₂ => rw [map_add, map_add, ih₁, ih₂]
-  · induction z using TensorProduct.inductionOn with
-    | tmul c w => induction w using TensorProduct.inductionOn with
-      | tmul b x =>
-        rw [hbwdₛ, hbwd, hfwdₛ, hfwd, map_mul, e.apply_symm_apply, e.apply_symm_apply, mul_comm c,
-          ← Algebra.smul_def, TensorProduct.smul_tmul, TensorProduct.smul_tmul', smul_eq_mul,
-          mul_one]
-      | add w₁ w₂ ih₁ ih₂ => rw [TensorProduct.tmul_add, map_add, map_add, ih₁, ih₂]
-    | add z₁ z₂ ih₁ ih₂ => rw [map_add, map_add, ih₁, ih₂]
+  have := RingHomInvPair.of_ringEquiv e
+  have := RingHomInvPair.of_ringEquiv_symm e
+  exact (hM.isNaturallyComplete_tensor P T'' s'' hden'' hT'').of_semilinearEquiv he he_symm
+    (TensorProduct.baseChangeTowerSemilinearEquiv A (ratLoc P T s hden) M e halg)
 
 /-- **Base change of stable `2`-pseudocoherence along a `2`-pseudoflat rational localisation**
 (Kedlaya–Liu II, Remark 2.4.5). If `A⟨T/s⟩` is `2`-pseudoflat over `A` and `M` is stably
@@ -476,7 +403,9 @@ theorem IsPseudoFlat.comp_of_forall_baseChange {A : Type*} [CommRing A] [Topolog
     (hBC : IsPseudoFlat B C m') : IsPseudoFlat A C m := by
   classical
   intro n K hK
-  have hinj_B := IsPseudoFlat.injective_baseChange_of_injective_rTensor (hAB n K hK)
+  have hinj_B : Function.Injective (K.subtype.baseChange B) := by
+    simpa only [LinearMap.baseChange_eq_lTensor] using
+      (K.subtype.lTensor_inj_iff_rTensor_inj B).2 (hAB n K hK)
   have hsurj_B := K.mkQ.baseChange_surjective B (Submodule.mkQ_surjective K)
   have hex_B : Function.Exact (K.subtype.baseChange B) (K.mkQ.baseChange B) := by
     simpa only [LinearMap.baseChange_eq_lTensor] using
@@ -484,23 +413,16 @@ theorem IsPseudoFlat.comp_of_forall_baseChange {A : Type*} [CommRing A] [Topolog
   have := Module.Finite.equiv (TensorProduct.piScalarRight A B B (Fin n)).symm
   have := Module.Projective.of_equiv (TensorProduct.piScalarRight A B B (Fin n)).symm
   have hinj_BC := hBC.rTensor_injective hinj_B hsurj_B hex_B (hstab n K hK)
-  let cancelK : (B ⊗[A] K) ⊗[B] C ≃ₗ[A] K ⊗[A] C :=
-    (TensorProduct.comm B (B ⊗[A] K) C).restrictScalars A ≪≫ₗ
-      (TensorProduct.AlgebraTensorModule.cancelBaseChange A B B C K).restrictScalars A ≪≫ₗ
-      TensorProduct.comm A C K
-  let cancelF : (B ⊗[A] (Fin n → A)) ⊗[B] C ≃ₗ[A] (Fin n → A) ⊗[A] C :=
-    (TensorProduct.comm B (B ⊗[A] (Fin n → A)) C).restrictScalars A ≪≫ₗ
-      (TensorProduct.AlgebraTensorModule.cancelBaseChange A B B C (Fin n → A)).restrictScalars A ≪≫ₗ
-      TensorProduct.comm A C (Fin n → A)
+  let cancelK := TensorProduct.cancelBaseChangeLeft A B K C
+  let cancelF := TensorProduct.cancelBaseChangeLeft A B (Fin n → A) C
   have hnat : cancelF.toLinearMap ∘ₗ ((K.subtype.baseChange B).rTensor C).restrictScalars A =
       K.subtype.rTensor C ∘ₗ cancelK.toLinearMap :=
     LinearMap.ext fun z ↦ by
-      induction z using TensorProduct.inductionOn with
-      | tmul x c =>
-        induction x using TensorProduct.inductionOn with
+      induction z with
+      | tmul x c => induction x with
         | tmul b k => simp [cancelK, cancelF]
-        | add x₁ x₂ ih₁ ih₂ => simp [TensorProduct.add_tmul, map_add, ih₁, ih₂]
-      | add z₁ z₂ ih₁ ih₂ => simp [map_add, ih₁, ih₂]
+        | add _ _ ih₁ ih₂ => simp_all [TensorProduct.add_tmul]
+      | add _ _ ih₁ ih₂ => simp_all
   have hinj_comp : Function.Injective (K.subtype.rTensor C ∘ₗ cancelK.toLinearMap) :=
     hnat ▸ cancelF.injective.comp hinj_BC
   exact fun z₁ z₂ hz ↦ cancelK.symm.injective <| hinj_comp <| by simpa using hz
