@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 public import TauCeti.RingTheory.StableRange
+import TauCeti.Data.Matrix.Block
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Stability.Surjective
 
 /-!
@@ -105,7 +106,9 @@ private theorem lowerVec_mul_blockOne (x : m → R) (e : GL m R) :
   rw [Units.val_mul, Units.val_mul, coe_lowerBlockGL, coe_fromBlocksGL, coe_lowerBlockGL]
   simp only [fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
     Matrix.one_mul, Matrix.mul_one, Units.val_one]
-  rfl
+  refine congrArg (fun M ↦ fromBlocks (e : Matrix m m R) 0 M 1) ?_
+  ext ⟨⟩ j
+  simp [Matrix.mul_apply, vecMul, dotProduct]
 
 private theorem blockOne_mul_upperVec (e : GL m R) (y : m → R) :
     blockOne e * upperVec y = upperVec ((e : Matrix m m R) *ᵥ y) * blockOne e := by
@@ -113,7 +116,17 @@ private theorem blockOne_mul_upperVec (e : GL m R) (y : m → R) :
   rw [Units.val_mul, Units.val_mul, coe_fromBlocksGL, coe_upperBlockGL, coe_upperBlockGL]
   simp only [fromBlocks_multiply, Matrix.mul_zero, Matrix.zero_mul, add_zero, zero_add,
     Matrix.one_mul, Matrix.mul_one, Units.val_one]
-  rfl
+  refine congrArg (fun M ↦ fromBlocks (e : Matrix m m R) M 0 1) ?_
+  ext i ⟨⟩
+  simp [Matrix.mul_apply, mulVec, dotProduct]
+
+private theorem toBlocks₂₁_apply (A : GL (m ⊕ Unit) R) (j : m) :
+    (A : Matrix (m ⊕ Unit) (m ⊕ Unit) R).toBlocks₂₁ () j = botRow A j :=
+  (rfl)
+
+private theorem toBlocks₂₂_apply (A : GL (m ⊕ Unit) R) :
+    (A : Matrix (m ⊕ Unit) (m ⊕ Unit) R).toBlocks₂₂ () () = botEntry A :=
+  (rfl)
 
 private theorem isUnimodular_sumElim_bot (A : GL (m ⊕ Unit) R) :
     Module.IsUnimodular R (Sum.elim (botRow A) (fun _ : Unit ↦ botEntry A)) := by
@@ -142,10 +155,11 @@ private theorem toBlocks_mul_clearLastRowFactor {A : GL (m ⊕ Unit) R} {b : m �
   have hfac : A * clearLastRowFactor A b = A₁ * lowerVec (-botRow A) := by
     rw [clearLastRowFactor, mul_assoc]
   refine ⟨?_, ?_⟩
-  · ext ⟨⟩ j; change botRow (A * clearLastRowFactor A b) j = 0
-    rw [hfac, botRow_mul_lowerVec, hrow₁, hd₁]; simp
-  · ext ⟨⟩ ⟨⟩; change botEntry (A * clearLastRowFactor A b) = 1
-    rw [hfac, botEntry_mul_lowerVec, hd₁]
+  · ext ⟨⟩ j
+    rw [toBlocks₂₁_apply, hfac, botRow_mul_lowerVec, hrow₁, hd₁]
+    simp
+  · ext ⟨⟩ ⟨⟩
+    rw [toBlocks₂₂_apply, hfac, botEntry_mul_lowerVec, hd₁, Matrix.one_apply_eq]
 
 end BlockVec
 
@@ -159,19 +173,20 @@ private theorem exists_elementarySubgroup_inv_mulVec_eq_single {R m : Type*} [Ri
     ∃ e ∈ elementarySubgroup m R, (↑e⁻¹ : Matrix m m R) *ᵥ b = Pi.single i₀ 1 := by
   obtain ⟨e₁, he₁, hae₁⟩ := hR.exists_vecMul_elementarySubgroup_eq_single hm
     (TauCeti.Module.isUnimodular_pi_iff.mpr ⟨b, hab⟩) i₀
-  let b₁ : m → R := (↑e₁⁻¹ : Matrix m m R) *ᵥ b
+  set b₁ : m → R := (↑e₁⁻¹ : Matrix m m R) *ᵥ b with hb₁_def
   have hb₁0 : b₁ i₀ = 1 := by
     calc b₁ i₀ = Pi.single i₀ (1 : R) ⬝ᵥ b₁ := by simp
-      _ = (a ᵥ* (e₁ : Matrix m m R)) ⬝ᵥ ((↑e₁⁻¹ : Matrix m m R) *ᵥ b) := by rw [← hae₁]
+      _ = (a ᵥ* (e₁ : Matrix m m R)) ⬝ᵥ ((↑e₁⁻¹ : Matrix m m R) *ᵥ b) := by rw [← hae₁, hb₁_def]
       _ = 1 := by rw [← dotProduct_mulVec, mulVec_mulVec, Units.mul_inv, one_mulVec, hab]
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
   let e₂ : GL m R := φ.reindexGL R (upperVec fun i ↦ b₁ i.1)
   refine ⟨e₁ * e₂, mul_mem he₁ ((φ.reindexGL_mem_elementarySubgroup_iff).mpr
     (upperBlockGL_mem_elementarySubgroup _)), ?_⟩
-  rw [show (↑(e₁ * e₂)⁻¹ : Matrix m m R) *ᵥ b = (↑e₂⁻¹ : Matrix m m R) *ᵥ b₁ by
-    simp [_root_.mul_inv_rev, mulVec_mulVec, b₁]]
+  rw [_root_.mul_inv_rev, Units.val_mul, ← mulVec_mulVec, ← hb₁_def]
   ext k; obtain ⟨p, rfl⟩ := φ.surjective k
-  rw [show e₂⁻¹ = φ.reindexGL R (upperVec fun i ↦ -b₁ i.1) by rw [← map_inv, upperVec_inv]; rfl]
+  have he₂_inv : e₂⁻¹ = φ.reindexGL R (upperVec (-(fun i : {i : m // i ≠ i₀} ↦ b₁ i.1))) := by
+    rw [← map_inv, upperVec_inv]
+  rw [he₂_inv]
   simp only [Equiv.coe_reindexGL, submatrix_apply, mulVec, dotProduct]
   rw [← φ.sum_comp]; simp only [φ.symm_apply_apply]
   rcases p with i | ⟨⟩
@@ -189,10 +204,10 @@ private theorem oneSubVecMulVecGL_mem_elementarySubgroup_of_dotProduct_eq_one {R
   obtain ⟨i₀⟩ := Fintype.card_pos_iff.mp (by omega : 0 < Fintype.card m)
   obtain ⟨e, he, heb⟩ := exists_elementarySubgroup_inv_mulVec_eq_single hR hm hab i₀
   set g := oneSubVecMulVecGL (-1) (fun i ↦ b i * r) x hr
-  let x' : m → R := x ᵥ* (e : Matrix m m R)
+  set x' : m → R := x ᵥ* (e : Matrix m m R) with hx'_def
   have hx'0 : x' i₀ = 0 := by
     calc x' i₀ = x' ⬝ᵥ Pi.single i₀ 1 := by simp
-      _ = (x ᵥ* (e : Matrix m m R)) ⬝ᵥ ((↑e⁻¹ : Matrix m m R) *ᵥ b) := by rw [← heb]
+      _ = (x ᵥ* (e : Matrix m m R)) ⬝ᵥ ((↑e⁻¹ : Matrix m m R) *ᵥ b) := by rw [← heb, hx'_def]
       _ = 0 := by rw [← dotProduct_mulVec, mulVec_mulVec, Units.mul_inv, one_mulVec, hxb]
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
   let L := lowerVec (R := R) (m := {i : m // i ≠ i₀}) (fun j ↦ -r * x' j.1)
@@ -201,12 +216,12 @@ private theorem oneSubVecMulVecGL_mem_elementarySubgroup_of_dotProduct_eq_one {R
     have hmulr : (↑e⁻¹ : Matrix m m R) *ᵥ (fun i ↦ b i * r) =
         fun i ↦ (Pi.single i₀ (1 : R) : m → R) i * r := by
       ext i
-      rw [show ((↑e⁻¹ : Matrix m m R) *ᵥ fun k ↦ b k * r) i =
-          (((↑e⁻¹ : Matrix m m R) *ᵥ b) i) * r by
-        simp only [mulVec, dotProduct, Finset.sum_mul, mul_assoc], heb]
+      calc ((↑e⁻¹ : Matrix m m R) *ᵥ fun k ↦ b k * r) i
+          = ((↑e⁻¹ : Matrix m m R) *ᵥ b) i * r := by
+            simp only [mulVec, dotProduct, Finset.sum_mul, mul_assoc]
+        _ = (Pi.single i₀ (1 : R) : m → R) i * r := by rw [heb]
     rw [Units.val_mul, Units.val_mul, coe_oneSubVecMulVecGL, Matrix.mul_sub, Matrix.mul_one,
-      Matrix.sub_mul, Units.inv_mul, Matrix.mul_vecMulVec, Matrix.vecMulVec_mul, hmulr]
-    change 1 - vecMulVec (fun i ↦ (Pi.single i₀ (1 : R) : m → R) i * r) x' = _
+      Matrix.sub_mul, Units.inv_mul, Matrix.mul_vecMulVec, Matrix.vecMulVec_mul, hmulr, ← hx'_def]
     ext p q; obtain ⟨p, rfl⟩ := φ.surjective p; obtain ⟨q, rfl⟩ := φ.surjective q
     simp only [Equiv.coe_reindexGL, submatrix_apply, φ.symm_apply_apply]
     rcases p with i | ⟨⟩ <;> rcases q with j | ⟨⟩
@@ -214,7 +229,8 @@ private theorem oneSubVecMulVecGL_mem_elementarySubgroup_of_dotProduct_eq_one {R
     · simp [φ, L, vecMulVec_apply, Pi.single_apply, i.2]
     · simp [φ, L, vecMulVec_apply, j.2.symm]
     · simp [φ, L, vecMulVec_apply, hx'0]
-  rw [show g = e * (e⁻¹ * g * e) * e⁻¹ by group, hconj]
+  have hg : g = e * (e⁻¹ * g * e) * e⁻¹ := by group
+  rw [hg, hconj]
   exact mul_mem (mul_mem he ((φ.reindexGL_mem_elementarySubgroup_iff).mpr
     (lowerBlockGL_mem_elementarySubgroup _))) (inv_mem he)
 
@@ -231,12 +247,6 @@ private def vasersteinBlock (A : GL (m ⊕ Unit) R) (b : m → R) (hb : botRow A
   (A * clearLastRowFactor A b).toBlocks₁₁GL
     (toBlocks_mul_clearLastRowFactor hb).1 (toBlocks_mul_clearLastRowFactor hb).2
 
-omit [DecidableEq m] in
-private theorem toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero (B C : Matrix (m ⊕ Unit) (m ⊕ Unit) R)
-    (hC : C.toBlocks₂₁ = 0) : (B * C).toBlocks₁₁ = B.toBlocks₁₁ * C.toBlocks₁₁ := by
-  conv_lhs => rw [← fromBlocks_toBlocks B, ← fromBlocks_toBlocks C, hC, fromBlocks_multiply]
-  simp
-
 /-- Comparing two `vasersteinBlock` extractions reduces to the `(1, 1)` block of the ratio of the
 row-cleared matrices, where the outer factors `A₁` and `A₂` interact directly. -/
 private theorem coe_vasersteinBlock_inv_mul {A₁ A₂ : GL (m ⊕ Unit) R} {b₁ b₂ : m → R}
@@ -246,8 +256,9 @@ private theorem coe_vasersteinBlock_inv_mul {A₁ A₂ : GL (m ⊕ Unit) R} {b�
         GL (m ⊕ Unit) R) : Matrix (m ⊕ Unit) (m ⊕ Unit) R).toBlocks₁₁ := by
   dsimp only [vasersteinBlock]
   rw [Units.val_mul, GeneralLinearGroup.coe_toBlocks₁₁GL_inv, GeneralLinearGroup.coe_toBlocks₁₁GL]
-  conv_rhs => rw [Units.val_mul]
-  exact (toBlocks₁₁_mul_of_toBlocks₂₁_eq_zero _ _ (toBlocks_mul_clearLastRowFactor hb₂).1).symm
+  conv_rhs =>
+    rw [Units.val_mul, Matrix.toBlocks₁₁_mul, (toBlocks_mul_clearLastRowFactor hb₂).1,
+      Matrix.mul_zero, add_zero]
 
 private theorem toBlocks₁₁_lower_upper_lower (a u : m → R) :
     ((lowerVec a * upperVec u * lowerVec (-a) : GL (m ⊕ Unit) R) :
@@ -314,8 +325,9 @@ private theorem vasersteinPsi_blockOne_mul_lowerVec {s : ℕ} (hR : HasStableRan
     rw [botRow_mul_lowerVec]; ext j; simp [botRow, botEntry, blockOne]
   have hclear : blockOne g * lowerVec c * clearLastRowFactor (blockOne g * lowerVec c) b =
       blockOne g := by
-    rw [clearLastRowFactor, hd, sub_self, show (fun i ↦ b i * (0 : R)) = 0 by ext; simp,
-      upperVec_zero, one_mul, ha, mul_assoc, lowerVec_mul, add_neg_cancel, lowerVec_zero, mul_one]
+    have hzero : (fun i ↦ b i * (0 : R)) = 0 := funext fun i ↦ mul_zero (b i)
+    rw [clearLastRowFactor, hd, sub_self, hzero, upperVec_zero, one_mul, ha, mul_assoc,
+      lowerVec_mul, add_neg_cancel, lowerVec_zero, mul_one]
   rw [hclear, coe_fromBlocksGL]; ext i j; simp
 
 /-- Right-invariance of `vasersteinPsi` under upper block unipotent matrices. -/
@@ -398,14 +410,15 @@ private theorem toBlocks₁₁_conj_lowerVec_of_dotProduct_eq_zero (a₁ a₂ u 
     ext ⟨⟩ ⟨⟩; simpa [X₀, U₀, Matrix.mul_apply, dotProduct] using hxu
   have hmid : ((upperVec (-u) * lowerVec x * upperVec u : GL (m ⊕ Unit) R) :
       Matrix (m ⊕ Unit) (m ⊕ Unit) R) = fromBlocks (1 - U₀ * X₀) 0 X₀ 1 := by
-    have hneg : Matrix.of (fun i (_ : Unit) ↦ -u i) = -U₀ := by ext i ⟨⟩; rfl
     have h12 : ((1 : Matrix m m R) + -(U₀ * X₀)) * U₀ + -U₀ = 0 := by
       rw [Matrix.add_mul, Matrix.one_mul, Matrix.neg_mul, Matrix.mul_assoc, hXU, Matrix.mul_zero,
         neg_zero, add_zero, add_neg_cancel]
     have hl : lowerVec x = lowerBlockGL X₀ := rfl
     have hu : upperVec u = upperBlockGL U₀ := rfl
-    rw [Units.val_mul, Units.val_mul, show upperVec (-u) = upperBlockGL (-U₀) from congrArg _ hneg,
-      hl, hu, coe_upperBlockGL, coe_lowerBlockGL, coe_upperBlockGL]
+    have hu_neg : upperVec (-u) = upperBlockGL (-U₀) := by
+      rw [← upperVec_inv, hu, upperBlockGL_inv]
+    rw [Units.val_mul, Units.val_mul, hu_neg, hl, hu, coe_upperBlockGL, coe_lowerBlockGL,
+      coe_upperBlockGL]
     simp only [fromBlocks_multiply, Matrix.mul_zero, add_zero, zero_add, Matrix.mul_one,
       Matrix.one_mul, Matrix.neg_mul, hXU]
     rw [h12, ← sub_eq_add_neg]
@@ -523,9 +536,12 @@ private theorem vasersteinPsi_mul_lowerVec_of_single {s : ℕ} (hR : HasStableRa
   have hAz_unimod : Module.IsUnimodular R (botRow Az) :=
     TauCeti.Module.isUnimodular_pi_iff.mpr ⟨b₂, hb₂⟩
   have hAx'_eq : A * lowerVec x * blockOne e₂ = Az * lowerVec y := by
-    rw [mul_assoc, lowerVec_mul_blockOne, ← mul_assoc]
-    change A' * lowerVec x' = _
-    rw [← hzy, ← lowerVec_mul, ← mul_assoc]
+    calc A * lowerVec x * blockOne e₂
+        = A * (lowerVec x * blockOne e₂) := mul_assoc ..
+      _ = A * (blockOne e₂ * lowerVec x') := by rw [lowerVec_mul_blockOne]
+      _ = A' * lowerVec x' := (mul_assoc ..).symm
+      _ = A' * (lowerVec z * lowerVec y) := by rw [← hzy, ← lowerVec_mul]
+      _ = Az * lowerVec y := (mul_assoc ..).symm
   have hAx'_unimod : Module.IsUnimodular R (botRow (Az * lowerVec y)) := by
     rw [← hAx'_eq, botRow_mul_blockOne, e₂.isUnimodular_vecMul_iff]; exact ha₂
   have heq1 : vasersteinPsi (A * lowerVec x) ha₂ = vasersteinPsi (Az * lowerVec y) hAx'_unimod :=
@@ -752,7 +768,7 @@ theorem injective_stability {R : Type*} [Ring R] (s : ℕ) (hR : HasStableRangeL
     let ψ := Equiv.sumEmpty n k
     have hg_eq : ψ.reindexGL R (fromBlocksGL (g, (1 : GL k R))) = g := by
       refine Units.ext ?_; ext i j
-      simp only [Equiv.coe_reindexGL, coe_fromBlocksGL, submatrix_apply]; rfl
+      simp [ψ]
     rw [← hg_eq]
     exact (ψ.reindexGL_mem_elementarySubgroup_iff).mpr hg'
   | succ m ih =>

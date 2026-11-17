@@ -101,23 +101,19 @@ private theorem surjective_stability_unit {R m : Type*} [Ring R] [Fintype m] [De
   obtain ⟨c, hc⟩ := hR.exists_isUnimodular_add_mul hm (hrow ▸ g.isUnimodular_apply (Sum.inr ()))
   obtain ⟨b, hb⟩ := TauCeti.Module.isUnimodular_pi_iff.mp hc
   obtain ⟨e₀, he₀, he₀_mul⟩ := exists_elementarySubgroup_vecMul_eq_inr hb
-  have hbot : ∀ q : m ⊕ Unit,
-      ((g * e₀ : GL (m ⊕ Unit) R) : Matrix (m ⊕ Unit) (m ⊕ Unit) R) (Sum.inr ()) q =
-        Sum.elim (0 : m → R) (fun _ : Unit ↦ 1) q := by
-    intro q
-    change ((g : Matrix (m ⊕ Unit) (m ⊕ Unit) R) (Sum.inr ()) ᵥ*
-      (e₀ : Matrix (m ⊕ Unit) (m ⊕ Unit) R)) q = _
-    rw [← hrow, he₀_mul]
+  have hbot : ((g * e₀ : GL (m ⊕ Unit) R) : Matrix (m ⊕ Unit) (m ⊕ Unit) R) (Sum.inr ()) =
+      Sum.elim (0 : m → R) (fun _ : Unit ↦ 1) := by
+    rw [Units.val_mul, Matrix.mul_apply_eq_vecMul, ← hrow, he₀_mul]
   have h₂₁ : ((g * e₀ : GL (m ⊕ Unit) R) : Matrix (m ⊕ Unit) (m ⊕ Unit) R).toBlocks₂₁ = 0 := by
-    ext ⟨⟩ j; simpa [toBlocks₂₁] using hbot (Sum.inl j)
+    ext ⟨⟩ j; simpa [toBlocks₂₁] using congrFun hbot (Sum.inl j)
   have h₂₂ : ((g * e₀ : GL (m ⊕ Unit) R) : Matrix (m ⊕ Unit) (m ⊕ Unit) R).toBlocks₂₂ = 1 := by
-    ext ⟨⟩ ⟨⟩; simpa [toBlocks₂₂] using hbot (Sum.inr ())
+    ext ⟨⟩ ⟨⟩; simpa [toBlocks₂₂] using congrFun hbot (Sum.inr ())
   let h : GL m R := (g * e₀).toBlocks₁₁GL h₂₁ h₂₂
   let u : GL (m ⊕ Unit) R := upperBlockGL
     ((↑h⁻¹ : Matrix m m R) *
       ((g * e₀ : GL (m ⊕ Unit) R) : Matrix (m ⊕ Unit) (m ⊕ Unit) R).toBlocks₁₂)
   have hge₀ : g * e₀ = fromBlocksGL (h, (1 : GL Unit R)) * u :=
-    eq_fromBlocksGL_mul_upperBlockGL (g * e₀) h₂₁ h₂₂
+    (g * e₀).eq_fromBlocksGL_mul_upperBlockGL h₂₁ h₂₂
   refine ⟨h, u * e₀⁻¹, mul_mem (upperBlockGL_mem_elementarySubgroup _) (inv_mem he₀), ?_⟩
   calc g = g * e₀ * e₀⁻¹ := by group
     _ = fromBlocksGL (h, (1 : GL Unit R)) * (u * e₀⁻¹) := by rw [hge₀]; group
@@ -239,7 +235,9 @@ theorem HasStableRangeLE.exists_vecMul_elementarySubgroup_eq_single {R m : Type*
     simp only [φ.symm_apply_apply]
     exact Fintype.sum_congr _ _ fun y ↦ by rcases y with i | ⟨⟩ <;> simp [φ]
   rw [hmul, he₀_mul]
-  rcases x with i | ⟨⟩ <;> simp [φ, show ∀ i : {i : m // i ≠ i₀}, i.1 ≠ i₀ from fun i ↦ i.2]
+  rcases x with i | ⟨⟩
+  · simp [φ, i.2]
+  · simp [φ]
 
 /-- **Right rank-one unipotent lemma:** over a ring of stable range at most `s` with
 `s + 1 ≤ Fintype.card m`, a rank-one unipotent matrix `1 - vecMulVec u v` with `v` unimodular and
@@ -252,10 +250,10 @@ theorem HasStableRangeLE.oneSubVecMulVecGL_mem_elementarySubgroup {R m : Type*} 
   obtain ⟨i₀⟩ := Fintype.card_pos_iff.mp (by omega : 0 < Fintype.card m)
   obtain ⟨e, he, hve⟩ := hR.exists_vecMul_elementarySubgroup_eq_single hm hv i₀
   set g := oneSubVecMulVecGL (-1) u v (by simp [hvu])
-  let u' : m → R := (↑e⁻¹ : Matrix m m R) *ᵥ u
+  set u' : m → R := (↑e⁻¹ : Matrix m m R) *ᵥ u with hu'_def
   have hu'0 : u' i₀ = 0 := by
     calc u' i₀ = Pi.single i₀ (1 : R) ⬝ᵥ u' := by simp
-      _ = (v ᵥ* (e : Matrix m m R)) ⬝ᵥ ((↑e⁻¹ : Matrix m m R) *ᵥ u) := by rw [← hve]
+      _ = (v ᵥ* (e : Matrix m m R)) ⬝ᵥ ((↑e⁻¹ : Matrix m m R) *ᵥ u) := by rw [← hve, hu'_def]
       _ = 0 := by rw [← dotProduct_mulVec, mulVec_mulVec, Units.mul_inv, one_mulVec, hvu]
   let φ := Equiv.subtypeNeSumPUnit.{0} i₀
   let U : GL ({i : m // i ≠ i₀} ⊕ Unit) R :=
@@ -263,8 +261,7 @@ theorem HasStableRangeLE.oneSubVecMulVecGL_mem_elementarySubgroup {R m : Type*} 
   have hconj : e⁻¹ * g * e = φ.reindexGL R U := by
     refine Units.ext ?_
     rw [Units.val_mul, Units.val_mul, coe_oneSubVecMulVecGL, Matrix.mul_sub, Matrix.mul_one,
-      Matrix.sub_mul, Units.inv_mul, Matrix.mul_vecMulVec, Matrix.vecMulVec_mul, hve]
-    change 1 - vecMulVec u' (Pi.single i₀ 1) = _
+      Matrix.sub_mul, Units.inv_mul, Matrix.mul_vecMulVec, Matrix.vecMulVec_mul, ← hu'_def, hve]
     ext p q; obtain ⟨p, rfl⟩ := φ.surjective p; obtain ⟨q, rfl⟩ := φ.surjective q
     simp only [Equiv.coe_reindexGL, submatrix_apply, φ.symm_apply_apply]
     rcases p with i | ⟨⟩ <;> rcases q with j | ⟨⟩
@@ -272,7 +269,8 @@ theorem HasStableRangeLE.oneSubVecMulVecGL_mem_elementarySubgroup {R m : Type*} 
     · simp [φ, U, vecMulVec_apply, i.2]
     · simp [φ, U, vecMulVec_apply, j.2, j.2.symm]
     · simp [φ, U, vecMulVec_apply, hu'0]
-  rw [show g = e * (e⁻¹ * g * e) * e⁻¹ by group, hconj]
+  have hg : g = e * (e⁻¹ * g * e) * e⁻¹ := by group
+  rw [hg, hconj]
   exact mul_mem (mul_mem he ((φ.reindexGL_mem_elementarySubgroup_iff).mpr
     (upperBlockGL_mem_elementarySubgroup _))) (inv_mem he)
 

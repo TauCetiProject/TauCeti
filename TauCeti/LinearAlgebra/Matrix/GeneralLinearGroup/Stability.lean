@@ -116,9 +116,8 @@ theorem ker_mk_eq_elementarySubgroup {R : Type*} [Ring R] {s n : ℕ} (hR : HasS
   let φ := finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hnk))
   have hU : φ.symm.reindexGL R (stabilizeGL R hnk u) =
       fromBlocksGL (u, (1 : GL (Fin (k - n)) R)) := by
-    rw [show stabilizeGL R hnk u = φ.reindexGL R (fromBlocksGL (u, (1 : GL (Fin (k - n)) R))) from
-      stabilizeGL_apply hnk u]
-    simp
+    rw [stabilizeGL_apply hnk u]
+    exact Equiv.reindexGL_symm_apply_reindexGL φ R _
   exact injective_stability s hR (Fin n) (Fin (k - n)) (by simpa using hn) u
     (φ.symm.reindexGL R (stabilizeGL R hnk u)) (by simp [hU])
     ((φ.symm.reindexGL_mem_elementarySubgroup_iff).mpr hu)
