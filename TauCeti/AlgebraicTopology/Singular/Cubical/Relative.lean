@@ -17,6 +17,10 @@ into the short exact sequence `C^□_*(A) → C^□_*(X) → C^□_*(X, A)`: the
 the chains supported in `A` (`Submodule.ker_mkQ`), and the connecting map gives the long exact
 sequence of the pair once the complexes are packaged as chain complexes.
 
+A cube contributes to a chain supported in `A` only if its image lies in `A`, so a chain supported
+in `A` and in `B` is supported in `A ∩ B`. This is what makes the relative chains of a product of
+pairs fit into a short exact sequence.
+
 ## Main definitions
 
 * `TauCeti.NormalizedCubicalChain.supportedIn R A n`: the chains of `X` supported in `A`, the image
@@ -29,6 +33,10 @@ sequence of the pair once the complexes are packaged as chain complexes.
 
 * `TauCeti.NormalizedCubicalChain.boundary_mem_supportedIn`: the chains supported in `A` form a
   subcomplex.
+* `TauCeti.NormalizedCubicalChain.range_map_eq_supportedIn_range`: the push-forward along an
+  inducing map has image the chains supported in its range.
+* `TauCeti.NormalizedCubicalChain.supportedIn_inter`: chains supported in `A` and in `B` are
+  supported in `A ∩ B`.
 * `TauCeti.RelativeCubicalChain.boundary_boundary`: `∂ ∘ ∂ = 0` on relative chains.
 * `TauCeti.RelativeCubicalChain.map_boundary`: the relative boundary is natural.
 
@@ -99,6 +107,83 @@ private theorem supportedIn_le_comap_map {Y : Type*} [TopologicalSpace Y] {A : S
     {f : C(X, Y)} (hf : Set.MapsTo f A B) (n : ℕ) :
     supportedIn R A n ≤ (supportedIn R B n).comap (map R f n) :=
   fun _ hg ↦ map_mem_supportedIn R hf hg
+
+/-- Chains supported in a smaller subspace are supported in a larger one. -/
+theorem supportedIn_mono {A B : Set X} (h : A ⊆ B) (n : ℕ) :
+    supportedIn R A n ≤ supportedIn R B n := fun g hg ↦ by
+  simpa using map_mem_supportedIn R (f := ContinuousMap.id X) (Set.mapsTo_id _ |>.mono_right h) hg
+
+/-- The image of the push-forward along an inducing map `f` consists of the chains supported in
+the range of `f`. -/
+theorem range_map_eq_supportedIn_range {Y : Type*} [TopologicalSpace Y] {f : C(X, Y)}
+    (hf : Topology.IsInducing f) (n : ℕ) :
+    LinearMap.range (map R f n) = supportedIn R (Set.range f) n := by
+  refine le_antisymm ?_ ?_
+  · rintro _ ⟨g, rfl⟩
+    induction g using induction_on with
+    | zero => simp
+    | add a b ha hb => simpa using add_mem ha hb
+    | smul r a ha => simpa using Submodule.smul_mem _ r ha
+    | ofCube c =>
+      rw [map_ofCube]
+      exact ofCube_mem_supportedIn R fun _ ⟨t, ht⟩ ↦ ⟨c t, ht⟩
+  · rintro _ ⟨g, rfl⟩
+    induction g using induction_on with
+    | zero => simp
+    | add a b ha hb => simpa using add_mem ha hb
+    | smul r a ha => simpa using Submodule.smul_mem _ r ha
+    | ofCube c =>
+      rw [map_ofCube]
+      exact ofCube_mem_range_map R hf fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2
+
+open Classical in
+/-- The projection of normalized chains onto the chains supported in `A`, keeping the cubes with
+image in `A` and killing the others. -/
+private def restrictTo (A : Set X) (n : ℕ) :
+    NormalizedCubicalChain X R n →ₗ[R] NormalizedCubicalChain X R n :=
+  desc (fun c ↦ if Set.range c ⊆ A then ofCube X R c else 0) fun c hc ↦ by
+    split_ifs <;> simp [hc]
+
+open Classical in
+private theorem restrictTo_ofCube (A : Set X) {n : ℕ} (c : SingularCube X n) :
+    restrictTo R A n (ofCube X R c) = if Set.range c ⊆ A then ofCube X R c else 0 := by
+  rw [restrictTo, desc_ofCube]
+
+private theorem restrictTo_eq_self {A : Set X} {n : ℕ} {g : NormalizedCubicalChain X R n}
+    (hg : g ∈ supportedIn R A n) : restrictTo R A n g = g := by
+  obtain ⟨g, rfl⟩ := hg
+  induction g using induction_on with
+  | zero => simp
+  | add a b ha hb => simp [ha, hb]
+  | smul r a ha => simp [ha]
+  | ofCube c =>
+    rw [map_ofCube, restrictTo_ofCube]
+    exact ite_eq_left_of_eq_true _ _ (eq_true fun _ ⟨t, ht⟩ ↦ ht ▸ (c t).2)
+
+private theorem restrictTo_restrictTo_mem (A B : Set X) {n : ℕ} (g : NormalizedCubicalChain X R n) :
+    restrictTo R A n (restrictTo R B n g) ∈ supportedIn R (A ∩ B) n := by
+  induction g using induction_on with
+  | zero => simp
+  | add a b ha hb => simpa using add_mem ha hb
+  | smul r a ha => simpa using Submodule.smul_mem _ r ha
+  | ofCube c =>
+    rw [restrictTo_ofCube R B]
+    split_ifs with hB
+    · rw [restrictTo_ofCube]
+      split_ifs with hA
+      · exact ofCube_mem_supportedIn R (Set.subset_inter hA hB)
+      · exact zero_mem _
+    · simp
+
+/-- **Chains supported in two subspaces are supported in their intersection.** A cube contributes
+to a normalized chain supported in `A` only if its image lies in `A`, so a chain supported both in
+`A` and in `B` is a combination of cubes with image in `A ∩ B`. -/
+theorem supportedIn_inter (A B : Set X) (n : ℕ) :
+    supportedIn R (A ∩ B) n = supportedIn R A n ⊓ supportedIn R B n := by
+  refine le_antisymm (le_inf (supportedIn_mono R Set.inter_subset_left n)
+    (supportedIn_mono R Set.inter_subset_right n)) (fun g ⟨hA, hB⟩ ↦ ?_)
+  rw [← restrictTo_eq_self R hA, ← restrictTo_eq_self R hB]
+  exact restrictTo_restrictTo_mem R A B g
 
 end NormalizedCubicalChain
 
