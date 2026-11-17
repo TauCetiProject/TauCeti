@@ -50,6 +50,8 @@ in terms of the exponentials `exp (± r / 2)`, and the Gaussian bound
   `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
   `cosh α * cosh θ ≠ 0`.
 * `Complex.norm_cosh_le` — `‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2` for complex `z`.
+* `Complex.norm_cosh_mul_le` — `‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2` for complex
+  `z` and `w`.
 * `Real.four_mul_sinh_half_sq` — `4 * sinh (r / 2) ^ 2 = (exp (r / 2) - exp (-(r / 2))) ^ 2`.
 * `Real.sinh_le_mul_exp_sq_div_six` — `sinh x ≤ x * exp (x ^ 2 / 6)` for `0 ≤ x`. It bounds the
   exponential moment `∫₀¹ exp (-λ x) dx = 2 exp (-λ / 2) sinh (λ / 2) / λ` of the uniform
@@ -345,5 +347,15 @@ theorem norm_cosh_le (z : ℂ) : ‖cosh z‖ ≤ (‖exp z‖ + ‖exp (-z)‖)
   rw [cosh, norm_div, Complex.norm_two]
   gcongr
   exact norm_add_le _ _
+
+/-- The bound `Complex.norm_cosh_le` with a common factor `w`:
+`‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2`. It dominates `cosh z * w` by the two
+exponential terms `exp (± z) * w`. -/
+theorem norm_cosh_mul_le (z w : ℂ) : ‖cosh z * w‖ ≤ (‖exp z * w‖ + ‖exp (-z) * w‖) / 2 := by
+  calc ‖cosh z * w‖ ≤ (‖exp z‖ + ‖exp (-z)‖) / 2 * ‖w‖ := by
+        rw [norm_mul]
+        gcongr
+        exact norm_cosh_le z
+    _ = _ := by rw [norm_mul, norm_mul]; ring
 
 end Complex

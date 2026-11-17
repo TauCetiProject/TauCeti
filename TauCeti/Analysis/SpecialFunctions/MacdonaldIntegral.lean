@@ -8,12 +8,13 @@ module
 public import Mathlib.Analysis.MellinInversion
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Analysis.SpecialFunctions.Gamma.Deriv
+import TauCeti.Analysis.MellinTransform
 import TauCeti.Analysis.MellinTransform.Basic
+import TauCeti.Analysis.MellinTransform.Convolution
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 import TauCeti.Analysis.SpecialFunctions.Hyperbolic
-import TauCeti.MeasureTheory.Integral.RpowLaplace
 
 /-!
 # The Macdonald integral and its Mellin transform
@@ -25,8 +26,9 @@ For `c > 0` and every complex `a`, the integral
 converges absolutely, since `e^{-c/s}` vanishes to infinite order at `s = 0`. Classically
 `Q_a(c) = 2 c^{a/2} K_a(2 √c)` with the modified Bessel function `K_a` of the second kind
 (Macdonald's function; DLMF 10.32.10), which neither Mathlib nor Tau Ceti defines; this file
-works with the integral itself. Exchanging the order of integration, its Mellin transform in `c`
-is a product of two Gamma functions (the integral form of DLMF 10.43.19):
+works with the integral itself. As the multiplicative convolution of `s ↦ s^a e^{-s}` with
+`s ↦ e^{-s}`, its Mellin transform in `c` is a product of two Gamma functions (the integral form
+of DLMF 10.43.19):
 
 `∫₀^∞ c^{t - 1} Q_a(c) dc = Γ(t) Γ(t + a)`   for `Re t > 0`, `Re (t + a) > 0`.
 
@@ -49,9 +51,9 @@ Macdonald integral: for real `ζ > 0` and complex `p`,
 
 The left side converges absolutely for `Re ζ > 0` and is holomorphic in `ζ` there, so identities
 proved on the positive axis extend to the right half-plane by the identity theorem. By
-DLMF 9.13.4, the generalized Airy function `A_n` of Swanson and Headley is
-`(2p / π) sin (p π) z^{1/2}` times Schläfli's integral at `p = 1 / (n + 2)` and
-`ζ = 2p z^{(n + 2)/2}`.
+DLMF 9.13.4 and 10.32.9, for `n ≥ 1` and `z ≠ 0` with `|arg z| < p π`, the generalized Airy
+function `A_n` of Swanson and Headley is `(2p / π) sin (p π) z^{1/2}` times Schläfli's integral
+at `p = 1 / (n + 2)` and `ζ = 2p z^{(n + 2)/2}`. That representation is not proved here.
 
 ## Main results
 
@@ -64,9 +66,9 @@ DLMF 9.13.4, the generalized Airy function `A_n` of Swanson and Headley is
 * `Complex.integral_exp_neg_mul_cosh_mul_cosh_Ioi`: Schläfli's integral as a Macdonald integral.
 * `Complex.integrable_exp_mul_mul_exp_neg_mul_cosh`: `e^{p u} e^{-ζ cosh u}` is integrable on the
   line for `Re ζ > 0`.
-* `Complex.integrableOn_exp_neg_mul_cosh_mul_cosh_Ioi` and
-  `Complex.differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi`: Schläfli's integral
-  converges and is holomorphic in `ζ` on the right half-plane.
+* `Complex.integrable_exp_neg_mul_cosh_mul_cosh` and
+  `Complex.differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi`: Schläfli's integrand is
+  integrable on the line, and Schläfli's integral is holomorphic in `ζ` on the right half-plane.
 
 ## References
 
@@ -133,43 +135,6 @@ theorem continuousOn_integral_cpow_mul_exp_neg_add_div_Ioi (a : ℂ) :
     gcongr
   · exact Eventually.of_forall fun s ↦ by fun_prop
 
-/-- The integrand of the Mellin transform of the Macdonald integral, as a function of `(c, s)`,
-splits into a factor depending on `s` and Euler's integrand with rate `1 / s` in `c`. -/
-private lemma cpow_mul_cpow_mul_exp_neg_add_div (a t : ℂ) (c s : ℝ) :
-    (c : ℂ) ^ (t - 1) * ((s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))) =
-      ((s : ℂ) ^ (a - 1) * Real.exp (-s)) * ((c : ℂ) ^ (t - 1) * cexp (-((s⁻¹ : ℝ) * c))) := by
-  simp only [neg_add, Real.exp_add, ofReal_mul, ofReal_exp]
-  push_cast
-  ring_nf
-
-/-- The integrand `c^{t - 1} s^{a - 1} e^{-s - c/s}` is integrable on `(0, ∞) × (0, ∞)` for
-`Re t > 0` and `Re (t + a) > 0`, by Tonelli's theorem and Euler's integral. -/
-private lemma integrable_cpow_mul_cpow_mul_exp_neg_add_div {a t : ℂ} (ht : 0 < t.re)
-    (hta : 0 < (t + a).re) :
-    Integrable (Function.uncurry fun c s : ℝ ↦
-        (c : ℂ) ^ (t - 1) * ((s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))))
-      ((volume.restrict (Ioi (0 : ℝ))).prod (volume.restrict (Ioi (0 : ℝ)))) := by
-  have hnorm {c s : ℝ} (hc : 0 < c) (hs : 0 < s) :
-      ‖(c : ℂ) ^ (t - 1) * ((s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s)))‖ =
-        (s ^ (a.re - 1) * Real.exp (-s)) * (c ^ (t.re - 1) * Real.exp (-(s⁻¹ * c))) := by
-    rw [cpow_mul_cpow_mul_exp_neg_add_div a t c s, norm_mul, norm_mul, norm_mul,
-      norm_cpow_eq_rpow_re_of_pos hs, norm_cpow_eq_rpow_re_of_pos hc, norm_real,
-      Real.norm_of_nonneg (exp_pos _).le, norm_exp]
-    simp
-  refine (integrable_prod_iff' (Measurable.aestronglyMeasurable (by fun_prop))).mpr ⟨?_, ?_⟩
-  · filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-    refine ((TauCeti.integrableOn_rpow_mul_exp_neg_mul_Ioi ht (inv_pos.mpr hs)).const_mul
-      (s ^ (a.re - 1) * Real.exp (-s))).mono' (Measurable.aestronglyMeasurable (by fun_prop)) ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with c (hc : 0 < c)
-    exact (hnorm hc hs).le
-  · refine ((Real.GammaIntegral_convergent hta).const_mul (Real.Gamma t.re)).congr ?_
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with s (hs : 0 < s)
-    simp only [Function.uncurry_apply_pair]
-    rw [setIntegral_congr_fun measurableSet_Ioi fun c (hc : 0 < c) ↦ hnorm hc hs,
-      integral_const_mul, Real.integral_rpow_mul_exp_neg_mul_Ioi ht (inv_pos.mpr hs), one_div,
-      inv_inv, add_re, show t.re + a.re - 1 = (a.re - 1) + t.re by ring, Real.rpow_add hs]
-    ring
-
 /-- **The Mellin transform of the Macdonald integral** (the integral form of DLMF 10.43.19). For
 `Re t > 0` and `Re (t + a) > 0`, the Mellin transform of `c ↦ ∫₀^∞ s^{a - 1} e^{-s - c/s} ds`
 converges at `t` and equals `Γ(t) Γ(t + a)`. -/
@@ -177,30 +142,20 @@ theorem hasMellin_integral_cpow_mul_exp_neg_add_div_Ioi {a t : ℂ} (ht : 0 < t.
     (hta : 0 < (t + a).re) :
     HasMellin (fun c : ℝ ↦ ∫ s in Ioi (0 : ℝ), (s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))) t
       (Gamma t * Gamma (t + a)) := by
-  have hint := integrable_cpow_mul_cpow_mul_exp_neg_add_div ht hta
-  -- the inner integral over `c` is Euler's integral for `Γ(t)` with rate `1 / s`
-  have hinner {s : ℝ} (hs : 0 < s) :
-      ∫ c in Ioi (0 : ℝ), (c : ℂ) ^ (t - 1) * ((s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))) =
-        Gamma t * ((s : ℂ) ^ (t + a - 1) * Real.exp (-s)) := by
-    simp_rw [cpow_mul_cpow_mul_exp_neg_add_div a t _ s]
-    rw [integral_const_mul, integral_cpow_mul_exp_neg_mul_Ioi ht (inv_pos.mpr hs), one_div,
-      ofReal_inv, inv_inv, show t + a - 1 = (a - 1) + t by ring,
-      cpow_add _ _ (ofReal_ne_zero.mpr hs.ne')]
-    ring
-  have hpull (c : ℝ) :
-      ∫ s in Ioi (0 : ℝ), (c : ℂ) ^ (t - 1) * ((s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s))) =
-        (c : ℂ) ^ (t - 1) • ∫ s in Ioi (0 : ℝ), (s : ℂ) ^ (a - 1) * Real.exp (-(s + c / s)) := by
-    rw [smul_eq_mul, ← integral_const_mul]
-  refine ⟨?_, ?_⟩
-  · rw [MellinConvergent, IntegrableOn]
-    simpa only [Function.uncurry_apply_pair, hpull] using hint.integral_prod_left
-  · rw [mellin]
-    simp_rw [← hpull]
-    rw [integral_integral_swap hint, setIntegral_congr_fun measurableSet_Ioi fun s hs ↦ hinner hs,
-      integral_const_mul, Gamma_eq_integral hta, GammaIntegral]
-    congr 1
-    refine setIntegral_congr_fun measurableSet_Ioi fun s _ ↦ ?_
-    ring
+  -- the Macdonald integral is the multiplicative convolution of `s^a e^{-s}` with `e^{-s}`
+  have hf : MellinConvergent (fun s : ℝ ↦ (s : ℂ) ^ a • (Real.exp (-s) : ℂ)) t :=
+    MellinConvergent.cpow_smul.mpr <|
+      (GammaIntegral_convergent hta).congr_fun (fun _ _ ↦ mul_comm _ _) measurableSet_Ioi
+  have hg : MellinConvergent (fun s : ℝ ↦ (Real.exp (-s) : ℂ)) t :=
+    (GammaIntegral_convergent ht).congr_fun (fun _ _ ↦ mul_comm _ _) measurableSet_Ioi
+  have h := TauCeti.hasMellin_integral_mul_div hf hg
+  rw [mellin_cpow_smul, ← GammaIntegral_eq_mellin, ← Gamma_eq_integral hta,
+    ← Gamma_eq_integral ht, mul_comm] at h
+  refine (TauCeti.hasMellin_congr fun c _ ↦ setIntegral_congr_fun measurableSet_Ioi
+    fun s (hs : 0 < s) ↦ ?_).mp h
+  rw [smul_eq_mul, cpow_sub _ _ (ofReal_ne_zero.mpr hs.ne'), cpow_one, neg_add, Real.exp_add]
+  push_cast
+  ring
 
 /-- **The Mellin–Barnes integral of the Macdonald integral.** On every vertical line
 `Re t = σ` with `σ > 0` and `σ + Re a > 0`, Mellin inversion of `Γ(t) Γ(t + a)` gives
@@ -302,25 +257,15 @@ theorem integral_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℝ} (hζ : 0 < ζ) (p : �
   linear_combination
     -(∫ u in Ioi (0 : ℝ), cexp (-((ζ : ℂ) * Real.cosh u)) * Complex.cosh (p * u)) * hunit
 
-/-- `‖cosh (p u)‖ ‖w‖ ≤ ‖e^{p u} w‖ + ‖e^{-p u} w‖`, which dominates Schläfli's integrand by the
-integrands of `integrable_exp_mul_mul_exp_neg_mul_cosh` at `p` and `-p`. -/
-private lemma norm_cosh_mul_le (p w : ℂ) (u : ℝ) :
-    ‖Complex.cosh (p * u)‖ * ‖w‖ ≤ ‖cexp (p * u) * w‖ + ‖cexp (-p * u) * w‖ := by
-  have hcosh : ‖Complex.cosh (p * u)‖ ≤ ‖cexp (p * u)‖ + ‖cexp (-p * u)‖ := by
-    rw [neg_mul]
-    linarith [norm_cosh_le (p * u), norm_nonneg (cexp (p * u)), norm_nonneg (cexp (-(p * u)))]
-  rw [norm_mul, norm_mul, ← add_mul]
-  gcongr
-
 /-- For `Re ζ > 0` and every complex `p`, Schläfli's integrand `e^{-ζ cosh u} cosh (p u)` is
-integrable on `(0, ∞)`. -/
-theorem integrableOn_exp_neg_mul_cosh_mul_cosh_Ioi {ζ : ℂ} (hζ : 0 < ζ.re) (p : ℂ) :
-    IntegrableOn (fun u : ℝ ↦ cexp (-(ζ * Real.cosh u)) * Complex.cosh (p * u)) (Ioi 0) := by
-  refine ((integrable_exp_mul_mul_exp_neg_mul_cosh hζ p).norm.add
-    (integrable_exp_mul_mul_exp_neg_mul_cosh hζ (-p)).norm).integrableOn.mono'
+integrable on the real line. -/
+theorem integrable_exp_neg_mul_cosh_mul_cosh {ζ : ℂ} (hζ : 0 < ζ.re) (p : ℂ) :
+    Integrable (fun u : ℝ ↦ cexp (-(ζ * Real.cosh u)) * Complex.cosh (p * u)) := by
+  refine (((integrable_exp_mul_mul_exp_neg_mul_cosh hζ p).norm.add
+    (integrable_exp_mul_mul_exp_neg_mul_cosh hζ (-p)).norm).div_const 2).mono'
     (Measurable.aestronglyMeasurable (by fun_prop)) (Eventually.of_forall fun u ↦ ?_)
-  rw [norm_mul, mul_comm]
-  exact norm_cosh_mul_le p _ u
+  rw [Pi.add_apply, mul_comm, neg_mul]
+  exact norm_cosh_mul_le _ _
 
 /-- **Schläfli's integral is holomorphic** in `ζ` on the right half-plane: for every complex `p`,
 `ζ ↦ ∫₀^∞ e^{-ζ cosh u} cosh (p u) du` is complex differentiable on `Re ζ > 0`. -/
@@ -349,7 +294,7 @@ theorem differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi (p : ℂ) :
     (F := fun ζ (u : ℝ) ↦ cexp (-(ζ * Real.cosh u)) * Complex.cosh (p * u))
     (F' := fun ζ (u : ℝ) ↦ cexp (-(ζ * Real.cosh u)) * Complex.cosh (p * u) * -(Real.cosh u))
     hball (Eventually.of_forall fun _ ↦ Measurable.aestronglyMeasurable (by fun_prop))
-    (integrableOn_exp_neg_mul_cosh_mul_cosh_Ioi hζ₀ p)
+    (integrable_exp_neg_mul_cosh_mul_cosh hζ₀ p).integrableOn
     (Measurable.aestronglyMeasurable (by fun_prop)) ?_ hbound ?_
   · exact h.2.differentiableAt.differentiableWithinAt
   · refine Eventually.of_forall fun u ζ hζ ↦ ?_
@@ -365,7 +310,11 @@ theorem differentiableOn_integral_exp_neg_mul_cosh_mul_cosh_Ioi (p : ℂ) :
       _ = 2 / δ * (‖Complex.cosh (p * u)‖ * ‖w u‖) := by
           simp only [hw, norm_exp, neg_re, mul_re, ofReal_re, ofReal_im, mul_zero, sub_zero]
           ring
-      _ ≤ bound u := mul_le_mul_of_nonneg_left (norm_cosh_mul_le p (w u) u) (by positivity)
+      _ ≤ bound u := by
+          simp only [bound, ← norm_mul, neg_mul]
+          gcongr
+          linarith [norm_cosh_mul_le (p * u) (w u), norm_nonneg (cexp (p * u) * w u),
+            norm_nonneg (cexp (-(p * u)) * w u)]
   · refine Eventually.of_forall fun u ζ _ ↦ ?_
     exact (((hasDerivAt_id' ζ).mul_const (Real.cosh u : ℂ)).neg.cexp.mul_const
       (Complex.cosh (p * u))).congr_deriv (by simp only [Pi.neg_apply]; ring)
