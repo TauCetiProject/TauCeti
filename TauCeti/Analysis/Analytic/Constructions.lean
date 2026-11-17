@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Analytic.Constructions
 
 /-!
-# Analytic constructions: products and finite sums
+# Analytic constructions: products, finite sums, and affine lines
 
 Mathlib's `AnalyticAt.curry_right` says that a function analytic at `p` on a product has an
 analytic slice `y ↦ f (p.1, y)` at `p.2`. Since the analytic locus is open, the same holds for the
@@ -19,6 +19,9 @@ Concatenating two finite families of vectors, `p ↦ Sum.elim p.1 p.2`, is analy
 
 Finite sums of functions admitting power series on a common ball admit the summed power series on
 that ball (`Finset.hasFPowerSeriesOnBall_sum`, `Finset.hasFPowerSeriesWithinOnBall_sum`).
+
+Restricting a function with a power series on `eball c r` to an affine line `w ↦ c + w • u` yields
+a one-variable power series at `0` on `eball 0 (r / ‖u‖ₑ)` (`HasFPowerSeriesOnBall.comp_add_smul`).
 -/
 
 public section
@@ -94,3 +97,33 @@ theorem Finset.hasFPowerSeriesOnBall_sum {ι : Type*} {f : ι → E → F}
   exact I.hasFPowerSeriesWithinOnBall_sum hr h
 
 end FinsetSum
+
+section AffineLine
+
+open scoped ENNReal
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- Restricting a function with formal power series `p` on `eball c r` to the affine line
+`w ↦ c + w • u` yields a one-variable power series at `0` on `eball 0 (r / ‖u‖ₑ)`. -/
+theorem HasFPowerSeriesOnBall.comp_add_smul {f : E → F} {p : FormalMultilinearSeries 𝕜 E F}
+    {c : E} {r : ℝ≥0∞} (hf : HasFPowerSeriesOnBall f p c r) (u : E) :
+    HasFPowerSeriesOnBall (fun w : 𝕜 ↦ f (c + w • u))
+      (p.compContinuousLinearMap (ContinuousLinearMap.toSpanSingleton 𝕜 u)) 0 (r / ‖u‖ₑ) := by
+  let L : 𝕜 →L[𝕜] E := ContinuousLinearMap.toSpanSingleton 𝕜 u
+  have hsub : (fun y : E ↦ f (y - (-c))) = fun y ↦ f (c + y) :=
+    funext fun y ↦ by rw [sub_neg_eq_add, add_comm]
+  have hc : c + (-c) = L 0 := by rw [add_neg_cancel, map_zero]
+  have htrans : HasFPowerSeriesOnBall (fun y ↦ f (c + y)) p (L 0) r := by
+    rw [← hsub, ← hc]
+    exact hf.comp_sub (-c)
+  have hfun : (fun y : E ↦ f (c + y)) ∘ L = fun w : 𝕜 ↦ f (c + w • u) :=
+    funext fun w ↦ by rw [Function.comp_apply, ContinuousLinearMap.toSpanSingleton_apply]
+  have hnorm : ‖L‖ₑ = ‖u‖ₑ := by
+    simp [L, eNorm_eq_nnNorm]
+  have hcomp := htrans.compContinuousLinearMap (u := L) (x := 0)
+  rwa [hfun, hnorm] at hcomp
+
+end AffineLine

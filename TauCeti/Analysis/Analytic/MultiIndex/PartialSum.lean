@@ -5,12 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 public import TauCeti.Analysis.Analytic.MultiIndex.Coeff
-import Mathlib.Analysis.Analytic.Constructions
 
 /-!
-# Partial sums and coordinate reindexing of multi-index series
+# Partial sums of multi-index series
 
 On a finite coordinate space `ι → 𝕜`, each homogeneous term `p k (fun _ ↦ z)` of a formal
 multilinear series `p` expands into multi-index monomials of total degree `k`
@@ -19,10 +17,6 @@ sum `p.partialSum T z` in terms of `p.mvCoeff`, and the triangle inequality boun
 `‖p k (fun _ ↦ z)‖` and `‖p.partialSum T z‖` on the closed polydisc `‖z‖ ≤ r` by the multi-index
 majorant `∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k`.
 
-This file also records the invariance of `FormalMultilinearSeries.mvCoeff` under reindexing the
-coordinates by an equivalence `κ ≃ ι`, used when transporting polydisc integral formulas from
-`Fin n → ℂ` to an arbitrary finite index type `ι`.
-
 ## Main results
 
 * `FormalMultilinearSeries.partialSum_eq_sum_mvCoeff`: the Taylor partial sum of order `T` written
@@ -30,8 +24,6 @@ coordinates by an equivalence `κ ≃ ι`, used when transporting polydisc integ
 * `FormalMultilinearSeries.norm_apply_le_sum_mvCoeff` and
   `FormalMultilinearSeries.norm_partialSum_le_sum_mvCoeff`: norm bounds on homogeneous terms and
   partial sums on `‖z‖ ≤ r` in terms of `‖p.mvCoeff α‖ * r ^ k`.
-* `FormalMultilinearSeries.mvCoeff_compContinuousLinearMap_piCongrLeft`: reindexing coordinates by
-  `e : κ ≃ ι` pulls `p.mvCoeff α` back to `α ∘ e`.
 -/
 
 public section
@@ -71,34 +63,5 @@ theorem norm_partialSum_le_sum_mvCoeff [DecidableEq ι]
     ‖p.partialSum T z‖ ≤
       ∑ k ∈ range T, ∑ α ∈ univ.piAntidiag k, ‖p.mvCoeff α‖ * r ^ k :=
   (norm_sum_le _ _).trans (sum_le_sum fun k _ ↦ p.norm_apply_le_sum_mvCoeff k hz)
-
-/-- Reindexing coordinates along `e : κ ≃ ι` pulls back the multi-index coefficients of `p`: the
-coefficient of `p.compContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜) e)` at `α ∘ e` is
-`p.mvCoeff α`. -/
-theorem mvCoeff_compContinuousLinearMap_piCongrLeft {κ : Type*} [Fintype κ]
-    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (e : κ ≃ ι) (α : ι → ℕ) :
-    (p.compContinuousLinearMap
-      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : ι ↦ 𝕜) e : (κ → 𝕜) →L[𝕜] (ι → 𝕜))).mvCoeff
-        (α ∘ e) = p.mvCoeff α := by
-  classical
-  set k := ∑ i, α i
-  have hk : ∑ j, (α ∘ e) j = k := e.sum_comp α
-  rw [mvCoeff_eq_sum _ hk, mvCoeff_eq_sum p rfl]
-  refine sum_equiv (Equiv.arrowCongr (Equiv.refl (Fin k)) e) (fun a ↦ ?_) (fun a _ ↦ ?_)
-  · simp only [mem_filter, mem_univ, true_and, Function.comp_apply, Equiv.arrowCongr_apply,
-      Equiv.refl_symm]
-    refine ⟨fun h i ↦ ?_, fun h j ↦ ?_⟩
-    · rw [← e.apply_symm_apply i, ← h (e.symm i)]
-      exact Fintype.card_congr (Equiv.subtypeEquivRight fun r ↦ e.apply_eq_iff_eq)
-    · rw [← h (e j)]
-      exact Fintype.card_congr (Equiv.subtypeEquivRight fun r ↦ e.apply_eq_iff_eq.symm)
-  · simp only [compContinuousLinearMap_apply, Equiv.arrowCongr_apply, Equiv.refl_symm,
-      Function.comp_apply]
-    congr 1
-    ext r i
-    change Equiv.piCongrLeft (fun _ : ι ↦ 𝕜) e (Pi.single (a r) 1) i =
-      Pi.single (M := fun _ : ι ↦ 𝕜) (e (a r)) 1 i
-    rw [Equiv.piCongrLeft_apply]
-    simp [Pi.single_apply, e.symm_apply_eq]
 
 end FormalMultilinearSeries

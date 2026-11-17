@@ -178,7 +178,8 @@ example :
         ∑ k ∈ range 2, ∑ α ∈ univ.piAntidiag k, ‖prodSeries.mvCoeff α‖ * (1 : ℝ) ^ k := by
   refine ⟨⟨hasFPowerSeriesOnBall_prod.norm_mvCoeff_mul_pow_le (fun _ hy ↦ norm_prod_le_four hy)
     ![1, 1] (by positivity) (by norm_num), ?_⟩, ?_⟩
-  · rw [prodSeries_mvCoeff_one_one, show (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 2 by decide]
+  · have hdeg : (∑ i : Fin 2, (![1, 1] : Fin 2 → ℕ) i) = 2 := by decide
+    rw [prodSeries_mvCoeff_one_one, hdeg]
     norm_num
   · refine hasFPowerSeriesOnBall_prod.norm_le_add_sum_mvCoeff (fun _ hy ↦ norm_prod_le_four hy) 2
       (z := ![1, 1]) (r := 1) ?_ (by norm_num)

@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Analytic.Basic
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Analytic.ChangeOrigin
-import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Order
 import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
@@ -16,6 +15,7 @@ import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import TauCeti.Analysis.Analytic.Constructions
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.Schwarz
 
@@ -95,24 +95,6 @@ section NormedSpace
 variable {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [NormedAddCommGroup V] [NormedSpace ℂ V]
 
-/-- Restricting `f` to a complex ray `w ↦ c + w • u` with `‖u‖ ≤ 1` preserves the power series
-radius `R`. -/
-private theorem hasFPowerSeriesOnBall_smul {f : E → V} {p : FormalMultilinearSeries ℂ E V}
-    {c : E} {R : ℝ≥0} (hf : HasFPowerSeriesOnBall f p c R) {u : E} (hu : ‖u‖ ≤ 1) :
-    HasFPowerSeriesOnBall (fun w : ℂ ↦ f (c + w • u))
-      (p.compContinuousLinearMap (ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) u)) 0 R := by
-  let L : ℂ →L[ℂ] E := ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) u
-  have hL : ‖L‖ ≤ 1 := L.opNorm_le_bound zero_le_one fun w ↦ by
-    simpa [L, norm_smul] using mul_le_of_le_one_right (norm_nonneg w) hu
-  have hLe : ‖L‖ₑ ≤ 1 := by
-    rw [← ofReal_norm]
-    exact ENNReal.ofReal_le_one.2 hL
-  have htrans : HasFPowerSeriesOnBall (fun y ↦ f (c + y)) p (L 0) R := by
-    simpa [sub_neg_eq_add, add_comm c] using hf.comp_sub (-c)
-  refine (htrans.compContinuousLinearMap (u := L) (x := 0)).mono hf.r_pos ?_
-  exact ENNReal.le_div_iff_mul_le (Or.inr hf.r_pos.ne') (Or.inl ENNReal.coe_ne_top) |>.2
-    (mul_le_of_le_one_right zero_le hLe)
-
 /-- **Cauchy's inequality for homogeneous terms.** If `f : E → V` has formal power series `p` on
 `ball c R` and satisfies `‖f y‖ ≤ M` there, then `‖p n (fun _ ↦ v)‖ * R ^ n ≤ M * ‖v‖ ^ n` for
 every `n : ℕ` and `v : E`. Neither `E` nor `V` is assumed complete. -/
@@ -130,8 +112,11 @@ theorem norm_apply_mul_pow_le {f : E → V} {p : FormalMultilinearSeries ℂ E V
     have hv_eq : v = (‖v‖ : ℂ) • u := by
       simp [u, smul_smul, mul_inv_cancel₀ (Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hv))]
     obtain ⟨φ, hφ_norm, hφ_val⟩ := exists_dual_vector'' ℂ (p n (fun _ ↦ u))
-    let L : ℂ →L[ℂ] E := ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) u
-    have hps := φ.comp_hasFPowerSeriesOnBall (hasFPowerSeriesOnBall_smul hf hu.le)
+    let L : ℂ →L[ℂ] E := ContinuousLinearMap.toSpanSingleton ℂ u
+    have hline : HasFPowerSeriesOnBall (fun w : ℂ ↦ f (c + w • u))
+        (p.compContinuousLinearMap L) 0 R := by
+      simpa [L, ← ofReal_norm, hu] using hf.comp_add_smul u
+    have hps := φ.comp_hasFPowerSeriesOnBall hline
     have hbound (w : ℂ) (hw : w ∈ ball (0 : ℂ) R) : ‖(φ ∘ fun w : ℂ ↦ f (c + w • u)) w‖ ≤ M := by
       have hmem : c + w • u ∈ ball c R := by
         rw [mem_ball_iff_norm, add_sub_cancel_left, norm_smul, hu, mul_one]
@@ -142,8 +127,10 @@ theorem norm_apply_mul_pow_le {f : E → V} {p : FormalMultilinearSeries ℂ E V
     have hterm :
         ‖(φ.compFormalMultilinearSeries (p.compContinuousLinearMap L) n) (fun _ ↦ 1)‖ =
           ‖p n (fun _ ↦ u)‖ := by
-      change ‖φ (p n (fun _ ↦ (1 : ℂ) • u))‖ = ‖p n (fun _ ↦ u)‖
-      simp [one_smul, hφ_val]
+      rw [ContinuousLinearMap.compFormalMultilinearSeries_apply,
+        ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply,
+        FormalMultilinearSeries.compContinuousLinearMap_apply]
+      simp [L, Function.comp_def, hφ_val]
     rw [hterm] at hscalar
     have hscale : ‖p n (fun _ ↦ v)‖ = ‖v‖ ^ n * ‖p n (fun _ ↦ u)‖ := by
       have hsmul : p n (fun _ ↦ v) = (‖v‖ : ℂ) ^ n • p n (fun _ ↦ u) := by
@@ -183,27 +170,34 @@ private theorem norm_add_sub_partialSum_le_of_completeSpace [CompleteSpace V] {f
     have hz_eq : (‖z‖ : ℂ) • u = z := by
       simp [u, smul_smul, mul_inv_cancel₀ (Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz0))]
     set q : FormalMultilinearSeries ℂ ℂ V :=
-      p.compContinuousLinearMap (ContinuousLinearMap.smulRight (1 : ℂ →L[ℂ] ℂ) u)
-    have hq : HasFPowerSeriesOnBall (fun w : ℂ ↦ f (c + w • u)) q 0 R :=
-      hasFPowerSeriesOnBall_smul hf hu.le
-    have hq_apply (k : ℕ) (w : ℂ) : q k (fun _ ↦ w) = p k (fun _ ↦ w • u) := rfl
+      p.compContinuousLinearMap (ContinuousLinearMap.toSpanSingleton ℂ u)
+    have hq : HasFPowerSeriesOnBall (fun w : ℂ ↦ f (c + w • u)) q 0 R := by
+      simpa [← ofReal_norm, hu] using hf.comp_add_smul u
+    have hq_apply (k : ℕ) (w : ℂ) : q k (fun _ ↦ w) = p k (fun _ ↦ w • u) := by
+      rw [FormalMultilinearSeries.compContinuousLinearMap_apply]
+      simp [Function.comp_def]
+    have hq_hom (k : ℕ) :
+        (fun ζ : ℂ ↦ q k (fun _ ↦ ζ)) = fun ζ ↦ ζ ^ k • q k (fun _ ↦ 1) :=
+      funext fun _ ↦ by simp
     set g : ℂ → V := fun w ↦ f (c + w • u) - q.partialSum T w
     have hg_an : AnalyticOnNhd ℂ g (ball 0 R) := fun w hw ↦
       (hq.analyticOnNhd w (by rwa [eball_coe])).sub <| Finset.analyticAt_fun_sum _ fun k _ ↦ by
-        rw [show (fun ζ : ℂ ↦ q k (fun _ ↦ ζ)) = fun ζ ↦ ζ ^ k • q k (fun _ ↦ 1) from
-          funext fun _ ↦ by simp]
+        rw [hq_hom k]
         fun_prop
     have hg_bound (w : ℂ) (hw : w ∈ ball (0 : ℂ) R) : ‖g w‖ ≤ (1 + T) * M := by
       have hwu : ‖w • u‖ < R := by simpa [norm_smul, hu] using hw
       have hfw : ‖f (c + w • u)‖ ≤ M := hM _ (by simpa [mem_ball_iff_norm] using hwu)
-      have hpart : ‖q.partialSum T w‖ ≤ T * M := (norm_sum_le _ _).trans <|
-        (Finset.sum_le_sum fun k _ ↦ hf.norm_apply_le_of_norm_le hM k hwu.le).trans (by simp)
+      have hpart : ‖q.partialSum T w‖ ≤ T * M := calc
+        ‖q.partialSum T w‖ ≤ ∑ k ∈ range T, ‖q k (fun _ ↦ w)‖ := norm_sum_le _ _
+        _ ≤ ∑ _k ∈ range T, M := Finset.sum_le_sum fun k _ ↦ by
+          rw [hq_apply]
+          exact hf.norm_apply_le_of_norm_le hM k hwu.le
+        _ = T * M := by simp
       linarith [norm_sub_le (f (c + w • u)) (q.partialSum T w)]
-    have hg_ord : (T : ℕ∞) ≤ analyticOrderAt g 0 := by
-      have hO : g =O[𝓝 (0 : ℂ)] fun w ↦ (w - 0) ^ T := by
+    have hg_ord : (T : ℕ∞) ≤ analyticOrderAt g 0 :=
+      (hg_an 0 (mem_ball_self hR)).natCast_le_analyticOrderAt_iff_isBigO.2 <| by
         simpa only [g, zero_add, sub_zero, ← norm_pow, Asymptotics.isBigO_norm_right] using
           hq.hasFPowerSeriesAt.isBigO_sub_partialSum_pow T
-      exact (hg_an 0 (mem_ball_self hR)).natCast_le_analyticOrderAt_iff_isBigO.2 hO
     have hw_mem : (‖z‖ : ℂ) ∈ ball (0 : ℂ) R := by
       simpa [Complex.norm_real, Real.norm_of_nonneg (norm_nonneg z)] using hz
     have hschwarz := Complex.norm_le_mul_div_pow_of_le_analyticOrderAt hg_an.differentiableOn

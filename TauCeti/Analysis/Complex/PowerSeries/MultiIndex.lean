@@ -133,6 +133,8 @@ private theorem norm_mvCoeff_mul_prod_pow_le_of_pos_of_lt {f : (ι → ℂ) → 
   let e : Fin (Fintype.card ι) ≃ ι := (Fintype.equivFin ι).symm
   let L := ContinuousLinearEquiv.piCongrLeft ℂ (fun _ : ι ↦ ℂ) e
   let Lc : (Fin (Fintype.card ι) → ℂ) →L[ℂ] (ι → ℂ) := L
+  -- Both `ContinuousLinearEquiv.piCongrLeft` and `IsometryEquiv.piCongrLeft` coerce to
+  -- `Equiv.piCongrLeft`, so they agree definitionally on points.
   have hL_dist (x y : Fin (Fintype.card ι) → ℂ) : dist (L x) (L y) = dist x y :=
     (IsometryEquiv.piCongrLeft (Y := fun _ : ι ↦ ℂ) e).dist_eq x y
   have hL_norm : ‖Lc‖ₑ ≤ 1 := by
@@ -156,10 +158,11 @@ private theorem norm_mvCoeff_mul_prod_pow_le_of_pos_of_lt {f : (ι → ℂ) → 
       ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply, ← map_sum,
       ← p.mvCoeff_eq_sum rfl, hφ_val]
     simp
+  have hprod : (∏ j, r (e j) ^ (α ∘ e) j) = ∏ i, r i ^ α i :=
+    e.prod_comp fun i ↦ r i ^ α i
   have hfin := norm_mvCoeff_mul_prod_pow_le_of_fin hps hbound (α ∘ e)
     (fun j ↦ hr0 (e j)) (fun j ↦ hrR (e j))
-  rwa [hcoeff, show (∏ j, r (e j) ^ (α ∘ e) j) = ∏ i, r i ^ α i from
-    e.prod_comp fun i ↦ r i ^ α i] at hfin
+  rwa [hcoeff, hprod] at hfin
 
 /-- **Cauchy's inequality on a polydisc (unequal polyradii).** If `f : (ι → ℂ) → V` has formal
 power series `p` on `ball c R` and satisfies `‖f y‖ ≤ M` there, then

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.Antidiag.Pi
 public import Mathlib.Analysis.Analytic.Basic
+public import Mathlib.Topology.Algebra.Module.Equiv.Pi
 import Mathlib.Analysis.Analytic.Constructions
 import Mathlib.Analysis.Analytic.Uniqueness
 import TauCeti.Algebra.MvPolynomial.Funext
@@ -28,6 +29,8 @@ coordinate by coordinate, as in transcendence proofs by auxiliary functions in s
 ## Main definitions and results
 
 * `FormalMultilinearSeries.mvCoeff`: the multi-index coefficient of a formal multilinear series.
+* `FormalMultilinearSeries.mvCoeff_compContinuousLinearMap_piCongrLeft`: reindexing coordinates by
+  `e : κ ≃ ι` pulls `p.mvCoeff α` back to `α ∘ e`.
 * `FormalMultilinearSeries.apply_eq_sum_mvCoeff`: the degree-`k` term is
   `∑ α ∈ univ.piAntidiag k, (∏ i, z i ^ α i) • p.mvCoeff α`.
 * `FormalMultilinearSeries.sum_norm_mvCoeff_le`: the coefficients of total degree `k` have norms
@@ -116,6 +119,34 @@ theorem mvCoeff_zero_eq_apply (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F)
   classical
   rw [mvCoeff_eq_sum p (k := 0) (by simp)]
   simp [Subsingleton.elim _ v]
+
+/-- Reindexing coordinates along `e : κ ≃ ι` pulls back the multi-index coefficients of `p`: the
+coefficient of `p.compContinuousLinearMap (piCongrLeft 𝕜 (fun _ ↦ 𝕜) e)` at `α ∘ e` is
+`p.mvCoeff α`. -/
+theorem mvCoeff_compContinuousLinearMap_piCongrLeft {κ : Type*} [Fintype κ]
+    (p : FormalMultilinearSeries 𝕜 (ι → 𝕜) F) (e : κ ≃ ι) (α : ι → ℕ) :
+    (p.compContinuousLinearMap
+      (ContinuousLinearEquiv.piCongrLeft 𝕜 (fun _ : ι ↦ 𝕜) e : (κ → 𝕜) →L[𝕜] (ι → 𝕜))).mvCoeff
+        (α ∘ e) = p.mvCoeff α := by
+  classical
+  set k := ∑ i, α i
+  have hk : ∑ j, (α ∘ e) j = k := e.sum_comp α
+  rw [mvCoeff_eq_sum _ hk, mvCoeff_eq_sum p (k := k) rfl]
+  refine sum_equiv (Equiv.arrowCongr (Equiv.refl (Fin k)) e) (fun a ↦ ?_) (fun a _ ↦ ?_)
+  · simp only [mem_filter, mem_univ, true_and, Function.comp_apply, Equiv.arrowCongr_apply,
+      Equiv.refl_symm]
+    refine ⟨fun h i ↦ ?_, fun h j ↦ ?_⟩
+    · rw [← e.apply_symm_apply i, ← h (e.symm i)]
+      exact Fintype.card_congr (Equiv.subtypeEquivRight fun r ↦ e.apply_eq_iff_eq)
+    · rw [← h (e j)]
+      exact Fintype.card_congr (Equiv.subtypeEquivRight fun r ↦ e.apply_eq_iff_eq.symm)
+  · rw [compContinuousLinearMap_apply]
+    congr 1
+    ext r i
+    -- Mathlib lacks `ContinuousLinearEquiv.piCongrLeft_apply`, so unfold through
+    -- `Homeomorph.piCongrLeft` to reach `Equiv.piCongrLeft_apply`.
+    simp [Equiv.arrowCongr_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.piCongrLeft,
+      Homeomorph.piCongrLeft, Equiv.piCongrLeft_apply, Pi.single_apply, e.symm_apply_eq]
 
 /-- The multi-index coefficient at `α` is the sum over the tuples `a : Fin k → ι` whose
 coordinate counts are `α`, for `α` of total degree `k`. -/
