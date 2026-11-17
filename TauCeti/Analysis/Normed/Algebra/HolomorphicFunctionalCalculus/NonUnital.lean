@@ -178,6 +178,7 @@ theorem quasispectrum_nonUnitalHolomorphicCalculus (a : A)
 
 /-- **Nonunital spectral mapping theorem** for an analytic representative `f` with `f 0 = 0`:
 `quasispectrum ℂ (f(a)) = f '' quasispectrum ℂ a`. -/
+@[simp high] -- Fire before `quasispectrum_nonUnitalHolomorphicCalculus` yields a set-builder.
 theorem quasispectrum_nonUnitalHolomorphicCalculus_ofFun (a : A) (f : ℂ → ℂ)
     (hf : AnalyticOnNhd ℂ f (quasispectrum ℂ a)) (hf0 : f 0 = 0) :
     quasispectrum ℂ

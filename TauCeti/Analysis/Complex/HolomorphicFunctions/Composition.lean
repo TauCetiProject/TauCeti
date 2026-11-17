@@ -164,10 +164,16 @@ theorem compAlgHom_restrict {V' : Opens ℂ} (hVV' : V ≤ V') (f : holomorphicF
 @[continuity]
 theorem continuous_compAlgHom (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V) :
     Continuous (compAlgHom f hf) := by
-  unfold compAlgHom
-  exact ((ContinuousMap.compRightAlgHom_continuous ℂ ℂ
-    (⟨fun z => ⟨f.val z, hf z⟩, f.val.continuous.subtype_mk hf⟩ : C(U, V))).comp
-    continuous_subtype_val).subtype_mk _
+  rw [continuous_induced_rng]
+  have hval :
+      (Subtype.val ∘ compAlgHom f hf : holomorphicFunctions V → C(U, ℂ)) =
+        (ContinuousMap.compRightAlgHom ℂ ℂ
+          (⟨fun z => ⟨f.val z, hf z⟩, f.val.continuous.subtype_mk hf⟩ : C(U, V))) ∘
+          Subtype.val := by
+    ext g z
+    exact compAlgHom_apply f hf g z
+  rw [hval]
+  exact (ContinuousMap.compRightAlgHom_continuous ℂ ℂ _).comp continuous_subtype_val
 
 end HolomorphicFunctions
 

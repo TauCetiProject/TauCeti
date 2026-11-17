@@ -265,8 +265,7 @@ private theorem balancedOrbitPolygon_edgePath (hE : ∀ x, #{e ∈ E | e.2 = x} 
     (balancedOrbitPolygon hE e).edgePath ℝ i =
       AffineMap.lineMap (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).1
         (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).2 := by
-  rw [Polygon.edgePath, balancedOrbitPolygon_succ]
-  rfl
+  rw [Polygon.edgePath, balancedOrbitPolygon_succ, balancedOrbitPolygon_apply]
 
 private theorem balancedOrbitPolygon_boundary_subset
     (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
@@ -325,8 +324,7 @@ theorem integral_ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ 
   rw [Polygon.integral_contourCycle _ (hf.mono (balancedOrbitPolygon_boundary_subset hE q.out)),
     ← Fin.sum_univ_eq_sum_range]
   exact Finset.sum_congr rfl fun i _ ↦ by
-    rw [balancedOrbitPolygon_edgePath, balancedOrbitPolygon_succ]
-    rfl
+    rw [balancedOrbitPolygon_edgePath, balancedOrbitPolygon_succ, balancedOrbitPolygon_apply]
 
 end BalancedSegments
 

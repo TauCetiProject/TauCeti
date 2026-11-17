@@ -48,6 +48,60 @@ section Parametric
 variable {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedSpace ℝ E]
   [CompleteSpace E]
 
+private noncomputable def uniformPartition (a b : ℝ) (n k : ℕ) : ℝ :=
+  a + (k : ℝ) * (b - a) / (n : ℝ)
+
+private theorem uniformPartition_eq (a b : ℝ) (n k : ℕ) :
+    uniformPartition a b n k = a + (k : ℝ) * (b - a) / (n : ℝ) := rfl
+
+private theorem uniformPartition_sub (a b : ℝ) (n k : ℕ) :
+    uniformPartition a b n (k + 1) - uniformPartition a b n k = (b - a) / (n : ℝ) := by
+  dsimp [uniformPartition]; push_cast; ring
+
+private theorem uniformPartition_le_succ {a b : ℝ} (hab : a ≤ b) (n k : ℕ) :
+    uniformPartition a b n k ≤ uniformPartition a b n (k + 1) := by
+  have hstep : 0 ≤ (b - a) / (n : ℝ) := div_nonneg (sub_nonneg.mpr hab) (Nat.cast_nonneg n)
+  linarith [uniformPartition_sub a b n k]
+
+private theorem uniformPartition_mem_Icc {a b : ℝ} (hab : a ≤ b) {n k : ℕ} (hn : 1 ≤ n)
+    (hk : k ≤ n) : uniformPartition a b n k ∈ Icc a b := by
+  have hba : 0 ≤ b - a := sub_nonneg.mpr hab
+  have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
+  refine ⟨?_, ?_⟩
+  · dsimp [uniformPartition]
+    have : 0 ≤ (k : ℝ) * (b - a) / (n : ℝ) :=
+      div_nonneg (mul_nonneg (Nat.cast_nonneg k) hba) hn_pos.le
+    linarith
+  · dsimp [uniformPartition]
+    have hk_le : (k : ℝ) * (b - a) / (n : ℝ) ≤ b - a := by
+      rw [div_le_iff₀ hn_pos]
+      nlinarith [(Nat.cast_le.mpr hk : (k : ℝ) ≤ n)]
+    linarith
+
+omit [CompleteSpace E] in
+private theorem norm_uniformPartition_subinterval_le {a b C : ℝ} (hab : a ≤ b) {n k : ℕ}
+    (hn : 1 ≤ n) (hk : k < n) {f : ℝ → E}
+    (hf : IntervalIntegrable f volume (uniformPartition a b n k) (uniformPartition a b n (k + 1)))
+    (hosc : ∀ ⦃s⦄, s ∈ Icc a b → ∀ ⦃t⦄, t ∈ Icc a b → |s - t| ≤ (b - a) / (n : ℝ) →
+      ‖f s - f t‖ ≤ C) :
+    ‖(∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
+          f (uniformPartition a b n k)) -
+        ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t‖ ≤
+      C * ((b - a) / (n : ℝ)) := by
+  have hle := uniformPartition_le_succ hab n k
+  have hsub := uniformPartition_sub a b n k
+  have hstep_nonneg : 0 ≤ (b - a) / (n : ℝ) :=
+    div_nonneg (sub_nonneg.mpr hab) (Nat.cast_nonneg n)
+  rw [← _root_.intervalIntegral.integral_sub intervalIntegrable_const hf,
+    ← abs_of_nonneg hstep_nonneg, ← hsub]
+  refine _root_.intervalIntegral.norm_integral_le_of_norm_le_const fun t ht => ?_
+  rw [uIoc_of_le hle] at ht
+  refine hosc (uniformPartition_mem_Icc hab hn hk.le)
+    ⟨(uniformPartition_mem_Icc hab hn hk.le).1.trans ht.1.le,
+      ht.2.trans (uniformPartition_mem_Icc hab hn (Nat.succ_le_of_lt hk)).2⟩ ?_
+  rw [abs_sub_comm, abs_of_pos (sub_pos.mpr ht.1)]
+  linarith [ht.2, hsub]
+
 /-- Quantitative error bound for the `n`-point left-endpoint Riemann sum of an interval-integrable
 function `f : ℝ → E` on `Icc a b` (`a ≤ b`, `1 ≤ n`): if `‖f s - f t‖ ≤ C` whenever
 `s, t ∈ Icc a b` satisfy `|s - t| ≤ (b - a) / n`, then the Riemann sum is within `C * (b - a)` of
@@ -60,56 +114,47 @@ theorem norm_riemannSum_Icc_sub_integral_le {a b C : ℝ} (hab : a ≤ b) {n : �
         ∫ t in a..b, f t‖ ≤ C * (b - a) := by
   rcases hab.eq_or_lt with rfl | hab_lt
   · simp
-  have hba : 0 < b - a := sub_pos.mpr hab_lt
   have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-  have hstep_pos : 0 < (b - a) / (n : ℝ) := div_pos hba hn_pos
-  let τ : ℕ → ℝ := fun k => a + (k : ℝ) * (b - a) / (n : ℝ)
-  have hτ_sub (k : ℕ) : τ (k + 1) - τ k = (b - a) / (n : ℝ) := by dsimp [τ]; push_cast; ring
-  have hτ_le (k : ℕ) : τ k ≤ τ (k + 1) := by linarith [hτ_sub k, hstep_pos]
-  have hτ_mem {k : ℕ} (hk : k ≤ n) : τ k ∈ Icc a b := by
-    refine ⟨?_, ?_⟩
-    · dsimp [τ]
-      have : 0 ≤ (k : ℝ) * (b - a) / (n : ℝ) :=
-        div_nonneg (mul_nonneg (Nat.cast_nonneg k) hba.le) hn_pos.le
-      linarith
-    · dsimp [τ]
-      have hk_le : (k : ℝ) * (b - a) / (n : ℝ) ≤ b - a := by
-        rw [div_le_iff₀ hn_pos]
-        nlinarith [(Nat.cast_le.mpr hk : (k : ℝ) ≤ n)]
-      linarith
-  have hint (k : ℕ) (hk : k < n) : IntervalIntegrable f volume (τ k) (τ (k + 1)) := by
+  -- Split the interval integral across the `n` uniform subintervals.
+  have hint (k : ℕ) (hk : k < n) :
+      IntervalIntegrable f volume (uniformPartition a b n k) (uniformPartition a b n (k + 1)) := by
     refine hf.mono_set ?_
-    rw [uIcc_of_le (hτ_le k), uIcc_of_le hab]
-    exact Icc_subset_Icc (hτ_mem hk.le).1 (hτ_mem (Nat.succ_le_of_lt hk)).2
-  have hsum_int : (∫ t in a..b, f t) = ∑ k ∈ Finset.range n, ∫ t in τ k..τ (k + 1), f t := by
-    have hτ0 : τ 0 = a := by simp [τ]
-    have hτn : τ n = b := by dsimp [τ]; rw [mul_div_cancel_left₀ _ hn_pos.ne', add_sub_cancel]
-    rw [← hτ0, ← hτn, ← _root_.intervalIntegral.sum_integral_adjacent_intervals hint]
+    rw [uIcc_of_le (uniformPartition_le_succ hab n k), uIcc_of_le hab]
+    exact Icc_subset_Icc (uniformPartition_mem_Icc hab hn hk.le).1
+      (uniformPartition_mem_Icc hab hn (Nat.succ_le_of_lt hk)).2
+  have hsum_int :
+      (∫ t in a..b, f t) =
+        ∑ k ∈ Finset.range n,
+          ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t := by
+    have h0 : uniformPartition a b n 0 = a := by simp [uniformPartition]
+    have hn' : uniformPartition a b n n = b := by
+      dsimp [uniformPartition]; rw [mul_div_cancel_left₀ _ hn_pos.ne', add_sub_cancel]
+    simpa only [h0, hn'] using
+      (_root_.intervalIntegral.sum_integral_adjacent_intervals hint).symm
+  -- Rewrite the Riemann sum as the sum of constant integrals on the same subintervals.
   have hsum_riem :
-      (((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, f (τ k)) =
-        ∑ k ∈ Finset.range n, ∫ _ in τ k..τ (k + 1), f (τ k) := by
+      (((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, f (a + (k : ℝ) * (b - a) / (n : ℝ))) =
+        ∑ k ∈ Finset.range n,
+          ∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
+            f (uniformPartition a b n k) := by
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun k _ => ?_
-    rw [_root_.intervalIntegral.integral_const, hτ_sub k]
+    rw [← uniformPartition_eq, _root_.intervalIntegral.integral_const, uniformPartition_sub]
+  -- Bound each subinterval error via `hosc` and sum using the triangle inequality.
   rw [hsum_riem, hsum_int, ← Finset.sum_sub_distrib]
-  have hterm (k : ℕ) (hk : k ∈ Finset.range n) :
-      ‖(∫ _ in τ k..τ (k + 1), f (τ k)) - ∫ t in τ k..τ (k + 1), f t‖ ≤
-        C * ((b - a) / (n : ℝ)) := by
-    have hk_lt : k < n := Finset.mem_range.mp hk
-    rw [← _root_.intervalIntegral.integral_sub intervalIntegrable_const (hint k hk_lt),
-      ← abs_of_pos hstep_pos, ← hτ_sub k]
-    refine _root_.intervalIntegral.norm_integral_le_of_norm_le_const fun t ht => ?_
-    rw [uIoc_of_le (hτ_le k)] at ht
-    refine hosc (hτ_mem hk_lt.le)
-      ⟨(hτ_mem hk_lt.le).1.trans ht.1.le, ht.2.trans (hτ_mem (Nat.succ_le_of_lt hk_lt)).2⟩ ?_
-    rw [abs_sub_comm, abs_of_pos (sub_pos.mpr ht.1)]
-    linarith [ht.2, hτ_sub k]
   calc ‖∑ k ∈ Finset.range n,
-          ((∫ _ in τ k..τ (k + 1), f (τ k)) - ∫ t in τ k..τ (k + 1), f t)‖
+          ((∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
+              f (uniformPartition a b n k)) -
+            ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t)‖
       ≤ ∑ k ∈ Finset.range n,
-          ‖(∫ _ in τ k..τ (k + 1), f (τ k)) - ∫ t in τ k..τ (k + 1), f t‖ :=
+          ‖(∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
+              f (uniformPartition a b n k)) -
+            ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t‖ :=
         norm_sum_le _ _
-    _ ≤ ∑ _k ∈ Finset.range n, C * ((b - a) / (n : ℝ)) := Finset.sum_le_sum hterm
+    _ ≤ ∑ _k ∈ Finset.range n, C * ((b - a) / (n : ℝ)) :=
+        Finset.sum_le_sum fun k hk =>
+          norm_uniformPartition_subinterval_le hab hn (Finset.mem_range.mp hk)
+            (hint k (Finset.mem_range.mp hk)) hosc
     _ = C * (b - a) := by
         rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
         field_simp [hn_pos.ne']

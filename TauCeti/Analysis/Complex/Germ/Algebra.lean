@@ -266,6 +266,19 @@ theorem coe_ofFunVanishingAt {s : Set ℂ} {x : ℂ} (hx : x ∈ s) (f : ℂ →
     (hf : AnalyticOnNhd ℂ f s) (hf0 : f x = 0) :
     (ofFunVanishingAt hx f hf hf0 : holomorphicGerms s) = ofFun f hf := (rfl)
 
+/-- The holomorphic germ of a polynomial function `z ↦ p.eval z` equals `Polynomial.aeval` at the
+coordinate germ. -/
+theorem ofFun_eval_polynomial (p : Polynomial ℂ) :
+    ofFun (fun z => p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)) =
+      Polynomial.aeval (ofFun id (analyticOnNhd_id : AnalyticOnNhd ℂ id s)) p := by
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq =>
+    rw [map_add, ← hp, ← hq, ← ofFun_add, ofFun_eq_iff]
+    exact Eventually.of_forall fun z => Polynomial.eval_add
+  | monomial n c =>
+    rw [Polynomial.aeval_monomial, ← ofFun_const, ← ofFun_pow, ← ofFun_mul, ofFun_eq_iff]
+    exact Eventually.of_forall fun z => by simp [Polynomial.eval_monomial]
+
 /-- Any unital complex-algebra homomorphism on `holomorphicGerms s` sending the coordinate germ to
 `a` agrees with `Polynomial.aeval a` on polynomial germs. -/
 theorem algHom_ofFun_polynomial {A : Type*} [Semiring A] [Algebra ℂ A] {a : A}
@@ -273,19 +286,7 @@ theorem algHom_ofFun_polynomial {A : Type*} [Semiring A] [Algebra ℂ A] {a : A}
     (hΦ : Φ (ofFun id analyticOnNhd_id) = a) (p : Polynomial ℂ) :
     Φ (ofFun (fun z => p.eval z) ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _))) =
       Polynomial.aeval a p := by
-  have hpoly :
-      (ofFun (fun z => p.eval z)
-        ((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)) : holomorphicGerms s) =
-      Polynomial.aeval (ofFun id analyticOnNhd_id) p := by
-    apply Subtype.ext
-    rw [Polynomial.aeval_subalgebra_coe, coe_ofFun, coe_ofFun,
-      ← Filter.Germ.coeAlgHom_apply (R := ℂ) (l := 𝓝ˢ s) id,
-      Polynomial.aeval_algHom_apply, Filter.Germ.coeAlgHom_apply]
-    congr 1
-    ext z
-    simpa only [Pi.evalAlgHom_apply, id_eq, Polynomial.coe_aeval_eq_eval] using
-      Polynomial.aeval_algHom_apply (Pi.evalAlgHom ℂ (fun _ : ℂ => ℂ) z) id p
-  rw [hpoly, ← Polynomial.aeval_algHom_apply, hΦ]
+  rw [ofFun_eval_polynomial, ← Polynomial.aeval_algHom_apply, hΦ]
 
 /-- Any unital complex-algebra homomorphism `Φ : holomorphicGerms s →ₐ[ℂ] A` sends a quotient
 `f / g` with `g` nonvanishing on `s` to `Φ f * Ring.inverse (Φ g)`. -/
