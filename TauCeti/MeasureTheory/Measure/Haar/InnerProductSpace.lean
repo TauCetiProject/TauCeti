@@ -36,6 +36,8 @@ conditions on single coordinates, such as polydiscs, are measured.
 * `TauCeti.volume_eq_one_of_subsingleton`: in a zero-dimensional space every nonempty set has
   volume one.
 * `Module.Basis.volume_eq_smul_addHaar`: the volume measure is `√(det G) • b.addHaar`.
+* `Module.Basis.volume_eq_smul_addHaar_of_pairwise_inner_eq_zero`: for a pairwise orthogonal
+  basis `b`, the volume measure is `(∏ i, ‖b i‖) • b.addHaar`.
 * `AffineIsometryEquiv.measurePreserving`: affine isometries preserve the volume measure, extending
   Mathlib's `LinearIsometryEquiv.measurePreserving` by a translation.
 * `Submodule.ae_of_ae_orthogonalProjectionOnto_prod`: a property of almost every point of a
@@ -97,6 +99,24 @@ theorem volume_eq_smul_addHaar (b : Basis ι ℝ E) :
     (volume : Measure E) = ENNReal.ofReal √(Matrix.gram ℝ b).det • b.addHaar := by
   rw [← TauCeti.volume_parallelepiped b (finrank_eq_card_basis b).symm, addHaar_def]
   exact Measure.addHaarMeasure_unique volume b.parallelepiped
+
+omit [DecidableEq ι] in
+open scoped RealInnerProductSpace in
+/-- The volume measure of a finite-dimensional real inner product space is the additive Haar
+measure normalized by a pairwise orthogonal basis `b`, scaled by the product of the norms of its
+basis vectors. -/
+theorem volume_eq_smul_addHaar_of_pairwise_inner_eq_zero (b : Basis ι ℝ E)
+    (hb : Pairwise fun i j ↦ ⟪b i, b j⟫ = 0) :
+    (volume : Measure E) = ENNReal.ofReal (∏ i, ‖b i‖) • b.addHaar := by
+  classical
+  have hgram : Matrix.gram ℝ b = Matrix.diagonal fun i ↦ ‖b i‖ ^ 2 := by
+    ext i j
+    by_cases hij : i = j
+    · subst hij
+      simp [Matrix.gram_apply]
+    · simp [Matrix.gram_apply, hij, hb hij]
+  rw [volume_eq_smul_addHaar b, hgram, Matrix.det_diagonal, Finset.prod_pow,
+    Real.sqrt_sq (Finset.prod_nonneg fun _ _ ↦ norm_nonneg _)]
 
 end Module.Basis
 

@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.MeasureTheory.Measure.HermitianMatrix.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Normalize
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
 # Lebesgue measure on the complex Hermitian subspace
@@ -112,54 +114,31 @@ private theorem inner_hermitianBasis_eq (n : ℕ)
       hermitianCoordinates_apply_of_gt n A h, ite_eq_right h.ne']
     ring
 
-/-- The rescaling that turns `TauCeti.hermitianBasis` into a Frobenius-orthonormal basis:
-`1` on the diagonal and `(√2)⁻¹` off it. -/
-private def hermScale (n : ℕ) (p : Fin n × Fin n) : ℝˣ :=
-  if p.1 = p.2 then 1 else Units.mk0 (Real.sqrt 2)⁻¹ (by positivity)
+private theorem pairwise_inner_hermitianBasis (n : ℕ) :
+    Pairwise fun p q ↦ ⟪hermitianBasis n p, hermitianBasis n q⟫ = 0 := by
+  intro p q hpq
+  rw [inner_hermitianBasis_eq, hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply,
+    Pi.single_eq_of_ne hpq.symm, mul_zero]
 
-private theorem hermScale_coe (n : ℕ) (p : Fin n × Fin n) :
-    ((hermScale n p : ℝˣ) : ℝ) = if p.1 = p.2 then 1 else (Real.sqrt 2)⁻¹ := by
-  rw [hermScale]
-  split <;> simp
-
-private theorem orthonormal_hermScaled (n : ℕ) :
-    Orthonormal ℝ ⇑((hermitianBasis n).unitsSMul (hermScale n)) := by
-  rw [orthonormal_iff_ite]
-  intro p q
-  rw [Basis.unitsSMul_apply, Basis.unitsSMul_apply, Units.smul_def, Units.smul_def,
-    real_inner_smul_left, real_inner_smul_right, inner_hermitianBasis_eq]
-  have hcoord : hermitianCoordinates n (hermitianBasis n p) q = if p = q then 1 else 0 := by
-    rw [hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_apply]
-    exact if_congr eq_comm rfl rfl
-  rw [hcoord]
-  by_cases hpq : p = q
-  · subst hpq
-    by_cases hd : p.1 = p.2
-    · simp [hermScale_coe, hd]
-    · simp only [hermScale_coe, hd, ↓reduceIte, mul_one]
-      rw [← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by norm_num), inv_mul_cancel₀ two_ne_zero]
-  · simp [hpq]
+private theorem norm_hermitianBasis (n : ℕ) (p : Fin n × Fin n) :
+    ‖hermitianBasis n p‖ = if p.1 = p.2 then 1 else Real.sqrt 2 := by
+  rw [← Real.sqrt_sq (norm_nonneg _), ← real_inner_self_eq_norm_sq, inner_hermitianBasis_eq,
+    hermitianBasis_apply, ContinuousLinearEquiv.apply_symm_apply, Pi.single_eq_same, mul_one]
+  split_ifs <;> simp
 
 /-- The Frobenius-orthonormal basis of the complex Hermitian subspace obtained by rescaling the
 off-diagonal vectors of `TauCeti.hermitianBasis` by `(√2)⁻¹`. -/
 def hermitianOrthonormalBasis (n : ℕ) :
     OrthonormalBasis (Fin n × Fin n) ℝ (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)) :=
-  ((hermitianBasis n).unitsSMul (hermScale n)).toOrthonormalBasis (orthonormal_hermScaled n)
+  (hermitianBasis n).toOrthonormalBasisOfOrthogonal (pairwise_inner_hermitianBasis n)
 
 /-- Each vector of `TauCeti.hermitianOrthonormalBasis` is `hermitianBasis` on the diagonal and
 `(√2)⁻¹ • hermitianBasis` off it. -/
 theorem hermitianOrthonormalBasis_apply (n : ℕ) (p : Fin n × Fin n) :
     hermitianOrthonormalBasis n p =
       if p.1 = p.2 then hermitianBasis n p else (Real.sqrt 2)⁻¹ • hermitianBasis n p := by
-  rw [hermitianOrthonormalBasis, Basis.coe_toOrthonormalBasis, Basis.unitsSMul_apply,
-    Units.smul_def, hermScale_coe]
+  rw [hermitianOrthonormalBasis, Basis.toOrthonormalBasisOfOrthogonal_apply, norm_hermitianBasis]
   split_ifs <;> simp
-
-private theorem addHaar_hermScaled (n : ℕ) :
-    ((hermitianBasis n).unitsSMul (hermScale n)).addHaar =
-      (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))) := by
-  rw [← Basis.toBasis_toOrthonormalBasis _ (orthonormal_hermScaled n),
-    OrthonormalBasis.addHaar_eq_volume]
 
 private theorem card_offDiag_fin_prod (n : ℕ) :
     (Finset.univ.filter fun p : Fin n × Fin n => p.1 ≠ p.2).card = n * (n - 1) := by
@@ -169,27 +148,6 @@ private theorem card_offDiag_fin_prod (n : ℕ) :
     simp
   rw [h, Finset.offDiag_card, Finset.card_fin, Nat.mul_sub_left_distrib, mul_one]
 
-private theorem prod_hermScale_inv (n : ℕ) :
-    (((∏ p, hermScale n p)⁻¹ : ℝˣ) : ℝ) = (2 : ℝ) ^ (n * (n - 1) / 2) := by
-  have hprod : ((∏ p, hermScale n p : ℝˣ) : ℝ) = (Real.sqrt 2)⁻¹ ^ (n * (n - 1)) := by
-    rw [← Units.coeHom_apply, map_prod]
-    simp only [Units.coeHom_apply, hermScale_coe]
-    rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const, card_offDiag_fin_prod]
-  rw [Units.val_inv_eq_inv_val, hprod, inv_pow, inv_inv]
-  conv_lhs =>
-    rw [← Nat.mul_div_cancel' (Nat.even_mul_pred_self n).two_dvd, pow_mul,
-      Real.sq_sqrt (by norm_num)]
-
-private theorem volume_parallelepiped_hermitianBasis (n : ℕ) :
-    (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ)))
-        (hermitianBasis n).parallelepiped =
-      ENNReal.ofReal ((2 : ℝ) ^ (n * (n - 1) / 2)) := by
-  rw [Basis.coe_parallelepiped, ← addHaar_hermScaled n, Measure.addHaar_parallelepiped,
-    Basis.det_unitsSMul]
-  simp only [_root_.smul_apply, Basis.det_self, smul_eq_mul, mul_one]
-  rw [prod_hermScale_inv]
-  exact congrArg ENNReal.ofReal (abs_of_nonneg (by positivity))
-
 end comparison
 
 /-- The Frobenius volume of the complex Hermitian subspace is `2 ^ (n * (n - 1) / 2)` times
@@ -198,8 +156,15 @@ Frobenius norm `√2`. -/
 theorem volume_hermitianMatrix_eq_smul_hermitianLebesgue (n : ℕ) :
     (volume : Measure (selfAdjoint.submodule ℝ (Matrix (Fin n) (Fin n) ℂ))) =
       ENNReal.ofReal ((2 : ℝ) ^ (n * (n - 1) / 2)) • hermitianLebesgue n := by
-  rw [hermitianLebesgue_eq_addHaar, Basis.addHaar_def, ← volume_parallelepiped_hermitianBasis]
-  exact Measure.addHaarMeasure_unique _ _
+  rw [hermitianLebesgue_eq_addHaar,
+    (hermitianBasis n).volume_eq_smul_addHaar_of_pairwise_inner_eq_zero
+      (pairwise_inner_hermitianBasis n)]
+  congr 2
+  simp_rw [norm_hermitianBasis]
+  rw [Finset.prod_ite, Finset.prod_const_one, one_mul, Finset.prod_const, card_offDiag_fin_prod]
+  conv_lhs =>
+    rw [← Nat.mul_div_cancel' (Nat.even_mul_pred_self n).two_dvd, pow_mul,
+      Real.sq_sqrt (by norm_num)]
 
 /-- In dimension zero, the complex Hermitian subspace is a single point and `hermitianLebesgue` is
 the Dirac measure there. -/
