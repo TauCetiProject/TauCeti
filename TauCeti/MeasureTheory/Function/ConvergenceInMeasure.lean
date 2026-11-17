@@ -49,6 +49,8 @@ whenever the transformed functions are eventually almost everywhere strongly mea
 * `TauCeti.tendstoInMeasure_of_iInf_measure_eq_zero`: localize convergence in measure off a family
   of exceptional sets whose infimum measure vanishes (`⨅ m, μ (F m) = 0`), without measurability
   or finiteness assumptions.
+* `TauCeti.tendstoInMeasure_const`: a family constant along a filter converges in measure to its
+  value, without finiteness or measurability assumptions.
 * `Filter.Tendsto.tendstoInMeasure_const`: a convergent deterministic family converges in measure
   as constant functions, without finiteness or measurability assumptions.
 * `UniformContinuous.comp_tendstoInMeasure`: post-composing with a uniformly continuous map
@@ -171,6 +173,12 @@ theorem tendstoInMeasure_of_iInf_measure_eq_zero {E' : Type*} {κ : Sort*} [EDis
     _ ≤ μ {x | ε ≤ edist (f_loc m k x) (g_loc m x)} + μ (F m) := measure_union_le _ _
     _ ≤ η / 2 + η / 2 := add_le_add hkm hm.le
     _ = η := ENNReal.add_halves η
+
+/-- A constant family along any filter converges in measure to its value, with no finiteness or
+measurability assumptions. -/
+theorem tendstoInMeasure_const [PseudoEMetricSpace E] (g : α → E) :
+    TendstoInMeasure μ (fun _ ↦ g) l g := fun ε hε ↦ by
+  simpa [edist_self, hε.not_ge] using tendsto_const_nhds
 
 end TauCeti
 

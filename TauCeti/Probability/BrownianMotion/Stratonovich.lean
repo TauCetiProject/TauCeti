@@ -80,21 +80,11 @@ private lemma interleave_midpoint_step_le {n : ℕ} {t : ℕ → ℝ≥0} {δ : 
     (ht : MonotoneOn t (Set.Iic n)) (hmesh : ∀ i < n, (t (i + 1) : ℝ) - t i ≤ δ)
     {j : ℕ} (hj : j < 2 * n) :
     ((TauCeti.interleave t (fun i ↦ (t i + t (i + 1)) / 2) (j + 1) : ℝ≥0) : ℝ) -
-      ((TauCeti.interleave t (fun i ↦ (t i + t (i + 1)) / 2) j : ℝ≥0) : ℝ) ≤ δ := by
-  set i := j / 2
-  have hi : i < n := by omega
-  have hle : (t i : ℝ) ≤ t (i + 1) := NNReal.coe_le_coe.2 (ht hi.le hi (Nat.le_succ _))
-  by_cases hmod : j % 2 = 0
-  · rw [show j = 2 * i by omega]
-    simp only [TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
-    push_cast
-    linarith [hmesh i hi]
-  · have h1 : j = 2 * i + 1 := by omega
-    have h2 : j + 1 = 2 * (i + 1) := by omega
-    rw [h2, h1]
-    simp only [TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
-    push_cast
-    linarith [hmesh i hi]
+      ((TauCeti.interleave t (fun i ↦ (t i + t (i + 1)) / 2) j : ℝ≥0) : ℝ) ≤ δ :=
+  (TauCeti.forall_lt_two_mul_interleave_succ_iff
+    (R := fun _ (x y : ℝ≥0) ↦ (y : ℝ) - x ≤ δ)).2 (fun i hi ↦ by
+      have hle : (t i : ℝ) ≤ t (i + 1) := NNReal.coe_le_coe.2 (ht hi.le hi (Nat.le_succ _))
+      constructor <;> (push_cast; linarith [hmesh i hi])) j hj
 
 private lemma grid_mem_Icc {a b : ℝ≥0} {k : ℕ} {π : ℕ → ℝ≥0}
     (hmono : MonotoneOn π (Set.Iic k)) (ha : π 0 = a) (hb : π k = b) {i : ℕ} (hi : i ≤ k) :
@@ -131,30 +121,17 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
   have hu : MonotoneOn u (Set.Iic (2 * n)) := monotoneOn_interleave_midpoint ht
   let H : ℕ → Ω → ℝ := TauCeti.interleave Y fun i ↦ -Y i
   -- 2. Verify adaptedness and `L²` integrability of the interleaved weights `H`.
-  have hHm : ∀ j < 2 * n, Measurable[ℱ (u j)] (H j) := by
-    intro j hj
-    set i := j / 2
-    have hi : i < n := by omega
-    by_cases hmod : j % 2 = 0
-    · rw [show j = 2 * i by omega,
-        show u (2 * i) = t i from TauCeti.interleave_two_mul _ _ i,
-        show H (2 * i) = Y i from TauCeti.interleave_two_mul _ _ i]
-      exact hY i hi
-    · rw [show j = 2 * i + 1 by omega,
-        show u (2 * i + 1) = (t i + t (i + 1)) / 2 from TauCeti.interleave_two_mul_add_one _ _ i,
-        show H (2 * i + 1) = -Y i from TauCeti.interleave_two_mul_add_one _ _ i]
-      have hle : t i ≤ (t i + t (i + 1)) / 2 :=
-        TauCeti.left_le_add_div_two.2 (ht hi.le hi (Nat.le_succ _))
-      exact (hY i hi).neg.mono (ℱ.mono hle) le_rfl
-  have hHi : ∀ j < 2 * n, MemLp (H j) 2 P := by
-    intro j hj
-    set i := j / 2
-    have hi : i < n := by omega
-    by_cases hmod : j % 2 = 0
-    · rw [show j = 2 * i by omega]
-      simpa only [H, TauCeti.interleave_two_mul] using hYi i hi
-    · rw [show j = 2 * i + 1 by omega]
-      simpa only [H, TauCeti.interleave_two_mul_add_one] using (hYi i hi).neg
+  have hHm : ∀ j < 2 * n, Measurable[ℱ (u j)] (H j) :=
+    (TauCeti.forall_lt_two_mul_interleave_iff
+      (P := fun j f ↦ Measurable[ℱ (u j)] f)).2 fun i hi ↦ by
+        rw [show u (2 * i) = t i from TauCeti.interleave_two_mul _ _ i,
+          show u (2 * i + 1) = (t i + t (i + 1)) / 2 from TauCeti.interleave_two_mul_add_one _ _ i]
+        have hle : t i ≤ (t i + t (i + 1)) / 2 :=
+          TauCeti.left_le_add_div_two.2 (ht hi.le hi (Nat.le_succ _))
+        exact ⟨hY i hi, (hY i hi).neg.mono (ℱ.mono hle) le_rfl⟩
+  have hHi : ∀ j < 2 * n, MemLp (H j) 2 P :=
+    (TauCeti.forall_lt_two_mul_interleave_iff (P := fun _ f ↦ MemLp f 2 P)).2 fun i hi ↦
+      ⟨hYi i hi, (hYi i hi).neg⟩
   -- 3. Apply the centered weighted quadratic-variation `L²` identity on `u` and pair terms.
   have hid := hB.integral_sq_sum_mul_sq_sub_sub hu hHm hHi
   have hlhs (ω : Ω) :
@@ -163,19 +140,19 @@ theorem integral_sq_sum_mul_midpoint_sq_sub_sq (hB : IsFilteredPreBrownianReal �
       ∑ i ∈ range n, Y i ω *
         ((B ((t i + t (i + 1)) / 2) ω - B (t i) ω) ^ 2 -
           (B (t (i + 1)) ω - B ((t i + t (i + 1)) / 2) ω) ^ 2) := by
-    rw [sum_range_two_mul]
+    rw [TauCeti.sum_range_two_mul_interleave t _
+      (fun j x y ↦ H j ω * ((B y ω - B x ω) ^ 2 - ((y : ℝ) - x)))]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega]
-    simp only [u, H, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one, Pi.neg_apply]
+    simp only [H, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one, Pi.neg_apply]
     push_cast
     ring
   have hrhs :
       2 * ∑ j ∈ range (2 * n), (∫ ω, H j ω ^ 2 ∂P) * ((u (j + 1) : ℝ) - u j) ^ 2 =
         ∑ i ∈ range n, (∫ ω, Y i ω ^ 2 ∂P) * ((t (i + 1) : ℝ) - t i) ^ 2 := by
-    rw [sum_range_two_mul, mul_sum]
+    rw [TauCeti.sum_range_two_mul_interleave t _
+      (fun j x y ↦ (∫ ω, H j ω ^ 2 ∂P) * ((y : ℝ) - x) ^ 2), mul_sum]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega]
-    simp only [u, H, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one, Pi.neg_apply,
+    simp only [H, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one, Pi.neg_apply,
       neg_sq]
     push_cast
     ring
@@ -319,8 +296,7 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
   let u : ℕ → ℝ≥0 := TauCeti.interleave a c
   have hu : MonotoneOn u (Set.Iic (2 * n)) := TauCeti.monotoneOn_interleave_Iic hac
   let τ : Fin (2 * n + 1) → ℝ≥0 := fun j ↦ u j
-  have hτ : Monotone τ := fun j₁ j₂ hle ↦
-    hu (Nat.le_of_lt_succ j₁.isLt) (Nat.le_of_lt_succ j₂.isLt) hle
+  have hτ : Monotone τ := hu.comp_fin_val_Iic
   let sgn : ℕ → ℝ := TauCeti.interleave (fun _ ↦ (1 : ℝ) / 2) (fun _ ↦ -(1 : ℝ) / 2)
   let ξ : Fin (2 * n) → Ω → ℝ := fun j ω ↦
     sgn j * (B (τ j.succ) ω - B (τ j.castSucc) ω) ^ 2
@@ -338,11 +314,10 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
     rw [Finset.sum_apply]
     simp only [ξ, τ, Fin.val_succ, Fin.val_castSucc]
     rw [Fin.sum_univ_eq_sum_range (fun m ↦ sgn m * (B (u (m + 1)) ω - B (u m) ω) ^ 2) (2 * n),
-      sum_range_two_mul,
+      TauCeti.sum_range_two_mul_interleave a c (fun m x y ↦ sgn m * (B y ω - B x ω) ^ 2),
       TauCeti.sum_mul_sub_sub_half_sq (fun i ↦ B (a i) ω) (fun i ↦ B (c i) ω) n]
     refine sum_congr rfl fun i _ ↦ ?_
-    rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega]
-    simp only [u, sgn, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
+    simp only [sgn, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
     ring
   -- 3. Sum variances termwise (`Var[(±1/2)(ΔB)²] = 1/2 * (Δu)²`) and pair even/odd terms.
   rw [hfun, hv]
@@ -365,11 +340,7 @@ theorem variance_sum_comp_midpoint_mul_sub_sub_half_sq (hB : IsPreBrownianReal B
     ring
   simp_rw [hterm]
   rw [Fin.sum_univ_eq_sum_range (fun m ↦ 1 / 2 * ((u (m + 1) : ℝ) - u m) ^ 2) (2 * n),
-    sum_range_two_mul, mul_sum]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega]
-  simp only [u, TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
-  ring
+    ← mul_sum, TauCeti.sum_range_two_mul_interleave a c (fun _ x y ↦ ((y : ℝ) - x) ^ 2)]
 
 /-- **Biased-clock temporal-midpoint limit.** Along deterministic clock partitions
 `A₀ = a n 0 ≤ c n 0 ≤ a n 1 ≤ … ≤ a n (k n) = A₁` whose clock mesh `(a n (i + 1) - a n i)` tends
@@ -446,13 +417,12 @@ theorem tendstoInMeasure_sum_comp_midpoint_mul_sub (hB : IsPreBrownianReal B P)
     ((hD_sub.add (hβ.tendstoInMeasure_const (μ := P))).congr_right
       (ae_of_all _ fun _ ↦ zero_add β)).congr_left
       fun n ↦ ae_of_all _ fun ω ↦ sub_add_cancel (D n ω) (μ n)
-  rw [tendstoInMeasure_iff_norm] at hD_lim ⊢
-  intro ε hε
-  refine (hD_lim ε hε).congr fun n ↦ ?_
-  congr with ω
-  dsimp [D]
-  rw [ha₁ n, ha₀ n]
-  ring_nf
+  exact ((TauCeti.tendstoInMeasure_const (μ := P) (l := l)
+      (fun ω ↦ (B A₁ ω ^ 2 - B A₀ ω ^ 2) / 2)).add hD_lim).congr_left
+    fun n ↦ ae_of_all _ fun ω ↦ by
+      dsimp only [D]
+      rw [ha₁ n, ha₀ n]
+      ring
 
 end ProbabilityTheory.IsPreBrownianReal
 
@@ -470,17 +440,11 @@ private theorem tendstoInMeasure_sq_sum_range (hB : IsPreBrownianReal B P)
     (hδ : Tendsto δ atTop (𝓝 0)) :
     TendstoInMeasure P
       (fun n ω ↦ ∑ i ∈ range (k n), (B (π n (i + 1)) ω - B (π n i) ω) ^ 2)
-      atTop (fun _ ↦ (b : ℝ) - a) := by
-  let grid : ∀ n, Fin (k n + 1) → ℝ≥0 := fun n j ↦ π n j
-  have hgrid : ∀ n, Monotone (grid n) := fun n i j hij ↦
-    hmono n (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
-  have hq := hB.tendstoInMeasure_quadraticSum hgrid
+      atTop (fun _ ↦ (b : ℝ) - a) :=
+  (hB.tendstoInMeasure_quadraticSum (fun n ↦ (hmono n).comp_fin_val_Iic)
     (fun n ↦ ha n) (fun n ↦ hb n)
-    (fun n (i : Fin (k n)) ↦ hmesh n i i.isLt) hδ
-  refine hq.congr_left fun n ↦ ae_of_all _ fun ω ↦ ?_
-  rw [quadraticSum_def]
-  exact Fin.sum_univ_eq_sum_range
-    (fun i ↦ (B (π n (i + 1)) ω - B (π n i) ω) ^ 2) (k n)
+    (fun n (i : Fin (k n)) ↦ hmesh n i i.isLt) hδ).congr_left
+    fun n ↦ ae_of_all _ fun ω ↦ quadraticSum_comp_fin_val B (π n) ω
 
 /-- The midpoint-refined quadratic sums `∑ ((B m_i - B t_i)² + (B t_{i+1} - B m_i)²)` converge in
 probability to `b - a`. -/
@@ -493,17 +457,14 @@ private theorem tendstoInMeasure_refined_sq_sum (hB : IsPreBrownianReal B P)
     TendstoInMeasure P (fun n ω ↦ ∑ i ∈ range (k n),
       ((B ((π n i + π n (i + 1)) / 2) ω - B (π n i) ω) ^ 2 +
         (B (π n (i + 1)) ω - B ((π n i + π n (i + 1)) / 2) ω) ^ 2))
-      atTop (fun _ ↦ (b : ℝ) - a) := by
-  have hqv_u := tendstoInMeasure_sq_sum_range hB (a := a) (b := b)
+      atTop (fun _ ↦ (b : ℝ) - a) :=
+  (tendstoInMeasure_sq_sum_range hB (a := a) (b := b)
     (fun n ↦ monotoneOn_interleave_midpoint (hmono n))
     (fun n ↦ by simp [ha n])
     (fun n ↦ by simp [hb n])
-    (fun n _ hj ↦ interleave_midpoint_step_le (hmono n) (hmesh n) hj) hδ
-  refine hqv_u.congr_left fun n ↦ ae_of_all _ fun ω ↦ ?_
-  rw [sum_range_two_mul]
-  refine sum_congr rfl fun i _ ↦ ?_
-  rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega]
-  simp only [TauCeti.interleave_two_mul, TauCeti.interleave_two_mul_add_one]
+    (fun n _ hj ↦ interleave_midpoint_step_le (hmono n) (hmesh n) hj) hδ).congr_left
+    fun n ↦ ae_of_all _ fun ω ↦
+      TauCeti.sum_range_two_mul_interleave (π n) _ (fun _ x y ↦ (B y ω - B x ω) ^ 2) (k n)
 
 /-- For any continuous function `g`, the alternating half-step Brownian quadratic sums
 `∑ g(B_{t_i}) ((B_{(t_i + t_{i+1}) / 2} - B_{t_i})² - (B_{t_{i+1}} - B_{(t_i + t_{i+1}) / 2})²)`
@@ -672,20 +633,12 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_add_of_boundedVariationOn
           ((B + A) (π n (i + 1)) ω - (B + A) (π n i) ω))
       atTop (fun ω ↦ H ((B + A) b ω) - H ((B + A) a ω)) := by
   have : IsProbabilityMeasure P := (hB.hasLaw_eval 0).isProbabilityMeasure
-  let grid : ∀ n, Fin (k n + 1) → ℝ≥0 := fun n j ↦ π n j
-  have hgrid : ∀ n, Monotone (grid n) := fun n i j hij ↦
-    hmono n (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
-  have hqv_grid := hB.tendstoInMeasure_quadraticSum_add_of_boundedVariationOn hgrid
+  have hqv := (hB.tendstoInMeasure_quadraticSum_add_of_boundedVariationOn
+    (fun n ↦ (hmono n).comp_fin_val_Iic)
     (fun n ↦ ha n) (fun n ↦ hb n)
     (fun n i ↦ grid_dist_le (hmono n) i.isLt (hmesh n i i.isLt))
-    hδ (fun n j ↦ hAmeas n j (Nat.le_of_lt_succ j.isLt)) hA
-  have hqv : TendstoInMeasure P
-      (fun n ω ↦ ∑ i ∈ range (k n), ((B + A) (π n (i + 1)) ω - (B + A) (π n i) ω) ^ 2)
-      atTop (fun _ ↦ (b : ℝ) - a) := by
-    refine hqv_grid.congr_left fun n ↦ ae_of_all _ fun ω ↦ ?_
-    rw [quadraticSum_def]
-    exact Fin.sum_univ_eq_sum_range
-      (fun i ↦ ((B + A) (π n (i + 1)) ω - (B + A) (π n i) ω) ^ 2) (k n)
+    hδ (fun n j ↦ hAmeas n j (Nat.le_of_lt_succ j.isLt)) hA).congr_left
+    fun n ↦ ae_of_all _ fun ω ↦ quadraticSum_comp_fin_val (B + A) (π n) ω
   exact TauCeti.Probability.tendstoInMeasure_sum_half_add_mul_sub
     (s := Icc a b) isCompact_Icc hh hH ha hb
     (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi)
@@ -718,8 +671,11 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
   let u (n : ℕ) : ℕ → ℝ≥0 := TauCeti.interleave (π n) fun i ↦ (π n i + π n (i + 1)) / 2
   have hu_mono (n : ℕ) : MonotoneOn (u n) (Set.Iic (2 * k n)) :=
     monotoneOn_interleave_midpoint (hmono n)
-  have hu_mesh (n : ℕ) : ∀ j < 2 * k n, (u n (j + 1) : ℝ) - u n j ≤ δ n :=
-    fun _ hj ↦ interleave_midpoint_step_le (hmono n) (hmesh n) hj
+  have hu_dist (n : ℕ) : ∀ i < k n,
+      dist ((π n i + π n (i + 1)) / 2) (π n i) ≤ δ n ∧
+      dist (π n (i + 1)) ((π n i + π n (i + 1)) / 2) ≤ δ n :=
+    (TauCeti.forall_lt_two_mul_interleave_succ_iff (R := fun _ x y ↦ dist y x ≤ δ n)).1
+      fun _ hj ↦ grid_dist_le (hu_mono n) hj (interleave_midpoint_step_le (hmono n) (hmesh n) hj)
   have hmem_mid (n i : ℕ) (hi : i < k n) : (π n i + π n (i + 1)) / 2 ∈ Icc a b := by
     simpa [u] using grid_mem_Icc (hu_mono n) (by simp [u, ha n]) (by simp [u, hb n])
       (show 2 * i + 1 ≤ 2 * k n by omega)
@@ -729,13 +685,8 @@ theorem tendstoInMeasure_sum_midpoint_mul_sub (hB : IsBrownianReal B P)
     (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi.le)
     hmem_mid
     (fun n _ hi ↦ grid_mem_Icc (hmono n) (ha n) (hb n) hi)
-    (fun n i hi ↦ by
-      simpa [u] using grid_dist_le (hu_mono n) (show 2 * i < 2 * k n by omega)
-        (hu_mesh n (2 * i) (by omega)))
-    (fun n i hi ↦ by
-      have h2 : 2 * i + 1 + 1 = 2 * (i + 1) := by omega
-      simpa [u, h2] using grid_dist_le (hu_mono n) (show 2 * i + 1 < 2 * k n by omega)
-        (hu_mesh n (2 * i + 1) (by omega)))
+    (fun n i hi ↦ (hu_dist n i hi).1)
+    (fun n i hi ↦ (hu_dist n i hi).2)
     hδ
     (fun n i _ ↦ (hB.aemeasurable _).aestronglyMeasurable)
     (fun n i _ ↦ (hB.aemeasurable _).aestronglyMeasurable)

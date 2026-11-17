@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Function.Basic
+public import Mathlib.Order.Fin.Basic
 public import Mathlib.Order.Interval.Set.Defs
 public import Mathlib.Order.Monotone.Defs
 public import Mathlib.Order.Nat
@@ -30,6 +31,8 @@ Interleaving two sequences `a` and `c` as `TauCeti.interleave a c`, namely
 
 * `StrictMonoOn.update`: a function strictly monotone on `s \ {a}`, updated at `a` to a value
   above its values before `a` and below its values after `a`, is strictly monotone on `s`.
+* `MonotoneOn.comp_fin_val`, `MonotoneOn.comp_fin_val_Iic`: restrict a function monotone on `Iio n`
+  or `Iic n` along `Fin.val` to obtain a `Monotone` function on `Fin n` or `Fin (n + 1)`.
 * `TauCeti.monotoneOn_interleave_Iic`: `TauCeti.interleave a c` is monotone on `Iic (2 * n)` when
   `a i ≤ c i` and `c i ≤ a (i + 1)` for `i < n`.
 -/
@@ -57,18 +60,23 @@ theorem StrictMonoOn.update {α β : Type*} [Preorder α] [Preorder β] [Decidab
   rw [update_of_ne hxa, update_of_ne hya]
   exact hf ⟨hx, hxa⟩ ⟨hy, hya⟩ hxy
 
+/-- Restricting a function monotone on `Iio n` along `Fin.val : Fin n → ℕ` yields a monotone
+function on `Fin n`. -/
+theorem MonotoneOn.comp_fin_val {α : Type*} [Preorder α] {n : ℕ} {f : ℕ → α}
+    (hf : MonotoneOn f (Iio n)) : Monotone (fun i : Fin n ↦ f i) :=
+  fun i j hij ↦ hf i.isLt j.isLt hij
+
+/-- Restricting a function monotone on `Iic n` along `Fin.val : Fin (n + 1) → ℕ` yields a monotone
+function on `Fin (n + 1)`. -/
+theorem MonotoneOn.comp_fin_val_Iic {α : Type*} [Preorder α] {n : ℕ} {f : ℕ → α}
+    (hf : MonotoneOn f (Iic n)) : Monotone (fun i : Fin (n + 1) ↦ f i) :=
+  fun i j hij ↦ hf (Nat.le_of_lt_succ i.isLt) (Nat.le_of_lt_succ j.isLt) hij
+
 /-- Interleaving `a 0, c 0, a 1, c 1, …, a n` via `TauCeti.interleave a c` produces a monotone
 sequence on `{0, …, 2 * n}` whenever `a i ≤ c i` and `c i ≤ a (i + 1)` for every `i < n`. -/
 theorem TauCeti.monotoneOn_interleave_Iic {α : Type*} [Preorder α] {n : ℕ} {a c : ℕ → α}
     (hac : ∀ i < n, a i ≤ c i ∧ c i ≤ a (i + 1)) :
-    MonotoneOn (TauCeti.interleave a c) (Iic (2 * n)) := by
-  refine monotoneOn_of_le_add_one ordConnected_Iic fun j _ _ hj ↦ ?_
-  have hjlt : j < 2 * n := Nat.lt_of_succ_le hj
-  set i := j / 2
-  by_cases hmod : j % 2 = 0
-  · rw [show j = 2 * i by omega]
-    simpa using (hac i (by omega)).1
-  · have h1 : j = 2 * i + 1 := by omega
-    have h2 : j + 1 = 2 * (i + 1) := by omega
-    rw [h2, h1]
-    simpa using (hac i (by omega)).2
+    MonotoneOn (TauCeti.interleave a c) (Iic (2 * n)) :=
+  monotoneOn_of_le_add_one ordConnected_Iic fun j _ _ hj ↦
+    (TauCeti.forall_lt_two_mul_interleave_succ_iff (R := fun _ x y ↦ x ≤ y)).2 hac j
+      (Nat.lt_of_succ_le hj)

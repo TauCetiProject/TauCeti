@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.Finset.Basic
 public import Mathlib.Algebra.BigOperators.Intervals
 public import Mathlib.Algebra.BigOperators.NatAntidiagonal
 public import Mathlib.Algebra.Algebra.Defs
+public import TauCeti.Data.Stream.Init
 import Mathlib.Algebra.Algebra.Basic
 import Mathlib.Algebra.BigOperators.GroupWithZero.Action
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -78,6 +79,8 @@ as those of noncrossing partitions, into sums over `Finset.range`.
   sum over `range (n * q)` into `q` consecutive blocks of `n` terms.
 * `Finset.prod_range_two_mul`, `Finset.sum_range_two_mul`: pair consecutive even and odd terms in
   a product or sum over `range (2 * n)`.
+* `TauCeti.prod_range_two_mul_interleave`, `TauCeti.sum_range_two_mul_interleave`: pair
+  consecutive steps of `TauCeti.interleave a c` in a product or sum over `range (2 * n)`.
 * `Finset.sum_range_two_mul_succ`: the sum `∑_{i=1}^{m} 2i` of the first `m` positive even
   numbers is `m (m + 1)`.
 * `Finset.sum_range_add_two_mul`: the sum `∑_{j<J} (D + 2j + 1)` of an arithmetic progression
@@ -332,6 +335,22 @@ end Finset
 namespace TauCeti
 
 open Finset
+
+/-- A product over `range (2 * n)` depending on an index `j` and consecutive entries of
+`TauCeti.interleave a c` pairs each even-step factor `(2 * i, a i, c i)` with the adjacent
+odd-step factor `(2 * i + 1, c i, a (i + 1))`. -/
+@[to_additive sum_range_two_mul_interleave
+  /-- A sum over `range (2 * n)` depending on an index `j` and consecutive entries of
+  `TauCeti.interleave a c` pairs each even-step term `(2 * i, a i, c i)` with the adjacent
+  odd-step term `(2 * i + 1, c i, a (i + 1))`. -/]
+theorem prod_range_two_mul_interleave {α M : Type*} [CommMonoid M]
+    (a c : ℕ → α) (F : ℕ → α → α → M) (n : ℕ) :
+    ∏ j ∈ range (2 * n), F j (interleave a c j) (interleave a c (j + 1)) =
+      ∏ i ∈ range n, (F (2 * i) (a i) (c i) * F (2 * i + 1) (c i) (a (i + 1))) := by
+  rw [prod_range_two_mul]
+  refine prod_congr rfl fun i _ ↦ ?_
+  rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega]
+  simp only [interleave_two_mul, interleave_two_mul_add_one]
 
 /-- Replacing a summation over `Finset.Ioo 0 n` by one over `Finset.range n`, provided the
 summand at `0` vanishes. -/

@@ -33,6 +33,10 @@ plain sequences `ℕ → α`.
 * `TauCeti.interleave_two_mul_add_one`: `interleave s₁ s₂ (2 * n + 1) = s₂ n`.
 * `TauCeti.interleave_apply`:
   `interleave s₁ s₂ n = if n % 2 = 0 then s₁ (n / 2) else s₂ (n / 2)`.
+* `TauCeti.forall_interleave_iff`: reduce a universal property at `(j, interleave s₁ s₂ j)` to its
+  even and odd cases `(2 * i, s₁ i)` and `(2 * i + 1, s₂ i)`.
+* `TauCeti.forall_lt_two_mul_interleave_iff`: bounded version for `j < 2 * n`.
+* `TauCeti.forall_lt_two_mul_interleave_succ_iff`: consecutive-pair version for `j < 2 * n`.
 -/
 
 public section
@@ -65,14 +69,44 @@ theorem interleave_two_mul_add_one (s₁ s₂ : ℕ → α) (n : ℕ) :
     interleave s₁ s₂ (2 * n + 1) = s₂ n :=
   Stream'.get_interleave_right n s₁ s₂
 
+/-- A predicate holds at `(j, interleave s₁ s₂ j)` for every `j` iff it holds at `(2 * i, s₁ i)`
+and `(2 * i + 1, s₂ i)` for every `i`. -/
+theorem forall_interleave_iff {s₁ s₂ : ℕ → α} {P : ℕ → α → Prop} :
+    (∀ j, P j (interleave s₁ s₂ j)) ↔ ∀ i, P (2 * i) (s₁ i) ∧ P (2 * i + 1) (s₂ i) := by
+  refine ⟨fun h i ↦ ⟨by simpa using h (2 * i), by simpa using h (2 * i + 1)⟩, fun h j ↦ ?_⟩
+  by_cases hmod : j % 2 = 0
+  · rw [show j = 2 * (j / 2) by omega]
+    simpa using (h (j / 2)).1
+  · rw [show j = 2 * (j / 2) + 1 by omega]
+    simpa using (h (j / 2)).2
+
+/-- A predicate holds at `(j, interleave s₁ s₂ j)` for every `j < 2 * n` iff it holds at
+`(2 * i, s₁ i)` and `(2 * i + 1, s₂ i)` for every `i < n`. -/
+theorem forall_lt_two_mul_interleave_iff {s₁ s₂ : ℕ → α} {n : ℕ} {P : ℕ → α → Prop} :
+    (∀ j < 2 * n, P j (interleave s₁ s₂ j)) ↔
+      ∀ i < n, P (2 * i) (s₁ i) ∧ P (2 * i + 1) (s₂ i) := by
+  rw [forall_interleave_iff (P := fun j x ↦ j < 2 * n → P j x)]
+  exact ⟨fun h i hi ↦ ⟨(h i).1 (by omega), (h i).2 (by omega)⟩,
+    fun h i ↦ ⟨fun hi ↦ (h i (by omega)).1, fun hi ↦ (h i (by omega)).2⟩⟩
+
+/-- A relation holds on consecutive entries `interleave s₁ s₂ j` and `interleave s₁ s₂ (j + 1)` for
+every `j < 2 * n` iff it holds on `(2 * i, s₁ i, s₂ i)` and `(2 * i + 1, s₂ i, s₁ (i + 1))` for
+every `i < n`. -/
+theorem forall_lt_two_mul_interleave_succ_iff {s₁ s₂ : ℕ → α} {n : ℕ} {R : ℕ → α → α → Prop} :
+    (∀ j < 2 * n, R j (interleave s₁ s₂ j) (interleave s₁ s₂ (j + 1))) ↔
+      ∀ i < n, R (2 * i) (s₁ i) (s₂ i) ∧ R (2 * i + 1) (s₂ i) (s₁ (i + 1)) := by
+  rw [forall_lt_two_mul_interleave_iff (P := fun j x ↦ R j x (interleave s₁ s₂ (j + 1)))]
+  refine forall₂_congr fun i _ ↦ ?_
+  rw [show 2 * i + 1 + 1 = 2 * (i + 1) by omega, interleave_two_mul, interleave_two_mul_add_one]
+
 /-- Evaluating `interleave s₁ s₂` at `n` yields `s₁ (n / 2)` for even `n` and `s₂ (n / 2)` for
 odd `n`. -/
 theorem interleave_apply (s₁ s₂ : ℕ → α) (n : ℕ) :
-    interleave s₁ s₂ n = if n % 2 = 0 then s₁ (n / 2) else s₂ (n / 2) := by
-  by_cases h : n % 2 = 0
-  · conv_lhs => rw [show n = 2 * (n / 2) by omega]
-    simp [h]
-  · conv_lhs => rw [show n = 2 * (n / 2) + 1 by omega]
-    simp [h]
+    interleave s₁ s₂ n = if n % 2 = 0 then s₁ (n / 2) else s₂ (n / 2) :=
+  (forall_interleave_iff (s₁ := s₁) (s₂ := s₂)
+    (P := fun k x ↦ x = if k % 2 = 0 then s₁ (k / 2) else s₂ (k / 2))).2 (fun i ↦ by
+      constructor
+      · simp [show (2 * i) % 2 = 0 by omega, show (2 * i) / 2 = i by omega]
+      · simp [show (2 * i + 1) / 2 = i by omega]) n
 
 end TauCeti

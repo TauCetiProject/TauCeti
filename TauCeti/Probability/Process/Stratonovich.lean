@@ -91,18 +91,14 @@ theorem tendstoInMeasure_sum_sub_mul_sub_sub_deriv_mul_sq [IsFiniteMeasure P]
     · have := hXmeas n i (mem_range.1 hi).le
       have := hXmeas n (i + 1) (mem_range.1 hi)
       fun_prop
-  refine tendstoInMeasure_of_tendsto_of_continuousOn hs
-    (ι := fun n ↦ Fin (k n))
-    (u := fun n i ↦ π n i) (v := fun n i ↦ π n ((i : ℕ) + 1))
-    (fun n i ↦ hmem n i i.isLt.le) (fun n i ↦ hmem n ((i : ℕ) + 1) i.isLt)
-    (fun n i ↦ hmesh n i i.isLt) hδ hc hV hm ?_
+  refine tendstoInMeasure_of_tendsto_of_continuousOn_range hs hmem hmesh hδ hc hV hm ?_
   intro ω idx L R d hLR hd_le hd hQ
   exact TauCeti.tendsto_sum_sub_mul_sub_sub_deriv_mul_sq
     (x := fun j i ↦ X (π (idx j) i) ω) (n := fun j ↦ k (idx j)) (δ := d)
     (fun z _ ↦ (hh.differentiable_one z).hasDerivAt.hasDerivWithinAt)
     hh.continuous_deriv_one.continuousOn
     (Eventually.of_forall fun j i hi ↦ hLR _ (hmem (idx j) i hi))
-    (Eventually.of_forall fun j i hi ↦ hd_le j ⟨i, hi⟩)
+    (Eventually.of_forall hd_le)
     hd hQ.isBoundedUnder_le
 
 /-- When `H` has derivative `h` and `h` is `C¹`, the difference between the symmetric-endpoint sum
@@ -138,11 +134,7 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_sub [IsFiniteMeasure P]
     have := hXmeas n i (mem_range.1 hi).le
     have := hXmeas n (i + 1) (mem_range.1 hi)
     fun_prop
-  refine tendstoInMeasure_of_tendsto_of_continuousOn hs
-    (ι := fun n ↦ Fin (k n))
-    (u := fun n i ↦ π n i) (v := fun n i ↦ π n ((i : ℕ) + 1))
-    (fun n i ↦ hmem n i i.isLt.le) (fun n i ↦ hmem n ((i : ℕ) + 1) i.isLt)
-    (fun n i ↦ hmesh n i i.isLt) hδ hc hV hm ?_
+  refine tendstoInMeasure_of_tendsto_of_continuousOn_range hs hmem hmesh hδ hc hV hm ?_
   intro ω idx L R d hLR hd_le hd hQ
   exact TauCeti.tendsto_sum_half_add_mul_sub_sub
     (x := fun j i ↦ X (π (idx j) i) ω) (n := fun j ↦ k (idx j)) (δ := d)
@@ -150,7 +142,7 @@ theorem tendstoInMeasure_sum_half_add_mul_sub_sub [IsFiniteMeasure P]
     (fun z _ ↦ (hh.differentiable_one z).hasDerivAt.hasDerivWithinAt)
     hh.continuous_deriv_one.continuousOn
     (Eventually.of_forall fun j i hi ↦ hLR _ (hmem (idx j) i hi))
-    (Eventually.of_forall fun j i hi ↦ hd_le j ⟨i, hi⟩)
+    (Eventually.of_forall hd_le)
     hd hQ.isBoundedUnder_le
 
 /-- **Symmetric-endpoint Stratonovich chain rule for continuous processes.** Along partitions of a

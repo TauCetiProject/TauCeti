@@ -23,6 +23,8 @@ unweighted quadratic sum) and invokes sample-path continuity on a compact set `s
 extraction, Heine–Cantor uniform continuity, and compact image boundedness into a single principle
 yielding `MeasureTheory.TendstoInMeasure` on any finite measure space, with no adaptedness,
 martingale, or moment assumption on the process `X`.
+`TauCeti.Probability.tendstoInMeasure_of_tendsto_of_continuousOn_range` specializes this principle
+to `ℕ`-indexed grids `π n 0, …, π n (k n)` indexed over `Finset.range (k n)`.
 
 ## References
 
@@ -88,5 +90,33 @@ theorem tendstoInMeasure_of_tendsto_of_continuousOn
   have hnorm := norm_le_pi_norm (fun m : Fin (Fintype.card (ι (idx j))) ↦
     X (v (idx j) ((e (idx j)).symm m)) ω - X (u (idx j) ((e (idx j)).symm m)) ω) (e (idx j) i)
   simpa only [Real.norm_eq_abs, (e (idx j)).symm_apply_apply] using hnorm
+
+/-- Specialization of `tendstoInMeasure_of_tendsto_of_continuousOn` to `ℕ`-indexed grids
+`π n 0, π n 1, …, π n (k n)` in `s`: provides the compact range bound on `s` and the vanishing
+increment bound `|X (π (idx j) (i + 1)) ω - X (π (idx j) i) ω| ≤ d j` for all `i < k (idx j)`. -/
+theorem tendstoInMeasure_of_tendsto_of_continuousOn_range
+    {Ω T E G : Type*} {_ : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+    [PseudoMetricSpace T] [PseudoEMetricSpace E] [PseudoEMetricSpace G]
+    {X : T → Ω → ℝ} {s : Set T} (hs : IsCompact s)
+    {k : ℕ → ℕ} {π : ℕ → ℕ → T} (hmem : ∀ n, ∀ i ≤ k n, π n i ∈ s)
+    {δ : ℕ → ℝ} (hmesh : ∀ n, ∀ i < k n, dist (π n (i + 1)) (π n i) ≤ δ n)
+    (hδ : Tendsto δ atTop (𝓝 0))
+    (hc : ∀ᵐ ω ∂P, ContinuousOn (X · ω) s)
+    {Q : ℕ → Ω → G} {V : Ω → G} (hV : TendstoInMeasure P Q atTop V)
+    {F : ℕ → Ω → E} {g : Ω → E} (hF : ∀ n, AEStronglyMeasurable (F n) P)
+    (hlim : ∀ (ω : Ω) (idx : ℕ → ℕ) (L R : ℝ) (d : ℕ → ℝ),
+      (∀ t ∈ s, X t ω ∈ Icc L R) →
+      (∀ j, ∀ i < k (idx j), |X (π (idx j) (i + 1)) ω - X (π (idx j) i) ω| ≤ d j) →
+      Tendsto d atTop (𝓝 0) →
+      Tendsto (fun j ↦ Q (idx j) ω) atTop (𝓝 (V ω)) →
+      Tendsto (fun j ↦ F (idx j) ω) atTop (𝓝 (g ω))) :
+    TendstoInMeasure P F atTop g :=
+  tendstoInMeasure_of_tendsto_of_continuousOn hs
+    (ι := fun n ↦ Fin (k n))
+    (u := fun n i ↦ π n i) (v := fun n i ↦ π n ((i : ℕ) + 1))
+    (fun n i ↦ hmem n i i.isLt.le) (fun n i ↦ hmem n ((i : ℕ) + 1) i.isLt)
+    (fun n i ↦ hmesh n i i.isLt) hδ hc hV hF
+    fun ω idx L R d hLR hd_le hd hQ ↦
+      hlim ω idx L R d hLR (fun j i hi ↦ hd_le j ⟨i, hi⟩) hd hQ
 
 end TauCeti.Probability
