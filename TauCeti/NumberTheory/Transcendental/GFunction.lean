@@ -13,9 +13,9 @@ import Mathlib.NumberTheory.Chebyshev
 
 Siegel introduced G-functions alongside E-functions in 1929 to study Diophantine approximation and
 linear/algebraic relations among values at algebraic points of locally analytic solutions to linear
-differential equations over `ℚ̄(z)` — including algebraic functions, logarithms, polylogarithms,
-Gauss hypergeometric series, and periods of algebraic families of varieties (later developed by
-Galochkin, Bombieri, Chudnovsky, and André).
+differential equations with rational function coefficients over `algebraicClosure ℚ ℂ` — including
+algebraic functions, logarithms, polylogarithms, Gauss hypergeometric series, and periods of
+algebraic families of varieties (later developed by Galochkin, Bombieri, Chudnovsky, and André).
 
 A formal power series `∑ aₙ Xⁿ` defines a *G-function* (`TauCeti.IsGFunction a`) when its
 coefficient sequence `a : ℕ → ℂ` satisfies the same arithmetic growth conditions as an E-function
@@ -31,8 +31,9 @@ Because formal Borel division `aₙ ↦ aₙ / n!` preserves and reflects D-fini
 (`TauCeti.isDFinite_ePowerSeries_iff`), a sequence `a` defines a G-function if and only if it
 defines an E-function (`TauCeti.isGFunction_iff_isEFunction`). Consequently all coefficients of a
 G-function lie in a common number field, while the geometric modulus bound `‖aₙ‖ ≤ C ^ (n + 1)`
-implies that `PowerSeries.mk a` has positive convergence radius at least `C⁻¹`
-(`TauCeti.IsGFunction.radius_pos`) and represents an analytic function on a disc around `0`.
+implies that `PowerSeries.mk a` has convergence radius at least `C⁻¹`
+(`PowerSeries.inv_le_radius_of_norm_coeff_le_mul_pow`), hence positive radius
+(`TauCeti.IsGFunction.radius_pos`), and represents an analytic function on a disc around `0`.
 G-functions are closed under addition, scalar multiplication, shifts
 (`TauCeti.IsGFunction.shift`, `TauCeti.IsGFunction.comp_add_right`), rescaling, Galois conjugation,
 formal differentiation, and Cauchy convolution (`TauCeti.IsGFunction.sum_antidiagonal_mul`).
@@ -81,7 +82,7 @@ structure IsGFunction (a : ℕ → ℂ) : Prop where
   /-- Every Taylor coefficient `aₙ` is algebraic over `ℚ`. -/
   isAlgebraic : ∀ n, IsAlgebraic ℚ (a n)
   /-- The ordinary generating series `PowerSeries.mk a = ∑ aₙ Xⁿ` satisfies a nonzero linear
-  differential equation with polynomial coefficients over `ℚ̄`. -/
+  differential equation with polynomial coefficients over `algebraicClosure ℚ ℂ`. -/
   isDFinite : PowerSeries.IsDFinite (algebraicClosure ℚ ℂ) (PowerSeries.mk a)
   /-- Geometric house bound: every complex root of `minpoly ℚ (aₙ)` has modulus at most
   `C ^ (n + 1)` for a uniform constant `C > 0` (using exponent `n + 1` so `n = 0` is included
@@ -135,24 +136,13 @@ theorem exists_numberField {a : ℕ → ℂ} (ha : IsGFunction a) :
 
 /-! ### Convergence on a disc of positive radius -/
 
-private theorem inv_le_radius_of_norm_le {a : ℕ → ℂ} {C : ℝ} (hC : 0 < C)
-    (hnorm : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) :
-    (Real.toNNReal C⁻¹ : ℝ≥0∞) ≤ (PowerSeries.mk a).radius := by
-  refine PowerSeries.le_radius_of_bound C fun n ↦ ?_
-  calc ‖PowerSeries.coeff n (PowerSeries.mk a)‖ * (Real.toNNReal C⁻¹ : ℝ) ^ n
-      = ‖a n‖ * (C⁻¹) ^ n := by
-        rw [PowerSeries.coeff_mk, Real.coe_toNNReal C⁻¹ (inv_nonneg.mpr hC.le)]
-    _ ≤ C ^ (n + 1) * (C⁻¹) ^ n := by gcongr; exact hnorm n
-    _ = C * (C * C⁻¹) ^ n := by rw [pow_succ', mul_pow, mul_assoc]
-    _ = C := by rw [mul_inv_cancel₀ hC.ne', one_pow, mul_one]
-
 /-- A G-function has positive formal radius of convergence. -/
 theorem radius_pos {a : ℕ → ℂ} (ha : IsGFunction a) :
     0 < (PowerSeries.mk a).radius := by
   obtain ⟨C, hC, hnorm⟩ := ha.exists_norm_le
-  have hr_pos : (0 : ℝ≥0∞) < Real.toNNReal C⁻¹ :=
-    ENNReal.coe_pos.mpr (Real.toNNReal_pos.mpr (inv_pos.mpr hC))
-  exact hr_pos.trans_le (inv_le_radius_of_norm_le hC hnorm)
+  exact (ENNReal.inv_pos.mpr ENNReal.coe_ne_top).trans_le <|
+    PowerSeries.inv_le_radius_of_norm_coeff_le_mul_pow (B := C) (C := Real.toNNReal C) fun n ↦ by
+      simpa [Real.coe_toNNReal C hC.le, pow_succ'] using hnorm n
 
 /-- A G-function represents the analytic sum `z ↦ ∑' n, a n * z ^ n` on the open ball of radius
 `(PowerSeries.mk a).radius` around `0`. -/
@@ -176,10 +166,8 @@ power series around `0`. -/
 theorem exists_hasFPowerSeriesOnBall {a : ℕ → ℂ} (ha : IsGFunction a) :
     ∃ r : ℝ≥0, 0 < r ∧ HasFPowerSeriesOnBall (fun z ↦ ∑' n, a n * z ^ n)
       (FormalMultilinearSeries.ofScalars ℂ a) 0 r := by
-  obtain ⟨C, hC, hnorm⟩ := ha.exists_norm_le
-  have hr_pos : 0 < Real.toNNReal C⁻¹ := Real.toNNReal_pos.mpr (inv_pos.mpr hC)
-  exact ⟨Real.toNNReal C⁻¹, hr_pos,
-    ha.hasFPowerSeriesOnBall.mono (ENNReal.coe_pos.mpr hr_pos) (inv_le_radius_of_norm_le hC hnorm)⟩
+  obtain ⟨r, hr, hrad⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp ha.radius_pos
+  exact ⟨r, by simpa using hr, ha.hasFPowerSeriesOnBall.mono hr hrad.le⟩
 
 /-- The series `∑ aₙ zⁿ` of a G-function is summable on a disc `{z : ℂ | ‖z‖ < r}` of positive
 radius `r > 0`. -/

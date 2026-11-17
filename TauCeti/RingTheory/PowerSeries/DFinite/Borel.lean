@@ -21,9 +21,10 @@ the ordinary generating series `PowerSeries.mk a = ∑ aₙ Xⁿ` is D-finite ov
 In transcendence theory, this formal Borel equivalence is the algebraic core of the bijection
 between Siegel's G-functions `∑ aₙ zⁿ` and Siegel's E-functions `∑ aₙ zⁿ / n!`: both classes share
 the same geometric house and denominator bounds on `aₙ`, and differ only in whether
-`PowerSeries.mk a` or `ePowerSeries a` satisfies a linear differential equation over `ℚ̄[X]`.
-Passing to `PowerSeries.mk a` also transfers P-recursive coefficient properties (such as
-containment of all algebraic coefficients in a single number field) directly to E-functions.
+`PowerSeries.mk a` or `ePowerSeries a` satisfies a linear differential equation over
+`(algebraicClosure ℚ ℂ)[X]`. Passing to `PowerSeries.mk a` also transfers P-recursive coefficient
+properties (such as containment of all algebraic coefficients in a single number field) directly to
+E-functions.
 
 ## Main results
 

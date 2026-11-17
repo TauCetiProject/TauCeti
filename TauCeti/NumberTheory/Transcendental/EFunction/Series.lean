@@ -14,6 +14,7 @@ public import TauCeti.RingTheory.PowerSeries.Radius
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.SmoothSeries
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
+import TauCeti.Algebra.Order.GroupWithZero.Pow
 
 /-!
 # Factorial-divided power series `eFun` under geometric coefficient bounds
@@ -28,20 +29,25 @@ corresponding to the formal Borel series `TauCeti.ePowerSeries a = ∑ (aₙ / n
 In transcendence theory, Siegel's E-functions are entire functions of the form `eFun a` whose
 coefficients satisfy algebraic, differential, and arithmetic growth hypotheses. Separating out the
 purely analytic consequences of the geometric modulus bound `‖aₙ‖ ≤ C ^ (n + 1)` allows entireness,
-Taylor-series representation, termwise complex differentiation, and evaluation of sums, differences,
-and Hurwitz products (including auxiliary quotient series such as `divOneSubSeq`) to be applied
-before establishing full E-function closure.
+Taylor-series representation, termwise complex differentiation, evaluation of sums, differences,
+and Hurwitz products, and division by `1 - z` at a zero at `1` (`TauCeti.divOneSubSeq`) to be
+applied before establishing full E-function closure or arithmetic bounds.
 
 Whenever `‖aₙ‖ ≤ C ^ (n + 1)` for all `n` (with any real constant `C`, automatically nonnegative
 from `n = 0`), `ePowerSeries a` has infinite radius of convergence, `eFun a` is represented by its
 Taylor series on `Metric.eball 0 ⊤` (hence analytic and complex-differentiable on all of `ℂ`),
 complex differentiation shifts `a` by `1` (`deriv (eFun a) = eFun fun n ↦ a (n + 1)`), and the
 Hurwitz convolution evaluates to the pointwise product (`eFun (hurwitzMul a b) z = eFun a z *
-eFun b z`).
+eFun b z`). If moreover `eFun a 1 = 0`, dividing `ePowerSeries a` by `1 - X` produces the
+normalized quotient sequence `divOneSubSeq a n = n! * ∑ k ≤ n, aₖ / k!`, which inherits a
+geometric modulus bound (`TauCeti.norm_divOneSubSeq_le`) and satisfies the analytic identity
+`(1 - z) * eFun (divOneSubSeq a) z = eFun a z` (`TauCeti.one_sub_mul_eFun_divOneSubSeq_of_norm_le`).
 
 ## Main definitions
 
 * `TauCeti.eFun a`: the analytic sum `z ↦ ∑' n, aₙ * zⁿ / n!`.
+* `TauCeti.divOneSubSeq a`: the coefficient sequence `n ↦ n! * ∑ k ≤ n, aₖ / k!` of the quotient
+  of `ePowerSeries a` by `1 - X`.
 
 ## Main results
 
@@ -54,6 +60,9 @@ eFun b z`).
 * `TauCeti.eFun_add_of_norm_le`, `TauCeti.eFun_sub_of_norm_le`,
   `TauCeti.eFun_hurwitzMul_of_norm_le`: `eFun` preserves addition, subtraction, and Hurwitz
   products under geometric coefficient bounds.
+* `TauCeti.one_sub_X_mul_ePowerSeries_divOneSubSeq`, `TauCeti.norm_divOneSubSeq_le`,
+  `TauCeti.one_sub_mul_eFun_divOneSubSeq_of_norm_le`: formal identity, geometric modulus bound,
+  and analytic quotient identity for `divOneSubSeq`.
 -/
 
 public section
@@ -213,20 +222,12 @@ theorem differentiable_eFun_of_norm_le {a : ℕ → ℂ} {C : ℝ}
     Differentiable ℂ (eFun a) :=
   differentiableOn_univ.mp (analyticOnNhd_eFun_of_norm_le ha).differentiableOn
 
-private theorem shift_norm_le {a : ℕ → ℂ} {C : ℝ} (ha : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (n : ℕ) :
-    ‖a (n + 1)‖ ≤ (max 1 C ^ 2) ^ (n + 1) := by
-  have hC : 0 ≤ C := by simpa using (norm_nonneg (a 0)).trans (ha 0)
-  refine (ha (n + 1)).trans ?_
-  calc C ^ (n + 2)
-      ≤ max 1 C ^ (n + 2) := pow_le_pow_left₀ hC (le_max_right 1 C) (n + 2)
-    _ ≤ max 1 C ^ (2 * (n + 1)) := pow_le_pow_right₀ (le_max_left 1 C) (by omega)
-    _ = (max 1 C ^ 2) ^ (n + 1) := by rw [pow_mul]
-
 /-- Under `‖a n‖ ≤ C ^ (n + 1)`, `eFun a` has complex derivative `eFun (fun n ↦ a (n + 1)) z` at
 every `z : ℂ`. -/
 theorem hasDerivAt_eFun_of_norm_le {a : ℕ → ℂ} {C : ℝ}
     (ha : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (z : ℂ) :
     HasDerivAt (eFun a) (eFun (fun n ↦ a (n + 1)) z) z := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg (a 0)).trans (ha 0)
   set R : ℝ := ‖z‖ + 1
   have hR : 0 < R := by positivity
   let g : ℕ → ℂ → ℂ := fun n w ↦ a n * w ^ n / n.factorial
@@ -235,7 +236,8 @@ theorem hasDerivAt_eFun_of_norm_le {a : ℕ → ℂ} {C : ℝ}
   let u : ℕ → ℝ := fun n ↦
     if n = 0 then 0 else ‖a n‖ * R ^ (n - 1) / (n - 1).factorial
   have hu_shift : Summable fun n : ℕ ↦ u (n + 1) := by
-    simpa [u] using summable_norm_eFun_term_of_norm_le (shift_norm_le ha) hR.le
+    simpa [u] using summable_norm_eFun_term_of_norm_le
+      (fun n ↦ (ha (n + 1)).trans (pow_le_max_one_pow_pow hC (k := 2) (by omega))) hR.le
   have hu : Summable u := (summable_nat_add_iff 1).mp hu_shift
   have hg : ∀ n w, w ∈ Metric.ball (0 : ℂ) R → HasDerivAt (g n) (g' n w) w := by
     intro n w _
@@ -286,7 +288,9 @@ theorem iteratedDeriv_eFun_of_norm_le {a : ℕ → ℂ} {C : ℝ}
     ext z
     simp
   | succ m ih =>
-    rw [iteratedDeriv_succ', deriv_eFun_of_norm_le ha, ih (shift_norm_le ha)]
+    have hC : 0 ≤ C := by simpa using (norm_nonneg (a 0)).trans (ha 0)
+    rw [iteratedDeriv_succ', deriv_eFun_of_norm_le ha,
+      ih fun n ↦ (ha (n + 1)).trans (pow_le_max_one_pow_pow hC (k := 2) (by omega))]
     simp_rw [Nat.add_assoc]
 
 /-- Under geometric bounds, `eFun` preserves addition. -/
@@ -310,5 +314,128 @@ theorem eFun_hurwitzMul_of_norm_le {a b : ℕ → ℂ} {C₁ C₂ : ℝ}
     eFun (hurwitzMul a b) z = eFun a z * eFun b z := by
   simp only [eFun_eq_evalAt_ePowerSeries, ePowerSeries_hurwitzMul]
   exact (isEntire_ePowerSeries_of_norm_le ha).evalAt_mul (isEntire_ePowerSeries_of_norm_le hb) z
+
+/-! ### Division by `1 - z` at a zero at `1` -/
+
+/-- Given `a : ℕ → ℂ`, the normalized coefficient sequence
+`divOneSubSeq a n = n! * ∑ k ∈ Finset.range (n + 1), a k / k!` of `(1 - X)⁻¹ * ePowerSeries a`. -/
+noncomputable def divOneSubSeq (a : ℕ → ℂ) (n : ℕ) : ℂ :=
+  n.factorial * ∑ k ∈ Finset.range (n + 1), a k / k.factorial
+
+/-- Unfolding `divOneSubSeq`. -/
+theorem divOneSubSeq_def (a : ℕ → ℂ) (n : ℕ) :
+    divOneSubSeq a n = n.factorial * ∑ k ∈ Finset.range (n + 1), a k / k.factorial :=
+  (rfl)
+
+/-- Applying `divOneSubSeq a` at `0` gives `a 0`. -/
+@[simp]
+theorem divOneSubSeq_apply_zero (a : ℕ → ℂ) : divOneSubSeq a 0 = a 0 := by
+  simp [divOneSubSeq_def]
+
+/-- `divOneSubSeq` maps the zero sequence to `0`. -/
+@[simp]
+theorem divOneSubSeq_zero : divOneSubSeq 0 = 0 := by
+  ext n
+  simp [divOneSubSeq_def]
+
+/-- Step recurrence for `divOneSubSeq`:
+`divOneSubSeq a (n + 1) = (n + 1) * divOneSubSeq a n + a (n + 1)`. -/
+theorem divOneSubSeq_succ (a : ℕ → ℂ) (n : ℕ) :
+    divOneSubSeq a (n + 1) = (n + 1) * divOneSubSeq a n + a (n + 1) := by
+  have hnf : ((n + 1).factorial : ℂ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero (n + 1))
+  rw [divOneSubSeq_def, divOneSubSeq_def, Finset.sum_range_succ, mul_add,
+    mul_div_cancel₀ _ hnf, Nat.factorial_succ, Nat.cast_mul, Nat.cast_add, Nat.cast_one,
+    mul_assoc]
+
+/-- Applying a ring endomorphism `σ : ℂ →+* ℂ` commutes with `divOneSubSeq` at each index. -/
+theorem map_divOneSubSeq (σ : ℂ →+* ℂ) (a : ℕ → ℂ) (n : ℕ) :
+    σ (divOneSubSeq a n) = divOneSubSeq (σ ∘ a) n := by
+  simp [divOneSubSeq_def]
+
+/-- Post-composing with a ring endomorphism `σ : ℂ →+* ℂ` commutes with `divOneSubSeq`. -/
+theorem comp_divOneSubSeq (σ : ℂ →+* ℂ) (a : ℕ → ℂ) :
+    σ ∘ divOneSubSeq a = divOneSubSeq (σ ∘ a) :=
+  funext (map_divOneSubSeq σ a)
+
+/-- Formal identity `(1 - X) * ePowerSeries (divOneSubSeq a) = ePowerSeries a`. -/
+@[simp]
+theorem one_sub_X_mul_ePowerSeries_divOneSubSeq (a : ℕ → ℂ) :
+    (1 - PowerSeries.X) * ePowerSeries (divOneSubSeq a) = ePowerSeries a := by
+  have hcoeff (n : ℕ) :
+      PowerSeries.coeff n (ePowerSeries (divOneSubSeq a)) =
+        ∑ k ∈ Finset.range (n + 1), a k / k.factorial := by
+    rw [coeff_ePowerSeries, divOneSubSeq_def,
+      mul_div_cancel_left₀ _ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n))]
+  ext n
+  cases n with
+  | zero => simp [sub_mul]
+  | succ n =>
+    rw [sub_mul, one_mul, map_sub, PowerSeries.coeff_succ_X_mul, hcoeff, hcoeff,
+      Finset.sum_range_succ, add_sub_cancel_left, coeff_ePowerSeries]
+
+/-- If `‖a n‖ ≤ C ^ (n + 1)` for all `n` and `eFun a 1 = 0`, then `divOneSubSeq a` satisfies the
+geometric modulus bound `‖divOneSubSeq a n‖ ≤ (max 1 C ^ 2 * Real.exp C) ^ (n + 1)`. -/
+theorem norm_divOneSubSeq_le {a : ℕ → ℂ} {C : ℝ}
+    (ha : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (hz : eFun a 1 = 0) (n : ℕ) :
+    ‖divOneSubSeq a n‖ ≤ (max 1 C ^ 2 * Real.exp C) ^ (n + 1) := by
+  have hC : 0 ≤ C := by simpa using (norm_nonneg (a 0)).trans (ha 0)
+  have hsum1 : Summable fun k : ℕ ↦ a k / k.factorial := by
+    simpa using summable_eFun_term_of_norm_le ha 1
+  have hz0 : (∑' k : ℕ, a k / k.factorial) = 0 := by simpa [eFun_def] using hz
+  have hsplit := hsum1.sum_add_tsum_nat_add (n + 1)
+  rw [hz0] at hsplit
+  have htail := eq_neg_of_add_eq_zero_left hsplit
+  have hterm_le (m : ℕ) :
+      ‖(n.factorial : ℂ) * (a (m + (n + 1)) / (m + (n + 1)).factorial)‖ ≤
+        C ^ (n + 2) * (C ^ m / m.factorial) := by
+    have hfac_le : n.factorial * m.factorial ≤ (m + (n + 1)).factorial :=
+      calc n.factorial * m.factorial
+          ≤ (n + 1).factorial * m.factorial :=
+            Nat.mul_le_mul_right _ (Nat.factorial_le (Nat.le_succ n))
+        _ = 1 * (m.factorial * (n + 1).factorial) := by ring
+        _ ≤ (m + (n + 1)).choose (n + 1) * (m.factorial * (n + 1).factorial) :=
+            Nat.mul_le_mul_right _ (Nat.choose_pos (Nat.le_add_left (n + 1) m))
+        _ = (m + (n + 1)).factorial := by
+            rw [← mul_assoc, Nat.add_choose_mul_factorial_mul_factorial]
+    have hexp : m + (n + 1) + 1 = (n + 2) + m := by omega
+    have hnf : (n.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n)
+    have hmf : (m.factorial : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero m)
+    rw [norm_mul, norm_div, Complex.norm_natCast, Complex.norm_natCast]
+    calc (n.factorial : ℝ) * (‖a (m + (n + 1))‖ / (m + (n + 1)).factorial)
+        ≤ (n.factorial : ℝ) * (C ^ (m + (n + 1) + 1) / (n.factorial * m.factorial)) := by
+          gcongr
+          · exact ha _
+          · exact_mod_cast hfac_le
+      _ = C ^ (n + 2) * (C ^ m / m.factorial) := by
+          rw [hexp, pow_add]
+          field_simp
+  have hdom : Summable fun m : ℕ ↦ C ^ (n + 2) * (C ^ m / m.factorial) :=
+    (Real.summable_pow_div_factorial C).mul_left (C ^ (n + 2))
+  have hsub : Summable fun m : ℕ ↦
+      ‖(n.factorial : ℂ) * (a (m + (n + 1)) / (m + (n + 1)).factorial)‖ :=
+    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hterm_le hdom
+  have hnorm_tail : ‖divOneSubSeq a n‖ ≤ C ^ (n + 2) * Real.exp C := by
+    rw [divOneSubSeq_def, htail, mul_neg, norm_neg, ← tsum_mul_left]
+    exact (norm_tsum_le_tsum_norm hsub).trans ((Summable.tsum_le_tsum hterm_le hsub hdom).trans
+      (by rw [tsum_mul_left, Real.exp_eq_exp_ℝ, NormedSpace.exp_eq_tsum_div]))
+  refine hnorm_tail.trans ?_
+  rw [mul_pow]
+  exact mul_le_mul (pow_le_max_one_pow_pow hC (by omega))
+    (le_self_pow₀ (Real.one_le_exp hC) (Nat.succ_ne_zero n))
+    (Real.exp_pos C).le (by positivity)
+
+/-- Under `‖a n‖ ≤ C ^ (n + 1)` and `eFun a 1 = 0`, the quotient sequence `divOneSubSeq a`
+satisfies `(1 - z) * eFun (divOneSubSeq a) z = eFun a z` for all `z : ℂ`. -/
+theorem one_sub_mul_eFun_divOneSubSeq_of_norm_le {a : ℕ → ℂ} {C : ℝ}
+    (ha : ∀ n, ‖a n‖ ≤ C ^ (n + 1)) (hz : eFun a 1 = 0) (z : ℂ) :
+    (1 - z) * eFun (divOneSubSeq a) z = eFun a z := by
+  have hb := isEntire_ePowerSeries_of_norm_le (norm_divOneSubSeq_le ha hz)
+  have h1X : (1 - PowerSeries.X : ℂ⟦X⟧).IsEntire :=
+    PowerSeries.isEntire_one.sub PowerSeries.isEntire_X
+  have heval1X : (1 - PowerSeries.X : ℂ⟦X⟧).evalAt z = 1 - z := by
+    simpa using PowerSeries.isEntire_one.evalAt_sub (R := ℂ) PowerSeries.isEntire_X z
+  rw [eFun_eq_evalAt_ePowerSeries, eFun_eq_evalAt_ePowerSeries, ← heval1X,
+    ← h1X.evalAt_mul hb z, one_sub_X_mul_ePowerSeries_divOneSubSeq]
 
 end TauCeti
