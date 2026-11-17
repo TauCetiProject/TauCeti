@@ -553,17 +553,6 @@ open TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (φ : ContDiffBump (0 : E))
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- The Littlewood–Paley cutoff `ψ₀`, as a complex-valued function, satisfies the hypotheses of
-the dispersive estimates for dilated cutoffs; `ψⱼ` is its dilate `ψ₀ (2^{-j} ·)`. -/
-theorem contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero :
-    ContDiff ℝ ∞ (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) ∧
-      HasCompactSupport (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) ∧
-      (0 : E) ∉ tsupport (fun ξ ↦ (φ.littlewoodPaley 0 ξ : ℂ)) :=
-  ⟨ofRealCLM.contDiff.comp (φ.contDiff_littlewoodPaley 0),
-    (φ.hasCompactSupport_littlewoodPaley 0).comp_left ofReal_zero,
-    fun h ↦ φ.zero_notMem_tsupport_littlewoodPaley 0 (tsupport_comp_subset ofReal_zero _ h)⟩
-
 /-- **The dispersive estimate for the dyadic half-wave kernels.** Let `E` have dimension
 `n` and let `ψⱼ` be the Littlewood–Paley cutoffs built from `φ`, supported in the annuli
 `‖ξ‖ ≈ 2^j`. There is `C` such that for every `j ∈ ℤ`, every time `t` and every point `x`,
@@ -574,9 +563,9 @@ theorem exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_littlewood
       ‖𝓕⁻ (fun ξ ↦ phaseSymbol sqrtNegLaplacianSymbol t ξ * φ.littlewoodPaley j ξ) x‖ ≤
         C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2) := by
-  obtain ⟨hψ, hψc, hψ0⟩ := φ.contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero
-  obtain ⟨C, hC0, hC⟩ :=
-    exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_comp_smul_le hψ hψc hψ0
+  obtain ⟨C, hC0, hC⟩ := exists_norm_fourierInv_phaseSymbol_sqrtNegLaplacianSymbol_mul_comp_smul_le
+    (φ.contDiff_ofReal_littlewoodPaley 0) (φ.hasCompactSupport_ofReal_littlewoodPaley 0)
+    (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0)
   refine ⟨C, hC0, fun j t x ↦ ?_⟩
   simpa only [φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j] using hC j t x
 
@@ -598,9 +587,9 @@ theorem exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_littlewoodPaley_l
       eLpNorm (halfWavePropagator F t (Lp.fourierMultiplierCLM F m f)) ∞ volume ≤
         ENNReal.ofReal (C * ((2 : ℝ) ^ j) ^ Module.finrank ℝ E *
           (1 + 2 ^ j * |t|) ^ (-((Module.finrank ℝ E : ℝ) - 1) / 2)) * eLpNorm f 1 volume := by
-  obtain ⟨hψ, hψc, hψ0⟩ := φ.contDiff_hasCompactSupport_zero_notMem_tsupport_littlewoodPaley_zero
-  obtain ⟨C, hC0, hC⟩ := exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le hψ hψc hψ0
-    (F := F)
+  obtain ⟨C, hC0, hC⟩ := exists_eLpNorm_halfWavePropagator_fourierMultiplierCLM_le (F := F)
+    (φ.contDiff_ofReal_littlewoodPaley 0) (φ.hasCompactSupport_ofReal_littlewoodPaley 0)
+    (φ.zero_notMem_tsupport_ofReal_littlewoodPaley 0)
   refine ⟨C, hC0, fun j m hm ↦ hC j m ?_⟩
   filter_upwards [hm] with ξ hξ
   rw [hξ, φ.littlewoodPaley_apply_eq_littlewoodPaley_zero_apply j]
