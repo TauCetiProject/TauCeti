@@ -42,6 +42,12 @@ terms lie within `N` of `M`, and since `α + β > 0` their `Lʳ` norms are `O(2^
   `u ∈ B^α_{p₁,q₁}`, `α < 0`, and `v ∈ B^β_{p₂,q₂}`, `α + β > 0`, lies in `B^α_{r,q₁}`.
 * `TauCeti.BesovSpace.exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_right`: the product of
   `u ∈ B^α_{p₁,q₁}` and `v ∈ B^β_{p₂,q₂}`, `β < 0`, `α + β > 0`, lies in `B^β_{r,q₂}`.
+* `TauCeti.BesovSpace.smulCLMOfNegLeft`, `TauCeti.BesovSpace.smulCLMOfNegRight`: these products as
+  bounded bilinear maps, characterised as the limits of the truncated products
+  (`TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegLeft`,
+  `TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegRight`), with operator norms bounded
+  uniformly in the exponents (`TauCeti.BesovSpace.exists_norm_smulCLMOfNegLeft_le`,
+  `TauCeti.BesovSpace.exists_norm_smulCLMOfNegRight_le`).
 
 ## References
 
@@ -256,5 +262,122 @@ theorem exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_right (hβ : β <
           gcongr
           exact hn₁.trans (by gcongr)
       _ = (C₁ * d + c * C₂ + c * C₃) * ‖u‖ * ‖v‖ := by ring
+
+section BilinearMap
+
+variable {s : ℝ} {p₁ p₂ r q₁ q₂ q : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+  [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] [Fact (1 ≤ q)] [p₁.HolderTriple p₂ r]
+  (h : ∃ C : ℝ, ∀ (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂),
+    ∃ w : BesovSpace F φ s r q, Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M :
+      Lp F r (volume : Measure E)) : 𝓢'(E, F))) atTop (𝓝 w.toDistr) ∧ ‖w‖ ≤ C * ‖u‖ * ‖v‖)
+
+/-- **The limits of the truncated products as a bounded bilinear map.** If for all `u` and `v`
+the products `S_M u · S_M v` converge in `𝓢'(E, F)` to an element of `B^s_{r,q}` of norm at most
+`C ‖u‖ ‖v‖`, then these limits form a bounded bilinear map. -/
+private def smulCLMOfTendsto :
+    BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ s r q :=
+  LinearMap.mkContinuous₂
+    (LinearMap.mk₂ ℂ (fun u v ↦ (h.choose_spec u v).choose)
+      (fun u u' v ↦ ext <| tendsto_nhds_unique (h.choose_spec (u + u') v).choose_spec.1 <| by
+        simpa [lowPass_add, Lp.smul_add] using
+          (h.choose_spec u v).choose_spec.1.add (h.choose_spec u' v).choose_spec.1)
+      (fun c u v ↦ ext <| tendsto_nhds_unique (h.choose_spec (c • u) v).choose_spec.1 <| by
+        simpa [lowPass_smul, Lp.smul_assoc] using (h.choose_spec u v).choose_spec.1.const_smul c)
+      (fun u v v' ↦ ext <| tendsto_nhds_unique (h.choose_spec u (v + v')).choose_spec.1 <| by
+        simpa [lowPass_add, Lp.add_smul] using
+          (h.choose_spec u v).choose_spec.1.add (h.choose_spec u v').choose_spec.1)
+      (fun c u v ↦ ext <| tendsto_nhds_unique (h.choose_spec u (c • v)).choose_spec.1 <| by
+        simpa [lowPass_smul, ← Lp.smul_comm] using
+          (h.choose_spec u v).choose_spec.1.const_smul c))
+    h.choose fun u v ↦ (h.choose_spec u v).choose_spec.2
+
+private theorem tendsto_smulCLMOfTendsto (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
+    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 (smulCLMOfTendsto h u v).toDistr) :=
+  (h.choose_spec u v).choose_spec.1
+
+private theorem smulCLMOfTendsto_eq
+    {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂} {w : BesovSpace F φ s r q}
+    (hw : Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) :
+      𝓢'(E, F))) atTop (𝓝 w.toDistr)) :
+    smulCLMOfTendsto h u v = w :=
+  ext <| tendsto_nhds_unique (h.choose_spec u v).choose_spec.1 hw
+
+variable (φ r) in
+/-- **The product of a distribution of negative regularity and a smoother one** as a bounded
+bilinear map `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^α_{r,q₁}`, for `α < 0 < α + β` and
+`1/r = 1/p₁ + 1/p₂`. The product of `u` and `v` is the limit in the tempered distributions of the
+products `S_M u · S_M v` of the low-frequency cut-offs
+(`TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegLeft`), and its operator norm is
+bounded uniformly in the exponents (`TauCeti.BesovSpace.exists_norm_smulCLMOfNegLeft_le`). For
+`p₁ = p₂ = r = q₁ = q₂ = ∞` this is the product map `𝒞^α × 𝒞^β → 𝒞^α`. -/
+def smulCLMOfNegLeft (hα : α < 0) (hαβ : 0 < α + β) :
+    BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ α r q₁ :=
+  smulCLMOfTendsto <| by
+    obtain ⟨C, -, hC⟩ :=
+      exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_left (F := F) φ hα hαβ
+    exact ⟨C, fun u v ↦ hC u v⟩
+
+/-- The product `smulCLMOfNegLeft` is the limit of the truncated products `S_M u · S_M v`. -/
+theorem tendsto_lowPass_smul_lowPass_smulCLMOfNegLeft (hα : α < 0) (hαβ : 0 < α + β)
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
+    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 (smulCLMOfNegLeft φ r hα hαβ u v).toDistr) :=
+  tendsto_smulCLMOfTendsto _ u v
+
+variable (φ) in
+/-- **The norm of the product of a distribution of negative regularity and a smoother one.**
+Let `α < 0 < α + β`. The operator norm of `smulCLMOfNegLeft` is bounded by a constant depending
+only on `φ`, `α` and `β`, uniformly in the exponents. -/
+theorem exists_norm_smulCLMOfNegLeft_le (hα : α < 0) (hαβ : 0 < α + β) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q₁ q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r],
+      ‖(smulCLMOfNegLeft φ r hα hαβ :
+        BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ α r q₁)‖ ≤ C := by
+  obtain ⟨C, hC, h⟩ :=
+    exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_left (F := F) φ hα hαβ
+  refine ⟨C, hC, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ ↦
+    ContinuousLinearMap.opNorm_le_bound₂ _ hC fun u v ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := h (r := r) u v
+  rwa [smulCLMOfNegLeft, smulCLMOfTendsto_eq _ hw]
+
+variable (φ r) in
+/-- **The product of a smoother distribution and one of negative regularity** as a bounded
+bilinear map `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^β_{r,q₂}`, for `β < 0 < α + β` and
+`1/r = 1/p₁ + 1/p₂`. The product of `u` and `v` is the limit in the tempered distributions of the
+products `S_M u · S_M v` of the low-frequency cut-offs
+(`TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegRight`), and its operator norm is
+bounded uniformly in the exponents (`TauCeti.BesovSpace.exists_norm_smulCLMOfNegRight_le`). -/
+def smulCLMOfNegRight (hβ : β < 0) (hαβ : 0 < α + β) :
+    BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ β r q₂ :=
+  smulCLMOfTendsto <| by
+    obtain ⟨C, -, hC⟩ :=
+      exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_right (F := F) φ hβ hαβ
+    exact ⟨C, fun u v ↦ hC u v⟩
+
+/-- The product `smulCLMOfNegRight` is the limit of the truncated products `S_M u · S_M v`. -/
+theorem tendsto_lowPass_smul_lowPass_smulCLMOfNegRight (hβ : β < 0) (hαβ : 0 < α + β)
+    (u : BesovSpace ℂ φ α p₁ q₁) (v : BesovSpace F φ β p₂ q₂) :
+    Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) : 𝓢'(E, F)))
+      atTop (𝓝 (smulCLMOfNegRight φ r hβ hαβ u v).toDistr) :=
+  tendsto_smulCLMOfTendsto _ u v
+
+variable (φ) in
+/-- **The norm of the product of a smoother distribution and one of negative regularity.**
+Let `β < 0 < α + β`. The operator norm of `smulCLMOfNegRight` is bounded by a constant depending
+only on `φ`, `α` and `β`, uniformly in the exponents. -/
+theorem exists_norm_smulCLMOfNegRight_le (hβ : β < 0) (hαβ : 0 < α + β) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {p₁ p₂ r q₁ q₂ : ℝ≥0∞} [Fact (1 ≤ p₁)] [Fact (1 ≤ p₂)] [Fact (1 ≤ r)]
+      [Fact (1 ≤ q₁)] [Fact (1 ≤ q₂)] [p₁.HolderTriple p₂ r],
+      ‖(smulCLMOfNegRight φ r hβ hαβ :
+        BesovSpace ℂ φ α p₁ q₁ →L[ℂ] BesovSpace F φ β p₂ q₂ →L[ℂ] BesovSpace F φ β r q₂)‖ ≤ C := by
+  obtain ⟨C, hC, h⟩ :=
+    exists_tendsto_lowPass_smul_lowPass_and_norm_le_of_neg_right (F := F) φ hβ hαβ
+  refine ⟨C, hC, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ ↦
+    ContinuousLinearMap.opNorm_le_bound₂ _ hC fun u v ↦ ?_⟩
+  obtain ⟨w, hw, hwn⟩ := h (r := r) u v
+  rwa [smulCLMOfNegRight, smulCLMOfTendsto_eq _ hw]
+
+end BilinearMap
 
 end TauCeti.BesovSpace
