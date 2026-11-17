@@ -414,25 +414,6 @@ private theorem exists_posPart_subsolution_ball_divergence [Nonempty ι] {q : �
   have := abs_le.1 (h2 hxB)
   constructor <;> linarith
 
-omit [DecidableEq ι] in
-/-- The exterior density at `x₀` passes to the superlevel sets of a function that is nonpositive
-off `Ω`: if `g ≤ 0` almost everywhere on `B(x₀, R) \ Ω` and `Ωᶜ` fills the proportion `θ` of
-`B(x₀, R)`, so does `{g ≤ 0}`. -/
-private theorem mul_measureReal_ball_le_measureReal_setOf_le_zero {θ R : ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {g : EuclideanSpace ℝ ι → ℝ}
-    (hθR : θ * mu.real (ball x₀ R) ≤ mu.real (ball x₀ R \ (Omega : Set (EuclideanSpace ℝ ι))))
-    (hg : ∀ᵐ x ∂mu, x ∈ ball x₀ R → x ∉ (Omega : Set (EuclideanSpace ℝ ι)) → g x ≤ 0) :
-    θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | g x ≤ 0} := by
-  refine hθR.trans ?_
-  rw [sdiff_eq, inter_comm, ← measureReal_restrict_apply Omega.isOpen.measurableSet.compl]
-  refine ENNReal.toReal_mono ((measure_mono (subset_univ _)).trans_lt ?_).ne
-    (measure_mono_ae ?_)
-  · rw [Measure.restrict_apply_univ]
-    exact measure_ball_lt_top
-  · filter_upwards [ae_restrict_of_ae hg, self_mem_ae_restrict measurableSet_ball]
-      with x h1 hxB hxc
-    exact h1 hxB hxc
-
 /-- **Reduction of the supremum at the boundary with a divergence datum (De Giorgi).** Let
 `n ≥ 1` be the dimension, fix a proportion `θ > 0` and an exponent `q > 2` with `q > n`. There
 are `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension and the normalization of the

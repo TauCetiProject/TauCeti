@@ -315,6 +315,25 @@ private theorem exists_uniformlyEllipticOn_top_extendByZeroL_posPart
       indicator_of_mem hxO]
   · rw [indicator_of_notMem hxO, hx, indicator_of_notMem hxO]
 
+omit [DecidableEq ι] in
+/-- The exterior density at `x₀` passes to the superlevel sets of a function that is nonpositive
+off `Ω`: if `g ≤ 0` almost everywhere on `B(x₀, R) \ Ω` and `Ωᶜ` fills the proportion `θ` of
+`B(x₀, R)`, so does `{g ≤ 0}`. -/
+theorem mul_measureReal_ball_le_measureReal_setOf_le_zero {θ R : ℝ}
+    {x₀ : EuclideanSpace ℝ ι} {g : EuclideanSpace ℝ ι → ℝ}
+    (hθR : θ * mu.real (ball x₀ R) ≤ mu.real (ball x₀ R \ (Omega : Set (EuclideanSpace ℝ ι))))
+    (hg : ∀ᵐ x ∂mu, x ∈ ball x₀ R → x ∉ (Omega : Set (EuclideanSpace ℝ ι)) → g x ≤ 0) :
+    θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | g x ≤ 0} := by
+  refine hθR.trans ?_
+  rw [sdiff_eq, inter_comm, ← measureReal_restrict_apply Omega.isOpen.measurableSet.compl]
+  refine ENNReal.toReal_mono ((measure_mono (subset_univ _)).trans_lt ?_).ne
+    (measure_mono_ae ?_)
+  · rw [Measure.restrict_apply_univ]
+    exact measure_ball_lt_top
+  · filter_upwards [ae_restrict_of_ae hg, self_mem_ae_restrict measurableSet_ball]
+      with x h1 hxB hxc
+    exact h1 hxB hxc
+
 /-- **Reduction of the supremum at the boundary (De Giorgi).** Let `n ≥ 1` be the dimension and
 fix a proportion `θ > 0`. There is `δ ∈ (0, 1)`, depending only on `λ`, `Λ`, `θ`, the dimension
 and the normalization of the additive Haar measure `mu`, such that the following holds. Let `a`
@@ -368,16 +387,10 @@ theorem exists_ae_value_le_mul_of_mul_measureReal_le_measureReal_ball_diff [None
     · rw [indicator_of_notMem hxO]
       exact hM
   -- The extension vanishes on `B(x₀, R) \ Ω`, which fills the proportion `θ` of the ball.
-  have hθ' : θ * mu.real (ball x₀ R) ≤
-      (mu.restrict (ball x₀ R)).real {x | W1p.value ub x ≤ 0} := by
-    refine hθR.trans ?_
-    rw [sdiff_eq, inter_comm, ← measureReal_restrict_apply hOm.compl]
-    refine ENNReal.toReal_mono ((measure_mono (subset_univ _)).trans_lt ?_).ne
-      (measure_mono_ae ?_)
-    · rw [Measure.restrict_apply_univ]
-      exact measure_ball_lt_top
-    · filter_upwards [ae_restrict_of_ae hval] with x hx hxc
-      rw [hx, indicator_of_notMem hxc]
+  have hθ' := mul_measureReal_ball_le_measureReal_setOf_le_zero
+    (g := fun x => W1p.value ub x) hθR (by
+      filter_upwards [hval] with x hx _ hxc
+      rw [hx, indicator_of_notMem hxc])
   have hred' := hred h' ha' hsubsol hR (by simp) hM hM' hθ'
   rw [ae_restrict_iff' (hOm.inter measurableSet_ball)]
   filter_upwards [hval, (ae_restrict_iff' measurableSet_ball).1 hred'] with x hx hx' hxO
