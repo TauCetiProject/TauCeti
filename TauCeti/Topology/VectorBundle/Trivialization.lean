@@ -36,7 +36,8 @@ of the first followed by the coordinate change from the first to the second
 (`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Linear coordinate changes
 satisfy the identity and cocycle laws over the relevant base sets
 (`Bundle.Trivialization.coordChangeL_same_apply`,
-`Bundle.Trivialization.coordChangeL_coordChangeL_apply`), and send the coordinate of a point in
+`Bundle.Trivialization.coordChangeL_coordChangeL_apply`), equal the identity outside the overlap
+(`Bundle.Trivialization.coordChangeL_of_notMem`), and send the coordinate of a point in
 the first trivialization to its coordinate in the second
 (`Bundle.Trivialization.coordChangeL_apply_snd`). Convergence in the total space of a vector bundle
 is convergence of base points and of fibre coordinates in any linear trivialization over the limit
@@ -127,6 +128,18 @@ theorem coe_linearEquivAt_symm {b : B} (hb : b ∈ e.baseSet) :
 theorem symmₗ_injective {b : B} (hb : b ∈ e.baseSet) : Function.Injective (e.symmₗ R b) := by
   rw [← e.coe_linearEquivAt_symm R hb, LinearEquiv.coe_coe]
   exact (e.linearEquivAt R b hb).symm.injective
+
+/-- Outside the overlap of two linear trivializations, their linear coordinate change is the
+identity equivalence. -/
+@[simp]
+theorem coordChangeL_of_notMem (e' : Trivialization F (π F E)) [e'.IsLinear R] {b : B}
+    (hb : b ∉ e.baseSet ∩ e'.baseSet) :
+    e.coordChangeL R e' b = ContinuousLinearEquiv.refl R F := by
+  apply ContinuousLinearEquiv.toLinearEquiv_injective
+  -- Mathlib defines `Bundle.Trivialization.coordChangeL` via a `dite` on
+  -- `b ∈ e.baseSet ∩ e'.baseSet` whose off-overlap branch is `LinearEquiv.refl R F`.
+  dsimp only [coordChangeL]
+  exact dite_eq_right hb
 
 end Linear
 
