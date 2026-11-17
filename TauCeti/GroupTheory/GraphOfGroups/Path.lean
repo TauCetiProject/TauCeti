@@ -294,6 +294,16 @@ theorem reverse {p q : 𝔸.Path x y} (h : Homotopic p q) : Homotopic p.reverse 
   rw [Quiver.Path.nil_comp] at h₂
   exact h₁.trans h₂
 
+/-- A common initial path can be cancelled from homotopic paths. -/
+theorem comp_left_iff {p : 𝔸.Path x y} {q r : 𝔸.Path y z} :
+    Homotopic (p.comp q) (p.comp r) ↔ Homotopic q r := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_left p⟩
+  -- `q ~ p⁻¹ (p q) ~ p⁻¹ (p r) ~ r`.
+  have hq := comp_reverse_comp_comp .nil p q
+  have hr := comp_reverse_comp_comp .nil p r
+  rw [Quiver.Path.nil_comp, Quiver.Path.nil_comp] at hq hr
+  exact hq.symm.trans ((h.comp_left p.reverse).trans hr)
+
 end Homotopic
 
 variable (𝔸) in
