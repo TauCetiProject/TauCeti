@@ -8,7 +8,7 @@ module
 public import TauCeti.Probability.Process.StoppingApproximation
 public import TauCeti.Probability.Process.StoppedValue
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Metrizable
-import Mathlib.MeasureTheory.Integral.Indicator
+import TauCeti.MeasureTheory.Integral.Indicator
 
 /-!
 # Passing a fixed conditional law to a stopping time
@@ -73,16 +73,11 @@ theorem measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
   have hevent (D : Set β) :
       (A ∩ {ω | τ ω ≠ ⊤}) ∩ stoppedValue U τ ⁻¹' D =
         ⋃ s : R, E s ∩ U s.val ⁻¹' D := by
+    rw [stoppedValue_preimage_eq]
     ext ω
-    simp only [mem_iUnion, mem_inter_iff, mem_preimage]
-    constructor
-    · rintro ⟨⟨hω, hfin⟩, hD⟩
-      obtain ⟨s, hs⟩ := WithTop.ne_top_iff_exists.mp hfin
-      exact ⟨⟨s, ω, hs.symm⟩, ⟨hω, hs.symm⟩,
-        by rwa [stoppedValue_of_eq hs.symm] at hD⟩
-    · rintro ⟨s, hs, hD⟩
-      exact ⟨⟨hs.1, fun htop => WithTop.coe_ne_top (hs.2.symm.trans htop)⟩,
-        by rwa [stoppedValue_of_eq hs.2]⟩
+    simp only [mem_inter_iff, mem_ofPred_eq, mem_union, mem_iUnion, E,
+      Subtype.exists, R, mem_range, mem_preimage]
+    aesop
   have hcover : (⋃ s : R, E s) = A ∩ {ω | τ ω ≠ ⊤} := by
     simpa using (hevent univ).symm
   have hmI (s : R) : MeasurableSet (E s ∩ U s.val ⁻¹' B) :=
@@ -147,9 +142,16 @@ theorem measure_inter_stoppedValue_preimage_eq_mul [TopologicalSpace β] [Discre
       ((hτ.dyadicCeilTime n).measurable_stoppedValue_of_countable_range
         (TauCeti.countable_range_dyadicCeilTime τ n) hm hB)
   have hEn (n : ℕ) : P (E n) = P C * c := by
-    simpa only [E, σ, C, ne_eq, TauCeti.dyadicCeilTime_eq_top_iff, inter_assoc, inter_self] using
-      (hτ.dyadicCeilTime n).measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
-        (TauCeti.countable_range_dyadicCeilTime τ n) hm hB hdet (hCn n)
+    have hfinite : {ω | σ n ω ≠ ⊤} = {ω | τ ω ≠ ⊤} := by
+      ext ω
+      exact not_congr (TauCeti.dyadicCeilTime_eq_top_iff n (τ ω))
+    have hCfinite : C ∩ {ω | σ n ω ≠ ⊤} = C := by
+      rw [hfinite, inter_eq_left]
+      exact inter_subset_right
+    have h := (hτ.dyadicCeilTime n).measure_inter_stoppedValue_preimage_eq_mul_of_countable_range
+      (TauCeti.countable_range_dyadicCeilTime τ n) hm hB hdet (hCn n)
+    rw [hCfinite] at h
+    exact h
   have hlim : ∀ᵐ ω ∂P, ∀ᶠ n in atTop, ω ∈ E n ↔ ω ∈ F := by
     filter_upwards [hrc] with ω hω
     by_cases hmem : ω ∈ C
@@ -159,18 +161,6 @@ theorem measure_inter_stoppedValue_preimage_eq_mul [TopologicalSpace β] [Discre
       filter_upwards [heq] with n hn
       simp only [E, F, mem_inter_iff, mem_preimage, hn]
     · exact Eventually.of_forall fun n => by simp [E, F, hmem]
-  -- The limiting event need only be null-measurable. Use its measurable eventual-event version.
-  let L := liminf E atTop
-  have hmL : MeasurableSet L := MeasurableSet.measurableSet_liminf hmEn
-  have hLF : L =ᵐ[P] F := by
-    filter_upwards [hlim] with ω hω
-    exact mem_liminf_iff_eventually_mem.trans ((eventually_congr hω).trans eventually_const)
-  have hconv : Tendsto (fun n => P (E n)) atTop (𝓝 (P L)) := by
-    apply tendsto_measure_of_ae_tendsto_indicator_of_isFiniteMeasure atTop hmL hmEn
-    filter_upwards [hlim, hLF] with ω hω hLFω
-    simpa only [hLFω] using hω
-  have heq : P L = P C * c :=
-    tendsto_nhds_unique hconv (by simpa only [hEn] using tendsto_const_nhds)
-  exact (measure_congr hLF).symm.trans heq
+  exact TauCeti.measure_eq_of_ae_eventually_mem_iff hmEn hEn hlim
 
 end MeasureTheory.IsStoppingTime
