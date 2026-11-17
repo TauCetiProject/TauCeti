@@ -11,6 +11,7 @@ import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
 import TauCeti.Analysis.Pseudodifferential.LatticeDecomposition
 import TauCeti.Analysis.Pseudodifferential.OutputSupport
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # Adjoints of quantizations of uniform symbols
@@ -99,6 +100,16 @@ section Commutator
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] {c : Symbol n V W m}
 
+omit [CompleteSpace V] [CompleteSpace W] in
+/-- Two right quantizations agree when their integrands `c(y, ξ) (u y)` agree pointwise. -/
+private theorem quantizeRightUniformCLM_eq_of_coefficient_apply_eq {m' : ℝ}
+    {c' : Symbol n V W m'} (hc : c.IsUniform) (hc' : c'.IsUniform)
+    {u u' : 𝓢(CoordinateSpace n, V)}
+    (h : ∀ y ξ, c.coefficient (y, ξ) (u y) = c'.coefficient (y, ξ) (u' y)) :
+    quantizeRightUniformCLM c hc u = quantizeRightUniformCLM c' hc' u' := by
+  ext x
+  simp only [quantizeRightUniformCLM_apply, h]
+
 /-- Multiplying a symbol with compact spatial support by `(y - z)ⱼ` before passing to the left
 symbol of its right quantization multiplies the input of that quantization by `(y - z)ⱼ`. -/
 private theorem quantizeSchwartzValue_ofRight_coordSubSymbol_comp
@@ -110,13 +121,15 @@ private theorem quantizeSchwartzValue_ofRight_coordSubSymbol_comp
     := by
   have hg : (fun y : CoordinateSpace n ↦ y j).HasTemperateGrowth :=
     (EuclideanSpace.proj j).hasTemperateGrowth
-  rw [quantizeSchwartzValue_ofRight, quantizeSchwartzValue_ofRight]
-  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-  dsimp only
-  congr 1
-  refine congrArg (fun f : CoordinateSpace n → W ↦ 𝓕 f ζ) (funext fun y ↦ ?_)
-  simp [coefficient_comp, SchwartzMap.smulLeftCLM_apply_apply hg,
-    ContinuousLinearMap.map_smul_of_tower, sub_smul, Complex.coe_smul]
+  have h := congrArg (· x) <| quantizeRightUniformCLM_eq_of_coefficient_apply_eq
+    (hc.comp_left (coordSubSymbol z j)).isUniform hc.isUniform (u := u)
+    (u' := SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) u - ((z j : ℝ) : ℂ) • u)
+    fun y ξ ↦ by
+      simp [coefficient_comp, SchwartzMap.smulLeftCLM_apply_apply hg,
+        ContinuousLinearMap.map_smul_of_tower, sub_smul, Complex.coe_smul]
+  rwa [quantizeRightUniformCLM_eq_quantizeUniformCLM_ofRight (hc.comp_left _),
+    quantizeRightUniformCLM_eq_quantizeUniformCLM_ofRight hc, quantizeUniformCLM_apply,
+    quantizeUniformCLM_apply] at h
 
 /-- **Commutator with a coordinate function.** For a symbol `c` with compact spatial support and
 the left symbol `cᵒ = c.ofRight` of its right quantization,
@@ -133,18 +146,35 @@ theorem coordSub_smul_coefficient_ofRight (hc : c.HasCompactSpatialSupport)
     Complex.I • inclusion (by linarith) ((frequencyDeriv j c).ofRight (hc.frequencyDeriv j))
   have hLR : L.coefficient = R.coefficient := by
     refine coefficient_eq_of_forall_quantizeSchwartzValue_eq fun u _ ↦ funext fun y ↦ ?_
-    obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice y
     -- Both sides are expressed through `Op(b)` applied to `u` and to `yⱼ u`, and `Op(∂_{ξⱼ} b)`.
+    set yu := SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) u
+    -- `Op(b) (yⱼ u - zⱼ u) = Op(b) (yⱼ u) - zⱼ Op(b) u`, by linearity in the input.
+    have hsub : quantizeSchwartzValue b.coefficient (yu - ((z j : ℝ) : ℂ) • u) y =
+        quantizeSchwartzValue b.coefficient yu y -
+          ((z j : ℝ) : ℂ) • quantizeSchwartzValue b.coefficient u y := by
+      obtain ⟨C, -, hC⟩ := b.exists_bound_coefficient_slice y
+      rw [sub_eq_add_neg, ← neg_smul,
+        quantizeSchwartzValue_add_right (b.continuous_coefficient_slice y).aestronglyMeasurable hC,
+        quantizeSchwartzValue_smul_right, neg_smul, ← sub_eq_add_neg]
+    -- `yⱼ Op(b) u = Op(b) (yⱼ u) + i Op(∂_{ξⱼ} b) u`, and `∂_{ξⱼ} b` is the left symbol of
+    -- `∂_{ξⱼ} c`.
     have hb := b.ofLp_smul_quantizeSchwartzValue j u y
     rw [frequencyDeriv_ofRight hc] at hb
-    rw [quantizeSchwartzValue_coordSubSymbol_comp, coefficient_add,
-      quantizeSchwartzValue_coefficient_add, coefficient_smul, quantizeSchwartzValue_smul_left,
-      coefficient_inclusion, quantizeSchwartzValue_ofRight_coordSubSymbol_comp hc,
-      sub_eq_add_neg (SchwartzMap.smulLeftCLM V _ u), ← neg_smul,
-      quantizeSchwartzValue_add_right (b.continuous_coefficient_slice y).aestronglyMeasurable hC,
-      quantizeSchwartzValue_smul_right, PiLp.sub_apply, Complex.ofReal_sub, sub_smul,
-      Complex.coe_smul, hb, neg_smul]
-    abel
+    calc quantizeSchwartzValue L.coefficient u y
+        = y j • quantizeSchwartzValue b.coefficient u y -
+            ((z j : ℝ) : ℂ) • quantizeSchwartzValue b.coefficient u y := by
+          rw [quantizeSchwartzValue_coordSubSymbol_comp, PiLp.sub_apply, Complex.ofReal_sub,
+            sub_smul, Complex.coe_smul]
+      _ = quantizeSchwartzValue
+            (((coordSubSymbol z j).comp c).ofRight (hc.comp_left _)).coefficient u y +
+          Complex.I •
+            quantizeSchwartzValue ((frequencyDeriv j c).ofRight (hc.frequencyDeriv j)).coefficient
+              u y := by
+          rw [quantizeSchwartzValue_ofRight_coordSubSymbol_comp hc, hsub, hb]
+          abel
+      _ = quantizeSchwartzValue R.coefficient u y := by
+          rw [coefficient_add, quantizeSchwartzValue_coefficient_add, coefficient_smul,
+            quantizeSchwartzValue_smul_left, coefficient_inclusion]
   calc ((x - z) j : ℂ) • b.coefficient (x, ξ) = L.coefficient (x, ξ) := by
         simp [L, RCLike.real_smul_eq_coe_smul (K := ℂ)]
     _ = R.coefficient (x, ξ) := congrFun hLR _
@@ -352,12 +382,7 @@ private theorem quantizeRightUniformCLM_latticeBump_comp {c : Symbol n V W m} (h
       j).isUniform u =
       quantizeRightUniformCLM c hc (SchwartzMap.smulLeftCLM V
         (fun y ↦ latticeBump n (y - latticePoint j)) u) := by
-  ext x
-  rw [quantizeRightUniformCLM_apply, quantizeRightUniformCLM_apply]
-  refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
-  dsimp only
-  congr 1
-  refine congrArg (fun f : CoordinateSpace n → W ↦ 𝓕 f ζ) (funext fun y ↦ ?_)
+  refine quantizeRightUniformCLM_eq_of_coefficient_apply_eq _ hc fun y ξ ↦ ?_
   simp [coefficient_comp,
     SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_latticeBump_sub j),
     ContinuousLinearMap.map_smul_of_tower]

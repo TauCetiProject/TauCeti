@@ -56,45 +56,10 @@ open scoped ContDiff RealInnerProductSpace SchwartzMap Topology
 
 namespace TauCeti
 
-/-- Expanding one factor `‖v‖²` in coordinates:
-`‖v‖ ^ (2 (N + 1)) F = ∑ⱼ ‖v‖ ^ (2N) (vⱼ² F)`. -/
-theorem norm_pow_two_mul_succ_mul_eq_sum {n : ℕ} (v : EuclideanSpace ℝ (Fin n)) (N : ℕ) (F : ℝ) :
-    ‖v‖ ^ (2 * (N + 1)) * F = ∑ j, ‖v‖ ^ (2 * N) * (v j ^ 2 * F) := by
-  rw [← Finset.mul_sum, ← Finset.sum_mul, ← EuclideanSpace.real_norm_sq_eq]
-  ring
-
-/-- Bounds `F ≤ C₀ w` and `‖v‖ ^ (2N) F ≤ C₁ w` combine to the weighted bound
-`F ≤ 2 ^ (N - 1) (C₀ + C₁) w ((1 + ‖v‖²) ^ N)⁻¹`. -/
-theorem le_mul_one_add_norm_sq_pow_inv {E : Type*} [SeminormedAddCommGroup E] {v : E} {N : ℕ}
-    {F C₀ C₁ w : ℝ} (hF : 0 ≤ F) (h₀ : F ≤ C₀ * w) (h₁ : ‖v‖ ^ (2 * N) * F ≤ C₁ * w) :
-    F ≤ 2 ^ (N - 1) * (C₀ + C₁) * w * ((1 + ‖v‖ ^ 2) ^ N)⁻¹ := by
-  rw [← div_eq_mul_inv, le_div_iff₀ (by positivity), mul_comm F]
-  calc (1 + ‖v‖ ^ 2) ^ N * F ≤ 2 ^ (N - 1) * (1 ^ N + (‖v‖ ^ 2) ^ N) * F :=
-        mul_le_mul_of_nonneg_right (add_pow_le zero_le_one (by positivity) N) hF
-    _ = 2 ^ (N - 1) * (F + ‖v‖ ^ (2 * N) * F) := by rw [one_pow, ← pow_mul]; ring
-    _ ≤ 2 ^ (N - 1) * (C₀ * w + C₁ * w) :=
-        mul_le_mul_of_nonneg_left (add_le_add h₀ h₁) (by positivity)
-    _ = 2 ^ (N - 1) * (C₀ + C₁) * w := by ring
-
 namespace Symbol
 
 variable {n : ℕ} {m : ℝ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W]
-
-/-- Peetre's inequality for the frequency shift `ξ + 2πθ` by a frequency `θ` dual to the position,
-in the form used for the integrals over `θ` defining the composition symbol and the left symbol of
-a right quantization. -/
-theorem one_add_norm_add_two_pi_smul_sq_rpow_le (m : ℝ) (ξ θ : CoordinateSpace n) :
-    (1 + ‖ξ + (2 * π) • θ‖ ^ 2) ^ (m / 2) ≤
-      2 ^ (|m| / 2) * (2 * π) ^ |m| * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
-  refine (one_add_norm_add_sq_rpow_le_mul m ξ ((2 * π) • θ)).trans ?_
-  have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  have := one_add_norm_smul_sq_rpow_le h2π |m| θ
-  rw [abs_abs] at this
-  calc 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2)
-      ≤ 2 ^ (|m| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) *
-          ((2 * π) ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2)) := by gcongr
-    _ = _ := by ring
 
 /-! ### Series of symbols -/
 
