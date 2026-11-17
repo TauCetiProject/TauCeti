@@ -156,31 +156,25 @@ private theorem norm_gaugeFixedAdjoint_le {δ : ℂ → EuclideanSpace ℝ (Fin 
   have hj (j : Fin 4) : |gaugeFixedAdjoint x δ z j| ≤ B := by
     have h₁ := fun i ↦ hcoord i 1 norm_one
     have hI := fun i ↦ hcoord i I norm_I
-    fin_cases j
-    · change |gaugeFixedAdjoint x δ z 0| ≤ B
+    match j with
+    | 0 =>
       rw [gaugeFixedAdjoint_apply_zero, abs_le]
-      exact ⟨by linarith [abs_le.1 (h₁ 0), abs_le.1 (hI 1), abs_le.1 (hmul 2 3),
-        abs_le.1 (hmul 3 2)],
-        by linarith [abs_le.1 (h₁ 0), abs_le.1 (hI 1), abs_le.1 (hmul 2 3),
-          abs_le.1 (hmul 3 2)]⟩
-    · change |gaugeFixedAdjoint x δ z 1| ≤ B
+      constructor <;>
+        linarith [abs_le.1 (h₁ 0), abs_le.1 (hI 1), abs_le.1 (hmul 2 3), abs_le.1 (hmul 3 2)]
+    | 1 =>
       rw [gaugeFixedAdjoint_apply_one, abs_le]
-      exact ⟨by linarith [abs_le.1 (hI 0), abs_le.1 (h₁ 1), abs_le.1 (hmul 2 2),
-        abs_le.1 (hmul 3 3)],
-        by linarith [abs_le.1 (hI 0), abs_le.1 (h₁ 1), abs_le.1 (hmul 2 2),
-          abs_le.1 (hmul 3 3)]⟩
-    · change |gaugeFixedAdjoint x δ z 2| ≤ B
+      constructor <;>
+        linarith [abs_le.1 (hI 0), abs_le.1 (h₁ 1), abs_le.1 (hmul 2 2), abs_le.1 (hmul 3 3)]
+    | 2 =>
       rw [gaugeFixedAdjoint_apply_two, abs_le]
-      exact ⟨by linarith [abs_le.1 (h₁ 2), abs_le.1 (hI 3), abs_le.1 (hmul 1 2),
-        abs_le.1 (hmul 0 3), abs_le.1 (hmul 3 0), abs_le.1 (hmul 2 1)],
-        by linarith [abs_le.1 (h₁ 2), abs_le.1 (hI 3), abs_le.1 (hmul 1 2),
-          abs_le.1 (hmul 0 3), abs_le.1 (hmul 3 0), abs_le.1 (hmul 2 1)]⟩
-    · change |gaugeFixedAdjoint x δ z 3| ≤ B
+      constructor <;>
+        linarith [abs_le.1 (h₁ 2), abs_le.1 (hI 3), abs_le.1 (hmul 1 2), abs_le.1 (hmul 0 3),
+          abs_le.1 (hmul 3 0), abs_le.1 (hmul 2 1)]
+    | 3 =>
       rw [gaugeFixedAdjoint_apply_three, abs_le]
-      exact ⟨by linarith [abs_le.1 (h₁ 3), abs_le.1 (hI 2), abs_le.1 (hmul 0 2),
-        abs_le.1 (hmul 1 3), abs_le.1 (hmul 2 0), abs_le.1 (hmul 3 1)],
-        by linarith [abs_le.1 (h₁ 3), abs_le.1 (hI 2), abs_le.1 (hmul 0 2),
-          abs_le.1 (hmul 1 3), abs_le.1 (hmul 2 0), abs_le.1 (hmul 3 1)]⟩
+      constructor <;>
+        linarith [abs_le.1 (h₁ 3), abs_le.1 (hI 2), abs_le.1 (hmul 0 2), abs_le.1 (hmul 1 3),
+          abs_le.1 (hmul 2 0), abs_le.1 (hmul 3 1)]
   have hsq : ‖gaugeFixedAdjoint x δ z‖ ^ 2 ≤ (2 * B) ^ 2 := by
     rw [EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
     have hsqj (j : Fin 4) : gaugeFixedAdjoint x δ z j ^ 2 ≤ B ^ 2 := by
@@ -191,15 +185,72 @@ private theorem norm_gaugeFixedAdjoint_le {δ : ℂ → EuclideanSpace ℝ (Fin 
   rw [abs_of_nonneg (norm_nonneg _), abs_of_nonneg (by positivity)] at habs
   linarith
 
-/-- Outside `tsupport δ`, `L_x* δ` vanishes. -/
-private theorem gaugeFixedAdjoint_eq_zero_of_notMem_tsupport
-    {δ : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ} (hz : z ∉ tsupport δ) :
-    gaugeFixedAdjoint x δ z = 0 := by
-  have hd (i : Fin 4) : fderiv ℝ (fun w ↦ δ w i) z = 0 :=
-    fderiv_of_notMem_tsupport ℝ fun h ↦
-      hz (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) δ h)
-  ext i
-  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hz]
+/-- Integral bound for testing `u ∈ L²` against `L_x* δ` when `δ` is `C¹` with support in a
+compact set `K` where `‖x‖ ≤ M` and `‖δ‖, ‖Dδ‖ ≤ ε`. -/
+private theorem norm_integral_inner_gaugeFixedAdjoint_le (hx : Continuous x)
+    {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : MemLp u 2 volume)
+    {K : Set ℂ} (hK : IsCompact K) {M ε : ℝ} (hM : ∀ z ∈ K, ‖x z‖ ≤ M)
+    {δ : ℂ → EuclideanSpace ℝ (Fin 4)} (hδ : ContDiff ℝ 1 δ) (hsupp : tsupport δ ⊆ K)
+    (hδb : ∀ z ∈ K, ‖δ z‖ ≤ ε) (hdδb : ∀ z ∈ K, ‖fderiv ℝ δ z‖ ≤ ε) :
+    ‖∫ z, ⟪u z, gaugeFixedAdjoint x δ z⟫‖ ≤ (4 + 8 * M) * ε * ∫ z in K, ‖u z‖ := by
+  have hδc : HasCompactSupport δ := hK.of_isClosed_subset (isClosed_tsupport δ) hsupp
+  have hint : Integrable (fun z ↦ ⟪u z, gaugeFixedAdjoint x δ z⟫) volume :=
+    hu.integrable_inner
+      ((continuous_gaugeFixedAdjoint hx hδ).memLp_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedAdjoint hδc))
+  have huK : IntegrableOn (fun z ↦ ‖u z‖) K volume :=
+    ((hu.locallyIntegrable one_le_two).integrableOn_isCompact hK).norm
+  have hzero (z : ℂ) (hz : z ∉ K) : ⟪u z, gaugeFixedAdjoint x δ z⟫ = 0 := by
+    rw [gaugeFixedAdjoint_eq_zero_of_notMem_tsupport (fun h ↦ hz (hsupp h)), inner_zero_right]
+  have hpt (z : ℂ) (hz : z ∈ K) :
+      ‖⟪u z, gaugeFixedAdjoint x δ z⟫‖ ≤ ((4 + 8 * M) * ε) * ‖u z‖ := by
+    refine (norm_inner_le_norm _ _).trans ?_
+    rw [mul_comm]
+    refine mul_le_mul_of_nonneg_right
+      ((norm_gaugeFixedAdjoint_le (hδ.differentiable one_ne_zero z)).trans ?_) (norm_nonneg _)
+    nlinarith [hM z hz, hδb z hz, hdδb z hz, norm_nonneg (x z), norm_nonneg (δ z)]
+  calc ‖∫ z, ⟪u z, gaugeFixedAdjoint x δ z⟫‖
+      = ‖∫ z in K, ⟪u z, gaugeFixedAdjoint x δ z⟫‖ := by
+        rw [setIntegral_eq_integral_of_forall_compl_eq_zero hzero]
+    _ ≤ ∫ z in K, ‖⟪u z, gaugeFixedAdjoint x δ z⟫‖ := norm_integral_le_integral_norm _
+    _ ≤ ∫ z in K, ((4 + 8 * M) * ε) * ‖u z‖ :=
+        setIntegral_mono_on hint.integrableOn.norm (huK.const_mul _) hK.isClosed.measurableSet hpt
+    _ = (4 + 8 * M) * ε * ∫ z in K, ‖u z‖ := integral_const_mul _ _
+
+/-- Continuity of adjoint testing under uniform `C¹` approximation on a fixed compact set `K`. -/
+private theorem norm_integral_inner_gaugeFixedAdjoint_sub_le (hx : Continuous x)
+    {u : ℂ → EuclideanSpace ℝ (Fin 4)} (hu : MemLp u 2 volume)
+    {K : Set ℂ} (hK : IsCompact K) {M ε : ℝ} (hM : ∀ z ∈ K, ‖x z‖ ≤ M)
+    {η₁ η₂ : ℂ → EuclideanSpace ℝ (Fin 4)} (hη₁ : ContDiff ℝ 1 η₁) (hη₂ : ContDiff ℝ 1 η₂)
+    (hsupp₁ : tsupport η₁ ⊆ K) (hsupp₂ : tsupport η₂ ⊆ K)
+    (hdist : ∀ z ∈ K, dist (η₁ z) (η₂ z) ≤ ε ∧ dist (fderiv ℝ η₁ z) (fderiv ℝ η₂ z) ≤ ε) :
+    ‖(∫ z, ⟪u z, gaugeFixedAdjoint x η₁ z⟫) - ∫ z, ⟪u z, gaugeFixedAdjoint x η₂ z⟫‖ ≤
+      (4 + 8 * M) * ε * ∫ z in K, ‖u z‖ := by
+  have hint {η : ℂ → EuclideanSpace ℝ (Fin 4)} (hη : ContDiff ℝ 1 η) (hsupp : tsupport η ⊆ K) :
+      Integrable (fun z ↦ ⟪u z, gaugeFixedAdjoint x η z⟫) volume :=
+    hu.integrable_inner
+      ((continuous_gaugeFixedAdjoint hx hη).memLp_of_hasCompactSupport
+        (hasCompactSupport_gaugeFixedAdjoint (hK.of_isClosed_subset (isClosed_tsupport η) hsupp)))
+  have hsub : (∫ z, ⟪u z, gaugeFixedAdjoint x η₁ z⟫) - ∫ z, ⟪u z, gaugeFixedAdjoint x η₂ z⟫ =
+      ∫ z, ⟪u z, gaugeFixedAdjoint x (η₁ - η₂) z⟫ := by
+    rw [← integral_sub (hint hη₁ hsupp₁) (hint hη₂ hsupp₂)]
+    refine integral_congr_ae (.of_forall fun z ↦ ?_)
+    have hadd := gaugeFixedAdjoint_add x (η := η₁ - η₂) (ν := η₂)
+      ((hη₁.sub hη₂).differentiable one_ne_zero z) (hη₂.differentiable one_ne_zero z)
+    rw [sub_add_cancel] at hadd
+    dsimp only
+    rw [hadd, inner_add_right, add_sub_cancel_right]
+  rw [hsub]
+  have hsupp : tsupport (η₁ - η₂) ⊆ K := by
+    rw [sub_eq_add_neg]
+    exact (tsupport_add η₁ (-η₂)).trans
+      (union_subset hsupp₁ ((tsupport_neg η₂).trans_subset hsupp₂))
+  refine norm_integral_inner_gaugeFixedAdjoint_le hx hu hK hM (hη₁.sub hη₂) hsupp
+    (fun z hz ↦ by simpa [dist_eq_norm] using (hdist z hz).1)
+    (fun z hz ↦ ?_)
+  rw [show fderiv ℝ (η₁ - η₂) z = fderiv ℝ η₁ z - fderiv ℝ η₂ z from
+    fderiv_sub (hη₁.differentiable one_ne_zero z) (hη₂.differentiable one_ne_zero z)]
+  simpa [dist_eq_norm] using (hdist z hz).2
 
 /-- **Testing against `C¹` fields.** At a continuous field `x`, a square-integrable field `u`
 lies in `weakGaugeFixedKernel x` if and only if `∫ ⟪u, L_x* η⟫ = 0` for every compactly supported
@@ -217,80 +268,26 @@ theorem mem_weakGaugeFixedKernel_iff_contDiff_one (hx : Continuous x)
   set M : ℝ := max M₀ 0
   have hM (z : ℂ) (hz : z ∈ K₁) : ‖x z‖ ≤ M := (hM₀ z hz).trans (le_max_left _ _)
   have hM_nonneg : 0 ≤ M := le_max_right _ _
-  have huK : IntegrableOn (fun z ↦ ‖u z‖) K₁ volume :=
-    (((Lp.memLp u).locallyIntegrable one_le_two).integrableOn_isCompact hK₁).norm
   set U : ℝ := ∫ z in K₁, ‖u z‖
   have : 0 ≤ U := setIntegral_nonneg Metric.isClosed_cthickening.measurableSet fun _ _ ↦
     norm_nonneg _
   refine eq_of_abs_sub_le_all fun r hr ↦ ?_
-  rw [sub_zero, ← Real.norm_eq_abs]
   set C : ℝ := (4 + 8 * M) * (U + 1)
   have hC : 0 < C := by positivity
   obtain ⟨φ, hφK, hφε⟩ := hη.exists_testFunction_dist_le_and_dist_fderiv_le
-    (Ω := (⊤ : Opens ℂ)) hηc.isCompact Subset.rfl zero_lt_one (subset_univ _)
-    (div_pos hr hC)
-  set δ : ℂ → EuclideanSpace ℝ (Fin 4) := (φ : ℂ → EuclideanSpace ℝ (Fin 4)) - η
-  have hδ : ContDiff ℝ 1 δ := (φ.contDiff.of_le (by simp)).sub hη
-  have hint_φ : Integrable (fun z ↦ ⟪u z, gaugeFixedAdjoint x φ z⟫) volume :=
-    (Lp.memLp u).integrable_inner
-      ((continuous_gaugeFixedAdjoint hx (φ.contDiff.of_le (by simp))).memLp_of_hasCompactSupport
-        (hasCompactSupport_gaugeFixedAdjoint φ.hasCompactSupport))
-  have hint_η : Integrable (fun z ↦ ⟪u z, gaugeFixedAdjoint x η z⟫) volume :=
-    (Lp.memLp u).integrable_inner
-      ((continuous_gaugeFixedAdjoint hx hη).memLp_of_hasCompactSupport
-        (hasCompactSupport_gaugeFixedAdjoint hηc))
-  have hsub : ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ = -∫ z, ⟪u z, gaugeFixedAdjoint x δ z⟫ := by
-    have hlin : (fun z ↦ ⟪u z, gaugeFixedAdjoint x φ z⟫ - ⟪u z, gaugeFixedAdjoint x η z⟫) =
-        fun z ↦ ⟪u z, gaugeFixedAdjoint x δ z⟫ := by
-      ext z
-      have hadd := gaugeFixedAdjoint_add x (hδ.differentiable one_ne_zero z)
-        (hη.differentiable one_ne_zero z)
-      have hφδ : δ + η = (φ : ℂ → EuclideanSpace ℝ (Fin 4)) := sub_add_cancel _ _
-      rw [hφδ] at hadd
-      rw [hadd, inner_add_right, add_sub_cancel_right]
-    have hdiff : ∫ z, ⟪u z, gaugeFixedAdjoint x δ z⟫ =
-        (∫ z, ⟪u z, gaugeFixedAdjoint x φ z⟫) - ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ := by
-      rw [← integral_sub hint_φ hint_η, hlin]
-    have hφ0 : ∫ z, ⟪u z, gaugeFixedAdjoint x φ z⟫ = 0 :=
-      hu φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
-    linarith
-  have hsupp (z : ℂ) (hz : z ∉ K₁) : ⟪u z, gaugeFixedAdjoint x δ z⟫ = 0 := by
-    have hzδ : z ∉ tsupport δ := fun h ↦ hz <|
-      (tsupport_add (φ : ℂ → EuclideanSpace ℝ (Fin 4)) (-η)).trans
-        (union_subset hφK
-          ((tsupport_neg η).trans_subset (Metric.self_subset_cthickening (tsupport η)))) h
-    rw [gaugeFixedAdjoint_eq_zero_of_notMem_tsupport hzδ, inner_zero_right]
-  rw [hsub, norm_neg, ← setIntegral_eq_integral_of_forall_compl_eq_zero hsupp]
-  refine (norm_integral_le_integral_norm _).trans ?_
-  have hpt (z : ℂ) (hz : z ∈ K₁) :
-      ‖⟪u z, gaugeFixedAdjoint x δ z⟫‖ ≤ ((4 + 8 * M) * (r / C)) * ‖u z‖ := by
-    have hδz := hφε z
-    have hnδ : ‖δ z‖ ≤ r / C := by simpa [δ, dist_eq_norm] using hδz.1
-    have hndδ : ‖fderiv ℝ δ z‖ ≤ r / C := by
-      rw [show fderiv ℝ δ z = fderiv ℝ (φ : ℂ → EuclideanSpace ℝ (Fin 4)) z - fderiv ℝ η z from
-        fderiv_sub (φ.contDiff.differentiable (by simp) z) (hη.differentiable one_ne_zero z)]
-      simpa [dist_eq_norm] using hδz.2
-    refine (norm_inner_le_norm _ _).trans ?_
-    rw [mul_comm]
-    refine mul_le_mul_of_nonneg_right ((norm_gaugeFixedAdjoint_le
-      (hδ.differentiable one_ne_zero z)).trans ?_) (norm_nonneg _)
-    nlinarith [hM z hz, norm_nonneg (δ z)]
-  have hint_δ : IntegrableOn (fun z ↦ ⟪u z, gaugeFixedAdjoint x δ z⟫) K₁ volume :=
-    (hint_φ.sub hint_η).integrableOn.congr_fun (fun z _ ↦ by
-      have hadd := gaugeFixedAdjoint_add x (hδ.differentiable one_ne_zero z)
-        (hη.differentiable one_ne_zero z)
-      rw [sub_add_cancel] at hadd
-      simp [hadd, inner_add_right]) Metric.isClosed_cthickening.measurableSet
-  calc ∫ z in K₁, ‖⟪u z, gaugeFixedAdjoint x δ z⟫‖
-      ≤ ∫ z in K₁, ((4 + 8 * M) * (r / C)) * ‖u z‖ :=
-        setIntegral_mono_on hint_δ.norm (huK.const_mul _)
-          Metric.isClosed_cthickening.measurableSet hpt
-    _ = (4 + 8 * M) * (r / C) * U := integral_const_mul _ _
-    _ ≤ r := by
-        have hle : (4 + 8 * M) * U ≤ C := by simp only [C]; nlinarith [hM_nonneg]
-        calc (4 + 8 * M) * (r / C) * U = r * ((4 + 8 * M) * U / C) := by ring
-          _ ≤ r * 1 := mul_le_mul_of_nonneg_left ((div_le_one hC).2 hle) hr.le
-          _ = r := mul_one r
+    (Ω := (⊤ : Opens ℂ)) hηc.isCompact Subset.rfl zero_lt_one (subset_univ _) (div_pos hr hC)
+  have hφ0 : ∫ z, ⟪u z, gaugeFixedAdjoint x φ z⟫ = 0 :=
+    hu φ (φ.contDiff.of_le (by simp)) φ.hasCompactSupport
+  have hbound := norm_integral_inner_gaugeFixedAdjoint_sub_le hx (Lp.memLp u) hK₁ hM
+    (φ.contDiff.of_le (by simp)) hη hφK (Metric.self_subset_cthickening (tsupport η))
+    fun z _ ↦ hφε z
+  rw [hφ0, zero_sub, norm_neg, Real.norm_eq_abs] at hbound
+  rw [sub_zero]
+  refine hbound.trans ?_
+  have hle : (4 + 8 * M) * U ≤ C := by simp only [C]; nlinarith [hM_nonneg]
+  calc (4 + 8 * M) * (r / C) * U = r * ((4 + 8 * M) * U / C) := by ring
+    _ ≤ r * 1 := mul_le_mul_of_nonneg_left ((div_le_one hC).2 hle) hr.le
+    _ = r := mul_one r
 
 /-- **Testing against `C²` fields.** At a continuous field `x`, a square-integrable field `u`
 lies in `weakGaugeFixedKernel x` if and only if `∫ ⟪u, L_x* η⟫ = 0` for every compactly supported
@@ -341,41 +338,34 @@ theorem toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero (hx : Contin
 /-- The real-linear map sending a classical solution `y ∈ gaugeFixedKernel x` to its `L²`
 equivalence class in `weakGaugeFixedKernel x`. -/
 def gaugeFixedKernelToWeak (hx : Continuous x) :
-    gaugeFixedKernel x →ₗ[ℝ] weakGaugeFixedKernel x where
-  toFun y := ⟨(mem_gaugeFixedKernel.1 y.2).2.1.toLp y.1,
-    toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero hx
+    gaugeFixedKernel x →ₗ[ℝ] weakGaugeFixedKernel x :=
+  (gaugeFixedKernelToLp x).codRestrict (weakGaugeFixedKernel x) fun y ↦ by
+    rw [gaugeFixedKernelToLp_apply]
+    exact toLp_mem_weakGaugeFixedKernel_of_gaugeFixedOperator_eq_zero hx
       ((mem_gaugeFixedKernel.1 y.2).1.of_le (by norm_num))
-      (mem_gaugeFixedKernel.1 y.2).2.1 (mem_gaugeFixedKernel.1 y.2).2.2⟩
-  map_add' y₁ y₂ := by
-    ext1
-    exact MemLp.toLp_add (mem_gaugeFixedKernel.1 y₁.2).2.1 (mem_gaugeFixedKernel.1 y₂.2).2.1
-  map_smul' c y := by
-    ext1
-    exact MemLp.toLp_const_smul c (mem_gaugeFixedKernel.1 y.2).2.1
+      (mem_gaugeFixedKernel.1 y.2).2.1 (mem_gaugeFixedKernel.1 y.2).2.2
+
+/-- The underlying `L²` class of `gaugeFixedKernelToWeak hx y` is `gaugeFixedKernelToLp x y`. -/
+@[simp]
+theorem coe_gaugeFixedKernelToWeak (hx : Continuous x) (y : gaugeFixedKernel x) :
+    (gaugeFixedKernelToWeak hx y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) =
+      gaugeFixedKernelToLp x y := by
+  rfl
 
 /-- `gaugeFixedKernelToWeak` sends `y ∈ gaugeFixedKernel x` to an `L²` class agreeing almost
 everywhere with `y`. -/
 theorem coe_gaugeFixedKernelToWeak_ae_eq (hx : Continuous x) (y : gaugeFixedKernel x) :
     ((gaugeFixedKernelToWeak hx y : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) :
-      ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] (y : ℂ → EuclideanSpace ℝ (Fin 4)) :=
-  (mem_gaugeFixedKernel.1 y.2).2.1.coeFn_toLp
+      ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] (y : ℂ → EuclideanSpace ℝ (Fin 4)) := by
+  rw [coe_gaugeFixedKernelToWeak]
+  exact coe_gaugeFixedKernelToLp_ae_eq y
 
 /-- `gaugeFixedKernelToWeak` is injective: continuous functions agreeing almost everywhere on `ℂ`
 are equal everywhere. -/
 theorem gaugeFixedKernelToWeak_injective (hx : Continuous x) :
     Function.Injective (gaugeFixedKernelToWeak hx) := by
-  intro y₁ y₂ h
-  have hval :
-      (gaugeFixedKernelToWeak hx y₁ : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) =
-        (gaugeFixedKernelToWeak hx y₂ : Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ)) :=
-    congrArg Subtype.val h
-  have hae : (y₁ : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume] y₂ := by
-    refine (coe_gaugeFixedKernelToWeak_ae_eq hx y₁).symm.trans ?_
-    rw [hval]
-    exact coe_gaugeFixedKernelToWeak_ae_eq hx y₂
-  exact Subtype.ext <|
-    ((mem_gaugeFixedKernel.1 y₁.2).1.continuous.ae_eq_iff_eq volume
-      (mem_gaugeFixedKernel.1 y₂.2).1.continuous).1 hae
+  rw [gaugeFixedKernelToWeak, LinearMap.injective_codRestrict_iff]
+  exact gaugeFixedKernelToLp_injective x
 
 /-! ### Elliptic bootstrap and equivalence of weak and classical kernels -/
 

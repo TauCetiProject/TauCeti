@@ -71,17 +71,11 @@ theorem exists_continuous_and_differentiable_sectionValue_eq_of_mem_gaugeFixedKe
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x) :
     ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
       ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
-  obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 hy
+  obtain ⟨hy₀, hy₁, hy₂, hy₃, hlin⟩ := gaugeFixedKernel_linearizedEquation y hy
   have hxi (i : Fin 4) : Differentiable ℝ fun w ↦ x w i :=
     (EuclideanSpace.proj (𝕜 := ℝ) i).differentiable.comp hx
-  have hyi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ y w i := contDiff_euclidean.1 hyc i
-  have hlin (w : ℂ) : linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0 := by
-    refine ⟨?_, ?_⟩
-    · rw [← gaugeFixedOperator_apply_two, hker w, PiLp.zero_apply]
-    · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
   obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul (k := 2) (by norm_num)
-    (hxi 2) (hxi 3) hhol hν hνeq (hyi 0) (hyi 1) ((hyi 2).differentiable (by norm_num))
-    ((hyi 3).differentiable (by norm_num)) hlin
+    (hxi 2) (hxi 3) hhol hν hνeq hy₀ hy₁ hy₂ hy₃ hlin
   exact ⟨G, hG.continuous, H, hH, hGH⟩
 
 /-- Any differentiable integrating factor `∂bar ν = (b₂ - i b₁) / 2` for a smooth connection differs
@@ -118,20 +112,10 @@ theorem principalPartMap_bijective (hx : ContDiff ℝ ∞ x)
   have hx₂ : ContDiff ℝ 2 x := hx.of_le (by simp)
   have hxi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ x w i := contDiff_euclidean.1 hx₂ i
   have hν₂ : ContDiff ℝ 2 ν := contDiff_of_conjWirtingerDeriv_apply_one_eq hx hν hνeq
-  have hlin (y) (hy : y ∈ gaugeFixedKernel x) :
-      ContDiff ℝ 2 (fun w ↦ y w 0) ∧ ContDiff ℝ 2 (fun w ↦ y w 1) ∧
-        Differentiable ℝ (fun w ↦ y w 2) ∧ Differentiable ℝ (fun w ↦ y w 3) ∧
-        ∀ w, linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0 := by
-    obtain ⟨hyc, -, hker⟩ := mem_gaugeFixedKernel.1 hy
-    have hyi (i : Fin 4) : ContDiff ℝ 2 fun w ↦ y w i := contDiff_euclidean.1 hyc i
-    refine ⟨hyi 0, hyi 1, (hyi 2).differentiable (by norm_num),
-      (hyi 3).differentiable (by norm_num), fun w ↦ ⟨?_, ?_⟩⟩
-    · rw [← gaugeFixedOperator_apply_two, hker w, PiLp.zero_apply]
-    · rw [← gaugeFixedOperator_apply_three, hker w, PiLp.zero_apply]
   have hinj : Function.Injective (principalPartMap hD hν.continuous hdec) :=
     principalPartMap_injective (k := 2) (by norm_num) (hxi 0) (hxi 1)
       ((hxi 2).differentiable (by norm_num)) ((hxi 3).differentiable (by norm_num)) hhol hD hν₂
-      hνeq hlin hdec fun y hy η hη hyη ↦ by
+      hνeq gaugeFixedKernel_linearizedEquation hdec fun y hy η hη hyη ↦ by
         obtain ⟨hyc, hy₂, hker⟩ := mem_gaugeFixedKernel.1 hy
         exact eq_zero_of_gaugeFixedOperator_eq_zero_of_sectionValue_eq_mul_of_tendsto
           (hx.of_le (by simp)) hhol hlim hyc.continuous hy₂ hker hη hyη

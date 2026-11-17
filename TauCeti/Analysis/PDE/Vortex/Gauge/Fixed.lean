@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
-public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.Analysis.PDE.Vortex.Deformation
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Analysis.Distribution.TestFunction.Inner
@@ -60,7 +60,8 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   operator is not a sum of nonnegative Schrödinger operators, since the coupling `K` has no
   sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
 * `gaugeFixedKernel x`: the kernel of `L_x` on `C²` square-integrable variations, a real
-  subspace.
+  subspace, with its injective map `gaugeFixedKernelToLp` into `L²(ℂ; ℝ⁴)`
+  (`gaugeFixedKernelToLp_injective`).
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
@@ -756,18 +757,19 @@ theorem continuous_gaugeFixedAdjoint (hx : Continuous x) (hy : ContDiff ℝ 1 y)
     Continuous (gaugeFixedAdjoint x y) :=
   (contDiff_gaugeFixedAdjoint (n := 0) (contDiff_zero.mpr hx) (by simpa using hy)).continuous
 
-/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
-theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
-    HasCompactSupport (gaugeFixedAdjoint x y) := by
-  apply hy.mono'
-  intro z hz
-  by_contra hn
+/-- Outside `tsupport y`, `L_x* y` vanishes, with no regularity assumption on the field. -/
+theorem gaugeFixedAdjoint_eq_zero_of_notMem_tsupport {z : ℂ} (hz : z ∉ tsupport y) :
+    gaugeFixedAdjoint x y z = 0 := by
   have hd (i : Fin 4) : fderiv ℝ (fun w ↦ y w i) z = 0 :=
     fderiv_of_notMem_tsupport ℝ fun h ↦
-      hn (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
-  apply hz
+      hz (tsupport_comp_subset (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) (by simp) y h)
   ext i
-  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hn]
+  fin_cases i <;> simp [hd, image_eq_zero_of_notMem_tsupport hz]
+
+/-- The formal adjoint preserves compact support, with no regularity assumption on the field. -/
+theorem hasCompactSupport_gaugeFixedAdjoint (hy : HasCompactSupport y) :
+    HasCompactSupport (gaugeFixedAdjoint x y) :=
+  hy.mono' fun _ hz ↦ not_not.1 fun hn ↦ hz (gaugeFixedAdjoint_eq_zero_of_notMem_tsupport hn)
 
 /-- The gauge-fixed operator is `Cⁿ` when the background is `Cⁿ` and the argument is `Cⁿ⁺¹`. -/
 theorem contDiff_gaugeFixedOperator {n : WithTop ℕ∞}
@@ -980,6 +982,36 @@ theorem mem_gaugeFixedKernel :
     y ∈ gaugeFixedKernel x ↔
       ContDiff ℝ 2 y ∧ MemLp y 2 volume ∧ ∀ z, gaugeFixedOperator x y z = 0 :=
   Iff.rfl
+
+/-- The real-linear map sending a classical kernel element `y ∈ gaugeFixedKernel x` to its `L²`
+equivalence class. -/
+def gaugeFixedKernelToLp (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedKernel x →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
+  toFun y := (mem_gaugeFixedKernel.1 y.2).2.1.toLp y
+  map_add' y v :=
+    MemLp.toLp_add (mem_gaugeFixedKernel.1 y.2).2.1 (mem_gaugeFixedKernel.1 v.2).2.1
+  map_smul' t y := MemLp.toLp_const_smul t (mem_gaugeFixedKernel.1 y.2).2.1
+
+/-- `gaugeFixedKernelToLp` sends `y ∈ gaugeFixedKernel x` to its `L²` class `MemLp.toLp`. -/
+theorem gaugeFixedKernelToLp_apply (y : gaugeFixedKernel x) :
+    gaugeFixedKernelToLp x y = (mem_gaugeFixedKernel.1 y.2).2.1.toLp y := by
+  rfl
+
+/-- `gaugeFixedKernelToLp` sends `y ∈ gaugeFixedKernel x` to an `L²` class agreeing almost
+everywhere with `y`. -/
+theorem coe_gaugeFixedKernelToLp_ae_eq (y : gaugeFixedKernel x) :
+    (gaugeFixedKernelToLp x y : ℂ → EuclideanSpace ℝ (Fin 4)) =ᵐ[volume]
+      (y : ℂ → EuclideanSpace ℝ (Fin 4)) := by
+  rw [gaugeFixedKernelToLp_apply]
+  exact (mem_gaugeFixedKernel.1 y.2).2.1.coeFn_toLp
+
+/-- `gaugeFixedKernelToLp` is injective: continuous functions agreeing almost everywhere on `ℂ`
+are equal everywhere. -/
+theorem gaugeFixedKernelToLp_injective (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
+    Function.Injective (gaugeFixedKernelToLp x) := by
+  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ Subtype.ext ?_
+  have h := (coe_gaugeFixedKernelToLp_ae_eq y).symm.trans ((Lp.eq_zero_iff_ae_eq_zero).1 hy)
+  exact ((mem_gaugeFixedKernel.1 y.2).1.continuous.ae_eq_iff_eq volume continuous_const).1 h
 
 end Kernel
 
