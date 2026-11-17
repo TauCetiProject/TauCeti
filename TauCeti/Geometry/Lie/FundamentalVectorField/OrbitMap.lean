@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.FundamentalVectorField
-import TauCeti.Geometry.Manifold.IsManifold.Basic
+import TauCeti.Geometry.Manifold.RegularValue
 
 /-!
 # The differential and the rank of the orbit map of a Lie group action
@@ -57,8 +57,8 @@ an immersion, respectively a submersion.
 * `TauCeti.mfderiv_fundamentalVectorField_eq_zero`,
   `TauCeti.orbitTangent_fundamental_le_ker_mfderiv`, and
   `TauCeti.ker_mfderiv_eq_orbitTangent_fundamental`: fundamental vector fields are vertical along
-  locally orbit-invariant differentiable maps `p : M → Q`, and `ker dp_x = 𝔤 · x` when `x` is
-  locally free, `dp_x` is surjective, and `dim Q + dim G = dim M`.
+  locally orbit-invariant maps `p : M → Q` (with no differentiability assumption needed on `p`), and
+  `ker dp_x = 𝔤 · x` when `x` is locally free, `dp_x` is surjective, and `dim Q + dim G = dim M`.
 
 ## References
 
@@ -102,30 +102,23 @@ theorem mfderiv_smul_const_apply (g : G) (x : M) (v : TangentSpace I g) :
   exact mfderiv_comp_apply_of_eq g (ContMDiffSMul.mdifferentiableAt_smul_const (g • x) 1)
     (mdifferentiableAt_mul_right (a := g⁻¹)) (mul_inv_cancel g) v
 
-omit [ContMDiffMul I 1 G] in
+omit [ContMDiffMul I 1 G] [ContMDiffSMul I I' 1 G M] in
 /-- **Fundamental vector fields are vertical along orbit-invariant maps.** If `p : M → Q` is
-differentiable at `x` and constant on the local orbit `{g • x | g near 1}`, then `dp_x` annihilates
-every fundamental vector `ξ_M(x)`. -/
+constant on the local orbit `{g • x | g near 1}`, then `dp_x` annihilates every fundamental vector
+`ξ_M(x)`. No differentiability hypothesis on `p` or the action is required: where either map fails
+to be differentiable, the corresponding derivative is `0`. -/
 theorem mfderiv_fundamentalVectorField_eq_zero
     {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace 𝕜 EQ]
     {HQ : Type*} [TopologicalSpace HQ] {JQ : ModelWithCorners 𝕜 EQ HQ}
     {Q : Type*} [TopologicalSpace Q] [ChartedSpace HQ Q]
-    {p : M → Q} {x : M} (hp : MDifferentiableAt I' JQ p x)
+    {p : M → Q} {x : M}
     (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x) (ξ : GroupLieAlgebra I G) :
     mfderiv I' JQ p x (fundamentalVectorField I' ξ x) = 0 := by
+  have hle := range_mfderiv_le_ker_mfderiv_of_eventually_eq (I := I') (J := JQ) (K := I)
+    (f := p) (g := fun g : G ↦ g • x) (p := (1 : G)) (y := p x) hinv
+  rw [one_smul] at hle
   rw [fundamentalVectorField_apply]
-  have horb : MDifferentiableAt I I' (fun g : G ↦ g • x) 1 :=
-    (ContMDiffSMul.contMDiff_smul_const (I := I) (I' := I') (n := 1) x).mdifferentiableAt
-      one_ne_zero
-  have hcomp := mfderiv_comp_apply_of_eq (I := I) (I' := I') (I'' := JQ) (1 : G) hp horb
-    (one_smul G x) ξ
-  -- Since `g ↦ p (g • x)` agrees near `1` with the constant map `p x`, its differential vanishes.
-  have hconst : mfderiv I JQ (p ∘ fun g : G ↦ g • x) 1 ξ = 0 := by
-    have h0 : HasMFDerivAt I JQ (fun _ : G ↦ p x) (1 : G) 0 := hasMFDerivAt_const (p x) (1 : G)
-    have h1 : HasMFDerivAt I JQ (p ∘ fun g : G ↦ g • x) (1 : G) 0 :=
-      h0.congr_of_eventuallyEq hinv
-    simp [h1.mfderiv]
-  exact hcomp.symm.trans hconst
+  exact hle (LinearMap.mem_range_self _ ξ)
 
 end Differential
 
@@ -220,34 +213,31 @@ variable {EQ : Type*} [NormedAddCommGroup EQ] [NormedSpace ℝ EQ]
   {HQ : Type*} [TopologicalSpace HQ] {JQ : ModelWithCorners ℝ EQ HQ}
   {Q : Type*} [TopologicalSpace Q] [ChartedSpace HQ Q]
 
-/-- The orbit tangent space `𝔤 · x` is contained in the kernel of `dp_x` whenever `p` is
-differentiable at `x` and locally invariant along the orbit of `x`. -/
+/-- The orbit tangent space `𝔤 · x` is contained in the kernel of `dp_x` whenever `p` is locally
+invariant along the orbit of `x`. No differentiability assumption on `p` is needed. -/
 theorem orbitTangent_fundamental_le_ker_mfderiv [CompleteSpace E'] {p : M → Q} {x : M}
-    (hp : MDifferentiableAt I' JQ p x) (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x) :
+    (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x) :
     (InfinitesimalAction.fundamental I G I' M).orbitTangent x ≤ (mfderiv I' JQ p x).ker := by
-  intro v hv
-  obtain ⟨ξ, rfl⟩ := (InfinitesimalAction.mem_orbitTangent_iff _ x).1 hv
-  rw [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, InfinitesimalAction.fundamental_apply]
-  exact mfderiv_fundamentalVectorField_eq_zero hp hinv ξ
+  have hle := range_mfderiv_le_ker_mfderiv_of_eventually_eq (I := I') (J := JQ) (K := I)
+    (f := p) (g := fun g : G ↦ g • x) (p := (1 : G)) (y := p x) hinv
+  rw [range_mfderiv_smul_const, one_smul] at hle
+  exact hle
 
-/-- **Vertical kernel by dimension counting.** If `p : M → Q` is differentiable at a locally free
-point `x`, locally invariant along the orbit of `x`, and has surjective differential `dp_x` onto a
-target model of complementary dimension `dim EQ + dim E = dim E'`, then `ker dp_x = 𝔤 · x`. -/
+/-- **Vertical kernel by dimension counting.** If `p : M → Q` is locally invariant along the orbit
+of a locally free point `x`, and has surjective differential `dp_x` onto a target model of
+complementary dimension `dim EQ + dim E = dim E'`, then `ker dp_x = 𝔤 · x`. -/
 theorem ker_mfderiv_eq_orbitTangent_fundamental [FiniteDimensional ℝ E'] {p : M → Q} {x : M}
     (hx : (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥)
-    (hp : MDifferentiableAt I' JQ p x) (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x)
+    (hinv : ∀ᶠ g in 𝓝 (1 : G), p (g • x) = p x)
     (hsurj : Surjective (mfderiv I' JQ p x))
     (hdim : Module.finrank ℝ EQ + Module.finrank ℝ E = Module.finrank ℝ E') :
     (mfderiv I' JQ p x).ker = (InfinitesimalAction.fundamental I G I' M).orbitTangent x := by
-  refine (Submodule.eq_of_le_of_finrank_eq
-    (orbitTangent_fundamental_le_ker_mfderiv hp hinv) ?_).symm
-  have hrn := LinearMap.finrank_range_add_finrank_ker
-    (mfderiv I' JQ p x : TangentSpace I' x →ₗ[ℝ] TangentSpace JQ (p x))
-  rw [LinearMap.range_eq_top.2 hsurj, finrank_top, finrank_tangentSpace,
-    finrank_tangentSpace] at hrn
-  rw [(InfinitesimalAction.fundamental I G I' M).finrank_orbitTangent_of_isotropy_eq_bot x hx,
-    finrank_tangentSpace]
-  omega
+  have : CompleteSpace E' := FiniteDimensional.completeSpace ℝ E'
+  have hreg : IsRegularPoint I' JQ p ((1 : G) • x) := by rwa [one_smul, isRegularPoint_iff]
+  have heq := hreg.range_mfderiv_eq_ker_mfderiv (K := I) (g := fun h : G ↦ h • x) (p := (1 : G))
+    (y := p x) hinv ((injective_mfderiv_smul_const_iff x 1).2 hx) (by omega)
+  rw [range_mfderiv_smul_const, one_smul] at heq
+  exact heq.symm
 
 end VerticalKernel
 

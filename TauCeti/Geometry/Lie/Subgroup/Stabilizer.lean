@@ -37,8 +37,8 @@ conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, as the stabilizers are
 The action is **locally free** at `x` when `G_x` is discrete. Since `G_x` is an embedded Lie
 subgroup modelled on its Lie algebra `𝔤_x`, this happens exactly when `𝔤_x = 0`, that is, when
 `ξ ↦ ξ_M(x)` is injective. In particular, at any point with trivial stabilizer the isotropy
-algebra vanishes (`TauCeti.Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`), and at any
-locally free (or free) point on a finite-dimensional manifold we have `dim G ≤ dim M`
+algebra vanishes (`TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`), and at any locally free (or
+free) point on a finite-dimensional manifold we have `dim G ≤ dim M`
 (`TauCeti.Lie.finrank_le_of_discreteTopology_stabilizer`,
 `TauCeti.Lie.finrank_le_of_stabilizer_eq_bot`). Through
 `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff` this is what makes every point
@@ -54,8 +54,8 @@ with discrete stabilizer, at which the form is nondegenerate, a regular point of
   algebra `𝔤_x`**, transported to left-invariant derivations by evaluation at the identity.
 * `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot`: the stabilizer is discrete
   exactly when the isotropy algebra is trivial.
-* `TauCeti.Lie.isotropy_fundamental_eq_bot_of_stabilizer_eq_bot`: where the stabilizer is trivial,
-  the isotropy algebra vanishes.
+* `TauCeti.Lie.isotropy_eq_bot_of_stabilizer_eq_bot`: a point with trivial stabilizer has
+  trivial isotropy algebra.
 * `TauCeti.Lie.finrank_le_of_discreteTopology_stabilizer`,
   `TauCeti.Lie.finrank_le_of_stabilizer_eq_bot`: where the stabilizer is discrete (or trivial),
   `dim G ≤ dim M`.
@@ -161,9 +161,9 @@ theorem discreteTopology_stabilizer_iff_isotropy_eq_bot [CompleteSpace E'] {x : 
   · exact (LinearEquiv.map_eq_zero_iff e.toLinearEquiv).1 (h _ hX)
 
 omit [T2Space G] in
-/-- Where the stabilizer of `x` is trivial, the isotropy Lie algebra `𝔤_x` of a smooth action on a
-Hausdorff boundaryless manifold vanishes. -/
-theorem isotropy_fundamental_eq_bot_of_stabilizer_eq_bot [CompleteSpace E'] {x : M}
+/-- **Free points are locally free.** Where the stabilizer of `x` is trivial, so is the isotropy
+algebra `𝔤_x`. -/
+theorem isotropy_eq_bot_of_stabilizer_eq_bot [CompleteSpace E'] {x : M}
     (hx : MulAction.stabilizer G x = ⊥) :
     (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   have : T2Space G := I.t2Space_of_lieGroup ∞

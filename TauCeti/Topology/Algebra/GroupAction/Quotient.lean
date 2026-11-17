@@ -206,7 +206,7 @@ theorem AddAction.orbitRelQuotientHomeomorphMultiplicative_toEquiv {G X : Type*}
   apply Equiv.ext
   intro q
   induction q using Quotient.inductionOn with
-  | h x => exact (AddAction.orbitRelQuotientEquivMultiplicative_mk x).symm
+  | h x => simp
 
 /-- Canonical homeomorphism identifying the orbit space of a multiplicative action of `G` on `X`
 with the orbit space of the corresponding additive action of `Additive G` on `X`. -/
@@ -244,7 +244,7 @@ theorem MulAction.orbitRelQuotientHomeomorphAdditive_toEquiv {G X : Type*} [Grou
   apply Equiv.ext
   intro q
   induction q using Quotient.inductionOn with
-  | h x => exact (MulAction.orbitRelQuotientEquivAdditive_mk x).symm
+  | h x => simp
 
 end TypeTags
 

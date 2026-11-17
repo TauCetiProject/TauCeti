@@ -39,8 +39,8 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [TopologicalSpace W]
   {I : ModelWithCorners 𝕜 E H} {J : ModelWithCorners 𝕜 F G}
   {K : ModelWithCorners 𝕜 V W} [K.Boundaryless]
-  {M N P : Type*} [TopologicalSpace M] [cM : ChartedSpace H M]
-  [TopologicalSpace N] [cN : ChartedSpace G N] [TopologicalSpace P] [ChartedSpace W P]
+  {M N P : Type*} [tM : TopologicalSpace M] [cM : ChartedSpace H M]
+  [tN : TopologicalSpace N] [cN : ChartedSpace G N] [TopologicalSpace P] [ChartedSpace W P]
   {n : ℕ∞ω} {p : P → M} {q : P → N}
 
 namespace Equiv
@@ -92,16 +92,16 @@ end Equiv
 
 namespace ChartedSpace
 
-omit cM in
-/-- **Uniqueness of quotient smooth structures.** Two atlases on the same topological space `M` are
-`C^n`-diffeomorphic via the identity whenever the same surjective map out of a boundaryless manifold
-is a `C^n` submersion for both atlases. -/
-theorem exists_diffeomorph_apply_eq_self_of_isSubmersion (a : ChartedSpace H M)
-    (b : ChartedSpace G M) (hp_surj : Surjective p)
-    (ha : letI := a; IsSubmersion K I n p)
-    (hb : letI := b; IsSubmersion K J n p) :
-    ∃ e : @Diffeomorph 𝕜 _ _ _ _ _ _ _ _ _ _ _ I J M _ a M _ b n, ∀ x, e x = x :=
-  ⟨Equiv.diffeomorphOfSubmersions (cM := a) (cN := b)
+omit tM cM in
+/-- **Uniqueness of quotient smooth structures.** Two topologies and atlases on the same type `M`
+are `C^n`-diffeomorphic via the identity whenever the same surjective map out of a boundaryless
+manifold is a `C^n` submersion for both structures. -/
+theorem exists_diffeomorph_apply_eq_self_of_isSubmersion {t₁ t₂ : TopologicalSpace M}
+    (a : @ChartedSpace H _ M t₁) (b : @ChartedSpace G _ M t₂) (hp_surj : Surjective p)
+    (ha : letI := t₁; letI := a; IsSubmersion K I n p)
+    (hb : letI := t₂; letI := b; IsSubmersion K J n p) :
+    ∃ e : @Diffeomorph 𝕜 _ _ _ _ _ _ _ _ _ _ _ I J M t₁ a M t₂ b n, ∀ x, e x = x :=
+  ⟨Equiv.diffeomorphOfSubmersions (tM := t₁) (cM := a) (tN := t₂) (cN := b)
     (Equiv.refl M) ha hp_surj hb rfl, fun _ ↦ rfl⟩
 
 end ChartedSpace

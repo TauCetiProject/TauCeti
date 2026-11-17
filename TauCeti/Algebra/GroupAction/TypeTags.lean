@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Algebra.Group.Action.TypeTags
 public import Mathlib.Algebra.Group.Pointwise.Set.Scalar
+public import Mathlib.Algebra.Group.Subgroup.Lattice
 public import Mathlib.Algebra.GroupWithZero.Action.Defs
+public import Mathlib.GroupTheory.GroupAction.Defs
 public import Mathlib.GroupTheory.GroupAction.Hom
 
 /-!
@@ -35,8 +37,9 @@ additive monoid `A` as an action by monoid endomorphisms on `Multiplicative A`. 
 additive coefficient module enter a construction stated for multiplicative ones, such as the
 twisted product of a factor set.
 
-This file also transfers cancellativity on the *acting* side (`Additive.isLeftCancelVAdd`,
-`Additive.isCancelVAdd`, `Multiplicative.isLeftCancelSMul`, `Multiplicative.isCancelSMul`),
+This file also transfers cancellativity (`Additive.isLeftCancelVAdd`, `Additive.isCancelVAdd`,
+`Multiplicative.isLeftCancelSMul`, `Multiplicative.isCancelSMul`) and point stabilizers
+(`TauCeti.stabilizer_multiplicative`, `TauCeti.stabilizer_additive`) on the *acting* side,
 complementing `Additive.vadd` and `Multiplicative.smul`.
 -/
 
@@ -153,3 +156,23 @@ theorem toAdditive_comp {P C : Type*} [Monoid P] [Monoid C] [MulDistribMulAction
   simp
 
 end MulDistribMulActionHom
+
+namespace TauCeti
+
+/-- The stabilizer of `x` under `Multiplicative G` is the multiplicative subgroup corresponding to
+the additive stabilizer of `x` under `G`. -/
+@[simp]
+theorem stabilizer_multiplicative {G X : Type*} [AddGroup G] [AddAction G X] (x : X) :
+    MulAction.stabilizer (Multiplicative G) x = (AddAction.stabilizer G x).toSubgroup := by
+  ext g
+  simp [MulAction.mem_stabilizer_iff, AddAction.mem_stabilizer_iff]
+
+/-- The stabilizer of `x` under `Additive G` is the additive subgroup corresponding to the
+multiplicative stabilizer of `x` under `G`. -/
+@[simp]
+theorem stabilizer_additive {G X : Type*} [Group G] [MulAction G X] (x : X) :
+    AddAction.stabilizer (Additive G) x = (MulAction.stabilizer G x).toAddSubgroup := by
+  ext g
+  simp [AddAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff]
+
+end TauCeti
