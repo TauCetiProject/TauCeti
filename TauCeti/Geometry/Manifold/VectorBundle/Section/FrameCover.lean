@@ -214,12 +214,9 @@ theorem continuous_smulLinearMap (f : C^n⟮I, M; 𝕜⟯) :
   refine ((ContMDiffMap.continuous_clmApplyLinearMap A).comp
     (continuous_frameCoordinates e U hU i)).congr fun s ↦ ?_
   ext x
-  rw [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply,
-    Bundle.Trivialization.frameCoordinates_apply,
-    ← (e i).continuousLinearMapAt_apply_of_mem (R := 𝕜) (hU i x.2),
-    Bundle.Trivialization.frameCoordinates_apply,
-    ← (e i).continuousLinearMapAt_apply_of_mem (R := 𝕜) (hU i x.2),
-    smulLinearMap_eq_smul, smul_apply, map_smul]
-  simp only [A, ContMDiffMap.coeFn_mk, ContinuousLinearMap.lsmul_apply]
+  rw [Function.comp_apply, ContMDiffMap.clmApplyLinearMap_apply]
+  simp only [A, ContMDiffMap.coeFn_mk, ContinuousLinearMap.lsmul_apply,
+    Bundle.Trivialization.frameCoordinates_apply, smulLinearMap_eq_smul, smul_apply]
+  exact ((e i).linear 𝕜 (hU i x.2)).map_smul (f x) (s x) |>.symm
 
 end ContMDiffSection

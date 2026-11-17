@@ -35,7 +35,8 @@ of unity (`BumpCovering.contMDiff_toPartitionOfUnity_of_contMDiff`, adapted from
 `BumpCovering.contMDiff_toPartitionOfUnity`). Combining these with
 `IsCompact.exists_smoothBumpCovering_isSubordinate` gives a finite `C^n` partition of unity by
 compactly supported functions subordinate to any neighbourhood cover of `K`, without assuming
-σ-compactness (`IsCompact.exists_contMDiffMap_partitionOfUnity`).
+σ-compactness (`IsCompact.exists_contMDiffMap_partitionOfUnity`, adapting Mathlib's
+`SmoothBumpCovering.toBumpCovering` and `SmoothBumpCovering.toSmoothPartitionOfUnity` to `C^n`).
 
 The cutoff construction, smoothing a finite sum of bump functions by `Real.smoothTransition`,
 follows the bump cover in the proof of `TauCeti.exists_vectorField_mvfderiv_eq_neg_one`.
@@ -143,7 +144,9 @@ Hausdorff `C^n` manifold (`n : ℕ∞`) modelled on a finite-dimensional real sp
 family of sets such that every point of `K` has some `U j` as a neighbourhood. Then there is a
 finite family `χ : ι → C^n⟮I, M; 𝓘(ℝ), ℝ⟯` of compactly supported nonnegative `C^n` functions,
 each supported in one of the `U j`, whose sum is at most `1` everywhere and equals `1` on `K`. No
-σ-compactness hypothesis on `M` is needed. -/
+σ-compactness hypothesis on `M` is needed. The conversion from `SmoothBumpCovering` to a
+`BumpCovering` and its `C^n` partition of unity is adapted from Mathlib's
+`SmoothBumpCovering.toBumpCovering` and `SmoothBumpCovering.toSmoothPartitionOfUnity`. -/
 theorem IsCompact.exists_contMDiffMap_partitionOfUnity {n : ℕ∞} [IsManifold I n M]
     {K : Set M} (hK : IsCompact K) {κ : Type*} {U : κ → Set M}
     (hU : ∀ x ∈ K, ∃ j, U j ∈ 𝓝 x) :

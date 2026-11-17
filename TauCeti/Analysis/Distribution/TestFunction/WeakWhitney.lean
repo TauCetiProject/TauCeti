@@ -63,22 +63,23 @@ theorem continuous_toContMDiffMap :
 
 /-- For `i ≤ n`, the `i`-th derivative seminorm of a test function supported in `K` equals the
 uniform norm on `K` of its `i`-th derivative, since all derivatives vanish outside `K`. -/
-theorem seminorm_eq_norm_restrict {i : ℕ} (hi : i ≤ n) (f : 𝓓^{n}_{K}(E, F)) :
-    N[ℝ]_{K, n, i} f =
+theorem seminorm_eq_norm_restrict (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F] {i : ℕ} (hi : i ≤ n) (f : 𝓓^{n}_{K}(E, F)) :
+    N[𝕜]_{K, n, i} f =
       ‖(ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap f) i
         (by exact_mod_cast hi)).restrict (K : Set E)‖ := by
   set g : C((K : Set E), E [×i]→L[ℝ] F) :=
     (ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap f) i
       (by exact_mod_cast hi)).restrict (K : Set E)
   apply le_antisymm
-  · refine (f.seminorm_le_iff ℝ (norm_nonneg g) i).2 fun _ x hx ↦ ?_
+  · refine (f.seminorm_le_iff 𝕜 (norm_nonneg g) i).2 fun _ x hx ↦ ?_
     have hgx : g ⟨x, hx⟩ = iteratedFDeriv ℝ i f x := by
       simp [g, -SetLike.coe_sort_coe]
     exact hgx ▸ g.norm_coe_le_norm ⟨x, hx⟩
-  · refine (g.norm_le (apply_nonneg (ContDiffMapSupportedIn.seminorm ℝ E F n K i) f)).2 fun z ↦ ?_
+  · refine (g.norm_le (apply_nonneg (ContDiffMapSupportedIn.seminorm 𝕜 E F n K i) f)).2 fun z ↦ ?_
     have hgz : g z = iteratedFDeriv ℝ i f z := by
       simp [g, -SetLike.coe_sort_coe]
-    exact hgz.symm ▸ norm_iteratedFDeriv_apply_le_seminorm ℝ hi
+    exact hgz.symm ▸ norm_iteratedFDeriv_apply_le_seminorm 𝕜 hi
 
 /-- Continuity into `𝓓^{n}_{K}(E, F)` is equivalent to continuity into the weak Whitney space of
 `C^n` maps, because functions supported in `K` have derivatives supported in `K`. -/
@@ -88,37 +89,30 @@ theorem continuous_iff_toContMDiffMap {X : Type*} [TopologicalSpace X]
   refine ⟨fun h ↦ continuous_toContMDiffMap.comp h, fun hφ ↦ ?_⟩
   refine (continuous_iff_comp_order_le φ).2 fun i hi ↦ ?_
   have hi' : (i : WithTop ℕ∞) ≤ n := by exact_mod_cast hi
-  let ψ : X → BoundedContinuousFunction (K : Set E) (E [×i]→L[ℝ] F) := fun x ↦
-    ContinuousMap.equivBoundedOfCompact (K : Set E) _
-      ((ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap (φ x)) i hi').restrict
-        (K : Set E))
+  let ψ : X → C((K : Set E), E [×i]→L[ℝ] F) := fun x ↦
+    (ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap (φ x)) i hi').restrict (K : Set E)
   have hψ : Continuous ψ :=
-    (ContinuousMap.isUniformInducing_equivBoundedOfCompact (K : Set E)
-      _).uniformContinuous.continuous.comp
-      ((ContinuousMap.continuous_restrict (K : Set E)).comp
-        ((ContMDiffMap.continuous_iteratedFDerivContinuousMap i hi').comp hφ))
+    (ContinuousMap.continuous_restrict (K : Set E)).comp
+      ((ContMDiffMap.continuous_iteratedFDerivContinuousMap i hi').comp hφ)
   have hdist (x y : X) :
       dist (structureMapCLM ℝ n i (φ x)) (structureMapCLM ℝ n i (φ y)) = dist (ψ x) (ψ y) := by
     have hsub :
         (ContMDiffMap.iteratedFDerivContinuousMap (toContMDiffMap (φ x - φ y)) i hi').restrict
             (K : Set E) =
-          (ψ x - ψ y).toContinuousMap := by
+          ψ x - ψ y := by
       ext z : 1
       simp only [ψ, ContinuousMap.restrict_apply, ContMDiffMap.iteratedFDerivContinuousMap_apply,
-        coe_toContMDiffMap, FunLike.coe_sub, BoundedContinuousFunction.coe_toContinuousMap,
-        sub_apply, ContinuousMap.equivBoundedOfCompact_apply,
-        BoundedContinuousFunction.mkOfCompact_apply]
+        coe_toContMDiffMap, FunLike.coe_sub, ContinuousMap.sub_apply]
       exact iteratedFDeriv_sub_apply (((φ x).contDiff.of_le hi').contDiffAt)
         (((φ y).contDiff.of_le hi').contDiffAt)
     rw [dist_eq_norm (structureMapCLM ℝ n i (φ x)) (structureMapCLM ℝ n i (φ y)),
       ← map_sub (structureMapCLM ℝ n i) (φ x) (φ y),
       ← ContDiffMapSupportedIn.seminorm_apply,
-      seminorm_eq_norm_restrict hi, hsub, BoundedContinuousFunction.norm_toContinuousMap_eq,
-      ← dist_eq_norm (ψ x) (ψ y)]
+      seminorm_eq_norm_restrict ℝ hi, hsub, ← dist_eq_norm (ψ x) (ψ y)]
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   rw [ContinuousAt, Metric.tendsto_nhds]
   intro ε hε
-  filter_upwards [(Metric.tendsto_nhds.1 (hψ.continuousAt (x := x))) ε hε] with y hy
+  filter_upwards [(Metric.tendsto_nhds (u := ψ)).1 (hψ.tendsto x) ε hε] with y hy
   simpa only [Function.comp_apply, hdist] using hy
 
 /-- The inclusion of `𝓓^{n}_{K}(E, F)` into `C^n(E, F)` with the weak Whitney topology induces its
