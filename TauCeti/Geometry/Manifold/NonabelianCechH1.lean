@@ -29,6 +29,10 @@ preserves the base point, is functorial for the identity and for composite refin
 not depend on the choice of `τ` (`TauCeti.NonabelianCechH1.refine_eq_refine`), because two choices
 differ by the coboundary of the transitions `c (τ' k) (τ k)` between the chosen charts.
 
+A `C^n` group homomorphism `ρ : G →* H` pushes cocycles and cohomologous pairs forward pointwise,
+inducing the pointed map `TauCeti.NonabelianCechH1.map ρ`, which is functorial under identity and
+composition and commutes with cover refinement.
+
 Mathlib's `CategoryTheory.PresheafOfGroups.H1` is the corresponding set for a presheaf of groups on
 a category, whose `1`-cochains are compatible families of sections over every object mapping to
 two members of the cover. Here cochains are functions `B → G` on a cover by arbitrary subsets,
@@ -43,13 +47,15 @@ The classification of principal bundles by this set is in
 * `TauCeti.IsContMDiffGroupCocycle`: `C^n` group-valued cocycles on a cover.
 * `TauCeti.IsContMDiffCohomologous`: cocycles differing by a `C^n` `0`-cochain.
 * `TauCeti.NonabelianCechH1`: the nonabelian Čech `H¹` of a cover, with
-  `TauCeti.NonabelianCechH1.refine` its refinement maps and `TauCeti.NonabelianCechH1.lift`
+  `TauCeti.NonabelianCechH1.refine` its refinement maps, `TauCeti.NonabelianCechH1.map` its
+  pushforward along `C^n` group homomorphisms, and `TauCeti.NonabelianCechH1.lift`
   descending cohomology-invariant functions of cocycles to it.
 
 ## References
 
 * F. Hirzebruch, *Topological Methods in Algebraic Geometry*, Springer, 1966, §3.1 (the nonabelian
-  first Čech cohomology set of a covering and its refinement maps).
+  first Čech cohomology set of a covering, its refinement maps, and its functoriality under group
+  homomorphisms).
 -/
 
 public section
@@ -299,5 +305,67 @@ theorem refine_eq_refine (τ τ' : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k))
   funext <| ind fun _ hc ↦ mk_eq_mk_iff.2 (hc.isContMDiffCohomologous_comp τ τ' hτ hτ')
 
 end NonabelianCechH1
+
+/-! ### Pushforward along group homomorphisms -/
+
+section Map
+
+variable {EH HH EK HK : Type*} [NormedAddCommGroup EH] [NormedSpace 𝕜 EH] [TopologicalSpace HH]
+  {IH : ModelWithCorners 𝕜 EH HH} {H : Type*} [Group H] [TopologicalSpace H] [ChartedSpace HH H]
+  [NormedAddCommGroup EK] [NormedSpace 𝕜 EK] [TopologicalSpace HK] {IK : ModelWithCorners 𝕜 EK HK}
+  {K : Type*} [Group K] [TopologicalSpace K] [ChartedSpace HK K] {U : ι → Set B} {V : κ → Set B}
+
+/-- Pushing a `C^n` cocycle forward along a `C^n` group homomorphism yields a `C^n` cocycle. -/
+theorem IsContMDiffGroupCocycle.map {c : ι → ι → B → G} (hc : IsContMDiffGroupCocycle IB IG n U c)
+    (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
+    IsContMDiffGroupCocycle IB IH n U fun i j b ↦ ρ (c i j b) :=
+  ⟨fun i j k b hb ↦ by rw [← map_mul, hc.mul_eq i j k b hb],
+    fun i j ↦ hρ.comp_contMDiffOn (hc.contMDiffOn i j)⟩
+
+/-- Pushing `C^n`-cohomologous families forward along a `C^n` homomorphism preserves cohomology. -/
+theorem IsContMDiffCohomologous.map {c c' : ι → ι → B → G}
+    (h : IsContMDiffCohomologous IB IG n U c c') (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
+    IsContMDiffCohomologous IB IH n U (fun i j b ↦ ρ (c i j b)) fun i j b ↦ ρ (c' i j b) := by
+  obtain ⟨k, hk, hcc'⟩ := h
+  exact ⟨fun i b ↦ ρ (k i b), fun i ↦ hρ.comp_contMDiffOn (hk i),
+    fun i j b hb ↦ by simp only [hcc' i j b hb, map_mul, map_inv]⟩
+
+namespace NonabelianCechH1
+
+variable [LieGroup IG n G]
+
+/-- The **pushforward** of nonabelian Čech `H¹` along a `C^n` group homomorphism `ρ : G →* H`,
+sending `[c]` to `[ρ ∘ c]`. -/
+def map [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
+    NonabelianCechH1 IB IG n G U → NonabelianCechH1 IB IH n H U :=
+  Quotient.map (fun c ↦ ⟨fun i j b ↦ ρ (c.1 i j b), c.2.map ρ hρ⟩) fun _ _ h ↦ h.map ρ hρ
+
+/-- Pushforward of the class of a cocycle `c` is the class of `ρ ∘ c`. -/
+@[simp] theorem map_mk [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ)
+    (c : ι → ι → B → G) (hc : IsContMDiffGroupCocycle IB IG n U c) :
+    map ρ hρ (mk c hc) = mk (fun i j b ↦ ρ (c i j b)) (hc.map ρ hρ) := (rfl)
+
+/-- Pushforward along a group homomorphism preserves the distinguished trivial class `1`. -/
+@[simp] theorem map_one [LieGroup IH n H] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ) :
+    map ρ hρ (1 : NonabelianCechH1 IB IG n G U) = 1 :=
+  mk_eq_mk_iff.2 <| .of_eqOn fun _ _ _ _ ↦ _root_.map_one ρ
+
+/-- Pushforward along the identity homomorphism is the identity on Čech `H¹`. -/
+@[simp] theorem map_id (x : NonabelianCechH1 IB IG n G U) :
+    map (MonoidHom.id G) contMDiff_id x = x := ind (fun _ _ ↦ rfl) x
+
+/-- Pushforward on Čech `H¹` is functorial under composition of `C^n` group homomorphisms. -/
+@[simp] theorem map_map [LieGroup IH n H] [LieGroup IK n K] (ρ : G →* H) (hρ : ContMDiff IG IH n ρ)
+    (σ : H →* K) (hσ : ContMDiff IH IK n σ) (x : NonabelianCechH1 IB IG n G U) :
+    map σ hσ (map ρ hρ x) = map (σ.comp ρ) (hσ.comp hρ) x := ind (fun _ _ ↦ rfl) x
+
+/-- Pushforward along a group homomorphism commutes with cover refinement. -/
+theorem refine_map [LieGroup IH n H] (τ : κ → ι) (hτ : ∀ k, V k ⊆ U (τ k)) (ρ : G →* H)
+    (hρ : ContMDiff IG IH n ρ) (x : NonabelianCechH1 IB IG n G U) :
+    refine τ hτ (map ρ hρ x) = map ρ hρ (refine τ hτ x) := ind (fun _ _ ↦ rfl) x
+
+end NonabelianCechH1
+
+end Map
 
 end TauCeti

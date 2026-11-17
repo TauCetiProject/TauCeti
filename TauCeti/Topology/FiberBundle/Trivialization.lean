@@ -265,6 +265,13 @@ theorem equivAt_symm_apply (e : Trivialization F (π F E)) (b : B) (hb : b ∈ e
     (e.equivAt b hb).symm v = e.symm b v :=
   (rfl)
 
+/-- The fibre-valued inverse of a trivialization with constant fibre coordinate `v` defines a
+continuous local section into the total space at any point of its base set. -/
+theorem continuousAt_totalSpaceMk_symm (e : Trivialization F (π F E)) {b : B} (hb : b ∈ e.baseSet)
+    (v : F) : ContinuousAt (fun x ↦ TotalSpace.mk' F x (e.symm x v)) b :=
+  (e.continuousAt_symm_prodMk_left hb).congr_of_eventuallyEq
+    (mem_of_superset (e.open_baseSet.mem_nhds hb) fun _ hx ↦ e.mk_symm hx v)
+
 end CoordChange
 
 end Bundle.Trivialization
