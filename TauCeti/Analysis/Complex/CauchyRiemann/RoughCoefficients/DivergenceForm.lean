@@ -11,7 +11,9 @@ import TauCeti.Analysis.Distribution.TestFunction.Inner
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
+import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Sobolev.Mollification.Interior
+import TauCeti.Data.ENNReal.Holder
 import TauCeti.MeasureTheory.Function.Holder
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
 import TauCeti.Topology.MetricSpace.Thickening
@@ -95,20 +97,6 @@ omit [FiniteDimensional ℝ V] in
 private theorem crPairing_apply (v w : V) (A : V →L[ℝ] V) : crPairing v w A = ⟪v, A w⟫_ℝ := by
   simp [crPairing]
 
-/-- The Hölder condition `1/p + 1/q ≤ 1` forces `1 ≤ p`. -/
-private theorem one_le_left_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ p :=
-  ENNReal.inv_le_one.1 (le_self_add.trans hpq)
-
-/-- The Hölder condition `1/p + 1/q ≤ 1` forces `1 ≤ q`. -/
-private theorem one_le_right_of_inv_add_inv_le_one (hpq : p⁻¹ + q⁻¹ ≤ 1) : 1 ≤ q :=
-  ENNReal.inv_le_one.1 (le_add_self.trans hpq)
-
-omit [FiniteDimensional ℝ V] in
-/-- The directional weak derivatives `∂_e J` of the coefficient are locally `Lᵖ`. -/
-private theorem IsSobolevCRCoefficients.memLpLoc_deriv_apply
-    (hc : IsSobolevCRCoefficients p Ω J DJ S) (e : ℂ) : MemLpLoc p Ω (fun z => DJ z e) :=
-  hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) e)
-
 omit [FiniteDimensional ℝ V] in
 /-- A test function times any field vanishes off the support of the test function. -/
 private theorem smul_eq_zero_of_notMem_tsupport (χ : 𝓓(Ω, ℝ)) (w : ℂ → V) {z : ℂ}
@@ -116,11 +104,11 @@ private theorem smul_eq_zero_of_notMem_tsupport (χ : 𝓓(Ω, ℝ)) (w : ℂ �
   simp [image_eq_zero_of_notMem_tsupport hz]
 
 omit [FiniteDimensional ℝ V] in
-/-- The field `a = ∂_s χ ξ + ∂_t χ J ξ + χ ((∂_t J) ξ - S ξ + η)` vanishes off the support
+/-- The field `a = ∂_s χ ξ + ∂_t χ J ξ + χ (η + (∂_t J) ξ - S ξ)` vanishes off the support
 of `χ`. -/
 private theorem crPairingField_eq_zero_of_notMem_tsupport (χ : 𝓓(Ω, ℝ)) {z : ℂ}
     (hz : z ∉ tsupport (χ : ℂ → ℝ)) : fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-      χ z • (DJ z I (ξ z) - S z (ξ z) + η z) = 0 := by
+      χ z • (η z + DJ z I (ξ z) - S z (ξ z)) = 0 := by
   simp [image_eq_zero_of_notMem_tsupport hz, fderiv_of_notMem_tsupport ℝ hz]
 
 omit [FiniteDimensional ℝ V] in
@@ -129,82 +117,97 @@ private theorem memLp_testFunction_smul {s : ℝ≥0∞} {W : ℂ → V} (c : �
     (hW : MemLpLoc s Ω W) : MemLp (fun z => c z • W z) s volume :=
   hW.memLp_smul_of_hasCompactSupport c.continuous c.hasCompactSupport c.tsupport_subset
 
+/-- The field `F = η + (∂_t J) ξ - S ξ` is locally `Lˢ` when `η` is, for a Hölder triple
+`1/p + 1/q = 1/t` with `s ≤ t`. -/
+private theorem IsWeakCRSolution.memLpLoc_divergenceForm_fst {s t : ℝ≥0∞}
+    [ENNReal.HolderTriple p q t] (h : IsWeakCRSolution q Ω J DJ S ξ η)
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hst : s ≤ t) (hη : MemLpLoc s Ω η) :
+    MemLpLoc s Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
+  (hη.add (((hc.memLpLoc_deriv_apply I).clm_apply h.memLpLoc).mono_exponent hst)).sub
+    ((hc.memLpLoc_zeroth.clm_apply h.memLpLoc).mono_exponent hst)
+
+/-- The field `G = -J F - (∂_s J) ξ - (∂_t J) (J ξ)` is locally `Lˢ` when `η` is and `J` is
+locally bounded, for a Hölder triple `1/p + 1/q = 1/t` with `s ≤ t`. -/
+private theorem IsWeakCRSolution.memLpLoc_divergenceForm_snd {s t : ℝ≥0∞}
+    [ENNReal.HolderTriple p q t] (h : IsWeakCRSolution q Ω J DJ S ξ η)
+    (hc : IsSobolevCRCoefficients p Ω J DJ S) (hJ : MemLpLoc ⊤ Ω J) (hst : s ≤ t)
+    (hη : MemLpLoc s Ω η) :
+    MemLpLoc s Ω (fun z => -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
+      DJ z I (J z (ξ z))) :=
+  ((hJ.clm_apply (h.memLpLoc_divergenceForm_fst hc hst hη)).neg.sub
+    (((hc.memLpLoc_deriv_apply 1).clm_apply h.memLpLoc).mono_exponent hst)).sub
+    (((hc.memLpLoc_deriv_apply I).clm_apply (hJ.clm_apply (r := q) h.memLpLoc)).mono_exponent hst)
+
 /-! ### Testing the weak equation against `χ Aᵀ v` -/
 
-/-- The field `a = ∂_s χ ξ + ∂_t χ J ξ + χ ((∂_t J) ξ - S ξ + η)` paired with the coefficient is
+/-- The field `a = ∂_s χ ξ + ∂_t χ J ξ + χ (η + (∂_t J) ξ - S ξ)` paired with the coefficient is
 integrable. -/
 private theorem IsWeakCRSolution.integrable_crPairingField
     (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) :
     Integrable (fun z => fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-      χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) := by
-  have hξ1 : MemLpLoc 1 Ω ξ := h.memLpLoc.mono_exponent (one_le_right_of_inv_add_inv_le_one hpq)
+      χ z • (η z + DJ z I (ξ z) - S z (ξ z))) := by
+  have hξ1 : MemLpLoc 1 Ω ξ :=
+    h.memLpLoc.mono_exponent (ENNReal.one_le_right_of_inv_add_inv_le_one hpq)
   have hJξ := hc.memLpLoc_coeff.memLpLoc_one_clm_apply h.memLpLoc hpq
-  have hDJξ := (hc.memLpLoc_deriv_apply I).memLpLoc_one_clm_apply h.memLpLoc hpq
-  have hSξ := hc.memLpLoc_zeroth.memLpLoc_one_clm_apply h.memLpLoc hpq
-  have hη : MemLpLoc 1 Ω η :=
-    (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 h.locallyIntegrableOn
-  have hW : MemLpLoc 1 Ω (fun z => DJ z I (ξ z) - S z (ξ z) + η z) := (hDJξ.sub hSξ).add hη
-  have hd (e : ℂ) : (fun z => fderiv ℝ (χ : ℂ → ℝ) z e) = ⇑(∂_{e} χ : 𝓓(Ω, ℝ)) :=
-    funext fun z => (TestFunction.lineDerivOp_apply_eq_fderiv χ e z).symm
+  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
+  have hW := h.memLpLoc_divergenceForm_fst hc (ENNReal.one_le_inv.2 hpq)
+    ((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 h.locallyIntegrableOn)
   have h1 := memLp_testFunction_smul (∂_{(1 : ℂ)} χ) hξ1
   have h2 := memLp_testFunction_smul (∂_{I} χ) hJξ
   have h3 := memLp_testFunction_smul χ hW
-  rw [← hd] at h1 h2
+  rw [TestFunction.coe_lineDerivOp_eq_fderiv] at h1 h2
   exact memLp_one_iff_integrable.1 ((h1.add h2).add h3)
 
 /-- **The test function `χ Aᵀ v`.** For a smooth field `A` of operators, a test function `χ` and a
 vector `v`, the function `χ Aᵀ v` is a test function `Φ`, and pointwise
 `⟪D* Φ, ξ⟫ - ⟪Φ, η⟫ = -(⟪v, A a⟫ + ⟪v, A' 1 (χ ξ)⟫ + ⟪v, A' I (χ J ξ)⟫)`, where `A'` is the
-derivative of `A` and `a = ∂_s χ ξ + ∂_t χ J ξ + χ ((∂_t J) ξ - S ξ + η)`. -/
+derivative of `A` and `a = ∂_s χ ξ + ∂_t χ J ξ + χ (η + (∂_t J) ξ - S ξ)`. -/
 private theorem exists_testFunction_inner_crFormalAdjoint_sub_inner (χ : 𝓓(Ω, ℝ)) (v : V)
     {A : ℂ → V →L[ℝ] V} (hA : ContDiff ℝ ∞ A) :
     ∃ Φ : 𝓓(Ω, V), ∀ z, ⟪crFormalAdjoint J DJ S Φ z, ξ z⟫_ℝ - ⟪(Φ : ℂ → V) z, η z⟫_ℝ =
       -(crPairing v (fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-          χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) (A z) +
+          χ z • (η z + DJ z I (ξ z) - S z (ξ z))) (A z) +
         crPairing v (χ z • ξ z) (fderiv ℝ A z 1) +
         crPairing v (χ z • J z (ξ z)) (fderiv ℝ A z I)) := by
-  let adj : (V →L[ℝ] V) ≃L[ℝ] V →L[ℝ] V :=
-    (ContinuousLinearMap.adjoint (𝕜 := ℝ) (E := V) (F := V)).toContinuousLinearEquiv
-  have hadj (B : V →L[ℝ] V) : adj B = ContinuousLinearMap.adjoint B := by simp [adj]
+  let adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V := ContinuousLinearMap.adjointRealCLM
   have hB : ContDiff ℝ ∞ (fun z => adj (A z) v) :=
-    ((adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V).contDiff.comp hA).clm_apply contDiff_const
+    (adj.contDiff.comp hA).clm_apply contDiff_const
   let Φ : 𝓓(Ω, V) := ⟨⇑χ • fun z => adj (A z) v, χ.contDiff.smul hB,
     χ.hasCompactSupport.smul_right, (tsupport_smul_subset_left _ _).trans χ.tsupport_subset⟩
-  have hΦ : (Φ : ℂ → V) = ⇑χ • fun z => adj (A z) v := rfl
+  have hΦ : (Φ : ℂ → V) = ⇑χ • fun z => adj (A z) v := TestFunction.coe_mk
   have hΦd (z e : ℂ) : fderiv ℝ (Φ : ℂ → V) z e =
       fderiv ℝ χ z e • adj (A z) v + χ z • adj (fderiv ℝ A z e) v := by
-    have h1 : HasFDerivAt (fun z => adj (A z))
-        ((adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V).comp (fderiv ℝ A z)) z :=
-      (adj : (V →L[ℝ] V) →L[ℝ] V →L[ℝ] V).hasFDerivAt.comp z
-        (hA.differentiable (by simp) z).hasFDerivAt
+    have h1 : HasFDerivAt (fun z => adj (A z)) (adj.comp (fderiv ℝ A z)) z :=
+      adj.hasFDerivAt.comp z (hA.differentiable (by simp) z).hasFDerivAt
     rw [hΦ, ((χ.contDiff.differentiable (by simp) z).hasFDerivAt.smul
       (h1.clm_apply (hasFDerivAt_const v z))).fderiv]
     simp [add_comm]
   refine ⟨Φ, fun z => ?_⟩
   rw [inner_crFormalAdjoint, hΦd, hΦd, hΦ]
   simp only [map_add, map_sub, map_smul, add_apply, sub_apply, FunLike.coe_smul, Pi.smul_apply,
-    Pi.smul_apply', smul_eq_mul, crPairing_apply, hadj, inner_add_left, real_inner_smul_left,
-    ContinuousLinearMap.adjoint_inner_left]
+    Pi.smul_apply', smul_eq_mul, crPairing_apply, adj, ContinuousLinearMap.adjointRealCLM_apply,
+    inner_add_left, real_inner_smul_left, ContinuousLinearMap.adjoint_inner_left]
   ring
 
 /-- **The weak equation tested against `χ Aᵀ v`.** For a smooth field `A` of operators, a test
 function `χ` and a vector `v`, the function `χ Aᵀ v` is a test function, and the weak equation
 tested against it reads `∫ ⟪v, A a⟫ + ∫ ⟪v, A' 1 (χ ξ)⟫ + ∫ ⟪v, A' I (χ J ξ)⟫ = 0`, where `A'`
-is the derivative of `A` and `a = ∂_s χ ξ + ∂_t χ J ξ + χ ((∂_t J) ξ - S ξ + η)`. -/
+is the derivative of `A` and `a = ∂_s χ ξ + ∂_t χ J ξ + χ (η + (∂_t J) ξ - S ξ)`. -/
 private theorem IsWeakCRSolution.integral_crPairing_of_contDiff
     (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) (v : V) {A : ℂ → V →L[ℝ] V} (hA : ContDiff ℝ ∞ A) :
     Integrable (fun z => crPairing v (fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-        χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) (A z)) ∧
+        χ z • (η z + DJ z I (ξ z) - S z (ξ z))) (A z)) ∧
       Integrable (fun z => crPairing v (χ z • ξ z) (fderiv ℝ A z 1)) ∧
       Integrable (fun z => crPairing v (χ z • J z (ξ z)) (fderiv ℝ A z I)) ∧
       (∫ z, crPairing v (fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-          χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) (A z)) +
+          χ z • (η z + DJ z I (ξ z) - S z (ξ z))) (A z)) +
         (∫ z, crPairing v (χ z • ξ z) (fderiv ℝ A z 1)) +
         ∫ z, crPairing v (χ z • J z (ξ z)) (fderiv ℝ A z I) = 0 := by
   have hK : IsCompact (tsupport (χ : ℂ → ℝ)) := χ.hasCompactSupport
-  have hξ1 : MemLpLoc 1 Ω ξ := h.memLpLoc.mono_exponent (one_le_right_of_inv_add_inv_le_one hpq)
+  have hξ1 : MemLpLoc 1 Ω ξ :=
+    h.memLpLoc.mono_exponent (ENNReal.one_le_right_of_inv_add_inv_le_one hpq)
   have hJξ := hc.memLpLoc_coeff.memLpLoc_one_clm_apply h.memLpLoc hpq
   have ha := h.integrable_crPairingField hc hpq χ
   have hb₁ : Integrable (fun z => χ z • ξ z) :=
@@ -262,7 +265,7 @@ private theorem IsWeakCRSolution.integral_crPairing_normed_convolution
     (hg : LocallyIntegrable ((U : Set ℂ).indicator J) volume) (φ : ContDiffBump (0 : ℂ))
     (hball : ∀ z ∈ tsupport (χ : ℂ → ℝ), closedBall z φ.rOut ⊆ U) :
     (∫ z, crPairing v (fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-        χ z • (DJ z I (ξ z) - S z (ξ z) + η z))
+        χ z • (η z + DJ z I (ξ z) - S z (ξ z)))
           ((φ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] (U : Set ℂ).indicator J) z)) +
       (∫ z, crPairing v (χ z • ξ z) ((φ.normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume]
         (U : Set ℂ).indicator (fun z => DJ z 1)) z)) +
@@ -289,13 +292,7 @@ private theorem IsWeakCRSolution.memLp_conjExponent_smul (h : IsWeakCRSolution q
     (hJ : MemLpLoc ⊤ Ω J) (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) :
     MemLp (fun z => χ z • ξ z) p.conjExponent volume ∧
       MemLp (fun z => χ z • J z (ξ z)) p.conjExponent volume := by
-  have hp1 := one_le_left_of_inv_add_inv_le_one hpq
-  have : Fact (1 ≤ p) := ⟨hp1⟩
-  have hp'q : p.conjExponent ≤ q := by
-    have h1 : p⁻¹ + p.conjExponent⁻¹ = 1 := by
-      rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p p.conjExponent 1, inv_one]
-    exact ENNReal.inv_le_inv.1 (ENNReal.le_of_add_le_add_left
-      (ENNReal.inv_ne_top.2 (zero_lt_one.trans_le hp1).ne') (h1 ▸ hpq))
+  have hp'q := ENNReal.conjExponent_le_of_inv_add_inv_le_one hpq
   exact ⟨memLp_testFunction_smul χ (h.memLpLoc.mono_exponent hp'q),
     memLp_testFunction_smul χ ((hJ.clm_apply h.memLpLoc).mono_exponent hp'q)⟩
 
@@ -306,14 +303,14 @@ private theorem IsWeakCRSolution.integral_crPairing_coeff
     (h : IsWeakCRSolution q Ω J DJ S ξ η) (hc : IsSobolevCRCoefficients p Ω J DJ S)
     (hJ : MemLpLoc ⊤ Ω J) (hpq : p⁻¹ + q⁻¹ ≤ 1) (χ : 𝓓(Ω, ℝ)) (v : V) :
     Integrable (fun z => crPairing v (fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-        χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) (J z)) ∧
+        χ z • (η z + DJ z I (ξ z) - S z (ξ z))) (J z)) ∧
       Integrable (fun z => crPairing v (χ z • ξ z) (DJ z 1)) ∧
       Integrable (fun z => crPairing v (χ z • J z (ξ z)) (DJ z I)) ∧
     (∫ z, crPairing v (fderiv ℝ χ z 1 • ξ z + fderiv ℝ χ z I • J z (ξ z) +
-          χ z • (DJ z I (ξ z) - S z (ξ z) + η z)) (J z)) +
+          χ z • (η z + DJ z I (ξ z) - S z (ξ z))) (J z)) +
         (∫ z, crPairing v (χ z • ξ z) (DJ z 1)) +
         ∫ z, crPairing v (χ z • J z (ξ z)) (DJ z I) = 0 := by
-  have hp1 := one_le_left_of_inv_add_inv_le_one hpq
+  have hp1 := ENNReal.one_le_left_of_inv_add_inv_le_one hpq
   have : Fact (1 ≤ p) := ⟨hp1⟩
   obtain ⟨hb₁, hb₂⟩ := h.memLp_conjExponent_smul hJ hpq χ
   have hw₁ (z : ℂ) (hz : z ∉ tsupport (χ : ℂ → ℝ)) := smul_eq_zero_of_notMem_tsupport χ ξ hz
@@ -376,15 +373,14 @@ private theorem inner_divergenceForm_eq (v : V) (ψ : 𝓓(Ω, ℝ)) (z : ℂ)
         DJ z I (J z (ξ z)))⟫_ℝ =
       crPairing v (fderiv ℝ (∂_{(1 : ℂ)} ψ : 𝓓(Ω, ℝ)) z 1 • ξ z +
         fderiv ℝ (∂_{(1 : ℂ)} ψ : 𝓓(Ω, ℝ)) z I • J z (ξ z) +
-          (∂_{(1 : ℂ)} ψ : 𝓓(Ω, ℝ)) z • (DJ z I (ξ z) - S z (ξ z) + η z))
+          (∂_{(1 : ℂ)} ψ : 𝓓(Ω, ℝ)) z • (η z + DJ z I (ξ z) - S z (ξ z)))
         (ContinuousLinearMap.id ℝ V) -
       (crPairing v (fderiv ℝ (∂_{I} ψ : 𝓓(Ω, ℝ)) z 1 • ξ z +
           fderiv ℝ (∂_{I} ψ : 𝓓(Ω, ℝ)) z I • J z (ξ z) +
-            (∂_{I} ψ : 𝓓(Ω, ℝ)) z • (DJ z I (ξ z) - S z (ξ z) + η z)) (J z) +
+            (∂_{I} ψ : 𝓓(Ω, ℝ)) z • (η z + DJ z I (ξ z) - S z (ξ z))) (J z) +
         crPairing v ((∂_{I} ψ : 𝓓(Ω, ℝ)) z • ξ z) (DJ z 1) +
         crPairing v ((∂_{I} ψ : 𝓓(Ω, ℝ)) z • J z (ξ z)) (DJ z I)) := by
-  have hc (e : ℂ) : ⇑(∂_{e} ψ : 𝓓(Ω, ℝ)) = fun w => fderiv ℝ (ψ : ℂ → ℝ) w e :=
-    funext (TestFunction.lineDerivOp_apply_eq_fderiv ψ e)
+  have hc := TestFunction.coe_lineDerivOp_eq_fderiv ψ
   have hd : DifferentiableAt ℝ (fderiv ℝ (ψ : ℂ → ℝ)) z :=
     (ψ.contDiff.fderiv_right (m := 1) (by simp)).differentiable one_ne_zero z
   -- mixed second derivatives agree
@@ -425,20 +421,14 @@ theorem IsWeakCRSolution.integral_laplacian_smul_eq (h : IsWeakCRSolution q Ω J
       -∫ z, (fderiv ℝ (ψ : ℂ → ℝ) z 1 • (η z + DJ z I (ξ z) - S z (ξ z)) +
         fderiv ℝ (ψ : ℂ → ℝ) z I • (-J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
           DJ z I (J z (ξ z)))) := by
-  have hF : MemLpLoc 1 Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
-    (((memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 h.locallyIntegrableOn).add
-      ((hc.memLpLoc_deriv_apply I).memLpLoc_one_clm_apply h.memLpLoc hpq)).sub
-      (hc.memLpLoc_zeroth.memLpLoc_one_clm_apply h.memLpLoc hpq)
-  have hG : MemLpLoc 1 Ω (fun z => -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
-      DJ z I (J z (ξ z))) :=
-    ((hJ.clm_apply hF).neg.sub ((hc.memLpLoc_deriv_apply 1).memLpLoc_one_clm_apply h.memLpLoc
-      hpq)).sub ((hc.memLpLoc_deriv_apply I).memLpLoc_one_clm_apply
-        (hJ.clm_apply (r := q) h.memLpLoc) hpq)
-  have hd (e : ℂ) : (fun z => fderiv ℝ (ψ : ℂ → ℝ) z e) = ⇑(∂_{e} ψ : 𝓓(Ω, ℝ)) :=
-    funext fun z => (TestFunction.lineDerivOp_apply_eq_fderiv ψ e z).symm
+  have : ENNReal.HolderTriple p q (p⁻¹ + q⁻¹)⁻¹ := ⟨(inv_inv _).symm⟩
+  have hη : MemLpLoc 1 Ω η :=
+    (memLpLoc_one_iff_locallyIntegrableOn Ω.isOpen.isLocallyClosed).2 h.locallyIntegrableOn
+  have hF := h.memLpLoc_divergenceForm_fst hc (ENNReal.one_le_inv.2 hpq) hη
+  have hG := h.memLpLoc_divergenceForm_snd hc hJ (ENNReal.one_le_inv.2 hpq) hη
   have hL : Integrable (fun z => Δ (ψ : ℂ → ℝ) z • ξ z) := by
     have h1 := memLp_testFunction_smul (LineDeriv.laplacianCLM ℝ ℂ 𝓓(Ω, ℝ) ψ)
-      (h.memLpLoc.mono_exponent (one_le_right_of_inv_add_inv_le_one hpq))
+      (h.memLpLoc.mono_exponent (ENNReal.one_le_right_of_inv_add_inv_le_one hpq))
     simp only [TestFunction.laplacianCLM_apply] at h1
     exact memLp_one_iff_integrable.1 h1
   have hR : Integrable (fun z => fderiv ℝ (ψ : ℂ → ℝ) z 1 • (η z + DJ z I (ξ z) - S z (ξ z)) +
@@ -446,7 +436,7 @@ theorem IsWeakCRSolution.integral_laplacian_smul_eq (h : IsWeakCRSolution q Ω J
         DJ z I (J z (ξ z)))) := by
     have h1 := memLp_testFunction_smul (∂_{(1 : ℂ)} ψ) hF
     have h2 := memLp_testFunction_smul (∂_{I} ψ) hG
-    rw [← hd] at h1 h2
+    rw [TestFunction.coe_lineDerivOp_eq_fderiv] at h1 h2
     exact memLp_one_iff_integrable.1 (h1.add h2)
   refine ext_inner_left ℝ fun v => ?_
   rw [← integral_inner hL v, inner_neg_right, ← integral_inner hR v, eq_neg_iff_add_eq_zero,
@@ -476,15 +466,10 @@ theorem IsWeakCRSolution.memWkpLoc_one (h : IsWeakCRSolution q Ω J DJ S ξ η)
     rw [ENNReal.HolderTriple.inv_add_inv_eq_inv p q r]
     exact (ENNReal.inv_lt_one.2 hr).le
   have hrq : r ≤ q := ENNReal.HolderTriple.le q p r
-  have hF : MemLpLoc r Ω (fun z => η z + DJ z I (ξ z) - S z (ξ z)) :=
-    (hη.add ((hc.memLpLoc_deriv_apply I).clm_apply h.memLpLoc)).sub
-      (hc.memLpLoc_zeroth.clm_apply h.memLpLoc)
-  have hG : MemLpLoc r Ω (fun z => -J z (η z + DJ z I (ξ z) - S z (ξ z)) - DJ z 1 (ξ z) -
-      DJ z I (J z (ξ z))) :=
-    ((hJ.clm_apply hF).neg.sub ((hc.memLpLoc_deriv_apply 1).clm_apply h.memLpLoc)).sub
-      ((hc.memLpLoc_deriv_apply I).clm_apply (hJ.clm_apply (r := q) h.memLpLoc))
   exact memWkpLoc_one_of_forall_integral_laplacian_smul_eq hr hr_top
-    (h.memLpLoc.locallyIntegrableOn (hr.le.trans hrq) Ω.isOpen.isLocallyClosed) hF hG
+    (h.memLpLoc.locallyIntegrableOn (hr.le.trans hrq) Ω.isOpen.isLocallyClosed)
+    (h.memLpLoc_divergenceForm_fst hc (t := r) le_rfl hη)
+    (h.memLpLoc_divergenceForm_snd hc hJ (t := r) le_rfl hη)
     fun ψ => h.integral_laplacian_smul_eq hc hJ hJJ hpq ψ
 
 end TauCeti
