@@ -17,9 +17,11 @@ outer horns `Λ[n + 2, 0]` can be filled is an equivalence (HTT Proposition 1.2.
 the opposite quasicategory `Cᵒᵖ` gives the dual criterion for the final outer horns
 `Λ[n + 2, Fin.last (n + 2)]` whose final edge, from `n + 1` to `n + 2`, is an equivalence.
 
-Together with inner horn filling, the two special outer horn theorems imply that the core `C.core`
-of a quasicategory is a Kan complex (`SSet.core.kanComplex`, HTT Proposition 1.2.5.3), and hence
-the largest Kan subcomplex of `C` (`SSet.isGreatest_core`).
+Together with inner horn filling, the two special outer horn theorems imply Joyal's criterion: a
+simplicial set is a Kan complex exactly when it is a quasicategory in which every edge is an
+equivalence. In particular, the core `C.core` of a quasicategory is a Kan complex
+(`SSet.core.kanComplex`, HTT Proposition 1.2.5.3), and hence the largest Kan subcomplex of `C`
+(`SSet.isGreatest_core`).
 
 The proof for `Λ[n + 2, 0]` follows Kerodon: under the isomorphism `Δ[1] ⋆ Δ[n] ≅ Δ[n + 2]`, the
 horn `Λ[n + 2, 0]` is the pushout-join `(Λ[1, 0] ⋆ Δ[n]) ∪ (Δ[1] ⋆ ∂Δ[n])`, so filling it amounts
@@ -43,13 +45,16 @@ inverse of `e` and shows that it is also a left inverse. Reversing simplices via
   an edge of a quasicategory is an equivalence if and only if every outer horn `Λ[n + 2, 0]`
   (respectively `Λ[n + 2, Fin.last (n + 2)]`) with that initial (respectively final) edge can be
   filled.
+* `SSet.Quasicategory.kanComplex_of_forall_isEquivalence`,
+  `SSet.kanComplex_iff_quasicategory_and_forall_isEquivalence`: **Joyal's criterion**, a simplicial
+  set is a Kan complex if and only if it is a quasicategory in which every edge is an equivalence.
 * `SSet.core.kanComplex`, `SSet.isGreatest_core`: the core of a quasicategory is a Kan complex, and
   the greatest Kan subcomplex of `C`.
 
 ## References
 
 * A. Joyal, *Quasi-categories and Kan complexes*, J. Pure Appl. Algebra 175 (2002), Theorem 1.3
-  and Corollary 1.5.
+  and Corollaries 1.4 and 1.5.
 * J. Lurie, *Higher Topos Theory*, Propositions 1.2.4.3 and 1.2.5.3.
 * J. Lurie, *Kerodon*, Theorem 4.4.2.6, Proposition 4.4.2.11, Proposition 4.4.2.13,
   Example 4.4.1.11 and Corollary 4.4.3.2.
@@ -149,7 +154,25 @@ theorem hornFilling_last [Quasicategory C] {n : ℕ}
     simp [opFunctor_map]
   rwa [hedge, Edge.isEquivalence_mk'_opObjEquiv_symm_iff]
 
+/-- **Joyal's Kan-complex criterion** (Joyal Corollary 1.4, HTT Proposition 1.2.4.3): a
+quasicategory in which every edge is an equivalence is a Kan complex. -/
+theorem kanComplex_of_forall_isEquivalence [Quasicategory C]
+    (h : ∀ s : C _⦋1⦌, (Edge.mk' s).IsEquivalence) : KanComplex C :=
+  kanComplex_of_outerHornFilling C (fun _ σ₀ ↦ hornFilling_zero σ₀ (h _))
+    (fun _ σ₀ ↦ hornFilling_last σ₀ (h _))
+
+/-- A quasicategory is a Kan complex if and only if its core is everything. -/
+theorem kanComplex_iff_core_eq_top [Quasicategory C] : KanComplex C ↔ C.core = ⊤ :=
+  ⟨fun _ ↦ core_eq_top, fun h ↦ kanComplex_of_forall_isEquivalence (core_eq_top_iff.1 h)⟩
+
 end Quasicategory
+
+/-- A simplicial set is a Kan complex if and only if it is a quasicategory in which every edge is
+an equivalence. -/
+theorem kanComplex_iff_quasicategory_and_forall_isEquivalence {C : SSet.{u}} :
+    KanComplex C ↔ Quasicategory C ∧ ∀ s : C _⦋1⦌, (Edge.mk' s).IsEquivalence :=
+  ⟨fun _ ↦ ⟨inferInstance, fun _ ↦ isEquivalence_of_kanComplex _⟩,
+    fun ⟨_, h⟩ ↦ Quasicategory.kanComplex_of_forall_isEquivalence h⟩
 
 namespace Edge
 
