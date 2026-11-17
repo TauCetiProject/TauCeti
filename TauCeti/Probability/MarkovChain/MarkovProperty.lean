@@ -39,7 +39,9 @@ This file proves it in the following forms.
   (`MeasureTheory.Measure.markovChainLaw_inter_preimage_eval_succ`).
 * As a consequence, a measurable function `f` of a chain whose transition laws depend on the
   current state only through its value under `f` is again a chain
-  (`MeasureTheory.Measure.markovChainLaw_map_comp`).
+  (`ProbabilityTheory.Kernel.markovChainLaw_dirac_map_comp`,
+  `ProbabilityTheory.Kernel.markovChainKernel_map_comp`,
+  `MeasureTheory.Measure.markovChainLaw_map_comp`).
 
 The proof restricts the path law to an event of the history and identifies the law of the future
 path on it by the uniqueness theorem `MeasureTheory.Measure.eq_markovChainLaw`: the prefix
@@ -293,20 +295,19 @@ namespace TauCeti.Probability
 
 variable {S γ : Type*} [MeasurableSpace S] [MeasurableSpace γ]
 
-/-- **A function of a Markov chain.** If `f` is measurable and the law of `f` under each transition
-`η s` is `κ (f s)`, so that the next value of `f` depends on the current state only through
-`f s`, then the image under `f` of the chain of `η` started from `ν` is the chain of `κ` started
-from `ν.map f`. -/
-theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S) [IsFiniteMeasure ν]
+/-- **A function of a Markov chain started at a state.** If `f` is measurable and
+`(η s).map f = κ (f s)` for every state `s`, then the image under `f` of the chain of `η` started
+at `x` is the chain of `κ` started at `f x`. -/
+theorem _root_.ProbabilityTheory.Kernel.markovChainLaw_dirac_map_comp
     (η : Kernel S S) [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ}
-    (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) :
-    (markovChainLaw ν η).map (fun ω n => f (ω n)) = markovChainLaw (ν.map f) κ := by
-  set P := markovChainLaw ν η
+    (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) (x : S) :
+    (markovChainLaw (Measure.dirac x) η).map (fun ω n => f (ω n)) =
+      markovChainLaw (Measure.dirac (f x)) κ := by
   have hX : ∀ n, Measurable fun ω : ℕ → S => f (ω n) := fun n => hf.comp (measurable_pi_apply n)
-  refine ((hasLaw_markovChainLaw_iff (ν.map f) κ (X := fun n (ω : ℕ → S) => f (ω n))
-    fun n => (hX n).aemeasurable).2 ⟨?_, fun n => ?_⟩).map_eq
-  · rw [← markovChainLaw_map_eval_zero ν η, Measure.map_map hf (measurable_pi_apply 0)]
-    rfl
+  refine ((hasLaw_markovChainLaw_iff (Measure.dirac (f x)) κ
+    (X := fun n (ω : ℕ → S) => f (ω n)) fun n => (hX n).aemeasurable).2 ⟨?_, fun n => ?_⟩).map_eq
+  · exact (Measure.map_map hf (measurable_pi_apply 0)).symm.trans <| by
+      rw [markovChainLaw_map_eval_zero, Measure.map_dirac' hf]
   refine Measure.ext_prod fun {A C} hA hC => ?_
   have hpre : Measurable fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1) :=
     measurable_pi_iff.2 fun i => hX i
@@ -320,8 +321,33 @@ theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S) [I
   have hfib : (fun (ω : ℕ → S) => ((fun i : Fin (n + 1) => f (ω i.1)), f (ω (n + 1)))) ⁻¹'
       (A ×ˢ C) = (fun (ω : ℕ → S) (i : Fin (n + 1)) => f (ω i.1)) ⁻¹' A ∩
         (fun ω : ℕ → S => ω (n + 1)) ⁻¹' (f ⁻¹' C) := rfl
-  rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ ν η n hB (hf hC)]
+  rw [hfib, Measure.markovChainLaw_inter_preimage_eval_succ (Measure.dirac x) η n hB (hf hC)]
   refine lintegral_congr fun ω => ?_
   rw [← Measure.map_apply hf hC, h]
+
+/-- **A function of a Markov chain, kernel form.** If `f` is measurable and
+`(η s).map f = κ (f s)` for every state `s`, pushing `η.markovChainKernel` forward coordinatewise
+along `f` equals pulling `κ.markovChainKernel` back along `f`. -/
+theorem _root_.ProbabilityTheory.Kernel.markovChainKernel_map_comp
+    (η : Kernel S S) [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ}
+    (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) :
+    η.markovChainKernel.map (fun ω n => f (ω n)) = κ.markovChainKernel.comap f hf := by
+  ext1 s
+  rw [Kernel.map_apply _ (by fun_prop), Kernel.comap_apply,
+    Kernel.markovChainKernel_apply, Kernel.markovChainKernel_apply]
+  exact η.markovChainLaw_dirac_map_comp κ hf h s
+
+/-- **A function of a Markov chain.** If `f` is measurable and the law of `f` under each transition
+`η s` is `κ (f s)`, so that the next value of `f` depends on the current state only through
+`f s`, then the image under `f` of the chain of `η` started from any initial measure `ν` is the
+chain of `κ` started from `ν.map f`. -/
+theorem _root_.MeasureTheory.Measure.markovChainLaw_map_comp (ν : Measure S)
+    (η : Kernel S S) [IsMarkovKernel η] (κ : Kernel γ γ) [IsMarkovKernel κ] {f : S → γ}
+    (hf : Measurable f) (h : ∀ s, (η s).map f = κ (f s)) :
+    (markovChainLaw ν η).map (fun ω n => f (ω n)) = markovChainLaw (ν.map f) κ := by
+  rw [Measure.markovChainLaw_eq_comp, Measure.map_comp _ _ (by fun_prop),
+    Kernel.markovChainKernel_map_comp η κ hf h, Measure.markovChainLaw_eq_comp,
+    ← Measure.deterministic_comp_eq_map hf, Measure.comp_assoc,
+    Kernel.comp_deterministic_eq_comap]
 
 end TauCeti.Probability
