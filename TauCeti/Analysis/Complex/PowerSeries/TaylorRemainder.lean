@@ -124,7 +124,7 @@ theorem norm_add_sub_partialSum_le {f : E → V} {p : FormalMultilinearSeries �
     {M : ℝ} (hM : ∀ y ∈ Metric.ball x R, ‖f y‖ ≤ M) (T : ℕ) {z : E} (hz : ‖z‖ < R) :
     ‖f (x + z) - p.partialSum T z‖ ≤ (1 + T) * M * (‖z‖ / R) ^ T := by
   rcases Nat.eq_zero_or_pos T with rfl | hTpos
-  · simpa [FormalMultilinearSeries.partialSum] using hM (x + z) (by simpa [dist_eq_norm] using hz)
+  · simpa using hM (x + z) (by simpa [dist_eq_norm] using hz)
   -- Pair with a norming dual functional to work in the complete target space `ℂ`.
   obtain ⟨ℓ, hℓ1, hℓv⟩ := exists_dual_vector'' ℂ (f (x + z) - p.partialSum T z)
   have hfℓ := ℓ.comp_hasFPowerSeriesOnBall hf
@@ -133,10 +133,7 @@ theorem norm_add_sub_partialSum_le {f : E → V} {p : FormalMultilinearSeries �
   let pℓ := ℓ.compFormalMultilinearSeries p
   let g : E → ℂ := fun w ↦ (ℓ ∘ f) (x + w) - pℓ.partialSum T w
   have hg0 : g 0 = 0 := by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hTpos.ne'
-    rw [show g 0 = (ℓ ∘ f) x - pℓ.partialSum (k + 1) 0 by simp [g],
-      FormalMultilinearSeries.partialSum, Finset.sum_range_succ', hfℓ.coeff_zero,
-      Finset.sum_eq_zero fun j _ ↦ (pℓ (j + 1)).map_coord_zero 0 rfl, zero_add, sub_self]
+    simp [g, pℓ, p.partialSum_apply_zero_of_pos hTpos, hf.coeff_zero]
   have hfd : DifferentiableOn ℂ (fun w ↦ (ℓ ∘ f) (x + w)) (Metric.ball (0 : E) R) := by
     simpa [Metric.eball_coe, add_comm] using (hfℓ.comp_sub (-x)).differentiableOn
   have hpd : Differentiable ℂ (pℓ.partialSum T) :=
