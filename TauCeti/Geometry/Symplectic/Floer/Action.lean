@@ -43,8 +43,11 @@ boundary terms of the Floer energy identity combine into actions. For a map `u` 
 
 For a solution of the Floer equation `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` with `J` tamed by `ω`,
 the energy density is nonnegative, so the action increases along the cylinder
-(`SymplecticForm.hamiltonianAction_le_hamiltonianAction`), and the energy of a Floer solution on
-the whole cylinder `ℝ × [0, 1]` is the difference of the limiting actions at its two ends
+(`SymplecticForm.hamiltonianAction_le_hamiltonianAction`) and the lower integral of the energy
+density over `[a, b] × [0, 1]` is the increase of the action
+(`SymplecticForm.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub`), and the
+energy of a Floer solution on the whole cylinder `ℝ × [0, 1]` is the difference of the limiting
+actions at its two ends
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`), by exhausting the
 cylinder with rectangles (`TauCeti.tendsto_setLIntegral_Icc_neg_prod`). These are the
 end and neck terms of the energy identity `E = A₁ + A₂ - A₀ + ω(A) - ∫ R_K` for pairs of pants.
@@ -102,6 +105,8 @@ derivatives.
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
   solutions.
+* `SymplecticForm.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub`: the energy of a
+  Floer solution over `[a, b] × [0, 1]` is the increase of its action, as a lower integral.
 * `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
   Floer solution on an open interval of `s`-values.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
@@ -387,6 +392,28 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
     ω.hamiltonianAction H (fun t ↦ u (a, t)) ≤ ω.hamiltonianAction H (fun t ↦ u (b, t)) :=
   ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) hJ
     (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
+
+/-- **The energy of a Floer solution over a rectangle.** Under the hypotheses of
+`TauCeti.SymplecticForm.hamiltonianAction_le_hamiltonianAction`, the Floer energy of `u` over
+`[a, b] × [0, 1]`, as the lower Lebesgue integral of its nonnegative energy density, is the
+increase `A_H(u(b, ·)) - A_H(u(a, ·))` of the action. -/
+theorem setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
+    ∫⁻ z in Icc a b ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
+      ENNReal.ofReal (ω.hamiltonianAction H (fun t ↦ u (b, t)) -
+        ω.hamiltonianAction H (fun t ↦ u (a, t))) := by
+  rw [← ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH hU hu hab hRU hper,
+    ofReal_integral_eq_lintegral_ofReal
+      (((ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) hU
+        (hu.of_le one_le_two) contDiffOn_const (contDiff_uncurry_cylindrical hH).contDiffOn).mono
+        hRU).integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
+      (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
+        fun z hz ↦ ω.floerEnergyDensity_cylindrical_nonneg (hJ z hz) (hfloer z hz))]
 
 /-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
 for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on
