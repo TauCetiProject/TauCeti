@@ -8,13 +8,11 @@ module
 public import TauCeti.Analysis.Calculus.IteratedGradient.Multilinear
 public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import Mathlib.Analysis.Calculus.Deriv.Pow
-import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import TauCeti.Analysis.Sobolev.Wkp.Classical
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
 import TauCeti.Data.Fin.Tuple.Basic
-import TauCeti.MeasureTheory.Function.EssSup
 import TauCeti.MeasureTheory.Function.Lp.Basic
-import TauCeti.MeasureTheory.Measure.Support
+import TauCeti.MeasureTheory.Function.LpSeminorm.LpNorm
 
 /-!
 # Iterated directional derivatives, contractions, and all-order symmetry on `W^{k,p}`
@@ -503,15 +501,10 @@ theorem domDomCongr_toContinuousMultilinearMapₗᵢ_iteratedGradient_ae (j : �
       with x hx₁ hx₂
     rw [← hx₁, ← hx₂, heq]
   filter_upwards [ae_all_iff.2 fun σ => ae_all_iff.2 fun r => hbasis σ r] with x hx σ
-  set M := IteratedGradient.toContinuousMultilinearMapₗᵢ E j (iteratedGradient j u x) with hM
-  refine sub_eq_zero.1 (norm_le_zero_iff.1 ?_)
-  rw [← (IteratedGradient.toContinuousMultilinearMapₗᵢ E j).symm.norm_map (M.domDomCongr σ - M)]
-  refine (IteratedGradient.norm_le_sum_norm_evalL_orthonormalBasis j _ b).trans ?_
-  refine Finset.sum_nonpos fun r _ => ?_
-  rw [IteratedGradient.evalL_toContinuousMultilinearMapₗᵢ_symm, sub_apply,
-    ContinuousMultilinearMap.domDomCongr_apply, hM,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_apply,
-    IteratedGradient.toContinuousMultilinearMapₗᵢ_apply, hx σ r, sub_self, norm_zero]
+  refine ContinuousMultilinearMap.toMultilinearMap_injective
+    (Module.Basis.ext_multilinear (fun _ => b.toBasis) fun r => ?_)
+  simpa [ContinuousMultilinearMap.domDomCongr_apply,
+    IteratedGradient.toContinuousMultilinearMapₗᵢ_apply] using hx σ r
 
 /-! ### Classical `ContDiffOn` bridges -/
 
@@ -597,21 +590,6 @@ example {p : ENNReal} [Fact (1 ≤ p)] :
     rw [hd.fderiv, smul_apply, ContinuousLinearMap.id_apply, smul_eq_mul]
     norm_num
 
--- Helper for Check 2: the L^∞ norm of `x ↦ c * x` on `(0, 1)` is `c` for `0 ≤ c`.
-private theorem lpNorm_const_mul_id_Ioo_top {c : ℝ} (hc : 0 ≤ c) :
-    lpNorm (fun x : ℝ => c * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) = c := by
-  have hid : eLpNorm (id : ℝ → ℝ) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) = 1 := by
-    rw [eLpNorm_exponent_top continuous_id.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
-    simp only [id_eq]
-    rw [essSup_eq_iSup_support _ continuous_eNorm.lowerSemicontinuous Measure.support_mem_ae,
-      Measure.support_restrict_of_isOpen volume isOpen_Ioo, closure_Ioo zero_ne_one]
-    refine le_antisymm (iSup₂_le fun x hx => ?_)
-      (le_iSup₂_of_le (1 : ℝ) ⟨zero_le_one, le_rfl⟩ (by simp))
-    rw [Real.eNorm_eq_ofReal hx.1]
-    simpa using ENNReal.ofReal_le_ofReal hx.2
-  have h := lpNorm_const_smul c (id : ℝ → ℝ) (volume.restrict (Set.Ioo (0 : ℝ) 1)) (p := ⊤)
-  simpa [Pi.smul_def, lpNorm, hid, coe_nnNorm, Real.norm_of_nonneg hc] using h
-
 -- Check 2: sharpness of the componentwise bound `‖lineDerivL v 0 u‖ ≤ ‖v‖ * ‖iteratedGradient 0 u‖`
 -- at `p = ⊤` for `u(x) = x²` on `Ioo 0 1` and `v = 3`: both sides equal `6`.
 example :
@@ -636,7 +614,8 @@ example :
         smul_eq_mul]
       ring
     rw [Lp.norm_def, eLpNorm_congr_ae h6, ← lpNorm]
-    exact lpNorm_const_mul_id_Ioo_top (c := 6) (by norm_num)
+    simpa [Ω, Pi.smul_def, zero_lt_one] using
+      lpNorm_const_smul (6 : ℝ) (id : ℝ → ℝ) (volume.restrict (Set.Ioo (0 : ℝ) 1)) (p := ∞)
   · rw [Real.norm_of_nonneg (by norm_num : (0 : ℝ) ≤ 3),
       norm_iteratedGradient_eq_lpNorm_of_contDiffOn 0 u hf.contDiffOn hu]
     have h2 : (fun x : ℝ => ‖iteratedFDeriv ℝ 1 (fun y : ℝ => y ^ 2) x‖) =
@@ -656,7 +635,10 @@ example :
         ((continuous_const.mul continuous_id).continuousOn.aestronglyMeasurable
           Ω.isOpen.measurableSet) ?_
       exact .of_forall (congrFun h2)
-    rw [hlp, lpNorm_const_mul_id_Ioo_top (c := 2) (by norm_num)]
+    have h2lp : lpNorm (fun x : ℝ => (2 : ℝ) * x) ⊤ (volume.restrict (Set.Ioo (0 : ℝ) 1)) = 2 := by
+      simpa [Pi.smul_def, zero_lt_one] using
+        lpNorm_const_smul (2 : ℝ) (id : ℝ → ℝ) (volume.restrict (Set.Ioo (0 : ℝ) 1)) (p := ∞)
+    rw [hlp, h2lp]
     norm_num
 
 -- Check 3: on the open unit ball in ℝ², u(x) = x₀ * x₁ in W^{2,p}(B(0, 1)) satisfies
