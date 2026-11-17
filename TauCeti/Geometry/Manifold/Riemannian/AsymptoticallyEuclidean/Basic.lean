@@ -5,18 +5,15 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
-public import TauCeti.Geometry.Manifold.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Coordinates
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Topology.LocalAtTarget
 import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Normed.Module.Ball.Exterior
-import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
 
 /-!
 # Asymptotically Euclidean ends
@@ -25,7 +22,8 @@ Let `M` be a manifold modelled on `EuclideanSpace ℝ (Fin n)` whose tangent bun
 Riemannian metric. An *asymptotically Euclidean end* of `M` of decay order `t` consists of an
 excision radius `R > 0` and a smooth parametrization `φ` of an open subset of `M` by the exterior
 `{x ∈ ℝⁿ : R < ‖x‖}`, injective there with bijective differential, in which the pulled-back metric
-coefficients `g_ij(x) = ⟪dφ_x e_i, dφ_x e_j⟫` satisfy
+coefficients `g_ij(x) = ⟪dφ_x e_i, dφ_x e_j⟫` (`TauCeti.pullbackMetricCoeff`, defined in
+`TauCeti.Geometry.Manifold.Riemannian.Pullback.Coordinates`) satisfy
 `|∂^α (g_ij - δ_ij)| ≤ C ‖x‖ ^ (-t - |α|)` for `|α| ≤ 2` (Cecchini-Zeidler, Definition 2.1;
 Lee-Parker, Sections 8 and 9). Integrability of the scalar curvature on the end is kept separate
 from this decay structure and supplied as a hypothesis where needed.
@@ -39,13 +37,16 @@ from any parametrization `φ : EuclideanSpace ℝ (Fin n) → M` satisfying the 
 
 A *finite-ended asymptotically Euclidean structure* `FiniteEndedAE n M t` packages a finite
 nonempty family of ends whose open images are pairwise disjoint and have compact complement in `M`
-(Cecchini-Zeidler, Definition 2.3, boundaryless case). Nonemptiness excludes closed manifolds such
-as flat tori, where the empty family of ends would have compact complement.
+(Cecchini-Zeidler, Definition 2.3, boundaryless case). Requiring `0 < numEnds` rules out the empty
+family of ends, whose complement would vacuously be `Set.univ` (compact whenever `M` is compact).
+In positive dimension `1 ≤ n` with positive decay order `0 < t` on a compact Hausdorff `C¹`
+manifold carrying a continuous Riemannian metric, a nonempty end family has infinite Riemannian
+volume and therefore excludes closed manifolds such as flat tori (at `n = 0` the coordinate
+exterior `{x : radius < ‖x‖}` is empty, and at `t ≤ 0` the decay bound does not force
+`g_ij → δ_ij` as `‖x‖ → ∞`).
 
 ## Main definitions
 
-* `TauCeti.pullbackMetricCoeff`: the metric coefficients `g_ij(x) = ⟪dφ_x e_i, dφ_x e_j⟫` of a
-  Riemannian manifold `M` in a Euclidean parametrization `φ : ℝⁿ → M`.
 * `TauCeti.AsymptoticallyEuclideanEnd`: an asymptotically Euclidean end of decay order `t`.
 * `TauCeti.AsymptoticallyEuclideanEnd.ofFun`,
   `TauCeti.AsymptoticallyEuclideanEnd.ofInjectiveMfderiv`: constructors from an arbitrary exterior
@@ -88,132 +89,6 @@ open Bundle Function Filter Metric Set
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 namespace TauCeti
-
-/-! ### Metric coefficients in a Euclidean parametrization -/
-
-section PullbackMetricCoeff
-
-variable {n : ℕ} {M : Type*} [TopologicalSpace M]
-  [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
-  [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡 n) x)]
-
-/-- The coefficients `g_ij(x) = g(dφ_x e_i, dφ_x e_j)` at `φ x` of the Riemannian metric of `M` in
-the coordinates given by a parametrization `φ : EuclideanSpace ℝ (Fin n) → M`, where `e_i` is the
-standard orthonormal basis of `EuclideanSpace ℝ (Fin n)`. -/
-def pullbackMetricCoeff (φ : EuclideanSpace ℝ (Fin n) → M) (x : EuclideanSpace ℝ (Fin n))
-    (i j : Fin n) : ℝ :=
-  inner ℝ (mfderiv (𝓡 n) (𝓡 n) φ x (EuclideanSpace.basisFun (Fin n) ℝ i))
-    (mfderiv (𝓡 n) (𝓡 n) φ x (EuclideanSpace.basisFun (Fin n) ℝ j))
-
-/-- Unfolding lemma for `TauCeti.pullbackMetricCoeff`. -/
-theorem pullbackMetricCoeff_def (φ : EuclideanSpace ℝ (Fin n) → M)
-    (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff φ x i j =
-      inner ℝ (mfderiv (𝓡 n) (𝓡 n) φ x (EuclideanSpace.basisFun (Fin n) ℝ i))
-        (mfderiv (𝓡 n) (𝓡 n) φ x (EuclideanSpace.basisFun (Fin n) ℝ j)) := (rfl)
-
-/-- The pulled-back metric coefficients form a symmetric matrix at every point. -/
-theorem pullbackMetricCoeff_symm (φ : EuclideanSpace ℝ (Fin n) → M)
-    (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff φ x i j = pullbackMetricCoeff φ x j i :=
-  real_inner_comm _ _
-
-/-- Diagonal pulled-back metric coefficients are nonnegative. -/
-theorem pullbackMetricCoeff_self_nonneg (φ : EuclideanSpace ℝ (Fin n) → M)
-    (x : EuclideanSpace ℝ (Fin n)) (i : Fin n) :
-    0 ≤ pullbackMetricCoeff φ x i i :=
-  real_inner_self_nonneg
-
-/-- Transporting two tangent vectors along an equality of base points via `tangentSpaceCast`
-preserves their Riemannian inner product. -/
-private theorem inner_tangentSpaceCast {p q : M} (h : q = p)
-    (u w : TangentSpace (𝓡 n) p) :
-    inner ℝ (tangentSpaceCast (𝓡 n) p q u) (tangentSpaceCast (𝓡 n) p q w) = inner ℝ u w := by
-  subst h
-  -- `tangentSpaceCast (𝓡 n) p p` acts as the identity on `TangentSpace (𝓡 n) p`.
-  rfl
-
-/-- `pullbackMetricCoeff` depends only on the germ of `φ` at `x`. -/
-theorem pullbackMetricCoeff_congr_nhds {φ₁ φ₂ : EuclideanSpace ℝ (Fin n) → M}
-    {x : EuclideanSpace ℝ (Fin n)} (h : φ₁ =ᶠ[𝓝 x] φ₂) (i j : Fin n) :
-    pullbackMetricCoeff φ₁ x i j = pullbackMetricCoeff φ₂ x i j := by
-  have happ (v : TangentSpace (𝓡 n) x) :
-      mfderiv (𝓡 n) (𝓡 n) φ₁ x v =
-        tangentSpaceCast (𝓡 n) (φ₂ x) (φ₁ x) (mfderiv (𝓡 n) (𝓡 n) φ₂ x v) := by
-    rw [h.mfderiv_eq, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
-  rw [pullbackMetricCoeff_def, pullbackMetricCoeff_def]
-  exact (congrArg₂ (inner ℝ)
-    (happ (EuclideanSpace.basisFun (Fin n) ℝ i))
-    (happ (EuclideanSpace.basisFun (Fin n) ℝ j))).trans
-    (inner_tangentSpaceCast h.eq_of_nhds _ _)
-
-/-- Two parametrizations with the same germ at `x` have the same `pullbackMetricCoeff` germ at
-`x`. -/
-theorem pullbackMetricCoeff_eventuallyEq_nhds {φ₁ φ₂ : EuclideanSpace ℝ (Fin n) → M}
-    {x : EuclideanSpace ℝ (Fin n)} (h : φ₁ =ᶠ[𝓝 x] φ₂) (i j : Fin n) :
-    (fun y ↦ pullbackMetricCoeff φ₁ y i j) =ᶠ[𝓝 x] (fun y ↦ pullbackMetricCoeff φ₂ y i j) :=
-  h.eventuallyEq_nhds.mono fun _ hy ↦ pullbackMetricCoeff_congr_nhds hy i j
-
-/-- If `φ` is `C^k` on an open set `U ⊆ ℝⁿ` and `M` carries a `C^m` Riemannian metric with
-`m + 1 ≤ k`, then each coefficient `x ↦ pullbackMetricCoeff φ x i j` is `C^m` on `U`. -/
-theorem contDiffOn_pullbackMetricCoeff [IsManifold (𝓡 n) 1 M] {m k : ℕ∞ω}
-    [IsContMDiffRiemannianBundle (𝓡 n) m (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x)]
-    {φ : EuclideanSpace ℝ (Fin n) → M} {U : Set (EuclideanSpace ℝ (Fin n))}
-    (hφ : ContMDiffOn (𝓡 n) (𝓡 n) k φ U) (hmk : m + 1 ≤ k) (hU : IsOpen U) (i j : Fin n) :
-    ContDiffOn ℝ m (fun x ↦ pullbackMetricCoeff φ x i j) U :=
-  hφ.contDiffOn_inner_mfderiv hmk hU _ _
-
-end PullbackMetricCoeff
-
-section EuclideanPullbackMetricCoeff
-
-/-- For a map `φ : ℝⁿ → ℝⁿ` into Euclidean space with its standard metric, `pullbackMetricCoeff` is
-the Euclidean inner product of the Fréchet derivatives along the coordinate basis vectors. -/
-theorem pullbackMetricCoeff_eq_inner_fderiv {n : ℕ}
-    (φ : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) (x : EuclideanSpace ℝ (Fin n))
-    (i j : Fin n) :
-    pullbackMetricCoeff φ x i j =
-      ⟪fderiv ℝ φ x (EuclideanSpace.basisFun (Fin n) ℝ i),
-        fderiv ℝ φ x (EuclideanSpace.basisFun (Fin n) ℝ j)⟫ := by
-  have happ (v : TangentSpace (𝓡 n) x) :
-      NormedSpace.fromTangentSpace (φ x) (mfderiv (𝓡 n) (𝓡 n) φ x v) =
-        fderiv ℝ φ x (NormedSpace.fromTangentSpace x v) := by
-    rw [mfderiv_eq_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
-      ContinuousLinearEquiv.coe_coe]
-  rw [pullbackMetricCoeff_def, Manifold.inner_tangentSpace_vectorSpace]
-  exact congrArg₂ (inner ℝ)
-    ((happ (EuclideanSpace.basisFun (Fin n) ℝ i)).trans
-      (congrArg (fderiv ℝ φ x) (NormedSpace.fromTangentSpace_apply x _)))
-    ((happ (EuclideanSpace.basisFun (Fin n) ℝ j)).trans
-      (congrArg (fderiv ℝ φ x) (NormedSpace.fromTangentSpace_apply x _)))
-
-/-- On Euclidean space `ℝⁿ` in the identity coordinates, the metric coefficients are the Kronecker
-delta `δ_ij`. -/
-@[simp]
-theorem pullbackMetricCoeff_id {n : ℕ} (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff (id : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n)) x i j =
-      if i = j then 1 else 0 := by
-  rw [pullbackMetricCoeff_eq_inner_fderiv, fderiv_id]
-  exact orthonormal_iff_ite.1 (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j
-
-/-- Under the homothety `y ↦ c • y` of Euclidean space `ℝⁿ`, the pulled-back metric coefficients are
-`c ^ 2 * δ_ij`. -/
-theorem pullbackMetricCoeff_const_smul {n : ℕ} (c : ℝ) (x : EuclideanSpace ℝ (Fin n))
-    (i j : Fin n) :
-    pullbackMetricCoeff (fun y : EuclideanSpace ℝ (Fin n) ↦ c • y) x i j =
-      c ^ 2 * if i = j then 1 else 0 := by
-  have hd : fderiv ℝ (fun y : EuclideanSpace ℝ (Fin n) ↦ c • y) x =
-      c • ContinuousLinearMap.id ℝ (EuclideanSpace ℝ (Fin n)) :=
-    ((hasFDerivAt_id x).const_smul c).fderiv
-  rw [pullbackMetricCoeff_eq_inner_fderiv, hd]
-  simp only [smul_apply, ContinuousLinearMap.id_apply,
-    real_inner_smul_left, real_inner_smul_right,
-    orthonormal_iff_ite.1 (EuclideanSpace.basisFun (Fin n) ℝ).orthonormal i j]
-  ring
-
-end EuclideanPullbackMetricCoeff
 
 /-! ### Asymptotically Euclidean ends -/
 
@@ -722,14 +597,18 @@ end AsymptoticallyEuclideanEnd
 
 /-- A finite-ended asymptotically Euclidean structure of order `t` on `M`: a finite nonempty family
 of asymptotically Euclidean ends with pairwise disjoint open images whose union has compact
-complement in `M` (Cecchini-Zeidler, Definition 2.3, without boundary). Nonemptiness excludes
-closed manifolds such as flat tori. -/
+complement in `M` (Cecchini-Zeidler, Definition 2.3, without boundary). Requiring `0 < numEnds`
+rules out the empty family of ends (whose complement is `Set.univ`); in positive dimension `1 ≤ n`
+with positive decay order `0 < t` on a compact Hausdorff `C¹` manifold carrying a continuous
+Riemannian metric, a nonempty end family has infinite Riemannian volume and thus excludes closed
+manifolds such as flat tori (at `n = 0` the exterior `{x : radius < ‖x‖}` is empty, and at `t ≤ 0`
+the decay bound does not force `g_ij → δ_ij`). -/
 structure FiniteEndedAE (n : ℕ) (M : Type*) [TopologicalSpace M]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
     [RiemannianBundle (fun x : M ↦ TangentSpace (𝓡 n) x)] (t : ℝ) where
   /-- The number of ends. -/
   numEnds : ℕ
-  /-- Nonemptiness of the end family, excluding closed manifolds. -/
+  /-- Nonemptiness of the end family, ruling out the empty family of ends. -/
   numEnds_pos : 0 < numEnds
   /-- The family of ends. -/
   ends : Fin numEnds → AsymptoticallyEuclideanEnd n M t

@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.AsymptoticallyEuclidean.Mass
-public import TauCeti.Geometry.Manifold.Riemannian.Conformal
-public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Basic
+public import TauCeti.Geometry.Manifold.Riemannian.Pullback.WithMetric
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
@@ -22,7 +21,9 @@ up to second derivatives outside `{x : ‖x‖ ≤ r}`, rescaling the standard E
 on `WithMetric` produces an asymptotically Euclidean end of order `t` and a one-ended
 `FiniteEndedAE` manifold. Specializing to a smoothly cut-off version of
 `(1 + c ‖x‖ ^ (2 - n)) ^ (4 / (n - 2))` (`3 ≤ n`) yields a smooth globally positive Schwarzschild
-model manifold of decay order `n - 2` (non-flat for `c ≠ 0`) with ADM mass `2 c`.
+model manifold of decay order `n - 2` (non-flat for `c ≠ 0`) with ADM mass `2 c`. The generic
+`WithMetric` coordinate pullback formulas used here live in
+`TauCeti.Geometry.Manifold.Riemannian.Pullback.WithMetric`.
 
 ## Main definitions
 
@@ -37,10 +38,6 @@ model manifold of decay order `n - 2` (non-flat for `c ≠ 0`) with ADM mass `2 
 
 ## Main results
 
-* `TauCeti.pullbackMetricCoeff_toWithMetric_comp`,
-  `TauCeti.pullbackMetricCoeff_toWithMetric_rescale_comp`, and
-  `TauCeti.pullbackMetricCoeff_toWithMetric_rescale`: pulling back `g` and `f • g` along
-  `WithMetric.toWithMetric ∘ φ`, and specializing to `f • g_eucl`.
 * `TauCeti.contDiff_schwarzschildModelFactor`, `TauCeti.schwarzschildModelFactor_pos`,
   `TauCeti.schwarzschildModelFactor_of_norm_le`, and `TauCeti.schwarzschildModelFactor_of_lt`:
   global smoothness, positivity, interior value `1`, and exterior formula for
@@ -62,92 +59,6 @@ open Bundle Filter Function Metric Set
 open scoped ContDiff Manifold RealInnerProductSpace Topology
 
 namespace TauCeti
-
--- For every `p`, `TangentSpace (𝓡 n) p` and `TangentSpace (𝓡 n) (WithMetric.toWithMetric g p)`
--- are definitionally the model space `EuclideanSpace ℝ (Fin n)` (cf. `WithMetric/Basic.lean`).
-private theorem mfderiv_ofWithMetric_mfderiv_toWithMetric_comp {n : ℕ} {k : ℕ∞ω}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
-    [IsManifold (𝓡 n) 1 M]
-    (g : ContMDiffRiemannianMetric (𝓡 n) k (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x))
-    (φ : EuclideanSpace ℝ (Fin n) → M) (x : EuclideanSpace ℝ (Fin n))
-    (v : TangentSpace (𝓡 n) x) :
-    mfderiv (𝓡 n) (𝓡 n) WithMetric.ofWithMetric (WithMetric.toWithMetric g (φ x))
-        (mfderiv (𝓡 n) (𝓡 n) (WithMetric.toWithMetric g ∘ φ) x v) =
-      mfderiv (𝓡 n) (𝓡 n) φ x v := by
-  by_cases hφ : MDifferentiableAt (𝓡 n) (𝓡 n) φ x
-  · rw [mfderiv_comp x (WithMetric.hasMFDerivAt_toWithMetric (φ x)).mdifferentiableAt hφ,
-      ContinuousLinearMap.comp_apply, WithMetric.mfderiv_ofWithMetric_mfderiv_toWithMetric]
-  · have hcomp : ¬ MDifferentiableAt (𝓡 n) (𝓡 n) (WithMetric.toWithMetric g ∘ φ) x :=
-      fun hc ↦ hφ <| by
-        have h := (WithMetric.hasMFDerivAt_ofWithMetric
-          (WithMetric.toWithMetric g (φ x))).mdifferentiableAt.comp x hc
-        rwa [show WithMetric.ofWithMetric ∘ (WithMetric.toWithMetric g ∘ φ) = φ from
-          funext fun y ↦ WithMetric.ofWithMetric_toWithMetric g (φ y)] at h
-    rw [mfderiv_zero_of_not_mdifferentiableAt hcomp, mfderiv_zero_of_not_mdifferentiableAt hφ,
-      zero_apply, zero_apply, map_zero]
-
-private theorem inner_congr_arg {n : ℕ} {k : ℕ∞ω}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
-    [IsManifold (𝓡 n) 1 M]
-    (g : ContMDiffRiemannianMetric (𝓡 n) k (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x))
-    {p q : M} (hpq : p = q) {u₁ : TangentSpace (𝓡 n) p} {u₂ : TangentSpace (𝓡 n) q}
-    (hu : u₁ = u₂) {w₁ : TangentSpace (𝓡 n) p} {w₂ : TangentSpace (𝓡 n) q} (hw : w₁ = w₂) :
-    g.inner p u₁ w₁ = g.inner q u₂ w₂ := by
-  subst hpq hu hw; rfl
-
-/-- Pulling back `WithMetric g` along `WithMetric.toWithMetric g ∘ φ` evaluates `g.inner` on the
-differentials of `φ` along the Euclidean coordinate basis vectors. -/
-theorem pullbackMetricCoeff_toWithMetric_comp {n : ℕ} {k : ℕ∞ω}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
-    [IsManifold (𝓡 n) 1 M]
-    (g : ContMDiffRiemannianMetric (𝓡 n) k (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x))
-    (φ : EuclideanSpace ℝ (Fin n) → M) (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff (WithMetric.toWithMetric g ∘ φ) x i j =
-      g.inner (φ x) (mfderiv (𝓡 n) (𝓡 n) φ x (EuclideanSpace.basisFun (Fin n) ℝ i))
-        (mfderiv (𝓡 n) (𝓡 n) φ x (EuclideanSpace.basisFun (Fin n) ℝ j)) := by
-  rw [pullbackMetricCoeff_def]
-  have h := WithMetric.inner_def (I := 𝓡 n) (WithMetric.toWithMetric g (φ x))
-    (mfderiv (𝓡 n) (𝓡 n) (WithMetric.toWithMetric g ∘ φ) x
-      (EuclideanSpace.basisFun (Fin n) ℝ i))
-    (mfderiv (𝓡 n) (𝓡 n) (WithMetric.toWithMetric g ∘ φ) x
-      (EuclideanSpace.basisFun (Fin n) ℝ j))
-  exact h.trans (inner_congr_arg g (WithMetric.ofWithMetric_toWithMetric g (φ x))
-    (mfderiv_ofWithMetric_mfderiv_toWithMetric_comp g φ x (EuclideanSpace.basisFun (Fin n) ℝ i))
-    (mfderiv_ofWithMetric_mfderiv_toWithMetric_comp g φ x (EuclideanSpace.basisFun (Fin n) ℝ j)))
-
-/-- Conformal rescaling of pulled-back metric coefficients: pulling back `g.rescale f hf hf_pos`
-along `WithMetric.toWithMetric _ ∘ φ` multiplies the pulled-back metric coefficients of `g` by
-`f (φ x)`. -/
-theorem pullbackMetricCoeff_toWithMetric_rescale_comp {n : ℕ} {k : ℕ∞ω}
-    {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanSpace ℝ (Fin n)) M]
-    [IsManifold (𝓡 n) 1 M]
-    (g : ContMDiffRiemannianMetric (𝓡 n) k (EuclideanSpace ℝ (Fin n))
-      (fun x : M ↦ TangentSpace (𝓡 n) x))
-    {f : M → ℝ} (hf : ContMDiff (𝓡 n) 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x)
-    (φ : EuclideanSpace ℝ (Fin n) → M) (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff (WithMetric.toWithMetric (g.rescale f hf hf_pos) ∘ φ) x i j =
-      f (φ x) * pullbackMetricCoeff (WithMetric.toWithMetric g ∘ φ) x i j := by
-  rw [pullbackMetricCoeff_toWithMetric_comp, pullbackMetricCoeff_toWithMetric_comp,
-    ContMDiffRiemannianMetric.rescale_inner]
-
-/-- Pulling back the conformally rescaled Euclidean metric `f • g_eucl` along
-`WithMetric.toWithMetric` yields the conformally flat coefficients `f x * δ_ij`. -/
-@[simp]
-theorem pullbackMetricCoeff_toWithMetric_rescale {n : ℕ} {k : ℕ∞ω}
-    {f : EuclideanSpace ℝ (Fin n) → ℝ} (hf : ContMDiff (𝓡 n) 𝓘(ℝ) k f) (hf_pos : ∀ x, 0 < f x)
-    (x : EuclideanSpace ℝ (Fin n)) (i j : Fin n) :
-    pullbackMetricCoeff
-      (WithMetric.toWithMetric
-        (((riemannianMetricVectorSpace (EuclideanSpace ℝ (Fin n))).ofLE le_top).rescale
-          f hf hf_pos))
-      x i j = f x * if i = j then 1 else 0 := by
-  rw [← Function.comp_id (WithMetric.toWithMetric _),
-    pullbackMetricCoeff_toWithMetric_rescale_comp, pullbackMetricCoeff_toWithMetric_comp, id_eq,
-    ContMDiffRiemannianMetric.ofLE_inner, ← ContMDiffRiemannianMetric.inner_riemannianBundle,
-    ← pullbackMetricCoeff_def, pullbackMetricCoeff_id]
 
 /-! ### General conformally Euclidean ends on `WithMetric` -/
 
