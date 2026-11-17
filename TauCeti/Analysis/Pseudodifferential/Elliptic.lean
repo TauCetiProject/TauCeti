@@ -33,6 +33,8 @@ degree:
   estimates of inverse symbols.
 * `HomogeneousSymbol.isElliptic_adjoint_iff`: between Hilbert spaces, the pointwise adjoint of a
   symbol is elliptic exactly when the symbol is.
+* `HomogeneousSymbol.isElliptic_normRpow`: the powers `‖ξ‖ ^ m Id` of the frequency norm are
+  elliptic.
 * `HomogeneousSymbol.IsElliptic.finrank_eq`: when the frequency space is nontrivial, an elliptic
   symbol identifies the two fibres, so they have the same dimension. On a trivial frequency space
   every symbol is elliptic (`HomogeneousSymbol.isElliptic_of_subsingleton`), and no such
@@ -244,6 +246,18 @@ theorem isElliptic_adjoint_iff {V W : Type*} [NormedAddCommGroup V] [InnerProduc
     [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
     {a : HomogeneousSymbol X E V W m} : a.adjoint.IsElliptic ↔ a.IsElliptic := by
   simp only [isElliptic_iff, coefficient_adjoint, ContinuousLinearMap.isInvertible_adjoint_iff]
+
+/-! ### Powers of the frequency norm -/
+
+variable (X) in
+/-- The powers `‖ξ‖ ^ m Id` of the frequency norm are elliptic. -/
+theorem isElliptic_normRpow (E V : Type*) [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [NormedAddCommGroup V] [NormedSpace ℂ V] (m : ℝ) : (normRpow X E V m).IsElliptic :=
+  fun _ ξ hξ ↦ by
+    rw [coefficient_normRpow_of_ne_zero _ _ _ hξ]
+    exact ContinuousLinearMap.isInvertible_iff_isUnit.2
+      (ContinuousLinearMap.isUnit_smul_id_of_ne_zero
+        (Real.rpow_pos_of_pos (norm_pos_iff.2 hξ) m).ne')
 
 end HomogeneousSymbol
 
