@@ -286,7 +286,7 @@ private theorem ae_eq_restrict_chart_iff (p : M)
       (fun y ↦ u (chartInvMap (I := I) p y)) =ᵐ[volume.restrict (Ω : Set _)]
         fun y ↦ g (chartInvMap (I := I) p y) := by
   rw [EventuallyEq, EventuallyEq, ae_restrict_iff' (isOpen_chartNbhd p Ω).measurableSet,
-    ae_restrict_iff' Ω.isOpen.measurableSet, ae_iff, ae_iff]
+    ae_restrict_iff' Ω.isOpen.measurableSet, MeasureTheory.ae_iff, MeasureTheory.ae_iff]
   simp only [Classical.not_imp]
   let S : Set M := {x | x ∈ chartNbhd (I := I) p Ω ∧ u x ≠ g x}
   let T : Set (EuclideanSpace ℝ (Fin (finrank ℝ E))) :=
