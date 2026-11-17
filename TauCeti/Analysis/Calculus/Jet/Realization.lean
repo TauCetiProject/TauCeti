@@ -22,7 +22,9 @@ polynomial realization. The polynomial and its smoothness are available without 
 zero or symmetry assumptions.
 
 `finiteJetSeries` is the factorial-normalized coefficient series, and `finiteJetPolynomial`
-is its finite Taylor sum about the chosen center. The main results are:
+is its finite Taylor sum about the chosen center. As a function of its coefficients it is the
+continuous linear map `finiteJetPolynomialCLM`, which depends smoothly on the center and the
+evaluation point (`contDiff_finiteJetPolynomialCLM`). The main results are:
 
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
@@ -129,6 +131,28 @@ theorem contDiff_finiteJetPolynomial (r : ℕ)
   intro y
   exact ((finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).cpolynomialAt_of_mem
     (by simp)).contDiffAt
+
+/-- The finite Taylor polynomial `A ↦ ∑ i ≤ r, (i!)⁻¹ A i (y - c, …, y - c)` of degree `r` with
+center `c`, evaluated at `y`, as a continuous linear map of the coefficients `A`. -/
+noncomputable def finiteJetPolynomialCLM (r : ℕ) (c y : E) :
+    ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) →L[𝕜] F :=
+  ∑ i : Fin (r + 1), (i.val.factorial : 𝕜)⁻¹ •
+    ((ContinuousLinearMap.id 𝕜 (E [×i.val]→L[𝕜] F)).flipMultilinear fun _ ↦ y - c).comp
+      (ContinuousLinearMap.proj i)
+
+@[simp]
+theorem finiteJetPolynomialCLM_apply (r : ℕ) (c y : E)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
+    finiteJetPolynomialCLM r c y A = finiteJetPolynomial r A c y := by
+  simp [finiteJetPolynomialCLM, finiteJetPolynomial_apply]
+
+/-- The finite Taylor polynomial is jointly smooth in its center and its evaluation point, as a
+continuous linear map of its coefficients. -/
+theorem contDiff_finiteJetPolynomialCLM (r : ℕ) {n : ℕ∞ω} :
+    ContDiff 𝕜 n fun p : E × E ↦ finiteJetPolynomialCLM (𝕜 := 𝕜) (F := F) r p.1 p.2 := by
+  refine ContDiff.sum fun i _ ↦ ContDiff.const_smul _ ?_
+  exact ((ContinuousMultilinearMap.contDiff _).comp
+    (contDiff_pi.2 fun _ ↦ contDiff_snd.sub contDiff_fst)).clm_comp contDiff_const
 
 /-- All derivatives above the prescribed jet order vanish everywhere, without any symmetry
 or characteristic-zero assumption on the prescribed coefficients. -/
