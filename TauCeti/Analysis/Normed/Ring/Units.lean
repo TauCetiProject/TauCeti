@@ -63,25 +63,33 @@ element invertible, with an explicit bound on its inverse: if `‖1 - a * b‖ <
 theorem isUnit_and_norm_inverse_le_of_norm_one_sub_mul_lt {a b : R}
     (hr : ‖1 - a * b‖ < 1) (hl : ‖1 - b * a‖ < 1) :
     IsUnit a ∧ ‖Ring.inverse a‖ ≤ ‖b‖ / (1 - ‖1 - a * b‖) := by
-  let ur : Rˣ := Units.oneSub (1 - a * b) hr
-  let ul : Rˣ := Units.oneSub (1 - b * a) hl
+  set ur : Rˣ := Units.oneSub (1 - a * b) hr with hur_def
+  set ul : Rˣ := Units.oneSub (1 - b * a) hl with hul_def
+  have hur : (ur : R) = a * b := by
+    rw [hur_def, Units.val_oneSub, sub_sub_cancel]
+  have hul : (ul : R) = b * a := by
+    rw [hul_def, Units.val_oneSub, sub_sub_cancel]
   have haR : a * (b * ↑ur⁻¹) = 1 := by
-    rw [← mul_assoc, show a * b = ↑ur from (sub_sub_cancel 1 (a * b)).symm, Units.mul_inv]
+    rw [← mul_assoc, ← hur, Units.mul_inv]
   have haL : (↑ul⁻¹ * b) * a = 1 := by
-    rw [mul_assoc, show b * a = ↑ul from (sub_sub_cancel 1 (b * a)).symm, Units.inv_mul]
+    rw [mul_assoc, ← hul, Units.inv_mul]
   have hLR : ↑ul⁻¹ * b = b * ↑ur⁻¹ := by
     rw [← mul_one (↑ul⁻¹ * b), ← haR, ← mul_assoc, haL, one_mul]
-  let u : Rˣ := ⟨a, b * ↑ur⁻¹, haR, hLR ▸ haL⟩
+  have haL' : (b * ↑ur⁻¹) * a = 1 := hLR ▸ haL
+  set u : Rˣ := Units.mk a (b * ↑ur⁻¹) haR haL' with hu_def
+  have hu_val : (u : R) = a := by
+    rw [hu_def, Units.val_mk]
+  have hu_inv : (↑u⁻¹ : R) = b * ↑ur⁻¹ := by
+    rw [hu_def, Units.inv_mk, Units.val_mk]
   have hu_eq : (b * ↑ur⁻¹ : R) = b + (b * ↑ur⁻¹) * (1 - a * b) := by
-    have hmul : (b * ↑ur⁻¹) * (1 - (1 - a * b)) = b := by
-      rw [← Units.val_oneSub (1 - a * b) hr, mul_assoc, Units.inv_mul, mul_one]
-    rwa [mul_sub, mul_one, sub_eq_iff_eq_add] at hmul
+    have hmul : (b * ↑ur⁻¹) * (a * b) = b := by
+      rw [← hur, mul_assoc, Units.inv_mul, mul_one]
+    rw [mul_sub, mul_one, hmul, add_sub_cancel]
   have hstep : ‖(b * ↑ur⁻¹ : R)‖ ≤ ‖b‖ + ‖(b * ↑ur⁻¹ : R)‖ * ‖1 - a * b‖ :=
     (congrArg norm hu_eq).le.trans <| (norm_add_le _ _).trans <|
       add_le_add_right (norm_mul_le _ _) _
-  refine ⟨⟨u, rfl⟩, ?_⟩
-  rw [show a = ↑u from rfl, Ring.inverse_unit, show (↑u⁻¹ : R) = b * ↑ur⁻¹ from rfl,
-    le_div_iff₀ (sub_pos.mpr hr)]
+  refine ⟨hu_val ▸ u.isUnit, ?_⟩
+  rw [← hu_val, Ring.inverse_unit, hu_inv, le_div_iff₀ (sub_pos.mpr hr)]
   linarith
 
 omit [HasSummableGeomSeries R] in
