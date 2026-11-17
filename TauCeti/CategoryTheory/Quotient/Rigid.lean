@@ -20,7 +20,7 @@ The duals follow `CategoryTheory.Functor.mapHasLeftDual` and
 `CategoryTheory.Functor.mapHasRightDual` along the strong monoidal quotient functor. The
 pairings are defined directly by mapping evaluations and coevaluations, without identity
 comparison morphisms. These evaluations and coevaluations compute to the mapped source
-morphisms, as do exposed `ExactPairing.rightDualIso` comparisons built directly from them,
+morphisms, as do exposed `CategoryTheory.rightDualIso` comparisons built directly from them,
 such as `TauCeti.drinfeldIso`.
 The per-object dual instances use the caller's dual of the underlying object `X.as`, so they
 need a dual only on the corresponding side, not rigidity of the whole source category.
@@ -261,13 +261,18 @@ theorem rightDualTensorIso_hom_obj (X Y : C) :
     (@ExactPairing.tensor _ _ _ _ _ _ _
       (instHasRightDualObj (r := r) X).exact (instHasRightDualObj (r := r) Y).exact)
     (evaluation_rightDual_obj (X ⊗ Y)) (by
-      have hQ := ExactPairing.tensor_evaluation
+      have tensor_eval {D : Type u} [Category.{v} D] [MonoidalCategory D]
+          {X₁ X₂ Y₁ Y₂ : D} [ExactPairing X₁ Y₁] [ExactPairing X₂ Y₂] :
+          ε_ (X₁ ⊗ X₂) (Y₂ ⊗ Y₁) = (α_ _ _ _).hom ≫ Y₂ ◁ (α_ _ _ _).inv ≫
+            Y₂ ◁ ε_ X₁ Y₁ ▷ X₂ ≫ Y₂ ◁ (λ_ X₂).hom ≫ ε_ X₂ Y₂ := by
+        simp [ExactPairing.tensor_evaluation, monoidalComp]
+      have hQ := tensor_eval
         (X₁ := (functor r).obj X) (X₂ := (functor r).obj Y)
-        (Y₁ := ((functor r).obj X)ᘁ) (Y₂ := ((functor r).obj Y)ᘁ)
+        (Y₁ := (((functor r).obj X)ᘁ : Quotient r))
+        (Y₂ := (((functor r).obj Y)ᘁ : Quotient r))
       have hC := congrArg (functor r).map
-        (ExactPairing.tensor_evaluation (X₁ := X) (X₂ := Y) (Y₁ := Xᘁ) (Y₂ := Yᘁ))
-      simp only [monoidalComp, evaluation_rightDual_obj] at hQ
-      simp only [monoidalComp] at hC
+        (tensor_eval (X₁ := X) (X₂ := Y) (Y₁ := Xᘁ) (Y₂ := Yᘁ))
+      simp only [evaluation_rightDual_obj] at hQ
       -- After expanding coherence, only primitive quotient associators, unitors and
       -- whiskering remain; these compute to the source composites with fixed endpoints.
       exact hQ.trans hC.symm))

@@ -40,7 +40,7 @@ the canonical pivotal structure.
   and `Y`, followed by the tensor comparison of the double right dual functor;
 * `TauCeti.drinfeldNatIso_isMonoidal`: in a symmetric category, `drinfeldNatIso` is monoidal.
 
-The construction uses Mathlib's `CategoryTheory.ExactPairing.rightDualIso` and
+The construction uses Mathlib's `CategoryTheory.rightDualIso` and
 `CategoryTheory.BraidedCategory.exactPairing_swap`. The name `drinfeldIso` follows
 J. McKoen's Mathlib pull request #42192.
 
