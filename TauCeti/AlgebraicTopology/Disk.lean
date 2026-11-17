@@ -33,8 +33,11 @@ extended over attached cells.
 Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 `EuclideanSpace ℝ (Fin n)`.  It is homeomorphic to the unit sphere of the Euclidean space
 `EuclideanSpace ℝ (ULift (Fin n))` of the same dimension in the lifted universe
-(`TauCeti.diskBoundaryHomeomorph`), which lets results about unit spheres of inner product spaces
-in that universe be applied to it.  In particular the boundary of the `n`-disk is empty exactly
+(`TauCeti.diskBoundaryHomeomorph`), and more generally the unit sphere of any real normed space of
+dimension `n + 1` is homeomorphic to `TopCat.sphere n` (`TauCeti.sphereHomeomorphTopCatSphere`,
+transporting homotopy equivalences via `ContinuousMap.HomotopyEquiv.topCatSphere`), which lets
+results about unit spheres of inner product spaces in that universe be applied to it.  In
+particular the boundary of the `n`-disk is empty exactly
 when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
 `1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`).  The antipodal map of
 the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
@@ -625,5 +628,67 @@ lemma diskBoundaryIso_neg_hom :
   simp
 
 end LinearIsometryEquiv
+
+namespace TauCeti
+
+/-- The unit sphere of any real normed space `F` of dimension `n + 1` is homeomorphic to
+`TopCat.sphere.{u} n` in any target universe `u`. -/
+def sphereHomeomorphTopCatSphere {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    (hF : Module.finrank ℝ F = n + 1) :
+    Metric.sphere (0 : F) 1 ≃ₜ TopCat.sphere.{u} n :=
+  haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+  (sphereHomeomorphOfFinrankEq
+      (hF.trans (finrank_euclideanSpace_ulift_fin.{u} (n + 1)).symm)).trans
+    (diskBoundaryHomeomorph (n + 1)).symm
+
+@[simp]
+theorem sphereHomeomorphTopCatSphere_apply {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : ℕ} (hF : Module.finrank ℝ F = n + 1) (x : Metric.sphere (0 : F) 1) :
+    haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+    sphereHomeomorphTopCatSphere.{u} hF x =
+      (diskBoundaryHomeomorph (n + 1)).symm
+        (sphereHomeomorphOfFinrankEq
+          (hF.trans (finrank_euclideanSpace_ulift_fin.{u} (n + 1)).symm) x) :=
+  (rfl)
+
+@[simp]
+theorem sphereHomeomorphTopCatSphere_symm_apply {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {n : ℕ} (hF : Module.finrank ℝ F = n + 1) (y : TopCat.sphere.{u} n) :
+    haveI : FiniteDimensional ℝ F := Module.finite_of_finrank_eq_succ hF
+    (sphereHomeomorphTopCatSphere.{u} hF).symm y =
+      (sphereHomeomorphOfFinrankEq
+        (hF.trans (finrank_euclideanSpace_ulift_fin.{u} (n + 1)).symm)).symm
+        (diskBoundaryHomeomorph (n + 1) y) :=
+  (rfl)
+
+end TauCeti
+
+namespace ContinuousMap.HomotopyEquiv
+
+open scoped ContinuousMap
+
+variable {X : Type u} [TopologicalSpace X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- Transport a homotopy equivalence `X ≃ₕ Metric.sphere (0 : F) 1` (with `F` in any universe and
+`Module.finrank ℝ F = n + 1`) to `X ≃ₕ TopCat.sphere.{u} n` in the universe of `X`. -/
+def topCatSphere {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1) (hF : Module.finrank ℝ F = n + 1) :
+    X ≃ₕ TopCat.sphere.{u} n :=
+  e.trans (TauCeti.sphereHomeomorphTopCatSphere.{u} hF).toHomotopyEquiv
+
+@[simp]
+theorem topCatSphere_apply {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) (x : X) :
+    e.topCatSphere hF x = TauCeti.sphereHomeomorphTopCatSphere.{u} hF (e x) :=
+  (rfl)
+
+@[simp]
+theorem topCatSphere_symm_apply {n : ℕ} (e : X ≃ₕ Metric.sphere (0 : F) 1)
+    (hF : Module.finrank ℝ F = n + 1) (y : TopCat.sphere.{u} n) :
+    (e.topCatSphere hF).symm y =
+      e.symm ((TauCeti.sphereHomeomorphTopCatSphere.{u} hF).symm y) :=
+  (rfl)
+
+end ContinuousMap.HomotopyEquiv
 
 end

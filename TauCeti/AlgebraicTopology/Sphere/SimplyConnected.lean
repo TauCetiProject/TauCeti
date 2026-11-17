@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Normed.Module.Connected
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 import Mathlib.Analysis.Convex.Combination
 
 /-!
@@ -52,6 +53,12 @@ Rank two is genuinely the boundary: the circle is not simply connected.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace`: the case of `Sⁿ` for `2 ≤ n`.
 * `TauCeti.simplyConnectedSpace_sphere_euclideanSpace_complex`: the case of the unit sphere
   `S²ᵏ⁺¹` of `ℂᵏ⁺¹` for `1 ≤ k`.
+* `ContinuousMap.HomotopyEquiv.nonempty_of_sphere`,
+  `ContinuousMap.HomotopyEquiv.pathConnectedSpace_of_sphere`,
+  `ContinuousMap.HomotopyEquiv.connectedSpace_of_sphere`, and
+  `ContinuousMap.HomotopyEquiv.simplyConnectedSpace_of_sphere`: nonemptiness, path-connectedness
+  (`1 < Module.rank ℝ F`), connectedness (`1 < Module.rank ℝ F`), and simple connectivity
+  (`2 < Module.rank ℝ F`) of a space homotopy equivalent to a sphere of nonnegative radius.
 
 ## References
 
@@ -460,5 +467,52 @@ theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤
   omega
 
 end TauCeti
+
+namespace ContinuousMap.HomotopyEquiv
+
+open scoped ContinuousMap
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real seminormed space with
+nontrivial topology is nonempty. -/
+theorem nonempty_of_sphere {X : Type*} [TopologicalSpace X]
+    {F : Type*} [SeminormedAddCommGroup F] [NormedSpace ℝ F] [NontrivialTopology F]
+    {c : F} {r : ℝ} (e : X ≃ₕ sphere c r) (hr : 0 ≤ r) :
+    Nonempty X := by
+  have : Nonempty (sphere c r) := (NormedSpace.sphere_nonempty.2 hr).to_subtype
+  exact e.symm.nonempty
+
+section Normed
+
+variable {X : Type*} [TopologicalSpace X]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than one is path-connected. -/
+theorem pathConnectedSpace_of_sphere {c : F} {r : ℝ} (e : X ≃ₕ sphere c r)
+    (hF : 1 < Module.rank ℝ F) (hr : 0 ≤ r) :
+    PathConnectedSpace X := by
+  have : PathConnectedSpace (sphere c r) :=
+    isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere hF c hr)
+  exact e.symm.pathConnectedSpace
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than one is connected. -/
+theorem connectedSpace_of_sphere {c : F} {r : ℝ} (e : X ≃ₕ sphere c r)
+    (hF : 1 < Module.rank ℝ F) (hr : 0 ≤ r) :
+    ConnectedSpace X := by
+  have := e.pathConnectedSpace_of_sphere hF hr
+  infer_instance
+
+/-- A space homotopy equivalent to a sphere of nonnegative radius in a real normed space of rank
+greater than two is simply connected. -/
+theorem simplyConnectedSpace_of_sphere {c : F} {r : ℝ} (e : X ≃ₕ sphere c r)
+    (hF : 2 < Module.rank ℝ F) (hr : 0 ≤ r) :
+    SimplyConnectedSpace X := by
+  have : SimplyConnectedSpace (sphere c r) := TauCeti.simplyConnectedSpace_sphere hF c hr
+  exact e.simplyConnectedSpace
+
+end Normed
+
+end ContinuousMap.HomotopyEquiv
 
 end
