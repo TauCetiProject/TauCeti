@@ -190,21 +190,6 @@ theorem IsBipartite.exists_isMatching_isVertexCover_ncard_eq [Finite V] (hG : G.
 
 namespace IsBipartiteWith
 
-/-- The left side of a displayed bipartition is a vertex cover of `G`; isolated vertices outside
-`L ∪ R` have no incident edges. -/
-theorem isVertexCover_left (hLR : G.IsBipartiteWith L R) : G.IsVertexCover L :=
-  fun _ _ hadj ↦ (hLR.mem_of_adj hadj).imp And.left And.right
-
-/-- The right side of a displayed bipartition is a vertex cover of `G`. -/
-theorem isVertexCover_right (hLR : G.IsBipartiteWith L R) : G.IsVertexCover R :=
-  hLR.symm.isVertexCover_left
-
-/-- For any subset `S`, removing `S` from `L` and adding its neighbourhood `(⋃ x ∈ S,
-G.neighborSet x)` yields a vertex cover of `G`. -/
-theorem isVertexCover_sdiff_union_biUnion_neighborSet (hLR : G.IsBipartiteWith L R) (S : Set V) :
-    G.IsVertexCover ((L \ S) ∪ ⋃ x ∈ S, G.neighborSet x) :=
-  hLR.isVertexCover_left.sdiff_union_biUnion_neighborSet S
-
 /-- For a matching `M` in a graph with bipartition `(L, R)`, the set `M.verts ∩ L` of matched
 vertices in `L` has the same extended cardinality as `M.edgeSet`. -/
 theorem encard_verts_inter_left (hLR : G.IsBipartiteWith L R) {M : G.Subgraph}

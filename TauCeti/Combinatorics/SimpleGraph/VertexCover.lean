@@ -5,16 +5,23 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Combinatorics.SimpleGraph.Subgraph
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.VertexCover
 
 /-!
-# Neighbourhood constructions and finite-cover kernelization for vertex covers
+# Neighbourhood constructions, bipartitions, and finite-cover kernelization for vertex covers
 
 For any vertex cover `C` of a simple graph `G : SimpleGraph V` and any subset `S : Set V`,
 replacing `S` in `C` by its open neighbourhood `⋃ x ∈ S, G.neighborSet x` yields another vertex
 cover `(C \ S) ∪ ⋃ x ∈ S, G.neighborSet x`
 (`SimpleGraph.IsVertexCover.sdiff_union_biUnion_neighborSet`).
+
+When `G` is equipped with a displayed bipartition `G.IsBipartiteWith L R` (which allows isolated
+vertices outside `L ∪ R`), each side `L` and `R` is a vertex cover of `G`
+(`SimpleGraph.IsBipartiteWith.isVertexCover_left`,
+`SimpleGraph.IsBipartiteWith.isVertexCover_right`), and specializing the neighbourhood construction
+gives the vertex cover `(L \ S) ∪ ⋃ x ∈ S, G.neighborSet x`
+(`SimpleGraph.IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet`).
 
 When `C₀` is a finite vertex cover of `G` on a possibly infinite vertex type `V`, retaining at most
 `C₀.ncard + 1` neighbours of each vertex of `C₀` produces an induced subgraph `S : G.Subgraph` on a
@@ -30,6 +37,11 @@ any remaining vertex of `C₀` already belongs to `S.verts`.
   and adjoining `⋃ x ∈ S, G.neighborSet x` produces a vertex cover.
 * `SimpleGraph.IsVertexCover.exists_finite_verts_isVertexCover_image`: finite-cover neighbourhood
   kernelization to an induced subgraph on finitely many vertices.
+* `SimpleGraph.IsBipartiteWith.isVertexCover_left` and
+  `SimpleGraph.IsBipartiteWith.isVertexCover_right`: each side of a displayed bipartition is a
+  vertex cover.
+* `SimpleGraph.IsBipartiteWith.isVertexCover_sdiff_union_biUnion_neighborSet`: removing `S` from
+  the left side `L` of a bipartition and adjoining `⋃ x ∈ S, G.neighborSet x` yields a vertex cover.
 -/
 
 public section
@@ -113,5 +125,28 @@ theorem IsVertexCover.exists_finite_verts_isVertexCover_image {C₀ : Set V}
   rcases hC₀ huv with hu₀ | hv₀
   · exact hcov_left huv hu₀
   · exact (hcov_left huv.symm hv₀).symm
+
+/-! ### Vertex covers of bipartite graphs -/
+
+namespace IsBipartiteWith
+
+variable {L R : Set V}
+
+/-- The left side of a displayed bipartition is a vertex cover of `G`; isolated vertices outside
+`L ∪ R` have no incident edges. -/
+theorem isVertexCover_left (hLR : G.IsBipartiteWith L R) : G.IsVertexCover L :=
+  fun _ _ hadj ↦ (hLR.mem_of_adj hadj).imp And.left And.right
+
+/-- The right side of a displayed bipartition is a vertex cover of `G`. -/
+theorem isVertexCover_right (hLR : G.IsBipartiteWith L R) : G.IsVertexCover R :=
+  hLR.symm.isVertexCover_left
+
+/-- For any subset `S`, removing `S` from `L` and adding its neighbourhood
+`⋃ x ∈ S, G.neighborSet x` yields a vertex cover of `G`. -/
+theorem isVertexCover_sdiff_union_biUnion_neighborSet (hLR : G.IsBipartiteWith L R) (S : Set V) :
+    G.IsVertexCover ((L \ S) ∪ ⋃ x ∈ S, G.neighborSet x) :=
+  hLR.isVertexCover_left.sdiff_union_biUnion_neighborSet S
+
+end IsBipartiteWith
 
 end SimpleGraph
