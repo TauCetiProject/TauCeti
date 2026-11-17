@@ -200,6 +200,11 @@ theorem compLinearCLE_symm_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E 
     (compLinearCLE e).symm f = compLinearL (e.symm : E' →L[ℝ] E) f :=
   (rfl)
 
+private theorem norm_compLinearL_apply_le_of_norm_le_one {e : E →L[ℝ] E'} (he : ‖e‖ ≤ 1)
+    (f : CkHolderSpace k α E' F) :
+    ‖compLinearL e f‖ ≤ ‖f‖ :=
+  ((compLinearL e).le_of_opNorm_le (norm_compLinearL_le_one he) f).trans_eq (one_mul _)
+
 /-- Isometric linear coordinate changes on bounded `C^{k,α}` functions, as a linear isometric
 equivalence. -/
 def compLinearLIE (e : E ≃ₗᵢ[ℝ] E') : CkHolderSpace k α E' F ≃ₗᵢ[ℝ] CkHolderSpace k α E F :=
@@ -210,14 +215,9 @@ def compLinearLIE (e : E ≃ₗᵢ[ℝ] E') : CkHolderSpace k α E' F ≃ₗᵢ[
       map_smul' := map_smul _
       left_inv f := ext fun x ↦ by simp
       right_inv f := ext fun x ↦ by simp }
-    (fun f ↦ show ‖compLinearL e.toLinearIsometry.toContinuousLinearMap f‖ ≤ ‖f‖ by
-      simpa only [one_mul] using
-        (compLinearL e.toLinearIsometry.toContinuousLinearMap).le_of_opNorm_le
-          (norm_compLinearL_le_one e.toLinearIsometry.norm_toContinuousLinearMap_le) f)
-    (fun f ↦ show ‖compLinearL e.symm.toLinearIsometry.toContinuousLinearMap f‖ ≤ ‖f‖ by
-      simpa only [one_mul] using
-        (compLinearL e.symm.toLinearIsometry.toContinuousLinearMap).le_of_opNorm_le
-          (norm_compLinearL_le_one e.symm.toLinearIsometry.norm_toContinuousLinearMap_le) f)
+    (norm_compLinearL_apply_le_of_norm_le_one e.toLinearIsometry.norm_toContinuousLinearMap_le)
+    (norm_compLinearL_apply_le_of_norm_le_one
+      e.symm.toLinearIsometry.norm_toContinuousLinearMap_le)
 
 /-- Applying `compLinearLIE` agrees with `compLinearL` on the underlying continuous linear map. -/
 @[simp]
