@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 public import TauCeti.Analysis.BoxIntegral.Integrability
 import TauCeti.MeasureTheory.Integral.Bochner.Affine
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Boundary flux on boxes
@@ -36,16 +37,6 @@ public section
 open MeasureTheory Set
 open scoped ENNReal
 
-/-- Continuity of `f` on the closed box `Set.Icc a b` gives integrability on every slice `x i = c`
-for `c ∈ Set.Icc (a i) (b i)`. -/
-theorem ContinuousOn.integrableOn_insertNth_Icc {n : ℕ} {E : Type*} [NormedAddCommGroup E]
-    {a b : Fin (n + 1) → ℝ} {f : (Fin (n + 1) → ℝ) → E}
-    (hf : ContinuousOn f (Icc a b)) (i : Fin (n + 1)) {c : ℝ} (hc : c ∈ Icc (a i) (b i)) :
-    IntegrableOn (fun x ↦ f (i.insertNth c x)) (Icc (a ∘ i.succAbove) (b ∘ i.succAbove)) := by
-  refine ContinuousOn.integrableOn_compact isCompact_Icc ?_
-  exact hf.comp (continuousOn_const.finInsertNth i continuousOn_id) fun x hx ↦
-    Fin.insertNth_mem_Icc.mpr ⟨hc, hx⟩
-
 namespace TauCeti
 
 variable {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -72,15 +63,12 @@ theorem boxBoundarySum_zero_one (F : Fin (n + 1) → (Fin (n + 1) → ℝ) → E
         ∫ x in Icc (0 : Fin n → ℝ) 1, F i (i.insertNth 0 x)) := by
   simp only [boxBoundarySum_def, Function.comp_def, Pi.zero_def, Pi.one_def]
 
+/-- The boundary flux of the zero field family vanishes. For the pointwise lambda form
+`fun _ _ ↦ 0`, see `boxBoundarySum_const`. -/
 @[simp]
 theorem boxBoundarySum_zero (a b : Fin (n + 1) → ℝ) :
-    boxBoundarySum a b (fun _ _ ↦ (0 : E)) = 0 := by
+    boxBoundarySum a b (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 := by
   simp [boxBoundarySum_def]
-
-@[simp]
-theorem boxBoundarySum_zero' (a b : Fin (n + 1) → ℝ) :
-    boxBoundarySum a b (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 :=
-  boxBoundarySum_zero a b
 
 /-- Constant flux components cancel between opposite faces, without ordering or regularity
 hypotheses on the box. -/

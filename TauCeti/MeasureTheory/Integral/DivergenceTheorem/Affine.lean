@@ -88,15 +88,19 @@ theorem affineFluxPullback_refl (j : ι) (u : ι → ℝ) :
     ext; simp
   simp [affineFluxPullback_apply, Pi.single_apply, hid]
 
+/-- The cofactor pullback of the zero field family vanishes. -/
 @[simp]
 theorem affineFluxPullback_zero :
-    L.affineFluxPullback p (fun _ _ ↦ (0 : E)) = 0 := by
+    L.affineFluxPullback p (0 : ι → (ι → ℝ) → E) = 0 := by
   ext j u
   simp [affineFluxPullback_apply]
 
+/-- Pointwise-lambda form of `affineFluxPullback_zero`, retained as a separate `@[simp]` rule so
+`simp` rewrites `fun _ _ ↦ 0` as well as `0` (as in `MeasureTheory.integral_zero'` and
+`Matrix.dotProduct_zero'`). -/
 @[simp]
 theorem affineFluxPullback_zero' :
-    L.affineFluxPullback p (0 : ι → (ι → ℝ) → E) = 0 :=
+    L.affineFluxPullback p (fun _ _ ↦ (0 : E)) = 0 :=
   L.affineFluxPullback_zero p
 
 theorem affineFluxPullback_smul (r : ℝ) :
@@ -200,15 +204,12 @@ theorem affineFluxBoundary_eq_sum :
         ∫ x in Icc (0 : Fin n → ℝ) 1, L.affineFluxPullback p F j (j.insertNth 0 x)) :=
   TauCeti.boxBoundarySum_zero_one _
 
+/-- The cofactor boundary flux of the zero field family vanishes. For the pointwise lambda form
+`fun _ _ ↦ 0`, see `affineFluxBoundary_const`. -/
 @[simp]
 theorem affineFluxBoundary_zero :
-    L.affineFluxBoundary p (fun _ _ ↦ (0 : E)) = 0 := by
+    L.affineFluxBoundary p (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 := by
   simp [affineFluxBoundary_def]
-
-@[simp]
-theorem affineFluxBoundary_zero' :
-    L.affineFluxBoundary p (0 : Fin (n + 1) → (Fin (n + 1) → ℝ) → E) = 0 :=
-  L.affineFluxBoundary_zero p
 
 /-- Constant field families have zero cofactor boundary flux, for either sign of `det L`. -/
 @[simp]

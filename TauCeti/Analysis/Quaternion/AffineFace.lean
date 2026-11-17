@@ -249,15 +249,12 @@ theorem rawAffineBoundary_comp_piMap_smul_id (L : (Fin 4 → ℝ) →L[ℝ] (Fin
     simp
   rw [affineFaceNormal_comp_piMap_smul_id, comp_apply, add_assoc, ← map_add, hpt, map_smul]
 
+/-- The raw affine boundary integral of the zero operator field vanishes. For the pointwise
+lambda form `fun _ ↦ 0`, see `rawAffineBoundary_const`. -/
 @[simp]
 theorem rawAffineBoundary_zero (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) :
-    rawAffineBoundary L p (fun _ ↦ (0 : ℍ →L[ℝ] E)) = 0 := by
+    rawAffineBoundary L p (0 : (Fin 4 → ℝ) → ℍ →L[ℝ] E) = 0 := by
   simp [rawAffineBoundary_eq]
-
-@[simp]
-theorem rawAffineBoundary_zero' (L : (Fin 4 → ℝ) →L[ℝ] (Fin 4 → ℝ)) (p : Fin 4 → ℝ) :
-    rawAffineBoundary L p (0 : (Fin 4 → ℝ) → ℍ →L[ℝ] E) = 0 :=
-  rawAffineBoundary_zero L p
 
 /-- Constant coefficients have zero boundary integral: opposite faces cancel, including
 for singular affine maps. -/
