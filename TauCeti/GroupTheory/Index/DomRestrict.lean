@@ -9,6 +9,7 @@ public import Mathlib.Data.ZMod.Basic
 public import Mathlib.GroupTheory.Index
 public import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.GroupTheory.OrderOfElement
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.FreeModule.Int
 
 /-!
@@ -171,11 +172,11 @@ theorem setOf_domRestrict_ker_ne_zero_eq_of_finrank_eq_two [Module.Free ℤ Λ] 
     {ψ : Λ →+ ZMod 2 | ψ.domRestrict ι.ker ≠ 0} = {χ, χ + ι} := by
   obtain ⟨hχ₀, hχι⟩ : χ ≠ 0 ∧ χ ≠ ι := by
     simpa [not_or] using (AddMonoidHom.domRestrict_ker_eq_zero_iff_zmod_two hι).not.1 hχ
-  have hadd₀ : χ + ι ≠ 0 := by rwa [← ZModModule.sub_eq_add, sub_ne_zero]
   ext ψ
-  rcases eq_zero_or_eq_or_eq_or_eq_add_of_finrank_eq_two h hι hχ₀ hχι ψ with
-    rfl | rfl | rfl | rfl <;>
-    simp [AddMonoidHom.domRestrict_ker_eq_zero_iff_zmod_two hι, hι, hχ₀, hχι, hadd₀,
-      hχ₀.symm, hχι.symm, hadd₀.symm]
+  rcases addMonoidHom_zmod_two_eq_zero_or_eq_or_eq_or_eq_add_of_finrank_eq_two h hι hχ₀ hχι ψ
+    with rfl | rfl | rfl | rfl <;>
+    simp [AddMonoidHom.domRestrict_ker_eq_zero_iff_zmod_two hι,
+      add_eq_zero_iff_eq_of_charTwo (ZMod 2), hι, hχ₀, hχι, hχ₀.symm, hχι.symm,
+      eq_comm (a := (0 : Λ →+ ZMod 2))]
 
 end TauCeti

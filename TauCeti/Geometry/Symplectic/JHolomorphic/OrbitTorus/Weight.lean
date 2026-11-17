@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.SignCharacter
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
 public import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 import Mathlib.Basic.Sign.Basic
+import Mathlib.Tactic.NoncommRing
 import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 
 /-!
@@ -241,8 +242,7 @@ theorem orbitTorusTwistSign_sq_zero (P : Matrix (Fin 2) (Fin 2) R) :
     orbitTorusTwistSign (P ^ 2) 0 = orbitTorusTwistSign P 0 * SignType.sign (1 + P).det := by
   rw [orbitTorusTwistSign_zero, orbitTorusTwistSign_zero, ← sign_mul, ← det_mul]
   congr 2
-  rw [sub_mul, one_mul, mul_add, mul_one, sq]
-  abel
+  noncomm_ring
 
 /-- For `det P = 1`, the orbit torus of the doubled orbit has twist index `0`, since
 `det (1 + P ^ 2) = (trace P) ^ 2` is never negative. -/

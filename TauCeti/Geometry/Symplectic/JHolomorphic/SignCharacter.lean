@@ -9,6 +9,7 @@ public import Mathlib.Basic.Sign.Defs
 public import Mathlib.Data.ZMod.Defs
 public import Mathlib.LinearAlgebra.Dimension.Free
 import Mathlib.Data.ZMod.Basic
+import TauCeti.Algebra.CharP.Two
 import TauCeti.LinearAlgebra.FreeModule.Int
 
 /-!
@@ -21,28 +22,21 @@ the real flat sign lines of `C`. These lines are the homomorphisms `χ : Λ → 
 determinant sign `s χ` of the normal operator twisted by each `χ`, the label has `σ = s 0`, and
 `i` is the number of nonzero sign characters with negative sign (`TauCeti.twistIndex`).
 
-This file proves the twist-index facts below. The underlying facts about homomorphisms to `ℤ/2`
-are proved in general in `TauCeti.LinearAlgebra.FreeModule.Int` and
-`TauCeti.GroupTheory.Index.DomRestrict`.
+This file proves the twist-index facts below.
 
 * **Change of trivialization.** An isomorphism `Λ ≃ Λ'` of lattices transports sign characters and
   preserves the twist index (`TauCeti.twistIndex_comp_addMonoidHomCongrLeft`). Reversing the
   orientation of `C` acts on `Λ` by `-1`, which fixes every sign character since `-1 = 1` in
   `ℤ/2`.
-* **Four sign characters.** A torus has `H₁ ≅ ℤ²`, hence four sign characters
-  (`TauCeti.natCard_addMonoidHom_zmod_two_of_finrank_eq_two`). For any nonzero `ι` and any `χ`
-  other than `0` and `ι`, these are `0`, `ι`, `χ` and `χ + ι`
-  (`TauCeti.eq_zero_or_eq_or_eq_or_eq_add_of_finrank_eq_two`), so the twist index is
+* **The twist index of a torus.** A torus has `H₁ ≅ ℤ²`, so for any nonzero `ι` and any `χ` other
+  than `0` and `ι` its sign characters are `0`, `ι`, `χ` and `χ + ι`; this enumeration is proved in
+  `TauCeti.LinearAlgebra.FreeModule.Int`. The twist index is therefore
   `[s ι < 0] + [s χ < 0] + [s (χ + ι) < 0]` (`TauCeti.twistIndex_eq_of_finrank_eq_two`) and is at
   most `3` (`TauCeti.twistIndex_le_three`). As an element of `Fin 4` it is the label
   `TauCeti.twistLabel`.
-* **Pullback to the double cover.** A nonzero sign character `ι` defines a connected double cover
-  of `C`, whose `H₁` is the kernel of `ι`. Pulling sign characters back to it is restriction to
-  `ker ι`. It kills exactly `0` and `ι` (`AddMonoidHom.domRestrict_ker_eq_zero_iff_zmod_two`),
-  and the other two sign characters `χ` and `χ + ι` restrict to one and the same nonzero character
-  of the cover (`AddMonoidHom.domRestrict_ker_add_self`,
-  `TauCeti.setOf_domRestrict_ker_ne_zero_eq_of_finrank_eq_two`). Covers of odd degree pull sign
-  characters back bijectively (`AddMonoidHom.domRestrictHom_zmod_bijective_of_coprime`).
+
+How sign characters pull back to finite covers of `C`, in particular to the double cover defined by
+a nonzero sign character, is described in `TauCeti.GroupTheory.Index.DomRestrict`.
 
 The signs `s χ` are inputs: their construction as oriented determinant signs of the twisted normal
 operators is separate. The local series attached to the label are `TauCeti.torusWeightSeries`.
@@ -91,12 +85,10 @@ theorem twistIndex_eq_of_finrank_eq_two [Module.Free ℤ Λ] [Module.Finite ℤ 
       (if s (χ + ι) = -1 then 1 else 0) := by
   classical
   let _ := Fintype.ofFinite (Λ →+ ZMod 2)
-  have hadd₀ : χ + ι ≠ 0 := by rwa [← ZModModule.sub_eq_add, sub_ne_zero]
   rw [twistIndex_def, Nat.card_eq_fintype_card, Fintype.card_subtype, Finset.card_filter,
-    univ_eq_of_finrank_eq_two h hι hχ₀ hχι,
-    Finset.sum_insert (by simp [hι.symm, hχ₀.symm, hadd₀.symm]),
-    Finset.sum_insert (by simp [hχι.symm, hχ₀]), Finset.sum_pair (by simp [hι])]
-  simp [hι, hχ₀, hadd₀, add_assoc]
+    univ_addMonoidHom_zmod_two_eq_of_finrank_eq_two h hι hχ₀ hχι]
+  simp [-Finset.sum_boole, Finset.sum_insert, add_eq_zero_iff_eq_of_charTwo (ZMod 2), hι, hχ₀,
+    hχι, hχι.symm, eq_comm (a := (0 : Λ →+ ZMod 2)), add_assoc]
 
 /-- A lattice of rank two has twist index at most `3`, so the label `(σ, i)` of a torus has
 `i ∈ {0, 1, 2, 3}`. -/
