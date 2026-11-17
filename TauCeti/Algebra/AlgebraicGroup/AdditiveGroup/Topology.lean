@@ -52,8 +52,7 @@ noncomputable def gaPointsContinuousMulEquiv :
       have hι (x : Multiplicative A) :
           ((gaPointsMulEquiv (R := R) (A := A)).symm x).ofConv (ι R R r) =
             algebraMap R A r * Multiplicative.toAdd x := by
-        have hr : ι R R r = r • ι R R 1 := by rw [← map_smul, smul_eq_mul, mul_one]
-        rw [hr, map_smul, gaPointsMulEquiv_symm_apply_ι, Algebra.smul_def]
+        rw [ι_self_eq_smul_ι_one, map_smul, gaPointsMulEquiv_symm_apply_ι, Algebra.smul_def]
       simpa only [MulEquiv.invFun_eq_symm, hι] using continuous_const.fun_mul continuous_toAdd
     | add p q hp hq => simpa only [MulEquiv.invFun_eq_symm, map_add] using hp.fun_add hq
     | mul p q hp hq => simpa only [MulEquiv.invFun_eq_symm, map_mul] using hp.fun_mul hq

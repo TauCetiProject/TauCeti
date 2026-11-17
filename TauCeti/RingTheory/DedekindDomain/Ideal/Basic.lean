@@ -341,6 +341,29 @@ theorem ofIrreducible_eq_ofIrreducible_iff {q r : R} (hq : Irreducible q)
 
 end OfIrreducible
 
+section IsField
+
+/-- A commutative ring that is a field has no height-one prime ideals. -/
+theorem isEmpty_of_isField {R : Type*} [CommRing R] (hR : IsField R) :
+    IsEmpty (HeightOneSpectrum R) :=
+  ⟨fun v ↦ by
+    obtain ⟨x, hxv, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot v.ne_bot
+    obtain ⟨y, hy⟩ := hR.mul_inv_cancel hx0
+    exact v.isPrime.ne_top (v.asIdeal.eq_top_iff_one.mpr (hy ▸ v.asIdeal.mul_mem_right y hxv))⟩
+
+/-- A Dedekind domain that is not a field has at least one height-one prime ideal. -/
+theorem nonempty_of_not_isField {R : Type*} [CommRing R] [IsDedekindDomain R] (hR : ¬ IsField R) :
+    Nonempty (HeightOneSpectrum R) :=
+  let ⟨m⟩ := (inferInstance : Nonempty (MaximalSpectrum R))
+  ⟨(equivMaximalSpectrum hR).symm m⟩
+
+/-- A Dedekind domain has a height-one prime ideal if and only if it is not a field. -/
+theorem nonempty_iff_not_isField {R : Type*} [CommRing R] [IsDedekindDomain R] :
+    Nonempty (HeightOneSpectrum R) ↔ ¬ IsField R :=
+  ⟨fun ⟨v⟩ hR ↦ (isEmpty_of_isField hR).false v, nonempty_of_not_isField⟩
+
+end IsField
+
 variable {R : Type*} [CommRing R] [IsDedekindDomain R]
 
 /-- Distinct height one primes are incomparable: a height one prime is not contained in any
@@ -590,25 +613,6 @@ discrete valuation ring be read as a statement about its valuation. -/
 lemma eq_maximalIdeal {A : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
     (P : HeightOneSpectrum A) : P = IsDiscreteValuationRing.maximalIdeal A :=
   HeightOneSpectrum.ext (IsLocalRing.eq_maximalIdeal P.isMaximal)
-
-/-- A commutative ring that is a field has no height-one prime ideals. -/
-theorem isEmpty_of_isField {R : Type*} [CommRing R] (hR : IsField R) :
-    IsEmpty (HeightOneSpectrum R) :=
-  ⟨fun v ↦ by
-    obtain ⟨x, hxv, hx0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot v.ne_bot
-    obtain ⟨y, hy⟩ := hR.mul_inv_cancel hx0
-    exact v.isPrime.ne_top (v.asIdeal.eq_top_iff_one.mpr (hy ▸ v.asIdeal.mul_mem_right y hxv))⟩
-
-/-- A Dedekind domain that is not a field has at least one height-one prime ideal. -/
-theorem nonempty_of_not_isField {R : Type*} [CommRing R] [IsDedekindDomain R] (hR : ¬ IsField R) :
-    Nonempty (HeightOneSpectrum R) :=
-  let ⟨m⟩ := (inferInstance : Nonempty (MaximalSpectrum R))
-  ⟨(equivMaximalSpectrum hR).symm m⟩
-
-/-- A Dedekind domain has a height-one prime ideal if and only if it is not a field. -/
-theorem nonempty_iff_not_isField {R : Type*} [CommRing R] [IsDedekindDomain R] :
-    Nonempty (HeightOneSpectrum R) ↔ ¬ IsField R :=
-  ⟨fun ⟨v⟩ hR ↦ (isEmpty_of_isField hR).false v, nonempty_of_not_isField⟩
 
 end IsDedekindDomain.HeightOneSpectrum
 

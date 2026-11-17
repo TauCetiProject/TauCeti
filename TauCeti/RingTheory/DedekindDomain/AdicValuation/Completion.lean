@@ -143,16 +143,13 @@ instance adicCompletion_charZero [CharZero K] (v : HeightOneSpectrum R) :
     CharZero (v.adicCompletion K) :=
   charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
 
-/-- The algebra map from `K` into its adic completion at `v` is the completion coercion. -/
-theorem algebraMap_adicCompletion_eq_coe (v : HeightOneSpectrum R) (k : K) :
-    algebraMap K (v.adicCompletion K) k = (k : v.adicCompletion K) := by
-  rw [algebraMap_adicCompletion, Function.comp_apply, Algebra.algebraMap_self_apply]
-
 /-- On `K`, the valuation on `v.adicCompletion K` agrees with `v.valuation K`. -/
 @[simp]
 theorem valued_algebraMap_adicCompletion (v : HeightOneSpectrum R) (k : K) :
-    Valued.v (algebraMap K (v.adicCompletion K) k) = v.valuation K k := by
-  rw [v.algebraMap_adicCompletion_eq_coe, valuedAdicCompletion_eq_valuation']
+    Valued.v (algebraMap K (v.adicCompletion K) k) = v.valuation K k :=
+  -- `algebraMap K (v.adicCompletion K) k` is definitionally `(k : v.adicCompletion K)` by
+  -- `algebraMap_adicCompletion` (`rfl`).
+  valuedAdicCompletion_eq_valuation' v k
 
 /-- An element of `K` maps into `v.adicCompletionIntegers K` if and only if its `v`-adic valuation
 is at most `1`. -/

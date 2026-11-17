@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.AlgebraicGroup.Adelic.IntegralModel
 public import TauCeti.RingTheory.DedekindDomain.FiniteAdeleRing.Basic
 public import TauCeti.Topology.Algebra.RestrictedProduct.Congr.Basic
+import TauCeti.Topology.Algebra.RestrictedProduct.ContinuousRng
 public import TauCeti.Topology.Algebra.RestrictedProduct.TopologicalSpace
 
 /-!
@@ -17,7 +18,7 @@ For an integral model `M : IntegralModel R K H S` of `G = Spec H` over a finite 
 places of `(R, K)`, this file proves the **Weil–Grothendieck restricted-product comparison**
 (Conrad 2012, Theorems 3.4 and 3.6):
 * `M.finiteAdelicPointsContinuousMulEquiv hS : FiniteAdelicPoints R K H ≃ₜ*
-  RestrictedProductGroup M.level`, mapping `M.sAdelicPoints S Set.Subset.rfl` onto
+  RestrictedProductGroup M.level`, mapping `M.sIntegralAdelicPoints S Set.Subset.rfl` onto
   `integralSubgroup M.level`;
 * `M.adelicPointsContinuousMulEquiv hS : AdelicPoints R K H ≃ₜ*
   RestrictedProductGroupWithFactor (InfinitePoints K H) M.level`, identifying `G(𝔸[R, K])` with
@@ -27,7 +28,7 @@ places of `(R, K)`, this file proves the **Weil–Grothendieck restricted-produc
   `restrictedProductCongr`.
 
 Forward continuity uses the exhaustion of `FiniteAdelicPoints R K H` by the open `T`-integral
-subgroups `M.sAdelicPoints T hST` over finite `T ⊇ S`, and inverse continuity uses
+subgroups `M.sIntegralAdelicPoints T hST` over finite `T ⊇ S`, and inverse continuity uses
 `PointTopology.continuous_withConv_iff` and `RestrictedProduct.mapAlong`.
 
 ## References
@@ -51,78 +52,88 @@ variable {R : Type u} [CommRing R] [IsDedekindDomain R]
   {K : Type v} [Field K] [Algebra R K] [IsFractionRing R K]
   {H : Type uH} [CommRing H] [HopfAlgebra K H] {S : Set (HeightOneSpectrum R)}
 
-/-- For `T ⊇ S`, `M.sAdelicPoints T hST` is the subgroup of `FiniteAdelicPoints R K H` arising
-from `(FiniteAdeleRing.sIntegralAdeles R K T)`-valued points of `M.coordinate`. -/
-noncomputable def sAdelicPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
-    (hST : S ⊆ T) : Subgroup (FiniteAdelicPoints R K H) :=
+/-- For `T ⊇ S`, `M.sIntegralAdelicPoints T hST` is the subgroup of `FiniteAdelicPoints R K H`
+arising from `(FiniteAdeleRing.sIntegralAdeles R K T)`-valued points of `M.coordinate`. -/
+noncomputable def sIntegralAdelicPoints (M : IntegralModel R K H S)
+    (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T) : Subgroup (FiniteAdelicPoints R K H) :=
   M.subringPoints (FiniteAdeleRing.sIntegralAdeles R K T).toSubring fun x ↦
     (FiniteAdeleRing.algebraMap_mem_sIntegralAdeles_iff T (x : K)).mpr
-      (fun v hv ↦ x.2 v fun hvS ↦ hv (hST hvS))
+      (Set.integer_mono K hST x.2)
 
-/-- `x ∈ M.sAdelicPoints T hST` iff `x` maps `M.embed` into `FiniteAdeleRing.sIntegralAdeles`. -/
+/-- `x ∈ M.sIntegralAdelicPoints T hST` iff `x` maps `M.embed` into
+`FiniteAdeleRing.sIntegralAdeles`. -/
 @[simp]
-theorem mem_sAdelicPoints_iff (M : IntegralModel R K H S) {T : Set (HeightOneSpectrum R)}
+theorem mem_sIntegralAdelicPoints_iff (M : IntegralModel R K H S) {T : Set (HeightOneSpectrum R)}
     (hST : S ⊆ T) {x : FiniteAdelicPoints R K H} :
-    x ∈ M.sAdelicPoints T hST ↔
+    x ∈ M.sIntegralAdelicPoints T hST ↔
       ∀ m : M.coordinate, x.ofConv (M.embed m) ∈ FiniteAdeleRing.sIntegralAdeles R K T :=
   M.mem_subringPoints_iff (FiniteAdeleRing.sIntegralAdeles R K T).toSubring _
 
-/-- `x ∈ M.sAdelicPoints T hST` iff its projection at every `v ∉ T` lies in `M.localPoints`. -/
-theorem mem_sAdelicPoints_iff_forall_localPoints (M : IntegralModel R K H S)
+/-- `x ∈ M.sIntegralAdelicPoints T hST` iff its projection at every `v ∉ T` lies in
+`M.localPoints`. -/
+theorem mem_sIntegralAdelicPoints_iff_forall_localPoints (M : IntegralModel R K H S)
     {T : Set (HeightOneSpectrum R)} (hST : S ⊆ T) {x : FiniteAdelicPoints R K H} :
-    x ∈ M.sAdelicPoints T hST ↔ ∀ (v : HeightOneSpectrum R) (hv : v ∉ T),
+    x ∈ M.sIntegralAdelicPoints T hST ↔ ∀ (v : HeightOneSpectrum R) (hv : v ∉ T),
       FiniteAdelicPoints.localProjection R K H v x ∈ M.localPoints v (fun hvS ↦ hv (hST hvS)) := by
-  simp only [mem_sAdelicPoints_iff, FiniteAdeleRing.mem_sIntegralAdeles, mem_localPoints_iff,
-    FiniteAdelicPoints.localProjection_apply_ofConv]
+  simp only [mem_sIntegralAdelicPoints_iff, FiniteAdeleRing.mem_sIntegralAdeles,
+    mem_localPoints_iff, FiniteAdelicPoints.localProjection_apply_ofConv]
   exact ⟨fun h v hv m ↦ h m v hv, fun h m v hv ↦ h v hv m⟩
 
-/-- Every `M.sAdelicPoints T hST` is open in `FiniteAdelicPoints R K H`. -/
-theorem isOpen_sAdelicPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
-    (hST : S ⊆ T) : IsOpen (M.sAdelicPoints T hST : Set (FiniteAdelicPoints R K H)) :=
+/-- Every `M.sIntegralAdelicPoints T hST` is open in `FiniteAdelicPoints R K H`. -/
+theorem isOpen_sIntegralAdelicPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
+    (hST : S ⊆ T) : IsOpen (M.sIntegralAdelicPoints T hST : Set (FiniteAdelicPoints R K H)) :=
   M.isOpen_subringPoints (FiniteAdeleRing.sIntegralAdeles R K T).toSubring _
     (FiniteAdeleRing.isOpen_sIntegralAdeles R K T)
 
-/-- Every `M.sAdelicPoints T hST` is closed in `FiniteAdelicPoints R K H`. -/
-theorem isClosed_sAdelicPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
-    (hST : S ⊆ T) : IsClosed (M.sAdelicPoints T hST : Set (FiniteAdelicPoints R K H)) :=
-  Subgroup.isClosed_of_isOpen (M.sAdelicPoints T hST) (M.isOpen_sAdelicPoints T hST)
+/-- Every `M.sIntegralAdelicPoints T hST` is closed in `FiniteAdelicPoints R K H`. -/
+theorem isClosed_sIntegralAdelicPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
+    (hST : S ⊆ T) : IsClosed (M.sIntegralAdelicPoints T hST : Set (FiniteAdelicPoints R K H)) :=
+  Subgroup.isClosed_of_isOpen (M.sIntegralAdelicPoints T hST)
+    (M.isOpen_sIntegralAdelicPoints T hST)
 
-/-- For `S = ∅` and finite residue fields, `M.sAdelicPoints ∅ Set.Subset.rfl` is compact. -/
-theorem isCompact_sAdelicPoints_empty (M : IntegralModel R K H (∅ : Set (HeightOneSpectrum R)))
+/-- For `S = ∅` and finite residue fields, `M.sIntegralAdelicPoints ∅ Set.Subset.rfl` is
+compact. -/
+theorem isCompact_sIntegralAdelicPoints_empty
+    (M : IntegralModel R K H (∅ : Set (HeightOneSpectrum R)))
     [∀ v : HeightOneSpectrum R, Finite (R ⧸ v.asIdeal)] :
-    IsCompact (M.sAdelicPoints ∅ Set.Subset.rfl : Set (FiniteAdelicPoints R K H)) := by
+    IsCompact (M.sIntegralAdelicPoints ∅ Set.Subset.rfl : Set (FiniteAdelicPoints R K H)) := by
   have hcomp : IsCompact (FiniteAdeleRing.sIntegralAdeles R K ∅ : Set (FiniteAdeleRing R K)) := by
     rw [FiniteAdeleRing.sIntegralAdeles_empty]; exact FiniteAdeleRing.isCompact_integralAdeles
   let _ : CompactSpace (FiniteAdeleRing.sIntegralAdeles R K ∅).toSubring :=
     isCompact_iff_compactSpace.mp hcomp
   exact M.isCompact_subringPoints (FiniteAdeleRing.sIntegralAdeles R K ∅).toSubring _
 
-/-- Enlarging `S` to `S'` preserves `sAdelicPoints T` for every `T ⊇ S'`. -/
+/-- Enlarging `S` to `S'` preserves `sIntegralAdelicPoints T` for every `T ⊇ S'`. -/
 @[simp]
-theorem sAdelicPoints_enlarge {S' : Set (HeightOneSpectrum R)} (M : IntegralModel R K H S)
+theorem sIntegralAdelicPoints_enlarge {S' : Set (HeightOneSpectrum R)} (M : IntegralModel R K H S)
     (hSS' : S ⊆ S') (T : Set (HeightOneSpectrum R)) (hS'T : S' ⊆ T) :
-    (M.enlarge hSS').sAdelicPoints T hS'T = M.sAdelicPoints T (hSS'.trans hS'T) :=
+    (M.enlarge hSS').sIntegralAdelicPoints T hS'T =
+      M.sIntegralAdelicPoints T (hSS'.trans hS'T) :=
   M.subringPoints_enlarge hSS' (FiniteAdeleRing.sIntegralAdeles R K T).toSubring _
 
-/-- Enlarging `T` enlarges `M.sAdelicPoints`. -/
-theorem sAdelicPoints_mono (M : IntegralModel R K H S) {T₁ T₂ : Set (HeightOneSpectrum R)}
+/-- Enlarging `T` enlarges `M.sIntegralAdelicPoints`. -/
+theorem sIntegralAdelicPoints_mono (M : IntegralModel R K H S) {T₁ T₂ : Set (HeightOneSpectrum R)}
     (hST₁ : S ⊆ T₁) (hT₁₂ : T₁ ⊆ T₂) :
-    M.sAdelicPoints T₁ hST₁ ≤ M.sAdelicPoints T₂ (hST₁.trans hT₁₂) := fun _ hx ↦ by
-  rw [mem_sAdelicPoints_iff] at hx ⊢
-  exact fun m ↦ FiniteAdeleRing.sIntegralAdeles_mono R K hT₁₂ (hx m)
+    M.sIntegralAdelicPoints T₁ hST₁ ≤ M.sIntegralAdelicPoints T₂ (hST₁.trans hT₁₂) :=
+  fun _ hx ↦ by
+    rw [mem_sIntegralAdelicPoints_iff] at hx ⊢
+    exact fun m ↦ FiniteAdeleRing.sIntegralAdeles_mono R K hT₁₂ (hx m)
 
-/-- Pulling back `M.sAdelicPoints T hST` along `diagonal` recovers `M.globalPoints T hST`. -/
+/-- Pulling back `M.sIntegralAdelicPoints T hST` along `diagonal` recovers
+`M.globalPoints T hST`. -/
 @[simp]
-theorem comap_diagonal_sAdelicPoints (M : IntegralModel R K H S) (T : Set (HeightOneSpectrum R))
-    (hST : S ⊆ T) :
-    (M.sAdelicPoints T hST).comap (FiniteAdelicPoints.diagonal R K H) = M.globalPoints T hST := by
-  ext g; simp [mem_sAdelicPoints_iff, mem_globalPoints_iff]
+theorem comap_diagonal_sIntegralAdelicPoints (M : IntegralModel R K H S)
+    (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T) :
+    (M.sIntegralAdelicPoints T hST).comap (FiniteAdelicPoints.diagonal R K H) =
+      M.globalPoints T hST := by
+  ext g; simp [mem_sIntegralAdelicPoints_iff, mem_globalPoints_iff]
 
 /-- Exhaustion of `G(𝔸ᶠ[R, K])` by open `T`-integral subgroups for finite `T ⊇ S` when `S` is
 finite. -/
-theorem exists_finite_mem_sAdelicPoints (M : IntegralModel R K H S) (hS : S.Finite)
+theorem exists_finite_mem_sIntegralAdelicPoints (M : IntegralModel R K H S) (hS : S.Finite)
     (x : FiniteAdelicPoints R K H) :
-    ∃ (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T), T.Finite ∧ x ∈ M.sAdelicPoints T hST := by
+    ∃ (T : Set (HeightOneSpectrum R)) (hST : S ⊆ T),
+      T.Finite ∧ x ∈ M.sIntegralAdelicPoints T hST := by
   obtain ⟨F, hF⟩ := Algebra.FiniteType.out (R := S.integer K) (A := M.coordinate)
   have hgen : Algebra.adjoin (S.integer K) (Set.range ((↑) : F → M.coordinate)) = ⊤ := by
     simpa using hF
@@ -130,26 +141,26 @@ theorem exists_finite_mem_sAdelicPoints (M : IntegralModel R K H S) (hS : S.Fini
     FiniteAdeleRing.exists_finset_mem_sIntegralAdeles (x.ofConv (M.embed i))
   refine ⟨S ∪ ⋃ i : F, (U i : Set (HeightOneSpectrum R)), Set.subset_union_left,
     hS.union (Set.finite_iUnion fun i ↦ (U i).finite_toSet), ?_⟩
-  rw [sAdelicPoints, M.mem_subringPoints_iff_of_adjoin_eq_top _ _ hgen]
+  rw [sIntegralAdelicPoints, M.mem_subringPoints_iff_of_adjoin_eq_top _ _ hgen]
   exact fun i ↦ FiniteAdeleRing.sIntegralAdeles_mono R K
     ((Set.subset_iUnion (fun j : F ↦ (U j : Set (HeightOneSpectrum R))) i).trans
       Set.subset_union_right) (hU i)
 
-/-- When `S` is finite, `⨆_{T ⊇ S finite} M.sAdelicPoints T = ⊤`. -/
-theorem iSup_sAdelicPoints_eq_top (M : IntegralModel R K H S) (hS : S.Finite) :
+/-- When `S` is finite, `⨆_{T ⊇ S finite} M.sIntegralAdelicPoints T = ⊤`. -/
+theorem iSup_sIntegralAdelicPoints_eq_top (M : IntegralModel R K H S) (hS : S.Finite) :
     (⨆ T : {T : Set (HeightOneSpectrum R) // S ⊆ T ∧ T.Finite},
-      M.sAdelicPoints T.1 T.2.1) = ⊤ :=
-  eq_top_iff.mpr fun x _ ↦ let ⟨T, hST, hT, hx⟩ := M.exists_finite_mem_sAdelicPoints hS x
+      M.sIntegralAdelicPoints T.1 T.2.1) = ⊤ :=
+  eq_top_iff.mpr fun x _ ↦ let ⟨T, hST, hT, hx⟩ := M.exists_finite_mem_sIntegralAdelicPoints hS x
     Subgroup.mem_iSup_of_mem ⟨T, hST, hT⟩ hx
 
 /-- When `S` is finite, `localProjection v x ∈ M.level v` at all but finitely many places `v`. -/
 theorem eventually_localProjection_mem_level (M : IntegralModel R K H S) (hS : S.Finite)
     (x : FiniteAdelicPoints R K H) :
     ∀ᶠ v in cofinite, FiniteAdelicPoints.localProjection R K H v x ∈ M.level v := by
-  obtain ⟨T, hST, hT, hx⟩ := M.exists_finite_mem_sAdelicPoints hS x
+  obtain ⟨T, hST, hT, hx⟩ := M.exists_finite_mem_sIntegralAdelicPoints hS x
   filter_upwards [hT.compl_mem_cofinite] with v hv
   rw [M.level_of_notMem (fun hvS ↦ hv (hST hvS))]
-  exact (M.mem_sAdelicPoints_iff_forall_localPoints hST).mp hx v hv
+  exact (M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST).mp hx v hv
 
 private noncomputable def toRestrictedProductMonoidHom (M : IntegralModel R K H S)
     (hS : S.Finite) : FiniteAdelicPoints R K H →* RestrictedProductGroup M.level where
@@ -161,21 +172,17 @@ private noncomputable def toRestrictedProductMonoidHom (M : IntegralModel R K H 
 private theorem continuous_toRestrictedProductMonoidHom (M : IntegralModel R K H S)
     (hS : S.Finite) : Continuous (M.toRestrictedProductMonoidHom hS) := by
   rw [continuous_iff_continuousAt]; intro x₀
-  obtain ⟨T, hST, hT, hx₀⟩ := M.exists_finite_mem_sAdelicPoints hS x₀
-  let U : Set (FiniteAdelicPoints R K H) := M.sAdelicPoints T hST
-  let stage : U → Πʳ v, [LocalPoints K H v, (M.level v : Set (LocalPoints K H v))]_[𝓟 Tᶜ] :=
-    fun u ↦ ⟨fun v ↦ FiniteAdelicPoints.localProjection R K H v u.1,
-      eventually_principal.mpr fun v hv ↦ by
-        dsimp only; rw [SetLike.mem_coe, M.level_of_notMem (fun hvS ↦ hv (hST hvS))]
-        exact (M.mem_sAdelicPoints_iff_forall_localPoints hST).mp u.2 v hv⟩
-  have hstage : Continuous stage :=
-    RestrictedProduct.continuous_rng_of_principal_iff_forall.mpr fun v ↦
-      (FiniteAdelicPoints.continuous_localProjection v).comp continuous_subtype_val
+  obtain ⟨T, hST, hT, hx₀⟩ := M.exists_finite_mem_sIntegralAdelicPoints hS x₀
+  let U : Set (FiniteAdelicPoints R K H) := M.sIntegralAdelicPoints T hST
   have hrestr : Continuous (U.domRestrict (M.toRestrictedProductMonoidHom hS)) :=
-    (RestrictedProduct.continuous_inclusion (le_principal_iff.mpr hT.compl_mem_cofinite)).comp
-      hstage
+    (continuous_restrictedProduct_iff_of_forall_mem (T := Tᶜ)
+      (le_principal_iff.mpr hT.compl_mem_cofinite) fun u v hv ↦ by
+        rw [SetLike.mem_coe, M.level_of_notMem (fun hvS ↦ hv (hST hvS))]
+        exact (M.mem_sIntegralAdelicPoints_iff_forall_localPoints hST).mp u.2 v hv).mpr <|
+      continuous_pi fun v ↦
+        (FiniteAdelicPoints.continuous_localProjection v).comp continuous_subtype_val
   exact (continuousOn_iff_continuous_domRestrict.mpr hrestr).continuousAt
-    ((M.isOpen_sAdelicPoints T hST).mem_nhds hx₀)
+    ((M.isOpen_sIntegralAdelicPoints T hST).mem_nhds hx₀)
 
 private noncomputable def evalRestrictedProductAdele (M : IntegralModel R K H S) (hS : S.Finite)
     (h : H) : RestrictedProductGroup M.level → FiniteAdeleRing R K :=
@@ -203,8 +210,8 @@ private noncomputable def ofRestrictedProduct (M : IntegralModel R K H S) (hS : 
       commutes' := fun k ↦ FiniteAdeleRing.ext K fun v ↦ by
         -- Unfold `M.evalRestrictedProductAdele hS (algebraMap K H k) y v` to `(y v).ofConv _`.
         change (y v).ofConv (algebraMap K H k) = algebraMap K (FiniteAdeleRing R K) k v
-        rw [(y v).ofConv.commutes, FiniteAdeleRing.algebraMap_apply,
-          v.algebraMap_adicCompletion_eq_coe] }
+        rw [(y v).ofConv.commutes, FiniteAdeleRing.algebraMap_apply]
+        exact congrFun (HeightOneSpectrum.algebraMap_adicCompletion R K v (S := K)) k }
 
 /-- Restricted-product presentation `G(𝔸ᶠ[R, K]) ≃ₜ* RestrictedProductGroup M.level` for finite
 `S` (Conrad 2012, Theorem 3.4). -/
@@ -246,11 +253,11 @@ theorem finiteAdelicPointsContinuousMulEquiv_diagonal (M : IntegralModel R K H S
     M.finiteAdelicPointsContinuousMulEquiv hS (FiniteAdelicPoints.diagonal R K H g) v =
       LocalPoints.diagonal K H v g := by simp
 
-/-- `M.finiteAdelicPointsContinuousMulEquiv hS` maps `M.sAdelicPoints S Set.Subset.rfl` onto
-`integralSubgroup M.level`. -/
+/-- `M.finiteAdelicPointsContinuousMulEquiv hS` maps `M.sIntegralAdelicPoints S Set.Subset.rfl`
+onto `integralSubgroup M.level`. -/
 @[simp]
-theorem map_sAdelicPoints_self (M : IntegralModel R K H S) (hS : S.Finite) :
-    (M.sAdelicPoints S Set.Subset.rfl).map
+theorem map_sIntegralAdelicPoints_self (M : IntegralModel R K H S) (hS : S.Finite) :
+    (M.sIntegralAdelicPoints S Set.Subset.rfl).map
         ((M.finiteAdelicPointsContinuousMulEquiv hS :
           FiniteAdelicPoints R K H ≃* RestrictedProductGroup M.level) :
           FiniteAdelicPoints R K H →* RestrictedProductGroup M.level) =
@@ -262,8 +269,8 @@ theorem map_sAdelicPoints_self (M : IntegralModel R K H S) (hS : S.Finite) :
     by_cases hv : v ∈ S
     · rw [M.level_of_mem hv]; exact Subgroup.mem_top _
     · rw [M.level_of_notMem hv]
-      exact (M.mem_sAdelicPoints_iff_forall_localPoints Set.Subset.rfl).mp hx v hv
-  · rw [M.mem_sAdelicPoints_iff_forall_localPoints Set.Subset.rfl]; intro v hv
+      exact (M.mem_sIntegralAdelicPoints_iff_forall_localPoints Set.Subset.rfl).mp hx v hv
+  · rw [M.mem_sIntegralAdelicPoints_iff_forall_localPoints Set.Subset.rfl]; intro v hv
     have hv' := hy v; rw [M.level_of_notMem hv] at hv'
     have hproj : FiniteAdelicPoints.localProjection R K H v
         ((M.finiteAdelicPointsContinuousMulEquiv hS).symm y) = y v := by ext h; simp
