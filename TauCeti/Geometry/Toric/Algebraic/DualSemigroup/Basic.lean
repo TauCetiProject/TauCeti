@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Geometry.Convex.Cone.Dual
 public import TauCeti.Geometry.Convex.Cone.LatticePoints
-public import TauCeti.Geometry.Toric.Algebraic.Lattice
+public import TauCeti.Geometry.Toric.Algebraic.Lattice.Basic
 
 /-!
 # Dual semigroups of toric cones
@@ -50,7 +50,6 @@ variable {N N' N'' V V' V'' : Type*}
 
 /-- The dual semigroup of a cone consists of the integral characters whose real-linear
 extensions are nonnegative on the cone. -/
--- Interface source: `TauCetiRoadmap/AnalyticToricGeometry/Suggested.lean`.
 noncomputable def dualSemigroup (hi : IsIntegralLattice i) (σ : PointedCone ℝ V) :
     AddSubmonoid (N →+ ℤ) :=
   (PointedCone.dual (Module.Dual.eval ℝ V) σ).latticePoints hi.realCharacter

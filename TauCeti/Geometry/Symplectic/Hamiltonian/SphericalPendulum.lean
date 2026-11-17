@@ -445,6 +445,15 @@ theorem sphericalPendulumEffectivePotential_le_iff {j z h : ℝ} (hz : z ^ 2 < 1
   rw [sphericalPendulumEffectivePotential_def, ← le_sub_iff_add_le, div_le_iff₀ hz']
   constructor <;> intro h <;> linarith
 
+/-- Away from the poles, the effective potential at `z` is below `h` exactly when
+`j² < 2 (h - z) (1 - z²)`, that is, when the points of height `z` in the fibre over `(h, j)` have
+nonzero vertical momentum. -/
+theorem sphericalPendulumEffectivePotential_lt_iff {j z h : ℝ} (hz : z ^ 2 < 1) :
+    sphericalPendulumEffectivePotential j z < h ↔ j ^ 2 < 2 * (h - z) * (1 - z ^ 2) := by
+  have hz' : 0 < 2 * (1 - z ^ 2) := by linarith
+  rw [sphericalPendulumEffectivePotential_def, ← lt_sub_iff_add_lt, div_lt_iff₀ hz']
+  constructor <;> intro h <;> linarith
+
 /-- **The effective potential is convex** on `(-1, 1)`: it is `z` plus the nonnegative multiple
 `j² / 4` of `2 / (1 - z²) = (1 - z)⁻¹ + (1 + z)⁻¹`. -/
 theorem convexOn_sphericalPendulumEffectivePotential (j : ℝ) :
@@ -500,7 +509,7 @@ theorem sphericalPendulumEffectivePotential_lt_of_eq_zero {j z₀ z : ℝ} (hz�
     (hcrit : j ^ 2 * z₀ + (1 - z₀ ^ 2) ^ 2 = 0) (hz : z ∈ Ioo (-1) 1) (hne : z ≠ z₀) :
     sphericalPendulumEffectivePotential j z₀ < sphericalPendulumEffectivePotential j z := by
   have h1z : 0 < 1 - z ^ 2 := sub_pos.2 (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
-  obtain ⟨hz₀₁, hz₀₂⟩ := hz₀
+  obtain ⟨_, hz₀₂⟩ := hz₀
   rw [← sub_pos, sphericalPendulumEffectivePotential_sub_eq hz₀₂.ne h1z.ne' hcrit]
   have hnum : 0 < 1 + z₀ ^ 2 + 2 * z₀ * z := by
     -- `1 + z₀² + 2 z₀ z = (1 + z₀ z)² + z₀² (1 - z²)`.
@@ -903,7 +912,7 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
   simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw2
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
   rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
-  obtain ⟨hF1, hF2⟩ := hF
+  obtain ⟨_, hF2⟩ := hF
   -- Since `r b = j ≠ 0`, the point is off the axis.
   have hr0 : 0 < r := hr.lt_of_ne fun h0 ↦ hj (by rw [← hF2, ← h0, zero_mul])
   have hz : z ∈ Ioo (-1 : ℝ) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 (by nlinarith)

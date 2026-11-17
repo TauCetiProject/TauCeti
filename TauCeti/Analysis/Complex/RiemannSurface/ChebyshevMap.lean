@@ -72,8 +72,7 @@ theorem isRoot_derivative_four_mul_X_mul_one_sub_X_iff {z : ℂ} :
 theorem degree_onePointMap_four_mul_mul_one_sub :
     degree (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) = 2 := by
   rw [← onePointMap_eval_four_mul_X_mul_one_sub_X,
-    degree_onePointMap_eval natDegree_four_mul_X_mul_one_sub_X_pos,
-    natDegree_four_mul_X_mul_one_sub_X]
+    degree_onePointMap_eval, natDegree_four_mul_X_mul_one_sub_X]
 
 /-- The fibre of `z ↦ 4z(1 - z)` over `0` consists of the two points `0` and `1`. -/
 theorem preimage_onePointMap_four_mul_mul_one_sub_zero :
@@ -106,7 +105,7 @@ theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_coe_of_ne {z : ℂ} (
     localMultiplicity (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) (z : OnePoint ℂ) = 1 := by
   rw [← onePointMap_eval_four_mul_X_mul_one_sub_X]
   exact localMultiplicity_onePointMap_eval_coe_of_not_isRoot
-    natDegree_four_mul_X_mul_one_sub_X_pos (isRoot_derivative_four_mul_X_mul_one_sub_X_iff.not.2 hz)
+    (isRoot_derivative_four_mul_X_mul_one_sub_X_iff.not.2 hz)
 
 /-- The map `z ↦ 4z(1 - z)` is ramified of index `2` at `1/2`, the only point over `1`. -/
 @[simp]
@@ -118,7 +117,7 @@ theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_half :
       simp only [eval_sub, eval_mul, eval_C, eval_X, eval_one, eval_pow]
       ring
   rw [← onePointMap_eval_four_mul_X_mul_one_sub_X,
-    localMultiplicity_onePointMap_eval_coe natDegree_four_mul_X_mul_one_sub_X_pos, h,
+    localMultiplicity_onePointMap_eval_coe, h,
     rootMultiplicity_mul_X_sub_C_pow (by simp), rootMultiplicity_C, zero_add]
 
 /-- The map `z ↦ 4z(1 - z)` is ramified of index `2` at `∞`, the only point over `∞`. -/
@@ -126,8 +125,7 @@ theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_half :
 theorem localMultiplicity_onePointMap_four_mul_mul_one_sub_infty :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ 4 * z * (1 - z)) (∞ : OnePoint ℂ) = 2 := by
   rw [← onePointMap_eval_four_mul_X_mul_one_sub_X,
-    localMultiplicity_onePointMap_eval_infty natDegree_four_mul_X_mul_one_sub_X_pos,
-    natDegree_four_mul_X_mul_one_sub_X]
+    localMultiplicity_onePointMap_eval_infty, natDegree_four_mul_X_mul_one_sub_X]
 
 /-- The branch values of `z ↦ 4z(1 - z)` are exactly `1` and `∞`: its only finite critical point
 is `1/2`, with critical value `1`. -/

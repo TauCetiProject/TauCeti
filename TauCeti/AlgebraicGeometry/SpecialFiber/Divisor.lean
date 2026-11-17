@@ -101,11 +101,7 @@ theorem principalDivisor_eq_sum_specialFiber
   have heq : D = ∑ x ∈ (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset,
       (toBase.specialFiberMultiplicity π x : ℤ) • WeilDivisor.ofPoint x := by
     rw [WeilDivisor.eq_sum_coeff_smul_ofPoint D, hsupport]
-    refine Finset.sum_congr rfl fun x hx ↦ ?_
-    have hEff : 0 ≤ D :=
-      SchemeWeilDivisor.principalDivisor_ofMul_mk0_nonneg
-        (toBase.germToFunctionField_appTop_ne_zero hη hπ hπ0)
-    have hpos : 0 ≤ WeilDivisor.coeff D x := WeilDivisor.coeff_nonneg hEff x
+    refine Finset.sum_congr rfl fun x _ ↦ ?_
     have hord : WeilDivisor.coeff D x = X.ord
         (X.germToFunctionField ⊤
           (toBase.appTop ((Scheme.ΓSpecIso (.of R)).inv π))) x := by

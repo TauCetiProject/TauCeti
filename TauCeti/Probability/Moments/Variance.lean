@@ -289,7 +289,7 @@ private theorem evariance_integral_prod_le_of_measurable (hF : Measurable F)
     calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
         ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
           gcongr
-          exact enorm_integral_le_lintegral_enorm _
+          exact eNorm_integral_le_lintegral_eNorm _
       _ ≤ _ := by
           simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
             (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
@@ -298,7 +298,7 @@ private theorem evariance_integral_prod_le_of_measurable (hF : Measurable F)
       ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
     _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
         lintegral_lintegral_swap
-          ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
+          ((hF.sub (hmm.measurable.comp measurable_snd)).eNorm.pow_const 2).aemeasurable
     _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
 
 /-- Jensen's inequality for the variance of an average: the variance of the average over the
@@ -339,6 +339,6 @@ theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → T
   exact Measurable.lintegral_prod_right'
     (f := fun p : (∀ i, α i) × α i =>
       ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
-    ((hu.sub (hm.measurable.comp measurable_fst)).enorm.pow_const 2)
+    ((hu.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
 
 end TauCeti.Probability

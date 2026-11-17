@@ -77,16 +77,18 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
 
 /-- **Matching two circles in a sphere to first order.** In the unit sphere `Sⁿ` of a real inner
 product space, `n ≥ 2`, a `C^k` embedding `K` of the circle, `k ≠ 0`, is smoothly ambient isotopic
-to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`,
-differentiable with injective derivative at `z₀`: `K' z₀ = L z₀`, and `K'` and `L` have the same
+to an embedding `K'` which agrees to first order at a given point `z₀` with a given loop `L`
+with injective derivative at `z₀` (so `L` is differentiable at `z₀`, the derivative of a
+non-differentiable map being the junk value `0`): `K' z₀ = L z₀`, and `K'` and `L` have the same
 derivative at `z₀`. -/
 theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
     (K : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1))
-    {L : Circle → sphere (0 : E) 1} {z₀ : Circle} (hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀)
+    {L : Circle → sphere (0 : E) 1} {z₀ : Circle}
     (hL : Injective (mfderiv (𝓡 1) (𝓡 n) L z₀)) :
     ∃ K' : SmoothEmbedding (𝓡 1) (𝓡 n) k Circle (sphere (0 : E) 1),
       K.SmoothAmbientIsotopic K' ∧ K' z₀ = L z₀ ∧
         mfderiv (𝓡 1) (𝓡 n) K' z₀ = mfderiv (𝓡 1) (𝓡 n) L z₀ := by
+  have hLd : MDifferentiableAt (𝓡 1) (𝓡 n) L z₀ := mdifferentiableAt_of_mfderiv_injective hL
   obtain ⟨t, rfl⟩ := Circle.exp_surjective z₀
   -- The points `x`, `y` and velocities `v`, `w` of `K` and `L` over `exp (t i)`, read in `E`.
   set γ : ℝ → E := fun s => (K (Circle.exp s) : E)
@@ -95,8 +97,8 @@ theorem exists_smoothAmbientIsotopic_mfderiv_eq (hn : 2 ≤ n) (hk : k ≠ 0)
   set v := deriv γ t
   set w := deriv (fun s => (L (Circle.exp s) : E)) t
   have hKd : MDifferentiableAt (𝓡 1) (𝓡 n) K (Circle.exp t) := K.contMDiff.mdifferentiableAt hk
-  have hv : v ≠ 0 := deriv_coe_comp_circleExp_ne_zero hKd (K.isImmersion.mfderiv_injective hk _)
-  have hw : w ≠ 0 := deriv_coe_comp_circleExp_ne_zero hLd hL
+  have hv : v ≠ 0 := deriv_coe_comp_circleExp_ne_zero (K.isImmersion.mfderiv_injective hk _)
+  have hw : w ≠ 0 := deriv_coe_comp_circleExp_ne_zero hL
   have hxv : ⟪x, v⟫ = 0 := inner_deriv_coe_comp_circleExp_eq_zero hKd
   have hyw : ⟪y, w⟫ = 0 := inner_deriv_coe_comp_circleExp_eq_zero hLd
   have hy : ‖-y‖ = 1 := by rw [norm_neg]; exact norm_eq_of_mem_sphere _

@@ -110,7 +110,7 @@ theorem jacobiMatrixAt_mulVec_self_eq_zero [Fintype σ] {p : ι → MvPolynomial
 theorem jacobiMatrixAt_smul_apply {p : ι → MvPolynomial σ R} {d : ι → ℕ}
     (hp : ∀ i, (p i).IsHomogeneous (d i)) (t : R) (v : σ → R) (i : ι) (j : σ) :
     jacobiMatrixAt p (t • v) i j = t ^ (d i - 1) * jacobiMatrixAt p v i j := by
-  simp only [jacobiMatrixAt_apply, ((hp i).pderiv).eval_smul, smul_eq_mul]
+  simp only [jacobiMatrixAt_apply, ((hp i).pderiv).eval_smul]
 
 /-- Rescaling the point multiplies the Jacobian matrix of a family of homogeneous equations on
 the left by the diagonal matrix of the powers `t ^ (d i - 1)`. -/

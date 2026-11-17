@@ -141,8 +141,8 @@ theorem sum_primesLE_log_div_sq_le {a b : ℝ} (ha : 0 < a) :
     have hbound := integral_two_mul_theta_div_cube_le ha hab
     rw [sum_primesLE_log_div_sq_eq ha hab]
     have htheta := Chebyshev.theta_le_log4_mul_x hb.le
-    have hnonneg := Chebyshev.theta_nonneg a
-    have hlog : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
+    have _ := Chebyshev.theta_nonneg a
+    have _ : 0 ≤ Real.log 4 := Real.log_nonneg (by norm_num)
     have htop : Chebyshev.theta b / b ^ 2 ≤ Real.log 4 / b := by
       apply (div_le_iff₀ (sq_pos_of_pos hb)).2
       convert htheta using 1

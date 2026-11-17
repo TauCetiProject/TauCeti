@@ -204,7 +204,7 @@ theorem IsJordanCurve.isPathConnected_sdiff (h : IsJordanCurve C) (hSC : S ⊆ C
   · rw [sdiff_empty]
     exact h.isPathConnected
   obtain ⟨e⟩ := isJordanCurve_iff.mp h
-  obtain ⟨a, b, hab, hlt, hSeq⟩ := exists_eq_jordanParam_image e hSC hS hpre hne hSne
+  obtain ⟨a, b, _, hlt, hSeq⟩ := exists_eq_jordanParam_image e hSC hS hpre hne hSne
   rw [sdiff_eq_jordanParam_image e hSeq]
   refine IsPathConnected.image' ?_ (continuous_jordanParam e).continuousOn
   exact ((convex_Ioo b (a + 2 * π)).isPathConnected

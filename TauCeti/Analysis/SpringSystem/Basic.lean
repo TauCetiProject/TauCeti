@@ -169,7 +169,6 @@ theorem hasFDerivAt_springForce (κ ℓ₀ : ℝ) {w : F} (hw : w ≠ 0) :
 to first order, only the stretching along the spring is felt. -/
 theorem hasFDerivAt_springForce_norm (κ : ℝ) {v : F} (hv : v ≠ 0) :
     HasFDerivAt (springForce κ ‖v‖) (κ • (ℝ ∙ v).starProjection) v := by
-  have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
   refine (hasFDerivAt_springForce κ ‖v‖ hv).congr_fderiv ?_
   ext h
   simp [Submodule.starProjection_singleton, smul_smul]

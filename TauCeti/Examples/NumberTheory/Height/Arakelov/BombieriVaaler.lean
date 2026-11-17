@@ -72,7 +72,7 @@ theorem minorGcd_one_one : minorGcd !![(1 : ℤ), 1] = 1 :=
 
 /-- The row `(1, 1)` has Gram determinant `2`. -/
 theorem det_one_one : (!![(1 : ℤ), 1] * !![(1 : ℤ), 1]ᵀ).det = 2 := by
-  simp [det_unique, vecMul, dotProduct, Fin.sum_univ_two]
+  simp [det_unique, Function.swap, vecHead, vecTail]
 
 /-- The integral kernel of the row `(1, 1)` is the line through `(1, -1)`. -/
 theorem ker_mulVecLin_one_one :
@@ -138,7 +138,7 @@ theorem minorGcd_diff : minorGcd !![(1 : ℤ), 0, -1; 0, 1, -1] = 1 :=
 /-- The matrix with rows `(1, 0, -1)` and `(0, 1, -1)` has Gram determinant `3`. -/
 theorem det_diff :
     (!![(1 : ℤ), 0, -1; 0, 1, -1] * !![(1 : ℤ), 0, -1; 0, 1, -1]ᵀ).det = 3 := by
-  simp [det_fin_two, vecMul, dotProduct, Fin.sum_univ_three]
+  simp [det_fin_two, Function.swap, vecHead, vecTail]
 
 /-- The integral kernel of the matrix with rows `(1, 0, -1)` and `(0, 1, -1)` is the line through
 `(1, 1, 1)`. -/

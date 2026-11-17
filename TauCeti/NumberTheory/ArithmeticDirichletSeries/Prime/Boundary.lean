@@ -174,7 +174,7 @@ theorem primeNumberTheoremTransfer (B : PrimeBoundaryRemainder K S δ) :
       (fun x ↦ primeCount K S x - δ * Real.logIntegral x) =o[atTop]
         (fun x : ℝ ↦ x / Real.log x) := by
   have hψ := primePsi_asymptotic_of_boundary B
-  have hθ := primeTheta_asymptotic_of_primePsi (standardPrimePowerRemoval K S) hψ
+  have hθ := primeTheta_asymptotic_of_primePsi hψ
   exact ⟨hψ, hθ, primeCount_sub_mul_logIntegral_isLittleO hθ⟩
 
 /-- **Prime counting by comparison with a Dirichlet series.** Let `c` be coefficients whose

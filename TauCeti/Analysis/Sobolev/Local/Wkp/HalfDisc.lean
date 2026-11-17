@@ -187,7 +187,7 @@ theorem memWkpLoc_ball_inter_setOf_im_nonneg_iff {c : ℂ} {r : ℝ} {u : ℂ �
     rw [Opens.coe_upperHalf]
     rfl
   refine ⟨fun hu s hs => ?_,
-    fun h => memWkpLoc_inter_setOf_im_nonneg_of_forall_wkp (Ω := disc c r) fun W hWc hWΩ => ?_⟩
+    fun h => memWkpLoc_inter_setOf_im_nonneg_of_forall_wkp (Ω := disc c r) fun W _ hWΩ => ?_⟩
   · obtain ⟨v, hv⟩ := hu.exists_wkp_upperHalf (Ω := disc c r) (W := disc c s)
       ((isCompact_closedBall c s).of_isClosed_subset isClosed_closure
         closure_ball_subset_closedBall)

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.UpperHalfPlane.HalfPlane
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.FromTo
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.VertexAngle
+public import TauCeti.Analysis.Complex.UpperHalfPlane.Isometry
 public import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.ConjJ
 import Mathlib.Analysis.Calculus.Deriv.Star
 import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle

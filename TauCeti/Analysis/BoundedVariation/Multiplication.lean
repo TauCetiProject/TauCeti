@@ -87,8 +87,8 @@ theorem totalVariationOn_mul_le {χ : E → ℝ} (hχ : ContDiff ℝ ∞ χ) {c 
       ∫⁻ x in Ω', ‖fderiv ℝ χ x‖ₑ * ‖u x‖ₑ ∂μ := by
     have h := φ.enorm_integral_apply_le_setLIntegral_enorm hφ (μ := μ)
       (fun x => u x • fderiv ℝ χ x)
-    rw [← Real.enorm_eq_ofReal_abs]
-    simpa only [smul_apply, smul_eq_mul, enorm_smul, ha, mul_comm] using h
+    rw [← Real.eNorm_eq_ofReal_abs]
+    simpa only [smul_apply, smul_eq_mul, eNorm_smul, ha, mul_comm] using h
   rw [hsplit]
   calc ENNReal.ofReal (∫ x, divergenceCLM χφ x * u x ∂μ - ∫ x, a x * u x ∂μ)
       ≤ ENNReal.ofReal (∫ x, divergenceCLM χφ x * u x ∂μ) +

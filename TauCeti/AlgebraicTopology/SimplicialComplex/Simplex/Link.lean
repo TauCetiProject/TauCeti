@@ -12,10 +12,10 @@ public import TauCeti.AlgebraicTopology.SimplicialComplex.Simplex.Basic
 # Links and stars in abstract simplices
 
 This file computes the closed star, link, and deletion constructions on the standard abstract
-simplex and its boundary.  These formulas are the standard-model calculations used by the
-recursive link condition for combinatorial manifolds in layer 11 of the geometric-topology
-roadmap.  In particular, the link of a subset in a simplex is the simplex on the complementary
-vertices, while the link in the boundary is the boundary of that complementary simplex.
+simplex and its boundary.  These formulas are the standard-model calculations used by the link
+condition for combinatorial manifolds (`CombinatorialManifold.Basic`).  In particular, the link of
+a subset in a simplex is the simplex on the complementary vertices, while the link in the
+boundary is the boundary of that complementary simplex.
 
 The constructions use `PreAbstractSimplicialComplex`, since taking a link changes the vertices
 that occur.  The formulas follow Rourke--Sanderson, *Introduction to Piecewise-Linear Topology*,

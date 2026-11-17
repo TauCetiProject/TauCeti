@@ -50,8 +50,6 @@ requirement.  The three notions are kept distinct.
 ## References
 
 * [W. Fulton, *Young Tableaux*][fulton1997], Section 7.1.
-* [Schur--Weyl roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SchurWeyl/README.md),
-  Layer 0.
 -/
 
 public section

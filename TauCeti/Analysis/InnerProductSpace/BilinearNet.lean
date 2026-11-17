@@ -67,7 +67,6 @@ theorem opNorm_le_of_isCover_sphere {E F : Type*} [NormedAddCommGroup E]
     (hM : ∀ u ∈ Nₙ, ∀ v ∈ Nₚ, |Inner.inner ℝ v (T u)| ≤ M)
     (hcoverₙ : IsCover η (sphere (0 : E) 1) Nₙ) (hcoverₚ : IsCover η (sphere (0 : F) 1) Nₚ) :
     ‖T‖ ≤ (1 - 2 * (η : ℝ))⁻¹ * M := by
-  have hη0 : 0 ≤ (η : ℝ) := η.coe_nonneg
   have hηreal : (η : ℝ) < 1 / 2 := by exact_mod_cast hη
   have hden : 0 < 1 - 2 * (η : ℝ) := by nlinarith
   have hunit : ∀ x : E, ‖x‖ = 1 → ‖T x‖ ≤ M + 2 * (η : ℝ) * ‖T‖ := by
@@ -84,8 +83,7 @@ theorem opNorm_le_of_isCover_sphere {E F : Type*} [NormedAddCommGroup E]
       have hinner : Inner.inner ℝ y (T x) = ‖T x‖ := by
         dsimp only [y]
         rw [real_inner_smul_self_left]
-        have hnormpos : 0 < ‖T x‖ := norm_pos_iff.mpr hTx
-        field_simp
+        field_simp [norm_ne_zero_iff.mpr hTx]
       obtain ⟨v, hv, hyv⟩ := hcoverₚ.exists_norm_sub_le (mem_sphere_zero_iff_norm.mpr hynorm)
       have herror := T.abs_real_inner_sub_le hx.le (mem_closedBall_zero_iff.mp (hNₚ hv)) hxu hyv
       have htri := abs_sub_abs_le_abs_sub (Inner.inner ℝ y (T x)) (Inner.inner ℝ v (T u))

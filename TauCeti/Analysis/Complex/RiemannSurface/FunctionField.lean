@@ -5,12 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Defs
-public import Mathlib.Algebra.Field.Defs
 public import TauCeti.Analysis.Complex.RiemannSurface.SphereMap
-import Mathlib.Algebra.Ring.InjSurj
 import Mathlib.Geometry.Manifold.Complex
-import Mathlib.Order.Filter.Germ.Basic
 import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 import TauCeti.Geometry.Manifold.Complex.Analytic
@@ -73,9 +69,8 @@ neighbourhood and its inverse is a multiplicative inverse.
   Riemann surface, a meromorphic function has finitely many poles.
 * `TauCeti.RiemannSurface.MeromorphicFunction.finite_setOf_eq_zero`: on a compact connected Riemann
   surface, a nonzero meromorphic function has finitely many zeros.
-* `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_infty`: the maximum
-  principle, a meromorphic function without poles on a compact connected Riemann surface is
-  constant.
+* `TauCeti.RiemannSurface.MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_infty`:
+  a meromorphic function without poles on a compact connected Riemann surface is constant.
 * `MeromorphicFunction.exists_algebraMap_eq_of_forall_ne_ne_infty_of_forall_ne_ne_zero`: a
   meromorphic function with neither zeros nor poles off one point of a compact connected Riemann
   surface is constant.
@@ -731,7 +726,7 @@ theorem inv_apply_of_eq_infty (hf : f x = ∞) : f⁻¹ x = ((0 : ℂ) : OnePoin
   filter_upwards [f.eventually_ne_infty x, nhdsWithin_le_nhds hne0] with y hy hy0
   rw [inv_apply hy hy0, finitePart_def, ← inv_invChart, inv_inv]
 
-/-! ### Finiteness of zeros, and the maximum principle -/
+/-! ### Finiteness of zeros, and constancy -/
 
 section Compact
 
@@ -742,18 +737,17 @@ zeros.** -/
 theorem finite_setOf_eq_zero (hf : f ≠ 0) : {x | f x = ((0 : ℂ) : OnePoint ℂ)}.Finite := by
   have h : {x | f x ≠ ((0 : ℂ) : OnePoint ℂ)} ∈ Filter.codiscrete X := by
     refine eventually_codiscrete_iff_forall_eventually_nhdsNE.2 fun x ↦ ?_
-    filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y hy hy0
+    filter_upwards [f.eventually_ne_infty x, eventually_finitePart_ne_zero hf x] with y _ hy0
     exact fun h ↦ hy0 (finitePart_of_eq_coe h)
   exact (isCompact_univ.finite_sdiff_of_mem_codiscreteWithin h).subset fun y hy ↦
     ⟨mem_univ y, (· hy)⟩
 
-/-- **The maximum principle.** A meromorphic function without poles on a compact connected
-Riemann surface is constant. -/
+/-- **A meromorphic function without poles on a compact connected Riemann surface is constant.**
+This is a consequence of the maximum principle. -/
 theorem exists_algebraMap_eq_of_forall_ne_infty (h : ∀ x, f x ≠ ∞) :
     ∃ c : ℂ, algebraMap ℂ (MeromorphicFunction X) c = f := by
-  have hmd : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f.finitePart := fun x ↦
-    (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using h x)).comp x (f.mdifferentiable x)
-  obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace hmd
+  obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace
+    fun x ↦ mdifferentiableAt_finitePart (h x)
   refine ⟨c, ext fun x ↦ ?_⟩
   rw [coe_algebraMap, ← coe_finitePart (h x), hc, Function.const_apply]
 

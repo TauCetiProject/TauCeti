@@ -389,7 +389,7 @@ private theorem PartialLift.extendFromOpen {X : Type*} [TopologicalSpace X] {p :
     if hz : z.2 ∈ O then LO.map (z.1, ⟨z.2, hz⟩) else L.map z
   have hraw_pos : ∀ (t : I) {x : X} (hx : x ∈ O), raw (t, x) = LO.map (t, ⟨x, hx⟩) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
-  have hraw_neg : ∀ (t : I) {x : X} (hx : x ∉ O), raw (t, x) = L.map (t, x) := by
+  have hraw_neg : ∀ (t : I) {x : X}, x ∉ O → raw (t, x) = L.map (t, x) := by
     intro t x hx; dsimp only [raw]; split_ifs; rfl
   have hraw_eq_of_eq : ∀ t x, τ₁ x = τ₂ x → raw (t, x) = L.map (t, x) := fun t x heq ↦ by
     by_cases hx : x ∈ O
@@ -502,7 +502,7 @@ private theorem PartialLift.advanceOpen {X : Type*} [TopologicalSpace X] {p : E 
     (L : PartialLift p f H τ₁) {O : Set X} (hO : IsOpen O)
     (hclos : closure {x : X | τ₁ x < τ₂ x} ⊆ O) {U : Set B}
     (hhlp : HasHomotopyLiftingProperty
-      (Set.MapsTo.restrict p (p ⁻¹' U) U (mapsTo_preimage p U)) O)
+      (U.restrictPreimage p) O)
     (hHU : ∀ x ∈ O, ∀ t ∈ Icc (τ₁ x) (τ₂ x), H (t, x) ∈ U) :
     ∃ L' : PartialLift p f H τ₂,
       ∀ t x, τ₁ x = τ₂ x → L'.map (t, x) = L.map (t, x) := by
@@ -618,7 +618,7 @@ private theorem PartialLift.advanceTube {ι : Type*} {A : Type w} [TopologicalSp
     {p : E → B} {U : ι → Set B} (ρ : PartitionOfUnity ι B) (hρ : ∀ i, support (ρ i) ⊆ U i)
     (hlift : ∀ i (W : Set A), IsOpen W →
       HasHomotopyLiftingProperty
-        (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i))) W)
+        ((U i).restrictPreimage p) W)
     {S : Set A} (hS : IsOpen S) {f : C(S, E)} {H : C(I × S, B)} {τ₁ τ₂ : C(S, I)}
     (hτ : ∀ x, τ₁ x ≤ τ₂ x) (L : PartialLift p f H τ₁) (m : ℕ) (α : Fin (m + 1) → ι)
     (hseg : ∀ (x : S) (k : Fin (m + 1)),
@@ -746,7 +746,7 @@ private theorem PartialLift.advanceGapStep {ι : Type*} {E : Type u} {B : Type v
     {p : E → B} {U : ι → Set B} (ρ : PartitionOfUnity ι B) (hρ : ∀ i, support (ρ i) ⊆ U i)
     (hlift : ∀ i (W : Set A), IsOpen W →
       HasHomotopyLiftingProperty
-        (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i))) W)
+        ((U i).restrictPreimage p) W)
     {f : C(A, E)} {H : C(I × A, B)} (n : ℕ)
     (L : PartialLift p f H (cumTime (tubePartition ρ H).gapPartition.shrink n)) :
     ∃ L' : PartialLift p f H (cumTime (tubePartition ρ H).gapPartition.shrink (n + 1)),
@@ -808,7 +808,7 @@ theorem HasHomotopyLiftingProperty.of_partitionOfUnity {p : E → B}
     {U : ι → Set B} (ρ : PartitionOfUnity ι B) (hρ : ∀ i, support (ρ i) ⊆ U i)
     (hlift : ∀ i (W : Set A), IsOpen W →
       HasHomotopyLiftingProperty
-        (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i))) W) :
+        ((U i).restrictPreimage p) W) :
     HasHomotopyLiftingProperty p A := by
   intro f H hH
   let μ := (tubePartition ρ H).gapPartition.shrink
@@ -823,8 +823,8 @@ theorem HasHomotopyLiftingProperty.of_partitionOfUnity {p : E → B}
   have hL_eq : ∀ n t a, cumTime μ n a = cumTime μ (n + 1) a →
       (L (n + 1)).map (t, a) = (L n).map (t, a) :=
     fun n ↦ (stepChoice n (L n)).2
-  have hL_stable : ∀ {N n : ℕ} (hNn : N ≤ n) {a : A}
-      (hsupp : μ.finsupport a ⊆ Finset.range N) (t : I),
+  have hL_stable : ∀ {N n : ℕ}, N ≤ n → ∀ {a : A},
+      μ.finsupport a ⊆ Finset.range N → ∀ (t : I),
       (L n).map (t, a) = (L N).map (t, a) := by
     intro N n hNn a hsupp t
     induction n, hNn using Nat.le_induction with
@@ -864,7 +864,7 @@ theorem HasHomotopyLiftingProperty.of_isOpenCover [NormalSpace B] [ParacompactSp
     {p : E → B} {U : ι → Set B} (hU : ∀ i, IsOpen (U i)) (hcov : ∀ b, ∃ i, b ∈ U i)
     (hlift : ∀ i (W : Set A), IsOpen W →
       HasHomotopyLiftingProperty
-        (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i))) W) :
+        ((U i).restrictPreimage p) W) :
     HasHomotopyLiftingProperty p A := by
   obtain ⟨ρ, hρ⟩ := PartitionOfUnity.exists_isSubordinate isClosed_univ U hU
     fun b _ ↦ mem_iUnion.2 (hcov b)
@@ -878,7 +878,7 @@ fibration. -/
 theorem isHurewiczFibration_of_partitionOfUnity {p : E → B} (hp : Continuous p)
     {U : ι → Set B} (ρ : PartitionOfUnity ι B) (hρ : ∀ i, support (ρ i) ⊆ U i)
     (hpU : ∀ i, IsHurewiczFibration.{w}
-      (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i)))) :
+      ((U i).restrictPreimage p)) :
     IsHurewiczFibration.{w} p :=
   isHurewiczFibration_iff.2 ⟨hp, fun _ _ ↦
     HasHomotopyLiftingProperty.of_partitionOfUnity ρ hρ
@@ -889,7 +889,7 @@ subordinate to `U` in the closed-support sense (`PartitionOfUnity.IsSubordinate`
 theorem isHurewiczFibration_of_isSubordinate {p : E → B} (hp : Continuous p)
     {U : ι → Set B} {ρ : PartitionOfUnity ι B} (hρ : ρ.IsSubordinate U)
     (hpU : ∀ i, IsHurewiczFibration.{w}
-      (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i)))) :
+      ((U i).restrictPreimage p)) :
     IsHurewiczFibration.{w} p :=
   isHurewiczFibration_of_partitionOfUnity hp ρ
     (fun i ↦ (subset_tsupport _).trans (hρ i)) hpU
@@ -900,7 +900,7 @@ theorem isHurewiczFibration_of_isOpenCover [NormalSpace B] [ParacompactSpace B]
     {p : E → B} (hp : Continuous p) {U : ι → Set B} (hU : ∀ i, IsOpen (U i))
     (hcov : ∀ b, ∃ i, b ∈ U i)
     (hpU : ∀ i, IsHurewiczFibration.{w}
-      (Set.MapsTo.restrict p (p ⁻¹' U i) (U i) (mapsTo_preimage p (U i)))) :
+      ((U i).restrictPreimage p)) :
     IsHurewiczFibration.{w} p :=
   isHurewiczFibration_iff.2 ⟨hp, fun _ _ ↦
     HasHomotopyLiftingProperty.of_isOpenCover hU hcov

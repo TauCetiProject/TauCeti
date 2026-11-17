@@ -94,7 +94,7 @@ theorem exists_norm_eq_one_isometry_riemannianExp_smul [CompleteSpace M] [Noncom
   have hS := isClosed_setOf_dist_riemannianExp_eq_norm ha
   -- The unit vectors `u` with `n • u` minimizing.
   set K : ℕ → Set (TangentSpace I p) := fun n ↦
-    sphere 0 1 ∩ (fun u ↦ (n : ℝ) • u) ⁻¹' {v | dist p (riemannianExp I M p v) = ‖v‖} with hK
+    sphere 0 1 ∩ (fun u ↦ (n : ℝ) • u) ⁻¹' {v | dist p (riemannianExp I M p v) = ‖v‖}
   have hKclosed (n : ℕ) : IsClosed (K n) :=
     isClosed_sphere.inter (hS.preimage (continuous_const_smul _))
   have hKmono (n : ℕ) : K (n + 1) ⊆ K n := by
