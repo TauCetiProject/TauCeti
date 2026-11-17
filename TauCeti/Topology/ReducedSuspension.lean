@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.SmashProduct
+import Mathlib.Topology.Maps.Proper.Basic
 import TauCeti.Topology.Category.TopPair
 
 /-!
@@ -17,7 +18,7 @@ For a pointed topological space `(X, x₀)`, the reduced suspension `ΣX` collap
 `X ∧ S¹`. Here `TauCeti.ReducedSuspension x₀` is constructed directly as
 `TopPair.ordinaryPairQuotient` of `TauCeti.reducedSuspensionPair x₀`, so the quotient projection
 `TauCeti.ReducedSuspension.mk` is unconditionally a surjective quotient map and
-`ReducedSuspension x₀` is unconditionally path-connected. For locally compact `X`,
+`ReducedSuspension x₀` is unconditionally path-connected. For every pointed topological space `X`,
 `TauCeti.ReducedSuspension.homeomorphSmashIntervalQuotient` identifies `ΣX` with `X ∧ (I / {0, 1})`.
 
 ## References
@@ -280,61 +281,61 @@ end Functoriality
 
 section SmashComparison
 
-variable {X : Type u} [TopologicalSpace X] [LocallyCompactSpace X] (x₀ : X)
+variable {X : Type u} [TopologicalSpace X] (x₀ : X)
 
-private def pairIsoProdULift :
-    reducedSuspensionPair x₀ ≅
-      TopPair.ofSubset (X := TopCat.of (X × ULift.{u} I))
-        (({x₀} : Set X) ×ˢ univ ∪ univ ×ˢ (ULift.down ⁻¹' ({0, 1} : Set I))) :=
-  TopPair.ofSubsetIso (X := TopCat.of (X × I)) (Y := TopCat.of (X × ULift.{u} I))
-    ((Homeomorph.refl X).prodCongr Homeomorph.ulift.{u}.symm) fun _ ↦
-      ⟨fun h ↦ h.elim (fun ⟨_, ht⟩ ↦ Or.inr ⟨trivial, ht⟩) fun ⟨hx, _⟩ ↦ Or.inl ⟨hx, trivial⟩,
-       fun h ↦ h.elim (fun ⟨hx, _⟩ ↦ Or.inr ⟨hx, trivial⟩) fun ⟨_, ht⟩ ↦ Or.inl ⟨trivial, ht⟩⟩
+private def intervalπ : C(I, intervalEndpointPair.{u}.ordinaryPairQuotient) :=
+  ⟨fun t ↦ intervalEndpointPair.{u}.ordinaryPairQuotientπ (ULift.up t),
+    intervalEndpointPair.{u}.ordinaryPairQuotientπ.hom.continuous.comp continuous_uliftUp⟩
 
-/-- **The reduced suspension is the smash product with `I / {0, 1}`** when `X` is locally compact:
-`ΣX ≃ₜ X ∧ (I / {0, 1})`, with the interval factor on the right. -/
+private lemma isQuotientMap_id_prodMap_intervalπ :
+    IsQuotientMap ((ContinuousMap.id X).prodMap intervalπ.{u}) :=
+  haveI : Nonempty intervalEndpointPair.{u}.snd := ⟨⟨ULift.up 0, Or.inl rfl⟩⟩
+  (isProperMap_id.prodMap intervalπ.{u}.continuous.isProperMap).isClosedMap.isQuotientMap
+    ((ContinuousMap.id X).prodMap intervalπ.{u}).continuous <| Function.surjective_id.prodMap <|
+      intervalEndpointPair.{u}.surjective_ordinaryPairQuotientπ.comp Equiv.ulift.symm.surjective
+
+/-- **The reduced suspension is the smash product with `I / {0, 1}`** for every pointed
+topological space `(X, x₀)`: `ΣX ≃ₜ X ∧ (I / {0, 1})`, with the interval factor on the right. -/
 def homeomorphSmashIntervalQuotient :
     ReducedSuspension x₀ ≃ₜ
       SmashProduct x₀ intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint :=
-  (TopPair.ordinaryPairQuotientHomeomorph (pairIsoProdULift x₀)).trans <|
-    (TopPair.ordinaryPairQuotientProdHomeomorph ({x₀} : Set X)
-      (ULift.down ⁻¹' ({0, 1} : Set I))).trans <|
-      SmashProduct.congrHomeomorph
-        (TopPair.ordinaryPairQuotientSingletonHomeomorph (X := TopCat.of X) x₀)
-        (Homeomorph.refl intervalEndpointPair.{u}.ordinaryPairQuotient)
-        (TopPair.ordinaryPairQuotientSingletonHomeomorph_basepoint (X := TopCat.of X) x₀)
-        (congrFun (Homeomorph.refl_apply _) intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint)
-
-private lemma homeomorphSmashIntervalQuotient_apply
-    (q : (reducedSuspensionPair x₀).ordinaryPairQuotient) :
-    homeomorphSmashIntervalQuotient x₀ q = SmashProduct.congrHomeomorph
-      (TopPair.ordinaryPairQuotientSingletonHomeomorph (X := TopCat.of X) x₀) (.refl _)
-      (TopPair.ordinaryPairQuotientSingletonHomeomorph_basepoint _)
-      (congrFun (Homeomorph.refl_apply _) _)
-      (TopPair.ordinaryPairQuotientProdHomeomorph ({x₀} : Set X) (ULift.down ⁻¹' ({0, 1} : Set I))
-        (TopPair.ordinaryPairQuotientHomeomorph (pairIsoProdULift x₀) q)) := rfl
+  let q := (ContinuousMap.id X).prodMap intervalπ.{u}
+  have hπ {t : I} (ht : t = 0 ∨ t = 1) : intervalπ.{u} t = _ :=
+    intervalEndpointPair.{u}.ordinaryPairQuotientπ_map ⟨ULift.up t, ht⟩
+  have hq : IsQuotientMap q := isQuotientMap_id_prodMap_intervalπ (X := X)
+  have hsurj : Function.Surjective intervalπ.{u} := fun z ↦
+    let ⟨⟨_, t⟩, h⟩ := hq.surjective (x₀, z); ⟨t, (Prod.mk.inj h).2⟩
+  let fwd := lift ((SmashProduct.mk x₀ _).comp q) (SmashProduct.basepoint _ _) (fun _ ↦ by simp [q])
+    (fun _ ↦ by simp [q, hπ (Or.inl rfl)]) (fun _ ↦ by simp [q, hπ (Or.inr rfl)])
+  have hfact : Function.FactorsThrough (mk x₀) q := fun ⟨_, _⟩ ⟨_, _⟩ h ↦ by
+    obtain ⟨rfl, ht⟩ := Prod.mk.inj h
+    rcases (intervalEndpointPair.{u}.ordinaryPairQuotientπ_eq_iff _ _).1 ht with h' | ⟨h₁, h₂⟩
+    · cases congrArg ULift.down h'; rfl
+    · rw [TopPair.range_ofSubset_map] at h₁ h₂
+      exact mk_eq_mk_iff.2 (Or.inr ⟨Or.inr h₁, Or.inr h₂⟩)
+  let g := hq.lift (mk x₀) hfact
+  have hg (x : X) (t : I) : g (x, intervalπ.{u} t) = mk x₀ (x, t) :=
+    DFunLike.congr_fun (hq.lift_comp (mk x₀) hfact) (x, t)
+  let inv := SmashProduct.lift g (basepoint x₀)
+    (fun z ↦ let ⟨t, ht⟩ := hsurj z; ht ▸ (hg x₀ t).trans (mk_basepoint t))
+    (fun x ↦ hπ (Or.inl rfl) ▸ (hg x 0).trans (mk_zero x))
+  { toFun := fwd, invFun := inv
+    left_inv := ind fun x t ↦ by simp [fwd, inv, q, hg]
+    right_inv := SmashProduct.ind fun x z ↦ by obtain ⟨t, rfl⟩ := hsurj z; simp [fwd, inv, q, hg]
+    continuous_toFun := fwd.continuous, continuous_invFun := inv.continuous }
 
 @[simp]
 lemma homeomorphSmashIntervalQuotient_mk (x : X) (t : I) :
     homeomorphSmashIntervalQuotient x₀ (mk x₀ (x, t)) =
       SmashProduct.mk x₀ intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint
         (x, intervalEndpointPair.{u}.ordinaryPairQuotientπ (ULift.up t)) := by
-  have hfst : TopPair.Hom.fst (pairIsoProdULift x₀).hom (x, t) = (x, ULift.up t) := by
-    rw [pairIsoProdULift, TopPair.ofSubsetIso_hom]; apply TopPair.ofSubsetMap_fst_apply
-  let p : (reducedSuspensionPair x₀).fst := (x, t)
-  rw [show mk x₀ (x, t) = (reducedSuspensionPair x₀).ordinaryPairQuotientπ p from rfl,
-    homeomorphSmashIntervalQuotient_apply, TopPair.ordinaryPairQuotientHomeomorph_π, hfst,
-    TopPair.ordinaryPairQuotientProdHomeomorph_π, SmashProduct.congrHomeomorph_mk,
-    TopPair.ordinaryPairQuotientSingletonHomeomorph_π]; rfl
+  simp [homeomorphSmashIntervalQuotient, intervalπ]
 
 @[simp]
 lemma homeomorphSmashIntervalQuotient_basepoint :
     homeomorphSmashIntervalQuotient x₀ (basepoint x₀) =
       SmashProduct.basepoint x₀ intervalEndpointPair.{u}.ordinaryPairQuotientBasepoint := by
-  rw [show basepoint x₀ = (reducedSuspensionPair x₀).ordinaryPairQuotientBasepoint from rfl,
-    homeomorphSmashIntervalQuotient_apply, TopPair.ordinaryPairQuotientHomeomorph_basepoint,
-    TopPair.ordinaryPairQuotientProdHomeomorph_basepoint,
-    SmashProduct.congrHomeomorph_basepoint]; rfl
+  simp [homeomorphSmashIntervalQuotient]
 
 @[simp]
 lemma homeomorphSmashIntervalQuotient_symm_mk_π (x : X) (t : I) :
