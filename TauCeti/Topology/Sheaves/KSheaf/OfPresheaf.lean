@@ -12,7 +12,6 @@ public import Mathlib.CategoryTheory.Limits.Preserves.Filtered
 import Mathlib.CategoryTheory.Limits.Types.Filtered
 import Mathlib.CategoryTheory.Limits.Types.Pullbacks
 import Mathlib.Topology.Sheaves.SheafCondition.UniqueGluing
-public import TauCeti.Topology.Sets.Compacts
 
 /-!
 # The K-presheaf of a presheaf
@@ -83,19 +82,16 @@ abbrev openNhdsDiagram (P : Presheaf C X) (K : Compacts X) : (↥K.openNhds)ᵒ�
 /-- The K-presheaf of a presheaf `P`: its value on a compact set `K` is the colimit of the values
 of `P` on the open neighbourhoods of `K`, the germs along `K` of sections of `P`, and its
 restriction maps restrict germs to smaller compact sets. -/
+@[expose]
 noncomputable def toKPresheaf (P : Presheaf C X) : KPresheaf C X where
   obj K := colimit (P.openNhdsDiagram K.unop)
-  map {K L} f :=
-    have hLK : (L.unop : Set X) ⊆ K.unop := f.unop.le
-    colimit.desc (P.openNhdsDiagram K.unop)
-      { pt := colimit (P.openNhdsDiagram L.unop)
-        ι :=
-          { app U := colimit.ι (P.openNhdsDiagram L.unop) (op ⟨U.unop.1, hLK.trans U.unop.2⟩)
-            naturality U V g :=
-              (colimit.w (P.openNhdsDiagram L.unop) (j' := op ⟨U.unop.1, hLK.trans U.unop.2⟩)
-                (j := op ⟨V.unop.1, hLK.trans V.unop.2⟩) g).trans (Category.comp_id _).symm } }
-  map_id K := colimit.hom_ext fun U ↦ by simp
-  map_comp f g := colimit.hom_ext fun U ↦ by simp
+  map {_ L} f :=
+    colimit.pre (P.openNhdsDiagram L.unop) (Compacts.baseChangeOpenNhds_mono f.unop).functor.op
+  map_id K := colimit.hom_ext fun U ↦ (colimit.ι_pre (P.openNhdsDiagram K.unop)
+    (Compacts.baseChangeOpenNhds_mono (𝟙 _)).functor.op U).trans (Category.comp_id _).symm
+  map_comp {_ _ M} f g := (colimit.pre_pre (P.openNhdsDiagram M.unop)
+    (Compacts.baseChangeOpenNhds_mono g.unop).functor.op
+    (Compacts.baseChangeOpenNhds_mono f.unop).functor.op).symm
 
 /-- The germ along a compact set `K` of a section of `P` over an open neighbourhood `U` of `K`. -/
 noncomputable def kGerm (P : Presheaf C X) (K : Compacts X) (U : Opens X) (h : (K : Set X) ⊆ U) :
@@ -117,7 +113,8 @@ theorem kGerm_toKPresheaf_map (P : Presheaf C X) {K L : Compacts X} (f : op K �
     (U : Opens X) (h : (K : Set X) ⊆ U) :
     P.kGerm K U h ≫ P.toKPresheaf.map f =
       P.kGerm L U ((show (L : Set X) ⊆ K from f.unop.le).trans h) :=
-  colimit.ι_desc _ _
+  colimit.ι_pre (P.openNhdsDiagram L) (Compacts.baseChangeOpenNhds_mono f.unop).functor.op
+    (op ⟨U, h⟩)
 
 /-- The cocone of germs along `K` over the values of `P` on the open neighbourhoods of `K`. -/
 @[expose, simps]
@@ -125,9 +122,8 @@ noncomputable def kGermCocone (P : Presheaf C X) (K : Compacts X) :
     Cocone (P.openNhdsDiagram K) where
   pt := P.toKPresheaf.obj (op K)
   ι :=
-    { app U := P.kGerm K U.unop.1 (Compacts.subset_of_mem_openNhds U.unop.2)
-      naturality _ V i := (P.map_kGerm K i.unop.le.hom
-        (Compacts.subset_of_mem_openNhds V.unop.2)).trans (Category.comp_id _).symm }
+    { app U := P.kGerm K U.unop.1 U.unop.2
+      naturality _ V i := (P.map_kGerm K i.unop.le.hom V.unop.2).trans (Category.comp_id _).symm }
 
 /-- The value of `P.toKPresheaf` on a compact set `K` is the colimit of the values of `P` on the
 open neighbourhoods of `K`, with the germs as colimit insertions. -/
@@ -142,41 +138,23 @@ theorem toKPresheaf_hom_ext (P : Presheaf C X) {K : Compacts X} {Z : C}
     (h : ∀ (U : Opens X) (hU : (K : Set X) ⊆ U), P.kGerm K U hU ≫ f = P.kGerm K U hU ≫ g) :
     f = g :=
   (P.isColimitKGermCocone K).hom_ext fun U ↦
-    h U.unop.1 (Compacts.subset_of_mem_openNhds U.unop.2)
-
-/-- The component on `K` of `toKPresheafMap φ`. -/
-private noncomputable def toKPresheafMapApp {P Q : Presheaf C X} (φ : P ⟶ Q) (K : Compacts X) :
-    P.toKPresheaf.obj (op K) ⟶ Q.toKPresheaf.obj (op K) :=
-  (P.isColimitKGermCocone K).desc
-    { pt := Q.toKPresheaf.obj (op K)
-      ι :=
-        { app U := φ.app _ ≫ Q.kGerm K U.unop.1 (Compacts.subset_of_mem_openNhds U.unop.2)
-          naturality _ V i :=
-            ((φ.naturality_assoc _ _).trans (congrArg (φ.app _ ≫ ·) (Q.map_kGerm K
-              i.unop.le.hom (Compacts.subset_of_mem_openNhds V.unop.2)))).trans
-              (Category.comp_id _).symm } }
-
-@[reassoc]
-private theorem kGerm_toKPresheafMapApp {P Q : Presheaf C X} (φ : P ⟶ Q) (K : Compacts X)
-    (U : Opens X) (h : (K : Set X) ⊆ U) :
-    P.kGerm K U h ≫ toKPresheafMapApp φ K = φ.app (op U) ≫ Q.kGerm K U h :=
-  (P.isColimitKGermCocone K).fac _ (op ⟨U, h⟩)
+    h U.unop.1 U.unop.2
 
 /-- The morphism of K-presheaves induced by a morphism of presheaves: on each compact set `K` it
 sends the germ along `K` of a section to the germ of its image. -/
 noncomputable def toKPresheafMap {P Q : Presheaf C X} (φ : P ⟶ Q) :
     P.toKPresheaf ⟶ Q.toKPresheaf where
-  app K := toKPresheafMapApp φ K.unop
-  naturality K L f := P.toKPresheaf_hom_ext fun U hU ↦ by
-    rw [kGerm_toKPresheaf_map_assoc (K := K.unop) (L := L.unop), kGerm_toKPresheafMapApp,
-      kGerm_toKPresheafMapApp_assoc, kGerm_toKPresheaf_map (K := K.unop) (L := L.unop)]
+  app K := colimMap (Functor.whiskerLeft (Set.mono_coe K.unop.openNhds).functor.op φ)
+  naturality _ L f := colimit.pre_map
+    (Functor.whiskerLeft (Set.mono_coe L.unop.openNhds).functor.op φ)
+    (Compacts.baseChangeOpenNhds_mono f.unop).functor.op
 
 /-- `toKPresheafMap φ` sends the germ of a section to the germ of its image under `φ`. -/
 @[reassoc (attr := simp)]
 theorem kGerm_toKPresheafMap_app {P Q : Presheaf C X} (φ : P ⟶ Q) (K : Compacts X) (U : Opens X)
     (h : (K : Set X) ⊆ U) :
     P.kGerm K U h ≫ (toKPresheafMap φ).app (op K) = φ.app (op U) ≫ Q.kGerm K U h :=
-  kGerm_toKPresheafMapApp φ K U h
+  ι_colimMap _ _
 
 variable (C X) in
 /-- Taking K-presheaves, as a functor from presheaves to K-presheaves. -/
@@ -209,7 +187,7 @@ section over an open neighbourhood of `K`. -/
 theorem exists_kGerm_apply_eq {K : Compacts X} (x : P.toKPresheaf.obj (op K)) :
     ∃ (U : Opens X) (hU : (K : Set X) ⊆ U) (s : P.obj (op U)), P.kGerm K U hU s = x := by
   obtain ⟨⟨U⟩, s, rfl⟩ := Types.jointly_surjective_of_isColimit (P.isColimitKGermCocone K) x
-  exact ⟨U.1, Compacts.subset_of_mem_openNhds U.2, s, rfl⟩
+  exact ⟨U.1, U.2, s, rfl⟩
 
 /-- Two sections of a presheaf of types have the same germ along `K` exactly when they agree on an
 open neighbourhood of `K`. -/
@@ -221,7 +199,7 @@ theorem kGerm_apply_eq_kGerm_apply_iff {K : Compacts X} {U V : Opens X} (hU : (K
   refine (Types.FilteredColimit.isColimit_eq_iff _ (P.isColimitKGermCocone K)
     (i := op ⟨U, hU⟩) (j := op ⟨V, hV⟩)).trans ⟨?_, ?_⟩
   · rintro ⟨⟨W⟩, iU, iV, h⟩
-    exact ⟨W.1, Compacts.subset_of_mem_openNhds W.2, homOfLE iU.unop.le, homOfLE iV.unop.le, h⟩
+    exact ⟨W.1, W.2, homOfLE iU.unop.le, homOfLE iV.unop.le, h⟩
   · rintro ⟨W, hW, iU, iV, h⟩
     exact ⟨op ⟨W, hW⟩, (homOfLE iU.le).op, (homOfLE iV.le).op, h⟩
 
@@ -373,49 +351,26 @@ theorem toKPresheaf_hom_ext_of_preservesColimits {K : Compacts X} {Z : D}
       G.map (P.kGerm K U hU) ≫ f = G.map (P.kGerm K U hU) ≫ g) :
     f = g :=
   (isColimitOfPreserves G (P.isColimitKGermCocone K)).hom_ext fun U ↦
-    h U.unop.1 (Compacts.subset_of_mem_openNhds U.unop.2)
-
-/-- The comparison of the value of `P.toKPresheaf ⋙ G` on `K` with that of `(P ⋙ G).toKPresheaf`,
-for a functor `G` preserving filtered colimits. -/
-noncomputable def toKPresheafObjCompIso (K : Compacts X) :
-    G.obj (P.toKPresheaf.obj (op K)) ≅ (toKPresheaf (P ⋙ G)).obj (op K) :=
-  (isColimitOfPreserves G (P.isColimitKGermCocone K)).coconePointUniqueUpToIso
-    (isColimitKGermCocone (P ⋙ G) K)
-
-/-- The comparison `toKPresheafObjCompIso` sends the image under `G` of a germ of `P` to the
-corresponding germ of `P ⋙ G`. -/
-@[reassoc (attr := simp)]
-theorem map_kGerm_comp_toKPresheafObjCompIso_hom (K : Compacts X) (U : Opens X)
-    (hU : (K : Set X) ⊆ U) :
-    G.map (P.kGerm K U hU) ≫ (P.toKPresheafObjCompIso G K).hom = kGerm (P ⋙ G) K U hU :=
-  (isColimitOfPreserves G (P.isColimitKGermCocone K)).comp_coconePointUniqueUpToIso_hom
-    (isColimitKGermCocone (P ⋙ G) K) (op ⟨U, hU⟩)
-
-/-- The inverse of the comparison `toKPresheafObjCompIso` sends a germ of `P ⋙ G` to the image
-under `G` of the corresponding germ of `P`. -/
-@[reassoc (attr := simp)]
-theorem kGerm_comp_toKPresheafObjCompIso_inv (K : Compacts X) (U : Opens X)
-    (hU : (K : Set X) ⊆ U) :
-    kGerm (P ⋙ G) K U hU ≫ (P.toKPresheafObjCompIso G K).inv = G.map (P.kGerm K U hU) := by
-  rw [Iso.comp_inv_eq, map_kGerm_comp_toKPresheafObjCompIso_hom]
+    h U.unop.1 U.unop.2
 
 /-- Taking K-presheaves commutes with a functor that preserves filtered colimits. -/
 noncomputable def toKPresheafCompIso : P.toKPresheaf ⋙ G ≅ toKPresheaf (P ⋙ G) :=
-  NatIso.ofComponents (fun K ↦ P.toKPresheafObjCompIso G K.unop) fun {K L} f ↦
+  NatIso.ofComponents (fun K ↦ preservesColimitIso G (P.openNhdsDiagram K.unop)) fun {K L} f ↦
     P.toKPresheaf_hom_ext_of_preservesColimits G fun U hU ↦ by
       rw [Functor.comp_map, ← G.map_comp_assoc,
-        P.kGerm_toKPresheaf_map (K := K.unop) (L := L.unop) f,
-        map_kGerm_comp_toKPresheafObjCompIso_hom, map_kGerm_comp_toKPresheafObjCompIso_hom_assoc,
-        kGerm_toKPresheaf_map (P ⋙ G) (K := K.unop) (L := L.unop) f]
+        P.kGerm_toKPresheaf_map (K := K.unop) (L := L.unop) f]
+      exact (ι_preservesColimitIso_hom G (P.openNhdsDiagram L.unop) _).trans
+        ((kGerm_toKPresheaf_map (P ⋙ G) (K := K.unop) (L := L.unop) f U hU).symm.trans
+          (ι_preservesColimitIso_hom_assoc G (P.openNhdsDiagram K.unop) _ _).symm)
 
 @[simp]
 theorem toKPresheafCompIso_hom_app (K : Compacts X) :
-    (P.toKPresheafCompIso G).hom.app (op K) = (P.toKPresheafObjCompIso G K).hom :=
+    (P.toKPresheafCompIso G).hom.app (op K) = (preservesColimitIso G (P.openNhdsDiagram K)).hom :=
   (rfl)
 
 @[simp]
 theorem toKPresheafCompIso_inv_app (K : Compacts X) :
-    (P.toKPresheafCompIso G).inv.app (op K) = (P.toKPresheafObjCompIso G K).inv :=
+    (P.toKPresheafCompIso G).inv.app (op K) = (preservesColimitIso G (P.openNhdsDiagram K)).inv :=
   (rfl)
 
 end Functor
