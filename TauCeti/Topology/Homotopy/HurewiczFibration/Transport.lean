@@ -283,6 +283,23 @@ theorem transport_comp_homotopic {E' : Type u'} {B' : Type v'} [TopologicalSpace
   · exact (hK₁ x).trans ((congrArg g (Λ'.liftFamily_comp_snd_one s₀' γ hΓ' x x rfl)).trans
       (hg₁ (Λ'.transport γ x)).symm)
 
+/-- Variant of `LiftingFunction.transport_comp_homotopic` for a path `γ' : Path a₀ a₁` covering a
+given path `γ : Path b₀ b₁` (`∀ t, f (γ' t) = γ t`), avoiding endpoint casts when `b₀ = b₁` is a
+loop in `B` and `γ'` has distinct endpoints in `B'`. -/
+theorem transport_comp_homotopic_of_map_eq {E' : Type u'} {B' : Type v'} [TopologicalSpace E']
+    [TopologicalSpace B'] {p' : C(E', B')} (Λ' : LiftingFunction p')
+    {g : C(E', E)} {f : C(B', B)} (h : ∀ x, p (g x) = f (p' x))
+    {a₀ a₁ : B'} (γ' : Path a₀ a₁) (γ : Path b₀ b₁) (hγ : ∀ t, f (γ' t) = γ t)
+    {g₀ : C(p' ⁻¹' {a₀}, p ⁻¹' {b₀})} {g₁ : C(p' ⁻¹' {a₁}, p ⁻¹' {b₁})}
+    (hg₀ : ∀ x, (g₀ x).1 = g x.1) (hg₁ : ∀ x, (g₁ x).1 = g x.1) :
+    ((Λ.transport γ).comp g₀).Homotopic (g₁.comp (Λ'.transport γ')) := by
+  have hb₀ : f a₀ = b₀ := (congrArg f γ'.source).symm.trans ((hγ 0).trans γ.source)
+  have hb₁ : f a₁ = b₁ := (congrArg f γ'.target).symm.trans ((hγ 1).trans γ.target)
+  subst hb₀ hb₁
+  have hγeq : γ'.map f.continuous = γ := Path.ext (funext hγ)
+  subst hγeq
+  exact Λ.transport_comp_homotopic Λ' h γ' hg₀ hg₁
+
 /-- **Independence of the lifting function.** Any two lifting functions for `p` induce homotopic
 transports along every path. -/
 theorem transport_homotopic_of_liftingFunction (Λ' : LiftingFunction p) (γ : Path b₀ b₁) :
