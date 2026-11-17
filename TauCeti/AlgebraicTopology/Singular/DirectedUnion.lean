@@ -17,6 +17,8 @@ public import TauCeti.Topology.Category.TopCat.Subspace
 public import TauCeti.Topology.Category.TopPair
 public import TauCeti.AlgebraicTopology.Singular.Relative
 public import TauCeti.CategoryTheory.Limits.Shapes.Kernels
+import Mathlib.Topology.Compactness.LocallyCompact
+import Mathlib.Topology.Sets.Opens
 
 /-!
 # Singular homology of a directed union
@@ -49,6 +51,8 @@ cokernels commute with colimits (`TauCeti.isColimitOfIsColimitCokernelCofork`).
 * `TauCeti.exists_singularHomologyMap_inclusion_eq_zero`: with coefficients in a module, a class of
   one member of an increasing cover of a subspace by relatively open sets that vanishes in the
   subspace already vanishes in some larger member.
+* `TauCeti.exists_isOpen_isCompact_closure_singularHomologyMap_eq`: every singular homology class of
+  a weakly locally compact Hausdorff space comes from an open subset with compact closure.
 * `TopPair.isColimitMapCoconeSingularChainComplex` and `TopPair.isColimitMapCoconeSingularHomology`:
   for a cocone over a filtered diagram of topological pairs whose legs are embeddings of the
   ambient spaces, such that every compact subset of the ambient space and of the subspace of the
@@ -153,6 +157,61 @@ theorem exists_singularHomologyMap_inclusion_eq_zero {i : J}
   exact ⟨j, f.le, hfg⟩
 
 end Module
+
+section CompactSupport
+
+/-- The open subsets of `X` with compact closure, ordered by inclusion. -/
+private abbrev RelCompactOpens (X : Type w) [TopologicalSpace X] : Type w :=
+  {U : TopologicalSpace.Opens X // IsCompact (closure (U : Set X))}
+
+private instance {X : Type w} [TopologicalSpace X] : SemilatticeSup (RelCompactOpens X) where
+  sup U V := ⟨U.1 ⊔ V.1, by
+    simpa only [TopologicalSpace.Opens.coe_sup, closure_union] using U.2.union V.2⟩
+  le_sup_left _ _ := le_sup_left (α := TopologicalSpace.Opens X)
+  le_sup_right _ _ := le_sup_right (α := TopologicalSpace.Opens X)
+  sup_le _ _ _ := sup_le (α := TopologicalSpace.Opens X)
+
+private instance {X : Type w} [TopologicalSpace X] : OrderBot (RelCompactOpens X) where
+  bot := ⟨⊥, by simp⟩
+  bot_le _ := bot_le (α := TopologicalSpace.Opens X)
+
+/-- **Singular homology classes of a locally compact Hausdorff space live on relatively compact open
+subsets.** Every class in `Hₖ(X; N)` is the image of a class in `Hₖ(U; N)` for some open subset
+`U ⊆ X` whose closure is compact. -/
+theorem exists_isOpen_isCompact_closure_singularHomologyMap_eq
+    {Λ : Type*} [Ring Λ] (N : ModuleCat.{w} Λ)
+    {X : Type w} [TopologicalSpace X] [T2Space X] [WeaklyLocallyCompactSpace X] (k : ℕ)
+    (γ : (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (TopCat.of X) :
+      ModuleCat.{w} Λ)) :
+    ∃ U : Set X, IsOpen U ∧ IsCompact (closure U) ∧
+      ∃ γU : (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj (TopCat.of U) :
+        ModuleCat.{w} Λ),
+        ((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+          (TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩) γU = γ := by
+  let D : RelCompactOpens X ⥤ TopCat.{w} :=
+    { obj U := TopCat.of (U.1 : Set X)
+      map f := TopCat.ofHom (ContinuousMap.inclusion f.le) }
+  let G := D ⋙ (singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N
+  have : PreservesColimit G
+      (forget₂ (ModuleCat.{w} Λ) AddCommGrpCat.{w} ⋙ forget AddCommGrpCat.{w}) :=
+    Limits.comp_preservesColimit (forget₂ (ModuleCat.{w} Λ) AddCommGrpCat.{w})
+      (forget AddCommGrpCat.{w})
+  have : PreservesColimit G (forget (ModuleCat.{w} Λ)) :=
+    preservesColimit_of_natIso G
+      (eqToIso (HasForget₂.forget_comp (C := ModuleCat.{w} Λ) (D := AddCommGrpCat.{w})))
+  let c : Cocone D :=
+    { pt := TopCat.of X
+      ι := { app U := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ } }
+  have hK (K : Set c.pt) (hKc : IsCompact K) : ∃ U, K ⊆ Set.range (c.ι.app U) := by
+    obtain ⟨L, hLc, hKL⟩ := exists_compact_superset hKc
+    refine ⟨⟨⟨interior L, isOpen_interior⟩, hLc.of_isClosed_subset isClosed_closure
+        (hLc.isClosed.closure_subset_iff.2 interior_subset)⟩,
+      fun x hx ↦ ⟨⟨x, hKL hx⟩, rfl⟩⟩
+  obtain ⟨U, γU, hγU⟩ := Concrete.isColimit_exists_rep _
+    (isColimitMapCoconeSingularHomology N k c (fun _ ↦ IsEmbedding.subtypeVal) hK) γ
+  exact ⟨(U.1 : Set X), U.1.isOpen, U.2, γU, hγU⟩
+
+end CompactSupport
 
 end TauCeti
 

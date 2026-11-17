@@ -36,11 +36,18 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyRestriction`: for `S ⊆ T`, the map `Hₖ(M, M ∖ T) ⟶ Hₖ(M, M ∖ S)`
   induced by the identity of `M`.
 * `TauCeti.singularHomologyToLocalHomology`: with module coefficients, the map
-  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`.
+  `Hₖ(M; N) → Hₖ(M, M ∖ {x}; N)` from singular homology to the local homology at `x`, compatible
+  with restriction along `x ∈ A` (`TauCeti.localHomologyRestriction_singularHomologyπ_apply`) and
+  vanishing on classes supported away from `x`
+  (`TauCeti.singularHomologyToLocalHomology_singularHomologyMap_eq_zero`).
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
+* `TauCeti.mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier`
+  and `TauCeti.mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier`: when `U ⊆ M` is
+  open and `Hₖ₊₁(M, M ∖ frontier U) = 0`, the composite `Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)`
+  and the inclusion `Hₖ(U) ⟶ Hₖ(M)` are monomorphisms.
 * `TauCeti.isIso_localHomologyRestriction_symm_image`: the restriction from a compact set in a
   chart, star-convex about one of its points, to that point is an isomorphism.
 * `TauCeti.localHomologyTransport`: the transport of local homology along a path class.
@@ -122,6 +129,61 @@ theorem isZero_localHomology_empty (k : ℕ) : IsZero (localHomology R (∅ : Se
   exact TopPair.singularHomologyMap_eq_zero_of_fac _ R
     (TopCat.ofHom (⟨fun x ↦ ⟨x, by simp⟩, by fun_prop⟩ : C(M, ((∅ : Set M)ᶜ : Set M)))) rfl k
 
+/-- **Injectivity into local homology along the closure of an open subset.** Let `U ⊆ M` be open.
+If the local homology `Hₖ₊₁(M, M ∖ frontier U)` along the frontier vanishes, then the composite
+`Hₖ(U) ⟶ Hₖ(M) ⟶ Hₖ(M, M ∖ closure U)` is a monomorphism. -/
+theorem mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier
+    {U : Set M} (hU : IsOpen U) {k : ℕ} (hfr : IsZero (localHomology R (frontier U) (k + 1))) :
+    Mono (((AlgebraicTopology.singularHomologyFunctor A k).obj R).map
+        (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M))) ≫
+      (TopPair.ofSubset ((closure U)ᶜ : Set (TopCat.of M))).singularHomologyπ R k) := by
+  let T := TopTriple.ofSubset (X := TopCat.of M)
+    (compl_subset_compl.2 (frontier_subset_closure (s := U)))
+  have hmono_inner : Mono (TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R k) :=
+    (T.singularHomology_exact_inner R (k + 1) k rfl).mono_g (hfr.eq_of_src _ _)
+  have : IsEmpty (TopPair.ofSubset (∅ : Set (TopCat.of U))).snd :=
+    inferInstanceAs (IsEmpty (∅ : Set U))
+  have := TopPair.isIso_singularHomologyMap_openToFrontierComplPair R (X := TopCat.of M) hU k
+  have hmono_comp : Mono ((TopPair.ofSubset (∅ : Set (TopCat.of U))).singularHomologyπ R k ≫
+      TopPair.singularHomologyMap (TopPair.openToFrontierComplPair (X := TopCat.of M) hU ≫
+        TopTriple.innerToTotal.app T) R k) := by
+    have hcomp := TopPair.singularHomologyMap_comp
+      (TopPair.openToFrontierComplPair (X := TopCat.of M) hU) R
+      (TopTriple.innerToTotal.app T) k
+    let f₂ : (TopPair.ofInclusion (X := TopCat.of M)
+        (compl_subset_compl.2 (frontier_subset_closure (s := U)))).singularHomology R k ⟶
+        (TopTriple.totalPair.obj T).singularHomology R k :=
+      TopPair.singularHomologyMap (TopTriple.innerToTotal.app T) R k
+    have : Mono f₂ := hmono_inner
+    have : Mono ((TopPair.ofSubset (∅ : Set (TopCat.of U))).singularHomologyπ R k ≫
+        (TopPair.singularHomologyMap
+          (TopPair.openToFrontierComplPair (X := TopCat.of M) hU) R k ≫ f₂)) := by
+      have := mono_comp (TopPair.singularHomologyMap
+        (TopPair.openToFrontierComplPair (X := TopCat.of M) hU) R k) f₂
+      exact mono_comp _ _
+    rwa [hcomp]
+  have hfst : TopPair.Hom.fst (TopPair.openToFrontierComplPair (X := TopCat.of M) hU ≫
+        TopTriple.innerToTotal.app T) =
+      TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) := by
+    ext x
+    -- `TopTriple.innerToTotal.app T` acts on the ambient space by `Subtype.val : (frontier U)ᶜ → M`
+    -- by definition, and `TopTriple.innerPair.obj T` is definitionally `TopPair.ofInclusion _`.
+    exact TopPair.openToFrontierComplPair_fst_apply (X := TopCat.of M) hU x
+  rw [singularHomologyFunctor_obj_map, ← hfst]
+  rwa [← TopPair.singularHomologyπ_naturality] at hmono_comp
+
+/-- **Injectivity of open-subset homology when frontier local homology vanishes.** If `U ⊆ M` is
+open and `Hₖ₊₁(M, M ∖ frontier U) = 0`, then the inclusion `U ↪ M` induces a monomorphism
+`Hₖ(U; R) ⟶ Hₖ(M; R)`. -/
+theorem mono_singularHomologyMap_subtype_of_isZero_localHomology_frontier
+    {U : Set M} (hU : IsOpen U) {k : ℕ} (hfr : IsZero (localHomology R (frontier U) (k + 1))) :
+    Mono (((AlgebraicTopology.singularHomologyFunctor A k).obj R).map
+      (TopCat.ofHom (⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)))) :=
+  have :=
+    mono_singularHomologyMap_subtype_comp_singularHomologyπ_of_isZero_localHomology_frontier R hU
+      hfr
+  mono_of_mono _ ((TopPair.ofSubset ((closure U)ᶜ : Set (TopCat.of M))).singularHomologyπ R k)
+
 /-- Let `S ⊆ T` contain `x` and `y`, and let the restrictions from `S` and from `T` to `x` be
 isomorphisms. Then comparing `x` with `y` through `T` and restricting from `S` to `x` gives the
 restriction from `S` to `y`. -/
@@ -161,6 +223,57 @@ theorem singularHomologyToLocalHomology_apply (x : M) {k : ℕ}
         (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
           (C := ModuleCat.{w} Λ) N k).hom μ) :=
   (rfl)
+
+/-- Restricting the relative image in `Hₖ(M, M ∖ A; N)` of a global class `μ ∈ Hₖ(M; N)` to a
+point `x ∈ A` gives `singularHomologyToLocalHomology N x k μ`. -/
+theorem localHomologyRestriction_singularHomologyπ_apply {A : Set M} {x : M} (hx : x ∈ A)
+    {k : ℕ} (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology N k : ModuleCat.{w} Λ)) :
+    localHomologyRestriction N (singleton_subset_iff.2 hx) k
+      (((TopPair.ofSubset (Aᶜ : Set (TopCat.of M))).singularHomologyπ
+        (C := ModuleCat.{w} Λ) N k) μ) =
+      singularHomologyToLocalHomology N x k μ := by
+  have hπ :=
+    TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id_assoc N
+      (X := TopCat.of M) (S := Aᶜ) (S' := (univ : Set M)ᶜ)
+      (compl_subset_compl.2 (subset_univ A)) k
+      (localHomologyRestriction N (singleton_subset_iff.2 hx) k)
+  rw [← localHomologyRestriction_def _ (subset_univ A), localHomologyRestriction_comp] at hπ
+  rw [singularHomologyToLocalHomology, hπ]
+  -- Composition in `ModuleCat` acts by composition of the underlying maps, and
+  -- `(ofSubset Aᶜ).fst` is `M` by definition.
+  rfl
+
+/-- A singular homology class pushed forward along a continuous map `f : Y → M` whose range misses
+`y` has zero image in the local homology `Hₖ(M, M ∖ {y}; N)`. -/
+theorem singularHomologyToLocalHomology_singularHomologyMap_eq_zero {Y : Type w}
+    [TopologicalSpace Y] {f : C(Y, M)} {y : M} (hy : y ∉ range f) {k : ℕ}
+    (γ : (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).obj
+      (TopCat.of Y) : ModuleCat.{w} Λ)) :
+    singularHomologyToLocalHomology N y k
+      ((((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{w} Λ) k).obj N).map
+        (TopCat.ofHom f)) γ) = 0 := by
+  let Py := TopPair.ofSubset (({y} : Set M)ᶜ : Set (TopCat.of M))
+  let j : TopCat.of Y ⟶ Py.snd :=
+    TopCat.ofHom ⟨fun z ↦ ⟨f z, fun hfy ↦ hy ⟨z, mem_singleton_iff.1 hfy⟩⟩, by fun_prop⟩
+  have hπ :=
+    TopPair.singularHomologyπ_comp_singularHomologyMap_ofSubsetMap_id N
+      (X := TopCat.of M) (S := ({y} : Set M)ᶜ) (S' := (univ : Set M)ᶜ)
+      (compl_subset_compl.2 (subset_univ {y})) k
+  rw [← localHomologyRestriction_def _ (subset_univ {y})] at hπ
+  have hj :
+      SSet.homologyMap (TopCat.toSSet.map (j ≫ Py.map)) N k γ =
+        SSet.homologyMap (TopCat.toSSet.map Py.map) N k
+          (SSet.homologyMap (TopCat.toSSet.map j) N k γ) := by
+    rw [Functor.map_comp, SSet.homologyMap_comp]
+    rfl
+  have hPy :
+      Py.singularHomologyπ N k
+        (SSet.homologyMap (TopCat.toSSet.map Py.map) N k
+          (SSet.homologyMap (TopCat.toSSet.map j) N k γ)) = 0 :=
+    ConcreteCategory.congr_hom (Py.homologyMap_comp_singularHomologyπ N k) _
+  rw [singularHomologyFunctor_obj_map, singularHomologyToLocalHomology, hπ]
+  -- `TopCat.ofHom f` is `j ≫ Py.map` by definition (`Py.map` is subtype inclusion).
+  exact hj.symm ▸ hPy
 
 end SingularHomology
 

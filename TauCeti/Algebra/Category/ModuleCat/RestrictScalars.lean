@@ -60,6 +60,9 @@ The API is dot notation on the ring homomorphism, respectively the ring isomorph
   scalars along a ring isomorphism.
 * `Function.Exact.smul_mem_range`: if `P → Q → M` is exact with `M` a module with scalars
   restricted along `φ`, then every scalar killed by `φ` multiplies `Q` into the image of `P`.
+* `ModuleCat.preservesColimitsOfShape_restrictScalars`: restriction of scalars preserves colimits
+  of any shape existing in `AddCommGrpCat`, with no universe constraint between the rings and the
+  modules.
 -/
 
 public section
@@ -217,6 +220,20 @@ theorem smul_mem_range {P Q : Type*} [AddCommGroup P] [Module R P] [AddCommGroup
 end Function.Exact
 
 namespace ModuleCat
+
+/-- Restricting scalars along `f : R →+* S` preserves colimits of any shape `J` that exist in
+`AddCommGrpCat.{v}`, regardless of the universes of `R` and `S`: composing with the
+colimit-reflecting forgetful functor to `AddCommGrpCat.{v}` gives the colimit-preserving forgetful
+functor from `ModuleCat.{v} S`. -/
+instance preservesColimitsOfShape_restrictScalars {J : Type*} [Category* J]
+    [Limits.HasColimitsOfShape J AddCommGrpCat.{v}] (f : R →+* S) :
+    Limits.PreservesColimitsOfShape J (restrictScalars.{v} f) :=
+  have : Limits.PreservesColimitsOfShape J
+      (restrictScalars.{v} f ⋙ forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v}) :=
+    inferInstanceAs
+      (Limits.PreservesColimitsOfShape J (forget₂ (ModuleCat.{v} S) AddCommGrpCat.{v}))
+  Limits.preservesColimitsOfShape_of_reflects_of_preserves
+    (restrictScalars.{v} f) (forget₂ (ModuleCat.{v} R) AddCommGrpCat.{v})
 
 variable {R : Type u₁} {S : Type u₂} [CommRing R] [Ring S] [Algebra R S]
 
