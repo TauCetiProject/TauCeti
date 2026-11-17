@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGroup.Curve.Projector
+import TauCeti.Data.Nat.Factorization.Basic
 
 /-!
 # Typical curves and Cartier's infinite typical projector
@@ -62,20 +63,6 @@ open TauCeti (FormalGroupHom FormalGroupIso)
 
 variable {R S : Type*} [CommRing R] [CommRing S]
 
-private theorem exists_primeFactor_not_dvd_of_coprime {n p : ℕ} (hn : 1 < n) (hcop : n.Coprime p) :
-    ∃ q ∈ n.primeFactors, ¬ q ∣ p := by
-  obtain ⟨q, hq, hqn⟩ := Nat.exists_prime_and_dvd hn.ne'
-  exact ⟨q, Nat.mem_primeFactors.mpr ⟨hq, hqn, by omega⟩,
-    hq.coprime_iff_not_dvd.mp (hcop.coprime_dvd_left hqn)⟩
-
-private theorem forall_mem_primeFactors_dvd_iff_exists_pow {p k : ℕ} (hp : p.Prime) (hk0 : k ≠ 0) :
-    (∀ q ∈ k.primeFactors, q ∣ p) ↔ ∃ r : ℕ, p ^ r = k :=
-  ⟨fun h ↦ ⟨k.primeFactorsList.length, (Nat.eq_prime_pow_of_unique_prime_dvd hk0 fun {q} hq hqk ↦
-      (Nat.prime_dvd_prime_iff_eq hq hp).mp
-        (h q (Nat.mem_primeFactors.mpr ⟨hq, hqk, hk0⟩))).symm⟩,
-    fun ⟨_, hr⟩ _ hq ↦ (Nat.prime_of_mem_primeFactors hq).dvd_of_dvd_pow
-      (hr ▸ Nat.dvd_of_mem_primeFactors hq)⟩
-
 /-! ### Typical curves -/
 
 namespace Curve
@@ -110,7 +97,7 @@ theorem IsTypical.frobeniusCurve_eq_zero {γ : F.Curve} {p : ℕ} (hγ : γ.IsTy
 /-- A `p`-typical curve is annihilated by `f_n` for every `n > 1` coprime to `p`. -/
 theorem IsTypical.frobeniusCurve_eq_zero_of_coprime {γ : F.Curve} {p : ℕ} (hγ : γ.IsTypical p)
     {n : ℕ} (hn : 1 < n) (hcop : n.Coprime p) : F.frobeniusCurve n (by omega) γ = 0 :=
-  hγ.frobeniusCurve_eq_zero (by omega) (exists_primeFactor_not_dvd_of_coprime hn hcop)
+  hγ.frobeniusCurve_eq_zero (by omega) (hcop.exists_mem_primeFactors_not_dvd hn)
 
 /-- A curve is `p`-typical iff `f_n γ = 0` for every integer `n > 1` coprime to `p`. -/
 theorem isTypical_iff_forall_coprime {γ : F.Curve} {p : ℕ} :
@@ -299,7 +286,8 @@ theorem isTypical_iff_coeff_subst_log_eq_zero_of_prime [Algebra ℚ R] {F : Form
     simp_all [FormalGroupHom.toPowerSeries_mapCurve]
   · refine imp_congr_left (not_iff_not.mp ?_)
     push Not
-    exact forall_mem_primeFactors_dvd_iff_exists_pow hp hk0
+    exact (hp.forall_mem_primeFactors_dvd_iff_exists_eq_pow hk0).trans
+      (exists_congr fun _ ↦ eq_comm)
 
 end Curve
 
@@ -524,8 +512,8 @@ theorem coeff_subst_typicalProjectorCurve_log_of_prime [Algebra ℚ R] {p : ℕ}
   rcases eq_or_ne k 0 with rfl | hk0
   · have h0 := (F.logHom.mapCurve γ).coeff_zero_toPowerSeries
     simp_all [FormalGroupHom.toPowerSeries_mapCurve]
-  · refine if_congr ((forall_mem_primeFactors_dvd_iff_exists_pow hp hk0).trans
-      ⟨fun ⟨r, hr⟩ ↦ by rw [← hr, Nat.log_pow hp.one_lt], fun h ↦ ⟨Nat.log p k, h⟩⟩) rfl rfl
+  · refine if_congr ((hp.forall_mem_primeFactors_dvd_iff_exists_eq_pow hk0).trans
+      ⟨fun ⟨r, hr⟩ ↦ by rw [hr, Nat.log_pow hp.one_lt], fun h ↦ ⟨Nat.log p k, h.symm⟩⟩) rfl rfl
 
 /-- Over a `ℚ`-algebra, Cartier's typical projector preserves degree-`p^r` log coefficients. -/
 @[simp]
@@ -579,7 +567,7 @@ theorem frobeniusCurve_typicalProjectorCurve_eq_zero {n : ℕ} (hn : n ≠ 0)
 theorem frobeniusCurve_typicalProjectorCurve_of_coprime {n : ℕ} (hn1 : 1 < n) (hcop : n.Coprime p)
     (γ : F.Curve) : F.frobeniusCurve n (by omega) (F.typicalProjectorCurve p hunit γ) = 0 :=
   F.frobeniusCurve_typicalProjectorCurve_eq_zero p hunit (by omega)
-    (exists_primeFactor_not_dvd_of_coprime hn1 hcop) γ
+    (hcop.exists_mem_primeFactors_not_dvd hn1) γ
 
 /-- `f_q` annihilates `F.typicalProjectorCurve p hunit` for every prime `q ∤ p`. -/
 @[simp]
@@ -665,7 +653,7 @@ theorem typicalProjectorCurve_verschiebungCurve_of_coprime {n : ℕ} (hn1 : 1 < 
     (hcop : n.Coprime p) (γ : F.Curve) :
     F.typicalProjectorCurve p hunit (F.verschiebungCurve n (by omega) γ) = 0 :=
   F.typicalProjectorCurve_verschiebungCurve_eq_zero p hunit (by omega)
-    (exists_primeFactor_not_dvd_of_coprime hn1 hcop) γ
+    (hcop.exists_mem_primeFactors_not_dvd hn1) γ
 
 /-- Cartier's typical projector commutes with `V_n` when every prime factor of `n` divides `p`. -/
 theorem typicalProjectorCurve_verschiebungCurve_of_forall_prime_dvd {n : ℕ} (hn : n ≠ 0)
