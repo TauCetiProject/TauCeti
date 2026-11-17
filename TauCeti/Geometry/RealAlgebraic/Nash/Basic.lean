@@ -215,12 +215,9 @@ theorem IsNashAt.eval_monicOfCoeff {d : ℕ} {c : Fin d → (σ → ℝ) → ℝ
 /-- A linear functional on a finite-dimensional real coordinate space is a Nash germ. -/
 theorem _root_.LinearMap.isNashAt (L : (σ → ℝ) →ₗ[ℝ] ℝ) : IsNashAt L x := by
   classical
-  have hlin : (L : (σ → ℝ) → ℝ) = ∑ i : σ, fun y ↦ y i * L (Pi.single i 1) := by
+  have hlin : (L : (σ → ℝ) → ℝ) = ∑ i : σ, fun y ↦ y i * L fun j ↦ if i = j then 1 else 0 := by
     ext y
-    conv_lhs => rw [pi_eq_sum_univ' y, map_sum]
-    rw [Finset.sum_apply]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [L.map_smul, smul_eq_mul]
+    simpa [Finset.sum_apply] using L.pi_apply_eq_sum_univ y
   rw [hlin]
   exact Finset.univ.isNashAt_sum fun i _ ↦ (isNashAt_apply i).fun_mul (isNashAt_const _)
 
