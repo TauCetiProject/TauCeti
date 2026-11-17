@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Limits
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # The complex interpolation method
@@ -216,16 +217,8 @@ theorem norm_le_rpow_mul_rpow (hF : C.IsStripFunction F g) {z : ℂ}
 /-- **Maximum principle.** On the closed strip, an admissible function is bounded in the sum norm
 by the norm `max ‖g₀‖ ‖g₁‖` of its boundary traces. -/
 theorem norm_le (hF : C.IsStripFunction F g) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖F z‖ ≤ ‖g‖ := by
-  refine (hF.norm_le_rpow_mul_rpow hz).trans ?_
-  calc ‖g.1‖ ^ (1 - z.re) * ‖g.2‖ ^ z.re ≤ ‖g‖ ^ (1 - z.re) * ‖g‖ ^ z.re := by
-        gcongr
-        · exact sub_nonneg.2 hz.2
-        · exact norm_fst_le g
-        · exact hz.1
-        · exact norm_snd_le g
-    _ = ‖g‖ := by
-        rw [← Real.rpow_add' (norm_nonneg g) (by simp), sub_add_cancel, Real.rpow_one]
+    ‖F z‖ ≤ ‖g‖ :=
+  (hF.norm_le_rpow_mul_rpow hz).trans (g.norm_fst_rpow_mul_norm_snd_rpow_le hz)
 
 /-- An admissible function is determined on the closed strip by its boundary traces. -/
 theorem eqOn (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G g) :
@@ -702,50 +695,6 @@ end Inter
 
 /-! ### Analytic families of operators and exact interpolation -/
 
-section ScaleFactor
-
-/-- The factor `M₀ ^ (z - 1) * M₁ ^ (-z)`, of modulus `1 / M₀` on the line `re z = 0` and
-`1 / M₁` on the line `re z = 1`. -/
-private def scaleFactor (M₀ M₁ : ℝ) (z : ℂ) : ℂ :=
-  exp ((z - 1) * Real.log M₀ - z * Real.log M₁)
-
-variable {M₀ M₁ : ℝ}
-
-private theorem differentiable_scaleFactor (M₀ M₁ : ℝ) : Differentiable ℂ (scaleFactor M₀ M₁) := by
-  unfold scaleFactor
-  fun_prop
-
-private theorem norm_scaleFactor (z : ℂ) :
-    ‖scaleFactor M₀ M₁ z‖ = Real.exp ((z.re - 1) * Real.log M₀ - z.re * Real.log M₁) := by
-  simp [scaleFactor, norm_exp]
-
-private theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
-    ‖scaleFactor M₀ M₁ z‖ ≤ Real.exp (|Real.log M₀| + |Real.log M₁|) := by
-  rw [norm_scaleFactor]
-  refine Real.exp_le_exp.2 ?_
-  have hz' := mem_verticalClosedStrip_iff.1 hz
-  nlinarith [hz'.1, hz'.2, neg_abs_le (Real.log M₀), le_abs_self (Real.log M₀),
-    neg_abs_le (Real.log M₁), le_abs_self (Real.log M₁), abs_nonneg (Real.log M₀),
-    abs_nonneg (Real.log M₁)]
-
-private theorem norm_scaleFactor_mul_I (hM₀ : 0 < M₀) (t : ℝ) :
-    ‖scaleFactor M₀ M₁ (t * I)‖ = M₀⁻¹ := by
-  simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₀]
-
-private theorem norm_scaleFactor_one_add_mul_I (hM₁ : 0 < M₁) (t : ℝ) :
-    ‖scaleFactor M₀ M₁ (1 + t * I)‖ = M₁⁻¹ := by
-  simp [norm_scaleFactor, Real.exp_neg, Real.exp_log hM₁]
-
-private theorem norm_scaleFactor_mul_rpow (hM₀ : 0 < M₀) (hM₁ : 0 < M₁) (θ : ℝ) :
-    ‖scaleFactor M₀ M₁ θ‖ * (M₀ ^ (1 - θ) * M₁ ^ θ) = 1 := by
-  rw [norm_scaleFactor, Real.rpow_def_of_pos hM₀, Real.rpow_def_of_pos hM₁, ← Real.exp_add,
-    ← Real.exp_add, ← Real.exp_zero]
-  congr 1
-  simp only [ofReal_re]
-  ring
-
-end ScaleFactor
-
 section AnalyticFamily
 
 variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace ℂ Y₀] [NormedAddCommGroup Y₁]
@@ -999,19 +948,12 @@ bounded analytic family `T` satisfy `‖T₀ t x‖ ≤ M₀ ‖x‖` and `‖T�
 theorem norm_analyticFamilyMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1)
     {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) (h₀ : ∀ t x, ‖T₀ t x‖ ≤ M₀ * ‖x‖)
     (h₁ : ∀ t x, ‖T₁ t x‖ ≤ M₁ * ‖x‖) (u : C.ComplexMethodSpace θ) :
-    ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
+    ‖analyticFamilyMap θ hT u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ :=
   -- apply the bound for the positive constants `M₀ + ε`, `M₁ + ε` and let `ε → 0`
-  have hle (ε : ℝ) (hε : 0 < ε) :
-      ‖analyticFamilyMap θ hT u‖ ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
+  le_rpow_mul_rpow_mul_of_forall_pos hθ fun _ hε =>
     norm_analyticFamilyMap_le_of_pos hT hθ (by positivity) (by positivity)
       (fun t x => (h₀ t x).trans (by gcongr; linarith))
       (fun t x => (h₁ t x).trans (by gcongr; linarith)) u
-  have hcont : Continuous fun ε : ℝ => (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
-    (((continuous_const.add continuous_id).rpow_const fun _ => Or.inr (sub_nonneg.2 hθ.2)).mul
-      ((continuous_const.add continuous_id).rpow_const fun _ => Or.inr hθ.1)).mul continuous_const
-  have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
-  simp only [add_zero] at hlim
-  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
 
 /-- The operator norm form of `ComplexMethodSpace.norm_analyticFamilyMap_le`. -/
 theorem opNorm_analyticFamilyMap_le (hT : IsBoundedAnalyticFamily T T₀ T₁) (hθ : θ ∈ Icc 0 1)
