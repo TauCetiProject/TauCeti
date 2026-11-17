@@ -336,6 +336,12 @@ theorem unitaryPart_mul_normPow {ψ : HeckeCharacter K} (hψ : ψ.shift = 0) (σ
   rw [unitaryPart_def, shift_mul, shift_normPow, hψ, zero_add, Complex.ofReal_re, mul_assoc ψ,
     ← normPow_add, add_neg_cancel, normPow_zero, mul_one ψ]
 
+/-- Every real norm-power Hecke character `‖·‖ ^ σ` has trivial unitary part. -/
+@[simp]
+theorem unitaryPart_normPow_ofReal (σ : ℝ) : (normPow K σ).unitaryPart = 1 := by
+  have h := unitaryPart_mul_normPow (K := K) (ψ := 1) shift_one σ
+  rwa [one_mul (normPow K σ)] at h
+
 /-- A Hecke character is its own unitary part exactly when its shift vanishes. -/
 theorem unitaryPart_eq_self_iff (χ : HeckeCharacter K) : χ.unitaryPart = χ ↔ χ.shift = 0 := by
   refine ⟨fun h ↦ h ▸ shift_unitaryPart χ, fun h ↦ ?_⟩
