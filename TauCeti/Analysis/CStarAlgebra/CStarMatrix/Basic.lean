@@ -36,8 +36,8 @@ and the transpose as a linear map.
 
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
-* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+* `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_conjTranspose`: reading a C⋆-matrix
+  as an ordinary matrix respects multiplication and sends `conjTranspose` to `ᴴ`.
 * `CStarMatrix.sum_apply`, `CStarMatrix.toOneByOne_apply`: entries of finite sums and of
   `1 × 1` C⋆-matrices.
 * `CStarMatrix.transposeₗ`: the transpose of C⋆-matrices, as a linear map.
@@ -81,13 +81,14 @@ instance instSMulCommClassSelf [Fintype n] [Monoid R] [NonUnitalNonAssocSemiring
 
 /-- Reading a C⋆-matrix as an ordinary matrix respects multiplication. -/
 @[simp]
-lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix n n A) :
+lemma ofMatrix_symm_mul {l m : Type*} [Fintype m] [Mul A] [AddCommMonoid A]
+    (M : CStarMatrix l m A) (N : CStarMatrix m n A) :
     ofMatrix.symm (M * N) = ofMatrix.symm M * ofMatrix.symm N := (rfl)
 
-/-- Reading a C⋆-matrix as an ordinary matrix sends `star` to the conjugate transpose. -/
+/-- Reading a C⋆-matrix as an ordinary matrix sends `conjTranspose` to `ᴴ`. -/
 @[simp]
-lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
-    ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+lemma ofMatrix_symm_conjTranspose {m : Type*} [Star A] (M : CStarMatrix m n A) :
+    ofMatrix.symm M.conjTranspose = (ofMatrix.symm M)ᴴ := (rfl)
 
 /-- Entries of a finite sum of C⋆-matrices are the sums of the entries. -/
 theorem sum_apply {m : Type*} [AddCommMonoid A] {ι : Type*} (s : Finset ι)
@@ -199,7 +200,8 @@ theorem nonneg_iff_forall_sum_nonneg {M : CStarMatrix n n A} :
   have key (R : CStarMatrix n n A) (x : n → A) :
       star x ⬝ᵥ (ofMatrix.symm (star R * R) *ᵥ x) =
         star (ofMatrix.symm R *ᵥ x) ⬝ᵥ (ofMatrix.symm R *ᵥ x) := by
-    rw [ofMatrix_symm_mul, ofMatrix_symm_star, ← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
+    rw [ofMatrix_symm_mul, star_eq_conjTranspose, ofMatrix_symm_conjTranspose,
+      ← mulVec_mulVec, dotProduct_mulVec, star_mulVec]
   have hform (x : n → A) :
       ∑ i, ∑ j, star (x i) * M i j * x j = star x ⬝ᵥ (ofMatrix.symm M *ᵥ x) := by
     rw [dot_mulVec_eq_sum_sum, Finset.sum_comm]

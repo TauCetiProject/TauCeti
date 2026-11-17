@@ -368,14 +368,12 @@ theorem single_smul [DecidableEq m] [DecidableEq n] [Zero A] [SMulZeroClass R A]
 @[simp] theorem single_mul_single_same [Fintype m] [DecidableEq l] [DecidableEq m] [DecidableEq n]
     [NonUnitalNonAssocSemiring A] (i : l) (j : m) (k : n) (a b : A) :
     single i j a * single j k b = single i k (a * b) := by
-  ext i' k'; simp only [mul_apply, single_apply]
-  by_cases h₁ : i = i' <;> by_cases h₂ : k = k' <;> simp [h₁, h₂]
+  rw [single, single, single, of_mul_of, Matrix.single_mul_single_same]
 
 theorem single_mul_single_of_ne [Fintype m] [DecidableEq l] [DecidableEq m] [DecidableEq n]
     [NonUnitalNonAssocSemiring A] (i : l) {j j' : m} (k : n) (h : j ≠ j') (a b : A) :
     single i j a * single j' k b = 0 := by
-  ext i' k'; simp only [mul_apply, single_apply, zero_apply]
-  by_cases h₁ : i = i' <;> simp [h₁, h, Finset.sum_eq_zero]
+  rw [single, single, of_mul_of, Matrix.single_mul_single_of_ne a i j j' h b, of_zero]
 
 /-- Diagonal corner embedding `a ↦ single i i a` into `CStarMatrix n n A`. -/
 def singleStarAlgHom [Fintype n] [DecidableEq n] [Semiring R]

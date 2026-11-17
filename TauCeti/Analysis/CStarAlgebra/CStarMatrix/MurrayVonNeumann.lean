@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import Mathlib.Topology.Connected.PathConnected
 public import TauCeti.Algebra.Star.PartialIsometry
 public import TauCeti.Analysis.CStarAlgebra.CStarMatrix.Block
+import TauCeti.Algebra.Star.Projection.Basic
 import TauCeti.Analysis.CStarAlgebra.Exponential
 import TauCeti.Data.Matrix.Block
 
@@ -443,6 +444,12 @@ def murrayVonNeumannSetoid (n A : Type*) [Fintype n]
   iseqv := ⟨fun p ↦ p.2.murrayVonNeumannEquivalent_refl, fun h ↦ h.symm,
     fun {p _ _} h₁ h₂ ↦ h₁.trans h₂ p.2.isIdempotentElem⟩
 
+/-- The relation of `murrayVonNeumannSetoid n A` is Murray–von Neumann equivalence on the underlying
+projections. -/
+@[simp] theorem murrayVonNeumannSetoid_r
+    (p q : {p : CStarMatrix n n A // IsStarProjection p}) :
+    (murrayVonNeumannSetoid n A).r p q ↔ p.val.MurrayVonNeumannEquivalent q.val := (Iff.rfl)
+
 /-- For square matrices `p, q : CStarMatrix n n A`, `p` is a star projection Murray–von Neumann
 equivalent to `q` iff there exists a partial isometry `v` (`TauCeti.IsPartialIsometry v`) with
 initial projection `star v * v = p` and final projection `v * star v = q`. -/
@@ -502,7 +509,7 @@ theorem stabilizedSymmetry_mul_self {p : CStarMatrix m m A} {q : CStarMatrix n n
     (hvp : v.conjTranspose * v = p) (hvq : v * v.conjTranspose = q) :
     stabilizedSymmetry p q v * stabilizedSymmetry p q v = 1 := by
   apply ofMatrix.symm.injective
-  rw [stabilizedSymmetry, ofMatrix_symm_hMul, ofMatrix_symm_fromBlocks]
+  rw [stabilizedSymmetry, ofMatrix_symm_mul, ofMatrix_symm_fromBlocks]
   exact Matrix.fromBlocks_one_sub_mul_self_of_mul_eq (a := ofMatrix.symm v.conjTranspose)
     (b := ofMatrix.symm v) (e := ofMatrix.symm p) (f := ofMatrix.symm q) hvp hvq
     (mul_conjTranspose_eq_self_of_conjTranspose_mul_self hp hvp)
@@ -526,7 +533,7 @@ theorem stabilizedSymmetry_conj_inl {p : CStarMatrix m m A} {q : CStarMatrix n n
       fromBlocks 0 0 0 q := by
   rw [(isSelfAdjoint_stabilizedSymmetry hvp hvq).star_eq]
   apply ofMatrix.symm.injective
-  rw [stabilizedSymmetry, ofMatrix_symm_hMul, ofMatrix_symm_hMul, ofMatrix_symm_fromBlocks,
+  rw [stabilizedSymmetry, ofMatrix_symm_mul, ofMatrix_symm_mul, ofMatrix_symm_fromBlocks,
     ofMatrix_symm_fromBlocks, ofMatrix_symm_fromBlocks]
   exact Matrix.fromBlocks_one_sub_mul_fromBlocks_mul_fromBlocks_one_sub_of_mul_eq
     (a := ofMatrix.symm v.conjTranspose) (b := ofMatrix.symm v)
@@ -537,10 +544,15 @@ end UnitalAlgebraic
 
 section RotationPath
 
-/-- The block projection `(1 / 2 : ℂ) • fromBlocks p (-v.conjTranspose) (-v) q` inside
-`CStarMatrix (m ⊕ n) (m ⊕ n) A`, defined without assuming `A` is unital. Its exponential path
-`t ↦ expUnitary ((π * t) • ⟨r, _⟩)` in the unitization rotates `fromBlocks p 0 0 0` to
-`fromBlocks 0 0 0 q`. -/
+/-- The `2 × 2` block matrix `(1 / 2 : ℂ) • fromBlocks p (-v.conjTranspose) (-v) q` inside
+`CStarMatrix (m ⊕ n) (m ⊕ n) A`, defined for arbitrary `p`, `q`, `v` without assuming `A` is
+unital. Over a complex star-ordered ring with proper star, whenever `p` is idempotent,
+`v.conjTranspose * v = p`, and `v * v.conjTranspose = q`, this matrix is a star projection
+(`isStarProjection_rotationProjection`). Over a (possibly non-unital) star-ordered C⋆-algebra `A`
+under the same hypotheses, conjugating `fromBlocks p 0 0 0` by the exponential unitary path
+`t ↦ expUnitary ((π * t) • ⟨rotationProjection p q v, _⟩)` in
+`Unitization ℂ (CStarMatrix (m ⊕ n) (m ⊕ n) A)` sends `t = 0` to `fromBlocks p 0 0 0` and `t = 1`
+to `fromBlocks 0 0 0 q` (see `rotationUnitary` and `rotationPath`). -/
 def rotationProjection {m n A : Type*} [Neg A] [Star A] [SMul ℂ A]
     (p : CStarMatrix m m A) (q : CStarMatrix n n A)
     (v : CStarMatrix n m A) : CStarMatrix (m ⊕ n) (m ⊕ n) A :=

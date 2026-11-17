@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Star.StarProjection
 public import Mathlib.Analysis.CStarAlgebra.Exponential
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+public import TauCeti.Algebra.Star.Projection.Basic
 import Mathlib.Analysis.SpecialFunctions.Exponential
 
 /-!
@@ -28,7 +29,6 @@ complete normed complex star-algebra, for a star projection `p` this gives
 * `selfAdjoint.star_expUnitary`: `star (expUnitary b) = expUnitary (-b)`.
 * `IsIdempotentElem.exp_mul_of_commute`, `IsIdempotentElem.exp`, `IsIdempotentElem.exp_smul`:
   closed forms for exponentials of `a * e`, `e`, and `z • e` for an idempotent `e`.
-* `IsStarProjection.one_sub_two_mul_mem_unitary`: `1 - 2 * p ∈ unitary A` for a star projection `p`.
 * `IsStarProjection.coe_expUnitary_smul`, `IsStarProjection.expUnitary_pi_smul`,
   `IsStarProjection.joined_one_one_sub_two_mul`: closed form and path to `1 - 2 * p` in `unitary A`.
 
@@ -58,18 +58,6 @@ theorem star_expUnitary (b : selfAdjoint A) : star (expUnitary b) = expUnitary (
 end selfAdjoint
 
 namespace IsIdempotentElem
-
-section NonAssocRing
-
-variable {A : Type*} [NonAssocRing A] {e : A}
-
-/-- For an idempotent `e`, the element `1 - 2 * e` is an involution. -/
-theorem one_sub_two_mul_mul_self (he : IsIdempotentElem e) : (1 - 2 * e) * (1 - 2 * e) = 1 := by
-  have he2 : (2 * e) * (2 * e) = 2 * e + 2 * e := by rw [two_mul e, add_mul, mul_add, he.eq]
-  rw [sub_mul, one_mul, mul_sub, mul_one, he2, sub_sub_eq_add_sub, ← add_assoc (1 - 2 * e),
-    sub_add_cancel, add_sub_cancel_right]
-
-end NonAssocRing
 
 section RatBanachAlgebra
 
@@ -127,28 +115,6 @@ end IsIdempotentElem
 
 namespace IsStarProjection
 
-section NonAssocStarRing
-
-variable {A : Type*} [NonAssocRing A] [StarRing A] {p : A}
-
-/-- For a star projection `p`, the reflection `1 - 2 * p` is self-adjoint. -/
-theorem isSelfAdjoint_one_sub_two_mul (hp : IsStarProjection p) : IsSelfAdjoint (1 - 2 * p) := by
-  rw [two_mul]; exact .sub (.one A) (hp.isSelfAdjoint.add hp.isSelfAdjoint)
-
-end NonAssocStarRing
-
-section StarRing
-
-variable {A : Type*} [Ring A] [StarRing A] {p : A}
-
-/-- For a star projection `p`, the reflection `1 - 2 * p` is a unitary element. -/
-theorem one_sub_two_mul_mem_unitary (hp : IsStarProjection p) : 1 - 2 * p ∈ unitary A := by
-  rw [Unitary.mem_iff, hp.isSelfAdjoint_one_sub_two_mul.star_eq,
-    hp.isIdempotentElem.one_sub_two_mul_mul_self]
-  exact ⟨rfl, rfl⟩
-
-end StarRing
-
 section Exponential
 
 variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [StarRing A] [ContinuousStar A]
@@ -166,10 +132,8 @@ theorem coe_expUnitary_smul (hp : IsStarProjection p) (t : ℝ) :
 /-- At `t = π`, `expUnitary (π • ⟨p, _⟩)` for a star projection `p` evaluates to `1 - 2 * p`. -/
 theorem coe_expUnitary_pi_smul (hp : IsStarProjection p) :
     (selfAdjoint.expUnitary (Real.pi • ⟨p, hp.isSelfAdjoint⟩) : A) = 1 - 2 * p := by
-  rw [hp.coe_expUnitary_smul Real.pi, mul_comm Complex.I, Complex.exp_pi_mul_I]
-  have htwo : (-1 - 1 : ℂ) • p = -(2 * p) := by
-    rw [show (-1 - 1 : ℂ) = -(2 : ℂ) by norm_num, neg_smul, two_smul, two_mul]
-  rw [htwo, ← sub_eq_add_neg]
+  rw [hp.coe_expUnitary_smul Real.pi, mul_comm Complex.I, Complex.exp_pi_mul_I,
+    sub_smul, neg_smul, one_smul, sub_eq_add_neg, ← neg_add, ← two_mul, ← sub_eq_add_neg]
 
 /-- Bundled form of `IsStarProjection.coe_expUnitary_pi_smul` in `unitary A`. -/
 theorem expUnitary_pi_smul (hp : IsStarProjection p) :
