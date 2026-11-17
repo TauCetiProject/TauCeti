@@ -892,34 +892,23 @@ theorem mem_gluedLattice_carrier_iff_exists_nsmul
   constructor
   · intro hx
     obtain ⟨hxDual, hw⟩ := (mem_gluedLattice_carrier_iff t ht hv H hH x).mp hx
-    rw [hHw, AddSubgroup.mem_zmultiples_iff] at hw
-    obtain ⟨c, hc⟩ := hw
-    have hm0 : (0 : ℤ) < m := Int.natCast_pos.mpr hm
-    have hmod_nonneg : 0 ≤ c % (m : ℤ) := Int.emod_nonneg c hm0.ne'
-    have hmod_lt : c % (m : ℤ) < m := Int.emod_lt_of_pos c hm0
-    refine ⟨(c % (m : ℤ)).toNat, by omega, ?_⟩
-    have hcm : (c % (m : ℤ)).toNat • w = c • w := by
-      have hm_z : (m : ℤ) • w = 0 := by rwa [natCast_zsmul]
-      rw [← natCast_zsmul, Int.toNat_of_nonneg hmod_nonneg]
-      calc (c % (m : ℤ)) • w
-          = (c / (m : ℤ)) • ((m : ℤ) • w) + (c % (m : ℤ)) • w := by rw [hm_z, smul_zero, zero_add]
-        _ = ((m : ℤ) * (c / (m : ℤ)) + c % (m : ℤ)) • w := by
-            rw [← mul_zsmul, mul_comm (c / (m : ℤ)), add_zsmul]
-        _ = c • w := by rw [Int.mul_ediv_add_emod]
+    classical
+    have hwFin : IsOfFinAddOrder w := isOfFinAddOrder_iff_nsmul_eq_zero.mpr ⟨m, hm, hmw⟩
+    rw [hHw, hwFin.mem_zmultiples_iff_mem_range_addOrderOf, Finset.mem_image] at hw
+    obtain ⟨k, hk, hkw⟩ := hw
+    refine ⟨k, (Finset.mem_range.mp hk).trans_le (addOrderOf_le_of_nsmul_eq_zero hm hmw), ?_⟩
     have hmk_smul :
-        (Submodule.Quotient.mk
-            (((c % (m : ℤ)).toNat : ℤ) • glueWordDualVector t ht hv w) :
+        (Submodule.Quotient.mk ((k : ℤ) • glueWordDualVector t ht hv w) :
             (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
-          glueWordIsometry t ht hv (((c % (m : ℤ)).toNat : ℤ) • w) := by
+          glueWordIsometry t ht hv ((k : ℤ) • w) := by
       rw [Submodule.Quotient.mk_smul, mk_glueWordDualVector]
-      exact (map_zsmul (glueWordIsometry t ht hv) _ w).symm
+      exact (map_zsmul (glueWordIsometry t ht hv) (k : ℤ) w).symm
     have hmk :
         (Submodule.Quotient.mk ⟨x, hxDual⟩ :
             (pi fun i ↦ (t i).rootLattice (ht i)).DiscriminantGroup) =
-          Submodule.Quotient.mk
-            (((c % (m : ℤ)).toNat : ℤ) • glueWordDualVector t ht hv w) := by
-      rw [hmk_smul, natCast_zsmul, hcm]
-      exact (AddEquiv.symm_apply_eq _).mp hc.symm
+          Submodule.Quotient.mk ((k : ℤ) • glueWordDualVector t ht hv w) := by
+      rw [hmk_smul, natCast_zsmul]
+      exact (AddEquiv.symm_apply_eq _).mp hkw.symm
     have hdiff := (discriminantGroup_mk_eq_iff _ _ _).mp hmk
     rwa [Submodule.coe_sub, Submodule.coe_smul, coe_glueWordDualVector, natCast_zsmul] at hdiff
   · rintro ⟨k, -, hmem⟩
