@@ -5,9 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Dual.Basis
+import Mathlib.RingTheory.Finiteness.Cardinality
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Trace
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Subcoalgebra
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Convolution
+import TauCeti.Algebra.Coalgebra.Subcomodule.Finite
 import TauCeti.LinearAlgebra.Trace.Nondegenerate
 
 /-!
@@ -15,7 +19,9 @@ import TauCeti.LinearAlgebra.Trace.Nondegenerate
 
 Over an algebraically closed field, the matrix coefficient map of a finite-dimensional
 simple comodule `M` identifies `M* ⊗ M` with its coefficient subcoalgebra. In particular,
-that subcoalgebra has dimension `(dim M)²`.
+that subcoalgebra has dimension `(dim M)²`, and for any basis `b` of `M`, the entries of its
+coefficient matrix form a basis of the coefficient submodule
+(`Module.Basis.matrixCoefficientSubmoduleBasis`).
 
 The convolution dual exhausts all endomorphisms of `M` by Burnside's theorem, and the
 trace pairing detects the kernel of the coefficient map. No linear reductivity assumption
@@ -86,3 +92,42 @@ theorem finrank_matrixCoefficientSubcoalgebra :
     Module.finrank_tensorProduct, Subspace.dual_finrank_eq, pow_two]
 
 end TauCeti.Comodule
+
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+variable {k C M ι : Type*} [Field k] [IsAlgClosed k]
+  [AddCommGroup C] [Module k C] [Coalgebra k C]
+  [AddCommGroup M] [Module k M] [Comodule k C M]
+  [IsSimpleOrder (Subcomodule k C M)]
+
+/-- Over an algebraically closed field, the entries of the coefficient matrix of a simple
+comodule form a basis of its coefficient submodule. -/
+noncomputable def matrixCoefficientSubmoduleBasis (b : Basis ι k M) :
+    Basis (ι × ι) k (matrixCoefficientSubmodule (R := k) (C := C) (M := M)) :=
+  open scoped Classical in
+  let _ : Module.Finite k M := finite_of_isSimpleOrder (R := k) (C := C) (M := M)
+  let _ : Finite ι := Module.Finite.finite_basis b
+  let _ : Fintype ι := Fintype.ofFinite ι
+  ((b.dualBasis.tensorProduct b).map (matrixCoefficientTensorEquiv (k := k) (C := C) (M := M))).map
+    (LinearEquiv.ofEq _ _ (matrixCoefficientSubcoalgebra_toSubmodule (R := k) (C := C) (M := M)))
+
+/-- The `(i, j)` basis vector of `matrixCoefficientSubmoduleBasis` is the `(i, j)` entry of the
+coefficient matrix. -/
+@[simp]
+theorem coe_matrixCoefficientSubmoduleBasis (b : Basis ι k M) (p : ι × ι) :
+    (b.matrixCoefficientSubmoduleBasis (C := C) p : C) =
+      coefficientMatrix (C := C) b p.1 p.2 := by
+  classical
+  rcases p with ⟨i, j⟩
+  have : Module.Finite k M := finite_of_isSimpleOrder (R := k) (C := C) (M := M)
+  have : Finite ι := Module.Finite.finite_basis b
+  have : Fintype ι := Fintype.ofFinite ι
+  have hcoord : b.dualBasis i = b.coord i := by
+    ext m
+    exact b.dualBasis_apply i m
+  simp [matrixCoefficientSubmoduleBasis, coefficientMatrix_apply, Basis.tensorProduct_apply,
+    hcoord]
+
+end Module.Basis

@@ -14,12 +14,17 @@ public import TauCeti.Algebra.HopfAlgebra.Integral.Basic
 /-!
 # Invariant integrals on Hopf algebras
 
-An invariant integral is a linear functional satisfying a Haar slice identity. A nonzero
-right invariant integral has a nondegenerate multiplication pairing in its first argument;
-a nonzero left invariant integral has a nondegenerate pairing in its second argument.
-These are algebraic statements: no norm, positivity, finite dimension, or normalization
-is required. Nondegeneracy is the algebraic input to strict positivity of positive Haar
-integrals and to the faithful algebraic GNS construction.
+An invariant integral is a linear functional satisfying a Haar slice identity. Pairing a left
+invariant integral `h₁` with a right invariant integral `h₂` gives `h₁ a * h₂ 1 = h₂ a * h₁ 1`
+(`LinearMap.IsLeftInvariantIntegral.apply_mul_apply_one`), so normalized two-sided invariant
+integrals on a bialgebra are unique
+(`LinearMap.IsLeftInvariantIntegral.eq_of_isRightInvariantIntegral`).
+
+A nonzero right invariant integral has a nondegenerate multiplication pairing in its first
+argument; a nonzero left invariant integral has a nondegenerate pairing in its second argument.
+These pairing and nondegeneracy statements are purely algebraic: no norm, positivity, finite
+dimension, or normalization is required. Nondegeneracy is the algebraic input to strict positivity
+of positive Haar integrals and to the faithful algebraic GNS construction.
 
 ## References
 

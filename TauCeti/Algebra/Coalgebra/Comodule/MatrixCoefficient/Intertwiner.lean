@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Coalgebra.Comodule.Hom
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import Mathlib.LinearAlgebra.Matrix.Basis
 
@@ -12,7 +13,10 @@ public import Mathlib.LinearAlgebra.Matrix.Basis
 # Intertwiners and coefficient matrices
 
 A linear map between finite free native comodules is colinear precisely when its scalar
-matrix intertwines the coefficient matrices. This permits matrix arguments about
+matrix intertwines the coefficient matrices (`Module.Basis.map_coact_iff_coefficientMatrix`).
+Consequently, when there is no nonzero comodule morphism between two finite free comodules,
+any scalar matrix intertwining their coefficient matrices is zero
+(`Module.Basis.eq_zero_of_coefficientMatrix_mul_eq`). This permits matrix arguments about
 corepresentations to produce native comodule morphisms, without replacing coactions by
 matrix-only objects. The source and target bases may have different index types.
 -/
@@ -26,11 +30,11 @@ namespace Module.Basis
 
 variable {R A M N ι κ : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   [Coalgebra R A] [AddCommMonoid M] [Module R M] [Comodule R A M]
-  [AddCommMonoid N] [Module R N] [Comodule R A N] [Fintype ι] [Fintype κ] [DecidableEq ι]
+  [AddCommMonoid N] [Module R N] [Comodule R A N] [Fintype ι] [Fintype κ]
 
 /-- Colinearity is equivalent to the coefficient-matrix intertwining equation. The scalar
 matrix of the linear map is extended to the coefficient algebra. -/
-theorem map_coact_iff_coefficientMatrix (b : Basis ι R M) (c : Basis κ R N)
+theorem map_coact_iff_coefficientMatrix [DecidableEq ι] (b : Basis ι R M) (c : Basis κ R N)
     (f : M →ₗ[R] N) :
     TensorProduct.map f LinearMap.id ∘ₗ coact (R := R) (C := A) =
         coact (R := R) (C := A) ∘ₗ f ↔
@@ -64,6 +68,22 @@ theorem map_coact_iff_coefficientMatrix (b : Basis ι R M) (c : Basis κ R N)
     apply (TensorProduct.equivFinsuppOfBasisLeft c).injective
     ext i
     exact (hleft i j).trans ((congrFun (congrFun h i) j).symm.trans (hright i j).symm)
+
+/-- If there is no nonzero comodule morphism from `M` to `N`, then any scalar matrix intertwining
+their coefficient matrices is zero. -/
+theorem eq_zero_of_coefficientMatrix_mul_eq (b : Basis ι R M) (c : Basis κ R N)
+    (hzero : ∀ f : Comodule.Hom R A M N, f = 0) {T : Matrix κ ι R}
+    (hT : coefficientMatrix (C := A) c * T.map (algebraMap R A) =
+      T.map (algebraMap R A) * coefficientMatrix (C := A) b) :
+    T = 0 := by
+  classical
+  let f : M →ₗ[R] N := (LinearMap.toMatrix b c).symm T
+  have hf_mat : LinearMap.toMatrix b c f = T := (LinearMap.toMatrix b c).apply_symm_apply T
+  have hcoact : TensorProduct.map f LinearMap.id ∘ₗ coact (R := R) (C := A) =
+      coact (R := R) (C := A) ∘ₗ f :=
+    (b.map_coact_iff_coefficientMatrix c f).mpr (by simpa [hf_mat] using hT)
+  have hf0 : f = 0 := congrArg Comodule.Hom.toLinearMap (hzero ⟨f, hcoact⟩)
+  rw [← hf_mat, hf0, map_zero]
 
 end Module.Basis
 

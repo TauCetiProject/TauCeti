@@ -33,6 +33,10 @@ character of the represented group: the determinant character of the comodule.
   corresponding column of the coefficient matrix.
 * `TauCeti.Comodule.comul_coefficientMatrix_eq_sum` and
   `TauCeti.Comodule.counit_coefficientMatrix`: the coalgebra identities.
+* `Module.Basis.coefficientMatrixRepr`: the `Coalgebra.Repr` packaging the comultiplication of a
+  coefficient matrix entry.
+* `Module.Basis.coefficientMatrix_map_comul`: the matrix comultiplication identity for a
+  coefficient matrix over a bialgebra.
 * `TauCeti.Comodule.coefficientMatrix_mul_map_antipode` and
   `TauCeti.Comodule.map_antipode_mul_coefficientMatrix`: the two inverse-matrix identities.
 * `TauCeti.Comodule.isUnit_det_coefficientMatrix`: the determinant is a unit.
@@ -50,9 +54,9 @@ public section
 open scoped TensorProduct
 open Module
 
-namespace TauCeti.Comodule
-
 universe u v w x
+
+namespace TauCeti.Comodule
 
 noncomputable section
 
@@ -122,18 +126,78 @@ theorem comul_coefficientMatrix_eq_sum (b : Basis ι R M) (i j : ι) :
 
 end Coalgebra
 
+end
+
+end TauCeti.Comodule
+
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+noncomputable section
+
+section Coalgebra
+
+variable {R : Type u} {C : Type v} {M : Type w} {ι : Type x}
+variable [CommSemiring R] [AddCommMonoid C] [Module R C] [Coalgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M] [Fintype ι]
+
+/-- The basis expansion of the comultiplication of a coefficient matrix entry, packaged as a
+`Coalgebra.Repr` so that coalgebra, bialgebra, and Hopf algebra sum identities apply directly. -/
+@[expose] def coefficientMatrixRepr (b : Basis ι R M) (i j : ι) :
+    Coalgebra.Repr R (coefficientMatrix (C := C) b i j) ι where
+  index := Finset.univ
+  left := fun k ↦ coefficientMatrix (C := C) b i k
+  right := fun k ↦ coefficientMatrix (C := C) b k j
+  eq := (comul_coefficientMatrix_eq_sum (C := C) b i j).symm
+
+@[simp]
+theorem coefficientMatrixRepr_index (b : Basis ι R M) (i j : ι) :
+    (b.coefficientMatrixRepr (C := C) i j).index = Finset.univ :=
+  rfl
+
+@[simp]
+theorem coefficientMatrixRepr_left (b : Basis ι R M) (i j k : ι) :
+    (b.coefficientMatrixRepr (C := C) i j).left k = coefficientMatrix (C := C) b i k :=
+  rfl
+
+@[simp]
+theorem coefficientMatrixRepr_right (b : Basis ι R M) (i j k : ι) :
+    (b.coefficientMatrixRepr (C := C) i j).right k = coefficientMatrix (C := C) b k j :=
+  rfl
+
+end Coalgebra
+
+section Bialgebra
+
+variable {R : Type u} {C : Type v} {M : Type w} {ι : Type x}
+variable [CommSemiring R] [Semiring C] [Bialgebra R C]
+variable [AddCommMonoid M] [Module R M] [Comodule R C M] [Fintype ι]
+
+/-- The coefficient matrix of a finite basis satisfies the matrix comultiplication equation. -/
+theorem coefficientMatrix_map_comul (b : Basis ι R M) :
+    (coefficientMatrix (C := C) b).map (Bialgebra.comulAlgHom R C) =
+      (coefficientMatrix (C := C) b).map (Algebra.TensorProduct.includeLeft (R := R) (S := R)) *
+        (coefficientMatrix (C := C) b).map (Algebra.TensorProduct.includeRight (R := R)) := by
+  ext i j
+  simp [Matrix.mul_apply, Algebra.TensorProduct.tmul_mul_tmul]
+
+end Bialgebra
+
+end
+
+end Module.Basis
+
+namespace TauCeti.Comodule
+
+noncomputable section
+
+variable {R : Type u} {C : Type v} {M : Type w} {ι : Type x}
+variable [CommSemiring R] [AddCommMonoid M] [Module R M]
+
 section HopfAlgebra
 
 variable [Semiring C] [HopfAlgebra R C] [Comodule R C M] [Fintype ι]
-
-/-- The basis expansion of the comultiplication of a matrix coefficient, packaged as a
-`Coalgebra.Repr` so that Mathlib's antipode sums apply to it. -/
-private def matrixCoefficientRepr (b : Basis ι R M) (p q : ι) :
-    Coalgebra.Repr R (matrixCoefficient (R := R) (C := C) (b.coord p) (b q)) ι where
-  index := Finset.univ
-  left := fun x ↦ matrixCoefficient (R := R) (C := C) (b.coord p) (b x)
-  right := fun x ↦ matrixCoefficient (R := R) (C := C) (b.coord x) (b q)
-  eq := (comul_matrixCoefficient_eq_sum (C := C) b (b.coord p) (b q)).symm
 
 /-- Multiplying the matrix of basis coefficients by its entrywise antipode transform gives the
 image under `algebraMap` of a single basis coordinate: taking `p` and `q` basis indices, the
@@ -144,7 +208,7 @@ theorem sum_matrixCoefficient_mul_antipode_eq_algebraMap (b : Basis ι R M) (p q
           (matrixCoefficient (R := R) (C := C) (b.coord x) (b q))) =
       algebraMap R C (b.coord p (b q)) := by
   rw [← counit_matrixCoefficient (R := R) (C := C) (b.coord p) (b q)]
-  exact HopfAlgebra.sum_mul_antipode_eq_algebraMap_counit (matrixCoefficientRepr (C := C) b p q)
+  exact HopfAlgebra.sum_mul_antipode_eq_algebraMap_counit (b.coefficientMatrixRepr (C := C) p q)
 
 /-- The opposite multiplication order of `sum_matrixCoefficient_mul_antipode_eq_algebraMap`: the
 entrywise antipode transform is also a left inverse of the matrix of basis coefficients. -/
@@ -154,7 +218,7 @@ theorem sum_antipode_mul_matrixCoefficient_eq_algebraMap (b : Basis ι R M) (p q
         matrixCoefficient (R := R) (C := C) (b.coord x) (b q)) =
       algebraMap R C (b.coord p (b q)) := by
   rw [← counit_matrixCoefficient (R := R) (C := C) (b.coord p) (b q)]
-  exact HopfAlgebra.sum_antipode_mul_eq_algebraMap_counit (matrixCoefficientRepr (C := C) b p q)
+  exact HopfAlgebra.sum_antipode_mul_eq_algebraMap_counit (b.coefficientMatrixRepr (C := C) p q)
 
 variable [DecidableEq ι]
 
@@ -212,18 +276,11 @@ theorem isGroupLikeElem_det_coefficientMatrix (b : Basis ι R M) :
       simp [Matrix.one_apply]
     rw [← Bialgebra.counitAlgHom_apply, AlgHom.map_det, AlgHom.mapMatrix_apply, hmap,
       Matrix.det_one]
-  · have hmap : (coefficientMatrix (C := C) b).map (Bialgebra.comulAlgHom R C) =
-        (coefficientMatrix (C := C) b).map
-            (Algebra.TensorProduct.includeLeft : C →ₐ[R] C ⊗[R] C) *
-          (coefficientMatrix (C := C) b).map
-            (Algebra.TensorProduct.includeRight : C →ₐ[R] C ⊗[R] C) := by
-      ext i j
-      simp [Matrix.mul_apply, Algebra.TensorProduct.tmul_mul_tmul]
-    have hdet (f : C →ₐ[R] C ⊗[R] C) :
+  · have hdet (f : C →ₐ[R] C ⊗[R] C) :
         ((coefficientMatrix (C := C) b).map f).det = f (coefficientMatrix (C := C) b).det :=
       (f.map_det _).symm
     simpa [hdet, Matrix.det_mul, Algebra.TensorProduct.tmul_mul_tmul] using
-      congrArg Matrix.det hmap
+      congrArg Matrix.det (b.coefficientMatrix_map_comul (C := C))
 
 end CommBialgebra
 

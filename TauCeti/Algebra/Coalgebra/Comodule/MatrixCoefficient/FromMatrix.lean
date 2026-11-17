@@ -20,6 +20,8 @@ the coefficient-matrix construction.
 * `TauCeti.Comodule.matrixCoact`: the candidate coaction given by the matrix columns.
 * `TauCeti.Comodule.matrixComodule`: the resulting comodule for a multiplicative matrix.
 * `TauCeti.Comodule.coefficientMatrix_matrixComodule`: its coefficient matrix is the input.
+* `Module.Basis.coefficientMatrix_counit_basisFun`: the coefficient matrix of a finite basis
+  satisfies the basis-coordinate counit condition for `matrixComodule`.
 -/
 
 public section
@@ -214,5 +216,21 @@ theorem coefficientMatrix_matrixComodule :
 
 end Coaction
 
-
 end TauCeti.Comodule
+
+namespace Module.Basis
+
+open TauCeti
+
+/-- The coefficient matrix of a finite basis satisfies the basis-coordinate counit condition. -/
+theorem coefficientMatrix_counit_basisFun {R C M ι : Type*} [CommSemiring R]
+    [AddCommMonoid C] [Module R C] [Coalgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M] [Finite ι] (b : Basis ι R M) :
+    ∀ i j, Coalgebra.counit (R := R) (TauCeti.Comodule.coefficientMatrix (C := C) b i j) =
+      (Pi.basisFun R ι).repr ((Pi.basisFun R ι) j) i := by
+  classical
+  intro i j
+  rw [TauCeti.Comodule.counit_coefficientMatrix, Basis.repr_self_apply]
+  simp only [eq_comm]
+
+end Module.Basis

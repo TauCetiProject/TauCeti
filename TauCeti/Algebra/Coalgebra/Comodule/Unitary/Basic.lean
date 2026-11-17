@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.ChangeBasis
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Conjugate
 public import TauCeti.Analysis.InnerProductSpace.Orthonormal.ChangeBasis
 public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Basic
 
@@ -163,8 +164,7 @@ theorem isUnitary_comodule_iff_map_antipode_eq_conjTranspose
   classical
   rw [b.isUnitary_comodule_iff]
   constructor
-  · intro h
-    exact left_inv_eq_right_inv (map_antipode_mul_coefficientMatrix b.toBasis) h.2
+  · exact b.toBasis.map_antipode_coefficientMatrix_eq_conjTranspose
   · intro h
     rw [Unitary.mem_iff, Matrix.star_eq_conjTranspose, ← h]
     exact ⟨map_antipode_mul_coefficientMatrix b.toBasis,

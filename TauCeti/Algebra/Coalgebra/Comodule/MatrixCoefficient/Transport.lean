@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Adjoin
+public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
 public import TauCeti.Algebra.Coalgebra.Comodule.Transport
 
 /-!
@@ -19,7 +20,8 @@ transport-specific consequences behind the `Comodule.Transport` import.
 
 These lemmas are bookkeeping for the faithful-representation criterion: faithfulness is detected by
 whether the matrix coefficients, together with their antipode images, generate the coordinate Hopf
-algebra.
+algebra. Transporting a finite free comodule along a basis equivalence `b.equivFun` recovers the
+reconstructed matrix comodule of its coefficient matrix.
 
 ## Main declarations
 
@@ -28,6 +30,8 @@ algebra.
 * `TauCeti.Comodule.matrixCoefficientSubmodule_transport` and
   `TauCeti.Comodule.matrixCoefficientSubalgebra_transport`: coefficient objects are
   invariant under transported coactions.
+* `Module.Basis.transport_equivFun_eq_matrixComodule`: transporting a comodule along `b.equivFun`
+  produces the matrix comodule of its coefficient matrix.
 
 ## References
 
@@ -99,3 +103,29 @@ end AlgebraTransport
 end Comodule
 
 end TauCeti
+
+namespace Module.Basis
+
+open TauCeti TauCeti.Comodule
+
+/-- Transporting a comodule along `b.equivFun` produces the matrix comodule of its coefficient
+matrix. -/
+theorem transport_equivFun_eq_matrixComodule {R S M ι : Type*} [CommSemiring R]
+    [Semiring S] [Bialgebra R S] [AddCommMonoid M] [Module R M] [Comodule R S M]
+    [Fintype ι] (b : Basis ι R M) :
+    Transport (R := R) (C := S) b.equivFun =
+      matrixComodule R (coefficientMatrix (C := S) b)
+        (b.coefficientMatrix_map_comul (C := S))
+        (b.coefficientMatrix_counit_basisFun (C := S)) := by
+  rw [transport_eq_iff]
+  apply b.ext
+  intro j
+  have hb_apply (k : ι) : b.equivFun (b k) = Pi.basisFun R ι k := by
+    classical
+    ext i
+    simp [Pi.basisFun_apply, Pi.single_apply, eq_comm]
+  simp only [LinearMap.coe_comp, Function.comp_apply, coact_basis_eq_sum_coefficientMatrix b,
+    map_sum, TensorProduct.map_tmul, LinearEquiv.coe_coe, LinearMap.id_apply,
+    matrixComodule_coact, hb_apply, matrixCoact_apply_basisFun]
+
+end Module.Basis

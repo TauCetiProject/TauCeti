@@ -55,6 +55,7 @@ groups.
   `TauCeti.Comodule.Hom.range_le_iff`: the underlying submodule, membership and order
   characterisation of the range.
 * `TauCeti.Comodule.Hom.range_finite`: ranges of morphisms out of finite modules are finite.
+* `TauCeti.Comodule.nontrivial_of_isSimpleOrder`: a simple comodule is nontrivial.
 * The instance `AddSubgroupClass (Subcomodule R C M) M` over a commutative ring and an additive
   group `M`: the subtype of a subcomodule is an additive group.
 
@@ -419,6 +420,17 @@ theorem range_le_iff {f : Hom R C M N} {P : Subcomodule R C N} :
     (Subcomodule.map_le_iff (A := (⊤ : Subcomodule R C M)) (f := f) (B := P))
 
 end Hom
+
+/-- A simple comodule is nontrivial. -/
+theorem nontrivial_of_isSimpleOrder {R : Type u} {C : Type v} {M : Type w} [CommSemiring R]
+    [AddCommMonoid C] [Module R C] [Coalgebra R C]
+    [AddCommMonoid M] [Module R M] [Comodule R C M]
+    [IsSimpleOrder (Subcomodule R C M)] : Nontrivial M := by
+  by_contra hsub
+  rw [not_nontrivial_iff_subsingleton] at hsub
+  have hbot : (⊥ : Subcomodule R C M) = ⊤ :=
+    Subcomodule.ext fun x ↦ by simp [Subsingleton.elim x 0]
+  exact bot_ne_top hbot
 
 end Comodule
 

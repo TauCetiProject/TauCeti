@@ -11,6 +11,7 @@ public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 import Mathlib.Analysis.Matrix.PosDef
 import Mathlib.Algebra.Order.Star.Real
+import TauCeti.LinearAlgebra.Matrix.PosDef.Basic
 import TauCeti.Topology.Instances.Matrix
 
 /-!
@@ -30,6 +31,10 @@ unit sphere and persists under small perturbations.
 For real matrices the cone is measurable ambiently, being the intersection of the closed
 Hermitian condition with the open set of `isOpen_setOfPred_re_dotProduct_pos`.
 
+Every positive-definite matrix `G` over `ℝ` or `ℂ` admits a unique positive scalar multiple
+`Matrix.normalizePosDefTrace G` satisfying `trace M = trace M⁻¹`; this normalization preserves
+positive definiteness, fixes already trace-normalized matrices, and is idempotent.
+
 Inverse segments between continuously varying positive-definite endpoints depend continuously
 on the endpoints and the segment parameter. On a compact family, their entries have a common
 bound. These inverse-segment arguments are adapted from the
@@ -44,6 +49,11 @@ bound. These inverse-segment arguments are adapted from the
   measurable set.
 * `Matrix.isOpen_setOfPred_posDef_selfAdjoint` — the positive-definite cone is open in the
   Hermitian subspace over `ℝ` or `ℂ`;
+* `Matrix.normalizePosDefTrace`, `Matrix.PosDef.normalizePosDefTrace`,
+  `Matrix.PosDef.trace_normalizePosDefTrace_eq_trace_inv`,
+  `Matrix.PosDef.normalizePosDefTrace_eq_self`, `Matrix.PosDef.normalizePosDefTrace_idem`, and
+  `Matrix.PosDef.eq_of_trace_eq_trace_inv_of_eq_smul` — trace normalization of positive-definite
+  matrices over `ℝ` or `ℂ`;
 * `TauCeti.continuousAt_inv_segment` and `TauCeti.continuous_inv_segment_pairs` — continuity
   of inverse segments with positive-definite endpoints;
 * `TauCeti.exists_uniform_inv_segment_apply_bound` — a common entry bound on compact fields.
@@ -129,6 +139,113 @@ theorem isOpen_setOfPred_posDef_selfAdjoint {n 𝕜 : Type*} [Finite n]
     have hAH := isHermitian_iff_isSelfAdjoint.mpr A.prop
     exact PosDef.of_dotProduct_mulVec_pos hAH fun x hx ↦
       RCLike.pos_iff.mpr ⟨hA x hx, hAH.im_star_dotProduct_mulVec_self x⟩
+
+section TraceNormalization
+
+variable {ι 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [RCLike 𝕜]
+
+/-- Rescale a matrix `G` by `√(Re(trace G⁻¹) / Re(trace G))` so that, when `G` is positive
+definite, `trace (normalizePosDefTrace G) = trace (normalizePosDefTrace G)⁻¹`. -/
+@[expose] def normalizePosDefTrace (G : Matrix ι ι 𝕜) : Matrix ι ι 𝕜 :=
+  (algebraMap ℝ 𝕜 (Real.sqrt (RCLike.re G⁻¹.trace / RCLike.re G.trace))) • G
+
+/-- Unfolding lemma for `Matrix.normalizePosDefTrace`. -/
+theorem normalizePosDefTrace_def (G : Matrix ι ι 𝕜) :
+    G.normalizePosDefTrace =
+      (algebraMap ℝ 𝕜 (Real.sqrt (RCLike.re G⁻¹.trace / RCLike.re G.trace))) • G :=
+  rfl
+
+/-- Trace-normalizing a positive definite matrix preserves positive definiteness. -/
+theorem PosDef.normalizePosDefTrace {G : Matrix ι ι 𝕜} (hG : G.PosDef) :
+    G.normalizePosDefTrace.PosDef := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · exact PosDef.of_isEmpty _
+  · obtain ⟨_, hGpos, hGeq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.trace_pos
+    obtain ⟨_, hIpos, hIeq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.inv.trace_pos
+    have hGre : 0 < RCLike.re G.trace := by simpa [← hGeq] using hGpos
+    have hIre : 0 < RCLike.re G⁻¹.trace := by simpa [← hIeq] using hIpos
+    have ht : (0 : 𝕜) < algebraMap ℝ 𝕜 (Real.sqrt (RCLike.re G⁻¹.trace / RCLike.re G.trace)) :=
+      RCLike.pos_iff_exists_ofReal.mpr ⟨_, Real.sqrt_pos.mpr (div_pos hIre hGre), rfl⟩
+    exact hG.smul ht
+
+/-- The trace-normalized matrix satisfies
+`trace (normalizePosDefTrace G) = trace (normalizePosDefTrace G)⁻¹`. -/
+theorem PosDef.trace_normalizePosDefTrace_eq_trace_inv {G : Matrix ι ι 𝕜} (hG : G.PosDef) :
+    G.normalizePosDefTrace.trace = G.normalizePosDefTrace⁻¹.trace := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · simp [Matrix.trace]
+  · obtain ⟨a, ha, hGeq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.trace_pos
+    obtain ⟨b, hb, hIeq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.inv.trace_pos
+    have hGre : RCLike.re G.trace = a := by simp [← hGeq]
+    have hIre : RCLike.re G⁻¹.trace = b := by simp [← hIeq]
+    set t : ℝ := Real.sqrt (b / a)
+    have htpos : 0 < t := Real.sqrt_pos.mpr (div_pos hb ha)
+    have htk : algebraMap ℝ 𝕜 t ≠ 0 := by simp [htpos.ne']
+    have hdef : G.normalizePosDefTrace = algebraMap ℝ 𝕜 t • G := by
+      simp [normalizePosDefTrace_def, hGre, hIre, t]
+    have hdet : IsUnit G.det := (Matrix.isUnit_iff_isUnit_det G).mp hG.isUnit
+    have hinv : G.normalizePosDefTrace⁻¹ = (algebraMap ℝ 𝕜 t)⁻¹ • G⁻¹ := by
+      rw [hdef]
+      simpa [Units.smul_def] using Matrix.inv_smul' G (Units.mk0 (algebraMap ℝ 𝕜 t) htk) hdet
+    rw [hinv, hdef, Matrix.trace_smul, Matrix.trace_smul, smul_eq_mul, smul_eq_mul, ← hGeq, ← hIeq]
+    have hsq : t ^ 2 = b / a := Real.sq_sqrt (div_pos hb ha).le
+    change (t : 𝕜) * (a : 𝕜) = (t : 𝕜)⁻¹ * (b : 𝕜)
+    norm_cast
+    field_simp [htpos.ne']
+    rw [hsq, div_mul_cancel₀ _ ha.ne']
+
+/-- A positive definite matrix already satisfying `trace G = trace G⁻¹` is fixed by
+`Matrix.normalizePosDefTrace`. -/
+theorem PosDef.normalizePosDefTrace_eq_self {G : Matrix ι ι 𝕜} (hG : G.PosDef)
+    (htr : G.trace = G⁻¹.trace) : G.normalizePosDefTrace = G := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · exact Subsingleton.elim _ _
+  · obtain ⟨a, ha, hGeq⟩ := RCLike.pos_iff_exists_ofReal.mp hG.trace_pos
+    have hGre : RCLike.re G.trace = a := by simp [← hGeq]
+    rw [normalizePosDefTrace_def, ← htr, hGre, div_self ha.ne', Real.sqrt_one, map_one, one_smul]
+
+/-- Trace normalization of a positive definite matrix is idempotent. -/
+theorem PosDef.normalizePosDefTrace_idem {G : Matrix ι ι 𝕜} (hG : G.PosDef) :
+    G.normalizePosDefTrace.normalizePosDefTrace = G.normalizePosDefTrace :=
+  hG.normalizePosDefTrace.normalizePosDefTrace_eq_self hG.trace_normalizePosDefTrace_eq_trace_inv
+
+/-- Two positive definite matrices satisfying `trace M = trace M⁻¹` that are scalar multiples of
+each other are equal. -/
+theorem PosDef.eq_of_trace_eq_trace_inv_of_eq_smul {G₁ G₂ : Matrix ι ι 𝕜}
+    (h₁ : G₁.PosDef) (h₂ : G₂.PosDef)
+    (htr₁ : G₁.trace = G₁⁻¹.trace) (htr₂ : G₂.trace = G₂⁻¹.trace)
+    {c : 𝕜} (hsmul : G₁ = c • G₂) : G₁ = G₂ := by
+  rcases isEmpty_or_nonempty ι with _ | _
+  · exact Subsingleton.elim _ _
+  · obtain ⟨a, ha, h1eq⟩ := RCLike.pos_iff_exists_ofReal.mp h₁.trace_pos
+    obtain ⟨b, hb, h2eq⟩ := RCLike.pos_iff_exists_ofReal.mp h₂.trace_pos
+    have htr : G₁.trace = c * G₂.trace := by rw [hsmul, Matrix.trace_smul, smul_eq_mul]
+    have h2ne : G₂.trace ≠ 0 := h₂.trace_pos.ne'
+    have hc_eq : c = algebraMap ℝ 𝕜 (a / b) := by
+      rw [map_div₀]
+      change c = (a : 𝕜) / (b : 𝕜)
+      rw [h1eq, h2eq]
+      exact eq_div_of_mul_eq h2ne htr.symm
+    have hab : 0 < a / b := div_pos ha hb
+    have hcne : c ≠ 0 := by rw [hc_eq]; exact (map_ne_zero _).mpr hab.ne'
+    have hdet₂ : IsUnit G₂.det := (Matrix.isUnit_iff_isUnit_det G₂).mp h₂.isUnit
+    have hinv : G₁⁻¹ = c⁻¹ • G₂⁻¹ := by
+      rw [hsmul]
+      simpa [Units.smul_def] using Matrix.inv_smul' G₂ (Units.mk0 c hcne) hdet₂
+    have hcc : c * G₂.trace = c⁻¹ * G₂.trace := by
+      calc c * G₂.trace = G₁.trace := htr.symm
+        _ = G₁⁻¹.trace := htr₁
+        _ = c⁻¹ * G₂⁻¹.trace := by rw [hinv, Matrix.trace_smul, smul_eq_mul]
+        _ = c⁻¹ * G₂.trace := by rw [← htr₂]
+    have hcsq : (a / b) ^ 2 = 1 := by
+      have hcinv : c = c⁻¹ := mul_right_cancel₀ h2ne hcc
+      have hc2 : c * c = 1 := by rw [← mul_inv_cancel₀ hcne, ← hcinv]
+      rw [hc_eq, ← map_mul, ← map_one (algebraMap ℝ 𝕜)] at hc2
+      simpa [sq] using RingHom.injective (algebraMap ℝ 𝕜) hc2
+    have hab1 : a / b = 1 := by nlinarith
+    rw [hsmul, hc_eq, hab1, map_one, one_smul]
+
+end TraceNormalization
 
 end Matrix
 

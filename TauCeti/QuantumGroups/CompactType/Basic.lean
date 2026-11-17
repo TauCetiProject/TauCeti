@@ -11,9 +11,8 @@ public import TauCeti.Algebra.Coalgebra.Comodule.LinearlyReductive.PositiveInteg
 /-!
 # Algebraic Haar integrals on complex bialgebras and Hopf star algebras
 
-An *algebraic Haar integral* on a complex bialgebra with a star operation is a complex-linear
-functional `h : A → ℂ` that is normalized (`h 1 = 1`), both left and right invariant under the
-coproduct, and positive on algebraic squares (`0 ≤ h (star a * a)`).
+An *algebraic Haar integral* on a complex star bialgebra is a `StarPositiveFunctional` `h : A → ℂ`
+that is normalized (`h 1 = 1`) and both left and right invariant under the coproduct.
 
 Because a normalized left invariant integral and a normalized right invariant integral on the same
 bialgebra automatically coincide, an algebraic Haar integral is unique whenever it exists
@@ -47,25 +46,24 @@ namespace TauCeti
 universe u v
 
 /-- A positive normalized two-sided invariant integral (algebraic Haar functional) on a complex
-bialgebra with a star operation. -/
-structure AlgebraicHaar (A : Type u) [Semiring A] [Bialgebra ℂ A] [Star A] extends A →ₗ[ℂ] ℂ where
+star bialgebra. -/
+structure AlgebraicHaar (A : Type u) [Ring A] [Bialgebra ℂ A] [StarRing A] extends
+    StarPositiveFunctional A where
   /-- Normalization at the unit element. -/
   map_one' : toLinearMap 1 = 1
   /-- Left invariance `(id ⊗ h) Δ(a) = h(a) • 1`. -/
   isLeftInvariantIntegral : toLinearMap.IsLeftInvariantIntegral
   /-- Right invariance `(h ⊗ id) Δ(a) = h(a) • 1`. -/
   isRightInvariantIntegral : toLinearMap.IsRightInvariantIntegral
-  /-- Positivity on algebraic squares `star a * a`. -/
-  square_nonneg : ∀ a : A, 0 ≤ toLinearMap (star a * a)
 
 namespace AlgebraicHaar
 
 section Bialgebra
 
-variable {A : Type u} [Semiring A] [Bialgebra ℂ A] [Star A]
+variable {A : Type u} [Ring A] [Bialgebra ℂ A] [StarRing A]
 
 instance : FunLike (AlgebraicHaar A) A ℂ where
-  coe h := h.toLinearMap
+  coe h := h.toStarPositiveFunctional
   coe_injective h₁ h₂ h := by
     cases h₁
     cases h₂
@@ -81,9 +79,20 @@ instance : LinearMapClass (AlgebraicHaar A) ℂ A ℂ where
 theorem ext {h₁ h₂ : AlgebraicHaar A} (h : ∀ a, h₁ a = h₂ a) : h₁ = h₂ :=
   DFunLike.ext h₁ h₂ h
 
-/-- Coercion of an algebraic Haar integral agrees with its underlying linear map. -/
+/-- Evaluation of the underlying `StarPositiveFunctional`. -/
 @[simp]
+theorem toStarPositiveFunctional_apply (h : AlgebraicHaar A) (a : A) :
+    h.toStarPositiveFunctional a = h a := (rfl)
+
+/-- Coercion of an algebraic Haar integral agrees with its underlying linear map. -/
 theorem toLinearMap_apply (h : AlgebraicHaar A) (a : A) : h.toLinearMap a = h a := (rfl)
+
+/-- Evaluation of a constructed algebraic Haar integral agrees with its underlying
+`StarPositiveFunctional`. -/
+@[simp]
+theorem mk_apply (φ : StarPositiveFunctional A) (h1 : φ.toLinearMap 1 = 1)
+    (hL : φ.toLinearMap.IsLeftInvariantIntegral) (hR : φ.toLinearMap.IsRightInvariantIntegral)
+    (a : A) : (AlgebraicHaar.mk φ h1 hL hR) a = φ a := (rfl)
 
 /-- An algebraic Haar integral is normalized at `1`. -/
 @[simp]
@@ -109,33 +118,17 @@ instance instSubsingleton : Subsingleton (AlgebraicHaar A) where
 /-- The identity functional on `ℂ` is an algebraic Haar integral. -/
 def complex : AlgebraicHaar ℂ where
   toLinearMap := LinearMap.id
+  square_nonneg a := by
+    simpa only [LinearMap.id_coe, id_eq] using star_mul_self_nonneg a
   map_one' := rfl
   isLeftInvariantIntegral := LinearMap.isLeftInvariantIntegral_iff.mpr fun a ↦ by
     simp [LinearMap.lTensor]
   isRightInvariantIntegral := LinearMap.isRightInvariantIntegral_iff.mpr fun a ↦ by
     simp [LinearMap.rTensor]
-  square_nonneg a := by
-    simpa only [LinearMap.id_coe, id_eq] using star_mul_self_nonneg a
 
 /-- Evaluation of the canonical algebraic Haar integral on `ℂ`. -/
 @[simp]
 theorem complex_apply (z : ℂ) : complex z = z := (rfl)
-
-end Bialgebra
-
-section StarRing
-
-variable {A : Type u} [Ring A] [Bialgebra ℂ A] [StarRing A]
-
-/-- View an algebraic Haar integral as a `StarPositiveFunctional`. -/
-def toStarPositiveFunctional (h : AlgebraicHaar A) : StarPositiveFunctional A where
-  toLinearMap := h.toLinearMap
-  square_nonneg := h.square_nonneg
-
-/-- Evaluation of the underlying `StarPositiveFunctional`. -/
-@[simp]
-theorem toStarPositiveFunctional_apply (h : AlgebraicHaar A) (a : A) :
-    h.toStarPositiveFunctional a = h a := (rfl)
 
 variable [StarModule ℂ A]
 
@@ -149,23 +142,23 @@ theorem star_apply_star_mul (h : AlgebraicHaar A) (a b : A) :
     star (h (star a * b)) = h (star b * a) :=
   h.toStarPositiveFunctional.star_apply_star_mul a b
 
-end StarRing
+end Bialgebra
 
 section HopfAlgebra
 
-variable {A : Type u} [Ring A] [HopfAlgebra ℂ A]
+variable {A : Type u} [Ring A] [HopfAlgebra ℂ A] [StarRing A]
 
 /-- Algebraic faithfulness on the right: if `h (a * b) = 0` for all `b`, then `a = 0`. -/
-theorem eq_zero_of_forall_mul_right_eq_zero [Star A] (h : AlgebraicHaar A) {a : A}
+theorem eq_zero_of_forall_mul_right_eq_zero (h : AlgebraicHaar A) {a : A}
     (ha : ∀ b, h (a * b) = 0) : a = 0 :=
   h.isRightInvariantIntegral.eq_zero_of_forall_mul_eq_zero h.toLinearMap_ne_zero ha
 
 /-- Algebraic faithfulness on the left: if `h (b * a) = 0` for all `b`, then `a = 0`. -/
-theorem eq_zero_of_forall_mul_left_eq_zero [Star A] (h : AlgebraicHaar A) {a : A}
+theorem eq_zero_of_forall_mul_left_eq_zero (h : AlgebraicHaar A) {a : A}
     (ha : ∀ b, h (b * a) = 0) : a = 0 :=
   h.isLeftInvariantIntegral.eq_zero_of_forall_mul_eq_zero h.toLinearMap_ne_zero ha
 
-variable [StarRing A] [StarModule ℂ A]
+variable [StarModule ℂ A]
 
 /-- An algebraic Haar integral on a complex Hopf algebra vanishes on `star a * a` only for
 `a = 0`. -/
