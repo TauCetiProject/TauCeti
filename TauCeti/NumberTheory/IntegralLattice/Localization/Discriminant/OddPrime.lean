@@ -21,7 +21,7 @@ import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.NumberTheory.LocalField.QuadraticForm.OddResidue.Padic
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.RingTheory.Henselian.SquareClasses
+import TauCeti.RingTheory.Henselian.Basic
 import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
 
 /-!
@@ -86,92 +86,6 @@ namespace TauCeti.IntegralLattice
 
 variable {V W : Type*} [AddCommGroup V] [Module ℚ V] [AddCommGroup W] [Module ℚ W]
 
-/-! ### `p`-adic unit squares and integer approximations -/
-
-/-- Canonical integer lift `θ ≡ u (mod p^{max(k, 1)})` of a `p`-adic unit `u`. -/
-private noncomputable def approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) : ℤ :=
-  (u : ℤ_[p]).appr (max k 1)
-
-private theorem pow_dvd_sub_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
-    (p : ℤ_[p]) ^ k ∣ (u : ℤ_[p]) - approxInt u k :=
-  (pow_dvd_pow (p : ℤ_[p]) (le_max_left k 1)).trans
-    (PadicInt.dvd_sub_appr (u : ℤ_[p]) (max k 1))
-
-private theorem dvd_sub_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
-    (p : ℤ_[p]) ∣ (u : ℤ_[p]) - approxInt u k :=
-  (pow_one (p : ℤ_[p]) ▸ pow_dvd_pow (p : ℤ_[p]) (le_max_right k 1)).trans
-    (PadicInt.dvd_sub_appr (u : ℤ_[p]) (max k 1))
-
-private theorem not_dvd_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
-    ¬(p : ℤ) ∣ approxInt u k := by
-  rw [← PadicInt.isUnit_intCast_iff]
-  by_contra hnu
-  have hdvd : (p : ℤ_[p]) ∣ approxInt u k := PadicInt.not_isUnit_iff_dvd.mp hnu
-  have hu : (p : ℤ_[p]) ∣ (u : ℤ_[p]) := by
-    simpa using (dvd_sub_approxInt u k).add hdvd
-  exact (PadicInt.not_isUnit_iff_dvd.mpr hu) u.isUnit
-
-private theorem isCoprime_approxInt {p : ℕ} [Fact p.Prime] (u : ℤ_[p]ˣ) (k : ℕ) :
-    IsCoprime (p : ℤ) (approxInt u k) :=
-  (Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp Fact.out)).mpr (not_dvd_approxInt u k)
-
-/-- At an odd prime `p`, the product of `u ∈ ℤ_pˣ` and its integer lift `approxInt u k` is a unit
-square in `ℤ_p`, because their residues modulo `p` coincide. -/
-private theorem isSquare_mul_approxInt {p : ℕ} [Fact p.Prime] (hp : p ≠ 2) (u : ℤ_[p]ˣ) (k : ℕ) :
-    IsSquare ((u : ℤ_[p]) * approxInt u k) := by
-  have hθu : IsUnit (approxInt u k : ℤ_[p]) :=
-    PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt u k)
-  have hmem : (u : ℤ_[p]) - approxInt u k ∈ IsLocalRing.maximalIdeal ℤ_[p] := by
-    rw [PadicInt.maximalIdeal_eq_span_p, Ideal.mem_span_singleton]
-    exact dvd_sub_approxInt u k
-  have hres_eq : IsLocalRing.residue ℤ_[p] (u : ℤ_[p]) =
-      IsLocalRing.residue ℤ_[p] (approxInt u k : ℤ_[p]) :=
-    sub_eq_zero.mp <| by
-      rw [← map_sub]
-      exact (IsLocalRing.residue_eq_zero_iff _).mpr hmem
-  exact (TauCeti.HenselianLocalRing.isSquare_iff_residue_isSquare
-    (PadicInt.isUnit_two hp) (u.isUnit.mul hθu)).mpr
-    (by rw [map_mul, hres_eq]; exact IsSquare.mul_self _)
-
-/-- Positive-level Legendre-symbol agreement between integer lifts translates to `p`-adic squareness
-of the corresponding unit products. -/
-private theorem isSquare_prod_filter_of_legendreSym_eq {p : ℕ} [Fact p.Prime] (hp : p ≠ 2)
-    {n : ℕ} (k : Fin n → ℕ) (u v : Fin n → ℤ_[p]ˣ) (k' : Fin n → ℕ) {m : ℕ}
-    (hleg : ∏ i with k i = m, legendreSym p (approxInt (u i) (k i)) =
-      ∏ i with k i = m, legendreSym p (approxInt (v i) (k' i))) :
-    IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v i) := by
-  rw [← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod]
-  set S := ({i : Fin n | k i = m} : Finset (Fin n))
-  have hsq_leg : legendreSym p (∏ i ∈ S, approxInt (u i) (k i) * approxInt (v i) (k' i)) = 1 := by
-    rw [← legendreSym.hom_apply, map_prod]
-    simp only [legendreSym.hom_apply, legendreSym.mul]
-    rw [Finset.prod_mul_distrib, hleg, ← Finset.prod_mul_distrib]
-    refine Finset.prod_eq_one fun i _ ↦ ?_
-    simpa [sq] using legendreSym.sq_one p
-      ((ZMod.isUnit_intCast_iff_isCoprime _ p).mpr (isCoprime_approxInt (v i) (k' i))).ne_zero
-  have hndvd : ¬(p : ℤ) ∣ ∏ i ∈ S, approxInt (u i) (k i) * approxInt (v i) (k' i) := by
-    rw [← PadicInt.isUnit_intCast_iff, Int.cast_prod]
-    exact IsUnit.prod_iff.mpr fun i _ ↦ by
-      rw [Int.cast_mul]
-      exact (PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt _ _)).mul
-        (PadicInt.isUnit_intCast_iff.mpr (not_dvd_approxInt _ _))
-  have hZ := (TauCeti.PadicInt.isSquare_intCast_iff_legendreSym_eq_one hp hndvd).mpr hsq_leg
-  rw [Int.cast_prod] at hZ
-  have hu_sq : IsSquare (∏ i ∈ S, (u i : ℤ_[p]) * approxInt (u i) (k i)) :=
-    Finset.isSquare_prod _ fun i _ ↦ isSquare_mul_approxInt hp (u i) (k i)
-  have hv_sq : IsSquare (∏ i ∈ S, (v i : ℤ_[p]) * approxInt (v i) (k' i)) :=
-    Finset.isSquare_prod _ fun i _ ↦ isSquare_mul_approxInt hp (v i) (k' i)
-  have hcomb : IsSquare (((∏ i ∈ S, (u i : ℤ_[p])) * ∏ i ∈ S, (v i : ℤ_[p])) *
-      (∏ i ∈ S, (approxInt (u i) (k i) : ℤ_[p]) * approxInt (v i) (k' i)) ^ 2) := by
-    convert (hu_sq.mul hv_sq).mul hZ using 1
-    simp only [Int.cast_mul, Finset.prod_mul_distrib, sq]
-    ring
-  have hne : (∏ i ∈ S, (approxInt (u i) (k i) : ℤ_[p]) * approxInt (v i) (k' i)) ≠ 0 := by
-    have hu_int := PadicInt.isUnit_intCast_iff.mpr hndvd
-    rw [Int.cast_prod] at hu_int
-    simpa [Int.cast_mul] using hu_int.ne_zero
-  exact (TauCeti.IsIntegrallyClosed.isSquare_mul_sq_iff hne).mp hcomb
-
 /-! ### Assembling an integral `ℤ_p`-isometry from fiberwise unit-diagonal equivalences -/
 
 /-- Given two diagonal Jordan forms of the same rank at an odd prime `p` whose `p`-primary
@@ -192,40 +106,53 @@ private theorem exists_perm_and_isSquare_pos_of_isometry_primaryComponent
       ∀ m, 0 < m → IsSquare ((∏ i with k i = m, u i) * ∏ i with k i = m, v (σ i)) := by
   classical
   have hp_odd : Odd p := (Fact.out : p.Prime).odd_of_ne_two hp
-  obtain ⟨fL⟩ := L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu
-    (fun i ↦ pow_dvd_sub_approxInt (u i) (k i))
-  obtain ⟨fM⟩ := M.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv
-    (fun i ↦ pow_dvd_sub_approxInt (v i) (l i))
+  let θL (i : Fin n) : ℤ := ((u i : ℤ_[p]).appr (max (k i) 1) : ℤ)
+  let θM (i : Fin n) : ℤ := ((v i : ℤ_[p]).appr (max (l i) 1) : ℤ)
+  have hL_pow (i : Fin n) : (p : ℤ_[p]) ^ k i ∣ (u i : ℤ_[p]) - θL i := by
+    simpa only [θL, Int.cast_natCast] using
+      (u i : ℤ_[p]).dvd_sub_appr_of_le (le_max_left (k i) 1)
+  have hM_pow (i : Fin n) : (p : ℤ_[p]) ^ l i ∣ (v i : ℤ_[p]) - θM i := by
+    simpa only [θM, Int.cast_natCast] using
+      (v i : ℤ_[p]).dvd_sub_appr_of_le (le_max_left (l i) 1)
+  obtain ⟨fL⟩ := L.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hb hbu hL_pow
+  obtain ⟨fM⟩ := M.nonempty_isometry_pi_oddCyclic_primaryComponent hp_odd hc hcv hM_pow
   obtain ⟨fLM⟩ := hdisc
   have hodd_card : Odd (Nat.card (FiniteQuadraticModule.pi fun i ↦
-      FiniteQuadraticModule.oddCyclic (p ^ k i) hp_odd.pow (approxInt (u i) (k i)))) := by
+      FiniteQuadraticModule.oddCyclic (p ^ k i) hp_odd.pow (θL i))) := by
     rw [Nat.card_pi]
     exact Finset.prod_induction _ Odd (fun _ _ ha hb ↦ ha.mul hb) odd_one fun i _ ↦ by
       rw [FiniteQuadraticModule.natCard_oddCyclic]
       exact hp_odd.pow
   have hquad : Nonempty (FiniteQuadraticModule.Isometry
       (FiniteQuadraticModule.pi fun i ↦
-        FiniteQuadraticModule.oddCyclic (p ^ k i) hp_odd.pow (approxInt (u i) (k i)))
+        FiniteQuadraticModule.oddCyclic (p ^ k i) hp_odd.pow (θL i))
       (FiniteQuadraticModule.pi fun i ↦
-        FiniteQuadraticModule.oddCyclic (p ^ l i) hp_odd.pow (approxInt (v i) (l i)))) :=
+        FiniteQuadraticModule.oddCyclic (p ^ l i) hp_odd.pow (θM i))) :=
     (FiniteQuadraticModule.nonempty_isometry_iff_bilinear_isometry_of_odd hodd_card).mpr
       ⟨fL.trans (fLM.trans fM.symm)⟩
   have hclass := (FiniteQuadraticModule.nonempty_isometry_pi_oddCyclic_iff hp_odd k l
-    (fun i ↦ isCoprime_approxInt (u i) (k i))
-    (fun i ↦ isCoprime_approxInt (v i) (l i))).mp hquad
+    (fun i ↦ (((u i : ℤ_[p]).coprime_appr_iff (by positivity)).mpr (u i).isUnit).isCoprime)
+    (fun i ↦ (((v i : ℤ_[p]).coprime_appr_iff (by positivity)).mpr (v i).isUnit).isCoprime)).mp
+    hquad
   obtain ⟨σ, hσ⟩ :=
     Function.exists_perm_of_occCount_eq_of_ne (u := k) (v := l) (z := 0) fun m hm ↦ by
       rw [Function.occCount_eq_card_filter, Function.occCount_eq_card_filter]
       exact (hclass m (Nat.pos_of_ne_zero hm)).1
   have hσi : ∀ i, l (σ i) = k i := congrFun hσ
   refine ⟨σ, hσi, fun m hm ↦ ?_⟩
-  have hleg_σ : ∏ i with k i = m, legendreSym p (approxInt (u i) (k i)) =
-      ∏ i with k i = m, legendreSym p (approxInt (v (σ i)) (l (σ i))) := by
-    rw [(hclass m hm).2, Finset.prod_filter, Finset.prod_filter]
-    exact (Equiv.prod_comp (σ : Fin n ≃ Fin n) fun j ↦
-      if l j = m then legendreSym p (approxInt (v j) (l j)) else 1).symm.trans
-      (Finset.prod_congr rfl fun i _ ↦ by simp [hσi i])
-  exact isSquare_prod_filter_of_legendreSym_eq hp k u (fun i ↦ v (σ i)) (fun i ↦ l (σ i)) hleg_σ
+  have hprod_v : ∏ i with k i = m, v (σ i) = ∏ j with l j = m, v j := by
+    rw [Finset.prod_filter, Finset.prod_filter]
+    exact (Finset.prod_congr rfl fun i _ ↦ by simp [hσi i]).trans
+      (Equiv.prod_comp (σ : Fin n ≃ Fin n) fun j ↦ if l j = m then v j else 1)
+  rw [hprod_v, ← Units.isSquare_coe_iff, Units.val_mul, Units.coe_prod, Units.coe_prod]
+  refine (TauCeti.PadicInt.isSquare_prod_mul_prod_iff_legendreSym_eq hp
+    {i : Fin n | k i = m} {j : Fin n | l j = m}
+    (fun i ↦ (u i : ℤ_[p])) (fun j ↦ (v j : ℤ_[p])) θL θM
+    (fun i _ ↦ (u i).isUnit) (fun j _ ↦ (v j).isUnit)
+    (fun i _ ↦ by simpa only [θL, Int.cast_natCast] using
+      (u i : ℤ_[p]).dvd_sub_appr_of_ne_zero (by positivity))
+    (fun j _ ↦ by simpa only [θM, Int.cast_natCast] using
+      (v j : ℤ_[p]).dvd_sub_appr_of_ne_zero (by positivity))).mpr (hclass m hm).2
 
 /-- Once two diagonal Jordan forms match up to `σ` and agree in square class on every fiber `m`,
 the localized integral forms are isometric over `ℤ_p`. -/

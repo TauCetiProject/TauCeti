@@ -10,6 +10,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 import Mathlib.Algebra.Field.ZMod
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import Mathlib.LinearAlgebra.Matrix.BilinearForm
 import Mathlib.RingTheory.Ideal.Quotient.Operations
 import Mathlib.Tactic.LinearCombination
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
@@ -40,8 +41,12 @@ orthogonal basis. Over `ℤ_[2]` these are the odd unimodular forms, and the inv
 
 * `LinearMap.BilinForm.IsSymm.exists_isCharacteristic`: a perfect symmetric form on a free module
   has a characteristic vector.
+* `LinearMap.BilinForm.IsSymm.exists_apply_eq_apply_self_zmod_two`: every symmetric form on a
+  finite `ℤ/2ℤ`-module has a vector representing its diagonal `x ↦ B x x`.
 * `LinearMap.BilinForm.IsSymm.exists_isCharacteristic_of_finite`: every symmetric form on a finite
   free module has a characteristic vector.
+* `LinearMap.BilinForm.IsSymm.exists_apply_eq_apply_self`: every symmetric form on a finite free
+  module over a ring with `c ^ 2 = c` has a vector representing its diagonal `x ↦ B x x`.
 * `LinearMap.BilinForm.Equivalent.forall_two_dvd_apply_self_iff`: isometric forms are even
   together.
 * `LinearMap.BilinForm.IsCharacteristic.isCharacteristic_iff_exists_eq_add_two_smul`: the
@@ -168,48 +173,33 @@ theorem IsSymm.exists_isCharacteristic [Free R M] [B.IsPerfPair] (hB : B.IsSymm)
   refine ⟨B.toPerfPair.symm φ, (hB.isCharacteristic_iff_forall_basis h2 b).2 fun i ↦ ?_⟩
   simp [φ]
 
-/-- Every symmetric matrix over `ℤ/2ℤ` has a vector whose product with each column equals the
-corresponding diagonal entry. -/
-private theorem exists_zmod_two_characteristic_coeffs {ι : Type*} [Fintype ι]
-    (A : ι → ι → ZMod 2) (hA : ∀ i j, A i j = A j i) :
-    ∃ c : ι → ZMod 2, ∀ j, ∑ i, c i * A i j = A j j := by
-  classical
+omit [CommRing R] [Module R M] in
+/-- **Existence of a diagonal-representing vector over `ℤ/2ℤ`.** Every symmetric bilinear form on a
+finite `ℤ/2ℤ`-module has a vector `w` satisfying `B w x = B x x` for every `x`. -/
+theorem IsSymm.exists_apply_eq_apply_self_zmod_two [Module (ZMod 2) M] [Module.Finite (ZMod 2) M]
+    {B : BilinForm (ZMod 2) M} (hB : B.IsSymm) :
+    ∃ w : M, ∀ x : M, B w x = B x x := by
   have : Fact (Nat.Prime 2) := ⟨Nat.prime_two⟩
-  let e := Pi.basisFun (ZMod 2) ι
-  let B : (ι → ZMod 2) →ₗ[ZMod 2] (ι → ZMod 2) →ₗ[ZMod 2] ZMod 2 :=
-    e.constr (ZMod 2) fun i ↦ e.constr (ZMod 2) fun j ↦ A i j
-  have hB_flip : LinearMap.flip B = B :=
-    e.ext fun i ↦ e.ext fun j ↦ by simp [B, hA j i]
-  let φ : (ι → ZMod 2) →ₗ[ZMod 2] ZMod 2 := e.constr (ZMod 2) fun i ↦ A i i
+  have hB_flip : LinearMap.flip B = B := by
+    ext x y
+    exact hB.eq y x
   have hc_sq : ∀ c : ZMod 2, c * c = c := fun | ⟨0, _⟩ => rfl | ⟨1, _⟩ => rfl
-  have hφ (u : ι → ZMod 2) : φ u = B u u := by
-    induction e.mem_span u using Submodule.span_induction with
-    | mem _ hx =>
-      obtain ⟨i, rfl⟩ := hx
-      simp [φ, B]
-    | zero => simp
-    | add x y _ _ hx hy =>
-      have hxy : B y x = B x y := LinearMap.congr_fun₂ hB_flip x y
-      have htwo : B x y + B x y = 0 := by
-        rw [← two_mul, ← Nat.cast_ofNat (R := ZMod 2), ZMod.natCast_self, zero_mul]
-      simp only [map_add, LinearMap.add_apply, hx, hy, hxy]
-      rw [add_assoc (B x x), ← add_assoc (B x y) (B x y), htwo, zero_add]
-    | smul c x _ hx =>
-      simp [hx, smul_eq_mul, ← mul_assoc, hc_sq c]
+  let φ : M →ₗ[ZMod 2] ZMod 2 :=
+    { toFun := fun x ↦ B x x
+      map_add' := fun x y ↦ by
+        have htwo : B x y + B x y = 0 := by
+          rw [← two_mul, ← Nat.cast_ofNat (R := ZMod 2), ZMod.natCast_self, zero_mul]
+        simp only [map_add, LinearMap.add_apply, hB.eq y x]
+        rw [add_assoc (B x x), ← add_assoc (B x y) (B x y), htwo, zero_add]
+      map_smul' := fun c x ↦ by
+        simp [smul_eq_mul, ← mul_assoc, hc_sq c] }
   have hmem : φ ∈ LinearMap.range B := by
     rw [← hB_flip, ← LinearMap.dualAnnihilator_ker_eq_range_flip (B := B),
       Submodule.mem_dualAnnihilator]
     intro u hu
-    rw [hφ u, LinearMap.mem_ker.mp hu, LinearMap.zero_apply]
-  obtain ⟨c, hc⟩ := hmem
-  refine ⟨c, fun j ↦ ?_⟩
-  have hcj : B c (e j) = A j j := by
-    simpa [φ] using LinearMap.congr_fun hc (e j)
-  have hc_sum : ∑ i, c i • e i = c := by simpa [e] using e.sum_repr c
-  have hBe (i : ι) : B (e i) (e j) = A i j := by simp [B]
-  rw [← hcj]
-  conv_rhs => rw [← hc_sum, map_sum, LinearMap.sum_apply]
-  simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hBe]
+    simp [φ, LinearMap.mem_ker.mp hu]
+  obtain ⟨w, hw⟩ := hmem
+  exact ⟨w, fun x ↦ LinearMap.congr_fun hw x⟩
 
 /-- **Existence of characteristic vectors on finite free modules.** If `c ^ 2 ≡ c` modulo `2` for
 every `c : R`, then every symmetric bilinear form on a finite free `R`-module has a characteristic
@@ -267,9 +257,18 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] 
             = (∏ y ∈ T, y) * (∏ y ∈ (X \ T).erase x, (1 - y)) * ((1 - x) * x) := by ring
         _ = 0 := by rw [h1x, mul_zero]
   have hsol (T : Finset S) : ∃ c : Free.ChooseBasisIndex R M → ZMod 2,
-      ∀ j, ∑ i, c i * (if G i j ∈ T then 1 else 0) = if G j j ∈ T then 1 else 0 :=
-    exists_zmod_two_characteristic_coeffs (fun i j ↦ if G i j ∈ T then 1 else 0)
-      fun i j ↦ by simp [G, hB.eq (b i) (b j)]
+      ∀ j, ∑ i, c i * (if G i j ∈ T then 1 else 0) = if G j j ∈ T then 1 else 0 := by
+    let A : Matrix (Free.ChooseBasisIndex R M) (Free.ChooseBasisIndex R M) (ZMod 2) :=
+      Matrix.of fun i j ↦ if G i j ∈ T then 1 else 0
+    have hA : A.IsSymm := Matrix.ext fun i j ↦ by simp [A, G, hB.eq (b i) (b j)]
+    obtain ⟨c, hc⟩ :=
+      (Matrix.isSymm_toBilin'_iff_isSymm.mpr hA).exists_apply_eq_apply_self_zmod_two
+    refine ⟨c, fun j ↦ ?_⟩
+    have hj := hc (Pi.single j 1)
+    simp only [Matrix.toBilin'_apply', dotProduct, Matrix.mulVec, Pi.single_apply,
+      mul_ite, mul_one, mul_zero, ite_mul, one_mul, zero_mul, Finset.sum_ite_eq',
+      Finset.mem_univ, ↓reduceIte] at hj
+    simpa only [A, Matrix.of_apply] using hj
   choose c hc using hsol
   -- Recombine the `ℤ/2ℤ` solutions via `e T` and lift the coefficients from `S` back to `R`.
   choose r hr using fun i ↦ Ideal.Quotient.mk_surjective (I := I)
@@ -300,6 +299,17 @@ theorem IsSymm.exists_isCharacteristic_of_finite [Free R M] [Module.Finite R M] 
           exact (he_mul T (G j j) (hG_mem j j)).symm
     _ = G j j := by
           rw [← Finset.sum_mul, hsum_e, one_mul]
+
+/-- Every symmetric bilinear form on a finite free module over a ring in which every element
+satisfies `c ^ 2 = c` has a vector `w` satisfying `B w x = B x x` for every `x`. -/
+theorem IsSymm.exists_apply_eq_apply_self [Free R M] [Module.Finite R M] (hB : B.IsSymm)
+    (hsq : ∀ c : R, c ^ 2 = c) : ∃ w : M, ∀ x : M, B w x = B x x := by
+  have h2 : (2 : R) = 0 := by
+    have h1 := hsq (-1)
+    rw [neg_one_sq] at h1
+    linear_combination h1
+  obtain ⟨w, hw⟩ := hB.exists_isCharacteristic_of_finite fun c ↦ by simp [hsq c]
+  exact ⟨w, fun x ↦ sub_eq_zero.mp (zero_dvd_iff.mp (h2 ▸ hw x))⟩
 
 /-- **Two characteristic vectors differ by twice a vector** when the form is perfect and the
 module is free. -/

@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.IsometryEquiv
+public import Mathlib.LinearAlgebra.QuadraticForm.Prod
 public import Mathlib.LinearAlgebra.QuadraticForm.Radical
 import Mathlib.LinearAlgebra.Determinant
-import Mathlib.LinearAlgebra.QuadraticForm.Prod
 
 /-!
 # Diagonal quadratic forms
@@ -21,6 +21,11 @@ of squares.
 * `TauCeti.equivalent_weightedSumSquares_comp`: reindexing the coefficients preserves equivalence.
 * `TauCeti.equivalent_weightedSumSquares_of_pair`: a binary equivalence extends across fixed
   coordinates.
+* `TauCeti.weightedSumSquaresMulFiberIsometryEquiv`,
+  `TauCeti.weightedSumSquaresMulFiberIsometryEquiv_apply`, and
+  `TauCeti.weightedSumSquaresMulFiberIsometryEquiv_symm_apply`: fiberwise orthogonal-sum
+  decomposition isometry for a scaled diagonal form over any commutative semiring, together with
+  its forward and inverse coordinate characterizations.
 * `TauCeti.equivalent_weightedSumSquares_mul_of_forall_fiber`: fiberwise equivalences of diagonal
   subforms assemble into an equivalence of scaled diagonal forms over any commutative semiring.
 * `QuadraticMap.associated_weightedSumSquares`, `QuadraticForm.toMatrix'_weightedSumSquares`, and
@@ -184,7 +189,7 @@ theorem equivalent_weightedSumSquares_comp (w : ι → R) (σ : κ ≃ ι) :
 
 /-- Fiberwise orthogonal-sum decomposition of a scaled diagonal form `∑ᵢ uᵢ s(kᵢ) xᵢ²` over the
 finite image of the scale profile `k`. -/
-private def weightedSumSquaresMulFiberEquiv {α : Type*} [DecidableEq α]
+def weightedSumSquaresMulFiberIsometryEquiv {α : Type*} [DecidableEq α]
     (k : ι → α) (s : α → R) (u : ι → R) :
     (weightedSumSquares R fun i ↦ u i * s (k i)).IsometryEquiv
       (QuadraticMap.pi fun m : Finset.univ.image k ↦
@@ -232,6 +237,27 @@ private def weightedSumSquaresMulFiberEquiv {α : Type*} [DecidableEq α]
       LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, Equiv.sigmaFiberEquiv_apply,
       Equiv.subtypeEquivRight_symm_apply_coe, smul_eq_mul]
 
+/-- The forward map of `weightedSumSquaresMulFiberIsometryEquiv` restricts a vector to each fiber
+of `k`. -/
+@[simp]
+theorem weightedSumSquaresMulFiberIsometryEquiv_apply {α : Type*} [DecidableEq α]
+    (k : ι → α) (s : α → R) (u : ι → R) (x : ι → R)
+    (m : Finset.univ.image k) (i : {i : ι // k i = m.1}) :
+    weightedSumSquaresMulFiberIsometryEquiv k s u x m i = x i.1 :=
+  (rfl)
+
+/-- The inverse map of `weightedSumSquaresMulFiberIsometryEquiv` reads the `i`-th coordinate from
+the fiber over `k i`. -/
+@[simp]
+theorem weightedSumSquaresMulFiberIsometryEquiv_symm_apply {α : Type*} [DecidableEq α]
+    (k : ι → α) (s : α → R) (u : ι → R)
+    (y : (m : Finset.univ.image k) → {i : ι // k i = m.1} → R) (i : ι) :
+    (weightedSumSquaresMulFiberIsometryEquiv k s u).symm y i =
+      y ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩ ⟨i, rfl⟩ := by
+  have h := congrFun (congrFun ((weightedSumSquaresMulFiberIsometryEquiv k s u).apply_symm_apply y)
+    ⟨k i, Finset.mem_image_of_mem k (Finset.mem_univ i)⟩) ⟨i, rfl⟩
+  simpa only [weightedSumSquaresMulFiberIsometryEquiv_apply] using h
+
 /-- Fiberwise equivalences of diagonal subforms assemble into an equivalence of scaled diagonal
 forms `∑ᵢ wᵢ s(kᵢ) xᵢ²` and `∑ᵢ vᵢ s(kᵢ) xᵢ²`. -/
 theorem equivalent_weightedSumSquares_mul_of_forall_fiber {α : Type*} [DecidableEq α]
@@ -254,8 +280,8 @@ theorem equivalent_weightedSumSquares_mul_of_forall_fiber {α : Type*} [Decidabl
                map_app' := fun x ↦ by
                  simp only [smul_apply, LinearMap.toFun_eq_coe, LinearEquiv.coe_coe,
                    QuadraticMap.IsometryEquiv.coe_toLinearEquiv, e.map_app] }⟩
-  exact QuadraticMap.Equivalent.trans ⟨weightedSumSquaresMulFiberEquiv k s w⟩
-    (hpi.trans ⟨(weightedSumSquaresMulFiberEquiv k s v).symm⟩)
+  exact QuadraticMap.Equivalent.trans ⟨weightedSumSquaresMulFiberIsometryEquiv k s w⟩
+    (hpi.trans ⟨(weightedSumSquaresMulFiberIsometryEquiv k s v).symm⟩)
 
 /-- A diagonal form with unit weights is the diagonal form with the underlying scalar weights. -/
 theorem _root_.QuadraticMap.weightedSumSquares_units (w : ι → Rˣ) :
