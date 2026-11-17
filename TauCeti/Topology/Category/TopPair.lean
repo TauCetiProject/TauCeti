@@ -35,6 +35,9 @@ subspaces is continuous because subspaces are embedded.
 The disjoint union `TopPair.sigma P = (Σ i, Xᵢ, Σ i, Aᵢ)` of a family of pairs `P i = (Xᵢ, Aᵢ)`,
 with the inclusions `TopPair.sigmaι P i` of the summands, is the coproduct of the family in
 `TopPair` (`TopPair.sigmaCofanIsColimit`).  Relative singular homology is additive along it.
+Maps `Pᵢ ⟶ X` exhibit `X` as such a coproduct when they induce a homeomorphism `Σ i, Xᵢ ≃ X` and
+every point of the subspace of `X` comes from a subspace `Aᵢ`
+(`TopPair.isColimitCofanOfIsHomeomorph`).
 
 A continuous map into the ambient space of a pair with values in the subspace corestricts to a
 continuous map into the subspace, `TopPair.liftSnd`, because the subspace is embedded.
@@ -397,6 +400,27 @@ def sigmaCofanIsColimit : IsColimit (sigmaCofan P) :=
       ext ⟨i, x⟩ : 2
       · exact ConcreteCategory.congr_hom (congrArg Hom.snd (hm i)) x
       · exact ConcreteCategory.congr_hom (congrArg Hom.fst (hm i)) x)
+
+variable {P} in
+/-- **A recognition principle for coproducts of pairs.** Maps of pairs `f i : Pᵢ ⟶ X` exhibit `X`
+as the coproduct of the `Pᵢ` in `TopPair` when the induced map `Σ i, Xᵢ → X` of ambient spaces is
+a homeomorphism and every point of the subspace of `X` comes from the subspace of some `Pᵢ`. -/
+noncomputable def isColimitCofanOfIsHomeomorph {X : TopPair.{u}} (f : ∀ i, P i ⟶ X)
+    (hf : IsHomeomorph fun x : Σ i, (P i).fst ↦ Hom.fst (f x.1) x.2)
+    (hsnd : ∀ y : X.snd, ∃ (i : ι) (a : (P i).snd), Hom.fst (f i) ((P i).map a) = X.map y) :
+    IsColimit (Cofan.mk X f) :=
+  let hσ := sigmaCofanIsColimit P
+  let φ := hσ.desc (Cofan.mk X f)
+  -- On the summand of `i`, `φ` is `f i`.
+  have hφ (x : Σ i, (P i).fst) : Hom.fst φ x = Hom.fst (f x.1) x.2 :=
+    ConcreteCategory.congr_hom (congrArg Hom.fst (hσ.fac _ ⟨x.1⟩)) x.2
+  have : IsIso (Hom.fst φ) := by
+    rw [TopCat.isIso_iff_isHomeomorph, (funext hφ : ⇑(Hom.fst φ) = _)]
+    exact hf
+  have : IsIso φ := isIso_of_isIso_fst_of_surjective_snd φ fun y ↦ by
+    obtain ⟨i, a, ha⟩ := hsnd y
+    exact ⟨⟨i, a⟩, X.isEmbedding_map.injective ((Hom.w_apply φ _).trans ((hφ _).trans ha))⟩
+  IsColimit.ofIsoColimit hσ (Cofan.ext (asIso φ) fun i ↦ hσ.fac _ ⟨i⟩)
 
 end sigma
 
