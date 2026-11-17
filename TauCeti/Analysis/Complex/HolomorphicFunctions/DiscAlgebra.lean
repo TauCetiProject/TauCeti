@@ -12,11 +12,12 @@ public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.ContinuousMap.Algebra
 public import Mathlib.Topology.ContinuousMap.Compact
 import Mathlib.Analysis.Analytic.Constructions
-import Mathlib.Analysis.Calculus.Deriv.Slope
+import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Complex.LocallyUniformLimit
 import Mathlib.Topology.Algebra.Algebra
 import TauCeti.Analysis.Analytic.ContinuousMap
+import TauCeti.Analysis.Calculus.FDeriv.Submodule
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.MeasureTheory.Integral.Circle.ContinuousMap
 
@@ -283,34 +284,15 @@ theorem differentiableAt_iff_coe {E : Type*} [NormedAddCommGroup E] [NormedSpace
     DifferentiableAt ℂ f a ↔ DifferentiableAt ℂ (fun x => (f x : C(closedBall c R, ℂ))) a := by
   refine ⟨fun hf => ((discAlgebra c R).valA.toContinuousLinearMap.differentiableAt).comp a hf,
     fun hg => ?_⟩
-  set g : E → C(closedBall c R, ℂ) := fun x => (f x : C(closedBall c R, ℂ))
-  have hfg : HasFDerivAt g (fderiv ℂ g a) a := hg.hasFDerivAt
-  have hmem_fderiv (v : E) : fderiv ℂ g a v ∈ discAlgebra c R := by
-    have hline : HasDerivAt (fun t : ℂ => a + t • v) v 0 := by
-      simpa using ((hasDerivAt_id (0 : ℂ)).smul_const v).const_add a
-    have hfg0 : HasFDerivAt g (fderiv ℂ g a) (a + (0 : ℂ) • v) := by simpa using hfg
-    have hd := hfg0.comp_hasDerivAt 0 hline
-    refine (isClosed_discAlgebra c R).mem_of_tendsto hd.tendsto_slope_zero
-      (Eventually.of_forall fun t => ?_)
-    simpa [g] using Subalgebra.smul_mem (discAlgebra c R)
-      (Subalgebra.sub_mem (discAlgebra c R) (f (a + t • v)).property (f a).property) t⁻¹
-  let L : E →L[ℂ] discAlgebra c R :=
-    LinearMap.mkContinuous
-      { toFun := fun v => ⟨fderiv ℂ g a v, hmem_fderiv v⟩
-        map_add' := fun v w => Subtype.ext (map_add (fderiv ℂ g a) v w)
-        map_smul' := fun k v => Subtype.ext (map_smul (fderiv ℂ g a) k v) }
-      ‖fderiv ℂ g a‖
-      fun v => by
-        rw [AddSubgroupClass.coe_norm]
-        exact (fderiv ℂ g a).le_opNorm v
-  refine HasFDerivAt.differentiableAt (f' := L) ?_
-  rw [hasFDerivAt_iff_isLittleO, Asymptotics.isLittleO_iff]
-  intro ε hε
-  filter_upwards [Asymptotics.isLittleO_iff.1 hfg.isLittleO hε] with y hy
-  have hnorm : ‖f y - f a - L (y - a)‖ = ‖g y - g a - fderiv ℂ g a (y - a)‖ := by
-    rw [AddSubgroupClass.coe_norm]
-    simp [L, g]
-  rwa [hnorm]
+  let S : Submodule ℂ C(closedBall c R, ℂ) := (discAlgebra c R).toSubmodule
+  have hfg := hg.hasFDerivAt
+  have hmem : ∀ v, fderiv ℂ (fun x => (f x : C(closedBall c R, ℂ))) a v ∈ S :=
+    hfg.apply_mem_of_eventually_sub_mem (isClosed_discAlgebra c R)
+      (Eventually.of_forall fun y => (discAlgebra c R).sub_mem (f y).2 (f a).2)
+  let L : E →L[ℂ] S := (fderiv ℂ (fun x => (f x : C(closedBall c R, ℂ))) a).codRestrict S hmem
+  exact (HasFDerivAt.of_comp_of_isEmbedding (f := S.subtypeL) (f' := S.subtypeL) (g := f) (g' := L)
+    (Topology.IsEmbedding.subtypeVal.continuousAt_iff.2 hg.continuousAt)
+    S.subtypeL.hasFDerivAt Topology.IsEmbedding.subtypeVal hfg EventuallyEq.rfl).differentiableAt
 
 /-- A jointly analytic family `F : E × ℂ → ℂ` on `{a} × closedBall c R`, with `E`
 finite-dimensional over `ℂ`, induces an analytic map `x ↦ mkD c R (fun z => F (x, z)) d` into

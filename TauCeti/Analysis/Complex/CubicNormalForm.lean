@@ -22,15 +22,14 @@ import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Analysis.Normed.Operator.Mul
 import Mathlib.Topology.Algebra.Algebra
+import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 import TauCeti.Analysis.Analytic.Inverse
 import TauCeti.Analysis.Analytic.IteratedDeriv
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
-import TauCeti.Analysis.Calculus.JointImplicitFunction
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.HolomorphicFunctions.DiscAlgebra
 import TauCeti.Analysis.Complex.LocalNormalForm
-import TauCeti.Analysis.Complex.Weierstrass
 
 /-!
 # The holomorphic Chester-Friedman-Ursell cubic normal form
@@ -44,8 +43,9 @@ integration variable `t ↦ w(α, t)` near `(α₀, t₀)` together with holomor
 `∂w/∂t (α₀, t₀) ≠ 0`, and locally `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)`.
 
 This reduction is the geometric heart of uniform Airy asymptotic approximations for contour
-integrals with two coalescing saddle points: under `u = w(α, t)` with local inverse `t = T(α, u)`,
-an oscillatory integral `∫ exp(-z p(α, t)) q(α, t) dt` becomes
+integrals with two coalescing saddle points: under `u = w(α, t)` with local inverse `t = T(α, u)`
+(see `TauCeti.exists_analyticAt_mul_deriv_eq` in `TauCeti.Analysis.Complex.ImplicitFunction`), an
+oscillatory integral `∫ exp(-z p(α, t)) q(α, t) dt` becomes
 `exp(-z η(α)) ∫ exp(-z (u ^ 3 / 3 - ζ(α) u)) f(α, u) du` with holomorphic transformed amplitude
 `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)`, and the critical points `∂p/∂t = 0` near `(α₀, t₀)` map
 bijectively to the two square roots `w ^ 2 = ζ(α)`.
@@ -76,9 +76,6 @@ square-root rate `√(α - α₀)`.
   `∂³p/∂t³ = 2 (∂w/∂t) ^ 3` (under `C²` regularity over any normed field of characteristic `≠ 3`)
   and `∂²p/∂α∂t = -ζ'(α₀) ∂w/∂t`, characterizing nondegenerate square-root coalescence
   `ζ'(α₀) ≠ 0`.
-* `AnalyticAt.exists_analyticAt_mul_deriv_eq`, `TauCeti.exists_analyticAt_mul_deriv_eq`: analytic
-  local inverse `T(α, u)` and transformed amplitude `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)`
-  satisfying `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)`.
 * `TauCeti.deriv_pow_three_div_three_sub_mul_eq_zero_iff`,
   `TauCeti.deriv_deriv_pow_three_div_three_sub_mul_zero`,
   `TauCeti.deriv_deriv_pow_three_div_three_add_sq_mul_zero`,
@@ -103,56 +100,6 @@ open Complex Filter Metric Set Topology
 namespace TauCeti
 
 /-! ### Local inflection decomposition -/
-
-/-- Quadratic Taylor remainder in the second variable along `s = 0` when the first partial
-derivative in `s` vanishes there. -/
-private theorem exists_quadratic_remainder_of_deriv_eq_zero {g : ℂ × ℂ → ℂ} {α₀ : ℂ}
-    (hg : AnalyticAt ℂ g (α₀, 0))
-    (hderiv0 : ∀ᶠ α in 𝓝 α₀, deriv (fun s => g (α, s)) 0 = 0) :
-    ∃ U : ℂ × ℂ → ℂ, AnalyticAt ℂ U (α₀, 0) ∧
-      U (α₀, 0) = deriv (deriv fun s => g (α₀, s)) 0 / 2 ∧
-      ∀ᶠ q in 𝓝 (α₀, 0), g q = g (q.1, 0) + q.2 ^ 2 * U q := by
-  obtain ⟨U, r, hU, -, hdiv⟩ := hg.exists_weierstrassDivision_monicOfCoeff
-    (d := 2) (c := 0) (fun _ => analyticAt_const) (fun _ => rfl)
-  have hdiv' : ∀ᶠ q in 𝓝 (α₀, 0), g q = r 0 q.1 + r 1 q.1 * q.2 + q.2 ^ 2 * U q := by
-    filter_upwards [hdiv] with q hq
-    rw [hq, TauCeti.Polynomial.eval_monicOfCoeff]
-    simp [Fin.sum_univ_two]
-    ring
-  have hdiv_prod : ∀ᶠ q in 𝓝 α₀ ×ˢ 𝓝 (0 : ℂ),
-      g q = r 0 q.1 + r 1 q.1 * q.2 + q.2 ^ 2 * U q := by rwa [← nhds_prod_eq]
-  have hr₀ : ∀ᶠ α in 𝓝 α₀, r 0 α = g (α, 0) := by
-    filter_upwards [hdiv_prod.curry] with α hα
-    have h0 := hα.self_of_nhds
-    linear_combination -h0
-  have hU_prod : ∀ᶠ q in 𝓝 α₀ ×ˢ 𝓝 (0 : ℂ), AnalyticAt ℂ U q := by
-    rw [← nhds_prod_eq]
-    exact hU.eventually_analyticAt
-  have hr₁ : ∀ᶠ α in 𝓝 α₀, r 1 α = 0 := by
-    filter_upwards [hdiv_prod.curry, hderiv0, hU_prod.curry] with α hα hdα hUα
-    have hU0 : DifferentiableAt ℂ (fun s => U (α, s)) 0 :=
-      (hUα.self_of_nhds.comp_of_eq (analyticAt_const.prod analyticAt_id) rfl).differentiableAt
-    have hd_rhs : deriv (fun s => r 0 α + r 1 α * s + s ^ 2 * U (α, s)) 0 = r 1 α := by
-      have hd := ((((hasDerivAt_id (0 : ℂ)).const_mul (r 1 α)).const_add (r 0 α)).add
-        ((hasDerivAt_pow 2 (0 : ℂ)).mul hU0.hasDerivAt)).deriv
-      simp only [Pi.add_def, Pi.mul_def, id] at hd
-      rw [hd]
-      simp
-    exact ((Filter.EventuallyEq.deriv_eq hα).trans hd_rhs).symm.trans hdα
-  have hmain : ∀ᶠ q in 𝓝 (α₀, 0), g q = g (q.1, 0) + q.2 ^ 2 * U q := by
-    filter_upwards [hdiv', continuous_fst.continuousAt.eventually (hr₀.and hr₁)]
-      with q hq ⟨h0, h1⟩
-    rw [hq, h0, h1]
-    ring
-  have hUs : AnalyticAt ℂ (fun s => U (α₀, s)) 0 :=
-    hU.comp_of_eq (analyticAt_const.prod analyticAt_id) rfl
-  have hmain_s : (fun s => g (α₀, s)) =ᶠ[𝓝 0] fun s => g (α₀, 0) + s ^ 2 * U (α₀, s) :=
-    ((continuous_const.prodMk continuous_id).tendsto (0 : ℂ)).eventually hmain
-  have hdd : deriv (deriv fun s => g (α₀, s)) 0 = 2 * U (α₀, 0) := by
-    rw [← iteratedDeriv_one, ← iteratedDeriv_succ', hmain_s.iteratedDeriv_eq 2,
-      iteratedDeriv_const_add (by norm_num : 0 < 2)]
-    simpa using TauCeti.iteratedDeriv_pow_sub_smul_self (n := 2) (a := (0 : ℂ)) hUs.contDiffAt
-  exact ⟨U, hU, by rw [hdd, mul_div_cancel_left₀ _ two_ne_zero], hmain⟩
 
 /-- **Local inflection curve and quadratic remainder of `∂p/∂t`.** Let `p(α, t)` be holomorphic on
 a neighbourhood `V` of `(α₀, t₀)` with `∂²p/∂t² (α₀, t₀) = 0` and `∂³p/∂t³ (α₀, t₀) ≠ 0`. Then
@@ -194,19 +141,32 @@ theorem exists_deriv_eq_add_sq_mul {p : ℂ × ℂ → ℂ} {V : Set (ℂ × ℂ
   have hg : AnalyticAt ℂ g (α₀, 0) :=
     hp₁.comp_of_eq (analyticAt_fst.prod
       ((hτ.comp_of_eq analyticAt_fst rfl).add analyticAt_snd)) (by simp [hτ0])
-  have hg_deriv0 : ∀ᶠ α in 𝓝 α₀, deriv (fun s => g (α, s)) 0 = 0 :=
-    hτeq.mono fun α hα => by simpa [g, p₁, deriv_comp_const_add] using hα
-  obtain ⟨U, hU, hU0, hgeq⟩ := exists_quadratic_remainder_of_deriv_eq_zero hg hg_deriv0
+  have hg_sub : AnalyticAt ℂ (fun q : ℂ × ℂ => g q - c q.1) (α₀, 0) :=
+    hg.sub (hc.comp_of_eq analyticAt_fst rfl)
+  have hord : ∀ᶠ α in 𝓝 α₀, ((2 : ℕ) : ℕ∞) ≤ analyticOrderAt (fun s => g (α, s) - c α) 0 := by
+    filter_upwards [hτeq, hg_sub.eventually_analyticAt_curry_right] with α hα hGα
+    rw [natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero hGα]
+    rintro (_ | _ | i) hi
+    · simp [g, c]
+    · simpa [g, p₁, deriv_comp_const_add] using hα
+    · omega
+  obtain ⟨U, hU, hGU⟩ := hg_sub.eventually_natCast_le_analyticOrderAt_iff.1 hord
+  have hgeq : ∀ᶠ q in 𝓝 (α₀, 0), g q = c q.1 + q.2 ^ 2 * U q :=
+    hGU.mono fun q hq => by simp only [sub_zero, smul_eq_mul] at hq; linear_combination hq
   have hU0' : U (α₀, 0) = deriv (deriv (deriv fun t => p (α₀, t))) t₀ / 2 := by
-    have hgs : (fun s => g (α₀, s)) = fun s => p₁ (α₀, t₀ + s) := by ext s; simp [g, hτ0]
-    have hd1 : deriv (fun u => p₁ (α₀, t₀ + u)) = fun s => p₂ (α₀, t₀ + s) := by
-      ext s; simpa [p₂] using deriv_comp_const_add (fun t => p₁ (α₀, t)) t₀ s
+    have hgs : (fun s => g (α₀, s)) =ᶠ[𝓝 0] fun s => c α₀ + s ^ 2 * U (α₀, s) :=
+      ((continuous_const.prodMk continuous_id).tendsto (0 : ℂ)).eventually hgeq
+    have hdd : deriv (deriv fun s => g (α₀, s)) 0 = 2 * U (α₀, 0) := by
+      rw [← iteratedDeriv_one, ← iteratedDeriv_succ', hgs.iteratedDeriv_eq 2,
+        iteratedDeriv_const_add (by norm_num : 0 < 2)]
+      simpa using TauCeti.iteratedDeriv_pow_sub_smul_self (n := 2) (a := (0 : ℂ))
+        hU.curry_right.contDiffAt
+    have hd1 : deriv (fun s => g (α₀, s)) = fun s => p₂ (α₀, t₀ + s) := by
+      ext s; simpa [g, hτ0, p₂] using deriv_comp_const_add (fun t => p₁ (α₀, t)) t₀ s
     have hd2 : deriv (fun s => p₂ (α₀, t₀ + s)) 0 = deriv (fun t => p₂ (α₀, t)) t₀ := by
       simpa using deriv_comp_const_add (fun t => p₂ (α₀, t)) t₀ 0
-    rw [hU0, hgs, hd1, hd2]
-  refine ⟨τ, c, U, hτ, hc, hU, hτ0, by simp [c, p₁, hτ0], hc_deriv, hU0', hτeq, ?_⟩
-  filter_upwards [hgeq] with q hq
-  simpa [g, c, p₁] using hq
+    rw [← hd2, ← hd1, hdd, mul_div_cancel_left₀ _ two_ne_zero]
+  exact ⟨τ, c, U, hτ, hc, hU, hτ0, by simp [c, p₁, hτ0], hc_deriv, hU0', hτeq, hgeq⟩
 
 /-! ### Disc-algebra inverse function construction -/
 
@@ -720,26 +680,6 @@ theorem deriv_deriv_deriv_eq_two_mul_deriv_pow_three {𝕜 : Type*} [Nontriviall
     · simp
   rw [hd₂.deriv_eq, (h_left.fun_add h_right).deriv, add_zero]
 
-/-- Derivative of `(h - ζ) * g` at `α₀` when `h α₀ = 0`, `h' α₀ = 0`, `ζ α₀ = 0`, and `g α₀ ≠ 0`,
-with no regularity assumption on `ζ`. -/
-private theorem deriv_sub_mul_of_ne_zero {h ζ g : ℂ → ℂ} {α₀ : ℂ}
-    (hh : DifferentiableAt ℂ h α₀) (hh0 : h α₀ = 0) (hh' : deriv h α₀ = 0)
-    (hζ0 : ζ α₀ = 0) (hg : AnalyticAt ℂ g α₀) (hg0 : g α₀ ≠ 0) :
-    deriv (fun α => (h α - ζ α) * g α) α₀ = -deriv ζ α₀ * g α₀ := by
-  by_cases hζd : DifferentiableAt ℂ ζ α₀
-  · have hd := ((hh.hasDerivAt.sub hζd.hasDerivAt).mul hg.differentiableAt.hasDerivAt).deriv
-    simp only [Pi.mul_def, Pi.sub_def] at hd
-    rw [hd, hh', hh0, hζ0]
-    ring
-  · have hnot : ¬DifferentiableAt ℂ (fun α => (h α - ζ α) * g α) α₀ := by
-      intro hfd
-      have hζ_eq : ζ =ᶠ[𝓝 α₀] fun α => h α - ((h α - ζ α) * g α) / g α := by
-        filter_upwards [hg.continuousAt.eventually_ne hg0] with α hgα
-        rw [mul_div_cancel_right₀ _ hgα, sub_sub_cancel]
-      exact hζd ((hh.sub (hfd.div hg.differentiableAt hg0)).congr_of_eventuallyEq hζ_eq)
-    rw [deriv_zero_of_not_differentiableAt hnot, deriv_zero_of_not_differentiableAt hζd,
-      neg_zero, zero_mul]
-
 /-- Along `t = t₀`, `∂p/∂t (α, t₀)` agrees near `α₀` with
 `(w(α, t₀) ^ 2 - ζ(α)) * ∂w/∂t (α, t₀)`. -/
 private theorem eventuallyEq_deriv_snd_slice {p w : ℂ × ℂ → ℂ} {ζ η : ℂ → ℂ} {α₀ t₀ : ℂ}
@@ -766,13 +706,25 @@ private theorem deriv_deriv_eq_neg_deriv_mul_deriv_of_ne_zero {p w : ℂ × ℂ 
   have hwa : AnalyticAt ℂ w (α₀, t₀) :=
     analyticAt_iff_eventually_differentiableAt_of_finiteDimensional.2 hw
   have hg : AnalyticAt ℂ (fun α => deriv (fun t => w (α, t)) t₀) α₀ := hwa.deriv_snd.curry_left
-  have hw_slice : AnalyticAt ℂ (fun α => w (α, t₀)) α₀ :=
-    hwa.comp_of_eq (analyticAt_id.prod analyticAt_const) rfl
+  have hh : DifferentiableAt ℂ (fun α => w (α, t₀) ^ 2) α₀ :=
+    (hwa.curry_left.pow 2).differentiableAt
   have hh' : deriv (fun α => w (α, t₀) ^ 2) α₀ = 0 := by
-    have hd := (hw_slice.differentiableAt.hasDerivAt.pow 2).deriv
-    simpa [Pi.pow_def, hw0] using hd
+    simpa [Pi.pow_def, hw0] using (hwa.curry_left.differentiableAt.hasDerivAt.pow 2).deriv
   rw [(eventuallyEq_deriv_snd_slice hwa hpw).deriv_eq]
-  exact deriv_sub_mul_of_ne_zero (hw_slice.pow 2).differentiableAt (by simp [hw0]) hh' hζ0 hg hdw
+  by_cases hζd : DifferentiableAt ℂ ζ α₀
+  · rw [deriv_fun_mul (hh.fun_sub hζd) hg.differentiableAt, deriv_fun_sub hh hζd, hh', hw0, hζ0]
+    ring
+  · have hnot : ¬DifferentiableAt ℂ
+        (fun α => (w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) α₀ := fun hfd => by
+      have hζ_eq : ζ =ᶠ[𝓝 α₀] fun α =>
+          w (α, t₀) ^ 2 - ((w (α, t₀) ^ 2 - ζ α) * deriv (fun t => w (α, t)) t₀) /
+            deriv (fun t => w (α, t)) t₀ :=
+        (hg.continuousAt.eventually_ne hdw).mono fun α hgα => by
+          dsimp only
+          rw [mul_div_cancel_right₀ _ hgα, sub_sub_cancel]
+      exact hζd ((hh.fun_sub (hfd.div hg.differentiableAt hdw)).congr_of_eventuallyEq hζ_eq)
+    rw [deriv_zero_of_not_differentiableAt hnot, deriv_zero_of_not_differentiableAt hζd,
+      neg_zero, zero_mul]
 
 /-- **Mixed-derivative identity for the cubic normal form.** For any cubic normal form
 `p(α, t) = w(α, t) ^ 3 / 3 - ζ(α) * w(α, t) + η(α)` with `ζ(α₀) = 0`, `w(α₀, t₀) = 0`, and `ζ`
@@ -815,99 +767,6 @@ theorem deriv_ne_zero_iff_deriv_deriv_ne_zero {p w : ℂ × ℂ → ℂ} {ζ η 
   exact ⟨fun hne => ⟨hne, hdw⟩, fun hne => hne.1⟩
 
 end CubicNormalForm
-
-end TauCeti
-
-/-! ### Local inverse coordinate and transformed amplitude -/
-
-namespace AnalyticAt
-
-open TauCeti
-
-/-- **Analytic inverse coordinate and transformed amplitude** (DLMF 2.4.20). Given a coordinate
-`w : E × 𝕜 → 𝕜` analytic at `(α₀, t₀)` with `∂w/∂t (α₀, t₀) ≠ 0` and an amplitude `q : E × 𝕜 → 𝕜`
-analytic at `(α₀, t₀)` (over complete normed spaces `E, 𝕜`), there exist analytic functions `T` and
-`f` at `(α₀, w (α₀, t₀))` such that `T(α₀, w(α₀, t₀)) = t₀`, `w(α, T(α, u)) = u` and
-`f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` near `(α₀, w (α₀, t₀))`, while `T(α, w(α, t)) = t` and
-`f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)` near `(α₀, t₀)`. -/
-theorem exists_analyticAt_mul_deriv_eq {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
-    [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-    {w q : E × 𝕜 → 𝕜} {α₀ : E} {t₀ : 𝕜}
-    (hw : AnalyticAt 𝕜 w (α₀, t₀))
-    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
-    (hq : AnalyticAt 𝕜 q (α₀, t₀)) :
-    ∃ T f : E × 𝕜 → 𝕜,
-      AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) ∧ AnalyticAt 𝕜 f (α₀, w (α₀, t₀)) ∧
-      T (α₀, w (α₀, t₀)) = t₀ ∧
-      (∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)),
-        w (u.1, T u) = u.2 ∧ f u = q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2) ∧
-      ∀ᶠ x in 𝓝 (α₀, t₀),
-        T (x.1, w x) = x.2 ∧ f (x.1, w x) * deriv (fun t => w (x.1, t)) x.2 = q x := by
-  have df : HasStrictFDerivAt w (fderiv 𝕜 w (α₀, t₀)) (α₀, t₀) := hw.hasStrictFDerivAt
-  have hinv : (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜).IsInvertible := by
-    refine ⟨ContinuousLinearEquiv.unitsEquivAut 𝕜 (.mk0 _ hdw), ?_⟩
-    have hd : HasFDerivAt (fun t => w (α₀, t))
-        (fderiv 𝕜 w (α₀, t₀) ∘L .inr 𝕜 E 𝕜) t₀ :=
-      df.hasFDerivAt.comp t₀ (hasFDerivAt_prodMk_right α₀ t₀)
-    ext
-    simp [hd.hasDerivAt.deriv]
-  let T : E × 𝕜 → 𝕜 := df.jointImplicitFunctionOfProdDomain hinv
-  have hTa : AnalyticAt 𝕜 T (α₀, w (α₀, t₀)) :=
-    df.analyticAt_jointImplicitFunctionOfProdDomain hinv hw
-  have hT0 : T (α₀, w (α₀, t₀)) = t₀ := df.jointImplicitFunctionOfProdDomain_apply_self hinv
-  have hT_right : ∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)), w (u.1, T u) = u.2 :=
-    df.eventually_apply_jointImplicitFunctionOfProdDomain hinv
-  have hT_left : ∀ᶠ x in 𝓝 (α₀, t₀), T (x.1, w x) = x.2 :=
-    df.eventually_jointImplicitFunctionOfProdDomain_apply hinv
-  set f : E × 𝕜 → 𝕜 := fun u => q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2
-  have hfa : AnalyticAt 𝕜 f (α₀, w (α₀, t₀)) :=
-    (hq.comp_of_eq (analyticAt_fst.prod hTa) (by simp [hT0])).fun_mul hTa.deriv_snd
-  refine ⟨T, f, hTa, hfa, hT0, hT_right.mono fun _ hu => ⟨hu, rfl⟩, ?_⟩
-  have hpull : ContinuousAt (fun x : E × 𝕜 => (x.1, w x)) (α₀, t₀) :=
-    continuousAt_fst.prodMk hw.continuousAt
-  filter_upwards [hT_left.eventually_nhds, hw.eventually_analyticAt,
-    hpull.eventually hTa.eventually_analyticAt] with x hx_nhds hwx hTx
-  have hx_eq : T (x.1, w x) = x.2 := hx_nhds.self_of_nhds
-  refine ⟨hx_eq, ?_⟩
-  have hTs : DifferentiableAt 𝕜 (fun s => T (x.1, s)) (w x) :=
-    (hTx.comp_of_eq (analyticAt_const.prod analyticAt_id) rfl).differentiableAt
-  have hwt : DifferentiableAt 𝕜 (fun t => w (x.1, t)) x.2 :=
-    (hwx.comp_of_eq (analyticAt_const.prod analyticAt_id) rfl).differentiableAt
-  have hchain := (hTs.hasDerivAt.comp x.2 hwt.hasDerivAt).deriv
-  simp only [Function.comp_def] at hchain
-  have hid : (fun t => T (x.1, w (x.1, t))) =ᶠ[𝓝 x.2] id :=
-    ((continuous_const.prodMk continuous_id).tendsto x.2).eventually hx_nhds
-  have hjac : deriv (fun s => T (x.1, s)) (w x) * deriv (fun t => w (x.1, t)) x.2 = 1 := by
-    rw [← hchain, hid.deriv_eq, deriv_id]
-  dsimp [f]
-  rw [hx_eq, mul_assoc, hjac, mul_one]
-
-end AnalyticAt
-
-namespace TauCeti
-
-/-- **Holomorphic inverse coordinate and transformed amplitude** (DLMF 2.4.20). Given a coordinate
-`w : E × ℂ → ℂ` (with `E` finite-dimensional over `ℂ`) holomorphic near `(α₀, t₀)` with
-`∂w/∂t (α₀, t₀) ≠ 0`, and an amplitude `q(α, t)` holomorphic on `V ∈ 𝓝 (α₀, t₀)`, there exist
-analytic functions `T` and `f` at `(α₀, w (α₀, t₀))` such that `T(α₀, w(α₀, t₀)) = t₀`,
-`w(α, T(α, u)) = u` and `f(α, u) = q(α, T(α, u)) ∂T/∂u (α, u)` near `(α₀, w (α₀, t₀))`, while
-`T(α, w(α, t)) = t` and `f(α, w(α, t)) ∂w/∂t (α, t) = q(α, t)` near `(α₀, t₀)`. -/
-theorem exists_analyticAt_mul_deriv_eq {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-    [FiniteDimensional ℂ E] {w q : E × ℂ → ℂ} {V : Set (E × ℂ)} {α₀ : E} {t₀ : ℂ}
-    (hw : ∀ᶠ x in 𝓝 (α₀, t₀), DifferentiableAt ℂ w x)
-    (hdw : deriv (fun t => w (α₀, t)) t₀ ≠ 0)
-    (hV : V ∈ 𝓝 (α₀, t₀)) (hq : DifferentiableOn ℂ q V) :
-    ∃ T f : E × ℂ → ℂ,
-      AnalyticAt ℂ T (α₀, w (α₀, t₀)) ∧ AnalyticAt ℂ f (α₀, w (α₀, t₀)) ∧
-      T (α₀, w (α₀, t₀)) = t₀ ∧
-      (∀ᶠ u in 𝓝 (α₀, w (α₀, t₀)),
-        w (u.1, T u) = u.2 ∧ f u = q (u.1, T u) * deriv (fun s => T (u.1, s)) u.2) ∧
-      ∀ᶠ x in 𝓝 (α₀, t₀),
-        T (x.1, w x) = x.2 ∧ f (x.1, w x) * deriv (fun t => w (x.1, t)) x.2 = q x := by
-  let : CompleteSpace E := FiniteDimensional.completeSpace ℂ E
-  have hwa : AnalyticAt ℂ w (α₀, t₀) :=
-    analyticAt_iff_eventually_differentiableAt_of_finiteDimensional.2 hw
-  exact hwa.exists_analyticAt_mul_deriv_eq hdw (hq.analyticAt_of_finiteDimensional hV)
 
 /-! ### Canonical and degenerate coalescing critical-point models -/
 
