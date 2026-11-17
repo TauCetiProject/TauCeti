@@ -210,29 +210,10 @@ theorem norm_lowPass_le_of_toDistr_eq (u : BesovSpace F φ s p q)
   rwa [h]
 
 /-- **The low-frequency cut-offs at negative regularity.** If `u ∈ B^s_{p,q}` with `s < 0`, then
-`‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`, since the blocks satisfy `‖Δₖ u‖_p ≤ 2^{-s k} ‖u‖` and
-`∑_{k < m} 2^{-s k} ≤ 2^{-s m} / (2^{-s} - 1)`. -/
+`‖S_m u‖_p ≤ 2^{-s m} ‖u‖ / (2^{-s} - 1)`. -/
 theorem norm_lowPass_le_of_neg [Fact (1 ≤ q)] (hs : s < 0) (u : BesovSpace F φ s p q) (m : ℕ) :
-    ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by
-  set x : ℝ := 2 ^ (-s)
-  have hx : 1 < x := Real.one_lt_rpow one_lt_two (neg_pos.2 hs)
-  have hpow : ∀ k : ℕ, (2 : ℝ) ^ (-s * k) = x ^ k := fun k ↦ by
-    rw [Real.rpow_mul zero_le_two, Real.rpow_natCast]
-  -- Each block is bounded by `2^{-s k} ‖u‖ = x^k ‖u‖`.
-  have hblock : ∀ k : ℕ, ‖u.block k‖ ≤ x ^ k * ‖u‖ := fun k ↦ by
-    calc ‖u.block k‖ = 2 ^ (-s * k) * (2 ^ (s * k) * ‖u.block k‖) := by
-          rw [← mul_assoc, ← Real.rpow_add two_pos, neg_mul, neg_add_cancel, Real.rpow_zero,
-            one_mul]
-      _ ≤ 2 ^ (-s * k) * ‖u‖ := mul_le_mul_of_nonneg_left (u.rpow_mul_norm_block_le k)
-          (by positivity)
-      _ = x ^ k * ‖u‖ := by rw [hpow]
-  calc ‖u.lowPass m‖ ≤ ∑ k ∈ Finset.range m, ‖u.block k‖ := norm_sum_le _ _
-    _ ≤ ∑ k ∈ Finset.range m, x ^ k * ‖u‖ := Finset.sum_le_sum fun k _ ↦ hblock k
-    _ = (x ^ m - 1) / (x - 1) * ‖u‖ := by rw [← Finset.sum_mul, geom_sum_eq hx.ne']
-    _ ≤ x ^ m / (x - 1) * ‖u‖ := by
-        gcongr
-        linarith
-    _ = 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ := by rw [hpow]
+    ‖u.lowPass m‖ ≤ 2 ^ (-s * m) / (2 ^ (-s) - 1) * ‖u‖ :=
+  (norm_sum_le _ _).trans (sum_norm_block_le_of_neg hs u m)
 
 end LowPass
 
