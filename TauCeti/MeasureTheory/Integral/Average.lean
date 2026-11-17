@@ -86,7 +86,7 @@ applied to an integrable function that is almost everywhere at least `a`.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
-  set of finite measure, `1 ≤ p < ∞`.
+  set of finite measure, `1 ≤ p ≤ ∞`.
 * `ContinuousLinearMap.average_apply`: an average of continuous linear maps, applied to a vector,
   is the average of the applications.
 * `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
@@ -310,9 +310,8 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
 
 /-- The `Lᵖ` deviation of `f` from its average over a set `s` of finite measure is at most twice
 its `Lᵖ` deviation from any constant `c`: `‖f - f_s‖_{Lᵖ(s)} ≤ 2 ‖f - c‖_{Lᵖ(s)}` for
-`1 ≤ p < ∞`. -/
-theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (c : F) :
+`1 ≤ p ≤ ∞`. -/
+theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 ≤ p) (c : F) :
     eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s) ≤
       2 * eLpNorm (fun x ↦ f x - c) p (μ.restrict s) := by
   rcases eq_or_ne (μ s) 0 with h0 | h0
@@ -342,7 +341,12 @@ theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 �
           Measure.restrict_apply_univ]
     _ ≤ N + μ s ^ (-(p.toReal)⁻¹) * N * μ s ^ (1 / p.toReal) := by
         gcongr
-        exact enorm_setAverage_le hp hp'
+        rcases eq_or_ne p ∞ with rfl | hp'
+        · rw [ENNReal.toReal_top, inv_zero, neg_zero, ENNReal.rpow_zero, one_mul]
+          exact ((enorm_setAverage_le_setLAverage μ _ s).trans
+            (laverage_le_essSup (μ := μ.restrict s) fun x ↦ ‖f x - c‖ₑ)).trans
+              eLpNormEssSup_le_eLpNorm_top
+        · exact enorm_setAverage_le hp hp'
     _ = 2 * N := by rw [mul_comm _ N, mul_assoc, hcancel, mul_one, two_mul]
 
 omit [NormedSpace ℝ F] [CompleteSpace F] in
