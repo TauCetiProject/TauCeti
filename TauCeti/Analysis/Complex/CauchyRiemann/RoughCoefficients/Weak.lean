@@ -239,7 +239,8 @@ omit [CompleteSpace V] in
 /-- The `∂_t J` coefficient `DJ · I` inherits local `Lᵖ` membership from `DJ`. -/
 private theorem IsSobolevCRCoefficients.memLpLoc_derivI
     (hc : IsSobolevCRCoefficients p Ω J DJ S) : MemLpLoc p Ω (fun z => DJ z I) :=
-  hc.memLpLoc_deriv.clm_comp (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
+  MemLpLoc.clm_comp (F := ℂ →L[ℝ] V →L[ℝ] V) (G := V →L[ℝ] V) hc.memLpLoc_deriv
+    (ContinuousLinearMap.apply ℝ (V →L[ℝ] V) I)
 
 omit [CompleteSpace V] in
 /-- The four terms of the pairing `⟪D* φ, ξ⟫` (see `TauCeti.inner_crFormalAdjoint`) are
@@ -422,7 +423,8 @@ theorem isWeakCRSolution_iff_of_contDiffOn [FiniteDimensional ℝ V] (hJ : ContD
     (hf.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)
   have hc : IsSobolevCRCoefficients 2 Ω J (fderiv ℝ J) S :=
     ⟨hasWeakFDerivOn_of_differentiableOn (hJ'.locallyIntegrableOn Ω.isOpen.measurableSet)
-      (hdiff hJ), hJ.continuousOn.memLpLoc, hJ'.memLpLoc, hS.memLpLoc⟩
+      (hdiff hJ), hJ.continuousOn.memLpLoc,
+      ContinuousOn.memLpLoc (F := ℂ →L[ℝ] V →L[ℝ] V) hJ', hS.memLpLoc⟩
   have hξw : HasWeakFDerivOn volume Ω ξ (fderiv ℝ ξ) :=
     hasWeakFDerivOn_of_differentiableOn (hξ'.locallyIntegrableOn Ω.isOpen.measurableSet)
       fun z hz => (hξ.differentiableOn one_ne_zero z hz).differentiableAt (Ω.isOpen.mem_nhds hz)

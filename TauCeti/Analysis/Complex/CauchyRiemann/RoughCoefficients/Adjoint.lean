@@ -452,8 +452,8 @@ theorem integral_inner_fderiv_add_I_mul_fderiv_conj_eq_zero (Ω : Opens ℂ) (φ
   set M : ℂ →L[ℝ] ℂ := ContinuousLinearMap.mul ℝ ℂ I
   let Ω' : Opens ℂ := ⟨(fun z : ℂ => -conj z) ⁻¹' Ω, Ω.isOpen.preimage (by fun_prop)⟩
   have hc : IsSobolevCRCoefficients 2 Ω (fun _ => M) 0 0 :=
-    ⟨hasWeakFDerivOn_iff.2 fun v => hasWeakLineDerivOn_const M, memLpLoc_const M, memLpLoc_zero,
-      memLpLoc_zero⟩
+    ⟨hasWeakFDerivOn_iff.2 fun v => hasWeakLineDerivOn_const M, memLpLoc_const M,
+      memLpLoc_zero (F := ℂ →L[ℝ] ℂ →L[ℝ] ℂ), memLpLoc_zero (F := ℂ →L[ℝ] ℂ)⟩
   have hD : crReflectedAdjointDeriv (0 : ℂ → ℂ →L[ℝ] ℂ →L[ℝ] ℂ) = fderiv ℝ fun _ : ℂ => M := by
     simp
   have key := (hc.forall_integral_inner_eq_zero_iff (q := 2)
