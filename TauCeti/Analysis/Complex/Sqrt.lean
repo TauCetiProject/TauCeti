@@ -78,6 +78,10 @@ theorem sqrt_re_pos_iff (z : ℂ) : 0 < (sqrt z).re ↔ z ∈ slitPlane := by
     have hlt := lt_of_le_of_ne h hz
     linarith
 
+/-- The principal half-power `z ^ (1 / 2)` has positive real part exactly on the slit plane. -/
+theorem cpow_one_half_re_pos_iff (z : ℂ) : 0 < (z ^ (1 / 2 : ℂ)).re ↔ z ∈ slitPlane := by
+  simpa only [sqrt, one_div] using sqrt_re_pos_iff z
+
 /-- A sum of principal square roots has positive real part exactly when at least one
 input lies in the slit plane. -/
 @[simp]
