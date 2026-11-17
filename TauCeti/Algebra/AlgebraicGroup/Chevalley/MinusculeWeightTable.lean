@@ -182,10 +182,10 @@ private theorem pinnedAction_cartan_isFaithful (hspan : Submodule.span ℤ (Set.
   intro x hx
   let c : Fin t.rank → ℚ := (t.cartanBasis ht).repr x
   have heval (a : α) : ∑ i, c i * (T.weight a i : ℚ) = 0 := by
-    have h := hx (Pi.single a 1)
     have hact : T.pinnedRep ht hT (ι ℚ (x : t.lieAlgebra ht)) (Pi.single a 1) = 0 := by
       rw [pinnedRep_ι]
-      exact h
+      simpa only [LieSubalgebra.coe_bracket_of_module, LieRingModule.compLieHom_apply,
+        Module.End.lie_apply] using hx (Pi.single a 1)
     have hscalar := congrFun hact a
     rw [pinnedRep_cartan_single] at hscalar
     exact hscalar
@@ -212,7 +212,10 @@ theorem pinnedAction_injective (hspan : Submodule.span ℤ (Set.range T.weight) 
     isFaithful_of_isFaithful_cartanSubalgebra (H := t.cartanSubalgebra ht)
   intro x y hxy
   apply hFaithful.injective_toEnd
-  exact hxy
+  apply LinearMap.ext
+  intro m
+  simpa only [LieModule.toEnd_apply_apply, LieRingModule.compLieHom_apply,
+    Module.End.lie_apply] using congrArg (fun f : Module.End ℚ (α → ℚ) => f m) hxy
 
 /-- The enveloping representation is injective on the included pinned Lie algebra. -/
 theorem pinnedRep_ι_injective (hspan : Submodule.span ℤ (Set.range T.weight) = ⊤) :
