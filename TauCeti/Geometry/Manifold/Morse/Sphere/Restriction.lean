@@ -27,7 +27,7 @@ in `E` through the differential `ι` of the inclusion, is the hyperplane `pᗮ`
 * **The Hessian.** At a critical point `p` of `f`, with `F` twice differentiable there, the critical
   Hessian of `f` is the second derivative of `F` corrected by the Lagrange multiplier:
   `Hess f(p)(v, w) = D²F(p)(ι v, ι w) - μ ⟪ι v, ι w⟫`
-  (`TauCeti.criticalHessian_comp_coe_sphere`).
+  (`TauCeti.criticalHessian_comp_coe_sphere_apply`).
 
 The Hessian formula is proved without computing the second derivative of a chart of the sphere.
 The function `G = F - (μ / 2) (‖·‖² - 1)` agrees with `F` on the sphere, and its derivative at `p`
@@ -67,10 +67,8 @@ theorem mem_criticalPoints_comp_coe_sphere_iff (hF : DifferentiableAt ℝ F p) :
   -- The differential of `F ∘ (↑)` is `DF(p) ∘ ι`, and the range of `ι` is `pᗮ`.
   have hd : mvfderiv (𝓡 n) (F ∘ ((↑) : sphere (0 : E) 1 → E)) p =
       (fderiv ℝ F p).comp (mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p) := by
-    rw [mvfderiv_comp p hF.mdifferentiableAt hcoe, mvfderiv_eq_fderiv]
-    -- `mvfderiv` of the inclusion is its `mfderiv` read through `NormedSpace.fromTangentSpace`,
-    -- which is the identity of `E`.
-    rfl
+    ext u
+    exact mvfderiv_comp_apply_of_differentiableAt hF hcoe u
   rw [mem_criticalPoints, hd, ← range_mvfderiv_subtypeVal (n := n) p]
   constructor
   · rintro h _ ⟨u, rfl⟩
@@ -109,7 +107,7 @@ theorem fderiv_apply_eq_mul_inner_of_mem_criticalPoints_comp_coe_sphere
 sphere, with `F` twice continuously differentiable at `p`, the critical Hessian of `f` is
 `D²F(p)(ι v, ι w) - μ ⟪ι v, ι w⟫`, where `ι` is the differential of the inclusion and
 `μ = DF(p) p` is the Lagrange multiplier. -/
-theorem criticalHessian_comp_coe_sphere (hF : ContDiffAt ℝ 2 F p)
+theorem criticalHessian_comp_coe_sphere_apply (hF : ContDiffAt ℝ 2 F p)
     (hcrit : p ∈ criticalPoints (𝓡 n) (F ∘ ((↑) : sphere (0 : E) 1 → E)))
     (v w : TangentSpace (𝓡 n) p) :
     criticalHessian (𝓡 n) (F ∘ ((↑) : sphere (0 : E) 1 → E)) p v w =

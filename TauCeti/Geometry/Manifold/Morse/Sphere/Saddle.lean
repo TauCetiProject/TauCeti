@@ -42,11 +42,11 @@ characteristic of `S²`.
 
 The Morse data are computed by Lagrange multipliers
 (`TauCeti.mem_criticalPoints_comp_coe_sphere_iff_mem_span` and
-`TauCeti.criticalHessian_comp_coe_sphere`). The gradient of `F(x) = ⟪x, u⟫² + t ⟪x, v⟫` on the
-ambient space is `2 ⟪x, u⟫ u + t v`, so a point `p` of the sphere is critical exactly when this is
-a multiple `μ p` of `p`; then either `⟪p, u⟫ = 0` and `p = ±v`, or `μ = 2`. The critical Hessian
-at `p` is `2 ⟪a, u⟫ ⟪b, u⟫ - μ ⟪a, b⟫` on the tangent hyperplane `pᗮ`, with `μ = -t` at `-v`,
-`μ = t` at `v` and `μ = 2` at the two maxima.
+`TauCeti.criticalHessian_comp_coe_sphere_apply`). The gradient of
+`F(x) = ⟪x, u⟫² + t ⟪x, v⟫` on the ambient space is `2 ⟪x, u⟫ u + t v`, so a point `p` of the
+sphere is critical exactly when this is a multiple `μ p` of `p`; then either `⟪p, u⟫ = 0` and
+`p = ±v`, or `μ = 2`. The critical Hessian at `p` is `2 ⟪a, u⟫ ⟪b, u⟫ - μ ⟪a, b⟫` on the
+tangent hyperplane `pᗮ`, with `μ = -t` at `-v`, `μ = t` at `v` and `μ = 2` at the two maxima.
 
 ## References
 
@@ -142,6 +142,14 @@ private theorem mem_span_of_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0)
   congr 2
   ring
 
+/-- A point with `hᵥ = t / 2` and `hᵤ² = 1 - t² / 4` is a critical point of `hᵤ² + t hᵥ`. -/
+private theorem mem_criticalPoints_of_sphereHeight_eq (huv : ⟪(u : E), (v : E)⟫ = 0)
+    (h1 : sphereHeight v p = t / 2) (h2 : sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) :
+    p ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) := by
+  rw [sphereHeight_sq_add_smul_sphereHeight_eq,
+    mem_criticalPoints_comp_coe_sphere_iff_mem_span (hasFDerivAt_ambient (p : E))]
+  exact mem_span_of_sphereHeight_eq huv h1 h2
+
 /-- **The critical points of `hᵤ² + t hᵥ`.** For orthogonal unit vectors `u`, `v` and `t ≠ 0`, the
 critical points of `hᵤ² + t hᵥ` on the sphere are the poles `±v` and the points with `hᵥ = t / 2`
 and `hᵤ² = 1 - t² / 4`. -/
@@ -205,7 +213,7 @@ private theorem contMDiff_sphereHeight_sq_add_smul_sphereHeight :
 /-- **The critical Hessian of `hᵤ² + t hᵥ`.** At a critical point `p`, with `ι` the differential of
 the inclusion of the sphere, the critical Hessian is
 `2 ⟪ι a, u⟫ ⟪ι b, u⟫ - μ ⟪ι a, ι b⟫`, where `μ = 2 hᵤ(p)² + t hᵥ(p)` is the Lagrange multiplier. -/
-theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight
+theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply
     (hp : p ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v))
     (a b : TangentSpace (𝓡 n) p) :
     criticalHessian (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p a b =
@@ -215,24 +223,11 @@ theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight
           ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p a,
             mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p b⟫ := by
   rw [sphereHeight_sq_add_smul_sphereHeight_eq] at hp ⊢
-  rw [criticalHessian_comp_coe_sphere (contDiff_ambient.contDiffAt.of_le (by simp)) hp,
+  rw [criticalHessian_comp_coe_sphere_apply (contDiff_ambient.contDiffAt.of_le (by simp)) hp,
     fderiv_fderiv_ambient, (hasFDerivAt_ambient (p : E)).fderiv]
   simp only [innerSL_apply_apply, inner_add_left, inner_smul_left, RCLike.conj_to_real,
     sphereHeight_apply, real_inner_comm (p : E) (u : E), real_inner_comm (p : E) (v : E)]
   ring
-
-/-- A critical point at which only the zero tangent vector is in the kernel of the critical Hessian
-is nondegenerate. -/
-private theorem isManifoldNondegenerateCriticalPoint_of_forall_criticalHessian_eq_zero
-    (hp : p ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v))
-    (h : ∀ a, (∀ b, criticalHessian (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p a b = 0) →
-      a = 0) :
-    IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p := by
-  rw [isManifoldNondegenerateCriticalPoint_iff_criticalHessian]
-  refine ⟨(contMDiff_sphereHeight_sq_add_smul_sphereHeight p).of_le (by simp),
-    mem_criticalPoints.1 hp,
-    criticalHessian_isInvertible_of_injective ((injective_iff_map_eq_zero _).2 fun a ha ↦
-      h a fun b ↦ by simp [ha])⟩
 
 /-- The tangent vector at the north pole `v` which the inclusion sends to `u`. -/
 private theorem exists_mvfderiv_coe_sphere_eq (huv : ⟪(u : E), (v : E)⟫ = 0) :
@@ -251,17 +246,18 @@ private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_self
         t * ⟪mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v a,
           mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) v b⟫ := by
   have hvu : sphereHeight u v = 0 := by rw [sphereHeight_apply, real_inner_comm, huv]
-  rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight
+  rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht).2 (Or.inl rfl)),
     hvu, sphereHeight_self]
   ring
 
-/-- **The saddle of `hᵤ² + t hᵥ`.** For `t ≠ 0, 2`, the north pole `v` is a nondegenerate
+/-- **The north pole of `hᵤ² + t hᵥ`.** For `t ≠ 0, 2`, the north pole `v` is a nondegenerate
 critical point. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeight_self
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : t ≠ 0) (ht₂ : t ≠ 2) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) v := by
-  refine isManifoldNondegenerateCriticalPoint_of_forall_criticalHessian_eq_zero
+  refine .of_forall_criticalHessian_eq_zero
+    ((contMDiff_sphereHeight_sq_add_smul_sphereHeight v).of_le (by simp))
     ((mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht₀).2 (Or.inl rfl))
     fun a h ↦ ?_
   obtain ⟨b, hb⟩ := exists_mvfderiv_coe_sphere_eq (n := n) huv
@@ -338,7 +334,7 @@ private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_neg_self_p
     (mem_criticalPoints_sphereHeight_sq_add_smul_sphereHeight_iff huv ht.ne').2
       (Or.inr (Or.inl rfl))
   have hx := (map_ne_zero_iff _ (injective_mvfderiv_subtypeVal_sphere (-v))).2 ha
-  rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight hcrit, sphereHeight_neg_self]
+  rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply hcrit, sphereHeight_neg_self]
   have hvu : sphereHeight u (-v) = 0 := by simp [inner_neg_left, real_inner_comm, huv]
   rw [hvu, real_inner_self_eq_norm_sq]
   nlinarith [mul_pos ht (pow_pos (norm_pos_iff.2 hx) 2),
@@ -350,8 +346,8 @@ private theorem sphereHeight_sq_add_neg_smul_sphereHeight_neg :
     sphereHeight u ^ 2 + (-t) • sphereHeight (-v) = sphereHeight u ^ 2 + t • sphereHeight v := by
   rw [sphereHeight_neg, neg_smul_neg]
 
-/-- **The south pole of `hᵤ² + t hᵥ`.** For `t ≠ 0, -2`, the south pole `-v` is a nondegenerate
-critical point: replacing `v` and `t` by `-v` and `-t` turns it into the north pole. -/
+/-- **The south pole of `hᵤ² + t hᵥ`.** For orthogonal unit vectors `u`, `v` and `t ≠ 0, -2`, the
+south pole `-v` is a nondegenerate critical point. -/
 theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeight_neg_self
     (huv : ⟪(u : E), (v : E)⟫ = 0) (ht₀ : t ≠ 0) (ht₂ : t ≠ -2) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) (-v) := by
@@ -376,16 +372,13 @@ private theorem criticalHessian_sphereHeight_sq_add_smul_sphereHeight_neg
     (h2 : sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) (ht : t ^ 2 ≠ 4) {a : TangentSpace (𝓡 n) p}
     (ha : a ≠ 0) :
     criticalHessian (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p a a < 0 := by
-  have hcrit : p ∈ criticalPoints (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) := by
-    rw [sphereHeight_sq_add_smul_sphereHeight_eq,
-      mem_criticalPoints_comp_coe_sphere_iff_mem_span (hasFDerivAt_ambient (p : E))]
-    exact mem_span_of_sphereHeight_eq huv h1 h2
+  have hcrit := mem_criticalPoints_of_sphereHeight_eq (n := n) huv h1 h2
   have hpu : ⟪(p : E), (u : E)⟫ ≠ 0 := fun h ↦ ht (by
     rw [sphereHeight_apply, h] at h2
     linarith)
   have hu : ‖(u : E)‖ = 1 := norm_eq_of_mem_sphere u
   have hpx := inner_coe_mvfderiv_subtypeVal_sphere p a
-  rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight hcrit, h1, h2,
+  rw [criticalHessian_sphereHeight_sq_add_smul_sphereHeight_apply hcrit, h1, h2,
     real_inner_self_eq_norm_sq, show 2 * (1 - t ^ 2 / 4) + t * (t / 2) = 2 by ring]
   set x := mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) p a
   -- The component of `x` orthogonal to `u` is nonzero, since `x ⊥ p` and `⟪p, u⟫ ≠ 0`.
@@ -407,12 +400,10 @@ theorem isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeig
     (huv : ⟪(u : E), (v : E)⟫ = 0) (h1 : sphereHeight v p = t / 2)
     (h2 : sphereHeight u p ^ 2 = 1 - t ^ 2 / 4) (ht : t ^ 2 ≠ 4) :
     IsManifoldNondegenerateCriticalPoint (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) p := by
-  refine isManifoldNondegenerateCriticalPoint_of_forall_criticalHessian_eq_zero ?_
-    fun a h ↦ by_contra fun ha ↦
+  refine .of_forall_criticalHessian_eq_zero
+    ((contMDiff_sphereHeight_sq_add_smul_sphereHeight p).of_le (by simp))
+    (mem_criticalPoints_of_sphereHeight_eq huv h1 h2) fun a h ↦ by_contra fun ha ↦
       (criticalHessian_sphereHeight_sq_add_smul_sphereHeight_neg huv h1 h2 ht ha).ne (h a)
-  rw [sphereHeight_sq_add_smul_sphereHeight_eq,
-    mem_criticalPoints_comp_coe_sphere_iff_mem_span (hasFDerivAt_ambient (p : E))]
-  exact mem_span_of_sphereHeight_eq huv h1 h2
 
 /-- **The maxima of `hᵤ² + t hᵥ`.** For `t² ≠ 4`, a point with `hᵥ = t / 2` and
 `hᵤ² = 1 - t² / 4` has Morse index `n`. -/
@@ -425,9 +416,9 @@ theorem manifoldMorseIndex_sphereHeight_sq_add_smul_sphereHeight_of_eq
     finrank_euclideanSpace_fin]
 
 /-- **`hᵤ² + t hᵥ` is a Morse function** on the sphere, for orthogonal unit vectors `u`, `v` and
-`0 < |t| < 2`. -/
+`t ≠ 0, ±2`. -/
 theorem isMorse_sphereHeight_sq_add_smul_sphereHeight (huv : ⟪(u : E), (v : E)⟫ = 0)
-    (ht₀ : t ≠ 0) (ht₂ : t ^ 2 < 4) :
+    (ht₀ : t ≠ 0) (ht₂ : t ^ 2 ≠ 4) :
     IsMorse (𝓡 n) (sphereHeight u ^ 2 + t • sphereHeight v) := by
   rw [← isMorseOn_univ, isMorseOn_iff_criticalPoints]
   refine ⟨contMDiff_sphereHeight_sq_add_smul_sphereHeight.contMDiffOn, fun x _ hx ↦ ?_⟩
@@ -438,7 +429,7 @@ theorem isMorse_sphereHeight_sq_add_smul_sphereHeight (huv : ⟪(u : E), (v : E)
   · exact isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeight_neg_self huv
       ht₀ (by rintro rfl; norm_num at ht₂)
   · exact isManifoldNondegenerateCriticalPoint_sphereHeight_sq_add_smul_sphereHeight_of_eq huv h1
-      h2 ht₂.ne
+      h2 ht₂
 
 /-! ### The critical counts -/
 
@@ -545,7 +536,7 @@ theorem criticalCount_neg_sphereHeight_sq_add_smul_sphereHeight (huv : ⟪(u : E
     criticalCount (𝓡 n) (-(sphereHeight u ^ 2 + t • sphereHeight v)) j =
       if j = 0 then 2 else if j = 1 ∨ j = n then 1 else 0 := by
   rcases le_or_gt j n with hj | hj
-  · rw [(isMorse_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂).criticalCount_neg
+  · rw [(isMorse_sphereHeight_sq_add_smul_sphereHeight huv ht₀ ht₂.ne).criticalCount_neg
       (by rwa [finrank_euclideanSpace_fin]), finrank_euclideanSpace_fin,
       criticalCount_sphereHeight_sq_add_smul_sphereHeight huv hn ht₀ ht₂]
     split_ifs <;> first | rfl | (exfalso; omega)
