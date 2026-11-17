@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Gram.PosSemidef
 public import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 public import TauCeti.RepresentationTheory.Continuous.Unitary.Basic
+import Mathlib.Analysis.InnerProductSpace.GramMatrix
 
 /-!
 # Positive-definite functions on groups and unitary representations
@@ -64,7 +64,7 @@ variable {𝕜 G V : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [Inne
 `(g, h) ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫` is positive semidefinite. -/
 theorem posSemidef_inner_map_inv_mul (hπ : π.IsUnitary) (ξ : V) :
     (Matrix.of fun g h : G ↦ ⟪ξ, π (g⁻¹ * h) ξ⟫_𝕜).PosSemidef := by
-  convert TauCeti.posSemidef_gram 𝕜 fun g : G ↦ π g ξ using 1
+  convert Matrix.posSemidef_gram 𝕜 fun g : G ↦ π g ξ using 1
   ext g h
   rw [Matrix.of_apply, Matrix.gram_apply, hπ.inner_map_inv_mul]
 
