@@ -19,6 +19,8 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 A full Clifford representation over a commutative `R`-algebra `A`, with `2` invertible in `R`,
 identifies base-changed exterior forms with endomorphisms of its spinor module: apply the
 inverse Chevalley map, the native Clifford base-change equivalence, and the representation.
+When `2` is also invertible in `A`, this agrees with applying `ExteriorAlgebra.baseChangeEquiv`
+followed by the inverse Chevalley map of `Q.baseChange A` and the representation.
 For a finite projective spinor module, composing with Mathlib's `dualTensorHomEquiv` gives
 the identification with `S ⊗ S*`. The dual here is the `A`-linear algebraic dual; in the
 complex case it is not a Hermitian conjugate space.
@@ -137,6 +139,32 @@ theorem cliffordFormsEquivEnd_conj
   | add x y hx hy => simp [hx, hy]
   | tmul z x => simp
 
+section InvertibleTwo
+
+variable [Invertible (2 : A)]
+
+/-- **Compatibility with `ExteriorAlgebra.baseChangeEquiv`**: when `2` is invertible in `A`,
+`cliffordFormsEquivEnd` factors through `ExteriorAlgebra.baseChangeEquiv` and the inverse
+Chevalley map of `Q.baseChange A`. -/
+theorem cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv
+    (ρ : CliffordAlgebra (Q.baseChange A) ≃ₐ[A] Module.End A S)
+    (x : A ⊗[R] ExteriorAlgebra R V) :
+    ρ.cliffordFormsEquivEnd x =
+      ρ ((equivExterior (Q.baseChange A)).symm (ExteriorAlgebra.baseChangeEquiv R V A x)) := by
+  rw [equivExterior_symm_baseChangeEquiv, cliffordFormsEquivEnd]
+  simp [equivBaseChange]
+
+/-- **Compatibility of the inverse with `ExteriorAlgebra.baseChangeEquiv`**: when `2` is
+invertible in `A`, `cliffordFormsEquivEnd.symm` applies the Chevalley map of `Q.baseChange A`
+followed by `(ExteriorAlgebra.baseChangeEquiv R V A).symm`. -/
+theorem cliffordFormsEquivEnd_symm_eq_baseChangeEquiv_symm
+    (ρ : CliffordAlgebra (Q.baseChange A) ≃ₐ[A] Module.End A S) (a : Module.End A S) :
+    ρ.cliffordFormsEquivEnd.symm a =
+      (ExteriorAlgebra.baseChangeEquiv R V A).symm (equivExterior (Q.baseChange A) (ρ.symm a)) := by
+  rw [cliffordFormsEquivEnd_symm_apply, ← baseChangeEquiv_equivExterior, AlgEquiv.symm_apply_apply]
+
+end InvertibleTwo
+
 variable [Module.Finite A S] [Module.Projective A S]
 
 /-- Base-changed forms as `S ⊗ S*`, with evaluation `s ⊗ φ ↦ (t ↦ φ(t) s)`.
@@ -210,6 +238,19 @@ theorem cliffordFormsEquivTensor_conj
         (ρ.cliffordFormsEquivTensor x) := by
   rw [ρ.cliffordFormsEquivTensor_eq_map_iff, cliffordFormsEquivEnd_conj,
     LinearEquiv.conjAlgEquiv_apply]
+
+/-- **Compatibility of `cliffordFormsEquivTensor` with `ExteriorAlgebra.baseChangeEquiv`**: when
+`2` is invertible in `A`, `cliffordFormsEquivTensor` factors through
+`ExteriorAlgebra.baseChangeEquiv` and the inverse Chevalley map of `Q.baseChange A`. -/
+theorem cliffordFormsEquivTensor_eq_equivExterior_symm_baseChangeEquiv [Invertible (2 : A)]
+    (ρ : CliffordAlgebra (Q.baseChange A) ≃ₐ[A] Module.End A S)
+    (x : A ⊗[R] ExteriorAlgebra R V) :
+    ρ.cliffordFormsEquivTensor x =
+      TensorProduct.comm A (Dual A S) S
+        ((dualTensorHomEquiv A S S).symm
+          (ρ ((equivExterior (Q.baseChange A)).symm
+            (ExteriorAlgebra.baseChangeEquiv R V A x)))) := by
+  simp [cliffordFormsEquivTensor, cliffordFormsEquivEnd_eq_equivExterior_symm_baseChangeEquiv]
 
 end AlgEquiv
 
