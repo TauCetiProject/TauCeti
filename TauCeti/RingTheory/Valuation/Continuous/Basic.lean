@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Chris Birkbeck
+Authors: Chris Birkbeck, The Tau Ceti contributors
 -/
 module
 
@@ -79,6 +79,11 @@ sets are *literally equal* for equivalent valuations, which is
   case.
 * `Valuation.isContinuous_of_discreteTopology` : **Remark 7.8(2)**, every valuation on
   a discrete ring is continuous.
+* `Valuation.IsContinuous.isClosed_ge` : attained superlevel sets `{a | v b ≤ v a}` are closed,
+  needing only a topology on `A`.
+* `Valuation.IsContinuous.isOpen_gt` and `Valuation.IsContinuous.isClosed_le` : strict superlevel
+  sets `{a | γ < v a}` are open and closed balls `{a | v a ≤ γ}` are closed for arbitrary `γ : Γ₀`
+  under `[SeparatelyContinuousAdd A]`.
 * `Valuation.IsContinuous.comap` : **Remark 7.9**, continuity is inherited along a
   continuous ring homomorphism.
 * `Valuation.IsContinuous.of_lt_imp_lt` : a valuation that preserves the strict comparisons and
@@ -161,6 +166,16 @@ theorem IsEquiv.isContinuous_iff {v : Valuation A Γ₀} {w : Valuation A Γ₀'
 theorem isContinuous_of_discreteTopology [DiscreteTopology A] (v : Valuation A Γ₀) :
     v.IsContinuous := fun _ ↦ isOpen_discrete _
 
+/-- **Attained superlevel sets of a continuous valuation are closed.** For every `b : A`, the set
+`{a | v b ≤ v a}` is the complement of the defining open `{a | v a < v b}`, so no compatibility
+between the topology and the ring operations is required. -/
+theorem IsContinuous.isClosed_ge {v : Valuation A Γ₀} (hv : v.IsContinuous) (b : A) :
+    IsClosed {a : A | v b ≤ v a} := by
+  have hcompl : ({a : A | v a < v b} : Set A)ᶜ = {a : A | v b ≤ v a} := by
+    ext a
+    simp
+  exact hcompl ▸ (hv b).isClosed_compl
+
 /-- For a continuous valuation `v` on a ring with separately continuous addition, the valuation ball
 `{y | v (y - a) < v b}` is a neighborhood of `a` whenever `v b ≠ 0`. -/
 theorem IsContinuous.sub_lt_mem_nhds [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
@@ -200,6 +215,25 @@ theorem IsContinuous.isOpen_le [SeparatelyContinuousAdd A] {v : Valuation A Γ�
   refine isOpen_iff_mem_nhds.mpr fun a ha ↦ ?_
   filter_upwards [hv.sub_lt_mem_nhds a hb] with y hy
   simpa using v.map_add_le hy.le ha
+
+/-- **Strict superlevel sets `{a | γ < v a}` are open for every `γ : Γ₀`**, whether or not `γ` lies
+in the value group: `γ < v x` forces `v x ≠ 0`, and off its support `v` is locally constant
+(`IsContinuous.eventually_eq`). -/
+theorem IsContinuous.isOpen_gt [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (γ : Γ₀) : IsOpen {a : A | γ < v a} := by
+  refine isOpen_iff_mem_nhds.mpr fun x hx ↦ ?_
+  have hx0 : v x ≠ 0 := ne_of_gt (zero_le.trans_lt hx)
+  filter_upwards [hv.eventually_eq hx0] with y hy
+  exact hy.symm ▸ hx
+
+/-- **Closed balls `{a | v a ≤ γ}` are closed for every `γ : Γ₀`.** For `γ = 0` this recovers
+closedness of the support (`IsContinuous.isClosed_supp`, without needing commutativity of `A`). -/
+theorem IsContinuous.isClosed_le [SeparatelyContinuousAdd A] {v : Valuation A Γ₀}
+    (hv : v.IsContinuous) (γ : Γ₀) : IsClosed {a : A | v a ≤ γ} := by
+  have hcompl : ({a : A | γ < v a} : Set A)ᶜ = {a : A | v a ≤ γ} := by
+    ext a
+    simp
+  exact hcompl ▸ (hv.isOpen_gt γ).isClosed_compl
 
 /-- **Continuous valuations are determined on a dense subset.** Two continuous valuations with
 the same zeros that compare the elements of a dense subset `s` in the same way are equivalent. -/
