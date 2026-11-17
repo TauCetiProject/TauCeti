@@ -186,7 +186,11 @@ theorem map_toLp_const_gaussianReal (ι : Type*) [Fintype ι] [DecidableEq ι]
   simp only [m, S, Matrix.smul_apply, Matrix.one_apply_eq,
     smul_eq_mul, mul_one, Real.toNNReal_coe] at heval
   rw [← heval, Measure.map_map (by fun_prop) (by fun_prop)]
-  simpa [Function.comp_def, m, S, Matrix.submatrix] using
+  have hcov : S.submatrix (fun _ : ι ↦ ()) (fun _ : ι ↦ ()) =
+      Matrix.of (fun _ _ : ι ↦ (v : ℝ)) := by
+    ext i j
+    simp [Matrix.submatrix_apply, S]
+  simpa only [Function.comp_def, m, WithLp.ofLp_toLp, hcov] using
     map_comp_multivariateGaussian m hS (fun _ : ι ↦ ())
 
 /-- An identity-covariance Gaussian is the product of its unit-variance Gaussian coordinate

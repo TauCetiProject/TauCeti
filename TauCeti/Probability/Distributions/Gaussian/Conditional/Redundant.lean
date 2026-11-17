@@ -22,8 +22,7 @@ In particular, any nonempty finite block of identical Gaussian coordinates deter
 retained block of copies, for arbitrary common mean and positive variance. The conditional
 kernel is specified at every ambient observation and uses the average observed coordinate,
 including off the diagonal support. We also prove the almost-everywhere `condDistrib` identity
-for jointly Gaussian vectors and, under mere a.e. measurability, for pathwise copies of any
-scalar random variable; the latter includes Gaussian copies of zero variance.
+for rank-one jointly Gaussian vectors with nonzero observed loading.
 
 ## References
 
@@ -117,6 +116,7 @@ theorem gaussianCondKernel_toLp_const_matrixOf_const [Nonempty κ] (μ : ℝ) {c
     (fun _ : ι ↦ Real.sqrt c) (fun _ : κ ↦ Real.sqrt c) hv x
   have hmean : (sumEquivProd (WithLp.toLp 2 (fun _ : ι ⊕ κ ↦ μ))) =
       (WithLp.toLp 2 (fun _ : ι ↦ μ), WithLp.toLp 2 (fun _ : κ ↦ μ)) := by
+    -- `sumEquivProd` splits coordinates definitionally, and `toLp`/`ofLp` cancel.
     ext <;> rfl
   have helim : Sum.elim (fun _ : ι ↦ Real.sqrt c) (fun _ : κ ↦ Real.sqrt c) =
       (fun _ ↦ Real.sqrt c) := by
@@ -152,49 +152,6 @@ theorem gaussianCondKernel_zero_matrixOf_const [Nonempty κ] {c : ℝ}
       Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ (∑ j, x j) / Fintype.card κ)) := by
   simpa only [← Pi.zero_def, WithLp.toLp_zero] using
     gaussianCondKernel_toLp_const_matrixOf_const (ι := ι) 0 hc x
-
-/-- With zero mean and positive constant covariance, the conditional Gaussian kernel at a
-constant observation is the Dirac law at that observation, even for singular observed covariance. -/
-theorem gaussianCondKernel_zero_matrixOf_const_toLp_const [Nonempty κ] {c : ℝ}
-    (hc : 0 < c) (z : ℝ) :
-    (0 : EuclideanSpace ℝ (ι ⊕ κ)).gaussianCondKernel
-        (Matrix.of fun _ _ ↦ c) (WithLp.toLp 2 (fun _ ↦ z)) =
-      Measure.dirac (WithLp.toLp 2 (fun _ : ι ↦ z)) := by
-  simpa using gaussianCondKernel_zero_matrixOf_const (ι := ι) hc
-    (WithLp.toLp 2 (fun _ : κ ↦ z))
-
-end TauCeti.Probability
-
-namespace TauCeti.Probability
-
-attribute [local instance] Fintype.ofFinite
-
-/-- Given a nonempty block of copies of an a.e. measurable scalar random variable, the
-conditional law of another block is almost everywhere the Dirac law at the observed average.
-No off-support claim about `condDistrib` is made. -/
-theorem condDistrib_toLp_const {Ω ι κ : Type*} [MeasurableSpace Ω]
-    [Finite ι] [Fintype κ] [Nonempty κ]
-    {P : Measure Ω} [IsFiniteMeasure P] {Z : Ω → ℝ}
-    (hZ : AEMeasurable Z P) :
-    condDistrib (Ω := EuclideanSpace ℝ ι) (β := EuclideanSpace ℝ κ)
-        (fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω))
-        (fun ω ↦ (WithLp.toLp 2 (fun _ ↦ Z ω) : EuclideanSpace ℝ κ)) P =ᵐ[
-      P.map (β := EuclideanSpace ℝ κ) (fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω))]
-      (fun x ↦ Measure.dirac (α := EuclideanSpace ℝ ι)
-        (WithLp.toLp 2 (fun _ ↦ (∑ j, x j) / Fintype.card κ))) := by
-  let Y : Ω → EuclideanSpace ℝ κ := fun ω ↦ WithLp.toLp 2 (fun _ ↦ Z ω)
-  let f : EuclideanSpace ℝ κ → EuclideanSpace ℝ ι :=
-    fun x ↦ WithLp.toLp 2 (fun _ ↦ (∑ j, x j) / Fintype.card κ)
-  have hf : Measurable f := by fun_prop
-  have hY : AEMeasurable Y P := (by fun_prop : Measurable
-    (fun z : ℝ ↦ WithLp.toLp 2 (fun _ : κ ↦ z))).comp_aemeasurable hZ
-  have hcomp : f ∘ Y = (fun ω ↦ WithLp.toLp 2 (fun _ : ι ↦ Z ω)) := by
-    funext ω
-    simp [f, Y]
-  have h := condDistrib_comp_self hY hf
-  rw [hcomp] at h
-  filter_upwards [h] with x hx
-  simpa only [Kernel.deterministic_apply, f] using hx
 
 end TauCeti.Probability
 
