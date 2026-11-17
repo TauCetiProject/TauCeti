@@ -10,7 +10,6 @@ import TauCeti.Geometry.Manifold.Distribution.Kernel
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Connection
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Hom
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # Levi-Civita decomposition and covariant derivatives of O'Neill's tensors
@@ -43,8 +42,6 @@ derivatives `∇A` and `∇T` via `contMDiff_oneillA` and `contMDiff_oneillT`.
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift_apply`: O'Neill's Lemma 2
   and the full Levi-Civita derivative of a basic horizontal lift (building on
   `TauCeti.IsRiemannianSubmersion.leviCivitaConnection_horizontalLift`).
-* `TauCeti.IsRiemannianSubmersion.exists_contMDiffOn_horizontalLift`: local extension of a
-  horizontal vector to a smooth basic horizontal lift without `[T2Space N]`.
 * `TauCeti.IsRiemannianSubmersion.hom_oneillA_apply`,
   `TauCeti.IsRiemannianSubmersion.hom_oneillT_apply`,
   `TauCeti.IsRiemannianSubmersion.inner_hom_oneillA`,
@@ -236,23 +233,6 @@ theorem leviCivitaConnection_horizontalLift_apply
     h.oneillA_starProjection_orthogonal_ker, h.oneillT_starProjection_ker]
   abel
 
-/-- Extend a horizontal vector at `x` locally to a basic horizontal lift that is smooth on an open
-neighbourhood of `x`, without assuming `[T2Space N]`. -/
-theorem exists_contMDiffOn_horizontalLift {u : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).kerᗮ) :
-    ∃ (W : Set N) (B : Π z : N, TangentSpace J z),
-      IsOpen W ∧ f x ∈ W ∧ CMDiff[W] ∞ (T% B) ∧
-      CMDiff[f ⁻¹' W] ∞ (T% (fun y ↦ h.horizontalLift y (B (f y)))) ∧
-      h.horizontalLift x (B (f x)) = u := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  obtain ⟨s, hs, hBs⟩ := exists_contMDiffOn_extend (k := ∞) J F (mfderiv I J f x u)
-  refine ⟨interior s, extend F (mfderiv I J f x u), isOpen_interior,
-    mem_interior_iff_mem_nhds.2 hs, hBs.mono interior_subset, fun y hy ↦ ?_, ?_⟩
-  · exact (h.contMDiffAt_horizontalLift
-      ((hBs.mono interior_subset).contMDiffAt (isOpen_interior.mem_nhds hy))
-      (by simp)).contMDiffWithinAt
-  · simp [extend_apply_self, h.horizontalLift_mfderiv_of_mem x hu]
-
 /-! ### Covariant derivatives of `A` and `T` -/
 
 variable [T2Space M]
@@ -304,7 +284,9 @@ theorem inner_hom_oneillA_self (a : TangentSpace I x)
     (hw : w ∈ (mfderiv I J f x).ker) :
     ⟪((leviCivitaConnection I M).hom ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
         h.oneillA x a u u, w⟫_ℝ = 0 := by
-  obtain ⟨W, B, hW, hfxW, hBW, hXW, hXx⟩ := h.exists_contMDiffOn_horizontalLift hu
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  let : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
+  obtain ⟨W, B, hW, hfxW, hBW, hXW, hXx⟩ := h.exists_contMDiffOn_horizontalLift ∞ hu (by simp)
   have hUopen : IsOpen (f ⁻¹' W) := hW.preimage h.isSubmersion.contMDiff.continuous
   set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B (f y))
   have hXd : MDiffAt (T% X) x :=

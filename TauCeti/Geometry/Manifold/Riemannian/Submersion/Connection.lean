@@ -13,7 +13,9 @@ public import TauCeti.Geometry.Manifold.VectorField.Related
 /-!
 # Horizontal Levi-Civita differentiation under a Riemannian submersion
 
-Horizontal lifts of vector fields on the base preserve their regularity and inner products.
+Horizontal lifts of vector fields on the base preserve their regularity and inner products, and
+every horizontal tangent vector extends locally to a `C^n` basic horizontal lift on an open
+neighbourhood without assuming `[T2Space N]` (`exists_contMDiffOn_horizontalLift`).
 Their brackets project to the brackets on the base, although those brackets need not themselves
 be horizontal. The Koszul formula then identifies the horizontal component of their covariant
 derivative with the lift of the base covariant derivative. This is the connection comparison
@@ -69,6 +71,24 @@ theorem contMDiffAt_horizontalLift {X : Π y : N, TangentSpace J y} {x : M}
   have hf := (h.isSubmersion.contMDiff.of_le hn) x
   simpa only [h.horizontalLift_apply, Function.comp_def] using
     hf.mfderiv_adjoint_apply (hX.comp x (hf.of_le le_self_add))
+
+variable (n) in
+/-- Extend a horizontal tangent vector at `x` locally to a basic horizontal lift that is `C^n` on
+an open neighbourhood of `x`, for `C^n` metrics and `n + 1 ≤ ∞`, without assuming `[T2Space N]`. -/
+theorem exists_contMDiffOn_horizontalLift [IsManifold J (n + 1) N] {x : M}
+    {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ) (hn : n + 1 ≤ ∞) :
+    ∃ (W : Set N) (B : Π z : N, TangentSpace J z),
+      IsOpen W ∧ f x ∈ W ∧ CMDiff[W] n (T% B) ∧
+      CMDiff[f ⁻¹' W] n (T% (fun y ↦ h.horizontalLift y (B (f y)))) ∧
+      h.horizontalLift x (B (f x)) = u := by
+  let := TangentBundle.contMDiffVectorBundle (I := J) (M := N) (n := n)
+  obtain ⟨s, hs, hBs⟩ := FiberBundle.exists_contMDiffOn_extend (k := n) J F (mfderiv I J f x u)
+  refine ⟨interior s, FiberBundle.extend F (mfderiv I J f x u), isOpen_interior,
+    mem_interior_iff_mem_nhds.2 hs, hBs.mono interior_subset, fun y hy ↦ ?_, ?_⟩
+  · exact (h.contMDiffAt_horizontalLift
+      ((hBs.mono interior_subset).contMDiffAt (isOpen_interior.mem_nhds hy))
+      hn).contMDiffWithinAt
+  · simp [FiberBundle.extend_apply_self, h.horizontalLift_mfderiv_of_mem x hu]
 
 end Regularity
 

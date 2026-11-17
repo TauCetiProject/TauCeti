@@ -14,7 +14,6 @@ import TauCeti.Geometry.Manifold.Riemannian.Submersion.Integrability
 import TauCeti.Geometry.Manifold.Riemannian.Submersion.ONeill.Connection
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Bianchi
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
 # O'Neill's curvature tensor equations for a Riemannian submersion
@@ -129,18 +128,6 @@ private theorem leviCivitaConnection_oneillT_eq {Y Z : Π y : M, TangentSpace I 
   rw [h.hom_oneillT_apply hY hZ w]
   abel
 
-/-- Extend a vertical vector at `x` to a globally smooth vertical vector field on `M`. -/
-private theorem exists_contMDiff_mem_ker {u : TangentSpace I x}
-    (hu : u ∈ (mfderiv I J f x).ker) :
-    ∃ U : Π y : M, TangentSpace I y, CMDiff ∞ (T% U) ∧ U x = u ∧
-      ∀ y, U y ∈ (mfderiv I J f y).ker := by
-  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
-  obtain ⟨U₀, hU₀, rfl⟩ := exists_contMDiff_section_eq I E ∞ u
-  refine ⟨fun y ↦ (mfderiv I J f y).ker.starProjection (U₀ y),
-    (h.contMDiff_starProjection_ker (n := ∞) (by simp)).clm_bundle_apply hU₀,
-    Submodule.starProjection_eq_self_iff.mpr hu,
-    fun _ ↦ Submodule.starProjection_apply_mem _ _⟩
-
 /-- Evaluate the horizontal inner product of `∇_A (∇_B W)` for smooth vertical fields `A, B, W`. -/
 private theorem inner_leviCivitaConnection_mem_ker_iterated
     {A B W : Π y : M, TangentSpace I y} {z : TangentSpace I x}
@@ -199,9 +186,9 @@ theorem inner_curvatureTensor_vertical_horizontal
             ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
           h.oneillT x v u w, z⟫_ℝ := by
   set cov := leviCivitaConnection I M
-  obtain ⟨U, hU, rfl, hUv⟩ := h.exists_contMDiff_mem_ker hu
-  obtain ⟨V, hV, rfl, hVv⟩ := h.exists_contMDiff_mem_ker hv
-  obtain ⟨W, hW, rfl, hWv⟩ := h.exists_contMDiff_mem_ker hw
+  obtain ⟨U, hU, rfl, hUv⟩ := h.exists_contMDiff_mem_ker ∞ hu (by simp)
+  obtain ⟨V, hV, rfl, hVv⟩ := h.exists_contMDiff_mem_ker ∞ hv (by simp)
+  obtain ⟨W, hW, rfl, hWv⟩ := h.exists_contMDiff_mem_ker ∞ hw (by simp)
   have hUd := hU.mdifferentiable (by simp)
   have hVd := hV.mdifferentiable (by simp)
   have hWd := hW.mdifferentiable (by simp)
@@ -364,12 +351,14 @@ theorem inner_curvatureTensor_horizontal_vertical_vertical_horizontal
           h.oneillA x v u w, z⟫_ℝ +
         ⟪h.oneillA x u v, h.oneillA x z w⟫_ℝ -
         ⟪h.oneillT x v u, h.oneillT x w z⟫_ℝ := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  let : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   set cov := leviCivitaConnection I M
-  obtain ⟨W₀, B, hW₀, hfxW₀, hBW₀, hXW₀, hXx⟩ := h.exists_contMDiffOn_horizontalLift hu
+  obtain ⟨W₀, B, hW₀, hfxW₀, hBW₀, hXW₀, hXx⟩ := h.exists_contMDiffOn_horizontalLift ∞ hu (by simp)
   set X : Π y : M, TangentSpace I y := fun y ↦ h.horizontalLift y (B (f y))
   have hUopen : IsOpen (f ⁻¹' W₀) := hW₀.preimage h.isSubmersion.contMDiff.continuous
-  obtain ⟨V, hV, hVx, hVv⟩ := h.exists_contMDiff_mem_ker hv
-  obtain ⟨W, hW, hWx, hWv⟩ := h.exists_contMDiff_mem_ker hw
+  obtain ⟨V, hV, hVx, hVv⟩ := h.exists_contMDiff_mem_ker ∞ hv (by simp)
+  obtain ⟨W, hW, hWx, hWv⟩ := h.exists_contMDiff_mem_ker ∞ hw (by simp)
   have hXd : MDiffAt (T% X) x :=
     (hXW₀.contMDiffAt (hUopen.mem_nhds hfxW₀)).mdifferentiableAt (by simp)
   have hB1 : CMDiffAt 1 (T% B) (f x) :=
@@ -507,10 +496,12 @@ theorem inner_curvatureTensor_horizontal_vertical
             ((leviCivitaConnection I M).hom (leviCivitaConnection I M)))
           h.oneillA x v u z, w⟫_ℝ -
         2 * ⟪h.oneillT x (h.oneillA x u v) z, w⟫_ℝ := by
+  let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
+  let : IsManifold J (∞ + 1) N := by simpa using (inferInstance : IsManifold J ∞ N)
   let cov := leviCivitaConnection I M
-  obtain ⟨W₁, B₁, hW₁, hfx₁, hB₁, hX₁, hXx₁⟩ := h.exists_contMDiffOn_horizontalLift hu
-  obtain ⟨W₂, B₂, hW₂, hfx₂, hB₂, hX₂, hXx₂⟩ := h.exists_contMDiffOn_horizontalLift hv
-  obtain ⟨W₃, B₃, hW₃, hfx₃, hB₃, hX₃, hXx₃⟩ := h.exists_contMDiffOn_horizontalLift hz
+  obtain ⟨W₁, B₁, hW₁, hfx₁, hB₁, hX₁, hXx₁⟩ := h.exists_contMDiffOn_horizontalLift ∞ hu (by simp)
+  obtain ⟨W₂, B₂, hW₂, hfx₂, hB₂, hX₂, hXx₂⟩ := h.exists_contMDiffOn_horizontalLift ∞ hv (by simp)
+  obtain ⟨W₃, B₃, hW₃, hfx₃, hB₃, hX₃, hXx₃⟩ := h.exists_contMDiffOn_horizontalLift ∞ hz (by simp)
   set W₀ := W₁ ∩ W₂ ∩ W₃
   have hW₀ : IsOpen W₀ := (hW₁.inter hW₂).inter hW₃
   have hfx₀ : f x ∈ W₀ := ⟨⟨hfx₁, hfx₂⟩, hfx₃⟩
