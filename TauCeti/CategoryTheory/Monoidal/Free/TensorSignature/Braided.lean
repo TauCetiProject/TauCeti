@@ -277,7 +277,7 @@ theorem lift_liftCoupon_map_crossingInv (X Y : S.withCrossings.FreeMonoidal) :
 
 /-- The interpretation `liftCoupon fo fc` of the free monoidal category on `S.withCrossings`
 satisfies the braided-category axioms of the crossings. -/
-theorem lift_liftCoupon_map_eq ⦃X Y : S.withCrossings.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄
+theorem map_eq_map_of_braidingRel ⦃X Y : S.withCrossings.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄
     (h : braidingRel S f g) :
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map f =
       (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map g := by
@@ -323,7 +323,7 @@ theorem map_eq_map_of_braidedRel
     (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map f =
       (FreeMonoidal.lift (S := S.withCrossings) fo (liftCoupon fo fc)).map g :=
   match hfg with
-  | .braiding hfg => lift_liftCoupon_map_eq fo fc hfg
+  | .braiding hfg => map_eq_map_of_braidingRel fo fc hfg
   | .of hfg => h hfg
 
 variable (h : ∀ ⦃X Y : S.withCrossings.FreeMonoidal⦄ ⦃f g : X ⟶ Y⦄, R f g →
@@ -348,18 +348,24 @@ theorem lift_obj_of (a : S.Obj) : (lift fo fc h).obj (of a) = fo a :=
 
 @[simp]
 theorem lift_map_coupon (g : S.Coupon) : (lift fo fc h).map (coupon g) = fc g :=
-  FreeMonoidal.lift_map_coupon _ _ _
+  (Presented.lift_map _ _ _ _).trans (FreeMonoidal.lift_map_coupon _ _ _)
 
 /-- The braiding of two words goes to the braiding of their images. -/
 theorem lift_map_braiding_hom (X Y : S.BraidedPresented R) :
     (lift fo fc h).map (β_ X Y).hom = (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).hom :=
-  lift_liftCoupon_map_crossing fo fc X.as Y.as
+  -- The chain is stated up to the definitional equality between `(lift fo fc h).obj (X ⊗ Y)` and
+  -- `(lift fo fc h).obj X ⊗ (lift fo fc h).obj Y`, which `rw` cannot see through.
+  (congrArg (lift fo fc h).map (braiding_hom_obj X.as Y.as)).trans
+    ((Presented.lift_map _ _ _ _).trans (lift_liftCoupon_map_crossing fo fc X.as Y.as))
 
 /-- The inverse braiding of two words goes to the inverse braiding of their images. -/
 @[simp]
 theorem lift_map_braiding_inv (X Y : S.BraidedPresented R) :
     (lift fo fc h).map (β_ X Y).inv = (β_ ((lift fo fc h).obj X) ((lift fo fc h).obj Y)).inv :=
-  lift_liftCoupon_map_crossingInv fo fc X.as Y.as
+  -- The chain is stated up to the definitional equality between `(lift fo fc h).obj (X ⊗ Y)` and
+  -- `(lift fo fc h).obj X ⊗ (lift fo fc h).obj Y`, which `rw` cannot see through.
+  (congrArg (lift fo fc h).map (braiding_inv_obj X.as Y.as)).trans
+    ((Presented.lift_map _ _ _ _).trans (lift_liftCoupon_map_crossingInv fo fc X.as Y.as))
 
 instance : (lift fo fc h).Braided where
   braided X Y := by
@@ -399,10 +405,9 @@ theorem map_braiding_inv_comp_wordIso_hom (X Y : S.withCrossings.FreeMonoidal) :
       (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
           e (Y ⊗ X).as).hom ≫
         G.map (β_ ((Presented.quotientFunctor _).obj X)
-          ((Presented.quotientFunctor _).obj Y)).inv := by
-  rw [← cancel_epi (F.map (β_ _ _).hom), ← Functor.map_comp_assoc, Iso.hom_inv_id,
-    Functor.map_id, Category.id_comp, reassoc_of% map_braiding_hom_comp_wordIso_hom,
-    ← Functor.map_comp, Iso.hom_inv_id, Functor.map_id, Category.comp_id]
+          ((Presented.quotientFunctor _).obj Y)).inv :=
+  (CommSq.horiz_inv (f := F.mapIso (β_ _ _)) (i := G.mapIso (β_ _ _))
+    ⟨map_braiding_hom_comp_wordIso_hom X Y⟩).w
 
 variable (he : ∀ g, F.map (coupon g) ≫
       (FreeMonoidal.wordIso (Presented.quotientFunctor _ ⋙ F) (Presented.quotientFunctor _ ⋙ G)
@@ -450,11 +455,11 @@ variable {D : Type u'} [Category.{v'} D] [MonoidalCategory D] [BraidedCategory D
 
 /-- The braided functor out of the free braided category on `S` determined by the images `fo` of
 the generating objects and `fc` of the coupons in a braided category `D`: the functor
-`BraidedPresented.lift`, whose hypothesis holds by `BraidedPresented.lift_liftCoupon_map_eq`. -/
+`BraidedPresented.lift`, whose hypothesis holds by `BraidedPresented.map_eq_map_of_braidingRel`. -/
 abbrev lift (fo : S.Obj → D)
     (fc : ∀ g : S.Coupon, projectObj fo (S.src g) ⟶ projectObj fo (S.tgt g)) :
     S.FreeBraided ⥤ D :=
-  BraidedPresented.lift fo fc (BraidedPresented.lift_liftCoupon_map_eq fo fc)
+  BraidedPresented.lift fo fc (BraidedPresented.map_eq_map_of_braidingRel fo fc)
 
 end FreeBraided
 
