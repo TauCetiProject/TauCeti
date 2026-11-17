@@ -35,9 +35,8 @@ totalized coordinate by coordinate.
 * `TauCeti.integral_norm_sub_sq_eq_norm_integral_sub_sq_add_trace_covMatrix` decomposes the
   second moment about a point into the squared distance from the mean to that point and the trace
   of the covariance matrix.
-* `TauCeti.covMatrix_map_const_smul`, `TauCeti.covMatrix_map_smul_const`, and
-  `TauCeti.covMatrix_map_toEuclideanLin` compute covariance matrices of pushforwards under scalar
-  rescaling, rank-one scalar multiples, and Euclidean matrix maps.
+* `TauCeti.covMatrix_map_smul_const` computes the rank-one covariance matrix of a pushforward
+  along scalar multiplication `u ↦ u • v`.
 * `TauCeti.covariance_inner_eq_inner_covMatrix` and `TauCeti.variance_inner_eq_inner_covMatrix`
   (together with their `map` forms) express directional scalar covariances and variances as
   quadratic forms of `covMatrix`.
@@ -127,34 +126,18 @@ theorem posSemidef_covMatrix [Fintype ι]
   rw [covarianceBilin_eq_covMatrix μ hμ x x] at hnonneg
   simpa only [RCLike.re_to_real, real_inner_comm] using hnonneg
 
-/-- Rescaling a Euclidean measure by a real scalar `c` scales its covariance matrix by `c ^ 2`. -/
-@[simp]
-theorem covMatrix_map_const_smul (μ : Measure (EuclideanSpace ℝ ι)) (c : ℝ) :
-    covMatrix (μ.map (fun z ↦ c • z)) = c ^ 2 • covMatrix μ := by
-  have hproj (i : ι) : Measurable (fun z : EuclideanSpace ℝ ι ↦ z i) :=
-    (measurable_pi_apply i).comp (WithLp.measurable_ofLp 2 _)
-  have hm : Measurable (fun z : EuclideanSpace ℝ ι ↦ c • z) :=
-    (WithLp.measurable_toLp 2 _).comp (Measurable.of_eval fun i ↦ measurable_const.mul (hproj i))
-  ext i j
-  simp only [covMatrix_apply, Matrix.smul_apply, smul_eq_mul]
-  rw [covariance_map_fun (hproj i).aestronglyMeasurable (hproj j).aestronglyMeasurable
-    hm.aemeasurable]
-  simp only [PiLp.smul_apply, smul_eq_mul, covariance_const_mul_left, covariance_const_mul_right]
-  ring
-
 /-- Pushing forward a real measure along `u ↦ u • v` yields the rank-one covariance matrix
 `Var[id; μ] • Matrix.vecMulVec v v`. -/
 @[simp]
 theorem covMatrix_map_smul_const (μ : Measure ℝ) (v : EuclideanSpace ℝ ι) :
     covMatrix (μ.map (fun u : ℝ ↦ u • v)) = Var[id; μ] • Matrix.vecMulVec v v := by
-  have hproj (i : ι) : Measurable (fun z : EuclideanSpace ℝ ι ↦ z i) :=
-    (measurable_pi_apply i).comp (WithLp.measurable_ofLp 2 _)
-  have hm : Measurable (fun u : ℝ ↦ u • v) :=
-    (WithLp.measurable_toLp 2 _).comp (Measurable.of_eval fun i ↦ measurable_id'.mul_const (v i))
+  have hm : Measurable (fun u : ℝ ↦ u • v) := by
+    have hfun : (fun u : ℝ ↦ u • v) = fun u ↦ WithLp.toLp 2 (fun i ↦ u * v i) := by
+      ext u i; simp only [PiLp.smul_apply, smul_eq_mul]
+    rw [hfun]; fun_prop
   ext i j
   simp only [covMatrix_apply, Matrix.smul_apply, Matrix.vecMulVec_apply, smul_eq_mul]
-  rw [covariance_map_fun (hproj i).aestronglyMeasurable (hproj j).aestronglyMeasurable
-    hm.aemeasurable]
+  rw [covariance_map_fun (by fun_prop) (by fun_prop) hm.aemeasurable]
   simp only [PiLp.smul_apply, smul_eq_mul, covariance_mul_const_left, covariance_mul_const_right]
   rw [← Function.id_def, covariance_self aemeasurable_id]
   ring
@@ -197,34 +180,6 @@ theorem variance_inner_eq_inner_covMatrix_map [Fintype ι] [DecidableEq ι]
     Var[fun ω ↦ ⟪x, X ω⟫; P] = ⟪x, (covMatrix (P.map X)).toEuclideanLin x⟫ := by
   have hXm : AEMeasurable X P := hX.aestronglyMeasurable.aemeasurable
   rw [← covariance_self (by fun_prop), covariance_inner_eq_inner_covMatrix_map hX]
-
-/-- Pushing forward a finite measure with finite second moment on `EuclideanSpace ℝ ι` along the
-Euclidean linear map of `A : Matrix κ ι ℝ` conjugates `covMatrix μ` to `A * covMatrix μ * Aᵀ`. -/
-theorem covMatrix_map_toEuclideanLin [Fintype ι] [DecidableEq ι] {κ : Type*}
-    (μ : Measure (EuclideanSpace ℝ ι)) [IsFiniteMeasure μ] (hμ : MemLp id 2 μ)
-    (A : Matrix κ ι ℝ) :
-    covMatrix (μ.map A.toEuclideanLin) = A * covMatrix μ * A.transpose := by
-  have hproj_ι (j : ι) : Measurable (fun z : EuclideanSpace ℝ ι ↦ z j) :=
-    (measurable_pi_apply j).comp (WithLp.measurable_ofLp 2 _)
-  have hproj_κ (k : κ) : Measurable (fun w : EuclideanSpace ℝ κ ↦ w k) :=
-    (measurable_pi_apply k).comp (WithLp.measurable_ofLp 2 _)
-  have hA : Measurable (A.toEuclideanLin : EuclideanSpace ℝ ι → EuclideanSpace ℝ κ) :=
-    (WithLp.measurable_toLp 2 _).comp (Measurable.of_eval fun k ↦
-      Finset.measurable_sum _ fun j _ ↦ measurable_const.mul (hproj_ι j))
-  have hcoord (j : ι) : MemLp (fun z : EuclideanSpace ℝ ι ↦ z j) 2 μ := by
-    simpa only [id_eq, EuclideanSpace.coe_proj] using
-      hμ.continuousLinearMap_comp (𝕜 := ℝ) (EuclideanSpace.proj j)
-  ext k₁ k₂
-  simp only [covMatrix_apply, Matrix.mul_apply, Matrix.transpose_apply]
-  rw [covariance_map_fun (hproj_κ k₁).aestronglyMeasurable (hproj_κ k₂).aestronglyMeasurable
-    hA.aemeasurable]
-  simp only [Matrix.toLpLin_apply, Matrix.mulVec, dotProduct]
-  rw [covariance_fun_sum_fun_sum (fun j ↦ (hcoord j).const_mul _) (fun l ↦ (hcoord l).const_mul _)]
-  simp only [Finset.sum_mul]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun l _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [covariance_const_mul_left, covariance_const_mul_right]
-  ring
 
 /-- The mean of the quadratic form of a matrix `B` on the centred variable of a Euclidean-valued
 probability measure with finite second moment is the trace of `B` times the covariance matrix. -/

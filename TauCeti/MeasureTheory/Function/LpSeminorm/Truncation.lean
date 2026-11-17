@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # Truncated second moments
 
 For a real square-integrable function `X` and a level `ε`, the truncated square
-`X ^ 2 𝟙{ε ≤ |X|}` is integrable (`MeasureTheory.MemLp.integrable_indicator_sq`), and on a
-probability space the second moment splits as `E[X²] ≤ ε² + E[X²; ε ≤ |X|]`
+`X ^ 2 𝟙{ε ≤ |X|}` is integrable (`MeasureTheory.MemLp.integrable_indicator_sq`), vanishes in
+integral as `ε → ∞` (`MeasureTheory.MemLp.tendsto_integral_indicator_sq_atTop`), and on a
+probability space splits the second moment as `E[X²] ≤ ε² + E[X²; ε ≤ |X|]`
 (`MeasureTheory.MemLp.integral_sq_le_sq_add_integral_indicator`). The truncated second moment is
 the quantity in the Lindeberg condition of the central limit theorem, and the split is how that
 condition controls each individual variance. Only almost-everywhere measurability is used, through
@@ -59,6 +61,25 @@ theorem MemLp.integral_sq_le_sq_add_integral_indicator [IsProbabilityMeasure P]
     _ = ε ^ 2 + ∫ ω, ({ω | ε ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P := by
         rw [integral_add (integrable_const _) h]
         simp
+
+/-- For a square-integrable real function `X`, the truncated second moment
+`∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P` tends to `0` as `R → ∞`. -/
+theorem MemLp.tendsto_integral_indicator_sq_atTop (hX : MemLp X 2 P) :
+    Filter.Tendsto (fun R : ℝ ↦ ∫ ω, ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω ∂P)
+      Filter.atTop (nhds 0) := by
+  have h := tendsto_integral_filter_of_dominated_convergence
+    (F := fun (R : ℝ) (ω : Ω) ↦ ({ω | R ≤ |X ω|}.indicator fun ω ↦ X ω ^ 2) ω)
+    (f := fun _ ↦ 0) (fun ω ↦ X ω ^ 2)
+    (.of_forall fun R ↦ (hX.integrable_indicator_sq R).aestronglyMeasurable)
+    (.of_forall fun R ↦ .of_forall fun ω ↦ by
+      by_cases h : R ≤ |X ω|
+      · rw [indicator_of_mem (s := {ω | R ≤ |X ω|}) h, Real.norm_of_nonneg (sq_nonneg _)]
+      · rw [indicator_of_notMem (s := {ω | R ≤ |X ω|}) h, norm_zero]
+        exact sq_nonneg _)
+    hX.integrable_sq (.of_forall fun ω ↦ tendsto_const_nhds.congr' <| by
+      filter_upwards [Filter.eventually_gt_atTop |X ω|] with R hR
+      exact (indicator_of_notMem (s := {ω | R ≤ |X ω|}) (not_le.mpr hR) _).symm)
+  rwa [integral_zero] at h
 
 /-- Cutting off an `Lᵖ` function above increasing real norm levels gives errors whose
 `p`-th norm-power integrals tend to zero, for finite positive `p`. No finiteness assumption

@@ -8,7 +8,6 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
 public import Mathlib.Probability.Distributions.Gaussian.Multivariate
 public import TauCeti.Probability.Moments.Covariance
-import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import Mathlib.Probability.CentralLimitTheorem
 import Mathlib.Probability.Independence.InfinitePi
 import Mathlib.Probability.ProductMeasure
@@ -55,7 +54,7 @@ Via the varying-space Cramér–Wold theorem
 dimension along every projection `z ↦ ⟪z, t⟫`. In each direction `t`, Cauchy–Schwarz transfers the
 Euclidean Lindeberg condition to the scalar Lindeberg condition at threshold `δ` via radius
 `δ / (2 ‖t‖)`, `TauCeti.variance_inner_eq_inner_covMatrix_map` identifies the projected variance as
-`⟪t, (covMatrix …).toEuclideanLin t⟫`, and `TauCeti.Probability.map_inner_multivariateGaussian`
+`⟪t, (covMatrix …).toEuclideanLin t⟫`, and `ProbabilityTheory.HasLaw.inner_multivariateGaussian`
 identifies the projected Gaussian limit even when `S` is singular (`⟪t, S.toEuclideanLin t⟫ = 0`).
 
 ## References
@@ -103,16 +102,13 @@ private theorem tendsto_sum_indicator_inner_sq_of_lindeberg
       (by simpa only [mul_zero] using (hlind ε hε).const_mul (‖t‖ ^ 2))
   rw [Finset.mul_sum]
   refine Finset.sum_le_sum fun i _ ↦ ?_
-  have hproj_L2 : MemLp (fun ω ↦ ⟪Y n i ω, t⟫) 2 (μ n) := by
-    simpa only [Function.comp_def, real_inner_comm t, coe_innerSL_apply] using
-      (innerSL ℝ t).comp_memLp' (hL2 n i)
   have hY_sq : Integrable (fun ω ↦ ‖Y n i ω‖ ^ 2) (μ n) :=
     (memLp_two_iff_integrable_sq_norm (hL2 n i).aestronglyMeasurable).1 (hL2 n i)
   have hs : NullMeasurableSet {ω | ε < ‖Y n i ω‖} (μ n) :=
     nullMeasurableSet_lt aemeasurable_const (hL2 n i).aestronglyMeasurable.norm.aemeasurable
   rw [← integral_indicator₀ hs, ← integral_const_mul]
-  refine integral_mono (hproj_L2.integrable_indicator_sq δ) ((hY_sq.indicator₀ hs).const_mul _)
-    fun ω ↦ ?_
+  refine integral_mono (((hL2 n i).inner_const t).integrable_indicator_sq δ)
+    ((hY_sq.indicator₀ hs).const_mul _) fun ω ↦ ?_
   by_cases hω : δ ≤ |⟪Y n i ω, t⟫|
   · have hcs : |⟪Y n i ω, t⟫| ≤ ‖Y n i ω‖ * ‖t‖ := abs_real_inner_le_norm (Y n i ω) t
     have hεlt : ε < ‖Y n i ω‖ := by
@@ -158,19 +154,11 @@ theorem tendstoInDistribution_sum_of_lindeberg [DecidableEq κ]
   simp_rw [sum_inner]
   have hZt : HasLaw (fun ω' ↦ ⟪Z ω', t⟫)
       (gaussianReal 0 (⟪t, S.toEuclideanLin t⟫).toNNReal) μ' := by
-    have hZ_meas : AEMeasurable Z μ' := hZ.aemeasurable
-    refine ⟨by fun_prop, ?_⟩
-    have hcomp : (fun ω' ↦ ⟪Z ω', t⟫) = (fun z ↦ ⟪t, z⟫) ∘ Z :=
-      funext fun ω' ↦ real_inner_comm t (Z ω')
-    rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable (by fun_prop : Measurable _).aemeasurable
-      hZ_meas, hZ.map_eq, TauCeti.Probability.map_inner_multivariateGaussian 0 t hS,
-      inner_zero_right]
+    simpa only [real_inner_comm t, inner_zero_right] using hZ.inner_multivariateGaussian hS t
   refine hZt.tendstoInDistribution_sum_of_lindeberg
     (fun n ↦ (hindep n).comp (fun _ z ↦ ⟪z, t⟫)
       fun _ ↦ (continuous_id.inner continuous_const).measurable)
-    (fun n i ↦ by
-      simpa only [Function.comp_def, real_inner_comm t, coe_innerSL_apply] using
-        (innerSL ℝ t).comp_memLp' (hL2 n i))
+    (fun n i ↦ (hL2 n i).inner_const t)
     (fun n i ↦ by
       simp_rw [real_inner_comm t]
       rw [integral_inner (𝕜 := ℝ) ((hL2 n i).integrable one_le_two) t, hmean n i,
@@ -246,26 +234,6 @@ theorem tendstoInDistribution_sum_of_norm_le_eventually [DecidableEq κ]
   filter_upwards [eventually_ge_atTop N] with n hn
   exact .of_forall fun ω ↦ by simp [Y', hn]
 
-/-- Dominated convergence sends the upper-tail second moment `∫_{|u| > R} u² ∂ν` to `0` as
-`R → ∞`. -/
-private theorem tendsto_integral_indicator_sq_atTop {ν : Measure ℝ}
-    (hu2 : Integrable (fun u : ℝ ↦ u ^ 2) ν) :
-    Tendsto (fun R : ℝ ↦ ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν) atTop (𝓝 0) := by
-  have h := tendsto_integral_filter_of_dominated_convergence
-    (F := fun (R : ℝ) (u : ℝ) ↦ ({u | R < |u|}.indicator fun u ↦ u ^ 2) u)
-    (f := fun _ ↦ 0) (fun u : ℝ ↦ u ^ 2)
-    (.of_forall fun R ↦ hu2.aestronglyMeasurable.indicator
-      (measurableSet_lt measurable_const measurable_norm))
-    (.of_forall fun R ↦ .of_forall fun u ↦ by
-      by_cases h : R < |u|
-      · rw [Set.indicator_of_mem (s := {u | R < |u|}) h, Real.norm_of_nonneg (sq_nonneg u)]
-      · rw [Set.indicator_of_notMem (s := {u | R < |u|}) h, norm_zero]
-        exact sq_nonneg u)
-    hu2 (.of_forall fun u ↦ tendsto_const_nhds.congr' <| by
-      filter_upwards [eventually_ge_atTop |u|] with R hR
-      exact (Set.indicator_of_notMem (not_lt.mpr hR) _).symm)
-  rwa [integral_zero] at h
-
 /-- Single-summand upper-tail bound for a weighted scalar shock `ξ • w` when `‖w‖ ≤ ε / R`. -/
 private theorem setIntegral_norm_smul_sq_le
     {Ω₀ : Type*} [MeasurableSpace Ω₀] {μ₀ : Measure Ω₀}
@@ -273,31 +241,31 @@ private theorem setIntegral_norm_smul_sq_le
     (hlaw : HasLaw ξ₀ ν μ₀) (hL2 : MemLp id 2 ν)
     {ε R : ℝ} (hε : 0 < ε) (hRpos : 0 < R) (hw : ‖w₀‖ ≤ ε / R) :
     ∫ ω in {ω | ε < ‖ξ₀ ω • w₀‖}, ‖ξ₀ ω • w₀‖ ^ 2 ∂μ₀ ≤
-      ‖w₀‖ ^ 2 * ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν := by
+      ‖w₀‖ ^ 2 * ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν := by
   have hξm : AEMeasurable ξ₀ μ₀ := hlaw.aemeasurable
   have hξ2 : Integrable (fun ω ↦ ξ₀ ω ^ 2) μ₀ :=
     ((memLp_map_measure_iff aestronglyMeasurable_id hξm).1
       (by rwa [hlaw.map_eq])).integrable_sq
   have hs : NullMeasurableSet {ω | ε < ‖ξ₀ ω • w₀‖} μ₀ :=
     nullMeasurableSet_lt aemeasurable_const (by fun_prop)
-  have hmap_ind : ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν =
-      ∫ ω, ({ω | R < |ξ₀ ω|}.indicator fun ω ↦ ξ₀ ω ^ 2) ω ∂μ₀ := by
+  have hmap_ind : ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν =
+      ∫ ω, ({ω | R ≤ |ξ₀ ω|}.indicator fun ω ↦ ξ₀ ω ^ 2) ω ∂μ₀ := by
     rw [← hlaw.map_eq]
     exact integral_map hξm
       ((by fun_prop : Measurable fun u : ℝ ↦ u ^ 2).aestronglyMeasurable.indicator
-        (measurableSet_lt measurable_const (by fun_prop : Measurable fun u : ℝ ↦ |u|)))
+        (measurableSet_le measurable_const (by fun_prop : Measurable fun u : ℝ ↦ |u|)))
   rw [← integral_indicator₀ hs, hmap_ind, ← integral_const_mul]
   refine integral_mono
     (((hξ2.mul_const (‖w₀‖ ^ 2)).congr (.of_forall fun ω ↦ ?_)).indicator₀ hs)
-    ((hξ2.indicator₀ (nullMeasurableSet_lt aemeasurable_const hξm.norm)).const_mul _) fun ω ↦ ?_
+    ((hξ2.indicator₀ (nullMeasurableSet_le aemeasurable_const hξm.norm)).const_mul _) fun ω ↦ ?_
   · simp [norm_smul, mul_pow]
   · by_cases hω : ε < ‖ξ₀ ω • w₀‖
     · have hω' : ε < |ξ₀ ω| * ‖w₀‖ := by rwa [norm_smul, Real.norm_eq_abs] at hω
       have hw_pos : 0 < ‖w₀‖ := pos_of_mul_pos_right (hε.trans hω') (abs_nonneg _)
-      have hRlt : R < |ξ₀ ω| :=
-        lt_of_mul_lt_mul_right (((le_div_iff₀' hRpos).1 hw).trans_lt hω') hw_pos.le
+      have hRle : R ≤ |ξ₀ ω| :=
+        (lt_of_mul_lt_mul_right (((le_div_iff₀' hRpos).1 hw).trans_lt hω') hw_pos.le).le
       rw [Set.indicator_of_mem (s := {ω | ε < ‖ξ₀ ω • w₀‖}) hω,
-        Set.indicator_of_mem (s := {ω | R < |ξ₀ ω|}) hRlt,
+        Set.indicator_of_mem (s := {ω | R ≤ |ξ₀ ω|}) hRle,
         norm_smul, Real.norm_eq_abs, mul_pow, sq_abs, mul_comm]
     · rw [Set.indicator_of_notMem (s := {ω | ε < ‖ξ₀ ω • w₀‖}) hω]
       exact mul_nonneg (sq_nonneg _) (Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _)
@@ -314,7 +282,7 @@ private theorem tendsto_sum_setIntegral_norm_smul_sq
     (hmax : ∀ δ > 0, ∀ᶠ n in atTop, ∀ i, ‖w n i‖ ≤ δ) {ε : ℝ} (hε : 0 < ε) :
     Tendsto (fun n ↦ ∑ i, ∫ ω in {ω | ε < ‖ξ n i ω • w n i‖}, ‖ξ n i ω • w n i‖ ^ 2 ∂(μ n))
       atTop (𝓝 0) := by
-  have htail := tendsto_integral_indicator_sq_atTop hL2.integrable_sq
+  have htail := hL2.tendsto_integral_indicator_sq_atTop
   have htrace : Tendsto (fun n ↦ ∑ i, ‖w n i‖ ^ 2) atTop (𝓝 Q.trace) := by
     have hcont : Continuous (fun A : Matrix κ κ ℝ ↦ A.trace) := by
       simp only [Matrix.trace, Matrix.diag_apply]; fun_prop
@@ -328,23 +296,23 @@ private theorem tendsto_sum_setIntegral_norm_smul_sq
   set M : ℝ := |Q.trace| + 1
   have hM : 0 < M := by positivity
   obtain ⟨R, hRpos, hRtail⟩ : ∃ R > 0,
-      ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν < η / (2 * M) :=
+      ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν < η / (2 * M) :=
     ((eventually_gt_atTop (0 : ℝ)).and
       (htail (Iio_mem_nhds (div_pos hη (mul_pos two_pos hM))))).exists
   filter_upwards [hmax (ε / R) (div_pos hε hRpos),
     htrace (Iio_mem_nhds (by linarith [le_abs_self Q.trace] : Q.trace < M))] with n hwn hsum
   have hsum_lt : ∑ i, ‖w n i‖ ^ 2 < M := hsum
-  have htail0 : 0 ≤ ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν :=
+  have htail0 : 0 ≤ ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν :=
     integral_nonneg fun _ ↦ Set.indicator_nonneg (fun _ _ ↦ sq_nonneg _) _
   have hnonneg : 0 ≤ ∑ i, ∫ ω in {ω | ε < ‖ξ n i ω • w n i‖}, ‖ξ n i ω • w n i‖ ^ 2 ∂(μ n) :=
     Finset.sum_nonneg fun i _ ↦ integral_nonneg fun _ ↦ sq_nonneg _
   rw [Real.dist_eq, sub_zero, abs_of_nonneg hnonneg]
   refine (le_trans (b := (∑ i, ‖w n i‖ ^ 2) *
-    ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν) ?_ ?_).trans_lt (half_lt_self hη)
+    ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν) ?_ ?_).trans_lt (half_lt_self hη)
   · rw [Finset.sum_mul]
     exact Finset.sum_le_sum fun i _ ↦
       setIntegral_norm_smul_sq_le (hlaw n i) hL2 hε hRpos (hwn i)
-  · calc (∑ i, ‖w n i‖ ^ 2) * ∫ u, ({u | R < |u|}.indicator fun u ↦ u ^ 2) u ∂ν
+  · calc (∑ i, ‖w n i‖ ^ 2) * ∫ u, ({u | R ≤ |u|}.indicator fun u ↦ u ^ 2) u ∂ν
         ≤ M * (η / (2 * M)) := mul_le_mul hsum_lt.le hRtail.le htail0 hM.le
       _ = η / 2 := by field_simp [hM.ne']
 
@@ -393,8 +361,8 @@ theorem tendstoInDistribution_sum_smul_of_tendsto_vecMulVec [DecidableEq κ]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hmap : (μ n).map (fun ω ↦ ξ n i ω • w n i) = ν.map (fun u : ℝ ↦ u • w n i) := by
     rw [← (hlaw n i).map_eq,
-      AEMeasurable.map_map_of_aemeasurable (by fun_prop) (hlaw n i).aemeasurable]
-    rfl
+      AEMeasurable.map_map_of_aemeasurable (by fun_prop) (hlaw n i).aemeasurable,
+      Function.comp_def]
   rw [hmap, covMatrix_map_smul_const]
 
 end Lindeberg
@@ -428,15 +396,10 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_euclidean
   have hU_var : Var[U 0; μ] = ⟪t, (covMatrix (μ.map (X 0))).toEuclideanLin t⟫ :=
     variance_inner_eq_inner_covMatrix_map hL2 t
   have hZt : HasLaw (fun ω' ↦ ⟪Z ω', t⟫) (gaussianReal 0 Var[U 0; μ].toNNReal) μ' := by
-    have hZm : AEMeasurable Z μ' := hZ.aemeasurable
-    refine ⟨by fun_prop, ?_⟩
-    have hcomp : (fun ω' ↦ ⟪Z ω', t⟫) = (fun z ↦ ⟪t, z⟫) ∘ Z :=
-      funext fun ω' ↦ real_inner_comm t (Z ω')
-    rw [hcomp, ← AEMeasurable.map_map_of_aemeasurable (by fun_prop : Measurable _).aemeasurable
-      hZm, hZ.map_eq, TauCeti.Probability.map_inner_multivariateGaussian 0 t hS, inner_zero_right,
-      hU_var]
+    simpa only [real_inner_comm t, inner_zero_right, hU_var] using
+      hZ.inner_multivariateGaussian hS t
   have hclt := ProbabilityTheory.tendstoInDistribution_inv_sqrt_mul_sum_sub hZt
-    ((innerSL ℝ t).comp_memLp' hL2)
+    (hL2.const_inner t)
     (hindep.comp (fun _ z ↦ ⟪t, z⟫) fun _ ↦ (continuous_const.inner continuous_id).measurable)
     fun i ↦ (hident i).comp (continuous_const.inner continuous_id).measurable
   have hmean : ∫ ω', U 0 ω' ∂μ = ⟪t, ∫ ω', X 0 ω' ∂μ⟫ :=
@@ -480,8 +443,7 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_pi
   have hX_map (i : ℕ) : Q.map (fun ω : ℕ → α ↦ s (ω i)) = P.map s := by
     rw [← hQ_eval i, AEMeasurable.map_map_of_aemeasurable
       (by rw [hQ_eval i]; exact hs.aestronglyMeasurable.aemeasurable)
-      (by fun_prop : Measurable _).aemeasurable]
-    rfl
+      (by fun_prop : Measurable _).aemeasurable, Function.comp_def]
   have hident (i : ℕ) : IdentDistrib (fun ω : ℕ → α ↦ s (ω i)) (fun ω ↦ s (ω 0)) Q Q :=
     ⟨hX_meas i, hX_meas 0, by rw [hX_map i, hX_map 0]⟩
   have hX0_L2 : MemLp (fun ω : ℕ → α ↦ s (ω 0)) 2 Q :=
@@ -510,8 +472,10 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_pi
     rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective, Measure.infinitePi_eq_pi]
   rw [← hr, AEMeasurable.map_map_of_aemeasurable (by rw [hr]; exact hTn_meas n)
     (by fun_prop : Measurable _).aemeasurable]
-  congr 1; ext ω
-  simp only [Function.comp_def, hmean, ← Fin.sum_univ_eq_sum_range]
+  congr 1
+  funext ω
+  dsimp only [Function.comp_def]
+  rw [hmean, Fin.sum_univ_eq_sum_range (fun k ↦ s (ω k) - ∫ a, s a ∂P)]
 
 end CentralLimitTheorem
 

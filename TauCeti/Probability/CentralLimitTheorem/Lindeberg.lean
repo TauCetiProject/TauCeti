@@ -208,8 +208,11 @@ private theorem norm_prod_charFun_sub_exp_le_of_nonneg {ι : Type*} [Fintype ι]
     have htri : ‖charFun (P.map (Y i)) t - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ ≤
         ‖charFun (P.map (Y i)) t - (1 - t ^ 2 * σ i / 2)‖ +
           ‖((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) - ((Real.exp (-(t ^ 2 * σ i / 2)) : ℝ) : ℂ)‖ := by
-      refine (norm_sub_le_norm_sub_add_norm_sub _ ((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) _).trans_eq ?_
-      push_cast; rfl
+      have hcast : ((1 - t ^ 2 * σ i / 2 : ℝ) : ℂ) = 1 - (t : ℂ) ^ 2 * (σ i : ℂ) / 2 := by
+        simp only [Complex.ofReal_sub, Complex.ofReal_one, Complex.ofReal_div, Complex.ofReal_mul,
+          Complex.ofReal_pow, Complex.ofReal_ofNat]
+      rw [← hcast]
+      exact norm_sub_le_norm_sub_add_norm_sub _ _ _
     linarith
   refine (Finset.sum_le_sum fun i _ ↦ hterm i).trans (le_of_eq ?_)
   simp only [Finset.sum_add_distrib, ← Finset.mul_sum]
