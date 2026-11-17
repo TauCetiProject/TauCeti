@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Adjunction.Mates
+public import Mathlib.CategoryTheory.Functor.Flat
 public import Mathlib.CategoryTheory.MorphismProperty.OverAdjunction
+import Mathlib.CategoryTheory.Limits.MorphismProperty
 
 /-!
 # Restricted over categories: object properties, identity base change, and slices
@@ -23,7 +25,10 @@ the restricted over categories `P.Over Q X`:
   stable under composition and satisfies `P.HasOfPostcompProperty P`, the slice category
   `CategoryTheory.Over U` is equivalent to `P.Over ⊤ U.left`, adapting
   `CategoryTheory.Over.iteratedSliceEquiv`, `CategoryTheory.Over.iteratedSliceForward`, and
-  `CategoryTheory.Over.iteratedSliceBackward` from `Mathlib.CategoryTheory.Comma.Over.Basic`.
+  `CategoryTheory.Over.iteratedSliceBackward` from `Mathlib.CategoryTheory.Comma.Over.Basic`;
+* `CategoryTheory.MorphismProperty.representablyFlat_over_pullback`: base change
+  `Over.pullback P ⊤ f` is representably flat when `C` has pullbacks and `P` is multiplicative,
+  stable under base change, and satisfies `P.HasOfPostcompProperty P`.
 -/
 
 public section
@@ -98,15 +103,7 @@ noncomputable def pullbackId :
   NatIso.ofComponents
     (fun Y ↦
       Over.isoMk
-        ({ hom := Limits.pullback.fst Y.hom (𝟙 X)
-           inv := Limits.pullback.lift (𝟙 Y.left) Y.hom (by simp)
-           hom_inv_id := by
-             apply Limits.pullback.hom_ext
-             · rw [Category.assoc, Limits.pullback.lift_fst, Category.comp_id, Category.id_comp]
-             · rw [Category.assoc, Limits.pullback.lift_snd, Limits.pullback.condition,
-                 Category.comp_id, Category.id_comp]
-           inv_hom_id := Limits.pullback.lift_fst _ _ _ } :
-          Limits.pullback Y.hom (𝟙 X) ≅ Y.left)
+        (asIso (Limits.pullback.fst Y.hom (𝟙 X)) : Limits.pullback Y.hom (𝟙 X) ≅ Y.left)
         ((Limits.pullback.condition (f := Y.hom) (g := 𝟙 X)).trans (Category.comp_id _)))
     (fun g ↦ by
       ext
@@ -323,5 +320,13 @@ lemma iteratedSliceEquiv_counitIso_inv_app_left [P.IsStableUnderComposition]
 end IteratedSlice
 
 end Over
+
+/-- Base change `Over.pullback P ⊤ f : P.Over ⊤ Y ⥤ P.Over ⊤ X` is representably flat when `C` has
+pullbacks and `P` is multiplicative, stable under base change, and satisfies post-cancellation. -/
+instance representablyFlat_over_pullback {C : Type*} [Category* C] (P : MorphismProperty C)
+    {X Y : C} (f : X ⟶ Y) [HasPullbacks C] [P.IsMultiplicative]
+    [P.IsStableUnderBaseChange] [P.HasOfPostcompProperty P] :
+    RepresentablyFlat (Over.pullback P ⊤ f) :=
+  flat_of_preservesFiniteLimits (Over.pullback P ⊤ f)
 
 end CategoryTheory.MorphismProperty

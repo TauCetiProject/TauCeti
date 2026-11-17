@@ -30,10 +30,11 @@ This file establishes three general site-theoretic facts in this setting:
   when `P` is stable under composition, `Over.map ⊤ hf` is cover-preserving for the restricted over
   topologies, and when `P` additionally satisfies `P.HasOfPostcompProperty P`, `Over.map ⊤ hf` is
   continuous.
-* **Cover-preservation and continuity of `Over.pullback`**: when `C` has pullbacks and `P` is
-  multiplicative, stable under base change, and satisfies `P.HasOfPostcompProperty P`,
-  `Over.pullback P ⊤ f` is representably flat, cover-preserving, and continuous for the restricted
-  over topologies.
+* **Cover-preservation and continuity of `Over.pullback`**: when `C` has pullbacks,
+  `Over.pullback P ⊤ f` is cover-preserving for the restricted over topologies whenever
+  `P.IsStableUnderBaseChangeAlong f`, and is continuous when `P` is multiplicative, stable under
+  base change, and satisfies `P.HasOfPostcompProperty P` (using its representable flatness from
+  `TauCeti.CategoryTheory.MorphismProperty.Over`).
 -/
 
 public section
@@ -357,13 +358,6 @@ section Pullback
 
 variable {C : Type*} [Category* C] (J : GrothendieckTopology C)
   (P : MorphismProperty C) {X Y : C} (f : X ⟶ Y)
-
-/-- Base change `Over.pullback P ⊤ f : P.Over ⊤ Y ⥤ P.Over ⊤ X` is representably flat when `C` has
-pullbacks and `P` is multiplicative, stable under base change, and satisfies post-cancellation. -/
-instance representablyFlat_over_pullback [HasPullbacks C] [P.IsMultiplicative]
-    [P.IsStableUnderBaseChange] [P.HasOfPostcompProperty P] :
-    RepresentablyFlat (Over.pullback P ⊤ f) :=
-  flat_of_preservesFiniteLimits (Over.pullback P ⊤ f)
 
 /-- Base change `Over.pullback P ⊤ f` is cover-preserving for the restricted over topologies. -/
 lemma coverPreserving_over_pullback [HasPullbacks C] [P.IsStableUnderBaseChangeAlong f]

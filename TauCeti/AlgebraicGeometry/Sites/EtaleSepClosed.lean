@@ -277,6 +277,67 @@ section GeometricPointPullback
 
 variable {S : Scheme.{u}} {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S)
 
+/-- The canonical fiber isomorphism identifying `pointSmallEtale (𝟙 (Spec Ω) ≫ s)` with
+`pointSmallEtale s`. -/
+private noncomputable def pointSmallEtaleFiberIdCompIso :
+    (pointSmallEtale (𝟙 (Spec (.of Ω)) ≫ s)).fiber ≅ (pointSmallEtale s).fiber :=
+  Functor.isoWhiskerLeft (Etale.forget S)
+    (coyoneda.mapIso
+      (CategoryTheory.Over.isoMk (Iso.refl _) :
+        CategoryTheory.Over.mk (𝟙 (Spec (.of Ω)) ≫ s) ≅ CategoryTheory.Over.mk s).op.symm)
+
+/-- The inverse of `pointSmallEtaleFiberIdCompIso s` preserves the underlying morphism out of
+`Spec Ω`. -/
+private lemma pointSmallEtaleFiberIdCompIso_inv_app_left (V : S.Etale)
+    (v : (pointSmallEtale s).fiber.obj V) :
+    ((pointSmallEtaleFiberIdCompIso s).inv.app V v).left = v.left := by
+  let i₀ : CategoryTheory.Over.mk (𝟙 (Spec (.of Ω)) ≫ s) ≅ CategoryTheory.Over.mk s :=
+    CategoryTheory.Over.isoMk (Iso.refl _)
+  have h : (pointSmallEtaleFiberIdCompIso s).inv.app V = TypeCat.ofHom (fun v' ↦
+      i₀.hom ≫ (v' : CategoryTheory.Over.mk s ⟶ (Etale.forget S).obj V)) := by
+    dsimp only [pointSmallEtaleFiberIdCompIso, pointSmallEtale]
+    ext v'
+    simp [i₀]
+  have hv : ((pointSmallEtaleFiberIdCompIso s).inv.app V v :
+      CategoryTheory.Over.mk (𝟙 (Spec (.of Ω)) ≫ s) ⟶ (Etale.forget S).obj V) =
+      i₀.hom ≫ (v : CategoryTheory.Over.mk s ⟶ (Etale.forget S).obj V) :=
+    CategoryTheory.types_congr_hom h v
+  have hleft {V' : CategoryTheory.Over S} (v' : CategoryTheory.Over.mk s ⟶ V') :
+      (i₀.hom ≫ v').left = v'.left := by
+    simp [i₀]
+  exact (congrArg CategoryTheory.Over.Hom.left hv).trans (hleft v)
+
+/-- Under the corepresentation of `pointSmallEtale (𝟙 (Spec Ω))`, transporting a lift `v` of `s`
+to `V` across `pointSmallEtaleFiberIdCompIso s` and
+`s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec Ω))` yields the pullback section
+`s.smallEtaleBaseChangeSection V v`. -/
+private lemma pointSmallEtaleFiberCorepresentableBy_homEquiv_symm_idComp
+    (V : S.Etale) (v : (pointSmallEtale s).fiber.obj V) :
+    (pointSmallEtaleFiberCorepresentableBy (𝟙 (Spec (.of Ω)))).homEquiv.symm
+      ((s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec (.of Ω)))).inv.app V
+        ((pointSmallEtaleFiberIdCompIso s).inv.app V v)) =
+      s.smallEtaleBaseChangeSection V v := by
+  let u : (pointSmallEtale (𝟙 (Spec (.of Ω)))).fiber.obj (s.smallEtaleBaseChange.obj V) :=
+    (Etale.forget (Spec (.of Ω))).map (s.smallEtaleBaseChangeSection V v)
+  have hhom :
+      (s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec (.of Ω)))).hom.app V u =
+        (pointSmallEtaleFiberIdCompIso s).inv.app V v := by
+    apply CategoryTheory.Over.OverMorphism.ext
+    exact (Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso_hom_app_left
+      s (𝟙 (Spec (.of Ω))) V u).trans
+      ((s.smallEtaleBaseChangeSection_left_fst V v).trans
+        (pointSmallEtaleFiberIdCompIso_inv_app_left s V v).symm)
+  have hinv :
+      (s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec (.of Ω)))).inv.app V
+          ((pointSmallEtaleFiberIdCompIso s).inv.app V v) = u := by
+    rw [← hhom]
+    exact CategoryTheory.types_congr_hom
+      ((s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec (.of Ω)))).hom_inv_id_app V) u
+  rw [hinv]
+  dsimp only [u]
+  rw [← pointSmallEtaleFiberCorepresentableBy_homEquiv_apply]
+  exact (pointSmallEtaleFiberCorepresentableBy (𝟙 (Spec (.of Ω)))).homEquiv.symm_apply_apply _
+
 /-- Pulling an étale sheaf on `S` with values in `A` back along a geometric point `s : Spec Ω ⟶ S`
 and taking global sections over `Spec Ω` recovers the geometric stalk at `s`. -/
 noncomputable def Hom.smallEtalePullbackCompΓIsoSheafFiber
@@ -286,14 +347,10 @@ noncomputable def Hom.smallEtalePullbackCompΓIsoSheafFiber
       S.smallEtaleTopology (Spec (.of Ω)).smallEtaleTopology).IsRightAdjoint] :
     s.smallEtalePullback A ⋙ Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) A ≅
       (pointSmallEtale s).sheafFiber :=
-  let i₀ : CategoryTheory.Over.mk (𝟙 (Spec (.of Ω)) ≫ s) ≅ CategoryTheory.Over.mk s :=
-    CategoryTheory.Over.isoMk (Iso.refl _)
-  let e₀ : (pointSmallEtale (𝟙 (Spec (.of Ω)) ≫ s)).fiber ≅ (pointSmallEtale s).fiber :=
-    Functor.isoWhiskerLeft (Etale.forget S) (coyoneda.mapIso i₀.op.symm)
   Functor.isoWhiskerLeft (s.smallEtalePullback A)
       (pointSmallEtaleIdSheafFiberIso Ω).symm ≪≫
     s.smallEtalePullbackCompSheafFiberIso (𝟙 (Spec (.of Ω))) A ≪≫
-    GrothendieckTopology.Point.sheafFiberIsoOfFiberIso e₀
+    GrothendieckTopology.Point.sheafFiberIsoOfFiberIso (pointSmallEtaleFiberIdCompIso s)
 
 /-- Under the inverse of `Hom.smallEtalePullbackCompΓIsoSheafFiber`, the germ at `v` of a section
 of `F` over `V : S.Etale` is obtained by applying the `(s^*, s_*)` unit over `V`, restricting along
@@ -313,64 +370,37 @@ theorem Hom.toPresheafFiber_smallEtalePullbackCompΓIsoSheafFiber_inv_app
         ((s.smallEtalePullback A).obj F).obj.map (s.smallEtaleBaseChangeSection V v).op ≫
         (Sheaf.ΓNatIsoSheafSections _ A (Etale.mkIdTerminal _)).inv.app
           ((s.smallEtalePullback A).obj F) := by
-  let i₀ : CategoryTheory.Over.mk (𝟙 (Spec (.of Ω)) ≫ s) ≅ CategoryTheory.Over.mk s :=
-    CategoryTheory.Over.isoMk (Iso.refl _)
-  let e₀ : (pointSmallEtale (𝟙 (Spec (.of Ω)) ≫ s)).fiber ≅ (pointSmallEtale s).fiber :=
-    Functor.isoWhiskerLeft (Etale.forget S) (coyoneda.mapIso i₀.op.symm)
   have h1 : (s.smallEtalePullbackCompΓIsoSheafFiber A).inv.app F =
-      (GrothendieckTopology.Point.sheafFiberIsoOfFiberIso e₀).inv.app F ≫
+      (GrothendieckTopology.Point.sheafFiberIsoOfFiberIso
+        (pointSmallEtaleFiberIdCompIso s)).inv.app F ≫
         (s.smallEtalePullbackCompSheafFiberIso (𝟙 (Spec (.of Ω))) A).inv.app F ≫
         (pointSmallEtaleIdSheafFiberIso Ω).hom.app ((s.smallEtalePullback A).obj F) := by
     dsimp only [Hom.smallEtalePullbackCompΓIsoSheafFiber]
-    generalize GrothendieckTopology.Point.sheafFiberIsoOfFiberIso (A := A) e₀ = δ
+    generalize GrothendieckTopology.Point.sheafFiberIsoOfFiberIso (A := A)
+      (pointSmallEtaleFiberIdCompIso s) = δ
     simp
   have step1 : (pointSmallEtale s).toPresheafFiber V v F.obj ≫
-      (GrothendieckTopology.Point.sheafFiberIsoOfFiberIso e₀).inv.app F =
-      (pointSmallEtale (𝟙 (Spec (.of Ω)) ≫ s)).toPresheafFiber V (e₀.inv.app V v) F.obj :=
-    (congrArg (_ ≫ ·) (GrothendieckTopology.Point.sheafFiberIsoOfFiberIso_inv_app e₀ F)).trans
-      (GrothendieckTopology.Point.toPresheafFiber_presheafFiberIsoOfFiberIso_inv_app e₀ V v F.obj)
+      (GrothendieckTopology.Point.sheafFiberIsoOfFiberIso
+        (pointSmallEtaleFiberIdCompIso s)).inv.app F =
+      (pointSmallEtale (𝟙 (Spec (.of Ω)) ≫ s)).toPresheafFiber V
+        ((pointSmallEtaleFiberIdCompIso s).inv.app V v) F.obj :=
+    (congrArg (_ ≫ ·)
+      (GrothendieckTopology.Point.sheafFiberIsoOfFiberIso_inv_app
+        (pointSmallEtaleFiberIdCompIso s) F)).trans
+      (GrothendieckTopology.Point.toPresheafFiber_presheafFiberIsoOfFiberIso_inv_app
+        (pointSmallEtaleFiberIdCompIso s) V v F.obj)
   have step2 := Hom.toPresheafFiber_smallEtalePullbackCompSheafFiberIso_inv_app
-    s (𝟙 (Spec (.of Ω))) A F V (e₀.inv.app V v)
+    s (𝟙 (Spec (.of Ω))) A F V ((pointSmallEtaleFiberIdCompIso s).inv.app V v)
   have step3 := toPresheafFiber_pointSmallEtaleIdSheafFiberIso_hom_app Ω
     ((s.smallEtalePullback A).obj F) (s.smallEtaleBaseChange.obj V)
     ((s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec (.of Ω)))).inv.app V
-      (e₀.inv.app V v))
+      ((pointSmallEtaleFiberIdCompIso s).inv.app V v))
   refine (congrArg (_ ≫ ·) h1).trans ?_
   refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) step1).trans ?_)
   refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) step2).trans ?_)
   refine (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) step3).trans ?_)
-  congr 2
-  refine congrArg (fun k : Etale.mk (𝟙 (Spec (.of Ω))) ⟶ s.smallEtaleBaseChange.obj V ↦
-    ((s.smallEtalePullback A).obj F).obj.map k.op) ?_
-  apply (Etale.forget (Spec (.of Ω))).map_injective
-  rw [forget_map_pointSmallEtaleFiberCorepresentableBy_homEquiv_symm]
-  apply CategoryTheory.Over.OverMorphism.ext
-  apply (s.isPullback_smallEtaleBaseChange V).hom_ext
-  · have he₀ : e₀.inv.app V = TypeCat.ofHom (fun v' ↦
-        i₀.hom ≫ (v' : CategoryTheory.Over.mk s ⟶ (Etale.forget S).obj V)) := by
-      dsimp only [e₀, pointSmallEtale]
-      ext v'
-      simp
-    have hv₀' : (e₀.inv.app V v :
-        CategoryTheory.Over.mk (𝟙 (Spec (.of Ω)) ≫ s) ⟶ (Etale.forget S).obj V) =
-        i₀.hom ≫ (v : CategoryTheory.Over.mk s ⟶ (Etale.forget S).obj V) :=
-      CategoryTheory.types_congr_hom he₀ v
-    have hleft {V' : CategoryTheory.Over S} (v' : CategoryTheory.Over.mk s ⟶ V') :
-        (i₀.hom ≫ v').left = v'.left := by
-      simp [i₀]
-    have hv₀ : ((e₀.inv.app V v :
-        (pointSmallEtale (𝟙 (Spec (.of Ω)) ≫ s)).fiber.obj V)).left = v.left :=
-      (congrArg CategoryTheory.Over.Hom.left hv₀').trans (hleft v)
-    exact (Hom.smallEtaleBaseChangeCompPointSmallEtaleFiberIso_inv_app_left_fst
-      s (𝟙 (Spec (.of Ω))) V (e₀.inv.app V v)).trans
-      (hv₀.trans (s.smallEtaleBaseChangeSection_left_fst V v).symm)
-  · have hu := CategoryTheory.Over.w
-      (((s.smallEtaleBaseChangeCompPointSmallEtaleFiberIso (𝟙 (Spec (.of Ω)))).inv.app V
-        (e₀.inv.app V v) :
-        (pointSmallEtale (𝟙 (Spec (.of Ω)))).fiber.obj (s.smallEtaleBaseChange.obj V)))
-    exact hu.trans
-      (CategoryTheory.Over.w ((Etale.forget (Spec (.of Ω))).map
-        (s.smallEtaleBaseChangeSection V v))).symm
+  rw [pointSmallEtaleFiberCorepresentableBy_homEquiv_symm_idComp]
+  rfl
 
 @[simp]
 theorem Hom.toPresheafFiber_smallEtalePullbackCompΓIsoSheafFiber_inv_app_assoc

@@ -23,7 +23,7 @@ functor on sheaves of `Λ`-modules is the stalk functor
 `TauCeti.AlgebraicGeometry.Scheme.etaleStalk Λ s`, with values in `Λ`-modules. Its underlying set
 is the stalk of the underlying sheaf of sets, and it identifies naturally with pulling back along
 `s` to `Spec Ω` and taking global sections
-(`TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompΓIsoEtaleStalk`). For any morphism of
+(`AlgebraicGeometry.Scheme.Hom.smallEtalePullbackCompΓIsoEtaleStalk`). For any morphism of
 schemes `f : X ⟶ Y`, the stalk of `f^* F` at `x` identifies with the stalk of `F` at `x ≫ f`, and
 both `etaleStalk Λ s` and `f.smallEtalePullback (ModuleCat.{u} Λ)` preserve short exact sequences.
 Stalks at a family of geometric points meeting every point of `S` are jointly conservative
@@ -46,8 +46,8 @@ sheaf on a finitely generated `Λ`-module). No invertibility hypothesis on `Λ` 
   `Λ`-modules.
 * `TauCeti.AlgebraicGeometry.Scheme.etaleStalkCompForgetIso`: the underlying set of the stalk is
   the stalk of the underlying sheaf of sets.
-* `TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompEtaleStalkIso`,
-  `TauCeti.AlgebraicGeometry.Scheme.smallEtalePullbackCompΓIsoEtaleStalk`: stalk comparison
+* `AlgebraicGeometry.Scheme.Hom.smallEtalePullbackCompEtaleStalkIso`,
+  `AlgebraicGeometry.Scheme.Hom.smallEtalePullbackCompΓIsoEtaleStalk`: stalk comparison
   `(f^* F)_x ≅ F_{x ≫ f}` and identification `Γ(Spec Ω, s^* F) ≅ F_s`.
 * `TauCeti.AlgebraicGeometry.Scheme.shortExact_map_etaleStalk`,
   `AlgebraicGeometry.Scheme.Hom.shortExact_map_smallEtalePullback`: geometric stalks and
@@ -174,27 +174,30 @@ theorem isIso_of_forall_isIso_etaleStalk {F G : Sheaf (smallEtaleTopology S) (Mo
 
 end Conservative
 
-section Pullback
+end TauCeti.AlgebraicGeometry.Scheme
 
-variable {X Y : Scheme.{u}}
+namespace AlgebraicGeometry.Scheme.Hom
+
+open TauCeti.AlgebraicGeometry.Scheme
+
+variable {S X Y : Scheme.{u}}
 
 /-- For a morphism of schemes `f : X ⟶ Y` and a geometric point `x : Spec Ω ⟶ X`, the stalk of
 `f^* F` at `x` identifies naturally with the stalk of `F` at `x ≫ f` in `ModuleCat.{u} Λ`. -/
 noncomputable abbrev smallEtalePullbackCompEtaleStalkIso (f : X ⟶ Y)
-    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (x : Spec (.of Ω) ⟶ X) :
+    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (x : Spec (.of Ω) ⟶ X) (Λ : Type u) [Ring Λ] :
     f.smallEtalePullback (ModuleCat.{u} Λ) ⋙ etaleStalk Λ x ≅ etaleStalk Λ (x ≫ f) :=
   f.smallEtalePullbackCompSheafFiberIso x (ModuleCat.{u} Λ)
 
 /-- Pulling an étale sheaf of `Λ`-modules on `S` back along a geometric point `s : Spec Ω ⟶ S` and
 taking global sections over `Spec Ω` recovers the geometric stalk at `s`. -/
 noncomputable abbrev smallEtalePullbackCompΓIsoEtaleStalk
-    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) :
+    {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S) (Λ : Type u) [Ring Λ] :
     s.smallEtalePullback (ModuleCat.{u} Λ) ⋙
         Sheaf.Γ (smallEtaleTopology (Spec (.of Ω))) (ModuleCat.{u} Λ) ≅
       etaleStalk Λ s :=
   s.smallEtalePullbackCompΓIsoSheafFiber (ModuleCat.{u} Λ)
 
-variable {Λ} in
 /-- Under the inverse of `smallEtalePullbackCompΓIsoEtaleStalk`, the germ at `v` of a section of
 `F` over `V : S.Etale` is obtained by applying the `(s^*, s_*)` unit over `V`, restricting along
 `s.smallEtaleBaseChangeSection V v` to `Spec Ω`, and identifying sections over `𝟙 (Spec Ω)` with
@@ -202,10 +205,11 @@ global sections. -/
 @[reassoc, elementwise nosimp]
 theorem toPresheafFiber_smallEtalePullbackCompΓIsoEtaleStalk_inv_app
     {Ω : Type u} [Field Ω] [IsSepClosed Ω] (s : Spec (.of Ω) ⟶ S)
+    {Λ : Type u} [Ring Λ]
     (F : Sheaf (smallEtaleTopology S) (ModuleCat.{u} Λ)) (V : S.Etale)
     (v : (pointSmallEtale s).fiber.obj V) :
     (pointSmallEtale s).toPresheafFiber V v F.obj ≫
-        (smallEtalePullbackCompΓIsoEtaleStalk Λ s).inv.app F =
+        (s.smallEtalePullbackCompΓIsoEtaleStalk Λ).inv.app F =
       ((s.smallEtaleAdjunction (ModuleCat.{u} Λ)).unit.app F).hom.app (op V) ≫
         ((s.smallEtalePullback (ModuleCat.{u} Λ)).obj F).obj.map
           (s.smallEtaleBaseChangeSection V v).op ≫
@@ -213,17 +217,14 @@ theorem toPresheafFiber_smallEtalePullbackCompΓIsoEtaleStalk_inv_app
           ((s.smallEtalePullback (ModuleCat.{u} Λ)).obj F) :=
   s.toPresheafFiber_smallEtalePullbackCompΓIsoSheafFiber_inv_app (ModuleCat.{u} Λ) F V v
 
-end Pullback
-
-end TauCeti.AlgebraicGeometry.Scheme
-
 /-- **Pullback of étale sheaves of modules is exact.** Inverse image along any morphism of schemes
 `f : X ⟶ Y` preserves short exact sequences of étale sheaves of `Λ`-modules. -/
-theorem _root_.AlgebraicGeometry.Scheme.Hom.shortExact_map_smallEtalePullback
-    {X Y : Scheme.{u}} {Λ : Type u} [Ring Λ] (f : X ⟶ Y)
+theorem shortExact_map_smallEtalePullback (f : X ⟶ Y) {Λ : Type u} [Ring Λ]
     {T : ShortComplex (Sheaf (smallEtaleTopology Y) (ModuleCat.{u} Λ))} (hT : T.ShortExact) :
     (T.map (f.smallEtalePullback (ModuleCat.{u} Λ))).ShortExact :=
   hT.map_of_exact _
+
+end AlgebraicGeometry.Scheme.Hom
 
 namespace CategoryTheory.ShortComplex
 
