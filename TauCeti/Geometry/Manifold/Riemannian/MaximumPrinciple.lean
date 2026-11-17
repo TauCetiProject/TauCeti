@@ -235,8 +235,8 @@ for every point `y` and every unit vector `v` minimizing `B y w w` over the unit
 
 For symmetric bilinear forms on an inner product space this is the lower bound `B ≥ -C g` on the
 least eigenvalue, from a hypothesis at its unit eigenvectors only
-(`TauCeti.Manifold.le_of_isLeast_of_laplaceBeltrami_neg`). The hypotheses hold for every `C²`
-field of continuous bilinear forms. -/
+(`TauCeti.Manifold.le_of_isLeast_of_laplaceBeltrami_neg`). The regularity hypotheses `hc` and
+`hB` hold for every `C²` field of continuous bilinear forms. -/
 theorem forall_le_apply_self_of_laplaceBeltrami_neg [CompactSpace M] {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
     {B : M → LinearMap.BilinForm ℝ V} (hc : Continuous fun p : M × V ↦ B p.1 p.2 p.2)
@@ -268,9 +268,7 @@ theorem forall_le_apply_self_of_laplaceBeltrami_neg [CompactSpace M] {V : Type*}
   · simp
   -- Scale `v` to the unit vector `u = v / ‖v‖`, at which `q y u ≥ μ y ≥ -C`.
   set u := ‖v‖⁻¹ • v
-  have hu : u ∈ S := by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 hv)]
+  have hu : u ∈ S := mem_sphere_zero_iff_norm.2 (norm_smul_inv_norm (𝕜 := ℝ) hv)
   have hvu : v = ‖v‖ • u := (smul_inv_smul₀ (norm_ne_zero_iff.2 hv) v).symm
   have hqu : μ y ≤ q y u := (hμ y).2 (Set.mem_image_of_mem _ hu)
   have hscale : B y v v = ‖v‖ ^ 2 * q y u := by
