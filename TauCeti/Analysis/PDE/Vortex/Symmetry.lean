@@ -40,8 +40,13 @@ preserve the limit, while a rotation by `u` multiplies it by `u^m`. The constant
 the end framing. This constant gauge does not tend to one at infinity, so it is a change of the
 frame of the line at infinity rather than an element of the framed gauge group.
 
-These are identities of smooth differential expressions; their Sobolev completions, and the
-induced action on the divisor of a vortex, are not treated here.
+At a point, `rotateField u` and `rotateTarget u` act on values by the linear isometries
+`fieldRotation u` and `targetRotation u` of `ℝ⁴`, and the zeroth-order part of `L_x` intertwines
+them (`gaugeFixedZerothOrder_fieldRotation`).
+
+These are identities of smooth differential expressions. Their counterparts for the `H¹`
+realization of `L_x` are in `TauCeti.Analysis.PDE.Vortex.RigidMotion`; the induced action on the
+divisor of a vortex is not treated here.
 
 ## Main results
 
@@ -53,6 +58,8 @@ induced action on the divisor of a vortex, are not treated here.
   `TauCeti.Vortex.gaugeFixedOperator_translateField` and
   `TauCeti.Vortex.gaugeFixedAdjoint_translateField`.
 * `TauCeti.Vortex.rotateField_translateField`: the semidirect product law of the two actions.
+* `TauCeti.Vortex.rotateField_apply_eq_fieldRotation`,
+  `TauCeti.Vortex.rotateTarget_apply_eq_targetRotation`: the actions on values.
 * `TauCeti.Vortex.tendsto_sectionValue_translateField`,
   `TauCeti.Vortex.tendsto_sectionValue_rotateField` and
   `TauCeti.Vortex.tendsto_sectionValue_gaugeTransform_rotateField`: the end framing laws.
@@ -313,6 +320,102 @@ theorem rotateTarget_rotateTarget (u v : Circle) (η : ℂ → EuclideanSpace �
     rotateTarget u (rotateTarget v η) = rotateTarget (u * v) η := by
   ext z i
   fin_cases i <;> simp [mul_comm (v : ℂ), mul_assoc] <;> ring
+
+/-- The rotation of values by which `rotateField u` acts at the rotated point: the connection
+coefficient `b₁ + i b₂` is multiplied by `u⁻¹` and the section is fixed
+(`rotateField_apply_eq_fieldRotation`). It is a linear isometry of `ℝ⁴`. -/
+def fieldRotation (u : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toFun v := !₂[(u : ℂ).re * v 0 + (u : ℂ).im * v 1, (u : ℂ).re * v 1 - (u : ℂ).im * v 0, v 2, v 3]
+  invFun v := !₂[(u : ℂ).re * v 0 - (u : ℂ).im * v 1, (u : ℂ).re * v 1 + (u : ℂ).im * v 0, v 2, v 3]
+  map_add' v w := by ext i; fin_cases i <;> simp <;> ring
+  map_smul' c v := by ext i; fin_cases i <;> simp <;> ring
+  left_inv v := by
+    have hn := Circle.re_sq_add_im_sq u
+    ext i; fin_cases i <;> simp
+    · linear_combination v 0 * hn
+    · linear_combination v 1 * hn
+  right_inv v := by
+    have hn := Circle.re_sq_add_im_sq u
+    ext i; fin_cases i <;> simp
+    · linear_combination v 0 * hn
+    · linear_combination v 1 * hn
+  norm_map' v := by
+    have hn := Circle.re_sq_add_im_sq u
+    simp only [EuclideanSpace.norm_eq, Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
+    congr 1
+    simp
+    linear_combination (v 0 ^ 2 + v 1 ^ 2) * hn
+
+/-- The rotation of values by which `rotateTarget u` acts at the rotated point: the complex
+`∂bar` row is multiplied by `u⁻¹` and the two real rows are fixed
+(`rotateTarget_apply_eq_targetRotation`). It is a linear isometry of `ℝ⁴`. -/
+def targetRotation (u : Circle) : EuclideanSpace ℝ (Fin 4) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 4) where
+  toFun v := !₂[v 0, v 1, (u : ℂ).re * v 2 + (u : ℂ).im * v 3, (u : ℂ).re * v 3 - (u : ℂ).im * v 2]
+  invFun v := !₂[v 0, v 1, (u : ℂ).re * v 2 - (u : ℂ).im * v 3, (u : ℂ).re * v 3 + (u : ℂ).im * v 2]
+  map_add' v w := by ext i; fin_cases i <;> simp <;> ring
+  map_smul' c v := by ext i; fin_cases i <;> simp <;> ring
+  left_inv v := by
+    have hn := Circle.re_sq_add_im_sq u
+    ext i; fin_cases i <;> simp
+    · linear_combination v 2 * hn
+    · linear_combination v 3 * hn
+  right_inv v := by
+    have hn := Circle.re_sq_add_im_sq u
+    ext i; fin_cases i <;> simp
+    · linear_combination v 2 * hn
+    · linear_combination v 3 * hn
+  norm_map' v := by
+    have hn := Circle.re_sq_add_im_sq u
+    simp only [EuclideanSpace.norm_eq, Real.norm_eq_abs, sq_abs, Fin.sum_univ_four]
+    congr 1
+    simp
+    linear_combination (v 2 ^ 2 + v 3 ^ 2) * hn
+
+@[simp]
+theorem fieldRotation_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    fieldRotation u v = !₂[(u : ℂ).re * v 0 + (u : ℂ).im * v 1,
+      (u : ℂ).re * v 1 - (u : ℂ).im * v 0, v 2, v 3] := (rfl)
+
+@[simp]
+theorem targetRotation_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    targetRotation u v = !₂[v 0, v 1, (u : ℂ).re * v 2 + (u : ℂ).im * v 3,
+      (u : ℂ).re * v 3 - (u : ℂ).im * v 2] := (rfl)
+
+private theorem fieldRotation_symm_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    (fieldRotation u).symm v = !₂[(u : ℂ).re * v 0 - (u : ℂ).im * v 1,
+      (u : ℂ).re * v 1 + (u : ℂ).im * v 0, v 2, v 3] := (rfl)
+
+private theorem targetRotation_symm_apply (u : Circle) (v : EuclideanSpace ℝ (Fin 4)) :
+    (targetRotation u).symm v = !₂[v 0, v 1, (u : ℂ).re * v 2 - (u : ℂ).im * v 3,
+      (u : ℂ).re * v 3 + (u : ℂ).im * v 2] := (rfl)
+
+/-- The inverse of the rotation of field values by `u` is the rotation by `u⁻¹`. -/
+@[simp]
+theorem fieldRotation_symm (u : Circle) : (fieldRotation u).symm = fieldRotation u⁻¹ := by
+  ext v i
+  fin_cases i <;> simp [fieldRotation_symm_apply, sub_eq_add_neg]
+
+/-- The inverse of the rotation of target values by `u` is the rotation by `u⁻¹`. -/
+@[simp]
+theorem targetRotation_symm (u : Circle) : (targetRotation u).symm = targetRotation u⁻¹ := by
+  ext v i
+  fin_cases i <;> simp [targetRotation_symm_apply, sub_eq_add_neg]
+
+/-- A rotated field is the rotation of the values of the field at the rotated point. -/
+theorem rotateField_apply_eq_fieldRotation (u : Circle) (x : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : rotateField u x z = fieldRotation u (x (u * z)) := (rfl)
+
+/-- A rotated target field is the rotation of the values of the target at the rotated point. -/
+theorem rotateTarget_apply_eq_targetRotation (u : Circle) (η : ℂ → EuclideanSpace ℝ (Fin 4))
+    (z : ℂ) : rotateTarget u η z = targetRotation u (η (u * z)) := (rfl)
+
+/-- The zeroth-order part of `L_x` intertwines the rotation of the values of the field and of the
+variation with the rotation of target values. -/
+theorem gaugeFixedZerothOrder_fieldRotation (u : Circle) (w v : EuclideanSpace ℝ (Fin 4)) :
+    gaugeFixedZerothOrder (fieldRotation u w) (fieldRotation u v) =
+      targetRotation u (gaugeFixedZerothOrder w v) := by
+  ext i
+  fin_cases i <;> simp [gaugeFixedZerothOrderMatrix, Fin.sum_univ_four] <;> ring
 
 /-- Evaluation of a real-linear functional at `u`, in the basis `(1, I)`. -/
 private theorem clm_apply_coe (L : ℂ →L[ℝ] ℝ) (u : Circle) :
