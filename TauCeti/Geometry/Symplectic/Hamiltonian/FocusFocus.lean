@@ -91,7 +91,7 @@ variable {V : Type*} [AddCommGroup V] [Module ℝ V] {ω : SymplecticForm V}
 /-! ### Commuting square roots of `1` and `-1` in `sp(V, ω)` -/
 
 /-- An element of `sp(V, ω)` squaring to `1` has a nonzero fixed vector. -/
-private theorem exists_ne_zero_apply_eq_self [Nontrivial V]
+theorem exists_ne_zero_apply_eq_self [Nontrivial V]
     {A : skewAdjointLieSubalgebra ω.toBilinForm} (hA : (A : Module.End ℝ V) * A = 1) :
     ∃ v ≠ 0, (A : Module.End ℝ V) v = v := by
   by_contra! h
