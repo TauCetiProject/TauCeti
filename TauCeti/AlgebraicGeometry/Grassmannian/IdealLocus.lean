@@ -8,7 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
 public import TauCeti.AlgebraicGeometry.Grassmannian.Points
 
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop

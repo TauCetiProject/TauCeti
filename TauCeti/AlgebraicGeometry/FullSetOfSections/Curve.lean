@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Section
 public import TauCeti.AlgebraicGeometry.FullSetOfSections.Basic
 public import TauCeti.AlgebraicGeometry.IdealSheaf.IncidenceLocus
-import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Degree.Sum
 import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
 import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop

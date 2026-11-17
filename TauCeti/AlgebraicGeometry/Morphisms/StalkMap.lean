@@ -10,7 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.QuasiFinite
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.RingTheory.IntegralClosure.IntegrallyClosed
 public import Mathlib.RingTheory.KrullDimension.Basic
-public import TauCeti.AlgebraicGeometry.AffineScheme
+public import TauCeti.AlgebraicGeometry.AffineScheme.Basic
 public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import TauCeti.AlgebraicGeometry.Restrict
 public import TauCeti.RingTheory.Etale.Locus
