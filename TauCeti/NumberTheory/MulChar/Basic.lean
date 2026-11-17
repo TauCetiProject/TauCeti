@@ -30,8 +30,9 @@ A character of order dividing two is `1` at the square of every unit
 `Int.castRingHom` takes the casts of its integer values
 (`MulChar.ringHomComp_intCast_apply_of_apply_eq`).
 
-The trivial character is quadratic (`MulChar.isQuadratic_one`), and it corresponds to the trivial
-homomorphism of unit groups (`MulChar.equivToUnitHom_one`, `MulChar.toUnitHom_one`).
+The trivial character is quadratic (`MulChar.isQuadratic_one`), and `MulChar.equivToUnitHom` and
+its inverse carry the trivial character `1` and the trivial unit homomorphism `1` to each other
+(`MulChar.equivToUnitHom_one`, `MulChar.equivToUnitHom_symm_one`, `MulChar.toUnitHom_one`).
 
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
@@ -74,6 +75,12 @@ theorem map_one_apply {R S R' R'' F G : Type*} [CommMonoid R] [CommMonoid S]
 theorem equivToUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
     equivToUnitHom (1 : MulChar R R') = 1 :=
   map_one mulEquivToUnitHom
+
+/-- `MulChar.equivToUnitHom.symm` sends the trivial unit homomorphism `1` to `1`. -/
+@[simp]
+theorem equivToUnitHom_symm_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
+    equivToUnitHom.symm (1 : Rˣ →* R'ˣ) = 1 :=
+  map_one mulEquivToUnitHom.symm
 
 /-- The trivial character restricts to the trivial homomorphism of unit groups. -/
 theorem toUnitHom_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R'] :
