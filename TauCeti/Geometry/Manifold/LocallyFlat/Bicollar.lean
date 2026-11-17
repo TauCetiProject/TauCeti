@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.HasGroupoid
+public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import TauCeti.Geometry.Manifold.LocallyFlat.Basic
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
 # Locally flat embeddings are locally bicollared
@@ -68,6 +71,8 @@ eliminate them downstream.
   the complement of the image inside the collar.
 * `TauCeti.IsBicollared.exists_isOpen_sdiff_range_eq_union`: a bicollared map with nonempty
   domain is two-sided.
+* `TauCeti.isBicollared_prodMkRight_of_finrank_eq_one`: a point fiber `Prod.mk x₀ : Y → X × Y` in
+  a product with a 1-manifold `X` is globally bicollared.
 * `TauCeti.IsLocallyBicollared.restrict`, `TauCeti.IsLocallyBicollared.isOpenEmbedding_comp`, and
   `TauCeti.IsLocallyBicollared.comp_homeomorph`: the local predicate's basic closure API.
 
@@ -260,6 +265,27 @@ the identity. -/
 theorem isBicollar_prodMkLeft : IsBicollar (fun x : N => (x, (0 : ℝ))) id where
   isOpenEmbedding := IsOpenEmbedding.id
   apply_zero _ := rfl
+
+/-- **A point fiber in a product with a 1-manifold is globally bicollared.** For any `x₀ : X` in a
+topological space `X` charted on a one-dimensional real normed space `H` (`Module.finrank ℝ H = 1`)
+and any topological space `Y`, the fiber inclusion `Prod.mk x₀ : Y → X × Y` admits a global
+bicollar. -/
+theorem isBicollared_prodMkRight_of_finrank_eq_one {X Y H : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y]
+    [NormedAddCommGroup H] [NormedSpace ℝ H] [ChartedSpace H X]
+    (hH : Module.finrank ℝ H = 1) (x₀ : X) :
+    IsBicollared (Prod.mk x₀ : Y → X × Y) := by
+  have : FiniteDimensional ℝ H := .of_finrank_pos (by omega)
+  let L : ℝ ≃L[ℝ] H :=
+    (FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
+      ((Module.finrank_self ℝ).trans hH.symm)).some
+  obtain ⟨κU, hκU, hκU0⟩ := isOpen_univ.exists_isOpenEmbedding_apply_zero_eq (E := H) (mem_univ x₀)
+  let κ : ℝ → X := Subtype.val ∘ κU ∘ L
+  have hκ : IsOpenEmbedding κ :=
+    isOpen_univ.isOpenEmbedding_subtypeVal.comp (hκU.comp L.toHomeomorph.isOpenEmbedding)
+  have hκ0 : κ 0 = x₀ := by simp [κ, hκU0]
+  refine isBicollared_iff.2 ⟨fun q ↦ (κ q.2, q.1), ?_, fun y ↦ by simp [hκ0]⟩
+  exact (Homeomorph.prodComm Y X).isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap hκ)
 
 namespace IsBicollared
 

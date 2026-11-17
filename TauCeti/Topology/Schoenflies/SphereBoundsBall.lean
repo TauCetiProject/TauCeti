@@ -7,13 +7,10 @@ module
 
 public import TauCeti.Geometry.Manifold.Irreducible
 public import TauCeti.Topology.Schoenflies.NormedSpace
-import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
 import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.AlgebraicTopology.Disk
-import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.AlgebraicTopology.Sphere.Contractible
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
-import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
 # Alexander's theorem and 3-manifold irreducibility instances
@@ -24,12 +21,13 @@ tame irreducibility predicate `TauCeti.IsSphereBoundsBall`. Likewise, every clos
 2-sphere in a 3-dimensional real normed space `E` bounds its filled hull as an embedded closed
 3-ball.
 
-More generally, a local bicollar of `TopCat.sphere n` into a real normed space `E` or into the unit
-sphere `S(F)` of a real normed space `F` already forces `E` (resp. `F`) to be finite-dimensional of
-dimension `n + 1` (resp. `n + 2`), by Riesz's theorem (`FiniteDimensional.of_totallyBounded_nhds`)
-and Brouwer's invariance of dimension (`Topology.IsOpenEmbedding.finrank_eq`). Consequently the
-closed-disk extension theorems and `TauCeti.IsSphereBoundsBall` hold without any auxiliary dimension
-hypotheses on `E` or `F`: for `finrank ℝ F = 4` (`S(F) ≅ S³`, non-vacuously witnessed by
+Because a local bicollar of `TopCat.sphere n` into a real normed space `E` or unit sphere `S(F)`
+forces `FiniteDimensional` and `finrank ℝ E = n + 1` (resp. `finrank ℝ F = n + 2`) by
+`TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere` and
+`TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere`
+(`TauCeti.Geometry.Manifold.LocallyFlat.Brown`), the closed-disk extension theorems and
+`TauCeti.IsSphereBoundsBall` hold without any auxiliary dimension hypotheses on `E` or `F`: for
+`finrank ℝ F = 4` (`S(F) ≅ S³`, non-vacuously witnessed by
 `TauCeti.isLocallyFlat_equatorInclusion`) this is **Alexander's theorem**, while for
 `finrank ℝ F ≠ 4` no locally flat `(ℝ², ℝ)`-embedding of `S²` into `S(F)` exists.
 
@@ -40,17 +38,13 @@ dimension.
 
 As a contrasting reducibility witness, a product `X × S²` of any nonempty 1-manifold `X` (such as
 `Circle × S²` or `ℝ × S²`) does **not** satisfy `TauCeti.IsSphereBoundsBall`: a fiber `{x₀} × S²`
-is a closed locally flat 2-sphere whose extension across `𝔻³` would contract `S²` via second-factor
-projection.
+is a closed locally flat 2-sphere (bicollared by
+`TauCeti.isBicollared_prodMkRight_of_finrank_eq_one` in
+`TauCeti.Geometry.Manifold.LocallyFlat.Bicollar`) whose extension across `𝔻³` would contract `S²`
+via second-factor projection.
 
 ## Main results
 
-* `TauCeti.IsLocallyBicollared.finiteDimensional_of_topCatSphere`,
-  `TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere`,
-  `TauCeti.IsLocallyBicollared.finiteDimensional_of_topCatSphere_sphere`, and
-  `TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere`: a locally bicollared `n`-sphere
-  in `E` (resp. `S(F)`) forces `FiniteDimensional ℝ E` and `finrank ℝ E = n + 1` (resp.
-  `FiniteDimensional ℝ F` and `finrank ℝ F = n + 2`).
 * `TauCeti.IsLocallyFlat.exists_isClosedEmbedding_disk_sphere`: a locally flat `n`-sphere
   `TopCat.sphere n → S(F)` extends across `TopCat.disk (n + 1)` to a closed embedding onto the
   closure of either complementary component.
@@ -60,8 +54,7 @@ projection.
 * `TauCeti.IsLocallyFlat.exists_isClosedEmbedding_disk_filledHull` and
   `TauCeti.isSphereBoundsBall_normedSpace`: closed-disk filling of `filledHull` and
   `TauCeti.IsSphereBoundsBall` for real normed spaces (in particular `ℝ³`).
-* `TauCeti.isBicollared_prodMkRight_of_finrank_eq_one`,
-  `TauCeti.not_isSphereBoundsBall_prod_sphere`,
+* `TauCeti.not_isSphereBoundsBall_prod_sphere`,
   `TauCeti.not_isSphereBoundsBall_circle_prod_sphere`, and
   `TauCeti.not_isSphereBoundsBall_real_prod_sphere`: `X × S²` fails `TauCeti.IsSphereBoundsBall`
   for every nonempty 1-manifold `X` (in particular `S¹ × S²` and `ℝ × S²`).
@@ -84,83 +77,6 @@ open CategoryTheory Filter Function Metric Module Set Topology
 namespace TauCeti
 
 universe u v
-
-/-! ### Dimension forcing from local bicollars -/
-
-/-- Any locally bicollared map out of `TopCat.sphere n` yields an open embedding of
-`EuclideanSpace ℝ (Fin n) × ℝ` into the target. -/
-private lemma exists_isOpenEmbedding_prod_of_topCatSphere {Y : Type v} [TopologicalSpace Y]
-    {n : ℕ} {f : TopCat.sphere.{u} n → Y} (hf : IsLocallyBicollared f) :
-    ∃ ψ : EuclideanSpace ℝ (Fin n) × ℝ → Y, IsOpenEmbedding ψ := by
-  let V := EuclideanSpace ℝ (Fin (n + 1))
-  have : Fact (finrank ℝ V = n + 1) := ⟨by simp [V]⟩
-  let eS : TopCat.sphere.{u} n ≃ₜ sphere (0 : V) 1 := Homeomorph.ulift
-  obtain ⟨s₀⟩ := nonempty_topCatSphere.{u} n
-  obtain ⟨U, hU, hx₀, hbic⟩ := isLocallyBicollared_iff.1 (hf.comp_homeomorph eS.symm) (eS s₀)
-  obtain ⟨b, hb⟩ := isBicollared_iff.1 hbic
-  obtain ⟨κ, hκ, -⟩ :=
-    hU.exists_isOpenEmbedding_apply_zero_eq (E := EuclideanSpace ℝ (Fin n)) hx₀
-  exact ⟨b ∘ Prod.map κ id, hb.isOpenEmbedding.comp (hκ.prodMap IsOpenEmbedding.id)⟩
-
-/-- Any locally bicollared map from `TopCat.sphere n` into `sphere (0 : F) 1` yields an open
-embedding of `(EuclideanSpace ℝ (Fin n) × ℝ) × ℝ` into `F`. -/
-private lemma exists_isOpenEmbedding_prod_of_topCatSphere_sphere
-    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
-    ∃ Φ : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ → F, IsOpenEmbedding Φ := by
-  obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
-  let ρ₀ := OpenPartialHomeomorph.univBall (1 : ℝ) (1 / 2)
-  have hρ_pos (t : ℝ) : 0 < ρ₀ t := by
-    have ht : dist (ρ₀ t) 1 < 1 / 2 := mem_ball.1 <|
-      OpenPartialHomeomorph.univBall_target (1 : ℝ) (by positivity : (0 : ℝ) < 1 / 2) ▸
-        ρ₀.map_source (by simp [ρ₀])
-    linarith [(abs_lt.1 (Real.dist_eq (ρ₀ t) 1 ▸ ht)).1]
-  let ρ : ℝ → Ioi (0 : ℝ) := fun t ↦ ⟨ρ₀ t, hρ_pos t⟩
-  have hρ : IsOpenEmbedding ρ :=
-    (isOpen_Ioi.isOpenEmbedding_subtypeVal.of_comp_iff ρ).1
-      (ρ₀.isOpenEmbedding (OpenPartialHomeomorph.univBall_source _ _))
-  exact ⟨Subtype.val ∘ (homeomorphUnitSphereProd F).symm ∘ Prod.map ψ ρ,
-    isOpen_compl_singleton.isOpenEmbedding_subtypeVal.comp <|
-      (homeomorphUnitSphereProd F).symm.isOpenEmbedding.comp (hψ.prodMap hρ)⟩
-
-/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `E` to be
-finite-dimensional.** -/
-theorem IsLocallyBicollared.finiteDimensional_of_topCatSphere
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
-    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
-    FiniteDimensional ℝ E := by
-  obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
-  obtain ⟨K, hK, hK0⟩ := exists_compact_mem_nhds (0 : EuclideanSpace ℝ (Fin n) × ℝ)
-  exact .of_totallyBounded_nhds (𝕜 := ℝ) (hψ.image_mem_nhds.2 hK0)
-    (hK.image hψ.continuous).totallyBounded
-
-/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `dim E = n + 1`.** -/
-theorem IsLocallyBicollared.finrank_eq_of_topCatSphere
-    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
-    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
-    finrank ℝ E = n + 1 := by
-  have := hf.finiteDimensional_of_topCatSphere
-  obtain ⟨_, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
-  exact (hψ.finrank_eq IsOpenEmbedding.id).trans (by simp [Module.finrank_prod])
-
-/-- **A locally bicollared `n`-sphere in `S(F)` forces `F` to be finite-dimensional.** -/
-theorem IsLocallyBicollared.finiteDimensional_of_topCatSphere_sphere
-    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
-    FiniteDimensional ℝ F := by
-  obtain ⟨Φ, hΦ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere_sphere hf
-  obtain ⟨K, hK, hK0⟩ := exists_compact_mem_nhds (0 : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ)
-  exact .of_totallyBounded_nhds (𝕜 := ℝ) (hΦ.image_mem_nhds.2 hK0)
-    (hK.image hΦ.continuous).totallyBounded
-
-/-- **A locally bicollared `n`-sphere in `S(F)` forces `dim F = n + 2`.** -/
-theorem IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere
-    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
-    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
-    finrank ℝ F = n + 2 := by
-  have := hf.finiteDimensional_of_topCatSphere_sphere
-  obtain ⟨_, hΦ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere_sphere hf
-  exact (hΦ.finrank_eq IsOpenEmbedding.id).trans (by simp [Module.finrank_prod])
 
 /-! ### Disk extensions and Alexander's theorem on `S³` -/
 
@@ -281,26 +197,6 @@ theorem isSphereBoundsBall_normedSpace (E : Type u) [NormedAddCommGroup E] [Norm
   exact ⟨g, hg_emb, hg_bdry⟩
 
 /-! ### Reducibility of `X × S²` (`S¹ × S²` and `ℝ × S²`) -/
-
-/-- **A point fiber in a product with a 1-manifold is globally bicollared.** For any `x₀ : X` in a
-topological space `X` charted on a one-dimensional real normed space `H` (`finrank ℝ H = 1`) and
-any topological space `Y`, the fiber inclusion `Prod.mk x₀ : Y → X × Y` admits a global bicollar. -/
-theorem isBicollared_prodMkRight_of_finrank_eq_one {X Y H : Type*}
-    [TopologicalSpace X] [TopologicalSpace Y]
-    [NormedAddCommGroup H] [NormedSpace ℝ H] [ChartedSpace H X]
-    (hH : finrank ℝ H = 1) (x₀ : X) :
-    IsBicollared (Prod.mk x₀ : Y → X × Y) := by
-  have : FiniteDimensional ℝ H := .of_finrank_pos (by omega)
-  let L : ℝ ≃L[ℝ] H :=
-    (FiniteDimensional.nonempty_continuousLinearEquiv_of_finrank_eq
-      ((Module.finrank_self ℝ).trans hH.symm)).some
-  obtain ⟨κU, hκU, hκU0⟩ := isOpen_univ.exists_isOpenEmbedding_apply_zero_eq (E := H) (mem_univ x₀)
-  let κ : ℝ → X := Subtype.val ∘ κU ∘ L
-  have hκ : IsOpenEmbedding κ :=
-    isOpen_univ.isOpenEmbedding_subtypeVal.comp (hκU.comp L.toHomeomorph.isOpenEmbedding)
-  have hκ0 : κ 0 = x₀ := by simp [κ, hκU0]
-  refine isBicollared_iff.2 ⟨fun q ↦ (κ q.2, q.1), ?_, fun y ↦ by simp [hκ0]⟩
-  exact (Homeomorph.prodComm Y X).isOpenEmbedding.comp (IsOpenEmbedding.id.prodMap hκ)
 
 /-- **Products of nonempty 1-manifolds with 2-spheres are reducible.** For any nonempty space `X`
 charted on a 1-dimensional real normed space `H` and any 3-dimensional real normed space `E`,

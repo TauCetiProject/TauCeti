@@ -11,8 +11,6 @@ import Mathlib.Analysis.Convex.PathConnected
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 import Mathlib.Topology.Compactification.OnePoint.Sphere
 import TauCeti.Topology.Compactification.OnePoint.FilledHull
-import TauCeti.Topology.ConnectedComponents
-import TauCeti.Topology.Schoenflies.Disc
 
 /-!
 # The generalized Schoenflies theorem in finite-dimensional real normed spaces
@@ -26,10 +24,11 @@ bicollared sphere `σ : S(E) → Sᵈ` missing the point at infinity `p∞`.
 By Brown's bicollaring and generalized Schoenflies theorems
 (`TauCeti.Topology.Schoenflies.LocallyFlat`), `σ` has a global bicollar and `(range σ)ᶜ` splits
 into two connected components: the component `U∞` of `p∞` and a second component `U₀` whose closure
-`U₀ ∪ range σ` avoids `p∞`. Pulling `U₀` and its closure back to `E` identifies them with the
-bounded inside `filledHull (range f) \ range f` and with the filled hull `filledHull (range f)`,
-in every finite dimension `d ≥ 0` (including `d = 1`, where `(range f)ᶜ` in `E` has two unbounded
-rays glued at `p∞` into `U∞`, and `d = 0`, where `S(E) = ∅` and `filledHull ∅ = {0}`).
+`U₀ ∪ range σ` avoids `p∞`. Pulling `U₀` and its closure back to `E` via
+`TauCeti.Topology.Compactification.OnePoint.FilledHull` identifies them with the bounded inside
+`filledHull (range f) \ range f` and with the filled hull `filledHull (range f)`, in every finite
+dimension `d ≥ 0` (including `d = 1`, where `(range f)ᶜ` in `E` has two unbounded rays glued at
+`p∞` into `U∞`, and `d = 0`, where `S(E) = ∅` and `filledHull ∅ = {0}`).
 
 Consequently `filledHull (range f)` is homeomorphic to `closedBall (0 : E) 1` by a homeomorphism
 inverting `f` on `range f` and sending `range f` onto `sphere (0 : E) 1`, and `f` extends to a
@@ -74,86 +73,6 @@ namespace TauCeti
 
 section OnePointBridge
 
-/-- In `OnePoint E ≃ₜ S`, if a complementary component `U₀` is disjoint from the component of `∞`
-and its closure adds only points of `K`, then `closure U₀` misses `∞` and lies in the image of
-`E`. -/
-private lemma closure_connectedComponentIn_subset_range_onePoint {E S : Type*}
-    [TopologicalSpace E] [TopologicalSpace S] {K : Set E} (Φ : OnePoint E ≃ₜ S) {q₀ : S}
-    (hinf : Φ ∞ ∉ Φ '' (((↑) : E → OnePoint E) '' K))
-    (hdisj : Disjoint (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ (Φ ∞))
-      (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀))
-    (hcl₀ : closure (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀) =
-      connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀ ∪
-        Φ '' (((↑) : E → OnePoint E) '' K)) :
-    closure (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀) ⊆
-      range (Φ ∘ ((↑) : E → OnePoint E)) := fun z hz ↦ by
-  have hzne : z ≠ Φ ∞ := by
-    rintro rfl
-    exact (hcl₀ ▸ hz).elim (hdisj.notMem_of_mem_left (mem_connectedComponentIn hinf)) hinf
-  have hmem : Φ.symm z ∈ range ((↑) : E → OnePoint E) :=
-    not_not.1 fun hn ↦ hzne (Φ.symm_apply_eq.1 (OnePoint.notMem_range_coe_iff.1 hn))
-  obtain ⟨x, hx⟩ := hmem
-  exact ⟨x, by simp [hx]⟩
-
-/-- In `OnePoint E ≃ₜ S`, the complementary component missing `∞` pulls back to `filledHull K \ K`,
-and its closure pulls back to `filledHull K`. -/
-private lemma preimage_connectedComponentIn_onePoint_sphere {E S : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [TopologicalSpace S] [CompactSpace S] {K : Set E} (hK : IsCompact K)
-    (Φ : OnePoint E ≃ₜ S) {q₀ : S}
-    (hinf : Φ ∞ ∉ Φ '' (((↑) : E → OnePoint E) '' K))
-    (hdisj : Disjoint (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ (Φ ∞))
-      (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀))
-    (hcompl : (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ =
-      connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ (Φ ∞) ∪
-        connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀)
-    (hcl₀ : closure (connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀) =
-      connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀ ∪
-        Φ '' (((↑) : E → OnePoint E) '' K)) :
-    let ψ : E → S := Φ ∘ ((↑) : E → OnePoint E)
-    let U₀ := connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ q₀
-    closure U₀ ⊆ range ψ ∧ ψ ⁻¹' U₀ = filledHull K \ K ∧ ψ ⁻¹' closure U₀ = filledHull K := by
-  intro ψ U₀
-  have hψ : IsOpenEmbedding ψ := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
-  have hψK : Φ '' (((↑) : E → OnePoint E) '' K) = ψ '' K := image_image _ _ _
-  have hcl_sub : closure U₀ ⊆ range ψ :=
-    closure_connectedComponentIn_subset_range_onePoint Φ hinf hdisj hcl₀
-  have hpre_U₀ : ψ ⁻¹' U₀ = filledHull K \ K := by
-    refine Subset.antisymm (fun x hx ↦ ?_) (fun x hx ↦ ?_)
-    · have hxK : x ∉ K := fun h ↦ connectedComponentIn_subset _ _ hx (hψK.symm ▸ ⟨x, h, rfl⟩)
-      have hU₀x : connectedComponentIn (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ (ψ x) = U₀ :=
-        (connectedComponentIn_eq hx).symm
-      have himg := hψ.isInducing.image_connectedComponentIn_preimage
-        (F := (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ) (y := x)
-        (hU₀x.symm ▸ (subset_closure.trans hcl_sub))
-      rw [hψK, preimage_compl, hψ.injective.preimage_image, ← hψK, hU₀x] at himg
-      have : CompactSpace (closure U₀) := isCompact_iff_compactSpace.1 isClosed_closure.isCompact
-      have hD_comp : IsCompact (ψ ⁻¹' closure U₀) := isCompact_iff_compactSpace.2
-        (hψ.isEmbedding.homeomorphOfSubsetRange hcl_sub).symm.compactSpace
-      have hsub : connectedComponentIn Kᶜ x ⊆ ψ ⁻¹' closure U₀ := by
-        rw [← hψ.injective.preimage_image (connectedComponentIn Kᶜ x), himg]
-        exact preimage_mono subset_closure
-      exact ⟨mem_filledHull_iff.2 (hD_comp.isBounded.subset hsub), hxK⟩
-    · have hxψ : ψ x ∈ (Φ '' (((↑) : E → OnePoint E) '' K))ᶜ :=
-        hψK ▸ fun ⟨w, hw, hwx⟩ ↦ hx.2 (hψ.injective hwx ▸ hw)
-      refine (hcompl ▸ hxψ).resolve_left fun hxinf ↦ ?_
-      set W : Set (OnePoint E) := ((↑) : E → OnePoint E) '' connectedComponentIn Kᶜ x
-      have hW_open : IsOpen (Φ '' W) :=
-        Φ.isOpenMap _ (OnePoint.isOpenEmbedding_coe.isOpenMap _
-          hK.isClosed.isOpen_compl.connectedComponentIn)
-      have hW_cl : closure (Φ '' W) ⊆ Φ '' W ∪ Φ '' (((↑) : E → OnePoint E) '' K) := by
-        rw [← Φ.image_closure]
-        exact (image_mono (closure_image_coe_connectedComponentIn_subset hK.isClosed hx.1)).trans
-          (by rw [image_union, image_union])
-      have hsub := isPreconnected_connectedComponentIn.subset_of_closure_inter_subset hW_open
-        ⟨ψ x, hxinf, ⟨x, mem_image_of_mem _ (mem_connectedComponentIn hx.2), rfl⟩⟩ fun z hz ↦
-          (hW_cl hz.1).resolve_right (connectedComponentIn_subset _ _ hz.2)
-      obtain ⟨_, ⟨y, _, hy⟩, hΦ⟩ := hsub (mem_connectedComponentIn hinf)
-      exact OnePoint.coe_ne_infty y (hy.trans (Φ.injective hΦ))
-  refine ⟨hcl_sub, hpre_U₀, ?_⟩
-  rw [hcl₀, preimage_union, hpre_U₀, hψK, hψ.injective.preimage_image, sdiff_union_self,
-    union_eq_left.2 subset_filledHull]
-
 /-- Embed `E` into `Sᵈ` via `OnePoint E` and extract the global bicollar and inside component for an
 injective locally bicollared sphere `f : sphere (0 : E) 1 → E`. -/
 private lemma exists_isOpenEmbedding_sphere_filledHull
@@ -174,8 +93,7 @@ private lemma exists_isOpenEmbedding_sphere_filledHull
   let ψ : E → sphere (0 : EuclideanSpace ℝ (Fin (finrank ℝ E + 1))) 1 :=
     Φ ∘ ((↑) : E → OnePoint E)
   have hψ : IsOpenEmbedding ψ := Φ.isOpenEmbedding.comp OnePoint.isOpenEmbedding_coe
-  have hσ_eq : Φ '' (((↑) : E → OnePoint E) '' range f) = range (ψ ∘ f) := by
-    rw [← image_comp, ← range_comp]
+  have hσ_eq : ψ '' range f = range (ψ ∘ f) := (range_comp ψ f).symm
   have hpinf : Φ ∞ ∉ range (ψ ∘ f) := by
     rintro ⟨x, hx⟩
     exact OnePoint.coe_ne_infty (f x) (Φ.injective hx)
@@ -184,15 +102,18 @@ private lemma exists_isOpenEmbedding_sphere_filledHull
   obtain ⟨q₀, hq₀, hdisj, hcompl⟩ :=
     exists_connectedComponentIn_compl_range_sphere_eq_union (by simp) hb.continuous
       hb.injective hpinf
-  have hcl₀ := hb.closure_connectedComponentIn_compl_range_of_finrank_eq (by simp) hq₀
-  have hK : IsCompact (range f) := isCompact_range hf.continuous
-  obtain ⟨hcl_sub, hpre_U₀, hpre_cl⟩ := preimage_connectedComponentIn_onePoint_sphere hK Φ
-    (hσ_eq.symm ▸ hpinf) (by simpa only [hσ_eq] using hdisj)
-    (by simpa only [hσ_eq] using hcompl) (by simpa only [hσ_eq] using hcl₀)
+  have hcl₀ := hb.closure_connectedComponentIn_compl_range (by simp) hq₀
+  have hK : IsClosed (range f) := (isCompact_range hf.continuous).isClosed
+  have hdisj' := hσ_eq ▸ hdisj
+  have hcompl' := hσ_eq ▸ hcompl
+  have hcl₀' := hσ_eq ▸ hcl₀
   refine ⟨ψ, b, q₀, hψ, hb, hq₀, ?_, ?_, ?_⟩
-  · simpa only [hσ_eq] using hcl_sub
-  · simpa only [hσ_eq] using hpre_U₀
-  · simpa only [hσ_eq] using hpre_cl
+  · simpa only [ψ, range_comp] using
+      closure_connectedComponentIn_subset_range_onePoint Φ hdisj' hcl₀'.subset
+  · simpa only [ψ, range_comp] using
+      preimage_connectedComponentIn_onePoint hK Φ hdisj' hcompl' hcl₀'.subset
+  · simpa only [ψ, range_comp] using
+      preimage_closure_connectedComponentIn_onePoint hK Φ hdisj' hcompl' hcl₀'
 
 end OnePointBridge
 

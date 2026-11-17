@@ -354,20 +354,14 @@ theorem frontier_setOf_inner_nonneg :
 only if `z` is neither `p` nor `-p`. -/
 theorem inner_mem_Ioo_iff_notMem_pair {z : sphere (0 : E) 1} :
     ⟪(z : E), (p : E)⟫ ∈ Ioo (-1 : ℝ) 1 ↔ z ∉ ({p, -p} : Set (sphere (0 : E) 1)) := by
-  refine ⟨fun hz hmem ↦ ?_, fun hz ↦ ?_⟩
-  · rcases hmem with h | (h : z = -p) <;> simp [h] at hz
-  · have hs : ⟪(z : E), (p : E)⟫ ∈ Icc (-1 : ℝ) 1 :=
-      abs_le.1 (by simpa using abs_real_inner_le_norm (z : E) (p : E))
-    have hsq := (sub_inner_smul_mem_closedBall p z).2
-    refine ⟨hs.1.lt_of_ne fun h ↦ hz (.inr (Subtype.ext ?_)),
-      hs.2.lt_of_ne fun h ↦ hz (.inl (Subtype.ext ?_))⟩
-    · have h0 : (z : E) - ⟪(z : E), (p : E)⟫ • (p : E) = 0 :=
-        norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 (by nlinarith [h]))
-      rw [← h, neg_one_smul, sub_neg_eq_add, add_eq_zero_iff_eq_neg] at h0
-      simpa [coe_neg_sphere] using h0
-    · have h0 : (z : E) - ⟪(z : E), (p : E)⟫ • (p : E) = 0 :=
-        norm_eq_zero.1 ((pow_eq_zero_iff two_ne_zero).1 (by nlinarith [h]))
-      rwa [h, one_smul, sub_eq_zero] at h0
+  have h1 :=
+    inner_lt_one_iff_real_of_norm_eq_one (norm_eq_of_mem_sphere z) (norm_eq_of_mem_sphere p)
+  have h2 :=
+    inner_lt_one_iff_real_of_norm_eq_one (norm_eq_of_mem_sphere z) (norm_eq_of_mem_sphere (-p))
+  simp only [mem_Ioo, mem_insert_iff, mem_singleton_iff, not_or, ne_eq, Subtype.ext_iff,
+    coe_neg_sphere, inner_neg_right, neg_lt] at h2 ⊢
+  rw [h1, ← h2]
+  exact and_comm
 
 /-- Inverse of `TauCeti.latitudeHomeomorphComplPair`: recovers the equatorial direction and height
 from a non-polar point of the unit sphere. -/

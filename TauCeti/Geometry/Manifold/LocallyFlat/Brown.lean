@@ -5,13 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Category.TopCat.Sphere
 public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import TauCeti.Geometry.Manifold.LocallyFlat.Finite
 public import TauCeti.Geometry.Manifold.LocallyFlat.Sphere
+import Mathlib.Analysis.Normed.Module.Ball.RadialEquiv
+import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
+import TauCeti.Geometry.Manifold.CoordinateBall
 
 /-!
-# Brown's bicollaring theorem for spheres
+# Brown's bicollaring theorem and dimension forcing for spheres
 
 Every locally flat embedding `Sⁿ → Sⁿ⁺¹` has a global bicollar, in every dimension `n`, and more
 generally so does every injective locally bicollared map from the unit sphere of a real normed
@@ -19,6 +23,12 @@ space `E` into the unit sphere of a real normed space `F` of dimension `dim E + 
 spheres of positive dimension (`dim E ≥ 2`), Jordan–Brouwer separation supplies the disconnected
 complement needed by the bicollaring theorem for separating spheres. When `dim E ≤ 1`, the source
 sphere is empty or a pair of points, so finite bicollaring applies directly.
+
+In addition, a local bicollar of `TopCat.sphere n` into a real normed space `E` or into the unit
+sphere `S(F)` of a real normed space `F` already forces `E` (resp. `F`) to be finite-dimensional
+of dimension `n + 1` (resp. `n + 2`), by Riesz's theorem
+(`FiniteDimensional.of_totallyBounded_nhds`) and Brouwer's invariance of dimension
+(`Topology.IsOpenEmbedding.finrank_eq`).
 
 The global product neighbourhood is the structural input to the generalized Schoenflies and
 annulus theorems; local flatness is essential, since a wild embedded sphere need not have a
@@ -32,6 +42,12 @@ bicollar.
   between unit spheres of real normed spaces (`finrank ℝ F = finrank ℝ E + 1`) is globally
   bicollared.
 * `TauCeti.brownBicollaring`: `BrownBicollaring n` holds in every dimension `n`.
+* `TauCeti.IsLocallyBicollared.finiteDimensional_of_topCatSphere`,
+  `TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere`,
+  `TauCeti.IsLocallyBicollared.finiteDimensional_of_topCatSphere_sphere`, and
+  `TauCeti.IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere`: a locally bicollared `n`-sphere
+  in `E` (resp. `S(F)`) forces `FiniteDimensional ℝ E` and `finrank ℝ E = n + 1` (resp.
+  `FiniteDimensional ℝ F` and `finrank ℝ F = n + 2`).
 
 ## References
 
@@ -97,5 +113,89 @@ theorem IsLocallyFlat.isBicollared_of_finrank_eq
 in the standard `(n + 1)`-sphere is globally bicollared, including `n = 0`. -/
 theorem brownBicollaring (n : ℕ) : BrownBicollaring n :=
   brownBicollaring_iff.2 fun _ hf ↦ hf.isBicollared_of_finrank_eq (by simp)
+
+/-! ### Dimension forcing from local bicollars of spheres -/
+
+section Dimension
+
+universe u v
+
+/-- Any locally bicollared map out of `TopCat.sphere n` yields an open embedding of
+`EuclideanSpace ℝ (Fin n) × ℝ` into the target. -/
+private lemma exists_isOpenEmbedding_prod_of_topCatSphere {Y : Type v} [TopologicalSpace Y]
+    {n : ℕ} {f : TopCat.sphere.{u} n → Y} (hf : IsLocallyBicollared f) :
+    ∃ ψ : EuclideanSpace ℝ (Fin n) × ℝ → Y, IsOpenEmbedding ψ := by
+  let V := EuclideanSpace ℝ (Fin (n + 1))
+  have : Fact (finrank ℝ V = n + 1) := ⟨by simp [V]⟩
+  let eS : TopCat.sphere.{u} n ≃ₜ sphere (0 : V) 1 := Homeomorph.ulift
+  obtain ⟨x₀⟩ : Nonempty (sphere (0 : V) 1) :=
+    (NormedSpace.sphere_nonempty.2 zero_le_one).to_subtype
+  obtain ⟨U, hU, hx₀, hbic⟩ := isLocallyBicollared_iff.1 (hf.comp_homeomorph eS.symm) x₀
+  obtain ⟨b, hb⟩ := isBicollared_iff.1 hbic
+  obtain ⟨κ, hκ, -⟩ :=
+    hU.exists_isOpenEmbedding_apply_zero_eq (E := EuclideanSpace ℝ (Fin n)) hx₀
+  exact ⟨b ∘ Prod.map κ id, hb.isOpenEmbedding.comp (hκ.prodMap IsOpenEmbedding.id)⟩
+
+/-- Any locally bicollared map from `TopCat.sphere n` into `sphere (0 : F) 1` yields an open
+embedding of `(EuclideanSpace ℝ (Fin n) × ℝ) × ℝ` into `F`. -/
+private lemma exists_isOpenEmbedding_prod_of_topCatSphere_sphere
+    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
+    ∃ Φ : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ → F, IsOpenEmbedding Φ := by
+  obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
+  let ρ₀ := OpenPartialHomeomorph.univBall (1 : ℝ) (1 / 2)
+  have hρ_pos (t : ℝ) : 0 < ρ₀ t := by
+    have ht : dist (ρ₀ t) 1 < 1 / 2 := mem_ball.1 <|
+      OpenPartialHomeomorph.univBall_target (1 : ℝ) (by positivity : (0 : ℝ) < 1 / 2) ▸
+        ρ₀.map_source (by simp [ρ₀])
+    linarith [(abs_lt.1 (Real.dist_eq (ρ₀ t) 1 ▸ ht)).1]
+  let ρ : ℝ → Ioi (0 : ℝ) := fun t ↦ ⟨ρ₀ t, hρ_pos t⟩
+  have hρ : IsOpenEmbedding ρ :=
+    (isOpen_Ioi.isOpenEmbedding_subtypeVal.of_comp_iff ρ).1
+      (ρ₀.isOpenEmbedding (OpenPartialHomeomorph.univBall_source _ _))
+  exact ⟨Subtype.val ∘ (homeomorphUnitSphereProd F).symm ∘ Prod.map ψ ρ,
+    isOpen_compl_singleton.isOpenEmbedding_subtypeVal.comp <|
+      (homeomorphUnitSphereProd F).symm.isOpenEmbedding.comp (hψ.prodMap hρ)⟩
+
+/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `E` to be
+finite-dimensional.** -/
+theorem IsLocallyBicollared.finiteDimensional_of_topCatSphere
+    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
+    FiniteDimensional ℝ E := by
+  obtain ⟨ψ, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
+  obtain ⟨K, hK, hK0⟩ := exists_compact_mem_nhds (0 : EuclideanSpace ℝ (Fin n) × ℝ)
+  exact .of_totallyBounded_nhds (𝕜 := ℝ) (hψ.image_mem_nhds.2 hK0)
+    (hK.image hψ.continuous).totallyBounded
+
+/-- **A locally bicollared `n`-sphere in a real normed space `E` forces `dim E = n + 1`.** -/
+theorem IsLocallyBicollared.finrank_eq_of_topCatSphere
+    {E : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+    {f : TopCat.sphere.{u} n → E} (hf : IsLocallyBicollared f) :
+    finrank ℝ E = n + 1 := by
+  have := hf.finiteDimensional_of_topCatSphere
+  obtain ⟨_, hψ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere hf
+  exact (hψ.finrank_eq IsOpenEmbedding.id).trans (by simp [Module.finrank_prod])
+
+/-- **A locally bicollared `n`-sphere in `S(F)` forces `F` to be finite-dimensional.** -/
+theorem IsLocallyBicollared.finiteDimensional_of_topCatSphere_sphere
+    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
+    FiniteDimensional ℝ F := by
+  obtain ⟨Φ, hΦ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere_sphere hf
+  obtain ⟨K, hK, hK0⟩ := exists_compact_mem_nhds (0 : (EuclideanSpace ℝ (Fin n) × ℝ) × ℝ)
+  exact .of_totallyBounded_nhds (𝕜 := ℝ) (hΦ.image_mem_nhds.2 hK0)
+    (hK.image hΦ.continuous).totallyBounded
+
+/-- **A locally bicollared `n`-sphere in `S(F)` forces `dim F = n + 2`.** -/
+theorem IsLocallyBicollared.finrank_eq_of_topCatSphere_sphere
+    {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ}
+    {f : TopCat.sphere.{u} n → sphere (0 : F) 1} (hf : IsLocallyBicollared f) :
+    finrank ℝ F = n + 2 := by
+  have := hf.finiteDimensional_of_topCatSphere_sphere
+  obtain ⟨_, hΦ⟩ := exists_isOpenEmbedding_prod_of_topCatSphere_sphere hf
+  exact (hΦ.finrank_eq IsOpenEmbedding.id).trans (by simp [Module.finrank_prod])
+
+end Dimension
 
 end TauCeti
