@@ -10,7 +10,6 @@ public import TauCeti.AlgebraicTopology.Cohomology.Manifold
 public import TauCeti.AlgebraicTopology.Cohomology.Slant
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere.Basic
 public import TauCeti.AlgebraicTopology.Singular.Reduced
-import TauCeti.AlgebraicTopology.Disk
 
 /-!
 # The cohomology of `Sᵈ⁺¹ × Y`
@@ -51,7 +50,9 @@ Then:
   a `k`-linear equivalence `Hⁿ⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M) ≃ Hⁿ⁺ᵈ⁺¹(Y; M) × Hⁿ(Y; M)` whose inverse is
   `(b, c) ↦ pr₂^* b + pr₁^* θ ⌣ pr₂^* c` (`TopCat.singularCohomologySphereProdSlantEquiv`). This
   is the analogue, for an arbitrary coefficient module `M`, of the equivalence
-  `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`;
+  `TopCat.singularCohomologySphereProdEquiv` with coefficients in `k`; combining it with
+  `TopCat.singularCohomologySphereZeroProdEquiv` at `d = 0` gives the uniform decomposition
+  `TopCat.singularCohomologySphereTopProdEquiv` across all `d ≥ 0`;
 * for a map `γ : Sᵈ⁺¹ ⟶ X` and `φ ∈ Hⁿ⁺ᵈ⁺¹(X × Y; M)`, the two components of `(γ × 𝟙)^* φ` are the
   restriction of `φ` to the slice `{γ x₀} × Y`, since the slant product by a point is restriction
   (`TopCat.singularSlant_singularHomology₀Section`), and, by naturality, the slant product
@@ -326,6 +327,59 @@ theorem singularCohomologyMap_tensorHom_eq_singularCohomologyMap_snd_add_singula
       (TopCat.singularCohomologyMap (γ ⊗ₘ g) (n + (d + 1)) φ),
     singularCohomologySphereProdSlantEquiv_singularCohomologyMap_tensorHom,
     singularCohomologySphereProdSlantEquiv_symm_apply]
+
+/-- **The cohomology of `Sᵈ × Y` across all sphere dimensions `d ≥ 0`**: a `k`-linear equivalence
+`Hⁿ⁺ᵈ(Sᵈ × Y; M) ≃ Hⁿ⁺ᵈ(Y; M) × Hⁿ(Y; M)`, given by `TopCat.singularCohomologySphereZeroProdEquiv`
+for `d = 0` and `TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasePoint d` for
+`d + 1`. In every dimension `d ≥ 0`, its inverse sends `(b, c)` to `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`,
+where `θ ∈ Hᵈ(Sᵈ; k)` is `TauCeti.singularCohomologyTopCatSphereTopClass`. -/
+def singularCohomologySphereTopProdEquiv (Y : TopCat.{w}) :
+    (d : ℕ) → (n : ℕ) →
+      (sphere.{w} d ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ≃ₗ[k]
+        Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
+          Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n
+  | 0, n => singularCohomologySphereZeroProdEquiv M Y n
+  | d + 1, n => singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasePoint d) n
+
+/-- For `d = 0`, `TopCat.singularCohomologySphereTopProdEquiv` is
+`TopCat.singularCohomologySphereZeroProdEquiv`. -/
+@[simp]
+lemma singularCohomologySphereTopProdEquiv_zero (Y : TopCat.{w}) (n : ℕ) :
+    singularCohomologySphereTopProdEquiv M Y 0 n =
+      singularCohomologySphereZeroProdEquiv M Y n :=
+  (rfl)
+
+/-- For `d + 1`, `TopCat.singularCohomologySphereTopProdEquiv` is
+`TopCat.singularCohomologySphereProdSlantEquiv` at `TauCeti.sphereBasePoint d`. -/
+@[simp]
+lemma singularCohomologySphereTopProdEquiv_succ (Y : TopCat.{w}) (d n : ℕ) :
+    singularCohomologySphereTopProdEquiv M Y (d + 1) n =
+      singularCohomologySphereProdSlantEquiv M Y (TauCeti.sphereBasePoint d) n :=
+  (rfl)
+
+/-- For every `d ≥ 0`, the inverse of `TopCat.singularCohomologySphereTopProdEquiv` sends `(b, c)`
+to `pr₂^* b + pr₁^* θ ⌣ pr₂^* c`, where `θ = TauCeti.singularCohomologyTopCatSphereTopClass k d`. -/
+@[simp]
+lemma singularCohomologySphereTopProdEquiv_symm_apply (Y : TopCat.{w}) (d n : ℕ)
+    (bc : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M (n + d) ×
+      Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k M n) :
+    (singularCohomologySphereTopProdEquiv M Y d n).symm bc =
+      TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) (n + d) bc.1 +
+        (sphere.{w} d ⊗ Y).singularCup k (λ_ (𝟙_ (ModuleCat.{w} k))).inv (λ_ M).hom
+          d n (n + d) (add_comm d n)
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst _ Y) d
+            (TauCeti.singularCohomologyTopCatSphereTopClass k d))
+          (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd _ Y) n bc.2) := by
+  cases d with
+  | zero =>
+    rw [singularCohomologySphereTopProdEquiv_zero,
+      singularCohomologySphereZeroProdEquiv_symm_apply,
+      TauCeti.singularCohomologyTopCatSphereTopClass_zero]
+    rfl
+  | succ d =>
+    rw [singularCohomologySphereTopProdEquiv_succ,
+      singularCohomologySphereProdSlantEquiv_symm_apply,
+      TauCeti.singularCohomologyTopCatSphereTopClass_succ]
 
 end Sphere
 
