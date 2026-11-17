@@ -51,7 +51,9 @@ element `m` of an additive commutative monoid on which `G` acts, fixed by `H`, t
 `G ⧸ L` when congruence modulo `K` on the set implies congruence modulo `L`.
 `Subgroup.card_fiber_quotientMapOfLE` counts every fibre of `G / H → G / K` as `[K : H]`.
 `Subgroup.index_eq_of_equiv`, `Subgroup.ne_zero_of_equiv`, and `Subgroup.finiteIndex_of_equiv`
-read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection.
+read the index, nonemptiness of `Fin n`, and `FiniteIndex` off a coset bijection, and
+`Subgroup.quotientEquivFin` constructs a coset bijection `G ⧸ H ≃ Fin n` from `H.index = n` when
+`n ≠ 0`.
 -/
 
 public section
@@ -262,6 +264,15 @@ theorem finiteIndex_of_equiv {G β : Type*} [Group G] [Finite β] (H : Subgroup 
     (e : G ⧸ H ≃ β) : H.FiniteIndex :=
   have : Finite (G ⧸ H) := Finite.of_equiv β e.symm
   H.finiteIndex_of_finite_quotient
+
+/-- An enumeration of the left cosets of a subgroup `H` of finite index `n ≠ 0`. -/
+@[to_additive /-- An enumeration of the left cosets of an additive subgroup `H` of finite index
+`n ≠ 0`. -/]
+noncomputable def quotientEquivFin {G : Type*} [Group G] (H : Subgroup G) {n : ℕ} [NeZero n]
+    (hH : H.index = n) : G ⧸ H ≃ Fin n :=
+  have hcard : Nat.card (G ⧸ H) = n := H.index_eq_card.symm.trans hH
+  have : Finite (G ⧸ H) := Nat.finite_of_card_ne_zero (hcard ▸ NeZero.ne n)
+  Finite.equivFinOfCardEq hcard
 
 end Subgroup
 
