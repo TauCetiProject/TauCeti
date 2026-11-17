@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
+public import Mathlib.RingTheory.RootsOfUnity.Complex
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every
 import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical
 import TauCeti.RingTheory.Polynomial.Cyclotomic.Roots
 import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
@@ -15,8 +16,8 @@ import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 
 This file transports the matrix calculations of
 `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical` to arbitrary Coxeter elements
-`wordProd P b l` of bases of classical Cartan type (`Aₙ`, `Bₙ`, `Cₙ`, `Dₙ`) and computes the
-complex eigenvalue multisets — retaining multiplicity — for all classical and exceptional types:
+`wordProd P b l` of bases of classical Cartan type (`Aₙ`, `Bₙ`, `Cₙ`, `Dₙ`) and computes their
+complex eigenvalue multisets — retaining multiplicity:
 
 | type | rank condition | `h` | exponents `e` |
 |---|---|---|---|
@@ -27,7 +28,8 @@ complex eigenvalue multisets — retaining multiplicity — for all classical an
 
 Stating the eigenvalue theorems as equalities of `Multiset ℂ` rather than set membership is
 essential in even type `D₂ₘ`, where the middle exponent `n - 1 = 2m - 1` occurs twice and `-1` is
-an eigenvalue of multiplicity `2`.
+an eigenvalue of multiplicity `2`. The corresponding eigenvalue multisets for the exceptional types
+live in `TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen`.
 
 ## Main definitions
 
@@ -41,9 +43,9 @@ an eigenvalue of multiplicity `2`.
 * `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType_A` (and `_B`, `_C`, `_D`) and
   `TauCeti.Coxeter.charpoly_of_hasCartanType_A_of_actsBy` (and `_B`, `_C`, `_D`): order and
   characteristic polynomial of every Coxeter element of a classical base.
-* `TauCeti.Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy` (and `_B`, `_C`, `_D`, `_E6`, `_E7`,
-  `_E8`, `_F4`, `_G2`) together with the weight-space versions for `P.weylGroupRootRep`: complex
-  eigenvalue multisets `exp (2πi e / h)` with multiplicity.
+* `TauCeti.Coxeter.roots_charpoly_of_hasCartanType_A_of_actsBy` (and `_B`, `_C`, `_D`) together
+  with the weight-space versions for `P.weylGroupRootRep`: complex eigenvalue multisets
+  `exp (2πi e / h)` with multiplicity.
 
 ## References
 
@@ -230,24 +232,6 @@ end ClassicalOrdersAndCharpoly
 
 /-! ### Complex eigenvalue multisets on simple roots and on the weight space -/
 
-private theorem nodup_map_exp_of_lt {h : ℕ} (hh : 0 < h) {exps : List ℕ} (hnd : exps.Nodup)
-    (hlt : ∀ e ∈ exps, e < h) :
-    (exps.map fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ)))).Nodup := by
-  have hζ := Complex.isPrimitiveRoot_exp h hh.ne'
-  refine (List.nodup_map_iff_inj_on hnd).mpr fun a ha b hb hab => ?_
-  rw [← exp_two_pi_I_div_pow, ← exp_two_pi_I_div_pow] at hab
-  exact hζ.pow_inj (hlt a ha) (hlt b hb) hab
-
-private theorem multiset_eq_ofList_of_nodup {s : Multiset ℂ} {h : ℕ} (hh : 0 < h) {exps : List ℕ}
-    (hnd_exps : exps.Nodup) (hlt : ∀ e ∈ exps, e < h) (hnd_s : s.Nodup)
-    (hiff : ∀ ζ : ℂ, ζ ∈ s ↔
-      ∃ e ∈ exps, Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ))) = ζ) :
-    s = Multiset.ofList
-      (exps.map fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ)))) := by
-  refine (Multiset.Nodup.ext hnd_s ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_of_lt hh hnd_exps hlt
-  · rw [hiff, Multiset.mem_coe, List.mem_map]
-
 section EigenvalueMultisets
 
 variable {ι R M N : Type*} [DecidableEq ι] [CommRing R] [AddCommGroup M] [Module R M]
@@ -311,61 +295,6 @@ theorem roots_charpoly_of_hasCartanType_D_of_actsBy {n : ℕ} (hn : 2 ≤ n)
     (Complex.isPrimitiveRoot_exp (2 * (n - 1)) (by omega))]
   simp [dExponents, hn0, List.map_map, Function.comp_def, exp_two_pi_I_div_pow,
     Nat.cast_sub (by omega : 1 ≤ n)]
-
-/-- **Complex eigenvalue multiset of a Coxeter element of type `E₆` on the simple roots.** -/
-theorem roots_charpoly_of_hasCartanType_E6_of_actsBy (h : HasCartanType P b .E6)
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots =
-      Multiset.ofList (e6Exponents.map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / 12))) := by
-  obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E6 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 12) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
-
-/-- **Complex eigenvalue multiset of a Coxeter element of type `E₇` on the simple roots.** -/
-theorem roots_charpoly_of_hasCartanType_E7_of_actsBy (h : HasCartanType P b .E7)
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots =
-      Multiset.ofList (e7Exponents.map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / 18))) := by
-  obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E7 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 18) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
-
-/-- **Complex eigenvalue multiset of a Coxeter element of type `E₈` on the simple roots.** -/
-theorem roots_charpoly_of_hasCartanType_E8_of_actsBy (h : HasCartanType P b .E8)
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots =
-      Multiset.ofList (e8Exponents.map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / 30))) := by
-  obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E8 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 30) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
-
-/-- **Complex eigenvalue multiset of a Coxeter element of type `F₄` on the simple roots.** -/
-theorem roots_charpoly_of_hasCartanType_F4_of_actsBy (h : HasCartanType P b .F4)
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots =
-      Multiset.ofList (f4Exponents.map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / 12))) := by
-  obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_F4 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 12) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
-
-/-- **Complex eigenvalue multiset of a Coxeter element of type `G₂` on the simple roots.** -/
-theorem roots_charpoly_of_hasCartanType_G2_of_actsBy (h : HasCartanType P b .G2)
-    (hnd : l.Nodup) (hall : ∀ i, i ∈ l) {W : Matrix b.support b.support ℤ}
-    (hW : b.ActsBy (wordProd P b l) W) :
-    (W.map (Int.castRingHom ℂ)).charpoly.roots =
-      Multiset.ofList (g2Exponents.map fun e : ℕ =>
-        Complex.exp (2 * Real.pi * Complex.I * (e / 6))) := by
-  obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_G2 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 6) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
 
 end EigenvalueMultisets
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Eigen
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Classification
 public import TauCeti.LinearAlgebra.RootSystem.NumberOfRoots
 public import TauCeti.LinearAlgebra.RootSystem.Positive

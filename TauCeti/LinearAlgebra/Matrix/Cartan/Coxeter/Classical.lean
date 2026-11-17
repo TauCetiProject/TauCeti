@@ -14,6 +14,7 @@ import TauCeti.GroupTheory.Perm.Coxeter
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.LinearAlgebra.Charpoly.Permutation
 import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
+import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
 # Coxeter elements of the classical Cartan matrices
@@ -155,14 +156,6 @@ private theorem list_prod_mul_eq_mul_list_prod {α : Type*} {m k : ℕ} (L : Lis
     rw [List.map_cons, List.prod_cons, Matrix.mul_assoc, ih fun x hx => h x (.tail a hx),
       ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
 
-private theorem pow_mul_eq_mul_pow {m k : ℕ} {U : Matrix (Fin m) (Fin k) ℤ}
-    {S : Matrix (Fin m) (Fin m) ℤ} {T : Matrix (Fin k) (Fin k) ℤ} (h : S * U = U * T) (r : ℕ) :
-    S ^ r * U = U * T ^ r := by
-  induction r with
-  | zero => simp
-  | succ r ih =>
-    rw [pow_succ, Matrix.mul_assoc, h, ← Matrix.mul_assoc, ih, Matrix.mul_assoc, ← pow_succ]
-
 /-- If `V * U = c • 1` (`c ≠ 0`) and `S * U = U * T` over `ℤ`, then `S` and `T` are conjugate over
 `ℚ` and therefore share the same characteristic polynomial and multiplicative order. -/
 private theorem intertwine_charpoly_and_orderOf {n : ℕ}
@@ -179,8 +172,9 @@ private theorem intertwine_charpoly_and_orderOf {n : ℕ}
     rw [Matrix.smul_mul, hmap, inv_smul_smul₀ (Int.cast_ne_zero.mpr hc)]
   have hUW : U.map f * Wq = 1 := mul_eq_one_comm.mp hWU
   have hconj (k : ℕ) : Wq * (S ^ k).map f * U.map f = (T ^ k).map f := by
-    rw [mul_assoc, ← Matrix.map_mul, pow_mul_eq_mul_pow hST k, Matrix.map_mul, ← mul_assoc, hWU,
-      one_mul]
+    have hpow : S ^ k * U = U * T ^ k := by
+      simpa using Matrix.aeval_mul_eq_mul_aeval hST (Polynomial.X ^ k : ℤ[X])
+    rw [mul_assoc, ← Matrix.map_mul, hpow, Matrix.map_mul, ← mul_assoc, hWU, one_mul]
   refine ⟨charpoly_eq_of_map_rat ?_, orderOf_eq_orderOf_iff.mpr fun k => ?_⟩
   · rw [← charpoly_map, ← pow_one T, ← hconj 1, pow_one, Matrix.charpoly_mul_comm, ← mul_assoc,
       hUW, one_mul]
@@ -495,13 +489,15 @@ theorem orderOf_coxA {n : ℕ} (hn : 0 < n) : orderOf (coxA n) = n + 1 := by
     simp_rw [hentry]
     simp [Fintype.sum_sum_type]
   refine (orderOf_eq_iff (by omega)).mpr ⟨?_, fun m hm hpos hm1 => ?_⟩
-  · have hpow := pow_mul_eq_mul_pow hSU (n + 1)
+  · have hpow : permMatrixHom (finRotate (n + 1)) ^ (n + 1) * U = U * coxA n ^ (n + 1) := by
+      simpa using Matrix.aeval_mul_eq_mul_aeval hSU (Polynomial.X ^ (n + 1) : ℤ[X])
     have hrot : finRotate (n + 1) ^ (n + 1) = 1 := by
       simpa [TauCeti.orderOf_finRotate (Nat.succ_ne_zero n)] using
         pow_orderOf_eq_one (finRotate (n + 1))
     rw [← map_pow, hrot, map_one, Matrix.one_mul] at hpow
     rw [← one_mul (coxA n ^ (n + 1)), ← hWU, Matrix.mul_assoc, ← hpow, hWU]
-  · have hpow := pow_mul_eq_mul_pow hSU m
+  · have hpow : permMatrixHom (finRotate (n + 1)) ^ m * U = U * coxA n ^ m := by
+      simpa using Matrix.aeval_mul_eq_mul_aeval hSU (Polynomial.X ^ m : ℤ[X])
     rw [hm1, Matrix.mul_one, ← map_pow] at hpow
     have h0 := congrFun₂ hpow 0 ⟨0, hn⟩
     rw [permMatrixHom_mul_apply] at h0
