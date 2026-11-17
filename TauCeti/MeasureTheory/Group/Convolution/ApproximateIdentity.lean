@@ -124,18 +124,6 @@ section ModularInversion
 
 variable [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
 
-/-- Modular inversion commutes with coercing a real `Lᵖ` function into an `RCLike` field `𝕜`. -/
-theorem modularInversion_ofRealCLM_compLp {𝕜 : Type*} [RCLike 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-    (k : Lp ℝ p μ) :
-    modularInversion μ p 𝕜 ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k) =
-      (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp (modularInversion μ p ℝ k) := by
-  refine Lp.ext ?_
-  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp k),
-    (quasiMeasurePreserving_inv_of_regular μ).ae ((RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp k),
-    (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp (modularInversion μ p ℝ k),
-    coeFn_modularInversion (𝕜 := ℝ) k] with x h₁ h₂ h₃ h₄
-  rw [h₁, h₂, h₃, h₄, ← map_smul]
-
 /-- **Right convolution as a Bochner integral of right translates.** For `h ∈ L¹(G, μ; 𝕜)` over an
 `RCLike` field `𝕜` and a real kernel `k ∈ L¹(G, μ; ℝ)`, convolving `h` on the right with `k` equals
 `∫ z, k z • R_(z⁻¹) h ∂μ`. -/

@@ -8,6 +8,8 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import TauCeti.MeasureTheory.Function.Lp.CastMeasure
+public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 public import TauCeti.MeasureTheory.Function.Lp.Star
 
 /-!
@@ -18,14 +20,16 @@ For a positive scalar `c : ℝ≥0`, the measures `c • μ` and `μ` have the s
 convention `1 / ∞ = 0`. Rescaling representatives by `c^(1/p)` therefore identifies
 `Lp E p (c • μ)` linear-isometrically with `Lp E p μ` (`MeasureTheory.Lp.smulMeasureₗᵢ`). At
 `p = 1`, the map multiplies functions by `c` and preserves Bochner integrals:
-`∫ (smulMeasureₗᵢ f) ∂μ = ∫ f ∂(c • μ)`.
+`∫ (smulMeasureₗᵢ f) ∂μ = ∫ f ∂(c • μ)`. On a group with a left-invariant measure, it also commutes
+with left translation (`MeasureTheory.Lp.smulMeasureₗᵢ_leftTranslation`).
 
 On a locally compact group `G`, any two regular left Haar measures `μ` and `ν` satisfy
 `μ = haarScalarFactor μ ν • ν` (`MeasureTheory.Measure.isMulLeftInvariant_eq_smul_of_regular`),
 without assuming second countability or σ-compactness of `G`. Composing `TauCeti.castLpₗᵢ` with
 `MeasureTheory.Lp.smulMeasureₗᵢ` gives a canonical isometric identification
 `MeasureTheory.Lp.haarMeasureCongrₗᵢ : Lp E p μ ≃ₗᵢ[𝕜] Lp E p ν` compatible with reflexivity,
-symmetry, composition, pointwise `star`, and (at `p = 1`) Haar integration.
+symmetry, composition, pointwise `star`, left and right translations, modular inversion, and
+(at `p = 1`) Haar integration.
 
 ## Main definitions
 
@@ -38,11 +42,15 @@ symmetry, composition, pointwise `star`, and (at `p = 1`) Haar integration.
 
 * `MeasureTheory.memLp_smul_measure_nnreal_iff`: `MemLp f p (c • μ) ↔ MemLp f p μ` for `c ≠ 0`.
 * `MeasureTheory.Lp.coeFn_smulMeasureₗᵢ`, `MeasureTheory.Lp.integral_smulMeasureₗᵢ`,
-  `MeasureTheory.Lp.star_smulMeasureₗᵢ`: almost-everywhere formula, integral preservation at
-  `p = 1`, and compatibility with pointwise `star`.
+  `MeasureTheory.Lp.star_smulMeasureₗᵢ`, `MeasureTheory.Lp.smulMeasureₗᵢ_leftTranslation`:
+  almost-everywhere formula, integral preservation at `p = 1`, and compatibility with pointwise
+  `star` and left translation.
 * `MeasureTheory.Lp.coeFn_haarMeasureCongrₗᵢ`, `MeasureTheory.Lp.haarMeasureCongrₗᵢ_trans`,
-  `MeasureTheory.Lp.haarMeasureCongrₗᵢ_symm`, `MeasureTheory.Lp.integral_haarMeasureCongrₗᵢ`:
-  functoriality and integral preservation when changing regular Haar normalization.
+  `MeasureTheory.Lp.haarMeasureCongrₗᵢ_symm`, `MeasureTheory.Lp.integral_haarMeasureCongrₗᵢ`,
+  `MeasureTheory.Lp.haarMeasureCongrₗᵢ_leftTranslation`,
+  `MeasureTheory.Lp.haarMeasureCongrₗᵢ_modularInversion`,
+  `MeasureTheory.Lp.haarMeasureCongrₗᵢ_rightTranslation`: functoriality, integral preservation,
+  and equivariance with translations and modular inversion when changing regular Haar normalization.
 -/
 
 public section
@@ -184,6 +192,31 @@ end Lp
 
 end SMulMeasure
 
+namespace Lp
+
+section LeftTranslation
+
+variable {G E 𝕜 : Type*} [Group G] [MeasurableSpace G] [MeasurableMul G] {μ : Measure G}
+  [μ.IsMulLeftInvariant] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [NormedRing 𝕜] [Module 𝕜 E] [IsBoundedSMul 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- `Lp.smulMeasureₗᵢ` commutes with left translation on `Lᵖ`. -/
+theorem smulMeasureₗᵢ_leftTranslation {c : ℝ≥0} (hc : c ≠ 0) (g : G) (f : Lp E p (c • μ)) :
+    smulMeasureₗᵢ μ p 𝕜 hc (leftTranslation (c • μ) p 𝕜 g f) =
+      leftTranslation μ p 𝕜 g (smulMeasureₗᵢ μ p 𝕜 hc f) := by
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulMeasureₗᵢ (p := p) (𝕜 := 𝕜) hc (leftTranslation (c • μ) p 𝕜 g f),
+    (Measure.ae_smul_measure_iff hc).1 (coeFn_leftTranslation (𝕜 := 𝕜) g f),
+    coeFn_leftTranslation (𝕜 := 𝕜) g (smulMeasureₗᵢ μ p 𝕜 hc f),
+    (measurePreserving_mul_left μ g⁻¹).quasiMeasurePreserving.ae
+      (coeFn_smulMeasureₗᵢ (p := p) (𝕜 := 𝕜) hc f)] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄]
+
+end LeftTranslation
+
+end Lp
+
 /-! ### Comparing regular left Haar measures on `Lᵖ` -/
 
 namespace Lp
@@ -288,6 +321,36 @@ theorem star_haarMeasureCongrₗᵢ [StarAddMonoid E] [NormedStarGroup E] [StarM
     coeFn_haarMeasureCongrₗᵢ (μ := μ) (ν := ν) (p := p) (𝕜 := 𝕜) (star f),
     hνμ.ae_eq (Lp.coeFn_star f)] with x h₁ h₂ h₃ h₄
   rw [h₁, Pi.star_apply, h₂, star_smul, star_trivial, h₃, h₄, Pi.star_apply]
+
+/-- `Lp.haarMeasureCongrₗᵢ` commutes with left translation on `Lᵖ`. -/
+theorem haarMeasureCongrₗᵢ_leftTranslation (g : G) (f : Lp E p μ) :
+    haarMeasureCongrₗᵢ μ ν p 𝕜 (leftTranslation μ p 𝕜 g f) =
+      leftTranslation ν p 𝕜 g (haarMeasureCongrₗᵢ μ ν p 𝕜 f) := by
+  simp only [haarMeasureCongrₗᵢ_def, LinearIsometryEquiv.trans_apply, castLpₗᵢ_leftTranslation,
+    smulMeasureₗᵢ_leftTranslation]
+
+/-- `Lp.haarMeasureCongrₗᵢ` commutes with `Lp.modularInversion`. -/
+theorem haarMeasureCongrₗᵢ_modularInversion (f : Lp E p μ) :
+    haarMeasureCongrₗᵢ μ ν p 𝕜 (modularInversion μ p 𝕜 f) =
+      modularInversion ν p 𝕜 (haarMeasureCongrₗᵢ μ ν p 𝕜 f) := by
+  have hνμ : ν ≪ μ := by
+    rw [Measure.isMulLeftInvariant_eq_smul_of_regular ν μ]
+    exact Measure.smul_absolutelyContinuous
+  refine Lp.ext ?_
+  filter_upwards [coeFn_haarMeasureCongrₗᵢ (μ := μ) (ν := ν) (p := p) (𝕜 := 𝕜)
+      (modularInversion μ p 𝕜 f),
+    hνμ.ae_eq (coeFn_modularInversion (𝕜 := 𝕜) f),
+    coeFn_modularInversion (𝕜 := 𝕜) (haarMeasureCongrₗᵢ μ ν p 𝕜 f),
+    (Measure.quasiMeasurePreserving_inv_of_regular ν).ae
+      (coeFn_haarMeasureCongrₗᵢ (μ := μ) (ν := ν) (p := p) (𝕜 := 𝕜) f)] with x h₁ h₂ h₃ h₄
+  rw [h₁, h₂, h₃, h₄, smul_comm]
+
+/-- `Lp.haarMeasureCongrₗᵢ` commutes with right translation on `Lᵖ`. -/
+theorem haarMeasureCongrₗᵢ_rightTranslation (g : G) (f : Lp E p μ) :
+    haarMeasureCongrₗᵢ μ ν p 𝕜 (rightTranslation μ p 𝕜 g f) =
+      rightTranslation ν p 𝕜 g (haarMeasureCongrₗᵢ μ ν p 𝕜 f) := by
+  rw [rightTranslation_apply, rightTranslation_apply, haarMeasureCongrₗᵢ_modularInversion,
+    haarMeasureCongrₗᵢ_leftTranslation, haarMeasureCongrₗᵢ_modularInversion]
 
 end HaarMeasure
 
