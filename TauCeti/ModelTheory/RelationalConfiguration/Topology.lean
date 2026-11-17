@@ -8,13 +8,17 @@ module
 public import TauCeti.ModelTheory.RelationalConfiguration.Basic
 public import Mathlib.MeasureTheory.Constructions.Polish.Basic
 public import Mathlib.SetTheory.Cardinal.Continuum
+public import TauCeti.Topology.Algebra.Group.Perm
 
 /-!
 # Topology of relational configurations
 
 The product topology on relational configurations is compact Hausdorff, and relabelling by a
 permutation of the carrier is continuous. Restriction along a vertex map is continuous, and
-jointly continuous in the vertex map when the target carrier is discrete. Specifying an atom's
+jointly continuous in the vertex map when the target carrier is discrete. Hence, for a discrete
+carrier, the *logic action* of its permutation group, with the topology of pointwise convergence,
+is jointly continuous, for every language, and stabilizers of configurations are closed
+subgroups. Specifying an atom's
 truth value gives a clopen, measurable cylinder. On countable carriers in countable relational
 vocabularies the topology is Polish and its Borel σ-algebra is the existing product σ-algebra.
 The same construction handles finite and empty carriers.
@@ -84,6 +88,21 @@ theorem continuous_uncurry_restrict {W : Type*} [TopologicalSpace W] [DiscreteTo
 /-- Each relabelling by a permutation of the carrier is continuous. -/
 instance : ContinuousConstSMul (Equiv.Perm V) (RelationalConfiguration L V) :=
   ⟨fun _ => continuous_restrict _⟩
+
+/-- **The logic action is jointly continuous**, for every language: relabelling by `σ` is
+restriction along `σ⁻¹`, which is jointly continuous in the vertex map and the configuration,
+and `σ⁻¹` depends continuously on `σ`. On `ℕ` this makes the coding space an `S∞`-space. -/
+instance instContinuousSMulPerm [TopologicalSpace V] [DiscreteTopology V] :
+    ContinuousSMul (Equiv.Perm V) (RelationalConfiguration L V) where
+  continuous_smul := continuous_uncurry_restrict.comp
+    (((continuous_pi Equiv.Perm.continuous_inv_apply).comp continuous_fst).prodMk continuous_snd)
+
+/-- The stabilizer of a configuration under the logic action is a closed subgroup, for every
+language. -/
+theorem isClosed_stabilizer [TopologicalSpace V] [DiscreteTopology V]
+    (c : RelationalConfiguration L V) :
+    IsClosed (MulAction.stabilizer (Equiv.Perm V) c : Set (Equiv.Perm V)) :=
+  isClosed_eq (continuous_id.smul continuous_const) continuous_const
 
 /-- The configurations giving a fixed answer to one atom form a clopen cylinder. -/
 theorem isClopen_setOf_eval (a : Atom L V) (b : Bool) :
