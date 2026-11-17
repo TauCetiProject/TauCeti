@@ -9,7 +9,7 @@ public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Data.Fin.Tuple.Basic
 public import Mathlib.GroupTheory.Submonoid.Center
 import Mathlib.Data.List.OfFn
-import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.Data.Fin.Basic
 
 /-!
 # Products along lists in a noncommutative monoid
@@ -132,26 +132,13 @@ theorem prod_ofFn_mul_prod_ofFn {n k : ℕ} (hk : k ≤ n) (b : Fin n → M) :
   congr 2 <;> apply ext_getElem <;> simp [hk]
 
 /-- **Contracting two adjacent entries does not change the ordered product**:
-`b₀ ⋯ (bₗ bₗ₊₁) ⋯ bₙ = b₀ ⋯ bₙ`. -/
+`b₀ ⋯ (bₗ bₗ₊₁) ⋯ bₙ = b₀ ⋯ bₙ`. This is `Fin.partialProd_contractNth_castSucc` for the final
+partial products. -/
+@[simp]
 theorem prod_ofFn_contractNth {n : ℕ} (b : Fin (n + 1) → M) (l : Fin n) :
     (ofFn (Fin.contractNth l.castSucc (· * ·) b)).prod = (ofFn b).prod := by
-  induction n with
-  | zero => exact l.elim0
-  | succ n ih =>
-    rw [← Fin.cons_self_tail b]
-    cases l using Fin.cases with
-    | zero =>
-      rw [Fin.castSucc_zero, Fin.contractNth_zero_cons, ofFn_succ, ofFn_succ, ofFn_succ,
-        prod_cons, prod_cons, prod_cons]
-      simp only [Fin.cons_zero, Fin.cons_succ, mul_assoc]
-      rfl
-    | succ l =>
-      rw [← Fin.succ_castSucc, Fin.contractNth_succ_cons, ofFn_succ, ofFn_succ, prod_cons,
-        prod_cons, Fin.cons_zero, Fin.cons_zero]
-      simp only [Fin.cons_succ]
-      -- `simp` leaves the contracted tail in eta-expanded form.
-      rw [show (fun i => Fin.contractNth l.castSucc (· * ·) (Fin.tail b) i) =
-        Fin.contractNth l.castSucc (· * ·) (Fin.tail b) from rfl, ih]
+  simpa only [Fin.partialProd, Fin.val_last, take_of_length_le, length_ofFn, le_refl] using
+    Fin.partialProd_contractNth_castSucc l b
 
 end OfFn
 

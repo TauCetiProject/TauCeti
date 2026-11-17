@@ -7,12 +7,11 @@ module
 
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Ungraded
-public import TauCeti.LinearAlgebra.Multilinear.ContractNth
 import Mathlib.Algebra.Algebra.Bilinear
-import Mathlib.LinearAlgebra.Multilinear.TensorProduct
 import TauCeti.Algebra.BigOperators.Group.List
 import TauCeti.Algebra.BigOperators.Ring.List
 import TauCeti.LinearAlgebra.Multilinear.TensorProduct
+import TauCeti.RingTheory.TensorProduct.Basic
 
 /-!
 # Extending an `A∞` module over `A` to an `A∞` module over `A ⊗ B`
@@ -26,10 +25,9 @@ ungraded `A∞` right module over the tensor product algebra `A ⊗ B` with the 
 
 `m₁(b₀ ⊗ m) = b₀ ⊗ m₁(m) + d_B b₀ ⊗ m`
 
-(`TauCeti.UngradedAInfinityRightModule.lTensor_act_tmul_tmul`). As an `R`-module, `B ⊗ M` is
-`M ⊗_A (A ⊗ B)`, the module obtained from `M` by extending scalars along `a ↦ a ⊗ 1`, and
-`m₂(·, a ⊗ 1)` is the extended action of `A`. Its operations commute
-with left multiplication on the factor `B`, except that `m₁` satisfies the Leibniz rule for `d_B`
+(`TauCeti.UngradedAInfinityRightModule.lTensor_act_tmul_tmul`). In particular
+`m₂(b₀ ⊗ m, a ⊗ 1) = b₀ ⊗ m₂(m, a)`. The operations commute with left multiplication on the
+factor `B`, except that `m₁` satisfies the Leibniz rule for `d_B`
 (`TauCeti.UngradedAInfinityRightModule.lTensor_act_smul`).
 
 A type `DD` bimodule `N` over `A` and `B` is a type `D` structure over `A ⊗ B`, and its box tensor
@@ -57,9 +55,6 @@ pure tensors of units.
 
 ## Main definitions
 
-* `TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
-  `TauCeti.ungradedStasheffMulMultilinear`: the terms of the `A∞` relations as multilinear maps
-  in the algebra inputs.
 * `TauCeti.UngradedAInfinityRightModule.lTensor`: the `A∞` module `B ⊗ M` over `A ⊗ B`.
 
 ## Main results
@@ -87,70 +82,6 @@ open scoped TensorProduct
 open Function
 
 namespace TauCeti
-
-/-! ### The relations as multilinear maps -/
-
-section StasheffMultilinear
-
-variable {R A M : Type*} [CommRing R] [Ring A] [Algebra R A] [AddCommGroup M] [Module R M]
-  (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M))
-  (d : A →ₗ[R] A)
-
-/-- The **composite terms** of the `A∞` relation of length `n`,
-`∑_{i + j = n} m_{j+1}(m_{i+1}(·, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, as a multilinear map in the algebra
-inputs (`TauCeti.ungradedStasheffCompMultilinear_apply`). -/
-noncomputable def ungradedStasheffCompMultilinear (n : ℕ) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
-  ∑ k : Fin (n + 1), ((TensorProduct.lift (LinearMap.llcomp R M M M).flip).compMultilinearMap
-      ((act k).domCoprod (act (n - k)))).domDomCongr
-      (finSumFinEquiv.trans (finCongr (by omega)))
-
-@[simp]
-theorem ungradedStasheffCompMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffCompMultilinear act n a m = ungradedStasheffComp act n a m := by
-  simp only [ungradedStasheffCompMultilinear, _root_.sum_apply, LinearMap.sum_apply,
-    MultilinearMap.domDomCongr_apply, LinearMap.compMultilinearMap_apply,
-    MultilinearMap.domCoprod_apply, TensorProduct.lift.tmul, LinearMap.flip_apply,
-    ungradedStasheffComp_def]
-  exact Finset.sum_congr rfl fun k _ => rfl
-
-/-- The **differential terms** of the `A∞` relation of length `n`,
-`∑_l m_{n+1}(·, a₁, …, d aₗ, …, aₙ)`, as a multilinear map in the algebra inputs
-(`TauCeti.ungradedStasheffDiffMultilinear_apply`). -/
-noncomputable def ungradedStasheffDiffMultilinear (n : ℕ) :
-    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
-  ∑ l : Fin n, (act n).compLinearMap (update (fun _ => LinearMap.id) l d)
-
-@[simp]
-theorem ungradedStasheffDiffMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffDiffMultilinear act d n a m = ungradedStasheffDiff act d n a m := by
-  simp only [ungradedStasheffDiffMultilinear, _root_.sum_apply, LinearMap.sum_apply,
-    MultilinearMap.compLinearMap_apply, ungradedStasheffDiff_def]
-  refine Finset.sum_congr rfl fun l _ => ?_
-  congr 2
-  funext i
-  by_cases h : i = l
-  · subst h; simp
-  · simp [h]
-
-/-- The **product terms** of the `A∞` relation of length `n`,
-`∑_l m_n(·, a₁, …, aₗ aₗ₊₁, …, aₙ)`, as a multilinear map in the algebra inputs
-(`TauCeti.ungradedStasheffMulMultilinear_apply`). -/
-noncomputable def ungradedStasheffMulMultilinear : (n : ℕ) →
-    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
-  | 0 => 0
-  | n + 1 => ∑ l : Fin n, (act n).compContractNth l
-
-@[simp]
-theorem ungradedStasheffMulMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
-    ungradedStasheffMulMultilinear act n a m = ungradedStasheffMul act n a m := by
-  cases n with
-  | zero => simp [ungradedStasheffMulMultilinear]
-  | succ n =>
-    simp [ungradedStasheffMulMultilinear, ungradedStasheffMul_succ, _root_.sum_apply,
-      LinearMap.sum_apply]
-
-end StasheffMultilinear
 
 /-! ### The module `B ⊗ M` over `A ⊗ B` -/
 
@@ -225,47 +156,27 @@ private theorem lTensorAct_comp_tmul (hB : IsUngradedDGAlgebra dB) {n : ℕ} (k 
         (if (k : ℕ) = 0 then (dB b₀ * (List.ofFn b).prod) ⊗ₜ[R] Mm.act n a m else 0) := by
   have hk := k.isLt
   have hπ := List.prod_ofFn_mul_prod_ofFn (Nat.lt_succ_iff.mp hk) b
-  rw [lTensorAct_tmul_tmul, map_add, lTensorAct_tmul_tmul, mul_assoc, hπ]
-  by_cases h0 : (k : ℕ) = 0
-  · rw [ite_eq_left h0, lTensorAct_tmul_tmul, hB.map_map, TensorProduct.zero_tmul, ite_self,
-      add_zero, ite_eq_left h0]
-    have ht : (List.ofFn fun l : Fin (n - k) => b ⟨k + l, by omega⟩).prod = (List.ofFn b).prod := by
-      rw [← hπ, prod_ofFn_eq_one h0, one_mul]
-    have hat : Mm.act (n - k) (fun l => a ⟨k + l, by omega⟩) = Mm.act n a :=
-      Mm.act_congr (by omega) fun l => congrArg a (Fin.ext (by simp [h0]))
-    rw [ht, hat]
-    by_cases hn : (k : ℕ) = n
-    · rw [ite_eq_left (by omega), ite_eq_left hn]
-      have hah : Mm.act k (fun l => a ⟨l, by omega⟩) = Mm.act n a :=
-        Mm.act_congr hn fun l => rfl
-      rw [hah, prod_ofFn_eq_one h0, prod_ofFn_eq_one (show n = 0 by omega) b, mul_one]
-    · rw [ite_eq_right (by omega), ite_eq_right hn, add_zero]
-  · rw [ite_eq_right h0, map_zero, add_zero, ite_eq_right h0, add_zero]
-    by_cases hn : (k : ℕ) = n
-    · rw [ite_eq_left (by omega), ite_eq_left hn]
-      have hah : Mm.act k (fun l => a ⟨l, by omega⟩) = Mm.act n a :=
-        Mm.act_congr hn fun l => rfl
-      have hh : (List.ofFn fun l : Fin k => b ⟨l, by omega⟩).prod = (List.ofFn b).prod := by
-        rw [← hπ, prod_ofFn_eq_one (by omega) (fun l : Fin (n - k) => b ⟨k + l, by omega⟩),
-          mul_one]
-      rw [hah, hh]
-    · rw [ite_eq_right (by omega), ite_eq_right hn, add_zero]
-
-private theorem update_tmul {n : ℕ} (a : Fin n → A) (b : Fin n → B) (l : Fin n) (x : A) (y : B) :
-    update (fun i => a i ⊗ₜ[R] b i) l (x ⊗ₜ[R] y) =
-      fun i => update a l x i ⊗ₜ[R] update b l y i := by
-  funext i
-  by_cases h : i = l
-  · subst h; simp
-  · simp [h]
-
-private theorem contractNth_tmul {n : ℕ} (a : Fin (n + 1) → A) (b : Fin (n + 1) → B) (l : Fin n) :
-    Fin.contractNth l.castSucc (· * ·) (fun i => a i ⊗ₜ[R] b i) =
-      fun i =>
-        Fin.contractNth l.castSucc (· * ·) a i ⊗ₜ[R] Fin.contractNth l.castSucc (· * ·) b i := by
-  funext i
-  simp only [Fin.contractNth]
-  split_ifs <;> simp [Algebra.TensorProduct.tmul_mul_tmul]
+  -- `m₁` of `d_B b₀ ⊗ m` adds `d_B (d_B b₀) ⊗ m = 0`; the `d_B` term of the outer operation
+  -- survives only when it is `m₁`, that is when `k = n`.
+  rw [lTensorAct_tmul_tmul, map_add, lTensorAct_tmul_tmul, mul_assoc, hπ,
+    apply_ite (Mm.lTensorAct dB (n - k) _), lTensorAct_tmul_tmul, hB.map_map,
+    TensorProduct.zero_tmul, ite_self, add_zero, map_zero]
+  simp only [show (n - k = 0) = ((k : ℕ) = n) from propext (by omega)]
+  -- When `k = n` (resp. `k = 0`) the inner (resp. outer) operation is the operation of arity `n`
+  -- and the ordered product of the other block is empty.
+  congr 1
+  · congr 1
+    split_ifs with h
+    · have hact : Mm.act k (fun l => a ⟨l, by omega⟩) = Mm.act n a :=
+        Mm.act_congr h fun _ => rfl
+      rw [← hπ, prod_ofFn_eq_one (by omega) (fun l : Fin (n - k) => b ⟨k + l, by omega⟩),
+        mul_one, hact]
+    · rfl
+  · split_ifs with h
+    · have hact : Mm.act (n - k) (fun l => a ⟨k + l, by omega⟩) = Mm.act n a :=
+        Mm.act_congr (by omega) fun l => congrArg a (Fin.ext (by simp [h]))
+      rw [← hπ, prod_ofFn_eq_one h (fun l : Fin k => b ⟨l, by omega⟩), one_mul, hact]
+    · rfl
 
 private theorem stasheffDiff_lTensorAct_tmul (hB : IsUngradedDGAlgebra dB) (n : ℕ) (a : Fin n → A)
     (b : Fin n → B) (b₀ : B) (m : M) :
@@ -278,9 +189,13 @@ private theorem stasheffDiff_lTensorAct_tmul (hB : IsUngradedDGAlgebra dB) (n : 
     ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun l _ => ?_
   have hn : n ≠ 0 := Nat.pos_iff_ne_zero.mp l.pos
-  rw [ungradedTensorDifferential_tmul, MultilinearMap.map_update_add, LinearMap.add_apply,
-    update_tmul, update_tmul, lTensorAct_tmul_tmul, lTensorAct_tmul_tmul, ite_eq_right hn,
-    add_zero, add_zero, update_eq_self, update_eq_self]
+  -- Updating a tuple of pure tensors at `l` by a pure tensor updates both factor tuples.
+  have hu (x : A) (y : B) : update (fun i => a i ⊗ₜ[R] b i) l (x ⊗ₜ[R] y) =
+      fun i => update a l x i ⊗ₜ[R] update b l y i :=
+    funext fun i => (apply_update₂ (fun _ => (· ⊗ₜ[R] ·)) a b l x y i).symm
+  rw [ungradedTensorDifferential_tmul, MultilinearMap.map_update_add, LinearMap.add_apply, hu, hu,
+    lTensorAct_tmul_tmul, lTensorAct_tmul_tmul, ite_eq_right hn, add_zero, add_zero,
+    update_eq_self, update_eq_self]
 
 private theorem stasheffMul_lTensorAct_tmul (n : ℕ) (a : Fin n → A) (b : Fin n → B) (b₀ : B)
     (m : M) :
@@ -292,8 +207,8 @@ private theorem stasheffMul_lTensorAct_tmul (n : ℕ) (a : Fin n → A) (b : Fin
     rw [ungradedStasheffMul_succ, ungradedStasheffMul_succ, TensorProduct.tmul_sum]
     refine Finset.sum_congr rfl fun l _ => ?_
     have hn : n ≠ 0 := Nat.pos_iff_ne_zero.mp l.pos
-    rw [contractNth_tmul, lTensorAct_tmul_tmul, ite_eq_right hn, add_zero,
-      List.prod_ofFn_contractNth]
+    rw [funext (Algebra.TensorProduct.contractNth_tmul (R := R) l.castSucc a b),
+      lTensorAct_tmul_tmul, ite_eq_right hn, add_zero, List.prod_ofFn_contractNth]
 
 private theorem sum_ite_val_eq_last {N : Type*} [AddCommMonoid N] (n : ℕ) (y : N) :
     ∑ k : Fin (n + 1), (if (k : ℕ) = n then y else 0) = y := by

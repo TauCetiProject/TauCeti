@@ -10,9 +10,11 @@ public import Mathlib.LinearAlgebra.Multilinear.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.LinearAlgebra.Multilinear.TensorProduct
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.LinearAlgebra.Multilinear.ContractNth
 
 /-!
 # Ungraded `A∞` right modules over a differential algebra
@@ -33,6 +35,10 @@ relations of a right module over the differential algebra `A`: every Koszul sign
 module `CFA` of a bordered three-manifold. Tau Ceti's `A∞` right modules
 (`TauCeti.AInfinityRightModule`) are `ℤ`-graded with operations of degree `1 - n`, which an ungraded
 differential cannot carry, for the reason recorded in `TauCeti.Algebra.Homology.DG.Ungraded`.
+Each of the three kinds of terms of the relation is multilinear in the algebra inputs
+(`TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
+`TauCeti.ungradedStasheffMulMultilinear`), so an identity between relations can be checked on
+tuples drawn from spanning sets.
 
 A differential right module (`TauCeti.IsUngradedDGRightModule`) is an `A∞` module whose
 operations `m_{n+1}` vanish for `n ≥ 2`, over a ring of characteristic two
@@ -88,6 +94,9 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
 ## Main definitions
 
 * `TauCeti.UngradedAInfinityRightModule`: an ungraded `A∞` right module.
+* `TauCeti.ungradedStasheffCompMultilinear`, `TauCeti.ungradedStasheffDiffMultilinear`,
+  `TauCeti.ungradedStasheffMulMultilinear`: the terms of the `A∞` relations as multilinear maps
+  in the algebra inputs.
 * `TauCeti.UngradedAInfinityRightModule.twistedDifferential`: the differential twisted by an
   element of the algebra.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct` and
@@ -210,6 +219,76 @@ theorem ungradedStasheffMul_add
   | succ n => simp [ungradedStasheffMul_succ, Finset.sum_add_distrib]
 
 end StasheffTerms
+
+/-! ### The relations as multilinear maps -/
+
+section StasheffMultilinear
+
+variable (act : (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M))
+  (d : A →ₗ[R] A)
+
+/-- The **composite terms** of the `A∞` relation of length `n`,
+`∑_{i + j = n} m_{j+1}(m_{i+1}(·, a₁, …, aᵢ), aᵢ₊₁, …, aₙ)`, as a multilinear map in the algebra
+inputs (`TauCeti.ungradedStasheffCompMultilinear_apply`). -/
+noncomputable def ungradedStasheffCompMultilinear (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
+  ∑ k : Fin (n + 1), ((TensorProduct.lift (LinearMap.llcomp R M M M).flip).compMultilinearMap
+      ((act k).domCoprod (act (n - k)))).domDomCongr
+      (finSumFinEquiv.trans (finCongr (by omega)))
+
+@[simp]
+theorem ungradedStasheffCompMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffCompMultilinear act n a m = ungradedStasheffComp act n a m := by
+  simp only [ungradedStasheffCompMultilinear, _root_.sum_apply, LinearMap.sum_apply,
+    MultilinearMap.domDomCongr_apply, LinearMap.compMultilinearMap_apply,
+    MultilinearMap.domCoprod_apply, TensorProduct.lift.tmul, LinearMap.flip_apply,
+    ungradedStasheffComp_def]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  -- Reindex the two blocks of `Fin k ⊕ Fin (n - k)` as the first `k` and the last `n - k`
+  -- arguments.
+  simp only [Equiv.trans_apply, finSumFinEquiv_apply_left, finSumFinEquiv_apply_right,
+    finCongr_apply, LinearMap.llcomp_apply]
+  exact congrArg₂ (fun f g => act (n - k) f (act k g m))
+    (funext fun l => congrArg a (Fin.ext (by simp)))
+    (funext fun l => congrArg a (Fin.ext (by simp)))
+
+/-- The **differential terms** of the `A∞` relation of length `n`,
+`∑_l m_{n+1}(·, a₁, …, d aₗ, …, aₙ)`, as a multilinear map in the algebra inputs
+(`TauCeti.ungradedStasheffDiffMultilinear_apply`). -/
+noncomputable def ungradedStasheffDiffMultilinear (n : ℕ) :
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M) :=
+  ∑ l : Fin n, (act n).compLinearMap (Function.update (fun _ => LinearMap.id) l d)
+
+@[simp]
+theorem ungradedStasheffDiffMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffDiffMultilinear act d n a m = ungradedStasheffDiff act d n a m := by
+  simp only [ungradedStasheffDiffMultilinear, _root_.sum_apply, LinearMap.sum_apply,
+    MultilinearMap.compLinearMap_apply, ungradedStasheffDiff_def]
+  refine Finset.sum_congr rfl fun l _ => ?_
+  congr 2
+  funext i
+  by_cases h : i = l
+  · subst h; simp
+  · simp [h]
+
+/-- The **product terms** of the `A∞` relation of length `n`,
+`∑_l m_n(·, a₁, …, aₗ aₗ₊₁, …, aₙ)`, as a multilinear map in the algebra inputs
+(`TauCeti.ungradedStasheffMulMultilinear_apply`). -/
+noncomputable def ungradedStasheffMulMultilinear : (n : ℕ) →
+    MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
+  | 0 => 0
+  | n + 1 => ∑ l : Fin n, (act n).compContractNth l
+
+@[simp]
+theorem ungradedStasheffMulMultilinear_apply (n : ℕ) (a : Fin n → A) (m : M) :
+    ungradedStasheffMulMultilinear act n a m = ungradedStasheffMul act n a m := by
+  cases n with
+  | zero => simp [ungradedStasheffMulMultilinear]
+  | succ n =>
+    simp [ungradedStasheffMulMultilinear, ungradedStasheffMul_succ, _root_.sum_apply,
+      LinearMap.sum_apply]
+
+end StasheffMultilinear
 
 /-- An **ungraded `A∞` right module** over the algebra `A` with differential `d`. The operation
 `act n` is `m_{n+1} : M ⊗ A^{⊗ n} → M`, multilinear in the algebra inputs and linear in the module

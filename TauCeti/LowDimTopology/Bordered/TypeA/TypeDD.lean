@@ -47,10 +47,12 @@ here.
   since `B ⊗ M` is then bounded as well.
 
 When `M` is strictly unital, so is `B ⊗ M` for the idempotents `ιA s ⊗ ιB t` of the type `DD`
-structure (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.lTensor`), and the results of
-`TauCeti.LowDimTopology.Bordered.TypeA` about `TauCeti.TypeDStructure.typeABoxTensor` restrict the
-differential to the box tensor product over the idempotents, the row vectors with
-`m₂(φ y, ιA s ⊗ ιB t) = φ y` at every generator `y` over `(s, t)`.
+structure (`TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.lTensor`). If moreover the
+differential `d ⊗ 1 + 1 ⊗ d_B` vanishes on these idempotents, for instance when `dA (ιA s) = 0`
+and `dB (ιB t) = 0`, the results of `TauCeti.LowDimTopology.Bordered.TypeA` about
+`TauCeti.TypeDStructure.typeABoxTensor` restrict the differential to the box tensor product over
+the idempotents, the row vectors with `m₂(φ y, ιA s ⊗ ιB t) = φ y` at every generator `y` over
+`(s, t)`.
 
 ## Main results
 
@@ -131,8 +133,7 @@ theorem typeABoxDifferential_lTensor_smul_of_act_eq_zero {K : ℕ} (hK : ∀ n, 
       b • N.typeABoxDifferential (Mm.lTensor hB) φ + dB b • φ :=
   N.typeABoxDifferential_lTensor_smul hB Mm (K := K + 1) (fun n hn => by
     rw [(Mm.lTensor hB).matrixAct_eq_zero_of_act_eq_zero Y
-      (Mm.lTensor_act_eq_zero hB (by omega) (hK n (by omega)))]
-    rfl) b φ
+      (Mm.lTensor_act_eq_zero hB (by omega) (hK n (by omega))), _root_.zero_apply]) b φ
 
 /-- **The box tensor differential of a bounded type `A` module with a type `DD` structure squares
 to zero.** If the operations `m_{n+1}` of `M` vanish for `n ≥ K`, then so do those of `B ⊗ M` for

@@ -7,6 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Multilinear.Curry
 public import Mathlib.LinearAlgebra.TensorProduct.Basic
+import Mathlib.Algebra.Module.Submodule.EqLocus
+import Mathlib.LinearAlgebra.TensorProduct.Map
 import TauCeti.LinearAlgebra.Multilinear.Span
 
 /-!
@@ -53,7 +55,10 @@ variable {R A B P Q : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [Ad
 `(A ⊗ B)ⁿ → P ⊗ Q` with `(a₁ ⊗ b₁, …, aₙ ⊗ bₙ) ↦ μ a ⊗ ν b`
 (`MultilinearMap.tensorMap_apply_tmul`). For `n + 1` arguments it separates the first one, on
 which it is the linear map out of `A ⊗ B` of the bilinear map
-`(a, b) ↦ tensorMapₗ n (μ.curryLeft a) (ν.curryLeft b)`. -/
+`(a, b) ↦ tensorMapₗ n (μ.curryLeft a) (ν.curryLeft b)`: it curries `μ` and `ν`
+(`multilinearCurryLeftEquiv`), takes the tensor product of the curried maps
+(`TensorProduct.mapBilinear`), composes with `TensorProduct.lift (tensorMapₗ n)` and uncurries,
+each step being linear. -/
 noncomputable def tensorMapₗ : (n : ℕ) →
     MultilinearMap (RingHom.id R) (fun _ : Fin n => A) P →ₗ[R]
       MultilinearMap (RingHom.id R) (fun _ : Fin n => B) Q →ₗ[R]
@@ -63,44 +68,11 @@ noncomputable def tensorMapₗ : (n : ℕ) →
       (fun _ _ _ => by ext; simp [TensorProduct.smul_tmul'])
       (fun _ _ _ => by ext; simp [TensorProduct.tmul_add])
       (fun _ _ _ => by ext; simp [TensorProduct.tmul_smul])
-  -- In the bilinearity proofs, `curryLeft` is additive and homogeneous by definition (it is the
-  -- linear equivalence `multilinearCurryLeftEquiv`), and a linear map out of `A ⊗ B` is
-  -- determined by its values on pure tensors (`TensorProduct.ext'`).
-  | n + 1 => LinearMap.mk₂ R
-      (fun μ ν => LinearMap.uncurryLeft
-        (TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft ν.curryLeft)))
-      (fun μ μ' ν => by
-        rw [show TensorProduct.lift ((tensorMapₗ n).compl₁₂ (μ + μ').curryLeft ν.curryLeft) =
-            TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft ν.curryLeft) +
-              TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ'.curryLeft ν.curryLeft) from
-          TensorProduct.ext' fun a b => by
-            simp only [LinearMap.add_apply, TensorProduct.lift.tmul, LinearMap.compl₁₂_apply]
-            rw [show (μ + μ').curryLeft a = μ.curryLeft a + μ'.curryLeft a from rfl, map_add,
-              LinearMap.add_apply]]
-        rfl)
-      (fun c μ ν => by
-        rw [show TensorProduct.lift ((tensorMapₗ n).compl₁₂ (c • μ).curryLeft ν.curryLeft) =
-            c • TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft ν.curryLeft) from
-          TensorProduct.ext' fun a b => by
-            simp only [LinearMap.smul_apply, TensorProduct.lift.tmul, LinearMap.compl₁₂_apply]
-            rw [show (c • μ).curryLeft a = c • μ.curryLeft a from rfl, map_smul,
-              LinearMap.smul_apply]]
-        rfl)
-      (fun μ ν ν' => by
-        rw [show TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft (ν + ν').curryLeft) =
-            TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft ν.curryLeft) +
-              TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft ν'.curryLeft) from
-          TensorProduct.ext' fun a b => by
-            simp only [LinearMap.add_apply, TensorProduct.lift.tmul, LinearMap.compl₁₂_apply]
-            rw [show (ν + ν').curryLeft b = ν.curryLeft b + ν'.curryLeft b from rfl, map_add]]
-        rfl)
-      (fun c μ ν => by
-        rw [show TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft (c • ν).curryLeft) =
-            c • TensorProduct.lift ((tensorMapₗ n).compl₁₂ μ.curryLeft ν.curryLeft) from
-          TensorProduct.ext' fun a b => by
-            simp only [LinearMap.smul_apply, TensorProduct.lift.tmul, LinearMap.compl₁₂_apply]
-            rw [show (c • ν).curryLeft b = c • ν.curryLeft b from rfl, map_smul]]
-        rfl)
+  | n + 1 => ((TensorProduct.mapBilinear (RingHom.id R) A B _ _).compr₂
+      ((multilinearCurryLeftEquiv (RingHom.id R) (fun _ => A ⊗[R] B) (P ⊗[R] Q)).symm.toLinearMap ∘ₗ
+        LinearMap.llcomp R (A ⊗[R] B) _ _ (TensorProduct.lift (tensorMapₗ n)))).compl₁₂
+      (multilinearCurryLeftEquiv (RingHom.id R) (fun _ => A) P).toLinearMap
+      (multilinearCurryLeftEquiv (RingHom.id R) (fun _ => B) Q).toLinearMap
 
 /-- The multilinear map `(A ⊗ B)ⁿ → P ⊗ Q` of multilinear maps `μ : Aⁿ → P` and `ν : Bⁿ → Q`,
 sending `(a₁ ⊗ b₁, …, aₙ ⊗ bₙ)` to `μ a ⊗ ν b` (`MultilinearMap.tensorMap_apply_tmul`); it is the
@@ -125,8 +97,12 @@ theorem tensorMap_apply_tmul {n : ℕ} (μ : MultilinearMap (RingHom.id R) (fun 
     rw [tensorMap_def, tensorMapₗ, LinearMap.mk₂_apply, constOfIsEmpty_apply,
       Function.const_apply, Subsingleton.elim a 0, Subsingleton.elim b 0]
   | succ n ih =>
-    rw [tensorMap_def, tensorMapₗ, LinearMap.mk₂_apply, LinearMap.uncurryLeft_apply,
-      TensorProduct.lift.tmul, LinearMap.compl₁₂_apply, ← tensorMap_def]
+    rw [tensorMap_def, tensorMapₗ]
+    simp only [LinearMap.compl₁₂_apply, LinearMap.compr₂_apply, LinearMap.comp_apply,
+      LinearEquiv.coe_coe, multilinearCurryLeftEquiv_symm_apply, LinearMap.llcomp_apply,
+      TensorProduct.mapBilinear_apply, LinearMap.uncurryLeft_apply, TensorProduct.map_tmul,
+      TensorProduct.lift.tmul, multilinearCurryLeftEquiv_apply]
+    rw [← tensorMap_def]
     -- The tail of a tuple of pure tensors is the tuple of pure tensors of the tails.
     rw [show Fin.tail (fun i => a i ⊗ₜ[R] b i) = fun i => Fin.tail a i ⊗ₜ[R] Fin.tail b i from rfl,
       ih, curryLeft_apply, curryLeft_apply, Fin.cons_self_tail, Fin.cons_self_tail]
@@ -173,25 +149,25 @@ end TensorMap
 
 section Ext
 
-variable {R A B N ι : Type*} [CommRing R] [AddCommGroup A] [Module R A] [AddCommGroup B]
-  [Module R B] [AddCommGroup N] [Module R N] [Finite ι]
+variable {R A B N ι : Type*} [CommSemiring R] [AddCommMonoid A] [Module R A] [AddCommMonoid B]
+  [Module R B] [AddCommMonoid N] [Module R N] [Finite ι]
 
 /-- **Multilinear maps of tensor product arguments are determined by their values on pure
-tensors**, since the pure tensors span `A ⊗ B`. -/
+tensors**, since the pure tensors span `A ⊗ B`: the values of the pair `(f, g)` on pure tensors
+lie in the diagonal of `N × N`, hence so do all its values. -/
 theorem ext_tmul {f g : MultilinearMap (RingHom.id R) (fun _ : ι => A ⊗[R] B) N}
     (h : ∀ (a : ι → A) (b : ι → B), f (fun i => a i ⊗ₜ[R] b i) = g (fun i => a i ⊗ₜ[R] b i)) :
     f = g := by
-  rw [← sub_eq_zero]
   ext m
-  have hm := map_mem_span_image_pi (f - g) (fun _ => {t | ∃ a b, a ⊗ₜ[R] b = t})
+  have hm := map_mem_span_image_pi (f.prod g) (fun _ => {t | ∃ a b, a ⊗ₜ[R] b = t})
     (m := m) fun i => by rw [TensorProduct.span_tmul_eq_top]; trivial
-  have hzero : (f - g) '' Set.univ.pi (fun _ => {t : A ⊗[R] B | ∃ a b, a ⊗ₜ[R] b = t}) ⊆ {0} := by
+  have hdiag : f.prod g '' Set.univ.pi (fun _ => {t : A ⊗[R] B | ∃ a b, a ⊗ₜ[R] b = t}) ⊆
+      LinearMap.eqLocus (LinearMap.fst R N N) (LinearMap.snd R N N) := by
     rintro _ ⟨m', hm', rfl⟩
     choose a b hab using fun i => hm' i (Set.mem_univ i)
     obtain rfl : m' = fun i => a i ⊗ₜ[R] b i := funext fun i => (hab i).symm
-    rw [Set.mem_singleton_iff, sub_apply, h, sub_self]
-  have := Submodule.span_mono hzero hm
-  rwa [Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot] at this
+    exact h a b
+  exact Submodule.span_le.2 hdiag hm
 
 end Ext
 
