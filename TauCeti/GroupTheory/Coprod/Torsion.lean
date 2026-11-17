@@ -14,22 +14,17 @@ import TauCeti.GroupTheory.CoprodI
 import TauCeti.GroupTheory.CoprodI.Word
 
 /-!
-# Torsion elements and conjugacy of factors in free products
+# Torsion elements in free products
 
 Every element of finite order in a free product of groups is conjugate to an element of finite order
 in one of the free factors; in particular, a free product of torsion-free groups is torsion-free,
 and any mixed two-letter product `inl x * inr y` of nontrivial factor elements has infinite order.
-Elements of the canonical factor submonoids of `CoprodI M` are conjugate in the free product if and
-only if either both are `1` or they come from the same factor and are conjugate there (the binary
-counterparts for `M ∗ N` live in `TauCeti.GroupTheory.Coprod.Conj`).
 
 Both the indexed free product `Monoid.CoprodI` and the binary free product `Monoid.Coprod` across
 arbitrary universes are covered.
 
 ## Main results
 
-* `Monoid.CoprodI.isConj_of_same_iff`, `Monoid.CoprodI.isConj_of_ne_iff`: conjugacy between images
-  of factor elements in `CoprodI M`.
 * `Monoid.CoprodI.exists_isConj_of_isOfFinOrder_of_ne_one`,
   `Monoid.CoprodI.eq_one_or_exists_isConj_of_isOfFinOrder`,
   `Monoid.CoprodI.isOfFinOrder_iff`: classification of torsion elements in `CoprodI G`.
@@ -61,30 +56,6 @@ namespace Monoid.CoprodI
 section Monoid
 
 variable {ι : Type*} {M : ι → Type*} [∀ i, Monoid (M i)]
-
-/-- Two elements of the same factor `M i` are conjugate in `CoprodI M` if and only if they are
-conjugate in `M i`. -/
-@[simp]
-theorem isConj_of_same_iff {i : ι} {x y : M i} :
-    IsConj (of x : CoprodI M) (of y) ↔ IsConj x y := by
-  classical
-  refine ⟨fun h => ?_, of.map_isConj⟩
-  simpa using (lift (Pi.mulSingle i (.id (M i)))).map_isConj h
-
-/-- Elements of distinct factors `M i` and `M j` are conjugate in `CoprodI M` if and only if both
-are `1`. -/
-theorem isConj_of_ne_iff {i j : ι} (hij : i ≠ j) {x : M i} {y : M j} :
-    IsConj (of x : CoprodI M) (of y) ↔ x = 1 ∧ y = 1 := by
-  classical
-  refine ⟨fun h => ⟨?_, ?_⟩, by rintro ⟨rfl, rfl⟩; simp⟩
-  · have hx : IsConj x 1 := by
-      simpa [Pi.mulSingle_eq_of_ne hij.symm] using
-        (lift (Pi.mulSingle i (.id (M i)))).map_isConj h
-    exact isConj_one_left.mp hx
-  · have hy : IsConj 1 y := by
-      simpa [Pi.mulSingle_eq_of_ne hij] using
-        (lift (Pi.mulSingle j (.id (M j)))).map_isConj h
-    exact isConj_one_right.mp hy
 
 /-- An element of `M i` has finite order in `CoprodI M` if and only if it has finite order in
 `M i`. -/

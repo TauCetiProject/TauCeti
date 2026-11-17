@@ -116,15 +116,16 @@ theorem psl2zEquivCoprod_coe_R :
 @[simp]
 theorem psl2zEquivCoprod_coe_T :
     psl2zEquivCoprod (T : PSL(2, ℤ)) = .inl (.ofAdd 1) * .inr (.ofAdd 1) := by
-  rw [← coe_S_mul_coe_R, map_mul, psl2zEquivCoprod_coe_S, psl2zEquivCoprod_coe_R]
+  rw [← coe_S_mul_coe_R]
+  simp [-coe_S_mul_coe_R]
 
 /-- `psl2zEquivCoprod` maps `U = S * T⁻¹` to `inl (ofAdd 1) * inr (ofAdd (-1)) * inl (ofAdd 1)`. -/
 @[simp]
 theorem psl2zEquivCoprod_coe_U :
     psl2zEquivCoprod (U : PSL(2, ℤ)) =
       .inl (.ofAdd 1) * .inr (.ofAdd (-1)) * .inl (.ofAdd 1) := by
-  rw [← coe_S_mul_coe_R_inv_mul_coe_S_inv, coe_S_inv, map_mul, map_mul, map_inv,
-    psl2zEquivCoprod_coe_S, psl2zEquivCoprod_coe_R, ← map_inv, ← ofAdd_neg]
+  rw [← coe_S_mul_coe_R_inv_mul_coe_S_inv]
+  simp
 
 /-- The inverse of `psl2zEquivCoprod` sends `inl (ofAdd k)` to `S ^ k`. -/
 @[simp]
@@ -406,17 +407,15 @@ theorem psl2zAbelianizationAddEquiv_coe_R :
 @[simp]
 theorem psl2zAbelianizationAddEquiv_coe_T :
     psl2zAbelianizationAddEquiv (.ofMul (.of (T : PSL(2, ℤ)))) = 1 := by
-  rw [← coe_S_mul_coe_R, map_mul, ofMul_mul, map_add, psl2zAbelianizationAddEquiv_coe_S,
-    psl2zAbelianizationAddEquiv_coe_R]
-  decide
+  rw [← coe_S_mul_coe_R]
+  simp +decide [-coe_S_mul_coe_R]
 
 /-- `psl2zAbelianizationAddEquiv` sends the class of `U = S * T⁻¹` to `2`. -/
 @[simp]
 theorem psl2zAbelianizationAddEquiv_coe_U :
     psl2zAbelianizationAddEquiv (.ofMul (.of (U : PSL(2, ℤ)))) = 2 := by
-  rw [U_def, QuotientGroup.mk_mul, QuotientGroup.mk_inv, map_mul, map_inv, ofMul_mul, ofMul_inv,
-    map_add, map_neg, psl2zAbelianizationAddEquiv_coe_S, psl2zAbelianizationAddEquiv_coe_T]
-  decide
+  rw [U_def]
+  simp +decide
 
 /-- The inverse of `psl2zAbelianizationAddEquiv` maps `1` to the class of `T`. -/
 @[simp]

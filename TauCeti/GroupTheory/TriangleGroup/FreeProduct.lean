@@ -191,9 +191,8 @@ theorem abelianizationZeroAddEquivProd_y (a b : ℕ) :
 @[simp]
 theorem abelianizationZeroAddEquivProd_z (a b : ℕ) :
     abelianizationZeroAddEquivProd a b (.ofMul (.of (z a b 0))) = (-1, -1) := by
-  rw [z_eq, map_inv, ofMul_inv, map_neg, map_mul, ofMul_mul, map_add,
-    abelianizationZeroAddEquivProd_y, abelianizationZeroAddEquivProd_x]
-  ext <;> simp
+  rw [z_eq]
+  simp
 
 /-- When `a` and `b` are coprime, the additive abelianization of `Δ(a, b, 0)` is isomorphic to
 `ZMod (a * b)` via the Chinese remainder theorem. -/
