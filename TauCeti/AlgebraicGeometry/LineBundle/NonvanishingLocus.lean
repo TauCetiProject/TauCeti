@@ -353,18 +353,15 @@ theorem exists_mem_nonvanishingLocus_of_isAffineOpen {U : X.Opens} (hU : IsAffin
     TauCeti.AlgebraicGeometry.InvertibleSheaf.isQuasicoherent_obj ⟨M, ‹_›⟩
   obtain ⟨V, t, hxV⟩ := exists_mem_trivialization M x
   obtain ⟨f, hfV, hxf⟩ := hU.exists_basicOpen_le ⟨x, hxV⟩ hx
-  -- The basis section of `M` over `D(f) ⊆ V` is `s / c` for a section `s` over `U` and a power `c`
-  -- of `f`, so `s` vanishes nowhere on `D(f)`.
-  have := M.isLocalizedModule_basicOpenRestrict hU f
-  obtain ⟨⟨s, c⟩, hc⟩ := IsLocalizedModule.surj (Submonoid.powers f) (M.basicOpenRestrict f)
+  -- A power of `f` times the basis section over `D(f) ⊆ V` extends to a section `s` over `U`,
+  -- so `s` vanishes nowhere on `D(f)`.
+  obtain ⟨n, s, hs⟩ := M.exists_pow_smul_eq_map hU f rfl (X.basicOpen_le f)
     (M.presheaf.map (homOfLE hfV).op (trivializationGenerator M t))
   refine ⟨s, (inf_le_right : X.basicOpen f ⊓ _ ≤ _) ?_⟩
-  obtain ⟨n, hn⟩ := c.2
-  rw [← nonvanishingLocus_map (homOfLE (X.basicOpen_le f)), ← basicOpenRestrict_apply, ← hc,
-    Submonoid.smul_def, basicOpen_smul_def, nonvanishingLocus_smul, nonvanishingLocus_map,
-    nonvanishingLocus_trivializationGenerator, X.basicOpen_res, ← hn]
+  rw [← nonvanishingLocus_map (homOfLE (X.basicOpen_le f)), ← hs,
+    nonvanishingLocus_smul, nonvanishingLocus_map,
+    nonvanishingLocus_trivializationGenerator, ← map_pow, X.basicOpen_res]
   refine ⟨⟨hxf, ?_⟩, hxf, hxV⟩
-  beta_reduce
   rw [SetLike.mem_coe, X.mem_basicOpen _ _ hx, map_pow]
   exact ((X.mem_basicOpen _ _ hx).mp hxf).pow n
 
