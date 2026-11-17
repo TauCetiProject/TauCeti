@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Homology.HomologySequenceLemmas
 public import TauCeti.Algebra.Homology.HomologicalComplex.Biprod
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.MayerVietoris
+public import TauCeti.AlgebraicTopology.Singular.MayerVietoris.Basic
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Equiv
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Subcomplex
 public import TauCeti.Data.Set.Lattice
@@ -71,46 +72,6 @@ namespace TauCeti
 variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} {M : Type u} [TopologicalSpace M] [ChartedSpace H M]
 
-/-- The map of singular simplicial sets induced by the inclusion of open sets `U ≤ W`. -/
-private abbrev toSSetInclusion {U W : Opens M} (h : U ≤ W) :
-    TopCat.toSSet.obj (TopCat.of U) ⟶ TopCat.toSSet.obj (TopCat.of W) :=
-  TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)
-
-/-- A singular simplex of `W` comes from the open subset `U ≤ W` exactly when it lies in `U`. -/
-private lemma mem_range_toSSetInclusion_iff {U W : Opens M} (h : U ≤ W) (k : SimplexCategoryᵒᵖ)
-    (σ : (TopCat.toSSet.obj (TopCat.of W)).obj k) :
-    σ ∈ (SSet.Subcomplex.range (toSSetInclusion h)).obj k ↔
-      Set.range ((TopCat.of W).toSSetObjEquiv k σ) ⊆ {x : W | (x : M) ∈ U} := by
-  have hr : Set.range (Opens.inclusion h) = {x : W | (x : M) ∈ U} := Set.range_inclusion _
-  rw [← hr]
-  exact (Opens.isOpenEmbedding_of_le h).isInducing.mem_range_toSSet_map_app_iff
-    (f := TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩) k σ
-
-/-- The singular simplices of `W` lying in `U` and in `V` are those lying in `U ⊓ V`. -/
-private lemma range_toSSetInclusion_inf {U V W : Opens M} (hU : U ≤ W) (hV : V ≤ W) :
-    SSet.Subcomplex.range (toSSetInclusion hU) ⊓ SSet.Subcomplex.range (toSSetInclusion hV) =
-      SSet.Subcomplex.range (toSSetInclusion (inf_le_left.trans hU : U ⊓ V ≤ W)) := by
-  ext k σ
-  -- The meet of subcomplexes is computed pointwise.
-  change σ ∈ (SSet.Subcomplex.range (toSSetInclusion hU)).obj k ∧
-      σ ∈ (SSet.Subcomplex.range (toSSetInclusion hV)).obj k ↔ _
-  simp only [mem_range_toSSetInclusion_iff, ← Set.subset_inter_iff]
-  rfl
-
-/-- The singular simplices of `U ⊔ V` lying in `U` or in `V` are its small singular simplices for
-the cover by `U` and `V`. -/
-private lemma range_toSSetInclusion_sup (U V : Opens M) :
-    SSet.Subcomplex.range (toSSetInclusion (le_sup_left : U ≤ U ⊔ V)) ⊔
-        SSet.Subcomplex.range (toSSetInclusion (le_sup_right : V ≤ U ⊔ V)) =
-      (TopCat.of ↥(U ⊔ V)).smallSingularSubcomplex
-        ![{x | (x : M) ∈ U}, {x | (x : M) ∈ V}] := by
-  ext k σ
-  -- The join of subcomplexes is computed pointwise.
-  change σ ∈ (SSet.Subcomplex.range (toSSetInclusion (le_sup_left : U ≤ U ⊔ V))).obj k ∨
-      σ ∈ (SSet.Subcomplex.range (toSSetInclusion (le_sup_right : V ≤ U ⊔ V))).obj k ↔ _
-  simp only [mem_range_toSSetInclusion_iff, TopCat.mem_smallSingularSubcomplex_iff,
-    Fin.exists_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
-
 variable {C : Type v} [Category.{w} C] [HasCoproducts.{u} C] [Abelian C] (R : C)
 
 /-- For open sets `O ≤ W`, the inclusion of the smooth singular chains of `O` into its singular
@@ -119,23 +80,23 @@ simplices of `W` lying in `O` into the chains of all singular simplices of `W` l
 one. -/
 private lemma quasiIso_homOfLE_range_iff {O W : Opens M} (h : O ≤ W) :
     QuasiIso (SSet.chainComplexMap (homOfLE (Subfunctor.range_comp_le
-      (smoothSingularSubcomplex I O).ι (toSSetInclusion h))) R) ↔
+      (smoothSingularSubcomplex I O).ι
+        (TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩)))) R) ↔
       QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I O).ι R) := by
+  let f := TopCat.toSSet.map (TopCat.ofHom (⟨Opens.inclusion h, continuous_inclusion h⟩ : C(O, W)))
   have : Mono (TopCat.ofHom (⟨Opens.inclusion h, continuous_inclusion h⟩ : C(O, W))) :=
     (TopCat.mono_iff_injective _).2 (Set.inclusion_injective h)
-  have : Mono (toSSetInclusion h) := Functor.map_mono _ _
-  have hsq : toRange ((smoothSingularSubcomplex I O).ι ≫ toSSetInclusion h) ≫
-        homOfLE (Subfunctor.range_comp_le (smoothSingularSubcomplex I O).ι (toSSetInclusion h)) =
-      (smoothSingularSubcomplex I O).ι ≫ toRange (toSSetInclusion h) := by
-    rw [← cancel_mono (SSet.Subcomplex.range (toSSetInclusion h)).ι]
+  have : Mono f := Functor.map_mono _ _
+  have hsq : toRange ((smoothSingularSubcomplex I O).ι ≫ f) ≫
+        homOfLE (Subfunctor.range_comp_le (smoothSingularSubcomplex I O).ι f) =
+      (smoothSingularSubcomplex I O).ι ≫ toRange f := by
+    rw [← cancel_mono (SSet.Subcomplex.range f).ι]
     simp
   exact (quasiIso_iff_of_arrow_mk_iso _ _
     (((SSet.chainComplexFunctor C).obj R).mapArrow.mapIso
       (Arrow.isoMk (f := Arrow.mk (smoothSingularSubcomplex I O).ι)
-        (g := Arrow.mk (homOfLE (Subfunctor.range_comp_le (smoothSingularSubcomplex I O).ι
-          (toSSetInclusion h))))
-        (asIso (toRange ((smoothSingularSubcomplex I O).ι ≫ toSSetInclusion h)))
-        (asIso (toRange (toSSetInclusion h))) hsq))).symm
+        (g := Arrow.mk (homOfLE (Subfunctor.range_comp_le (smoothSingularSubcomplex I O).ι f)))
+        (asIso (toRange ((smoothSingularSubcomplex I O).ι ≫ f))) (asIso (toRange f)) hsq))).symm
 
 /-- The Mayer–Vietoris part of the proof: under the hypotheses of the Mayer–Vietoris step, the
 chains of the smooth singular simplices of `U ⊔ V` lying in `U` or in `V` include into the chains of
@@ -152,28 +113,25 @@ private lemma quasiIso_homOfLE_inf_smallSingularSubcomplex (U V : Opens M)
   have hV' : V ≤ U ⊔ V := le_sup_right
   have hUV' : U ⊓ V ≤ U ⊔ V := inf_le_left.trans le_sup_left
   -- The singular simplices of `U ⊔ V` lying in `U ⊓ V`, in `U`, in `V`, and in `U` or in `V`.
-  let B₁ := SSet.Subcomplex.range (toSSetInclusion hUV')
-  let B₂ := SSet.Subcomplex.range (toSSetInclusion hU')
-  let B₃ := SSet.Subcomplex.range (toSSetInclusion hV')
+  let f₁ := TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion hUV', continuous_inclusion hUV'⟩)
+  let f₂ := TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion hU', continuous_inclusion hU'⟩)
+  let f₃ := TopCat.toSSet.map (TopCat.ofHom ⟨Opens.inclusion hV', continuous_inclusion hV'⟩)
+  let B₁ := SSet.Subcomplex.range f₁
+  let B₂ := SSet.Subcomplex.range f₂
+  let B₃ := SSet.Subcomplex.range f₃
   let B₄ := (TopCat.of ↥(U ⊔ V)).smallSingularSubcomplex ![{x | (x : M) ∈ U}, {x | (x : M) ∈ V}]
   -- The smooth ones among them.
-  let A₁ :=
-    SSet.Subcomplex.range ((smoothSingularSubcomplex I ↥(U ⊓ V)).ι ≫ toSSetInclusion hUV')
-  let A₂ := SSet.Subcomplex.range ((smoothSingularSubcomplex I U).ι ≫ toSSetInclusion hU')
-  let A₃ := SSet.Subcomplex.range ((smoothSingularSubcomplex I V).ι ≫ toSSetInclusion hV')
+  let A₁ := SSet.Subcomplex.range ((smoothSingularSubcomplex I ↥(U ⊓ V)).ι ≫ f₁)
+  let A₂ := SSet.Subcomplex.range ((smoothSingularSubcomplex I U).ι ≫ f₂)
+  let A₃ := SSet.Subcomplex.range ((smoothSingularSubcomplex I V).ι ≫ f₃)
   have hA₁ : A₁ = S ⊓ B₁ := range_smoothSingularSubcomplex_ι_comp_toSSet_map_inclusion hUV'
   have hA₂ : A₂ = S ⊓ B₂ := range_smoothSingularSubcomplex_ι_comp_toSSet_map_inclusion hU'
   have hA₃ : A₃ = S ⊓ B₃ := range_smoothSingularSubcomplex_ι_comp_toSSet_map_inclusion hV'
   have sqB : SSet.Subcomplex.BicartSq B₁ B₂ B₃ B₄ :=
-    ⟨range_toSSetInclusion_sup U V, range_toSSetInclusion_inf hU' hV'⟩
+    ⟨TopCat.range_toSSet_map_inclusion_sup U V, TopCat.range_toSSet_map_inclusion_inf hU' hV'⟩
   have sqA : SSet.Subcomplex.BicartSq A₁ A₂ A₃ (S ⊓ B₄) := by
     refine ⟨?_, ?_⟩
-    · rw [hA₂, hA₃, ← sqB.sup_eq]
-      ext k σ
-      -- Joins and meets of subcomplexes are computed pointwise.
-      change (σ ∈ S.obj k ∧ σ ∈ B₂.obj k) ∨ (σ ∈ S.obj k ∧ σ ∈ B₃.obj k) ↔
-        σ ∈ S.obj k ∧ (σ ∈ B₂.obj k ∨ σ ∈ B₃.obj k)
-      exact and_or_left.symm
+    · rw [hA₂, hA₃, ← sqB.sup_eq, inf_comm S B₂, inf_comm S B₃, ← Subfunctor.max_min, inf_comm]
     · rw [hA₁, hA₂, hA₃, ← sqB.inf_eq]
       exact (inf_inf_distrib_left _ _ _).symm
   have h₁₁ : A₁ ≤ B₁ := hA₁ ▸ inf_le_right

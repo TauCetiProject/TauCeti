@@ -36,6 +36,8 @@ of `X`.
 
 * `TopCat.isPushout_toSSet_inter_smallSingularSubcomplex`: the pushout square of singular
   simplicial sets of an intersection.
+* `TopCat.range_toSSet_map_inclusion_sup`: for open sets `U` and `V`, the singular simplices of
+  `U ⊔ V` lying in `U` or in `V` are its small singular simplices for the cover by `U` and `V`.
 * `TopCat.mayerVietorisδ`: the Mayer–Vietoris connecting morphism `Hₙ(X) ⟶ Hₘ(U ∩ V)`,
   `m + 1 = n`, characterized by `TopCat.homologyMap_ι_comp_mayerVietorisδ`. The other two maps
   of the sequence are `SSet.mayerVietorisToBiprod` and `SSet.mayerVietorisFromBiprod` applied to
@@ -125,6 +127,19 @@ theorem isPushout_toSSet_inter_smallSingularSubcomplex :
     change fV = toSmallSingularSubcomplex ![U, V]
       ((Matrix.cons_val_one U ![V]).trans (Matrix.cons_val_zero V ![])).superset ≫ D.ι
     exact (toSmallSingularSubcomplex_ι _ _).symm
+
+open TopologicalSpace in
+/-- For open sets `U` and `V` of a space `Y`, the singular simplices of `U ⊔ V` lying in `U` or in
+`V` are its small singular simplices for the cover by `U` and `V`. -/
+theorem range_toSSet_map_inclusion_sup {Y : Type*} [TopologicalSpace Y] (U V : Opens Y) :
+    SSet.Subcomplex.range (toSSet.map
+        (ofHom ⟨Opens.inclusion le_sup_left, continuous_inclusion (le_sup_left : U ≤ U ⊔ V)⟩)) ⊔
+        SSet.Subcomplex.range (toSSet.map
+          (ofHom ⟨Opens.inclusion le_sup_right, continuous_inclusion (le_sup_right : V ≤ U ⊔ V)⟩)) =
+      (of ↥(U ⊔ V)).smallSingularSubcomplex ![{x | (x : Y) ∈ U}, {x | (x : Y) ∈ V}] := by
+  ext n σ
+  simp only [Subfunctor.max_obj, Set.mem_union, mem_range_toSSet_map_inclusion_iff,
+    mem_smallSingularSubcomplex_iff, Fin.exists_fin_two, Matrix.cons_val_zero, Matrix.cons_val_one]
 
 /-- Restricting `f` to a set `A` lying in a member of the family `S` and then passing to the small
 singular subcomplex of `T` agrees with passing to the small singular subcomplex of `S` first and

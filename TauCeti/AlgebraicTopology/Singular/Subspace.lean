@@ -14,7 +14,10 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 The singular simplices of a subspace are characterized by the image of their underlying maps.
 This identifies the range subcomplex of a subspace inclusion in a singular simplicial set. A
 singular simplex whose image lies in an open set `V` corestricts to a singular simplex of `V`
-(`TopCat.toSSetObjCodRestrict`), inverse to the map induced by the inclusion of `V`.
+(`TopCat.toSSetObjCodRestrict`), inverse to the map induced by the inclusion of `V`. For open
+sets `U ≤ W`, the singular simplices of `W` coming from `U` are those lying in `U`
+(`TopCat.mem_range_toSSet_map_inclusion_iff`), and those coming from `U` and from `V` are those
+coming from `U ⊓ V` (`TopCat.range_toSSet_map_inclusion_inf`).
 -/
 
 public section
@@ -105,5 +108,33 @@ lemma toSSet_map_homOfLE_toSSetObjCodRestrict {W : Opens X} (hVW : V ≤ W)
   exact coe_toSSetObjEquiv_toSSetObjCodRestrict σ h z
 
 end Opens
+
+section OpensInclusion
+
+variable {Y : Type*} [TopologicalSpace Y]
+
+/-- A singular simplex of an open set `W` comes from an open subset `U ≤ W` exactly when its image
+lies in `U`. -/
+lemma mem_range_toSSet_map_inclusion_iff {U W : Opens Y} (h : U ≤ W) (n : SimplexCategoryᵒᵖ)
+    (σ : (toSSet.obj (of W)).obj n) :
+    σ ∈ (SSet.Subcomplex.range
+      (toSSet.map (ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩))).obj n ↔
+      Set.range ((of W).toSSetObjEquiv n σ) ⊆ {x : W | (x : Y) ∈ U} := by
+  rw [← show Set.range (Opens.inclusion h) = {x : W | (x : Y) ∈ U} from Set.range_inclusion _]
+  exact (Opens.isOpenEmbedding_of_le h).isInducing.mem_range_toSSet_map_app_iff
+    (f := ofHom ⟨Opens.inclusion h, continuous_inclusion h⟩) n σ
+
+/-- For open subsets `U` and `V` of an open set `W`, the singular simplices of `W` lying in `U`
+and in `V` are those lying in `U ⊓ V`. -/
+lemma range_toSSet_map_inclusion_inf {U V W : Opens Y} (hU : U ≤ W) (hV : V ≤ W) :
+    SSet.Subcomplex.range (toSSet.map (ofHom ⟨Opens.inclusion hU, continuous_inclusion hU⟩)) ⊓
+        SSet.Subcomplex.range (toSSet.map (ofHom ⟨Opens.inclusion hV, continuous_inclusion hV⟩)) =
+      SSet.Subcomplex.range (toSSet.map (ofHom ⟨Opens.inclusion (inf_le_left.trans hU),
+        continuous_inclusion (inf_le_left.trans hU : U ⊓ V ≤ W)⟩)) := by
+  ext n σ
+  simp only [Subfunctor.min_obj, Set.mem_inter_iff, mem_range_toSSet_map_inclusion_iff,
+    ← Set.subset_inter_iff, ← Set.ofPred_and, Opens.mem_inf]
+
+end OpensInclusion
 
 end TopCat
