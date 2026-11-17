@@ -174,25 +174,23 @@ coefficients are `O(n^ε)` for every `ε > 0`, and its cuspidal part obeys the m
 private lemma abscissaOfAbsConv_qExpansion_coeff_Gamma1_one
     (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) 1) :
     LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 f).coeff n) ≤ (1 : EReal) := by
-  let Q := ModularForm.qExpansionLinearMap one_pos (one_mem_strictPeriods_Gamma1_map N) 1
-  have hQ (g : ModularForm ((Gamma1 N).map (mapGL ℝ)) 1) : Q g = qExpansion 1 g :=
-    ModularForm.qExpansionLinearMap_apply _ _ g
   have hf : f ∈ Submodule.span ℂ (Set.range (CharIndex.weightOneForm (N := N))) ⊔
       ModularForm.cuspFormSubmodule ((Gamma1 N).map (mapGL ℝ)) 1 := by
     rw [isCompl_span_range_weightOneForm_cuspFormSubmodule.sup_eq_top]
     exact Submodule.mem_top
-  obtain ⟨e, he, _, ⟨c, rfl⟩, rfl⟩ := Submodule.mem_sup.mp hf
+  obtain ⟨e, he, c, hc, rfl⟩ := Submodule.mem_sup.mp hf
+  clear hf
   have hE := abscissaOfAbsConv_qExpansion_coeff_le_of_mem_span_weightOneForm he
   have hC : LSeries.abscissaOfAbsConv (fun n ↦ (qExpansion 1 c).coeff n) ≤ (1 : EReal) := by
+    obtain ⟨c, rfl⟩ := hc
     have h := CuspForm.abscissaOfAbsConv_qExpansion_coeff_le c
     rw [strictWidthInfty_Gamma1] at h
     norm_num at h
     exact h
-  have hadd : (fun n ↦ (qExpansion 1 ⇑(e + CuspForm.toModularFormₗ c)).coeff n) =
+  have hadd : (fun n ↦ (qExpansion 1 ⇑(e + c)).coeff n) =
       (fun n ↦ (qExpansion 1 e).coeff n) + fun n ↦ (qExpansion 1 c).coeff n := by
     ext n
-    rw [← hQ (e + _), map_add, hQ, hQ, funext (CuspForm.toModularFormₗ_apply c)]
-    simp
+    simp [ModularForm.qExpansion_add one_pos (one_mem_strictPeriods_Gamma1_map N) e c]
   rw [hadd]
   exact (LSeries.abscissaOfAbsConv_add_le _ _).trans (max_le hE hC)
 
