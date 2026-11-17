@@ -12,7 +12,7 @@ import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 /-!
 # The Dirichlet problem on a ball via the Newtonian potential
 
-Let `B = B(z, R) ⊆ ℝⁿ`, `n ≥ 3`, and let `f` be of class `C²` with compact support. The
+Let `B = B(z, R) ⊆ ℝⁿ`, `n = 1` or `n ≥ 3`, and let `f` be of class `C²` with compact support. The
 classical solution of `-Δu = f` in `B`, `u = 0` on `∂B`, is the Newtonian potential `Gₙ ⋆ f`
 corrected by the harmonic function `h` on `B` with boundary values `Gₙ ⋆ f` on the sphere:
 `u = Gₙ ⋆ f - h`. Such an `h` exists, given by the Poisson integral
@@ -56,11 +56,11 @@ variable {n : ℕ} {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} {z : Euclidean
   {u : W1p0 volume Omega 2}
 
 /-- **The weak solution of Poisson's equation on a ball is the corrected Newtonian potential.**
-Let `n ≥ 2`, let `f` be of class `C²` with compact support on `ℝ^{n+1}`, and let `h` be harmonic
-on the ball `B(z, R)`, continuous on its closure and equal to the Newtonian potential `G ⋆ f` on
-the sphere. If `u ∈ H¹₀(B)` is the weak solution of `-Δu = f` in `B`, `u = 0` on `∂B`, then
-`u = G ⋆ f - h` almost everywhere on `B`. -/
-theorem IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub (hn : 2 ≤ n)
+Let `n ≠ 1`, so that the dimension `n + 1` is `1` or at least `3`, let `f` be of class `C²` with
+compact support on `ℝ^{n+1}`, and let `h` be harmonic on the ball `B(z, R)`, continuous on its
+closure and equal to the Newtonian potential `G ⋆ f` on the sphere. If `u ∈ H¹₀(B)` is the weak
+solution of `-Δu = f` in `B`, `u = 0` on `∂B`, then `u = G ⋆ f - h` almost everywhere on `B`. -/
+theorem IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub (hn : n ≠ 1)
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) {h : EuclideanSpace ℝ (Fin (n + 1)) → ℝ}
     (hh : HarmonicOnNhd h (ball z R)) (hhc : ContinuousOn h (closedBall z R))
     (hhG : EqOn h (newtonianKernel (n + 1) ⋆ f) (sphere z R))
@@ -78,7 +78,7 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub (hn 
   have hv := contDiff_newtonianKernel_convolution (n := n + 1) hf hc
   have hΔ : ∀ x ∈ ball z R, Δ (newtonianKernel (n + 1) ⋆ f - h) x = -f x := fun x hx => by
     rw [hv.contDiffAt.laplacian_sub (hh x hx).1, laplacian_newtonianKernel_convolution
-      (by omega) hf hc, (hh x hx).2.eq_of_nhds, Pi.zero_apply, sub_zero, Pi.neg_apply]
+      (by omega) (by omega) hf hc, (hh x hx).2.eq_of_nhds, Pi.zero_apply, sub_zero, Pi.neg_apply]
   refine hu.value_ae_eq_of_contDiffOn hΩ.le ?_ ?_ ?_ ?_
   · rw [hΩ]
     exact hv.contDiffOn.sub fun x hx => (hh x hx).1.contDiffWithinAt
@@ -90,12 +90,13 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_newtonianKernel_convolution_sub (hn 
   · filter_upwards [hg, ae_restrict_mem Omega.isOpen.measurableSet] with x hx hxΩ
     rw [hx, Pi.neg_apply, hΔ x (hΩ ▸ hxΩ), neg_neg]
 
-/-- **The Dirichlet problem for Poisson's equation on a ball.** Let `n ≥ 2` and let `f` be of
-class `C²` with compact support on `ℝ^{n+1}`. The weak solution `u ∈ H¹₀(B)` of `-Δu = f` in the
-ball `B = B(z, R)`, `u = 0` on `∂B`, is the Newtonian potential corrected by a harmonic function:
-there is `h`, harmonic on `B`, continuous on its closure and equal to `G ⋆ f` on the sphere, with
+/-- **The Dirichlet problem for Poisson's equation on a ball.** Let `n ≠ 1`, so that the dimension
+`n + 1` is `1` or at least `3`, and let `f` be of class `C²` with compact support on `ℝ^{n+1}`.
+The weak solution `u ∈ H¹₀(B)` of `-Δu = f` in the ball `B = B(z, R)`, `u = 0` on `∂B`, is the
+Newtonian potential corrected by a harmonic function: there is `h`, harmonic on `B`, continuous
+on its closure and equal to `G ⋆ f` on the sphere, with
 `u = G ⋆ f - h` almost everywhere on `B`. -/
-theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq (hn : 2 ≤ n)
+theorem IsWeakSolutionDirichlet.exists_harmonicOnNhd_value_ae_eq (hn : n ≠ 1)
     (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f)
     (hΩ : (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))) = ball z R)
     (hg : g =ᵐ[volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1))))] f)

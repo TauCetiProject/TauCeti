@@ -149,7 +149,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- The parametrization `ι z = q'⁻¹ (q' y + z)` of the cut is read in `e` through the transition
   -- `e ∘ q'⁻¹`, whose derivative `D` at `q' y` satisfies `D ∘ A' = Ae`.
   set D := fderiv 𝕜 (q'.symm.trans e) (q' y)
-  have hDA : D ∘L (A' : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hn hq' he hyq' hye hA' hAe
+  have hDA : D ∘L (A' : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hyq' hA' hAe
   have hDF (z : E) : D z = Ae (A'.symm z) := by
     simpa using congrArg (fun B : E →L[𝕜] E ↦ B (A'.symm z)) hDA
   have hι0 : q'.symm (q' y + ((0 : F) : E)) = y := by simp [q'.left_inv hyq']

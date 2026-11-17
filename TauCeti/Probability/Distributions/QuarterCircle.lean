@@ -9,7 +9,7 @@ public import TauCeti.MeasureTheory.Measure.WithDensity
 public import TauCeti.Probability.Distributions.MarchenkoPastur.Basic
 public import TauCeti.Probability.Distributions.Semicircle.LocationScale
 public import TauCeti.Probability.Distributions.Semicircle.Moments
-import TauCeti.Analysis.SpecialFunctions.Beta
+import TauCeti.Analysis.SpecialFunctions.Beta.Basic
 import TauCeti.MeasureTheory.Measure.Support
 import TauCeti.Probability.Distributions.Beta.Symmetric
 import TauCeti.Probability.Distributions.MarchenkoPastur.Moments

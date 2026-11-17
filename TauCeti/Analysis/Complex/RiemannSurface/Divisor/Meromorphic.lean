@@ -28,6 +28,9 @@ lower bound on the dimension of a divisor's section space into an actual finite 
 divisor `D` bounding the poles is effective, the degree of this map is at most `deg D`, so a
 second section of the divisor of a single point gives a map of degree one.
 
+Since principal divisors have degree zero, the same embedding shows that a divisor of negative
+degree on a compact connected Riemann surface has no nonzero global sections.
+
 ## References
 
 * Otto Forster, *Lectures on Riemann Surfaces*, Graduate Texts in Mathematics 81, Springer, 1981,
@@ -172,6 +175,36 @@ theorem exists_finiteHolomorphicMap_of_one_lt_finrank_divisorSections [CompactSp
   simpa only [FiniteHolomorphicMap.coe_ofMDifferentiable,
     ← MeromorphicFunction.finitePart_def, MeromorphicFunction.order_apply] using
     divisorSections.neg_le_order_toMeromorphic s
+
+/-- A divisor of negative degree has no nonzero global sections: a nonzero section is a meromorphic
+function whose principal divisor is at least `-D`, and principal divisors have degree zero. -/
+theorem finrank_divisorSheaf_eq_zero_of_degree_neg [CompactSpace X] [T2Space X]
+    {D : WeilDivisor X} (hD : WeilDivisor.degree D < 0) :
+    Module.finrank ℂ ((divisorSheaf D).obj.obj (Opposite.op ⊤)) = 0 := by
+  rw [(divisorSheafSectionsEquiv D ⊤).finrank_eq]
+  suffices h : ∀ f : divisorSections D ⊤, f = 0 by
+    have : Subsingleton (divisorSections D ⊤) := ⟨fun f g ↦ by rw [h f, h g]⟩
+    exact Module.finrank_zero_of_subsingleton
+  intro f
+  by_contra hf
+  have hm : divisorSections.toMeromorphic D f ≠ 0 := fun h ↦
+    hf (divisorSections.toMeromorphic_injective D (h.trans (map_zero _).symm))
+  let u : Additive (MeromorphicFunction X)ˣ := Additive.ofMul (Units.mk0 _ hm)
+  have hle : 0 ≤ (MeromorphicFunction.orderSystem X).principalDivisor u + D := by
+    rw [WeilDivisor.nonneg_iff]
+    intro x
+    have hx : ((-D x : ℤ) : WithTop ℤ) ≤
+        MeromorphicFunction.order x (u.toMul : MeromorphicFunction X) :=
+      divisorSections.neg_le_order_toMeromorphic f x
+    rw [← MeromorphicFunction.coe_coeff_principalDivisor_orderSystem u x] at hx
+    rw [WeilDivisor.coeff_add]
+    have : -D x ≤ WeilDivisor.coeff ((MeromorphicFunction.orderSystem X).principalDivisor u) x :=
+      WithTop.coe_le_coe.mp hx
+    simp only [WeilDivisor.coeff] at this ⊢
+    omega
+  have := WeilDivisor.degree_nonneg hle
+  rw [map_add, MeromorphicFunction.degree_principalDivisor, zero_add] at this
+  omega
 
 /-- **A second section of `𝒪(x)` gives a degree-one map to `ℙ¹`.** If the global sections of the
 divisor of a point `x` on a compact connected Riemann surface have dimension greater than one,

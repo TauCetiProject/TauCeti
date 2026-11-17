@@ -9,8 +9,6 @@ public import TauCeti.Analysis.Complex.Fuchsian.Arithmetic
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Degree
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 
-import TauCeti.NumberTheory.ModularForms.WithCenter
-
 /-!
 # The degree of the map from a modular curve to the level-one curve
 
@@ -90,6 +88,6 @@ theorem two_mul_degree_compactifiedQuotientMap_Gamma1 (hN : 3 ≤ N) :
     have := Nat.le_of_dvd two_pos (neg_one_mem_Gamma1_iff.mp h)
     omega
   rw [Subgroup.degree_compactifiedQuotientMap_map_sl2zToPSL2R,
-    TauCeti.ModularForm.index_eq_two_mul_index_withCenter_of_neg_one_notMem h]
+    Matrix.SpecialLinearGroup.index_eq_two_mul_index_withCenter_of_neg_one_notMem h]
 
 end CongruenceSubgroup
