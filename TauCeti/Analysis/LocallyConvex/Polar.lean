@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Dual
 
 /-!
-# Polars of absolutely convex hulls
+# Polars of absolutely convex hulls and zero-neighborhoods
 
 The absolute polar for a bilinear pairing is unchanged by taking an absolutely
 convex hull. For the continuous dual pairing, taking the closed absolutely convex
@@ -19,11 +19,18 @@ generating set and its closed disked hull.
 
 The annihilator `StrongDual.polarSubmodule` of the kernel of a continuous functional `α` is the
 line `𝕜 ∙ α` (`StrongDual.polarSubmodule_ker_eq_span_singleton`).
+
+In addition, the polar of any neighborhood of zero in a topological module over a
+nontrivially normed field is von Neumann bounded in the strong dual
+(`StrongDual.isVonNBounded_polar`): every bounded subset of the primal space is
+absorbed by the neighborhood, so functionals in the polar are uniformly bounded on
+it.
 -/
 
 public section
 
-open scoped ComplexOrder
+open Topology
+open scoped ComplexOrder Pointwise
 
 namespace LinearMap
 
@@ -43,6 +50,8 @@ end LinearMap
 
 namespace StrongDual
 
+section RCLike
+
 variable {𝕜 E : Type*} [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E] [TopologicalSpace E]
 
 /-- Taking the closed absolutely convex hull does not change the absolute polar. -/
@@ -57,6 +66,28 @@ theorem polar_closedAbsConvexHull (s : Set E) :
   exact (B.polar_antitone subset_closedAbsConvexHull).antisymm <|
     (B.tripolar_eq_polar s).symm.trans_subset <| B.polar_antitone <|
       closedAbsConvexHull_min (B.subset_bipolar s) (LinearMap.polar_AbsConvex _) hclosed
+
+end RCLike
+
+section Bounded
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E]
+
+/-- The polar of a neighborhood of zero is von Neumann bounded in the strong dual. -/
+theorem isVonNBounded_polar {U : Set E} (hU : U ∈ 𝓝 (0 : E)) :
+    Bornology.IsVonNBounded 𝕜 (polar 𝕜 U) := by
+  refine ContinuousLinearMap.isVonNBounded_iff.2 fun s hs ↦ ?_
+  obtain ⟨r, -, hr⟩ := (hs hU).exists_pos
+  obtain ⟨c, hc⟩ := NormedField.exists_lt_norm 𝕜 r
+  have hsub : s ⊆ c • U := hr c hc.le
+  refine (NormedSpace.isVonNBounded_closedBall 𝕜 𝕜 ‖c‖).subset ?_
+  rintro _ ⟨f, hf, x, hx, rfl⟩
+  obtain ⟨u, hu, rfl⟩ := hsub hx
+  simp only [Metric.mem_closedBall, dist_zero_right, map_smul, smul_eq_mul, norm_mul]
+  exact mul_le_of_le_one_right (norm_nonneg c) (hf u hu)
+
+end Bounded
 
 end StrongDual
 
