@@ -262,23 +262,6 @@ theorem exists_norm_euclideanInitialDataCLE_symm_sub_le (hα₀ : 0 < α) (hα�
 
 section Terminal
 
--- These shortcuts keep instance search shallow for the nested Euclidean coefficient spaces.
-private local instance : NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-private local instance : NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedAddCommGroup (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedSpace ℝ (EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedAddCommGroup ((EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedSpace ℝ ((EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-private local instance :
-    NormedAddCommGroup ((EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) :=
-  inferInstance
-private local instance :
-    NormedSpace ℝ ((EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) →L[ℝ] ℝ) := inferInstance
-
 private def slabDuration {t₀ t₁ : ℝ} (ht : t₀ < t₁) : ℝ≥0 :=
   ⟨t₁ - t₀, (sub_pos.2 ht).le⟩
 
@@ -288,22 +271,6 @@ private theorem coe_slabDuration {t₀ t₁ : ℝ} (ht : t₀ < t₁) :
 
 private theorem zero_eq_sub_self (t : ℝ) : (0 : ℝ) = t - t :=
   (sub_self t).symm
-
-private theorem bijective_backward_prod {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : t₀ < t₁)
-    (a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ)
-    (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) {lam : ℝ} (hlam : 0 < lam)
-    (ha : ∀ p (ξ : EuclideanSpace ℝ ι),
-      lam * ‖ξ‖ ^ 2 ≤ (Matrix.of fun i j ↦ a i j p).toQuadraticForm' ξ) :
-    Function.Bijective ((euclideanBackwardParabolicOperatorL hα₁.le a b c).prod
-      (spatialTraceL (F := ℝ) (hab := ht) ⟨t₁, right_mem_Icc.2 ht.le⟩)) := by
-  have hT : (0 : ℝ) < slabDuration ht := sub_pos.2 ht
-  rw [euclideanBackwardParabolicOperatorL_def,
-    bijective_backwardParabolicOperatorL_prod_spatialTraceL_iff (T := t₁)
-      (ha := (zero_eq_sub_self t₁)) (hb := coe_slabDuration ht),
-    initialDataL_def, parabolicOperatorL_compLipschitzL_euclidean hα₁.le ht a b c]
-  exact bijective_euclideanParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ hT _ _ hlam
-    fun p ξ ↦ by simpa only [HolderSpace.compLipschitzL_apply] using ha _ ξ
 
 /-- **The terminal-data isomorphism.** For `0 < α < 1`, `t₀ < t₁`, and coefficients `aⁱʲ`, `bⁱ`, `c`
 in `C_b^{α,α/2}(ℝⁿ × [t₀, t₁])` with `a` uniformly elliptic, `λ ‖ξ‖² ≤ ξᵀ a ξ` with `0 < λ`, the
@@ -319,7 +286,8 @@ def euclideanTerminalDataCLE {t₀ t₁ : ℝ} (hα₀ : 0 < α) (hα₁ : α < 
     ParabolicC2HolderSpace α (EuclideanSpace ℝ ι) ℝ ht ≃L[ℝ]
       HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ ×
         CkHolderSpace 2 α (EuclideanSpace ℝ ι) ℝ :=
-  have hbij := ha.elim fun _ h ↦ bijective_backward_prod hα₀ hα₁ ht a b c h.1 h.2
+  have hbij := ha.elim fun _ h ↦
+    bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL hα₀ hα₁ ht b c h.1 h.2
   ContinuousLinearEquiv.ofBijective _ (LinearMap.ker_eq_bot.2 hbij.1)
     (LinearMap.range_eq_top.2 hbij.2)
 

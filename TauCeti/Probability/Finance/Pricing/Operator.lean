@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Weight
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Backward
+public import TauCeti.Probability.Finance.WeightedLogSpot
 import TauCeti.Probability.Finance.LogSpot
 import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.WholeLine
 
@@ -51,9 +52,14 @@ bound on `r` enters: the zeroth-order coefficient `-r (1 - sigmoid y)` is then a
 since `0 < 1 - sigmoid y < 1`. For a nonnegative short rate the bound holds with `γ = 0`.
 
 For a price `C(s, t) = (1 + s) u(log s, t)` the statements transfer through
-`TauCeti.Finance.weightedLogSpotPricingOperatorL_eq_spot`. In spot coordinates, uniqueness of
-classical prices of linear growth, for bounded volatility and a bounded rate depending on time
-only, is `TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`.
+`TauCeti.Finance.weightedLogSpotPricingOperatorL_eq_spot`, and for the reconstructed price
+`TauCeti.Finance.weightedLogSpotPrice u` directly through
+`TauCeti.Finance.pde_weightedLogSpotPrice_eq_mul`,
+`TauCeti.Finance.pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo`, and their market-volatility
+specializations `TauCeti.Finance.pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL`
+and `TauCeti.Finance.pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL_of_mem_Ioo`.
+In spot coordinates, uniqueness of classical prices of linear growth, for bounded volatility and a
+bounded rate depending on time only, is `TauCeti.Finance.eq_of_pde_eq_of_terminal_eq`.
 
 ## References
 
@@ -223,6 +229,78 @@ theorem weightedLogSpotPricingOperatorL_eq_spot
   have hpde := pde_comp_exp σ (r (slabMk x t)) hCss
   apply (eq_div_iff (by positivity : 1 + exp x ≠ 0)).2
   linear_combination hw + hpde
+
+/-- The spot pricing residual of the reconstructed price `weightedLogSpotPrice v` (with within-slab
+time derivative) is `1 + s` times `weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_mul (v : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ}
+    (hs : 0 < s) (t : Icc t₀ t₁) :
+    derivWithin (weightedLogSpotPrice v s) (Icc t₀ t₁) t +
+        a (slabMk (log s) t) * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
+        r (slabMk (log s) t) * (s * deriv (fun x ↦ weightedLogSpotPrice v x t) s -
+          weightedLogSpotPrice v s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r v (slabMk (log s) t) := by
+  have hsig : sigmoid (log s) = s / (1 + s) := by
+    rw [sigmoid_def, exp_neg, exp_log hs]
+    field_simp
+    ring
+  have h₁ : 2 * sigmoid (log s) - 1 = (s - 1) / (s + 1) := by
+    rw [hsig]
+    field_simp
+    ring
+  have h₂ : 1 - sigmoid (log s) = 1 / (1 + s) := by
+    rw [hsig]
+    field_simp
+    ring
+  rw [weightedLogSpotPricingOperatorL_apply, space_slabMk, h₁, h₂]
+  -- The change of variables holds for every volatility; both sides are affine in `σ² / 2`, so
+  -- its instances with `σ = 0` and `σ = 1` combine to the local variance rate `a`.
+  have e₀ := pde_weightedLogSpotPrice v hs t 0 (r (slabMk (log s) t))
+  have e₁ := pde_weightedLogSpotPrice v hs t 1 (r (slabMk (log s) t))
+  linear_combination (1 - 2 * a (slabMk (log s) t)) * e₀ + 2 * a (slabMk (log s) t) * e₁
+
+/-- At an interior time `t ∈ (t₀, t₁)`, the spot pricing residual of `weightedLogSpotPrice v` (with
+ordinary time derivative) is `1 + s` times `weightedLogSpotPricingOperatorL` evaluated at
+`(log s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo (v : ParabolicC2HolderSpace α ℝ ℝ ht)
+    {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Ioo t₀ t₁) :
+    deriv (weightedLogSpotPrice v s) t +
+        a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) * s ^ 2 *
+          deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
+        r (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) *
+          (s * deriv (fun x ↦ weightedLogSpotPrice v x t) s - weightedLogSpotPrice v s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r v
+        (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) := by
+  rw [deriv_weightedLogSpotPrice_time v s ht',
+    ← derivWithin_weightedLogSpotPrice_time v s ⟨t, Ioo_subset_Icc_self ht'⟩]
+  exact pde_weightedLogSpotPrice_eq_mul hα a r v hs ⟨t, Ioo_subset_Icc_self ht'⟩
+
+/-- On the closed slab `[t₀, t₁]`, the classical spot pricing operator with local volatility `σ` and
+rate `r₀` applied to `C = weightedLogSpotPrice u` (with within-slab time derivative) equals
+`(1 + s)` times `weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) (t : Icc t₀ t₁) {σ r₀ : ℝ}
+    (ha : a (slabMk (log s) t) = σ ^ 2 / 2) (hr : r (slabMk (log s) t) = r₀) :
+    derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
+        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r u (slabMk (log s) t) := by
+  rw [← pde_weightedLogSpotPrice_eq_mul hα a r u hs t, ha, hr]
+  ring
+
+/-- At an interior time `t ∈ (t₀, t₁)`, the classical spot pricing operator with local volatility
+`σ` and rate `r₀` applied to `C = weightedLogSpotPrice u` (with ordinary time derivative) equals
+`(1 + s)` times `weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
+theorem pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL_of_mem_Ioo
+    (u : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Ioo t₀ t₁)
+    {σ r₀ : ℝ} (ha : a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = σ ^ 2 / 2)
+    (hr : r (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = r₀) :
+    deriv (weightedLogSpotPrice u s) t +
+        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
+        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
+      (1 + s) * weightedLogSpotPricingOperatorL hα a r u
+        (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) := by
+  rw [← pde_weightedLogSpotPrice_eq_mul_of_mem_Ioo hα a r u hs ht', ha, hr]
+  ring
 
 /-! ### The a priori bound and uniqueness for the terminal-value problem -/
 

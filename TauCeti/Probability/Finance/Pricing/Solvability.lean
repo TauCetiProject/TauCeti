@@ -44,9 +44,6 @@ exposure.
 
 All financial declarations are in the `TauCeti.Finance` namespace.
 
-* `pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL` and
-  `pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL_of_mem_Ioo`: spot-coordinate
-  pricing-operator identities on `[t₀, t₁]` and `(t₀, t₁)`.
 * `bijective_weightedLogSpotPricingOperatorL_prod_spatialTraceL` and
   `weightedLogSpotTerminalDataCLE`: the Banach-space isomorphism `u ↦ (P u, u(·, t₁))`, with
   `weightedLogSpotTerminalDataCLE_apply`,
@@ -109,54 +106,6 @@ private local instance :
 private local instance :
     NormedSpace ℝ ((EuclideanSpace ℝ Unit →L[ℝ] EuclideanSpace ℝ Unit →L[ℝ] ℝ) →L[ℝ] ℝ) :=
   inferInstance
-
-/-! ### Spot-coordinate pricing-operator identities -/
-
-section SpotPricingIdentity
-
-variable {α : ℝ≥0} {t₀ t₁ : ℝ} {ht : t₀ < t₁}
-
-/-- On the closed slab `[t₀, t₁]`, the classical spot pricing operator applied to
-`C = weightedLogSpotPrice u` (with within-slab time derivative) equals `(1 + s)` times
-`weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
-theorem pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL (hα : α ≤ 1)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (u : ParabolicC2HolderSpace α ℝ ℝ ht)
-    {s : ℝ} (hs : 0 < s) (t : Icc t₀ t₁) {σ r₀ : ℝ}
-    (ha : a (slabMk (log s) t) = σ ^ 2 / 2) (hr : r (slabMk (log s) t) = r₀) :
-    derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t +
-        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
-      (1 + s) * weightedLogSpotPricingOperatorL hα a r u (slabMk (log s) t) := by
-  rw [pde_weightedLogSpotPrice u hs t σ r₀, weightedLogSpotPricingOperatorL_apply, space_slabMk,
-    ha, hr, sigmoid_def, exp_neg, exp_log hs]
-  have hs' : s ≠ 0 := hs.ne'
-  have h1s : 1 + s ≠ 0 := by positivity
-  have hs1 : s + 1 ≠ 0 := by positivity
-  field_simp
-  ring
-
-/-- At an interior time `t ∈ (t₀, t₁)`, the classical spot pricing operator applied to
-`C = weightedLogSpotPrice u` (with ordinary time derivative) equals `(1 + s)` times
-`weightedLogSpotPricingOperatorL` evaluated at `(log s, t)`. -/
-theorem pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL_of_mem_Ioo (hα : α ≤ 1)
-    (a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ) (u : ParabolicC2HolderSpace α ℝ ℝ ht)
-    {s : ℝ} (hs : 0 < s) {t : ℝ} (ht' : t ∈ Ioo t₀ t₁) {σ r₀ : ℝ}
-    (ha : a (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = σ ^ 2 / 2)
-    (hr : r (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) = r₀) :
-    deriv (weightedLogSpotPrice u s) t +
-        σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x ↦ weightedLogSpotPrice u x t) s +
-        r₀ * (s * deriv (fun x ↦ weightedLogSpotPrice u x t) s - weightedLogSpotPrice u s t) =
-      (1 + s) * weightedLogSpotPricingOperatorL hα a r u
-        (slabMk (log s) ⟨t, Ioo_subset_Icc_self ht'⟩) := by
-  have hd : deriv (weightedLogSpotPrice u s) t =
-      derivWithin (weightedLogSpotPrice u s) (Icc t₀ t₁) t := by
-    rw [deriv_weightedLogSpotPrice_time u s ht',
-      derivWithin_weightedLogSpotPrice_time u s ⟨t, Ioo_subset_Icc_self ht'⟩]
-  rw [hd]
-  exact pde_weightedLogSpotPrice_eq_mul_weightedLogSpotPricingOperatorL hα a r u hs
-    ⟨t, Ioo_subset_Icc_self ht'⟩ ha hr
-
-end SpotPricingIdentity
 
 /-! ### The weighted log-spot terminal-data isomorphism -/
 

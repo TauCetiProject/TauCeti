@@ -78,40 +78,6 @@ theorem isInvertible_weightedLogSpotPricingOperatorL_prod_spatialTraceL (hα₀ 
   exact isInvertible_backwardParabolicOperatorL_prod_spatialTraceL_real hα₀ hα₁ ht _ _ hlam
     fun p ↦ by simpa using ha p
 
-section Residual
-
-variable {hα : α ≤ 1} {a r : HolderSpace α (slab (E := ℝ) t₀ t₁) ℝ}
-
-/-- The spot pricing residual of the price represented by `v` is `1 + s` times the weighted
-log-spot operator applied to `v`. -/
-private theorem pde_weightedLogSpotPrice_eq_mul (v : ParabolicC2HolderSpace α ℝ ℝ ht) {s : ℝ}
-    (hs : 0 < s) (t : Icc t₀ t₁) :
-    derivWithin (weightedLogSpotPrice v s) (Icc t₀ t₁) t +
-        a (slabMk (log s) t) * s ^ 2 * deriv (deriv fun x ↦ weightedLogSpotPrice v x t) s +
-        r (slabMk (log s) t) * (s * deriv (fun x ↦ weightedLogSpotPrice v x t) s -
-          weightedLogSpotPrice v s t) =
-      (1 + s) * weightedLogSpotPricingOperatorL hα a r v (slabMk (log s) t) := by
-  have hsig : sigmoid (log s) = s / (1 + s) := by
-    rw [sigmoid_def, exp_neg, exp_log hs]
-    field_simp
-    ring
-  have h₁ : 2 * sigmoid (log s) - 1 = (s - 1) / (s + 1) := by
-    rw [hsig]
-    field_simp
-    ring
-  have h₂ : 1 - sigmoid (log s) = 1 / (1 + s) := by
-    rw [hsig]
-    field_simp
-    ring
-  rw [weightedLogSpotPricingOperatorL_apply, space_slabMk, h₁, h₂]
-  -- The change of variables holds for every volatility; both sides are affine in `σ² / 2`, so
-  -- its instances with `σ = 0` and `σ = 1` combine to the local variance rate `a`.
-  have e₀ := pde_weightedLogSpotPrice v hs t 0 (r (slabMk (log s) t))
-  have e₁ := pde_weightedLogSpotPrice v hs t 1 (r (slabMk (log s) t))
-  linear_combination (1 - 2 * a (slabMk (log s) t)) * e₀ + 2 * a (slabMk (log s) t) * e₁
-
-end Residual
-
 /-- **Existence and uniqueness of the classical price in the weighted Hölder class.** Let
 `0 < α < 1`, let the local variance rate `a = σ² / 2 ≥ lam > 0` and the rate `r` be fields in
 `C_b^{α,α/2}(ℝ × [t₀, t₁])` in log-spot coordinates, and let the payoff `h` satisfy
@@ -140,9 +106,9 @@ theorem existsUnique_pde_weightedLogSpotPrice_eq_zero (hα₀ : 0 < α) (hα₁ 
     refine HolderSpace.ext fun p ↦ ?_
     obtain ⟨y, t, rfl⟩ : ∃ y t, slabMk y t = p := ⟨_, _, slabMk_space_slabTime p⟩
     have hp := hv (exp y) (exp_pos y) t
-    rw [pde_weightedLogSpotPrice_eq_mul (hα := hα₁.le) v (exp_pos y) t, log_exp] at hp
+    rw [pde_weightedLogSpotPrice_eq_mul hα₁.le a r v (exp_pos y) t, log_exp] at hp
     exact (mul_eq_zero.1 hp).resolve_left (by positivity)
-  · rw [pde_weightedLogSpotPrice_eq_mul (hα := hα₁.le) v hs t, hv, HolderSpace.zero_apply,
+  · rw [pde_weightedLogSpotPrice_eq_mul hα₁.le a r v hs t, hv, HolderSpace.zero_apply,
       mul_zero]
   · ext y
     have hy := (weightedLogSpotPrice_of_mem v (exp y) ⟨t₁, right_mem_Icc.2 ht.le⟩).symm.trans
