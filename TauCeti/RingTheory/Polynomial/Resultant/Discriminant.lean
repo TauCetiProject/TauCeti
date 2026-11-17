@@ -59,6 +59,8 @@ depressed specialization of that formula is used to compare a quartic with its c
   power of the leading coefficient, with an arbitrary commutative coefficient ring.
 * `TauCeti.leadingCoeff_pow_mul_discrSqrt_sq`: the corresponding scaled root-difference product
   is a square root of the discriminant, including degree zero and annihilating base change.
+* `Polynomial.Monic.discr_eq_neg_one_pow_mul_resultant_deriv`: for a monic polynomial, the
+  discriminant is `(-1) ^ (n * (n - 1) / 2)` times the resultant of `f` and its derivative.
 * `Polynomial.Monic.prod_roots_eval_derivative`: the product of the derivative over the root
   multiset, which is the discriminant up to the same sign. This is the shape in which the
   discriminant of a minimal polynomial is a norm.
@@ -83,10 +85,11 @@ depressed specialization of that formula is used to compare a quartic with its c
   discriminant is squarefree.
 * `Polynomial.discr_ne_zero_iff`: over a field, a nonzero polynomial that need not be monic is
   separable exactly when its discriminant is nonzero.
-* `Multiset.discr_prod_X_sub_C_ne_zero_iff`,
-  `Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr`: for a multiset `R` over an
-  integral domain, the discriminant of `∏_{w ∈ R} (X - w)` vanishes exactly when `R` has a repeated
-  element, and up to sign it is the product `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u)` of the differences.
+* `Multiset.prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr`: for a multiset `R` over a
+  commutative ring, the discriminant of `∏_{w ∈ R} (X - w)` is up to sign the product
+  `∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u)` of the differences.
+* `Multiset.discr_prod_X_sub_C_ne_zero_iff`: over an integral domain, that discriminant vanishes
+  exactly when `R` has a repeated element.
 * `Finset.prod_prod_erase_sub_eq_neg_one_pow_mul_discr`: the same product formula for
   `∏_{w ∈ s} (X - g w)`, indexed by a finite set.
 * `Squarefree.discr_ne_zero`: a squarefree polynomial over a GCD domain of characteristic zero
@@ -158,6 +161,14 @@ theorem resultant_deriv {f : R[X]} (hf : f.Monic) :
     simp [h1]
   · rw [Polynomial.resultant_deriv (natDegree_pos_iff_degree_pos.mp h), hf.leadingCoeff,
       mul_one]
+
+/-- The discriminant of a monic polynomial is, up to the sign `(-1) ^ (n * (n - 1) / 2)`, the
+resultant of `f` and `f.derivative` at the degree bounds `f.natDegree` and `f.natDegree - 1`. -/
+theorem discr_eq_neg_one_pow_mul_resultant_deriv {f : R[X]} (hf : f.Monic) :
+    f.discr = (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) *
+      f.resultant f.derivative f.natDegree (f.natDegree - 1) := by
+  rw [hf.resultant_deriv, ← mul_assoc, ← mul_pow]
+  simp
 
 end Monic
 
@@ -1093,12 +1104,20 @@ end TauCeti
 
 namespace Multiset
 
-variable {K : Type*} [CommRing K] [IsDomain K]
+/-- The product `∏_{w ∈ S} ∏_{u ∈ S ∖ w} (w - u)` commutes with ring homomorphisms. -/
+private theorem map_prod_map_prod_map_sub_erase {A K : Type*} [CommRing A] [CommRing K]
+    [DecidableEq A] [DecidableEq K] (φ : A →+* K) (S : Multiset A) :
+    φ (S.map fun w ↦ ((S.erase w).map fun u ↦ w - u).prod).prod =
+      ((S.map φ).map fun w ↦ (((S.map φ).erase w).map fun u ↦ w - u).prod).prod := by
+  rw [map_multiset_prod, Multiset.map_map, Multiset.map_map]
+  refine congrArg Multiset.prod (Multiset.map_congr rfl fun w hw ↦ ?_)
+  simp only [Function.comp_apply, map_multiset_prod, ← Multiset.map_erase_of_mem _ _ hw,
+    Multiset.map_map, map_sub]
 
-/-- **The discriminant as a product of differences.** For a multiset `R` of `m` elements,
-`∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u) = (-1)^(m (m - 1) / 2) discr (∏_{w ∈ R} (X - w))`. The left side
-is the product of the derivative of `∏_{w ∈ R} (X - w)` over its roots. -/
-theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr [DecidableEq K] (R : Multiset K) :
+/-- The product formula over an integral domain, where the derivative of `∏_{w ∈ R} (X - w)` may
+be evaluated over its roots. -/
+private theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr_of_isDomain {K : Type*}
+    [CommRing K] [IsDomain K] [DecidableEq K] (R : Multiset K) :
     (R.map fun w ↦ ((R.erase w).map fun u ↦ w - u).prod).prod =
       (-1) ^ (card R * (card R - 1) / 2) * (R.map fun w ↦ X - C w).prod.discr := by
   have h := (monic_multisetProd_X_sub_C R).prod_roots_eval_derivative (by simp)
@@ -1107,9 +1126,30 @@ theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr [DecidableEq K] (R 
   exact congrArg Multiset.prod
     (Multiset.map_congr rfl fun w hw ↦ (eval_multiset_prod_X_sub_C_derivative hw).symm)
 
+variable {K : Type*} [CommRing K]
+
+/-- **The discriminant as a product of differences.** For a multiset `R` of `m` elements,
+`∏_{w ∈ R} ∏_{u ∈ R ∖ w} (w - u) = (-1)^(m (m - 1) / 2) discr (∏_{w ∈ R} (X - w))`. The left side
+is the product of the derivative of `∏_{w ∈ R} (X - w)` over its roots. This is a universal
+polynomial identity, so it holds over any commutative ring. -/
+theorem prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr [DecidableEq K] (R : Multiset K) :
+    (R.map fun w ↦ ((R.erase w).map fun u ↦ w - u).prod).prod =
+      (-1) ^ (card R * (card R - 1) / 2) * (R.map fun w ↦ X - C w).prod.discr := by
+  classical
+  -- `R` is the image of the multiset of variables `X_w`, `w ∈ R`, of a polynomial ring over `ℤ`.
+  set φ : MvPolynomial K ℤ →+* K := MvPolynomial.eval₂Hom (Int.castRingHom K) id with hφ
+  have hR : (R.map MvPolynomial.X).map φ = R := by simp [hφ, Multiset.map_map]
+  have h := congrArg φ
+    (prod_map_prod_map_sub_erase_eq_neg_one_pow_mul_discr_of_isDomain (R.map MvPolynomial.X))
+  rw [map_prod_map_prod_map_sub_erase, hR, map_mul, map_pow, map_neg, map_one,
+    ← (monic_multisetProd_X_sub_C _).discr_map, Polynomial.map_multiset_prod, Multiset.map_map,
+    Multiset.card_map] at h
+  convert h using 4
+  simp [hφ, Multiset.map_map]
+
 /-- The discriminant of `∏_{w ∈ R} (X - w)` is nonzero exactly when `R` has no repeated
 element. -/
-theorem discr_prod_X_sub_C_ne_zero_iff (R : Multiset K) :
+theorem discr_prod_X_sub_C_ne_zero_iff [IsDomain K] (R : Multiset K) :
     (R.map fun w ↦ X - C w).prod.discr ≠ 0 ↔ R.Nodup := by
   classical
   -- Up to a sign, the discriminant is the product of the differences `w - u`, `u ∈ R ∖ w`.
@@ -1126,7 +1166,7 @@ end Multiset
 
 namespace Finset
 
-variable {K ι : Type*} [CommRing K] [IsDomain K] [DecidableEq ι]
+variable {K ι : Type*} [CommRing K] [DecidableEq ι]
 
 /-- **The discriminant as a product of differences, indexed by a finite set.** For a finite set
 `s` and values `g w`,

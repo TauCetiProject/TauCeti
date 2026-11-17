@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.CauchyRiemann.Similarity
 public import TauCeti.Analysis.Complex.Wirtinger.Root.Branch
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
-import TauCeti.Analysis.Complex.Wirtinger.FinsetProd
 import TauCeti.Analysis.Polynomial.Discriminant
 import TauCeti.RingTheory.Polynomial.Resultant.Discriminant
 
@@ -127,7 +126,8 @@ theorem norm_conjWirtingerDeriv_discr_le_of_nodup [CompleteSpace V] {m : ℕ} {b
     rw [hcard, Finset.prod_eq_multiset_prod (f := fun w ↦ X - C (v w y))] at h
     rw [Pi.smul_apply, smul_eq_mul, hRy, ← hsval, Multiset.map_map, Function.comp_def]
     simp only [F]
-    rw [h, ← mul_assoc, hσ, ← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow, one_mul]
+    rw [h, ← mul_assoc, hσ, ← mul_pow]
+    simp
   have hΔx : ((R x).map fun w ↦ X - C w).prod.discr = σ * F x := by
     simpa using hΔ.self_of_nhds
   -- Each difference `v w - v u` solves `D_C`, so the logarithmic derivative bound applies.

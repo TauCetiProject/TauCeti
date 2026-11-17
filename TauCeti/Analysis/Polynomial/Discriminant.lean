@@ -24,6 +24,8 @@ a parameter, the Sylvester matrix and the discriminant depend `C^n` on it as wel
 
 * `TauCeti.contDiffOn_sylvester_apply`: an entry of the Sylvester matrix of two families of
   polynomials with `C^n` coefficients is `C^n`.
+* `TauCeti.contDiffOn_discr_of_monic`: the discriminant of a family of monic polynomials of fixed
+  degree with `C^n` coefficients is `C^n`.
 * `TauCeti.contDiffOn_discr_prod_X_sub_C`: if `b_j(y) = e_j(R(y))` are `C^n`, then the discriminant
   of `∏_{w ∈ R(y)} (X - w)` is `C^n`.
 -/
@@ -55,9 +57,23 @@ theorem contDiffOn_sylvester_apply {f g : E → 𝔸[X]}
     · simpa only [sylvester, Matrix.of_apply, Fin.addCases_right, h, ↓reduceIte] using
         contDiffOn_const
 
-/-- **Regularity of the discriminant.** If `b₁, …, b_m` are `C^n` on `s` and `b_j(y) = e_j(R(y))`
-for a multiset `R(y)` of `m` points, then the discriminant of `∏_{w ∈ R(y)} (X - w)` is `C^n` on
-`s`. It is a polynomial in the coefficients of that product, which are `±b_j` and `1`. -/
+/-- **Regularity of the discriminant.** If `P y` is monic of degree `m` for `y ∈ s` and its
+coefficients are `C^n` on `s`, then its discriminant is `C^n` on `s`: up to sign, it is the
+determinant of the Sylvester matrix of `P y` and its derivative. -/
+theorem contDiffOn_discr_of_monic {m : ℕ} {P : E → 𝔸[X]} (hmon : ∀ y ∈ s, (P y).Monic)
+    (hdeg : ∀ y ∈ s, (P y).natDegree = m) (hc : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (P y).coeff k) s) :
+    ContDiffOn 𝕜 n (fun y ↦ (P y).discr) s := by
+  have hc' : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (P y).derivative.coeff k) s := fun k ↦ by
+    simpa only [coeff_derivative] using (hc (k + 1)).mul contDiffOn_const
+  refine ((contDiffOn_const (c := (-1 : 𝔸) ^ (m * (m - 1) / 2))).mul
+    (ContDiffOn.matrix_det fun i j ↦ contDiffOn_sylvester_apply hc hc' m (m - 1) i j)).congr
+    fun y hy ↦ ?_
+  rw [(hmon y hy).discr_eq_neg_one_pow_mul_resultant_deriv, hdeg y hy, resultant]
+
+/-- **Regularity of the discriminant in the roots.** If `b₁, …, b_m` are `C^n` on `s` and
+`b_j(y) = e_j(R(y))` for a multiset `R(y)` of `m` points, then the discriminant of
+`∏_{w ∈ R(y)} (X - w)` is `C^n` on `s`. By Vieta's formulas the coefficients of that product are
+`±b_j` and `1`. -/
 theorem contDiffOn_discr_prod_X_sub_C [Nontrivial 𝔸] {m : ℕ} {b : ℕ → E → 𝔸}
     {R : E → Multiset 𝔸} (hb : ∀ j ∈ Icc 1 m, ContDiffOn 𝕜 n (b j) s)
     (hR : ∀ y ∈ s, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j) :
@@ -85,25 +101,8 @@ theorem contDiffOn_discr_prod_X_sub_C [Nontrivial 𝔸] {m : ℕ} {b : ℕ → E
     · rw [coeff_eq_zero_of_natDegree_lt (by
         rw [hP, natDegree_multiset_prod_X_sub_C_eq_card, hcard]; omega)]
       simp [hc, show ¬k < m by omega, show k ≠ m by omega]
-  have hPd : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (P y).coeff k) s :=
+  exact contDiffOn_discr_of_monic (fun y _ ↦ monic_multisetProd_X_sub_C (R y))
+    (fun y hy ↦ by rw [natDegree_multiset_prod_X_sub_C_eq_card, (hR y hy).1])
     fun k ↦ (hcd k).congr fun y hy ↦ hPc y hy k
-  have hP'd : ∀ k, ContDiffOn 𝕜 n (fun y ↦ (P y).derivative.coeff k) s := fun k ↦ by
-    simpa only [coeff_derivative] using (hPd (k + 1)).mul contDiffOn_const
-  -- The discriminant of the monic `P y` is a sign times the resultant of `P y` and its derivative.
-  have hdiscr : ∀ y ∈ s, (P y).discr =
-      (-1) ^ (m * (m - 1) / 2) * (sylvester (P y) (P y).derivative m (m - 1)).det := by
-    intro y hy
-    have hmon : (P y).Monic := monic_multisetProd_X_sub_C (R y)
-    have hdeg : (P y).natDegree = m := by
-      rw [hP, natDegree_multiset_prod_X_sub_C_eq_card, (hR y hy).1]
-    have h := hmon.resultant_deriv
-    rw [hdeg] at h
-    have hsq : ((-1 : 𝔸) ^ (m * (m - 1) / 2)) ^ 2 = 1 := by
-      rw [← pow_mul, mul_comm, pow_mul, neg_one_sq, one_pow]
-    calc (P y).discr = ((-1 : 𝔸) ^ (m * (m - 1) / 2)) ^ 2 * (P y).discr := by rw [hsq, one_mul]
-      _ = (-1) ^ (m * (m - 1) / 2) * ((-1) ^ (m * (m - 1) / 2) * (P y).discr) := by ring
-      _ = _ := by rw [← h, resultant]
-  exact (contDiffOn_const.mul (ContDiffOn.matrix_det fun i j ↦
-    contDiffOn_sylvester_apply hPd hP'd m (m - 1) i j)).congr hdiscr
 
 end TauCeti
