@@ -27,8 +27,10 @@ ideals `I : TwoSidedIdeal A` (closed or not):
   all equivalent (`I.IsClosedEssential ↔ I.IsEssential ↔ I.leftAnnihilator = ⊥`).
 
 In the unital case `[CStarAlgebra A]`, `I.leftAnnihilator` agrees with
-`(Module.annihilator A I).toTwoSided`, and closedness, complex scalar absorption, and
-`star`-invariance transfer directly to `Module.annihilator A I` and its two-sided bundling.
+`(Module.annihilator A I).toTwoSided`, and `star`-invariance transfers directly to
+`Module.annihilator A I` and its two-sided bundling (building on the algebraic and topological
+characterizations in `TauCeti.RingTheory.TwoSidedIdeal.Annihilator` and
+`TauCeti.Topology.Algebra.Ring.TwoSidedIdeal`).
 
 In the nonunital case `[NonUnitalCStarAlgebra A]`, a closed two-sided ideal `I` absorbs complex
 scalars (`TwoSidedIdeal.smul_mem_of_isClosed`), hence carries the left `Unitization ℂ A`-module
@@ -50,9 +52,9 @@ Finally, for any closed two-sided ideal `I`, the canonical contractive `⋆`-hom
   `TwoSidedIdeal.topologicalClosure_le_leftAnnihilator_leftAnnihilator`, and
   `TwoSidedIdeal.isClosedEssential_iff_leftAnnihilator_eq_bot`: symmetry, disjointness, double
   annihilator inclusion, and essentiality in any `NonUnitalCStarAlgebra`.
-* `TwoSidedIdeal.isClosed_annihilator_toTwoSided`, `TwoSidedIdeal.smul_mem_annihilator_toTwoSided`,
-  and `TwoSidedIdeal.star_mem_annihilator_toTwoSided`: closedness, complex scalar absorption, and
-  `star`-invariance of `(Module.annihilator A I).toTwoSided` in unital C⋆-algebras.
+* `TwoSidedIdeal.star_mem_annihilator_toTwoSided` and `TwoSidedIdeal.star_mem_annihilator`:
+  `star`-invariance of `(Module.annihilator A I).toTwoSided` and `Module.annihilator A I` in unital
+  C⋆-algebras.
 * `TwoSidedIdeal.unitizationSMul`, `TwoSidedIdeal.unitizationModule`, and
   `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization`: left `Unitization ℂ A`-module action on a
   closed ideal `I` and identification of `I.leftAnnihilator` with the pullback of
@@ -190,31 +192,6 @@ end NonUnitalCStarAlgebra
 section UnitalCStarAlgebra
 
 variable {A : Type*} [CStarAlgebra A]
-
-/-- Membership in `(Module.annihilator A I).toTwoSided` for a two-sided ideal `I` of a unital
-C⋆-algebra. -/
-theorem mem_annihilator_toTwoSided_iff {I : TwoSidedIdeal A} {a : A} :
-    a ∈ (Module.annihilator A I).toTwoSided ↔ ∀ x ∈ I, a * x = 0 := by
-  rw [← leftAnnihilator_eq_annihilator, mem_leftAnnihilator]
-
-/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
-closed. -/
-instance isClosed_annihilator_toTwoSided (I : TwoSidedIdeal A) :
-    IsClosed (((Module.annihilator A I).toTwoSided : TwoSidedIdeal A) : Set A) :=
-  I.leftAnnihilator_eq_annihilator ▸ I.isClosed_leftAnnihilator
-
-/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `Module.annihilator A I` is closed. -/
-instance isClosed_annihilator (I : TwoSidedIdeal A) :
-    IsClosed (Module.annihilator A I : Set A) := by
-  simpa only [Ideal.coe_toTwoSided] using isClosed_annihilator_toTwoSided I
-
-/-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
-closed under complex scalar multiplication. -/
-theorem smul_mem_annihilator_toTwoSided (I : TwoSidedIdeal A) (c : ℂ) {a : A}
-    (ha : a ∈ (Module.annihilator A I).toTwoSided) :
-    c • a ∈ (Module.annihilator A I).toTwoSided := by
-  rw [← leftAnnihilator_eq_annihilator] at ha ⊢
-  exact I.smul_mem_leftAnnihilator c ha
 
 /-- For any two-sided ideal `I` of a unital C⋆-algebra `A`, `(Module.annihilator A I).toTwoSided` is
 closed under `star`. -/

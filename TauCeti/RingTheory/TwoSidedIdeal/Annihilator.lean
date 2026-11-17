@@ -29,8 +29,8 @@ to be an essential two-sided ideal (`TwoSidedIdeal.IsEssential`: `I ⊓ J ≠ �
 When `A` is unital, `I.leftAnnihilator` coincides with `(Module.annihilator A I).toTwoSided` for
 the left-multiplication module structure on `I`. When `A` is a nonunital `R`-algebra, any
 `R`-invariant two-sided ideal `I : TwoSidedIdeal A` carries a left `Unitization R A`-module
-structure `(r, a) • x = r • x + a * x` given by multiplication inside `Unitization R A` (parallel
-to the `Submodule` action in `TauCeti.Algebra.Module.Submodule.Unitization`); pulling back
+structure `(r, a) • x = r • x + a * x` given by multiplication inside `Unitization R A` (built via
+the `Submodule` action in `TauCeti.Algebra.Module.Submodule.Unitization`); pulling back
 `(Module.annihilator (Unitization R A) I).toTwoSided` along `Unitization.inrNonUnitalAlgHom R A`
 recovers `I.leftAnnihilator`.
 
@@ -48,7 +48,8 @@ closed under `star`, `I ⊓ I.leftAnnihilator = ⊥`, `I ≤ I.leftAnnihilator.l
 * `TwoSidedIdeal.leftAnnihilator` and `TwoSidedIdeal.rightAnnihilator`: the two-sided left and
   right annihilators of `I : TwoSidedIdeal A`, with Galois connection
   `TwoSidedIdeal.gc_leftAnnihilator_rightAnnihilator`.
-* `TwoSidedIdeal.leftAnnihilator_eq_annihilator` and
+* `TwoSidedIdeal.leftAnnihilator_eq_annihilator`, `TwoSidedIdeal.mem_annihilator_toTwoSided_iff`,
+  `TwoSidedIdeal.smul_mem_annihilator_toTwoSided`, and
   `TwoSidedIdeal.leftAnnihilator_eq_comap_unitization_of_smul_mem`: module-annihilator descriptions
   in the unital and unitized settings.
 * `TwoSidedIdeal.leftAnnihilator_eq_rightAnnihilator_of_star_mem`,
@@ -323,6 +324,20 @@ theorem leftAnnihilator_eq_annihilator (I : TwoSidedIdeal R) :
   rw [mem_leftAnnihilator, Ideal.mem_toTwoSided, Module.mem_annihilator]
   exact ⟨fun h x => Subtype.ext (h x x.2), fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩)⟩
 
+/-- Membership in `(Module.annihilator R I).toTwoSided` for a two-sided ideal `I` of a unital
+ring `R`. -/
+theorem mem_annihilator_toTwoSided_iff {I : TwoSidedIdeal R} {a : R} :
+    a ∈ (Module.annihilator R I).toTwoSided ↔ ∀ x ∈ I, a * x = 0 := by
+  rw [← leftAnnihilator_eq_annihilator, mem_leftAnnihilator]
+
+/-- For a two-sided ideal `I` of a unital ring `R`, `(Module.annihilator R I).toTwoSided` is
+closed under compatible scalar multiplication. -/
+theorem smul_mem_annihilator_toTwoSided {M : Type*} [SMul M R] [IsScalarTower M R R]
+    (I : TwoSidedIdeal R) (c : M) {a : R} (ha : a ∈ (Module.annihilator R I).toTwoSided) :
+    c • a ∈ (Module.annihilator R I).toTwoSided := by
+  simpa only [smul_mul_assoc, one_mul] using
+    (Module.annihilator R I).toTwoSided.mul_mem_left (c • (1 : R)) a ha
+
 theorem asIdeal_leftAnnihilator (I : TwoSidedIdeal R) :
     I.leftAnnihilator.asIdeal = Module.annihilator R I := by
   rw [leftAnnihilator_eq_annihilator, Ideal.asIdeal_toTwoSided]
@@ -373,29 +388,33 @@ section NonAssocRing
 
 variable {R A : Type*} [Semiring R] [NonUnitalNonAssocRing A] [Module R A]
 
+/-- Bundle an `R`-invariant two-sided ideal as an `R`-submodule of `A`. -/
+private def toSubmoduleOfSMulMem (I : TwoSidedIdeal A)
+    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) : Submodule R A where
+  carrier := I
+  add_mem' := I.add_mem
+  zero_mem' := I.zero_mem
+  smul_mem' r _ hx := hsmul r hx
+
 /-- Left scalar action `(r, a) • x = r • x + a * x` of `Unitization R A` on a two-sided ideal `I`
 closed under `R`-scalar multiplication. Provided as a definition taking the scalar-absorption
 hypothesis rather than a global instance. -/
 @[instance_reducible]
 def unitizationSMulOfSMulMem (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) : SMul (Unitization R A) I where
-  smul u x := ⟨u.fst • (x : A) + u.snd * (x : A),
-    I.add_mem (hsmul u.fst x.2) (I.mul_mem_left u.snd x x.2)⟩
+    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) : SMul (Unitization R A) I :=
+  (I.toSubmoduleOfSMulMem hsmul).unitizationSMul I.mul_mem_left
 
 theorem coe_unitizationSMulOfSMulMem (I : TwoSidedIdeal A)
     (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) (u : Unitization R A) (x : I) :
     (letI := I.unitizationSMulOfSMulMem hsmul; ((u • x : I) : A)) =
       u.fst • (x : A) + u.snd * (x : A) :=
-  (rfl)
+  (I.toSubmoduleOfSMulMem hsmul).coe_unitizationSMul I.mul_mem_left u x
 
 theorem inr_coe_unitizationSMulOfSMulMem (I : TwoSidedIdeal A)
     (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) (u : Unitization R A) (x : I) :
     (letI := I.unitizationSMulOfSMulMem hsmul; (((u • x : I) : A) : Unitization R A)) =
-      u * ((x : A) : Unitization R A) := by
-  let _ := I.unitizationSMulOfSMulMem hsmul
-  ext
-  · simp
-  · simp [coe_unitizationSMulOfSMulMem]
+      u * ((x : A) : Unitization R A) :=
+  (I.toSubmoduleOfSMulMem hsmul).inr_coe_unitizationSMul I.mul_mem_left u x
 
 end NonAssocRing
 
@@ -409,19 +428,13 @@ two-sided ideal `I : TwoSidedIdeal A`. -/
 @[instance_reducible]
 def unitizationModuleOfSMulMem (I : TwoSidedIdeal A)
     (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) : Module (Unitization R A) I :=
-  letI := I.unitizationSMulOfSMulMem hsmul
-  Function.Injective.module (Unitization R A)
-    ((Unitization.inrHom R R A).toAddMonoidHom.comp I.coeAddMonoidHom)
-    (Unitization.inr_injective.comp Subtype.coe_injective)
-    (I.inr_coe_unitizationSMulOfSMulMem hsmul)
+  (I.toSubmoduleOfSMulMem hsmul).unitizationModule I.mul_mem_left
 
 theorem mem_annihilator_unitizationOfSMulMem_iff (I : TwoSidedIdeal A)
     (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) {u : Unitization R A} :
     (letI := I.unitizationModuleOfSMulMem hsmul; u ∈ Module.annihilator (Unitization R A) I) ↔
-      ∀ x ∈ I, u.fst • x + u.snd * x = 0 := by
-  let _ := I.unitizationModuleOfSMulMem hsmul
-  rw [Module.mem_annihilator]
-  refine ⟨fun h x hx => congrArg Subtype.val (h ⟨x, hx⟩), fun h x => Subtype.ext (h x x.2)⟩
+      ∀ x ∈ I, u.fst • x + u.snd * x = 0 :=
+  (I.toSubmoduleOfSMulMem hsmul).mem_annihilator_unitization_iff I.mul_mem_left
 
 end CommSemiring
 

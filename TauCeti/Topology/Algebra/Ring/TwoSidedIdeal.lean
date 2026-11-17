@@ -19,7 +19,8 @@ public import TauCeti.RingTheory.TwoSidedIdeal.Annihilator
 The closure of a two-sided ideal in a topological ring is again two-sided, and closed two-sided
 ideals in rings with an approximate unit absorb compatible scalar multiplication. In a `T₁`
 topological ring with continuous multiplication, the left and right annihilators of any two-sided
-ideal are closed and agree with the annihilators of its topological closure; we also define
+ideal (as well as `Module.annihilator R I` and `(Module.annihilator R I).toTwoSided` in the unital
+case) are closed and agree with the annihilators of its topological closure; we also define
 essential ideals in the lattice of closed two-sided ideals (`TwoSidedIdeal.IsClosedEssential`) and
 relate them to `TwoSidedIdeal.IsEssential` and annihilators. We
 also supply the topological-ring structure on Mathlib's existing quotient topology
@@ -244,6 +245,20 @@ theorem rightAnnihilator_topologicalClosure [IsTopologicalRing A] [T1Space A]
       closure_minimal (fun _ hy => mul_eq_zero_of_mem_rightAnnihilator hy ha)
         (isClosed_singleton.preimage (continuous_mul_const a))
         (I.mem_topologicalClosure.mp hx)
+
+/-- In a `T₁` unital ring with continuous multiplication, `(Module.annihilator R I).toTwoSided` is
+closed for any two-sided ideal `I`. -/
+instance isClosed_annihilator_toTwoSided {R : Type*} [Ring R] [TopologicalSpace R]
+    [ContinuousMul R] [T1Space R] (I : TwoSidedIdeal R) :
+    IsClosed (((Module.annihilator R I).toTwoSided : TwoSidedIdeal R) : Set R) :=
+  I.leftAnnihilator_eq_annihilator ▸ I.isClosed_leftAnnihilator
+
+/-- In a `T₁` unital ring with continuous multiplication, `Module.annihilator R I` is closed for any
+two-sided ideal `I`. -/
+instance isClosed_annihilator {R : Type*} [Ring R] [TopologicalSpace R]
+    [ContinuousMul R] [T1Space R] (I : TwoSidedIdeal R) :
+    IsClosed (Module.annihilator R I : Set R) := by
+  simpa only [Ideal.coe_toTwoSided] using isClosed_annihilator_toTwoSided I
 
 end ClosedAnnihilator
 
