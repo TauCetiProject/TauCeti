@@ -45,6 +45,8 @@ preserves the norm.
 `BoundedContinuousFunction.exists_finite_range_dist_lt` says that on a discrete space every bounded
 real function is a uniform limit of finite-valued bounded functions.
 
+`BoundedContinuousFunction.norm_smul_apply_le` bounds `‖c • f x‖` by `‖c‖ * ‖f‖`.
+
 `BoundedContinuousFunction.norm_norm_smul_one_sub_le_of_nonneg` says that a nonnegative real
 bounded continuous function `f` lies within `‖f‖` of the constant `‖f‖`.
 
@@ -80,6 +82,12 @@ theorem norm_boundedContinuousFunction_comp_le (hN : LipschitzWith ε N) (f : T 
 end TauCeti
 
 namespace BoundedContinuousFunction
+
+/-- Scaling a value `f x` of a bounded continuous function by `c` has norm at most `‖c‖ * ‖f‖`. -/
+theorem norm_smul_apply_le {α 𝕜 E : Type*} [TopologicalSpace α] [SeminormedAddGroup 𝕜]
+    [SeminormedAddCommGroup E] [SMulZeroClass 𝕜 E] [IsBoundedSMul 𝕜 E]
+    (f : α →ᵇ E) (c : 𝕜) (x : α) : ‖c • f x‖ ≤ ‖c‖ * ‖f‖ :=
+  (norm_smul_le c (f x)).trans (mul_le_mul_of_nonneg_left (f.norm_coe_le_norm x) (norm_nonneg c))
 
 variable {α 𝕜 X Y : Type*} [TopologicalSpace α] [NontriviallyNormedField 𝕜]
   [SeminormedAddCommGroup X] [NormedSpace 𝕜 X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y]
