@@ -114,8 +114,11 @@ theorem exists_contDiffOn_conjWirtingerDeriv_apply_one_eq_of_eball {f : ℂ → 
   set G : ℂ → W := fun z ↦ h 0 z + ∑' k, (h (k + 1) - h k - P k) z
   have hkey (m : ℕ) : ∃ K : ℂ → W, DifferentiableOn ℂ K (ball c (r m)) ∧
       EqOn G (h m + K) (ball c (r m)) :=
-    exists_differentiableOn_eqOn_add_tsum hr_mono.monotone hP
-      (fun k ↦ (hdiff k).mono (ball_subset_ball (hrs k).le)) hP_lt m
+    exists_differentiableOn_eqOn_add_tsum isOpen_ball (fun k ↦ (hP k).differentiableOn)
+      summable_geometric_two m
+      (fun k hmk ↦ (hdiff k).mono (ball_subset_ball ((hr_mono.monotone hmk).trans (hrs k).le)))
+      fun k hmk z hz ↦
+        (hP_lt k z (ball_subset_closedBall (ball_subset_ball (hr_mono.monotone hmk) hz))).le
   -- Every point of the disc lies in some `ball c (r m)`, where `\bar∂ (h m) = f`.
   have hglue := contDiffOn_and_conjWirtingerDeriv_eq_of_locally_eq_add (G := G)
     (n := n) (U := eball c R) (v := fun _ : Unit ↦ (1 : ℂ)) (f := fun _ ↦ f) (by exact_mod_cast hn)

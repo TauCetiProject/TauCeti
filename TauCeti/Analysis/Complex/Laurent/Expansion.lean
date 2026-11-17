@@ -42,11 +42,15 @@ proves:
   `TauCeti.HasLaurentSeriesOnAnnulus.coeff_unique`: circle-integral coefficient formula and
   uniqueness of Laurent expansions.
 * `TauCeti.hasLaurentSeriesOnAnnulus_of_differentiable_off_countable`,
-  `DifferentiableOn.hasLaurentSeriesOnAnnulus`, and
+  `DifferentiableOn.hasLaurentSeriesOnAnnulus`,
+  `TauCeti.exists_hasLaurentSeriesOnAnnulus_of_eventually_differentiableAt`, and
   `TauCeti.differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus`: Laurent's theorem on concentric
-  open annuli.
-* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff`: removable singularities on
-  punctured disks via vanishing of negative Laurent coefficients.
+  open annuli and punctured neighborhoods.
+* `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_eventuallyEq_iff`,
+  `TauCeti.HasLaurentSeriesOnAnnulus.exists_analyticAt_sub_eventuallyEq_iff`, and
+  `TauCeti.HasLaurentSeriesOnAnnulus.laurentNegPart_eq_iff`: removable singularities and equality
+  of singular germs modulo analytic germs on punctured disks via negative Laurent coefficients and
+  `laurentNegPart`.
 * `TauCeti.HasLaurentSeriesOnAnnulus.deriv` and
   `TauCeti.HasLaurentSeriesOnAnnulus.hasSum_deriv`: term-by-term differentiation of Laurent series.
 
@@ -337,6 +341,19 @@ theorem _root_.DifferentiableOn.hasLaurentSeriesOnAnnulus
   exact hasLaurentSeriesOnAnnulus_of_differentiable_off_countable hr hrρ hρR countable_empty
     hf.continuousOn fun z hz => (hf z hz.1).differentiableAt (hopen.mem_nhds hz.1)
 
+/-- Any function complex-differentiable on a punctured neighborhood of `c` admits a convergent
+Laurent series on a punctured disk around `c`. -/
+theorem exists_hasLaurentSeriesOnAnnulus_of_eventually_differentiableAt
+    {f : ℂ → E} {c : ℂ} (hf : ∀ᶠ z in 𝓝[≠] c, DifferentiableAt ℂ f z) :
+    ∃ (a : ℤ → E) (R : ℝ≥0∞), HasLaurentSeriesOnAnnulus f a c 0 R := by
+  obtain ⟨r, hr, hball⟩ := (nhdsWithin_hasBasis nhds_basis_ball _).mem_iff.mp hf
+  have hdiff : DifferentiableOn ℂ f (eball c (ENNReal.ofReal r) \ closedBall c 0) := fun z hz =>
+    (hball ⟨by simpa only [eball_ofReal] using hz.1,
+      by simpa only [closedBall_zero, mem_compl_iff] using hz.2⟩).differentiableWithinAt
+  exact ⟨circleLaurentCoeff f c (r / 2), ENNReal.ofReal r,
+    hdiff.hasLaurentSeriesOnAnnulus le_rfl (half_pos hr)
+      ((ENNReal.ofReal_lt_ofReal_iff hr).mpr (half_lt_self hr))⟩
+
 /-- For a complete target space `E`, complex differentiability on a nonempty open concentric annulus
 is equivalent to admitting a convergent Laurent series on that annulus. -/
 theorem differentiableOn_iff_exists_hasLaurentSeriesOnAnnulus
@@ -407,6 +424,39 @@ theorem exists_analyticAt_eventuallyEq_iff {f : ℂ → E} {a : ℤ → E} {c : 
     (h.analyticOnNhd_update_of_neg_eq_zero ha) c (mem_eball_self h.outerRadius_pos), ?_⟩
   exact eventually_nhdsWithin_iff.2
     (Eventually.of_forall fun z hzc => (Function.update_of_ne hzc _ _).symm)
+
+/-- **Equality of singular germs modulo analytic germs via Laurent coefficients.** Two functions
+admitting Laurent expansions on punctured disks around `c` differ on `𝓝[≠] c` by a function
+analytic at `c` if and only if they have the same negative-degree Laurent coefficients. -/
+theorem exists_analyticAt_sub_eventuallyEq_iff {f₁ f₂ : ℂ → E} {a₁ a₂ : ℤ → E} {c : ℂ}
+    {R₁ R₂ : ℝ≥0∞} (h₁ : HasLaurentSeriesOnAnnulus f₁ a₁ c 0 R₁)
+    (h₂ : HasLaurentSeriesOnAnnulus f₂ a₂ c 0 R₂) :
+    (∃ g : ℂ → E, AnalyticAt ℂ g c ∧ f₁ - f₂ =ᶠ[𝓝[≠] c] g) ↔
+      ∀ k : ℕ, a₁ (-((k : ℤ) + 1)) = a₂ (-((k : ℤ) + 1)) := by
+  have hmin : ENNReal.ofReal 0 < min R₁ R₂ := by
+    simpa only [ENNReal.ofReal_zero] using lt_min h₁.outerRadius_pos h₂.outerRadius_pos
+  have hsub := (h₁.mono le_rfl (min_le_left _ _) hmin).sub
+    (h₂.mono le_rfl (min_le_right _ _) hmin)
+  simpa only [Pi.sub_def, sub_eq_zero] using hsub.exists_analyticAt_eventuallyEq_iff
+
+/-- Two functions admitting Laurent expansions on punctured disks around `c` have the same global
+negative Laurent part `laurentNegPart` if and only if their difference agrees on `𝓝[≠] c` with a
+function analytic at `c`. -/
+theorem laurentNegPart_eq_iff {f₁ f₂ : ℂ → E} {a₁ a₂ : ℤ → E} {c : ℂ} {R₁ R₂ : ℝ≥0∞}
+    (h₁ : HasLaurentSeriesOnAnnulus f₁ a₁ c 0 R₁)
+    (h₂ : HasLaurentSeriesOnAnnulus f₂ a₂ c 0 R₂) :
+    laurentNegPart a₁ c = laurentNegPart a₂ c ↔
+      ∃ g : ℂ → E, AnalyticAt ℂ g c ∧ f₁ - f₂ =ᶠ[𝓝[≠] c] g := by
+  refine ⟨fun hneg => ?_, fun h => ?_⟩
+  · refine ⟨laurentPosPart a₁ c - laurentPosPart a₂ c,
+      (h₁.analyticOnNhd_laurentPosPart c (mem_eball_self h₁.outerRadius_pos)).sub
+        (h₂.analyticOnNhd_laurentPosPart c (mem_eball_self h₂.outerRadius_pos)), ?_⟩
+    filter_upwards [h₁.eventuallyEq_laurentPosPart_add_laurentNegPart,
+      h₂.eventuallyEq_laurentPosPart_add_laurentNegPart] with w hw₁ hw₂
+    simp only [Pi.sub_apply, hw₁, hw₂, Pi.add_apply, congrFun hneg w, add_sub_add_right_eq_sub]
+  · have hk := (h₁.exists_analyticAt_sub_eventuallyEq_iff h₂).mp h
+    funext w
+    simp_rw [laurentNegPart_def, hk]
 
 end HasLaurentSeriesOnAnnulus
 
