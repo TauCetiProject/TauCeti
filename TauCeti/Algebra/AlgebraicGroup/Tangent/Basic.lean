@@ -68,8 +68,7 @@ namespace TauCeti
 
 section BialgebraPoint
 
-variable (R A B : Type*) [CommSemiring R] [Semiring A] [Bialgebra R A]
-  [Semiring B] [Algebra R B]
+variable (R A B : Type*) [CommSemiring R] [Semiring B] [Algebra R B]
 
 /-- Type synonym: `B` as an `A`-algebra through the identity point of the functor of
 points — the counit followed by the structure map, which is the convolution unit
@@ -78,8 +77,8 @@ convolution monoid does not exist and the composite is its generalization.
 Derivations of `A` valued in `Bialgebra.CounitAlgebra R A B` are the tangent vectors
 at the identity. -/
 -- `@[expose]` is mandated by the compiler for a type synonym carrying instances under
--- the module system ("locally inferred compilation type differs from type that would
--- be inferred in other modules ... may need to be `@[expose]`d"); removing it fails
+-- the module system (locally inferred compilation type differs from type that would
+-- be inferred in other modules ... may need to be `@[expose]`d); removing it fails
 -- the build. Consumers should still prefer `algEquivSelf` for transport.
 @[expose]
 def Bialgebra.CounitAlgebra (_R _A : Type*) (B : Type*) : Type _ := B
@@ -90,11 +89,16 @@ instance : Semiring (CounitAlgebra R A B) := inferInstanceAs (Semiring B)
 
 instance : Algebra R (CounitAlgebra R A B) := inferInstanceAs (Algebra R B)
 
+/-- The base `R`-algebra map of the coefficient synonym agrees with that of `B` itself:
+the synonym changes only the `A`-algebra structure. -/
+@[simp]
+lemma algebraMap_base (r : R) :
+    algebraMap R (CounitAlgebra R A B) r = algebraMap R B r := rfl
+
 /-- The canonical `R`-algebra identification of the counit-point coefficient algebra
 with `B` itself. -/
 def algEquivSelf : CounitAlgebra R A B ≃ₐ[R] B := AlgEquiv.refl
 
-omit [Semiring A] [Bialgebra R A] in
 @[simp]
 lemma algEquivSelf_apply (x : CounitAlgebra R A B) : algEquivSelf R A B x = x := by
   -- A direct `rfl` is rejected by the module system's exported-`rfl` validation (the
@@ -104,7 +108,6 @@ lemma algEquivSelf_apply (x : CounitAlgebra R A B) : algEquivSelf R A B x = x :=
   simp only [AlgEquiv.coe_refl]
   rfl
 
-omit [Semiring A] [Bialgebra R A] in
 @[simp]
 lemma algEquivSelf_symm_apply (b : B) : (algEquivSelf R A B).symm b = b := by
   -- Same documented definitional identification as in `algEquivSelf_apply`.
@@ -145,7 +148,6 @@ instance instIsScalarTowerSemiring [Semiring B] :
 end Bialgebra.CounitAlgebra
 
 end SynonymScalars
-
 
 end BialgebraPoint
 
@@ -194,13 +196,6 @@ instance : SMulCommClass B A (CounitAlgebra R A B) where
     -- with the `B`-action: move the central factor across the product.
     rw [Algebra.smul_def, Algebra.smul_def, Algebra.commutes a (b • x), smul_mul_assoc,
       Algebra.commutes a x]
-
-omit [CommSemiring A] [Bialgebra R A] in
-/-- The base `R`-algebra map of the coefficient synonym agrees with that of `B` itself:
-the synonym changes only the `A`-algebra structure. -/
-@[simp]
-lemma algebraMap_base (r : R) :
-    algebraMap R (CounitAlgebra R A B) r = algebraMap R B r := rfl
 
 @[simp]
 lemma algebraMap_apply (a : A) :
@@ -272,11 +267,11 @@ lemma Bialgebra.CounitAlgebra.algEquivSelf_comp_apply_mul
 
 end DerivationCoefficients
 
-section CounitAlgebraMap
-
 namespace Bialgebra.CounitAlgebra
 
-variable {R A B C : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
+section CounitAlgebraMapAlgHom
+
+variable {R A B C : Type*} [CommSemiring R]
   [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
 
 /-- An algebra homomorphism of coefficients, transported to the counit coefficient
@@ -285,7 +280,6 @@ noncomputable def mapAlgHom (phi : B →ₐ[R] C) :
     CounitAlgebra R A B →ₐ[R] CounitAlgebra R A C :=
   (algEquivSelf R A C).symm.toAlgHom.comp (phi.comp (algEquivSelf R A B).toAlgHom)
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- Identifying counit coefficient algebras with their coefficient rings commutes with
 an algebra homomorphism of coefficients. -/
 @[simp]
@@ -294,7 +288,6 @@ lemma algEquivSelf_map (phi : B →ₐ[R] C) (b : CounitAlgebra R A B) :
   exact (algEquivSelf_apply R A C _).trans
     (congrArg phi (algEquivSelf_apply R A B b).symm)
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- Transport of counit coefficient algebras acts pointwise by the original
 coefficient homomorphism. -/
 @[simp]
@@ -306,7 +299,6 @@ lemma mapAlgHom_apply (phi : B →ₐ[R] C) (b : CounitAlgebra R A B) :
   change (algEquivSelf R A C).symm (phi (algEquivSelf R A B b)) = phi b
   rw [algEquivSelf_apply, algEquivSelf_symm_apply]
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- The identity coefficient homomorphism induces the identity homomorphism of
 counit coefficient algebras. -/
 @[simp]
@@ -322,7 +314,6 @@ lemma mapAlgHom_id :
   change (AlgHom.id R B) (algEquivSelf R A B b) = algEquivSelf R A B b
   rw [AlgHom.id_apply]
 
-omit [CommSemiring A] [Bialgebra R A] in
 /-- Homomorphisms of counit coefficient algebras preserve composition. -/
 @[simp]
 lemma mapAlgHom_comp {D : Type*} [Semiring D] [Algebra R D]
@@ -337,6 +328,13 @@ lemma mapAlgHom_comp {D : Type*} [Semiring D] [Algebra R D]
   change (psi.comp phi) (algEquivSelf R A B b) =
     psi (phi (algEquivSelf R A B b))
   rw [AlgHom.comp_apply]
+
+end CounitAlgebraMapAlgHom
+
+section CounitAlgebraMap
+
+variable {R A B C : Type*} [CommSemiring R] [CommSemiring A] [Bialgebra R A]
+  [Semiring B] [Algebra R B] [Semiring C] [Algebra R C]
 
 /-- An algebra map between coefficient algebras, regarded as a linear map for the
 `A`-module structures induced by the counit. -/
@@ -391,9 +389,9 @@ lemma map_comp {D : Type*} [Semiring D] [Algebra R D]
     psi (phi (algEquivSelf R A B b))
   rw [AlgHom.comp_apply]
 
-end Bialgebra.CounitAlgebra
-
 end CounitAlgebraMap
+
+end Bialgebra.CounitAlgebra
 
 section CommPointScalar
 
