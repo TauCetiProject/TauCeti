@@ -8,10 +8,12 @@ module
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
 public import TauCeti.LinearAlgebra.Projectivization.Product
 public import TauCeti.Topology.Algebra.Projectivization
+public import TauCeti.Topology.Algebra.Projectivization.Projector
+public import TauCeti.Topology.Instances.Matrix
 public import TauCeti.Topology.PiCurry
 
 /-!
-# Standard product affine charts of multiprojective space as open partial homeomorphisms
+# Topology of multiprojective spaces: standard product affine charts and product projector embedding
 
 Over a topological field `K`, a finite product `(i : ι) → ℙ K (Fin (n i + 1) → K)` of projective
 spaces is covered by the standard product affine opens `Projectivization.piAffineOpen I`, which are
@@ -19,6 +21,12 @@ open in the product topology when `ι` is finite. Each flattened standard produc
 `Projectivization.piAffineChart I` is continuous on `piAffineOpen I` with continuous inverse, giving
 an open partial homeomorphism `Projectivization.piAffineOpenPartialHomeomorph I` onto the flattened
 coordinate space `(Σ i, Fin (n i)) → K`.
+
+Over a Hausdorff topological ordered field `K` with continuous inversion, the factorwise product
+projector map `Projectivization.piProjector` and its flattened coordinate form
+`Projectivization.piProjectorCoords` are closed embeddings onto `TauCeti.piProjectorLocus κ K` and
+its flattened image `TauCeti.piMatrixLinearEquiv K κ κ K '' TauCeti.piProjectorLocus κ K`, which are
+closed (and compact over `ℝ`).
 
 ## Main declarations
 
@@ -29,6 +37,22 @@ coordinate space `(Σ i, Fin (n i)) → K`.
   embedding.
 * `Projectivization.interPiAffineOpenHomeomorph`: `piAffineChart I` identifies `X ∩ piAffineOpen I`
   homeomorphically with its coordinate image.
+* `Projectivization.continuous_piProjector`, `Projectivization.continuous_piProjectorCoords`,
+  `Projectivization.isClosedEmbedding_piProjector`, and
+  `Projectivization.isClosedEmbedding_piProjectorCoords`: continuity and closed embeddings of the
+  product projector maps over any Hausdorff topological ordered field with continuous inversion.
+* `TauCeti.isClosed_piProjectorLocus`,
+  `TauCeti.isClosed_image_piMatrixLinearEquiv_piProjectorLocus`,
+  `TauCeti.isCompact_piProjectorLocus`, and
+  `TauCeti.isCompact_image_piMatrixLinearEquiv_piProjectorLocus`: closedness and real compactness
+  of the product projector locus and its flattened image.
+
+## References
+
+* S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Normale Superiore di
+  Pisa (3) 18 (1964), 449–474, §3, p. 464.
+* J. Bochnak, M. Coste and M.-F. Roy, *Real Algebraic Geometry*, Ergebnisse der Mathematik und
+  ihrer Grenzgebiete (3) 36, Springer, 1998, §3.4.
 -/
 
 public section
@@ -157,4 +181,81 @@ theorem isOpenEmbedding_piAffineChart_symm (I : ∀ i, Fin (n i + 1)) :
 
 end PiAffineChart
 
+section PiProjector
+
+open TauCeti
+
+@[simp]
+theorem piMatrixHomeomorph_piProjector {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
+    {K : Type*} [Field K] [TopologicalSpace K] (p : (i : ι) → ℙ K (κ i → K)) :
+    piMatrixHomeomorph κ κ K (piProjector p) = piProjectorCoords p := by
+  rw [coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K, piMatrixLinearEquiv_piProjector]
+
+variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
+  {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+  [TopologicalSpace K] [IsTopologicalRing K] [ContinuousInv₀ K]
+
+/-- The factorwise product projector map is continuous for the product topologies. -/
+theorem continuous_piProjector :
+    Continuous (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) := by
+  rw [piProjector_def]
+  exact Continuous.piMap fun _ ↦ continuous_projector
+
+/-- The flattened product projector map into `(Σ i, κ i × κ i) → K` is continuous. -/
+theorem continuous_piProjectorCoords :
+    Continuous (piProjectorCoords : ((i : ι) → ℙ K (κ i → K)) → (Σ i, κ i × κ i) → K) := by
+  rw [piProjectorCoords_def, ← coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K]
+  exact (piMatrixHomeomorph κ κ K).continuous.comp continuous_piProjector
+
+/-- Over a Hausdorff topological ordered field with continuous inversion, the factorwise product
+projector map is a closed embedding onto `TauCeti.piProjectorLocus κ K`. -/
+theorem isClosedEmbedding_piProjector [T2Space K] :
+    IsClosedEmbedding
+      (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) := by
+  rw [piProjector_def]
+  exact IsClosedEmbedding.piMap fun _ ↦ isClosedEmbedding_projector
+
+/-- Over a Hausdorff topological ordered field with continuous inversion, the flattened product
+projector map is a closed embedding into `(Σ i, κ i × κ i) → K`. -/
+theorem isClosedEmbedding_piProjectorCoords [T2Space K] :
+    IsClosedEmbedding
+      (piProjectorCoords : ((i : ι) → ℙ K (κ i → K)) → (Σ i, κ i × κ i) → K) := by
+  rw [piProjectorCoords_def, ← coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K]
+  exact (piMatrixHomeomorph κ κ K).isClosedEmbedding.comp isClosedEmbedding_piProjector
+
+end PiProjector
+
 end Projectivization
+
+namespace TauCeti
+
+section PiProjectorLocus
+
+variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
+
+/-- Over `ℝ`, the product projector locus is compact. -/
+theorem isCompact_piProjectorLocus : IsCompact (piProjectorLocus κ ℝ) := by
+  rw [piProjectorLocus_def]
+  exact isCompact_univ_pi fun i ↦ isCompact_projectorLocus
+
+/-- Over `ℝ`, the flattened product projector locus is compact. -/
+theorem isCompact_image_piMatrixLinearEquiv_piProjectorLocus :
+    IsCompact (piMatrixLinearEquiv ℝ κ κ ℝ '' piProjectorLocus κ ℝ) :=
+  isCompact_piProjectorLocus.image continuous_piMatrixLinearEquiv
+
+variable {K : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K] [T2Space K]
+
+/-- The product projector locus is closed over a Hausdorff topological ring. -/
+theorem isClosed_piProjectorLocus : IsClosed (piProjectorLocus κ K) := by
+  rw [piProjectorLocus_def]
+  exact isClosed_set_pi fun i _ ↦ isClosed_projectorLocus
+
+/-- The flattened product projector locus is closed over a Hausdorff topological ring. -/
+theorem isClosed_image_piMatrixLinearEquiv_piProjectorLocus :
+    IsClosed (piMatrixLinearEquiv K κ κ K '' piProjectorLocus κ K) := by
+  rw [← coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K]
+  exact (piMatrixHomeomorph κ κ K).isClosed_image.2 isClosed_piProjectorLocus
+
+end PiProjectorLocus
+
+end TauCeti

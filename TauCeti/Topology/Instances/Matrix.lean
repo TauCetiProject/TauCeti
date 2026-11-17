@@ -64,6 +64,7 @@ both partial traces of a continuously varying matrix on a product index.
 The matrices with nonnegative diagonal form a closed set
 (`Matrix.isClosed_setOfPred_nonneg_diag`).
 
+`Matrix.ofHomeomorph` bundles `Matrix.of` as a homeomorphism `(m → n → α) ≃ₜ Matrix m n α`.
 Flattening a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to `(Σ i, κ i × μ i) → α` is a
 homeomorphism for the entrywise product topologies (`TauCeti.piMatrixHomeomorph`), matching
 `TauCeti.piMatrixLinearEquiv` as a bijection and yielding continuity of `piMatrixLinearEquiv` and
@@ -103,34 +104,58 @@ instance {n R : Type*} [Fintype n] [DecidableEq n] [Semiring R] [TopologicalSpac
     [ContinuousAdd R] [ContinuousMul R] : ContinuousSMul (Matrix n n R) (n → R) :=
   ⟨continuous_fst.matrix_mulVec continuous_snd⟩
 
+end TauCeti
+
+namespace Matrix
+
+/-- `Matrix.of` bundled as a homeomorphism between curried functions `m → n → α` and matrices
+`Matrix m n α` with the entrywise product topology. -/
+def ofHomeomorph {m n α : Type*} [TopologicalSpace α] : (m → n → α) ≃ₜ Matrix m n α where
+  toEquiv := of
+  continuous_toFun := continuous_id.matrixOf
+  continuous_invFun := continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_id.matrix_elem i j
+
+@[simp]
+theorem ofHomeomorph_toEquiv {m n α : Type*} [TopologicalSpace α] :
+    (ofHomeomorph : (m → n → α) ≃ₜ Matrix m n α).toEquiv = of :=
+  (rfl)
+
+@[simp]
+theorem ofHomeomorph_apply {m n α : Type*} [TopologicalSpace α] (f : m → n → α) :
+    ofHomeomorph f = of f :=
+  (rfl)
+
+@[simp]
+theorem ofHomeomorph_symm_apply {m n α : Type*} [TopologicalSpace α] (A : Matrix m n α) :
+    ofHomeomorph.symm A = of.symm A :=
+  (rfl)
+
+end Matrix
+
+namespace TauCeti
+
 section MatrixCoordinates
 
 variable {ι : Type*} (κ μ : ι → Type*) (α : Type*) [TopologicalSpace α]
-
-private def matrixOfHomeomorph (m n α : Type*) [TopologicalSpace α] :
-    (m → n → α) ≃ₜ Matrix m n α where
-  toEquiv := Matrix.of
-  continuous_toFun := continuous_id.matrixOf
-  continuous_invFun := continuous_pi fun i ↦ continuous_pi fun j ↦ continuous_id.matrix_elem i j
 
 /-- Flatten a family of matrices `(i : ι) → Matrix (κ i) (μ i) α` to a single coordinate tuple
 indexed by `Σ i, κ i × μ i`, as a homeomorphism for the entrywise product topologies. -/
 def piMatrixHomeomorph :
     ((i : ι) → Matrix (κ i) (μ i) α) ≃ₜ ((p : Σ i, κ i × μ i) → α) :=
-  (Homeomorph.piCongrRight fun i ↦
-      (matrixOfHomeomorph (κ i) (μ i) α).symm.trans Homeomorph.piCurry.symm).trans
+  (Homeomorph.piCongrRight fun _ ↦
+      Matrix.ofHomeomorph.symm.trans Homeomorph.piCurry.symm).trans
     (piCurryHomeomorph fun (_ : ι) (_ : κ _ × μ _) ↦ α).symm
 
 @[simp]
 theorem piMatrixHomeomorph_apply (A : (i : ι) → Matrix (κ i) (μ i) α) (p : Σ i, κ i × μ i) :
     piMatrixHomeomorph κ μ α A p = A p.1 p.2.1 p.2.2 := by
-  simp [piMatrixHomeomorph, matrixOfHomeomorph, Function.uncurry]
+  simp [piMatrixHomeomorph, Function.uncurry]
 
 @[simp]
 theorem piMatrixHomeomorph_symm_apply (a : (p : Σ i, κ i × μ i) → α)
     (i : ι) (j : κ i) (k : μ i) :
     (piMatrixHomeomorph κ μ α).symm a i j k = a ⟨i, j, k⟩ := by
-  simp [piMatrixHomeomorph, matrixOfHomeomorph, Function.curry]
+  simp [piMatrixHomeomorph, Function.curry]
 
 /-- As an underlying equivalence, `TauCeti.piMatrixHomeomorph` agrees with
 `TauCeti.piMatrixLinearEquiv`. -/

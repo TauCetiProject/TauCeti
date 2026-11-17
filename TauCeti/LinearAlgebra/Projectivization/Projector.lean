@@ -28,8 +28,9 @@ line, and give the inverse of the projector map on the standard affine charts. O
 field `xᵀ x ≠ 0` for every nonzero `x`, and the projector map is a bijection from `ℙ K (ι → K)`
 onto the projector locus. Since the locus is cut out by polynomial equations in the entries, this
 realizes projective space as an algebraic set of matrices. Over `ℝ` this is the standard embedding
-of real projective space as a compact real algebraic set; its topological and semialgebraic
-properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
+of real projective space as a compact real algebraic set; its topological properties are in
+`TauCeti.Topology.Algebra.Projectivization.Projector` and its semialgebraic and Nash properties
+are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
 
 ## Main declarations
 

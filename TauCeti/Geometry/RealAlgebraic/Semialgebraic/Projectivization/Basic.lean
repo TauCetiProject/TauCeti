@@ -10,7 +10,6 @@ public import TauCeti.Geometry.RealAlgebraic.CAD.Existence
 public import TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding
 public import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Local
 public import TauCeti.Topology.Algebra.Projectivization.Product
-public import TauCeti.Topology.Instances.Matrix
 
 /-!
 # Semialgebraic subsets of multiprojective spaces
@@ -21,7 +20,8 @@ including the empty product (`IsEmpty ι`). Using `TauCeti.piConeDomain` and
 *multiprojective semialgebraic* (`TauCeti.IsMultiprojectiveSemialgebraic S`) when `piConePreimage S`
 is semialgebraic in `(Σ i, κ i) → K`. For finite `ι` and finite `κ i`, these sets form an algebra of
 sets closed under complements, finite Boolean operations, standard product affine opens, products,
-diagonals, and singletons without projection closure.
+diagonals, and singletons without projection closure. The topological properties of `piProjector`
+and `piProjectorLocus` live in `TauCeti.Topology.Algebra.Projectivization.Product`.
 
 Using `TauCeti.IsSemialgebraic.preimage_eval_div`, the first three characterizations below are
 equivalent over **any** ordered field (without `HasSemialgebraicProjections K`), and over `ℝ` they
@@ -38,16 +38,8 @@ are equivalent to local chart semialgebraicity on `closure S` (and hence at ever
 
 ## Main declarations
 
-* `Projectivization.continuous_piProjector`, `Projectivization.continuous_piProjectorCoords`,
-  `Projectivization.isClosedEmbedding_piProjector`, and
-  `Projectivization.isClosedEmbedding_piProjectorCoords`: continuity and closed embeddings of the
-  product projector maps over any Hausdorff topological ordered field with continuous inversion.
-* `TauCeti.isClosed_piProjectorLocus`,
-  `TauCeti.isClosed_image_piMatrixLinearEquiv_piProjectorLocus`,
-  `TauCeti.isCompact_piProjectorLocus`,
-  `TauCeti.isCompact_image_piMatrixLinearEquiv_piProjectorLocus`, and
-  `TauCeti.isSemialgebraic_piProjectorLocus`: closedness, real compactness, and semialgebraicity of
-  the product projector locus and its flattened image.
+* `TauCeti.isSemialgebraic_piProjectorLocus`: semialgebraicity of the flattened product projector
+  locus.
 * `TauCeti.IsMultiprojectiveSemialgebraic` and
   `TauCeti.isMultiprojectiveSemialgebraic_iff_isSemialgebraic_image_piProjectorCoords`: cone
   definition and equivalence with the embedded projector model.
@@ -80,56 +72,8 @@ public section
 
 universe v
 
-open Matrix MeasureTheory MvPolynomial Projectivization Set Topology
+open Matrix MeasureTheory MvPolynomial Projectivization Set
 open scoped LinearAlgebra.Projectivization
-
-namespace Projectivization
-
-open TauCeti
-
-section Topology
-
-@[simp]
-theorem piMatrixHomeomorph_piProjector {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
-    {K : Type*} [Field K] [TopologicalSpace K] (p : (i : ι) → ℙ K (κ i → K)) :
-    piMatrixHomeomorph κ κ K (piProjector p) = piProjectorCoords p := by
-  rw [coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K, piMatrixLinearEquiv_piProjector]
-
-variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
-  {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
-  [TopologicalSpace K] [IsTopologicalRing K] [ContinuousInv₀ K]
-
-/-- The factorwise product projector map is continuous for the product topologies. -/
-theorem continuous_piProjector :
-    Continuous (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) := by
-  rw [piProjector_def]
-  exact Continuous.piMap fun _ ↦ continuous_projector
-
-/-- The flattened product projector map into `(Σ i, κ i × κ i) → K` is continuous. -/
-theorem continuous_piProjectorCoords :
-    Continuous (piProjectorCoords : ((i : ι) → ℙ K (κ i → K)) → (Σ i, κ i × κ i) → K) := by
-  rw [piProjectorCoords_def, ← coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K]
-  exact (piMatrixHomeomorph κ κ K).continuous.comp continuous_piProjector
-
-/-- Over a Hausdorff topological ordered field with continuous inversion, the factorwise product
-projector map is a closed embedding onto `TauCeti.piProjectorLocus κ K`. -/
-theorem isClosedEmbedding_piProjector [T2Space K] :
-    IsClosedEmbedding
-      (piProjector : ((i : ι) → ℙ K (κ i → K)) → (i : ι) → Matrix (κ i) (κ i) K) := by
-  rw [piProjector_def]
-  exact IsClosedEmbedding.piMap fun _ ↦ isClosedEmbedding_projector
-
-/-- Over a Hausdorff topological ordered field with continuous inversion, the flattened product
-projector map is a closed embedding into `(Σ i, κ i × κ i) → K`. -/
-theorem isClosedEmbedding_piProjectorCoords [T2Space K] :
-    IsClosedEmbedding
-      (piProjectorCoords : ((i : ι) → ℙ K (κ i → K)) → (Σ i, κ i × κ i) → K) := by
-  rw [piProjectorCoords_def, ← coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K]
-  exact (piMatrixHomeomorph κ κ K).isClosedEmbedding.comp isClosedEmbedding_piProjector
-
-end Topology
-
-end Projectivization
 
 namespace TauCeti
 
@@ -380,33 +324,7 @@ end MultiprojectiveSemialgebraic
 section ProductProjector
 
 variable {ι : Type*} {κ : ι → Type*} [∀ i, Fintype (κ i)]
-
-/-- Over `ℝ`, the product projector locus is compact. -/
-theorem isCompact_piProjectorLocus : IsCompact (piProjectorLocus κ ℝ) := by
-  rw [piProjectorLocus_def]
-  exact isCompact_univ_pi fun i ↦ isCompact_projectorLocus
-
-/-- Over `ℝ`, the flattened product projector locus is compact. -/
-theorem isCompact_image_piMatrixLinearEquiv_piProjectorLocus :
-    IsCompact (piMatrixLinearEquiv ℝ κ κ ℝ '' piProjectorLocus κ ℝ) :=
-  isCompact_piProjectorLocus.image continuous_piMatrixLinearEquiv
-
-variable {K : Type*} [Field K]
-
-/-- The product projector locus is closed over a Hausdorff topological ring. -/
-theorem isClosed_piProjectorLocus [TopologicalSpace K] [IsTopologicalRing K] [T2Space K] :
-    IsClosed (piProjectorLocus κ K) := by
-  rw [piProjectorLocus_def]
-  exact isClosed_set_pi fun i _ ↦ isClosed_projectorLocus
-
-/-- The flattened product projector locus is closed over a Hausdorff topological ring. -/
-theorem isClosed_image_piMatrixLinearEquiv_piProjectorLocus [TopologicalSpace K]
-    [IsTopologicalRing K] [T2Space K] :
-    IsClosed (piMatrixLinearEquiv K κ κ K '' piProjectorLocus κ K) := by
-  rw [← coe_piMatrixHomeomorph_eq_piMatrixLinearEquiv κ κ K K]
-  exact (piMatrixHomeomorph κ κ K).isClosed_image.2 isClosed_piProjectorLocus
-
-variable [LinearOrder K]
+  {K : Type*} [Field K] [LinearOrder K]
 
 omit [∀ i, Fintype (κ i)] in
 private theorem isSemialgebraic_image_piMatrixLinearEquiv_univ_pi [Finite ι]
