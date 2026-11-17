@@ -296,6 +296,13 @@ private theorem pathAngle_horizontal_eq_add {a b : Fin 2 → I} (γ : Path a b) 
     simp only [Path.map', Path.coe_mk_mk, comp_apply, hγ] <;>
     exact congrArg Γ (square_ext (by simp [ht]) (by simp))
 
+/-- An integer is the degree of `Γ` around the boundary of the square once its multiple of `2π`
+is the multiple `squareBoundaryDegree Γ * 2π`. -/
+private theorem squareBoundaryDegree_eq_of_mul_two_pi {n : ℤ}
+    (h : (squareBoundaryDegree Γ : ℝ) * (2 * Real.pi) = n * (2 * Real.pi)) :
+    squareBoundaryDegree Γ = n := by
+  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) h
+
 /-- **Subdivision.** If `Γ` is continuous on the boundary of the square and on the vertical
 segment `s = 1/2`, its degree around the boundary is the sum of the degrees of its restrictions
 to the left and right halves of the square. -/
@@ -332,7 +339,7 @@ theorem squareBoundaryDegree_eq_add
     rw [Int.cast_add, add_mul, squareBoundaryDegree_mul_two_pi hL,
       squareBoundaryDegree_mul_two_pi hR, key, hseam]
     ring
-  exact_mod_cast (mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) hsum).symm
+  exact squareBoundaryDegree_eq_of_mul_two_pi hsum.symm
 
 /-! ### The direction from the centre -/
 
@@ -453,8 +460,6 @@ theorem squareBoundaryDegree_squareCenterDirection :
   rw [hbot, hright, htop, hleft, h00, h10, h01, neg_neg, neg_neg,
     Complex.arg_neg_eq_arg_sub_pi_of_im_pos hz,
     Complex.arg_neg_eq_arg_add_pi_of_im_neg (by simpa using hz), hconj] at key
-  have : (squareBoundaryDegree squareCenterDirection : ℝ) * (2 * Real.pi) = 1 * (2 * Real.pi) := by
-    rw [key]; ring
-  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * Real.pi : ℝ) ≠ 0) this
+  exact squareBoundaryDegree_eq_of_mul_two_pi (by rw [key]; push_cast; ring)
 
 end TauCeti
