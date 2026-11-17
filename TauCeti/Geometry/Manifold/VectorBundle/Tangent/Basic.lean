@@ -104,7 +104,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.mfderiv_subtype_val`: the differential of the inclusion is the canonical
   tangent-space equivalence, it is injective (`TauCeti.Manifold.mfderiv_subtype_val_injective`),
   and the inclusion of nested open submanifolds has the identity of the model space as its
-  differential (`TauCeti.Manifold.mfderiv_inclusion_apply`).
+  differential (`TauCeti.Manifold.mfderiv_inclusion_apply`, and
+  `TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_inclusion_apply` under `tangentSpaceOpenEquiv`).
 * `TauCeti.Manifold.tangentMap_subtype_val`: the tangent map of the inclusion under this
   equivalence.
 * `TauCeti.Manifold.mvfderiv_subtype_val_apply` and
@@ -978,6 +979,15 @@ theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
   have h' := mfderiv_apply_of_subtype_val_comp_eq (I' := I) (f := Opens.inclusion h) (A := id) rfl v
   rw [mfderiv_id] at h'
   exact h'
+
+/-- Under the canonical tangent-space identifications of open submanifolds, the differential of the
+inclusion of nested open submanifolds preserves every tangent vector. -/
+theorem tangentSpaceOpenEquiv_mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
+    (v : TangentSpace I x) :
+    tangentSpaceOpenEquiv (I := I) (Opens.inclusion h x)
+        (mfderiv I I (Opens.inclusion h) x v) =
+      tangentSpaceOpenEquiv (I := I) x v := by
+  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_inclusion_apply]
 
 /-- The derivative of the inclusion of an open subset of a normed space, read in the normed space,
 maps each tangent vector to itself. -/
