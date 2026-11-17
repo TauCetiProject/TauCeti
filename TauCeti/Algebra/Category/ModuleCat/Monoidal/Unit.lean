@@ -57,17 +57,16 @@ def uliftTensorSelfIso :
 @[simp]
 theorem uliftTensorSelfIso_hom_tmul (a b : ULift.{u} R) :
     (uliftTensorSelfIso R).hom (a ⊗ₜ b) = ULift.up (a.down * b.down) := by
-  rw [uliftTensorSelfIso, Iso.trans_hom, Iso.trans_hom, comp_apply, comp_apply, tensorIso_hom,
-    MonoidalCategory.tensorHom_tmul, MonoidalCategory.leftUnitor_hom_apply, Iso.symm_hom]
-  simp only [LinearEquiv.toModuleIso_hom, LinearEquiv.toModuleIso_inv, hom_ofHom,
-    LinearEquiv.coe_coe, ULift.moduleEquiv_apply, ULift.moduleEquiv_symm_apply, smul_eq_mul]
+  -- The Mathlib simp lemmas are instantiated by hand because simp does not unify the carriers of
+  -- `of R (ULift R) ⊗ of R (ULift R)` and `𝟙_ (ModuleCat R)` with `ULift R ⊗[R] ULift R` and `R`.
+  simp [uliftTensorSelfIso,
+    MonoidalCategory.tensorHom_tmul (K := of R (ULift.{u} R)) (M := of R (ULift.{u} R)),
+    MonoidalCategory.leftUnitor_hom_apply (M := 𝟙_ (ModuleCat.{u} R))]
 
 @[simp]
 theorem uliftTensorSelfIso_inv_apply (a : ULift.{u} R) :
     (uliftTensorSelfIso R).inv a = ULift.up 1 ⊗ₜ a := by
-  rw [uliftTensorSelfIso, Iso.trans_inv, Iso.trans_inv, comp_apply, comp_apply, Iso.symm_inv,
-    MonoidalCategory.leftUnitor_inv_apply, tensorIso_inv, MonoidalCategory.tensorHom_tmul]
-  simp only [LinearEquiv.toModuleIso_hom, LinearEquiv.toModuleIso_inv, hom_ofHom,
-    LinearEquiv.coe_coe, ULift.moduleEquiv_apply, ULift.moduleEquiv_symm_apply]
+  -- As in `uliftTensorSelfIso_hom_tmul`, the carrier of `𝟙_ (ModuleCat R)` is supplied by hand.
+  simp [uliftTensorSelfIso, MonoidalCategory.leftUnitor_inv_apply (M := 𝟙_ (ModuleCat.{u} R))]
 
 end ModuleCat
