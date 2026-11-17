@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Cyclotomic
 import TauCeti.Data.Nat.ModEq
+import TauCeti.RingTheory.Ideal.Int
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Ideal.Span
 
