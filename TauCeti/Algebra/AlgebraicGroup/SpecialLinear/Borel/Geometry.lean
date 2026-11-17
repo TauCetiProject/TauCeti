@@ -88,6 +88,15 @@ def tautologicalPoint : SL2Borel (coordinateHopfAlgebra R) :=
   pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R)
     (toConv (AlgHom.id R (coordinateHopfAlgebra R)))
 
+/-- The tautological point is the image of the identity point of the coordinate algebra under the
+point equivalence. -/
+theorem tautologicalPoint_def :
+    tautologicalPoint R =
+      pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R)
+        (toConv (AlgHom.id R (coordinateHopfAlgebra R))) := by
+  unfold tautologicalPoint
+  rfl
+
 /-- The upper-left diagonal coordinate of the standard `SL₂` Borel, bundled as a unit. -/
 def diagonalUnit : (coordinateHopfAlgebra R)ˣ :=
   SL2Borel.diag (tautologicalPoint R)
