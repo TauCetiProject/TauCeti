@@ -12,30 +12,24 @@ import TauCeti.Topology.Homotopy.MappingPath.PathFibration
 import TauCeti.Topology.Homotopy.SerreFibration.Connected
 
 /-!
-# Serre fibrations with acyclic fibres induce homology isomorphisms
+# Fibre homology invariance and single-fibre acyclicity for Serre fibrations
 
-Let `p : E ⟶ B` be a Serre fibration and `R` a ring. If every fibre `p⁻¹(b)` is path-connected and
-`H_q(p⁻¹(b); R) = 0` for `0 < q ≤ n`, then `p` induces an isomorphism `H_n(E; R) ≅ H_n(B; R)`
-(`TauCeti.TopCat.isIso_singularHomologyMap_of_forall_fiber`). No CW, separation, or connectivity
-hypothesis is imposed on `B` or `E`.
-
-For each fibre `p⁻¹(b)`, path-connectedness implies that the map `p⁻¹(b) ⟶ *` to a point induces an
-isomorphism on `H_0(-; R)` via the singular augmentation
-(`TauCeti.singularHomologyMap_singularHomology₀ε`), while vanishing of `H_q(p⁻¹(b); R)` for
-`0 < q ≤ n` makes `p⁻¹(b) ⟶ *` an isomorphism in positive degrees up to `n`; the homology
-isomorphism for `p` then follows from
-`TauCeti.TopCat.isIso_singularHomologyMap_of_isIso_fiber_to_point`.
-
-When `B` is path-connected, the fibres of `p` over any two points of `B` are connected by a
-zigzag of weak homotopy equivalences through the pullback of `p` along a path between them
-(`TauCeti.TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`, in
-`TauCeti.Topology.Homotopy.SerreFibration.Connected`). Hence path-connectedness
-(`TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`) and the isomorphism class of the
-singular homology of `p⁻¹(b)` do not depend on `b`
+When `p : E ⟶ B` is a Serre fibration, the fibres over any two points in the same path component
+of `B` are connected by a zigzag of weak homotopy equivalences through the pullback of `p` along a
+path between them (`TauCeti.TopCat.exists_isWeakHomotopyEquivalence_fiber_of_joined`, in
+`TauCeti.Topology.Homotopy.SerreFibration.Connected`). Consequently, path-connectedness
+(`TauCeti.TopCat.pathConnectedSpace_fiber_iff_of_joined`) and the isomorphism class of the singular
+homology of `p⁻¹(b)` with coefficients in any module `M` are constant along path components of `B`
 (`TauCeti.TopCat.nonempty_iso_singularHomology_fiber_of_joined`,
-`TauCeti.TopCat.isZero_singularHomology_fiber_iff_of_joined`), and over a path-connected base it
-suffices to check the condition on a single fibre
-(`TauCeti.TopCat.isIso_singularHomologyMap_of_fiber`).
+`TauCeti.TopCat.isZero_singularHomology_fiber_iff_of_joined`).
+
+Combined with the all-fibre comparison theorem
+`TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber` (from
+`TauCeti.AlgebraicTopology.Singular.Fibration.Comparison`), over a path-connected base `B` it
+suffices to verify path-connectedness and vanishing of positive-degree `R`-homology on a single
+fibre `p⁻¹(b₀)` to conclude that `p` induces an isomorphism `H_n(E; R) ≅ H_n(B; R)`
+(`TauCeti.TopCat.isIso_singularHomologyMap_of_fiber`). No CW, separation, or connectivity
+hypothesis beyond path-connectedness is imposed on `B` or `E`.
 
 Applied to the fixed-end path fibration `P_x X ⟶ X` of a simply connected space `(X, x)`, whose
 total space is contractible and whose fibre over `x` is the loop space `Ω X x`, this shows that
@@ -47,11 +41,8 @@ total space is contractible and whose fibre over `x` is the loop space `Ω X x`,
 * `TauCeti.TopCat.nonempty_iso_singularHomology_fiber_of_joined`,
   `TauCeti.TopCat.isZero_singularHomology_fiber_iff_of_joined`: invariance of the singular homology
   of the fibres of a Serre fibration along paths in the base.
-* `TauCeti.TopCat.isIso_singularHomologyMap_of_forall_fiber`: a Serre fibration whose fibres are
-  path-connected with vanishing `R`-homology in degrees `0 < q ≤ n` induces an isomorphism on
-  `H_n(-; R)`.
-* `TauCeti.TopCat.isIso_singularHomologyMap_of_fiber`: the single-fibre form over a path-connected
-  base.
+* `TauCeti.TopCat.isIso_singularHomologyMap_of_fiber`: single-fibre form over a path-connected base
+  of `TauCeti.TopCat.isIso_singularHomologyMap_of_isZero_fiber`.
 * `TauCeti.isZero_singularHomology_of_loopSpace`: a simply connected space whose loop space has
   vanishing `R`-homology in positive degrees `≤ n + 1` has vanishing `H_{n+1}(-; R)`.
 
@@ -106,38 +97,18 @@ theorem isZero_singularHomology_fiber_iff_of_joined (hp : serreFibrations p) {b�
 
 end JoinedFibers
 
-/-- **A Serre fibration whose fibres have the `R`-homology of a point through degree `n` induces an
-isomorphism on `H_n(-; R)`.** Let `p : E ⟶ B` be a Serre fibration over an arbitrary topological
-space `B`, and let `R` be a ring. If every fibre `p⁻¹(b)` is path-connected and has vanishing
-`R`-homology in degrees `0 < q ≤ n`, then `p` induces an isomorphism `H_n(E; R) ≅ H_n(B; R)`. -/
-theorem isIso_singularHomologyMap_of_forall_fiber {E B : _root_.TopCat.{u}} {p : E ⟶ B}
-    (hp : serreFibrations p) (R : Type u) [Ring R] (n : ℕ)
-    (hF₀ : ∀ b : B, PathConnectedSpace (p.fiber b))
-    (hF : ∀ b : B, ∀ q, 0 < q → q ≤ n →
-      IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj
-        (ModuleCat.of R R)).obj (p.fiber b))) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map p) := by
-  refine isIso_singularHomologyMap_of_isIso_fiber_to_point hp R n fun b q hq ↦ ?_
-  rcases q with _ | q
-  · have := hF₀ b
-    exact IsIso.of_isIso_fac_right
-      (singularHomologyMap_singularHomology₀ε (ModuleCat.of R R)
-        (_root_.TopCat.isTerminalPUnit.from (p.fiber b)))
-  · exact (hF b (q + 1) q.succ_pos hq).isIso
-      (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R) _ q.succ_ne_zero) _
-
 /-- **Single-fibre homology isomorphism criterion for a Serre fibration over a path-connected
 base.** Let `p : E ⟶ B` be a Serre fibration over a path-connected space `B`, and let `b₀ : B`. If
-the fibre `p⁻¹(b₀)` is path-connected and has vanishing `R`-homology in degrees `0 < q ≤ n`, then
-`p` induces an isomorphism `H_n(E; R) ≅ H_n(B; R)`. -/
+the fibre `p⁻¹(b₀)` is path-connected and has vanishing `R`-homology in the positive degrees
+`q ≤ n`, then `p` induces an isomorphism `H_n(E; R) ≅ H_n(B; R)`. -/
 theorem isIso_singularHomologyMap_of_fiber {E B : _root_.TopCat.{u}} [PathConnectedSpace B]
     {p : E ⟶ B} (hp : serreFibrations p) (b₀ : B) (R : Type u) [Ring R] (n : ℕ)
     (hF₀ : PathConnectedSpace (p.fiber b₀))
-    (hF : ∀ q, 0 < q → q ≤ n →
+    (hF : ∀ q, q ≠ 0 → q ≤ n →
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj
         (ModuleCat.of R R)).obj (p.fiber b₀))) :
     IsIso (((singularHomologyFunctor (ModuleCat.{u} R) n).obj (ModuleCat.of R R)).map p) :=
-  isIso_singularHomologyMap_of_forall_fiber hp R n
+  isIso_singularHomologyMap_of_isZero_fiber hp R n
     (fun b ↦ (pathConnectedSpace_fiber_iff_of_joined hp (PathConnectedSpace.joined b₀ b)).1 hF₀)
     fun b q hq hqn ↦
       (isZero_singularHomology_fiber_iff_of_joined hp (PathConnectedSpace.joined b₀ b)
@@ -161,11 +132,13 @@ theorem isZero_singularHomology_of_loopSpace {X : Type u} [TopologicalSpace X]
   have : PathConnectedSpace (Ω X x) :=
     (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).2 hπ₁
   have hF₀ : PathConnectedSpace (p.fiber x) := e.symm.pathConnectedSpace
-  have hF (q : ℕ) (hq : 0 < q) (hqn : q ≤ n + 1) :
+  have hF (q : ℕ) (hq : q ≠ 0) (hqn : q ≤ n + 1) :
       IsZero (((singularHomologyFunctor (ModuleCat.{u} R) q).obj (ModuleCat.of R R)).obj
         (p.fiber x)) := by
-    obtain ⟨m, rfl⟩ : ∃ m, q = m + 1 := ⟨q - 1, by omega⟩
-    exact (hΩ m (by omega)).of_iso (((singularHomologyFunctor (ModuleCat.{u} R) (m + 1)).obj
+    obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hq
+    have hm := hΩ m (by omega)
+    rw [← singularHomologyFunctor_obj_obj] at hm
+    exact hm.of_iso (((singularHomologyFunctor (ModuleCat.{u} R) (m + 1)).obj
       (ModuleCat.of R R)).mapIso (_root_.TopCat.isoOfHomeo e))
   have hp : TopCat.serreFibrations p :=
     (MappingPathFiber.isHurewiczFibration_proj.{0} (.id X) x).mem_serreFibrations
@@ -176,6 +149,7 @@ theorem isZero_singularHomology_of_loopSpace {X : Type u} [TopologicalSpace X]
       (ModuleCat.of R R)).obj (_root_.TopCat.of (MappingPathFiber (.id X) x))) :=
     isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of R R)
       (_root_.TopCat.of (MappingPathFiber (.id X) x)) (Nat.succ_ne_zero n)
+  rw [← singularHomologyFunctor_obj_obj]
   exact hEP.of_iso (asIso (((singularHomologyFunctor (ModuleCat.{u} R) (n + 1)).obj
     (ModuleCat.of R R)).map p)).symm
 
