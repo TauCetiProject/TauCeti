@@ -47,6 +47,8 @@ expected derivative, with a norm bound in terms of bounds on the factors and the
   derivatives of its summands.
 * `TauCeti.hasDerivAt_prodMk_left`, `TauCeti.hasDerivAt_prodMk_right`: the coordinate lines
   through a point have velocities `(1, 0)` and `(0, 1)`.
+* `TauCeti.hasFDerivAt_prodMk_add_smul`: the vertical affine line `t ↦ (x, y₀ + t • y)` in
+  `E × F` has Fréchet derivative `c ↦ c • (0, y)` at every `t₀ : 𝕜`.
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.hasDerivAt_fderiv_apply_line`: the derivative of a first derivative along a line.
@@ -283,6 +285,15 @@ theorem hasDerivAt_prodMk_left (s : 𝕜) (b : F) :
 theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
+
+/-- The vertical affine line `t ↦ (x, y₀ + t • y)` in `E × F` has Fréchet derivative
+`c ↦ c • (0, y)` at every point `t₀ : 𝕜`. -/
+theorem hasFDerivAt_prodMk_add_smul (x : E) (y₀ y : F) (t₀ : 𝕜) :
+    HasFDerivAt (fun t : 𝕜 ↦ (x, y₀ + t • y))
+      (ContinuousLinearMap.smulRight (1 : 𝕜 →L[𝕜] 𝕜) ((0 : E), y)) t₀ := by
+  refine ((hasFDerivAt_const (𝕜 := 𝕜) x t₀).prodMk
+    (((hasFDerivAt_id (𝕜 := 𝕜) t₀).smul_const y).const_add y₀)).congr_fderiv ?_
+  ext <;> simp
 
 /-- Where `u` is differentiable, its partial derivative in the first variable is its derivative
 applied to `(1, 0)`. -/
