@@ -39,7 +39,8 @@ properness from `G/N₁` to `G/N₂` along any inclusion of closed subgroups `N�
 
 ## Main declarations
 
-* `Comodule.projectiveOrbitPointsSheaf`: the fppf sheaf of points of a projective orbit scheme.
+* `Comodule.projectiveOrbitPointsSheaf`: the fppf sheaf of points of a projective orbit scheme
+  (identified with `CommAlgCat.pointsSheaf` by `Comodule.projectiveOrbitPointsSheaf_def`).
 * `Comodule.toProjectiveOrbitPoints`: the orbit map on points.
 * `Comodule.fppfHomogeneousQuotientToProjectiveOrbitPoints`: the orbit map descended to `G/N`.
 * `Comodule.fppfHomogeneousQuotientIsoProjectiveOrbitPoints`: **`G/N` is represented by the
@@ -79,12 +80,18 @@ variable {k : Type u} [Field k] [IsAlgClosed k] {H : _root_.CommHopfAlgCat.{u} k
 `Spec A` is sent to the morphisms `Spec A ⟶ X` over `Spec k`, lifted to `Type (u + 1)` to sit
 beside the fppf homogeneous quotient.
 
-The body is exposed so that isomorphisms `fppfHomogeneousQuotient H I ≅ projectiveOrbitPointsSheaf`
-can be passed directly to the scheme-level homogeneous-quotient API. -/
-@[expose, implicit_reducible]
+Use `projectiveOrbitPointsSheaf_def` (and `eqToIso`) to transport isomorphisms into the
+scheme-level homogeneous-quotient API. -/
 noncomputable def projectiveOrbitPointsSheaf (m : M) (hm : Module.IsUnimodular k m) :
     Sheaf (CommAlgCat.fppfTopology k) (Type (u + 1)) :=
   CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm))
+
+/-- `projectiveOrbitPointsSheaf` is `CommAlgCat.pointsSheaf` of the projective orbit scheme over
+`Spec k`. -/
+theorem projectiveOrbitPointsSheaf_def (m : M) (hm : Module.IsUnimodular k m) :
+    projectiveOrbitPointsSheaf (H := H) m hm =
+      CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm)) :=
+  (rfl)
 
 /-- The points of the projective orbit scheme over `Spec A` are its morphisms from `Spec A`
 over the base field. -/
@@ -248,15 +255,41 @@ theorem fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom [_root_.IsReduced H]
 theorem fppfHomogeneousQuotientSchemeProjection_isoProjectiveOrbitPoints_left
     [_root_.IsReduced H] :
     (CommHopfAlgCat.fppfHomogeneousQuotientSchemeProjection
-        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset)).left =
+        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
+          eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm))).left =
       toProjectiveOrbit (H := H) m hm := by
-  let eI := fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset
+  let eI := fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
+    eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm)
   let u : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k H) :=
     WithConv.toConv (AlgHom.id k H)
   have h₁ := CommHopfAlgCat.mapMulEquiv_comp_fppfHomogeneousQuotientSchemeProjection eI u
   rw [CommHopfAlgCat.mapMulEquiv_toConv_id H, Category.id_comp] at h₁
   have h₂ := congrArg (fun α ↦ α.app (op (op (CommAlgCat.of k H))) (ULift.up u))
     (fppfHomogeneousQuotientProjection_comp_toProjectiveOrbitPoints I m hm hcoset)
+  have h₁' :
+      ULift.up (CommHopfAlgCat.fppfHomogeneousQuotientSchemeProjection eI) =
+        (eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm)).hom.hom.app
+          (op (op (CommAlgCat.of k H)))
+          ((toProjectiveOrbitPoints (H := H) m hm).app (op (op (CommAlgCat.of k H)))
+            (ULift.up u)) := by
+    rw [h₁]
+    simp only [eI, Iso.trans_hom, ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+      types_comp_apply, fppfHomogeneousQuotientIsoProjectiveOrbitPoints_hom]
+    exact congrArg _ h₂
+  -- Unfolding `projectiveOrbitPointsSheaf` identifies the endpoints of `eqToIso`, so its forward
+  -- component is `𝟙`.
+  have htr :
+      (eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm)).hom.hom.app
+        (op (op (CommAlgCat.of k H)))
+        ((toProjectiveOrbitPoints (H := H) m hm).app (op (op (CommAlgCat.of k H)))
+          (ULift.up u)) =
+        (toProjectiveOrbitPoints (H := H) m hm).app (op (op (CommAlgCat.of k H)))
+          (ULift.up u) := by
+    let S := CommAlgCat.pointsSheaf (Over.mk (projectiveOrbitToSpec (H := H) m hm))
+    let y : ToType (S.obj.obj (op (op (CommAlgCat.of k H)))) :=
+      (toProjectiveOrbitPoints (H := H) m hm).app (op (op (CommAlgCat.of k H))) (ULift.up u)
+    change (eqToIso (rfl : S = S)).hom.hom.app _ y = y
+    simp
   have hrhs :
       (ULift.down ((toProjectiveOrbitPoints (H := H) m hm).app
         (op (op (CommAlgCat.of k H))) (ULift.up u))).left =
@@ -268,16 +301,18 @@ theorem fppfHomogeneousQuotientSchemeProjection_isoProjectiveOrbitPoints_left
     refine Eq.trans (b := Spec.map (CommRingCat.ofHom u.ofConv.toRingHom) ≫
       toProjectiveOrbit (H := H) m hm) rfl ?_
     rw [hid, Spec.map_id, Category.id_comp]
-  exact (congrArg (fun z ↦ (ULift.down z).left) (h₁.trans h₂)).trans hrhs
+  exact (congrArg (fun z ↦ (ULift.down z).left) (h₁'.trans htr)).trans hrhs
 
 /-- **Left translation on the projective orbit scheme agrees with `projectiveOrbitTranslation`.** -/
 @[simp]
 theorem fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_hom_left
     [_root_.IsReduced H] (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
     (CommHopfAlgCat.fppfHomogeneousQuotientSchemeTranslation
-        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) g).hom.left =
+        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
+          eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm)) g).hom.left =
       (projectiveOrbitTranslation (H := H) m hm g).hom := by
-  let eI := fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset
+  let eI := fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
+    eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm)
   let τOver : Over.mk (projectiveOrbitToSpec (H := H) m hm) ⟶
       Over.mk (projectiveOrbitToSpec (H := H) m hm) :=
     Over.homMk (projectiveOrbitTranslation (H := H) m hm g).hom
@@ -300,7 +335,8 @@ theorem fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_hom_le
 theorem fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_inv_left
     [_root_.IsReduced H] (g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k)) :
     (CommHopfAlgCat.fppfHomogeneousQuotientSchemeTranslation
-        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset) g).inv.left =
+        (fppfHomogeneousQuotientIsoProjectiveOrbitPoints I m hm hcoset ≪≫
+          eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm)) g).inv.left =
       (projectiveOrbitTranslation (H := H) m hm g).inv := by
   rw [← Iso.symm_hom, ← CommHopfAlgCat.fppfHomogeneousQuotientSchemeTranslation_inv,
     fppfHomogeneousQuotientSchemeTranslation_isoProjectiveOrbitPoints_hom_left,
@@ -321,7 +357,9 @@ theorem morphismProperty_projectiveOrbitToSpec_iff_of_fppfHomogeneousQuotient
     (e' : CommHopfAlgCat.fppfHomogeneousQuotient H I ≅
       projectiveOrbitPointsSheaf (H := H) m' hm') :
     P (projectiveOrbitToSpec (H := H) m hm) ↔ P (projectiveOrbitToSpec (H := H) m' hm') :=
-  CommHopfAlgCat.morphismProperty_hom_iff_of_fppfHomogeneousQuotientScheme P e e'
+  CommHopfAlgCat.morphismProperty_hom_iff_of_fppfHomogeneousQuotientScheme P
+    (e ≪≫ eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm))
+    (e' ≪≫ eqToIso (projectiveOrbitPointsSheaf_def (H := H) m' hm'))
 
 /-- **Properness of a projective orbit depends only on the homogeneous quotient it represents.** -/
 theorem isProper_projectiveOrbitToSpec_iff_of_fppfHomogeneousQuotient {I : HopfIdeal k H}
@@ -351,7 +389,9 @@ theorem isProper_projectiveOrbitToSpec_of_le {I J : HopfIdeal k H}
     instIsSeparatedProjectiveOrbitToSpec m' hm'
   have : LocallyOfFiniteType (Over.mk (projectiveOrbitToSpec (H := H) m' hm')).hom :=
     instLocallyOfFiniteTypeProjectiveOrbitToSpec m' hm'
-  exact CommHopfAlgCat.isProper_hom_of_fppfHomogeneousQuotientScheme_of_le eI eJ hJI
+  exact CommHopfAlgCat.isProper_hom_of_fppfHomogeneousQuotientScheme_of_le
+    (eI ≪≫ eqToIso (projectiveOrbitPointsSheaf_def (H := H) m hm))
+    (eJ ≪≫ eqToIso (projectiveOrbitPointsSheaf_def (H := H) m' hm')) hJI
 
 end Properness
 

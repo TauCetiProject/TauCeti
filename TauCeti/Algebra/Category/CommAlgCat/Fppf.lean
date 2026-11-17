@@ -215,7 +215,7 @@ theorem pointsSheafMap_comp {R : Type u} [CommRing R]
 /-- **The functor of fppf points of schemes over `Spec R`.** A scheme `X` over `Spec R` is sent
 to its fppf sheaf of affine `R`-points `pointsSheaf X`, and a morphism `f : X ⟶ Y` over `Spec R`
 is sent to `pointsSheafMap f`. -/
-@[expose] noncomputable def pointsSheafFunctor (R : Type u) [CommRing R] :
+noncomputable def pointsSheafFunctor (R : Type u) [CommRing R] :
     Over (Spec (CommRingCat.of R)) ⥤ Sheaf (fppfTopology R) (Type (u + 1)) where
   obj := pointsSheaf
   map := pointsSheafMap
@@ -228,12 +228,18 @@ theorem pointsSheafFunctor_obj {R : Type u} [CommRing R] (X : Over (Spec (CommRi
     (pointsSheafFunctor R).obj X = pointsSheaf X :=
   (rfl)
 
-/-- On morphisms, `pointsSheafFunctor` is `pointsSheafMap`. -/
+/-- On morphisms, `pointsSheafFunctor` is `pointsSheafMap` (up to `eqToHom` along
+`pointsSheafFunctor_obj`). -/
 @[simp]
 theorem pointsSheafFunctor_map {R : Type u} [CommRing R]
     {X Y : Over (Spec (CommRingCat.of R))} (f : X ⟶ Y) :
-    (pointsSheafFunctor R).map f = pointsSheafMap f :=
-  (rfl)
+    (pointsSheafFunctor R).map f =
+      eqToHom (pointsSheafFunctor_obj X) ≫ pointsSheafMap f ≫
+        eqToHom (pointsSheafFunctor_obj Y).symm := by
+  -- Unfolding `pointsSheafFunctor` reveals both endpoints as `pointsSheaf`, so the `eqToHom`
+  -- transports reduce to identities.
+  change pointsSheafMap f = eqToHom rfl ≫ pointsSheafMap f ≫ eqToHom rfl
+  rw [eqToHom_refl, eqToHom_refl, Category.id_comp, Category.comp_id]
 
 /-- **Affine fppf points determine schemes over `Spec R` up to canonical isomorphism:**
 `pointsSheafFunctor R` is fully faithful. -/
