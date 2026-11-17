@@ -22,6 +22,9 @@ zero.
 A scalar acting on the right factor of an outer product `vecMulVec (Pi.single i 1) v` may be pulled
 out to the left without any commutativity, since the left factor has entries `0` and `1` only.
 
+If a rectangular matrix `U` intertwines `f a` and `g a` for every entry `a` of a list `L`, then
+`U` intertwines the ordered list products `(L.map f).prod` and `(L.map g).prod`.
+
 ## Main results
 
 * `Matrix.pow_apply_pos_of_le`: if `A` is entrywise nonnegative and `A ^ k` is strictly positive
@@ -31,6 +34,7 @@ out to the left without any commutativity, since the left factor has entries `0`
   is nonempty and neither factor is zero.
 * `Matrix.vecMulVec_single_one_smul`: `vecMulVec (Pi.single i 1) (r • v) = r • vecMulVec
   (Pi.single i 1) v`, for any scalar action, unlike `Matrix.vecMulVec_smul`.
+* `Matrix.list_prod_map_mul_eq_mul_list_prod_map`: list products preserve rectangular intertwiners.
 -/
 
 public section
@@ -104,5 +108,23 @@ theorem vecMulVec_single_one_smul (r : R) (i : m) (v : p → α) :
   · simp [vecMulVec_apply, h]
 
 end MulZeroOneClass
+
+section Semiring
+
+variable {α m k R : Type*} [Fintype m] [DecidableEq m] [Fintype k] [DecidableEq k] [Semiring R]
+
+/-- **List products preserve intertwiners.** If a rectangular matrix `U` intertwines `f a` and `g a`
+for every entry `a` of a list `L` (`f a * U = U * g a`), then `U` intertwines the ordered products
+`(L.map f).prod` and `(L.map g).prod`. -/
+theorem list_prod_map_mul_eq_mul_list_prod_map (L : List α) (U : Matrix m k R)
+    (f : α → Matrix m m R) (g : α → Matrix k k R) (h : ∀ a ∈ L, f a * U = U * g a) :
+    (L.map f).prod * U = U * (L.map g).prod := by
+  induction L with
+  | nil => simp
+  | cons a t ih =>
+    rw [List.map_cons, List.prod_cons, Matrix.mul_assoc, ih fun x hx => h x (.tail a hx),
+      ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
+
+end Semiring
 
 end Matrix

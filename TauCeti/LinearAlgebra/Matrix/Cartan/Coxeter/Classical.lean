@@ -8,12 +8,14 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Charpoly.Basic
 public import TauCeti.Data.List.OneDegenerateOrder
 public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Basic
-import Mathlib.LinearAlgebra.Matrix.Permutation
 import TauCeti.Data.Fin.Basic
+import TauCeti.Data.Matrix.Mul
+import TauCeti.GroupTheory.OrderOfElement.Basic
 import TauCeti.GroupTheory.Perm.Coxeter
 import TauCeti.GroupTheory.Perm.OrbitCount.FinRotate
 import TauCeti.LinearAlgebra.Charpoly.Permutation
-import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclotomic
+import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import TauCeti.LinearAlgebra.Matrix.Permutation
 import TauCeti.LinearAlgebra.Matrix.Polynomial
 
 /-!
@@ -144,59 +146,7 @@ theorem isOneDegenerateOrder_D (n : ℕ) :
   simp only [CartanMatrix.D, Matrix.of_apply, Fin.ext_iff] at h1 h2
   split_ifs at h1 h2 <;> omega
 
-/-! ### Shared matrix helpers: intertwining, unimodular difference basis, and shifts -/
-
-private theorem list_prod_mul_eq_mul_list_prod {α : Type*} {m k : ℕ} (L : List α)
-    (U : Matrix (Fin m) (Fin k) ℤ) (f : α → Matrix (Fin m) (Fin m) ℤ)
-    (g : α → Matrix (Fin k) (Fin k) ℤ) (h : ∀ a ∈ L, f a * U = U * g a) :
-    (L.map f).prod * U = U * (L.map g).prod := by
-  induction L with
-  | nil => simp
-  | cons a t ih =>
-    rw [List.map_cons, List.prod_cons, Matrix.mul_assoc, ih fun x hx => h x (.tail a hx),
-      ← Matrix.mul_assoc, h a (.head t), Matrix.mul_assoc, ← List.prod_cons, ← List.map_cons]
-
-/-- If `V * U = c • 1` (`c ≠ 0`) and `S * U = U * T` over `ℤ`, then `S` and `T` are conjugate over
-`ℚ` and therefore share the same characteristic polynomial and multiplicative order. -/
-private theorem intertwine_charpoly_and_orderOf {n : ℕ}
-    {U V S T : Matrix (Fin n) (Fin n) ℤ} {c : ℤ} (hc : c ≠ 0)
-    (hVU : V * U = c • 1) (hST : S * U = U * T) :
-    T.charpoly = S.charpoly ∧ orderOf T = orderOf S := by
-  let f := Int.castRingHom ℚ
-  let Wq : Matrix (Fin n) (Fin n) ℚ := (c : ℚ)⁻¹ • V.map f
-  have hWU : Wq * U.map f = 1 := by
-    have hmap : V.map f * U.map f = (c : ℚ) • (1 : Matrix (Fin n) (Fin n) ℚ) := by
-      rw [← Matrix.map_mul, hVU]; ext i j
-      simp only [f, Matrix.map_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul, eq_intCast]
-      split_ifs <;> simp
-    rw [Matrix.smul_mul, hmap, inv_smul_smul₀ (Int.cast_ne_zero.mpr hc)]
-  have hUW : U.map f * Wq = 1 := mul_eq_one_comm.mp hWU
-  have hconj (k : ℕ) : Wq * (S ^ k).map f * U.map f = (T ^ k).map f := by
-    have hpow : S ^ k * U = U * T ^ k := by
-      simpa using Matrix.aeval_mul_eq_mul_aeval hST (Polynomial.X ^ k : ℤ[X])
-    rw [mul_assoc, ← Matrix.map_mul, hpow, Matrix.map_mul, ← mul_assoc, hWU, one_mul]
-  refine ⟨charpoly_eq_of_map_rat ?_, orderOf_eq_orderOf_iff.mpr fun k => ?_⟩
-  · rw [← charpoly_map, ← pow_one T, ← hconj 1, pow_one, Matrix.charpoly_mul_comm, ← mul_assoc,
-      hUW, one_mul]
-  · have hinj : Function.Injective (fun M : Matrix (Fin n) (Fin n) ℤ => M.map f) :=
-      Matrix.map_injective f.injective_int
-    have h1 : (1 : Matrix (Fin n) (Fin n) ℤ).map f = 1 :=
-      Matrix.map_one f (map_zero f) (map_one f)
-    refine ⟨fun hk => hinj ?_, fun hk => hinj ?_⟩
-    · have h := hconj k; rw [hk, h1] at h
-      dsimp only; rw [h1]
-      calc (S ^ k).map f
-        _ = U.map f * (Wq * (S ^ k).map f * U.map f) * Wq := by
-              rw [← mul_assoc (U.map f), ← mul_assoc (U.map f), hUW, one_mul, mul_assoc, hUW,
-                mul_one]
-        _ = 1 := by rw [h, mul_one, hUW]
-    · dsimp only
-      rw [← hconj k, hk, h1, mul_one, hWU]
-
-private theorem intertwine_one_charpoly_and_orderOf {n : ℕ}
-    {U V S T : Matrix (Fin n) (Fin n) ℤ} (hVU : V * U = 1) (hST : S * U = U * T) :
-    T.charpoly = S.charpoly ∧ orderOf T = orderOf S :=
-  intertwine_charpoly_and_orderOf one_ne_zero (by rw [hVU, one_smul]) hST
+/-! ### Shared matrix helpers: unimodular difference basis and shifts -/
 
 private theorem mul_reflMatrix_apply {m k : ℕ} (M : Matrix (Fin m) (Fin k) ℤ)
     (A : Matrix (Fin k) (Fin k) ℤ) (i : Fin k) (p : Fin m) (q : Fin k) :
@@ -207,12 +157,6 @@ private theorem transposition_symm {m : ℕ} (i : Fin m) :
     (BraidGroup.transposition (n := m + 1) i).symm = BraidGroup.transposition (n := m + 1) i := by
   rw [← Equiv.Perm.inv_def, inv_eq_iff_mul_eq_one]
   exact BraidGroup.transposition_mul_self (n := m + 1) i
-
-private theorem permMatrixHom_mul_apply {m k : ℕ} (σ : Equiv.Perm (Fin m))
-    (M : Matrix (Fin m) (Fin k) ℤ) (p : Fin m) (q : Fin k) :
-    (permMatrixHom (R := ℤ) σ * M) p q = M (σ.symm p) q := by
-  rw [permMatrixHom_apply, Equiv.Perm.permMatrix, PEquiv.toMatrix_toPEquiv_mul, submatrix_apply,
-    Equiv.Perm.inv_def, id_eq]
 
 /-- Unit lower-triangular basis `ε₀ - ε₁, …, ε_{m-2} - ε_{m-1}, ε_{m-1}` of `ℤᵐ`. -/
 private def diffBasis (m : ℕ) : Matrix (Fin m) (Fin m) ℤ :=
@@ -246,31 +190,28 @@ private theorem sumBasis_mul_diffBasis (m : ℕ) : sumBasis m * diffBasis m = 1 
       simp [diffBasis, hp, hpq']
     · exact fun h => absurd (Finset.mem_univ _) h
 
+private theorem isLeftRegular_det_diffBasis (m : ℕ) : IsLeftRegular (diffBasis m).det :=
+  isLeftRegular_det_right_of_mul_eq_smul_one isRegular_one.left (by
+    rw [sumBasis_mul_diffBasis, one_smul])
+
 /-! ### Cyclic and negacyclic shift matrices -/
 
 private theorem permMatrixHom_finRotate_mul_eq {m k : ℕ}
     (U : Matrix (Fin (m + 1)) (Fin k) ℤ) (g : Fin m → Matrix (Fin k) (Fin k) ℤ)
     (h : ∀ i : Fin m, permMatrixHom (BraidGroup.transposition (n := m + 1) i) * U = U * g i) :
     permMatrixHom (finRotate (m + 1)) * U = U * ((List.finRange m).map g).prod := by
-  have hprod := list_prod_mul_eq_mul_list_prod (List.finRange m) U
+  have hprod := list_prod_map_mul_eq_mul_list_prod_map (List.finRange m) U
     (permMatrixHom (R := ℤ) ∘ BraidGroup.transposition (n := m + 1)) g (fun i _ => h i)
   have hrot : (permCoxeterSystem (m + 1)).wordProd (List.finRange m) = finRotate (m + 1) :=
     permCoxeterSystem_wordProd_finRange (n := m + 1)
   rwa [← List.map_map, ← map_list_prod, ← permCoxeterSystem_wordProd (n := m + 1), hrot] at hprod
-
-private theorem toMatrix_lmapDomain {m : ℕ} (σ : Equiv.Perm (Fin m)) :
-    LinearMap.toMatrix Finsupp.basisSingleOne Finsupp.basisSingleOne
-      (Finsupp.lmapDomain ℤ ℤ σ) = permMatrixHom σ := by
-  ext p q
-  simp [LinearMap.toMatrix_apply, Finsupp.single_apply, permMatrixHom_apply,
-    PEquiv.toMatrix_apply, Equiv.Perm.inv_def, Equiv.eq_symm_apply, eq_comm]
 
 private theorem charpoly_permMatrixHom_finRotate {m : ℕ} (hm : 0 < m) :
     (permMatrixHom (R := ℤ) (finRotate m)).charpoly = X ^ m - 1 := by
   have hsame : ∀ y : Fin m, (finRotate m).SameCycle ⟨0, hm⟩ y := by
     rw [← permCoxeterSystem_wordProd_finRange]
     exact sameCycle_wordProd_permCoxeterSystem (List.Perm.refl _) ⟨0, hm⟩
-  rw [← toMatrix_lmapDomain, LinearMap.charpoly_toMatrix,
+  rw [← LinearMap.toMatrix_basisSingleOne_lmapDomain, LinearMap.charpoly_toMatrix,
     Equiv.Perm.charpoly_lmapDomain_of_forall_sameCycle _ hsame, Fintype.card_fin]
 
 /-- Negacyclic shift matrix on `Fin n`: `ε₀ ↦ ε₁ ↦ ⋯ ↦ ε_{n-1} ↦ -ε₀`. -/
@@ -439,8 +380,8 @@ rank `n` (including `n = 0`). -/
 theorem charpoly_coxA (n : ℕ) :
     (coxA n).charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k := by
   obtain ⟨B, hB⟩ := list_prod_extReflA (List.finRange n)
-  have hc := (intertwine_one_charpoly_and_orderOf (sumBasis_mul_diffBasis (n + 1))
-    (permMatrixHom_finRotate_mul_diffBasis n)).1.trans
+  have hc := (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_diffBasis (n + 1)).ne_zero
+    (permMatrixHom_finRotate_mul_diffBasis n)).symm.trans
     (charpoly_permMatrixHom_finRotate (Nat.succ_pos n))
   rw [← charpoly_reindex (finSumFinEquiv (m := n) (n := 1)).symm, reindex_apply,
     Equiv.symm_symm, hB, charpoly_fromBlocks_zero₂₁] at hc
@@ -560,8 +501,9 @@ theorem charpoly_coxB_zero : (coxB 0).charpoly = 1 := by simp
 /-- **Characteristic polynomial of the type `B` Coxeter element** (`0 < n`): `X ^ n + 1`. -/
 theorem charpoly_coxB {n : ℕ} (hn : 0 < n) : (coxB n).charpoly = X ^ n + 1 := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  exact (intertwine_one_charpoly_and_orderOf (sumBasis_mul_diffBasis (m + 1))
-    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m)).1.trans (charpoly_negShift (Nat.succ_pos m))
+  exact (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_diffBasis (m + 1)).ne_zero
+    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m)).symm.trans
+    (charpoly_negShift (Nat.succ_pos m))
 
 /-- The empty type `B₀` Coxeter element has order `1`. -/
 @[simp]
@@ -572,8 +514,10 @@ theorem orderOf_coxB_zero : orderOf (coxB 0) = 1 := by
 has order `2 * n`. -/
 theorem orderOf_coxB {n : ℕ} (hn : 0 < n) : orderOf (coxB n) = 2 * n := by
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by omega⟩
-  exact (intertwine_one_charpoly_and_orderOf (sumBasis_mul_diffBasis (m + 1))
-    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m)).2.trans (orderOf_negShift (Nat.succ_pos m))
+  exact (SemiconjBy.orderOf_eq_of_isRegular
+    (isRegular_of_isLeftRegular_det (isLeftRegular_det_diffBasis (m + 1)))
+    (negShift_mul_diffBasis_eq_diffBasis_mul_coxB m).symm).trans
+    (orderOf_negShift (Nat.succ_pos m))
 
 /-! ### Type `C` -/
 
@@ -589,26 +533,25 @@ private theorem diagBC_mul_coxC (n : ℕ) : diagBC n * coxC n = coxB n * diagBC 
     simp only [reflMatrix_apply, CartanMatrix.B, CartanMatrix.C, Matrix.of_apply, Fin.ext_iff]
     split_ifs <;> omega
   simpa [coxC, coxB, coxeterElement] using
-    (list_prod_mul_eq_mul_list_prod (List.finRange n) (diagBC n)
+    (list_prod_map_mul_eq_mul_list_prod_map (List.finRange n) (diagBC n)
       (reflMatrix (CartanMatrix.B n)) (reflMatrix (CartanMatrix.C n)) fun i _ => hrefl i).symm
 
-private theorem coxC_charpoly_and_orderOf_eq_coxB (n : ℕ) :
-    (coxC n).charpoly = (coxB n).charpoly ∧ orderOf (coxC n) = orderOf (coxB n) := by
-  refine intertwine_charpoly_and_orderOf (V := diagonal fun i => if i.val + 1 = n then 1 else 2)
-    two_ne_zero ?_ (diagBC_mul_coxC n).symm
-  rw [diagBC, diagonal_mul_diagonal]
-  ext i j; simp only [diagonal_apply, Matrix.smul_apply, Matrix.one_apply, smul_eq_mul]
-  split_ifs <;> omega
+private theorem det_diagBC_ne_zero (n : ℕ) : (diagBC n).det ≠ 0 := by
+  rw [diagBC, det_diagonal, Finset.prod_ne_zero_iff]
+  intro i _
+  split_ifs <;> norm_num
 
 /-- The Coxeter elements of `CartanMatrix.C n` and `CartanMatrix.B n` have the same order for every
 `n`. -/
 theorem orderOf_coxC_eq_orderOf_coxB (n : ℕ) : orderOf (coxC n) = orderOf (coxB n) :=
-  (coxC_charpoly_and_orderOf_eq_coxB n).2
+  SemiconjBy.orderOf_eq_of_isRegular
+    (isRegular_of_isLeftRegular_det (IsRegular.of_ne_zero' (det_diagBC_ne_zero n)).left)
+    (diagBC_mul_coxC n)
 
 /-- The Coxeter elements of `CartanMatrix.C n` and `CartanMatrix.B n` have the same characteristic
 polynomial for every `n`. -/
 theorem charpoly_coxC_eq_charpoly_coxB (n : ℕ) : (coxC n).charpoly = (coxB n).charpoly :=
-  (coxC_charpoly_and_orderOf_eq_coxB n).1
+  (Matrix.charpoly_eq_of_mul_eq_mul (det_diagBC_ne_zero n) (diagBC_mul_coxC n).symm).symm
 
 /-- The empty type `C₀` Coxeter element has order `1`. -/
 @[simp]
@@ -692,6 +635,10 @@ private theorem adjBasisD_mul_basisD (m : ℕ) : adjBasisD m * basisD m = (2 : �
       split_ifs <;> omega
     · intro r _ hr; simp [hr.symm, hpm]
     · exact fun h => absurd (Finset.mem_univ _) h
+
+private theorem isLeftRegular_det_basisD (m : ℕ) : IsLeftRegular (basisD m).det :=
+  isLeftRegular_det_right_of_mul_eq_smul_one (IsRegular.of_ne_zero' two_ne_zero).left
+    (adjBasisD_mul_basisD m)
 
 private theorem cartanMatrix_D_apply_succ_succ (m : ℕ) (i j : Fin (m + 2)) :
     CartanMatrix.D (m + 2) i j =
@@ -821,8 +768,8 @@ theorem charpoly_coxD {n : ℕ} (hn : 2 ≤ n) :
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   have hsub : m + 2 - 1 = m + 1 := rfl
   rw [hsub,
-    (intertwine_charpoly_and_orderOf two_ne_zero (adjBasisD_mul_basisD m)
-      (modelD_mul_basisD_eq_basisD_mul_coxD m)).1,
+    (Matrix.charpoly_eq_of_mul_eq_mul (isLeftRegular_det_basisD m).ne_zero
+      (modelD_mul_basisD_eq_basisD_mul_coxD m)).symm,
     modelD, charpoly_reindex, charpoly_fromBlocks_zero₂₁, charpoly_negShift (Nat.succ_pos m)]
   congr 1
   rw [Matrix.charpoly, Matrix.det_fin_one]; simp [sub_neg_eq_add]
@@ -857,8 +804,9 @@ theorem orderOf_coxD {n : ℕ} (hn : 2 ≤ n) : orderOf (coxD n) = 2 * (n - 1) :
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 2 := ⟨n - 2, by omega⟩
   have hsub : m + 2 - 1 = m + 1 := rfl
   rw [hsub,
-    (intertwine_charpoly_and_orderOf two_ne_zero (adjBasisD_mul_basisD m)
-      (modelD_mul_basisD_eq_basisD_mul_coxD m)).2, orderOf_modelD]
+    SemiconjBy.orderOf_eq_of_isRegular
+      (isRegular_of_isLeftRegular_det (isLeftRegular_det_basisD m))
+      (modelD_mul_basisD_eq_basisD_mul_coxD m).symm, orderOf_modelD]
 
 end TauCeti.Coxeter
 

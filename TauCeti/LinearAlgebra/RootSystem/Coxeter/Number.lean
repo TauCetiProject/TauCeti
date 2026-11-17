@@ -222,23 +222,16 @@ theorem two_mul_sum_exponents_eq_numRoots (t : DynkinType) :
       ring
   | E6 | E7 | E8 | F4 | G2 => decide
 
-private theorem perm_range_sub (m : ℕ) : ((List.range m).map (m - 1 - ·)).Perm (List.range m) := by
-  have hnd : ((List.range m).map (m - 1 - ·)).Nodup :=
-    (List.nodup_map_iff_inj_on List.nodup_range).mpr fun a ha b hb hab => by
-      rw [List.mem_range] at ha hb; omega
-  refine (List.perm_ext_iff_of_nodup hnd List.nodup_range).mpr fun k => ?_
-  simp only [List.mem_map, List.mem_range]
-  exact ⟨fun ⟨a, ha, hka⟩ => by omega, fun hk => ⟨m - 1 - k, by omega, by omega⟩⟩
-
 private theorem perm_map_two_mul_sub (m : ℕ) :
     ((Coxeter.bExponents m).map (2 * m - ·)).Perm (Coxeter.bExponents m) := by
   rw [Coxeter.bExponents_def]
-  have hmap : ((List.range m).map fun k => 2 * k + 1).map (2 * m - ·) =
-      ((List.range m).map (m - 1 - ·)).map (fun k => 2 * k + 1) := by
-    rw [List.map_map, List.map_map]
+  have hrev : ((List.range m).map fun k => 2 * k + 1).map (2 * m - ·) =
+      ((List.range m).map fun k => 2 * k + 1).reverse := by
+    rw [← List.map_reverse, List.map_map, List.range_eq_range' (n := m), List.reverse_range',
+      List.map_map, ← List.range_eq_range']
     exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
-  rw [hmap]
-  exact (perm_range_sub m).map _
+  rw [hrev]
+  exact List.reverse_perm _
 
 /-- **Duality of exponents**: `e ↦ h - e` permutes `t.exponents` (preserving multiplicities). -/
 theorem perm_map_sub_exponents (t : DynkinType) :
@@ -246,12 +239,13 @@ theorem perm_map_sub_exponents (t : DynkinType) :
   cases t with
   | A n =>
     simp only [exponents_A, coxeterNumber_A, Coxeter.aExponents_def]
-    have hmap : ((List.range n).map (· + 1)).map (n + 1 - ·) =
-        ((List.range n).map (n - 1 - ·)).map (· + 1) := by
-      rw [List.map_map, List.map_map]
+    have hrev : ((List.range n).map (· + 1)).map (n + 1 - ·) =
+        ((List.range n).map (· + 1)).reverse := by
+      rw [← List.map_reverse, List.map_map, List.range_eq_range' (n := n), List.reverse_range',
+        List.map_map, ← List.range_eq_range']
       exact List.map_congr_left fun k hk => by rw [List.mem_range] at hk; simp; omega
-    rw [hmap]
-    exact (perm_range_sub n).map (· + 1)
+    rw [hrev]
+    exact List.reverse_perm _
   | B n => exact perm_map_two_mul_sub n
   | C n => simpa [Coxeter.cExponents_def] using perm_map_two_mul_sub n
   | D n =>

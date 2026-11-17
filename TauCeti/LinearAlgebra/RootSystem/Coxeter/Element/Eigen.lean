@@ -73,24 +73,6 @@ theorem f4Exponents_eq_filter : f4Exponents = (List.range 12).filter (Nat.Coprim
 theorem g2Exponents_eq_filter : g2Exponents = (List.range 6).filter (Nat.Coprime · 6) := by
   decide
 
-private theorem nodup_map_exp_of_lt {h : ℕ} (hh : 0 < h) {exps : List ℕ} (hnd : exps.Nodup)
-    (hlt : ∀ e ∈ exps, e < h) :
-    (exps.map fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ)))).Nodup := by
-  have hζ := Complex.isPrimitiveRoot_exp h hh.ne'
-  refine (List.nodup_map_iff_inj_on hnd).mpr fun a ha b hb hab => ?_
-  rw [← exp_two_pi_I_div_pow, ← exp_two_pi_I_div_pow] at hab
-  exact hζ.pow_inj (hlt a ha) (hlt b hb) hab
-
-private theorem multiset_eq_ofList_of_nodup {s : Multiset ℂ} {h : ℕ} (hh : 0 < h) {exps : List ℕ}
-    (hnd_exps : exps.Nodup) (hlt : ∀ e ∈ exps, e < h) (hnd_s : s.Nodup)
-    (hiff : ∀ ζ : ℂ, ζ ∈ s ↔
-      ∃ e ∈ exps, Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ))) = ζ) :
-    s = Multiset.ofList
-      (exps.map fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * ((e : ℂ) / (h : ℂ)))) := by
-  refine (Multiset.Nodup.ext hnd_s ?_).mpr fun ζ => ?_
-  · simpa using nodup_map_exp_of_lt hh hnd_exps hlt
-  · rw [hiff, Multiset.mem_coe, List.mem_map]
-
 variable {ι R M N : Type*} [DecidableEq ι] [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic] [IsDomain R]
   [CharZero R]
@@ -180,8 +162,9 @@ theorem roots_charpoly_of_hasCartanType_E6_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (e6Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 12))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E6 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 12) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
+  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
+  · simpa using nodup_map_exp_two_pi_I_div (h := 12) (l := e6Exponents) (by decide) (by decide)
+  · rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `E₇` on the simple roots**:
 `exp (2πi e / 18)` for `e ∈ e7Exponents = [1, 5, 7, 9, 11, 13, 17]`, each with multiplicity one. -/
@@ -192,8 +175,9 @@ theorem roots_charpoly_of_hasCartanType_E7_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (e7Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 18))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E7 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 18) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
+  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
+  · simpa using nodup_map_exp_two_pi_I_div (h := 18) (l := e7Exponents) (by decide) (by decide)
+  · rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `E₈` on the simple roots**:
 `exp (2πi e / 30)` for `e ∈ e8Exponents = [1, 7, 11, 13, 17, 19, 23, 29]`, each with multiplicity
@@ -205,8 +189,9 @@ theorem roots_charpoly_of_hasCartanType_E8_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (e8Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 30))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_E8 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 30) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
+  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
+  · simpa using nodup_map_exp_two_pi_I_div (h := 30) (l := e8Exponents) (by decide) (by decide)
+  · rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `F₄` on the simple roots**:
 `exp (2πi e / 12)` for `e ∈ f4Exponents = [1, 5, 7, 11]`, each with multiplicity one. -/
@@ -217,8 +202,9 @@ theorem roots_charpoly_of_hasCartanType_F4_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (f4Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 12))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_F4 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 12) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
+  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
+  · simpa using nodup_map_exp_two_pi_I_div (h := 12) (l := f4Exponents) (by decide) (by decide)
+  · rw [hmem, Multiset.mem_coe, List.mem_map]
 
 /-- **Complex eigenvalue multiset of a Coxeter element of type `G₂` on the simple roots**:
 `exp (2πi e / 6)` for `e ∈ g2Exponents = [1, 5]`, each with multiplicity one. -/
@@ -229,8 +215,9 @@ theorem roots_charpoly_of_hasCartanType_G2_of_actsBy {b : P.Base} (h : HasCartan
       Multiset.ofList (g2Exponents.map fun e : ℕ =>
         Complex.exp (2 * Real.pi * Complex.I * (e / 6))) := by
   obtain ⟨hmem, hnd_r⟩ := eigenvalues_of_hasCartanType_G2 h hnd hall hW
-  simpa using multiset_eq_ofList_of_nodup (h := 6) (by norm_num) (by decide) (by decide) hnd_r
-    fun ζ => by rw [hmem]; norm_num
+  refine (Multiset.Nodup.ext hnd_r ?_).mpr fun ζ => ?_
+  · simpa using nodup_map_exp_two_pi_I_div (h := 6) (l := g2Exponents) (by decide) (by decide)
+  · rw [hmem, Multiset.mem_coe, List.mem_map]
 
 end TauCeti.Coxeter
 
