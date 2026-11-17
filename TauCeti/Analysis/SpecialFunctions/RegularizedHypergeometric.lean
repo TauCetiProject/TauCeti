@@ -14,6 +14,7 @@ import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Analytic.OfScalars
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
 
 /-!
 # Regularized hypergeometric functions `₀F₁` and `₂F₁`
@@ -416,15 +417,6 @@ private theorem differentiable_coeff_regularizedGaussHGFunSeries_mul_pow
     differentiable_one_div_Gamma.comp (by fun_prop)
   fun_prop
 
-private theorem norm_ascPochhammer_eval_le_ascFactorial {s : ℂ} {M : ℕ} (hs : ‖s‖ ≤ M) (n : ℕ) :
-    ‖(ascPochhammer ℂ n).eval s‖ ≤ M.ascFactorial n := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [ascPochhammer_succ_eval, Nat.ascFactorial_succ, Nat.cast_mul, mul_comm ((M + n : ℕ) : ℝ),
-      norm_mul]
-    exact mul_le_mul ih ((norm_add_le s n).trans (by simp [hs])) (norm_nonneg _) (by positivity)
-
 private theorem norm_regularizedGaussHGFun_term_add_le {a b c z : ℂ} {M k : ℕ} {CΓ r : ℝ}
     (ha : ‖a‖ ≤ M) (hb : ‖b‖ ≤ M) (hc : 1 ≤ (c + ((M + 1 : ℕ) : ℂ)).re)
     (hCΓ : ‖(Gamma (c + ((M + 1 : ℕ) : ℂ)))⁻¹‖ ≤ CΓ) (hz : ‖z‖ ≤ r) :
@@ -452,8 +444,8 @@ private theorem norm_regularizedGaussHGFun_term_add_le {a b c z : ℂ} {M k : �
     simp [abs_of_nonneg hr₀, sq]
   rw [hk_coeff, coeff_regularizedGaussHGFunSeries, pow_add z (M + 1) k, div_eq_mul_inv, mul_inv]
   simp only [norm_mul, norm_inv, Complex.norm_natCast, norm_pow]
-  have ha_le := (norm_ascPochhammer_eval_le_ascFactorial ha (M + 1 + k)).trans_eq hpM
-  have hb_le := (norm_ascPochhammer_eval_le_ascFactorial hb (M + 1 + k)).trans_eq hpM
+  have ha_le := (TauCeti.norm_ascPochhammer_eval_le_ascFactorial (M + 1 + k) ha).trans_eq hpM
+  have hb_le := (TauCeti.norm_ascPochhammer_eval_le_ascFactorial (M + 1 + k) hb).trans_eq hpM
   have hinv_fac : ((((M + 1 + k)! : ℕ) : ℝ))⁻¹ ≤ ((k ! : ℝ))⁻¹ :=
     inv_anti₀ (mod_cast Nat.factorial_pos k) (mod_cast Nat.factorial_le (Nat.le_add_left k (M + 1)))
   calc ‖(ascPochhammer ℂ (M + 1 + k)).eval a‖ *
