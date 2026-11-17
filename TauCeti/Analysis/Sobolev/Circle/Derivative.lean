@@ -42,7 +42,9 @@ order is what governs the differentiability of reparametrizations of boundary ma
   `H^(s + 1) → H^s`, since it multiplies the `n`-th Fourier coefficient by the nonvanishing factor
   `1 + 2πin/T`; `TauCeti.CircleSobolev.derivativeAddInclusionEquiv` is the resulting continuous
   linear equivalence, whose inverse divides the coefficients by that factor
-  (`TauCeti.CircleSobolev.coeff_derivativeAddInclusionEquiv_symm`).
+  (`TauCeti.CircleSobolev.coeff_derivativeAddInclusionEquiv_symm`). More generally
+  `ζ ↦ ζ' + c ζ` is a bijection for every `c` with `Re c ≠ 0`
+  (`TauCeti.CircleSobolev.bijective_derivative_add_smul_inclusion`).
 * `TauCeti.CircleSobolev.hasDerivAt_toContinuousMap`: for `s > 1/2`, the continuous representative
   of `a ∈ H^t` is differentiable, with derivative the continuous representative of
   `derivative T h a`.
@@ -203,10 +205,46 @@ private theorem one_add_derivFactor_ne_zero (n : ℤ) : (1 + 2 * π * I * n / T 
   simp [Complex.div_re] at this
 
 omit hT in
-/-- The Fourier multiplier `1 + 2πin/T` has modulus at least `1`. -/
-private theorem one_le_norm_one_add_derivFactor (n : ℤ) : 1 ≤ ‖(1 + 2 * π * I * n / T : ℂ)‖ := by
+/-- The Fourier multiplier `c + 2πin/T` of `ζ ↦ ζ' + c ζ` has modulus at least `|Re c|`. -/
+private theorem abs_re_le_norm_add_derivFactor (c : ℂ) (n : ℤ) :
+    |c.re| ≤ ‖(c + 2 * π * I * n / T : ℂ)‖ := by
   refine le_trans (le_of_eq ?_) (Complex.abs_re_le_norm _)
   simp [Complex.div_re]
+
+/-- **`ζ ↦ ζ' + c ζ` is a bijection `H^(s + 1) → H^s` when `Re c ≠ 0`.** It multiplies the `n`-th
+Fourier coefficient by `c + 2πin/T`, whose real part `Re c` does not vanish. -/
+theorem bijective_derivative_add_smul_inclusion (h : s + 1 = t) {c : ℂ} (hc : c.re ≠ 0) :
+    Function.Bijective
+      (derivative T h.le + c • inclusion (by linarith) :
+        CircleSobolev t E →L[ℂ] CircleSobolev s E) := by
+  subst h
+  have hne (n : ℤ) : (c + 2 * π * I * n / T : ℂ) ≠ 0 :=
+    norm_pos_iff.1 ((abs_pos.2 hc).trans_le (abs_re_le_norm_add_derivFactor T c n))
+  refine ⟨fun a b hab ↦ CircleSobolev.ext (funext fun n ↦ ?_), fun b ↦ ?_⟩
+  · have hn := congrArg (fun d : CircleSobolev s E ↦ d.coeff n) hab
+    simp only [add_apply, coeff_add, Pi.add_apply, coeff_derivative, smul_apply, coeff_smul,
+      Pi.smul_apply, coeff_inclusion] at hn
+    refine smul_right_injective E (hne n) ?_
+    simp only [add_smul]
+    rw [add_comm (c • a.coeff n), hn, add_comm]
+  · -- Divide the coefficients of `b` by `c + 2πin/T`, then recover one order of regularity.
+    set c' : ℤ → ℂ := fun n ↦ (c + 2 * π * I * n / T : ℂ)⁻¹
+    have hc' (n : ℤ) : ‖c' n‖ ≤ |c.re|⁻¹ := by
+      rw [norm_inv]
+      exact inv_anti₀ (abs_pos.2 hc) (abs_re_le_norm_add_derivFactor T c n)
+    let a : CircleSobolev s E := ⟨fun n ↦ c' n • b.coeff n,
+      memℓp_of_forall_le (C := |c.re|⁻¹) fun n ↦ by
+        rw [norm_smul, mul_left_comm]
+        exact mul_le_mul_of_nonneg_right (hc' n) (mul_nonneg (weight_nonneg s n) (norm_nonneg _))⟩
+    obtain ⟨d, hda, hdb⟩ := exists_inclusion_eq_and_derivative_eq T a (b - c • a) fun n ↦ by
+      simp only [coeff_sub, Pi.sub_apply, coeff_smul, Pi.smul_apply, a, c', smul_smul]
+      have key : (1 : ℂ) - c * (c + 2 * π * I * n / T)⁻¹ =
+          2 * π * I * n / T * (c + 2 * π * I * n / T)⁻¹ := by
+        field_simp [hne n]
+        ring
+      rw [← key, sub_smul, one_smul]
+    refine ⟨d, ?_⟩
+    rw [add_apply, smul_apply, hdb, hda, sub_add_cancel]
 
 /-- **`ζ ↦ ζ' + ζ` is a bijection `H^(s + 1) → H^s`.** It multiplies the `n`-th Fourier
 coefficient by `1 + 2πin/T`, which never vanishes. -/
@@ -214,32 +252,8 @@ theorem bijective_derivative_add_inclusion (h : s + 1 = t) :
     Function.Bijective
       (derivative T h.le + inclusion (by linarith) :
         CircleSobolev t E →L[ℂ] CircleSobolev s E) := by
-  subst h
-  refine ⟨fun a b hab ↦ CircleSobolev.ext (funext fun n ↦ ?_), fun b ↦ ?_⟩
-  · have hn := congrArg (fun c : CircleSobolev s E ↦ c.coeff n) hab
-    simp only [add_apply, coeff_add, Pi.add_apply, coeff_derivative, coeff_inclusion] at hn
-    refine smul_right_injective E (one_add_derivFactor_ne_zero T n) ?_
-    simp only [add_smul, one_smul]
-    rw [add_comm (a.coeff n), hn, add_comm]
-  · -- Divide the coefficients of `b` by `1 + 2πin/T`, then recover one order of regularity.
-    set c : ℤ → ℂ := fun n ↦ (1 + 2 * π * I * n / T : ℂ)⁻¹
-    have hc (n : ℤ) : ‖c n‖ ≤ 1 := by
-      rw [norm_inv]
-      exact inv_le_one_of_one_le₀ (one_le_norm_one_add_derivFactor T n)
-    let a : CircleSobolev s E := ⟨fun n ↦ c n • b.coeff n, memℓp_of_forall_le (C := 1) fun n ↦ by
-      rw [norm_smul, one_mul]
-      exact mul_le_mul_of_nonneg_left (mul_le_of_le_one_left (norm_nonneg _) (hc n))
-        (weight_nonneg s n)⟩
-    obtain ⟨d, hda, hdb⟩ := exists_inclusion_eq_and_derivative_eq T a (b - a) fun n ↦ by
-      have hne := one_add_derivFactor_ne_zero T n
-      simp only [coeff_sub, Pi.sub_apply, a, c, smul_smul]
-      have key : (1 : ℂ) - (1 + 2 * π * I * n / T)⁻¹ =
-          2 * π * I * n / T * (1 + 2 * π * I * n / T)⁻¹ := by
-        field_simp
-        ring
-      rw [← key, sub_smul, one_smul]
-    refine ⟨d, ?_⟩
-    rw [add_apply, hdb, hda, sub_add_cancel]
+  simpa only [one_smul] using
+    bijective_derivative_add_smul_inclusion (E := E) T h (c := 1) (by simp)
 
 /-- `ζ ↦ ζ' + ζ`, as a continuous linear equivalence `H^(s + 1) ≃ H^s`. -/
 def derivativeAddInclusionEquiv [CompleteSpace E] (h : s + 1 = t) :
