@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Basic
 public import TauCeti.Analysis.SpecialFunctions.IncompleteGamma.Tricomi
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Order
 
@@ -27,7 +28,9 @@ both defined through Tricomi's entire function `γ*` of
 * `Complex.differentiableAt_lowerIncompleteGamma_left`: `γ(·, z)` is holomorphic off `−ℕ`;
 * `Complex.regularizedGamma_one_left`, `Complex.regularizedGamma_neg_natCast`,
   `Complex.regularizedGammaQ_neg_natCast`: `P(1, z) = 1 − e^{−z}`, and `P(−n, z) = 1`,
-  `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12).
+  `Q(−n, z) = 0` for `z ≠ 0` (DLMF 8.2.5, 8.4.12);
+* `Complex.lowerIncompleteGamma_ofReal`, `Complex.regularizedGamma_ofReal`: agreement of the
+  complex and real lower and regularized incomplete Gamma functions for `0 < s` and `0 ≤ x`.
 
 ## Implementation notes
 
@@ -46,7 +49,7 @@ public section
 
 noncomputable section
 
-open Filter Set
+open Filter MeasureTheory Set
 open scoped Nat Topology
 
 namespace Complex
@@ -142,5 +145,55 @@ theorem tendsto_mul_lowerIncompleteGamma (n : ℕ) {z : ℂ} (hz : z ≠ 0) :
     exact ((differentiable_regularizedGamma_left hz).continuous.tendsto _).mono_left
       nhdsWithin_le_nhds
   simpa [lowerIncompleteGamma_def, mul_assoc] using (tendsto_add_natCast_mul_Gamma n).mul hP
+
+/-- For `0 < s` and `0 ≤ x`, the complex lower incomplete Gamma function restricts to the real
+`TauCeti.lowerIncompleteGamma`. -/
+theorem lowerIncompleteGamma_ofReal {s x : ℝ} (hs : 0 < s) (hx : 0 ≤ x) :
+    lowerIncompleteGamma (s : ℂ) (x : ℂ) = (TauCeti.lowerIncompleteGamma s x : ℂ) := by
+  rcases hx.eq_or_lt with rfl | hx
+  · simp
+  · have hsre : 0 < (s : ℂ).re := by simpa using hs
+    have hsub := congr_arg (fun y : ℝ => x * y)
+      (intervalIntegral.integral_comp_mul_right
+        (fun t : ℝ => t ^ (s - 1) * Real.exp (-t)) hx.ne' (a := (0 : ℝ)) (b := 1))
+    dsimp at hsub
+    rw [zero_mul, one_mul, ← mul_assoc, mul_inv_cancel₀ hx.ne', one_mul] at hsub
+    rw [TauCeti.lowerIncompleteGamma_eq_integral hx.le, ← hsub, ofReal_mul,
+      ← intervalIntegral.integral_ofReal, ← intervalIntegral.integral_const_mul,
+      lowerIncompleteGamma_eq_integral hsre, ← intervalIntegral.integral_const_mul]
+    refine intervalIntegral.integral_congr_ae ?_
+    filter_upwards [volume.ae_ne (0 : ℝ)] with u hune hu
+    rw [Set.uIoc_of_le zero_le_one] at hu
+    have hupos : 0 < u := lt_of_le_of_ne hu.1.le hune.symm
+    have hxpow : x * (u * x) ^ (s - 1) = x ^ s * u ^ (s - 1) := by
+      have hx1 : x * x ^ (s - 1) = x ^ s := by
+        conv_lhs => enter [1]; rw [← Real.rpow_one x]
+        rw [← Real.rpow_add hx]
+        congr 1
+        ring
+      rw [Real.mul_rpow hupos.le hx.le, mul_left_comm, hx1, mul_comm]
+    have hcpow_u : (u : ℂ) ^ ((s : ℂ) - 1) = ((u ^ (s - 1) : ℝ) : ℂ) := by
+      rw [ofReal_cpow hupos.le, ofReal_sub, ofReal_one]
+    have hexp : cexp (-((x : ℂ) * u)) = (Real.exp (-(u * x)) : ℂ) := by
+      rw [ofReal_exp, ofReal_neg, ofReal_mul, mul_comm (u : ℂ) (x : ℂ)]
+    rw [← ofReal_cpow hx.le s, hcpow_u, hexp, ofReal_mul]
+    calc ((x ^ s : ℝ) : ℂ) * (((u ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ))
+      _ = (((x ^ s * u ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ)) := by
+        rw [ofReal_mul, mul_assoc]
+      _ = (((x * (u * x) ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ)) := by
+        rw [hxpow]
+      _ = (x : ℂ) * ((((u * x) ^ (s - 1) : ℝ) : ℂ) * (Real.exp (-(u * x)) : ℂ)) := by
+        rw [ofReal_mul, mul_assoc]
+
+/-- For `0 < s` and `0 ≤ x`, the complex regularized lower incomplete Gamma function restricts to
+the real `TauCeti.regularizedGamma`. -/
+theorem regularizedGamma_ofReal {s x : ℝ} (hs : 0 < s) (hx : 0 ≤ x) :
+    regularizedGamma (s : ℂ) (x : ℂ) = (TauCeti.regularizedGamma s x : ℂ) := by
+  have hlow := lowerIncompleteGamma_ofReal hs hx
+  rw [lowerIncompleteGamma_def, Gamma_ofReal] at hlow
+  have hG : (Real.Gamma s : ℂ) ≠ 0 :=
+    ofReal_ne_zero.mpr (Real.Gamma_pos_of_pos hs).ne'
+  rw [TauCeti.regularizedGamma_eq_div, ofReal_div]
+  exact eq_div_of_mul_eq hG (by rw [mul_comm]; exact hlow)
 
 end Complex
