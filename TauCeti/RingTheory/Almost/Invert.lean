@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
-public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 public import TauCeti.Algebra.Category.CommAlgCat.Localization
 public import TauCeti.Algebra.Category.ModuleCat.Localization
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
@@ -40,9 +38,9 @@ canonical numerators. When `ϖ ∈ m`, the unit `R → (R^a)_*` is an almost iso
 precomposing with almostification recovers ordinary algebra localization
 (`TauCeti.Almost.Algebra.toAlmostCompInvertIso`).
 
-Finally, a short complex or homological complex of `V`-modules is exact in `Almost.Module S` if and
-only if its homology is almost zero, and any such complex becomes honestly exact over
-`Localization.Away ϖ` after inverting `ϖ ∈ m`.
+Finally, combining `TauCeti.Almost.Module.exact_map_toAlmost_iff` with exactness of `invert S hϖ`,
+any short complex or homological complex of `V`-modules whose homology is almost zero becomes
+honestly exact over `Localization.Away ϖ` after inverting `ϖ ∈ m`.
 
 ## Main definitions
 
@@ -689,28 +687,6 @@ end Algebra
 section Complexes
 
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
-
-namespace Module
-
-/-- A short complex of `V`-modules becomes exact in `Almost.Module S` if and only if its homology is
-almost zero. -/
-@[simp]
-theorem exact_map_toAlmost_iff (C : ShortComplex (ModuleCat.{u} V)) :
-    (C.map (toAlmost S)).Exact ↔ S.IsAlmostZero C.homology := by
-  rw [ShortComplex.exact_iff_isZero_homology,
-    (C.mapHomologyIso (toAlmost S)).isZero_iff, isZero_toAlmost_obj_iff]
-
-/-- A homological complex `K` of `V`-modules becomes exact at `i` in `Almost.Module S` if and only
-if `K.homology i` is almost zero. -/
-@[simp]
-theorem exactAt_mapHomologicalComplex_toAlmost_iff {ι : Type*} {c : ComplexShape ι}
-    (K : HomologicalComplex (ModuleCat.{u} V) c) (i : ι) :
-    (((toAlmost S).mapHomologicalComplex c).obj K).ExactAt i ↔
-      S.IsAlmostZero (K.homology i) := by
-  rw [Functor.mapHomologicalComplex_obj_exactAt_iff, exact_map_toAlmost_iff]
-  rfl
-
-end Module
 
 /-- A short complex of `V`-modules with almost zero homology becomes exact after localizing away
 from `ϖ ∈ m` (Scholze–Weinstein, *Berkeley lectures*, Lecture 8, proof of Proposition 8.2.8). -/
