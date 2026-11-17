@@ -230,9 +230,6 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
     fun h ↦ (mem_logTranslationQuotientPuncturedOpens P l).1 hq₀ (by
       rw [torusFamilyCyclicQuotientProjection_mk, h, zero_pow (NeZero.ne m)])
   have hπ := isLocalDiffeomorph_logTranslationQuotient_mk P l hP hinj hfree x₀
-  have hopen : IsOpen (Subtype.val ⁻¹' hπ.localInverse.source :
-      Set (logTranslationQuotientPuncturedOpens P l)) :=
-    hπ.localInverse.open_source.preimage continuous_subtype_val
   refine (ContMDiffAt.subtypeVal_comp_iff (torusFamilyPuncturedOpens P) _ _).1 ?_
   refine ContMDiffAt.congr_of_eventuallyEq
     (f := fun q : logTranslationQuotientPuncturedOpens P l ↦
@@ -242,12 +239,12 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv :
         (⟨Quotient.mk _ x₀, hq₀⟩ : logTranslationQuotientPuncturedOpens P l)
         contMDiff_subtype_val.contMDiffAt)
       (hπ.localInverse_left_inv hπ.localInverse_mem_target)
-  · filter_upwards [hopen.mem_nhds hπ.localInverse_mem_source] with q hq
-    obtain ⟨q, hq'⟩ := q
-    have hmk := hπ.localInverse_right_inv hq
+  · filter_upwards [hπ.localInverse_eventuallyEq_right.comp_tendsto
+      continuous_subtype_val.continuousAt] with ⟨q, hq⟩ hmk
+    change Quotient.mk _ (hπ.localInverse q) = q at hmk
     generalize hπ.localInverse q = x at hmk ⊢
     subst hmk
-    exact torusFamilyLogGaugeEquiv_mk P l hr x hq'
+    exact torusFamilyLogGaugeEquiv_mk P l hr x hq
 
 /-- **The inverse of the logarithmic gauge in local form.** Near `(t₀, e₀)` with `t₀ ≠ 0`, the
 inverse of the logarithmic gauge composed with the orbit map `D_t × E → Y` is the `C^n` map
@@ -367,9 +364,6 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
   obtain ⟨F, hF, hFeq⟩ :=
     exists_contMDiffAt_eq_torusFamilyLogGaugeEquiv_symm_mk P l hP hinj hr hfree ht₀ e₀
   have hmkY := isLocalDiffeomorph_torusFamily_mk P hinj hP (t₀, e₀)
-  have hopen : IsOpen (Subtype.val ⁻¹' hmkY.localInverse.source :
-      Set (torusFamilyPuncturedOpens P)) :=
-    hmkY.localInverse.open_source.preimage continuous_subtype_val
   refine (ContMDiffAt.subtypeVal_comp_iff (logTranslationQuotientPuncturedOpens P l) _ _).1 ?_
   refine ContMDiffAt.congr_of_eventuallyEq
     (f := fun y : torusFamilyPuncturedOpens P ↦ F (hmkY.localInverse y.1)) ?_ ?_
@@ -377,12 +371,12 @@ private theorem contMDiff_torusFamilyLogGaugeEquiv_symm :
         (⟨Quotient.mk _ (t₀, e₀), hy₀⟩ : torusFamilyPuncturedOpens P)
         contMDiff_subtype_val.contMDiffAt)
       (hmkY.localInverse_left_inv hmkY.localInverse_mem_target)
-  · filter_upwards [hopen.mem_nhds hmkY.localInverse_mem_source] with y hy
-    obtain ⟨y, hy'⟩ := y
-    have hmk := hmkY.localInverse_right_inv hy
+  · filter_upwards [hmkY.localInverse_eventuallyEq_right.comp_tendsto
+      continuous_subtype_val.continuousAt] with ⟨y, hy⟩ hmk
+    change Quotient.mk _ (hmkY.localInverse y) = y at hmk
     generalize hmkY.localInverse y = p at hmk ⊢
     subst hmk
-    exact (hFeq p.1 p.2 hy').symm
+    exact (hFeq p.1 p.2 hy).symm
 
 /-- **The logarithmic gauge is a diffeomorphism.** Let `P` be a `C^n` family of full period
 lattices over the disc of radius `r ^ m`, and suppose the normalized pure translation action of the
@@ -448,8 +442,47 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
       torusFamilyLogGaugeEquiv P l hr :=
   (rfl)
 
+/-- The diffeomorphism is the function `TauCeti.torusFamilyLogGaugeEquiv`. -/
+@[simp] theorem coe_torusFamilyLogGaugeDiffeomorph :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    letI := logTranslationMulAction P l
+    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _)) (fun _ _ ↦ AddMonoidHom.id E)
+      (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+      (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+      (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
+      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+    ⇑(torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree) = torusFamilyLogGaugeEquiv P l hr :=
+  (rfl)
+
+/-- The inverse of the diffeomorphism is the inverse of `TauCeti.torusFamilyLogGaugeEquiv`. -/
+@[simp] theorem coe_torusFamilyLogGaugeDiffeomorph_symm :
+    letI := periodAddAction P
+    letI := torusFamilyChartedSpace (H := ℂ) P (fun l ↦ (hP l).continuous) hinj
+    letI := periodAddAction (powPullbackPeriod m r P)
+    letI := torusFamilyChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _))
+    letI := logTranslationMulAction P l
+    letI := torusFamilyAffineQuotientChartedSpace (H := ℂ) (powPullbackPeriod m r P)
+      (fun z ↦ powPullbackPeriod_injective P z (hinj _)) (fun _ _ ↦ AddMonoidHom.id E)
+      (Representation.trivial ℤ (rootsOfUnity m ℂ) Λ) (powPullbackPeriod_smul_apply P)
+      (logTranslationSection P l) (torusFamilyProjection_logTranslationSection P l)
+      (fun _ _ ↦ rfl) (fun _ _ _ _ ↦ rfl) (logTranslationSection_mul P l)
+      (fun l ↦ (contMDiff_powPullbackPeriod P (hP l)).continuous) (fun _ ↦ continuous_snd)
+      (fun ζ ↦ (contMDiff_logTranslationSection P l hP hinj ζ).continuous) hfree
+    ⇑(torusFamilyLogGaugeDiffeomorph P l hP hinj hr hfree).symm =
+      (torusFamilyLogGaugeEquiv P l hr).symm :=
+  (rfl)
+
 /-- The logarithmic gauge on the class of a point over `z ≠ 0`. -/
-@[simp] theorem torusFamilyLogGaugeDiffeomorph_mk
+theorem torusFamilyLogGaugeDiffeomorph_mk
     (x : letI := periodAddAction (powPullbackPeriod m r P)
       AddAction.orbitRel.Quotient Λ (rootsOfUnityBall m r × E)) (hx) :
     letI := periodAddAction P
@@ -473,7 +506,7 @@ noncomputable def torusFamilyLogGaugeDiffeomorph :
 
 /-- The logarithmic gauge lies over the identity of the punctured disc: the image of a point of
 `Q*` with coordinate `t` lies over `t`. -/
-@[simp] theorem coe_torusFamilyProjection_torusFamilyLogGaugeDiffeomorph
+theorem coe_torusFamilyProjection_torusFamilyLogGaugeDiffeomorph
     (q : letI := periodAddAction (powPullbackPeriod m r P)
       letI := logTranslationMulAction P l
       logTranslationQuotientPuncturedOpens P l) :
