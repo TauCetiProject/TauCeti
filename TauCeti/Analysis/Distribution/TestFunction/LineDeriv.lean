@@ -41,8 +41,8 @@ a weak derivative be tested against `g φ` when `g` is only smooth inside `Ω`.
   derivatives of test functions commute.
 * `TestFunction.lineDerivOp_laplacianCLM`: the Laplacian of test functions commutes with
   directional derivatives.
-* `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a test function on `Ω` with a
-  function smooth on `Ω` is a test function on `Ω`.
+* `TestFunction.exists_coe_eq_smul_of_contDiffOn`: the product of a `C^n` test function on `Ω`
+  with a function `C^n` on `Ω` is a `C^n` test function on `Ω`.
 * `TestFunction.lineDeriv_fun_smul_of_differentiableOn`: its directional derivatives obey the
   product rule.
 * `TestFunction.laplacianCLM_apply`: the test-function Laplacian agrees pointwise with the
@@ -165,13 +165,13 @@ theorem lineDeriv_lineDerivOp_comm (φ : 𝓓(Ω, F)) (v w x : E) :
 
 /-! ### Multiplication by a function smooth on `Ω` -/
 
-/-- **A test function times a function smooth on `Ω` is a test function.** If `g` is smooth on
-`Ω`, with no condition off `Ω`, and `φ ∈ 𝓓(Ω, F)`, then `x ↦ g x • φ x` is again a test function
-on `Ω`: it is smooth on `Ω` and vanishes on the open complement of `tsupport φ`, and these two
-open sets cover `E`. -/
-theorem exists_coe_eq_smul_of_contDiffOn {g : E → ℝ} (hg : ContDiffOn ℝ ∞ g Ω) (φ : 𝓓(Ω, F)) :
-    ∃ ψ : 𝓓(Ω, F), ⇑ψ = fun x => g x • φ x := by
-  have hsmooth : ContDiff ℝ ∞ fun x => g x • φ x := by
+/-- **A test function times a function smooth on `Ω` is a test function.** If `g` is `C^n` on
+`Ω`, with no condition off `Ω`, and `φ ∈ 𝓓^{n}(Ω, F)`, then `x ↦ g x • φ x` is again a `C^n` test
+function on `Ω`: it is `C^n` on `Ω` and vanishes on the open complement of `tsupport φ`, and these
+two open sets cover `E`. -/
+theorem exists_coe_eq_smul_of_contDiffOn {n : ℕ∞} {g : E → ℝ} (hg : ContDiffOn ℝ n g Ω)
+    (φ : 𝓓^{n}(Ω, F)) : ∃ ψ : 𝓓^{n}(Ω, F), ⇑ψ = fun x => g x • φ x := by
+  have hsmooth : ContDiff ℝ n fun x => g x • φ x := by
     refine contDiff_of_contDiffOn_union_of_isOpen (hg.smul φ.contDiff.contDiffOn)
       ((contDiffOn_const (c := (0 : F))).congr fun x hx => ?_) ?_ Ω.isOpen
       (isClosed_tsupport (φ : E → F)).isOpen_compl

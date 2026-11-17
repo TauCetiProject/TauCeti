@@ -8,9 +8,14 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.Defs
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+public import Mathlib.Topology.Algebra.Module.Determinant
+import Mathlib.Analysis.Calculus.Deriv.Abs
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Analysis.Calculus.FDeriv.Det.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Equiv
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -46,6 +51,17 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.contDiffOn`: a `C^n` partial diffeomorphism between normed spaces is `C^n`
+  on its source.
+* `PartialDiffeomorph.det_fderiv_symm_mul_det_fderiv`,
+  `PartialDiffeomorph.det_fderiv_mul_det_fderiv_symm`: for a partial diffeomorphism of a normed
+  space, the Jacobian determinants of it and of its inverse at corresponding points are reciprocal.
+* `PartialDiffeomorph.det_fderiv_ne_zero`, `PartialDiffeomorph.det_fderiv_symm_apply`: the
+  Jacobian determinant does not vanish on the source, and that of the inverse at `Φ x` is its
+  reciprocal.
+* `PartialDiffeomorph.contDiffOn_abs_det_fderiv`,
+  `PartialDiffeomorph.contDiffOn_abs_det_fderiv_symm`: for a real `C^n` partial diffeomorphism,
+  the Jacobian `|det DΦ|` is `C^m` on the source for `m + 1 ≤ n`, and `|det D(Φ⁻¹)|` on the target.
 -/
 
 public section
@@ -160,5 +176,72 @@ theorem fderiv_comp_symm_eq_comp (ψ : PartialDiffeomorph I 𝓘(𝕜, G'') M G'
   rw [← heq.fderiv_eq, fderiv_comp (φ x) h₁ (χ.differentiableAt_comp_symm φ hn hχ hφ), hχx]
 
 end Transition
+
+section NormedSpace
+
+variable (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, F) E F n)
+
+/-- A `C^n` partial diffeomorphism between normed spaces is `C^n` on its source. -/
+theorem contDiffOn : ContDiffOn 𝕜 n Φ Φ.source :=
+  contMDiffOn_iff_contDiffOn.1 Φ.contMDiffOn
+
+/-- A partial diffeomorphism between normed spaces is differentiable at every point of its
+source. -/
+theorem differentiableAt (hn : n ≠ 0) {x : E} (hx : x ∈ Φ.source) : DifferentiableAt 𝕜 Φ x :=
+  mdifferentiableAt_iff_differentiableAt.1 (Φ.mdifferentiableAt hn hx)
+
+/-- The Jacobian determinants of a partial diffeomorphism of a normed space at `Φ⁻¹ y` and of its
+inverse at `y` multiply to one. -/
+theorem det_fderiv_mul_det_fderiv_symm (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) E E n)
+    (hn : n ≠ 0) {y : E} (hy : y ∈ Φ.target) :
+    (fderiv 𝕜 Φ (Φ.symm y)).det * (fderiv 𝕜 Φ.symm y).det = 1 := by
+  have h := congrArg LinearMap.det (congrArg ContinuousLinearMap.toLinearMap
+    (Φ.toOpenPartialHomeomorph.fderiv_comp_fderiv_symm hy
+      (Φ.differentiableAt hn (Φ.map_target hy)) (Φ.symm.differentiableAt hn hy)))
+  rwa [ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.coe_id, LinearMap.det_comp,
+    LinearMap.det_id] at h
+
+/-- The Jacobian determinants of the inverse of a partial diffeomorphism of a normed space at
+`Φ x` and of `Φ` at `x` multiply to one. -/
+theorem det_fderiv_symm_mul_det_fderiv (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) E E n)
+    (hn : n ≠ 0) {x : E} (hx : x ∈ Φ.source) :
+    (fderiv 𝕜 Φ.symm (Φ x)).det * (fderiv 𝕜 Φ x).det = 1 :=
+  Φ.symm.det_fderiv_mul_det_fderiv_symm hn hx
+
+/-- The Jacobian determinant of a partial diffeomorphism of a normed space does not vanish on its
+source. -/
+theorem det_fderiv_ne_zero (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) E E n) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ Φ.source) : (fderiv 𝕜 Φ x).det ≠ 0 :=
+  right_ne_zero_of_mul_eq_one (Φ.det_fderiv_symm_mul_det_fderiv hn hx)
+
+/-- The Jacobian determinant of the inverse of a partial diffeomorphism at `Φ x` is the reciprocal
+of that of `Φ` at `x`. -/
+theorem det_fderiv_symm_apply (Φ : PartialDiffeomorph 𝓘(𝕜, E) 𝓘(𝕜, E) E E n) (hn : n ≠ 0) {x : E}
+    (hx : x ∈ Φ.source) : (fderiv 𝕜 Φ.symm (Φ x)).det = (fderiv 𝕜 Φ x).det⁻¹ :=
+  eq_inv_of_mul_eq_one_left (Φ.det_fderiv_symm_mul_det_fderiv hn hx)
+
+end NormedSpace
+
+section Real
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {m : ℕ∞}
+
+/-- The Jacobian `|det DΦ|` of a real `C^n` partial diffeomorphism is `C^m` on its source for
+`m + 1 ≤ n`. -/
+theorem contDiffOn_abs_det_fderiv (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E n)
+    (hmn : m + 1 ≤ n) : ContDiffOn ℝ m (fun x ↦ |(fderiv ℝ Φ x).det|) Φ.source := by
+  have hn : n ≠ 0 := by rintro rfl; simp at hmn
+  have hD := Φ.contDiffOn.fderiv_of_isOpen Φ.open_source hmn
+  intro x hx
+  exact (contDiffAt_abs (Φ.det_fderiv_ne_zero hn hx)).comp_contDiffWithinAt x
+    ((ContinuousLinearMap.contDiff_det.comp_contDiffOn hD) x hx)
+
+/-- The Jacobian `|det D(Φ⁻¹)|` of the inverse of a real `C^n` partial diffeomorphism is `C^m` on
+its target for `m + 1 ≤ n`. -/
+theorem contDiffOn_abs_det_fderiv_symm (Φ : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E n)
+    (hmn : m + 1 ≤ n) : ContDiffOn ℝ m (fun y ↦ |(fderiv ℝ Φ.symm y).det|) Φ.target :=
+  Φ.symm.contDiffOn_abs_det_fderiv hmn
+
+end Real
 
 end PartialDiffeomorph
