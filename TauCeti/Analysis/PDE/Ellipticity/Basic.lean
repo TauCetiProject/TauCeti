@@ -644,6 +644,18 @@ lemma mono_constants (h : UniformlyEllipticOn Ω a lam Lam) (hlam' : 0 < lam')
       (mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_right hLam_le (norm_nonneg _))
         (norm_nonneg _))
 
+/-- Multiplying the coefficient field by `c > 0` multiplies both ellipticity constants by `c`, so
+the ratio `Λ / λ` is unchanged. -/
+lemma const_smul (h : UniformlyEllipticOn Ω a lam Lam) {c : ℝ} (hc : 0 < c) :
+    UniformlyEllipticOn Ω (c • a) (c * lam) (c * Lam) := by
+  refine ⟨mul_pos hc h.pos, mul_le_mul_of_nonneg_left h.le hc.le, fun {x} hx => ⟨fun ξ => ?_,
+    fun η ξ => ?_⟩⟩
+  · rw [Pi.smul_apply, toQuadraticForm'_smul, _root_.smul_apply, smul_eq_mul, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (h.lower_bound hx ξ) hc.le
+  · rw [Pi.smul_apply, smul_mulVec, dotProduct_smul, smul_eq_mul, abs_mul, abs_of_pos hc,
+      mul_assoc, mul_assoc]
+    exact mul_le_mul_of_nonneg_left (by simpa only [mul_assoc] using h.upper_bound hx η ξ) hc.le
+
 /-- A constructor when the side conditions and pointwise quadratic-form bounds are already
 available separately. -/
 lemma of_bounds (hlam : 0 < lam) (hlamLam : lam ≤ Lam)
