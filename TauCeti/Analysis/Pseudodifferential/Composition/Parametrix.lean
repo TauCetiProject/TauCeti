@@ -37,6 +37,12 @@ well, and the remainders `1 - ∑_{k < N} sharpTerm b a k` then have order `-N` 
 position. These are the parametrix symbols of the calculus of symbols with estimates uniform on all
 of `ℝⁿ`, where no compact localization in the position is available.
 
+A symbol which is only elliptic on a set `S` of points `(x, ξ)` (`TauCeti.Symbol.IsEllipticOn`)
+has **microlocal parametrix symbols**: for every symbol `c` of order `0` vanishing outside `S`,
+there are symbols `b` of order `-m` with `c ∼ ∑ₖ sharpTerm b a k`, and others with
+`c ∼ ∑ₖ sharpTerm a b k`. For a conic cutoff `c` near a covector, these invert `Op(a)`
+microlocally there.
+
 ## Main results
 
 * `TauCeti.Symbol.exists_isAsymptoticSum_sharpTerm_left`,
@@ -68,6 +74,10 @@ of `ℝⁿ`, where no compact localization in the position is available.
   symbols.** For a smooth function `ψ` of the position, `q(x, ξ) = ψ(x) b(x, ξ)` with `b` a left
   parametrix symbol of `a`, and a symbol `p` with compact spatial support which agrees with `a`
   near the support of `ψ`, the composition symbol `q # p` is `ψ(x)` up to a smoothing symbol.
+* `TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left`,
+  `TauCeti.Symbol.IsEllipticOn.exists_isAsymptoticSum_sharpTerm_right`: **microlocal left and
+  right parametrix symbols** of a symbol elliptic on a set `S`, for a target symbol of order `0`
+  vanishing outside `S`.
 
 ## Proof outline
 
@@ -91,7 +101,7 @@ cut-off inverse provides `b₀`.
 ## References
 
 * M. E. Taylor, *Pseudodifferential Operators: Four Lectures at MSRI*, September 2008,
-  Lecture I, (4.1)–(4.11).
+  Lecture I, (4.1)–(4.11), and §7 for microlocal parametrices.
 * L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1.
 -/
 
@@ -113,6 +123,41 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
 
 section Left
 
+/-- The correction step for left parametrix symbols with target `e`: if
+`r = e - ∑_{k < N} sharpTerm b a k` has order `-N` and the correction `d` of order `-m - N`
+satisfies `d a = (r - sharpTerm b a N) + t` pointwise, then the new remainder
+`e - ∑_{k ≤ N} sharpTerm (b + d) a k` is `-t - ∑_{k < N} sharpTerm d a (k + 1)`, which has order
+`-N - 1` when `t` has. -/
+private theorem coefficient_sub_sum_sharpTerm_left_succ {μ : ℝ} {e : Symbol n V V μ}
+    {a : Symbol n V W m} {N : ℕ} {b : Symbol n W V (-m)} {r : Symbol n V V (-m + m - N)}
+    (hr : e.coefficient - ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient)
+    {d : Symbol n W V (-m - N)} {t : Symbol n V V (-m + m - (N + 1 : ℕ))}
+    (hd : (d.comp a).coefficient = (r - b.sharpTerm a N).coefficient + t.coefficient) :
+    e.coefficient -
+      ∑ k ∈ range (N + 1), ((b + inclusion (by simp) d).sharpTerm a k).coefficient =
+        (-t - ∑ k : Fin N,
+          inclusion (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+            (d.sharpTerm a (k + 1))).coefficient := by
+  -- The remainder `R = e - ∑_{k ≤ N} sharpTerm b a k`, of order `-N`.
+  set R := r - b.sharpTerm a N with hR
+  have hRc : R.coefficient = e.coefficient -
+      ∑ k ∈ range (N + 1), (b.sharpTerm a k).coefficient := by
+    rw [hR, coefficient_sub, ← hr, sum_range_succ]
+    abel
+  have hd₀ : (d.sharpTerm a 0).coefficient = R.coefficient + t.coefficient := by
+    rw [← hd]
+    funext p
+    simp
+  rw [coefficient_sub, coefficient_neg, coefficient_sum]
+  simp only [coefficient_inclusion]
+  simp only [coefficient_sharpTerm_eq_add_left (a₀ := b + inclusion (by simp) d) (a₁ := b)
+    (a₂ := d) (by rw [coefficient_add, coefficient_inclusion]), sum_add_distrib]
+  rw [sum_range_succ' fun k ↦ (d.sharpTerm a k).coefficient, hd₀,
+    Fin.sum_univ_eq_sum_range fun k ↦ (d.sharpTerm a (k + 1)).coefficient]
+  rw [show ∑ k ∈ range (N + 1), (b.sharpTerm a k).coefficient =
+    e.coefficient - R.coefficient by rw [hRc]; abel]
+  abel
+
 /-- The correction step for left parametrix symbols: if `r = 1 - ∑_{k < N} sharpTerm b a k` has
 order `-N` and `t` is `(r - sharpTerm b a N) (b₀ a - 1)` at order `-N - 1`, then changing `b` by
 the symbol `d = (r - sharpTerm b a N) b₀` of order `-m - N` makes the new remainder
@@ -131,27 +176,11 @@ private theorem exists_coefficient_sub_sum_sharpTerm_left_succ {a : Symbol n V W
           (-t - ∑ k : Fin N,
             inclusion (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
               (d.sharpTerm a (k + 1))).coefficient := by
-  -- The remainder `R = 1 - ∑_{k ≤ N} sharpTerm b a k`, of order `-N`, and the correction `R b₀`.
-  set R := r - b.sharpTerm a N with hR
-  have hRc : R.coefficient = (const (.id ℂ V) : Symbol n V V 0).coefficient -
-      ∑ k ∈ range (N + 1), (b.sharpTerm a k).coefficient := by
-    rw [hR, coefficient_sub, ← hr, sum_range_succ]
-    abel
-  let d : Symbol n W V (-m - N) := inclusion (by linarith) (R.comp b₀)
-  have hd₀ : (d.sharpTerm a 0).coefficient = R.coefficient +
-      (R.comp (b₀.comp a - inclusion (neg_add_cancel m).ge (const (.id ℂ V)))).coefficient := by
-    funext p
-    simp [d, ContinuousLinearMap.comp_sub, ContinuousLinearMap.comp_assoc]
-  refine ⟨d, rfl, ?_⟩
-  rw [coefficient_sub, coefficient_neg, coefficient_sum, ht]
-  simp only [coefficient_inclusion]
-  simp only [coefficient_sharpTerm_eq_add_left (a₀ := b + inclusion (by simp) d) (a₁ := b)
-    (a₂ := d) (by rw [coefficient_add, coefficient_inclusion]), sum_add_distrib]
-  rw [sum_range_succ' fun k ↦ (d.sharpTerm a k).coefficient, hd₀,
-    Fin.sum_univ_eq_sum_range fun k ↦ (d.sharpTerm a (k + 1)).coefficient]
-  rw [show ∑ k ∈ range (N + 1), (b.sharpTerm a k).coefficient =
-    (const (.id ℂ V) : Symbol n V V 0).coefficient - R.coefficient by rw [hRc]; abel]
-  abel
+  -- `(R b₀) a = R + R (b₀ a - 1)` for `R = r - sharpTerm b a N`.
+  refine ⟨_, rfl, coefficient_sub_sum_sharpTerm_left_succ hr ?_⟩
+  rw [ht]
+  funext p
+  simp [ContinuousLinearMap.comp_sub, ContinuousLinearMap.comp_assoc]
 
 /-- **Left parametrix symbols.** If a symbol `b₀` of order `-m` is a pointwise left inverse of the
 symbol `a` of order `m` modulo symbols of order `-1`, that is `b₀(x, ξ) a(x, ξ) - 1` is a symbol of
@@ -250,6 +279,41 @@ end Left
 
 section Right
 
+/-- The correction step for right parametrix symbols with target `e`: if
+`r = e - ∑_{k < N} sharpTerm a b k` has order `-N` and the correction `d` of order `-m - N`
+satisfies `a d = (r - sharpTerm a b N) + t` pointwise, then the new remainder
+`e - ∑_{k ≤ N} sharpTerm a (b + d) k` is `-t - ∑_{k < N} sharpTerm a d (k + 1)`, which has order
+`-N - 1` when `t` has. -/
+private theorem coefficient_sub_sum_sharpTerm_right_succ {μ : ℝ} {e : Symbol n W W μ}
+    {a : Symbol n V W m} {N : ℕ} {b : Symbol n W V (-m)} {r : Symbol n W W (m + -m - N)}
+    (hr : e.coefficient - ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient)
+    {d : Symbol n W V (-m - N)} {t : Symbol n W W (m + -m - (N + 1 : ℕ))}
+    (hd : (a.comp d).coefficient = (r - a.sharpTerm b N).coefficient + t.coefficient) :
+    e.coefficient -
+      ∑ k ∈ range (N + 1), (a.sharpTerm (b + inclusion (by simp) d) k).coefficient =
+        (-t - ∑ k : Fin N,
+          inclusion (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
+            (a.sharpTerm d (k + 1))).coefficient := by
+  -- The remainder `R = e - ∑_{k ≤ N} sharpTerm a b k`, of order `-N`.
+  set R := r - a.sharpTerm b N with hR
+  have hRc : R.coefficient = e.coefficient -
+      ∑ k ∈ range (N + 1), (a.sharpTerm b k).coefficient := by
+    rw [hR, coefficient_sub, ← hr, sum_range_succ]
+    abel
+  have hd₀ : (a.sharpTerm d 0).coefficient = R.coefficient + t.coefficient := by
+    rw [← hd]
+    funext p
+    simp
+  rw [coefficient_sub, coefficient_neg, coefficient_sum]
+  simp only [coefficient_inclusion]
+  simp only [coefficient_sharpTerm_eq_add_right (b₀ := b + inclusion (by simp) d) (b₁ := b)
+    (b₂ := d) (by rw [coefficient_add, coefficient_inclusion]), sum_add_distrib]
+  rw [sum_range_succ' fun k ↦ (a.sharpTerm d k).coefficient, hd₀,
+    Fin.sum_univ_eq_sum_range fun k ↦ (a.sharpTerm d (k + 1)).coefficient]
+  rw [show ∑ k ∈ range (N + 1), (a.sharpTerm b k).coefficient =
+    e.coefficient - R.coefficient by rw [hRc]; abel]
+  abel
+
 /-- The correction step for right parametrix symbols: if `r = 1 - ∑_{k < N} sharpTerm a b k` has
 order `-N` and `t` is `(a b₀ - 1) (r - sharpTerm a b N)` at order `-N - 1`, then changing `b` by
 the symbol `d = b₀ (r - sharpTerm a b N)` of order `-m - N` makes the new remainder
@@ -268,26 +332,11 @@ private theorem exists_coefficient_sub_sum_sharpTerm_right_succ {a : Symbol n V 
           (-t - ∑ k : Fin N,
             inclusion (by push_cast; linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ (k : ℕ))])
               (a.sharpTerm d (k + 1))).coefficient := by
-  -- The remainder `R = 1 - ∑_{k ≤ N} sharpTerm a b k`, of order `-N`, and the correction `b₀ R`.
-  set R := r - a.sharpTerm b N with hR
-  have hRc : R.coefficient = (const (.id ℂ W) : Symbol n W W 0).coefficient -
-      ∑ k ∈ range (N + 1), (a.sharpTerm b k).coefficient := by
-    rw [hR, coefficient_sub, ← hr, sum_range_succ]
-    abel
-  let d : Symbol n W V (-m - N) := inclusion (by linarith) (b₀.comp R)
-  have hd₀ : (a.sharpTerm d 0).coefficient = R.coefficient +
-      ((a.comp b₀ - inclusion (add_neg_cancel m).ge (const (.id ℂ W))).comp R).coefficient := by
-    funext p
-    simp [d, ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc]
-  refine ⟨d, rfl, ?_⟩
-  rw [coefficient_sub, coefficient_neg, coefficient_sum, ht]
-  simp only [coefficient_inclusion]
-  simp only [coefficient_sharpTerm_eq_add_right (b₀ := b + inclusion (by simp) d) (b₁ := b)
-    (b₂ := d) (by rw [coefficient_add, coefficient_inclusion]), sum_add_distrib]
-  rw [sum_range_succ' fun k ↦ (a.sharpTerm d k).coefficient, hd₀,
-    Fin.sum_univ_eq_sum_range fun k ↦ (a.sharpTerm d (k + 1)).coefficient]
-  rw [show ∑ k ∈ range (N + 1), (a.sharpTerm b k).coefficient =
-    (const (.id ℂ W) : Symbol n W W 0).coefficient - R.coefficient by rw [hRc]; abel]
+  -- `a (b₀ R) = R + (a b₀ - 1) R` for `R = r - sharpTerm a b N`.
+  refine ⟨_, rfl, coefficient_sub_sum_sharpTerm_right_succ hr ?_⟩
+  rw [ht]
+  funext p
+  simp [ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc]
   abel
 
 /-- **Right parametrix symbols.** If a symbol `b₀` of order `-m` is a pointwise right inverse of
@@ -518,6 +567,106 @@ theorem isSmoothing_sharp_sub_ofSpatial {a : Symbol n V W m} {b : Symbol n W V (
   abel
 
 end Parametrix
+
+/-! ### Microlocal parametrix symbols
+
+A symbol `a` that is only elliptic on a set `S` of points `(x, ξ)`, typically a conic set of large
+frequencies over a compact set of positions, still has parametrix symbols there: for every symbol
+`c` of order `0` vanishing outside `S`, the formal composition can be made equal to `c`. When `c` is
+a conic cutoff equal to `1` near a covector `(x₀, ξ₀)`, this inverts `Op(a)` microlocally near
+`(x₀, ξ₀)` modulo smoothing operators, which is how a microlocal parametrix detects elliptic
+regular covectors.
+
+The construction is the one for elliptic symbols, with the pointwise inverse of `a` used only on the
+closure of `S`, where `a` is still elliptic (`TauCeti.Symbol.IsEllipticOn.closure`). Every
+successive approximation `b` vanishes outside the closure, hence so do the terms `sharpTerm b a k`
+and the remainder `R = c - ∑_{k ≤ N} sharpTerm b a k`, and the correction `d = R a⁻¹`
+(`TauCeti.Symbol.compInverse`) is a symbol with `d a = R` exactly. The asymptotic sum of the
+corrections need not vanish outside `S`, but the remainders only depend on it modulo symbols of the
+order of the remainder. -/
+
+section Microlocal
+
+variable [CompleteSpace V] {S : Set (CoordinateSpace n × CoordinateSpace n)}
+
+/-- **Microlocal left parametrix symbols.** Let the symbol `a` of order `m` be elliptic on a set
+`S` of points `(x, ξ)`, and let `c` be a symbol of order `0` vanishing outside `S`. Then there
+is a symbol `b` of order `-m` whose formal composition with `a` is `c`:
+`c ∼ ∑ₖ sharpTerm b a k`. -/
+theorem IsEllipticOn.exists_isAsymptoticSum_sharpTerm_left {a : Symbol n V W m}
+    (ha : a.IsEllipticOn S) {c : Symbol n V V 0} (hc : ∀ p ∉ S, c.coefficient p = 0) :
+    ∃ b : Symbol n W V (-m),
+      IsAsymptoticSum (m := fun k : ℕ ↦ -m + m - k) (inclusion (by simp) c) (b.sharpTerm a) := by
+  obtain ⟨b, hb⟩ := exists_forall_of_exists_add_of_imp
+    (fun N (b : Symbol n W V (-m)) ↦ (∃ r : Symbol n V V (-m + m - N),
+      c.coefficient - ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient) ∧
+        ∀ p ∉ _root_.closure S, b.coefficient p = 0)
+    (fun N (b : Symbol n W V (-m)) ↦ ∃ r : Symbol n V V (-m + m - N),
+      c.coefficient - ∑ k ∈ range N, (b.sharpTerm a k).coefficient = r.coefficient)
+    (b₀ := 0) ⟨⟨inclusion (by simp) c, by simp⟩, fun _ _ ↦ rfl⟩ (fun _ _ h ↦ h.1)
+    (fun _ _ _ d ⟨_, hr⟩ h ↦ ⟨_, coefficient_sub_sum_sharpTerm_left_congr d hr h⟩)
+    (fun N b ⟨⟨r, hr⟩, hb⟩ ↦ by
+      -- The remainder `R = c - ∑_{k ≤ N} sharpTerm b a k` vanishes outside `S`, as `b` does.
+      have hbS (k : ℕ) (p) (hp : p ∉ _root_.closure S) : (b.sharpTerm a k).coefficient p = 0 :=
+        coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_left
+          (eventuallyEq_of_mem (isClosed_closure.isOpen_compl.mem_nhds hp) fun q hq ↦ hb q hq) a k
+      have hR (p) (hp : p ∉ _root_.closure S) : (r - b.sharpTerm a N).coefficient p = 0 := by
+        rw [coefficient_sub, Pi.sub_apply, ← hr]
+        simp [hc p fun h ↦ hp (subset_closure h), hbS _ p hp]
+      -- The correction `d = R a⁻¹` satisfies `d a = R` exactly.
+      let d : Symbol n W V (-m - N) :=
+        inclusion (by linarith) ((r - b.sharpTerm a N).compInverse a hR ha.closure)
+      have hd : (d.comp a).coefficient =
+          (r - b.sharpTerm a N).coefficient + (0 : Symbol n V V (-m + m - (N + 1 : ℕ))).coefficient
+          := by
+        funext p
+        simp only [d, coefficient_comp, coefficient_inclusion, coefficient_compInverse_comp,
+          coefficient_zero, add_zero]
+      refine ⟨d, ⟨_, coefficient_sub_sum_sharpTerm_left_succ hr hd⟩, fun p hp ↦ ?_⟩
+      simp only [d, coefficient_add, coefficient_inclusion, Pi.add_apply, hb p hp, zero_add]
+      exact coefficient_compInverse_of_notMem _ _ _ _ hp)
+  exact ⟨b, isAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
+
+/-- **Microlocal right parametrix symbols.** Let the symbol `a` of order `m` be elliptic on a set
+`S` of points `(x, ξ)`, and let `c` be a symbol of order `0` vanishing outside `S`. Then there
+is a symbol `b` of order `-m` such that the formal composition of `a` with `b` is `c`:
+`c ∼ ∑ₖ sharpTerm a b k`. -/
+theorem IsEllipticOn.exists_isAsymptoticSum_sharpTerm_right {a : Symbol n V W m}
+    (ha : a.IsEllipticOn S) {c : Symbol n W W 0}
+    (hc : ∀ p ∉ S, c.coefficient p = 0) :
+    ∃ b : Symbol n W V (-m),
+      IsAsymptoticSum (m := fun k : ℕ ↦ m + -m - k) (inclusion (by simp) c) (a.sharpTerm b) := by
+  obtain ⟨b, hb⟩ := exists_forall_of_exists_add_of_imp
+    (fun N (b : Symbol n W V (-m)) ↦ (∃ r : Symbol n W W (m + -m - N),
+      c.coefficient - ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient) ∧
+        ∀ p ∉ _root_.closure S, b.coefficient p = 0)
+    (fun N (b : Symbol n W V (-m)) ↦ ∃ r : Symbol n W W (m + -m - N),
+      c.coefficient - ∑ k ∈ range N, (a.sharpTerm b k).coefficient = r.coefficient)
+    (b₀ := 0) ⟨⟨inclusion (by simp) c, by simp⟩, fun _ _ ↦ rfl⟩ (fun _ _ h ↦ h.1)
+    (fun _ _ _ d ⟨_, hr⟩ h ↦ ⟨_, coefficient_sub_sum_sharpTerm_right_congr d hr h⟩)
+    (fun N b ⟨⟨r, hr⟩, hb⟩ ↦ by
+      -- The remainder `R = c - ∑_{k ≤ N} sharpTerm a b k` vanishes outside `S`, as `b` does.
+      have hbS (k : ℕ) (p) (hp : p ∉ _root_.closure S) : (a.sharpTerm b k).coefficient p = 0 :=
+        coefficient_sharpTerm_eq_zero_of_eventuallyEq_zero_right
+          (eventuallyEq_of_mem (isClosed_closure.isOpen_compl.mem_nhds hp) fun q hq ↦ hb q hq) a k
+      have hR (p) (hp : p ∉ _root_.closure S) : (r - a.sharpTerm b N).coefficient p = 0 := by
+        rw [coefficient_sub, Pi.sub_apply, ← hr]
+        simp [hc p fun h ↦ hp (subset_closure h), hbS _ p hp]
+      -- The correction `d = a⁻¹ R` satisfies `a d = R` exactly.
+      let d : Symbol n W V (-m - N) :=
+        inclusion (by linarith) (a.inverseComp (r - a.sharpTerm b N) hR ha.closure)
+      have hd : (a.comp d).coefficient =
+          (r - a.sharpTerm b N).coefficient + (0 : Symbol n W W (m + -m - (N + 1 : ℕ))).coefficient
+          := by
+        funext p
+        simp only [d, coefficient_comp, coefficient_inclusion, coefficient_comp_inverseComp,
+          coefficient_zero, add_zero]
+      refine ⟨d, ⟨_, coefficient_sub_sum_sharpTerm_right_succ hr hd⟩, fun p hp ↦ ?_⟩
+      simp only [d, coefficient_add, coefficient_inclusion, Pi.add_apply, hb p hp, zero_add]
+      exact coefficient_inverseComp_of_notMem _ _ _ _ hp)
+  exact ⟨b, isAsymptoticSum_iff.2 fun N ↦ by simpa using hb N⟩
+
+end Microlocal
 
 end Symbol
 

@@ -83,7 +83,9 @@ homogeneous symbols of degrees `m - j`.
 * `TauCeti.Symbol.exists_asymptoticSum`: every sequence of symbols of orders decreasing to `-∞`
   has an asymptotic sum.
 * `TauCeti.Symbol.exists_forall_of_exists_add`: successive corrections of orders `μ - N` that
-  improve a symbol step by step can be summed to one symbol with every improved property.
+  improve a symbol step by step can be summed to one symbol with every improved property;
+  `TauCeti.Symbol.exists_forall_of_exists_add_of_imp` lets a stronger, unstable property drive
+  the iteration.
 * `TauCeti.Symbol.IsUniform.exists_norm_mixedDeriv_cutoff_smul_le`: the estimates of the cut-off
   symbols `χ(ξ / t) a(x, ξ)` of a uniform symbol, uniform in `t ≥ 1` and in the position.
 * `TauCeti.Symbol.IsUniformAsymptoticSum`: `b` is an asymptotic sum of the symbols `aⱼ` with
@@ -733,16 +735,20 @@ private theorem exists_corrections_of_exists_add {μ : ℝ} (P : ℕ → Symbol 
     rw [Finset.sum_range_succ, ← add_assoc, ← ih]
     simp [s]
 
-/-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
-order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
-and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
-theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
-    {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
-    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), P N b →
-      b'.coefficient = b.coefficient + d.coefficient → P N b')
+/-- **Asymptotic summation of successive corrections**, with a stronger property driving the
+iteration. Let `Q N` be properties of symbols of order `μ` which are stable under changes by
+symbols of order `μ - N`, and `P N` stronger properties which `b₀` has for `N = 0` and which can be
+improved from `N` to `N + 1` by such a change. Then one symbol has all the properties `Q N`.
+
+The properties `P N` need not be stable under changes of order `μ - N`: they may for instance
+record where the successive approximations vanish, which an asymptotic sum does not preserve. -/
+theorem exists_forall_of_exists_add_of_imp {μ : ℝ} (P Q : ℕ → Symbol n V W μ → Prop)
+    {b₀ : Symbol n V W μ} (h₀ : P 0 b₀) (hPQ : ∀ N b, P N b → Q N b)
+    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), Q N b →
+      b'.coefficient = b.coefficient + d.coefficient → Q N b')
     (hsucc : ∀ (N : ℕ) b, P N b →
       ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
-    ∃ b, ∀ N, P N b := by
+    ∃ b, ∀ N, Q N b := by
   obtain ⟨c, -, hc⟩ := exists_corrections_of_exists_add P (fun _ _ ↦ True) h₀
     fun N b hb ↦ (hsucc N b hb).imp fun _ hd ↦ ⟨trivial, hd⟩
   have hm : Antitone fun j : ℕ => μ - j := fun _ _ hij => sub_le_sub_left (Nat.cast_le.2 hij) μ
@@ -752,9 +758,21 @@ theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → 
   refine ⟨b₀ + inclusion (by simp) B, fun N ↦ ?_⟩
   obtain ⟨r, hr⟩ := isAsymptoticSum_iff.1 hB N
   obtain ⟨b, hb, hbc⟩ := hc N
-  refine hcongr N b _ r hb ?_
+  refine hcongr N b _ r (hPQ N b hb) ?_
   rw [coefficient_add, coefficient_inclusion, ← hr, hbc]
   abel
+
+/-- **Asymptotic summation of successive corrections.** Let `P N` be properties of symbols of
+order `μ` which `b₀` has for `N = 0`, which are stable under changes by symbols of order `μ - N`,
+and which can be improved from `N` to `N + 1` by such a change. Then one symbol has all of them. -/
+theorem exists_forall_of_exists_add {μ : ℝ} (P : ℕ → Symbol n V W μ → Prop)
+    {b₀ : Symbol n V W μ} (h₀ : P 0 b₀)
+    (hcongr : ∀ (N : ℕ) b b' (d : Symbol n V W (μ - N)), P N b →
+      b'.coefficient = b.coefficient + d.coefficient → P N b')
+    (hsucc : ∀ (N : ℕ) b, P N b →
+      ∃ d : Symbol n V W (μ - N), P (N + 1) (b + inclusion (by simp) d)) :
+    ∃ b, ∀ N, P N b :=
+  exists_forall_of_exists_add_of_imp P P h₀ (fun _ _ h ↦ h) hcongr hsucc
 
 /-! ### Asymptotic sums of uniform symbols -/
 

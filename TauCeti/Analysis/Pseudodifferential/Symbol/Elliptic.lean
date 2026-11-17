@@ -42,7 +42,9 @@ Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
 ## Main declarations
 
 * `TauCeti.Symbol.IsEllipticAbove`, `TauCeti.Symbol.IsUniformlyEllipticAbove`: ellipticity of a
-  symbol above a radius, with locally uniform and uniform constants.
+  symbol above a radius, with locally uniform and uniform constants;
+  `TauCeti.Symbol.isEllipticOn_iff_isEllipticAbove` identifies the first with ellipticity on the
+  set of large frequencies (`TauCeti.Symbol.IsEllipticOn`).
 * `TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub`,
   `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`: the cut-off inverse is a pointwise
   two-sided inverse of `a` modulo smoothing symbols, and
@@ -117,6 +119,14 @@ theorem IsEllipticAbove.isInvertible {a : Symbol n V W m} (ha : a.IsEllipticAbov
 theorem IsEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsEllipticAbove R) (h : R ≤ R') :
     a.IsEllipticAbove R' :=
   fun K hK => (ha K hK).imp fun _ hC x hx ξ hξ => hC x hx ξ (h.trans hξ)
+
+/-- Ellipticity on the set of points with frequency of norm at least `R` is ellipticity above the
+radius `R`. -/
+theorem isEllipticOn_iff_isEllipticAbove {a : Symbol n V W m} :
+    a.IsEllipticOn {p | R ≤ ‖p.2‖} ↔ a.IsEllipticAbove R := by
+  rw [isEllipticOn_iff, isEllipticAbove_iff]
+  exact forall₂_congr fun _ _ => exists_congr fun _ =>
+    ⟨fun h x hx ξ hξ => h (x, ξ) hξ hx, fun h p hp hpK => h p.1 hpK p.2 hp⟩
 
 /-- Uniform ellipticity above a radius implies uniform ellipticity above every larger radius. -/
 theorem IsUniformlyEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsUniformlyEllipticAbove R)
