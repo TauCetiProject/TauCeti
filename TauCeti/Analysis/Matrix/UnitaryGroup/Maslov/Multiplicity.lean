@@ -19,7 +19,7 @@ For a unitary frame `U` of the Lagrangian `Λ = U ℝⁿ ⊆ ℂⁿ`, the Souria
 exactly when `W x = x`, and the fixed vectors of `W` are stable under conjugation because the
 entrywise conjugate of `W` is its inverse. As `W` is unitary, hence normal, the multiplicity of `1`
 as a root of its characteristic polynomial is the dimension of its fixed vectors, so it is the
-dimension of `Λ ∩ ℝⁿ` (`Matrix.UnitaryGroup.rootMultiplicity_charpoly_souriau`).
+dimension of `Λ ∩ ℝⁿ` (`Matrix.UnitaryGroup.rootMultiplicity_one_charpoly_souriau`).
 
 This turns the zero axiom `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq`, stated
 through the Souriau maps, into the zero axiom of Robbin and Salamon: a path of Lagrangians whose
@@ -30,8 +30,8 @@ intersections with `ℝⁿ` keep the same dimension has Maslov index zero
 
 * `Matrix.UnitaryGroup.eigenspace_toEuclideanLin_souriau_one`: the fixed vectors of the Souriau map
   of `U` are the complex span of `U ℝⁿ ∩ ℝⁿ`.
-* `Matrix.UnitaryGroup.rootMultiplicity_charpoly_souriau`: the multiplicity of the eigenvalue `1`
-  of the Souriau map is the dimension of `U ℝⁿ ∩ ℝⁿ`.
+* `Matrix.UnitaryGroup.rootMultiplicity_one_charpoly_souriau`: the multiplicity of the eigenvalue
+  `1` of the Souriau map is the dimension of `U ℝⁿ ∩ ℝⁿ`.
 * `Matrix.UnitaryGroup.maslovIndex_eq_zero_of_finrank_eq`: the zero axiom for paths of Lagrangian
   frames.
 
@@ -149,7 +149,7 @@ theorem eigenspace_toEuclideanLin_souriau_one (U : unitaryGroup n ℂ) :
 
 /-- **The multiplicity of `1` as an eigenvalue of the Souriau map** `U Uᵀ` is the dimension of the
 intersection `U ℝⁿ ∩ ℝⁿ` of the Lagrangian `U ℝⁿ` with `ℝⁿ`. -/
-theorem rootMultiplicity_charpoly_souriau (U : unitaryGroup n ℂ) :
+theorem rootMultiplicity_one_charpoly_souriau (U : unitaryGroup n ℂ) :
     (souriau U : Matrix n n ℂ).charpoly.rootMultiplicity 1 =
       finrank ℝ ((U : Matrix n n ℂ).realImage ⊓ realSubspace n : Submodule ℝ _) := by
   rw [rootMultiplicity_charpoly_eq_finrank_eigenspace, eigenspace_toEuclideanLin_souriau_one,
@@ -161,6 +161,6 @@ theorem maslovIndex_eq_zero_of_finrank_eq {U V : unitaryGroup n ℂ} (γ : Path 
     (h : ∀ t, finrank ℝ ((γ t : Matrix n n ℂ).realImage ⊓ realSubspace n : Submodule ℝ _) = k) :
     maslovIndex γ = 0 :=
   maslovIndex_eq_zero_of_rootMultiplicity_eq γ fun t ↦
-    (rootMultiplicity_charpoly_souriau (γ t)).trans (h t)
+    (rootMultiplicity_one_charpoly_souriau (γ t)).trans (h t)
 
 end Matrix.UnitaryGroup

@@ -68,12 +68,11 @@ theorem finrank_realImage_diagonalStraightening_mul_graphFrame_inf_realSubspace
       Submodule ℝ _) = finrank ℝ (eigenspace (toLin' A) 1) := by
   set T := (toEuclideanCLM (𝕜 := ℂ) (diagonalStraightening n) :
       EuclideanSpace ℂ (n ⊕ n) →ₗ[ℂ] EuclideanSpace ℂ (n ⊕ n)).restrictScalars ℝ
-  have hT : Function.Injective T := by
-    intro x y h
-    simp only [T, LinearMap.restrictScalars_apply, ContinuousLinearMap.coe_coe] at h
-    have h' := congrArg (toEuclideanCLM (𝕜 := ℂ) (star (diagonalStraightening n))) h
-    rwa [← mul_apply_eq_comp, ← mul_apply_eq_comp, ← map_mul,
-      Unitary.star_mul_self_of_mem diagonalStraightening_mem_unitaryGroup, map_one] at h'
+  have hT : Function.Injective T := fun x y h ↦
+    (UnitaryGroup.toLinearIsometryEquiv ⟨_, diagonalStraightening_mem_unitaryGroup⟩).injective <| by
+      -- Both sides act by `diagonalStraightening n *ᵥ ·`, so `h` closes the goal by `rfl`.
+      rw [UnitaryGroup.toLinearIsometryEquiv_apply, UnitaryGroup.toLinearIsometryEquiv_apply]
+      exact h
   rw [← realImage_diagonalStraightening_mul_graphFrame_one, realImage_mul, realImage_mul,
     ← Submodule.map_inf T hT, realImage_graphFrame_inf_realImage_graphFrame_one,
     ← Submodule.map_comp]
@@ -88,11 +87,11 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 /-- The multiplicity of `1` as an eigenvalue of the Souriau map of the unitary graph frame of a
 symplectic matrix `A` is the dimension of the fixed vectors of `A`. -/
-theorem rootMultiplicity_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+theorem rootMultiplicity_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n ℝ) :
     (UnitaryGroup.souriau (graphUnitaryFrame A) :
       Matrix (n ⊕ n) (n ⊕ n) ℂ).charpoly.rootMultiplicity 1 =
         finrank ℝ (eigenspace (toLin' ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)) 1) := by
-  rw [UnitaryGroup.rootMultiplicity_charpoly_souriau, realImage_graphUnitaryFrame,
+  rw [UnitaryGroup.rootMultiplicity_one_charpoly_souriau, realImage_graphUnitaryFrame,
     finrank_realImage_diagonalStraightening_mul_graphFrame_inf_realSubspace]
 
 /-- **The zero axiom for the Conley–Zehnder index.** A path of symplectic matrices along which the
@@ -105,7 +104,7 @@ theorem conleyZehnderIndex_eq_zero_of_finrank_eigenspace_eq {A B : GLSymplectic 
     conleyZehnderIndex γ = 0 := by
   rw [conleyZehnderIndex_def, UnitaryGroup.maslovIndex_eq_zero_of_rootMultiplicity_eq _ (k := k)
     fun t ↦ by rw [Path.map_coe, Function.comp_apply,
-      rootMultiplicity_charpoly_souriau_graphUnitaryFrame, h t], neg_zero]
+      rootMultiplicity_one_charpoly_souriau_graphUnitaryFrame, h t], neg_zero]
 
 /-- **Naturality of the Conley–Zehnder index.** Conjugating a path of symplectic matrices by a
 constant symplectic matrix `P` does not change its Conley–Zehnder index: `CZ(P Ψ P⁻¹) = CZ(Ψ)`. -/
