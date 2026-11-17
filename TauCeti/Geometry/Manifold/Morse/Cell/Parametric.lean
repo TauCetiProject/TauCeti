@@ -440,7 +440,7 @@ theorem exists_fiberHomotopyEquiv_fiberwiseCellComparison_morseFamilyAttachingMa
   have hreg (x : M) (h₁ : c - ε ≤ f x) (h₂ : f x < c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by
     obtain ⟨i, hi⟩ := mem_iUnion.1
       (hcrit ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 h0, h₁, by linarith⟩)
-    exact mfderiv_ne_zero_of_mem_source_of_ne_level (φ i) (by simp) (hfφ i)
+    exact (φ i).mfderiv_ne_zero_of_mem_source_of_ne_level (by simp) (hfφ i)
       (hfs.mdifferentiableAt (by simp)) hi h₂.ne h0
   -- Milnor's comparison over `P` of the cells of the constant family `φ` with those of `ψ`: linear
   -- isometries `e i p` of the discs and homotopies `K i : χφ i ≃ χ i ∘ e i` of characteristic maps.

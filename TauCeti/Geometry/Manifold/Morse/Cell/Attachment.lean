@@ -480,7 +480,7 @@ end MilnorFunction
 /-- In a normal-form chart `φ` of `f`, every critical point lies on the level `c`: along the
 curve `t ↦ φ⁻¹(t • φ x)` the function is `c + t² (f x - c)`, with derivative `2 (f x - c)` at
 `t = 1`. -/
-theorem mfderiv_ne_zero_of_mem_source_of_ne_level {m : WithTop ℕ∞}
+theorem _root_.PartialDiffeomorph.mfderiv_ne_zero_of_mem_source_of_ne_level {m : WithTop ℕ∞}
     (φ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) m)
     (hm : m ≠ 0) {k : ℕ}
     (hfφ : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
