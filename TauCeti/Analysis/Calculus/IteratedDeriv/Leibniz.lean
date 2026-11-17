@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
-# Leibniz's rule at a zero of a power
+# Leibniz's rule at a zero of a power, and for compositions of linear maps
 
 The `n`-th derivative of `z ↦ (z - a) ^ n • h z` at `a` is `n! • h a`: in Leibniz's rule every
 other term differentiates `(z - a) ^ n` fewer than `n` times and so vanishes at `a`. If an
@@ -19,11 +20,16 @@ analytic function `f` factors as `f z = (z - a) ^ n • h z` (for instance throu
 More generally, multiplying by `(z - a) ^ p` shifts the Taylor coefficients at `a` up by `p`
 without changing them.
 
+For functions `c` and `d` with values in continuous linear maps, `Cⁿ` on an open set, Leibniz's
+rule `(c ∘ d)⁽ⁿ⁾ = ∑ᵢ (n choose i) c⁽ⁱ⁾ ∘ d⁽ⁿ⁻ⁱ⁾` holds for their pointwise composition.
+
 ## Main results
 
 * `TauCeti.iteratedDeriv_pow_sub_smul_self`: the identity above.
 * `TauCeti.inv_factorial_smul_iteratedDeriv_pow_sub_smul`: the `(p + i)`-th Taylor coefficient of
   `z ↦ (z - a) ^ p • h z` at `a` is the `i`-th Taylor coefficient of `h`.
+* `TauCeti.iteratedDeriv_clm_comp`: Leibniz's rule for the pointwise composition of functions
+  with values in continuous linear maps.
 -/
 
 public section
@@ -85,5 +91,47 @@ theorem inv_factorial_smul_iteratedDeriv_pow_sub_smul [CharZero 𝕜] (p i : ℕ
   rw [← h]
   push_cast
   field_simp
+
+section CLMComp
+
+variable {F G : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup G]
+  [NormedSpace 𝕜 G]
+
+/-- **Leibniz's rule for compositions of continuous linear maps.** If `c` and `d` are `Cⁿ` on an
+open set `s` containing `x`, the `n`-th derivative at `x` of their pointwise composition is
+`∑ᵢ (n choose i) c⁽ⁱ⁾(x) ∘ d⁽ⁿ⁻ⁱ⁾(x)`. -/
+theorem iteratedDeriv_clm_comp {s : Set 𝕜} (hs : IsOpen s) {c : 𝕜 → F →L[𝕜] G}
+    {d : 𝕜 → E →L[𝕜] F} {n : ℕ} (hc : ContDiffOn 𝕜 n c s) (hd : ContDiffOn 𝕜 n d s) {x : 𝕜}
+    (hx : x ∈ s) :
+    iteratedDeriv n (fun y ↦ (c y).comp (d y)) x =
+      ∑ i ∈ Finset.range (n + 1),
+        n.choose i • (iteratedDeriv i c x).comp (iteratedDeriv (n - i) d x) := by
+  induction n generalizing c d with
+  | zero => simp
+  | succ n ih =>
+    have hc' : ContDiffOn 𝕜 n (deriv c) s := hc.deriv_of_isOpen hs (by norm_cast)
+    have hd' : ContDiffOn 𝕜 n (deriv d) s := hd.deriv_of_isOpen hs (by norm_cast)
+    -- On `s` the derivative of the composition is given by the product rule.
+    have heq : Set.EqOn (deriv fun y ↦ (c y).comp (d y))
+        ((fun y ↦ (deriv c y).comp (d y)) + fun y ↦ (c y).comp (deriv d y)) s := fun y hy ↦ by
+      have hm := hs.mem_nhds hy
+      exact deriv_clm_comp ((hc.differentiableOn (by simp)).differentiableAt hm)
+        ((hd.differentiableOn (by simp)).differentiableAt hm)
+    have hm := hs.mem_nhds hx
+    have hle : (n : WithTop ℕ∞) ≤ (n + 1 : ℕ) := by norm_cast; omega
+    rw [iteratedDeriv_succ', heq.iteratedDeriv_of_isOpen hs n hx,
+      iteratedDeriv_add ((hc'.clm_comp (hd.of_le hle)).contDiffAt hm)
+        (((hc.of_le hle).clm_comp hd').contDiffAt hm), ih hc' (hd.of_le hle),
+      ih (hc.of_le hle) hd']
+    simp only [← iteratedDeriv_succ']
+    rw [show n + 1 + 1 = n + 2 from rfl,
+      Finset.sum_choose_succ_nsmul (fun i k ↦ (iteratedDeriv i c x).comp (iteratedDeriv k d x)) n,
+      add_comm]
+    congr 1
+    refine Finset.sum_congr rfl fun i hi ↦ ?_
+    rw [Finset.mem_range] at hi
+    rw [show n - i + 1 = n + 1 - i by omega]
+
+end CLMComp
 
 end TauCeti
