@@ -6,9 +6,12 @@ Authors: Giada Franz, The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Basic
+public import TauCeti.Analysis.InnerProductSpace.Sphere.Boost
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
+import Mathlib.Analysis.Normed.Module.Normalize
+import Mathlib.Analysis.SpecialFunctions.Artanh
 
 /-!
 # The conformal maps of Hersch's balancing lemma
@@ -29,6 +32,7 @@ at `‖v‖ = 1` gives `T_v(x) = v` whenever `⟪v, x⟫ ≠ -1`, and the map is
 ## Main definitions and results
 
 * `TauCeti.herschMap`: the map `T_a`, as a map of the ambient space.
+* `TauCeti.herschMap_tanh_smul`: interior Hersch maps are sphere boosts, with parameter `tanh t`.
 * `TauCeti.norm_herschMap`: `T_a` maps the unit sphere to itself.
 * `TauCeti.herschMap_neg_herschMap`: `T_(-a) ∘ T_a = id` where `⟪a, x⟫ ≠ -1`.
 * `TauCeti.herschMap_of_norm_eq_one`: `T_v(x) = v` for `‖v‖ = 1` and `⟪v, x⟫ ≠ -1`.
@@ -66,21 +70,48 @@ theorem herschMap_def (a x : E) :
 theorem herschMap_zero (x : E) : herschMap 0 x = x := by
   simp [herschMap]
 
+/-- Along a unit direction, Hersch's parameter is the hyperbolic tangent of the boost rapidity.
+The identity holds on the entire ambient space, including where the denominator vanishes. -/
+theorem herschMap_tanh_smul {u : E} (hu : ‖u‖ = 1) (t : ℝ) (x : E) :
+    herschMap (Real.tanh t • u) x = sphereBoost u t x := by
+  have hc : Real.cosh t ≠ 0 := (Real.cosh_pos t).ne'
+  have hsqrt : √(1 - Real.tanh t ^ 2) = (Real.cosh t)⁻¹ := by
+    apply (Real.sqrt_eq_iff_mul_self_eq (sub_nonneg.2 (Real.tanh_sq_lt_one t).le)
+      (inv_nonneg.2 (Real.cosh_pos t).le)).2
+    rw [Real.tanh_eq_sinh_div_cosh]
+    field_simp
+    nlinarith [Real.cosh_sq t]
+  simp only [herschMap_def, sphereBoost_def, norm_smul, Real.norm_eq_abs, hu, mul_one,
+    sq_abs, hsqrt, real_inner_smul_left]
+  rw [Real.tanh_eq_sinh_div_cosh, real_inner_comm u x]
+  have hden : 1 + Real.sinh t / Real.cosh t * ⟪u, x⟫ =
+      (Real.cosh t + Real.sinh t * ⟪u, x⟫) / Real.cosh t := by
+    field_simp
+  rw [hden, inv_div]
+  match_scalars <;> field_simp
+  congr 1
+  linear_combination -⟪u, x⟫ * Real.cosh_sq t
+
+/-- At a point `v` of the unit sphere, `T_v(x) = v` whenever `⟪v, x⟫ ≠ -1`. -/
+theorem herschMap_of_norm_eq_one {v x : E} (hv : ‖v‖ = 1) (h : ⟪v, x⟫ ≠ -1) :
+    herschMap v x = v := by
+  have hD : 1 + ⟪v, x⟫ ≠ 0 := fun h' ↦ h (by linarith)
+  rw [herschMap, hv]
+  simp only [one_pow, sub_self, Real.sqrt_zero, zero_smul, zero_add, add_zero, div_one]
+  rw [smul_smul, add_comm ⟪v, x⟫ 1, inv_mul_cancel₀ hD, one_smul]
+
 /-- `T_a` maps the unit sphere to itself. -/
 theorem norm_herschMap {a x : E} (ha : ‖a‖ ≤ 1) (hx : ‖x‖ = 1) (h : ⟪a, x⟫ ≠ -1) :
     ‖herschMap a x‖ = 1 := by
-  set s := √(1 - ‖a‖ ^ 2) with hs_def
-  have hs : s ^ 2 = 1 - ‖a‖ ^ 2 := Real.sq_sqrt (by nlinarith [norm_nonneg a])
-  have hD : 1 + ⟪a, x⟫ ≠ 0 := fun h' ↦ h (by linarith)
-  have hs1 : 1 + s ≠ 0 := by positivity
-  rw [herschMap, ← hs_def, norm_smul, norm_inv, Real.norm_eq_abs,
-    inv_mul_eq_one₀ (by simpa using hD), eq_comm, ← sq_eq_sq₀ (norm_nonneg _) (abs_nonneg _),
-    sq_abs, ← real_inner_self_eq_norm_sq]
-  simp only [inner_add_left, inner_add_right, real_inner_smul_left, real_inner_smul_right]
-  simp only [real_inner_self_eq_norm_sq, hx, real_inner_comm x a,
-    show ‖a‖ ^ 2 = 1 - s ^ 2 by linarith]
-  field_simp
-  ring
+  rcases ha.lt_or_eq with ha | ha
+  · by_cases ha0 : a = 0
+    · simpa [ha0] using hx
+    · have ht : Real.tanh (Real.artanh ‖a‖) = ‖a‖ :=
+        Real.tanh_artanh ⟨by linarith [norm_nonneg a], ha⟩
+      have := norm_sphereBoost (NormedSpace.norm_normalize ha0) hx (Real.artanh ‖a‖)
+      rwa [← herschMap_tanh_smul (NormedSpace.norm_normalize ha0), ht,
+        NormedSpace.norm_smul_normalize] at this
+  · rw [herschMap_of_norm_eq_one ha h, ha]
 
 /-- For `x ⊥ a`, `T_a(x) = √(1 - ‖a‖²) x + a`. -/
 theorem herschMap_of_inner_eq_zero {a x : E} (h : ⟪a, x⟫ = 0) :
@@ -124,14 +155,6 @@ theorem herschMap_neg_herschMap {a x : E} (ha : ‖a‖ < 1) (h : ⟪a, x⟫ ≠
   rw [inv_div]
   match_scalars <;> field_simp [hs2]
   ring
-
-/-- At a point `v` of the unit sphere, `T_v(x) = v` whenever `⟪v, x⟫ ≠ -1`. -/
-theorem herschMap_of_norm_eq_one {v x : E} (hv : ‖v‖ = 1) (h : ⟪v, x⟫ ≠ -1) :
-    herschMap v x = v := by
-  have hD : 1 + ⟪v, x⟫ ≠ 0 := fun h' ↦ h (by linarith)
-  rw [herschMap, hv]
-  simp only [one_pow, sub_self, Real.sqrt_zero, zero_smul, zero_add, add_zero, div_one]
-  rw [smul_smul, add_comm ⟪v, x⟫ 1, inv_mul_cancel₀ hD, one_smul]
 
 /-- `T_a(x)` is jointly continuous in `(a, x)` where `⟪a, x⟫ ≠ -1`. -/
 theorem continuousAt_herschMap {a x : E} (h : ⟪a, x⟫ ≠ -1) :

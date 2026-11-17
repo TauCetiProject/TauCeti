@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.Sphere.Hersch.Basic
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+import Mathlib.Analysis.SpecialFunctions.Artanh
 
 /-!
 # Hersch's maps in stereographic coordinates
@@ -41,15 +42,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {u : E} {�
 /-- `T_(ρu)` fixes `u`. -/
 theorem herschMap_smul_self (hu : ‖u‖ = 1) (hρ0 : -1 < ρ) (hρ1 : ρ ≤ 1) :
     herschMap (ρ • u) u = u := by
-  have hs := Real.sq_sqrt (by nlinarith : 0 ≤ 1 - ρ ^ 2)
-  have hs0 : 0 ≤ √(1 - ρ ^ 2) := Real.sqrt_nonneg _
-  have hρ : 1 + ρ ≠ 0 := by linarith
-  simp only [herschMap_def, norm_smul, Real.norm_eq_abs, hu, mul_one, sq_abs, real_inner_smul_left,
-    real_inner_self_eq_norm_sq, smul_smul, ← add_smul]
-  set s := √(1 - ρ ^ 2)
-  convert one_smul ℝ u using 2
-  field_simp
-  linear_combination hs
+  rcases hρ1.lt_or_eq with hρ1 | rfl
+  · rw [← Real.tanh_artanh ⟨hρ0, hρ1⟩, herschMap_tanh_smul hu, sphereBoost_self hu]
+  · simpa only [one_smul] using herschMap_of_norm_eq_one hu
+      (x := u) (by rw [real_inner_self_eq_norm_sq, hu]; norm_num)
 
 /-- `T_(ρu)` fixes `-u`, for `ρ < 1`. -/
 theorem herschMap_smul_neg_self (hu : ‖u‖ = 1) (hρ0 : -1 ≤ ρ) (hρ1 : ρ < 1) :
