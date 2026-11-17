@@ -50,7 +50,7 @@ Its crossing form at `t₀` is therefore `Γ`, and the finite-dimensional crossi
 (`ContinuousLinearMap.eventually_sigNeg_eq_add_sigNeg_crossingForm` and
 `ContinuousLinearMap.eventually_sigNeg_eq_add_sigPos_crossingForm`) give the negative index of
 `V t` just after and just before `t₀`. On the other hand the negative index of `V t` counts the
-eigenvalues of `A t` in `[-c, 0)` (`TauCeti.sigNeg_add_spectralCount_eq_finrank`): the form
+eigenvalues of `A t` in `[-c, 0)` (`IsSelfAdjoint.sigNeg_add_spectralCount_eq_finrank`): the form
 `x ↦ ⟪A t x, x⟫` is negative definite on the spectral subspace for `[-c, 0)` and nonnegative on
 that for `[0, c]`
 (`ContinuousLinearMap.re_inner_apply_self_neg_of_mem_range_cfc_indicator` and
@@ -62,9 +62,9 @@ a difference of these counts.
 
 ## Main results
 
-* `TauCeti.sigNeg_add_spectralCount_eq_finrank`: the negative index of the form of a self-adjoint
-  operator on the range of its spectral projection for a cut `[-c, c]`, plus the number of its
-  eigenvalues in `[0, c]`, is the rank of that projection.
+* `IsSelfAdjoint.sigNeg_add_spectralCount_eq_finrank`: the negative index of the form of a
+  self-adjoint operator on the range of its spectral projection for a cut `[-c, c]`, plus the
+  number of its eigenvalues in `[0, c]`, is the rank of that projection.
 * `TauCeti.eventually_spectralFlow_self_eq_neg_sigNeg_crossingForm`: the spectral flow just after
   a regular crossing.
 * `TauCeti.eventually_spectralFlow_eq_sigPos_crossingForm`: the spectral flow just before a
@@ -148,8 +148,8 @@ self-adjoint operator `S`: neither `-c` nor `c` is in its spectrum, and its spec
 the negative index of the form `(v, w) ↦ ⟪S (U v), U w⟫` on `K`, plus the number
 `spectralCount c S` of eigenvalues of `S` in `[0, c]`, is the dimension of `K`: the negative index
 counts the eigenvalues of `S` in `[-c, 0)`. -/
-theorem sigNeg_add_spectralCount_eq_finrank {S : H →L[ℝ] H} (hS : IsSelfAdjoint S) {c : ℝ}
-    (hc : 0 ≤ c) (h₁ : -c ∉ spectrum ℝ S) (h₂ : c ∉ spectrum ℝ S)
+theorem _root_.IsSelfAdjoint.sigNeg_add_spectralCount_eq_finrank {S : H →L[ℝ] H}
+    (hS : IsSelfAdjoint S) {c : ℝ} (hc : 0 ≤ c) (h₁ : -c ∉ spectrum ℝ S) (h₂ : c ∉ spectrum ℝ S)
     (hfd : FiniteDimensional ℝ (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) S).range)
     {K : Type*} [NormedAddCommGroup K] [NormedSpace ℝ K] {U : K →L[ℝ] H} (hU : Injective U)
     (hUr : (U : K →ₗ[ℝ] H).range = (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) S).range) :
@@ -317,7 +317,7 @@ private theorem exists_spectralFlow_eq_sigNeg_sub_sigNeg {s : Set ℝ} (ht₀ : 
       · rintro _ ⟨v, rfl⟩
         exact ⟨v, by simp⟩
       · rw [LinearMap.finrank_range_of_inj hinj, hrk, hK]
-    exact sigNeg_add_spectralCount_eq_finrank hst hc.le h₁ h₂ hfd hinj hrange
+    exact hst.sigNeg_add_spectralCount_eq_finrank hc.le h₁ h₂ hfd hinj hrange
   obtain ⟨ε, hε, hball⟩ := Metric.mem_nhdsWithin_iff.1 hloc
   refine ⟨ε, hε, fun a b ha hab hb hs ↦ ?_⟩
   have hsub : Icc a b ⊆ Metric.ball t₀ ε ∩ s := fun u hu ↦ by
