@@ -52,13 +52,6 @@ variable {A : Type*} [IsEmpty A] [DecidableEq A] (Γ : A → Type*) [∀ α, Gro
   (ρ : ∀ α, Representation ℝ (Γ α) (E α)) (n : ℕ) (X : Type*) [TopologicalSpace X] [T2Space X]
   [ChartedSpace (EuclideanSpace ℝ (Fin n)) X]
 
-omit [DecidableEq A] [∀ α, NormedSpace ℝ (E α)] [∀ α, FiniteDimensional ℝ (E α)] in
-/-- With an empty index set every zero set is the whole thickening. -/
-private theorem kuranishiZeroSet_eq_univ_of_isEmpty {T : Finset A → Type*}
-    (s : ∀ (J : Finset A) (α : J), T J → E α) (I J : Finset A) :
-    kuranishiZeroSet s I J = univ :=
-  eq_univ_of_forall fun _ ↦ mem_kuranishiZeroSet.2 fun α ↦ (IsEmpty.false α.1).elim
-
 /-- **The manifold atlas.** A Hausdorff space charted on `ℝⁿ` is an implicit atlas of virtual
 dimension `n` with an empty index set, whose only thickening `X_∅ = X` is regular everywhere. -/
 noncomputable def ofChartedSpace :
@@ -77,14 +70,17 @@ noncomputable def ofChartedSpace :
   footprintMap_footprintMap _ _ _ _ _ _ _ _ := rfl
   kuranishi_footprintMap _ _ _ _ α := (IsEmpty.false α.1).elim
   isOpen_range_footprintMap _ _ _ := by
-    rw [Subtype.range_coe, kuranishiZeroSet_eq_univ_of_isEmpty]
+    rw [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]
     exact isOpen_univ
   range_footprintMap_inter _ _ _ _ _ := by
-    simp only [Subtype.range_coe, kuranishiZeroSet_eq_univ_of_isEmpty, inter_self]
+    simp only [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim,
+      inter_self]
   footprintMap_mem_range_iff _ _ _ _ _ _ := by
-    simp only [Subtype.range_coe, kuranishiZeroSet_eq_univ_of_isEmpty, mem_univ]
+    simp only [Subtype.range_coe, kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim,
+      mem_univ]
   isQuotientMap_footprintMap I J _ :=
-    IsQuotientMap.of_inverse (f := fun y ↦ ⟨y.1, by simp [kuranishiZeroSet_eq_univ_of_isEmpty]⟩)
+    IsQuotientMap.of_inverse
+      (f := fun y ↦ ⟨y.1, by simp [kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]⟩)
       (continuous_subtype_val.subtype_mk _) continuous_subtype_val.rangeFactorization
       fun _ ↦ rfl
   footprintMap_eq_footprintMap_iff _ _ _ x y :=
@@ -97,7 +93,8 @@ noncomputable def ofChartedSpace :
       (chartAt (EuclideanSpace ℝ (Fin n)) x.1).transHomeomorph (Homeomorph.prodUnique _ _).symm,
       by simp, fun _ _ ↦ funext fun α ↦ (IsEmpty.false α.1).elim⟩
   exists_footprintMap_eq y :=
-    ⟨∅, ⟨y, by simp [kuranishiZeroSet_eq_univ_of_isEmpty]⟩, mem_univ _, rfl⟩
+    ⟨∅, ⟨y, by simp [kuranishiZeroSet_eq_univ _ fun α ↦ (IsEmpty.false α).elim]⟩,
+      mem_univ _, rfl⟩
 
 /-- The regular locus of the manifold atlas is the whole space. -/
 @[simp]
@@ -125,10 +122,6 @@ theorem powKuranishi_apply (m : ℕ) (J : Finset Unit) (α : J) (x : PowThickeni
 /-- A finite set of indices that misses the only index is empty. -/
 private theorem eq_empty_of_notMem {I : Finset Unit} {α : Unit} (hα : α ∉ I) : I = ∅ :=
   Finset.eq_empty_of_forall_notMem fun β hβ ↦ hα (Subsingleton.elim β α ▸ hβ)
-
-/-- A nonempty finset of indices contains the only index. -/
-private theorem eq_univ_of_nonempty {I : Finset Unit} (hI : I.Nonempty) : I = Finset.univ :=
-  Finset.eq_univ_of_forall fun α ↦ let ⟨β, hβ⟩ := hI; Subsingleton.elim β α ▸ hβ
 
 variable {m : ℕ}
 
@@ -210,7 +203,7 @@ noncomputable def powAtlas (hm : m ≠ 0) :
   eq_one_of_act_eq _ _ _ _ _ _ _ _ := Subsingleton.elim _ _
   exists_openPartialHomeomorph I J h x hx := by
     have hJ : J.Nonempty := Finset.Nonempty.mono h hx
-    obtain rfl : I = Finset.univ := eq_univ_of_nonempty hx
+    obtain rfl : I = Finset.univ := hx.eq_univ
     have : IsEmpty ↥(J \ Finset.univ) := ⟨fun α ↦ (Finset.mem_sdiff.1 α.2).2 (Finset.mem_univ _)⟩
     refine ⟨1, by simp, ((powThickeningHomeomorph hJ).trans <|
       ((Homeomorph.funUnique (Fin 1) ℝ).symm.trans
