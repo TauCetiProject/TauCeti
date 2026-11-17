@@ -85,12 +85,16 @@ theorem isIso_singularCohomologyMap_of_attach (f : P ⟶ ofSubset X) (hX : IsClo
   -- The deformation `H` and its extension to `Z` make both enlargements isomorphisms, and excision
   -- for the open cover of `Z` by the thickening and the complement of `X` makes the map of the
   -- enlarged pairs one.
-  obtain ⟨_, HA, hA₁, hA₂, hA₃⟩ := exists_homotopy_id_of_deformation H hH₀
+  obtain ⟨ρA, HA, hA₁, hA₂, hA₃⟩ := exists_homotopy_id_of_deformation H hH₀
     (fun t a ha ↦ (hHS t a ha).symm ▸ ha) hHO hH₁
-  obtain ⟨_, HZ, hZ₁, hZ₂, hZ₃⟩ := exists_homotopy_id_attach hf hX hfX hcover
-    (mapsTo_range_map_of_hom f) H hH₀ hHS hHO hH₁
-  have := isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy hSO' HA hA₁ hA₂ hA₃ R k M n
-  have := isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy hXN HZ hZ₁ hZ₂ hZ₃ R k M n
+  obtain ⟨ρZ, HZ, hZ₁, hZ₂, hZ₃⟩ := exists_homotopy_id_attach hf hX hfX hcover H hHS
+    (mapsTo_range_map_of_hom f) hH₀ hHO hH₁
+  -- The homotopies are read as homotopies of morphisms of `TopCat`: the identity morphism has
+  -- underlying map `ContinuousMap.id`, and `TopCat.ofHom ρ` has underlying map `ρ`, definitionally.
+  have := isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy (ρ := TopCat.ofHom ρA) hSO' HA
+    hA₁ hA₂ hA₃ R k M n
+  have := isIso_singularCohomologyMap_ofSubsetMap_id_of_homotopy (ρ := TopCat.ofHom ρZ) hXN HZ
+    hZ₁ hZ₂ hZ₃ R k M n
   have := isIso_singularCohomologyMap_ofSubsetMap_union_image R k M n g hX hf hO
     (fun a ha ↦ hSO (hfX a ha)) hcover hφO
   have : IsIso (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)

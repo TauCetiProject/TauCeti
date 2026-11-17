@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.UnitInterval
 public import TauCeti.Topology.ContinuousMap.GlueClosedEmbeddings
+public import TauCeti.Topology.Homotopy.OfApplyZero
 
 /-!
 # Deformations of an attached space
@@ -22,6 +23,8 @@ This is a topological input of the comparison of the relative homology of the at
 with that of `(A, S)`, when `S` has an open neighbourhood `O` which a deformation of `A` fixing `S`
 pushes into `S`: the thickening `X ∪ φ(O)` is then an open neighbourhood of `X`
 (`Topology.IsClosedEmbedding.isOpen_union_image`) which the extended deformation pushes into `X`.
+So the identity of `Z` is homotopic, keeping `X` and `X ∪ φ(O)` inside themselves, to a map pushing
+`X ∪ φ(O)` into `X` (`TauCeti.exists_homotopy_id_attach`).
 
 ## References
 
@@ -96,5 +99,21 @@ theorem attachHomotopy_one_mem (hφS : ∀ a ∈ S, φ a ∈ X) (hH₁ : ∀ a �
   · rwa [attachHomotopy_apply_of_mem hφ hX hφX hcover H hHS 1 hz]
   · rw [attachHomotopy_apply]
     exact hφS _ (hH₁ a ha)
+
+include hφ hX hφX hcover hHS in
+/-- **The deformation of an attachment.** In the setting of `TauCeti.attachHomotopy`, let `H` start
+at the identity, keep `O` inside `O` and push `O` into `S` at time one, and let `φ` send `S` into
+`X`. Then the identity of `Z` is homotopic, keeping `X` and the thickening `X ∪ φ(O)` inside
+themselves, to a map pushing `X ∪ φ(O)` into `X`: the extension of `H` to `Z`. -/
+theorem exists_homotopy_id_attach (hφS : ∀ a ∈ S, φ a ∈ X) (hH₀ : ∀ a, H (0, a) = a)
+    (hHO : ∀ t, ∀ a ∈ O, H (t, a) ∈ O) (hH₁ : ∀ a ∈ O, H (1, a) ∈ S) :
+    ∃ (ρ : C(Z, Z)) (G : (ContinuousMap.id Z).Homotopy ρ),
+      (∀ (τ : I) (z : Z), z ∈ X → G (τ, z) ∈ X) ∧
+        (∀ (τ : I) (z : Z), z ∈ X ∪ φ '' O → G (τ, z) ∈ X ∪ φ '' O) ∧ MapsTo ρ (X ∪ φ '' O) X :=
+  exists_homotopy_id_of_deformation (attachHomotopy hφ hX hφX hcover H hHS)
+    (attachHomotopy_zero hφ hX hφX hcover H hHS hH₀)
+    (fun t _ hz ↦ (attachHomotopy_apply_of_mem hφ hX hφX hcover H hHS t hz).symm ▸ hz)
+    (fun t _ hz ↦ attachHomotopy_mem_union_image hφ hX hφX hcover H hHS hHO t hz)
+    (fun _ hz ↦ attachHomotopy_one_mem hφ hX hφX hcover H hHS hφS hH₁ hz)
 
 end TauCeti
