@@ -44,7 +44,7 @@ surjectivity on a barrelled `T₁` locally convex space directly to
 
 Finally, canonical evaluation intertwines every continuous linear map `u : E →L[𝕜] F` with its
 double strong transpose `precomp G (precomp G u)`
-(`ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_applyₗ_apply`),
+(`ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`),
 recovering `u` when both spaces carry canonical bidual isomorphisms
 (`ContinuousLinearMap.symm_comp_precomp_precomp_comp_of_forall_apply_eq`). When
 `e : E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` agrees with canonical evaluation,
@@ -66,7 +66,7 @@ dual of a reflexive space is canonically reflexive.
 * `TauCeti.strongBidualEquivOfContinuousOfSurjective`, `TauCeti.strongBidualEquivOfSurjective`:
   topological linear isomorphisms `E ≃L[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)` from surjectivity of
   evaluation.
-* `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_applyₗ_apply`:
+* `ContinuousLinearMap.applyₗ_comp_precomp`, `ContinuousLinearMap.precomp_precomp_comp_applyₗ`:
   naturality of canonical evaluation with respect to the double strong transpose.
 * `ContinuousLinearEquiv.toLinearMap_arrowCongr_refl_of_forall_apply_eq`: the inverse of the strong
   transpose of a canonical bidual isomorphism is the canonical bidual evaluation of the strong dual.
@@ -98,14 +98,6 @@ theorem injective_of_forall_apply_eq {𝕜 E G H : Type*} [Ring 𝕜] [Topologic
     Function.Injective ev := fun x y hxy ↦
   (SeparatingDual.eq_iff_forall_dual_eq (R := 𝕜)).2 fun φ ↦ by
     rw [← hev x φ, ← hev y φ, hxy]
-
-/-- When continuous functionals separate points of `E`, canonical evaluation into the strong bidual
-is injective. -/
-theorem applyₗ_id_injective {𝕜 E : Type*} [NormedField 𝕜] [AddCommGroup E] [Module 𝕜 E]
-    [TopologicalSpace E] [ContinuousSMul 𝕜 E] [SeparatingDual 𝕜 E] :
-    Function.Injective (ContinuousLinearMap.applyₗ 𝕜 (RingHom.id 𝕜) :
-      E →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :=
-  injective_of_forall_apply_eq (p := id) fun _ _ ↦ rfl
 
 end Injectivity
 
@@ -359,19 +351,14 @@ variable {𝕜 E F G : Type*} [NormedField 𝕜]
   [AddCommGroup G] [Module 𝕜 G] [TopologicalSpace G] [IsTopologicalAddGroup G]
   [ContinuousConstSMul 𝕜 G]
 
-/-- Composing canonical evaluation at `x` with `precomp G u` gives canonical evaluation at `u x`.
-This is the `simp`-normal form of `precomp_precomp_applyₗ_apply` after `precomp_apply` unfolds the
-outer `precomp`. -/
+/-- **Naturality of canonical evaluation.** Composing canonical evaluation at `x` with
+`precomp G u` gives canonical evaluation at `u x`. Together with `precomp_apply`, this lets
+`simp` reduce `precomp G (precomp G u) (applyₗ G (RingHom.id 𝕜) x)` to
+`applyₗ G (RingHom.id 𝕜) (u x)`. -/
 @[simp]
 theorem applyₗ_comp_precomp (u : E →L[𝕜] F) (x : E) :
     (applyₗ G (RingHom.id 𝕜) x).comp (precomp G u) = applyₗ G (RingHom.id 𝕜) (u x) := by
   ext ψ
-  simp
-
-/-- **Naturality of canonical evaluation.** Applying `precomp G (precomp G u)` for `u : E →L[𝕜] F`
-to the evaluation at `x` gives the evaluation at `u x`. -/
-theorem precomp_precomp_applyₗ_apply (u : E →L[𝕜] F) (x : E) :
-    precomp G (precomp G u) (applyₗ G (RingHom.id 𝕜) x) = applyₗ G (RingHom.id 𝕜) (u x) := by
   simp
 
 /-- Linear-map form of the naturality of canonical evaluation under `precomp G (precomp G u)`. -/
