@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Normed.Module.Basic
+import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import Mathlib.NumberTheory.Padics.ProperSpace
 import Mathlib.Topology.Instances.Real.Lemmas
 import Mathlib.Topology.MetricSpace.Ultra.TotallySeparated
@@ -61,19 +61,12 @@ example :
       (𝓝 (0 : ℚ_[2])).HasBasis (fun _ : ℤ ↦ True) fun m : ℤ ↦ (L m : Set ℚ_[2]) := by
   have hnorm (k : ℤ) : ‖(2 : ℚ_[2]) ^ k‖ = (2 : ℝ) ^ (-k) := by
     simpa using Padic.norm_p_zpow (p := 2) k
+  have hsubring : (PadicInt.subring 2 : Set ℚ_[2]) = Metric.closedBall (0 : ℚ_[2]) 1 := by
+    ext x
+    simp [PadicInt.mem_subring_iff]
   have hball (m : ℤ) : (2 : ℚ_[2]) ^ m • (PadicInt.subring 2 : Set ℚ_[2]) =
       Metric.closedBall (0 : ℚ_[2]) ((2 : ℝ) ^ (-m)) := by
-    ext x
-    simp only [mem_smul_set, SetLike.mem_coe, PadicInt.mem_subring_iff, smul_eq_mul,
-      Metric.mem_closedBall, dist_zero_right]
-    refine ⟨?_, fun hx ↦ ⟨(2 : ℚ_[2]) ^ (-m) * x, ?_, ?_⟩⟩
-    · rintro ⟨y, hy, rfl⟩
-      rw [norm_mul, hnorm]
-      exact mul_le_of_le_one_right (zpow_nonneg zero_le_two (-m)) hy
-    · rw [norm_mul, hnorm, neg_neg]
-      exact (mul_le_mul_of_nonneg_left hx (zpow_nonneg zero_le_two m)).trans_eq
-        (by rw [zpow_neg, mul_inv_cancel₀ (zpow_ne_zero m two_ne_zero)])
-    · rw [zpow_neg, mul_inv_cancel_left₀ (zpow_ne_zero m two_ne_zero)]
+    rw [hsubring, smul_unitClosedBall, hnorm]
   let L_sub (m : ℤ) : AddSubgroup ℚ_[2] :=
     (PadicInt.subring 2).toAddSubgroup.map (AddMonoidHom.mulLeft ((2 : ℚ_[2]) ^ m))
   have hL_coe (m : ℤ) : (L_sub m : Set ℚ_[2]) =
