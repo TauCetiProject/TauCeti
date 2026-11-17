@@ -14,6 +14,7 @@ public import TauCeti.MeasureTheory.Integral.PiSystem
 import Mathlib.Analysis.Normed.Affine.MazurUlam
 import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import TauCeti.Algebra.Order.Ring.PosPart.Sq
+import TauCeti.MeasureTheory.Function.Holder
 
 /-!
 # Inner products of square-integrable functions
@@ -73,9 +74,7 @@ variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜
 /-- The pointwise inner product of two square-integrable functions is integrable. -/
 theorem MemLp.integrable_inner {f g : α → E} (hf : MemLp f 2 μ) (hg : MemLp g 2 μ) :
     Integrable (fun x ↦ ⟪f x, g x⟫_𝕜) μ :=
-  (L2.integrable_inner (𝕜 := 𝕜) (hf.toLp f) (hg.toLp g)).congr <| by
-    filter_upwards [hf.coeFn_toLp, hg.coeFn_toLp] with x hfx hgx
-    rw [hfx, hgx]
+  hf.integrable_inner_of_holderConjugate hg
 
 /-- The quadratic form of a matrix on a square-integrable Euclidean-valued function is
 integrable. -/
