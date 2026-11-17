@@ -37,7 +37,8 @@ common bound is nonnegative and bounds the function itself
 change its iterated derivatives of positive order (`TauCeti.iteratedFDeriv_succ_add_const`). The
 iterated derivatives of a constant `c` have norm at most `‖c‖`
 (`TauCeti.norm_iteratedFDeriv_const_le`), and those of positive order of the identity have norm at
-most one (`TauCeti.norm_iteratedFDeriv_id_le_one`).
+most one (`TauCeti.norm_iteratedFDeriv_id_le_one`), as have those of right translations
+(`TauCeti.norm_iteratedFDeriv_addRight_le`).
 -/
 
 public section
@@ -221,6 +222,15 @@ theorem norm_iteratedFDeriv_id_le_one {n : ℕ} (hn : 1 ≤ n) (x : E) :
   rcases n with _ | n
   · simpa using ContinuousLinearMap.norm_id_le
   · simp [iteratedFDeriv_const_of_ne (Nat.succ_ne_zero n)]
+
+/-- Right translation `Equiv.addRight a` has iterated derivatives of every positive order of norm
+at most one. -/
+theorem norm_iteratedFDeriv_addRight_le (a : E) {n : ℕ} (hn : 1 ≤ n) (x : E) :
+    ‖iteratedFDeriv 𝕜 n (Equiv.addRight a) x‖ ≤ 1 := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_add_of_le' hn
+  have hfn : (Equiv.addRight a : E → E) = fun y ↦ (id : E → E) y + a := rfl
+  rw [hfn, iteratedFDeriv_succ_add_const]
+  exact norm_iteratedFDeriv_id_le_one (by omega) x
 
 /-- Bounded derivatives up to order `N` have a common bound. -/
 theorem exists_forall_norm_iteratedFDeriv_le_of_forall_exists {f : E → F} {N : ℕ}
