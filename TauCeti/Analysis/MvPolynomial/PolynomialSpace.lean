@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Analytic.ConvergenceRadius
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
 import Mathlib.FieldTheory.Finite.Polynomial
@@ -22,8 +23,9 @@ to almost-everywhere classes. In particular, degree zero means exactly the const
 also when the coordinate type is empty.
 
 Evaluating a real multilinear map on the diagonal gives a polynomial function of degree at most
-the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`); this covers
-the homogeneous terms of a power series.
+the number of its arguments (`MultilinearMap.apply_const_mem_polynomialsDegLE`), and hence every
+partial sum of a real formal multilinear series belongs to `polynomialsDegLE ι (N - 1)`
+(`FormalMultilinearSeries.partialSum_mem_polynomialsDegLE`).
 
 The construction uses Mathlib's `MvPolynomial.evalₗ` and `MvPolynomial.funext`, and the formal
 dimension formula `TauCeti.finrank_restrictTotalDegree`.
@@ -164,6 +166,20 @@ theorem _root_.MultilinearMap.apply_const_mem_polynomialsDegLE [Finite ι] {κ :
     -- Expand `x = ∑ᵢ xᵢ eᵢ` in every argument by multilinearity.
     conv_rhs => rw [← b.sum_repr x, m.map_sum]
     simp [m.map_smul_univ, b, mul_comm]
+
+/-- Every partial sum `p.partialSum N` of a real formal multilinear series on Euclidean space is a
+polynomial function of degree at most `N - 1`. -/
+theorem _root_.FormalMultilinearSeries.partialSum_mem_polynomialsDegLE {ι : Type*} [Finite ι]
+    [ContinuousAdd (EuclideanSpace ℝ ι)] [ContinuousConstSMul ℝ (EuclideanSpace ℝ ι)]
+    (p : FormalMultilinearSeries ℝ (EuclideanSpace ℝ ι) ℝ) (N : ℕ) :
+    p.partialSum N ∈ polynomialsDegLE ι (N - 1) := by
+  have hsum : p.partialSum N = ∑ k ∈ Finset.range N, fun y ↦ p k fun _ ↦ y := by
+    ext y
+    simp [FormalMultilinearSeries.partialSum]
+  rw [hsum]
+  refine Submodule.sum_mem _ fun k hk ↦
+    polynomialsDegLE_mono ι (Nat.le_sub_one_of_lt (Finset.mem_range.1 hk)) ?_
+  simpa using (p k).toMultilinearMap.apply_const_mem_polynomialsDegLE
 
 /-- Bounded-degree polynomial functions form a finite-dimensional space. -/
 instance [Finite ι] (m : ℕ) : FiniteDimensional ℝ (polynomialsDegLE ι m) :=
