@@ -78,7 +78,7 @@ there; here the point is a double and may vanish, so the guard must exclude `1` 
 
 ## Provenance
 
-Ported from J. Xu and D. K. Angdinata's
+Ported from C. Birkbeck and D. K. Angdinata's
 `projects/NagellLutz/LutzNagell/LutzNagellTheorem/PIDMain.lean` in AINTLIB
 (`github.com/CBirkbeck/AINTLIB`, Apache-2.0, `main @ 1c1c74664e40071c2c2165bc55ca2616a67ccd6b`):
 `kappa_sq_dvd_four_Psi3_of_torsion` (`:356`) and `lutz_nagell_pid_discriminant_of_torsion`
