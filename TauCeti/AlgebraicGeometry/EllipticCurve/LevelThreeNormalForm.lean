@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import Mathlib.RingTheory.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Basic
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
+import TauCeti.RingTheory.Smooth.Hypersurface
 
 /-!
 # Elliptic curves with a basis of their `3`-torsion
@@ -55,9 +57,10 @@ The relation `v² = -3 ψ₂(Q)²` on the curve shows that `v` is a unit, and
 
 Finally, `WeierstrassCurve.UniversalLevelThree.curve` is the level-three normal form over
 `ℤ[μ, ζ] / (ζ² + ζ + 1)` localised away from the discriminant, that is over
-`ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`. It is elliptic, carries the basis `(P, Q)` of its `3`-torsion, and
-every Weierstrass curve with such a basis over a ring in which `3` is a unit is isomorphic to its
-base change along exactly one ring homomorphism
+`ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`, which is standard smooth of relative dimension `1` over `ℤ`
+(`WeierstrassCurve.UniversalLevelThree.isStandardSmoothOfRelativeDimension`). It is elliptic,
+carries the basis `(P, Q)` of its `3`-torsion, and every Weierstrass curve with such a basis over a
+ring in which `3` is a unit is isomorphic to its base change along exactly one ring homomorphism
 (`WeierstrassCurve.UniversalLevelThree.classifyingHom`), by exactly one change of variables matching
 the bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
 
@@ -94,6 +97,8 @@ the bases (`WeierstrassCurve.UniversalLevelThree.existsUnique_lift`).
   hypotheses are also necessary.
 * `WeierstrassCurve.isUnit_three_of_eval_Ψ₃_eq_zero`: on an elliptic curve, two roots of `Ψ₃`
   differing by a unit force `3` to be a unit.
+* `WeierstrassCurve.UniversalLevelThree.isStandardSmoothOfRelativeDimension`: the coordinate ring
+  `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is standard smooth of relative dimension `1` over `ℤ`.
 * `WeierstrassCurve.UniversalLevelThree.existsUnique_lift`: the universal property of the
   level-three normal form over `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`.
 * `WeierstrassCurve.UniversalLevelThree.map_lift`, `WeierstrassCurve.UniversalLevelThree.eq_lift`,
@@ -777,6 +782,43 @@ noncomputable abbrev polyCurve : WeierstrassCurve PolyRing :=
 /-- The ring `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`: the ring `ℤ[μ, ζ] / (ζ² + ζ + 1)` localised away from the
 discriminant `27 (μ³ - 1)³` of the level-three normal form with parameter `μ`. -/
 abbrev Ring : Type := Localization.Away polyCurve.Δ
+
+/-- The coordinate ring `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is
+standard smooth of relative dimension `1` over `ℤ`. -/
+instance isStandardSmoothOfRelativeDimension :
+    Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ Ring := by
+  -- In `ℤ[μ, ζ] / (ζ² + ζ + 1)`, the partial derivative `2ζ + 1` divides `Δ = 27(μ³ - 1)³` via
+  -- `(2ζ + 1)² = -3`, so `Ring` is a principal localization of the standard-smooth hypersurface
+  -- localization away from `2ζ + 1`.
+  let g : MvPolynomial (Fin 2) ℤ := MvPolynomial.X 1 ^ 2 + MvPolynomial.X 1 + 1
+  let δ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.pderiv 1 g)
+  let S := Localization.Away δ
+  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ S := by
+    simpa using MvPolynomial.isStandardSmoothOfRelativeDimension_localizationAway_pderiv g 1
+  let μ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.X 0)
+  let ζ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.X 1)
+  let y : PolyRing := -δ ^ 5 * (μ₀ ^ 3 - 1) ^ 3
+  have hζ₀ : ζ₀ ^ 2 + ζ₀ + 1 = 0 := by
+    simpa only [ζ₀, g, map_add, map_pow, map_one] using
+      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self g)
+  have hδ : δ = 2 * ζ₀ + 1 := by
+    simp [δ, ζ₀, g, sq]
+    ring
+  have hδy : δ * y = polyCurve.Δ := by
+    dsimp only [y]
+    rw [levelThreeNormalForm_Δ, hδ]
+    linear_combination -4 * ((2 * ζ₀ + 1) ^ 4 - 3 * (2 * ζ₀ + 1) ^ 2 + 9) *
+      (μ₀ ^ 3 - 1) ^ 3 * hζ₀
+  let T := Localization.Away (algebraMap PolyRing S y)
+  have : Algebra.IsStandardSmoothOfRelativeDimension 0 S T :=
+    Algebra.IsStandardSmoothOfRelativeDimension.localization_away (S := T) (algebraMap PolyRing S y)
+  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ T :=
+    Algebra.IsStandardSmoothOfRelativeDimension.trans 1 0 ℤ S T
+  have : IsLocalization.Away polyCurve.Δ T := hδy ▸ IsLocalization.Away.mul' S T δ y
+  let e : T ≃+* Ring := (IsLocalization.algEquiv (.powers polyCurve.Δ) T Ring).toRingEquiv
+  exact Algebra.IsStandardSmoothOfRelativeDimension.of_algEquiv 1
+    (AlgEquiv.ofRingEquiv (f := e) fun x ↦
+      RingHom.congr_fun (RingHom.ext_int (e.toRingHom.comp (algebraMap ℤ T)) (algebraMap ℤ Ring)) x)
 
 /-- The parameter `μ` in `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`. -/
 noncomputable def parameter : Ring :=

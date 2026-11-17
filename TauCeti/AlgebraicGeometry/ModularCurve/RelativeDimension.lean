@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy.FourTorsion
 public import TauCeti.AlgebraicGeometry.ModularCurve.YOne
+import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.MulBy.FourTorsion
 import TauCeti.AlgebraicGeometry.ModularCurve.Rigidifier.LevelThree
 import TauCeti.AlgebraicGeometry.ModularCurve.Simultaneous.Projections
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Descent
@@ -52,19 +52,13 @@ one-dimensional rigidifiers over open subsets covering `B`:
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.UniversalTate.yOneFourIso`: the isomorphism
-  `Y₁(4) ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]`.
-* `TauCeti.AlgebraicGeometry.EllObj.yOneBaseIsoProd`: for every `N ≠ 0`, the identification of the
-  base of `EllObj.yOne B N` with `B × Y₁(N)`.
-* `TauCeti.AlgebraicGeometry.EllObj.yOneBaseMap`: for a base morphism `B' ⟶ B`, the induced
-  morphism `(yOne B' N).base ⟶ (yOne B N).base`.
+  `UniversalTate.yOne 4 ≅ Spec ℤ[B, (B(1 - 16B))⁻¹]` identifying `Y₁(4)` over `ℤ`.
 
 ## Main results
 
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.smoothOfRelativeDimension_of_representableBy`:
   smooth relative dimension transfers from an étale surjective rigidifier to any smooth
   representable étale moduli problem.
-* `TauCeti.AlgebraicGeometry.EllObj.isPullback_yOneBaseMap`: the base of `EllObj.yOne B N` commutes
-  with arbitrary base change `B' ⟶ B`.
 * `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_four_structureMap`: `Y₁(4)`
   is smooth of relative dimension `1` over every base scheme `B`.
 * `TauCeti.AlgebraicGeometry.EllObj.smoothOfRelativeDimension_one_yOne_structureMap`: for `N ≥ 4`
@@ -378,170 +372,9 @@ instance smoothOfRelativeDimension_one_terminal_from_yOne_four :
 
 end UniversalTate
 
-/-! ### Base change of `EllObj.yOne B N` and smoothness of relative dimension `1` -/
+/-! ### Relative dimension of `Y₁(N)` for `N ≥ 4` -/
 
 namespace EllObj
-
-open UniversalTate EllipticCurveGeom
-
-section BaseChange
-
-variable (B : Scheme.{u}) (N : ℕ) [NeZero N]
-
--- On the base change of `universalTate B` along `t`, the pullback of `(0, 0)` has naive exact
--- order `N` if and only if `t ≫ prod.snd` factors through `UniversalTate.yOne N`.
-private theorem isOfNaiveExactOrder_universalTatePoint_iff {S : Scheme.{u}}
-    (t : S ⟶ B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring))) :
-    (universalTate B).curve.IsOfNaiveExactOrder
-        (toUnit (Over.mk t) ≫ universalTatePoint B) N ↔
-      ∃ h : S ⟶ UniversalTate.yOne.{u} N, h ≫ UniversalTate.yOneι N = t ≫ prod.snd := by
-  let hbc := (universalTate B).curve.isPullback_baseChange t
-  have hbc0 : ((universalTate B).curve.baseChange t).zero ≫
-      ((universalTate B).curve.baseChangeIso t).hom ≫ pullback.fst _ _ =
-      t ≫ (universalTate B).curve.zero := by simp
-  let P_S := pointsPullback hbc hbc0 (universalTatePoint B)
-  have hPS : pointsBaseChangeEquiv hbc hbc0 P_S = toUnit (Over.mk t) ≫ universalTatePoint B := by
-    ext1
-    simp [P_S]
-  rw [← hPS, isOfNaiveExactOrder_pointsBaseChangeEquiv_iff hbc hbc0]
-  have hg : IsPullback
-      (((universalTate B).curve.baseChangeIso t).hom ≫ pullback.fst _ _ ≫
-        prodCurveProj B curveGeom)
-      ((universalTate B).curve.baseChange t).structureMap curveGeom.structureMap
-      (t ≫ prod.snd) :=
-    hbc.paste_horiz (isPullback_prodCurveProj B curveGeom)
-  have h₀ : ((universalTate B).curve.baseChange t).zero ≫
-      (((universalTate B).curve.baseChangeIso t).hom ≫ pullback.fst _ _ ≫
-        prodCurveProj B curveGeom) = (t ≫ prod.snd) ≫ curveGeom.zero := by
-    rw [reassoc_of% hbc0, Category.assoc, zero_prodCurveProj]
-  have hP : P_S = pointsPullback hg h₀ pointHom := by
-    refine (eq_pointsPullback_iff hg h₀).mpr ?_
-    rw [← Category.assoc ((universalTate B).curve.baseChangeIso t).hom,
-      ← Category.assoc P_S.left, pointsPullback_left_comp, Category.assoc,
-      universalTatePoint_def, prodCurvePoint_left_prodCurveProj, Category.assoc]
-    exact rfl
-  have hpow : P_S ^ N = 1 ↔
-      (t ≫ prod.snd) ≫ (pointHom ^ N).left = (t ≫ prod.snd) ≫ curveGeom.zero := by
-    rw [hP, ← map_pow]
-    simpa [Over.OverMorphism.ext_iff, hom_one_left] using
-      comp_pointsPullback_left_eq_comp_zero_iff hg h₀ (pointHom ^ N) (𝟙 S)
-  have happ (k : ℕ) (s : S) : (P_S ^ k).left s =
-        ((universalTate B).curve.baseChange t).zero s ↔
-      (pointHom ^ k).left ((t ≫ prod.snd) s) = curveGeom.zero ((t ≫ prod.snd) s) := by
-    rw [hP, ← map_pow]
-    exact pointsPullback_left_apply_eq_zero_iff hg h₀ (pointHom ^ k) s
-  rw [isOfNaiveExactOrder_iff_forall_lt, exists_comp_yOneι_eq_iff, hpow]
-  refine and_congr_right' ⟨fun h s ↦ mem_exactOrderOpens_iff.mpr fun k hk0 hkN ↦
-    mt (happ k s).mpr ((isEmpty_equalizer_one_iff _).mp (h k hk0 hkN) s), fun h k hk0 hkN ↦
-    (isEmpty_equalizer_one_iff _).mpr fun s ↦
-      mt (happ k s).mp (mem_exactOrderOpens_iff.mp (h s) k hk0 hkN)⟩
-
--- Morphisms `S ⟶ B × Spec ℤ[A, B][Δ⁻¹]` factor through `(yOne B N).base` if and only if their
--- second projection factors through `UniversalTate.yOne N`.
-private theorem exists_comp_yOneι_base_iff {S : Scheme.{u}}
-    (t : S ⟶ B ⨯ Spec (.of (ULift.{u} UniversalTate.Ring))) :
-    (∃ l : S ⟶ (yOne B N).base, l ≫ (yOneι B N).base = t) ↔
-      ∃ h : S ⟶ UniversalTate.yOne.{u} N, h ≫ UniversalTate.yOneι N = t ≫ prod.snd := by
-  simp only [yOneι_base]
-  exact (exists_lift_naiveExactOrderPreimageι_iff N (universalTatePoint B)
-    (Z := Over.mk t) (x := toUnit (Over.mk t) ≫ universalTatePoint B) rfl).trans
-    (isOfNaiveExactOrder_universalTatePoint_iff B N t)
-
-/-- The canonical projection `(yOne B N).base ⟶ UniversalTate.yOne N`. -/
-noncomputable def yOneSnd : (yOne B N).base ⟶ UniversalTate.yOne.{u} N :=
-  ((exists_comp_yOneι_base_iff B N (yOneι B N).base).mp ⟨𝟙 _, Category.id_comp _⟩).choose
-
-/-- The projection `yOneSnd B N` commutes with the inclusions into the base of the universal Tate
-normal form. -/
-@[reassoc (attr := simp)]
-theorem yOneSnd_yOneι :
-    yOneSnd B N ≫ UniversalTate.yOneι N = (yOneι B N).base ≫ prod.snd :=
-  ((exists_comp_yOneι_base_iff B N (yOneι B N).base).mp ⟨𝟙 _, Category.id_comp _⟩).choose_spec
-
-private theorem exists_prodToYOne :
-    ∃ inv : B ⨯ UniversalTate.yOne.{u} N ⟶ (yOne B N).base,
-      inv ≫ (yOneι B N).base = prod.map (𝟙 B) (UniversalTate.yOneι.{u} N) :=
-  (exists_comp_yOneι_base_iff B N
-    (prod.map (𝟙 B) (UniversalTate.yOneι.{u} N))).mpr ⟨prod.snd, by simp⟩
-
-/-- **The base of `EllObj.yOne B N` is `B × Y₁(N)`.** -/
-noncomputable def yOneBaseIsoProd : (yOne B N).base ≅ B ⨯ UniversalTate.yOne.{u} N where
-  hom := prod.lift (yOne B N).structureMap (yOneSnd B N)
-  inv := (exists_prodToYOne B N).choose
-  hom_inv_id := by
-    refine (cancel_mono (yOneι B N).base).mp ?_
-    rw [Category.assoc, (exists_prodToYOne B N).choose_spec, Category.id_comp]
-    refine prod.hom_ext ?_ ?_ <;> simp [yOne_structureMap]
-  inv_hom_id := by
-    have hinv := (exists_prodToYOne B N).choose_spec
-    refine prod.hom_ext ?_ ?_
-    · rw [Category.assoc, prod.lift_fst, yOne_structureMap, reassoc_of% hinv, prod.map_fst,
-        Category.comp_id, Category.id_comp]
-    · rw [Category.assoc, prod.lift_snd, Category.id_comp]
-      refine (cancel_mono (UniversalTate.yOneι.{u} N)).mp ?_
-      rw [Category.assoc, yOneSnd_yOneι, reassoc_of% hinv, prod.map_snd]
-
-/-- Under `yOneBaseIsoProd`, the first projection is `(yOne B N).structureMap`. -/
-@[reassoc (attr := simp)]
-theorem yOneBaseIsoProd_hom_fst :
-    (yOneBaseIsoProd B N).hom ≫ prod.fst = (yOne B N).structureMap :=
-  prod.lift_fst _ _
-
-/-- Under `(yOneBaseIsoProd B N).inv`, the structure morphism of `yOne B N` is the first
-projection. -/
-@[reassoc]
-theorem yOneBaseIsoProd_inv_structureMap :
-    (yOneBaseIsoProd B N).inv ≫ (yOne B N).structureMap = prod.fst := by
-  rw [← yOneBaseIsoProd_hom_fst, Iso.inv_hom_id_assoc]
-
-/-- Under `yOneBaseIsoProd`, the second projection is `yOneSnd B N`. -/
-@[reassoc (attr := simp)]
-theorem yOneBaseIsoProd_hom_snd :
-    (yOneBaseIsoProd B N).hom ≫ prod.snd = yOneSnd B N :=
-  prod.lift_snd _ _
-
-/-- Under `(yOneBaseIsoProd B N).inv`, `yOneSnd B N` is the second projection. -/
-@[reassoc (attr := simp)]
-theorem yOneBaseIsoProd_inv_yOneSnd :
-    (yOneBaseIsoProd B N).inv ≫ yOneSnd B N = prod.snd := by
-  rw [← yOneBaseIsoProd_hom_snd, Iso.inv_hom_id_assoc]
-
-/-- For a morphism of base schemes `g : B' ⟶ B`, the induced morphism
-`(yOne B' N).base ⟶ (yOne B N).base`. -/
-noncomputable def yOneBaseMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
-    (yOne B' N).base ⟶ (yOne B N).base :=
-  (yOneBaseIsoProd B' N).hom ≫ prod.map g (𝟙 _) ≫ (yOneBaseIsoProd B N).inv
-
-/-- The base-change morphism of `EllObj.yOne B N` along the identity is the identity. -/
-@[simp]
-theorem yOneBaseMap_id : yOneBaseMap (𝟙 B) N = 𝟙 (yOne B N).base := by
-  simp [yOneBaseMap]
-
-/-- The base-change morphism of `EllObj.yOne` is functorial in the base scheme. -/
-@[simp]
-theorem yOneBaseMap_comp {B'' B' B : Scheme.{u}} (f : B'' ⟶ B') (g : B' ⟶ B) (N : ℕ) [NeZero N] :
-    yOneBaseMap (f ≫ g) N = yOneBaseMap f N ≫ yOneBaseMap g N := by
-  simp [yOneBaseMap]
-
-/-- `yOneBaseMap g N` lies over `g : B' ⟶ B`. -/
-@[reassoc]
-theorem yOneBaseMap_structureMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
-    yOneBaseMap g N ≫ (yOne B N).structureMap = (yOne B' N).structureMap ≫ g := by
-  rw [yOneBaseMap, Category.assoc, Category.assoc, yOneBaseIsoProd_inv_structureMap, prod.map_fst,
-    yOneBaseIsoProd_hom_fst_assoc]
-
-/-- `yOneBaseMap g N` commutes with the canonical projection `yOneSnd` to `UniversalTate.yOne N`. -/
-@[reassoc (attr := simp)]
-theorem yOneBaseMap_yOneSnd {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
-    yOneBaseMap g N ≫ yOneSnd B N = yOneSnd B' N := by
-  simp [yOneBaseMap]
-
-/-- **The base of `EllObj.yOne B N` commutes with arbitrary base change `g : B' ⟶ B`.** -/
-theorem isPullback_yOneBaseMap {B' B : Scheme.{u}} (g : B' ⟶ B) (N : ℕ) [NeZero N] :
-    IsPullback (yOneBaseMap g N) (yOne B' N).structureMap (yOne B N).structureMap g := by
-  have hprod := (IsPullback.of_prod_fst_with_id g (UniversalTate.yOne.{u} N)).flip
-  refine hprod.of_iso' (yOneBaseIsoProd B' N) (yOneBaseIsoProd B N) (Iso.refl _) (Iso.refl _)
-    ?_ ?_ ?_ ?_ <;> simp [yOneBaseMap]
 
 /-- **`Y₁(4)` is smooth of relative dimension `1` over every base scheme `B`.** -/
 instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
@@ -553,10 +386,6 @@ instance smoothOfRelativeDimension_one_yOne_four_structureMap (B : Scheme.{u}) :
     inferInstance
   rw [← yOneBaseIsoProd_hom_fst]
   simpa only [Nat.zero_add] using h
-
-end BaseChange
-
-/-! ### Relative dimension of `Y₁(N)` for `N ≥ 4` -/
 
 private theorem smoothOfRelativeDimension_restrict_yOne_of_open (B : Scheme.{u}) (U : B.Opens)
     (N : ℕ) [NeZero N] (hU : SmoothOfRelativeDimension 1 (yOne U.toScheme N).structureMap) :

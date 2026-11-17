@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.Smooth.StandardSmooth
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.Glue
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.LevelThreeNormalForm
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.BaseChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.Geom.BaseChange.GroupLaw
 import TauCeti.AlgebraicGeometry.Morphisms.Smooth.StandardSmooth
-import TauCeti.RingTheory.Smooth.Hypersurface
 
 /-!
 # The universal level-three normal form over a scheme
@@ -69,9 +67,9 @@ over its copy `ULift.{u} ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]`
 * `TauCeti.AlgebraicGeometry.UniversalLevelThree.firstPointHom_left_comp_mulBy_three_left`,
   `TauCeti.AlgebraicGeometry.UniversalLevelThree.secondPointHom_left_ne_firstPointHom_left` and
   their siblings: the universal basis satisfies the conditions.
-* `WeierstrassCurve.UniversalLevelThree.isStandardSmoothOfRelativeDimension` and
-  `WeierstrassCurve.UniversalLevelThree.smoothOfRelativeDimension_terminal_from`: the base
-  `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is standard smooth of relative dimension `1` over `Spec ℤ`.
+* `WeierstrassCurve.UniversalLevelThree.smoothOfRelativeDimension_terminal_from` and
+  `WeierstrassCurve.UniversalLevelThree.smooth_terminal_from`: the base
+  `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` is smooth of relative dimension `1` over `Spec ℤ`.
 
 ## References
 
@@ -235,42 +233,6 @@ theorem secondPoint_ne_firstPoint_projModelNeg (s) :
   (basis_conditions.2.2.2.2 s).2
 
 /-! ### Smoothness of the base -/
-
-/-- The coordinate ring `ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is
-standard smooth of relative dimension `1` over `ℤ`: in `ℤ[μ, ζ] / (ζ² + ζ + 1)` the partial
-derivative `2ζ + 1` divides `Δ = 27(μ³ - 1)³` via `(2ζ + 1)² = -3`, so `Ring` is a principal
-localization of the standard-smooth hypersurface localization away from `2ζ + 1`. -/
-instance isStandardSmoothOfRelativeDimension :
-    Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ Ring := by
-  let g : MvPolynomial (Fin 2) ℤ := MvPolynomial.X 1 ^ 2 + MvPolynomial.X 1 + 1
-  let δ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.pderiv 1 g)
-  let S := Localization.Away δ
-  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ S := by
-    simpa using MvPolynomial.isStandardSmoothOfRelativeDimension_localizationAway_pderiv g 1
-  let μ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.X 0)
-  let ζ₀ : PolyRing := Ideal.Quotient.mk (Ideal.span {g}) (MvPolynomial.X 1)
-  let y : PolyRing := -δ ^ 5 * (μ₀ ^ 3 - 1) ^ 3
-  have hζ₀ : ζ₀ ^ 2 + ζ₀ + 1 = 0 := by
-    simpa only [ζ₀, g, map_add, map_pow, map_one] using
-      Ideal.Quotient.eq_zero_iff_mem.mpr (Ideal.mem_span_singleton_self g)
-  have hδ : δ = 2 * ζ₀ + 1 := by
-    simp [δ, ζ₀, g, sq]
-    ring
-  have hδy : δ * y = polyCurve.Δ := by
-    dsimp only [y]
-    rw [levelThreeNormalForm_Δ, hδ]
-    linear_combination -4 * ((2 * ζ₀ + 1) ^ 4 - 3 * (2 * ζ₀ + 1) ^ 2 + 9) *
-      (μ₀ ^ 3 - 1) ^ 3 * hζ₀
-  let T := Localization.Away (algebraMap PolyRing S y)
-  have : Algebra.IsStandardSmoothOfRelativeDimension 0 S T :=
-    Algebra.IsStandardSmoothOfRelativeDimension.localization_away (S := T) (algebraMap PolyRing S y)
-  have : Algebra.IsStandardSmoothOfRelativeDimension 1 ℤ T :=
-    Algebra.IsStandardSmoothOfRelativeDimension.trans 1 0 ℤ S T
-  have : IsLocalization.Away polyCurve.Δ T := hδy ▸ IsLocalization.Away.mul' S T δ y
-  let e : T ≃+* Ring := (IsLocalization.algEquiv (.powers polyCurve.Δ) T Ring).toRingEquiv
-  exact Algebra.IsStandardSmoothOfRelativeDimension.of_algEquiv 1
-    (AlgEquiv.ofRingEquiv (f := e) fun x ↦
-      RingHom.congr_fun (RingHom.ext_int (e.toRingHom.comp (algebraMap ℤ T)) (algebraMap ℤ Ring)) x)
 
 /-- The base `Spec ℤ[1/3, ζ₃][μ, 1/(μ³ - 1)]` of the universal level-three normal form is smooth of
 relative dimension `1` over `Spec ℤ`, the terminal scheme. -/
