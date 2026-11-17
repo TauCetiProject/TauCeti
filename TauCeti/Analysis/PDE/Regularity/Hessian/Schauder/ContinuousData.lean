@@ -535,8 +535,8 @@ private theorem laplacian_approx {e : Fin 2 → E} (he : Orthonormal ℝ e) {t :
     ring
   have := (contDiff_quad e).contDiffAt.laplacian_fun_mul (hFq.comp x hq)
   simp only [Function.comp_def] at this hΔG hinner
-  rw [show approx e t = fun y ↦ quad e y * F (‖y‖ ^ 2 + t) from rfl, this, hΔG, hinner,
-    laplacian_quad he, approxLaplacian]
+  unfold approx
+  rw [this, hΔG, hinner, laplacian_quad he, approxLaplacian]
   ring
 
 /-- **The Laplacian of `u`** on the punctured unit ball is
@@ -582,7 +582,7 @@ omit [FiniteDimensional ℝ E] in
 /-- Dominated convergence for `∫ φ Δuₜ` as `t → 0⁺`, with the uniform bound on `Δuₜ` on the
 support of `φ`, where `‖x‖² + t ≤ s₀ < 1` for `0 < t < δ`. -/
 private theorem tendsto_integral_smul_approxLaplacian {e : Fin 2 → E} (he : Orthonormal ℝ e)
-    {δ s₀ : ℝ} (hδ : 0 < δ) (hs₀ : s₀ < 1) (hΩ1 : ∀ x ∈ (Ω : Set E), ‖x‖ < 1)
+    {δ s₀ : ℝ} (hδ : 0 < δ) (hs₀ : s₀ < 1)
     (hrange : ∀ t ∈ Ioo 0 δ, ∀ x ∈ (Ω : Set E), 0 < ‖x‖ ^ 2 + t ∧ ‖x‖ ^ 2 + t ≤ s₀)
     (φ : 𝓓(Ω, ℝ)) : Tendsto (fun t ↦ ∫ x, (φ : E → ℝ) x • approxLaplacian e t x ∂μ) (𝓝[>] 0)
       (𝓝 (∫ x, (φ : E → ℝ) x • laplacianQuadraticSqrtNegLog e x ∂μ)) := by
@@ -609,7 +609,9 @@ private theorem tendsto_integral_smul_approxLaplacian {e : Fin 2 → E} (he : Or
     refine Tendsto.const_smul ?_ _
     rcases eq_or_ne x 0 with rfl | hx0
     · simp [approxLaplacian]
-    have hx1 : ‖x‖ < 1 := hΩ1 x (hφne x hx)
+    have hx1 : ‖x‖ < 1 := by
+      have := (hrange (δ / 2) ⟨half_pos hδ, half_lt_self hδ⟩ x (hφne x hx)).2
+      exact (sq_lt_one_iff₀ (norm_nonneg x)).1 (by linarith)
     obtain ⟨hx2, hx3⟩ := norm_sq_add_zero_mem_Ioo hx0 hx1
     have hshift : ContinuousAt (fun t : ℝ ↦ ‖x‖ ^ 2 + t) 0 :=
       continuousAt_const.add continuousAt_id
@@ -635,7 +637,6 @@ private theorem integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball {e : 
   have hρ2 : ρ ^ 2 < 1 := by nlinarith
   have hδ : 0 < δ := by simp only [δ]; linarith
   have hs₀ : s₀ < 1 := by simp only [s₀]; linarith
-  have hΩ1 : ∀ x ∈ (Ω : Set E), ‖x‖ < 1 := fun x hx ↦ (mem_ball_zero_iff.1 (hΩρ hx)).trans hρ1
   have hrange : ∀ t ∈ Ioo 0 δ, ∀ x ∈ (Ω : Set E), 0 < ‖x‖ ^ 2 + t ∧ ‖x‖ ^ 2 + t ≤ s₀ := by
     intro t ht x hx
     have := mem_ball_zero_iff.1 (hΩρ hx)
@@ -658,7 +659,7 @@ private theorem integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball {e : 
       simp only [laplacian_approx he (hs x hxΩ).1 ((hs x hxΩ).2.trans_lt hs₀)]
   exact tendsto_nhds_unique ((tendsto_integral_laplacian_smul_approx he φ).congr'
       (by filter_upwards [Ioo_mem_nhdsGT hδ] with t ht using hgreen t ht))
-    (tendsto_integral_smul_approxLaplacian he hδ hs₀ hΩ1 hrange φ)
+    (tendsto_integral_smul_approxLaplacian he hδ hs₀ hrange φ)
 
 variable (μ) in
 /-- **`Δu = f` in the sense of distributions**, also across the origin: for every test function
