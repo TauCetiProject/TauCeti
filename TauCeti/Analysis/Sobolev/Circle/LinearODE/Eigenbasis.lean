@@ -102,6 +102,17 @@ theorem real_inner_I_smul_loopOperator_comm
       one_mul, zero_sub]
     linarith [hS x (toContinuousMap T (by norm_num) a x) (toContinuousMap T (by norm_num) b x)]
 
+omit hT [FiniteDimensional ℂ F] in
+/-- Real multiples of an infinitesimally symplectic loop are infinitesimally symplectic. -/
+theorem smul_isInfinitesimallySymplectic
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (τ : ℝ) :
+    ∀ t v w, (inner ℂ ((τ • S) t v) w).im + (inner ℂ v ((τ • S) t w)).im = 0 := by
+  intro t v w
+  simp only [ContinuousMap.smul_apply, smul_apply, ← Complex.coe_smul,
+    inner_smul_left, inner_smul_right, Complex.conj_ofReal, Complex.mul_im, Complex.ofReal_re,
+    Complex.ofReal_im, zero_mul, add_zero]
+  linear_combination τ * hS t v w
+
 /-- **The orthonormal eigenbasis of the asymptotic operator at a nondegenerate loop.** Let every
 `S_t` be infinitesimally symplectic for `ω₀ = Im ⟪·, ·⟫`, and let `ζ ↦ ζ' - S ζ` be invertible
 from `H¹` to `H⁰`. Then `H⁰`, with its real inner product, has a Hilbert basis `b` of

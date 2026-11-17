@@ -25,9 +25,9 @@ In the convention `J₀ ∂t + S₀(t)` of `TauCeti.orbitTorusOperator`, `A` is 
 `S = J₀ S₀`, and `S` is infinitesimally symplectic for `Im ⟪·, ·⟫` exactly when `S₀` is symmetric;
 then `A` is symmetric (`TauCeti.CircleSobolev.real_inner_I_smul_loopOperator_comm`). The four real
 sign characters of the torus twist `D`; for the two twisted along the circle factor, `D` acts on
-maps antiperiodic of antiperiod `ℓ` in `s`. This file realizes these operators on Sobolev spaces
-and proves that they are invertible, along the whole path to the complex-linear operator
-`∂s + J₀ ∂t`.
+maps antiperiodic of antiperiod `ℓ` in `s`. This file realizes the one of these that is untwisted
+along `γ`, acting on maps periodic in `t`, on Sobolev spaces and proves that it is invertible,
+along the whole path to the complex-linear operator `∂s + J₀ ∂t`.
 
 **The spaces.** An antiperiodic map expands in the modes `cos (ωₖ s)` and `sin (ωₖ s)`,
 `ωₖ = (2k + 1)π/ℓ`, `k ∈ ℕ`: `u = ∑ₖ cos (ωₖ s) aₖ + sin (ωₖ s) bₖ`, with `aₖ, bₖ` loops in `t`.
@@ -39,9 +39,9 @@ the `L²` space of mode sequences in `H⁰(F)²`. Both carry the complex structu
 
 **The operator.** Since `∂s cos (ωs) = -ω sin (ωs)` and `∂s sin (ωs) = ω cos (ωs)`, the operator
 acts on the mode `k` by `(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ aₖ)`
-(`TauCeti.antiperiodicTorusOperator`, `TauCeti.antiperiodicTorusOperator_apply_apply`). It depends
-continuously on `S` (`TauCeti.continuous_antiperiodicTorusOperator`), and for `S = 0` it is complex
-linear (`TauCeti.antiperiodicTorusOperator_zero_apply_smul`).
+(`TauCeti.antiperiodicTorusOperator`, `TauCeti.antiperiodicTorusOperator_apply_apply_eq`). It
+depends continuously on `S` (`TauCeti.continuous_antiperiodicTorusOperator`), and for `S = 0` it
+is complex linear (`TauCeti.antiperiodicTorusOperator_zero_apply_smul`).
 
 **The estimate.** By the symmetry of `A` the cross terms cancel and each mode satisfies
 `‖A a + ω b‖² + ‖A b - ω a‖² = ‖A a‖² + ‖A b‖² + ω² (‖a‖² + ‖b‖²)`, the operator counterpart of
@@ -136,6 +136,20 @@ theorem mem_antiperiodicSobolev_iff {ℓ : ℝ} {x : 𝕏[F]} :
       (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) (x.1 k) :=
   Iff.rfl
 
+/-- The first component of the mode `k` of the second sequence of an element of
+`TauCeti.antiperiodicSobolev` is `ωₖ aₖ`, read in `H⁰(F)`. -/
+theorem fst_snd_apply_of_mem_antiperiodicSobolev {ℓ : ℝ} {x : 𝕏[F]}
+    (hx : x ∈ antiperiodicSobolev F ℓ) (k : ℕ) :
+    (x.2 k).fst = ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one (x.1 k).fst := by
+  simpa using congrArg WithLp.fst (hx k)
+
+/-- The second component of the mode `k` of the second sequence of an element of
+`TauCeti.antiperiodicSobolev` is `ωₖ bₖ`, read in `H⁰(F)`. -/
+theorem snd_snd_apply_of_mem_antiperiodicSobolev {ℓ : ℝ} {x : 𝕏[F]}
+    (hx : x ∈ antiperiodicSobolev F ℓ) (k : ℕ) :
+    (x.2 k).snd = ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one (x.1 k).snd := by
+  simpa using congrArg WithLp.snd (hx k)
+
 /-- `TauCeti.antiperiodicSobolev` is closed, as an intersection of equalizers of continuous maps. -/
 theorem isClosed_antiperiodicSobolev (ℓ : ℝ) :
     IsClosed (antiperiodicSobolev F ℓ : Set 𝕏[F]) := by
@@ -169,7 +183,7 @@ local instance instCompleteSpaceAntiperiodicTorusOperator : CompleteSpace F :=
 `A ζ = J₀ (ζ' - S ζ)` of a loop `S`, as a bounded real-linear map from the Sobolev space `H¹` of
 these maps (`TauCeti.antiperiodicSobolev`) to the corresponding `L²` space of mode sequences in
 `H⁰(F)²`. On the mode `cos (ωₖ s) aₖ + sin (ωₖ s) bₖ` it acts by
-`(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ aₖ)` (`TauCeti.antiperiodicTorusOperator_apply_apply`). -/
+`(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ aₖ)` (`TauCeti.antiperiodicTorusOperator_apply_apply_eq`). -/
 def antiperiodicTorusOperator (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F)) :
     antiperiodicSobolev F ℓ →L[ℝ] 𝕐[F] :=
   (lp.ampliation ℕ 2 ((I • loopOperator T S).withLpProdMap 2 (I • loopOperator T S)) ∘L
@@ -189,6 +203,18 @@ theorem antiperiodicTorusOperator_apply_apply (ℓ : ℝ) (S : C(AddCircle T, F 
       WithLp.toLp 2 (I • loopOperator T S ((x : 𝕏[F]).1 k).fst + ((x : 𝕏[F]).2 k).snd,
         I • loopOperator T S ((x : 𝕏[F]).1 k).snd - ((x : 𝕏[F]).2 k).fst) := by
   simp [antiperiodicTorusOperator, sub_eq_add_neg, ← WithLp.toLp_add]
+
+/-- The operator acts on the mode `k` by `(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ aₖ)`, where
+`(aₖ, bₖ)` is the mode `k` of the first sequence of `TauCeti.antiperiodicSobolev`. -/
+theorem antiperiodicTorusOperator_apply_apply_eq (ℓ : ℝ) (S : C(AddCircle T, F →L[ℝ] F))
+    (x : antiperiodicSobolev F ℓ) (k : ℕ) :
+    antiperiodicTorusOperator T ℓ S x k = WithLp.toLp 2
+      (I • loopOperator T S ((x : 𝕏[F]).1 k).fst +
+          ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).snd,
+        I • loopOperator T S ((x : 𝕏[F]).1 k).snd -
+          ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).fst) := by
+  rw [antiperiodicTorusOperator_apply_apply, fst_snd_apply_of_mem_antiperiodicSobolev x.2,
+    snd_snd_apply_of_mem_antiperiodicSobolev x.2]
 
 /-- **The reference operator is complex linear.** For `S = 0` the operator `∂s + J₀ ∂t` commutes
 with multiplication by complex scalars, the complex structure of `H¹` and `L²` acting by `J₀`. -/
@@ -241,9 +267,9 @@ private theorem norm_sq_add_norm_sq_mode (S : C(AddCircle T, F →L[ℝ] F))
           ‖inclusion (E := F) zero_le_one b‖ ^ 2) := by
   rw [norm_add_sq_real, norm_sub_sq_real, real_inner_smul_right, real_inner_smul_right,
     real_inner_comm (inclusion zero_le_one a), ← real_inner_I_smul_loopOperator_comm T S hS a b,
-    norm_smul, norm_smul, norm_smul, norm_smul, norm_I, Real.norm_eq_abs]
-  ring_nf
-  rw [sq_abs]
+    norm_smul, norm_smul, norm_smul, norm_smul, norm_I]
+  simp only [mul_pow, Real.norm_eq_abs, sq_abs]
+  ring
 
 /-- **The estimate of one mode.** If `‖S t‖ ≤ M` for every `t` and `ω₀ ≤ |ω|` with `ω₀ > 0`, the
 `H¹` norms of `a, b` are bounded by the mode `(A a + ω b, A b - ω a)` of the operator, with a
@@ -282,25 +308,6 @@ private theorem norm_sq_add_norm_sq_le_mode (S : C(AddCircle T, F →L[ℝ] F))
 
 /-! ### The a priori estimate -/
 
-/-- The two components of an element of `TauCeti.antiperiodicSobolev` at the mode `k` are
-`(aₖ, bₖ)` and `ωₖ (aₖ, bₖ)`, so the operator acts on the mode `k` by
-`(aₖ, bₖ) ↦ (A aₖ + ωₖ bₖ, A bₖ - ωₖ aₖ)`. -/
-private theorem antiperiodicTorusOperator_apply_apply_eq {ℓ : ℝ} (S : C(AddCircle T, F →L[ℝ] F))
-    (x : antiperiodicSobolev F ℓ) (k : ℕ) :
-    ((x : 𝕏[F]).2 k).fst = ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).fst ∧
-    ((x : 𝕏[F]).2 k).snd = ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).snd ∧
-    antiperiodicTorusOperator T ℓ S x k = WithLp.toLp 2
-      (I • loopOperator T S ((x : 𝕏[F]).1 k).fst +
-          ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).snd,
-        I • loopOperator T S ((x : 𝕏[F]).1 k).snd -
-          ((2 * k + 1) * π / ℓ : ℝ) • inclusion zero_le_one ((x : 𝕏[F]).1 k).fst) := by
-  have hx := mem_antiperiodicSobolev_iff.1 x.2 k
-  have h1 := congrArg WithLp.fst hx
-  have h2 := congrArg WithLp.snd hx
-  simp only [WithLp.smul_fst, WithLp.smul_snd, ContinuousLinearMap.withLpProdMap_apply,
-    WithLp.toLp_fst, WithLp.toLp_snd] at h1 h2
-  exact ⟨h1, h2, by rw [antiperiodicTorusOperator_apply_apply, h1, h2]⟩
-
 /-- The lowest antiperiodic frequency `π / |ℓ|` bounds every frequency `ωₖ = (2k + 1)π/ℓ`. -/
 private theorem div_le_abs_frequency {ℓ : ℝ} (hℓ : ℓ ≠ 0) (k : ℕ) :
     π / |ℓ| ≤ |((2 * k + 1) * π / ℓ : ℝ)| := by
@@ -314,30 +321,42 @@ loops of uniform norm at most `M`. -/
 private def modeConstant (ℓ M : ℝ) : ℝ :=
   (2 + 4 * (T / (2 * π)) ^ 2 * M ^ 2) / (π / |ℓ|) ^ 2 + 4 * (T / (2 * π)) ^ 2
 
+/-- The a priori estimate of one mode `y = (a, b)` of frequency `ω`, `π / |ℓ| ≤ |ω|`: both `y`
+in `H¹(F)²` and `ω y` in `H⁰(F)²` are bounded by the mode `z = (A a + ω b, A b - ω a)` of the
+operator. -/
+private theorem norm_le_mode {ℓ : ℝ} (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
+    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) {M ω : ℝ}
+    (hM : ∀ t, ‖S t‖ ≤ M) (hω : π / |ℓ| ≤ |ω|)
+    {y : WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F)}
+    {z : WithLp 2 (CircleSobolev 0 F × CircleSobolev 0 F)}
+    (hz₁ : I • loopOperator T S y.fst + ω • inclusion zero_le_one y.snd = z.fst)
+    (hz₂ : I • loopOperator T S y.snd - ω • inclusion zero_le_one y.fst = z.snd) :
+    ‖y‖ ≤ √(modeConstant T ℓ M) * ‖z‖ ∧
+      ‖ω • (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) y‖ ≤ ‖z‖ := by
+  have hz : ‖z‖ ^ 2 = ‖I • loopOperator T S y.fst + ω • inclusion zero_le_one y.snd‖ ^ 2 +
+      ‖I • loopOperator T S y.snd - ω • inclusion zero_le_one y.fst‖ ^ 2 := by
+    rw [WithLp.prod_norm_sq_eq_of_L2, hz₁, hz₂]
+  have hK : 0 ≤ modeConstant T ℓ M := by unfold modeConstant; positivity
+  constructor
+  · refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
+    rw [mul_pow, Real.sq_sqrt hK, hz, WithLp.prod_norm_sq_eq_of_L2]
+    exact norm_sq_add_norm_sq_le_mode T S hS hM (div_pos Real.pi_pos (abs_pos.2 hℓ)) hω _ _
+  · refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
+    rw [hz, norm_sq_add_norm_sq_mode T S hS, norm_smul, mul_pow, Real.norm_eq_abs, sq_abs,
+      WithLp.prod_norm_sq_eq_of_L2]
+    simp only [ContinuousLinearMap.withLpProdMap_apply, WithLp.toLp_fst, WithLp.toLp_snd]
+    nlinarith [sq_nonneg ‖loopOperator T S y.fst‖, sq_nonneg ‖loopOperator T S y.snd‖]
+
 /-- The a priori estimate of `TauCeti.antiperiodicTorusOperator`, mode by mode. -/
 private theorem norm_apply_le_mode {ℓ : ℝ} (hℓ : ℓ ≠ 0) (S : C(AddCircle T, F →L[ℝ] F))
     (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) {M : ℝ}
     (hM : ∀ t, ‖S t‖ ≤ M) (x : antiperiodicSobolev F ℓ) (k : ℕ) :
     ‖(x : 𝕏[F]).1 k‖ ≤ √(modeConstant T ℓ M) * ‖antiperiodicTorusOperator T ℓ S x k‖ ∧
       ‖(x : 𝕏[F]).2 k‖ ≤ ‖antiperiodicTorusOperator T ℓ S x k‖ := by
-  obtain ⟨h1, h2, hD⟩ := antiperiodicTorusOperator_apply_apply_eq T S x k
-  have hω := div_le_abs_frequency hℓ k
-  set ω : ℝ := (2 * k + 1) * π / ℓ
-  set a := ((x : 𝕏[F]).1 k).fst
-  set b := ((x : 𝕏[F]).1 k).snd
-  have hDk : ‖antiperiodicTorusOperator T ℓ S x k‖ ^ 2 =
-      ‖I • loopOperator T S a + ω • inclusion zero_le_one b‖ ^ 2 +
-        ‖I • loopOperator T S b - ω • inclusion zero_le_one a‖ ^ 2 := by
-    rw [hD, WithLp.prod_norm_sq_eq_of_L2, WithLp.toLp_fst, WithLp.toLp_snd]
-  have hK : 0 ≤ modeConstant T ℓ M := by unfold modeConstant; positivity
-  constructor
-  · refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-    rw [mul_pow, Real.sq_sqrt hK, hDk, WithLp.prod_norm_sq_eq_of_L2]
-    exact norm_sq_add_norm_sq_le_mode T S hS hM (div_pos Real.pi_pos (abs_pos.2 hℓ)) hω a b
-  · refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
-    rw [hDk, norm_sq_add_norm_sq_mode T S hS, WithLp.prod_norm_sq_eq_of_L2, h1, h2, norm_smul,
-      norm_smul, Real.norm_eq_abs, mul_pow, mul_pow, sq_abs]
-    nlinarith [sq_nonneg ‖loopOperator T S a‖, sq_nonneg ‖loopOperator T S b‖]
+  have hD := antiperiodicTorusOperator_apply_apply_eq T ℓ S x k
+  rw [mem_antiperiodicSobolev_iff.1 x.2 k]
+  exact norm_le_mode T hℓ S hS hM (div_le_abs_frequency hℓ k)
+    (congrArg WithLp.fst hD).symm (congrArg WithLp.snd hD).symm
 
 /-- **The a priori estimate.** For a bound `M`, there is a constant `C` such that
 `‖x‖ ≤ C ‖(∂s + A) x‖` for every `x` in the Sobolev space `H¹` of maps antiperiodic in `s`, for the
@@ -381,7 +400,7 @@ private theorem exists_mode_eq_of_zero {ω : ℝ} (hω : ω ≠ 0) (z₁ z₂ : 
       map_smul, ← Complex.coe_smul]
     rw [eq_sub_of_add_eq hu, eq_sub_of_add_eq hv]
     -- Compare the coefficients of `z₁`, `z₂`, `u` and `v`, which agree since `I ^ 2 = -1`.
-    match_scalars <;> ring_nf <;> simp only [I_sq, I_pow_four] <;> ring
+    match_scalars <;> grind [I_sq]
 
 /-- **The reference operator is onto.** For `S = 0` the operator `∂s + J₀ ∂t` maps the Sobolev
 space `H¹` of maps antiperiodic in `s` onto the corresponding `L²` space. -/
@@ -393,26 +412,17 @@ theorem surjective_antiperiodicTorusOperator_zero {ℓ : ℝ} (hℓ : ℓ ≠ 0)
       (z k).fst (z k).snd
   have hzero : ∀ t v w, (inner ℂ ((0 : C(AddCircle T, F →L[ℝ] F)) t v) w).im +
       (inner ℂ v ((0 : C(AddCircle T, F →L[ℝ] F)) t w)).im = 0 := by simp
-  have hz (k : ℕ) : ‖z k‖ ^ 2 = ‖(z k).fst‖ ^ 2 + ‖(z k).snd‖ ^ 2 :=
-    WithLp.prod_norm_sq_eq_of_L2 _
   -- The mode estimate for `S = 0` puts the solutions in `H¹`, with square-summable norms.
-  have h₁ (k : ℕ) : ‖WithLp.toLp 2 (a k, b k)‖ ≤
-      ‖(√(modeConstant T ℓ 0) • ⇑z) k‖ := by
+  have hmode (k : ℕ) := norm_le_mode T hℓ 0 hzero (M := 0) (fun _ ↦ by simp)
+    (div_le_abs_frequency hℓ k) (y := WithLp.toLp 2 (a k, b k)) (hab k).1 (hab k).2
+  have h₁ (k : ℕ) : ‖WithLp.toLp 2 (a k, b k)‖ ≤ ‖(√(modeConstant T ℓ 0) • ⇑z) k‖ := by
     rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
-    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
-    rw [mul_pow, Real.sq_sqrt (by unfold modeConstant; positivity), hz,
-      WithLp.prod_norm_sq_eq_of_L2, WithLp.toLp_fst, WithLp.toLp_snd, ← (hab k).1, ← (hab k).2]
-    exact norm_sq_add_norm_sq_le_mode T 0 hzero (fun _ ↦ by simp)
-      (div_pos Real.pi_pos (abs_pos.2 hℓ)) (div_le_abs_frequency hℓ k) (a k) (b k)
+    exact (hmode k).1
   set x₁ : ℓ²(ℕ, WithLp 2 (CircleSobolev 1 F × CircleSobolev 1 F)) :=
     ⟨fun k ↦ WithLp.toLp 2 (a k, b k), ((lp.memℓp z).const_smul _).mono' h₁⟩
   have h₂ (k : ℕ) : ‖((2 * k + 1) * π / ℓ : ℝ) •
-      (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) (x₁ k)‖ ≤ ‖z k‖ := by
-    refine (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 ?_
-    rw [hz, ← (hab k).1, ← (hab k).2, norm_sq_add_norm_sq_mode T 0 hzero, norm_smul,
-      mul_pow, Real.norm_eq_abs, sq_abs, WithLp.prod_norm_sq_eq_of_L2]
-    simp only [x₁, ContinuousLinearMap.withLpProdMap_apply, WithLp.toLp_fst, WithLp.toLp_snd]
-    nlinarith [sq_nonneg ‖loopOperator T 0 (a k)‖, sq_nonneg ‖loopOperator T 0 (b k)‖]
+      (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) (x₁ k)‖ ≤ ‖z k‖ :=
+    (hmode k).2
   set x₂ : ℓ²(ℕ, WithLp 2 (CircleSobolev 0 F × CircleSobolev 0 F)) :=
     ⟨fun k ↦ ((2 * k + 1) * π / ℓ : ℝ) •
       (inclusion zero_le_one).withLpProdMap 2 (inclusion zero_le_one) (x₁ k),
@@ -424,17 +434,6 @@ theorem surjective_antiperiodicTorusOperator_zero {ℓ : ℝ} (hℓ : ℓ ≠ 0)
   · simpa [x₁, x₂] using (hab k).2
 
 /-! ### Invertibility -/
-
-omit hT [FiniteDimensional ℂ F] in
-/-- Real multiples of an infinitesimally symplectic loop are infinitesimally symplectic. -/
-private theorem smul_isInfinitesimallySymplectic {S : C(AddCircle T, F →L[ℝ] F)}
-    (hS : ∀ t v w, (inner ℂ (S t v) w).im + (inner ℂ v (S t w)).im = 0) (τ : ℝ) :
-    ∀ t v w, (inner ℂ ((τ • S) t v) w).im + (inner ℂ v ((τ • S) t w)).im = 0 := by
-  intro t v w
-  simp only [ContinuousMap.smul_apply, smul_apply, ← Complex.coe_smul, inner_smul_left,
-    inner_smul_right, Complex.conj_ofReal, Complex.mul_im, Complex.ofReal_re, Complex.ofReal_im,
-    zero_mul, add_zero]
-  linear_combination τ * hS t v w
 
 /-- **Invertibility along the homotopy to the complex-linear reference.** For every
 infinitesimally symplectic loop `S`, the orbit-torus operator `∂s + A`, `A ζ = J₀ (ζ' - S ζ)`, is
@@ -459,12 +458,12 @@ theorem isInvertible_antiperiodicTorusOperator {ℓ : ℝ} (hℓ : ℓ ≠ 0)
     exact (mul_le_mul (abs_le.2 ⟨by linarith [hτ.1], hτ.2⟩) (S.norm_coe_le_norm t)
       (norm_nonneg _) zero_le_one).trans_eq (one_mul _)
   have h0 : Function.Surjective (antiperiodicTorusOperator T ℓ ((0 : ℝ) • S)) := by
-    rw [show (0 : ℝ) • S = 0 by ext; simp]
+    rw [zero_smul ℝ S]
     exact surjective_antiperiodicTorusOperator_zero T hℓ
   have h := isPreconnected_Icc.isInvertible_of_forall_norm_le hL
-    (fun τ hτ' x ↦ hC (τ • S) (smul_isInfinitesimallySymplectic T hS τ) (hτ τ hτ') x)
+    (fun τ hτ' x ↦ hC (τ • S) (smul_isInfinitesimallySymplectic T S hS τ) (hτ τ hτ') x)
     (Set.left_mem_Icc.2 zero_le_one) (Set.right_mem_Icc.2 zero_le_one) h0
-  rwa [show (1 : ℝ) • S = S by ext; simp] at h
+  rwa [one_smul ℝ S] at h
 
 end Inner
 
