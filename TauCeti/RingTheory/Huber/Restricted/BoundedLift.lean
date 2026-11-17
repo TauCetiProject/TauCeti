@@ -279,20 +279,14 @@ theorem weightedAddMapCompletion_toAddMonoidHom {φ : R →+* S} {C : ℝ}
     (hφ : ∀ r, ‖φ r‖ ≤ C * ‖r‖) :
     weightedAddMapCompletion (k := k) (φ : R →+ S) hφ =
       (weightedMapCompletion (k := k) (AddMonoidHomClass.lipschitz_of_bound φ C hφ).continuous
-        isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp) : _ →+ _) :=
-  AddMonoidHom.ext fun g ↦ UniformSpace.Completion.induction_on g
-    (isClosed_eq (continuous_weightedAddMapCompletion _ _)
-      (continuous_weightedMapCompletion ..)) fun f ↦ by
-    have hf : weightedAddMap (k := k) (φ : R →+ S) hφ f =
-        weightedMap (k := k) (AddMonoidHomClass.lipschitz_of_bound φ C hφ).continuous
-          isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp) f :=
-      congrArg (fun m ↦ m f) (weightedAddMap_toAddMonoidHom (k := k) hφ)
-    change weightedAddMapCompletion (φ : R →+ S) hφ
-        (f : restrictedMvPowerSeriesCompletion k R) =
-      weightedMapCompletion (AddMonoidHomClass.lipschitz_of_bound φ C hφ).continuous
-        isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp)
-        (f : restrictedMvPowerSeriesCompletion k R)
-    rw [weightedAddMapCompletion_coe, weightedMapCompletion_coe, hf]
+        isWeightFamily_one_weight isWeightFamily_one_weight (fun _ ↦ by simp) : _ →+ _) := by
+  ext g
+  refine UniformSpace.Completion.induction_on g
+    (isClosed_eq (continuous_weightedAddMapCompletion _ _) ?_) fun f ↦ ?_
+  · rw [AddMonoidHom.coe_ofClass]
+    exact continuous_weightedMapCompletion ..
+  · rw [weightedAddMapCompletion_coe, AddMonoidHom.coe_ofClass, weightedMapCompletion_coe,
+      weightedAddMap_toAddMonoidHom (k := k) hφ, AddMonoidHom.coe_ofClass]
 
 /-- Over a complete source ring `S`, an injective bounded additive map induces an injective
 additive map on completed Huber restricted-series algebras (without requiring completeness of
