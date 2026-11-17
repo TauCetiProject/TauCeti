@@ -15,6 +15,8 @@ public import Mathlib.Analysis.RCLike.Basic
 * `RCLike.re_eq_self_of_im_eq_zero`: a scalar with zero imaginary part equals its real part.
 * `RCLike.norm_le_abs_re_add_abs_im`: `‖z‖ ≤ |re z| + |im z|`, the `RCLike` counterpart of
   `Complex.norm_le_abs_re_add_abs_im`.
+* `RCLike.re_mem_Ioo_of_mem_ball`: for `z ∈ Metric.ball z₀ δ`,
+  `re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ)`.
 -/
 
 public section
@@ -34,5 +36,12 @@ theorem norm_le_abs_re_add_abs_im (z : K) : ‖z‖ ≤ |re z| + |im z| := by
 /-- A scalar with zero imaginary part is the image of its real part. -/
 theorem re_eq_self_of_im_eq_zero {z : K} (h : im z = 0) : (re z : K) = z :=
   conj_eq_iff_re.mp (conj_eq_iff_im.mpr h)
+
+/-- The real part of any point in the open ball `Metric.ball z₀ δ` lies in
+`Set.Ioo (re z₀ - δ) (re z₀ + δ)`. -/
+theorem re_mem_Ioo_of_mem_ball {z z₀ : K} {δ : ℝ} (hz : z ∈ Metric.ball z₀ δ) :
+    re z ∈ Set.Ioo (re z₀ - δ) (re z₀ + δ) := by
+  simpa only [Real.ball_eq_Ioo, NNReal.coe_one, one_mul] using
+    lipschitzWith_re.mapsTo_ball one_ne_zero z₀ δ hz
 
 end RCLike
