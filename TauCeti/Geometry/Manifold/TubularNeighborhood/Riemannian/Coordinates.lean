@@ -13,6 +13,8 @@ public import TauCeti.Topology.FiberBundle.Separation
 public import Mathlib.Geometry.Manifold.Metrizable
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Neighborhood
+import TauCeti.Geometry.Manifold.Diffeomorph.Empty
+import TauCeti.Geometry.Manifold.TubularNeighborhood.Riemannian.Lift
 
 /-!
 # Smooth normal-exponential coordinates
@@ -65,22 +67,26 @@ theorem isLocalDiffeomorphAt_normalExp_zeroSection
     letI := f.normalSpaceFiberBundle hn hdim
     IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) J m (f.normalExp (P := P) hn)
       (zeroSection P (fun x ↦ f.NormalSpace x hn) x) := by
-  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
   have h2m : (1 : ℕ∞ω) + 1 ≤ m + 1 := by gcongr
-  have : IsManifold I (1 + 1) M := .of_le (n := m + 1) h2m
-  have hminfty : m + 1 ≤ ∞ := by
+  have hm' : m + 1 ≤ ∞ := by
     lift m to ℕ∞ using ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
     exact_mod_cast le_top
-  have : IsManifold J (m + 1) N := .of_le (n := ∞) hminfty
+  have : IsManifold J (m + 1) N := .of_le hm'
+  have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  have : IsManifold I m M := .of_le (n := m + 1) le_self_add
+  have : IsManifold I (1 + 1) M := .of_le (n := m + 1) h2m
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
   let := f.normalSpaceContMDiffVectorBundle hn hm hdim
-  have : IsManifold I m M := .of_le (n := m + 1) le_self_add
-  obtain ⟨e, he⟩ := f.isInvertible_mfderiv_normalExp_zeroSection hn
-    (h2m.trans hm) hdim x
-  exact isLocalDiffeomorphAt_of_mfderiv_eq (f.contMDiffOn_normalExp hn hm hdim)
-    (f.isOpen_normalExpDomain hn hdim) (f.zeroSection_mem_normalExpDomain hn x)
-    BoundarylessManifold.isInteriorPoint hm1 he
+  have hexp : f.normalExp (P := P) hn =
+      TauCeti.Bundle.liftExp f (fun x ↦ f.normalRepresentative x hn) :=
+    funext fun p ↦ by rw [f.normalExp_apply, TauCeti.Bundle.liftExp_apply]
+  have hinv := f.isInvertible_mfderiv_normalExp_zeroSection (P := P) hn (h2m.trans hm) hdim x
+  rw [mfderiv_congr hexp] at hinv
+  rw [hexp]
+  exact TauCeti.Bundle.isLocalDiffeomorphAt_liftExp_zeroSection (P := P) (g := f)
+    (L := fun x ↦ f.normalRepresentative x hn) hm1
+    (f.contMDiff_normalRepresentative (m := m) hn hm hdim) hinv
 
 /-- Normal exponential coordinates around an entire embedded submanifold have a single `C^m`
 inverse. Their source lies in the natural exponential domain, contains the whole zero section,
@@ -97,45 +103,33 @@ theorem exists_partialDiffeomorph_normalExp_subset [SecondCountableTopology N] [
       (∀ x, zeroSection P (fun x ↦ f.NormalSpace x hn) x ∈ Φ.source) ∧
       Φ.source ⊆ f.normalExpDomain hn ∧ Φ.target ⊆ O ∧
       Φ.target = f.normalExp hn '' Φ.source ∧ ⇑Φ = f.normalExp hn := by
+  have h2m : (1 : ℕ∞ω) + 1 ≤ m + 1 := by gcongr
+  have hm' : m + 1 ≤ ∞ := by
+    lift m to ℕ∞ using ne_top_of_le_ne_top WithTop.coe_ne_top ENat.LEInfty.out
+    exact_mod_cast le_top
+  have : IsManifold J (m + 1) N := .of_le hm'
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
+  have : IsManifold I m M := .of_le (n := m + 1) le_self_add
+  have : IsManifold I (1 + 1) M := .of_le (n := m + 1) h2m
   let := f.normalSpaceFiberBundle hn hdim
   let := f.normalSpaceVectorBundle hn hdim
-  have : T2Space M := f.isEmbedding.t2Space
-  have : SecondCountableTopology M := f.isEmbedding.isInducing.secondCountableTopology
-  have : LocallyCompactSpace G := J.locallyCompactSpace
-  have : LocallyCompactSpace N := ChartedSpace.locallyCompactSpace G N
-  have : LocallyCompactSpace (ModelProd H P) := (I.prod 𝓘(ℝ, P)).locallyCompactSpace
-  have : LocallyCompactSpace (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-    ChartedSpace.locallyCompactSpace (ModelProd H P) _
-  have : MetrizableSpace N := Manifold.metrizableSpace J N
-  have : MetrizableSpace (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-    Manifold.metrizableSpace (I.prod 𝓘(ℝ, P)) _
-  have : Nonempty (TotalSpace P (fun x ↦ f.NormalSpace x hn)) :=
-    Nonempty.map (zeroSection P (fun x ↦ f.NormalSpace x hn)) inferInstance
-  let A := f.normalExp (P := P) hn
-  let U := {p | IsLocalDiffeomorphAt (I.prod 𝓘(ℝ, P)) J m A p}
-  have hU : IsOpen U := isOpen_iff_mem_nhds.mpr fun _ hp => hp.eventually
-  let S := (U ∩ f.normalExpDomain (P := P) hn) ∩ A ⁻¹' O
-  have hS : IsOpen S :=
-    ContinuousOn.isOpen_inter_preimage
-      ((f.contMDiffOn_normalExp hn hm hdim).continuousOn.mono inter_subset_right)
-      (hU.inter (f.isOpen_normalExpDomain hn hdim)) hO
-  have hzero : range (zeroSection P (fun x ↦ f.NormalSpace x hn)) ⊆ S := by
-    rintro _ ⟨x, rfl⟩
-    exact ⟨⟨f.isLocalDiffeomorphAt_normalExp_zeroSection hn hm hm1 hdim x,
-      f.zeroSection_mem_normalExpDomain hn x⟩, by simpa [A] using hfO (mem_range_self x)⟩
-  have hlocal : IsLocalDiffeomorphOn (I.prod 𝓘(ℝ, P)) J m A S := fun p => p.property.1.1
-  have hcore : A ∘ zeroSection P (fun x ↦ f.NormalSpace x hn) = f :=
-    funext (f.normalExp_zeroSection hn)
-  obtain ⟨Φ, hzeroΦ, hΦS, htarget, hΦ⟩ := hlocal.exists_partialDiffeomorph_near_section
-    hS hzero (_root_.Bundle.Trivialization.continuous_zeroSection ℝ)
-    (π P (fun x ↦ f.NormalSpace x hn))
-    (FiberBundle.continuous_proj _ _) (fun _ => rfl) (hcore ▸ f.isEmbedding.isInducing)
-  refine ⟨Φ, fun x => hzeroΦ (mem_range_self x), fun p hp => (hΦS hp).1.2, ?_,
-    htarget, hΦ⟩
-  rw [htarget]
-  rintro _ ⟨p, hp, rfl⟩
-  exact (hΦS hp).2
+  let := f.normalSpaceContMDiffVectorBundle hn hm hdim
+  have hdom : f.normalExpDomain (P := P) hn =
+      TauCeti.Bundle.liftExpDomain f (fun x ↦ f.normalRepresentative x hn) := by
+    ext p; simp
+  have hexp : f.normalExp (P := P) hn =
+      TauCeti.Bundle.liftExp f (fun x ↦ f.normalRepresentative x hn) :=
+    funext fun p ↦ by rw [f.normalExp_apply, TauCeti.Bundle.liftExp_apply]
+  have hinv : ∀ x, (mfderiv (I.prod 𝓘(ℝ, P)) J
+      (TauCeti.Bundle.liftExp (P := P) f (fun x ↦ f.normalRepresentative x hn))
+      (zeroSection P (fun x ↦ f.NormalSpace x hn) x)).IsInvertible := by
+    intro x
+    have hx := f.isInvertible_mfderiv_normalExp_zeroSection (P := P) hn (h2m.trans hm) hdim x
+    rwa [mfderiv_congr hexp] at hx
+  rw [hdom, hexp]
+  exact TauCeti.Bundle.exists_partialDiffeomorph_liftExp_subset (P := P) (g := f)
+    (L := fun x ↦ f.normalRepresentative x hn) hm1 f.isEmbedding
+    (f.contMDiff_normalRepresentative (m := m) hn hm hdim) hinv hO hfO
 
 omit [ENat.LEInfty m] [IsManifold I (m + 1) M] [I.Boundaryless] in
 /-- The radial compression step of the Riemannian tubular neighbourhood theorem: a partial
@@ -232,14 +226,9 @@ theorem exists_diffeomorph_normalBundle_riemannian_subset
   let := f.normalSpaceContMDiffVectorBundle (m := ∞) hn (by simp) hdim
   cases isEmpty_or_nonempty M with
   | inl hM =>
-    let W : TopologicalSpace.Opens N := ⊥
     have : IsEmpty (TotalSpace P (fun x ↦ f.NormalSpace x hn)) := ⟨fun p => hM.false p.proj⟩
-    have : IsEmpty W := ⟨fun y => y.property⟩
-    let Φ : TotalSpace P (fun x ↦ f.NormalSpace x hn) ≃ₘ^∞⟮I.prod 𝓘(ℝ, P), J⟯ W :=
-      { Equiv.equivOfIsEmpty _ _ with
-        contMDiff_toFun := fun p => (hM.false p.proj).elim
-        contMDiff_invFun := fun y => (IsEmpty.false y).elim }
-    exact ⟨W, empty_subset O, Φ, fun x => (hM.false x).elim⟩
+    have : IsEmpty (⊥ : TopologicalSpace.Opens N) := ⟨fun y => y.property⟩
+    exact ⟨⊥, empty_subset O, Diffeomorph.ofIsEmpty, fun x => (hM.false x).elim⟩
   | inr hM =>
     let := hM
     have : T2Space M := f.isEmbedding.t2Space

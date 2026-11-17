@@ -11,6 +11,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
 import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -46,11 +47,15 @@ For partial diffeomorphisms `ψ`, `χ`, `φ` into normed spaces, such as charts,
   the transition `ψ ∘ φ⁻¹` is differentiable.
 * `PartialDiffeomorph.fderiv_comp_symm_eq_comp`: the derivatives of transitions compose, the
   chain rule `D(ψ ∘ φ⁻¹) = D(ψ ∘ χ⁻¹) ∘ D(χ ∘ φ⁻¹)`.
+* `PartialDiffeomorph.apply_mem_symm_trans_source`, `PartialDiffeomorph.symm_trans_apply_apply`,
+  `PartialDiffeomorph.mfderiv_symm_trans_apply`, and
+  `PartialDiffeomorph.mfderiv_symm_trans_eq_of_comp`: source membership, evaluation, and
+  differential of a manifold transition `Φ₀.symm.trans Φ₁` at `Φ₀ z`.
 -/
 
 public section
 
-open Filter
+open Filter Set
 open scoped Manifold Topology
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -121,6 +126,58 @@ theorem bijective_mvfderiv (Φ : PartialDiffeomorph I 𝓘(𝕜, F) M F n) (hn :
   refine ⟨TauCeti.injective_mvfderiv_iff.2 h.injective, fun w ↦ ?_⟩
   obtain ⟨v, hv⟩ := h.surjective w
   exact ⟨v, (mvfderiv_apply_eq_mfderiv_apply _ _ _).trans hv⟩
+
+section SymmTrans
+
+variable {G H'' Z : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+  [TopologicalSpace H''] {K : ModelWithCorners 𝕜 G H''}
+  [TopologicalSpace Z] [ChartedSpace H'' Z]
+
+/-- For partial diffeomorphisms `Φ₀` and `Φ₁` defined at `z`, the image `Φ₀ z` lies in the source
+of `Φ₀.symm.trans Φ₁`. -/
+theorem apply_mem_symm_trans_source (Φ₀ : PartialDiffeomorph K I Z M n)
+    (Φ₁ : PartialDiffeomorph K J Z N n) {z : Z} (hz₀ : z ∈ Φ₀.source) (hz₁ : z ∈ Φ₁.source) :
+    Φ₀ z ∈ (Φ₀.symm.trans Φ₁).source := by
+  have hz : Φ₀.symm (Φ₀ z) = z := Φ₀.left_inv hz₀
+  rw [PartialDiffeomorph.trans_source, mem_inter_iff, mem_preimage, hz]
+  exact ⟨Φ₀.map_source hz₀, hz₁⟩
+
+/-- At any `z ∈ Φ₀.source`, the transition `Φ₀.symm.trans Φ₁` sends `Φ₀ z` to `Φ₁ z`. -/
+theorem symm_trans_apply_apply (Φ₀ : PartialDiffeomorph K I Z M n)
+    (Φ₁ : PartialDiffeomorph K J Z N n) {z : Z} (hz₀ : z ∈ Φ₀.source) :
+    (Φ₀.symm.trans Φ₁) (Φ₀ z) = Φ₁ z := by
+  have hz : Φ₀.symm (Φ₀ z) = z := Φ₀.left_inv hz₀
+  rw [PartialDiffeomorph.coe_trans, Function.comp_apply, hz]
+
+/-- The differential of `Φ₀.symm.trans Φ₁` at `Φ₀ z` is the composition of `dΦ₀⁻¹_(Φ₀ z)` followed
+by `dΦ₁_z`. -/
+theorem mfderiv_symm_trans_apply (Φ₀ : PartialDiffeomorph K I Z M n)
+    (Φ₁ : PartialDiffeomorph K J Z N n) (hn : n ≠ 0)
+    {z : Z} (hz₀ : z ∈ Φ₀.source) (hz₁ : z ∈ Φ₁.source) (v : TangentSpace I (Φ₀ z)) :
+    mfderiv I J (Φ₀.symm.trans Φ₁) (Φ₀ z) v =
+      mfderiv K J Φ₁ z (mfderiv I K Φ₀.symm (Φ₀ z) v) := by
+  rw [PartialDiffeomorph.coe_trans]
+  exact mfderiv_comp_apply_of_eq (Φ₀ z) (Φ₁.mdifferentiableAt hn hz₁)
+    (Φ₀.symm.mdifferentiableAt hn (Φ₀.map_source hz₀)) (Φ₀.left_inv hz₀) v
+
+/-- If at `z ∈ Φ₀.source ∩ Φ₁.source` with `Φ₀ z = x` and `Φ₁ z = y` the differential of `Φ₁`
+factors as `A ∘ dΦ₀_z`, then the differential of `Φ₀.symm.trans Φ₁` at `x` equals `A`. -/
+theorem mfderiv_symm_trans_eq_of_comp (Φ₀ : PartialDiffeomorph K I Z M n)
+    (Φ₁ : PartialDiffeomorph K J Z N n) (hn : n ≠ 0)
+    {z : Z} {x : M} {y : N} (hz₀ : z ∈ Φ₀.source) (hz₁ : z ∈ Φ₁.source)
+    (hx : Φ₀ z = x) (hy : Φ₁ z = y)
+    {A : TangentSpace I x →L[𝕜] TangentSpace J y}
+    (hA : mfderiv K J Φ₁ z = A.comp (mfderiv K I Φ₀ z)) :
+    mfderiv I J (Φ₀.symm.trans Φ₁) x = A := by
+  subst hx; subst hy
+  ext v
+  have hz : Φ₀.symm (Φ₀ z) = z := Φ₀.left_inv hz₀
+  have hinv := Φ₀.mfderiv_apply_mfderiv_symm_apply hn (Φ₀.map_source hz₀) v
+  rw [hz] at hinv
+  exact (Φ₀.mfderiv_symm_trans_apply Φ₁ hn hz₀ hz₁ v).trans <|
+    (DFunLike.congr_fun hA _).trans (congrArg A hinv)
+
+end SymmTrans
 
 section Transition
 
