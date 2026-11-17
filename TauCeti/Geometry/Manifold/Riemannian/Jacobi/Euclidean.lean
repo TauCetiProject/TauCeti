@@ -19,16 +19,20 @@ geodesic `t ↦ p + t • v` the Jacobi equation `D_t² J + R(J, γ') γ' = 0` b
 
 Every affine field `t ↦ u + t • w` is thus a Jacobi field along every affine geodesic, with
 initial value `u` and initial covariant derivative `w`; this includes `u = w = 0` and the constant
-geodesic `v = 0`. A quadratic field `t ↦ t² • e` has Jacobi residual `2 • e` at every time, so it
-is not a Jacobi field when `e ≠ 0`, although it vanishes at `t = 0`.
+geodesic `v = 0`. The Jacobi residual of any field is its ordinary second derivative within
+the parameter set.
 
 ## Main results
 
-* `TauCeti.Manifold.isJacobiFieldOn_add_smul_model_space`: affine fields are Jacobi fields along
-  affine geodesics.
-* `TauCeti.Manifold.alongCurveWithin_add_smul_model_space`: their covariant derivative is `w`.
-* `TauCeti.Manifold.not_isJacobiFieldOn_sq_smul_model_space`: the field `t ↦ t² • e`, whose
-  Jacobi residual is `2 • e`, is not a Jacobi field for `e ≠ 0`.
+* `TauCeti.Manifold.IsGeodesicCurveOn.isJacobiFieldOn_add_smul_model_space`:
+  affine fields are Jacobi fields along geodesics on arbitrary parameter sets.
+* `TauCeti.Manifold.isJacobiFieldOn_iff_model_space`: the flat-space Jacobi equation is
+  the ordinary second-order equation.
+* `TauCeti.Manifold.jacobiResidual_model_space`: the flat Jacobi residual is the second derivative.
+* `TauCeti.Manifold.isJacobiFieldOn_iff_exists_eqOn_add_smul_model_space`: on a preconnected
+  parameter set, Jacobi fields are exactly affine fields.
+* `TauCeti.Manifold.IsJacobiFieldOn.eq_add_smul_model_space`: a flat Jacobi field is determined
+  by its value and derivative at one parameter.
 
 ## References
 
@@ -47,76 +51,96 @@ namespace TauCeti.Manifold
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
 
-private theorem curvatureTensor_apply_model_space (x : F) (u v w : TangentSpace 𝓘(ℝ, F) x) :
-    (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor x u v w = 0 := by
-  rw [curvatureTensor_leviCivitaConnection_model_space]
-  rfl
-
-/-- The covariant derivative of the affine field `t ↦ u + t • w` along any curve is `w`. -/
-theorem alongCurveWithin_add_smul_model_space (γ : ℝ → F) (u w : F) (t : ℝ) :
+/-- In flat space the Jacobi residual of any field along any curve is its ordinary second
+derivative within the parameter set. No regularity or geodesic hypothesis is needed. -/
+theorem jacobiResidual_model_space (γ V : ℝ → F) (s : Set ℝ) (t : ℝ) :
     alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
-      (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) univ t = w := by
-  rw [alongCurveWithin_leviCivitaConnection_model_space γ (fun r ↦ u + r • w), derivWithin_univ]
-  have h := (((hasDerivAt_id t).smul_const w).const_add u).deriv
-  rw [one_smul] at h
-  exact h
+        (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+          (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s) s t +
+      (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (γ t) (V t)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s t)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s t) = derivWithin (derivWithin V s) s t := by
+  let W : ∀ r, TangentSpace 𝓘(ℝ, F) (γ r) := fun r ↦ V r
+  -- Keep the field dependently typed so rewriting sees the tangent-bundle operators.
+  change alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s) s t +
+    (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (γ t) (W t)
+      (curveVelocityWithin 𝓘(ℝ, F) γ s t)
+      (curveVelocityWithin 𝓘(ℝ, F) γ s t) = _
+  let DW : ∀ r, TangentSpace 𝓘(ℝ, F) (γ r) := fun r ↦ derivWithin V s r
+  have hD : alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s =
+      DW := funext (alongCurveWithin_leviCivitaConnection_model_space γ V s)
+  have hDD : alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ DW s t =
+      derivWithin (derivWithin V s) s t :=
+    alongCurveWithin_leviCivitaConnection_model_space γ (derivWithin V s) s t
+  rw [hD, hDD, curvatureTensor_leviCivitaConnection_model_space]
+  simp only [LinearMap.zero_apply]
+  exact add_zero _
 
-/-- The affine field `t ↦ u + t • w` is a Jacobi field along every affine geodesic
-`t ↦ p + t • v`, including the zero field and the constant geodesic. -/
-theorem isJacobiFieldOn_add_smul_model_space (p v u w : F) :
-    IsJacobiFieldOn 𝓘(ℝ, F) (fun t ↦ p + t • v)
-      (fun t ↦ (u + t • w : TangentSpace 𝓘(ℝ, F) (p + t • v))) univ := by
-  have hD : alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
-      (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (p + r • v))) univ = fun _ ↦ w :=
-    funext (alongCurveWithin_add_smul_model_space _ u w)
-  refine ⟨(isGeodesicCurveOnFrom_add_smul p v).isGeodesicCurveOn, ?_, fun t _ ↦ ?_⟩
-  · rw [contMDiffOn_univ]
-    have hpair := contMDiff_iff_contDiff.mpr
-      ((show ContDiff ℝ 2 fun t : ℝ ↦ p + t • v by fun_prop).prodMk
-        (show ContDiff ℝ 2 fun t : ℝ ↦ u + t • w by fun_prop))
-    rw [modelWithCornersSelf_prod] at hpair
-    exact (contMDiff_tangentBundleModelSpaceHomeomorph_symm (I := 𝓘(ℝ, F)) (n := 2)).comp hpair
-  · have hc : (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (p + t • v) (u + t • w)
-        (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t)
-        (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t) = 0 :=
-      curvatureTensor_apply_model_space _ _ _ _
-    rw [hD, hc, add_zero,
-      alongCurveWithin_leviCivitaConnection_model_space (fun r ↦ p + r • v) (fun _ : ℝ ↦ w)]
-    exact congrFun (derivWithin_const (𝕜 := ℝ) univ w) t
+/-- A field in flat space is Jacobi exactly when its base curve is geodesic, the field is
+`C²`, and its ordinary second derivative within the parameter set vanishes. -/
+theorem isJacobiFieldOn_iff_model_space (γ V : ℝ → F) (s : Set ℝ) :
+    IsJacobiFieldOn 𝓘(ℝ, F) γ
+        (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s ↔
+      IsGeodesicCurveOn 𝓘(ℝ, F) γ s ∧ ContDiffOn ℝ 2 V s ∧
+        ∀ r ∈ s, derivWithin (derivWithin V s) s r = 0 := by
+  let W : ∀ r, TangentSpace 𝓘(ℝ, F) (γ r) := fun r ↦ V r
+  -- Naming the dependent field avoids inferring it as a nondependent map into F.
+  change IsJacobiFieldOn 𝓘(ℝ, F) γ W s ↔ _
+  rw [isJacobiFieldOn_iff]
+  have hEq : (∀ r ∈ s, alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+        (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ W s) s r +
+      (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (γ r) (W r)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s r)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s r) = 0) ↔
+      ∀ r ∈ s, derivWithin (derivWithin V s) s r = 0 := by
+    exact ⟨fun h r hr ↦ (jacobiResidual_model_space γ V s r).symm.trans (h r hr),
+      fun h r hr ↦ (jacobiResidual_model_space γ V s r).trans (h r hr)⟩
+  rw [hEq]
+  refine and_congr_right fun hγ ↦ and_congr ?_ Iff.rfl
+  simp only [ContMDiffOn, Bundle.contMDiffWithinAt_totalSpace_iff,
+    trivializationAt_model_space_apply]
+  exact ⟨fun h t ht ↦ (h t ht).2.contDiffWithinAt,
+    fun h t ht ↦ ⟨hγ.contMDiffOn t ht, (h t ht).contMDiffWithinAt⟩⟩
 
-/-- The quadratic field `t ↦ t² • e` has Jacobi residual `2 • e` at every time along every
-affine geodesic. -/
-private theorem jacobiResidual_sq_smul_model_space (p v e : F) (t : ℝ) :
-    alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
-        (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
-          (fun r ↦ (r ^ 2 • e : TangentSpace 𝓘(ℝ, F) (p + r • v))) univ) univ t +
-      (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (p + t • v) (t ^ 2 • e)
-        (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t)
-        (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t) = (2 : ℝ) • e := by
-  have hD : alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
-      (fun r ↦ (r ^ 2 • e : TangentSpace 𝓘(ℝ, F) (p + r • v))) univ =
-      fun r ↦ (2 * r) • e := by
-    funext r
-    rw [alongCurveWithin_leviCivitaConnection_model_space _ (fun r ↦ r ^ 2 • e), derivWithin_univ]
-    have h := ((hasDerivAt_pow 2 r).smul_const e).deriv
-    norm_num at h
-    exact h
-  have hc : (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (p + t • v) (t ^ 2 • e)
-      (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t)
-      (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t) = 0 :=
-    curvatureTensor_apply_model_space _ _ _ _
-  rw [hD, hc, add_zero,
-    alongCurveWithin_leviCivitaConnection_model_space _ (fun r ↦ (2 * r) • e), derivWithin_univ]
-  have h := (((hasDerivAt_id t).const_mul (2 : ℝ)).smul_const e).deriv
-  rw [mul_one] at h
-  exact h
+/-- An affine field is Jacobi along every geodesic in flat space, on any parameter set.
+This includes the zero field and constant geodesics. -/
+theorem IsGeodesicCurveOn.isJacobiFieldOn_add_smul_model_space {γ : ℝ → F} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn 𝓘(ℝ, F) γ s) (u w : F) :
+    IsJacobiFieldOn 𝓘(ℝ, F) γ
+      (fun t ↦ (u + t • w : TangentSpace 𝓘(ℝ, F) (γ t))) s := by
+  refine (isJacobiFieldOn_iff_model_space γ (fun t ↦ u + t • w) s).2
+    ⟨hγ, by fun_prop, fun t ht ↦ ?_⟩
+  have hD : EqOn (derivWithin (fun r : ℝ ↦ u + r • w) s) (fun _ ↦ w) s := by
+    intro r hr
+    simpa using ((((hasDerivAt_id r).smul_const w).const_add u).hasDerivWithinAt.derivWithin
+      (hγ.uniqueDiffOn r hr))
+  rw [derivWithin_congr hD (hD ht)]
+  exact congrFun (derivWithin_const (𝕜 := ℝ) s w) t
 
-/-- A quadratic field `t ↦ t² • e` with `e ≠ 0` is not a Jacobi field along any affine geodesic,
-although it vanishes at `t = 0`. -/
-theorem not_isJacobiFieldOn_sq_smul_model_space (p v : F) {e : F} (he : e ≠ 0) :
-    ¬IsJacobiFieldOn 𝓘(ℝ, F) (fun t ↦ p + t • v)
-      (fun t ↦ (t ^ 2 • e : TangentSpace 𝓘(ℝ, F) (p + t • v))) univ := fun hJ ↦
-  he <| (smul_eq_zero.mp ((jacobiResidual_sq_smul_model_space p v e 0).symm.trans
-    (hJ.equation 0 (mem_univ 0)))).resolve_left two_ne_zero
+/-- On a preconnected parameter set, flat-space Jacobi fields along a geodesic are exactly
+the fields agreeing there with an affine function. -/
+theorem isJacobiFieldOn_iff_exists_eqOn_add_smul_model_space {γ V : ℝ → F} {s : Set ℝ}
+    (hγ : IsGeodesicCurveOn 𝓘(ℝ, F) γ s) (hs : IsPreconnected s) :
+    IsJacobiFieldOn 𝓘(ℝ, F) γ (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s ↔
+      ∃ u w : F, EqOn V (fun t ↦ u + t • w) s := by
+  rw [isJacobiFieldOn_iff_model_space, and_iff_right hγ,
+    ← isGeodesicCurveOn_iff_model_space hγ.uniqueDiffOn,
+    isGeodesicCurveOn_iff_exists_eqOn_add_smul hγ.uniqueDiffOn hs]
+
+/-- A flat Jacobi field on a preconnected parameter set is the affine field with its initial
+value and ordinary derivative. The ordinary derivative equals the covariant derivative by
+`alongCurveWithin_leviCivitaConnection_model_space`. -/
+theorem IsJacobiFieldOn.eq_add_smul_model_space {γ V : ℝ → F} {s : Set ℝ} {a t : ℝ}
+    (hV : IsJacobiFieldOn 𝓘(ℝ, F) γ (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s)
+    (hs : IsPreconnected s) (ha : a ∈ s) (ht : t ∈ s) :
+    V t = V a + (t - a) • derivWithin V s a := by
+  obtain ⟨u, w, h⟩ := (isJacobiFieldOn_iff_exists_eqOn_add_smul_model_space
+    hV.isGeodesicCurveOn hs).mp hV
+  have hd : HasDerivWithinAt V w s a := by
+    refine HasDerivWithinAt.congr_of_mem ?_ h ha
+    simpa using (((hasDerivAt_id a).smul_const w).const_add u).hasDerivWithinAt
+  rw [hd.derivWithin (hV.uniqueDiffOn a ha), h ht, h ha, sub_smul]
+  module
 
 end TauCeti.Manifold

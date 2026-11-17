@@ -5,36 +5,39 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Euclidean
+
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.ConstantCurvature
 import TauCeti.Geometry.Manifold.Riemannian.Jacobi.ConstantGeodesic
-import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Euclidean
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Curvature
+import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.VectorSpace
 
 /-!
 # Examples: Jacobi fields in flat space, on the round sphere and along a constant geodesic
 
-Three model computations for the Jacobi equation `D_t² J + R(J, γ') γ' = 0`.
+Model computations and conditional sphere formulas for the Jacobi equation
+`D_t² J + R(J, γ') γ' = 0`.
 
 * Flat space. Along a unit-speed affine geodesic of an inner-product space the field
   `J t = u + t • w` is a Jacobi field with initial value `u` and initial covariant derivative `w`,
   including `u = w = 0`. The field `t ↦ t² • e` has residual `2 • e`, so it is not a Jacobi field
   for `e ≠ 0`: vanishing at one parameter does not impose the equation.
 * The unit sphere. A normal Jacobi field along a unit-speed geodesic of the unit sphere `Sⁿ`
-  vanishing at `a` has norm `|sin (t - a)| ‖D_t J (a)‖`, so it vanishes again at `a + π`. Two
-  zeros are impossible in nonpositive curvature, so the sphere shows that the curvature sign
-  cannot be dropped there.
+  vanishing at `a` has norm `|sin (t - a)| ‖D_t J (a)‖`, so it vanishes again at `a + π`.
+  These are conditional formulas for an assumed Jacobi field; they do not construct a nonzero
+  field or establish conjugacy on the sphere.
 * A constant geodesic. Along a constant curve the Jacobi fields are the affine fields, so a
   quadratic field with nonzero coefficient is not a Jacobi field even on `[0, 1]`.
 
 ## Used results
 
-* `TauCeti.Manifold.isJacobiFieldOn_add_smul_model_space`,
+* `TauCeti.Manifold.IsGeodesicCurveOn.isJacobiFieldOn_add_smul_model_space`,
   `TauCeti.Manifold.alongCurveWithin_add_smul_model_space` and
-  `TauCeti.Manifold.not_isJacobiFieldOn_sq_smul_model_space`: affine and quadratic fields in an
-  inner-product space.
+  `TauCeti.Manifold.jacobiResidual_model_space`: affine fields and residuals in flat space.
 * `TauCeti.Manifold.IsJacobiFieldOn.norm_eq_abs_sin_mul_norm` and
-  `TauCeti.hasConstantSectionalCurvature_sphere`: the norm of a normal Jacobi field in constant
-  curvature `1`, and the curvature of the unit sphere.
+  `TauCeti.hasConstantSectionalCurvature_sphere`: the norm of a normal Jacobi field in positive
+  constant curvature, specialized here to curvature `1` on the unit sphere.
 * `TauCeti.Manifold.isJacobiFieldOn_const_iff`: Jacobi fields along a constant geodesic.
 
 ## References
@@ -57,22 +60,70 @@ example {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDime
       (∀ t, ‖curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t‖ = 1) ∧
       u + (0 : ℝ) • w = u ∧
       alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun t ↦ p + t • v)
-        (fun t ↦ (u + t • w : TangentSpace 𝓘(ℝ, F) (p + t • v))) univ 0 = w := by
-  refine ⟨isJacobiFieldOn_add_smul_model_space p v u w, fun t ↦ ?_, by simp,
-    alongCurveWithin_add_smul_model_space _ u w 0⟩
-  have hline : HasDerivAt (fun r : ℝ ↦ p + r • v) v t := by
-    simpa using ((hasDerivAt_id t).smul_const v).const_add p
-  rw [norm_tangentSpace_vectorSpace, curveVelocityWithin_eq_derivWithin, derivWithin_univ,
-    hline.deriv]
-  exact hv
+        (fun t ↦ (u + t • w : TangentSpace 𝓘(ℝ, F) (p + t • v))) univ 0 = w ∧
+      (∀ t, alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
+        (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
+          (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (p + r • v))) univ) univ t = 0) ∧
+      (∀ t, (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (p + t • v) (u + t • w)
+        (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t)
+        (curveVelocityWithin 𝓘(ℝ, F) (fun r ↦ p + r • v) univ t) = 0) := by
+  refine ⟨(isGeodesicCurveOnFrom_add_smul p v).isGeodesicCurveOn
+    |>.isJacobiFieldOn_add_smul_model_space u w, fun t ↦ ?_, by simp,
+    alongCurveWithin_add_smul_model_space _ uniqueDiffWithinAt_univ u w, ?_, ?_⟩
+  · have hline : HasDerivAt (fun r : ℝ ↦ p + r • v) v t := by
+      simpa using ((hasDerivAt_id t).smul_const v).const_add p
+    rw [norm_tangentSpace_vectorSpace, curveVelocityWithin_eq_derivWithin, derivWithin_univ,
+      hline.deriv]
+    exact (congrArg norm (NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) (p + t • v) v)).trans hv
+  · have hD : alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) (fun r ↦ p + r • v)
+        (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (p + r • v))) univ = fun _ ↦ w :=
+      funext fun _ ↦ alongCurveWithin_add_smul_model_space _ uniqueDiffWithinAt_univ u w
+    intro t
+    simp only [hD, alongCurveWithin_leviCivitaConnection_model_space]
+    exact congrFun (derivWithin_const (𝕜 := ℝ) univ w) t
+  · simp only [curvatureTensor_leviCivitaConnection_model_space, LinearMap.zero_apply,
+      implies_true]
 
-/- In an inner-product space, `t ↦ t² • e` with `e ≠ 0` is not a Jacobi field along any affine
-geodesic. -/
+/-- The quadratic field has residual `2 • e` along any curve, within any parameter set
+with unique derivatives. -/
+public theorem jacobiResidual_sq_smul_model_space
+    {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+    (γ : ℝ → F) {s : Set ℝ} (hs : UniqueDiffOn ℝ s) {t : ℝ} (ht : t ∈ s) (e : F) :
+    alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+        (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+          (fun r ↦ (r ^ 2 • e : TangentSpace 𝓘(ℝ, F) (γ r))) s) s t +
+      (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (γ t) (t ^ 2 • e)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s t)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s t) = (2 : ℝ) • e := by
+  rw [jacobiResidual_model_space]
+  have hD : EqOn (derivWithin (fun r : ℝ ↦ r ^ 2 • e) s) (fun r ↦ (2 * r) • e) s := by
+    intro r hr
+    simpa using ((hasDerivAt_pow 2 r).smul_const e).hasDerivWithinAt.derivWithin (hs r hr)
+  rw [derivWithin_congr hD (hD ht)]
+  have h := (((hasDerivAt_id t).const_mul (2 : ℝ)).smul_const e).hasDerivWithinAt.derivWithin
+    (hs t ht)
+  rw [mul_one] at h
+  exact h
+
+/- A quadratic field vanishes at zero but has nonzero residual everywhere on any nonempty
+parameter set with unique derivatives, along any curve. In particular it is not Jacobi along a
+unit-speed affine geodesic. -/
 example {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
-    (p v : F) {e : F} (he : e ≠ 0) :
-    ¬IsJacobiFieldOn 𝓘(ℝ, F) (fun t ↦ p + t • v)
-      (fun t ↦ (t ^ 2 • e : TangentSpace 𝓘(ℝ, F) (p + t • v))) univ :=
-  not_isJacobiFieldOn_sq_smul_model_space p v he
+    (γ : ℝ → F) {s : Set ℝ} (hs : UniqueDiffOn ℝ s) (hne : s.Nonempty)
+    {e : F} (he : e ≠ 0) :
+    (∀ t ∈ s, alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+        (alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+          (fun r ↦ (r ^ 2 • e : TangentSpace 𝓘(ℝ, F) (γ r))) s) s t +
+      (leviCivitaConnection 𝓘(ℝ, F) F).curvatureTensor (γ t) (t ^ 2 • e)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s t)
+        (curveVelocityWithin 𝓘(ℝ, F) γ s t) = (2 : ℝ) • e) ∧
+      (2 : ℝ) • e ≠ 0 ∧ (0 : ℝ) ^ 2 • e = 0 ∧
+      ¬IsJacobiFieldOn 𝓘(ℝ, F) γ
+        (fun t ↦ (t ^ 2 • e : TangentSpace 𝓘(ℝ, F) (γ t))) s := by
+  have hne' : (2 : ℝ) • e ≠ 0 := smul_ne_zero two_ne_zero he
+  refine ⟨fun t ht ↦ jacobiResidual_sq_smul_model_space γ hs ht e, hne', by simp, fun hJ ↦ ?_⟩
+  obtain ⟨t, ht⟩ := hne
+  exact hne' ((jacobiResidual_sq_smul_model_space γ hs ht e).symm.trans (hJ.equation t ht))
 
 section Sphere
 
@@ -96,11 +147,12 @@ example (hJ : IsJacobiFieldOn (𝓡 n) γ J s) (hs : IsPreconnected s) (ha : a �
     (hnormal : ∀ r ∈ s, ⟪J r, curveVelocityWithin (𝓡 n) γ s r⟫_ℝ = 0)
     (hspeed : ‖curveVelocityWithin (𝓡 n) γ s a‖ = 1) (hJa : J a = 0) (hb : a + π ∈ s) :
     J (a + π) = 0 := by
-  have h := hJ.norm_eq_abs_sin_mul_norm hs ha
+  have heq : a + π = a + π / (√(1 : ℝ) * ‖curveVelocityWithin (𝓡 n) γ s a‖) := by
+    simp [hspeed]
+  rw [heq] at hb ⊢
+  exact hJ.apply_add_pi_div_eq_zero hs ha
     (fun r _ ↦ hasConstantSectionalCurvature_sphere.hasSectionalCurvatureAt (γ r)) hnormal
-    (by norm_num) (by intro h; simp [h] at hspeed) hJa hb
-  rw [← norm_eq_zero]
-  simpa [hspeed] using h
+    one_pos (by intro h; simp [h] at hspeed) hJa hb
 
 end Sphere
 

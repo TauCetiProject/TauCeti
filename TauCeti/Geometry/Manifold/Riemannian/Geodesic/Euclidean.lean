@@ -165,6 +165,7 @@ theorem acceleration_model_space {γ : ℝ → F} {t : ℝ} (hγ : ContDiffAt �
 
 /-- In an inner-product space the Levi-Civita covariant derivative along a curve is the
 derivative within the parameter set. -/
+@[simp]
 theorem alongCurveWithin_leviCivitaConnection_model_space (γ V : ℝ → F) (s : Set ℝ) (t : ℝ) :
     alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
       (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) s t = derivWithin V s t := by
@@ -179,6 +180,36 @@ theorem alongCurveWithin_leviCivitaConnection_model_space (γ V : ℝ → F) (s 
     rfl
   rw [hcoord, TangentBundle.symmL_model_space]
   rfl
+
+/-- In an inner-product space the Levi-Civita covariant derivative along a curve is the
+ordinary derivative. -/
+@[simp]
+theorem alongCurve_leviCivitaConnection_model_space (γ V : ℝ → F) (t : ℝ) :
+    alongCurve (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) t = deriv V t := by
+  exact (alongCurveWithin_univ _ γ
+    (fun r ↦ (V r : TangentSpace 𝓘(ℝ, F) (γ r))) t).symm.trans
+      ((alongCurveWithin_leviCivitaConnection_model_space γ V univ t).trans
+        (congrFun derivWithin_univ t))
+
+/-- The covariant derivative of the affine field `t ↦ u + t • w` along any curve is `w`
+within a parameter set with a unique derivative. -/
+theorem alongCurveWithin_add_smul_model_space (γ : ℝ → F) {s : Set ℝ} {t : ℝ}
+    (hs : UniqueDiffWithinAt ℝ s t) (u w : F) :
+    alongCurveWithin (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) s t = w := by
+  rw [alongCurveWithin_leviCivitaConnection_model_space]
+  have h := (((hasDerivAt_id t).smul_const w).const_add u).hasDerivWithinAt.derivWithin hs
+  rw [one_smul] at h
+  exact h
+
+/-- The covariant derivative of the affine field `t ↦ u + t • w` along any curve is `w`. -/
+theorem alongCurve_add_smul_model_space (γ : ℝ → F) (u w : F) (t : ℝ) :
+    alongCurve (leviCivitaConnection 𝓘(ℝ, F) F) γ
+      (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) t = w := by
+  exact (alongCurveWithin_univ _ γ
+    (fun r ↦ (u + r • w : TangentSpace 𝓘(ℝ, F) (γ r))) t).symm.trans
+      (alongCurveWithin_add_smul_model_space γ uniqueDiffWithinAt_univ u w)
 
 /-- Every affine line in a finite-dimensional real inner-product space is a geodesic for the
 standard Riemannian metric, with its evident initial point and velocity. -/
