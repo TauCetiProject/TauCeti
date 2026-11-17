@@ -26,7 +26,7 @@ comparison with the de Rham differential on `LieAlgebroid.tangent I M`.
 
 * K. C. H. Mackenzie, *General Theory of Lie Groupoids and Lie Algebroids*, LMS Lecture Note Series
   213, Cambridge University Press (2005), §7.1.
-* M. Crainic, R. L. Fernandes, and I. Mărcuț, *Lectures on Poisson Geometry*, AMS Graduate Studies
+* M. Crainic, R. L. Fernandes, and I. Marcut, *Lectures on Poisson Geometry*, AMS Graduate Studies
   in Mathematics 217 (2021).
 -/
 
@@ -388,15 +388,12 @@ theorem extDeriv_smul {k : ℕ} (f : C^∞⟮I, M; ℝ⟯) (η : A.Cochain k) :
     simp only [_root_.add_apply, _root_.smul_apply, smul_eq_mul]; ring
   | succ k ih =>
     refine ContMDiffSection.ext_of_interior fun a ↦ ?_
-    have hcast_smul {m n : ℕ} (h : m = n) (c : ℝ) (ξ : A.Cochain m) :
-        LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) h (c • ξ) =
-          c • LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) h ξ := by
-      cases h; rfl
-    simp only [A.interior_extDeriv_succ, A.lieDeriv_smul, map_smul, map_add,
+    simp only [A.interior_extDeriv_succ, A.lieDeriv_smul, map_add,
       ContMDiffSection.interior_cast,
       ContMDiffSection.interior_wedge (k := 0) a (A.extDeriv 0 (A.cochainZeroEquiv.symm f)) η,
       A.interior_extDeriv_zero, ContMDiffSection.wedge_zero_left, h₀, A.cochainZeroEquiv_lieDeriv,
-      LinearEquiv.apply_symm_apply, hcast_smul, ih (ContMDiffSection.interior a η), smul_sub]
+      LinearEquiv.apply_symm_apply, LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯),
+      ih (ContMDiffSection.interior a η), smul_sub]
     simp only [LinearEquiv.cast_apply, cast_cast, cast_eq]
     module
 
@@ -436,16 +433,12 @@ private lemma extDeriv_wedge_zero_right {k : ℕ} (φ : A.Cochain (k + 1)) (ψ :
   have h₀ (ξ : A.Cochain 0) :
       ContMDiffSection.trivialEquiv (ContMDiffSection.alternatingIsEmptyEquiv ξ) =
         A.cochainZeroEquiv ξ := by rw [cochainZeroEquiv, LinearEquiv.trans_apply]
-  have hcast_smul {m n : ℕ} (h : m = n) (c : ℝ) (ξ : A.Cochain m) :
-      LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) h (c • ξ) =
-        c • LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) h ξ := by
-    cases h; rfl
   have hsmul_sq (ξ : A.Cochain (k + 1 + 0 + 1)) :
       (-1 : ℝ) ^ (k + 1) • (-1 : ℝ) ^ ((k + 1) * (0 + 1)) • ξ = ξ := by
     rw [smul_smul, zero_add, mul_one, ← pow_add, Even.neg_one_pow ⟨k + 1, rfl⟩, one_smul]
   simp only [ContMDiffSection.wedge_zero_right, h₀, A.extDeriv_cast, A.extDeriv_smul,
-    LinearEquiv.symm_apply_apply, map_add, ContMDiffSection.wedge_comm φ (A.extDeriv 0 ψ),
-    hcast_smul]
+    LinearEquiv.symm_apply_apply, ContMDiffSection.wedge_comm φ (A.extDeriv 0 ψ),
+    LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯)]
   simp only [LinearEquiv.cast_apply, cast_cast, hsmul_sq]
   exact add_comm _ _
 
@@ -465,10 +458,6 @@ theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
     · exact A.extDeriv_wedge_zero_left φ ψ
     rcases l with _ | l
     · exact A.extDeriv_wedge_zero_right φ ψ
-    have hcast_smul {m n : ℕ} (h : m = n) (c : ℝ) (ξ : A.Cochain m) :
-        LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) h (c • ξ) =
-          c • LinearEquiv.cast (R := C^∞⟮I, M; ℝ⟯) (M := A.Cochain) h ξ := by
-      cases h; rfl
     refine ContMDiffSection.ext_of_interior (k := k + 1 + l + 1) fun a ↦ ?_
     have ih₁ := ih (k + (l + 1)) (by omega) (ContMDiffSection.interior a φ) ψ rfl
     have ih₂ := ih ((k + 1) + l) (by omega) φ (ContMDiffSection.interior a ψ) rfl
@@ -489,7 +478,7 @@ theorem extDeriv_wedge {k l : ℕ} (φ : A.Cochain k) (ψ : A.Cochain l) :
       ContMDiffSection.interior_wedge a (A.extDeriv (k + 1) φ) ψ,
       ContMDiffSection.interior_wedge a φ (A.extDeriv (l + 1) ψ),
       A.interior_extDeriv_succ, A.extDeriv_cast, map_add, map_sub, map_smul,
-      LinearMap.sub_apply, LinearMap.map_smul_of_tower, hcast_smul, ih₁, ih₂]
+      LinearMap.sub_apply, LinearMapClass.map_smul_of_tower (S := C^∞⟮I, M; ℝ⟯), ih₁, ih₂]
     simp only [LinearEquiv.cast_apply, cast_cast, cast_eq, hsmul_add, hsmul_sub, hsmul_sq]
     simp only [hpow₁, hpow₂]
     module
