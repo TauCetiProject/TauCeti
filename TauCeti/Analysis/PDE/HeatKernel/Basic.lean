@@ -128,9 +128,13 @@ theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 ≤ t) (x : E)
   have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
     rw [norm_smul, norm_inv, norm_of_nonneg (sqrt_nonneg t), mul_pow, inv_pow, sq_sqrt ht]
     ring
-  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht,
-    show 4 * π * (t * s) = t * (4 * π * s) by ring, mul_rpow_of_nonneg_left ht,
-    show -‖x‖ ^ 2 / (4 * (t * s)) = -(‖x‖ ^ 2 / t) / (4 * s) by ring]
+  -- Refactor the time factor `4π(ts)` as `t · (4πs)`, so that `mul_rpow_of_nonneg_left` splits
+  -- off `t ^ (-n/2)`, which matches `(√t)⁻¹ ^ n` by `inv_sqrt_pow_eq_rpow`.
+  have hprod : 4 * π * (t * s) = t * (4 * π * s) := by ring
+  -- Refactor the exponent quotient as `(‖x‖² / t) / (4s)`, the shape produced by `hnorm`.
+  have hquot : -‖x‖ ^ 2 / (4 * (t * s)) = -(‖x‖ ^ 2 / t) / (4 * s) := by ring
+  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht, hprod,
+    mul_rpow_of_nonneg_left ht, hquot]
   ring
 
 /-- **Parabolic scaling of the heat kernel.** For `t ≥ 0`,
