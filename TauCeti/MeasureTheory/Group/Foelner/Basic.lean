@@ -6,27 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Group.FoelnerFilter
+import TauCeti.MeasureTheory.Group.Action
 
 /-!
 # Filter compatibility and generating-set reductions for Følner families
 
 Let a group `G` act on a measurable space `X` with a measure `μ`. Mathlib defines Følner families
 `IsFoelner G μ l F` along a filter `l` and the maximal Følner filter `maxFoelner G μ`. This file
-develops three basic tools for manipulating `IsFoelner` and `maxFoelner` (together with their
+develops two basic tools for manipulating `IsFoelner` and `maxFoelner` (together with their
 additive counterparts `IsAddFoelner` and `maxAddFoelner`):
 
-1. **Measure-theoretic translation cocycle bounds** under `[SMulInvariantMeasure G X μ]`:
-   invariance of `μ ((g • s) ∆ (g • t))`, inversion symmetry `μ ((g⁻¹ • s) ∆ s) = μ ((g • s) ∆ s)`,
-   and subadditivity along products and list words.
-2. **Filter and perturbation compatibility**: eventual equality (`IsFoelner.congr`), cofinal
-   monotone reindexing along `atTop`, invariance of `IsFoelner` and ultrafilter density means
-   `IsFoelner.mean` under asymptotically negligible relative symmetric-difference perturbations
-   `μ (F i ∆ F' i) / μ (F i) → 0`, and eventual `μ`-almost-everywhere equality.
-3. **Generating-set reduction (Garrido Lemma 3.4, BDHV Remark G.5.3)**: for an invariant measure
+1. **Filter and perturbation compatibility**: eventual equality (`IsFoelner.congr`), invariance of
+   `IsFoelner` (for a `G`-invariant measure `μ` and an eventually measurable family `F'`) under
+   asymptotically negligible relative symmetric-difference perturbations
+   `μ (F i ∆ F' i) / μ (F i) → 0` and eventual `μ`-almost-everywhere equality, and invariance of
+   ultrafilter density means `IsFoelner.mean` under such perturbations (without requiring
+   invariance of `μ` or `IsFoelner` for `F'`).
+2. **Generating-set reduction (Garrido Lemma 3.4, BDHV Remark G.5.3)**: for a `G`-invariant measure
    `μ`, the elements `g : G` with `μ ((g • F i) ∆ F i) / μ (F i) → 0` form a subgroup
    `TauCeti.vanishingSubgroup μ l F`. Consequently `IsFoelner`, `maxFoelner G μ`, and
    `(maxFoelner G μ).NeBot` can be tested purely on a generating set `S` with
-   `Subgroup.closure S = ⊤`.
+   `Subgroup.closure S = ⊤`; for an arbitrary measure `μ` (without invariance),
+   `(maxFoelner G μ).NeBot` is characterized by passing all finite tests over `G`.
 
 ## Main definitions
 
@@ -35,13 +36,12 @@ additive counterparts `IsAddFoelner` and `maxAddFoelner`):
 
 ## Main results
 
-* `MeasureTheory.measure_mul_smul_symmDiff_le`:
-  `μ (((g * h) • s) ∆ s) ≤ μ ((h • s) ∆ s) + μ ((g • s) ∆ s)`.
 * `IsFoelner.congr`, `TauCeti.isFoelner_congr`: eventual-equality invariance of `IsFoelner`.
 * `IsFoelner.of_tendsto_meas_symmDiff_div`, `IsFoelner.of_eventually_ae_eq`: stability of
-  `IsFoelner` under asymptotically small relative symmetric differences and `ae`-equality.
+  `IsFoelner` for a `G`-invariant measure under asymptotically small relative symmetric differences
+  and eventual `μ`-a.e. equality.
 * `IsFoelner.mean_eq_of_tendsto_meas_symmDiff_div`, `IsFoelner.mean_eq_of_eventually_ae_eq`:
-  asymptotically equivalent Følner families induce the same ultrafilter density mean.
+  asymptotically equivalent families induce the same ultrafilter density mean.
 * `IsFoelner.of_closure_eq_top`, `TauCeti.isFoelner_iff_of_closure_eq_top`: generating-set
   criterion for `IsFoelner`.
 * `TauCeti.maxFoelner_eq_of_closure_eq_top`: `maxFoelner G μ` is determined by a generating set of
@@ -60,54 +60,6 @@ public section
 open Filter MeasureTheory Set
 open scoped ENNReal Pointwise symmDiff Topology
 
-namespace MeasureTheory
-
-section SMulSymmDiff
-
-variable {G X : Type*} [Group G] [MulAction G X] [MeasurableSpace X]
-  (μ : Measure X) [SMulInvariantMeasure G X μ]
-
-/-- A measure-preserving group action preserves the measure of symmetric differences. -/
-@[to_additive (attr := simp)
-/-- A measure-preserving additive group action preserves the measure of symmetric differences. -/]
-theorem measure_smul_symmDiff_smul (g : G) (s t : Set X) :
-    μ ((g • s) ∆ (g • t)) = μ (s ∆ t) := by
-  rw [← smul_set_symmDiff, measure_smul]
-
-/-- Translating a set by `g⁻¹` gives a symmetric difference of the same invariant measure as
-translating by `g`. -/
-@[to_additive
-/-- Translating a set by `-g` gives a symmetric difference of the same invariant measure as
-translating by `g`. -/]
-theorem measure_inv_smul_symmDiff_self (g : G) (s : Set X) :
-    μ ((g⁻¹ • s) ∆ s) = μ ((g • s) ∆ s) := by
-  rw [measure_inv_smul_symmDiff, symmDiff_comm]
-
-/-- Subadditivity of `μ ((g • s) ∆ s)` under group multiplication. -/
-@[to_additive
-/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` under group addition. -/]
-theorem measure_mul_smul_symmDiff_le (g h : G) (s : Set X) :
-    μ (((g * h) • s) ∆ s) ≤ μ ((h • s) ∆ s) + μ ((g • s) ∆ s) :=
-  calc
-    μ (((g * h) • s) ∆ s) = μ ((g • (h • s)) ∆ s) := by rw [mul_smul]
-    _ ≤ μ ((g • (h • s)) ∆ (g • s)) + μ ((g • s) ∆ s) := measure_symmDiff_le _ (g • s) _
-    _ = μ ((h • s) ∆ s) + μ ((g • s) ∆ s) := by rw [measure_smul_symmDiff_smul]
-
-/-- Subadditivity of `μ ((g • s) ∆ s)` along a list product in `G`. -/
-@[to_additive
-/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` along a list sum in `G`. -/]
-theorem measure_list_prod_smul_symmDiff_le (L : List G) (s : Set X) :
-    μ ((L.prod • s) ∆ s) ≤ (L.map fun g ↦ μ ((g • s) ∆ s)).sum := by
-  induction L with
-  | nil => simp
-  | cons g L ih =>
-    simpa only [List.prod_cons, List.map_cons, List.sum_cons, add_comm] using
-      (measure_mul_smul_symmDiff_le μ g L.prod s).trans (add_le_add_left ih _)
-
-end SMulSymmDiff
-
-end MeasureTheory
-
 section Foelner
 
 variable {G X ι : Type*} [Group G] [MulAction G X] [MeasurableSpace X] {μ : Measure X}
@@ -115,22 +67,13 @@ variable {G X ι : Type*} [Group G] [MulAction G X] [MeasurableSpace X] {μ : Me
 
 namespace IsFoelner
 
-/-! ### Eventual equality and subnet compatibility -/
+/-! ### Eventual equality -/
 
 /-- A family eventually equal to a Følner family along `l` is itself Følner. -/
 @[to_additive
 /-- A family eventually equal to an additive Følner family along `l` is itself Følner. -/]
 theorem congr (hF : IsFoelner G μ l F) (h : F =ᶠ[l] F') : IsFoelner G μ l F' :=
   (isFoelner_iff_tendsto _ _).2 <| ((isFoelner_iff_tendsto _ _).1 hF).congr' h
-
-/-- Reindexing a Følner family along `atTop` by a monotone cofinal map preserves `IsFoelner`. -/
-@[to_additive
-/-- Reindexing an additive Følner family along `atTop` by a monotone cofinal map preserves
-`IsAddFoelner`. -/]
-theorem comp_of_monotone_cofinal {ι' : Type*} [Preorder ι] [Preorder ι'] {φ : ι' → ι}
-    (hF : IsFoelner G μ atTop F) (hmono : Monotone φ) (hcof : ∀ i, ∃ j, i ≤ φ j) :
-    IsFoelner G μ atTop (F ∘ φ) :=
-  hF.comp_tendsto (tendsto_atTop_atTop_of_monotone hmono hcof)
 
 end IsFoelner
 
@@ -144,7 +87,7 @@ namespace IsFoelner
 /-! ### Asymptotic symmetric-difference perturbations -/
 
 /-- If `μ (F i ∆ F' i) / μ (F i) → 0` along a Følner family `F`, then `μ (F' i) / μ (F i) → 1`. -/
-@[to_additive
+@[to_additive tendsto_meas_div_of_tendsto_meas_symmDiff_div
 /-- If `μ (F i ∆ F' i) / μ (F i) → 0` along an additive Følner family `F`, then
 `μ (F' i) / μ (F i) → 1`. -/]
 theorem tendsto_meas_div_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ l F)
@@ -164,7 +107,7 @@ theorem tendsto_meas_div_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ l F)
     simpa [symmDiff_comm] using tsub_le_iff_left.1 (le_measure_symmDiff (s₁ := F' i) (s₂ := F i))
 
 /-- If `μ (F i ∆ F' i) / μ (F i) → 0` along a Følner family `F`, then `μ (F i) / μ (F' i) → 1`. -/
-@[to_additive
+@[to_additive tendsto_div_meas_of_tendsto_meas_symmDiff_div
 /-- If `μ (F i ∆ F' i) / μ (F i) → 0` along an additive Følner family `F`, then
 `μ (F i) / μ (F' i) → 1`. -/]
 theorem tendsto_div_meas_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ l F)
@@ -176,11 +119,11 @@ theorem tendsto_div_meas_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ l F)
   filter_upwards [hF.eventually_meas_ne_zero, hF.eventually_meas_ne_top] with i hi0 hitop
   exact ENNReal.inv_div (Or.inl hitop) (Or.inl hi0)
 
-/-- Perturbing a Følner family `F` to measurable sets `F'` with `μ (F i ∆ F' i) / μ (F i) → 0`
-preserves `IsFoelner`. -/
-@[to_additive
-/-- Perturbing an additive Følner family `F` to measurable sets `F'` with
-`μ (F i ∆ F' i) / μ (F i) → 0` preserves `IsAddFoelner`. -/]
+/-- For a `G`-invariant measure `μ`, perturbing a Følner family `F` to an eventually measurable
+family `F'` with `μ (F i ∆ F' i) / μ (F i) → 0` preserves `IsFoelner`. -/
+@[to_additive of_tendsto_meas_symmDiff_div
+/-- For a `G`-invariant measure `μ`, perturbing an additive Følner family `F` to an eventually
+measurable family `F'` with `μ (F i ∆ F' i) / μ (F i) → 0` preserves `IsAddFoelner`. -/]
 theorem of_tendsto_meas_symmDiff_div [SMulInvariantMeasure G X μ] (hF : IsFoelner G μ l F)
     (hmeas : ∀ᶠ i in l, MeasurableSet (F' i))
     (hdiff : Tendsto (fun i ↦ μ (F i ∆ F' i) / μ (F i)) l (𝓝 0)) :
@@ -217,11 +160,12 @@ theorem of_tendsto_meas_symmDiff_div [SMulInvariantMeasure G X μ] (hF : IsFoeln
     filter_upwards [hF.eventually_meas_ne_zero, hF.eventually_meas_ne_top] with i hi0 hitop
     exact ENNReal.div_mul_div_cancel hi0 hitop
 
-/-- Replacing each set in a Følner family by an eventually measurable `μ`-almost-everywhere equal
-set preserves `IsFoelner`. -/
+/-- For a `G`-invariant measure `μ`, replacing a Følner family `F` by an eventually measurable
+family `F'` that is eventually `μ`-almost-everywhere equal to `F` preserves `IsFoelner`. -/
 @[to_additive
-/-- Replacing each set in an additive Følner family by an eventually measurable
-`μ`-almost-everywhere equal set preserves `IsAddFoelner`. -/]
+/-- For a `G`-invariant measure `μ`, replacing an additive Følner family `F` by an eventually
+measurable family `F'` that is eventually `μ`-almost-everywhere equal to `F` preserves
+`IsAddFoelner`. -/]
 theorem of_eventually_ae_eq [SMulInvariantMeasure G X μ] (hF : IsFoelner G μ l F)
     (hmeas : ∀ᶠ i in l, MeasurableSet (F' i)) (hae : ∀ᶠ i in l, F i =ᵐ[μ] F' i) :
     IsFoelner G μ l F' := by
@@ -229,12 +173,14 @@ theorem of_eventually_ae_eq [SMulInvariantMeasure G X μ] (hF : IsFoelner G μ l
   filter_upwards [hae] with i hi
   simp [measure_symmDiff_eq_zero_iff.2 hi]
 
-/-- Two Følner families along an ultrafilter `u` with `μ (F i ∆ F' i) / μ (F i) → 0` induce the
-same density-limit mean on all subsets of `X`. -/
-@[to_additive
-/-- Two additive Følner families along an ultrafilter `u` with `μ (F i ∆ F' i) / μ (F i) → 0`
-induce the same density-limit mean on all subsets of `X`. -/]
-theorem mean_eq_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ u F) (hF' : IsFoelner G μ u F')
+/-- If `F` is a Følner family along an ultrafilter `u` and `μ (F i ∆ F' i) / μ (F i) → 0`, then
+`F` and `F'` have the same density-limit mean on all subsets of `X` (without requiring `F'` to be
+Følner or `μ` to be invariant). -/
+@[to_additive mean_eq_of_tendsto_meas_symmDiff_div
+/-- If `F` is an additive Følner family along an ultrafilter `u` and
+`μ (F i ∆ F' i) / μ (F i) → 0`, then `F` and `F'` have the same density-limit mean on all subsets
+of `X` (without requiring `F'` to be additive Følner or `μ` to be invariant). -/]
+theorem mean_eq_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ u F)
     (hdiff : Tendsto (fun i ↦ μ (F i ∆ F' i) / μ (F i)) u (𝓝 0)) (s : Set X) :
     mean μ u F s = mean μ u F' s := by
   have hlow : Tendsto (fun i ↦ μ (s ∩ F i) / μ (F i) - μ (F i ∆ F' i) / μ (F i)) u
@@ -258,19 +204,23 @@ theorem mean_eq_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ u F) (hF' : Is
   have hprod := ENNReal.Tendsto.mul hmid (Or.inr ENNReal.one_ne_top)
     (hF.tendsto_div_meas_of_tendsto_meas_symmDiff_div hdiff) (Or.inl one_ne_zero)
   rw [mul_one] at hprod
-  refine (tendsto_nhds_unique (hF'.tendsto_nhds_mean s) (hprod.congr' ?_)).symm
-  filter_upwards [hF.eventually_meas_ne_zero, hF.eventually_meas_ne_top] with i hi0 hitop
-  exact ENNReal.div_mul_div_cancel hi0 hitop
+  have hlim : Tendsto (fun i ↦ μ (s ∩ F' i) / μ (F' i)) u (𝓝 (mean μ u F s)) := by
+    refine hprod.congr' ?_
+    filter_upwards [hF.eventually_meas_ne_zero, hF.eventually_meas_ne_top] with i hi0 hitop
+    exact ENNReal.div_mul_div_cancel hi0 hitop
+  exact hlim.limUnder_eq.symm
 
-/-- Two Følner families along an ultrafilter `u` that are eventually `μ`-almost-everywhere equal
-induce the same density-limit mean on all subsets of `X`. -/
+/-- If `F` is a Følner family along an ultrafilter `u` and `F'` is eventually `μ`-almost-everywhere
+equal to `F`, then `F` and `F'` have the same density-limit mean on all subsets of `X` (without
+requiring `F'` to be Følner or `μ` to be invariant). -/
 @[to_additive
-/-- Two additive Følner families along an ultrafilter `u` that are eventually
-`μ`-almost-everywhere equal induce the same density-limit mean on all subsets of `X`. -/]
-theorem mean_eq_of_eventually_ae_eq (hF : IsFoelner G μ u F) (hF' : IsFoelner G μ u F')
+/-- If `F` is an additive Følner family along an ultrafilter `u` and `F'` is eventually
+`μ`-almost-everywhere equal to `F`, then `F` and `F'` have the same density-limit mean on all
+subsets of `X` (without requiring `F'` to be additive Følner or `μ` to be invariant). -/]
+theorem mean_eq_of_eventually_ae_eq (hF : IsFoelner G μ u F)
     (hae : ∀ᶠ i in (u : Filter ι), F i =ᵐ[μ] F' i) (s : Set X) :
     mean μ u F s = mean μ u F' s := by
-  refine hF.mean_eq_of_tendsto_meas_symmDiff_div hF' (tendsto_const_nhds.congr' ?_) s
+  refine hF.mean_eq_of_tendsto_meas_symmDiff_div (tendsto_const_nhds.congr' ?_) s
   filter_upwards [hae] with i hi
   simp [measure_symmDiff_eq_zero_iff.2 hi]
 
@@ -376,6 +326,49 @@ theorem maxFoelner_eq_of_closure_eq_top [SMulInvariantMeasure G X μ] {S : Set G
     (Filter.Eventually.mono hmem fun _ h ↦ h.2.2) fun g hg ↦ ?_)
   exact tendsto_comap.mono_left (inf_le_right.trans <| iInf₂_le g hg)
 
+/-- Finite-test characterization of nontriviality of the Følner filter restricted to a subset `S`,
+without assuming measure invariance. -/
+@[to_additive addFoelnerFilter_neBot_iff]
+private theorem foelnerFilter_neBot_iff {S : Set G} :
+    (𝓟 {s : Set X | MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞} ⊓
+        ⨅ g ∈ S, comap (fun s ↦ μ ((g • s) ∆ s) / μ s) (𝓝 0)).NeBot ↔
+      ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ≥0∞, ε ≠ 0 →
+        ∃ s : Set X, MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞ ∧
+          ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε := by
+  set r : Filter (Set X) :=
+    𝓟 {s : Set X | MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞} ⊓
+      ⨅ g ∈ S, comap (fun s ↦ μ ((g • s) ∆ s) / μ s) (𝓝 0)
+  constructor
+  · intro hne K hKS ε hε
+    have hmem : ∀ᶠ s in r, MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞ :=
+      mem_inf_of_left (mem_principal_self _)
+    have hK : ∀ᶠ s in r, ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε :=
+      (eventually_all_finset K).2 fun g hg ↦
+        (tendsto_comap.mono_left (inf_le_right.trans <| iInf₂_le g (hKS hg))).eventually
+          (gt_mem_nhds (pos_iff_ne_zero.2 hε))
+    obtain ⟨s, ⟨hm, h0, htop⟩, hsK⟩ := (hmem.and hK).exists
+    exact ⟨s, hm, h0, htop, hsK⟩
+  · intro h
+    classical
+    choose F hmeas hne0 hnetop hlt using fun i : Finset S × ℕ ↦
+      h (i.1.image Subtype.val) (by simp) ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹ (by simp)
+    have htend : Tendsto F atTop r := by
+      refine tendsto_inf.2 ⟨tendsto_principal.2 (.of_forall fun i ↦
+        ⟨hmeas i, hne0 i, hnetop i⟩), tendsto_iInf.2 fun g ↦ tendsto_iInf.2 fun hg ↦
+        tendsto_comap_iff.2 ?_⟩
+      have hsnd : Tendsto (fun i : Finset S × ℕ ↦ i.2 + 1) atTop atTop :=
+        tendsto_atTop_atTop_of_monotone
+          (fun _ _ hij ↦ Nat.add_le_add_right (Prod.le_def.1 hij).2 1)
+          fun n ↦ ⟨(∅, n), Nat.le_add_right n 1⟩
+      have hbound : Tendsto (fun i : Finset S × ℕ ↦ ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹) atTop (𝓝 0) :=
+        ENNReal.tendsto_inv_nat_nhds_zero.comp hsnd
+      refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
+        (.of_forall fun _ ↦ zero_le) ?_
+      filter_upwards [eventually_ge_atTop ({⟨g, hg⟩}, 0)] with i hi
+      exact (hlt i g <| Finset.mem_image.2
+        ⟨⟨g, hg⟩, (Prod.le_def.1 hi).1 (Finset.mem_singleton_self _), rfl⟩).le
+    exact htend.neBot
+
 /-- When `μ` is `G`-invariant and `S` generates `G`, `maxFoelner G μ` is nontrivial if and only if
 every finite subset `K ⊆ S` and nonzero tolerance `ε : ℝ≥0∞` admit a measurable set of finite
 nonzero measure passing the `K`-test. -/
@@ -389,46 +382,23 @@ theorem maxFoelner_neBot_iff_of_closure_eq_top [SMulInvariantMeasure G X μ] {S 
       ∀ K : Finset G, (K : Set G) ⊆ S → ∀ ε : ℝ≥0∞, ε ≠ 0 →
         ∃ s : Set X, MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞ ∧
           ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε := by
-  constructor
-  · intro hne K _ ε hε
-    have hF := isFoelner_maxFoelner G μ
-    have hK : ∀ᶠ s in maxFoelner G μ, ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε :=
-      (eventually_all_finset K).2 fun g _ ↦
-        (hF.tendsto_meas_smul_symmDiff g).eventually (gt_mem_nhds (pos_iff_ne_zero.2 hε))
-    obtain ⟨s, hm, h0, htop, hsK⟩ :=
-      (hF.eventually_measurableSet.and (hF.eventually_meas_ne_zero.and
-        (hF.eventually_meas_ne_top.and hK))).exists
-    exact ⟨s, hm, h0, htop, hsK⟩
-  · intro h
-    classical
-    choose F hmeas hne0 hnetop hlt using fun i : Finset S × ℕ ↦
-      h (i.1.image Subtype.val) (by simp) ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹ (by simp)
-    have hF : IsFoelner G μ atTop F := by
-      refine .of_closure_eq_top hS (.of_forall hmeas) (.of_forall hne0) (.of_forall hnetop)
-        fun g hg ↦ ?_
-      have hsnd : Tendsto (fun i : Finset S × ℕ ↦ i.2 + 1) atTop atTop :=
-        tendsto_atTop_atTop_of_monotone
-          (fun _ _ hij ↦ Nat.add_le_add_right (Prod.le_def.1 hij).2 1)
-          fun n ↦ ⟨(∅, n), Nat.le_add_right n 1⟩
-      have hbound : Tendsto (fun i : Finset S × ℕ ↦ ((i.2 + 1 : ℕ) : ℝ≥0∞)⁻¹) atTop (𝓝 0) :=
-        ENNReal.tendsto_inv_nat_nhds_zero.comp hsnd
-      refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hbound
-        (.of_forall fun _ ↦ zero_le) ?_
-      filter_upwards [eventually_ge_atTop ({⟨g, hg⟩}, 0)] with i hi
-      exact (hlt i g <| Finset.mem_image.2
-        ⟨⟨g, hg⟩, (Prod.le_def.1 hi).1 (Finset.mem_singleton_self _), rfl⟩).le
-    exact ((isFoelner_iff_tendsto _ _).1 hF).neBot
+  rw [maxFoelner_eq_of_closure_eq_top hS]
+  exact foelnerFilter_neBot_iff
 
-/-- Finite-test characterization of nontriviality of `maxFoelner G μ` for an invariant measure. -/
+/-- Finite-test characterization of nontriviality of `maxFoelner G μ` for any measure `μ`. -/
 @[to_additive maxAddFoelner_neBot_iff
-/-- Finite-test characterization of nontriviality of `maxAddFoelner G μ` for an invariant
-measure. -/]
-theorem maxFoelner_neBot_iff [SMulInvariantMeasure G X μ] :
+/-- Finite-test characterization of nontriviality of `maxAddFoelner G μ` for any measure `μ`. -/]
+theorem maxFoelner_neBot_iff :
     (maxFoelner G μ).NeBot ↔
       ∀ K : Finset G, ∀ ε : ℝ≥0∞, ε ≠ 0 →
         ∃ s : Set X, MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞ ∧
           ∀ g ∈ K, μ ((g • s) ∆ s) / μ s < ε := by
-  simpa using maxFoelner_neBot_iff_of_closure_eq_top (G := G) (μ := μ) Subgroup.closure_univ
+  have h : maxFoelner G μ =
+      𝓟 {s : Set X | MeasurableSet s ∧ μ s ≠ 0 ∧ μ s ≠ ∞} ⊓
+        ⨅ g ∈ (univ : Set G), comap (fun s ↦ μ ((g • s) ∆ s) / μ s) (𝓝 0) := by
+    simp only [maxFoelner, mem_univ, iInf_pos]
+  rw [h, foelnerFilter_neBot_iff]
+  simp only [subset_univ, true_imp_iff]
 
 end TauCeti
 

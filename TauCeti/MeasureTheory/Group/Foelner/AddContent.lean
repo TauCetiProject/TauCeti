@@ -88,13 +88,13 @@ theorem addContent_eq_of_tendsto_meas_symmDiff_div (hF : IsFoelner G μ u F)
     (hF' : IsFoelner G μ u F')
     (hdiff : Tendsto (fun i ↦ μ (F i ∆ F' i) / μ (F i)) u (𝓝 0)) :
     hF.addContent = hF'.addContent :=
-  MeasureTheory.AddContent.ext fun s ↦ hF.mean_eq_of_tendsto_meas_symmDiff_div hF' hdiff s
+  MeasureTheory.AddContent.ext fun s ↦ hF.mean_eq_of_tendsto_meas_symmDiff_div hdiff s
 
 /-- Two Følner families along `u` that are eventually `μ`-almost-everywhere equal induce the same
 density-limit content. -/
 theorem addContent_eq_of_eventually_ae_eq (hF : IsFoelner G μ u F) (hF' : IsFoelner G μ u F')
     (hae : ∀ᶠ i in (u : Filter ι), F i =ᵐ[μ] F' i) :
     hF.addContent = hF'.addContent :=
-  MeasureTheory.AddContent.ext fun s ↦ hF.mean_eq_of_eventually_ae_eq hF' hae s
+  MeasureTheory.AddContent.ext fun s ↦ hF.mean_eq_of_eventually_ae_eq hae s
 
 end IsFoelner

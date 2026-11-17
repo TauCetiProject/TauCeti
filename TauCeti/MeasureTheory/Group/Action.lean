@@ -18,6 +18,12 @@ exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restr
 transitive isometric action all balls of one radius have the same invariant measure
 (`measure_ball_eq_measure_ball`). Every linear action on a finite-dimensional real space has
 measurable translations (`measurableConstSMul_of_finiteDimensional`).
+
+For a group action preserving a measure `μ`, the symmetric difference of translated sets has
+invariant measure (`measure_smul_symmDiff_smul`), inversion symmetry
+(`measure_inv_smul_symmDiff_self`), and subadditivity under products and list words
+(`measure_mul_smul_symmDiff_le`, `measure_list_prod_smul_symmDiff_le`), together with their
+additive counterparts.
 -/
 
 public section
@@ -70,5 +76,51 @@ theorem measurableConstSMul_of_finiteDimensional : MeasurableConstSMul G E :=
     (DistribMulAction.toModuleEnd ℝ E g)).measurable⟩
 
 end Linear
+
+section SMulSymmDiff
+
+open scoped symmDiff
+
+variable {G X : Type*} [Group G] [MulAction G X] [MeasurableSpace X]
+  (μ : Measure X) [SMulInvariantMeasure G X μ]
+
+/-- A measure-preserving group action preserves the measure of symmetric differences. -/
+@[to_additive (attr := simp)
+/-- A measure-preserving additive group action preserves the measure of symmetric differences. -/]
+theorem measure_smul_symmDiff_smul (g : G) (s t : Set X) :
+    μ ((g • s) ∆ (g • t)) = μ (s ∆ t) := by
+  rw [← smul_set_symmDiff, measure_smul]
+
+/-- Translating a set by `g⁻¹` gives a symmetric difference of the same invariant measure as
+translating by `g`. -/
+@[to_additive
+/-- Translating a set by `-g` gives a symmetric difference of the same invariant measure as
+translating by `g`. -/]
+theorem measure_inv_smul_symmDiff_self (g : G) (s : Set X) :
+    μ ((g⁻¹ • s) ∆ s) = μ ((g • s) ∆ s) := by
+  rw [measure_inv_smul_symmDiff, symmDiff_comm]
+
+/-- Subadditivity of `μ ((g • s) ∆ s)` under group multiplication. -/
+@[to_additive
+/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` under group addition. -/]
+theorem measure_mul_smul_symmDiff_le (g h : G) (s : Set X) :
+    μ (((g * h) • s) ∆ s) ≤ μ ((h • s) ∆ s) + μ ((g • s) ∆ s) :=
+  calc
+    μ (((g * h) • s) ∆ s) = μ ((g • (h • s)) ∆ s) := by rw [mul_smul]
+    _ ≤ μ ((g • (h • s)) ∆ (g • s)) + μ ((g • s) ∆ s) := measure_symmDiff_le _ (g • s) _
+    _ = μ ((h • s) ∆ s) + μ ((g • s) ∆ s) := by rw [measure_smul_symmDiff_smul]
+
+/-- Subadditivity of `μ ((g • s) ∆ s)` along a list product in `G`. -/
+@[to_additive
+/-- Subadditivity of `μ ((g +ᵥ s) ∆ s)` along a list sum in `G`. -/]
+theorem measure_list_prod_smul_symmDiff_le (L : List G) (s : Set X) :
+    μ ((L.prod • s) ∆ s) ≤ (L.map fun g ↦ μ ((g • s) ∆ s)).sum := by
+  induction L with
+  | nil => simp
+  | cons g L ih =>
+    simpa only [List.prod_cons, List.map_cons, List.sum_cons, add_comm] using
+      (measure_mul_smul_symmDiff_le μ g L.prod s).trans (add_le_add_left ih _)
+
+end SMulSymmDiff
 
 end MeasureTheory

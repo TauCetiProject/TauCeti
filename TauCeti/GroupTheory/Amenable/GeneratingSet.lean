@@ -11,15 +11,15 @@ public import TauCeti.GroupTheory.Amenable.Sequence
 /-!
 # Generating-set Følner characterizations of amenability
 
-By subadditivity of symmetric differences under left translation (`Finset.card_symmDiff_le` and
-`MeasureTheory.measure_mul_smul_symmDiff_le`), controlling the translation boundaries `|gF △ F|` of
-a finite set `F ⊆ G` on a generating set `S` of `G` controls `|gF △ F|` on all words in `S ∪ S⁻¹`,
-with an explicit word-length factor
-(`Finset.exists_finset_card_smul_symmDiff_le_of_subset_closure`).
+By subadditivity of symmetric differences under left translation
+(`Finset.card_mul_smul_finset_symmDiff_le` and `MeasureTheory.measure_mul_smul_symmDiff_le`),
+controlling the translation boundaries `|gF △ F|` of a finite set `F ⊆ G` on a generating set `S`
+of `G` controls `|gF △ F|` on all words in `S ∪ S⁻¹`, with a uniform multiplicative constant
+`M : ℕ` independent of `F` (`Finset.exists_finset_card_smul_symmDiff_le_of_subset_closure`).
 
 This file develops the resulting generating-set Følner and amenability characterizations for
-discrete and topological groups, together with test-set/tolerance monotonicity, countable
-Følner-sequence generator criteria, and `DecidableEq`-free finite `Set` (`Set.ncard`) forms:
+discrete and topological groups, together with countable Følner-sequence generator criteria and
+`DecidableEq`-free finite `Set` (`Set.ncard`) forms:
 
 * For any generating set `S : Set G` (`Subgroup.closure S = ⊤`), `HasFoelnerSets G` (and, when `G`
   is discrete, `Amenable G`) holds iff every finite subset `K ⊆ S` and `ε > 0` admit a finite
@@ -29,9 +29,11 @@ Følner-sequence generator criteria, and `DecidableEq`-free finite `Set` (`Set.n
   boundaries, small summed generator boundary `∑ g ∈ S, |gF △ F| < ε · |F|`, and non-expansion of
   the unit Cayley ball `|({1} ∪ S) • F| < (1 + c) · |F|`. Negating gives a positive Cheeger /
   vertex-expansion constant on `{1} ∪ S` itself for every nonamenable finitely generated group.
-* Along any nontrivial filter `l` (and, when `G` is countable, along `ℕ`), vanishing of
-  `#((g • F i) ∆ F i) / #(F i)` on a generating set `S` characterizes `HasFoelnerSets G` and
-  discrete `Amenable G`, and implies `Amenable G` in every group topology.
+* Along any nontrivial filter `l`, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating
+  set `S` for an eventually nonempty family `F` is sufficient for `HasFoelnerSets G` (and hence
+  for `Amenable G` in every group topology). When `G` is countable, the existence of a sequence
+  along `ℕ` of nonempty finite sets with vanishing ratios on `S` characterizes `HasFoelnerSets G`
+  and discrete `Amenable G`.
 
 ## Main results
 
@@ -65,14 +67,7 @@ namespace TauCeti
 
 variable {G : Type*} [Group G]
 
-/-! ### Finite-test monotonicity and generating-set criteria -/
-
-/-- Monotonicity of a finite Følner test in both the test set `K₁ ⊆ K₂` and tolerance `ε₁ ≤ ε₂`. -/
-theorem foelnerTest_mono [DecidableEq G] {K₁ K₂ : Finset G} (hK : K₁ ⊆ K₂) {ε₁ ε₂ : ℝ}
-    (hε : ε₁ ≤ ε₂) {F : Finset G}
-    (hF : ∀ g ∈ K₂, (#((g • F) ∆ F) : ℝ) < ε₁ * #F) :
-    ∀ g ∈ K₁, (#((g • F) ∆ F) : ℝ) < ε₂ * #F :=
-  fun g hg ↦ (hF g (hK hg)).trans_le (mul_le_mul_of_nonneg_right hε (Nat.cast_nonneg _))
+/-! ### Generating-set criteria -/
 
 /-- **Garrido Lemma 3.4 (arbitrary generating set, `Set.ncard` form).** When `S` generates `G`,
 `HasFoelnerSets G` holds iff every finite `K ⊆ S` and `ε > 0` admit a finite nonempty `F : Set G`
@@ -184,7 +179,7 @@ theorem hasFoelnerSets_iff_card_insert_one_smul_lt_of_closure_eq_top [DecidableE
 /-! ### Net and sequence generator criteria -/
 
 /-- Along a nontrivial filter, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating set `S`
-gives `HasFoelnerSets G`. -/
+for an eventually nonempty family `F` gives `HasFoelnerSets G`. -/
 theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top [DecidableEq G]
     {S : Set G} (hS : Subgroup.closure S = ⊤) {ι : Type*} {l : Filter ι} [l.NeBot]
     {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)
@@ -198,7 +193,7 @@ theorem HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top 
   exact ⟨F i, hni, fun g hg ↦ (div_lt_iff₀ (by exact_mod_cast hni.card_pos)).1 (hi g hg)⟩
 
 /-- Along a nontrivial filter, vanishing of `#((g • F i) ∆ F i) / #(F i)` on a generating set `S`
-makes `G` amenable for every group topology. -/
+for an eventually nonempty family `F` makes `G` amenable for every group topology. -/
 theorem Amenable.of_tendsto_card_smul_symmDiff_div_card_of_closure_eq_top [TopologicalSpace G]
     [IsTopologicalGroup G] [DecidableEq G] {S : Set G} (hS : Subgroup.closure S = ⊤) {ι : Type*}
     {l : Filter ι} [l.NeBot] {F : ι → Finset G} (hne : ∀ᶠ i in l, (F i).Nonempty)

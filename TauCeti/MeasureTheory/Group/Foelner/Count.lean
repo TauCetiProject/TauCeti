@@ -8,8 +8,9 @@ module
 public import Mathlib.Data.Set.Card
 public import Mathlib.MeasureTheory.Measure.Count
 public import TauCeti.MeasureTheory.Group.Foelner.Basic
-import Mathlib.Algebra.Group.Action.Pointwise.Set.Basic
 import TauCeti.Data.ENNReal.NatCastDiv
+import TauCeti.MeasureTheory.Measure.Count.Action
+import TauCeti.MeasureTheory.Measure.Count.Basic
 
 /-!
 # Counting-measure Følner bridges for finite sets
@@ -23,8 +24,6 @@ and `maxFoelner` for `Measure.count` with `Set.ncard` ratios and finite-test cri
 
 ## Main results
 
-* `MeasureTheory.Measure.smulInvariantMeasure_count`: counting measure on a space with measurable
-  singletons is invariant under any group action.
 * `MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard`: for a finite nonempty
   `F : Set X`, the counting-measure Følner ratio is below `ENNReal.ofReal ε` iff
   `(((m • F) ∆ F).ncard : ℝ) < ε * F.ncard`.
@@ -49,24 +48,9 @@ section Count
 
 variable {G X : Type*} [Group G] [MulAction G X] [MeasurableSpace X]
 
-/-- Counting measure on a space with measurable singletons is invariant under any group action. -/
-@[to_additive vAddInvariantMeasure_count
-/-- Counting measure on a space with measurable singletons is invariant under any additive group
-action. -/]
-theorem MeasureTheory.Measure.smulInvariantMeasure_count [MeasurableSingletonClass X] :
-    SMulInvariantMeasure G X Measure.count :=
-  ⟨fun g s _ ↦ by
-    rw [preimage_smul]
-    exact Measure.count_injective_image (MulAction.injective g⁻¹) s⟩
-
-/-- Counting measure of any finite set `s : Set X` with measurable singletons equals `s.ncard`. -/
-theorem MeasureTheory.Measure.count_apply_eq_ncard [MeasurableSingletonClass X] {s : Set X}
-    (hs : s.Finite) : Measure.count s = s.ncard := by
-  rw [Measure.count_apply_finite s hs, Set.ncard_eq_toFinset_card s hs]
-
 /-- For a finite nonempty `F : Set X`, the counting-measure Følner ratio at `m` is below
 `ENNReal.ofReal ε` iff `(((m • F) ∆ F).ncard : ℝ) < ε * F.ncard`. -/
-@[to_additive
+@[to_additive count_vadd_symmDiff_div_count_lt_ofReal_iff_ncard
 /-- For a finite nonempty `F : Set X`, the counting-measure additive Følner ratio at `m` is below
 `ENNReal.ofReal ε` iff `(((m +ᵥ F) ∆ F).ncard : ℝ) < ε * F.ncard`. -/]
 theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard
@@ -80,7 +64,7 @@ theorem MeasureTheory.Measure.count_smul_symmDiff_div_count_lt_ofReal_iff_ncard
 
 /-- The counting-measure Følner ratio of a finite measurable set bounds its `Set.ncard` ratio from
 above, without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/
-@[to_additive
+@[to_additive ncard_vadd_symmDiff_div_ncard_le_count_div_count
 /-- The counting-measure additive Følner ratio of a finite measurable set bounds its `Set.ncard`
 ratio from above, without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/]
 theorem MeasureTheory.Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count {M : Type*}
@@ -99,7 +83,7 @@ theorem MeasureTheory.Measure.ncard_smul_symmDiff_div_ncard_le_count_div_count {
 
 /-- Along any counting-measure Følner family, the real `Set.ncard` translation-boundary ratios tend
 to zero without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/
-@[to_additive
+@[to_additive tendsto_ncard_vadd_symmDiff_div_ncard
 /-- Along any counting-measure additive Følner family, the real `Set.ncard` translation-boundary
 ratios tend to zero without requiring `[MeasurableSingletonClass X]` or `[DecidableEq X]`. -/]
 theorem IsFoelner.tendsto_ncard_smul_symmDiff_div_ncard {ι : Type*} {l : Filter ι} {F : ι → Set X}

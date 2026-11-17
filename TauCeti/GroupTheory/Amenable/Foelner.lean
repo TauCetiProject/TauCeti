@@ -46,6 +46,7 @@ nontrivial filter. The proof picks for `(K, n)` a witness for `K` with tolerance
   passes every finite test.
 * `TauCeti.exists_isFoelner_atTop`: if every finite test has a witness, there is a Følner family
   of finite nonempty sets indexed by `Finset G × ℕ` along `atTop`.
+* `TauCeti.foelnerTest_mono`: monotonicity of a finite Følner test in the test set and tolerance.
 * `TauCeti.hasFoelnerSets_iff_exists_finite_set`, `TauCeti.hasFoelnerSets_iff`: `HasFoelnerSets G`
   is equivalent to the finite-set condition (`Set.Finite` / `Set.ncard` and `Finset`).
 * `TauCeti.HasFoelnerSets.of_tendsto_card_smul_symmDiff_div_card`: finite sets with vanishing
@@ -170,6 +171,13 @@ theorem exists_finite_ncard_smul_symmDiff_lt_iff {M X : Type*} [SMul M X] [Decid
   · rintro ⟨F, hne, hFK⟩
     refine ⟨F, F.finite_toSet, coe_nonempty.2 hne, fun m hm ↦ ?_⟩
     simpa only [← coe_smul_finset, ← coe_symmDiff, Set.ncard_coe_finset] using hFK m hm
+
+/-- Monotonicity of a finite Følner test in both the test set `K₁ ⊆ K₂` and tolerance `ε₁ ≤ ε₂`. -/
+theorem foelnerTest_mono {M X : Type*} [SMul M X] [DecidableEq X] {K₁ K₂ : Finset M}
+    (hK : K₁ ⊆ K₂) {ε₁ ε₂ : ℝ} (hε : ε₁ ≤ ε₂) {F : Finset X}
+    (hF : ∀ m ∈ K₂, (#((m • F) ∆ F) : ℝ) < ε₁ * #F) :
+    ∀ m ∈ K₁, (#((m • F) ∆ F) : ℝ) < ε₂ * #F :=
+  fun m hm ↦ (hF m (hK hm)).trans_le (mul_le_mul_of_nonneg_right hε (Nat.cast_nonneg _))
 
 variable (G) in
 /-- A group `G` has Følner sets when Mathlib's maximal Følner filter for the left regular action
