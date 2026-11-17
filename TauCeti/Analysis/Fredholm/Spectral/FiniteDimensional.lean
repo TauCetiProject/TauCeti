@@ -153,14 +153,11 @@ theorem spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank {a b : ℝ} (h
     spectralCount_eq_finrank_pointSpectralSubspace (hsa b hb) (hlt b hb),
     spectralCount_eq_finrank_pointSpectralSubspace (hsa a ha) (hlt a ha)]
   -- The nonnegative and the negative eigenvalues of `A t` together have the dimension of `H`.
-  have hdim {t : ℝ} (ht : t ∈ Icc a b) :
-      Module.finrank 𝕜 (Module.End.pointSpectralSubspace (A t : H →ₗ[𝕜] H) (Ici 0)) +
-        Module.finrank 𝕜 (Module.End.pointSpectralSubspace (A t : H →ₗ[𝕜] H) (Iio 0)) =
-          Module.finrank 𝕜 H := by
-    rw [← compl_Iio, ← (hsa t ht).isSymmetric.orthogonal_pointSpectralSubspace, add_comm]
-    exact Submodule.finrank_add_finrank_orthogonal _
-  have h₁ := hdim ha
-  have h₂ := hdim hb
+  have hAa := (hsa a ha).isSymmetric
+  have hAb := (hsa b hb).isSymmetric
+  have h₁ := hAa.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (Iio 0)
+  have h₂ := hAb.finrank_pointSpectralSubspace_add_finrank_pointSpectralSubspace_compl (Iio 0)
+  rw [compl_Iio] at h₁ h₂
   omega
 
 /-- **Negation.** On a finite-dimensional space, negating a continuous path of self-adjoint
@@ -176,17 +173,14 @@ theorem spectralFlow_neg {a b : ℝ} (hab : a ≤ b) (hA : ContinuousOn A (Icc a
     spectralFlow_eq_finrank_pointSpectralSubspace_sub_finrank hab hA hsa]
   -- The negative eigenvalues of `-T` are the positive ones of `T`, and for invertible `T` the
   -- positive and the negative eigenvalues together have the dimension of `H`.
-  have hdim {t : ℝ} (ht : t ∈ Icc a b) (hker : LinearMap.ker (A t : H →ₗ[𝕜] H) = ⊥) :
-      Module.finrank 𝕜 (Module.End.pointSpectralSubspace ((-A t : H →L[𝕜] H) : H →ₗ[𝕜] H)
-          (Iio 0)) +
-        Module.finrank 𝕜 (Module.End.pointSpectralSubspace (A t : H →ₗ[𝕜] H) (Iio 0)) =
-          Module.finrank 𝕜 H := by
-    rw [ContinuousLinearMap.toLinearMap_neg, Module.End.pointSpectralSubspace_neg, neg_Iio,
-      neg_zero, add_comm]
-    exact Submodule.finrank_add_eq_of_isCompl
-      ((hsa t ht).isSymmetric.isCompl_pointSpectralSubspace_Iio_zero_Ioi_zero hker)
-  have h₁ := hdim ha' ha
-  have h₂ := hdim hb' hb
+  rw [ContinuousLinearMap.toLinearMap_neg, ContinuousLinearMap.toLinearMap_neg,
+    Module.End.pointSpectralSubspace_neg, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero]
+  have hAa := (hsa a ha').isSymmetric
+  have hAb := (hsa b hb').isSymmetric
+  have h₁ :=
+    hAa.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero ha
+  have h₂ :=
+    hAb.finrank_pointSpectralSubspace_Iio_zero_add_finrank_pointSpectralSubspace_Ioi_zero hb
   omega
 
 end TauCeti
@@ -204,9 +198,10 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 self-adjoint operators on a finite-dimensional real inner product space over `[a, b]`, with
 invertible endpoints. Suppose that every crossing `t ∈ (a, b)`, where `A t` is not injective, is
 regular: `A` has derivative `A' t` at `t`, and the crossing form `Γₜ : v ↦ ⟪A' t v, v⟫` on the
-kernel of `A t` is nondegenerate. Then there are finitely many crossings, and the spectral flow of
-`A` is the sum over them of the signatures `sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is
-invertible contribute zero to the sum. -/
+kernel of `A t` is nondegenerate. Then the spectral flow of `A` is the sum over the crossings of
+the signatures `sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is invertible contribute zero to the
+sum. That the crossings are finite in number is a separate fact,
+`ContinuousLinearMap.finite_setOf_not_nondegenerate_toBilinForm`. -/
 theorem spectralFlow_eq_finsum_sigPos_sub_sigNeg_crossingForm {a b : ℝ} (hab : a ≤ b)
     (hA : ContinuousOn A (Icc a b)) (hsa : ∀ t ∈ Icc a b, IsSelfAdjoint (A t))
     (ha : LinearMap.ker (A a : E →ₗ[ℝ] E) = ⊥) (hb : LinearMap.ker (A b : E →ₗ[ℝ] E) = ⊥)
