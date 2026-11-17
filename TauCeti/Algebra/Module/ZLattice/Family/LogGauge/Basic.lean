@@ -523,6 +523,21 @@ theorem torusFamilyLogGaugeEquiv_symm_mk {t : Metric.ball (0 : ℂ) (r ^ m)}
   rw [← hq, Equiv.apply_symm_apply]
   exact (torusFamilyCyclicQuotientProjection_torusFamilyLogGaugeInv P l hr q.1).symm
 
+/-- **A holomorphic branch of the `m`-th root.** For a nonzero point `z₀` of the disc of
+radius `r`, the branch `t ↦ exp (log z₀ + (1 / m) log (t / z₀ ^ m))` of the `m`-th root
+(`Complex.exp_log_add_inv_mul_log_div_pow`) maps the disc of radius `r ^ m` into the disc of
+radius `r`; at `t = 0` it takes the value `z₀`. -/
+theorem exp_log_add_inv_mul_log_div_pow_mem_rootsOfUnityBall {z₀ : rootsOfUnityBall m r}
+    (hz₀ : (z₀ : ℂ) ≠ 0) (t : Metric.ball (0 : ℂ) (r ^ m)) :
+    exp (log z₀ + (m : ℂ)⁻¹ * log (t / (z₀ : ℂ) ^ m)) ∈ rootsOfUnityBall m r := by
+  have hr : 0 ≤ r := (norm_nonneg _).trans (mem_rootsOfUnityBall.1 z₀.2).le
+  by_cases ht : (t : ℂ) = 0
+  · simp only [ht, zero_div, log_zero, mul_zero, add_zero, exp_log hz₀]
+    exact z₀.2
+  · rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
+      ← norm_pow, exp_log_add_inv_mul_log_div_pow hz₀ ht, ← mem_ball_zero_iff]
+    exact t.2
+
 /-! ### The logarithmic gauge is a homeomorphism -/
 
 section Topology
@@ -633,14 +648,8 @@ private theorem continuousAt_torusFamilyLogGaugeInv
   have hz₀ : (z₀ : ℂ) ≠ 0 := fun h ↦ ht₀ (by rw [← hz₀m, h, zero_pow (NeZero.ne m)])
   -- Near `t₀`, use the continuous branch `L t` of the logarithm of an `m`-th root of `t`.
   let L : ℂ → ℂ := fun t ↦ log z₀ + (m : ℂ)⁻¹ * log (t / (z₀ : ℂ) ^ m)
-  have hmem (t : Metric.ball (0 : ℂ) (r ^ m)) : exp (L t) ∈ rootsOfUnityBall m r := by
-    by_cases ht : (t : ℂ) = 0
-    · simp only [L, ht, zero_div, log_zero, mul_zero, add_zero, exp_log hz₀]
-      exact z₀.2
-    · rw [mem_rootsOfUnityBall, ← pow_lt_pow_iff_left₀ (norm_nonneg _) hr (NeZero.ne m),
-        ← norm_pow, exp_log_add_inv_mul_log_div_pow hz₀ ht, ← mem_ball_zero_iff]
-      exact t.2
-  let w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r := fun t ↦ ⟨exp (L t), hmem t⟩
+  let w : Metric.ball (0 : ℂ) (r ^ m) → rootsOfUnityBall m r := fun t ↦
+    ⟨exp (L t), exp_log_add_inv_mul_log_div_pow_mem_rootsOfUnityBall hz₀ t⟩
   have hw {t : Metric.ball (0 : ℂ) (r ^ m)} (ht : (t : ℂ) ≠ 0) :
       rootsOfUnityBall.powMap m r (w t) = t :=
     Subtype.ext (by rw [rootsOfUnityBall.coe_powMap]; exact exp_log_add_inv_mul_log_div_pow hz₀ ht)
