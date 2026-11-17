@@ -19,6 +19,8 @@ matrix, provided `f` is a local homomorphism (`Matrix.map_nonsing_inv`). The inv
 commute with every ring homomorphism (`RingHom.map_det`, `RingHom.map_adjugate`), and a local
 homomorphism commutes with `Ring.inverse` (`map_ringInverse`). For the same reason a local
 homomorphism preserves and reflects invertibility of square matrices (`Matrix.isUnit_map_iff`).
+Over a ring without zero divisors, a nonzero multiple of a nonsingular matrix is nonsingular
+(`Matrix.det_smul_ne_zero`).
 
 Locality is needed: `ℤ →+* ℚ` is not local, and the `1 × 1` matrix `2` over `ℤ` has inverse `0`,
 while its image in `ℚ` has inverse `1 / 2`. Every ring homomorphism from a field to a nontrivial
@@ -65,6 +67,12 @@ theorem isUnit_map_iff (f : F) [IsLocalHom f] (A : Matrix n n R) :
     IsUnit (A.map f) ↔ IsUnit A := by
   have hdet : f A.det = (A.map f).det := RingHom.map_det (f : R →+* S) A
   rw [isUnit_iff_isUnit_det, isUnit_iff_isUnit_det, ← hdet, _root_.isUnit_map_iff]
+
+/-- Scaling a nonsingular matrix by a nonzero scalar keeps it nonsingular. -/
+theorem det_smul_ne_zero [NoZeroDivisors R] {c : R} (hc : c ≠ 0) {A : Matrix n n R}
+    (hA : A.det ≠ 0) : (c • A).det ≠ 0 := by
+  rw [det_smul]
+  exact mul_ne_zero (pow_ne_zero _ hc) hA
 
 /-- If the column change `Q` kills `x` off the pivot columns `e`, then normalizing by the inverse of
 the pivot matrix turns the rows of `x * Q` into coordinate vectors. -/

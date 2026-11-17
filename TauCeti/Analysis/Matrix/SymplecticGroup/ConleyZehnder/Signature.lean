@@ -13,6 +13,7 @@ import TauCeti.Analysis.Matrix.Exponential.Spectrum
 import TauCeti.Analysis.Matrix.HermitianSignature.Matrix
 import TauCeti.Analysis.Matrix.SymplecticGroup.L2OpNorm
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Crossing
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.LinearAlgebra.SymplecticGroup
 
 /-!
@@ -76,12 +77,6 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 private theorem norm_smul_J_mul (t : ℝ) (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) :
     ‖t • (J n ℝ * S)‖ = |t| * ‖S‖ := by
   rw [norm_smul, Real.norm_eq_abs, l2_opNorm_J_mul]
-
-/-- Halving an invertible matrix keeps it invertible. -/
-private theorem det_inv_two_smul_ne_zero {S : Matrix (n ⊕ n) (n ⊕ n) ℝ} (hdet : S.det ≠ 0) :
-    ((2⁻¹ : ℝ) • S).det ≠ 0 := by
-  rw [det_smul]
-  exact mul_ne_zero (pow_ne_zero _ (by norm_num)) hdet
 
 /-- The Cayley generator `J (1 - exp (t J S)) (1 + exp (t J S))⁻¹` of `exp (t J S)`. -/
 private noncomputable def cayleyGen (S : Matrix (n ⊕ n) (n ⊕ n) ℝ) (t : ℝ) :
@@ -183,21 +178,18 @@ private theorem conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi {S : Matrix (n �
       (by rw [coe_expPath_apply]; exact hunit t t.2)
     simpa only [coe_expPath_apply, cayleyGen, Path.map_coe, Function.comp_apply] using h
   -- The only crossing is at `t = 0`, where `cayleyGen S` vanishes with derivative `S / 2`.
-  have hcross (t : ℝ) (ht : t ∈ Icc (0 : ℝ) 1) (hdt : (cayleyGen S t).det = 0) : t = 0 := by
-    by_contra h0
-    exact hdetA t ht h0 hdt
   have hmas := Matrix.UnitaryGroup.maslovIndex_eq_crossingForm_add_finsum_of_souriau_eq_cayley
     ((expPath X hXsp).map continuous_graphUnitaryFrame) (A' := fun _ ↦ (2⁻¹ : ℝ) • S)
     (continuousOn_cayleyGen S hunit) hA hγ
     (fun t ht hdt i j ↦ by
-      obtain rfl := hcross t ht hdt
+      obtain rfl : t = 0 := by_contra fun h0 ↦ hdetA t ht h0 hdt
       let L : Matrix (n ⊕ n) (n ⊕ n) ℝ →L[ℝ] ℝ :=
         LinearMap.toContinuousLinearMap (entryLinearMap ℝ ℝ i j)
       exact (L.hasFDerivAt.comp_hasDerivAt 0 (hasDerivAt_cayleyGen S)).hasDerivWithinAt)
     (fun t ht hdt ↦ by
-      obtain rfl := hcross t ht hdt
+      obtain rfl : t = 0 := by_contra fun h0 ↦ hdetA t ht h0 hdt
       rw [hA0]
-      exact nondegenerate_crossingForm_zero (hS.smul _) (det_inv_two_smul_ne_zero hdet))
+      exact nondegenerate_crossingForm_zero (hS.smul _) (det_smul_ne_zero (by norm_num) hdet))
   rw [conleyZehnderIndex_def, hmas, hA0, sigPos_sub_sigNeg_crossingForm_zero,
     signature_smul_of_pos (by norm_num),
     sigPos_sub_sigNeg_crossingForm_eq_zero (hA 1 (right_mem_Icc.2 zero_le_one)).isSymm
@@ -252,7 +244,7 @@ theorem conleyZehnderIndex_expPath_J_mul_eq_neg_signature_div_two {S : Matrix (n
     rw [norm_smul, Real.norm_eq_abs, abs_of_pos (by norm_num)]
     linarith
   rw [← hsplit, conleyZehnderIndex_trans, conleyZehnderIndex_expPath_J_mul_of_norm_lt_pi hS'
-    (det_inv_two_smul_ne_zero hdet) hnorm,
+    (det_smul_ne_zero (by norm_num) hdet) hnorm,
     signature_smul_of_pos (by norm_num), conleyZehnderIndex_eq_zero_of_forall_isUnit_sub_one δ
     fun s ↦ ?_, add_zero]
   have hs : 0 < (1 + (s : ℝ)) / 2 := by linarith [s.2.1]

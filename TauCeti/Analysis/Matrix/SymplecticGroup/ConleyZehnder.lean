@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Matrix.UnitaryGroup.Torus
 public import TauCeti.LinearAlgebra.TotallyReal.Lagrangian
 import TauCeti.Analysis.Matrix.UnitaryGroup.Maslov.Localization
 import TauCeti.LinearAlgebra.Matrix.DetDescent
+import TauCeti.LinearAlgebra.Matrix.Nonsingular.Inverse
 import TauCeti.LinearAlgebra.Matrix.OfReal
 import TauCeti.LinearAlgebra.SymplecticGroup
 
@@ -312,11 +313,8 @@ theorem souriau_graphUnitaryFrame_eq_cayley (A : GLSymplectic n ℝ)
     souriau_eq_cayley_of_coe_eq_mul hB ((coe_realOrthonormalize F).trans (by rw [hF]))
   have hreal : (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage =
       (U : Matrix (n ⊕ n) (n ⊕ n) ℂ).realImage := by
-    have hunit : IsUnit ((√2 : ℝ)⁻¹ • (1 + M)) :=
-      (isUnit_iff_isUnit_det _).2 (by
-        rw [det_smul]
-        exact (IsUnit.mk0 _ (pow_ne_zero _ (inv_ne_zero (Real.sqrt_pos.2 two_pos).ne'))).mul
-          ((isUnit_iff_isUnit_det _).1 h1))
+    have hunit : IsUnit ((√2 : ℝ)⁻¹ • (1 + M)) := (isUnit_iff_isUnit_det _).2
+      (det_smul_ne_zero (by positivity) ((isUnit_iff_isUnit_det _).1 h1).ne_zero).isUnit
     rw [realImage_graphUnitaryFrame, diagonalStraightening_mul_graphFrame_eq_mul h1,
       realImage_mul_map_ofReal _ hunit, realImage_realOrthonormalize, hF]
   rw [souriau_eq_of_realImage_eq hreal, hU]
@@ -409,8 +407,8 @@ theorem not_isRoot_one_charpoly_souriau_graphUnitaryFrame (A : GLSymplectic n �
   have hIm : ((G : Matrix (n ⊕ n) (n ⊕ n) ℂ) * O.map ((↑) : ℝ → ℂ)).map Complex.im =
       (G : Matrix (n ⊕ n) (n ⊕ n) ℂ).map Complex.im * O :=
     map_mul_algebraMap Complex.imLm O _
-  rw [isRoot_one_charpoly_souriau_iff, ← hU, hO, hIm, hImG, det_mul, det_smul]
-  exact mul_ne_zero (mul_ne_zero (pow_ne_zero _ (inv_ne_zero (Real.sqrt_pos.2 two_pos).ne'))
+  rw [isRoot_one_charpoly_souriau_iff, ← hU, hO, hIm, hImG, det_mul]
+  exact mul_ne_zero (det_smul_ne_zero (by positivity)
     ((isUnit_iff_isUnit_det _).1 (isUnit_J_mul_one_sub h1)).ne_zero) hdetO
 
 /-- **The zero axiom.** A path of symplectic matrices none of which has the eigenvalue `1` has
