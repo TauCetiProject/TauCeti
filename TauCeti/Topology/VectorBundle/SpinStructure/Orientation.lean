@@ -114,20 +114,17 @@ theorem toFrame_op_smul (s : SpinStructure F E n) (g : realCliffordSpinGroupZero
           specialOrthogonalGroup (EuclideanSpace ℝ (Fin n))) :
         unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) • s.toFrame p := by
   obtain ⟨x, p⟩ := p
-  rcases hq₀ : s.toFrame ⟨x, p⟩ with ⟨x₀, φ₀⟩
-  rcases hq₁ : s.toFrame ⟨x, op g • p⟩ with ⟨x₁, φ₁⟩
-  obtain rfl : x = x₀ := by
-    symm
-    simpa [hq₀] using s.proj_toFrame ⟨x, p⟩
-  obtain rfl : x = x₁ := by
-    symm
-    simpa [hq₁] using s.proj_toFrame ⟨x, op g • p⟩
+  obtain ⟨φ₀, hq₀⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
+  obtain ⟨φ₁, hq₁⟩ := s.exists_toFrame_eq_mk ⟨x, op g • p⟩
+  set u : unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) :=
+    (realCliffordSpinToEuclideanSpecialOrthogonal n g).1
+  rw [TotalSpace.smul_mk, hq₀, hq₁,
+    OrthonormalFrameBundle.eq_mk_of_proj_eq (op u • (⟨x, φ₀⟩ : OrthonormalFrameBundle ℝ F E _))
+      (OrthonormalFrameBundle.proj_smul _ _)]
   refine OrthonormalFrameBundle.mk_eq_mk_iff.2 (LinearIsometryEquiv.ext fun w ↦ ?_)
   have hw := s.toFrame_smul x p g w.ofLp
   rw [WithLp.toLp_ofLp, hq₀, hq₁] at hw
-  rw [TotalSpace.mk_inj.1 hw, LinearIsometryEquiv.trans_apply, unop_op]
-  congr 1
-  rw [← LinearIsometryEquiv.coe_coe'', Unitary.coe_linearIsometryEquiv_apply,
+  rw [TotalSpace.mk_inj.1 hw, OrthonormalFrameBundle.frame_smul_apply, unop_op,
     realCliffordSpinToEuclideanSpecialOrthogonal_apply_apply]
 
 /-- Acting on the right by the central element `-1` of `Spin(n)` preserves the induced frame. -/
@@ -479,10 +476,7 @@ theorem fiberOrientation_pullback {Y : Type*} [TopologicalSpace Y] {K : Type*} [
     (o : Orientation ℝ (EuclideanSpace ℝ (Fin n)) (Fin n)) (y : Y) :
     (s.pullback f).fiberOrientation o y = s.fiberOrientation o (f y) := by
   obtain ⟨p⟩ := s.nonempty_P (f y)
-  rcases hfr : s.toFrame ⟨f y, p⟩ with ⟨x₁, φ₁⟩
-  obtain rfl : f y = x₁ := by
-    symm
-    simpa [hfr] using s.proj_toFrame ⟨f y, p⟩
+  obtain ⟨φ₁, hfr⟩ := s.exists_toFrame_eq_mk ⟨f y, p⟩
   have h₁ := (s.pullback f).toOrientationCover_toFrame o ⟨y, p⟩
   rw [s.toFrame_pullback_mk f y p hfr, OrthonormalFrameBundle.toOrientationCover_eq_mk,
     VectorBundleOrientationCover.mk_eq_mk_iff] at h₁

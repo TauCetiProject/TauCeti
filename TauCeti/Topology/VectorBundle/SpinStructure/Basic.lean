@@ -115,21 +115,27 @@ variable {X : Type*} [TopologicalSpace X] {F : Type*} {E : X → Type w}
 instance nonempty_P (s : SpinStructure F E n) (x : X) : Nonempty (s.P x) :=
   ⟨(FiberBundle.homeomorphAt (realCliffordSpinGroupZero n) s.P x).symm 1⟩
 
+/-- The orthonormal frame attached to a point `p` of `P` equals `⟨p.proj, φ⟩` for some
+orthonormal frame `φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E p.proj`. -/
+theorem exists_toFrame_eq_mk (s : SpinStructure F E n)
+    (p : TotalSpace (realCliffordSpinGroupZero n) s.P) :
+    ∃ φ : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] E p.proj, s.toFrame p = ⟨p.proj, φ⟩ :=
+  ⟨s.proj_toFrame p ▸ (s.toFrame p).frame,
+    OrthonormalFrameBundle.eq_mk_of_proj_eq (s.toFrame p) (s.proj_toFrame p)⟩
+
 /-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` is finite-dimensional. -/
 theorem finiteDimensional_fiber (s : SpinStructure F E n) (x : X) :
     FiniteDimensional ℝ (E x) := by
   obtain ⟨p⟩ := s.nonempty_P x
-  have hproj : (s.toFrame ⟨x, p⟩).proj = x := s.proj_toFrame ⟨x, p⟩
-  exact hproj ▸ (s.toFrame ⟨x, p⟩).frame.toLinearEquiv.finiteDimensional
+  obtain ⟨φ, -⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
+  exact φ.toLinearEquiv.finiteDimensional
 
 /-- Every fibre `E x` of a bundle carrying a Spin structure of rank `n` has dimension `n`. -/
 theorem finrank_fiber (s : SpinStructure F E n) (x : X) :
     Module.finrank ℝ (E x) = n := by
   obtain ⟨p⟩ := s.nonempty_P x
-  have hproj : (s.toFrame ⟨x, p⟩).proj = x := s.proj_toFrame ⟨x, p⟩
-  have h := (s.toFrame ⟨x, p⟩).frame.toLinearEquiv.finrank_eq
-  rw [hproj, finrank_euclideanSpace_fin] at h
-  exact h.symm
+  obtain ⟨φ, -⟩ := s.exists_toFrame_eq_mk ⟨x, p⟩
+  simpa [finrank_euclideanSpace_fin] using φ.toLinearEquiv.finrank_eq.symm
 
 /-- Over a nonempty base, the model fibre `F` of a vector bundle carrying a Spin structure of rank
 `n` is finite-dimensional. -/

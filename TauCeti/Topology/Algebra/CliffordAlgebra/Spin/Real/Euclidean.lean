@@ -89,10 +89,7 @@ theorem realCliffordSpecialOrthogonalContinuousMulEquivEuclidean_apply_apply (n 
       unitary (EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))) :
         EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n)) v =
       WithLp.toLp 2 ((g : (Fin n → ℝ) ≃ₗ[ℝ] (Fin n → ℝ)) v.ofLp) := by
-  rw [realCliffordSpecialOrthogonalContinuousMulEquivEuclidean, ContinuousMulEquiv.trans_apply,
-    coe_matrixSpecialOrthogonalContinuousMulEquivEuclidean, Matrix.toEuclideanCLM_apply,
-    QuadraticMap.matrixSpecialOrthogonalContinuousMulEquivRealCliffordForm_symm_coe,
-    Matrix.toLpLin_apply, ← Matrix.toLin'_apply, Matrix.toLin'_toMatrix', LinearEquiv.coe_coe]
+  simp [realCliffordSpecialOrthogonalContinuousMulEquivEuclidean, Matrix.toLpLin_apply]
 
 /-- The compact real Spin projection onto the special orthogonal operator group of
 `EuclideanSpace ℝ (Fin n)`, bundled as a continuous group homomorphism. -/

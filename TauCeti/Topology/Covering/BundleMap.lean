@@ -8,8 +8,11 @@ module
 public import Mathlib.Topology.Algebra.Group.Defs
 public import Mathlib.Topology.Covering.Basic
 public import Mathlib.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.Algebra.Group.Shear
 import TauCeti.Topology.Covering.Homeomorph
 import TauCeti.Topology.Covering.Prod
+import TauCeti.Topology.FiberBundle.Trivialization
+import TauCeti.Topology.Homeomorph.SetCongr
 
 /-!
 # Equivariant bundle maps along covering maps
@@ -72,76 +75,43 @@ theorem isCoveringMapOn_of_equivariant_trivialization (hρ : IsCoveringMap ρ)
   have hWe : W ⊆ e.baseSet := inter_subset_left
   have hWt : W ⊆ t.baseSet := inter_subset_right
   let V : Set Q := projQ ⁻¹' W
-  have hV : IsOpen V := by
-    have hV_eq : V = t.source ∩ projQ ⁻¹' W :=
-      (inter_eq_right (s := t.source) (t := V) |>.2 fun _ hq ↦ t.mem_source.2 hq.2).symm
-    rw [hV_eq]
-    exact t.continuousOn_proj.isOpen_inter_preimage t.open_source hW
-  have hpreV_eq : φ ⁻¹' V = projP ⁻¹' W := by
-    ext p
-    simp [V, hproj p]
-  have hpreV : IsOpen (φ ⁻¹' V) := by
-    have hpre_eq : projP ⁻¹' W = e.source ∩ projP ⁻¹' W :=
-      (inter_eq_right (s := e.source) (t := projP ⁻¹' W) |>.2 fun _ hp ↦ e.mem_source.2 hp.1).symm
-    rw [hpreV_eq, hpre_eq]
-    exact e.continuousOn_proj.isOpen_inter_preimage e.open_source hW
+  have hV : IsOpen V := t.isOpen_preimage hW hWt
+  have hpreV_eq : φ ⁻¹' V = projP ⁻¹' W := by ext p; simp [V, hproj p]
+  have hpreV : IsOpen (φ ⁻¹' V) := hpreV_eq ▸ e.isOpen_preimage hW hWe
   refine IsCoveringMapOn.of_isCoveringMap_restrictPreimage V hV hpreV ?_
-  have hset_coe : ∀ {s₁ s₂ : Set P} (h : s₁ = s₂) (p : s₁), (Homeomorph.setCongr h p : P) = p.1 :=
-    fun h _ ↦ by cases h; rfl
+  -- Trivialize `φ ⁻¹' V` as `W × G` and `V` as `W × H`.
   let hDom : (φ ⁻¹' V) ≃ₜ W × G :=
     (Homeomorph.setCongr hpreV_eq).trans (e.preimageHomeomorph hWe)
   let hCod : V ≃ₜ W × H := t.preimageHomeomorph hWt
-  -- The local unit section `σ` of `e` maps via `t ∘ φ` to a continuous shift `c : W → H`.
+  -- The local unit section `σ` of `e` maps via `t ∘ φ` to a continuous shear `c : W → H`.
   let σ : W → P := fun y ↦ e.toOpenPartialHomeomorph.symm (y.1, 1)
   have hσ_cont : Continuous σ :=
-    e.continuousOn_invFun.comp_continuous (continuous_subtype_val.prodMk continuous_const)
-      fun y ↦ e.mem_target.2 y.2.1
+    e.continuousOn_symm_prodMk_left.comp_continuous continuous_subtype_val fun y ↦ y.2.1
   have hσ_proj (y : W) : projP (σ y) = y.1 := e.proj_symm_apply' y.2.1
   let c : W → H := fun y ↦ (t (φ (σ y))).2
   have hc_cont : Continuous c :=
     continuous_snd.comp <| t.continuousOn_toFun.comp_continuous
       (hφ.comp_continuous hσ_cont fun y ↦ by rw [mem_preimage, hσ_proj]; exact y.2)
       fun y ↦ by rw [t.mem_source, hproj, hσ_proj]; exact y.2.2
-  let shift : W × H ≃ₜ W × H :=
-    { toFun yh := (yh.1, c yh.1 * yh.2)
-      invFun yh := (yh.1, (c yh.1)⁻¹ * yh.2)
-      left_inv yh := Prod.ext rfl (inv_mul_cancel_left (c yh.1) yh.2)
-      right_inv yh := Prod.ext rfl (mul_inv_cancel_left (c yh.1) yh.2)
-      continuous_toFun :=
-        continuous_fst.prodMk ((hc_cont.comp continuous_fst).mul continuous_snd)
-      continuous_invFun :=
-        continuous_fst.prodMk ((hc_cont.comp continuous_fst).inv.mul continuous_snd) }
+  let shift : W × H ≃ₜ W × H := TauCeti.prodMulLeftHomeomorph c hc_cont
+  -- In trivialized coordinates, `φ` is `Prod.map id ρ` followed by the left-translation shear.
   have hlocal : V.restrictPreimage φ = hCod.symm ∘ shift ∘ Prod.map id ρ ∘ hDom := by
     funext p
     apply hCod.injective
-    simp only [Function.comp_apply, Homeomorph.apply_symm_apply]
     have hpW : projP p.1 ∈ W := by simpa only [hpreV_eq, mem_preimage] using p.2
     let y : W := ⟨projP p.1, hpW⟩
     let g : G := (e p.1).2
-    have hDom_p : hDom p = (y, g) := by
-      rw [Homeomorph.trans_apply, e.preimageHomeomorph_apply hWe]
-      exact Prod.ext (Subtype.ext (congrArg projP (hset_coe hpreV_eq p)))
-        (congrArg (fun x ↦ (e x).2) (hset_coe hpreV_eq p))
-    rw [hDom_p, Prod.map_apply, id_eq]
-    have hp_eq : p.1 = op g • σ y := by
-      have hσ_mem : projP (σ y) ∈ e.baseSet := (hσ_proj y).symm ▸ hpW.1
-      have hsrc₁ : p.1 ∈ e.source := e.mem_source.2 hpW.1
-      have hsrc₂ : op g • σ y ∈ e.source := e.mem_source.2 (by rw [hprojP_smul]; exact hσ_mem)
-      refine e.injOn hsrc₁ hsrc₂ (Prod.ext ?_ ?_)
-      · rw [e.coe_coe, e.coe_fst hsrc₁, e.coe_fst hsrc₂, hprojP_smul, hσ_proj]
-      · rw [e.coe_coe, he g (σ y) hσ_mem,
-          congrArg Prod.snd (e.apply_symm_apply' hpW.1), one_mul]
-    have hq_mem : projQ (φ (σ y)) ∈ t.baseSet := by
-      rw [hproj, hσ_proj]
-      exact hpW.2
-    rw [t.preimageHomeomorph_apply hWt]
-    simp only [Set.restrictPreimage_coe, shift, c, Homeomorph.homeomorph_mk_coe, Equiv.coe_fn_mk,
-      Prod.mk.injEq]
+    have hDom_p : hDom p = (y, g) := by simp [hDom, y, g]
+    have hp_eq : p.1 = op g • σ y := (e.op_snd_smul_symm_one hprojP_smul he hpW.1).symm
+    have hq_mem : projQ (φ (σ y)) ∈ t.baseSet := by rw [hproj, hσ_proj]; exact hpW.2
+    simp only [Function.comp_apply, Homeomorph.apply_symm_apply, hDom_p, Prod.map_apply, id_eq,
+      shift, TauCeti.prodMulLeftHomeomorph_apply]
+    simp only [hCod, t.preimageHomeomorph_apply hWt, Set.restrictPreimage_coe, c, Prod.mk.injEq]
     refine ⟨Subtype.ext (hproj p.1), ?_⟩
     rw [hp_eq, hequiv, ht (ρ g) (φ (σ y)) hq_mem]
   rw [hlocal]
-  exact ((((IsCoveringMap.id.prodMap hρ).homeomorph_comp shift).homeomorph_comp
-    hCod.symm).comp_homeomorph hDom)
+  exact (((IsCoveringMap.id.prodMap hρ).homeomorph_comp shift).homeomorph_comp
+    hCod.symm).comp_homeomorph hDom
 
 /-- **An equivariant bundle map along a covering map is a covering map.** If `φ : P → Q` covers
 the identity of `B` equivariantly along a covering map `ρ : G → H` into a topological group `H`,
