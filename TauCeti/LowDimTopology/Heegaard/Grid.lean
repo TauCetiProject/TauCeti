@@ -128,12 +128,12 @@ def heegaardRegionSystem :
   beta p := p.1
   alphaNext := Equiv.prodCongrLeft fun _ => finRotate n
   alphaNext_isCycleOn i := by
-    convert isCycleOn_finRotate.prodCongrLeft_const i using 1
+    convert isCycleOn_finRotate.prodCongrLeft (σ := fun _ => finRotate n) (b := i) using 1
     ext p
     simp
   betaNext := Equiv.prodCongrRight fun _ => finRotate n
   betaNext_isCycleOn j := by
-    convert isCycleOn_finRotate.prodCongrRight_const j using 1
+    convert isCycleOn_finRotate.prodCongrRight (τ := fun _ => finRotate n) (a := j) using 1
     ext p
     simp
   alphaLeft p := p
