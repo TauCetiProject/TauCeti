@@ -159,17 +159,6 @@ theorem isBalanced_iff_isCompl :
   · exact P.corootSpan_dualAnnihilator_map_eq_iInf_ker_coroot'.symm ▸ h₁
   · exact P.rootSpan_dualAnnihilator_map_eq_iInf_ker_root'.symm ▸ h₂
 
-private lemma smul_eq_self_of_mem_ker_weylGroupToPerm {k : P.weylGroup}
-    (hk : k ∈ P.weylGroupToPerm.ker) {x : M} (hx : x ∈ P.rootSpan R) :
-    k • x = x := by
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨i, rfl⟩ := hy
-    rw [weylGroup_apply_root, MonoidHom.mem_ker.mp hk, _root_.Equiv.Perm.one_apply]
-  | zero => exact smul_zero k
-  | add y z _ _ hy hz => rw [smul_add, hy, hz]
-  | smul c y _ hy => rw [smul_comm, hy]
-
 private noncomputable def weylQuotientAct
     (q : P.weylGroup ⧸ P.weylGroupToPerm.ker) (x : P.rootSpan R) : M :=
   Quotient.liftOn' q (fun w ↦ w • (x : M)) fun w₁ w₂ h ↦ by
@@ -431,49 +420,12 @@ theorem weylGroupToPerm_injective_of_isBalanced : Function.Injective P.weylGroup
 
 end RootSpanProj
 
-section HomEquiv
+section Equiv
 
 variable {ι ι₂ R M N M₂ N₂ : Type*} [CommRing R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {P : RootPairing ι R M N} {Q : RootPairing ι₂ R M₂ N₂}
-
-/-- The weight map of a root-pairing homomorphism carries the `S`-span of the roots into the
-`S`-span of the target roots, for any scalar ring `S` compatible with `R`. -/
-theorem Hom.weightMap_mem_rootSpan {S : Type*} [CommRing S] [SMul S R] [Module S M] [Module S M₂]
-    [IsScalarTower S R M] [IsScalarTower S R M₂] (f : P.Hom Q) {x : M} (hx : x ∈ P.rootSpan S) :
-    f.weightMap x ∈ Q.rootSpan S := by
-  induction hx using Submodule.span_induction with
-  | mem y hy =>
-    obtain ⟨i, rfl⟩ := hy
-    rw [f.root_weightMap_apply]
-    exact subset_span (mem_range_self (f.indexEquiv i))
-  | zero => simp
-  | add _ _ _ _ hx hy =>
-    rw [map_add]
-    exact add_mem hx hy
-  | smul c y _ hy =>
-    rw [LinearMap.map_smul_of_tower]
-    exact smul_mem _ c hy
-
-/-- The contravariant coweight map of a root-pairing homomorphism carries the `S`-span of the
-target coroots into the `S`-span of the source coroots. -/
-theorem Hom.coweightMap_mem_corootSpan {S : Type*} [CommRing S] [SMul S R] [Module S N]
-    [Module S N₂] [IsScalarTower S R N] [IsScalarTower S R N₂] (f : P.Hom Q) {y : N₂}
-    (hy : y ∈ Q.corootSpan S) :
-    f.coweightMap y ∈ P.corootSpan S := by
-  induction hy using Submodule.span_induction with
-  | mem z hz =>
-    obtain ⟨j, rfl⟩ := hz
-    rw [f.coroot_coweightMap_apply]
-    exact subset_span (mem_range_self (f.indexEquiv.symm j))
-  | zero => simp
-  | add _ _ _ _ hx hy =>
-    rw [map_add]
-    exact add_mem hx hy
-  | smul c z _ hz =>
-    rw [LinearMap.map_smul_of_tower]
-    exact smul_mem _ c hz
 
 /-- An equivalence of root pairings preserves and reflects membership in the central kernel. -/
 theorem Equiv.weightMap_mem_corootKer_iff (e : P.Equiv Q) {x : M} :
@@ -502,7 +454,7 @@ theorem Equiv.map_corootKer (e : P.Equiv Q) :
 theorem Equiv.coe_rootSpanProj_weightMap [P.IsBalanced] [Q.IsBalanced] (e : P.Equiv Q) (x : M) :
     (Q.rootSpanProj (e.weightMap x) : M₂) = e.weightMap (P.rootSpanProj x : M) := by
   have hmem : e.weightMap (P.rootSpanProj x : M) ∈ Q.rootSpan R :=
-    Hom.weightMap_mem_rootSpan (S := R) e.toHom (P.rootSpanProj x).property
+    e.toHom.weightMap_mem_rootSpan (P.rootSpanProj x).property
   have hker : e.weightMap x - e.weightMap (P.rootSpanProj x : M) ∈ Q.corootKer := by
     rw [← map_sub, e.weightMap_mem_corootKer_iff]
     exact P.sub_coe_rootSpanProj_mem_corootKer x
@@ -517,6 +469,6 @@ theorem coe_rootSpanProj_smul [P.IsBalanced] (g : P.Aut) (x : M) :
     (P.rootSpanProj (g • x) : M) = g • (P.rootSpanProj x : M) :=
   g.coe_rootSpanProj_weightMap x
 
-end HomEquiv
+end Equiv
 
 end RootPairing
