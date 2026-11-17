@@ -15,9 +15,6 @@ public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.LaurentSeries.Basic
 public import TauCeti.RingTheory.LaurentSeries.Convergence
 
-import Mathlib.Algebra.Polynomial.Expand
-import Mathlib.RingTheory.PowerSeries.Trunc
-
 /-!
 # Ramified levels of Laurent series
 
@@ -258,57 +255,33 @@ theorem _root_.FiniteField.LaurentSeries.expand_card {K : Type*} [Field K] [Fint
   simp [-single_order_mul_powerSeriesPart, expand_coe, FiniteField.PowerSeries.expand_card,
     mul_pow, single_pow, hd]
 
-open scoped Polynomial in
-/-- On power series coerced to `R⸨X⸩`, applying `frobenius R d` to the coefficients of
-`expand R d f` gives `f ^ (d : ℕ)`. -/
-private theorem mapRingHom_frobenius_expand_coe (d : ℕ+) [ExpChar R d] (f : R⟦X⟧) :
-    mapRingHom (frobenius R d) (expand R d (f : R⸨X⸩)) = (f : R⸨X⸩) ^ (d : ℕ) := by
-  rw [← (ofPowerSeries ℤ R).map_pow]
-  ext k
-  rw [coeff_mapRingHom]
-  by_cases hk : k < 0
-  · rw [PowerSeries.coeff_coe, ite_eq_left hk]
-    by_cases hd : (d : ℤ) ∣ k
-    · obtain ⟨j, rfl⟩ := hd
-      have hj : j < 0 := by
-        have : (0 : ℤ) < d := by exact_mod_cast d.pos
-        nlinarith
-      rw [coeff_expand_mul, PowerSeries.coeff_coe, ite_eq_left hj, map_zero]
-    · rw [coeff_expand_of_not_dvd d _ hd, map_zero]
-  · lift k to ℕ using not_lt.mp hk
-    rw [PowerSeries.coeff_coe, ite_eq_right hk, Int.natAbs_natCast]
-    have hpow : PowerSeries.coeff k (f ^ (d : ℕ)) =
-        ((Polynomial.map (frobenius R d)
-          (Polynomial.expand R d (f.trunc (k + 1)))).coeff k) := by
-      have htrunc : PowerSeries.coeff k (f ^ (d : ℕ)) =
-          PowerSeries.coeff k ((f.trunc (k + 1) : R⟦X⟧) ^ (d : ℕ)) := by
-        simpa only [PowerSeries.coeff_trunc, ite_eq_left k.lt_succ_self] using
-          congrArg (fun p : R[X] ↦ p.coeff k) (f.trunc_trunc_pow (k + 1) d).symm
-      rw [htrunc, ← Polynomial.coe_pow, Polynomial.coeff_coe, ← Polynomial.map_frobenius_expand]
-    rw [hpow, Polynomial.coeff_map]
-    by_cases hd : (d : ℕ) ∣ k
-    · obtain ⟨j, rfl⟩ := hd
-      have hj : j < d * j + 1 := Nat.lt_succ_of_le (Nat.le_mul_of_pos_left j d.pos)
-      have hj0 : ¬ ((j : ℤ) < 0) := by omega
-      rw [Nat.cast_mul, coeff_expand_mul, PowerSeries.coeff_coe, ite_eq_right hj0,
-        Int.natAbs_natCast, Polynomial.coeff_expand_mul' d.pos, PowerSeries.coeff_trunc,
-        ite_eq_left hj]
-    · have hd' : ¬ ((d : ℤ) ∣ (k : ℤ)) := by exact_mod_cast hd
-      rw [coeff_expand_of_not_dvd d _ hd', Polynomial.coeff_expand d.pos, ite_eq_right hd,
-        map_zero]
-
 /-- Over a commutative semiring `R` of exponential characteristic `d`, applying `frobenius R d` to
 the coefficients of `expand R d f` produces `f ^ (d : ℕ)`. -/
 theorem mapRingHom_frobenius_expand (d : ℕ+) [ExpChar R d] (f : R⸨X⸩) :
     mapRingHom (frobenius R d) (expand R d f) = f ^ (d : ℕ) := by
-  conv_lhs => rw [← single_order_mul_powerSeriesPart f]
-  conv_rhs => rw [← single_order_mul_powerSeriesPart f]
-  have hsingle : mapRingHom (frobenius R d) (single ((d : ℤ) * f.order) (1 : R)) =
-      single ((d : ℤ) * f.order) 1 := by
+  rcases (expChar_iff R d).mp ‹ExpChar R d› with ⟨_, hd1⟩ | ⟨hp, hchar⟩
+  · obtain rfl : d = 1 := PNat.eq hd1
     ext k
-    by_cases hk : k = (d : ℤ) * f.order <;> simp [hk]
-  rw [map_mul, map_mul, expand_single, hsingle, mapRingHom_frobenius_expand_coe, mul_pow,
-    single_pow, one_pow, nsmul_eq_mul]
+    simp [frobenius_def]
+  · have : CharP R d := hchar
+    let : Neg R := ⟨fun x ↦ ((d - 1 : ℕ) : R) * x⟩
+    let : CommRing R :=
+      { ‹CommSemiring R› with
+        zsmul := zsmulRec
+        neg_add_cancel x := by
+          calc ((d - 1 : ℕ) : R) * x + x
+              = (((d - 1 : ℕ) + 1 : ℕ) : R) * x := by
+                rw [Nat.cast_add, Nat.cast_one, add_mul, one_mul]
+            _ = (d : R) * x := by rw [Nat.sub_add_cancel hp.one_le]
+            _ = 0 := by rw [CharP.cast_eq_zero, zero_mul] }
+    conv_lhs => rw [← single_order_mul_powerSeriesPart f]
+    conv_rhs => rw [← single_order_mul_powerSeriesPart f]
+    have hsingle : mapRingHom (frobenius R d) (single ((d : ℤ) * f.order) (1 : R)) =
+        single ((d : ℤ) * f.order) 1 := by
+      ext k
+      by_cases hk : k = (d : ℤ) * f.order <;> simp [hk]
+    rw [map_mul, map_mul, expand_single, hsingle, expand_coe, mapRingHom_apply, map_ofPowerSeries,
+      PowerSeries.map_frobenius_expand, map_pow, mul_pow, single_pow, one_pow, nsmul_eq_mul]
 
 /-! ### Contraction by exponent congruence classes -/
 
