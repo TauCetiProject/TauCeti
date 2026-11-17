@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 -- `vecMul_dotProduct_comm` is used in the proof of `e6Root_dotProduct_e6Coroot_comm` below.
-import TauCeti.LinearAlgebra.Matrix.Gram
+import TauCeti.LinearAlgebra.Matrix.Gram.Basic
 -- The `DynkinType` API, `dotProductEquiv` and `RootPairing.Base` come with
 -- `SimplyConnectedRootDatum.Basic`.
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Basic
