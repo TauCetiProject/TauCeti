@@ -18,11 +18,7 @@ import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
 
 For a geometric simplicial complex `K` and a set `B`, the faces of `K` all of whose vertices lie
 in `B` form a subcomplex `K.restrict B`. When `B` is convex, its underlying space lies in
-`|K| ∩ B`. For an arbitrary set `B`, the faces of `K` whose closed simplices lie in `B` form a
-subcomplex `K.restrictConvexHull B` whose underlying space always lies in `|K| ∩ B`. It is all of
-`|K| ∩ B` as soon as every simplex of `K` whose open simplex meets `B` lies in `B`
-(`Geometry.SimplicialComplex.space_restrictConvexHull`), as happens for the simplices of a complex
-lying in the underlying space of another one after cutting along its simplices.
+`|K| ∩ B`.
 
 When moreover `B` is an extreme subset of `|K|` (for instance a face of a convex polytope which
 `K` triangulates), the restriction triangulates exactly `|K| ∩ B`
@@ -31,8 +27,15 @@ When moreover `B` is an extreme subset of `|K|` (for instance a face of a convex
 induces a triangulation of each of its faces. This is what lets triangulations of polytopes
 meeting along common faces be compared, and glued, face by face.
 
-The restriction of a locally finite complex to a compact set has finitely many faces
-(`Geometry.SimplicialComplex.finite_faces_restrict`).
+For an arbitrary set `B`, the faces of `K` whose closed simplices lie in `B` form a subcomplex
+`K.restrictConvexHull B` whose underlying space always lies in `|K| ∩ B`. It is all of `|K| ∩ B`
+as soon as every simplex of `K` whose open simplex meets `B` lies in `B`
+(`Geometry.SimplicialComplex.space_restrictConvexHull`), as happens for the simplices of a complex
+lying in the underlying space of another one after cutting along its simplices.
+
+Both restrictions `K.restrict B` and `K.restrictConvexHull B` of a locally finite complex to a
+compact set `B` have finitely many faces (`Geometry.SimplicialComplex.finite_faces_restrict`,
+`Geometry.SimplicialComplex.finite_faces_restrictConvexHull`).
 
 ## Main definitions
 

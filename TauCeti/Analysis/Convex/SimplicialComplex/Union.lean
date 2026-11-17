@@ -10,7 +10,6 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 import TauCeti.Analysis.Convex.Polyhedron.Simplex
 import TauCeti.Analysis.Convex.SimplicialComplex.Arrangement
-import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
 import TauCeti.Analysis.Convex.SimplicialComplex.Glue
 import TauCeti.Analysis.Convex.SimplicialComplex.Relative
 
