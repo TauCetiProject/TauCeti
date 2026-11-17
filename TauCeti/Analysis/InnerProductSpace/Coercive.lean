@@ -82,6 +82,11 @@ theorem isUnit_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
   intro x
   exact (mul_comm _ _).le.trans ((hcoer x).trans (RCLike.re_le_norm _))
 
+/-- A bounded operator with a uniformly coercive real quadratic form is invertible. -/
+theorem isInvertible_of_coercive [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
+    (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) : N.IsInvertible :=
+  isInvertible_iff_isUnit.2 (isUnit_of_coercive N hc hcoer)
+
 /-- **The inverse of a coercive operator is coercive.** If `c ‖z‖² ≤ re ⟪N z, z⟫` with `c > 0`,
 then `N` is invertible and `c / (‖N‖ + 1)² ‖w‖² ≤ re ⟪N⁻¹ w, w⟫`: writing `w = N u`, the form
 `re ⟪N⁻¹ w, w⟫ = re ⟪N u, u⟫` is at least `c ‖u‖²`, and `‖w‖ ≤ (‖N‖ + 1) ‖u‖`. No self-adjointness
@@ -89,7 +94,7 @@ is needed. -/
 theorem mul_norm_sq_le_re_inner_inverse_apply [CompleteSpace E] (N : E →L[𝕜] E) {c : ℝ}
     (hc : 0 < c) (hcoer : ∀ z, c * ‖z‖ ^ 2 ≤ RCLike.re ⟪N z, z⟫_𝕜) (w : E) :
     c / (‖N‖ + 1) ^ 2 * ‖w‖ ^ 2 ≤ RCLike.re ⟪N.inverse w, w⟫_𝕜 := by
-  obtain ⟨e, rfl⟩ := isInvertible_iff_isUnit.2 (isUnit_of_coercive N hc hcoer)
+  obtain ⟨e, rfl⟩ := isInvertible_of_coercive N hc hcoer
   set u := e.symm w
   have hw : w = e u := (e.apply_symm_apply w).symm
   have hu : ‖w‖ ≤ (‖(e : E →L[𝕜] E)‖ + 1) * ‖u‖ := by

@@ -160,7 +160,7 @@ point `x`, if the quadratic form of `g` is coercive, `c ‖v‖² ≤ ⟪g v, v�
 `κ ‖v‖² ≤ ⟪-Hess f(x) (-(g⁻¹ ∘ Hess f(x)) v), v⟫` for some `κ > 0`: the symmetric operator
 `-Hess f(x)` is a Lyapunov form of `-(g⁻¹ ∘ Hess f(x))`, the linearization of
 `-metricGradient G f` at `x` when `G x = g`. -/
-theorem IsNondegenerateCriticalPoint.exists_pos_mul_norm_sq_le_inner_neg_hessianOperator
+private theorem IsNondegenerateCriticalPoint.exists_pos_mul_norm_sq_le_inner_neg_hessianOperator
     (h : IsNondegenerateCriticalPoint f x) {g : E →L[ℝ] E} {c : ℝ} (hc : 0 < c)
     (hg : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪g v, v⟫_ℝ) :
     ∃ κ > 0, ∀ v, κ * ‖v‖ ^ 2 ≤
@@ -220,6 +220,28 @@ theorem IsNondegenerateCriticalPoint.finrank_stableSubspace_neg_inverse_comp_hes
 
 variable {G : E → E →L[ℝ] E} {n : ℕ}
 
+/-- The hypotheses shared by the local stable and unstable graph theorems for
+`-metricGradient G f`: the field is `C^n` at `x`, vanishes there, and has derivative
+`A = -((G x)⁻¹ ∘ Hess f(x))`, and the flow of `A` has an exponential dichotomy. -/
+private theorem IsNondegenerateCriticalPoint.exists_projection_hasFDerivAt_neg_metricGradient
+    (h : IsNondegenerateCriticalPoint f x) (hn : 1 ≤ n) (hf : ContDiffAt ℝ (n + 1) f x)
+    (hG : ContDiffAt ℝ n G x) {c : ℝ} (hc : 0 < c) (hGx : ∀ v, c * ‖v‖ ^ 2 ≤ ⟪G x v, v⟫_ℝ) :
+    ContDiffAt ℝ n (-metricGradient G f) x ∧ (-metricGradient G f) x = 0 ∧
+      HasFDerivAt (-metricGradient G f) (-((G x).inverse ∘L hessianOperator f x)) x ∧
+      ∃ P : E →L[ℝ] E, IsIdempotentElem P ∧
+        Commute (-((G x).inverse ∘L hessianOperator f x)) P ∧ ∃ K α : ℝ≥0, 0 < K ∧ 0 < α ∧
+        (∀ t : ℝ, 0 ≤ t → ∀ v : E, ‖NormedSpace.exp (t • -((G x).inverse ∘L
+          hessianOperator f x)) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖) ∧
+        (∀ t : ℝ, t ≤ 0 → ∀ v : E, ‖NormedSpace.exp (t • -((G x).inverse ∘L
+          hessianOperator f x)) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖) := by
+  have hGi : (G x).IsInvertible :=
+    (G x).isInvertible_of_coercive hc fun v ↦ by simpa using hGx v
+  refine ⟨(hf.metricGradient hG hGi).neg, ?_, (hasFDerivAt_metricGradient h.contDiffAt
+    h.fderiv_eq_zero (hG.differentiableAt (by exact_mod_cast Nat.one_le_iff_ne_zero.1 hn))
+    hGi).neg, (h.hasLyapunovForm_neg_inverse_comp_hessianOperator hc
+    hGx).exists_projection_exponential_bounds⟩
+  rw [Pi.neg_apply, (metricGradient_eq_zero_iff hGi).2 h.fderiv_eq_zero, neg_zero]
+
 /-- **Local stable manifold of the negative gradient flow of a variable metric.** Let `x` be a
 nondegenerate critical point of a function `f` that is `C^(n+1)` at `x`, with `n ≥ 1`, and let `G`
 be a `C^n` field of operators whose quadratic form at `x` is coercive. Then there is a projection
@@ -245,15 +267,10 @@ theorem IsNondegenerateCriticalPoint.exists_localStableGraph_neg_metricGradient
           (fun z ↦ z + g z) '' (Set.range P ∩ closedBall 0 ρ) ∧
         (∀ y : ℝ → E, IsIntegralCurveOn y (fun _ w ↦ -metricGradient G f (x + w)) (Ici 0) →
           MapsTo y (Ici 0) (closedBall 0 r) → Tendsto y atTop (𝓝 0)) := by
-  have hGi : (G x).IsInvertible := ContinuousLinearMap.isInvertible_iff_isUnit.2
-    ((G x).isUnit_of_coercive hc fun v ↦ by simpa using hGx v)
-  obtain ⟨P, hP, hAP, K, α, -, hα, hs, hu⟩ :=
-    (h.hasLyapunovForm_neg_inverse_comp_hessianOperator hc hGx).exists_projection_exponential_bounds
-  have hA := (hasFDerivAt_metricGradient h.contDiffAt h.fderiv_eq_zero
-    (hG.differentiableAt (by exact_mod_cast Nat.one_le_iff_ne_zero.1 hn)) hGi).neg
-  obtain ⟨r, hr, ρ, hρ, g, C, hg⟩ := ContinuousLinearMap.exists_localStableGraph_of_contDiffAt _ P
-    hs hu hα hP hAP hn (hf.metricGradient hG hGi).neg
-    (by rw [(metricGradient_eq_zero_iff hGi).2 h.fderiv_eq_zero, neg_zero]) hA
+  obtain ⟨hV, hx, hA, P, hP, hAP, K, α, -, hα, hs, hu⟩ :=
+    h.exists_projection_hasFDerivAt_neg_metricGradient hn hf hG hc hGx
+  obtain ⟨r, hr, ρ, hρ, g, C, hg⟩ :=
+    ContinuousLinearMap.exists_localStableGraph_of_contDiffAt _ P hs hu hα hP hAP hn hV hx hA
   exact ⟨P, hP, ContinuousLinearMap.range_eq_stableSubspace_of_exponential_bounds
     (by exact_mod_cast hα) hP hAP hs hu, r, hr, ρ, hρ, g, C, by simpa only [Pi.neg_apply] using hg⟩
 
@@ -283,15 +300,10 @@ theorem IsNondegenerateCriticalPoint.exists_localUnstableGraph_neg_metricGradien
           (fun z ↦ z + g z) '' (Set.range (ContinuousLinearMap.id ℝ E - P) ∩ closedBall 0 ρ) ∧
         (∀ y : ℝ → E, IsIntegralCurveOn y (fun _ w ↦ -metricGradient G f (x + w)) (Iic 0) →
           MapsTo y (Iic 0) (closedBall 0 r) → Tendsto y atBot (𝓝 0)) := by
-  have hGi : (G x).IsInvertible := ContinuousLinearMap.isInvertible_iff_isUnit.2
-    ((G x).isUnit_of_coercive hc fun v ↦ by simpa using hGx v)
-  obtain ⟨P, hP, hAP, K, α, -, hα, hs, hu⟩ :=
-    (h.hasLyapunovForm_neg_inverse_comp_hessianOperator hc hGx).exists_projection_exponential_bounds
-  have hA := (hasFDerivAt_metricGradient h.contDiffAt h.fderiv_eq_zero
-    (hG.differentiableAt (by exact_mod_cast Nat.one_le_iff_ne_zero.1 hn)) hGi).neg
-  obtain ⟨r, hr, ρ, hρ, g, C, hg⟩ := ContinuousLinearMap.exists_localUnstableGraph_of_contDiffAt _ P
-    hs hu hα hP hAP hn (hf.metricGradient hG hGi).neg
-    (by rw [(metricGradient_eq_zero_iff hGi).2 h.fderiv_eq_zero, neg_zero]) hA
+  obtain ⟨hV, hx, hA, P, hP, hAP, K, α, -, hα, hs, hu⟩ :=
+    h.exists_projection_hasFDerivAt_neg_metricGradient hn hf hG hc hGx
+  obtain ⟨r, hr, ρ, hρ, g, C, hg⟩ :=
+    ContinuousLinearMap.exists_localUnstableGraph_of_contDiffAt _ P hs hu hα hP hAP hn hV hx hA
   exact ⟨P, hP, ContinuousLinearMap.range_id_sub_eq_unstableSubspace_of_exponential_bounds
     (by exact_mod_cast hα) hP hAP hs hu, r, hr, ρ, hρ, g, C, by simpa only [Pi.neg_apply] using hg⟩
 
