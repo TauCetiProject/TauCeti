@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
+public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Isoperimetric
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import TauCeti.Analysis.Calculus.FDeriv.CircleMap
@@ -80,34 +80,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
   {u : ℂ → V} {J : V → V →L[ℝ] V} {z₀ : ℂ} {a b c M : ℝ}
-
-/-- **Boundary control of the energy of an annulus.** For a uniformly tamed solution of
-`∂ₜu = J(u) ∂ₛu` on the annulus `a ≤ |z - z₀| ≤ b` with `‖J(u)‖ ≤ M`, twice the taming constant
-times the energy `∫ ‖∂ₛu‖²` is at most `(1 + M)²` times the sum of the boundary densities
-`r (r ∫ ‖∂ₛu(z₀ + r e^{iθ})‖² dθ)` of the two boundary circles. The inner product is the fixed
-compatible metric of `(ω, J₀)`. -/
-theorem two_mul_mul_integral_norm_fderiv_one_sq_annulus_le
-    (hg : ∀ v w, ω v (J₀ w) = ⟪v, w⟫) (hc : 0 < c) (ha : 0 ≤ a) (hab : a ≤ b)
-    (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z)
-    (hCR : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
-      fderiv ℝ u z I = J (u z) (fderiv ℝ u z 1))
-    (htame : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ∀ v : V,
-      c * ‖v‖ ^ 2 ≤ ω v (J (u z) v))
-    (hJ : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖J (u z)‖ ≤ M) :
-    2 * c * (∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ‖fderiv ℝ u z 1‖ ^ 2) ≤
-      (1 + M) ^ 2 * (b * (b * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ b θ) 1‖ ^ 2) +
-        a * (a * ∫ θ in -π..π, ‖fderiv ℝ u (circleMap z₀ a θ) 1‖ ^ 2)) := by
-  have hmem (r : ℝ) (hr : r ∈ Icc a b) (θ : ℝ) :=
-    circleMap_mem_setOf_le_norm_sub_le (z₀ := z₀) ha hr θ
-  have hbound := ω.integral_norm_fderiv_one_sq_annulus_le z₀ hg ha hab hc hu hCR htame
-  have hb := integral_norm_deriv_comp_circleMap_sq_le (ha.trans hab)
-    (fun θ ↦ (hu _ (hmem b ⟨hab, le_rfl⟩ θ)).of_le one_le_two)
-    (fun θ ↦ hCR _ (hmem b ⟨hab, le_rfl⟩ θ)) (fun θ ↦ hJ _ (hmem b ⟨hab, le_rfl⟩ θ))
-  have ha' := integral_norm_deriv_comp_circleMap_sq_le ha
-    (fun θ ↦ (hu _ (hmem a ⟨le_rfl, hab⟩ θ)).of_le one_le_two)
-    (fun θ ↦ hCR _ (hmem a ⟨le_rfl, hab⟩ θ)) (fun θ ↦ hJ _ (hmem a ⟨le_rfl, hab⟩ θ))
-  rw [le_div_iff₀ (by positivity)] at hbound
-  nlinarith
 
 omit [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] in
 /-- For `0 ≤ t ≤ T` with `a e^T ≤ b e^{-T}`, the radii `a e^t ≤ b e^{-t}` lie in `[a, b]`. -/
@@ -484,8 +456,6 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le_ray {Kc γ s t θ : ℝ} (h
     ‖u (circleMap z₀ t θ) - u (circleMap z₀ s θ)‖ ≤
       Kc * ((2 * a / s) ^ γ + (t * (3 / (2 * b))) ^ γ) / γ := by
   have hs0 : 0 < s := by linarith
-  have hray (ρ : ℝ) : HasDerivAt (fun ρ : ℝ ↦ circleMap z₀ ρ θ) (exp (θ * I)) ρ := by
-    simpa [circleMap] using ((hasDerivAt_id ρ).ofReal_comp.mul_const (exp (θ * I))).const_add z₀
   have hin {ρ : ℝ} (hρ : ρ ∈ Icc s t) :
       2 * a ≤ ‖circleMap z₀ ρ θ - z₀‖ ∧ 3 * ‖circleMap z₀ ρ θ - z₀‖ ≤ 2 * b := by
     rw [norm_circleMap_sub_center _ (hs0.le.trans hρ.1)]
@@ -493,7 +463,8 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le_ray {Kc γ s t θ : ℝ} (h
   refine norm_sub_le_of_norm_deriv_le (φ := fun ρ ↦ u (circleMap z₀ ρ θ))
     (φ' := fun ρ ↦ fderiv ℝ u (circleMap z₀ ρ θ) (exp (θ * I))) hKc (by linarith)
     (by positivity) hγ hs0 hst (fun ρ hρ ↦ ?_) (fun ρ hρ ↦ ?_)
-  · exact (hdiff _ (hin hρ).1 (hin hρ).2).hasFDerivAt.comp_hasDerivAt ρ (hray ρ)
+  · exact (hdiff _ (hin hρ).1 (hin hρ).2).hasFDerivAt.comp_hasDerivAt ρ
+      (hasDerivAt_circleMap_radius z₀ ρ θ)
   · calc _ ≤ ‖fderiv ℝ u (circleMap z₀ ρ θ)‖ * ‖exp (θ * I)‖ := ContinuousLinearMap.le_opNorm _ _
       _ ≤ _ := by
         rw [norm_exp_ofReal_mul_I, mul_one]
@@ -526,8 +497,6 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le {Kc γ r₁ r₂ : ℝ} (hK
   have hQs : 0 ≤ (2 * a / r₁) ^ γ + (r₂ * (3 / (2 * b))) ^ γ :=
     add_nonneg (Real.rpow_nonneg (div_nonneg (by linarith) hr₁.le) _)
       (Real.rpow_nonneg (mul_nonneg (by linarith [hw₁.1, hw₁.2]) (by positivity)) _)
-  have hpolar (w : ℂ) : circleMap z₀ ‖w - z₀‖ (arg (w - z₀)) = w := by
-    rw [circleMap, norm_mul_exp_arg_mul_I, add_sub_cancel]
   -- Along the arc of radius `|w₁ - z₀|` from the angle of `w₁` to the angle of `w₂`.
   have harc := norm_sub_le_of_norm_fderiv_le_circle (z₀ := z₀) (u := u) hρ₁.le
     (θ₁ := arg (w₁ - z₀)) (θ₂ := arg (w₂ - z₀))
@@ -549,8 +518,8 @@ private theorem norm_sub_le_of_forall_norm_fderiv_le {Kc γ r₁ r₂ : ℝ} (hK
     rw [abs_sub_le_iff]
     constructor <;> linarith [neg_pi_lt_arg (w₁ - z₀), arg_le_pi (w₁ - z₀),
       neg_pi_lt_arg (w₂ - z₀), arg_le_pi (w₂ - z₀)]
-  rw [div_mul_cancel₀ _ hρ₁.ne', hpolar w₁] at harc
-  rw [hpolar w₂] at hrad
+  rw [div_mul_cancel₀ _ hρ₁.ne', circleMap_norm_sub_arg_sub z₀ w₁] at harc
+  rw [circleMap_norm_sub_arg_sub z₀ w₂] at hrad
   calc ‖u w₁ - u w₂‖ ≤ ‖u w₁ - u (circleMap z₀ ‖w₁ - z₀‖ (arg (w₂ - z₀)))‖ +
         ‖u (circleMap z₀ ‖w₁ - z₀‖ (arg (w₂ - z₀))) - u w₂‖ :=
       norm_sub_le_norm_sub_add_norm_sub _ _ _
