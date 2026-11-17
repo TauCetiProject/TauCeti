@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.SimpleGraph.Finite
 public import TauCeti.RepresentationTheory.Quiver.Preprojective.Isomorphism
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Signless
+import TauCeti.Combinatorics.SimpleGraph.Maps
 
 /-!
 # Signless preprojective algebras of induced subgraphs
@@ -491,15 +492,6 @@ end PathAlgebra
 
 section Embedding
 
-/-- `SimpleGraph.Embedding.isoInduceRange` sends `i` to the range subtype vertex `⟨f i, ⟨i, rfl⟩⟩`.
-Its underlying equivalence is `Equiv.ofInjective f f.injective` by definition of
-`SimpleGraph.Embedding.isoInduceRange`, which has no Mathlib `simp` lemma for evaluation. -/
-private theorem isoInduceRange_apply {V : Type u} {W : Type v}
-    {G : SimpleGraph V} {H : SimpleGraph W} (f : G ↪g H) (i : V) :
-    f.isoInduceRange i = ⟨f i, ⟨i, rfl⟩⟩ := by
-  change Equiv.ofInjective f f.injective i = ⟨f i, ⟨i, rfl⟩⟩
-  exact Equiv.ofInjective_apply f f.injective i
-
 variable (k : Type w) [CommRing k] {V : Type u} {W : Type v} [Finite V] [Finite W]
   {G : SimpleGraph V} {H : SimpleGraph W} [∀ i, Fintype (G.neighborSet i)]
 
@@ -525,7 +517,7 @@ theorem signlessPreprojectiveEmbeddingHom_vertexIdempotent (f : G ↪g H) (i : V
     ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
     signlessPreprojectiveInducedSubgraphHom_vertexIdempotent, dite_eq_left hi,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_vertexIdempotent,
-    isoInduceRange_apply]
+    SimpleGraph.Embedding.isoInduceRange_apply]
 
 /-- The induced-embedding homomorphism kills every vertex idempotent outside `Set.range f`. -/
 @[simp]
@@ -550,8 +542,8 @@ theorem signlessPreprojectiveEmbeddingHom_ofArrow (f : G ↪g H) {i j : V} (h : 
     ← signlessPreprojectiveAlgebraEquiv_symm, AlgEquiv.apply_symm_apply,
     signlessPreprojectiveInducedSubgraphHom_ofArrow, dite_eq_left hi, dite_eq_left hj,
     signlessPreprojectiveAlgebraEquiv_signlessPreprojectiveMk, pathAlgebraEquiv_ofArrow]
-  have hui : f.isoInduceRange i = ⟨f i, hi⟩ := isoInduceRange_apply f i
-  have huj : f.isoInduceRange j = ⟨f j, hj⟩ := isoInduceRange_apply f j
+  have hui : f.isoInduceRange i = ⟨f i, hi⟩ := f.isoInduceRange_apply i
+  have huj : f.isoInduceRange j = ⟨f j, hj⟩ := f.isoInduceRange_apply j
   generalize h' : f.isoInduceRange.map_adj_iff.mpr h = h''
   clear h'
   revert h''
