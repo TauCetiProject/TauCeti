@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.TopRegular
 import TauCeti.Algebra.BigOperators.Finset.BoxCauchySchwarz
+import TauCeti.Data.Finset.Image
 import TauCeti.Data.Fintype.BigOperators
+import TauCeti.Data.Set.PowersetCard
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
@@ -304,21 +306,7 @@ end Deviation
 
 section Coordinates
 
-private theorem exists_mem_of_mem_map {q : Finset {p : V × V // p.1 ≠ p.2}} {a b : V}
-    (h : (a, b) ∈ q.map (Function.Embedding.subtype _)) :
-    ∃ hab : a ≠ b, (⟨(a, b), hab⟩ : {p : V × V // p.1 ≠ p.2}) ∈ q := by
-  obtain ⟨⟨p, hp'⟩, hp, hpe⟩ := mem_map.1 h
-  rw [Function.Embedding.subtype_apply] at hpe
-  subst hpe
-  exact ⟨hp', hp⟩
-
 variable [DecidableEq V]
-
-/-- The underlying vertex set of an injective triple. -/
-private theorem val_ofFinEmb_eq (x : {x : Fin 3 → V // Function.Injective x}) :
-    (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ : Finset V) = {x.1 0, x.1 1, x.1 2} := by
-  ext v
-  simp [Fin.exists_fin_succ, eq_comm]
 
 /-- The indicator of the ordered vertex pairs of a set of distinct pairs. -/
 private noncomputable def pairInd (q : Finset {p : V × V // p.1 ≠ p.2}) (a b : V) : ℝ :=
@@ -346,9 +334,9 @@ private theorem sum_support_eq_sum_cells {κ₂ : Type*} {S : PairSkeleton3 κ�
         refine sum_bij' (fun x _ ↦ (x.1 0, x.1 1, x.1 2))
           (fun p hp ↦ ⟨![p.1, p.2.1, p.2.2], ?_⟩) ?_ ?_ ?_ ?_ ?_
         · obtain ⟨-, h₀₁, h₀₂, h₁₂⟩ := mem_filter.1 hp
-          obtain ⟨hab, -⟩ := exists_mem_of_mem_map h₀₁
-          obtain ⟨had, -⟩ := exists_mem_of_mem_map h₀₂
-          obtain ⟨hbd, -⟩ := exists_mem_of_mem_map h₁₂
+          obtain ⟨hab, -⟩ := mem_map_subtype.1 h₀₁
+          obtain ⟨had, -⟩ := mem_map_subtype.1 h₀₂
+          obtain ⟨hbd, -⟩ := mem_map_subtype.1 h₁₂
           intro j k hjk
           fin_cases j <;> fin_cases k <;> simp_all [eq_comm]
         · intro x hx
@@ -358,9 +346,9 @@ private theorem sum_support_eq_sum_cells {κ₂ : Type*} {S : PairSkeleton3 κ�
             mem_map.2 ⟨_, h₀₁, by simp⟩, mem_map.2 ⟨_, h₀₂, by simp⟩, mem_map.2 ⟨_, h₁₂, by simp⟩⟩
         · intro p hp
           obtain ⟨-, h₀₁, h₀₂, h₁₂⟩ := mem_filter.1 hp
-          obtain ⟨_, h₀₁⟩ := exists_mem_of_mem_map h₀₁
-          obtain ⟨_, h₀₂⟩ := exists_mem_of_mem_map h₀₂
-          obtain ⟨_, h₁₂⟩ := exists_mem_of_mem_map h₁₂
+          obtain ⟨_, h₀₁⟩ := mem_map_subtype.1 h₀₁
+          obtain ⟨_, h₀₂⟩ := mem_map_subtype.1 h₀₂
+          obtain ⟨_, h₁₂⟩ := mem_map_subtype.1 h₁₂
           refine (Q.mem_support_iff_coordPair_mem _).2 ⟨?_, ?_, ?_⟩
           · convert h₀₁ using 1
             exact Subtype.ext (by simp)
@@ -392,11 +380,13 @@ private theorem tripleDev_coord (H : Colored3Graph κ V) (c : κ) (i : ι)
     tripleDev H c i f (x.1 0) (x.1 1) (x.1 2) =
       Fintype.labelDev (H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c) i
         (f (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)) := by
+  have hv : (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ : Finset V) = {x.1 0, x.1 1, x.1 2} :=
+    Set.powersetCard.val_ofFinEmb_fin_three _
   have h₃ : #({x.1 0, x.1 1, x.1 2} : Finset V) = 3 := by
-    rw [← val_ofFinEmb_eq]
+    rw [← hv]
     exact Set.powersetCard.card_eq _
   have he : Set.powersetCard.ofCard h₃ = Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ :=
-    Subtype.ext (val_ofFinEmb_eq x).symm
+    Subtype.ext hv.symm
   simp only [tripleDev, h₃, ↓reduceDIte, he]
 
 /-- On a set of injective triples, the deviations add up to the count discrepancy of the split
@@ -407,8 +397,7 @@ private theorem sum_tripleDev_coord (H : Colored3Graph κ V) (c : κ) (i : ι)
   simp only [splitDiscrepancy_def, card_filter, Nat.cast_sum, Nat.cast_ite, Nat.cast_one,
     Nat.cast_zero, sum_div, ← sum_sub_distrib, tripleDev_coord, color_split, Prod.mk.injEq]
   refine sum_congr rfl fun x _ ↦ ?_
-  unfold Fintype.labelDev
-  split_ifs <;> simp_all [div_eq_mul_inv]
+  rw [Fintype.labelDev_eq]
 
 variable [Nonempty ι]
 

@@ -129,8 +129,7 @@ private theorem sum_sum_splitDev (f : Sym2 V → ι) (s t : Finset V) :
   simp only [card_filter, sum_product, Nat.cast_sum, Nat.cast_ite, Nat.cast_one, Nat.cast_zero,
     sum_div, ← sum_sub_distrib, colorOfPair_split_eq_some_iff]
   refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ ?_
-  unfold splitDev Fintype.labelDev
-  split_ifs <;> simp_all [div_eq_mul_inv]
+  rw [splitDev, Fintype.labelDev_eq]
 
 /-- A bound on the count discrepancy of a split color, relative to the number of ordered distinct
 pairs of the rectangle, bounds its density discrepancy. -/
