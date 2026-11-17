@@ -153,13 +153,13 @@ private theorem integral_beta_mul_multichoose_term (a : ℂ) {b c : ℂ} (hb : 0
       setIntegral_congr_fun measurableSet_Ioo (g := fun t : ℝ => (Ring.multichoose a n * z ^ n) *
         ((t : ℂ) ^ (b + n - 1) * (1 - (t : ℂ)) ^ (c - b - 1))) (fun t ht => by
           dsimp only; rw [mul_pow, ← cpow_natCast (t : ℂ) n,
-            show b + (n : ℂ) - 1 = (b - 1) + (n : ℂ) by ring,
+            add_sub_right_comm,
             cpow_add _ _ (ofReal_ne_zero.2 ht.1.ne')]; ring),
       integral_const_mul, setIntegral_congr_set Ioo_ae_eq_Ioc,
       ← intervalIntegral.integral_of_le zero_le_one, ← betaIntegral,
       betaIntegral_eq_Gamma_mul_div (b + n) (c - b)
         (by simp; linarith [n.cast_nonneg (α := ℝ)]) (by simpa using sub_pos.2 hbc),
-      show b + (n : ℂ) + (c - b) = c + n by ring]
+      add_right_comm b (n : ℂ) (c - b), add_sub_cancel]
   have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
   have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos (by simpa using sub_pos.2 hbc)
   have hpoch := (div_eq_iff hGb).1

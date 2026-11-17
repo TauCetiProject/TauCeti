@@ -11,6 +11,7 @@ public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.SeparatingContour
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.SpecialFunctions.Gamma.MellinBarnes
 import TauCeti.Analysis.SpecialFunctions.Gamma.Order
@@ -82,8 +83,7 @@ private theorem continuousOn_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
   refine continuousOn_of_forall_continuousAt fun ⟨t, y⟩ ⟨ht, _⟩ => ?_
   have hs : ContinuousAt (fun p : ℝ × ℝ => (σ : ℂ) + (p.2 : ℂ) * I) (t, y) := by fun_prop
   have h1t_slit : 1 - (t : ℂ) ∈ slitPlane := by
-    rw [show (1 : ℂ) - (t : ℂ) = ((1 - t : ℝ) : ℂ) by push_cast; ring]
-    exact ofReal_mem_slitPlane.2 (sub_pos.2 ht.2)
+    simpa only [ofReal_sub, ofReal_one] using ofReal_mem_slitPlane.2 (sub_pos.2 ht.2)
   have hG1 : ContinuousAt (fun p : ℝ × ℝ => Gamma (-((σ : ℂ) + p.2 * I))) (t, y) :=
     (differentiableAt_Gamma _ (ne_neg_natCast_of_re_pos (by simp; linarith))).continuousAt.comp
       hs.neg
@@ -114,8 +114,7 @@ private theorem integrable_mellinBarnesFubiniKernel {a b c : ℂ} {x σ : ℝ}
         (fun n _ => by linarith [n.cast_nonneg (α := ℝ)])
     refine ((hv.comp_neg.congr (Eventually.of_forall fun y => ?_)).norm.const_mul (x ^ σ))
     dsimp only
-    rw [show ((-σ : ℝ) : ℂ) + ((-y : ℝ) : ℂ) * I = -((σ : ℂ) + y * I) by push_cast; ring,
-      sub_neg_eq_add]
+    rw [← neg_ofReal_add_mul_I, sub_neg_eq_add]
   have hmeas_prod : (volume.restrict (Ioo (0 : ℝ) 1)).prod (volume : Measure ℝ) =
       ((volume : Measure ℝ).prod volume).restrict (Ioo (0 : ℝ) 1 ×ˢ univ) := by
     rw [← Measure.prod_restrict, Measure.restrict_univ]
@@ -137,7 +136,7 @@ private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
         (((x * t : ℝ) : ℂ) ^ ((σ : ℂ) + y * I) *
           (Gamma (-((σ : ℂ) + y * I)) * Gamma (a + ((σ : ℂ) + y * I)))) := by
     dsimp [mellinBarnesFubiniKernel]
-    rw [show b + ((σ : ℂ) + y * I) - 1 = (b - 1) + ((σ : ℂ) + y * I) by ring,
+    rw [add_sub_right_comm,
       cpow_add _ _ (ofReal_ne_zero.2 ht.1.ne'), ofReal_mul, mul_cpow_ofReal_nonneg hx.le ht.1.le]
     ring
   simp_rw [hpoint, integral_const_mul]
@@ -146,12 +145,12 @@ private theorem integral_mellinBarnesFubiniKernel_y {a b c : ℂ} {x σ t : ℝ}
       (Gamma (-((σ : ℂ) + (-y : ℝ) * I)) * Gamma (a + ((σ : ℂ) + (-y : ℝ) * I))) =
       ((x * t : ℝ) : ℂ) ^ (-((-σ : ℝ) + (y : ℂ) * I)) *
         (Gamma ((-σ : ℝ) + (y : ℂ) * I) * Gamma (a - ((-σ : ℝ) + (y : ℂ) * I))) := by
-    rw [show -((σ : ℂ) + (-y : ℝ) * I) = (-σ : ℝ) + (y : ℂ) * I by push_cast; ring,
-      show a + ((σ : ℂ) + (-y : ℝ) * I) = a - ((-σ : ℝ) + (y : ℂ) * I) by push_cast; ring,
-      show (σ : ℂ) + (-y : ℝ) * I = -((-σ : ℝ) + (y : ℂ) * I) by push_cast; ring]
+    have hpt : (σ : ℂ) + ((-y : ℝ) : ℂ) * I = -(((-σ : ℝ) : ℂ) + (y : ℂ) * I) := by
+      simpa only [neg_neg] using (neg_ofReal_add_mul_I (-σ) y).symm
+    rw [hpt, neg_neg, ← sub_eq_add_neg]
   simp_rw [hneg]
-  rw [integral_cpow_neg_mul_Gamma_mul_Gamma_sub (by linarith) (by linarith) (mul_pos hx ht.1),
-    show (1 : ℂ) + ((x * t : ℝ) : ℂ) = 1 - (t : ℂ) * (-(x : ℂ)) by push_cast; ring]
+  rw [integral_cpow_neg_mul_Gamma_mul_Gamma_sub (by linarith) (by linarith) (mul_pos hx ht.1)]
+  simp only [ofReal_mul, mul_neg, sub_neg_eq_add, mul_comm (t : ℂ) (x : ℂ)]
   ring
 
 private theorem integral_mellinBarnesFubiniKernel_t {a b c : ℂ} {x σ : ℝ} (y : ℝ)
@@ -163,7 +162,7 @@ private theorem integral_mellinBarnesFubiniKernel_t {a b c : ℂ} {x σ : ℝ} (
     ← intervalIntegral.integral_of_le zero_le_one, ← betaIntegral,
     betaIntegral_eq_Gamma_mul_div (b + (σ + y * I)) (c - b) (by simpa using hbσ)
       (by simpa using sub_pos.2 hbc),
-    show b + ((σ : ℂ) + y * I) + (c - b) = c + ((σ : ℂ) + y * I) by ring,
+    add_right_comm b ((σ : ℂ) + y * I) (c - b), add_sub_cancel,
     mellinBarnesIntegrand_def, neg_neg, div_eq_mul_inv]
   ring
 

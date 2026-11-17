@@ -17,12 +17,16 @@ If `x` and `y` are each within `e` of a nonnegative `q`, their product is within
 `e (2q + e)` of `q²`: the quantitative form of continuity of multiplication used when a measure is
 compared with its own square. When `|b| ≤ 1` and `|c| ≤ 1`, the products `a c` and `b d` differ by
 at most `|a - b| + |c - d|`. When `|d| ≤ 1`, replacing `b` by `c` inside `|a - d b|` costs at
-most `|b - c|`. All are stated for any linearly ordered commutative ring.
+most `|b - c|`. Two integers whose casts into a strictly ordered ring are closer than `1` are equal
+(`TauCeti.eq_of_abs_intCast_sub_lt_one`), so two shifts closer than `1` from a common base point
+cannot land on distinct integers (`TauCeti.eq_of_add_eq_intCast_of_abs_sub_lt_one`).
 -/
 
 public section
 
 namespace TauCeti
+
+section
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
 
@@ -55,5 +59,27 @@ theorem abs_sub_mul_le_of_abs_le_one {a b c d : R} (hd : |d| ≤ 1) :
     _ ≤ |a - d * b| + |b - c| := by
       rw [abs_mul]
       exact add_le_add_right (mul_le_of_le_one_left (abs_nonneg _) hd) _
+
+end
+
+/-- Two integers whose casts into a strictly ordered ring are closer than `1` are equal. -/
+theorem eq_of_abs_intCast_sub_lt_one {R : Type*} [Ring R] [LinearOrder R] [IsStrictOrderedRing R]
+    {m₁ m₂ : ℤ} (h : |(m₁ : R) - m₂| < 1) : m₁ = m₂ := by
+  by_contra hne
+  have h1le : (1 : R) ≤ |((m₁ - m₂ : ℤ) : R)| := by
+    rw [← Int.cast_abs]
+    exact_mod_cast Int.one_le_abs (sub_ne_zero.2 hne)
+  rw [Int.cast_sub] at h1le
+  exact h.not_ge h1le
+
+/-- Two shifts closer than `1` from a common base point `a` cannot land on distinct integers:
+if `|x₁ - x₂| < 1`, `a + x₁ = m₁`, and `a + x₂ = m₂` with `m₁, m₂ : ℤ`, then `x₁ = x₂`. -/
+theorem eq_of_add_eq_intCast_of_abs_sub_lt_one {R : Type*} [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {a x₁ x₂ : R} {m₁ m₂ : ℤ}
+    (hdist : |x₁ - x₂| < 1) (h1 : a + x₁ = m₁) (h2 : a + x₂ = m₂) : x₁ = x₂ := by
+  have hmeq : m₁ = m₂ := eq_of_abs_intCast_sub_lt_one (R := R) <| by
+    rwa [← h1, ← h2, add_sub_add_left_eq_sub]
+  subst hmeq
+  exact add_left_cancel (h1.trans h2.symm)
 
 end TauCeti

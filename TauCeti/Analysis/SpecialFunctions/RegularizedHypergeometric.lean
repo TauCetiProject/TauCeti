@@ -12,6 +12,8 @@ public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.Calculus.Deriv.Polynomial
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
+import TauCeti.Analysis.SpecialFunctions.Pochhammer
+import TauCeti.Analysis.SpecificLimits.Normed
 
 /-!
 # Series and parameter regularity of regularized hypergeometric functions
@@ -256,8 +258,8 @@ private theorem norm_regularizedGaussTerm_shift_le {M N₀ : ℕ} {C r : ℝ}
     have hnat : (m + K)! ≤ m ! * (m + K) ^ K := by
       rw [← Nat.factorial_mul_ascFactorial m K]
       exact Nat.mul_le_mul_left (m !) (Nat.ascFactorial_le_pow_add m K)
-    refine (norm_ascPochhammer_eval_le_factorial hw (N₀ + m)).trans ?_
-    rw [show M + (N₀ + m) = m + K by omega]
+    refine (TauCeti.norm_ascPochhammer_eval_le_factorial hw (N₀ + m)).trans ?_
+    rw [← add_assoc, hK, add_comm K m]
     simpa [add_comm m K] using (Nat.cast_le (α := ℝ)).2 hnat
   have hNm : (m ! : ℝ) ≤ ((N₀ + m)! : ℝ) :=
     (Nat.cast_le (α := ℝ)).2 (Nat.factorial_le (Nat.le_add_left m N₀))
@@ -277,16 +279,6 @@ private theorem norm_regularizedGaussTerm_shift_le {M N₀ : ℕ} {C r : ℝ}
         ((m ! : ℝ)⁻¹ * (C / (m ! : ℝ))) * r ^ (N₀ + m) := by gcongr
     _ = C * (((K + m : ℕ) : ℝ) ^ (2 * K) * r ^ (N₀ + m)) := by
         rw [two_mul, pow_add]; field_simp [hm_pos.ne']; ring
-
-private theorem summable_gauss_majorant (C : ℝ) (K N₀ : ℕ) {r : ℝ} (hr0 : 0 < r) (hr1 : r < 1) :
-    Summable fun m : ℕ => C * (((K + m : ℕ) : ℝ) ^ (2 * K) * r ^ (N₀ + m)) := by
-  generalize 2 * K = L
-  have hpow : Summable fun m : ℕ => ((m + K : ℕ) : ℝ) ^ L * r ^ (m + K) :=
-    (summable_nat_add_iff (f := fun n : ℕ => (n : ℝ) ^ L * r ^ n) K).2
-      (summable_pow_mul_geometric_of_norm_lt_one L (by rwa [Real.norm_of_nonneg hr0.le]))
-  refine (hpow.mul_left (C * (r ^ N₀ / r ^ K))).congr fun m => ?_
-  rw [add_comm m K, pow_add (a := r) K m, pow_add (a := r) N₀ m]
-  field_simp [pow_ne_zero K hr0.ne']
 
 private def regularizedGaussTerm (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) : ℂ :=
   ((ascPochhammer ℂ n).eval p.1 * (ascPochhammer ℂ n).eval p.2.1 /
@@ -350,9 +342,14 @@ theorem analyticOnNhd_regularizedGaussHGFun :
     Metric.isOpen_ball.prod (Metric.isOpen_ball.prod (Metric.isOpen_ball.prod Metric.isOpen_ball))
   have hp₀U : p₀ ∈ U := ⟨Metric.mem_ball_self zero_lt_one, Metric.mem_ball_self zero_lt_one,
     Metric.mem_ball_self zero_lt_one, by simp [Metric.mem_ball, r]; linarith⟩
+  have hmaj : Summable fun m : ℕ =>
+      C * (((M + N₀ + m : ℕ) : ℝ) ^ (2 * (M + N₀)) * r ^ (N₀ + m)) := by
+    have h := TauCeti.summable_add_pow_mul_geometric_of_norm_lt_one
+      ((M + N₀ : ℕ) : ℝ) (2 * (M + N₀)) (r := r) (by rwa [Real.norm_of_nonneg hr0.le])
+    refine (h.mul_left (C * r ^ N₀)).congr fun m => ?_
+    rw [pow_add]; push_cast; ring
   have htail_an : AnalyticAt ℂ (fun p => ∑' m : ℕ, regularizedGaussTerm (N₀ + m) p) p₀ :=
-    ((tendstoUniformlyOn_tsum (s := U)
-        (summable_gauss_majorant C (M + N₀) N₀ hr0 hr1) fun m p hp =>
+    ((tendstoUniformlyOn_tsum (s := U) hmaj fun m p hp =>
         norm_regularizedGaussTerm_shift_le_on_box (le_max_left _ _) (le_max_right _ _) le_rfl
           hp.1 hp.2.1 hp.2.2.1 hp.2.2.2
           ((hC₀ p.2.2.1 (Metric.ball_subset_closedBall hp.2.2.1)).trans (le_max_left _ _)) m

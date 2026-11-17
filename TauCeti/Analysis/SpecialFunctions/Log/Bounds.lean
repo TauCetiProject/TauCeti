@@ -10,16 +10,19 @@ public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 /-!
 # Elementary numerical bounds on the real logarithm
 
-From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x = 2` and `x / 2`,
-one obtains `log 4 = 2 log 2 ≤ 2` and `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
-`x = 0` via `0 / 0 = 0`). The first compares explicit prime-counting constants involving `log 4`
-with rational constants, and the second bounds the contribution `log p / p` of a single prime at a
-real cutoff `x` when passing between inclusive and strict prime sums.
+From `log x ≤ x - 1` for `x > 0` (`Real.log_le_sub_one_of_pos`) applied at `x = 2`, `x / 2`, and
+`η * x`, one obtains `log 4 = 2 log 2 ≤ 2`, `log x / x ≤ 1 / 2` for every real `x ≥ 0` (holding at
+`x = 0` via `0 / 0 = 0`), and the scaled tangent-line bound `log x ≤ η * x - log η - 1` for every
+`x > 0` and slope `η > 0`. The first compares explicit prime-counting constants involving `log 4`
+with rational constants, the second bounds the contribution `log p / p` of a single prime at a
+real cutoff `x` when passing between inclusive and strict prime sums, and the third bounds
+logarithmic growth linearly with arbitrarily small slope `η`.
 
 ## Main results
 
 * `Real.log_four_le_two`: `log 4 ≤ 2`.
 * `Real.log_div_self_le_half`: `log x / x ≤ 1 / 2` for every nonnegative real `x`.
+* `Real.log_le_mul_sub_log_sub_one`: `log x ≤ η * x - log η - 1` for `x > 0` and `η > 0`.
 -/
 
 public section
@@ -41,5 +44,13 @@ theorem log_div_self_le_half {x : ℝ} (hx : 0 ≤ x) : log x / x ≤ 1 / 2 := b
   rw [log_div hx.ne' two_ne_zero] at h
   rw [div_le_iff₀ hx]
   linarith [log_le_sub_one_of_pos zero_lt_two]
+
+/-- For `x > 0` and any positive slope `η > 0`, `log x ≤ η * x - log η - 1`. This is the
+tangent-line inequality `log (η * x) ≤ η * x - 1` rearranged for `log x`. -/
+theorem log_le_mul_sub_log_sub_one {x η : ℝ} (hx : 0 < x) (hη : 0 < η) :
+    log x ≤ η * x - log η - 1 := by
+  have h := log_le_sub_one_of_pos (mul_pos hη hx)
+  rw [log_mul hη.ne' hx.ne'] at h
+  linarith
 
 end Real

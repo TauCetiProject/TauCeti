@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.SeparatingContour.Basic
 import Mathlib.Analysis.Analytic.Constructions
+import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Complex.CauchyIntegralPolydisc
 import TauCeti.Analysis.Complex.UniformLimit
@@ -57,17 +58,6 @@ open scoped Real Topology
 
 namespace Complex
 
-private theorem not_both_abscissa_poles {w : ℂ} {x₁ x₂ : ℝ}
-    (hx₁ : -1 < x₁ ∧ x₁ < 0) (hx₂ : -1 < x₂ ∧ x₂ < 0) (hne : x₁ ≠ x₂)
-    (h1 : ∃ k : ℕ, w.re + x₁ = -k) (h2 : ∃ k : ℕ, w.re + x₂ = -k) : False := by
-  obtain ⟨k₁, hk₁⟩ := h1; obtain ⟨k₂, hk₂⟩ := h2
-  have hdiff : (((k₂ : ℤ) - k₁ : ℤ) : ℝ) = x₁ - x₂ := by push_cast; linarith
-  have hlt1 : (k₂ : ℤ) - k₁ < 1 := by exact_mod_cast (by linarith : (((k₂ : ℤ) - k₁ : ℤ) : ℝ) < 1)
-  have hgt1 : (-1 : ℤ) < (k₂ : ℤ) - k₁ := by
-    exact_mod_cast (by linarith : (-1 : ℝ) < (((k₂ : ℤ) - k₁ : ℤ) : ℝ))
-  have hz : (k₂ : ℤ) - k₁ = 0 := by omega
-  exact hne (by rw [hz, Int.cast_zero] at hdiff; linarith)
-
 private noncomputable def mellinBarnesAbscissa (a b : ℂ) : ℝ :=
   open Classical in
   if (∀ k : ℕ, a.re + (-1 / 2 : ℝ) ≠ -k) ∧ (∀ k : ℕ, b.re + (-1 / 2 : ℝ) ≠ -k) then -1 / 2
@@ -91,17 +81,20 @@ private theorem mellinBarnesAbscissa_avoid (a b : ℂ) :
   · exact h2
   · by_contra h3
     rw [not_and_or] at h1 h2 h3; push Not at h1 h2 h3
-    have np {w : ℂ} {x₁ x₂ : ℝ} (p₁ : -1 < x₁ ∧ x₁ < 0) (p₂ : -1 < x₂ ∧ x₂ < 0) (ne : x₁ ≠ x₂) :=
-      not_both_abscissa_poles (w := w) p₁ p₂ ne
+    have np {r x₁ x₂ : ℝ} (hdist : |x₁ - x₂| < 1) (hne : x₁ ≠ x₂)
+        (hp₁ : ∃ k : ℕ, r + x₁ = -k) (hp₂ : ∃ k : ℕ, r + x₂ = -k) : False := by
+      obtain ⟨k₁, hk₁⟩ := hp₁; obtain ⟨k₂, hk₂⟩ := hp₂
+      exact hne (TauCeti.eq_of_add_eq_intCast_of_abs_sub_lt_one (m₁ := -(k₁ : ℤ)) (m₂ := -(k₂ : ℤ))
+        hdist (by simpa using hk₁) (by simpa using hk₂))
     rcases h1 with h1a | h1b <;> rcases h2 with h2a | h2b <;> rcases h3 with h3a | h3b
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h1a h2a
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h1a h2a
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h1a h3a
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h2b h3b
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h2a h3a
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h1b h3b
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h1b h2b
-    · exact np ⟨by norm_num, by norm_num⟩ ⟨by norm_num, by norm_num⟩ (by norm_num) h1b h2b
+    · exact np (by norm_num) (by norm_num) h1a h2a
+    · exact np (by norm_num) (by norm_num) h1a h2a
+    · exact np (by norm_num) (by norm_num) h1a h3a
+    · exact np (by norm_num) (by norm_num) h2b h3b
+    · exact np (by norm_num) (by norm_num) h2a h3a
+    · exact np (by norm_num) (by norm_num) h1b h3b
+    · exact np (by norm_num) (by norm_num) h1b h2b
+    · exact np (by norm_num) (by norm_num) h1b h2b
 
 /-- **Canonical separating-contour Mellin–Barnes integral**, representing
 `Γ(a) Γ(b) 𝐅(a, b; c; z)` (and hence `(Γ(a) Γ(b) / Γ(c)) ₂F₁(a, b; c; z)`). Evaluated at a
@@ -167,37 +160,6 @@ private theorem analyticAt_mellinBarnesIntegrand_uncurry {p : ℂ × ℂ × ℂ 
     ((analyticAt_Gamma ht).comp_of_eq analyticAt_snd.neg rfl)).mul
     ((differentiable_one_div_Gamma.analyticAt (p.2.2.1 + t)).comp_of_eq
       (hp3.add analyticAt_snd) rfl)).mul (hp4.neg.cpow analyticAt_snd hz))
-
-private theorem exists_ball_abscissa_avoid (w₀ : ℂ) {σ : ℝ} (hw₀ : ∀ k : ℕ, w₀.re + σ ≠ -k) :
-    ∃ δ : ℝ, 0 < δ ∧ δ ≤ 1 / 2 ∧
-      ∀ w ∈ ball w₀ δ, (∀ k : ℕ, w.re + σ ≠ -k) ∧
-        (∀ k : ℕ, (-w₀ - k).re < σ → (-w - k).re < σ) := by
-  let N : ℕ := ⌊-w₀.re - σ⌋₊ + 2
-  have hN : (Finset.range N).Nonempty := ⟨0, by simp [N]⟩
-  let δ : ℝ := min (1 / 2) ((Finset.range N).inf' hN fun k => |w₀.re + σ + k| / 2)
-  have hδ : 0 < δ := lt_min (by norm_num) ((Finset.lt_inf'_iff hN).2 fun k _ =>
-    div_pos (abs_pos.2 fun h => hw₀ k (by linarith)) (by norm_num))
-  refine ⟨δ, hδ, min_le_left _ _, fun w hw => ?_⟩
-  have hw_re : |w.re - w₀.re| < δ := (abs_re_le_norm (w - w₀)).trans_lt (mem_ball_iff_norm.1 hw)
-  have hδ_half : δ ≤ 1 / 2 := min_le_left _ _
-  have hlarge {k : ℕ} (hk : N ≤ k) : 0 < w.re + σ + k := by
-    have h2 : (⌊-w₀.re - σ⌋₊ + 2 : ℝ) ≤ k := by exact_mod_cast hk
-    linarith [Nat.lt_floor_add_one (-w₀.re - σ), (abs_lt.1 hw_re).1, sub_re w w₀]
-  refine ⟨fun k => ?_, fun k hk0 => ?_⟩
-  · by_cases hk : k < N
-    · have hle : δ ≤ |w₀.re + σ + k| / 2 :=
-        (min_le_right _ _).trans (Finset.inf'_le _ (Finset.mem_range.2 hk))
-      intro hEq
-      have habs : |w₀.re + σ + k| = |w.re - w₀.re| := by
-        rw [show w.re - w₀.re = -(w₀.re + σ + k) by linarith, abs_neg]
-      linarith [abs_nonneg (w₀.re + σ + k)]
-    · intro hEq; linarith [hlarge (not_lt.1 hk)]
-  · simp only [sub_re, neg_re, natCast_re] at hk0 ⊢
-    by_cases hk : k < N
-    · have hle : δ ≤ |w₀.re + σ + k| / 2 :=
-        (min_le_right _ _).trans (Finset.inf'_le _ (Finset.mem_range.2 hk))
-      rw [abs_of_pos (by linarith)] at hle; linarith [(abs_lt.1 hw_re).1]
-    · linarith [hlarge (not_lt.1 hk)]
 
 private theorem analyticAt_truncated_vertical_mellinBarnes {p : ℂ × ℂ × ℂ × ℂ} {σ : ℝ}
     (hσ : σ < 0) (ha : ∀ k : ℕ, p.1.re + σ ≠ -k) (hb : ∀ k : ℕ, p.2.1.re + σ ≠ -k)
@@ -301,7 +263,7 @@ private theorem exists_ball_slitPlane_arg_bound {z₀ : ℂ} (hz₀ : -z₀ ∈ 
   have hcont_arg : ContinuousAt (fun z : ℂ => |(-z).arg|) z₀ :=
     continuous_abs.continuousAt.comp ((continuousAt_arg hz₀).comp continuous_neg.continuousAt)
   obtain ⟨ρ₂, hρ₂, hsub₂⟩ := Metric.eventually_nhds_iff_ball.1
-    (hcont_arg.eventually (gt_mem_nhds (show |(-z₀).arg| < |(-z₀).arg| + 2 * δ by linarith)))
+    (hcont_arg.eventually (gt_mem_nhds (lt_add_of_pos_right _ (mul_pos zero_lt_two hδ))))
   have hz₀_pos : 0 < ‖z₀‖ := norm_pos_iff.2 (neg_ne_zero.1 (slitPlane_ne_zero hz₀))
   refine ⟨min (‖z₀‖ / 2) (min ρ₁ ρ₂), lt_min (by positivity) (lt_min hρ₁ hρ₂), fun z hz => ?_⟩
   have hzn : ‖z - z₀‖ < ‖z₀‖ / 2 := (mem_ball_iff_norm.1 hz).trans_le (min_le_left _ _)
@@ -315,19 +277,32 @@ private theorem analyticAt_vertical_mellinBarnes {p₀ : ℂ × ℂ × ℂ × �
     (hz₀ : -p₀.2.2.2 ∈ slitPlane) :
     AnalyticAt ℂ (fun p : ℂ × ℂ × ℂ × ℂ =>
       ∫ y : ℝ, mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2 (σ + y * I)) p₀ := by
-  obtain ⟨δ₀, hδ₀, hδ₀_le, hav₀⟩ := exists_ball_abscissa_avoid p₀.1 ha₀
-  obtain ⟨δ₁, hδ₁, hδ₁_le, hav₁⟩ := exists_ball_abscissa_avoid p₀.2.1 hb₀
+  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' range ((↑) : ℕ → ℝ)) :=
+    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
+      (continuous_neg.comp (continuous_id.add continuous_const))
+  obtain ⟨δ₀', hδ₀', hav₀'⟩ := p₀.1.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact ha₀ k (by linarith))
+  obtain ⟨δ₁', hδ₁', hav₁'⟩ := p₀.2.1.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact hb₀ k (by linarith))
+  let δ₀ : ℝ := min δ₀' (1 / 2)
+  let δ₁ : ℝ := min δ₁' (1 / 2)
+  have hδ₀ : 0 < δ₀ := lt_min hδ₀' (by norm_num)
+  have hδ₁ : 0 < δ₁ := lt_min hδ₁' (by norm_num)
+  have hav₀ (w : ℂ) (hw : w ∈ ball p₀.1 δ₀) (k : ℕ) : w.re + σ ≠ -k := fun hk =>
+    (hav₀' w (ball_subset_ball (min_le_left _ _) hw)).1 ⟨k, by linarith⟩
+  have hav₁ (w : ℂ) (hw : w ∈ ball p₀.2.1 δ₁) (k : ℕ) : w.re + σ ≠ -k := fun hk =>
+    (hav₁' w (ball_subset_ball (min_le_left _ _) hw)).1 ⟨k, by linarith⟩
   obtain ⟨ρ, hρ, hz_sub⟩ := exists_ball_slitPlane_arg_bound hz₀
   let U : Set (ℂ × ℂ × ℂ × ℂ) :=
     ball p₀.1 δ₀ ×ˢ ball p₀.2.1 δ₁ ×ˢ ball p₀.2.2.1 1 ×ˢ ball p₀.2.2.2 ρ
   have hU_open : IsOpen U := isOpen_ball.prod (isOpen_ball.prod (isOpen_ball.prod isOpen_ball))
   have hp₀U : p₀ ∈ U :=
     ⟨mem_ball_self hδ₀, mem_ball_self hδ₁, mem_ball_self zero_lt_one, mem_ball_self hρ⟩
-  have hunif := tendstoUniformlyOn_truncated_vertical_mellinBarnes hσ hδ₀_le hδ₁_le
-    (fun w hw => (hav₀ w hw).1) (fun w hw => (hav₁ w hw).1) hz₀ hz_sub
+  have hunif := tendstoUniformlyOn_truncated_vertical_mellinBarnes hσ (min_le_right _ _)
+    (min_le_right _ _) hav₀ hav₁ hz₀ hz_sub
   have hF_an (n : ℕ) (p : ℂ × ℂ × ℂ × ℂ) (hp : p ∈ U) :=
-    analyticAt_truncated_vertical_mellinBarnes hσ (hav₀ p.1 hp.1).1
-      (hav₁ p.2.1 hp.2.1).1 (hz_sub p.2.2.2 hp.2.2.2).1 n
+    analyticAt_truncated_vertical_mellinBarnes hσ (hav₀ p.1 hp.1)
+      (hav₁ p.2.1 hp.2.1) (hz_sub p.2.2.2 hp.2.2.2).1 n
   exact (hunif.differentiableOn
     (Eventually.of_forall fun n p hp => (hF_an n p hp).differentiableAt.differentiableWithinAt)
     hU_open).analyticAt_of_finiteDimensional (hU_open.mem_nhds hp₀U)
@@ -401,12 +376,12 @@ private theorem mellinBarnesLeftPoles_cover {a₀ b₀ a b : ℂ} {σ r : ℝ}
   · refine ⟨-a₀ - k, mem_mellinBarnesLeftPoles.2 ⟨lt_of_le_of_ne
       (not_lt.1 fun h => hw_re.not_gt (ha_cross k h)) (fun h => ha₀_σ k (by simp at h; linarith)),
       Or.inl ⟨k, rfl⟩⟩, ?_⟩
-    rw [mem_ball_iff_norm, show (-a - (k : ℂ)) - (-a₀ - k) = -(a - a₀) by ring, norm_neg]
+    rw [mem_ball_iff_norm, sub_sub_sub_cancel_right, neg_sub_neg, norm_sub_rev]
     linarith [norm_nonneg (a - a₀)]
   · refine ⟨-b₀ - k, mem_mellinBarnesLeftPoles.2 ⟨lt_of_le_of_ne
       (not_lt.1 fun h => hw_re.not_gt (hb_cross k h)) (fun h => hb₀_σ k (by simp at h; linarith)),
       Or.inr ⟨k, rfl⟩⟩, ?_⟩
-    rw [mem_ball_iff_norm, show (-b - (k : ℂ)) - (-b₀ - k) = -(b - b₀) by ring, norm_neg]
+    rw [mem_ball_iff_norm, sub_sub_sub_cancel_right, neg_sub_neg, norm_sub_rev]
     linarith [norm_nonneg (b - b₀)]
 
 private theorem residueSum_eq_sum_circleIntegral_mellinBarnes {a₀ b₀ a b : ℂ} (c z : ℂ) {σ r : ℝ}
@@ -505,8 +480,13 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
       ∑ w ∈ mellinBarnesLeftPoles p.1 p.2.1 σ,
         TauCeti.Contour.residue (mellinBarnesIntegrand p.1 p.2.1 p.2.2.1 p.2.2.2) w) p₀ := by
   obtain ⟨r, hr, hre, hnat, hsep⟩ := exists_isolating_radius_mellinBarnesLeftPoles σ ha₀ hb₀
-  obtain ⟨δ₀, hδ₀, _, hav₀⟩ := exists_ball_abscissa_avoid p₀.1 ha₀_σ
-  obtain ⟨δ₁, hδ₁, _, hav₁⟩ := exists_ball_abscissa_avoid p₀.2.1 hb₀_σ
+  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' range ((↑) : ℕ → ℝ)) :=
+    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
+      (continuous_neg.comp (continuous_id.add continuous_const))
+  obtain ⟨δ₀, hδ₀, hav₀⟩ := p₀.1.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact ha₀_σ k (by linarith))
+  obtain ⟨δ₁, hδ₁, hav₁⟩ := p₀.2.1.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact hb₀_σ k (by linarith))
   let δ_ab : ℝ := min (r / 2) (min δ₀ δ₁)
   have hδ_ab : 0 < δ_ab := lt_min (by positivity) (lt_min hδ₀ hδ₁)
   have hU_nhds : (ball p₀.1 δ_ab ×ˢ ball p₀.2.1 δ_ab ×ˢ (univ : Set (ℂ × ℂ))) ∈ 𝓝 p₀ :=
@@ -515,11 +495,21 @@ private theorem analyticAt_residueSum_mellinBarnes {p₀ : ℂ × ℂ × ℂ × 
   refine (Finset.analyticAt_fun_sum (mellinBarnesLeftPoles p₀.1 p₀.2.1 σ) fun _ hs =>
     analyticAt_circleIntegral_mellinBarnes_term hr hre hnat hsep hz₀ hs).congr ?_
   filter_upwards [hU_nhds] with p hp
+  have ha_cross : ∀ k : ℕ, (-p₀.1 - k).re < σ → (-p.1 - k).re < σ := fun k hk => by
+    have hiff := (hav₀ p.1 (ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _)) hp.1)).2
+      (-(k : ℝ) - σ) ⟨k, by ring⟩
+    simp only [sub_re, neg_re, natCast_re] at hk ⊢
+    linarith [hiff.1 (by linarith)]
+  have hb_cross : ∀ k : ℕ, (-p₀.2.1 - k).re < σ → (-p.2.1 - k).re < σ := fun k hk => by
+    have hiff := (hav₁ p.2.1
+      (ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hp.2.1)).2
+      (-(k : ℝ) - σ) ⟨k, by ring⟩
+    simp only [sub_re, neg_re, natCast_re] at hk ⊢
+    linarith [hiff.1 (by linarith)]
   exact (residueSum_eq_sum_circleIntegral_mellinBarnes p.2.2.1 p.2.2.2 hr hre hnat hsep ha₀_σ hb₀_σ
     ((mem_ball_iff_norm.1 hp.1).trans_le (min_le_left _ _))
     ((mem_ball_iff_norm.1 hp.2.1).trans_le (min_le_left _ _))
-    (hav₀ p.1 (ball_subset_ball ((min_le_right _ _).trans (min_le_left _ _)) hp.1)).2
-    (hav₁ p.2.1 (ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _)) hp.2.1)).2).symm
+    ha_cross hb_cross).symm
 
 /-- **Joint four-variable holomorphy of the separating-contour Mellin–Barnes integral.** On
 `{p | (∀ k : ℕ, a ≠ -k) ∧ (∀ k : ℕ, b ≠ -k) ∧ -z ∈ slitPlane}`, `mellinBarnesIntegral a b c z` is
@@ -532,8 +522,13 @@ theorem analyticOnNhd_mellinBarnesIntegral :
   let σ : ℝ := mellinBarnesAbscissa p₀.1 p₀.2.1
   have hσ : σ < 0 := mellinBarnesAbscissa_lt_zero p₀.1 p₀.2.1
   obtain ⟨ha₀_σ, hb₀_σ⟩ := mellinBarnesAbscissa_avoid p₀.1 p₀.2.1
-  obtain ⟨δ₀, hδ₀, _, hav₀⟩ := exists_ball_abscissa_avoid p₀.1 ha₀_σ
-  obtain ⟨δ₁, hδ₁, _, hav₁⟩ := exists_ball_abscissa_avoid p₀.2.1 hb₀_σ
+  have hcl : IsClosed ((fun x : ℝ => -(x + σ)) ⁻¹' range ((↑) : ℕ → ℝ)) :=
+    Nat.isClosedEmbedding_coe_real.isClosed_range.preimage
+      (continuous_neg.comp (continuous_id.add continuous_const))
+  obtain ⟨δ₀, hδ₀, hav₀⟩ := p₀.1.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact ha₀_σ k (by linarith))
+  obtain ⟨δ₁, hδ₁, hav₁⟩ := p₀.2.1.exists_ball_re_notMem_and_lt_iff hcl
+    (by rintro ⟨k, hk⟩; exact hb₀_σ k (by linarith))
   have hU_nhds : (ball p₀.1 δ₀ ×ˢ ball p₀.2.1 δ₁ ×ˢ univ ×ˢ {z : ℂ | -z ∈ slitPlane}) ∈ 𝓝 p₀ :=
     (isOpen_ball.prod (isOpen_ball.prod (isOpen_univ.prod
       (isOpen_slitPlane.preimage continuous_neg)))).mem_nhds
@@ -543,7 +538,9 @@ theorem analyticOnNhd_mellinBarnesIntegral :
     (analyticAt_residueSum_mellinBarnes ha₀ hb₀ ha₀_σ hb₀_σ hz₀)).congr ?_
   filter_upwards [hU_nhds] with p hp
   dsimp only [Pi.add_apply, Pi.mul_apply]
-  rw [mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral p.2.2.1 hσ (hav₀ p.1 hp.1).1
-    (hav₁ p.2.1 hp.2.1).1 hp.2.2.2, mellinBarnesSeparatingIntegral_def]
+  rw [mellinBarnesIntegral_eq_mellinBarnesSeparatingIntegral p.2.2.1 hσ
+    (fun k hk => (hav₀ p.1 hp.1).1 ⟨k, by linarith⟩)
+    (fun k hk => (hav₁ p.2.1 hp.2.1).1 ⟨k, by linarith⟩) hp.2.2.2,
+    mellinBarnesSeparatingIntegral_def]
 
 end Complex

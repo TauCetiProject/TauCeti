@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import TauCeti.Analysis.Contour.Residue.Basic
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Analysis.Contour.Curve.Rectangle
 import TauCeti.Analysis.Contour.Residue.Cycle
 import TauCeti.Analysis.Contour.Residue.SimplePole
@@ -92,11 +93,11 @@ theorem mem_mellinBarnesLeftPoles {a b : ℂ} {σ : ℝ} {t : ℂ} :
   · rcases h with ⟨k, _, rfl⟩ | ⟨k, _, rfl⟩ <;> [exact Or.inl ⟨k, rfl⟩; exact Or.inr ⟨k, rfl⟩]
   · rcases h with ⟨k, rfl⟩ | ⟨k, rfl⟩
     · refine Or.inl ⟨k, ?_, rfl⟩
-      exact_mod_cast (show (k : ℝ) < -a.re - σ by simp at hσ; linarith).trans
-        (Nat.lt_floor_add_one (-a.re - σ))
+      have hlt : (k : ℝ) < -a.re - σ := by simp at hσ; linarith
+      exact_mod_cast hlt.trans (Nat.lt_floor_add_one (-a.re - σ))
     · refine Or.inr ⟨k, ?_, rfl⟩
-      exact_mod_cast (show (k : ℝ) < -b.re - σ by simp at hσ; linarith).trans
-        (Nat.lt_floor_add_one (-b.re - σ))
+      have hlt : (k : ℝ) < -b.re - σ := by simp at hσ; linarith
+      exact_mod_cast hlt.trans (Nat.lt_floor_add_one (-b.re - σ))
 
 /-- Symmetry of `mellinBarnesLeftPoles` in `a` and `b`. -/
 theorem mellinBarnesLeftPoles_symm (a b : ℂ) (σ : ℝ) :
@@ -180,11 +181,13 @@ theorem residue_mellinBarnesIntegrand_neg_sub_natCast_left (a b c z : ℂ) (k : 
       (-1) ^ k / (k ! : ℂ) * Gamma (b - a - k) * Gamma (a + k) *
         (Gamma (c - a - k))⁻¹ * (-z) ^ (-a - k) := by
   set t₀ : ℂ := -a - k
+  have hadd_t₀ (w : ℂ) : w + t₀ = w - a - k := by dsimp [t₀]; ring
+  have hneg_t₀ : -t₀ = a + k := by dsimp [t₀]; ring
   have hshift : Tendsto (fun t : ℂ => a + t) (𝓝[≠] t₀) (𝓝[≠] (-(k : ℂ))) := by
     refine tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩
-    · have h : Tendsto (fun t : ℂ => a + t) (𝓝 t₀) (𝓝 (a + t₀)) :=
-        (continuous_const.add continuous_id).tendsto t₀
-      simpa only [show a + t₀ = -(k : ℂ) by dsimp [t₀]; ring] using h.mono_left nhdsWithin_le_nhds
+    · have hat₀ : a + t₀ = -(k : ℂ) := by rw [hadd_t₀, sub_self, zero_sub]
+      rw [← hat₀]
+      exact ((continuous_const.add continuous_id).tendsto t₀).mono_left nhdsWithin_le_nhds
     · filter_upwards [self_mem_nhdsWithin] with t ht
       rw [mem_compl_singleton_iff] at ht ⊢
       exact fun hEq => ht (by dsimp [t₀]; linear_combination hEq)
@@ -204,16 +207,12 @@ theorem residue_mellinBarnesIntegrand_neg_sub_natCast_left (a b c z : ℂ) (k : 
         fun h => ha 0 (by dsimp [t₀] at h; linear_combination -h)))
   have hrest : Tendsto (fun t : ℂ => Gamma (b + t) * Gamma (-t) * (Gamma (c + t))⁻¹ * (-z) ^ t)
       (𝓝[≠] t₀) (𝓝 (Gamma (b - a - k) * Gamma (a + k) * (Gamma (c - a - k))⁻¹ * (-z) ^ t₀)) := by
-    simpa only [show b + t₀ = b - a - k by dsimp [t₀]; ring,
-      show -t₀ = a + k by dsimp [t₀]; ring, show c + t₀ = c - a - k by dsimp [t₀]; ring] using
+    simpa only [hadd_t₀ b, hneg_t₀, hadd_t₀ c] using
       tendsto_nhdsWithin_of_tendsto_nhds (s := {t₀}ᶜ) hrest_an.continuousAt.tendsto
   refine TauCeti.Contour.residue_eq_of_tendsto_sub_mul
     (meromorphicAt_mellinBarnesIntegrand a b c z t₀) ?_
   have hmul := hG.mul hrest
-  rw [show (-1 : ℂ) ^ k / (k ! : ℂ) *
-      (Gamma (b - a - k) * Gamma (a + k) * (Gamma (c - a - k))⁻¹ * (-z) ^ t₀) =
-      (-1) ^ k / (k ! : ℂ) * Gamma (b - a - k) * Gamma (a + k) *
-        (Gamma (c - a - k))⁻¹ * (-z) ^ t₀ by ring] at hmul
+  simp only [← mul_assoc] at hmul
   refine hmul.congr' ?_
   filter_upwards [self_mem_nhdsWithin] with t _; simp only [mellinBarnesIntegrand_def]; ring
 
@@ -264,8 +263,8 @@ theorem exists_norm_mellinBarnesIntegrand_vertical_le {R r₁ r₂ δ : ℝ}
   have hcpow : ‖(-z) ^ ((σ : ℂ) + y * I)‖ ≤ Real.exp (R * Mz + (π - 2 * δ) * |y|) := by
     rw [cpow_def_of_ne_zero hz_ne, norm_exp]
     refine Real.exp_le_exp.2 ?_
-    rw [show (Complex.log (-z) * ((σ : ℂ) + y * I)).re = Real.log ‖-z‖ * σ - (-z).arg * y by
-      simp [mul_re, log_re, log_im]]
+    simp only [mul_re, log_re, log_im, add_re, add_im, mul_im, ofReal_re, ofReal_im, I_re, I_im,
+      mul_zero, mul_one, sub_zero, add_zero, zero_add]
     have h1 : Real.log ‖-z‖ * σ ≤ Mz * R :=
       (le_abs_self _).trans ((abs_mul _ _).trans_le
         (mul_le_mul hlogz hσ (abs_nonneg _) ((abs_nonneg _).trans hlogz)))
@@ -273,9 +272,9 @@ theorem exists_norm_mellinBarnesIntegrand_vertical_le {R r₁ r₂ δ : ℝ}
       (neg_le_abs _).trans ((abs_mul _ _).trans_le (mul_le_mul_of_nonneg_right harg (abs_nonneg y)))
     linarith
   have hGs : ‖Gamma (-((σ : ℂ) + y * I))‖ ≤ Real.exp (A + (-π / 2 + δ / 4) * |y|) := by
-    rw [show -((σ : ℂ) + y * I) = (-σ : ℂ) + (-y : ℝ) * I by push_cast; ring]
+    rw [neg_ofReal_add_mul_I]
     simpa only [abs_neg] using
-      (hG (-σ : ℂ) (-y) (by simpa using hσ.trans (by linarith))
+      (hG ((-σ : ℝ) : ℂ) (-y) (by simpa using hσ.trans (by linarith))
         (by simp [hR]) (by simpa using hy)).1
   have hGa := (hGshift ha).1
   have hGb := (hGshift hb).1
@@ -494,10 +493,7 @@ private theorem mellinBarnesSeparatingIntegral_eq_of_lt_of_lt_zero {a b : ℂ} (
   rw [inv_mul_cancel_left₀ two_pi_I_ne_zero] at hdiv
   have hI : (2 * (π : ℂ) * I)⁻¹ * I = (2 * π : ℂ)⁻¹ := by
     rw [mul_inv, mul_assoc, inv_mul_cancel₀ I_ne_zero, mul_one]
-  rw [show (2 * (π : ℂ) * I)⁻¹ *
-      (I * (∫ y : ℝ, g (σ₂ + y * I)) - I * (∫ y : ℝ, g (σ₁ + y * I))) =
-      (2 * π : ℂ)⁻¹ * (∫ y : ℝ, g (σ₂ + y * I)) - (2 * π : ℂ)⁻¹ * (∫ y : ℝ, g (σ₁ + y * I)) by
-    linear_combination ((∫ y : ℝ, g (σ₂ + y * I)) - ∫ y : ℝ, g (σ₁ + y * I)) * hI] at hdiv
+  rw [mul_sub, ← mul_assoc, ← mul_assoc, hI] at hdiv
   rw [mellinBarnesSeparatingIntegral_def, mellinBarnesSeparatingIntegral_def]
   linear_combination -hdiv
 

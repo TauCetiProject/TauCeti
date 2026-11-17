@@ -56,7 +56,6 @@ summability and moment arguments for discrete laws with Beta-function masses.
 * `Complex.ne_neg_natCast_of_re_pos` — a parameter with positive real part avoids `−ℕ`.
 * `Complex.isConnected_setOf_forall_ne_neg_natCast` — the complement `{w : ℂ | ∀ n : ℕ, w ≠ -n}`
   of the nonpositive integers is connected.
-* `Complex.norm_ascPochhammer_eval_le_factorial` — `‖(w)ₙ‖ ≤ (M + n)!` whenever `‖w‖ ≤ M`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
 * `Real.inv_Gamma_add_natCast_le` — `(Γ(s + k))⁻¹ ≤ (Γ s)⁻¹ / k!` for `1 ≤ s`, the real
@@ -275,18 +274,6 @@ theorem isConnected_setOf_forall_ne_neg_natCast :
   rw [heq]
   exact (Set.countable_range _).isConnected_compl_of_one_lt_rank
     (Complex.rank_real_complex ▸ Nat.one_lt_ofNat)
-
-/-- The ascending Pochhammer evaluation `(w)ₙ` satisfies `‖(w)ₙ‖ ≤ (M + n)!` whenever `‖w‖ ≤ M`. -/
-theorem norm_ascPochhammer_eval_le_factorial {w : ℂ} {M : ℕ} (hw : ‖w‖ ≤ M) (n : ℕ) :
-    ‖(ascPochhammer ℂ n).eval w‖ ≤ ((M + n)! : ℝ) := by
-  induction n with
-  | zero => simp [Nat.one_le_iff_ne_zero, Nat.factorial_ne_zero]
-  | succ n ih =>
-    have hwn : ‖w + n‖ ≤ (M + n + 1 : ℝ) :=
-      (norm_add_le w n).trans (by rw [Complex.norm_natCast]; linarith)
-    rw [ascPochhammer_succ_eval, norm_mul]
-    refine (mul_le_mul ih hwn (norm_nonneg _) (by positivity)).trans_eq ?_
-    rw [← add_assoc, Nat.factorial_succ]; push_cast; ring
 
 end Complex
 
