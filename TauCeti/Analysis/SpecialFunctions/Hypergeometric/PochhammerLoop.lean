@@ -7,6 +7,9 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Hypergeometric.EulerIntegral
 import Mathlib.Analysis.Analytic.Uniqueness
+import TauCeti.Analysis.SpecialFunctions.Exp.Periodic
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.FiniteProduct
 -- Reuse the private `(0+)` keyhole contour helpers from `LoopIntegral.lean`.
 import all TauCeti.Analysis.SpecialFunctions.Hypergeometric.LoopIntegral
 
@@ -17,8 +20,14 @@ Pochhammer's `(0+, 1+, 0-, 1-)` commutator contour integral `Complex.hypergeomet
 (DLMF 15.6.5) removes both endpoint integrability restrictions of Euler's integral
 `Complex.eulerIntegral` simultaneously. Starting and ending at a basepoint `A ∈ (0, 1)` where
 `ph t = ph (1 - t) = 0`, with circle radii `ρ₀ < A` around `0` and `ρ₁ < 1 - A` around `1`, the
-contour avoids both branch points `0` and `1` and stays off the cut `[1, ∞)` throughout the
-principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`.
+contour avoids both branch points `0` and `1`: the circular arcs cross the branch cuts `(-∞, 0]`
+of `t ^ (b - 1)` and `[1, ∞)` of `(1 - t) ^ (c - b - 1)` with explicitly tracked branches
+(`t = ρ₀ e^{iθ}` for `θ ∈ [0, 2π]` and `t = 1 - ρ₁ e^{iφ}` for `φ ∈ [0, 2π]`), accruing the
+monodromy factors `exp (2πi (b - 1))` and `exp (2πi (c - b - 1))` on the intervening radial
+segments. Meanwhile, for `z` in the principal cut plane `{z | 1 - z ∈ Complex.slitPlane}`, the
+admissibility conditions `‖z‖ * ρ₀ < 1` and `closedBall (1 - z) (‖z‖ * ρ₁) ⊆ Complex.slitPlane`
+keep `1 - z * t` inside `Complex.slitPlane` along the entire contour, so the principal branch of
+`(1 - z * t) ^ (-a)` crosses no branch cut.
 
 Splitting the radial segments at `A` expresses `Complex.hypergeometricPochhammerLoop` as a linear
 combination of the two `(0+)` keyhole pieces from
@@ -175,9 +184,7 @@ private theorem pochhammer_seg_split (a b c z : ℂ) (hz : 1 - z ∈ slitPlane)
     (affineSegIntegrand a (c - b) b (1 - z) (-z)) (1 : ℝ) (a := A) (b := 1 - ρ₁)
   rw [sub_sub_cancel] at hsub
   rw [← hsub]
-  refine intervalIntegral.integral_congr fun t _ => ?_
-  simp only [affineSegIntegrand, ofReal_sub, ofReal_one, sub_sub_cancel, sub_neg_mul_one_sub]
-  ring
+  exact intervalIntegral.integral_congr fun t _ => (affineSegIntegrand_one_sub a b c z t).symm
 
 private theorem pochhammer_circ_sum (a b c z : ℂ) (ρ₀ ρ₁ : ℝ) :
     (∫ θ : ℝ in 0..(2 * π),
@@ -274,9 +281,7 @@ private theorem hypergeometricPochhammerLoop_eq_affineLoopZero (a b c z : ℂ)
       (affineSegIntegrand a (c - b) b (1 - z) (-z)) (1 : ℝ) (a := A) (b := 1 - ρ₁)
     rw [sub_sub_cancel] at hsub
     rw [← hsub]
-    refine intervalIntegral.integral_congr fun t _ => ?_
-    simp only [affineSegIntegrand, ofReal_sub, ofReal_one, sub_sub_cancel, sub_neg_mul_one_sub]
-    ring
+    exact intervalIntegral.integral_congr fun t _ => (affineSegIntegrand_one_sub a b c z t).symm
   have hcirc := pochhammer_circ_sum a b c z ρ₀ ρ₁
   rw [hypergeometricPochhammerLoop_def, hs1, hs3, hs5, hs7, hs9,
     pochhammer_seg_split a b c z hz hρ₀ hρ₀A hρ₁ hρ₁A, affineLoopZero, affineLoopZero]
@@ -300,13 +305,15 @@ private theorem pochhammer_change_radii (a b c z : ℂ) {A ρ₀ ρ₀' ρ₁ ρ
         ⟨hr.le.trans hu.1, hu.2.trans hA1.le⟩).intervalIntegrable_of_Icc hrA.le
   have hint₁ (r : ℝ) (hr : 0 < r) (hrA : r < 1 - A) :
       IntervalIntegrable (affineSegIntegrand a (c - b) b (1 - z) (-z)) volume r (1 - A) :=
-    (continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr h1A1 fun u hu =>
-      sub_neg_mul_mem_slitPlane hz (hr.le.trans hu.1)
-        (hu.2.trans h1A1.le)).intervalIntegrable_of_Icc hrA.le
+    (continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr h1A1 fun u hu => by
+      rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
+      exact one_sub_mul_ofReal_mem_slitPlane hz
+        ⟨sub_nonneg.mpr (hu.2.trans h1A1.le),
+          sub_le_self _ (hr.le.trans hu.1)⟩).intervalIntegrable_of_Icc hrA.le
   rw [hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀ hρ₀A hρ₁ hρ₁A hz,
     hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀' hρ₀'A hρ₁' hρ₁'A hz,
     affineLoopZero_eq_of_radius a b (c - b) 1 z hρ₀ (hρ₀A.trans hA1) hρ₀' (hρ₀'A.trans hA1)
-      (closedBall_one_subset_slitPlane hz₀) (closedBall_one_subset_slitPlane hz₀')
+      (closedBall_one_subset_slitPlane_iff.mpr hz₀) (closedBall_one_subset_slitPlane_iff.mpr hz₀')
       (hint₀ ρ₀ hρ₀ hρ₀A) (hint₀ ρ₀' hρ₀' hρ₀'A),
     affineLoopZero_eq_of_radius a (c - b) b (1 - z) (-z) hρ₁ (hρ₁A.trans h1A1) hρ₁'
       (hρ₁'A.trans h1A1) (by simpa only [norm_neg] using hz₁)
@@ -324,7 +331,10 @@ private theorem pochhammer_change_basepoint (a b c z : ℂ) (hz : 1 - z ∈ slit
   have hcont₀ := continuousOn_affineSegIntegrand_Icc a b (c - b) 1 z hr₀ hAA' fun u hu =>
     one_sub_mul_ofReal_mem_slitPlane hz ⟨hr₀.le.trans hu.1, hu.2.trans hAA'.le⟩
   have hcont₁ := continuousOn_affineSegIntegrand_Icc a (c - b) b (1 - z) (-z) hr₁ h1AA'
-    fun u hu => sub_neg_mul_mem_slitPlane hz (hr₁.le.trans hu.1) (hu.2.trans h1AA'.le)
+    fun u hu => by
+      rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
+      exact one_sub_mul_ofReal_mem_slitPlane hz
+        ⟨sub_nonneg.mpr (hu.2.trans h1AA'.le), sub_le_self _ (hr₁.le.trans hu.1)⟩
   have hsplit₀ : (∫ u : ℝ in r₀..A', affineSegIntegrand a b (c - b) 1 z u) =
       (∫ u : ℝ in r₀..A, affineSegIntegrand a b (c - b) 1 z u) +
         ∫ u : ℝ in A..A', affineSegIntegrand a b (c - b) 1 z u :=
@@ -354,9 +364,7 @@ private theorem pochhammer_change_basepoint (a b c z : ℂ) (hz : 1 - z ∈ slit
         -∫ t : ℝ in A..A', affineSegIntegrand a b (c - b) 1 z t := by
       rw [← hsub, intervalIntegral.integral_symm A A']
       congr 1
-      refine intervalIntegral.integral_congr fun t _ => ?_
-      simp only [affineSegIntegrand, ofReal_sub, ofReal_one, sub_sub_cancel, sub_neg_mul_one_sub]
-      ring
+      exact intervalIntegral.integral_congr fun t _ => affineSegIntegrand_one_sub a b c z t
     rw [hcov]; ring
   simp only [affineLoopZero, hsplit₀, hsplit₁]
   ring
@@ -418,7 +426,11 @@ theorem analyticOnNhd_hypergeometricPochhammerLoop {A ρ₀ ρ₁ : ℝ}
   have hslit₀ : ∀ u ∈ Icc ρ₀ A, (1 : ℂ) - p.2.2.2 * (u : ℂ) ∈ slitPlane := fun u hu =>
     one_sub_mul_ofReal_mem_slitPlane hz ⟨hρ₀.le.trans hu.1, hu.2.trans hA1.le⟩
   have hslit₁ : ∀ u ∈ Icc ρ₁ (1 - A), (1 - p.2.2.2) - (-p.2.2.2) * (u : ℂ) ∈ slitPlane :=
-    fun u hu => sub_neg_mul_mem_slitPlane hz (hρ₁.le.trans hu.1) (hu.2.trans h1A1.le)
+    fun u hu => by
+      rw [show (1 - p.2.2.2) - (-p.2.2.2) * (u : ℂ) = 1 - p.2.2.2 * ((1 - u : ℝ) : ℂ) by
+        push_cast; ring]
+      exact one_sub_mul_ofReal_mem_slitPlane hz
+        ⟨sub_nonneg.mpr (hu.2.trans h1A1.le), sub_le_self _ (hρ₁.le.trans hu.1)⟩
   have haff₀ : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
       affineLoopZero q.1 q.2.1 (q.2.2.1 - q.2.1) 1 q.2.2.2 A ρ₀) p :=
     ((by fun_prop : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
@@ -426,7 +438,7 @@ theorem analyticOnNhd_hypergeometricPochhammerLoop {A ρ₀ ρ₁ : ℝ}
       (analyticAt_integral_affineSegIntegrand_compact (fw₀ := fun _ => 1) ha hb hcb
         analyticAt_const hz_an hρ₀ hρ₀A.le hA1 hslit₀)).fun_add
       (analyticAt_integral_affineCircIntegrand (fw₀ := fun _ => 1) ha hb hcb analyticAt_const
-        hz_an hρ₀ (hρ₀A.trans hA1) (closedBall_one_subset_slitPlane hp.1))
+        hz_an hρ₀ (hρ₀A.trans hA1) (closedBall_one_subset_slitPlane_iff.mpr hp.1))
   have haff₁ : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
       affineLoopZero q.1 (q.2.2.1 - q.2.1) q.2.1 (1 - q.2.2.2) (-q.2.2.2) (1 - A) ρ₁) p :=
     ((by fun_prop : AnalyticAt ℂ (fun q : ℂ × ℂ × ℂ × ℂ =>
@@ -475,10 +487,12 @@ theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0
       exact Icc_subset_Icc_right (by linarith))
     rw [uIcc_of_le zero_le_one]
     exact continuousOn_of_forall_continuousAt fun u hu =>
-      ContinuousAt.cpow (by fun_prop) continuousAt_const (sub_neg_mul_mem_slitPlane hz hu.1 hu.2)
+      ContinuousAt.cpow (by fun_prop) continuousAt_const (by
+        rw [show (1 - z) - (-z) * (u : ℂ) = 1 - z * ((1 - u : ℝ) : ℂ) by push_cast; ring]
+        exact one_sub_mul_ofReal_mem_slitPlane hz ⟨sub_nonneg.mpr hu.2, sub_le_self _ hu.1⟩)
   rw [hypergeometricPochhammerLoop_eq_affineLoopZero a b c z hρ₀ hρ₀A hρ₁ hρ₁A hz,
     affineLoopZero_eq_integral a b (c - b) 1 z hb hρ₀ (hρ₀A.trans hA1) hρ₀A.le
-      (closedBall_one_subset_slitPlane hz₀) hint₀,
+      (closedBall_one_subset_slitPlane_iff.mpr hz₀) hint₀,
     affineLoopZero_eq_integral a (c - b) b (1 - z) (-z) hcb hρ₁ (hρ₁A.trans (by linarith))
       hρ₁A.le (by simpa only [norm_neg] using hz₁) hint₁]
   have hcov : (∫ u : ℝ in 0..(1 - A), affineSegIntegrand a (c - b) b (1 - z) (-z) u) =
@@ -487,9 +501,7 @@ theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0
       (affineSegIntegrand a (c - b) b (1 - z) (-z)) (1 : ℝ) (a := A) (b := 1)
     rw [sub_self] at hsub
     rw [← hsub]
-    refine intervalIntegral.integral_congr fun t _ => ?_
-    simp only [affineSegIntegrand, ofReal_sub, ofReal_one, sub_sub_cancel, sub_neg_mul_one_sub]
-    ring
+    exact intervalIntegral.integral_congr fun t _ => affineSegIntegrand_one_sub a b c z t
   have hadj : (∫ t : ℝ in 0..A, affineSegIntegrand a b (c - b) 1 z t) +
       (∫ t : ℝ in A..1, affineSegIntegrand a b (c - b) 1 z t) =
       ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a) := by
@@ -497,7 +509,11 @@ theorem hypergeometricPochhammerLoop_eq_integral (a : ℂ) {b c z : ℂ} (hb : 0
       hint_full.mono_set (by
         rw [uIcc_of_le hA1.le, uIcc_of_le zero_le_one]; exact Icc_subset_Icc_left hA0.le)
     exact intervalIntegral.integral_add_adjacent_intervals hint₀ h2
-  rw [hcov, exp_two_pi_mul_I_sub_one, exp_two_pi_mul_I_sub_one]
+  have hexp_b : exp (2 * π * I * (b - 1)) = exp (2 * π * I * b) := by
+    simpa [sub_eq_add_neg] using exp_two_pi_mul_I_mul_add_intCast b (-1)
+  have hexp_cb : exp (2 * π * I * (c - b - 1)) = exp (2 * π * I * (c - b)) := by
+    simpa [sub_eq_add_neg] using exp_two_pi_mul_I_mul_add_intCast (c - b) (-1)
+  rw [hcov, hexp_b, hexp_cb]
   linear_combination -(1 - exp (2 * π * I * b)) * (1 - exp (2 * π * I * (c - b))) * hadj
 
 /-- When `0 < re b < re c`, Pochhammer's contour integral is
@@ -513,31 +529,32 @@ theorem hypergeometricPochhammerLoop_eq_eulerIntegral (a : ℂ) {b c z : ℂ} (h
   have hcb : 0 < (c - b).re := by simpa using sub_pos.mpr hbc
   have hGb : Gamma b ≠ 0 := Gamma_ne_zero_of_re_pos hb
   have hGcb : Gamma (c - b) ≠ 0 := Gamma_ne_zero_of_re_pos hcb
-  have hrefl_b := sin_mul_Gamma_eq_pi_div_Gamma_one_sub hb
-  have hrefl_cb := sin_mul_Gamma_eq_pi_div_Gamma_one_sub hcb
+  have hrefl_b := Gamma_mul_sin_pi_mul (ne_neg_natCast_of_re_pos hb)
+  have hrefl_cb := Gamma_mul_sin_pi_mul (ne_neg_natCast_of_re_pos hcb)
   have h1cb : 1 - (c - b) = 1 + b - c := by ring
   rw [h1cb] at hrefl_cb
-  have hm1 : 1 - exp (2 * π * I * b) = -(2 * I * exp (b * π * I) * sin (π * b)) := by
-    rw [← neg_sub, exp_two_pi_sub_one_eq_sin]
-  have hm2 : 1 - exp (2 * π * I * (c - b)) =
-      -(2 * I * exp ((c - b) * π * I) * sin (π * (c - b))) := by
-    rw [← neg_sub, exp_two_pi_sub_one_eq_sin]
+  have h1sub (x : ℂ) : 1 - exp (2 * π * I * x) = -2 * I * exp (x * π * I) * sin (π * x) := by
+    have h := one_sub_exp_mul_I (2 * π * x)
+    rw [show I * (2 * π * x) = 2 * π * I * x by ring,
+      show 2 * π * I * x / 2 = x * π * I by ring,
+      show 2 * π * x / 2 = π * x by ring] at h
+    exact h
   have hexpc : exp (b * π * I) * exp ((c - b) * π * I) = exp (c * π * I) := by
     rw [← exp_add]
     congr 1
     ring
   rw [hypergeometricPochhammerLoop_eq_integral a hb hbc hρ₀ hρ₀A hρ₁ hρ₁A hz₀ hz₁,
-    hm1, hm2, eulerIntegral_def]
+    h1sub b, h1sub (c - b), eulerIntegral_def]
   set E := ∫ t : ℝ in 0..1,
     (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) * (1 - z * t) ^ (-a)
   have hE : E = Gamma b * Gamma (c - b) * ((Gamma b * Gamma (c - b))⁻¹ * E) := by
     rw [← mul_assoc, mul_inv_cancel₀ (mul_ne_zero hGb hGcb), one_mul]
   conv_lhs => rw [hE]
-  calc -(-(2 * I * exp (b * π * I) * sin (π * b))) *
-        (-(2 * I * exp ((c - b) * π * I) * sin (π * (c - b)))) *
+  calc -(-2 * I * exp (b * π * I) * sin (π * b)) *
+        (-2 * I * exp ((c - b) * π * I) * sin (π * (c - b))) *
         (Gamma b * Gamma (c - b) * ((Gamma b * Gamma (c - b))⁻¹ * E))
       = -(4 * I ^ 2) * (exp (b * π * I) * exp ((c - b) * π * I)) *
-          (sin (π * b) * Gamma b) * (sin (π * (c - b)) * Gamma (c - b)) *
+          (Gamma b * sin (π * b)) * (Gamma (c - b) * sin (π * (c - b))) *
           ((Gamma b * Gamma (c - b))⁻¹ * E) := by ring
     _ = 4 * π ^ 2 * exp (c * π * I) / (Gamma (1 - b) * Gamma (1 + b - c)) *
           ((Gamma b * Gamma (c - b))⁻¹ * E) := by
