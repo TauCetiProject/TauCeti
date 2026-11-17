@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Weak
 import TauCeti.Analysis.Sobolev.Poincare.W1p0
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.LpSeminorm.ChebyshevMarkov
 
 /-!
 # Comparison and uniqueness for quasilinear divergence-form equations
@@ -223,15 +224,8 @@ private theorem value_nonpos_of_norm_gradient_truncation_sq_le {P K : ℝ}
         fun k ↦ measureReal_lt_value_le_of_norm_gradient_truncation_sq_le hpoincare hw
           (by positivity) (div_le_self hδ.le (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]))
           (hbound _ (by positivity))
-    have hfin : mu.restrict Omega {x | δ < W1p.value w x} ≠ ⊤ := by
-      refine ne_top_of_le_ne_top ((Lp.memLp (W1p.value w)).meas_ge_lt_top' two_ne_zero
-        ENNReal.ofNat_ne_top (ENNReal.ofReal_pos.2 hδ).ne').ne (measure_mono fun x hx ↦ ?_)
-      have hx : δ < W1p.value w x := hx
-      simp only [mem_ofPred_eq]
-      rw [ENNReal.ofReal_le_iff_le_toReal ENNReal.coe_ne_top, ENNReal.coe_toReal, coe_nnNorm,
-        Real.norm_eq_abs]
-      exact hx.le.trans (le_abs_self _)
-    exact (measureReal_eq_zero_iff hfin).1 (le_antisymm hreal measureReal_nonneg)
+    exact (measureReal_eq_zero_iff ((Lp.memLp (W1p.value w)).measure_gt_lt_top two_ne_zero
+      ENNReal.ofNat_ne_top hδ).ne).1 (le_antisymm hreal measureReal_nonneg)
   -- Hence `{w > 0} = ⋃ₖ {w > 1 / (k + 1)}` is null.
   have hunion : {x | 0 < W1p.value w x} = ⋃ k : ℕ, {x | 1 / ((k : ℝ) + 1) < W1p.value w x} := by
     ext x
