@@ -100,11 +100,8 @@ as its forward map. -/
 theorem realSpinFourContinuousMulEquivSpecialUnitaryProd_apply
     (s : spinGroup (realCliffordForm 4 0)) :
     realSpinFourContinuousMulEquivSpecialUnitaryProd s = realSpinFourEquivSpecialUnitaryProd s := by
-  rw [realSpinFourContinuousMulEquivSpecialUnitaryProd,
-    ContinuousMulEquiv.toQuaternionSpecialUnitaryProd_apply,
-    realSpinFourContinuousMulEquivQuaternionUnitaryProd_apply,
-    realSpinFourEquivSpecialUnitaryProd_eq]
-  rfl
+  simp [realSpinFourContinuousMulEquivSpecialUnitaryProd, realSpinFourEquivSpecialUnitaryProd_eq,
+    MulEquiv.prodCongr, Prod.ext_iff]
 
 /-- The inverse of `realSpinFourContinuousMulEquivSpecialUnitaryProd` is
 `realSpinFourEquivSpecialUnitaryProd.symm`. -/
@@ -113,11 +110,8 @@ theorem realSpinFourContinuousMulEquivSpecialUnitaryProd_symm_apply
     (M : Matrix.specialUnitaryGroup (Fin 2) ℂ × Matrix.specialUnitaryGroup (Fin 2) ℂ) :
     realSpinFourContinuousMulEquivSpecialUnitaryProd.symm M =
       realSpinFourEquivSpecialUnitaryProd.symm M := by
-  rw [realSpinFourContinuousMulEquivSpecialUnitaryProd,
-    ContinuousMulEquiv.toQuaternionSpecialUnitaryProd_symm_apply,
-    realSpinFourContinuousMulEquivQuaternionUnitaryProd_symm_apply,
-    realSpinFourEquivSpecialUnitaryProd_eq]
-  rfl
+  simp [realSpinFourContinuousMulEquivSpecialUnitaryProd, realSpinFourEquivSpecialUnitaryProd_eq,
+    MulEquiv.prodCongr, Prod.ext_iff]
 
 /-- The native algebraic equivalence `Spin(4) ≃* SU(2) × SU(2)` is continuous. -/
 @[fun_prop]

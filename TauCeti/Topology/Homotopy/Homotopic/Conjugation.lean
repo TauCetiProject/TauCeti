@@ -35,11 +35,6 @@ namespace Joined
 
 variable {G : Type*} [TopologicalSpace G] [Group G] [IsTopologicalGroup G]
 
-private theorem coe_mk_conj_apply (w x : G) :
-    (⟨MulAut.conj w, IsTopologicalGroup.continuous_conj w⟩ : C(G, G)) x = w * x * w⁻¹ :=
-  (congrFun (ContinuousMap.coe_mk (MulAut.conj w) (IsTopologicalGroup.continuous_conj w)) x).trans
-    (MulAut.conj_apply w x)
-
 /-- Given `Joined w₁ w₂` in a topological group `G`, `MulAut.conj w₁` is homotopic relative to
 `{(1 : G)}` to `MulAut.conj w₂`. -/
 theorem homotopicRel_conj {w₁ w₂ : G} (hw : Joined w₁ w₂) :
@@ -48,11 +43,19 @@ theorem homotopicRel_conj {w₁ w₂ : G} (hw : Joined w₁ w₂) :
   obtain ⟨γ⟩ := hw
   refine ⟨{ toFun := fun tx : I × G ↦ γ tx.1 * tx.2 * (γ tx.1)⁻¹
             continuous_toFun := by fun_prop
-            map_zero_left := fun x ↦ by simp [coe_mk_conj_apply]
-            map_one_left := fun x ↦ by simp [coe_mk_conj_apply]
+            -- `ContinuousMap.coe_mk` does not rewrite at `implicit` transparency here because
+            -- `IsTopologicalGroup.continuous_conj w` has type `Continuous fun h ↦ w * h * w⁻¹`
+            -- rather than `Continuous ⇑(MulAut.conj w)`.
+            map_zero_left := fun x ↦ by
+              simp only [Path.source]
+              exact (MulAut.conj_apply w₁ x).symm
+            map_one_left := fun x ↦ by
+              simp only [Path.target]
+              exact (MulAut.conj_apply w₂ x).symm
             prop' := fun t x hx ↦ by
               rw [Set.mem_singleton_iff.mp hx]
-              simp [coe_mk_conj_apply] }⟩
+              simp only [ContinuousMap.coe_mk, mul_one, mul_inv_cancel]
+              exact (MulAut.conj w₁).map_one.symm }⟩
 
 /-- **Inner conjugation by an element in the identity path component is pointed-homotopic to the
 identity.** Given `Joined (1 : G) w` in a topological group `G`, `ContinuousMap.id G` is homotopic
