@@ -30,9 +30,10 @@ variables: if `g` decays rapidly on a cone around `a ζ₀ ≠ 0`, then `g (a ζ
 on the cone of those `ζ` with `a ζ` in that cone and `‖b ζ‖ < c ‖a ζ‖`. This is how the localized
 Fourier transform of a tensor product inherits the decay of one of its factors.
 
-In a proper space, if every unit vector lies in an open cone, finitely many of these cones cover
-the nonzero vectors, by compactness of the unit sphere. This is how conditions imposed direction by
-direction combine into one condition on the whole frequency space.
+In a proper space, if every unit vector of a closed cone lies in an open cone, finitely many of
+these cones cover the nonzero vectors of the closed cone, by compactness of the unit sphere. This
+is how conditions imposed direction by direction combine into one condition on a whole closed
+cone of frequencies.
 
 ## Main results
 
@@ -44,8 +45,9 @@ direction combine into one condition on the whole frequency space.
 * `TauCeti.exists_cone_decay_mul`: if `g` decays rapidly on an open cone around `a ζ₀ ≠ 0` and `h`
   grows at most polynomially, then `ζ ↦ g (a ζ) * h (b ζ)` decays rapidly on an open cone around
   `ζ₀`, provided `‖ζ‖ ≤ ‖a ζ‖ + ‖b ζ‖`.
-* `TauCeti.exists_finset_compl_singleton_subset_biUnion`: if every unit vector lies in an open
-  cone, finitely many of these cones cover the nonzero vectors.
+* `TauCeti.exists_finset_diff_singleton_subset_biUnion`: if every unit vector of a closed cone `V`
+  lies in an open cone, finitely many of these cones cover the nonzero vectors of `V`;
+  `TauCeti.exists_finset_compl_singleton_subset_biUnion` is the case `V = E`.
 
 ## References
 
@@ -221,6 +223,26 @@ theorem exists_cone_decay_mul {X A B 𝕜 : Type*} [NormedField 𝕜] [NormedAdd
       _ ≤ (1 + c) ^ (N + k) * C₀ * C := by gcongr; exact hC _ h₁
 
 
+/-- **Finitely many open cones cover a closed cone.** Let `V` be a closed subset of a proper real
+normed space closed under multiplication by positive reals. If every unit vector `ξ` of `V` lies
+in an open set `Γ ξ` closed under multiplication by positive reals, then finitely many of these
+cones cover every nonzero vector of `V`: the unit vectors of `V` form a compact set. -/
+theorem exists_finset_diff_singleton_subset_biUnion [NormedSpace ℝ E] [ProperSpace E] {V : Set E}
+    (hV : IsClosed V) (hVcone : ∀ t : ℝ, 0 < t → ∀ η ∈ V, t • η ∈ V)
+    {Γ : sphere (0 : E) 1 → Set E} (hΓ : ∀ ξ, IsOpen (Γ ξ))
+    (hξΓ : ∀ ξ : sphere (0 : E) 1, (ξ : E) ∈ V → (ξ : E) ∈ Γ ξ)
+    (hcone : ∀ ξ, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ ξ, t • η ∈ Γ ξ) :
+    ∃ t : Finset (sphere (0 : E) 1), V \ {0} ⊆ ⋃ ξ ∈ t, Γ ξ := by
+  obtain ⟨t, ht⟩ := ((isCompact_sphere (0 : E) 1).inter_left hV).elim_finite_subcover Γ hΓ
+    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ.2⟩, hξΓ _ hζ.1⟩
+  refine ⟨t, fun η hη ↦ ?_⟩
+  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
+  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη.2
+  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ V ∩ sphere (0 : E) 1 from
+    ⟨hVcone _ (inv_pos.2 hη') η hη.1, by simp [norm_smul, inv_mul_cancel₀ hη'.ne']⟩))
+  exact mem_iUnion₂.2 ⟨ξ, hξt, by
+    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+
 /-- **Finitely many open cones cover the nonzero vectors.** If every unit vector `ξ` of a proper
 real normed space lies in an open set `Γ ξ` closed under multiplication by positive reals, then
 finitely many of these cones cover every nonzero vector: the unit sphere is compact. -/
@@ -228,14 +250,7 @@ theorem exists_finset_compl_singleton_subset_biUnion [NormedSpace ℝ E] [Proper
     {Γ : sphere (0 : E) 1 → Set E} (hΓ : ∀ ξ, IsOpen (Γ ξ)) (hξΓ : ∀ ξ, (ξ : E) ∈ Γ ξ)
     (hcone : ∀ ξ, ∀ t : ℝ, 0 < t → ∀ η ∈ Γ ξ, t • η ∈ Γ ξ) :
     ∃ t : Finset (sphere (0 : E) 1), {0}ᶜ ⊆ ⋃ ξ ∈ t, Γ ξ := by
-  obtain ⟨t, ht⟩ := (isCompact_sphere (0 : E) 1).elim_finite_subcover Γ hΓ
-    fun ζ hζ ↦ mem_iUnion.2 ⟨⟨ζ, hζ⟩, hξΓ _⟩
-  refine ⟨t, fun η hη ↦ ?_⟩
-  -- The direction of `η` lies in one of the finitely many cones, hence so does `η`.
-  have hη' : 0 < ‖η‖ := norm_pos_iff.2 hη
-  obtain ⟨ξ, hξt, hηξ⟩ := mem_iUnion₂.1 (ht (show ‖η‖⁻¹ • η ∈ sphere (0 : E) 1 by
-    simp [norm_smul, inv_mul_cancel₀ hη'.ne']))
-  exact mem_iUnion₂.2 ⟨ξ, hξt, by
-    simpa [smul_smul, mul_inv_cancel₀ hη'.ne'] using hcone ξ ‖η‖ hη' _ hηξ⟩
+  simpa [compl_eq_univ_sdiff] using exists_finset_diff_singleton_subset_biUnion isClosed_univ
+    (fun _ _ _ _ ↦ mem_univ _) hΓ (fun ξ _ ↦ hξΓ ξ) hcone
 
 end TauCeti
