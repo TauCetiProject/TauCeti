@@ -9,8 +9,10 @@ public import Mathlib.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Morphisms.UniversallyInjective
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import Mathlib.FieldTheory.IsSepClosed
 import Mathlib.AlgebraicGeometry.Morphisms.IsIso
 import TauCeti.CategoryTheory.MorphismProperty.Limits
+import TauCeti.FieldTheory.IsSepClosed
 import TauCeti.RingTheory.Unramified.Fiber
 
 /-!
@@ -43,6 +45,10 @@ exactly when it is universally injective
 immersion, which is an isomorphism exactly when it is surjective.
 
 Formally unramified morphisms respect isomorphisms (`TauCeti.formallyUnramified_respectsIso`).
+Over a point with separably closed residue field, a morphism that is formally unramified and
+locally of finite type induces an isomorphism on residue fields
+(`AlgebraicGeometry.Scheme.Hom.isIso_residueFieldMap_of_isSepClosed`), so the source residue field
+is also separably closed (`AlgebraicGeometry.Scheme.Hom.isSepClosed_residueField`).
 
 ## References
 
@@ -212,5 +218,22 @@ theorem FormallyUnramified.mono_iff_universallyInjective (f : X ⟶ Y) [Formally
   -- the diagonal of `f` is an open immersion, and it is surjective as `f` is universally injective
   rw [← pullback.isIso_diagonal_iff, isIso_iff_isOpenImmersion_and_surjective]
   exact ⟨inferInstance, (UniversallyInjective.iff_diagonal f).1 hf⟩
+
+/-- If `f : X ⟶ Y` is formally unramified and locally of finite type, and `κ(f x)` is
+separably closed, then `f.residueFieldMap x : κ(f x) ⟶ κ(x)` is an isomorphism. -/
+theorem Scheme.Hom.isIso_residueFieldMap_of_isSepClosed (f : X ⟶ Y) [FormallyUnramified f]
+    [LocallyOfFiniteType f] (x : X) [IsSepClosed (Y.residueField (f x))] :
+    IsIso (f.residueFieldMap x) := by
+  let : Algebra (Y.residueField (f x)) (X.residueField x) := (f.residueFieldMap x).hom.toAlgebra
+  exact (ConcreteCategory.isIso_iff_bijective (f.residueFieldMap x)).mpr
+    (IsSepClosed.algebraMap_bijective _ (X.residueField x))
+
+/-- If `f : X ⟶ Y` is formally unramified and locally of finite type, and `κ(f x)` is
+separably closed, then `κ(x)` is separably closed. -/
+theorem Scheme.Hom.isSepClosed_residueField (f : X ⟶ Y) [FormallyUnramified f]
+    [LocallyOfFiniteType f] (x : X) [IsSepClosed (Y.residueField (f x))] :
+    IsSepClosed (X.residueField x) := by
+  have := f.isIso_residueFieldMap_of_isSepClosed x
+  exact IsSepClosed.of_ringEquiv (asIso (f.residueFieldMap x)).commRingCatIsoToRingEquiv
 
 end AlgebraicGeometry

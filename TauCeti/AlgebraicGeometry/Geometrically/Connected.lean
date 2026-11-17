@@ -21,6 +21,9 @@ fibre product of the two spectra over the base.
   respects isomorphisms.
 * `TauCeti.geometricallyConnected_tensorProduct`: the tensor product of two commutative algebras
   with geometrically connected, universally open spectra is geometrically connected.
+* `AlgebraicGeometry.GeometricallyConnected.connectedSpace_of_isPullback`: pulling back a
+  geometrically connected, universally open morphism along a map from a connected scheme yields a
+  connected scheme.
 -/
 
 public section
@@ -58,3 +61,17 @@ theorem geometricallyConnected_tensorProduct
   exact .comp _ _
 
 end TauCeti
+
+namespace AlgebraicGeometry
+
+/-- Pulling back a geometrically connected, universally open morphism along a map from a connected
+scheme yields a connected scheme. -/
+theorem GeometricallyConnected.connectedSpace_of_isPullback {P X Y S : Scheme.{u}}
+    {fst : P ⟶ X} {snd : P ⟶ Y} {f : X ⟶ S} {g : Y ⟶ S} (H : IsPullback fst snd f g)
+    [GeometricallyConnected f] [UniversallyOpen f] [ConnectedSpace Y] :
+    ConnectedSpace P := by
+  have : GeometricallyConnected snd := MorphismProperty.of_isPullback H ‹_›
+  have : UniversallyOpen snd := MorphismProperty.of_isPullback H ‹_›
+  exact GeometricallyConnected.connectedSpace snd snd.isOpenMap
+
+end AlgebraicGeometry
