@@ -10,12 +10,14 @@ public import Mathlib.Analysis.Normed.Operator.Extend
 public import Mathlib.Analysis.Normed.Group.ControlledClosure
 public import Mathlib.Analysis.Normed.Group.HomCompletion
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
+public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Analysis.Normed.Group.BallSphere
 public import TauCeti.Analysis.Normed.Operator.Basic
 import Mathlib.Topology.Algebra.Module.FiniteDimension
+import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 
 /-!
-# Operator norms and finite rank of bounded maps extended to completions
+# Operator norms, finite rank, and coercivity of bounded maps extended to completions
 
 A bounded semilinear map `f : E →SL[σ₁₂] F` between seminormed spaces extends to the bounded
 map `f.completion` between the completions, and, when `F` is complete and Hausdorff, to the
@@ -43,6 +45,12 @@ whereas its completion `ℝ →L[ℚ] ℝ` has infinite `ℚ`-rank), and the bou
 infinite cardinals (`id` on finitely supported `ℓ²`-sequences has rank `ℵ₀`, whereas `ℓ²(ℕ)` has
 uncountable Hamel dimension).
 
+Over `ℝ` or `ℂ`, coercivity bounds for `T.completion` on finite-dimensional domains also pull back
+into the uncompleted space `E` without increasing the norm bound, at an arbitrarily small loss in
+the coercivity constant: if `T.completion ∘L A'` is `s`-coercive on a finite-dimensional normed
+space `V` and `c < s`, then `ContinuousLinearMap.denseRange_comp` and rescaling produce
+`A : V →L[𝕜] E` with `‖A‖ ≤ ‖A'‖` such that `T ∘L A` is `c`-coercive.
+
 ## Main results
 
 * `ContinuousLinearMap.norm_completion`: `‖f.completion‖ = ‖f‖`.
@@ -55,6 +63,9 @@ uncountable Hamel dimension).
 * `ContinuousLinearMap.rank_completion_le_of_rank_le` and
   `ContinuousLinearMap.rank_fromCompletion_le_of_rank_le`: over a complete field, extending a
   bounded linear map of rank at most `n` (`n : ℕ`) to completions preserves `rank ≤ n`.
+* `ContinuousLinearMap.exists_norm_le_and_mul_norm_le_norm_apply_of_completion`: over `ℝ` or `ℂ`,
+  a finite-dimensional map into `Completion E` making `T.completion` strictly more than
+  `c`-coercive can be pulled back to `E` with norm at most `‖A'‖` and `T` still `c`-coercive.
 * `LinearIsometryEquiv.completion`: the extension of a linear isometric equivalence to the
   completions.
 * `LinearIsometryEquiv.toLinearIsometry_completion`: as a linear isometry, it is
@@ -188,6 +199,72 @@ theorem rank_fromCompletion_le_of_rank_le [T0Space F] [CompleteSpace F] (T : E �
   exact (LinearMap.rank_comp_le_right _ _).trans (T.rank_completion_le_of_rank_le hT)
 
 end Rank
+
+section Coercive
+
+variable {𝕜 V E F : Type*} [RCLike 𝕜]
+  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [FiniteDimensional 𝕜 V]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- If `s * ‖u‖ ≤ ‖T.completion (A' u)‖` for all `u` in a finite-dimensional normed space `V` and
+`c < s`, then there exists `A : V →L[𝕜] E` with `‖A‖ ≤ ‖A'‖` such that `c * ‖u‖ ≤ ‖T (A u)‖` for
+all `u`. -/
+theorem exists_norm_le_and_mul_norm_le_norm_apply_of_completion
+    (T : E →L[𝕜] F) {A' : V →L[𝕜] Completion E} {c s : ℝ} (hcs : c < s)
+    (hs : ∀ u : V, s * ‖u‖ ≤ ‖T.completion (A' u)‖) :
+    ∃ A : V →L[𝕜] E, ‖A‖ ≤ ‖A'‖ ∧ ∀ u : V, c * ‖u‖ ≤ ‖T (A u)‖ := by
+  -- Trivial case `c ≤ 0`: `A = 0` satisfies both bounds.
+  rcases le_or_gt c 0 with hc | hc_pos
+  · exact ⟨0, by simp, fun u ↦ (mul_nonpos_of_nonpos_of_nonneg hc (norm_nonneg u)).trans
+      (norm_nonneg _)⟩
+  -- Trivial case `‖A'‖ = 0`: `A' = 0`, so `hs` forces `‖u‖ = 0` for every `u`.
+  rcases (norm_nonneg A').eq_or_lt with hR0 | hR
+  · refine ⟨0, by simp, fun u ↦ ?_⟩
+    have hu : s * ‖u‖ ≤ 0 := by simpa [norm_eq_zero.mp hR0.symm] using hs u
+    simp [le_antisymm (nonpos_of_mul_nonpos_right hu (hc_pos.trans hcs)) (norm_nonneg u)]
+  -- Nondegenerate case `0 < c` and `0 < ‖A'‖`: approximate `A'` by `toComplL ∘L A₀` and rescale.
+  set R : ℝ := ‖A'‖
+  let ι : E →L[𝕜] Completion E := Completion.toComplL
+  have hD : 0 < c + R * ‖T‖ + 1 := by positivity
+  set δ : ℝ := R * (s - c) / (c + R * ‖T‖ + 1)
+  have hδ : 0 < δ := div_pos (mul_pos hR (sub_pos.mpr hcs)) hD
+  obtain ⟨A₀, hA₀_dist⟩ := Metric.denseRange_iff.mp
+    (ContinuousLinearMap.denseRange_comp (g := ι) Completion.denseRange_coe) A' δ hδ
+  have hA₀_err : ‖A' - ι ∘L A₀‖ ≤ δ := (dist_eq_norm A' (ι ∘L A₀)).symm.trans_le hA₀_dist.le
+  have hA₀_norm : ‖A₀‖ ≤ R + δ := by
+    rw [← norm_toComplL_comp (f := A₀)]
+    exact (norm_le_insert A' (ι ∘L A₀)).trans (add_le_add le_rfl hA₀_err)
+  have hRδ : 0 < R + δ := by positivity
+  have hδ_le : (c + R * ‖T‖) * δ ≤ R * (s - c) :=
+    (mul_le_mul_of_nonneg_right (by linarith) hδ.le).trans_eq (mul_div_cancel₀ _ hD.ne')
+  let A : V →L[𝕜] E := ((R / (R + δ) : ℝ) : 𝕜) • A₀
+  refine ⟨A, ?_, fun u ↦ ?_⟩
+  · rw [norm_smul, RCLike.norm_ofReal, abs_of_pos (div_pos hR hRδ)]
+    exact (mul_le_mul_of_nonneg_left hA₀_norm (by positivity)).trans_eq (div_mul_cancel₀ R hRδ.ne')
+  · have herr : ‖T.completion (A' u) - T.completion (ι (A₀ u))‖ ≤ ‖T‖ * (δ * ‖u‖) := by
+      calc ‖T.completion (A' u) - T.completion (ι (A₀ u))‖
+          = ‖T.completion ((A' - ι ∘L A₀) u)‖ := by simp [map_sub]
+        _ ≤ ‖T.completion‖ * ‖(A' - ι ∘L A₀) u‖ := T.completion.le_opNorm _
+        _ ≤ ‖T‖ * (δ * ‖u‖) := by
+          rw [T.norm_completion]
+          exact mul_le_mul_of_nonneg_left
+            (((A' - ι ∘L A₀).le_opNorm u).trans (by gcongr)) (norm_nonneg _)
+    have htri : s * ‖u‖ - ‖T‖ * (δ * ‖u‖) ≤ ‖T (A₀ u)‖ := by
+      have h := norm_le_insert (T.completion (ι (A₀ u))) (T.completion (A' u))
+      rw [norm_sub_rev] at h
+      have hnorm : ‖T.completion (ι (A₀ u))‖ = ‖T (A₀ u)‖ := by simp [ι]
+      linarith [hs u]
+    have hTA : ‖T (A u)‖ = R / (R + δ) * ‖T (A₀ u)‖ := by
+      dsimp only [A]
+      rw [smul_apply, map_smul, norm_smul, RCLike.norm_ofReal, abs_of_pos (div_pos hR hRδ)]
+    rw [hTA, div_mul_eq_mul_div, le_div_iff₀ hRδ]
+    calc c * ‖u‖ * (R + δ) = c * (R + δ) * ‖u‖ := by ring
+      _ ≤ R * (s - ‖T‖ * δ) * ‖u‖ := mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg u)
+      _ = R * (s * ‖u‖ - ‖T‖ * (δ * ‖u‖)) := by ring
+      _ ≤ R * ‖T (A₀ u)‖ := by gcongr
+
+end Coercive
 
 end ContinuousLinearMap
 
