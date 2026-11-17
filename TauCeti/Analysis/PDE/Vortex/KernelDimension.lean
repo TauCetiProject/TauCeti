@@ -19,7 +19,7 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 Let `x` be a field whose holomorphicity rows `∂bar_a α = 0` vanish, with `|α| → 1` at infinity,
 and let the zeros of its section `α`, counted with multiplicity, form the effective divisor `D`
-(`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue`).
+(`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto`).
 This file proves that every real vector space of `C²` square-integrable solutions `y` of
 `L_x y = 0`, for the gauge-fixed operator `L_x = d₀* ⊕ d₁` (`gaugeFixedOperator`), is finite
 dimensional (`TauCeti.Vortex.finiteDimensional_of_gaugeFixedOperator_eq_zero`), of dimension at
@@ -199,19 +199,6 @@ private theorem exists_injective_linearMap (hx : ContDiff ℝ 2 x)
   exact ⟨_, principalPartMap_injective_of_gaugeFixedOperator_eq_zero hx hhol hlim hD
     (hν.differentiable (by norm_num)) hνeq hV⟩
 
-omit [μ.IsAddHaarMeasure] in
-/-- The zero divisor of a `C¹` field satisfying the holomorphicity rows with `|α|² → 1`. -/
-private theorem exists_multiset_isZeroMultiplicity_of_tendsto (hx : ContDiff ℝ 1 x)
-    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
-    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
-    ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
-  have hi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := contDiff_euclidean.1 hx i
-  refine exists_multiset_isZeroMultiplicity_sectionValue (hi 0) (hi 1)
-    ((hi 2).differentiable (by norm_num)) ((hi 3).differentiable (by norm_num)) hhol ?_
-  filter_upwards [hlim.eventually (lt_mem_nhds zero_lt_one)] with w hw hz
-  rw [sectionValue_eq_zero_iff] at hz
-  simp [hz] at hw
-
 /-- **Kernel elements of the gauge-fixed operator form a finite-dimensional space.** Let `x` be a
 `C²` field with vanishing holomorphicity rows and `|α|² → 1` at infinity. Then every real vector
 space of `C²` square-integrable solutions of `L_x y = 0` is finite dimensional. -/
@@ -220,7 +207,9 @@ theorem finiteDimensional_of_gaugeFixedOperator_eq_zero (hx : ContDiff ℝ 2 x)
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     (hV : ∀ y ∈ V, ContDiff ℝ 2 y ∧ MemLp y 2 μ ∧ ∀ w, gaugeFixedOperator x y w = 0) :
     FiniteDimensional ℝ V := by
-  obtain ⟨D, hD⟩ := exists_multiset_isZeroMultiplicity_of_tendsto (hx.of_le one_le_two) hhol hlim
+  have hi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_euclidean.1 hx i).of_le one_le_two
+  obtain ⟨D, hD⟩ := exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto (hi 0) (hi 1)
+    ((hi 2).differentiable (by simp)) ((hi 3).differentiable (by simp)) hhol hlim
   obtain ⟨Φ, hΦ⟩ := exists_injective_linearMap hx hhol hlim hD hV
   exact FiniteDimensional.of_injective Φ hΦ
 
@@ -549,7 +538,9 @@ theorem contDiff_of_mem_gaugeFixedKernel (hx : ContDiff ℝ ∞ x)
     (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1))
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ gaugeFixedKernel x) :
     ContDiff ℝ ∞ y := by
-  obtain ⟨D, hD⟩ := exists_multiset_isZeroMultiplicity_of_tendsto (hx.of_le (by simp)) hhol hlim
+  have hi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_euclidean.1 hx i).of_le (by simp)
+  obtain ⟨D, hD⟩ := exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto (hi 0) (hi 1)
+    ((hi 2).differentiable (by simp)) ((hi 3).differentiable (by simp)) hhol hlim
   rw [← smoothGaugeFixedKernel_eq_gaugeFixedKernel hx hhol hlim hD] at hy
   exact hy.1
 

@@ -27,11 +27,13 @@ section factors near every point as `(w - z) ^ n z * v w` with `v` of class `C�
 nonzero there (`TauCeti.Vortex.exists_contDiffAt_section_eq_pow_mul`), so `n` is a zero
 multiplicity function of the section (`TauCeti.IsZeroMultiplicity`). When `α` is eventually nonzero
 near infinity (in particular when `|α|² → 1`), the zeros are isolated and bounded, hence form an
-effective divisor `D : Multiset ℂ` (`TauCeti.Vortex.exists_multiset_sectionValue_eq_pow_count_mul`,
-`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue`). Under the degree-`m` end
-framing, the topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows that
-the multiplicities add up to `m`. Hence the zeros of a framed degree-`m` vortex section, counted
-with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
+effective divisor `D : Multiset ℂ`
+(`TauCeti.Vortex.exists_multiset_sectionValue_eq_pow_count_mul`,
+`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue`,
+`TauCeti.Vortex.exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto`). Under the degree-`m`
+end framing, the topological argument principle `TauCeti.finsum_eq_of_tendsto_mul_inv_pow` shows
+that the multiplicities add up to `m`. Hence the zeros of a framed degree-`m` vortex section,
+counted with multiplicity, form an effective divisor of degree `m`, a point of `Sym ℂ m`
 (`TauCeti.Vortex.exists_sym_sectionValue_eq_pow_count_mul`). Only the holomorphicity rows are
 used; the curvature equation is not needed. The divisor is determined by the section, since zero
 multiplicities are unique (`TauCeti.IsZeroMultiplicity.unique`).
@@ -127,6 +129,21 @@ theorem exists_multiset_isZeroMultiplicity_sectionValue
   let ⟨D, hmult, _⟩ :=
     exists_multiset_isZeroMultiplicity_and_eq_pow_count_mul le_rfl hb₁ hb₂ hp hq hhol htail
   ⟨D, hmult⟩
+
+omit hn hb₁ hb₂ hp hq hhol in
+/-- The zero multiplicities of a field with `C¹` connection coefficients and differentiable section
+satisfying the holomorphicity rows with `|α|² → 1` at infinity are the counts of an effective
+divisor `D : Multiset ℂ`. -/
+theorem exists_multiset_isZeroMultiplicity_sectionValue_of_tendsto
+    (hb₁ : ContDiff ℝ 1 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 1 (fun w ↦ x w 1))
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0)
+    (hlim : Tendsto (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∃ D : Multiset ℂ, IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z := by
+  refine exists_multiset_isZeroMultiplicity_sectionValue hb₁ hb₂ hp hq hhol ?_
+  filter_upwards [hlim.eventually (lt_mem_nhds zero_lt_one)] with w hw hz
+  rw [sectionValue_eq_zero_iff] at hz
+  simp [hz] at hw
 
 /-- **The zero divisor of a framed degree-`m` vortex lies in `Sym ℂ m`.** If the section of a
 field with `Cᵏ` connection coefficients, `k ≥ 1`, satisfying the holomorphicity rows has the
