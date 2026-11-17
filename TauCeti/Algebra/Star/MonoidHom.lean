@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Star.MonoidHom
 public import Mathlib.Algebra.Star.StarAlgHom
+import TauCeti.Algebra.Ring.Hom
 
 /-!
 # Corner unitization of non-unital `⋆`-algebra homomorphisms as `⋆`-monoid homomorphisms
@@ -40,14 +41,6 @@ variable {R A B : Type*} [Monoid R]
   [Semiring A] [DistribMulAction R A] [StarMul A]
   [Ring B] [DistribMulAction R B] [StarRing B]
 
-private theorem one_sub_map_one_mul_apply (ρ : A →⋆ₙₐ[R] B) (a : A) :
-    (1 - ρ 1) * ρ a = 0 := by
-  rw [sub_mul, one_mul, ← map_mul, one_mul, sub_self]
-
-private theorem apply_mul_one_sub_map_one (ρ : A →⋆ₙₐ[R] B) (a : A) :
-    ρ a * (1 - ρ 1) = 0 := by
-  rw [mul_sub, mul_one, ← map_mul, mul_one, sub_self]
-
 /-- Extend a possibly non-unital `⋆`-algebra homomorphism `ρ : A →⋆ₙₐ[R] B` between unital
 `⋆`-rings to a `StarMonoidHom` `A →⋆* B` via `a ↦ ρ a + (1 - ρ 1)`, acting as the identity on the
 complementary corner `1 - ρ 1` so that `Unitary.map` sends unitaries of `A` to unitaries of `B`. -/
@@ -57,14 +50,14 @@ def unitizeStarMonoidHom (ρ : A →⋆ₙₐ[R] B) : A →⋆* B where
   map_mul' a b := by
     symm
     have hidem : (1 - ρ 1) * (1 - ρ 1) = 1 - ρ 1 := by
-      rw [mul_sub, mul_one, one_sub_map_one_mul_apply, sub_zero]
+      rw [mul_sub, mul_one, TauCeti.one_sub_map_one_mul_apply, sub_zero]
     calc
       (ρ a + (1 - ρ 1)) * (ρ b + (1 - ρ 1))
         = ρ a * ρ b + ρ a * (1 - ρ 1) + ((1 - ρ 1) * ρ b + (1 - ρ 1) * (1 - ρ 1)) := by
           rw [add_mul, mul_add, mul_add]
       _ = ρ (a * b) + (1 - ρ 1) := by
-          rw [← map_mul, apply_mul_one_sub_map_one, one_sub_map_one_mul_apply, hidem,
-            add_zero, zero_add]
+          rw [← map_mul, TauCeti.apply_mul_one_sub_map_one, TauCeti.one_sub_map_one_mul_apply,
+            hidem, add_zero, zero_add]
   map_star' a := by
     rw [star_add, star_sub, star_one, ← map_star, ← map_star, star_one]
 
@@ -83,14 +76,14 @@ theorem unitizeStarMonoidHom_apply_of_map_one {ρ : A →⋆ₙₐ[R] B} (hρ : 
 @[simp]
 theorem unitizeStarMonoidHom_mul_apply (ρ : A →⋆ₙₐ[R] B) (a b : A) :
     ρ.unitizeStarMonoidHom a * ρ b = ρ (a * b) := by
-  rw [unitizeStarMonoidHom_apply, add_mul, one_sub_map_one_mul_apply, add_zero, ← map_mul]
+  rw [unitizeStarMonoidHom_apply, add_mul, TauCeti.one_sub_map_one_mul_apply, add_zero, ← map_mul]
 
 /-- Right multiplication by `ρ.unitizeStarMonoidHom b` on `ρ a` drops the complementary corner
 `1 - ρ 1`. -/
 @[simp]
 theorem apply_mul_unitizeStarMonoidHom (ρ : A →⋆ₙₐ[R] B) (a b : A) :
     ρ a * ρ.unitizeStarMonoidHom b = ρ (a * b) := by
-  rw [unitizeStarMonoidHom_apply, mul_add, apply_mul_one_sub_map_one, add_zero, ← map_mul]
+  rw [unitizeStarMonoidHom_apply, mul_add, TauCeti.apply_mul_one_sub_map_one, add_zero, ← map_mul]
 
 /-- Conjugating `ρ b` by `ρ.unitizeStarMonoidHom a` coincides with applying `ρ` to `a * b * star a`.
 -/

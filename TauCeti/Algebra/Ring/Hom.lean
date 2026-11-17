@@ -17,6 +17,10 @@ The element `-1` squares to `1`. A multiplicative map into a ring without zero d
 therefore sends it to `1` or `-1`. This applies to ordinary ring-valued maps as well as to
 unit-valued characters after composing with the coercion homomorphism.
 
+Any multiplicative map `f` from a unital magma into a (possibly non-associative) ring sends `1` to
+an idempotent `f 1`, and the complementary idempotent `1 - f 1` annihilates every image `f a` on
+both sides (`TauCeti.one_sub_map_one_mul_apply` and `TauCeti.apply_mul_one_sub_map_one`).
+
 A ring homomorphism fixes natural number casts, so it preserves membership statements of the form
 `n ^ k * x ∈ A`: if it maps `A` into `B`, then `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`. This
 controls denominators under ring endomorphisms that preserve a subring, as in integrality arguments
@@ -25,6 +29,8 @@ for Hazewinkel's functional equation.
 ## Main results
 
 * `TauCeti.map_neg_one_eq_one_or_eq_neg_one`: the image of `-1` is `1` or `-1`.
+* `TauCeti.one_sub_map_one_mul_apply` and `TauCeti.apply_mul_one_sub_map_one`: `1 - f 1`
+  annihilates `f a` on the left and right for any multiplicative map `f`.
 * `Set.MapsTo.natCast_pow_mul_apply_mem`: if a ring homomorphism `f` maps `A` into `B`, then
   `n ^ k * x ∈ A` implies `n ^ k * f x ∈ B`.
 * `Set.MapsTo.ringHom_pow`: if a ring endomorphism `f` maps `A` into itself, so does `f ^ n`.
@@ -41,6 +47,22 @@ theorem map_neg_one_eq_one_or_eq_neg_one {F M R : Type*} [MulOneClass M] [HasDis
     [NonAssocRing R] [NoZeroDivisors R] [FunLike F M R] [MonoidHomClass F M R] (f : F) :
     f (-1) = 1 ∨ f (-1) = -1 :=
   mul_self_eq_one_iff.mp (by rw [← map_mul]; simp)
+
+/-- For any multiplicative map `f` from a unital magma into a (possibly non-associative) ring,
+the complementary idempotent `1 - f 1` annihilates `f a` on the left. -/
+@[simp]
+theorem one_sub_map_one_mul_apply {F M R : Type*} [MulOneClass M] [NonAssocRing R]
+    [FunLike F M R] [MulHomClass F M R] (f : F) (a : M) :
+    (1 - f 1) * f a = 0 := by
+  rw [sub_mul, one_mul, ← map_mul, one_mul, sub_self]
+
+/-- For any multiplicative map `f` from a unital magma into a (possibly non-associative) ring,
+the complementary idempotent `1 - f 1` annihilates `f a` on the right. -/
+@[simp]
+theorem apply_mul_one_sub_map_one {F M R : Type*} [MulOneClass M] [NonAssocRing R]
+    [FunLike F M R] [MulHomClass F M R] (f : F) (a : M) :
+    f a * (1 - f 1) = 0 := by
+  rw [mul_sub, mul_one, ← map_mul, mul_one, sub_self]
 
 end TauCeti
 

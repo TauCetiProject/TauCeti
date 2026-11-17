@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.CStarAlgebra.Spectrum
 public import Mathlib.Algebra.Star.UnitaryStarAlgAut
 import TauCeti.Algebra.Star.MonoidHom
+import TauCeti.Analysis.CStarAlgebra.Basic
 import TauCeti.Analysis.Normed.Ring.Basic
 
 /-!
@@ -107,10 +108,7 @@ theorem trans (h₁ : ApproximatelyUnitarilyEquivalent φ ψ)
         ‖(v : B) * ψ a * star (v : B) - χ a‖ := norm_add_le _ _
     _ = ‖(u : B) * φ a * star (u : B) - ψ a‖ +
         ‖(v : B) * ψ a * star (v : B) - χ a‖ := by
-      simpa only [Unitary.coe_star] using congrArg
-        (fun x : ℝ ↦ x + ‖(v : B) * ψ a * star (v : B) - χ a‖)
-        ((CStarRing.norm_mul_coe_unitary _ (star v)).trans
-          (CStarRing.norm_coe_unitary_mul v _))
+      rw [CStarRing.norm_unitary_conj]
     _ < ε / 2 + ε / 2 := add_lt_add (hu a ha) (hv a ha)
     _ = ε := by ring
 
@@ -145,10 +143,8 @@ theorem norm_eq (h : ApproximatelyUnitarilyEquivalent φ ψ) (a : A) : ‖φ a�
     apply le_of_forall_pos_lt_add
     intro ε hε
     obtain ⟨u, hu⟩ := h {a} ε hε
-    have hn := StarAlgEquiv.norm_map (Unitary.conjStarAlgAut ℂ B u) (φ a)
     have ht := norm_le_norm_add_norm_sub (ψ a) ((u : B) * φ a * star (u : B))
-    rw [Unitary.conjStarAlgAut_apply] at hn
-    rw [hn, norm_sub_rev] at ht
+    rw [CStarRing.norm_unitary_conj, norm_sub_rev] at ht
     linarith [hu a (Finset.mem_singleton_self a)]
   exact le_antisymm (hle h) (hle h.symm)
 

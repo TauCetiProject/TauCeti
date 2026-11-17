@@ -9,6 +9,7 @@ public import TauCeti.Analysis.CStarAlgebra.ApproximateUnitaryEquivalence.Basic
 public import Mathlib.Analysis.SpecificLimits.Basic
 public import Mathlib.Topology.MetricSpace.Equicontinuity
 public import Mathlib.Topology.DenseEmbedding
+import TauCeti.Analysis.CStarAlgebra.Basic
 
 /-!
 # Sequential implementation of approximate unitary equivalence
@@ -48,11 +49,6 @@ theorem of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] (u : ι → unitary B)
   obtain ⟨i, hi⟩ := (F.eventually_all.mpr fun a _ ↦ he a).exists
   exact ⟨u i, hi⟩
 
-private theorem norm_unitary_conj_sub (u : unitary B) (x y : B) :
-    ‖(u : B) * x * star (u : B) - (u : B) * y * star (u : B)‖ = ‖x - y‖ := by
-  rw [← Unitary.conjStarAlgAut_apply (S := ℂ) u x, ← Unitary.conjStarAlgAut_apply (S := ℂ) u y,
-    ← map_sub, StarAlgEquiv.norm_map]
-
 /-- Approximate unitary equivalence is jointly closed in both arguments under point-norm
 convergence along any nontrivial filter, without separability assumptions. -/
 theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι → A →⋆ₙₐ[ℂ] B}
@@ -82,7 +78,7 @@ theorem of_tendsto_of_tendsto {ι : Type*} {l : Filter ι} [l.NeBot] {Φ Ψ : ι
           (add_le_add_left (norm_sub_le_norm_sub_add_norm_sub _ ((u : B) * Φ i a * star (u : B)) _)
             _)
     _ = ‖Φ i a - φ a‖ + ‖(u : B) * Φ i a * star (u : B) - Ψ i a‖ + ‖Ψ i a - ψ a‖ := by
-        rw [norm_unitary_conj_sub, norm_sub_rev (φ a)]
+        rw [CStarRing.norm_unitary_conj_sub, norm_sub_rev (φ a)]
     _ < ε / 3 + ε / 3 + ε / 3 := add_lt_add (add_lt_add (hΦi a ha) (hu a ha)) (hΨi a ha)
     _ = ε := by ring
 
