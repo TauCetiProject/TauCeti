@@ -6,14 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Tangent.Basic
+public import TauCeti.Topology.Homotopy.Cube.Radius
 public import TauCeti.Topology.VectorBundle.Complex.Clutching
 
 /-!
 # The first Chern number of the tangent bundle of the Riemann sphere
 
 The holomorphic tangent bundle `TS²` of the Riemann sphere `OnePoint ℂ` is a complex line bundle.
-This file computes its clutching number (`TauCeti.clutchingNumber`), the clutching description of
-the first Chern number, on the standard sphere: `c₁(TS²)[S²] = 2`.
+This file computes its clutching number (`TauCeti.clutchingNumber`) on the standard sphere: it is
+`2`. This is the clutching description of the evaluation `c₁(TS²)[S²] = 2`; as in
+`TauCeti.clutchingNumber`, no comparison with a cohomological first Chern class is made here.
 
 **The standard sphere.** The based sphere `TauCeti.riemannSphereSquare`, a map from the square
 `I²` to `OnePoint ℂ` sending the boundary of the square to `∞`, reads a point `y` of the open square
@@ -63,68 +65,48 @@ namespace TauCeti
 
 /-! ### The standard sphere -/
 
-/-- The sup norm `max (|Re z|, |Im z|)` of `z` is positively homogeneous. -/
-private theorem norm_equivRealProd_ofReal_mul {r : ℝ} (hr : 0 ≤ r) (z : ℂ) :
-    ‖Complex.equivRealProd ((r : ℂ) * z)‖ = r * ‖Complex.equivRealProd z‖ := by
-  simp [abs_of_nonneg hr, mul_max_of_nonneg _ _ hr]
+/-- The sup radius `TauCeti.cubeRadius` of a point of the square is twice the sup norm
+`max (|Re c|, |Im c|)` of its offset `c` from the centre. -/
+private theorem cubeRadius_eq_two_mul_norm (y : Fin 2 → I) :
+    cubeRadius y = 2 * ‖Complex.equivRealProdCLM (squareCenterOffset y)‖ := by
+  rw [cubeRadius_def]
+  congr 1
+  refine le_antisymm ((dist_pi_le_iff (norm_nonneg _)).2 fun i ↦ ?_) ?_
+  · fin_cases i <;> simp [dist_apply_cubeCenter]
+  · have h₀ := dist_le_pi_dist y (cubeCenter : I^(Fin 2)) 0
+    have h₁ := dist_le_pi_dist y (cubeCenter : I^(Fin 2)) 1
+    rw [dist_apply_cubeCenter] at h₀ h₁
+    simpa using max_le h₀ h₁
 
-/-- The rescaled distance `1 - 2 max (|s - 1/2|, |t - 1/2|)` of a point `(s, t)` of the square to
-the boundary, in the sup norm: `1` at the centre and `0` exactly on the boundary. -/
+/-- The rescaled distance `1 - cubeRadius y` of a point `y` of the square to the boundary, in the
+sup norm: `1` at the centre and `0` exactly on the boundary. -/
 private def squareDepth (y : Fin 2 → I) : ℝ :=
-  1 - 2 * ‖Complex.equivRealProd (squareCenterOffset y)‖
+  1 - cubeRadius y
 
 @[fun_prop]
-private theorem continuous_squareDepth : Continuous squareDepth := by
-  unfold squareDepth
-  simp only [Complex.equivRealProd_apply, Prod.norm_mk, Real.norm_eq_abs]
-  fun_prop
+private theorem continuous_squareDepth : Continuous squareDepth :=
+  continuous_const.sub continuous_cubeRadius
 
-private theorem abs_coe_sub_half_le (s : I) : |(s : ℝ) - 1 / 2| ≤ 1 / 2 :=
-  abs_le.2 ⟨by linarith [s.2.1], by linarith [s.2.2]⟩
-
-private theorem squareDepth_nonneg (y : Fin 2 → I) : 0 ≤ squareDepth y := by
-  have := max_le (abs_coe_sub_half_le (y 0)) (abs_coe_sub_half_le (y 1))
-  simp only [squareDepth, Complex.equivRealProd_apply, Prod.norm_mk, Real.norm_eq_abs,
-    re_squareCenterOffset, im_squareCenterOffset]
-  linarith
-
-private theorem abs_coe_sub_half_eq_half_iff (s : I) :
-    |(s : ℝ) - 1 / 2| = 1 / 2 ↔ s = 0 ∨ s = 1 := by
-  rw [abs_eq (by norm_num), ← Set.Icc.coe_eq_zero, ← Set.Icc.coe_eq_one]
-  constructor <;> rintro (h | h)
-  · exact Or.inr (by linarith)
-  · exact Or.inl (by linarith)
-  · exact Or.inr (by rw [h]; norm_num)
-  · exact Or.inl (by rw [h]; norm_num)
+private theorem squareDepth_nonneg (y : Fin 2 → I) : 0 ≤ squareDepth y :=
+  sub_nonneg.2 (cubeRadius_le_one y)
 
 private theorem squareDepth_eq_zero_iff {y : Fin 2 → I} :
-    squareDepth y = 0 ↔ y ∈ Cube.boundary (Fin 2) := by
-  have h₀ := abs_coe_sub_half_le (y 0)
-  have h₁ := abs_coe_sub_half_le (y 1)
-  simp only [squareDepth, Complex.equivRealProd_apply, Prod.norm_mk, Real.norm_eq_abs,
-    re_squareCenterOffset, im_squareCenterOffset, Cube.boundary, mem_ofPred_eq,
-    Fin.exists_fin_two, ← abs_coe_sub_half_eq_half_iff]
-  constructor
-  · intro h
-    rcases le_total |(y 0 : ℝ) - 1 / 2| |(y 1 : ℝ) - 1 / 2| with hle | hle
-    · exact Or.inr (by rw [max_eq_right hle] at h; linarith)
-    · exact Or.inl (by rw [max_eq_left hle] at h; linarith)
-  · rintro (h | h)
-    · rw [max_eq_left (by rw [h]; exact h₁)]; linarith
-    · rw [max_eq_right (by rw [h]; exact h₀)]; linarith
+    squareDepth y = 0 ↔ y ∈ Cube.boundary (Fin 2) :=
+  sub_eq_zero.trans (eq_comm.trans (cubeRadius_eq_one_iff y))
 
 /-- In the open square, the offset `c` from the centre is recovered from `z = c / d`, for the
 depth `d`, as `z / (1 + 2 max (|Re z|, |Im z|))`. -/
 private theorem squareCenterOffset_eq_div {y : Fin 2 → I} (hy : squareDepth y ≠ 0) :
     squareCenterOffset y = (squareCenterOffset y / squareDepth y : ℂ) /
-      (1 + 2 * ‖Complex.equivRealProd (squareCenterOffset y / squareDepth y : ℂ)‖ : ℝ) := by
+      (1 + 2 * ‖Complex.equivRealProdCLM (squareCenterOffset y / squareDepth y : ℂ)‖ : ℝ) := by
   have hd : 0 < squareDepth y := (squareDepth_nonneg y).lt_of_ne' hy
-  have h1 : 1 + 2 * ‖Complex.equivRealProd (squareCenterOffset y / squareDepth y : ℂ)‖ =
+  have h1 : 1 + 2 * ‖Complex.equivRealProdCLM (squareCenterOffset y / squareDepth y : ℂ)‖ =
       (squareDepth y)⁻¹ := by
-    rw [div_eq_inv_mul, ← Complex.ofReal_inv, norm_equivRealProd_ofReal_mul (inv_nonneg.2 hd.le)]
+    rw [div_eq_inv_mul, ← Complex.ofReal_inv, ← Complex.real_smul, map_smul, norm_smul,
+      Real.norm_of_nonneg (inv_nonneg.2 hd.le)]
     apply eq_inv_of_mul_eq_one_left
     rw [add_mul, mul_comm (squareDepth y)⁻¹, mul_assoc, mul_assoc, inv_mul_cancel₀ hd.ne',
-      squareDepth]
+      squareDepth, cubeRadius_eq_two_mul_norm]
     ring
   rw [h1, Complex.ofReal_inv, div_inv_eq_mul, div_mul_cancel₀ _ (by exact_mod_cast hd.ne')]
 
@@ -132,7 +114,7 @@ private theorem squareCenterOffset_eq_div {y : Fin 2 → I} (hy : squareDepth y 
 square: the point `1/2 + z / (1 + 2 max (|Re z|, |Im z|))`. -/
 private theorem exists_squareCenterOffset_div_eq (z : ℂ) :
     ∃ y : Fin 2 → I, squareDepth y ≠ 0 ∧ squareCenterOffset y / squareDepth y = z := by
-  set m := ‖Complex.equivRealProd z‖
+  set m := ‖Complex.equivRealProdCLM z‖
   have hm : 0 ≤ m := norm_nonneg _
   set r : ℝ := (1 + 2 * m)⁻¹
   have hr : 0 < r := inv_pos.2 (by linarith)
@@ -151,7 +133,8 @@ private theorem exists_squareCenterOffset_div_eq (z : ℂ) :
   have hc : squareCenterOffset y = (r : ℂ) * z := by
     apply Complex.ext <;> simp [y]
   have hd : squareDepth y = r := by
-    rw [squareDepth, hc, norm_equivRealProd_ofReal_mul hr.le, eq_comm,
+    rw [squareDepth, cubeRadius_eq_two_mul_norm, hc, ← Complex.real_smul, map_smul, norm_smul,
+      Real.norm_of_nonneg hr.le, eq_comm,
       ← mul_inv_cancel₀ (by linarith : 1 + 2 * m ≠ 0)]
     ring
   refine ⟨y, by rw [hd]; exact hr.ne', ?_⟩
@@ -214,31 +197,39 @@ private theorem riemannSphereSquare_apply (y : Fin 2 → I) :
     riemannSphereSquare y = riemannSphereSquareMap y :=
   (rfl)
 
+private theorem riemannSphereSquare_of_squareDepth_eq_zero {y : Fin 2 → I}
+    (hy : squareDepth y = 0) : riemannSphereSquare y = ∞ :=
+  (riemannSphereSquare_apply y).trans (riemannSphereSquareMap_of_eq_zero hy)
+
+private theorem riemannSphereSquare_of_squareDepth_ne_zero {y : Fin 2 → I}
+    (hy : squareDepth y ≠ 0) :
+    riemannSphereSquare y = ((squareCenterOffset y / squareDepth y : ℂ) : OnePoint ℂ) :=
+  (riemannSphereSquare_apply y).trans (riemannSphereSquareMap_of_ne_zero hy)
+
 /-- The standard sphere sends the boundary of the square to `∞`. -/
 @[simp]
 theorem riemannSphereSquare_apply_of_mem {y : Fin 2 → I} (hy : y ∈ Cube.boundary (Fin 2)) :
     riemannSphereSquare y = ∞ := by
-  rw [riemannSphereSquare_apply, riemannSphereSquareMap_of_eq_zero (squareDepth_eq_zero_iff.2 hy)]
+  rw [riemannSphereSquare_of_squareDepth_eq_zero (squareDepth_eq_zero_iff.2 hy)]
 
 /-- At a point of the open square, the standard sphere is `c / (1 - 2 max (|Re c|, |Im c|))`, for
 the offset `c` from the centre; the maximum is the sup norm of `c` read in `ℝ × ℝ`. -/
 theorem riemannSphereSquare_apply_of_notMem {y : Fin 2 → I} (hy : y ∉ Cube.boundary (Fin 2)) :
     riemannSphereSquare y = ((squareCenterOffset y /
-      (1 - 2 * ‖Complex.equivRealProd (squareCenterOffset y)‖ : ℝ) : ℂ) : OnePoint ℂ) := by
-  rw [riemannSphereSquare_apply, riemannSphereSquareMap_of_ne_zero
-    (mt squareDepth_eq_zero_iff.1 hy), squareDepth]
+      (1 - 2 * ‖Complex.equivRealProdCLM (squareCenterOffset y)‖ : ℝ) : ℂ) : OnePoint ℂ) := by
+  rw [riemannSphereSquare_of_squareDepth_ne_zero (mt squareDepth_eq_zero_iff.1 hy), squareDepth,
+    cubeRadius_eq_two_mul_norm]
 
 /-- **The standard sphere maps the open square bijectively onto `ℂ`.** -/
 theorem bijOn_riemannSphereSquare :
     BijOn riemannSphereSquare (Cube.boundary (Fin 2))ᶜ (range ((↑) : ℂ → OnePoint ℂ)) := by
-  have happ {y : Fin 2 → I} (hy : squareDepth y ≠ 0) :
-      riemannSphereSquare y = ((squareCenterOffset y / squareDepth y : ℂ) : OnePoint ℂ) := by
-    rw [riemannSphereSquare_apply, riemannSphereSquareMap_of_ne_zero hy]
   have hd {y : Fin 2 → I} (hy : y ∈ (Cube.boundary (Fin 2))ᶜ) : squareDepth y ≠ 0 :=
     mt squareDepth_eq_zero_iff.1 hy
-  refine ⟨fun y hy ↦ ⟨_, (happ (hd hy)).symm⟩, fun y hy y' hy' h ↦ ?_, ?_⟩
+  refine ⟨fun y hy ↦ ⟨_, (riemannSphereSquare_of_squareDepth_ne_zero (hd hy)).symm⟩,
+    fun y hy y' hy' h ↦ ?_, ?_⟩
   · -- Injectivity: the offset from the centre is recovered from the image, hence the point.
-    rw [happ (hd hy), happ (hd hy'), OnePoint.coe_eq_coe] at h
+    rw [riemannSphereSquare_of_squareDepth_ne_zero (hd hy),
+      riemannSphereSquare_of_squareDepth_ne_zero (hd hy'), OnePoint.coe_eq_coe] at h
     have hc : squareCenterOffset y = squareCenterOffset y' := by
       rw [squareCenterOffset_eq_div (hd hy), squareCenterOffset_eq_div (hd hy'), h]
     ext i
@@ -247,7 +238,8 @@ theorem bijOn_riemannSphereSquare :
     · simpa using congrArg Complex.im hc
   · rintro _ ⟨z, rfl⟩
     obtain ⟨y, hy, hz⟩ := exists_squareCenterOffset_div_eq z
-    exact ⟨y, mt squareDepth_eq_zero_iff.2 hy, by rw [happ hy, hz]⟩
+    exact ⟨y, mt squareDepth_eq_zero_iff.2 hy,
+      by rw [riemannSphereSquare_of_squareDepth_ne_zero hy, hz]⟩
 
 /-! ### A frame of the tangent bundle along the standard sphere -/
 
@@ -285,7 +277,19 @@ private def frame (y : Fin 2 → I) : ℂ ≃L[ℂ] TangentSpace 𝓘(ℂ, ℂ) 
   ContinuousLinearEquiv.unitsEquivAut ℂ (Units.mk0 (frameCoeff y) (frameCoeff_ne_zero y))
 
 private theorem frame_apply (y : Fin 2 → I) (v : ℂ) : frame y v = v * frameCoeff y :=
-  (rfl)
+  ContinuousLinearEquiv.unitsEquivAut_apply (R := ℂ) _ _
+
+/-- Transport the value of a trivialization of the tangent bundle along an equality `x = x'` of
+base points. The fibre `TangentSpace 𝓘(ℂ, ℂ) x` of the point `⟨x, w⟩` of the total space depends
+on `x`, so `rw` cannot rewrite `x` there directly, for instance from `riemannSphereSquare y` to its
+value: the motive would not be type-correct. Once the vector `w` is read as an element of `ℂ`, this
+lemma rewrites the base point together with the vector. -/
+private theorem trivializationAt_snd_congr (b : OnePoint ℂ) {x x' : OnePoint ℂ} (h : x = x')
+    (w : ℂ) :
+    (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) b ⟨x, w⟩).2 =
+      (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) b ⟨x', w⟩).2 := by
+  subst h
+  rfl
 
 /-- In the open square, the frame reads as `v (d² + |c|²) / d²` in the affine chart. -/
 private theorem trivializationAt_coe_frame {y : Fin 2 → I} (hy : squareDepth y ≠ 0) (z₀ : ℂ)
@@ -293,13 +297,8 @@ private theorem trivializationAt_coe_frame {y : Fin 2 → I} (hy : squareDepth y
     (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (z₀ : OnePoint ℂ)
       ⟨riemannSphereSquare y, frame y v⟩).2 =
         v * ((frameNumerator y : ℂ) / (squareDepth y : ℂ) ^ 2) := by
-  have h := (riemannSphereSquare_apply y).trans (riemannSphereSquareMap_of_ne_zero hy)
-  have key : ∀ (x : OnePoint ℂ) (w : ℂ),
-      x = ((squareCenterOffset y / squareDepth y : ℂ) : OnePoint ℂ) →
-        (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (z₀ : OnePoint ℂ) ⟨x, w⟩).2 = w := by
-    rintro _ w rfl
-    exact trivializationAt_coe_apply_coe _ _ _
-  rw [key _ (frame y v) h, frame_apply]
+  rw [frame_apply, trivializationAt_snd_congr _ (riemannSphereSquare_of_squareDepth_ne_zero hy),
+    trivializationAt_coe_apply_coe]
   simp [frameCoeff, hy]
 
 /-- Away from the centre of the square, the frame reads as `-v (d² + |c|²) / c²` in the inverted
@@ -310,23 +309,13 @@ private theorem trivializationAt_infty_frame {y : Fin 2 → I} (hy : squareCente
       ⟨riemannSphereSquare y, frame y v⟩).2 =
         v * (-(frameNumerator y : ℂ) / squareCenterOffset y ^ 2) := by
   by_cases hd : squareDepth y = 0
-  · have key : ∀ (x : OnePoint ℂ) (w : ℂ), x = ∞ →
-        (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (∞ : OnePoint ℂ) ⟨x, w⟩).2 = w := by
-      rintro _ w rfl
-      exact trivializationAt_infty_apply_infty _
-    rw [key _ (frame y v) ((riemannSphereSquare_apply y).trans
-      (riemannSphereSquareMap_of_eq_zero hd)), frame_apply]
+  · rw [frame_apply, trivializationAt_snd_congr _ (riemannSphereSquare_of_squareDepth_eq_zero hd),
+      trivializationAt_infty_apply_infty]
     simp [frameCoeff, hd]
   · have hd' : (squareDepth y : ℂ) ≠ 0 := by exact_mod_cast hd
     have hz : (squareCenterOffset y / squareDepth y : ℂ) ≠ 0 := div_ne_zero hy hd'
-    have key : ∀ (x : OnePoint ℂ) (w : ℂ),
-        x = ((squareCenterOffset y / squareDepth y : ℂ) : OnePoint ℂ) →
-          (trivializationAt ℂ (TangentSpace 𝓘(ℂ, ℂ)) (∞ : OnePoint ℂ) ⟨x, w⟩).2 =
-            -((squareCenterOffset y / squareDepth y) ^ 2)⁻¹ * w := by
-      rintro _ w rfl
-      exact trivializationAt_infty_apply_coe hz _
-    rw [key _ (frame y v) ((riemannSphereSquare_apply y).trans
-      (riemannSphereSquareMap_of_ne_zero hd)), frame_apply]
+    rw [frame_apply, trivializationAt_snd_congr _ (riemannSphereSquare_of_squareDepth_ne_zero hd),
+      trivializationAt_infty_apply_coe hz]
     simp only [frameCoeff, hd, ite_false]
     field_simp
 
@@ -346,7 +335,7 @@ private theorem continuous_frame :
       squareCenterOffset_ne_zero_of_mem (squareDepth_eq_zero_iff.1 hd)
     have hproj : (TotalSpace.mk' ℂ (E := TangentSpace 𝓘(ℂ, ℂ)) (riemannSphereSquare q₀.1)
         (frame q₀.1 q₀.2)).proj = ∞ :=
-      (riemannSphereSquare_apply _).trans (riemannSphereSquareMap_of_eq_zero hd)
+      riemannSphereSquare_of_squareDepth_eq_zero hd
     rw [hproj]
     have hev : ∀ᶠ q in 𝓝 q₀, squareCenterOffset q.1 ≠ 0 :=
       (continuous_squareCenterOffset.comp continuous_fst).continuousAt.eventually_ne hc
@@ -357,7 +346,7 @@ private theorem continuous_frame :
   · -- In the open square, read the frame in the affine chart.
     obtain ⟨z₀, hz₀⟩ : ∃ z₀ : ℂ, (TotalSpace.mk' ℂ (E := TangentSpace 𝓘(ℂ, ℂ))
         (riemannSphereSquare q₀.1) (frame q₀.1 q₀.2)).proj = z₀ :=
-      ⟨_, (riemannSphereSquare_apply _).trans (riemannSphereSquareMap_of_ne_zero hd)⟩
+      ⟨_, riemannSphereSquare_of_squareDepth_ne_zero hd⟩
     rw [hz₀]
     have hev : ∀ᶠ q in 𝓝 q₀, squareDepth q.1 ≠ 0 :=
       (continuous_squareDepth.comp continuous_fst).continuousAt.eventually_ne hd
@@ -397,8 +386,9 @@ private theorem clutchingFunction_frame {y : Fin 2 → I} (hy : y ∈ Cube.bound
   simp only [B, hN]
   field_simp
 
-/-- **The first Chern number of the Riemann sphere.** The clutching number of the holomorphic
-tangent bundle of the Riemann sphere on the standard sphere is `2`: `c₁(TS²)[S²] = 2`. -/
+/-- **The clutching first Chern number of the Riemann sphere.** The clutching number of the
+holomorphic tangent bundle of the Riemann sphere on the standard sphere is `2`. This is the
+clutching description of `c₁(TS²)[S²] = 2`; it is not compared here with a cohomological `c₁`. -/
 theorem clutchingNumber_tangentSpace_riemannSphereSquare :
     clutchingNumber ℂ (TangentSpace 𝓘(ℂ, ℂ)) riemannSphereSquare = 2 := by
   rw [clutchingNumber_eq_squareBoundaryDegree riemannSphereSquare _
