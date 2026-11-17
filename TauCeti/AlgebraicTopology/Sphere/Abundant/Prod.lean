@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.ProductBase
 public import TauCeti.AlgebraicTopology.Sphere.Abundant.Basic
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 
 /-!
 # Products of manifolds abundant with two-spheres
@@ -99,13 +100,6 @@ variable {V : Type} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensiona
   [T2Space N] [CompactSpace N] [ChartedSpace V N] (o : HomologicalOrientation N V n)
   (hn : Module.finrank ℝ V = n)
 
-/-- The identification of the coefficients `ℤ ⊗ ℤ` of a cross product with `ℤ`. -/
-private abbrev tensorCoeffIso :
-    ModuleCat.of ℤ (ULift.{0} ℤ) ⊗ ModuleCat.of ℤ (ULift.{0} ℤ) ≅ ModuleCat.of ℤ (ULift.{0} ℤ) :=
-  tensorIso (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso
-      (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso ≪≫ λ_ (𝟙_ _) ≪≫
-    (ULift.moduleEquiv : ULift.{0} ℤ ≃ₗ[ℤ] ℤ).toModuleIso.symm
-
 /-- The class of `Map(S², N × M)` built from a class `α` of `Map(S², M)`: the cross product
 `[N] × α`, with coefficients `ℤ ⊗ ℤ` identified with `ℤ`, carried to `Map(S², N × M)` along
 `constProdSphereMap`. -/
@@ -117,7 +111,8 @@ private def prodClass {k : ℕ}
   (SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom constProdSphereMap))
     (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom
     ((HomologicalComplex.homologyMap (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
-      tensorCoeffIso.hom).app (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom
+      (ModuleCat.uliftTensorSelfIso ℤ).hom).app
+        (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom
       ((TopCat.singularHomologyCross (TopCat.of N) (TopCat.of C(Sphere2, M))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (ModuleCat.of ℤ (ULift.{0} ℤ)) n k (n + k) rfl).hom
           (o.fundamentalClass hn ⊗ₜ α)))
@@ -145,7 +140,8 @@ private theorem livesOverFundamentalClass_prodClass_iff [T1Space M] {k : ℕ} (b
   (livesOverFundamentalClass_homologyMap_iff_of_comp_eq_id _ constProdSphereMap sphereMapSplit
     sphereMapSplit_comp_constProdSphereMap mappingSpaceEval_comp_constProdSphereMap
     prodMap_comp_sphereMapSplit).trans <|
-  (livesOverFundamentalClass_homologyMap_coefficient_iff _ tensorCoeffIso).trans <|
+  (livesOverFundamentalClass_homologyMap_coefficient_iff _
+    (ModuleCat.uliftTensorSelfIso ℤ)).trans <|
   o.livesOverFundamentalClass_prodMap_singularHomologyCross_fundamentalClass_iff hn
     (isClosed_singleton.preimage (mappingSpaceEval Sphere2.north).continuous) rfl
 
@@ -171,11 +167,11 @@ private theorem homologyMap_prodClass {k : ℕ}
           ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp (mappingSpaceEval Sphere2.north)))))
         (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k) ≫
       SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom constProdSphereMap))
-        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k) := by
-    rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
-      ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, constProdSphereMap_comp_prodMap]
+        (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k) :=
+    homologyMap_toSSet_ofHom_comp_comm _ _ constProdSphereMap_comp_prodMap.symm
   have h₂ := congrArg (fun g ↦ HomologicalComplex.homologyMap g (n + k))
-    (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map tensorCoeffIso.hom).naturality
+    (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+      (ModuleCat.uliftTensorSelfIso ℤ).hom).naturality
       (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.prodMap (ContinuousMap.id N)
         ((ContinuousMap.const' : C(M, C(Sphere2, M))).comp (mappingSpaceEval Sphere2.north))))))
   simp only [HomologicalComplex.homologyMap_comp] at h₂
@@ -188,8 +184,9 @@ private theorem homologyMap_prodClass {k : ℕ}
   exact (ConcreteCategory.congr_hom h₁ _).trans (congrArg (SSet.homologyMap (TopCat.toSSet.map
     (TopCat.ofHom constProdSphereMap)) (ModuleCat.of ℤ (ULift.{0} ℤ)) (n + k)).hom
     ((ConcreteCategory.congr_hom h₂ _).symm.trans (congrArg (HomologicalComplex.homologyMap
-      (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map tensorCoeffIso.hom).app
-        (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom h₃.symm)))
+      (((SSet.chainComplexFunctor (ModuleCat.{0} ℤ)).map
+        (ModuleCat.uliftTensorSelfIso ℤ).hom).app
+          (TopCat.toSSet.obj (TopCat.of (N × C(Sphere2, M))))) (n + k)).hom h₃.symm)))
 
 include o hn in
 /-- **Products with a manifold abundant with 2-spheres**, with the oriented factor on the left

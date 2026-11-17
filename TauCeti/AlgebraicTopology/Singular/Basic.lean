@@ -18,6 +18,8 @@ without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
+A commuting square of continuous maps gives a commuting square of homology maps
+(`TauCeti.homologyMap_toSSet_ofHom_comp_comm`).
 -/
 
 public section
@@ -54,6 +56,19 @@ lemma singularHomologyFunctor_obj_map [CategoryWithHomology C] (n : ℕ) {X Y : 
     (f : X ⟶ Y) :
     ((AlgebraicTopology.singularHomologyFunctor C n).obj R).map f =
       SSet.homologyMap (TopCat.toSSet.map f) R n := rfl
+
+/-- A commuting square of continuous maps gives a commuting square of the simplicial homology maps
+of the singular simplicial sets. -/
+lemma homologyMap_toSSet_ofHom_comp_comm [CategoryWithHomology C] (n : ℕ)
+    {X Y Y' Z : Type w} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Y']
+    [TopologicalSpace Z] {f : C(X, Y)} {g : C(Y, Z)} {f' : C(X, Y')} {g' : C(Y', Z)}
+    (h : g.comp f = g'.comp f') :
+    SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f)) R n ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g)) R n =
+      SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom f')) R n ≫
+        SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom g')) R n := by
+  rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
+    ← TopCat.ofHom_comp, ← TopCat.ofHom_comp, h]
 
 /-- Mathlib's identification of the singular chains of a totally disconnected space with the
 alternating constant complex sends the summand of a singular vertex to the summand of the point

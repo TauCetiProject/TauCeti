@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LivesOver
 public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Kunneth.Projective
+import TauCeti.Topology.Homeomorph.Prod
 
 /-!
 # Living over the fundamental class of a product base
@@ -201,8 +202,7 @@ private theorem singularHomologyCrossRel_tmul_homologyMap_map (S : Set (TopCat.o
   have hid : (TopPair.singularHomologyMap (TopPair.ofSubsetMap (𝟙 (TopCat.of M))
       (TopCat.mapsTo_id_compl subset_rfl)) (ModuleCat.of ℤ (ULift.{0} ℤ)) d).hom
         (o x).val = (o x).val := by
-    rw [TopPair.ofSubsetMap_id, TopPair.singularHomologyMap_id]
-    rfl
+    rw [TopPair.ofSubsetMap_id, TopPair.singularHomologyMap_id, ModuleCat.id_apply]
   -- The left side of `h` is the relative cross product of `id_* (o x)` and `ι_* w`, by definition
   -- of the composite and of the tensor product of maps in `ModuleCat`.
   exact (congrArg (fun t ↦ (TopCat.singularHomologyCrossRel (TopCat.of M) (TopCat.of Y) ({x}ᶜ)
@@ -211,17 +211,6 @@ private theorem singularHomologyCrossRel_tmul_homologyMap_map (S : Set (TopCat.o
         (ModuleCat.of ℤ (ULift.{0} ℤ)) k).hom w)) hid.symm).trans h
 
 variable {X Q : Type} [TopologicalSpace X]
-
-/-- The homeomorphism between the subspace `M × (X ∖ F)` of `M × X` and the product `M × (X ∖ F)`.
--/
-private def prodComplHomeomorph (F : Set X) :
-    ↥(Prod.snd ⁻¹' Fᶜ : Set (M × X)) ≃ₜ M × ↥Fᶜ where
-  toFun z := (z.1.1, ⟨z.1.2, z.2⟩)
-  invFun z := ⟨(z.1, z.2.1), z.2.2⟩
-  left_inv _ := rfl
-  right_inv _ := rfl
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
 
 /-- The map of pairs `(M × (X ∖ F), (M ∖ {b'}) × (X ∖ F)) ⟶ (M × X, (M ∖ {b'}) × X)`, for the
 fibre `F = p⁻¹(b)`. -/
@@ -297,8 +286,8 @@ private theorem exists_singularHomologyCrossRel_eq (p : X → Q) (b' : M) (b : Q
     (B := (Subtype.val ⁻¹' (Prod.fst ⁻¹' ({b'}ᶜ : Set M)) :
       Set ↥(Prod.snd ⁻¹' (p ⁻¹' {b})ᶜ : Set (M × X))))
     (B' := Prod.fst ⁻¹' ({b'}ᶜ : Set M))
-    (TopCat.ofHom ⟨prodComplHomeomorph (M := M) (p ⁻¹' {b}),
-      (prodComplHomeomorph (M := M) (p ⁻¹' {b})).continuous⟩) fun _ hz ↦ hz
+    (TopCat.ofHom ⟨Homeomorph.Set.preimageSnd (X := M) (p ⁻¹' {b})ᶜ,
+      (Homeomorph.Set.preimageSnd (X := M) (p ⁻¹' {b})ᶜ).continuous⟩) fun _ hz ↦ hz
   have hφψ : φ ≫ prodComplPairMap p b' b = TopPair.excisionMap (X := TopCat.of (M × X))
       (Prod.snd ⁻¹' (p ⁻¹' {b})ᶜ) (Prod.fst ⁻¹' ({b'}ᶜ : Set M)) :=
     TopPair.hom_ext_of_fst _ (by
@@ -352,7 +341,7 @@ private theorem singularHomologyMap_singularHomologyCrossRel_homologyMap_eq_zero
           erw [TopPair.Hom.fst_comp, TopPair.ofSubsetMap_fst, TopPair.ofSubsetMap_fst]
           rfl) _)
   refine (congrArg _ (o.singularHomologyCrossRel_tmul_homologyMap_map b' X _ w)).trans ?_
-  exact (ConcreteCategory.congr_hom hzero _).trans rfl
+  exact (ConcreteCategory.congr_hom hzero _).trans (LinearMap.zero_apply _)
 
 include hd in
 /-- **Cross products with the fundamental class over a product base.** Let `M` be a compact
@@ -387,9 +376,11 @@ theorem livesOverFundamentalClass_prodMap_singularHomologyCross_fundamentalClass
         ((singularHomologyCrossRelEquiv_apply _ _ _ _ _ _).trans
           (hw.symm.trans (singularHomologyCrossRelEquiv_apply _ _ _ _ _ _).symm))
     rw [hαw]
+    -- `fiberLocalization` is an abbreviation for the map `π` to the relative homology, so its value
+    -- at `ι_* w` is `(ι_* ≫ π) w` by `ModuleCat.comp_apply`.
     exact (ConcreteCategory.congr_hom ((TopPair.ofSubset ((p ⁻¹' {b})ᶜ :
       Set (TopCat.of X))).homologyMap_comp_singularHomologyπ (ModuleCat.of ℤ (ULift.{0} ℤ)) k)
-        w).trans rfl
+        w).trans (LinearMap.zero_apply _)
   · -- If `α` comes from `X ∖ F`, so does `o b' × α`.
     intro hα
     obtain ⟨w, rfl⟩ := (ShortComplex.moduleCat_exact_iff _).1

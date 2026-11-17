@@ -16,11 +16,16 @@ is `R` itself. This file records the consequences that instance search and `Modu
 not see through the monoidal structure: the unit is a free, finitely generated `R`-module
 (`ModuleCat.free_tensorUnit`, `ModuleCat.finite_tensorUnit`), of rank one when `R` satisfies the
 strong rank condition (`ModuleCat.finrank_tensorUnit`).
+
+Coefficients are often taken in the copy `ULift R` of `R`, for instance integral singular homology
+with coefficients `ULift ℤ`, and then cross products have coefficients `ULift R ⊗ ULift R`.
+`ModuleCat.uliftTensorSelfIso` identifies these with `ULift R` by multiplication.
 -/
 
 public section
 
 open CategoryTheory MonoidalCategory
+open scoped TensorProduct
 
 universe u
 
@@ -40,5 +45,20 @@ instance finite_tensorUnit : Module.Finite R (𝟙_ (ModuleCat.{u} R)) :=
 @[simp]
 theorem finrank_tensorUnit [StrongRankCondition R] : Module.finrank R (𝟙_ (ModuleCat.{u} R)) = 1 :=
   Module.finrank_self R
+
+/-- The tensor square of the copy `ULift R` of the tensor unit is `ULift R` again, by
+`a ⊗ b ↦ a * b`. -/
+def uliftTensorSelfIso :
+    of R (ULift.{u} R) ⊗ of R (ULift.{u} R) ≅ of R (ULift.{u} R) :=
+  tensorIso (ULift.moduleEquiv : ULift.{u} R ≃ₗ[R] R).toModuleIso
+      (ULift.moduleEquiv : ULift.{u} R ≃ₗ[R] R).toModuleIso ≪≫ λ_ (𝟙_ _) ≪≫
+    (ULift.moduleEquiv : ULift.{u} R ≃ₗ[R] R).toModuleIso.symm
+
+@[simp]
+theorem uliftTensorSelfIso_hom_tmul (a b : ULift.{u} R) :
+    (uliftTensorSelfIso R).hom (a ⊗ₜ b) = ULift.up (a.down * b.down) := by
+  simp only [uliftTensorSelfIso, Iso.trans_hom, tensorIso_hom, Iso.symm_hom]
+  exact congrArg ULift.up (MonoidalCategory.leftUnitor_hom_apply (M := 𝟙_ (ModuleCat.{u} R))
+    a.down b.down)
 
 end ModuleCat

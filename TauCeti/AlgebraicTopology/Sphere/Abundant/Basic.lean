@@ -227,11 +227,9 @@ theorem IsAbundantWithTwoSpheres.homeomorph {Q' : Type} [TopologicalSpace Q'] {n
         SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom
           (ContinuousMap.const'.comp (mappingSpaceEval (X := Q) Sphere2.north))))
           (ModuleCat.of ℤ (ULift.{0} ℤ)) k ≫ SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom H))
-          (ModuleCat.of ℤ (ULift.{0} ℤ)) k := by
-      rw [← SSet.homologyMap_comp, ← SSet.homologyMap_comp, ← Functor.map_comp, ← Functor.map_comp,
-        ← TopCat.ofHom_comp, ← TopCat.ofHom_comp]
-      congr 3
-      exact ContinuousMap.ext fun f ↦ ContinuousMap.ext fun s ↦ by simp [H]
+          (ModuleCat.of ℤ (ULift.{0} ℤ)) k :=
+      homologyMap_toSSet_ofHom_comp_comm _ _
+        (ContinuousMap.ext fun f ↦ ContinuousMap.ext fun s ↦ by simp [H])
     rw [← ModuleCat.comp_apply, hcomm, ModuleCat.comp_apply, ← map_sub]
     exact (hlo _).2 hk
 
