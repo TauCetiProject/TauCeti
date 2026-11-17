@@ -26,7 +26,9 @@ constant, the bound `∫_s ψ² ≤ K² |B|` for a function bounded by `K` and s
 ball `B`, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
 on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
-unions with disjoint sets.
+unions with disjoint sets. The constant comparison estimate
+`MeasureTheory.norm_setIntegral_sub_smul_measureReal_le` bounds the integral of a function
+within `ε` of a constant by `ε` times the measure of the integration set.
 
 ## Main statements
 
@@ -316,5 +318,21 @@ theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
   calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
     _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
     _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+/-- A function within `ε` of a constant `c` on a measurable set of finite measure has integral
+within `ε μ(S)` of `μ(S) • c`. -/
+theorem norm_setIntegral_sub_smul_measureReal_le {α G : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G] {μ : Measure α} {S : Set α}
+    (hS : MeasurableSet S) (hSfin : μ S < ⊤) {J : α → G}
+    (hJ : AEStronglyMeasurable J (μ.restrict S)) {c : G} {ε : ℝ}
+    (hJS : ∀ z ∈ S, ‖J z - c‖ ≤ ε) :
+    ‖(∫ z in S, J z ∂μ) - μ.real S • c‖ ≤ ε * μ.real S := by
+  have hJint : IntegrableOn J S μ := by
+    refine IntegrableOn.of_bound hSfin hJ (‖c‖ + ε)
+      (ae_restrict_of_forall_mem hS fun z hz ↦ ?_)
+    have := norm_sub_norm_le (J z) c
+    linarith [hJS z hz]
+  rw [← setIntegral_const, ← integral_sub hJint (integrableOn_const hSfin.ne)]
+  exact norm_setIntegral_le_of_norm_le_const hSfin hJS
 
 end MeasureTheory

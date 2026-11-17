@@ -21,6 +21,9 @@ If `A` is injective and the relative error is some `ε < 1`, then `f ∘ invFun 
 pseudo-emetric for which `A` is `c`-antilipschitz and `δ < 1`, then `f` is
 `c (1 - δ)⁻¹`-antilipschitz on `p` (`AntilipschitzWith.domRestrict_of_approx`).
 
+The pointwise estimate `TauCeti.norm_bounds_of_norm_sub_le` bounds `‖x‖` above and below
+when `x` is within a relative error of `y`.
+
 These estimates turn a piecewise approximation of a differentiable map by linear maps, with
 small relative error, into bi-Lipschitz bounds on each piece; the decomposition into injective
 pieces used by the area formula is built this way.
@@ -32,6 +35,15 @@ open Set Function
 open scoped NNReal
 
 namespace TauCeti
+
+/-- A vector `x` within `c ‖y‖` of `y` has norm between `(1 - c) ‖y‖` and `(1 + c) ‖y‖`. -/
+theorem norm_bounds_of_norm_sub_le {G : Type*} [SeminormedAddCommGroup G] {x y : G} {c : ℝ}
+    (h : ‖x - y‖ ≤ c * ‖y‖) :
+    (1 - c) * ‖y‖ ≤ ‖x‖ ∧ ‖x‖ ≤ (1 + c) * ‖y‖ := by
+  have h1 := norm_sub_norm_le x y
+  have h2 := norm_sub_norm_le y x
+  rw [norm_sub_rev y x] at h2
+  constructor <;> nlinarith
 
 section AddGroup
 
