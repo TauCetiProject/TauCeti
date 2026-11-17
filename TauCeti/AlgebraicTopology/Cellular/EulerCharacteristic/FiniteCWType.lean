@@ -114,7 +114,7 @@ every degree. -/
 instance finiteDimensional_singularChains_homology (X : Type w) [TopologicalSpace X]
     [FiniteCWType X] (k : Type w) [Field k] (n : ℕ) :
     FiniteDimensional k (((singularChains k).obj (TopCat.of X)).homology n) := by
-  rw [← singularHomologyFunctor_obj_obj_eq_homology]
+  rw [← singularHomologyFunctor_obj_obj]
   exact finite_singularHomology_of_finiteCWType X (ModuleCat.of k k) n
 
 /-- Some finite CW complex homotopy equivalent to `X` has alternating cell count equal to a given

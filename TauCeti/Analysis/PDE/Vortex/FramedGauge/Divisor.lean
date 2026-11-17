@@ -44,7 +44,10 @@ not be preserved by `G_(k+1)`, and the classification is the orbit statement abo
 
 That every point of `Sym ℂ m` is the divisor of a vortex of `A_m^k` needs, beyond Taubes's
 existence theorem for smooth framed vortices (`TauCeti.Vortex.framedVortexDivisor_surjective`),
-a smooth framed gauge moving each smooth framed vortex into `A_m^k`; it is not proved here.
+a smooth framed gauge moving each smooth framed vortex into `A_m^k`. This is
+`TauCeti.Vortex.exists_framedGaugeGroup_smul_mem_framedFieldSpace`, which gives
+`TauCeti.Vortex.sobolevVortexDivisor_surjective` and the identification
+`TauCeti.Vortex.sobolevVortexModuliEquiv` of the Sobolev moduli with `Sym ℂ m`.
 
 ## Main definitions
 

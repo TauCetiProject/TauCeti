@@ -50,6 +50,8 @@ For a positive base `a`, the real powers `(a ^ (n + 1)) ^ B` and `(a ^ n) ^ C` m
 a geometric series.
 For `1 ≤ b`, moving the exponent of `b ^ (s y)` to `s x` with `|x - y| ≤ L` costs at most the
 factor `b ^ (|s| L)`. This compares dyadic weights `2 ^ (s j)` and `2 ^ (s k)` at nearby indices.
+For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`: a weight of
+nonpositive regularity at a larger index absorbs the inverse weight at a smaller one.
 For `0 < x` and natural numbers `a ≤ b`, `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))`, the form of the
 off-diagonal decay `2 ^ (-M |j - k|)` between dyadic indices `j` and `k`.
 
@@ -111,6 +113,8 @@ with the corresponding integral of `q`-th powers.
   for `0 < a`.
 * `Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul`: `b ^ (s x) ≤ b ^ (|s| L) b ^ (s y)` when `1 ≤ b`
   and `|x - y| ≤ L`.
+* `Real.rpow_mul_mul_rpow_neg_mul_le_one`: `b ^ (s x) b ^ (-s y) ≤ 1` when `1 ≤ b`, `s ≤ 0` and
+  `y ≤ x`.
 * `Real.pow_div_pow_pow_eq_rpow_of_le`: `(x ^ a / x ^ b) ^ M = x ^ (-(M |b - a|))` for `0 < x`
   and `a ≤ b`.
 * `Real.rpow_mul_natCast_le_of_mem_Ico`, `Real.rpow_mul_natCast_le_of_mem_Ico'`:
@@ -274,6 +278,13 @@ theorem rpow_mul_natCast_le_of_mem_Ico' {b : ℝ} (hb : 1 ≤ b) (s : ℝ) {j k 
   rw [Finset.mem_Ico] at hk
   refine rpow_mul_le_rpow_abs_mul_mul_rpow_mul hb s (abs_sub_le_iff.2 ⟨?_, ?_⟩)
   all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
+
+/-- For `1 ≤ b`, `s ≤ 0` and `y ≤ x`, `b ^ (s x) b ^ (-s y) = b ^ (s (x - y)) ≤ 1`. -/
+theorem rpow_mul_mul_rpow_neg_mul_le_one {b : ℝ} (hb : 1 ≤ b) {s : ℝ} (hs : s ≤ 0) {x y : ℝ}
+    (hxy : y ≤ x) : b ^ (s * x) * b ^ (-s * y) ≤ 1 := by
+  rw [← rpow_add (by linarith)]
+  refine rpow_le_one_of_one_le_of_nonpos hb ?_
+  nlinarith
 
 /-- For `0 < b`, the geometric weight `(b ^ (-s)) ^ d` turns the dyadic weight `b ^ (s (d + k))`
 back into `b ^ (s k)`. -/

@@ -147,12 +147,12 @@ theorem lefschetzNumber_id [FiniteCWType X] :
     (eventually_isZero_singularHomology_of_finiteCWType X (ModuleCat.of k k))
   rw [eulerChar_eq_finsum_finrank_singularHomology X k,
     ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range hN]
-  simp_rw [singularHomologyFunctor_obj_obj_eq_homology] at hN
+  simp_rw [singularHomologyFunctor_obj_obj] at hN
   rw [lefschetzNumber_eq_sum (s := Finset.range N)
       (fun n hn ↦ ModuleCat.isZero_iff_subsingleton.1 (hN n (by simpa using hn)))]
   push_cast
   refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [singularHomologyMap_id', LinearMap.trace_id, singularHomologyFunctor_obj_obj_eq_homology]
+  rw [singularHomologyMap_id', LinearMap.trace_id, singularHomologyFunctor_obj_obj]
 
 /-- Every self-map of a contractible space has Lefschetz number one: it is homotopic to the
 identity, whose Lefschetz number is the Euler characteristic `1`. -/

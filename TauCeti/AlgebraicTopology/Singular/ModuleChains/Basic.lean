@@ -36,13 +36,15 @@ and vanishing on boundaries.
 
 ## Main results
 
+* `TauCeti.singularHomologyFunctor_obj_obj`: singular homology with coefficients in `k` is the
+  homology of `singularChains k`.
+* `TauCeti.subsingleton_singularChains_homology_iff_of_isIso`: a homology isomorphism identifies
+  the vanishing of the homology of the chains of its source and target.
 * `TauCeti.singularChains_linearMap_ext`, `TauCeti.singularChains_addMonoidHom_ext`: linear maps,
   and additive maps out of the chains with integer coefficients, are determined on simplices.
 * `TauCeti.singularChains_d_simplexChain`: the boundary of a simplex.
 * `TauCeti.singularAugment_map`, `TauCeti.singularAugment_d`: the augmentation is natural and
   vanishes on boundaries.
-* `TauCeti.singularHomologyFunctor_obj_obj_eq_homology`: singular homology with coefficients in
-  `k` is the homology of the singular chains with coefficients in `k`.
 * `ContinuousMap.singularHomologyMap_iterate`: the iterates of a self-map act on singular homology
   by the powers of its action.
 -/
@@ -63,12 +65,22 @@ variable (k : Type u) [Ring k]
 abbrev singularChains : TopCat.{u} ⥤ ChainComplex (ModuleCat.{u} k) ℕ :=
   (singularChainComplexFunctor (ModuleCat.{u} k)).obj (ModuleCat.of k k)
 
-/-- The degree-`n` singular homology with coefficients in `k` is the degree-`n` homology of the
-singular chains with coefficients in `k`. -/
-theorem singularHomologyFunctor_obj_obj_eq_homology (X : TopCat.{u}) (n : ℕ) :
-    ((singularHomologyFunctor (ModuleCat.{u} k) n).obj (ModuleCat.of k k)).obj X =
-      ((singularChains k).obj X).homology n :=
+/-- Singular homology with coefficients in `k` is, by definition, the homology of the simplicial
+singular chains `singularChains k`. -/
+theorem singularHomologyFunctor_obj_obj (X : TopCat.{u}) (i : ℕ) :
+    ((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).obj X =
+      ((singularChains k).obj X).homology i :=
   rfl
+
+/-- A map inducing an isomorphism on singular homology with coefficients in `k` in degree `i`
+identifies the vanishing of the degree-`i` homology of the chains of its source and target. -/
+theorem subsingleton_singularChains_homology_iff_of_isIso {X Y : TopCat.{u}} (f : X ⟶ Y) (i : ℕ)
+    [IsIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f)] :
+    Subsingleton (((singularChains k).obj X).homology i) ↔
+      Subsingleton (((singularChains k).obj Y).homology i) := by
+  rw [← singularHomologyFunctor_obj_obj, ← singularHomologyFunctor_obj_obj]
+  exact (asIso (((singularHomologyFunctor (ModuleCat.{u} k) i).obj (ModuleCat.of k k)).map f))
+    |>.toLinearEquiv.toEquiv.subsingleton_congr
 
 section Singular
 
