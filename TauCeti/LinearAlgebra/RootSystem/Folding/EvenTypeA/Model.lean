@@ -198,31 +198,16 @@ noncomputable def evenTypeAFixedBasis (n : ℕ) :
   rw [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
     evenTypeAFixedLeftEquiv_symm_apply]; simp [Finsupp.single_apply]
 
-/-- The root orbit of `p : TypeAIndex m` under `typeAZeroSumRevAut K m` is
-`{p, finDistinctPairsRevSwap (m + 1) p}`. -/
-theorem orbitIndices_typeAZeroSumRevAut (m : ℕ) (p : TypeAIndex m) :
-    (typeAZeroSumRootPairing K m).orbitIndices (typeAZeroSumRevAut K m) p =
-      {p, finDistinctPairsRevSwap (m + 1) p} := by
-  rw [← indexEquiv_typeAZeroSumRevAut K m]
-  exact RootPairing.orbitIndices_eq_pair_of_apply_apply (by
-    rw [indexEquiv_typeAZeroSumRevAut]; exact finDistinctPairsRevSwap_finDistinctPairsRevSwap p)
-
-/-- A root pair `p` is fixed by `finDistinctPairsRevSwap (m + 1)` iff `p.val.2 = p.val.1.rev`. -/
-theorem finDistinctPairsRevSwap_eq_self_iff {m : ℕ} {p : TypeAIndex m} :
-    finDistinctPairsRevSwap (m + 1) p = p ↔ p.val.2 = p.val.1.rev := by
-  rw [Subtype.ext_iff, finDistinctPairsRevSwap_apply_val, Prod.ext_iff, Fin.rev_eq_iff,
-    eq_comm (a := p.val.1.rev), and_self]
-
 private lemma orbitSum_typeAZeroSumRevAut_eq (n : ℕ) (p : TypeAIndex (2 * n)) :
     (typeAZeroSumRootPairing K (2 * n)).orbitSum (typeAZeroSumRevAut K (2 * n)) p =
       if p.val.2 = p.val.1.rev then evenTypeAFoldAtom K n p.val.1
       else evenTypeAFoldAtom K n p.val.1 - evenTypeAFoldAtom K n p.val.2 := by
   rw [RootPairing.orbitSum_def, orbitIndices_typeAZeroSumRevAut]
   by_cases hfix : p.val.2 = p.val.1.rev
-  · rw [ite_eq_left hfix, finDistinctPairsRevSwap_eq_self_iff.mpr hfix, pair_eq_singleton,
-      sum_singleton, root_typeAZeroSumRootPairing, hfix, evenTypeAFoldAtom]
+  · rw [ite_eq_left hfix, (finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev p).mpr hfix,
+      pair_eq_singleton, sum_singleton, root_typeAZeroSumRootPairing, hfix, evenTypeAFoldAtom]
   · have hp : p ≠ finDistinctPairsRevSwap (2 * n + 1) p :=
-      fun hc ↦ hfix (finDistinctPairsRevSwap_eq_self_iff.mp hc.symm)
+      fun hc ↦ hfix ((finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev p).mp hc.symm)
     rw [ite_eq_right hfix, sum_pair hp, root_typeAZeroSumRootPairing, root_typeAZeroSumRootPairing,
       finDistinctPairsRevSwap_apply_val, add_rev_typeAZeroSumVec]
 
@@ -272,7 +257,8 @@ theorem evenTypeAFixedShortLift_spec (n : ℕ) (i : Fin n) :
   have hfix : (evenTypeAFixedShortLift n i).val.2 = (evenTypeAFixedShortLift n i).val.1.rev := rfl
   refine ⟨by rw [isPos_typeAZeroSumBase_iff, evenTypeAFixedShortLift_val, Fin.lt_def,
       val_evenTypeALeftIdx, val_rev_evenTypeALeftIdx]; omega,
-    by rw [orbitIndices_typeAZeroSumRevAut, finDistinctPairsRevSwap_eq_self_iff.mpr hfix,
+    by rw [orbitIndices_typeAZeroSumRevAut,
+      (finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev _).mpr hfix,
       pair_eq_singleton, card_singleton],
     by rw [orbitSum_typeAZeroSumRevAut_eq, ite_eq_left hfix]; rfl⟩
 
@@ -288,7 +274,7 @@ theorem evenTypeAPairedShortLift_spec (n : ℕ) (i : Fin n) :
     simp [Fin.ext_iff]; omega
   refine ⟨by rw [isPos_typeAZeroSumBase_iff, evenTypeAPairedShortLift_val, Fin.lt_def]; exact hi,
     by rw [orbitIndices_typeAZeroSumRevAut]
-       exact card_pair fun hc ↦ hne (finDistinctPairsRevSwap_eq_self_iff.mp hc.symm),
+       exact card_pair fun hc ↦ hne ((finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev _).mp hc.symm),
     by rw [orbitSum_typeAZeroSumRevAut_eq, ite_eq_right hne, evenTypeAPairedShortLift_val,
       evenTypeAFoldAtom_left, evenTypeAFoldAtom_mid, sub_zero]⟩
 

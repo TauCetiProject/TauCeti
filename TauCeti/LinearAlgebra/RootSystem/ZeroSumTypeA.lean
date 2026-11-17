@@ -6,22 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Data.Fin.DistinctPairs
-public import TauCeti.InformationTheory.Coding.Elementary.Basic
+public import TauCeti.InformationTheory.Coding.Elementary.Basis
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.A
 public import TauCeti.LinearAlgebra.RootSystem.EquivComp
 public import TauCeti.LinearAlgebra.RootSystem.Isomorphism
 public import TauCeti.LinearAlgebra.RootSystem.Map
+public import TauCeti.LinearAlgebra.RootSystem.OrbitSum
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import TauCeti.Algebra.BigOperators.Finset.PartialSum
 
 /-!
 # The classical sum-zero root system of type `Aₘ`
 
 This file constructs Bourbaki's classical realization `typeAZeroSumRootPairing K m` of type `Aₘ` on
 `singleParityCheckCode K (Fin (m + 1))` paired by the ambient dot product, its Bourbaki base
-`typeAZeroSumBase K m` and simple-root basis `typeAZeroSumBasis`, the canonical equivalence
+`typeAZeroSumBase K m` (using the adjacent-difference basis `singleParityCheckCodeBasis K m` from
+`TauCeti.InformationTheory.Coding.Elementary.Basis`), the canonical equivalence
 `typeABaseChangeEquivZeroSum K m` from `typeABaseChangeRootSystem K m`, and the diagram-reversal
-automorphism `typeAZeroSumRevAut K m` (`(θ x) a = -x (rev a)`).
+automorphism `typeAZeroSumRevAut K m` (`(θ x) a = -x (rev a)`) together with its root orbits
+`orbitIndices_typeAZeroSumRevAut`.
 
 ## References
 * N. Bourbaki, *Lie Groups and Lie Algebras, Chapters 4--6*, Plate I.
@@ -71,71 +73,18 @@ theorem typeAZeroSumVec_dotProduct_self {a b : Fin (m + 1)} (h : a ≠ b) :
     (typeAZeroSumVec R a b : Fin (m + 1) → R) ⬝ᵥ (typeAZeroSumVec R a b : Fin (m + 1) → R) = 2 := by
   rw [typeAZeroSumVec_dotProduct]; simp only [ite_true, h, h.symm, ite_false]; norm_num
 
-/-- The `i`-th Bourbaki simple root `αᵢ = eᵢ - eᵢ₊₁` in `singleParityCheckCode R (Fin (m + 1))`. -/
-def typeAZeroSumSimpleRoot (m : ℕ) (i : Fin m) : singleParityCheckCode R (Fin (m + 1)) :=
-  typeAZeroSumVec R i.castSucc i.succ
+/-- The `i`-th vector of `singleParityCheckCodeBasis R m` is the Bourbaki simple root
+`eᵢ - eᵢ₊₁`. -/
+theorem singleParityCheckCodeBasis_eq_typeAZeroSumVec (i : Fin m) :
+    singleParityCheckCodeBasis R m i = typeAZeroSumVec R i.castSucc i.succ :=
+  Subtype.ext (coe_singleParityCheckCodeBasis_apply R m i)
 
-/-- Unfolding equation for `typeAZeroSumSimpleRoot`. -/
-theorem typeAZeroSumSimpleRoot_def (m : ℕ) (i : Fin m) :
-    typeAZeroSumSimpleRoot R m i = typeAZeroSumVec R i.castSucc i.succ := (rfl)
-
-private lemma sum_Iic_typeAZeroSumSimpleRoot (i k : Fin m) :
-    ∑ j ∈ Iic k.castSucc, (typeAZeroSumSimpleRoot R m i : Fin (m + 1) → R) j =
-      if i = k then 1 else 0 := by
-  rw [typeAZeroSumSimpleRoot_def, coe_typeAZeroSumVec]
-  simp only [Pi.sub_apply, sum_sub_distrib, Pi.single_apply, Finset.sum_ite_eq', mem_Iic]
-  simp only [Fin.le_def, Fin.val_castSucc, Fin.val_succ, Fin.ext_iff]
-  split_ifs <;> first | (norm_num; done) | (exfalso; omega)
-
-private lemma sum_Iic_sum_smul_simpleRoot (c : Fin m → R) (k : Fin m) :
-    ∑ j ∈ Iic k.castSucc, ((∑ i : Fin m, c i • typeAZeroSumSimpleRoot R m i :
-      singleParityCheckCode R (Fin (m + 1))) : Fin (m + 1) → R) j = c k := by
-  simp_rw [Submodule.coe_sum, Finset.sum_apply]; rw [sum_comm]
-  simp_rw [SetLike.val_smul, Pi.smul_apply, smul_eq_mul, ← mul_sum,
-    sum_Iic_typeAZeroSumSimpleRoot R]; simp
-
-private def typeAZeroSumCoordEquiv (m : ℕ) :
-    singleParityCheckCode R (Fin (m + 1)) ≃ₗ[R] (Fin m → R) where
-  toFun x i := ∑ j ∈ Iic i.castSucc, (x : Fin (m + 1) → R) j
-  map_add' _ _ := by ext; simp [sum_add_distrib]
-  map_smul' _ _ := by ext; simp [mul_sum]
-  invFun y := ∑ i : Fin m, y i • typeAZeroSumSimpleRoot R m i
-  right_inv y := funext (sum_Iic_sum_smul_simpleRoot R y)
-  left_inv x := by
-    refine sub_eq_zero.mp (Subtype.ext (eq_zero_of_forall_sum_Iic_eq_zero <| Fin.lastCases ?_ ?_))
-    · rw [eq_univ_of_forall fun j ↦ mem_Iic.mpr (Fin.le_last j)]
-      exact (mem_singleParityCheckCode R (Fin (m + 1))).mp
-        ((∑ i : Fin m, (∑ j ∈ Iic i.castSucc, (x : Fin (m + 1) → R) j) •
-          typeAZeroSumSimpleRoot R m i) - x).2
-    · intro k; simp only [AddSubgroupClass.coe_sub, Pi.sub_apply, sum_sub_distrib, sub_eq_zero]
-      exact sum_Iic_sum_smul_simpleRoot R _ k
-
-private lemma typeAZeroSumCoordEquiv_symm_apply (m : ℕ) (y : Fin m → R) :
-    (typeAZeroSumCoordEquiv R m).symm y = ∑ i : Fin m, y i • typeAZeroSumSimpleRoot R m i := rfl
-
-/-- The Bourbaki simple roots `αᵢ = eᵢ - eᵢ₊₁` form an `R`-basis of `singleParityCheckCode`. -/
-noncomputable def typeAZeroSumBasis (m : ℕ) :
-    Module.Basis (Fin m) R (singleParityCheckCode R (Fin (m + 1))) :=
-  Module.Basis.ofRepr
-    ((typeAZeroSumCoordEquiv R m).trans (Finsupp.linearEquivFunOnFinite R R (Fin m)).symm)
-
-/-- The `i`-th vector of `typeAZeroSumBasis` is `typeAZeroSumSimpleRoot R m i`. -/
-@[simp] theorem typeAZeroSumBasis_apply (m : ℕ) (i : Fin m) :
-    typeAZeroSumBasis R m i = typeAZeroSumSimpleRoot R m i := by
-  rw [typeAZeroSumBasis, Module.Basis.coe_ofRepr]; dsimp only
-  rw [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
-    typeAZeroSumCoordEquiv_symm_apply]; simp [Finsupp.single_apply]
-
-/-- The `i`-th coordinate of `x` in `typeAZeroSumBasis` is the partial sum `∑_{j ≤ i} xⱼ`. -/
-@[simp] theorem typeAZeroSumBasis_repr_apply (m : ℕ)
-    (x : singleParityCheckCode R (Fin (m + 1))) (i : Fin m) :
-    (typeAZeroSumBasis R m).repr x i = ∑ j ∈ Iic i.castSucc, (x : Fin (m + 1) → R) j := (rfl)
-
-/-- Expansion of `eₐ - e_b` in `typeAZeroSumBasis`: coordinate `i` is `[a ≤ i] - [b ≤ i]`. -/
-theorem typeAZeroSumBasis_repr_vec (a b : Fin (m + 1)) (i : Fin m) :
-    (typeAZeroSumBasis R m).repr (typeAZeroSumVec R a b) i =
+/-- Expansion of `eₐ - e_b` in `singleParityCheckCodeBasis`: coordinate `i` is
+`[a ≤ i] - [b ≤ i]`. -/
+theorem singleParityCheckCodeBasis_repr_typeAZeroSumVec (a b : Fin (m + 1)) (i : Fin m) :
+    (singleParityCheckCodeBasis R m).repr (typeAZeroSumVec R a b) i =
       (if a ≤ i.castSucc then 1 else 0) - (if b ≤ i.castSucc then 1 else 0) := by
-  rw [typeAZeroSumBasis_repr_apply, coe_typeAZeroSumVec]; simp [Pi.single_apply]
+  rw [singleParityCheckCodeBasis_repr_apply, coe_typeAZeroSumVec]; simp [Pi.single_apply]
 
 /-- The reversal linear involution `(θ x) a = -x (rev a)` on the sum-zero hyperplane. -/
 def typeAZeroSumRevEquiv (m : ℕ) :
@@ -168,12 +117,12 @@ def typeAZeroSumRevEquiv (m : ℕ) :
     typeAZeroSumRevEquiv R m (typeAZeroSumVec R a b) = typeAZeroSumVec R b.rev a.rev := by
   ext k; simp only [coe_typeAZeroSumRevEquiv_apply, typeAZeroSumVec_apply, Fin.rev_eq_iff]; ring
 
-/-- Reversal sends the `i`-th Bourbaki simple root to the `(rev i)`-th Bourbaki simple root. -/
-@[simp] theorem typeAZeroSumRevEquiv_simpleRoot (i : Fin m) :
-    typeAZeroSumRevEquiv R m (typeAZeroSumSimpleRoot R m i) =
-      typeAZeroSumSimpleRoot R m i.rev := by
-  rw [typeAZeroSumSimpleRoot_def, typeAZeroSumRevEquiv_vec, typeAZeroSumSimpleRoot_def,
-    Fin.rev_succ, Fin.rev_castSucc]
+/-- Reversal sends the `i`-th vector of `singleParityCheckCodeBasis` to the `(rev i)`-th. -/
+@[simp] theorem typeAZeroSumRevEquiv_singleParityCheckCodeBasis (i : Fin m) :
+    typeAZeroSumRevEquiv R m (singleParityCheckCodeBasis R m i) =
+      singleParityCheckCodeBasis R m i.rev := by
+  rw [singleParityCheckCodeBasis_eq_typeAZeroSumVec, typeAZeroSumRevEquiv_vec,
+    singleParityCheckCodeBasis_eq_typeAZeroSumVec, Fin.rev_succ, Fin.rev_castSucc]
 
 end CommRing
 
@@ -197,9 +146,9 @@ private lemma zeroSumDiffMap_injective (m : ℕ) : Injective (zeroSumDiffMap K m
 
 private noncomputable def zeroSumWeightEquiv (m : ℕ) :
     singleParityCheckCode K (Fin (m + 1)) ≃ₗ[K] (Fin m → K) :=
-  haveI := Module.Finite.of_basis (typeAZeroSumBasis K m)
+  haveI := Module.Finite.of_basis (singleParityCheckCodeBasis K m)
   (zeroSumDiffMap K m).linearEquivOfInjective (zeroSumDiffMap_injective K m) <| by
-    rw [Module.finrank_eq_card_basis (typeAZeroSumBasis K m), Module.finrank_fin_fun,
+    rw [Module.finrank_eq_card_basis (singleParityCheckCodeBasis K m), Module.finrank_fin_fun,
       Fintype.card_fin]
 
 private lemma zeroSumWeightEquiv_apply (m : ℕ)
@@ -210,24 +159,23 @@ private lemma zeroSumWeightEquiv_apply (m : ℕ)
 omit [CharZero K] in
 private noncomputable def zeroSumCoweightEquiv (m : ℕ) :
     (Fin m → K) ≃ₗ[K] singleParityCheckCode K (Fin (m + 1)) :=
-  (Finsupp.linearEquivFunOnFinite K K (Fin m)).symm.trans (typeAZeroSumBasis K m).repr.symm
+  (Finsupp.linearEquivFunOnFinite K K (Fin m)).symm.trans (singleParityCheckCodeBasis K m).repr.symm
 
 omit [CharZero K] in
 private lemma zeroSumCoweightEquiv_symm_apply (m : ℕ)
     (v : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
-    (zeroSumCoweightEquiv K m).symm v k = (typeAZeroSumBasis K m).repr v k := rfl
+    (zeroSumCoweightEquiv K m).symm v k = (singleParityCheckCodeBasis K m).repr v k := rfl
 
 private lemma zeroSumWeightEquiv_dotProduct (m : ℕ)
     (u v : singleParityCheckCode K (Fin (m + 1))) :
     zeroSumWeightEquiv K m u ⬝ᵥ (zeroSumCoweightEquiv K m).symm v =
       (u : Fin (m + 1) → K) ⬝ᵥ (v : Fin (m + 1) → K) := by
-  conv_rhs => rw [← (typeAZeroSumBasis K m).sum_repr v]
+  conv_rhs => rw [← (singleParityCheckCodeBasis K m).sum_repr v]
   rw [Submodule.coe_sum, dotProduct_sum, dotProduct]
   exact sum_congr rfl fun k _ ↦ by
-    rw [SetLike.val_smul, dotProduct_smul, smul_eq_mul, typeAZeroSumBasis_apply,
-      typeAZeroSumSimpleRoot_def, coe_typeAZeroSumVec, dotProduct_sub, dotProduct_single,
-      dotProduct_single, mul_one, mul_one, mul_comm, zeroSumWeightEquiv_apply,
-      zeroSumCoweightEquiv_symm_apply]
+    rw [SetLike.val_smul, dotProduct_smul, smul_eq_mul, coe_singleParityCheckCodeBasis_apply,
+      dotProduct_sub, dotProduct_single, dotProduct_single, mul_one, mul_one, mul_comm,
+      zeroSumWeightEquiv_apply, zeroSumCoweightEquiv_symm_apply]
 
 private lemma zeroSumWeightEquiv_vec (m : ℕ) (p : TypeAIndex m) :
     zeroSumWeightEquiv K m (typeAZeroSumVec K p.val.1 p.val.2) =
@@ -241,8 +189,8 @@ private lemma zeroSumCoweightEquiv_coroot (m : ℕ) (p : TypeAIndex m) :
     zeroSumCoweightEquiv K m ((typeABaseChangeRootSystem K m).coroot (typeAIndexEquiv m p)) =
       typeAZeroSumVec K p.val.1 p.val.2 := by
   apply (zeroSumCoweightEquiv K m).symm.injective; rw [LinearEquiv.symm_apply_apply]; ext k
-  rw [zeroSumCoweightEquiv_symm_apply, typeAZeroSumBasis_repr_vec, coroot_typeABaseChangeRootSystem,
-    piAlgebraMap_apply, coroot_typeAIndexEquiv]
+  rw [zeroSumCoweightEquiv_symm_apply, singleParityCheckCodeBasis_repr_typeAZeroSumVec,
+    coroot_typeABaseChangeRootSystem, piAlgebraMap_apply, coroot_typeAIndexEquiv]
   simp [algebraMap_int_eq, apply_ite Int.cast]
 
 /-- **The classical sum-zero root system of type `Aₘ` over `K`.** -/
@@ -327,10 +275,11 @@ theorem reflectionPerm_typeAZeroSumRootPairing_val (m : ℕ) (p q : TypeAIndex m
   rw [RootPairing.weightEquiv_equivMap, LinearEquiv.symm_symm, zeroSumWeightEquiv_apply]
 
 /-- The contravariant coweight map of `typeABaseChangeEquivZeroSum K m` takes coordinates in
-`typeAZeroSumBasis K m`. -/
+`singleParityCheckCodeBasis K m`. -/
 @[simp] theorem coweightMap_typeABaseChangeEquivZeroSum_apply (m : ℕ)
     (v : singleParityCheckCode K (Fin (m + 1))) (k : Fin m) :
-    (typeABaseChangeEquivZeroSum K m).coweightMap v k = (typeAZeroSumBasis K m).repr v k := by
+    (typeABaseChangeEquivZeroSum K m).coweightMap v k =
+      (singleParityCheckCodeBasis K m).repr v k := by
   delta typeABaseChangeEquivZeroSum typeAZeroSumRootPairing
   rw [RootPairing.coweightMap_equivMap_apply, zeroSumCoweightEquiv_symm_apply]
 
@@ -408,12 +357,13 @@ theorem isPos_typeAZeroSumBase_iff {m : ℕ} {p : TypeAIndex m} :
     rw [← mem_posRoots, mem_posRoots_iff_root_mem_posRootCone,
       mem_posRootCone_iff_exists_nat_of_bijOn _ _ hbij]
     refine ⟨fun i ↦ if q.val.1 ≤ i.castSucc ∧ i.castSucc < q.val.2 then 1 else 0,
-      (typeAZeroSumBasis K m).repr.injective (Finsupp.ext fun k ↦ ?_)⟩
-    simp only [root_typeAZeroSumRootPairing, typeAZeroSumBasis_repr_vec, map_sum, map_nsmul,
-      typeAZeroSumSimplePair_val, ← typeAZeroSumSimpleRoot_def, ← typeAZeroSumBasis_apply,
-      Finset.sum_apply', Finsupp.smul_apply, Module.Basis.repr_self_apply, nsmul_eq_mul,
-      mul_ite, mul_one, mul_zero, sum_ite_eq', mem_univ, ite_true, Nat.cast_ite, Nat.cast_one,
-      Nat.cast_zero, Fin.le_def, Fin.lt_def, Fin.val_castSucc]
+      (singleParityCheckCodeBasis K m).repr.injective (Finsupp.ext fun k ↦ ?_)⟩
+    simp only [root_typeAZeroSumRootPairing, singleParityCheckCodeBasis_repr_typeAZeroSumVec,
+      map_sum, map_nsmul, typeAZeroSumSimplePair_val,
+      ← singleParityCheckCodeBasis_eq_typeAZeroSumVec, Finset.sum_apply', Finsupp.smul_apply,
+      Module.Basis.repr_self_apply, nsmul_eq_mul, mul_ite, mul_one, mul_zero, sum_ite_eq',
+      mem_univ, ite_true, Nat.cast_ite, Nat.cast_one, Nat.cast_zero, Fin.le_def, Fin.lt_def,
+      Fin.val_castSucc]
     have : (q.val.1 : ℕ) < (q.val.2 : ℕ) := hlt
     split_ifs <;> first | (norm_num; done) | (exfalso; omega)
   refine ⟨fun hpos ↦ (lt_or_gt_of_ne p.2).resolve_right fun hgt ↦ ?_, hfwd p⟩
@@ -433,6 +383,15 @@ noncomputable def typeAZeroSumRevAut (m : ℕ) : RootPairing.Aut (typeAZeroSumRo
 /-- The index permutation of `typeAZeroSumRevAut K m` is `finDistinctPairsRevSwap (m + 1)`. -/
 @[simp] theorem indexEquiv_typeAZeroSumRevAut (m : ℕ) :
     (typeAZeroSumRevAut K m).indexEquiv = finDistinctPairsRevSwap (m + 1) := (rfl)
+
+/-- The root orbit of `p : TypeAIndex m` under `typeAZeroSumRevAut K m` is
+`{p, finDistinctPairsRevSwap (m + 1) p}`. -/
+theorem orbitIndices_typeAZeroSumRevAut (m : ℕ) (p : TypeAIndex m) :
+    (typeAZeroSumRootPairing K m).orbitIndices (typeAZeroSumRevAut K m) p =
+      {p, finDistinctPairsRevSwap (m + 1) p} := by
+  rw [← indexEquiv_typeAZeroSumRevAut K m]
+  exact RootPairing.orbitIndices_eq_pair_of_apply_apply (by
+    rw [indexEquiv_typeAZeroSumRevAut]; exact finDistinctPairsRevSwap_finDistinctPairsRevSwap p)
 
 /-- `typeAZeroSumRevAut K m` reverses the Bourbaki-numbered simple pairs. -/
 theorem indexEquiv_typeAZeroSumRevAut_simplePair (m : ℕ) (i : Fin m) :

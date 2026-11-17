@@ -25,7 +25,8 @@ source. The root systems of types `Aₙ` and `Dₙ` enumerate their roots this w
 * `TauCeti.finDistinctPairsRevSwap`: the involution `(a, b) ↦ (rev b, rev a)` of the pairs, the
   diagram automorphism of type `A` read on root indices. It is its own inverse
   (`finDistinctPairsRevSwap_symm`, `finDistinctPairsRevSwap_finDistinctPairsRevSwap`),
-  `finDistinctPairsRevSwap_eq_self_iff` describes its fixed pairs, and
+  `finDistinctPairsRevSwap_eq_self_iff` and `finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev`
+  describe its fixed pairs, and
   `finDistinctPairsRevSwap_val_fst_add_val_snd` and
   `finDistinctPairsRevSwap_val_fst_add_val_snd_lt_iff` relate the index sums of a pair and its
   image.
@@ -105,6 +106,13 @@ theorem finDistinctPairsRevSwap_eq_self_iff {n : ℕ} (p : {p : Fin n × Fin n /
   have hi := p.val.1.isLt
   have hj := p.val.2.isLt
   omega
+
+/-- The reversed exchange fixes a pair `(a, b)` exactly when `b = a.rev`. -/
+theorem finDistinctPairsRevSwap_eq_self_iff_snd_eq_rev {n : ℕ}
+    (p : {p : Fin n × Fin n // p.1 ≠ p.2}) :
+    finDistinctPairsRevSwap n p = p ↔ p.val.2 = p.val.1.rev := by
+  rw [Subtype.ext_iff, finDistinctPairsRevSwap_apply_val, Prod.ext_iff, Fin.rev_eq_iff,
+    eq_comm (a := p.val.1.rev), and_self]
 
 /-- The index sums of a pair and of its reversed exchange add up to `2 * (n - 1)`. -/
 theorem finDistinctPairsRevSwap_val_fst_add_val_snd {n : ℕ}
