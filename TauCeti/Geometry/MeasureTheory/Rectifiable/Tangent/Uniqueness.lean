@@ -15,13 +15,16 @@ import TauCeti.Geometry.Euclidean.Volume.Measure
 /-!
 # Uniqueness of approximate tangent planes of rectifiable sets
 
-A `k`-plane `P` is an approximate tangent plane of a set `E` at `x` if, for every `ε > 0`, the
-part of `E ∩ closedBall x r` outside the cone `{z | infDist (z - x) P ≤ ε dist z x}` has
-`k`-dimensional density zero at `x`, measured with the normalized Hausdorff measure `μHE[k]`
-against the volume of a ball of `EuclideanSpace ℝ (Fin k)`. Let `E` be a countably
-`k`-rectifiable set that is `μHE[k]`-null-measurable and whose restricted measure
-`μHE[k].restrict E` is locally finite. Approximate tangent `k`-planes of such a set exist almost
-everywhere on it
+A `k`-plane `P` is an approximate tangent plane of a set `E` at `x` if `E` has positive upper
+`k`-dimensional density at `x` and, for every `ε > 0`, the part of `E` outside the cone
+`{z | infDist (z - x) P ≤ ε dist z x}` has `k`-dimensional density zero at `x`: its `μHE[k]`
+measure in `closedBall x r`, divided by the volume of the ball of radius `r` in
+`EuclideanSpace ℝ (Fin k)`, tends to zero as `r → 0⁺`. The results below use only the second
+condition.
+
+Let `E` be a countably `k`-rectifiable set that is `μHE[k]`-null-measurable and whose restricted
+measure `μHE[k].restrict E` is locally finite. Approximate tangent `k`-planes of such a set exist
+almost everywhere on it
 (`TauCeti.CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_div`). This file
 proves that they are almost everywhere unique.
 
@@ -36,9 +39,10 @@ density less than one inside the cone, contradicting density one. Hence `P = D`.
 
 ## Main results
 
-* `LipschitzWith.eq_range_fderiv_of_tendsto_measure_outside_cone_div`: on a bi-Lipschitz patch
-  `f '' A`, at a point `f u₀` where `E` has density one and `E \ f '' A` has density zero, every
-  approximate tangent `k`-plane of `E` is the range of the derivative of `f` at `u₀`.
+* `LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div`: let `f` be Lipschitz and
+  inverse-Lipschitz on `A` in a `k`-dimensional space, with derivative `D` within `A` at `u₀ ∈ A`
+  whose range has dimension `k`. At `f u₀`, if `E` has density one and `E \ f '' A` has density
+  zero, every approximate tangent `k`-plane of `E` is the range of `D`.
 * `TauCeti.CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div`: approximate tangent
   `k`-planes of a null-measurable, countably `k`-rectifiable set with locally finite `μHE[k]`
   measure are unique at almost every point.
@@ -61,23 +65,25 @@ variable {k : ℕ}
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V]
 
+variable {U : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U]
+
 omit [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V] in
 /-- Near `f u₀`, a set `E` is covered by its part outside a cone of aperture `ε` about `P`, its
 part off the patch `f '' A`, and the image of the parameters `u ∈ A` with `u - u₀` in a thin cone
-`|⟪w, f' u₀ (u - u₀)⟫| ≤ t ‖u - u₀‖`, where `w ⊥ P`. This holds at radii `r` whose parameter
-radius `(L + 1) r` is within the radius `ρ` on which `f` is `η`-close to its linearization. -/
-private theorem subset_union_image_of_forall_dist_lt
-    {f : EuclideanSpace ℝ (Fin k) → V} {A : Set (EuclideanSpace ℝ (Fin k))} {K L : ℝ≥0}
-    (hf : LipschitzWith K f) (hA : AntilipschitzWith L (A.domRestrict f))
-    {u₀ : EuclideanSpace ℝ (Fin k)} (hu₀ : u₀ ∈ A) {P : Submodule ℝ V} {w : V} (hwP : w ∈ Pᗮ)
+`|⟪w, D (u - u₀)⟫| ≤ t ‖u - u₀‖`, where `w ⊥ P`. This holds at radii `r` whose parameter
+radius `(L + 1) r` is within the radius `ρ` on which `f` is `η`-close on `A` to its linearization
+`D`. -/
+private theorem subset_union_image_of_forall_dist_lt {f : U → V} {A : Set U} {D : U →L[ℝ] V}
+    {K L : ℝ≥0} (hf : LipschitzOnWith K f A) (hA : AntilipschitzWith L (A.domRestrict f))
+    {u₀ : U} (hu₀ : u₀ ∈ A) {P : Submodule ℝ V} {w : V} (hwP : w ∈ Pᗮ)
     {ε η t ρ : ℝ} (hε : 0 ≤ ε) (hεη : ‖w‖ * (ε * K + η) ≤ t)
-    (hρ : ∀ ⦃u⦄, dist u u₀ < ρ → ‖f u - f u₀ - fderiv ℝ f u₀ (u - u₀)‖ ≤ η * ‖u - u₀‖)
+    (hρ : ∀ ⦃u⦄, u ∈ A → dist u u₀ < ρ → ‖f u - f u₀ - D (u - u₀)‖ ≤ η * ‖u - u₀‖)
     (E : Set V) {r : ℝ} (hrρ : ((L : ℝ) + 1) * r < ρ) :
     E ∩ closedBall (f u₀) r ⊆
       {z ∈ E ∩ closedBall (f u₀) r | ε * dist z (f u₀) < infDist (z - f u₀) (P : Set V)} ∪
         ((E \ f '' A) ∩ closedBall (f u₀) r) ∪
         f '' (A ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (((L : ℝ) + 1) * r) ∩
-          {v | |(innerSL ℝ w).comp (fderiv ℝ f u₀) v| ≤ t * ‖v‖})) := by
+          {v | |(innerSL ℝ w).comp D v| ≤ t * ‖v‖})) := by
   intro z hz
   by_cases hout : ε * dist z (f u₀) < infDist (z - f u₀) (P : Set V)
   · exact Or.inl (Or.inl ⟨hz, hout⟩)
@@ -96,18 +102,18 @@ private theorem subset_union_image_of_forall_dist_lt
       _ ≤ ((L : ℝ) + 1) * r := by nlinarith
   refine ⟨mem_closedBall_zero_iff.mpr hdist, ?_⟩
   have hsmall : dist u u₀ < ρ := by rw [dist_eq_norm]; linarith
-  have hlin := hρ hsmall
+  have hlin := hρ hu hsmall
   have hcone : |⟪w, f u - f u₀⟫| ≤ ‖w‖ * (ε * dist (f u) (f u₀)) :=
-    (abs_inner_le_norm_mul_infDist hwP _).trans
+    (Real.norm_eq_abs _ ▸ norm_inner_le_norm_mul_infDist hwP _).trans
       (mul_le_mul_of_nonneg_left (not_lt.mp hout) (norm_nonneg w))
   have hLip : dist (f u) (f u₀) ≤ K * ‖u - u₀‖ := by
-    rw [← dist_eq_norm]; exact hf.dist_le_mul u u₀
-  have hψu : (innerSL ℝ w).comp (fderiv ℝ f u₀) (u - u₀) =
-      ⟪w, f u - f u₀⟫ - ⟪w, f u - f u₀ - fderiv ℝ f u₀ (u - u₀)⟫ := by
+    rw [← dist_eq_norm]; exact hf.dist_le_mul u hu u₀ hu₀
+  have hψu : (innerSL ℝ w).comp D (u - u₀) =
+      ⟪w, f u - f u₀⟫ - ⟪w, f u - f u₀ - D (u - u₀)⟫ := by
     simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, inner_sub_right]
     ring
-  calc |(innerSL ℝ w).comp (fderiv ℝ f u₀) (u - u₀)|
-      ≤ |⟪w, f u - f u₀⟫| + |⟪w, f u - f u₀ - fderiv ℝ f u₀ (u - u₀)⟫| := by
+  calc |(innerSL ℝ w).comp D (u - u₀)|
+      ≤ |⟪w, f u - f u₀⟫| + |⟪w, f u - f u₀ - D (u - u₀)⟫| := by
         rw [hψu]; exact abs_sub _ _
     _ ≤ ‖w‖ * (ε * (K * ‖u - u₀‖)) + ‖w‖ * (η * ‖u - u₀‖) := by
         gcongr
@@ -116,15 +122,16 @@ private theorem subset_union_image_of_forall_dist_lt
     _ = ‖w‖ * (ε * K + η) * ‖u - u₀‖ := by ring
     _ ≤ t * ‖u - u₀‖ := by gcongr
 
-/-- **The approximate tangent plane on a patch.** Let `f` be Lipschitz, inverse-Lipschitz on `A`,
-and differentiable at `u₀ ∈ A` with derivative range of dimension `k`. If a set `E` has density one
-at `x = f u₀` and `E \ f '' A` has density zero there, then every approximate tangent `k`-plane of
-`E` at `x` is the derivative range. -/
-theorem _root_.LipschitzWith.eq_range_fderiv_of_tendsto_measure_outside_cone_div
-    {f : EuclideanSpace ℝ (Fin k) → V} {A : Set (EuclideanSpace ℝ (Fin k))} {K L : ℝ≥0}
-    (hf : LipschitzWith K f) (hA : AntilipschitzWith L (A.domRestrict f))
-    {u₀ : EuclideanSpace ℝ (Fin k)} (hu₀ : u₀ ∈ A) (hd : DifferentiableAt ℝ f u₀)
-    (hrange : Module.finrank ℝ (fderiv ℝ f u₀).range = k) {E : Set V}
+/-- **The approximate tangent plane on a patch.** Let `U` be a `k`-dimensional real inner product
+space and `f : U → V` be Lipschitz and inverse-Lipschitz on `A`, with derivative `D` within `A` at
+`u₀ ∈ A` whose range has dimension `k`. If a set `E` has density one at `x = f u₀` and `E \ f '' A`
+has density zero there, then every approximate tangent `k`-plane of `E` at `x` is the range of
+`D`. -/
+theorem _root_.LipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
+    [FiniteDimensional ℝ U] [MeasurableSpace U] [BorelSpace U] (hU : Module.finrank ℝ U = k)
+    {f : U → V} {A : Set U} {D : U →L[ℝ] V} {K L : ℝ≥0} (hf : LipschitzOnWith K f A)
+    (hA : AntilipschitzWith L (A.domRestrict f)) {u₀ : U} (hu₀ : u₀ ∈ A)
+    (hd : HasFDerivWithinAt f D A u₀) (hrange : Module.finrank ℝ D.range = k) {E : Set V}
     (hE1 : Tendsto (fun r ↦ μHE[k] (E ∩ closedBall (f u₀) r) /
       volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 1))
     (hE0 : Tendsto (fun r ↦ μHE[k] ((E \ f '' A) ∩ closedBall (f u₀) r) /
@@ -133,26 +140,33 @@ theorem _root_.LipschitzWith.eq_range_fderiv_of_tendsto_measure_outside_cone_div
     (hP : ∀ ε > (0 : ℝ), Tendsto (fun r ↦
       μHE[k] {z ∈ E ∩ closedBall (f u₀) r | ε * dist z (f u₀) < infDist (z - f u₀) (P : Set V)} /
         volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0)) :
-    P = (fderiv ℝ f u₀).range := by
-  set D := fderiv ℝ f u₀
+    P = D.range := by
   set x := f u₀
+  -- Balls in `U` have the volume of balls in `EuclideanSpace ℝ (Fin k)`.
+  have hvol (r : ℝ) : volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) =
+      volume (closedBall (0 : U) r) := by
+    subst hU
+    rw [← (stdOrthonormalBasis ℝ U).measurePreserving_repr.measure_preimage
+      measurableSet_closedBall.nullMeasurableSet, LinearIsometryEquiv.preimage_closedBall,
+      map_zero]
+  simp only [hvol] at hE1 hE0 hP
   by_contra hne
   -- A vector `w` orthogonal to `P` but not to the derivative range makes `ψ = ⟪w, D ·⟫` nonzero.
   obtain ⟨w, hwP, -, ⟨v₀, rfl⟩, hwv₀⟩ := exists_mem_orthogonal_inner_ne_zero_of_not_le
     (S := D.range) fun hle ↦
       hne (Submodule.eq_of_le_of_finrank_eq hle (hrange.trans hPk.symm)).symm
   have hwpos : 0 < ‖w‖ := norm_pos_iff.mpr fun h ↦ hwv₀ (by simp [h])
-  set ψ : EuclideanSpace ℝ (Fin k) →L[ℝ] ℝ := (innerSL ℝ w).comp D
+  set ψ : U →L[ℝ] ℝ := (innerSL ℝ w).comp D
   have hψ : ψ ≠ 0 := fun h ↦ hwv₀ (by simpa [ψ] using congr($h v₀))
   -- The constant `a` with `μHE[k] (patch part) ≤ a r ^ k vol (cone)`.
   set a : ℝ≥0∞ := (K : ℝ≥0∞) ^ k * ENNReal.ofReal (((L : ℝ) + 1) ^ k)
   have ha_top : a ≠ ∞ := ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.coe_ne_top)
     ENNReal.ofReal_ne_top
-  set B₁ := volume (ball (0 : EuclideanSpace ℝ (Fin k)) 1)
+  set B₁ := volume (ball (0 : U) 1)
   have hB₁0 : B₁ ≠ 0 := (measure_ball_pos _ _ one_pos).ne'
   have hB₁top : B₁ ≠ ∞ := measure_ball_lt_top.ne
   -- Choose the thickness `t` of the parameter cone so that its share is below one.
-  set C : ℝ → Set (EuclideanSpace ℝ (Fin k)) := fun t ↦ closedBall 0 1 ∩ {v | |ψ v| ≤ t * ‖v‖}
+  set C : ℝ → Set U := fun t ↦ closedBall 0 1 ∩ {v | |ψ v| ≤ t * ‖v‖}
   have hlt : a * 0 < B₁ := by rw [mul_zero]; exact pos_iff_ne_zero.mpr hB₁0
   obtain ⟨t, hn, ht⟩ := (((ENNReal.Tendsto.const_mul
     (Measure.tendsto_addHaar_closedBall_inter_setOf_abs_le_mul_norm volume hψ)
@@ -172,7 +186,9 @@ theorem _root_.LipschitzWith.eq_range_fderiv_of_tendsto_measure_outside_cone_div
       field_simp
     rw [this]
     nlinarith
-  obtain ⟨ρ, hρ, hρd⟩ := Metric.eventually_nhds_iff.mp (hd.hasFDerivAt.isLittleO.def hη)
+  obtain ⟨ρ, hρ, hρd⟩ := Metric.mem_nhdsWithin_iff.mp (hd.isLittleO.def hη)
+  replace hρd : ∀ ⦃u⦄, u ∈ A → dist u u₀ < ρ → ‖f u - f u₀ - D (u - u₀)‖ ≤ η * ‖u - u₀‖ :=
+    fun u hu hdist ↦ hρd ⟨mem_ball.mpr hdist, hu⟩
   -- Passing to the limit in the three-piece cover gives `1 ≤ 0 + 0 + m`, contradicting `m < 1`.
   have hlim : (1 : ℝ≥0∞) ≤ 0 + 0 + m := by
     refine le_of_tendsto_of_tendsto hE1 (((hP ε hε).add hE0).add tendsto_const_nhds) ?_
@@ -182,22 +198,24 @@ theorem _root_.LipschitzWith.eq_range_fderiv_of_tendsto_measure_outside_cone_div
     have hrρ' : ((L : ℝ) + 1) * r < ρ := by
       rwa [lt_div_iff₀' (by positivity)] at hrρ
     set S := A ∩ (fun u ↦ u - u₀) ⁻¹' (closedBall 0 (((L : ℝ) + 1) * r) ∩ {v | |ψ v| ≤ t * ‖v‖})
-    calc μHE[k] (E ∩ closedBall x r) / volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)
+    calc μHE[k] (E ∩ closedBall x r) / volume (closedBall (0 : U) r)
         ≤ (μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} +
             μHE[k] ((E \ f '' A) ∩ closedBall x r) + μHE[k] (f '' S)) /
-              volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) := by
+              volume (closedBall (0 : U) r) := by
           gcongr
           exact (measure_mono (subset_union_image_of_forall_dist_lt hf hA hu₀ hwP hε.le hεη hρd E
             hrρ')).trans ((measure_union_le _ _).trans (by gcongr; exact measure_union_le _ _))
       _ = μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-              volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) +
+              volume (closedBall (0 : U) r) +
             μHE[k] ((E \ f '' A) ∩ closedBall x r) /
-              volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) +
-            μHE[k] (f '' S) / volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r) := by
+              volume (closedBall (0 : U) r) +
+            μHE[k] (f '' S) / volume (closedBall (0 : U) r) := by
           rw [ENNReal.add_div, ENNReal.add_div]
       _ ≤ _ := by
           gcongr
-          exact hf.euclideanHausdorffMeasure_image_inter_cone_div_le A u₀ ψ t (by positivity) hr
+          have h := hf.euclideanHausdorffMeasure_image_inter_cone_div_le u₀ ψ t (c := (L : ℝ) + 1)
+            (by positivity) hr
+          rwa [hU] at h
   simp only [zero_add] at hlim
   exact absurd hm (not_lt.mpr hlim)
 
@@ -240,9 +258,10 @@ theorem CountablyRectifiable.ae_eq_of_tendsto_measure_outside_cone_div {E : Set 
   obtain ⟨u, hu, rfl, hd, hrange, -⟩ := hgood n hxn
   have h0 := hzero n fun h ↦ h.2 hxn
   have hone' := hone hxE
-  rw [(hLip n).eq_range_fderiv_of_tendsto_measure_outside_cone_div (hAnti n) hu hd hrange hone' h0
-      hP hPc,
-    (hLip n).eq_range_fderiv_of_tendsto_measure_outside_cone_div (hAnti n) hu hd hrange hone' h0
-      hQ hQc]
+  have hchart (P : Submodule ℝ V) :=
+    (hLip n).lipschitzOnWith.eq_range_of_tendsto_measure_outside_cone_div
+      (finrank_euclideanSpace_fin (𝕜 := ℝ)) (hAnti n) hu hd.hasFDerivAt.hasFDerivWithinAt hrange
+      hone' h0 (P := P)
+  rw [hchart P hP hPc, hchart Q hQ hQc]
 
 end TauCeti

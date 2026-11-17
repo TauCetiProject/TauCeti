@@ -71,8 +71,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
   `TauCeti.exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank`: fewer than `dim E` vectors
   have a common nonzero, and hence a common unit, orthogonal vector.
 * `TauCeti.ne_neg_of_inner_eq_zero`: a vector orthogonal to a nonzero vector `b` is not `-b`.
-* `TauCeti.abs_inner_le_norm_mul_infDist`: a vector `w` orthogonal to a real subspace `P` satisfies
-  `|⟪w, z⟫| ≤ ‖w‖ * infDist z P`.
+* `TauCeti.norm_inner_le_norm_mul_infDist`: a vector `w` orthogonal to a subspace `P` satisfies
+  `‖⟪w, z⟫‖ ≤ ‖w‖ * infDist z P`.
 * `TauCeti.exists_mem_orthogonal_inner_ne_zero_of_not_le`: if `S` is not contained in `P`, some
   vector orthogonal to `P` is not orthogonal to `S`.
 * `TauCeti.eventually_linearIndependent_starProjection_apply`,
@@ -416,20 +416,19 @@ theorem ne_neg_of_inner_eq_zero {a b : E} (hb : b ≠ 0) (hab : ⟪a, b⟫_𝕜 
   rw [inner_neg_left, neg_eq_zero, inner_self_eq_zero] at hab
   exact hb hab
 
-/-- A vector `w` orthogonal to a real subspace `P` pairs with any vector `z` to at most `‖w‖` times
-the distance from `z` to `P`. -/
-theorem abs_inner_le_norm_mul_infDist {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
-    {P : Submodule ℝ F} {w : F} (hw : w ∈ Pᗮ) (z : F) :
-    |⟪w, z⟫_ℝ| ≤ ‖w‖ * Metric.infDist z (P : Set F) := by
+/-- A vector `w` orthogonal to a subspace `P` pairs with any vector `z` to at most `‖w‖` times the
+distance from `z` to `P`. -/
+theorem norm_inner_le_norm_mul_infDist {P : Submodule 𝕜 E} {w : E} (hw : w ∈ Pᗮ) (z : E) :
+    ‖⟪w, z⟫_𝕜‖ ≤ ‖w‖ * Metric.infDist z (P : Set E) := by
   rcases eq_or_ne w 0 with rfl | hw0
   · simp
   have hpos : 0 < ‖w‖ := norm_pos_iff.mpr hw0
   rw [← div_le_iff₀' hpos]
   refine (Metric.le_infDist ⟨0, P.zero_mem⟩).mpr fun p hp ↦ ?_
   rw [div_le_iff₀' hpos, dist_eq_norm]
-  calc |⟪w, z⟫_ℝ| = |⟪w, z - p⟫_ℝ| := by
+  calc ‖⟪w, z⟫_𝕜‖ = ‖⟪w, z - p⟫_𝕜‖ := by
         rw [inner_sub_right, Submodule.inner_left_of_mem_orthogonal hp hw, sub_zero]
-    _ ≤ ‖w‖ * ‖z - p‖ := abs_real_inner_le_norm w (z - p)
+    _ ≤ ‖w‖ * ‖z - p‖ := norm_inner_le_norm w (z - p)
 
 /-- If a subspace `S` is not contained in a subspace `P` admitting an orthogonal projection, some
 vector orthogonal to `P` has nonzero inner product with some vector of `S`. -/
