@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import TauCeti.Geometry.Manifold.ContMDiffMap.CLMApply
 public import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Geometry.Manifold.ExtChartAt
 
 /-!
 # Compact chart seminorms for bundle sections
@@ -21,7 +23,10 @@ with each derivative seminorm of order `m ≤ k` bounded by the `C^k` seminorm
 (`Bundle.Trivialization.chartDerivativeSeminorm_le_chartCkSeminorm`).
 These measure the actual coordinate derivatives, including order zero, without requiring
 an ambient norm on the fibres or choosing a connection. They supply the local controls
-used in smooth-section and compactly supported test-section topologies.
+used in smooth-section and compactly supported test-section topologies. On a compact overlap
+of two smooth trivializations and inherited charts, the combined Leibniz and Faà di Bruno
+estimate bounds the `C^k` seminorm in one frame and chart by a constant multiple of the `C^k`
+seminorm in the other (`Bundle.Trivialization.exists_chartCkSeminorm_le_coordChange`).
 
 The construction allows finite and infinite regularity, manifolds with corners, and
 arbitrary normed model fibres. No topology on the section space is installed here.
@@ -272,5 +277,97 @@ theorem forall_chartDerivativeSeminorm_zero_eq_zero_iff (s : Cₛ^n⟮I; F, V⟯
     exact hz
   · intro h x K
     exact (chartDerivativeSeminorm_zero_eq_zero_iff e hU x K s).mpr fun z _ => h _
+
+omit [IsManifold I n M] in
+private theorem eqOn_frameCoordinates_comp_symm
+    (e₁ e₂ : Trivialization F (π F V)) [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
+    {U₁ U₂ : Opens M} (hU₁ : (U₁ : Set M) ⊆ e₁.baseSet) (hU₂ : (U₂ : Set M) ⊆ e₂.baseSet)
+    (x₁ : U₁) (x₂ : U₂) {S : Set E} (hS₁ : S ⊆ (extChartAt I x₁).target)
+    (hmemS : ∀ z ∈ S,
+      (extChartAt I (x₁ : M)).symm z ∈ (U₂ : Set M) ∩ (extChartAt I (x₂ : M)).source)
+    (hST : MapsTo (I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M)))
+      S (extChartAt I x₂).target)
+    (s : Cₛ^n⟮I; F, V⟯) :
+    EqOn ((e₁.frameCoordinates hU₁ s) ∘ (extChartAt I x₁).symm)
+      (fun y ↦ (e₂.coordChangeL 𝕜 e₁ ((extChartAt I (x₁ : M)).symm y) : F →L[𝕜] F)
+        (((e₂.frameCoordinates hU₂ s) ∘ (extChartAt I x₂).symm)
+          (I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M)) y))) S := fun w hw ↦ by
+  have hcoe₁ := U₁.coe_extChartAt_symm_apply x₁ (hS₁ hw)
+  have hcoe₂ := U₂.coe_extChartAt_symm_apply x₂ (hST hw)
+  have hpt : ((extChartAt I x₂).symm
+      (I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M)) w) : M) =
+      ((extChartAt I x₁).symm w : M) := by
+    rw [hcoe₂, hcoe₁, I.extendCoordChange_chartAt_apply]
+    exact (extChartAt I (x₂ : M)).left_inv (hmemS w hw).2
+  simp only [Function.comp_apply, frameCoordinates_apply, ContinuousLinearEquiv.coe_coe]
+  rw [hpt, ← hcoe₁]
+  exact ((e₂.coordChangeL_apply e₁ ⟨hU₂ (by rw [hcoe₁]; exact (hmemS w hw).1),
+    hU₁ ((extChartAt I x₁).symm w).2⟩ _).trans
+    (congrArg (fun v ↦ (e₁ ⟨((extChartAt I x₁).symm w : M), v⟩).2)
+      (e₂.symm_apply_apply_mk (hU₂ (by rw [hcoe₁]; exact (hmemS w hw).1)) _))).symm
+
+/-- On a compact overlap of two bundle trivializations and inherited charts (boundary and corner
+charts included), the `C^k` seminorm in the first trivialization and chart is bounded by a positive
+multiple of the `C^k` seminorm in the second on any compact piece containing the transformed
+coordinates. -/
+theorem exists_chartCkSeminorm_le_coordChange
+    (e₁ e₂ : Trivialization F (π F V)) [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
+    {U₁ U₂ : Opens M} (hU₁ : (U₁ : Set M) ⊆ e₁.baseSet) (hU₂ : (U₂ : Set M) ⊆ e₂.baseSet)
+    (x₁ : U₁) (x₂ : U₂)
+    (P : Compacts (extChartAt I x₁).target) (Q : Compacts (extChartAt I x₂).target)
+    (hoverlap : ∀ z ∈ P, ∃ hy₂ : ((extChartAt I x₁).symm z : M) ∈ U₂,
+      ∃ hy : (⟨((extChartAt I x₁).symm z : M), hy₂⟩ : U₂) ∈ (extChartAt I x₂).source,
+        (⟨extChartAt I x₂ ⟨((extChartAt I x₁).symm z : M), hy₂⟩,
+          (extChartAt I x₂).map_source hy⟩ : (extChartAt I x₂).target) ∈ Q)
+    (k : ℕ) (hk : k ≤ n) :
+    ∃ C : ℝ, 0 < C ∧ ∀ s : Cₛ^n⟮I; F, V⟯,
+      e₁.chartCkSeminorm hU₁ x₁ P k hk s ≤ C * e₂.chartCkSeminorm hU₂ x₂ Q k hk s := by
+  obtain ⟨W, hW, hPS, hmemS, hSτ, hST⟩ := TauCeti.exists_open_extChartAt_overlap x₁ x₂
+    (P := (P : Set (extChartAt I x₁).target))
+    fun z hz ↦ let ⟨hy₂, hy, _⟩ := hoverlap z hz; ⟨hy₂, hy⟩
+  set S : Set E := (extChartAt I x₁).target ∩ W
+  set τ := I.extendCoordChange (chartAt H (x₁ : M)) (chartAt H (x₂ : M))
+  have hL : ContDiffOn 𝕜 k
+      (fun z ↦ (e₂.coordChangeL 𝕜 e₁ ((extChartAt I (x₁ : M)).symm z) : F →L[𝕜] F)) S :=
+    (e₂.contDiffOn_coordChangeL_comp_symm e₁ (x₁ : M)
+      (inter_subset_left.trans (U₁.extChartAt_target_subset x₁)) fun z hz ↦
+        ⟨hU₂ (hmemS z hz).1, hU₁ (by
+          rw [← U₁.coe_extChartAt_symm_apply x₁ hz.1]
+          exact ((extChartAt I x₁).symm z).2)⟩).of_le hk
+  have hτ : ContDiffOn 𝕜 k τ S :=
+    ((I.contDiffOn_extendCoordChange (StructureGroupoid.chart_mem_maximalAtlas _ (x₁ : M))
+      (StructureGroupoid.chart_mem_maximalAtlas _ (x₂ : M))).mono hSτ).of_le hk
+  choose C hC using fun i : Fin (k + 1) ↦
+    ContDiffOn.exists_norm_iteratedFDerivWithin_clm_apply_comp_le (n := i)
+      (hL.of_le (Nat.cast_le.mpr (Nat.le_of_lt_succ i.isLt)))
+      (hτ.of_le (Nat.cast_le.mpr (Nat.le_of_lt_succ i.isLt)))
+      ((uniqueDiffOn_extChartAt_target x₁).inter hW) (uniqueDiffOn_extChartAt_target x₂) hST
+      (P.isCompact.image continuous_subtype_val) hPS
+  refine ⟨∑ i, |C i| + 1, by positivity, fun s ↦ ?_⟩
+  set φ := (e₂.frameCoordinates hU₂ s) ∘ (extChartAt I x₂).symm
+  have hφ : ContDiffOn 𝕜 k φ (extChartAt I x₂).target :=
+    (((e₂.frameCoordinates hU₂ s).contMDiff.comp_contMDiffOn
+      (contMDiffOn_extChartAt_symm x₂)).contDiffOn).of_le hk
+  have hδ := apply_nonneg (e₂.chartCkSeminorm hU₂ x₂ Q k hk) s
+  refine (e₁.chartCkSeminorm_le_iff hU₁ x₁ P k hk s (by positivity)).mpr fun m hm z hzP ↦ ?_
+  have hzS : (z : E) ∈ S := hPS ⟨z, hzP, rfl⟩
+  rw [ContMDiffMap.chartIteratedFDeriv_self_target_apply,
+    ← iteratedFDerivWithin_inter (hW.mem_nhds hzS.2),
+    iteratedFDerivWithin_congr (eqOn_frameCoordinates_comp_symm e₁ e₂ hU₁ hU₂ x₁ x₂
+      inter_subset_left hmemS hST s) hzS]
+  let m' : Fin (k + 1) := ⟨m, Nat.lt_succ_of_le hm⟩
+  refine (hC m' φ (hφ.of_le (Nat.cast_le.mpr hm)) (e₂.chartCkSeminorm hU₂ x₂ Q k hk s)
+    (fun j hj _ hw ↦ ?_) z ⟨z, hzP, rfl⟩).trans ?_
+  · obtain ⟨w, hwP, rfl⟩ := hw
+    obtain ⟨hy₂, hy, hQ⟩ := hoverlap w hwP
+    have hτeq : (⟨extChartAt I x₂ ⟨((extChartAt I x₁).symm w : M), hy₂⟩,
+        (extChartAt I x₂).map_source hy⟩ : (extChartAt I x₂).target) =
+        ⟨τ w, hST (hPS ⟨w, hwP, rfl⟩)⟩ :=
+      Subtype.ext (Opens.extendCoordChange_chartAt_coe_apply x₁ x₂ w.2).symm
+    have hQj := (e₂.chartCkSeminorm_le_iff hU₂ x₂ Q k hk s hδ).mp le_rfl j (hj.trans hm) _ hQ
+    rwa [hτeq, ContMDiffMap.chartIteratedFDeriv_self_target_apply] at hQj
+  · exact mul_le_mul_of_nonneg_right ((le_abs_self _).trans <|
+      (Finset.single_le_sum (fun i _ ↦ abs_nonneg (C i)) (Finset.mem_univ m')).trans
+        (le_add_of_nonneg_right zero_le_one)) hδ
 
 end Bundle.Trivialization
