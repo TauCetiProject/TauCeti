@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Probability.Distributions.Exponential.Basic
 public import TauCeti.Order.Interval.SeparatedBox
-public import Mathlib.MeasureTheory.Constructions.Pi
 
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Basic.NNReal.Interval

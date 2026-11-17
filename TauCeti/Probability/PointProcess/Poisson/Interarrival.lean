@@ -12,12 +12,9 @@ public import Mathlib.Probability.Independence.InfinitePi
 
 import Mathlib.MeasureTheory.Function.Floor
 import TauCeti.Algebra.BigOperators.Fin
-import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
-import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Measure.StrictMono
 import TauCeti.Probability.Distributions.Exponential.PartialSum
 import TauCeti.Probability.PointProcess.Poisson.Count
-import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import TauCeti.Probability.PointProcess.Poisson.Simplicity
 import TauCeti.Probability.Independence.Basic
 

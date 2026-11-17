@@ -7,8 +7,6 @@ module
 
 public import TauCeti.MeasureTheory.MeasurableSpace.StrictMono
 public import TauCeti.Order.Interval.SeparatedBox
-public import Mathlib.MeasureTheory.Measure.Restrict
-public import Mathlib.MeasureTheory.Measure.Typeclasses.Finite
 
 /-!
 # Measure extensionality on the strictly increasing positive chamber

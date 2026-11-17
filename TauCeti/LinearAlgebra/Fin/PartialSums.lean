@@ -8,7 +8,6 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Block
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.Data.Fin.Tuple.Spacing
-import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Partial sums as a linear equivalence
