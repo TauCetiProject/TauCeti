@@ -8,10 +8,8 @@ module
 public import Mathlib.NumberTheory.NumberField.Units.DirichletTheorem
 public import TauCeti.NumberTheory.LFunctions.DedekindZeta.PartialZeta
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.FundamentalCone
-public import TauCeti.NumberTheory.NumberField.Global.RayClass.Count.TrivialModulus
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Convergence
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
-import TauCeti.NumberTheory.NumberField.Global.RayClass.Integral
 import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 import TauCeti.RingTheory.FractionalIdeal.Norm
 
