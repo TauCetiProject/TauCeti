@@ -12,6 +12,7 @@ public import Mathlib.Topology.Homotopy.Equiv
 public import TauCeti.Topology.Category.CompactlyGenerated.Coreflection
 public import TauCeti.Topology.Category.TopCat.MappingSpace
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.CategoryTheory.Monoidal.Closed.Unit
 
 /-!
 # Convenient products, homotopies, and Cartesian closed structure on `CompactlyGenerated`
@@ -553,17 +554,23 @@ theorem curryHom_apply {Y Z T : CompactlyGenerated.{u, w}} (f : Y ⊗ Z ⟶ T) (
 theorem uncurryHom_apply {Y Z T : CompactlyGenerated.{u, w}} (g : Z ⟶ (ihomFunctor Y).obj T)
     (p : ↑(Y ⊗ Z)) : uncurryHom g p = g p.2 p.1 := (rfl)
 
+/-- The hom-set equivalence of `ihom.adjunction Y` in `CompactlyGenerated.{u, w}` is
+`curryEquiv Y`. -/
+theorem ihom_adjunction_homEquiv (Y Z T : CompactlyGenerated.{u, w}) :
+    (ihom.adjunction Y).homEquiv Z T = curryEquiv Y Z T :=
+  congrFun (congrFun (Adjunction.mkOfHomEquiv_homEquiv _) _) _
+
 @[simp]
 theorem curry_apply {Y Z T : CompactlyGenerated.{u, w}} (f : Y ⊗ Z ⟶ T) (z : Z) (y : Y) :
     (MonoidalClosed.curry f z) y = f (y, z) := by
-  change ((tensorLeftAdjunction Y).homEquiv Z T f z) y = f (y, z)
-  rw [tensorLeftAdjunction, Adjunction.mkOfHomEquiv_homEquiv]; rfl
+  rw [← MonoidalClosed.homEquiv_apply_eq, ihom_adjunction_homEquiv]
+  exact curryHom_apply f z y
 
 @[simp]
 theorem uncurry_apply {Y Z T : CompactlyGenerated.{u, w}} (g : Z ⟶ (ihom Y).obj T) (p : ↑(Y ⊗ Z)) :
     MonoidalClosed.uncurry g p = g p.2 p.1 := by
-  change ((tensorLeftAdjunction Y).homEquiv Z T).symm g p = g p.2 p.1
-  rw [tensorLeftAdjunction, Adjunction.mkOfHomEquiv_homEquiv]; rfl
+  rw [← MonoidalClosed.homEquiv_symm_apply_eq, ihom_adjunction_homEquiv]
+  exact uncurryHom_apply g p
 
 @[simp]
 theorem ihom_ev_app_apply (Y Z : CompactlyGenerated.{u, w}) (p : ↑(Y ⊗ (ihom Y).obj Z)) :
@@ -587,6 +594,25 @@ theorem pre_app_apply {A B : CompactlyGenerated.{u, w}} (f : B ⟶ A)
   have h := uncurry_apply ((MonoidalClosed.pre f).app Z) bg
   rw [MonoidalClosed.uncurry_pre, CategoryTheory.comp_apply, whiskerRight_apply] at h
   exact h.symm.trans (ihom_ev_app_apply A Z fbg)
+
+/-- Pointwise formula for internal currying `MonoidalClosed.ihomCurry` in
+`CompactlyGenerated.{u, w}`. -/
+@[simp]
+theorem ihomCurry_apply (Y X Z : CompactlyGenerated.{u, w})
+    (g : ↑((ihom (Y ⊗ X)).obj Z)) (x : X) (y : Y) :
+    ((MonoidalClosed.ihomCurry Y X Z g) x) y = g (y, x) := by
+  let xg : ↑(X ⊗ (ihom (Y ⊗ X)).obj Z) := (x, g)
+  let yxg : ↑(Y ⊗ (X ⊗ (ihom (Y ⊗ X)).obj Z)) := (y, xg)
+  let yx_g : ↑((Y ⊗ X) ⊗ (ihom (Y ⊗ X)).obj Z) := ((y, x), g)
+  calc
+    ((MonoidalClosed.ihomCurry Y X Z g) x) y
+      = MonoidalClosed.uncurry (MonoidalClosed.uncurry (MonoidalClosed.ihomCurry Y X Z)) yxg := by
+        rw [uncurry_apply, uncurry_apply]
+    _ = ((α_ Y X _).inv ≫ (ihom.ev (Y ⊗ X)).app Z) yxg := by
+        rw [MonoidalClosed.uncurry_uncurry_ihomCurry]
+    _ = (ihom.ev (Y ⊗ X)).app Z ((α_ Y X _).inv yxg) := CategoryTheory.comp_apply _ _ yxg
+    _ = (ihom.ev (Y ⊗ X)).app Z yx_g := congrArg _ (associator_inv_apply y x g)
+    _ = g (y, x) := ihom_ev_app_apply (Y ⊗ X) Z yx_g
 
 /-- Evaluation at a point `y : Y` as a morphism `(ihom Y).obj Z ⟶ Z` in
 `CompactlyGenerated.{u, w}`. -/
@@ -681,12 +707,18 @@ theorem curry_comp_ihomIsoToCompactlyGeneratedMappingSpace
         (TopCat.curryEquiv Y.toTop X.toTop Z.toTop
           ((TopCat.isoOfHomeo (tensorLeftLocallyCompactHomeomorph Y X)).inv ≫ f.hom)) := by
   refine ConcreteCategory.hom_ext _ _ fun x ↦ DFunLike.ext _ _ fun y ↦ ?_
-  simp only [Functor.comp_obj, CategoryTheory.comp_apply,
-    ihomIsoToCompactlyGeneratedMappingSpace_hom_app_apply, curry_apply]
-  change f (y, x) =
-    (TopCat.curryEquiv Y.toTop X.toTop Z.toTop
-      ((TopCat.isoOfHomeo (tensorLeftLocallyCompactHomeomorph Y X)).inv ≫ f.hom)).hom x y
-  rw [TopCat.curryEquiv_apply_hom_apply_apply]; rfl
+  let g : X.toTop ⟶ TopCat.of C(Y, Z) := TopCat.curryEquiv Y.toTop X.toTop Z.toTop
+    ((TopCat.isoOfHomeo (tensorLeftLocallyCompactHomeomorph Y X)).inv ≫ f.hom)
+  calc
+    ((MonoidalClosed.curry f ≫ (ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z) x) y
+      = ((ihomIsoToCompactlyGeneratedMappingSpace Y).hom.app Z (MonoidalClosed.curry f x)) y := by
+        rw [CategoryTheory.comp_apply]
+    _ = (MonoidalClosed.curry f x) y :=
+        ihomIsoToCompactlyGeneratedMappingSpace_hom_app_apply Y Z _ y
+    _ = f (y, x) := curry_apply f x y
+    _ = g.hom x y := by rw [TopCat.curryEquiv_apply_hom_apply_apply]; rfl
+    _ = (adj.{u, w}.homEquiv X (TopCat.of C(Y, Z)) g x) y :=
+        congrArg (fun h : C(Y, Z) ↦ h y) (adj_homEquiv_apply g x).symm
 
 @[simp]
 theorem isoOfHomeo_hom_apply {X Y : CompactlyGenerated.{u, w}} (e : X ≃ₜ Y) (x : X) :
@@ -731,18 +763,21 @@ theorem toCompactlyGeneratedMappingSpaceCurryIso_hom_apply
   let g4 : ↑((ihom (X ⊗ Y)).obj Z) :=
     (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z).symm f
   let g3 : ↑((ihom (Y ⊗ X)).obj Z) := (MonoidalClosed.pre (β_ Y X).hom).app Z g4
-  let xg3 : ↑(X ⊗ (ihom (Y ⊗ X)).obj Z) := (x, g3)
-  let yxg3 : ↑(Y ⊗ (X ⊗ (ihom (Y ⊗ X)).obj Z)) := (y, xg3)
-  let yx : ↑(Y ⊗ X) := (y, x); let xy : ↑(X ⊗ Y) := (x, y)
-  let yx_g3 : ↑((Y ⊗ X) ⊗ (ihom (Y ⊗ X)).obj Z) := (yx, g3)
-  have h3 : ((α_ Y X _).inv ≫ (ihom.ev (Y ⊗ X)).app Z) yxg3 = (ihom.ev (Y ⊗ X)).app Z yx_g3 := by
-    rw [CategoryTheory.comp_apply]; exact congrArg _ (associator_inv_apply y x g3)
-  change (((MonoidalClosed.ihomCurry Y X Z) g3) x) y = f xy
-  exact (DFunLike.congr_fun (curry_apply _ g3 x) y).trans <| (curry_apply _ xg3 y).trans <|
-    h3.trans <| (ihom_ev_app_apply (Y ⊗ X) Z yx_g3).trans <|
-      (pre_app_apply (β_ Y X).hom Z g4 yx).trans <|
-        (congrArg g4 (braiding_hom_apply y x)).trans <|
-          ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply (X ⊗ Y) Z f xy
+  let yx : ↑(Y ⊗ X) := (y, x)
+  let xy : ↑(X ⊗ Y) := (x, y)
+  have hhom : (toCompactlyGeneratedMappingSpaceCurryIso X Y Z).hom =
+      (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap (X ⊗ Y) Z)).inv ≫
+        (MonoidalClosed.pre (β_ Y X).hom).app Z ≫ MonoidalClosed.ihomCurry Y X Z ≫
+        (ihom X).map (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap Y Z)).hom ≫
+        (isoOfHomeo (ihomHomeomorphToCompactlyGeneratedContinuousMap X
+          (TopCat.toCompactlyGenerated.{u, w}.obj (TopCat.of C(Y, Z))))).hom := rfl
+  rw [hhom]
+  simp only [CategoryTheory.comp_apply, isoOfHomeo_hom_apply, isoOfHomeo_inv_apply,
+    ihomHomeomorphToCompactlyGeneratedContinuousMap_apply, ihom_map_apply, ihomCurry_apply]
+  calc
+    g3 yx = g4 ((β_ Y X).hom yx) := pre_app_apply (β_ Y X).hom Z g4 yx
+    _ = g4 xy := congrArg g4 (braiding_hom_apply y x)
+    _ = f xy := ihomHomeomorphToCompactlyGeneratedContinuousMap_symm_apply (X ⊗ Y) Z f xy
 
 /-- Pointwise evaluation formula for `toCompactlyGeneratedMappingSpaceCurryHomeomorph`. -/
 @[simp]
@@ -759,16 +794,25 @@ theorem toCompactlyGeneratedMappingSpaceCurryHomeomorph_apply
 theorem unitIsoSelf_hom_apply (Z : CompactlyGenerated.{u, w})
     (f : ↑((ihom (𝟙_ CompactlyGenerated.{u, w})).obj Z)) :
     (MonoidalClosed.unitIsoSelf (X := Z)).hom f = f PUnit.unit := by
-  simpa [MonoidalClosed.unitIsoSelf, MonoidalClosed.unitNatIso, conjugateIsoEquiv, conjugateEquiv]
-    using ihom_ev_app_apply _ _ (PUnit.unit, f)
+  let pf : ↑(𝟙_ CompactlyGenerated.{u, w} ⊗ (ihom (𝟙_ CompactlyGenerated.{u, w})).obj Z) :=
+    (PUnit.unit, f)
+  calc
+    (MonoidalClosed.unitIsoSelf (X := Z)).hom f
+      = ((λ_ ((ihom (𝟙_ CompactlyGenerated.{u, w})).obj Z)).inv ≫
+          (ihom.ev (𝟙_ CompactlyGenerated.{u, w})).app Z) f := by
+        rw [MonoidalClosed.unitIsoSelf_hom]
+    _ = (ihom.ev (𝟙_ CompactlyGenerated.{u, w})).app Z
+          ((λ_ ((ihom (𝟙_ CompactlyGenerated.{u, w})).obj Z)).inv f) :=
+        CategoryTheory.comp_apply _ _ f
+    _ = (ihom.ev (𝟙_ CompactlyGenerated.{u, w})).app Z pf :=
+        congrArg _ (leftUnitor_inv_apply f)
+    _ = f PUnit.unit := ihom_ev_app_apply _ Z pf
 
 /-- Pointwise formula for `(MonoidalClosed.unitIsoSelf Z).inv` in `CompactlyGenerated.{u, w}`. -/
 @[simp]
 theorem unitIsoSelf_inv_apply (Z : CompactlyGenerated.{u, w}) (z : Z) (p : PUnit.{w + 1}) :
     ((MonoidalClosed.unitIsoSelf Z).inv z) p = z := by
-  cases p
-  rw [← unitIsoSelf_hom_apply Z ((MonoidalClosed.unitIsoSelf Z).inv z)]
-  exact (homeoOfIso (MonoidalClosed.unitIsoSelf Z)).apply_symm_apply z
+  rw [MonoidalClosed.unitIsoSelf_inv, curry_apply, leftUnitor_hom_apply]
 
 /-- Auxiliary evaluation morphism `S⁰ ⊗ (Z ⊗ Z) ⟶ Z` sending `(⟨false⟩, z₀, z₁)` to `z₀` and
 `(⟨true⟩, z₀, z₁)` to `z₁`. -/

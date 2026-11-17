@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Limits.Preserves.Limits
 public import Mathlib.Topology.Category.CompactlyGenerated
 public import TauCeti.Topology.Category.TopCat.Compact
-public import TauCeti.Topology.CWComplex.Classical.DeltaGenerated
 public import TauCeti.Topology.Convenient.CompactlyGenerated
 
 /-!
@@ -28,8 +28,8 @@ and deduce completeness, cocompleteness, and counit characterizations:
   `CompactlyGenerated.limitIsoToCompactlyGeneratedLimit`.
 * `CompactlyGenerated.isIso_counit_app_iff` and `CompactlyGenerated.isHomeomorph_counit_app_iff`
   characterize counit invertibility, specializing to `u`-small Hausdorff compactly coherent (in
-  particular weakly locally compact) spaces, Hausdorff CW complexes, and colimits of `u`-compactly
-  generated stages.
+  particular weakly locally compact) spaces and colimits of `u`-compactly generated stages (for
+  Hausdorff CW complexes, see `TauCeti.Topology.Category.CompactlyGenerated.CWComplex`).
 
 ## References
 
@@ -322,16 +322,6 @@ weakly locally compact space), the counit `kX ⟶ X` is an isomorphism in `TopCa
 theorem isIso_counit_app_of_compactlyCoherentSpace (X : Type w) [TopologicalSpace X]
     [T2Space X] [CompactlyCoherentSpace X] [Small.{u} X] :
     IsIso (adj.{u, w}.counit.app (TopCat.of X)) := inferInstance
-
-/-- On any Hausdorff CW complex `C : Set X`, the counit `kC ⟶ C` is an isomorphism in `TopCat` for
-every test universe `u`. -/
-theorem isIso_counit_app_of_cwComplex {X : Type w} [TopologicalSpace X] [T2Space X]
-    (C : Set X) [CWComplex C] : IsIso (adj.{u, w}.counit.app (TopCat.of C)) := inferInstance
-
-/-- On any Hausdorff space carrying a CW structure on `Set.univ`, the counit `kX ⟶ X` is an
-isomorphism in `TopCat` for every test universe `u`. -/
-theorem isIso_counit_app_of_cwComplex_univ (X : Type w) [TopologicalSpace X] [T2Space X]
-    [CWComplex (Set.univ : Set X)] : IsIso (adj.{u, w}.counit.app (TopCat.of X)) := inferInstance
 
 /-- On any colimit cocone in `TopCat` whose stages are `u`-compactly generated, the counit on the
 colimit point is an isomorphism. -/

@@ -9,7 +9,8 @@ public import Mathlib.Logic.Small.Basic
 public import Mathlib.Topology.Compactness.CompactlyGeneratedSpace
 public import Mathlib.Topology.Instances.Shrink
 public import Mathlib.Topology.UnitInterval
-public import TauCeti.Topology.Convenient.CartesianClosed
+public import TauCeti.Topology.Convenient.GeneratedBy
+public import TauCeti.Topology.Convenient.HomSpace
 
 /-!
 # Compact Hausdorff generators, products, and mapping spaces
