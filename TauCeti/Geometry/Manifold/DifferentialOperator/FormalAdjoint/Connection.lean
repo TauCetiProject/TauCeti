@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric
 public import TauCeti.Geometry.Manifold.DifferentialOperator.FormalAdjoint.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.DifferentialOperator
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 
@@ -18,9 +18,7 @@ import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 Let `∇` be a smooth connection on a vector bundle `V` over a smooth manifold `M`, and let `X` be a
 smooth vector field. The covariant derivative along `X`, `∇_X σ = ∇σ(X)`
 (`CovariantDerivative.alongVectorField`), is a first-order differential operator on the smooth
-sections of `V`: by the Leibniz rule `∇_X (a σ) = a ∇_X σ + X(a) σ`
-(`CovariantDerivative.alongVectorField_smul`), its commutator with multiplication by a smooth
-function `a` is multiplication by `X(a)`.
+sections of `V` (`CovariantDerivative.alongVectorField_mem_differentialOperators_one`).
 
 If `M` is a Riemannian manifold without boundary, `V` carries a smooth fibre metric and `∇` is
 compatible with it, then with respect to the Riemannian volume `dV` the formal adjoint of `∇_X` is
@@ -36,8 +34,6 @@ vector field acting on functions. Merely negating `∇_X` is wrong unless `X` is
 
 ## Main results
 
-* `CovariantDerivative.alongVectorField_mem_differentialOperators_one`: `∇_X` is a differential
-  operator of order at most one in Grothendieck's sense.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField`,
   `CovariantDerivative.IsMetricCompatible.formalAdjoint_alongVectorField_apply`: the formal
   adjoint of `∇_X` for the Riemannian volume is `-∇_X - div X`.
@@ -64,37 +60,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
-
-/-! ### The covariant derivative along a vector field is a first-order operator -/
-
-section FirstOrder
-
-variable {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
-  [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)]
-  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [FiberBundle F V] [VectorBundle ℝ F V]
-  (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
-
-/-- The covariant derivative along a smooth vector field is a differential operator of order at
-most one: its commutator with multiplication by `a` is multiplication by `X(a)`. -/
-theorem alongVectorField_mem_differentialOperators_one :
-    cov.alongVectorField X ∈
-      differentialOperators ℝ C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯ Cₛ^∞⟮I; F, V⟯ 1 := by
-  refine mem_differentialOperators_succ_iff.2 fun a ↦
-    mem_differentialOperators_zero_iff.2 fun b σ ↦ ContMDiffSection.ext fun x ↦ ?_
-  simp only [smulCommutator_apply_apply, ContMDiffSection.coe_sub, Pi.sub_apply,
-    ContMDiffSection.smul_apply, alongVectorField_smul]
-  module
-
-variable [FiniteDimensional ℝ E] [T2Space M]
-
-/-- The covariant derivative along a smooth vector field does not enlarge supports. -/
-theorem tsupport_alongVectorField_apply_subset (σ : Cₛ^∞⟮I; F, V⟯) :
-    (cov.alongVectorField X σ).tsupport ⊆ σ.tsupport :=
-  tsupport_differentialOperators_section_apply_subset
-    (cov.alongVectorField_mem_differentialOperators_one X) σ
-
-end FirstOrder
 
 /-! ### The formal adjoint for the Riemannian volume -/
 
