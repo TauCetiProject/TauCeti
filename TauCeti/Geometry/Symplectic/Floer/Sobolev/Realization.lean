@@ -33,7 +33,7 @@ range: the Fredholm property of `D_u` minus the finiteness of its cokernel.
   `TauCeti.CylinderSobolev.H1` (`TauCeti.SymplecticForm.floerSobolevOperator_def`). It acts
   pointwise by the coefficient field (`TauCeti.SymplecticForm.coeFn_floerSobolevOperator`), and on
   the jet of a test section it is `D_u ξ`
-  (`TauCeti.SymplecticForm.floerSobolevOperator_jetₗ_ae_eq`), provided its coefficients are
+  (`TauCeti.SymplecticForm.floerSobolevOperator_jetLp_ae_eq`), provided its coefficients are
   essentially bounded on the cylinder.
 * Along a Floer trajectory of `K = H_t dt`, whose loops and slice defect `∂t u - X_{H_t}(u)`
   converge uniformly at both ends, the coefficients are bounded
@@ -77,7 +77,7 @@ open scoped NNReal ENNReal Manifold
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
@@ -132,13 +132,14 @@ theorem coeFn_floerSobolevOperator (ω : SymplecticForm V) {J : ℝ × ℝ → V
 
 /-- On the jet of a test section `ξ`, the Sobolev realization of the linearized Floer operator is
 `D_u ξ`, when the coefficients of `D_u` are essentially bounded on the cylinder. -/
-theorem floerSobolevOperator_jetₗ_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
+theorem floerSobolevOperator_jetLp_ae_eq (ω : SymplecticForm V) {J : ℝ × ℝ → V → V →L[ℝ] V}
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
     (hM : MemLp (ω.floerJetCoeff J Ks Kt u) ∞ stripMeasure) (ξ : testSection V) :
-    ω.floerSobolevOperator J Ks Kt u ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩ =ᵐ[stripMeasure]
+    ω.floerSobolevOperator J Ks Kt u
+        ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       ω.floerLinearization J Ks Kt u ξ := by
-  filter_upwards [coeFn_floerSobolevOperator ω hM ⟨jetₗ V ξ, jetₗ_mem_H1 ξ⟩, coeFn_jetₗ ξ]
-    with z h₁ h₂
+  filter_upwards [coeFn_floerSobolevOperator ω hM
+      ⟨jetLp (testSection V) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂, floerJetCoeff_jet]
 
 /-- The norm of the coefficient field on jets is at most `1 + ‖J(z, u z)‖ + ‖A(z)‖`. -/
@@ -361,7 +362,7 @@ end TauCeti.SymplecticForm
 namespace TauCeti.Floer
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
@@ -439,7 +440,7 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 open CylinderSobolev
-open StripSobolev (jet jet_apply stripMeasure)
+open StripSobolev (jet jet_apply stripMeasure jetLp jetLp_mem_jetClosure coeFn_jetLp)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
