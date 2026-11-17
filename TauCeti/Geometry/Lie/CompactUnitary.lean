@@ -13,6 +13,7 @@ public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.RepresentationTheory.Compact.Faithful
 
 import Mathlib.Topology.Homeomorph.Lemmas
+import TauCeti.Geometry.Lie.Representation
 
 /-!
 # Faithful unitary representations of compact Lie groups and the NSS characterization
@@ -20,19 +21,15 @@ import Mathlib.Topology.Homeomorph.Lemmas
 This file connects the representation theory of compact Hausdorff groups with the smooth theory of
 finite-dimensional real Lie groups in both directions:
 
-1. **Automatic smoothness of finite-dimensional continuous representations**
-   (`ContRepresentation.contMDiff`, `ContRepresentation.contMDiff_apply`): every continuous
-   representation of a finite-dimensional real Lie group on a finite-dimensional normed space over
-   a finite-dimensional normed `ℝ`-algebra `𝕜` is smooth as an operator-valued map and acts
-   smoothly on `G × V`.
-2. **Smooth faithful unitary representations of compact Lie groups**
+1. **Smooth faithful unitary representations of compact Lie groups**
    (`TauCeti.Lie.exists_faithful_isUnitary_contMDiff`,
    `TauCeti.Lie.exists_injective_contMDiffMonoidMorphism_matrixUnitarySubgroup`): every compact
    finite-dimensional real Lie group has no small subgroups
-   (`TauCeti.Lie.hasNoSmallSubgroups_of_lieGroup`), hence by Peter–Weyl admits a smooth faithful
-   unitary representation on `EuclideanSpace 𝕜 (Fin n)` (over `ℂ` or `ℝ`), and embeds smoothly and
-   closedly into the matrix unitary Lie group `unitarySubgroup (GL (Fin n) 𝕜)`.
-3. **The Gleason–Montgomery–Zippin / Peter–Weyl characterization of compact Lie groups**
+   (`TauCeti.Lie.hasNoSmallSubgroups_of_lieGroup`), hence by Peter–Weyl admits a faithful unitary
+   representation on `EuclideanSpace 𝕜 (Fin n)` (over `ℂ` or `ℝ`), which is automatically smooth
+   (`ContRepresentation.contMDiff`), and embeds smoothly and closedly into the matrix unitary Lie
+   group `unitarySubgroup (GL (Fin n) 𝕜)`.
+2. **The Gleason–Montgomery–Zippin / Peter–Weyl characterization of compact Lie groups**
    (`TauCeti.Lie.HasNoSmallSubgroups.exists_lieGroup`,
    `TauCeti.Lie.hasNoSmallSubgroups_iff_exists_lieGroup`,
    `TauCeti.Lie.tfae_hasNoSmallSubgroups_compact`): a compact Hausdorff topological group `G`
@@ -46,8 +43,6 @@ finite-dimensional real Lie groups in both directions:
 
 ## Main results
 
-* `ContRepresentation.contMDiff`, `ContRepresentation.contMDiff_apply`: finite-dimensional
-  continuous representations of real Lie groups are smooth.
 * `TauCeti.Lie.exists_faithful_isUnitary_contMDiff`: every compact finite-dimensional real Lie
   group admits a smooth faithful unitary representation on `EuclideanSpace 𝕜 (Fin n)`.
 * `TauCeti.Lie.exists_injective_contMDiffMonoidMorphism_matrixUnitarySubgroup`: smooth closed
@@ -76,44 +71,6 @@ open Filter Function Manifold Set
 open scoped ContDiff Manifold Matrix Matrix.Norms.Operator Topology
 
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
-
-namespace ContRepresentation
-
-attribute [local instance] ContMDiffMul.boundarylessManifold
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G] [LieGroup I ∞ G]
-  {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [FiniteDimensional ℝ 𝕜]
-  [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedSpace ℝ V] [SMulCommClass 𝕜 ℝ V]
-  [IsScalarTower ℝ 𝕜 V] [FiniteDimensional 𝕜 V]
-
-/-- **Every continuous finite-dimensional representation of a finite-dimensional real Lie group is
-smooth.** -/
-theorem contMDiff (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    ContMDiff I 𝓘(ℝ, V →L[𝕜] V) ∞ π := by
-  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  let _ : FiniteDimensional ℝ V := Module.Finite.trans 𝕜 V
-  let _ : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
-  let _ : FiniteDimensional ℝ (V →L[𝕜] V) := Module.Finite.trans 𝕜 (V →L[𝕜] V)
-  let _ : NormedAlgebra ℝ (V →L[𝕜] V) :=
-    { ContinuousLinearMap.toNormedSpace, ContinuousLinearMap.algebra with }
-  have hhom : ContMDiff I 𝓘(ℝ, V →L[𝕜] V) ∞ (π.toUnitsContinuousMonoidHom hπ) :=
-    TauCeti.Lie.contMDiff_of_continuous_monoidHom (π.toUnitsContinuousMonoidHom hπ)
-      (π.toUnitsContinuousMonoidHom hπ).continuous
-  simpa [Function.comp_def, toMonoidHom_apply] using
-    (Units.contMDiff_val (𝕜 := ℝ) (R := V →L[𝕜] V) (n := ∞)).comp hhom
-
-/-- The joint action `(g, v) ↦ π g v` of a continuous finite-dimensional representation of a
-finite-dimensional real Lie group is smooth. -/
-theorem contMDiff_apply (π : ContRepresentation 𝕜 G V) (hπ : Continuous π) :
-    ContMDiff (I.prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ (fun p : G × V ↦ π p.1 p.2) := by
-  let R : (V →L[𝕜] V) →L[ℝ] (V →L[ℝ] V) := ContinuousLinearMap.restrictScalarsL 𝕜 V V ℝ ℝ
-  have hR : ContMDiff I 𝓘(ℝ, V →L[ℝ] V) ∞ (fun g : G ↦ R (π g)) :=
-    R.contDiff.contMDiff.comp (π.contMDiff hπ)
-  exact (hR.comp contMDiff_fst).clm_apply contMDiff_snd
-
-end ContRepresentation
 
 namespace TauCeti.Lie
 
@@ -157,42 +114,18 @@ theorem exists_injective_contMDiffMonoidMorphism_matrixUnitarySubgroup :
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
   have hG : HasNoSmallSubgroups G := hasNoSmallSubgroups_of_lieGroup I
   obtain ⟨n, π, hπc, hπu, hinj⟩ := hG.exists_faithful_isUnitary (𝕜 := 𝕜)
-  let eMat : (EuclideanSpace 𝕜 (Fin n) →L[𝕜] EuclideanSpace 𝕜 (Fin n)) ≃⋆ₐ[𝕜]
-      Matrix (Fin n) (Fin n) 𝕜 :=
-    (Matrix.toEuclideanCLM (n := Fin n) (𝕜 := 𝕜)).symm
-  have heMat_cont : Continuous eMat :=
-    LinearMap.continuous_of_finiteDimensional eMat.toAlgEquiv.toLinearEquiv.toLinearMap
-  let φGL : G →* GL (Fin n) 𝕜 :=
-    (Units.map eMat.toRingHom.toMonoidHom).comp π.toMonoidHom.toHomUnits
-  have hval_φGL (g : G) : ((φGL g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) = eMat (π g) := by
-    simp [φGL]
-    rfl
-  have hinv_φGL (g : G) :
-      (((φGL g)⁻¹ : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) = eMat (π g⁻¹) := by
-    rw [← map_inv, hval_φGL]
-  have hφGL_cont : Continuous φGL := by
-    refine Units.continuous_iff.mpr ⟨?_, ?_⟩
-    · have h1 : (Units.val ∘ φGL) = fun g ↦ eMat (π g) := funext hval_φGL
-      rw [h1]
-      exact heMat_cont.comp hπc
-    · have h2 : (fun g : G ↦ (((φGL g)⁻¹ : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜)) =
-          fun g ↦ eMat (π g⁻¹) := funext hinv_φGL
-      rw [h2]
-      exact heMat_cont.comp (hπc.comp continuous_inv)
-  have hφGL_mem : ∀ g : G, φGL g ∈ unitarySubgroup (GL (Fin n) 𝕜) := fun g ↦ by
-    rw [mem_unitarySubgroup_iff, TauCeti.mem_unitary_units_iff, hval_φGL]
-    exact Unitary.map_mem eMat (hπu.mem_unitary g)
+  let ψ : G →ₜ* Matrix.unitaryGroup (Fin n) 𝕜 := hπu.toMatrixUnitaryGroupHom hπc
   let φ : G →ₜ* unitarySubgroup (GL (Fin n) 𝕜) :=
-    { toMonoidHom := φGL.codRestrict (unitarySubgroup (GL (Fin n) 𝕜)) hφGL_mem
-      continuous_toFun := hφGL_cont.subtype_mk _ }
-  have hφ_inj : Function.Injective φ := by
-    intro x y hxy
-    have hval : ((φGL x : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) =
-        ((φGL y : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) :=
-      congrArg (fun u : unitarySubgroup (GL (Fin n) 𝕜) ↦ ((u : GL (Fin n) 𝕜) :
-        Matrix (Fin n) (Fin n) 𝕜)) hxy
-    rw [hval_φGL, hval_φGL] at hval
-    exact hinj (eMat.injective hval)
+    { toMonoidHom :=
+        (unitarySubgroupUnitsEquiv (M := Matrix (Fin n) (Fin n) 𝕜)).symm.toMonoidHom.comp
+          ψ.toMonoidHom
+      continuous_toFun :=
+        ((TauCeti.unitarySubgroupUnitsHomeomorph (Matrix (Fin n) (Fin n) 𝕜)).symm.continuous.comp
+          ψ.continuous).congr fun g ↦
+          TauCeti.unitarySubgroupUnitsHomeomorph_symm_apply (ψ g) }
+  have hφ_inj : Function.Injective φ :=
+    (unitarySubgroupUnitsEquiv (M := Matrix (Fin n) (Fin n) 𝕜)).symm.injective.comp
+      ((hπu.injective_toMatrixUnitaryGroupHom_iff hπc).mpr hinj)
   let f := φ.toContMDiffMonoidMorphism I
     𝓘(ℝ, (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix (Fin n) (Fin n) 𝕜))
       (unitarySubgroup (GL (Fin n) 𝕜))).toSubmodule)

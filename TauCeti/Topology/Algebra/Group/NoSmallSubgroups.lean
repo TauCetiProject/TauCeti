@@ -41,7 +41,8 @@ no small subgroups if and only if it is discrete
   `ContinuousMulEquiv.hasNoSmallSubgroups_iff`, `TauCeti.hasNoSmallSubgroups_prod_iff`:
   hereditary and invariance properties.
 * `TauCeti.hasNoSmallSubgroups_units`, `TauCeti.hasNoSmallAddSubgroups_of_normedAddCommGroup`:
-  normed-algebra units and normed additive groups have no small subgroups.
+  units of normed rings with integer norm homogeneity have no small subgroups, and normed additive
+  groups with integer norm homogeneity have no small additive subgroups.
 * `ContinuousMonoidHom.isOpen_ker_of_hasNoSmallSubgroups`,
   `TauCeti.hasNoSmallSubgroups_iff_discreteTopology`: continuous homomorphisms out of profinite
   groups into NSS groups have open kernel, so an NSS profinite group is discrete.
