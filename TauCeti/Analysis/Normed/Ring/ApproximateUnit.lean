@@ -29,7 +29,9 @@ We prove:
   `C + D + C * D`. In the unitization, `1 - (e + f - f * e) = (1 - f) * (1 - e)`;
 * transfer under continuous multiplicative maps with dense range, provided the image of the
   approximate unit is eventually norm bounded. This allows a bounded approximate unit of a
-  dense subalgebra to serve in its completion.
+  dense subalgebra to serve in its completion;
+* squaring an eventually bounded two-sided approximate identity gives another two-sided
+  approximate identity (`Filter.IsApproximateUnit.map_mul_self`).
 
 ## References
 
@@ -259,5 +261,38 @@ theorem map_of_denseRange {l : Filter A} (hl : l.IsApproximateUnit) (f : F)
             simpa only [Function.comp_def] using (continuous_snd.tendsto (x, x)).comp (htarget x))
           tendsto_mul_right := fun x => tendsto_map'_iff.2 (by
             simpa only [Function.comp_def] using (continuous_fst.tendsto (x, x)).comp (htarget x)) }
+
+/-- Squaring an eventually bounded two-sided approximate identity of a seminormed ring produces
+another two-sided approximate identity. -/
+theorem map_mul_self {A : Type*} [NonUnitalSeminormedRing A] {l : Filter A}
+    (hl : l.IsApproximateUnit) {C : ℝ} (hC : ∀ᶠ e in l, ‖e‖ ≤ C) :
+    (l.map fun e ↦ e * e).IsApproximateUnit where
+  tendsto_mul_left a := by
+    refine tendsto_map'_iff.2 (tendsto_iff_norm_sub_tendsto_zero.2 ?_)
+    have h0 : Tendsto (fun e : A ↦ ‖a * e - a‖ * C + ‖a * e - a‖) l (𝓝 0) := by
+      simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 (hl.tendsto_mul_left a)).mul_const C).add
+        (tendsto_iff_norm_sub_tendsto_zero.1 (hl.tendsto_mul_left a))
+    refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ h0
+    filter_upwards [hC] with e he
+    have hsub : a * (e * e) - a = (a * e - a) * e + (a * e - a) := by
+      simp only [sub_mul, mul_assoc]
+      abel
+    rw [Function.comp_apply, hsub]
+    exact (norm_add_le _ _).trans <| add_le_add
+      ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left he (norm_nonneg _))) le_rfl
+  tendsto_mul_right a := by
+    refine tendsto_map'_iff.2 (tendsto_iff_norm_sub_tendsto_zero.2 ?_)
+    have h0 : Tendsto (fun e : A ↦ C * ‖e * a - a‖ + ‖e * a - a‖) l (𝓝 0) := by
+      simpa using ((tendsto_iff_norm_sub_tendsto_zero.1 (hl.tendsto_mul_right a)).const_mul C).add
+        (tendsto_iff_norm_sub_tendsto_zero.1 (hl.tendsto_mul_right a))
+    refine squeeze_zero' (.of_forall fun _ ↦ norm_nonneg _) ?_ h0
+    filter_upwards [hC] with e he
+    have hsub : e * e * a - a = e * (e * a - a) + (e * a - a) := by
+      simp only [mul_sub, mul_assoc]
+      abel
+    rw [Function.comp_apply, hsub]
+    exact (norm_add_le _ _).trans <| add_le_add
+      ((norm_mul_le _ _).trans (mul_le_mul_of_nonneg_right he (norm_nonneg _))) le_rfl
+  neBot := have := hl.neBot; inferInstance
 
 end Filter.IsApproximateUnit
