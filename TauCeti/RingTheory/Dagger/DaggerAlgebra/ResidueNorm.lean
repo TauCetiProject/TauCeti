@@ -5,8 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.ClosedIdeal
+
+import TauCeti.Analysis.Normed.Algebra.Completion
 
 /-!
 # The residue norm of a dagger algebra and its completion
@@ -17,8 +20,8 @@ algebra, presented by `φ : W_n ↠ A`. The *residue seminorm* of the presentati
 ideal of `W_n` is closed for the Gauss norm, so the quotient seminorm is definite, and in fact
 the infimum is attained. This file transports it to a norm on `A` along the chosen minimal
 presentation, shows that the completion map `τ : A → Â = T_n ⧸ I T_n` of
-`TauCeti.Dagger.toCompletion` is an isometry with dense image, so that `Â` is a metric
-completion of `A`.
+`TauCeti.Dagger.toCompletion` is an isometry with dense image, and identifies `Â` with the
+metric completion `UniformSpace.Completion A` as a normed `K`-algebra.
 
 This is the completion comparison of Grosse-Klönne, *Rigid analytic spaces with overconvergent
 structure sheaf*, §1, Proposition 1.6: `A` is to its completion `Â` as `W_n` is to `T_n`, with the
@@ -31,9 +34,9 @@ of arbitrary `K`-algebra homomorphisms of dagger algebras, which is established 
 The isometry `isometry_toCompletion` compares the residue norm transported along the chosen
 minimal presentation with the quotient Gauss norm on `completion K A`. The residue norm is
 carried explicitly by `residueNormedCommRing` and the local `letI` declarations in the results,
-rather than by a global instance. With these structures installed locally, one can formulate
-an algebra equivalence from `UniformSpace.Completion A` to `completion K A`; this file provides
-the isometry and dense range used for that comparison, but does not construct the equivalence.
+rather than by a global instance. With these structures installed locally, `completionAlgEquiv`
+packages the isometry and dense range into an isometric `K`-algebra isomorphism from
+`UniformSpace.Completion A` to `completion K A`.
 
 ## Main definitions
 
@@ -42,6 +45,8 @@ the isometry and dense range used for that comparison, but does not construct th
 * `TauCeti.Dagger.residueNormedCommRing` and `TauCeti.Dagger.residueNormedAlgebra`: the
   transported ultrametric algebra norm on `A`. Not instances, since they depend on the chosen
   presentation.
+* `TauCeti.Dagger.completionAlgEquiv`: isometric algebra isomorphism identifying
+  `UniformSpace.Completion A` with `completion K A` for the residue norm.
 
 ## Main results
 
@@ -49,10 +54,11 @@ the isometry and dense range used for that comparison, but does not construct th
   every representing series.
 * `TauCeti.Dagger.exists_presentation_norm_eq`: the infimum defining the residue norm is
   attained by a representative.
-* `TauCeti.Dagger.norm_toCompletion`, `TauCeti.Dagger.isometry_toCompletion`: the completion
-  map `τ : A → Â` is an isometry for the residue norm and the quotient Gauss norm of `Â`.
-  Its image is dense (`TauCeti.Dagger.denseRange_toCompletion`), so `Â` is a metric
-  completion of the residue-normed `A`.
+* `TauCeti.Dagger.norm_toCompletion`, `TauCeti.Dagger.isometry_toCompletion`,
+  `TauCeti.Dagger.isometry_completionAlgEquiv`: the completion map `τ : A → Â` is an isometry for
+  the residue norm and the quotient Gauss norm of `Â`, with dense image
+  (`TauCeti.Dagger.denseRange_toCompletion`), yielding the isometric algebra isomorphism
+  `completionAlgEquiv`.
 
 ## References
 
@@ -87,6 +93,20 @@ noncomputable def residueAlgEquiv : A ≃ₐ[K] W ⧸ I :=
   have h := Ideal.quotientKerAlgEquivOfSurjective_mk (presentation_surjective K A) f
   simp only [residueAlgEquiv, ← h, AlgEquiv.symm_apply_apply]
 
+/-- The inverse of the residue isomorphism sends the quotient class of a series to its image under
+the chosen presentation. -/
+@[simp] theorem residueAlgEquiv_symm_mk (f : W) :
+    (residueAlgEquiv K A).symm (Ideal.Quotient.mk _ f) = presentation K A f := by
+  rw [residueAlgEquiv, AlgEquiv.symm_symm, Ideal.quotientKerAlgEquivOfSurjective_mk]
+
+/-- The inverse of the residue isomorphism is the kernel lift of the chosen presentation.
+Not marked `@[simp]` so that `simp` stays confluent with `AlgEquiv.apply_symm_apply`;
+use `residueAlgEquiv_symm_mk` to simplify on quotient classes. -/
+theorem residueAlgEquiv_symm_apply (y : W ⧸ I) :
+    (residueAlgEquiv K A).symm y = Ideal.kerLiftAlg (presentation K A) y := by
+  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective y
+  rw [residueAlgEquiv_symm_mk, Ideal.kerLiftAlg_mk]
+
 end Algebraic
 
 variable (K : Type*) [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
@@ -115,6 +135,14 @@ noncomputable abbrev residueNormedAlgebra :
     letI := residueNormedCommRing K A
     ‖residueAlgEquiv K A x‖ = ‖x‖ :=
   rfl
+
+/-- `TauCeti.Dagger.residueAlgEquiv` is an isometry for the residue norm on `A` and the quotient
+Gauss norm on `W_n ⧸ ker (presentation K A)`. -/
+theorem isometry_residueAlgEquiv :
+    letI := residueNormedCommRing K A
+    Isometry (residueAlgEquiv K A) :=
+  letI := residueNormedCommRing K A
+  AddMonoidHomClass.isometry_of_norm (residueAlgEquiv K A) (norm_residueAlgEquiv K A)
 
 /-- The residue norm on a dagger algebra is ultrametric. -/
 theorem isUltrametricDist_residueNormedCommRing :
@@ -170,5 +198,63 @@ theorem isometry_toCompletion :
   (AddMonoidHomClass.isometry_iff_norm (E := A) (F := completion K A)
     (toCompletion K A)).mpr
     fun a ↦ norm_toCompletion K A a
+
+/-- **Metric completion comparison for a dagger algebra.** With its residue norm, the metric
+completion `UniformSpace.Completion A` is isometrically isomorphic as a `K`-algebra to
+`completion K A`. -/
+noncomputable def completionAlgEquiv :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    Completion A ≃ₐ[K] completion K A :=
+  letI := residueNormedCommRing K A
+  letI := residueNormedAlgebra K A
+  AlgHom.completionAlgEquiv (R := K) (A := A) (B := completion K A)
+    (toCompletion K A) (isometry_toCompletion K A) denseRange_toCompletion
+
+variable {K A} in
+/-- `completionAlgEquiv` extends `toCompletion K A` on elements of `A`. -/
+@[simp]
+theorem completionAlgEquiv_coe (a : A) :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    completionAlgEquiv K A (a : Completion A) = toCompletion K A a := by
+  let := residueNormedCommRing K A
+  let := residueNormedAlgebra K A
+  rw [completionAlgEquiv]
+  exact AlgHom.completionAlgEquiv_coe _ _ _ a
+
+variable {K A} in
+/-- The inverse of `completionAlgEquiv` recovers the completion class of every `a ∈ A`. -/
+@[simp]
+theorem completionAlgEquiv_symm_toCompletion (a : A) :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    (completionAlgEquiv K A).symm (toCompletion K A a) = (a : Completion A) := by
+  let := residueNormedCommRing K A
+  let := residueNormedAlgebra K A
+  rw [completionAlgEquiv]
+  exact AlgHom.completionAlgEquiv_symm_apply _ _ _ a
+
+/-- `completionAlgEquiv` is an isometry. -/
+theorem isometry_completionAlgEquiv :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    Isometry (completionAlgEquiv K A) := by
+  let := residueNormedCommRing K A
+  let := residueNormedAlgebra K A
+  rw [completionAlgEquiv]
+  exact AlgHom.isometry_completionAlgEquiv _ _ _
+
+/-- `completionAlgEquiv` preserves norms. -/
+@[simp]
+theorem norm_completionAlgEquiv :
+    letI := residueNormedCommRing K A
+    letI := residueNormedAlgebra K A
+    ∀ x : Completion A, ‖completionAlgEquiv K A x‖ = ‖x‖ := by
+  let := residueNormedCommRing K A
+  let := residueNormedAlgebra K A
+  intro x
+  rw [completionAlgEquiv]
+  exact AlgHom.norm_completionAlgEquiv _ _ _ x
 
 end TauCeti.Dagger

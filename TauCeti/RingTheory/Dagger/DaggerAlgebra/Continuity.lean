@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Completion
 public import TauCeti.RingTheory.Affinoid.QuotientNorm
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.ResidueNorm
 public import TauCeti.RingTheory.Huber.PowerBounded
 
 import TauCeti.RingTheory.Affinoid.Polyradius
 import TauCeti.RingTheory.Affinoid.PowerBounded
+import TauCeti.RingTheory.Affinoid.Restricted
 import TauCeti.RingTheory.Dagger.DaggerAlgebra.FaithfullyFlat
 import TauCeti.RingTheory.Dagger.QuotientCompletion
 import TauCeti.RingTheory.Dagger.SupSeminorm
@@ -19,8 +19,7 @@ import TauCeti.RingTheory.Huber.Normed
 import TauCeti.RingTheory.Huber.OpenIdeal
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Polynomial
 import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Radius
-import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.UniversalProperty
-import TauCeti.Topology.Algebra.UniformRing
+import TauCeti.Topology.Algebra.Ring.Ideal
 
 /-!
 # Automatic continuity, canonical residue topology, and functoriality of completion
@@ -59,8 +58,6 @@ independence of the completion `A ↦ Â`.
   homeomorphisms for the residue norms.
 * `TauCeti.Dagger.quotientKerContinuousAlgEquiv`: for any surjective morphism `φ : A →ₐ[K] B` of
   dagger algebras, `A ⧸ ker φ ≃A[K] B` is a homeomorphism for the residue norms.
-* `TauCeti.Dagger.completionAlgEquiv`: isometric algebra isomorphism identifying
-  `UniformSpace.Completion A` with `completion K A` for the residue norm.
 * `TauCeti.Dagger.mapCompletion` and `TauCeti.Dagger.mapCompletionEquiv`: the completion functor
   `φ ↦ φ̂ : Â →ₐ[K] B̂` and its action on algebra equivalences.
 * `TauCeti.Dagger.presentationCompletionEquiv`: for any presentation `π : W_σ ↠ A`, the canonical
@@ -98,7 +95,15 @@ public section
 
 namespace TauCeti.Dagger
 
-open _root_.MvPowerSeries UniformSpace
+open _root_.MvPowerSeries
+
+/-- If an algebra homomorphism `g` vanishes on `f '' I`, then it vanishes on `I.map f`. -/
+private theorem algHom_eq_zero_of_mem_ideal_map {k R S T : Type*} [CommSemiring k] [CommRing R]
+    [CommRing S] [CommRing T] [Algebra k R] [Algebra k S] [Algebra k T]
+    (f : R →ₐ[k] S) (g : S →ₐ[k] T) {I : Ideal R} (h : ∀ a ∈ I, g (f a) = 0)
+    {x : S} (hx : x ∈ I.map f) : g x = 0 :=
+  RingHom.mem_ker.mp ((Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by
+    simpa [Ideal.mem_comap, RingHom.mem_ker] using h a ha) hx)
 
 variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [CompleteSpace K]
 
@@ -143,31 +148,20 @@ ultrametric `K`-algebra norm. -/
 private noncomputable def liftToAffinoidNormed {E : Type*} [NormedCommRing E] [NormedAlgebra K E]
     [IsUltrametricDist E] [CompleteSpace E] (hE : IsAffinoidAlgebra K E)
     (ψ : W σ →ₐ[K] E) : T σ →ₐ[K] E :=
-  let := Fintype.ofFinite σ
-  let e : σ ≃ Fin (Fintype.card σ) := Fintype.equivFin σ
-  let r : T σ ≃ₐ[K] T (Fin (Fintype.card σ)) := IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1
-  let φ₀ : T (Fin (Fintype.card σ)) →+* E :=
-    MvPowerSeries.restrictedLift (continuous_algebraMap K E)
-      fun j ↦ isPowerBounded_map_of_norm_le_one hE ψ (norm_X (e.symm j)).le
-  let φ : T (Fin (Fintype.card σ)) →ₐ[K] E :=
-    { φ₀ with commutes' := MvPowerSeries.restrictedLift_algebraMap _ _ }
-  φ.comp r.toAlgHom
+  let e : σ ≃ Fin (Nat.card σ) := Finite.equivFin σ
+  let r : T σ ≃ₐ[K] T (Fin (Nat.card σ)) := IsRestricted.renameAlgEquiv (R := K) e fun _ ↦ 1
+  let hb : ∀ j : Fin (Nat.card σ), Huber.IsPowerBounded (ψ (X σ K (e.symm j))) :=
+    fun j ↦ isPowerBounded_map_of_norm_le_one hE ψ (norm_X (e.symm j)).le
+  (isAffinoidAlgebra_self.restrictedLift hE (Algebra.ofId K E) hb).comp r.toAlgHom
 
 /-- The normed Tate extension agrees with `ψ` on every coordinate variable. -/
 private theorem liftToAffinoidNormed_X {E : Type*} [NormedCommRing E] [NormedAlgebra K E]
     [IsUltrametricDist E] [CompleteSpace E] (hE : IsAffinoidAlgebra K E)
     (ψ : W σ →ₐ[K] E) (i : σ) :
     liftToAffinoidNormed hE ψ ⟨MvPowerSeries.X i, isRestricted_X _ i⟩ = ψ (X σ K i) := by
-  let := Fintype.ofFinite σ
-  let e : σ ≃ Fin (Fintype.card σ) := Fintype.equivFin σ
-  have hren :
-      IsRestricted.renameAlgEquiv (R := K) e (fun _ ↦ (1 : ℝ))
-        ⟨MvPowerSeries.X i, isRestricted_X _ i⟩ =
-      ⟨MvPowerSeries.X (e i), isRestricted_X _ (e i)⟩ :=
-    Subtype.ext (by simp)
   dsimp only [liftToAffinoidNormed, AlgHom.comp_apply, AlgEquiv.coe_toAlgHom]
-  rw [hren]
-  exact (MvPowerSeries.restrictedLift_X _ _ (e i)).trans (by rw [Equiv.symm_apply_apply])
+  rw [IsRestricted.renameAlgEquiv_X (c := fun _ ↦ (1 : ℝ)), IsAffinoidAlgebra.restrictedLift_X,
+    Equiv.symm_apply_apply]
 
 /-- The normed Tate extension extends `ψ` along `toTate`. -/
 private theorem liftToAffinoidNormed_toTate {E : Type*} [NormedCommRing E] [NormedAlgebra K E]
@@ -303,20 +297,18 @@ noncomputable def liftQuotientToAffinoid {I : Ideal (W σ)} {E : Type*} [CommRin
     (hE : IsAffinoidAlgebra K E) (φ : (W σ ⧸ I) →ₐ[K] E) :
     (T σ ⧸ I.map (toTate σ K)) →ₐ[K] E :=
   Ideal.Quotient.liftₐ (I.map (toTate σ K)) (liftToAffinoid hE (φ.comp (Ideal.Quotient.mkₐ K I)))
-    fun g hg ↦ by
-      have hle : I.map (toTate σ K) ≤
-          RingHom.ker (liftToAffinoid hE (φ.comp (Ideal.Quotient.mkₐ K I))) :=
-        Ideal.map_le_iff_le_comap.mpr fun f hf ↦ by
-          simp [Ideal.mem_comap, RingHom.mem_ker, Ideal.Quotient.eq_zero_iff_mem.mpr hf]
-      exact RingHom.mem_ker.mp (hle hg)
+    fun _ ↦ algHom_eq_zero_of_mem_ideal_map (toTate σ K) _ fun _ hf ↦ by
+      simp [Ideal.Quotient.eq_zero_iff_mem.mpr hf]
 
 /-- `liftQuotientToAffinoid` evaluated on the class of an overconvergent series `toTate f`. -/
 @[simp]
 theorem liftQuotientToAffinoid_mk_toTate {I : Ideal (W σ)} {E : Type*} [CommRing E] [Algebra K E]
     (hE : IsAffinoidAlgebra K E) (φ : (W σ ⧸ I) →ₐ[K] E) (f : W σ) :
     liftQuotientToAffinoid hE φ (Ideal.Quotient.mk (I.map (toTate σ K)) (toTate σ K f)) =
-      φ (Ideal.Quotient.mk I f) :=
-  liftToAffinoid_toTate hE (φ.comp (Ideal.Quotient.mkₐ K I)) f
+      φ (Ideal.Quotient.mk I f) := by
+  rw [liftQuotientToAffinoid, ← Ideal.Quotient.mkₐ_eq_mk K, ← AlgHom.comp_apply,
+    Ideal.Quotient.liftₐ_comp]
+  simp
 
 /-- `liftQuotientToAffinoid` extends `φ` along `W_σ ⧸ I → T_σ ⧸ I T_σ`. -/
 @[simp]
@@ -402,9 +394,7 @@ noncomputable def liftToAffinoid [CommRing E] [Algebra K E] (hE : IsAffinoidAlge
 theorem liftToAffinoid_toCompletion [CommRing E] [Algebra K E] (hE : IsAffinoidAlgebra K E)
     (φ : A →ₐ[K] E) (a : A) : liftToAffinoid hE φ (toCompletion K A a) = φ a := by
   obtain ⟨f, rfl⟩ := presentation_surjective K A a
-  rw [toCompletion_presentation, liftToAffinoid, washnitzerAlgebra.liftQuotientToAffinoid_mk_toTate,
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, ← residueAlgEquiv_presentation,
-    AlgEquiv.symm_apply_apply]
+  simp [liftToAffinoid]
 
 /-- `liftToAffinoid` factors `φ` through `toCompletion K A`. -/
 @[simp]
@@ -486,15 +476,6 @@ theorem isClosed_ideal (I : Ideal A) :
       isAffinoidAlgebra_completion _
   exact comap_map_toCompletion K I ▸ hc.preimage (isometry_toCompletion K A).continuous
 
-variable (K A) in
-/-- `residueAlgEquiv K A` is an isometry for the residue norm on `A` and the quotient Gauss norm
-on `W_n ⧸ ker (presentation K A)`. -/
-theorem isometry_residueAlgEquiv :
-    letI := residueNormedCommRing K A
-    Isometry (residueAlgEquiv K A) :=
-  let := residueNormedCommRing K A
-  AddMonoidHomClass.isometry_of_norm (residueAlgEquiv K A) (norm_residueAlgEquiv K A)
-
 /-- **Algebra isomorphisms of dagger algebras are homeomorphisms.** Every `K`-algebra isomorphism
 between dagger algebras is continuous in both directions for their residue norms. -/
 noncomputable def toContinuousAlgEquiv (e : A ≃ₐ[K] B) :
@@ -560,14 +541,7 @@ theorem kerLiftAlg_presentationContinuousAlgEquiv {σ τ : Type*} [Finite σ] [F
       Ideal.kerLiftAlg π₁ x := by
   obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
   obtain ⟨g, hg⟩ := hπ₂ (π₁ f)
-  have hmk : Ideal.quotientKerAlgEquivOfSurjective hπ₂ (Ideal.Quotient.mk (RingHom.ker π₂) g) =
-      π₁ f := by
-    rw [Ideal.quotientKerAlgEquivOfSurjective_mk, hg]
-  have hval : presentationContinuousAlgEquiv π₁ hπ₁ π₂ hπ₂ (Ideal.Quotient.mk (RingHom.ker π₁) f) =
-      Ideal.Quotient.mk (RingHom.ker π₂) g := by
-    rw [coe_presentationContinuousAlgEquiv, AlgEquiv.trans_apply,
-      Ideal.quotientKerAlgEquivOfSurjective_mk, ← hmk, AlgEquiv.symm_apply_apply]
-  rw [hval, Ideal.kerLiftAlg_mk, Ideal.kerLiftAlg_mk, hg]
+  simp [coe_presentationContinuousAlgEquiv, ← hg]
 
 /-- Every presentation `π : W_σ ↠ A` of a dagger algebra is an open quotient map for the Gauss
 norm on `W_σ` and the residue norm on `A`. -/
@@ -583,13 +557,9 @@ theorem isOpenQuotientMap_of_presentation {σ : Type*} [Finite σ]
       { (residueAlgEquiv K A).symm with
         continuous_toFun := iso.symm.continuous
         continuous_invFun := iso.continuous }
-  have hsymm : ∀ y, (residueAlgEquiv K A).symm y = Ideal.kerLiftAlg (presentation K A) y := by
-    intro y
-    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective y
-    rw [Ideal.kerLiftAlg_mk, ← residueAlgEquiv_presentation K A g, AlgEquiv.symm_apply_apply]
   have hcomp : (e : _ → A) ∘ (Ideal.Quotient.mk (RingHom.ker π)) = π := funext fun f ↦ by
     rw [Function.comp_apply, ContinuousAlgEquiv.trans_apply]
-    exact (hsymm _).trans <| by
+    exact (residueAlgEquiv_symm_apply K A _).trans <| by
       simpa only [Ideal.kerLiftAlg_mk] using
         kerLiftAlg_presentationContinuousAlgEquiv π hπ (presentation K A)
           (presentation_surjective K A) (Ideal.Quotient.mk (RingHom.ker π) f)
@@ -621,25 +591,17 @@ noncomputable def quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Func
     (A ⧸ RingHom.ker φ) ≃A[K] B :=
   let := residueNormedCommRing K A
   let := residueNormedCommRing K B
-  { Ideal.quotientKerAlgEquivOfSurjective hφ with
-    continuous_toFun :=
-      QuotientAddGroup.isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr
-        (continuous_algHom φ)
+  let e := Ideal.quotientKerAlgEquivOfSurjective hφ
+  have he : (e : A ⧸ RingHom.ker φ → B) = RingHom.kerLift (φ : A →+* B) := funext fun x ↦ by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    exact (Ideal.quotientKerAlgEquivOfSurjective_mk hφ a).trans
+      (RingHom.kerLift_mk (f := (φ : A →+* B)) a).symm
+  have h : IsHomeomorph e :=
+    he ▸ RingHom.isHomeomorph_kerLift (isOpenQuotientMap φ hφ).isQuotientMap
+  { e with
+    continuous_toFun := h.continuous
     continuous_invFun :=
-      (isOpenQuotientMap φ hφ).isQuotientMap.continuous_iff.mpr <| by
-        have h : (Ideal.quotientKerAlgEquivOfSurjective hφ).invFun ∘ φ =
-            Ideal.Quotient.mk (RingHom.ker φ) := funext fun a ↦
-          (AlgEquiv.symm_apply_eq _).mpr (Ideal.quotientKerAlgEquivOfSurjective_mk hφ a).symm
-        rw [h]
-        exact continuous_quot_mk }
-
-/-- The topological first isomorphism theorem sends the class of `a` to `φ a`. -/
-@[simp]
-theorem quotientKerContinuousAlgEquiv_mk (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) (a : A) :
-    letI := residueNormedCommRing K A
-    letI := residueNormedCommRing K B
-    quotientKerContinuousAlgEquiv φ hφ (Ideal.Quotient.mk (RingHom.ker φ) a) = φ a :=
-  Ideal.quotientKerAlgEquivOfSurjective_mk hφ a
+      (e.toEquiv.toHomeomorphOfContinuousOpen h.continuous h.isOpenMap).symm.continuous }
 
 /-- The underlying algebra isomorphism is the algebraic first isomorphism theorem. -/
 @[simp]
@@ -650,71 +612,16 @@ theorem toAlgEquiv_quotientKerContinuousAlgEquiv (φ : A →ₐ[K] B) (hφ : Fun
       Ideal.quotientKerAlgEquivOfSurjective hφ :=
   (rfl)
 
-variable (K A) in
-/-- **Metric completion comparison for a dagger algebra.** With its residue norm, the metric
-completion `UniformSpace.Completion A` is isometrically isomorphic as a `K`-algebra to
-`completion K A`. -/
-noncomputable def completionAlgEquiv :
-    letI := residueNormedCommRing K A
-    letI := residueNormedAlgebra K A
-    Completion A ≃ₐ[K] completion K A :=
-  let := residueNormedCommRing K A
-  let := residueNormedAlgebra K A
-  (Completion.mapAlgEquiv (residueAlgEquiv K A)
-    (isometry_residueAlgEquiv K A).continuous
-    ((isometry_residueAlgEquiv K A).right_inv
-      (residueAlgEquiv K A).apply_symm_apply).continuous).trans
-    (RingHom.ker (presentation K A)).washnitzerCompletionAlgEquiv
-
-/-- `completionAlgEquiv` extends `toCompletion K A` on elements of `A`. -/
+/-- The topological first isomorphism theorem sends the class of `a` to `φ a`. -/
 @[simp]
-theorem completionAlgEquiv_coe (a : A) :
+theorem quotientKerContinuousAlgEquiv_mk (φ : A →ₐ[K] B) (hφ : Function.Surjective φ) (a : A) :
     letI := residueNormedCommRing K A
-    letI := residueNormedAlgebra K A
-    completionAlgEquiv K A (a : Completion A) = toCompletion K A a := by
+    letI := residueNormedCommRing K B
+    quotientKerContinuousAlgEquiv φ hφ (Ideal.Quotient.mk (RingHom.ker φ) a) = φ a := by
   let := residueNormedCommRing K A
-  let := residueNormedAlgebra K A
-  obtain ⟨f, rfl⟩ := presentation_surjective K A a
-  rw [completionAlgEquiv, AlgEquiv.trans_apply, Completion.mapAlgEquiv_coe,
-    Ideal.washnitzerCompletionAlgEquiv_coe, residueAlgEquiv_presentation,
-    Ideal.quotient_map_mkₐ, toCompletion_presentation, Ideal.Quotient.mkₐ_eq_mk]
-
-/-- The inverse of `completionAlgEquiv` recovers the completion class of every `a ∈ A`. -/
-@[simp]
-theorem completionAlgEquiv_symm_toCompletion (a : A) :
-    letI := residueNormedCommRing K A
-    letI := residueNormedAlgebra K A
-    (completionAlgEquiv K A).symm (toCompletion K A a) = (a : Completion A) := by
-  let := residueNormedCommRing K A
-  let := residueNormedAlgebra K A
-  rw [← completionAlgEquiv_coe a, AlgEquiv.symm_apply_apply]
-
-variable (K A) in
-/-- `completionAlgEquiv` is an isometry. -/
-theorem isometry_completionAlgEquiv :
-    letI := residueNormedCommRing K A
-    letI := residueNormedAlgebra K A
-    Isometry (completionAlgEquiv K A) := by
-  let := residueNormedCommRing K A
-  let := residueNormedAlgebra K A
-  intro x y
-  rw [completionAlgEquiv, AlgEquiv.trans_apply, AlgEquiv.trans_apply,
-    (RingHom.ker (presentation K A)).isometry_washnitzerCompletionAlgEquiv.edist_eq,
-    Completion.mapAlgEquiv_apply, Completion.mapAlgEquiv_apply]
-  exact (isometry_residueAlgEquiv K A).completion_map x y
-
-variable (K A) in
-/-- `completionAlgEquiv` preserves norms. -/
-@[simp]
-theorem norm_completionAlgEquiv :
-    letI := residueNormedCommRing K A
-    letI := residueNormedAlgebra K A
-    ∀ x : Completion A, ‖completionAlgEquiv K A x‖ = ‖x‖ := by
-  let := residueNormedCommRing K A
-  let := residueNormedAlgebra K A
-  intro x
-  exact (AddMonoidHomClass.isometry_iff_norm (E := Completion A) (F := completion K A)
-    (completionAlgEquiv K A)).mp (isometry_completionAlgEquiv K A) x
+  let := residueNormedCommRing K B
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, toAlgEquiv_quotientKerContinuousAlgEquiv,
+    Ideal.quotientKerAlgEquivOfSurjective_mk]
 
 end DaggerAlgebra
 
@@ -783,22 +690,19 @@ noncomputable def mapCompletionEquiv (e : A ≃ₐ[K] B) : completion K A ≃A[K
 @[simp]
 theorem toAlgHom_mapCompletionEquiv (e : A ≃ₐ[K] B) :
     (mapCompletionEquiv e).toAlgEquiv.toAlgHom = mapCompletion e.toAlgHom := by
-  rw [mapCompletionEquiv, IsAffinoidAlgebra.toAlgEquiv_toContinuousAlgEquiv]
-  rfl
+  rw [mapCompletionEquiv, IsAffinoidAlgebra.toAlgEquiv_toContinuousAlgEquiv,
+    AlgEquiv.toAlgHom_ofAlgHom]
 
 /-- `mapCompletionEquiv e` acts as `mapCompletion e`. -/
 @[simp]
 theorem coe_mapCompletionEquiv (e : A ≃ₐ[K] B) :
     ⇑(mapCompletionEquiv e) = mapCompletion e.toAlgHom := by
-  rw [mapCompletionEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv]
-  rfl
+  rw [← ContinuousAlgEquiv.coe_toAlgEquiv, ← AlgEquiv.coe_toAlgHom, toAlgHom_mapCompletionEquiv]
 
 /-- `mapCompletionEquiv e` intertwines the completion maps. -/
-@[simp]
 theorem mapCompletionEquiv_toCompletion (e : A ≃ₐ[K] B) (a : A) :
     mapCompletionEquiv e (toCompletion K A a) = toCompletion K B (e a) := by
-  rw [coe_mapCompletionEquiv]
-  exact mapCompletion_toCompletion e.toAlgHom a
+  simp
 
 /-- The inverse of `mapCompletionEquiv e` intertwines the completion maps along `e.symm`. -/
 theorem mapCompletionEquiv_symm_toCompletion (e : A ≃ₐ[K] B) (b : B) :
@@ -810,8 +714,7 @@ theorem mapCompletionEquiv_symm_toCompletion (e : A ≃ₐ[K] B) (b : B) :
 theorem mapCompletionEquiv_refl :
     mapCompletionEquiv (AlgEquiv.refl : A ≃ₐ[K] A) = ContinuousAlgEquiv.refl K (completion K A) :=
   ContinuousAlgEquiv.ext <| funext fun x ↦ by
-    rw [coe_mapCompletionEquiv]
-    exact AlgHom.congr_fun (mapCompletion_id (K := K) (A := A)) x
+    simp [coe_mapCompletionEquiv]
 
 /-- `mapCompletionEquiv` preserves composition of isomorphisms. -/
 @[simp]
@@ -821,7 +724,8 @@ theorem mapCompletionEquiv_trans (e₁ : A ≃ₐ[K] B) (e₂ : B ≃ₐ[K] C) :
   ContinuousAlgEquiv.ext <| funext fun x ↦ by
     rw [coe_mapCompletionEquiv, ContinuousAlgEquiv.trans_apply, coe_mapCompletionEquiv,
       coe_mapCompletionEquiv, mapCompletion_mapCompletion]
-    rfl
+    exact congrArg (fun φ ↦ mapCompletion φ x)
+      (AlgHom.ext fun a ↦ AlgEquiv.trans_apply e₁ e₂ a)
 
 /-- `mapCompletionEquiv` commutes with taking inverses. -/
 @[simp]
@@ -829,8 +733,7 @@ theorem mapCompletionEquiv_symm (e : A ≃ₐ[K] B) :
     (mapCompletionEquiv e).symm = mapCompletionEquiv e.symm :=
   ContinuousAlgEquiv.ext <| funext fun b ↦ by
     apply EquivLike.injective (mapCompletionEquiv e)
-    rw [ContinuousAlgEquiv.apply_symm_apply, coe_mapCompletionEquiv, coe_mapCompletionEquiv,
-      mapCompletion_mapCompletion, AlgEquiv.comp_symm, mapCompletion_id, AlgHom.id_apply]
+    simp [mapCompletion_mapCompletion]
 
 /-- **Presentation independence of completion.** For any surjection `π : W_σ ↠ A` from a
 finite-variable Monsky–Washnitzer algebra, the affinoid quotient `T_σ ⧸ (ker π) T_σ` is
@@ -904,7 +807,7 @@ theorem mapCompletion_surjective {φ : A →ₐ[K] B} (hφ : Function.Surjective
     Ideal.quotientMapₐ _ (AlgHom.id K _) (by simpa using hle)
   have hq : Function.Surjective q := fun y ↦ by
     obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective y
-    exact ⟨Ideal.Quotient.mk _ g, rfl⟩
+    exact ⟨Ideal.Quotient.mk _ g, by simp [q, Ideal.quotient_map_mkₐ]⟩
   have heq : ((presentationCompletionEquiv πB hπB).toAlgEquiv.toAlgHom).comp q =
       mapCompletion φ :=
     mapCompletion_unique φ fun a ↦ by
@@ -943,8 +846,8 @@ noncomputable def completionWashnitzerEquiv (σ : Type*) [Finite σ] :
 theorem completionWashnitzerEquiv_toCompletion {σ : Type*} [Finite σ] (f : washnitzerAlgebra σ K) :
     completionWashnitzerEquiv K σ (toCompletion K (washnitzerAlgebra σ K) f) =
       washnitzerAlgebra.toTate σ K f := by
-  rw [completionWashnitzerEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv]
-  exact liftToAffinoid_toCompletion isAffinoidAlgebra_tate (washnitzerAlgebra.toTate σ K) f
+  rw [completionWashnitzerEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv,
+    AlgEquiv.ofAlgHom_apply, liftToAffinoid_toCompletion]
 
 /-- The inverse of `completionWashnitzerEquiv` sends `toTate f` to `toCompletion f`. -/
 @[simp]
@@ -971,8 +874,8 @@ noncomputable def completionSelfEquiv : completion K K ≃A[K] K :=
 @[simp]
 theorem completionSelfEquiv_toCompletion (c : K) :
     completionSelfEquiv K (toCompletion K K c) = c := by
-  rw [completionSelfEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv]
-  exact liftToAffinoid_toCompletion isAffinoidAlgebra_self (AlgHom.id K K) c
+  rw [completionSelfEquiv, IsAffinoidAlgebra.coe_toContinuousAlgEquiv,
+    AlgEquiv.ofAlgHom_apply, liftToAffinoid_toCompletion, AlgHom.id_apply]
 
 /-- The inverse of `completionSelfEquiv` is `toCompletion K K`. -/
 @[simp]
@@ -980,63 +883,99 @@ theorem completionSelfEquiv_symm_apply (c : K) :
     (completionSelfEquiv K).symm c = toCompletion K K c := by
   rw [ContinuousAlgEquiv.symm_apply_eq, completionSelfEquiv_toCompletion]
 
+/-- The forward map `completion K (A ⧸ I) →ₐ[K] Â ⧸ I Â` of `completionQuotientEquiv`. -/
+private noncomputable def completionQuotientToFun (K : Type*) [NontriviallyNormedField K]
+    [IsUltrametricDist K] [CompleteSpace K] {A : Type*} [CommRing A] [Algebra K A]
+    [IsDaggerAlgebra K A] (I : Ideal A) :
+    completion K (A ⧸ I) →ₐ[K] (completion K A ⧸ I.map (toCompletion K A)) :=
+  liftToAffinoid ((isAffinoidAlgebra_completion (K := K) (A := A)).quotient _)
+    (Ideal.quotientMapₐ (I.map (toCompletion K A)) (toCompletion K A) Ideal.le_comap_map)
+
+/-- The inverse map `Â ⧸ I Â →A[K] completion K (A ⧸ I)` of `completionQuotientEquiv`. -/
+private noncomputable def completionQuotientInvFun (K : Type*) [NontriviallyNormedField K]
+    [IsUltrametricDist K] [CompleteSpace K] {A : Type*} [CommRing A] [Algebra K A]
+    [IsDaggerAlgebra K A] (I : Ideal A) :
+    (completion K A ⧸ I.map (toCompletion K A)) →A[K] completion K (A ⧸ I) :=
+  Ideal.Quotient.liftA (I.map (toCompletion K A))
+    ⟨mapCompletion (Ideal.Quotient.mkₐ K I), continuous_mapCompletion _⟩
+    fun _ ↦ algHom_eq_zero_of_mem_ideal_map (toCompletion K A)
+      (mapCompletion (Ideal.Quotient.mkₐ K I)) fun _ ha ↦ by
+        simp [Ideal.Quotient.eq_zero_iff_mem.mpr ha]
+
+/-- `completionQuotientInvFun` sends the quotient class of `z ∈ Â` to `mapCompletion mk z`. -/
+private theorem completionQuotientInvFun_mk (I : Ideal A) (z : completion K A) :
+    completionQuotientInvFun K I (Ideal.Quotient.mk (I.map (toCompletion K A)) z) =
+      mapCompletion (Ideal.Quotient.mkₐ K I) z := by
+  rw [completionQuotientInvFun, Ideal.Quotient.liftA_mk]
+  exact congrFun (ContinuousAlgHom.coe_mk' _ _) z
+
+/-- `completionQuotientToFun` is a left inverse to `completionQuotientInvFun`. -/
+private theorem completionQuotientToFun_comp_invFun (I : Ideal A) :
+    (completionQuotientToFun K I).comp (completionQuotientInvFun K I).toAlgHom = AlgHom.id K _ := by
+  have hQ : IsAffinoidAlgebra K (completion K A ⧸ I.map (toCompletion K A)) :=
+    (isAffinoidAlgebra_completion (K := K) (A := A)).quotient _
+  have hcomp :
+      ((completionQuotientToFun K I).comp (completionQuotientInvFun K I).toAlgHom).comp
+          (Ideal.Quotient.mkₐ K (I.map (toCompletion K A))) =
+        Ideal.Quotient.mkₐ K (I.map (toCompletion K A)) :=
+    algHom_toCompletion_ext hQ fun a ↦ by
+      simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, ContinuousAlgHom.coe_coe,
+        completionQuotientInvFun_mk, mapCompletion_toCompletion, completionQuotientToFun,
+        liftToAffinoid_toCompletion, Ideal.quotient_map_mkₐ]
+  exact AlgHom.ext fun y ↦ by
+    obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
+    exact AlgHom.congr_fun hcomp x
+
+/-- `completionQuotientInvFun` is a left inverse to `completionQuotientToFun`. -/
+private theorem completionQuotientInvFun_comp_toFun (I : Ideal A) :
+    (completionQuotientInvFun K I).toAlgHom.comp (completionQuotientToFun K I) =
+      AlgHom.id K (completion K (A ⧸ I)) :=
+  algHom_toCompletion_ext isAffinoidAlgebra_completion fun q ↦ by
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
+    simp only [AlgHom.comp_apply, AlgHom.id_apply, ContinuousAlgHom.coe_coe,
+      completionQuotientToFun, liftToAffinoid_toCompletion, Ideal.quotient_map_mkₐ,
+      completionQuotientInvFun_mk, mapCompletion_toCompletion, Ideal.Quotient.mkₐ_eq_mk]
+
+/-- The forward map of `completionQuotientEquiv` is continuous. -/
+private theorem continuous_completionQuotientToFun (I : Ideal A) :
+    Continuous (completionQuotientToFun K I) :=
+  (isOpenQuotientMap_mapCompletion
+    (φ := Ideal.Quotient.mkₐ K I) Ideal.Quotient.mk_surjective).isQuotientMap.continuous_iff.mpr <|
+    by
+      have h : ⇑(completionQuotientToFun K I) ∘ ⇑(mapCompletion (Ideal.Quotient.mkₐ K I)) =
+          ⇑(Ideal.Quotient.mkA K (I.map (toCompletion K A))) := funext fun x ↦ by
+        rw [Function.comp_apply, Ideal.Quotient.mkA_apply, ← completionQuotientInvFun_mk I x,
+          ← ContinuousAlgHom.coe_coe (completionQuotientInvFun K I), ← AlgHom.comp_apply,
+          completionQuotientToFun_comp_invFun, AlgHom.id_apply]
+      rw [h]
+      exact (Ideal.Quotient.mkA K (I.map (toCompletion K A))).continuous
+
 /-- **Completion commutes with quotients.** For any ideal `I` of a dagger algebra `A`, the
 completion of `A ⧸ I` is canonically continuously isomorphic to `Â ⧸ I Â`. -/
 noncomputable def completionQuotientEquiv (I : Ideal A) :
     completion K (A ⧸ I) ≃A[K] (completion K A ⧸ I.map (toCompletion K A)) :=
-  have hQ : IsAffinoidAlgebra K (completion K A ⧸ I.map (toCompletion K A)) :=
-    (isAffinoidAlgebra_completion (K := K) (A := A)).quotient _
-  let toFun : completion K (A ⧸ I) →ₐ[K] (completion K A ⧸ I.map (toCompletion K A)) :=
-    liftToAffinoid hQ
-      (Ideal.quotientMapₐ (I.map (toCompletion K A)) (toCompletion K A) Ideal.le_comap_map)
-  let invFun : (completion K A ⧸ I.map (toCompletion K A)) →ₐ[K] completion K (A ⧸ I) :=
-    Ideal.Quotient.liftₐ (I.map (toCompletion K A)) (mapCompletion (Ideal.Quotient.mkₐ K I))
-      fun x hx ↦ by
-        have hle : I.map (toCompletion K A) ≤
-            RingHom.ker (mapCompletion (Ideal.Quotient.mkₐ K I)) :=
-          Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by
-            simp [Ideal.mem_comap, RingHom.mem_ker, Ideal.Quotient.eq_zero_iff_mem.mpr ha]
-        exact RingHom.mem_ker.mp (hle hx)
-  have hinv (z : completion K A) :
-      invFun (Ideal.Quotient.mk (I.map (toCompletion K A)) z) =
-        mapCompletion (Ideal.Quotient.mkₐ K I) z := rfl
-  have hcomp :
-      (toFun.comp invFun).comp (Ideal.Quotient.mkₐ K (I.map (toCompletion K A))) =
-        Ideal.Quotient.mkₐ K (I.map (toCompletion K A)) :=
-    algHom_toCompletion_ext hQ fun a ↦ by
-      simp only [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk, hinv, mapCompletion_toCompletion,
-        toFun, liftToAffinoid_toCompletion, Ideal.quotient_map_mkₐ]
-  have hleft : toFun.comp invFun = AlgHom.id K _ :=
-    AlgHom.ext fun y ↦ by
-      obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
-      exact AlgHom.congr_fun hcomp x
-  have hright : invFun.comp toFun = AlgHom.id K (completion K (A ⧸ I)) :=
-    algHom_toCompletion_ext isAffinoidAlgebra_completion fun q ↦ by
-      obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective q
-      simp only [AlgHom.comp_apply, AlgHom.id_apply, toFun, liftToAffinoid_toCompletion,
-        Ideal.quotient_map_mkₐ, hinv, mapCompletion_toCompletion, Ideal.Quotient.mkₐ_eq_mk]
-  { AlgEquiv.ofAlgHom toFun invFun hleft hright with
+  { AlgEquiv.ofAlgHom (completionQuotientToFun K I) (completionQuotientInvFun K I).toAlgHom
+      (completionQuotientToFun_comp_invFun I) (completionQuotientInvFun_comp_toFun I) with
     continuous_toFun :=
-      (isOpenQuotientMap_mapCompletion
-        (φ := Ideal.Quotient.mkₐ K I) Ideal.Quotient.mk_surjective).isQuotientMap.continuous_iff.mpr
-        <| by
-          have h :
-              (AlgEquiv.ofAlgHom toFun invFun hleft hright).toFun ∘
-                  mapCompletion (Ideal.Quotient.mkₐ K I) =
-                ⇑(Ideal.Quotient.mk (I.map (toCompletion K A))) := funext fun x ↦
-            AlgHom.congr_fun hleft (Ideal.Quotient.mk (I.map (toCompletion K A)) x)
-          rw [h]
-          exact QuotientAddGroup.isOpenQuotientMap_mk.continuous
+      (continuous_completionQuotientToFun I).congr fun x ↦
+        (AlgEquiv.ofAlgHom_apply (completionQuotientToFun K I)
+          (completionQuotientInvFun K I).toAlgHom (completionQuotientToFun_comp_invFun I)
+          (completionQuotientInvFun_comp_toFun I) x).symm
     continuous_invFun :=
-      QuotientAddGroup.isOpenQuotientMap_mk.isQuotientMap.continuous_iff.mpr
-        (continuous_mapCompletion (Ideal.Quotient.mkₐ K I)) }
+      (completionQuotientInvFun K I).continuous.congr fun y ↦
+        (congrFun (ContinuousAlgHom.coe_coe (completionQuotientInvFun K I)) y).symm.trans
+          (AlgEquiv.ofAlgHom_symm_apply (completionQuotientToFun K I)
+            (completionQuotientInvFun K I).toAlgHom (completionQuotientToFun_comp_invFun I)
+            (completionQuotientInvFun_comp_toFun I) y).symm }
 
 /-- `completionQuotientEquiv` sends `toCompletion (mk a)` to `mk (toCompletion a)`. -/
 @[simp]
 theorem completionQuotientEquiv_toCompletion_mk (I : Ideal A) (a : A) :
     completionQuotientEquiv I (toCompletion K (A ⧸ I) (Ideal.Quotient.mk I a)) =
-      Ideal.Quotient.mk (I.map (toCompletion K A)) (toCompletion K A a) :=
-  (liftToAffinoid_toCompletion _ _ _).trans (Ideal.quotient_map_mkₐ _ _ _)
+      Ideal.Quotient.mk (I.map (toCompletion K A)) (toCompletion K A a) := by
+  simp only [completionQuotientEquiv, ContinuousAlgEquiv.coe_mk, AlgEquiv.ofAlgHom_apply,
+    completionQuotientToFun, liftToAffinoid_toCompletion, Ideal.quotient_map_mkₐ,
+    Ideal.Quotient.mkₐ_eq_mk]
 
 /-- The inverse of `completionQuotientEquiv` sends `mk (toCompletion a)` to
 `toCompletion (mk a)`. -/
