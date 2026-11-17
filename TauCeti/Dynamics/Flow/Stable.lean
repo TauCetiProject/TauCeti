@@ -38,6 +38,8 @@ its limiting point is fixed by the flow.  Time reversal exchanges the two constr
   point of a trajectory is fixed.
 * `Flow.disjoint_stableSet` and `Flow.disjoint_unstableSet`: stable (respectively unstable) sets
   of distinct points are disjoint.
+* `Flow.eq_of_mem_stableSet` and `Flow.eq_of_mem_unstableSet`: a fixed point lies on no stable
+  (respectively unstable) set but its own.
 * `Flow.stableSet_reverse` and `Flow.unstableSet_reverse`: time reversal exchanges
   stable and unstable sets.
 * `Homeomorph.image_stableSet_eq` and `Homeomorph.image_unstableSet_eq`: a topological conjugacy
@@ -193,6 +195,16 @@ theorem disjoint_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x y : α} (
     Disjoint (unstableSet φ x) (unstableSet φ y) :=
   disjoint_left.2 fun _ hx hy ↦
     hxy (tendsto_nhds_unique (mem_unstableSet.1 hx) (mem_unstableSet.1 hy))
+
+/-- A fixed point of the flow lies on no stable set but its own. -/
+theorem eq_of_mem_stableSet [T2Space α] {φ : _root_.Flow ℝ α} {x c : α} (hx : ∀ t, φ t x = x)
+    (h : x ∈ stableSet φ c) : x = c :=
+  by_contra fun hne ↦ disjoint_left.1 (disjoint_stableSet hne) (self_mem_stableSet_iff.2 hx) h
+
+/-- A fixed point of the flow lies on no unstable set but its own. -/
+theorem eq_of_mem_unstableSet [T2Space α] {φ : _root_.Flow ℝ α} {x c : α} (hx : ∀ t, φ t x = x)
+    (h : x ∈ unstableSet φ c) : x = c :=
+  by_contra fun hne ↦ disjoint_left.1 (disjoint_unstableSet hne) (self_mem_unstableSet_iff.2 hx) h
 
 /-- Time reversal is an involution. -/
 @[simp]

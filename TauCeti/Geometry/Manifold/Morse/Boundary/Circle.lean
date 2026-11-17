@@ -19,24 +19,26 @@ automatically Morse–Smale in dimension one.
 
 Since `f` has a second maximum, the two trajectories leaving a maximum end at two different
 minima, which are therefore `q_0` and `q_1`
-(`IsMorseSmale.exists_ne_signedMorseBoundaryCoeff_of_finrank_eq_one` in the namespace
-`TauCeti.IsAdaptedPseudoGradient`). So:
+(`TauCeti.IsAdaptedPseudoGradient.exists_ne_signedMorseBoundaryCoeff_of_finrank_eq_one`). So:
 
 * the mod-two Morse boundary of each maximum is `q_0 + q_1`, the sum of all the minima
   (`IsMorseSmale.morseBoundary_single_apply_circleCosTwo`), and the mod-two differential is the
   matrix with all entries `1`;
 * with integer coefficients and any orientations of the unstable manifolds, the coefficients of
   `p_j` at `q_0` and `q_1`, weighted by the augmentation signs, are `ε_j` and `-ε_j` for a sign
-  `ε_j = ±1` (`augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo` in the namespace
-  `TauCeti.IsAdaptedPseudoGradient`).
+  `ε_j = ±1` (`exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq` in the
+  namespace `TauCeti.IsAdaptedPseudoGradient`).
 
 Reversing the orientations at some of the critical points therefore produces orientation data in
-which the integral Morse differential, in the ordered bases `(p_0, p_1)` and `(q_0, q_1)`, is the
-matrix `D = I - S = [[1, -1], [-1, 1]]`, where `S` exchanges the two generators
-(`TauCeti.IsAdaptedPseudoGradient.exists_signedMorseBoundaryCoeff_circleCosTwo_eq`). This is the
-Morse differential of the end functions of the circle continuation examples, in which the
-continuation map along the half turn `r = π ρ(t)` is the identity while tracking the critical points
-exchanges them.
+which the integral Morse differential, in the ordered bases `(p_0, p_1)` and `(q_0, q_1)`, has the
+sign pattern of `D = I - S = [[1, -1], [-1, 1]]`, where `S` exchanges the two generators
+(`TauCeti.IsAdaptedPseudoGradient.exists_signedMorseBoundaryCoeff_circleCosTwo_eq`). This only
+realizes a sign pattern: since the orientation at each critical point can be reversed on its own,
+the same argument gives every matrix `(a_j b_i)` with all `a_j, b_i = ±1`, for instance the matrix
+with all entries `1`. This file does not identify these orientations with the orientations `+∂_θ`
+of the unstable manifolds of the maxima used in the circle continuation examples, so it does not
+show that the Morse differential for those orientations is `I - S` for the matrix `S` of the
+continuation map.
 
 ## Main results
 
@@ -45,10 +47,10 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `isMorseSmale_circleCosTwo`: every pseudo-gradient adapted to `f_r` is Morse–Smale.
 * `IsMorseSmale.morseBoundary_single_apply_circleCosTwo`: the mod-two Morse boundary of a maximum
   is the sum of the two minima.
-* `augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo`: the weighted integral boundary
-  coefficients of `p_j` at `q_0` and `q_1` are `ε_j` and `-ε_j`.
+* `exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq`: the weighted integral
+  boundary coefficients of `p_j` at `q_0` and `q_1` are `ε_j` and `-ε_j`.
 * `exists_signedMorseBoundaryCoeff_circleCosTwo_eq`: for suitable orientations the integral Morse
-  differential is `I - S`.
+  differential has the sign pattern `[[1, -1], [-1, 1]]` of `I - S`.
 
 ## References
 
@@ -68,14 +70,14 @@ local instance : Fact (0 < 2 * π) := ⟨Real.two_pi_pos⟩
 variable {δ r : ℝ} {X : (x : AddCircle (2 * π)) → TangentSpace 𝓘(ℝ) x}
 
 /-- The maximum `r + j π` as a critical point. -/
-private noncomputable def maxCrit (hδ : δ ≠ 0) (r : ℝ) (j : Fin 2) :
+private noncomputable def maxCrit (δ r : ℝ) (j : Fin 2) :
     criticalPoints 𝓘(ℝ) (circleCosTwo δ r) :=
-  ⟨circleCosTwoMax r j, circleCosTwoMax_mem_criticalPoints hδ r j⟩
+  ⟨circleCosTwoMax r j, circleCosTwoMax_mem_criticalPoints δ r j⟩
 
 /-- The minimum `r + π / 2 + j π` as a critical point. -/
-private noncomputable def minCrit (hδ : δ ≠ 0) (r : ℝ) (j : Fin 2) :
+private noncomputable def minCrit (δ r : ℝ) (j : Fin 2) :
     criticalPoints 𝓘(ℝ) (circleCosTwo δ r) :=
-  ⟨circleCosTwoMin r j, circleCosTwoMin_mem_criticalPoints hδ r j⟩
+  ⟨circleCosTwoMin r j, circleCosTwoMin_mem_criticalPoints δ r j⟩
 
 /-- Two distinct critical points of index `0` are the two minima, so every critical point of
 index `0` is one of them. -/
@@ -84,9 +86,9 @@ private theorem eq_or_eq_of_manifoldMorseIndex_eq_zero (hδ : 0 < δ)
     (hq₀ : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q₀ = 0)
     (hq₁ : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q₁ = 0)
     (hq : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q = 0) : q = q₀ ∨ q = q₁ := by
-  obtain ⟨i, hi⟩ := eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r q.2 hq
-  obtain ⟨i₀, hi₀⟩ := eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r q₀.2 hq₀
-  obtain ⟨i₁, hi₁⟩ := eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r q₁.2 hq₁
+  obtain ⟨i, hi⟩ := exists_eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r q.2 hq
+  obtain ⟨i₀, hi₀⟩ := exists_eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r q₀.2 hq₀
+  obtain ⟨i₁, hi₁⟩ := exists_eq_circleCosTwoMin_of_manifoldMorseIndex_eq_zero hδ r q₁.2 hq₁
   have hi01 : i₀ ≠ i₁ := fun he ↦ hne (Subtype.ext (by rw [hi₀, hi₁, he]))
   fin_cases i <;> fin_cases i₀ <;> fin_cases i₁ <;>
     first
@@ -116,12 +118,13 @@ theorem morseBoundary_single_apply_circleCosTwo (hδ : 0 < δ)
     (q : criticalPoints 𝓘(ℝ) (circleCosTwo δ r)) :
     h.morseBoundary hf (Finsupp.single p 1) q =
       if manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q = 0 then 1 else 0 := by
-  -- The maximum other than `p`.
-  obtain ⟨j, hj⟩ : ∃ j, (p : AddCircle (2 * π)) ≠ circleCosTwoMax r j := by
-    by_contra! hall
-    exact absurd (circleCosTwoMax_injective r ((hall 0).symm.trans (hall 1))) (by decide)
+  -- `p` is a maximum `p_j`; the other maximum is `p_{j + 1}`.
+  obtain ⟨j, hj⟩ := exists_eq_circleCosTwoMax_of_manifoldMorseIndex_eq_one hδ r p.2 hp
   obtain ⟨q₀, q₁, hne, hq₀, hq₁, hd⟩ := h.exists_ne_morseBoundary_single_of_finrank_eq_one hf
-    (finrank_self ℝ) hp (c := maxCrit hδ.ne' r j) (fun he ↦ hj (congrArg Subtype.val he).symm)
+    (finrank_self ℝ) hp (c := maxCrit δ r (j + 1))
+    (fun he ↦ by
+      have := circleCosTwoMax_injective r ((congrArg Subtype.val he).trans hj)
+      fin_cases j <;> simp at this)
     (by simp [maxCrit, manifoldMorseIndex_circleCosTwoMax hδ])
   rw [hd, Finsupp.add_apply]
   by_cases hq : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q = 0
@@ -140,7 +143,7 @@ pseudo-gradient and every choice of orientations of the unstable manifolds, the 
 integral Morse boundary of the maximum `p_j = r + j π` at the minima `q_0 = r + π / 2` and
 `q_1 = r + 3π / 2`, weighted by the augmentation signs, are `ε_j` and `-ε_j` for a sign
 `ε_j = ±1`. -/
-theorem augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo (hδ : 0 < δ)
+theorem exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X)
     (𝔬 : MorseOrientation (circleCosTwo δ r) X) :
     ∃ ε : Fin 2 → ℤ, (∀ j, ε j = 1 ∨ ε j = -1) ∧
@@ -150,28 +153,27 @@ theorem augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo (hδ : 0 < δ
         𝔬.augmentationSign q * hX.signedMorseBoundaryCoeff 𝔬 p q =
           if i = 0 then ε j else -ε j := by
   have hf := isMorse_circleCosTwo hδ.ne' r
-  have h := hX.isMorseSmale_circleCosTwo hδ.ne'
   -- For each maximum, the two minima carry opposite weighted coefficients `±1`.
   have key (j : Fin 2) : ∃ e : ℤ, (e = 1 ∨ e = -1) ∧
-      𝔬.augmentationSign (minCrit hδ.ne' r 0) *
-          hX.signedMorseBoundaryCoeff 𝔬 (maxCrit hδ.ne' r j) (minCrit hδ.ne' r 0) = e ∧
-      𝔬.augmentationSign (minCrit hδ.ne' r 1) *
-          hX.signedMorseBoundaryCoeff 𝔬 (maxCrit hδ.ne' r j) (minCrit hδ.ne' r 1) = -e := by
+      𝔬.augmentationSign (minCrit δ r 0) *
+          hX.signedMorseBoundaryCoeff 𝔬 (maxCrit δ r j) (minCrit δ r 0) = e ∧
+      𝔬.augmentationSign (minCrit δ r 1) *
+          hX.signedMorseBoundaryCoeff 𝔬 (maxCrit δ r j) (minCrit δ r 1) = -e := by
     obtain ⟨Q₀, Q₁, hne, hQ₀, hQ₁, hsign, hrel, -⟩ :=
-      h.exists_ne_signedMorseBoundaryCoeff_of_finrank_eq_one hf (finrank_self ℝ) 𝔬
-        (p := maxCrit hδ.ne' r j) (c := maxCrit hδ.ne' r (j + 1))
+      hX.exists_ne_signedMorseBoundaryCoeff_of_finrank_eq_one hf (finrank_self ℝ) 𝔬
+        (p := maxCrit δ r j) (c := maxCrit δ r (j + 1))
         (manifoldMorseIndex_circleCosTwoMax hδ r j)
         (fun he ↦ by
           have := circleCosTwoMax_injective r (congrArg Subtype.val he)
           fin_cases j <;> simp at this)
         (by simp [maxCrit, manifoldMorseIndex_circleCosTwoMax hδ])
     have haug := 𝔬.augmentationSign_eq_one_or_eq_neg_one hQ₀
-    set e := 𝔬.augmentationSign Q₀ * hX.signedMorseBoundaryCoeff 𝔬 (maxCrit hδ.ne' r j) Q₀
+    set e := 𝔬.augmentationSign Q₀ * hX.signedMorseBoundaryCoeff 𝔬 (maxCrit δ r j) Q₀
     have he : e = 1 ∨ e = -1 := by
       rcases haug with ha | ha <;> rcases hsign with hs | hs <;> simp [e, ha, hs]
-    have hmin (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) (minCrit hδ.ne' r i) = 0 :=
+    have hmin (i : Fin 2) : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) (minCrit δ r i) = 0 :=
       manifoldMorseIndex_circleCosTwoMin hδ r i
-    have hm01 : minCrit hδ.ne' r 0 ≠ minCrit hδ.ne' r 1 := fun he ↦ by
+    have hm01 : minCrit δ r 0 ≠ minCrit δ r 1 := fun he ↦ by
       have := circleCosTwoMin_injective r (congrArg Subtype.val he)
       simp at this
     -- The labels of `Q₀` and `Q₁` are `0` and `1` in some order.
@@ -184,18 +186,20 @@ theorem augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo (hδ : 0 < δ
       · exact absurd (h0.trans h1.symm) hm01
   choose ε hε h0 h1 using key
   refine ⟨ε, hε, fun i j p q hp hq ↦ ?_⟩
-  obtain rfl : p = maxCrit hδ.ne' r j := Subtype.ext hp
-  obtain rfl : q = minCrit hδ.ne' r i := Subtype.ext hq
+  obtain rfl : p = maxCrit δ r j := Subtype.ext hp
+  obtain rfl : q = minCrit δ r i := Subtype.ext hq
   fin_cases i
   · exact h0 j
   · exact h1 j
 
-/-- **The Morse differential `I - S` of the circle.** For `δ > 0` and every pseudo-gradient adapted
-to `θ ↦ δ cos (2 (θ - r))`, there are orientations of the unstable manifolds for which the
-integral Morse differential, in the ordered bases `(p_0, p_1)` of the maxima `p_j = r + j π` and
-`(q_0, q_1)` of the minima `q_i = r + π / 2 + i π`, is the matrix
-`D = I - S = [[1, -1], [-1, 1]]`: the coefficient of `q_i` in the boundary of `p_j` is `1` when
-`i = j` and `-1` otherwise. -/
+/-- **Orientations realizing the sign pattern of `I - S` on the circle.** For `δ > 0` and every
+pseudo-gradient adapted to `θ ↦ δ cos (2 (θ - r))`, there are orientations of the unstable
+manifolds for which the integral Morse differential, in the ordered bases `(p_0, p_1)` of the
+maxima `p_j = r + j π` and `(q_0, q_1)` of the minima `q_i = r + π / 2 + i π`, is the matrix
+`[[1, -1], [-1, 1]]`: the coefficient of `q_i` in the boundary of `p_j` is `1` when `i = j` and
+`-1` otherwise. The orientations are obtained by reversing some of those of an arbitrary choice, so
+this does not tie them to the orientations `+∂_θ` of the circle continuation examples; reversing
+differently realizes every matrix `(a_j b_i)` with all `a_j, b_i = ±1`. -/
 theorem exists_signedMorseBoundaryCoeff_circleCosTwo_eq (hδ : 0 < δ)
     (hX : IsAdaptedPseudoGradient (circleCosTwo δ r) X) :
     ∃ 𝔬 : MorseOrientation (circleCosTwo δ r) X,
@@ -212,7 +216,8 @@ theorem exists_signedMorseBoundaryCoeff_circleCosTwo_eq (hδ : 0 < δ)
       (hq : manifoldMorseIndex 𝓘(ℝ) (circleCosTwo δ r) q = 0) : 𝔬₁.augmentationSign q = 1 := by
     rw [MorseOrientation.augmentationSign_reverse]
     rcases 𝔬₀.augmentationSign_eq_one_or_eq_neg_one hq with ha | ha <;> simp [ha]
-  obtain ⟨ε, hε, hcoeff⟩ := hX.augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo hδ 𝔬₁
+  obtain ⟨ε, hε, hcoeff⟩ :=
+    hX.exists_augmentationSign_mul_signedMorseBoundaryCoeff_circleCosTwo_eq hδ 𝔬₁
   -- Then reverse the maxima `p_j` whose sign `ε_j` is not `1` for `j = 0` and `-1` for `j = 1`.
   set S := {p : criticalPoints 𝓘(ℝ) (circleCosTwo δ r) |
     ∃ j, (p : AddCircle (2 * π)) = circleCosTwoMax r j ∧ ε j ≠ if j = 0 then 1 else -1}
