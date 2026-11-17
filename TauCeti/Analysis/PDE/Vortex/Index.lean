@@ -28,7 +28,7 @@ isomorphism between the two (`TauCeti.Vortex.kerSobolevGaugeFixedOperatorEquiv`)
   when its values solve `L_x y = 0` weakly
   (`TauCeti.Vortex.mem_ker_sobolevGaugeFixedOperator_iff`).
 * It is injective because an element of `H¹(ℂ)` is determined by its value
-  (`TauCeti.W1p.value_injective`).
+  (`TauCeti.W1p.ext_value`).
 * It is onto because, at a bounded continuous field, every weak `L²` solution of `L_x u = 0` is
   the value of an element of `H¹(ℂ)⁴`
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
@@ -64,56 +64,47 @@ local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens 
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
 
-/-- The values of the four coordinates of `y ∈ H¹(ℂ)⁴` form a square-integrable field. -/
-private theorem memLp_values (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
-    MemLp (fun z ↦ (WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)))
-      2 volume :=
-  memLp_piLp_iff.2 fun j ↦ W1p.memLp_value (y j)
-
-/-- The `L²` class of the values of the four coordinates of `y ∈ H¹(ℂ)⁴`. -/
+/-- The `L²` class of the values of the four coordinates of `y ∈ H¹(ℂ)⁴`, assembled from the
+value maps `W1p.valueL` and read on `volume` instead of its restriction to `⊤`. -/
 private def valuesLp :
     (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →ₗ[ℝ]
-      Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) where
-  toFun y := (memLp_values y).toLp _
-  map_add' y y' := by
-    refine Lp.ext ?_
-    have hadd : ∀ᵐ z ∂(volume : Measure ℂ), ∀ j : Fin 4,
-        W1p.value (y j + y' j) z = W1p.value (y j) z + W1p.value (y' j) z := by
-      refine ae_all_iff.2 fun j ↦ ?_
-      filter_upwards [(W1p.value_add_ae (y j) (y' j)).filter_mono
-        (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z hz
-      exact hz
-    filter_upwards [(memLp_values (y + y')).coeFn_toLp, (memLp_values y).coeFn_toLp,
-      (memLp_values y').coeFn_toLp, Lp.coeFn_add ((memLp_values y).toLp _)
-        ((memLp_values y').toLp _), hadd] with z h h₁ h₂ h₃ h₄
-    rw [h, h₃, Pi.add_apply, h₁, h₂]
-    ext j
-    simp [h₄ j]
-  map_smul' c y := by
-    refine Lp.ext ?_
-    have hsmul : ∀ᵐ z ∂(volume : Measure ℂ), ∀ j : Fin 4,
-        W1p.value (c • y j) z = c * W1p.value (y j) z := by
-      refine ae_all_iff.2 fun j ↦ ?_
-      filter_upwards [(W1p.value_smul_ae c (y j)).filter_mono
-        (ae_mono (Measure.restrict_coe_opens_top _).ge)] with z hz
-      exact hz
-    filter_upwards [(memLp_values (c • y)).coeFn_toLp, (memLp_values y).coeFn_toLp,
-      Lp.coeFn_smul c ((memLp_values y).toLp _), hsmul] with z h h₁ h₂ h₃
-    rw [h, RingHom.id_apply, h₂, Pi.smul_apply, h₁]
-    ext j
-    simp [h₃ j]
+      Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) :=
+  Lp.compMeasurePreservingₗ ℝ id
+      (by rw [Measure.restrict_coe_opens_top]; exact .id _) ∘ₗ
+    (∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
+        ((W1p.valueL).comp (ContinuousLinearMap.proj j))).toLinearMap
 
 private theorem coeFn_valuesLp (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     valuesLp y =ᵐ[volume] fun z ↦
-      (WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)) :=
-  (memLp_values y).coeFn_toLp
+      (WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)) := by
+  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
+      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
+        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
+          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
+    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
+  have hs := Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
+    ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))
+  rw [valuesLp, LinearMap.comp_apply, Lp.compMeasurePreservingₗ_apply]
+  refine (Lp.coeFn_compMeasurePreserving _ _).trans ?_
+  filter_upwards [(hs.and hv).filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge)]
+    with z h
+  simp only [Function.comp_apply, id, ContinuousLinearMap.coe_coe,
+    FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.proj_apply, W1p.valueL_apply]
+  rw [h.1, Finset.sum_apply]
+  simp only [h.2]
+  ext i
+  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
 
 private theorem valuesLp_injective : Function.Injective valuesLp := by
   intro y y' h
   funext j
   have hy := coeFn_valuesLp y
   rw [h] at hy
-  refine W1p.value_injective (Lp.ext ?_)
+  refine W1p.ext_value (Lp.ext ?_)
   filter_upwards [ae_restrict_of_ae hy, ae_restrict_of_ae (coeFn_valuesLp y')] with z h₁ h₂
   simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v j) (h₁.symm.trans h₂)
 

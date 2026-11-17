@@ -802,22 +802,6 @@ theorem W1p.coe_ae_eq_zero_of_value_ae_eq_zero {V : Opens E} (hV : V ≤ Omega)
   exact (WithLp.ext_iff _).2 (Prod.ext ((hv' (hV hxV)).symm.trans (hv hxV))
     ((hg' (hV hxV)).symm.trans (hg hxV)))
 
-/-- **A Sobolev function is determined by its value.** Its weak gradient is determined by its
-value (`TauCeti.W1p.gradient_ae_eq_zero_of_value_ae_eq_zero`). -/
-theorem W1p.value_injective :
-    Function.Injective (W1p.value : W1p mu Omega p → Lp ℝ p (mu.restrict Omega)) := by
-  intro u v h
-  have hv : W1p.value (u - v) = 0 := by rw [W1p.value_sub, h, sub_self]
-  have hu : ∀ᵐ x ∂mu.restrict (Omega : Set E), W1p.value (u - v) x = 0 := by
-    rw [hv]
-    exact Lp.coeFn_zero ℝ p _
-  rw [← sub_eq_zero]
-  refine W1p.ext (by rw [hv, W1p.value_zero]) (Lp.ext ?_)
-  rw [W1p.gradient_zero]
-  filter_upwards [W1p.gradient_ae_eq_zero_of_value_ae_eq_zero le_rfl hu, Lp.coeFn_zero E p _]
-    with x h h₀
-  rw [h, h₀, Pi.zero_apply]
-
 /-- **The jet of a Sobolev function vanishes off the support of any representative of its value.**
 If the value of `u` agrees almost everywhere on `Ω` with `f`, then outside `tsupport f` the value
 vanishes on the open set `Ω ∖ tsupport f`, hence so does the whole jet
