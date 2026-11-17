@@ -70,7 +70,7 @@ private theorem measure_exists_gt_le_of_stronglyMeasurable (hW : IsPreBrownianRe
   let A (i : Fin (n + 1)) : Set Ω := {ω | (∀ j < i, W (g j) ω ≤ b) ∧ b < W (g i) ω}
   let C (i : Fin (n + 1)) : Set Ω := ((W (g N) - W (g i)) ⁻¹' Ici 0) ∩ A i
   have hA_meas (i : Fin (n + 1)) : MeasurableSet[ℱ (g i)] (A i) := by
-    rw [show A i = (⋂ j, ⋂ (_ : j < i), {ω | W (g j) ω ≤ b}) ∩ {ω | b < W (g i) ω} by ext; simp [A]]
+    simp only [A, ofPred_and, ofPred_forall]
     exact (MeasurableSet.iInter fun j ↦ MeasurableSet.iInter fun (hji : j < i) ↦
       measurableSet_le ((hWF.adapted (g j)).mono (ℱ.mono (hg hji.le)) le_rfl)
         measurable_const).inter (measurableSet_lt measurable_const (hWF.adapted (g i)))
@@ -191,9 +191,7 @@ private theorem measurableSet_dyadicCrossingSet (hWm : ∀ s, StronglyMeasurable
     MeasurableSet[Filtration.natural W hWm (nnrealDyadicPoint t n i)]
       (dyadicCrossingSet W t a δ n i) := by
   let ℱ := Filtration.natural W hWm; have hAd := (Filtration.stronglyAdapted_natural hWm).adapted
-  rw [show dyadicCrossingSet W t a δ n i = (⋂ j, ⋂ (_ : j < i),
-      {ω | W (nnrealDyadicPoint t n j) ω < a}) ∩ ({ω | a ≤ W (nnrealDyadicPoint t n i) ω} ∩
-      {ω | W (nnrealDyadicPoint t n i) ω < a + δ}) by ext ω; simp [dyadicCrossingSet]]
+  simp only [dyadicCrossingSet, ofPred_and, ofPred_forall]
   exact (MeasurableSet.iInter fun j ↦ MeasurableSet.iInter fun (hji : j < i) ↦ measurableSet_lt
     ((hAd _).mono (ℱ.mono (monotone_nnrealDyadicPoint t n hji.le)) le_rfl) measurable_const).inter
     ((measurableSet_le measurable_const (hAd _)).inter (measurableSet_lt (hAd _) measurable_const))
@@ -250,10 +248,10 @@ private theorem measure_exists_le_ge_of_continuous (hW : IsPreBrownianReal W P)
       ((tendsto_const_nhds (x := P {ω | ∃ s ≤ t, a ≤ W s ω})).add hosc)
       (.of_forall fun n ↦ two_mul_measure_add_ge_le_step hW hWm hW0 t ha hδ n)
   obtain ⟨u, hu_anti, hu_gt, hu_tend⟩ := exists_seq_strictAnti_tendsto a
-  rw [hW.measure_eval_ge_eq_measure_eval_gt (.inr ha.ne'),
-    show {ω | a < W t ω} = ⋃ m, {ω | u m ≤ W t ω} from
-      (congrArg (W t ⁻¹' ·) (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend)).symm.trans
-        preimage_iUnion]
+  have hGt : {ω | a < W t ω} = ⋃ m, {ω | u m ≤ W t ω} :=
+    (congrArg (W t ⁻¹' ·) (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend)).symm.trans
+      preimage_iUnion
+  rw [hW.measure_eval_ge_eq_measure_eval_gt (.inr ha.ne'), hGt]
   refine le_of_tendsto' (ENNReal.Tendsto.const_mul (tendsto_measure_iUnion_atTop (μ := P)
     fun _ _ hm _ hω ↦ (hu_anti.antitone hm).trans hω) (Or.inr ENNReal.ofNat_ne_top)) fun m ↦ ?_
   simpa only [Function.comp_apply, add_sub_cancel] using hδ_bound (sub_pos.mpr (hu_gt m))
@@ -313,13 +311,14 @@ theorem measureReal_exists_le_ge (hB : IsBrownianReal B P) (t : ℝ≥0) {a : �
 theorem measure_exists_le_gt (hB : IsBrownianReal B P) (t : ℝ≥0) {a : ℝ} (ha : 0 ≤ a) :
     P {ω | ∃ s ≤ t, a < B s ω} = 2 * P {ω | a < B t ω} := by
   obtain ⟨u, hu_anti, hu_gt, hu_tend⟩ := exists_seq_strictAnti_tendsto a
-  rw [show {ω | ∃ s ≤ t, a < B s ω} = ⋃ m, {ω | ∃ s ≤ t, u m ≤ B s ω} by
-      ext ω; simp only [← mem_Ioi, ← iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend, mem_iUnion,
-        mem_Ici, mem_ofPred_eq]
-      exact (exists_congr fun _ ↦ exists_and_left.symm).trans exists_comm,
-    show {ω | a < B t ω} = ⋃ m, {ω | u m ≤ B t ω} from
-      (congrArg (B t ⁻¹' ·) (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend)).symm.trans
-        preimage_iUnion]
+  have hSup : {ω | ∃ s ≤ t, a < B s ω} = ⋃ m, {ω | ∃ s ≤ t, u m ≤ B s ω} := by
+    ext ω; simp only [← mem_Ioi, ← iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend, mem_iUnion,
+      mem_Ici, mem_ofPred_eq]
+    exact (exists_congr fun _ ↦ exists_and_left.symm).trans exists_comm
+  have hGt : {ω | a < B t ω} = ⋃ m, {ω | u m ≤ B t ω} :=
+    (congrArg (B t ⁻¹' ·) (iUnion_Ici_eq_Ioi_of_lt_of_tendsto hu_gt hu_tend)).symm.trans
+      preimage_iUnion
+  rw [hSup, hGt]
   exact tendsto_nhds_unique (tendsto_measure_iUnion_atTop (μ := P) fun _ _ hm _ ⟨s, hst, hs⟩ ↦
       ⟨s, hst, (hu_anti.antitone hm).trans hs⟩)
     ((ENNReal.Tendsto.const_mul (tendsto_measure_iUnion_atTop (μ := P) fun _ _ hm _ hω ↦

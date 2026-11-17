@@ -79,10 +79,10 @@ private theorem integral_min_intervalExit_eq_integral_sq (a b : ℝ) (T : ℝ≥
     (Filtration.stronglyAdapted_natural hWm).adapted.isStoppingTime_hittingAfter_compl_of_isOpen
       hWc isOpen_Ioo 0
   have hMc (ω : Ω) : Continuous (M · ω) := ((hWc ω).pow 2).sub NNReal.continuous_coe
-  rw [show (fun ω ↦ stoppedProcess W τ T ω ^ 2) = fun ω ↦ stoppedProcess M τ T ω +
-        ((min (T : WithTop ℝ≥0) (τ ω)).untopA : ℝ) from funext fun _ ↦ by
-          simp only [stoppedProcess_eq_stoppedValue_apply, stoppedValue, M]; ring,
-    integral_add ((hWF.martingale_sq_sub.stoppedProcess_of_continuous hMc hτ).integrable T)
+  have hsq : (fun ω ↦ stoppedProcess W τ T ω ^ 2) = fun ω ↦ stoppedProcess M τ T ω +
+      ((min (T : WithTop ℝ≥0) (τ ω)).untopA : ℝ) := funext fun _ ↦ by
+    simp only [stoppedProcess_eq_stoppedValue_apply, stoppedValue, M]; ring
+  rw [hsq, integral_add ((hWF.martingale_sq_sub.stoppedProcess_of_continuous hMc hτ).integrable T)
       (integrable_untopA_const_min hτ.measurable'.aemeasurable T),
     hWF.martingale_sq_sub.integral_stoppedProcess_eq_zero_of_ae_continuous (.of_forall hMc)
       (.of_forall fun ω ↦ by simp [hW0 ω]) hτ T, zero_add]
@@ -268,12 +268,13 @@ theorem measureReal_eval_hittingAfter_compl_Ioo_eq_right (hB : IsBrownianReal B 
     dsimp only [Z, stoppedValue]; rw [← hτ_eq]; rcases hω with hZa | hZb
     · rw [indicator_of_notMem (fun h ↦ hab.ne (hZa.symm.trans h)), mul_zero, sub_eq_zero.mpr hZa]
     · rw [indicator_of_mem hZb, Pi.one_apply, mul_one]; exact congrArg (· - a) hZb
-  have hint := integral_congr_ae hind_eq
-  rw [show (fun ω ↦ Z ω - a) = fun ω ↦ (x - a) + stoppedValue W _ ω by ext; simp [Z]; ring,
-    integral_add (integrable_const _) (integrable_stoppedValue_intervalExit hW hWm hWc hW0 h0),
-    integral_const, probReal_univ, one_smul,
-    integral_stoppedValue_intervalExit_eq_zero hW hWm hWc hW0 h0, add_zero, integral_const_mul,
-    integral_indicator_one (hZ_meas (measurableSet_singleton b))] at hint
+  have hS_int := integrable_stoppedValue_intervalExit hW hWm hWc hW0 h0
+  have hZa : ∫ ω, (Z ω - a) ∂P = x - a := by
+    rw [integral_sub (f := Z) ((integrable_const x).add hS_int) (integrable_const a)]
+    simp only [Z, integral_add (integrable_const x) hS_int, integral_const, probReal_univ, one_smul,
+      integral_stoppedValue_intervalExit_eq_zero hW hWm hWc hW0 h0, add_zero]
+  have hint := hZa.symm.trans (integral_congr_ae hind_eq)
+  rw [integral_const_mul, integral_indicator_one (hZ_meas (measurableSet_singleton b))] at hint
   rw [measureReal_congr hset_ae, eq_div_iff (sub_ne_zero.mpr hab.ne'), mul_comm]; linarith
 
 /-- `ℝ≥0∞`-valued upper exit probability for Brownian motion on `(a, b)`. -/
@@ -295,8 +296,7 @@ theorem measureReal_eval_hittingAfter_compl_Ioo_eq_left (hB : IsBrownianReal B P
     ⟨neg_le_neg hx.2, neg_le_neg hx.1⟩
   have hτ : hittingAfter (fun t ω ↦ -x + (-B) t ω) (Ioo (-b) (-a))ᶜ 0 =
       hittingAfter (fun t ω ↦ x + B t ω) (Ioo a b)ᶜ 0 := by
-    rw [show (fun t ω ↦ -x + (-B) t ω) = -(fun t ω ↦ x + B t ω) by ext; simp [add_comm],
-      hittingAfter_neg, Set.neg_preimage, Set.compl_neg, Set.neg_Ioo, neg_neg, neg_neg]
+    rw [hittingAfter_neg_const_add_neg, neg_preimage, compl_neg, neg_Ioo, neg_neg, neg_neg]
   rw [hτ] at hneg
   refine (congrArg P.real ?_).trans (hneg.trans (by ring))
   ext ω; simp only [mem_ofPred_eq, Pi.neg_apply]; constructor <;> intro <;> linarith

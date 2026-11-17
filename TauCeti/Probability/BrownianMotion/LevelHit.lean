@@ -62,10 +62,10 @@ private theorem hittingAfter_Ioi_ae_eq_Ici_of_pos {Ω : Type*} {mΩ : Measurable
   have hstep (t : ℝ≥0) : ∀ᵐ ω ∂P, τ₁ ω ≤ t → τ₂ ω ≤ t := by
     have hST : {ω | τ₂ ω ≤ t} ⊆ {ω | τ₁ ω ≤ t} :=
       fun ω hω ↦ (hittingAfter_apply_anti W 0 ω Ioi_subset_Ici_self).trans hω
+    have hτ₁ : {ω | τ₁ ω ≤ t} = {ω | ∃ s ≤ t, a ≤ W s ω} := by
+      ext ω; simp only [τ₁, mem_ofPred_eq]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]; simp
     have hle : P {ω | τ₁ ω ≤ t} ≤ P {ω | τ₂ ω ≤ t} := by
-      rw [show {ω | τ₁ ω ≤ t} = {ω | ∃ s ≤ t, a ≤ W s ω} by
-          ext ω; simp only [τ₁, mem_ofPred_eq]; rw [isClosed_Ici.hittingAfter_le_iff (hWc ω)]; simp,
-        hW.measure_exists_le_ge t ha,
+      rw [hτ₁, hW.measure_exists_le_ge t ha,
         hW.toIsPreBrownianReal.measure_eval_ge_eq_measure_eval_gt (.inr ha.ne'),
         ← hW.measure_exists_le_gt t ha.le]
       exact measure_mono fun ω ⟨s, hst, hs⟩ ↦
@@ -147,9 +147,8 @@ theorem hittingAfter_singleton_ae_eq_Ici (hB : IsBrownianReal B P) {x a : ℝ} (
 theorem hittingAfter_singleton_ae_eq_Iic (hB : IsBrownianReal B P) {x a : ℝ} (hax : a ≤ x) :
     hittingAfter (fun t ω ↦ x + B t ω) {a} 0 =ᵐ[P]
       hittingAfter (fun t ω ↦ x + B t ω) (Iic a) 0 := by
-  simpa only [show (fun t ω ↦ -x + (-B) t ω) = -(fun t ω ↦ x + B t ω) by ext; simp [add_comm],
-    hittingAfter_neg, Set.neg_preimage, Set.neg_singleton, Set.neg_Ici, neg_neg] using
-    hB.neg.hittingAfter_singleton_ae_eq_Ici (neg_le_neg hax)
+  simpa only [hittingAfter_neg_const_add_neg, Set.neg_preimage, Set.neg_singleton,
+    Set.neg_Ici, neg_neg] using hB.neg.hittingAfter_singleton_ae_eq_Ici (neg_le_neg hax)
 
 private theorem measure_hittingAfter_singleton_le_of_lt (hB : IsBrownianReal B P) {x a : ℝ}
     (hxa : x < a) (t : ℝ≥0) :
@@ -176,8 +175,7 @@ theorem measure_hittingAfter_singleton_le (hB : IsBrownianReal B P) {x a : ℝ} 
   · have hneg := measure_hittingAfter_singleton_le_of_lt hB.neg (neg_lt_neg hax) t
     have hτ : hittingAfter (fun s ω ↦ -x + (-B) s ω) {-a} 0 =
         hittingAfter (fun s ω ↦ x + B s ω) {a} 0 := by
-      rw [show (fun s ω ↦ -x + (-B) s ω) = -(fun s ω ↦ x + B s ω) by ext; simp [add_comm],
-        hittingAfter_neg, Set.neg_preimage, Set.neg_singleton, neg_neg]
+      rw [hittingAfter_neg_const_add_neg, Set.neg_preimage, Set.neg_singleton, neg_neg]
     rwa [hτ, neg_sub_neg, abs_sub_comm, ((hB.neg.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·))
       measurableSet_Ici).trans ((hB.hasLaw_eval t).measure_eq (p := (|a - x| ≤ ·))
         measurableSet_Ici).symm] at hneg
@@ -286,7 +284,7 @@ theorem integral_exp_neg_mul_hittingAfter_singleton (hB : IsBrownianReal B P) (x
   · simpa [mgf] using mgf_dirac (hB.hasLaw_hittingAfter_singleton_self x) (-θ)
   · refine (mgf_of_hasLaw_levyMeasure (sq_pos_of_ne_zero (sub_ne_zero.mpr hx.symm))
       (hB.hasLaw_hittingAfter_singleton hx) (neg_nonpos.mpr hθ)).trans ?_
-    rw [zero_mul, zero_sub, show -2 * (a - x) ^ 2 * -θ = (2 * θ) * (a - x) ^ 2 by ring,
+    rw [zero_mul, zero_sub, neg_mul, neg_mul_neg, mul_right_comm 2 _ θ,
       Real.sqrt_mul (by positivity), Real.sqrt_sq_eq_abs, neg_mul]
 
 end ProbabilityTheory.IsBrownianReal

@@ -27,10 +27,10 @@ initial state lies on the opposite side, and a path starting in `[a, b]` remains
 `[a, b]` up to its first exit from `(a, b)` (so the stopped path stays in `[a, b]` thereafter)
 and hits `{a, b}` when that exit is finite.
 
-For arbitrary processes and state spaces—without order, topology, or path-continuity
-hypotheses—post-composition and negation pull target sets back through preimages, entrance
-into a union of two sets is the minimum of the two individual entrance times, and
-indistinguishable processes have almost everywhere equal hitting times.
+Without topology or path-continuity hypotheses, post-composition and negation (including negated
+shifted processes over a `SubtractionCommMonoid`) pull target sets back through preimages,
+indistinguishable processes have a.e. equal hitting times, and entrance into a union of two sets
+is the minimum of the two entrances (on a conditionally complete linear order).
 
 These results apply in particular to exits from open domains and to closed-level
 localization of continuous adapted processes. Stopping-time measurability on a raw
@@ -72,6 +72,13 @@ theorem hittingAfter_neg {Ω ι E : Type*} [Preorder ι] [InfSet ι] [Neg E]
     (X : ι → Ω → E) (s : Set E) (a : ι) :
     hittingAfter (-X) s a = hittingAfter X (Neg.neg ⁻¹' s) a :=
   Pi.neg_def (f := X) ▸ hittingAfter_comp Neg.neg X s a
+
+/-- First entrance of `-x + (-X)` into `s` equals that of `x + X` into `Neg.neg ⁻¹' s`. -/
+theorem hittingAfter_neg_const_add_neg {Ω ι E : Type*} [Preorder ι] [InfSet ι]
+    [SubtractionCommMonoid E] (x : E) (X : ι → Ω → E) (s : Set E) (a : ι) :
+    hittingAfter (fun t ω ↦ -x + (-X) t ω) s a =
+      hittingAfter (fun t ω ↦ x + X t ω) (Neg.neg ⁻¹' s) a := by
+  simp only [Pi.neg_apply, ← neg_add]; exact hittingAfter_comp Neg.neg (fun t ω ↦ x + X t ω) s a
 
 end MeasureTheory
 

@@ -214,9 +214,11 @@ theorem measurable_hittingAfter_of_isOpen (hY : ∀ t, Measurable (Y t))
   classical
   have : Nonempty (Ici a) := ⟨⟨a, le_rfl⟩⟩
   let d : ℕ → Ici a := TopologicalSpace.denseSeq (Ici a)
-  rw [show hittingAfter Y U a = fun ω ↦ ⨅ k, if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤
-    from funext fun ω ↦ (hc ω).hittingAfter_eq_iInf_Ici_of_isOpen hU
-      (TopologicalSpace.denseRange_denseSeq (Ici a))]
+  have heq : hittingAfter Y U a =
+      fun ω ↦ ⨅ k, if Y (d k) ω ∈ U then ((d k : ι) : WithTop ι) else ⊤ :=
+    funext fun ω ↦ (hc ω).hittingAfter_eq_iInf_Ici_of_isOpen hU
+      (TopologicalSpace.denseRange_denseSeq (Ici a))
+  rw [heq]
   exact .iInf fun _ ↦ measurable_const.ite (hU.measurableSet.preimage (hY _)) measurable_const
 
 /-- Open-set entrance from any starting time of an almost-surely continuous process with almost
