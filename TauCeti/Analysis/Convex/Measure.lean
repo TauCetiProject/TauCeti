@@ -185,8 +185,7 @@ theorem Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter
     intro w hw
     refine ⟨?_, ?_⟩
     · have hc : dist (x + t • (z - x)) x = t * dist x z := by
-        rw [dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_of_nonneg ht₀.le,
-          dist_comm, dist_eq_norm]
+        simp [dist_eq_norm, norm_smul, abs_of_pos ht₀, norm_sub_rev]
       rw [mem_closedBall]
       calc dist w x ≤ dist w (x + t • (z - x)) + dist (x + t • (z - x)) x := dist_triangle _ _ _
         _ ≤ t * ρ + t * dist x z := by rw [hc]; exact add_le_add (mem_ball.1 hw).le le_rfl
@@ -198,14 +197,12 @@ theorem Convex.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter
       have hc : z + (1 - t) • (x - z) = x + t • (z - x) := by module
       rw [hc, sub_sub_cancel] at h
       exact interior_subset (h hw)
+  have hscale : ρ / R * r = t * ρ := by simp only [t]; ring
   calc ENNReal.ofReal ((ρ / R) ^ finrank ℝ E) * μ (closedBall x r)
       = μ (ball (x + t • (z - x)) (t * ρ)) := by
         rw [Measure.addHaar_closedBall μ x hr.le,
           Measure.addHaar_ball_of_pos μ _ (mul_pos ht₀ hρ), ← mul_assoc,
-          ← ENNReal.ofReal_mul (by positivity), ← mul_pow]
-        congr 3
-        simp only [t]
-        ring
+          ← ENNReal.ofReal_mul (by positivity), ← mul_pow, hscale]
     _ ≤ μ (closedBall x r ∩ s) := measure_mono hsub
 
 open Function

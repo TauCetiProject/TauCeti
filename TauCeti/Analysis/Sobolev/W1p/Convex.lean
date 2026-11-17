@@ -180,23 +180,6 @@ section Morrey
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- If a set `s` fills at least the fraction `c` of `closedBall x r`, then
-`μ(ball x r ∩ s) ≥ c ω rⁿ`, where `ω` is the measure of the unit ball and `n` the dimension. -/
-private theorem mul_measureReal_ball_mul_pow_le_measureReal_ball_inter {s : Set E} {x : E}
-    {r c : ℝ} (hr : 0 < r) (hc : 0 < c)
-    (hdens : ENNReal.ofReal c * μ (closedBall x r) ≤ μ (closedBall x r ∩ s)) :
-    c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E ≤ μ.real (ball x r ∩ s) := by
-  refine (ENNReal.ofReal_le_iff_le_toReal (measure_ne_top_of_subset inter_subset_left
-    measure_ball_lt_top.ne)).1 ?_
-  rw [← measure_congr (ae_eq_set_inter
-    (Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero μ x r hr.ne')
-    (Filter.EventuallyEqSet.rfl : s =ᵐ[μ] s))]
-  refine le_trans (le_of_eq ?_) hdens
-  rw [Measure.addHaar_closedBall μ x hr.le, ← ofReal_measureReal measure_ball_lt_top.ne,
-    ← ENNReal.ofReal_mul (by positivity), ← ENNReal.ofReal_mul hc.le]
-  congr 1
-  ring
-
 /-- **Mean oscillation on balls about the points of a convex domain.** If `Ω` is convex and fills
 at least the fraction `c > 0` of `closedBall x r`, then the mean oscillation of `u ∈ W^{1,p}(Ω)`
 on `closedBall x r ∩ Ω` is at most `C ‖∇u‖_{Lᵖ(Ω)} r ^ (1 - n / p)`, where `n` is the dimension
@@ -220,8 +203,14 @@ private theorem W1p.setAverage_closedBall_norm_sub_le_of_convex (hp : p ≠ ∞)
       (Filter.EventuallyEqSet.rfl : (Ω : Set E) =ᵐ[μ] Ω)
   -- The measure of `W` is at least `c ω rⁿ`, where `ω` is the measure of the unit ball.
   have hpos : 0 < c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E := by positivity
-  have hm : c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E ≤ μ.real W :=
-    mul_measureReal_ball_mul_pow_le_measureReal_ball_inter hr hc hdens
+  have hm : c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E ≤ μ.real W := by
+    have h := Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall μ x (c := c.toNNReal) hr
+      (by rwa [ENNReal.ofNNReal_toNNReal])
+    rw [Measure.restrict_apply measurableSet_closedBall, measure_congr hWae,
+      ← ofReal_measureReal hWb.measure_lt_top.ne, ENNReal.ofReal_le_ofReal_iff measureReal_nonneg,
+      Real.coe_toNNReal _ hc.le, Real.rpow_natCast, measureReal_congr
+        (Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero μ (0 : E) 1 one_ne_zero)] at h
+    exact (le_of_eq (by ring)).trans h
   have hW0 : μ W ≠ 0 := fun h ↦
     (hpos.trans_le hm).ne' ((measureReal_eq_zero_iff hWb.measure_lt_top.ne).2 h)
   -- Pass to the restriction of `u` to `W`.
@@ -231,9 +220,11 @@ private theorem W1p.setAverage_closedBall_norm_sub_le_of_convex (hp : p ≠ ∞)
         ⨍ z in W, W1p.value (W1p.restrictL hWΩ u) z ∂μ‖ ∂μ := by
     rw [average_congr hval]
     exact average_congr (hval.mono fun y hy ↦ by simp only [hy])
-  have hdiam : diam (W : Set E) ^ (Module.finrank ℝ E + 1) ≤ (2 * r) ^ (Module.finrank ℝ E + 1) :=
-    pow_le_pow_left₀ diam_nonneg
-      ((diam_mono inter_subset_left isBounded_ball).trans (diam_ball hr.le)) _
+  have hexp : r ^ (1 - Module.finrank ℝ E / p.toReal) =
+      r ^ (Module.finrank ℝ E + 1) * r ^ ((Module.finrank ℝ E : ℝ) * e) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_add hr]
+    push_cast [e]
+    ring_nf
   rw [Measure.restrict_restrict measurableSet_closedBall, Measure.restrict_congr_set hWae, hosc]
   refine (W1p.setAverage_norm_sub_setAverage_le_of_convex hp ((convex_ball x r).inter hconv)
     hWb hW0 _).trans ?_
@@ -241,20 +232,15 @@ private theorem W1p.setAverage_closedBall_norm_sub_le_of_convex (hp : p ≠ ∞)
         ‖W1p.gradient (W1p.restrictL hWΩ u)‖
       ≤ μ.real (ball (0 : E) 1) * (2 * r) ^ (Module.finrank ℝ E + 1) *
           (c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E) ^ e * ‖W1p.gradient u‖ := by
-        gcongr _ * ?_ * ?_ * ?_
+        gcongr _ * ?_ ^ _ * ?_ * ?_
+        · exact (diam_mono inter_subset_left isBounded_ball).trans (diam_ball hr.le)
         · exact Real.rpow_le_rpow_of_nonpos hpos hm (neg_nonpos.2 (by positivity))
         · exact W1p.norm_gradient_restrictL_le hWΩ u
     _ = 2 ^ (Module.finrank ℝ E + 1) * μ.real (ball (0 : E) 1) *
           (c * μ.real (ball (0 : E) 1)) ^ e * ‖W1p.gradient u‖ *
             r ^ (1 - Module.finrank ℝ E / p.toReal) := by
         rw [Real.mul_rpow (by positivity) (by positivity), ← Real.rpow_natCast_mul hr.le,
-          mul_pow, show r ^ (1 - Module.finrank ℝ E / p.toReal) =
-            r ^ (Module.finrank ℝ E + 1) * r ^ ((Module.finrank ℝ E : ℝ) * e) by
-              rw [← Real.rpow_natCast, ← Real.rpow_add hr]
-              congr 1
-              simp only [e]
-              push_cast
-              ring]
+          mul_pow, hexp]
         ring
 
 /-- Morrey's inequality on a bounded convex domain for finite `p`, the case of
@@ -285,9 +271,8 @@ private theorem W1p.exists_holderOnWith_preciseRepresentative_of_convex_of_ne_to
       ENNReal.ofReal c * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω) := by
     intro x hx r hr hrd
     have hrd' : r ≤ 2 * diam (Ω : Set E) := by
-      rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_toReal hb.ediam_ne_top,
-        ← ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_le_ofReal_iff (by positivity)] at hrd
-      exact hrd
+      simpa [ENNReal.toReal_mul, diam] using
+        (ENNReal.ofReal_le_iff_le_toReal (ENNReal.mul_ne_top (by simp) hb.ediam_ne_top)).1 hrd
     exact hconv.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter hρ hball
       (subset_closure hx) hr (by linarith) (by linarith [dist_le_diam_of_mem hb hx hz])
   -- The mean oscillation is at most `K ‖∇u‖ r^α`.
@@ -309,11 +294,13 @@ private theorem W1p.exists_holderOnWith_preciseRepresentative_of_convex_of_ne_to
       rw [Real.coe_toNNReal _ (by positivity), hαp]
       exact W1p.setAverage_closedBall_norm_sub_le_of_convex hp' hconv u hr hc
         (hdens x hx r hr hrd)
+  have hC : (K₀ * K * ‖W1p.gradient u‖).toNNReal =
+      K₀.toNNReal * (K * ‖W1p.gradient u‖).toNNReal := by
+    rw [mul_assoc, Real.toNNReal_mul hK₀.le]
   intro x hx y hy
-  have h := hholder x hx y hy
-  rwa [preciseRepresentative_restrict_of_mem_nhds (Ω.isOpen.mem_nhds hx),
-    preciseRepresentative_restrict_of_mem_nhds (Ω.isOpen.mem_nhds hy),
-    ← Real.toNNReal_mul hK₀.le, ← mul_assoc] at h
+  rw [hC, ← preciseRepresentative_restrict_of_mem_nhds (Ω.isOpen.mem_nhds hx),
+    ← preciseRepresentative_restrict_of_mem_nhds (Ω.isOpen.mem_nhds hy)]
+  exact hholder x hx y hy
 
 /-- **Morrey's inequality on a bounded convex domain.** Let `Ω` be a bounded convex open subset
 of a finite-dimensional real inner product space of dimension `n`, and let `n < p ≤ ∞`. There is
