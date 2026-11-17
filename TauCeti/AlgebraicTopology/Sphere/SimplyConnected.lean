@@ -445,6 +445,12 @@ theorem simplyConnectedSpace_sphere_euclideanSpace {n : ℕ} (hn : 2 ≤ n) :
   rw [hrank]
   exact_mod_cast (by omega : 2 < n + 1)
 
+/-- The unit sphere `Sⁿ⁺²` of `ℝⁿ⁺³` is simply connected, as an instance; this covers the
+two-sphere. -/
+instance simplyConnectedSpace_sphere_euclideanSpace_add_three (n : ℕ) :
+    SimplyConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1) :=
+  simplyConnectedSpace_sphere_euclideanSpace (n := n + 2) (by omega)
+
 /-- **The unit sphere `S²ᵏ⁺¹` of `ℂᵏ⁺¹` is simply connected for `1 ≤ k`.** -/
 theorem simplyConnectedSpace_sphere_euclideanSpace_complex {k : ℕ} (hk : 1 ≤ k) :
     SimplyConnectedSpace (sphere (0 : EuclideanSpace ℂ (Fin (k + 1))) 1) := by
