@@ -49,9 +49,14 @@ are therefore indexed by the image `RootPairing.foldedIndices P σ`, a finite se
   orbit sum.
 * `RootPairing.weightMap_orbitSum`: an equivalence of root pairings intertwining two automorphisms
   carries orbit sums to orbit sums; in particular `RootPairing.orbitSum_mem_fixedSubmodule` says
-  each orbit sum is fixed by `σ`.
+  each orbit sum is fixed by `σ`, and `RootPairing.coroot'_eq_of_mem_orbitIndices` says coroot
+  evaluations on any `σ`-fixed weight are constant along each `σ`-orbit.
 * `RootPairing.orbitSum_reflectionPerm_self`: the orbit sum of a negated root is the negated
   orbit sum.
+* `RootPairing.Base.orbitIndices_subset_support` and
+  `RootPairing.Base.orbitSum_eq_orbitSum_iff_of_mem_support`: for an automorphism permuting the
+  simple roots of a base `b`, simple orbits stay in `b.support` and two simple roots have the same
+  orbit sum if and only if they belong to the same `σ`-orbit.
 * `RootPairing.orbitSum_mem_posRootCone` and `RootPairing.orbitSum_ne_zero`: for an automorphism
   permuting the simple roots of a base, the orbit sum of a positive root is a natural combination
   of simple roots, and no orbit sum vanishes (`RootPairing.zero_notMem_foldedIndices`).
@@ -258,6 +263,16 @@ theorem orbitSum_mem_fixedSubmodule :
     P.orbitSum σ i ∈ LinearMap.fixedSubmodule σ.weightMap :=
   LinearMap.mem_fixedSubmodule_iff.mpr (weightMap_orbitSum_self P σ i)
 
+variable {P σ i} in
+/-- On a `σ`-fixed weight `x`, the coroot functionals `P.coroot' j` take the same value at every
+member `j` of the `σ`-orbit of `i`. -/
+theorem coroot'_eq_of_mem_orbitIndices (hj : j ∈ P.orbitIndices σ i)
+    {x : M} (hx : x ∈ LinearMap.fixedSubmodule σ.weightMap) :
+    P.coroot' j x = P.coroot' i x :=
+  ((mem_orbitIndices.mp hj).apply_eq_of_apply_eq (f := (P.coroot' · x)) fun z ↦ by
+    simpa [LinearMap.mem_fixedSubmodule_iff.mp hx] using
+      σ.coroot'_weightEquiv (i := z) (x := x)).symm
+
 /-! ### Negation -/
 
 /-- The orbit sum of the negative of a root is the negative of its orbit sum. -/
@@ -279,6 +294,46 @@ theorem orbitSum_reflectionPerm_self :
 /-! ### Orbit sums and a base -/
 
 section Base
+
+namespace Base
+
+variable {P σ i}
+
+/-- If `i ∈ b.support` and `σ` stabilizes `b.support`, every member of the root orbit of `i` lies in
+`b.support`. -/
+theorem orbitIndices_subset_support (b : P.Base)
+    (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
+    (hi : i ∈ b.support) : P.orbitIndices σ i ⊆ b.support :=
+  fun _ hj ↦ (Iff.of_eq ((mem_orbitIndices.mp hj).apply_eq_of_apply_eq (f := (· ∈ b.support))
+    fun _ ↦ propext (b.indexEquiv_mem_support_iff hσ))).mp hi
+
+/-- Two simple roots of `b` have the same orbit sum under a base-preserving automorphism if and
+only if they belong to the same `σ`-orbit. -/
+theorem orbitSum_eq_orbitSum_iff_of_mem_support (b : P.Base)
+    (hσ : ∀ k ∈ b.support, σ.indexEquiv k ∈ b.support)
+    (hi : i ∈ b.support) (hj : j ∈ b.support) :
+    P.orbitSum σ i = P.orbitSum σ j ↔ j ∈ P.orbitIndices σ i := by
+  refine ⟨fun heq ↦ ?_, fun hmem ↦ (orbitSum_eq_of_mem hmem).symm⟩
+  rcases subsingleton_or_nontrivial R with hsub | hnt
+  · have : Subsingleton M := Module.subsingleton R M
+    exact P.root.injective (Subsingleton.elim (P.root i) (P.root j)) ▸ self_mem_orbitIndices P σ i
+  · classical
+    have hsub_i := b.orbitIndices_subset_support hσ hi
+    have hsub_j := b.orbitIndices_subset_support hσ hj
+    have hsum (s : Finset ι) (hs : s ⊆ b.support) :
+        ∑ k ∈ s, P.root k = ∑ k ∈ b.support, (if k ∈ s then (1 : R) else 0) • P.root k := by
+      simp_rw [ite_smul, one_smul, zero_smul, Finset.sum_ite_mem, Finset.inter_eq_right.mpr hs]
+    rw [orbitSum_def, orbitSum_def, hsum _ hsub_i, hsum _ hsub_j, ← sub_eq_zero,
+      ← Finset.sum_sub_distrib] at heq
+    simp_rw [← sub_smul] at heq
+    have hcoeff := linearIndepOn_iff'.mp b.linearIndepOn_root b.support
+      (fun k ↦ (if k ∈ P.orbitIndices σ i then (1 : R) else 0) -
+        if k ∈ P.orbitIndices σ j then 1 else 0) (fun _ h ↦ h) heq j hj
+    simp only [self_mem_orbitIndices, ite_true, sub_eq_zero] at hcoeff
+    by_contra hnot
+    simp [hnot] at hcoeff
+
+end Base
 
 variable {P σ i} [CharZero R] {b : P.Base}
 
