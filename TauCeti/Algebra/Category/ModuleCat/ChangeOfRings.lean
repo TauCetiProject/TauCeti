@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
+public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import TauCeti.LinearAlgebra.Matrix.BaseChange
 public import Mathlib.RingTheory.IsTensorProduct
 public import Mathlib.RingTheory.Localization.BaseChange
@@ -33,8 +34,11 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
 
 Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars is the tensor
 product `S ⊗[R] M` taken with the algebra module structure of `S`
-(`ModuleCat.extendScalarsAlgebraMapIso`). An `R`-linear map `f : M → N` to an `S`-module
-exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
+(`ModuleCat.extendScalarsAlgebraMapIso`), naturally in `M`
+(`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`). When `S` is flat over `R`, this
+extension of scalars is exact and so preserves finite limits
+(`ModuleCat.preservesFiniteLimits_extendScalars_algebraMap`). An `R`-linear map `f : M → N` to an
+`S`-module exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
 `S ⊗[R] M → N` is bijective; in that case the adjoint morphism of modules is an isomorphism
 (`ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange`).
 
@@ -229,7 +233,32 @@ theorem extendScalarsAlgebraMapIso_inv_tmul (M : ModuleCat.{w} R) (s : S) (m : M
   unfold extendScalarsAlgebraMapIso
   rfl
 
+/-- `extendScalarsAlgebraMapIso` is natural in the module: it identifies the base change
+`S ⊗[R] g` of an `R`-linear map `g` with the extension of scalars of `g`. -/
+@[reassoc]
+theorem extendScalarsAlgebraMapIso_inv_naturality {M N : ModuleCat.{w} R} (g : M ⟶ N) :
+    ofHom (g.hom.baseChange S) ≫ (extendScalarsAlgebraMapIso N).inv =
+      (extendScalarsAlgebraMapIso M).inv ≫ (extendScalars (algebraMap R S)).map g := by
+  refine hom_ext (LinearMap.ext fun t ↦ ?_)
+  induction t using TensorProduct.inductionOn with
+  | tmul s x =>
+    simp only [hom_comp, LinearMap.comp_apply, hom_ofHom, LinearMap.baseChange_tmul]
+    -- `simp` leaves the two inverse comparisons unreduced, so they are rewritten explicitly.
+    rw [extendScalarsAlgebraMapIso_inv_tmul, extendScalarsAlgebraMapIso_inv_tmul]
+    exact (ExtendScalars.map_tmul (algebraMap R S) g s x).symm
+  | add x y hx hy => simp_all
+
 end AlgebraMap
+
+section Flat
+
+/-- Extension of scalars along a flat algebra is exact, so it preserves finite limits. -/
+instance preservesFiniteLimits_extendScalars_algebraMap {R S : Type u} [CommRing R] [CommRing S]
+    [Algebra R S] [Module.Flat R S] :
+    Limits.PreservesFiniteLimits (extendScalars.{u, u, u} (algebraMap R S)) :=
+  preservesFiniteLimits_extendScalars_of_flat (RingHom.flat_algebraMap_iff.2 inferInstance)
+
+end Flat
 
 section BaseChange
 
