@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Sub
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import TauCeti.Probability.Renewal.Count
 public import TauCeti.Probability.Renewal.Moments
@@ -139,6 +140,11 @@ theorem renewalMeasure_eq_dirac_add_conv [MeasurableAdd₂ α] (μ : Measure α)
   rw [conv_renewalMeasure, _root_.add_apply, MeasureTheory.Measure.sum_apply _ hs,
     renewalMeasure_apply _,
     tsum_eq_zero_add' CompleteLattice.summable, convolutionPower_zero]
+
+/-- Removing the artificial point mass at zero from the renewal measure leaves `μ ∗ U`. -/
+theorem renewalMeasure_sub_dirac [MeasurableAdd₂ α] (μ : Measure α) [SFinite μ] :
+    μ.renewalMeasure - dirac 0 = μ ∗ μ.renewalMeasure := by
+  conv_lhs => rw [renewalMeasure_eq_dirac_add_conv, add_comm, Measure.add_sub_cancel]
 
 end RenewalMeasure
 

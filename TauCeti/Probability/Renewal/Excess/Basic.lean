@@ -56,7 +56,9 @@ These representations are the input of the limit theorem for the excess.
 
 * `TauCeti.Probability.lt_renewalExcess_iff`: on a nonexplosive path, `x < E t` exactly when some
   arrival `arrival T n` is at most `t` while the next one is after `t + x`.
-* `TauCeti.Probability.measurable_renewalExcess`: measurability of the excess.
+* `TauCeti.Probability.measurable_renewalExcess`, `TauCeti.Probability.aemeasurable_renewalExcess`,
+  `TauCeti.Probability.renewalExcess_congr_ae`: measurability, almost-everywhere measurability,
+  and almost-everywhere congruence of the excess.
 * `TauCeti.Probability.measure_lt_renewalExcess`,
   `TauCeti.Probability.measureReal_lt_renewalExcess`: the excess-tail representation
   `P(x < E t) = (F> (· + x) ∗ U) t`.
