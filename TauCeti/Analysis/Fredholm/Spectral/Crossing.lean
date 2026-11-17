@@ -65,9 +65,9 @@ a difference of these counts.
 * `IsSelfAdjoint.sigNeg_add_spectralCount_eq_finrank`: the negative index of the form of a
   self-adjoint operator on the range of its spectral projection for a cut `[-c, c]`, plus the
   number of its eigenvalues in `[0, c]`, is the rank of that projection.
-* `TauCeti.eventually_spectralFlow_self_eq_neg_sigNeg_crossingForm`: the spectral flow just after
+* `TauCeti.eventually_spectralFlow_right_eq_neg_sigNeg_crossingForm`: the spectral flow just after
   a regular crossing.
-* `TauCeti.eventually_spectralFlow_eq_sigPos_crossingForm`: the spectral flow just before a
+* `TauCeti.eventually_spectralFlow_left_eq_sigPos_crossingForm`: the spectral flow just before a
   regular crossing.
 * `TauCeti.eventually_spectralFlow_eq_sigPos_sub_sigNeg_crossingForm`: **the regular-crossing
   formula**, the spectral flow across a regular crossing.
@@ -386,7 +386,7 @@ Fredholm and right derivative `A'` at `t₀`. If the crossing form `Γ v = ⟪A'
 of `A t₀` is nondegenerate, then the spectral flow of `A` from `t₀` to every `b > t₀` close to
 `t₀` is `-sigNeg Γ`: the eigenvalues leaving `0` downwards are those of the negative directions
 of `Γ`. -/
-theorem eventually_spectralFlow_self_eq_neg_sigNeg_crossingForm
+theorem eventually_spectralFlow_right_eq_neg_sigNeg_crossingForm
     (hA : ∀ᶠ t in 𝓝[≥] t₀, ContinuousWithinAt A (Ici t₀) t)
     (hsa : ∀ᶠ t in 𝓝[≥] t₀, IsSelfAdjoint (A t))
     (hF : (A t₀).IsFredholm) (hd : HasDerivWithinAt A A' (Ici t₀) t₀)
@@ -408,7 +408,7 @@ Fredholm and left derivative `A'` at `t₀`. If the crossing form `Γ v = ⟪A' 
 of `A t₀` is nondegenerate, then the spectral flow of `A` from every `a < t₀` close to `t₀` to
 `t₀` is `sigPos Γ`: the eigenvalues arriving at `0` from below are those of the positive
 directions of `Γ`. -/
-theorem eventually_spectralFlow_eq_sigPos_crossingForm
+theorem eventually_spectralFlow_left_eq_sigPos_crossingForm
     (hA : ∀ᶠ t in 𝓝[≤] t₀, ContinuousWithinAt A (Iic t₀) t)
     (hsa : ∀ᶠ t in 𝓝[≤] t₀, IsSelfAdjoint (A t))
     (hF : (A t₀).IsFredholm) (hd : HasDerivWithinAt A A' (Iic t₀) t₀)
