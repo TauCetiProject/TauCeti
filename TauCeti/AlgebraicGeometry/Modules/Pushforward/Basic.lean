@@ -91,8 +91,9 @@ between the image under its inverse and the preimage under the forward map. -/
 @[simp]
 theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
     (V : Y.Opens) (x : Γ((pushforward e.hom).obj M, V)) :
-    (((pushforwardIsoRestrictFunctor e).hom.app M).val.app (.op V)) x =
-      M.val.map (eqToHom (Scheme.Hom.inv_image e V)).op x := by
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((((pushforwardIsoRestrictFunctor e).hom.app M).val.app (.op V)) x =
+      M.val.map (eqToHom (Scheme.Hom.inv_image e V)).op x) := by
   -- `pushforwardCongr₂` restricts sections along the components of `eqToIso`,
   -- whose underlying maps are `eqToHom`.
   rfl
@@ -101,8 +102,9 @@ theorem pushforwardIsoRestrictFunctor_hom_app_val_app_apply (e : X ≅ Y) (M : X
 @[simp]
 theorem pushforwardIsoRestrictFunctor_inv_app_val_app_apply (e : X ≅ Y) (M : X.Modules)
     (V : Y.Opens) (x : Γ(M.restrict e.inv, V)) :
-    (((pushforwardIsoRestrictFunctor e).inv.app M).val.app (.op V)) x =
-      M.val.map (eqToHom (Scheme.Hom.inv_image e V).symm).op x := by
+    dsimp% only [sheafCompose_obj_obj, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
+    ((((pushforwardIsoRestrictFunctor e).inv.app M).val.app (.op V)) x =
+      M.val.map (eqToHom (Scheme.Hom.inv_image e V).symm).op x) := by
   -- The inverse components of `eqToIso` use the symmetric equality.
   rfl
 
@@ -138,8 +140,9 @@ of the two inverse-image opens. -/
 theorem restrictPushforwardIso_hom_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ(((pushforward f).obj M).restrict U.ι, V)) :
-    dsimp% only [Functor.comp_obj] (((restrictPushforwardIso f U).hom.app M).val.app (.op V)) x =
-      M.val.map (eqToHom (image_morphismRestrict_preimage f U V)).op x :=
+    dsimp% only [Functor.comp_obj, sheafCompose_obj_obj, CommRingCat.forgetToRingCat_obj]
+    ((((restrictPushforwardIso f U).hom.app M).val.app (.op V)) x =
+      M.val.map (eqToHom (image_morphismRestrict_preimage f U V)).op x) :=
   (rfl)
 
 /-- The inverse comparison restricts along the inverse equality of inverse-image opens. -/
@@ -147,8 +150,9 @@ theorem restrictPushforwardIso_hom_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
 theorem restrictPushforwardIso_inv_app_val_app_apply (f : X ⟶ Y) (U : Y.Opens)
     (M : X.Modules) (V : U.toScheme.Opens)
     (x : Γ((pushforward (f ∣_ U)).obj (M.restrict (f ⁻¹ᵁ U).ι), V)) :
-    dsimp% only [Functor.comp_obj] (((restrictPushforwardIso f U).inv.app M).val.app (.op V)) x =
-      M.val.map (eqToHom (image_morphismRestrict_preimage f U V).symm).op x :=
+    dsimp% only [Functor.comp_obj, sheafCompose_obj_obj, CommRingCat.forgetToRingCat_obj]
+    ((((restrictPushforwardIso f U).inv.app M).val.app (.op V)) x =
+      M.val.map (eqToHom (image_morphismRestrict_preimage f U V).symm).op x) :=
   (rfl)
 
 end

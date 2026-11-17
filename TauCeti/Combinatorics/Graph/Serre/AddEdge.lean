@@ -195,6 +195,11 @@ noncomputable def deleteEdgeGeomEdgeEquiv (d : Γ.E) :
       Γ.toGeomEdge e.1 :=
   congrArg Subtype.val (GeomEdge.lift_toGeomEdge ..)
 
+/-- Deleting an edge of a graph with finitely many geometric edges leaves finitely many geometric
+edges. -/
+instance [Finite Γ.GeomEdge] (d : Γ.E) : Finite (Γ.deleteEdge d).GeomEdge :=
+  .of_equiv _ (Γ.deleteEdgeGeomEdgeEquiv d).symm
+
 variable {Γ} in
 /-- Two vertices joined by a path stay joined after deleting the edge of `d`, when the target of
 `d` is joined to its source by a path avoiding that edge. -/
