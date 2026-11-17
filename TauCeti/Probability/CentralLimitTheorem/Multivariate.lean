@@ -299,24 +299,6 @@ theorem tendstoInDistribution_sum_smul_of_tendsto_vecMulVec [DecidableEq κ]
 
 end Lindeberg
 
-/-- Transfer convergence in distribution along pushforwards of the underlying sample spaces. -/
-private theorem tendstoInDistribution_of_map_eq
-    {Ω₁ Ω₂ : ℕ → Type*} [∀ n, MeasurableSpace (Ω₁ n)] [∀ n, MeasurableSpace (Ω₂ n)]
-    {μ₁ : (n : ℕ) → Measure (Ω₁ n)} [∀ n, IsProbabilityMeasure (μ₁ n)]
-    {μ₂ : (n : ℕ) → Measure (Ω₂ n)} [∀ n, IsProbabilityMeasure (μ₂ n)]
-    {E Ω' : Type*} [TopologicalSpace E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    [MeasurableSpace Ω'] {μ' : Measure Ω'} [IsProbabilityMeasure μ']
-    {f : (n : ℕ) → Ω₁ n → Ω₂ n} {X : (n : ℕ) → Ω₁ n → E} {T : (n : ℕ) → Ω₂ n → E} {Z : Ω' → E}
-    (hf : ∀ n, AEMeasurable (f n) (μ₁ n)) (hmap : ∀ n, (μ₁ n).map (f n) = μ₂ n)
-    (hT : ∀ n, AEMeasurable (T n) (μ₂ n)) (hcomp : ∀ n ω, X n ω = T n (f n ω))
-    (h : TendstoInDistribution X atTop Z μ₁ μ') :
-    TendstoInDistribution T atTop Z μ₂ μ' := by
-  refine ⟨hT, h.aemeasurable_limit,
-    h.tendsto.congr fun n ↦ ProbabilityMeasure.toMeasure_injective ?_⟩
-  simp only [ProbabilityMeasure.coe_mk]
-  rw [← hmap n, AEMeasurable.map_map_of_aemeasurable (by rw [hmap n]; exact hT n) (hf n)]
-  exact Measure.map_congr (.of_forall (hcomp n))
-
 section CentralLimitTheorem
 
 variable {κ : Type*} [Fintype κ] [DecidableEq κ]
@@ -397,16 +379,22 @@ theorem tendstoInDistribution_inv_sqrt_smul_sum_sub_pi
   have hmean : ∫ ω', s (ω' 0) ∂Q = ∫ a, s a ∂P := by
     rw [← (heval 0).map_eq, integral_map (measurable_pi_apply 0).aemeasurable
       (by rw [(heval 0).map_eq]; exact hs.aestronglyMeasurable)]
-  refine tendstoInDistribution_of_map_eq (f := fun n (ω : ℕ → α) (i : Fin n) ↦ ω i)
-    (fun n ↦ (Measurable.of_eval fun i : Fin n ↦ measurable_pi_apply (i : ℕ)).aemeasurable)
-    (fun n ↦ by rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective,
-      Measure.infinitePi_eq_pi])
-    (fun n ↦ ?_)
-    (fun n ω ↦ by rw [hmean, Fin.sum_univ_eq_sum_range (fun k ↦ s (ω k) - ∫ a, s a ∂P)]) hseq
-  have hsum := Finset.aemeasurable_fun_sum Finset.univ fun i : Fin n ↦ fun _ ↦
-    (hs.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving
-      (Measure.quasiMeasurePreserving_eval (fun _ : Fin n ↦ P) i)).sub_const (∫ a, s a ∂P)
-  fun_prop
+  have hT (n : ℕ) : AEMeasurable
+      (fun x : Fin n → α ↦ (√(n : ℝ))⁻¹ • ∑ i : Fin n, (s (x i) - ∫ a, s a ∂P))
+      (Measure.pi fun _ : Fin n ↦ P) := by
+    have hsum := Finset.aemeasurable_fun_sum Finset.univ fun i : Fin n ↦ fun _ ↦
+      (hs.aestronglyMeasurable.aemeasurable.comp_quasiMeasurePreserving
+        (Measure.quasiMeasurePreserving_eval (fun _ : Fin n ↦ P) i)).sub_const (∫ a, s a ∂P)
+    fun_prop
+  refine hseq.congr_map hT hseq.aemeasurable_limit (.of_forall fun n ↦ ?_) rfl
+  let f : (ℕ → α) → (Fin n → α) := fun ω i ↦ ω i
+  have hf : AEMeasurable f Q :=
+    (Measurable.of_eval fun i : Fin n ↦ measurable_pi_apply (i : ℕ)).aemeasurable
+  have hproj : Q.map f = Measure.pi fun _ : Fin n ↦ P := by
+    rw [Measure.map_infinitePi_infinitePi_of_inj Fin.val_injective, Measure.infinitePi_eq_pi]
+  rw [← hproj, AEMeasurable.map_map_of_aemeasurable (by rw [hproj]; exact hT n) hf]
+  exact Measure.map_congr (.of_forall fun ω ↦ by
+    rw [hmean, Function.comp_apply, Fin.sum_univ_eq_sum_range (fun k ↦ s (ω k) - ∫ a, s a ∂P)])
 
 end CentralLimitTheorem
 

@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInDistribution
-import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.MeasureTheory.Measure.LevyConvergence
-import TauCeti.MeasureTheory.Function.StronglyMeasurable.FiniteDimensional
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.Pettis
 
 /-!
 # The Cramér–Wold theorem on varying probability spaces
@@ -34,9 +33,9 @@ equivalence already entail almost-everywhere measurability of `X n` and `X'`.
 
 On the right-hand side of `tendstoInDistribution_iff_forall_tendstoInDistribution_inner`, each
 projection `ω ↦ ⟪X n ω, t⟫` is almost everywhere measurable by
-`TendstoInDistribution.forall_aemeasurable`; applying `TauCeti.aestronglyMeasurable_clm_apply_iff`
-to the Riesz dual map `InnerProductSpace.toDual ℝ E ∘ X n` reconstructs almost-everywhere
-measurability of `X n` (and similarly of `X'`), after which
+`TendstoInDistribution.forall_aemeasurable`; Pettis' measurability theorem
+(`TauCeti.aestronglyMeasurable_iff_forall_inner`) reconstructs almost-everywhere strong
+measurability (hence almost-everywhere measurability) of `X n` and `X'`, after which
 `MeasureTheory.TendstoInDistribution.of_tendsto_charFun` and
 `MeasureTheory.charFun_map_eq_charFun_map_inner_one` conclude on varying probability spaces.
 
@@ -58,17 +57,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
-/-- On a finite-dimensional real inner product space, a map whose scalar inner-product projections
-are all almost everywhere measurable is itself almost everywhere measurable. -/
-private theorem aemeasurable_of_forall_aemeasurable_inner
-    {α : Type*} [MeasurableSpace α] {μ : Measure α} {X : α → E}
-    (h : ∀ t, AEMeasurable (fun ω ↦ ⟪X ω, t⟫) μ) :
-    AEMeasurable X μ := by
-  have hclm : AEStronglyMeasurable (fun ω ↦ InnerProductSpace.toDual ℝ E (X ω)) μ :=
-    aestronglyMeasurable_clm_apply_iff.2 fun t ↦ (h t).aestronglyMeasurable
-  simpa only [Function.comp_def, LinearIsometryEquiv.symm_apply_apply] using
-    ((InnerProductSpace.toDual ℝ E).symm.continuous.comp_aestronglyMeasurable hclm).aemeasurable
-
 /-- **Cramér–Wold theorem on varying probability spaces.** Convergence in distribution of random
 vectors `X n : Ω n → E` on probability spaces `(Ω n, P n)` to `X' : Ω' → E` on `(Ω', P')`, where
 `E` is a finite-dimensional real inner product space with its Borel σ-algebra, is equivalent to
@@ -83,9 +71,13 @@ theorem tendstoInDistribution_iff_forall_tendstoInDistribution_inner
   mp h t := h.continuous_comp (continuous_id.inner continuous_const)
   mpr h := by
     have hX (n : ℕ) : AEMeasurable (X n) (P n) :=
-      aemeasurable_of_forall_aemeasurable_inner fun t ↦ (h t).forall_aemeasurable n
+      ((aestronglyMeasurable_iff_forall_inner (𝕜 := ℝ)).2 fun t ↦ by
+        simpa only [real_inner_comm t] using
+          ((h t).forall_aemeasurable n).aestronglyMeasurable).aemeasurable
     have hX' : AEMeasurable X' P' :=
-      aemeasurable_of_forall_aemeasurable_inner fun t ↦ (h t).aemeasurable_limit
+      ((aestronglyMeasurable_iff_forall_inner (𝕜 := ℝ)).2 fun t ↦ by
+        simpa only [real_inner_comm t] using
+          (h t).aemeasurable_limit.aestronglyMeasurable).aemeasurable
     refine .of_tendsto_charFun hX hX' fun t ↦ ?_
     rw [charFun_map_eq_charFun_map_inner_one hX']
     exact ((h t).tendsto_charFun 1).congr fun n ↦

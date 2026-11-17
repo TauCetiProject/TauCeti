@@ -146,9 +146,10 @@ theorem posSemidef_covMatrix_map [Fintype ι] {Ω : Type*} [MeasurableSpace Ω] 
 @[simp]
 theorem covMatrix_map_smul_const (μ : Measure ℝ) (v : EuclideanSpace ℝ ι) :
     covMatrix (μ.map (fun u : ℝ ↦ u • v)) = Var[id; μ] • Matrix.vecMulVec v v := by
+  -- Without `[Fintype ι]`, `EuclideanSpace ℝ ι` lacks `BorelSpace`, `ContinuousSMul`, and
+  -- `MeasurableSMul`, so `fun_prop` needs the explicit `WithLp.toLp` representation.
   have hm : Measurable (fun u : ℝ ↦ u • v) := by
-    simpa only [Function.comp_def, id_eq, WithLp.toLp_smul, WithLp.toLp_ofLp] using
-      (WithLp.measurable_toLp 2 (ι → ℝ)).comp (measurable_id.smul_const (WithLp.ofLp v))
+    simpa using (by fun_prop : Measurable fun u : ℝ ↦ WithLp.toLp 2 (u • v.ofLp))
   ext i j
   simp only [covMatrix_apply, Matrix.smul_apply, Matrix.vecMulVec_apply, smul_eq_mul]
   rw [covariance_map_fun (by fun_prop) (by fun_prop) hm.aemeasurable]
