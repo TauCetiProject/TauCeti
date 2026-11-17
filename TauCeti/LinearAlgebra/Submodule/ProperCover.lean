@@ -21,13 +21,7 @@ subspaces needed to cover each finite set of solutions, which lie in finitely ge
 and a common number field, becomes a bound for the whole set, with no finite generation assumed of
 the ambient group.
 
-The proof is a span/cover induction. For a finite `F ⊆ A` and a family `𝒲` covering `F`, measure
-`∑ W ∈ 𝒲, finrank K (span K (W ∩ F))`. Only finitely many proper families consist of spans of
-subsets of `F`; adjoin to `F` a point of `A` outside each of them. Every proper family covering the
-enlarged set then has strictly larger measure than its restriction to `F`, since one of its
-members picks up a new point outside the span of its old points. The measure of a family of at
-most `t` subspaces is at most `t * finrank K V`, so after `t * finrank K V + 1` steps no proper
-family of at most `t` subspaces covers the finite set built.
+The proof follows the span/cover induction of Evertse–Schlickewei–Schmidt, Section 6.
 
 Finite-dimensionality is necessary: if `A` is a basis of an infinite-dimensional space, every
 finite subset of `A` lies in one proper subspace, but `A` spans the whole space.
