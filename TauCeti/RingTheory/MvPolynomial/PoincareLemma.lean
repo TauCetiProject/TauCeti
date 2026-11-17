@@ -26,8 +26,8 @@ potential of degree at most `m` reduces the claim to a function with vanishing g
 
 The argument is the one with homogeneous components and Euler's identity
 (`MvPolynomial.IsHomogeneous.sum_X_mul_pderiv`), the polynomial case of the homotopy formula in
-the proof of the Poincaré lemma for closed differential forms. When `Pⱼ` is homogeneous of
-degree `d` and `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, Euler's identity shows that
+the proof of the Poincaré lemma for closed differential forms (Bott and Tu, §4). When `Pⱼ` is
+homogeneous of degree `d` and `∂ⱼ Pᵢ = ∂ᵢ Pⱼ` for all `i`, Euler's identity shows that
 `∂ⱼ (∑ᵢ Xᵢ Pᵢ) = (d + 1) Pⱼ`. The proof therefore takes as potential the sum over `d` of
 `(d + 1)⁻¹ ∑ᵢ Xᵢ Pᵢᵈ`, where `Pᵢᵈ` is the degree-`d` homogeneous component of `Pᵢ`. Uniqueness
 up to constants holds over any commutative ring with `HasUniqueDiv` (`MvPolynomial.pderiv.ext`),
@@ -52,6 +52,11 @@ inherited from `MvPowerSeries.pderiv.ext`.
 * `MvPolynomial.existsUnique_mem_restrictTotalDegree_pderiv_eq`,
   `MvPolynomial.existsUnique_pderiv_eq`: unique polynomial potentials with prescribed constant
   coefficient.
+
+## References
+
+* R. Bott, L. W. Tu, *Differential Forms in Algebraic Topology*, Springer (1982), §4 (the homotopy
+  operator construction underlying the homogeneous-component potential formula).
 -/
 
 public section

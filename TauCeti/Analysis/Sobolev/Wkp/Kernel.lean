@@ -8,14 +8,11 @@ module
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import TauCeti.Analysis.MvPolynomial.PolynomialSpace
 public import TauCeti.Analysis.Sobolev.Wkp.Classical
-public import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.MvPolynomial.Poincare
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
-import TauCeti.Analysis.Sobolev.W1p.Restriction
 import TauCeti.Analysis.Sobolev.WeakDeriv.Symmetry
-import TauCeti.MeasureTheory.Function.LocallyAEConst
-import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 
 /-!
 # Polynomial kernel of the top weak derivative on `W^{m+1,p}(Ω)`
@@ -34,9 +31,8 @@ smooth and its `(m + 1)`-st classical Fréchet derivative vanishes identically
 The forward direction argues by induction on `m` along three basis-free steps followed by the
 Euclidean polynomial Poincaré lemma:
 
-1. Commutativity of mixed weak derivatives (`TauCeti.HasWeakLineDerivOn.comm`) passes directional
-   differentiation through `Wkp.iteratedGradient`
-   (`TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`), identifying
+1. Commutativity of mixed weak derivatives passes directional differentiation through
+   `Wkp.iteratedGradient` (`TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`), identifying
    `Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u)` with evaluation of the outermost slot of
    `Wkp.iteratedGradient (j + 1) u` at `v` (`TauCeti.Wkp.iteratedGradient_lineDerivL`).
 2. When `Wkp.iteratedGradient (m + 1) u = 0`, each coordinate directional derivative
@@ -47,19 +43,14 @@ Euclidean polynomial Poincaré lemma:
    everywhere on `Ω` to all of `EuclideanSpace ℝ ι`, so
    `TauCeti.exists_mem_polynomialsDegLE_gradient_eq` produces `Q ∈ polynomialsDegLE ι (m + 1)`
    whose classical gradient agrees almost everywhere on `Ω` with the weak gradient of `u`.
-3. Subtracting `Q` locally on compactly contained balls reduces to the `m = 0` constancy theorem
-   `TauCeti.W1p.exists_value_ae_eq_const_of_gradient_eq_zero`, and preconnectedness glues the
-   local constants (`TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`).
+3. Subtracting `Q` locally on compactly contained balls and gluing local constants on the
+   preconnected domain (`TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`) expresses
+   `u` almost everywhere as `Q + c`.
 
 ## Main declarations
 
-* `TauCeti.Wkp.hasWeakLineDerivOn_iteratedGradient`: weak directional differentiation commutes
-  with `Wkp.iteratedGradient`.
-* `TauCeti.Wkp.iteratedGradient_lineDerivL`: the top weak derivative of `Wkp.lineDerivL v (j + 1) u`
-  evaluates the outermost slot of `Wkp.iteratedGradient (j + 1) u` at `v`.
-* `TauCeti.W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq`: on a preconnected open set, a
-  `W^{1,p}` function whose weak gradient agrees almost everywhere with `∇ q` for `q` of class `C¹`
-  equals `q + c` almost everywhere.
+* `TauCeti.iteratedGradientChain_eq_zero_of_mem_polynomialsDegLE`: every classical iterated
+  gradient field of order exceeding `m` vanishes on `polynomialsDegLE ι m`.
 * `TauCeti.Wkp.iteratedGradient_eq_zero_of_ae_eq_mem_polynomialsDegLE`: a Sobolev function
   represented almost everywhere by a polynomial of degree at most `m ≤ k` has vanishing `(k + 1)`-st
   weak derivative.
@@ -83,140 +74,8 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter LineDeriv MeasureTheory Metric Set TopologicalSpace
-open scoped ContDiff Distributions ENNReal Gradient InnerProductSpace Topology
-
-/-! ### Basis-free Sobolev lemmas -/
-
-section InnerProductSpace
-
-variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-  [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
-  {Omega : Opens E} {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-omit [FiniteDimensional ℝ E] [mu.IsAddHaarMeasure] in
-/-- A point-separating family of continuous linear functionals or operators lifts
-`HasWeakLineDerivOn` on locally integrable functions. -/
-private theorem hasWeakLineDerivOn_of_forall_clm_comp {α F G : Type*}
-    [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
-    [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
-    {u u' : E → F} {v : E} (hu : LocallyIntegrableOn u Omega mu)
-    (hu' : LocallyIntegrableOn u' Omega mu) (L : α → F →L[ℝ] G)
-    (hsep : ∀ y z : F, (∀ a, L a y = L a z) → y = z)
-    (hL : ∀ a, HasWeakLineDerivOn mu Omega (fun x ↦ L a (u x)) (fun x ↦ L a (u' x)) v) :
-    HasWeakLineDerivOn mu Omega u u' v := by
-  refine hasWeakLineDerivOn_iff_testFunction.2 ⟨‹CompleteSpace F›, hu, hu', fun φ ↦ ?_⟩
-  apply hsep
-  intro a
-  have h1 := ContinuousLinearMap.integral_comp_comm (L a)
-    (integrable_lineDeriv_smul_of_locallyIntegrableOn hu φ v)
-  have h2 := ContinuousLinearMap.integral_comp_comm (L a) (φ.integrable_smul hu')
-  calc L a (∫ x, lineDeriv ℝ (φ : E → ℝ) x v • u x ∂mu)
-      = ∫ x, lineDeriv ℝ (φ : E → ℝ) x v • L a (u x) ∂mu := by
-          simpa only [Function.comp_def, map_smul] using h1.symm
-    _ = -∫ x, (φ : E → ℝ) x • L a (u' x) ∂mu :=
-          (hL a).integral_lineDeriv_smul_eq_neg_integral_smul φ
-    _ = L a (-∫ x, (φ : E → ℝ) x • u' x ∂mu) := by
-          rw [map_neg]
-          congr 1
-          simpa only [Function.comp_def, map_smul] using h2
-
-/-- **Weak directional derivatives commute with `Wkp.iteratedGradient`.** If the value of `g` is a
-weak derivative of the value of `f` in the direction `w` on `Ω`, then at every recorded order `j`
-the highest weak derivative `Wkp.iteratedGradient j g` is a weak derivative of
-`Wkp.iteratedGradient j f` in the direction `w`. -/
-theorem Wkp.hasWeakLineDerivOn_iteratedGradient :
-    ∀ (j : ℕ) {f g : Wkp mu Omega p (j + 1)} {w : E},
-      HasWeakLineDerivOn mu Omega (Wkp.value (j + 1) f) (Wkp.value (j + 1) g) w →
-      HasWeakLineDerivOn mu Omega (Wkp.iteratedGradient j f) (Wkp.iteratedGradient j g) w
-  | 0, f, g, w, h => by
-      refine hasWeakLineDerivOn_of_forall_clm_comp
-        (Lp.locallyIntegrableOn _ Fact.out) (Lp.locallyIntegrableOn _ Fact.out)
-        (fun z : E ↦ innerSL ℝ z) (fun y y' hy ↦ ext_inner_left ℝ fun z ↦ hy z) fun z ↦ ?_
-      have hf : HasWeakLineDerivOn mu Omega (Wkp.value 1 f)
-          (fun x ↦ innerSL ℝ z (Wkp.iteratedGradient 0 f x)) z := by
-        simpa only [innerSL_apply_apply, real_inner_comm] using
-          (Wkp.hasWeakFDerivOn_value f).hasWeakLineDerivOn z
-      have hg : HasWeakLineDerivOn mu Omega (Wkp.value 1 g)
-          (fun x ↦ innerSL ℝ z (Wkp.iteratedGradient 0 g x)) z := by
-        simpa only [innerSL_apply_apply, real_inner_comm] using
-          (Wkp.hasWeakFDerivOn_value g).hasWeakLineDerivOn z
-      exact h.comm hg hf
-  | j + 1, f, g, w, h => by
-      have ih := Wkp.hasWeakLineDerivOn_iteratedGradient j
-        (f := Wkp.lowerOrder (j + 1) f) (g := Wkp.lowerOrder (j + 1) g)
-        (by simpa only [Wkp.value_succ] using h)
-      refine hasWeakLineDerivOn_of_forall_clm_comp
-        (Lp.locallyIntegrableOn _ Fact.out) (Lp.locallyIntegrableOn _ Fact.out)
-        (fun z : E ↦ ContinuousLinearMap.apply ℝ (IteratedGradient E j) z)
-        (fun A B hAB ↦ ContinuousLinearMap.ext hAB) fun z ↦ ?_
-      exact ih.comm ((Wkp.hasWeakFDerivOn_iteratedGradient j g).hasWeakLineDerivOn z)
-        ((Wkp.hasWeakFDerivOn_iteratedGradient j f).hasWeakLineDerivOn z)
-
-/-- **Top weak derivative of a directional derivative.** Because weak derivatives commute, the
-highest weak derivative of `Wkp.lineDerivL v (j + 1) u` is obtained by evaluating the outermost
-direction slot of `Wkp.iteratedGradient (j + 1) u` at `v`. -/
-theorem Wkp.iteratedGradient_lineDerivL (v : E) (j : ℕ) (u : Wkp mu Omega p (j + 2)) :
-    Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u) =
-      (ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).compLp
-        (Wkp.iteratedGradient (j + 1) u) := by
-  have h1 : HasWeakLineDerivOn mu Omega
-      (Wkp.iteratedGradient j (Wkp.lowerOrder (j + 1) u))
-      (Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u)) v :=
-    Wkp.hasWeakLineDerivOn_iteratedGradient j (f := Wkp.lowerOrder (j + 1) u)
-      (by simpa only [Wkp.value_succ] using Wkp.hasWeakLineDerivOn_lineDerivL v (j + 1) u)
-  have h2 := (Wkp.hasWeakFDerivOn_iteratedGradient j u).hasWeakLineDerivOn v
-  apply Lp.ext
-  refine (h1.ae_eq h2).trans (Filter.EventuallyEq.symm ?_)
-  exact (ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).coeFn_compLp _
-
-/-- If the highest weak derivative of `u ∈ W^{j+2,p}(Ω)` vanishes, then so does the highest weak
-derivative of every directional derivative `Wkp.lineDerivL v (j + 1) u`. -/
-theorem Wkp.iteratedGradient_lineDerivL_eq_zero_of_eq_zero (v : E) {j : ℕ}
-    {u : Wkp mu Omega p (j + 2)} (hu : Wkp.iteratedGradient (j + 1) u = 0) :
-    Wkp.iteratedGradient j (Wkp.lineDerivL v (j + 1) u) = 0 := by
-  rw [Wkp.iteratedGradient_lineDerivL, hu]
-  exact ((ContinuousLinearMap.apply ℝ (IteratedGradient E j) v).compLpₗ p
-    (mu.restrict Omega)).map_zero
-
-/-- **Integration up to a constant on a preconnected domain.** If `Ω` is preconnected and the weak
-gradient of `u ∈ W^{1,p}(Ω)` agrees almost everywhere on `Ω` with the classical gradient `∇ q` of
-a function `q` that is `C¹` on `Ω`, then `u` agrees almost everywhere on `Ω` with `q + c` for some
-constant `c : ℝ`. Neither boundedness of `Ω` nor global `Lᵖ` integrability of `q` is needed. -/
-theorem W1p.exists_value_ae_eq_add_const_of_gradient_ae_eq
-    (hconn : IsPreconnected (Omega : Set E)) {u : W1p mu Omega p} {q : E → ℝ}
-    (hq : ContDiffOn ℝ 1 q Omega)
-    (hgrad : (W1p.gradient u : E → E) =ᵐ[mu.restrict Omega] ∇ q) :
-    ∃ c : ℝ, (W1p.value u : E → ℝ) =ᵐ[mu.restrict Omega] fun x ↦ q x + c := by
-  have hloc : ∃ c : ℝ, ∀ᵐ y ∂mu.restrict Omega, W1p.value u y - q y = c := by
-    refine hconn.exists_ae_eq_const_of_forall_nhds (HereditarilyLindelofSpace.isLindelof _)
-      fun x hx ↦ ?_
-    obtain ⟨R, hR, hxR⟩ := Metric.isOpen_iff.1 Omega.isOpen x hx
-    set r := R / 2
-    have hr : 0 < r := half_pos hR
-    let B : Opens E := ⟨ball x r, isOpen_ball⟩
-    have hKsub : closedBall x r ⊆ (Omega : Set E) :=
-      (closedBall_subset_ball (half_lt_self hR)).trans hxR
-    have hBO : B ≤ Omega := ball_subset_closedBall.trans hKsub
-    obtain ⟨v, hvval, hvgrad⟩ :=
-      W1p.exists_value_gradient_ae_eq_of_contDiffOn_of_isCompact (mu := mu) (Omega := B) (p := p)
-        Omega.isOpen hq (isCompact_closedBall x r) ball_subset_closedBall hKsub
-    have hdiff_grad : W1p.gradient (W1p.restrictL hBO u - v) = 0 := by
-      rw [W1p.gradient_sub, sub_eq_zero]
-      apply Lp.ext
-      exact (W1p.gradient_restrictL_ae hBO u).trans <|
-        Filter.EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset hBO hgrad) hvgrad.symm
-    obtain ⟨c, hc⟩ := W1p.exists_value_ae_eq_const_of_gradient_eq_zero
-      (Omega := B) (convex_ball x r).isPreconnected hdiff_grad
-    refine ⟨c, ball x r, ball_mem_nhds x hr, ?_⟩
-    filter_upwards [hc, W1p.value_sub_ae (W1p.restrictL hBO u) v,
-      W1p.value_restrictL_ae hBO u, hvval] with y hy hsub huB hvB
-    rw [← hy, hsub, Pi.sub_apply, huB, hvB]
-  obtain ⟨c, hc⟩ := hloc
-  refine ⟨c, hc.mono fun x hx ↦ ?_⟩
-  linarith
-
-end InnerProductSpace
+open Filter MeasureTheory Metric Set TopologicalSpace
+open scoped ContDiff ENNReal Gradient InnerProductSpace Topology
 
 /-! ### Polynomial kernel of the top weak derivative on `EuclideanSpace ℝ ι` -/
 

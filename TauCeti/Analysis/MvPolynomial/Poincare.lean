@@ -77,23 +77,23 @@ variable {ι : Type*} [Fintype ι]
 
 /-- Evaluating a real multivariate polynomial on `EuclideanSpace ℝ ι` is real-analytic on the whole
 space. -/
-theorem analyticOnNhd_polynomialEvalₗ (p : MvPolynomial ι ℝ) :
+theorem _root_.MvPolynomial.analyticOnNhd_polynomialEvalₗ (p : MvPolynomial ι ℝ) :
     AnalyticOnNhd ℝ (polynomialEvalₗ ι p) Set.univ := by
   rw [polynomialEvalₗ_eq_fun]
   exact AnalyticOnNhd.eval_continuousLinearMap
     (EuclideanSpace.equiv ι ℝ).toContinuousLinearMap p
 
 /-- Evaluating a real multivariate polynomial on `EuclideanSpace ℝ ι` is `C^n` for every `n`. -/
-theorem contDiff_polynomialEvalₗ {n : WithTop ℕ∞} (p : MvPolynomial ι ℝ) :
+theorem _root_.MvPolynomial.contDiff_polynomialEvalₗ {n : WithTop ℕ∞} (p : MvPolynomial ι ℝ) :
     ContDiff ℝ n (polynomialEvalₗ ι p) :=
-  (analyticOnNhd_polynomialEvalₗ p).contDiff.of_le le_top
+  p.analyticOnNhd_polynomialEvalₗ.contDiff.of_le le_top
 
 /-- Every polynomial function in `polynomialsDegLE ι m` is real-analytic on `EuclideanSpace ℝ ι`. -/
 theorem analyticOnNhd_of_mem_polynomialsDegLE {m : ℕ} {f : EuclideanSpace ℝ ι → ℝ}
     (hf : f ∈ polynomialsDegLE ι m) :
     AnalyticOnNhd ℝ f Set.univ := by
   obtain ⟨p, -, rfl⟩ := (mem_polynomialsDegLE_iff ι).mp hf
-  exact analyticOnNhd_polynomialEvalₗ p
+  exact p.analyticOnNhd_polynomialEvalₗ
 
 /-- Every polynomial function in `polynomialsDegLE ι m` is `C^n` for every `n`. -/
 theorem contDiff_of_mem_polynomialsDegLE {m : ℕ} {n : WithTop ℕ∞} {f : EuclideanSpace ℝ ι → ℝ}
@@ -118,8 +118,8 @@ theorem polynomialEvalₗ_eq_of_eqOn_isOpen {p q : MvPolynomial ι ℝ}
   let := Fintype.ofFinite ι
   obtain ⟨z₀, hz₀⟩ := hs_ne
   apply polynomialEvalₗ_injective ι
-  exact (analyticOnNhd_polynomialEvalₗ p).eq_of_eventuallyEq
-    (analyticOnNhd_polynomialEvalₗ q) (heq.eventuallyEq_of_mem (hs.mem_nhds hz₀))
+  exact p.analyticOnNhd_polynomialEvalₗ.eq_of_eventuallyEq
+    q.analyticOnNhd_polynomialEvalₗ (heq.eventuallyEq_of_mem (hs.mem_nhds hz₀))
 
 /-- Two polynomial functions agreeing on a nonempty open subset of `EuclideanSpace ℝ ι` are equal
 everywhere. -/
@@ -156,7 +156,7 @@ section Derivatives
 /-- Differentiating `polynomialEvalₗ ι p` in the `i`-th standard coordinate direction evaluates
 `pderiv i p`. -/
 @[simp]
-theorem fderiv_polynomialEvalₗ_single {ι : Type*} [Finite ι] [DecidableEq ι]
+theorem _root_.MvPolynomial.fderiv_polynomialEvalₗ_single {ι : Type*} [Finite ι] [DecidableEq ι]
     (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) (i : ι) :
     fderiv ℝ (polynomialEvalₗ ι p) x (EuclideanSpace.single i 1) =
       polynomialEvalₗ ι (pderiv i p) x := by
@@ -165,21 +165,21 @@ theorem fderiv_polynomialEvalₗ_single {ι : Type*} [Finite ι] [DecidableEq ι
 
 /-- The directional Fréchet derivative of `polynomialEvalₗ ι p` at `x` along `v` is the inner
 product of the evaluated formal gradient with `v`. -/
-theorem fderiv_polynomialEvalₗ_apply {ι : Type*} [Fintype ι] (p : MvPolynomial ι ℝ)
-    (x v : EuclideanSpace ℝ ι) :
+theorem _root_.MvPolynomial.fderiv_polynomialEvalₗ_apply {ι : Type*} [Fintype ι]
+    (p : MvPolynomial ι ℝ) (x v : EuclideanSpace ℝ ι) :
     fderiv ℝ (polynomialEvalₗ ι p) x v = ∑ i, polynomialEvalₗ ι (pderiv i p) x * v i := by
   rw [polynomialEvalₗ_eq_fun]
   simpa only [polynomialEvalₗ_apply] using p.fderiv_eval_euclidean_apply x v
 
 /-- The Euclidean gradient of `polynomialEvalₗ ι p` at `x` expands in the standard basis with
 coefficients `polynomialEvalₗ ι (pderiv i p) x`. -/
-theorem gradient_polynomialEvalₗ {ι : Type*} [Fintype ι] [DecidableEq ι] (p : MvPolynomial ι ℝ)
-    (x : EuclideanSpace ℝ ι) :
+theorem _root_.MvPolynomial.gradient_polynomialEvalₗ {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (p : MvPolynomial ι ℝ) (x : EuclideanSpace ℝ ι) :
     ∇ (polynomialEvalₗ ι p) x =
       ∑ i, polynomialEvalₗ ι (pderiv i p) x • EuclideanSpace.single i 1 := by
   apply (InnerProductSpace.toDual ℝ (EuclideanSpace ℝ ι)).injective
   ext v
-  simp [fderiv_polynomialEvalₗ_apply, EuclideanSpace.inner_single_left, mul_comm]
+  simp [p.fderiv_polynomialEvalₗ_apply, EuclideanSpace.inner_single_left, mul_comm]
 
 /-- Differentiating a polynomial function of degree at most `m` in a fixed direction produces a
 polynomial function of degree at most `m - 1`. -/
@@ -191,7 +191,7 @@ theorem fderiv_apply_mem_polynomialsDegLE {ι : Type*} [Finite ι] {m : ℕ}
   have heq : (fun x ↦ fderiv ℝ (polynomialEvalₗ ι p) x v) =
       ∑ i, v i • polynomialEvalₗ ι (pderiv i p) := by
     ext x
-    simp [fderiv_polynomialEvalₗ_apply, mul_comm]
+    simp [p.fderiv_polynomialEvalₗ_apply, mul_comm]
   rw [heq]
   refine Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ (v i) ?_
   rw [polynomialEvalₗ_mem_polynomialsDegLE_iff]
@@ -245,12 +245,12 @@ theorem exists_mem_polynomialsDegLE_fderiv_single_eq {ι : Type*} [Finite ι] [D
     intro i j
     apply polynomialEvalₗ_injective ι
     ext x
-    simpa only [← fderiv_polynomialEvalₗ_single, hPeval] using hclosed i j x
+    simpa only [← MvPolynomial.fderiv_polynomialEvalₗ_single, hPeval] using hclosed i j x
   obtain ⟨Q, hQdeg, hQp⟩ := exists_pderiv_eq P hPmem hPclosed
   refine ⟨polynomialEvalₗ ι Q, ?_, fun i x ↦ ?_⟩
   · rw [polynomialEvalₗ_mem_polynomialsDegLE_iff]
     exact (mem_restrictTotalDegree ι (m + 1) Q).mp hQdeg
-  · rw [fderiv_polynomialEvalₗ_single, hQp i, hPeval i]
+  · rw [Q.fderiv_polynomialEvalₗ_single, hQp i, hPeval i]
 
 /-- A closed family in `polynomialsDegLE ι m` admits a unique potential in
 `polynomialsDegLE ι (m + 1)` with any prescribed value at `0`. -/
@@ -279,7 +279,7 @@ theorem existsUnique_mem_polynomialsDegLE_fderiv_single_eq {ι : Type*} [Finite 
   · intro i
     apply polynomialEvalₗ_injective ι
     ext x
-    simpa only [← fderiv_polynomialEvalₗ_single, hQ, hQ', hqf i x] using hq'f i x
+    simpa only [← MvPolynomial.fderiv_polynomialEvalₗ_single, hQ, hQ', hqf i x] using hq'f i x
   · have h0 : polynomialEvalₗ ι Q' 0 = polynomialEvalₗ ι Q 0 := by rw [hQ', hQ, hq'0, hq0]
     simpa only [polynomialEvalₗ_apply, PiLp.zero_apply, ← Pi.zero_def, eval_zero] using h0
 
@@ -296,10 +296,10 @@ theorem exists_mem_polynomialsDegLE_gradient_eq {ι : Type*} [Fintype ι] [Decid
   obtain ⟨q, hqdeg, hqf⟩ := exists_mem_polynomialsDegLE_fderiv_single_eq hp hclosed
   obtain ⟨Q, -, rfl⟩ := (mem_polynomialsDegLE_iff ι).mp hqdeg
   have hQp : ∀ i x, polynomialEvalₗ ι (pderiv i Q) x = p i x := fun i x ↦ by
-    rw [← fderiv_polynomialEvalₗ_single, hqf i x]
+    rw [← Q.fderiv_polynomialEvalₗ_single, hqf i x]
   refine ⟨polynomialEvalₗ ι Q, hqdeg, hqf, fun x v ↦ ?_, fun x ↦ ?_⟩
-  · simp_rw [fderiv_polynomialEvalₗ_apply, hQp]
-  · simp_rw [gradient_polynomialEvalₗ, hQp]
+  · simp_rw [Q.fderiv_polynomialEvalₗ_apply, hQp]
+  · simp_rw [Q.gradient_polynomialEvalₗ, hQp]
 
 end Poincare
 
