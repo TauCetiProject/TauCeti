@@ -247,6 +247,31 @@ lemma basedCubeToSphere_zero_apply (y : I^(Fin 0)) :
   (eq_sphereBasepoint_or_eq_sphereAntiBasepoint _).resolve_left fun h ↦ by
     rwa [basedCubeToSphere_eq_sphereBasepoint_iff, Cube.boundary_eq_empty] at h
 
+/-- Reindexing `TopCat.sphere a` to `TopCat.sphere b` along an equality `h : a = b` of dimensions,
+via the coordinate permutation `finCongr` on `EuclideanSpace ℝ (Fin (· + 1))`. -/
+def sphereCongrHomeomorph {a b : ℕ} (h : a = b) :
+    TopCat.sphere.{u} a ≃ₜ TopCat.sphere.{u} b :=
+  Homeomorph.ulift.trans <|
+    (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
+      (finCongr (congrArg (· + 1) h))).toHomeomorph.subtype fun _ ↦ by simp).trans
+      Homeomorph.ulift.symm)
+
+@[simp]
+lemma sphereCongrHomeomorph_rfl (a : ℕ) :
+    sphereCongrHomeomorph (rfl : a = a) = Homeomorph.refl (TopCat.sphere.{u} a) := by
+  ext s; refine ULift.ext (Subtype.ext ?_); ext i; rfl
+
+@[simp]
+lemma sphereCongrHomeomorph_sphereBasepoint {a b : ℕ} (h : a = b) :
+    sphereCongrHomeomorph.{u} h (sphereBasepoint.{u} a) = sphereBasepoint.{u} b := by
+  subst h; simp
+
+@[simp]
+lemma sphereCongrHomeomorph_basedCubeToSphere {a b : ℕ} (h : a = b) (y : I^(Fin a)) :
+    sphereCongrHomeomorph.{u} h (basedCubeToSphere.{u} a y) =
+      basedCubeToSphere.{u} b (y ∘ Fin.cast h.symm) := by
+  subst h; simp
+
 /-- The based disk-to-sphere collapse map `TopCat.disk n ⟶ TopCat.sphere n`, defined as the
 composite of `TauCeti.diskHomeomorphCube n` and `TauCeti.basedCubeToSphere n`. -/
 def basedDiskToSphere (n : ℕ) : TopCat.disk.{u} n ⟶ TopCat.sphere.{u} n :=
@@ -401,18 +426,17 @@ instance t2Space_diskBoundaryPairQuotient (n : ℕ) :
     T2Space (diskBoundaryPair.{u} n).ordinaryPairQuotient :=
   (diskQuotientSphereHomeomorph.{u} n).symm.t2Space
 
+-- Not `@[simp]`: `TauCeti.diskBoundaryPair_fst` simplifies the implicit domain of
+-- `ConcreteCategory.hom`, so `simpNF` rejects `@[simp]` on this lemma.
 lemma diskQuotientSphereHomeomorph_π (n : ℕ) (z : TopCat.disk.{u} n) :
     diskQuotientSphereHomeomorph.{u} n ((diskBoundaryPair.{u} n).ordinaryPairQuotientπ z) =
-      basedDiskToSphere.{u} n z := by
-  have hy : TopPair.Hom.fst (diskBoundaryPairIsoCube.{u} n).hom z =
-      ULift.up (diskHomeomorphCube.{u} n z) :=
-    ULift.ext ((congrArg
-      (fun f : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n ↦ (TopPair.Hom.fst f z).down)
-      (diskBoundaryPairIsoCube_hom n)).trans (diskBoundaryPairToCube_fst_apply_down z))
-  exact (congrArg (cubeQuotientSphereHomeomorph.{u} n)
-    ((TopPair.ordinaryPairQuotientHomeomorph_π (diskBoundaryPairIsoCube.{u} n) z).trans
-      (congrArg _ hy))).trans
-    (cubeQuotientSphereHomeomorph_π n (ULift.up (diskHomeomorphCube.{u} n z)))
+      basedDiskToSphere.{u} n z :=
+  (congrArg (cubeQuotientSphereHomeomorph.{u} n) <|
+    (TopPair.ordinaryPairQuotientHomeomorph_π (diskBoundaryPairIsoCube.{u} n) z).trans <|
+      congrArg _ <| ULift.ext <| (congrArg
+        (fun f : diskBoundaryPair.{u} n ⟶ cubeBoundaryPair.{u} n ↦ (TopPair.Hom.fst f z).down)
+        (diskBoundaryPairIsoCube_hom n)).trans (diskBoundaryPairToCube_fst_apply_down z)).trans
+    (cubeQuotientSphereHomeomorph_π n _)
 
 @[simp]
 lemma diskQuotientSphereHomeomorph_basepoint (n : ℕ) :
@@ -441,6 +465,19 @@ with `TauCeti.diskQuotientSphereHomeomorph` and `TauCeti.cubeQuotientSphereHomeo
 lemma ordinaryPairQuotientHomeomorph_diskBoundaryPairIsoCube_trans (n : ℕ) :
     (TopPair.ordinaryPairQuotientHomeomorph (diskBoundaryPairIsoCube.{u} n)).trans
       (cubeQuotientSphereHomeomorph.{u} n) = diskQuotientSphereHomeomorph.{u} n := (rfl)
+
+@[simp]
+lemma ordinaryPairQuotientHomeomorph_cubeBoundaryPairProdIso_π
+    (m n : ℕ) (x : I^(Fin m)) (y : I^(Fin n)) :
+    TopPair.ordinaryPairQuotientHomeomorph (cubeBoundaryPairProdIso.{u} m n)
+      ((TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+        ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ univ ∪
+          univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n)))).ordinaryPairQuotientπ
+        (ULift.up x, ULift.up y)) =
+      (cubeBoundaryPair.{u} (m + n)).ordinaryPairQuotientπ (ULift.up (Fin.append x y)) :=
+  (TopPair.ordinaryPairQuotientHomeomorph_π (cubeBoundaryPairProdIso.{u} m n) _).trans <|
+    congrArg (cubeBoundaryPair.{u} (m + n)).ordinaryPairQuotientπ
+      (cubeBoundaryPairProdIso_hom_fst_apply m n (ULift.up x, ULift.up y))
 
 end TauCeti
 

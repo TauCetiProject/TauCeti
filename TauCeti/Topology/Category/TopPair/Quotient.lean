@@ -374,12 +374,12 @@ private lemma preimage_insert_basepoint_image_π (P : TopPair.{u}) {U : Set P.fs
     fun ⟨y, hy, hyx⟩ ↦ ((P.ordinaryPairQuotientπ_eq_iff y x).1 hyx).elim (· ▸ hy)
       fun ⟨_, hxB⟩ ↦ hU hxB, fun hx ↦ Or.inr ⟨x, hx, rfl⟩⟩
 
-private lemma separated_basepoint_π (P : TopPair.{u}) [T3Space P.fst]
-    (hP : IsClosed (Set.range P.map)) {x : P.fst} (hx : x ∉ Set.range P.map) :
+private lemma separated_basepoint_π (P : TopPair.{u}) {x : P.fst}
+    (hsep : Disjoint (𝓝ˢ (Set.range P.map)) (𝓝 x)) :
     ∃ W₁ W₂ : Set P.ordinaryPairQuotient, IsOpen W₁ ∧ IsOpen W₂ ∧
       P.ordinaryPairQuotientBasepoint ∈ W₁ ∧ P.ordinaryPairQuotientπ x ∈ W₂ ∧ Disjoint W₁ W₂ := by
   obtain ⟨U, ⟨hUo, hBU⟩, V, ⟨hxV, hVo⟩, hUV⟩ :=
-    ((hasBasis_nhdsSet _).disjoint_iff (nhds_basis_opens x)).1 (RegularSpace.regular hP hx)
+    ((hasBasis_nhdsSet _).disjoint_iff (nhds_basis_opens x)).1 hsep
   refine ⟨insert P.ordinaryPairQuotientBasepoint (P.ordinaryPairQuotientπ '' U),
     P.ordinaryPairQuotientπ '' V, ?_, ?_, Or.inl rfl, ⟨x, hxV, rfl⟩, ?_⟩
   · rwa [P.isOpen_ordinaryPairQuotient_iff, P.preimage_insert_basepoint_image_π hBU]
@@ -390,18 +390,19 @@ private lemma separated_basepoint_π (P : TopPair.{u}) [T3Space P.fst]
     exact Set.disjoint_left.1 hUV
       ((Set.ext_iff.1 (P.preimage_insert_basepoint_image_π hBU) v).1 hz₁) hv
 
-/-- The pointed quotient of a pair with `T₃` ambient space and closed subspace is Hausdorff. -/
-lemma t2Space_ordinaryPairQuotient_of_isClosed (P : TopPair.{u}) [T3Space P.fst]
-    (hP : IsClosed (Set.range P.map)) : T2Space P.ordinaryPairQuotient := ⟨fun {z₁ z₂} hne ↦ by
+private lemma t2Space_ordinaryPairQuotient_of_disjoint (P : TopPair.{u}) [T2Space P.fst]
+    (hP : IsClosed (Set.range P.map))
+    (hsep : ∀ x ∉ Set.range P.map, Disjoint (𝓝ˢ (Set.range P.map)) (𝓝 x)) :
+    T2Space P.ordinaryPairQuotient := ⟨fun {z₁ z₂} hne ↦ by
   by_cases hz₁ : z₁ = P.ordinaryPairQuotientBasepoint
   · obtain ⟨x, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₂).resolve_right
       (hz₁ ▸ hne.symm)
-    exact hz₁ ▸ P.separated_basepoint_π hP fun hx ↦
-      hne (hz₁.trans ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx).symm)
+    exact hz₁ ▸ P.separated_basepoint_π (hsep x fun hx ↦
+      hne (hz₁.trans ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx).symm))
   by_cases hz₂ : z₂ = P.ordinaryPairQuotientBasepoint
   · obtain ⟨x, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₁).resolve_right hz₁
-    obtain ⟨W₁, W₂, h₁, h₂, hb, hx, hd⟩ := P.separated_basepoint_π hP
-      fun hx ↦ hz₁ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx)
+    obtain ⟨W₁, W₂, h₁, h₂, hb, hx, hd⟩ := P.separated_basepoint_π (hsep x fun hx ↦
+      hz₁ ((P.ordinaryPairQuotientπ_eq_basepoint_iff x).2 hx))
     exact ⟨W₂, W₁, h₂, h₁, hx, hz₂ ▸ hb, hd.symm⟩
   obtain ⟨x₁, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₁).resolve_right hz₁
   obtain ⟨x₂, rfl⟩ := (P.exists_ordinaryPairQuotientπ_or_eq_basepoint z₂).resolve_right hz₂
@@ -421,11 +422,17 @@ lemma t2Space_ordinaryPairQuotient_of_isClosed (P : TopPair.{u}) [T3Space P.fst]
     exact Set.disjoint_left.1 hd hu.1
       ((Set.ext_iff.1 (P.preimage_image_π_of_disjoint (hdisj U₂)) u).1 hz₂).1⟩
 
-/-- The pointed quotient of a pair with `T₃` ambient space and compact subspace is Hausdorff,
+/-- The pointed quotient of a pair with `T₃` ambient space and closed subspace is Hausdorff. -/
+lemma t2Space_ordinaryPairQuotient_of_isClosed (P : TopPair.{u}) [T3Space P.fst]
+    (hP : IsClosed (Set.range P.map)) : T2Space P.ordinaryPairQuotient :=
+  P.t2Space_ordinaryPairQuotient_of_disjoint hP fun _ hx ↦ RegularSpace.regular hP hx
+
+/-- The pointed quotient of a pair with `T₂` ambient space and compact subspace is Hausdorff,
 including when the subspace is empty. -/
-instance t2Space_ordinaryPairQuotient (P : TopPair.{u}) [T3Space P.fst] [CompactSpace P.snd] :
+instance t2Space_ordinaryPairQuotient (P : TopPair.{u}) [T2Space P.fst] [CompactSpace P.snd] :
     T2Space P.ordinaryPairQuotient :=
-  P.t2Space_ordinaryPairQuotient_of_isClosed (isCompact_range P.map.hom.continuous).isClosed
+  have hK : IsCompact (Set.range P.map) := isCompact_range P.map.hom.continuous
+  P.t2Space_ordinaryPairQuotient_of_disjoint hK.isClosed fun _ hx ↦ hK.disjoint_nhdsSet_nhds hx
 
 /-- Collapsing a singleton `{x₀}` in `X` together with the added basepoint recovers `X`,
 with no separation assumption on `X`. -/

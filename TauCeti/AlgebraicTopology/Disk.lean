@@ -357,6 +357,30 @@ abbrev cubeBoundaryPair : TopPair.{u} :=
   TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin n))))
     (ULift.down ⁻¹' Cube.boundary (Fin n))
 
+/-- The isomorphism of pairs `(Iᵐ × Iⁿ, ∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ) ≅ (Iᵐ⁺ⁿ, ∂Iᵐ⁺ⁿ)` induced by
+`Fin.appendHomeomorph`. -/
+def cubeBoundaryPairProdIso (m n : ℕ) :
+    TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+      ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ Set.univ ∪
+        Set.univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n))) ≅
+      cubeBoundaryPair.{u} (m + n) :=
+  TopPair.ofSubsetIso
+    (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
+    (Y := TopCat.of (ULift.{u} (I^(Fin (m + n)))))
+    ((Homeomorph.ulift.prodCongr Homeomorph.ulift).trans
+      ((Fin.appendHomeomorph (X := I) m n).trans Homeomorph.ulift.symm))
+    fun ⟨_, _⟩ ↦
+      ⟨fun h ↦ Cube.append_mem_boundary_iff.2 (h.imp And.left And.right),
+       fun h ↦ (Cube.append_mem_boundary_iff.1 h).imp (⟨·, trivial⟩) (⟨trivial, ·⟩)⟩
+
+@[simp]
+lemma cubeBoundaryPairProdIso_hom_fst_apply (m n : ℕ)
+    (p : ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))) :
+    TopPair.Hom.fst (cubeBoundaryPairProdIso.{u} m n).hom p =
+      ULift.up (Fin.append p.1.down p.2.down) := by
+  rw [cubeBoundaryPairProdIso, TopPair.ofSubsetIso_hom]
+  apply TopPair.ofSubsetMap_fst_apply
+
 /-- A singular `m`-cube of the ambient space of a pair `P` sending the boundary of the cube into
 the subspace, as a map of pairs `(Iᵐ, ∂Iᵐ) ⟶ P`. -/
 def cubeBoundaryPairHom {P : TopPair.{u}} {m : ℕ} (c : C(I^(Fin m), P.fst))

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.AlgebraicTopology.Sphere.BasedQuotient
 public import TauCeti.Topology.ReducedSuspension
-import Mathlib.Topology.Homeomorph.Lemmas
 
 /-!
 # Smash products and reduced suspensions of spheres
@@ -112,67 +111,7 @@ end SphereZeroUnit
 
 end SmashProduct
 
-/-- Reindexing `TopCat.sphere a` to `TopCat.sphere b` along an equality `h : a = b` of dimensions,
-via the coordinate permutation `finCongr` on `EuclideanSpace ℝ (Fin (· + 1))`. -/
-def sphereCongrHomeomorph {a b : ℕ} (h : a = b) :
-    TopCat.sphere.{u} a ≃ₜ TopCat.sphere.{u} b :=
-  Homeomorph.ulift.trans <|
-    (((LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
-      (finCongr (congrArg (· + 1) h))).toHomeomorph.subtype fun _ ↦ by simp).trans
-      Homeomorph.ulift.symm)
-
-@[simp]
-lemma sphereCongrHomeomorph_rfl (a : ℕ) :
-    sphereCongrHomeomorph (rfl : a = a) = Homeomorph.refl (TopCat.sphere.{u} a) := by
-  ext s; refine ULift.ext (Subtype.ext ?_); ext i; rfl
-
-@[simp]
-lemma sphereCongrHomeomorph_sphereBasepoint {a b : ℕ} (h : a = b) :
-    sphereCongrHomeomorph.{u} h (sphereBasepoint.{u} a) = sphereBasepoint.{u} b := by
-  subst h; simp
-
-@[simp]
-lemma sphereCongrHomeomorph_basedCubeToSphere {a b : ℕ} (h : a = b) (y : I^(Fin a)) :
-    sphereCongrHomeomorph.{u} h (basedCubeToSphere.{u} a y) =
-      basedCubeToSphere.{u} b (y ∘ Fin.cast h.symm) := by
-  subst h; simp
-
 section SmashSphere
-
-/-- The isomorphism of pairs `(Iᵐ × Iⁿ, ∂Iᵐ × Iⁿ ∪ Iᵐ × ∂Iⁿ) ≅ (Iᵐ⁺ⁿ, ∂Iᵐ⁺ⁿ)` induced by
-`Fin.appendHomeomorph`. -/
-def cubeBoundaryPairProdIso (m n : ℕ) :
-    TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
-      ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ univ ∪
-        univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n))) ≅
-      cubeBoundaryPair.{u} (m + n) :=
-  TopPair.ofSubsetIso
-    (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
-    (Y := TopCat.of (ULift.{u} (I^(Fin (m + n)))))
-    ((Homeomorph.ulift.prodCongr Homeomorph.ulift).trans
-      ((Fin.appendHomeomorph (X := I) m n).trans Homeomorph.ulift.symm))
-    fun ⟨_, _⟩ ↦
-      ⟨fun h ↦ Cube.append_mem_boundary_iff.2 (h.imp And.left And.right),
-       fun h ↦ (Cube.append_mem_boundary_iff.1 h).imp (⟨·, trivial⟩) (⟨trivial, ·⟩)⟩
-
-@[simp]
-lemma ordinaryPairQuotientHomeomorph_cubeBoundaryPairProdIso_π
-    (m n : ℕ) (x : I^(Fin m)) (y : I^(Fin n)) :
-    TopPair.ordinaryPairQuotientHomeomorph (cubeBoundaryPairProdIso.{u} m n)
-      ((TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
-        ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ univ ∪
-          univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n)))).ordinaryPairQuotientπ
-        (ULift.up x, ULift.up y)) =
-      (cubeBoundaryPair.{u} (m + n)).ordinaryPairQuotientπ (ULift.up (Fin.append x y)) := by
-  let P := TopPair.ofSubset (X := TopCat.of (ULift.{u} (I^(Fin m)) × ULift.{u} (I^(Fin n))))
-    ((ULift.down ⁻¹' Cube.boundary (Fin m)) ×ˢ univ ∪
-      univ ×ˢ (ULift.down ⁻¹' Cube.boundary (Fin n)))
-  exact (TopPair.ordinaryPairQuotientHomeomorph_π (cubeBoundaryPairProdIso.{u} m n) _).trans <|
-    congrArg (cubeBoundaryPair.{u} (m + n)).ordinaryPairQuotientπ <|
-      (congrArg (fun f : P ⟶ cubeBoundaryPair.{u} (m + n) ↦
-          TopPair.Hom.fst f (ULift.up x, ULift.up y)) (TopPair.ofSubsetIso_hom _ _)).trans
-        (congrArg (fun g : P.fst ⟶ (cubeBoundaryPair.{u} (m + n)).fst ↦ g (ULift.up x, ULift.up y))
-          (TopPair.ofSubsetMap_fst _ _))
 
 /-- **The smash product of spheres is a sphere**: `Sᵐ ∧ Sⁿ ≃ₜ Sᵐ⁺ⁿ` for all `m, n ≥ 0`, with the
 first `m` cube coordinates followed by the last `n` cube coordinates. -/
@@ -195,8 +134,8 @@ lemma smashSphereHomeomorph_basepoint (m n : ℕ) :
       sphereBasepoint.{u} (m + n) := by
   dsimp only [smashSphereHomeomorph, Homeomorph.trans_apply]
   rw [SmashProduct.congrHomeomorph_basepoint,
-    TopPair.ordinaryPairQuotientProdHomeomorph_symm_basepoint,
-    TopPair.ordinaryPairQuotientHomeomorph_basepoint, cubeQuotientSphereHomeomorph_basepoint]
+    TopPair.ordinaryPairQuotientProdHomeomorph_symm_basepoint]
+  simp
 
 /-- **Cube-concatenation formula for `TauCeti.smashSphereHomeomorph`**: the composite
 `Iᵐ × Iⁿ → Sᵐ ∧ Sⁿ → Sᵐ⁺ⁿ` is `TauCeti.basedCubeToSphere (m + n)` composed with `Fin.append`. -/
@@ -250,25 +189,19 @@ lemma smashSphereHomeomorph_zero_left (n : ℕ) :
     (smashSphereHomeomorph.{u} 0 n).trans (sphereCongrHomeomorph (Nat.zero_add n)) =
       SmashProduct.sphereZeroLeftHomeomorph (sphereBasepoint.{u} n) := by
   refine Homeomorph.ext fun z ↦ congrFun (smashSphere_ext (by simp) fun x y ↦ ?_) z
-  rw [Subsingleton.elim x Fin.elim0, Homeomorph.trans_apply,
-    smashSphereHomeomorph_mk_basedCubeToSphere, sphereCongrHomeomorph_basedCubeToSphere,
-    basedCubeToSphere_zero_apply, SmashProduct.sphereZeroLeftHomeomorph_mk_antiBasepoint,
-    Fin.elim0_append]
-  exact congrArg (basedCubeToSphere.{u} n) (funext fun _ ↦ rfl)
+  rw [Homeomorph.trans_apply, smashSphereHomeomorph_mk_basedCubeToSphere,
+    Subsingleton.elim x Fin.elim0]
+  simp [Fin.elim0_append]; rfl
 
 /-- **Right `S⁰` unit coherence for `TauCeti.smashSphereHomeomorph`**: `Sᵐ ∧ S⁰ ≃ₜ Sᵐ` agrees
 with `TauCeti.SmashProduct.sphereZeroRightHomeomorph`. -/
 lemma smashSphereHomeomorph_zero_right (m : ℕ) :
     smashSphereHomeomorph.{u} m 0 =
       SmashProduct.sphereZeroRightHomeomorph (sphereBasepoint.{u} m) := by
-  refine Homeomorph.ext fun z ↦ congrFun (smashSphere_ext
-    ((smashSphereHomeomorph_basepoint m 0).trans
-      (SmashProduct.sphereZeroRightHomeomorph_basepoint (sphereBasepoint.{u} m)).symm)
-    fun x y ↦ ?_) z
-  rw [Subsingleton.elim y Fin.elim0, smashSphereHomeomorph_mk_basedCubeToSphere,
-    basedCubeToSphere_zero_apply, SmashProduct.sphereZeroRightHomeomorph_mk_antiBasepoint,
-    Fin.append_elim0]
-  exact congrArg (basedCubeToSphere.{u} m) (funext fun _ ↦ rfl)
+  refine Homeomorph.ext fun z ↦ congrFun
+    (smashSphere_ext (by simpa using smashSphereHomeomorph_basepoint m 0) fun x y ↦ ?_) z
+  rw [smashSphereHomeomorph_mk_basedCubeToSphere, Subsingleton.elim y Fin.elim0]
+  simp [Fin.append_elim0]
 
 /-- **Associativity coherence for `TauCeti.smashSphereHomeomorph`**: the two ways of identifying
 `(Sᵐ ∧ Sⁿ) ∧ Sᵏ` with `Sᵐ⁺⁽ⁿ⁺ᵏ⁾` via `TauCeti.SmashProduct.assoc` and
@@ -289,11 +222,7 @@ lemma smashSphereHomeomorph_assoc (m n k : ℕ) :
         (smashSphereHomeomorph.{u} m (n + k))) := by
   refine Homeomorph.ext <| SmashProduct.ind <| SmashProduct.ind fun u v w ↦ ?_
   by_cases h : (u = sphereBasepoint.{u} m ∨ v = sphereBasepoint.{u} n) ∨ w = sphereBasepoint.{u} k
-  · have hbase : SmashProduct.mk (SmashProduct.basepoint _ _) (sphereBasepoint.{u} k)
-        (SmashProduct.mk (sphereBasepoint.{u} m) (sphereBasepoint.{u} n) (u, v), w) =
-        SmashProduct.basepoint _ _ := by
-      rcases h with (rfl | rfl) | rfl <;> simp
-    rw [hbase]; simp
+  · rcases h with (rfl | rfl) | rfl <;> simp
   · push Not at h
     obtain ⟨x', rfl⟩ := exists_basedCubeToSphere_eq_of_ne h.1.1
     obtain ⟨y', rfl⟩ := exists_basedCubeToSphere_eq_of_ne h.1.2
@@ -327,11 +256,9 @@ lemma intervalQuotientSphereOneHomeomorph_π (t : I) :
       (intervalEndpointPair.{u}.ordinaryPairQuotientπ (ULift.up t)) =
       basedCubeToSphere.{u} 1 (fun _ ↦ t) := by
   have h₁ : TopPair.Hom.fst intervalEndpointPairIsoCubeOne.{u}.hom (ULift.up t) =
-      ULift.up fun _ ↦ t :=
-    (congrArg (fun f : intervalEndpointPair.{u} ⟶ cubeBoundaryPair.{u} 1 ↦
-        TopPair.Hom.fst f (ULift.up t)) (TopPair.ofSubsetIso_hom _ _)).trans
-      (congrArg (fun g : intervalEndpointPair.{u}.fst ⟶ (cubeBoundaryPair.{u} 1).fst ↦
-        g (ULift.up t)) (TopPair.ofSubsetMap_fst _ _))
+      ULift.up fun _ ↦ t := by
+    rw [intervalEndpointPairIsoCubeOne, TopPair.ofSubsetIso_hom]
+    apply TopPair.ofSubsetMap_fst_apply
   exact (congrArg (cubeQuotientSphereHomeomorph.{u} 1)
     ((TopPair.ordinaryPairQuotientHomeomorph_π intervalEndpointPairIsoCubeOne.{u}
       (ULift.up t)).trans (congrArg _ h₁))).trans (cubeQuotientSphereHomeomorph_π 1 _)

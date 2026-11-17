@@ -191,10 +191,6 @@ instance subsingleton_right [Subsingleton Y] : Subsingleton (SmashProduct x₀ y
   subsingleton_of_forall_eq (basepoint x₀ y₀)
     (ind fun x y ↦ Subsingleton.elim y y₀ ▸ mk_basepoint_right x)
 
-instance [PathConnectedSpace X] [PathConnectedSpace Y] :
-    PathConnectedSpace (SmashProduct x₀ y₀) :=
-  (isQuotientMap_mk x₀ y₀).surjective.pathConnectedSpace (mk x₀ y₀).continuous
-
 end Basic
 
 section Functoriality
@@ -291,6 +287,20 @@ lemma comm_symm (x₀ : X) (y₀ : Y) : (comm x₀ y₀).symm = comm y₀ x₀ :
 @[simp]
 lemma comm_comm_apply (w : SmashProduct x₀ y₀) : comm y₀ x₀ (comm x₀ y₀ w) = w :=
   (comm x₀ y₀).symm_apply_apply w
+
+instance pathConnectedSpace_left [PathConnectedSpace X] :
+    PathConnectedSpace (SmashProduct x₀ y₀) where
+  nonempty := ⟨basepoint x₀ y₀⟩
+  joined :=
+    have hbase : ∀ z, Joined (basepoint x₀ y₀) z := ind fun x y ↦ by
+      simpa only [mk_basepoint_left] using (PathConnectedSpace.joined x₀ x).map
+        (f := fun u ↦ mk x₀ y₀ (u, y))
+        ((mk x₀ y₀).continuous.comp (continuous_id.prodMk continuous_const))
+    fun z₁ z₂ ↦ (hbase z₁).symm.trans (hbase z₂)
+
+instance pathConnectedSpace_right [PathConnectedSpace Y] :
+    PathConnectedSpace (SmashProduct x₀ y₀) :=
+  (comm y₀ x₀).pathConnectedSpace
 
 end Functoriality
 
