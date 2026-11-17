@@ -23,7 +23,7 @@ differentiable where eigenvalues cross.
 Hamilton's maximum principle for symmetric tensors bounds `λ` from below without differentiating
 it. At a point `y` and a unit vector `v` attaining `λ(y)`, the smooth function `z ↦ B_z(v, v)` lies
 above `λ` and touches it at `y`, so at a minimum of `λ` it has a local minimum and nonnegative
-Laplacian (`TauCeti.Manifold.le_of_isLeast_of_laplaceBeltrami_neg`). Hence, if
+Laplacian (`TauCeti.Manifold.forall_le_apply_self_of_laplaceBeltrami_neg`). Hence, if
 `Δ (z ↦ B_z(v, v)) < 0` at every such `(y, v)` with `λ(y) < -C`, then `B_y ≥ -C g` for every `y`
 (`TauCeti.SeibergWitten.forall_le_hermitianForm_apply_self_of_laplaceBeltrami_neg`).
 
@@ -33,13 +33,18 @@ bound `B ≥ -C g` is the bound `‖F⁻‖ ≤ √2 (c + C)` on the anti-self-d
 gives that bound from a differential inequality at the unit eigenvectors of `λ`
 (`TauCeti.SeibergWitten.norm_smul_sub_hodgeStar_le_of_laplaceBeltrami_neg`).
 
-This is the form of Taubes's estimate for the anti-self-dual curvature of solutions of the
-large-parameter Seiberg–Witten equations on a symplectic four-manifold. There `F` is the real
-curvature form `i F_a` of the connection on the twisting line, written in a unitary frame in which
-`J` is constant, and the lower bound `B ≥ -C g` turns the formula for `c` into the refined bound
-`|F_a⁻| ≤ (r / (4 √2)) w₊ + O(1)` (`TauCeti.SeibergWitten.norm_smul_sub_hodgeStar_le`). The
-differential inequality at the eigenvectors of `λ`, which comes from the curvature, Dirac and
-Weitzenböck equations, is a hypothesis here.
+Taubes's estimate for the anti-self-dual curvature of solutions of the large-parameter
+Seiberg–Witten equations on a symplectic four-manifold has this shape, with `F` the real curvature
+form `i F_a` of the connection on the twisting line, and there the lower bound `B ≥ -C g` turns
+the formula for `c` into the refined bound `|F_a⁻| ≤ (r / (4 √2)) w₊ + O(1)`
+(`TauCeti.SeibergWitten.norm_smul_sub_hodgeStar_le`). The results here only cover a family of
+forms on one fixed inner product space `V` with a constant `J`, that is, the case of a global
+unitary frame in which `J` is constant. A general symplectic four-manifold has no such frame, and
+in a frame the Laplacian of the components of `F` differs from the rough Laplacian of the bundle
+by connection terms; applying the estimate there needs a version for sections of the bundle
+`Λ²T*M` with the rough Laplacian, which is not proved here. The differential inequality at the
+eigenvectors of `λ`, which comes from the curvature, Dirac and Weitzenböck equations, is a
+hypothesis.
 
 ## Main results
 
@@ -90,55 +95,22 @@ theorem forall_le_hermitianForm_apply_self_of_laplaceBeltrami_neg [CompactSpace 
       J.hermitianForm (F y) v v < -C →
       laplaceBeltrami I (fun z ↦ J.hermitianForm (F z) v v) y < 0)
     (y : M) : ∀ v : V, -C * ‖v‖ ^ 2 ≤ J.hermitianForm (F y) v v := by
-  intro v
-  rcases subsingleton_or_nontrivial V with hV | hV
-  · simp [Subsingleton.elim v 0]
-  set S := sphere (0 : V) 1
-  set q : M → V → ℝ := fun y w ↦ J.hermitianForm (F y) w w with hq_def
-  have hS : IsCompact S := isCompact_sphere 0 1
-  -- `q` is jointly continuous, as `q y w = ⟪F y, w ∧ J w⟫`.
-  have hqc : Continuous fun p : M × V ↦ q p.1 p.2 := by
+  -- `(z, w) ↦ B_z(w, w) = ⟪F z, w ∧ J w⟫` is jointly continuous.
+  have hc : Continuous fun p : M × V ↦ J.hermitianForm (F p.1) p.2 p.2 := by
     have hι : Continuous fun w : V ↦ ιMulti ℝ 2 ![w, J w] :=
       (ιMulti ℝ 2 : V [⋀^Fin 2]→ₗ[ℝ] ⋀[ℝ]^2 V).toMultilinearMap.continuous_of_finiteDimensional.comp
         (by have := J.toLinearMap.continuous_of_finiteDimensional; fun_prop)
-    simp only [hq_def, AlmostComplexStructure.hermitianForm_apply_self]
+    simp only [AlmostComplexStructure.hermitianForm_apply_self]
     exact (hF.continuous.comp continuous_fst).inner (hι.comp continuous_snd)
-  -- The least eigenvalue `μ y` of `B_y` is the infimum of `q y` on the unit sphere.
-  set μ : M → ℝ := fun y ↦ sInf (q y '' S)
-  have hμ : ∀ y, IsLeast (q y '' S) (μ y) := fun y ↦
-    (hS.image (hqc.comp (Continuous.prodMk_right y))).isLeast_sInf
-      ((NormedSpace.sphere_nonempty.2 zero_le_one).image _)
-  have hμc : Continuous μ := hS.continuous_sInf hqc
-  -- A unit vector attaining `μ y` minimizes `q y` on the unit sphere.
-  have hmin : ∀ y v, q y v = μ y → ∀ w : V, ‖w‖ = 1 → q y v ≤ q y w :=
-    fun y v hv w hw ↦
-      hv.le.trans ((hμ y).2 (Set.mem_image_of_mem _ (mem_sphere_zero_iff_norm.2 hw)))
-  -- Each `z ↦ q z w = ⟪ιMulti ℝ 2 ![w, J w], F z⟫` is `C²`.
-  have hq : ∀ w, ContMDiff I 𝓘(ℝ) 2 fun z ↦ q z w := fun w ↦ by
-    have hqw : (fun z ↦ q z w) = fun z ↦ innerSL ℝ (ιMulti ℝ 2 ![w, J w]) (F z) := by
+  -- Each `z ↦ B_z(w, w) = ⟪ιMulti ℝ 2 ![w, J w], F z⟫` is `C²`.
+  have hB : ∀ w, ContMDiff I 𝓘(ℝ) 2 fun z ↦ J.hermitianForm (F z) w w := fun w ↦ by
+    have hBw : (fun z ↦ J.hermitianForm (F z) w w) =
+        fun z ↦ innerSL ℝ (ιMulti ℝ 2 ![w, J w]) (F z) := by
       ext z
-      simp [hq_def, real_inner_comm]
-    rw [hqw]
+      simp [real_inner_comm]
+    rw [hBw]
     exact (innerSL ℝ (ιMulti ℝ 2 ![w, J w])).contMDiff.comp hF
-  have hlow : -C ≤ μ y :=
-    le_of_isLeast_of_laplaceBeltrami_neg (I := I) hμ hμc (fun _ w _ _ _ ↦ (hq w).contMDiffAt)
-      (fun x w hw hwx hlt ↦ hΔ x w (mem_sphere_zero_iff_norm.1 hw) (hmin x w hwx)
-        (hwx.trans_lt hlt)) y
-  rcases eq_or_ne v 0 with rfl | hv
-  · simp
-  -- Scale `v` to the unit vector `u = v / ‖v‖`, at which `q y u ≥ μ y ≥ -C`.
-  set u := ‖v‖⁻¹ • v
-  have hu : u ∈ S := by
-    rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-      inv_mul_cancel₀ (norm_ne_zero_iff.2 hv)]
-  have hvu : v = ‖v‖ • u := (smul_inv_smul₀ (norm_ne_zero_iff.2 hv) v).symm
-  have hqu : μ y ≤ q y u := (hμ y).2 (Set.mem_image_of_mem _ hu)
-  have hscale : J.hermitianForm (F y) v v = ‖v‖ ^ 2 * q y u := by
-    conv_lhs => rw [hvu]
-    simp only [hq_def, map_smul, LinearMap.smul_apply, smul_eq_mul]
-    ring
-  rw [hscale]
-  nlinarith [sq_nonneg ‖v‖]
+  exact forall_le_apply_self_of_laplaceBeltrami_neg (B := fun z ↦ J.hermitianForm (F z)) hc hB hΔ y
 
 /-! ### Dimension four -/
 
