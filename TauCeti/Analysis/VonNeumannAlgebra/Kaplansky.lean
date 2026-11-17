@@ -15,6 +15,8 @@ public import TauCeti.Analysis.VonNeumannAlgebra.Basic
 public import TauCeti.Analysis.VonNeumannAlgebra.Bicommutant
 public import TauCeti.Analysis.VonNeumannAlgebra.MatrixAmplification
 
+import TauCeti.Algebra.Star.Subalgebra
+
 /-!
 # The Kaplansky density theorem
 

@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 
+import TauCeti.Analysis.InnerProductSpace.PiL2
+
 /-!
 # Amplification of operators to a finite Hilbert sum
 
@@ -35,18 +37,6 @@ public section
 open scoped InnerProductSpace
 
 variable {𝕜 H ι : Type*} [RCLike 𝕜] [NormedAddCommGroup H] [InnerProductSpace 𝕜 H]
-
-namespace PiLp
-
-/-- The inner product with a vector of the Hilbert sum supported at `i` reads off the `i`-th
-component, as `lp.inner_single_left` does for `lp`. -/
-theorem inner_single_left [Fintype ι] [DecidableEq ι] {β : ι → Type*}
-    [∀ i, NormedAddCommGroup (β i)] [∀ i, InnerProductSpace 𝕜 (β i)] (i : ι) (a : β i)
-    (w : PiLp 2 β) : ⟪PiLp.single 2 i a, w⟫_𝕜 = ⟪a, w i⟫_𝕜 := by
-  rw [PiLp.inner_apply, Finset.sum_eq_single i (fun b _ hb => by simp [hb]) (by simp)]
-  simp
-
-end PiLp
 
 namespace ContinuousLinearMap
 

@@ -9,14 +9,15 @@ public import Mathlib.Algebra.Star.Subalgebra
 public import Mathlib.RingTheory.TwoSidedIdeal.Kernel
 
 /-!
-# Range and codomain restrictions of `⋆`-algebra homomorphisms
+# Range and codomain restrictions of `⋆`-algebra homomorphisms, and double commutants
 
 Mathlib defines `codRestrict` and `rangeRestrict` for `NonUnitalStarAlgHom`
 (`Mathlib/Algebra/Star/NonUnitalSubalgebra.lean`) and `StarAlgHom`
 (`Mathlib/Algebra/Star/Subalgebra.lean`), but omits surjectivity of `rangeRestrict` and
 compatibility of `TwoSidedIdeal.ker` with codomain and range restriction. We supply both in
 nonunital and unital generality, mirroring `AlgHom.rangeRestrict_surjective` and
-`AlgHom.ker_rangeRestrict`.
+`AlgHom.ker_rangeRestrict`. We also record that the double commutant of a `⋆`-subalgebra is
+closed under `star`.
 
 ## Main results
 
@@ -25,6 +26,8 @@ nonunital and unital generality, mirroring `AlgHom.rangeRestrict_surjective` and
 * `NonUnitalStarAlgHom.ker_codRestrict`, `NonUnitalStarAlgHom.ker_rangeRestrict`,
   `StarAlgHom.ker_codRestrict`, and `StarAlgHom.ker_rangeRestrict`: restricting the codomain or
   range preserves `TwoSidedIdeal.ker`.
+* `StarSubalgebra.star_mem_centralizer_centralizer`: the double commutant `S''` of a
+  `⋆`-subalgebra `S` is closed under `star`.
 
 ## Implementation notes
 
@@ -113,3 +116,14 @@ theorem ker_rangeRestrict (f : A →⋆ₐ[R] B) :
 end Ker
 
 end StarAlgHom
+
+namespace StarSubalgebra
+
+/-- The double commutant `S''` of a star subalgebra is closed under adjoints. -/
+theorem star_mem_centralizer_centralizer {R A : Type*} [CommSemiring R] [StarRing R]
+    [Semiring A] [StarRing A] [Algebra R A] [StarModule R A] (S : StarSubalgebra R A) {x : A}
+    (hx : x ∈ (S : Set A).centralizer.centralizer) :
+    star x ∈ (S : Set A).centralizer.centralizer :=
+  Set.star_mem_centralizer' (fun _ ha => Set.star_mem_centralizer' (fun _ => star_mem) ha) hx
+
+end StarSubalgebra
