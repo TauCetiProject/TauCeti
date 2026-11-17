@@ -353,25 +353,24 @@ theorem floerOperator_preglue_of_one_lt (ω : SymplecticForm V) (J : ℝ → V �
   simp only [floerOperator_def, fderiv_preglue_of_one_lt hz, preglue_of_one_le hz.le,
     Prod.snd_sub, sub_zero]
 
-/-- **The pre-gluing error vanishes off the neck.** If `u` and `v` solve the Floer equation on
-`ℝ × [0, 1]`, the Floer operator of the pre-glued map vanishes at every point of `ℝ × [0, 1]`
-outside the neck `[-1, 1] × [0, 1]`. -/
+/-- **The pre-gluing error vanishes off the neck.** Suppose `u` solves the Floer equation on a set
+`A` and `v` on a set `B`. Then the Floer operator of the pre-glued map vanishes at every point
+`z = (s, t)` with `s ∉ [-1, 1]` such that `z + (R, 0) ∈ A` if `s < -1` and `z - (R, 0) ∈ B` if
+`s > 1`. -/
 theorem floerOperator_preglue_eq_zero (ω : SymplecticForm V) (J : ℝ → V → V →L[ℝ] V)
-    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ)
-    (huF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
-      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u z = 0)
-    (hvF : ∀ z ∈ univ ×ˢ Icc (0 : ℝ) 1,
-      ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v z = 0)
-    {z : ℝ × ℝ} (hz : z ∈ univ ×ˢ Icc (0 : ℝ) 1) (hzN : z ∉ Icc (-1 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) :
+    (H : ℝ → V → ℝ) (x : ℝ → V) {u v : ℝ × ℝ → V} (R : ℝ) {A B : Set (ℝ × ℝ)}
+    (huF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) u) 0 A)
+    (hvF : EqOn (ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) v) 0 B)
+    {z : ℝ × ℝ} (hA : z.1 < -1 → z + (R, 0) ∈ A) (hB : 1 < z.1 → z - (R, 0) ∈ B)
+    (hzN : z.1 ∉ Icc (-1 : ℝ) 1) :
     ω.floerOperator (fun p ↦ J p.2) (fun _ _ ↦ 0) (fun p ↦ H p.2) (preglue x u v R) z = 0 := by
-  have hz₂ : z.2 ∈ Icc (0 : ℝ) 1 := hz.2
   rcases lt_or_ge z.1 (-1) with h₁ | h₁
   · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁]
-    exact huF _ ⟨mem_univ _, by simpa using hz₂⟩
+    exact huF (hA h₁)
   rcases lt_or_ge 1 z.1 with h₂ | h₂
   · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂]
-    exact hvF _ ⟨mem_univ _, by simpa using hz₂⟩
-  exact absurd ⟨⟨h₁, h₂⟩, hz₂⟩ hzN
+    exact hvF (hB h₂)
+  exact absurd ⟨h₁, h₂⟩ hzN
 
 /-- **The pointwise pre-gluing error.** Let `x` be an orbit of `X_{H_t}` at `t = z.2`, and write
 `Du = du - (σ, τ) ↦ τ X_{H_t}(x(t))`, and similarly `Dv`. If `‖J_z(w_R z)‖ ≤ M`, `X_{H_t}` is
@@ -548,14 +547,10 @@ theorem exists_eventually_norm_floerOperator_preglue_le_of_eqOn (ω : Symplectic
   refine ⟨C', hC'.mono fun R hR z hz hA hB ↦ ?_⟩
   have hpos : 0 ≤ C' * Real.exp (-(κ * R)) :=
     (norm_nonneg _).trans (hR (0, 0) ⟨⟨by norm_num, by norm_num⟩, by norm_num, by norm_num⟩)
-  rcases lt_or_ge z.1 (-1) with h₁ | h₁
-  · rw [ω.floerOperator_preglue_of_lt_neg_one J H x u v R h₁, huF (hA h₁), Pi.zero_apply,
-      norm_zero]
-    exact hpos
-  rcases lt_or_ge 1 z.1 with h₂ | h₂
-  · rw [ω.floerOperator_preglue_of_one_lt J H x u v R h₂, hvF (hB h₂), Pi.zero_apply, norm_zero]
-    exact hpos
-  exact hR z ⟨⟨h₁, h₂⟩, hz⟩
+  by_cases hzN : z.1 ∈ Icc (-1 : ℝ) 1
+  · exact hR z ⟨hzN, hz⟩
+  rw [ω.floerOperator_preglue_eq_zero J H x R huF hvF hA hB hzN, norm_zero]
+  exact hpos
 
 /-- **The pre-gluing error of two Floer cylinders.** Under the hypotheses of
 `TauCeti.SymplecticForm.exists_eventually_norm_floerOperator_preglue_le`, suppose moreover that `u`
@@ -642,7 +637,8 @@ theorem exists_eventually_eLpNorm_floerOperator_preglue_le_of_floerOperator_eq_z
     by_cases hzN : z ∈ N
     · rw [indicator_of_mem hzN]
     · rw [indicator_of_notMem hzN]
-      exact ω.floerOperator_preglue_eq_zero J H x R huF hvF hz hzN
+      exact ω.floerOperator_preglue_eq_zero J H x R huF hvF (fun _ ↦ by simpa [S] using hz)
+        (fun _ ↦ by simpa [S] using hz) fun h ↦ hzN ⟨h, hz.2⟩
   have hvol : volume.restrict S N = 2 := by
     rw [Measure.restrict_apply hN, inter_eq_left.2 (prod_mono (subset_univ _) le_rfl),
       Measure.volume_eq_prod, Measure.prod_prod, Real.volume_Icc, Real.volume_Icc]
