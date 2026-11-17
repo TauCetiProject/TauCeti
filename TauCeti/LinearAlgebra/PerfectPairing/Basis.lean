@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.Matrix.SesquilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
-import Mathlib.LinearAlgebra.Determinant
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Perfect pairings from Gram matrices
@@ -90,19 +90,14 @@ theorem isPerfPair_of_isUnit_det (b : Basis ι R M) (c : Basis ι R N) (B : M �
     (h : IsUnit (LinearMap.toMatrix₂ b c B).det) : B.IsPerfPair := by
   have : Module.Finite R N := .of_basis c
   have : Module.Free R N := .of_basis c
-  refine .of_bijective B ?_
-  rw [← LinearEquiv.coe_ofIsUnitDet (v := b) (v' := c.dualBasis) (f := B)
-    (by rwa [toMatrix_dualBasis_eq_transpose_toMatrix₂, det_transpose]), LinearEquiv.coe_coe]
-  exact LinearEquiv.bijective _
+  refine .of_bijective B ((LinearMap.isUnit_det_toMatrix_iff_bijective b c.dualBasis B).1 ?_)
+  rwa [toMatrix_dualBasis_eq_transpose_toMatrix₂, det_transpose]
 
 /-- **The Gram matrix of a perfect pairing in finite bases has unit determinant.** -/
 theorem isUnit_det_of_isPerfPair (b : Basis ι R M) (c : Basis ι R N) (B : M →ₗ[R] N →ₗ[R] R)
     (h : B.IsPerfPair) : IsUnit (LinearMap.toMatrix₂ b c B).det := by
-  -- `B`, read as a linear map into the dual of `N`, is the linear equivalence it induces.
-  have he : (LinearEquiv.ofBijective B h.bijective_left : M →ₗ[R] Module.Dual R N) = B :=
-    LinearMap.ext (LinearEquiv.ofBijective_apply B)
-  rw [← det_transpose, ← toMatrix_dualBasis_eq_transpose_toMatrix₂, ← he]
-  exact (LinearEquiv.ofBijective B h.bijective_left).isUnit_det b c.dualBasis
+  rw [← det_transpose, ← toMatrix_dualBasis_eq_transpose_toMatrix₂]
+  exact (LinearMap.isUnit_det_toMatrix_iff_bijective b c.dualBasis B).2 h.bijective_left
 
 end CommRing
 
