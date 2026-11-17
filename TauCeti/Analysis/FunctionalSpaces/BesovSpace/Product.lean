@@ -263,7 +263,7 @@ def smulL (hα : α < 0) (hαβ : 0 < α + β) :
 
 private theorem smulL_apply (hα : α < 0) (hαβ : 0 < α + β) (u : BesovSpace ℂ φ α p₁ q₁)
     (v : BesovSpace F φ β p₂ q₂) : smulL r hα hαβ u v = smulAux r hα hαβ u v :=
-  rfl
+  (LinearMap.mkContinuous₂_apply _ _ u v).trans (LinearMap.mk₂_apply _ _ u v)
 
 /-- **The product is the limit of the products of the low-frequency cut-offs:**
 `S_M u · S_M v → u v` in the tempered distributions. -/
