@@ -104,7 +104,6 @@ theorem eventually_ne_zero_of_real_on_axis {x r : ℝ} (hr : 0 < r)
     Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hr)
   rcases (hFd.analyticAt hxr).eventually_eq_zero_or_eventually_ne_zero with h | h
   · -- an extension vanishing near `x` would vanish somewhere in the upper half-plane
-    have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
     obtain ⟨z, ⟨hz0, hzr⟩, hzH⟩ :=
       (((h.and hxr).filter_mono nhdsWithin_le_nhds).and
         (self_mem_nhdsWithin (s := {z : ℂ | 0 < z.im}))).exists

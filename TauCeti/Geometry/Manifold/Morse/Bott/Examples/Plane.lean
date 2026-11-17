@@ -54,12 +54,6 @@ private theorem snd_pow_eq_comp (m : ℕ) :
     (fun p : ℝ × ℝ ↦ p.2 ^ m) = (fun y : ℝ ↦ y ^ m) ∘ Prod.snd :=
   rfl
 
-/-- The coordinate expression of a function of the real line in its identity chart at `0` is
-the function itself, so it is `C²` when the function is. -/
-private theorem contDiffAt_comp_extChartAt_symm {q : ℝ → ℝ} (hq : ContDiffAt ℝ 2 q 0) :
-    ContDiffAt ℝ 2 (q ∘ (extChartAt 𝓘(ℝ) (0 : ℝ)).symm) (extChartAt 𝓘(ℝ) (0 : ℝ) 0) := by
-  simpa using hq
-
 /-! ### The Morse–Bott function `y²` -/
 
 /-- **`y²` is Morse–Bott on the plane.** The critical set of `(x, y) ↦ y²` is the line `ℝ × {0}`,
@@ -93,8 +87,7 @@ theorem finrank_negativeNormalSpace_snd_sq (x : ℝ) :
     Module.finrank ℝ ((isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()
       ).toIsCriticalSubmanifold.negativeNormalSpace (by simp) g x) = 0 := by
   rw [(isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()).finrank_negativeNormalSpace,
-    SmoothEmbedding.ofIsSmoothEmbedding_apply, snd_pow_eq_comp,
-    manifoldMorseIndex_comp_snd (contDiffAt_comp_extChartAt_symm (by fun_prop)),
+    SmoothEmbedding.ofIsSmoothEmbedding_apply, snd_pow_eq_comp, manifoldMorseIndex_comp_snd,
     manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_pos (by simp)
 
@@ -105,9 +98,7 @@ theorem finrank_positiveNormalSpace_snd_sq (x : ℝ) :
       ).toIsCriticalSubmanifold.positiveNormalSpace (by simp) g x) = 1 := by
   rw [(isMorseBottFamily_snd_sq.isNondegenerateCriticalSubmanifold ()).finrank_positiveNormalSpace,
     SmoothEmbedding.ofIsSmoothEmbedding_apply, snd_pow_eq_comp, ← Pi.neg_comp,
-    manifoldMorseIndex_comp_snd (contDiffAt_comp_extChartAt_symm (q := -fun y : ℝ ↦ y ^ 2)
-      (contDiff_id.pow 2).neg.contDiffAt),
-    manifoldMorseIndex_modelSpace]
+    manifoldMorseIndex_comp_snd, manifoldMorseIndex_modelSpace]
   exact morseIndex_real_of_neg (by simp)
 
 end NormalSpaces
@@ -136,8 +127,6 @@ theorem not_isMorseBottFamily_snd_pow_four {ι : Type*} {E' : ι → Type*}
   have hcrit := criticalPoints_pow (m := 4) (by norm_num)
   refine not_isMorseBottFamily_comp_snd (M := ℝ) (q := fun y : ℝ ↦ y ^ 4) (y := 0)
     (by simp [hcrit])
-    (Filter.Eventually.of_forall fun z hz ↦ by rwa [hcrit] at hz) (fun h ↦ ?_) i
-  rw [isNondegenerateCriticalPoint_real_iff (by fun_prop)] at h
-  exact h.2 (by simp)
+    (Filter.Eventually.of_forall fun z hz ↦ by rwa [hcrit] at hz) (by simp) i
 
 end TauCeti

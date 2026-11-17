@@ -160,16 +160,8 @@ theorem k_smul_vec_zero : k q • vec q μ 0 = μ • vec q μ 0 := by
   exact k_sub_algebraMap_mem_vermaIdeal μ
 
 /-- The action of `K⁻¹` on the highest vector. -/
-theorem kInv_smul_vec_zero : kInv q • vec q μ 0 = μ⁻¹ • vec q μ 0 := by
-  rcases eq_or_ne μ 0 with rfl | hμ
-  · -- For `μ = 0` the highest vector is `K⁻¹ K v₀ = 0`.
-    have h : vec q 0 0 = 0 := by
-      rw [← one_smul (UqSl2 q) (vec q 0 0), ← kInv_mul_k, mul_smul, k_smul_vec_zero, zero_smul,
-        smul_zero]
-    rw [h, smul_zero, smul_zero]
-  · calc kInv q • vec q μ 0 = μ⁻¹ • kInv q • μ • vec q μ 0 := by
-          rw [smul_comm (kInv q) μ, inv_smul_smul₀ hμ]
-      _ = μ⁻¹ • vec q μ 0 := by rw [← k_smul_vec_zero, ← mul_smul, kInv_mul_k, one_smul]
+theorem kInv_smul_vec_zero : kInv q • vec q μ 0 = μ⁻¹ • vec q μ 0 :=
+  kInv_smul_of_mem_weightSpace (mem_weightSpace_iff.mpr k_smul_vec_zero)
 
 /-- The action of `K`: `K v_j = q^(-2j) μ v_j`. -/
 @[simp]

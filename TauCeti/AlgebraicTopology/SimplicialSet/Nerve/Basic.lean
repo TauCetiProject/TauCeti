@@ -15,7 +15,9 @@ An `n`-simplex of the nerve `CategoryTheory.nerve C` of a category is a string
 `F : ComposableArrows C n` of composable arrows. For positions `i ≤ j` its arrow from the `i`-th
 to the `j`-th object, viewed as a total arrow of `C`, is `F.totalArrow i j hij` (defined in
 `TauCeti.CategoryTheory.ComposableArrows.Basic`), and the simplicial operators of the nerve
-reindex these arrows (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`).
+reindex these arrows (`CategoryTheory.ComposableArrows.totalArrow_whiskerLeft`, stated for the
+nerve, together with its effect on objects and vertices, as `CategoryTheory.nerve.totalArrow_map`,
+`CategoryTheory.nerve.map_obj` and `CategoryTheory.nerve.map_const`).
 
 An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exactly when its
 `i`-th arrow is an identity arrow (`CategoryTheory.nerve.mem_range_σ_iff`, in `Set.range` form
@@ -38,6 +40,8 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
 * `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
+* `CategoryTheory.nerve.map_obj`, `CategoryTheory.nerve.totalArrow_map`,
+  `CategoryTheory.nerve.map_const`: the objects, arrows and vertices of a reindexed simplex.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
 -/
@@ -144,6 +148,31 @@ theorem δ_succ_precomp {n : ℕ} (j : Fin (n + 2)) (σ : ComposableArrows C (n 
   -- By definition of `precomp`, the first arrow of the right-hand side is the prepended one.
   rw [ComposableArrows.totalArrow_def]
   rfl
+
+section Map
+
+/-! The nerve reindexes a string along `f : ⦋m⦌ ⟶ ⦋n⦌` by whiskering with the functor
+`SimplexCategory.toCat.map f`, which acts on objects by `f.toOrderHom`. The lemmas below state
+this once, for objects, arrows and vertices. -/
+
+/-- Reindexing a simplex of the nerve along `f` reindexes its objects along `f`. -/
+lemma map_obj {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows C n) (i : Fin (m + 1)) :
+    ((nerve C).map f.op s).obj i = s.obj (f.toOrderHom i) :=
+  rfl
+
+/-- Reindexing a simplex of the nerve along `f` reindexes its arrows along `f`. -/
+lemma totalArrow_map {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : ComposableArrows C n) (i j : Fin (m + 1))
+    (hij : i ≤ j) :
+    ((nerve C).map f.op s).totalArrow i j hij =
+      s.totalArrow (f.toOrderHom i) (f.toOrderHom j) (f.toOrderHom.monotone hij) :=
+  s.totalArrow_whiskerLeft _ i j hij
+
+/-- The `i`-th vertex of a simplex `s` of the nerve is the `0`-simplex given by `s.obj i`. -/
+lemma map_const {n : ℕ} (s : ComposableArrows C n) (i : Fin (n + 1)) :
+    (nerve C).map (SimplexCategory.const ⦋0⦌ ⦋n⦌ i).op s = nerveEquiv.symm (s.obj i) :=
+  ComposableArrows.ext₀ rfl
+
+end Map
 
 section Faces
 
