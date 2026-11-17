@@ -61,16 +61,18 @@ abbrev openRestrictionExcisionTowerMap (hinj : Function.Injective i) :
 theorem quasiIso_openRestrictionExcisionTowerMap_app [T2Space U] (hi : IsOpenEmbedding i.hom)
     (n : ℕ) : QuasiIso ((openRestrictionExcisionTowerMap i L K hi.injective).app (op n)) := by
   have hmaps : Set.MapsTo i (K n)ᶜ (i '' K n)ᶜ := fun _ hx h ↦ hx (hi.injective.mem_set_image.1 h)
-  erw [complChainComplexTowerPairMap_app]
-  refine TopPair.quasiIso_twistedChainComplexMap_of_open_cover
-    (TopPair.ofHom (X := TopPair.ofSubset (K n)ᶜ) (Y := TopPair.ofSubset (i '' K n)ᶜ) i
-      (TopCat.ofHom ⟨hmaps.restrict, i.hom.continuous.restrict hmaps⟩) rfl) L hi.isEmbedding
-    (fun x hx ↦ by rw [TopPair.range_ofSubset_map] at hx ⊢; exact fun hxK ↦ hx ⟨x, hxK, rfl⟩)
-    (fun b : Bool ↦ bif b then Set.range i else (i '' K n)ᶜ)
-    (Bool.rec ((K.isCompact n).image i.hom.continuous).isClosed.isOpen_compl hi.isOpen_range)
-    (Set.eq_univ_of_forall fun y ↦ Set.mem_iUnion.2 <|
-      Classical.byCases (p := y ∈ i '' K n) (fun ⟨x, _, hxy⟩ ↦ ⟨true, x, hxy⟩) (⟨false, ·⟩))
-    (Bool.rec (Or.inl (TopPair.range_ofSubset_map (B := (i '' K n)ᶜ)).ge) (Or.inr le_rfl))
+  erw [complChainComplexTowerPairMap_app]; refine (quasiIso_iff_comp_left (eqToHom _) _).2 <|
+    TopPair.quasiIso_twistedChainComplexMap_of_open_cover (TopPair.ofSubsetMap i hmaps) L
+      (by rw [TopPair.ofSubsetMap_fst]; exact hi.isEmbedding)
+      (fun x hx ↦ by
+        rw [TopPair.range_ofSubset_map] at hx ⊢; rw [TopPair.ofSubsetMap_fst] at hx
+        exact fun hxK ↦ hx ⟨x, hxK, rfl⟩)
+      (fun b : Bool ↦ bif b then Set.range i else (i '' K n)ᶜ)
+      (Bool.rec ((K.isCompact n).image i.hom.continuous).isClosed.isOpen_compl hi.isOpen_range)
+      (Set.eq_univ_of_forall fun y ↦ Set.mem_iUnion.2 <|
+        Classical.byCases (p := y ∈ i '' K n) (fun ⟨x, _, hxy⟩ ↦ ⟨true, x, hxy⟩) (⟨false, ·⟩))
+      (Bool.rec (Or.inl (TopPair.range_ofSubset_map (B := (i '' K n)ᶜ)).ge)
+        (Or.inr (by rw [TopPair.ofSubsetMap_fst]; exact le_rfl)))
 /-- **Excision on the limit complex** for an open embedding `i : V ⟶ U` into a Hausdorff space. -/
 theorem quasiIso_limComplexMap_openRestrictionExcisionTowerMap [T2Space U]
     (hi : IsOpenEmbedding i.hom) :
