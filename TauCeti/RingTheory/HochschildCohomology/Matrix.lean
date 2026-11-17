@@ -249,7 +249,8 @@ private theorem sum_hochschildFace_natMatrixHomotopyTuple_of_le
         φ (hochschildFace m.castSucc (natMatrixHomotopyTuple r ((k' : ℕ) + 1) p a)) =
       ∑ q : Fin ((k' : ℕ) + 1) → ι, φ (natMatrixHomotopyTuple r k' q (hochschildFace m a)) := by
   have := k'.2; let j : Fin ((k' : ℕ) + 2) := ⟨m, by omega⟩
-  let m₀ : Fin (n + 1) := ⟨m, by omega⟩; have hm_eq : m = m₀.castSucc := rfl
+  let m₀ : Fin (n + 1) := ⟨m, by omega⟩
+  have hm_eq : m = m₀.castSucc := Fin.ext (Fin.val_castSucc m₀).symm
   let b := extTuple a; have ha : a = fun t : Fin (n + 2) ↦ b t := (extTuple_comp_val a).symm
   rw [← (j.insertNthEquiv (fun _ : Fin ((k' : ℕ) + 2) ↦ ι)).sum_comp, Fintype.sum_prod_type,
     Finset.sum_comm]
@@ -351,7 +352,7 @@ private theorem sum_hochschildFace_zero_natMatrixHomotopyTuple_zero
     (fun p : Fin 1 → ι ↦ φ (hochschildFace 0 (natMatrixHomotopyTuple r 0 p a)))
     (fun u ↦ φ (Function.update a 0 (a 0 * Matrix.single u r (1 : A) * Matrix.single r u (1 : A))))
     fun p ↦ congrArg φ (by
-      rw [show (0 : Fin (n + 2)) = (0 : Fin (n + 1)).castSucc from rfl, ha,
+      rw [← Fin.castSucc_zero, ha,
         natMatrixHomotopyTuple_comp_val r (Nat.zero_le _) p b, hochschildFace_castSucc_comp_val,
         Fin.val_zero, natHomotopyTuple_congr_path r 0 (Q := fun _ ↦ p 0)
           (fun t ht ↦ by obtain rfl : t = 0 := (by omega); simp [extPath]) b]
@@ -374,12 +375,13 @@ private theorem sum_hochschildFace_last_natMatrixHomotopyTuple_last [SMulCommCla
     simp only [Fin.cons_zero, natMatrixHomotopyTuple, natHomotopyTuple, extPath, extTuple,
       Fin.val_last, Fin.val_zero, Nat.add_eq_zero_iff, one_ne_zero, and_false, lt_self_iff_false,
       ↓reduceIte, Nat.lt_succ_self, Nat.zero_lt_succ, ↓reduceDIte, Equiv.arrowCongr_apply,
-      Equiv.symm_symm, Equiv.refl_apply, Function.comp_apply, Matrix.single_one_mul_mul_single_one]
-    rw [show (⟨n, Nat.lt_succ_self n⟩ : Fin (n + 1)) = Fin.last n from rfl, finRotate_last]; rfl
+      Equiv.symm_symm, Equiv.refl_apply, Function.comp_apply, Matrix.single_one_mul_mul_single_one,
+      Fin.mk_zero]
+    rw [Fin.eq_last_of_not_lt (i := ⟨n, Nat.lt_succ_self n⟩) (lt_irrefl n), finRotate_last]
   | succ m =>
     simp only [Fin.cons_succ, natMatrixHomotopyTuple, natHomotopyTuple, extPath, extTuple,
       Fin.val_succ, Fin.val_castSucc, Nat.add_eq_zero_iff, one_ne_zero, and_false, ↓reduceIte,
-      Nat.add_lt_add_iff_right, m.2, ↓reduceDIte, Nat.add_sub_cancel, Nat.lt_succ_of_lt m.2,
+      Nat.add_lt_add_iff_right, m.2, Nat.add_sub_cancel, Nat.lt_succ_of_lt m.2,
       Equiv.arrowCongr_apply, Equiv.symm_symm, Equiv.refl_apply, Function.comp_apply]
     exact congrArg (fun x ↦ Matrix.single r r (a m.succ (p x) (p (finRotate (n + 1) m.succ))))
       (Fin.finRotate_castSucc m).symm
@@ -437,7 +439,7 @@ theorem matrixHochschildHomotopy_hochschildCoboundary_zero (r : ι)
     Fin.sum_univ_castSucc, Fin.sum_univ_zero, Fin.val_castSucc, Fin.val_last, pow_one,
     neg_one_smul, Finset.sum_add_distrib, Finset.sum_neg_distrib, zero_add,
     matrixHomotopyTuple_eq_natMatrixHomotopyTuple]
-  rw [show (Fin.last 0).castSucc = (0 : Fin 2) from rfl,
+  rw [Fin.last_zero, Fin.castSucc_zero,
     sum_hochschildFace_zero_natMatrixHomotopyTuple_zero r φ a, ← sub_eq_add_neg,
     sum_hochschildFace_last_natMatrixHomotopyTuple_last r φ a]
 
@@ -498,12 +500,13 @@ theorem hochschildCoboundary_matrixHochschildHomotopy_add (r : ι) (n : ℕ)
   rw [add_neg_cancel_left,
     Fin.sum_univ_succ (fun k : Fin (n + 2) ↦ homotopyFaceSum r φ a k k.castSucc),
     Fin.sum_univ_castSucc (fun k : Fin (n + 2) ↦ homotopyFaceSum r φ a k k.succ),
+    Fin.castSucc_zero, Fin.succ_last,
     show ∑ j : Fin (n + 1), homotopyFaceSum r φ a j.succ j.succ.castSucc =
         ∑ j : Fin (n + 1), homotopyFaceSum r φ a j.castSucc j.castSucc.succ from
       Finset.sum_congr rfl fun j _ ↦ sum_hochschildFace_diagonal_succ_eq_superdiagonal r φ a j,
-    show homotopyFaceSum r φ a 0 (0 : Fin (n + 2)).castSucc = φ a from
+    show homotopyFaceSum r φ a 0 0 = φ a from
       sum_hochschildFace_zero_natMatrixHomotopyTuple_zero r φ a,
-    show homotopyFaceSum r φ a (Fin.last (n + 1)) (Fin.last (n + 1)).succ =
+    show homotopyFaceSum r φ a (Fin.last (n + 1)) (Fin.last (n + 2)) =
       matrixCochainExtension ι (n + 1) (matrixCochainRestriction r (n + 1) φ) a from
       sum_hochschildFace_last_natMatrixHomotopyTuple_last r φ a]; abel
 
