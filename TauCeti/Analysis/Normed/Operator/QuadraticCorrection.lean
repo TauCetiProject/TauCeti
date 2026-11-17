@@ -62,6 +62,16 @@ gluing constructions, with explicit radii.
   `E` is complete, `N p 0 = 0` and `2 C ‖e p‖ ≤ r` for all `p`, the solutions constructed above
   form a continuous family (`TauCeti.exists_continuous_forall_add_add_eq_zero`). Smooth
   dependence is in `TauCeti.Analysis.Calculus.QuadraticCorrection`.
+* **Forcing.** On a common ball of radius `r ≤ δ` with `C L r ≤ 1 / 2`, solutions depend on the
+  residual with Lipschitz constant `2 C` (`TauCeti.norm_sub_le_two_mul_mul_norm_sub`). Suppose
+  the residuals satisfy `‖e p‖ ≤ ε` with `2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, and add a forcing
+  term `g p ρ` of size at most `β`, depending on a second parameter `ρ`. Under the tolerance
+  `16 C² L β ≤ 1` and `8 C β ≤ δ`, the forced equations `e p + g p ρ + D p x + N p x = 0`
+  have solutions `x p ρ`. These are continuous in `(p, ρ)`, `2 C`-Lipschitz in the forcing, and
+  unique in the range of `Q p` below the radius `min (δ / 2) (2 C L)⁻¹`
+  (`TauCeti.exists_continuousOn_forall_add_add_add_eq_zero`). This is how a small curvature
+  perturbation `ρ`, added after the unforced correction has been constructed, is absorbed: its
+  admissible size is fixed by the constants of the unforced problem alone.
 
 No linearity of `D` and no completeness of `F` is needed; the fixed-point characterization needs
 no norms at all, and the estimates only need seminorms on `E` and `F`. The right inverse `Q` is
@@ -190,6 +200,22 @@ theorem one_sub_mul_norm_sub_le_mul_norm_sub {e' : F} {x y : E} (hx : x ∈ clos
   rw [← map_sub, add_sub_add_right_eq_sub]
   exact hQ _
 
+/-- **Lipschitz dependence on the residual.** Solutions `x` of `e + D x + N x = 0` and `y` of
+`e' + D y + N y = 0` in the range of `Q`, both of norm at most `r ≤ δ` with `C L r ≤ 1 / 2`, satisfy
+`‖x - y‖ ≤ 2 C ‖e - e'‖`. -/
+theorem norm_sub_le_two_mul_mul_norm_sub {e' : F} {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r ≤ 1 / 2)
+    {x y : E} (hx : ‖x‖ ≤ r) (hy : ‖y‖ ≤ r) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
+    (hyQ : y ∈ range Q) (hye : e' + D y + N y = 0) : ‖x - y‖ ≤ 2 * C * ‖e - e'‖ := by
+  have h := one_sub_mul_norm_sub_le_mul_norm_sub hDQ hQ hN
+    (mem_closedBall_zero_iff.2 (hx.trans hrδ)) (mem_closedBall_zero_iff.2 (hy.trans hrδ)) hxQ hxe
+    hyQ hye
+  -- The weight in the comparison estimate is at least `1 - C L r ≥ 1 / 2`.
+  have hw : 1 / 2 ≤ 1 - C * (L / 2 * (‖x‖ + ‖y‖)) := by
+    have hCL : (0 : ℝ) ≤ C * L := mul_nonneg C.2 L.2
+    have := mul_le_mul_of_nonneg_left (add_le_add hx hy) hCL
+    nlinarith
+  nlinarith [mul_le_mul_of_nonneg_right hw (norm_nonneg (x - y))]
+
 omit hDQ in
 /-- On the closed ball of radius `R ≤ δ`, the map `z ↦ Q (e + N z)` is Lipschitz with
 constant `C L R`. -/
@@ -237,6 +263,26 @@ theorem eq_of_add_add_eq_zero {r : ℝ} (hrδ : r ≤ δ) (hr : C * L * r < 1) {
     by_contra hxy
     linarith [mul_pos hpos (not_le.1 hxy)]
   exact sub_eq_zero.1 (norm_le_zero_iff.1 hxy)
+
+/-- **Uniqueness in the ball of radius `min (δ / 2) (2 C L)⁻¹`.** Two solutions of
+`e + D x + N x = 0` in the range of `Q`, both of norm less than `min (δ / 2) (2 C L)⁻¹`, coincide:
+on this ball `C L ‖x‖ < 1 / 2`. When `C L = 0` the ball is empty. -/
+theorem eq_of_add_add_eq_zero_of_lt_min {x y : E} (hx : ‖x‖ < min (δ / 2) (2 * C * L)⁻¹)
+    (hy : ‖y‖ < min (δ / 2) (2 * C * L)⁻¹) (hxQ : x ∈ range Q) (hxe : e + D x + N x = 0)
+    (hyQ : y ∈ range Q) (hye : e + D y + N y = 0) : x = y := by
+  set r := max ‖x‖ ‖y‖
+  have hrγ : r < min (δ / 2) (2 * C * L)⁻¹ := max_lt hx hy
+  rw [lt_min_iff] at hrγ
+  have hr0 : 0 ≤ r := (norm_nonneg x).trans (le_max_left _ _)
+  have hCL : C * L * r < 1 := by
+    rcases eq_or_lt_of_le (mul_nonneg C.coe_nonneg L.coe_nonneg) with hCL | hCL
+    · rw [← hCL, zero_mul]
+      exact one_pos
+    · have h := hrγ.2
+      rw [← one_div, lt_div_iff₀ (by linarith)] at h
+      linarith
+  exact eq_of_add_add_eq_zero hDQ hQ hN (by linarith) hCL (le_max_left _ _) (le_max_right _ _) hxQ
+    hxe hyQ hye
 
 /-- **Existence.** If `E` is complete, `2 C ‖e‖ ≤ δ` and `2 C² L ‖e‖ < 1`, the equation
 `e + D x + N x = 0` has a solution `x` in the range of `Q` with `‖x‖ ≤ 2 C ‖e‖`. It is the fixed
@@ -375,6 +421,88 @@ theorem exists_continuous_forall_add_add_eq_zero [CompleteSpace E] (hN0 : ∀ p,
   choose x hxQ hxn hxe using hsol
   exact ⟨x, continuous_of_forall_add_add_eq_zero hDQ hQ hN hrδ hr (fun p ↦ (hxn p).trans (he p))
     hxQ hxe hT, fun p ↦ ⟨hxQ p, hxn p, hxe p⟩⟩
+
+/-- **The forced correction.** Let the residuals satisfy `‖e p‖ ≤ ε` with
+`2 C² L ε < 1 / 4` and `2 C ε < δ / 4`, so that the unforced equations `e p + D p x + N p x = 0`
+are solved by `TauCeti.exists_continuous_forall_add_add_eq_zero`. Add a forcing term `g p ρ`,
+depending on a second parameter `ρ ∈ s`, of size `‖g p ρ‖ ≤ β` within the tolerance
+`16 C² L β ≤ 1` and `8 C β ≤ δ`. If `E` is complete and `N p 0 = 0`, the forced equations
+
+`e p + g p ρ + D p x + N p x = 0`
+
+have solutions `x p ρ` in the range of `Q p` with `‖x p ρ‖ ≤ 2 C ‖e p + g p ρ‖`, depending
+continuously on `(p, ρ)` as soon as the maps `(p, ρ) ↦ Q p (e p + g p ρ + N p z)` do for `z` in the
+closed ball of radius `2 C (ε + β)`, and depending on the forcing with Lipschitz constant `2 C`:
+`‖x p ρ - x p ρ'‖ ≤ 2 C ‖g p ρ - g p ρ'‖`. Moreover `x p ρ` is the only solution in the range
+of `Q p` of norm less than `min (δ / 2) (2 C L)⁻¹`.
+
+The tolerance only costs a fixed fraction of the contraction and radius budgets:
+`2 C² L (ε + β) < 3 / 8` and `2 C (ε + β) < δ / 2`. For a forcing `‖g p ρ‖ ≤ B ‖ρ‖` over the
+ball `‖ρ‖ ≤ τ`, take `β = B τ`: the tolerance holds as soon as `τ ≤ (16 C² L (1 + B))⁻¹` and
+`τ ≤ δ / (8 C (1 + B))`. -/
+theorem exists_continuousOn_forall_add_add_add_eq_zero [CompleteSpace E] (hN0 : ∀ p, N p 0 = 0)
+    {V : Type*} [TopologicalSpace V] {s : Set V} {g : ∀ p, V → F p} {ε β : ℝ}
+    (he : ∀ p, ‖e p‖ ≤ ε) (hg : ∀ p, ∀ ρ ∈ s, ‖g p ρ‖ ≤ β) (hε : 2 * C ^ 2 * L * ε < 1 / 4)
+    (hεδ : 2 * C * ε < δ / 4) (hβ : 16 * C ^ 2 * L * β ≤ 1) (hβδ : 8 * C * β ≤ δ)
+    (hT : ∀ z ∈ closedBall (0 : E) (2 * C * (ε + β)),
+      ContinuousOn (fun q : P × V ↦ Q q.1 (e q.1 + g q.1 q.2 + N q.1 z)) (univ ×ˢ s)) :
+    ∃ x : P → V → E, ContinuousOn (Function.uncurry x) (univ ×ˢ s) ∧
+      (∀ p, ∀ ρ ∈ s, x p ρ ∈ range (Q p) ∧ ‖x p ρ‖ ≤ 2 * C * ‖e p + g p ρ‖ ∧
+        e p + g p ρ + D p (x p ρ) + N p (x p ρ) = 0) ∧
+      (∀ p, ∀ ρ ∈ s, ∀ y ∈ range (Q p), ‖y‖ < min (δ / 2) (2 * C * L)⁻¹ →
+        e p + g p ρ + D p y + N p y = 0 → y = x p ρ) ∧
+      ∀ p, ∀ ρ ∈ s, ∀ ρ' ∈ s, ‖x p ρ - x p ρ'‖ ≤ 2 * C * ‖g p ρ - g p ρ'‖ := by
+  classical
+  have hC : (0 : ℝ) ≤ C := C.2
+  have hL : (0 : ℝ) ≤ L := L.2
+  -- The solutions are constructed in the ball of radius `r = min (2 C (ε + β)) δ`, on which the
+  -- contraction constant `C L r` is below `3 / 8`.
+  set R : ℝ := 2 * C * (ε + β)
+  have hRδ : R < δ / 2 := by nlinarith
+  have hCLR : C * L * R < 3 / 8 := by nlinarith
+  set r : ℝ := min R δ
+  have hCLr : C * L * r ≤ 1 / 2 := by
+    linarith [hCLR, mul_le_mul_of_nonneg_left (min_le_left R δ) (mul_nonneg hC hL)]
+  have hbound (p : P) (ρ : V) (hρ : ρ ∈ s) : 2 * C * ‖e p + g p ρ‖ ≤ r := by
+    have h₁ : 2 * C * ‖e p + g p ρ‖ ≤ R :=
+      mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (add_le_add (he p) (hg p ρ hρ)))
+        (by positivity)
+    exact le_min h₁
+      (by linarith [mul_nonneg (mul_nonneg zero_le_two hC) (norm_nonneg (e p + g p ρ))])
+  -- Solve over the parameter space `P × s`, viewed as a subtype of `P × V`.
+  obtain ⟨x, hxc, hx⟩ := exists_continuous_forall_add_add_eq_zero (P := ↥(univ ×ˢ s))
+    (F := fun q ↦ F q.1.1) (G := fun q ↦ G q.1.1) (Q := fun q ↦ Q q.1.1)
+    (D := fun q ↦ D q.1.1) (N := fun q ↦ N q.1.1) (e := fun q ↦ e q.1.1 + g q.1.1 q.1.2)
+    (fun q ↦ hDQ q.1.1) (fun q ↦ hQ q.1.1) (fun q ↦ hN q.1.1) (fun q ↦ hN0 q.1.1)
+    (min_le_right R δ) (by linarith) (fun q ↦ hbound q.1.1 q.1.2 q.2.2)
+    fun z hz ↦ (hT z (closedBall_subset_closedBall (min_le_left R δ) hz)).domRestrict
+  set y : P → V → E := fun p ρ ↦ if h : ρ ∈ s then x ⟨(p, ρ), mem_univ p, h⟩ else 0
+  have hyx (p : P) (ρ : V) (hρ : ρ ∈ s) : y p ρ = x ⟨(p, ρ), mem_univ p, hρ⟩ := dite_eq_left hρ
+  have hys (p : P) (ρ : V) (hρ : ρ ∈ s) :
+      y p ρ ∈ range (Q p) ∧ ‖y p ρ‖ ≤ 2 * C * ‖e p + g p ρ‖ ∧
+        e p + g p ρ + D p (y p ρ) + N p (y p ρ) = 0 := by
+    rw [hyx p ρ hρ]
+    exact hx ⟨(p, ρ), mem_univ p, hρ⟩
+  refine ⟨y, ?_, hys, fun p ρ hρ z hzQ hz hze ↦ ?_, fun p ρ hρ ρ' hρ' ↦ ?_⟩
+  · rw [continuousOn_iff_continuous_domRestrict]
+    convert hxc using 1
+    ext ⟨⟨p, ρ⟩, hq⟩
+    exact hyx p ρ hq.2
+  · -- The constructed solution has norm at most `2 C (ε + β)`, inside the uniqueness ball.
+    obtain ⟨hQρ, hnρ, heρ⟩ := hys p ρ hρ
+    have hyR : ‖y p ρ‖ ≤ R := hnρ.trans ((hbound p ρ hρ).trans (min_le_left R δ))
+    -- The uniqueness ball is nonempty, so `C L > 0`.
+    have hCL : 0 < 2 * (C : ℝ) * L := inv_pos.1 ((norm_nonneg z).trans_lt (lt_min_iff.1 hz).2)
+    have hRγ : R < (2 * (C : ℝ) * L)⁻¹ := by
+      rw [← one_div, lt_div_iff₀ hCL]
+      linarith
+    exact eq_of_add_add_eq_zero_of_lt_min (hDQ p) (hQ p) (hN p) hz
+      (lt_min (by linarith) (hyR.trans_lt hRγ)) hzQ hze hQρ heρ
+  · obtain ⟨hQρ, hnρ, heρ⟩ := hys p ρ hρ
+    obtain ⟨hQρ', hnρ', heρ'⟩ := hys p ρ' hρ'
+    have h := norm_sub_le_two_mul_mul_norm_sub (hDQ p) (hQ p) (hN p) (min_le_right R δ) hCLr
+      (hnρ.trans (hbound p ρ hρ)) (hnρ'.trans (hbound p ρ' hρ')) hQρ heρ hQρ' heρ'
+    rwa [add_sub_add_left_eq_sub] at h
 
 end Parametric
 
