@@ -61,6 +61,7 @@ of the torsion submodules. A linear map into a torsion-free module vanishes on t
 * `TauCeti.Submodule.prodMk_mem_torsion`: a pair of torsion elements is torsion.
 * `Module.IsTorsion.of_injective`, `Module.IsTorsion.of_surjective`, `Module.IsTorsion.prod`:
   submodules, linear images and products of torsion modules are torsion.
+* `LinearEquiv.isTorsion'_iff`: being `S`-torsion is invariant under linear equivalences.
 * `Submodule.torsionBy_eq_ker_lsmul`: the `a`-torsion submodule is the kernel of
   `LinearMap.lsmul R M a`.
 * `Submodule.exists_smul_mem_of_forall_exists_smul_mem`: finitely many elements with nonzero
@@ -321,6 +322,20 @@ theorem prod (hM : Module.IsTorsion R M) (hN : Module.IsTorsion R N) :
     ((_root_.Submodule.mem_torsion_iff _).mpr (@hN x.2)))
 
 end Module.IsTorsion
+
+namespace LinearEquiv
+
+/-- Being `S`-torsion, every element killed by an element of `S`, is invariant under linear
+equivalences. -/
+theorem isTorsion'_iff {R M N : Type*} [Semiring R] [AddCommMonoid M] [AddCommMonoid N]
+    [Module R M] [Module R N] (e : M ≃ₗ[R] N) {S : Submonoid R} :
+    Module.IsTorsion' M S ↔ Module.IsTorsion' N S :=
+  ⟨fun h x ↦ (@h (e.symm x)).imp fun _ ha ↦ by
+    simpa [Submonoid.smul_def] using congrArg e ha,
+  fun h x ↦ (@h (e x)).imp fun _ ha ↦ by
+    simpa [Submonoid.smul_def] using congrArg e.symm ha⟩
+
+end LinearEquiv
 
 namespace Submodule
 
