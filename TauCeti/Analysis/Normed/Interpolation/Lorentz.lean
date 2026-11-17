@@ -166,7 +166,7 @@ theorem eLorentzNorm_le_kMethodENorm_l1Linfty (hθ : θ ∈ Ioo 0 1)
   rw [eLorentzNorm_eq_eLpNorm ((AEEqFun.aestronglyMeasurable _).congr hu)
     (exp_ne_zero_of_inv_eq hp), kMethodENorm_def]
   refine eLpNorm_mono_eNorm_ae
-    (measurable_rpow_mul_decreasingRearrangement _ _ _).aestronglyMeasurable
+    (μ.measurable_rpow_mul_decreasingRearrangement _ _).aestronglyMeasurable
     (ae_pos_multHaar.mono fun t ht ↦ ?_)
   simp only [eNorm_eq_self]
   calc ENNReal.ofReal (t ^ (p⁻¹).toReal) * μ.decreasingRearrangement (‖f ·‖ₑ) t
@@ -186,11 +186,6 @@ theorem eLorentzNorm_le_kMethodENorm_lebesgue_one_top (hθ : θ ∈ Ioo 0 1)
     (hv : ⇑(L1AddLinfty.toAEEqFun 𝕜 ((lebesgue 𝕜 E μ 1 ∞).sumSpaceEmbed v)) =ᵐ[μ] f) :
     eLorentzNorm f p q μ ≤ (lebesgue 𝕜 E μ 1 ∞).kMethodENorm θ q v :=
   kMethodENorm_l1Linfty_sumSpaceEmbed θ q v ▸ eLorentzNorm_le_kMethodENorm_l1Linfty hθ hp hv
-
-private theorem measurable_rpow_neg_mul_setLIntegral_Ioc (θ : ℝ) (φ : ℝ → ℝ≥0∞) :
-    Measurable fun t : ℝ ↦ ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, φ s :=
-  ((measurable_id.pow_const (-θ)).ennreal_ofReal).mul
-    (Monotone.measurable fun _ _ h ↦ lintegral_mono_set (Ioc_subset_Ioc_right h))
 
 /-- **General upper bound (`‖u‖_{θ, q} ≤ 2 θ⁻¹ ‖f‖_{p, q}`).** Over any normed field `𝕜` (without
 requiring `NormedSpace ℝ E`), indicator truncation and the prefix Hardy inequality bound the
@@ -212,8 +207,7 @@ theorem kMethodENorm_l1Linfty_le_two_mul_eLorentzNorm (hθ : θ ∈ Ioo 0 1)
               ENNReal.ofReal_mul (Real.rpow_nonneg ht.le _)]
             exact (mul_le_mul_right (ofReal_kFunctional_l1Linfty_le_two_mul hu ht.le) _).trans_eq
               (mul_left_comm _ _ _))
-    _ = 2 * eLpNorm g q multHaar := eLpNorm_const_mul_ennreal
-        (measurable_rpow_neg_mul_setLIntegral_Ioc θ _).aestronglyMeasurable
+    _ = 2 * eLpNorm g q multHaar := eLpNorm_const_mul_ennreal_of_pos (zero_lt_one.trans_le hq)
     _ ≤ _ := (mul_le_mul_right (eLpNorm_rpow_neg_mul_setLIntegral_Ioc_le hθ.1 hq
         (μ.measurable_decreasingRearrangement _).aemeasurable) 2).trans_eq (mul_assoc _ _ _).symm
 

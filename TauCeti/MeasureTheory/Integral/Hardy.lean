@@ -7,6 +7,8 @@ module
 
 public import TauCeti.MeasureTheory.Measure.Haar.MultHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Integral.SchurTest
 
 /-!
@@ -114,14 +116,6 @@ private theorem lintegral_hardyKernel_col {θ s : ℝ} (hθ : 0 < θ) (hs : 0 < 
   have hsθ : s ^ θ ≠ 0 := (Real.rpow_pos_of_pos hs θ).ne'
   rw [sub_add_cancel, neg_div_neg_eq, Real.rpow_neg hs.le]; field_simp
 
-private theorem schur_const_eq_self (A : ℝ≥0∞) {q : ℝ≥0∞} (hq : 1 ≤ q) :
-    A ^ (1 - q.toReal⁻¹) * A ^ q.toReal⁻¹ = A := by
-  have h₀ : 0 ≤ 1 - q.toReal⁻¹ := by
-    rcases eq_or_ne q ∞ with rfl | hq_top
-    · simp
-    · exact sub_nonneg.2 (inv_le_one_of_one_le₀ (by simpa using ENNReal.toReal_mono hq_top hq))
-  rw [← ENNReal.rpow_add_of_nonneg _ _ h₀ (by positivity), sub_add_cancel, ENNReal.rpow_one]
-
 /-- **Prefix Hardy inequality** in multiplicative Haar form: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ (-θ) ∫₀ᵗ ψ(s) ds / s‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (-θ) ψ(s)‖_{L^q(ds / s)}`. -/
 theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_multHaar_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ≥0∞}
@@ -147,8 +141,9 @@ theorem eLpNorm_rpow_neg_mul_setLIntegral_Ioc_multHaar_le {θ : ℝ} (hθ : 0 < 
   rw [eLpNorm_congr_ae hae]
   exact (eLpNorm_lintegral_mul_le (measurable_uncurry_hardyKernel θ).aemeasurable hg hq
     (ae_pos_multHaar.mono fun t ht ↦ (lintegral_hardyKernel_row hθ ht).le)
-    (ae_pos_multHaar.mono fun s hs ↦ (lintegral_hardyKernel_col hθ hs).le)).trans_eq
-    (by rw [schur_const_eq_self _ hq])
+    (ae_pos_multHaar.mono fun s hs ↦ (lintegral_hardyKernel_col hθ hs).le)).trans_eq <| by
+      rw [mul_comm (_ ^ _), ENNReal.rpow_mul_rpow_one_sub _ (by positivity)
+        (sub_nonneg.1 (by simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hq))]
 
 /-- **Prefix Hardy inequality** for Lebesgue integrals on `(0, t]`: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ (-θ) ∫₀ᵗ φ(s) ds‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (1 - θ) φ(s)‖_{L^q(ds / s)}`. -/
@@ -191,8 +186,9 @@ theorem eLpNorm_rpow_mul_setLIntegral_Ici_multHaar_le {θ : ℝ} (hθ : 0 < θ) 
   rw [eLpNorm_congr_ae hae]
   exact (eLpNorm_lintegral_mul_le (measurable_uncurry_hardyKernel_swap θ).aemeasurable hg hq
     (ae_pos_multHaar.mono fun t ht ↦ (lintegral_hardyKernel_col hθ ht).le)
-    (ae_pos_multHaar.mono fun s hs ↦ (lintegral_hardyKernel_row hθ hs).le)).trans_eq
-    (by rw [schur_const_eq_self _ hq])
+    (ae_pos_multHaar.mono fun s hs ↦ (lintegral_hardyKernel_row hθ hs).le)).trans_eq <| by
+      rw [mul_comm (_ ^ _), ENNReal.rpow_mul_rpow_one_sub _ (by positivity)
+        (sub_nonneg.1 (by simpa only [one_div] using ENNReal.one_sub_one_div_toReal_nonneg hq))]
 
 /-- **Tail Hardy inequality** for Lebesgue integrals on `[t, ∞)`: for `θ > 0` and `1 ≤ q ≤ ∞`,
 `‖t ↦ t ^ θ ∫_t^∞ φ(s) ds‖_{L^q(dt / t)} ≤ θ⁻¹ ‖s ↦ s ^ (1 + θ) φ(s)‖_{L^q(ds / s)}`. -/

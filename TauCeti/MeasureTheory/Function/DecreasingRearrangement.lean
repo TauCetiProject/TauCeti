@@ -164,6 +164,24 @@ theorem continuousWithinAt_decreasingRearrangement (f : α → ℝ≥0∞) (s : 
   · exact eventually_nhdsWithin_of_forall fun t (ht : s ≤ t) ↦
       (μ.antitone_decreasingRearrangement f ht).trans_lt hc
 
+/-- For any real exponent `r`, the power-weighted decreasing rearrangement `t ↦ t ^ r * f*(t)` is
+measurable. -/
+theorem measurable_rpow_mul_decreasingRearrangement (f : α → ℝ≥0∞) (r : ℝ) :
+    Measurable fun t : ℝ ↦ ENNReal.ofReal (t ^ r) * μ.decreasingRearrangement f t :=
+  ((measurable_id.pow_const r).ennreal_ofReal).mul (μ.measurable_decreasingRearrangement f)
+
+/-- For any real exponent `r` and `t > 0`, the power-weighted decreasing rearrangement
+`s ↦ s ^ r * f*(s)` is right continuous at `t`. -/
+theorem continuousWithinAt_rpow_mul_decreasingRearrangement (f : α → ℝ≥0∞) (r : ℝ) (ht : 0 < t) :
+    ContinuousWithinAt
+      (fun s : ℝ ↦ ENNReal.ofReal (s ^ r) * μ.decreasingRearrangement f s) (Ici t) t :=
+  ENNReal.Tendsto.mul
+    ((ENNReal.continuous_ofReal.continuousAt.comp
+      (Real.continuousAt_rpow_const t r (Or.inl ht.ne'))).continuousWithinAt)
+    (Or.inl (ENNReal.ofReal_pos.2 (Real.rpow_pos_of_pos ht r)).ne')
+    (μ.continuousWithinAt_decreasingRearrangement f t)
+    (Or.inr ENNReal.ofReal_ne_top)
+
 /-- At nonpositive arguments the decreasing rearrangement is the essential supremum. -/
 theorem decreasingRearrangement_of_nonpos (f : α → ℝ≥0∞) (hs : s ≤ 0) :
     μ.decreasingRearrangement f s = essSup f μ := by
