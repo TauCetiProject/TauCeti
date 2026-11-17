@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.IteratedFDeriv
+public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Calculus.Jet.Equivalence
@@ -196,18 +197,18 @@ theorem iteratedFDeriv_finiteJetPolynomial_self (r : ℕ)
   simp [Fintype.card_perm, nsmul_eq_mul, ← smul_assoc,
     Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero i.val)]
 
-/-- **Taylor polynomials have the jets of their functions.** Over `ℝ` or `ℂ`, a map `s` which is
-`C^r` at `y` has the same `r`-jet at `y` as its Taylor polynomial of degree `r` centered at `y`. -/
-theorem sameJetAt_finiteJetPolynomial_iteratedFDeriv [IsRCLikeNormedField 𝕜] {r : ℕ}
-    {s : E → F} {y : E} (hs : ContDiffAt 𝕜 r s y) :
+/-- **Taylor polynomials have the jets of their functions.** A map `s` which is `C^n` at `y` with
+`minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic otherwise) has the same `r`-jet at `y` as
+its Taylor polynomial of degree `r` centered at `y`. -/
+theorem sameJetAt_finiteJetPolynomial_iteratedFDeriv [CharZero 𝕜] {r : ℕ} {n : ℕ∞ω}
+    {s : E → F} {y : E} (hs : ContDiffAt 𝕜 n s y) (hn : minSmoothness 𝕜 r ≤ n) :
     SameJetAt 𝕜 r y (finiteJetPolynomial r (fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s y) y)
       s := by
-  let := IsRCLikeNormedField.rclike 𝕜
   rw [sameJetAt_iff]
   intro i hi
   exact iteratedFDeriv_finiteJetPolynomial_self r _ y ⟨i, Nat.lt_succ_of_le hi⟩
     fun v σ ↦ hs.iteratedFDeriv_comp_perm_of_le
-      (by rw [minSmoothness_of_isRCLikeNormedField]; exact_mod_cast hi) v σ
+      ((minSmoothness_monotone (by exact_mod_cast hi)).trans hn) v σ
 
 /-- A finite symmetric jet is realized by an analytic smooth function whose graph stays
 in any prescribed neighborhood of the center-value pair `(x, A 0 0)` near the center. -/

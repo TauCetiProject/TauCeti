@@ -34,9 +34,10 @@ and continuous with no smoothness assumption, and smooth in `x` when `h` and `g`
 These are the local coordinate results from which the bundle of `r`-jets of a vector bundle is
 glued: its coordinate changes satisfy the identity and cocycle laws on symmetric jets, depend
 only on the germs of the coordinate maps, are smooth on chart overlaps, and commute with
-truncation of jets to lower order. Iterated derivatives are symmetric only over `ℝ` and `ℂ` for
-maps which are not analytic, so the laws which apply the transformation to transformed jets
-assume `IsRCLikeNormedField 𝕜`.
+truncation of jets to lower order. Iterated derivatives of maps which are not analytic are
+symmetric only over `ℝ` and `ℂ`, so the laws which apply the transformation to transformed jets
+assume the maps are `C^n` with `minSmoothness 𝕜 r ≤ n`: `C^r` over `ℝ` or `ℂ`, analytic
+otherwise.
 
 ## Main declarations
 
@@ -100,10 +101,10 @@ private theorem contDiffAt_jetTransform {r : ℕ} {h : E' → E} {g : E' → F �
 base-dependent linear change of fibre coordinates `g : E' → F →L[𝕜] G`, at the point `x : E'`.
 It is defined by realizing a jet `A` at `h x` by its Taylor polynomial `P` of degree `r` and
 taking the `r`-jet at `x` of `z ↦ g z (P (h z))` (`TauCeti.linearJetCoordChange_apply_apply`);
-this makes sense for all `h` and `g`, and is continuous linear in the jet. Over `ℝ` or `ℂ`, when
-`s : E → F`, `h` and `g` are `C^r`, it takes the `r`-jet `(Dⁱ s (h x))ᵢ` of `s` at `h x` to the
-`r`-jet at `x` of the transformed section `z ↦ g z (s (h z))`
-(`TauCeti.linearJetCoordChange_iteratedFDeriv`). -/
+this makes sense for all `h` and `g`, and is continuous linear in the jet. When `h` and `g` are
+`C^r` and `s : E → F` is `C^n` with `minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic
+otherwise), it takes the `r`-jet `(Dⁱ s (h x))ᵢ` of `s` at `h x` to the `r`-jet at `x` of the
+transformed section `z ↦ g z (s (h z))` (`TauCeti.linearJetCoordChange_iteratedFDeriv`). -/
 def linearJetCoordChange (r : ℕ) (h : E' → E) (g : E' → F →L[𝕜] G) (x : E') :
     ((i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) →L[𝕜] ((i : Fin (r + 1)) → E' [×i.val]→L[𝕜] G) :=
   ContinuousLinearMap.pi fun i ↦ (iteratedFDeriv 𝕜 i.val
@@ -196,15 +197,17 @@ theorem linearJetCoordChange_eq_of_sameJetAt {r : ℕ} {h : E' → E} {g : E' �
     (contDiff_finiteJetPolynomial r A (h x)).contDiffAt hs hh ha).iteratedFDeriv_eq
       i.is_le
 
-/-- **Coordinate changes of jets of sections.** Over `ℝ` or `ℂ`, the coordinate change of `r`-jets
-takes the `r`-jet of a `C^r` map `s` at `h x` to the `r`-jet at `x` of the transformed map
+/-- **Coordinate changes of jets of sections.** If `h` and `g` are `C^r` at `x` and `s` is `C^n`
+at `h x` with `minSmoothness 𝕜 r ≤ n` (`C^r` over `ℝ` or `ℂ`, analytic otherwise), the coordinate
+change of `r`-jets takes the `r`-jet of `s` at `h x` to the `r`-jet at `x` of the transformed map
 `z ↦ g z (s (h z))`. -/
-theorem linearJetCoordChange_iteratedFDeriv [IsRCLikeNormedField 𝕜] {r : ℕ} {h : E' → E}
-    {g : E' → F →L[𝕜] G} {x : E'} {s : E → F} (hs : ContDiffAt 𝕜 r s (h x))
-    (hh : ContDiffAt 𝕜 r h x) (hg : ContDiffAt 𝕜 r g x) :
+theorem linearJetCoordChange_iteratedFDeriv [CharZero 𝕜] {r : ℕ} {n : ℕ∞ω} {h : E' → E}
+    {g : E' → F →L[𝕜] G} {x : E'} {s : E → F} (hs : ContDiffAt 𝕜 n s (h x))
+    (hn : minSmoothness 𝕜 r ≤ n) (hh : ContDiffAt 𝕜 r h x) (hg : ContDiffAt 𝕜 r g x) :
     linearJetCoordChange r h g x (fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val s (h x)) =
       fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val (fun z ↦ g z (s (h z))) x :=
-  linearJetCoordChange_eq_of_sameJetAt (sameJetAt_finiteJetPolynomial_iteratedFDeriv hs) hs hh hg
+  linearJetCoordChange_eq_of_sameJetAt (sameJetAt_finiteJetPolynomial_iteratedFDeriv hs hn)
+    (hs.of_le (le_minSmoothness.trans hn)) hh hg
 
 /-- **The identity law.** The identity coordinate change fixes every symmetric jet. -/
 theorem linearJetCoordChange_id [CharZero 𝕜] {r : ℕ} (x : E)
@@ -215,26 +218,29 @@ theorem linearJetCoordChange_id [CharZero 𝕜] {r : ℕ} (x : E)
   rw [linearJetCoordChange_apply i contDiffAt_id contDiffAt_const]
   exact iteratedFDeriv_finiteJetPolynomial_self r A x i (hA i)
 
-/-- **The cocycle law.** Over `ℝ` or `ℂ`, transforming a jet first by `(h₁, g₁)` at `h₂ x` and
-then by `(h₂, g₂)` at `x` is transforming it by the composite coordinate change
-`(h₁ ∘ h₂, z ↦ g₂ z ∘ g₁ (h₂ z))` at `x`. -/
-theorem linearJetCoordChange_comp [IsRCLikeNormedField 𝕜] {r : ℕ}
+/-- **The cocycle law.** If `h₁` and `g₁` are `C^n` at `h₂ x` with `minSmoothness 𝕜 r ≤ n`
+(`C^r` over `ℝ` or `ℂ`, analytic otherwise) and `h₂` and `g₂` are `C^r` at `x`, then transforming
+a jet first by `(h₁, g₁)` at `h₂ x` and then by `(h₂, g₂)` at `x` is transforming it by the
+composite coordinate change `(h₁ ∘ h₂, z ↦ g₂ z ∘ g₁ (h₂ z))` at `x`. -/
+theorem linearJetCoordChange_comp [CharZero 𝕜] {r : ℕ} {n : ℕ∞ω}
     {h₁ : E' → E} {g₁ : E' → F →L[𝕜] G} {h₂ : E'' → E'} {g₂ : E'' → G →L[𝕜] H} {x : E''}
-    (hh₁ : ContDiffAt 𝕜 r h₁ (h₂ x)) (hg₁ : ContDiffAt 𝕜 r g₁ (h₂ x))
-    (hh₂ : ContDiffAt 𝕜 r h₂ x) (hg₂ : ContDiffAt 𝕜 r g₂ x)
+    (hh₁ : ContDiffAt 𝕜 n h₁ (h₂ x)) (hg₁ : ContDiffAt 𝕜 n g₁ (h₂ x))
+    (hn : minSmoothness 𝕜 r ≤ n) (hh₂ : ContDiffAt 𝕜 r h₂ x) (hg₂ : ContDiffAt 𝕜 r g₂ x)
     (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
     linearJetCoordChange r h₂ g₂ x (linearJetCoordChange r h₁ g₁ (h₂ x) A) =
       linearJetCoordChange r (h₁ ∘ h₂) (fun z ↦ (g₂ z).comp (g₁ (h₂ z))) x A := by
   -- The first transformation is the jet of the transformed Taylor polynomial `σ` of `A`.
   set σ : E' → G := fun t ↦ g₁ t (finiteJetPolynomial r A (h₁ (h₂ x)) (h₁ t))
-  have hσd : ContDiffAt 𝕜 r σ (h₂ x) :=
+  have hσd : ContDiffAt 𝕜 n σ (h₂ x) :=
     hg₁.clm_apply ((contDiff_finiteJetPolynomial r A _).contDiffAt.comp _ hh₁)
+  replace hh₁ := hh₁.of_le (le_minSmoothness.trans hn)
+  replace hg₁ := hg₁.of_le (le_minSmoothness.trans hn)
   have h₁A : linearJetCoordChange r h₁ g₁ (h₂ x) A =
       fun i : Fin (r + 1) ↦ iteratedFDeriv 𝕜 i.val σ (h₂ x) := by
     funext i
     exact linearJetCoordChange_apply i (hh₁.of_le (natCast_val_le i)) (hg₁.of_le (natCast_val_le i))
       A
-  rw [h₁A, linearJetCoordChange_iteratedFDeriv hσd hh₂ hg₂]
+  rw [h₁A, linearJetCoordChange_iteratedFDeriv hσd hn hh₂ hg₂]
   funext i
   rw [linearJetCoordChange_apply (g := fun z ↦ (g₂ z).comp (g₁ (h₂ z))) i
     ((hh₁.comp x hh₂).of_le (natCast_val_le i))
