@@ -64,9 +64,8 @@ satisfy the discrete variational inequality of `TauCeti.Analysis.GradientFlow.Mo
 
 ## Main results
 
-* `TauCeti.dist_sq_le_of_eq_generalizedGeodesic` and
-  `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le`: quadratic distance bound between points along
-  a generalized geodesic and convexity of the squared Wasserstein distance from the base point.
+* `TauCeti.IsGeneralizedGeodesicPlan.dist_sq_add_le`: the convexity of the squared Wasserstein
+  distance from the base point along a generalized geodesic, as an inequality of real numbers.
 * `TauCeti.GeneralizedGeodesicallyConvex.add_edist_sq_div` and
   `TauCeti.GeneralizedGeodesicallyConvex.exists_convexAlong_add_dist_sq_div`:
   `(m + 1 / τ)`-convexity of the JKO penalized functional along generalized geodesics.
@@ -177,43 +176,6 @@ theorem GeneralizedGeodesicallyConvex.mono (h : GeneralizedGeodesicallyConvex m 
   (h h₀ h₁).imp fun _ hγ ↦ ⟨hγ.1, hγ.2.mono hm⟩
 
 end Convexity
-
-section NormedSpace
-
-variable [NormedSpace ℝ E] [BorelSpace E] [SecondCountableTopology E] [CompleteSpace E]
-
-/-- **Distance between two points along a generalized geodesic.** For a measure `γ` on `E × E × E`
-and laws `νs`, `νr` in `P₂(E)` equal to `generalizedGeodesic γ s` and `generalizedGeodesic γ r`,
-`W₂ (νs, νr) ^ 2 ≤ (r - s) ^ 2 ∫ ‖y₀ - y₁‖ ^ 2 dγ`. -/
-theorem dist_sq_le_of_eq_generalizedGeodesic {γ : Measure (E × E × E)} {s r : ℝ}
-    {νs νr : WassersteinSpace 2 E}
-    (hνs : ((νs : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ s)
-    (hνr : ((νr : ProbabilityMeasure E) : Measure E) = generalizedGeodesic γ r) :
-    dist νs νr ^ 2 ≤ (r - s) ^ 2 * ∫ z, ‖z.1 - z.2‖ ^ 2 ∂γ.snd := by
-  set f : E × E → E × E := fun z ↦ ((1 - s) • z.1 + s • z.2, (1 - r) • z.1 + r • z.2)
-  have hf_meas : Measurable f := by fun_prop
-  have hcoupl : IsCoupling (γ.snd.map f) ((νs : ProbabilityMeasure E) : Measure E)
-      ((νr : ProbabilityMeasure E) : Measure E) := by
-    constructor
-    · rw [hνs, generalizedGeodesic_def, Measure.fst, Measure.map_map measurable_fst hf_meas,
-        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-      rfl
-    · rw [hνr, generalizedGeodesic_def, Measure.snd, Measure.map_map measurable_snd hf_meas,
-        Measure.snd, Measure.map_map (by fun_prop) measurable_snd]
-      rfl
-  refine (WassersteinSpace.dist_sq_le_integral hcoupl).trans ?_
-  rw [integral_map (f := fun z : E × E ↦ ‖z.1 - z.2‖ ^ 2) hf_meas.aemeasurable (by fun_prop)]
-  have hpoint : ∀ z : E × E, ‖(f z).1 - (f z).2‖ ^ 2 = (r - s) ^ 2 * ‖z.1 - z.2‖ ^ 2 := fun z ↦ by
-    have hsub : ((1 - s) • z.1 + s • z.2) - ((1 - r) • z.1 + r • z.2) =
-        (r - s) • (z.1 - z.2) := by
-      simp only [sub_smul, one_smul, smul_sub]
-      abel
-    dsimp [f]
-    rw [hsub, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
-  simp_rw [hpoint, integral_const_mul]
-  exact le_rfl
-
-end NormedSpace
 
 section Hilbert
 
