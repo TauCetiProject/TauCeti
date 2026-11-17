@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.HasPrimitives
 public import TauCeti.Geometry.Manifold.DeRham.SimplyConnected
 import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Calculus.FDeriv.RestrictScalars
 
 /-!
@@ -18,6 +19,8 @@ primitive there. This file records:
 
 * gluing from a convex part of a disc to the whole disc
   (`DifferentiableOn.exists_hasDerivAt_eqOn_ball_inter`);
+* exactness of `z ↦ z⁻¹` on `Complex.slitPlane` via `Complex.log`
+  (`TauCeti.isExactOn_inv_slitPlane`);
 * the correspondence between complex primitives of `f` and real `1`-form primitives of `f(z) dz`
   (`TauCeti.isPrimitiveOn_toSpanSingleton_iff`,
   `TauCeti.forall_exists_isPrimitiveOn_toSpanSingleton_iff_differentiableOn`);
@@ -132,3 +135,8 @@ theorem DifferentiableOn.exists_hasDerivAt_eqOn_ball_inter {f g : ℂ → E} {c 
     (fun _ _ ↦ norm_zero.le) hz₀ hz
   rw [zero_mul, norm_le_zero_iff, sub_eq_zero, Pi.sub_apply, Pi.sub_apply] at this
   simp [← this]
+
+/-- The holomorphic function `z ↦ z⁻¹` has a complex primitive on `Complex.slitPlane`, namely
+the principal branch `Complex.log`. -/
+theorem TauCeti.isExactOn_inv_slitPlane : Complex.IsExactOn (fun z : ℂ ↦ z⁻¹) Complex.slitPlane :=
+  ⟨Complex.log, fun _ hz ↦ Complex.hasDerivAt_log hz⟩

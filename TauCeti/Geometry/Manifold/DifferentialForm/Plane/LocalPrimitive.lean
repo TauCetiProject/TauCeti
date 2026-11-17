@@ -14,8 +14,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ContinuousP
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Plane.XDy
 public import TauCeti.Topology.Circle.Loop
+import Mathlib.Analysis.InnerProductSpace.NormPow
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
@@ -40,8 +40,9 @@ with local primitives, closed `C¹` `1`-forms, exact `1`-forms, and holomorphic 
   with double traversal `4π` and reversal `-2π`, showing that neither
   `TauCeti.puncturedPlaneAngularFormRestricted` on `ℂ \ {0}` nor `TauCeti.circleAngularForm` on
   `Circle` has a global primitive.
-* **Holomorphic `dz / z`**: exact on `Complex.slitPlane` (`Complex.log`), with loop integral
-  `2πi` around the unit circle, hence not exact on `ℂ \ {0}`.
+* **Holomorphic `dz / z`**: exact on `Complex.slitPlane` (`TauCeti.isExactOn_inv_slitPlane`), with
+  loop integral `2πi` around the unit circle, hence not exact on `ℂ \ {0}`
+  (`TauCeti.not_isExactOn_inv_compl_zero`).
 * **Non-`C¹` form `d(|x|^(3/2))` on `ℝ × ℝ` (`TauCeti.absRpowThreeHalvesForm`)**: has global
   primitive `(x, y) ↦ |x|^(3/2)` (unique up to a constant), is not `C¹`, integrates to `1` along
   `(0, 0) → (1, 0)` and `0` along `(-1, 0) → (1, 0)`, while `TauCeti.pathClassIntegral` returns
@@ -84,9 +85,10 @@ theorem complexDx_apply (z : ℂ) (v : Fin 1 → ℂ) :
 /-- The constant form `dx` on `ℂ` is nonzero. -/
 theorem complexDx_ne_zero : complexDx ≠ 0 := by
   intro h
-  have h1 := congrArg (fun φ : RoughForm 𝓘(ℝ, ℂ) ℂ ℝ 1 ↦ φ 0 fun _ ↦ (1 : ℂ)) h
-  change (1 : ℝ) = 0 at h1
-  norm_num at h1
+  have h1 : complexDx 0 ![(1 : ℂ)] = 0 :=
+    RoughForm.mem_ker.mp ((RoughForm.ker_eq_top_iff.mpr (congrFun h 0)).symm ▸ Submodule.mem_top)
+  have h2 := (complexDx_apply 0 ![(1 : ℂ)]).symm.trans h1
+  simp at h2
 
 /-- `Complex.re` is a global primitive of `complexDx` on `ℂ`. -/
 theorem isPrimitiveOn_complexDx_re : IsPrimitiveOn complexDx Complex.re univ := by
@@ -249,9 +251,11 @@ theorem puncturedPlaneAngularForm_apply (z : ℂ) (v : Fin 1 → ℂ) :
 
 @[simp]
 theorem puncturedPlaneAngularForm_zero : puncturedPlaneAngularForm 0 = 0 := by
-  ext v
-  let w : ℂ := v 0
-  exact (puncturedPlaneAngularForm_apply 0 v).trans (by change (w / 0).im = 0; simp)
+  rw [← RoughForm.ker_eq_top_iff, eq_top_iff]
+  intro v _
+  rw [RoughForm.mem_ker]
+  let w : ℂ := v
+  exact (puncturedPlaneAngularForm_apply 0 ![w]).trans (by simp)
 
 /-- The angular `1`-form restricted to the punctured plane `ℂ \ {0}`. -/
 def puncturedPlaneAngularFormRestricted : RoughForm 𝓘(ℝ, ℂ) puncturedPlane ℝ 1 :=
@@ -305,9 +309,7 @@ theorem puncturedPlaneAngularFormRestricted_eq_mapCoeff_mlogDeriv :
   have hv : (fun i : Fin 1 ↦
       mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : puncturedPlane → ℂ) z (v i)) = fun _ ↦ w :=
     funext fun i ↦ by rw [Subsingleton.elim i 0]
-  rw [hv]
-  change puncturedPlaneAngularForm (z : ℂ) (fun _ ↦ w) = ((z : ℂ)⁻¹ * w).im
-  rw [puncturedPlaneAngularForm_apply, div_eq_inv_mul]
+  rw [hv, puncturedPlaneAngularForm_apply, div_eq_inv_mul]
 
 /-- The angular form on the punctured plane is smooth. -/
 theorem isSmoothForm_puncturedPlaneAngularFormRestricted :
@@ -353,9 +355,7 @@ theorem mpullback_circleToPuncturedPlane_puncturedPlaneAngularFormRestricted :
   have hv : (fun i : Fin 1 ↦
       mfderiv (𝓡 1) 𝓘(ℝ, ℂ) (fun y : Circle ↦ (y : ℂ)) z (v i)) = fun _ ↦ w :=
     funext fun i ↦ by rw [Subsingleton.elim i 0]
-  rw [hv]
-  change puncturedPlaneAngularForm (z : ℂ) (fun _ ↦ w) = planeAngularForm (z : ℂ) (fun _ ↦ w)
-  rw [puncturedPlaneAngularForm_apply, ← puncturedPlaneAngularCovector_apply,
+  rw [hv, puncturedPlaneAngularForm_apply, ← puncturedPlaneAngularCovector_apply,
     puncturedPlaneAngularCovector_apply_re_im, Circle.re_sq_add_im_sq z, div_one,
     planeAngularForm_apply]
 
@@ -365,9 +365,9 @@ def circleUnitLoop : Path (1 : Circle) 1 :=
 
 @[simp]
 theorem circleUnitLoop_apply (t : unitInterval) :
-    circleUnitLoop t = Circle.exp (2 * Real.pi * t) := by
-  change (ContinuousMap.id Circle).toBasedLoop t = _
-  rw [ContinuousMap.toBasedLoop_apply, ContinuousMap.id_apply, unitToCircle_apply]
+    circleUnitLoop t = Circle.exp (2 * Real.pi * t) :=
+  (ContinuousMap.toBasedLoop_apply (ContinuousMap.id Circle) t).trans (by
+    rw [ContinuousMap.id_apply, unitToCircle_apply])
 
 /-- The standard counterclockwise unit circle loop inside the punctured plane `ℂ \ {0}`. -/
 def puncturedPlaneUnitLoop : Path puncturedPlaneOne puncturedPlaneOne :=
@@ -376,8 +376,9 @@ def puncturedPlaneUnitLoop : Path puncturedPlaneOne puncturedPlaneOne :=
 @[simp]
 theorem puncturedPlaneUnitLoop_apply (t : unitInterval) :
     (puncturedPlaneUnitLoop t : ℂ) = Circle.exp (2 * Real.pi * t) := by
-  change (circleToPuncturedPlane (circleUnitLoop t) : ℂ) = _
-  simp [circleToPuncturedPlane]
+  have hmap : puncturedPlaneUnitLoop t = circleToPuncturedPlane (circleUnitLoop t) :=
+    congrFun (circleUnitLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t
+  rw [hmap, circleToPuncturedPlane, circleUnitLoop_apply]
 
 /-- The angular form `circleAngularForm` has local primitives on `Circle`. -/
 theorem forall_exists_isPrimitiveOn_circleAngularForm (z : Circle) :
@@ -407,11 +408,15 @@ is `2π`. -/
 theorem continuousPathIntegral_puncturedPlaneAngularForm_unitLoop :
     continuousPathIntegral puncturedPlaneAngularFormRestricted puncturedPlaneUnitLoop =
       2 * Real.pi := by
-  change continuousPathIntegral puncturedPlaneAngularFormRestricted
-      (circleUnitLoop.map contMDiff_circleToPuncturedPlane.continuous) = 2 * Real.pi
-  rw [← continuousPathIntegral_mpullback
-    forall_exists_isPrimitiveOn_puncturedPlaneAngularFormRestricted
-    (contMDiff_circleToPuncturedPlane.mdifferentiable (by simp)),
+  rw [continuousPathIntegral_eq_of_apply_eq puncturedPlaneUnitLoop
+        (circleUnitLoop.map contMDiff_circleToPuncturedPlane.continuous)
+        (fun t ↦ Subtype.ext (by
+          rw [puncturedPlaneUnitLoop_apply,
+            congrFun (circleUnitLoop.map_coe contMDiff_circleToPuncturedPlane.continuous) t]
+          simp [circleToPuncturedPlane])),
+    ← continuousPathIntegral_mpullback
+      forall_exists_isPrimitiveOn_puncturedPlaneAngularFormRestricted
+      (contMDiff_circleToPuncturedPlane.mdifferentiable (by simp)),
     mpullback_circleToPuncturedPlane_puncturedPlaneAngularFormRestricted,
     continuousPathIntegral_circleAngularForm_circleUnitLoop]
 
@@ -487,11 +492,6 @@ theorem not_exists_isPrimitiveOn_circleAngularForm :
   rw [sub_self, continuousPathIntegral_circleAngularForm_circleUnitLoop] at h0
   linarith [Real.pi_pos]
 
-/-- The holomorphic function `z ↦ z⁻¹` has a complex primitive on `Complex.slitPlane`, namely
-the principal branch `Complex.log`. -/
-theorem isExactOn_inv_slitPlane : Complex.IsExactOn (fun z : ℂ ↦ z⁻¹) Complex.slitPlane :=
-  ⟨Complex.log, fun _ hz ↦ Complex.hasDerivAt_log hz⟩
-
 /-- The logarithmic derivative `dz / z` on the punctured plane has local primitives everywhere. -/
 theorem forall_exists_isPrimitiveOn_mlogDeriv_puncturedPlane (z : puncturedPlane) :
     ∃ (g : puncturedPlane → ℂ) (U : Set puncturedPlane),
@@ -534,9 +534,7 @@ theorem continuousPathIntegral_mlogDeriv_puncturedPlane_unitLoop :
       (hasDerivAt_coe_circleExp (2 * Real.pi * t)).scomp t hlin
     rw [hd.deriv, Complex.real_smul]
     have hne : (Circle.exp (2 * Real.pi * t) : ℂ) ≠ 0 := Circle.coe_ne_zero _
-    change (Circle.exp (2 * Real.pi * t) : ℂ)⁻¹ *
-        ((2 * Real.pi : ℝ) * (Complex.I * (Circle.exp (2 * Real.pi * t) : ℂ))) =
-      2 * Real.pi * Complex.I
+    simp only [c, circleToPuncturedPlane]
     push_cast
     field_simp [hne]
   simp_rw [hval]
@@ -561,8 +559,12 @@ theorem not_isExactOn_inv_compl_zero :
         mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) (Subtype.val : puncturedPlane → ℂ) z (v i)) = fun _ ↦ w :=
       funext fun i ↦ by rw [Subsingleton.elim i 0]
     rw [hv]
-    change (ContinuousLinearMap.toSpanSingleton ℂ (z : ℂ)⁻¹) w = (z : ℂ)⁻¹ * w
-    simp [mul_comm]
+    exact (ContinuousAlternatingMap.ofSubsingleton_apply_apply
+      (f := (ContinuousLinearMap.toSpanSingleton ℂ (z : ℂ)⁻¹).restrictScalars ℝ)
+      (i := (0 : Fin 1)) (x := fun _ ↦ w)).trans
+      (by
+        rw [ContinuousLinearMap.coe_restrictScalars', ContinuousLinearMap.toSpanSingleton_apply,
+          smul_eq_mul, mul_comm])
   have hpre : ((Subtype.val : puncturedPlane → ℂ) ⁻¹' ({0} : Set ℂ)ᶜ) = univ :=
     eq_univ_iff_forall.mpr fun z ↦ z.2
   have hgp : IsPrimitiveOn (mlogDeriv 𝓘(ℝ, ℂ) (Subtype.val : puncturedPlane → ℂ))
@@ -596,40 +598,19 @@ def absRpowThreeHalvesDeriv (x : ℝ) : ℝ :=
 `absRpowThreeHalvesDeriv`. -/
 theorem hasDerivAt_absRpowThreeHalves (x : ℝ) :
     HasDerivAt absRpowThreeHalves (absRpowThreeHalvesDeriv x) x := by
+  unfold absRpowThreeHalves
+  refine (hasDerivAt_abs_rpow x (p := (3 : ℝ) / 2) (by norm_num)).congr_deriv ?_
+  rw [absRpowThreeHalvesDeriv]
   rcases lt_trichotomy x 0 with hx | rfl | hx
-  · have heq : absRpowThreeHalves =ᶠ[𝓝 x] fun y ↦ (-y) ^ ((3 : ℝ) / 2) := by
-      filter_upwards [isOpen_Iio.mem_nhds hx] with y hy
-      simp [absRpowThreeHalves, abs_of_neg hy]
-    have hd := (Real.hasDerivAt_rpow_const (p := (3 : ℝ) / 2)
-      (Or.inl (neg_pos.mpr hx).ne')).comp x (hasDerivAt_neg x)
-    refine (hd.congr_of_eventuallyEq heq).congr_deriv ?_
-    have hsqrt : Real.sqrt x = 0 := Real.sqrt_eq_zero_of_nonpos hx.le
-    rw [absRpowThreeHalvesDeriv, hsqrt, zero_sub, Real.sqrt_eq_rpow]
-    norm_num
-  · rw [hasDerivAt_iff_tendsto_slope_zero]
-    have h0 : absRpowThreeHalves 0 = 0 := by simp [absRpowThreeHalves]
-    have hd0 : absRpowThreeHalvesDeriv 0 = 0 := by simp [absRpowThreeHalvesDeriv]
-    rw [h0, hd0]
-    refine squeeze_zero_norm' (a := fun t : ℝ ↦ Real.sqrt |t|) ?_ ?_
-    · filter_upwards [self_mem_nhdsWithin] with t ht
-      have htp : 0 < |t| := abs_pos.mpr ht
-      have hrp : |t| ^ ((3 : ℝ) / 2) = |t| * Real.sqrt |t| := by
-        rw [show ((3 : ℝ) / 2) = 1 + (1 / 2) by norm_num, Real.rpow_add htp, Real.rpow_one,
-          ← Real.sqrt_eq_rpow]
-      simp only [absRpowThreeHalves, zero_add, sub_zero, smul_eq_mul, Real.norm_eq_abs, abs_mul,
-        abs_inv, hrp, abs_abs, abs_of_nonneg (Real.sqrt_nonneg _)]
-      rw [← mul_assoc, inv_mul_cancel₀ htp.ne', one_mul]
-    · have hcont :=
-        ((Real.continuous_sqrt.comp continuous_abs).continuousAt (x := (0 : ℝ))).tendsto.mono_left
-          (nhdsWithin_le_nhds (s := ({0} : Set ℝ)ᶜ))
-      simpa only [Function.comp_def, abs_zero, Real.sqrt_zero] using hcont
-  · have heq : absRpowThreeHalves =ᶠ[𝓝 x] fun y ↦ y ^ ((3 : ℝ) / 2) := by
-      filter_upwards [isOpen_Ioi.mem_nhds hx] with y hy
-      simp [absRpowThreeHalves, abs_of_pos hy]
-    have hd := Real.hasDerivAt_rpow_const (x := x) (p := (3 : ℝ) / 2) (Or.inl hx.ne')
-    refine (hd.congr_of_eventuallyEq heq).congr_deriv ?_
-    have hsqrt : Real.sqrt (-x) = 0 := Real.sqrt_eq_zero_of_nonpos (by linarith)
-    rw [absRpowThreeHalvesDeriv, hsqrt, sub_zero, Real.sqrt_eq_rpow]
+  · have hpos : 0 < -x := neg_pos.mpr hx
+    rw [abs_of_neg hx, Real.sqrt_eq_zero_of_nonpos hx.le, zero_sub, Real.sqrt_eq_rpow]
+    have hmul : (-x) ^ ((3 : ℝ) / 2 - 2) * (-x) = (-x) ^ ((1 : ℝ) / 2) := by
+      rw [← Real.rpow_add_one hpos.ne']
+      norm_num
+    linarith [congrArg (fun t ↦ (3 : ℝ) / 2 * t) hmul]
+  · simp
+  · rw [abs_of_pos hx, Real.sqrt_eq_zero_of_nonpos (x := -x) (by linarith), sub_zero,
+      Real.sqrt_eq_rpow, mul_assoc, ← Real.rpow_add_one hx.ne']
     norm_num
 
 /-- `absRpowThreeHalvesDeriv` is not differentiable at `0`. -/
@@ -711,20 +692,21 @@ theorem not_isSmoothForm_one_absRpowThreeHalvesForm :
   intro hsmooth
   have hcd : ContDiff ℝ (E := ℝ × ℝ) (F := (ℝ × ℝ) [⋀^Fin 1]→L[ℝ] ℝ) 1 absRpowThreeHalvesForm :=
     isSmoothForm_modelSpace_iff.mp hsmooth
-  let ev : ((ℝ × ℝ) [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] ℝ :=
-    ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) ℝ (fun _ ↦ ((1 : ℝ), (0 : ℝ)))
-  have h1 : DifferentiableAt ℝ (ev ∘ absRpowThreeHalvesForm) (0, 0) :=
-    ev.differentiableAt.comp (0, 0) (hcd.differentiable one_ne_zero (0, 0))
+  have h1 : DifferentiableAt ℝ
+      (fun p : ℝ × ℝ ↦
+        ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) ℝ (fun _ ↦ ((1 : ℝ), (0 : ℝ)))
+          (absRpowThreeHalvesForm p)) (0, 0) :=
+    (differentiableAt_const _).clm_apply (hcd.differentiable one_ne_zero (0, 0))
   have h2 : DifferentiableAt ℝ (fun x : ℝ ↦ (x, (0 : ℝ))) 0 :=
     differentiableAt_id.prodMk (differentiableAt_const (0 : ℝ))
-  have hdiff : DifferentiableAt ℝ ((ev ∘ absRpowThreeHalvesForm) ∘ fun x : ℝ ↦ (x, (0 : ℝ))) 0 :=
+  have hcomp : DifferentiableAt ℝ
+      (fun x : ℝ ↦
+        ContinuousAlternatingMap.apply ℝ (ℝ × ℝ) ℝ (fun _ ↦ ((1 : ℝ), (0 : ℝ)))
+          (absRpowThreeHalvesForm (x, 0))) 0 :=
     DifferentiableAt.comp (f := fun x : ℝ ↦ (x, (0 : ℝ))) 0 h1 h2
-  have heq : ((ev ∘ absRpowThreeHalvesForm) ∘ fun x : ℝ ↦ (x, (0 : ℝ))) =
-      absRpowThreeHalvesDeriv := by
-    funext x
-    change absRpowThreeHalvesForm (x, 0) (fun _ ↦ (1, 0)) = absRpowThreeHalvesDeriv x
-    simp
-  rw [heq] at hdiff
+  have hdiff : DifferentiableAt ℝ absRpowThreeHalvesDeriv 0 :=
+    hcomp.congr_of_eventuallyEq (.of_forall fun x ↦
+      ((absRpowThreeHalvesForm_apply (x, 0) (fun _ ↦ (1, 0))).trans (mul_one _)).symm)
   exact not_differentiableAt_absRpowThreeHalvesDeriv_zero hdiff
 
 /-- Along the segment `(0, 0) → (1, 0)` in `ℝ × ℝ`, `continuousPathIntegral` of `d(|x|^(3/2))`

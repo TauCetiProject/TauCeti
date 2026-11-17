@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Manifold.Topology
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Basic
 public import Mathlib.Topology.Homotopy.Lifting
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
 
 /-!
@@ -234,20 +235,10 @@ theorem continuousPathIntegral_eq_sum_sub_of_subdivision
       g i (γ (t i.succ)) - g i (γ (t i.castSucc)) =
         PrimitiveSpace.value φ (Γ (t i.succ)) - PrimitiveSpace.value φ (Γ (t i.castSucc)) :=
     (PrimitiveSpace.value_sub_eq_of_isPrimitiveOn hφ Γ.continuous hΓγ (hg i) (hγ i)).symm
-  have htel : ∀ {m : ℕ} (a : Fin (m + 1) → F),
-      ∑ i : Fin m, (a i.succ - a i.castSucc) = a (Fin.last m) - a 0 := by
-    intro m a
-    induction m with
-    | zero => simp
-    | succ m ih =>
-      rw [Fin.sum_univ_castSucc]
-      simp only [Fin.succ_castSucc]
-      rw [ih (fun k ↦ a k.castSucc)]
-      simp only [Fin.succ_last, Fin.castSucc_zero]
-      abel
   rw [continuousPathIntegral_eq_sub_of_lift hφ Γ.continuous hΓγ,
     Finset.sum_congr rfl fun i _ ↦ hterm i,
-    htel (fun k : Fin (n + 1) ↦ PrimitiveSpace.value φ (Γ (t k))), ht₀, ht₁]
+    Fin.sum_univ_succ_sub_castSucc (fun k : Fin (n + 1) ↦ PrimitiveSpace.value φ (Γ (t k))),
+    ht₀, ht₁]
 
 /-! ### Path operations and homotopy invariance -/
 
@@ -509,11 +500,12 @@ section Comparison
 
 omit [IsManifold I 1 M] in
 /-- **Local fundamental theorem of calculus for `IsPrimitiveOn`.** If `g` is a primitive of `φ` on
-an open set `U` containing the `C¹` curve `c` on `uIcc a b`, and the integrand is interval
-integrable, then `pathIntegral φ c a b = g (c b) - g (c a)`. No `C¹` regularity of `g` is needed. -/
+an open set `U` containing the curve `c` on `uIcc a b`, `c` is differentiable at every point of
+`uIcc a b`, and the integrand is interval integrable, then
+`pathIntegral φ c a b = g (c b) - g (c a)`. No `C¹` regularity of `g` or `c` is needed. -/
 theorem pathIntegral_eq_sub_of_isPrimitiveOn [CompleteSpace F]
     {g : M → F} {U : Set M} (hgU : IsPrimitiveOn φ g U)
-    {c : ℝ → M} (hc : ContMDiff 𝓘(ℝ, ℝ) I 1 c) {a b : ℝ}
+    {c : ℝ → M} {a b : ℝ} (hc : ∀ t ∈ uIcc a b, MDifferentiableAt 𝓘(ℝ, ℝ) I c t)
     (hcU : ∀ t ∈ uIcc a b, c t ∈ U)
     (hint : IntervalIntegrable (fun t ↦ φ (c t) fun _ ↦ Manifold.curveVelocity I c t)
       volume a b) :
@@ -525,8 +517,7 @@ theorem pathIntegral_eq_sub_of_isPrimitiveOn [CompleteSpace F]
   have hd : HasDerivAt (g ∘ c) (mextDeriv (RoughForm.ofFunction I g) (c t)
       fun _ ↦ Manifold.curveVelocity I c t) t := by
     rw [mextDeriv_ofFunction, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-    exact Manifold.hasDerivAt_comp_curve hgt
-      (Manifold.hasMFDerivAt_curveVelocity ((hc t).mdifferentiableAt one_ne_zero))
+    exact Manifold.hasDerivAt_comp_curve hgt (Manifold.hasMFDerivAt_curveVelocity (hc t ht))
   rwa [hgU.mextDeriv_eq (c t) (hcU t ht)] at hd
 
 /-- **Comparison with smooth path integrals.** For a continuous `1`-form `φ` with local primitives
@@ -557,35 +548,11 @@ theorem continuousPathIntegral_eq_pathIntegral [CompleteSpace F]
       exact ordConnected_Ioo
     simp only [PrimitiveSpace.value_graph, PrimitiveSpace.proj_graph, Γ, hγ]
     rw [← pathIntegral_add_adjacent (hint 0 t₀) (hint t₀ s),
-      pathIntegral_eq_sub_of_isPrimitiveOn hgU hc (fun t ht ↦ hsub ht) (hint t₀ s)]
+      pathIntegral_eq_sub_of_isPrimitiveOn hgU (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero)
+        (fun t ht ↦ hsub ht) (hint t₀ s)]
     abel
   rw [continuousPathIntegral_eq_sub_of_lift hφ hΓ (fun t ↦ PrimitiveSpace.proj_graph (γ t))]
   simp [Γ]
-
-/-- On a real normed space `E`, `TauCeti.pathIntegral` of the `1`-form associated to a covector
-field `α : E → E →L[ℝ] F` along a curve `c` matching a path `γ` on `[0, 1]` agrees with Mathlib's
-`curveIntegral α γ`. -/
-theorem pathIntegral_ofSubsingleton_eq_curveIntegral (α : E → E →L[ℝ] F) {c : ℝ → E}
-    {a b : E} {γ : Path a b} (hγ : ∀ t : unitInterval, γ t = c t) :
-    pathIntegral (I := 𝓘(ℝ, E))
-        ((fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)) :
-          RoughForm 𝓘(ℝ, E) E F 1) c 0 1 =
-      curveIntegral α γ := by
-  let ψ : RoughForm 𝓘(ℝ, E) E F 1 :=
-    fun p ↦ ContinuousAlternatingMap.ofSubsingleton ℝ E F (0 : Fin 1) (α p)
-  change pathIntegral ψ c 0 1 = curveIntegral α γ
-  rw [pathIntegral_def, curveIntegral_eq_intervalIntegral_deriv]
-  refine intervalIntegral.integral_congr_uIoo fun t ht ↦ ?_
-  rw [uIoo_of_le zero_le_one] at ht
-  have heq : γ.extend =ᶠ[𝓝 t] c := by
-    filter_upwards [isOpen_Ioo.mem_nhds ht] with s hs
-    have hs' : s ∈ Icc (0 : ℝ) 1 := Ioo_subset_Icc_self hs
-    rw [Path.extend_apply γ hs', hγ ⟨s, hs'⟩]
-  have hv : Manifold.curveVelocity 𝓘(ℝ, E) c t = deriv γ.extend t := by
-    rw [Manifold.curveVelocity_eq_deriv, heq.deriv_eq]
-  rw [hv, heq.eq_of_nhds]
-  exact ContinuousAlternatingMap.ofSubsingleton_apply_apply (f := α (c t)) (i := (0 : Fin 1))
-    (x := fun _ : Fin 1 ↦ deriv γ.extend t)
 
 /-- On a real normed space `E`, for a continuous covector field `α : E → E →L[ℝ] F` with local
 primitives and complete coefficients, `continuousPathIntegral` along a path following a `C¹` curve
