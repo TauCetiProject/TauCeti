@@ -157,7 +157,7 @@ end Transport
 section Average
 
 variable {G : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [CompactSpace G]
-  [MeasurableSpace G] [BorelSpace G] (μ : Measure G) [IsFiniteMeasure μ]
+  [MeasurableSpace G] [OpensMeasurableSpace G] (μ : Measure G) [IsFiniteMeasure μ]
   (ρ : G →* (CoordinateSpace n ≃L[ℝ] CoordinateSpace n)) (σ : G →* (V ≃L[ℂ] V))
   (τ : G →* (W ≃L[ℂ] W))
 
@@ -165,7 +165,7 @@ variable {ρ σ τ}
 variable (hρ : Continuous fun g ↦ (ρ g : CoordinateSpace n →L[ℝ] CoordinateSpace n))
   (hσ : Continuous fun g ↦ (σ g : V →L[ℂ] V)) (hτ : Continuous fun g ↦ (τ g : W →L[ℂ] W))
 
-omit [CompactSpace G] [MeasurableSpace G] [BorelSpace G] in
+omit [CompactSpace G] [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- The jets of the transported symbols `g • a` are jointly continuous in `g` and the
 position-frequency variables. -/
@@ -204,7 +204,7 @@ private theorem continuous_iteratedFDeriv_transport (a : Symbol n V W m) (k : �
     funext fun y ↦ (coefficient_transport _ _ _ _ y).symm
   simp only [Function.comp_apply, hfun]
 
-omit [MeasurableSpace G] [BorelSpace G] in
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- **Uniform estimates for transported symbols.** If `a` satisfies the estimates of order `m`
 with constants `C α' β'` at every position of a set `S`, then all the transported symbols `g • a`
@@ -257,7 +257,7 @@ private theorem exists_bound_mixedDeriv_transport (a : Symbol n V W m)
             ).norm_coe_le_norm g]
     _ = _ := by ring
 
-omit [MeasurableSpace G] [BorelSpace G] in
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 include hρ hσ hτ in
 /-- The transported symbols `g • a` satisfy the estimates of order `m` on each compact set of
 positions with constants independent of `g`. -/
@@ -312,7 +312,7 @@ theorem average_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
     average μ hρ hσ hτ (inclusion h a) = inclusion h (average μ hρ hσ hτ a) :=
   Symbol.ext (funext fun p ↦ by simp [coefficient_inclusion])
 
-variable [μ.IsMulLeftInvariant]
+variable [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 /-- **The average is invariant.** For a left-invariant measure, transporting the average along
 the action of any `h ∈ G` gives the average back. -/
@@ -352,7 +352,7 @@ theorem quantizeSchwartzValue_average_transport (a : Symbol n V W m) (h : G)
   conv_lhs => rw [← transport_average μ hρ hσ hτ a h]
   exact quantizeSchwartzValue_transport _ _ _ _ u y
 
-omit [μ.IsMulLeftInvariant] in
+omit [MeasurableMul G] [μ.IsMulLeftInvariant] in
 /-- **The averaged operator is the average of the conjugated operators.** On a Schwartz input `u`,
 `Op(avg a) u (x) = ∫ τ(g) (Op(a)(σ(g)⁻¹ ∘ u ∘ ρ(g)) (ρ(g)⁻¹ x)) dμ(g)`. -/
 theorem quantizeSchwartzValue_average (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V))
@@ -371,7 +371,7 @@ theorem quantizeSchwartzValue_average (a : Symbol n V W m) (u : 𝓢(CoordinateS
   dsimp only
   rw [← quantizeSchwartzValue_transport, hu]
 
-omit [μ.IsMulLeftInvariant] in
+omit [MeasurableMul G] [μ.IsMulLeftInvariant] in
 /-- **Averaging an invariant symbol.** A symbol invariant under the action of every `g ∈ G`
 averages to its multiple by the total mass of `μ`. -/
 theorem average_eq_smul_self [CompleteSpace (V →L[ℂ] W)] {a : Symbol n V W m}
@@ -380,7 +380,7 @@ theorem average_eq_smul_self [CompleteSpace (V →L[ℂ] W)] {a : Symbol n V W m
   simp only [average, ha]
   exact integral_const μ a
 
-omit [μ.IsMulLeftInvariant] in
+omit [MeasurableMul G] [μ.IsMulLeftInvariant] in
 /-- **Averaging fixes invariant symbols.** For a probability measure, a symbol invariant under
 the action of every `g ∈ G` is its own average. -/
 theorem average_eq_self [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ]
@@ -395,7 +395,7 @@ theorem average_average [CompleteSpace (V →L[ℂ] W)] [IsProbabilityMeasure μ
     average μ hρ hσ hτ (average μ hρ hσ hτ a) = average μ hρ hσ hτ a :=
   average_eq_self μ hρ hσ hτ (transport_average μ hρ hσ hτ a)
 
-omit [μ.IsMulLeftInvariant]
+omit [MeasurableMul G] [μ.IsMulLeftInvariant]
 
 /-- The average of a smoothing symbol is smoothing. -/
 theorem IsSmoothing.average {a : Symbol n V W m} (ha : a.IsSmoothing) :
