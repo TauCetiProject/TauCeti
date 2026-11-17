@@ -43,7 +43,7 @@ functions with derivatives bounded by a constant multiple of those of `A`, and
 * `TauCeti.BesovSpace.mulLeftCLM`: the multiplication as a bounded operator, with its tempered
   distribution `TauCeti.BesovSpace.toDistr_mulLeftCLM` and its norm bound
   `TauCeti.BesovSpace.exists_norm_mulLeftCLM_le`.
-* `TauCeti.BesovSpace.mulLeftCLM_comp_mulLeftCLM`, `TauCeti.BesovSpace.mulLeftCLM_const`: the
+* `TauCeti.BesovSpace.mulLeftCLM_compL_mulLeftCLM`, `TauCeti.BesovSpace.mulLeftCLM_const`: the
   multiplications compose as the functions do, and constant functions act by `postcomp`.
 * `TauCeti.BesovSpace.mulLeftCLM_smul_id`, `TauCeti.BesovSpace.mulLeftCLM_add`: multiplication by
   `x ↦ g x • id` is the scalar multiplication `TauCeti.BesovSpace.smulLeftCLM`, and the
@@ -207,7 +207,7 @@ theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
 
 /-- **Composition.** For `A : E → (F →L[ℂ] G)` and `B : E → (G →L[ℂ] H)`, multiplying by `A` and
 then by `B` is multiplying by the pointwise composition `x ↦ B x ∘ A x`. -/
-theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
+theorem mulLeftCLM_compL_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
     {B : E → G →L[ℂ] H} (hA : A.HasTemperateGrowth)
     (hbdA : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
     (hB : B.HasTemperateGrowth)
@@ -220,7 +220,7 @@ theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[�
   ext1
   rw [ContinuousLinearMap.comp_apply, toDistr_mulLeftCLM, toDistr_mulLeftCLM, toDistr_mulLeftCLM,
     ← ContinuousLinearMap.comp_apply (TemperedDistribution.mulLeftCLM B),
-    TemperedDistribution.mulLeftCLM_comp_mulLeftCLM hA hB]
+    TemperedDistribution.mulLeftCLM_compL_mulLeftCLM hA hB]
 
 omit [FiniteDimensional ℂ G] in
 /-- Multiplication by the identity is the identity. -/
@@ -232,13 +232,13 @@ private theorem mulLeftCLM_eq_id {C : E → F →L[ℂ] F} (hC : ∀ x, C x = .i
   rw [mulLeftCLM_const, postcomp_id]
 
 /-- Multiplying by `A` and then by a pointwise left inverse `B` of `A` is the identity. -/
-private theorem mulLeftCLM_comp_mulLeftCLM_eq_id {A : E → F →L[ℂ] G} {B : E → G →L[ℂ] F}
+private theorem mulLeftCLM_compL_mulLeftCLM_eq_id {A : E → F →L[ℂ] G} {B : E → G →L[ℂ] F}
     (hA : A.HasTemperateGrowth) (hbdA : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n A x‖ ≤ C)
     (hB : B.HasTemperateGrowth) (hbdB : ∀ n ≤ ⌊|s|⌋₊ + 1, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n B x‖ ≤ C)
     (h : ∀ x, (B x).comp (A x) = .id ℂ F) :
     mulLeftCLM φ s p q B hB hbdB ∘L mulLeftCLM φ s p q A hA hbdA = .id ℂ _ := by
   have hBA : (fun x ↦ (B x).comp (A x)) = fun _ ↦ .id ℂ F := funext h
-  rw [mulLeftCLM_comp_mulLeftCLM hA hbdA hB hbdB (by rw [hBA]; exact .const _)
+  rw [mulLeftCLM_compL_mulLeftCLM hA hbdA hB hbdB (by rw [hBA]; exact .const _)
       (by rw [hBA]; exact fun n _ ↦ ⟨_, norm_iteratedFDeriv_const_le _ n⟩)]
   exact mulLeftCLM_eq_id h _ _
 
@@ -255,8 +255,8 @@ def mulLeftEquiv {A : E → F →L[ℂ] G} {A' : E → G →L[ℂ] F} (hA : A.Ha
     BesovSpace F φ s p q ≃L[ℂ] BesovSpace G φ s p q :=
   ContinuousLinearEquiv.equivOfInverse' (mulLeftCLM φ s p q A hA hbdA)
     (mulLeftCLM φ s p q A' hA' hbdA')
-    (mulLeftCLM_comp_mulLeftCLM_eq_id hA' hbdA' hA hbdA hright)
-    (mulLeftCLM_comp_mulLeftCLM_eq_id hA hbdA hA' hbdA' hleft)
+    (mulLeftCLM_compL_mulLeftCLM_eq_id hA' hbdA' hA hbdA hright)
+    (mulLeftCLM_compL_mulLeftCLM_eq_id hA hbdA hA' hbdA' hleft)
 
 @[simp]
 theorem mulLeftEquiv_apply {A : E → F →L[ℂ] G} {A' : E → G →L[ℂ] F} (hA : A.HasTemperateGrowth)

@@ -49,7 +49,7 @@ basis. It reduces statements about `A u` to the scalar multiplication and to con
   `A x = g x • id` is the scalar multiplication `TemperedDistribution.smulLeftCLM`
   (`TemperedDistribution.mulLeftCLM_smul_id`).
 * `TemperedDistribution.mulLeftCLM_add`: additivity in `A`.
-* `TemperedDistribution.mulLeftCLM_comp_mulLeftCLM`: `B (A u) = (B A) u`, so that a pointwise
+* `TemperedDistribution.mulLeftCLM_compL_mulLeftCLM`: `B (A u) = (B A) u`, so that a pointwise
   invertible `A` whose inverse is again of temperate growth acts invertibly.
 * `TemperedDistribution.mulLeftCLM_toTemperedDistributionCLM_eq`: on Schwartz functions `A u` is
   the pointwise product.
@@ -174,7 +174,7 @@ theorem mulLeftCLM_add {A B : E → F →L[ℂ] G} (hA : A.HasTemperateGrowth)
 
 /-- **Composition.** For `A : E → (F →L[ℂ] G)` and `B : E → (G →L[ℂ] H)` of temperate growth,
 `B (A u) = (B A) u`, where `B A` is the pointwise composition `x ↦ B x ∘ A x`. -/
-theorem mulLeftCLM_comp_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
+theorem mulLeftCLM_compL_mulLeftCLM [FiniteDimensional ℂ H] {A : E → F →L[ℂ] G}
     {B : E → G →L[ℂ] H} (hA : A.HasTemperateGrowth) (hB : B.HasTemperateGrowth) :
     mulLeftCLM B ∘L mulLeftCLM A = mulLeftCLM (fun x ↦ (B x).comp (A x)) := by
   ext u φ
