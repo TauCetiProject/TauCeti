@@ -97,16 +97,12 @@ noncomputable def standardTameCoverIntegralClosureAlgEquiv (hf : f ∈ maximalId
     (hf₀ : f ∈ nonZeroDivisors A) {n : ℕ} {γ : L} (hγ : γ ^ n = algebraMap A L f)
     (hgen : K⟮γ⟯ = ⊤) :
     standardTameCover A f n ≃ₐ[A] integralClosure A L := by
-  have : Nontrivial (A ⧸ Ideal.span {f}) :=
-    Ideal.Quotient.nontrivial_iff.mpr <|
-      Ideal.span_singleton_eq_top.not.mpr ((mem_maximalIdeal f).mp hf)
-  have : IsLocalRing (A ⧸ Ideal.span {f}) := .of_surjective' _ Ideal.Quotient.mk_surjective
-  have : _root_.IsRegularLocalRing (A ⧸ Ideal.span {f}) := .of_isRegularRing_of_isLocalRing _
-  have : _root_.IsRegularLocalRing A :=
-    TauCeti.IsRegularLocalRing.of_quotient_nonZeroDivisor A hf hf₀
-  have : (Ideal.span {f}).IsPrime := (Ideal.Quotient.isDomain_iff_prime _).mp inferInstance
-  have := FaithfulSMul.trans A K L
   have hf_nu : ¬ IsUnit f := (mem_maximalIdeal f).mp hf
+  have : _root_.IsRegularLocalRing A :=
+    TauCeti.IsRegularLocalRing.of_isRegularRing_quotient_nonZeroDivisor A hf hf₀
+  have : (Ideal.span {f}).IsPrime :=
+    (Ideal.span {f}).isPrime_of_isRegularRing_quotient (Ideal.span_singleton_eq_top.not.mpr hf_nu)
+  have := FaithfulSMul.trans A K L
   have hn : n ≠ 0 :=
     Algebra.ne_zero_of_pow_eq_algebraMap_of_injective (a := f)
       (FaithfulSMul.algebraMap_injective A L) (fun h1 ↦ hf_nu (h1 ▸ isUnit_one)) hγ
