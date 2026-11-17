@@ -146,6 +146,13 @@ private noncomputable def spinBasis (s : Finset (Fin (0 + 7))) (hs : Even s.card
       simp_rw [Pi.basisFun_apply, realCliffordForm_single_one_of_le (Nat.zero_le _),
         Finset.prod_const, hs.neg_one_pow]⟩
 
+/-- The Spin element `e_s` is the basis monomial `e_s` of the Clifford algebra. -/
+@[simp]
+private theorem coe_spinBasis (s : Finset (Fin (0 + 7))) (hs : Even s.card) :
+    (spinBasis s hs : CliffordAlgebra (realCliffordForm 0 7)) =
+      basis (realCliffordForm 0 7) (Pi.basisFun ℝ (Fin (0 + 7))) s :=
+  rfl
+
 /-- The central element `-1` of the Spin group of `realCliffordForm 0 7`. -/
 private noncomputable def spinNegOne : realCliffordSpinGroup 0 7 :=
   spinGroup.negOne _ (nondegenerate_realCliffordForm 0 7).ne_zero
@@ -371,14 +378,15 @@ private theorem mem_spinSevenSupports_of_parity : ∀ t : Finset (Fin (0 + 7)), 
 /-- The basis monomial of a support is an element of the elementary abelian subgroup. -/
 private theorem spinBasis_mem {s : Finset (Fin (0 + 7))} (hs : s ∈ spinSevenSupports) :
     spinBasis s (even_card_of_mem_spinSevenSupports hs) ∈ realSpinZeroSevenElementaryAbelian :=
-  mem_realSpinZeroSevenElementaryAbelian_iff.mpr ⟨s, hs, Or.inl rfl⟩
+  mem_realSpinZeroSevenElementaryAbelian_iff.mpr ⟨s, hs, Or.inl (coe_spinBasis _ _)⟩
 
 /-- The basis monomial `e_s` of an even support negates the coordinates in `s`. -/
 private theorem spinVectorAction_spinBasis_apply (s : Finset (Fin (0 + 7))) (hs : Even s.card)
     (w : Fin (0 + 7) → ℝ) (j : Fin (0 + 7)) :
     spinVectorAction _ (spinBasis s hs) w j = (if j ∈ s then -1 else 1) * w j := by
   simpa only [Pi.basisFun_repr] using basis_repr_spinVectorAction_of_coe_eq
-    (isOrthoᵢ_associated_realCliffordForm 0 7) hs (g := spinBasis s hs) (Or.inl rfl) w j
+    (isOrthoᵢ_associated_realCliffordForm 0 7) hs (g := spinBasis s hs)
+    (Or.inl (coe_spinBasis s hs)) w j
 
 /-- The basis monomial `e_s` of an even support negates the coordinate vectors indexed by `s` and
 fixes the others. -/
@@ -387,7 +395,8 @@ private theorem spinVectorAction_spinBasis_single (s : Finset (Fin (0 + 7))) (hs
     spinVectorAction _ (spinBasis s hs) (Pi.single i 1) =
       if i ∈ s then -Pi.single i 1 else Pi.single i 1 := by
   simpa only [Pi.basisFun_apply] using spinVectorAction_basis_of_coe_eq
-    (isOrthoᵢ_associated_realCliffordForm 0 7) hs (g := spinBasis s hs) (Or.inl rfl) i
+    (isOrthoᵢ_associated_realCliffordForm 0 7) hs (g := spinBasis s hs)
+    (Or.inl (coe_spinBasis s hs)) i
 
 /-- An element of the centralizer of the elementary abelian subgroup sends every coordinate vector
 `eᵢ` to `±eᵢ`. Its image of `eᵢ` lies in the same eigenspaces of the three diagonal sign changes
@@ -447,14 +456,11 @@ private theorem exists_isSignedBasis_of_mem_centralizer {x : realCliffordSpinGro
     (fun i ↦ spinVectorAction _ x (Pi.single i 1) = -Pi.single i 1) with ht
   have hdet := congrArg Units.val (QuadraticMap.det_coe_specialOrthogonalGroup
     (spinToSpecialOrthogonal (realCliffordForm 0 7) x))
-  have hcoe : ((spinToSpecialOrthogonal (realCliffordForm 0 7) x :
-      QuadraticMap.specialOrthogonalGroup (realCliffordForm 0 7)) :
-        (Fin (0 + 7) → ℝ) ≃ₗ[ℝ] (Fin (0 + 7) → ℝ)) = spinVectorAction _ x :=
-    LinearEquiv.ext fun m ↦ coe_spinToSpecialOrthogonal_apply _ x m
-  rw [hcoe, LinearEquiv.coe_det, toLinearMap_spinVectorAction_eq_toLin' hx, LinearMap.det_toLin',
-    Matrix.det_diagonal, Finset.prod_ite_mem, Finset.univ_inter, Finset.prod_const,
-    Units.val_one, ← ht] at hdet
-  have heven : Even t.card := (neg_one_pow_eq_one_iff_even (by norm_num)).mp hdet
+  have heven : Even t.card := by
+    rw [← neg_one_pow_eq_one_iff_even (R := ℝ) (by norm_num)]
+    simpa [coe_spinToSpecialOrthogonal, LinearEquiv.coe_det,
+      toLinearMap_spinVectorAction_eq_toLin' hx, Matrix.det_diagonal, Finset.prod_ite_mem,
+      ← ht] using hdet
   refine ⟨t, heven, ?_⟩
   have hρ : spinToSpecialOrthogonal (realCliffordForm 0 7) x =
       spinToSpecialOrthogonal (realCliffordForm 0 7) (spinBasis t heven) := by
@@ -465,8 +471,8 @@ private theorem exists_isSignedBasis_of_mem_centralizer {x : realCliffordSpinGro
     rcases spinVectorAction_single_eq_or hx i with h | h <;> split_ifs <;> simp_all
   rcases eq_or_eq_negOne_mul_of_spinToSpecialOrthogonal_eq _ (nondegenerate_realCliffordForm 0 7)
     x _ hρ with h | h
-  · exact Or.inl (by rw [h]; rfl)
-  · exact Or.inr (by simp [h, spinBasis])
+  · exact Or.inl (by rw [h, coe_spinBasis])
+  · exact Or.inr (by simp [h])
 
 /-- **The elementary abelian subgroup is its own centralizer** in the Spin group of
 `realCliffordForm 0 7`. An element `x` commuting with it acts on `ℝ⁷` preserving the joint
@@ -487,7 +493,7 @@ theorem centralizer_realSpinZeroSevenElementaryAbelian :
     have h := congrArg (fun g : realCliffordSpinGroup 0 7 ↦
       (g : CliffordAlgebra (realCliffordForm 0 7)))
       ((Subgroup.mem_centralizer_iff.mp hx) _ (spinBasis_mem hs))
-    simp only [Submonoid.coe_mul, spinBasis] at h
+    simp only [Submonoid.coe_mul, coe_spinBasis] at h
     rcases hxt with hxt | hxt <;> rw [hxt] at h
     · exact h
     · simpa only [mul_neg, neg_mul, neg_inj] using h
