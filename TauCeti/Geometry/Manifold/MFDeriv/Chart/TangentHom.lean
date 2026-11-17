@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Tangent
-public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.Boundary.Basic
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.IsManifold.Basic
-import TauCeti.Topology.OpenPartialHomeomorph.Continuity
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Coordinate expressions of tangent-space homomorphisms along a map
@@ -23,8 +23,6 @@ For manifolds `X` and `M` modelled on `J : ModelWithCorners 𝕜 E H'` and
 
 ## Main declarations
 
-* `ModelWithCorners.det_fderiv_extendCoordChange_ne_zero`: nonvanishing Jacobian determinant of an
-  extended chart transition on the interior of its overlap domain.
 * `TauCeti.chartTangentHom`: coordinate expression of `du` in charts `φ` and `ψ`, agreeing in
   preferred charts with `ContinuousLinearMap.inCoordinates`
   (`TauCeti.chartTangentHom_chartAt_eq_inCoordinates`).
@@ -53,83 +51,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
   {H'' : Type*} [TopologicalSpace H''] {I' : ModelWithCorners 𝕜 F' H''}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H'' N]
-
-/-- Nonvanishing Jacobian `det` of `φ.extend J ∘ (φ'.extend J).symm` on the overlap interior. -/
-theorem _root_.ModelWithCorners.det_fderiv_extendCoordChange_ne_zero (J : ModelWithCorners 𝕜 E H')
-    {n : ℕ∞ω} (hn : n ≠ 0) {φ' φ : OpenPartialHomeomorph X H'}
-    (hφ' : φ' ∈ IsManifold.maximalAtlas J n X) (hφ : φ ∈ IsManifold.maximalAtlas J n X)
-    {w : E} (hw : w ∈ interior ((φ'.extend J).target ∩ (φ'.extend J).symm ⁻¹' φ.source)) :
-    (fderiv 𝕜 (φ.extend J ∘ (φ'.extend J).symm) w).det ≠ 0 := by
-  have hsrc : (J.extendCoordChange φ' φ).source =
-      (φ'.extend J).target ∩ (φ'.extend J).symm ⁻¹' φ.source := by
-    rw [ModelWithCorners.extendCoordChange, PartialEquiv.trans_source, PartialEquiv.symm_source,
-      φ.extend_source]
-  rcases J.isInvertible_fderivWithin_extendCoordChange hn hφ' hφ (hsrc ▸ interior_subset hw) with
-    ⟨L, hL⟩
-  rw [fderivWithin_of_mem_nhds (hsrc ▸ mem_of_superset (isOpen_interior.mem_nhds hw)
-    interior_subset)] at hL
-  rw [← PartialEquiv.coe_trans, ← hL]
-  exact L.toLinearEquiv.isUnit_det'.ne_zero
-
-omit [ChartedSpace H' X] in
-/-- Criterion for `z ∈ interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' U)` via `𝓝`. -/
-theorem _root_.OpenPartialHomeomorph.mem_interior_extend_target_inter_preimage
-    (φ : OpenPartialHomeomorph X H') {U : Set X} {z : E}
-    (hzt : (φ.extend J).target ∈ 𝓝 z) (hU : U ∈ 𝓝 ((φ.extend J).symm z)) :
-    z ∈ interior ((φ.extend J).target ∩ (φ.extend J).symm ⁻¹' U) :=
-  mem_interior_iff_mem_nhds.2
-    (inter_mem hzt (((φ.continuousOn_extend_symm (I := J)).continuousAt hzt).preimage_mem_nhds hU))
-
-omit [ChartedSpace H' X] in
-/-- Extending `φ : OpenPartialHomeomorph X E` by `𝓘(𝕜, E)` gives `φ.toPartialEquiv`. -/
-theorem _root_.OpenPartialHomeomorph.extend_modelWithCornersSelf (φ : OpenPartialHomeomorph X E) :
-    φ.extend 𝓘(𝕜, E) = φ.toPartialEquiv := by
-  rw [OpenPartialHomeomorph.extend, modelWithCornersSelf_partialEquiv, PartialEquiv.trans_refl]
-
-/-- Differentiability of `(φ.extend J).symm` on `interior (φ.extend J).target` for `C¹` `φ`. -/
-theorem _root_.OpenPartialHomeomorph.mdifferentiableAt_extend_symm_of_mem_interior
-    {φ : OpenPartialHomeomorph X H'} (hφ : φ ∈ IsManifold.maximalAtlas J 1 X) {z : E}
-    (hz : z ∈ interior (φ.extend J).target) :
-    MDifferentiableAt 𝓘(𝕜, E) J (φ.extend J).symm z :=
-  (((φ.extend_target' (I := J) ▸ contMDiffOn_extend_symm hφ) z (interior_subset hz)).contMDiffAt
-    (mem_interior_iff_mem_nhds.1 hz)).mdifferentiableAt one_ne_zero
-
-/-- On `interior (φ.extend J).target`, `mfderivWithin` of `(φ.extend J).symm` equals `mfderiv`. -/
-theorem _root_.OpenPartialHomeomorph.mfderivWithin_extend_symm_of_mem_interior
-    (φ : OpenPartialHomeomorph X H') {z : E} (hz : z ∈ interior (φ.extend J).target) :
-    mfderivWithin 𝓘(𝕜, E) J (φ.extend J).symm (range J) z =
-      mfderiv 𝓘(𝕜, E) J (φ.extend J).symm z :=
-  mfderivWithin_of_mem_nhds
-    (mem_of_superset (mem_interior_iff_mem_nhds.1 hz) φ.extend_target_subset_range)
-
-omit [ChartedSpace H' X] [ChartedSpace H M] in
-/-- Continuity of `ψ.extend I ∘ u ∘ (φ.extend J).symm` on subsets of the chart overlap domain. -/
-theorem _root_.OpenPartialHomeomorph.continuousOn_extend_comp_symm
-    (φ : OpenPartialHomeomorph X H') (ψ : OpenPartialHomeomorph M H) {u : X → M} {s : Set X}
-    (hc : ContinuousOn u s)
-    {W : Set E} (hW : W ⊆ (φ.extend J).target ∩ (φ.extend J).symm ⁻¹' (s ∩ u ⁻¹' ψ.source)) :
-    ContinuousOn (ψ.extend I ∘ u ∘ (φ.extend J).symm) W :=
-  ((ψ.continuousOn_extend (I := I)).mono ψ.extend_source.ge).comp
-    (hc.comp ((φ.continuousOn_extend_symm (I := J)).mono (hW.trans inter_subset_left))
-      fun _ hw ↦ (hW hw).2.1) fun _ hw ↦ (hW hw).2.2
-
-omit [ChartedSpace H M] in
-/-- Openness of `(ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' U` for boundaryless `I`, open `U`. -/
-theorem _root_.OpenPartialHomeomorph.isOpen_extend_target_inter_preimage [I.Boundaryless]
-    (ψ : OpenPartialHomeomorph M H) {U : Set M} (hU : IsOpen U) :
-    IsOpen ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' U) :=
-  (ψ.continuousOn_extend_symm (I := I)).isOpen_inter_preimage (ψ.isOpen_extend_target (I := I)) hU
-
-/-- `C^n` regularity of `ψ'.extend I' ∘ f ∘ (ψ.extend I).symm` on the chart overlap domain. -/
-theorem _root_.OpenPartialHomeomorph.contDiffOn_extend_comp {n : ℕ∞ω}
-    {ψ : OpenPartialHomeomorph M H} (hψ : ψ ∈ IsManifold.maximalAtlas I n M)
-    {ψ' : OpenPartialHomeomorph N H''} (hψ' : ψ' ∈ IsManifold.maximalAtlas I' n N)
-    {f : M → N} {t : Set M} (hf : ContMDiffOn I I' n f t) :
-    ContDiffOn 𝕜 n (ψ'.extend I' ∘ f ∘ (ψ.extend I).symm)
-      ((ψ.extend I).target ∩ (ψ.extend I).symm ⁻¹' (t ∩ f ⁻¹' ψ'.source)) :=
-  contMDiffOn_iff_contDiffOn.1 ((ψ'.contMDiffOn_extend hψ').comp
-    (hf.comp ((ψ.extend_target' (I := I) ▸ contMDiffOn_extend_symm hψ).mono inter_subset_left)
-      fun _ hw ↦ hw.2.1) fun _ hw ↦ hw.2.2)
 
 section Linear
 
@@ -207,7 +128,7 @@ theorem chartTangentHom_mfderiv (hφ : φ ∈ IsManifold.maximalAtlas J 1 X)
     (hdu : MDifferentiableAt J I u ((φ.extend J).symm z)) :
     chartTangentHom J I φ ψ u (fun x ↦ mfderiv J I u x) z =
       fderiv 𝕜 (ψ.extend I ∘ u ∘ (φ.extend J).symm) z := by
-  have hdφ := φ.mdifferentiableAt_extend_symm_of_mem_interior hφ hz
+  have hdφ := φ.mdifferentiableAt_extend_symm_of_mem_interior one_ne_zero hφ hz
   have hmv := mvfderiv_comp z ((ψ.contMDiffAt_extend hψ hy).mdifferentiableAt one_ne_zero)
     (hdu.comp z hdφ)
   rw [mfderiv_comp z hdu hdφ, mvfderiv_eq_fderiv] at hmv
@@ -319,7 +240,7 @@ theorem chartTangentHom_comp_fderiv_transition (hφ : φ ∈ IsManifold.maximalA
   have hxφ' : (φ'.extend J).symm w ∈ φ'.source :=
     φ'.extend_source (I := J) ▸ (φ'.extend J).map_target hwt
   have hxφ : (φ'.extend J).symm w ∈ φ.source := (interior_subset hw).2
-  have hdφ' := φ'.mdifferentiableAt_extend_symm_of_mem_interior hφ' hwint
+  have hdφ' := φ'.mdifferentiableAt_extend_symm_of_mem_interior one_ne_zero hφ' hwint
   have hΦint : Φ w ∈ interior (φ.extend J).target :=
     ModelWithCorners.mem_interior_extend_target_of_mem_maximalAtlas one_ne_zero hφ' hφ hxφ' hxφ
       (by rwa [(φ'.extend J).right_inv hwt])
@@ -327,7 +248,7 @@ theorem chartTangentHom_comp_fderiv_transition (hφ : φ ∈ IsManifold.maximalA
     filter_upwards [isOpen_interior.mem_nhds hw] with z hz
     simp only [Φ, Function.comp_apply, φ.extend_left_inv (interior_subset hz).2]
   have hmf := hev.mfderiv_eq (I := 𝓘(𝕜, E)) (I' := J)
-  rw [mfderiv_comp w (φ.mdifferentiableAt_extend_symm_of_mem_interior hφ hΦint)
+  rw [mfderiv_comp w (φ.mdifferentiableAt_extend_symm_of_mem_interior one_ne_zero hφ hΦint)
     (((φ.contMDiffAt_extend hφ hxφ).mdifferentiableAt one_ne_zero).comp w hdφ')] at hmf
   ext v
   rw [ContinuousLinearMap.comp_apply, chartTangentHom_apply, chartTangentHom_apply,

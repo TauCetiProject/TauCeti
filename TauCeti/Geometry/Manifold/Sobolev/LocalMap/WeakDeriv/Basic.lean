@@ -13,6 +13,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Geometry.Manifold.Measure.Differentiable
 
 /-!
@@ -491,13 +492,6 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ClosedUpperHalfPlane X]
   {du du' : ∀ x : X, TangentSpace closedUpperHalfPlaneModel x →L[ℝ] TangentSpace I (u x)}
   {s : Set X}
 
-/-- Bordered-holomorphic charts lie in `IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 X`. -/
-theorem borderedHolomorphicGroupoid_maximalAtlas_subset :
-    borderedHolomorphicGroupoid.maximalAtlas X ⊆
-      IsManifold.maximalAtlas closedUpperHalfPlaneModel 1 X :=
-  StructureGroupoid.maximalAtlas_mono (borderedHolomorphicGroupoid_le_contDiffGroupoid.trans
-    (contDiffGroupoid_le (by exact_mod_cast le_top)))
-
 variable (I) in
 /-- Weak differential of `u : X → M` on `s ⊆ X` for a Riemann surface `X` with boundary. -/
 abbrev HasWeakMFDerivOnBordered (u : X → M)
@@ -515,7 +509,7 @@ abbrev HasWeakMFDerivBordered (u : X → M)
 theorem _root_.ContMDiffOn.hasWeakMFDerivOnBordered [CompleteSpace F] {n : ℕ∞ω}
     (hu : ContMDiffOn closedUpperHalfPlaneModel I n u s) (hn : 1 ≤ n) (hs : IsOpen s) :
     HasWeakMFDerivOnBordered I u (fun x ↦ mfderiv closedUpperHalfPlaneModel I u x) s :=
-  hu.hasWeakMFDerivOnGroupoid borderedHolomorphicGroupoid_maximalAtlas_subset hn hs
+  hu.hasWeakMFDerivOnGroupoid (borderedHolomorphicGroupoid_maximalAtlas_subset (by simp)) hn hs
 
 /-- Global consistency of `HasWeakMFDerivBordered` with `mfderiv` for `C^n` (`1 ≤ n`) maps. -/
 theorem _root_.ContMDiff.hasWeakMFDerivBordered [CompleteSpace F] {n : ℕ∞ω}
@@ -529,7 +523,7 @@ theorem HasWeakMFDerivOnBordered.congr_deriv_of_isNullSet
     (hnull : IsNullSet closedUpperHalfPlaneModel {x ∈ s | du x ≠ du' x}) :
     HasWeakMFDerivOnBordered I u du' s :=
   HasWeakMFDerivOnGroupoid.congr_deriv_of_isNullSet
-    borderedHolomorphicGroupoid_maximalAtlas_subset h hnull
+    (borderedHolomorphicGroupoid_maximalAtlas_subset (by simp)) h hnull
 
 end BorderedSurface
 
