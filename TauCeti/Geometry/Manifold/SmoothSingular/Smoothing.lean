@@ -52,8 +52,8 @@ singular cochains (`TauCeti.smoothSingularCochainHomotopyEquiv`) and a natural i
 cohomology (`TauCeti.smoothSingularCohomologyIso`).
 
 The proof proceeds by Mayer–Vietoris induction on open subsets of `M`
-(`ModelWithCorners.mayerVietoris_induction`), which works uniformly over arbitrary real models with
-corners (including manifolds with boundary and corners):
+(`TauCeti.mayerVietoris_induction_extChartAt`), which works uniformly over arbitrary real models
+with corners (including manifolds with boundary and corners):
 
 1. **Empty and smoothly contractible opens:** On an empty manifold both chain complexes are zero
    (`TauCeti.quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty`). On a smoothly
@@ -544,19 +544,47 @@ singular chains into singular chains with coefficients in `R` is a quasi-isomorp
 countable coproducts are exact in `C`. -/
 theorem quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_opens (U : Opens M) :
     QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R) := by
-  refine I.mayerVietoris_induction
+  have : ProperSpace E := .of_locallyCompactSpace ℝ
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : SecondCountableTopology H := I.isClosedEmbedding.isEmbedding.secondCountableTopology
+  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
+  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
+  refine mayerVietoris_induction_extChartAt I
     (fun U : Opens M ↦ QuasiIso (SSet.chainComplexMap (smoothSingularSubcomplex I U).ι R))
     ?_ ?_ ?_ ?_ U
   · have : IsEmpty ↥(⊥ : Opens M) := ⟨fun x ↦ x.2⟩
     exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_isEmpty I ↥(⊥ : Opens M) R
-  · intro e he U ⟨c, hc⟩ hUe hconv
+  · intro x C U _ hCconv hCt hU ⟨c, hc⟩
+    have hUe : (U : Set M) ⊆ (chartAt H x).source := by
+      rw [hU]
+      exact Set.inter_subset_left
+    have himg : (chartAt H x).extend I '' (U : Set M) = C ∩ Set.range I := by
+      refine Set.Subset.antisymm ?_ ?_
+      · rintro _ ⟨y, hy, rfl⟩
+        rw [hU] at hy
+        exact ⟨hy.2, chartAt H x y, rfl⟩
+      · rintro z ⟨hzC, hzR⟩
+        have hzt : z ∈ (extChartAt I x).target := hCt ⟨hzC, hzR⟩
+        have hy_src : (extChartAt I x).symm z ∈ (chartAt H x).source := by
+          rw [← extChartAt_source I]
+          exact (extChartAt I x).map_target hzt
+        have hy_eq : extChartAt I x ((extChartAt I x).symm z) = z :=
+          (extChartAt I x).right_inv hzt
+        refine ⟨(extChartAt I x).symm z, ?_, hy_eq⟩
+        rw [hU]
+        exact ⟨hy_src, by simpa only [Set.mem_preimage, hy_eq] using hzC⟩
+    have hconv : Convex ℝ ((chartAt H x).extend I '' (U : Set M)) := by
+      rw [himg]
+      exact hCconv.inter I.convex_range
     exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_of_starConvex R
-      (IsManifold.subset_maximalAtlas he) hUe hc (hconv.starConvex ⟨c, hc, rfl⟩)
+      (IsManifold.subset_maximalAtlas (chart_mem_atlas H x)) hUe hc
+      (hconv.starConvex ⟨c, hc, rfl⟩)
   · intro U V hU hV hUV
     exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_sup R U V hU hV hUV
   · intro s hs hPs
     let s' : ULift.{u} ℕ → Opens M := s ∘ ULift.down
-    have hs' : Pairwise (Disjoint on s') := fun i j hij ↦ hs fun h ↦ hij (ULift.ext h)
+    have hs' : Pairwise (Disjoint on s') := fun i j hij ↦
+      hs i.down j.down fun h ↦ hij (ULift.ext h)
     have hsup : (⨆ i : ULift.{u} ℕ, s' i) = ⨆ n : ℕ, s n := Equiv.ulift.iSup_comp (g := s)
     rw [← hsup]
     exact quasiIso_chainComplexMap_smoothSingularSubcomplex_ι_iSup (I := I) s' C R hs'

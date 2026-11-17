@@ -5,237 +5,170 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Convex
 public import Mathlib.Geometry.Manifold.IsManifold.ExtChartAt
-public import Mathlib.Topology.Compactness.SigmaCompact
-public import Mathlib.Topology.Sets.Opens
-
-import Mathlib.Analysis.Normed.Module.Convex
-import Mathlib.Analysis.Normed.Module.FiniteDimension
-import Mathlib.Geometry.Manifold.ChartedSpace
-import TauCeti.Topology.MayerVietoris
+public import TauCeti.Topology.MayerVietoris
 
 /-!
-# Mayer–Vietoris induction on manifolds
+# Mayer–Vietoris induction over convex chart domains
 
-Let `M` be a Hausdorff, σ-compact space charted on the model space `H` of a real model with corners
-`I : ModelWithCorners ℝ E H`, where `E` is locally compact (equivalently, finite-dimensional over
-`ℝ`). A property `P` of open subsets of `M` holds on every open set if it holds on the empty set
-and on every nonempty open subset `U` contained in an atlas chart `e` whose extended-chart image
-`e.extend I '' U` is convex in `E`, passes from `U`, `V`, and `U ⊓ V` to `U ⊔ V`, and passes to
-countable pairwise disjoint unions (`ModelWithCorners.mayerVietoris_induction`).
+The Mayer–Vietoris induction principle `TauCeti.mayerVietoris_induction` needs a basis of the
+topology that is closed under finite intersections. On a charted space `M` over a model with
+corners `I : ModelWithCorners 𝕜 E H`, the natural sets on which a comparison map can be checked
+directly are the *convex chart domains*
 
-The proof applies the topological Mayer–Vietoris induction principle
-(`TauCeti.mayerVietoris_induction`) twice. First, inside any single chart domain `e.source`, the
-opens whose images under `e.extend I` are convex form an intersection-stable basis: `e.extend I` is
-injective on `e.source` and sends open balls intersected with `range I` (which are convex because
-`range I` is convex) to convex sets. This establishes `P` on every open subset of `e.source`
-(`ModelWithCorners.mayerVietoris_induction_of_subset_source`). Second, on `M` itself, the opens
-contained in the source of some atlas chart form an intersection-stable basis, so a second
-application of `TauCeti.mayerVietoris_induction` yields `P` on every open subset of `M`.
+`U = (chartAt H x).source ∩ (extChartAt I x)⁻¹' C`,
 
-Working directly inside chart domains of `M` avoids transporting predicates between `M` and `H`,
-so `E`, `H`, and `M` may live in independent universes.
+for a point `x`, a convex open set `C ⊆ E` and `C ∩ range I ⊆ (extChartAt I x).target`. The
+extended chart at `x` maps such a `U` bijectively onto `C ∩ range I`, which is convex because
+`range I` is (`ModelWithCorners.convex_range`), so for instance it contracts onto any of its
+points along straight lines in the chart. These sets do not form an intersection-stable
+family, since the intersection of convex domains in two different charts need not be convex in
+either chart.
+
+This file proves the induction principle with only the nonempty sets of this form as base
+cases, in two steps.
+Inside the source of one chart, the convex chart domains of that chart are a basis closed under
+intersections, so Mayer–Vietoris induction below an open set
+(`TauCeti.mayerVietoris_induction_le`) proves the property for every open subset of the chart
+source (`TauCeti.mayerVietoris_induction_subset_chartAt_source`). The open sets contained in some
+chart source are then an intersection-stable basis of `M`, so ordinary Mayer–Vietoris induction
+proves the property for every open subset of `M`
+(`TauCeti.mayerVietoris_induction_extChartAt`).
+
+Typical properties are that a natural map between two (co)homology theories of open subsets is an
+isomorphism, such as the inclusion of smooth singular chains into singular chains, the de Rham
+homomorphism, or the Poincaré duality map. Each has a Mayer–Vietoris sequence and turns countable
+disjoint unions into direct sums or products, and is verified directly on convex chart domains,
+for instance by a contraction. Boundary and corners are allowed. The one-chart step only needs
+`E` to be locally compact. The only hypotheses on `M` in the global step are those of
+`TauCeti.mayerVietoris_induction`; a Hausdorff σ-compact manifold over a finite-dimensional model
+satisfies them (`Manifold.locallyCompact_of_finiteDimensional`,
+`ChartedSpace.secondCountable_of_sigmaCompact`).
 
 ## Main results
 
-* `ModelWithCorners.mayerVietoris_induction_of_subset_source`: Mayer–Vietoris induction for open
-  subsets of the source of a chart `e : OpenPartialHomeomorph M H`, from convex-in-chart opens.
-* `ModelWithCorners.mayerVietoris_induction`: Mayer–Vietoris induction for all open subsets of a
-  Hausdorff, σ-compact charted space modelled on a locally compact real model with corners.
+* `TauCeti.mayerVietoris_induction_subset_chartAt_source`: induction over the convex chart
+  domains of one chart proves a property for every open subset of its source.
+* `TauCeti.mayerVietoris_induction_extChartAt`: induction over all convex chart domains proves a
+  property for every open subset of `M`.
 
 ## References
 
-* J. M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Chapter 18, proofs of Theorems 18.7
-  and 18.14.
-* R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, §5.
+* J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 18, proof of the de Rham
+  theorem (Theorem 18.14).
+* R. Bott and L. W. Tu, *Differential Forms in Algebraic Topology*, §5, the Mayer–Vietoris
+  argument for Poincaré duality.
 -/
 
 public section
 
-open Set TopologicalSpace Function
+open Set TopologicalSpace Topology Metric
 
-namespace ModelWithCorners
+namespace TauCeti
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [LocallyCompactSpace E]
-  [TopologicalSpace H] (I : ModelWithCorners ℝ E H) [TopologicalSpace M]
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [NormedSpace ℝ E] {H : Type*} [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
 
-section Chart
-
-variable (e : OpenPartialHomeomorph M H)
-
-/-- Push an open subset of `e.source` forward to an open subset of `M`. -/
-private def pushOpen (V : Opens e.source) : Opens M :=
-  ⟨Subtype.val '' (V : Set e.source), e.open_source.isOpenMap_subtype_val _ V.isOpen⟩
-
-private lemma pushOpen_bot : pushOpen e ⊥ = ⊥ := by
-  ext x
-  simp [pushOpen]
-
-private lemma pushOpen_inf (U V : Opens e.source) :
-    pushOpen e (U ⊓ V) = pushOpen e U ⊓ pushOpen e V := by
-  ext x
-  simp [pushOpen, Set.image_inter Subtype.val_injective]
-
-private lemma pushOpen_sup (U V : Opens e.source) :
-    pushOpen e (U ⊔ V) = pushOpen e U ⊔ pushOpen e V := by
-  ext x
-  simp [pushOpen, Set.image_union]
-
-private lemma pushOpen_iSup {ι : Type*} (s : ι → Opens e.source) :
-    pushOpen e (⨆ i, s i) = ⨆ i, pushOpen e (s i) := by
-  ext x
-  simp [pushOpen, Set.image_iUnion]
-
-private lemma pushOpen_disjoint {U V : Opens e.source} (h : Disjoint U V) :
-    Disjoint (pushOpen e U) (pushOpen e V) := by
-  rw [disjoint_iff, ← pushOpen_inf, disjoint_iff.mp h, pushOpen_bot]
-
-private lemma pushOpen_subset_source (V : Opens e.source) :
-    (pushOpen e V : Set M) ⊆ e.source :=
-  Subtype.coe_image_subset _ _
-
-omit [LocallyCompactSpace E] in
-private lemma isBasis_convex_opens_source :
-    Opens.IsBasis {V : Opens e.source | Convex ℝ (e.extend I '' (pushOpen e V : Set M))} := by
-  rw [Opens.isBasis_iff_nbhd]
-  intro V x hx
-  -- `e` maps `pushOpen e V` to an open subset of `H`, which is the preimage under `I` of an open
-  -- subset `O` of `E`.
-  have hVopen : IsOpen (e '' (pushOpen e V : Set M)) :=
-    e.isOpen_image_of_subset_source (pushOpen e V).isOpen (pushOpen_subset_source e V)
-  obtain ⟨O, hOopen, hIO⟩ := I.isClosedEmbedding.isInducing.isOpen_iff.mp hVopen
-  have hxO : e.extend I x.1 ∈ O := by
-    have hx' : e x.1 ∈ I ⁻¹' O := by
-      rw [hIO]
-      exact ⟨x.1, ⟨x, hx, rfl⟩, rfl⟩
-    exact hx'
-  obtain ⟨r, hr, hballO⟩ := Metric.isOpen_iff.mp hOopen _ hxO
-  -- Pull back the open ball of radius `r` around `e.extend I x` to an open subset of `e.source`.
-  have hcont : Continuous fun z : e.source ↦ e.extend I z.1 :=
-    I.continuous.comp (e.continuousOn.comp_continuous continuous_subtype_val fun z ↦ z.2)
-  let W : Opens e.source :=
-    ⟨(fun z : e.source ↦ e.extend I z.1) ⁻¹' Metric.ball (e.extend I x.1) r,
-      Metric.isOpen_ball.preimage hcont⟩
-  have hWV : W ≤ V := by
-    intro z hz
-    have hmem : e z.1 ∈ e '' (pushOpen e V : Set M) := by
-      rw [← hIO]
-      exact hballO hz
-    obtain ⟨w, ⟨w', hw'V, rfl⟩, hwe⟩ := hmem
-    have hzw : z.1 = w'.1 := e.injOn z.2 w'.2 hwe.symm
-    exact Subtype.ext hzw ▸ hw'V
-  have himg : e.extend I '' (pushOpen e W : Set M) =
-      Metric.ball (e.extend I x.1) r ∩ Set.range I := by
-    refine Set.Subset.antisymm ?_ ?_
-    · rintro _ ⟨_, ⟨z, hzW, rfl⟩, rfl⟩
-      exact ⟨hzW, e z.1, rfl⟩
-    · rintro y ⟨hyball, h, rfl⟩
-      have hh : h ∈ e '' (pushOpen e V : Set M) := by
-        rw [← hIO]
-        exact hballO hyball
-      obtain ⟨z, ⟨z', _, rfl⟩, hze⟩ := hh
-      have hzW : z' ∈ W := by
-        simpa only [W, Opens.mem_mk, Set.mem_preimage, OpenPartialHomeomorph.extend_coe,
-          Function.comp_apply, hze] using hyball
-      exact ⟨z'.1, ⟨z', hzW, rfl⟩, by
-        simp only [OpenPartialHomeomorph.extend_coe, Function.comp_apply, hze]⟩
-  refine ⟨W, ?_, Metric.mem_ball_self hr, hWV⟩
-  rw [Set.mem_ofPred_eq, himg]
-  exact (convex_ball _ _).inter I.convex_range
-
-/-- **Mayer–Vietoris induction inside a single chart domain.** Let `e : OpenPartialHomeomorph M H`
-be a chart into a locally compact real model with corners `I`. A property of open subsets of `M`
-holds on every open `U ⊆ e.source` if it holds on `⊥` and on every nonempty open subset of
-`e.source` whose image under `e.extend I` is convex, passes from `U`, `V`, and `U ⊓ V` to
-`U ⊔ V`, and passes to countable pairwise disjoint unions. -/
-theorem mayerVietoris_induction_of_subset_source (P : Opens M → Prop)
-    (hbot : P ⊥)
-    (hconvex : ∀ U : Opens M, (U : Set M).Nonempty → (U : Set M) ⊆ e.source →
-      Convex ℝ (e.extend I '' (U : Set M)) → P U)
-    (hsup : ∀ U V, P U → P V → P (U ⊓ V) → P (U ⊔ V))
-    (hdisjoint : ∀ s : ℕ → Opens M, Pairwise (Disjoint on s) →
-      (∀ n, P (s n)) → P (⨆ n, s n)) :
-    ∀ U : Opens M, (U : Set M) ⊆ e.source → P U := by
-  have : ProperSpace E := ProperSpace.of_locallyCompactSpace ℝ
+/-- **Mayer–Vietoris induction in one chart.** Let `x` be a point of a charted space `M` over a
+locally compact model space `E`. A property of open subsets of `M` holds on every open subset of
+the source of the chart at `x` if it holds on the empty set and on the nonempty convex chart
+domains `(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`, for convex open `C ⊆ E` with
+`C ∩ range I ⊆ (extChartAt I x).target`, is preserved by binary unions of open subsets of the
+chart source when it holds on their intersection, and is preserved by countable disjoint unions of
+open subsets of the chart source. -/
+theorem mayerVietoris_induction_subset_chartAt_source [LocallyCompactSpace E]
+    (I : ModelWithCorners 𝕜 E H) (x : M) (P : Opens M → Prop) (hbot : P ⊥)
+    (hbase : ∀ (C : Set E) (U : Opens M), IsOpen C → Convex ℝ C →
+      C ∩ range I ⊆ (extChartAt I x).target →
+      (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C → (U : Set M).Nonempty → P U)
+    (hsup : ∀ U V : Opens M, (U : Set M) ⊆ (chartAt H x).source →
+      (V : Set M) ⊆ (chartAt H x).source → P U → P V → P (U ⊓ V) → P (U ⊔ V))
+    (hdisjoint : ∀ s : ℕ → Opens M, (∀ n, (s n : Set M) ⊆ (chartAt H x).source) →
+      (∀ i j, i ≠ j → Disjoint (s i) (s j)) → (∀ n, P (s n)) → P (⨆ n, s n)) :
+    ∀ U : Opens M, (U : Set M) ⊆ (chartAt H x).source → P U := by
+  let W : Opens M := ⟨_, (chartAt H x).open_source⟩
+  -- The chart identifies `W` with an open subset of `H`, which embeds as a closed subset of the
+  -- locally compact, hence proper, normed space `E`.
+  have hW : IsOpenEmbedding ((chartAt H x).source.domRestrict (chartAt H x)) :=
+    (chartAt H x).isOpenEmbedding_restrict
+  have : ProperSpace E := .of_locallyCompactSpace ℝ
+  have : LocallyCompactSpace H := I.locallyCompactSpace
   have : T2Space H := I.isClosedEmbedding.isEmbedding.t2Space
-  have : LocallyCompactSpace H := I.locallyCompactSpace
   have : SecondCountableTopology H := I.isClosedEmbedding.isEmbedding.secondCountableTopology
-  have : T2Space e.source := e.toHomeomorphSourceTarget.isEmbedding.t2Space
-  have : LocallyCompactSpace e.target := e.open_target.locallyCompactSpace
-  have : LocallyCompactSpace e.source :=
-    e.toHomeomorphSourceTarget.isClosedEmbedding.locallyCompactSpace
-  have : SecondCountableTopology e.source :=
-    e.toHomeomorphSourceTarget.isEmbedding.secondCountableTopology
-  have hQ : ∀ V : Opens e.source, P (pushOpen e V) :=
-    TauCeti.mayerVietoris_induction (fun V : Opens e.source ↦ P (pushOpen e V))
-      {V : Opens e.source | Convex ℝ (e.extend I '' (pushOpen e V : Set M))}
-      (isBasis_convex_opens_source I e)
-      (fun U hU V hV ↦ by
-        rw [Set.mem_ofPred_eq, pushOpen_inf, Opens.coe_inf,
-          (e.extend I).injOn.image_inter (by rw [e.extend_source]; exact pushOpen_subset_source e U)
-            (by rw [e.extend_source]; exact pushOpen_subset_source e V)]
-        exact hU.inter hV)
-      (by rwa [pushOpen_bot])
-      (fun V hV ↦ by
-        rcases (pushOpen e V : Set M).eq_empty_or_nonempty with hemp | hne
-        · have hVbot : pushOpen e V = ⊥ := Opens.ext hemp
-          rwa [hVbot]
-        · exact hconvex (pushOpen e V) hne (pushOpen_subset_source e V) hV)
-      (fun U V hU hV hUV ↦ by
-        rw [pushOpen_sup]
-        exact hsup _ _ hU hV (pushOpen_inf e U V ▸ hUV))
-      (fun s hs hPs ↦ by
-        rw [pushOpen_iSup]
-        exact hdisjoint (fun n ↦ pushOpen e (s n))
-          (fun i j hij ↦ pushOpen_disjoint e (hs i j hij)) hPs)
-  intro U hUe
-  let V : Opens e.source :=
-    ⟨Subtype.val ⁻¹' (U : Set M), U.isOpen.preimage continuous_subtype_val⟩
-  have hVU : pushOpen e V = U := by
-    ext x
-    simp only [pushOpen, V, Opens.coe_mk, Set.mem_image, Set.mem_preimage, Subtype.exists]
-    exact ⟨fun ⟨_, _, hyU, hyx⟩ ↦ hyx ▸ hyU, fun hxU ↦ ⟨x, hUe hxU, hxU, rfl⟩⟩
-  exact hVU ▸ hQ V
+  have : T2Space W := hW.isEmbedding.t2Space
+  have : LocallyCompactSpace W := hW.locallyCompactSpace
+  have : SecondCountableTopology W := hW.isEmbedding.secondCountableTopology
+  let B : Set (Opens M) := {U | ∃ C : Set E, IsOpen C ∧ Convex ℝ C ∧
+    C ∩ range I ⊆ (extChartAt I x).target ∧
+    (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C}
+  intro U hU
+  refine mayerVietoris_induction_le W P B ?_ ?_ hbot ?_
+    (fun U V hU hV ↦ hsup U V (SetLike.coe_subset_coe.2 hU) (SetLike.coe_subset_coe.2 hV))
+    (fun s hs ↦ hdisjoint s fun n ↦ SetLike.coe_subset_coe.2 (hs n)) U
+    (SetLike.coe_subset_coe.1 hU)
+  · -- A small ball around the chart image of a point gives a convex chart domain inside any
+    -- open neighbourhood of that point in the chart source.
+    intro U hUW y hy
+    have hUs : (U : Set M) ⊆ (chartAt H x).source := SetLike.coe_subset_coe.2 hUW
+    have hys : y ∈ (extChartAt I x).source := by
+      rw [extChartAt_source]
+      exact hUs hy
+    have himg : extChartAt I x '' U ∈ 𝓝[range I] extChartAt I x y := by
+      rw [← map_extChartAt_nhds' hys]
+      exact Filter.image_mem_map (U.isOpen.mem_nhds hy)
+    obtain ⟨ε, hε, hball⟩ := mem_nhdsWithin_iff.1 himg
+    refine ⟨⟨_, isOpen_extChartAt_preimage x isOpen_ball⟩,
+      ⟨ball (extChartAt I x y) ε, isOpen_ball, convex_ball _ _, ?_, rfl⟩,
+      Opens.mem_mk.2 ⟨hUs hy, mem_ball_self hε⟩, ?_⟩
+    · intro z hz
+      obtain ⟨w, hw, rfl⟩ := hball hz
+      exact (extChartAt I x).map_source (by rw [extChartAt_source]; exact hUs hw)
+    · rw [← SetLike.coe_subset_coe, Opens.coe_mk]
+      rintro z ⟨hzs, hzC⟩
+      rw [← extChartAt_source I] at hzs
+      obtain ⟨w, hw, hwz⟩ :=
+        hball ⟨hzC, extChartAt_target_subset_range x ((extChartAt I x).map_source hzs)⟩
+      have hws : w ∈ (extChartAt I x).source := by
+        rw [extChartAt_source]
+        exact hUs hw
+      rwa [← (extChartAt I x).injOn hws hzs hwz]
+  · rintro U ⟨C, hC, hCc, hCt, hU⟩ - V ⟨D, hD, hDc, -, hV⟩ - -
+    refine ⟨C ∩ D, hC.inter hD, hCc.inter hDc, fun z hz ↦ hCt ⟨hz.1.1, hz.2⟩, ?_⟩
+    rw [Opens.coe_inf, hU, hV, preimage_inter]
+    exact (inter_inter_distrib_left _ _ _).symm
+  · rintro U ⟨C, hC, hCc, hCt, hU⟩ - hne
+    exact hbase C U hC hCc hCt hU hne
 
-end Chart
-
-section Manifold
-
-variable [ChartedSpace H M] [T2Space M] [SigmaCompactSpace M]
-
-/-- **Mayer–Vietoris induction on a manifold.** Let `M` be a Hausdorff, σ-compact charted space
-modelled on a locally compact real model with corners `I`. A property of open subsets of `M` holds
-on every open set if it holds on `⊥` and on every nonempty open subset contained in an atlas chart
-whose extended-chart image is convex, passes from `U`, `V`, and `U ⊓ V` to `U ⊔ V`, and passes
-to countable pairwise disjoint unions. -/
-theorem mayerVietoris_induction (P : Opens M → Prop)
+/-- **Mayer–Vietoris induction over convex chart domains.** On a second-countable locally compact
+Hausdorff charted space `M`, a property of open subsets holds on every open subset if it holds on
+the empty set and on the nonempty convex chart domains
+`(chartAt H x).source ∩ (extChartAt I x)⁻¹' C`, for points `x` and convex open `C ⊆ E` with
+`C ∩ range I ⊆ (extChartAt I x).target`, is preserved by binary unions when it holds on the
+intersection, and is preserved by countable disjoint unions. -/
+theorem mayerVietoris_induction_extChartAt [T2Space M] [LocallyCompactSpace M]
+    [SecondCountableTopology M] (I : ModelWithCorners 𝕜 E H) (P : Opens M → Prop)
     (hbot : P ⊥)
-    (hconvex : ∀ e ∈ atlas H M, ∀ U : Opens M, (U : Set M).Nonempty →
-      (U : Set M) ⊆ e.source → Convex ℝ (e.extend I '' (U : Set M)) → P U)
+    (hbase : ∀ (x : M) (C : Set E) (U : Opens M), IsOpen C → Convex ℝ C →
+      C ∩ range I ⊆ (extChartAt I x).target →
+      (U : Set M) = (chartAt H x).source ∩ extChartAt I x ⁻¹' C → (U : Set M).Nonempty → P U)
     (hsup : ∀ U V, P U → P V → P (U ⊓ V) → P (U ⊔ V))
-    (hdisjoint : ∀ s : ℕ → Opens M, Pairwise (Disjoint on s) →
+    (hdisjoint : ∀ s : ℕ → Opens M, (∀ i j, i ≠ j → Disjoint (s i) (s j)) →
       (∀ n, P (s n)) → P (⨆ n, s n)) :
-    ∀ U : Opens M, P U := by
-  have : ProperSpace E := ProperSpace.of_locallyCompactSpace ℝ
-  have : LocallyCompactSpace H := I.locallyCompactSpace
-  have : SecondCountableTopology H := I.isClosedEmbedding.isEmbedding.secondCountableTopology
-  have : LocallyCompactSpace M := ChartedSpace.locallyCompactSpace H M
-  have : SecondCountableTopology M := ChartedSpace.secondCountable_of_sigmaCompact H M
-  let B : Set (Opens M) := {U : Opens M | ∃ e ∈ atlas H M, (U : Set M) ⊆ e.source}
-  have hB : Opens.IsBasis B := by
-    rw [Opens.isBasis_iff_nbhd]
-    intro U x hx
-    refine ⟨U ⊓ ⟨(chartAt H x).source, (chartAt H x).open_source⟩,
-      ⟨chartAt H x, chart_mem_atlas H x, Set.inter_subset_right⟩,
-      ⟨hx, mem_chart_source H x⟩, inf_le_left⟩
-  have hB_inf : ∀ U ∈ B, ∀ V ∈ B, U ⊓ V ∈ B := by
-    rintro U ⟨e, he, hUe⟩ V -
-    exact ⟨e, he, Set.inter_subset_left.trans hUe⟩
-  have hbase : ∀ U ∈ B, P U := by
-    rintro U ⟨e, he, hUe⟩
-    exact I.mayerVietoris_induction_of_subset_source e P hbot (hconvex e he) hsup hdisjoint U hUe
-  exact TauCeti.mayerVietoris_induction P B hB hB_inf hbot hbase hsup hdisjoint
+    ∀ U, P U := by
+  refine mayerVietoris_induction P {U | ∃ x : M, (U : Set M) ⊆ (chartAt H x).source} ?_ ?_ hbot
+    ?_ hsup hdisjoint
+  · refine Opens.isBasis_iff_nbhd.2 fun {U} y hy ↦ ?_
+    exact ⟨U ⊓ ⟨_, (chartAt H y).open_source⟩, ⟨y, inter_subset_right⟩,
+      ⟨hy, mem_chart_source H y⟩, inf_le_left⟩
+  · rintro U ⟨x, hx⟩ V - -
+    exact ⟨x, inter_subset_left.trans hx⟩
+  · rintro U ⟨x, hx⟩ -
+    -- A nonempty locally compact manifold is modelled on a locally compact space.
+    have : Nonempty M := ⟨x⟩
+    have := LocallyCompactSpace.of_locallyCompact_manifold M I
+    exact mayerVietoris_induction_subset_chartAt_source I x P hbot (hbase x)
+      (fun U V _ _ ↦ hsup U V) (fun s _ ↦ hdisjoint s) U hx
 
-end Manifold
-
-end ModelWithCorners
+end TauCeti
