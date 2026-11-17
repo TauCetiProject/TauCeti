@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Abelian.Injective.Dimension
 public import TauCeti.Algebra.Homology.Ext.Map.Adjunction
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
 
@@ -16,8 +17,8 @@ An additive equivalence `e` induces an additive equivalence on `Ext` groups via
 `CategoryTheory.Abelian.Ext.mapExactFunctor`. Bijectivity follows from
 `CategoryTheory.Adjunction.mapExt_bijective_of_isIso_unit_app` applied to `e.toAdjunction`.
 That criterion uses Mathlib's `CategoryTheory.Adjunction.extEquiv`.
-Since projective dimension is defined by the vanishing of `Ext`, it is invariant under any
-equivalence of abelian categories, which is automatically additive.
+Since projective and injective dimensions are defined by the vanishing of `Ext`, both are invariant
+under any equivalence of abelian categories, which is automatically additive.
 
 ## Main definitions
 
@@ -33,6 +34,8 @@ equivalence of abelian categories, which is automatically additive.
   equivalence is bijective on `Ext`.
 * `CategoryTheory.Equivalence.projectiveDimension_functor_obj`: an equivalence of abelian
   categories preserves projective dimension.
+* `CategoryTheory.Equivalence.injectiveDimension_functor_obj`: an equivalence of abelian
+  categories preserves injective dimension.
 -/
 
 public section
@@ -115,5 +118,29 @@ theorem _root_.CategoryTheory.Equivalence.projectiveDimension_functor_obj
       (e.hasProjectiveDimensionLT_functor_obj_iff X n).mpr)
     (projectiveDimension_le_of_hasProjectiveDimensionLT fun n ↦
       (e.hasProjectiveDimensionLT_functor_obj_iff X n).mp)
+
+/-- **Injective dimension bounds are invariant under an equivalence.** The object `e X` has
+injective dimension `< n` exactly when `X` does. No additivity hypothesis is needed: an
+equivalence of abelian categories is automatically additive. -/
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.hasInjectiveDimensionLT_functor_obj_iff
+    (e : C ≌ D) (X : C) (n : ℕ) :
+    HasInjectiveDimensionLT (e.functor.obj X) n ↔ HasInjectiveDimensionLT X n := by
+  have := e.functor.additive_of_preserves_binary_products
+  let := HasExt.standard C
+  let := HasExt.standard D
+  simp only [hasInjectiveDimensionLT_iff]
+  refine ⟨fun h i hi Y α ↦ (e.extAddEquiv Y X i).injective ?_, fun h i hi Y β ↦ ?_⟩
+  · rw [map_zero]
+    exact h i hi _
+  · simpa only [AddEquivClass.map_eq_zero_iff] using h i hi ((e.extAddEquiv _ X i).symm
+      ((extAddEquivOfIso (e.counitIso.app Y) (Iso.refl _) i).symm β))
+
+/-- **An equivalence of abelian categories preserves injective dimension.** -/
+@[simp]
+theorem _root_.CategoryTheory.Equivalence.injectiveDimension_functor_obj
+    (e : C ≌ D) (X : C) :
+    injectiveDimension (e.functor.obj X) = injectiveDimension X := by
+  simp only [injectiveDimension, e.hasInjectiveDimensionLT_functor_obj_iff]
 
 end TauCeti
