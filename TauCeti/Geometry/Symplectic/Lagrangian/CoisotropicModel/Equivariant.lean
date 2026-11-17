@@ -56,8 +56,9 @@ equivariant.
 
 ## Main results
 
-* `LinearMap.BilinForm.IsAlt.exists_equivariant_projection`: an equivariant coisotropic embedding
-  provides an equivariant projection onto the kernel of the pulled back form.
+* `TauCeti.Representation.IsInvariantForm.exists_equivariant_projection_ker`: an injective
+  equivariant map into a semisimple representation provides an equivariant projection onto the
+  kernel of an invariant form.
 * `LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel`:
   equivariant uniqueness of linear coisotropic embeddings.
 * `TauCeti.SymplecticForm.exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic`: the
@@ -253,44 +254,6 @@ private theorem exists_isotropic_dual_lift (hB : B.IsAlt) (hσ : IsInvariantForm
 
 end Model
 
-/-- **Equivariant projection onto the kernel.** Let a group `G` act on a symplectic vector space
-`(V, ω)` by a semisimple representation `ρ` preserving `ω`, and on `W` by a representation `σ`. If
-`ι : W → V` is an injective `G`-equivariant linear map with coisotropic image, pulling `ω` back to
-`B`, then the kernel `K` of `B` has a `G`-equivariant projection `P : W → K`, as asked for by
-`LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel`. It projects
-along the preimage of an invariant complement of `ι(K)` in `V`. -/
-theorem exists_equivariant_projection [ρ.IsSemisimpleRepresentation]
-    (hρ : IsInvariantForm ρ ω.toBilinForm)
-    (hσ : IsInvariantForm σ B) (hι : Function.Injective ι)
-    (hω : ∀ w w', ω (ι w) (ι w') = B w w') (hC : ω.IsCoisotropic (LinearMap.range ι))
-    (hισ : ∀ g w, ι (σ g w) = ρ g (ι w)) :
-    ∃ P : W →ₗ[ℝ] LinearMap.ker B, (∀ k : LinearMap.ker B, P k = k) ∧
-      ∀ g w, (P (σ g w) : W) = σ g (P w) := by
-  obtain ⟨Y, hY⟩ := exists_isCompl_orthogonal_range hρ hισ
-  rw [← SymplecticForm.map_ker_eq_orthogonal_range ω hω hC] at hY
-  let K : Subrepresentation σ := ⟨LinearMap.ker B, fun g _ hk ↦ hσ.apply_mem_ker g hk⟩
-  let C : Subrepresentation σ := ⟨Y.toSubmodule.comap ι, fun g w hw ↦ by
-    rw [Submodule.mem_comap, hισ]
-    exact Y.apply_mem_toSubmodule g hw⟩
-  have h : IsCompl K C := by
-    rw [← Subrepresentation.isCompl_toSubmodule]
-    refine ⟨Submodule.disjoint_def.2 fun k hk hkY ↦ hι ?_, codisjoint_iff.2 ?_⟩
-    · rw [map_zero]
-      exact Submodule.disjoint_def.1 hY.disjoint _ (Submodule.mem_map_of_mem hk) hkY
-    · refine Submodule.eq_top_iff'.2 fun w ↦ ?_
-      obtain ⟨r, hr, y, hy, hry⟩ :=
-        Submodule.mem_sup.1 (hY.sup_eq_top ▸ Submodule.mem_top (x := ι w))
-      obtain ⟨k, hk, rfl⟩ := hr
-      refine Submodule.mem_sup.2 ⟨k, hk, w - k, ?_, add_sub_cancel _ _⟩
-      rwa [Submodule.mem_comap, map_sub, ← hry, add_sub_cancel_left]
-  -- The first component of the splitting of `σ` along `K ⊕ C`, an equivalence of representations.
-  let e := Subrepresentation.equivProdOfIsCompl h
-  refine ⟨LinearMap.fst ℝ K.toSubmodule C.toSubmodule ∘ₗ e.toLinearMap, fun k ↦ ?_, fun g w ↦ ?_⟩
-  · simp [e]
-  · have he : e (σ g w) = K.toRepresentation.prod C.toRepresentation g (e w) :=
-      LinearMap.congr_fun (e.toIntertwiningMap.isIntertwining' g) w
-    simp [he, Subrepresentation.toRepresentation_apply]
-
 /-- **Equivariant uniqueness of the linear coisotropic embedding.** Let a group `G` act on a
 finite-dimensional symplectic vector space `(V, ω)` by a semisimple representation `ρ` preserving
 `ω`, and on `W` by a representation `σ`. Let `ι : W → V` be an injective `G`-equivariant linear
@@ -336,6 +299,53 @@ theorem exists_equivariant_isSymplectomorphism_coisotropicModel [FiniteDimension
 
 end LinearMap.BilinForm.IsAlt
 
+namespace TauCeti.Representation.IsInvariantForm
+
+variable {k W V G : Type*} [Field k] [AddCommGroup W] [Module k W] [AddCommGroup V] [Module k V]
+  [Group G] {B : LinearMap.BilinForm k W} {σ : _root_.Representation k G W}
+  {ρ : _root_.Representation k G V} {ι : W →ₗ[k] V}
+
+/-- **Equivariant projection onto the kernel.** Let a group `G` act on `W` by a representation `σ`
+preserving a bilinear form `B`, and on `V` by a semisimple representation `ρ`. If `ι : W → V` is an
+injective `G`-equivariant linear map, then the kernel `K` of `B` has a `G`-equivariant projection
+`P : W → K`, as asked for by
+`LinearMap.BilinForm.IsAlt.exists_equivariant_isSymplectomorphism_coisotropicModel`. It projects
+along the preimage of an invariant complement of `ι(K)` in `V`. -/
+theorem exists_equivariant_projection_ker [ρ.IsSemisimpleRepresentation]
+    (hσ : IsInvariantForm σ B) (hι : Function.Injective ι)
+    (hισ : ∀ g w, ι (σ g w) = ρ g (ι w)) :
+    ∃ P : W →ₗ[k] LinearMap.ker B, (∀ x : LinearMap.ker B, P x = x) ∧
+      ∀ g w, (P (σ g w) : W) = σ g (P w) := by
+  let R : Subrepresentation ρ := ⟨(LinearMap.ker B).map ι, by
+    rintro g _ ⟨w, hw, rfl⟩
+    exact ⟨σ g w, hσ.apply_mem_ker g hw, hισ g w⟩⟩
+  obtain ⟨Y, hY⟩ := exists_isCompl R
+  rw [← Subrepresentation.isCompl_toSubmodule] at hY
+  let K : Subrepresentation σ := ⟨LinearMap.ker B, fun g _ hk ↦ hσ.apply_mem_ker g hk⟩
+  let C : Subrepresentation σ := ⟨Y.toSubmodule.comap ι, fun g w hw ↦ by
+    rw [Submodule.mem_comap, hισ]
+    exact Y.apply_mem_toSubmodule g hw⟩
+  have h : IsCompl K C := by
+    rw [← Subrepresentation.isCompl_toSubmodule]
+    refine ⟨Submodule.disjoint_def.2 fun x hx hxY ↦ hι ?_, codisjoint_iff.2 ?_⟩
+    · rw [map_zero]
+      exact Submodule.disjoint_def.1 hY.disjoint _ (Submodule.mem_map_of_mem hx) hxY
+    · refine Submodule.eq_top_iff'.2 fun w ↦ ?_
+      obtain ⟨r, hr, y, hy, hry⟩ :=
+        Submodule.mem_sup.1 (hY.sup_eq_top ▸ Submodule.mem_top (x := ι w))
+      obtain ⟨x, hx, rfl⟩ := hr
+      refine Submodule.mem_sup.2 ⟨x, hx, w - x, ?_, add_sub_cancel _ _⟩
+      rwa [Submodule.mem_comap, map_sub, ← hry, add_sub_cancel_left]
+  -- The first component of the splitting of `σ` along `K ⊕ C`, an equivalence of representations.
+  let e := Subrepresentation.equivProdOfIsCompl h
+  refine ⟨LinearMap.fst k K.toSubmodule C.toSubmodule ∘ₗ e.toLinearMap, fun x ↦ ?_, fun g w ↦ ?_⟩
+  · simp [e]
+  · have he : e (σ g w) = K.toRepresentation.prod C.toRepresentation g (e w) :=
+      LinearMap.congr_fun (e.toIntertwiningMap.isIntertwining' g) w
+    simp [he, Subrepresentation.toRepresentation_apply]
+
+end TauCeti.Representation.IsInvariantForm
+
 namespace TauCeti.SymplecticForm
 
 variable {W V₁ V₂ G : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup V₁] [Module ℝ V₁]
@@ -363,8 +373,7 @@ theorem exists_equivariant_isSymplectomorphism_extend_of_isCoisotropic [FiniteDi
   have hω₁ (w w' : W) : ω₁ (ι₁ w) (ι₁ w') = B w w' := (rfl)
   have hσ : IsInvariantForm σ B := isInvariantForm_iff.2 fun g w w' ↦ by
     simp only [B, LinearMap.compl₁₂_apply, hισ₁, hρ₁.apply]
-  obtain ⟨P, hP, hPσ⟩ := LinearMap.BilinForm.IsAlt.exists_equivariant_projection hρ₁ hσ hι₁ hω₁
-    hC₁ hισ₁
+  obtain ⟨P, hP, hPσ⟩ := hσ.exists_equivariant_projection_ker hι₁ hισ₁
   obtain ⟨e₁, he₁, he₁ι, he₁ρ⟩ := hB.exists_equivariant_isSymplectomorphism_coisotropicModel hP
     hρ₁ hσ hι₁ hω₁ hC₁ hισ₁ hPσ
   obtain ⟨e₂, he₂, he₂ι, he₂ρ⟩ := hB.exists_equivariant_isSymplectomorphism_coisotropicModel hP
