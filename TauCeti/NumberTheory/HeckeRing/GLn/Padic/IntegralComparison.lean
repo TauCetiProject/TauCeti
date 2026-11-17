@@ -10,9 +10,9 @@ public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.Basic
 public import TauCeti.NumberTheory.HeckeRing.Map.InjectiveHom
 public import TauCeti.NumberTheory.HeckeRing.Map.SubgroupExtension
 public import TauCeti.NumberTheory.HeckeRing.Map.Submonoid
-public import TauCeti.NumberTheory.Padics.FiniteSublattice
 
 import TauCeti.LinearAlgebra.Matrix.Divisibility
+import TauCeti.NumberTheory.Padics.FiniteSublattice
 import TauCeti.NumberTheory.Padics.RatCast
 
 /-!

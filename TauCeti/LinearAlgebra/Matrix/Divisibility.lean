@@ -69,6 +69,8 @@ proves the uniqueness of the Smith normal form, from one diagonal factor to two.
 * `Matrix.prod_castLE_mul_prod_castLE_dvd_of_mul_diagonal_mul_diagonal_mul_eq`: if
   `P * diagonal c₁ * Q * diagonal c₂ * S = diagonal d`, then the product of the first `k`
   entries of `d` is divisible by those of `c₁` and `c₂`.
+* `Matrix.det_dvd_pow_card_of_mul_eq_smul_one`: if `X * Y = r • 1` for square matrices over a
+  commutative ring, then `det X ∣ r ^ card ι`.
 -/
 
 public section

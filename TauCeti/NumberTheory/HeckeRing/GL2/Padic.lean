@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.HeckeRing.GL2.DiagonalCosetDegree
 public import TauCeti.NumberTheory.HeckeRing.GLn.Padic.IntegralComparison
+
+import TauCeti.NumberTheory.HeckeRing.GL2.DiagonalCosetDegree
 
 /-!
 # Rank-two `p`-adic Hecke double-coset degrees

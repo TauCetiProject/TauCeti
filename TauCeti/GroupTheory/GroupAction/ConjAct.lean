@@ -45,8 +45,6 @@ by conjugation on every transitive normal subgroup.
   normalizes `Γ`.
 * `Subgroup.subgroupOf_conjAct_smul_mul_left_of_mem_normalizer`: left multiplication of `g` by an
   element of the normalizer of `Γ₁` conjugates `(gΓ₂g⁻¹).subgroupOf Γ₁`.
-* `Subgroup.map_pointwise_conjAct`: pushing a subgroup forward along a group homomorphism commutes
-  with pointwise `ConjAct` conjugation.
 * `TauCeti.MulAction.orbitRel_smul_smul_iff_of_conjAct_smul_eq`: `g • x` and `g • y` lie in the
   same orbit of `g H g⁻¹` exactly when `x` and `y` lie in the same orbit of `H`.
 * `Subgroup.stabilizer_conjNormal_injective`: in a faithful action, the conjugation map
@@ -165,22 +163,6 @@ theorem subgroupOf_conjAct_smul_mul_left_of_mem_normalizer {G : Type*} [Group G]
   -- bracketing: `(hg)⁻¹x(hg)` versus `g⁻¹(h⁻¹xh)g`. Reassociating proves that identity; the
   -- `iff` is then congruence along it, so no rewriting has to find a redex.
   exact iff_of_eq (congrArg (· ∈ Γ₂) (by simp only [mul_inv_rev, mul_assoc]))
-
-/-- Pushing a subgroup forward along a group homomorphism commutes with pointwise `ConjAct`
-conjugation. -/
-theorem map_pointwise_conjAct {G K : Type*} [Group G] [Group K] (φ : G →* K) (x : G)
-    (H : Subgroup G) :
-    ConjAct.toConjAct (φ x) • H.map φ = (ConjAct.toConjAct x • H).map φ := by
-  ext y
-  rw [mem_conjAct_smul_iff, mem_map, mem_map]
-  refine ⟨fun ⟨h, hh, hy⟩ ↦ ⟨x * h * x⁻¹, ?_, ?_⟩, fun ⟨z, hz, hy⟩ ↦ ?_⟩
-  · rw [mem_conjAct_smul_iff]
-    simpa [mul_assoc] using hh
-  · calc φ (x * h * x⁻¹) = φ x * φ h * (φ x)⁻¹ := by simp [mul_assoc]
-      _ = φ x * ((φ x)⁻¹ * y * φ x) * (φ x)⁻¹ := by rw [hy]
-      _ = y := by simp [mul_assoc]
-  · subst hy
-    exact ⟨x⁻¹ * z * x, mem_conjAct_smul_iff.mp hz, by simp [mul_assoc]⟩
 
 end Subgroup
 

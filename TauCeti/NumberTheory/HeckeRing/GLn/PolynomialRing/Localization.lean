@@ -351,22 +351,21 @@ theorem exists_mul_scalarLocalUnit_pow_eq (p : ℕ) (z : pLocalRationalSubring n
       (by simpa only [smul_eq_mul] using hk.symm)
   simpa [f, g₀] using hk'
 
+@[instance_reducible]
+private noncomputable def commRingPLocalSubring (p : ℕ) : CommRing (pLocalSubring n p) :=
+  { (inferInstance : Ring _) with
+    mul_comm := fun a b ↦ Subtype.ext
+      (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
+        (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+
 private theorem isLocalization_away_heckeGen_rev_zero (p : ℕ) :
-    letI : CommRing (pLocalSubring n p) :=
-      { (inferInstance : Ring _) with
-        mul_comm := fun a b ↦ Subtype.ext
-          (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-            (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+    letI : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
     letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
       (integralToRationalLocal n p).toAlgebra
     IsLocalization.Away
       (⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩ : pLocalSubring n p)
       (pLocalRationalSubring n p) :=
-  letI : CommRing (pLocalSubring n p) :=
-    { (inferInstance : Ring _) with
-      mul_comm := fun a b ↦ Subtype.ext
-        (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-          (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+  letI : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
   letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
     (integralToRationalLocal n p).toAlgebra
   IsLocalization.Away.mk _ (val_scalarLocalUnit n p ▸ (scalarLocalUnit n p).isUnit)
@@ -389,11 +388,7 @@ theorem pLocalRationalSubring_ringHom_ext {p : ℕ} {R : Type*} [Semiring R]
     exact (Subtype.ext hza.symm : z = integralToRationalLocal 0 p ⟨a, ha⟩) ▸
       RingHom.congr_fun h ⟨a, ha⟩
   · have : NeZero n := ⟨hn.ne'⟩
-    let _ : CommRing (pLocalSubring n p) :=
-      { (inferInstance : Ring _) with
-        mul_comm := fun a b ↦ Subtype.ext
-          (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-            (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+    let _ : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
     let _ : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
       (integralToRationalLocal n p).toAlgebra
     have := isLocalization_away_heckeGen_rev_zero n p
@@ -409,11 +404,7 @@ noncomputable def pLocalRationalSubringLift {p : ℕ} {R : Type*} [Semiring R]
     (g : pLocalSubring n p →+* R)
     (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩)) :
     pLocalRationalSubring n p →+* R :=
-  letI : CommRing (pLocalSubring n p) :=
-    { (inferInstance : Ring _) with
-      mul_comm := fun a b ↦ Subtype.ext
-        (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-          (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+  letI : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
   letI : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
     (integralToRationalLocal n p).toAlgebra
   haveI := isLocalization_away_heckeGen_rev_zero n p
@@ -427,11 +418,7 @@ theorem pLocalRationalSubringLift_integralToRationalLocal {p : ℕ} {R : Type*} 
     (hg : IsUnit (g ⟨heckeGen n p (Fin.rev 0), heckeGen_mem_pLocalSubring n p (Fin.rev 0)⟩))
     (a : pLocalSubring n p) :
     pLocalRationalSubringLift n g hg (integralToRationalLocal n p a) = g a := by
-  let _ : CommRing (pLocalSubring n p) :=
-    { (inferInstance : Ring _) with
-      mul_comm := fun a b ↦ Subtype.ext
-        (HeckeCosetModule.mul_comm_of_antiInvolution ℤ (transposeAntiInvolution n)
-          (transposeAntiInvolution_onHeckeCoset_eq_self n) a.1 b.1) }
+  let _ : CommRing (pLocalSubring n p) := commRingPLocalSubring n p
   let _ : Algebra (pLocalSubring n p) (pLocalRationalSubring n p) :=
     (integralToRationalLocal n p).toAlgebra
   have := isLocalization_away_heckeGen_rev_zero n p
