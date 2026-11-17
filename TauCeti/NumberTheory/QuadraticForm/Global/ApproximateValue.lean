@@ -54,7 +54,7 @@ variable {K X Y : Type*} [Field K] [NumberField K]
   [AddCommGroup X] [Module K X] [FiniteDimensional K X]
   [AddCommGroup Y] [Module K Y] [FiniteDimensional K Y]
 
-omit [FiniteDimensional K X] in
+omit [FiniteDimensional K X] [FiniteDimensional K Y] in
 /-- If `W` is regular, then `-U x` is represented at a finite place `v` as soon as, where `W_v` is
 anisotropic, the value `U_v (1 ⊗ x)` lies in the square class of a local value of `U_v` that is
 the negative of a local value of `W_v`. -/

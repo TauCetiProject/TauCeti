@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.BilinearForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.BaseChange
 public import TauCeti.NumberTheory.NumberField.Global.Places.ScalarExtension
@@ -181,13 +182,17 @@ theorem _root_.QuadraticMap.Represents.atComplexEmbedding
   rw [atComplexEmbedding_def]
   simpa only [RingHom.algebraMap_toAlgebra] using h.baseChange (A := ℂ)
 
-/-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every finite place. -/
-theorem Nondegenerate.atFinitePlace [NumberField K] [FiniteDimensional K V]
+/-- A nondegenerate quadratic form stays nondegenerate at every finite place. -/
+theorem Nondegenerate.atFinitePlace [NumberField K]
     {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate) (v : HeightOneSpectrum (𝓞 K)) :
     (Q.atFinitePlace v).Nondegenerate := by
   let : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
-  rw [atFinitePlace_def]
-  exact _root_.QuadraticForm.Nondegenerate.baseChange hQ
+  let : Invertible (2 : v.adicCompletion K) :=
+    (Invertible.map (algebraMap K (v.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
+  rw [atFinitePlace_def, ← QuadraticMap.nondegenerate_associated_iff,
+    _root_.QuadraticForm.associated_baseChange]
+  exact LinearMap.BilinForm.Nondegenerate.baseChange (v.adicCompletion K)
+    (QuadraticMap.nondegenerate_associated_iff.mpr hQ)
 
 /-- A finite-dimensional nondegenerate quadratic form stays nondegenerate at every real place. -/
 theorem Nondegenerate.atRealPlace [FiniteDimensional K V]
