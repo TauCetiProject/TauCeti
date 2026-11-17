@@ -90,7 +90,8 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   constant series, and over a normed field `K` restricted series over a normed `K`-algebra form a
   `NormedAlgebra` over `K`.
 * `TauCeti.MvPowerSeries.polynomialToRestricted`: the inclusion of polynomials as an algebra
-  homomorphism into restricted series.
+  homomorphism into restricted series, which is bijective over a discrete coefficient ring when
+  `∀ i, 1 ≤ c i` (`TauCeti.MvPowerSeries.polynomialToRestricted_bijective_of_discreteTopology`).
 * `TauCeti.MvPowerSeries.not_finite_isRestrictedSubring`: over a nontrivial ring, restricted
   series in at least one variable do not form a finitely generated module.
 
@@ -933,6 +934,32 @@ theorem renameAlgEquiv_polynomialToRestricted {τ : Type*} (e : σ ≃ τ) (c : 
     IsRestricted.renameAlgEquiv e c (polynomialToRestricted (c ∘ e) p) =
       polynomialToRestricted c (MvPolynomial.rename e p) :=
   Subtype.ext <| by simp [rename_coe]
+
+/-- Over a discrete ultrametric normed ring, the polynomial inclusion into restricted series at
+polyradii `c ≥ 1` is bijective: only finitely many weighted coefficient norms can exceed the radius
+of an isolating ball around `0`. -/
+theorem polynomialToRestricted_bijective_of_discreteTopology [DiscreteTopology R]
+    (hc : ∀ i, 1 ≤ c i) :
+    Function.Bijective (polynomialToRestricted (R := R) c) := by
+  refine ⟨fun p q h ↦ MvPolynomial.coe_injective σ R (by simpa using congrArg Subtype.val h),
+    fun f ↦ ?_⟩
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (isOpen_discrete ({0} : Set R)) 0 rfl
+  have hfin : {t : σ →₀ ℕ | ε ≤ ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·)}.Finite := by
+    simpa [Filter.eventually_cofinite, not_lt] using f.property.eventually (gt_mem_nhds hε)
+  have hsupp : (Function.support fun t ↦ coeff t (f : MvPowerSeries σ R)).Finite := by
+    refine hfin.subset fun t ht ↦ ?_
+    rw [Function.mem_support, Ne] at ht
+    have hnorm : ε ≤ ‖coeff t (f : MvPowerSeries σ R)‖ :=
+      not_lt.mp fun hlt ↦ ht (by simpa [Metric.mem_ball] using hball (by simpa using hlt))
+    have hprod : 1 ≤ t.prod (c · ^ ·) := by
+      simpa [Finsupp.prod] using
+        Finset.prod_le_prod₀ (fun _ _ ↦ zero_le_one) fun i _ ↦ one_le_pow₀ (hc i)
+    exact hnorm.trans <| by
+      simpa only [mul_one] using
+        mul_le_mul_of_nonneg_left hprod (norm_nonneg (coeff t (f : MvPowerSeries σ R)))
+  refine ⟨AddMonoidAlgebra.ofCoeff (Finsupp.ofSupportFinite _ hsupp), Subtype.ext ?_⟩
+  ext t
+  simp [coe_polynomialToRestricted, MvPolynomial.coeff_coe, Finsupp.ofSupportFinite_coe]
 
 variable (c) in
 /-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely
