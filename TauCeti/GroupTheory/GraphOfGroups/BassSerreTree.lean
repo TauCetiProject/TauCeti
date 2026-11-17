@@ -433,6 +433,26 @@ private def bassSerreAction : π₁ 𝔸 a →* (bassSerreGraph 𝔸 a).Aut wher
   map_mul' g g' := SerreGraph.Iso.ext (fun (y : BSVertex 𝔸 a) ↦ mul_smul g g' y)
     fun (d : BSDart 𝔸 a) ↦ mul_smul g g' d
 
+variable {𝔸 a}
+
+/-- `bassSerreAction g` moves the coset `p A_b` to `(g p) A_b`. -/
+private theorem bassSerreAction_equivV (g : π₁ 𝔸 a) (y : BSVertex 𝔸 a) :
+    (bassSerreAction 𝔸 a g).equivV y = ⟨y.1, g • y.2⟩ := by
+  -- By definition, `bassSerreAction g` permutes vertices by `toPerm g`.
+  refine (MulAction.toPerm_apply (β := BSVertex 𝔸 a) g y).trans ?_
+  obtain ⟨b, y⟩ := y
+  rw [Sigma.smul_mk]
+
+/-- `bassSerreAction g` moves the coset `p α_e(A_e)` to `(g p) α_e(A_e)`, over the same dart `e`. -/
+private theorem bassSerreAction_equivE (g : π₁ 𝔸 a) (d : BSDart 𝔸 a) :
+    (bassSerreAction 𝔸 a g).equivE d = ⟨d.1, d.2.1, d.2.2.1, g • d.2.2.2⟩ := by
+  -- By definition, `bassSerreAction g` permutes darts by `toPerm g`.
+  refine (MulAction.toPerm_apply (β := BSDart 𝔸 a) g d).trans ?_
+  obtain ⟨b, c, e, y⟩ := d
+  rw [Sigma.smul_mk, Sigma.smul_mk, Sigma.smul_mk]
+
+variable (𝔸 a)
+
 /-! ### The Bass–Serre tree -/
 
 /-- The Bass–Serre tree `X(𝔸, a)` of a graph of groups `𝔸` at a vertex `a`, a tree for the
@@ -445,7 +465,9 @@ def bassSerreTree : GTree.{max u v w, max u v w} (π₁ 𝔸 a) where
   action := bassSerreAction 𝔸 a
   action_smul_ne_rev g d h := by
     obtain ⟨b, c, e, y⟩ := d
-    -- The action keeps the dart `e` of `Γ` underlying a dart, while reversal reverses it.
+    rw [bassSerreAction_equivE] at h
+    -- The action keeps the dart `e` of `Γ` underlying a dart, while reversal (`BSDart.rev`)
+    -- reverses it.
     exact Γ.rev_ne e.1
       ((Γ.reverse_val e).symm.trans (congrArg (fun d : BSDart 𝔸 a ↦ d.2.2.1.1) h).symm)
 
@@ -456,20 +478,16 @@ variable {𝔸 a}
 private theorem bassSerreTree_smul_vertex (g : π₁ 𝔸 a) (y : (bassSerreTree 𝔸 a).V) :
     g • y = (⟨y.1, g • y.2⟩ : BSVertex 𝔸 a) := by
   rw [GTree.smul_vertex_def, SerreGraph.Aut.smul_vertex_def]
-  -- The action of `bassSerreTree` is `bassSerreAction`, which permutes vertices by `toPerm g`.
-  refine (MulAction.toPerm_apply (β := BSVertex 𝔸 a) g y).trans ?_
-  obtain ⟨b, y⟩ := y
-  rw [Sigma.smul_mk]
+  -- The action of `bassSerreTree` is `bassSerreAction`.
+  exact bassSerreAction_equivV g y
 
 /-- The action of `π₁(𝔸, a)` on the darts of the Bass–Serre tree is its action on the cosets
 `p α_e(A_e)`. -/
 private theorem bassSerreTree_smul_dart (g : π₁ 𝔸 a) (d : (bassSerreTree 𝔸 a).E) :
     g • d = (⟨d.1, d.2.1, d.2.2.1, g • d.2.2.2⟩ : BSDart 𝔸 a) := by
   rw [GTree.smul_dart_def, SerreGraph.Aut.smul_dart_def]
-  -- The action of `bassSerreTree` is `bassSerreAction`, which permutes darts by `toPerm g`.
-  refine (MulAction.toPerm_apply (β := BSDart 𝔸 a) g d).trans ?_
-  obtain ⟨b, c, e, y⟩ := d
-  rw [Sigma.smul_mk, Sigma.smul_mk, Sigma.smul_mk]
+  -- The action of `bassSerreTree` is `bassSerreAction`.
+  exact bassSerreAction_equivE g d
 
 /-- The vertex `p A_b` of the Bass–Serre tree given by an `𝔸`-path `p` from `a` to `b`. -/
 -- The definitions below are `noncomputable` because the vertex and dart types of `bassSerreTree`,
