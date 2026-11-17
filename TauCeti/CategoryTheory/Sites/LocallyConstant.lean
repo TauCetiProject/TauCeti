@@ -5,6 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Preadditive.Biproducts
+public import Mathlib.CategoryTheory.Sites.LocalSite
+public import TauCeti.CategoryTheory.Sites.ConstantSheaf
+public import TauCeti.CategoryTheory.Sites.Continuous
+public import TauCeti.CategoryTheory.Sites.Over
 public import TauCeti.CategoryTheory.Sites.Point.ConstantSheaf
 public import TauCeti.CategoryTheory.Sites.Point.Over
 
@@ -35,6 +40,16 @@ constant, and the fibre of a constant sheaf with value `M` is `M`.
 * `CategoryTheory.Sheaf.isLocallyConstantIn_constantSheaf`: a constant sheaf is locally constant.
 * `CategoryTheory.Sheaf.isLocallyConstantIn_iff_of_isTerminal`: on a site with a terminal object
   `T`, local constancy only needs to be checked over `T`.
+* `CategoryTheory.Sheaf.locallyConstantSieve_mem_iff_of_mem`,
+  `CategoryTheory.Sheaf.isLocallyConstantIn_iff_of_sieve_mem_of_isTerminal`: local constancy is
+  local for `J`-coverings.
+* `CategoryTheory.Sheaf.isLocallyConstantIn_zero`,
+  `CategoryTheory.Sheaf.IsLocallyConstantIn.biprod`: closure of locally constant sheaves with
+  preadditive coefficients under zero objects and binary biproducts.
+* `CategoryTheory.Sheaf.isLocallyConstantIn_iff_exists_iso_constantSheaf`,
+  `CategoryTheory.Sheaf.isLocallyConstantIn_iff_prop_Γ_obj`: on a local site, locally constant
+  sheaves with values in `P` are globally constant with value satisfying `P`, and when
+  `constantSheaf J A` is an equivalence they are the sheaves whose global sections satisfy `P`.
 * `CategoryTheory.Sheaf.IsLocallyConstantIn.exists_sheafFiber_iso`: the fibres of a locally
   constant sheaf are isomorphic to objects satisfying `P`.
 
@@ -47,7 +62,7 @@ public section
 
 universe w v u u' v'
 
-open CategoryTheory Limits
+open CategoryTheory Limits ZeroObject
 
 namespace CategoryTheory.Sheaf
 
@@ -108,6 +123,30 @@ lemma isLocallyConstantIn_iff_of_isTerminal (F : Sheaf J A) {T : C} (hT : IsTerm
   ⟨fun hF ↦ hF T, fun h X ↦
     F.pullback_locallyConstantSieve P (hT.from X) ▸ J.pullback_stable (hT.from X) h⟩
 
+/-- By transitivity of `J`, `F.locallyConstantSieve P X` covers `X` as soon as it covers the source
+of every arrow in a `J`-covering sieve of `X`. -/
+lemma locallyConstantSieve_mem_of_mem {F : Sheaf J A} {X : C} {R : Sieve X} (hR : R ∈ J X)
+    (h : ∀ ⦃Y : C⦄ ⦃g : Y ⟶ X⦄, R g → F.locallyConstantSieve P Y ∈ J Y) :
+    F.locallyConstantSieve P X ∈ J X :=
+  J.transitive hR (F.locallyConstantSieve P X) fun _ g hg ↦
+    (F.pullback_locallyConstantSieve P g).symm ▸ h hg
+
+/-- Given a covering sieve `R ∈ J X`, `F` is locally constant with values in `P` over `X` if and
+only if it is so over the source of every arrow in `R`. -/
+lemma locallyConstantSieve_mem_iff_of_mem (F : Sheaf J A) {X : C} {R : Sieve X} (hR : R ∈ J X) :
+    F.locallyConstantSieve P X ∈ J X ↔
+      ∀ ⦃Y : C⦄ ⦃g : Y ⟶ X⦄, R g → F.locallyConstantSieve P Y ∈ J Y :=
+  ⟨fun hX _ g _ ↦ F.pullback_locallyConstantSieve P g ▸ J.pullback_stable g hX,
+    locallyConstantSieve_mem_of_mem P hR⟩
+
+/-- On a site with a terminal object `T`, local constancy can be tested on any covering sieve
+`R ∈ J T`. -/
+lemma isLocallyConstantIn_iff_of_sieve_mem_of_isTerminal (F : Sheaf J A) {T : C}
+    (hT : IsTerminal T) {R : Sieve T} (hR : R ∈ J T) :
+    F.IsLocallyConstantIn J P ↔ ∀ ⦃Y : C⦄ ⦃g : Y ⟶ T⦄, R g → F.locallyConstantSieve P Y ∈ J Y :=
+  (F.isLocallyConstantIn_iff_of_isTerminal P hT).trans
+    (F.locallyConstantSieve_mem_iff_of_mem P hR)
+
 variable {P}
 
 lemma IsLocallyConstantIn.mono {Q : ObjectProperty A} (h : P ≤ Q) {F : Sheaf J A}
@@ -127,6 +166,54 @@ lemma isLocallyConstantIn_constantSheaf {M : A} (hM : P M) :
     ((constantSheaf J A).obj M).IsLocallyConstantIn J P := fun X ↦ by
   convert J.top_mem X
   exact top_unique fun Y _ _ ↦ ⟨M, hM, ⟨Iso.refl _⟩⟩
+
+/-- When `A` is preadditive and `P` contains `0`, the zero sheaf is locally constant with values in
+`P`. -/
+lemma isLocallyConstantIn_zero [Preadditive A] [HasZeroObject A] [HasZeroObject (Sheaf J A)]
+    (h₀ : P 0) : (0 : Sheaf J A).IsLocallyConstantIn J P :=
+  (isLocallyConstantIn_constantSheaf h₀).of_iso (constantSheaf J A).mapZeroObject
+
+/-- When `A` is preadditive with binary biproducts and `P` is closed under binary biproducts,
+`IsLocallyConstantIn J P` is closed under binary biproducts, by intersecting trivializing sieves. -/
+lemma IsLocallyConstantIn.biprod [Preadditive A] [HasBinaryBiproducts A]
+    [HasBinaryBiproducts (Sheaf J A)]
+    (hP : ∀ ⦃M₁ M₂ : A⦄, P M₁ → P M₂ → P (M₁ ⊞ M₂))
+    {F₁ F₂ : Sheaf J A} (hF₁ : F₁.IsLocallyConstantIn J P) (hF₂ : F₂.IsLocallyConstantIn J P) :
+    (F₁ ⊞ F₂).IsLocallyConstantIn J P := by
+  have := preservesBinaryBiproducts_of_preservesBiproducts (constantSheaf J A)
+  intro X
+  refine J.superset_covering ?_ (J.intersection_covering (hF₁ X) (hF₂ X))
+  rintro Y _ ⟨⟨M₁, hM₁, ⟨e₁⟩⟩, ⟨M₂, hM₂, ⟨e₂⟩⟩⟩
+  have : HasBinaryBiproducts (Sheaf (J.over Y) A) := HasBinaryBiproducts.of_hasBinaryProducts
+  have := preservesBinaryBiproducts_of_preservesBiproducts (J.overPullback A Y)
+  exact ⟨M₁ ⊞ M₂, hP hM₁ hM₂,
+    ⟨(J.overPullback A Y).mapBiprod F₁ F₂ ≪≫ biprod.mapIso e₁ e₂ ≪≫
+      ((J.overPullback A Y).mapBiprod _ _).symm ≪≫
+      (J.overPullback A Y).mapIso ((constantSheaf J A).mapBiprod M₁ M₂).symm⟩⟩
+
+/-- On a local site, a sheaf is locally constant with values in `P` if and only if it is globally
+isomorphic to `(constantSheaf J A).obj M` for some `M : A` satisfying `P`. -/
+lemma isLocallyConstantIn_iff_exists_iso_constantSheaf [J.IsLocalSite] (P : ObjectProperty A)
+    (F : Sheaf J A) :
+    F.IsLocallyConstantIn J P ↔ ∃ M, P M ∧ Nonempty (F ≅ (constantSheaf J A).obj M) := by
+  constructor
+  · intro hF
+    obtain ⟨M, hM, ⟨e⟩⟩ :=
+      GrothendieckTopology.IsLocalSite.from_terminal_mem_of_mem J (𝟙 (⊤_ C)) (hF (⊤_ C))
+    exact ⟨M, hM, ⟨(J.overPullback A (⊤_ C)).asEquivalence.fullyFaithfulFunctor.preimageIso e⟩⟩
+  · rintro ⟨M, hM, ⟨e⟩⟩
+    exact (isLocallyConstantIn_constantSheaf hM).of_iso e.symm
+
+/-- On a local site where `constantSheaf J A` is an equivalence and `P` is closed under
+isomorphisms, a sheaf `F` is locally constant with values in `P` if and only if its global sections
+`(Sheaf.Γ J A).obj F` satisfy `P`. -/
+lemma isLocallyConstantIn_iff_prop_Γ_obj [J.IsLocalSite] [(constantSheaf J A).IsEquivalence]
+    (P : ObjectProperty A) [P.IsClosedUnderIsomorphisms] (F : Sheaf J A) :
+    F.IsLocallyConstantIn J P ↔ P ((Sheaf.Γ J A).obj F) := by
+  rw [isLocallyConstantIn_iff_exists_iso_constantSheaf]
+  exact ⟨fun ⟨M, hM, ⟨e⟩⟩ ↦ P.prop_of_iso
+      (asIso ((constantSheafΓAdj J A).unit.app M) ≪≫ (Sheaf.Γ J A).mapIso e.symm) hM,
+    fun hF ↦ ⟨(Sheaf.Γ J A).obj F, hF, ⟨(asIso ((constantSheafΓAdj J A).counit.app F)).symm⟩⟩⟩
 
 /-- **The fibres of a locally constant sheaf.** At every point `Φ` of the site, the fibre of a
 sheaf which is locally constant with values in `P` is isomorphic to an object satisfying `P`. -/

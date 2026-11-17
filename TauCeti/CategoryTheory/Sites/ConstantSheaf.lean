@@ -8,9 +8,11 @@ module
 public import Mathlib.CategoryTheory.Sites.ConstantSheaf
 public import Mathlib.CategoryTheory.Sites.Pullback
 public import TauCeti.CategoryTheory.Limits.Final
+public import TauCeti.CategoryTheory.Preadditive.AdditiveFunctor
+public import TauCeti.CategoryTheory.Sites.Sheafification
 
 /-!
-# Pullback of constant sheaves
+# Pullback and additivity of constant sheaves
 
 Let `u : C ⥤ D` be a continuous functor from a site `(C, J)` to a site `(D, K)`, whose sheaf
 pushforward `u_* : Sheaf K A ⥤ Sheaf J A` has the left adjoint `u^* = u.sheafPullback A J K`.
@@ -23,8 +25,14 @@ When `u` is final, which holds for instance when `u` is representably flat
 this comparison is an isomorphism: maps out of either side into a sheaf `F` on `(D, K)` are cones
 with apex `X` over `F`, restricted along `u` in the first case.
 
+We also record the `Functor.Additive` instance for `constantSheaf J A` whenever `A` is preadditive
+and `(C, J)` admits weak sheafification in `A`, generalizing the abelian instance in
+`Mathlib.CategoryTheory.Sites.Abelian`.
+
 ## Main declarations
 
+* `CategoryTheory.additive_constantSheaf`: additivity of `constantSheaf J A` for preadditive
+  coefficients with weak sheafification.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom`: the comparison `u^* (X_J) ⟶ X_K`.
 * `CategoryTheory.Functor.sheafPullbackConstantSheafHom_naturality`: the comparison is natural
   in `X`.
@@ -38,6 +46,18 @@ with apex `X` over `F`, restricted along `u` in the first case.
 public section
 
 open CategoryTheory Limits
+
+namespace CategoryTheory
+
+/-- The constant sheaf functor `constantSheaf J A` is additive whenever `A` is preadditive and
+`(C, J)` admits weak sheafification in `A`. -/
+noncomputable instance additive_constantSheaf {C : Type*} [Category* C]
+    (J : GrothendieckTopology C) (A : Type*) [Category* A] [Preadditive A] [HasWeakSheafify J A] :
+    (constantSheaf J A).Additive :=
+  -- `constantSheaf J A` is by definition `Functor.const Cᵒᵖ ⋙ presheafToSheaf J A`.
+  inferInstanceAs (Functor.const Cᵒᵖ ⋙ presheafToSheaf J A).Additive
+
+end CategoryTheory
 
 namespace CategoryTheory.Functor
 
