@@ -130,6 +130,7 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimension
 
 /-- **The complexification of a real vector bundle has clutching number zero.** The fibrewise
 conjugation `z ⊗ v ↦ conj z ⊗ v` is a real structure on `ℂ ⊗[ℝ] V`. -/
+@[simp]
 theorem clutchingNumber_complexification_eq_zero (p : Ω^ (Fin 2) X x) :
     clutchingNumber (Complexification G) (fun x ↦ ℂ ⊗[ℝ] V x) p = 0 :=
   clutchingNumber_eq_zero_of_conjugateLinear (fun x ↦ tmulConjCLE (V x))
@@ -137,6 +138,7 @@ theorem clutchingNumber_complexification_eq_zero (p : Ω^ (Fin 2) X x) :
 
 /-- The clutching number homomorphism `π₂(X, x) → ℤ` of the complexification of a real vector bundle
 is zero. -/
+@[simp]
 theorem clutchingNumberHom_complexification_eq_zero (x : X) :
     clutchingNumberHom (Complexification G) (fun x ↦ ℂ ⊗[ℝ] V x) x = 0 :=
   clutchingNumberHom_eq_zero_of_conjugateLinear (fun x ↦ tmulConjCLE (V x))
