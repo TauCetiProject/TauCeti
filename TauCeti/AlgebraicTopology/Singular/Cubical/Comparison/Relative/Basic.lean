@@ -211,7 +211,8 @@ theorem homologyMap_homologyπ_eq_of_isCubicalRepresentative (P : TopPair.{u}) {
       ((normalizedCubicalChainComplexXEquiv P.fst n).symm
         (NormalizedCubicalChain.map k P.map.hom n a)) = 0 :=
     congrArg (fun f ↦ f.hom a) (cubicalChainComplex_condition_f k P n)
-  rw [ha, map_sub, LinearEquiv.symm_apply_apply, map_sub, sub_eq_zero] at h₀
+  rw [ha, map_sub, LinearEquiv.symm_apply_apply, map_sub,
+    normalizedCubicalChainComplexXEquiv_symm_apply, sub_eq_zero] at h₀
   refine (P.cubicalChainComplex k).moduleCat_iCycles_injective n ?_
   rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, ← hcr]
   exact h₀

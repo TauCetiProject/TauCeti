@@ -97,6 +97,9 @@ theorem isRepresentingCycle_of_forall_isCubicalRepresentative [T2Space A] [Compa
     cubicalHomology_ext_of_dense_iUnion (Y := (TopPair.ofSubset A).snd) (E := E) hm hU
       fun i ↦ TopPair.homologyMap_homologyπ_eq_of_isCubicalRepresentative k
         (TopPair.ofSubset (U i)ᶜ) z (hc i)
+          -- The embedding `(TopPair.ofSubset S).map` of Mathlib's `TopPair.ofSubset` is, by
+          -- definition, `TopCat.ofHom` of the subtype inclusion `ContinuousMap.subtypeVal S`
+          -- through which `NormalizedCubicalChain.supportedIn` is defined.
           ((NormalizedCubicalChain.supportedIn_def k _ m).le (hzc i))⟩
 
 /-- **A sum of face chains represents the class they represent face by face.** Let `A` be a
