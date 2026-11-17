@@ -38,11 +38,15 @@ zero ideal, which has no prime factors, is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mul_right_intCast`: the same for a rational integer `m`, read in
   each quotient.
 * `Ideal.powerResidueSymbolIdeal_pow_right`: `(α / 𝔞 ^ k)_n = ((α / 𝔞)_n) ^ k`.
+* `Ideal.powerResidueSymbolIdeal_prod_right`: `(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n` for nonzero ideals
+  `𝔞ᵢ`.
 * `Ideal.powerResidueSymbolIdeal_top`: `(α / 𝓞 K)_n = 1`.
 * `Ideal.powerResidueSymbolIdeal_bot`: the symbol at the zero ideal is the trivial character.
 * `Ideal.powerResidueSymbolIdeal_mk_eq_zero_iff`: `(α / 𝔞)_n = 0` exactly when `α` and `𝔞` are
   not coprime.
 * `Ideal.powerResidueSymbolIdeal_pow_eq_one`: on units the symbol is an `n`-th root of unity.
+* `Ideal.powerResidueSymbolIdeal_eq_zero_or_pow_eq_one`: every value of the symbol is either `0` or
+  an `n`-th root of unity.
 * `Ideal.powerResidueSymbolIdeal_neg`: `(-x / 𝔞)_n = (x / 𝔞)_n` for odd `n`.
 * `Ideal.powerResidueSymbolIdeal_mk_of_pow_eq_one`: `(ζ / 𝔞)_n = ζ ^ ((N 𝔞 - 1) / n)` for an
   `n`-th root of unity `ζ` of `𝓞 K`, when `N 𝔞` is prime to `n`.
@@ -195,6 +199,14 @@ theorem powerResidueSymbolIdeal_pow_eq_one {x : 𝓞 K ⧸ 𝔞} (hx : IsUnit x)
   rw [symbolAt, dite_eq_left hPm]
   exact powerResidueSymbol_pow_eq_one hαP.ne_zero
 
+/-- Every value of the `n`-th power residue symbol at an ideal is either `0` or an `n`-th root of
+unity. -/
+theorem powerResidueSymbolIdeal_eq_zero_or_pow_eq_one (𝔞 : Ideal (𝓞 K)) (x : 𝓞 K ⧸ 𝔞) :
+    powerResidueSymbolIdeal 𝔞 n x = 0 ∨ powerResidueSymbolIdeal 𝔞 n x ^ n = 1 := by
+  by_cases hx : IsUnit x
+  · exact Or.inr (powerResidueSymbolIdeal_pow_eq_one hx)
+  · exact Or.inl (MulChar.map_nonunit _ hx)
+
 /-- For odd `n`, `(-x / 𝔞)_n = (x / 𝔞)_n` at every ideal `𝔞`: the symbol is a character of odd
 order dividing `n`, so its value at `-1` is `1`. -/
 @[simp]
@@ -263,6 +275,21 @@ theorem map_powerResidueSymbolIdeal {L : Type*} [Field L] [NumberField L]
       powerResidueSymbolIdeal_mul_right (hσ hP₀) (hσ h𝔞), map_mul, ih,
       powerResidueSymbolIdeal_of_isMaximal P, powerResidueSymbolIdeal_of_isMaximal (P.map σ),
       map_powerResidueSymbol P σ]
+
+/-- **Multiplicativity in a finite product of nonzero ideals.** `(α / ∏ᵢ 𝔞ᵢ)_n = ∏ᵢ (α / 𝔞ᵢ)_n`
+when every factor ideal `𝔞ᵢ` is nonzero. -/
+theorem powerResidueSymbolIdeal_prod_right {ι : Type*} (s : Finset ι) {𝔞 : ι → Ideal (𝓞 K)}
+    (h𝔞 : ∀ i ∈ s, 𝔞 i ≠ ⊥) (α : 𝓞 K) :
+    powerResidueSymbolIdeal (∏ i ∈ s, 𝔞 i) n (Quotient.mk (∏ i ∈ s, 𝔞 i) α) =
+      ∏ i ∈ s, powerResidueSymbolIdeal (𝔞 i) n (Quotient.mk (𝔞 i) α) := by
+  induction s using Finset.cons_induction with
+  | empty => rw [Finset.prod_empty, Finset.prod_empty, one_eq_top, powerResidueSymbolIdeal_top]
+  | cons a s ha ih =>
+    have ha₀ : 𝔞 a ≠ ⊥ := h𝔞 a (Finset.mem_cons_self a s)
+    have hs₀ : ∀ i ∈ s, 𝔞 i ≠ ⊥ := fun i hi ↦ h𝔞 i (Finset.mem_cons_of_mem hi)
+    have hprod₀ : ∏ i ∈ s, 𝔞 i ≠ ⊥ := by
+      simpa only [← zero_eq_bot] using Finset.prod_ne_zero_iff.mpr hs₀
+    rw [Finset.prod_cons, Finset.prod_cons, powerResidueSymbolIdeal_mul_right ha₀ hprod₀, ih hs₀]
 
 /-- For `n = 2`, a quadratic nonresidue modulo `P` has symbol `1` at `P ^ 2`, although it is not
 a square modulo `P ^ 2`: the value `1` does not detect residues at composite ideals. -/
