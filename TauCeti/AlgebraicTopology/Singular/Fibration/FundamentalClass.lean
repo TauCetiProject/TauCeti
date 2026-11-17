@@ -179,7 +179,7 @@ private lemma isZero_offSlice (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (
       map_one_left _ := rfl }
   -- `H` is the homotopy with underlying map `G`, so `hGp` and `hGY` describe it.
   have hHG : ∀ q, H q = G q := fun _ ↦ rfl
-  have hH := TopPair.ofSubsetHomotopy (B := B) (B' := B) H fun τ e he ↦ by
+  exact TopPair.isZero_singularHomology_ofSubset_of_homotopy H (fun τ e he ↦ by
     rcases he with he | he
     · refine Or.inl ?_
       simp only [mem_ofPred_eq, hHG, hGY]
@@ -187,14 +187,7 @@ private lemma isZero_offSlice (hK : Convex ℝ K) (hK₀ : K ∈ 𝓝 (0 : V)) (
     · refine Or.inr ?_
       simp only [mem_preimage, mem_ofPred_eq] at he ⊢
       rw [hHG, hGp, AffineMap.lineMap_apply_module, add_comm]
-      exact hS he τ.2.1 (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)
-  refine TopPair.isZero_singularHomology_of_homotopy (P := TopPair.ofSubset B)
-    (f := TopPair.ofSubsetMap ρ fun e _ ↦ hρ e) ?_
-    (_root_.TopCat.ofHom ⟨fun e ↦ ⟨ρ e, hρ e⟩, by fun_prop⟩) ?_ (ModuleCat.of R R) n
-  · rw [← TopPair.ofSubsetMap_id (B := B) fun _ hx ↦ hx]
-    exact hH
-  · ext e
-    exact (TopPair.ofSubsetMap_fst_apply _ _ e).symm
+      exact hS he τ.2.1 (sub_nonneg.2 τ.2.2) (add_sub_cancel _ _)) hρ (ModuleCat.of R R) n
 
 /-- **The pair of the fibre minus a point.** The inclusion of `(F, F ∖ {x₀})`, for `F` the fibre
 over `0`, into `(E, offSlice φ x₀)` induces isomorphisms on relative homology: the retraction
