@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.EquationMap
-import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.MeasureTheory.Function.Lp.Basic
 
 /-!
@@ -25,7 +24,7 @@ of variations. This file realizes the rest of the complex, for every integer `k 
 
 * `sobolevGaugeDirection f m hk y : H^(k+2)(ℂ) → H^(k+1)(ℂ)⁴`, the infinitesimal gauge action at
   `x_m + y`. Its zeroth-order part multiplies by the coordinates of `x_m + y` without losing a
-  derivative (`TauCeti.Vortex.fieldMulSelfCLM`), because `H^(k+1)(ℂ)` is an algebra.
+  derivative (`TauCeti.Vortex.fieldMulOrderPreservingCLM`), because `H^(k+1)(ℂ)` is an algebra.
 * `sobolevGaugeAdjoint f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)`, its formal adjoint.
 * `sobolevScaleGaugeFixedOperator f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)⁴`, the gauge-fixed operator
   `d₀* ⊕ d₁`.
@@ -81,7 +80,7 @@ def sobolevGaugeDirection (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) 
   let D (v : ℂ) : H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
     lineDerivCLM ENNReal.one_lt_two ENNReal.ofNat_ne_top v
   let X (a : Fin 4) : H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
-    (fieldMulSelfCLM f m hk y a).comp (inclusion (lt_add_one _).le)
+    (fieldMulOrderPreservingCLM f m hk y a).comp (inclusion (lt_add_one _).le)
   pi ![-D 1, -D I, -X 3, X 2]
 
 section apply
@@ -103,13 +102,13 @@ theorem sobolevGaugeDirection_apply_one :
 /-- The real section component of `sobolevGaugeDirection`. -/
 theorem sobolevGaugeDirection_apply_two :
     sobolevGaugeDirection f m hk y v 2 =
-      -fieldMulSelfCLM f m hk y 3 (inclusion (lt_add_one _).le v) :=
+      -fieldMulOrderPreservingCLM f m hk y 3 (inclusion (lt_add_one _).le v) :=
   (rfl)
 
 /-- The imaginary section component of `sobolevGaugeDirection`. -/
 theorem sobolevGaugeDirection_apply_three :
     sobolevGaugeDirection f m hk y v 3 =
-      fieldMulSelfCLM f m hk y 2 (inclusion (lt_add_one _).le v) :=
+      fieldMulOrderPreservingCLM f m hk y 2 (inclusion (lt_add_one _).le v) :=
   (rfl)
 
 end apply
@@ -132,7 +131,8 @@ theorem coeFn_inclusionLp_sobolevGaugeDirection_ae_eq (hk : 1 ≤ k)
   have hv' : ⇑(inclusionLp h₁ (inclusion (lt_add_one _).le v)) =ᵐ[volume]
       fun z ↦ (g z : ℂ) := by
     rwa [inclusionLp_inclusion]
-  have hX (b : Fin 4) := coeFn_inclusionLp_fieldMulSelfCLM_ae_eq (f := f) (m := m) hk hu b hv'
+  have hX (b : Fin 4) :=
+    coeFn_inclusionLp_fieldMulOrderPreservingCLM_ae_eq (f := f) (m := m) hk hu b hv'
   fin_cases a
   · rw [Fin.zero_eta, sobolevGaugeDirection_apply_zero, map_neg]
     filter_upwards [Lp.coeFn_neg_ae_eq_of_ae_eq (hd 1)] with z hz
@@ -270,8 +270,8 @@ theorem contDiff_sobolevGaugeDirection (hk : 1 ≤ k) :
   fin_cases i
   · exact contDiff_const
   · exact contDiff_const
-  · exact ((contDiff_fieldMulSelfCLM hk 3).clm_comp contDiff_const).neg
-  · exact (contDiff_fieldMulSelfCLM hk 2).clm_comp contDiff_const
+  · exact ((contDiff_fieldMulOrderPreservingCLM hk 3).clm_comp contDiff_const).neg
+  · exact (contDiff_fieldMulOrderPreservingCLM hk 2).clm_comp contDiff_const
 
 /-- **The adjoint gauge action depends analytically on the field.** -/
 theorem contDiff_sobolevGaugeAdjoint (hk : 1 ≤ k) : ContDiff ℂ ω (sobolevGaugeAdjoint f m hk) := by

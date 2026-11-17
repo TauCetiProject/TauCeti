@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.BesselPotentialSpace
 import Mathlib.Analysis.Fourier.LpSpace
+import TauCeti.Analysis.Distribution.SchwartzSpace.Basic
 import TauCeti.Analysis.Distribution.SchwartzSpace.Fourier
 import TauCeti.Analysis.Sobolev.BesselPotential.Multiplication
 
@@ -229,11 +230,7 @@ theorem continuousLinearMap_ext_real {G : Type*} [AddCommMonoid G] [Module ℂ G
         T' (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM))) :
     T = T' := by
   refine continuousLinearMap_ext hp fun φ ↦ ?_
-  have hsplit : φ = (φ.postcompCLM Complex.reCLM).postcompCLM Complex.ofRealCLM +
-      Complex.I • (φ.postcompCLM Complex.imCLM).postcompCLM Complex.ofRealCLM := by
-    ext x
-    simpa [mul_comm] using (Complex.re_add_im (φ x)).symm
-  rw [hsplit]
+  rw [← SchwartzMap.postcompCLM_re_add_I_smul_im φ]
   simp only [map_add, map_smul, h]
 
 /-- In `H^{0,p} = Lᵖ` the element with `Lᵖ` part `f` is the tempered distribution of `f`. -/

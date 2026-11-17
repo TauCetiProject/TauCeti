@@ -59,8 +59,8 @@ are the complexified coordinates of the variation, elements of Mathlib's Bessel-
   `sobolevLinearizedEquation f m hk y` at `x_m + y` (`hasFDerivAt_sobolevEquation`).
   The derivatives in it are `BesselPotentialSpace.lineDerivCLM`, the coefficients of the reference
   field act by `referenceMulCLM`, and those of `x_m + y` by `fieldMulCLM`, which is the
-  order-preserving multiplication `fieldMulSelfCLM` on `H^(k+1)(ℂ)` followed by the inclusion into
-  `H^k(ℂ)`. The linearized equation depends analytically on `y`
+  order-preserving multiplication `fieldMulOrderPreservingCLM` on `H^(k+1)(ℂ)` followed by the
+  inclusion into `H^k(ℂ)`. The linearized equation depends analytically on `y`
   (`contDiff_sobolevLinearizedEquation`).
 * A real field `y` lies in `sobolevFields s` exactly when its coordinates are, almost everywhere,
   the `L²` functions of some `u : Fin 4 → H^s(ℂ)`
@@ -296,7 +296,7 @@ variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
 
 /-- For `k ≥ 1`, `H^(k+1)(ℂ)` is an algebra: the Sobolev order exceeds half the real dimension of
 `ℂ`. This is the hypothesis of `BesselPotentialSpace.mulCLM` at order `k + 1`. -/
-theorem finrank_lt_two_mul_natCast_add_one (hk : 1 ≤ k) :
+private theorem finrank_lt_two_mul_natCast_add_one (hk : 1 ≤ k) :
     (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) :=
   finrank_real_complex_lt_two_mul (by linarith [show (1 : ℝ) ≤ k from mod_cast hk])
 
@@ -329,51 +329,42 @@ theorem coeFn_inclusionLp_referenceMulCLM_ae_eq (a : Fin 4) (u : H^{(k : ℝ)}(�
 
 variable (f m) in
 /-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates
-`y ∈ H^(k+1)(ℂ)⁴` of a variation, as a bounded operator `H^(k+1)(ℂ) → H^k(ℂ)`. The product with
-`y_a` uses that `H^(k+1)(ℂ)` is an algebra for `k ≥ 1`. -/
+`y ∈ H^(k+1)(ℂ)⁴` of a variation, as a bounded operator on `H^(k+1)(ℂ)`. It keeps the order: the
+reference coordinate is smooth with bounded derivatives, and `H^(k+1)(ℂ)` is an algebra for
+`k ≥ 1`. Followed by the inclusion into `H^k(ℂ)` it is `fieldMulCLM`. -/
+def fieldMulOrderPreservingCLM (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
+    H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
+  (inclusion (Nat.cast_succ k).ge).comp
+      ((referenceMulCLM f m (k + 1) a).comp (inclusion (Nat.cast_succ k).le)) +
+    mulCLM (finrank_lt_two_mul_natCast_add_one hk) (y a)
+
+/-- `fieldMulOrderPreservingCLM` is the sum of the multiplications by the reference coordinate and
+by `y_a`; `hs` is any proof that `H^(k+1)(ℂ)` is an algebra. -/
+theorem fieldMulOrderPreservingCLM_apply (hk : 1 ≤ k)
+    (hs : (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1))
+    (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) (v : H^{(k : ℝ) + 1}(ℂ)) :
+    fieldMulOrderPreservingCLM f m hk y a v =
+      inclusion (Nat.cast_succ k).ge (referenceMulCLM f m (k + 1) a
+        (inclusion (Nat.cast_succ k).le v)) + mulCLM hs (y a) v :=
+  (rfl)
+
+variable (f m) in
+/-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates
+`y ∈ H^(k+1)(ℂ)⁴` of a variation, as a bounded operator `H^(k+1)(ℂ) → H^k(ℂ)`: the
+order-preserving multiplication `fieldMulOrderPreservingCLM` followed by the inclusion
+`H^(k+1)(ℂ) ⊆ H^k(ℂ)`. -/
 def fieldMulCLM (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
     H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ)}(ℂ) :=
-  (referenceMulCLM f m k a).comp (inclusion (lt_add_one _).le) +
-    (inclusion (lt_add_one _).le).comp (mulCLM (finrank_lt_two_mul_natCast_add_one hk) (y a))
+  (inclusion (lt_add_one _).le).comp (fieldMulOrderPreservingCLM f m hk y a)
 
 /-- `fieldMulCLM` is the sum of the multiplications by the reference coordinate and by `y_a`;
 `hs` is any proof that `H^(k+1)(ℂ)` is an algebra. -/
 theorem fieldMulCLM_apply (hk : 1 ≤ k) (hs : (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1))
     (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) (v : H^{(k : ℝ) + 1}(ℂ)) :
     fieldMulCLM f m hk y a v = referenceMulCLM f m k a (inclusion (lt_add_one _).le v) +
-      inclusion (lt_add_one _).le (mulCLM hs (y a) v) :=
-  (rfl)
-
-variable (f m) in
-/-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates
-`y ∈ H^(k+1)(ℂ)⁴` of a variation, as a bounded operator on `H^(k+1)(ℂ)`. Unlike `fieldMulCLM`,
-which maps `H^(k+1)(ℂ)` to `H^k(ℂ)`, it keeps the order: the reference coordinate is smooth with
-bounded derivatives, and `H^(k+1)(ℂ)` is an algebra for `k ≥ 1`. Followed by the inclusion into
-`H^k(ℂ)` it is `fieldMulCLM` (`fieldMulCLM_eq_inclusion_comp_fieldMulSelfCLM`). -/
-def fieldMulSelfCLM (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
-    H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
-  (inclusion (Nat.cast_succ k).ge).comp
-      ((referenceMulCLM f m (k + 1) a).comp (inclusion (Nat.cast_succ k).le)) +
-    mulCLM (finrank_lt_two_mul_natCast_add_one hk) (y a)
-
-/-- `fieldMulSelfCLM` is the sum of the multiplications by the reference coordinate and by `y_a`;
-`hs` is any proof that `H^(k+1)(ℂ)` is an algebra. -/
-theorem fieldMulSelfCLM_apply (hk : 1 ≤ k) (hs : (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1))
-    (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) (v : H^{(k : ℝ) + 1}(ℂ)) :
-    fieldMulSelfCLM f m hk y a v =
-      inclusion (Nat.cast_succ k).ge (referenceMulCLM f m (k + 1) a
-        (inclusion (Nat.cast_succ k).le v)) + mulCLM hs (y a) v :=
-  (rfl)
-
-/-- `fieldMulCLM` is the order-preserving multiplication `fieldMulSelfCLM` followed by the
-inclusion `H^(k+1)(ℂ) ⊆ H^k(ℂ)`. -/
-theorem fieldMulCLM_eq_inclusion_comp_fieldMulSelfCLM (hk : 1 ≤ k)
-    (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
-    fieldMulCLM f m hk y a = (inclusion (lt_add_one _).le).comp (fieldMulSelfCLM f m hk y a) := by
-  have hs := finrank_lt_two_mul_natCast_add_one hk
-  ext1 v
+      inclusion (lt_add_one _).le (mulCLM hs (y a) v) := by
   refine BesselPotentialSpace.ext ?_
-  simp [fieldMulCLM_apply hk hs, fieldMulSelfCLM_apply hk hs]
+  simp [fieldMulCLM, fieldMulOrderPreservingCLM_apply hk hs]
 
 variable (f m) in
 /-- **The linearized vortex equation between Sobolev spaces.** For `k ≥ 1` and complexified
@@ -556,17 +547,16 @@ theorem contDiff_sobolevLinearizedEquation (hk : 1 ≤ k) :
 
 /-- Multiplication by the coordinate `a` of `x_m + y`, as an operator on `H^(k+1)(ℂ)`, depends
 analytically on the coordinates `y`: it is affine in them. -/
-theorem contDiff_fieldMulSelfCLM (hk : 1 ≤ k) (a : Fin 4) :
-    ContDiff ℂ ω fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦ fieldMulSelfCLM f m hk y a :=
+theorem contDiff_fieldMulOrderPreservingCLM (hk : 1 ≤ k) (a : Fin 4) :
+    ContDiff ℂ ω fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦ fieldMulOrderPreservingCLM f m hk y a :=
   contDiff_const.add ((mulCLM (finrank_lt_two_mul_natCast_add_one hk)).comp
     (proj (R := ℂ) (φ := fun _ : Fin 4 ↦ H^{(k : ℝ) + 1}(ℂ)) a)).contDiff
 
 /-- Multiplication by the coordinate `a` of `x_m + y`, as an operator `H^(k+1)(ℂ) → H^k(ℂ)`,
 depends analytically on the coordinates `y`: it is affine in them. -/
 theorem contDiff_fieldMulCLM (hk : 1 ≤ k) (a : Fin 4) :
-    ContDiff ℂ ω fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦ fieldMulCLM f m hk y a := by
-  simp_rw [fieldMulCLM_eq_inclusion_comp_fieldMulSelfCLM hk]
-  exact contDiff_const.clm_comp (contDiff_fieldMulSelfCLM hk a)
+    ContDiff ℂ ω fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦ fieldMulCLM f m hk y a :=
+  contDiff_const.clm_comp (contDiff_fieldMulOrderPreservingCLM hk a)
 
 /-! #### Comparison with the pointwise equation
 
@@ -584,21 +574,22 @@ theorem coeFn_inclusionLp_sobolevReferenceDefect_ae_eq (i : Fin 3) :
   exact SchwartzMap.coeFn_toLp _ 2 volume
 
 /-- If the coordinates of `y` are almost everywhere the real functions `y_a`, and `v` is almost
-everywhere the real function `g`, then `fieldMulSelfCLM f m hk y a v` is almost everywhere the
-product `(x_m + y)_a g`. -/
-theorem coeFn_inclusionLp_fieldMulSelfCLM_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)}
+everywhere the real function `g`, then `fieldMulOrderPreservingCLM f m hk y a v` is almost
+everywhere the product `(x_m + y)_a g`. -/
+theorem coeFn_inclusionLp_fieldMulOrderPreservingCLM_ae_eq (hk : 1 ≤ k)
+    {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)}
     {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) (a : Fin 4)
     {v : H^{(k : ℝ) + 1}(ℂ)} {g : ℂ → ℝ}
     (hv : ⇑(inclusionLp (by positivity) v) =ᵐ[volume] fun z ↦ (g z : ℂ)) :
-    ⇑(inclusionLp (by positivity) (fieldMulSelfCLM f m hk u a v)) =ᵐ[volume]
+    ⇑(inclusionLp (by positivity) (fieldMulOrderPreservingCLM f m hk u a v)) =ᵐ[volume]
       fun z ↦ ((referenceField f m + y) z a * g z : ℝ) := by
   have hs := finrank_lt_two_mul_natCast_add_one hk
   have h₀ : (0 : ℝ) ≤ k + 1 := by positivity
   have hr := coeFn_inclusionLp_referenceMulCLM_ae_eq (f := f) (m := m) (k := k + 1) a
     (inclusion (Nat.cast_succ k).le v)
   rw [inclusionLp_inclusion] at hr
-  rw [fieldMulSelfCLM_apply hk hs, map_add, inclusionLp_inclusion]
+  rw [fieldMulOrderPreservingCLM_apply hk hs, map_add, inclusionLp_inclusion]
   filter_upwards [Lp.coeFn_add (inclusionLp _ (referenceMulCLM f m (k + 1) a
     (inclusion (Nat.cast_succ k).le v))) (inclusionLp h₀ (mulCLM hs (u a) v)), hr,
     coeFn_toLp_inclusion_mulCLM hs h₀ (u a) v, hu a, hv] with z h₁ h₂ h₃ h₄ h₅
@@ -617,8 +608,8 @@ theorem coeFn_inclusionLp_fieldMulCLM_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^{(k 
     (hv : ⇑(inclusionLp (by positivity) v) =ᵐ[volume] fun z ↦ (g z : ℂ)) :
     ⇑(inclusionLp (k.cast_nonneg : (0 : ℝ) ≤ k) (fieldMulCLM f m hk u a v)) =ᵐ[volume]
       fun z ↦ ((referenceField f m + y) z a * g z : ℝ) := by
-  rw [fieldMulCLM_eq_inclusion_comp_fieldMulSelfCLM, comp_apply, inclusionLp_inclusion]
-  exact coeFn_inclusionLp_fieldMulSelfCLM_ae_eq hk hu a hv
+  rw [fieldMulCLM, comp_apply, inclusionLp_inclusion]
+  exact coeFn_inclusionLp_fieldMulOrderPreservingCLM_ae_eq hk hu a hv
 
 /-- **The Sobolev linearized equation computes the pointwise one.** If the coordinates of
 `u` and `w` are almost everywhere those of the real fields `y` and `h`, with `h` of class `C¹`,
