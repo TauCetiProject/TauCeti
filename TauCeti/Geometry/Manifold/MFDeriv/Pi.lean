@@ -142,6 +142,21 @@ theorem mfderiv_pi {f : N → ∀ i, M i} {y : N}
 
 end Pi
 
+/-- The reindexing `x ↦ (j ↦ x (σ j))` of a finite product of manifolds along `σ : ι' → ι` has
+derivative the same reindexing `Pi.compRightL` of the product of the model spaces. -/
+theorem hasMFDerivAt_precomp {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
+    HasMFDerivAt (ModelWithCorners.pi I) (ModelWithCorners.pi fun j ↦ I (σ j))
+      (fun x : ∀ i, M i ↦ fun j ↦ x (σ j)) x (Pi.compRightL 𝕜 E σ) :=
+  hasMFDerivAt_pi fun j ↦ hasMFDerivAt_apply (σ j) x
+
+/-- The derivative of the reindexing `x ↦ (j ↦ x (σ j))` of a finite product of manifolds along
+`σ : ι' → ι` is the same reindexing `Pi.compRightL` of the product of the model spaces. -/
+@[simp]
+theorem mfderiv_precomp {ι' : Type*} [Fintype ι'] (σ : ι' → ι) (x : ∀ i, M i) :
+    mfderiv (ModelWithCorners.pi I) (ModelWithCorners.pi fun j ↦ I (σ j))
+      (fun x : ∀ i, M i ↦ fun j ↦ x (σ j)) x = Pi.compRightL 𝕜 E σ :=
+  (hasMFDerivAt_precomp σ x).mfderiv
+
 variable [DecidableEq ι]
 
 /-- The coordinate insertion `Function.update x i` has derivative the inclusion of the `i`-th
