@@ -500,13 +500,11 @@ theorem mapFundamentalClass_comap {N : Type} [TopologicalSpace N] [T2Space N] [C
   -- `f_*[N]` lies in the singular homology of `TopCat.of M`, read as `SSet.homology` here.
   refine o.eq_fundamentalClass hn
     (γ := (o.comap e.isOpenEmbedding).mapFundamentalClass hn (e : C(N, M))) fun y ↦ ?_
-  obtain ⟨x, rfl⟩ := e.surjective y
-  have hx : (e : C(N, M)) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
-  rw [mapFundamentalClass_def]
-  -- The fundamental class is typed in `SSet.homology` of the singular simplicial set, while the
-  -- naturality lemma reads it in the homology functor's object; they agree after unfolding.
-  erw [singularHomologyToLocalHomology_singularHomologyMap _ _ hx]
-  rw [singularHomologyToLocalHomology_fundamentalClass, comap_apply]
+  obtain ⟨x, rfl⟩ : ∃ x, (e : C(N, M)) x = y := e.surjective y
+  have hx : (e : C(N, M)) ⁻¹' {(e : C(N, M)) x} ⊆ {x} := fun z hz ↦ e.injective hz
+  rw [mapFundamentalClass_def, singularHomologyFunctor_obj_map_hom_apply,
+    singularHomologyToLocalHomology_singularHomologyMap _ _ hx,
+    singularHomologyToLocalHomology_fundamentalClass, comap_apply]
   exact e.isOpenEmbedding.localHomologyMap_localOrientationEquiv_symm x (o (e x)) hx
 
 /-- The image of the fundamental class of the pulled-back orientation `o.comap` under a composite

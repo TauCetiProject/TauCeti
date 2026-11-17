@@ -146,18 +146,17 @@ theorem IsFundamentalClass.map_homeomorph
       ((((singularHomologyFunctor (ModuleCat.{w} R) n).obj N).map
         (TopCat.ofHom (e : C(M, M')))).hom μ) := by
   intro y
-  obtain ⟨x, rfl⟩ := e.surjective y
-  have hx : (e : C(M, M')) ⁻¹' {e x} ⊆ {x} := fun z hz ↦ e.injective hz
+  obtain ⟨x, rfl⟩ : ∃ x, (e : C(M, M')) x = y := e.surjective y
+  have hx : (e : C(M, M')) ⁻¹' {(e : C(M, M')) x} ⊆ {x} := fun z hz ↦ e.injective hz
   have hsurj := (ConcreteCategory.bijective_of_isIso
     (localHomologyIsoOfIsOpenEmbedding N e.isOpenEmbedding x n).hom).2
   rw [localHomologyIsoOfIsOpenEmbedding_hom] at hsurj
   have h := congrArg (Submodule.map (localHomologyMap N (e : C(M, M')) hx n).hom) (hμ x)
   rw [Submodule.map_span, Set.image_singleton, Submodule.map_top,
     LinearMap.range_eq_top.2 hsurj] at h
-  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology. The
-  -- class `μ` is typed in `SSet.homology` of the singular simplicial set, while the naturality
-  -- lemma reads it in the homology functor's object; they agree after unfolding.
-  erw [singularHomologyToLocalHomology_singularHomologyMap N (e : C(M, M')) hx]
+  -- The local class of `e_* μ` at `e x` is read through the naturality of local homology.
+  rw [singularHomologyFunctor_obj_map_hom_apply,
+    singularHomologyToLocalHomology_singularHomologyMap N (e : C(M, M')) hx]
   exact h
 
 end Homeomorph

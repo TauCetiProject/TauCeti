@@ -312,15 +312,17 @@ private theorem exists_singularHomologyMap_eq_degreeAtRegularValue_smul_of_diffe
       (ιN.toHomeomorph : C(N', N)).comp g :=
     ContinuousMap.ext fun x ↦ (congrFun hιg x).symm
   rw [map_zsmul, ← HomologicalOrientation.mapFundamentalClass_comp, hcomp,
-    HomologicalOrientation.mapFundamentalClass_comp, key]
-  -- The fundamental class of `N'` is read in the homology functor's object.
-  erw [map_zsmul]
-  rw [← HomologicalOrientation.mapFundamentalClass_def, smul_smul]
-  -- The right-hand side lives in the homology of `N`, read as `SSet.homology`.
-  erw [smul_smul]
-  congr 1
-  have h₂ : s₂ * s₂ = 1 := by rcases hs₂ with rfl | rfl <;> rfl
-  linear_combination (-(s₁ * degreeAtRegularValue o o' f y)) * h₂
+    HomologicalOrientation.mapFundamentalClass_comp, key, singularHomologyFunctor_obj_map_hom_apply,
+    map_zsmul, ← singularHomologyFunctor_obj_map_hom_apply,
+    ← HomologicalOrientation.mapFundamentalClass_def]
+  have hs : s₁ * degreeAtRegularValue o o' f y =
+      s₁ * s₂ * degreeAtRegularValue o o' f y * s₂ := by
+    have h₂ : s₂ * s₂ = 1 := by rcases hs₂ with rfl | rfl <;> rfl
+    linear_combination (-(s₁ * degreeAtRegularValue o o' f y)) * h₂
+  -- Both sides are multiples of `ιN_*[N']`, but each nests a scalar multiplication of the homology
+  -- functor's object with one of `SSet.homology`, its definitional unfolding; `exact` unifies the
+  -- two module structures, which `rw [smul_smul]` cannot.
+  exact (smul_smul _ _ _).trans ((congrArg (· • _) hs).trans (smul_smul _ _ _).symm)
 
 
 /-- **The smooth degree is the homological degree, for any models.** Let `f : M → N` be a `C¹`

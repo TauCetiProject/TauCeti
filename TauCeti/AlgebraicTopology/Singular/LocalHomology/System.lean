@@ -40,6 +40,8 @@ compatibility with composition characterizes the transport
 * `TauCeti.localHomologyMap`: for a continuous map `j : M → N` with `j ⁻¹' T ⊆ S`, the map
   `Hₖ(M, M ∖ S) ⟶ Hₖ(N, N ∖ T)` induced by `j`. It is functorial, is the restriction map for `j`
   the identity, and is compatible with restriction on both sides.
+* `TauCeti.singularHomologyFunctor_obj_map_hom_apply`: the singular homology functor's map applied
+  to a class in `SSet.homology` is the simplicial homology map, the normal form of the next lemma.
 * `TauCeti.singularHomologyToLocalHomology_singularHomologyMap`: passing to local homology is
   natural in maps `j` for which `x` is the only preimage of `j x`.
 * `TauCeti.isZero_localHomology_empty`: `Hₖ(M, M) = 0`.
@@ -253,6 +255,16 @@ variable {M N : Type w} [TopologicalSpace M] [TopologicalSpace N] {Λ : Type*} [
   (L : ModuleCat.{w} Λ)
 
 open AlgebraicTopology in
+/-- The map of the singular homology functor applied to a class `μ` typed in `SSet.homology` of
+the singular simplicial set, rewritten as the simplicial homology map. The left side applies a
+map out of the homology functor's object to `μ`, which agrees with `SSet.homology` only after
+unfolding; the right side is well typed as stated, so later rewrites can match it syntactically. -/
+theorem singularHomologyFunctor_obj_map_hom_apply {X Y : TopCat.{w}} (f : X ⟶ Y) {k : ℕ}
+    (μ : ((TopCat.toSSet.obj X).homology L k : ModuleCat.{w} Λ)) :
+    (((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj L).map f).hom μ =
+      (SSet.homologyMap (TopCat.toSSet.map f) L k).hom μ :=
+  (rfl)
+
 /-- **Naturality of the passage to local homology.** If `x` is the only preimage of `j x` under
 `j : M → N`, the image in the local homology at `j x` of `j_* μ ∈ Hₖ(N; L)` is the image of the
 local class of `μ` at `x` under the map of local homology `Hₖ(M, M ∖ {x}) ⟶ Hₖ(N, N ∖ {j x})`
@@ -261,7 +273,7 @@ theorem singularHomologyToLocalHomology_singularHomologyMap (j : C(M, N)) {x : M
     (hx : j ⁻¹' {j x} ⊆ {x}) {k : ℕ}
     (μ : ((TopCat.toSSet.obj (TopCat.of M)).homology L k : ModuleCat.{w} Λ)) :
     singularHomologyToLocalHomology L (j x) k
-        ((((singularHomologyFunctor (ModuleCat.{w} Λ) k).obj L).map (TopCat.ofHom j)).hom μ) =
+        ((SSet.homologyMap (TopCat.toSSet.map (TopCat.ofHom j)) L k).hom μ) =
       localHomologyMap L j hx k (singularHomologyToLocalHomology L x k μ) := by
   have h := congrArg (fun φ ↦ φ.hom μ)
     (TopPair.singularHomologyπ_naturality (TopPair.ofSubsetMap (X := TopCat.of M)
@@ -281,9 +293,10 @@ theorem singularHomologyToLocalHomology_singularHomologyMap (j : C(M, N)) {x : M
     (((TopPair.ofSubset ((univ : Set (TopCat.of M))ᶜ)).singularHomologyπ
       (C := ModuleCat.{w} Λ) L k).hom μ)) key
   simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at h h'
-  rw [TauCeti.singularHomologyFunctor_obj_map]
-  -- `singularHomologyToLocalHomology` is read through its definition as a composite.
-  erw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply, h]
+  rw [singularHomologyToLocalHomology_apply, singularHomologyToLocalHomology_apply]
+  -- The quotient map of the pair reads its source as `(toSSetPair.obj (ofSubset _)).right`, which
+  -- `rw` does not identify with `TopCat.toSSet.obj (TopCat.of N)`.
+  erw [h]
   exact h'
 
 end SingularHomologyMap
