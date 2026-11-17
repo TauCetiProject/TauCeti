@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.FDeriv.Defs
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Algebra.Order.Hom.Monoid
-import Mathlib.Analysis.Asymptotics.TVS
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Pow
 import Mathlib.Analysis.Calculus.FDeriv.Add
@@ -20,6 +19,7 @@ import Mathlib.Analysis.Convex.Mul
 import Mathlib.Tactic.Linarith
 import TauCeti.Algebra.Order.Module.Pi
 import TauCeti.Analysis.Calculus.FDeriv.Monotone
+import TauCeti.Analysis.Calculus.FDeriv.TVS
 import TauCeti.Analysis.Convex.Extrema
 
 /-!
@@ -66,14 +66,20 @@ section OuterRow
 variable {X ι : Type*}
 
 /-- The affine outer row `h (g a) + Dh (y - g a)` at the image of an anchor `a`. -/
-@[expose] def outerRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι → ℝ) →L[ℝ] ℝ)
+def outerRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι → ℝ) →L[ℝ] ℝ)
     (y : ι → ℝ) : ℝ :=
   h (g a) + Dh (y - g a)
+
+/-- Characterization of `outerRow` evaluated at `y`. -/
+theorem outerRow_apply (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι → ℝ) →L[ℝ] ℝ)
+    (y : ι → ℝ) :
+    outerRow g h a Dh y = h (g a) + Dh (y - g a) :=
+  (rfl)
 
 @[simp]
 theorem outerRow_self (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dh : (ι → ℝ) →L[ℝ] ℝ) :
     outerRow g h a Dh (g a) = h (g a) := by
-  simp [outerRow]
+  simp [outerRow_apply]
 
 /-- Outer convex support: if `h` is convex on `E` and has Fréchet derivative `Dh` at `g a ∈ E`,
 then `outerRow g h a Dh y ≤ h y` for every `y ∈ E`. -/
@@ -91,29 +97,29 @@ variable {X : Type*} [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] {ι κ
 
 /-- The affine component row `g a + Dg (x - a)` formed from inner values and a continuous linear
 map `Dg`. -/
-@[expose] def componentRow (g : X → ι → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ)) (x : X) : ι → ℝ :=
+def componentRow (g : X → ι → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ)) (x : X) : ι → ℝ :=
   g a + Dg (x - a)
 
 /-- The composed direct affine row `h (g a) + (Dh ∘L Dg) (x - a)`. -/
-@[expose] def directRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ))
+def directRow (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ))
     (Dh : (ι → ℝ) →L[ℝ] ℝ) (x : X) : ℝ :=
   h (g a) + (Dh.comp Dg) (x - a)
 
 /-- Points in `D` satisfying every direct row at the common anchor family `a`. -/
-@[expose] def directOA (D : Set X) (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : κ → X)
+def directOA (D : Set X) (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : κ → X)
     (Dg : κ → X →L[ℝ] (ι → ℝ)) (Dh : κ → (ι → ℝ) →L[ℝ] ℝ) (b : ℝ) : Set X :=
   {x | x ∈ D ∧ ∀ i, directRow g h (a i) (Dg i) (Dh i) x ≤ b}
 
 /-- Pairs `(x, y) ∈ D × E` where a single common height vector `y` dominates every component row
 and satisfies every outer row. -/
-@[expose] def sharedOA (D : Set X) (E : Set (ι → ℝ)) (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : κ → X)
+def sharedOA (D : Set X) (E : Set (ι → ℝ)) (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : κ → X)
     (Dg : κ → X →L[ℝ] (ι → ℝ)) (Dh : κ → (ι → ℝ) →L[ℝ] ℝ) (b : ℝ) : Set (X × (ι → ℝ)) :=
   {z | z.1 ∈ D ∧ z.2 ∈ E ∧ ∀ i,
     componentRow g (a i) (Dg i) z.1 ≤ z.2 ∧ outerRow g h (a i) (Dh i) z.2 ≤ b}
 
 /-- Pairs `(x, y) ∈ D × E` satisfying all component and outer rows for a common height vector `y`,
 with exact equality `y j = componentRow g (a i) (Dg i) x j` on the selected coordinates `J`. -/
-@[expose] def sharedOAOn (J : Set ι) (D : Set X) (E : Set (ι → ℝ)) (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ)
+def sharedOAOn (J : Set ι) (D : Set X) (E : Set (ι → ℝ)) (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ)
     (a : κ → X) (Dg : κ → X →L[ℝ] (ι → ℝ)) (Dh : κ → (ι → ℝ) →L[ℝ] ℝ) (b : ℝ) :
     Set (X × (ι → ℝ)) :=
   {z | z.1 ∈ D ∧ z.2 ∈ E ∧ ∀ i,
@@ -126,6 +132,12 @@ theorem componentRow_apply (g : X → ι → ℝ) (a : X) (Dg : X →L[ℝ] (ι 
     componentRow g a Dg x j = g a j + Dg (x - a) j := by
   simp [componentRow]
 
+/-- Characterization of `directRow` evaluated at `x`. -/
+theorem directRow_apply (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ))
+    (Dh : (ι → ℝ) →L[ℝ] ℝ) (x : X) :
+    directRow g h a Dg Dh x = h (g a) + Dh (Dg (x - a)) :=
+  (rfl)
+
 @[simp]
 theorem componentRow_self (g : X → ι → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ)) :
     componentRow g a Dg a = g a := by
@@ -135,7 +147,7 @@ theorem componentRow_self (g : X → ι → ℝ) (a : X) (Dg : X →L[ℝ] (ι �
 theorem directRow_self (g : X → ι → ℝ) (h : (ι → ℝ) → ℝ) (a : X) (Dg : X →L[ℝ] (ι → ℝ))
     (Dh : (ι → ℝ) →L[ℝ] ℝ) :
     directRow g h a Dg Dh a = h (g a) := by
-  simp [directRow]
+  simp [directRow_apply]
 
 /-- Evaluating the outer row at the component row reproduces the direct row. -/
 @[simp]
@@ -149,7 +161,7 @@ theorem mem_directOA {D : Set X} {g : X → ι → ℝ} {h : (ι → ℝ) → �
     {Dg : κ → X →L[ℝ] (ι → ℝ)} {Dh : κ → (ι → ℝ) →L[ℝ] ℝ} {b : ℝ} {x : X} :
     x ∈ directOA D g h a Dg Dh b ↔
       x ∈ D ∧ ∀ i, directRow g h (a i) (Dg i) (Dh i) x ≤ b :=
-  Iff.rfl
+  (Iff.rfl)
 
 @[simp]
 theorem mem_sharedOA {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ}
@@ -158,7 +170,7 @@ theorem mem_sharedOA {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ} {
     z ∈ sharedOA D E g h a Dg Dh b ↔
       z.1 ∈ D ∧ z.2 ∈ E ∧ ∀ i,
         componentRow g (a i) (Dg i) z.1 ≤ z.2 ∧ outerRow g h (a i) (Dh i) z.2 ≤ b :=
-  Iff.rfl
+  (Iff.rfl)
 
 @[simp]
 theorem mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g : X → ι → ℝ}
@@ -169,7 +181,7 @@ theorem mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι → ℝ)} {g : X �
         componentRow g (a i) (Dg i) z.1 ≤ z.2 ∧
         (∀ j ∈ J, z.2 j = componentRow g (a i) (Dg i) z.1 j) ∧
         outerRow g h (a i) (Dh i) z.2 ≤ b :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- Forgetting the coordinate equalities on `J` embeds `sharedOAOn J` into `sharedOA`. -/
 theorem sharedOAOn_subset_sharedOA (J : Set ι) (D : Set X) (E : Set (ι → ℝ))
@@ -241,7 +253,7 @@ theorem directOA_of_isEmpty_coord [IsEmpty ι] [Nonempty κ] (D : Set X) (g : X 
     directOA D g h a Dg Dh b = {x ∈ D | h 0 ≤ b} := by
   ext x
   have hrow (i : κ) : directRow g h (a i) (Dg i) (Dh i) x = h 0 := by
-    simp [directRow, Subsingleton.elim (g (a i)) 0, Subsingleton.elim (Dg i (x - a i)) 0]
+    simp [directRow_apply, Subsingleton.elim (g (a i)) 0, Subsingleton.elim (Dg i (x - a i)) 0]
   simp [hrow]
 
 /-- With zero height coordinates and at least one anchor, `sharedOA` retains membership of the
@@ -252,7 +264,7 @@ theorem sharedOA_of_isEmpty_coord [IsEmpty ι] [Nonempty κ] (D : Set X) (E : Se
     sharedOA D E g h a Dg Dh b = {z | z.1 ∈ D ∧ z.2 ∈ E ∧ h 0 ≤ b} := by
   ext z
   have hrow (i : κ) : outerRow g h (a i) (Dh i) z.2 = h 0 := by
-    simp [outerRow, Subsingleton.elim (g (a i)) 0, Subsingleton.elim z.2 0]
+    simp [outerRow_apply, Subsingleton.elim (g (a i)) 0, Subsingleton.elim z.2 0]
   simp [hrow]
 
 /-- Graph witness for `sharedOAOn`: given component support off `J`, exact component rows on `J`,
@@ -296,7 +308,7 @@ theorem fst_mem_directOA_of_mem_sharedOAOn {J : Set ι} {D : Set X} {E : Set (ι
   have hpos : 0 ≤ Dh i v := hD i v hv0 hvJ
   have hdiff : outerRow g h (a i) (Dh i) z.2 - directRow g h (a i) (Dg i) (Dh i) z.1 = Dh i v := by
     rw [← outerRow_componentRow g h (a i) (Dg i) (Dh i) z.1]
-    simp only [outerRow, v, add_sub_add_left_eq_sub, ← map_sub]
+    simp only [outerRow_apply, v, add_sub_add_left_eq_sub, ← map_sub]
     congr 1
     abel
   linarith
@@ -335,13 +347,8 @@ theorem componentRow_eq_of_eventuallyEq_continuousAffineMap {g : X → ι → �
     {Dg : X →L[ℝ] (ι → ℝ)} {j : ι} (f : X →ᴬ[ℝ] ℝ) (hg : HasFDerivAt g Dg a)
     (hnhds : (fun z => g z j) =ᶠ[𝓝 a] f) (hx : g x j = f x) :
     componentRow g a Dg x j = g x j := by
-  have hgj : HasFDerivAt (fun z => g z j) ((ContinuousLinearMap.proj (R := ℝ) j).comp Dg) a :=
-    .of_isLittleOTVS (hg.isLittleOTVS.proj j)
-  have hf : HasFDerivAt f f.contLinear a := by
-    refine .of_isLittleOTVS <| (Asymptotics.IsLittleOTVS.zero _ _).congr_left fun p => ?_
-    simp [(vsub_eq_sub _ _).symm.trans (f.contLinear_apply_vsub _ _).symm]
   have heq : (ContinuousLinearMap.proj (R := ℝ) j).comp Dg = f.contLinear :=
-    hgj.unique (hf.congr_of_eventuallyEq hnhds)
+    (hg.proj j).unique (f.hasFDerivAt_tvs.congr_of_eventuallyEq hnhds)
   have hDg : Dg (x - a) j = f.contLinear (x - a) := by
     simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] using
       congrArg (fun L : X →L[ℝ] ℝ => L (x - a)) heq
@@ -357,10 +364,8 @@ theorem componentRow_le_of_convexOn {D : Set X} {g : X → ι → ℝ} {a x : X}
     {Dg : X →L[ℝ] (ι → ℝ)} {j : ι} (hc : ConvexOn ℝ D (fun z => g z j)) (ha : a ∈ D)
     (hx : x ∈ D) (hg : HasFDerivAt g Dg a) :
     componentRow g a Dg x j ≤ g x j := by
-  have hgj : HasFDerivAt (fun z => g z j) ((ContinuousLinearMap.proj (R := ℝ) j).comp Dg) a :=
-    .of_isLittleOTVS (hg.isLittleOTVS.proj j)
   simpa only [componentRow_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.proj_apply] using hc.add_le_of_hasFDerivAt ha hgj x hx
+    ContinuousLinearMap.proj_apply] using hc.add_le_of_hasFDerivAt ha (hg.proj j) x hx
 
 /-- Direct-row convex support via the chain rule: if `h ∘ g` is convex on `D` and `g`, `h` have
 actual Fréchet derivatives `Dg` at `a ∈ D` and `Dh` at `g a`, then `directRow g h a Dg Dh x ≤
@@ -368,16 +373,8 @@ h (g x)` for every `x ∈ D`. -/
 theorem directRow_le_of_convexOn_comp {D : Set X} {g : X → ι → ℝ} {h : (ι → ℝ) → ℝ} {a x : X}
     {Dg : X →L[ℝ] (ι → ℝ)} {Dh : (ι → ℝ) →L[ℝ] ℝ} (hc : ConvexOn ℝ D (h ∘ g))
     (ha : a ∈ D) (hx : x ∈ D) (hg : HasFDerivAt g Dg a) (hh : HasFDerivAt h Dh (g a)) :
-    directRow g h a Dg Dh x ≤ h (g x) := by
-  have hcomp : HasFDerivAt (h ∘ g) (Dh.comp Dg) a := by
-    refine .of_isLittleOTVS <| calc
-      (fun x' : X => (h ∘ g) x' - (h ∘ g) a - (Dh.comp Dg) (x' - a))
-        = (fun y => h y - h (g a) - Dh (y - g a)) ∘ g +
-            Dh ∘ (fun x' => g x' - g a - Dg (x' - a)) := by ext x'; simp
-      _ =o[ℝ; 𝓝 a] (fun x' => x' - a) :=
-        ((hh.isLittleOTVS.comp_tendsto hg.continuousAt.tendsto).trans_isBigOTVS
-          hg.isBigOTVS_sub).add (Dh.isBigOTVS_comp.trans_isLittleOTVS hg.isLittleOTVS)
-  exact hc.add_le_of_hasFDerivAt ha hcomp x hx
+    directRow g h a Dg Dh x ≤ h (g x) :=
+  hc.add_le_of_hasFDerivAt ha (hh.comp_tvs hg) x hx
 
 /-- **Matched outer approximation comparison with exact rows on selected coordinates.**
 If `g` maps `D` into `E`, component rows are exact on `J`, every component off `J` is convex on
@@ -461,16 +458,23 @@ end Analytic
 
 section Separation
 
-/-- Exact rows on selected coordinates strictly extend the monotone-derivative comparison: for
-`g x = ![x, x ^ 2]` and `h y = y 0 ^ 2 + y 1` anchored at `-1` with budget `2` and `J = {0}`,
-the hypotheses of `affine_coordinate_comparison` hold with a non-trivial permitted cone containing
-`![0, 1]`, the actual outer derivative `Dh 0` is not monotone, and `Prod.fst '' sharedOA` is not
-contained in `directOA`, whereas `Prod.fst '' sharedOAOn {0}` is. -/
+/-- Exact rows on selected coordinates strictly extend the monotone-derivative comparison: there
+exist `g : ℝ → Fin 2 → ℝ`, `h : (Fin 2 → ℝ) → ℝ`, an anchor `a : Fin 1 → ℝ`, and actual Fréchet
+derivatives `Dg`, `Dh` satisfying all hypotheses of `affine_coordinate_comparison` for `J = {0}` on
+`D = Set.univ`, `E = Set.univ` with budget `2` (whose permitted cone `{v : Fin 2 → ℝ | 0 ≤ v ∧
+v 0 = 0}` contains the nonzero vector `![0, 1]`), such that `Dh 0` is not monotone and
+`Prod.fst '' sharedOA` is not contained in `directOA`, whereas `{x | h (g x) ≤ 2} ⊆
+Prod.fst '' sharedOAOn {0} ⊆ directOA`. Witnessed by `g x = ![x, x ^ 2]`, `h y = y 0 ^ 2 + y 1`,
+and `a 0 = -1`. -/
 theorem exists_affine_coordinate_comparison_not_monotone :
     ∃ (g : ℝ → Fin 2 → ℝ) (h : (Fin 2 → ℝ) → ℝ) (a : Fin 1 → ℝ)
       (Dg : Fin 1 → ℝ →L[ℝ] (Fin 2 → ℝ)) (Dh : Fin 1 → (Fin 2 → ℝ) →L[ℝ] ℝ),
+      (∀ i x, ∀ j ∈ ({0} : Set (Fin 2)), componentRow g (a i) (Dg i) x j = g x j) ∧
+      (∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j)) ∧
+      ConvexOn ℝ Set.univ h ∧
       (∀ i, HasFDerivAt g (Dg i) (a i)) ∧
       (∀ i, HasFDerivAt h (Dh i) (g (a i))) ∧
+      (∀ i v, 0 ≤ v → (∀ j ∈ ({0} : Set (Fin 2)), v j = 0) → 0 ≤ Dh i v) ∧
       (¬ Monotone (Dh 0)) ∧
       (¬ Prod.fst '' sharedOA Set.univ Set.univ g h a Dg Dh 2 ⊆ directOA Set.univ g h a Dg Dh 2) ∧
       ({x : ℝ | h (g x) ≤ 2} ⊆ Prod.fst '' sharedOAOn {0} Set.univ Set.univ g h a Dg Dh 2 ∧
@@ -499,23 +503,30 @@ theorem exists_affine_coordinate_comparison_not_monotone :
       directOA Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 := fun hsub => by
     have hmem : ((-2 : ℝ), ![0, 3]) ∈
         sharedOA Set.univ Set.univ g h a (fun _ => Dg0) (fun _ => Dh0) 2 :=
-      ⟨mem_univ _, mem_univ _, fun _ => ⟨fun j => by
-          fin_cases j <;> norm_num [componentRow, g, a, Dg0], by norm_num [outerRow, g, h, a, Dh0]⟩⟩
-    have hdir := (hsub ⟨((-2 : ℝ), ![0, 3]), hmem, rfl⟩).2 0
-    norm_num [directRow, g, h, a, Dg0, Dh0] at hdir
+      mem_sharedOA.2 ⟨mem_univ _, mem_univ _, fun _ => ⟨fun j => by
+          fin_cases j <;> norm_num [componentRow_apply, g, a, Dg0],
+        by norm_num [outerRow_apply, g, h, a, Dh0]⟩⟩
+    have hdir := (mem_directOA.1 (hsub ⟨((-2 : ℝ), ![0, 3]), hmem, rfl⟩)).2 0
+    norm_num [directRow_apply, g, h, a, Dg0, Dh0] at hdir
+  have haff : ∀ i : Fin 1, ∀ x : ℝ, ∀ j ∈ ({0} : Set (Fin 2)),
+      componentRow g (a i) Dg0 x j = g x j := fun _ x j hj => by
+    rw [mem_singleton_iff.1 hj]
+    simp [componentRow_apply, g, a, Dg0]
+  have hc : ∀ j ∉ ({0} : Set (Fin 2)), ConvexOn ℝ Set.univ (fun x => g x j) := fun j hj => by
+    fin_cases j <;> first | exact (hj rfl).elim | simpa [g] using even_two.convexOn_pow (𝕜 := ℝ)
   have hhc : ConvexOn ℝ Set.univ h := by
     let p0 : (Fin 2 → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj 0
     let p1 : (Fin 2 → ℝ) →ₗ[ℝ] ℝ := LinearMap.proj 1
     simpa [h, p0, p1, Pi.add_def, Function.comp_def] using
       ((even_two.convexOn_pow (𝕜 := ℝ)).comp_linearMap p0).add (p1.convexOn convex_univ)
+  have hD : ∀ _ : Fin 1, ∀ v : Fin 2 → ℝ,
+      0 ≤ v → (∀ j ∈ ({0} : Set (Fin 2)), v j = 0) → 0 ≤ Dh0 v :=
+    fun _ => (forall_map_nonneg_of_eq_zero_iff Dh0 {0}).2 fun j hj => by
+      fin_cases j <;> first | exact (hj rfl).elim | norm_num [Dh0]
   have hcmp := affine_coordinate_comparison (J := ({0} : Set (Fin 2))) 2 (mapsTo_univ g Set.univ)
-    (fun _ x _ j hj => by rw [mem_singleton_iff.1 hj]; simp [componentRow, g, a, Dg0])
-    (fun j hj => by
-      fin_cases j <;> first | exact (hj rfl).elim | simpa [g] using even_two.convexOn_pow (𝕜 := ℝ))
-    hhc (fun _ => mem_univ _) hg hh
-    (fun _ => (forall_map_nonneg_of_eq_zero_iff Dh0 {0}).2 fun j hj => by
-      fin_cases j <;> first | exact (hj rfl).elim | norm_num [Dh0])
-  exact ⟨g, h, a, fun _ => Dg0, fun _ => Dh0, hg, hh, hnotmono, hnotSub, by simpa using hcmp⟩
+    (fun i x _ j hj => haff i x j hj) hc hhc (fun _ => mem_univ _) hg hh hD
+  exact ⟨g, h, a, fun _ => Dg0, fun _ => Dh0, haff, hc, hhc, hg, hh, hD,
+    hnotmono, hnotSub, by simpa using hcmp⟩
 
 end Separation
 

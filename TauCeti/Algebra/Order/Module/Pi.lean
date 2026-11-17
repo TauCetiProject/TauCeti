@@ -47,10 +47,7 @@ theorem forall_map_nonneg_of_eq_zero_iff {ι R M F : Type*} [Finite ι] [Decidab
     (∀ v : ι → R, 0 ≤ v → (∀ j ∈ J, v j = 0) → 0 ≤ L v) ↔
       ∀ j ∉ J, 0 ≤ L (Pi.single j 1) := by
   have := Fintype.ofFinite ι
-  refine ⟨fun h j hj => h (Pi.single j 1) (fun k => by
-      by_cases hkj : k = j
-      · subst hkj; simp
-      · simp [hkj]) fun k hk => ?_,
+  refine ⟨fun h j hj => h (Pi.single j 1) (Pi.single_nonneg.2 zero_le_one) fun k hk => ?_,
     fun h v hv hvJ => ?_⟩
   · have hkj : k ≠ j := fun h' => hj (h' ▸ hk)
     exact Pi.single_eq_of_ne hkj 1
@@ -72,11 +69,7 @@ theorem monotone_iff_forall_map_single_nonneg {ι R M F : Type*} [Finite ι] [De
     Monotone L ↔ ∀ j : ι, 0 ≤ L (Pi.single j 1) := by
   have := Fintype.ofFinite ι
   refine ⟨fun h j => ?_, fun h v w hvw => ?_⟩
-  · have hle : (0 : ι → R) ≤ Pi.single j 1 := fun k => by
-      by_cases hkj : k = j
-      · subst hkj; simp
-      · simp [hkj]
-    simpa only [map_zero] using h hle
+  · simpa only [map_zero] using h (Pi.single_nonneg.2 (zero_le_one : (0 : R) ≤ 1))
   · rw [pi_eq_sum_univ' v, pi_eq_sum_univ' w, map_sum, map_sum]
     refine sum_le_sum fun j _ => ?_
     rw [map_smul, map_smul]

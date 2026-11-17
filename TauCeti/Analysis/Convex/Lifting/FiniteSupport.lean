@@ -39,12 +39,15 @@ the projection collapses to `D` (`TauCeti.exists_mem_sharedRows_iff_of_exists_em
 projecting `independentRows` recovers only the same-anchor diagonal sums
 (`TauCeti.exists_mem_independentRows_iff`).
 
-For the sum outer function `y ↦ ∑ j, y j` with free height domain `E = Set.univ`, the matched
-outer approximations `TauCeti.directOA` and `TauCeti.sharedOA` coincide algebraically with
-`independentRows` and `sharedRows` (`TauCeti.directOA_sum_eq_fst_image_independentRows` and
-`TauCeti.sharedOA_sum_eq_sharedRows`), without assuming convexity or differentiability. A concrete
-two-anchor squared-component witness (`TauCeti.exists_strict_sharedOA_ssubset_directOA`) shows that
-both inclusions `{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA ⊂ directOA` can be strict.
+For the sum outer function `y ↦ ∑ j, y j` with free height domain `E = Set.univ`, without
+assuming convexity or differentiability, `TauCeti.directOA` coincides algebraically with the
+projection `Prod.fst '' independentRows` (`TauCeti.directOA_sum_eq_fst_image_independentRows`),
+and for a nonempty finite anchor set `TauCeti.sharedOA` coincides with `TauCeti.sharedRows`
+(`TauCeti.sharedOA_sum_eq_sharedRows`). For any nonempty anchor family (finite or infinite), the
+projection of `TauCeti.sharedOA` is characterized by all mixed-choice sums
+(`TauCeti.mem_fst_image_sharedOA_sum_iff_forall_choice`). A concrete two-anchor squared-component
+witness (`TauCeti.exists_strict_sharedOA_ssubset_directOA`) shows that both inclusions
+`{x ∈ D | h (g x) ≤ b} ⊂ Prod.fst '' sharedOA ⊂ directOA` can be strict.
 
 ## References
 
@@ -67,13 +70,13 @@ variable {X ι I κ β : Type*} [Fintype ι] [AddCommMonoid β] [LE β]
 
 /-- Pairs `(x, y)` with `x ∈ D`, a single free height vector `y : ι → β` dominating every active
 support row `row j i x ≤ y j` for `i ∈ H j`, and total budget `∑ j, y j ≤ b`. -/
-@[expose] def sharedRows (D : Set X) (row : ι → I → X → β) (H : ι → Finset I) (b : β) :
+def sharedRows (D : Set X) (row : ι → I → X → β) (H : ι → Finset I) (b : β) :
     Set (X × (ι → β)) :=
   {z | z.1 ∈ D ∧ (∀ j, ∀ i ∈ H j, row j i z.1 ≤ z.2 j) ∧ ∑ j, z.2 j ≤ b}
 
 /-- Pairs `(x, y)` with `x ∈ D` and an independent height vector `y a : ι → β` per anchor `a : κ`
 dominating `row a j x ≤ y a j` with per-anchor budget `∑ j, y a j ≤ b a`. -/
-@[expose] def independentRows (D : Set X) (row : κ → ι → X → β) (b : κ → β) :
+def independentRows (D : Set X) (row : κ → ι → X → β) (b : κ → β) :
     Set (X × (κ → ι → β)) :=
   {z | z.1 ∈ D ∧ ∀ a, (∀ j, row a j z.1 ≤ z.2 a j) ∧ ∑ j, z.2 a j ≤ b a}
 
@@ -82,19 +85,31 @@ theorem mem_sharedRows {D : Set X} {row : ι → I → X → β} {H : ι → Fin
     {z : X × (ι → β)} :
     z ∈ sharedRows D row H b ↔
       z.1 ∈ D ∧ (∀ j, ∀ i ∈ H j, row j i z.1 ≤ z.2 j) ∧ ∑ j, z.2 j ≤ b :=
-  Iff.rfl
+  (Iff.rfl)
 
 @[simp]
 theorem mem_independentRows {D : Set X} {row : κ → ι → X → β} {b : κ → β}
     {z : X × (κ → ι → β)} :
     z ∈ independentRows D row b ↔
       z.1 ∈ D ∧ ∀ a, (∀ j, row a j z.1 ≤ z.2 a j) ∧ ∑ j, z.2 a j ≤ b a :=
-  Iff.rfl
+  (Iff.rfl)
 
 /-- With zero components, `sharedRows` projects to `x ∈ D ∧ 0 ≤ b`. -/
 theorem exists_mem_sharedRows_of_isEmpty [IsEmpty ι] {D : Set X} {row : ι → I → X → β}
     {H : ι → Finset I} {b : β} {x : X} :
     (∃ y, (x, y) ∈ sharedRows D row H b) ↔ x ∈ D ∧ (0 : β) ≤ b := by
+  simp
+
+/-- With zero anchors, `independentRows` projects to `x ∈ D`. -/
+theorem exists_mem_independentRows_of_isEmpty_anchor [IsEmpty κ] {D : Set X}
+    {row : κ → ι → X → β} {b : κ → β} {x : X} :
+    (∃ y, (x, y) ∈ independentRows D row b) ↔ x ∈ D := by
+  simp
+
+/-- With zero components, `independentRows` projects to `x ∈ D ∧ ∀ a, 0 ≤ b a`. -/
+theorem exists_mem_independentRows_of_isEmpty [IsEmpty ι] {D : Set X}
+    {row : κ → ι → X → β} {b : κ → β} {x : X} :
+    (∃ y, (x, y) ∈ independentRows D row b) ↔ x ∈ D ∧ ∀ a, (0 : β) ≤ b a := by
   simp
 
 end Definitions
@@ -143,16 +158,12 @@ theorem exists_mem_sharedRows_iff_of_exists_empty [AddCommGroup β] [Preorder β
     obtain ⟨u, hu⟩ := Finset.exists_le ((H j).image fun i => row j i x)
     exact ⟨u, fun i hi => hu _ (mem_image_of_mem _ hi)⟩
   choose u hu using hbound
-  let y : ι → β := fun j => if j = j₀ then b - ∑ k ∈ univ.erase j₀, u k else u j
-  refine ⟨y, hxD, fun j i hi => ?_, ?_⟩
-  · by_cases hjj : j = j₀
-    · subst hjj; simp [hj₀] at hi
-    · simp [y, hjj, hu j i hi]
-  · rw [← add_sum_erase univ y (Finset.mem_univ j₀)]
-    have hrest : ∑ k ∈ univ.erase j₀, y k = ∑ k ∈ univ.erase j₀, u k :=
-      sum_congr rfl fun k hk => by simp [y, (mem_erase.1 hk).1]
-    rw [hrest]
-    simp [y]
+  let y : ι → β := Function.update u j₀ (b - ∑ k ∈ univ \ {j₀}, u k)
+  refine ⟨y, mem_sharedRows.2 ⟨hxD, fun j i hi => ?_, ?_⟩⟩
+  · rcases eq_or_ne j j₀ with rfl | hjj
+    · simp [hj₀] at hi
+    · simpa [y, hjj] using hu j i hi
+  · rw [Finset.sum_update_of_mem (Finset.mem_univ j₀), sub_add_cancel]
 
 /-- **Independent-row projection.** When each anchor carries its own free height vector, eliminating
 the heights yields exactly `x ∈ D` together with each same-anchor diagonal sum inequality. -/
@@ -171,7 +182,8 @@ simply the sum `∑ j, y j`. -/
 @[simp]
 theorem outerRow_sum {X ι : Type*} [Fintype ι] (g : X → ι → ℝ) (a : X) (y : ι → ℝ) :
     outerRow g (fun v => ∑ j, v j) a (∑ j, ContinuousLinearMap.proj (R := ℝ) j) y = ∑ j, y j := by
-  simp [outerRow, sum_apply]
+  rw [outerRow_apply]
+  simp [sum_apply]
 
 variable {X ι κ : Type*} [AddCommGroup X] [TopologicalSpace X] [Module ℝ X] [Fintype ι]
 
@@ -234,30 +246,31 @@ theorem mem_fst_image_sharedOA_sum_iff_forall_choice [Nonempty κ] {D : Set X}
       x ∈ D ∧ ∀ choice : ι → κ, ∑ j, componentRow g (a (choice j)) (Dg (choice j)) x j ≤ b := by
   classical
   constructor
-  · rintro ⟨⟨_, y⟩, ⟨hxD, _, hrow⟩, rfl⟩
+  · rintro ⟨⟨_, y⟩, hmem, rfl⟩
+    obtain ⟨hxD, _, hrow⟩ := mem_sharedOA.1 hmem
     have hsum : ∑ j, y j ≤ b := by
       simpa only [outerRow_sum] using (hrow (Classical.arbitrary κ)).2
     exact ⟨hxD, fun choice => (sum_le_sum fun j _ => (hrow (choice j)).1 j).trans hsum⟩
   · rintro ⟨hxD, hall⟩
     by_cases hι : IsEmpty ι
-    · refine ⟨(x, 0), ⟨hxD, Set.mem_univ _, fun _ => ⟨fun j => (hι.false j).elim, ?_⟩⟩, rfl⟩
+    · refine ⟨(x, 0), mem_sharedOA.2 ⟨hxD, Set.mem_univ _, fun _ =>
+        ⟨fun j => (hι.false j).elim, ?_⟩⟩, rfl⟩
       rw [outerRow_sum]
       simpa using hall fun j => (hι.false j).elim
     have : Nonempty ι := not_isEmpty_iff.1 hι
     let r : ι → κ → ℝ := fun j i => componentRow g (a i) (Dg i) x j
     let i₀ : κ := Classical.arbitrary κ
     have hbdd : ∀ j, BddAbove (range (r j)) := fun j => by
-      refine ⟨b - ∑ k ∈ univ.erase j, r k i₀, ?_⟩
+      refine ⟨b - ∑ k ∈ univ \ {j}, r k i₀, ?_⟩
       rintro _ ⟨i, rfl⟩
-      have hch := hall fun k => if k = j then i else i₀
-      rw [← add_sum_erase univ (fun k => r k (if k = j then i else i₀)) (Finset.mem_univ j)] at hch
-      have hrest : ∑ k ∈ univ.erase j, r k (if k = j then i else i₀) =
-          ∑ k ∈ univ.erase j, r k i₀ :=
-        sum_congr rfl fun k hk => by simp [(mem_erase.1 hk).1]
-      simp only [↓reduceIte, hrest] at hch
+      have hch : ∑ k, r k (Function.update (fun _ => i₀) j i k) ≤ b :=
+        hall (Function.update (fun _ => i₀) j i)
+      simp_rw [Function.apply_update r] at hch
+      rw [Finset.sum_update_of_mem (Finset.mem_univ j)] at hch
       linarith
     let y : ι → ℝ := fun j => ⨆ i : κ, r j i
-    refine ⟨(x, y), ⟨hxD, Set.mem_univ _, fun i => ⟨fun j => le_ciSup (hbdd j) i, ?_⟩⟩, rfl⟩
+    refine ⟨(x, y), mem_sharedOA.2 ⟨hxD, Set.mem_univ _, fun i =>
+      ⟨fun j => le_ciSup (hbdd j) i, ?_⟩⟩, rfl⟩
     rw [outerRow_sum]
     by_contra hlt
     have hlt : b < ∑ j, y j := lt_of_not_ge hlt
@@ -321,8 +334,8 @@ theorem exists_strict_sharedOA_ssubset_directOA :
     (fun _ _ hxy => sum_le_sum fun j _ => hxy j) hc hhc ha hg hh
   have hstrict1 : ¬ Prod.fst '' sharedOA D Set.univ g h a Dg Dh (1 / 2) ⊆
       {x ∈ D | h (g x) ≤ 1 / 2} := fun hsub => by
-    have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), ⟨fun j _ => by fin_cases j <;> norm_num,
-      Set.mem_univ _, fun i => ⟨fun j => by
+    have horig := (hsub ⟨(![1, 1 / 4], ![1, -1 / 2]), mem_sharedOA.2 ⟨fun j _ => by
+        fin_cases j <;> norm_num, Set.mem_univ _, fun i => ⟨fun j => by
           fin_cases i <;> fin_cases j <;> norm_num [componentRow_apply, g, a, Dg],
         by simp only [h, Dh]; rw [outerRow_sum]; norm_num [Fin.sum_univ_two]⟩⟩, rfl⟩).2
     norm_num [h, g, Fin.sum_univ_two] at horig
