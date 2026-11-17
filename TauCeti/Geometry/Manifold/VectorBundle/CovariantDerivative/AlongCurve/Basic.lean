@@ -12,7 +12,6 @@ public import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Shift
-import TauCeti.Geometry.Manifold.VectorBundle.CurveInTotalSpace
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
 /-!
@@ -31,10 +30,10 @@ the current point rather than a single global chart.  Derivatives are taken with
 set `s`, so that the construction applies on a closed interval as well as on all of `𝕜`; the
 unrestricted operator is the `s = Set.univ` case, exactly as Mathlib's `fderiv` is the
 `Set.univ` case of `fderivWithin`.  This first part of the along-curve API proves the
-characteristic additive and scalar Leibniz laws, locality in the field and parameter set,
-naturality under differentiable reparametrization, and 1-jet dependence for curves into the tangent
-bundle.  For a field pulled back from an ambient vector field, `AlongCurve/Pullback.lean`
-identifies the formula in an arbitrary fixed chart and with the ambient covariant derivative.
+characteristic additive and scalar Leibniz laws, locality in the field and parameter set, and
+naturality under differentiable reparametrization.  For a field pulled back from an ambient vector
+field, `AlongCurve/Pullback.lean` identifies the formula in an arbitrary fixed chart and with the
+ambient covariant derivative.
 
 ## Main definitions and results
 
@@ -62,12 +61,6 @@ identifies the formula in an arbitrary fixed chart and with the ambient covarian
   reparametrization, with
   `CovariantDerivative.alongCurve_congr` and `CovariantDerivative.alongCurve_comp` their
   unrestricted cases.
-* `CovariantDerivative.alongCurveWithin_eq_symmL_curveVelocityWithin` and
-  `CovariantDerivative.alongCurveWithin_heq_of_curveVelocityLiftWithin_eq`: expressing the
-  covariant derivative of a differentiable curve in `TM` via its tangent-bundle velocity, and
-  deducing 1-jet invariance, with unrestricted counterparts
-  `CovariantDerivative.alongCurve_eq_symmL_curveVelocity` and
-  `CovariantDerivative.alongCurve_heq_of_curveVelocityLift_eq`.
 
 ## References
 
@@ -558,108 +551,5 @@ theorem alongCurve_sum {ι : Type*} (A : Finset ι) (W : ι → ∀ r, TangentSp
     alongCurve cov γ (fun r ↦ ∑ i ∈ A, W i r) t = ∑ i ∈ A, alongCurve cov γ (W i) t := by
   simpa only [alongCurveWithin_univ] using
     alongCurveWithin_sum cov γ A W (s := Set.univ) fun i hi ↦ (hW i hi).differentiableWithinAt
-
-/-! ### Curves in the tangent bundle -/
-
-/-- **Moving-chart formula in terms of the tangent-bundle velocity.** For a curve `σ` in the
-tangent bundle differentiable within `s` at `t` (where `s` has unique derivatives), the covariant
-derivative of `q ↦ (σ q).2` along `q ↦ (σ q).proj` is expressed directly in terms of `σ t` and
-`curveVelocityWithin I.tangent σ s t`: its model-space coordinates are the vertical component of
-the velocity plus the Christoffel correction evaluated on `(σ t).2` and the horizontal component of
-the velocity. -/
-theorem alongCurveWithin_eq_symmL_curveVelocityWithin
-    {σ : 𝕜 → TangentBundle I M} {s : Set 𝕜} {t : 𝕜}
-    (hσ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I.tangent σ s t)
-    (hs : UniqueDiffWithinAt 𝕜 s t) :
-    alongCurveWithin cov (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) s t =
-      (trivializationAt E (TangentSpace I) (σ t).proj).symmL 𝕜 (σ t).proj
-        ((curveVelocityWithin I.tangent σ s t).2 +
-          christoffelMap (Module.finBasis 𝕜 E)
-            (cov.isCovariantDerivativeOn
-              (s := (trivializationAt E (TangentSpace I) (σ t).proj).baseSet))
-            (σ t).proj (σ t).2 (curveVelocityWithin I.tangent σ s t).1) := by
-  let x₀ := (σ t).proj
-  let e := trivializationAt E (TangentSpace I) x₀
-  -- `TangentSpace I.tangent (σ t)` reduces to the model product `E × E`, whose components give the
-  -- horizontal and vertical coordinate derivatives of `σ`.
-  let ξ : E × E := curveVelocityWithin I.tangent σ s t
-  obtain ⟨hcont, hbase, hfib⟩ := (hasMFDerivWithinAt_totalSpace_curve_iff
-    (z := σ) (s := s) (t := t) (a := ξ.1) (b := ξ.2)).mp
-    (hasMFDerivWithinAt_curveVelocityWithin hσ)
-  have hmem : ∀ᶠ r in 𝓝[s] t, (σ r).proj ∈ e.baseSet :=
-    ((FiberBundle.continuous_proj E (TangentSpace I)).continuousAt.comp_continuousWithinAt
-      hcont).preimage_mem_nhdsWithin
-      (e.open_baseSet.mem_nhds (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x₀))
-  have hsec : sectionCoord (F := E) (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) x₀ =ᶠ[𝓝[s] t]
-      fun r ↦ (e (σ r)).2 := by
-    filter_upwards [hmem] with r hr
-    rw [sectionCoord_apply]
-    exact e.continuousLinearMapAt_apply_of_mem 𝕜 hr (σ r).2
-  have hsect : sectionCoord (F := E) (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) x₀ t =
-      (e (σ t)).2 := by
-    rw [sectionCoord_apply]
-    exact e.continuousLinearMapAt_apply_of_mem 𝕜
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) x₀) (σ t).2
-  have hsec0 : sectionCoord (F := E) (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) x₀ t = (σ t).2 := by
-    rw [sectionCoord_apply]
-    exact continuousLinearMapAt_trivializationAt_self x₀ (σ t).2
-  rw [alongCurveWithin_apply, alongCurveInChartWithin_apply, Function.comp_def,
-    (hfib.congr_of_eventuallyEq hsec hsect).derivWithin hs, hbase.derivWithin hs, hsec0]
-
-/-- The unrestricted case of `CovariantDerivative.alongCurveWithin_eq_symmL_curveVelocityWithin`. -/
-theorem alongCurve_eq_symmL_curveVelocity
-    {σ : 𝕜 → TangentBundle I M} {t : 𝕜}
-    (hσ : MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent σ t) :
-    alongCurve cov (fun q ↦ (σ q).proj) (fun q ↦ (σ q).2) t =
-      (trivializationAt E (TangentSpace I) (σ t).proj).symmL 𝕜 (σ t).proj
-        ((curveVelocity I.tangent σ t).2 +
-          christoffelMap (Module.finBasis 𝕜 E)
-            (cov.isCovariantDerivativeOn
-              (s := (trivializationAt E (TangentSpace I) (σ t).proj).baseSet))
-            (σ t).proj (σ t).2 (curveVelocity I.tangent σ t).1) := by
-  simpa only [alongCurveWithin_univ, curveVelocityWithin_univ] using
-    alongCurveWithin_eq_symmL_curveVelocityWithin cov hσ.mdifferentiableWithinAt
-      uniqueDiffWithinAt_univ
-
-/-- **1-jet invariance of covariant differentiation along tangent-bundle curves.** Two curves in
-`TM` differentiable within `s` at `t` (where `s` has unique derivatives) that agree to first order
-at `t` — i.e., have the same `curveVelocityLiftWithin` — have heterogeneously equal covariant
-derivatives at `t`. -/
-theorem alongCurveWithin_heq_of_curveVelocityLiftWithin_eq
-    {σ₁ σ₂ : 𝕜 → TangentBundle I M} {s : Set 𝕜} {t : 𝕜}
-    (hσ₁ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I.tangent σ₁ s t)
-    (hσ₂ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I.tangent σ₂ s t)
-    (hs : UniqueDiffWithinAt 𝕜 s t)
-    (h : curveVelocityLiftWithin I.tangent σ₁ s t =
-      curveVelocityLiftWithin I.tangent σ₂ s t) :
-    HEq (alongCurveWithin cov (fun q ↦ (σ₁ q).proj) (fun q ↦ (σ₁ q).2) s t)
-      (alongCurveWithin cov (fun q ↦ (σ₂ q).proj) (fun q ↦ (σ₂ q).2) s t) := by
-  rw [alongCurveWithin_eq_symmL_curveVelocityWithin cov hσ₁ hs,
-    alongCurveWithin_eq_symmL_curveVelocityWithin cov hσ₂ hs]
-  let F : TangentBundle I.tangent (TangentBundle I M) → TangentBundle I M := fun u ↦
-    TotalSpace.mk' E u.proj.proj
-      ((trivializationAt E (TangentSpace I) u.proj.proj).symmL 𝕜 u.proj.proj
-        ((u.2 : E × E).2 +
-          christoffelMap (Module.finBasis 𝕜 E)
-            (cov.isCovariantDerivativeOn
-              (s := (trivializationAt E (TangentSpace I) u.proj.proj).baseSet))
-            u.proj.proj u.proj.2 (u.2 : E × E).1))
-  rw [curveVelocityLiftWithin_apply, curveVelocityLiftWithin_apply] at h
-  exact (TotalSpace.ext_iff.mp (congrArg F h)).2
-
-/-- The unrestricted case of
-`CovariantDerivative.alongCurveWithin_heq_of_curveVelocityLiftWithin_eq`. -/
-theorem alongCurve_heq_of_curveVelocityLift_eq
-    {σ₁ σ₂ : 𝕜 → TangentBundle I M} {t : 𝕜}
-    (hσ₁ : MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent σ₁ t)
-    (hσ₂ : MDifferentiableAt 𝓘(𝕜, 𝕜) I.tangent σ₂ t)
-    (h : curveVelocityLift I.tangent σ₁ t = curveVelocityLift I.tangent σ₂ t) :
-    HEq (alongCurve cov (fun q ↦ (σ₁ q).proj) (fun q ↦ (σ₁ q).2) t)
-      (alongCurve cov (fun q ↦ (σ₂ q).proj) (fun q ↦ (σ₂ q).2) t) := by
-  rw [← alongCurveWithin_univ, ← alongCurveWithin_univ]
-  refine alongCurveWithin_heq_of_curveVelocityLiftWithin_eq cov hσ₁.mdifferentiableWithinAt
-    hσ₂.mdifferentiableWithinAt uniqueDiffWithinAt_univ ?_
-  simpa only [curveVelocityLiftWithin_apply, curveVelocityWithin_univ,
-    ← curveVelocityLift_apply] using h
 
 end CovariantDerivative
