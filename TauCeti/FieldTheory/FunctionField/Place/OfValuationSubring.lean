@@ -41,7 +41,9 @@ unit. That is exactly Mathlib's `HasUnitMulPowIrreducibleFactorization`.
   `TauCeti.Place.integers_ofValuationSubring`: the place attached to such a valuation subring,
   its valuation, and the fact that its valuation ring is the subring one started from.
 * `TauCeti.Place.existsUnique_integers_eq`: the place is the unique one with that valuation ring
-  (Stichtenoth, Theorem 1.1.13).
+  (Stichtenoth, Theorem 1.1.13), and `TauCeti.Place.isTrivialOn_or_existsUnique_integers_comap_eq`:
+  every place of an extension field is trivial on `F` or contracts to the valuation ring of a
+  unique place of `F / k`.
 
 ## Implementation notes
 
@@ -332,6 +334,24 @@ theorem existsUnique_integers_eq (hF : IsFunctionField k F) (hk : ∀ c : k, alg
     (hA : A ≠ ⊤) : ∃! P : Place k F, P.integers = A :=
   ⟨ofValuationSubring hF hk hA, integers_ofValuationSubring hF hk hA, fun _ h ↦
     integers_injective (h.trans (integers_ofValuationSubring hF hk hA).symm)⟩
+
+/-- **Dichotomy for places over an algebraic function field.** Let `F' / K` lie over a function
+field `F / k`. Every place `Q'` of `F' / K` is either trivial on `F` or contracts to the valuation
+ring of a unique place `Q` of `F / k`. -/
+theorem isTrivialOn_or_existsUnique_integers_comap_eq {K F' : Type*} [Field K] [Field F']
+    [Algebra k K] [Algebra k F'] [Algebra K F'] [Algebra F F']
+    [IsScalarTower k K F'] [IsScalarTower k F F']
+    (hF : IsFunctionField k F) (Q' : Place K F') :
+    Q'.valuation.IsTrivialOn F ∨
+      ∃! Q : Place k F, Q'.integers.comap (algebraMap F F') = Q.integers := by
+  by_cases hV : Q'.integers.comap (algebraMap F F') = ⊤
+  · exact Or.inl (Q'.isTrivialOn_iff_integers_comap_eq_top.mpr hV)
+  · have hk : ∀ c : k, algebraMap k F c ∈ Q'.integers.comap (algebraMap F F') := fun c ↦ by
+      rw [ValuationSubring.mem_comap, ← IsScalarTower.algebraMap_apply k F F',
+        IsScalarTower.algebraMap_apply k K F']
+      exact Q'.algebraMap_mem_integers _
+    obtain ⟨Q, hQ, huniq⟩ := existsUnique_integers_eq hF hk hV
+    exact Or.inr ⟨Q, hQ.symm, fun Q₁ hQ₁ ↦ huniq Q₁ hQ₁.symm⟩
 
 end Place
 

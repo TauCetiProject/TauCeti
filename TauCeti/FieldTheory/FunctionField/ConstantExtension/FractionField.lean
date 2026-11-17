@@ -22,7 +22,9 @@ The domain hypothesis is available from
 `TauCeti.isDomain_tensorProduct_of_separating` for a separably generated field with
 exact constants. We retain the actual fraction-field carrier, rather than asserting
 that the tensor product itself is a field. The results also apply to any specified
-fraction field with compatible scalar maps.
+fraction field with compatible scalar maps, and conversely any linearly disjoint
+compositum `F · k'` is a fraction field of `F ⊗[k] k'`
+(`TauCeti.isFractionRing_tensorProduct_of_linearDisjoint`).
 
 ## References
 
@@ -76,5 +78,51 @@ theorem IsFunctionField.fractionRing_tensorProduct (hF : IsFunctionField k F)
     IsFunctionField K (FractionRing (F ⊗[k] K)) := by
   have := isDomain_tensorProduct_of_isGeometricallyReduced hex K
   exact hF.of_isFractionRing_tensorProduct
+
+section Compositum
+
+variable {k F k' F' : Type*} [Field k] [Field F] [Field k'] [Field F']
+  [Algebra k F] [Algebra k k'] [Algebra k F'] [Algebra F F'] [Algebra k' F']
+  [IsScalarTower k F F'] [IsScalarTower k k' F']
+
+/-- **A linearly disjoint compositum is the fraction field of the tensor product.** -/
+theorem isFractionRing_tensorProduct_of_linearDisjoint
+    (H : (IsScalarTower.toAlgHom k k' F').fieldRange.LinearDisjoint F)
+    (h : constantCompositum F k' F' = ⊤) :
+    letI := (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
+      (IsScalarTower.toAlgHom k k' F')).toRingHom.toAlgebra
+    IsFractionRing (F ⊗[k] k') F' := by
+  let g : F ⊗[k] k' →ₐ[F] F' := Algebra.TensorProduct.productLeftAlgHom
+    (Algebra.ofId F F') (IsScalarTower.toAlgHom k k' F')
+  let _ := (Algebra.TensorProduct.productMap (IsScalarTower.toAlgHom k F F')
+    (IsScalarTower.toAlgHom k k' F')).toRingHom.toAlgebra
+  have hg_eq : ⇑g = algebraMap (F ⊗[k] k') F' := by
+    ext x
+    induction x using TensorProduct.inductionOn with
+    | tmul a b => simp [g, RingHom.algebraMap_toAlgebra]
+    | add u v hu hv => simp only [map_add, hu, hv]
+  have hg : Function.Injective g :=
+    hg_eq.symm ▸ productMap_injective_iff_linearDisjoint.mpr H
+  have : IsDomain (F ⊗[k] k') := hg.isDomain g.toRingHom
+  let ψ : FractionRing (F ⊗[k] k') →ₐ[F] F' := IsFractionRing.liftAlgHom hg
+  have hrange : ψ '' Set.range (algebraMap k' (FractionRing (F ⊗[k] k'))) =
+      Set.range (algebraMap k' F') := by
+    rw [← Set.range_comp]
+    refine congrArg Set.range (funext fun c ↦ ?_)
+    have hc : algebraMap k' (F ⊗[k] k') c = 1 ⊗ₜ c := rfl
+    rw [Function.comp_apply,
+      IsScalarTower.algebraMap_apply k' (F ⊗[k] k') (FractionRing (F ⊗[k] k')),
+      IsFractionRing.coe_liftAlgHom, IsFractionRing.lift_algebraMap, hc]
+    simp [g]
+  have htop : ψ.fieldRange = ⊤ := by
+    rw [AlgHom.fieldRange_eq_map, ← adjoin_range_right_eq_top_of_isFractionRing_tensorProduct
+      (k := k) (F := F) (K := k') (Q := FractionRing (F ⊗[k] k')),
+      IntermediateField.adjoin_map, hrange, ← constantCompositum_def, h]
+  exact IsLocalization.isLocalization_of_algEquiv (nonZeroDivisors (F ⊗[k] k'))
+    (AlgEquiv.ofRingEquiv (f := RingEquiv.ofBijective ψ.toRingHom
+      ⟨ψ.injective, fun y ↦ (htop ▸ IntermediateField.mem_top : y ∈ ψ.fieldRange)⟩)
+      fun z ↦ (IsFractionRing.lift_algebraMap hg z).trans (congrFun hg_eq z))
+
+end Compositum
 
 end TauCeti
