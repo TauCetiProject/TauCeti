@@ -179,32 +179,6 @@ theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
   simpa only [LinearIsometryEquiv.apply_symm_apply, LinearIsometryEquiv.dist_map,
     dist_eq_norm] using hxy
 
-private theorem holderOnWith_iteratedFDeriv_zero_iff' {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {f : E → F} {s : Set E} {H α : ℝ≥0} :
-    HolderOnWith H α (iteratedFDeriv 𝕜 0 f) s ↔ HolderOnWith H α f s := by
-  simp only [holderOnWith_iff_dist_le, iteratedFDeriv_zero_eq_comp,
-    Function.comp_apply, LinearIsometryEquiv.dist_map]
-
-private theorem holderOnWith_iteratedFDeriv_succ_iff' {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
-    {f : E → F} {s : Set E} {j : ℕ} {H α : ℝ≥0} :
-    HolderOnWith H α (iteratedFDeriv 𝕜 (j + 1) f) s ↔
-      HolderOnWith H α (iteratedFDeriv 𝕜 j (fderiv 𝕜 f)) s := by
-  simp only [holderOnWith_iff_dist_le, iteratedFDeriv_succ_eq_comp_right,
-    Function.comp_apply, LinearIsometryEquiv.dist_map]
-
-private theorem holderOnWith_iteratedFDeriv_comp' {𝕜 E E' T Tu : Type*} [NontriviallyNormedField 𝕜]
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
-    [NormedAddCommGroup T] [NormedSpace 𝕜 T] [NormedAddCommGroup Tu] [NormedSpace 𝕜 Tu]
-    (e : E' ≃ₗᵢ[𝕜] E) (t : T ≃ₗᵢ[𝕜] Tu) (v : E → T)
-    {C α : ℝ≥0} (j : ℕ) {S : Set E} (hv : HolderOnWith C α (iteratedFDeriv 𝕜 j v) S) :
-    HolderOnWith C α (iteratedFDeriv 𝕜 j (t ∘ v ∘ e)) (e ⁻¹' S) := by
-  rw [holderOnWith_iff_dist_le] at hv ⊢
-  intro x hx y hy
-  rw [dist_eq_norm, e.norm_iteratedFDeriv_sub_comp t v j x y, ← dist_eq_norm, ← e.dist_map x y]
-  exact hv (e x) hx (e y) hy
-
 private theorem holderOnWith_iteratedFDeriv_bilinear_aux {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E A B G : Type u} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [NormedAddCommGroup A] [NormedSpace 𝕜 A] [NormedAddCommGroup B] [NormedSpace 𝕜 B]
@@ -220,9 +194,9 @@ private theorem holderOnWith_iteratedFDeriv_bilinear_aux {𝕜 : Type*} [Nontriv
       (iteratedFDeriv 𝕜 k (fun x => L (f x) (g x))) s := by
   induction k generalizing A B G with
   | zero =>
-    rw [pow_zero, one_mul, holderOnWith_iteratedFDeriv_zero_iff']
-    exact L.holderOnWith_comp₂ (holderOnWith_iteratedFDeriv_zero_iff'.mp (hfH 0 le_rfl))
-      (holderOnWith_iteratedFDeriv_zero_iff'.mp (hgH 0 le_rfl))
+    rw [pow_zero, one_mul, TauCeti.holderOnWith_iteratedFDeriv_zero_iff]
+    exact L.holderOnWith_comp₂ (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp (hfH 0 le_rfl))
+      (TauCeti.holderOnWith_iteratedFDeriv_zero_iff.mp (hgH 0 le_rfl))
       (by simpa only [norm_iteratedFDeriv_zero] using hfb 0 le_rfl)
       (by simpa only [norm_iteratedFDeriv_zero] using hgb 0 le_rfl)
   | succ k ih =>
@@ -231,11 +205,11 @@ private theorem holderOnWith_iteratedFDeriv_bilinear_aux {𝕜 : Type*} [Nontriv
     have hR := ih (L.precompR E) (hf.of_le (by simp)) hg' (fun j hj => hfb j (by omega))
       (fun j _ x hx => by rw [norm_iteratedFDeriv_fderiv]; exact hgb (j + 1) (by omega) x hx)
       (fun j hj => hfH j (by omega))
-      (fun j _ => holderOnWith_iteratedFDeriv_succ_iff'.mp (hgH (j + 1) (by omega)))
+      (fun j _ => TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mp (hgH (j + 1) (by omega)))
     have hL := ih (L.precompL E) hf' (hg.of_le (by simp))
       (fun j _ x hx => by rw [norm_iteratedFDeriv_fderiv]; exact hfb (j + 1) (by omega) x hx)
       (fun j hj => hgb j (by omega))
-      (fun j _ => holderOnWith_iteratedFDeriv_succ_iff'.mp (hfH (j + 1) (by omega)))
+      (fun j _ => TauCeti.holderOnWith_iteratedFDeriv_succ_iff.mp (hfH (j + 1) (by omega)))
       (fun j hj => hgH j (by omega))
     let uR : E → E →L[𝕜] G := fun x => L.precompR E (f x) (fderiv 𝕜 g x)
     let uL : E → E →L[𝕜] G := fun x => L.precompL E (fderiv 𝕜 f x) (g x)
@@ -262,7 +236,7 @@ private theorem holderOnWith_iteratedFDeriv_bilinear_aux {𝕜 : Type*} [Nontriv
       rw [(hd.iteratedFDeriv 𝕜 k).eq_of_nhds,
         iteratedFDeriv_add_apply (huR.contDiffAt (hs.mem_nhds hx))
           (huL.contDiffAt (hs.mem_nhds hx)), Pi.add_apply]
-    rw [holderOnWith_iteratedFDeriv_succ_iff']
+    rw [TauCeti.holderOnWith_iteratedFDeriv_succ_iff]
     exact fun x hx y hy => by rw [heq x hx, heq y hy]; exact hsum x hx y hy
 
 /-- A bilinear product on an open set `s` has a local Hölder bound for its order-`k` derivative
@@ -313,8 +287,8 @@ theorem holderOnWith_iteratedFDeriv
     (fun j hj x hx => by
       rw [b.symm.norm_iteratedFDeriv_comp_left, e.norm_iteratedFDeriv_comp_right]
       exact hgb j hj (e x) hx)
-    (fun j hj => holderOnWith_iteratedFDeriv_comp' e a.symm f j (hfH j hj))
-    (fun j hj => holderOnWith_iteratedFDeriv_comp' e b.symm g j (hgH j hj))).mono_const
+    (fun j hj => e.holderOnWith_iteratedFDeriv_comp a.symm f j (hfH j hj))
+    (fun j hj => e.holderOnWith_iteratedFDeriv_comp b.symm g j (hgH j hj))).mono_const
     (C₂ := (2 : ℝ≥0) ^ k * ‖L‖₊ * (M * K + N * H)) (by gcongr)
   rw [holderOnWith_iff_dist_le] at h ⊢
   intro x hx y hy

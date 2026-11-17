@@ -11,7 +11,9 @@ import Mathlib.Algebra.Group.Action.Pi
 import Mathlib.Algebra.Group.Pi.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import TauCeti.Analysis.Calculus.UniformLimitsDeriv
+import TauCeti.Analysis.Holder.JetBounds
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -694,24 +696,11 @@ theorem iteratedFDeriv_ofContDiffOn_apply (g : E → F) (hg : ContDiffOn ℝ k g
     (ofContDiffOn g hg hbdd hholder).iteratedFDeriv i x = _root_.iteratedFDeriv ℝ i g x :=
   (iteratedFDeriv_of_eq _ (fun y ↦ (ofContDiffOn_apply g hg hbdd hholder y).symm) i x).symm
 
-private theorem norm_iteratedFDeriv_const_le (y : F) (i : ℕ) (x : E) :
-    ‖_root_.iteratedFDeriv ℝ i (fun _ : E ↦ y) x‖ ≤ ‖y‖ := by
-  rcases eq_or_ne i 0 with rfl | hi
-  · simp
-  · simp [iteratedFDeriv_const_of_ne hi, norm_nonneg y]
-
-private theorem holderOnWith_iteratedFDeriv_const (y : F) :
-    HolderOnWith 0 α (_root_.iteratedFDeriv ℝ k (fun _ : E ↦ y)) (Ω : Set E) := by
-  rcases eq_or_ne k 0 with rfl | hk
-  · rw [iteratedFDeriv_zero_eq_comp, Function.comp_def]
-    exact (HolderWith.const (C := 0)).holderOnWith _
-  · rw [iteratedFDeriv_const_of_ne hk]; exact (HolderWith.const (C := 0)).holderOnWith _
-
 /-- Constant map on `Ω` as an element of `CkHolderOnSpace k α Ω F`. -/
 def const (y : F) : CkHolderOnSpace k α Ω F :=
   ofContDiffOn (fun _ : E ↦ y) contDiffOn_const
-    (fun i _ ↦ ⟨‖y‖, fun x _ ↦ norm_iteratedFDeriv_const_le y i x⟩)
-    ⟨0, holderOnWith_iteratedFDeriv_const y⟩
+    (fun i _ ↦ ⟨‖y‖, fun x _ ↦ norm_iteratedFDeriv_const_le i y x⟩)
+    ⟨0, holderOnWith_iteratedFDeriv_const k y⟩
 
 /-- Pointwise evaluation of `const y` on `Ω` returns `y`. -/
 @[simp] theorem const_apply (y : F) (x : Ω) : const (k := k) (α := α) (Ω := Ω) y x = y :=
@@ -763,7 +752,8 @@ theorem norm_const_le (y : F) : ‖const (k := k) (α := α) (Ω := Ω) y‖ ≤
       funext fun x ↦ hc (Fin.last k) x
     rw [hdom]
     exact le_antisymm
-      (holderOnWith_iteratedFDeriv_const (k := k) (α := α) (Ω := Ω) y).holderWith.nnholderNorm_le
+      (holderOnWith_iteratedFDeriv_const (C := 0) (α := α) (s := (Ω : Set E)) k
+        y).holderWith.nnholderNorm_le
       zero_le
   rw [Finset.sum_eq_single 0 (fun i _ hi ↦ hpos i hi) (by simp), hH, NNReal.coe_zero, add_zero]
   exact h0
