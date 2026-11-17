@@ -7,10 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Involutive
-import TauCeti.Analysis.Calculus.DifferentialForm.Basic
-import TauCeti.Geometry.Manifold.DifferentialForm.Naturality
-import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
-import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
+import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.PartialDiffeomorph
 import TauCeti.Geometry.Manifold.Flow.Straightening
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
@@ -92,55 +89,6 @@ private theorem mvfderiv_prodMk_apply {g : M → E} {T : E →L[ℝ] ι → ℝ}
     exact T.mvfderiv_comp_apply hg v
   · exact h2.symm
 
-section Pullback
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-omit [FiniteDimensional ℝ E] in
-/-- Read through a partial diffeomorphism `Φ` into a normed space, the pullback of `σ` along
-`Φ⁻¹` is `σ`: evaluated on the images under `dΦ` of two tangent vectors, it is `σ` on them. -/
-private theorem mpullbackWithin_symm_apply_mvfderiv (Φ : PartialDiffeomorph I 𝓘(ℝ, V) M V ∞)
-    {μ : V → V [⋀^Fin 2]→L[ℝ] ℝ} (hμ : μ = mpullbackWithin 𝓘(ℝ, V) I Φ.symm Φ.target σ.1)
-    {y : M} (hy : y ∈ Φ.source) (X Y : TangentSpace I y) :
-    μ (Φ y) ![mvfderiv I Φ y X, mvfderiv I Φ y Y] = SmoothBundleForm.eval₂ σ y X Y := by
-  have hX (Z : TangentSpace I y) : mfderiv 𝓘(ℝ, V) I Φ.symm (Φ y) (mvfderiv I Φ y Z) = Z :=
-    Φ.mfderiv_symm_apply_mfderiv_apply (by simp) hy Z
-  -- The base point `Φ⁻¹ (Φ y)` of the pulled back form is `y`.
-  have key : ∀ z, z = y → ∀ A B : E, σ.1 z ![A, B] = σ.1 y ![A, B] := by
-    rintro z rfl A B
-    rfl
-  rw [hμ, SmoothBundleForm.eval₂_apply]
-  refine (mpullbackWithin_apply (I := 𝓘(ℝ, V)) _ _ _ (Φ y) _).trans ?_
-  rw [mfderivWithin_of_isOpen Φ.open_target (Φ.map_source hy)]
-  refine Eq.trans ?_ (key _ (Φ.left_inv hy) X Y)
-  congr 1
-  funext k
-  fin_cases k
-  · exact hX X
-  · exact hX Y
-
-omit [FiniteDimensional ℝ E] in
-/-- The pullback of a smooth closed two-form along the inverse of a partial diffeomorphism into a
-normed space is a smooth closed form on its target. -/
-private theorem contDiffOn_and_extDeriv_eq_zero (hσ : σ.IsClosed)
-    (Φ : PartialDiffeomorph I 𝓘(ℝ, V) M V ∞) {μ : V → V [⋀^Fin 2]→L[ℝ] ℝ}
-    (hμ : μ = mpullbackWithin 𝓘(ℝ, V) I Φ.symm Φ.target σ.1) :
-    ContDiffOn ℝ ∞ μ Φ.target ∧ ∀ p ∈ Φ.target, extDeriv μ p = 0 := by
-  have : IsManifold I 1 M := .of_le (n := ∞) (by simp)
-  refine ⟨fun p hp ↦ hμ ▸ RoughForm.contDiffWithinAt_of_contMDiffWithinAt_modelSpace
-    (ContMDiffOn.mpullbackWithin_form (σ.contMDiff.contMDiffOn (s := univ))
-      Φ.contMDiffOn_invFun (by simp) (mapsTo_univ _ _) Φ.open_target.uniqueMDiffOn p hp),
-    fun p hp ↦ ?_⟩
-  rw [hμ]
-  refine (extDerivWithin_of_isOpen Φ.open_target hp).symm.trans
-    ((extDerivWithin_mpullbackWithin ((Φ.contMDiffOn_invFun p hp).of_le (by simp))
-      Φ.open_target.uniqueDiffOn (subset_closure (by rwa [Φ.open_target.interior_eq])) hp
-      ((σ.contMDiff _).mdifferentiableAt (by simp))).trans ?_)
-  rw [(SmoothForm.isClosed_def σ).1 hσ, mpullbackWithin_zero]
-  rfl
-
-end Pullback
-
 omit [Fintype ι] in
 /-- The derivative of the shear `(t, c) ↦ (t - t₀ + a(c), c)` of `(ι → ℝ) × (ι → ℝ)`. -/
 private theorem fderiv_shear_apply [Finite ι] {a : (ι → ℝ) → ι → ℝ} {t₀ : ι → ℝ}
@@ -192,25 +140,11 @@ private theorem injective_mvfderiv_prodMk [DecidableEq ι]
   simp [hc]
 
 include hσ hF hcomm in
-/-- Hamiltonian vector fields of functions which Poisson-commute near `x` commute near `x`, since
-`[X_f, X_g] = -X_{{f, g}}`. -/
-private theorem eventually_mlieBracket_hamiltonianVectorField_eq_zero (i j : ι) :
-    ∀ᶠ y in 𝓝 x, mlieBracket I (σ.hamiltonianVectorField (F · i))
-      (σ.hamiltonianVectorField (F · j)) y = 0 := by
-  filter_upwards [eventually_eventually_nhds.2 (hcomm i j)] with y hy
-  have h := congrFun (hσ.isNondegenerate.hamiltonianVectorField_poissonBracket hσ.isClosed
-    (by simpa using (contMDiff_pi_module_iff.1 hF i).of_le (by simp))
-    (by simpa using (contMDiff_pi_module_iff.1 hF j).of_le (by simp))) y
-  have hy' : σ.poissonBracket (F · i) (F · j) =ᶠ[𝓝 y] fun _ ↦ (0 : ℝ) := hy
-  rw [hy'.hamiltonianVectorField_eq, hamiltonianVectorField_const, Pi.neg_apply] at h
-  exact neg_eq_zero.1 h.symm
-
-include hσ hF hcomm in
 /-- **A flow box for commuting Hamiltonians.** Let `σ` be symplectic on a manifold of dimension
 `2n` and let `F : M → (ι → ℝ)`, with `n` components, be smooth, with components Poisson-commuting
-near an interior point `x` and with independent differentials at `x`. Then a smooth partial
-diffeomorphism `Φ` from `M` to `(ι → ℝ) × (ι → ℝ)` defined near `x` has second component `F` and
-sends each Hamiltonian vector field `X_{Fᵢ}` to the constant vector field `(eᵢ, 0)`. -/
+near an interior point `x` and with independent differentials at `x`. Then there is a smooth
+partial diffeomorphism `Φ` from `M` to `(ι → ℝ) × (ι → ℝ)` defined near `x`, with second component
+`F`, sending each Hamiltonian vector field `X_{Fᵢ}` to the constant vector field `(eᵢ, 0)`. -/
 theorem exists_partialDiffeomorph_mvfderiv_hamiltonianVectorField_eq_of_isInteriorPoint
     [DecidableEq ι] (hx : I.IsInteriorPoint x) (hreg : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x)
     (hdim : 2 * Fintype.card ι = finrank ℝ E) :
@@ -225,7 +159,10 @@ theorem exists_partialDiffeomorph_mvfderiv_hamiltonianVectorField_eq_of_isInteri
       (fun i ↦ (hσ.isNondegenerate.contMDiff_hamiltonianVectorField le_rfl
         (by simpa using contMDiff_pi_module_iff.1 hF i)).contMDiffOn) univ_mem
       (hσ.isNondegenerate.linearIndependent_hamiltonianVectorField hreg)
-      fun i j _ ↦ eventually_mlieBracket_hamiltonianVectorField_eq_zero hσ hF hcomm i j
+      fun i j _ ↦ (eventually_eventually_nhds.2 (hcomm i j)).mono fun _ ↦
+        hσ.isNondegenerate.mlieBracket_hamiltonianVectorField_eq_zero hσ.isClosed
+          (by simpa using (contMDiff_pi_module_iff.1 hF i).of_le (by simp))
+          (by simpa using (contMDiff_pi_module_iff.1 hF j).of_le (by simp))
   -- A linear form `T` with `T uᵢ = eᵢ`.
   obtain ⟨T, hT⟩ : ∃ T : E →L[ℝ] ι → ℝ, ∀ i, T (u i) = Pi.single i 1 := by
     obtain ⟨g, hg⟩ := LinearMap.exists_extend ((Finsupp.lcoeFun : (ι →₀ ℝ) →ₗ[ℝ] ι → ℝ) ∘ₗ hu.repr)
@@ -284,10 +221,8 @@ private theorem exists_darbouxChart_of_shear (hx : I.IsInteriorPoint x)
             (mvfderiv I chart y w).1 i * (mvfderiv I chart y v).2 i) := by
   set χ : (ι → ℝ) × (ι → ℝ) → (ι → ℝ) × (ι → ℝ) := fun q ↦ (q.1 - (Φ x).1 + a q.2, q.2) with hχ
   have hball {q : (ι → ℝ) × (ι → ℝ)} (hq : q ∈ Metric.ball (Φ x) r) :
-      q.2 ∈ Metric.ball (Φ x).2 r := by
-    have h := Metric.mem_ball.1 hq
-    rw [Prod.dist_eq, max_lt_iff] at h
-    exact Metric.mem_ball.2 h.2
+      q.2 ∈ Metric.ball (Φ x).2 r :=
+    (ball_prod_same (Φ x).1 (Φ x).2 r ▸ hq).2
   have hχs : ContDiffOn ℝ ∞ χ (Metric.ball (Φ x) r) :=
     ((contDiff_fst.contDiffOn.sub contDiffOn_const).add
       (ha.comp contDiff_snd.contDiffOn fun _ hq ↦ hball hq)).prodMk contDiff_snd.contDiffOn
@@ -357,12 +292,24 @@ theorem exists_darbouxChart_snd_eq_of_isInteriorPoint (hx : I.IsInteriorPoint x)
   -- In the flow box, `σ` is a closed two-form `μ` with `μ(∂_{tᵢ}, ·) = dcᵢ`.
   obtain ⟨μ, hμdef⟩ : ∃ μ : (ι → ℝ) × (ι → ℝ) → ((ι → ℝ) × (ι → ℝ)) [⋀^Fin 2]→L[ℝ] ℝ,
       μ = mpullbackWithin 𝓘(ℝ, (ι → ℝ) × (ι → ℝ)) I Φ.symm Φ.target σ.1 := ⟨_, rfl⟩
-  obtain ⟨hμs, hμc⟩ := contDiffOn_and_extDeriv_eq_zero hσ.isClosed Φ hμdef
+  have hμs : ContDiffOn ℝ ∞ μ Φ.target := by
+    subst hμdef
+    exact Φ.contDiffOn_mpullbackWithin_symm σ
+  have hμc : ∀ p ∈ Φ.target, extDeriv μ p = 0 := by
+    subst hμdef
+    exact fun p hp ↦ Φ.extDeriv_mpullbackWithin_symm_eq_zero hσ.isClosed hp
+  have hpull {y : M} (hy : y ∈ Φ.source) (v w : TangentSpace I y) :
+      μ (Φ y) ![mvfderiv I Φ y v, mvfderiv I Φ y w] = SmoothBundleForm.eval₂ σ y v w := by
+    rw [hμdef, SmoothBundleForm.eval₂_apply,
+      ← Φ.mpullbackWithin_symm_apply_mvfderiv (by simp) σ.1 hy ![v, w]]
+    congr 1
+    rw [funext_iff, Fin.forall_fin_two]
+    exact ⟨rfl, rfl⟩
   have hμh : ∀ p ∈ Φ.target, ∀ i v, μ p ![(Pi.single i 1, 0), v] = v.2 i := by
     intro p hp i v
     obtain ⟨y, hy, rfl⟩ : ∃ y ∈ Φ.source, Φ y = p := ⟨_, Φ.map_target hp, Φ.right_inv hp⟩
     obtain ⟨w, rfl⟩ := (Φ.bijective_mvfderiv (by simp) hy).2 v
-    rw [← (hΦ y hy).2 i, mpullbackWithin_symm_apply_mvfderiv Φ hμdef hy,
+    rw [← (hΦ y hy).2 i, hpull hy,
       hσ.isNondegenerate.eval₂_hamiltonianVectorField (F · i) y w, hsnd hy]
     have hk := congrArg (fun L ↦ L w) (mvfderiv_apply (hF.mdifferentiableAt (by simp) (x := y)) i)
     simpa only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply] using hk
@@ -370,7 +317,7 @@ theorem exists_darbouxChart_snd_eq_of_isInteriorPoint (hx : I.IsInteriorPoint x)
   obtain ⟨r, hr, -, a, ha0, ha, hμa⟩ :=
     exists_apply_eq_sum_of_apply_inl_single_eq_snd Φ.open_target (Φ.map_source hxΦ) hμs hμc hμh
   exact exists_darbouxChart_of_shear hσ hx hdim Φ hxΦ (fun y hy ↦ (hΦ y hy).1) hr ha0 ha
-    fun y hy hyr v w ↦ by rw [← mpullbackWithin_symm_apply_mvfderiv Φ hμdef hy, hμa _ hyr]
+    fun y hy hyr v w ↦ by rw [← hpull hy, hμa _ hyr]
 
 include hσ hF hcomm in
 /-- **The Carathéodory–Jacobi–Lie theorem for `n` functions.** On a boundaryless symplectic
