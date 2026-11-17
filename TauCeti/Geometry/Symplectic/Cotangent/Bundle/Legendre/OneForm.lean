@@ -237,16 +237,11 @@ theorem snd_eq_oneFormLagrangian_mextDerivₗ_id :
   rw [oneFormLagrangian_mextDerivₗ_apply, hid, mvfderiv_apply_eq_mfderiv_apply, mfderiv_id,
     ContinuousLinearMap.id_apply]
 
-/-- The Lagrangian `L(q, v) = v` on the real line is smooth. -/
-theorem contMDiff_snd_tangentBundle_real :
-    ContMDiff 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ) ∞ (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2) := by
-  rw [snd_eq_oneFormLagrangian_mextDerivₗ_id]
-  exact contMDiff_oneFormLagrangian _
-
 /-- **The Cartan two-form of `L(q, v) = v` vanishes.** Its Cartan one-form is `dq`, which is
 closed. -/
 theorem cartanTwoForm_snd_eq_zero :
-    cartanTwoForm (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2) contMDiff_snd_tangentBundle_real = 0 := by
+    cartanTwoForm (fun v : TangentBundle 𝓘(ℝ, ℝ) ℝ ↦ v.2)
+      (contMDiff_snd_tangentBundle_modelSpace ℝ 𝓘(ℝ, ℝ)) = 0 := by
   -- The Cartan two-form of the Lagrangian of an exact form vanishes; transport along the equality
   -- of Lagrangians, which also moves the smoothness proof.
   have key : ∀ (f : SmoothForm 𝓘(ℝ, ℝ) ℝ ℝ 0) (L : TangentBundle 𝓘(ℝ, ℝ) ℝ → ℝ)
@@ -256,9 +251,10 @@ theorem cartanTwoForm_snd_eq_zero :
     exact (cartanTwoForm_oneFormLagrangian_eq_zero_iff _ hL).2 (SmoothForm.isClosed_mextDerivₗ f)
   exact key _ _ _ snd_eq_oneFormLagrangian_mextDerivₗ_id
 
-/-- **`L(q, v) = v` has no second-order Lagrangian vector field.** Its energy is zero, so for every
-two-form on the tangent bundle the Hamiltonian vector field of the energy vanishes and its base
-component is `0`, not `v`. -/
+/-- **The Hamiltonian vector field of the energy of `L(q, v) = v` is not second order.** Its energy
+is zero, so for every two-form on the tangent bundle the Hamiltonian vector field of the energy
+vanishes and its base component is `0`, not `v`. Since the Cartan two-form also vanishes, the
+equation `ι_X ω_L = dE_L` does not force a second-order field: every vector field solves it. -/
 theorem mfderiv_proj_hamiltonianVectorField_lagrangianEnergy_snd
     (σ : SmoothTwoForm 𝓘(ℝ, ℝ).tangent (TangentBundle 𝓘(ℝ, ℝ) ℝ)) (v : TangentBundle 𝓘(ℝ, ℝ) ℝ) :
     mfderiv 𝓘(ℝ, ℝ).tangent 𝓘(ℝ, ℝ) (π ℝ (TangentSpace 𝓘(ℝ, ℝ))) v

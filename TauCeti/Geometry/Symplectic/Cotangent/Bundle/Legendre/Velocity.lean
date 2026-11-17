@@ -32,6 +32,7 @@ is not hyperregular (`TauCeti.not_isHyperregularLagrangian_exp_snd`), and the Ha
 
 ## Main declarations
 
+* `TauCeti.contMDiff_comp_snd`: `f(v)` is as smooth as `f`.
 * `TauCeti.legendreMap_comp_snd`, `TauCeti.fiberHessian_comp_snd`,
   `TauCeti.lagrangianEnergy_comp_snd`: the Legendre map, fibre Hessian and energy of `f(v)`.
 * `TauCeti.isRegularLagrangian_comp_snd_iff`, `TauCeti.isHyperregularLagrangian_comp_snd_iff`:
@@ -59,6 +60,11 @@ section VectorSpace
 variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   (f : E → 𝕜)
 
+/-- A Lagrangian `f(v)` depending only on the velocity is as smooth as `f`. -/
+theorem contMDiff_comp_snd {n : WithTop ℕ∞} {f : E → 𝕜} (hf : ContDiff 𝕜 n f) :
+    ContMDiff 𝓘(𝕜, E).tangent 𝓘(𝕜, 𝕜) n (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) :=
+  hf.contMDiff.comp (contMDiff_snd_tangentBundle_modelSpace E 𝓘(𝕜, E))
+
 /-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity is
 `(q, v) ↦ (q, Df(v))`. -/
 @[simp]
@@ -80,6 +86,8 @@ theorem fiberHessian_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
 theorem lagrangianEnergy_comp_snd (v : TangentBundle 𝓘(𝕜, E) E) :
     lagrangianEnergy (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) v = fderiv 𝕜 f v.2 v.2 - f v.2 := by
   rw [lagrangianEnergy_apply, legendreMap_comp_snd]
+  -- The sides differ only in the fibre types `TangentSpace 𝓘(𝕜, E) v.proj` and
+  -- `TangentSpace 𝓘(𝕜, E) v.proj →L[𝕜] 𝕜`, which are `E` and `E →L[𝕜] 𝕜` by definition.
   rfl
 
 /-- A Lagrangian `f(v)` depending only on the velocity is regular exactly when every second
@@ -115,24 +123,28 @@ theorem injective_legendreMap_comp_snd_iff :
     obtain ⟨x, w⟩ := v
     obtain ⟨x', w'⟩ := v'
     obtain rfl : x = x' := congrArg TotalSpace.proj hvv'
-    obtain rfl : w = w' := h (eq_of_heq (TotalSpace.mk.inj hvv').2)
+    obtain rfl : w = w' := h (TotalSpace.mk_inj.1 hvv' :)
     rfl
+
+/-- The Legendre map of a Lagrangian `f(v)` depending only on the velocity is surjective exactly
+when the derivative `Df : E → E'` is. -/
+theorem surjective_legendreMap_comp_snd_iff :
+    Surjective (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
+      Surjective (fderiv 𝕜 f) := by
+  -- Every covector at every base point is a value of `Df`.
+  simp only [← range_eq_univ, range_legendreMap_comp_snd, eq_univ_iff_forall]
+  exact ⟨fun h p ↦ h (TotalSpace.mk' (E →L[𝕜] 𝕜) (0 : E) p), fun h z ↦ h z.2⟩
 
 /-- A Lagrangian `f(v)` depending only on the velocity is hyperregular exactly when every second
 derivative of `f` is invertible and the derivative `Df : E → E'` is a bijection. -/
 theorem isHyperregularLagrangian_comp_snd_iff :
     IsHyperregularLagrangian (fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
       (∀ w : E, (fderiv 𝕜 (fderiv 𝕜 f) w).IsInvertible) ∧ Bijective (fderiv 𝕜 f) := by
-  -- Surjectivity: every covector at every base point is a value of `Df`.
-  have hsurj : Surjective (legendreMap fun v : TangentBundle 𝓘(𝕜, E) E ↦ f v.2) ↔
-      Surjective (fderiv 𝕜 f) := by
-    simp only [← range_eq_univ, range_legendreMap_comp_snd, eq_univ_iff_forall]
-    exact ⟨fun h p ↦ h (TotalSpace.mk' (E →L[𝕜] 𝕜) (0 : E) p), fun h z ↦ h z.2⟩
   refine ⟨fun h ↦ ⟨(isRegularLagrangian_comp_snd_iff f).1 h.isRegularLagrangian,
     (injective_legendreMap_comp_snd_iff f).1 h.bijective_legendreMap.1,
-    hsurj.1 h.bijective_legendreMap.2⟩, fun ⟨h₁, h₂, h₃⟩ ↦
+    (surjective_legendreMap_comp_snd_iff f).1 h.bijective_legendreMap.2⟩, fun ⟨h₁, h₂, h₃⟩ ↦
     ⟨(isRegularLagrangian_comp_snd_iff f).2 h₁,
-      (injective_legendreMap_comp_snd_iff f).2 h₂, hsurj.2 h₃⟩⟩
+      (injective_legendreMap_comp_snd_iff f).2 h₂, (surjective_legendreMap_comp_snd_iff f).2 h₃⟩⟩
 
 end VectorSpace
 
@@ -161,8 +173,9 @@ theorem range_legendreMap_exp_snd :
     simp only [Set.mem_ofPred_eq]
     exact hw ▸ hpos
   · refine ContinuousLinearMap.ext_ring ?_
-    rw [fderiv_eq_smul_deriv, Real.deriv_exp, Real.exp_log hz, one_smul]
-    rfl
+    rw [fderiv_eq_smul_deriv, Real.deriv_exp, one_smul]
+    -- The sides differ only in the fibre type `TangentSpace 𝓘(ℝ, ℝ) z.proj`, which is `ℝ`.
+    exact Real.exp_log hz
 
 /-- **`L(q, v) = e^v` is not hyperregular**: its Legendre map `(q, v) ↦ (q, e^v)` misses the
 covectors `p ≤ 0`, so it is not onto `T*ℝ`, and `H = E_L ∘ FL⁻¹` is not defined on `T*ℝ`. -/
