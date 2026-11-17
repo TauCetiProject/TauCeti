@@ -252,8 +252,9 @@ theorem posPow_zero (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫
   -- `A^0 x = A^{-0} (A^0 x) = x`, as `A^{-0} = 1`.
   calc A.posPow hA h 0 ⟨x, hx₁⟩ = A.negPow hA h 0 (A.posPow hA h 0 ⟨x, hx₁⟩) := by
         rw [negPow_zero hpos, one_apply_eq_self]
+    _ = x := ContinuousLinearMap.apply_inverse_toPMap_top _ hinj _
     _ = (LinearMap.id : H →ₗ[ℂ] H).toPMap ⊤ ⟨x, hx₂⟩ :=
-        ContinuousLinearMap.apply_inverse_toPMap_top _ hinj _
+        (LinearMap.id_apply x).symm.trans (LinearMap.toPMap_apply _ ⊤ ⟨x, hx₂⟩).symm
 
 variable (hpos : ∀ u : A.domain, 0 ≤ RCLike.re ⟪A u, (u : H)⟫_ℂ) (hker : A.ker = ⊥)
 include hpos hker
