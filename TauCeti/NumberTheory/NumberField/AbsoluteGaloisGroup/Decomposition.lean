@@ -14,10 +14,10 @@ import Mathlib.GroupTheory.GroupAction.Basic
 /-!
 # Decomposition and inertia groups in the absolute Galois group of a field
 
-Let `F` be a field, `F̄ = AlgebraicClosure F`, `G_F = Field.absoluteGaloisGroup F`, and let
-`O = integralClosure (𝓞 F) F̄` be the integral closure of the ring of integers of `F` in `F̄`. For a
-number field `F` this is the ring of all algebraic integers in `F̄`, and its maximal ideals are the
-primes of `F̄` above the finite places of `F`. Each `σ ∈ G_F` restricts to an `𝓞 F`-algebra
+Let `F` be a field, `F^alg = AlgebraicClosure F`, `G_F = Field.absoluteGaloisGroup F`, and let
+`O = integralClosure (𝓞 F) F^alg` be the integral closure of the ring of integers of `F` in `F^alg`.
+For a number field `F` this is the ring of all algebraic integers in `F^alg`, and its maximal ideals
+are the primes of `F^alg` above the finite places of `F`. Each `σ ∈ G_F` restricts to an `𝓞 F`-algebra
 automorphism `toIntegralClosure F σ` of `O`, which makes `O` a `G_F`-ring. For an ideal `Q` of `O`
 this file defines
 
@@ -77,8 +77,8 @@ namespace TauCeti.GaloisRep
 
 variable (F : Type*) [Field F]
 
-/-- The automorphism of the integral closure `O` of `𝓞 F` in `F̄` induced by `σ ∈ G_F`: Mathlib's
-`AlgEquiv.mapIntegralClosure` of `σ`, viewed as an `𝓞 F`-algebra automorphism of `F̄`. -/
+/-- The automorphism of the integral closure `O` of `𝓞 F` in `F^alg` induced by `σ ∈ G_F`: Mathlib's
+`AlgEquiv.mapIntegralClosure` of `σ`, viewed as an `𝓞 F`-algebra automorphism of `F^alg`. -/
 @[expose] def toIntegralClosure (σ : Field.absoluteGaloisGroup F) :
     integralClosure (𝓞 F) (AlgebraicClosure F) ≃ₐ[𝓞 F]
       integralClosure (𝓞 F) (AlgebraicClosure F) :=
@@ -86,7 +86,7 @@ variable (F : Type*) [Field F]
 
 variable {F}
 
-/-- `toIntegralClosure F σ` acts on `O` as `σ` acts on `F̄`. -/
+/-- `toIntegralClosure F σ` acts on `O` as `σ` acts on `F^alg`. -/
 @[simp]
 theorem coe_toIntegralClosure_apply (σ : Field.absoluteGaloisGroup F)
     (x : integralClosure (𝓞 F) (AlgebraicClosure F)) :
@@ -94,7 +94,7 @@ theorem coe_toIntegralClosure_apply (σ : Field.absoluteGaloisGroup F)
       DFunLike.coe (F := AlgebraicClosure F ≃ₐ[F] AlgebraicClosure F) σ (x : AlgebraicClosure F) :=
   rfl
 
-/-- The action of `G_F` on the integral closure `O` of `𝓞 F` in `F̄`, by
+/-- The action of `G_F` on the integral closure `O` of `𝓞 F` in `F^alg`, by
 `σ • x = toIntegralClosure F σ x`. -/
 instance instMulSemiringActionIntegralClosure :
     MulSemiringAction (Field.absoluteGaloisGroup F)
@@ -113,7 +113,7 @@ theorem smul_def (σ : Field.absoluteGaloisGroup F)
     σ • x = toIntegralClosure F σ x :=
   rfl
 
-/-- The action of `G_F` on `O` is the restriction of its action on `F̄`. -/
+/-- The action of `G_F` on `O` is the restriction of its action on `F^alg`. -/
 @[simp]
 theorem coe_smul (σ : Field.absoluteGaloisGroup F)
     (x : integralClosure (𝓞 F) (AlgebraicClosure F)) :
@@ -137,7 +137,7 @@ theorem toIntegralClosure_eq_toAlgEquiv (σ : Field.absoluteGaloisGroup F) :
 variable (F) (Q : Ideal (integralClosure (𝓞 F) (AlgebraicClosure F)))
 
 /-- The **decomposition group** `D_Q` of an ideal `Q` of the integral closure `O` of `𝓞 F` in
-`F̄`: the `σ ∈ G_F` with `σ • Q = Q`. -/
+`F^alg`: the `σ ∈ G_F` with `σ • Q = Q`. -/
 def decompositionGroup : Subgroup (Field.absoluteGaloisGroup F) :=
   MulAction.stabilizer (Field.absoluteGaloisGroup F) Q
 
