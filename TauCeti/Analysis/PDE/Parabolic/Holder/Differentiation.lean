@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated
 import Mathlib.Analysis.Calculus.Deriv.Comp
-import TauCeti.Analysis.Normed.Module.Multilinear.Basic
+import TauCeti.Analysis.Normed.Module.Multilinear.Curry
 
 /-!
 # Spatial and time derivatives on parabolic Hölder spaces of every order

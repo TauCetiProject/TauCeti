@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Multilinear.Curry
+public import Mathlib.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
 # Operator-norm bounds for continuous multilinear maps
@@ -15,9 +15,6 @@ A continuous multilinear map `D` on `E × F` in `j + l` variables, evaluated on 
 `‖D‖ * ((∏ i, ‖u i‖) * ∏ i, ‖w i‖)`. This is the form in which mixed derivatives in two groups
 of variables are estimated by a full Fréchet derivative.
 
-Separating the last variable of a continuous multilinear map with
-`ContinuousMultilinearMap.curryRight` preserves distances, so it is `1`-Lipschitz.
-
 Postcomposition with a continuous linear map `g` is Lipschitz on continuous multilinear maps,
 with constant `‖g‖`.
 
@@ -25,9 +22,6 @@ with constant `‖g‖`.
 
 * `ContinuousMultilinearMap.norm_apply_append_prod_le`: the operator-norm bound on
   `Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))`.
-* `ContinuousMultilinearMap.edist_curryRight` and
-  `ContinuousMultilinearMap.lipschitzWith_curryRight`: separating the last variable preserves
-  distances.
 * `ContinuousLinearMap.norm_compContinuousMultilinearMap_sub_le`: the Lipschitz bound for
   postcomposition with a continuous linear map.
 -/
@@ -49,23 +43,6 @@ theorem norm_apply_append_prod_le {j l : ℕ} (D : (E × F) [×(j + l)]→L[𝕜
   refine (D.le_opNorm _).trans_eq ?_
   simp only [Fin.prod_univ_add, Fin.append_left, Fin.append_right, Prod.norm_mk, norm_zero,
     norm_nonneg, max_eq_left, max_eq_right]
-
-section curryRight
-
-variable {n : ℕ} {Ei : Fin (n + 1) → Type*} [∀ i, NormedAddCommGroup (Ei i)]
-  [∀ i, NormedSpace 𝕜 (Ei i)]
-
-/-- Separating the last variable of a continuous multilinear map preserves distances. -/
-theorem edist_curryRight (f g : ContinuousMultilinearMap 𝕜 Ei G) :
-    edist f.curryRight g.curryRight = edist f g :=
-  (continuousMultilinearCurryRightEquiv 𝕜 Ei G).edist_map f g
-
-/-- Separating the last variable of a continuous multilinear map is `1`-Lipschitz. -/
-theorem lipschitzWith_curryRight :
-    LipschitzWith 1 fun f : ContinuousMultilinearMap 𝕜 Ei G ↦ f.curryRight :=
-  LipschitzWith.of_edist_le fun f g ↦ (edist_curryRight f g).le
-
-end curryRight
 
 end ContinuousMultilinearMap
 
