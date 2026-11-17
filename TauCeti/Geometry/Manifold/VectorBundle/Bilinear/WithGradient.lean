@@ -55,14 +55,9 @@ theorem ContMDiffAt.clm_bundle_withGradient
   have hgv : ContMDiffAt IB (IB.prod 𝓘(ℝ, F →L[ℝ] ℝ)) n
       (fun y ↦ TotalSpace.mk' (F →L[ℝ] ℝ) (E := fun z ↦ V z →L[ℝ] ℝ) y (g y (v y))) x :=
     hg.clm_bundle_apply hv
-  have hαv : ContMDiffAt IB 𝓘(ℝ) n (fun y ↦ α y (v y)) x := by
-    have h := hα.clm_bundle_apply (F₂ := ℝ) (E₂ := Bundle.Trivial B ℝ) hv
-    simp only [contMDiffAt_totalSpace_iff] at h
-    exact h.2
-  have hgvv : ContMDiffAt IB 𝓘(ℝ) n (fun y ↦ g y (v y) (v y)) x := by
-    have h := hgv.clm_bundle_apply (F₂ := ℝ) (E₂ := Bundle.Trivial B ℝ) hv
-    simp only [contMDiffAt_totalSpace_iff] at h
-    exact h.2
+  have hαv : ContMDiffAt IB 𝓘(ℝ) n (fun y ↦ α y (v y)) x := hα.clm_bundle_apply_scalar hv
+  have hgvv : ContMDiffAt IB 𝓘(ℝ) n (fun y ↦ g y (v y) (v y)) x :=
+    hgv.clm_bundle_apply_scalar hv
   -- `withGradient` is a combination of these with coefficients `C^n` where `α v ≠ 0`.
   have h := (hg.sub_section ((hαv.inv₀ hx).smul_section
     ((hα.clm_bundle_smulRight hgv).add_section (hgv.clm_bundle_smulRight hα)))).add_section
