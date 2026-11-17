@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Reduction
 public import TauCeti.Topology.Algebra.Valued.Integer
-public import TauCeti.RingTheory.Huber.Normed
+public import TauCeti.RingTheory.Huber.Reduction
 public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import Mathlib.Algebra.MvPolynomial.Nilpotent
 public import Mathlib.Topology.Algebra.Valued.LocallyCompact
@@ -46,6 +46,8 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
 * `TauCeti.MvPowerSeries.restrictedReduction`: coefficientwise reduction `T° →+* 𝓀[K][X]`.
 * `TauCeti.MvPowerSeries.restrictedReductionQuotientEquiv`: `T° ⧸ T°° ≃+* 𝓀[K][X]`, where the
   kernel `T°°` is described by `TauCeti.MvPowerSeries.restrictedReduction_eq_zero_iff`.
+* `TauCeti.MvPowerSeries.canonicalReductionAlgEquiv`: the `𝓀[K]`-algebra isomorphism
+  `Huber.CanonicalReduction T ≃ₐ[𝓀[K]] 𝓀[K][X]`.
 
 ## Main results
 
@@ -74,6 +76,10 @@ many variables and for complete `L`, evaluation at a point `x` with coordinates 
   `T` form its Gauss unit ball.
 * `TauCeti.MvPowerSeries.isTopologicallyNilpotent_iff_norm_lt_one`: the topologically nilpotent
   elements of `T` are the series of Gauss norm less than one.
+* `TauCeti.MvPowerSeries.isDomain_canonicalReduction`: the canonical reduction of `T` is a domain.
+* `TauCeti.MvPowerSeries.finiteType_canonicalReduction` and
+  `TauCeti.MvPowerSeries.isNoetherianRing_canonicalReduction`: in finitely many variables, the
+  canonical reduction of `T` is of finite type over `𝓀[K]` and Noetherian.
 
 ## References
 
@@ -476,6 +482,56 @@ one, since the Gauss norm is multiplicative. Within the unit ball `T°` they for
 of reduction (`mem_ker_restrictedReduction`). -/
 theorem isTopologicallyNilpotent_iff_norm_lt_one {f : T} : IsTopologicallyNilpotent f ↔ ‖f‖ < 1 :=
   isTopologicallyNilpotent_iff_norm_lt_one_of_isPowMul fun f n _ ↦ norm_pow f n
+
+/-- **The canonical reduction of `K⟨X⟩` is the polynomial algebra `𝓀[K][X]`.** -/
+noncomputable def canonicalReductionAlgEquiv :
+    Huber.CanonicalReduction T ≃ₐ[𝓀[K]] MvPolynomial σ 𝓀[K] :=
+  let e₀ : Huber.powerBoundedSubring T ≃+* T° :=
+    RingEquiv.subringCongr (powerBoundedSubring_eq_unitClosedBall (σ := σ) (K := K))
+  have hmap : Ideal.map (e₀ : _ →+* _) (Huber.topologicallyNilpotentIdeal T) =
+      RingHom.ker (restrictedReduction (σ := σ) (K := K)) := by
+    rw [Ideal.map_comap_of_equiv e₀]
+    ext g
+    rw [Ideal.mem_comap, Huber.mem_topologicallyNilpotentIdeal,
+      isTopologicallyNilpotent_iff_norm_lt_one, mem_ker_restrictedReduction]
+    exact Iff.of_eq (by rw [RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply])
+  AlgEquiv.ofRingEquiv
+    (f := (Ideal.quotientEquiv _ _ e₀ hmap.symm).trans restrictedReductionQuotientEquiv)
+    fun x ↦ by
+      obtain ⟨c, rfl⟩ := residue_surjective (R := 𝒪[K]) x
+      have hc : algebraMap K T c ∈ T° := Subring.mem_unitClosedBall.mpr
+        ((norm_algebraMap_isRestrictedSubring (c : K)).trans_le (Valued.integer.norm_le_one c))
+      rw [Huber.algebraMap_canonicalReduction_residue, RingEquiv.trans_apply,
+        Ideal.quotientEquiv_mk, restrictedReductionQuotientEquiv_mk]
+      have he₀ : e₀ (Huber.integerToPowerBounded K T c) = ⟨algebraMap K T c, hc⟩ :=
+        Subtype.ext ((RingEquiv.coe_subringCongr_apply _ _).trans
+          (Huber.coe_integerToPowerBounded c))
+      rw [he₀, restrictedReduction_algebraMap c hc, MvPolynomial.algebraMap_eq]
+
+@[simp]
+theorem canonicalReductionAlgEquiv_mk (f : Huber.powerBoundedSubring T) :
+    canonicalReductionAlgEquiv (Ideal.Quotient.mk (Huber.topologicallyNilpotentIdeal T) f) =
+      restrictedReduction
+        ⟨f.1, (powerBoundedSubring_eq_unitClosedBall (σ := σ) (K := K)).le f.2⟩ := by
+  rw [canonicalReductionAlgEquiv, AlgEquiv.ofRingEquiv_apply, RingEquiv.trans_apply,
+    Ideal.quotientEquiv_mk, restrictedReductionQuotientEquiv_mk]
+  exact congrArg restrictedReduction (Subtype.ext (RingEquiv.coe_subringCongr_apply _ f))
+
+/-- The canonical reduction of a Tate algebra `K⟨X⟩` is a domain. -/
+instance isDomain_canonicalReduction : IsDomain (Huber.CanonicalReduction T) :=
+  (canonicalReductionAlgEquiv (σ := σ) (K := K)).toMulEquiv.isDomain _
+
+/-- For finitely many variables, the canonical reduction of a Tate algebra `K⟨X⟩` is a
+finite-type `𝓀[K]`-algebra. -/
+instance finiteType_canonicalReduction [Finite σ] :
+    Algebra.FiniteType 𝓀[K] (Huber.CanonicalReduction T) :=
+  .of_surjective (canonicalReductionAlgEquiv (σ := σ) (K := K)).symm.toAlgHom
+    (canonicalReductionAlgEquiv (σ := σ) (K := K)).symm.surjective
+
+/-- For finitely many variables, the canonical reduction of a Tate algebra `K⟨X⟩` is Noetherian. -/
+instance isNoetherianRing_canonicalReduction [Finite σ] :
+    IsNoetherianRing (Huber.CanonicalReduction T) :=
+  Algebra.FiniteType.isNoetherianRing 𝓀[K] (Huber.CanonicalReduction T)
 
 end PowerBounded
 
