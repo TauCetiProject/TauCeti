@@ -33,6 +33,9 @@ consists of pure tensors.
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
 * `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
+* `Module.Basis.baseChange_repr_tmul_basis`, `Module.Basis.baseChange_repr_tmul_eq_smul_mapRange`,
+  `Module.Basis.baseChange_repr_one_tmul`, and `Module.Basis.baseChange_repr_symm_single`:
+  coordinates of pure tensors and single-coordinate inverses in a base-changed basis.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
@@ -168,6 +171,34 @@ variable {T : Type w} [Semiring T] [Algebra R T]
 theorem baseChange_reindex {ι' : Type*} (b : Basis ι R M) (e : ι ≃ ι') :
     (b.reindex e).baseChange S = (b.baseChange S).reindex e :=
   eq_of_apply_eq fun i => by simp
+
+/-- In a base-changed basis, the coordinate vector of `s ⊗ₜ b i` is `Finsupp.single i s`. -/
+theorem baseChange_repr_tmul_basis (b : Basis ι R M) (s : S) (i : ι) :
+    (b.baseChange S).repr (s ⊗ₜ[R] b i) = Finsupp.single i s := by
+  have h : s ⊗ₜ[R] b i = s • b.baseChange S i := by
+    rw [baseChange_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
+  rw [h, map_smul, repr_self, Finsupp.smul_single_one]
+
+/-- In a base-changed basis, the coordinate vector of a pure tensor `s ⊗ₜ m` is `s` times the
+scalar extension of `b.repr m` along `algebraMap R S`. -/
+theorem baseChange_repr_tmul_eq_smul_mapRange (b : Basis ι R M) (s : S) (m : M) :
+    (b.baseChange S).repr (s ⊗ₜ[R] m) =
+      s • (b.repr m).mapRange (algebraMap R S) (map_zero _) := by
+  ext i
+  simp [Algebra.smul_def, Algebra.commutes]
+
+/-- In a base-changed basis, the coordinate vector of `1 ⊗ₜ m` is the scalar extension of
+`b.repr m` along `algebraMap R S`. -/
+theorem baseChange_repr_one_tmul (b : Basis ι R M) (m : M) :
+    (b.baseChange S).repr ((1 : S) ⊗ₜ[R] m) =
+      (b.repr m).mapRange (algebraMap R S) (map_zero _) := by
+  rw [b.baseChange_repr_tmul_eq_smul_mapRange, one_smul]
+
+/-- The inverse coordinate equivalence of a base-changed basis sends `Finsupp.single i s` to
+`s ⊗ₜ b i`. -/
+theorem baseChange_repr_symm_single (b : Basis ι R M) (i : ι) (s : S) :
+    (b.baseChange S).repr.symm (Finsupp.single i s) = s ⊗ₜ[R] b i := by
+  rw [repr_symm_single, baseChange_apply, TensorProduct.smul_tmul', smul_eq_mul, mul_one]
 
 /-- Coordinates in a base-changed basis are natural in the scalar-extension algebra. -/
 @[simp] theorem map_baseChange_repr (b : Basis ι R M) (φ : S →ₗ[R] T)
