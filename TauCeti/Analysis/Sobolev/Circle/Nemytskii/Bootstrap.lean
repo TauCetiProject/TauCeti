@@ -9,9 +9,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Nemytskii.Basic
 public import TauCeti.Analysis.Sobolev.Circle.RealBilinear
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
-import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
-import TauCeti.Analysis.Fourier.Monomial
 import TauCeti.Analysis.Normed.Operator.FiniteDimensional
 import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 import TauCeti.Analysis.Sobolev.Circle.Slobodeckij
@@ -95,19 +93,6 @@ variable (T : ℝ) [hT : Fact (0 < T)]
   {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
 
-private theorem norm_ofContinuousMap_sq {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    [FiniteDimensional ℂ H] (g : C(AddCircle T, H)) :
-    ‖ofContinuousMap T g‖ ^ 2 = ∫ x, ‖g x‖ ^ 2 ∂AddCircle.haarAddCircle := by
-  have h := real_inner_ofContinuousMap T g g; rw [real_inner_self_eq_norm_sq] at h
-  refine h.trans (integral_congr_ae (ae_of_all _ fun x ↦ ?_))
-  dsimp only; rw [← RCLike.re_eq_complex_re, inner_self_eq_norm_sq]
-
-private theorem mapCLM_ofContinuousMap (L : E →L[ℂ] F) (g : C(AddCircle T, E)) :
-    mapCLM L (ofContinuousMap T g) = ofContinuousMap T ((ContinuousMap.mk L L.continuous).comp g) :=
-  CircleSobolev.ext <| funext fun n ↦ by
-    rw [coeff_mapCLM, coeff_ofContinuousMap, coeff_ofContinuousMap]
-    exact (L.fourierCoeff_comp (g.integrable AddCircle.haarAddCircle) n).symm
-
 private def euclEquiv (G : Type*) [NormedAddCommGroup G] [NormedSpace ℂ G]
     [FiniteDimensional ℂ G] : G ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ G)) :=
   ((Module.finBasis ℂ G).equiv (EuclideanSpace.basisFun _ ℂ).toBasis (.refl _))
@@ -144,18 +129,6 @@ private theorem exists_norm_ofContinuousMap_le_pointwise :
           (hL2.trans (mul_le_mul_of_nonneg_left (norm_mapCLM_le _ _) (by positivity)))
           (norm_nonneg _)
     _ = ‖LFi‖ * ‖LF‖ * ‖LEi‖ * ‖LE‖ * M * ‖ofContinuousMap T υ‖ := by ring
-
-private theorem rotate_ofContinuousMap (h : AddCircle T) (g : C(AddCircle T, F)) :
-    rotate h (ofContinuousMap T g) = ofContinuousMap T (g.comp ⟨(· + h), continuous_add_const h⟩) :=
-  CircleSobolev.ext <| funext fun n ↦ by
-    rw [coeff_rotate, coeff_ofContinuousMap, coeff_ofContinuousMap, fourierCoeff, fourierCoeff,
-      ← integral_smul, ← integral_add_right_eq_self (μ := AddCircle.haarAddCircle)
-        (fun y ↦ fourier n h • fourier (-n) y • g y) h]
-    refine integral_congr_ae (ae_of_all _ fun x ↦ ?_)
-    have hh : fourier n h * fourier (-n) h = 1 := by
-      rw [← fourier_add, add_neg_cancel, fourier_zero]
-    simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk, smul_smul, fourier_apply_add]
-    exact congrArg (· • g (x + h)) (by linear_combination fourier (-n) x * hh)
 
 private theorem slobodeckijEnergy_ofContinuousMap_comp_le {s : ℝ} (hs : 1 / 2 < s)
     {K : Set E} {L : ℝ≥0} {f : E → F} (hLip : LipschitzOnWith L f K) {C₀ : ℝ}

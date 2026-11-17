@@ -34,6 +34,10 @@ groupings agree.
 * `DiscreteConvolution.single_ringConvolution_single` and its additive version
   `DiscreteConvolution.single_addRingConvolution_single`:
   `Pi.single m a ⋆ᵣ Pi.single n b = Pi.single (m * n) (a * b)`.
+* `DiscreteConvolution.convolution_single_apply`, `DiscreteConvolution.single_convolution_apply`,
+  and their additive versions `addConvolution_single_apply`, `single_addConvolution_apply`: on a
+  group, convolution on either side with a single-point family evaluates the other factor at a
+  shifted index.
 * `DiscreteConvolution.ringConvolution_assoc` and its additive version
   `DiscreteConvolution.addRingConvolution_assoc`: ring convolution is associative when the triple
   family and the inner convolutions are summable.
@@ -141,6 +145,42 @@ theorem ringConvolution_assoc {f g h : M → R} (hfg : ConvolutionExists (.mul �
   exacts [(hfg p.1.1).hasSum.mul_right (h p.1.2), (hgh p.1.2).hasSum.mul_left (f p.1.1)]
 
 end Assoc
+
+section Group
+
+variable {M S E E' F : Type*} [Group M] [DecidableEq M]
+  [CommSemiring S] [AddCommMonoid E] [AddCommMonoid E'] [AddCommMonoid F]
+  [Module S E] [Module S E'] [Module S F] [TopologicalSpace F]
+
+/-- On a group, convolution on the right with a single-point family `Pi.single k b` evaluates at
+`x` to `L (f (x / k)) b`. -/
+@[to_additive (dont_translate := S E E' F) addConvolution_single_apply
+  /-- On an additive group, additive convolution on the right with a single-point family
+  `Pi.single k b` evaluates at `x` to `L (f (x - k)) b`. -/]
+theorem convolution_single_apply (L : E →ₗ[S] E' →ₗ[S] F) (f : M → E) (k : M) (b : E') (x : M) :
+    (f ⋆[L] Pi.single k b) x = L (f (x / k)) b := by
+  simp only [convolution, Pi.single_apply]
+  rw [tsum_eq_single ⟨(x / k, k), mem_mulFiber.2 (div_mul_cancel x k)⟩ fun ab hab ↦ ?_]
+  · simp
+  · have hne : ab.1.2 ≠ k := fun h ↦ hab <| Subtype.ext <| Prod.ext
+      (eq_div_of_mul_eq' (h ▸ mem_mulFiber.1 ab.2)) h
+    simp [hne]
+
+/-- On a group, convolution on the left with a single-point family `Pi.single k a` evaluates at
+`x` to `L a (g (k⁻¹ * x))`. -/
+@[to_additive (dont_translate := S E E' F) single_addConvolution_apply
+  /-- On an additive group, additive convolution on the left with a single-point family
+  `Pi.single k a` evaluates at `x` to `L a (g (-k + x))`. -/]
+theorem single_convolution_apply (L : E →ₗ[S] E' →ₗ[S] F) (k : M) (a : E) (g : M → E') (x : M) :
+    (Pi.single k a ⋆[L] g) x = L a (g (k⁻¹ * x)) := by
+  simp only [convolution, Pi.single_apply]
+  rw [tsum_eq_single ⟨(k, k⁻¹ * x), mem_mulFiber.2 (mul_inv_cancel_left k x)⟩ fun ab hab ↦ ?_]
+  · simp
+  · have hne : ab.1.1 ≠ k := fun h ↦ hab <| Subtype.ext <| Prod.ext h
+      (eq_inv_mul_of_mul_eq (h ▸ mem_mulFiber.1 ab.2))
+    simp [hne]
+
+end Group
 
 section AddGroup
 
