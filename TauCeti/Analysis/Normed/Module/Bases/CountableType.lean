@@ -13,6 +13,7 @@ public import TauCeti.Analysis.Normed.Module.Bases.TOrthogonal
 public import TauCeti.Analysis.Normed.Module.RieszLemma
 
 import Mathlib.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # `t`-orthogonal bases and subspaces of normed spaces of countable type
@@ -333,33 +334,12 @@ theorem separatingDual_of_dense_span {v : ℕ → E}
     simp only [h, zero_smul] at hsum
     exact hx (hsum.unique hasSum_zero)
 
-private theorem exists_dense_span_range_of_countable {R M : Type*} [Semiring R]
-    [AddCommMonoid M] [Module R M] [TopologicalSpace M] {S : Set M} (hS : S.Countable) :
-    ∃ v : ℕ → span R S, Dense (span R (range v) : Set (span R S)) := by
-  obtain ⟨f, hf⟩ : ∃ f : ℕ → M, insert 0 S = range f :=
-    (hS.insert 0).exists_eq_range (insert_nonempty _ _)
-  have hfS (n : ℕ) : f n ∈ span R S := by
-    have : f n ∈ insert (0 : M) S := hf ▸ mem_range_self n
-    rcases mem_insert_iff.mp this with h0 | hn
-    · rw [h0]
-      exact zero_mem _
-    · exact subset_span hn
-  let v : ℕ → span R S := fun n ↦ ⟨f n, hfS n⟩
-  have hv : (span R S).subtype ∘ v = f := by
-    ext n
-    exact (span R S).subtype_apply (v n)
-  have htop : span R (range v) = ⊤ := by
-    apply Submodule.map_injective_of_injective (span R S).injective_subtype
-    rw [Submodule.map_top, Submodule.range_subtype, Submodule.map_span, ← range_comp, hv, ← hf,
-      span_insert_zero]
-  exact ⟨v, by rw [htop]; exact dense_univ⟩
-
 /-- Continuous linear functionals separate points on the span of any countable set in an
 ultrametric normed space over a complete nontrivially normed field. -/
 theorem _root_.Submodule.separatingDual_span_of_countable {S : Set E} (hS : S.Countable) :
     SeparatingDual K (span K S) :=
-  let ⟨_, hv⟩ := exists_dense_span_range_of_countable hS
-  separatingDual_of_dense_span hv
+  let ⟨_, hv⟩ := hS.exists_span_range_eq_top K
+  separatingDual_of_dense_span (by rw [hv, top_coe]; exact dense_univ)
 
 end TauCeti
 
@@ -407,7 +387,7 @@ theorem _root_.Submodule.exists_bounded_dual_ne_zero_span_of_countable {K E : Ty
     [NormedField K] [CompleteSpace K] [NormedAddCommGroup E] [NormedSpace K E]
     [IsUltrametricDist E] {S : Set E} (hS : S.Countable) {x : span K S} (hx : x ≠ 0) :
     ∃ (φ : span K S →ₗ[K] K) (C : ℝ), (∀ y, ‖φ y‖ ≤ C * ‖y‖) ∧ φ x ≠ 0 :=
-  let ⟨_, hv⟩ := exists_dense_span_range_of_countable hS
-  exists_bounded_dual_ne_zero_of_dense_span hv hx
+  let ⟨_, hv⟩ := hS.exists_span_range_eq_top K
+  exists_bounded_dual_ne_zero_of_dense_span (by rw [hv, top_coe]; exact dense_univ) hx
 
 end TauCeti
