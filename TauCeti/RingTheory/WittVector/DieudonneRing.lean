@@ -328,26 +328,15 @@ private lemma zpowFV_mul_zpowFV {f v : R} (hfv : f * v = p) (hvf : v * f = p) (m
       zpowFV_neg_natCast, zpowFV_neg_natCast, ← pow_add,
       show wordExp (-a) (-b) = 0 by unfold wordExp; omega, pow_zero, one_mul]
 
-private lemma pow_mul_map {g : 𝕎 k →+* R} {f : R}
-    (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius ξ) * f) (n : ℕ) (ξ : 𝕎 k) :
-    f ^ n * g ξ = g (((frobeniusEquiv p k : RingAut (𝕎 k)) ^ n) ξ) * f ^ n := by
+omit [CharP k p] [PerfectRing k p] in
+private lemma pow_mul_map {g : 𝕎 k →+* R} {x : R} {τ : RingAut (𝕎 k)}
+    (h : ∀ ξ : 𝕎 k, x * g ξ = g (τ ξ) * x) (n : ℕ) (ξ : 𝕎 k) :
+    x ^ n * g ξ = g ((τ ^ n) ξ) * x ^ n := by
   induction n generalizing ξ with
   | zero => simp
   | succ n ih =>
     simp only [pow_succ, ← mul_assoc]
-    rw [mul_assoc, hF, ← mul_assoc, ih]
-    simp [mul_assoc]
-
-private lemma pow_mul_map' {g : 𝕎 k →+* R} {v : R}
-    (hV : ∀ ξ : 𝕎 k, v * g (frobenius ξ) = g ξ * v) (n : ℕ) (ξ : 𝕎 k) :
-    v ^ n * g ξ = g (((frobeniusEquiv p k : RingAut (𝕎 k))⁻¹ ^ n) ξ) * v ^ n := by
-  have hV' (ξ : 𝕎 k) : v * g ξ = g ((frobeniusEquiv p k)⁻¹ ξ) * v := by
-    rw [← hV, frobenius_frobeniusEquiv_inv]
-  induction n generalizing ξ with
-  | zero => simp
-  | succ n ih =>
-    simp only [pow_succ, ← mul_assoc]
-    rw [mul_assoc, hV', ← mul_assoc, ih]
+    rw [mul_assoc, h, ← mul_assoc, ih]
     simp [mul_assoc]
 
 private lemma zpowFV_mul_map {g : 𝕎 k →+* R} {f v : R}
@@ -357,9 +346,11 @@ private lemma zpowFV_mul_map {g : 𝕎 k →+* R} {f v : R}
   obtain ⟨n, rfl | rfl⟩ := Int.eq_nat_or_neg m
   · rw [zpowFV_natCast, zpow_natCast]
     exact pow_mul_map hF n ξ
-  · rw [zpowFV_neg_natCast, zpow_neg, zpow_natCast,
+  · have hV' (ξ : 𝕎 k) : v * g ξ = g ((frobeniusEquiv p k)⁻¹ ξ) * v := by
+      rw [← hV, frobenius_frobeniusEquiv_inv]
+    rw [zpowFV_neg_natCast, zpow_neg, zpow_natCast,
       ← inv_pow (frobeniusEquiv p k : RingAut (𝕎 k))]
-    exact pow_mul_map' hV n ξ
+    exact pow_mul_map hV' n ξ
 
 private lemma zpowFV_mul_map_mul_zpowFV {g : 𝕎 k →+* R} {f v : R}
     (hF : ∀ ξ : 𝕎 k, f * g ξ = g (frobenius ξ) * f)
