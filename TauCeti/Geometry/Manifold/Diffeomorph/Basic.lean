@@ -16,10 +16,11 @@ import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 The differentials of a diffeomorphism and its inverse undo each other, and the differential of a
 diffeomorphism undoes the pullback of vector fields along it.
-Differentiability at a point is also preserved by precomposition and postcomposition with a
-diffeomorphism, so the chain rule for such compositions holds without differentiability
-assumptions, and the tangent images of a map, the ranges of its differentials, are unchanged by
-precomposition with a diffeomorphism and are mapped by the differential under postcomposition.
+Differentiability at a point and invertibility of the differential are also preserved by
+precomposition and postcomposition with a diffeomorphism, so the chain rule for such compositions
+holds without differentiability assumptions, and the tangent images of a map, the ranges of its
+differentials, are unchanged by precomposition with a diffeomorphism and are mapped by the
+differential under postcomposition.
 These facts support inverse isometries and transport of curve differentiability through
 diffeomorphisms. The underlying equivalence of a diffeomorphism viewed as a partial
 diffeomorphism is also characterized, for composition with partial coordinates.
@@ -176,6 +177,24 @@ theorem mfderiv_comp_diffeomorph (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) (f 
       (h.mdifferentiableAt_comp_diffeomorph_iff hn).not.mpr hf
     rw [mfderiv_zero_of_not_mdifferentiableAt hf, mfderiv_zero_of_not_mdifferentiableAt hfh,
       ContinuousLinearMap.zero_comp]
+
+/-- Postcomposition with a `C^n` diffeomorphism (`n ≠ 0`) preserves invertibility of the manifold
+derivative, with no differentiability hypothesis on `f`. -/
+@[simp]
+theorem isInvertible_mfderiv_diffeomorph_comp_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {f : P → M}
+    {x : P} :
+    (mfderiv K J (h ∘ f) x).IsInvertible ↔ (mfderiv K I f x).IsInvertible := by
+  rw [h.mfderiv_diffeomorph_comp hn, ← h.mfderivToContinuousLinearEquiv_coe hn,
+    ContinuousLinearMap.isInvertible_equiv_comp]
+
+/-- Precomposition with a `C^n` diffeomorphism (`n ≠ 0`) preserves invertibility of the manifold
+derivative, with no differentiability hypothesis on `f`. -/
+@[simp]
+theorem isInvertible_mfderiv_comp_diffeomorph_iff (h : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) {f : N → P}
+    {x : M} :
+    (mfderiv I K (f ∘ h) x).IsInvertible ↔ (mfderiv J K f (h x)).IsInvertible := by
+  rw [h.mfderiv_comp_diffeomorph hn, ← h.mfderivToContinuousLinearEquiv_coe hn,
+    ContinuousLinearMap.isInvertible_comp_equiv]
 
 /-- Postcomposition with a diffeomorphism maps tangent images by its differential: the range of
 the differential of `h ∘ f` at `x` is the image of the range of the differential of `f` under the

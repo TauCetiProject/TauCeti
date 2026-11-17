@@ -9,7 +9,10 @@ public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Smooth
 public import TauCeti.Geometry.Manifold.Degree.Global
 public import TauCeti.Geometry.Manifold.RegularValue.Fibre
+import TauCeti.Geometry.Manifold.Degree.Diffeomorph
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
+import TauCeti.Geometry.Manifold.ModelTransport.Interior
+import TauCeti.Geometry.Manifold.Orientation.Pullback
 import TauCeti.Topology.Maps.Proper.Basic
 
 /-!
@@ -29,7 +32,7 @@ orientation sign of `f` at `x` (`TauCeti.Manifold.Orientation.localIndex_toHomol
 `1` where `f` preserves the orientations and `-1` where it reverses them. In the preferred charts
 at `x` and `f x`, the derivative of `f` is that of `χ ∘ f ∘ φ.symm`, which acts on the local
 homology of the model by the sign of its Jacobian
-(`OpenPartialHomeomorph.localHomologyMap_restrict_localOrientationOfOrientedChart`). Only
+(`OpenPartialHomeomorph.localOrientationOfOrientedChart` under `localHomologyMap`). Only
 differentiability at `x` is used; it already makes `x` isolated in its fibre
 (`TauCeti.eventually_ne_of_mfderiv_injective`).
 
@@ -54,6 +57,12 @@ $$\int_M f^*\varphi = \deg(f) \int_N \varphi$$
 Neither manifold need be compact; for instance `f` may be a proper smooth self-map of an open
 disc.
 
+The degree formula for the fundamental class also extends to any compact oriented boundaryless
+`C¹` source manifold `(P, I)`
+(`TauCeti.Manifold.Orientation.exists_homologyMap_eq_degreeAtRegularValue_smul`), without requiring
+the model vector space of `I` to carry an inner product or to coincide with `E` (covering, for
+instance, products of spheres modelled on `(𝓡 m).prod (𝓡 1)`).
+
 ## Main results
 
 * `TauCeti.Manifold.Orientation.localIndex_toHomologicalOrientation`: at a point of invertible
@@ -67,6 +76,10 @@ disc.
   degree of a proper `C¹` map onto a preconnected σ-compact manifold is its mapping degree.
 * `TauCeti.Manifold.Orientation.integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul`:
   `∫_M f^*φ = deg(f) ∫_N φ` for a proper smooth map, with the homological degree.
+* `TauCeti.Manifold.Orientation.exists_homologyMap_eq_degreeAtRegularValue_smul`: any compact
+  oriented boundaryless `C¹` manifold `(M, I)` carries a class `a ∈ Hₙ₊₁(M; ℤ)` sent by every
+  continuous map `f : M → N` into a compact preconnected oriented `C¹` manifold modelled on `E`
+  to `(degreeAtRegularValue o o' f y) • [N]` at any regular value `y`.
 
 ## References
 
@@ -221,6 +234,54 @@ theorem integralTopForm_mpullback_eq_degree_toHomologicalOrientation_mul
         integralTopForm o' φ := by
   rw [degree_toHomologicalOrientation_eq_degree hE o o' (hf.of_le (by simp)) hfp]
   exact integralTopForm_mpullback_eq_degree_mul o o' hf hfp hφ hc
+
+/-- **Homological degree formula for an arbitrary boundaryless `C¹` source model.** Any compact
+Hausdorff boundaryless `C¹` manifold `(P, I)` oriented by
+`oP : Manifold.Orientation I P (Fin (n + 1))` carries a class `a ∈ Hₙ₊₁(P; ℤ)` such that for every
+compact preconnected Hausdorff `C¹` manifold `(Q, 𝓘(ℝ, E))` oriented by `oQ`, every continuous map
+`f : C(P, Q)`, and every regular value `y` of `f`,
+`f_* a = (degreeAtRegularValue oP oQ f y) • [Q]`. This avoids requiring the model vector space of
+`I` to carry an inner product or to coincide with `E`. -/
+theorem exists_homologyMap_eq_degreeAtRegularValue_smul
+    {P F H : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ F H} [TopologicalSpace P] [T2Space P]
+    [ChartedSpace H P] [IsManifold I 1 P] [BoundarylessManifold I P] [CompactSpace P]
+    (oP : Manifold.Orientation I P (Fin (n + 1))) :
+    ∃ a : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of P),
+      ∀ {Q : Type} [TopologicalSpace Q] [T2Space Q] [ChartedSpace E Q] [IsManifold 𝓘(ℝ, E) 1 Q]
+        [CompactSpace Q] [PreconnectedSpace Q]
+        (oQ : Manifold.Orientation 𝓘(ℝ, E) Q (Fin (n + 1))) {f : C(P, Q)} {y : Q},
+        IsRegularValue I 𝓘(ℝ, E) f y →
+          (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 1)).obj
+            (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom a =
+            degreeAtRegularValue oP oQ f y •
+              (oQ.toHomologicalOrientation hE).fundamentalClass hE := by
+  -- Transport `(P, I)` to a manifold `P'` modelled directly on `𝓘(ℝ, E)` via a linear equivalence
+  -- `F ≃L[ℝ] E` followed by `BoundarylessModel.interiorDiffeomorph`.
+  have hFE : finrank ℝ F = finrank ℝ E := oP.card_eq.symm.trans (by simp [hE])
+  let e : F ≃L[ℝ] E := (LinearEquiv.ofFinrankEq F E hFE).toContinuousLinearEquiv
+  let I₁ : ModelWithCorners ℝ E H := I.transContinuousLinearEquiv e
+  let Φ₁ : P ≃ₘ^1⟮I, I₁⟯ P := e.toTransContinuousLinearEquiv (n := 1) I P
+  have : BoundarylessManifold I₁ P := Φ₁.boundarylessManifold one_ne_zero
+  let P' : Type := BoundarylessModel I₁ P
+  let : ChartedSpace E P' := BoundarylessModel.interiorChartedSpace I₁
+  have : T2Space P' := (BoundarylessModel.homeomorph I₁ P).t2Space
+  have : CompactSpace P' := (BoundarylessModel.homeomorph I₁ P).compactSpace
+  have : IsManifold 𝓘(ℝ, E) 1 P' := BoundarylessModel.instIsManifoldInteriorChartedSpace I₁
+  let Φ : P' ≃ₘ^1⟮𝓘(ℝ, E), I⟯ P := (BoundarylessModel.interiorDiffeomorph I₁ 1).symm.trans Φ₁.symm
+  let o₁ : Manifold.Orientation 𝓘(ℝ, E) P' (Fin (n + 1)) :=
+    oP.pullback Φ.contMDiff (fun _ ↦ Φ.isInvertible_mfderiv one_ne_zero) (by simp [hE])
+  refine ⟨(o₁.toHomologicalOrientation hE).mapFundamentalClass hE ⟨Φ, Φ.continuous⟩, ?_⟩
+  intro Q _ _ _ _ _ _ oQ f y hy
+  have hdeg : degreeAtRegularValue o₁ oQ (f.comp ⟨Φ, Φ.continuous⟩) y =
+      degreeAtRegularValue oP oQ f y :=
+    Φ.degreeAtRegularValue_comp_diffeomorph_of_isOrientationPreservingAt one_ne_zero oQ
+      fun x _ ↦ isOrientationPreservingAt_pullback _ _ _ _ x
+  exact ((o₁.toHomologicalOrientation hE).mapFundamentalClass_comp hE f
+    ⟨Φ, Φ.continuous⟩).symm.trans
+    ((mapFundamentalClass_eq_degreeAtRegularValue_smul hE o₁ oQ
+      ((Φ.isRegularValue_comp_diffeomorph_iff one_ne_zero).2 hy)).trans (by rw [hdeg]))
 
 end Manifold.Orientation
 

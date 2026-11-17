@@ -24,7 +24,9 @@ the sphere by diffeomorphisms (`TauCeti.continuousOrthogonalToDiffSphere`) with 
 fibration `SO(n + 1) → SO(n + 2) → Sⁿ⁺¹`. This file proves that if `πₙ(SO(n + 1))` is a torsion
 group, then `Sⁿ⁺¹` is `ℓ`-covered by diffeomorphisms for some `ℓ > 0`.
 
-The argument is the first proof of Proposition 6.34 of Barraud–Damian–Humilière–Oancea.
+The argument is the first proof of Proposition 6.34 of Barraud–Damian–Humilière–Oancea (the
+second, unconditional proof via plane rotations is in
+`TauCeti.Geometry.Diffeomorphism.Sphere.RotationFamily`).
 
 * In the exact sequence `πₙ₊₁(SO(n + 2)) → πₙ₊₁(Sⁿ⁺¹) → πₙ(SO(n + 1))` of the fibration, the
   boundary of the generator `ι` of `πₙ₊₁(Sⁿ⁺¹)` has finite order, so some positive power `ι ^ k`
@@ -291,9 +293,7 @@ theorem exists_isCoveredByDiffeomorphisms_sphere_of_isMulTorsion [NeZero n]
       rw [← Module.finrank_eq_rank, finrank_euclideanSpace_fin]
       exact_mod_cast (by omega : 1 < n + 2)) 0 zero_le_one)
   obtain ⟨ℓ, hℓ, hc⟩ := exists_ne_zero_isCoveredByDiffeomorphisms_sphereNorthPole h o m
-  refine ⟨|ℓ|, abs_pos.2 hℓ, ?_⟩
-  rw [← Int.sign_mul_self_eq_abs]
-  exact ((isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace _ x₀).1 hc).mul_left _
+  exact ⟨|ℓ|, abs_pos.2 hℓ, ((isCoveredByDiffeomorphisms_iff_of_pathConnectedSpace _ x₀).1 hc).abs⟩
 
 /-- **The `3`-sphere is covered by rotations**: since `π₂(SO(3)) = 0`, the sphere `S³` is
 `ℓ`-covered by diffeomorphisms for some `ℓ > 0`. -/
