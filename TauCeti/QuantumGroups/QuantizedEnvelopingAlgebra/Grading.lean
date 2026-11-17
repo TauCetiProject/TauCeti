@@ -114,6 +114,7 @@ theorem mul_mem_gradedPiece {c d : ι →₀ ℤ} {x y : QuantizedEnvelopingAlge
     simpa using word_mem_gradedPiece (D := D) (q := q) (l := l₁ ++ l₂) (by simp)
   exact hle (Submodule.mul_mem_mul hx hy)
 
+/-- Multiplication respects `gradedPiece D q`, giving a graded monoid structure for all `q : K`. -/
 instance instGradedMonoid (D : CartanDatum ι X Y) (q : K) :
     SetLike.GradedMonoid (gradedPiece D q) where
   one_mem := one_mem_gradedPiece_zero
@@ -302,6 +303,8 @@ private theorem decomposeAlgHom_apply_of_mem {D : CartanDatum ι X Y} {q : K} {c
   | add _ _ _ _ iha ihb => rw [map_add, iha, ihb, ← map_add]; rfl
   | smul _ _ _ ih => rw [map_smul, ih, ← of_smul]; rfl
 
+/-- `gradedPiece D q` forms an internal direct sum for every `q : K` (given `[DecidableEq ι]`),
+giving unique finite homogeneous decompositions and a genuine `(ι →₀ ℤ)`-grading. -/
 theorem isInternal_gradedPiece (D : CartanDatum ι X Y) (q : K) : IsInternal (gradedPiece D q) := by
   let := GradedAlgebra.ofAlgHom (gradedPiece D q) (decomposeAlgHom D q)
     (by ext <;> simp [decomposeAlgHom, lof_eq_of]) (fun _ x => decomposeAlgHom_apply_of_mem x.2)
