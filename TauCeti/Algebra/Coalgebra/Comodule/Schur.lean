@@ -22,8 +22,8 @@ between simple comodules is bijective.
 
 Over an algebraically closed field `k`, every simple comodule is automatically finite dimensional
 by the fundamental theorem of comodules, and every comodule endomorphism of a simple comodule is a
-scalar multiple of the identity (`TauCeti.Comodule.Hom.exists_eq_smul_id`). Consequently any scalar
-matrix commuting with the coefficient matrix of a finite basis of a simple comodule is a scalar
+scalar multiple of the identity (`TauCeti.Comodule.Hom.exists_eq_smul_id`). Consequently any matrix
+over `k` commuting with the coefficient matrix of a finite basis of a simple comodule is a scalar
 multiple of the identity matrix (`Module.Basis.exists_eq_smul_one_of_commute_coefficientMatrix`).
 
 ## Main declarations
@@ -127,9 +127,9 @@ variable {k A M ι : Type*} [Field k] [IsAlgClosed k] [Ring A] [Algebra k A] [Co
   [AddCommGroup M] [Module k M] [Comodule k A M] [IsSimpleOrder (Subcomodule k A M)]
   [Fintype ι] [DecidableEq ι]
 
-/-- **Matrix form of Schur's lemma.** If a scalar matrix `T` commutes with the coefficient matrix
-of a finite basis of a simple comodule over an algebraically closed field, then `T` is a scalar
-multiple of the identity matrix. -/
+/-- **Matrix form of Schur's lemma.** If a matrix `T` with entries in `k` (embedded via
+`algebraMap k A`) commutes with the coefficient matrix of a finite basis of a simple comodule over
+an algebraically closed field, then `T` is a scalar multiple of the identity matrix. -/
 theorem exists_eq_smul_one_of_commute_coefficientMatrix (b : Basis ι k M) (T : Matrix ι ι k)
     (hT : coefficientMatrix (C := A) b * T.map (algebraMap k A) =
       T.map (algebraMap k A) * coefficientMatrix (C := A) b) :
