@@ -133,7 +133,8 @@ theorem units_smul (hE : IsRieszColemanProjection u Q E) (c : Rˣ) :
 /-- The operator preserves the kernel of its Riesz–Coleman projection. -/
 theorem mapsTo_ker (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.ker E.ker := fun x hx ↦
   LinearMap.mem_ker.mpr <| by
-    simpa [show E x = 0 by simpa using hx] using congr($hE.commute.eq x).symm
+    rw [coe_coe, ← mul_apply_eq_comp, ← hE.commute.eq, mul_apply_eq_comp, ← coe_coe E,
+      LinearMap.mem_ker.mp hx, map_zero]
 
 /-- The operator preserves the range of its Riesz–Coleman projection. -/
 theorem mapsTo_range (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.range E.range := by
@@ -143,7 +144,8 @@ theorem mapsTo_range (hE : IsRieszColemanProjection u Q E) : Set.MapsTo u E.rang
 /-- Every polynomial in `u` preserves the kernel of a Riesz–Coleman projection. -/
 theorem mapsTo_ker_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
     Set.MapsTo (aeval u P : M →L[R] M) E.ker E.ker := fun x hx ↦ LinearMap.mem_ker.mpr <| by
-  simpa [show E x = 0 by simpa using hx] using congr($((hE.commute_aeval P).eq.symm) x)
+  rw [coe_coe, ← mul_apply_eq_comp, ← (hE.commute_aeval P).eq, mul_apply_eq_comp, ← coe_coe E,
+    LinearMap.mem_ker.mp hx, map_zero]
 
 /-- Every polynomial in `u` preserves the range of a Riesz–Coleman projection. -/
 theorem mapsTo_range_aeval (hE : IsRieszColemanProjection u Q E) (P : R[X]) :
@@ -200,12 +202,14 @@ theorem mapsTo_ker_inverse (hE : IsRieszColemanProjection u Q E) :
 /-- On `ker E`, the complementary inverse is a left inverse of `Q*(u)`. -/
 theorem inverse_aeval_reverse_apply (hE : IsRieszColemanProjection u Q E) {x : M} (hx : x ∈ E.ker) :
     hE.inverse (aeval u Q.reverse x) = x := by
-  simpa [show E x = 0 by simpa using hx] using congr($(hE.inverse_mul_aeval_reverse) x)
+  rw [← mul_apply_eq_comp, hE.inverse_mul_aeval_reverse, sub_apply, one_apply_eq_self, ← coe_coe E,
+    LinearMap.mem_ker.mp hx, sub_zero]
 
 /-- On `ker E`, the complementary inverse is a right inverse of `Q*(u)`. -/
 theorem aeval_reverse_apply_inverse (hE : IsRieszColemanProjection u Q E) {x : M} (hx : x ∈ E.ker) :
     aeval u Q.reverse (hE.inverse x) = x := by
-  simpa [show E x = 0 by simpa using hx] using congr($(hE.aeval_reverse_mul_inverse) x)
+  rw [← mul_apply_eq_comp, hE.aeval_reverse_mul_inverse, sub_apply, one_apply_eq_self, ← coe_coe E,
+    LinearMap.mem_ker.mp hx, sub_zero]
 
 /-- **The range of a Riesz–Coleman projection is the polynomial kernel** `ker Q*(u)`. -/
 theorem range_eq_ker (hE : IsRieszColemanProjection u Q E) :
@@ -334,7 +338,7 @@ theorem mapsTo_range_of_semiconj (hE : IsRieszColemanProjection u Q E)
 theorem mapsTo_ker_of_semiconj (hE : IsRieszColemanProjection u Q E)
     (hF : IsRieszColemanProjection v Q F) (f : M →ₗ[R] N) (hf : Function.Semiconj f u v) :
     Set.MapsTo f E.ker F.ker := fun x hx ↦ LinearMap.mem_ker.mpr <| by
-  rw [coe_coe, ← hE.semiconj hF f hf x, show E x = 0 by simpa using hx, map_zero]
+  rw [coe_coe, ← hE.semiconj hF f hf x, ← coe_coe E, LinearMap.mem_ker.mp hx, map_zero]
 
 /-- Linear intertwiners also intertwine the complementary inverses of `Q*(u)` and `Q*(v)`. -/
 theorem semiconj_inverse (hE : IsRieszColemanProjection u Q E)
