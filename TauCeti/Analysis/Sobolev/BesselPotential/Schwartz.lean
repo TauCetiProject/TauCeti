@@ -36,7 +36,9 @@ normed complex `F`.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM_zero`: on `H^{0,p}` the inclusion is isometric for
   the `Lᵖ` norm.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
-  `p < ∞`, are determined by their values on Schwartz functions.
+  `p < ∞`, are determined by their values on Schwartz functions, and
+  `BesselPotentialSpace.continuousLinearMap_ext_real` for complex-linear maps out of
+  `H^{s,p}(E, ℂ)` on real Schwartz functions.
 * `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
   norm is the `L²` norm of the weighted Fourier transform.
 * `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
@@ -216,6 +218,23 @@ theorem continuousLinearMap_ext {G : Type*} [AddCommMonoid G] [Module ℂ G] [To
   ContinuousLinearMap.ext fun f ↦ congrFun
     ((SchwartzMap.denseRange_toBesselPotentialSpaceCLM s hp).equalizer T.continuous T'.continuous
       (funext h)) f
+
+/-- Continuous complex-linear maps out of `H^{s,p}(E, ℂ)`, `p < ∞`, into a Hausdorff space are
+determined by their values on real Schwartz functions, embedded by `Complex.ofRealCLM`. -/
+theorem continuousLinearMap_ext_real {G : Type*} [AddCommMonoid G] [Module ℂ G]
+    [TopologicalSpace G] [T2Space G] {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] (hp : p ≠ ∞)
+    {T T' : H^{s, p}(E, ℂ) →L[ℂ] G}
+    (h : ∀ u : 𝓢(E, ℝ),
+      T (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM)) =
+        T' (SchwartzMap.toBesselPotentialSpaceCLM s p (u.postcompCLM Complex.ofRealCLM))) :
+    T = T' := by
+  refine continuousLinearMap_ext hp fun φ ↦ ?_
+  have hsplit : φ = (φ.postcompCLM Complex.reCLM).postcompCLM Complex.ofRealCLM +
+      Complex.I • (φ.postcompCLM Complex.imCLM).postcompCLM Complex.ofRealCLM := by
+    ext x
+    simpa [mul_comm] using (Complex.re_add_im (φ x)).symm
+  rw [hsplit]
+  simp only [map_add, map_smul, h]
 
 /-- In `H^{0,p} = Lᵖ` the element with `Lᵖ` part `f` is the tempered distribution of `f`. -/
 theorem toDistr_toLpₗᵢ_zero_symm_apply {p : ℝ≥0∞} [Fact (1 ≤ p)]
