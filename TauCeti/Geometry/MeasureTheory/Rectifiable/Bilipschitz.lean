@@ -14,7 +14,13 @@ import TauCeti.MeasureTheory.Function.AreaFormula.Lipschitz
 In finite-dimensional real inner product spaces, countable rectifiability is equivalent to
 coverage, up to normalized Hausdorff measure zero, by countably many bi-Lipschitz patches
 with Borel domains. No measurability or local finiteness of the rectifiable set is assumed.
-The patches may extend beyond the set, as in `CountablyRectifiable` itself.
+The patches may extend beyond the set, as in `CountablyRectifiable` itself; when the set is
+`μHE[k]`-null-measurable, intersecting with a Borel kernel refines the patches to lie inside the
+set (`TauCeti.CountablyRectifiable.exists_bilipschitz_subset_cover`). Consequently, any property
+holding `μHE[k]`-a.e. on every bi-Lipschitz Borel patch inside `s` holds `μHE[k]`-a.e. on `s`
+(`TauCeti.CountablyRectifiable.ae_of_forall_bilipschitz_patch`), and any function that is
+a.e. measurable on every such patch is `(μHE[k].restrict s)`-a.e. measurable
+(`TauCeti.CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch`).
 
 The construction starts from a cover by countably many Lipschitz maps defined on all of
 `EuclideanSpace ℝ (Fin k)` (`TauCeti.CountablyRectifiable.exists_lipschitzWith_cover`).
@@ -89,6 +95,62 @@ theorem CountablyRectifiable.exists_bilipschitz_cover {k : ℕ} {s : Set V}
           rcases hx with ⟨x, rfl⟩
           exact ⟨x, hFg n x⟩)).trans
         (Filter.EventuallySubset.countable_iUnion hcover))
+
+/-- A `μHE[k]`-null-measurable countably `k`-rectifiable set admits countably many bi-Lipschitz
+Borel patches contained in the set itself (`f n '' A n ⊆ s`) covering it up to `μHE[k]`-measure
+zero. -/
+theorem CountablyRectifiable.exists_bilipschitz_subset_cover {k : ℕ} {s : Set V}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k]) :
+    ∃ (A : ℕ → Set (EuclideanSpace ℝ (Fin k))) (f : ℕ → EuclideanSpace ℝ (Fin k) → V),
+      (∀ n, MeasurableSet (A n)) ∧ (∀ n, f n '' A n ⊆ s) ∧
+      (∀ n, ∃ K L : ℝ≥0,
+        LipschitzWith K (f n) ∧ AntilipschitzWith L ((A n).domRestrict (f n))) ∧
+      μHE[k] (s \ ⋃ n, f n '' A n) = 0 := by
+  obtain ⟨s₀, hs₀s, hs₀m, hs₀ae⟩ := hsm.exists_measurable_subset_ae_eq
+  obtain ⟨A, f, hAm, hbi, hcover⟩ := (hs.congr hs₀ae.symm).exists_bilipschitz_cover
+  choose K L hLip hAnti using hbi
+  refine ⟨fun n => A n ∩ f n ⁻¹' s₀, f,
+    fun n => (hAm n).inter (hs₀m.preimage (hLip n).continuous.measurable),
+    fun n => image_subset_iff.2 fun _ hx => hs₀s hx.2,
+    fun n => ⟨K n, L n, hLip n, fun x y => hAnti n ⟨x, x.2.1⟩ ⟨y, y.2.1⟩⟩, ?_⟩
+  refine measure_mono_null (fun y ⟨hys, hyU⟩ => ?_)
+    (measure_union_null (ae_eq_set.1 hs₀ae.symm).1 hcover)
+  by_cases hys₀ : y ∈ s₀
+  · refine Or.inr ⟨hys₀, fun hyA => ?_⟩
+    obtain ⟨n, x, hx, rfl⟩ := mem_iUnion.1 hyA
+    exact hyU (mem_iUnion.2 ⟨n, x, ⟨hx, hys₀⟩, rfl⟩)
+  · exact Or.inl ⟨hys, hys₀⟩
+
+/-- If a predicate holds `μHE[k]`-almost everywhere on every bi-Lipschitz Borel patch
+`f '' A ⊆ s`, then it holds `μHE[k]`-almost everywhere on the null-measurable countably
+`k`-rectifiable set `s`. -/
+theorem CountablyRectifiable.ae_of_forall_bilipschitz_patch {k : ℕ} {s : Set V} {p : V → Prop}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
+    (hp : ∀ {A : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
+      MeasurableSet A → f '' A ⊆ s → LipschitzWith K f → AntilipschitzWith L (A.domRestrict f) →
+      ∀ᵐ y ∂μHE[k], y ∈ f '' A → p y) :
+    ∀ᵐ x ∂μHE[k], x ∈ s → p x := by
+  obtain ⟨A, f, hAm, hAsub, hbi, hcov⟩ := hs.exists_bilipschitz_subset_cover hsm
+  choose K L hLip hAnti using hbi
+  filter_upwards [measure_eq_zero_iff_ae_notMem.1 hcov,
+    ae_all_iff.2 fun n => hp (hAm n) (hAsub n) (hLip n) (hAnti n)] with x hcovx hpx hxs
+  obtain ⟨n, hxn⟩ := mem_iUnion.1 (not_not.1 fun h => hcovx ⟨hxs, h⟩)
+  exact hpx n hxn
+
+/-- If a map `g : V → α` is `(μHE[k].restrict (f '' A))`-a.e. measurable on every bi-Lipschitz
+Borel patch `f '' A ⊆ s`, then `g` is `(μHE[k].restrict s)`-a.e. measurable on the null-measurable
+countably `k`-rectifiable set `s`. -/
+theorem CountablyRectifiable.aemeasurable_of_forall_bilipschitz_patch
+    {α : Type*} [MeasurableSpace α] {k : ℕ} {s : Set V} {g : V → α}
+    (hs : CountablyRectifiable k s) (hsm : NullMeasurableSet s μHE[k])
+    (hg : ∀ {A : Set (EuclideanSpace ℝ (Fin k))} {f : EuclideanSpace ℝ (Fin k) → V} {K L : ℝ≥0},
+      MeasurableSet A → f '' A ⊆ s → LipschitzWith K f → AntilipschitzWith L (A.domRestrict f) →
+      AEMeasurable g (μHE[k].restrict (f '' A))) :
+    AEMeasurable g (μHE[k].restrict s) := by
+  obtain ⟨A, f, hAm, hAsub, hbi, hcov⟩ := hs.exists_bilipschitz_subset_cover hsm
+  choose K L hLip hAnti using hbi
+  exact (AEMeasurable.iUnion fun n => hg (hAm n) (hAsub n) (hLip n) (hAnti n)).mono_measure
+    (Measure.restrict_mono_ae (ae_subset.mpr hcov))
 
 /-- Countable rectifiability in a finite-dimensional Euclidean target is equivalent to
 coverage up to a null set by bi-Lipschitz patches with Borel domains and parametrizations

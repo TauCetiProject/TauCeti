@@ -33,6 +33,9 @@ complete: the formula is applied after embedding `V` into its completion.
   projection onto the range of `B`.
 * `ContinuousLinearMap.comp_adjoint_eq_starProjection_range`: for an isometry `B` it reduces to
   `B B†`.
+* `ContinuousLinearMap.ofInjective_symm_comp_orthogonalProjectionOnto_comp`,
+  `LinearMap.ofInjective_symm_orthogonalProjectionOnto_apply`: projecting onto the range of an
+  injective operator and inverting on the range recovers the input.
 * `LinearMap.finrank_orthogonal_range_of_injective`: the dimension of the orthogonal
   complement of the range of an injective operator.
 * `Submodule.starProjection_inverse_apply`: if the compression to `W` of the orthogonal projection
@@ -143,9 +146,36 @@ theorem starProjection_orthogonal_range_comp (B : F →L[𝕜] V) [B.range.HasOr
 
 end Range
 
+/-- For an injective operator `A` out of a finite-dimensional space, projecting orthogonally onto
+`A.range` and applying the inverse of `A` on its range gives a continuous linear left inverse of
+`A`. -/
+@[simp]
+theorem ofInjective_symm_comp_orthogonalProjectionOnto_comp
+    [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+    [ContinuousSMul 𝕜 F] [FiniteDimensional 𝕜 F]
+    (A : F →L[𝕜] V) (hinj : Injective A) :
+    (LinearEquiv.ofInjective A.toLinearMap hinj).symm.toContinuousLinearMap ∘L
+      A.range.orthogonalProjectionOnto ∘L A = ContinuousLinearMap.id 𝕜 F := by
+  ext x
+  have hp := A.range.orthogonalProjectionOnto_mem_subspace_eq_self
+    ⟨A x, LinearMap.mem_range_self _ x⟩
+  simp only [comp_apply, id_apply, hp, LinearMap.coe_toContinuousLinearMap']
+  exact (LinearEquiv.ofInjective A.toLinearMap hinj).symm_apply_apply x
+
 end ContinuousLinearMap
 
 section LinearMap
+
+/-- Applying the inverse of an injective linear map `A` on its range to the orthogonal projection
+of `A x` onto `A.range` recovers `x`. -/
+@[simp]
+theorem LinearMap.ofInjective_symm_orthogonalProjectionOnto_apply
+    {𝕜 E V : Type*} [RCLike 𝕜] [AddCommMonoid E] [Module 𝕜 E]
+    [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+    (A : E →ₗ[𝕜] V) [A.range.HasOrthogonalProjection] (hinj : Injective A) (x : E) :
+    (LinearEquiv.ofInjective A hinj).symm (A.range.orthogonalProjectionOnto (A x)) = x := by
+  rw [A.range.orthogonalProjectionOnto_mem_subspace_eq_self ⟨A x, LinearMap.mem_range_self A x⟩]
+  exact (LinearEquiv.ofInjective A hinj).symm_apply_apply x
 
 variable {𝕜 E V : Type*} [RCLike 𝕜] [AddCommGroup E] [Module 𝕜 E]
   [NormedAddCommGroup V] [InnerProductSpace 𝕜 V] [FiniteDimensional 𝕜 V]
