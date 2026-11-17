@@ -43,6 +43,26 @@ namespace TauCeti.Probability
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+/-- The real natural-parameter von Mises–Fisher density relative to uniform sphere probability.
+In dimension zero its sphere domain is empty. -/
+def vonMisesFisherNaturalPDFReal (η : E) (x : sphere (0 : E) 1) : ℝ :=
+  exp ⟪η, (x : E)⟫_ℝ /
+    ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E
+
+/-- The real natural-parameter density is the normalized exponential weight. -/
+theorem vonMisesFisherNaturalPDFReal_def (η : E) (x : sphere (0 : E) 1) :
+    vonMisesFisherNaturalPDFReal η x = exp ⟪η, (x : E)⟫_ℝ /
+      ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E := (rfl)
+
+/-- The extended-real natural-parameter density relative to uniform sphere probability. -/
+def vonMisesFisherNaturalPDF (η : E) (x : sphere (0 : E) 1) : ℝ≥0∞ :=
+  ENNReal.ofReal (vonMisesFisherNaturalPDFReal η x)
+
+/-- The extended-real natural density is the nonnegative lift of the real density. -/
+theorem vonMisesFisherNaturalPDF_eq_ofReal (η : E) :
+    vonMisesFisherNaturalPDF η = fun x ↦ ENNReal.ofReal (vonMisesFisherNaturalPDFReal η x) :=
+  (rfl)
+
 /-- The von Mises–Fisher law with natural parameter `η`, relative to uniform sphere probability.
 In dimension zero the sphere and this measure are empty. -/
 def vonMisesFisherNaturalMeasure (η : E) : Measure (sphere (0 : E) 1) :=
@@ -102,16 +122,14 @@ theorem isProbabilityMeasure_vonMisesFisherMeasure_iff (m : sphere (0 : E) 1) (�
 /-- The natural-parameter law has the normalized exponential density relative to the uniform
 sphere law, including the empty-sphere case. -/
 theorem vonMisesFisherNaturalMeasure_eq_withDensity (η : E) :
-    vonMisesFisherNaturalMeasure η = (uniformSphereMeasure E).withDensity
-      (fun x ↦ ENNReal.ofReal (exp ⟪η, (x : E)⟫_ℝ /
-        ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E)) := (rfl)
+    vonMisesFisherNaturalMeasure η =
+      (uniformSphereMeasure E).withDensity (vonMisesFisherNaturalPDF η) := (rfl)
 
 /-- The Radon–Nikodym derivative against uniform sphere probability is the normalized
 exponential weight. -/
 theorem rnDeriv_vonMisesFisherNaturalMeasure (η : E) :
     (vonMisesFisherNaturalMeasure η).rnDeriv (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E]
-      fun x ↦ ENNReal.ofReal (exp ⟪η, (x : E)⟫_ℝ /
-        ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫_ℝ ∂uniformSphereMeasure E) :=
+      vonMisesFisherNaturalPDF η :=
   rnDeriv_tilted_left_self (by fun_prop)
 
 /-- Zero natural parameter gives the uniform sphere law. -/

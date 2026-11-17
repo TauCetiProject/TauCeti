@@ -7,20 +7,20 @@ module
 
 public import TauCeti.Probability.Distributions.VonMisesFisher.Basic
 public import TauCeti.Probability.Density
-import Mathlib.MeasureTheory.Integral.Prod
 
 /-!
 # Densities of sphere-valued von Mises–Fisher laws
 
-The direction/concentration density is taken relative to `uniformSphereMeasure E`, not
-ambient Lebesgue measure. Its normalized exponential form works in every positive dimension,
-including the two-point sphere in dimension one. Negative concentration gives density zero;
-at zero concentration the density is one. In dimension at least two, the positive-concentration
-normalizer can also be expressed using the modified Bessel function.
+The natural-parameter and direction/concentration densities are taken relative to
+`uniformSphereMeasure E`, not ambient Lebesgue measure. Their normalized exponential form works
+in every positive dimension, including the two-point sphere in dimension one. Negative
+concentration gives density zero; at zero concentration the density is one. In dimension at
+least two, the positive-concentration normalizer can also be expressed using the modified
+Bessel function.
 
 This module supplies named real and extended-real densities, their normalization and
 Radon–Nikodym derivative, and the density interfaces for sphere-valued random variables.
-The density is jointly measurable in the direction, concentration, and sphere point.
+Both parameterizations are jointly measurable in the parameters and sphere point.
 
 ## References
 
@@ -39,13 +39,97 @@ namespace TauCeti.Probability
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
 
+/-- The natural-parameter real density is positive at every sphere point. -/
+theorem vonMisesFisherNaturalPDFReal_pos (η : E) (x : sphere (0 : E) 1) :
+    0 < vonMisesFisherNaturalPDFReal η x := by
+  have : Nontrivial E := ⟨⟨x, 0, ne_zero_of_mem_sphere one_ne_zero x⟩⟩
+  rw [vonMisesFisherNaturalPDFReal_def]
+  exact div_pos (exp_pos _) (integral_exp_inner_uniformSphereMeasure_pos _)
+
+/-- The natural-parameter real density is nonnegative. -/
+theorem vonMisesFisherNaturalPDFReal_nonneg (η : E) (x : sphere (0 : E) 1) :
+    0 ≤ vonMisesFisherNaturalPDFReal η x :=
+  (vonMisesFisherNaturalPDFReal_pos η x).le
+
+/-- Converting the natural-parameter density to the reals recovers its real density. -/
+@[simp]
+theorem toReal_vonMisesFisherNaturalPDF (η : E) (x : sphere (0 : E) 1) :
+    (vonMisesFisherNaturalPDF η x).toReal = vonMisesFisherNaturalPDFReal η x := by
+  rw [vonMisesFisherNaturalPDF_eq_ofReal]
+  exact ENNReal.toReal_ofReal (vonMisesFisherNaturalPDFReal_nonneg η x)
+
+/-- Zero natural parameter gives real density one at every sphere point. -/
+@[simp]
+theorem vonMisesFisherNaturalPDFReal_zero (x : sphere (0 : E) 1) :
+    vonMisesFisherNaturalPDFReal 0 x = 1 := by
+  have : Nontrivial E := ⟨⟨x, 0, ne_zero_of_mem_sphere one_ne_zero x⟩⟩
+  simp [vonMisesFisherNaturalPDFReal_def]
+
+/-- Zero natural parameter gives extended-real density one. -/
+@[simp]
+theorem vonMisesFisherNaturalPDF_zero (x : sphere (0 : E) 1) :
+    vonMisesFisherNaturalPDF 0 x = 1 := by
+  simp [vonMisesFisherNaturalPDF_eq_ofReal]
+
+/-- The natural-parameter real density is jointly measurable in its parameter and sphere point. -/
+@[fun_prop]
+theorem measurable_uncurry_vonMisesFisherNaturalPDFReal :
+    Measurable fun p : E × sphere (0 : E) 1 ↦ vonMisesFisherNaturalPDFReal p.1 p.2 := by
+  have hZ : Measurable fun η : E ↦
+      ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫ ∂uniformSphereMeasure E :=
+    (by fun_prop : Measurable fun p : E × sphere (0 : E) 1 ↦
+      exp ⟪p.1, (p.2 : E)⟫).stronglyMeasurable.integral_prod_right'.measurable
+  simp_rw [vonMisesFisherNaturalPDFReal_def]
+  exact Measurable.div (by fun_prop) (hZ.comp measurable_fst)
+
+/-- The natural-parameter extended-real density is jointly measurable. -/
+@[fun_prop]
+theorem measurable_uncurry_vonMisesFisherNaturalPDF :
+    Measurable fun p : E × sphere (0 : E) 1 ↦ vonMisesFisherNaturalPDF p.1 p.2 := by
+  simp_rw [vonMisesFisherNaturalPDF_eq_ofReal]
+  exact measurable_uncurry_vonMisesFisherNaturalPDFReal.ennreal_ofReal
+
+/-- The natural-parameter real density is measurable in the sphere point. -/
+@[fun_prop]
+theorem measurable_vonMisesFisherNaturalPDFReal (η : E) :
+    Measurable (vonMisesFisherNaturalPDFReal η) :=
+  measurable_uncurry_vonMisesFisherNaturalPDFReal.comp (measurable_const.prodMk measurable_id)
+
+/-- The natural-parameter extended-real density is measurable in the sphere point. -/
+@[fun_prop]
+theorem measurable_vonMisesFisherNaturalPDF (η : E) :
+    Measurable (vonMisesFisherNaturalPDF η) := by
+  simpa only [vonMisesFisherNaturalPDF_eq_ofReal] using
+    (measurable_vonMisesFisherNaturalPDFReal η).ennreal_ofReal
+
+/-- The natural-parameter density has total mass one in positive dimension. -/
+theorem lintegral_vonMisesFisherNaturalPDF [Nontrivial E] (η : E) :
+    ∫⁻ x, vonMisesFisherNaturalPDF η x ∂uniformSphereMeasure E = 1 := by
+  simpa only [vonMisesFisherNaturalMeasure_eq_withDensity,
+    withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ] using
+    measure_univ (μ := vonMisesFisherNaturalMeasure η)
+
+/-- The natural-parameter real density is integrable, including on the empty sphere. -/
+theorem integrable_vonMisesFisherNaturalPDFReal (η : E) :
+    Integrable (vonMisesFisherNaturalPDFReal η) (uniformSphereMeasure E) :=
+  integrable_of_eq_withDensity
+    (by simpa only [vonMisesFisherNaturalPDF_eq_ofReal] using
+      vonMisesFisherNaturalMeasure_eq_withDensity η)
+    (measurable_vonMisesFisherNaturalPDFReal η).aemeasurable
+    (ae_of_all _ (vonMisesFisherNaturalPDFReal_nonneg η))
+
+/-- The natural-parameter real density integrates to one in positive dimension. -/
+theorem integral_vonMisesFisherNaturalPDFReal [Nontrivial E] (η : E) :
+    ∫ x, vonMisesFisherNaturalPDFReal η x ∂uniformSphereMeasure E = 1 := by
+  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (vonMisesFisherNaturalPDFReal_nonneg η))
+    (measurable_vonMisesFisherNaturalPDFReal η).aestronglyMeasurable]
+  simpa only [vonMisesFisherNaturalPDF_eq_ofReal, ENNReal.toReal_one] using
+    congrArg ENNReal.toReal (lintegral_vonMisesFisherNaturalPDF η)
+
 /-- The real von Mises–Fisher density relative to uniform sphere probability, zero at negative
 concentration. The direction is a unit vector, so the empty sphere has no parameters. -/
 def vonMisesFisherPDFReal (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) : ℝ :=
-  if 0 ≤ κ then
-    exp ⟪κ • (m : E), (x : E)⟫ /
-      ∫ y : sphere (0 : E) 1, exp ⟪κ • (m : E), (y : E)⟫ ∂uniformSphereMeasure E
-  else 0
+  if 0 ≤ κ then vonMisesFisherNaturalPDFReal (κ • (m : E)) x else 0
 
 /-- The extended-real von Mises–Fisher density relative to uniform sphere probability. -/
 def vonMisesFisherPDF (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (0 : E) 1) : ℝ≥0∞ :=
@@ -57,11 +141,21 @@ theorem vonMisesFisherPDF_eq_ofReal (m : sphere (0 : E) 1) (κ : ℝ)
     vonMisesFisherPDF m κ x = ENNReal.ofReal (vonMisesFisherPDFReal m κ x) := (rfl)
 
 /-- At nonnegative concentration, the density is the normalized exponential weight. -/
+@[simp]
 theorem vonMisesFisherPDFReal_of_nonneg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ)
     (x : sphere (0 : E) 1) :
     vonMisesFisherPDFReal m κ x = exp (κ * ⟪(m : E), (x : E)⟫) /
       ∫ y : sphere (0 : E) 1, exp (κ * ⟪(m : E), (y : E)⟫) ∂uniformSphereMeasure E := by
-  simp only [vonMisesFisherPDFReal, ite_eq_left hκ, real_inner_smul_left]
+  simp only [vonMisesFisherPDFReal, ite_eq_left hκ, vonMisesFisherNaturalPDFReal_def,
+    real_inner_smul_left]
+
+/-- At nonnegative concentration, the extended-real density is the normalized exponential. -/
+@[simp]
+theorem vonMisesFisherPDF_of_nonneg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ)
+    (x : sphere (0 : E) 1) :
+    vonMisesFisherPDF m κ x = ENNReal.ofReal (exp (κ * ⟪(m : E), (x : E)⟫) /
+      ∫ y : sphere (0 : E) 1, exp (κ * ⟪(m : E), (y : E)⟫) ∂uniformSphereMeasure E) := by
+  rw [vonMisesFisherPDF_eq_ofReal, vonMisesFisherPDFReal_of_nonneg m hκ]
 
 /-- Negative concentration gives zero real density. -/
 @[simp]
@@ -78,9 +172,8 @@ theorem vonMisesFisherPDF_of_neg (m : sphere (0 : E) 1) {κ : ℝ} (hκ : κ < 0
 /-- The real density is strictly positive at every sphere point for valid concentration. -/
 theorem vonMisesFisherPDFReal_pos (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ)
     (x : sphere (0 : E) 1) : 0 < vonMisesFisherPDFReal m κ x := by
-  have : Nontrivial E := ⟨⟨m, 0, ne_zero_of_mem_sphere one_ne_zero m⟩⟩
-  simp only [vonMisesFisherPDFReal, ite_eq_left hκ]
-  exact div_pos (exp_pos _) (integral_exp_inner_uniformSphereMeasure_pos _)
+  simpa only [vonMisesFisherPDFReal, ite_eq_left hκ] using
+    vonMisesFisherNaturalPDFReal_pos (κ • (m : E)) x
 
 /-- The totalized real density is nonnegative. -/
 theorem vonMisesFisherPDFReal_nonneg (m : sphere (0 : E) 1) (κ : ℝ)
@@ -96,29 +189,26 @@ theorem toReal_vonMisesFisherPDF (m : sphere (0 : E) 1) (κ : ℝ) (x : sphere (
   ENNReal.toReal_ofReal (vonMisesFisherPDFReal_nonneg m κ x)
 
 /-- At zero concentration the density relative to uniform sphere probability is one. -/
-@[simp]
+@[simp high]
 theorem vonMisesFisherPDFReal_zero (m x : sphere (0 : E) 1) :
     vonMisesFisherPDFReal m 0 x = 1 := by
-  have : Nontrivial E := ⟨⟨m, 0, ne_zero_of_mem_sphere one_ne_zero m⟩⟩
-  simp [vonMisesFisherPDFReal]
+  rw [vonMisesFisherPDFReal, ite_eq_left le_rfl, zero_smul, vonMisesFisherNaturalPDFReal_zero]
 
 /-- At zero concentration the extended-real density is one. -/
-@[simp]
+@[simp high]
 theorem vonMisesFisherPDF_zero (m x : sphere (0 : E) 1) : vonMisesFisherPDF m 0 x = 1 := by
-  simp [vonMisesFisherPDF]
+  rw [vonMisesFisherPDF_eq_ofReal, vonMisesFisherPDFReal_zero, ENNReal.ofReal_one]
 
 /-- The real density is jointly measurable in the direction, concentration, and sphere point. -/
 @[fun_prop]
 theorem measurable_uncurry_vonMisesFisherPDFReal :
     Measurable fun p : (sphere (0 : E) 1 × ℝ) × sphere (0 : E) 1 ↦
       vonMisesFisherPDFReal p.1.1 p.1.2 p.2 := by
-  have hZ : Measurable fun η : E ↦
-      ∫ y : sphere (0 : E) 1, exp ⟪η, (y : E)⟫ ∂uniformSphereMeasure E :=
-    (by fun_prop : Measurable fun p : E × sphere (0 : E) 1 ↦
-      exp ⟪p.1, (p.2 : E)⟫).stronglyMeasurable.integral_prod_right'.measurable
   unfold vonMisesFisherPDFReal
   apply Measurable.ite (measurableSet_le measurable_const measurable_fst.snd)
-  · exact Measurable.div (by fun_prop) (hZ.comp (by fun_prop))
+  · exact measurable_uncurry_vonMisesFisherNaturalPDFReal.comp
+      ((measurable_fst.snd.smul (measurable_subtype_coe.comp measurable_fst.fst)).prodMk
+        measurable_snd)
   · exact measurable_const
 
 /-- The extended-real density is jointly measurable in all its arguments. -/
@@ -150,7 +240,8 @@ theorem vonMisesFisherMeasure_eq_withDensity (m : sphere (0 : E) 1) (κ : ℝ) :
   · rw [vonMisesFisherMeasure_of_nonneg m hκ, vonMisesFisherNaturalMeasure_eq_withDensity]
     congr 1
     funext x
-    simp only [vonMisesFisherPDF_eq_ofReal, vonMisesFisherPDFReal, ite_eq_left hκ]
+    simp only [vonMisesFisherPDF_eq_ofReal, vonMisesFisherPDFReal, ite_eq_left hκ,
+      vonMisesFisherNaturalPDF_eq_ofReal]
   · have hzero : vonMisesFisherPDF m κ = 0 :=
       funext fun x ↦ vonMisesFisherPDF_of_neg m (lt_of_not_ge hκ) x
     simp [vonMisesFisherMeasure_of_neg m (lt_of_not_ge hκ), hzero]
@@ -165,25 +256,27 @@ theorem rnDeriv_vonMisesFisherMeasure (m : sphere (0 : E) 1) (κ : ℝ) :
 /-- The density has total mass one at every valid concentration. -/
 theorem lintegral_vonMisesFisherPDF (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ) :
     ∫⁻ x, vonMisesFisherPDF m κ x ∂uniformSphereMeasure E = 1 := by
-  have := isProbabilityMeasure_vonMisesFisherMeasure m hκ
-  simpa only [vonMisesFisherMeasure_eq_withDensity, withDensity_apply _ MeasurableSet.univ,
-    Measure.restrict_univ] using measure_univ (μ := vonMisesFisherMeasure m κ)
+  have : Nontrivial E := ⟨⟨m, 0, ne_zero_of_mem_sphere one_ne_zero m⟩⟩
+  simpa only [vonMisesFisherPDF, vonMisesFisherPDFReal, ite_eq_left hκ,
+    vonMisesFisherNaturalPDF_eq_ofReal] using lintegral_vonMisesFisherNaturalPDF (κ • (m : E))
 
 /-- The real density is integrable for every concentration, including negative concentrations
 where it vanishes. -/
 theorem integrable_vonMisesFisherPDFReal (m : sphere (0 : E) 1) (κ : ℝ) :
-    Integrable (vonMisesFisherPDFReal m κ) (uniformSphereMeasure E) :=
-  integrable_of_eq_withDensity (vonMisesFisherMeasure_eq_withDensity m κ)
-    (measurable_vonMisesFisherPDFReal m κ).aemeasurable
-    (ae_of_all _ (vonMisesFisherPDFReal_nonneg m κ))
+    Integrable (vonMisesFisherPDFReal m κ) (uniformSphereMeasure E) := by
+  unfold vonMisesFisherPDFReal
+  by_cases hκ : 0 ≤ κ
+  · simpa only [ite_eq_left hκ] using
+      integrable_vonMisesFisherNaturalPDFReal (κ • (m : E))
+  · simpa only [ite_eq_right hκ] using
+      (integrable_const 0 : Integrable (fun _ ↦ (0 : ℝ)) (uniformSphereMeasure E))
 
 /-- The real density integrates to one at valid concentrations. -/
 theorem integral_vonMisesFisherPDFReal (m : sphere (0 : E) 1) {κ : ℝ} (hκ : 0 ≤ κ) :
     ∫ x, vonMisesFisherPDFReal m κ x ∂uniformSphereMeasure E = 1 := by
-  rw [integral_eq_lintegral_of_nonneg_ae (ae_of_all _ (vonMisesFisherPDFReal_nonneg m κ))
-    (measurable_vonMisesFisherPDFReal m κ).aestronglyMeasurable]
-  simpa only [vonMisesFisherPDF_eq_ofReal, ENNReal.toReal_one] using
-    congrArg ENNReal.toReal (lintegral_vonMisesFisherPDF m hκ)
+  have : Nontrivial E := ⟨⟨m, 0, ne_zero_of_mem_sphere one_ne_zero m⟩⟩
+  simpa only [vonMisesFisherPDFReal, ite_eq_left hκ] using
+    integral_vonMisesFisherNaturalPDFReal (κ • (m : E))
 
 end TauCeti.Probability
 
@@ -193,7 +286,23 @@ open TauCeti.Probability
 
 variable {E Ω : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [MeasurableSpace Ω] {P : Measure Ω}
-  {X : Ω → sphere (0 : E) 1} {m : sphere (0 : E) 1} {κ : ℝ}
+  {X : Ω → sphere (0 : E) 1} {η : E} {m : sphere (0 : E) 1} {κ : ℝ}
+
+/-- A natural-parameter sphere-valued von Mises–Fisher variable has a density relative to
+uniform sphere probability, including the empty-sphere case. -/
+theorem hasPDF_vonMisesFisherNaturalMeasure
+    (hX : HasLaw X (vonMisesFisherNaturalMeasure η) P) :
+    HasPDF X P (uniformSphereMeasure E) :=
+  hasPDF_of_hasLaw_withDensity (measurable_vonMisesFisherNaturalPDF η).aemeasurable
+    (by rwa [vonMisesFisherNaturalMeasure_eq_withDensity] at hX)
+
+/-- The canonical density of a natural-parameter sphere-valued variable agrees almost
+everywhere with the named density against uniform sphere probability. -/
+theorem pdf_eq_vonMisesFisherNaturalPDF
+    (hX : HasLaw X (vonMisesFisherNaturalMeasure η) P) :
+    pdf X P (uniformSphereMeasure E) =ᵐ[uniformSphereMeasure E] vonMisesFisherNaturalPDF η :=
+  pdf_eq_of_hasLaw_withDensity (measurable_vonMisesFisherNaturalPDF η).aemeasurable
+    (by rwa [vonMisesFisherNaturalMeasure_eq_withDensity] at hX)
 
 /-- A sphere-valued von Mises–Fisher variable has a density relative to uniform sphere
 probability, not ambient volume. -/
