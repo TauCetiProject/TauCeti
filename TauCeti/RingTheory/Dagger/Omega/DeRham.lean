@@ -33,16 +33,6 @@ noncomputable section
 
 open CategoryTheory
 
-namespace TauCeti.Dagger.IsDaggerAlgebra
-
-/-- For every `K`-dagger algebra `A`, `Omega K A` is a Noetherian `A`-module. -/
-instance (priority := low) isNoetherian_omega (K A : Type*) [NormedField K]
-    [IsUltrametricDist K] [CompleteSpace K] [CommRing A] [Algebra K A] [IsDaggerAlgebra K A] :
-    IsNoetherian A (Omega K A) :=
-  have := isNoetherianRing (K := K) (A := A); inferInstance
-
-end TauCeti.Dagger.IsDaggerAlgebra
-
 namespace TauCeti.Dagger.Omega
 
 /-! ### Exterior derivative, de Rham complex, and cohomology -/
@@ -169,10 +159,9 @@ def exactForms : (q : ℕ) → Submodule R (⋀[A]^q (Omega R A))
 @[simp] theorem exactForms_zero : exactForms R A 0 = ⊥ := (rfl)
 @[simp] theorem exactForms_succ (q : ℕ) :
     exactForms R A (q + 1) = LinearMap.range (exteriorDeriv R A q) := (rfl)
-theorem exactForms_le_closedForms (q : ℕ) : exactForms R A q ≤ closedForms R A q := by
-  cases q with
-  | zero => simp
-  | succ q => exact LinearMap.range_le_ker_iff.mpr (exteriorDeriv_comp_exteriorDeriv q)
+theorem exactForms_le_closedForms : (q : ℕ) → exactForms R A q ≤ closedForms R A q
+  | 0 => by simp
+  | q + 1 => LinearMap.range_le_ker_iff.mpr (exteriorDeriv_comp_exteriorDeriv q)
 theorem exteriorDeriv_mem_closedForms (q : ℕ) (ω : ⋀[A]^q (Omega R A)) :
     exteriorDeriv R A q ω ∈ closedForms R A (q + 1) :=
   exactForms_le_closedForms R A (q + 1) (LinearMap.mem_range_self _ ω)
@@ -199,10 +188,8 @@ theorem mk_eq_moduleCatHomologyClass (q : ℕ) :
       (deRhamComplex R A).moduleCatHomologyClass (Z := closedForms R A q)
         (CochainComplex.next ℕ q)
         ((deRhamComplexXIso R A q).inv.hom ∘ₗ (closedForms R A q).subtype)
-        fun ω ↦ by
-          rw [LinearMap.comp_apply]
-          exact deRhamComplex_d_eq_zero_of_mem_closedForms R A q ω.2 :=
-  LinearMap.ext fun ω ↦ by
+        (fun ω ↦ deRhamComplex_d_eq_zero_of_mem_closedForms R A q ω.2) :=
+  LinearMap.ext fun _ ↦ by
     rw [mk, HomologicalComplex.moduleCatCohomologyClassOfIso_apply,
       HomologicalComplex.moduleCatHomologyClass_apply]; rfl
 
@@ -222,8 +209,7 @@ theorem ker_mk (q : ℕ) :
 theorem mk_zero_injective : Function.Injective (mk R A 0) :=
   (injective_iff_map_eq_zero _).mpr fun _ hω ↦ Subtype.ext <| by simpa [exactForms_zero] using hω
 
-/-- In degree zero, `deRhamCohomology R A 0` is canonically linearly equivalent to
-`closedForms R A 0`. -/
+/-- In degree zero, `deRhamCohomology R A 0` is canonically equivalent to `closedForms R A 0`. -/
 def zeroEquivClosedForms : closedForms R A 0 ≃ₗ[R] deRhamCohomology R A 0 :=
   LinearEquiv.ofBijective (mk R A 0) ⟨mk_zero_injective R A, mk_surjective R A 0⟩
 @[simp] theorem zeroEquivClosedForms_apply (ω : closedForms R A 0) :
@@ -238,8 +224,7 @@ theorem subsingleton_deRhamCohomology_of_closedForms_le_exactForms {q : ℕ}
     obtain ⟨ω, rfl⟩ := deRhamCohomology.mk_surjective R A q c
     exact (deRhamCohomology.mk_eq_zero_iff R A q ω).mpr (h ω.2)
 
-/-- `deRhamComplex R A` is exact in positive degree `q + 1` iff every closed `(q + 1)`-form is
-exact. -/
+/-- `deRhamComplex R A` is exact in degree `q + 1` iff every closed `(q + 1)`-form is exact. -/
 theorem exactAt_deRhamComplex_succ_iff (q : ℕ) :
     (deRhamComplex R A).ExactAt (q + 1) ↔
       exactForms R A (q + 1) = closedForms R A (q + 1) := by
@@ -271,16 +256,17 @@ def formsMap (f : A →ₐ[K] B) (q : ℕ) : ⋀[A]^q (Omega K A) →ₗ[K] ⋀[
   toFun := exteriorPower.mapSemilinear q (mapSemilinear f)
   map_add' := map_add _
   map_smul' r ω := by
-    rw [← algebraMap_smul A r ω, LinearMap.map_smulₛₗ]
-    change f (algebraMap K A r) • _ = r • _; rw [f.commutes, algebraMap_smul]
+    have hfr : f.toRingHom (algebraMap K A r) = algebraMap K B r := f.commutes r
+    rw [← algebraMap_smul A r ω, LinearMap.map_smulₛₗ, hfr, algebraMap_smul, RingHom.id_apply]
 
 omit [IsDaggerAlgebra K A] in
 @[simp] theorem formsMap_apply (f : A →ₐ[K] B) (q : ℕ) (ω : ⋀[A]^q (Omega K A)) :
     formsMap f q ω = exteriorPower.mapSemilinear q (mapSemilinear f) ω := (rfl)
 @[simp] theorem formsMap_id (q : ℕ) : formsMap (AlgHom.id K A) q = LinearMap.id :=
-  LinearMap.ext fun ω ↦ by
-    change exteriorPower.mapSemilinear (σ := RingHom.id A) q (mapSemilinear (AlgHom.id K A)) ω = ω
-    rw [mapSemilinear_id, exteriorPower.mapSemilinear_id_apply]
+  LinearMap.ext fun ω ↦
+    -- `(AlgHom.id K A).toRingHom` is defeq to `RingHom.id A`, matching `mapSemilinear_id`.
+    (congrArg (fun g : Omega K A →ₗ[A] Omega K A ↦ exteriorPower.mapSemilinear q g ω)
+      mapSemilinear_id).trans (exteriorPower.mapSemilinear_id_apply q ω)
 omit [IsDaggerAlgebra K A] in
 theorem formsMap_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) (q : ℕ) :
     formsMap (g.comp f) q = (formsMap g q) ∘ₗ (formsMap f q) := LinearMap.ext fun ω ↦ by
@@ -306,11 +292,10 @@ def map (f : A →ₐ[K] B) (q : ℕ) : closedForms K A q →ₗ[K] closedForms 
 theorem map_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) (q : ℕ) :
     map (g.comp f) q = (map g q) ∘ₗ (map f q) :=
   LinearMap.ext fun _ ↦ Subtype.ext (by simp [formsMap_comp])
-theorem map_mem_exactForms (f : A →ₐ[K] B) (q : ℕ) (ω : closedForms K A q)
-    (hω : ω.1 ∈ exactForms K A q) : (map f q ω).1 ∈ exactForms K B q := by
-  cases q with
-  | zero => rw [exactForms_zero, Submodule.mem_bot] at hω ⊢; rw [coe_map, hω, map_zero]
-  | succ q => obtain ⟨η, hη⟩ := hω; exact ⟨formsMap f q η, by rw [exteriorDeriv_formsMap, hη]; rfl⟩
+theorem map_mem_exactForms (f : A →ₐ[K] B) : ∀ (q : ℕ) (ω : closedForms K A q),
+    ω.1 ∈ exactForms K A q → (map f q ω).1 ∈ exactForms K B q
+  | 0, ω, hω => by rw [exactForms_zero, Submodule.mem_bot] at hω ⊢; rw [coe_map, hω, map_zero]
+  | q + 1, _, ⟨η, hη⟩ => ⟨formsMap f q η, by rw [exteriorDeriv_formsMap, hη]; rfl⟩
 
 end closedForms
 
@@ -321,9 +306,8 @@ def map (f : A →ₐ[K] B) (q : ℕ) : deRhamCohomology K A q →ₗ[K] deRhamC
   (LinearMap.liftOfSurjective (R := K) (M := closedForms K A q) (M₂ := deRhamCohomology K A q)
     (M₃ := deRhamCohomology K B q) (f := mk K A q) (mk_surjective K A q))
     ⟨(mk K B q).comp (closedForms.map f q), fun ω hω ↦ by
-      rw [LinearMap.mem_ker, mk_eq_zero_iff] at hω
       rw [LinearMap.mem_ker, LinearMap.comp_apply, mk_eq_zero_iff]
-      exact closedForms.map_mem_exactForms f q ω hω⟩
+      exact closedForms.map_mem_exactForms f q ω ((mk_eq_zero_iff K A q ω).mp hω)⟩
 @[simp] theorem map_mk (f : A →ₐ[K] B) (q : ℕ) (ω : closedForms K A q) :
     map f q (mk K A q ω) = mk K B q (closedForms.map f q ω) := by
   rw [map, LinearMap.equivOfSurjective_apply]; rfl
@@ -331,8 +315,7 @@ def map (f : A →ₐ[K] B) (q : ℕ) : deRhamCohomology K A q →ₗ[K] deRhamC
   LinearMap.ext fun c ↦ by obtain ⟨ω, rfl⟩ := mk_surjective K A q c; simp
 theorem map_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) (q : ℕ) :
     map (g.comp f) q = (map g q).comp (map f q) := LinearMap.ext fun c ↦ by
-  obtain ⟨ω, rfl⟩ := mk_surjective K A q c
-  rw [LinearMap.comp_apply, map_mk, map_mk, map_mk, closedForms.map_comp]; rfl
+  obtain ⟨ω, rfl⟩ := mk_surjective K A q c; simp [closedForms.map_comp]
 
 /-- An equivalence of `K`-dagger algebras induces a `K`-linear equivalence on de Rham cohomology. -/
 def equivOfAlgEquiv (e : A ≃ₐ[K] B) (q : ℕ) :
@@ -376,9 +359,7 @@ def map (f : A →ₐ[K] B) : deRhamComplex K A ⟶ deRhamComplex K B :=
       (deRhamComplexXIso K A q).hom ≫ ModuleCat.ofHom (formsMap f q) := by simp [map]
 @[simp] theorem map_id : map (AlgHom.id K A) = 𝟙 _ := by ext q : 2; simp [map]
 theorem map_comp (g : B →ₐ[K] C) (f : A →ₐ[K] B) : map (g.comp f) = map f ≫ map g := by
-  ext q : 2
-  simp only [map, HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id_assoc,
-    formsMap_comp g f q, ModuleCat.ofHom_comp]
+  ext q : 2; simp [map, formsMap_comp g f q]
 
 theorem homologyMap_map (f : A →ₐ[K] B) (q : ℕ) :
     HomologicalComplex.homologyMap (map f) q = ModuleCat.ofHom (deRhamCohomology.map f q) := by
@@ -452,8 +433,8 @@ theorem d_X_zero_wedge_d_X_one_ne_zero :
   have heq : exteriorPower.ιMulti_family W 2 (washnitzerBasis (Fin 2) K) s =
       exteriorPower.ιMulti W 2 ![d K W (X (Fin 2) K 0), d K W (X (Fin 2) K 1)] := by
     rw [exteriorPower.ιMulti_family]; congr 1; funext i; fin_cases i
-    · simp [e, show e 0 = 0 from Fin.ext (by omega)]; rfl
-    · simp [e, show e 1 = 1 from Fin.ext (by omega)]; rfl
+    · have he0 : e 0 = 0 := Fin.ext (by omega); simp [e, he0]; rfl
+    · have he1 : e 1 = 1 := Fin.ext (by omega); simp [e, he1]; rfl
   have hdiag := exteriorPower.ιMultiDual_apply_diag W 2 (washnitzerBasis (Fin 2) K) s
   rw [heq, h0, map_zero] at hdiag; exact zero_ne_one hdiag
 

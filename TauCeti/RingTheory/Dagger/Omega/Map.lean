@@ -34,14 +34,6 @@ namespace TauCeti.Dagger.Omega
 
 open scoped Pointwise TensorProduct
 
-/-- Universally finite differentials vanish when the structure map is surjective. -/
-theorem subsingleton_of_surjective {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
-    (h : Function.Surjective (algebraMap R A)) : Subsingleton (Omega R A) :=
-  have := KaehlerDifferential.subsingleton_of_surjective R A h; inferInstance
-
-instance instSubsingletonSelf (R : Type*) [CommRing R] : Subsingleton (Omega R R) :=
-  subsingleton_of_surjective Function.surjective_id
-
 section FiniteResidue
 variable {R A B : Type*} [CommRing R] [IsNoetherianRing R] [CommRing A] [CommRing B]
   [Algebra R A] [Algebra R B] [IsNoetherianRing B]
@@ -68,7 +60,8 @@ theorem map_eq_zero_of_ofKaehler_eq_zero {M : Type*} [AddCommGroup M]
     Module.Finite.equiv ((TensorProduct.quotTensorEquivQuotSMul M (m ^ n)).restrictScalars R)
   let : Module A (M ⧸ P) := Module.compHom (M ⧸ P) f.toRingHom
   have : IsScalarTower R A (M ⧸ P) := IsScalarTower.of_algebraMap_smul fun r z ↦ by
-    change f (algebraMap R A r) • z = r • z; rw [f.commutes, algebraMap_smul]
+    rw [MulAction.compHom_smul_def (f.toRingHom : A →* B), MonoidHom.coe_ofClass,
+      AlgHom.toRingHom_eq_coe, AlgHom.coe_toRingHom, f.commutes, algebraMap_smul]
   let q : Ω[A⁄R] →ₗ[A] M ⧸ P :=
     { toFun := fun z ↦ P.mkQ (g z)
       map_add' := fun _ _ ↦ by rw [map_add, map_add]

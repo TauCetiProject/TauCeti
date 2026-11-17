@@ -74,29 +74,24 @@ noncomputable def closedFormsZeroWashnitzerEquiv :
     simp only [smul_eq_mul, RingHom.id_apply, SetLike.val_smul]
     rw [map_mul, ← Algebra.smul_def, ← IsScalarTower.algebraMap_smul (washnitzerAlgebra σ K) a,
       LinearEquiv.map_smul, IsScalarTower.algebraMap_smul]
-  invFun ω :=
-    MvPowerSeries.constantCoeff (exteriorPower.zeroEquiv (washnitzerAlgebra σ K) _ ω.1).1
+  invFun ω := MvPowerSeries.constantCoeff (exteriorPower.zeroEquiv _ _ ω.1).1
   left_inv _ := by simp [MvPowerSeries.algebraMap_apply]
   right_inv ω := Subtype.ext <| by
-    dsimp only
-    set f := exteriorPower.zeroEquiv (washnitzerAlgebra σ K) (Omega K (washnitzerAlgebra σ K)) ω.1
+    dsimp only; set f := exteriorPower.zeroEquiv _ _ ω.1
     have hdf : d K (washnitzerAlgebra σ K) f = 0 := by
       rw [← oneEquiv_exteriorDeriv_zero, (mem_closedForms K _ ω.1).mp ω.2, LinearEquiv.map_zero]
     rw [← (d_eq_zero_iff_eq_algebraMap_constantCoeff f).mp hdf, LinearEquiv.symm_apply_apply]
 
 @[simp] theorem coe_closedFormsZeroWashnitzerEquiv_apply (c : K) :
     (closedFormsZeroWashnitzerEquiv σ K c).1 =
-      (exteriorPower.zeroEquiv (washnitzerAlgebra σ K) _).symm
-        (algebraMap K (washnitzerAlgebra σ K) c) := (rfl)
+      (exteriorPower.zeroEquiv (washnitzerAlgebra σ K) _).symm (algebraMap K _ c) := (rfl)
 @[simp] theorem closedFormsZeroWashnitzerEquiv_symm_apply
     (ω : closedForms K (washnitzerAlgebra σ K) 0) :
     (closedFormsZeroWashnitzerEquiv σ K).symm ω =
-      MvPowerSeries.constantCoeff
-        (exteriorPower.zeroEquiv (washnitzerAlgebra σ K) _ ω.1).1 := (rfl)
+      MvPowerSeries.constantCoeff (exteriorPower.zeroEquiv _ _ ω.1).1 := (rfl)
 
 variable (σ K) in
-/-- **Degree-zero overconvergent de Rham cohomology of a dagger polydisc**:
-`H⁰_dR(K⟨X_σ⟩† / K) ≃ₗ[K] K` in characteristic zero. -/
+/-- **Degree-zero de Rham cohomology of a dagger polydisc**: `H⁰_dR(K⟨X_σ⟩† / K) ≃ₗ[K] K`. -/
 noncomputable def deRhamCohomologyZeroWashnitzerEquiv :
     K ≃ₗ[K] deRhamCohomology K (washnitzerAlgebra σ K) 0 :=
   (closedFormsZeroWashnitzerEquiv σ K).trans
@@ -104,16 +99,14 @@ noncomputable def deRhamCohomologyZeroWashnitzerEquiv :
 
 @[simp] theorem deRhamCohomologyZeroWashnitzerEquiv_apply (c : K) :
     deRhamCohomologyZeroWashnitzerEquiv σ K c =
-      deRhamCohomology.mk K (washnitzerAlgebra σ K) 0
-        (closedFormsZeroWashnitzerEquiv σ K c) := by
+      deRhamCohomology.mk K (washnitzerAlgebra σ K) 0 (closedFormsZeroWashnitzerEquiv σ K c) := by
   rw [deRhamCohomologyZeroWashnitzerEquiv, LinearEquiv.trans_apply,
     deRhamCohomology.zeroEquivClosedForms_apply]
 @[simp] theorem deRhamCohomologyZeroWashnitzerEquiv_symm_mk
     (ω : closedForms K (washnitzerAlgebra σ K) 0) :
     (deRhamCohomologyZeroWashnitzerEquiv σ K).symm
         (deRhamCohomology.mk K (washnitzerAlgebra σ K) 0 ω) =
-      MvPowerSeries.constantCoeff
-        (exteriorPower.zeroEquiv (washnitzerAlgebra σ K) _ ω.1).1 := by
+      MvPowerSeries.constantCoeff (exteriorPower.zeroEquiv _ _ ω.1).1 := by
   rw [← deRhamCohomology.zeroEquivClosedForms_apply, deRhamCohomologyZeroWashnitzerEquiv,
     LinearEquiv.trans_symm, LinearEquiv.trans_apply, LinearEquiv.symm_apply_apply]; rfl
 
@@ -131,8 +124,7 @@ private theorem exteriorAlgebra_repr_coe_eq [Finite σ] [LinearOrder σ]
     (washnitzerBasis σ K).ExteriorAlgebra.repr ω.1 u.1 =
       ((washnitzerBasis σ K).exteriorPower r).repr ω u := by
   classical
-  let : Fintype σ := Fintype.ofFinite σ
-  let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
+  let : Fintype σ := Fintype.ofFinite σ; let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
   rw [← Module.Basis.coord_apply]
   conv_lhs => rw [← ((washnitzerBasis σ K).exteriorPower r).sum_repr ω]
   simp only [Submodule.coe_sum, Submodule.coe_smul, ← ExteriorAlgebra.basis_eq_coe_basis,
@@ -145,10 +137,10 @@ private theorem exteriorAlgebra_repr_coe_eq [Finite σ] [LinearOrder σ]
 theorem exteriorDeriv_washnitzerBasis_exteriorPower [Finite σ] [LinearOrder σ] (r : ℕ)
     (t : Set.powersetCard σ r) :
     exteriorDeriv K (washnitzerAlgebra σ K) r ((washnitzerBasis σ K).exteriorPower r t) = 0 := by
-  rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family,
-    show (washnitzerBasis σ K) ∘ (Set.powersetCard.ofFinEmbEquiv.symm t) =
-      (d K (washnitzerAlgebra σ K)) ∘ (X σ K ∘ Set.powersetCard.ofFinEmbEquiv.symm t) from
-      funext fun _ ↦ washnitzerBasis_apply ..]
+  have hcomp : (washnitzerBasis σ K) ∘ (Set.powersetCard.ofFinEmbEquiv.symm t) =
+      (d K (washnitzerAlgebra σ K)) ∘ (X σ K ∘ Set.powersetCard.ofFinEmbEquiv.symm t) :=
+    funext fun _ ↦ washnitzerBasis_apply ..
+  rw [exteriorPower.basis_apply, exteriorPower.ιMulti_family, hcomp]
   exact exteriorDeriv_ιMulti_comp_d _
 
 private theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul
@@ -168,14 +160,12 @@ private theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul
   rw [washnitzerBasis_repr_d, LinearMap.map_smul, smul_mul_assoc, LinearMap.map_smul, ι_mul_basis]
   by_cases hkt : k ∈ t.1
   · simp [hkt]
-  · by_cases hins : insert k t.1 = u.1
-    · rw [ite_eq_right hkt, ite_eq_left ⟨hkt, hins⟩, hins, Units.smul_def, Units.smul_def,
-        ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K),
-        ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K), LinearMap.map_smul,
-        Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_same]; simp [mul_comm]
-    · rw [ite_eq_right hkt, ite_eq_right fun h ↦ hins h.2, Units.smul_def,
-        ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K), LinearMap.map_smul,
-        Module.Basis.coord_apply, Module.Basis.repr_self, Finsupp.single_eq_of_ne' hins]; simp
+  · rw [ite_eq_right hkt, Units.smul_def, ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K),
+      LinearMap.map_smul, Module.Basis.coord_apply, Module.Basis.repr_self]
+    by_cases hins : insert k t.1 = u.1
+    · rw [ite_eq_left ⟨hkt, hins⟩, hins, Units.smul_def,
+        ← Int.cast_smul_eq_zsmul (washnitzerAlgebra σ K), Finsupp.single_eq_same]; simp [mul_comm]
+    · rw [ite_eq_right fun h ↦ hins h.2, Finsupp.single_eq_of_ne' hins]; simp
 
 /-- **Coordinate formula for the overconvergent exterior derivative** in any characteristic. -/
 theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrder σ]
@@ -187,12 +177,10 @@ theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrde
         pderiv σ K k.1 (((washnitzerBasis σ K).exteriorPower r).repr ω
           (Set.powersetCard.ofCard (s := u.1.erase k.1)
             (by rw [Finset.card_erase_of_mem k.2, Set.powersetCard.card_eq u]; rfl))) := by
-  let : Fintype σ := Fintype.ofFinite σ
-  let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
+  let : Fintype σ := Fintype.ofFinite σ; let : Fintype (Set.powersetCard σ r) := Fintype.ofFinite _
   rw [← Module.Basis.coord_apply]
   conv_lhs => rw [← ((washnitzerBasis σ K).exteriorPower r).sum_repr ω]
-  rw [map_sum, map_sum,
-    Finset.sum_congr rfl fun t _ ↦ by
+  rw [map_sum, map_sum, Finset.sum_congr rfl fun t _ ↦ by
       rw [Module.Basis.coord_apply, washnitzerBasis_exteriorPower_repr_exteriorDeriv_smul],
     Finset.sum_comm, ← Finset.sum_subset (Finset.subset_univ u.1)]
   · rw [← Finset.sum_attach u.1]
@@ -201,8 +189,7 @@ theorem washnitzerBasis_exteriorPower_repr_exteriorDeriv [Finite σ] [LinearOrde
       (by rw [Finset.card_erase_of_mem k.2, Set.powersetCard.card_eq u]; rfl)
     rw [Finset.sum_eq_single tk
       (fun t _ hne ↦ ite_eq_right fun ⟨hkt, hins⟩ ↦ hne <| Subtype.ext <|
-        show t.1 = u.1.erase k.1 from
-          (Finset.erase_insert hkt).symm.trans (congrArg (·.erase k.1) hins))
+        (Finset.erase_insert hkt).symm.trans (congrArg (·.erase k.1) hins))
       (fun h ↦ absurd (Finset.mem_univ tk) h),
       ite_eq_left ⟨Finset.notMem_erase k.1 u.1, Finset.insert_erase k.2⟩]
   · exact fun k _ hku ↦ Finset.sum_eq_zero fun t _ ↦ by
@@ -215,9 +202,8 @@ private theorem washnitzerBasis_exteriorPower_one_repr [Finite σ] [LinearOrder 
         (Set.powersetCard.ofCard (Finset.card_singleton k)) =
       (washnitzerBasis σ K).repr ω k := by
   let : Fintype σ := Fintype.ofFinite σ
-  have hcoe : (((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω :
-      ⋀[washnitzerAlgebra σ K]^1 _) : ExteriorAlgebra (washnitzerAlgebra σ K) _) =
-      ExteriorAlgebra.ι (washnitzerAlgebra σ K) ω := by
+  have hcoe : ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω).1 =
+      ExteriorAlgebra.ι _ ω := by
     simp [exteriorPower.oneEquiv_symm_apply, ExteriorAlgebra.ιMulti_succ_apply]
   rw [← exteriorAlgebra_repr_coe_eq, hcoe, ← Module.Basis.coord_apply]
   conv_lhs => rw [← (washnitzerBasis σ K).sum_repr ω]
@@ -225,6 +211,36 @@ private theorem washnitzerBasis_exteriorPower_one_repr [Finite σ] [LinearOrder 
     ← basis_singleton (washnitzerBasis σ K), Module.Basis.coord_apply, Module.Basis.repr_self,
     Finsupp.single_apply, Finset.singleton_inj, smul_eq_mul, mul_boole, Finset.sum_ite_eq',
     Finset.mem_univ, ↓reduceIte]
+
+/-- For `i < j`, the `{i, j}`-coordinate of `dω` for a `1`-form `ω` is `∂ᵢ ωⱼ - ∂ⱼ ωᵢ`. -/
+private theorem washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one [Finite σ] [LinearOrder σ]
+    (ω : Omega K (washnitzerAlgebra σ K)) {i j : σ} (hij : i < j) :
+    ((washnitzerBasis σ K).exteriorPower 2).repr
+        (exteriorDeriv K (washnitzerAlgebra σ K) 1
+          ((exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω))
+        (Set.powersetCard.ofCard (Finset.card_pair hij.ne)) =
+      pderiv σ K i ((washnitzerBasis σ K).repr ω j) -
+        pderiv σ K j ((washnitzerBasis σ K).repr ω i) := by
+  set u := Set.powersetCard.ofCard (Finset.card_pair hij.ne)
+  rw [washnitzerBasis_exteriorPower_repr_exteriorDeriv]
+  have hatt : u.1.attach = {⟨i, by simp [u]⟩, ⟨j, by simp [u]⟩} := by
+    ext ⟨x, hx⟩; simp only [Finset.mem_attach, Finset.mem_insert, Finset.mem_singleton,
+      Subtype.ext_iff, true_iff]; simpa [u, Set.powersetCard.ofCard] using hx
+  rw [hatt, Finset.sum_pair (fun h ↦ hij.ne (congrArg Subtype.val h))]
+  have hei (hc : (u.1.erase i).card = 1) :
+      Set.powersetCard.ofCard hc = Set.powersetCard.ofCard (Finset.card_singleton j) :=
+    Subtype.ext (by simp [u, Set.powersetCard.ofCard, hij.ne])
+  have hej (hc : (u.1.erase j).card = 1) :
+      Set.powersetCard.ofCard hc = Set.powersetCard.ofCard (Finset.card_singleton i) :=
+    Subtype.ext (by simp only [u, Set.powersetCard.ofCard]; rw [Finset.pair_comm]; simp [hij.ne'])
+  -- Since `i < j`, `i` has sign `+1` (`{x ∈ u | x < i} = ∅`) and `j` has sign `-1` (`{i}`).
+  have hfi : u.1.filter (· < i) = ∅ := by
+    simp [u, Set.powersetCard.val_ofCard, Finset.filter_insert, hij.le]
+  have hfj : u.1.filter (· < j) = {i} := by
+    simp [u, Set.powersetCard.val_ofCard, Finset.filter_insert, Finset.filter_singleton, hij]
+  rw [hei, hej, washnitzerBasis_exteriorPower_one_repr, washnitzerBasis_exteriorPower_one_repr,
+    basisEraseSign_eq_neg_one_pow_card_filter_lt, basisEraseSign_eq_neg_one_pow_card_filter_lt,
+    hfi, hfj]; simp [sub_eq_add_neg]
 
 /-- **Curl-free characterization of closed `1`-forms** on `W = K⟨X_σ⟩†` (any characteristic):
 `d(∑ᵢ fᵢ dXᵢ) = 0` iff `∂ᵢ fⱼ = ∂ⱼ fᵢ` for all `i, j : σ`. -/
@@ -235,51 +251,20 @@ theorem exteriorDeriv_one_eq_zero_iff [Finite σ] (ω : Omega K (washnitzerAlgeb
         pderiv σ K j ((washnitzerBasis σ K).repr ω i) := by
   obtain ⟨n, ⟨e⟩⟩ := Finite.exists_equiv_fin σ
   let : LinearOrder σ := LinearOrder.lift' e e.injective
-  let : Fintype σ := Fintype.ofFinite σ
-  let b := washnitzerBasis σ K
-  set η := (exteriorPower.oneEquiv (washnitzerAlgebra σ K) _).symm ω
-  have hpair {i j : σ} (hij : i < j) :
-      (b.exteriorPower 2).repr (exteriorDeriv K (washnitzerAlgebra σ K) 1 η)
-          (Set.powersetCard.ofCard (Finset.card_pair hij.ne)) =
-        pderiv σ K i (b.repr ω j) - pderiv σ K j (b.repr ω i) := by
-    set u := Set.powersetCard.ofCard (Finset.card_pair hij.ne)
-    rw [washnitzerBasis_exteriorPower_repr_exteriorDeriv]
-    have hatt : u.1.attach =
-        {⟨i, by simp [u, Set.powersetCard.ofCard]⟩, ⟨j, by simp [u, Set.powersetCard.ofCard]⟩} := by
-      ext ⟨x, hx⟩; simp only [Finset.mem_attach, Finset.mem_insert, Finset.mem_singleton,
-        Subtype.ext_iff, true_iff]; simpa [u, Set.powersetCard.ofCard] using hx
-    rw [hatt, Finset.sum_pair (fun h ↦ hij.ne (congrArg Subtype.val h))]
-    have hei (hc : (u.1.erase i).card = 1) :
-        Set.powersetCard.ofCard hc = Set.powersetCard.ofCard (Finset.card_singleton j) :=
-      Subtype.ext (by simp [u, Set.powersetCard.ofCard, hij.ne])
-    have hej (hc : (u.1.erase j).card = 1) :
-        Set.powersetCard.ofCard hc = Set.powersetCard.ofCard (Finset.card_singleton i) :=
-      Subtype.ext (by simp only [u, Set.powersetCard.ofCard]; rw [Finset.pair_comm]; simp [hij.ne'])
-    have hfi : u.1.filter (· < i) = ∅ := Finset.filter_eq_empty_iff.mpr fun x hx ↦ by
-      simp only [u, Set.powersetCard.val_ofCard, Finset.mem_insert, Finset.mem_singleton] at hx
-      rcases hx with rfl | rfl; exacts [lt_irrefl _, not_lt_of_gt hij]
-    have hfj : u.1.filter (· < j) = {i} := by
-      ext x; simp only [u, Set.powersetCard.val_ofCard, Finset.mem_filter, Finset.mem_insert,
-        Finset.mem_singleton]
-      exact ⟨fun ⟨hx, h⟩ ↦ hx.elim id fun h' ↦ absurd (h' ▸ h) (lt_irrefl _),
-        fun hx ↦ ⟨Or.inl hx, hx ▸ hij⟩⟩
-    rw [hei, hej, washnitzerBasis_exteriorPower_one_repr, washnitzerBasis_exteriorPower_one_repr,
-      basisEraseSign_eq_neg_one_pow_card_filter_lt, basisEraseSign_eq_neg_one_pow_card_filter_lt,
-      hfi, hfj]; simp [sub_eq_add_neg]; rfl
-  rw [← (b.exteriorPower 2).repr.map_eq_zero_iff, Finsupp.ext_iff]
+  rw [← ((washnitzerBasis σ K).exteriorPower 2).repr.map_eq_zero_iff, Finsupp.ext_iff]
   refine ⟨fun h i j ↦ ?_, fun h u ↦ ?_⟩
-  · rcases lt_trichotomy i j with hij | rfl | hji
-    · exact sub_eq_zero.mp <| by
-        simpa [hpair hij] using h (Set.powersetCard.ofCard (Finset.card_pair hij.ne))
-    · rfl
-    · exact (sub_eq_zero.mp <| by
-        simpa [hpair hji] using h (Set.powersetCard.ofCard (Finset.card_pair hji.ne))).symm
+  · have hlt {a b : σ} (hab : a < b) : pderiv σ K a ((washnitzerBasis σ K).repr ω b) =
+        pderiv σ K b ((washnitzerBasis σ K).repr ω a) := sub_eq_zero.mp <| by
+      simpa [washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one ω hab] using
+        h (Set.powersetCard.ofCard (Finset.card_pair hab.ne))
+    rcases lt_trichotomy i j with hij | rfl | hji
+    exacts [hlt hij, rfl, (hlt hji).symm]
   · obtain ⟨i, j, hij, hu⟩ := Finset.card_eq_two.mp (Set.powersetCard.card_eq u)
-    rcases lt_or_gt_of_ne hij with hlt | hgt
-    · rw [show u = Set.powersetCard.ofCard (Finset.card_pair hlt.ne) from Subtype.ext hu,
-        hpair hlt, h i j, sub_self]; rfl
-    · rw [show u = Set.powersetCard.ofCard (Finset.card_pair hgt.ne) from
-        Subtype.ext (hu.trans (Finset.pair_comm i j)), hpair hgt, h j i, sub_self]; rfl
+    wlog hlt : i < j generalizing i j
+    · exact this j i hij.symm (hu.trans (Finset.pair_comm i j))
+        (lt_of_le_of_ne (le_of_not_gt hlt) hij.symm)
+    have hu' : u = Set.powersetCard.ofCard (Finset.card_pair hlt.ne) := Subtype.ext hu
+    rw [hu', washnitzerBasis_exteriorPower_two_repr_exteriorDeriv_one ω hlt, h i j, sub_self]; rfl
 
 private theorem d_eq_iff_forall_pderiv_eq [Finite σ] (g : washnitzerAlgebra σ K)
     (ω : Omega K (washnitzerAlgebra σ K)) :
@@ -332,22 +317,115 @@ private theorem pderiv_repr_eq_zero_of_lt [LinearOrder σ] (q : ℕ) {i₀ k₀ 
   rw [washnitzerBasis_exteriorPower_repr_exteriorDeriv] at hdw
   have hkw : k₀ ∈ w.1 := Finset.mem_insert_self k₀ s.1
   rw [Finset.sum_eq_single ⟨k₀, hkw⟩] at hdw
-  · rw [show Set.powersetCard.ofCard (s := w.1.erase k₀)
-        (by rw [Finset.card_erase_of_mem hkw, Set.powersetCard.card_eq w]; rfl) = s from
-      Subtype.ext (Finset.erase_insert hkn_s)] at hdw
+  · have hwk : Set.powersetCard.ofCard (s := w.1.erase k₀)
+        (by rw [Finset.card_erase_of_mem hkw, Set.powersetCard.card_eq w]; rfl) = s :=
+      Subtype.ext (Finset.erase_insert hkn_s)
+    rw [hwk] at hdw
     have hinv := congrArg ((basisEraseSign k₀ w.1)⁻¹ • ·) hdw
     rwa [inv_smul_smul, Units.smul_def, zsmul_zero] at hinv
   · intro l _ hlk
     have hzero (hc : (w.1.erase l.1).card = q + 1) :
-        ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω (Set.powersetCard.ofCard hc) = 0 := by
-      by_contra hne
-      exact not_le_of_gt hk₀ (hsupp _ hne k₀ <| by
-        rw [Set.powersetCard.val_ofCard]
-        exact Finset.mem_erase.mpr ⟨fun h ↦ hlk (Subtype.ext h.symm), hkw⟩)
+        ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω (Set.powersetCard.ofCard hc) = 0 :=
+      by_contra fun hne ↦ not_le_of_gt hk₀ <| hsupp _ hne k₀ <| Set.powersetCard.val_ofCard _ ▸
+        Finset.mem_erase.mpr ⟨fun h ↦ hlk (Subtype.ext h.symm), hkw⟩
     rw [hzero, map_zero, Units.smul_def, zsmul_zero]
   · exact fun h ↦ absurd (Finset.mem_attach w.1 ⟨k₀, hkw⟩) h
 
-private theorem poincare_step [LinearOrder σ] (q : ℕ) (i₀ : σ)
+section PoincareStep
+
+variable [LinearOrder σ] {q : ℕ} {i₀ : σ}
+  {ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))}
+
+/-- The `q`-form integrating the `i₀`-components of `ω` along `X_{i₀}` on `q`-subsets strictly
+above `i₀`, and vanishing on all other basis multi-indices. -/
+private noncomputable def poincarePrimitive (q : ℕ) (i₀ : σ)
+    (ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))) :
+    ⋀[washnitzerAlgebra σ K]^q (Omega K (washnitzerAlgebra σ K)) :=
+  let : Finite (Set.powersetCard σ q) := let : Fintype σ := Fintype.ofFinite σ; inferInstance
+  ((washnitzerBasis σ K).exteriorPower q).repr.symm <| Finsupp.equivFunOnFinite.symm fun t ↦
+    if hgt : ∀ j ∈ t.1, i₀ < j then
+      primitive σ K i₀ (((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω
+        (Set.powersetCard.ofCard (s := insert i₀ t.1)
+          (by rw [Finset.card_insert_of_notMem fun h ↦ lt_irrefl i₀ (hgt i₀ h),
+            Set.powersetCard.card_eq t])))
+    else 0
+
+private theorem poincarePrimitive_repr_of_forall_lt {t : Set.powersetCard σ q}
+    (hgt : ∀ j ∈ t.1, i₀ < j) (hc : (insert i₀ t.1).card = q + 1) :
+    ((washnitzerBasis σ K).exteriorPower q).repr (poincarePrimitive q i₀ ω) t =
+      primitive σ K i₀ (((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω
+        (Set.powersetCard.ofCard hc)) := by
+  simp only [poincarePrimitive, LinearEquiv.apply_symm_apply, Finsupp.coe_equivFunOnFinite_symm,
+    dite_eq_left hgt]
+
+private theorem poincarePrimitive_repr_of_not_forall_lt {t : Set.powersetCard σ q}
+    (hnot : ¬∀ j ∈ t.1, i₀ < j) :
+    ((washnitzerBasis σ K).exteriorPower q).repr (poincarePrimitive q i₀ ω) t = 0 := by
+  simp only [poincarePrimitive, LinearEquiv.apply_symm_apply, Finsupp.coe_equivFunOnFinite_symm,
+    dite_eq_right hnot]
+
+/-- For a closed form supported on indices `≥ i₀`, `d (poincarePrimitive q i₀ ω)` vanishes on
+every multi-index containing an index strictly below `i₀`. -/
+private theorem exteriorDeriv_poincarePrimitive_repr_of_exists_lt
+    (hdω : exteriorDeriv K (washnitzerAlgebra σ K) (q + 1) ω = 0)
+    (hsupp : ∀ s : Set.powersetCard σ (q + 1),
+      ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω s ≠ 0 → ∀ i ∈ s.1, i₀ ≤ i)
+    {u : Set.powersetCard σ (q + 1)} (hex_lt : ∃ j₀ ∈ u.1, j₀ < i₀) :
+    ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
+        (exteriorDeriv K (washnitzerAlgebra σ K) q (poincarePrimitive q i₀ ω)) u = 0 := by
+  obtain ⟨j₀, hj₀u, hj₀m⟩ := hex_lt
+  rw [washnitzerBasis_exteriorPower_repr_exteriorDeriv]
+  refine Finset.sum_eq_zero fun k _ ↦ ?_
+  by_cases hgt : ∀ j ∈ u.1.erase k.1, i₀ < j
+  · -- Erasing `k` leaves indices `> i₀`, so `k = j₀ < i₀` and `∂_k` commutes past `primitive i₀`.
+    have hkj₀ : k.1 = j₀ := by_contra fun hne ↦
+      asymm hj₀m (hgt j₀ (Finset.mem_erase.mpr ⟨Ne.symm hne, hj₀u⟩))
+    have hji₀ : i₀ ≠ k.1 := ne_of_gt (hkj₀ ▸ hj₀m)
+    let t : Set.powersetCard σ q := Set.powersetCard.ofCard (s := u.1.erase k.1)
+      (by rw [Finset.card_erase_of_mem k.2, Set.powersetCard.card_eq u]; rfl)
+    have hgt' : ∀ j ∈ t.1, i₀ < j := by simpa only [t, Set.powersetCard.val_ofCard] using hgt
+    rw [poincarePrimitive_repr_of_forall_lt (t := t) hgt'
+        (by rw [Finset.card_insert_of_notMem fun h ↦ lt_irrefl i₀ (hgt' i₀ h),
+          Set.powersetCard.card_eq]),
+      pderiv_primitive_of_ne hji₀,
+      pderiv_repr_eq_zero_of_lt q hdω hsupp (hkj₀ ▸ hj₀m) _
+        (by simp [t, Set.powersetCard.val_ofCard, Ne.symm hji₀]),
+      map_zero, Units.smul_def, zsmul_zero]
+  · rw [poincarePrimitive_repr_of_not_forall_lt (by simpa using hgt),
+      map_zero, Units.smul_def, zsmul_zero]
+
+/-- On a multi-index `u` with minimum element `i₀`, `d (poincarePrimitive q i₀ ω)` reproduces the
+`u`-coordinate of `ω`. -/
+private theorem exteriorDeriv_poincarePrimitive_repr_of_mem_of_forall_le
+    {u : Set.powersetCard σ (q + 1)} (hi₀u : i₀ ∈ u.1) (hle : ∀ j ∈ u.1, i₀ ≤ j) :
+    ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
+        (exteriorDeriv K (washnitzerAlgebra σ K) q (poincarePrimitive q i₀ ω)) u =
+      ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω u := by
+  rw [washnitzerBasis_exteriorPower_repr_exteriorDeriv, Finset.sum_eq_single ⟨i₀, hi₀u⟩]
+  · -- Only the `k = i₀` term survives; since `i₀ = min u`, `basisEraseSign i₀ u.1 = 1`.
+    let t : Set.powersetCard σ q := Set.powersetCard.ofCard (s := u.1.erase i₀)
+      (by rw [Finset.card_erase_of_mem hi₀u, Set.powersetCard.card_eq u]; rfl)
+    have hgt : ∀ j ∈ t.1, i₀ < j := fun j hj ↦ by
+      rw [Set.powersetCard.val_ofCard] at hj
+      exact lt_of_le_of_ne (hle j (Finset.mem_of_mem_erase hj)) (Finset.ne_of_mem_erase hj).symm
+    have hc : (insert i₀ t.1).card = q + 1 := by
+      simp [t, Set.powersetCard.val_ofCard, Finset.insert_erase hi₀u, Set.powersetCard.card_eq u]
+    have htu : Set.powersetCard.ofCard hc = u :=
+      Subtype.ext (by simp [t, Set.powersetCard.val_ofCard, Finset.insert_erase hi₀u])
+    have hsign : basisEraseSign i₀ u.1 = 1 := by
+      rw [basisEraseSign_eq_neg_one_pow_card_filter_lt,
+        Finset.filter_eq_empty_iff.mpr fun j hj ↦ not_lt_of_ge (hle j hj),
+        Finset.card_empty, pow_zero]
+    rw [poincarePrimitive_repr_of_forall_lt (t := t) hgt hc, pderiv_primitive, htu, hsign,
+      Units.smul_def, Units.val_one, one_zsmul]
+  · intro k _ hki₀
+    rw [poincarePrimitive_repr_of_not_forall_lt (fun hgt ↦ lt_irrefl i₀ <| hgt i₀ <|
+      Set.powersetCard.val_ofCard _ ▸
+        Finset.mem_erase.mpr ⟨fun h ↦ hki₀ (Subtype.ext h.symm), hi₀u⟩),
+      map_zero, Units.smul_def, zsmul_zero]
+  · exact fun h ↦ absurd (Finset.mem_attach u.1 ⟨i₀, hi₀u⟩) h
+
+private theorem poincare_step (q : ℕ) (i₀ : σ)
     {ω : ⋀[washnitzerAlgebra σ K]^(q + 1) (Omega K (washnitzerAlgebra σ K))}
     (hdω : exteriorDeriv K (washnitzerAlgebra σ K) (q + 1) ω = 0)
     (hsupp : ∀ s : Set.powersetCard σ (q + 1),
@@ -355,77 +433,24 @@ private theorem poincare_step [LinearOrder σ] (q : ℕ) (i₀ : σ)
     ∃ η₀ : ⋀[washnitzerAlgebra σ K]^q (Omega K (washnitzerAlgebra σ K)),
       exteriorDeriv K (washnitzerAlgebra σ K) (q + 1)
           (ω - exteriorDeriv K (washnitzerAlgebra σ K) q η₀) = 0 ∧
-        ∀ u : Set.powersetCard σ (q + 1),
-          ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
-              (ω - exteriorDeriv K (washnitzerAlgebra σ K) q η₀) u ≠ 0 →
-            ∀ i ∈ u.1, i₀ < i := by
-  let b := washnitzerBasis σ K
-  let g (t : Set.powersetCard σ q) : washnitzerAlgebra σ K :=
-    if hgt : ∀ j ∈ t.1, i₀ < j then
-      primitive σ K i₀ ((b.exteriorPower (q + 1)).repr ω
-        (Set.powersetCard.ofCard (s := insert i₀ t.1)
-          (by rw [Finset.card_insert_of_notMem fun h ↦ lt_irrefl i₀ (hgt i₀ h),
-            Set.powersetCard.card_eq t])))
-    else 0
-  have : Finite (Set.powersetCard σ q) := let : Fintype σ := Fintype.ofFinite σ; inferInstance
-  let η₀ := (b.exteriorPower q).repr.symm (Finsupp.equivFunOnFinite.symm g)
-  have hrepr (t : Set.powersetCard σ q) : (b.exteriorPower q).repr η₀ t = g t := by
-    rw [LinearEquiv.apply_symm_apply]; rfl
-  refine ⟨η₀, by rw [map_sub, hdω, exteriorDeriv_exteriorDeriv_apply, sub_zero], fun u hu i hi ↦ ?_⟩
+        ∀ u, ((washnitzerBasis σ K).exteriorPower (q + 1)).repr
+            (ω - exteriorDeriv K (washnitzerAlgebra σ K) q η₀) u ≠ 0 → ∀ i ∈ u.1, i₀ < i := by
+  refine ⟨poincarePrimitive q i₀ ω,
+    by rw [map_sub, hdω, exteriorDeriv_exteriorDeriv_apply, sub_zero], fun u hu i hi ↦ ?_⟩
   by_contra! hle_i₀; apply hu
   rw [← Module.Basis.coord_apply, LinearMap.map_sub, sub_eq_zero, Module.Basis.coord_apply,
-    Module.Basis.coord_apply, washnitzerBasis_exteriorPower_repr_exteriorDeriv]
-  have hzero_term {k : σ} (hnot : ¬∀ j ∈ u.1.erase k, i₀ < j) (hc : (u.1.erase k).card = q) :
-      basisEraseSign k u.1 • pderiv σ K k ((b.exteriorPower q).repr η₀
-        (Set.powersetCard.ofCard hc)) = 0 := by
-    rw [hrepr]; dsimp only [g]
-    rw [dite_eq_right (by simpa only [Set.powersetCard.val_ofCard] using hnot), map_zero,
-      Units.smul_def, zsmul_zero]
+    Module.Basis.coord_apply]
   by_cases hex_lt : ∃ j₀ ∈ u.1, j₀ < i₀
-  · obtain ⟨j₀, hj₀u, hj₀m⟩ := hex_lt
-    have hωu : (b.exteriorPower (q + 1)).repr ω u = 0 := by
-      by_contra hne; exact not_le_of_gt hj₀m (hsupp u hne j₀ hj₀u)
-    rw [hωu]; symm; refine Finset.sum_eq_zero fun k _ ↦ ?_
-    by_cases hgt : ∀ j ∈ u.1.erase k.1, i₀ < j
-    · have hkj₀ : k.1 = j₀ := by
-        by_contra hne; exact asymm hj₀m (hgt j₀ (Finset.mem_erase.mpr ⟨Ne.symm hne, hj₀u⟩))
-      have hji₀ : i₀ ≠ k.1 := ne_of_gt (hkj₀ ▸ hj₀m)
-      have hterm (hc : (u.1.erase k.1).card = q) :
-          basisEraseSign k.1 u.1 • pderiv σ K k.1 ((b.exteriorPower q).repr η₀
-            (Set.powersetCard.ofCard hc)) = 0 := by
-        rw [hrepr]; dsimp only [g]
-        rw [dite_eq_left (by simpa only [Set.powersetCard.val_ofCard] using hgt),
-          pderiv_primitive_of_ne hji₀]
-        have hzero (hc2 : (insert i₀ (Set.powersetCard.ofCard hc).1).card = q + 1) :
-            pderiv σ K k.1 ((b.exteriorPower (q + 1)).repr ω (Set.powersetCard.ofCard hc2)) = 0 :=
-          pderiv_repr_eq_zero_of_lt q hdω hsupp (hkj₀ ▸ hj₀m) _ <| by
-            rw [Set.powersetCard.val_ofCard, Set.powersetCard.val_ofCard]; simp [Ne.symm hji₀]
-        rw [hzero, map_zero, Units.smul_def, zsmul_zero]
-      exact hterm _
-    · exact hzero_term hgt _
-  · simp only [not_exists, not_and, not_lt] at hex_lt
+  · -- Both `ω` (by `hsupp`) and `d η₀` vanish on multi-indices containing an index `< i₀`.
+    have hωu : ((washnitzerBasis σ K).exteriorPower (q + 1)).repr ω u = 0 :=
+      by_contra fun hne ↦ hex_lt.elim fun j₀ ⟨hj₀u, hj₀m⟩ ↦ not_le_of_gt hj₀m (hsupp u hne j₀ hj₀u)
+    rw [hωu, exteriorDeriv_poincarePrimitive_repr_of_exists_lt hdω hsupp hex_lt]
+  · -- Otherwise `i₀ = min u`, so `d η₀` reproduces and cancels the `u`-coordinate of `ω`.
+    simp only [not_exists, not_and, not_lt] at hex_lt
     have hi₀u : i₀ ∈ u.1 := le_antisymm hle_i₀ (hex_lt i hi) ▸ hi
-    symm; rw [Finset.sum_eq_single ⟨i₀, hi₀u⟩]
-    · have hmain (hc : (u.1.erase i₀).card = q) :
-          basisEraseSign i₀ u.1 • pderiv σ K i₀ ((b.exteriorPower q).repr η₀
-            (Set.powersetCard.ofCard hc)) = (b.exteriorPower (q + 1)).repr ω u := by
-        have hgt : ∀ j ∈ (Set.powersetCard.ofCard hc).1, i₀ < j := fun j hj ↦ by
-          rw [Set.powersetCard.val_ofCard] at hj
-          exact lt_of_le_of_ne (hex_lt j (Finset.mem_of_mem_erase hj))
-            (Ne.symm (Finset.ne_of_mem_erase hj))
-        rw [hrepr]; dsimp only [g]; rw [dite_eq_left hgt, pderiv_primitive]
-        have htu (hc2 : (insert i₀ (Set.powersetCard.ofCard hc).1).card = q + 1) :
-            Set.powersetCard.ofCard hc2 = u := Subtype.ext (by
-          rw [Set.powersetCard.val_ofCard, Set.powersetCard.val_ofCard, Finset.insert_erase hi₀u])
-        have hsign : basisEraseSign i₀ u.1 = 1 := by
-          rw [basisEraseSign_eq_neg_one_pow_card_filter_lt,
-            Finset.filter_eq_empty_iff.mpr fun j hj ↦ not_lt_of_ge (hex_lt j hj),
-            Finset.card_empty, pow_zero]
-        rw [htu, hsign, Units.smul_def, Units.val_one, one_zsmul]
-      exact hmain _
-    · exact fun k _ hki₀ ↦ hzero_term (fun hgt ↦ lt_irrefl i₀
-        (hgt i₀ (Finset.mem_erase.mpr ⟨fun h ↦ hki₀ (Subtype.ext h.symm), hi₀u⟩))) _
-    · exact fun h ↦ absurd (Finset.mem_attach u.1 ⟨i₀, hi₀u⟩) h
+    exact (exteriorDeriv_poincarePrimitive_repr_of_mem_of_forall_le hi₀u hex_lt).symm
+
+end PoincareStep
 
 /-- **The Poincaré lemma on a dagger polydisc (Grosse-Klönne)**: every closed `(q + 1)`-form on
 `W = K⟨X_σ⟩†` (`[Finite σ]`, `CharZero K`) is exact. -/
@@ -454,8 +479,9 @@ theorem exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero (q : ℕ)
     intro m hm ω hdω hsupp
     let i₀ : σ := e.symm ⟨m, by omega⟩
     have hei₀ : (e i₀ : ℕ) = m := by simp [i₀]
-    obtain ⟨η₀, hdω', hsupp'⟩ := poincare_step q i₀ hdω fun s hs i hi ↦ by
-      change e i₀ ≤ e i; rw [Fin.le_def, hei₀]; exact hsupp s hs i hi
+    -- Under `LinearOrder.lift' e`, `i₀ ≤ i` is definitionally `e i₀ ≤ e i`.
+    obtain ⟨η₀, hdω', hsupp'⟩ := poincare_step q i₀ hdω fun s hs i hi ↦
+      Fin.le_def.mpr (hei₀.symm ▸ hsupp s hs i hi)
     obtain ⟨η₁, hη₁⟩ := ih (m + 1) (by omega) _ hdω' fun s hs i hi ↦ by
       have hlt : e i₀ < e i := hsupp' s hs i hi; rw [Fin.lt_def, hei₀] at hlt; omega
     exact ⟨η₀ + η₁, by rw [map_add, hη₁, add_sub_cancel]⟩
@@ -463,11 +489,10 @@ theorem exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero (q : ℕ)
 /-- In characteristic zero, exact and closed `(q + 1)`-forms on `W = K⟨X_σ⟩†` coincide. -/
 theorem exactForms_washnitzer_succ (q : ℕ) :
     exactForms K (washnitzerAlgebra σ K) (q + 1) =
-      closedForms K (washnitzerAlgebra σ K) (q + 1) := by
-  refine le_antisymm (exactForms_le_closedForms K _ (q + 1)) fun ω hω ↦ ?_
-  rw [exactForms_succ]
-  exact LinearMap.mem_range.mpr
-    (exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero q ((mem_closedForms K _ ω).mp hω))
+      closedForms K (washnitzerAlgebra σ K) (q + 1) :=
+  le_antisymm (exactForms_le_closedForms K _ (q + 1)) fun ω hω ↦
+    (exactForms_succ K (washnitzerAlgebra σ K) q).symm ▸ LinearMap.mem_range.mpr
+      (exists_exteriorDeriv_eq_of_exteriorDeriv_eq_zero q ((mem_closedForms K _ ω).mp hω))
 
 /-- **Exactness of the overconvergent de Rham complex of a dagger polydisc** in positive degree. -/
 theorem exactAt_deRhamComplex_washnitzer_succ (q : ℕ) :
@@ -519,10 +544,9 @@ theorem not_exists_d_eq_X_pow_sub_one_smul_d_X_charP (p : ℕ) [CharP K p] [Fact
   have hrepr := congrArg (fun ω ↦ (washnitzerBasis (Fin 1) K).repr ω 0) hg
   rw [washnitzerBasis_repr_d, LinearEquiv.map_smul, ← washnitzerBasis_apply,
     Module.Basis.repr_self, Finsupp.smul_single_one, Finsupp.single_eq_same] at hrepr
-  have hcoeff := congrArg (fun f : washnitzerAlgebra (Fin 1) K ↦
-    MvPowerSeries.coeff (Finsupp.single (0 : Fin 1) (p - 1)) f.1) hrepr
-  have hlhs : MvPowerSeries.coeff (Finsupp.single (0 : Fin 1) (p - 1))
-      (pderiv (Fin 1) K 0 g).1 = 0 := by
+  let e : Fin 1 →₀ ℕ := Finsupp.single 0 (p - 1)
+  have hcoeff := congrArg (fun f : washnitzerAlgebra (Fin 1) K ↦ MvPowerSeries.coeff e f.1) hrepr
+  have hlhs : MvPowerSeries.coeff e (pderiv (Fin 1) K 0 g).1 = 0 := by
     rw [coe_pderiv, MvPowerSeries.coeff_pderiv, Finsupp.single_eq_same, ← Nat.cast_add_one,
       Nat.sub_add_cancel (Fact.out : p.Prime).pos, CharP.cast_eq_zero, mul_zero]
   rw [hlhs, SubmonoidClass.coe_pow, coe_X, MvPowerSeries.coeff_X_pow, ite_eq_left rfl] at hcoeff
@@ -538,12 +562,10 @@ theorem not_exactAt_deRhamComplex_washnitzer_one_charP (p : ℕ) [CharP K p] [Fa
   have hclosed : ω ∈ closedForms K W 1 := by
     have := subsingleton_forms_washnitzer_of_card_lt (σ := Fin 1) (K := K) (q := 2) (by simp)
     rw [mem_closedForms]; exact Subsingleton.elim _ 0
-  rw [← hex, exactForms_succ, LinearMap.mem_range] at hclosed
-  obtain ⟨f₀, hf₀⟩ := hclosed
+  obtain ⟨f₀, hf₀⟩ := LinearMap.mem_range.mp ((exactForms_succ K W 0) ▸ hex.symm ▸ hclosed)
   obtain ⟨c, rfl⟩ := (exteriorPower.zeroEquiv W _).symm.surjective f₀
-  rw [exteriorDeriv_zero_symm] at hf₀
   exact not_exists_d_eq_X_pow_sub_one_smul_d_X_charP p
-    ⟨c, (exteriorPower.oneEquiv W _).symm.injective hf₀⟩
+    ⟨c, (exteriorPower.oneEquiv W _).symm.injective (by rwa [exteriorDeriv_zero_symm] at hf₀)⟩
 
 /-- In characteristic `p > 0`, `H¹_dR(K⟨X₀⟩† / K)` is nontrivial. -/
 theorem nontrivial_deRhamCohomology_washnitzer_one_charP (p : ℕ) [CharP K p] [Fact p.Prime] :
