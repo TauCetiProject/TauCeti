@@ -31,10 +31,9 @@ The action of `Γ` on a subshift is measurable for the trace σ-algebra
 (`MeasurableConstSMul Γ X`), and the exterior σ-algebras lie below the trace σ-algebra
 (`TauCeti.Subshift.exterior_le`).
 
-## References
-
-This is the setting of Layer 4 of the TauCetiRoadmap roadmap `DimerModelsAndLozengeTilings`
-(4.4 and 4.5).
+Subshifts are the configuration spaces of specifications and Gibbs measures
+(`TauCeti.Specification`): a specification resamples a configuration inside a finite set `Λ`
+given its values outside `Λ`, measurably for the exterior σ-algebra `𝓕_{Λᶜ}`.
 -/
 
 public section
@@ -59,7 +58,7 @@ namespace Subshift
 variable {Γ I S : Type*} [Group Γ] [MulAction Γ I] [TopologicalSpace S]
 
 /-- A subshift is a set of configurations. -/
-instance : SetLike (Subshift Γ I S) (I → S) where
+instance instSetLike : SetLike (Subshift Γ I S) (I → S) where
   coe := carrier
   coe_injective X Y h := by cases X; cases Y; congr
 
@@ -80,25 +79,24 @@ theorem smul_mem (g : Γ) {ω : I → S} (hω : ω ∈ X) : (fun i => ω (g⁻¹
   X.smul_mem' g hω
 
 /-- `Γ` acts on a subshift by `(g • ω) i = ω (g⁻¹ • i)`. -/
-instance : MulAction Γ X where
+instance instSMul : SMul Γ X where
   smul g ω := ⟨fun i => ω.1 (g⁻¹ • i), X.smul_mem g ω.2⟩
-  one_smul ω := Subtype.ext <| funext fun i => by
-    change ω.1 ((1 : Γ)⁻¹ • i) = ω.1 i
-    simp
-  mul_smul g h ω := Subtype.ext <| funext fun i => by
-    change ω.1 ((g * h)⁻¹ • i) = ω.1 (h⁻¹ • g⁻¹ • i)
-    simp [mul_smul]
 
 /-- The coordinates of `g • ω`. -/
 @[simp]
 theorem coe_smul_apply (g : Γ) (ω : X) (i : I) : (g • ω : X).1 i = ω.1 (g⁻¹ • i) :=
   rfl
 
+/-- The action of `Γ` on a subshift is a group action. -/
+instance instMulAction : MulAction Γ X where
+  one_smul ω := Subtype.ext <| funext fun i => by simp
+  mul_smul g h ω := Subtype.ext <| funext fun i => by simp [mul_smul]
+
 variable [MeasurableSpace S]
 
 /-- Each `ω ↦ g • ω` is measurable for the trace of the product σ-algebra: each coordinate of
 `g • ω` is a coordinate of `ω`. -/
-instance : MeasurableConstSMul Γ X where
+instance instMeasurableConstSMul : MeasurableConstSMul Γ X where
   measurable_const_smul g :=
     Measurable.subtype_mk (f := fun ω : X => fun i => ω.1 (g⁻¹ • i)) <|
       .of_eval fun i => (measurable_pi_apply (g⁻¹ • i)).comp measurable_subtype_coe

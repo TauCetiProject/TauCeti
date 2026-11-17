@@ -10,6 +10,7 @@ public import Mathlib.Probability.Kernel.Invariance
 public import Mathlib.Probability.Kernel.Proper
 public import Mathlib.Probability.Notation
 public import TauCeti.MeasureTheory.Group.ErgodicExtreme
+public import TauCeti.Probability.Kernel.Invariance
 public import TauCeti.Probability.Gibbs.Subshift
 
 /-!
@@ -43,8 +44,7 @@ resampling `Δ`. A measure `μ` is Gibbs for `γ` when `μ.bind γ_Λ = μ` for 
 
 ## References
 
-This is target 4.5 of the TauCetiRoadmap roadmap `DimerModelsAndLozengeTilings`; the definitions
-follow Sheffield, *Random surfaces*, Astérisque 304 (2005), Section 1.1.2.
+The definitions follow Sheffield, *Random surfaces*, Astérisque 304 (2005), Section 1.1.2.
 -/
 
 public section
@@ -77,6 +77,14 @@ attribute [instance] isMarkovKernel
 
 variable {X : Subshift Γ I S} (γ : Specification X) {μ ν : Measure X}
 
+/-- Two specifications with the same kernels are equal. -/
+@[ext]
+theorem ext {γ γ' : Specification X} (h : ∀ Λ, γ.kernel Λ = γ'.kernel Λ) : γ = γ' := by
+  obtain ⟨κ, _, _, _⟩ := γ
+  obtain ⟨κ', _, _, _⟩ := γ'
+  obtain rfl : κ = κ' := funext h
+  rfl
+
 /-- `ω ↦ γ_Λ(· | ω)` is measurable for the full σ-algebra on `X`. -/
 theorem measurable_kernel (Λ : Finset I) : Measurable (γ.kernel Λ : X → Measure X) :=
   (γ.kernel Λ).measurable.mono (X.exterior_le Λ) le_rfl
@@ -98,15 +106,14 @@ theorem isGibbs_iff_forall_invariant :
 
 variable {γ} in
 /-- Sums of Gibbs measures are Gibbs. -/
-theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ + ν) := fun Λ => by
-  change (γ.kernel Λ).comap id (measurable_id'' (X.exterior_le Λ)) ∘ₘ (μ + ν) = μ + ν
-  rw [Measure.comp_add]
-  exact congr_arg₂ (· + ·) (hμ Λ) (hν Λ)
+theorem IsGibbs.add (hμ : γ.IsGibbs μ) (hν : γ.IsGibbs ν) : γ.IsGibbs (μ + ν) :=
+  γ.isGibbs_iff_forall_invariant.2 fun Λ =>
+    (γ.isGibbs_iff_forall_invariant.1 hμ Λ).add (γ.isGibbs_iff_forall_invariant.1 hν Λ)
 
 variable {γ} in
 /-- Multiples of Gibbs measures are Gibbs. -/
-theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) := fun Λ => by
-  rw [Measure.bind_smul _ _ (γ.measurable_kernel Λ).aemeasurable, hμ Λ]
+theorem IsGibbs.smul (hμ : γ.IsGibbs μ) (c : ℝ≥0∞) : γ.IsGibbs (c • μ) :=
+  γ.isGibbs_iff_forall_invariant.2 fun Λ => (γ.isGibbs_iff_forall_invariant.1 hμ Λ).smul c
 
 /-- The Gibbs measures of a specification form a convex cone. -/
 theorem convex_setOf_isGibbs : Convex ℝ≥0∞ {μ : Measure X | γ.IsGibbs μ} :=
@@ -125,32 +132,43 @@ exterior σ-algebra `𝓕_{Λᶜ}`. -/
 theorem isGibbs_iff_forall_ae_eq_condExp [IsFiniteMeasure μ] :
     γ.IsGibbs μ ↔ ∀ (Λ : Finset I) ⦃C : Set X⦄, MeasurableSet C →
       (fun ω => (γ.kernel Λ ω C).toReal) =ᵐ[μ] μ⟦C | X.exterior Λ⟧ := by
+  have hm := X.exterior_le
+  -- Integrals of `γ_Λ(C | ·)` are the real parts of the corresponding lower integrals.
+  have hint : ∀ (Λ : Finset I) ⦃C : Set X⦄, MeasurableSet C → ∀ s,
+      ∫ ω in s, (γ.kernel Λ ω C).toReal ∂μ = (∫⁻ ω in s, γ.kernel Λ ω C ∂μ).toReal :=
+    fun Λ C hC s => integral_toReal
+      (((γ.kernel Λ).measurable_coe hC).mono (hm Λ) le_rfl).aemeasurable
+      (.of_forall fun ω => measure_lt_top _ _)
   constructor
   · intro hμ Λ C hC
-    have hm := X.exterior_le Λ
     have hg : Measurable[X.exterior Λ] fun ω => (γ.kernel Λ ω C).toReal :=
       ((γ.kernel Λ).measurable_coe hC).ennreal_toReal
     have hgi : Integrable (fun ω => (γ.kernel Λ ω C).toReal) μ :=
-      .of_bound (hg.mono hm le_rfl).aestronglyMeasurable 1 <| .of_forall fun ω => by
+      .of_bound (hg.mono (hm Λ) le_rfl).aestronglyMeasurable 1 <| .of_forall fun ω => by
         simpa using ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using prob_le_one)
-    refine ae_eq_condExp_of_forall_setIntegral_eq hm
+    refine ae_eq_condExp_of_forall_setIntegral_eq (hm Λ)
       ((integrable_const (1 : ℝ)).indicator hC) (fun s _ _ => hgi.integrableOn)
       (fun s hs _ => ?_) hg.stronglyMeasurable.aestronglyMeasurable
-    rw [integral_toReal ((γ.kernel Λ).measurable_coe hC |>.mono hm le_rfl).aemeasurable ?_,
-      (γ.isProper Λ).setLIntegral_eq_comp hm hC hs, hμ Λ, integral_indicator_const _ hC,
-      measureReal_restrict_apply hC, smul_eq_mul, mul_one, Measure.real]
-    exact .of_forall fun ω => measure_lt_top _ _
+    -- By properness, the integral over an exterior `s` is `(μ.bind γ_Λ) (C ∩ s) = μ (C ∩ s)`.
+    have hprop : ∫⁻ ω in s, γ.kernel Λ ω C ∂μ = μ (C ∩ s) := by
+      rw [(γ.isProper Λ).setLIntegral_eq_comp (hm Λ) hC hs]
+      exact congrArg (· (C ∩ s)) (hμ Λ)
+    rw [hint Λ hC s, hprop, integral_indicator_const _ hC]
+    simp [Measure.restrict_apply hC, Measure.real]
   · intro h Λ
     ext C hC
-    have hm := X.exterior_le Λ
     have hfin : ∫⁻ ω, γ.kernel Λ ω C ∂μ ≠ ∞ :=
       ((lintegral_mono fun ω => prob_le_one).trans_lt (by simp)).ne
+    -- Integrating the conditional expectation of `1_C` over the whole space gives `μ C`.
+    have hcond : ∫ ω, (γ.kernel Λ ω C).toReal ∂μ = μ.real C := by
+      rw [integral_congr_ae (h Λ hC), integral_condExp (hm Λ), integral_indicator_const _ hC]
+      simp
     rw [Measure.bind_apply hC (γ.measurable_kernel Λ).aemeasurable,
-      ← ENNReal.toReal_eq_toReal_iff' hfin (measure_ne_top μ C),
-      ← integral_toReal ((γ.kernel Λ).measurable_coe hC |>.mono hm le_rfl).aemeasurable
-        (.of_forall fun ω => measure_lt_top _ _),
-      integral_congr_ae (h Λ hC), integral_condExp hm, integral_indicator_const _ hC, smul_eq_mul,
-      mul_one, Measure.real]
+      ← ENNReal.toReal_eq_toReal_iff' hfin (measure_ne_top μ C)]
+    have hall := hint Λ hC univ
+    rw [Measure.restrict_univ] at hall
+    rw [← hall]
+    exact hcond
 
 /-- A specification is equivariant when `γ_{gΛ}(gC | g • ω) = γ_Λ(C | ω)`: the push-forward of
 `γ_Λ(· | ω)` by `g` is `γ_{gΛ}(· | g • ω)`, where `gΛ` is the image of `Λ` under `g`. -/
