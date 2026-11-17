@@ -176,14 +176,15 @@ private theorem reducedSolution_spec (hm : 0 < P.natDegree) :
     (forall_sobolevReducedFunctional_reducedMinimizer_le hm)).choose_spec
 
 /-- The reduced solution of a constant polynomial is `0`. -/
-theorem reducedSolution_of_natDegree_eq_zero (hm : P.natDegree = 0) : reducedSolution P = 0 := by
+theorem reducedSolution_eq_zero_of_natDegree_eq_zero (hm : P.natDegree = 0) :
+    reducedSolution P = 0 := by
   simp [reducedSolution, hm]
 
 variable (P) in
 /-- The reduced solution is smooth. -/
 theorem contDiff_reducedSolution : ContDiff ℝ ∞ (reducedSolution P) := by
   rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
-  · rw [reducedSolution_of_natDegree_eq_zero hm]
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
     exact contDiff_const
   · exact (reducedSolution_spec hm).1
 
@@ -213,7 +214,7 @@ variable (P) in
 /-- The reduced solution is square integrable. -/
 theorem memLp_reducedSolution : MemLp (reducedSolution P) 2 := by
   rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
-  · rw [reducedSolution_of_natDegree_eq_zero hm]
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
     exact MemLp.zero
   · exact (W1p.memLp_value (reducedMinimizer P)).ae_eq
       (by simpa using value_reducedMinimizer_ae_eq_reducedSolution hm)
@@ -223,7 +224,7 @@ variable (P) in
 theorem tendsto_reducedSolution_cocompact :
     Tendsto (reducedSolution P) (cocompact ℂ) (𝓝 0) := by
   rcases Nat.eq_zero_or_pos P.natDegree with hm | hm
-  · rw [reducedSolution_of_natDegree_eq_zero hm]
+  · rw [reducedSolution_eq_zero_of_natDegree_eq_zero hm]
     exact tendsto_const_nhds
   · exact tendsto_cocompact_of_memLp_of_laplacian_eq
       (.of_forall fun _ ↦ ((contDiff_reducedSolution P).of_le (by simp)).contDiffAt)
