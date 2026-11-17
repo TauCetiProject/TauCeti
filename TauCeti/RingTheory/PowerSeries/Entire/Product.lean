@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.PowerSeries.Entire.Factorization
+import Mathlib.RingTheory.Polynomial.GaussNorm
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.RingTheory.Polynomial.Roots
 
@@ -92,14 +93,13 @@ variable {R : Type*} [NormedCommRing R] [IsUltrametricDist R]
 private theorem norm_restrict_polynomialHom_C_mul_X_le (r : Set.Ioi (0 : ℝ)) (c : R) :
     ‖restrict r (_root_.PowerSeries.IsEntire.polynomialHom (Polynomial.C c * Polynomial.X))‖ ≤
       ‖c‖ * (r : ℝ) := by
-  refine TauCeti.PowerSeries.norm_le_iff.mpr fun m ↦ ?_
-  rw [coe_restrict, _root_.PowerSeries.IsEntire.coe_polynomialHom, Polynomial.coeff_coe]
-  rcases eq_or_ne m 1 with rfl | hm
-  · simp
-  · have h0 : (Polynomial.C c * Polynomial.X).coeff m = 0 := by
-      simp [Polynomial.coeff_C_mul, Polynomial.coeff_X, hm.symm]
-    rw [h0, norm_zero, zero_mul]
-    exact mul_nonneg (norm_nonneg c) r.2.le
+  rw [TauCeti.PowerSeries.norm_eq_gaussNorm, coe_restrict,
+    _root_.PowerSeries.IsEntire.coe_polynomialHom, Polynomial.coe_mul, Polynomial.coe_C,
+    Polynomial.coe_X, ← pow_one (_root_.PowerSeries.X (R := R)),
+    ← _root_.PowerSeries.monomial_eq_C_mul_X_pow]
+  have h : (_root_.PowerSeries.monomial 1 c).gaussNorm norm (r : ℝ) = ‖c‖ * (r : ℝ) ^ 1 :=
+    _root_.PowerSeries.gaussNorm_monomial (v := normRingSeminorm R) (r := c) r.2.le 1
+  rw [h, pow_one]
 
 /-- **Necessary condition for multipliability of `1 - cᵢ X`.** Over an ultrametric normed
 commutative ring, if the linear factors `1 - cᵢ X` are unconditionally multipliable in the Gauss
