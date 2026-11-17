@@ -583,59 +583,21 @@ theorem solutionEquivCutBase_symm_apply_toHom :
 end EquivSymm
 
 /-- If the cut boundary `p` remains open in `Ω.cutBase p μ q hc hμ`, another variable base crosses
-`p` and forces the junction between `U′.word (p - 1)` and `U′.word p` to be reduced, so
-`U′[α(μ), β(μ)]` is automatically reduced as written for every solution `U′` of `Ω.cutBase`. -/
+`p`, so the two cut pieces of `μ` glue without cancellation and `U′[α(μ), β(μ)]` is automatically
+reduced as written for every solution `U′` of `Ω.cutBase`. -/
 theorem isReduced_cutBase_of_isOpenBoundary
     (hp : (Ω.cutBase p μ q hc hμ).IsOpenBoundary p) (U' : (Ω.cutBase p μ q hc hμ).Solution) :
     FreeGroup.IsReduced (substituteVars U'.word (Ω.segment (Ω.left μ) (Ω.right μ) true)) := by
-  obtain ⟨hp₁, hp₂, -, -⟩ := Ω.bounds_of_mem_connections (p, μ, q) hc
-  dsimp only at hp₁ hp₂
-  obtain ⟨β, hβ⟩ := ((Ω.cutBase p μ q hc hμ).isOpenBoundary_iff).1 hp
-  obtain ⟨hβ₁, hβ₂⟩ := ((Ω.cutBase p μ q hc hμ).crosses_iff).1 hβ
-  have hp_pos : 0 < (p : ℕ) := Nat.lt_of_le_of_lt (Nat.zero_le _) (Fin.lt_def.1 hp₁)
-  have hp_lt : (p : ℕ) < Ω.numItems :=
-    Nat.lt_of_lt_of_le (Fin.lt_def.1 hp₂) (Nat.le_of_lt_succ (Ω.right μ).isLt)
-  let k₀ : Fin Ω.numItems := ⟨(p : ℕ) - 1, by omega⟩
-  let k₁ : Fin Ω.numItems := ⟨p, hp_lt⟩
-  have hk₀_val : (k₀ : ℕ) = (p : ℕ) - 1 := rfl
-  have hk₁_val : (k₁ : ℕ) = p := rfl
-  have hk₀_eq : (k₀ : ℕ) + 1 = p := by omega
-  have hleft_le : (Ω.left μ : ℕ) ≤ k₀ := by
-    have := Fin.lt_def.1 hp₁; omega
-  have hright_ge : (k₁ : ℕ) + 1 ≤ Ω.right μ := by
-    have := Fin.lt_def.1 hp₂; omega
-  have hβ_left : ((Ω.cutBase p μ q hc hμ).left β : ℕ) ≤ k₀ := by
-    have := Fin.lt_def.1 hβ₁; omega
-  have hβ_right : (k₁ : ℕ) + 1 ≤ (Ω.cutBase p μ q hc hμ).right β := by
-    have := Fin.lt_def.1 hβ₂; omega
-  have hred₀ : FreeGroup.IsReduced (substituteVars U'.word (Ω.segment (Ω.left μ) p true)) := by
-    simpa using U'.isReduced_substituteVars_segment (Ω.cutPiece μ hμ 0)
-  have hred₁ : FreeGroup.IsReduced (substituteVars U'.word (Ω.segment p (Ω.right μ) true)) := by
-    simpa using U'.isReduced_substituteVars_segment (Ω.cutPiece μ hμ 1)
-  have hred_mid : FreeGroup.IsReduced
-      (substituteVars U'.word (Ω.segment k₀ ((k₁ : ℕ) + 1) true)) := by
-    simpa using U'.isReduced_substituteVars_segment_of_le β hβ_left hβ_right
-  have hseg₀ : Ω.segment (Ω.left μ) p true =
-      Ω.segment (Ω.left μ) k₀ true ++ Ω.segment k₀ ((k₀ : ℕ) + 1) true := by
-    conv_lhs => rw [← hk₀_eq]
-    exact (Ω.segment_append hleft_le (Nat.le_succ _) (by omega)).symm
-  have hseg₁ : Ω.segment p (Ω.right μ) true =
-      Ω.segment k₁ ((k₁ : ℕ) + 1) true ++ Ω.segment ((k₁ : ℕ) + 1) (Ω.right μ) true :=
-    (Ω.segment_append (Nat.le_succ _) hright_ge (Ω.right μ).is_le).symm
-  have hseg_mid : Ω.segment k₀ ((k₁ : ℕ) + 1) true =
-      Ω.segment k₀ ((k₀ : ℕ) + 1) true ++ Ω.segment k₁ ((k₁ : ℕ) + 1) true := by
-    have hk₀₁ : (k₀ : ℕ) + 1 = k₁ := by omega
-    conv_lhs => rw [← Ω.segment_append (i := k₀) (j := (k₀ : ℕ) + 1) (k := (k₁ : ℕ) + 1)
-      (Nat.le_succ _) (by omega) (by omega)]
-    rw [hk₀₁]
-  rw [← Ω.segment_append hp₁.le hp₂.le (Ω.right μ).is_le, hseg₀, hseg₁,
-    substituteVars_append, substituteVars_append, substituteVars_append]
-  rw [hseg₀, substituteVars_append] at hred₀
-  rw [hseg₁, substituteVars_append] at hred₁
-  rw [hseg_mid, substituteVars_append] at hred_mid
-  have hstep := hred₀.append_overlap hred_mid (by simp [segment_succ, U'.word_ne_nil k₀])
-  simpa [List.append_assoc] using
-    hstep.append_overlap hred₁ (by simp [segment_succ, U'.word_ne_nil k₁])
+  have h₀ : FreeGroup.IsReduced
+      (substituteVars U'.word ((Ω.cutBase p μ q hc hμ).segment (Ω.left μ) p true)) := by
+    simpa only [cutLeft_cutPiece_zero, cutRight_cutPiece_zero] using
+      U'.isReduced_substituteVars_segment (Ω.cutPiece μ hμ 0)
+  have h₁ : FreeGroup.IsReduced
+      (substituteVars U'.word ((Ω.cutBase p μ q hc hμ).segment p (Ω.right μ) true)) := by
+    simpa only [cutLeft_cutPiece_one, cutRight_cutPiece_one] using
+      U'.isReduced_substituteVars_segment (Ω.cutPiece μ hμ 1)
+  rw [← segment_cutBase hc hμ]
+  exact U'.isReduced_substituteVars_segment_of_isOpenBoundary hp h₀ h₁
 
 /-- **ET1 when the cut boundary stays open.** If `Ω` is formally consistent and `p` remains an open
 boundary in `Ω.cutBase p μ q hc hμ`, graphical solutions of `Ω` and of `Ω.cutBase p μ q hc hμ` are
