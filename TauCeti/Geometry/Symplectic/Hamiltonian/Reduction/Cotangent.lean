@@ -18,9 +18,12 @@ Let a Lie group `G` act smoothly, freely and properly on a manifold `Q`, so that
 projection `Q → Q ⧸ G` is a smooth submersion whose vertical tangent vectors are the orbit
 directions `𝔤 · q` (`ProperSMul.isSubmersion_quotientMk`, `ProperSMul.ker_mfderiv_quotientMk`). The
 cotangent-lifted action of `G` on `T*Q` has the moment map `⟨μ(q, p), ξ⟩ = p(ξ_Q(q))`
-(`TauCeti.CotangentBundle.momentMap`). This file identifies the zero level `μ⁻¹(0)`, divided by
-`G`, with the cotangent bundle `T*(Q ⧸ G)`, the model case `T*Q //₀ G ≅ T*(Q ⧸ G)` of cotangent
-bundle reduction.
+(`TauCeti.CotangentBundle.momentMap`). This file proves the ingredients of the model case
+`T*Q //₀ G ≅ T*(Q ⧸ G)` of cotangent bundle reduction: a reduction map `Ψ` from the zero level
+`μ⁻¹(0)` onto `T*(Q ⧸ G)` whose fibres are exactly the `G`-orbits, and which pulls the canonical
+symplectic form of `T*(Q ⧸ G)` back to that of `T*Q` along smooth families in `μ⁻¹(0)`. It does
+not construct `μ⁻¹(0) ⧸ G` as a manifold, nor a map out of it, so the symplectomorphism itself is
+not stated here.
 
 Most statements are made for a map `ρ : Q → B` with the properties of the orbit projection that
 they use, and the final section applies them to the orbit projection itself. Write `Ψ` for the
