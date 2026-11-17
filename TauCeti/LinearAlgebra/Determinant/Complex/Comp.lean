@@ -32,11 +32,11 @@ cokernels (`LinearMap.kerRestrictScalarsEquiv`, `LinearMap.cokerRestrictScalarsE
 commute with the maps of the two kernel–cokernel sequences
 (`LinearMap.kerCompToKer_comp_kerRestrictScalarsEquiv` and its companions).
 
-Orientations of determinant lines of complex-linear Fredholm operators are oriented this way
-when an operator is composed with another complex-linear operator. For instance, a complex-linear
-operator `D` cut down by complex-linear incidence conditions `ev` is the composite of
-`D.prod ev` with the projection onto the target of `D`, so the complex orientations of
-`det (D.prod ev)` and of the determinant line of the projection give that of `det D`.
+This is how complex orientations of determinant lines behave under composition of complex-linear
+maps, such as Fredholm operators. For instance, a complex-linear operator `D` cut down by
+complex-linear incidence conditions `ev` is the composite of `D.prod ev` with the projection onto
+the target of `D`, so the complex orientations of `det (D.prod ev)` and of the determinant line of
+the projection give that of `det D`.
 
 ## Main results
 

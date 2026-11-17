@@ -150,10 +150,11 @@ section KerCokerComp
 
 The maps of the sequence `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) →
 coker g → 0` of the restricted maps commute with the identifications of the `R`-kernels and
-cokernels with the `S`-kernels and cokernels. They act on representatives, but the kernel and
-cokernel of the restriction of `g ∘ f` agree with those of the composite of the restrictions only
-up to definitional unfolding, which defeats rewriting, so each square is checked by an explicit
-chain of equations. -/
+cokernels with the `S`-kernels and cokernels. -/
+
+-- The maps act on representatives, but the kernel and cokernel of the restriction of `g ∘ f`
+-- agree with those of the composite of the restrictions only up to definitional unfolding, which
+-- defeats rewriting, so each square is checked by an explicit chain of equations.
 
 variable (R : Type*) {S M N P : Type*} [Ring R] [Ring S] [SMul R S]
   [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M]
