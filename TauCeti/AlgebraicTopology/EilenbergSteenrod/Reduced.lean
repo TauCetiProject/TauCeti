@@ -158,7 +158,7 @@ lemma isoBiprodOfRetraction_hom_fst (i : ι)
     (HP.isoBiprodOfRetraction r hr i).hom ≫ biprod.fst = (HP.H i).map r :=
   biprod.lift_fst _ _
 
-@[simp]
+@[reassoc (attr := simp)]
 lemma isoBiprodOfRetraction_hom_snd (i : ι)
     [HasBinaryBiproduct ((HP.H i).obj X.snd) ((HP.Hₚ i).obj X)] :
     (HP.isoBiprodOfRetraction r hr i).hom ≫ biprod.snd = HP.hFstToHₚ i X :=
@@ -181,28 +181,28 @@ theorem isIso_map_inr_comp_hFstToHₚ [Balanced C] (i : ι) {X : TopPair.{u}} {B
     (inr : B ⟶ X.fst) (hc : IsColimit (BinaryCofan.mk X.map inr))
     [∀ j, PreservesColimit (pair X.snd B) (HP.H j)] :
     IsIso ((HP.H i).map inr ≫ HP.hFstToHₚ i X) := by
-  -- In every degree the images of the two inclusions form a coproduct in `C`, so the image of
-  -- `A ⟶ X` has the retraction `fst j` and `Hⱼ(X)` is the biproduct of `Hⱼ(A)` and `Hⱼ(B)`.
+  -- In every degree the images of the two inclusions form a coproduct in `C`, hence a bilimit
+  -- bicone `b j`: the image of `A ⟶ X` has the retraction `(b j).fst`, and `Hⱼ(X)` is the
+  -- biproduct of `Hⱼ(A)` and `Hⱼ(B)`.
   let hcj (j : ι) := mapIsColimitOfPreservesOfIsColimit (HP.H j) _ _ hc
-  let fst (j : ι) := BinaryCofan.IsColimit.desc (hcj j) (𝟙 _) 0
-  let snd := BinaryCofan.IsColimit.desc (hcj i) 0 (𝟙 _)
+  let b (j : ι) := BinaryBicone.ofColimitCocone (hcj j)
   have hmono (j : ι) : Mono ((HP.H j).map X.map) :=
-    have : IsSplitMono ((HP.H j).map X.map) :=
-      .mk' ⟨fst j, BinaryCofan.IsColimit.inl_desc (hcj j) _ _⟩
+    have : IsSplitMono ((HP.H j).map X.map) := .mk' ⟨(b j).fst, (b j).inl_fst⟩
     inferInstance
-  have htotal : fst i ≫ (HP.H i).map X.map + snd ≫ (HP.H i).map inr = 𝟙 _ :=
-    BinaryCofan.IsColimit.hom_ext (hcj i)
-      (by rw [Preadditive.comp_add, ← Category.assoc, ← Category.assoc,
-        BinaryCofan.IsColimit.inl_desc, BinaryCofan.IsColimit.inl_desc]; simp)
-      (by rw [Preadditive.comp_add, ← Category.assoc, ← Category.assoc,
-        BinaryCofan.IsColimit.inr_desc, BinaryCofan.IsColimit.inr_desc]; simp)
+  -- The cone point of `b i` is `Hᵢ(X)` only up to unfolding `BinaryCofan.mk`, so the projections
+  -- and the identities they satisfy are restated with `Hᵢ(X)` as their source.
+  let fst : (HP.H i).obj X.fst ⟶ (HP.H i).obj X.snd := (b i).fst
+  let snd : (HP.H i).obj X.fst ⟶ (HP.H i).obj B := (b i).snd
+  have hinl : (HP.H i).map X.map ≫ snd = 0 := (b i).inl_snd
+  have hinr : (HP.H i).map inr ≫ snd = 𝟙 _ := (b i).inr_snd
+  have htotal : fst ≫ (HP.H i).map X.map + snd ≫ (HP.H i).map inr = 𝟙 _ :=
+    IsBilimit.binary_total (binaryBiconeIsBilimitOfColimitCoconeOfIsColimit (hcj i))
   -- The short exact sequence of the pair identifies `Hᵢ(X, A)` with the cokernel of
   -- `Hᵢ(A) ⟶ Hᵢ(X)`, through which the projection `snd` to `Hᵢ(B)` factors.
   have hS := HP.pairShortComplex_exact i X
   have := HP.epi_hFstToHₚ_of_mono i X fun j _ ↦ hmono j
-  refine ⟨hS.desc snd (BinaryCofan.IsColimit.inl_desc (hcj i) _ _), ?_, ?_⟩
-  · rw [Category.assoc, hS.g_desc]
-    exact BinaryCofan.IsColimit.inr_desc (hcj i) _ _
+  refine ⟨hS.desc snd hinl, ?_, ?_⟩
+  · rw [Category.assoc, hS.g_desc, hinr]
   · rw [← cancel_epi (HP.hFstToHₚ i X), hS.g_desc_assoc, ← Category.assoc,
       eq_sub_of_add_eq' htotal]
     simp [(HP.pairShortComplex i X).zero]
@@ -228,6 +228,12 @@ private abbrev toPoint (X : BasedTopologicalSpace.{u}) :
     TopCat.of X.carrier ⟶ TopCat.of PUnit.{u + 1} :=
   TopCat.ofHom (ContinuousMap.const _ PUnit.unit)
 
+/-- A based map `X ⟶ Y` followed by the map `Y ⟶ *` is the map `X ⟶ *`. -/
+private lemma ofHom_comp_const_punit {X Y : BasedTopologicalSpace.{u}} (f : X ⟶ Y) :
+    TopCat.ofHom f.toContinuousMap ≫ TopCat.ofHom (ContinuousMap.const Y.carrier PUnit.unit) =
+      TopCat.ofHom (ContinuousMap.const X.carrier PUnit.unit) :=
+  TopCat.isTerminalPUnit.hom_ext _ _
+
 /-- The split augmentation `Hᵢ(X) ≅ Hᵢ(*) ⊞ H~ᵢ(X)` of a based space `X`. Its first component is
 induced by the map `X ⟶ *`, and its second is the map to the relative homology of `(X, *)`. -/
 def augmentationIso (i : ι) (X : BasedTopologicalSpace.{u}) :
@@ -243,7 +249,7 @@ lemma augmentationIso_hom_fst (i : ι) (X : BasedTopologicalSpace.{u}) :
       (HP.H i).map (TopCat.ofHom (ContinuousMap.const _ PUnit.unit)) :=
   HP.isoBiprodOfRetraction_hom_fst _ _ i
 
-@[simp]
+@[reassoc (attr := simp)]
 lemma augmentationIso_hom_snd (i : ι) (X : BasedTopologicalSpace.{u}) :
     (HP.augmentationIso i X).hom ≫ biprod.snd =
       HP.hFstToHₚ i (BasedTopologicalSpace.toTopPair.obj X) :=
@@ -264,8 +270,8 @@ lemma augmentationIso_hom_naturality (i : ι) {X Y : BasedTopologicalSpace.{u}} 
         biprod.map (𝟙 _) ((HP.Hₚ i).map (BasedTopologicalSpace.toTopPair.map f)) := by
   ext
   · rw [Category.assoc, Category.assoc, biprod.map_fst, Category.comp_id,
-      augmentationIso_hom_fst, augmentationIso_hom_fst, ← Functor.map_comp]
-    rfl
+      augmentationIso_hom_fst, augmentationIso_hom_fst, ← Functor.map_comp,
+      ofHom_comp_const_punit]
   · rw [Category.assoc, Category.assoc, biprod.map_snd, augmentationIso_hom_snd,
       ← Category.assoc (HP.augmentationIso i X).hom, augmentationIso_hom_snd]
     exact (HP.hFstToHₚ_naturality (BasedTopologicalSpace.toTopPair.map f) i).symm
@@ -285,10 +291,12 @@ map to the relative homology of `(X₊, *)`. -/
 def addBasepointIso (i : ι) (X : TopCat.{u}) :
     (HP.H i).obj X ≅ (HP.Hₚ i).obj
       (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) :=
-  @asIso _ _ _ _ _ <| HP.isIso_map_inr_comp_hFstToHₚ i
+  haveI := HP.isIso_map_inr_comp_hFstToHₚ i
     (X := BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) (B := X)
     (TopCat.ofHom ⟨Sum.inr, continuous_inr⟩)
     (TopCat.binaryCofanIsColimit (TopCat.of PUnit.{u + 1}) X)
+  asIso ((HP.H i).map (TopCat.ofHom ⟨Sum.inr, continuous_inr⟩) ≫ HP.hFstToHₚ i
+    (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)))
 
 @[simp]
 lemma addBasepointIso_hom (i : ι) (X : TopCat.{u}) :
@@ -296,6 +304,15 @@ lemma addBasepointIso_hom (i : ι) (X : TopCat.{u}) :
       HP.hFstToHₚ i
         (BasedTopologicalSpace.toTopPair.obj (BasedTopologicalSpace.addBasepoint.obj X)) :=
   (rfl)
+
+/-- The inclusion `X ⟶ X₊` is natural in `X`. -/
+private lemma inr_comp_addBasepoint_map {X Y : TopCat.{u}} (f : X ⟶ Y) :
+    TopCat.ofHom ⟨Sum.inr, continuous_inr⟩ ≫
+        Hom.fst (BasedTopologicalSpace.toTopPair.map (BasedTopologicalSpace.addBasepoint.map f)) =
+      f ≫ TopCat.ofHom ⟨Sum.inr, continuous_inr⟩ := by
+  ext
+  -- `Sum.map id f (Sum.inr x) = Sum.inr (f x)` holds by the definition of `Sum.map`.
+  rfl
 
 /-- The isomorphism `Hᵢ(X) ≅ H~ᵢ(X₊)` is natural in `X`. -/
 @[reassoc]
@@ -305,8 +322,7 @@ lemma addBasepointIso_hom_naturality (i : ι) {X Y : TopCat.{u}} (f : X ⟶ Y) :
         (HP.Hₚ i).map
           (BasedTopologicalSpace.toTopPair.map (BasedTopologicalSpace.addBasepoint.map f)) := by
   rw [addBasepointIso_hom, addBasepointIso_hom, Category.assoc, HP.hFstToHₚ_naturality,
-    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc]
-  rfl
+    ← Functor.map_comp_assoc, ← Functor.map_comp_assoc, inr_comp_addBasepoint_map]
 
 end AddBasepoint
 
@@ -327,23 +343,57 @@ def cohomologyAugmentationIso (i : ι) (X : BasedTopologicalSpace.{u}) :
         Opposite.unop ((E.Hₚ i).obj (BasedTopologicalSpace.toTopPair.obj X)) :=
   (E.augmentationIso i X).unop.symm ≪≫ (biprod.opIso _ _).unop
 
+/-- The inverse of the split augmentation in cohomology, read off from the homological one. -/
+lemma cohomologyAugmentationIso_inv (i : ι) (X : BasedTopologicalSpace.{u}) :
+    (E.cohomologyAugmentationIso i X).inv =
+      (biprod.opIso _ _).inv.unop ≫ (E.augmentationIso i X).hom.unop :=
+  (rfl)
+
+@[reassoc (attr := simp)]
 lemma inl_cohomologyAugmentationIso_inv (i : ι) (X : BasedTopologicalSpace.{u}) :
     biprod.inl ≫ (E.cohomologyAugmentationIso i X).inv =
       ((E.H i).map (TopCat.ofHom (ContinuousMap.const X.carrier PUnit.unit))).unop := by
   apply Quiver.Hom.op_inj
-  simpa [cohomologyAugmentationIso] using E.augmentationIso_hom_fst i X
+  rw [cohomologyAugmentationIso_inv, op_comp, op_comp, Quiver.Hom.op_unop, Quiver.Hom.op_unop,
+    Quiver.Hom.op_unop, Category.assoc, biprod.opIso_inv_inl_op, augmentationIso_hom_fst]
 
+@[reassoc (attr := simp)]
 lemma inr_cohomologyAugmentationIso_inv (i : ι) (X : BasedTopologicalSpace.{u}) :
     biprod.inr ≫ (E.cohomologyAugmentationIso i X).inv =
       (E.hFstToHₚ i (BasedTopologicalSpace.toTopPair.obj X)).unop := by
   apply Quiver.Hom.op_inj
-  simpa [cohomologyAugmentationIso] using E.augmentationIso_hom_snd i X
+  rw [cohomologyAugmentationIso_inv, op_comp, op_comp, Quiver.Hom.op_unop, Quiver.Hom.op_unop,
+    Quiver.Hom.op_unop, Category.assoc, biprod.opIso_inv_inr_op, augmentationIso_hom_snd]
 
+/-- The split augmentation in cohomology, read off from the homological one. -/
+lemma cohomologyAugmentationIso_hom (i : ι) (X : BasedTopologicalSpace.{u}) :
+    (E.cohomologyAugmentationIso i X).hom =
+      (E.augmentationIso i X).inv.unop ≫ (biprod.opIso _ _).hom.unop :=
+  (rfl)
+
+@[reassoc (attr := simp)]
 lemma cohomologyAugmentationIso_hom_fst (i : ι) (X : BasedTopologicalSpace.{u}) :
     (E.cohomologyAugmentationIso i X).hom ≫ biprod.fst =
       ((E.H i).map (TopCat.ofHom (ContinuousMap.const PUnit.{u + 1} X.basepoint))).unop := by
   apply Quiver.Hom.op_inj
-  simpa [cohomologyAugmentationIso] using E.inl_augmentationIso_inv i X
+  rw [cohomologyAugmentationIso_hom, op_comp, op_comp, Quiver.Hom.op_unop, Quiver.Hom.op_unop,
+    Quiver.Hom.op_unop, biprod.fst_op_opIso_hom_assoc, inl_augmentationIso_inv]
+
+/-- The split augmentation in cohomology is natural in based maps: a based map `f : X ⟶ Y`
+acts on `Eⁱ(*) ⊞ E~ⁱ(Y)` by the identity on `Eⁱ(*)` and by `f` on the reduced groups. -/
+@[reassoc]
+lemma cohomologyAugmentationIso_inv_naturality (i : ι) {X Y : BasedTopologicalSpace.{u}}
+    (f : X ⟶ Y) :
+    biprod.map (𝟙 _) ((E.Hₚ i).map (BasedTopologicalSpace.toTopPair.map f)).unop ≫
+        (E.cohomologyAugmentationIso i X).inv =
+      (E.cohomologyAugmentationIso i Y).inv ≫
+        ((E.H i).map (TopCat.ofHom f.toContinuousMap)).unop := by
+  apply biprod.hom_ext'
+  · rw [biprod.inl_map_assoc, Category.id_comp, inl_cohomologyAugmentationIso_inv,
+      inl_cohomologyAugmentationIso_inv_assoc, ← unop_comp, ← Functor.map_comp,
+      ofHom_comp_const_punit]
+  · rw [biprod.inr_map_assoc, inr_cohomologyAugmentationIso_inv,
+      inr_cohomologyAugmentationIso_inv_assoc, ← unop_comp, ← unop_comp, hFstToHₚ_naturality]
 
 end Cohomology
 
