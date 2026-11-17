@@ -287,72 +287,6 @@ private def compEquivAux [OpensMeasurableSpace E] [OpensMeasurableSpace E']
     (fun u => (norm_compAux hf htv u).le)
     (fun v => (norm_compAux hg (totalVariationOn_comp_symm hgf htv) v).le)
 
-omit [BorelSpace E] [BorelSpace E'] in
-private theorem toL1_compEquivAux [OpensMeasurableSpace E] [OpensMeasurableSpace E']
-    {f : E → E'} {g : E' → E}
-    (hf : MeasurePreserving f (μ.restrict V) (ν.restrict Ω))
-    (hg : MeasurePreserving g (ν.restrict Ω) (μ.restrict V))
-    (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
-    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
-    (u : BV ν Ω) :
-    (compEquivAux hf hg hfg hgf htv u).toL1 = Lp.compMeasurePreserving f hf u.toL1 :=
-  toL1_compAux hf htv u
-
-omit [BorelSpace E] [BorelSpace E'] in
-private theorem toL1_compEquivAux_symm [OpensMeasurableSpace E] [OpensMeasurableSpace E']
-    {f : E → E'} {g : E' → E}
-    (hf : MeasurePreserving f (μ.restrict V) (ν.restrict Ω))
-    (hg : MeasurePreserving g (ν.restrict Ω) (μ.restrict V))
-    (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
-    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
-    (v : BV μ V) :
-    ((compEquivAux hf hg hfg hgf htv).symm v).toL1 = Lp.compMeasurePreserving g hg v.toL1 :=
-  toL1_compAux hg (totalVariationOn_comp_symm hgf htv) v
-
-omit [BorelSpace E] [BorelSpace E'] in
-private theorem coeFn_compEquivAux [OpensMeasurableSpace E] [OpensMeasurableSpace E']
-    {f : E → E'} {g : E' → E}
-    (hf : MeasurePreserving f (μ.restrict V) (ν.restrict Ω))
-    (hg : MeasurePreserving g (ν.restrict Ω) (μ.restrict V))
-    (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
-    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
-    (u : BV ν Ω) :
-    (compEquivAux hf hg hfg hgf htv u : E → ℝ) =ᵐ[μ.restrict V] u ∘ f :=
-  coeFn_compAux hf htv u
-
-omit [BorelSpace E] [BorelSpace E'] in
-private theorem coeFn_compEquivAux_symm [OpensMeasurableSpace E] [OpensMeasurableSpace E']
-    {f : E → E'} {g : E' → E}
-    (hf : MeasurePreserving f (μ.restrict V) (ν.restrict Ω))
-    (hg : MeasurePreserving g (ν.restrict Ω) (μ.restrict V))
-    (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
-    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
-    (v : BV μ V) :
-    ((compEquivAux hf hg hfg hgf htv).symm v : E' → ℝ) =ᵐ[ν.restrict Ω] v ∘ g :=
-  coeFn_compAux hg (totalVariationOn_comp_symm hgf htv) v
-
-omit [BorelSpace E] [BorelSpace E'] in
-private theorem totalVariationOn_compEquivAux [OpensMeasurableSpace E] [OpensMeasurableSpace E']
-    {f : E → E'} {g : E' → E}
-    (hf : MeasurePreserving f (μ.restrict V) (ν.restrict Ω))
-    (hg : MeasurePreserving g (ν.restrict Ω) (μ.restrict V))
-    (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
-    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
-    (u : BV ν Ω) :
-    totalVariationOn μ V (compEquivAux hf hg hfg hgf htv u) = totalVariationOn ν Ω u :=
-  totalVariationOn_compAux hf htv u
-
-omit [BorelSpace E] [BorelSpace E'] in
-private theorem totalVariationOn_compEquivAux_symm [OpensMeasurableSpace E]
-    [OpensMeasurableSpace E'] {f : E → E'} {g : E' → E}
-    (hf : MeasurePreserving f (μ.restrict V) (ν.restrict Ω))
-    (hg : MeasurePreserving g (ν.restrict Ω) (μ.restrict V))
-    (hfg : ∀ y, f (g y) = y) (hgf : ∀ x, g (f x) = x)
-    (htv : ∀ w : E' → ℝ, totalVariationOn μ V (w ∘ f) = totalVariationOn ν Ω w)
-    (v : BV μ V) :
-    totalVariationOn ν Ω ((compEquivAux hf hg hfg hgf htv).symm v) = totalVariationOn μ V v :=
-  totalVariationOn_compAux hg (totalVariationOn_comp_symm hgf htv) v
-
 omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
   [MeasurableSpace E] [BorelSpace E] [MeasurableSpace E'] [BorelSpace E'] in
@@ -409,8 +343,9 @@ theorem toL1_compLinearIsometryEquiv [OpensMeasurableSpace E'] (he : MeasurePres
     (hVO : (V : Set E) = e ⁻¹' Ω) (u : BV ν Ω) :
     (compLinearIsometryEquiv he hVO u).toL1 =
       Lp.compMeasurePreserving e (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet) u.toL1 := by
-  rw [compLinearIsometryEquiv]
-  exact toL1_compEquivAux _ _ _ _ _ u
+  simp only [compLinearIsometryEquiv, compEquivAux, LinearIsometryEquiv.ofBounds,
+    LinearIsometryEquiv.coe_mk, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
+  exact toL1_compAux _ _ u
 
 omit [BorelSpace E'] in
 /-- The `L¹` class of the inverse of `compLinearIsometryEquiv` is `Lp.compMeasurePreserving` along
@@ -421,8 +356,9 @@ theorem toL1_compLinearIsometryEquiv_symm [OpensMeasurableSpace E'] (he : Measur
       Lp.compMeasurePreserving e.symm
         (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, e.symm.continuous.measurable⟩
           (hVO ▸ he.restrict_preimage Ω.isOpen.measurableSet)) v.toL1 := by
-  rw [compLinearIsometryEquiv]
-  exact toL1_compEquivAux_symm _ _ _ _ _ v
+  simp only [compLinearIsometryEquiv, compEquivAux, LinearIsometryEquiv.ofBounds,
+    LinearIsometryEquiv.symm, LinearIsometryEquiv.coe_mk, LinearEquiv.coe_symm_mk]
+  exact toL1_compAux _ _ v
 
 omit [BorelSpace E'] in
 /-- Pulling a BV class back along `e` precomposes its representative with `e` almost everywhere on
@@ -430,8 +366,9 @@ omit [BorelSpace E'] in
 theorem coeFn_compLinearIsometryEquiv [OpensMeasurableSpace E'] (he : MeasurePreserving e μ ν)
     (hVO : (V : Set E) = e ⁻¹' Ω) (u : BV ν Ω) :
     (compLinearIsometryEquiv he hVO u : E → ℝ) =ᵐ[μ.restrict V] u ∘ e := by
-  rw [compLinearIsometryEquiv]
-  exact coeFn_compEquivAux _ _ _ _ _ u
+  simp only [compLinearIsometryEquiv, compEquivAux, LinearIsometryEquiv.ofBounds,
+    LinearIsometryEquiv.coe_mk, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
+  exact coeFn_compAux _ _ u
 
 omit [BorelSpace E'] in
 /-- The inverse of `compLinearIsometryEquiv` precomposes representatives with `e.symm` almost
@@ -439,8 +376,9 @@ everywhere on `Ω`. -/
 theorem coeFn_compLinearIsometryEquiv_symm [OpensMeasurableSpace E'] (he : MeasurePreserving e μ ν)
     (hVO : (V : Set E) = e ⁻¹' Ω) (v : BV μ V) :
     ((compLinearIsometryEquiv he hVO).symm v : E' → ℝ) =ᵐ[ν.restrict Ω] v ∘ e.symm := by
-  rw [compLinearIsometryEquiv]
-  exact coeFn_compEquivAux_symm _ _ _ _ _ v
+  simp only [compLinearIsometryEquiv, compEquivAux, LinearIsometryEquiv.ofBounds,
+    LinearIsometryEquiv.symm, LinearIsometryEquiv.coe_mk, LinearEquiv.coe_symm_mk]
+  exact coeFn_compAux _ _ v
 
 omit [BorelSpace E'] in
 /-- Pulling a BV class back along `e` preserves its total variation. -/
@@ -448,8 +386,9 @@ omit [BorelSpace E'] in
 theorem totalVariationOn_compLinearIsometryEquiv [OpensMeasurableSpace E']
     (he : MeasurePreserving e μ ν) (hVO : (V : Set E) = e ⁻¹' Ω) (u : BV ν Ω) :
     totalVariationOn μ V (compLinearIsometryEquiv he hVO u) = totalVariationOn ν Ω u := by
-  rw [compLinearIsometryEquiv]
-  exact totalVariationOn_compEquivAux _ _ _ _ _ u
+  simp only [compLinearIsometryEquiv, compEquivAux, LinearIsometryEquiv.ofBounds,
+    LinearIsometryEquiv.coe_mk, LinearEquiv.coe_mk, LinearMap.coe_mk, AddHom.coe_mk]
+  exact totalVariationOn_compAux _ _ u
 
 omit [BorelSpace E'] in
 /-- Applying the inverse of `compLinearIsometryEquiv` preserves total variation. -/
@@ -457,16 +396,25 @@ omit [BorelSpace E'] in
 theorem totalVariationOn_compLinearIsometryEquiv_symm [OpensMeasurableSpace E']
     (he : MeasurePreserving e μ ν) (hVO : (V : Set E) = e ⁻¹' Ω) (v : BV μ V) :
     totalVariationOn ν Ω ((compLinearIsometryEquiv he hVO).symm v) = totalVariationOn μ V v := by
-  rw [compLinearIsometryEquiv]
-  exact totalVariationOn_compEquivAux_symm _ _ _ _ _ v
+  simp only [compLinearIsometryEquiv, compEquivAux, LinearIsometryEquiv.ofBounds,
+    LinearIsometryEquiv.symm, LinearIsometryEquiv.coe_mk, LinearEquiv.coe_symm_mk]
+  exact totalVariationOn_compAux _ _ v
 
+omit [BorelSpace E'] in
 /-- The inverse of `compLinearIsometryEquiv` along `e` is `compLinearIsometryEquiv` along
 `e.symm`. -/
-theorem compLinearIsometryEquiv_symm (he : MeasurePreserving e μ ν) (hVO : (V : Set E) = e ⁻¹' Ω) :
+theorem compLinearIsometryEquiv_symm [OpensMeasurableSpace E'] (he : MeasurePreserving e μ ν)
+    (hVO : (V : Set E) = e ⁻¹' Ω) :
     (compLinearIsometryEquiv he hVO).symm =
-      compLinearIsometryEquiv
-        (by simpa using MeasurePreserving.symm e.toMeasurableEquiv he)
+      @compLinearIsometryEquiv E' E _ _ _ _ _ _ _
+        ((⟨e.symm.toEquiv, e.symm.continuous.measurable, he.measurable⟩ :
+          E' ≃ᵐ E).measurableEmbedding.borelSpace e.symm.toHomeomorph.isInducing)
+        _ ν μ Ω V e.symm _
+        (MeasurePreserving.symm ⟨e.toEquiv, he.measurable, e.symm.continuous.measurable⟩ he)
         (show (Ω : Set E') = e.symm ⁻¹' V by rw [hVO, ← Set.preimage_comp]; ext y; simp) := by
+  have : BorelSpace E' :=
+    (⟨e.symm.toEquiv, e.symm.continuous.measurable, he.measurable⟩ :
+      E' ≃ᵐ E).measurableEmbedding.borelSpace e.symm.toHomeomorph.isInducing
   ext1 v
   exact ext <| (coeFn_compLinearIsometryEquiv_symm he hVO v).trans
     (coeFn_compLinearIsometryEquiv _ _ v).symm

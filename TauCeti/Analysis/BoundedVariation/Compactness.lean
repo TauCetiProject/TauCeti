@@ -321,57 +321,77 @@ section CompactOperator
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E] {μ : Measure E} {Ω : Opens E}
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [OpensMeasurableSpace E] in
+/-- Transport an `L¹(μ.restrict Ω)` class to `L¹((c • μ).restrict Ω)` along a nonnegative scalar
+rescaling of the measure. -/
+private def l1SmulMeasureAux (c : ℝ≥0) (f : E →₁[μ.restrict Ω] ℝ) : E →₁[(c • μ).restrict Ω] ℝ :=
+  ((Measure.restrict_smul (c : ℝ≥0) μ Ω).symm ▸ (L1.integrable_coeFn f).smul_measure_nnreal).toL1 f
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [OpensMeasurableSpace E] in
+/-- Scaling the ambient measure by `c : ℝ≥0` scales `L¹` distances under `l1SmulMeasureAux c` by
+`c`. -/
+private theorem dist_l1SmulMeasureAux (c : ℝ≥0) (f g : E →₁[μ.restrict Ω] ℝ) :
+    dist (l1SmulMeasureAux c f) (l1SmulMeasureAux c g) = (c : ℝ) * dist f g := by
+  have hfx : (l1SmulMeasureAux c f : E → ℝ) =ᵐ[(c • μ).restrict Ω] f := Integrable.coeFn_toL1 _
+  have hgx : (l1SmulMeasureAux c g : E → ℝ) =ᵐ[(c • μ).restrict Ω] g := Integrable.coeFn_toL1 _
+  have h : ⇑(l1SmulMeasureAux c f - l1SmulMeasureAux c g) =ᵐ[(c • μ).restrict Ω]
+      (f : E → ℝ) - g := by
+    filter_upwards [Lp.coeFn_sub (l1SmulMeasureAux c f) (l1SmulMeasureAux c g), hfx, hgx]
+      with x hx hf hg
+    exact hx.trans (by simp [hf, hg])
+  rw [dist_eq_norm, dist_eq_norm, Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae h,
+    eLpNorm_congr_ae (Lp.coeFn_sub f g), Measure.restrict_smul, ENNReal.smul_def,
+    eLpNorm_one_smul_measure, ENNReal.toReal_mul, ENNReal.coe_toReal]
+
+/-- View a `BV (c • μ) Ω` class as a `BV μ Ω` class for a nonzero scalar `c : ℝ≥0`. -/
+private def BV.ofSmulMeasureAux {c : ℝ≥0} (hc : c ≠ 0) (u : BV (c • μ) Ω) : BV μ Ω :=
+  BV.ofFunction u <| memBV_iff.mpr
+    ⟨by simpa only [IntegrableOn, Measure.restrict_smul, inv_smul_smul₀ hc] using
+        u.integrableOn.smul_measure_nnreal (c := c⁻¹),
+      lt_top_iff_ne_top.mpr fun h => u.totalVariationOn_lt_top.ne (by simp [h, hc])⟩
+
+/-- Transporting `BV.ofSmulMeasureAux hc u` back to `L¹((c • μ).restrict Ω)` recovers `u.toL1`. -/
+private theorem l1SmulMeasureAux_toL1_ofSmulMeasureAux {c : ℝ≥0} (hc : c ≠ 0) (u : BV (c • μ) Ω) :
+    l1SmulMeasureAux c (BV.ofSmulMeasureAux hc u).toL1 = u.toL1 := by
+  let f : E → ℝ := u
+  have hf : ((BV.ofSmulMeasureAux hc u).toL1 : E → ℝ) =ᵐ[μ.restrict Ω] f :=
+    BV.coeFn_ofFunction (μ := μ) (Ω := Ω) f _
+  have hfc : ((BV.ofSmulMeasureAux hc u).toL1 : E → ℝ) =ᵐ[(c • μ).restrict Ω] f :=
+    (Measure.restrict_smul (c : ℝ≥0) μ Ω).symm ▸ Measure.ae_smul_measure hf c
+  exact Lp.ext <| (Integrable.coeFn_toL1 _).trans hfc
+
+/-- The `BV (c • μ) Ω` norm is `c` times the `BV μ Ω` norm of `BV.ofSmulMeasureAux hc u`. -/
+private theorem norm_eq_mul_norm_ofSmulMeasureAux {c : ℝ≥0} (hc : c ≠ 0) (u : BV (c • μ) Ω) :
+    ‖u‖ = (c : ℝ) * ‖BV.ofSmulMeasureAux hc u‖ := by
+  have hL1 (f : E → ℝ) : eLpNorm f 1 ((c • μ).restrict Ω) =
+      (c : ℝ≥0∞) * eLpNorm f 1 (μ.restrict Ω) := by
+    rw [Measure.restrict_smul, ENNReal.smul_def, eLpNorm_one_smul_measure]
+  rw [BV.ofSmulMeasureAux, BV.norm_def, BV.norm_def, Lp.norm_def, Lp.norm_def,
+    eLpNorm_congr_ae (BV.coeFn_ofFunction (μ := μ) (Ω := Ω) u _), hL1 u,
+    totalVariationOn_smul_measure, BV.totalVariationOn_ofFunction, ENNReal.toReal_mul,
+    ENNReal.toReal_mul, ENNReal.coe_toReal, mul_add]
+
 /-- Scalar rescaling of the ambient measure by `c : ℝ≥0` preserves compactness of `BV.toL1CLM`. -/
 theorem BV.isCompactOperator_toL1CLM_smul_measure (c : ℝ≥0)
     (hcpt : IsCompactOperator (BV.toL1CLM (μ := μ) (Ω := Ω))) :
     IsCompactOperator (BV.toL1CLM (μ := c • μ) (Ω := Ω)) := by
-  refine (isCompactOperator_iff_totallyBounded_image_closedBall _ zero_lt_one).mpr ?_
   rcases eq_or_ne c 0 with rfl | hc
   · rw [zero_smul]
-    exact (totallyBounded_singleton (0 : E →₁[(0 : Measure E).restrict Ω] ℝ)).subset
-      fun _ _ => Lp.ext (ae_restrict_of_ae (ae_zero.symm ▸ Filter.eventually_bot))
+    suffices (BV.toL1CLM (μ := 0) (Ω := Ω) : BV (0 : Measure E) Ω → _) = 0 from
+      this ▸ isCompactOperator_zero
+    ext1 u
+    exact Lp.ext (ae_restrict_of_ae (ae_zero.symm ▸ Filter.eventually_bot))
   have hcpos : (0 : ℝ) < c := NNReal.coe_pos.mpr (pos_iff_ne_zero.mpr hc)
-  have hres : (c • μ).restrict (Ω : Set E) = c • μ.restrict (Ω : Set E) := Measure.restrict_smul ..
-  have hint_iff {f : E → ℝ} : IntegrableOn f Ω (c • μ) ↔ IntegrableOn f Ω μ :=
-    ⟨fun h => by simpa only [IntegrableOn, hres, inv_smul_smul₀ hc] using
-        h.smul_measure_nnreal (c := c⁻¹),
-      fun h => by rw [IntegrableOn, hres]; exact h.smul_measure_nnreal⟩
-  have hL1 (f : E → ℝ) : (eLpNorm f 1 ((c • μ).restrict Ω)).toReal =
-      (c : ℝ) * (eLpNorm f 1 (μ.restrict Ω)).toReal := by
-    rw [hres, eLpNorm_smul_measure_of_ne_zero' hc]
-    simp [ENNReal.smul_def, ENNReal.toReal_mul]
-  refine Metric.totallyBounded_iff.mpr fun ε hε => ?_
-  obtain ⟨s, hs, hcov⟩ := Metric.totallyBounded_iff.mp
-    (hcpt.totallyBounded_image_closedBall (c : ℝ)⁻¹) (ε / c) (div_pos hε hcpos)
-  let φ : (E →₁[μ.restrict Ω] ℝ) → (E →₁[(c • μ).restrict Ω] ℝ) :=
-    fun f => (hint_iff.mpr (L1.integrable_coeFn f)).integrable.toL1 f
-  refine ⟨φ '' s, hs.image φ, ?_⟩
+  have huc : UniformContinuous (l1SmulMeasureAux (μ := μ) (Ω := Ω) c) :=
+    (LipschitzWith.of_dist_le_mul fun f g => (dist_l1SmulMeasureAux c f g).le).uniformContinuous
+  refine (isCompactOperator_iff_totallyBounded_image_closedBall _ zero_lt_one).mpr ?_
+  refine ((hcpt.totallyBounded_image_closedBall (c : ℝ)⁻¹).image huc).subset ?_
   rintro _ ⟨u, hu, rfl⟩
-  have huBV : MemBV μ Ω u := memBV_iff.mpr ⟨hint_iff.mp u.integrableOn, by
-    have hlt := u.totalVariationOn_lt_top
-    exact lt_top_iff_ne_top.mpr fun h => hlt.ne (by simp [h, hc])⟩
-  let u' : BV μ Ω := BV.ofFunction u huBV
-  have hu_norm : ‖u‖ = (c : ℝ) * ‖u'‖ := by
-    simp only [u', BV.norm_def, Lp.norm_def, eLpNorm_congr_ae (BV.coeFn_ofFunction u huBV),
-      hL1, totalVariationOn_smul_measure, BV.totalVariationOn_ofFunction, ENNReal.toReal_mul,
-      ENNReal.coe_toReal, mul_add]
-  have hu'mem : u'.toL1 ∈ (BV.toL1CLM (μ := μ) (Ω := Ω)) '' closedBall 0 (c : ℝ)⁻¹ :=
-    ⟨u', mem_closedBall_zero_iff.mpr <| by
-      rw [inv_eq_one_div, le_div_iff₀' hcpos, ← hu_norm]
-      exact mem_closedBall_zero_iff.mp hu, BV.toL1CLM_apply u'⟩
-  obtain ⟨f, hfs, hdist⟩ := mem_iUnion₂.mp (hcov hu'mem)
-  refine mem_iUnion₂.mpr ⟨φ f, ⟨f, hfs, rfl⟩, ?_⟩
-  have h₁ : ⇑(u.toL1 - φ f) =ᵐ[(c • μ).restrict Ω] fun x => u x - f x := by
-    filter_upwards [Lp.coeFn_sub u.toL1 (φ f),
-      (hint_iff.mpr (L1.integrable_coeFn f)).integrable.coeFn_toL1] with x hx₁ hx₂
-    exact hx₁.trans (by rw [Pi.sub_apply, hx₂])
-  have h₂ : ⇑(u'.toL1 - f) =ᵐ[μ.restrict Ω] fun x => u x - f x := by
-    filter_upwards [Lp.coeFn_sub u'.toL1 f, BV.coeFn_ofFunction u huBV] with x hx₁ hx₂
-    exact hx₁.trans (by rw [Pi.sub_apply, hx₂])
-  have hdist_eq : dist u.toL1 (φ f) = (c : ℝ) * dist u'.toL1 f := by
-    simp only [dist_eq_norm, Lp.norm_def, eLpNorm_congr_ae h₁, eLpNorm_congr_ae h₂, hL1]
-  rw [mem_ball, ContinuousLinearMap.coe_coe, BV.toL1CLM_apply, hdist_eq]
-  exact (mul_lt_mul_of_pos_left (mem_ball.mp hdist) hcpos).trans_eq (mul_div_cancel₀ ε hcpos.ne')
+  refine ⟨(BV.ofSmulMeasureAux hc u).toL1,
+    ⟨BV.ofSmulMeasureAux hc u, mem_closedBall_zero_iff.mpr ?_, BV.toL1CLM_apply _⟩,
+    (l1SmulMeasureAux_toL1_ofSmulMeasureAux hc u).trans (BV.toL1CLM_apply u).symm⟩
+  rw [inv_eq_one_div, le_div_iff₀' hcpos, ← norm_eq_mul_norm_ofSmulMeasureAux hc u]
+  exact mem_closedBall_zero_iff.mp hu
 
 /-- **Invariance of compactness of `BV.toL1CLM` under positive rescaling of the measure.** -/
 theorem BV.isCompactOperator_toL1CLM_smul_measure_iff {c : ℝ≥0} (hc : c ≠ 0) :
