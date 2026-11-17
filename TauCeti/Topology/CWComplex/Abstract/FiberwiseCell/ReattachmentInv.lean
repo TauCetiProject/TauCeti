@@ -746,8 +746,9 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_comp_fiberwiseCellComp
     rw [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.compContinuousMap_apply,
       ContinuousMap.comp_apply, fiberwiseCellAttachmentProj_fiberwiseCellReattachment, hg₁P,
       ContinuousMap.HomotopyRel.symm_apply, fst_fiberwiseCellReattachmentInvHomotopy]
-  exact ⟨F₁.trans (F₂.trans G₃), ContinuousMap.Homotopy.trans_apply_eq_of_forall hF₁
-    (ContinuousMap.Homotopy.trans_apply_eq_of_forall hF₂ hG₃)⟩
+  exact ⟨F₁.trans (F₂.trans G₃), ContinuousMap.Homotopy.trans_apply_mem
+    (S := fun y ↦ fiberwiseCellAttachmentProj α₀ ⁻¹' {fiberwiseCellAttachmentProj α₀ y}) hF₁
+    (ContinuousMap.Homotopy.trans_apply_mem hF₂ hG₃)⟩
 
 section BaseChange
 
