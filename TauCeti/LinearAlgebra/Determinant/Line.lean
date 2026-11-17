@@ -74,8 +74,8 @@ the linear algebra itself is standard.
   `LinearEquiv.detLineCongr_symm`: the induced isomorphisms are functorial.
 * `LinearEquiv.detLineCongr_apply_eq_det_smul`: an automorphism acts on the determinant line by
   its determinant.
-* `LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and `e'` of
-  `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
+* `LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul`: automorphisms `e` of `V` and
+  `e'` of `W` act on `det V ⊗ (det W)^*` by `det e * (det e')⁻¹`.
 * `LinearMap.finrank_detLine`: the determinant line of a linear map between vector spaces has
   dimension one (for an infinite-dimensional kernel or cokernel, by the `finrank = 0`
   convention).
@@ -192,7 +192,7 @@ theorem detLineCongr_apply_eq_det_smul [Module.Free R V] (e : V ≃ₗ[R] V) (x 
 
 /-- Automorphisms `e` of `V` and `e'` of `W` act on `det V ⊗ (det W)^*` by multiplication by
 `det e * (det e')⁻¹`. -/
-theorem tensorCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
+theorem tensorProductCongr_detLineCongr_apply_eq_det_smul [Module.Free R V] [Module.Free R W]
     (e : V ≃ₗ[R] V) (e' : W ≃ₗ[R] W) (z : detLine R V ⊗[R] Dual R (detLine R W)) :
     TensorProduct.congr e.detLineCongr e'.detLineCongr.symm.dualMap z =
       (LinearEquiv.det e * (LinearEquiv.det e')⁻¹) • z := by
@@ -465,7 +465,7 @@ theorem detLineCongr_apply_eq_det_smul (f : M →ₗ[R] N) [Module.Free R (ker f
           (e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective e₂.injective h)) *
         (LinearEquiv.det (Submodule.Quotient.equiv _ _ e₂
           (f.map_range_eq_range_of_comp_eq e₁.surjective h)))⁻¹) • z :=
-  LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul _ _ z
+  LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul _ _ z
 
 /-- Let `e₁` and `e₂` act on the source and target of `f` as multiplication by the same unit `c`.
 Transport along the commuting square they form multiplies the determinant line of `f` by

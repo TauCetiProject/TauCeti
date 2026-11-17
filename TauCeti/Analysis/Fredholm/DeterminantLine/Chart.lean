@@ -331,7 +331,7 @@ theorem detLineChartEquiv_apply_eq_det_smul_of_coprod_comp_eq {D₃ : Λ →L[�
   have := detLineChartEquiv_detLineCongr (e₁ := LinearEquiv.refl 𝕜 E)
     (e₂ := LinearEquiv.refl 𝕜 F) hΨ hΨ₁ hΨ₂ eG hq h h₁ y
   simpa only [LinearMap.detLineCongr_refl, LinearEquiv.refl_apply,
-    LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul, Units.smul_def, Units.val_mul,
+    LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul, Units.smul_def, Units.val_mul,
     Units.val_inv_eq_inv_val, LinearEquiv.coe_det] using this
 
 /-- **Changing the kernel coordinate.** Two kernel charts of `D₁` with the same stabilizer `D₂`
@@ -444,7 +444,7 @@ theorem detLineChartEquiv_detLineCongr_of_comp_eq
     (LinearMap.ext fun z ↦ by simp [hS])
     (fun _ ↦ rfl) (fun _ ↦ rfl) (LinearEquiv.refl 𝕜 G) (fun z _ ↦ by simp) hT
     (isInvertible_prod_coprod_of_comp_eq h hT) y
-  rw [LinearEquiv.tensorCongr_detLineCongr_apply_eq_det_smul] at this
+  rw [LinearEquiv.tensorProductCongr_detLineCongr_apply_eq_det_smul] at this
   simpa using this
 
 end Conjugate
