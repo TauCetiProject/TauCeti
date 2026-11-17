@@ -10,11 +10,8 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 public import Mathlib.Topology.Homotopy.TopCat.ToSSet
 public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.TopologicalSimplex
-public import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 public import TauCeti.Geometry.Manifold.SmoothSingular.Basic
-public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
-public import Mathlib.Geometry.Manifold.Algebra.LieGroup
-public import Mathlib.Geometry.Manifold.Algebra.SMul
+import TauCeti.Geometry.Manifold.ContMDiff.StarConvex
 import TauCeti.Topology.Homotopy.TopCat.Basic
 
 /-!
@@ -44,8 +41,8 @@ Consequently a smoothly contractible manifold has the smooth singular homology o
 identity of `M` is smoothly homotopic to a constant map, the positive-degree smooth singular
 homology of `M` vanishes (`TauCeti.isZero_homology_smoothSingularSubcomplex_of_contMDiff`). This
 applies to every star-convex open subset of a real normed space
-(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`), the contraction being
-`(t, x) ↦ c + (1 - ψ t) • (x - c)` for a smooth `ψ : ℝ → [0, 1]` with `ψ 0 = 0` and `ψ 1 = 1`. The
+(`TauCeti.isZero_homology_smoothSingularSubcomplex_of_starConvex`), using the time-reversed smooth
+radial contraction `(t, x) ↦ hU.smoothContraction (1 - t, x)`. The
 homotopy is required to be smooth on all of `ℝ × M`, not merely on `[0, 1] × M`: a smooth simplex is
 locally the restriction of a smooth map on an open subset of `ℝⁿ`, and the affine coordinate `t_α`
 takes values outside `[0, 1]` off the simplex.
@@ -265,9 +262,9 @@ theorem isZero_homology_smoothSingularSubcomplex_of_contMDiff [CategoryWithHomol
   rw [IsZero.iff_id_eq_zero, hid, hpt.eq_of_src (SSet.homologyMap s R n) 0, comp_zero]
 
 /-- **A star-convex open subset has vanishing positive-degree smooth singular homology.**
-The smooth contraction `(t, x) ↦ c + (1 - ψ t) • (x - c)` towards the centre `c`, with `ψ` the
-smooth transition function from `0` to `1`, stays in the subset, so its smooth singular homology
-vanishes in every positive degree. -/
+Precomposing `hU.smoothContraction` with `(t, x) ↦ (1 - t, x)` gives a smooth contraction from the
+identity to the star-centre `c`, so the smooth singular homology of `U` vanishes in every positive
+degree. -/
 theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomology C]
     {V : Type u} [NormedAddCommGroup V] [NormedSpace ℝ V] {U : TopologicalSpace.Opens V} {c : V}
     (hU : StarConvex ℝ c (U : Set V)) {n : ℕ} (hn : n ≠ 0) :
@@ -281,20 +278,11 @@ theorem isZero_homology_smoothSingularSubcomplex_of_starConvex [CategoryWithHomo
       rw [hempty] at hx
       exact hx
     exact (HomologicalComplex.homologyFunctor C _ n).map_isZero (SSet.isZero_chainComplex _ R)
-  have hmem : ∀ p : ℝ × U, c + (1 - Real.smoothTransition p.1) • ((p.2 : V) - c) ∈ U :=
-    fun p ↦ hU.add_smul_sub_mem p.2.2 (by linarith [Real.smoothTransition.le_one p.1])
-      (by linarith [Real.smoothTransition.nonneg p.1])
-  let F : ℝ × U → U := fun p ↦ ⟨_, hmem p⟩
-  have hF : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ F := by
-    rw [← ContMDiff.subtypeVal_comp_iff]
-    have hψ : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) ∞ fun p : ℝ × U ↦ Real.smoothTransition p.1 :=
-      Real.smoothTransition.contDiff.contMDiff.comp contMDiff_fst
-    have hx : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞ fun p : ℝ × U ↦ (p.2 : V) :=
-      contMDiff_subtype_val.comp contMDiff_snd
-    exact ContMDiff.add contMDiff_const
-      (ContMDiff.smul (ContMDiff.sub contMDiff_const hψ) (hx.sub contMDiff_const))
+  have hF : ContMDiff (𝓘(ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, V) ∞
+      fun p : ℝ × U ↦ hU.smoothContraction (1 - p.1, p.2) :=
+    hU.contMDiff_smoothContraction.comp
+      (((contDiff_const.sub contDiff_id).contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   exact isZero_homology_smoothSingularSubcomplex_of_contMDiff R hF ⟨c, hU.mem hne⟩
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.zero]))
-    (fun x ↦ Subtype.ext (by simp [F, Real.smoothTransition.one])) hn
+    (fun x ↦ by simp) (fun x ↦ by simp) hn
 
 end TauCeti

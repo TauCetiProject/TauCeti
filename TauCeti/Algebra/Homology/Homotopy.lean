@@ -409,6 +409,7 @@ as a retract up to homotopy of `e.hom`: homotopy-commutative squares `jK ≫ i�
 `i₂ ≫ rL ~ rK ≫ e.hom`, together with homotopies `rK ≫ jK ~ 𝟙 K₂` and `rL ≫ jL ~ 𝟙 L₂`.
 The transferred homotopy inverse is `rL ≫ e.inv ≫ jK`; no homotopies on `jK ≫ rK` or `jL ≫ rL`
 are used. -/
+@[no_expose]
 def ofHomotopyRetract (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
     {jK : K₁ ⟶ K₂} {jL : L₁ ⟶ L₂} {rK : K₂ ⟶ K₁} {rL : L₂ ⟶ L₁}
     (hK : Homotopy (rK ≫ jK) (𝟙 K₂)) (hL : Homotopy (rL ≫ jL) (𝟙 L₂))
@@ -450,6 +451,7 @@ lemma ofHomotopyRetract_inv (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
 /-- Transfer a homotopy equivalence `e : HomotopyEquiv K₁ L₁` to a morphism `i₂ : K₂ ⟶ L₂` along
 strictly commutative squares `jK ≫ i₂ = e.hom ≫ jL` and `i₂ ≫ rL = rK ≫ e.hom` with homotopies
 `rK ≫ jK ~ 𝟙 K₂` and `rL ≫ jL ~ 𝟙 L₂`. -/
+@[no_expose]
 def ofHomotopyRetractOfComm (e : HomotopyEquiv K₁ L₁) (i₂ : K₂ ⟶ L₂)
     {jK : K₁ ⟶ K₂} {jL : L₁ ⟶ L₂} {rK : K₂ ⟶ K₁} {rL : L₂ ⟶ L₁}
     (hK : Homotopy (rK ≫ jK) (𝟙 K₂)) (hL : Homotopy (rL ≫ jL) (𝟙 L₂))
@@ -485,6 +487,7 @@ variable {K L K₁ L₁ K₂ L₂ : HomologicalComplex C c}
 homotopy `fK ≫ e₂.hom ~ e₁.hom ≫ fL`, the composites `fL ≫ e₂.inv` and `e₁.inv ≫ fK` are
 homotopic via `fL ≫ e₂.inv ~ e₁.inv ≫ e₁.hom ≫ fL ≫ e₂.inv ~ e₁.inv ≫ fK ≫ e₂.hom ≫ e₂.inv ~
 e₁.inv ≫ fK`. -/
+@[no_expose]
 def homotopyInvSquare (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
     {fK : K₁ ⟶ K₂} {fL : L₁ ⟶ L₂} (h : Homotopy (fK ≫ e₂.hom) (e₁.hom ≫ fL)) :
     Homotopy (fL ≫ e₂.inv) (e₁.inv ≫ fK) :=
@@ -497,6 +500,7 @@ def homotopyInvSquare (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K�
 
 /-- A commutative square between the forward maps of two homotopy equivalences induces a
 homotopy-commutative square between their homotopy inverses. -/
+@[no_expose]
 def homotopyInvOfComm (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K₂ L₂)
     {fK : K₁ ⟶ K₂} {fL : L₁ ⟶ L₂} (h : fK ≫ e₂.hom = e₁.hom ≫ fL) :
     Homotopy (fL ≫ e₂.inv) (e₁.inv ≫ fK) :=
@@ -505,6 +509,7 @@ def homotopyInvOfComm (e₁ : HomotopyEquiv K₁ L₁) (e₂ : HomotopyEquiv K�
 /-- **Uniqueness of homotopy inverses up to homotopy.** Two homotopy equivalences whose forward
 maps are homotopic have homotopic inverse maps (`e₁.inv ~ e₁.inv ≫ e₂.hom ≫ e₂.inv ~
 e₁.inv ≫ e₁.hom ≫ e₂.inv ~ e₂.inv`). -/
+@[no_expose]
 def homotopyInv (e₁ e₂ : HomotopyEquiv K L) (h : Homotopy e₁.hom e₂.hom) :
     Homotopy e₁.inv e₂.inv :=
   (Homotopy.ofEq (Category.id_comp e₁.inv).symm).trans
@@ -514,6 +519,7 @@ def homotopyInv (e₁ e₂ : HomotopyEquiv K L) (h : Homotopy e₁.hom e₂.hom)
       (Homotopy.ofEq (Category.comp_id e₂.inv)))
 
 /-- Two homotopy equivalences with the same forward map have homotopic inverse maps. -/
+@[no_expose]
 def homotopyInvOfHomEq (e₁ e₂ : HomotopyEquiv K L) (h : e₁.hom = e₂.hom) :
     Homotopy e₁.inv e₂.inv :=
   e₁.homotopyInv e₂ (.ofEq h)

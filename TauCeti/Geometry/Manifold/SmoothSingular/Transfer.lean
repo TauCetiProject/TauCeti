@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.Homotopy
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.Geometry.Manifold.SmoothSingular.Homotopy
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
+import TauCeti.Geometry.Manifold.ContMDiff.EuclideanHalfSpace
 import TauCeti.Geometry.Manifold.ContMDiff.StarConvex
 import TauCeti.Geometry.Manifold.DeRham.Circle
 import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
@@ -613,18 +614,9 @@ theorem coe_openHalfLineInclusion_apply (y : openHalfLine) :
 
 /-- The inclusion `(0, ∞) → [0, ∞)` is smooth with respect to `𝓘(ℝ, ℝ)` and `𝓡∂ 1`. -/
 theorem contMDiff_openHalfLineInclusion :
-    ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) ∞ openHalfLineInclusion := by
-  have hlin : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞
-      (fun y : openHalfLine ↦ EuclideanSpace.single (𝕜 := ℝ) (0 : Fin 1) y.1) :=
-    ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
-      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))).contDiff.contMDiff.comp
-        contMDiff_subtype_val).congr fun y ↦ by
-      ext i
-      rw [Subsingleton.elim i 0]
-      simp
-  refine (𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hlin fun y ↦ ?_
-  rw [range_modelWithCornersEuclideanHalfSpace]
-  simpa using (mem_openHalfLine_iff.mp y.2).le
+    ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) ∞ openHalfLineInclusion :=
+  contMDiff_subtype_val.modelWithCornersEuclideanHalfSpace_symm_single fun y ↦
+    (mem_openHalfLine_iff.mp y.2).le
 
 /-- Smooth inward translation `r(x) = x + 1` from the closed half-line `[0, ∞)` into its open
 interior `(0, ∞)`. -/
@@ -682,19 +674,8 @@ theorem contMDiff_halfLineInwardDeformation :
         (fun p : ℝ × EuclideanHalfSpace 1 ↦ (1 - p.1) ^ 2) :=
       ((contDiff_const.sub contDiff_id).pow 2).contMDiff.comp contMDiff_fst
     exact hx.add ht
-  have hlin : ContMDiff (𝓘(ℝ).prod (𝓡∂ 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞
-      (fun p : ℝ × EuclideanHalfSpace 1 ↦
-        EuclideanSpace.single (𝕜 := ℝ) (0 : Fin 1) ((𝓡∂ 1) p.2 0 + (1 - p.1) ^ 2)) :=
-    ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
-      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))).contDiff.contMDiff.comp hcoord).congr fun p ↦ by
-      ext i
-      rw [Subsingleton.elim i 0]
-      simp
-  refine (𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hlin fun p ↦ ?_
-  rw [range_modelWithCornersEuclideanHalfSpace]
-  have hx : 0 ≤ p.2.1 0 := p.2.2
-  have hsq : 0 ≤ (1 - p.1) ^ 2 := sq_nonneg (1 - p.1)
-  simpa using add_nonneg hx hsq
+  exact hcoord.modelWithCornersEuclideanHalfSpace_symm_single fun p ↦
+    add_nonneg p.2.2 (sq_nonneg (1 - p.1))
 
 /-- At `t = 0`, `halfLineInwardDeformation` agrees with `j ∘ r`. -/
 @[simp]
@@ -768,21 +749,9 @@ theorem ι_smoothSingularChainHomotopyEquivHalfLine_inv_f_zero
 /-- The smooth curve `t ↦ t²` in `[0, ∞)`, which meets the boundary `0` with vanishing velocity so
 that it extends smoothly across `t = 0` on all of `ℝ`, bundled as a smooth `1`-simplex from `0` to
 `1`. -/
-def halfLineBridge : SmoothSimplex (𝓡∂ 1) (EuclideanHalfSpace 1) 1 := by
-  let γ : ℝ → EuclideanHalfSpace 1 := fun t ↦ (𝓡∂ 1).symm (EuclideanSpace.single 0 (t ^ 2))
-  have hlin : ContMDiff 𝓘(ℝ, ℝ) 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞
-      (fun t : ℝ ↦ EuclideanSpace.single (𝕜 := ℝ) (0 : Fin 1) (t ^ 2)) :=
-    ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
-      (EuclideanSpace.single (0 : Fin 1) (1 : ℝ))).contDiff.contMDiff.comp
-        (contDiff_id.pow 2).contMDiff).congr fun t ↦ by
-      ext i
-      rw [Subsingleton.elim i 0]
-      simp
-  have hγ : ContMDiff 𝓘(ℝ, ℝ) (𝓡∂ 1) ∞ γ :=
-    (𝓡∂ 1).contMDiffOn_symm.comp_contMDiff hlin fun t ↦ by
-      rw [range_modelWithCornersEuclideanHalfSpace]
-      simpa using sq_nonneg t
-  exact SmoothSimplex.ofCurve hγ
+def halfLineBridge : SmoothSimplex (𝓡∂ 1) (EuclideanHalfSpace 1) 1 :=
+  SmoothSimplex.ofCurve
+    ((contDiff_id.pow 2).contMDiff.modelWithCornersEuclideanHalfSpace_symm_single sq_nonneg)
 
 /-- In the smooth singular chain complex of `[0, ∞)`, the boundary of `halfLineBridge` is
 `[1] - [0]`, witnessing that the transferred image `[1]` of the boundary vertex `[0]` is smoothly
