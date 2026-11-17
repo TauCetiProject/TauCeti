@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Inhomogeneous.Floer
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 import TauCeti.LinearAlgebra.Complex.Module
+import Mathlib.Analysis.Complex.CauchyIntegral
 
 /-!
 # The weak Cauchy–Riemann equation: comparisons
@@ -31,6 +32,8 @@ This file compares the planar weak equation `TauCeti.IsWeakCauchyRiemannOn` of
   with this weak conjugate Wirtinger derivative is a weak solution, so for the constant structure
   the weak equation is exactly `\bar∂u = η(z, u)/2` weakly
   (`TauCeti.isWeakCauchyRiemannOn_I_smul_id_zero_iff` for `η = 0`).
+  In particular a holomorphic map on an open set is a weak solution of the homogeneous equation
+  with every exponent (`DifferentiableOn.isWeakCauchyRiemannOn`).
 * `TauCeti.isWeakCauchyRiemannOn_floer_iff`: Floer's equation
   `∂ₛu + J(u)(∂ₜu - X(u)) = 0` is the inhomogeneous equation whose term is twice the value on
   `∂ₛ` of the normalized Floer forcing term `TauCeti.InhomogeneousTerm.floer`, namely `J X`.
@@ -145,6 +148,17 @@ theorem isWeakCauchyRiemannOn_I_smul_id_zero_iff :
   rw [isWeakCauchyRiemannOn_I_smul_id_iff]
   simp only [smul_zero]
   rfl
+
+/-- **Holomorphic maps are weak solutions.** A holomorphic map on an open set `Ω`, with values
+in a complete complex normed space, solves the homogeneous weak equation for the structure
+`J = i` with every exponent: it is `C¹`, hence `W^{1,p}_loc`, and satisfies `\bar∂w = 0`, so
+`TauCeti.isWeakCauchyRiemannOn_I_smul_id_zero_iff` applies. -/
+theorem _root_.DifferentiableOn.isWeakCauchyRiemannOn [CompleteSpace F]
+    (hw : DifferentiableOn ℂ w Ω) :
+    IsWeakCauchyRiemannOn p Ω (fun _ _ => I • ContinuousLinearMap.id ℝ F) (fun _ _ => 0) w :=
+  isWeakCauchyRiemannOn_I_smul_id_zero_iff.2 ⟨hw.continuousOn,
+    ((hw.contDiffOn (n := 1) Ω.isOpen).restrict_scalars ℝ).memWkpLoc subset_rfl,
+    hw.hasWeakConjWirtingerDerivOn_zero⟩
 
 end Wirtinger
 
