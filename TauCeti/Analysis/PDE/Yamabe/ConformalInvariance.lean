@@ -160,14 +160,7 @@ theorem yamabeQuotient_rescale_const
         let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩
         rw [Subsingleton.elim (mgradient I u y) 0]
         exact sq_eq_zero_iff.2 norm_zero
-      have hs : h.scalarCurvature y = 0 := by
-        let _ : RiemannianBundle (fun x : M ↦ TangentSpace I x) := ⟨h.toRiemannianMetric⟩
-        rw [h.scalarCurvature_def,
-          CovariantDerivative.scalarCurvature_eq_sum _ y (stdOrthonormalBasis ℝ (TangentSpace I y))]
-        exact Finset.sum_eq_zero fun i _ ↦ by
-          rw [Subsingleton.elim (stdOrthonormalBasis ℝ (TangentSpace I y) i) 0]
-          simp
-      simp [hm, hs]
+      simp [hm, h.scalarCurvature_eq_zero_of_finrank_le_one y (by omega)]
     simp only [hzero, integral_zero, zero_div]
   · have hd' : (finrank ℝ E : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr hd
     rw [WithMetric.integral_riemannianVolume_rescale fun y ↦
@@ -192,10 +185,10 @@ theorem yamabeQuotient_rescale_const
       ring
     have hpow : (c ^ ((finrank ℝ E : ℝ) / 2)) ^ (2 / criticalExponent (finrank ℝ E)) =
         c ^ ((finrank ℝ E : ℝ) / 2) * c⁻¹ := by
-      rw [← Real.rpow_mul hc.le, two_div_criticalExponent,
-        show (finrank ℝ E : ℝ) / 2 * (((finrank ℝ E : ℝ) - 2) / finrank ℝ E) =
-          (finrank ℝ E : ℝ) / 2 + -1 by field_simp; ring,
-        Real.rpow_add hc, Real.rpow_neg_one]
+      have hexp : (finrank ℝ E : ℝ) / 2 * (((finrank ℝ E : ℝ) - 2) / finrank ℝ E) =
+          (finrank ℝ E : ℝ) / 2 - 1 := by field_simp
+      rw [← Real.rpow_mul hc.le, two_div_criticalExponent, hexp, Real.rpow_sub hc, Real.rpow_one,
+        div_eq_mul_inv]
     simp only [hnum, smul_eq_mul, integral_const_mul]
     rw [Real.mul_rpow (by positivity) (integral_nonneg fun _ ↦ by positivity), hpow,
       mul_div_mul_left _ _ (by positivity)]

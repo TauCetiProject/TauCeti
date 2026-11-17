@@ -170,7 +170,7 @@ theorem conformalLaplacian_congr_of_eventuallyEq {u v : M → ℝ} {x : M}
     rw [laplaceBeltrami_def]
     exact divergence_eq_zero_of_notMem_tsupport I (notMem_tsupport_iff_eventuallyEq.2 hgrad0)
   have hΔ : laplaceBeltrami I u x = laplaceBeltrami I v x := by
-    rw [show u = (u - v) + v from (sub_add_cancel u v).symm,
+    rw [← sub_add_cancel u v,
       laplaceBeltrami_add_of_contMDiffAt I (f := u - v) (hu.sub hv) hv, hΔ0, zero_add]
   rw [conformalLaplacian_def, conformalLaplacian_def, hΔ, h.eq_of_nhds]
 
