@@ -40,6 +40,8 @@ maps differ by a unit of `ℤ` on `πₘ(Sᵐ)`, and hence everywhere.
 * `HomotopyGroup.isIso_hurewicz_iff_bijective_zmultiplesHom`: in that range, the Hurewicz class of
   a generalized loop generates `Hₙ₊₂(X; ℤ)` freely exactly when its homotopy class generates
   `πₙ₊₂(X, x)` freely.
+* `HomotopyGroup.isIso_hurewicz_genLoopLoopHomeomorph_iff`: the loop-space shift
+  `πₙ₊₂(Ω_x X) ≅ πₙ₊₃(X, x)` matches generating Hurewicz classes of `Ω_x X` and of `X`.
 
 ## References
 
@@ -200,5 +202,28 @@ theorem isIso_hurewicz_iff_bijective_zmultiplesHom
     rw [zmultiplesHom_apply, ← map_zsmul, smul_eq_mul, mul_one]
   rw [ConcreteCategory.isIso_iff_bijective, h,
     ← (hurewiczAddEquiv hX).bijective_zmultiplesHom_apply_iff, hurewiczAddEquiv_ofMul_mk]
+
+/-- **The loop-space shift preserves generating Hurewicz classes.** If `πₖ(X, x)` vanishes for
+`k < n + 3`, a generalized loop `g` of the loop space `Ω_x X` at the constant loop has a Hurewicz
+class generating `Hₙ₊₂(Ω_x X; ℤ)` exactly when the generalized loop
+`GenLoop.genLoopLoopHomeomorph x (n + 2) g` of `X` it corresponds to has one generating
+`Hₙ₊₃(X; ℤ)`. -/
+theorem isIso_hurewicz_genLoopLoopHomeomorph_iff
+    (hX : ∀ k < n + 3, Subsingleton (HomotopyGroup (Fin k) X x))
+    (g : Ω^ (Fin (n + 2)) (Ω X x) (Path.refl x)) :
+    IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (GenLoop.genLoopLoopHomeomorph x (n + 2) g)) ↔
+      IsIso (GenLoop.hurewicz (ModuleCat.of ℤ ℤ) g) := by
+  have hΩ : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) (Ω X x) (Path.refl x)) :=
+    fun k hk ↦ (subsingleton_homotopyGroup_loopSpace_iff x k).2 (hX (k + 1) (by omega))
+  -- The shift sends the class of `g` to the class of the corresponding loop of `X`.
+  have hF : (pathLoopSpaceMulEquiv (n + 1)).toAdditive
+      (Additive.ofMul (α := HomotopyGroup (Fin (n + 1 + 1)) (Ω X x) (Path.refl x)) ⟦g⟧) =
+      Additive.ofMul (α := HomotopyGroup (Fin (n + 1 + 2)) X x)
+        ⟦GenLoop.genLoopLoopHomeomorph x (n + 2) g⟧ := by
+    rw [MulEquiv.toAdditive_apply_apply]
+    exact congrArg Additive.ofMul (pathLoopSpaceMulEquiv_mk_eq_genLoopLoopHomeomorph (n + 1) g)
+  rw [isIso_hurewicz_iff_bijective_zmultiplesHom (n := n + 1) (fun k hk ↦ hX k (by omega)),
+    isIso_hurewicz_iff_bijective_zmultiplesHom hΩ, ← hF]
+  exact AddEquiv.bijective_zmultiplesHom_apply_iff _ _
 
 end HomotopyGroup

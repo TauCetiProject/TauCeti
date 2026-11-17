@@ -45,9 +45,12 @@ degree of `τ` and the class of `α`.
 
 ## Main declarations
 
-* `TauCeti.sphereMeridian`: the meridian `γ_w : p ⇝ -p`.
+* `TauCeti.sphereMeridian`: the meridian `γ_w : p ⇝ -p`. Off the poles `±p` every point of the
+  sphere lies on exactly one meridian, at exactly one time (`TauCeti.exists_sphereMeridian_eq`,
+  `TauCeti.eq_and_eq_of_sphereMeridian_eq`).
 * `TauCeti.meridianLoop`: the loop `γ_w · γ_u⁻¹` at `p`, the map `α`.
-* `TauCeti.meridianContraction`: the path of loops `χ_u`.
+* `TauCeti.meridianContraction`: the path of loops `χ_u`, which stays on the meridian `γ_u`
+  (`TauCeti.meridianContraction_apply_mem_range`).
 * `TauCeti.rotatingMeridianLoop`: the loop of loops `Γ_{u,v}`.
 * `TauCeti.stiefelDoubleLoop`: the double loop `σ_{p,u,v}`, with
   `TauCeti.continuous_stiefelDoubleLoop`.
@@ -115,6 +118,58 @@ theorem _root_.Continuous.sphereMeridian {Y : Type*} [TopologicalSpace Y]
   simp only [Function.comp_def, coe_sphereMeridian]
   fun_prop
 
+/-- The meridians meet only at the poles: a point of the sphere other than `±p` lies on exactly one
+meridian, at exactly one time. -/
+theorem eq_and_eq_of_sphereMeridian_eq {w w' : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1} {t t' : I}
+    (h : sphereMeridian p w t = sphereMeridian p w' t') (hp : sphereMeridian p w t ≠ p)
+    (hp' : sphereMeridian p w t ≠ -p) : w = w' ∧ t = t' := by
+  have hre (s : I) : ((Circle.homeomorphSphere (Circle.exp (π * s)) : ℂ)).re = cos (π * s) := by
+    rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp]
+    exact_mod_cast Complex.exp_ofReal_mul_I_re (π * s)
+  have him (s : I) : ((Circle.homeomorphSphere (Circle.exp (π * s)) : ℂ)).im = sin (π * s) := by
+    rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp]
+    exact_mod_cast Complex.exp_ofReal_mul_I_im (π * s)
+  have hpi (s : I) : π * s ∈ Set.Icc 0 π :=
+    ⟨mul_nonneg pi_pos.le s.2.1, by nlinarith [pi_pos, s.2.2]⟩
+  have hsin (s : I) : 0 ≤ sin (π * s) := sin_nonneg_of_nonneg_of_le_pi (hpi s).1 (hpi s).2
+  rw [sphereMeridian_apply] at hp hp'
+  -- The time `t` is off the poles, so its imaginary part is positive.
+  have ht : sin (π * t) ≠ 0 := fun h0 ↦ by
+    rcases sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero p (x := (w, _))
+      ((him t).trans h0) with h1 | h1
+    exacts [hp h1, hp' h1]
+  rw [sphereMeridian_apply, sphereMeridian_apply] at h
+  rcases (sphereRotationFamily_eq_sphereRotationFamily_iff p (x := (w, _))
+    ((him t).trans_ne ht)).1 h.symm with h1 | ⟨-, h1⟩
+  · refine ⟨(Prod.ext_iff.1 h1).1.symm, Subtype.ext ?_⟩
+    have hc := congrArg (fun z : sphere (0 : ℂ) 1 ↦ (z : ℂ).re) (Prod.ext_iff.1 h1).2
+    simp only [hre] at hc
+    exact mul_left_cancel₀ pi_ne_zero (injOn_cos (hpi t') (hpi t) hc).symm
+  · have hc := congrArg Complex.im h1
+    rw [him, Complex.conj_im, him] at hc
+    exact absurd hc (by linarith [hsin t', (hsin t).lt_of_ne' ht])
+
+/-- Every point of the sphere other than `±p` lies on a meridian. -/
+theorem exists_sphereMeridian_eq {q : sphere (0 : E) 1} (hqp : q ≠ p) (hqp' : q ≠ -p) :
+    ∃ w t, sphereMeridian p w t = q := by
+  obtain ⟨⟨w, ζ⟩, hζ, hq⟩ := exists_sphereRotationFamily_eq p hqp hqp'
+  have hζ1 := Complex.re_sq_add_im_sq_of_mem_sphere ζ.2
+  have hre : -1 ≤ (ζ : ℂ).re ∧ (ζ : ℂ).re ≤ 1 := by
+    constructor <;> nlinarith [sq_nonneg ((ζ : ℂ).im), sq_nonneg ((ζ : ℂ).re + 1),
+      sq_nonneg ((ζ : ℂ).re - 1)]
+  refine ⟨w, ⟨arccos (ζ : ℂ).re / π, div_nonneg (arccos_nonneg _) pi_pos.le,
+    (div_le_one pi_pos).2 (arccos_le_pi _)⟩, ?_⟩
+  rw [← hq, sphereMeridian_apply]
+  congr 2
+  refine Subtype.ext (Complex.ext ?_ ?_)
+  · rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_re]
+    dsimp only
+    rw [mul_div_cancel₀ _ pi_ne_zero, cos_arccos hre.1 hre.2]
+  · rw [Circle.coe_homeomorphSphere_apply, Circle.coe_exp, Complex.exp_ofReal_mul_I_im]
+    dsimp only
+    rw [mul_div_cancel₀ _ pi_ne_zero, sin_arccos,
+      show 1 - (ζ : ℂ).re ^ 2 = (ζ : ℂ).im ^ 2 by linarith, sqrt_sq hζ.le]
+
 /-- The loop `γ_w · γ_u⁻¹` at `p` for a pair `x = (u, w)` of unit vectors orthogonal to `p`: along
 the meridian in the direction `w` to `-p`, and back along the meridian in the direction `u`. -/
 def meridianLoop (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
@@ -160,6 +215,12 @@ theorem continuous_meridianContraction :
   Path.continuous_uncurry_iff.mp <| continuous_fst.fst.sphereMeridian p
     ((Path.Homotopy.continuous_reflTransSymmAux.comp
       (continuous_fst.snd.prodMk continuous_snd)).subtype_mk _)
+
+/-- The path of loops `χ_u` stays on the meridian `γ_u`. -/
+theorem meridianContraction_apply_mem_range (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s t : I) :
+    meridianContraction p u s t ∈ Set.range (sphereMeridian p u) := by
+  rw [meridianContraction_apply]
+  exact ⟨_, rfl⟩
 
 /-! ### The loops of loops `Γ_{u,v}` and the double loops `σ_{p,u,v}` -/
 
