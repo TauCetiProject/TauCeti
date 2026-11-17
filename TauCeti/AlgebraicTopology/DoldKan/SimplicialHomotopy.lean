@@ -10,54 +10,36 @@ public import Mathlib.AlgebraicTopology.DoldKan.HomotopyEquivalence
 public import TauCeti.AlgebraicTopology.DoldKan.Monoidal
 public import TauCeti.AlgebraicTopology.SimplicialObject.ChainHomotopy
 public import TauCeti.AlgebraicTopology.SimplicialObject.Cylinder
+import TauCeti.Algebra.Homology.Homotopy
 
 /-!
 # Simplicial homotopies and chain homotopies across the Dold–Kan correspondence
 
-In an idempotent-complete preadditive category `C` with finite coproducts, the Dold–Kan
-correspondence identifies simplicial objects in `C` with non-negatively graded chain complexes in
-`C` via `CategoryTheory.Idempotents.DoldKan.equivalence`. By Satz 3.31 of Dold and Puppe's
-*Homologie nicht-additiver Funktoren*, this equivalence also identifies combinatorial simplicial
-homotopies `CategoryTheory.SimplicialObject.Homotopy f g` with chain homotopies between the induced
-chain maps on alternating face map complexes or normalized chain complexes.
+In an idempotent-complete preadditive category `C` with finite coproducts, the Dold–Kan equivalence
+(`CategoryTheory.Idempotents.DoldKan.equivalence`) identifies combinatorial simplicial homotopies
+`CategoryTheory.SimplicialObject.Homotopy f g` with chain homotopies on alternating face map
+complexes or normalized chain complexes (Dold–Puppe, Satz 3.31).
 
-While the forward direction (`SimplicialObject.Homotopy.toChainHomotopy`) holds in any preadditive
-category, the converse requires producing a simplicial morphism `(cylinder C).obj X ⟶ Y` out of a
-chain homotopy between `(alternatingFaceMapComplex C).map f` and
-`(alternatingFaceMapComplex C).map g`. We construct an explicit chain map
-`cylinderChainMap H : K[(cylinder C).obj X] ⟶ K[Y]` whose restrictions along `cylinderι₀` and
-`cylinderι₁` equal `K.map f` and `K.map g`, restrict it to the normalized summand
-`Idempotents.DoldKan.N`, transport it across the full faithfulness of `N` to obtain a morphism
-`(cylinder C).obj X ⟶ Y`, and apply `Homotopy.ofCylinderHom`.
+While `SimplicialObject.Homotopy.toChainHomotopy` holds in any preadditive category, the converse
+constructs an explicit chain map `cylinderChainMap H : K[(cylinder C).obj X] ⟶ K[Y]` restricting
+along `cylinderι₀` and `cylinderι₁` to `K.map f` and `K.map g`, restricts it to
+`Idempotents.DoldKan.N`, pulls it back along the full faithfulness of `N` to a simplicial morphism
+`(cylinder C).obj X ⟶ Y`, and applies `Homotopy.ofCylinderHom`.
 
 ## Main definitions and results
 
-* `CategoryTheory.Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: the homotopy
-  equivalence `HomotopyEquiv (N.obj X) ((alternatingFaceMapComplex C).obj X)` in any
-  idempotent-complete preadditive category with finite coproducts.
-* `CategoryTheory.SimplicialObject.cylinderChainMap`: explicit chain map
-  `K[(cylinder C).obj X] ⟶ K[Y]` lifting a chain homotopy between `K.map f` and `K.map g`.
-* `CategoryTheory.SimplicialObject.Homotopy.ofAlternatingFaceMapComplexHomotopy`,
-  `CategoryTheory.SimplicialObject.Homotopy.ofNHomotopy`,
-  `CategoryTheory.SimplicialObject.Homotopy.ofNormalizedMooreComplexHomotopy`: constructs a
-  simplicial homotopy `Homotopy f g` from a chain homotopy on alternating face map complexes,
-  pseudoabelian normalized chains `N`, or abelian normalized Moore complexes.
-* `CategoryTheory.SimplicialObject.Homotopy.symm`,
-  `CategoryTheory.SimplicialObject.Homotopy.trans`: symmetry and transitivity of simplicial
-  homotopies in an idempotent-complete preadditive category with finite coproducts.
-* `CategoryTheory.SimplicialObject.nonempty_homotopy_iff_alternatingFaceMapComplex`,
-  `CategoryTheory.SimplicialObject.nonempty_homotopy_iff_N`,
-  `CategoryTheory.SimplicialObject.nonempty_homotopy_iff_normalizedMooreComplex`: two simplicial
-  morphisms are simplicially homotopic if and only if their induced chain maps are chain homotopic
-  (Dold–Puppe, Satz 3.31).
-* `CategoryTheory.SimplicialObject.HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv`,
-  `CategoryTheory.SimplicialObject.homotopyEquivalences_alternatingFaceMapComplex_map_iff`: a
-  simplicial morphism induces a chain homotopy equivalence on alternating face map complexes if and
-  only if it is a simplicial homotopy equivalence.
-* `CategoryTheory.Idempotents.DoldKan.Γ.mapHomotopy`,
-  `CategoryTheory.Idempotents.DoldKan.Γ.mapHomotopyEquiv`: the inverse Dold–Kan functor `Γ` carries
-  chain homotopies to simplicial homotopies and chain homotopy equivalences to simplicial homotopy
-  equivalences.
+* `Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex`: chain homotopy equivalence
+  `N.obj X ≃ K[X]` in any pseudoabelian category with finite coproducts.
+* `SimplicialObject.cylinderChainMap`: explicit chain map `K[(cylinder C).obj X] ⟶ K[Y]`.
+* `SimplicialObject.Homotopy.ofAlternatingFaceMapComplexHomotopy`, `ofNHomotopy`,
+  `ofNormalizedMooreComplexHomotopy`: lifting chain homotopies to simplicial homotopies.
+* `SimplicialObject.nonempty_homotopy_iff_alternatingFaceMapComplex`, `nonempty_homotopy_iff_N`,
+  `nonempty_homotopy_iff_normalizedMooreComplex`: Dold–Puppe, Satz 3.31.
+* `SimplicialObject.HomotopyEquiv.ofAlternatingFaceMapComplexHomotopyEquiv`,
+  `SimplicialObject.homotopyEquivalences_alternatingFaceMapComplex_map_iff`: lifting chain homotopy
+  equivalences to simplicial homotopy equivalences.
+* `Idempotents.DoldKan.Γ.mapHomotopy`, `Idempotents.DoldKan.Γ.mapHomotopyEquiv`: the inverse
+  Dold–Kan functor `Γ` preserves homotopies and homotopy equivalences.
 
 ## References
 
@@ -91,13 +73,11 @@ def homotopyEquivNAlternatingFaceMapComplex (X : SimplicialObject C) :
 
 @[simp]
 lemma homotopyEquivNAlternatingFaceMapComplex_hom (X : SimplicialObject C) :
-    (homotopyEquivNAlternatingFaceMapComplex X).hom = inclusionN.app X :=
-  (rfl)
+    (homotopyEquivNAlternatingFaceMapComplex X).hom = inclusionN.app X := (rfl)
 
 @[simp]
 lemma homotopyEquivNAlternatingFaceMapComplex_inv (X : SimplicialObject C) :
-    (homotopyEquivNAlternatingFaceMapComplex X).inv = PInftyToN.app X :=
-  (rfl)
+    (homotopyEquivNAlternatingFaceMapComplex X).inv = PInftyToN.app X := (rfl)
 
 end CategoryTheory.Idempotents.DoldKan
 
@@ -355,29 +335,19 @@ end CylinderChainMap
 
 section Pseudoabelian
 
+open Idempotents.DoldKan
+
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
   [IsIdempotentComplete C]
 
-private def homotopyConj {K L K' L' : ChainComplex C ℕ} {f g : K ⟶ L} {f' g' : K' ⟶ L'}
-    (u : K ⟶ K') (v : L' ⟶ L) (H : _root_.Homotopy f' g')
-    (hf : f = u ≫ f' ≫ v) (hg : g = u ≫ g' ≫ v) :
-    _root_.Homotopy f g :=
-  (_root_.Homotopy.ofEq hf).trans
-    (((H.compRight v).compLeft u).trans (_root_.Homotopy.ofEq hg.symm))
-
 private lemma N_map_eq_inclusionN_comp_PInftyToN {X Y : SimplicialObject C} (f : X ⟶ Y) :
-    Idempotents.DoldKan.N.map f =
-      Idempotents.DoldKan.inclusionN.app X ≫ (alternatingFaceMapComplex C).map f ≫
-        Idempotents.DoldKan.PInftyToN.app Y := by
-  rw [Idempotents.DoldKan.PInftyToN.naturality,
-    Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app_assoc]
+    N.map f = inclusionN.app X ≫ (alternatingFaceMapComplex C).map f ≫ PInftyToN.app Y := by
+  rw [PInftyToN.naturality, inclusionN_app_comp_PInftyToN_app_assoc]
 
 private lemma PInfty_comp_map_eq {X Y : SimplicialObject C} (f : X ⟶ Y) :
     PInfty ≫ (alternatingFaceMapComplex C).map f =
-      Idempotents.DoldKan.PInftyToN.app X ≫ Idempotents.DoldKan.N.map f ≫
-        Idempotents.DoldKan.inclusionN.app Y := by
-  rw [Idempotents.DoldKan.inclusionN.naturality,
-    Idempotents.DoldKan.PInftyToN_app_comp_inclusionN_app_assoc]
+      PInftyToN.app X ≫ N.map f ≫ inclusionN.app Y := by
+  rw [inclusionN.naturality, PInftyToN_app_comp_inclusionN_app_assoc]
 
 namespace Homotopy
 
@@ -388,54 +358,37 @@ def ofAlternatingFaceMapComplexHomotopy {X Y : SimplicialObject C} {f g : X ⟶ 
     (H : _root_.Homotopy ((alternatingFaceMapComplex C).map f)
       ((alternatingFaceMapComplex C).map g)) :
     Homotopy f g := by
-  let Ψ : Idempotents.DoldKan.N.obj ((cylinder C).obj X) ⟶ Idempotents.DoldKan.N.obj Y :=
-    Idempotents.DoldKan.inclusionN.app ((cylinder C).obj X) ≫
-      cylinderChainMap H ≫ Idempotents.DoldKan.PInftyToN.app Y
-  let Φ : (cylinder C).obj X ⟶ Y :=
-    (Idempotents.DoldKan.equivalence (C := C)).fullyFaithfulFunctor.preimage Ψ
-  have hΦ : Idempotents.DoldKan.N.map Φ = Ψ :=
-    (Idempotents.DoldKan.equivalence (C := C)).fullyFaithfulFunctor.map_preimage Ψ
+  let hN : (N (C := C)).FullyFaithful :=
+    (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+  let Ψ : N.obj ((cylinder C).obj X) ⟶ N.obj Y :=
+    inclusionN.app ((cylinder C).obj X) ≫ cylinderChainMap H ≫ PInftyToN.app Y
+  let Φ : (cylinder C).obj X ⟶ Y := hN.preimage Ψ
+  have hΦ : N.map Φ = Ψ := hN.map_preimage Ψ
   refine ofCylinderHom Φ ?_ ?_ <;>
-    · apply (Idempotents.DoldKan.equivalence (C := C)).fullyFaithfulFunctor.map_injective
-      change Idempotents.DoldKan.N.map (_ ≫ Φ) = Idempotents.DoldKan.N.map _
+    · apply hN.map_injective
       rw [Functor.map_comp, hΦ]
       dsimp [Ψ]
-      rw [Idempotents.DoldKan.inclusionN.naturality_assoc]
+      rw [inclusionN.naturality_assoc]
       first
         | rw [alternatingFaceMapComplex_map_cylinderι₀_comp_cylinderChainMap_assoc]
         | rw [alternatingFaceMapComplex_map_cylinderι₁_comp_cylinderChainMap_assoc]
-      rw [Idempotents.DoldKan.PInftyToN.naturality,
-        Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app_assoc]
-
-/-- Symmetry of combinatorial simplicial homotopies in an idempotent-complete preadditive category
-with finite coproducts. -/
-@[symm]
-def symm {X Y : SimplicialObject C} {f g : X ⟶ Y} (h : Homotopy f g) : Homotopy g f :=
-  ofAlternatingFaceMapComplexHomotopy h.toChainHomotopy.symm
-
-/-- Transitivity of combinatorial simplicial homotopies in an idempotent-complete preadditive
-category with finite coproducts. -/
-@[trans]
-def trans {X Y : SimplicialObject C} {e f g : X ⟶ Y}
-    (h₁ : Homotopy e f) (h₂ : Homotopy f g) : Homotopy e g :=
-  ofAlternatingFaceMapComplexHomotopy (h₁.toChainHomotopy.trans h₂.toChainHomotopy)
+      rw [PInftyToN.naturality, inclusionN_app_comp_PInftyToN_app_assoc]
 
 /-- A simplicial homotopy `Homotopy f g` induces a chain homotopy between `N.map f` and `N.map g`
 for the pseudoabelian normalized chain functor `Idempotents.DoldKan.N`. -/
 def toNHomotopy {X Y : SimplicialObject C} {f g : X ⟶ Y} (h : Homotopy f g) :
-    _root_.Homotopy (Idempotents.DoldKan.N.map f) (Idempotents.DoldKan.N.map g) :=
-  homotopyConj (Idempotents.DoldKan.inclusionN.app X) (Idempotents.DoldKan.PInftyToN.app Y)
-    h.toChainHomotopy (N_map_eq_inclusionN_comp_PInftyToN f) (N_map_eq_inclusionN_comp_PInftyToN g)
+    _root_.Homotopy (N.map f) (N.map g) :=
+  h.toChainHomotopy.compLeftRightOfEq (inclusionN.app X) (PInftyToN.app Y)
+    (N_map_eq_inclusionN_comp_PInftyToN f) (N_map_eq_inclusionN_comp_PInftyToN g)
 
 /-- Any chain homotopy between `N.map f` and `N.map g` lifts to a simplicial homotopy
 `Homotopy f g`. -/
 def ofNHomotopy {X Y : SimplicialObject C} {f g : X ⟶ Y}
-    (H : _root_.Homotopy (Idempotents.DoldKan.N.map f) (Idempotents.DoldKan.N.map g)) :
-    Homotopy f g :=
+    (H : _root_.Homotopy (N.map f) (N.map g)) : Homotopy f g :=
   ofAlternatingFaceMapComplexHomotopy <|
     ((homotopyPInftyToId X).compRightId _).symm.trans <|
-      (homotopyConj (Idempotents.DoldKan.PInftyToN.app X) (Idempotents.DoldKan.inclusionN.app Y)
-        H (PInfty_comp_map_eq f) (PInfty_comp_map_eq g)).trans
+      (H.compLeftRightOfEq (PInftyToN.app X) (inclusionN.app Y)
+        (PInfty_comp_map_eq f) (PInfty_comp_map_eq g)).trans
         ((homotopyPInftyToId X).compRightId _)
 
 end Homotopy
@@ -456,8 +409,7 @@ simplicial objects in an idempotent-complete preadditive category with finite co
 simplicially homotopic if and only if their normalized chain morphisms `N.map f` and `N.map g` are
 chain homotopic. -/
 theorem nonempty_homotopy_iff_N {X Y : SimplicialObject C} (f g : X ⟶ Y) :
-    Nonempty (Homotopy f g) ↔
-      Nonempty (_root_.Homotopy (Idempotents.DoldKan.N.map f) (Idempotents.DoldKan.N.map g)) :=
+    Nonempty (Homotopy f g) ↔ Nonempty (_root_.Homotopy (N.map f) (N.map g)) :=
   ⟨fun ⟨h⟩ ↦ ⟨h.toNHomotopy⟩, fun ⟨H⟩ ↦ ⟨Homotopy.ofNHomotopy H⟩⟩
 
 namespace HomotopyEquiv
@@ -469,51 +421,31 @@ def ofAlternatingFaceMapComplexHomotopyEquiv {X Y : SimplicialObject C} (f : X �
       ((alternatingFaceMapComplex C).obj Y))
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
     HomotopyEquiv X Y := by
-  let gN : Idempotents.DoldKan.N.obj Y ⟶ Idempotents.DoldKan.N.obj X :=
-    Idempotents.DoldKan.inclusionN.app Y ≫ e.inv ≫ Idempotents.DoldKan.PInftyToN.app X
-  let g : Y ⟶ X :=
-    (Idempotents.DoldKan.equivalence (C := C)).fullyFaithfulFunctor.preimage gN
-  have hg : Idempotents.DoldKan.N.map g = gN :=
-    (Idempotents.DoldKan.equivalence (C := C)).fullyFaithfulFunctor.map_preimage gN
+  let hN : (N (C := C)).FullyFaithful :=
+    (equivalence (C := C)).fullyFaithfulFunctor.ofIso (CategoryTheory.eqToIso equivalence_functor)
+  let gN : N.obj Y ⟶ N.obj X := inclusionN.app Y ≫ e.inv ≫ PInftyToN.app X
+  let g : Y ⟶ X := hN.preimage gN
+  have hg : N.map g = gN := hN.map_preimage gN
   refine
     { hom := f
       inv := g
       homotopyHomInvId := Homotopy.ofNHomotopy <|
-        homotopyConj (Idempotents.DoldKan.inclusionN.app X) (Idempotents.DoldKan.PInftyToN.app X)
-          e.homotopyHomInvId ?_ ?_
+        e.homotopyHomInvId.compLeftRightOfEq (inclusionN.app X) (PInftyToN.app X) ?_ ?_
       homotopyInvHomId := Homotopy.ofNHomotopy <|
-        homotopyConj (Idempotents.DoldKan.inclusionN.app Y) (Idempotents.DoldKan.PInftyToN.app Y)
-          e.homotopyInvHomId ?_ ?_ }
-  · rw [Functor.map_comp, hg]
-    dsimp [gN]
-    rw [Idempotents.DoldKan.inclusionN.naturality_assoc, ← he, Category.assoc]
-  · rw [Category.id_comp, Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app, Functor.map_id]
-  · rw [Functor.map_comp, hg]
-    dsimp [gN]
-    rw [Category.assoc, Category.assoc, ← Idempotents.DoldKan.PInftyToN.naturality, ← he,
-      Category.assoc]
-  · rw [Category.id_comp, Idempotents.DoldKan.inclusionN_app_comp_PInftyToN_app, Functor.map_id]
+        e.homotopyInvHomId.compLeftRightOfEq (inclusionN.app Y) (PInftyToN.app Y) ?_ ?_ }
+  · rw [Functor.map_comp, hg]; dsimp [gN]
+    rw [inclusionN.naturality_assoc, ← he, Category.assoc]
+  · rw [Category.id_comp, inclusionN_app_comp_PInftyToN_app, Functor.map_id]
+  · rw [Functor.map_comp, hg]; dsimp [gN]
+    rw [Category.assoc, Category.assoc, ← PInftyToN.naturality, ← he, Category.assoc]
+  · rw [Category.id_comp, inclusionN_app_comp_PInftyToN_app, Functor.map_id]
 
 @[simp]
 lemma ofAlternatingFaceMapComplexHomotopyEquiv_hom {X Y : SimplicialObject C} (f : X ⟶ Y)
     (e : _root_.HomotopyEquiv ((alternatingFaceMapComplex C).obj X)
       ((alternatingFaceMapComplex C).obj Y))
     (he : e.hom = (alternatingFaceMapComplex C).map f) :
-    (ofAlternatingFaceMapComplexHomotopyEquiv f e he).hom = f :=
-  (rfl)
-
-/-- Transitivity of combinatorial simplicial homotopy equivalences in an idempotent-complete
-preadditive category with finite coproducts. -/
-@[trans]
-def trans {X Y Z : SimplicialObject C} (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEquiv Y Z) :
-    HomotopyEquiv X Z :=
-  ofAlternatingFaceMapComplexHomotopyEquiv (e₁.hom ≫ e₂.hom)
-    (e₁.toChainHomotopyEquiv.trans e₂.toChainHomotopyEquiv) (by simp)
-
-@[simp]
-lemma trans_hom {X Y Z : SimplicialObject C} (e₁ : HomotopyEquiv X Y) (e₂ : HomotopyEquiv Y Z) :
-    (e₁.trans e₂).hom = e₁.hom ≫ e₂.hom :=
-  (rfl)
+    (ofAlternatingFaceMapComplexHomotopyEquiv f e he).hom = f := (rfl)
 
 end HomotopyEquiv
 
@@ -539,8 +471,9 @@ namespace Homotopy
 normalized Moore complexes. -/
 def toNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y} (h : Homotopy f g) :
     _root_.Homotopy ((normalizedMooreComplex A).map f) ((normalizedMooreComplex A).map g) :=
-  homotopyConj (Abelian.DoldKan.comparisonN.hom.app X) (Abelian.DoldKan.comparisonN.inv.app Y)
-    h.toNHomotopy (NatIso.naturality_2 Abelian.DoldKan.comparisonN f).symm
+  h.toNHomotopy.compLeftRightOfEq
+    (Abelian.DoldKan.comparisonN.hom.app X) (Abelian.DoldKan.comparisonN.inv.app Y)
+    (NatIso.naturality_2 Abelian.DoldKan.comparisonN f).symm
     (NatIso.naturality_2 Abelian.DoldKan.comparisonN g).symm
 
 /-- A chain homotopy on normalized Moore complexes lifts to a simplicial homotopy `Homotopy f g`. -/
@@ -548,8 +481,9 @@ def ofNormalizedMooreComplexHomotopy {X Y : SimplicialObject A} {f g : X ⟶ Y}
     (H : _root_.Homotopy ((normalizedMooreComplex A).map f) ((normalizedMooreComplex A).map g)) :
     Homotopy f g :=
   ofNHomotopy <|
-    homotopyConj (Abelian.DoldKan.comparisonN.inv.app X) (Abelian.DoldKan.comparisonN.hom.app Y)
-      H (NatIso.naturality_1 Abelian.DoldKan.comparisonN f).symm
+    H.compLeftRightOfEq
+      (Abelian.DoldKan.comparisonN.inv.app X) (Abelian.DoldKan.comparisonN.hom.app Y)
+      (NatIso.naturality_1 Abelian.DoldKan.comparisonN f).symm
       (NatIso.naturality_1 Abelian.DoldKan.comparisonN g).symm
 
 end Homotopy
@@ -578,7 +512,7 @@ homotopies to combinatorial simplicial homotopies. -/
 def Γ.mapHomotopy {K L : ChainComplex C ℕ} {φ ψ : K ⟶ L} (H : Homotopy φ ψ) :
     SimplicialObject.Homotopy (Γ.map φ) (Γ.map ψ) :=
   SimplicialObject.Homotopy.ofNHomotopy <|
-    SimplicialObject.homotopyConj ((η (C := C)).hom.app K) ((η (C := C)).inv.app L) H
+    H.compLeftRightOfEq ((η (C := C)).hom.app K) ((η (C := C)).inv.app L)
       (NatIso.naturality_2 (η (C := C)) φ).symm
       (NatIso.naturality_2 (η (C := C)) ψ).symm
 
@@ -586,8 +520,8 @@ def Γ.mapHomotopy {K L : ChainComplex C ℕ} {φ ψ : K ⟶ L} (H : Homotopy φ
 simplicially homotopic. -/
 theorem nonempty_homotopy_Γ_map_iff {K L : ChainComplex C ℕ} (φ ψ : K ⟶ L) :
     Nonempty (SimplicialObject.Homotopy (Γ.map φ) (Γ.map ψ)) ↔ Nonempty (Homotopy φ ψ) :=
-  ⟨fun ⟨h⟩ ↦ ⟨SimplicialObject.homotopyConj ((η (C := C)).inv.app K) ((η (C := C)).hom.app L)
-      h.toNHomotopy (NatIso.naturality_1 (η (C := C)) φ).symm
+  ⟨fun ⟨h⟩ ↦ ⟨h.toNHomotopy.compLeftRightOfEq ((η (C := C)).inv.app K) ((η (C := C)).hom.app L)
+      (NatIso.naturality_1 (η (C := C)) φ).symm
       (NatIso.naturality_1 (η (C := C)) ψ).symm⟩,
     fun ⟨H⟩ ↦ ⟨Γ.mapHomotopy H⟩⟩
 
@@ -598,20 +532,18 @@ def Γ.mapHomotopyEquiv {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L) :
   hom := Γ.map e.hom
   inv := Γ.map e.inv
   homotopyHomInvId :=
-    (SimplicialObject.Homotopy.ofEq (Γ.map_comp e.hom e.inv).symm).trans
-      ((Γ.mapHomotopy e.homotopyHomInvId).trans (SimplicialObject.Homotopy.ofEq (Γ.map_id K)))
+    ((Γ.mapHomotopy e.homotopyHomInvId).congrLeft (Γ.map_comp e.hom e.inv)).congrRight
+      (Γ.map_id K)
   homotopyInvHomId :=
-    (SimplicialObject.Homotopy.ofEq (Γ.map_comp e.inv e.hom).symm).trans
-      ((Γ.mapHomotopy e.homotopyInvHomId).trans (SimplicialObject.Homotopy.ofEq (Γ.map_id L)))
+    ((Γ.mapHomotopy e.homotopyInvHomId).congrLeft (Γ.map_comp e.inv e.hom)).congrRight
+      (Γ.map_id L)
 
 @[simp]
 lemma Γ.mapHomotopyEquiv_hom {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L) :
-    (Γ.mapHomotopyEquiv e).hom = Γ.map e.hom :=
-  (rfl)
+    (Γ.mapHomotopyEquiv e).hom = Γ.map e.hom := (rfl)
 
 @[simp]
 lemma Γ.mapHomotopyEquiv_inv {K L : ChainComplex C ℕ} (e : HomotopyEquiv K L) :
-    (Γ.mapHomotopyEquiv e).inv = Γ.map e.inv :=
-  (rfl)
+    (Γ.mapHomotopyEquiv e).inv = Γ.map e.inv := (rfl)
 
 end CategoryTheory.Idempotents.DoldKan

@@ -6,68 +6,41 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.KProjective
-public import Mathlib.AlgebraicTopology.ExtraDegeneracy
-public import TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy
+public import TauCeti.AlgebraicTopology.DoldKan.DoldPuppe
 
 /-!
-# Non-additive functors on projective simplicial objects and the Dold–Puppe construction
+# Projectivity across Dold–Kan and weak equivalences under non-additive functors
 
-In their 1961 memoir *Homologie nicht-additiver Funktoren*, Albrecht Dold and Dieter Puppe showed
-how to derive arbitrary (not necessarily additive) functors `F : C ⥤ D` from an abelian category `C`
-into a preadditive category `D` with homology by passing through simplicial objects via the Dold–Kan
-correspondence:
-
-1. A simplicial object `X : SimplicialObject C` has projective components if and only if its
-   normalized chain complex `N.obj X` has projective components (`projective_iff_N_projective`), and
-   the inverse Dold–Kan functor `Γ` sends degreewise projective chain complexes to degreewise
-   projective simplicial objects (`Γ₀.projective_obj`, `Γ.projective_obj`).
-2. When `X` and `Y` are degreewise projective simplicial objects in an abelian category `C`, a
-   morphism `f : X ⟶ Y` induces a quasi-isomorphism on alternating face map complexes if and only
-   if `f` is a simplicial homotopy equivalence
-   (`quasiIso_alternatingFaceMapComplex_map_iff_of_projective`, `homotopyEquivOfQuasiIso`).
-3. Because levelwise postcomposition `(SimplicialObject.whiskering C D).obj F` by *any* functor
-   `F : C ⥤ D` preserves simplicial homotopies—even when `F` is non-additive—it sends weak
-   equivalences between degreewise projective simplicial objects to chain homotopy equivalences and
-   hence to quasi-isomorphisms (`quasiIso_whiskering_of_projective`), including when `F` is defined
-   only on a full subcategory `C₀` such as `(isProjective C).FullSubcategory` or finitely generated
-   projectives (`quasiIso_whiskering_of_fullyFaithful_projective`,
-   `quasiIso_whiskering_isProjective`).
-4. Evaluating `Idempotents.DoldKan.Γ ⋙ (whiskering C D).obj F ⋙ alternatingFaceMapComplex D`
-   (`CategoryTheory.Functor.doldPuppeFunctor`) therefore carries chain homotopies to chain
-   homotopies, preserves quasi-isomorphisms between degreewise projective chain complexes, agrees up
-   to chain homotopy equivalence with `F.mapHomologicalComplex (.down ℕ)` when `F` is additive,
-   sends `(ChainComplex.single₀ C).obj X` to `(ChainComplex.single₀ D).obj (F.obj X)` up to chain
-   homotopy equivalence, and evaluates the non-additive constant functor `(Functor.const C).obj B`
-   to `(ChainComplex.single₀ D).obj B` on every chain complex `K` (including `K = 0`).
+Building on `TauCeti.AlgebraicTopology.DoldKan.SimplicialHomotopy` and the general Dold–Puppe
+functor in `TauCeti.AlgebraicTopology.DoldKan.DoldPuppe`, this file develops the projectivity layer
+of Albrecht Dold and Dieter Puppe's theory of derived non-additive functors. Because levelwise
+postcomposition `(SimplicialObject.whiskering C D).obj F` by *any* functor `F : C ⥤ D` preserves
+simplicial homotopies—even when `F` is non-additive—it sends weak equivalences between degreewise
+projective simplicial objects to chain homotopy equivalences and hence to quasi-isomorphisms.
 
 ## Main definitions and results
 
-* `CategoryTheory.SimplicialObject.projective_iff_N_projective`: `X` is degreewise projective if and
-  only if `Idempotents.DoldKan.N.obj X` is degreewise projective.
-* `CategoryTheory.Idempotents.DoldKan.N.constIso`,
-  `CategoryTheory.Idempotents.DoldKan.Γ.single₀Iso`: `N` carries `(SimplicialObject.const C).obj X`
-  isomorphically to `(ChainComplex.single₀ C).obj X`, and `Γ` carries
-  `(ChainComplex.single₀ C).obj X` isomorphically to `(SimplicialObject.const C).obj X`.
-* `CategoryTheory.SimplicialObject.quasiIso_alternatingFaceMapComplex_map_iff_of_projective`,
-  `CategoryTheory.SimplicialObject.homotopyEquivOfQuasiIso`: weak equivalences between degreewise
-  projective simplicial objects coincide with simplicial homotopy equivalences.
-* `CategoryTheory.SimplicialObject.quasiIso_whiskering_of_projective`,
-  `CategoryTheory.SimplicialObject.quasiIso_whiskering_of_fullyFaithful_projective`,
-  `CategoryTheory.SimplicialObject.quasiIso_whiskering_isProjective`: arbitrary (possibly
-  non-additive) functors preserve weak equivalences between degreewise projective simplicial
-  objects.
-* `CategoryTheory.Functor.doldPuppeFunctor`: the Dold–Puppe chain-complex functor
-  `Γ ⋙ (whiskering C D).obj F ⋙ alternatingFaceMapComplex D`, together with its homotopy,
-  quasi-isomorphism, additivity, degree-zero, and constant-functor laws.
+* `SimplicialObject.projective_iff_N_projective`,
+  `SimplicialObject.projective_iff_normalizedMooreComplex_projective`: `X` is degreewise projective
+  iff its normalized chain complex / Moore complex is degreewise projective; also
+  `Γ₀.projective_obj` and `Γ.projective_obj`.
+* `SimplicialObject.quasiIso_alternatingFaceMapComplex_map_iff_of_projective`,
+  `SimplicialObject.homotopyEquivOfQuasiIso`: weak equivalences between degreewise projective
+  simplicial objects in an abelian category coincide with simplicial homotopy equivalences.
+* `SimplicialObject.quasiIso_whiskering_of_projective`,
+  `SimplicialObject.quasiIso_whiskering_of_fullyFaithful_projective`,
+  `SimplicialObject.quasiIso_whiskering_isProjective`: arbitrary (possibly non-additive) functors
+  (including functors defined only on a full subcategory such as `(isProjective C).FullSubcategory`)
+  preserve weak equivalences between degreewise projective simplicial objects.
+* `Functor.quasiIso_doldPuppeFunctor_map_of_projective`: resolution independence of the Dold–Puppe
+  functor on degreewise projective chain complexes.
 
 ## References
 
 * A. Dold and D. Puppe, *Homologie nicht-additiver Funktoren. Anwendungen*, Ann. Inst. Fourier 11
   (1961), 201–312, §§3–4 (especially 3.31 and 4.4–4.7).
-* D. Quillen, *Homotopical Algebra*, Lecture Notes in Mathematics 43, Springer-Verlag (1967),
-  Chapter II, §4.
-* C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press (1994),
-  Chapter 8, §8.4.
+* D. Quillen, *Homotopical Algebra*, Lecture Notes in Mathematics 43, Springer-Verlag (1967), II.4.
+* C. A. Weibel, *An Introduction to Homological Algebra*, Cambridge University Press (1994), §8.4.
 -/
 
 public noncomputable section
@@ -126,75 +99,6 @@ instance N.projective_X (X : SimplicialObject C) [∀ n, Projective (X _⦋n⦌)
   exact r.projective
 
 end Projective
-
-section ConstSingle₀
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasFiniteCoproducts C]
-  [IsIdempotentComplete C]
-
-omit [HasZeroObject C] in
-/-- In positive degree `m + 1`, the normalized chain complex of a constant simplicial object is
-zero, because every simplex is in the image of `σ 0 = 𝟙 X`. -/
-lemma isZero_N_const_obj_X_succ (X : C) (m : ℕ) :
-    IsZero ((N.obj ((SimplicialObject.const C).obj X)).X (m + 1)) := by
-  have hP : (PInfty (X := (SimplicialObject.const C).obj X)).f (m + 1) = 0 := by
-    have hσ := σ_comp_PInfty ((SimplicialObject.const C).obj X) (0 : Fin (m + 1))
-    dsimp [SimplicialObject.σ] at hσ
-    rwa [Category.id_comp] at hσ
-  rw [IsZero.iff_id_eq_zero]
-  calc
-    𝟙 ((N.obj ((SimplicialObject.const C).obj X)).X (m + 1))
-      = ((inclusionN.app ((SimplicialObject.const C).obj X)).f (m + 1)) ≫
-          ((PInftyToN.app ((SimplicialObject.const C).obj X)).f (m + 1)) := by
-        rw [← HomologicalComplex.comp_f, inclusionN_app_comp_PInftyToN_app,
-          HomologicalComplex.id_f]
-    _ = ((inclusionN.app ((SimplicialObject.const C).obj X)) ≫ PInfty).f (m + 1) ≫
-          ((PInftyToN.app ((SimplicialObject.const C).obj X)).f (m + 1)) := by
-        rw [inclusionN_app_comp_PInfty]
-    _ = 0 := by
-        rw [HomologicalComplex.comp_f, hP, comp_zero, zero_comp]
-
-/-- The normalized chain complex `N.obj ((SimplicialObject.const C).obj X)` of a constant simplicial
-object is canonically isomorphic to `(ChainComplex.single₀ C).obj X`. -/
-def N.constIso (X : C) :
-    N.obj ((SimplicialObject.const C).obj X) ≅ (ChainComplex.single₀ C).obj X :=
-  HomologicalComplex.Hom.isoOfComponents
-    (fun
-      | 0 =>
-        { hom := (inclusionN.app ((SimplicialObject.const C).obj X)).f 0
-          inv := (PInftyToN.app ((SimplicialObject.const C).obj X)).f 0
-          hom_inv_id := by
-            rw [← HomologicalComplex.comp_f, inclusionN_app_comp_PInftyToN_app,
-              HomologicalComplex.id_f]
-          inv_hom_id := by
-            rw [← HomologicalComplex.comp_f, PInftyToN_app_comp_inclusionN_app, PInfty_f_0]
-            rfl } ≪≫ (HomologicalComplex.singleObjXSelf (.down ℕ) 0 X).symm
-      | m + 1 =>
-        (isZero_N_const_obj_X_succ X m).iso
-          (HomologicalComplex.isZero_single_obj_X (.down ℕ) 0 X (m + 1) (by omega)))
-    (fun i j hij ↦ by
-      dsimp [ComplexShape.down] at hij
-      obtain rfl := hij.symm
-      exact (isZero_N_const_obj_X_succ X j).eq_of_src _ _)
-
-@[simp]
-lemma N.constIso_hom_f_zero (X : C) :
-    (N.constIso X).hom.f 0 = (inclusionN.app ((SimplicialObject.const C).obj X)).f 0 := by
-  simp [N.constIso]
-
-@[simp]
-lemma N.constIso_inv_f_zero (X : C) :
-    (N.constIso X).inv.f 0 = (PInftyToN.app ((SimplicialObject.const C).obj X)).f 0 := by
-  simp [N.constIso]
-
-/-- Under the inverse Dold–Kan functor `Γ`, the chain complex `(ChainComplex.single₀ C).obj X`
-concentrated in degree `0` corresponds to the constant simplicial object
-`(SimplicialObject.const C).obj X`. -/
-def Γ.single₀Iso (X : C) :
-    Γ.obj ((ChainComplex.single₀ C).obj X) ≅ (SimplicialObject.const C).obj X :=
-  Γ.mapIso (N.constIso X).symm ≪≫ (ε (C := C)).symm.app ((SimplicialObject.const C).obj X)
-
-end ConstSingle₀
 
 end CategoryTheory.Idempotents.DoldKan
 
@@ -367,7 +271,8 @@ theorem quasiIso_whiskering_of_fullyFaithful_projective
   have he : e.hom = f := by
     apply ((whiskering C₀ C).obj ι).map_injective
     dsimp only [e]
-    rw [HomotopyEquiv.map_ofFullyFaithful_hom, homotopyEquivOfQuasiIso_hom]
+    rw [Functor.whiskeringRight_obj_map, HomotopyEquiv.whiskerRight_ofFullyFaithful_hom,
+      homotopyEquivOfQuasiIso_hom]
   rw [← he, ← e.whiskerRight_hom F]
   exact (e.whiskerRight F).quasiIso_alternatingFaceMapComplex_map
 
@@ -391,153 +296,6 @@ end WhiskeringProjective
 end CategoryTheory.SimplicialObject
 
 namespace CategoryTheory
-
-section DoldPuppe
-
-variable {C : Type u} [Category.{v} C] [Preadditive C] [HasFiniteCoproducts C]
-  [IsIdempotentComplete C]
-variable {D : Type u'} [Category.{v'} D] [Preadditive D]
-
-/-- **The Dold–Puppe chain-complex functor** associated to an arbitrary (not necessarily additive)
-functor `F : C ⥤ D`: sends `K : ChainComplex C ℕ` to the alternating face map complex of `F` applied
-levelwise to `Idempotents.DoldKan.Γ.obj K`. Evaluating `F.doldPuppeFunctor` on a projective
-resolution computes the left derived functor of `F` in the sense of Dold and Puppe. -/
-abbrev Functor.doldPuppeFunctor (F : C ⥤ D) : ChainComplex C ℕ ⥤ ChainComplex D ℕ :=
-  Idempotents.DoldKan.Γ ⋙ (SimplicialObject.whiskering C D).obj F ⋙ alternatingFaceMapComplex D
-
-lemma Functor.doldPuppeFunctor_obj (F : C ⥤ D) (K : ChainComplex C ℕ) :
-    F.doldPuppeFunctor.obj K =
-      (alternatingFaceMapComplex D).obj
-        (((SimplicialObject.whiskering C D).obj F).obj (Idempotents.DoldKan.Γ.obj K)) :=
-  (rfl)
-
-lemma Functor.doldPuppeFunctor_map (F : C ⥤ D) {K L : ChainComplex C ℕ} (f : K ⟶ L) :
-    F.doldPuppeFunctor.map f =
-      (alternatingFaceMapComplex D).map
-        (((SimplicialObject.whiskering C D).obj F).map (Idempotents.DoldKan.Γ.map f)) :=
-  (rfl)
-
-/-- Naturality of `Functor.doldPuppeFunctor` with respect to a natural transformation
-`α : F ⟶ G`. -/
-def NatTrans.doldPuppeFunctor {F G : C ⥤ D} (α : F ⟶ G) :
-    F.doldPuppeFunctor ⟶ G.doldPuppeFunctor :=
-  Functor.whiskerLeft Idempotents.DoldKan.Γ
-    (Functor.whiskerRight ((SimplicialObject.whiskering C D).map α) (alternatingFaceMapComplex D))
-
-@[simp]
-lemma NatTrans.doldPuppeFunctor_app_f {F G : C ⥤ D} (α : F ⟶ G) (K : ChainComplex C ℕ) (n : ℕ) :
-    ((NatTrans.doldPuppeFunctor α).app K).f n = α.app ((Idempotents.DoldKan.Γ.obj K) _⦋n⦌) :=
-  (rfl)
-
-@[simp]
-lemma NatTrans.doldPuppeFunctor_id (F : C ⥤ D) :
-    NatTrans.doldPuppeFunctor (𝟙 F) = 𝟙 F.doldPuppeFunctor := by
-  ext K n
-  simp
-
-@[simp]
-lemma NatTrans.doldPuppeFunctor_comp {F G H : C ⥤ D} (α : F ⟶ G) (β : G ⟶ H) :
-    NatTrans.doldPuppeFunctor (α ≫ β) =
-      NatTrans.doldPuppeFunctor α ≫ NatTrans.doldPuppeFunctor β := by
-  ext K n
-  simp
-
-/-- For *any* functor `F : C ⥤ D` (not necessarily additive), `F.doldPuppeFunctor` preserves chain
-homotopies. -/
-def Functor.doldPuppeMapHomotopy (F : C ⥤ D) {K L : ChainComplex C ℕ} {φ ψ : K ⟶ L}
-    (H : Homotopy φ ψ) :
-    Homotopy (F.doldPuppeFunctor.map φ) (F.doldPuppeFunctor.map ψ) :=
-  ((Idempotents.DoldKan.Γ.mapHomotopy H).whiskerRight F).toChainHomotopy
-
-/-- For *any* functor `F : C ⥤ D` (not necessarily additive), `F.doldPuppeFunctor` preserves chain
-homotopy equivalences. -/
-def Functor.doldPuppeMapHomotopyEquiv (F : C ⥤ D) {K L : ChainComplex C ℕ}
-    (e : HomotopyEquiv K L) :
-    HomotopyEquiv (F.doldPuppeFunctor.obj K) (F.doldPuppeFunctor.obj L) :=
-  ((Idempotents.DoldKan.Γ.mapHomotopyEquiv e).whiskerRight F).toChainHomotopyEquiv
-
-@[simp]
-lemma Functor.doldPuppeMapHomotopyEquiv_hom (F : C ⥤ D) {K L : ChainComplex C ℕ}
-    (e : HomotopyEquiv K L) :
-    (F.doldPuppeMapHomotopyEquiv e).hom = F.doldPuppeFunctor.map e.hom := by
-  dsimp [Functor.doldPuppeMapHomotopyEquiv, Functor.doldPuppeFunctor]
-  simp
-
-@[simp]
-lemma Functor.doldPuppeMapHomotopyEquiv_inv (F : C ⥤ D) {K L : ChainComplex C ℕ}
-    (e : HomotopyEquiv K L) :
-    (F.doldPuppeMapHomotopyEquiv e).inv = F.doldPuppeFunctor.map e.inv := by
-  dsimp [Functor.doldPuppeMapHomotopyEquiv, Functor.doldPuppeFunctor]
-  simp
-
-/-- **Agreement with the classical additive derived functor** (Dold–Puppe, Satz 4.7): when
-`F : C ⥤ D` is additive, `F.doldPuppeFunctor.obj K` is canonically chain homotopy equivalent to
-`(F.mapHomologicalComplex (.down ℕ)).obj K` for every chain complex `K`. -/
-def Functor.doldPuppeFunctorAdditiveHomotopyEquiv (F : C ⥤ D) [F.Additive]
-    (K : ChainComplex C ℕ) :
-    HomotopyEquiv (F.doldPuppeFunctor.obj K) ((F.mapHomologicalComplex (.down ℕ)).obj K) :=
-  (HomotopyEquiv.ofIso
-      ((alternatingFaceMapComplexCompMapHomologicalComplexIso F).symm.app
-        (Idempotents.DoldKan.Γ.obj K))).trans
-    ((F.mapHomotopyEquiv
-        (Idempotents.DoldKan.homotopyEquivNAlternatingFaceMapComplex
-          (Idempotents.DoldKan.Γ.obj K)).symm).trans
-      (HomotopyEquiv.ofIso
-        ((F.mapHomologicalComplex (.down ℕ)).mapIso ((Idempotents.DoldKan.η (C := C)).app K))))
-
-/-- When `F : C ⥤ D` is additive and `D` has homology, the comparison chain map from
-`F.doldPuppeFunctor.obj K` to `(F.mapHomologicalComplex (.down ℕ)).obj K` is a
-quasi-isomorphism. -/
-instance Functor.quasiIso_doldPuppeFunctorAdditiveHomotopyEquiv_hom [CategoryWithHomology D]
-    (F : C ⥤ D) [F.Additive] (K : ChainComplex C ℕ) :
-    QuasiIso (F.doldPuppeFunctorAdditiveHomotopyEquiv K).hom :=
-  homotopyEquivalences_le_quasiIso D (.down ℕ) _
-    (F.doldPuppeFunctorAdditiveHomotopyEquiv K).homotopyEquivalences_hom
-
-/-- **Degree-zero law**: for any object `X : C` and any functor `F : C ⥤ D` into a preadditive
-category with a zero object, `F.doldPuppeFunctor.obj ((ChainComplex.single₀ C).obj X)` is
-canonically chain homotopy equivalent to `(ChainComplex.single₀ D).obj (F.obj X)`. In particular,
-when `X` is projective, `(ChainComplex.single₀ C).obj X` is a projective resolution of `X`, so the
-derived functor of `F` recovers `F.obj X` concentrated in degree `0`. -/
-def Functor.doldPuppeFunctorSingle₀HomotopyEquiv [HasZeroObject C] [HasZeroObject D]
-    (F : C ⥤ D) (X : C) :
-    HomotopyEquiv (F.doldPuppeFunctor.obj ((ChainComplex.single₀ C).obj X))
-      ((ChainComplex.single₀ D).obj (F.obj X)) := by
-  let isoSimp : ((SimplicialObject.whiskering C D).obj F).obj
-        (Idempotents.DoldKan.Γ.obj ((ChainComplex.single₀ C).obj X)) ≅
-      (SimplicialObject.const D).obj (F.obj X) :=
-    ((SimplicialObject.whiskering C D).obj F).mapIso (Idempotents.DoldKan.Γ.single₀Iso X) ≪≫
-      NatIso.ofComponents (fun _ ↦ Iso.refl (F.obj X)) (fun _ ↦ by dsimp; simp)
-  exact (HomotopyEquiv.ofIso ((alternatingFaceMapComplex D).mapIso isoSimp)).trans
-    (SimplicialObject.Augmented.ExtraDegeneracy.const (F.obj X)).homotopyEquiv
-
-instance Functor.quasiIso_doldPuppeFunctorSingle₀HomotopyEquiv_hom
-    [HasZeroObject C] [HasZeroObject D] [CategoryWithHomology D]
-    (F : C ⥤ D) (X : C) :
-    QuasiIso (F.doldPuppeFunctorSingle₀HomotopyEquiv X).hom :=
-  homotopyEquivalences_le_quasiIso D (.down ℕ) _
-    (F.doldPuppeFunctorSingle₀HomotopyEquiv X).homotopyEquivalences_hom
-
-/-- **Constant non-additive functor law**: for any object `B : D` and any chain complex
-`K : ChainComplex C ℕ` (including `K = 0`), `((Functor.const C).obj B).doldPuppeFunctor.obj K` is
-canonically chain homotopy equivalent to `(ChainComplex.single₀ D).obj B`. -/
-def Functor.doldPuppeFunctorConstHomotopyEquiv [HasZeroObject D] (B : D) (K : ChainComplex C ℕ) :
-    HomotopyEquiv (((Functor.const C).obj B).doldPuppeFunctor.obj K)
-      ((ChainComplex.single₀ D).obj B) := by
-  let isoSimp : ((SimplicialObject.whiskering C D).obj ((Functor.const C).obj B)).obj
-        (Idempotents.DoldKan.Γ.obj K) ≅
-      (SimplicialObject.const D).obj B :=
-    NatIso.ofComponents (fun _ ↦ Iso.refl B) (fun _ ↦ by dsimp)
-  exact (HomotopyEquiv.ofIso ((alternatingFaceMapComplex D).mapIso isoSimp)).trans
-    (SimplicialObject.Augmented.ExtraDegeneracy.const B).homotopyEquiv
-
-instance Functor.quasiIso_doldPuppeFunctorConstHomotopyEquiv_hom
-    [HasZeroObject D] [CategoryWithHomology D] (B : D) (K : ChainComplex C ℕ) :
-    QuasiIso (Functor.doldPuppeFunctorConstHomotopyEquiv B K).hom :=
-  homotopyEquivalences_le_quasiIso D (.down ℕ) _
-    (Functor.doldPuppeFunctorConstHomotopyEquiv B K).homotopyEquivalences_hom
-
-end DoldPuppe
 
 section AbelianDoldPuppe
 
