@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.PiTensorProduct.Generators
 public import TauCeti.Algebra.DirectSum.Internal
+public import TauCeti.Algebra.Module.GradedModule.Coarsen
 public import TauCeti.Algebra.Module.GradedModule.Internal
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 public import TauCeti.LinearAlgebra.TensorProduct.Decomposition
@@ -41,10 +42,15 @@ degrees. This grading is used by tensor products of differential graded objects.
 * `TauCeti.InternalGrading.piTensorProduct_ext`: linear maps from a finite tensor product agree
   when they agree on pure tensors of homogeneous elements.
 * `TauCeti.LinearMap.IsHomogeneous.tensorProduct`: tensoring homogeneous maps adds their degrees.
-* `TauCeti.InternalGrading.isHomogeneous_assoc` and
-  `TauCeti.InternalGrading.isHomogeneous_assoc_symm`: reassociation preserves total degree.
+* `TauCeti.InternalGrading.isHomogeneous_assoc`,
+  `TauCeti.InternalGrading.isHomogeneous_assoc_symm`, and
+  `TauCeti.InternalGrading.isHomogeneous_tensorTensorTensorComm`: reassociating and interchanging
+  tensor factors preserve total degree.
 * `TauCeti.InternalGrading.koszulTwist_tensorProduct`: the Koszul twist of the total grading is
   the tensor product of the Koszul twists of the factors.
+* `TauCeti.parityGrading_tensorProduct_one_eq_bot` and
+  `TauCeti.parityGrading_baseChange_one_eq_bot`: tensor products and base change preserve even
+  support.
 
 The construction reuses `DirectSum.IsInternal.tensorProduct` for the bidegree decomposition
 and `DirectSum.IsInternal.iSup_fiber` to collect equal total degrees.
@@ -188,6 +194,33 @@ theorem isHomogeneous_assoc {P : Type w'} [AddCommMonoid P] [Module R P]
       0 := by
   exact (isHomogeneous_assoc_symm G H K).linearEquiv_symm
 
+/-- The fourfold tensor-product interchange `tensorTensorTensorComm` preserves total degree. -/
+theorem isHomogeneous_tensorTensorTensorComm {M' : Type v'} {N' : Type w'}
+    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+    (G : InternalGrading R M ℤ) (G' : InternalGrading R M' ℤ)
+    (H : InternalGrading R N ℤ) (H' : InternalGrading R N' ℤ) :
+    LinearMap.IsHomogeneous (TensorProduct.tensorTensorTensorComm R M M' N N').toLinearMap
+      ((G.tensorProduct G').tensorProduct (H.tensorProduct H')).piece
+      ((G.tensorProduct H).tensorProduct (G'.tensorProduct H')).piece 0 := by
+  rw [LinearMap.isHomogeneous_def]
+  intro n z hz
+  set target := ((G.tensorProduct H).tensorProduct (G'.tensorProduct H')).piece (n + 0) with htarget
+  refine (G.tensorProduct G').tensorProduct_piece_le (H.tensorProduct H')
+    (C := target.comap (TensorProduct.tensorTensorTensorComm R M M' N N').toLinearMap)
+    (fun p t₁ ht₁ t₂ ht₂ ↦ G.tensorProduct_piece_le G'
+      (C := target.comap ((TensorProduct.tensorTensorTensorComm R M M' N N').toLinearMap ∘ₗ
+        (TensorProduct.mk R (M ⊗[R] M') (N ⊗[R] N')).flip t₂))
+      (fun q x₁ hx₁ x₂ hx₂ ↦ H.tensorProduct_piece_le H'
+        (C := target.comap ((TensorProduct.tensorTensorTensorComm R M M' N N').toLinearMap ∘ₗ
+          TensorProduct.mk R (M ⊗[R] M') (N ⊗[R] N') (x₁ ⊗ₜ[R] x₂)))
+        (fun r y₁ hy₁ y₂ hy₂ ↦ ?_) ht₂) ht₁) hz
+  rw [Submodule.mem_comap, LinearMap.comp_apply, TensorProduct.mk_apply, LinearEquiv.coe_coe,
+    TensorProduct.tensorTensorTensorComm_tmul]
+  have hdeg : n + 0 = (q + r) + ((p - q) + (n - p - r)) := by ring
+  rw [htarget, hdeg]
+  exact tmul_mem_tensorProduct _ _ (tmul_mem_tensorProduct G H hx₁ hy₁)
+    (tmul_mem_tensorProduct G' H' hx₂ hy₂)
+
 end Internal
 
 section KoszulTwist
@@ -257,5 +290,26 @@ theorem rTensor {G : InternalGrading R M ℤ} {G' : InternalGrading R M' ℤ} {f
     hf.tensorProduct (LinearMap.isHomogeneous_id (R := R) H.piece)
 
 end LinearMap.IsHomogeneous
+
+/-- The tensor product of two even-supported internally `ℤ`-graded modules is even-supported. -/
+theorem parityGrading_tensorProduct_one_eq_bot {R : Type u} {M : Type v} {N : Type w}
+    [CommSemiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    {G : InternalGrading R M ℤ} {H : InternalGrading R N ℤ}
+    (hG : parityGrading G.piece 1 = ⊥) (hH : parityGrading H.piece 1 = ⊥) :
+    parityGrading (G.tensorProduct H).piece 1 = ⊥ :=
+  parityGrading_one_eq_bot_iff.mpr fun k => le_bot_iff.mp <|
+    G.tensorProduct_piece_le H fun p x hx y hy => by
+      rcases Int.even_or_odd p with ⟨m, rfl⟩ | hp
+      · rw [eq_bot_of_parityGrading_one_eq_bot_of_odd hH ⟨k - m, by ring⟩, Submodule.mem_bot] at hy
+        simp [hy]
+      · rw [eq_bot_of_parityGrading_one_eq_bot_of_odd hG hp, Submodule.mem_bot] at hx
+        simp [hx]
+
+/-- Base change preserves even support of an integer-indexed family of submodules. -/
+theorem parityGrading_baseChange_one_eq_bot {R : Type u} {S : Type*} {M : Type v}
+    [CommSemiring R] [Semiring S] [Algebra R S] [AddCommMonoid M] [Module R M]
+    {ℳ : ℤ → Submodule R M} (h : parityGrading ℳ 1 = ⊥) :
+    parityGrading (fun i : ℤ => (ℳ i).baseChange S) 1 = ⊥ := by
+  rw [parityGrading_one_eq_bot_iff] at h ⊢; intro k; simp [h k]
 
 end TauCeti
