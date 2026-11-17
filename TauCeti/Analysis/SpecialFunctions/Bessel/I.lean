@@ -290,7 +290,7 @@ private theorem integral_exp_mul_cos_mul_cexp_natCast (κ : ℝ) (n : ℕ) :
   convert (Complex.hasSum_ofReal.mpr (hasSum_besselI_natCast n κ)).mul_left (2 * (π : ℂ))
     using 2 with l
   push_cast
-  rfl
+  ring
 
 /-- **The circle integral of `I_n`, complex form.** For an integer `n` and real `κ`,
 `∫_{-π}^{π} e^{κ cos θ} e^{i n θ} dθ = 2π I_{|n|}(κ)`: the `n`-th Fourier coefficient of
