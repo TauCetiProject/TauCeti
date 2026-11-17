@@ -473,15 +473,6 @@ theorem etaMultiplier_of_c_eq_zero_of_d_neg {γ : SL(2, ℤ)} (hc : γ 1 0 = 0) 
     etaMultiplier γ = -I * cexp (-(π * I * γ 0 1 / 12)) := by
   rw [etaMultiplier_of_c_eq_zero hc, ite_eq_right hd.not_gt]
 
-/-- The `GL(2, ℝ)` automorphy factor of a mapped `SL(2, ℤ)` matrix in terms of its bottom row. -/
-private theorem denom_mapGL_coe (γ : SL(2, ℤ)) (τ : ℍ) :
-    UpperHalfPlane.denom (Matrix.SpecialLinearGroup.mapGL ℝ (γ : SL(2, ℝ))) τ =
-      (γ 1 0 : ℂ) * τ + γ 1 1 := by
-  have h : Matrix.SpecialLinearGroup.mapGL ℝ (γ : SL(2, ℝ)) = (γ : GL (Fin 2) ℝ) := by
-    ext i j
-    simp [Matrix.SpecialLinearGroup.mapGL_coe_matrix]
-  rw [h, ModularGroup.denom_apply]
-
 /-- Explicit inversion law for `etaMultiplier` across all of `SL(2, ℤ)`: `ε(γ⁻¹) = ε(γ)⁻¹` except
 on the negative upper-triangular coset `γ = -T⁻ᵇ` (`γ 1 0 = 0` and `γ 1 1 < 0`), where the
 automorphy factor `-1` sits on the negative real branch cut and `ε(γ⁻¹) = -ε(γ)⁻¹`. -/
@@ -494,11 +485,14 @@ theorem etaMultiplier_inv (γ : SL(2, ℤ)) :
   set z : ℂ := ((γ⁻¹ : SL(2, ℤ)) 1 0 : ℂ) * UpperHalfPlane.I + (γ⁻¹ : SL(2, ℤ)) 1 1
   set w : ℂ := (γ 1 0 : ℂ) * (γ⁻¹ • UpperHalfPlane.I : ℍ) + γ 1 1
   have hw : w = z⁻¹ := by
-    have hcoc := Matrix.SpecialLinearGroup.denom_mapGL_mul
-      (γ : SL(2, ℝ)) (γ : SL(2, ℝ))⁻¹ UpperHalfPlane.I
-    rw [mul_inv_cancel, map_one, UpperHalfPlane.denom_one, ← map_inv,
-      ← Matrix.SpecialLinearGroup.toGL_smul, ← ModularGroup.sl_moeb,
-      denom_mapGL_coe, denom_mapGL_coe] at hcoc
+    have hcoc := UpperHalfPlane.denom_cocycle_σ
+      (γ : GL (Fin 2) ℝ) ((γ⁻¹ : SL(2, ℤ)) : GL (Fin 2) ℝ) UpperHalfPlane.I
+    have hdet : 0 < (((γ⁻¹ : SL(2, ℤ)) : GL (Fin 2) ℝ) : Matrix (Fin 2) (Fin 2) ℝ).det := by
+      rw [Matrix.SpecialLinearGroup.coe_GL_coe_matrix, Matrix.SpecialLinearGroup.det_coe]
+      exact zero_lt_one
+    rw [← map_mul, ← map_mul, mul_inv_cancel, map_one, map_one, UpperHalfPlane.denom_one,
+      UpperHalfPlane.σ_eq_refl_of_det_pos hdet, ContinuousAlgEquiv.refl_apply,
+      ← ModularGroup.sl_moeb, ModularGroup.denom_apply, ModularGroup.denom_apply] at hcoc
     exact eq_inv_of_mul_eq_one_left hcoc.symm
   have hdiag (hc : γ 1 0 = 0) : γ 0 0 = γ 1 1 ∧ (γ 1 1 = 1 ∨ γ 1 1 = -1) := by
     have hdet := γ.fin_two_mul_sub_mul_eq_one
