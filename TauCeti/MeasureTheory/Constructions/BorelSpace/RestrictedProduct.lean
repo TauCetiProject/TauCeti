@@ -1,0 +1,207 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
+public import TauCeti.Topology.Algebra.RestrictedProduct.Box
+public import TauCeti.Topology.Algebra.RestrictedProduct.SecondCountable
+
+/-!
+# Borel measurable space structure on restricted products
+
+We endow any restricted product `Πʳ i, [R i, A i]_[𝓕]` of topological spaces with its Borel
+`σ`-algebra (`RestrictedProduct.instMeasurableSpace`, `RestrictedProduct.instBorelSpace`).
+
+Even though the topology of `Πʳ i, [R i, A i]` is in general strictly finer than the subspace
+topology inherited from `Π i, R i` (for instance when every `R i` is nonempty and `A i` is open,
+nonempty, and proper infinitely often), its Borel `σ`-algebra coincides with
+`⨆ i, (borel (R i)).comap (fun x ↦ x i)` when `ι` is countable, each `R i` is second countable,
+and each `A i` is open.
+
+## Main declarations
+
+* `RestrictedProduct.instMeasurableSpace`, `RestrictedProduct.instBorelSpace`: Borel measurable
+  space structure on `Πʳ i, [R i, A i]_[𝓕]`.
+* `RestrictedProduct.measurableSet_box`, `RestrictedProduct.measurableSingletonClass`: measurable
+  coordinate boxes and singletons over a countable index type.
+* `RestrictedProduct.borel_eq_generateFrom_open_box`: open cofinitely-integral boxes generate the
+  Borel `σ`-algebra of `Πʳ i, [R i, A i]`.
+* `RestrictedProduct.borel_eq_iSup_comap_eval`,
+  `RestrictedProduct.measurableSpace_eq_iSup_comap_eval`, `RestrictedProduct.measurable_iff_eval`,
+  `RestrictedProduct.measurableEmbedding_coe`: identification with the subspace `σ`-algebra of
+  `Π i, R i`.
+
+## References
+
+* A. Weil, *Basic Number Theory*, 3rd ed., Springer (1974), Chapter IV, §1.
+* V. Platonov, A. Rapinchuk, and I. Rapinchuk, *Algebraic Groups and Number Theory*, Vol. 1,
+  2nd ed., Cambridge University Press (2023), §3.5, pp. 188–189.
+-/
+
+public section
+
+open Filter MeasurableSpace Set Topology
+open scoped RestrictedProduct
+
+namespace RestrictedProduct
+
+section General
+
+variable {ι : Type*} {R : ι → Type*} {A : ∀ i, Set (R i)} {𝓕 𝓖 : Filter ι}
+variable [∀ i, TopologicalSpace (R i)]
+
+/-- Endow a restricted product `Πʳ i, [R i, A i]_[𝓕]` with its Borel `σ`-algebra. -/
+instance instMeasurableSpace : MeasurableSpace (Πʳ i, [R i, A i]_[𝓕]) := borel _
+
+/-- A restricted product `Πʳ i, [R i, A i]_[𝓕]` is a Borel space for its restricted-product
+topology. -/
+instance instBorelSpace : BorelSpace (Πʳ i, [R i, A i]_[𝓕]) := ⟨rfl⟩
+
+/-- Coordinate evaluation `x ↦ x i` on a restricted product is Borel measurable whenever the `i`-th
+factor is a Borel space. -/
+@[fun_prop]
+theorem measurable_eval (i : ι) [MeasurableSpace (R i)] [BorelSpace (R i)] :
+    Measurable fun x : Πʳ j, [R j, A j]_[𝓕] ↦ x i :=
+  ((continuous_apply i).comp continuous_coe).measurable
+
+/-- Coercion from a restricted product to the full product `Π i, R i` is measurable with respect to
+the product `σ`-algebra. -/
+@[fun_prop]
+theorem measurable_coe [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)] :
+    Measurable ((↑) : Πʳ i, [R i, A i]_[𝓕] → Π i, R i) :=
+  measurable_pi_iff.mpr fun i ↦ measurable_eval i
+
+/-- The natural inclusion `inclusion R A h` associated to `h : 𝓕 ≤ 𝓖` is Borel measurable. -/
+@[fun_prop]
+theorem measurable_inclusion (h : 𝓕 ≤ 𝓖) : Measurable (inclusion R A h) :=
+  (continuous_inclusion h).measurable
+
+/-- The structure map `Π i, A i → Πʳ i, [R i, A i]_[𝓕]` is Borel measurable when `Π i, A i` carries
+its product `σ`-algebra of subspaces of spaces with `OpensMeasurableSpace`, provided `ι` is
+countable and each `R i` is second countable. -/
+@[fun_prop]
+theorem measurable_structureMap [Countable ι] [∀ i, SecondCountableTopology (R i)]
+    [∀ i, MeasurableSpace (R i)] [∀ i, OpensMeasurableSpace (R i)] :
+    Measurable (structureMap R A 𝓕) :=
+  isEmbedding_structureMap.continuous.measurable
+
+/-- When `ι` is countable, each `R i` is second countable, and every reference set `A i` is open,
+the structure map `structureMap R A cofinite : Π i, A i → Πʳ i, [R i, A i]` is a measurable
+embedding. -/
+theorem measurableEmbedding_structureMap [Countable ι] [∀ i, SecondCountableTopology (R i)]
+    [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)] (hA : ∀ i, IsOpen (A i)) :
+    MeasurableEmbedding (structureMap R A cofinite) :=
+  (isOpenEmbedding_structureMap hA).measurableEmbedding
+
+/-- When every reference set `A i` is open and `cofinite ≤ 𝓟 S`, the principal inclusion
+`inclusion R A hS : Πʳ i, [R i, A i]_[𝓟 S] → Πʳ i, [R i, A i]` is a measurable embedding. -/
+theorem measurableEmbedding_inclusion_principal {S : Set ι} (hA : ∀ i, IsOpen (A i))
+    (hS : cofinite ≤ 𝓟 S) : MeasurableEmbedding (inclusion R A hS) :=
+  (isOpenEmbedding_inclusion_principal hA hS).measurableEmbedding
+
+/-- Over a countable index type, a coordinate box of measurable sets is Borel measurable in
+`Πʳ i, [R i, A i]_[𝓕]` for every filter `𝓕`. -/
+theorem measurableSet_box [Countable ι] [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)]
+    {C : ∀ i, Set (R i)} (hC : ∀ i, MeasurableSet (C i)) :
+    MeasurableSet (box C : Set (Πʳ i, [R i, A i]_[𝓕])) :=
+  preimage_coe_univ_pi C ▸ (MeasurableSet.univ_pi hC).preimage measurable_coe
+
+/-- Over a countable index type, singletons in `Πʳ i, [R i, A i]_[𝓕]` are Borel measurable whenever
+singletons are measurable in every factor (even without `T1Space` assumptions). -/
+theorem measurableSingletonClass [Countable ι] [∀ i, MeasurableSpace (R i)]
+    [∀ i, BorelSpace (R i)] [∀ i, MeasurableSingletonClass (R i)] :
+    MeasurableSingletonClass (Πʳ i, [R i, A i]_[𝓕]) where
+  measurableSet_singleton x :=
+    box_singleton x ▸ measurableSet_box fun i ↦ measurableSet_singleton (x i)
+
+/-- The supremum of coordinate-evaluation pullbacks of the factor Borel `σ`-algebras is bounded
+above by the Borel `σ`-algebra of `Πʳ i, [R i, A i]_[𝓕]`. -/
+theorem iSup_comap_le_borel :
+    (⨆ i : ι, (borel (R i)).comap fun x : Πʳ j, [R j, A j]_[𝓕] ↦ x i) ≤
+      borel (Πʳ i, [R i, A i]_[𝓕]) := by
+  refine iSup_le fun i ↦ ?_
+  let _ : MeasurableSpace (R i) := borel (R i)
+  have _ : BorelSpace (R i) := ⟨rfl⟩
+  exact ((continuous_apply i).comp continuous_coe).measurable.comap_le
+
+end General
+
+section Cofinite
+
+variable {ι : Type*} {R : ι → Type*} {A : ∀ i, Set (R i)}
+variable [Countable ι] [∀ i, TopologicalSpace (R i)] [∀ i, SecondCountableTopology (R i)]
+
+/-- When `ι` is countable, each `R i` is second countable, and each reference set `A i` is open,
+the Borel `σ`-algebra of `Πʳ i, [R i, A i]` is generated by the open boxes `box C` satisfying
+`C i = A i` cofinitely. -/
+theorem borel_eq_generateFrom_open_box (hA : ∀ i, IsOpen (A i)) :
+    borel (Πʳ i, [R i, A i]) =
+      MeasurableSpace.generateFrom
+        {s : Set (Πʳ i, [R i, A i]) | ∃ C : ∀ i, Set (R i),
+          (∀ i, IsOpen (C i)) ∧ (∀ᶠ i in cofinite, C i = A i) ∧ s = box C} := by
+  have _ : SecondCountableTopology (Πʳ i, [R i, A i]) := secondCountableTopology_of_cofinite hA
+  exact (isTopologicalBasis_open_box hA).borel_eq_generateFrom
+
+/-- When `ι` is countable, each `R i` is second countable, and each `A i` is open, the Borel
+`σ`-algebra of `Πʳ i, [R i, A i]` coincides with the supremum of the coordinate pullbacks
+`⨆ i, (borel (R i)).comap (fun x ↦ x i)`. -/
+theorem borel_eq_iSup_comap_eval (hA : ∀ i, IsOpen (A i)) :
+    borel (Πʳ i, [R i, A i]) =
+      ⨆ i : ι, (borel (R i)).comap fun x : Πʳ j, [R j, A j] ↦ x i := by
+  refine le_antisymm ?_ iSup_comap_le_borel
+  rw [borel_eq_generateFrom_open_box hA]
+  refine generateFrom_le fun _ ⟨C, hCopen, _, hC⟩ ↦ ?_
+  have h_eq : (box C : Set (Πʳ i, [R i, A i])) =
+      ⋂ i, (fun x : Πʳ j, [R j, A j] ↦ x i) ⁻¹' C i := by ext; simp
+  rw [hC, h_eq]
+  exact @MeasurableSet.iInter _ _
+    (⨆ i : ι, (borel (R i)).comap fun x : Πʳ j, [R j, A j] ↦ x i) _ _ fun i ↦
+    le_iSup (fun i : ι ↦ (borel (R i)).comap fun x : Πʳ j, [R j, A j] ↦ x i) i _
+      ⟨C i, MeasurableSpace.measurableSet_generateFrom (hCopen i), rfl⟩
+
+/-- Version of `RestrictedProduct.borel_eq_iSup_comap_eval` phrased in terms of `MeasurableSpace`
+instances on the factors `R i`. -/
+theorem measurableSpace_eq_iSup_comap_eval [mR : ∀ i, MeasurableSpace (R i)]
+    [∀ i, BorelSpace (R i)] (hA : ∀ i, IsOpen (A i)) :
+    (instMeasurableSpace : MeasurableSpace (Πʳ i, [R i, A i])) =
+      ⨆ i : ι, (mR i).comap fun x : Πʳ j, [R j, A j] ↦ x i := by
+  simp_rw [instMeasurableSpace, borel_eq_iSup_comap_eval hA, BorelSpace.measurable_eq]
+
+/-- When `ι` is countable, each `R i` is second countable, and each `A i` is open, a map into
+`Πʳ i, [R i, A i]` is Borel measurable if and only if each coordinate map `z ↦ f z i` is
+measurable. -/
+theorem measurable_iff_eval [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)]
+    (hA : ∀ i, IsOpen (A i)) {Z : Type*} [MeasurableSpace Z] {f : Z → Πʳ i, [R i, A i]} :
+    Measurable f ↔ ∀ i, Measurable fun z ↦ f z i := by
+  rw [measurable_iff_comap_le, measurableSpace_eq_iSup_comap_eval hA]
+  simp_rw [MeasurableSpace.comap_iSup, iSup_le_iff, MeasurableSpace.comap_comp, Function.comp_def,
+    ← measurable_iff_comap_le]
+
+/-- When `ι` is countable, each `R i` is second countable, and each `A i` is open, coercion from
+`Πʳ i, [R i, A i]` to the full product `Π i, R i` is a measurable embedding (even though it is in
+general not a topological embedding). -/
+theorem measurableEmbedding_coe [∀ i, MeasurableSpace (R i)] [∀ i, BorelSpace (R i)]
+    (hA : ∀ i, IsOpen (A i)) :
+    MeasurableEmbedding ((↑) : Πʳ i, [R i, A i] → Π i, R i) := by
+  classical
+  refine MeasurableEmbedding.iff_comap_eq.mpr ⟨DFunLike.coe_injective, ?_, ?_⟩
+  · rw [measurableSpace_eq_iSup_comap_eval hA, MeasurableSpace.pi, MeasurableSpace.comap_iSup]
+    simp_rw [MeasurableSpace.comap_comp, Function.comp_def]
+  · rw [range_coe]
+    have hrange : {x : Π i, R i | ∀ᶠ i in cofinite, x i ∈ A i} =
+        ⋃ T : Finset ι, ⋂ i : {i // i ∉ T}, (fun x : Π j, R j ↦ x i.1) ⁻¹' A i.1 := by
+      ext x
+      simp only [Set.mem_ofPred_eq, eventually_cofinite, mem_iUnion, mem_iInter, mem_preimage,
+        Subtype.forall]
+      exact ⟨fun h ↦ ⟨h.toFinset, fun i hi ↦ by simpa [Set.Finite.mem_toFinset] using hi⟩,
+        fun ⟨T, hT⟩ ↦ T.finite_toSet.subset fun i hi ↦
+          Classical.byContradiction fun hiT ↦ hi (hT i hiT)⟩
+    exact hrange ▸ MeasurableSet.iUnion fun _ ↦
+      MeasurableSet.iInter fun i ↦ measurable_pi_apply i.1 (hA i.1).measurableSet
+
+end Cofinite
+
+end RestrictedProduct
