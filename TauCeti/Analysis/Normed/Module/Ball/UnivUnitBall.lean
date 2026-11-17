@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
-import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
 # A Lipschitz estimate for the radial map onto the unit ball
@@ -21,9 +21,12 @@ constant that improves far from the origin:
 (`OpenPartialHomeomorph.norm_univUnitBall_sub_le`). The gain `1 / √(1 + ‖x‖²)` is what makes the
 map useful for comparing functions with polynomial growth: if `‖f - g‖ ≤ δ (1 + ‖g‖)` everywhere,
 then `univUnitBall ∘ f` and `univUnitBall ∘ g` are uniformly within `4 δ`
-(`OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le`). The estimate rests on
-the fact that `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line
-(`TauCeti.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le`).
+(`OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le`). Both follow from an estimate
+on `‖A⁻¹ a' - B⁻¹ b'‖`, with `A = √(1 + ‖a‖²)` and `B = √(1 + ‖b‖²)`
+(`TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le`), which also compares rescalings of vectors
+`a'`, `b'` other than `a`, `b` (`TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le`).
+The estimate rests on the fact that `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line
+(`Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub`).
 
 For `f` a complex polynomial, `univUnitBall ∘ f` is the section `exp(u₀) f` of the background
 amplitude `u₀ = -log (1 + ‖f‖²) / 2` used to construct plane vortices with prescribed zeros.
@@ -35,28 +38,64 @@ open Metric
 
 namespace TauCeti
 
-/-- The function `t ↦ √(1 + t²)` is `1`-Lipschitz on the real line. -/
-theorem abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le (a b : ℝ) :
-    |√(1 + a ^ 2) - √(1 + b ^ 2)| ≤ |a - b| := by
-  have hA := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 1 + a ^ 2)
-  have hB := Real.sq_sqrt (by positivity : (0 : ℝ) ≤ 1 + b ^ 2)
-  have hA0 := Real.sqrt_nonneg (1 + a ^ 2)
-  have hB0 := Real.sqrt_nonneg (1 + b ^ 2)
-  -- `|√(1 + a²)| ≥ |a|` and `|√(1 + b²)| ≥ |b|`, so the sum of the roots dominates `|a + b|`.
-  have ha : |a| ≤ √(1 + a ^ 2) := Real.abs_le_sqrt (by nlinarith)
-  have hb : |b| ≤ √(1 + b ^ 2) := Real.abs_le_sqrt (by nlinarith)
-  have hab : |a + b| ≤ √(1 + a ^ 2) + √(1 + b ^ 2) := (abs_add_le a b).trans (add_le_add ha hb)
-  -- `(√(1 + a²) - √(1 + b²)) (√(1 + a²) + √(1 + b²)) = (a - b) (a + b)`.
-  have hprod : |√(1 + a ^ 2) - √(1 + b ^ 2)| * (√(1 + a ^ 2) + √(1 + b ^ 2)) =
-      |a - b| * |a + b| := by
-    rw [← abs_of_nonneg (add_nonneg hA0 hB0), ← abs_mul, ← abs_mul]
-    congr 1
-    linear_combination hA - hB
-  rcases (add_nonneg hA0 hB0).eq_or_lt with h | h
-  · nlinarith [Real.sqrt_pos.2 (by positivity : (0 : ℝ) < 1 + a ^ 2)]
-  · refine le_of_mul_le_mul_right ?_ h
-    rw [hprod]
-    exact mul_le_mul_of_nonneg_left hab (abs_nonneg _)
+/-- If `‖a - b‖ ≤ δ (1 + ‖b‖)` with `δ ≤ 1 / 2`, then `(1 + ‖b‖) / 4 ≤ √(1 + ‖a‖²)`. -/
+theorem one_add_norm_div_four_le_sqrt_one_add_norm_sq {E : Type*} [SeminormedAddGroup E]
+    {a b : E} {δ : ℝ} (hδ : δ ≤ 1 / 2) (h : ‖a - b‖ ≤ δ * (1 + ‖b‖)) :
+    (1 + ‖b‖) / 4 ≤ √(1 + ‖a‖ ^ 2) := by
+  have h₁ := Real.one_add_div_two_le_sqrt_one_add_sq ‖a‖
+  have h₂ := norm_le_norm_add_norm_sub a b
+  nlinarith [norm_nonneg b]
+
+variable {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Comparing two radial rescalings.** With `A = √(1 + ‖a‖²)` and `B = √(1 + ‖b‖²)`,
+`‖A⁻¹ a' - B⁻¹ b'‖ ≤ ‖a' - b'‖ / A + ‖a - b‖ ‖b'‖ / (A B)`. For `a' = a` and `b' = b` this compares
+`univUnitBall a` with `univUnitBall b`. -/
+theorem norm_inv_sqrt_smul_sub_inv_sqrt_smul_le (a b a' b' : E) :
+    ‖(√(1 + ‖a‖ ^ 2))⁻¹ • a' - (√(1 + ‖b‖ ^ 2))⁻¹ • b'‖ ≤
+      ‖a' - b'‖ / √(1 + ‖a‖ ^ 2) + ‖a - b‖ * ‖b'‖ / (√(1 + ‖a‖ ^ 2) * √(1 + ‖b‖ ^ 2)) := by
+  set A := √(1 + ‖a‖ ^ 2)
+  set B := √(1 + ‖b‖ ^ 2)
+  have hA : 0 < A := Real.sqrt_pos.2 (by positivity)
+  have hB : 0 < B := Real.sqrt_pos.2 (by positivity)
+  -- `|B - A| ≤ |‖b‖ - ‖a‖| ≤ ‖a - b‖`.
+  have hBA : |B - A| ≤ ‖a - b‖ :=
+    (Real.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le_abs_sub _ _).trans
+      (by rw [abs_sub_comm]; exact abs_norm_sub_norm_le a b)
+  have hsplit : A⁻¹ • a' - B⁻¹ • b' = A⁻¹ • (a' - b') + (A⁻¹ - B⁻¹) • b' := by module
+  rw [hsplit]
+  refine (norm_add_le _ _).trans (add_le_add (le_of_eq ?_) ?_)
+  · rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hA, inv_mul_eq_div]
+  · rw [norm_smul, Real.norm_eq_abs, inv_sub_inv hA.ne' hB.ne', abs_div,
+      abs_of_pos (mul_pos hA hB), div_mul_eq_mul_div]
+    gcongr
+
+/-- **Uniform closeness of radial rescalings.** With `A = √(1 + ‖a‖²)` and `B = √(1 + ‖b‖²)`: if
+`‖a - b‖ ≤ δ (1 + ‖b‖)`, `‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with
+`0 ≤ δ ≤ 1 / 2`, then `‖A⁻¹ a' - B⁻¹ b'‖ ≤ (4 + 8 C) δ`. This is the companion of
+`OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le` for vectors `a'`, `b'`, such as
+derivatives, of at most the size of `b`. -/
+theorem norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le {a b a' b' : E} {δ C : ℝ}
+    (hδ0 : 0 ≤ δ) (hδ : δ ≤ 1 / 2) (hC : 0 ≤ C) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖))
+    (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖)) (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
+    ‖(√(1 + ‖a‖ ^ 2))⁻¹ • a' - (√(1 + ‖b‖ ^ 2))⁻¹ • b'‖ ≤ (4 + 8 * C) * δ := by
+  refine (norm_inv_sqrt_smul_sub_inv_sqrt_smul_le a b a' b').trans ?_
+  set A := √(1 + ‖a‖ ^ 2)
+  set B := √(1 + ‖b‖ ^ 2)
+  have hA : (1 + ‖b‖) / 4 ≤ A := one_add_norm_div_four_le_sqrt_one_add_norm_sq hδ ha
+  have hB : (1 + ‖b‖) / 2 ≤ B := Real.one_add_div_two_le_sqrt_one_add_sq _
+  have hA0 : 0 < A := lt_of_lt_of_le (by positivity) hA
+  have hB0 : 0 < B := lt_of_lt_of_le (by positivity) hB
+  have h₁ : ‖a' - b'‖ / A ≤ 4 * δ := by
+    rw [div_le_iff₀ hA0]
+    nlinarith
+  have h₂ : ‖a - b‖ * ‖b'‖ / (A * B) ≤ 8 * C * δ := by
+    rw [div_le_iff₀ (mul_pos hA0 hB0)]
+    have hAB : (1 + ‖b‖) ^ 2 / 8 ≤ A * B := by
+      nlinarith [mul_le_mul hA hB (by positivity) hA0.le]
+    have := mul_le_mul ha hb' (norm_nonneg _) (by positivity)
+    nlinarith [mul_nonneg hδ0 hC]
+  linarith
 
 end TauCeti
 
@@ -73,30 +112,16 @@ theorem norm_univUnitBall_le (x : E) : ‖univUnitBall x‖ ≤ 1 :=
 `‖univUnitBall x - univUnitBall y‖ ≤ 2 ‖x - y‖ / √(1 + ‖x‖²)`. -/
 theorem norm_univUnitBall_sub_le (x y : E) :
     ‖univUnitBall x - univUnitBall y‖ ≤ 2 * ‖x - y‖ / √(1 + ‖x‖ ^ 2) := by
-  set A := √(1 + ‖x‖ ^ 2)
-  set B := √(1 + ‖y‖ ^ 2)
-  have hA : 0 < A := Real.sqrt_pos.2 (by positivity)
-  have hB : 0 < B := Real.sqrt_pos.2 (by positivity)
-  have hyB : ‖y‖ ≤ B := Real.le_sqrt_of_sq_le (by linarith)
-  -- `|B - A| ≤ |‖y‖ - ‖x‖| ≤ ‖x - y‖`.
-  have hBA : |B - A| ≤ ‖x - y‖ :=
-    (TauCeti.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le _ _).trans
-      (by rw [abs_sub_comm]; exact abs_norm_sub_norm_le x y)
-  have hsplit : univUnitBall x - univUnitBall y = A⁻¹ • (x - y) + (A⁻¹ - B⁻¹) • y := by
-    simp only [univUnitBall_apply, A, B]
-    module
-  have hcoef : |A⁻¹ - B⁻¹| * ‖y‖ ≤ ‖x - y‖ / A := by
-    rw [inv_sub_inv hA.ne' hB.ne', abs_div, abs_of_pos (mul_pos hA hB), div_mul_eq_mul_div,
-      div_le_div_iff₀ (mul_pos hA hB) hA]
-    have := mul_le_mul hBA hyB (norm_nonneg y) (norm_nonneg _)
-    nlinarith [abs_nonneg (B - A)]
-  rw [hsplit]
-  calc ‖A⁻¹ • (x - y) + (A⁻¹ - B⁻¹) • y‖ ≤ ‖A⁻¹ • (x - y)‖ + ‖(A⁻¹ - B⁻¹) • y‖ := norm_add_le _ _
-    _ = ‖x - y‖ / A + |A⁻¹ - B⁻¹| * ‖y‖ := by
-      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_inv, abs_of_pos hA,
-        inv_mul_eq_div]
-    _ ≤ ‖x - y‖ / A + ‖x - y‖ / A := add_le_add le_rfl hcoef
-    _ = 2 * ‖x - y‖ / A := by ring
+  have hB : 0 < √(1 + ‖y‖ ^ 2) := Real.sqrt_pos.2 (by positivity)
+  have hyB : ‖y‖ ≤ √(1 + ‖y‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
+  -- The second term of the general estimate is at most the first, since `‖y‖ ≤ √(1 + ‖y‖²)`.
+  have hcoef : ‖x - y‖ * ‖y‖ / (√(1 + ‖x‖ ^ 2) * √(1 + ‖y‖ ^ 2)) ≤ ‖x - y‖ / √(1 + ‖x‖ ^ 2) := by
+    rw [mul_div_mul_comm]
+    exact mul_le_of_le_one_right (by positivity) ((div_le_one hB).2 hyB)
+  simp only [univUnitBall_apply]
+  calc _ ≤ _ := TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le x y x y
+    _ ≤ ‖x - y‖ / √(1 + ‖x‖ ^ 2) + ‖x - y‖ / √(1 + ‖x‖ ^ 2) := add_le_add_right hcoef _
+    _ = 2 * ‖x - y‖ / √(1 + ‖x‖ ^ 2) := by ring
 
 /-- **Uniform closeness under `univUnitBall`.** If `‖x - y‖ ≤ δ (1 + ‖y‖)`, then
 `‖univUnitBall x - univUnitBall y‖ ≤ 4 δ`: an error that grows at most like `y` becomes uniformly
@@ -107,8 +132,7 @@ theorem norm_univUnitBall_sub_le_of_norm_sub_le {x y : E} {δ : ℝ}
   have hδ : 0 ≤ δ := nonneg_of_mul_nonneg_left ((norm_nonneg _).trans h) (by positivity)
   rw [norm_sub_rev]
   refine (norm_univUnitBall_sub_le y x).trans ?_
-  have hy : (1 + ‖y‖) / 2 ≤ √(1 + ‖y‖ ^ 2) :=
-    Real.le_sqrt_of_sq_le (by nlinarith [sq_nonneg (‖y‖ - 1)])
+  have hy := Real.one_add_div_two_le_sqrt_one_add_sq ‖y‖
   rw [div_le_iff₀ hB, norm_sub_rev]
   nlinarith
 

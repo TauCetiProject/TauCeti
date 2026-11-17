@@ -63,10 +63,10 @@ with eventually `deg P i ≤ deg Q`. Then `P i - Q` and its derivative are bound
 size into uniformly small ones (`OpenPartialHomeomorph.norm_univUnitBall_sub_le_of_norm_sub_le`),
 so the background sections and the derivatives `Du₀` converge uniformly on the whole plane, not
 only on compact sets; zeros of `P i` may collide in the limit. The fields reconstructed from
-amplitudes `u₀ + w i` then converge uniformly whenever the corrections `w i` converge uniformly
-together with their first derivatives. This is the background half of the continuity of the vortex
-field `amplitudeField (u₀ + w_P) P` in `P`, the correction `w_P` entering through these
-hypotheses.
+amplitudes `u₀ + w i` then converge uniformly whenever differentiable corrections `w i` converge
+uniformly together with their first derivatives and the limit `w₀` is bounded above. This is the
+background half of the continuity of the vortex field `amplitudeField (u₀ + w_P) P` in `P`, the
+correction `w_P` entering through these hypotheses.
 
 ## Main results
 
@@ -90,7 +90,8 @@ hypotheses.
   `TauCeti.Vortex.continuous_ofFun_fderiv_backgroundAmplitude`: the same as continuity in the
   uniform topology for families of a fixed degree.
 * `TauCeti.Vortex.tendstoUniformly_amplitudeField_backgroundAmplitude_add`: the reconstructed
-  fields converge uniformly when the corrections and their derivatives do.
+  fields converge uniformly when the corrections and their derivatives do and the limit correction
+  is bounded above.
 
 ## References
 
@@ -311,7 +312,9 @@ theorem hasFDerivAt_backgroundAmplitude {f' : ℂ →L[ℝ] ℂ} (hf : HasFDeriv
     rw [backgroundAmplitude_apply]
     ring
   ext v
-  simp [smul_eq_mul]
+  simp only [neg_smul, neg_apply, smul_apply, ContinuousLinearMap.comp_apply, coe_innerSL_apply,
+    Complex.inner, mul_re, conj_re, conj_im, mul_neg, sub_neg_eq_add, smul_eq_mul, one_div,
+    smul_add, nsmul_eq_mul, Nat.cast_ofNat, neg_inj]
   ring
 
 /-- The derivative of the background amplitude of a real-differentiable `f`. -/
@@ -336,48 +339,6 @@ private theorem inv_one_add_sq_mul_inner_eq (a x : ℂ) :
   rw [OpenPartialHomeomorph.univUnitBall_apply, real_inner_smul_left, real_inner_smul_right,
     ← mul_assoc, ← mul_inv, Real.mul_self_sqrt (by positivity)]
 
-/-- `√(1 + ‖a‖²) ≥ (1 + ‖b‖) / 4` when `‖a - b‖ ≤ δ (1 + ‖b‖)` with `δ ≤ 1 / 2`. -/
-private theorem one_add_norm_div_four_le_sqrt {a b : ℂ} {δ : ℝ} (hδ : δ ≤ 1 / 2)
-    (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖)) : (1 + ‖b‖) / 4 ≤ √(1 + ‖a‖ ^ 2) := by
-  have h₁ := one_add_norm_le_sqrt_two_mul_sqrt a
-  have h₀ : √2 ≤ 2 := by rw [Real.sqrt_le_left zero_le_two]; norm_num
-  have h₃ := Real.sqrt_nonneg (1 + ‖a‖ ^ 2)
-  have h₂ : ‖b‖ - ‖a‖ ≤ ‖a - b‖ := by rw [norm_sub_rev]; exact norm_sub_norm_le b a
-  nlinarith [norm_nonneg b]
-
-/-- With `A = √(1 + ‖a‖²)` and `B = √(1 + ‖b‖²)`: if `‖a - b‖ ≤ δ (1 + ‖b‖)`,
-`‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `0 ≤ δ ≤ 1 / 2`, then
-`‖A⁻¹ a' - B⁻¹ b'‖ ≤ (4 + 8 C) δ`. -/
-private theorem norm_inv_sqrt_smul_sub_inv_sqrt_smul_le {a b a' b' : ℂ} {δ C : ℝ} (hδ0 : 0 ≤ δ)
-    (hδ : δ ≤ 1 / 2) (hC : 0 ≤ C) (ha : ‖a - b‖ ≤ δ * (1 + ‖b‖))
-    (ha' : ‖a' - b'‖ ≤ δ * (1 + ‖b‖)) (hb' : ‖b'‖ ≤ C * (1 + ‖b‖)) :
-    ‖(√(1 + ‖a‖ ^ 2))⁻¹ • a' - (√(1 + ‖b‖ ^ 2))⁻¹ • b'‖ ≤ (4 + 8 * C) * δ := by
-  set A := √(1 + ‖a‖ ^ 2)
-  set B := √(1 + ‖b‖ ^ 2)
-  have hA : (1 + ‖b‖) / 4 ≤ A := one_add_norm_div_four_le_sqrt hδ ha
-  have hB : (1 + ‖b‖) / 2 ≤ B := by
-    have h₁ := one_add_norm_le_sqrt_two_mul_sqrt b
-    have h₀ : √2 ≤ 2 := by rw [Real.sqrt_le_left zero_le_two]; norm_num
-    nlinarith [Real.sqrt_nonneg (1 + ‖b‖ ^ 2)]
-  have hA0 : 0 < A := lt_of_lt_of_le (by positivity) hA
-  have hB0 : 0 < B := lt_of_lt_of_le (by positivity) hB
-  have hBA : |B - A| ≤ ‖a - b‖ :=
-    (TauCeti.abs_sqrt_one_add_sq_sub_sqrt_one_add_sq_le _ _).trans
-      (by rw [abs_sub_comm]; exact abs_norm_sub_norm_le a b)
-  have hsplit : A⁻¹ • a' - B⁻¹ • b' = A⁻¹ • (a' - b') + (A⁻¹ - B⁻¹) • b' := by module
-  have h₁ : ‖A⁻¹ • (a' - b')‖ ≤ 4 * δ := by
-    rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hA0, inv_mul_le_iff₀ hA0]
-    nlinarith
-  have h₂ : ‖(A⁻¹ - B⁻¹) • b'‖ ≤ 8 * C * δ := by
-    rw [norm_smul, Real.norm_eq_abs, inv_sub_inv hA0.ne' hB0.ne', abs_div,
-      abs_of_pos (mul_pos hA0 hB0), div_mul_eq_mul_div, div_le_iff₀ (mul_pos hA0 hB0)]
-    have hAB : (1 + ‖b‖) ^ 2 / 8 ≤ A * B := by
-      nlinarith [mul_le_mul hA hB (by positivity) hA0.le]
-    have := mul_le_mul (hBA.trans ha) hb' (norm_nonneg _) (by positivity)
-    nlinarith [mul_nonneg hδ0 hC]
-  rw [hsplit]
-  linarith [norm_add_le (A⁻¹ • (a' - b')) ((A⁻¹ - B⁻¹) • b')]
-
 /-- **The pointwise estimate behind the convergence of `Du₀`.** If `‖a - b‖ ≤ δ (1 + ‖b‖)`,
 `‖a' - b'‖ ≤ δ (1 + ‖b‖)` and `‖b'‖ ≤ C (1 + ‖b‖)`, with `0 ≤ δ ≤ 1 / 2`, then the values
 `-(1 + ‖a‖²)⁻¹ ⟪a, v a'⟫` and `-(1 + ‖b‖²)⁻¹ ⟪b, v b'⟫` of the derivatives of the background
@@ -391,7 +352,7 @@ private theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : ℂ} {δ C : �
   set A := √(1 + ‖a‖ ^ 2)
   set B := √(1 + ‖b‖ ^ 2)
   set F := OpenPartialHomeomorph.univUnitBall (E := ℂ)
-  have hA : (1 + ‖b‖) / 4 ≤ A := one_add_norm_div_four_le_sqrt hδ ha
+  have hA : (1 + ‖b‖) / 4 ≤ A := TauCeti.one_add_norm_div_four_le_sqrt_one_add_norm_sq hδ ha
   have hA0 : 0 < A := lt_of_lt_of_le (by positivity) hA
   -- The three estimates: on `F a - F b`, on `a' / A` and on `a' / A - b' / B`.
   have hF : ‖F a - F b‖ ≤ 4 * δ :=
@@ -401,7 +362,7 @@ private theorem abs_inv_one_add_sq_mul_inner_sub_le {a b a' b' : ℂ} {δ C : �
     have := norm_le_norm_add_norm_sub' a' b'
     rw [norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hA0, inv_mul_le_iff₀ hA0]
     nlinarith
-  have hk' := norm_inv_sqrt_smul_sub_inv_sqrt_smul_le hδ0 hδ hC ha ha' hb'
+  have hk' := TauCeti.norm_inv_sqrt_smul_sub_inv_sqrt_smul_le_of_norm_sub_le hδ0 hδ hC ha ha' hb'
   -- Split the difference of inner products and estimate each term.
   rw [inv_one_add_sq_mul_inner_eq, inv_one_add_sq_mul_inner_eq]
   have hsplit : ⟪F a, A⁻¹ • (v * a')⟫_ℝ - ⟪F b, B⁻¹ • (v * b')⟫_ℝ =
@@ -603,17 +564,21 @@ theorem tendstoUniformly_amplitudeField_backgroundAmplitude_add {w : ι → ℂ 
       simp
   · convert ((2⁻¹ : ℝ) • Complex.reCLM).uniformContinuous.comp_tendstoUniformly hS using 1
     · funext i z
-      simp [Real.exp_add, -Complex.real_smul]
+      simp only [Fin.reduceFinMk, amplitudeField_apply_two, Fin.isValue, Real.exp_add,
+        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, reCLM_apply, smul_eq_mul]
       ring
     · funext z
-      simp [Real.exp_add, -Complex.real_smul]
+      simp only [Fin.reduceFinMk, amplitudeField_apply_two, Fin.isValue, Real.exp_add,
+        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, reCLM_apply, smul_eq_mul]
       ring
   · convert ((2⁻¹ : ℝ) • Complex.imCLM).uniformContinuous.comp_tendstoUniformly hS using 1
     · funext i z
-      simp [Real.exp_add, -Complex.real_smul]
+      simp only [Fin.reduceFinMk, amplitudeField_apply_three, Fin.isValue, Real.exp_add,
+        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, imCLM_apply, smul_eq_mul]
       ring
     · funext z
-      simp [Real.exp_add, -Complex.real_smul]
+      simp only [Fin.reduceFinMk, amplitudeField_apply_three, Fin.isValue, Real.exp_add,
+        FunLike.coe_smul, Function.comp_apply, Pi.smul_apply, map_smul, imCLM_apply, smul_eq_mul]
       ring
 
 end TauCeti.Vortex
