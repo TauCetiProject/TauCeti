@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Vortex.EquationMap
+public import TauCeti.Analysis.PDE.Vortex.EquationMap.Basic
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Sobolev
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
