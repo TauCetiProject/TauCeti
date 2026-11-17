@@ -37,6 +37,10 @@ This file treats C⋆-algebras only, with the operator-space structure they carr
   homomorphisms are complete contractions.
 * `CStarMatrix.isCompletelyBounded_transposeₗ`, `CStarMatrix.cbNorm_transposeₗ`: the transpose on
   `M_n(ℂ)` is completely bounded with cb norm `n`.
+* `CStarMatrix.norm_sum_smul_le`: compressing `x ∈ M_{m,n}(A)` by scalar vectors `v`, `w` gives
+  `‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`.
+* `ContinuousLinearMap.isCompletelyBounded_toLinearMap`, `ContinuousLinearMap.cbNorm_toLinearMap`:
+  a bounded functional `u : A → ℂ` is completely bounded with `‖u‖_cb = ‖u‖`.
 
 ## Implementation notes
 
@@ -45,6 +49,12 @@ from writing the transpose as `y ↦ ∑ E i j * y * E i j` and applying
 `Finset.norm_sum_mul_mul_sq_le`. For `n ≥ 1`, the lower bound comes from level `n`: the
 amplification sends the flip unitary `[E l k]_{k l}`, of norm `1`, to `[E k l]_{k l}`, which is
 `n` times a rank-one projection.
+
+For a bounded functional `u` and `x ∈ M_k(A)`, the scalar matrix `uₖ(x)` is tested against vectors
+`v, w ∈ ℂᵏ`: `⟪w, v uₖ(x)⟫ = u(∑ i j, (vᵢ wⱼ*) xᵢⱼ)`, and `CStarMatrix.norm_sum_smul_le` bounds
+the compressed element. Its proof tests `x` against the vectors `(vᵢ a)ᵢ` and `(wⱼ b)ⱼ` of the
+Hilbert `A`-module `Aᵏ`, which bounds `‖a z b*‖` for the compression `z`, and takes `a = z*`,
+`b = z* z`; no unit is needed.
 
 ## References
 
@@ -306,6 +316,56 @@ end NonUnitalStarAlgHom
 
 namespace CStarMatrix
 
+section Compression
+
+open WithCStarModule CStarModule
+open scoped InnerProductSpace
+
+variable {m n A : Type*} [Fintype m] [Fintype n] [NonUnitalCStarAlgebra A] [PartialOrder A]
+  [StarOrderedRing A]
+
+/-- The vector `(v i • a)ᵢ` of the Hilbert `A`-module `Aᵐ` has norm `‖v‖ ‖a‖`. -/
+private theorem norm_smul_vec (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ)) (a : A) :
+    ‖(equiv A (m → A)).symm fun i => v i • a‖ = ‖v‖ * ‖a‖ := by
+  rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), mul_pow, norm_sq_eq A, norm_sq_eq ℂ,
+    pi_inner, pi_inner]
+  simp only [equiv_symm_pi_apply, inner_def, smul_mul_smul_comm, star_smul, ← Finset.sum_smul,
+    norm_smul, CStarRing.norm_self_mul_star, sq]
+
+/-- Compressing a matrix over a C⋆-algebra by scalar vectors does not increase norms:
+`‖∑ i j, (vᵢ wⱼ*) xᵢⱼ‖ ≤ ‖v‖ ‖x‖ ‖w‖`. -/
+theorem norm_sum_smul_le (x : CStarMatrix m n A) (v : C⋆ᵐᵒᵈ(ℂ, m → ℂ))
+    (w : C⋆ᵐᵒᵈ(ℂ, n → ℂ)) :
+    ‖∑ i, ∑ j, (v i * star (w j)) • x i j‖ ≤ ‖v‖ * ‖x‖ * ‖w‖ := by
+  set z := ∑ i, ∑ j, (v i * star (w j)) • x i j
+  set K := ‖v‖ * ‖x‖ * ‖w‖
+  have key (a b : A) : ‖a * z * star b‖ ≤ K * (‖a‖ * ‖b‖) := by
+    let V : C⋆ᵐᵒᵈ(A, m → A) := (equiv A (m → A)).symm fun i => v i • a
+    let W : C⋆ᵐᵒᵈ(A, n → A) := (equiv A (n → A)).symm fun j => w j • b
+    have hz : ⟪W, toCLM x V⟫_A = a * z * star b := by
+      simp only [pi_inner, toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def, V, W, z,
+        Finset.sum_mul, Finset.mul_sum, star_smul, smul_mul_assoc, mul_smul_comm,
+        Finset.smul_sum, smul_smul, mul_comm (star (w _))]
+      exact Finset.sum_comm
+    rw [← hz]
+    calc ‖⟪W, toCLM x V⟫_A‖ ≤ ‖W‖ * ‖toCLM x V‖ := norm_inner_le _
+      _ ≤ ‖W‖ * (‖x‖ * ‖V‖) := by gcongr; exact (toCLM x).le_opNorm V
+      _ = K * (‖a‖ * ‖b‖) := by
+        rw [norm_smul_vec, norm_smul_vec]; simp only [K]; ring
+  have hs : star (star z * z) = star z * z := by simp
+  have h := key (star z) (star z * z)
+  have e : ‖star z * z * (star z * z)‖ = ‖star z * z‖ * ‖star z * z‖ := by
+    nth_rw 1 [← hs]
+    exact CStarRing.norm_star_mul_self (x := star z * z)
+  rw [hs, ← mul_assoc, mul_assoc (star z * z), norm_star, e, CStarRing.norm_star_mul_self] at h
+  rcases (norm_nonneg z).eq_or_lt with hz | hz
+  · rw [← hz]
+    positivity
+  have h3 : 0 < ‖z‖ * (‖z‖ * ‖z‖) := by positivity
+  nlinarith
+
+end Compression
+
 section Transpose
 
 variable {m n : Type*} [Fintype m] [Fintype n]
@@ -448,3 +508,41 @@ theorem cbNorm_transposeₗ (n : Type*) [Fintype n] :
 end Transpose
 
 end CStarMatrix
+
+namespace ContinuousLinearMap
+
+open WithCStarModule CStarModule
+open scoped InnerProductSpace
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+private theorem norm_map_le_opNorm_mul (u : A →L[ℂ] ℂ) {n : ℕ} (x : CStarMatrix (Fin n) (Fin n) A) :
+    ‖x.map (u : A →ₗ[ℂ] ℂ)‖ ≤ ‖u‖ * ‖x‖ := by
+  refine CStarMatrix.norm_le_of_forall_inner_le (C := ‖u‖₊ * ‖x‖₊) fun v w => ?_
+  have h : ⟪w, CStarMatrix.toCLM (x.map (u : A →ₗ[ℂ] ℂ)) v⟫_ℂ =
+      u (∑ i, ∑ j, (v i * star (w j)) • x i j) := by
+    simp only [pi_inner, CStarMatrix.toCLM_apply_eq_sum, equiv_symm_pi_apply, inner_def,
+      CStarMatrix.map_apply, map_sum, map_smul, smul_eq_mul, Finset.sum_mul]
+    rw [Finset.sum_comm]
+    simp only [coe_coe]
+    refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
+  rw [h]
+  calc ‖u (∑ i, ∑ j, (v i * star (w j)) • x i j)‖
+      ≤ ‖u‖ * ‖∑ i, ∑ j, (v i * star (w j)) • x i j‖ := u.le_opNorm _
+    _ ≤ ‖u‖ * (‖v‖ * ‖x‖ * ‖w‖) := by gcongr; exact CStarMatrix.norm_sum_smul_le x v w
+    _ = _ := by simp only [NNReal.coe_mul, coe_nnNorm]; ring
+
+/-- A bounded functional on a C⋆-algebra is completely bounded. -/
+theorem isCompletelyBounded_toLinearMap (u : A →L[ℂ] ℂ) :
+    (u : A →ₗ[ℂ] ℂ).IsCompletelyBounded :=
+  ⟨‖u‖, norm_nonneg u, fun _ x => norm_map_le_opNorm_mul u x⟩
+
+/-- **A bounded functional on a C⋆-algebra has cb norm equal to its norm** (Smith's lemma at
+level one). -/
+theorem cbNorm_toLinearMap (u : A →L[ℂ] ℂ) : (u : A →ₗ[ℂ] ℂ).cbNorm = ‖u‖ :=
+  le_antisymm
+    (LinearMap.cbNorm_le_of_bound (norm_nonneg u) fun _ x => norm_map_le_opNorm_mul u x) <|
+    u.opNorm_le_bound (LinearMap.cbNorm_nonneg _) fun a =>
+      LinearMap.norm_apply_le_cbNorm_mul (isCompletelyBounded_toLinearMap u) a
+
+end ContinuousLinearMap
