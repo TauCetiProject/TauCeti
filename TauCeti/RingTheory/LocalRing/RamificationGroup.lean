@@ -104,7 +104,7 @@ integer indexing that Herbrand theory uses.
 * `TauCeti.IsLocalRing.isPGroup_ramificationGroupGraded_natCast_succ` and
   `TauCeti.IsLocalRing.isPGroup_ramificationGroup`: in residue characteristic `p`, each positive
   graded piece has exponent dividing `p`, and over a Noetherian local ring with faithful action
-  and finite inertia each `G_i` (`i > 0`) is a `p`-group.
+  each finite `G_i` (`0 < i`) is a `p`-group.
 * `TauCeti.IsLocalRing.ramificationGroup_eq_bot_of_charZero` and
   `TauCeti.IsLocalRing.ramificationGroup_one_eq_bot_of_charZero`: in residue characteristic zero,
   every finite-order element of `G_1` over a Noetherian local ring acts trivially, so when `G_i`
@@ -1017,16 +1017,23 @@ theorem isPGroup_ramificationGroupGraded_natCast_succ (p : ℕ) [CharP (ResidueF
 
 variable (G S) in
 /-- **Positive-depth ramification groups are `p`-groups.** Over a Noetherian local ring of residue
-characteristic `p` with faithful action and finite inertia group `G_0`, every ramification group
-`G_i` with `0 < i` is a `p`-group. -/
+characteristic `p` with faithful action, every finite ramification group `G_i` with `0 < i` is a
+`p`-group. -/
 theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p]
-    [IsNoetherianRing S] [FaithfulSMul G S] [Finite (ramificationGroup G S 0)]
-    {i : ℤ} (hi : 0 < i) :
+    [IsNoetherianRing S] [FaithfulSMul G S] {i : ℤ} [Finite (ramificationGroup G S i)]
+    (hi : 0 < i) :
     IsPGroup p (ramificationGroup G S i) := by
-  obtain ⟨N, hN⟩ := exists_forall_ramificationGroup_eq_bot G S
+  have hanti : Antitone fun k : ℕ ↦ ramificationGroup G S (i + k) :=
+    fun _ _ hmn ↦ ramificationGroup_antitone G S (by omega)
+  have h0 : (fun k : ℕ ↦ ramificationGroup G S (i + k)) 0 = ramificationGroup G S i := by simp
+  have : Finite ((fun k : ℕ ↦ ramificationGroup G S (i + k)) 0) := h0 ▸ ‹_›
+  have hinf : ⨅ k : ℕ, ramificationGroup G S (i + k) = ⊥ :=
+    eq_bot_iff.mpr <| (iInf_ramificationGroup_eq_bot G S) ▸
+      le_iInf fun j ↦ (iInf_le _ (j - i).toNat).trans (ramificationGroup_antitone G S (by omega))
+  obtain ⟨N, hN⟩ := TauCeti.Subgroup.exists_forall_eq_bot_of_antitone_iInf_eq_bot _ hanti hinf
   rw [isPGroup_iff_pow_pow_eq_one]
   intro g
-  refine ⟨N.toNat, ?_⟩
+  refine ⟨N, ?_⟩
   have hpow : ∀ k : ℕ, (g : G) ^ (p ^ k) ∈ ramificationGroup G S (i + k) := by
     intro k
     induction k with
@@ -1036,10 +1043,9 @@ theorem isPGroup_ramificationGroup (p : ℕ) [CharP (ResidueField S) p]
       have hidx2 : (((i + k - 1).toNat : ℤ) + 2) = i + ((k + 1 : ℕ) : ℤ) := by omega
       rw [pow_succ, pow_mul, ← hidx2]
       exact pow_mem_ramificationGroup_natCast_add_two p (hidx1 ▸ ih)
-  have hbot : ramificationGroup G S (i + (N.toNat : ℤ)) = ⊥ := hN _ (by omega)
-  have hg1 : (g : G) ^ (p ^ N.toNat) = 1 := by
-    have hmem := hpow N.toNat
-    rwa [hbot, Subgroup.mem_bot] at hmem
+  have hg1 : (g : G) ^ (p ^ N) = 1 := by
+    have hmem := hpow N
+    rwa [hN N le_rfl, Subgroup.mem_bot] at hmem
   exact Subtype.ext hg1
 
 /-- In residue characteristic zero, each positive graded piece `G_{n+1} / G_{n+2}` is torsion-free:

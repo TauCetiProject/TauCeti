@@ -10,7 +10,6 @@ public import Mathlib.GroupTheory.Sylow
 public import TauCeti.RingTheory.DiscreteValuationRing.PrincipalUnitGroup
 public import TauCeti.RingTheory.DiscreteValuationRing.Uniformizer
 public import TauCeti.RingTheory.LocalRing.RamificationGroup
-import Mathlib.Algebra.Group.Action.Units
 import Mathlib.RingTheory.IntegralDomain
 import Mathlib.RingTheory.RootsOfUnity.PrimitiveRoots
 import TauCeti.Algebra.Group.Action.Irreducible
@@ -113,15 +112,16 @@ section UniformizerRatio
 variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
   [MulSemiringAction G S]
 
-attribute [local instance] Units.mulDistribMulActionRight
-
 /-- An element `σ ∈ G_i` moves every unit `u : Sˣ` by a factor in `U(S, i + 1)`. -/
-private theorem smul_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
+private theorem map_mul_inv_mem_principalUnitGroup {i : ℕ} {σ : G}
     (hσ : σ ∈ ramificationGroup G S i) (u : Sˣ) :
-    σ • u * u⁻¹ ∈ (maximalIdeal S ^ (i + 1)).principalUnitGroup := by
+    Units.map (MulDistribMulAction.toMonoidHom S σ) u * u⁻¹ ∈
+      (maximalIdeal S ^ (i + 1)).principalUnitGroup := by
   rw [Ideal.mem_principalUnitGroup]
-  have hsub : ((σ • u * u⁻¹ : Sˣ) : S) - 1 = (σ • (u : S) - (u : S)) * (↑u⁻¹ : S) := by
-    rw [Units.val_mul, Units.coe_smul, sub_mul, Units.mul_inv]
+  have hsub :
+      ((Units.map (MulDistribMulAction.toMonoidHom S σ) u * u⁻¹ : Sˣ) : S) - 1 =
+        (σ • (u : S) - (u : S)) * (↑u⁻¹ : S) := by
+    rw [Units.val_mul, Units.coe_map, MulDistribMulAction.toMonoidHom_apply, sub_mul, Units.mul_inv]
   rw [hsub]
   exact Ideal.mul_mem_right _ _ (mem_ramificationGroup_natCast_iff.mp hσ (u : S))
 
@@ -158,10 +158,12 @@ theorem uniformizerRatio_one (G : Type*) [Group G] [MulSemiringAction G S] (i : 
 
 /-- Twisted multiplicativity (1-cocycle law) of `uniformizerRatio` in `Sˣ`:
 `u_{σ * τ} = u_σ * σ(u_τ)`. -/
-private theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
+theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
     (σ τ : ramificationGroup G S i) :
     ((uniformizerRatio i hϖ (σ * τ) : (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) =
-      (uniformizerRatio i hϖ σ : Sˣ) * (σ : G) • (uniformizerRatio i hϖ τ : Sˣ) := by
+      (uniformizerRatio i hϖ σ : Sˣ) *
+        Units.map (MulDistribMulAction.toMonoidHom S (σ : G))
+          (uniformizerRatio i hϖ τ : Sˣ) := by
   apply Units.ext
   apply mul_left_cancel₀ hϖ.ne_zero
   calc
@@ -171,16 +173,20 @@ private theorem coe_uniformizerRatio_mul (i : ℕ) {ϖ : S} (hϖ : Irreducible �
           (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) : S)) := by
         rw [mul_smul, mul_coe_uniformizerRatio]
     _ = ϖ * ((((uniformizerRatio i hϖ σ : (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) *
-          (σ : G) • (uniformizerRatio i hϖ τ : Sˣ) : Sˣ) : S) := by
-        rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_smul, mul_assoc]
+          Units.map (MulDistribMulAction.toMonoidHom S (σ : G))
+            (uniformizerRatio i hϖ τ : Sˣ) : Sˣ) : S) := by
+        rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_map,
+          MulDistribMulAction.toMonoidHom_apply, mul_assoc]
 
-/-- Replacing `ϖ` by `ϖ' = ϖ * a` multiplies `uniformizerRatio` by the coboundary `σ(a) * a⁻¹`. -/
-private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : S} (hϖ : Irreducible ϖ)
+/-- Replacing `ϖ` by `ϖ' = ϖ * a` multiplies `uniformizerRatio` by the coboundary `σ(a) * a⁻¹`:
+`a * u'_σ = u_σ * σ(a)` in `Sˣ`. -/
+theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : S} (hϖ : Irreducible ϖ)
     (hϖ' : Irreducible ϖ') (σ : ramificationGroup G S i) :
     uniformizerChangeUnit ϖ ϖ' hϖ hϖ' *
         ((uniformizerRatio i hϖ' σ : (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) =
       ((uniformizerRatio i hϖ σ : (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) *
-        (σ : G) • uniformizerChangeUnit ϖ ϖ' hϖ hϖ' := by
+        Units.map (MulDistribMulAction.toMonoidHom S (σ : G))
+          (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') := by
   apply Units.ext
   apply mul_left_cancel₀ hϖ.ne_zero
   calc
@@ -191,8 +197,10 @@ private theorem coe_uniformizerRatio_change (i : ℕ) {ϖ ϖ' : S} (hϖ : Irredu
     _ = (σ : G) • (ϖ * (uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : S)) := by
         rw [mul_coe_uniformizerRatio, mul_uniformizerChangeUnit]
     _ = ϖ * ((((uniformizerRatio i hϖ σ : (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) *
-          (σ : G) • uniformizerChangeUnit ϖ ϖ' hϖ hϖ' : Sˣ) : S) := by
-        rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_smul, mul_assoc]
+          Units.map (MulDistribMulAction.toMonoidHom S (σ : G))
+            (uniformizerChangeUnit ϖ ϖ' hϖ hϖ') : Sˣ) : S) := by
+        rw [smul_mul', ← mul_coe_uniformizerRatio i hϖ σ, Units.val_mul, Units.coe_map,
+          MulDistribMulAction.toMonoidHom_apply, mul_assoc]
 
 variable (G) in
 /-- The homomorphism `G_i →* U(S, i) / U(S, i + 1)` sending `σ` to the class of `u_σ`, where
@@ -207,7 +215,7 @@ noncomputable def ramificationGroupToPrincipalUnitGraded (i : ℕ) {ϖ : S}
     rw [← QuotientGroup.mk_mul, QuotientGroup.eq, Subgroup.mem_subgroupOf]
     let uσ : Sˣ := uniformizerRatio i hϖ σ
     let uτ : Sˣ := uniformizerRatio i hϖ τ
-    let v : Sˣ := (σ : G) • uτ
+    let v : Sˣ := Units.map (MulDistribMulAction.toMonoidHom S (σ : G)) uτ
     have heq :
         (((uniformizerRatio i hϖ (σ * τ))⁻¹ *
           (uniformizerRatio i hϖ σ * uniformizerRatio i hϖ τ) :
@@ -222,7 +230,7 @@ noncomputable def ramificationGroupToPrincipalUnitGraded (i : ℕ) {ϖ : S}
       simp only [Units.val_mul]
       ring
     rw [heq]
-    exact inv_mem (smul_mul_inv_mem_principalUnitGroup σ.2 uτ)
+    exact inv_mem (map_mul_inv_mem_principalUnitGroup σ.2 uτ)
 
 @[simp]
 theorem ramificationGroupToPrincipalUnitGraded_apply (i : ℕ) {ϖ : S} (hϖ : Irreducible ϖ)
@@ -243,29 +251,30 @@ theorem ramificationGroupToPrincipalUnitGraded_eq_of_irreducible (i : ℕ) {ϖ �
   rw [ramificationGroupToPrincipalUnitGraded_apply,
     ramificationGroupToPrincipalUnitGraded_apply, QuotientGroup.eq, Subgroup.mem_subgroupOf]
   let a : Sˣ := uniformizerChangeUnit ϖ ϖ' hϖ hϖ'
+  let b : Sˣ := Units.map (MulDistribMulAction.toMonoidHom S (σ : G)) a
   have hrel := coe_uniformizerRatio_change i hϖ hϖ' σ
   have heq :
       (((uniformizerRatio i hϖ σ)⁻¹ * uniformizerRatio i hϖ' σ :
         (maximalIdeal S ^ i).principalUnitGroup) : Sˣ) =
-      (σ : G) • a * a⁻¹ := by
+      b * a⁻¹ := by
     apply mul_left_cancel (a := a * (uniformizerRatio i hϖ σ : Sˣ))
     apply mul_right_cancel (b := a)
-    simp only [Subgroup.coe_mul, Subgroup.coe_inv, a]
+    simp only [Subgroup.coe_mul, Subgroup.coe_inv, a, b]
     calc
       a * (uniformizerRatio i hϖ σ : Sˣ) *
           ((uniformizerRatio i hϖ σ : Sˣ)⁻¹ * (uniformizerRatio i hϖ' σ : Sˣ)) * a
         = (a * (uniformizerRatio i hϖ' σ : Sˣ)) * a := by group
-      _ = ((uniformizerRatio i hϖ σ : Sˣ) * (σ : G) • a) * a := by rw [hrel]
-      _ = a * (uniformizerRatio i hϖ σ : Sˣ) * ((σ : G) • a * a⁻¹) * a := by
+      _ = ((uniformizerRatio i hϖ σ : Sˣ) * b) * a := by rw [hrel]
+      _ = a * (uniformizerRatio i hϖ σ : Sˣ) * (b * a⁻¹) * a := by
           have hr :
-              a * (uniformizerRatio i hϖ σ : Sˣ) * ((σ : G) • a * a⁻¹) * a =
-                a * (uniformizerRatio i hϖ σ : Sˣ) * (σ : G) • a := by group
+              a * (uniformizerRatio i hϖ σ : Sˣ) * (b * a⁻¹) * a =
+                a * (uniformizerRatio i hϖ σ : Sˣ) * b := by group
           rw [hr]
           ext
           simp only [Units.val_mul]
           ring
   rw [heq]
-  exact smul_mul_inv_mem_principalUnitGroup σ.2 a
+  exact map_mul_inv_mem_principalUnitGroup σ.2 a
 
 /-- An element `σ ∈ G_i` lies in the kernel of `G_i →* U(S, i) / U(S, i + 1)` if and only if it
 moves `ϖ` into `𝔪 ^ (i + 2)`. -/
@@ -645,6 +654,9 @@ the residue characteristic `p` is prime, the action is faithful, and `G_0` is fi
 inside `G_0` is a Sylow `p`-subgroup of `G_0`: it is a `p`-group (`isPGroup_ramificationGroup`) of
 index prime to `p` (`not_dvd_index_ramificationGroup_one`). -/
 noncomputable def ramificationGroupOneSylow : Sylow p (ramificationGroup G S 0) :=
+  letI : Finite (ramificationGroup G S 1) :=
+    Finite.of_injective _
+      (Subgroup.inclusion_injective (ramificationGroup_antitone G S zero_le_one))
   ((isPGroup_ramificationGroup G S p zero_lt_one).comap_subtype).toSylow
     (not_dvd_index_ramificationGroup_one G R S p)
 

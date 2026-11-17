@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 public import TauCeti.RingTheory.Ideal.PrincipalUnitGroup
-import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 import TauCeti.RingTheory.Ideal.Operations
 
 /-!
@@ -53,44 +52,40 @@ section Zero
 
 variable {S : Type*} [CommRing S] [IsLocalRing S]
 
-private noncomputable def principalUnitZeroToResidueUnits (S : Type*) [CommRing S] [IsLocalRing S] :
-    (maximalIdeal S ^ 0).principalUnitGroup →* (ResidueField S)ˣ :=
-  (Units.map (residue S).toMonoidHom).comp (maximalIdeal S ^ 0).principalUnitGroup.subtype
-
-private theorem ker_principalUnitZeroToResidueUnits :
-    (principalUnitZeroToResidueUnits S).ker =
-      (maximalIdeal S ^ 1).principalUnitGroup.subgroupOf
-        (maximalIdeal S ^ 0).principalUnitGroup := by
-  ext u
-  rw [principalUnitZeroToResidueUnits, MonoidHom.mem_ker, MonoidHom.comp_apply,
-    Subgroup.coe_subtype, ← MonoidHom.mem_ker, ← Ideal.principalUnitGroup_ker,
-    IsLocalRing.ker_residue, Subgroup.mem_subgroupOf, pow_one]
-
-private theorem principalUnitZeroToResidueUnits_surjective :
-    Function.Surjective (principalUnitZeroToResidueUnits S) := by
-  have hres : Function.Surjective (Units.map (residue S).toMonoidHom) :=
-    IsLocalRing.surjective_units_map_of_local_ringHom _ residue_surjective inferInstance
-  intro v
-  obtain ⟨u, rfl⟩ := hres v
-  exact ⟨⟨u, by simp⟩, rfl⟩
-
 variable (S) in
 /-- At depth `0`, reduction of units modulo the maximal ideal identifies
 `U(S, 0) / U(S, 1) = Sˣ / (1 + 𝔪)` with `(ResidueField S)ˣ`. -/
 noncomputable def principalUnitGradedZeroEquiv :
     PrincipalUnitGraded S 0 ≃* (ResidueField S)ˣ :=
-  (QuotientGroup.quotientMulEquivOfEq (ker_principalUnitZeroToResidueUnits (S := S)).symm).trans
-    (QuotientGroup.quotientKerEquivOfSurjective _ principalUnitZeroToResidueUnits_surjective)
+  (QuotientGroup.congr _ (maximalIdeal S).principalUnitGroup
+      ((MulEquiv.subgroupCongr
+        (by rw [pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top])).trans
+        Subgroup.topEquiv)
+      (by
+        ext u
+        simp only [Subgroup.mem_map, Subgroup.mem_subgroupOf, MonoidHom.coe_ofClass,
+          MulEquiv.trans_apply, Subgroup.topEquiv_apply, MulEquiv.subgroupCongr_apply,
+          zero_add, pow_one]
+        exact ⟨fun ⟨_, hv, hvu⟩ ↦ hvu ▸ hv,
+          fun hu ↦ ⟨⟨u, by rw [pow_zero, Ideal.one_eq_top, Ideal.principalUnitGroup_top]; trivial⟩,
+            hu, rfl⟩⟩)).trans
+    (Ideal.unitsQuotientPrincipalUnitGroupEquiv
+      (Ideal.jacobson_bot.trans (ringJacobson_eq_maximalIdeal S)).ge)
 
 /-- Evaluating `principalUnitGradedZeroEquiv` on the class of a unit reduces it modulo the maximal
 ideal. -/
 @[simp]
 theorem principalUnitGradedZeroEquiv_mk (u : (maximalIdeal S ^ 0).principalUnitGroup) :
     principalUnitGradedZeroEquiv S (QuotientGroup.mk u) =
-      Units.map (residue S).toMonoidHom (u : Sˣ) :=
-  (MulEquiv.trans_apply ..).trans <|
-    (congrArg _ (QuotientGroup.quotientMulEquivOfEq_mk ..)).trans
-      (TauCeti.QuotientGroup.quotientKerEquivOfSurjective_apply_mk ..)
+      Units.map (residue S).toMonoidHom (u : Sˣ) := by
+  -- `ResidueField S` is defined as `S ⧸ maximalIdeal S` and `residue S` as `Ideal.Quotient.mk _`,
+  -- so the composite is split by unification and each factor is evaluated by its `_mk` lemma.
+  refine (MulEquiv.trans_apply ..).trans <|
+    (congrArg _ (QuotientGroup.congr_mk ..)).trans <|
+      (Ideal.unitsQuotientPrincipalUnitGroupEquiv_mk
+        (Ideal.jacobson_bot.trans (ringJacobson_eq_maximalIdeal S)).ge _).trans ?_
+  simp only [MulEquiv.trans_apply, Subgroup.topEquiv_apply, MulEquiv.subgroupCongr_apply]
+  rfl
 
 /-- The underlying residue-field value of `principalUnitGradedZeroEquiv S (QuotientGroup.mk u)` is
 `residue S u`. -/
