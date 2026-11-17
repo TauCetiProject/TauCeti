@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.MetricSpace.Pseudo.Defs
 public import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Algebra.Order.Group
 import Mathlib.Topology.Homeomorph.Lemmas
@@ -15,6 +16,9 @@ import Mathlib.Topology.Order.ProjIcc
 # Intervals in order topologies
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
+The frontier of a closed or half-open interval avoids every set that misses both endpoints.
+In `ℝ`, the interval from a point of an order-connected set to a nearby point of that set stays in
+the ball about the first point.
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
@@ -35,6 +39,10 @@ A path that starts in an open set and leaves it has a first exit time.
 
 * `TauCeti.uIcc_mem_nhds_of_ne` — `uIcc a b` is a neighbourhood of each of its points other than
   `a` and `b`.
+* `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
+  `(a, b]` avoids a set containing neither `a` nor `b`.
+* `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
+  order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
   outside a closed set `s` lies in the interior of a closed subinterval of `[[a, b]]` whose
   interior is disjoint from `s`.
@@ -76,6 +84,30 @@ theorem uIcc_mem_nhds_of_ne {α : Type*} [TopologicalSpace α] [LinearOrder α]
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 ha.symm) (lt_of_le_of_ne ht.2 hb)
   · rw [uIcc_of_ge hab] at ht ⊢
     exact Icc_mem_nhds (lt_of_le_of_ne ht.1 hb.symm) (lt_of_le_of_ne ht.2 ha)
+
+/-- The frontier of `[a, b]` avoids a set containing neither `a` nor `b`. -/
+theorem disjoint_frontier_Icc {α : Type*} [TopologicalSpace α] [LinearOrder α] [OrderTopology α]
+    [DenselyOrdered α] [NoMinOrder α] [NoMaxOrder α] {a b : α} {s : Set α} (hab : a ≤ b)
+    (ha : a ∉ s) (hb : b ∉ s) : Disjoint (frontier (Icc a b)) s := by
+  rw [frontier_Icc hab]
+  exact disjoint_insert_left.2 ⟨ha, disjoint_singleton_left.2 hb⟩
+
+/-- The frontier of `(a, b]` avoids a set containing neither `a` nor `b`. -/
+theorem disjoint_frontier_Ioc {α : Type*} [TopologicalSpace α] [LinearOrder α] [OrderTopology α]
+    [DenselyOrdered α] [NoMaxOrder α] {a b : α} {s : Set α} (hab : a < b) (ha : a ∉ s)
+    (hb : b ∉ s) : Disjoint (frontier (Ioc a b)) s := by
+  rw [frontier_Ioc hab]
+  exact disjoint_insert_left.2 ⟨ha, disjoint_singleton_left.2 hb⟩
+
+/-- In `ℝ`, the interval between a point `x` of an order-connected set `s` and a point `y` of
+`ball x ε ∩ s` lies in `ball x ε ∩ s`. -/
+theorem _root_.Set.OrdConnected.uIcc_subset_ball_inter {s : Set ℝ} (hs : s.OrdConnected)
+    {x y ε : ℝ} (hx : x ∈ s) (hy : y ∈ Metric.ball x ε ∩ s) :
+    uIcc x y ⊆ Metric.ball x ε ∩ s := by
+  have hball : (Metric.ball x ε).OrdConnected := by
+    rw [Real.ball_eq_Ioo]
+    exact ordConnected_Ioo
+  exact (hball.inter hs).uIcc_subset ⟨Metric.mem_ball_self (Metric.pos_of_mem_ball hy.1), hx⟩ hy
 
 /-- Around any point `t` of the open interval between `a` and `b` outside a closed set `s` there
 is a closed subinterval of `[[a, b]]` whose interior contains `t` and is disjoint from `s`. -/

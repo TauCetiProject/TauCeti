@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Fredholm.Spectral.Projection
 public import TauCeti.Analysis.InnerProductSpace.Spectral.FiniteRank
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 import TauCeti.Topology.Algebra.Indicator
+import TauCeti.Topology.Order.Interval
 
 /-!
 # The spectral flow of a path of self-adjoint Fredholm operators
@@ -235,20 +236,6 @@ section Single
 
 variable {S : H →L[𝕜] H}
 
-/-- The frontier of `[l, r]` avoids a set containing neither `l` nor `r`. -/
-private theorem disjoint_frontier_Icc {l r : ℝ} {X : Set ℝ} (hlr : l ≤ r) (h₁ : l ∉ X)
-    (h₂ : r ∉ X) : Disjoint (frontier (Icc l r)) X := by
-  rw [frontier_Icc hlr, disjoint_left]
-  rintro x (rfl | rfl)
-  exacts [h₁, h₂]
-
-/-- The frontier of `(c', c]` avoids a set containing neither `c'` nor `c`. -/
-private theorem disjoint_frontier_Ioc {c' c : ℝ} {X : Set ℝ} (hcc : c' < c) (h₁ : c' ∉ X)
-    (h₂ : c ∉ X) : Disjoint (frontier (Ioc c' c)) X := by
-  rw [frontier_Ioc hcc, disjoint_left]
-  rintro x (rfl | rfl)
-  exacts [h₁, h₂]
-
 variable (hS : IsSelfAdjoint S) (hc : 0 ≤ c) (h₁ : -c ∉ spectrum ℝ S) (h₂ : c ∉ spectrum ℝ S)
   (hfd : FiniteDimensional 𝕜 (cfc ((Icc (-c) c).indicator (1 : ℝ → ℝ)) S).range)
 include hS hc h₁ h₂ hfd
@@ -376,14 +363,6 @@ private theorem Icc_subset_ball {x ε s t : ℝ} (hs : x - ε < s) (ht : t < x +
     Icc s t ⊆ ball x ε := by
   rw [Real.ball_eq_Ioo]
   exact Icc_subset_Ioo hs ht
-
-/-- The interval between a time `t₀` of `[a, b]` and a time `t` of `ball t₀ ε ∩ [a, b]` lies in
-`ball t₀ ε ∩ [a, b]`. -/
-private theorem uIcc_subset_ball_inter_Icc {a b t₀ t ε : ℝ} (ht₀ : t₀ ∈ Icc a b) (hε : 0 < ε)
-    (ht : t ∈ ball t₀ ε ∩ Icc a b) : uIcc t₀ t ⊆ ball t₀ ε ∩ Icc a b := by
-  rw [Real.ball_eq_Ioo] at ht ⊢
-  exact (ordConnected_Ioo.inter ordConnected_Icc).uIcc_subset
-    ⟨⟨by linarith, by linarith⟩, ht₀⟩ ht
 
 omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
 /-- By the Lebesgue number lemma, if every time has a neighbourhood with a spectral cut, then all
@@ -553,7 +532,7 @@ private theorem IsSpectralFlowPotential.sub_eq_sub_of_loc {a b : ℝ} {F G : ℝ
     refine (continuousWithinAt_const (b := F t₀ - G t₀)).congr_of_eventuallyEq ?_ rfl
     filter_upwards [inter_mem_nhdsWithin (Icc a b) (ball_mem_nhds t₀ hε)] with u ⟨hu, huε⟩
     -- Compare `F` and `G` over the interval between `t₀` and `u`.
-    have hcu := hc.mono (uIcc_subset_ball_inter_Icc ht₀ hε ⟨huε, hu⟩)
+    have hcu := hc.mono (ordConnected_Icc.uIcc_subset_ball_inter ht₀ ⟨huε, hu⟩)
     have h₁ := hF.sub_eq_of_uIcc ht₀ hu hcu
     have h₂ := hG.sub_eq_of_uIcc ht₀ hu hcu
     linarith
@@ -715,10 +694,10 @@ theorem spectralFlow_eq_zero_of_forall_zero_notMem_spectrum {a b : ℝ} (hab : a
     intro s t c has hst htb hc
     have hsub : Icc s t ⊆ Icc a b := Icc_subset_Icc has htb
     have hr : spectralCount c (A t) = spectralCount c (A s) := by
-      rw [spectralCount_def, spectralCount_def, Module.finrank, Module.finrank,
-        isPreconnected_Icc.rank_range_cfc_indicator_eq (hA.mono hsub) (fun u hu ↦ hsa u (hsub hu))
-          (Ω := Icc 0 c) (fun u hu ↦ disjoint_frontier_Icc hc.pos.le (h0 u (hsub hu))
-            (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩]
+      rw [spectralCount_def, spectralCount_def]
+      exact congr_arg Cardinal.toNat (isPreconnected_Icc.rank_range_cfc_indicator_eq (hA.mono hsub)
+        (fun u hu ↦ hsa u (hsub hu)) (Ω := Icc 0 c) (fun u hu ↦ disjoint_frontier_Icc hc.pos.le
+          (h0 u (hsub hu)) (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩)
     simp [hr]
   rw [spectralFlow_eq_sub hab hA hsa hF hp]
   simp
@@ -750,7 +729,7 @@ private theorem spectralFlow_sub_spectralFlow_of_forall_exists_isSpectralCutOn (
     refine (continuousWithinAt_const (b := Fv t₀ - Fu t₀ -
       spectralFlow (fun s ↦ G s t₀) u v)).congr_of_eventuallyEq ?_ rfl
     filter_upwards [inter_mem_nhdsWithin (Icc a b) (ball_mem_nhds t₀ hε)] with t ⟨ht, htε⟩
-    have hsub := uIcc_subset_ball_inter_Icc ht₀ hε ⟨htε, ht⟩
+    have hsub := ordConnected_Icc.uIcc_subset_ball_inter ht₀ ⟨htε, ht⟩
     -- The vertical path at a time of the neighbourhood has the cut `c`.
     have hvert {t' : ℝ} (ht' : t' ∈ ball t₀ ε ∩ Icc a b) :
         spectralFlow (fun s ↦ G s t') u v =
