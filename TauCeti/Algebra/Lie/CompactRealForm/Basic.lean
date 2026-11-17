@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.LinearAlgebra.Trace
 public import Mathlib.RingTheory.TensorProduct.Free
 public import TauCeti.Algebra.Lie.BaseChange.Hom
+import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Real forms of a complex Lie algebra fixed by a conjugation, and compact real forms
@@ -89,14 +90,6 @@ definite. Its fixed points form a compact real form. -/
 structure IsCompactConjugation (τ : L →ₛₗ[starRingEnd ℂ] L) : Prop extends IsLieConjugation τ where
   /-- The Hermitian Killing form is positive definite. -/
   pos (x : L) (hx : x ≠ 0) : 0 < killingHermitianForm τ x x
-
-/-- The trace of an endomorphism of an infinite-dimensional vector space is zero. -/
-theorem trace_eq_zero_of_not_finiteDimensional {K M : Type*} [Field K] [AddCommGroup M]
-    [Module K M] (h : ¬FiniteDimensional K M) (f : Module.End K M) :
-    LinearMap.trace K M f = 0 := by
-  classical
-  rw [LinearMap.trace, dite_eq_right fun ⟨_, ⟨b⟩⟩ ↦ h (Module.Finite.of_basis b),
-    LinearMap.zero_apply]
 
 namespace IsLieConjugation
 
@@ -275,7 +268,7 @@ include hτ in
 theorem trace_comp_comp (f : Module.End ℂ L) :
     LinearMap.trace ℂ L ((τ.comp f).comp τ) = star (LinearMap.trace ℂ L f) := by
   by_cases hfin : ¬FiniteDimensional ℂ L
-  · simp [trace_eq_zero_of_not_finiteDimensional hfin]
+  · simp [TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin]
   rw [not_not] at hfin
   have : FiniteDimensional ℝ L := Module.Finite.trans ℂ L
   let c := hτ.complexBasis (Module.finBasis ℝ hτ.realForm)
@@ -315,7 +308,8 @@ theorem killingForm_realForm (x y : hτ.realForm) :
       have : FiniteDimensional ℝ L := Module.Finite.trans ℂ L
       infer_instance
     rw [killingForm_apply_apply, killingForm_apply_apply,
-      trace_eq_zero_of_not_finiteDimensional hfin, trace_eq_zero_of_not_finiteDimensional hL,
+      TauCeti.LinearMap.trace_eq_zero_of_not_finite hfin,
+      TauCeti.LinearMap.trace_eq_zero_of_not_finite hL, LinearMap.zero_apply, LinearMap.zero_apply,
       Complex.ofReal_zero]
   rw [not_not] at hfin
   let b := Module.finBasis ℝ hτ.realForm

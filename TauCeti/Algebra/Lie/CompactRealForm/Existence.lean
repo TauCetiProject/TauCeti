@@ -14,6 +14,7 @@ public import TauCeti.Algebra.Lie.Presentation.Serre.Killing
 public import TauCeti.Algebra.Lie.Weights.Chevalley.Twist
 public import TauCeti.Algebra.Lie.Weights.Positivity
 public import TauCeti.Algebra.Lie.Weights.Root.IntegralBasis
+import TauCeti.Algebra.Lie.Killing.Basic
 
 /-!
 # Existence of a compact real form
@@ -143,24 +144,6 @@ end LieBasisConj
 
 /-! ### Chevalley systems over an algebraically closed field -/
 
-/-- A Lie algebra over a field with nondegenerate Killing form is finite-dimensional: on an
-infinite-dimensional one every trace, hence the Killing form, vanishes. -/
-private theorem finiteDimensional_of_isKilling {K L : Type*} [Field K] [LieRing L]
-    [LieAlgebra K L] [IsKilling K L] : FiniteDimensional K L := by
-  by_contra h
-  have hB : killingForm K L = 0 := by
-    ext y z
-    rw [killingForm_apply_apply, trace_eq_zero_of_not_finiteDimensional h, LinearMap.zero_apply,
-      LinearMap.zero_apply]
-  have hker := IsKilling.ker_killingForm_eq_bot (R := K) (L := L)
-  rw [hB, LinearMap.ker_zero] at hker
-  have : Subsingleton L := ⟨fun y z ↦ by
-    have hy : y ∈ (⊥ : Submodule K L) := hker ▸ Submodule.mem_top
-    have hz : z ∈ (⊥ : Submodule K L) := hker ▸ Submodule.mem_top
-    rw [Submodule.mem_bot] at hy hz
-    rw [hy, hz]⟩
-  exact h inferInstance
-
 section Chevalley
 
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
@@ -173,7 +156,7 @@ variable (H) in
 theorem. -/
 theorem exists_lieEquiv_forall_mem_apply_eq_neg : ∃ ω : L ≃ₗ⁅K⁆ L, ∀ y ∈ H, ω y = -y := by
   classical
-  have := finiteDimensional_of_isKilling (K := K) (L := L)
+  have := finite_of_isKilling (R := K) (L := L)
   obtain ⟨b⟩ := (rootSystem H).nonempty_base
   obtain ⟨e, f, hS, hspan⟩ := exists_isSerreSystem_of_base b
   let E := serreLiftEquiv hS hspan
@@ -494,7 +477,7 @@ nondegenerate Killing form has a compact conjugation, whose fixed points are a r
 negative definite Killing form (`TauCeti.IsCompactConjugation.killingForm_realForm_neg`). -/
 theorem exists_isCompactConjugation (L : Type*) [LieRing L] [LieAlgebra ℂ L] [IsKilling ℂ L] :
     ∃ τ : L →ₛₗ[starRingEnd ℂ] L, IsCompactConjugation τ := by
-  have := finiteDimensional_of_isKilling (K := ℂ) (L := L)
+  have := finite_of_isKilling (R := ℂ) (L := L)
   obtain ⟨H, _, ⟨b⟩⟩ := exists_isCartanSubalgebra_base ℂ L
   obtain ⟨ω, hω⟩ := exists_lieEquiv_forall_mem_apply_eq_neg H
   obtain ⟨x, hx⟩ := exists_isChevalleySystem_of_isAlgClosed hω
