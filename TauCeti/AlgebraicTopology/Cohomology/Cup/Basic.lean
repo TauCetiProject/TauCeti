@@ -279,9 +279,13 @@ lemma singularCup_comp_tensorHom (X : TopCat.{w}) (k : Type*) [CommRing k] [Line
         (X.singularCohomologyChainCoefficientMap k N g q b) := by
   have h' := TauCeti.ChainComplex.cup_naturality (k := k) (X.alexanderWhitneyDiagonal
     (u ≫ (f ⊗ₘ g))) μ (X.alexanderWhitneyDiagonal u) (𝟙 _) _ _
+    -- The tensor product `⊗ₘ` of chain maps is `HomologicalComplex.tensorHom` by definition.
     (by rw [Category.id_comp, alexanderWhitneyDiagonal_comp_tensorHom]; rfl) p q n h a b
   rw [singularCup, singularCup]
-  simpa [singularCohomologyChainCoefficientMap] using h'.symm
+  refine .trans ?_ h'.symm
+  rw [op_id, CategoryTheory.Functor.map_id]
+  exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyMap_id
+    (((toSSet.obj X).chainComplex T).linearYonedaObj k P) n) _).symm
 
 section Laws
 

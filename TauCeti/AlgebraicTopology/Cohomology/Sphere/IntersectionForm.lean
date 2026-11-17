@@ -79,6 +79,7 @@ theorem two_dvd_singularKronecker_integralCup_self_of_compactSpace {M E : Type}
   -- the `ℤ`-linear structure of a preadditive category; these are the same structure.
   have := Linear.subsingletonInt (ModuleCat.{0} ℤ)
   convert two_dvd_singularKronecker_singularCup_self_of_compactSpace hn hnp hp x' _
+  -- The remaining differences are the `Linear ℤ` instance and a proof of the degree equation.
   congr
   · exact Subsingleton.elim _ _
   · exact proof_irrel_heq _ _
