@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.RingTheory.SimpleRing.Basic
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
+import TauCeti.RingTheory.TwoSidedIdeal.Operations
 
 /-!
 # Closed two-sided ideals and simplicity in normed rings
@@ -52,10 +53,6 @@ and `TwoSidedIdeal.isClosed_of_isCoatom`) adapt Heather Macbeth's `Ideal.eq_top_
 public section
 
 namespace TwoSidedIdeal
-
-private theorem asIdeal_eq_top_iff {R : Type*} [Ring R] (I : TwoSidedIdeal R) :
-    I.asIdeal = ⊤ ↔ I = ⊤ := by
-  rw [Ideal.eq_top_iff_one, I.mem_asIdeal, TwoSidedIdeal.one_mem_iff]
 
 variable {R : Type*} [NormedRing R] [HasSummableGeomSeries R]
 

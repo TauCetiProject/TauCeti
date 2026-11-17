@@ -12,6 +12,7 @@ public import TauCeti.Analysis.CStarAlgebra.Quotient
 public import TauCeti.Analysis.Normed.Operator.Compact.Ideal
 import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Cutoff
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.Idempotent
 import TauCeti.Analysis.Normed.Ring.Simple
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.FiniteDimensional
 
@@ -27,6 +28,7 @@ quotient `⋆`-homomorphism `CalkinAlgebra.mk` and essential-norm formula `Calki
 
 Combining the closed-ideal `star a * a` criterion (`TauCeti.Analysis.CStarAlgebra.Quotient`),
 spectral cutoffs of normal operators (`TauCeti.Analysis.InnerProductSpace.BorelCalculus.Cutoff`),
+noncompact-idempotent factorization (`TauCeti.Analysis.Normed.Operator.Compact.Idempotent`),
 the compact-operator and separable-range ideals (`TauCeti.Analysis.Normed.Operator.Compact.Ideal`),
 and the Banach-ring simplicity criterion (`TauCeti.Analysis.Normed.Ring.Simple`), this file proves:
 * **Calkin's classification:** on a separable complex Hilbert space `H`, the closed two-sided

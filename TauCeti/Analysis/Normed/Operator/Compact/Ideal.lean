@@ -5,18 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Analysis.Normed.Operator.Compact.FiniteDimension
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
 public import TauCeti.Analysis.InnerProductSpace.RankOne
 import Mathlib.Analysis.Normed.Module.HahnBanach
 import Mathlib.RingTheory.TwoSidedIdeal.Lattice
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
-import TauCeti.Analysis.InnerProductSpace.OrthogonalFamily
-import TauCeti.Analysis.Normed.Operator.Compact.Finite.Rank
 import TauCeti.Analysis.Normed.Operator.Compact.Orthonormal
 import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Schmidt
-import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.IdempotentRange
 
 /-!
 # The compact-operator and separable-range ideals of bounded operators
@@ -40,8 +36,6 @@ extraction with the norm-convergent singular value expansion of compact operator
 * Every nonzero closed two-sided ideal of `H →L[𝕜] H` contains `compactIdeal 𝕜 H`.
 * When `H` is nonseparable, `compactIdeal 𝕜 H < separableRangeIdeal 𝕜 H < ⊤`, witnessed by the
   orthogonal projection onto the closed span of a countably infinite orthonormal sequence.
-* When `H` is separable, every noncompact idempotent operator `p : H →L[𝕜] H` admits a linear
-  isometry `v : H →ₗᵢ[𝕜] H` satisfying `p * v = v` and `star v * p * v = 1`.
 
 ## Main declarations
 
@@ -58,9 +52,6 @@ extraction with the norm-convergent singular value expansion of compact operator
   of `H →L[𝕜] H` contains `compactIdeal 𝕜 H`.
 * `ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal`: on a nonseparable Hilbert space,
   `compactIdeal 𝕜 H < separableRangeIdeal 𝕜 H`.
-* `IsIdempotentElem.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one`: on a separable Hilbert
-  space, a noncompact idempotent operator `p` admits a linear isometry `v` with `p * v = v` and
-  `star v * p * v = 1`.
 
 ## References
 
@@ -393,7 +384,7 @@ end ContinuousLinearMap
 
 end RankOneAndSimplicity
 
-section SeparabilityAndProjections
+section Nonseparable
 
 variable {𝕜 H : Type*} [RCLike 𝕜]
   [NormedAddCommGroup H] [InnerProductSpace 𝕜 H] [CompleteSpace H]
@@ -430,37 +421,6 @@ theorem ContinuousLinearMap.compactIdeal_lt_separableRangeIdeal (hH : ¬ Separab
   simp only [norm_one, le_refl, Set.ofPred_true] at hfin
   exact Set.infinite_univ hfin
 
-/-- On a separable Hilbert space, every noncompact idempotent operator `p` admits a linear isometry
-`v : H →ₗᵢ[𝕜] H` satisfying `p * v = v` and `star v * p * v = 1`. -/
-theorem IsIdempotentElem.exists_linearIsometry_mul_eq_and_star_mul_mul_eq_one [SeparableSpace H]
-    {p : H →L[𝕜] H} (hp : IsIdempotentElem p) (hnc : ¬ IsCompactOperator p) :
-    ∃ v : H →ₗᵢ[𝕜] H,
-      p * v.toContinuousLinearMap = v.toContinuousLinearMap ∧
-        Star.star v.toContinuousLinearMap * p * v.toContinuousLinearMap = 1 := by
-  have : CompleteSpace p.range :=
-    (ContinuousLinearMap.IsIdempotentElem.isClosed_range hp).completeSpace_coe
-  have hinf : ¬ FiniteDimensional 𝕜 p.range := fun _ ↦
-    hnc (LinearMap.HasFiniteRange.isCompactOperator Submodule.FG.of_finite)
-  obtain ⟨w₁, b₁, -⟩ := exists_hilbertBasis 𝕜 p.range
-  have : Infinite w₁ := not_finite_iff_infinite.mp fun hfin ↦ by
-    have := Fintype.ofFinite w₁
-    exact hinf b₁.toOrthonormalBasis.toBasis.finiteDimensional_of_finite
-  obtain ⟨w₂, b₂, -⟩ := exists_hilbertBasis 𝕜 H
-  have : Countable w₂ := b₂.orthonormal.countable
-  obtain ⟨f₂, hf₂⟩ := exists_injective_nat w₂
-  -- Embed the countable Hilbert basis of `H` into the infinite Hilbert basis of `p.range`.
-  let φ : w₂ → w₁ := Infinite.natEmbedding w₁ ∘ f₂
-  have hφ : Function.Injective φ := (Infinite.natEmbedding w₁).injective.comp hf₂
-  have hu : Orthonormal 𝕜 (b₁ ∘ φ) := b₁.orthonormal.comp φ hφ
-  let v : H →ₗᵢ[𝕜] H :=
-    p.range.subtypeₗᵢ.comp (hu.orthogonalFamily.linearIsometry.comp b₂.repr.toLinearIsometry)
-  have hpv : p * v.toContinuousLinearMap = v.toContinuousLinearMap := by
-    ext x
-    simp [v, ContinuousLinearMap.IsIdempotentElem.apply_coe_range hp]
-  refine ⟨v, hpv, ?_⟩
-  rw [mul_assoc, hpv, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.mul_def,
-    v.adjoint_comp_self]
-
-end SeparabilityAndProjections
+end Nonseparable
 
 end
