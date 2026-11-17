@@ -231,11 +231,9 @@ already the stable group `π_n(SO)`. -/
 theorem isMulTorsion_homotopyGroup_specialOrthogonalGroup_of_isMulTorsion {n : ℕ} [NeZero n]
     (hn : Even n)
     (h : IsMulTorsion (HomotopyGroup (Fin n) (specialOrthogonalGroup (Fin (2 + (n + 1))) ℝ) 1)) :
-    IsMulTorsion (HomotopyGroup (Fin n) (specialOrthogonalGroup (Fin (n + 1)) ℝ) 1) := by
-  intro c
-  obtain ⟨k, hk, hck⟩ := (h (HomotopyGroup.mapHom (blockEmbedding n)
-    (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 2 (n + 1))) c)).exists_pow_eq_one
-  refine (isOfFinOrder_of_homotopyGroupMap_fromBlocksOne_eq_one hn ?_).of_pow hk.ne'
-  rw [← HomotopyGroup.mapHom_apply, map_pow, hck]
+    IsMulTorsion (HomotopyGroup (Fin n) (specialOrthogonalGroup (Fin (n + 1)) ℝ) 1) :=
+  IsMulTorsion.extension_closed (f := HomotopyGroup.mapHom (blockEmbedding n)
+    (map_one (SpecialOrthogonalGroup.fromBlocksOne ℝ 2 (n + 1)))) rfl h fun c ↦
+    Submonoid.isOfFinOrder_coe.1 (isOfFinOrder_of_homotopyGroupMap_fromBlocksOne_eq_one hn c.2)
 
 end TauCeti
