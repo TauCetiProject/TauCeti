@@ -38,7 +38,7 @@ the energy densities along the sequence, since it depends continuously on the va
 derivative of the map (`TauCeti.SymplecticForm.tendsto_floerEnergyDensity`), so the energy is
 lower semicontinuous (`TauCeti.SymplecticForm.setLIntegral_floerEnergyDensity_le_liminf`). The
 limit equation is read back from the coordinate equation by
-`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_of_fderiv_comp_equivRealProdCLM_I_sub`.
+`TauCeti.SymplecticForm.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub`.
 
 The same holds for solutions in a symplectic chart of a manifold, in the namespace
 `TauCeti.SmoothTwoForm` of `TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`:
@@ -114,7 +114,9 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer (ω : SymplecticForm V)
     (hΩ.preimage e.continuous) (fun y hy ↦ hvW (e y) hy)
     (fun n ↦ (hu n).comp e.contDiff.contDiffOn (mapsTo_preimage e Ω))
     (fun n y _ w ↦ by simp)
-    (fun n y hy ↦ ω.fderiv_comp_equivRealProdCLM_I_sub (hfl n (e y) hy)) hbd'
+    (fun n y hy ↦
+      (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub).1
+        (hfl n (e y) hy)) hbd'
     (fun y hy ↦ hlim (e y) hy)
   -- Back to the original coordinates.
   have hmaps : MapsTo e.symm Ω (e ⁻¹' Ω) := fun z hz ↦ by simpa using hz
@@ -133,8 +135,8 @@ theorem tendstoLocallyUniformlyOn_fderiv_of_floer (ω : SymplecticForm V)
       exact hfd (u n) z
     · funext z
       exact hfd v z
-  · have h := ω.isComplexLinearMap_perturbedFDeriv_of_fderiv_comp_equivRealProdCLM_I_sub
-      (Ks := Ks) (Kt := Kt) (J := J) (u := v) (y := e.symm z) (heq' (e.symm z) (hmaps hz))
+  · have h := (ω.isComplexLinearMap_perturbedFDeriv_iff_fderiv_comp_equivRealProdCLM_I_sub
+      (Ks := Ks) (Kt := Kt) (J := J) (u := v) (y := e.symm z)).2 (heq' (e.symm z) (hmaps hz))
     simpa [he] using h
 
 /-- **Floer solutions of bounded energy converge in `C¹` off finitely many bubbling points.** Let
