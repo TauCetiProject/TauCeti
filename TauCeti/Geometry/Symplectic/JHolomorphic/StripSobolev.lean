@@ -18,7 +18,7 @@ Sobolev space `W^{1,2}` of the strip with boundary values in `L₀` and `L₁`
 (`TauCeti.StripSobolev.H1`), with values in `L²`. For disjoint isotropic `L₀` and `L₁`, for
 instance a transverse pair of Lagrangian subspaces, the energy estimate
 `TauCeti.exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul` on test sections
-(`TauCeti.StripSobolev.exists_norm_jetₗ_le_mul_norm_cauchyRiemann_jetₗ`) passes to the closure:
+(`TauCeti.StripSobolev.exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp`) passes to the closure:
 the operator is bounded below, hence injective with closed range. This is the linearized operator
 of the constant Floer strip at a transverse intersection point of two Lagrangian submanifolds, in
 a unitary trivialization. Its surjectivity is not proved here.
@@ -85,23 +85,23 @@ theorem coeFn_cauchyRiemann (x : H1 L₀ L₁) :
   (cauchyRiemannJetCoeff J).coeFn_compLpL _
 
 /-- On the jet of a test section `ξ`, the Cauchy--Riemann operator is `∂s ξ + J ∂t ξ`. -/
-theorem cauchyRiemann_jetₗ_ae_eq (ξ : testSection L₀ L₁) :
-    cauchyRiemann J L₀ L₁ ⟨jetₗ L₀ L₁ ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
+theorem cauchyRiemann_jetLp_ae_eq (ξ : testSection L₀ L₁) :
+    cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩ =ᵐ[stripMeasure]
       fun z ↦ fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineReal +
         J (fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineImag) := by
-  filter_upwards [coeFn_cauchyRiemann (J := J) ⟨jetₗ L₀ L₁ ξ, jetLp_mem_jetClosure ξ⟩,
-    coeFn_jetLp ξ] with z h₁ h₂
+  filter_upwards [coeFn_cauchyRiemann (J := J)
+    ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩, coeFn_jetLp ξ] with z h₁ h₂
   rw [h₁, h₂, ← cauchyRiemannJetCoeff_apply, cauchyRiemannJetCoeff_jet]
 
 /-- The squared `L²` norm of the Cauchy--Riemann operator on the jet of a test section `ξ` is the
 integral of `‖∂s ξ + J ∂t ξ‖²` over the strip. -/
-theorem sq_norm_cauchyRiemann_jetₗ (ξ : testSection L₀ L₁) :
-    ‖cauchyRiemann J L₀ L₁ ⟨jetₗ L₀ L₁ ξ, jetLp_mem_jetClosure ξ⟩‖ ^ 2 =
+theorem sq_norm_cauchyRiemann_jetLp (ξ : testSection L₀ L₁) :
+    ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ ^ 2 =
       ∫ z in univ ×ˢ Icc (0 : ℝ) 1, ‖fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineReal +
         J (fderiv ℝ (ξ : ℝ × ℝ → V) z stdComplexLineImag)‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   refine integral_congr_ae ?_
-  filter_upwards [cauchyRiemann_jetₗ_ae_eq (J := J) ξ] with z hz
+  filter_upwards [cauchyRiemann_jetLp_ae_eq (J := J) ξ] with z hz
   rw [hz]
 
 section InnerProductSpace
@@ -112,10 +112,11 @@ variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {L₀ L₁ : Sub
 /-- The Cauchy--Riemann estimate on the jets of test sections: with transverse isotropic boundary
 conditions, `‖ξ‖_{W^{1,2}} ≤ C ‖∂s ξ + J ∂t ξ‖_{L²}` for every test section `ξ`, with `C`
 independent of `ξ`. -/
-theorem exists_norm_jetₗ_le_mul_norm_cauchyRiemann_jetₗ (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
+theorem exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
     ∃ C, ∀ ξ : testSection L₀ L₁,
-      ‖jetₗ L₀ L₁ ξ‖ ≤ C * ‖cauchyRiemann J L₀ L₁ ⟨jetₗ L₀ L₁ ξ, jetLp_mem_jetClosure ξ⟩‖ := by
+      ‖jetLp (testSection L₀ L₁) ξ‖ ≤
+        C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖ := by
   obtain ⟨C, hC, hest⟩ := exists_integral_norm_sq_add_partialDeriv_sq_strip_le_mul hg hL₀ hL₁ hL
   refine ⟨√C, fun ξ ↦ ?_⟩
   obtain ⟨hξ, hc, h₀, h₁⟩ := mem_testSection_iff.1 ξ.2
@@ -128,9 +129,9 @@ theorem exists_norm_jetₗ_le_mul_norm_cauchyRiemann_jetₗ (hg : ∀ v w, ω v 
         (hc.fderiv_apply ℝ stdComplexLineReal)).add
       ((hdu.clm_apply continuous_const).integrable_norm_sq_of_hasCompactSupport
         (hc.fderiv_apply ℝ stdComplexLineImag)))).integrableOn
-  have hsq : ‖jetₗ L₀ L₁ ξ‖ ^ 2 ≤
-      (√C * ‖cauchyRiemann J L₀ L₁ ⟨jetₗ L₀ L₁ ξ, jetLp_mem_jetClosure ξ⟩‖) ^ 2 := by
-    rw [mul_pow, Real.sq_sqrt hC.le, sq_norm_cauchyRiemann_jetₗ, sq_norm_jetLp]
+  have hsq : ‖jetLp (testSection L₀ L₁) ξ‖ ^ 2 ≤
+      (√C * ‖cauchyRiemann J L₀ L₁ ⟨jetLp (testSection L₀ L₁) ξ, jetLp_mem_jetClosure ξ⟩‖) ^ 2 := by
+    rw [mul_pow, Real.sq_sqrt hC.le, sq_norm_cauchyRiemann_jetLp, sq_norm_jetLp]
     refine (integral_mono_of_nonneg (.of_forall fun z ↦ by positivity) hint
       (.of_forall fun z ↦ (sq_norm_jet_le _ z).trans_eq ?_)).trans ?_
     · rw [stdComplexLineReal_eq, stdComplexLineImag_eq]
@@ -146,7 +147,7 @@ boundary values in `L₀` and `L₁`. -/
 theorem exists_norm_le_mul_norm_cauchyRiemann (hg : ∀ v w, ω v (J w) = ⟪v, w⟫)
     (hL₀ : ω.IsIsotropic L₀) (hL₁ : ω.IsIsotropic L₁) (hL : Disjoint L₀ L₁) :
     ∃ C, ∀ x : H1 L₀ L₁, ‖x‖ ≤ C * ‖cauchyRiemann J L₀ L₁ x‖ := by
-  obtain ⟨C, hC⟩ := exists_norm_jetₗ_le_mul_norm_cauchyRiemann_jetₗ hg hL₀ hL₁ hL
+  obtain ⟨C, hC⟩ := exists_norm_jetLp_le_mul_norm_cauchyRiemann_jetLp hg hL₀ hL₁ hL
   set D := (cauchyRiemannJetCoeff J).compLpL 2 stripMeasure with hD
   -- The estimate on the jets of test sections passes to their closure `H1`.
   refine ⟨C, fun x ↦ ?_⟩

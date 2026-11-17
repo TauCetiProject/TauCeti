@@ -22,8 +22,8 @@ sections, the strip counterpart of `TauCeti.CylinderSobolev.H1`.
 * The jet `(ξ, ∂s ξ, ∂t ξ)` (`TauCeti.StripSobolev.jet`) of a test section is square integrable
   on the strip (`TauCeti.StripSobolev.memLp_jet`), for the Lebesgue measure
   `TauCeti.StripSobolev.stripMeasure` of `ℝ × [0, 1]`. This gives the linear map
-  `TauCeti.StripSobolev.jetₗ` into `L²(ℝ × [0, 1], V × V × V)`, whose norm is the `W^{1,2}` norm
-  up to a factor between `1` and `√3`.
+  `TauCeti.StripSobolev.jetLp (testSection L₀ L₁)` into `L²(ℝ × [0, 1], V × V × V)`, whose norm is
+  the `W^{1,2}` norm up to a factor between `1` and `√3`.
 * `TauCeti.StripSobolev.H1 L₀ L₁` is the closure of the jets of test sections: the completion of
   the test sections in the `W^{1,2}` norm, realized inside `L²` as a closed subspace, hence
   complete when `V` is. The `L²` jets and their closure are the constructions
@@ -48,7 +48,6 @@ periodicity of the cylinder. For linear isotropic boundary conditions the Cauchy
 ## Main definitions
 
 * `TauCeti.StripSobolev.testSection L₀ L₁`: the test sections with boundary values in `L₀`, `L₁`.
-* `TauCeti.StripSobolev.jetₗ`: the `L²` jet of a test section.
 * `TauCeti.StripSobolev.H1 L₀ L₁`: the Sobolev space `W^{1,2}` of the strip with these boundary
   conditions.
 
@@ -105,12 +104,6 @@ theorem memLp_jet (hξ : ξ ∈ testSection L₀ L₁) : MemLp (jet ξ) 2 stripM
 /-- The test sections are differentiable with square integrable jets. -/
 instance : HasL2Jets (testSection L₀ L₁) :=
   ⟨fun _ hξ ↦ (mem_testSection_iff.1 hξ).1.differentiable (by norm_num), fun _ ↦ memLp_jet⟩
-
-variable (L₀ L₁) in
-/-- The `L²` jet `(ξ, ∂s ξ, ∂t ξ)` of a test section, as a linear map into
-`L²(ℝ × [0, 1], V × V × V)`. -/
-abbrev jetₗ : testSection L₀ L₁ →ₗ[ℝ] Lp (V × V × V) 2 stripMeasure :=
-  jetLp (testSection L₀ L₁)
 
 variable (L₀ L₁) in
 /-- The Sobolev space `W^{1,2}` of the strip `ℝ × [0, 1]` with boundary values in `L₀` and `L₁`:
