@@ -59,7 +59,7 @@ def rankTwoUpperUnitaryRootHom :
       (UnitaryRankOne.upperRootHom _ _)
 
 /-- The finite root embedding is the general unitary root embedding transported to the
-Steinberg fixed subgroup. -/
+fixed subgroup of the finite graph-twisted Frobenius. -/
 theorem rankTwoUpperUnitaryRootHom_def :
     d.rankTwoUpperUnitaryRootHom =
     (MulEquiv.subgroupCongr
@@ -93,13 +93,15 @@ theorem mem_range_rankTwoUpperUnitaryRootHom_iff
           (GaloisField d.characteristic (d.fieldExponent * 2))).IsUpperUnitriangular := by
   let e := MulEquiv.subgroupCongr
     (d.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup 2)
+  have he (a) : e (d.rankTwoUpperUnitaryRootHom a) =
+      UnitaryRankOne.upperRootHom _ _ a := Subtype.ext (by simp [e])
   refine Iff.trans ?_ (by simpa only [e, MulEquiv.subgroupCongr_apply] using
     UnitaryRankOne.mem_range_upperRootHom_iff (e g))
   constructor
   · rintro ⟨a, rfl⟩
-    exact ⟨a, rfl⟩
+    exact ⟨a, (he a).symm⟩
   · rintro ⟨a, ha⟩
-    exact ⟨a, e.injective ha⟩
+    exact ⟨a, e.injective ((he a).trans ha)⟩
 
 end TauCeti.ValidLieTypeIndex
 
