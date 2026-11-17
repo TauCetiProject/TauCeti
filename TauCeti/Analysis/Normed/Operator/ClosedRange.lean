@@ -9,13 +9,19 @@ public import Mathlib.Analysis.Normed.Operator.Banach
 public import TauCeti.Topology.Algebra.Module.Complement
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Topology.MetricSpace.Sequences
+import TauCeti.Analysis.Normed.Module.RieszLemma
 
 /-!
-# The a priori estimate of a closed-range operator
+# Closed-range operators and their a priori estimate
 
-A continuous linear map `T : E →L[𝕜] F` between Banach spaces with closed range fails to be
-bounded below only in the direction of its kernel. When that kernel is complemented, this file
-makes the failure quantitative, in the classical form
+A continuous linear map `T : E →L[𝕜] F` between normed spaces has closed range as soon as every
+bounded sequence whose `T`-images converge has a convergent subsequence. This sequential criterion
+needs no completeness and no complement of the kernel: it chooses preimages almost as far from
+`ker T` as their norm by the translated Riesz lemma `TauCeti.riesz_lemma_translate`.
+
+Conversely, a closed-range operator `T` between Banach spaces fails to be bounded below only in
+the direction of its kernel. When that kernel is complemented, this file makes the failure
+quantitative, in the classical form
 
 `‖x‖ ≤ C * ‖T x‖ + ‖P x‖`,
 
@@ -25,6 +31,8 @@ such as `ℝ` or `ℂ`, the finite-rank projection `P` is a compact operator.
 
 ## Main declarations
 
+* `ContinuousLinearMap.isClosed_range_of_exists_subseq_tendsto`: the sequential closed-range
+  criterion, over any nontrivially normed field and without completeness.
 * `ContinuousLinearMap.exists_norm_le_mul_norm_of_mem`: a closed-range operator is bounded below
   on any topological complement of its kernel.
 * `ContinuousLinearMap.exists_norm_le_mul_norm_add_norm_projectionL`: the a priori estimate
@@ -52,6 +60,66 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 variable {X₁ : Submodule 𝕜 E}
+
+open Filter Topology in
+/-- **Sequential closed-range criterion.** If every bounded sequence whose `T`-images converge
+has a convergent subsequence, then `T` has closed range. Neither space needs to be complete. -/
+theorem isClosed_range_of_exists_subseq_tendsto (T : E →L[𝕜] F)
+    (hT : ∀ {R : ℝ} {v : ℕ → E} {y : F}, (∀ n, ‖v n‖ ≤ R) →
+      Tendsto (fun n ↦ T (v n)) atTop (𝓝 y) →
+      ∃ (x : E) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun n ↦ v (ψ n)) atTop (𝓝 x)) :
+    IsClosed (T.range : Set F) := by
+  -- Each point of the range has a preimage almost as far from `ker T` as its norm, by
+  -- `TauCeti.riesz_lemma_translate`; the subsequence hypothesis bounds the norms of such
+  -- preimages by a multiple of the norms of their images, so the preimages of a convergent
+  -- sequence are bounded.
+  -- `T` is bounded below on vectors almost as far from `ker T` as their norm.
+  obtain ⟨C, hC0, hC⟩ : ∃ C : ℝ, 0 ≤ C ∧
+      ∀ w : E, (∀ z ∈ T.ker, 2⁻¹ * ‖w‖ ≤ ‖w - z‖) → ‖w‖ ≤ C * ‖T w‖ := by
+    by_contra! hcon
+    obtain ⟨a, ha⟩ := NormedField.exists_one_lt_norm 𝕜
+    have hshell : ∀ n : ℕ, ∃ u : E, (∀ z ∈ T.ker, 2⁻¹ * ‖u‖ ≤ ‖u - z‖) ∧ ‖u‖ ≤ 1 ∧
+        ‖a‖⁻¹ ≤ ‖u‖ ∧ ‖T u‖ ≤ 1 / (n + 1) := by
+      intro n
+      obtain ⟨w, hw, hlt⟩ := hcon (n + 1) (by positivity)
+      have hw0 : w ≠ 0 := by rintro rfl; simp at hlt
+      obtain ⟨d, hd0, hdlt, hdge, _⟩ := rescale_to_shell ha one_pos hw0
+      refine ⟨d • w, fun z hz ↦ ?_, hdlt.le, by simpa using hdge, ?_⟩
+      · calc 2⁻¹ * ‖d • w‖ = ‖d‖ * (2⁻¹ * ‖w‖) := by rw [norm_smul]; ring
+          _ ≤ ‖d‖ * ‖w - d⁻¹ • z‖ := by gcongr; exact hw _ (T.ker.smul_mem _ hz)
+          _ = ‖d • w - z‖ := by rw [← norm_smul, smul_sub, smul_inv_smul₀ hd0]
+      · calc ‖T (d • w)‖ = ‖d‖ * ‖T w‖ := by rw [map_smul, norm_smul]
+          _ ≤ ‖d‖ * (‖w‖ / (n + 1)) := by
+            gcongr
+            rw [le_div_iff₀ (by positivity), mul_comm]
+            exact hlt.le
+          _ = 1 / (n + 1) * ‖d • w‖ := by rw [norm_smul]; ring
+          _ ≤ 1 / (n + 1) := mul_le_of_le_one_right (by positivity) hdlt.le
+    choose u hu hule huge hTu using hshell
+    have hTu0 := squeeze_zero_norm hTu tendsto_one_div_add_atTop_nhds_zero_nat
+    obtain ⟨x, ψ, hψ, hx⟩ := hT hule hTu0
+    have hxker : x ∈ T.ker := LinearMap.mem_ker.mpr <|
+      tendsto_nhds_unique ((T.continuous.tendsto x).comp hx) (hTu0.comp hψ.tendsto_atTop)
+    -- `‖u (ψ n)‖ ≤ 2 * ‖u (ψ n) - x‖ → 0`, although `‖u (ψ n)‖ ≥ ‖a‖⁻¹`.
+    have hlim : Tendsto (fun n ↦ 2 * ‖u (ψ n) - x‖) atTop (𝓝 0) := by
+      simpa using (tendsto_iff_norm_sub_tendsto_zero.mp hx).const_mul 2
+    have hge : ‖a‖⁻¹ ≤ 0 := ge_of_tendsto' hlim fun n ↦
+      (huge (ψ n)).trans (by linarith [hu (ψ n) x hxker])
+    exact hge.not_gt (by positivity)
+  refine isSeqClosed_iff_isClosed.mp fun y z hy hyz ↦ ?_
+  -- Replace arbitrary preimages by preimages almost as far from `ker T` as their norm.
+  have hpre : ∀ n, ∃ w : E, T w = y n ∧ ∀ z ∈ T.ker, 2⁻¹ * ‖w‖ ≤ ‖w - z‖ := fun n ↦ by
+    obtain ⟨x, hx⟩ := hy n
+    obtain ⟨k, hk, hk'⟩ := TauCeti.riesz_lemma_translate T.isClosed_ker x (r := 2⁻¹) (by norm_num)
+    have hk0 : T k = 0 := hk
+    exact ⟨x - k, by rw [map_sub, hk0, sub_zero]; exact hx, hk'⟩
+  choose w hTw hw using hpre
+  obtain ⟨R, hR⟩ := hyz.norm.bddAbove_range
+  have hwle (n : ℕ) : ‖w n‖ ≤ C * R :=
+    (hC _ (hw n)).trans (by rw [hTw]; exact mul_le_mul_of_nonneg_left (hR ⟨n, rfl⟩) hC0)
+  obtain ⟨x, ψ, hψ, hx⟩ := hT hwle (by simpa only [hTw] using hyz)
+  exact ⟨x, tendsto_nhds_unique ((T.continuous.tendsto x).comp hx)
+    (by simpa only [Function.comp_def, hTw] using hyz.comp hψ.tendsto_atTop)⟩
 
 variable [CompleteSpace E] [CompleteSpace F]
 

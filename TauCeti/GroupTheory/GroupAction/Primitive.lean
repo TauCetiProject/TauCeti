@@ -11,7 +11,7 @@ public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
 /-!
 # Point stabilizers, larger acting groups, and transitive normal subgroups in primitive actions
 
-This file records facts about primitive and quasi-primitive actions.
+This file records facts about blocks, primitive actions and quasi-primitive actions.
 
 The first is the fixed-point property that distinguishes a nonregular primitive action from a
 regular one.  In a faithful primitive action, a nontrivial point stabilizer fixes only its base
@@ -36,11 +36,13 @@ plus one divides the degree; see Dixon–Mortimer, *Permutation Groups*, §1.5.
 
 ## Main results
 
+* `MulAction.IsBlock.orbit_stabilizer_subset`,
+  `MulAction.IsBlock.orbit_inf_stabilizer_subset`: a block containing a point contains every
+  orbit of its point stabilizer that it meets, also for an acting subgroup.
 * `MulAction.IsBlock.of_le`, `MulAction.IsPreprimitive.of_le`: blocks pass to smaller subgroups
   and primitivity to larger ones.
 * `MulAction.IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot`: in a faithful
   quasi-primitive action, every nontrivial normal subgroup acts transitively.
-* `MulAction.IsBlock.orbit_stabilizer_subset`: blocks are unions of point-stabilizer orbits.
 * `MulAction.IsPreprimitive.of_two_orbit_stabilizer`: a divisibility criterion for primitivity
   of finite transitive actions covered by two non-base-point suborbits.
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton`: a nontrivial point stabilizer in a
@@ -55,6 +57,31 @@ open scoped Pointwise
 namespace TauCeti.MulAction
 
 open _root_.MulAction
+
+section Blocks
+
+variable {G X : Type*} [Group G] [MulAction G X] {B : Set X} {a x : X}
+
+/-- A block containing `a` contains the orbit under the stabilizer of `a` of each of its points. -/
+theorem _root_.MulAction.IsBlock.orbit_stabilizer_subset (hB : IsBlock G B)
+    (ha : a ∈ B) (hx : x ∈ B) : orbit (stabilizer G a) x ⊆ B := by
+  intro y hy
+  obtain ⟨g, rfl⟩ := mem_orbit_iff.mp hy
+  rw [Subgroup.smul_def, ← mem_stabilizer_iff.mp (hB.stabilizer_le ha g.property)]
+  exact Set.smul_mem_smul_set hx
+
+/-- For a subgroup action, a block containing `a` contains each orbit of the intersection
+of the acting subgroup with the ambient stabilizer of `a` that it meets. -/
+theorem _root_.MulAction.IsBlock.orbit_inf_stabilizer_subset {H : Subgroup G}
+    (hB : IsBlock H B) (ha : a ∈ B) (hx : x ∈ B) :
+    orbit ↥(H ⊓ stabilizer G a) x ⊆ B := by
+  intro y hy
+  apply hB.orbit_stabilizer_subset ha hx
+  -- Use the orbit-relation bridge to compare the two subgroup action types.
+  rw [← stabilizer_subgroupOf H a, ← orbitRel_apply, orbitRel_subgroupOf, inf_comm]
+  exact orbitRel_apply.mpr hy
+
+end Blocks
 
 section Enlarge
 
@@ -93,15 +120,6 @@ end Normal
 section Suborbits
 
 variable {G X : Type*} [Group G] [MulAction G X]
-
-/-- A block containing `a` contains the entire stabilizer-`a` orbit of each of its points. -/
-theorem _root_.MulAction.IsBlock.orbit_stabilizer_subset {B : Set X} (hB : IsBlock G B)
-    {a x : X} (ha : a ∈ B) (hx : x ∈ B) : orbit (stabilizer G a) x ⊆ B := by
-  rintro y ⟨g, rfl⟩
-  have hset := mem_stabilizer_iff.mp (hB.stabilizer_le ha g.property)
-  simp only [Subgroup.smul_def]
-  rw [← hset]
-  exact Set.smul_mem_smul_set hx
 
 /-- In a finite transitive action, a block contained in a base point together with one
 stabilizer orbit is a singleton if the orbit size plus one does not divide the degree. -/
