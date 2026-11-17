@@ -26,13 +26,14 @@ energy over `P`. This file shows that `u` breaks off a one-periodic orbit at eac
 of `P`:
 
 * at each end `r ≠ q` of the receiving pair of pants `S`, an orbit `y` of `Hb r` and `s_n → ∞`
-  such that the loops `t ↦ u(φ_r(±s_n, t))`, with the sign of the end, converge to `y`
-  (`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_endChart_plumbed_of_isCompact`,
-  in the namespace `TauCeti.SmoothTwoForm`);
+  such that the loops `t ↦ u(φ_r(±s_n, t))`, with the sign of the end, converge to `y`, by
+  `exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_plumbedPerturbation_of_isCompact`
+  in the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`;
 * at each input end `r ≠ ∞` of the inserted pair of pants `S'`, whose image under `ψ` is an end of
   `P`, an orbit `y` of `Ha r` and `s_n → ∞` such that the loops `t ↦ u(ψ(φ_r(s_n, t)))` converge
-  to `y` (`IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_of_isCompact`,
-  in the same namespace).
+  to `y`, by
+  `exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_endChart_of_floer_of_isCompact` in the
+  same namespace.
 
 On a compact manifold `B` can be the whole manifold (the same names without `_of_isCompact`). As in
 `TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Manifold`, convergence and uniform tameness are
@@ -52,9 +53,9 @@ namespace `TauCeti.SmoothTwoForm`, which only needs the solution on an open set 
 * **Inserted ends.** Outside the circle `s_∞ = -L/2` of the end `∞` of `S'`, the pullback of the
   plumbed perturbation along the holomorphic plumbing map `ψ` is the perturbation of `S'`
   (`TauCeti.Floer.plumbedPerturbation_plumbingMap`), and `ψ` maps that part of `S'` into `P`
-  (`TauCeti.Floer.realChart_plumbingMap_mem_plumbedSphere`). Since the perturbed derivative and
-  the energy density are natural under holomorphic changes of coordinates, `u ∘ ψ` solves the
-  Floer equation for the perturbation of `S'` there
+  (`TauCeti.ThricePuncturedSphere.Puncture.realChart_plumbingMap_mem_plumbedSphere`). Since the
+  perturbed derivative and the energy density are natural under holomorphic changes of
+  coordinates, `u ∘ ψ` solves the Floer equation for the perturbation of `S'` there
   (`TauCeti.SmoothTwoForm.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap`), and
   its energy density is the Jacobian of `ψ` times that of `u`
   (`TauCeti.SmoothTwoForm.floerEnergyDensity_comp_realChart_plumbingMap`), so by the change of
@@ -88,18 +89,6 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
 
 /-! ### The regions of the two pairs of pants inside the plumbed sphere -/
 
-/-- The part of the pair of pants on which the signed longitudinal coordinate of the end `r` is
-less than `L/2`, in real coordinates, is open. -/
-private theorem isOpen_endSign_mul_re_endCoord_lt (r : Puncture) (L : ℝ) :
-    IsOpen (thricePuncturedSphereReal ∩
-      (fun z : ℝ × ℝ ↦ r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) ⁻¹'
-        Iio (L / 2)) := by
-  refine ContinuousOn.isOpen_inter_preimage (fun z hz ↦ ?_) isOpen_thricePuncturedSphereReal
-    isOpen_Iio
-  exact (continuousAt_const.mul ((r.contDiffAt_re_endCoord
-    (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) r) (n := 0)).continuousAt.comp
-      Complex.equivRealProdCLM.symm.continuous.continuousAt)).continuousWithinAt
-
 /-- Far out on an end `r ≠ r'`, the signed longitudinal coordinate of `r'` is less than `L/2`. -/
 private theorem positiveEndChart_mem_endSign_mul_re_endCoord_lt {r r' : Puncture} (hr : r ≠ r')
     (hL : 0 < L) {ζ : ℝ × ℝ} (hζ : 0 < ζ.1) :
@@ -113,97 +102,12 @@ private theorem positiveEndChart_mem_endSign_mul_re_endCoord_lt {r r' : Puncture
     simpa [← mul_assoc] using hζ
   exact (endSign_mul_re_endCoord_nonpos hr h).trans_lt (half_pos hL)
 
-/-! ### The inserted pair of pants in the plumbing chart -/
-
-omit [TopologicalSpace M] [ChartedSpace HM M] [IsManifold I (⊤ : ℕ∞) M] in
-/-- Outside the circle `s_∞ = -L/2` of the inserted pair of pants, the components along `∂_s` and
-`∂_t` of the pullback of the plumbed perturbation along the plumbing chart are those of the
-perturbation of the inserted pair of pants. -/
-private theorem perturbationPullback_realChart_plumbedPerturbation_stdComplexLine (hq : q ≠ inf)
-    (hab : Hb q = Ha inf) (hL : 4 < L) {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2) :
-    perturbationPullback (realChart (q.plumbingMap L))
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineReal w =
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1) w ∧
-      perturbationPullback (realChart (q.plumbingMap L))
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        stdComplexLineImag w =
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I) w := by
-  have h (v : ℝ × ℝ) := funext fun x ↦ perturbationPullback_realChart_plumbedPerturbation hq hab
-    hL (mem_thricePuncturedSphereReal_iff.1 hw).1 hwL x v
-  exact ⟨(h stdComplexLineReal).trans (by rw [equivRealProdCLM_symm_stdComplexLineReal]),
-    (h stdComplexLineImag).trans (by rw [equivRealProdCLM_symm_stdComplexLineImag])⟩
-
-/-- **The inserted pair of pants solves the Floer equation in the plumbing chart.** Outside the
-circle `s_∞ = -L/2` of the inserted pair of pants, if `u` solves the Floer equation
-`(du - X_K)^{0,1} = 0` for the plumbed perturbation `K` at the image `ψ(w)` of `w` under the
-plumbing chart, then `u ∘ ψ` solves the Floer equation for the perturbation of the inserted pair
-of pants at `w`. -/
-theorem isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
-    (hL : 4 < L) {u : ℝ × ℝ → M} {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w))
-    {J : AlmostComplexStructure (TangentSpace I (u (realChart (q.plumbingMap L) w)))}
-    (hfloer : IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedMFDeriv
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u (realChart (q.plumbingMap L) w)).toLinearMap) :
-    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
-      (ω.perturbedMFDeriv
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (u ∘ realChart (q.plumbingMap L)) w).toLinearMap := by
-  have hP := realChart_plumbingMap_mem_plumbedSphere hq (by linarith)
-    (mem_thricePuncturedSphereReal_iff.1 hw) hwL
-  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab hL hw
-    hwL
-  rw [← ω.perturbedMFDeriv_congr_perturbation _ hs ht]
-  exact ω.isComplexLinearMap_perturbedMFDeriv_perturbationPullback
-    ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu
-    (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ 1)
-    (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ Complex.I)
-    (isComplexLinearMap_fderiv_realChart (q.hasDerivAt_plumbingMap L _)) hfloer
-
-/-- **The energy density of the inserted pair of pants in the plumbing chart.** Outside the circle
-`s_∞ = -L/2` of the inserted pair of pants, the Floer energy density of `u ∘ ψ` for the
-perturbation of the inserted pair of pants at `w` is the Jacobian of the plumbing chart `ψ` times
-the energy density of `u` for the plumbed perturbation at `ψ(w)`. -/
-theorem floerEnergyDensity_comp_realChart_plumbingMap (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Ha r)))
-    (hHbs : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
-    (hL : 4 < L) {u : ℝ × ℝ → M} {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal)
-    (hwL : inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm w)).re ≤ L / 2)
-    (hu : MDifferentiableAt 𝓘(ℝ, ℝ × ℝ) I u (realChart (q.plumbingMap L) w)) :
-    ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (u ∘ realChart (q.plumbingMap L)) w =
-      (fderiv ℝ (realChart (q.plumbingMap L)) w).det * ω.floerEnergyDensity
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x Complex.I)
-        u (realChart (q.plumbingMap L) w) := by
-  have hP := realChart_plumbingMap_mem_plumbedSphere hq (by linarith)
-    (mem_thricePuncturedSphereReal_iff.1 hw) hwL
-  obtain ⟨hs, ht⟩ := perturbationPullback_realChart_plumbedPerturbation_stdComplexLine hq hab hL hw
-    hwL
-  rw [← ω.floerEnergyDensity_congr_perturbation _ hs ht]
-  exact ω.floerEnergyDensity_perturbationPullback
-    ((contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w) hu
-    (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ 1)
-    (mdifferentiableAt_plumbedPerturbation_target hq hHa hHb hHas hHbs hab hL hP _ Complex.I)
-
 /-! ### Asymptotic orbits at the ends -/
 
 variable [FiniteDimensional ℝ E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {e : M → F}
+
+namespace IsNondegenerate
 
 /-- **A finite-energy Floer four-punctured sphere in a manifold breaks off an orbit at each end of
 the receiving pair of pants.** Plumb the output of a pair of pants with Hamiltonians `Ha` into the
@@ -217,7 +121,8 @@ of `B`, and suppose that the almost complex structures are uniformly tame with r
 `r ≠ q` of the receiving pair of pants there are a `1`-periodic orbit `y` of the Hamiltonian vector
 field of `Hb r` in `B` and `s_n → ∞` such that the loops `t ↦ u(φ_r(±s_n, t))`, with the sign of
 the end, converge to `y`, pointwise in `M` and uniformly after applying `e`. -/
-theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_endChart_plumbed_of_isCompact
+theorem
+    exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_plumbedPerturbation_of_isCompact
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
     (hL : 4 < L) (he : ContMDiff I 𝓘(ℝ, F) 1 e) {B : Set M} (hB : IsCompact B)
@@ -268,8 +173,8 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_endChart_p
     rw [plumbedPerturbation_of_re_endCoord_le hq hab (by linarith) x]
   refine hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_of_isOpen
     (fun r w x hw ↦ pairOfPantsPerturbation_eq_smul_endAngularForm (H := Hb) hw x) hHb hHbs he hB
-    he_inj hde (isOpen_endSign_mul_re_endCoord_lt q L) (hu.mono hUP) (fun z hz ↦ huB z (hUP z hz))
-    J hc (fun z hz ↦ hJc z (hUP z hz)) (fun z hz ↦ ?_)
+    he_inj hde (isOpen_endSign_mul_re_endCoord_lt q (L / 2)) (hu.mono hUP)
+    (fun z hz ↦ huB z (hUP z hz)) J hc (fun z hz ↦ hJc z (hUP z hz)) (fun z hz ↦ ?_)
     (ne_top_of_le_ne_top hE ?_) (a := 0)
     fun ζ hζ ↦ positiveEndChart_mem_endSign_mul_re_endCoord_lt hr (by linarith) hζ
   · rw [← ω.perturbedMFDeriv_congr_perturbation u
@@ -282,7 +187,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_endChart_p
   · -- The energy over `U` is the energy for the plumbed perturbation, which is at most that over
     -- `P`.
     refine le_of_eq_of_le (setLIntegral_congr_fun
-      (isOpen_endSign_mul_re_endCoord_lt q L).measurableSet fun z hz ↦ ?_)
+      (isOpen_endSign_mul_re_endCoord_lt q (L / 2)).measurableSet fun z hz ↦ ?_)
       (lintegral_mono_set hUP)
     rw [ω.floerEnergyDensity_congr_perturbation u
       (Ks := fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
@@ -304,7 +209,7 @@ complex structures are uniformly tame with respect to `e`: `c ‖d e v‖² ≤ 
 pair of pants there are a `1`-periodic orbit `y` of the Hamiltonian vector field of `Ha r` in `B`
 and `s_n → ∞` such that the loops `t ↦ u(ψ(φ_r(s_n, t)))` converge to `y`, pointwise in `M` and
 uniformly after applying `e`. -/
-theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_of_isCompact
+theorem exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_endChart_of_floer_of_isCompact
     (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1) (hHas : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
@@ -344,7 +249,7 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMa
   set U := thricePuncturedSphereReal ∩
     (fun z : ℝ × ℝ ↦ inf.endSign * (inf.endCoord (Complex.equivRealProdCLM.symm z)).re) ⁻¹'
       Iio (L / 2)
-  have hUo : IsOpen U := isOpen_endSign_mul_re_endCoord_lt inf L
+  have hUo : IsOpen U := isOpen_endSign_mul_re_endCoord_lt inf (L / 2)
   have hψ : ∀ z ∈ U, (Complex.equivRealProdCLM.symm (ψ z) ≠ 0 ∧
       Complex.equivRealProdCLM.symm (ψ z) ≠ 1) ∧
       Complex.equivRealProdCLM.symm (ψ z) ≠ q.plumbingMap L 1 := fun z hz ↦
@@ -359,8 +264,9 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMa
     he_inj hde hUo (u := u ∘ ψ)
     (hu.comp (contDiff_realChart_plumbingMap q L).contMDiff.contMDiffOn hψ)
     (fun z hz ↦ huB _ (hψ z hz)) (fun z ↦ J (ψ z)) hc (fun z hz ↦ hJc _ (hψ z hz))
-    (fun z hz ↦ isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap hq hHa hHb hHas
-      hHbs hab hL hz.1 hz.2.le (hud z hz) (hfloer _ (hψ z hz)))
+    (fun z hz ↦ ω.isComplexLinearMap_perturbedMFDeriv_comp_realChart_plumbingMap hq hHa hHb hHas
+      hHbs hab hL (mem_thricePuncturedSphereReal_iff.1 hz.1) hz.2.le (hud z hz)
+      (hfloer _ (hψ z hz)))
     (ne_top_of_le_ne_top hE ?_) (a := 0)
     (fun ζ hζ ↦ positiveEndChart_mem_endSign_mul_re_endCoord_lt hr (by linarith) hζ) |>.imp
       fun y ⟨hy, hyB, σ, hσ, hconv, hpt⟩ ↦ ⟨hy, hyB, σ, hσ, ?_, ?_⟩
@@ -370,8 +276,8 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMa
       (fun z _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero z)
       fun z hz ↦ by
         rw [abs_of_nonneg (det_fderiv_realChart_plumbingMap_nonneg q L z)]
-        exact floerEnergyDensity_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab hL hz.1
-          hz.2.le (hud z hz)]
+        exact ω.floerEnergyDensity_comp_realChart_plumbingMap hq hHa hHb hHas hHbs hab hL
+          (mem_thricePuncturedSphereReal_iff.1 hz.1) hz.2.le (hud z hz)]
     refine lintegral_mono_set ?_
     rintro _ ⟨z, hz, rfl⟩
     exact hψ z hz
@@ -390,7 +296,7 @@ are uniformly tame with respect to `e`: `c ‖d e v‖² ≤ ω(v, J z v)` with 
 `1`-periodic orbit `y` of the Hamiltonian vector field of `Hb r` and `s_n → ∞` such that the loops
 `t ↦ u(φ_r(±s_n, t))`, with the sign of the end, converge to `y`, pointwise in `M` and uniformly
 after applying `e`. -/
-theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_endChart_plumbed
+theorem exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_plumbedPerturbation
     [CompactSpace M] (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
     (hL : 4 < L) (he : ContMDiff I 𝓘(ℝ, F) 1 e) (he_inj : Injective e)
@@ -420,9 +326,9 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_endChart_p
         TendstoUniformly (fun n t ↦ e (u (endChart r (r.endSign * σ n, t)))) (e ∘ y) atTop ∧
         ∀ t, Tendsto (fun n ↦ u (endChart r (r.endSign * σ n, t))) atTop (𝓝 (y t)) := by
   obtain ⟨y, hy, -, h⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_endChart_plumbed_of_isCompact hq hHb
-      hHbs hab hL he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu (fun _ _ ↦ mem_univ _) J hc
-      hJc hfloer hE hr
+    exists_mem_periodicSolutions_tendstoUniformly_endChart_of_floer_plumbedPerturbation_of_isCompact
+      hω hq hHb hHbs hab hL he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu
+      (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE hr
   exact ⟨y, hy, h⟩
 
 /-- **A finite-energy Floer four-punctured sphere in a closed manifold breaks off an orbit at each
@@ -437,7 +343,7 @@ space, and suppose that the almost complex structures are uniformly tame with re
 input end `r ≠ ∞` of the inserted pair of pants there are a `1`-periodic orbit `y` of the
 Hamiltonian vector field of `Ha r` and `s_n → ∞` such that the loops `t ↦ u(ψ(φ_r(s_n, t)))`
 converge to `y`, pointwise in `M` and uniformly after applying `e`. -/
-theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMap
+theorem exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_endChart_of_floer
     [CompactSpace M] (hω : ω.IsNondegenerate) (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1)
     (hHb : ∀ r, Periodic (Hb r) 1) (hHas : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry (Hb r))) (hab : Hb q = Ha inf)
@@ -470,10 +376,12 @@ theorem IsNondegenerate.exists_mem_periodicSolutions_tendstoUniformly_plumbingMa
         ∀ t, Tendsto (fun n ↦ u (realChart (q.plumbingMap L) (endChart r (σ n, t)))) atTop
           (𝓝 (y t)) := by
   obtain ⟨y, hy, -, h⟩ :=
-    hω.exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_of_isCompact hq hHa hHb
-      hHas hHbs hab hL he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu
+    hω.exists_mem_periodicSolutions_tendstoUniformly_plumbingMap_endChart_of_floer_of_isCompact hq
+      hHa hHb hHas hHbs hab hL he isCompact_univ he_inj.injOn (fun p _ ↦ hde p) hu
       (fun _ _ ↦ mem_univ _) J hc hJc hfloer hE hr
   exact ⟨y, hy, h⟩
+
+end IsNondegenerate
 
 end SmoothTwoForm
 
