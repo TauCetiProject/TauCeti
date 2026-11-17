@@ -86,25 +86,21 @@ theorem kInv_smul_of_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace 
       kInv q • v = μ⁻¹ • μ • kInv q • v := by rw [smul_smul, inv_mul_cancel₀ hμ, one_smul]
       _ = μ⁻¹ • v := by rw [← hv']
 
+/-- An element `a` with `K a = c (a K)` maps the `μ`-weight space into the `c μ`-weight space. -/
+theorem smul_mem_weightSpace_of_k_mul {a : UqSl2 q} {c μ : ℂ} (ha : k q * a = c • (a * k q))
+    {v : V} (hv : v ∈ weightSpace q V μ) : a • v ∈ weightSpace q V (c * μ) := by
+  rw [mem_weightSpace_iff] at hv ⊢
+  rw [← mul_smul, ha, smul_assoc, mul_smul, hv, smul_comm a μ v, smul_smul]
+
 /-- Raising a weight vector multiplies its weight by `q²`. -/
 theorem e_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
-    e q • v ∈ weightSpace q V (q ^ 2 * μ) := by
-  rw [mem_weightSpace_iff] at hv ⊢
-  calc
-    k q • e q • v = (k q * e q) • v := (mul_smul _ _ _).symm
-    _ = (q ^ 2 • (e q * k q)) • v := by rw [k_mul_e]
-    _ = (q ^ 2 * μ) • e q • v := by
-      simp [smul_assoc, mul_smul, hv, smul_comm (e q) μ v]
+    e q • v ∈ weightSpace q V (q ^ 2 * μ) :=
+  smul_mem_weightSpace_of_k_mul k_mul_e hv
 
 /-- Lowering a weight vector multiplies its weight by `q⁻²`. -/
 theorem f_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) :
-    f q • v ∈ weightSpace q V (q⁻¹ ^ 2 * μ) := by
-  rw [mem_weightSpace_iff] at hv ⊢
-  calc
-    k q • f q • v = (k q * f q) • v := (mul_smul _ _ _).symm
-    _ = (q⁻¹ ^ 2 • (f q * k q)) • v := by rw [k_mul_f]
-    _ = (q⁻¹ ^ 2 * μ) • f q • v := by
-      simp [smul_assoc, mul_smul, hv, smul_comm (f q) μ v]
+    f q • v ∈ weightSpace q V (q⁻¹ ^ 2 * μ) :=
+  smul_mem_weightSpace_of_k_mul k_mul_f hv
 
 /-- The weight after `n` raising operations. -/
 theorem e_pow_smul_mem_weightSpace {μ : ℂ} {v : V} (hv : v ∈ weightSpace q V μ) (n : ℕ) :
@@ -181,7 +177,7 @@ theorem weightSpace_le_genWeightSpace (μ : ℂ) : weightSpace q V μ ≤ genWei
 theorem genWeightSpace_zero : genWeightSpace q V 0 = ⊥ := by
   refine (Submodule.eq_bot_iff _).mpr fun v hv => ?_
   obtain ⟨n, hn⟩ := mem_genWeightSpace_iff.mp hv
-  rw [map_zero, sub_zero, ← kUnit_val, ← Units.val_pow_eq_pow_val] at hn
+  rw [map_zero, sub_zero, ← val_kUnit, ← Units.val_pow_eq_pow_val] at hn
   exact ((kUnit q ^ n).isUnit.smul_eq_zero).mp hn
 
 /-- An element `a` that `q`-commutes with `K` in the form `K a = c (a K)` maps the generalized

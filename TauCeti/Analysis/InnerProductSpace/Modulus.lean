@@ -49,7 +49,9 @@ No finite dimension is assumed. For linear maps between finite-dimensional space
   `T† T`; in particular `ContinuousLinearMap.IsPositive.modulus_eq`: a positive operator is its
   own modulus.
 * `ContinuousLinearMap.norm_modulus_apply`: `‖|T| x‖ = ‖T x‖`; consequently
-  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`,
+  `ContinuousLinearMap.ker_modulus`: `ker |T| = ker T`, so that in finite dimension
+  `ContinuousLinearMap.isUnit_modulus_iff_injective`: `|T|` is invertible exactly when `T` is
+  injective,
   `ContinuousLinearMap.topologicalClosure_range_modulus`: the closure of the range of `|T|` is
   `(ker T)ᗮ`, and
   `ContinuousLinearMap.norm_modulus`: `‖|T|‖ = ‖T‖`.
@@ -210,6 +212,13 @@ theorem ker_modulus (T : E →L[𝕜] F) : T.modulus.ker = T.ker := by
   ext x
   simp only [LinearMap.mem_ker, coe_coe, ← norm_eq_zero (a := T.modulus x),
     ← norm_eq_zero (a := T x), norm_modulus_apply]
+
+/-- In finite dimension the modulus `|T|` of an operator is invertible exactly when `T` is
+injective. -/
+theorem isUnit_modulus_iff_injective [FiniteDimensional 𝕜 E] {T : E →L[𝕜] F} :
+    IsUnit T.modulus ↔ Function.Injective T := by
+  rw [isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_ker_eq_bot, ker_modulus,
+    LinearMap.ker_eq_bot, coe_coe]
 
 /-- The orthogonal complement of the range of the modulus is the kernel of the operator. -/
 @[simp]

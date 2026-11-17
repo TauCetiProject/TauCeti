@@ -58,6 +58,20 @@ pseudometrics and is measurable in both directions.
   component of an arbitrary finite-moment anchor;
 * `TauCeti.WassersteinSpace.isometryEquivComponentOfFiniteMoment` — its isometric form.
 
+## Main results
+
+* `TauCeti.WassersteinSpace.exists_coe_eq_smul_add_smul` — convexity of `P_p(X)`;
+* `TauCeti.WassersteinSpace.sum_mul_wassersteinEDist_rpow_ne_top` — finiteness of weighted
+  `p`-Wasserstein costs against finitely many laws of `P_p(X)`;
+* `TauCeti.transportCost_norm_sub_sq_div_two_ne_top` — finite quadratic transport cost between
+  laws of `P₂(E)`;
+* `TauCeti.WassersteinSpace.dist_sq_le_integral` and `TauCeti.WassersteinSpace.dist_sq_eq_integral`
+  — the squared distance is the minimal quadratic cost of a coupling, attained by optimal couplings;
+* `TauCeti.WassersteinSpace.isOptimalCoupling_of_integral_le_dist_sq` — the converse: a coupling
+  of at most that cost is optimal;
+* `TauCeti.WassersteinSpace.norm_toLp_sub_eq_dist` — the `L²` norm of the displacement of an
+  optimal coupling is the distance.
+
 ## References
 
 * C. Villani, *Optimal Transport: Old and New*, Grundlehren 338, Springer 2009, Chapter 6.
@@ -136,6 +150,7 @@ theorem measurable_toProbabilityMeasure :
     Measurable (toProbabilityMeasure : WassersteinComponent p μ₀ → ProbabilityMeasure X) :=
   measurable_subtype_coe
 
+/-- The probability measure underlying `TauCeti.WassersteinComponent.mk μ hμ` is `μ`. -/
 @[simp]
 theorem coe_mk (μ : ProbabilityMeasure X) (hμ) :
     toProbabilityMeasure (mk (p := p) (μ₀ := μ₀) μ hμ) = μ :=
@@ -156,6 +171,8 @@ theorem wassersteinEDist_anchor_ne_top (μ : WassersteinComponent p μ₀) :
     wassersteinEDist p (μ₀ : Measure X) ((μ : ProbabilityMeasure X) : Measure X) ≠ ∞ :=
   μ.2
 
+/-- Rebuilding an element of a component from its underlying probability measure and the proof
+that it lies at finite distance from the anchor returns the element. -/
 @[simp]
 theorem mk_coe (μ : WassersteinComponent p μ₀) :
     mk (μ : ProbabilityMeasure X) (wassersteinEDist_anchor_ne_top μ) = μ :=
@@ -289,6 +306,7 @@ theorem measurable_toProbabilityMeasure :
     Measurable (toProbabilityMeasure : WassersteinSpace p X → ProbabilityMeasure X) :=
   measurable_subtype_coe
 
+/-- The probability measure underlying `TauCeti.WassersteinSpace.mk μ hμ` is `μ`. -/
 @[simp]
 theorem coe_mk (μ : ProbabilityMeasure X) (hμ) :
     toProbabilityMeasure (mk (p := p) μ hμ) = μ :=
@@ -307,6 +325,8 @@ theorem hasFiniteMoment (μ : WassersteinSpace p X) :
     HasFiniteMoment p ((μ : ProbabilityMeasure X) : Measure X) :=
   μ.2
 
+/-- Rebuilding an element of `WassersteinSpace p X` from its underlying probability measure and
+its finite `p`-moment returns the element. -/
 @[simp]
 theorem mk_coe (μ : WassersteinSpace p X) :
     mk (μ : ProbabilityMeasure X) (hasFiniteMoment μ) = μ :=
@@ -335,12 +355,14 @@ def equivComponent (x₀ : X) : WassersteinSpace p X ≃ WassersteinComponent p 
   left_inv _ := ext (rfl)
   right_inv _ := WassersteinComponent.ext (rfl)
 
+/-- The identification `equivComponent` leaves the underlying probability measure unchanged. -/
 @[simp]
 theorem coe_equivComponent (x₀ : X) (μ : WassersteinSpace p X) :
     WassersteinComponent.toProbabilityMeasure (equivComponent x₀ μ) =
       (μ : ProbabilityMeasure X) :=
   (rfl)
 
+/-- The inverse of `equivComponent` leaves the underlying probability measure unchanged. -/
 @[simp]
 theorem coe_equivComponent_symm (x₀ : X) (μ : WassersteinComponent p (diracProba x₀)) :
     toProbabilityMeasure ((equivComponent x₀).symm μ) =
@@ -386,6 +408,8 @@ def measurableEquivComponentOfFiniteMoment
   measurable_toFun := WassersteinComponent.measurable_mk measurable_toProbabilityMeasure _
   measurable_invFun := measurable_mk WassersteinComponent.measurable_toProbabilityMeasure _
 
+/-- The identification with the component of a finite-moment anchor leaves the underlying
+probability measure unchanged. -/
 @[simp]
 theorem coe_measurableEquivComponentOfFiniteMoment
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
@@ -395,6 +419,8 @@ theorem coe_measurableEquivComponentOfFiniteMoment
       (μ : ProbabilityMeasure X) :=
   WassersteinComponent.coe_mk _ _
 
+/-- The inverse of the identification with the component of a finite-moment anchor leaves the
+underlying probability measure unchanged. -/
 @[simp]
 theorem coe_measurableEquivComponentOfFiniteMoment_symm
     (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
@@ -570,6 +596,8 @@ def isometryEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
   ⟨(measurableEquivComponentOfFiniteMoment measurable_edist hμ₀).toEquiv,
     isometry_measurableEquivComponentOfFiniteMoment hμ₀⟩
 
+/-- The isometric identification with the component of a finite-moment anchor leaves the
+underlying probability measure unchanged. -/
 @[simp]
 theorem coe_isometryEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
     (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ : WassersteinSpace p X) :
@@ -577,6 +605,8 @@ theorem coe_isometryEquivComponentOfFiniteMoment {μ₀ : ProbabilityMeasure X}
       (μ : ProbabilityMeasure X) :=
   WassersteinComponent.coe_mk _ _
 
+/-- The inverse of the isometric identification with the component of a finite-moment anchor
+leaves the underlying probability measure unchanged. -/
 @[simp]
 theorem coe_isometryEquivComponentOfFiniteMoment_symm {μ₀ : ProbabilityMeasure X}
     (hμ₀ : HasFiniteMoment p (μ₀ : Measure X)) (μ : WassersteinComponent p μ₀) :

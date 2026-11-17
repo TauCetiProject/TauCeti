@@ -38,7 +38,7 @@ Only the zero pattern of the projection is used, not its signs.
 * `TauCeti.nonempty_delineation_of_signInvariant_collinsProjection`: **Collins delineability**
   over a preconnected subset of `ℝⁿ` on which the projection is sign-invariant.
 * `TauCeti.nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection`:
-  delineability after mapping the coefficients of a multivariate family injectively into `ℝ`.
+  delineability after mapping the coefficients of a multivariate family into `ℝ`.
 
 ## References
 
@@ -117,23 +117,33 @@ theorem nonempty_delineation_of_signInvariant_collinsProjection (hS : IsPreconne
       (congrArg (· = 0) (signInvariant_def.1 (h q hq) x x.2 y y.2)).to_iff
 
 /-- **Delineability of families mapped to `ℝ`.** Let `P` be a finite family of polynomials in
-the variables `X 0, …, X n` over `A`, and let `φ : A →+* ℝ` be injective. If every element of the
+the variables `X 0, …, X n` over `A`, and let `φ : A →+* ℝ`. If every element of the
 Collins projection computed over `A`, with `X 0` singled out, is sign-invariant after evaluation
 along `φ` on a preconnected set `S ⊆ ℝⁿ`, then the family obtained by mapping `P` to `ℝ` and
 singling out `X 0` has a delineation over `S`. -/
 theorem nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection
     [DecidableEq (MvPolynomial (Fin n) A)[X]] [DecidableEq (MvPolynomial (Fin n) ℝ)[X]]
-    (hφ : Function.Injective φ) {P : Finset (MvPolynomial (Fin (n + 1)) A)}
+    {P : Finset (MvPolynomial (Fin (n + 1)) A)}
     (hS : IsPreconnected S)
     (h : ∀ q ∈ (P.image (MvPolynomial.finSuccEquiv A n)).collinsProjection,
       SignInvariant (fun x ↦ MvPolynomial.eval₂ φ x q) S) :
     Nonempty (Delineation fun (p : P.image fun f ↦ MvPolynomial.finSuccEquiv ℝ n (f.map φ))
       (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1)) := by
   classical
-  refine nonempty_delineation_of_signInvariant_collinsProjection hS fun q hq ↦ ?_
-  rw [Finset.collinsProjection_image_finSuccEquiv_map hφ] at hq
-  obtain ⟨r, hr, rfl⟩ := Finset.mem_image.1 hq
-  simpa only [MvPolynomial.eval₂_id, MvPolynomial.eval_map] using h r hr
+  obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection hS h
+  -- The two families have the same members: specializing the mapped image of `f` at `x` is
+  -- specializing the image of `f` along `φ` at `x`.
+  have hspec (f : MvPolynomial (Fin (n + 1)) A) (x : S) :
+      (MvPolynomial.finSuccEquiv ℝ n (f.map φ)).map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1) =
+        (MvPolynomial.finSuccEquiv A n f).map (MvPolynomial.eval₂Hom φ x.1) := by
+    simp only [MvPolynomial.finSuccEquiv_map, Polynomial.map_map]
+    congr 1
+    ext <;> simp
+  refine D.nonempty_of_forall_exists_eq (fun q ↦ ?_) fun p ↦ ?_
+  · obtain ⟨f, hf, hq⟩ := Finset.mem_image.1 q.2
+    exact ⟨⟨_, Finset.mem_image_of_mem _ hf⟩, fun x ↦ hq ▸ hspec f x⟩
+  · obtain ⟨f, hf, hp⟩ := Finset.mem_image.1 p.2
+    exact ⟨⟨_, Finset.mem_image_of_mem _ hf⟩, fun x ↦ hp ▸ hspec f x⟩
 
 end MvPolynomial
 

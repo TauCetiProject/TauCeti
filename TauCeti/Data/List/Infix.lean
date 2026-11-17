@@ -8,11 +8,11 @@ module
 public import Mathlib.Data.List.Infix
 
 /-!
-# Prefixes of repeated lists
+# Prefixes of repeated lists, and infixes of concatenations
 
 Concatenating fewer copies of a list gives a prefix of concatenating more copies. A list which,
 followed by an entry `y`, begins with `k` copies of an entry `x ≠ y` itself begins with these `k`
-copies.
+copies. A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`.
 -/
 
 public section
@@ -39,5 +39,18 @@ theorem replicate_prefix_of_append_cons_eq {x y : α} (hxy : x ≠ y) {l t r : L
       obtain rfl : y = z := by simpa using congrArg head? hc'
       exact absurd (eq_of_mem_replicate (hc ▸ by simp : y ∈ replicate k x)).symm hxy
   · exact ⟨c, hc.symm⟩
+
+/-- A list with no entry in `l₁` that is an infix of `l₁ ++ l₂` is an infix of `l₂`. This is the
+infix analogue of `List.Sublist.of_sublist_append_right`. -/
+theorem IsInfix.of_infix_append_right {l l₁ l₂ : List α} (w : ∀ a ∈ l, a ∉ l₁)
+    (h : l <:+: l₁ ++ l₂) : l <:+: l₂ := by
+  induction l₁ with
+  | nil => simpa using h
+  | cons e l₁ ih =>
+    rcases infix_cons_iff.1 h with h | h
+    · rcases l with _ | ⟨e', l⟩
+      · exact nil_infix
+      · exact absurd ((cons_prefix_cons.1 h).1 ▸ mem_cons_self) (w e' mem_cons_self)
+    · exact ih (fun a ha ha' ↦ w a ha (mem_cons_of_mem _ ha')) h
 
 end List

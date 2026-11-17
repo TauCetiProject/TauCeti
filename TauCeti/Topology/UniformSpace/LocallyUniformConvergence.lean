@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+public import Mathlib.Topology.OpenPartialHomeomorph.Defs
 public import Mathlib.Topology.MetricSpace.Pseudo.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
 public import Mathlib.Analysis.RCLike.Basic
@@ -33,6 +34,11 @@ On an open set on which the limit is continuous, locally uniform convergence is 
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
 
+A locally uniform limit `w` of maps `e ∘ uᵢ`, for an open partial homeomorphism `e` and maps `uᵢ`
+with values in a subset `K` of its source, is read back through `e.symm` when `w` takes values in
+`e '' K`: the maps `uᵢ` converge pointwise to the continuous map `e.symm ∘ w`
+(`OpenPartialHomeomorph.tendsto_symm_of_tendstoLocallyUniformlyOn`).
+
 A family `Φ : α → δ → γ` that is jointly continuous at every point of `α × {q}` converges locally
 uniformly in its first argument as the second tends to `q`
 (`TauCeti.tendstoLocallyUniformly_of_forall_continuousAt`), with no local compactness assumption
@@ -58,6 +64,29 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- A locally uniform limit `w` of maps `e ∘ uᵢ`, where the `uᵢ` take values in a set
+`K ⊆ e.source` and `w` takes values in `e '' K`, is read back through the inverse of `e`:
+`e.symm ∘ w` is continuous with values in `K`, the maps `e ∘ uᵢ` converge to `e ∘ e.symm ∘ w`,
+and `uᵢ → e.symm ∘ w` pointwise. -/
+theorem OpenPartialHomeomorph.tendsto_symm_of_tendstoLocallyUniformlyOn {M N : Type*}
+    [TopologicalSpace M] [UniformSpace N] (e : OpenPartialHomeomorph M N) {K : Set M}
+    (hKe : K ⊆ e.source) {ι X : Type*} [TopologicalSpace X] {l : Filter ι} {S : Set X}
+    {w : X → N} {u : ι → X → M} (hwc : ContinuousOn w S) (hwK : MapsTo w S (e '' K))
+    (huK : ∀ i, MapsTo (u i) S K) (hlim : TendstoLocallyUniformlyOn (fun i ↦ e ∘ u i) w l S) :
+    ContinuousOn (e.symm ∘ w) S ∧ MapsTo (e.symm ∘ w) S K ∧
+      TendstoLocallyUniformlyOn (fun i ↦ e ∘ u i) (e ∘ e.symm ∘ w) l S ∧
+      ∀ y ∈ S, Tendsto (fun i ↦ u i y) l (𝓝 ((e.symm ∘ w) y)) := by
+  have hwt : ∀ y ∈ S, w y ∈ e.target ∧ e (e.symm (w y)) = w y ∧ e.symm (w y) ∈ K := by
+    intro y hy
+    obtain ⟨x, hx, hxw⟩ := hwK hy
+    rw [← hxw]
+    exact ⟨e.map_source (hKe hx), by rw [e.left_inv (hKe hx)], by rwa [e.left_inv (hKe hx)]⟩
+  refine ⟨e.continuousOn_symm.comp hwc fun y hy ↦ (hwt y hy).1, fun y hy ↦ (hwt y hy).2.2,
+    hlim.congr_right fun y hy ↦ (hwt y hy).2.1.symm, fun y hy ↦ ?_⟩
+  have hcont := e.continuousOn_symm.continuousAt (e.open_target.mem_nhds (hwt y hy).1)
+  refine (hcont.tendsto.comp (hlim.tendsto_at hy)).congr fun i ↦ ?_
+  exact e.left_inv (hKe (huK i hy))
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
