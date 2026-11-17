@@ -227,9 +227,7 @@ theorem exists_lt_tendsto_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncur
   have hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
     (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
   -- The action is monotone and bounded, so the energy is finite.
-  have hmono : Monotone A := monotoneOn_univ.1
-    (ω.monotoneOn_hamiltonianAction_of_floer isOpen_univ hH hu.contDiffOn (fun s _ ↦ hper s)
-      (fun z hz ↦ hJ z (by simpa using hz)) fun z hz ↦ hfloer z (by simpa using hz))
+  have hmono : Monotone A := ω.monotone_hamiltonianAction_of_floer hH hu hper hJ hfloer
   obtain ⟨B, hB⟩ := ω.exists_forall_abs_hamiltonianAction_le hH.continuous hK L
   have hbdd (s : ℝ) := abs_le.1 (hB (hu.of_le one_le_two) hper huK hL s)
   have hE : ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,

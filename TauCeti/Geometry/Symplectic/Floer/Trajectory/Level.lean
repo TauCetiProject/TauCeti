@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Trajectory
+import TauCeti.Geometry.Symplectic.Floer.Breaking
 import TauCeti.Geometry.Symplectic.Floer.Trajectory.Neck
 import TauCeti.Topology.ContinuousMap.Ascoli
 import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
@@ -122,18 +123,16 @@ private theorem tendsto_setLIntegral_floerEnergyDensity_of_forall_eq
     ((hslice β).congr_right fun t _ ↦ (hst β t).trans (hst α t).symm)
   rw [← ENNReal.ofReal_zero]
   refine (ENNReal.tendsto_ofReal hE).congr fun k ↦ ?_
-  -- The energy density is continuous and nonnegative.
-  have hsub : Icc α β ×ˢ Icc (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-    prod_mono (subset_univ _) le_rfl
-  exact ofReal_integral_eq_lintegral_ofReal
-    ((ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := fun w ↦ H w.2) isOpen_univ
-      ((hf k).of_le one_le_two).contDiffOn contDiffOn_const
-      (contDiff_uncurry_cylindrical hH).contDiffOn).mono (subset_univ _) |>.integrableOn_compact
-        (isCompact_Icc.prod isCompact_Icc))
-    (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc) fun z hz ↦
-      ω.floerEnergyDensity_nonneg (fun v hv ↦
-        (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc k z (hsub hz) v))
-        (hfloer k z (hsub hz)))
+  -- Both integrals are the increase of the action across the window.
+  have hpk (s : ℝ) (_ : s ∈ Icc α β) : f k (s, 1) = f k (s, 0) := by simpa using hper k s 0
+  rw [ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub hH isOpen_univ (hf k).contDiffOn hαβ
+    (subset_univ _) hpk]
+  refine (ω.setLIntegral_floerEnergyDensity_eq_ofReal_hamiltonianAction_sub (J := J k)
+    (fun z hz v hv ↦ (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le
+      (hJc k z ⟨mem_univ _, hz.2⟩ v)) hH isOpen_univ (hf k).contDiffOn hαβ (subset_univ _) hpk
+    fun z hz ↦ ?_).symm
+  simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ (f k) z).1
+    (hfloer k z ⟨mem_univ _, hz.2⟩)
 
 /-- A stationary limit of Floer trajectories with uniformly bounded derivatives is the stationary
 cylinder over a `1`-periodic orbit: `t ↦ g(0, t)` is a `1`-periodic orbit of the Hamiltonian
@@ -154,8 +153,10 @@ private theorem periodic_hasDerivAt_of_forall_eq
         ∀ t, g (0, t) ∈ K := by
   -- The energy over every window tends to zero, so `g` is the stationary cylinder over an orbit.
   obtain ⟨x, hxper, hxd, hxK, rfl⟩ :=
-    exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add (σ := fun _ ↦ 0) (g := g) hH
-      hHper hK (fun k ↦ (hf k).of_le one_le_two) hper hfK hc hJc hJM hfloer
+    exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add (s := fun _ ↦ 0) (v := g) hH
+      hHper hK isOpen_univ (fun k ↦ ((hf k).of_le one_le_two).contDiffOn) (fun k r _ ↦ hper k r)
+      (fun k r _ t ↦ hfK k (r, t)) hc hJc hJM hfloer
+      (fun _ _ ↦ Eventually.of_forall fun _ ↦ subset_univ _)
       (fun α β ↦ by
         simpa using tendsto_setLIntegral_floerEnergyDensity_of_forall_eq hH hf hper hc hJc hfloer
           hL hg hst α β) (by simpa [Prod.mk_zero_zero] using hg)

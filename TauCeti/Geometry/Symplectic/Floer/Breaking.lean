@@ -12,7 +12,9 @@ import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Geometry.Symplectic.Floer.Translation.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
@@ -89,6 +91,9 @@ boundary loops (`SymplecticForm.tendsto_integral_floerEnergyDensity_of_tendstoUn
   Hamiltonian orbit.
 * `SymplecticForm.perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add`: the limit is a
   stationary Floer cylinder.
+* `SymplecticForm.exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add`: for periodic data
+  and loops in a closed set `K`, the limit is the stationary cylinder over a `1`-periodic orbit in
+  `K`.
 * `SymplecticForm.tendsto_hamiltonianAction_of_tendstoLocallyUniformlyOn_comp_add`: the actions of
   the end loops converge to the action of the limit loop.
 * `SymplecticForm.exists_apply_ne_apply_of_tendstoLocallyUniformlyOn`: windows that keep a fixed
@@ -532,6 +537,65 @@ theorem perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   refine ContinuousLinearMap.ext fun w ↦ ?_
   rw [perturbedFDeriv_comp_snd_apply hd.differentiableAt, hd.deriv]
   simp
+
+/-- **Limits of translates along windows of vanishing energy are stationary cylinders over
+orbits.** Let `H` be a `C¹` Hamiltonian, `1`-periodic in time, `K` a closed set and `S` an open
+set of `s`-values. Let `u k` be `C¹` on `S × ℝ`, with `1`-periodic loops `t ↦ u k (s, t)` in `K`
+for `s ∈ S`, solving the Floer equation `∂_s u + J_k (∂_t u - X_{H_t}(u)) = 0` on `S × [0, 1]` for
+uniformly tame almost complex structures, `c ‖w‖² ≤ ω(w, J_k z w)` and `‖J_k z w‖ ≤ M ‖w‖` with
+`c > 0`. Suppose that every window `[a + s k, b + s k]` eventually lies in `S` and that the energy
+of `u k` over `[a + s k, b + s k] × [0, 1]` tends to zero. If the translates
+`(s', t) ↦ u k (s' + s k, t)` converge locally uniformly to `v`, then `v(s', t) = x(t)` for a
+`1`-periodic orbit `x` of the Hamiltonian vector field with values in `K`. -/
+theorem exists_periodic_hasDerivAt_of_tendsto_setLIntegral_comp_add
+    (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) {K : Set V} (hK : IsClosed K)
+    {S : Set ℝ} (hS : IsOpen S) (hu : ∀ k, ContDiffOn ℝ 1 (u k) (S ×ˢ univ))
+    (hper : ∀ k, ∀ r ∈ S, Periodic (fun t ↦ u k (r, t)) 1)
+    (huK : ∀ k, ∀ r ∈ S, ∀ t, u k (r, t) ∈ K) (hc : 0 < c)
+    (hJc : ∀ k, ∀ z ∈ S ×ˢ Icc 0 1, ∀ w, c * ‖w‖ ^ 2 ≤ ω w (J k z w))
+    (hJM : ∀ k, ∀ z ∈ S ×ˢ Icc 0 1, ∀ w, ‖J k z w‖ ≤ M * ‖w‖)
+    (hfloer : ∀ k, ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ)
+      (J k z) (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z : ℝ × ℝ →ₗ[ℝ] V))
+    (hsS : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ⊆ S)
+    (hen : ∀ a b : ℝ, Tendsto (fun k ↦ ∫⁻ z in Icc (a + s k) (b + s k) ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) (u k) z)) atTop (𝓝 0))
+    (hv : TendstoLocallyUniformly (fun k z ↦ u k (z + (s k, 0))) v atTop) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧
+      (∀ t, x t ∈ K) ∧ v = fun z ↦ x z.2 := by
+  have hzs (y : ℝ × ℝ) (r : ℝ) : y + (r, 0) = (y.1 + r, y.2) := by ext <;> simp
+  have hat (z : ℝ × ℝ) : Tendsto (fun k ↦ u k (z + (s k, 0))) atTop (𝓝 (v z)) :=
+    (hv.tendstoLocallyUniformlyOn (s := univ)).tendsto_at (mem_univ z)
+  have hmem (r : ℝ) : ∀ᶠ k in atTop, r + s k ∈ S :=
+    (hsS r r).mono fun _ hk ↦ hk ⟨le_rfl, le_rfl⟩
+  -- The limit is periodic in `t`, since the translates eventually are at each point.
+  have hvper (z : ℝ × ℝ) : v (z.1, z.2 + 1) = v z := by
+    refine tendsto_nhds_unique ((hat (z.1, z.2 + 1)).congr' ?_) (hat z)
+    filter_upwards [hmem z.1] with k hk
+    simpa only [hzs] using hper k _ hk z.2
+  -- On the strip `ℝ × [0, 1]` the limit does not depend on `s`, and `x(t) = v(0, t)` solves
+  -- Hamilton's equation on `[0, 1]`.
+  have hEU : S ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ univ := prod_mono le_rfl (subset_univ _)
+  have hW (a b : ℝ) : ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
+    (hsS a b).mono fun _ hk ↦ prod_mono hk le_rfl
+  have hv' := hv.tendstoLocallyUniformlyOn (s := univ ×ˢ Icc 0 1)
+  have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add (hS.prod isOpen_univ) hu hEU hc hJc hJM
+    hfloer hW hen hv'
+  have hder := hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add hH (hS.prod isOpen_univ) hu
+    hEU hc hJc hJM hfloer hW hen hv'
+  set x : ℝ → V := fun t ↦ v (0, t)
+  have hxper : Periodic x 1 := fun t ↦ hvper (0, t)
+  have hvx : v = fun z ↦ x z.2 := funext fun z ↦
+    calc v z = v (z.1, Int.fract z.2) :=
+          (Periodic.apply_fract (f := fun t ↦ v (z.1, t)) (fun t ↦ hvper (z.1, t)) z.2).symm
+      _ = x (Int.fract z.2) := hstat z.1 _ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩
+      _ = x z.2 := hxper.apply_fract z.2
+  -- By periodicity, `x` solves Hamilton's equation everywhere.
+  set Y : ℝ → V := fun t ↦ ω.hamiltonianVectorField (H t) (x t)
+  have hYper : Periodic Y 1 := fun t ↦ by simp only [Y, hHper t, hxper t]
+  refine ⟨x, hxper, hasDerivAt_of_periodic_of_hasDerivWithinAt one_pos hxper hYper hder,
+    fun t ↦ hK.mem_of_tendsto (hat (0, t)) ?_, hvx⟩
+  filter_upwards [hmem 0] with k hk
+  simpa only [hzs] using huK k _ hk t
 
 end Limit
 

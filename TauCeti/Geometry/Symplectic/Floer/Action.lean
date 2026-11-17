@@ -109,6 +109,8 @@ derivatives.
   Floer solution over `[a, b] × [0, 1]` is the increase of its action, as a lower integral.
 * `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
   Floer solution on an open interval of `s`-values.
+* `SymplecticForm.monotone_hamiltonianAction_of_floer`: the action is monotone in `s` along a
+  Floer solution on the whole cylinder.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
 * `SymplecticForm.continuous_hamiltonianAction_slice`: the action of the loops of a `C¹` map is
@@ -434,6 +436,20 @@ theorem monotoneOn_hamiltonianAction_of_floer (ω : SymplecticForm V)
     (hS.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
     (fun s h ↦ by simpa using hper s (Set.Icc_subset S hs₁ hs₂ h) 0) fun z hz ↦ by
       simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
+
+/-- **The action increases along a Floer solution on the whole cylinder.** Let `u` be a `C²`
+solution of the Floer equation on `ℝ × [0, 1]` with `1`-periodic loops and tame almost complex
+structures. Then the action `A_H(u(s, ·))` of the loop at `s` is monotone in `s`. -/
+theorem monotone_hamiltonianAction_of_floer (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiff ℝ 2 u)
+    (hper : ∀ s, Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    Monotone fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t)) :=
+  monotoneOn_univ.1 <| ω.monotoneOn_hamiltonianAction_of_floer isOpen_univ hH hu.contDiffOn
+    (fun s _ ↦ hper s) hJ hfloer
 
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,
