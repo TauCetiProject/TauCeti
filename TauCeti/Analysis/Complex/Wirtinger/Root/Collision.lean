@@ -111,7 +111,7 @@ theorem norm_conjWirtingerDeriv_discr_le_of_nodup [CompleteSpace V] {m : ℕ} {b
       ((m * (m - 1) : ℕ) * (‖ν x‖ + ‖μ x‖)) * ‖((R x).map fun w ↦ X - C w).prod.discr‖ := by
   classical
   obtain ⟨v, hv, hRv⟩ :=
-    exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup hb hR hx ν μ heq
+    exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup one_ne_zero hb hR hx ν μ heq
   set s : Finset ℂ := (R x).toFinset
   have hsval : s.val = R x := by rw [Multiset.toFinset_val, hx.dedup]
   have hcard : #s = m := by rw [← Finset.card_val, hsval, hR.self_of_nhds.1]

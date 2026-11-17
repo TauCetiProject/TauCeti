@@ -305,27 +305,28 @@ theorem exists_root_branch_conjWirtingerDeriv_add_add_eq_zero [CompleteSpace V]
   exact conjWirtingerDeriv_add_add_eq_zero_of_prod_ne_zero hby hvy hry' hcard hbR
     (hGprod y hcard hbR hmem ▸ hGy) (ν y) (μ y) hy
 
-/-- **Root branches near simple roots.** Let `b₁, …, b_m` be `C¹` at `x`, with `b_j(y) = e_j(R(y))`
-for multisets `R(y)` of `m` points near `x`, solving near `x` the equation of the elementary
-symmetric functions of `m` solutions of `D_C = \bar∂ + ν W + μ \bar W`. If `R(x)` has no repeated
-point, there are functions `v w`, one through each root `w ∈ R(x)`, which are `C¹` at `x`, solve
-`D_C (v w) = 0` near `x`, and list the roots near `x`: `R(y) = {v w (y) | w ∈ R(x)}`. -/
-theorem exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup [CompleteSpace V] {m : ℕ}
-    {b : ℕ → V → ℂ} {R : V → Multiset ℂ} {x : V} (hb : ∀ j ∈ Icc 1 m, ContDiffAt ℝ 1 (b j) x)
+/-- **Root branches near simple roots.** Let `b₁, …, b_m` be `Cⁿ` at `x`, `n ≠ 0`, with
+`b_j(y) = e_j(R(y))` for multisets `R(y)` of `m` points near `x`, solving near `x` the equation of
+the elementary symmetric functions of `m` solutions of `D_C = \bar∂ + ν W + μ \bar W`. If `R(x)` has
+no repeated point, there are functions `v w`, one through each root `w ∈ R(x)`, which are `Cⁿ` at
+`x`, solve `D_C (v w) = 0` near `x`, and list the roots near `x`: `R(y) = {v w (y) | w ∈ R(x)}`. -/
+theorem exists_root_branches_conjWirtingerDeriv_add_add_eq_zero_of_nodup [CompleteSpace V]
+    {n : WithTop ℕ∞} (hn : n ≠ 0) {m : ℕ} {b : ℕ → V → ℂ} {R : V → Multiset ℂ} {x : V}
+    (hb : ∀ j ∈ Icc 1 m, ContDiffAt ℝ n (b j) x)
     (hR : ∀ᶠ y in 𝓝 x, Multiset.card (R y) = m ∧ ∀ j ∈ Icc 1 m, b j y = (R y).esymm j)
     (hx : (R x).Nodup) (ν μ : V → V →L⋆[ℂ] ℂ)
     (heq : ∀ᶠ y in 𝓝 x, ∀ j ∈ Icc 1 m, conjWirtingerDeriv (b j) y + (j * b j y) • ν y +
       ((R y).map fun w ↦ conj w * ((R y).erase w).esymm (j - 1)).sum • μ y = 0) :
-    ∃ v : ℂ → V → ℂ, (∀ w ∈ R x, v w x = w ∧ ContDiffAt ℝ 1 (v w) x ∧
+    ∃ v : ℂ → V → ℂ, (∀ w ∈ R x, v w x = w ∧ ContDiffAt ℝ n (v w) x ∧
       ∀ᶠ y in 𝓝 x, conjWirtingerDeriv (v w) y + v w y • ν y + conj (v w y) • μ y = 0) ∧
       ∀ᶠ y in 𝓝 x, R y = (R x).map fun w ↦ v w y := by
   classical
   -- Through each root `w` passes a root branch `v w` solving `D_C (v w) = 0` near `x`.
-  have hbr : ∀ w ∈ R x, ∃ v : V → ℂ, v x = w ∧ ContDiffAt ℝ 1 v x ∧
+  have hbr : ∀ w ∈ R x, ∃ v : V → ℂ, v x = w ∧ ContDiffAt ℝ n v x ∧
       (∀ᶠ p in 𝓝 (x, w),
         p.2 ^ m + ∑ j ∈ Icc 1 m, (-1) ^ j * b j p.1 * p.2 ^ (m - j) = 0 ↔ v p.1 = p.2) ∧
       ∀ᶠ y in 𝓝 x, conjWirtingerDeriv v y + v y • ν y + conj (v y) • μ y = 0 :=
-    fun w hw ↦ exists_root_branch_conjWirtingerDeriv_add_add_eq_zero one_ne_zero hb hR
+    fun w hw ↦ exists_root_branch_conjWirtingerDeriv_add_add_eq_zero hn hb hR
       (Multiset.count_eq_one_of_mem hx hw) ν μ heq
   choose! v hvx hvc hgraph hvD using hbr
   refine ⟨v, fun w hw ↦ ⟨hvx w hw, hvc w hw, hvD w hw⟩, ?_⟩
