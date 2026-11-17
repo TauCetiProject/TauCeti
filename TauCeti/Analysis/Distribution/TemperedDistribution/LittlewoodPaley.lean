@@ -119,6 +119,8 @@ blocks `Δⱼ u`.
   `TemperedDistribution.littlewoodPaleyBlock_postcomp`,
   `TemperedDistribution.littlewoodPaleyBlock_postcomp_eq_compLp`: the blocks commute with the
   Bessel potentials and with post-composition by continuous linear maps on the fiber.
+* `TemperedDistribution.littlewoodPaleyBlock_apply_apply`: the blocks are symmetric for the
+  pairing with Schwartz functions, `(Δⱼ u) f = u (Δⱼ f)`.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
   whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
   no other block.
@@ -436,19 +438,14 @@ theorem littlewoodPaleyBlock_apply (j : ℕ) (u : 𝓢'(E, F)) :
 
 /-- **The Littlewood–Paley blocks are symmetric.** For a tempered distribution `u` and a Schwartz
 function `f`, `(Δⱼ u) f = u (Δⱼ f)`, where on the right `Δⱼ` is the Fourier multiplier by `ψⱼ` on
-Schwartz functions. This holds because `ψⱼ` is even. -/
+Schwartz functions. This holds because `ψⱼ` is even
+(`ContDiffBump.inhomogeneousLittlewoodPaley_neg`). -/
 theorem littlewoodPaleyBlock_apply_apply (j : ℕ) (u : 𝓢'(E, F)) (f : 𝓢(E, ℂ)) :
     littlewoodPaleyBlock F φ j u f =
       u (SchwartzMap.fourierMultiplierCLM ℂ
-        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) := by
-  rw [littlewoodPaleyBlock_apply, fourierMultiplierCLM_apply_apply,
-    SchwartzMap.fourier_smulLeftCLM_fourierInv_eq
-      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j)]
-  congr 3
-  funext ξ
-  rcases j with _ | j
-  · simp [φ.neg]
-  · simp [ContDiffBump.inhomogeneousLittlewoodPaley_succ_apply, smul_neg, φ.neg]
+        (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) f) :=
+  fourierMultiplierCLM_apply_apply_of_even
+    (fun ξ ↦ by simp only [φ.inhomogeneousLittlewoodPaley_neg]) u f
 
 /-- The partial sums of the Littlewood–Paley blocks are the low-pass truncations:
 `∑_{j ≤ N} Δⱼ = 𝓕⁻ (φ (2^{-N} ·) • 𝓕 ·)`. -/

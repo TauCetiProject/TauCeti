@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.LinearAlgebra.StdBasis
 public import Mathlib.LinearAlgebra.Dimension.Finite
+public import Mathlib.Analysis.Normed.Lp.lpHolder
 import Mathlib.LinearAlgebra.Basis.VectorSpace
 import TauCeti.Analysis.Normed.Operator.Dense
 
@@ -21,7 +22,11 @@ coordinate evaluation (`lp.evalCLM_apply`, `lp.evalCLM_comp_singleContinuousLine
 `lp.leftInverse_evalCLM_singleContinuousLinearMap`, `lp.evalCLM_surjective`) let users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
-extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q`
+extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). Sequences whose
+coordinates have the same norms have the same `ℓᵖ` norm (`lp.norm_eq_of_forall_norm_eq`); in
+particular the sequence `i ↦ ‖f i‖` of coordinate norms of `f ∈ ℓᵖ` (`lp.normSeq`) has `ℓᵖ` norm
+`‖f‖` (`lp.norm_normSeq`). For Hölder conjugate exponents `p` and `q`, including `1` and `∞`,
+every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖` (`lp.sum_norm_mul_norm_le`). For `0 < p ≤ q`
 the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
 form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
 bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
@@ -186,6 +191,61 @@ theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
 theorem hasSum_enorm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖ₑ) ‖y‖ₑ := by
   simp only [eNorm_eq_nnNorm]
   exact ENNReal.hasSum_coe.2 (NNReal.hasSum_coe.1 (hasSum_norm_one y))
+
+/-- Two sequences whose coordinates have the same norms have the same `ℓᵖ` norm. For instance,
+the sequence of norms `i ↦ ‖f i‖` of `f ∈ ℓᵖ` has `ℓᵖ` norm `‖f‖`. -/
+theorem norm_eq_of_forall_norm_eq {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)] {f : lp E p}
+    {g : lp F p} (h : ∀ i, ‖f i‖ = ‖g i‖) : ‖f‖ = ‖g‖ := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · have hs : {i | f i ≠ 0} = {i | g i ≠ 0} := by
+      ext i
+      rw [Set.mem_ofPred_eq, Set.mem_ofPred_eq, ← norm_ne_zero_iff, h i, norm_ne_zero_iff]
+    simp only [norm_eq_card_dsupport, hs]
+  · exact (norm_mono hp fun i ↦ (h i).le).antisymm (norm_mono hp fun i ↦ (h i).ge)
+
+/-- The sequence `i ↦ ‖f i‖` of the norms of the coordinates of `f ∈ ℓᵖ`, as an element of the
+scalar `ℓᵖ`. It has the same norm as `f` (`lp.norm_normSeq`). -/
+def normSeq (f : lp E p) : lp (fun _ : ι ↦ ℝ) p :=
+  ⟨fun i ↦ ‖f i‖, (lp.memℓp f).norm⟩
+
+@[simp]
+theorem normSeq_apply (f : lp E p) (i : ι) : normSeq f i = ‖f i‖ := (rfl)
+
+@[simp]
+theorem norm_normSeq (f : lp E p) : ‖normSeq f‖ = ‖f‖ :=
+  norm_eq_of_forall_norm_eq fun i ↦ by simp
+
+/-- The coordinates of the Hölder pairing `lp.holderL r B hBK e f` are `B i (e i) (f i)`. -/
+@[simp]
+theorem holderL_apply_apply_coe {𝕜 : Type*} [RCLike 𝕜] {F G : ι → Type*}
+    [∀ i, NormedSpace 𝕜 (E i)] [∀ i, NormedAddCommGroup (F i)] [∀ i, NormedSpace 𝕜 (F i)]
+    [∀ i, NormedAddCommGroup (G i)] [∀ i, NormedSpace 𝕜 (G i)] {q : ℝ≥0∞} (r : ℝ≥0∞)
+    [p.HolderTriple q r] [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
+    (B : (i : ι) → E i →L[𝕜] F i →L[𝕜] G i) {K : ℝ≥0} (hBK : ∀ i, ‖B i‖ ≤ K) (e : lp E p)
+    (f : lp F q) (i : ι) : holderL r B hBK e f i = B i (e i) (f i) := by
+  rw [holderL, LinearMap.mkContinuous₂_apply, holderₗ_apply_apply_coe]
+
+/-- **Hölder's inequality in `ℓᵖ`, for finite sums.** For Hölder conjugate exponents `p` and `q`,
+every finite sum of `‖f i‖ ‖g i‖` is at most `‖f‖ ‖g‖`. Unlike `lp.tsum_mul_le_mul_norm`, this
+allows the exponents `1` and `∞`. -/
+theorem sum_norm_mul_norm_le {F : ι → Type*} [∀ i, NormedAddCommGroup (F i)] {q : ℝ≥0∞}
+    [p.HolderConjugate q] (f : lp E p) (g : lp F q) (s : Finset ι) :
+    ∑ i ∈ s, ‖f i‖ * ‖g i‖ ≤ ‖f‖ * ‖g‖ := by
+  have : Fact (1 ≤ p) := ⟨ENNReal.HolderConjugate.one_le p q⟩
+  have : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le q p⟩
+  -- Pair the sequences of norms by multiplication, a bilinear map of norm at most `1`.
+  have hB : ∀ _ : ι, ‖ContinuousLinearMap.mul ℝ ℝ‖ ≤ (1 : ℝ≥0) := fun _ ↦ by simp
+  set P := holderL (p := p) (q := q) 1 (fun _ : ι ↦ ContinuousLinearMap.mul ℝ ℝ) hB
+  have h1 := sum_rpow_le_norm_rpow (p := 1) (by simp) (P (normSeq f) (normSeq g)) s
+  simp only [ENNReal.toReal_one, Real.rpow_one] at h1
+  calc ∑ i ∈ s, ‖f i‖ * ‖g i‖ ≤ ∑ i ∈ s, ‖P (normSeq f) (normSeq g) i‖ :=
+        Finset.sum_le_sum fun i _ ↦ by simp [P]
+    _ ≤ ‖P‖ * ‖normSeq f‖ * ‖normSeq g‖ := h1.trans (P.le_opNorm₂ _ _)
+    _ ≤ 1 * ‖f‖ * ‖g‖ := by
+        rw [norm_normSeq, norm_normSeq]
+        gcongr
+        exact norm_holderL_le 1 _ hB
+    _ = ‖f‖ * ‖g‖ := by rw [one_mul]
 
 /-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
 -/
