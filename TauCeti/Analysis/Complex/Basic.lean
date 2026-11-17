@@ -36,6 +36,9 @@ Two integers whose images in `ℂ` are at distance less than `1` are equal.
 
 Dividing by a natural number does not increase the norm, so `‖(a z + b) / M‖ ≤ ‖a‖ C + ‖b‖`
 whenever `‖z‖ ≤ C` (`Complex.norm_mul_add_div_natCast_le`).
+
+On the closed right half-plane `0 ≤ z.re`, `1 + z` has real part and norm at least `1`
+(`Complex.one_le_re_one_add`, `Complex.one_le_norm_one_add`).
 -/
 
 public section
@@ -167,5 +170,13 @@ theorem norm_mul_add_div_natCast_le (M : ℕ) (a b : ℂ) {z : ℂ} {C : ℝ} (h
   rw [norm_div, Complex.norm_natCast]
   exact (div_nat_le_self_of_nonneg (norm_nonneg _) M).trans
     (norm_add_le_of_le (norm_mul_le_of_le le_rfl hz) le_rfl)
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has real part at least `1`. -/
+theorem one_le_re_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ (1 + z).re := by
+  simp [hz]
+
+/-- For `z` in the closed right half-plane (`0 ≤ z.re`), `1 + z` has norm at least `1`. -/
+theorem one_le_norm_one_add {z : ℂ} (hz : 0 ≤ z.re) : 1 ≤ ‖1 + z‖ :=
+  (one_le_re_one_add hz).trans (re_le_norm _)
 
 end Complex
