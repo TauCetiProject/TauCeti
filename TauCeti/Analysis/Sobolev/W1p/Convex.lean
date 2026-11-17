@@ -204,13 +204,16 @@ private theorem W1p.setAverage_closedBall_norm_sub_le_of_convex (hp : p ≠ ∞)
   -- The measure of `W` is at least `c ω rⁿ`, where `ω` is the measure of the unit ball.
   have hpos : 0 < c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E := by positivity
   have hm : c * μ.real (ball (0 : E) 1) * r ^ Module.finrank ℝ E ≤ μ.real W := by
+    have hμW : μ.restrict Ω (closedBall x r) = μ W := by
+      rw [Measure.restrict_apply measurableSet_closedBall, measure_congr hWae]
+    have hω₁ := measureReal_congr (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero 0 1 one_ne_zero)
     have h := Measure.ofReal_mul_rpow_mul_le_addHaar_restrict_closedBall μ x (c := c.toNNReal) hr
       (by rwa [ENNReal.ofNNReal_toNNReal])
-    rw [Measure.restrict_apply measurableSet_closedBall, measure_congr hWae,
-      ← ofReal_measureReal hWb.measure_lt_top.ne, ENNReal.ofReal_le_ofReal_iff measureReal_nonneg,
-      Real.coe_toNNReal _ hc.le, Real.rpow_natCast, measureReal_congr
-        (Measure.addHaar_closedBall_ae_eq_ball_of_ne_zero μ (0 : E) 1 one_ne_zero)] at h
-    exact (le_of_eq (by ring)).trans h
+    rw [hμW, ← ofReal_measureReal hWb.measure_lt_top.ne,
+      ENNReal.ofReal_le_ofReal_iff measureReal_nonneg] at h
+    refine Eq.trans_le ?_ h
+    rw [Real.coe_toNNReal _ hc.le, Real.rpow_natCast, hω₁]
+    ring
   have hW0 : μ W ≠ 0 := fun h ↦
     (hpos.trans_le hm).ne' ((measureReal_eq_zero_iff hWb.measure_lt_top.ne).2 h)
   -- Pass to the restriction of `u` to `W`.
@@ -271,8 +274,8 @@ private theorem W1p.exists_holderOnWith_preciseRepresentative_of_convex_of_ne_to
       ENNReal.ofReal c * μ (closedBall x r) ≤ μ (closedBall x r ∩ Ω) := by
     intro x hx r hr hrd
     have hrd' : r ≤ 2 * diam (Ω : Set E) := by
-      simpa [ENNReal.toReal_mul, diam] using
-        (ENNReal.ofReal_le_iff_le_toReal (ENNReal.mul_ne_top (by simp) hb.ediam_ne_top)).1 hrd
+      have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofNat_ne_top hb.ediam_ne_top) hrd
+      rwa [ENNReal.toReal_ofReal hr.le, ENNReal.toReal_mul, ENNReal.toReal_ofNat] at h
     exact hconv.ofReal_div_pow_mul_addHaar_closedBall_le_addHaar_closedBall_inter hρ hball
       (subset_closure hx) hr (by linarith) (by linarith [dist_le_diam_of_mem hb hx hz])
   -- The mean oscillation is at most `K ‖∇u‖ r^α`.
