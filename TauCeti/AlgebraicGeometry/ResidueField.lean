@@ -8,7 +8,9 @@ module
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import Mathlib.AlgebraicGeometry.QuasiAffine
 public import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
+public import Mathlib.FieldTheory.IsSepClosed
 public import TauCeti.AlgebraicGeometry.ResidueDegree
+import TauCeti.FieldTheory.IsSepClosed
 
 /-!
 # Residue fields of schemes and their behaviour under base change
@@ -56,6 +58,8 @@ canonical morphism `Spec κ(x) ⟶ X` on the opens containing `x`.
   prime ideal of global functions vanishing at `x`.
 * `AlgebraicGeometry.Spec.map_algebraMap_residueField_closedPoint`: the closed point of
   `Spec κ(p)` lies over the prime `p` of `R`.
+* `AlgebraicGeometry.Spec.isSepClosed_residueField`: the residue field of `Spec K` is separably
+  closed when `K` is.
 
 The residue field map `f.residueFieldMap x` has source `κ(f x)`. When `f x` is known to equal a
 point `y` only propositionally, for instance when `f` is an automorphism fixing `x`, it is
@@ -96,6 +100,12 @@ theorem Spec.natCast_residueField_ne_zero {K : Type u} [Field K] {N : ℕ} (hN :
   rw [← map_natCast ((Scheme.ΓSpecIso (.of K)).inv ≫
     (Spec (.of K)).presheaf.germ ⊤ s trivial ≫ (Spec (.of K)).residue s).hom]
   exact (map_ne_zero _).mpr hN
+
+/-- The residue field of `Spec K` at any point is separably closed when `K` is. -/
+instance Spec.isSepClosed_residueField {K : Type u} [Field K] [IsSepClosed K]
+    (s : Spec (.of K)) : IsSepClosed ((Spec (.of K)).residueField s) :=
+  IsSepClosed.of_ringEquiv
+    (Scheme.Spec.residueFieldIsoOfField s).symm.commRingCatIsoToRingEquiv
 
 section residueFieldCongr
 

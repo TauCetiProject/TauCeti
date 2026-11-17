@@ -84,7 +84,7 @@ theorem eq_of_blowupToBase_eq_of_mem_smoothLocus
   have := hnodal.syntomic
   let f := (X.singularLocus K).blowupToBase; let U := (X ↘ Spec (.of K)).smoothLocus
   have : IsIso (f ∣_ U) := X.isIso_blowupToBase_singularLocus_restrict_smoothLocus
-  have hy₂ : y₂ ∈ f ⁻¹ᵁ U := by change f y₂ ∈ U; rwa [← heq]
+  have hy₂ : y₂ ∈ f ⁻¹ᵁ U := by simpa [heq] using hU
   have hcomp : ((f ∣_ U) ≫ U.ι) ⟨y₁, hU⟩ = ((f ∣_ U) ≫ U.ι) ⟨y₂, hy₂⟩ := by rwa [morphismRestrict_ι]
   exact congrArg Subtype.val ((f ∣_ U).homeomorph.injective (U.ι.isOpenEmbedding.injective hcomp))
 
@@ -339,9 +339,8 @@ theorem range_normalizedComponentToCurve :
     Set.range (X.normalizedComponentToCurve K hnodal v) =
       ((X.blowupComponentEquiv K hnodal v : irreducibleComponents X) : Set X) := by
   have := hnodal.syntomic
-  change Set.range (X.normalizedComponentι K hnodal v ≫ (X.singularLocus K).blowupToBase) = _
-  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp, X.range_normalizedComponentι hnodal v,
-    X.coe_blowupComponentEquiv hnodal v]
+  rw [normalizedComponentToCurve_def, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp,
+    X.range_normalizedComponentι hnodal v, X.coe_blowupComponentEquiv hnodal v]
 
 instance instOverNormalizedComponent : (X.normalizedComponent K hnodal v).Over (Spec (.of K)) :=
   ⟨X.normalizedComponentToCurve K hnodal v ≫ (X ↘ Spec (.of K))⟩
