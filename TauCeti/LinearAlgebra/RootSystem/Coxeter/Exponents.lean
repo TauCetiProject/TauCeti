@@ -133,6 +133,7 @@ theorem le_coxeterNumber_of_mem_exponents {t : DynkinType} {e : ℕ} (he : e ∈
   | E6 | E7 | E8 | F4 | G2 => revert e; decide
 
 /-- **Exponent duality**: replacing each exponent `e` by `h - e` preserves `t.exponents`. -/
+@[simp]
 theorem map_coxeterNumber_sub_exponents (t : DynkinType) :
     t.exponents.map (t.coxeterNumber - ·) = t.exponents := by
   cases t with

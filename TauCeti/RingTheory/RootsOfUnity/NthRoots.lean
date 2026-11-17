@@ -43,11 +43,8 @@ theorem roots_geom_sum {n : ℕ} {ζ : R} (hζ : IsPrimitiveRoot ζ n) :
     rw [← roots_X_sub_C, ← roots_mul (hp ▸ X_pow_sub_C_ne_zero (Nat.pos_of_ne_zero hn) 1), hp,
       ← nthRoots, hζ.nthRoots_eq (one_pow n)]
   obtain ⟨m, rfl⟩ : ∃ m, n = 1 + m := ⟨n - 1, by omega⟩
-  rw [Multiset.range_add, Multiset.range_succ 0, Multiset.range_zero, Multiset.cons_zero,
-    Multiset.map_add, Multiset.map_singleton, pow_zero, one_mul, Multiset.map_map, add_comm]
-    at hroots
-  rw [add_left_cancel hroots, Nat.add_sub_cancel_left]
-  exact Multiset.map_congr rfl fun e _ ↦ by simp [add_comm]
+  rw [Multiset.range_add, add_comm p.roots] at hroots
+  simpa [add_comm 1] using hroots
 
 /-- **The roots of `X ^ n + 1` in a domain.** Given a primitive `(2 * n)`-th root of unity `ζ`, the
 root multiset of `X ^ n + 1` consists of the odd powers `ζ ^ (2 * k + 1)` for `k = 0, …, n - 1`,

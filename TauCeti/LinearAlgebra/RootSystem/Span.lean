@@ -5,23 +5,27 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.RootSystem.IsValuedIn
+public import Mathlib.LinearAlgebra.RootSystem.Base
 
 /-!
-# Root-span restrictions of reflections
+# Root-span restrictions of reflections and integral simple-root basis
 
 For any commutative ring `S` acting compatibly on `M`, the inclusion `P.rootSpanMem S` of roots into
 the `S`-span `P.rootSpan S` is injective, and each reflection `P.reflection k` restricts to an
 involution `P.reflectionRootSpan S k : P.rootSpan S ≃ₗ[S] P.rootSpan S` permuting `P.rootSpanMem S`
-by `P.reflectionPerm k`.
+by `P.reflectionPerm k`. For a base `b` over a characteristic-zero ring, the integral simple-root
+basis `b.toWeightBasisInt` sends each simple index `i` to `P.rootSpanMem ℤ i`.
 
 ## Main definitions and results
 
 * `RootPairing.rootSpanMem_injective`: `P.rootSpanMem S` is injective.
+* `RootPairing.reflection_mem_rootSpan`: each root reflection preserves `P.rootSpan S`.
 * `RootPairing.reflectionRootSpan`: `P.reflection k` restricted to an `S`-linear equivalence of
   `P.rootSpan S`.
 * `RootPairing.coe_reflectionRootSpan_apply`, `RootPairing.reflectionRootSpan_rootSpanMem`,
-  `RootPairing.reflectionRootSpan_symm`, and `RootPairing.reflectionRootSpan_rootSpanMem_eq_sub`.
+  `RootPairing.reflectionRootSpan_symm`, `RootPairing.reflectionRootSpan_same`, and
+  `RootPairing.reflectionRootSpan_rootSpanMem_eq_sub`.
+* `RootPairing.Base.toWeightBasisInt_apply`: `b.toWeightBasisInt i = P.rootSpanMem ℤ i`.
 -/
 
 public section
@@ -40,7 +44,8 @@ section Tower
 
 variable [SMul S R] [Module S M] [IsScalarTower S R M]
 
-private theorem reflection_mem_rootSpan (k : ι) {x : M} (hx : x ∈ P.rootSpan S) :
+/-- Each root reflection preserves the `S`-span of the roots. -/
+theorem reflection_mem_rootSpan (k : ι) {x : M} (hx : x ∈ P.rootSpan S) :
     P.reflection k x ∈ P.rootSpan S := by
   refine Submodule.span_induction ?_ (by simp)
     (fun u v _ _ hu hv => by simpa only [map_add] using (P.rootSpan S).add_mem hu hv)
@@ -79,6 +84,12 @@ theorem reflectionRootSpan_symm (k : ι) :
     (P.reflectionRootSpan S k).symm = P.reflectionRootSpan S k :=
   (rfl)
 
+/-- `P.reflectionRootSpan S k` is an involution. -/
+@[simp]
+theorem reflectionRootSpan_same (k : ι) (x : P.rootSpan S) :
+    P.reflectionRootSpan S k (P.reflectionRootSpan S k x) = x :=
+  Subtype.ext (P.reflection_same k x)
+
 end Tower
 
 /-- When `P` is valued in `S`, `P.reflectionRootSpan S k` acts on `P.rootSpanMem S j` by subtracting
@@ -90,5 +101,19 @@ theorem reflectionRootSpan_rootSpanMem_eq_sub [Algebra S R] [Module S M]
   Subtype.ext (P.reflection_apply_root' S)
 
 end RootPairing
+
+namespace RootPairing.Base
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
+
+/-- The `i`-th element of the integral simple-root basis `b.toWeightBasisInt` is
+`P.rootSpanMem ℤ i`. -/
+@[simp]
+theorem toWeightBasisInt_apply [CharZero R] (b : P.Base) (i : b.support) :
+    b.toWeightBasisInt i = P.rootSpanMem ℤ i :=
+  Subtype.ext (b.coe_toWeightBasisInt_apply i)
+
+end RootPairing.Base
 
 end

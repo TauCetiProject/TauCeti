@@ -78,18 +78,6 @@ theorem isOneDegenerateOrder_D (n : ℕ) :
   simp only [CartanMatrix.D, of_apply, ne_eq, Fin.ext_iff] at hzx hzy
   apply Fin.ext; split_ifs at hzx hzy <;> omega
 
-/-! ### Reflection-matrix helpers -/
-
-private theorem reflMatrix_mulVec_single {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ) (i j : Fin n) :
-    reflMatrix A i *ᵥ Pi.single j 1 = Pi.single j 1 - A j i • Pi.single i 1 := by
-  ext k; rw [mulVec_single_one, col_apply, reflMatrix_apply]; simp [Pi.single_apply, eq_comm]
-
-private theorem mul_reflMatrix_apply {n : ℕ} (V A : Matrix (Fin n) (Fin n) ℤ) (i r j : Fin n) :
-    (V * reflMatrix A i) r j = V r j - V r i * A j i := by
-  rw [Matrix.mul_apply]
-  simp only [reflMatrix_apply, mul_sub, Finset.sum_sub_distrib, mul_ite, mul_one, mul_zero]
-  rw [Finset.sum_ite_eq', Finset.sum_ite_eq']; simp
-
 /-! ### Type `Aₙ` -/
 
 private def aPrefixVec (n m : ℕ) (j k : Fin n) : ℤ :=
@@ -131,10 +119,10 @@ theorem charpoly_coxeterElement_A (n : ℕ) :
     (coxeterElement (CartanMatrix.A n)).charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k := by
   rw [coxeterElement_A, charpoly_companion_const_one]
 
-/-- **The Coxeter number of `Aₙ` (`0 < n`) is `n + 1`**: the Coxeter element has order `n + 1`. -/
-theorem orderOf_coxeterElement_A {n : ℕ} (hn : 0 < n) :
+/-- **The Coxeter number of `Aₙ` is `n + 1`**: the Coxeter element has order `n + 1`. -/
+theorem orderOf_coxeterElement_A (n : ℕ) :
     orderOf (coxeterElement (CartanMatrix.A n)) = n + 1 := by
-  rw [coxeterElement_A]; exact orderOf_companion_const_one hn (by decide)
+  rw [coxeterElement_A]; exact orderOf_companion_const_one n (by decide)
 
 /-! ### Signed-permutation and adjacent-transposition helpers for `Bₙ` and `Dₙ` -/
 

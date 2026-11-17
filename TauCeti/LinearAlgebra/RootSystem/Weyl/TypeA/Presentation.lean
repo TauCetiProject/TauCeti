@@ -9,7 +9,6 @@ public import TauCeti.GroupTheory.Coxeter.Restriction
 public import TauCeti.GroupTheory.Perm.Coxeter
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.DynkinType
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Length
-import TauCeti.LinearAlgebra.RootSystem.FiniteType.NumberOfRoots
 
 /-!
 # The Weyl group of type `Aₙ` is the symmetric group
@@ -34,7 +33,7 @@ The marking turns combinatorics of the Weyl group into combinatorics of permutat
 of a Weyl group element, which is its number of inversions among the positive roots, is the
 number of inversions of the corresponding permutation, and a simple root is sent to a positive
 root exactly when the permutation keeps the two letters of the corresponding adjacent
-transposition in order. Type `Aₙ` has `n (n + 1) / 2` positive roots and `n (n + 1)` roots in all.
+transposition in order.
 
 ## Main definitions
 
@@ -52,8 +51,6 @@ transposition in order. Type `Aₙ` has `n (n + 1) / 2` positive roots and `n (n
 * `RootPairing.nonempty_weylGroup_mulEquiv_perm_of_typeA`: **the Weyl group of a root pairing with
   a base of Cartan type `Aₙ` is isomorphic to the symmetric group on `n + 1` letters.**
 * `RootPairing.card_weylGroup_of_hasCartanType_A`: its order is `(n + 1)!`.
-* `RootPairing.ncard_posRoots_of_hasCartanType_A` and `RootPairing.natCard_eq_of_hasCartanType_A`:
-  there are `n (n + 1) / 2` positive roots and `n (n + 1)` roots.
 
 ## References
 
@@ -192,20 +189,5 @@ theorem card_weylGroup_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
     Nat.card P.weylGroup = (n + 1).factorial := by
   obtain ⟨e⟩ := P.nonempty_weylGroup_mulEquiv_perm_of_typeA b h
   rw [Nat.card_congr e.toEquiv, Nat.card_perm, Nat.card_fin]
-
-/-- A root pairing with a base of Cartan type `Aₙ` has `n (n + 1)` roots. -/
-theorem natCard_eq_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
-    Nat.card ι = n * (n + 1) := by
-  rcases eq_or_ne n 0 with rfl | hn
-  · have : IsEmpty ι := ⟨fun i => P.ne_zero i
-      (by simpa [card_eq_zero.mp h.card_support] using b.root_mem_span_int i)⟩
-    simp
-  · simpa [DynkinType.numRoots_A] using
-      h.natCard_eq_numRoots (DynkinType.valid_A.mpr (Nat.pos_of_ne_zero hn))
-
-/-- A base of Cartan type `Aₙ` has `n (n + 1) / 2` positive roots. -/
-theorem ncard_posRoots_of_hasCartanType_A (h : HasCartanType P b (.A n)) :
-    (posRoots P b).ncard = n * (n + 1) / 2 := by
-  rw [ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_A b h]
 
 end RootPairing

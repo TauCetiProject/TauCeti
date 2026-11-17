@@ -27,6 +27,8 @@ has `t.numRoots` roots and `t.numRoots / 2` positive roots.
 * `TauCeti.natCard_eq_numRoots_classifiedDynkinType`,
   `TauCeti.two_mul_ncard_posRoots_eq_numRoots_classifiedDynkinType`, and
   `TauCeti.ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two`.
+* `RootPairing.natCard_eq_of_hasCartanType_A` and `RootPairing.ncard_posRoots_of_hasCartanType_A`:
+  specializations to type `Aₙ`, including the rank-zero case `n = 0`.
 
 ## References
 
@@ -102,5 +104,32 @@ theorem ncard_posRoots_eq_numRoots_classifiedDynkinType_div_two (b : P.Base) :
 end Classified
 
 end TauCeti
+
+namespace RootPairing
+
+section TypeA
+
+variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
+  [Module R N] (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
+  [P.IsCrystallographic] [P.IsReduced] (b : P.Base) {n : ℕ}
+
+/-- A root pairing with a base of Cartan type `Aₙ` has `n (n + 1)` roots. -/
+theorem natCard_eq_of_hasCartanType_A (h : TauCeti.HasCartanType P b (.A n)) :
+    Nat.card ι = n * (n + 1) := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · have : IsEmpty ι := ⟨fun i => P.ne_zero i
+      (by simpa [Finset.card_eq_zero.mp h.card_support] using b.root_mem_span_int i)⟩
+    simp
+  · simpa [TauCeti.DynkinType.numRoots_A] using
+      h.natCard_eq_numRoots (TauCeti.DynkinType.valid_A.mpr (Nat.pos_of_ne_zero hn))
+
+/-- A base of Cartan type `Aₙ` has `n (n + 1) / 2` positive roots. -/
+theorem ncard_posRoots_of_hasCartanType_A (h : TauCeti.HasCartanType P b (.A n)) :
+    (TauCeti.posRoots P b).ncard = n * (n + 1) / 2 := by
+  rw [TauCeti.ncard_posRoots_eq_natCard_div_two, P.natCard_eq_of_hasCartanType_A b h]
+
+end TypeA
+
+end RootPairing
 
 end

@@ -45,12 +45,12 @@ variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-! ### Multiplicative orders of classical Coxeter elements -/
 
-/-- **Every Coxeter element of a base of type `Aₙ` (`0 < n`) has order `n + 1`.** -/
-theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ} (hn : 0 < n)
+/-- **Every Coxeter element of a base of type `Aₙ` has order `n + 1`.** -/
+theorem orderOf_wordProd_of_hasCartanType_A [Finite ι] {n : ℕ}
     (h : HasCartanType P b (.A n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
     orderOf (wordProd P b l) = n + 1 :=
   (orderOf_wordProd_of_isOneDegenerateOrder_of_hasCartanType (DynkinType.cartanMatrix_A n)
-    (isOneDegenerateOrder_A n) (.refl _) h hnd hall).trans (orderOf_coxeterElement_A hn)
+    (isOneDegenerateOrder_A n) (.refl _) h hnd hall).trans (orderOf_coxeterElement_A n)
 
 /-- **Every Coxeter element of a base of type `Bₙ` (`0 < n`) has order `2 n`.** -/
 theorem orderOf_wordProd_of_hasCartanType_B [Finite ι] {n : ℕ} (hn : 0 < n)
@@ -124,26 +124,34 @@ theorem roots_charpoly_of_hasCartanType_A_of_actsBy [DecidableEq ι] {n : ℕ}
   simp only [Polynomial.map_sum, Polynomial.map_pow, map_X]
   simpa [Multiset.map_map] using roots_geom_sum_complex (n + 1)
 
-/-- **Complex eigenvalue multiset of every Coxeter element of type `Bₙ` (`0 < n`) on the simple
-roots**: `exp (2πi e / (2n))` for `e = 1, 3, …, 2n - 1`. -/
-theorem roots_charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 0 < n)
+/-- **Complex eigenvalue multiset of every Coxeter element of type `Bₙ` on the simple roots**:
+`exp (2πi e / (2n))` for `e = 1, 3, …, 2n - 1`. -/
+theorem roots_charpoly_of_hasCartanType_B_of_actsBy [DecidableEq ι] {n : ℕ}
     (h : HasCartanType P b (.B n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       ((Multiset.range n).map (2 * · + 1)).map
         fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / (2 * n : ℕ))) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have : IsEmpty b.support :=
+      Finset.isEmpty_coe_sort.2 (Finset.card_eq_zero.1 h.card_support)
+    simp [charpoly_isEmpty]
   rw [charpoly_map, charpoly_of_hasCartanType_B_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
   simpa [Multiset.map_map] using roots_X_pow_add_one_complex n
 
-/-- **Complex eigenvalue multiset of every Coxeter element of type `Cₙ` (`0 < n`) on the simple
-roots**: `exp (2πi e / (2n))` for `e = 1, 3, …, 2n - 1`. -/
-theorem roots_charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ} (hn : 0 < n)
+/-- **Complex eigenvalue multiset of every Coxeter element of type `Cₙ` on the simple roots**:
+`exp (2πi e / (2n))` for `e = 1, 3, …, 2n - 1`. -/
+theorem roots_charpoly_of_hasCartanType_C_of_actsBy [DecidableEq ι] {n : ℕ}
     (h : HasCartanType P b (.C n)) (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix b.support b.support ℤ} (hW : b.ActsBy (wordProd P b l) W) :
     (W.map (Int.castRingHom ℂ)).charpoly.roots =
       ((Multiset.range n).map (2 * · + 1)).map
         fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / (2 * n : ℕ))) := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · have : IsEmpty b.support :=
+      Finset.isEmpty_coe_sort.2 (Finset.card_eq_zero.1 h.card_support)
+    simp [charpoly_isEmpty]
   rw [charpoly_map, charpoly_of_hasCartanType_C_of_actsBy hn h hnd hall hW]
   simp only [Polynomial.map_add, Polynomial.map_pow, map_X, Polynomial.map_one]
   simpa [Multiset.map_map] using roots_X_pow_add_one_complex n

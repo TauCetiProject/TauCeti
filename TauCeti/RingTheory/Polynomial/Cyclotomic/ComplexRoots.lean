@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Polynomial.Cyclotomic.Basic
-public import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
+public import Mathlib.RingTheory.RootsOfUnity.Complex
 import Mathlib.RingTheory.Polynomial.Cyclotomic.Roots
+import TauCeti.RingTheory.RootsOfUnity.Complex.Exp
 import TauCeti.RingTheory.RootsOfUnity.NthRoots
 
 /-!
@@ -53,7 +54,7 @@ theorem roots_cyclotomic_complex (h : ℕ) :
         fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h)) := by
   have hnd : ((((List.range h).filter (Nat.Coprime · h) : Multiset ℕ)).map
       fun e : ℕ => Complex.exp (2 * Real.pi * Complex.I * (e / h))).Nodup :=
-    Complex.nodup_map_exp_two_pi_I_mul_div (Multiset.coe_nodup.2 (List.nodup_range.filter _))
+    TauCeti.nodup_map_exp_two_pi_I_mul_div (Multiset.coe_nodup.2 (List.nodup_range.filter _))
       fun _ he => List.mem_range.1 (List.mem_of_mem_filter (Multiset.mem_coe.1 he))
   refine (Multiset.Nodup.ext (nodup_roots_cyclotomic_complex h) hnd).2 fun ζ => ?_
   rw [mem_roots_cyclotomic_complex_iff, Multiset.mem_map]
@@ -68,7 +69,7 @@ theorem roots_geom_sum_complex (n : ℕ) :
   obtain rfl | hn := eq_or_ne n 0
   · simp
   rw [(Complex.isPrimitiveRoot_exp n hn).roots_geom_sum]
-  exact Multiset.map_congr rfl fun e _ => (Complex.exp_two_pi_I_mul_div (e + 1) n).symm
+  exact Multiset.map_congr rfl fun e _ => (TauCeti.exp_two_pi_I_mul_div (e + 1) n).symm
 
 /-- **The complex root multiset of `X ^ n + 1`** consists of `exp (2πi (2k + 1) / (2n))` for
 `k = 0, …, n - 1`, each once. -/
@@ -79,7 +80,7 @@ theorem roots_X_pow_add_one_complex (n : ℕ) :
   obtain rfl | hn := eq_or_ne n 0
   · rw [pow_zero, ← C_1, ← map_add, roots_C]; simp
   rw [(Complex.isPrimitiveRoot_exp (2 * n) (by positivity)).roots_X_pow_add_one]
-  exact Multiset.map_congr rfl fun k _ => (Complex.exp_two_pi_I_mul_div (2 * k + 1) (2 * n)).symm
+  exact Multiset.map_congr rfl fun k _ => (TauCeti.exp_two_pi_I_mul_div (2 * k + 1) (2 * n)).symm
 
 end Polynomial
 

@@ -35,7 +35,8 @@ classification-free theorems for any irreducible reduced crystallographic finite
 
 * `TauCeti.Coxeter.orderOf_wordProd_of_hasCartanType` and
   `TauCeti.Coxeter.roots_charpoly_of_hasCartanType_of_actsBy`.
-* `TauCeti.Coxeter.natCard_eq_card_support_mul_orderOf_wordProd_of_hasCartanType` and
+* `TauCeti.Coxeter.natCard_eq_card_support_mul_orderOf_wordProd_of_hasCartanType`,
+  `TauCeti.Coxeter.orderOf_wordProd_eq_natCard_div_card_support_of_hasCartanType`, and
   `TauCeti.Coxeter.sum_exponents_eq_ncard_posRoots_of_hasCartanType`.
 * `TauCeti.DynkinType.mem_exponents_of_coprime`.
 * `TauCeti.Coxeter.orderOf_wordProd_eq_coxeterNumber`,
@@ -70,7 +71,7 @@ theorem orderOf_wordProd_of_hasCartanType [Finite ι] {t : DynkinType} (ht : t.V
   cases t with
   | A n =>
     simpa [DynkinType.coxeterNumber_A] using
-      orderOf_wordProd_of_hasCartanType_A (DynkinType.valid_A.mp ht) h hnd hall
+      orderOf_wordProd_of_hasCartanType_A h hnd hall
   | B n =>
     simpa [DynkinType.coxeterNumber_B] using
       orderOf_wordProd_of_hasCartanType_B (by have := DynkinType.valid_B.mp ht; omega) h hnd hall
@@ -92,7 +93,7 @@ private theorem roots_eq_map_exponents {t : DynkinType} (ht : t.Valid) {r : Mult
     (hs_nd : t.exponents.Nodup := by simp) :
     r = t.exponents.map fun e : ℕ =>
       Complex.exp (2 * Real.pi * Complex.I * (e / t.coxeterNumber)) := by
-  refine (h.2.ext (Complex.nodup_map_exp_two_pi_I_mul_div hs_nd fun e he =>
+  refine (h.2.ext (TauCeti.nodup_map_exp_two_pi_I_mul_div hs_nd fun e he =>
     t.lt_coxeterNumber_of_mem_exponents ht he)).2 fun ζ => ?_
   rw [h.1, Multiset.mem_map]
 
@@ -111,12 +112,10 @@ theorem roots_charpoly_of_hasCartanType_of_actsBy [DecidableEq ι] {t : DynkinTy
       roots_charpoly_of_hasCartanType_A_of_actsBy h hnd hall hW
   | B n =>
     simpa [DynkinType.exponents_B, DynkinType.coxeterNumber_B] using
-      roots_charpoly_of_hasCartanType_B_of_actsBy
-        (by have := DynkinType.valid_B.mp ht; omega) h hnd hall hW
+      roots_charpoly_of_hasCartanType_B_of_actsBy h hnd hall hW
   | C n =>
     simpa [DynkinType.exponents_C, DynkinType.coxeterNumber_C] using
-      roots_charpoly_of_hasCartanType_C_of_actsBy
-        (by have := DynkinType.valid_C.mp ht; omega) h hnd hall hW
+      roots_charpoly_of_hasCartanType_C_of_actsBy h hnd hall hW
   | D n =>
     have hn4 := DynkinType.valid_D.mp ht
     have hn0 : n ≠ 0 := by omega
@@ -136,6 +135,15 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd_of_hasCartanType [Finite ι
     Nat.card ι = b.support.card * orderOf (wordProd P b l) := by
   rw [h.natCard_eq_numRoots ht, h.card_support, orderOf_wordProd_of_hasCartanType ht h hnd hall,
     DynkinType.numRoots_eq_rank_mul_coxeterNumber]
+
+/-- **The order of any Coxeter element of a base of valid Cartan type `t` is `|Φ| / r`.** -/
+theorem orderOf_wordProd_eq_natCard_div_card_support_of_hasCartanType [Finite ι] [P.IsReduced]
+    {t : DynkinType} (ht : t.Valid) (h : HasCartanType P b t) (hnd : l.Nodup)
+    (hall : ∀ i, i ∈ l) :
+    orderOf (wordProd P b l) = Nat.card ι / b.support.card := by
+  have hpos : 0 < b.support.card := h.card_support ▸ DynkinType.rank_pos ht
+  rw [natCard_eq_card_support_mul_orderOf_wordProd_of_hasCartanType ht h hnd hall,
+    Nat.mul_div_right _ hpos]
 
 /-- **For any finite reduced crystallographic root pairing with a base of valid Cartan type `t`, the
 exponents of `t` sum to the number of positive roots**: `∑ eᵢ = |Φ⁺|`. -/
@@ -173,7 +181,7 @@ theorem mem_exponents_of_coprime {t : DynkinType} (ht : t.Valid) {a : ℕ}
   have hroots : WC.charpoly.roots = t.exponents.map (ζ ^ ·) := by
     rw [Coxeter.roots_charpoly_of_hasCartanType_of_actsBy ht htype b₀.support.attach.nodup_toList
       (fun i => Finset.mem_toList.2 (Finset.mem_attach _ i)) (b₀.actsBy_wordProd l₀)]
-    exact Multiset.map_congr rfl fun e _ => Complex.exp_two_pi_I_mul_div e h
+    exact Multiset.map_congr rfl fun e _ => TauCeti.exp_two_pi_I_mul_div e h
   have hsplit : (WC.charpoly.roots.map fun r => X - Polynomial.C r).prod = WC.charpoly :=
     prod_multiset_X_sub_C_of_monic_of_roots_card_eq WC.charpoly_monic <| by
       rw [hroots, Multiset.card_map, t.card_exponents, WC.charpoly_natDegree_eq_dim,
@@ -221,10 +229,9 @@ theorem natCard_eq_card_support_mul_orderOf_wordProd (hnd : l.Nodup) (hall : ∀
 /-- **The order of any Coxeter element of an irreducible reduced crystallographic finite root system
 is `|Φ| / r`.** -/
 theorem orderOf_wordProd_eq_natCard_div_card_support (hnd : l.Nodup) (hall : ∀ i, i ∈ l) :
-    orderOf (wordProd P b l) = Nat.card ι / b.support.card := by
-  have hpos : 0 < b.support.card :=
-    rank_classifiedDynkinType b ▸ DynkinType.rank_pos (valid_classifiedDynkinType b)
-  rw [natCard_eq_card_support_mul_orderOf_wordProd hnd hall, Nat.mul_div_right _ hpos]
+    orderOf (wordProd P b l) = Nat.card ι / b.support.card :=
+  orderOf_wordProd_eq_natCard_div_card_support_of_hasCartanType (valid_classifiedDynkinType b)
+    (hasCartanType_classifiedDynkinType b) hnd hall
 
 /-- **Complex eigenvalue multiset of any Coxeter element of an irreducible reduced crystallographic
 finite root system on the simple roots.** -/

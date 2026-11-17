@@ -18,7 +18,7 @@ Over a commutative ring its characteristic polynomial is `X ^ n + ∑ k : Fin n,
 
 Two specializations govern the Coxeter elements of the classical Cartan matrices:
 * `c = fun _ => 1` gives `charpoly = ∑ k ∈ Finset.range (n + 1), X ^ k` and multiplicative order
-  `n + 1` when `0 < n` and `(2 : R) ≠ 0` (type `A_n`);
+  `n + 1` when `(2 : R) ≠ 0` (type `A_n`);
 * `c = Pi.single ⟨0, hn⟩ 1` gives `charpoly = X ^ n + 1`, `M ^ n = -1`, and multiplicative order
   `2 * n` when `0 < n` and `(2 : R) ≠ 0` (the signed `n`-cycle in types `B_n`, `C_n`, and `D_n`).
 
@@ -58,6 +58,7 @@ theorem companion_apply {n : ℕ} (c : Fin n → R) (i j : Fin n) :
 end Defs
 
 /-- Entrywise application of a ring homomorphism commutes with forming a companion matrix. -/
+@[simp]
 theorem map_companion {R S : Type*} [NonAssocRing R] [NonAssocRing S] (f : R →+* S) {n : ℕ}
     (c : Fin n → R) : (companion c).map f = companion (f ∘ c) := by
   ext i j; simp only [map_apply, companion_apply, Function.comp_apply]; split_ifs <;> simp
@@ -193,10 +194,11 @@ theorem companion_const_one_pow_eq_one (n : ℕ) :
     rw [RingHom.mapMatrix_apply, map_companion]; congr 1; ext; simp
   rw [← hmap, ← map_pow, hℤ, map_one]
 
-/-- **The all-ones companion matrix has multiplicative order `n + 1`** whenever `0 < n` and
-`(2 : R) ≠ 0`. -/
-theorem orderOf_companion_const_one {n : ℕ} (hn : 0 < n) (h2 : (2 : R) ≠ 0) :
+/-- **The all-ones companion matrix has multiplicative order `n + 1`** whenever `(2 : R) ≠ 0`. -/
+theorem orderOf_companion_const_one (n : ℕ) (h2 : (2 : R) ≠ 0) :
     orderOf (companion (fun _ : Fin n => (1 : R))) = n + 1 := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · simp [Subsingleton.elim (companion (fun _ : Fin 0 => (1 : R))) 1]
   have : Nontrivial R := nontrivial_of_ne (2 : R) 0 h2
   set M := companion (fun _ : Fin n => (1 : R))
   refine (orderOf_eq_iff (by omega)).2 ⟨companion_const_one_pow_eq_one n, fun m hmlt hm0 hpow => ?_⟩

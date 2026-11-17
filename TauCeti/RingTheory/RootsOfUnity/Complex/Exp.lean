@@ -18,8 +18,8 @@ unity. This file records that these roots are compatible along the power maps: f
 
 * `TauCeti.exp_two_pi_I_div_pow_div`: `exp(2πi / m) ^ (m / n) = exp(2πi / n)` for `n ∣ m`,
   `m ≠ 0`.
-* `Complex.exp_two_pi_I_mul_div`: `exp(2πi k / n) = exp(2πi / n) ^ k`.
-* `Complex.eq_of_exp_two_pi_I_mul_div_eq` and `Complex.nodup_map_exp_two_pi_I_mul_div`: injectivity
+* `TauCeti.exp_two_pi_I_mul_div`: `exp(2πi k / n) = exp(2πi / n) ^ k`.
+* `TauCeti.eq_of_exp_two_pi_I_mul_div_eq` and `TauCeti.nodup_map_exp_two_pi_I_mul_div`: injectivity
   of `e ↦ exp(2πi e / h)` on `{e : ℕ | e < h}` and duplicate-freeness of its multiset image.
 -/
 
@@ -41,14 +41,10 @@ theorem exp_two_pi_I_div_pow_div {m n : ℕ} (hm : m ≠ 0) (h : n ∣ m) :
   push_cast
   field_simp
 
-end TauCeti
-
-namespace Complex
-
 /-- For natural numbers `k` and `n`, `exp(2πi k / n)` is the `k`-th power of `exp(2πi / n)`. -/
 theorem exp_two_pi_I_mul_div (k n : ℕ) :
     exp (2 * Real.pi * I * (k / n)) = exp (2 * Real.pi * I / n) ^ k := by
-  rw [← exp_nat_mul]
+  rw [← Complex.exp_nat_mul]
   congr 1
   ring
 
@@ -65,4 +61,4 @@ theorem nodup_map_exp_two_pi_I_mul_div {s : Multiset ℕ} {h : ℕ} (hs : s.Nodu
     (s.map fun e : ℕ => exp (2 * Real.pi * I * (e / h))).Nodup :=
   hs.map_on fun _ ha _ hb => eq_of_exp_two_pi_I_mul_div_eq (hlt _ ha) (hlt _ hb)
 
-end Complex
+end TauCeti
