@@ -22,7 +22,7 @@ whenever `f` or `g` has compact support (`TauCeti.isFormalTranspose_smoothLaplac
 
 An operator `D` of Laplace type with constant `c` (`TauCeti.IsLaplaceType`) and `-c Δ` have the
 same principal symbol `ξ ↦ -(c ‖ξ‖²)` in the geometric convention, so `D + c Δ` has order at most
-one (`TauCeti.mem_differentialOperators_one_of_smoothPrincipalSymbol_eq_zero`). In general this
+one (`TauCeti.forall_smoothPrincipalSymbol_eq_zero_iff`). In general this
 first-order part contains a derivation, the term that the Bochner connection of `D` absorbs. If
 `D` is formally self-adjoint for `dV`, then so is `D + c Δ`, and a formally self-adjoint operator
 of order at most one has order zero
@@ -108,7 +108,7 @@ theorem IsLaplaceType.isFormalTranspose_self_iff (hD : IsLaplaceType D c) :
     -- self-adjoint, hence it has order zero.
     set P : differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ 2 :=
       D + c • ⟨smoothLaplaceBeltrami I M, hΔ⟩ with hP
-    have hP1 := mem_differentialOperators_one_of_smoothPrincipalSymbol_eq_zero P fun x ξ ↦ by
+    have hP1 := (forall_smoothPrincipalSymbol_eq_zero_iff P).1 fun x ξ ↦ by
       rw [hP, smoothPrincipalSymbol_add, smoothPrincipalSymbol_smul, hD.smoothPrincipalSymbol_eq,
         smoothPrincipalSymbol_smoothLaplaceBeltrami]
       ring
@@ -119,12 +119,10 @@ theorem IsLaplaceType.isFormalTranspose_self_iff (hD : IsLaplaceType D c) :
     have hPf := congr($(mem_differentialOperators_zero_iff.1 hP0 f 1) x)
     have hΔ1 : Manifold.laplaceBeltrami I (⇑(1 : C^∞⟮I, M; ℝ⟯)) x = 0 :=
       Manifold.laplaceBeltrami_const I 1 x
-    simp only [LinearMap.add_apply, LinearMap.smul_apply, ContMDiffMap.coe_add,
-      ContMDiffMap.coe_smul, ContMDiffMap.coe_mul, Pi.add_apply, Pi.smul_apply, Pi.mul_apply,
-      smul_eq_mul, mul_one, smoothLaplaceBeltrami_apply, hΔ1] at hPf
     simp only [LinearMap.add_apply, LinearMap.smul_apply, LinearMap.mulLeft_apply,
       ContMDiffMap.coe_add, ContMDiffMap.coe_smul, ContMDiffMap.coe_mul, Pi.add_apply,
-      Pi.smul_apply, Pi.mul_apply, smul_eq_mul, smoothLaplaceBeltrami_apply]
+      Pi.smul_apply, Pi.mul_apply, smul_eq_mul, mul_one, smoothLaplaceBeltrami_apply, hΔ1]
+      at hPf ⊢
     linarith
   · intro h
     rw [h]
