@@ -136,34 +136,22 @@ theorem not_hasWeakFDerivOn_indicator_pos {E : Type*} [NormedAddCommGroup E] [No
   obtain ⟨v₀, hv₀⟩ := hex
   let w : E := (ℓ v₀)⁻¹ • v₀
   have hℓw : ℓ w = 1 := by simp [w, inv_mul_cancel₀ hv₀]
-  let K := LinearMap.ker (ℓ : E →ₗ[ℝ] ℝ)
-  let d := Module.finrank ℝ K
-  let eK : K ≃ₗ[ℝ] EuclideanSpace ℝ (Fin d) :=
-    (Module.finBasis ℝ K).equivFun.trans (WithLp.linearEquiv 2 ℝ (Fin d → ℝ)).symm
-  let splitL : (ℝ × EuclideanSpace ℝ (Fin d)) ≃ₗ[ℝ] E :=
-    { toFun := fun q => q.1 • w + (eK.symm q.2 : E)
-      invFun := fun x => (ℓ x, eK ⟨x - ℓ x • w, by simp [K, hℓw]⟩)
-      map_add' := fun p q => by
-        simp only [Prod.fst_add, Prod.snd_add, add_smul, map_add, Submodule.coe_add]
-        abel
-      map_smul' := fun r q => by
-        simp only [Prod.smul_fst, Prod.smul_snd, smul_eq_mul, mul_smul, map_smul,
-          Submodule.coe_smul_of_tower, RingHom.id_apply, smul_add]
-      left_inv := fun ⟨t, y⟩ => by
-        have hy0 : ℓ (eK.symm y : E) = 0 := (eK.symm y).2
-        ext1
-        · simp [hℓw, hy0]
-        · refine (eK.apply_symm_apply y).symm ▸ congrArg eK (Subtype.ext ?_)
-          simp [hℓw, hy0]
-      right_inv := fun x => by simp }
-  let e : (ℝ × EuclideanSpace ℝ (Fin d)) ≃L[ℝ] E := splitL.toContinuousLinearEquiv
+  let s : ℝ →L[ℝ] E := (ContinuousLinearMap.id ℝ ℝ).smulRight w
+  have hs : Function.RightInverse s ℓ := fun t => by simp [s, hℓw]
+  let d := Module.finrank ℝ ℓ.ker
+  let eK : ℓ.ker ≃L[ℝ] EuclideanSpace ℝ (Fin d) :=
+    ((Module.finBasis ℝ ℓ.ker).equivFun.trans
+      (WithLp.linearEquiv 2 ℝ (Fin d → ℝ)).symm).toContinuousLinearEquiv
+  let e : (ℝ × EuclideanSpace ℝ (Fin d)) ≃L[ℝ] E :=
+    ((ContinuousLinearEquiv.refl ℝ ℝ).prodCongr eK.symm).trans
+      (ContinuousLinearEquiv.equivOfRightInverse ℓ s hs).symm
   have : (volume : Measure (ℝ × EuclideanSpace ℝ (Fin d))).IsAddHaarMeasure :=
     Measure.prod.instIsAddHaarMeasure volume volume
   have hℓe : ∀ q, ℓ (e q) = q.1 := fun q => by
     have hy0 : ℓ (eK.symm q.2 : E) = 0 := (eK.symm q.2).2
-    simp [e, splitL, hℓw, hy0]
+    simp [e, s, hℓw, hy0]
   let y₀ : EuclideanSpace ℝ (Fin d) := eK ⟨x₀, hx₀0⟩
-  have he0 : e (0, y₀) = x₀ := by simp [e, splitL, y₀]
+  have he0 : e (0, y₀) = x₀ := by simp [e, s, y₀]
   let Ω' : Opens (ℝ × EuclideanSpace ℝ (Fin d)) :=
     Ω.comap (e.toHomeomorph : C(ℝ × EuclideanSpace ℝ (Fin d), E))
   have h0Ω' : ((0 : ℝ), y₀) ∈ Ω' := by simpa [Ω', he0] using hx₀

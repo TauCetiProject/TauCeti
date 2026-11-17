@@ -75,14 +75,17 @@ order-one planar class `TauCeti.MemWkpLoc p Ω 1 u` (`TauCeti.memWkpLoc_one_iff_
   (`ContinuousLinearEquiv.memW1pLoc_comp_iff`), regardless of Jacobian determinant or choice of
   equivalent norm (`TauCeti.memW1pLoc_comp_toLp_iff`); the corresponding `MemLpLoc` invariance
   results live in `TauCeti.Analysis.Sobolev.Local.Basic`.
-* **Sharpness checks.** The identity is in `MemW1pLoc p Ω` without belonging to global `Lᵖ` for
-  `p ≠ 0` on a nontrivial space; `x ↦ ‖x‖` lies in `MemW1pLoc p Ω` for all `p` (with
-  non-inner-product derivative on `(Fin 2 → ℝ)` equipped with the supremum norm); the unit radial
-  map `x ↦ ‖x‖⁻¹ • x` on an inner product space of dimension `d ≥ 2` with `0 ∈ Ω` belongs to
-  `MemW1pLoc p Ω` if and only if `p < d` (`TauCeti.memW1pLoc_norm_inv_smul_iff`); and the indicator
-  of an open half-space `{x | 0 < ℓ x}` (`ℓ ≠ 0`) belongs to `MemLpLoc p Ω` for all `p`
-  (`TauCeti.memLpLoc_indicator_pos`) but never to `MemW1pLoc p Ω` when `Ω` meets `{x | ℓ x = 0}`
-  (`TauCeti.not_memW1pLoc_indicator_pos`).
+* **Sharpness checks.** The identity is in `MemW1pLoc p Ω` (`TauCeti.memW1pLoc_id`) without
+  belonging to global `Lᵖ` for `p ≠ 0` on a nontrivial space (`TauCeti.not_memLp_id` in
+  `TauCeti.MeasureTheory.Integral.NormRpow`); `x ↦ ‖x‖` lies in `MemW1pLoc p Ω` for all `p` with
+  `‖fderiv ℝ (‖·‖) x‖ ≤ 1` (`TauCeti.memW1pLoc_norm`, while its classical derivative on `ι → ℝ`
+  with the supremum norm is given by `TauCeti.hasFDerivAt_pi_norm_of_abs_lt` in
+  `TauCeti.Analysis.Calculus.FDeriv.Norm`); the unit radial map `x ↦ ‖x‖⁻¹ • x` on an inner
+  product space of dimension `d ≥ 2` with `0 ∈ Ω` belongs to `MemW1pLoc p Ω` if and only if
+  `p < d` (`TauCeti.memW1pLoc_norm_inv_smul_iff`); and the indicator of an open half-space
+  `{x | 0 < ℓ x}` (`ℓ ≠ 0`) belongs to `MemLpLoc p Ω` for all `p`
+  (`TauCeti.memLpLoc_indicator_pos`) but never to `MemW1pLoc p Ω` when `Ω` meets
+  `{x | ℓ x = 0}` (`TauCeti.not_memW1pLoc_indicator_pos`).
 
 ## References
 
@@ -654,42 +657,6 @@ theorem memW1pLoc_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Fin
     (p : ℝ≥0∞) (Ω : Opens E) : MemW1pLoc p Ω (id : E → E) :=
   (ContinuousLinearMap.id ℝ E).memW1pLoc
 
-/-- On a nontrivial finite-dimensional real normed space with an additive Haar measure, the
-identity map does *not* belong to global `Lᵖ` for any nonzero exponent `p`, witnessing that
-`MemW1pLoc` imposes no growth bound at infinity. -/
-theorem not_memLp_id {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    [Nontrivial E] [MeasureSpace E] [BorelSpace E] [(volume : Measure E).IsAddHaarMeasure]
-    {p : ℝ≥0∞} (hp : p ≠ 0) : ¬ MemLp (id : E → E) p (volume : Measure E) := by
-  intro h
-  rcases eq_or_ne p ∞ with rfl | hptop
-  · have htop : eLpNormEssSup (id : E → E) volume < ⊤ := by
-      simpa [eLpNorm_exponent_top h.aestronglyMeasurable] using h.eLpNorm_lt_top
-    obtain ⟨C, hC⟩ := eLpNormEssSup_lt_top_iff_isBoundedUnder.1 htop
-    obtain ⟨v, hv⟩ := exists_ne (0 : E)
-    have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
-    let R : ℝ := (C : ℝ) + 1
-    let x₀ : E := ((2 * R) / ‖v‖) • v
-    have hx₀ : ‖x₀‖ = 2 * R := by
-      rw [norm_smul, Real.norm_of_nonneg (by positivity), div_mul_cancel₀ _ hv0.ne']
-    have hsub : ball x₀ 1 ⊆ {x : E | (C : ℝ) < ‖x‖} := fun x hx => by
-      simp only [mem_ofPred]
-      have hdist : ‖x₀ - x‖ < 1 := by simpa [dist_eq_norm'] using mem_ball.1 hx
-      have htri : ‖x₀‖ - ‖x₀ - x‖ ≤ ‖x‖ := by
-        simpa using norm_sub_norm_le x₀ (x₀ - x)
-      linarith [NNReal.coe_nonneg C]
-    have hnull : volume (ball x₀ 1) = 0 := by
-      refine measure_mono_null hsub ?_
-      rw [measure_eq_zero_iff_ae_notMem]
-      filter_upwards [hC] with x hx
-      exact not_lt.2 (NNReal.coe_le_coe.2 hx)
-    exact (measure_ball_pos volume x₀ one_pos).ne' hnull
-  · have hint : IntegrableOn (fun x : E => ‖x‖ ^ p.toReal) (closedBall 0 1)ᶜ volume :=
-      ((integrable_norm_rpow_iff h.aestronglyMeasurable hp hptop).2 h).integrableOn
-    have hlt := (integrableOn_norm_rpow_compl_closedBall_iff (E := E) (mu := volume)
-      (s := p.toReal) one_pos).1 hint
-    have hpos : 0 ≤ p.toReal := ENNReal.toReal_nonneg
-    linarith [(Nat.cast_pos (α := ℝ)).2 (Module.finrank_pos (R := ℝ) (M := E))]
-
 /-- The norm `x ↦ ‖x‖` on any finite-dimensional real normed space belongs to `MemW1pLoc p Ω` for
 every open set `Ω` and every exponent `p`, with weak derivative `fderiv ℝ (‖·‖)` of operator norm at
 most `1` everywhere. -/
@@ -699,34 +666,6 @@ theorem memW1pLoc_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [F
     MemW1pLoc p Ω (‖·‖ : E → ℝ) ∧ ∀ x : E, ‖fderiv ℝ (‖·‖ : E → ℝ) x‖ ≤ 1 :=
   ⟨lipschitzWith_one_norm.memW1pLoc, fun _ =>
     NNReal.coe_one ▸ norm_fderiv_le_of_lipschitz ℝ lipschitzWith_one_norm⟩
-
-/-- On `Fin 2 → ℝ` (with the supremum norm `‖v‖ = max |v 0| |v 1|`), the Fréchet derivative of
-`‖·‖` at `![1, 1 / 2]` is the first coordinate projection, so it vanishes on `![0, 1]`: the weak
-derivative of `‖·‖` reflects the geometry of the unit sphere rather than an inner product. -/
-theorem fderiv_norm_pi_fin_two_apply :
-    fderiv ℝ (‖·‖ : (Fin 2 → ℝ) → ℝ) ![1, 1 / 2] ![0, 1] = 0 := by
-  let S : Set (Fin 2 → ℝ) := {y | |y 1| < y 0}
-  have hS_open : IsOpen S :=
-    isOpen_lt (continuous_abs.comp (continuous_apply 1)) (continuous_apply 0)
-  have hxS : (![1, 1 / 2] : Fin 2 → ℝ) ∈ S := by
-    simp only [S, mem_ofPred, Matrix.cons_val_zero, Matrix.cons_val_one,
-      Matrix.cons_val_fin_one]
-    norm_num
-  have heq : (‖·‖ : (Fin 2 → ℝ) → ℝ) =ᶠ[𝓝 ![1, 1 / 2]] ContinuousLinearMap.proj (R := ℝ) 0 := by
-    filter_upwards [hS_open.mem_nhds hxS] with y hy
-    have hy0 : 0 ≤ y 0 := (abs_nonneg _).trans hy.le
-    have hsup : ‖y‖ = max |y 0| |y 1| :=
-      le_antisymm
-        ((pi_norm_le_iff_of_nonneg (le_max_of_le_left (abs_nonneg _))).2
-          (Fin.forall_fin_two.2 ⟨le_max_left _ _, le_max_right _ _⟩))
-        (max_le (norm_le_pi_norm y 0) (norm_le_pi_norm y 1))
-    rw [hsup, abs_of_nonneg hy0, max_eq_left hy.le]
-    rfl
-  let p₀ : (Fin 2 → ℝ) →L[ℝ] ℝ := ContinuousLinearMap.proj (R := ℝ) 0
-  have hfd : HasFDerivAt (‖·‖ : (Fin 2 → ℝ) → ℝ) p₀ ![1, 1 / 2] :=
-    p₀.hasFDerivAt.congr_of_eventuallyEq heq
-  rw [hfd.fderiv]
-  simp [p₀]
 
 /-- **Sharpness on the unit radial map.** On a finite-dimensional real inner product space `E` of
 dimension `d ≥ 2` and an open set `Ω` containing `0`, the unit radial map `x ↦ ‖x‖⁻¹ • x` belongs
