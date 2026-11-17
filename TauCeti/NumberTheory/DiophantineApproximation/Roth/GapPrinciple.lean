@@ -42,8 +42,10 @@ fundamental inequality for `β - β' ∈ K` bounds the product of the truncated 
 Bombieri–Gubler (6.9), which bounds every local factor by a power of the product, and through
 (6.10), which says that the exponents add up to at least `1 - |S| / N`.
 
-For `c = (1 - |S| / N) κ - 1 > 1` the gap is multiplicative above a threshold, so the solutions
-whose height lies in a window `(X, A X]` are at most `⌈log A / log ((c + 1) / 2)⌉` per class.
+For `c = (1 - |S| / N) κ - 1 > 1` the gap is multiplicative above a threshold, so the set of
+solutions whose height lies in a window `(X, A X]` has `Set.ncard` at most
+`⌈log A / log ((c + 1) / 2)⌉` times the number of classes. Since `Set.ncard` is `0` on infinite
+sets, this does not prove that the set is finite; finiteness (from Northcott) is not proved here.
 
 ## Main results
 
@@ -60,6 +62,9 @@ whose height lies in a window `(X, A X]` are at most `⌈log A / log ((c + 1) / 
   (2006), Lemma 6.5.6 and Theorem 6.5.4.
 * H. Davenport and K. F. Roth, *Rational approximations to algebraic numbers*, Mathematika 2
   (1955).
+* The statements follow Ralf Stephan's formalization `DiophantineApproximation/GapPrinciple.lean`
+  and `DiophantineApproximation/CountingApproximations.lean` in `rwst/Subspace-Theorems` at
+  `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
@@ -264,8 +269,9 @@ theorem mul_absLogHeight₁_sub_le_of_approxClass_eq
 lie over `v` at every place of `Sinf` and `Sfin`, let `0 < N` and `0 ≤ κ`, and write
 `c + 1 = (1 - |S| / N) κ` with `c > 1`, where `|S|` is the number of places. For
 `X ≥ log 16 / (c - 1)`, the solutions of Roth's inequality with exponent `κ` whose absolute
-logarithmic height lies in `(X, A X]` number at most `⌈log A / log ((c + 1) / 2)⌉` times
-`(N + |S|).choose |S|`. -/
+logarithmic height lies in `(X, A X]` form a set whose `Set.ncard` is at most
+`⌈log A / log ((c + 1) / 2)⌉` times `(N + |S|).choose |S|`. Since `Set.ncard` is `0` on infinite
+sets, the statement does not say that this set is finite. -/
 theorem ncard_setOf_absLogHeight₁_mem_Ioc_le
     (hwInf : ∀ v ∈ Sinf, (w v.1).LiesOver v.1) (hwFin : ∀ v ∈ Sfin, (w v.1).LiesOver v.1)
     {N : ℕ} (hN : 0 < N) {κ : ℝ} (hκ : 0 ≤ κ) (hc : 2 < (1 - (#Sinf + #Sfin : ℝ) / N) * κ)

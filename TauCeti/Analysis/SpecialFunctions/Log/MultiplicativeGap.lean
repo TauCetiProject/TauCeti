@@ -37,6 +37,9 @@ The solutions in a window are then at most `⌈log A / log ρ⌉` times the numb
 
 * E. Bombieri and W. Gubler, *Heights in Diophantine Geometry*, Cambridge University Press
   (2006), Lemma 6.5.6.
+* `Set.ncard_le_ceil_mul_ncard_of_gap` follows the lemma of the same name in Ralf Stephan's
+  formalization `DiophantineApproximation/CountingApproximations.lean` in `rwst/Subspace-Theorems`
+  at `09835cb23557ae5ae0cf55a9c4ab9055f5d60338` (Apache 2.0).
 -/
 
 public section
