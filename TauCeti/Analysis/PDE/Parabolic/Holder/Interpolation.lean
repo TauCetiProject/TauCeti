@@ -53,6 +53,9 @@ absorb lower-order terms in parabolic Schauder estimates.
   the absorption of the lower-order parabolic Hölder norms, with the separate bounds
   `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_mul` and
   `TauCeti.ParabolicC2HolderSpace.norm_spatialFDerivHolderL_le_mul`.
+* `TauCeti.ParabolicC2HolderSpace.norm_valueHolderL_le_add_sq_mul`: the scale-explicit bound
+  `‖u‖_{α,par} ≤ (1 + 40 ρ^(-α)) ‖u‖_∞ + 2 ρ² ([D_x² u]_{α,par} + [∂ₜ u]_{α,par})`, whose two sides
+  scale in the same way under parabolic dilations.
 
 ## References
 
@@ -416,6 +419,95 @@ theorem exists_norm_valueHolderL_add_norm_spatialFDerivHolderL_le (hα : α < 1)
   refine (norm_valueHolderL_add_norm_spatialFDerivHolderL_le hα.le f hε
     (min_le_left _ _)).trans ?_
   gcongr
+
+/-! ### Scale-explicit interpolation -/
+
+/-- The parabolic seminorm of the value at the spatial scale `ρ` and the temporal scale `ρ²`, in
+terms of the suprema of `u`, `D_x u` and `∂ₜ u`. -/
+private theorem nnHolderNorm_valueL_le (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab) {ρ : ℝ}
+    (hρ : 0 < ρ) :
+    (nnHolderNorm α (valueL f : slab (E := E) a b → F) : ℝ) ≤
+      ‖spatialFDerivL f‖ * ρ ^ (1 - (α : ℝ)) + 2 * ‖valueL f‖ * ρ ^ (-(α : ℝ)) +
+        (‖(timeDerivL f).toBoundedContinuousFunction‖ * (ρ ^ 2) ^ (1 - (α : ℝ) / 2) +
+          2 * ‖valueL f‖ * (ρ ^ 2) ^ (-((α : ℝ) / 2))) := by
+  -- Spatial and temporal Lipschitz bounds of `u`, from `D_x u` and `∂ₜ u`.
+  have hx : ∀ t ∈ Icc a b, ∀ y, HasFDerivAt (fun z ↦ timeExtension hab.le f z t)
+      (timeExtension hab.le (spatialFDerivL f) y t) y := fun t ht y ↦ by
+    simpa [timeExtension_def, projIcc_of_mem hab.le ht] using f.hasSpatialFDerivAt ⟨t, ht⟩ y
+  have ht : ∀ x, ∀ s ∈ Icc a b, HasDerivWithinAt (timeExtension hab.le f x)
+      (timeExtension hab.le (timeDerivL f) x s) (Icc a b) s := fun x s hs ↦ by
+    simpa [timeExtension_def, projIcc_of_mem hab.le hs] using f.hasTimeDerivWithinAt x ⟨s, hs⟩
+  have h₁ := spaceEHolderNorm_one_le_of_hasFDerivAt (C := ‖spatialFDerivL f‖₊) hx
+    fun y t _ ↦ by
+      simpa only [timeExtension_def, coe_nnNorm] using (spatialFDerivL f).norm_coe_le_norm _
+  have h₂ := timeEHolderNorm_one_le_of_hasDerivWithinAt
+    (C := ‖(timeDerivL f).toBoundedContinuousFunction‖₊) ht fun x s _ ↦ by
+      simpa only [timeExtension_def, HolderSpace.toBoundedContinuousFunction_apply, coe_nnNorm]
+        using (timeDerivL f).toBoundedContinuousFunction.norm_coe_le_norm _
+  rw [timeExtension_space_slabTime] at h₁ h₂
+  -- The parabolic seminorm at the spatial scale `ρ` and the temporal scale `ρ²`.
+  lift ρ to ℝ≥0 using hρ.le
+  have hρ' : 0 < ρ := by exact_mod_cast hρ
+  have h := eHolderNorm_le_of_spaceEHolderNorm_le_of_timeEHolderNorm_le h₁ h₂
+    (D := 2 * ‖valueL f‖₊) (fun p q ↦ by simpa using (valueL f).dist_le_two_norm p q) hα
+    (by rw [div_le_iff₀ two_pos]; exact hα.trans (by norm_num)) hρ' (pow_pos hρ' 2)
+  rw [← (memHolder_valueL hα f).coe_nnHolderNorm_eq_eHolderNorm, ENNReal.coe_le_coe,
+    ← NNReal.coe_le_coe] at h
+  push_cast at h
+  exact h
+
+/-- **Scale-explicit interpolation for the value.** For `α ≤ 1` and every spatial scale `ρ > 0`
+with `2 ρ² ≤ b - a`, the parabolic Hölder norm of the value of `u ∈ C_b^{2+α,1+α/2}` satisfies
+
+`‖u‖_{α,par} ≤ (1 + 40 ρ^(-α)) ‖u‖_∞ + 2 ρ² ([D_x² u]_{α,par} + [∂ₜ u]_{α,par})`.
+
+Under the parabolic dilation `(x, t) ↦ (ρ x, ρ² t)` the two sides scale in the same way, so `ρ`
+may be taken comparable to the square root of a time scale, as in estimates weighted by the
+distance to the initial time. -/
+theorem norm_valueHolderL_le_add_sq_mul (hα : α ≤ 1) (f : ParabolicC2HolderSpace α E F hab)
+    {ρ : ℝ} (hρ : 0 < ρ) (hρab : 2 * ρ ^ 2 ≤ b - a) :
+    ‖valueHolderL hα f‖ ≤ (1 + 40 * ρ ^ (-(α : ℝ))) * ‖valueL f‖ +
+      2 * ρ ^ 2 * (nnHolderNorm α ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) +
+        nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _)) := by
+  have h := nnHolderNorm_valueL_le hα f hρ
+  -- Powers of `ρ`, with `r = ρ^(-α)`.
+  set r : ℝ := ρ ^ (-(α : ℝ)) with hr
+  have hρ0 : ρ ≠ 0 := hρ.ne'
+  have hr0 : 0 ≤ r := by positivity
+  have hρ₁ : ρ ^ (1 - (α : ℝ)) = ρ * r := by
+    rw [sub_eq_add_neg, Real.rpow_add hρ, Real.rpow_one]
+  have hsq (x : ℝ) : (ρ ^ 2) ^ x = ρ ^ (2 * x) := by
+    rw [← Real.rpow_natCast, ← Real.rpow_mul hρ.le]
+    norm_num
+  have hρ₂ : (ρ ^ 2) ^ (1 - (α : ℝ) / 2) = ρ ^ 2 * r := by
+    rw [hsq, show 2 * (1 - (α : ℝ) / 2) = 2 + -α by ring, Real.rpow_add hρ, Real.rpow_two]
+  have hρ₃ : (ρ ^ 2) ^ (-((α : ℝ) / 2)) = r := by
+    rw [hsq, hr]
+    ring_nf
+  have hαr : ρ ^ (α : ℝ) * r = 1 := by
+    rw [hr, ← Real.rpow_add hρ, add_neg_cancel, Real.rpow_zero]
+  rw [hρ₁, hρ₂, hρ₃] at h
+  -- Interpolate the suprema of `D_x u`, `D_x² u` and `∂ₜ u` at the same scales.
+  have hD := (mul_le_mul_of_nonneg_right (f.norm_spatialFDerivL_le hρ)
+    (by positivity : (0 : ℝ) ≤ ρ * r)).trans_eq
+    (show _ = 2 * ‖valueL f‖ * r + ‖(spatialSecondFDerivL f).toBoundedContinuousFunction‖ *
+      (ρ ^ 2 * r) by field_simp)
+  have h₂ := (mul_le_mul_of_nonneg_right
+    (f.norm_toBoundedContinuousFunction_spatialSecondFDerivL_le hρ)
+    (by positivity : (0 : ℝ) ≤ ρ ^ 2 * r)).trans_eq
+    (show _ = 32 * ‖valueL f‖ * r + 2 * nnHolderNorm α
+      ((spatialSecondFDerivL f).toBoundedContinuousFunction : _ → _) * ρ ^ 2 *
+        (ρ ^ (α : ℝ) * r) by field_simp)
+  have hₜ := (mul_le_mul_of_nonneg_right
+    (f.norm_toBoundedContinuousFunction_timeDerivL_le hρ hρab)
+    (by positivity : (0 : ℝ) ≤ ρ ^ 2 * r)).trans_eq
+    (show _ = 2 * ‖valueL f‖ * r + nnHolderNorm α
+      ((timeDerivL f).toBoundedContinuousFunction : _ → _) * ρ ^ 2 *
+        (ρ ^ (α : ℝ) * r) by field_simp)
+  rw [hαr] at h₂ hₜ
+  rw [HolderSpace.norm_def, toBoundedContinuousFunction_valueHolderL]
+  have := NNReal.coe_nonneg (nnHolderNorm α ((timeDerivL f).toBoundedContinuousFunction : _ → _))
+  nlinarith
 
 end ParabolicC2HolderSpace
 
