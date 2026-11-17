@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.TensorProduct.Pi
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 public import Mathlib.RingTheory.Localization.BaseChange
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
 # Base change of a tensor product, and injectivity of base-change maps
@@ -49,6 +50,8 @@ The image of a base change map spans its target over the extended scalars.
   that is compatible with the base-change maps is bijective.
 * `IsBaseChange.injective_of_tensorProduct_mk_injective`: a base-change map is injective when
   the scalar-unit map `M → S ⊗[R] M` is injective.
+* `IsBaseChange.range`: when `f` satisfies `IsBaseChange S f`, the subtype inclusion of `f.range`
+  satisfies `IsBaseChange S f.range.subtype`.
 * `LinearMap.liftBaseChange_comp_baseChange`: naturality of the induced map `S ⊗[R] M → N`.
 * `LinearMap.liftBaseChange_pi_injective`: injectivity of the induced map on finite products.
 * `LinearMap.liftBaseChange_injective`: extension to a localization preserves injectivity of a
@@ -121,6 +124,24 @@ theorem IsBaseChange.injective_of_tensorProduct_mk_injective {f : M →ₗ[R] N}
   apply hinj
   apply hf.equiv.injective
   simpa only [TensorProduct.mk_apply, hf.equiv_tmul, one_smul] using hxy
+
+/-- If an `R`-linear map `f : M →ₗ[R] N` exhibits `N` as `S ⊗[R] M`, then the subtype inclusion of
+`f.range` exhibits `N` as `S ⊗[R] f.range`. -/
+theorem IsBaseChange.range {f : M →ₗ[R] N} (hf : IsBaseChange S f) :
+    IsBaseChange S f.range.subtype := by
+  have hcomp : f.range.subtype.liftBaseChange S ∘ₗ f.rangeRestrict.baseChange S =
+      f.liftBaseChange S := by
+    ext m
+    simp
+  have hbij : Function.Bijective
+      (⇑(f.range.subtype.liftBaseChange S) ∘ ⇑(f.rangeRestrict.baseChange S)) := by
+    rw [← LinearMap.coe_comp, hcomp]
+    exact hf.liftBaseChange_bijective
+  have hqbij : Function.Bijective (f.rangeRestrict.baseChange S) :=
+    ⟨Function.Injective.of_comp hbij.1,
+      f.rangeRestrict.baseChange_surjective S (LinearMap.range_eq_top.mp f.range_rangeRestrict)⟩
+  exact IsBaseChange.iff_liftBaseChange_bijective.mpr
+    ((Function.Bijective.of_comp_iff _ hqbij).mp hbij)
 
 section
 
