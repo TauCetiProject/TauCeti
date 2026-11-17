@@ -72,7 +72,9 @@ are strictly larger than `Kˣ`.
   `G_K`-modules.
 * `TauCeti.baseUnitsEquivInvariants`: the isomorphism `Kˣ ≅ H⁰(G_K, (Kˢ)ˣ)`.
 * `TauCeti.embeddedUnitsInvariants`: for a `K`-embedding `σ : L →ₐ[K] Kˢ`, a unit `b` of `L` as
-  the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`.
+  the invariant `σ b` of `(Kˢ)ˣ` under the subgroup of `G_K` fixing `σ(L)`. On the image of a
+  unit of `K` it is `TauCeti.baseUnitsEquivInvariants`
+  (`TauCeti.coe_embeddedUnitsInvariants_map_algebraMap`).
 * `TauCeti.embeddedUnitsEquivInvariants`: the isomorphism `Lˣ ≅ H⁰(Gal(Kˢ/σ(L)), (Kˢ)ˣ)`.
   For normal `L/K` it intertwines the action of `σ.restrictNormalHom g` with that of `g`
   (`TauCeti.embeddedUnitsEquivInvariants_restrictNormalHom_smul`, with the `simp` form
@@ -467,6 +469,15 @@ theorem embeddedUnitsInvariants_mul (a b : Lˣ) :
     embeddedUnitsInvariants K L σ (a * b) =
       embeddedUnitsInvariants K L σ a + embeddedUnitsInvariants K L σ b :=
   Subtype.ext <| Additive.toMul.injective <| map_mul (Units.map σ.toRingHom.toMonoidHom) a b
+
+/-- **On a unit of `K`, the invariant attached through `σ` is the base invariant**: `σ` is a
+`K`-embedding, so the image of `a ∈ Kˣ` in `Lˣ` gives the invariant that
+`TauCeti.baseUnitsEquivInvariants` attaches to `a`, read in `(Kˢ)ˣ`. -/
+@[simp]
+theorem coe_embeddedUnitsInvariants_map_algebraMap (a : Kˣ) :
+    (embeddedUnitsInvariants K L σ (Units.map (algebraMap K L : K →* L) a) : UnitsCoeff K) =
+      baseUnitsEquivInvariants K (Additive.ofMul a) :=
+  Additive.toMul.injective <| Units.ext <| by simp
 
 variable {K L σ} in
 /-- **A unit of `Kˢ` fixed by `Gal(Kˢ/σ(L))` comes from `Lˣ`.** This is the fixed-field theorem
