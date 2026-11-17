@@ -91,6 +91,14 @@ section Main
 variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   {m k l : ℕ}
 
+omit [FiniteDimensional ℝ E] in
+/-- The smooth real wedge at a point is the wedge of the values. The metric only supplies the
+norm on the tangent spaces that `ContinuousAlternatingMap.wedge` requires. -/
+theorem SmoothForm.coe_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M) :
+    (SmoothForm.wedge φ ψ).1 x = (φ.1 x).wedge (ψ.1 x) := by
+  rw [SmoothForm.coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
+    ContinuousAlternatingMap.wedge_def]
+
 namespace RoughForm
 
 /-- The Hodge star of rough real `k`-forms on an oriented Riemannian manifold of dimension
@@ -587,14 +595,6 @@ theorem coe_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
     (φ : SmoothForm I M ℝ k) :
     (hodgeStar o hkl φ : RoughForm I M ℝ l) = RoughForm.hodgeStar o hkl φ :=
   (rfl)
-
-omit [FiniteDimensional ℝ E]
-  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
-/-- The smooth real wedge at a point is the wedge of the values. -/
-theorem coe_wedge_apply (φ : SmoothForm I M ℝ k) (ψ : SmoothForm I M ℝ l) (x : M) :
-    (wedge φ ψ).1 x = (φ.1 x).wedge (ψ.1 x) := by
-  rw [coe_wedge, RoughForm.wedge_def, RoughForm.wedgeWith_apply',
-    ContinuousAlternatingMap.wedge_def]
 
 /-- **The square of the Hodge star of smooth forms**: `⋆⋆α = (-1) ^ (k l) α`. -/
 theorem hodgeStar_hodgeStar (o : Manifold.Orientation I M (Fin m)) (hkl : k + l = m)
