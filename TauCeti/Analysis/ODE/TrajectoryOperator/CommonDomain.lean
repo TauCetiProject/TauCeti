@@ -479,8 +479,8 @@ theorem not_isClosed_range_domainTrajectoryOperator_of_ker_ne_bot (hι : Functio
     (isClosed_tsupport ψ) hψsupp, subset_univ _⟩
   let u := smulRightBaseW1pL ι a (W1p.ofTestFunctionₗ volume ⊤ 2 φ)
   have hsq : (∫ s, ψ s ^ 2) * ‖a‖ ^ 2 ≤ (K : ℝ) ^ 2 * ((∫ s, deriv ψ s ^ 2) * ‖ι a‖ ^ 2) := by
-    change (∫ s, (φ : ℝ → ℝ) s ^ 2) * _ ≤ _ * ((∫ s, deriv (φ : ℝ → ℝ) s ^ 2) * _)
-    rw [← norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq (mu := volume) ι a φ,
+    have hφ : (φ : ℝ → ℝ) = ψ := TestFunction.coe_mk
+    rw [← hφ, ← norm_prev_smulRightBaseW1pL_ofTestFunctionₗ_sq (mu := volume) ι a φ,
       ← norm_domainTrajectoryOperator_smulRightBaseW1pL_ofTestFunctionₗ_sq (mu := volume) ι A hAa φ,
       ← mul_pow]
     exact pow_le_pow_left₀ (norm_nonneg _)
