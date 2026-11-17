@@ -13,6 +13,7 @@ import TauCeti.RingTheory.DiscreteValuationRing.AbhyankarModel.Localization
 import TauCeti.RingTheory.DiscreteValuationRing.Kummer
 import TauCeti.RingTheory.Ideal.LiesOver
 import TauCeti.RingTheory.Localization.AtPrime
+import TauCeti.RingTheory.Localization.Finiteness
 import TauCeti.RingTheory.Localization.Integral
 
 /-!
@@ -53,37 +54,13 @@ every multiple `e` of `e₀` and every `e`-th root `β` of `π`, `L(β)` is unra
 
 public section
 
-open IntermediateField IsLocalRing Polynomial
+open IntermediateField IsLocalRing
 
 namespace TauCeti.Algebra
 
 variable {A K L : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A]
   [Field K] [Algebra A K] [IsFractionRing A K] [Field L] [Algebra A L] [Algebra K L]
   [IsScalarTower A K L] [FiniteDimensional K L] [Algebra.IsSeparable K L]
-
-/-- Clear denominators over a domain `B_P` with fraction field `L` when an element `βS` of a
-domain `S` (with fraction field `L₁`) generates `L₁` as an `L`-algebra. -/
-private theorem exists_mul_mem_adjoin_of_adjoin_eq_top
-    {B_P S L₁ : Type*} [CommRing B_P] [IsDomain B_P] [Algebra B_P L] [IsFractionRing B_P L]
-    [CommRing S] [Algebra B_P S] [Field L₁] [Algebra L L₁] [Algebra S L₁]
-    [IsFractionRing S L₁]
-    (hcomp : (algebraMap S L₁).comp (algebraMap B_P S) =
-      (algebraMap L L₁).comp (algebraMap B_P L))
-    {βS : S} (hβgen : Algebra.adjoin L {algebraMap S L₁ βS} = ⊤) (c : S) :
-    ∃ s : B_P, s ≠ 0 ∧ algebraMap B_P S s * c ∈ Algebra.adjoin B_P {βS} := by
-  have hmem : algebraMap S L₁ c ∈ Algebra.adjoin L {algebraMap S L₁ βS} :=
-    hβgen ▸ Algebra.mem_top
-  rw [Algebra.adjoin_singleton_eq_range_aeval] at hmem
-  obtain ⟨p, hp⟩ := hmem
-  obtain ⟨s, hs, hsp⟩ := IsLocalization.integerNormalization_spec (nonZeroDivisors B_P) p
-  refine ⟨s, nonZeroDivisors.ne_zero hs, ?_⟩
-  rw [Algebra.adjoin_singleton_eq_range_aeval]
-  refine ⟨IsLocalization.integerNormalization (nonZeroDivisors B_P) p,
-    IsFractionRing.injective S L₁ ?_⟩
-  simp only [AlgHom.toRingHom_eq_coe, RingHom.coe_coe] at hp ⊢
-  rw [aeval_def, map_mul, ← RingHom.comp_apply, hcomp, RingHom.comp_apply,
-    Polynomial.hom_eval₂, hcomp, ← eval₂_map, hsp,
-    ← IsScalarTower.algebraMap_smul L s p, eval₂_smul, ← aeval_def, hp]
 
 -- At a maximal ideal `Q` of an integral closure `B₁` of `A₁` in `L₁ = L(β)`, localize at `Q` and
 -- `P = Q ∩ B` to apply the local Abhyankar model (`TauCeti.irreducible_of_pow_eq_unit_mul_pow` and
@@ -137,13 +114,17 @@ private theorem ramificationIdx_eq_one_and_isSeparable_at_prime
   have : IsLocalHom (algebraMap B_P S) := by
     rw [Localization.AtPrime.algebraMap_eq P Q]
     exact Localization.isLocalHom_localRingHom P Q (algebraMap B B₁) Ideal.LiesOver.over
+  have : IsScalarTower B S L₁ := .to₁₃₄ B B₁ S L₁
   have hcomp : (algebraMap S L₁).comp (algebraMap B_P S) =
       (algebraMap L L₁).comp (algebraMap B_P L) :=
-    IsLocalization.ringHom_ext P.primeCompl <| RingHom.ext fun b ↦ by
-      simp only [RingHom.comp_apply, ← IsScalarTower.algebraMap_apply B B_P S,
-        ← IsScalarTower.algebraMap_apply B B_P L]
-      rw [IsScalarTower.algebraMap_apply B B₁ S, ← IsScalarTower.algebraMap_apply B₁ S L₁,
-        ← IsScalarTower.algebraMap_apply B B₁ L₁, ← IsScalarTower.algebraMap_apply B L L₁]
+    IsLocalization.ringHom_ext P.primeCompl <|
+      calc ((algebraMap S L₁).comp (algebraMap B_P S)).comp (algebraMap B B_P)
+        _ = algebraMap B L₁ := by
+            simp only [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq B B_P S,
+              ← IsScalarTower.algebraMap_eq B S L₁]
+        _ = ((algebraMap L L₁).comp (algebraMap B_P L)).comp (algebraMap B B_P) := by
+            simp only [RingHom.comp_assoc, ← IsScalarTower.algebraMap_eq B B_P L,
+              ← IsScalarTower.algebraMap_eq B L L₁]
   have hBP_S_inj : Function.Injective (algebraMap B_P S) :=
     Function.Injective.of_comp (f := algebraMap S L₁) <| by
       rw [← RingHom.coe_comp, hcomp]
@@ -179,8 +160,19 @@ private theorem ramificationIdx_eq_one_and_isSeparable_at_prime
   have hβS_val : algebraMap S L₁ βS = algebraMap A₁ L₁ βA₁ := by
     rw [← IsScalarTower.algebraMap_apply B₁ S L₁, ← IsScalarTower.algebraMap_apply A₁ B₁ L₁]
   have hgen : ∀ c : S, ∃ s : B_P,
-      s ≠ 0 ∧ algebraMap B_P S s * c ∈ Algebra.adjoin B_P {βS} :=
-    exists_mul_mem_adjoin_of_adjoin_eq_top hcomp (hβS_val.symm ▸ hβgen)
+      s ≠ 0 ∧ algebraMap B_P S s * c ∈ Algebra.adjoin B_P {βS} := by
+    let : Algebra B_P L₁ := ((algebraMap L L₁).comp (algebraMap B_P L)).toAlgebra
+    have : IsScalarTower B_P L L₁ :=
+      .of_algebraMap_eq fun _ ↦ by simp [RingHom.algebraMap_toAlgebra]
+    let f : S →ₐ[B_P] L₁ :=
+      { algebraMap S L₁ with commutes' := fun x ↦ RingHom.congr_fun hcomp x }
+    intro c
+    have hc : f c ∈ Algebra.adjoin L (f '' {βS}) := by
+      simp [f, hβS_val, hβgen]
+    obtain ⟨s, hs, hsc⟩ :=
+      (f.apply_mem_adjoin_image_iff_exists_smul_mem_adjoin
+        (IsFractionRing.injective S L₁) (nonZeroDivisors B_P)).mp hc
+    exact ⟨s, nonZeroDivisors.ne_zero hs, by simpa [Algebra.smul_def] using hsc⟩
   have hβS_irred : Irreducible βS :=
     TauCeti.irreducible_of_pow_eq_unit_mul_pow hϖ u.isUnit hunit_mBP hd hβS_pow hgen
   have : Algebra.IsSeparable (ResidueField B_P) (ResidueField S) :=
@@ -246,30 +238,6 @@ private theorem isUnramifiedWRT_of_dvr_adjoin_root
 variable {Ω : Type*} [Field Ω] [Algebra K Ω] [Algebra L Ω] [Algebra A Ω]
   [IsScalarTower K L Ω] [IsScalarTower A K Ω]
 
-omit [IsDomain A] [IsDiscreteValuationRing A] [IsFractionRing A K]
-  [FiniteDimensional K L] [Algebra.IsSeparable K L] in
-/-- Shared scalar towers and generator-power equation for adjoining an `e`-th root `β ∈ Ω` of
-`π ∈ A` to `K ⊆ L`. -/
-private theorem adjoinBaseChange_towers_and_pow {π : A} {e : ℕ} {β : Ω}
-    (hβ : β ^ e = algebraMap A Ω π) :
-    letI := (TauCeti.IntermediateField.adjoinBaseChange K L β).toAlgebra
-    ∃ h : IsScalarTower A L Ω, letI := h
-      IsScalarTower A K L⟮β⟯ ∧ IsScalarTower A K⟮β⟯ L⟮β⟯ ∧
-        AdjoinSimple.gen K β ^ e = algebraMap A K⟮β⟯ π := by
-  let := (TauCeti.IntermediateField.adjoinBaseChange K L β).toAlgebra
-  have hALΩ : IsScalarTower A L Ω := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A K Ω, IsScalarTower.algebraMap_apply A K L,
-      IsScalarTower.algebraMap_apply K L Ω]
-  have hAKLβ : IsScalarTower A K L⟮β⟯ := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A L L⟮β⟯,
-      IsScalarTower.algebraMap_apply K L L⟮β⟯, ← IsScalarTower.algebraMap_apply A K L]
-  have hAKβLβ : IsScalarTower A K⟮β⟯ L⟮β⟯ :=
-    IsScalarTower.of_algHom ((TauCeti.IntermediateField.adjoinBaseChange K L β).restrictScalars A)
-  have hβK : AdjoinSimple.gen K β ^ e = algebraMap A K⟮β⟯ π :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮β⟯,
-      IsScalarTower.algebraMap_apply A K Ω] using hβ)
-  exact ⟨hALΩ, hAKLβ, hAKβLβ, hβK⟩
-
 /-- **Abhyankar's lemma for discrete valuation rings (global Kummer case).** Let `L / K` be a
 finite separable extension tamely ramified with respect to a discrete valuation ring `A` with
 uniformizer `π`. If `β` is an `e`-th root of `π` in an ambient extension `Ω` of `L` such that
@@ -289,7 +257,10 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
   have := FaithfulSMul.trans A K Ω
   have he : e ≠ 0 := Algebra.ne_zero_of_pow_eq_algebraMap_of_injective
     (FaithfulSMul.algebraMap_injective A Ω) hπ.ne_one hβ
-  obtain ⟨_, _, _, hβK⟩ := adjoinBaseChange_towers_and_pow (A := A) (K := K) (L := L) hβ
+  have : IsScalarTower A L Ω := .to₁₃₄ A K L Ω
+  have := TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A β
+  have hβK : AdjoinSimple.gen K β ^ e = algebraMap A K⟮β⟯ π :=
+    TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hβ
   have hgenK : K⟮AdjoinSimple.gen K β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
   let A₁ := integralClosure A K⟮β⟯
   have : IsDiscreteValuationRing A₁ :=
@@ -301,10 +272,7 @@ theorem IsTamelyRamifiedWRT.isUnramifiedWRT_adjoin_root (h : IsTamelyRamifiedWRT
     TauCeti.IntermediateField.finiteDimensional_adjoinBaseChange K L β
   have : Algebra.IsSeparable K⟮β⟯ L⟮β⟯ :=
     TauCeti.IntermediateField.isSeparable_adjoinBaseChange K L β
-  have : IsScalarTower A A₁ L⟮β⟯ := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A₁ K⟮β⟯ L⟮β⟯,
-      ← IsScalarTower.algebraMap_apply A A₁ K⟮β⟯,
-      ← IsScalarTower.algebraMap_apply A K⟮β⟯ L⟮β⟯]
+  have : IsScalarTower A A₁ L⟮β⟯ := .to₁₂₄ A A₁ K⟮β⟯ L⟮β⟯
   have hβA₁_mem : AdjoinSimple.gen K β ∈ A₁ := (mem_integralClosure_iff _ _).mpr
     (IsIntegral.of_pow (Nat.pos_of_ne_zero he) (hβK ▸ isIntegral_algebraMap))
   let βA₁ : A₁ := ⟨AdjoinSimple.gen K β, hβA₁_mem⟩
@@ -360,7 +328,10 @@ theorem isTamelyRamifiedWRT_tfae [IsAlgClosed Ω] {π : A} (hπ : Irreducible π
   tfae_have 2 → 1 := by
     rintro ⟨e, β, he, hβ, hDVR, hU⟩
     let := (TauCeti.IntermediateField.adjoinBaseChange K L β).toAlgebra
-    obtain ⟨_, _, _, hβK⟩ := adjoinBaseChange_towers_and_pow (A := A) (K := K) (L := L) hβ
+    have : IsScalarTower A L Ω := .to₁₃₄ A K L Ω
+    have := TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A β
+    have hβK : AdjoinSimple.gen K β ^ e = algebraMap A K⟮β⟯ π :=
+      TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hβ
     exact IsDiscreteValuationRing.isTamelyRamifiedWRT_of_isUnramifiedWRT_of_pow_eq_of_irreducible
       hπ he hβK (adjoin_adjoinSimple_gen_eq_top β) hU
   tfae_finish

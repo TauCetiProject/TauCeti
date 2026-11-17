@@ -305,18 +305,10 @@ private theorem isTamelyRamifiedWRT_baseChange_of_isAlgClosed
   let := (TauCeti.IntermediateField.adjoinBaseChange K L α).toAlgebra
   obtain ⟨_, hU_A₁⟩ := h.isUnramifiedWRT_adjoin_root (K := K) hπ hα hdvd
   let A₁ := integralClosure A K⟮α⟯
-  have : IsScalarTower A K L⟮α⟯ := .of_algebraMap_eq fun a ↦ by
-    simp [IsScalarTower.algebraMap_apply A L L⟮α⟯,
-      IsScalarTower.algebraMap_apply K L L⟮α⟯, ← IsScalarTower.algebraMap_apply A K L]
-  have : IsScalarTower A K⟮α⟯ L⟮α⟯ :=
-    IsScalarTower.of_algHom ((TauCeti.IntermediateField.adjoinBaseChange K L α).restrictScalars A)
-  have : IsScalarTower A A₁ L⟮α⟯ := .of_algebraMap_eq fun a ↦ by
-    rw [IsScalarTower.algebraMap_apply A₁ K⟮α⟯ L⟮α⟯,
-      ← IsScalarTower.algebraMap_apply A A₁ K⟮α⟯,
-      ← IsScalarTower.algebraMap_apply A K⟮α⟯ L⟮α⟯]
+  have := TauCeti.IntermediateField.isScalarTower_adjoinBaseChange K L A α
+  have : IsScalarTower A A₁ L⟮α⟯ := .to₁₂₄ A A₁ K⟮α⟯ L⟮α⟯
   have hαK : AdjoinSimple.gen K α ^ e = algebraMap A K⟮α⟯ π :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A K K⟮α⟯,
-      IsScalarTower.algebraMap_apply A K Ω] using hα)
+    TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hα
   have : IsFractionRing A₁ K⟮α⟯ :=
     IsDiscreteValuationRing.isFractionRing_integralClosure_of_pow_eq_of_irreducible hπ hαK
       (adjoin_adjoinSimple_gen_eq_top α)
@@ -327,8 +319,7 @@ private theorem isTamelyRamifiedWRT_baseChange_of_isAlgClosed
   -- Build the Kummer DVR `A'₁ = integralClosure A' K'(β)` and the standard tame cover `T`.
   let A'₁ := integralClosure A' K'⟮β⟯
   have hβK' : AdjoinSimple.gen K' β ^ e = algebraMap A' K'⟮β⟯ π' :=
-    Subtype.ext (by simpa [IsScalarTower.algebraMap_apply A' K' K'⟮β⟯,
-      IsScalarTower.algebraMap_apply A' K' Ω] using hβ)
+    TauCeti.adjoinSimple_gen_pow_eq_algebraMap_iff.mpr hβ
   have hgenβ : K'⟮AdjoinSimple.gen K' β⟯ = ⊤ := adjoin_adjoinSimple_gen_eq_top β
   have : IsDiscreteValuationRing A'₁ :=
     IsDiscreteValuationRing.isDiscreteValuationRing_integralClosure_of_pow_eq_of_irreducible
@@ -344,10 +335,7 @@ private theorem isTamelyRamifiedWRT_baseChange_of_isAlgClosed
   let : Algebra A T := ((algebraMap A'₁ T).comp ((algebraMap A' A'₁).comp
     (algebraMap A A'))).toAlgebra
   -- Obtain `f : A₁ → T` compatible with `gT : T → Ω`, and apply finite étale base change.
-  have : IsScalarTower A' K'⟮β⟯ Ω := .of_algebraMap_eq fun a' ↦ by
-    rw [IsScalarTower.algebraMap_apply A' K' K'⟮β⟯,
-      ← IsScalarTower.algebraMap_apply K' K'⟮β⟯ Ω,
-      ← IsScalarTower.algebraMap_apply A' K' Ω]
+  have : IsScalarTower A' K'⟮β⟯ Ω := .to₁₃₄ A' K' K'⟮β⟯ Ω
   have : IsScalarTower A'₁ K'⟮β⟯ Ω := Subalgebra.isScalarTower_left (integralClosure A' K'⟮β⟯)
   have : IsScalarTower A₁ L⟮α⟯ Ω := .of_algebraMap_eq fun x ↦ by
     rw [IsScalarTower.algebraMap_apply A₁ K⟮α⟯ L⟮α⟯]
