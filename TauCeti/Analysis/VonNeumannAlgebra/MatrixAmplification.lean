@@ -56,13 +56,7 @@ def piLpMatrix (S : StarSubalgebra 𝕜 (H →L[𝕜] H)) :
     rw [this]
     exact add_mem (hT i j) (hU i j)
   algebraMap_mem' c i j := by
-    have : (algebraMap 𝕜 (PiLp 2 (fun _ : ι => H) →L[𝕜] PiLp 2 (fun _ : ι => H)) c).piLpEntry i j =
-        if i = j then algebraMap 𝕜 (H →L[𝕜] H) c else 0 := by
-      ext h
-      by_cases hij : i = j
-      · subst hij; simp [Algebra.algebraMap_eq_smul_one]
-      · simp [Algebra.algebraMap_eq_smul_one, hij]
-    rw [this]
+    rw [← AlgHomClass.commutes (PiLp.diagStarAlgHom 𝕜 H ι) c, piLpEntry_diagStarAlgHom]
     split_ifs
     exacts [S.algebraMap_mem c, zero_mem S]
   star_mem' {T} hT i j := by
