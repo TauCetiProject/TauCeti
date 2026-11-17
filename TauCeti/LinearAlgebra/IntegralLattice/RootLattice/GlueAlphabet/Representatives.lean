@@ -74,17 +74,6 @@ private theorem mem_dualCarrier_of_eq {V : Type*} [AddCommGroup V] [Module ℚ V
     x ∈ L₁.dualCarrier :=
   h ▸ hx
 
-private theorem mk_eq_discriminantGroupEquiv_ofEq {V : Type*} [AddCommGroup V] [Module ℚ V]
-    {L₁ L₂ : IntegralLattice V} (h : L₁ = L₂) (u : L₁.dualCarrier) (v : L₂.dualCarrier)
-    {c : L₂.DiscriminantGroup} (hval : (u : V) = (v : V))
-    (hmk : (Submodule.Quotient.mk v : L₂.DiscriminantGroup) = c) :
-    (Submodule.Quotient.mk u : L₁.DiscriminantGroup) =
-      (Isometry.ofEq h.symm).discriminantGroupEquiv c := by
-  have hu : u = (Isometry.ofEq h.symm).dualCarrierEquiv v :=
-    Subtype.ext (hval.trans ((Isometry.coe_dualCarrierEquiv_apply _ v).trans
-      (Isometry.ofEq_apply h.symm v)).symm)
-  rw [hu, ← Isometry.discriminantGroupEquiv_mk, hmk]
-
 private theorem form_of_eq {V : Type*} [AddCommGroup V] [Module ℚ V]
     {L₁ L₂ : IntegralLattice V} (h : L₁ = L₂) (x y : V) : L₁.form x y = L₂.form x y :=
   h ▸ rfl
@@ -186,14 +175,13 @@ private theorem mk_glueLabelVector_A (n : ℕ) (hv : (A n).Valid) (ht : (A n).Is
         ((A n).rootLattice ht).DiscriminantGroup) =
       (A n).glueAlphabetIsometry hv ht ((A n).glueLabelEquiv ht d) := by
   have hd : ((d.val : ZMod (n + 1)).val) = d.val := ZMod.val_natCast_of_lt d.isLt
-  refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_A n ht) _
-    (typeACosetRepresentativeDual n (d.val : ZMod (n + 1)).val)
-    (((glueLabelVector_A n d.val).trans (congrArg (typeACosetRepresentative n) hd.symm)).trans
-      (coe_typeACosetRepresentativeDual n _).symm)
-    (mk_typeACosetRepresentativeDual_val (d.val : ZMod (n + 1)))).trans ?_
-  rw [glueLabelEquiv_A, glueAlphabetIsometry_A_apply]
-  -- Both sides agree across `Fin (A n).rank` and `Fin n`.
-  rfl
+  rw [glueLabelEquiv_A, glueAlphabetIsometry_A_apply,
+    ← mk_typeACosetRepresentativeDual_val (d.val : ZMod (n + 1))]
+  exact ((Isometry.ofEq (rootLattice_A n ht).symm).discriminantGroupEquiv_mk_eq_mk_of_apply_eq <|
+    (Isometry.ofEq_apply _ _).trans <|
+      (coe_typeACosetRepresentativeDual n _).trans <|
+        (congrArg (typeACosetRepresentative n) hd).trans
+          (glueLabelVector_A n d.val).symm).symm
 
 -- Explicit identifications of the bundled type-D glue-label representatives.
 
@@ -269,11 +257,9 @@ private theorem mk_glueLabelVector_E6 (hv : E6.Valid) (ht : E6.IsSimplyLaced)
     rw [Nat.cast_zero, map_zero, map_zero]
     -- The two zero classes agree across `Fin E6.rank` and `Fin 6`.
     rfl
-  · refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _ typeE₆MinusculeWeightDual
-      coe_typeE₆MinusculeWeightDual.symm mk_typeE₆MinusculeWeightDual).trans ?_
-    rw [Nat.cast_one, typeE₆DiscriminantGroupEquiv_apply_one]
-    -- Both sides agree across `Fin E6.rank` and `Fin 6`.
-    rfl
+  · rw [Nat.cast_one, typeE₆DiscriminantGroupEquiv_apply_one, ← mk_typeE₆MinusculeWeightDual]
+    exact ((Isometry.ofEq (rootLattice_E6 ht).symm).discriminantGroupEquiv_mk_eq_mk_of_apply_eq <|
+      (Isometry.ofEq_apply _ _).trans coe_typeE₆MinusculeWeightDual).symm
   · have h2 : ((2 : ℕ) : ZMod 3) = -1 :=
       eq_neg_of_add_eq_zero_left
         (by rw [← Nat.cast_one, ← Nat.cast_add]; exact ZMod.natCast_self 3)
@@ -282,9 +268,11 @@ private theorem mk_glueLabelVector_E6 (hv : E6.Valid) (ht : E6.IsSimplyLaced)
         typeE₆DiscriminantGroupEquiv ((2 : ℕ) : ZMod 3) := by
       rw [Submodule.Quotient.mk_neg, mk_typeE₆MinusculeWeightDual, h2, map_neg,
         typeE₆DiscriminantGroupEquiv_apply_one]
-    exact mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E6 ht) _ (-typeE₆MinusculeWeightDual)
-      ((Submodule.coe_neg _ typeE₆MinusculeWeightDual).trans
-        (congrArg Neg.neg coe_typeE₆MinusculeWeightDual)).symm hmk2
+    rw [← hmk2]
+    exact ((Isometry.ofEq (rootLattice_E6 ht).symm).discriminantGroupEquiv_mk_eq_mk_of_apply_eq <|
+      (Isometry.ofEq_apply _ _).trans
+        ((Submodule.coe_neg _ typeE₆MinusculeWeightDual).trans
+          (congrArg Neg.neg coe_typeE₆MinusculeWeightDual))).symm
 
 private theorem mk_glueLabelVector_E7 (hv : E7.Valid) (ht : E7.IsSimplyLaced)
     (d : Fin E7.glueLabelCount) :
@@ -299,11 +287,9 @@ private theorem mk_glueLabelVector_E7 (hv : E7.Valid) (ht : E7.IsSimplyLaced)
     rw [Nat.cast_zero, map_zero, map_zero]
     -- The two zero classes agree across `Fin E7.rank` and `Fin 7`.
     rfl
-  · refine (mk_eq_discriminantGroupEquiv_ofEq (rootLattice_E7 ht) _ typeE₇MinusculeWeightDual
-      coe_typeE₇MinusculeWeightDual.symm mk_typeE₇MinusculeWeightDual).trans ?_
-    rw [Nat.cast_one, typeE₇DiscriminantGroupEquiv_apply_one]
-    -- Both sides agree across `Fin E7.rank` and `Fin 7`.
-    rfl
+  · rw [Nat.cast_one, typeE₇DiscriminantGroupEquiv_apply_one, ← mk_typeE₇MinusculeWeightDual]
+    exact ((Isometry.ofEq (rootLattice_E7 ht).symm).discriminantGroupEquiv_mk_eq_mk_of_apply_eq <|
+      (Isometry.ofEq_apply _ _).trans coe_typeE₇MinusculeWeightDual).symm
 
 /-- For every valid digit `d : Fin t.glueLabelCount`, `t.glueLabelVector d.val` represents the
 discriminant class of `t.glueLabelEquiv ht d`. -/
