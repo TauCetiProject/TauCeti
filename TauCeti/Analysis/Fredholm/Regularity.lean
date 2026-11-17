@@ -23,8 +23,9 @@ elliptic operator `P` of order `m` on a compact manifold, with `T = P : H^(s+m) 
 
 Then `i` identifies the kernels of `T'` and `T` (`LinearMap.kerEquivOfRegularity`), `j`
 identifies their cokernels (`LinearMap.cokerEquivOfRegularity`), the two indices agree, and `T'`
-is Fredholm too when it acts between Banach spaces. So the kernel, the cokernel and the index of
-an elliptic operator do not depend on the Sobolev order at which it is realized. Density of `j`
+is Fredholm too when it acts between real or complex Banach spaces. Applied to an elliptic
+operator, once elliptic regularity and the Fredholm property of `P : H^(s+m) → H^s` are available,
+this shows that its kernel, cokernel and index do not depend on `s`. Density of `j`
 enters only through the cokernel: the range of `T` is closed of finite codimension, so together
 with the dense range of `j` it spans `F` (`ContinuousLinearMap.IsFredholm.range_sup_range_eq_top`),
 and the algebraic comparison `LinearMap.cokerEquivOfRegularity` applies.
@@ -35,7 +36,8 @@ and the algebraic comparison `LinearMap.cokerEquivOfRegularity` applies.
   dense subspace together span the target, so the cokernel is represented by elements of any
   dense subspace.
 * `ContinuousLinearMap.IsFredholm.index_eq_of_regularity`: the indices of `T'` and `T` agree.
-* `ContinuousLinearMap.IsFredholm.of_regularity`: between Banach spaces, `T'` is Fredholm.
+* `ContinuousLinearMap.IsFredholm.of_regularity`: between real or complex Banach spaces, `T'` is
+  Fredholm.
 
 ## References
 
@@ -90,7 +92,8 @@ variable {T' : E' →L[𝕜] F'} {i : E' →ₗ[𝕜] E} {j : F' →ₗ[𝕜] F}
 
 /-- **Fredholm property at a higher regularity level.** Let `T` be Fredholm and
 `T (i x) = j (T' x)` with `i` and `j` injective, `j` of dense range, and `T x = j y` only when `x`
-is in the range of `i`. If `T'` acts between Banach spaces, then it is Fredholm. -/
+is in the range of `i`. If `T'` acts between real or complex Banach spaces, then it is
+Fredholm. -/
 theorem IsFredholm.of_regularity (hT : IsFredholm T)
     (hcomm : ∀ x, T (i x) = j (T' x)) (hi : Function.Injective i) (hj : Function.Injective j)
     (hjd : DenseRange j) (hreg : ∀ x y, T x = j y → ∃ x', i x' = x) :
