@@ -158,13 +158,9 @@ private theorem exists_strictMono_tendstoLocallyUniformlyOn_iteratedFDeriv_succ
         (iteratedFDeriv ℝ (k + 1) v) atTop Ω := by
   -- The derivative of the `k`-th derivative is the `(k + 1)`-th derivative, up to currying.
   let e := continuousMultilinearCurryLeftEquiv ℝ (fun _ : Fin (k + 1) ↦ E) F
-  have hfd (f : E → F) : fderiv ℝ (iteratedFDeriv ℝ k f) = e ∘ iteratedFDeriv ℝ (k + 1) f := by
-    rw [iteratedFDeriv_succ_eq_comp_left]
-    funext x
-    exact (e.apply_symm_apply _).symm
   -- The `(k + 1)`-th derivatives are equicontinuous, by the bound on the next derivative.
   have hequi : EquicontinuousOn (fun n ↦ fderiv ℝ (iteratedFDeriv ℝ k (u n))) Ω := by
-    simp only [hfd]
+    simp only [fderiv_iteratedFDeriv]
     refine e.isometry.isUniformInducing.equicontinuousOn_iff.1 ?_
     refine equicontinuousOn_of_forall_isCompact_norm_fderiv_le hΩ
       (fun n ↦ (hu n).differentiableOn_iteratedFDeriv_of_isOpen (by norm_cast; omega) hΩ)

@@ -19,6 +19,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Calculus.FDeriv.Norm
 import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
@@ -242,14 +243,10 @@ theorem covariantDeriv_sub_phaseForm_mul (hu : ∀ y, ‖u y‖ = 1) (hud : Diff
     (hα : DifferentiableAt ℝ α x) :
     covariantDeriv (b - phaseForm u) (u * α) x = u x • covariantDeriv b α x := by
   ext v
-  -- Since `|u| = 1`, the derivative of `|u|²` vanishes, so `u⁻¹ du` is imaginary.
+  -- Since `|u| = 1`, `du` is orthogonal to `u`, so `u⁻¹ du = conj u du` is imaginary.
   have hre : ((u x)⁻¹ * fderiv ℝ u x v).re = 0 := by
-    have h := fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (b := 0) hud v
-    simp only [hu, one_pow, fderiv_const_apply, covariantDeriv_apply, Pi.zero_apply,
-      ContinuousAlternatingMap.coe_zero, ofReal_zero, mul_zero, zero_mul, add_zero] at h
-    rw [inv_eq_conj (hu x)]
-    simp only [_root_.zero_apply] at h
-    linarith
+    rw [inv_eq_conj (hu x), mul_comm, ← Complex.inner]
+    exact inner_fderiv_eq_zero_of_eventually_norm_eq (.of_forall fun y ↦ by rw [hu, hu]) v
   have hu0 : u x ≠ 0 := by simp [← norm_ne_zero_iff, hu x]
   have hdu : fderiv ℝ u x v = u x * (I * ((u x)⁻¹ * fderiv ℝ u x v).im) := by
     have hw : (u x)⁻¹ * fderiv ℝ u x v = I * ((u x)⁻¹ * fderiv ℝ u x v).im :=
