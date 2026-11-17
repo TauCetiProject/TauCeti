@@ -179,7 +179,6 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
   -- The cut-offs `x ↦ χ (s n • x)` with `s n = 1 / (n + 1)`, equal to `1` on `closedBall 0 (n + 1)`
   -- and vanishing outside `ball 0 (2 * (n + 1))`.
   let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
-  have hχrOut : χ.rOut = 2 := rfl
   have hDχ : Continuous (fderiv ℝ χ) := (χ.contDiff (n := 1)).continuous_fderiv one_ne_zero
   obtain ⟨D, hD⟩ := hDχ.bounded_above_of_compact_support (χ.hasCompactSupport.fderiv ℝ)
   let s (n : ℕ) : ℝ := ((n : ℝ) + 1)⁻¹
@@ -189,11 +188,7 @@ theorem integral_integral_fderiv_eq_zero_of_norm_fderiv_le (h : IsContinuityEqua
   let ψ (n : ℕ) : ℝ × E → ℝ := fun q ↦ χ (s n • q.2) * φ q
   have hψ (n : ℕ) : ContDiff ℝ 1 (ψ n) := (χ.contDiff.comp (contDiff_snd.const_smul (s n))).mul hφ
   have hψc (n : ℕ) : HasCompactSupport (ψ n) :=
-    χ.hasCompactSupport_cutoff_mul (hs0 n) (R := 2 * ((n : ℝ) + 1)) (by
-      rw [hχrOut]
-      simp only [s]
-      field_simp
-      rfl) fun q hq ↦ hzero hq
+    χ.hasCompactSupport_cutoff_mul (hs0 n) fun q hq ↦ hzero hq
   have hψs (n : ℕ) : tsupport (ψ n) ⊆ Ioo a b ×ˢ univ := tsupport_mul_subset_right.trans hφs
   have hderiv (n : ℕ) (q : ℝ × E) (w : E) : fderiv ℝ (ψ n) q (1, w) =
       χ (s n • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s n • q.2) (s n • w) :=
