@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
+import Mathlib.RingTheory.Flat.Localization
 
 /-!
 # Flat ring homomorphisms
@@ -15,6 +16,11 @@ A commutative square whose horizontal maps are isomorphisms transports flatness 
 localizing the targets at corresponding submonoids
 (`RingHom.flat_localization_comp_iff_of_ringEquiv`). Applied at corresponding primes, this lets
 symmetry arguments reduce flatness of a morphism to flatness at one point.
+
+For a localization `S` of `R` at a submonoid `M`, a ring homomorphism `g : S →+* T` is flat
+exactly when `g.comp (algebraMap R S)` is flat
+(`RingHom.Flat.comp_algebraMap_iff_of_isLocalization`). Stating this for ring homomorphisms rather
+than `Algebra` instances lets it be applied directly to endomorphisms of `S` such as Frobenius.
 
 The file also states the equational criterion for flatness for a ring homomorphism
 `g : A →+* B`, without an `Algebra A B` instance
@@ -50,6 +56,17 @@ theorem flat_localization_comp_iff_of_ringEquiv {T T' : Type*} [CommRing T] [Com
       (congrArg (algebraMap S' T') (RingHom.congr_fun h x))
   rw [← Flat.comp_iff_of_bijective_left (g := e.toRingHom) e.bijective, he,
     Flat.comp_iff_of_bijective_right eR.bijective]
+
+/-- If `S` is a localization of `R` at `M`, a ring homomorphism `g : S →+* T` is flat exactly when
+its composition `R →+* S →+* T` with `algebraMap R S` is flat. This is the ring-homomorphism form
+of `Module.flat_iff_of_isLocalization`, usable even when `T = S`. -/
+theorem Flat.comp_algebraMap_iff_of_isLocalization {T : Type*} [CommRing T] [Algebra R S]
+    (M : Submonoid R) [IsLocalization M S] (g : S →+* T) :
+    (g.comp (algebraMap R S)).Flat ↔ g.Flat := by
+  let : Algebra S T := g.toAlgebra
+  let : Algebra R T := (g.comp (algebraMap R S)).toAlgebra
+  have : IsScalarTower R S T := .of_algebraMap_eq fun _ ↦ rfl
+  exact (Module.flat_iff_of_isLocalization S M T).symm
 
 /-- **Equational criterion for flatness** of a ring homomorphism: if `g : A →+* B` is flat, every
 relation `∑ⱼ g (fⱼ) xⱼ = 0` in `B` is trivial, that is, `xⱼ = ∑ᵢ g (aⱼᵢ) yᵢ` for some `aⱼᵢ ∈ A` and

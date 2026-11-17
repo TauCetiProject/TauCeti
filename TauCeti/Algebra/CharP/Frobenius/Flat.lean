@@ -8,11 +8,13 @@ module
 public import Mathlib.Algebra.CharP.Frobenius
 public import Mathlib.RingTheory.RingHom.Flat
 import Mathlib.Algebra.CharP.Reduced
+import Mathlib.RingTheory.Flat.Localization
 import Mathlib.RingTheory.Nilpotent.Basic
 import Mathlib.RingTheory.RingHom.FaithfullyFlat
+import TauCeti.RingTheory.RingHom.Flat
 
 /-!
-# Flat Frobenius is injective and forces reducedness
+# Flat Frobenius is injective, forces reducedness, and localizes
 
 Let `R` be a commutative ring of exponential characteristic `p > 1`. Frobenius induces the
 identity on the prime spectrum of `R`, so if it is flat it is faithfully flat, hence injective,
@@ -20,12 +22,19 @@ and `R` is reduced. This is the obstruction to flatness of Frobenius on nonreduc
 `𝔽_p[ε] ⧸ (ε²)`, where Frobenius kills `ε`. Kunz's theorem
 `TauCeti.IsRegularRing.flat_frobenius` gives flatness for regular rings.
 
+Flatness of Frobenius is also preserved under arbitrary localization
+(`TauCeti.flat_frobenius_of_isLocalization`): Frobenius commutes with `R → S`, and flatness of a
+ring map out of a localization `S` of `R` is equivalent to flatness of its composition with
+`R → S`.
+
 ## Main results
 
 * `TauCeti.isReduced_of_flat_frobenius`: a ring of exponential characteristic `p > 1` with flat
   Frobenius is reduced.
 * `TauCeti.injective_frobenius_of_flat`: flat Frobenius is injective.
 * `TauCeti.flat_iterateFrobenius`: if Frobenius is flat, so is each of its iterates.
+* `TauCeti.flat_frobenius_of_isLocalization`: if Frobenius is flat, so is Frobenius of any
+  localization.
 -/
 
 public section
@@ -60,5 +69,16 @@ theorem flat_iterateFrobenius (h : (frobenius R p).Flat) (n : ℕ) :
   induction n with
   | zero => simpa using RingHom.Flat.id R
   | succ n ih => simpa [iterateFrobenius_add, iterateFrobenius_one] using h.comp ih
+
+/-- **Frobenius flatness passes to localizations.** If the Frobenius endomorphism of `R` is flat,
+then so is the Frobenius endomorphism of any localization `S` of `R`. -/
+theorem flat_frobenius_of_isLocalization {S : Type*} [CommRing S] [Algebra R S]
+    (M : Submonoid R) [IsLocalization M S] [ExpChar S p] (h : (frobenius R p).Flat) :
+    (frobenius S p).Flat := by
+  rw [← RingHom.Flat.comp_algebraMap_iff_of_isLocalization M (frobenius S p)]
+  have hcomm : (frobenius S p).comp (algebraMap R S) = (algebraMap R S).comp (frobenius R p) :=
+    RingHom.ext fun x ↦ ((algebraMap R S).map_frobenius p x).symm
+  rw [hcomm]
+  exact h.comp (RingHom.flat_algebraMap_iff.mpr (IsLocalization.flat S M))
 
 end TauCeti

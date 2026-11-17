@@ -7,22 +7,27 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.ChangeOfRings
 public import Mathlib.Algebra.Category.ModuleCat.Monoidal.Basic
+public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.CategoryTheory.Monoidal.Tor
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.RingHom.Flat
 public import TauCeti.Algebra.Category.ModuleCat.Projective.QuotientResolution
+public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.LinearAlgebra.End.TensorProduct
 
 import Mathlib.Algebra.Category.ModuleCat.Descent
+import Mathlib.Algebra.Category.ModuleCat.Monoidal.Closed
 import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 import Mathlib.Algebra.Homology.HomologySequence
+import Mathlib.CategoryTheory.Adjunction.FullyFaithful
+import Mathlib.LinearAlgebra.DirectSum.Finsupp
 import Mathlib.RingTheory.Flat.CategoryTheory
 import Mathlib.RingTheory.Flat.Tensor
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
 import TauCeti.Algebra.Category.ModuleCat.Monoidal.ChangeOfRings
+import TauCeti.Algebra.Category.ModuleCat.RestrictScalars
 import TauCeti.CategoryTheory.Abelian.LeftDerived
 import TauCeti.LinearAlgebra.TensorProduct.Basic
-public import TauCeti.Algebra.Homology.ModuleCat.Basic
-public import TauCeti.LinearAlgebra.End.TensorProduct
 
 /-!
 # `Tor` of modules: flatness, short exact sequences and locally nilpotent endomorphisms
@@ -56,18 +61,28 @@ homology sequence relates the groups `Torₙ(Xᵢ, M)`. We record the vanishing 
 (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_X₂`), in particular `Torₙ(X × Y, M)` vanishes
 with `Torₙ(X, M)` and `Torₙ(Y, M)` (`ModuleCat.isZero_Tor_prod`), `Torₙ₊₁(X₃, M)` vanishes with
 `Torₙ₊₁(X₂, M)` and `Torₙ(X₁, M)` (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_succ_X₃`),
-and `Tor₁(X₃, M)` vanishes with `Tor₁(X₂, M)` when `X₁ ⊗ M → X₂ ⊗ M` is injective
-(`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_one_X₃`). Flat modules have vanishing higher
-`Tor` (`ModuleCat.isZero_Tor_succ_of_flat`), and `Torₙ₊₁(X ⧸ N, M)` vanishes when `N` is a directed
-union of submodules `Nᵢ` with `Torₙ₊₁(X ⧸ Nᵢ, M) = 0`
-(`ModuleCat.isZero_Tor_succ_quotient_iSup`), since an element of `N ⊗ P` already comes from a
-finitely generated submodule of `N`.
+`Torₙ(X₁, M)` vanishes with `Torₙ₊₁(X₃, M)` and `Torₙ(X₂, M)`
+(`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_X₁`), `Tor₁(X₃, M)` vanishes with `Tor₁(X₂, M)`
+when `X₁ ⊗ M → X₂ ⊗ M` is injective (`CategoryTheory.ShortComplex.ShortExact.isZero_Tor_one_X₃`),
+and conversely vanishing of `Tor₁(X₃, M)` forces `X₁ ⊗ M → X₂ ⊗ M` to be injective
+(`CategoryTheory.ShortComplex.ShortExact.rTensor_injective_of_isZero_Tor_one`). Flat modules have
+vanishing higher `Tor` (`ModuleCat.isZero_Tor_succ_of_flat`), higher `Tor` vanishing passes to
+direct sums (`ModuleCat.isZero_Tor_succ_directSum`, `ModuleCat.isZero_Tor_succ_finsupp`), and
+`Torₙ₊₁(X ⧸ N, M)` vanishes when `N` is a directed union of submodules `Nᵢ` with
+`Torₙ₊₁(X ⧸ Nᵢ, M) = 0` (`ModuleCat.isZero_Tor_succ_quotient_iSup`), since an element of `N ⊗ P`
+already comes from a finitely generated submodule of `N`.
 
 `Tor` vanishing is invariant under flat base change: for a flat ring homomorphism `f : A →+* B`,
 a `B`-module `M` and an `A`-module `N`, `Torₙ^A(M, N)` vanishes exactly when
 `Torₙ^B(M, B ⊗[A] N)` does (`ModuleCat.isZero_Tor_restrictScalars_iff`). Extension of scalars
 along `f` carries a projective resolution of `N` to one of `B ⊗[A] N`, and
 `M ⊗[B] (B ⊗[A] -) ≅ M ⊗[A] -` (`ModuleCat.extendScalarsCompTensorLeftIso`).
+
+For a surjective ring homomorphism `f : A →+* B` with `Torᵢ₊₁^A(B, B) = 0` for all `i` (a
+surjective homological epimorphism, such as any surjection of perfect rings), every `B`-module `M`
+satisfies `Torᵢ₊₁^A(M, B) = 0` for all `i`
+(`ModuleCat.isZero_Tor_succ_restrictScalars_of_surjective`), by induction on `i` along a free
+`B`-module presentation of `M`.
 
 ## References
 
@@ -302,18 +317,29 @@ theorem isZero_Tor_succ_X₃ {n : ℕ}
   rw [isZero_Tor_iff P] at h₁ h₂ ⊢
   exact (hT.homology_exact₃ (n + 1) n rfl).isZero_X₂ (h₂.eq_of_src _ _) (h₁.eq_of_tgt _ _)
 
-/-- **`Tor₁` of a cokernel**: for a short exact sequence `0 → X₁ → X₂ → X₃ → 0`, if
-`Tor₁(X₂, M)` vanishes and `X₁ ⊗ M → X₂ ⊗ M` is injective, then `Tor₁(X₃, M)` vanishes. -/
-theorem isZero_Tor_one_X₃ (h₂ : IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X₂).obj M))
-    (h₁ : Function.Injective (S.f.hom.rTensor M)) :
-    IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X₃).obj M) := by
+/-- **Dimension shifting downward for `Tor` in the first variable**: for a short exact sequence
+`0 → X₁ → X₂ → X₃ → 0`, if `Tor_{n+1}(X₃, M)` and `Tor_n(X₂, M)` vanish then so does
+`Tor_n(X₁, M)`. -/
+theorem isZero_Tor_X₁ {n : ℕ}
+    (h₃ : IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj S.X₃).obj M))
+    (h₂ : IsZero (((Tor (ModuleCat.{u} A) n).obj S.X₂).obj M)) :
+    IsZero (((Tor (ModuleCat.{u} A) n).obj S.X₁).obj M) := by
   let P := CategoryTheory.projectiveResolution M
   have hT := shortExact_tensorResolutionShortComplex P hS
-  rw [isZero_Tor_iff P] at h₂ ⊢
-  -- In degree zero, the homology of `X ⊗ P` is `X ⊗ M` through `fromLeftDerivedZero'`, so
-  -- `H₀(S.f ⊗ P)` is the injective map `S.f ⊗ M`; hence the connecting map `δ` vanishes.
+  rw [isZero_Tor_iff P] at h₃ h₂ ⊢
+  exact (hT.homology_exact₁ (n + 1) n rfl).isZero_X₂ (h₃.eq_of_src _ _) (h₂.eq_of_tgt _ _)
+
+omit hS in
+/-- In degree zero, `H₀(S.f ⊗ P)` is a monomorphism exactly when `S.f ⊗ M` is injective, because
+`H₀(X ⊗ P) ≅ X ⊗ M` naturally in `X`. -/
+private theorem mono_homologyMap_zero_iff (P : ProjectiveResolution M) :
+    Mono (HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0) ↔
+      Function.Injective (S.f.hom.rTensor M) := by
+  have (X : ModuleCat.{u} A) : PreservesFiniteColimits ((tensoringLeft _).obj X) :=
+    PreservesColimitsOfSize.preservesFiniteColimits _
   let e (X : ModuleCat.{u} A) : (tensorResolution P X).homology 0 ⟶ X ⊗ M :=
     (tensorResolution P X).homologyι 0 ≫ P.fromLeftDerivedZero' ((tensoringLeft _).obj X)
+  have (X : ModuleCat.{u} A) : IsIso (e X) := by dsimp [e]; infer_instance
   have key : HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0 ≫ e S.X₂ =
       e S.X₁ ≫ S.f ▷ M := by
     simp only [e, HomologicalComplex.homologyι_naturality_assoc, Category.assoc]
@@ -324,22 +350,50 @@ theorem isZero_Tor_one_X₃ (h₂ : IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X�
       ProjectiveResolution.pOpcycles_comp_fromLeftDerivedZero'_assoc]
     -- `(tensoringLeft _).obj X` acts on morphisms by whiskering on the left with `X`.
     exact (whisker_exchange S.f (P.π.f 0)).symm
-  have hf : Mono (S.f ▷ M) :=
-    (ModuleCat.mono_iff_injective _).2 (by simpa [ModuleCat.hom_whiskerRight] using h₁)
-  have : Mono (HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0) := by
-    have : Mono (HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0 ≫
-        e S.X₂) := by
-      rw [key]
-      infer_instance
+  have hm : Mono (S.f ▷ M) ↔ Function.Injective (S.f.hom.rTensor M) := by
+    simpa [ModuleCat.hom_whiskerRight] using ModuleCat.mono_iff_injective (S.f ▷ M)
+  rw [← hm]
+  constructor
+  · intro _
+    have : Mono (e S.X₁ ≫ S.f ▷ M) := key ▸ inferInstance
+    have : Mono (inv (e S.X₁) ≫ e S.X₁ ≫ S.f ▷ M) := inferInstance
+    rwa [IsIso.inv_hom_id_assoc] at this
+  · intro _
+    have : Mono (HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0 ≫ e S.X₂) :=
+      key.symm ▸ inferInstance
     exact mono_of_mono _ (e S.X₂)
+
+/-- **`Tor₁` of a cokernel**: for a short exact sequence `0 → X₁ → X₂ → X₃ → 0`, if
+`Tor₁(X₂, M)` vanishes and `X₁ ⊗ M → X₂ ⊗ M` is injective, then `Tor₁(X₃, M)` vanishes. -/
+theorem isZero_Tor_one_X₃ (h₂ : IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X₂).obj M))
+    (h₁ : Function.Injective (S.f.hom.rTensor M)) :
+    IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X₃).obj M) := by
+  let P := CategoryTheory.projectiveResolution M
+  have hT := shortExact_tensorResolutionShortComplex P hS
+  rw [isZero_Tor_iff P] at h₂ ⊢
+  have : Mono (HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0) :=
+    (mono_homologyMap_zero_iff (S := S) M P).mpr h₁
   have hδ : hT.δ 1 0 rfl = 0 := (hT.homology_exact₁ 1 0 rfl).mono_g_iff.1 this
   exact (hT.homology_exact₃ 1 0 rfl).isZero_X₂ (h₂.eq_of_src _ _) hδ
+
+/-- **Injectivity after tensoring from vanishing `Tor₁`**: for a short exact sequence
+`0 → X₁ → X₂ → X₃ → 0`, if `Tor₁(X₃, M)` vanishes, then `X₁ ⊗ M → X₂ ⊗ M` is injective. -/
+theorem rTensor_injective_of_isZero_Tor_one
+    (h₃ : IsZero (((Tor (ModuleCat.{u} A) 1).obj S.X₃).obj M)) :
+    Function.Injective (S.f.hom.rTensor M) := by
+  let P := CategoryTheory.projectiveResolution M
+  have hT := shortExact_tensorResolutionShortComplex P hS
+  rw [isZero_Tor_iff P] at h₃
+  have : Mono (HomologicalComplex.homologyMap (tensorResolutionShortComplex P S).f 0) :=
+    (hT.homology_exact₁ 1 0 rfl).mono_g_iff.2 (h₃.eq_of_src _ _)
+  exact (mono_homologyMap_zero_iff (S := S) M P).mp this
 
 end CategoryTheory.ShortComplex.ShortExact
 
 namespace ModuleCat
 
 open CategoryTheory Limits
+open scoped DirectSum TensorProduct
 
 universe u
 
@@ -356,9 +410,54 @@ theorem isZero_Tor_prod {X Y : ModuleCat.{u} A} (M : ModuleCat.{u} A) {n : ℕ}
       (LinearMap.snd_comp_inl _ _ _))
     Function.Exact.inl_snd LinearMap.inl_injective LinearMap.snd_surjective).isZero_Tor_X₂ M hX hY
 
+/-- **Higher `Tor` vanishing passes to direct sums.** If `Tor_{n+1}(X i, M) = 0` for every `i`,
+then `Tor_{n+1}(⨁ i, X i, M) = 0`. -/
+theorem isZero_Tor_succ_directSum {ι : Type u} (X : ι → ModuleCat.{u} A)
+    (M : ModuleCat.{u} A) (n : ℕ)
+    (h : ∀ i, IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj (X i)).obj M)) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj (of A (⨁ i, X i))).obj M) := by
+  classical
+  let P := CategoryTheory.projectiveResolution M
+  simp only [isZero_Tor_succ_iff P] at h ⊢
+  let e (k : ℕ) := TensorProduct.directSumLeft A A (fun i ↦ (X i : Type u)) (P.complex.X k)
+  have hcomm (k : ℕ) (f : P.complex.X (k + 1) →ₗ[A] P.complex.X k)
+      (y : (⨁ i, X i) ⊗[A] P.complex.X (k + 1)) (i : ι) :
+      e k (f.lTensor (⨁ i, X i) y) i = f.lTensor (X i) (e (k + 1) y i) := by
+    induction y using TensorProduct.inductionOn with
+    | tmul m p => simp [e]
+    | add y₁ y₂ h₁ h₂ => simp [map_add, h₁, h₂]
+  intro y hy
+  -- Lift each coordinate of `e (n + 1) y` to a preimage in `X i ⊗ P_{n+2}` and sum over the
+  -- finite support of `e (n + 1) y`.
+  choose z hz using fun i ↦ h i (e (n + 1) y i) (by
+    rw [← hcomm n (P.complex.d (n + 1) n).hom y i, hy, map_zero, DirectSum.zero_apply])
+  refine ⟨(e (n + 2)).symm (∑ j ∈ (e (n + 1) y).support, DirectSum.lof A ι _ j (z j)),
+    (e (n + 1)).injective ?_⟩
+  ext i
+  rw [hcomm (n + 1) (P.complex.d (n + 2) (n + 1)).hom, LinearEquiv.apply_symm_apply,
+    DirectSum.sum_apply, map_sum]
+  by_cases hi : i ∈ (e (n + 1) y).support
+  · rw [Finset.sum_eq_single i
+      (fun j _ hji ↦ by rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ hji.symm, map_zero])
+      (fun h' ↦ absurd hi h'), DirectSum.lof_eq_of, DirectSum.of_eq_same, hz i]
+  · rw [DFinsupp.notMem_support_iff.mp hi]
+    exact Finset.sum_eq_zero fun j hj ↦ by
+      rw [DirectSum.lof_eq_of, DirectSum.of_eq_of_ne _ _ _ (ne_of_mem_of_not_mem hj hi).symm,
+        map_zero]
+
+/-- **Higher `Tor` vanishing passes to free-sum powers `ι →₀ X`.** If `Tor_{n+1}(X, M) = 0`, then
+`Tor_{n+1}(ι →₀ X, M) = 0`. -/
+theorem isZero_Tor_succ_finsupp (ι : Type u) (X M : ModuleCat.{u} A) (n : ℕ)
+    (h : IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj X).obj M)) :
+    IsZero (((Tor (ModuleCat.{u} A) (n + 1)).obj (of A (ι →₀ X))).obj M) := by
+  classical
+  exact (isZero_Tor_succ_directSum (fun _ : ι ↦ X) M n fun _ ↦ h).of_iso
+    (((Tor (ModuleCat.{u} A) (n + 1)).mapIso
+      (finsuppLEquivDirectSum A X ι).toModuleIso).app M)
+
 end ModuleCat
 
-/-! ### Flat base change -/
+/-! ### Flat base change and surjective homological epimorphisms -/
 
 namespace ModuleCat
 
@@ -402,5 +501,52 @@ theorem isZero_Tor_restrictScalars_iff (hf : f.Flat) (M : ModuleCat.{u} B) (N : 
     ((tensorResolution Q' M).sc n).exact_map_iff_of_faithful (restrictScalars.{u} f)
   rw [← hR]
   exact ⟨fun h ↦ h.of_iso e.symm, fun h ↦ h.of_iso e⟩
+
+/-- **Higher `Tor` vanishing for modules over a surjective homological epimorphism.** Let
+`f : A →+* B` be a surjective ring homomorphism with `Tor_{i+1}^A(B, B) = 0` for all `i` (for
+instance, any surjection of perfect rings). Then `Tor_{i+1}^A(M, B) = 0` for every `B`-module `M`
+and every `i`. -/
+theorem isZero_Tor_succ_restrictScalars_of_surjective (hf : Function.Surjective f)
+    (hB : ∀ i, IsZero (((Tor (ModuleCat.{u} A) (i + 1)).obj
+      ((restrictScalars f).obj (of B B))).obj ((restrictScalars f).obj (of B B))))
+    (M : ModuleCat.{u} B) (i : ℕ) :
+    IsZero (((Tor (ModuleCat.{u} A) (i + 1)).obj ((restrictScalars f).obj M)).obj
+      ((restrictScalars f).obj (of B B))) := by
+  have : (restrictScalars.{u} f).Full := f.full_restrictScalars hf
+  have hfree (N : ModuleCat.{u} B) (k : ℕ) :
+      IsZero (((Tor (ModuleCat.{u} A) (k + 1)).obj
+        ((restrictScalars f).obj (of B (N →₀ B)))).obj ((restrictScalars f).obj (of B B))) :=
+    let eF : (restrictScalars f).obj (of B (N →₀ B)) ≃ₗ[A]
+        (N →₀ (restrictScalars f).obj (of B B)) :=
+      { AddEquiv.refl (N →₀ B) with map_smul' := fun _ _ ↦ rfl }
+    (isZero_Tor_succ_finsupp N _ _ k (hB k)).of_iso
+      (((Tor (ModuleCat.{u} A) (k + 1)).mapIso eF.toModuleIso).app _)
+  induction i generalizing M with
+  | zero =>
+    -- Present `M` by the free `B`-module `M →₀ B`; since `f` is surjective, the counit
+    -- `B ⊗_A (-|_A) ≅ id` is an isomorphism, so `ker g ⊗_A B → (M →₀ B) ⊗_A B` is injective.
+    let g : (M →₀ B) →ₗ[B] M := Finsupp.linearCombination B id
+    have hg : Function.Surjective g := fun m ↦ ⟨Finsupp.single m 1, by simp [g]⟩
+    let S := g.shortComplexKer
+    have hS : S.ShortExact := g.shortExact_shortComplexKer hg
+    have hSR : (S.map (restrictScalars f)).ShortExact := hS.map_of_exact (restrictScalars f)
+    have hmono : Mono ((extendScalars.{u, u, u} f).map ((restrictScalars f).map S.f)) := by
+      have hnat := (extendRestrictScalarsAdj.{u, u, u} f).counit.naturality S.f
+      have : Mono (((extendScalars.{u, u, u} f).map ((restrictScalars f).map S.f)) ≫
+          (extendRestrictScalarsAdj.{u, u, u} f).counit.app S.X₂) := by
+        have := hS.mono_f
+        rw [Functor.comp_map] at hnat
+        rw [hnat]
+        infer_instance
+      exact mono_of_mono _ ((extendRestrictScalarsAdj.{u, u, u} f).counit.app S.X₂)
+    exact hSR.isZero_Tor_one_X₃ _ (hfree M 0)
+      ((mono_extendScalars_map_iff_rTensor_injective f ((restrictScalars f).map S.f)).mp hmono)
+  | succ i ih =>
+    let g : (M →₀ B) →ₗ[B] M := Finsupp.linearCombination B id
+    have hg : Function.Surjective g := fun m ↦ ⟨Finsupp.single m 1, by simp [g]⟩
+    let S := g.shortComplexKer
+    have hSR : (S.map (restrictScalars f)).ShortExact :=
+      (g.shortExact_shortComplexKer hg).map_of_exact (restrictScalars f)
+    exact hSR.isZero_Tor_succ_X₃ _ (hfree M (i + 1)) (ih S.X₁)
 
 end ModuleCat

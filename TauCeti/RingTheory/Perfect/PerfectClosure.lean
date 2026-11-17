@@ -8,9 +8,11 @@ module
 public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
+public import Mathlib.RingTheory.RingHom.FaithfullyFlat
 public import Mathlib.RingTheory.RingHom.Flat
 import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
+import TauCeti.RingTheory.Perfect.IsPRadical
 import TauCeti.RingTheory.RingHom.Flat
 
 /-!
@@ -28,8 +30,11 @@ of perfect rings, such as the vanishing of `Tor_i^A(B, C)` for perfect `A`-algeb
 and `i > 0`, to quotients of perfect rings by radical ideals.
 
 Over a base which is not perfect, flatness of Frobenius takes the place of perfectness: if the
-Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is flat. For instance
-the perfection of a regular ring of characteristic `p` is flat over it, by Kunz's theorem.
+Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is flat, and indeed
+faithfully flat (`RingHom.FaithfullyFlat.of_isPerfectClosure`), since `p`-radical maps induce
+homeomorphisms on prime spectra. For instance the perfection of a regular ring of characteristic
+`p` is faithfully flat over it, by Kunz's theorem. Moreover, perfection preserves surjectivity
+(`PerfectRing.surjective_lift_comp`).
 
 ## Main results
 
@@ -41,6 +46,10 @@ the perfection of a regular ring of characteristic `p` is flat over it, by Kunz'
   Frobenius is injective.
 * `RingHom.Flat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is flat
   over it.
+* `RingHom.FaithfullyFlat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is
+  faithfully flat over it.
+* `PerfectRing.surjective_lift_of_pow_mem` and `PerfectRing.surjective_lift_comp`: surjectivity
+  of the induced map between perfect closures.
 * `RingHom.Flat.perfectClosureOf_comp`: the colimit perfection of a flat algebra over a perfect
   ring is flat.
 * `TauCeti.flat_perfectClosureOf_comp_C`: the perfect polynomial algebra
@@ -186,7 +195,47 @@ theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat :=
     ← map_sum, pow_add, pow_mul, ← hy, ← map_pow, hyw, iterateFrobenius_def]
   simp only [← pow_mul, ← pow_add]
 
+/-- A perfect closure of a ring with flat Frobenius is faithfully flat: it is flat by
+`RingHom.Flat.of_isPerfectClosure`, and `p`-radical maps induce homeomorphisms (in particular,
+surjections) on prime spectra. -/
+theorem RingHom.FaithfullyFlat.of_isPerfectClosure (hF : (frobenius K p).Flat) :
+    i.FaithfullyFlat := by
+  have : NeZero p := ⟨expChar_ne_zero K p⟩
+  exact RingHom.FaithfullyFlat.iff_flat_and_comap_surjective.mpr
+    ⟨RingHom.Flat.of_isPerfectClosure i p hF, (IsPRadical.isHomeomorph_comap i p).surjective⟩
+
 end FlatFrobenius
+
+section SurjectiveLift
+
+/-- If `i : K →+* L` is a perfect closure and every element of a perfect ring `M` has some
+`p ^ n`-th power in the image of `j : K →+* M`, then `PerfectRing.lift i j p : L →+* M` is
+surjective. -/
+theorem PerfectRing.surjective_lift_of_pow_mem {K L M : Type*} [CommRing K] [CommRing L]
+    [CommRing M] (i : K →+* L) (j : K →+* M) (p : ℕ) [ExpChar K p] [ExpChar L p] [ExpChar M p]
+    [PerfectRing L p] [PerfectRing M p] [IsPerfectClosure i p]
+    (h : ∀ z : M, ∃ (n : ℕ) (y : K), j y = z ^ p ^ n) :
+    Function.Surjective (PerfectRing.lift i j p) := fun z ↦ by
+  obtain ⟨n, y, hy⟩ := h z
+  refine ⟨(iterateFrobeniusEquiv L p n).symm (i y), ?_⟩
+  rw [PerfectRing.lift_apply i j p _ n y (by
+    rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]),
+    hy, ← iterateFrobeniusEquiv_def, RingEquiv.symm_apply_apply]
+
+/-- Perfection preserves surjectivity: if `φ : K →+* R` is surjective, `i : K →+* L` is a perfect
+closure of `K`, and `i' : R →+* M` is a perfect closure of `R`, then the induced map
+`PerfectRing.lift i (i'.comp φ) p : L →+* M` is surjective. -/
+theorem PerfectRing.surjective_lift_comp {K L R M : Type*} [CommRing K] [CommRing L]
+    [CommRing R] [CommRing M] (i : K →+* L) (i' : R →+* M) (p : ℕ) [ExpChar K p] [ExpChar L p]
+    [ExpChar M p] [PerfectRing L p] [PerfectRing M p] [IsPerfectClosure i p] [IsPRadical i' p]
+    {φ : K →+* R} (hφ : Function.Surjective φ) :
+    Function.Surjective (PerfectRing.lift i (i'.comp φ) p) :=
+  PerfectRing.surjective_lift_of_pow_mem i (i'.comp φ) p fun z ↦ by
+    obtain ⟨n, r, hr⟩ := IsPRadical.pow_mem i' p z
+    obtain ⟨y, rfl⟩ := hφ r
+    exact ⟨n, y, hr⟩
+
+end SurjectiveLift
 
 section PerfectClosure
 
