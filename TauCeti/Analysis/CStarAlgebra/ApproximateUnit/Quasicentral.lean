@@ -11,7 +11,7 @@ public import TauCeti.Analysis.CStarAlgebra.Ideal
 import Mathlib.Analysis.Normed.Operator.NormedSpace
 import Mathlib.Analysis.SpecificLimits.Basic
 import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
-import TauCeti.Analysis.CStarAlgebra.GNS.Basic
+import TauCeti.Analysis.CStarAlgebra.GNS.Nondegenerate
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Decomposition
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Unitization
 import TauCeti.Analysis.CStarAlgebra.Representation.Multiplier
@@ -122,7 +122,6 @@ private theorem commute_nonUnitalMultiplierExtension_one {H : Type*}
       intro x
       rw [← mul_apply_eq_comp, hmul_right x]
       exact πS.apply_eq_zero_of_mem_orthogonal_essentialSubspace hη _
-    change (P * T) η = (T * P) η
     rw [mul_apply_eq_comp, mul_apply_eq_comp,
       πS.nonUnitalMultiplierExtension_apply_eq_zero 1 hTη,
       πS.nonUnitalMultiplierExtension_apply_eq_zero 1 hη, map_zero]
@@ -167,10 +166,10 @@ theorem tendsto_toWeakSpace_commutator {l : Filter I.toNonUnitalStarSubalgebra} 
   -- Evaluate `ω (e * a - a * e)` as a difference of inner products and pass to the limit.
   have hterm : ∀ e : S, ω ((e : A) * a - a * (e : A)) =
       ⟪f.gnsVector, πS e (T f.gnsVector)⟫_ℂ - ⟪f.gnsVector, T (πS e f.gnsVector)⟫_ℂ := fun e => by
-    have hω_repr : ∀ b : A, ω b = ⟪f.gnsVector, πA b f.gnsVector⟫_ℂ := fun b => by
-      simp [πA, f]
-    rw [map_sub, hω_repr, hω_repr]
-    simp [πS, T, map_mul]
+    simp only [πS, T, NonUnitalStarAlgHom.comp_apply, NonUnitalStarSubalgebraClass.coe_subtype]
+    rw [map_sub, ← ω.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr,
+      ← ω.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr,
+      map_mul, map_mul, mul_apply_eq_comp, mul_apply_eq_comp]
   have hinner₁ : Tendsto (fun e : S => ⟪f.gnsVector, πS e (T f.gnsVector)⟫_ℂ) l
       (𝓝 ⟪f.gnsVector, P (T f.gnsVector)⟫_ℂ) :=
     ((continuous_const.inner continuous_id).tendsto _).comp (hstrong (T f.gnsVector))
@@ -196,31 +195,6 @@ theorem tendsto_toWeakSpace_commutator_of_isIncreasingApproximateUnit [PartialOr
       l (𝓝 (toWeakSpace ℂ A 0)) :=
   have := hl.neBot
   I.tendsto_toWeakSpace_commutator hl.eventually_norm hl.tendsto_mul_right a
-
-/-- Coordinatewise weak convergence in a finite product implies weak convergence in the product. -/
-private theorem tendsto_toWeakSpace_pi {ι α : Type*} [Finite ι]
-    {l : Filter α} {φ : α → ι → A} {y : ι → A}
-    (h : ∀ i : ι, Tendsto (fun e => toWeakSpace ℂ A (φ e i)) l (𝓝 (toWeakSpace ℂ A (y i)))) :
-    Tendsto (fun e => toWeakSpace ℂ (ι → A) (φ e)) l (𝓝 (toWeakSpace ℂ (ι → A) y)) := by
-  classical
-  have := Fintype.ofFinite ι
-  rw [TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto]
-  intro Λ
-  have hcoord : ∀ i : ι,
-      Tendsto (fun e => (Λ.comp (ContinuousLinearMap.single ℂ (fun _ : ι => A) i)) (φ e i))
-        l (𝓝 ((Λ.comp (ContinuousLinearMap.single ℂ (fun _ : ι => A) i)) (y i))) := fun i =>
-    (TauCeti.tendsto_toWeakSpace_iff_forall_eval_tendsto.mp (h i))
-      (Λ.comp (ContinuousLinearMap.single ℂ (fun _ : ι => A) i))
-  have hsum := tendsto_finsetSum (Finset.univ : Finset ι) fun i _ => hcoord i
-  have hdecomp : ∀ z : ι → A,
-      Λ z = ∑ i : ι, (Λ.comp (ContinuousLinearMap.single ℂ (fun _ : ι => A) i)) (z i) := by
-    intro z
-    have hz : z = ∑ i : ι, ContinuousLinearMap.single ℂ (fun _ : ι => A) i (z i) := by
-      ext j
-      simp [Finset.sum_apply, Pi.single_apply]
-    conv_lhs => rw [hz, map_sum]
-    simp only [ContinuousLinearMap.comp_apply]
-  simpa only [← hdecomp] using hsum
 
 end WeakConvergence
 
@@ -251,7 +225,7 @@ private theorem exists_ge_norm_le_one_commutator_lt {e₀ : A} (he₀I : e₀ �
   let φ : U → (F → A) := fun e a => ((e.1 : A) * a.1 - a.1 * (e.1 : A))
   have hweak : Tendsto (fun e : U => toWeakSpace ℂ (F → A) (φ e)) lU
       (𝓝 (toWeakSpace ℂ (F → A) 0)) :=
-    tendsto_toWeakSpace_pi fun a =>
+    TauCeti.tendsto_toWeakSpace_pi_iff.mpr fun a =>
       (I.tendsto_toWeakSpace_commutator_of_isIncreasingApproximateUnit
         (CStarAlgebra.increasingApproximateUnit S) a.1).comp tendsto_comap
   have h0_mem : (0 : F → A) ∈ closure (convexHull ℝ (Set.range φ)) :=

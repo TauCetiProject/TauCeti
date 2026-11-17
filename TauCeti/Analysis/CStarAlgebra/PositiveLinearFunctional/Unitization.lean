@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
+import TauCeti.Algebra.Algebra.Unitization
 import TauCeti.Analysis.CStarAlgebra.PositiveLinearFunctional.Basic
 
 /-!
@@ -70,10 +71,8 @@ private def extendUnitizationCLM (ω : A →P[ℂ] ℂ) : Unitization ℂ A →L
           ((ω.continuous.tendsto x.snd).comp (hl.tendsto_mul_right x.snd))
       refine le_of_tendsto (hx := hl.neBot) hconv.norm ?_
       filter_upwards [hl.eventually_norm] with e he
-      have hmul : ((x.fst • e + e * x.snd : A) : A⁺¹) = (e : A⁺¹) * x := by
-        conv_rhs => rw [← Unitization.inl_fst_add_inr_snd_eq x]
-        rw [mul_add, ← Unitization.algebraMap_eq_inl, Algebra.algebraMap_eq_smul_one]
-        simp [Unitization.inr_add, Unitization.inr_smul, Unitization.inr_mul]
+      have hmul : ((x.fst • e + e * x.snd : A) : A⁺¹) = (e : A⁺¹) * x :=
+        (Unitization.inr_mul_eq_inr e x).symm
       have hval : x.fst * ω e + ω (e * x.snd) = ω (x.fst • e + e * x.snd) := by
         simp [map_add, map_smul]
       calc ‖x.fst * ω e + ω (e * x.snd)‖

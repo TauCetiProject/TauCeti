@@ -53,22 +53,6 @@ namespace ContinuousLinearMap
 
 section JordanDecomposition
 
-/-- On a nontrivial unital C⋆-algebra, every self-adjoint element `h` admits a state `ω` with
-`|(ω h).re| = ‖h‖`. -/
-private theorem exists_state_abs_re_apply_eq_norm {D : Type*} [CStarAlgebra D] [PartialOrder D]
-    [StarOrderedRing D] [Nontrivial D] {h : D} (hh : IsSelfAdjoint h) :
-    ∃ ω : D →P[ℂ] ℂ, ‖(ω : D →L[ℂ] ℂ)‖ = 1 ∧ |(ω h).re| = ‖h‖ := by
-  have : IsStarNormal h := hh.isStarNormal
-  open TauCeti.CStarAlgebra in
-  rcases CStarAlgebra.norm_or_neg_norm_mem_spectrum h hh with hr | hr <;>
-    · obtain ⟨ω, -, hω_norm, hω_pow⟩ :=
-        exists_positiveContinuousLinearMap_apply_star_pow_mul_pow_eq_of_mem_spectrum
-          (spectrum.algebraMap_mem ℂ hr)
-      refine ⟨ω, hω_norm, ?_⟩
-      have hωh := hω_pow 0 1
-      simp only [pow_zero, one_mul, pow_one] at hωh
-      simp [hωh, abs_of_nonneg (norm_nonneg h)]
-
 private theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
     {D : Type*} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D] [Nontrivial D]
     {ψ : D →L[ℂ] ℂ} (hψ_norm : ‖ψ‖ = 1) (hψ_star : ∀ a, ψ (star a) = star (ψ a)) :
@@ -109,7 +93,8 @@ private theorem toWeakDual_mem_convexJoin_stateSpace_of_norm_eq_one
         Complex.neg_re] at this
       simpa [hω_re] using this
     exact abs_lt.mpr ⟨by linarith, h1⟩
-  obtain ⟨ω, hω_norm, hωh⟩ := exists_state_abs_re_apply_eq_norm hh_sa
+  obtain ⟨ω, -, hω_norm, hωh⟩ :=
+    TauCeti.CStarAlgebra.exists_positiveContinuousLinearMap_abs_re_apply_eq_norm hh_sa
   have hnorm_lt : ‖h‖ < u := hωh ▸ hstate_lt ω hω_norm
   have hle : (ψ h).re ≤ ‖h‖ :=
     (Complex.re_le_norm (ψ h)).trans <| by simpa [hψ_norm] using ψ.le_opNorm h
@@ -175,28 +160,6 @@ private theorem exists_sub_positiveContinuousLinearMap_unital
 
 variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
 
-private theorem opNorm_ofConv_realPart_le {B : Type*} [NonUnitalCStarAlgebra B]
-    (φ : B →L[ℂ] ℂ) :
-    ‖(realPart (WithConv.toConv φ) : WithConv (B →L[ℂ] ℂ)).ofConv‖ ≤ ‖φ‖ := by
-  have hval : (realPart (WithConv.toConv φ) : WithConv (B →L[ℂ] ℂ)).ofConv =
-      (2 : ℝ)⁻¹ • (φ + (star (WithConv.toConv φ)).ofConv) := by
-    simpa [WithConv.ofConv_smul, WithConv.ofConv_add] using
-      congrArg WithConv.ofConv (realPart_apply_coe (WithConv.toConv φ))
-  rw [hval, norm_smul, Real.norm_of_nonneg (by positivity)]
-  calc (2 : ℝ)⁻¹ * ‖φ + (star (WithConv.toConv φ)).ofConv‖
-      ≤ 2⁻¹ * (‖φ‖ + ‖(star (WithConv.toConv φ)).ofConv‖) := by
-        gcongr; exact norm_add_le _ _
-    _ = ‖φ‖ := by rw [norm_ofConv_star_toConv]; ring
-
-private theorem opNorm_ofConv_imaginaryPart_le {B : Type*} [NonUnitalCStarAlgebra B]
-    (φ : B →L[ℂ] ℂ) :
-    ‖(imaginaryPart (WithConv.toConv φ) : WithConv (B →L[ℂ] ℂ)).ofConv‖ ≤ ‖φ‖ := by
-  have heq : (imaginaryPart (WithConv.toConv φ) : WithConv (B →L[ℂ] ℂ)).ofConv =
-      -(realPart (WithConv.toConv (Complex.I • φ)) : WithConv (B →L[ℂ] ℂ)).ofConv := by
-    simp [WithConv.ofConv_neg, WithConv.toConv_smul]
-  rw [heq, norm_neg]
-  exact (opNorm_ofConv_realPart_le (Complex.I • φ)).trans_eq (by simp [norm_smul])
-
 /-- **Jordan decomposition of bounded Hermitian functionals.** Every continuous linear functional
 `φ : A →L[ℂ] ℂ` on a (possibly nonunital) C⋆-algebra satisfying `φ (star a) = star (φ a)` is the
 difference `ω₁ - ω₂` of two positive continuous linear functionals with `‖ω₁‖ + ‖ω₂‖ = ‖φ‖`. -/
@@ -220,7 +183,7 @@ theorem exists_sub_positiveContinuousLinearMap_of_map_star (φ : A →L[ℂ] ℂ
     simpa [ψ, WithConv.ofConv_smul, WithConv.ofConv_add, hψ₀_apply a, hstar,
       Complex.real_smul, ← two_mul] using hval
   have hψ_norm : ‖ψ‖ = ‖φ‖ := le_antisymm
-    ((opNorm_ofConv_realPart_le ψ₀).trans_eq hψ₀_norm)
+    ((norm_ofConv_realPart_toConv_le ψ₀).trans_eq hψ₀_norm)
     (opNorm_le_bound _ (norm_nonneg ψ) fun a => by
       rw [← hψ_ext a]
       exact (ψ.le_opNorm (a : A⁺¹)).trans_eq (by rw [Unitization.norm_inr]))
@@ -260,8 +223,8 @@ theorem exists_four_positiveContinuousLinearMap (φ : A →L[ℂ] ℂ) :
   obtain ⟨ω₁, ω₂, hR_eq, hR_norm⟩ := φR.exists_sub_positiveContinuousLinearMap_of_map_star hφR_star
   obtain ⟨ω₃, ω₄, hI_eq, hI_norm⟩ := φI.exists_sub_positiveContinuousLinearMap_of_map_star hφI_star
   refine ⟨ω₁, ω₂, ω₃, ω₄, fun a => ?_,
-    hR_norm.trans_le (opNorm_ofConv_realPart_le φ),
-    hI_norm.trans_le (opNorm_ofConv_imaginaryPart_le φ)⟩
+    hR_norm.trans_le (norm_ofConv_realPart_toConv_le φ),
+    hI_norm.trans_le (norm_ofConv_imaginaryPart_toConv_le φ)⟩
   have hsplit := congrArg (fun f : WithConv (A →L[ℂ] ℂ) => f.ofConv a)
     (realPart_add_I_smul_imaginaryPart (WithConv.toConv φ))
   rw [← hR_eq a, ← hI_eq a]

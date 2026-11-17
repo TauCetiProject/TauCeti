@@ -25,7 +25,9 @@ For a positive continuous linear functional `ω : A →P[ℂ] ℂ` extended cano
 in norm to the cyclic vector `[1]` of `ω.extendUnitization`
 (`PositiveContinuousLinearMap.tendsto_toGNS_inr_extendUnitization`), so restricting the GNS
 representation of `ω.extendUnitization` to `A` remains nondegenerate
-(`PositiveContinuousLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr`).
+(`PositiveContinuousLinearMap.isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr`),
+and its vector functional at `gnsVector` recovers `ω`
+(`PositiveContinuousLinearMap.inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr`).
 
 The zero functional is included: its GNS Hilbert space is zero and the representation is
 still nondegenerate. Faithfulness is sufficient, not necessary, for injectivity of the GNS
@@ -175,6 +177,20 @@ theorem isNondegenerate_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr (ω : 
   refine f.denseRange_toGNS.induction_on η ?_ hinner_all
   exact isClosed_eq ((continuous_star.comp (innerSL ℂ ξ).continuous).congr fun v => by simp)
     continuous_const
+
+/-- In the restricted GNS representation of `ω.extendUnitization`, the vector functional at
+`gnsVector` recovers `ω`. -/
+theorem inner_gnsVector_gnsNonUnitalStarAlgHom_extendUnitization_comp_inr (ω : A →P[ℂ] ℂ)
+    (b : A) :
+    ⟪ω.extendUnitization.toPositiveLinearMap.gnsVector,
+      (ω.extendUnitization.toPositiveLinearMap.gnsNonUnitalStarAlgHom.comp
+        (Unitization.inrNonUnitalStarAlgHom ℂ A)) b
+        ω.extendUnitization.toPositiveLinearMap.gnsVector⟫_ℂ = ω b := by
+  rw [NonUnitalStarAlgHom.comp_apply, Unitization.inrNonUnitalStarAlgHom_apply,
+    PositiveLinearMap.gnsNonUnitalStarAlgHom_apply_gnsVector,
+    PositiveLinearMap.inner_gnsVector_coe,
+    PositiveContinuousLinearMap.coe_toPositiveLinearMap,
+    ω.extendUnitization_inr]
 
 end PositiveContinuousLinearMap
 

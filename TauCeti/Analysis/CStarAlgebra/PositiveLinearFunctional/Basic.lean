@@ -10,11 +10,12 @@ public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
 public import Mathlib.Analysis.CStarAlgebra.PositiveLinearMap
 public import Mathlib.Analysis.Normed.Module.WeakDual
 public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit.Basic
+import Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal
 
 /-!
 # Norms of positive functionals on C⋆-algebras
 
-## Pullback along surjective homomorphisms
+## Norm along approximate units
 
 The norm of a positive functional on a possibly nonunital C⋆-algebra is its limit along any
 increasing approximate unit, Mathlib's `PositiveContinuousLinearMap.tendsto_nhds_opNorm`. As direct
@@ -24,10 +25,22 @@ consequences:
   `‖ω₁ + ω₂‖ = ‖ω₁‖ + ‖ω₂‖`.
 * `PositiveContinuousLinearMap.tendsto_mul_self_nhds_opNorm`: along any increasing approximate unit
   `e`, the squared values `ω (e * e)` also tend to `‖ω‖`.
+
+## Pullback along surjective homomorphisms
+
 * `PositiveContinuousLinearMap.opNorm_comp_ofClass_of_surjective`: a surjective star-algebra
   homomorphism carries increasing approximate units to increasing approximate units, so pulling a
   positive functional back along it does not change the norm. In particular states pull back to
   states along quotient maps; without surjectivity the norm can drop, for instance to `0`.
+
+## Cauchy–Schwarz vanishing criteria
+
+* `PositiveLinearMap.map_mul_eq_zero_of_map_mul_star_self_eq_zero` and
+  `PositiveLinearMap.map_mul_eq_zero_of_map_star_mul_self_eq_zero`: if a positive linear functional
+  vanishes on `x * star x` (resp. `star y * y`), it vanishes on `x * y`.
+* `PositiveLinearMap.map_eq_zero_of_map_star_mul_self_eq_zero` and
+  `PositiveLinearMap.map_eq_zero_of_map_mul_star_self_eq_zero`: on a C⋆-algebra, a positive linear
+  functional vanishing on `star x * x` or `x * star x` vanishes on `x`.
 
 ## Positive functionals in the weak-* dual
 
@@ -118,6 +131,58 @@ theorem opNorm_comp_ofClass_of_surjective (ω : B →P[ℂ] ℂ) (f : F) (hf : F
     (Filter.tendsto_map'_iff.mp (ω.tendsto_nhds_opNorm (hl.map f hf)))
 
 end PositiveContinuousLinearMap
+
+namespace PositiveLinearMap
+
+section StarOrdered
+
+variable {A : Type*} [NonUnitalRing A] [PartialOrder A] [Module ℂ A] [StarRing A]
+  [StarOrderedRing A] [SelfAdjointDecompose A] [StarModule ℂ A] [IsScalarTower ℂ A A]
+  {F : Type*} [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+
+/-- By Cauchy–Schwarz, if a positive linear functional vanishes on `x * star x`, it vanishes on
+`x * y` for every `y`. -/
+theorem map_mul_eq_zero_of_map_mul_star_self_eq_zero (f : F) {x : A} (hx : f (x * star x) = 0)
+    (y : A) : f (x * y) = 0 := by
+  have hcs := norm_map_mul_star_le f x (star y)
+  rw [star_star, hx, norm_zero, Real.sqrt_zero, zero_mul] at hcs
+  exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
+
+/-- By Cauchy–Schwarz, if a positive linear functional vanishes on `star y * y`, it vanishes on
+`x * y` for every `x`. -/
+theorem map_mul_eq_zero_of_map_star_mul_self_eq_zero (f : F) {y : A} (hy : f (star y * y) = 0)
+    (x : A) : f (x * y) = 0 := by
+  have hcs := norm_map_star_mul_le f (star x) y
+  rw [star_star, hy, norm_zero, Real.sqrt_zero, mul_zero] at hcs
+  exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
+
+end StarOrdered
+
+section CStar
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  {F : Type*} [FunLike F A ℂ] [LinearMapClass F ℂ A ℂ] [OrderHomClass F A ℂ]
+
+/-- On a C⋆-algebra, if a positive linear functional vanishes on `star x * x`, it vanishes on
+`x`. -/
+theorem map_eq_zero_of_map_star_mul_self_eq_zero (f : F) {x : A} (hx : f (star x * x) = 0) :
+    f x = 0 := by
+  have hcs := (PositiveContinuousLinearMap.ofClass (R := ℂ) f).norm_map_le_sqrt_opNorm_mul x
+  rw [PositiveContinuousLinearMap.coe_ofClass, hx, norm_zero, Real.sqrt_zero, mul_zero] at hcs
+  exact norm_eq_zero.mp (le_antisymm hcs (norm_nonneg _))
+
+/-- On a C⋆-algebra, if a positive linear functional vanishes on `x * star x`, it vanishes on
+`x`. -/
+theorem map_eq_zero_of_map_mul_star_self_eq_zero (f : F) {x : A} (hx : f (x * star x) = 0) :
+    f x = 0 := by
+  have h : f (star x) = 0 :=
+    map_eq_zero_of_map_star_mul_self_eq_zero f (x := star x) (by rwa [star_star])
+  have hstar : star (f x) = 0 := by simpa only [map_star] using h
+  exact star_eq_zero.mp hstar
+
+end CStar
+
+end PositiveLinearMap
 
 namespace WeakDual
 
