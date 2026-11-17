@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.IdealSheaf.Functorial
+public import Mathlib.RingTheory.LocalRing.Defs
 public import TauCeti.AlgebraicGeometry.IdealSheaf.OfIdealTop
 
+import Mathlib.RingTheory.LocalProperties.Submodule
 import TauCeti.AlgebraicGeometry.Scheme.StalkSpecializes
 
 /-!
@@ -39,6 +41,10 @@ On an affine open `U` containing a point `η`, the ideal of the reduced closed s
 ideal generates the prime lying under the maximal ideal of `𝒪_{X,η}` when `η` is a generization of
 `x` (`map_ideal_vanishingIdeal_closure_singleton_of_specializes`), and the unit ideal otherwise
 (`map_ideal_vanishingIdeal_closure_singleton_of_not_specializes`).
+
+Combining affine pullback with localization at maximal ideals shows that containment and vanishing
+of ideal sheaves are detected on morphisms from spectra of local rings
+(`le_of_comap_Spec_isLocalRing`, `eq_bot_of_le_ker_Spec_isLocalRing`).
 -/
 
 public section
@@ -209,5 +215,48 @@ theorem map_ideal_vanishingIdeal_closure_singleton_of_not_specializes {U : X.aff
     (isClosed_closure.preimage hU.fromSpec.continuous).closure_subset h1
   rw [hU.fromSpec_primeIdealOf] at h2
   exact specializes_iff_mem_closure.mpr h2
+
+/-- Pulling an ideal sheaf `I` back along `Spec S ⟶ Spec Γ(X, U) ⟶ X` for an affine open `U` gives
+the ideal sheaf associated to the extension of `I(U)` along `Γ(X, U) ⟶ S`, read in `Γ(Spec S, ⊤)`.
+-/
+theorem comap_SpecMap_fromSpec_eq_ofIdealTop (I : X.IdealSheafData) {U : X.Opens}
+    (hU : IsAffineOpen U) {S : CommRingCat.{u}} (ψ : Γ(X, U) ⟶ S) :
+    I.comap (Spec.map ψ ≫ hU.fromSpec) =
+      ofIdealTop (((I.ideal ⟨U, hU⟩).map ψ.hom).map (Scheme.ΓSpecIso S).inv.hom) := by
+  rw [comap_comp, comap_fromSpec_eq_ofIdealTop I hU, comap_ofIdealTop_map_ΓSpecIso_inv]
+
+/-- Containment of ideal sheaves pulled back along `Spec S ⟶ Spec Γ(X, U) ⟶ X` for an affine open
+`U` is containment of their section ideals on `U` extended to `S`. -/
+theorem comap_SpecMap_fromSpec_le_iff {I J : X.IdealSheafData} {U : X.Opens}
+    (hU : IsAffineOpen U) {S : CommRingCat.{u}} (ψ : Γ(X, U) ⟶ S) :
+    I.comap (Spec.map ψ ≫ hU.fromSpec) ≤ J.comap (Spec.map ψ ≫ hU.fromSpec) ↔
+      (I.ideal ⟨U, hU⟩).map ψ.hom ≤ (J.ideal ⟨U, hU⟩).map ψ.hom := by
+  rw [comap_SpecMap_fromSpec_eq_ofIdealTop I hU ψ, comap_SpecMap_fromSpec_eq_ofIdealTop J hU ψ,
+    ← equivOfIsAffine_symm_apply, ← equivOfIsAffine_symm_apply, map_le_map_iff]
+  have hbij := ConcreteCategory.bijective_of_isIso (Scheme.ΓSpecIso S).inv
+  exact ⟨fun h ↦ (Ideal.comap_map_of_bijective _ hbij).symm.trans_le
+    ((Ideal.comap_mono h).trans_eq (Ideal.comap_map_of_bijective _ hbij)), Ideal.map_mono⟩
+
+/-- **Containment of ideal sheaves is local on spectra of local rings.** If `I.comap φ ≤ J.comap φ`
+for every morphism `φ : Spec R ⟶ X` from the spectrum of a local ring `R`, then `I ≤ J`. -/
+theorem le_of_comap_Spec_isLocalRing {I J : X.IdealSheafData}
+    (h : ∀ (R : Type u) [CommRing R] [IsLocalRing R] (φ : Spec (.of R) ⟶ X),
+      I.comap φ ≤ J.comap φ) :
+    I ≤ J := by
+  intro U
+  refine Ideal.le_of_localization_maximal fun P hP ↦ ?_
+  have := hP.isPrime
+  exact (comap_SpecMap_fromSpec_le_iff U.2
+    (CommRingCat.ofHom (algebraMap Γ(X, U) (Localization.AtPrime P)))).mp
+    (h (Localization.AtPrime P) _)
+
+/-- **Vanishing of an ideal sheaf is local on spectra of local rings.** An ideal sheaf `I` on `X`
+is `⊥` if `I ≤ φ.ker` for every morphism `φ : Spec R ⟶ X` from the spectrum of a local ring `R`. -/
+theorem eq_bot_of_le_ker_Spec_isLocalRing {I : X.IdealSheafData}
+    (h : ∀ (R : Type u) [CommRing R] [IsLocalRing R] (φ : Spec (.of R) ⟶ X), I ≤ φ.ker) :
+    I = ⊥ :=
+  le_bot_iff.mp <| le_of_comap_Spec_isLocalRing fun R _ _ φ ↦ by
+    rw [comap_bot, ← le_map_iff_comap_le, map_bot]
+    exact h R φ
 
 end AlgebraicGeometry.Scheme.IdealSheafData

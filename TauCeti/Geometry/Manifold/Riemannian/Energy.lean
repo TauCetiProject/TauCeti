@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Riemannian.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The energy of a curve
@@ -129,24 +130,8 @@ theorem sum_energy_adjacent_intervals (γ : ℝ → M) {n : ℕ} (τ : Fin (n + 
       MeasureTheory.volume (τ i.castSucc) (τ i.succ)) :
     ∑ i : Fin n, energy I γ (τ i.castSucc) (τ i.succ) =
       energy I γ (τ 0) (τ (Fin.last n)) := by
-  let a (k : ℕ) := τ (Fin.ofNat (n + 1) k)
-  have ha (i : Fin (n + 1)) : a i = τ i := by
-    simp [a, Fin.ofNat_eq_cast]
   simp_rw [energy_def]
-  rw [← Finset.sum_div]
-  congr 1
-  have hint' (k : ℕ) (hk : k < n) : IntervalIntegrable
-      (fun t ↦ ‖curveVelocity I γ t‖ ^ 2) MeasureTheory.volume (a k) (a (k + 1)) := by
-    simpa only [← ha (⟨k, hk⟩ : Fin n).castSucc, ← ha (⟨k, hk⟩ : Fin n).succ,
-      Fin.val_castSucc, Fin.val_succ, Fin.val_mk] using hint ⟨k, hk⟩
-  have h0 : a 0 = τ 0 := by simpa only [Fin.val_zero] using ha 0
-  have hn : a n = τ (Fin.last n) := by simpa only [Fin.val_last] using ha (Fin.last n)
-  have hsum := intervalIntegral.sum_integral_adjacent_intervals hint'
-  rw [← Fin.sum_univ_eq_sum_range, h0, hn] at hsum
-  rw [← hsum]
-  apply Finset.sum_congr rfl
-  intro i _
-  simp only [← ha i.castSucc, ← ha i.succ, Fin.val_castSucc, Fin.val_succ]
+  rw [← Finset.sum_div, TauCeti.intervalIntegral.sum_integral_adjacent_intervals_fin τ hint]
 
 /-- On any parameter set `s` containing the interval between `a` and `b`, the energy may be
 computed from the velocity within `s`.  The two velocities agree on the open interval, so no

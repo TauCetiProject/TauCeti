@@ -114,7 +114,7 @@ theorem augmentation_eq_bot_of_finrank_lie_eq_zero
     HopfIdeal.augmentation k H = ⊥ := by
   let _ : IsNoetherianRing H := Algebra.FiniteType.isNoetherianRing k H
   let _ : ConnectedSpace (PrimeSpectrum H) :=
-    hconnected.connectedSpace k (_root_.CommHopfAlgCat.of k H)
+    hconnected.connectedSpace
   exact (HopfIdeal.augmentation_eq_bot_iff_finrank_lie_eq_zero
     (Bialgebra.AugmentationIdeal k H).fg_of_isNoetherianRing).mpr hlie
 
