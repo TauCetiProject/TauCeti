@@ -247,24 +247,15 @@ theorem linearJetCoordChange_comp [CharZero 𝕜] {r : ℕ} {n : ℕ∞ω}
     ((hg₂.clm_comp (hg₁.comp x hh₂)).of_le (natCast_val_le i))]
   simp [σ]
 
-/-- **Truncation commutes with coordinate changes.** Truncating a transformed symmetric `r`-jet
-to order `r' ≤ r` gives the transformed truncated jet. -/
-theorem linearJetCoordChange_truncate [CharZero 𝕜] {r r' : ℕ} (hr : r' ≤ r) {h : E' → E}
+/-- **Truncation commutes with coordinate changes.** Truncating a transformed `r`-jet to order
+`r' ≤ r` gives the transformed truncated jet. -/
+theorem linearJetCoordChange_truncate {r r' : ℕ} (hr : r' ≤ r) {h : E' → E}
     {g : E' → F →L[𝕜] G} {x : E'} (hh : ContDiffAt 𝕜 r' h x) (hg : ContDiffAt 𝕜 r' g x)
-    {A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F}
-    (hA : ∀ i (v : Fin i.val → E) (σ : Perm (Fin i.val)), A i (v ∘ σ) = A i v) :
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) :
     (fun i : Fin (r' + 1) ↦ linearJetCoordChange r h g x A (Fin.castLE (by omega) i)) =
       linearJetCoordChange r' h g x (fun i ↦ A (Fin.castLE (by omega) i)) := by
   -- The Taylor polynomials of `A` and of its truncation have the same `r'`-jet at `h x`.
-  have hP : SameJetAt 𝕜 r' (h x) (finiteJetPolynomial r A (h x))
-      (finiteJetPolynomial r' (fun i ↦ A (Fin.castLE (by omega) i)) (h x)) := by
-    rw [sameJetAt_iff]
-    intro j hj
-    rw [iteratedFDeriv_finiteJetPolynomial_self r A (h x) ⟨j, by omega⟩ (hA _),
-      iteratedFDeriv_finiteJetPolynomial_self r' _ (h x) ⟨j, by omega⟩
-      fun v σ ↦ hA (Fin.castLE (by omega) ⟨j, by omega⟩) v σ]
-    simp only [Fin.castLE_mk]
-  rw [linearJetCoordChange_eq_of_sameJetAt hP.symm
+  rw [linearJetCoordChange_eq_of_sameJetAt (sameJetAt_finiteJetPolynomial_castLE hr A (h x)).symm
     (contDiff_finiteJetPolynomial r A (h x)).contDiffAt hh hg]
   funext i
   have hi : ((Fin.castLE (by omega) i : Fin (r + 1)).val : ℕ∞ω) ≤ r' := by

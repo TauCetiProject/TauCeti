@@ -32,6 +32,8 @@ evaluation point (`contDiff_finiteJetPolynomialCLM`). The main results are:
 * `iteratedFDeriv_finiteJetPolynomial_self`: realization of each prescribed symmetric derivative;
 * `sameJetAt_finiteJetPolynomial_iteratedFDeriv`: over `ℝ` or `ℂ`, a `C^r` map has the same
   `r`-jet as its Taylor polynomial of degree `r`;
+* `sameJetAt_finiteJetPolynomial_castLE`: for `r' ≤ r`, truncating a tuple to order `r'` does not
+  change the `r'`-jet of its Taylor polynomial;
 * `exists_contDiff_iteratedFDeriv_eq_eventually_mem`: realization with the graph in any
   neighborhood of the center-value pair `(x, A 0 0)`;
 * `exists_contDiff_hasCompactSupport_iteratedFDeriv_eq`: on a finite-dimensional real base,
@@ -209,6 +211,25 @@ theorem sameJetAt_finiteJetPolynomial_iteratedFDeriv [CharZero 𝕜] {r : ℕ} {
   exact iteratedFDeriv_finiteJetPolynomial_self r _ y ⟨i, Nat.lt_succ_of_le hi⟩
     fun v σ ↦ hs.iteratedFDeriv_comp_perm_of_le
       ((minSmoothness_monotone (by exact_mod_cast hi)).trans hn) v σ
+
+/-- **Truncating Taylor polynomials.** For `r' ≤ r`, the Taylor polynomial of degree `r` of a
+tuple `A` has the same `r'`-jet at its center as the Taylor polynomial of degree `r'` of the
+truncated tuple: they differ by terms of order above `r'`. No symmetry or characteristic-zero
+assumption is needed. -/
+theorem sameJetAt_finiteJetPolynomial_castLE {r r' : ℕ} (hr : r' ≤ r)
+    (A : (i : Fin (r + 1)) → E [×i.val]→L[𝕜] F) (x : E) :
+    SameJetAt 𝕜 r' x (finiteJetPolynomial r A x)
+      (finiteJetPolynomial r' (fun i ↦ A (Fin.castLE (by omega) i)) x) := by
+  rw [sameJetAt_iff]
+  intro j hj
+  ext v
+  -- Both derivatives are symmetrizations of the order-`j` coefficients, which agree for `j ≤ r'`.
+  have hp := (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r A x).toHasFPowerSeriesOnBall
+  have hp' := (finiteJetPolynomial_hasFiniteFPowerSeriesOnBall r'
+    (fun i ↦ A (Fin.castLE (by omega) i)) x).toHasFPowerSeriesOnBall
+  rw [hp.iteratedFDeriv_eq_sum (contDiff_finiteJetPolynomial r A x (n := ω)).contDiffOn.analyticOn,
+    hp'.iteratedFDeriv_eq_sum (contDiff_finiteJetPolynomial r' _ x (n := ω)).contDiffOn.analyticOn]
+  simp [finiteJetSeries, show j < r + 1 by omega, show j < r' + 1 by omega]
 
 /-- A finite symmetric jet is realized by an analytic smooth function whose graph stays
 in any prescribed neighborhood of the center-value pair `(x, A 0 0)` near the center. -/
