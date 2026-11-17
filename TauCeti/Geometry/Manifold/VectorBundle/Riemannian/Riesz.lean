@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Dual
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Topology.VectorBundle.FiniteDimensional
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.ChartGram
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
@@ -38,9 +39,13 @@ frame smoothness API replace those constructions.
 * `Riemannian.Tensor.norm_sq_eq_apply_rieszDual` and
   `Riemannian.Tensor.norm_sq_eq_dotProduct_chartInvGramMatrix_mulVec` express the squared norm of
   a covector as its value on its Riesz dual, and in coordinates through the inverse Gram matrix.
-* `Riemannian.Tensor.contMDiffOn_rieszDual` proves smoothness on a chart domain from smoothness
-  of the covector's evaluations on the chart-local frame.
-* `Riemannian.Tensor.contMDiffAt_rieszDual` is the corresponding pointwise criterion.
+* `Riemannian.Tensor.contMDiffOn_rieszDual`, `Riemannian.Tensor.contMDiffAt_rieszDual`, and
+  `Riemannian.Tensor.mdifferentiableAt_rieszDual` prove regularity of the Riesz dual from
+  regularity of the covector's evaluations on the chart-local frame.
+* `ContMDiffAt.rieszDual_innerSL_comp`, `ContMDiff.rieszDual_innerSL_comp`, and
+  `MDifferentiableAt.rieszDual_innerSL_comp` deduce regularity of the tangent vector field
+  fibrewise Riesz-dual to `v ↦ ⟪τ, η v⟫` for a `V`-valued one-form `η` and section `τ` of a
+  Riemannian bundle `V`.
 
 Since `rieszDual` is the fibrewise equivalence itself, its linearity in the functional is
 Mathlib's `LinearIsometryEquiv` API (`map_add`, `map_smul`, `LinearIsometryEquiv.map_zero`).
@@ -238,7 +243,110 @@ theorem contMDiffAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).source)
   simpa only [c, Matrix.mulVec, dotProduct] using congrArg (TotalSpace.mk' E y)
     (rieszDual_eq_sum_chartLocalFrame (I := I) a hy (Φ y))
 
+section Pairing
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+  [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace ℝ (V x)]
+  [FiberBundle F V] [VectorBundle ℝ F V]
+  [IsContMDiffRiemannianBundle I n F V]
+
+/-- For a section `η` of `Hom(TM, V)` and a section `τ` of `V` that are `C^n` at `x`, the tangent
+vector field fibrewise Riesz-dual to `v ↦ ⟪τ, η v⟫` is `C^n` at `x`. -/
+theorem _root_.ContMDiffAt.rieszDual_innerSL_comp {η : Π y : M, TangentSpace I y →L[ℝ] V y}
+    {τ : Π y : M, V y} {x : M}
+    (hη : CMDiffAt n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
+    (hτ : CMDiffAt n (T% τ) x) :
+    ContMDiffAt I I.tangent n
+      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x := by
+  refine contMDiffAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
+  have hframe : CMDiffAt n (T% (chartLocalFrame (I := I) x j)) x := by
+    have hOn : CMDiff[(chartAt H x).source] n (T% (chartLocalFrame (I := I) x j)) := by
+      simpa only [TangentBundle.trivializationAt_baseSet] using
+        contMDiffOn_chartLocalFrame (I := I) (n := n) x j
+    exact hOn.contMDiffAt ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))
+  exact hτ.inner_bundle (hη.clm_bundle_apply hframe)
+
+/-- For a `C^n` section `η` of `Hom(TM, V)` and a `C^n` section `τ` of `V`, the tangent vector
+field fibrewise Riesz-dual to `v ↦ ⟪τ, η v⟫` is `C^n`. -/
+theorem _root_.ContMDiff.rieszDual_innerSL_comp {η : Π y : M, TangentSpace I y →L[ℝ] V y}
+    {τ : Π y : M, V y}
+    (hη : CMDiff n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)))
+    (hτ : CMDiff n (T% τ)) :
+    ContMDiff I I.tangent n
+      (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) :=
+  fun x ↦ (hη x).rieszDual_innerSL_comp (hτ x)
+
+end Pairing
+
 end Smooth
+
+section Differentiable
+
+variable [IsManifold I 2 M]
+  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+
+/-- Differentiability counterpart of `contMDiffAt_rieszDual`: if the evaluations of a covector
+field on the chart-local frame at `a` are differentiable at `x ∈ (chartAt H a).source`, then its
+fibrewise Riesz-dual vector field is differentiable at `x`. -/
+theorem mdifferentiableAt_rieszDual (a : M) {x : M} (hx : x ∈ (chartAt H a).source)
+    {Φ : (y : M) → TangentSpace I y →L[ℝ] ℝ}
+    (hΦ : ∀ j : Fin (Module.finrank ℝ E),
+      MDiffAt (fun y ↦ Φ y (chartLocalFrame (I := I) a j y)) x) :
+    MDiffAt (T% fun y ↦ rieszDual (I := I) y (Φ y)) x := by
+  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
+  have hmem : (chartAt H a).source ∈ 𝓝 x := (chartAt H a).open_source.mem_nhds hx
+  have hGinv (i j : Fin (Module.finrank ℝ E)) :
+      MDiffAt (fun y ↦ chartInvGramMatrix (I := I) a y i j) x := by
+    have hOn : ContMDiffOn I 𝓘(ℝ) 1
+        (fun y ↦ chartInvGramMatrix (I := I) a y i j) (chartAt H a).source := by
+      simpa only [TangentBundle.trivializationAt_baseSet] using
+        contMDiffOn_chartInvGramMatrix_entry (I := I) (n := 1) a i j
+    exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
+  have hframe (i : Fin (Module.finrank ℝ E)) :
+      MDiffAt (T% (chartLocalFrame (I := I) a i)) x := by
+    have hOn : CMDiff[(chartAt H a).source] 1 (T% (chartLocalFrame (I := I) a i)) := by
+      simpa only [TangentBundle.trivializationAt_baseSet] using
+        contMDiffOn_chartLocalFrame (I := I) (n := 1) a i
+    exact (hOn.contMDiffAt hmem).mdifferentiableAt one_ne_zero
+  have hc (i : Fin (Module.finrank ℝ E)) : MDiffAt (fun y ↦
+      ∑ j, chartInvGramMatrix (I := I) a y i j * Φ y (chartLocalFrame (I := I) a j y)) x := by
+    simpa only [Finset.sum_fn, Pi.mul_apply] using MDifferentiableAt.sum (t := Finset.univ)
+      fun j _ ↦ (hGinv i j).mul (hΦ j)
+  have hsum : MDiffAt (T% fun y ↦
+      ∑ i, (∑ j, chartInvGramMatrix (I := I) a y i j *
+        Φ y (chartLocalFrame (I := I) a j y)) • chartLocalFrame (I := I) a i y) x :=
+    MDifferentiableAt.sum_section fun i _ ↦ (hc i).smul_section (hframe i)
+  refine hsum.congr_of_eventuallyEq (Filter.eventually_of_mem hmem fun y hy ↦ ?_)
+  simpa only [Matrix.mulVec, dotProduct] using congrArg (TotalSpace.mk' E y)
+    (rieszDual_eq_sum_chartLocalFrame (I := I) a hy (Φ y))
+
+/-- For a section `η` of `Hom(TM, V)` and a section `τ` of `V` differentiable at `x` on a `C²`
+manifold with `C¹` Riemannian metrics on `TM` and `V`, the tangent vector field fibrewise
+Riesz-dual to `v ↦ ⟪τ, η v⟫` is differentiable at `x`. -/
+theorem _root_.MDifferentiableAt.rieszDual_innerSL_comp
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
+    [∀ y, NormedAddCommGroup (V y)] [∀ y, InnerProductSpace ℝ (V y)]
+    [FiberBundle F V] [VectorBundle ℝ F V] [IsContMDiffRiemannianBundle I 1 F V]
+    {η : Π y : M, TangentSpace I y →L[ℝ] V y} {τ : Π y : M, V y} {x : M}
+    (hη : MDiffAt
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] F) (E := fun z ↦ TangentSpace I z →L[ℝ] V z) y (η y)) x)
+    (hτ : MDiffAt (T% τ) x) :
+    MDiffAt (T% fun y ↦ rieszDual (I := I) y ((innerSL ℝ (τ y)).comp (η y))) x := by
+  have : IsManifold I (1 + 1) M := by rw [one_add_one_eq_two]; infer_instance
+  refine mdifferentiableAt_rieszDual x (mem_chart_source H x) fun j ↦ ?_
+  have hframe : MDiffAt (T% (chartLocalFrame (I := I) x j)) x := by
+    have hOn : CMDiff[(chartAt H x).source] 1 (T% (chartLocalFrame (I := I) x j)) := by
+      simpa only [TangentBundle.trivializationAt_baseSet] using
+        contMDiffOn_chartLocalFrame (I := I) (n := 1) x j
+    exact (hOn.contMDiffAt
+      ((chartAt H x).open_source.mem_nhds (mem_chart_source H x))).mdifferentiableAt one_ne_zero
+  exact hτ.inner_bundle (hη.clm_bundle_apply hframe)
+
+end Differentiable
 
 end Tensor
 end Riemannian

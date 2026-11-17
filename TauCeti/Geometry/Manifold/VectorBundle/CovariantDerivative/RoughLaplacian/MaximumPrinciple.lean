@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.MaximumPrinciple
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Hessian
-public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian
+public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.RoughLaplacian.Basic
 
 /-!
 # The squared norm of a section and the maximum principle for the rough Laplacian

@@ -20,6 +20,9 @@ section values and fibre vectors.
 
 * `IsCovariantDerivativeOn.neg` and `IsCovariantDerivativeOn.sub`: a covariant derivative over
   `u` commutes with negation and subtraction of sections differentiable at a point of `u`.
+* `IsCovariantDerivativeOn.eq_zero_of_notMem_closure` and
+  `CovariantDerivative.covariantDerivative_eq_zero_of_notMem_closure`: a covariant derivative
+  vanishes outside the closure of a section's nonzero locus.
 * `TauCeti.Manifold.covariantDerivative_sum`: a covariant derivative over `u` commutes with finite
   sums of sections differentiable at a point of `u`.
 * `CovariantDerivative.covariantDerivative_smul_section_apply` and
@@ -106,6 +109,20 @@ theorem sub (hcov : IsCovariantDerivativeOn F cov u) (hσ : MDiffAt (T% σ) x)
   rw [sub_eq_add_neg, hcov.add hσ (mdifferentiableAt_neg_section hσ') hx, hcov.neg hσ' hx,
     ← sub_eq_add_neg]
 
+/-- A covariant derivative on a neighbourhood `u` of `x` vanishes at `x` whenever `x` lies outside
+the closure of the nonzero locus of `σ`, without assuming differentiability of `σ` elsewhere. -/
+theorem eq_zero_of_notMem_closure (hcov : IsCovariantDerivativeOn F cov u) (hu : u ∈ 𝓝 x)
+    (hx : x ∉ closure {y | σ y ≠ 0}) :
+    cov σ x = 0 := by
+  have hzero : ∀ᶠ y in 𝓝 x, σ y = (0 : Π z, V z) y :=
+    Filter.eventually_of_mem (isClosed_closure.isOpen_compl.mem_nhds hx) fun y hy ↦
+      by_contra fun h ↦ hy (subset_closure h)
+  have h0 : MDiffAt (T% (0 : Π z, V z)) x := mdifferentiableAt_zeroSection ..
+  have hT : (T% σ) =ᶠ[𝓝 x] (T% (0 : Π z, V z)) :=
+    hzero.mono fun y hy ↦ congrArg (TotalSpace.mk' F y) hy
+  rw [hcov.congr_of_eventuallyEq (h0.congr_of_eventuallyEq hT) h0 hu hzero,
+    hcov.zero (mem_of_mem_nhds hu)]
+
 end IsCovariantDerivativeOn
 
 namespace CovariantDerivative
@@ -120,6 +137,12 @@ variable
   [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)] [∀ x, TopologicalSpace (V x)]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
   [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- A covariant derivative vanishes off the closure of a section's nonzero locus. -/
+theorem covariantDerivative_eq_zero_of_notMem_closure (cov : CovariantDerivative I F V)
+    {σ : Π x : M, V x} {x : M} (hx : x ∉ closure {y | σ y ≠ 0}) :
+    cov σ x = 0 :=
+  cov.isCovariantDerivativeOnUniv.eq_zero_of_notMem_closure Filter.univ_mem hx
 
 omit [VectorBundle 𝕜 F V] in
 /-- Adding an endomorphism-valued one-form, evaluated on a section. -/

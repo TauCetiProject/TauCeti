@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.CanonicalTensor
 public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
-import TauCeti.Analysis.InnerProductSpace.Nondegenerate
+import TauCeti.Analysis.InnerProductSpace.CanonicalTensor
 
 /-!
 # Metric trace of a bilinear form
@@ -53,8 +53,7 @@ theorem bilinFormTrace_apply (B : BilinForm ℝ W) :
 /-- In an orthonormal basis, the metric trace is the sum of the diagonal values. -/
 theorem bilinFormTrace_eq_sum {i : Type*} [Fintype i] (B : BilinForm ℝ W)
     (b : OrthonormalBasis i ℝ W) : bilinFormTrace B = ∑ j, B (b j) (b j) := by
-  rw [bilinFormTrace_apply, InnerProductSpace.canonicalCovariantTensor_eq_sum W b, map_sum]
-  simp only [TensorProduct.lift.tmul]
+  rw [bilinFormTrace_apply, TensorProduct.lift_canonicalCovariantTensor_eq_sum B b]
 
 /-- In an arbitrary basis `b`, the metric trace contracts the form against the inverse Gram
 matrix of `b`: `tr_g B = ∑ i j, (G⁻¹)ᵢⱼ B(bᵢ, bⱼ)` with `Gᵢⱼ = ⟪bᵢ, bⱼ⟫`. This is the classical
@@ -62,24 +61,8 @@ index formula `gⁱʲ Bᵢⱼ`; the basis need not be orthogonal. -/
 theorem bilinFormTrace_eq_sum_inv_gram {ι : Type*} [Fintype ι] [DecidableEq ι]
     (B : BilinForm ℝ W) (b : Module.Basis ι ℝ W) :
     bilinFormTrace B = ∑ i, ∑ j, (Matrix.gram ℝ b)⁻¹ i j * B (b i) (b j) := by
-  set Ginv := (Matrix.gram ℝ b)⁻¹
-  -- `d i` is the vector representing the `i`-th coordinate functional of `b`.
-  let d : ι → W := fun i ↦ ∑ j, Ginv i j • b j
-  have hd (i : ι) (w : W) : ⟪d i, w⟫_ℝ = b.repr w i := by
-    simpa only [Module.Basis.dualBasis_innerₗ_eq_sum] using b.inner_dualBasis_left i w
-  have htensor : InnerProductSpace.canonicalCovariantTensor W = ∑ i, b i ⊗ₜ[ℝ] d i := by
-    let v := stdOrthonormalBasis ℝ W
-    rw [InnerProductSpace.canonicalCovariantTensor_eq_sum W v]
-    calc ∑ k, v k ⊗ₜ[ℝ] v k = ∑ k, (∑ i, ⟪d i, v k⟫_ℝ • b i) ⊗ₜ[ℝ] v k := by
-          simp only [hd, b.sum_repr]
-      _ = ∑ i, b i ⊗ₜ[ℝ] ∑ k, ⟪v k, d i⟫_ℝ • v k := by
-          simp only [TensorProduct.sum_tmul, TensorProduct.tmul_sum, TensorProduct.smul_tmul,
-            real_inner_comm (d _)]
-          exact Finset.sum_comm
-      _ = ∑ i, b i ⊗ₜ[ℝ] d i := by simp only [v.sum_repr']
-  rw [bilinFormTrace_apply, htensor, map_sum]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  simp only [TensorProduct.lift.tmul, d, map_sum, map_smul, smul_eq_mul]
+  simp_rw [bilinFormTrace_apply, TensorProduct.lift_canonicalCovariantTensor_eq_sum_inv_gram B b,
+    smul_eq_mul]
 
 /-- The metric trace of the inner product is the real dimension. -/
 @[simp]
