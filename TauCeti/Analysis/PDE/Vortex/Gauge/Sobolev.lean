@@ -25,7 +25,7 @@ of variations. This file realizes the rest of the complex, for every integer `k 
 
 * `sobolevGaugeDirection f m hk y : H^(k+2)(ℂ) → H^(k+1)(ℂ)⁴`, the infinitesimal gauge action at
   `x_m + y`. Its zeroth-order part multiplies by the coordinates of `x_m + y` without losing a
-  derivative (`fieldMulSelfCLM`), because `H^(k+1)(ℂ)` is an algebra.
+  derivative (`TauCeti.Vortex.fieldMulSelfCLM`), because `H^(k+1)(ℂ)` is an algebra.
 * `sobolevGaugeAdjoint f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)`, its formal adjoint.
 * `sobolevScaleGaugeFixedOperator f m hk y : H^(k+1)(ℂ)⁴ → H^k(ℂ)⁴`, the gauge-fixed operator
   `d₀* ⊕ d₁`.
@@ -37,7 +37,7 @@ On complexified coordinates of real fields these compute the pointwise operators
 **The complex.** At a vortex the two maps compose to zero: if the coordinates `y` of a `C¹` field
 `x_m + y` are a zero of the Sobolev equation map `TauCeti.Vortex.sobolevEquation`, then
 `d₁ ∘ d₀ = 0` as an operator `H^(k+2)(ℂ) → H^k(ℂ)³`
-(`sobolevLinearizedEquation_comp_sobolevGaugeDirection`). Both sides are continuous, so it
+(`sobolevLinearizedEquation_comp_sobolevGaugeDirection_eq_zero`). Both sides are continuous, so it
 suffices to test real Schwartz phases, where this is the pointwise identity
 `TauCeti.Vortex.linearizedEquation_gaugeDirection_eq_zero`. So at every such vortex
 `H^(k+2)(ℂ) → H^(k+1)(ℂ)⁴ → H^k(ℂ)³` is a complex, the infinitesimal gauge directions lie in the
@@ -66,54 +66,6 @@ open BesselPotentialSpace Complex ContinuousLinearMap MeasureTheory
 open scoped BesselPotentialSpace ContDiff Laplacian SchwartzMap
 
 variable {f : ContDiffBump (0 : ℝ)} {m k : ℕ}
-
-/-! ### Multiplication by the coordinates of a field on `H^(k+1)` -/
-
-variable (f m) in
-/-- Multiplication by the coordinate `a` of `x_m + y`, for complexified coordinates
-`y ∈ H^(k+1)(ℂ)⁴` of a variation, as a bounded operator on `H^(k+1)(ℂ)`. Unlike `fieldMulCLM`,
-which maps `H^(k+1)(ℂ)` to `H^k(ℂ)`, it keeps the order: the reference coordinate is smooth with
-bounded derivatives, and `H^(k+1)(ℂ)` is an algebra for `k ≥ 1`. -/
-def fieldMulSelfCLM (hk : 1 ≤ k) (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) :
-    H^{(k : ℝ) + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ) :=
-  (inclusion (Nat.cast_succ k).ge).comp
-      ((referenceMulCLM f m (k + 1) a).comp (inclusion (Nat.cast_succ k).le)) +
-    mulCLM (finrank_real_complex_lt_two_mul (by linarith [show (1 : ℝ) ≤ k from mod_cast hk]))
-      (y a)
-
-/-- `fieldMulSelfCLM` is the sum of the multiplications by the reference coordinate and by `y_a`;
-`hs` is any proof that `H^(k+1)(ℂ)` is an algebra. -/
-theorem fieldMulSelfCLM_apply (hk : 1 ≤ k) (hs : (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1))
-    (y : Fin 4 → H^{(k : ℝ) + 1}(ℂ)) (a : Fin 4) (v : H^{(k : ℝ) + 1}(ℂ)) :
-    fieldMulSelfCLM f m hk y a v =
-      inclusion (Nat.cast_succ k).ge (referenceMulCLM f m (k + 1) a
-        (inclusion (Nat.cast_succ k).le v)) + mulCLM hs (y a) v :=
-  (rfl)
-
-/-- If the coordinates of `y` are almost everywhere the real functions `y_a`, and `v` is almost
-everywhere the real function `g`, then `fieldMulSelfCLM f m hk y a v` is almost everywhere the
-product `(x_m + y)_a g`. -/
-theorem coeFn_inclusionLp_fieldMulSelfCLM_ae_eq (hk : 1 ≤ k) {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)}
-    {y : ℂ → EuclideanSpace ℝ (Fin 4)}
-    (hu : ∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ)) (a : Fin 4)
-    {v : H^{(k : ℝ) + 1}(ℂ)} {g : ℂ → ℝ}
-    (hv : ⇑(inclusionLp (by positivity) v) =ᵐ[volume] fun z ↦ (g z : ℂ)) :
-    ⇑(inclusionLp (by positivity) (fieldMulSelfCLM f m hk u a v)) =ᵐ[volume]
-      fun z ↦ ((referenceField f m + y) z a * g z : ℝ) := by
-  have hs : (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) :=
-    finrank_real_complex_lt_two_mul (by linarith [show (1 : ℝ) ≤ k from mod_cast hk])
-  have h₀ : (0 : ℝ) ≤ k + 1 := by positivity
-  have hr := coeFn_inclusionLp_referenceMulCLM_ae_eq (f := f) (m := m) (k := k + 1) a
-    (inclusion (Nat.cast_succ k).le v)
-  rw [inclusionLp_inclusion] at hr
-  rw [fieldMulSelfCLM_apply hk hs, map_add, inclusionLp_inclusion]
-  filter_upwards [Lp.coeFn_add (inclusionLp _ (referenceMulCLM f m (k + 1) a
-    (inclusion (Nat.cast_succ k).le v))) (inclusionLp h₀ (mulCLM hs (u a) v)), hr,
-    coeFn_toLp_inclusion_mulCLM hs h₀ (u a) v, hu a, hv] with z h₁ h₂ h₃ h₄ h₅
-  simp only [toLp_inclusion] at h₃
-  rw [h₁, Pi.add_apply, h₂, h₃, h₄, h₅]
-  simp only [PiLp.add_apply, Pi.add_apply, Complex.ofReal_mul, Complex.ofReal_add]
-  ring
 
 /-! ### The infinitesimal gauge action -/
 
@@ -308,19 +260,18 @@ theorem coeFn_inclusionLp_sobolevScaleGaugeFixedOperator_ae_eq (hk : 1 ≤ k)
 
 /-! ### Dependence on the field -/
 
-/-- Multiplication by the coordinate `a` of `x_m + y`, as an operator `H^(k+1)(ℂ) → H^k(ℂ)`,
-depends analytically on the coordinates `y`: it is affine in them. -/
-theorem contDiff_fieldMulCLM (hk : 1 ≤ k) (a : Fin 4) :
-    ContDiff ℂ ω fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦ fieldMulCLM f m hk y a := by
-  have hs : (Module.finrank ℝ ℂ : ℝ) < 2 * ((k : ℝ) + 1) :=
-    finrank_real_complex_lt_two_mul (by linarith [show (1 : ℝ) ≤ k from mod_cast hk])
-  let P := (mulCLM hs).comp (proj (R := ℂ) (φ := fun _ : Fin 4 ↦ H^{(k : ℝ) + 1}(ℂ)) a)
-  have h : (fun y : Fin 4 → H^{(k : ℝ) + 1}(ℂ) ↦ fieldMulCLM f m hk y a) = fun y ↦
-      (referenceMulCLM f m k a).comp (inclusion (lt_add_one _).le) +
-        (inclusion (lt_add_one _).le).comp (P y) :=
-    funext fun y ↦ ext fun v ↦ fieldMulCLM_apply hk hs y a v
-  rw [h]
-  exact contDiff_const.add (contDiff_const.clm_comp P.contDiff)
+/-- **The infinitesimal gauge action depends analytically on the field.** -/
+theorem contDiff_sobolevGaugeDirection (hk : 1 ≤ k) :
+    ContDiff ℂ ω (sobolevGaugeDirection f m hk) := by
+  let T : (Fin 4 → H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] H^{(k : ℝ) + 1}(ℂ)) →L[ℂ]
+      H^{(k : ℝ) + 1 + 1}(ℂ) →L[ℂ] (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) :=
+    (piEquivL ℂ _ _ : _ ≃L[ℂ] _).toContinuousLinearMap
+  refine T.contDiff.comp (contDiff_pi' fun i ↦ ?_)
+  fin_cases i
+  · exact contDiff_const
+  · exact contDiff_const
+  · exact ((contDiff_fieldMulSelfCLM hk 3).clm_comp contDiff_const).neg
+  · exact (contDiff_fieldMulSelfCLM hk 2).clm_comp contDiff_const
 
 /-- **The adjoint gauge action depends analytically on the field.** -/
 theorem contDiff_sobolevGaugeAdjoint (hk : 1 ≤ k) : ContDiff ℂ ω (sobolevGaugeAdjoint f m hk) := by
@@ -335,9 +286,7 @@ coordinates `y ∈ H^(k+1)(ℂ)⁴` of `x_m + y` to the bounded operators `H^(k+
 `sobolevScaleGaugeFixedOperator` is analytic. -/
 theorem contDiff_sobolevScaleGaugeFixedOperator (hk : 1 ≤ k) :
     ContDiff ℂ ω (sobolevScaleGaugeFixedOperator f m hk) := by
-  have hL : ContDiff ℂ ω (sobolevLinearizedEquation f m hk) := by
-    rw [← funext (fderiv_sobolevEquation (f := f) (m := m) hk)]
-    exact (contDiff_sobolevEquation hk).fderiv_right (by simp)
+  have hL := contDiff_sobolevLinearizedEquation (f := f) (m := m) hk
   let T : (Fin 4 → (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] H^{(k : ℝ)}(ℂ)) →L[ℂ]
       (Fin 4 → H^{(k : ℝ) + 1}(ℂ)) →L[ℂ] (Fin 4 → H^{(k : ℝ)}(ℂ)) :=
     (piEquivL ℂ _ _ : _ ≃L[ℂ] _).toContinuousLinearMap
@@ -355,7 +304,7 @@ theorem contDiff_sobolevScaleGaugeFixedOperator (hk : 1 ≤ k) :
 `x = x_m + y ∈ A_m^(k+1)`. If `x` is a vortex, that is, `sobolevEquation f m hk u = 0`, then the
 infinitesimal gauge action followed by the linearized equation vanishes:
 `d₁ ∘ d₀ = 0` as an operator `H^(k+2)(ℂ) → H^k(ℂ)³`. -/
-theorem sobolevLinearizedEquation_comp_sobolevGaugeDirection (hk : 1 ≤ k)
+theorem sobolevLinearizedEquation_comp_sobolevGaugeDirection_eq_zero (hk : 1 ≤ k)
     {u : Fin 4 → H^{(k : ℝ) + 1}(ℂ)} {y : ℂ → EuclideanSpace ℝ (Fin 4)}
     (hu : ∀ a, ⇑(inclusionLp (by positivity) (u a)) =ᵐ[volume] fun z ↦ (y z a : ℂ))
     (hy : ContDiff ℝ 1 y) (hsol : sobolevEquation f m hk u = 0) :
