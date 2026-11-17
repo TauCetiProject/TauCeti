@@ -21,9 +21,13 @@ equation**
 
 `R_t h_t = -(∂_t α_t)(R_t)`, where `h_t = h (t, ·)`,
 
-which is the hypothesis `hR` of `TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`. This
-file solves it near a hypersurface transverse to the Reeb fields, with zero values on the
-hypersurface.
+on an open set `U ⊆ ℝ × M`; this is the hypothesis `hR` of
+`TauCeti.SmoothForm.exists_partialDiffeomorph_mpullback_eq`. This file solves the equation near a
+hypersurface transverse to the Reeb fields, with zero values on the hypersurface. The solution is
+smooth only on that neighbourhood, the target of a flow-out chart, so it gives `hR` there but not
+the global smoothness of `h` that the strict Moser theorem also requires. Before it is fed to that
+theorem it still has to be cut off or extended to a smooth function on all of `ℝ × M` which agrees
+with it on a smaller open set, and that set is then used as `U`.
 
 The equation is an ordinary differential equation along the trajectories of the Reeb fields, so it
 is solved by integration along them. On `ℝ × M` the Reeb fields form the vertical field
@@ -43,8 +47,8 @@ integral solving the transport equation along the flow-out
 In the strict neighbourhood theorem for a closed Legendrian submanifold `Λ` (Kriegl–Michor),
 `α_t` is the linear interpolation between two contact forms which agree together with their
 exterior derivatives along `Λ`, and `ι` is a hypersurface containing `Λ` and transverse to the Reeb
-fields. The solution `h` of this file is the function `h_t = α_t(X_t)` of the strict Moser vector
-field `X_t` there.
+fields. Near `Λ`, a globally smooth extension of the solution `h` of this file serves as the
+function `h_t = α_t(X_t)` of the strict Moser vector field `X_t` there.
 
 ## Main results
 
@@ -146,6 +150,12 @@ theorem exists_mvfderiv_apply_reebVectorField_eq_of_flowOut
     rw [mfderiv_prod_right] at hslice
     have hp' := hderiv p hp
     rw [verticalField_apply] at hp'
+    -- `hslice` ends in `mvfderiv h (p.1, p.2) (inr (R p.1 p.2))` and `hp'` starts with
+    -- `mvfderiv h p (0, R p.1 p.2)`. These agree definitionally: `inr v` is `(0, v)`
+    -- (`ContinuousLinearMap.inr_apply`), and `(p.1, p.2)` is `p` by eta. The rewrite
+    -- `inr_apply` itself does not apply here: `inr` lands in the product
+    -- `TangentSpace 𝓘(ℝ, ℝ) p.1 × TangentSpace I p.2`, which is only definitionally the tangent
+    -- space `TangentSpace (𝓘(ℝ, ℝ).prod I) (p.1, p.2)`, so the rewrite is not type-correct.
     exact hslice.trans hp'
 
 end TauCeti.SmoothForm

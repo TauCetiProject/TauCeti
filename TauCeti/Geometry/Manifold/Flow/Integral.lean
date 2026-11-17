@@ -136,6 +136,13 @@ private def integralField (v : (x : M) → TangentSpace I x) (f : M → F) :
     (p : F × M) → TangentSpace (𝓘(ℝ, F).prod I) p :=
   fun p ↦ (f p.2, v p.2)
 
+omit [CompleteSpace E] [T2Space M] [BoundarylessManifold I M] [IsManifold I 1 M]
+  [CompleteSpace F] in
+/-- The field `(f, v)` at `p` is `(f p.2, v p.2)`. -/
+private theorem integralField_apply (v : (x : M) → TangentSpace I x) (f : M → F) (p : F × M) :
+    integralField v f p = (f p.2, v p.2) :=
+  rfl
+
 omit [CompleteSpace E] [T2Space M] [BoundarylessManifold I M] [CompleteSpace F] in
 /-- The field `(f, v)` is as regular as `v` and `f`. -/
 private theorem contMDiff_integralField {n : ℕ∞}
@@ -148,8 +155,11 @@ private theorem contMDiff_integralField {n : ℕ∞}
     have hg : ContMDiff (𝓘(ℝ, F).prod I) 𝓘(ℝ, F × F) n (fun p : F × M ↦ (p.1, f p.2)) :=
       contMDiff_fst.prodMk_space (hf.comp contMDiff_snd)
     exact (contMDiff_tangentBundleModelSpaceHomeomorph_symm (I := 𝓘(ℝ, F)) (n := n)).comp hg
-  exact (contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, F)) (M := F) (I' := I) (M' := M)).comp
-    (h₁.prodMk (hv.comp contMDiff_snd))
+  refine ((contMDiff_equivTangentBundleProd_symm (I := 𝓘(ℝ, F)) (M := F) (I' := I)
+    (M' := M)).comp (h₁.prodMk (hv.comp contMDiff_snd))).congr fun p ↦ ?_
+  -- `(equivTangentBundleProd _ F I M).symm (a, b)` is `⟨(a.1, b.1), (a.2, b.2)⟩` by definition.
+  rw [integralField_apply]
+  rfl
 
 /-- On an open interval of times of the flow domain at `x`, the curve
 `σ ↦ (r + I(σ, x), φ_σ x)` is an integral curve of the field `(f, v)`. -/
@@ -167,8 +177,11 @@ private theorem isMIntegralCurveOn_integralField
   have h₁ : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, F) (fun s ↦ r + flowIntegral v f s x) σ
       ((1 : ℝ →L[ℝ] ℝ).smulRight (f (flowOf v σ x))) :=
     hasMFDerivAt_iff_hasFDerivAt.2 ((hasDerivAt_flowIntegral hv hf hdom).const_add r).hasFDerivAt
-  -- Both derivatives send `a` to `(a • f (φ_σ x), a • v (φ_σ x))`.
+  -- Both derivatives send `a` to `(a • f (φ_σ x), a • v (φ_σ x))`: after unfolding the field,
+  -- the two sides agree by `ContinuousLinearMap.prod_apply` and `smulRight_apply`, with the
+  -- tangent space of `F × M` definitionally the product of tangent spaces.
   refine ((h₁.prodMk h₂).congr_mfderiv (ContinuousLinearMap.ext fun a ↦ ?_)).hasMFDerivWithinAt
+  rw [integralField_apply]
   rfl
 
 /-- **The flow of the field `(f, v)`.** Where the flow of `v` is defined, so is that of `(f, v)`,
