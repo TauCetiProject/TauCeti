@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Complement.Local
+public import TauCeti.GroupTheory.Complement.SemidirectProduct
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
 
 /-!
@@ -19,7 +19,8 @@ or finiteness is needed.
 `Subgroup.localQuotientSplittingEquiv` combines the global quotient-splitting dictionary
 with the passage between subgroups of `H` and subgroups of the ambient group contained in `H`.
 Its inverse recovers the right projection of the local product decomposition; the left
-projection is the remainder after removing that splitting value.
+projection is the remainder after removing that splitting value, and the ambient components of
+`Subgroup.IsLocalComplement.semidirectProductMulEquiv.symm` evaluate accordingly.
 -/
 
 public section
@@ -109,6 +110,23 @@ theorem coe_leftProjection_eq_mul_inv_localQuotientSplitting (x : H) :
         (QuotientGroup.mk' (N.subgroupOf H) x) : G)⁻¹ := by
   rw [h.coe_localQuotientSplittingEquiv_symm_mk]
   exact eq_mul_inv_iff_mul_eq.mpr (h.leftProjection_mul_rightProjection x)
+
+/-- In the ambient group, the right component of `semidirectProductMulEquiv.symm` agrees with the
+local quotient splitting evaluated on the coset of `x`. -/
+theorem coe_right_semidirectProductMulEquiv_symm (x : H) :
+    ((h.semidirectProductMulEquiv.symm x).right : G) =
+      ((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩
+        (QuotientGroup.mk' (N.subgroupOf H) x) : G) := by
+  rw [h.right_semidirectProductMulEquiv_symm, h.coe_localQuotientSplittingEquiv_symm_mk]
+
+/-- In the ambient group, the left component of `semidirectProductMulEquiv.symm` is the remainder
+after dividing out the local quotient splitting value. -/
+theorem coe_left_semidirectProductMulEquiv_symm (x : H) :
+    ((h.semidirectProductMulEquiv.symm x).left : G) = (x : G) *
+      ((N.localQuotientSplittingEquiv H h.left_le).symm ⟨K, h⟩
+        (QuotientGroup.mk' (N.subgroupOf H) x) : G)⁻¹ := by
+  rw [h.left_semidirectProductMulEquiv_symm,
+    h.coe_leftProjection_eq_mul_inv_localQuotientSplitting]
 
 end IsLocalComplement
 
