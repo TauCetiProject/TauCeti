@@ -9,8 +9,9 @@ public import Mathlib.RingTheory.Regular.RegularSequence
 public import TauCeti.RingTheory.FormalGroup.Hazewinkel.Integral
 public import TauCeti.RingTheory.FormalGroup.Height.Ideal
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Basic
-import Mathlib.Data.Nat.Prime.Int
+import Mathlib.RingTheory.Ideal.Int
 import TauCeti.RingTheory.FormalGroup.Hazewinkel.NSMul
+import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPolynomial.RegularSequence
 
 /-!
@@ -231,15 +232,6 @@ section Polynomial
 
 variable (p : ℕ) [hp : Fact p.Prime]
 
-omit hp in
-private theorem span_natCast_eq_map_C (R : Type*) [CommRing R] :
-    Ideal.span {(p : MvPolynomial ℕ+ R)} = (Ideal.span {(p : R)}).map MvPolynomial.C := by
-  rw [Ideal.map_span, Set.image_singleton, map_natCast]
-
-private theorem isPrime_span_natCast_int : (Ideal.span {(p : ℤ)}).IsPrime :=
-  (Ideal.span_singleton_prime (Nat.cast_ne_zero.mpr hp.out.ne_zero)).mpr
-    (Nat.prime_iff_prime_int.mp hp.out)
-
 /-- If `(p)` is a prime ideal of `R` (for instance `R = ℤ` or `R = ℤ_(p)`), then for every `n ≥ 1`
 the `n`-th height ideal of `hazewinkelIntegralFormalGroup p MvPolynomial.X` over `R[v₁, v₂, …]` is
 prime. -/
@@ -248,7 +240,8 @@ theorem isPrime_heightIdeal_hazewinkelIntegralFormalGroup_X {R : Type*} [CommRin
     ((hazewinkelIntegralFormalGroup p
       (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).heightIdeal p n).IsPrime := by
   have := hprime
-  rw [heightIdeal_hazewinkelIntegralFormalGroup p _ hn, span_natCast_eq_map_C,
+  rw [heightIdeal_hazewinkelIntegralFormalGroup p _ hn,
+    ← map_natCast (MvPolynomial.C (σ := ℕ+)), ← Set.image_singleton, ← Ideal.map_span,
     ← MvPolynomial.comap_map_quotient_mk_span_X_image]
   exact (MvPolynomial.span_X_image_isPrime _).comap _
 
@@ -259,7 +252,8 @@ theorem isPrime_iSup_heightIdeal_hazewinkelIntegralFormalGroup_X {R : Type*} [Co
     (⨆ n, (hazewinkelIntegralFormalGroup p
       (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).heightIdeal p n).IsPrime := by
   have := hprime
-  rw [iSup_heightIdeal_hazewinkelIntegralFormalGroup, ← Set.image_univ, span_natCast_eq_map_C,
+  rw [iSup_heightIdeal_hazewinkelIntegralFormalGroup, ← Set.image_univ,
+    ← map_natCast (MvPolynomial.C (σ := ℕ+)), ← Set.image_singleton, ← Ideal.map_span,
     ← MvPolynomial.comap_map_quotient_mk_span_X_image]
   exact (MvPolynomial.span_X_image_isPrime _).comap _
 
@@ -268,14 +262,16 @@ theorem isPrime_iSup_heightIdeal_hazewinkelIntegralFormalGroup_X {R : Type*} [Co
 theorem isPrime_heightIdeal_universalHazewinkelIntegralFormalGroup {n : ℕ} (hn : 0 < n) :
     ((universalHazewinkelIntegralFormalGroup p).heightIdeal p n).IsPrime := by
   rw [← hazewinkelIntegralFormalGroup_X]
-  exact isPrime_heightIdeal_hazewinkelIntegralFormalGroup_X p (isPrime_span_natCast_int p) hn
+  exact isPrime_heightIdeal_hazewinkelIntegralFormalGroup_X p
+    (Int.ideal_span_isMaximal_of_prime p).isPrime hn
 
 /-- The supremum `⨆ n, I_n = (p, v₁, v₂, …)` of the height ideals of
 `universalHazewinkelIntegralFormalGroup p` over `ℤ[v₁, v₂, …]` is prime. -/
 theorem isPrime_iSup_heightIdeal_universalHazewinkelIntegralFormalGroup :
     (⨆ n, (universalHazewinkelIntegralFormalGroup p).heightIdeal p n).IsPrime := by
   rw [← hazewinkelIntegralFormalGroup_X]
-  exact isPrime_iSup_heightIdeal_hazewinkelIntegralFormalGroup_X p (isPrime_span_natCast_int p)
+  exact isPrime_iSup_heightIdeal_hazewinkelIntegralFormalGroup_X p
+    (Int.ideal_span_isMaximal_of_prime p).isPrime
 
 /-- If `(p) ≠ ⊤` in `R`, then the supremum `⨆ n, I_n` of the height ideals over `R[v₁, v₂, …]` is a
 proper ideal. -/
@@ -284,7 +280,8 @@ theorem iSup_heightIdeal_hazewinkelIntegralFormalGroup_X_ne_top {R : Type*} [Com
     ⨆ n, (hazewinkelIntegralFormalGroup p
       (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).heightIdeal p n ≠ ⊤ := by
   have : Nontrivial (R ⧸ Ideal.span {(p : R)}) := Ideal.Quotient.nontrivial_iff.mpr hptop
-  rw [iSup_heightIdeal_hazewinkelIntegralFormalGroup, ← Set.image_univ, span_natCast_eq_map_C,
+  rw [iSup_heightIdeal_hazewinkelIntegralFormalGroup, ← Set.image_univ,
+    ← map_natCast (MvPolynomial.C (σ := ℕ+)), ← Set.image_singleton, ← Ideal.map_span,
     ← MvPolynomial.comap_map_quotient_mk_span_X_image]
   intro htop
   rw [Ideal.eq_top_iff_one, Ideal.mem_comap, map_one, ← Ideal.eq_top_iff_one] at htop
@@ -327,7 +324,8 @@ theorem strictMono_heightIdeal_hazewinkelIntegralFormalGroup_X {R : Type*} [Comm
       have hm2 : m + 2 = (m' : ℕ) + 1 := by rw [hm']
       rw [hm2, heightIdeal_hazewinkelIntegralFormalGroup_succ]
       exact Ideal.mem_sup_right (Ideal.mem_span_singleton_self _)
-    rw [← heq, heightIdeal_hazewinkelIntegralFormalGroup p _ m.succ_pos, span_natCast_eq_map_C,
+    rw [← heq, heightIdeal_hazewinkelIntegralFormalGroup p _ m.succ_pos,
+      ← map_natCast (MvPolynomial.C (σ := ℕ+)), ← Set.image_singleton, ← Ideal.map_span,
       ← MvPolynomial.comap_map_quotient_mk_span_X_image, Ideal.mem_comap, MvPolynomial.map_X] at hin
     classical
     rw [MvPolynomial.span_X_image_eq_ker_aeval_ite_mem, RingHom.mem_ker, MvPolynomial.aeval_X]
@@ -342,7 +340,8 @@ theorem isSMulRegular_X_quotient_heightIdeal_hazewinkelIntegralFormalGroup_X
       (MvPolynomial ℕ+ R ⧸ (hazewinkelIntegralFormalGroup p
         (MvPolynomial.X : ℕ+ → MvPolynomial ℕ+ R)).heightIdeal p n)
       (MvPolynomial.X n : MvPolynomial ℕ+ R) := by
-  rw [heightIdeal_hazewinkelIntegralFormalGroup p _ n.pos, span_natCast_eq_map_C]
+  rw [heightIdeal_hazewinkelIntegralFormalGroup p _ n.pos,
+    ← map_natCast (MvPolynomial.C (σ := ℕ+)), ← Set.image_singleton, ← Ideal.map_span]
   exact MvPolynomial.isSMulRegular_X_quotient_map_C_sup_span_X_image _ _ (by simp)
 
 /-- For every commutative ring `R` and `n : ℕ+`, the `pⁿ`-th coefficient of `[p]_(F_X)` is regular
@@ -412,7 +411,7 @@ theorem isRegular_coeff_pow_nsmulSeries_universalHazewinkelIntegralFormalGroup (
   rw [← hazewinkelIntegralFormalGroup_X]
   exact isRegular_coeff_pow_nsmulSeries_hazewinkelIntegralFormalGroup_X p
     (fun _ _ h ↦ mul_left_cancel₀ (Nat.cast_ne_zero.mpr hp.out.ne_zero) h)
-    (isPrime_span_natCast_int p).ne_top n
+    (Int.ideal_span_isMaximal_of_prime p).ne_top n
 
 end Polynomial
 
@@ -431,7 +430,7 @@ theorem iSup_heightIdeal_formalGroup_ne_top :
   rw [Ideal.map_iSup, Ideal.map_top] at hmap
   simp only [FormalGroup.map_heightIdeal, map_lift] at hmap
   exact iSup_heightIdeal_hazewinkelIntegralFormalGroup_X_ne_top p
-    (isPrime_span_natCast_int p).ne_top hmap
+    (Int.ideal_span_isMaximal_of_prime p).ne_top hmap
 
 /-- Every height ideal `I_n` of the universal formal group law over `LazardRing` is proper. -/
 theorem heightIdeal_formalGroup_ne_top (n : ℕ) :
@@ -444,7 +443,7 @@ strictly increasing. -/
 theorem strictMono_heightIdeal_formalGroup :
     StrictMono (formalGroup.heightIdeal p) := by
   have hstrict := strictMono_heightIdeal_hazewinkelIntegralFormalGroup_X p (R := ℤ)
-    (Nat.cast_ne_zero.mpr hp.out.ne_zero) (isPrime_span_natCast_int p).ne_top
+    (Nat.cast_ne_zero.mpr hp.out.ne_zero) (Int.ideal_span_isMaximal_of_prime p).ne_top
   intro m n hmn
   refine lt_of_le_of_ne (formalGroup.heightIdeal_mono hmn.le) fun heq ↦ (hstrict hmn).ne ?_
   simpa only [FormalGroup.map_heightIdeal, map_lift] using congrArg (Ideal.map (lift
