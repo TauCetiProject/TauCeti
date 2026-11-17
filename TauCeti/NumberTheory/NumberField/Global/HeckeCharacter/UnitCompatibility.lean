@@ -36,7 +36,7 @@ the signed norm formula in `TauCeti.NumberTheory.NumberField.TotallyPositive`.
 public section
 noncomputable section
 
-open NumberField NumberField.InfinitePlace.Completion
+open NumberField
 open scoped NumberField
 
 namespace TauCeti.GlobalNumberFields
@@ -55,17 +55,7 @@ private theorem coe_infiniteComponent_real (χ : HeckeCharacter K) (n : Algebrai
     (hx : e w = 0 ∨ 0 < InfinitePlace.embedding_of_isReal w.2 (x : K)) :
     (χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) : ℂ) =
       w.1.embedding (x : K) ^ n w.1.embedding := by
-  have htransport :
-      χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
-        χ.realComponent w (Units.map (InfinitePlace.embedding_of_isReal w.2).toMonoidHom x) := by
-    rw [realComponent_apply]
-    congr 1
-    apply (Units.mapContinuousMulEquiv (continuousMulEquivRealOfIsReal w.2)).injective
-    rw [ContinuousMulEquiv.apply_symm_apply]
-    apply Units.ext
-    exact (continuousMulEquivRealOfIsReal_apply w.2 _).trans
-      (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
-  rw [htransport, realComponent_eq, hn]
+  rw [infiniteComponent_map_algebraMap_eq_realComponent, realComponent_eq, hn]
   simp only [ContinuousInfinityType.add_realExponent, ContinuousInfinityType.add_realParity,
     Pi.add_apply, AlgebraicInfinityType.toContinuous_realExponent,
     AlgebraicInfinityType.toContinuous_realParity,
@@ -91,17 +81,7 @@ private theorem coe_infiniteComponent_complex (χ : HeckeCharacter K)
       w.1.embedding (x : K) ^ n w.1.embedding *
         ComplexEmbedding.conjugate w.1.embedding (x : K) ^
           n (ComplexEmbedding.conjugate w.1.embedding) := by
-  have htransport :
-      χ.infiniteComponent w.1 (Units.map (algebraMap K w.1.Completion).toMonoidHom x) =
-        χ.complexComponent w (Units.map w.1.embedding.toMonoidHom x) := by
-    rw [complexComponent_apply]
-    congr 1
-    apply (Units.mapContinuousMulEquiv (continuousMulEquivComplexOfIsComplex w.2)).injective
-    rw [ContinuousMulEquiv.apply_symm_apply]
-    apply Units.ext
-    exact (continuousMulEquivComplexOfIsComplex_apply w.2 _).trans
-      (by simp [NumberField.InfinitePlace.Completion.algebraMap_apply_eq_coe])
-  rw [htransport, complexComponent_eq, hn]
+  rw [infiniteComponent_map_algebraMap_eq_complexComponent, complexComponent_eq, hn]
   simp only [ContinuousInfinityType.add_complexExponent, Pi.add_apply,
     AlgebraicInfinityType.toContinuous_complexExponent,
     FiniteOrderInfinityType.toContinuous_complexExponent, add_zero,
