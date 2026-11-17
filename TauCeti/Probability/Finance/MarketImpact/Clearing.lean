@@ -32,13 +32,16 @@ positive half-line, this derivative is bounded below by `δ > 0` there, and the 
 tends to zero as `x ↓ 0`. Then:
 
 * the clearing map grows at rate at least `δ`: `δ (x₂ - x₁) ≤ x₂(1 - H(x₂)) - x₁(1 - H(x₁))`
-  for `0 < x₁ ≤ x₂` (`mul_sub_le_clearingMap_sub`), so it is strictly increasing;
-* `δ x ≤ x (1 - H(x))`, hence `δ ≤ 1 - H(x)` and the clearing map tends to infinity;
-* the clearing map is a bijection of `(0, ∞)` onto itself (`bijOn_clearingMap`): every positive
-  value of `c(y)` has exactly one positive equilibrium price (`existsUnique_clearingMap_eq`);
+  for `0 < x₁ ≤ x₂` (`mul_sub_le_clearingMap_sub`), so it is strictly increasing and tends to
+  infinity;
 * the inverse (the equilibrium price as a function of `c(y)`) is strictly increasing and
-  Lipschitz with constant `δ⁻¹` on the range of the clearing map, which needs only the margin,
-  and differentiable with derivative the reciprocal of the clearing derivative.
+  Lipschitz with constant `δ⁻¹` on the range of the clearing map, and differentiable with
+  derivative the reciprocal of the clearing derivative;
+* `δ x ≤ x (1 - H(x))`, hence `δ ≤ 1 - H(x)`;
+* the clearing map is a bijection of `(0, ∞)` onto itself (`bijOn_clearingMap`): every positive
+  value of `c(y)` has exactly one positive equilibrium price (`existsUnique_clearingMap_eq`).
+
+Only the last two items use the limit at zero; the others need only the margin.
 
 Without the margin, strict monotonicity and the endpoint limits do not give a differentiable
 inverse: `x (1 - H(x)) = 1 + (x - 1)³` has a critical point at `x = 1`.
@@ -165,6 +168,40 @@ theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
     le_div_iff₀' hδ]
   exact mul_abs_sub_le_abs_clearingMap_sub hH hmargin hx₂ hx₁
 
+/-- Under a strictly positive clearing-derivative margin, the clearing map tends to infinity with
+the price. -/
+theorem tendsto_clearingMap_atTop (hδ : 0 < δ) : Tendsto (clearingMap H) atTop atTop := by
+  refine tendsto_atTop_mono' atTop ?_ (tendsto_atTop_add_const_right atTop (clearingMap H 1 - δ)
+    (tendsto_id.const_mul_atTop hδ))
+  filter_upwards [eventually_ge_atTop 1] with x hx
+  dsimp only [id]
+  linarith [mul_sub_le_clearingMap_sub hH hmargin one_pos hx]
+
+/-- Under a strictly positive clearing-derivative margin, the equilibrium price is differentiable:
+at the clearing value of a positive price `x`, its derivative is the reciprocal of the clearing
+derivative `1 - H(x) - x H'(x)`. -/
+theorem hasDerivAt_invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
+    HasDerivAt (invFunOn (clearingMap H) (Ioi 0)) (1 - H x - x * deriv H x)⁻¹
+      (clearingMap H x) := by
+  have hmono := strictMonoOn_clearingMap hH hmargin hδ
+  have hx₁ : 0 < x / 2 := half_pos hx
+  have hsub : Icc (x / 2) (2 * x) ⊆ Ioi 0 := fun y hy ↦ hx₁.trans_le hy.1
+  have hnhds : clearingMap H '' Ioi 0 ∈ 𝓝 (clearingMap H x) := by
+    refine mem_of_superset (Icc_mem_nhds (hmono hx₁ hx (half_lt_self hx))
+      (hmono hx (hsub ⟨by linarith, le_rfl⟩) (by linarith))) ?_
+    exact (intermediate_value_Icc (by linarith)
+      ((continuousOn_clearingMap hH.continuousOn).mono hsub)).trans (image_mono hsub)
+  have hderiv : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x)
+      (invFunOn (clearingMap H) (Ioi 0) (clearingMap H x)) := by
+    rw [invFunOn_clearingMap hH hmargin hδ hx]
+    exact hasDerivAt_clearingMap_of_differentiableOn hH hx
+  refine HasDerivAt.of_local_left_inverse ?_ hderiv ?_ ?_
+  · exact (lipschitzOnWith_invFunOn_clearingMap hH hmargin hδ).continuousOn.continuousAt hnhds
+  · exact (hδ.trans_le (hmargin x hx)).ne'
+  · filter_upwards [hnhds]
+    rintro _ ⟨x', hx', rfl⟩
+    rw [invFunOn_clearingMap hH hmargin hδ hx']
+
 variable (hzero : Tendsto (clearingMap H) (𝓝[>] 0) (𝓝 0))
 include hzero
 
@@ -186,20 +223,13 @@ theorem le_one_sub_of_tendsto_clearingMap (hx : 0 < x) : δ ≤ 1 - H x := by
   exact le_of_mul_le_mul_left this hx
 
 /-- Under a strictly positive clearing-derivative margin and the zero limit at zero price, the
-clearing map tends to infinity with the price. -/
-theorem tendsto_clearingMap_atTop (hδ : 0 < δ) : Tendsto (clearingMap H) atTop atTop := by
-  refine tendsto_atTop_mono' atTop ?_ (tendsto_id.const_mul_atTop hδ)
-  filter_upwards [eventually_gt_atTop 0] with x hx
-  exact mul_le_clearingMap hH hmargin hzero hx
-
-/-- Under a strictly positive clearing-derivative margin and the zero limit at zero price, the
 clearing map is a bijection of the positive half-line onto itself. -/
 theorem bijOn_clearingMap (hδ : 0 < δ) : BijOn (clearingMap H) (Ioi 0) (Ioi 0) := by
   refine ⟨fun x hx ↦ ?_, (strictMonoOn_clearingMap hH hmargin hδ).injOn, fun y hy ↦ ?_⟩
   · exact (mul_pos hδ hx).trans_le (mul_le_clearingMap hH hmargin hzero hx)
   obtain ⟨a, hay, ha⟩ :=
     ((hzero.eventually (gt_mem_nhds hy)).and self_mem_nhdsWithin).exists
-  obtain ⟨b, hby, hab⟩ := ((tendsto_clearingMap_atTop hH hmargin hzero hδ).eventually_gt_atTop y
+  obtain ⟨b, hby, hab⟩ := ((tendsto_clearingMap_atTop hH hmargin hδ).eventually_gt_atTop y
     |>.and (eventually_ge_atTop a)).exists
   have hcont : ContinuousOn (clearingMap H) (Icc a b) :=
     (continuousOn_clearingMap hH.continuousOn).mono fun x hx ↦ ha.trans_le hx.1
@@ -242,23 +272,6 @@ theorem lipschitzOnWith_invFunOn_clearingMap_Ioi (hδ : 0 < δ) :
     LipschitzOnWith (Real.toNNReal δ⁻¹) (invFunOn (clearingMap H) (Ioi 0)) (Ioi 0) :=
   (lipschitzOnWith_invFunOn_clearingMap hH hmargin hδ).mono
     (bijOn_clearingMap hH hmargin hzero hδ).surjOn
-
-/-- The equilibrium price is differentiable: at the clearing value of a positive price `x`, its
-derivative is the reciprocal of the clearing derivative `1 - H(x) - x H'(x)`. -/
-theorem hasDerivAt_invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
-    HasDerivAt (invFunOn (clearingMap H) (Ioi 0)) (1 - H x - x * deriv H x)⁻¹
-      (clearingMap H x) := by
-  have hy : 0 < clearingMap H x := (bijOn_clearingMap hH hmargin hzero hδ).mapsTo hx
-  have hderiv : HasDerivAt (clearingMap H) (1 - H x - x * deriv H x)
-      (invFunOn (clearingMap H) (Ioi 0) (clearingMap H x)) := by
-    rw [invFunOn_clearingMap hH hmargin hδ hx]
-    exact hasDerivAt_clearingMap_of_differentiableOn hH hx
-  refine HasDerivAt.of_local_left_inverse ?_ hderiv ?_ ?_
-  · exact (lipschitzOnWith_invFunOn_clearingMap_Ioi hH hmargin hzero hδ).continuousOn.continuousAt
-      (Ioi_mem_nhds hy)
-  · exact (hδ.trans_le (hmargin x hx)).ne'
-  · filter_upwards [Ioi_mem_nhds hy] with y' hy'
-    exact clearingMap_invFunOn hH hmargin hzero hδ hy'
 
 end Margin
 
