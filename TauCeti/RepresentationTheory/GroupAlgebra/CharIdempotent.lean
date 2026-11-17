@@ -10,6 +10,7 @@ public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Algebra.MonoidAlgebra.SubgroupCharSum
 public import TauCeti.GroupTheory.FiniteAbelian.CharacterOrthogonality
 public import TauCeti.RingTheory.Idempotents.Module
+public import TauCeti.RingTheory.Idempotents.SquareRootOne
 
 /-!
 # Character idempotents of a finite group algebra
@@ -61,6 +62,9 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
 * `TauCeti.sum_charIdempotent`: for a finite commutative group with enough roots of unity, the
   character idempotents sum to `1`.
 * `TauCeti.completeOrthogonalIdempotents_charIdempotent`: they form a complete orthogonal family.
+* `TauCeti.halfOneAdd_of_eq_sum_charIdempotent`, `TauCeti.halfOneAdd_neg_of_eq_sum_charIdempotent`:
+  when `2` is invertible and `c ∈ H` satisfies `c * c = 1`, the plus and minus idempotents
+  `½ (1 ± c)` are the sums of `e_χ` over even (`χ c = 1`) and odd (`χ c = -1`) characters.
 * `TauCeti.mem_charIdempotent_smul_top_iff`: the eigencharacter criterion for the isotypic
   component `e_χ M`.
 * `TauCeti.isInternal_charIdempotent_smul_top`: the isotypic decomposition `M = ⨁_χ e_χ M`.
@@ -71,6 +75,8 @@ algebraic closure, only a domain, because the characters here are one-dimensiona
   (`Representation.asAlgebraHom_charIdempotent_apply_of_mem`).
 * `Representation.asAlgebraHom_charIdempotent_apply_of_mem_of_ne`: over a domain it kills the
   joint eigenspace of every other character.
+* `Representation.isInternal_eigenspace`: for a finite commutative group with enough roots of
+  unity and `#H` a unit, `V` is the internal direct sum of its joint eigenspaces.
 
 ## References
 
@@ -246,6 +252,60 @@ theorem isInternal_charIdempotent_smul_top {S M : Type*} [Semiring S] [AddCommMo
     DirectSum.IsInternal fun χ : H →* Oˣ ↦ charIdempotent χ • (⊤ : Submodule S M) :=
   isInternal_smul_top (completeOrthogonalIdempotents_charIdempotent hH)
 
+omit [Fintype H] [HasEnoughRootsOfUnity O (Monoid.exponent H)] in
+/-- When `c * c = 1` in `H` and `O` is a domain, every character sends `c` to `1` or `-1`. -/
+private theorem char_eq_one_or_neg_one {c : H} (hc : c * c = 1) (χ : H →* Oˣ) :
+    χ c = 1 ∨ χ c = -1 :=
+  (sq_eq_one_iff.mp <| by
+    rw [← Units.val_pow_eq_pow_val, ← map_pow, sq, hc, map_one, Units.val_one]).imp
+    Units.ext Units.ext
+
+private theorem one_ne_neg_one_units [Invertible (2 : O)] : (1 : Oˣ) ≠ -1 := fun h ↦
+  one_ne_zero (α := O) <| by
+    have h1 : (1 : O) = -1 := by simpa using congrArg Units.val h
+    have h2 : (2 : O) = 0 := by rw [← one_add_one_eq_two]; nth_rw 2 [h1]; exact add_neg_cancel 1
+    simpa [h2] using invOf_mul_self (2 : O)
+
+/-- **Plus idempotent as the sum of even character idempotents.** When `2` is invertible in `O`
+and `c ∈ H` satisfies `c * c = 1`, the idempotent `½ (1 + c)` in `O[H]` equals the sum of the
+character idempotents `e_χ` over all characters `χ` with `χ c = 1`. -/
+theorem halfOneAdd_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (Nat.card H : O))
+    {c : H} (hc : c * c = 1) [DecidablePred fun χ : H →* Oˣ ↦ χ c = 1] :
+    halfOneAdd O (of O H c) = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by
+  calc halfOneAdd O (of O H c)
+      = halfOneAdd O (of O H c) * ∑ χ : H →* Oˣ, charIdempotent χ := by
+        rw [sum_charIdempotent hH, mul_one]
+    _ = ∑ χ : H →* Oˣ, halfOneAdd O (of O H c) * charIdempotent χ := Finset.mul_sum _ _ _
+    _ = ∑ χ : H →* Oˣ, if χ c = 1 then charIdempotent χ else 0 := by
+        refine Finset.sum_congr rfl fun χ _ ↦ ?_
+        rw [halfOneAdd_def, smul_mul_assoc, add_mul, one_mul, of_apply, single_mul_charIdempotent]
+        rcases char_eq_one_or_neg_one hc χ with h1 | hm1
+        · simp [h1, ← two_smul O]
+        · simp [hm1, (one_ne_neg_one_units (O := O)).symm]
+    _ = ∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ := by rw [Finset.sum_filter]
+
+/-- **Minus idempotent as the sum of odd character idempotents.** When `2` is invertible in `O`
+and `c ∈ H` satisfies `c * c = 1`, the idempotent `½ (1 - c)` in `O[H]` equals the sum of the
+character idempotents `e_χ` over all characters `χ` with `χ c = -1`. -/
+theorem halfOneAdd_neg_of_eq_sum_charIdempotent [Invertible (2 : O)] (hH : IsUnit (Nat.card H : O))
+    {c : H} (hc : c * c = 1) [DecidablePred fun χ : H →* Oˣ ↦ χ c = -1] :
+    halfOneAdd O (-of O H c) = ∑ χ : H →* Oˣ with χ c = -1, charIdempotent χ := by
+  classical
+  have hpart :
+      (∑ χ : H →* Oˣ with χ c = 1, charIdempotent χ) +
+        (∑ χ : H →* Oˣ with χ c = -1, charIdempotent χ) = 1 := by
+    rw [← sum_charIdempotent (O := O) (H := H) hH,
+      ← Finset.sum_filter_add_sum_filter_not Finset.univ (fun χ : H →* Oˣ ↦ χ c = 1)]
+    congr 1
+    refine Finset.sum_congr (Finset.filter_congr fun χ _ ↦ ?_) fun _ _ ↦ rfl
+    rcases char_eq_one_or_neg_one hc χ with h1 | hm1
+    · simp [h1, one_ne_neg_one_units (O := O)]
+    · simp [hm1, (one_ne_neg_one_units (O := O)).symm]
+  have hsum : halfOneAdd O (of O H c) + halfOneAdd O (-of O H c) = 1 :=
+    halfOneAdd_add_halfOneAdd_neg O (of O H c)
+  rw [halfOneAdd_of_eq_sum_charIdempotent hH hc] at hsum
+  exact add_left_cancel (hsum.trans hpart.symm)
+
 end CommGroup
 
 end TauCeti
@@ -255,6 +315,8 @@ end TauCeti
 namespace Representation
 
 open TauCeti MonoidAlgebra Module
+
+section Group
 
 variable {k H V : Type*} [CommRing k] [Group H] [Fintype H] [AddCommGroup V] [Module k V]
   (ρ : Representation k H V)
@@ -307,5 +369,41 @@ theorem range_asAlgebraHom_charIdempotent (hH : IsUnit (Nat.card H : k)) (χ : H
   le_antisymm (LinearMap.range_le_iff_comap.2 <| Submodule.eq_top_iff'.2 fun v ↦
       asAlgebraHom_charIdempotent_apply_mem ρ χ v)
     fun v hv ↦ ⟨v, asAlgebraHom_charIdempotent_apply_of_mem ρ hH hv⟩
+
+end Group
+
+section CommGroup
+
+variable {k H V : Type*} [CommRing k] [IsDomain k] [CommGroup H]
+  [HasEnoughRootsOfUnity k (Monoid.exponent H)] [AddCommGroup V] [Module k V]
+  (ρ : Representation k H V)
+
+/-- **The character projectors of a representation form a complete orthogonal family of
+idempotents** in `End_k(V)`, when `H` is a finite commutative group, `k` is a domain with enough
+roots of unity, and `#H` is a unit in `k`. -/
+theorem completeOrthogonalIdempotents_asAlgebraHom_charIdempotent [Fintype H]
+    (hH : IsUnit (Nat.card H : k)) :
+    CompleteOrthogonalIdempotents (fun χ : H →* kˣ ↦ ρ.asAlgebraHom (charIdempotent χ)) :=
+  ⟨⟨fun χ ↦ (isIdempotentElem_charIdempotent χ).map ρ.asAlgebraHom,
+    fun _ _ hne ↦ by dsimp only; rw [← map_mul, charIdempotent_mul_charIdempotent_of_ne hne,
+      map_zero]⟩,
+   by rw [← map_sum, sum_charIdempotent hH, map_one]⟩
+
+/-- **The eigenspace decomposition of a representation of a finite commutative group**: when `k` is
+a domain with enough roots of unity and `#H` is a unit in `k`, `V` is the internal direct sum of
+its joint eigenspaces `⨅ a, Eig(ρ(a), χ(a))`. -/
+theorem isInternal_eigenspace [Finite H] [DecidableEq (H →* kˣ)] (hH : IsUnit (Nat.card H : k)) :
+    DirectSum.IsInternal (fun χ : H →* kˣ ↦ ⨅ a, End.eigenspace (ρ a) (χ a : k)) := by
+  let := Fintype.ofFinite H
+  have heq : (fun χ : H →* kˣ ↦ ⨅ a, End.eigenspace (ρ a) (χ a : k)) =
+      fun χ ↦ ρ.asAlgebraHom (charIdempotent χ) • (⊤ : Submodule k V) := by
+    ext χ x
+    rw [← range_asAlgebraHom_charIdempotent ρ hH χ, Submodule.pointwise_smul_def,
+      Submodule.map_top]
+    rfl
+  rw [heq]
+  exact isInternal_smul_top (completeOrthogonalIdempotents_asAlgebraHom_charIdempotent ρ hH)
+
+end CommGroup
 
 end Representation
