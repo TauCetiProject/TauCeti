@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Quotient
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
+public import TauCeti.CategoryTheory.Quotient.Iterated
 
 /-!
 # The monoidal structure on a quotient category
@@ -31,13 +31,18 @@ related by `HomRel.MonoidalClosure r`. The quotient by `HomRel.MonoidalClosure r
 the monoidal category obtained from `C` by imposing the equations `r`; this is how monoidal
 categories presented by generators and relations are built from free ones, and the quotient of a
 monoidal preadditive category by a tensor ideal (`TauCeti.MonoidalQuotient`) is a special case.
+Quotienting successively by two families of equations agrees with quotienting once by their union,
+as a monoidal equivalence (`CategoryTheory.Quotient.iteratedEquiv` for monoidal relations, and
+`CategoryTheory.Quotient.iteratedMonoidalEquiv` for arbitrary relations via `MonoidalClosure`).
 
 ## Main definitions and results
 
 * `HomRel.IsMonoidal r`: the relation `r` is stable under whiskering on both sides. Strong
-  monoidal functors induce monoidal relations (`HomRel.isMonoidal_homRel`).
+  monoidal functors induce monoidal relations (`HomRel.isMonoidal_homRel`), and `IsMonoidal` is
+  preserved by `HomRel.sup` and `HomRel.mapQuotient`.
 * `HomRel.MonoidalClosure r`: the least monoidal relation containing `r`, with
-  `HomRel.MonoidalClosure.imp` and `HomRel.monoidalClosure_iff_self`.
+  `HomRel.MonoidalClosure.imp`, `HomRel.monoidalClosure_iff_self`,
+  `HomRel.monoidalClosure_sup_iff`, and `HomRel.monoidalClosure_mapQuotient_iff`.
 * the instance `MonoidalCategory (CategoryTheory.Quotient r)` for monoidal `r`, characterized by
   `CategoryTheory.Quotient.whiskerLeft_map`, `CategoryTheory.Quotient.map_whiskerRight`,
   `CategoryTheory.Quotient.map_tensorHom_map` and the corresponding lemmas for the associator and
@@ -49,7 +54,10 @@ monoidal preadditive category by a tensor ideal (`TauCeti.MonoidalQuotient`) is 
   of `F` (`CategoryTheory.Quotient.lift_μ` and its companions), together with the instance saying
   that `CategoryTheory.Quotient.lift.isLift` is a monoidal natural isomorphism for lax monoidal
   `F`;
-* the instance saying that `CategoryTheory.Quotient.natTransLift r τ` is monoidal when `τ` is.
+* the instance saying that `CategoryTheory.Quotient.natTransLift r τ` is monoidal when `τ` is;
+* the monoidal equivalence instances on `CategoryTheory.Quotient.iteratedEquiv` (for monoidal
+  relations) and `CategoryTheory.Quotient.iteratedMonoidalEquiv` (for arbitrary relations closed
+  under whiskering).
 -/
 
 public section
@@ -115,6 +123,24 @@ theorem MonoidalClosure.map_eq {D : Type u'} [Category.{v'} D] [MonoidalCategory
     [F.Monoidal] (h : ∀ ⦃X Y : C⦄ ⦃f g : X ⟶ Y⦄, r f g → F.map f = F.map g) {X Y : C}
     {f g : X ⟶ Y} (hfg : MonoidalClosure r f g) : F.map f = F.map g :=
   MonoidalClosure.imp (s := F.homRel) h hfg
+
+/-- The union of two monoidal relations is monoidal. -/
+instance IsMonoidal.sup (r₁ r₂ : HomRel C) [r₁.IsMonoidal] [r₂.IsMonoidal] :
+    (r₁.sup r₂).IsMonoidal where
+  whiskerLeft X _ _ _ _ h := h.imp (IsMonoidal.whiskerLeft X) (IsMonoidal.whiskerLeft X)
+  whiskerRight Z h := h.imp (IsMonoidal.whiskerRight Z) (IsMonoidal.whiskerRight Z)
+
+/-- The monoidal closure of a union of two relations is the union of their monoidal closures. -/
+theorem monoidalClosure_sup_iff (r₁ r₂ : HomRel C) {X Y : C} (f g : X ⟶ Y) :
+    MonoidalClosure (r₁.sup r₂) f g ↔ (MonoidalClosure r₁).sup (MonoidalClosure r₂) f g := by
+  constructor
+  · exact MonoidalClosure.imp (s := (MonoidalClosure r₁).sup (MonoidalClosure r₂))
+      fun _ _ _ _ h ↦ h.imp MonoidalClosure.of MonoidalClosure.of
+  · rintro (h₁ | h₂)
+    · exact MonoidalClosure.imp (s := MonoidalClosure (r₁.sup r₂))
+        (fun _ _ _ _ h ↦ MonoidalClosure.of (.inl h)) h₁
+    · exact MonoidalClosure.imp (s := MonoidalClosure (r₁.sup r₂))
+        (fun _ _ _ _ h ↦ MonoidalClosure.of (.inr h)) h₂
 
 end HomRel
 
@@ -412,5 +438,279 @@ instance (τ : functor r ⋙ F ⟶ functor r ⋙ G) [τ.IsMonoidal] : (natTransL
     exact h
 
 end natTransLift
+
+end CategoryTheory.Quotient
+
+namespace HomRel
+
+/-- The image in `Quotient r₁` of a monoidal relation `r₂` is monoidal when `r₁` is monoidal. -/
+instance IsMonoidal.mapQuotient (r₁ r₂ : HomRel C) [r₁.IsMonoidal] [r₂.IsMonoidal] :
+    (r₁.mapQuotient r₂).IsMonoidal where
+  whiskerLeft X _ _ _ _ := by
+    rintro ⟨f', g', rfl, rfl, h⟩
+    exact ⟨X.as ◁ f', X.as ◁ g', rfl, rfl, IsMonoidal.whiskerLeft X.as h⟩
+  whiskerRight Z := by
+    rintro ⟨f', g', rfl, rfl, h⟩
+    exact ⟨f' ▷ Z.as, g' ▷ Z.as, rfl, rfl, IsMonoidal.whiskerRight Z.as h⟩
+
+/-- The monoidal closure of the image of `r₂` in `Quotient r₁` agrees with the image of the
+monoidal closure of `r₂`. -/
+theorem monoidalClosure_mapQuotient_iff (r₁ r₂ : HomRel C) [r₁.IsMonoidal]
+    {X Y : CategoryTheory.Quotient r₁} (f g : X ⟶ Y) :
+    MonoidalClosure (r₁.mapQuotient r₂) f g ↔ r₁.mapQuotient (MonoidalClosure r₂) f g := by
+  constructor
+  · exact MonoidalClosure.imp (s := r₁.mapQuotient (MonoidalClosure r₂))
+      fun _ _ _ _ ⟨f', g', hf, hg, h⟩ ↦ ⟨f', g', hf, hg, MonoidalClosure.of h⟩
+  · rintro ⟨f', g', rfl, rfl, h⟩
+    have key : ∀ {A B : C} {u v : A ⟶ B}, MonoidalClosure r₂ u v →
+        MonoidalClosure (r₁.mapQuotient r₂)
+          ((CategoryTheory.Quotient.functor r₁).map u)
+          ((CategoryTheory.Quotient.functor r₁).map v) := by
+      intro A B u v huv
+      induction huv with
+      | of h => exact MonoidalClosure.of ⟨_, _, rfl, rfl, h⟩
+      | whiskerLeft W _ ih =>
+          exact MonoidalClosure.whiskerLeft ((CategoryTheory.Quotient.functor r₁).obj W) ih
+      | whiskerRight W _ ih =>
+          exact MonoidalClosure.whiskerRight ((CategoryTheory.Quotient.functor r₁).obj W) ih
+    exact key h
+
+end HomRel
+
+namespace CategoryTheory.Quotient
+
+/-! ### Iterated monoidal quotients -/
+
+section IteratedMonoidalRelations
+
+variable (r₁ r₂ : HomRel C) [r₁.IsMonoidal] [r₂.IsMonoidal]
+
+/-- The equivalence `iteratedToSup` between an iterated quotient by two monoidal relations and the
+combined quotient is strong monoidal, with identity structure morphisms. -/
+instance instMonoidalIteratedToSup : (iteratedToSup r₁ r₂).Monoidal :=
+  liftMonoidal (r := r₁.mapQuotient r₂)
+    (lift r₁ (functor (r₁.sup r₂)) fun _ _ _ _ h ↦ Quotient.sound _ (.inl h)) _
+
+/-- The inverse equivalence `supToIterated` is strong monoidal, with identity structure
+morphisms. -/
+instance instMonoidalSupToIterated : (supToIterated r₁ r₂).Monoidal :=
+  liftMonoidal (r := r₁.sup r₂) (functor r₁ ⋙ functor (r₁.mapQuotient r₂)) _
+
+instance instMonoidalIteratedEquivFunctor : (iteratedEquiv r₁ r₂).functor.Monoidal :=
+  instMonoidalIteratedToSup r₁ r₂
+
+instance instMonoidalIteratedEquivInverse : (iteratedEquiv r₁ r₂).inverse.Monoidal :=
+  instMonoidalSupToIterated r₁ r₂
+
+@[simp]
+theorem iteratedToSup_ε : Functor.LaxMonoidal.ε (iteratedToSup r₁ r₂) = 𝟙 _ := rfl
+
+@[simp]
+theorem iteratedToSup_η : Functor.OplaxMonoidal.η (iteratedToSup r₁ r₂) = 𝟙 _ := rfl
+
+@[simp]
+theorem iteratedToSup_μ (X Y : Quotient (r₁.mapQuotient r₂)) :
+    Functor.LaxMonoidal.μ (iteratedToSup r₁ r₂) X Y = 𝟙 _ := rfl
+
+@[simp]
+theorem iteratedToSup_δ (X Y : Quotient (r₁.mapQuotient r₂)) :
+    Functor.OplaxMonoidal.δ (iteratedToSup r₁ r₂) X Y = 𝟙 _ := rfl
+
+@[simp]
+theorem supToIterated_ε : Functor.LaxMonoidal.ε (supToIterated r₁ r₂) = 𝟙 _ := by
+  refine (lift_ε _ _).trans ?_
+  simp only [Functor.LaxMonoidal.comp_ε, functor_ε, Category.id_comp]
+  exact (functor (r₁.mapQuotient r₂)).map_id _
+
+@[simp]
+theorem supToIterated_η : Functor.OplaxMonoidal.η (supToIterated r₁ r₂) = 𝟙 _ := by
+  refine (lift_η _ _).trans ?_
+  simp only [Functor.OplaxMonoidal.comp_η, functor_η, Category.comp_id]
+  exact (functor (r₁.mapQuotient r₂)).map_id _
+
+@[simp]
+theorem supToIterated_μ (X Y : Quotient (r₁.sup r₂)) :
+    Functor.LaxMonoidal.μ (supToIterated r₁ r₂) X Y = 𝟙 _ := by
+  refine (lift_μ _ _ X.as Y.as).trans ?_
+  simp only [Functor.LaxMonoidal.comp_μ, functor_μ]
+  exact (Category.id_comp _).trans ((functor (r₁.mapQuotient r₂)).map_id _)
+
+@[simp]
+theorem supToIterated_δ (X Y : Quotient (r₁.sup r₂)) :
+    Functor.OplaxMonoidal.δ (supToIterated r₁ r₂) X Y = 𝟙 _ := by
+  refine (lift_δ _ _ X.as Y.as).trans ?_
+  simp only [Functor.OplaxMonoidal.comp_δ, functor_δ, Category.comp_id]
+  exact (functor (r₁.mapQuotient r₂)).map_id _
+
+/-- The equivalence between an iterated quotient by two monoidal relations and the quotient by
+their union is monoidal. -/
+instance iteratedEquivIsMonoidal : (iteratedEquiv r₁ r₂).IsMonoidal where
+  leftAdjoint_ε :=
+    (supToIterated_ε r₁ r₂).trans
+      ((Category.id_comp _).symm.trans
+        (congrArg (𝟙 _ ≫ ·) (CategoryTheory.Functor.map_id (supToIterated r₁ r₂) _).symm))
+  leftAdjoint_μ X Y :=
+    (supToIterated_μ r₁ r₂ X Y).trans
+      ((Category.id_comp _).symm.trans (congrArg (𝟙 _ ≫ ·)
+        ((CategoryTheory.Functor.map_id (supToIterated r₁ r₂) _).symm.trans
+          (congrArg (supToIterated r₁ r₂).map
+            ((Category.id_comp _).symm.trans
+              (congrArg (𝟙 _ ≫ ·) (id_tensorHom_id _ _).symm))))))
+
+end IteratedMonoidalRelations
+
+section IteratedMonoidalClosure
+
+variable (r₁ r₂ : HomRel C)
+
+/-- The canonical functor from the iterated monoidal quotient (first closing `r₁` under whiskering,
+then closing the image of `r₂` under whiskering) to the single monoidal quotient by `r₁.sup r₂`. -/
+@[expose] def iteratedMonoidalToSup :
+    Quotient (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂)) ⥤
+      Quotient (HomRel.MonoidalClosure (r₁.sup r₂)) :=
+  lift (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))
+    (lift (HomRel.MonoidalClosure r₁) (functor (HomRel.MonoidalClosure (r₁.sup r₂)))
+      fun _ _ _ _ h ↦ HomRel.MonoidalClosure.map_eq
+        (fun _ _ _ _ h₁ ↦ Quotient.sound _ (.of (.inl h₁))) h)
+    fun _ _ _ _ h ↦ HomRel.MonoidalClosure.map_eq
+      (fun _ _ _ _ ⟨_, _, hf, hg, h₂⟩ ↦ by
+        rw [← hf, ← hg]
+        exact Quotient.sound _ (.of (.inr h₂))) h
+
+/-- The canonical functor from the single monoidal quotient by `r₁.sup r₂` to the iterated
+monoidal quotient. -/
+@[expose] def supToIteratedMonoidal :
+    Quotient (HomRel.MonoidalClosure (r₁.sup r₂)) ⥤
+      Quotient (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂)) :=
+  lift (HomRel.MonoidalClosure (r₁.sup r₂))
+    (functor (HomRel.MonoidalClosure r₁) ⋙
+      functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂)))
+    fun _ _ _ _ h ↦ HomRel.MonoidalClosure.map_eq (fun _ _ _ _ h₁₂ ↦ by
+      rcases h₁₂ with h₁ | h₂
+      · exact congrArg
+          (functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))).map
+          (Quotient.sound _ (.of h₁))
+      · exact Quotient.sound _ (.of (HomRel.mapQuotient_of _ h₂))) h
+
+instance instMonoidalIteratedMonoidalToSup : (iteratedMonoidalToSup r₁ r₂).Monoidal :=
+  liftMonoidal (r := HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))
+    (lift (HomRel.MonoidalClosure r₁) (functor (HomRel.MonoidalClosure (r₁.sup r₂))) _) _
+
+instance instMonoidalSupToIteratedMonoidal : (supToIteratedMonoidal r₁ r₂).Monoidal :=
+  liftMonoidal (r := HomRel.MonoidalClosure (r₁.sup r₂))
+    (functor (HomRel.MonoidalClosure r₁) ⋙
+      functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))) _
+
+theorem functor_comp_iteratedMonoidalToSup :
+    functor (HomRel.MonoidalClosure r₁) ⋙
+        functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂)) ⋙
+        iteratedMonoidalToSup r₁ r₂ =
+      functor (HomRel.MonoidalClosure (r₁.sup r₂)) :=
+  rfl
+
+theorem functor_comp_supToIteratedMonoidal :
+    functor (HomRel.MonoidalClosure (r₁.sup r₂)) ⋙ supToIteratedMonoidal r₁ r₂ =
+      functor (HomRel.MonoidalClosure r₁) ⋙
+        functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂)) :=
+  rfl
+
+@[simp]
+theorem iteratedMonoidalToSup_ε :
+    Functor.LaxMonoidal.ε (iteratedMonoidalToSup r₁ r₂) = 𝟙 _ := rfl
+
+@[simp]
+theorem iteratedMonoidalToSup_η :
+    Functor.OplaxMonoidal.η (iteratedMonoidalToSup r₁ r₂) = 𝟙 _ := rfl
+
+@[simp]
+theorem iteratedMonoidalToSup_μ
+    (X Y : Quotient (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))) :
+    Functor.LaxMonoidal.μ (iteratedMonoidalToSup r₁ r₂) X Y = 𝟙 _ := rfl
+
+@[simp]
+theorem iteratedMonoidalToSup_δ
+    (X Y : Quotient (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))) :
+    Functor.OplaxMonoidal.δ (iteratedMonoidalToSup r₁ r₂) X Y = 𝟙 _ := rfl
+
+@[simp]
+theorem supToIteratedMonoidal_ε :
+    Functor.LaxMonoidal.ε (supToIteratedMonoidal r₁ r₂) = 𝟙 _ := by
+  refine (lift_ε _ _).trans ?_
+  simp only [Functor.LaxMonoidal.comp_ε, functor_ε, Category.id_comp]
+  exact (functor _).map_id _
+
+@[simp]
+theorem supToIteratedMonoidal_η :
+    Functor.OplaxMonoidal.η (supToIteratedMonoidal r₁ r₂) = 𝟙 _ := by
+  refine (lift_η _ _).trans ?_
+  simp only [Functor.OplaxMonoidal.comp_η, functor_η, Category.comp_id]
+  exact (functor _).map_id _
+
+@[simp]
+theorem supToIteratedMonoidal_μ (X Y : Quotient (HomRel.MonoidalClosure (r₁.sup r₂))) :
+    Functor.LaxMonoidal.μ (supToIteratedMonoidal r₁ r₂) X Y = 𝟙 _ := by
+  refine (lift_μ _ _ X.as Y.as).trans ?_
+  simp only [Functor.LaxMonoidal.comp_μ, functor_μ]
+  exact (Category.id_comp _).trans ((functor _).map_id _)
+
+@[simp]
+theorem supToIteratedMonoidal_δ (X Y : Quotient (HomRel.MonoidalClosure (r₁.sup r₂))) :
+    Functor.OplaxMonoidal.δ (supToIteratedMonoidal r₁ r₂) X Y = 𝟙 _ := by
+  refine (lift_δ _ _ X.as Y.as).trans ?_
+  simp only [Functor.OplaxMonoidal.comp_δ, functor_δ, Category.comp_id]
+  exact (functor _).map_id _
+
+theorem iteratedMonoidalToSup_comp_supToIteratedMonoidal :
+    iteratedMonoidalToSup r₁ r₂ ⋙ supToIteratedMonoidal r₁ r₂ = 𝟭 _ := by
+  apply lift_unique' (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))
+  apply lift_unique' (HomRel.MonoidalClosure r₁)
+  rfl
+
+theorem supToIteratedMonoidal_comp_iteratedMonoidalToSup :
+    supToIteratedMonoidal r₁ r₂ ⋙ iteratedMonoidalToSup r₁ r₂ = 𝟭 _ := by
+  apply lift_unique' (HomRel.MonoidalClosure (r₁.sup r₂))
+  rfl
+
+/-- Quotienting a monoidal category first by the monoidal closure of `r₁` and then by the monoidal
+closure of the image of `r₂` is monoidally equivalent to quotienting once by the monoidal closure
+of `r₁.sup r₂`. -/
+@[expose] def iteratedMonoidalEquiv :
+    Quotient (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂)) ≌
+      Quotient (HomRel.MonoidalClosure (r₁.sup r₂)) where
+  functor := iteratedMonoidalToSup r₁ r₂
+  inverse := supToIteratedMonoidal r₁ r₂
+  unitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
+    obtain ⟨f, rfl⟩ :=
+      (functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))).map_surjective
+        f
+    obtain ⟨f, rfl⟩ := (functor (HomRel.MonoidalClosure r₁)).map_surjective f
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  counitIso := NatIso.ofComponents (fun _ ↦ Iso.refl _) fun {X Y} f ↦ by
+    obtain ⟨f, rfl⟩ := (functor (HomRel.MonoidalClosure (r₁.sup r₂))).map_surjective f
+    exact (Category.comp_id _).trans (Category.id_comp _).symm
+  functor_unitIso_comp _ := Category.comp_id _
+
+instance instMonoidalIteratedMonoidalEquivFunctor :
+    (iteratedMonoidalEquiv r₁ r₂).functor.Monoidal :=
+  instMonoidalIteratedMonoidalToSup r₁ r₂
+
+instance instMonoidalIteratedMonoidalEquivInverse :
+    (iteratedMonoidalEquiv r₁ r₂).inverse.Monoidal :=
+  instMonoidalSupToIteratedMonoidal r₁ r₂
+
+instance iteratedMonoidalEquivIsMonoidal : (iteratedMonoidalEquiv r₁ r₂).IsMonoidal where
+  leftAdjoint_ε :=
+    (supToIteratedMonoidal_ε r₁ r₂).trans
+      ((Category.id_comp _).symm.trans
+        (congrArg (𝟙 _ ≫ ·) (CategoryTheory.Functor.map_id (supToIteratedMonoidal r₁ r₂) _).symm))
+  leftAdjoint_μ X Y :=
+    (supToIteratedMonoidal_μ r₁ r₂ X Y).trans
+      ((Category.id_comp _).symm.trans (congrArg (𝟙 _ ≫ ·)
+        ((CategoryTheory.Functor.map_id (supToIteratedMonoidal r₁ r₂) _).symm.trans
+          (congrArg (supToIteratedMonoidal r₁ r₂).map
+            ((Category.id_comp _).symm.trans
+              (congrArg (𝟙 _ ≫ ·) (id_tensorHom_id _ _).symm))))))
+
+end IteratedMonoidalClosure
 
 end CategoryTheory.Quotient

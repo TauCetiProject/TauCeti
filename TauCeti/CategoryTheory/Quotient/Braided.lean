@@ -34,6 +34,9 @@ including quotients of braided diagram categories by negligible morphisms.
 * `CategoryTheory.Quotient.liftLaxBraided` and `CategoryTheory.Quotient.liftBraided`: a lax
   braided or braided functor identifying related morphisms factors through a lax braided or
   braided functor.
+* `CategoryTheory.Quotient.instBraidedIteratedToSup`, `instBraidedSupToIterated`,
+  `instBraidedIteratedMonoidalToSup`, and `instBraidedSupToIteratedMonoidal`: the mutually inverse
+  equivalences between an iterated quotient and the combined quotient are braided.
 
 ## References
 
@@ -119,5 +122,69 @@ noncomputable instance liftBraided [F.Braided] : (lift r F H).Braided where
   __ := liftLaxBraided r F H
 
 end lift
+
+end CategoryTheory.Quotient
+
+namespace CategoryTheory.Quotient
+
+open CategoryTheory MonoidalCategory
+
+section IteratedBraided
+
+variable {C : Type u} [Category.{v} C] [MonoidalCategory C] [BraidedCategory C]
+
+section MonoidalRelations
+
+variable (r₁ r₂ : HomRel C) [r₁.IsMonoidal] [r₂.IsMonoidal]
+
+/-- The functor from an iterated quotient by two monoidal relations to the combined quotient is
+braided. -/
+noncomputable instance instBraidedIteratedToSup : (iteratedToSup r₁ r₂).Braided :=
+  liftBraided (r₁.mapQuotient r₂)
+    (lift r₁ (functor (r₁.sup r₂)) fun _ _ _ _ h ↦ Quotient.sound _ (.inl h)) _
+
+/-- The inverse functor from the combined quotient to an iterated quotient by two monoidal
+relations is braided. -/
+noncomputable instance instBraidedSupToIterated : (supToIterated r₁ r₂).Braided :=
+  liftBraided (r₁.sup r₂) (functor r₁ ⋙ functor (r₁.mapQuotient r₂)) _
+
+noncomputable instance instBraidedIteratedEquivFunctor : (iteratedEquiv r₁ r₂).functor.Braided :=
+  instBraidedIteratedToSup r₁ r₂
+
+noncomputable instance instBraidedIteratedEquivInverse : (iteratedEquiv r₁ r₂).inverse.Braided :=
+  instBraidedSupToIterated r₁ r₂
+
+end MonoidalRelations
+
+section MonoidalClosure
+
+variable (r₁ r₂ : HomRel C)
+
+/-- The functor from the iterated monoidal quotient to the combined monoidal quotient is
+braided. -/
+noncomputable instance instBraidedIteratedMonoidalToSup :
+    (iteratedMonoidalToSup r₁ r₂).Braided :=
+  liftBraided (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))
+    (lift (HomRel.MonoidalClosure r₁) (functor (HomRel.MonoidalClosure (r₁.sup r₂))) _) _
+
+/-- The inverse functor from the combined monoidal quotient to the iterated monoidal quotient is
+braided. -/
+noncomputable instance instBraidedSupToIteratedMonoidal :
+    (supToIteratedMonoidal r₁ r₂).Braided :=
+  liftBraided (HomRel.MonoidalClosure (r₁.sup r₂))
+    (functor (HomRel.MonoidalClosure r₁) ⋙
+      functor (HomRel.MonoidalClosure ((HomRel.MonoidalClosure r₁).mapQuotient r₂))) _
+
+noncomputable instance instBraidedIteratedMonoidalEquivFunctor :
+    (iteratedMonoidalEquiv r₁ r₂).functor.Braided :=
+  instBraidedIteratedMonoidalToSup r₁ r₂
+
+noncomputable instance instBraidedIteratedMonoidalEquivInverse :
+    (iteratedMonoidalEquiv r₁ r₂).inverse.Braided :=
+  instBraidedSupToIteratedMonoidal r₁ r₂
+
+end MonoidalClosure
+
+end IteratedBraided
 
 end CategoryTheory.Quotient
