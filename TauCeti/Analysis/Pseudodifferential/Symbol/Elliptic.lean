@@ -42,9 +42,8 @@ Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
 ## Main declarations
 
 * `TauCeti.Symbol.IsEllipticAbove`, `TauCeti.Symbol.IsUniformlyEllipticAbove`: ellipticity of a
-  symbol above a radius, with locally uniform and uniform constants;
-  `TauCeti.Symbol.isEllipticOn_iff_isEllipticAbove` identifies the first with ellipticity on the
-  set of large frequencies (`TauCeti.Symbol.IsEllipticOn`).
+  symbol above a radius, with locally uniform and uniform constants; the first is defined as
+  ellipticity on the set of large frequencies (`TauCeti.Symbol.IsEllipticOn`).
 * `TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub`,
   `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`: the cut-off inverse is a pointwise
   two-sided inverse of `a` modulo smoothing symbols, and
@@ -118,12 +117,6 @@ theorem IsEllipticAbove.isInvertible {a : Symbol n V W m} (ha : a.IsEllipticAbov
 theorem IsEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsEllipticAbove R) (h : R ≤ R') :
     a.IsEllipticAbove R' :=
   IsEllipticOn.mono ha fun _ hp => h.trans hp
-
-/-- Ellipticity on the set of points with frequency of norm at least `R` is ellipticity above the
-radius `R`. -/
-theorem isEllipticOn_iff_isEllipticAbove {a : Symbol n V W m} :
-    a.IsEllipticOn {p | R ≤ ‖p.2‖} ↔ a.IsEllipticAbove R :=
-  Iff.rfl
 
 /-- Uniform ellipticity above a radius implies uniform ellipticity above every larger radius. -/
 theorem IsUniformlyEllipticAbove.mono {a : Symbol n V W m} (ha : a.IsUniformlyEllipticAbove R)
