@@ -88,10 +88,6 @@ variable {k : ℕ∞} {ℓ : ℝ} [Fact (0 < ℓ)] (γ : ConvexTable k ℓ)
 instance : CoeFun (ConvexTable k ℓ) fun _ ↦ ℝ → ℂ :=
   ⟨toFun⟩
 
-@[simp]
-theorem toFun_eq_coe : γ.toFun = γ :=
-  (rfl)
-
 theorem differentiable : Differentiable ℝ γ :=
   γ.contDiff.differentiable <| by
     have := γ.one_le
@@ -231,7 +227,7 @@ theorem coe_ne_comp_neg {j : ℕ∞} (δ : ConvexTable j ℓ) : ⇑δ ≠ γ ∘
     rw [hδ, show γ ∘ Neg.neg = fun s ↦ γ (-s) from rfl, deriv_comp_neg, neg_zero]
   have h1 := δ.left_of_tangent 0 (ℓ / 2) hm
   have h2 := γ.left_of_tangent (-0) (-(ℓ / 2)) hm'
-  rw [toFun_eq_coe, hd] at h1
+  rw [hd] at h1
   simp only [hδ, comp_apply, map_neg, neg_mul, neg_im, neg_zero] at h1 h2
   linarith
 
