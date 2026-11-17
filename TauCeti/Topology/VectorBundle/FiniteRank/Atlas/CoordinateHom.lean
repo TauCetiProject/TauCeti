@@ -200,6 +200,11 @@ def coordinateHomAddEquiv (A D : FiniteRankAtlas 𝕜 X) :
     ext m n : 2; refine FiniteRankBundleCore.hom_ext fun z ↦ ?_; ext v j
     simp only [Pi.add_apply, FiniteRankBundleCore.fiberMap_add, add_apply,
       fiberMap_toCoordinateHom_apply, fiberMap_add, LinearMap.add_apply]
+@[simp] theorem coordinateHomAddEquiv_apply (A D : FiniteRankAtlas 𝕜 X) (f : A ⟶ D) :
+    coordinateHomAddEquiv A D f = toCoordinateHom f := by rfl
+@[simp] theorem coordinateHomAddEquiv_symm_apply (A D : FiniteRankAtlas 𝕜 X)
+    (c : ∀ m n : ℕ, sourcePairCore A D m n ⟶ targetPairCore A D m n) :
+    (coordinateHomAddEquiv A D).symm c = ofCoordinateHom c := by rfl
 
 @[simp] theorem toCoordinateHom_id (A : FiniteRankAtlas 𝕜 X) (n : ℕ) :
     toCoordinateHom (𝟙 A) n n =
@@ -281,6 +286,9 @@ def constStratumCharts (C : FiniteRankBundleCore 𝕜 X) (m : ℕ) :
       {x : X // LocallyConstant.const X C.rank x = m} (Fin k → 𝕜)
       {x : X // LocallyConstant.const X C.rank x = m}) (C.pullback (constStratumInclusion C m)).core
   else (FiniteRankBundleCore.trivial 𝕜 {x : X // LocallyConstant.const X C.rank x = m} m).core
+@[simp] theorem constStratumCharts_self (C : FiniteRankBundleCore 𝕜 X) :
+    constStratumCharts C C.rank = (C.pullback (constStratumInclusion C C.rank)).core :=
+  dite_eq_left rfl
 
 /-- Embed a constant-rank point-indexed core as a variable-rank bundle atlas of constant rank. -/
 -- Expose the rank projection so `(ofCore C).Fiber` reduces to `C`'s coordinate fibre.
@@ -291,8 +299,8 @@ def ofCore (C : FiniteRankBundleCore 𝕜 X) : FiniteRankAtlas 𝕜 X where
   indexAt_eq m x := by
     by_cases h : C.rank = m
     · subst h
-      rw [show constStratumCharts C C.rank = (C.pullback (constStratumInclusion C C.rank)).core from
-        dite_eq_left_of_eq_true (eq_true rfl)]; rfl
+      rw [constStratumCharts_self C]
+      exact (C.pullback (constStratumInclusion C C.rank)).indexAt_eq x
     · exact False.elim (h x.2)
 @[simp] theorem rank_ofCore (C : FiniteRankBundleCore 𝕜 X) :
     (ofCore C).rank = LocallyConstant.const X C.rank := by rfl
@@ -300,7 +308,7 @@ theorem rank_ofCore_apply (C : FiniteRankBundleCore 𝕜 X) (x : X) : (ofCore C)
   rfl
 @[simp] theorem charts_ofCore_self (C : FiniteRankBundleCore 𝕜 X) :
     (ofCore C).charts C.rank = (C.pullback (constStratumInclusion C C.rank)).core :=
-  dite_eq_left_of_eq_true (eq_true rfl)
+  constStratumCharts_self C
 
 private def chartsOfCoreSelfPkg (C : FiniteRankBundleCore 𝕜 X) :
     { e : ((ofCore C).charts C.rank).TotalSpace ≃ₜ C.core.TotalSpace //

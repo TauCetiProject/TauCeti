@@ -90,6 +90,31 @@ noncomputable def fiberBundleOfHomeomorph [TopologicalSpace B] [TopologicalSpace
     totalSpaceMk_isInducing' b := h.isInducing.of_comp_iff.mp
       ((FiberBundle.totalSpaceMk_isInducing F E b).comp (φ b).isInducing) }
 
+/-- The chosen trivialization of `fiberBundleOfHomeomorph` at `b` is obtained by precomposing
+`trivializationAt F E b` with `totalSpaceHomeomorphOfIsInducing`. -/
+@[simp] theorem trivializationAt_fiberBundleOfHomeomorph [TopologicalSpace B] [TopologicalSpace F]
+    [∀ b, TopologicalSpace (E b)] [∀ b, TopologicalSpace (E' b)] [FiberBundle F E]
+    (φ : ∀ b, E' b ≃ₜ E b)
+    (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E)))
+    (b : B) :
+    let _ : FiberBundle F E' := fiberBundleOfHomeomorph F φ ht
+    trivializationAt F E' b = (trivializationAt F E b).compHomeomorph
+      (totalSpaceHomeomorphOfIsInducing F (fun b ↦ (φ b).toEquiv) ht) :=
+  (rfl)
+
+/-- A trivialization belongs to the atlas of `fiberBundleOfHomeomorph` if and only if it is
+obtained by precomposing an atlas trivialization of `E` with `totalSpaceHomeomorphOfIsInducing`. -/
+@[simp] theorem mem_trivializationAtlas_fiberBundleOfHomeomorph_iff [TopologicalSpace B]
+    [TopologicalSpace F] [∀ b, TopologicalSpace (E b)] [∀ b, TopologicalSpace (E' b)]
+    [FiberBundle F E] (φ : ∀ b, E' b ≃ₜ E b)
+    (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E)))
+    (e' : Trivialization F (π F E')) :
+    let _ : FiberBundle F E' := fiberBundleOfHomeomorph F φ ht
+    e' ∈ trivializationAtlas F E' ↔
+      ∃ (e : Trivialization F (π F E)) (_ : MemTrivializationAtlas e),
+        e' = e.compHomeomorph (totalSpaceHomeomorphOfIsInducing F (fun b ↦ (φ b).toEquiv) ht) :=
+  (Iff.rfl)
+
 end Transport
 end TauCeti
 
@@ -192,6 +217,12 @@ def fiberBundleOfIsEmpty [TopologicalSpace F] : FiberBundle F E where
   mem_baseSet_trivializationAt' := isEmptyElim
   trivialization_mem_atlas' := isEmptyElim
   totalSpaceMk_isInducing' := isEmptyElim
+
+/-- The trivialization atlas of `fiberBundleOfIsEmpty` is empty. -/
+@[simp] theorem trivializationAtlas_fiberBundleOfIsEmpty [TopologicalSpace F] :
+    let _ : FiberBundle F E := fiberBundleOfIsEmpty F E
+    trivializationAtlas F E = ∅ :=
+  (rfl)
 
 /-- Over an empty base, `fiberBundleOfIsEmpty` is a `VectorBundle`. -/
 theorem vectorBundleOfIsEmpty (𝕜 : Type*) [NontriviallyNormedField 𝕜]
