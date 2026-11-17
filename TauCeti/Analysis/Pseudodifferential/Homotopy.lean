@@ -134,7 +134,8 @@ private theorem contDiffOn_cutoff_smul_comp_normalize (χ : FrequencyCutoff E) {
       rcases eq_or_ne q.2 0 with h0 | h0
       · simp [h0, χ.apply_zero]
       · simp only [hT q hq, hs _ _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) h0), c',
-          coefficient_compPosition, coefficient_ofSphere _ _ h0, Real.rpow_zero, one_smul]
+          coefficient_compPosition, coefficient_ofSphere_of_ne_zero _ _ h0, Real.rpow_zero,
+          one_smul]
     exact ((c'.contDiff_comp_inv_smul_snd_smul_coefficient χ (1 / 2)).contDiffAt
       |>.congr_of_eventuallyEq (eventuallyEq_of_mem (hTo.mem_nhds hq) hEq)).contDiffWithinAt
   rintro q (hq | hq)
@@ -218,7 +219,7 @@ theorem exists_contDiffOn_isElliptic_homotopy [FiniteDimensional ℝ X] [FiniteD
     refine ((hg.contDiffOn.norm_rpow_smul_comp_normalize m).comp_continuousLinearMap
       (ContinuousLinearEquiv.prodAssoc ℝ ℝ X E).symm.toContinuousLinearMap).congr ?_
     rintro ⟨t, x, ξ⟩ (hξ : ξ ≠ 0)
-    simp [coefficient_ofSphere _ _ hξ, ContinuousLinearEquiv.prodAssoc_symm_apply]
+    simp [coefficient_ofSphere_of_ne_zero _ _ hξ, ContinuousLinearEquiv.prodAssoc_symm_apply]
   · exact (isElliptic_ofSphere_iff _).mpr fun x ξ hξ ↦
       hε_inv ((t, x), ξ) _ (by simpa [hξ] using (lt_min_iff.mp (hgG ((t, x), ξ))).1)
   · refine (ofSphere_congr _ _ fun x ξ hξ ↦ ?_).trans (ofSphere_coefficient a₀)

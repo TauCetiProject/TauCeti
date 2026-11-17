@@ -259,7 +259,7 @@ theorem isElliptic_ofSphere_iff {E : Type*} [NormedAddCommGroup E] [InnerProduct
   · simpa [coefficient_ofSphere_of_norm_eq_one g hg hξ] using
       h x ξ (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero))
   · have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
-    rw [coefficient_ofSphere g hg hξ, ← Complex.coe_smul,
+    rw [coefficient_ofSphere_of_ne_zero g hg hξ, ← Complex.coe_smul,
       ContinuousLinearMap.isInvertible_smul_iff (by exact_mod_cast (Real.rpow_pos_of_pos hn m).ne')]
     exact h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)
 

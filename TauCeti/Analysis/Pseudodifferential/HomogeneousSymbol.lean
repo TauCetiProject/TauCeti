@@ -1069,8 +1069,8 @@ noncomputable def ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ �
         mul_smul]
 
 @[simp]
-theorem coefficient_ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0})
-    {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+theorem coefficient_ofSphere_of_ne_zero (g : X × E → V →L[ℂ] W)
+    (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) {x : X} {ξ : E} (hξ : ξ ≠ 0) :
     (ofSphere m g hg).coefficient (x, ξ) = ‖ξ‖ ^ m • g (x, ‖ξ‖⁻¹ • ξ) :=
   coefficient_mk'_of_ne_zero _ _ _ hξ
 
@@ -1078,7 +1078,7 @@ theorem coefficient_ofSphere (g : X × E → V →L[ℂ] W) (hg : ContDiffOn ℝ
 theorem coefficient_ofSphere_of_norm_eq_one (g : X × E → V →L[ℂ] W)
     (hg : ContDiffOn ℝ ∞ g {p | p.2 ≠ 0}) {x : X} {ξ : E} (hξ : ‖ξ‖ = 1) :
     (ofSphere m g hg).coefficient (x, ξ) = g (x, ξ) := by
-  rw [coefficient_ofSphere g hg (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero)), hξ]
+  rw [coefficient_ofSphere_of_ne_zero g hg (norm_ne_zero_iff.mp (hξ ▸ one_ne_zero)), hξ]
   simp
 
 /-- The homogeneous extension only depends on the values on the unit sphere. -/
@@ -1086,7 +1086,7 @@ theorem ofSphere_congr {g g' : X × E → V →L[ℂ] W} (hg : ContDiffOn ℝ �
     (hg' : ContDiffOn ℝ ∞ g' {p | p.2 ≠ 0}) (h : ∀ x ξ, ‖ξ‖ = 1 → g (x, ξ) = g' (x, ξ)) :
     ofSphere m g hg = ofSphere m g' hg' :=
   ext_of_ne_zero fun x ξ hξ ↦ by
-    rw [coefficient_ofSphere g hg hξ, coefficient_ofSphere g' hg' hξ,
+    rw [coefficient_ofSphere_of_ne_zero g hg hξ, coefficient_ofSphere_of_ne_zero g' hg' hξ,
       h x _ (by simpa using norm_smul_inv_norm (𝕜 := ℝ) hξ)]
 
 /-- A homogeneous symbol is the homogeneous extension of its values on the unit sphere. -/
@@ -1095,7 +1095,7 @@ theorem ofSphere_coefficient (a : HomogeneousSymbol X E V W m) :
     ofSphere m a.coefficient a.contDiffOn_coefficient = a :=
   ext_of_ne_zero fun x ξ hξ ↦ by
     have hn : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
-    rw [coefficient_ofSphere _ _ hξ, a.homogeneous x ξ _ (inv_pos.mpr hn), smul_smul,
+    rw [coefficient_ofSphere_of_ne_zero _ _ hξ, a.homogeneous x ξ _ (inv_pos.mpr hn), smul_smul,
       ← Real.mul_rpow hn.le (by positivity)]
     simp [hn.ne']
 
