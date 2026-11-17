@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.MaximalIdeal
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Separated
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
-public import TauCeti.RingTheory.LocalRing.AlgHom
+import TauCeti.RingTheory.LocalRing.AlgHom
 
 /-!
 # Complex-algebra homomorphisms of holomorphic stalks and analytic map germs
@@ -21,8 +21,9 @@ in `StructureSheaf.Germ`; `stalkPullbackAlgHom` and `stalkPullbackAt` in
 `StructureSheaf.StalkPullback`). Because each stalk is a local ring admitting the `ℂ`-algebra
 augmentation `evalAlgHom I X x`, every `ℂ`-algebra homomorphism
 `ψ : 𝒪_{Y, y} →ₐ[ℂ] 𝒪_{X, x}` between holomorphic stalks automatically reflects units
-(`isLocalHom_stalk_algHom`) and commutes with evaluation (`eval_algHom_apply`), with no manifold
-regularity assumption on either space.
+(`isLocalHom_stalk_algHom`) and commutes with evaluation (`evalAlgHom_comp`, `eval_algHom_apply`),
+all established in `StructureSheaf.LocalRing` with no manifold regularity assumption on either
+space.
 
 When the target `Y` is a finite-dimensional boundaryless complex manifold and the source stalk
 `𝒪_{X, x}` is separated (`IsHausdorff`) with respect to its maximal ideal — in particular whenever
@@ -59,32 +60,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {H : Type*} [Top
   {I : ModelWithCorners ℂ E H} {X : Type} [TopologicalSpace X] [ChartedSpace H X]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
   {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
-
-/-- Every `ℂ`-algebra homomorphism between holomorphic stalks automatically reflects units. -/
-instance isLocalHom_stalk_algHom {x : X} {y : Y}
-    (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
-      (holomorphicStructureSheaf I X).presheaf.stalk x) : IsLocalHom ψ :=
-  ψ.isLocalHom_of_algHom (evalAlgHom I X x)
-
-/-- Every `ℂ`-algebra homomorphism between holomorphic stalks commutes with base-point
-evaluation. -/
-@[simp]
-theorem evalAlgHom_comp {x : X} {y : Y}
-    (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
-      (holomorphicStructureSheaf I X).presheaf.stalk x) :
-    (evalAlgHom I X x).comp ψ = evalAlgHom J Y y :=
-  Subsingleton.elim _ _
-
-/-- Pointwise form of `evalAlgHom_comp`: any `ℂ`-algebra homomorphism between holomorphic stalks
-preserves the values of germs at their base points. -/
-@[simp]
-theorem eval_algHom_apply {x : X} {y : Y}
-    (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
-      (holomorphicStructureSheaf I X).presheaf.stalk x)
-    (s : (holomorphicStructureSheaf J Y).presheaf.stalk y) :
-    eval I X x (ψ s) = eval J Y y s :=
-  by simpa only [evalAlgHom_apply] using
-    ψ.comp_apply_of_isLocalRing (evalAlgHom J Y y) (evalAlgHom I X x) s
 
 /-! ### Analytic map germs -/
 

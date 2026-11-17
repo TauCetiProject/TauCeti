@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Basic
 import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.RingTheory.LocalRing.ResidueField.Basic
 import Mathlib.RingTheory.Ideal.Quotient.Operations
+import TauCeti.RingTheory.LocalRing.AlgHom
 
 /-!
 # Local rings of holomorphic germs
@@ -16,8 +17,12 @@ import Mathlib.RingTheory.Ideal.Quotient.Operations
 A germ of a holomorphic function is invertible exactly when its value at the base point
 is nonzero. Consequently the stalks of the holomorphic structure sheaf are local rings,
 their maximal ideals consist of the germs vanishing at the base point, and their residue
-fields are canonically `ℂ` via evaluation. These are the local algebra needed for local
-equations of divisors and their invertible sheaves on complex curves.
+fields are canonically `ℂ` via evaluation. Because each stalk admits the `ℂ`-algebra
+augmentation `evalAlgHom`, every `ℂ`-algebra homomorphism between holomorphic stalks
+automatically reflects units (`isLocalHom_stalk_algHom`) and commutes with base-point
+evaluation (`evalAlgHom_comp`, `eval_algHom_apply`). These are the local algebra needed
+for local equations of divisors and their invertible sheaves on complex curves, as well as
+for comparing holomorphic maps and ringed-space morphisms.
 
 The results hold for any complex model with corners;
 compactness, connectedness, and a manifold regularity assumption are unnecessary.
@@ -114,5 +119,39 @@ theorem residueFieldEquiv_residue (x : X)
   exact (congrArg ((eval I X x).quotientKerEquivOfSurjective (eval_surjective I X x))
     (Ideal.quotEquivOfEq_mk (maximalIdeal_stalk I X x) f)).trans
       (RingHom.quotientKerEquivOfSurjective_apply_mk (eval_surjective I X x) f)
+
+section AlgHom
+
+variable {I X}
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E'] {H' : Type*} [TopologicalSpace H']
+  {J : ModelWithCorners ℂ E' H'} {Y : Type} [TopologicalSpace Y] [ChartedSpace H' Y]
+
+/-- Every `ℂ`-algebra homomorphism between holomorphic stalks automatically reflects units. -/
+instance isLocalHom_stalk_algHom {x : X} {y : Y}
+    (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).presheaf.stalk x) : IsLocalHom ψ :=
+  ψ.isLocalHom_of_algHom (evalAlgHom I X x)
+
+/-- Every `ℂ`-algebra homomorphism between holomorphic stalks commutes with base-point
+evaluation. -/
+@[simp]
+theorem evalAlgHom_comp {x : X} {y : Y}
+    (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (evalAlgHom I X x).comp ψ = evalAlgHom J Y y :=
+  Subsingleton.elim _ _
+
+/-- Pointwise form of `evalAlgHom_comp`: any `ℂ`-algebra homomorphism between holomorphic stalks
+preserves the values of germs at their base points. -/
+@[simp]
+theorem eval_algHom_apply {x : X} {y : Y}
+    (ψ : (holomorphicStructureSheaf J Y).presheaf.stalk y →ₐ[ℂ]
+      (holomorphicStructureSheaf I X).presheaf.stalk x)
+    (s : (holomorphicStructureSheaf J Y).presheaf.stalk y) :
+    eval I X x (ψ s) = eval J Y y s := by
+  simpa only [evalAlgHom_apply] using
+    ψ.comp_apply_of_isLocalRing (evalAlgHom J Y y) (evalAlgHom I X x) s
+
+end AlgHom
 
 end TauCeti.holomorphicStructureSheaf
