@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.Integral.LayerCake
+public import TauCeti.Probability.Renewal.Lattice.Basic
 public import Mathlib.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -20,8 +21,9 @@ normalized expected truncated gap. Equivalently it is the normalized integral of
 interarrival tail, the forcing term in the renewal equation for the excess tail.
 
 This is the candidate limiting distribution of the residual waiting time in an
-ordinary renewal process. Its construction does not require a nonlattice law;
-no convergence assertion is made here. Taking the inverse in `ℝ≥0∞` also makes
+ordinary renewal process. Its construction does not require a nonlattice law, and no
+convergence assertion is made here; for any nonlattice measure on `ℝ≥0`, normalization holds
+precisely when the extended first moment is finite. Taking the inverse in `ℝ≥0∞` also makes
 the infinite-mean case explicit: the resulting measure is zero, not a probability.
 
 ## References
@@ -52,6 +54,13 @@ theorem equilibriumExcessLaw_def (F : Measure ℝ≥0) :
     equilibriumExcessLaw F = (volume.restrict (Ioi 0)).withDensity (fun t =>
       (∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹ * F {u | t < (u : ℝ)}) := (rfl)
 
+/-- Relative to Lebesgue measure on the whole real line, the equilibrium excess-life
+density is `t ↦ (∫⁻ u, u ∂F)⁻¹ * F((t, ∞))` on `(0, ∞)` and zero on `(-∞, 0]`. -/
+theorem equilibriumExcessLaw_eq_withDensity (F : Measure ℝ≥0) :
+    equilibriumExcessLaw F = volume.withDensity
+      ((Ioi 0).indicator fun t => (∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹ * F {u | t < (u : ℝ)}) := by
+  rw [equilibriumExcessLaw_def, withDensity_indicator measurableSet_Ioi]
+
 /-- Evaluation on a measurable set is the normalized integral of the interarrival tail. -/
 theorem equilibriumExcessLaw_apply (F : Measure ℝ≥0) {s : Set ℝ} (hs : MeasurableSet s) :
     equilibriumExcessLaw F s = (∫⁻ u, (u : ℝ≥0∞) ∂F)⁻¹ *
@@ -70,6 +79,11 @@ zero and infinite means. -/
   congr 1
   simpa using (lintegral_eq_lintegral_meas_lt F
     (ae_of_all _ fun u => u.coe_nonneg) measurable_coe_nnreal_real.aemeasurable).symm
+
+/-- The equilibrium excess-life measure has total mass at most one for every measure `F`,
+and is therefore always finite. -/
+instance (F : Measure ℝ≥0) : IsFiniteMeasure (equilibriumExcessLaw F) :=
+  ⟨by simp [lt_top_iff_ne_top]⟩
 
 /-- Normalization holds precisely for a finite, nonzero extended mean. In particular,
 an infinite-mean interarrival law does not give a probability distribution by this formula. -/
@@ -97,6 +111,18 @@ theorem isProbabilityMeasure_equilibriumExcessLaw_of_measure_singleton_lt_one
   apply (mem_ae_iff_prob_eq_one (measurableSet_singleton 0)).1
   filter_upwards [hae] with u hu
   simpa using hu
+
+/-- For a nonlattice measure on `ℝ≥0` (in particular, a nonlattice probability interarrival
+law), the equilibrium excess-life measure is a probability measure (equivalently, has total
+mass one) precisely when the extended first moment is finite. -/
+theorem isProbabilityMeasure_equilibriumExcessLaw_iff_of_not_isLattice
+    (F : Measure ℝ≥0) (hNL : ¬ F.IsLattice) :
+    IsProbabilityMeasure F.equilibriumExcessLaw ↔ (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞ := by
+  rw [isProbabilityMeasure_equilibriumExcessLaw_iff, and_iff_right_iff_imp]
+  intro _ hz
+  refine hNL (isLattice_iff.2 ⟨1, isLatticeSpan_iff.2 ⟨zero_lt_one, ?_⟩⟩)
+  filter_upwards [(lintegral_eq_zero_iff measurable_coe_nnreal_ennreal).1 hz] with u hu
+  exact ⟨0, by simpa using hu.symm⟩
 
 /-- With infinite mean the candidate excess-life measure is zero. -/
 @[simp] theorem equilibriumExcessLaw_eq_zero_of_mean_eq_top (F : Measure ℝ≥0)
