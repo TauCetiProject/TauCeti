@@ -51,7 +51,9 @@ Then `f = J^{2k} v = (J²)^k v`, with `J² = 1 - (2π)⁻² Δ`
 `ψ ∂_w g = ∂_w (ψ g) - (∂_w ψ) g` shows that if every Schwartz multiple of `g` lies in `H^{r,p}`,
 then every Schwartz multiple of `∂_w g` lies in `H^{r - 1,p}`, since `∂_w` maps `H^{r,p}` to
 `H^{r - 1,p}` for `1 < p < ∞` (`TemperedDistribution.memSobolev_smulLeftCLM_lineDerivOp`). Each
-factor `J²` therefore costs two orders, and `k` of them give the order `-2k`.
+factor `J²` therefore costs two orders
+(`TemperedDistribution.memSobolev_smulLeftCLM_besselPotential_two`), and `k` of them give the order
+`-2k`.
 
 ## References
 
@@ -71,21 +73,6 @@ namespace TemperedDistribution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- If every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of
-`J² f = f - (2π)⁻² Δ f` lies in `H^{r - 2,p}`. -/
-private theorem memSobolev_smulLeftCLM_besselPotential_two (hp : 1 < p) (hp_top : p ≠ ∞)
-    {r : ℝ} {f : 𝓢'(E, F)}
-    (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (ψ : 𝓢(E, ℂ)) :
-    MemSobolev (r - 2) p (smulLeftCLM F (ψ : E → ℂ) (besselPotential E F 2 f)) := by
-  set b := stdOrthonormalBasis ℝ E
-  rw [besselPotential_two_eq_sub_laplacian, laplacian_eq_sum b, map_sub,
-    ContinuousLinearMap.map_smul_of_tower, map_sum, RCLike.real_smul_eq_coe_smul (K := ℂ)]
-  refine ((hf ψ).mono_of_one_lt hp hp_top (by linarith)).sub
-    (MemSobolev.smul _ (MemSobolev.sum fun i _ ↦ ?_))
-  have h := memSobolev_smulLeftCLM_lineDerivOp hp hp_top
-    (memSobolev_smulLeftCLM_lineDerivOp hp hp_top hf (b i)) (b i) ψ
-  rwa [show r - 1 - 1 = r - 2 by ring] at h
 
 /-- **Schwartz multiples of distributions of finite `L²` order lie in `H^{-2k,p}`.** Let
 `1 < p < ∞`. If `f ∈ H^s = H^{s,2}` and `n < 2 (s + 2k)`, where `n = dim E`, then `ψ f ∈ H^{-2k,p}`

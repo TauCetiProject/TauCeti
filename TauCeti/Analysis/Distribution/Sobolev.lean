@@ -88,6 +88,9 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   function with a bounded representative lies in `H^{0,p}`.
 * `TemperedDistribution.memSobolev_smulLeftCLM_lineDerivOp`: for `1 < p < ∞`, if every Schwartz
   multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of `∂_w f` lies in `H^{r-1,p}`.
+* `TemperedDistribution.memSobolev_smulLeftCLM_besselPotential_two`: for `1 < p < ∞`, if every
+  Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of `J² f` lies in
+  `H^{r-2,p}`.
 
 ## References
 
@@ -480,6 +483,21 @@ theorem memSobolev_smulLeftCLM_lineDerivOp (hp : 1 < p) (hp_top : p ≠ ∞) {r 
   rw [eq_sub_of_add_eq' h.symm]
   exact ((hf ψ).lineDerivOp_of_one_lt hp hp_top).sub
     ((hf (∂_{w} ψ : 𝓢(E, ℂ))).mono_of_one_lt hp hp_top (by linarith))
+
+/-- If every Schwartz multiple of `f` lies in `H^{r,p}`, then every Schwartz multiple of
+`J² f = f - (2π)⁻² Δ f` lies in `H^{r - 2,p}`. -/
+theorem memSobolev_smulLeftCLM_besselPotential_two (hp : 1 < p) (hp_top : p ≠ ∞)
+    {r : ℝ} {f : 𝓢'(E, F)}
+    (hf : ∀ ψ : 𝓢(E, ℂ), MemSobolev r p (smulLeftCLM F (ψ : E → ℂ) f)) (ψ : 𝓢(E, ℂ)) :
+    MemSobolev (r - 2) p (smulLeftCLM F (ψ : E → ℂ) (besselPotential E F 2 f)) := by
+  set b := stdOrthonormalBasis ℝ E
+  rw [besselPotential_two_eq_sub_laplacian, laplacian_eq_sum b, map_sub,
+    ContinuousLinearMap.map_smul_of_tower, map_sum, RCLike.real_smul_eq_coe_smul (K := ℂ)]
+  refine ((hf ψ).mono_of_one_lt hp hp_top (by linarith)).sub
+    (MemSobolev.smul _ (MemSobolev.sum fun i _ ↦ ?_))
+  have h := memSobolev_smulLeftCLM_lineDerivOp hp hp_top
+    (memSobolev_smulLeftCLM_lineDerivOp hp hp_top hf (b i)) (b i) ψ
+  rwa [show r - 1 - 1 = r - 2 by ring] at h
 
 end inner
 
