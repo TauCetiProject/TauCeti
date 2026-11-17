@@ -8,6 +8,9 @@ module
 public import Mathlib.GroupTheory.Torsion
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.DegreeZero
 
+import TauCeti.Algebra.Homology.CochainComplex.Basic
+import TauCeti.CategoryTheory.ConcreteCategory.Basic
+
 /-!
 # Independence of continuous cohomology from the extra coefficient universe
 
@@ -82,23 +85,6 @@ public section
 
 open CategoryTheory
 
-private theorem eqToHom_apply_heq.{u, w} {R : Type u} [Ring R] [TopologicalSpace R]
-    {A₁ A₂ : TopModuleCat.{w} R} (h : A₁ = A₂) (x : A₁) :
-    (eqToHom h) x ≍ x := by
-  subst h
-  simp
-
-private theorem cochainComplex_of_eq {V : Type*} [Category* V] [Limits.HasZeroMorphisms V]
-    {F₁ F₂ : ℕ → V} (hF : F₁ = F₂)
-    {d₁ : ∀ n, F₁ n ⟶ F₁ (n + 1)} {d₂ : ∀ n, F₂ n ⟶ F₂ (n + 1)}
-    (hd : ∀ n, d₁ n ≍ d₂ n) (hc₁ : ∀ n, d₁ n ≫ d₁ (n + 1) = 0)
-    (hc₂ : ∀ n, d₂ n ≫ d₂ (n + 1) = 0) :
-    CochainComplex.of F₁ d₁ hc₁ = CochainComplex.of F₂ d₂ hc₂ := by
-  refine HomologicalComplex.ext hF ?_
-  rintro i _ rfl
-  simp only [CochainComplex.of_d, comp_eqToHom_iff, Category.assoc]
-  exact (conj_eqToHom_iff_heq' _ _ _ _).2 (hd i)
-
 namespace TopRep
 
 universe w u v
@@ -152,7 +138,7 @@ theorem d_universe_heq (X : TopRep.{v} R G) (n : ℕ) :
 `w`. -/
 theorem resolution_max_universe_eq (X : TopRep.{max v w} R G) :
     resolution.{u, v, max v w} X = resolution.{u, v, w} X :=
-  cochainComplex_of_eq (funext (X.resolutionX_max_universe_eq.{w})) (X.d_max_universe_heq.{w}) _ _
+  CochainComplex.of_eq (X.resolutionX_max_universe_eq.{w}) (X.d_max_universe_heq.{w})
 
 /-- For `X : TopRep.{v} R G`, `TopRep.resolution X` at extra universe `v` equals that at extra
 universe `0`. -/
@@ -164,8 +150,8 @@ theorem resolution_universe_eq (X : TopRep.{v} R G) :
 parameter `w`. -/
 theorem resolution'_max_universe_eq (X : TopRep.{max v w} R G) :
     resolution'.{u, v, max v w} X = resolution'.{u, v, w} X :=
-  cochainComplex_of_eq (funext fun n ↦ X.resolutionX_max_universe_eq.{w} (n + 1))
-    (fun n ↦ X.d_max_universe_heq.{w} (n + 1)) _ _
+  CochainComplex.of_eq (fun n ↦ X.resolutionX_max_universe_eq.{w} (n + 1))
+    (fun n ↦ X.d_max_universe_heq.{w} (n + 1))
 
 /-- For `X : TopRep.{v} R G`, `TopRep.resolution' X` at extra universe `v` equals that at extra
 universe `0`. -/
@@ -215,7 +201,7 @@ theorem homogeneousCochainsUniverseCast_hom_f_apply_heq (X : TopRep.{max v w} R 
     (a : (homogeneousCochains.{u, v, max v w} X).X n) :
     (X.homogeneousCochainsUniverseCast.{w}).hom.f n a ≍ a := by
   rw [homogeneousCochainsUniverseCast_eq_eqToIso, eqToIso.hom, HomologicalComplex.eqToHom_f]
-  exact eqToHom_apply_heq _ a
+  apply TauCeti.eqToHom_apply_heq
 
 /-- The inverse of `homogeneousCochainsUniverseCast` preserves homogeneous cochains in every degree
 up to heterogeneous equality. -/
@@ -223,7 +209,7 @@ theorem homogeneousCochainsUniverseCast_inv_f_apply_heq (X : TopRep.{max v w} R 
     (a : (homogeneousCochains.{u, v, w} X).X n) :
     (X.homogeneousCochainsUniverseCast.{w}).inv.f n a ≍ a := by
   rw [homogeneousCochainsUniverseCast_eq_eqToIso, eqToIso.inv, HomologicalComplex.eqToHom_f]
-  exact eqToHom_apply_heq _ a
+  apply TauCeti.eqToHom_apply_heq
 
 -- Not `@[simp]`: `simp` rewrites the implicit carrier `(homogeneousCochains X).X k` through
 -- `CategoryTheory.Functor.mapHomologicalComplex_obj_X`, so these statements are for `rw`.
@@ -359,14 +345,14 @@ theorem universeCast_hom_apply_heq (X : TopRep.{max v w} R G) (n : ℕ)
     (x : continuousCohomology.{u, v, max v w} n X) :
     (universeCast.{w} X n).hom x ≍ x := by
   rw [universeCast_eq_eqToIso, eqToIso.hom]
-  exact eqToHom_apply_heq _ x
+  apply TauCeti.eqToHom_apply_heq
 
 /-- The inverse of `universeCast` preserves classes up to heterogeneous equality. -/
 theorem universeCast_inv_apply_heq (X : TopRep.{max v w} R G) (n : ℕ)
     (x : continuousCohomology.{u, v, w} n X) :
     (universeCast.{w} X n).inv x ≍ x := by
   rw [universeCast_eq_eqToIso, eqToIso.inv]
-  exact eqToHom_apply_heq _ x
+  apply TauCeti.eqToHom_apply_heq
 
 /-! ### Compatibility with cocycles and homogeneous cocycle classes -/
 
