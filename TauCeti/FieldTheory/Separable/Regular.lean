@@ -274,21 +274,6 @@ theorem isIntegrallyClosedIn_iff_forall_isDomain_tensorProduct_of_perfectField [
 
 section BaseChange
 
-/-- If `A ⊗[k] B` is a domain, then for any total quotient ring `Q` of `K ⊗[k] B`, the tensor
-product `Q ⊗[K] A` is a domain. -/
-private theorem isDomain_tensorProduct_of_isFractionRing_left_tensorProduct_of_isDomain
-    {k B K Q : Type*} [CommRing k] [CommRing B] [Algebra k B] [Field K] [Algebra k K]
-    [CommRing Q] [Algebra (K ⊗[k] B) Q] [Algebra K Q] [IsScalarTower K (K ⊗[k] B) Q]
-    [IsFractionRing (K ⊗[k] B) Q] (A : Type*) [CommRing A] [Algebra K A] [Algebra k A]
-    [IsScalarTower k K A] [IsDomain (A ⊗[k] B)] :
-    IsDomain (Q ⊗[K] A) := by
-  -- `(K ⊗[k] B) ⊗[K] A ≃ A ⊗[k] B` is a domain, and `Q` localizes `K ⊗[k] B` at nonzero divisors.
-  let e : (K ⊗[k] B) ⊗[K] A ≃ₐ[K] A ⊗[k] B :=
-    (Algebra.TensorProduct.comm K (K ⊗[k] B) A).trans
-      (Algebra.TensorProduct.cancelBaseChange k K K A B)
-  have : IsDomain ((K ⊗[k] B) ⊗[K] A) := e.toMulEquiv.isDomain
-  exact isDomain_tensorProduct_of_isLocalization (nonZeroDivisors (K ⊗[k] B)) le_rfl Q A
-
 /-- **Regularity is stable under arbitrary field base change (left-scalar tensor order).** Let
 `F / k` be geometrically reduced with exact constants and let `K / k` be any field extension. For
 any fraction ring `Q` of `K ⊗[k] F` and any domain `K`-algebra `A`, the tensor product `Q ⊗[K] A`
@@ -302,7 +287,8 @@ theorem isDomain_tensorProduct_of_isFractionRing_left_tensorProduct
   let _ : Algebra k A := ((algebraMap K A).comp (algebraMap k K)).toAlgebra
   have : IsScalarTower k K A := .of_algebraMap_eq fun _ ↦ rfl
   have : IsDomain (A ⊗[k] F) := isDomain_tensorProduct_of_isGeometricallyReduced' hex A
-  exact isDomain_tensorProduct_of_isFractionRing_left_tensorProduct_of_isDomain (k := k) (B := F) A
+  exact isDomain_tensorProduct_of_isLocalization_tensorProduct
+    (nonZeroDivisors (K ⊗[k] F)) le_rfl Q A
 
 /-- **Exact constants persist after arbitrary field base change of a regular extension.** If
 `F / k` is geometrically reduced with exact constants and `K / k` is any field extension, then `K`
@@ -327,7 +313,8 @@ theorem isDomain_tensorProduct_of_isFractionRing_left_tensorProduct_of_isAlgClos
     IsDomain (Q ⊗[F] A) := by
   let _ : Algebra k A := ((algebraMap F A).comp (algebraMap k F)).toAlgebra
   have : IsScalarTower k F A := .of_algebraMap_eq fun _ ↦ rfl
-  exact isDomain_tensorProduct_of_isFractionRing_left_tensorProduct_of_isDomain (k := k) (B := B) A
+  exact isDomain_tensorProduct_of_isLocalization_tensorProduct
+    (nonZeroDivisors (F ⊗[k] B)) le_rfl Q A
 
 /-- **Relative algebraic closure in `Frac(F ⊗[k] B)` over an algebraically closed field.** If `k`
 is algebraically closed, then for any field extension `F / k` and commutative domain `k`-algebra

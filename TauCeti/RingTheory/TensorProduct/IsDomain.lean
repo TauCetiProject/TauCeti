@@ -45,6 +45,8 @@ field.
 
 * `TauCeti.isDomain_tensorProduct_of_isLocalization`: localizing the first factor at nonzero
   divisors preserves domains.
+* `TauCeti.isDomain_tensorProduct_of_isLocalization_tensorProduct`: if `A ⊗[k] B` is a domain,
+  then `Q ⊗[K] A` is a domain for any localization `Q` of `K ⊗[k] B` at nonzero divisors.
 * `TauCeti.isDomain_fractionRing_mvPolynomial_tensorProduct`: a rational function field over `K`
   tensored with a domain is a domain.
 * `TauCeti.isDomain_tensorProduct_of_isAlgClosed`: over an algebraically closed field, the tensor
@@ -86,6 +88,22 @@ theorem isDomain_tensorProduct_of_isLocalization {A : Type*} [CommRing A] [Algeb
     Algebra.TensorProduct.includeLeft_injective (S := K) (algebraMap K L).injective
   exact IsLocalization.isDomain_of_le_nonZeroDivisors _
     (M := Algebra.algebraMapSubmonoid (A ⊗[K] L) M) (map_le_nonZeroDivisors_of_injective _ hinj hM)
+
+/-- Let `Q` be a localization of the base-changed algebra `K ⊗[k] B` at a submonoid of nonzero
+divisors. If `A` is a `K`-algebra (in a scalar tower `k → K → A`) such that `A ⊗[k] B` is a
+domain, then `Q ⊗[K] A` is a domain. -/
+theorem isDomain_tensorProduct_of_isLocalization_tensorProduct {k B : Type*} [CommSemiring k]
+    [CommRing B] [Algebra k B] [Algebra k K] (M : Submonoid (K ⊗[k] B))
+    (hM : M ≤ nonZeroDivisors (K ⊗[k] B)) (Q : Type*) [CommRing Q] [Algebra (K ⊗[k] B) Q]
+    [Algebra K Q] [IsScalarTower K (K ⊗[k] B) Q] [IsLocalization M Q] (A : Type*) [CommRing A]
+    [Algebra K A] [Algebra k A] [IsScalarTower k K A] [IsDomain (A ⊗[k] B)] :
+    IsDomain (Q ⊗[K] A) := by
+  -- `(K ⊗[k] B) ⊗[K] A ≃ A ⊗[k] B` is a domain, and `Q` localizes `K ⊗[k] B` at `M`.
+  let e : (K ⊗[k] B) ⊗[K] A ≃ₐ[K] A ⊗[k] B :=
+    (Algebra.TensorProduct.comm K (K ⊗[k] B) A).trans
+      (Algebra.TensorProduct.cancelBaseChange k K K A B)
+  have : IsDomain ((K ⊗[k] B) ⊗[K] A) := e.toMulEquiv.isDomain
+  exact isDomain_tensorProduct_of_isLocalization M hM Q A
 
 /-- The tensor product of a domain over a field `K` with a rational function field over `K` is a
 domain. -/

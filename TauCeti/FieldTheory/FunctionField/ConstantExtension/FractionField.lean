@@ -72,25 +72,26 @@ theorem constantCompositum_eq_top_of_isFractionRing_tensorProduct
   rw [constantCompositum_def]
   exact adjoin_range_right_eq_top_of_isFractionRing_tensorProduct (k := k)
 
-section SpecifiedFractionField
+namespace ConstantExtension.Internal
 
-variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
-  [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q]
-  [Algebra F Q] [Algebra K Q]
-  [IsScalarTower F (F ⊗[k] K) Q] [IsScalarTower K (F ⊗[k] K) Q]
-
-/-- The canonical `k`-algebra structure on a fraction field `Q` of `F ⊗[k] K`, induced through
-`k → F ⊗[k] K → Q`. -/
+/-- Internal helper shared by `ConstantExtension.FractionField` and
+`ConstantExtension.Parameter`: the canonical `k`-algebra structure on an `(F ⊗[k] K)`-algebra `Q`,
+induced through `k → F ⊗[k] K → Q`. -/
 @[instance_reducible]
-private noncomputable def fractionFieldBaseAlgebra : Algebra k Q :=
+noncomputable def baseAlgebra {k F K Q : Type*} [CommSemiring k] [CommSemiring F]
+    [CommSemiring K] [CommSemiring Q] [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q] :
+    Algebra k Q :=
   ((algebraMap (F ⊗[k] K) Q).comp (algebraMap k (F ⊗[k] K))).toAlgebra
 
-/-- The canonical `k`-algebra structure on a fraction field `Q` of `F ⊗[k] K` makes both
+/-- Internal helper shared by `ConstantExtension.FractionField` and
+`ConstantExtension.Parameter`: the induced `k`-algebra structure `baseAlgebra` makes both
 `k → F → Q` and `k → K → Q` scalar towers. -/
-private theorem fractionFieldBase_isScalarTowers :
-    letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+theorem baseAlgebra_isScalarTowers {k F K Q : Type*} [CommSemiring k] [CommSemiring F]
+    [CommSemiring K] [CommSemiring Q] [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q]
+    [Algebra F Q] [Algebra K Q] [IsScalarTower F (F ⊗[k] K) Q] [IsScalarTower K (F ⊗[k] K) Q] :
+    letI := baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
     IsScalarTower k F Q ∧ IsScalarTower k K Q :=
-  letI := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  letI := baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
   ⟨.of_algebraMap_eq fun c ↦ by
       rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
         IsScalarTower.algebraMap_apply k F (F ⊗[k] K),
@@ -100,14 +101,23 @@ private theorem fractionFieldBase_isScalarTowers :
         IsScalarTower.algebraMap_apply k K (F ⊗[k] K),
         ← IsScalarTower.algebraMap_apply K (F ⊗[k] K) Q]⟩
 
-variable [IsFractionRing (F ⊗[k] K) Q]
+end ConstantExtension.Internal
+
+section SpecifiedFractionField
+
+variable {k F K Q : Type*} [Field k] [Field F] [Field K] [Field Q]
+  [Algebra k F] [Algebra k K] [Algebra (F ⊗[k] K) Q]
+  [Algebra F Q] [Algebra K Q]
+  [IsScalarTower F (F ⊗[k] K) Q] [IsScalarTower K (F ⊗[k] K) Q]
+  [IsFractionRing (F ⊗[k] K) Q]
 
 /-- A fraction field of a domain tensor product is a one-variable function field
 over the enlarged constants. -/
 theorem IsFunctionField.of_isFractionRing_tensorProduct (hF : IsFunctionField k F) :
     IsFunctionField K Q := by
-  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  let _ := ConstantExtension.Internal.baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := ConstantExtension.Internal.baseAlgebra_isScalarTowers
+    (k := k) (F := F) (K := K) (Q := Q)
   exact hF.of_constantCompositum_eq_top_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k))
@@ -117,8 +127,9 @@ field `Q` of `F ⊗[k] K`. -/
 theorem _root_.Transcendental.algebraMap_of_isFractionRing_tensorProduct {x : F}
     (hx : Transcendental k x) :
     Transcendental K (algebraMap F Q x) := by
-  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  let _ := ConstantExtension.Internal.baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := ConstantExtension.Internal.baseAlgebra_isScalarTowers
+    (k := k) (F := F) (K := K) (Q := Q)
   exact (linearDisjoint_of_isFractionRing_tensorProduct (k := k)).transcendental_algebraMap hx
 
 include k in
@@ -127,8 +138,9 @@ include k in
 theorem isSeparable_adjoin_simple_of_isFractionRing_tensorProduct (x : F)
     [Algebra.IsSeparable k⟮x⟯ F] :
     Algebra.IsSeparable K⟮algebraMap F Q x⟯ Q := by
-  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  let _ := ConstantExtension.Internal.baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := ConstantExtension.Internal.baseAlgebra_isScalarTowers
+    (k := k) (F := F) (K := K) (Q := Q)
   have hsep := isSeparable_adjoin_image_of_constantCompositum_eq_top (k := k) (k' := K)
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k) (Q := Q))
     (S := ({x} : Set F))
@@ -138,8 +150,9 @@ theorem isSeparable_adjoin_simple_of_isFractionRing_tensorProduct (x : F)
 Neither the constants nor the relative extension need be separable. -/
 theorem finrank_over_adjoin_simple_eq_of_isFractionRing_tensorProduct (x : F) :
     Module.finrank K⟮algebraMap F Q x⟯ Q = Module.finrank k⟮x⟯ F := by
-  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  let _ := ConstantExtension.Internal.baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := ConstantExtension.Internal.baseAlgebra_isScalarTowers
+    (k := k) (F := F) (K := K) (Q := Q)
   exact finrank_over_adjoin_simple_eq_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) x
@@ -156,8 +169,9 @@ theorem isSeparable_ratFunc_of_isFractionRing_tensorProduct
       algebraMap (RatFunc K) Q RatFunc.X)
     [Algebra.IsSeparable (RatFunc k) F] :
     Algebra.IsSeparable (RatFunc K) Q := by
-  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  let _ := ConstantExtension.Internal.baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := ConstantExtension.Internal.baseAlgebra_isScalarTowers
+    (k := k) (F := F) (K := K) (Q := Q)
   exact isSeparable_ratFunc_of_constantCompositum_eq_top (k := k)
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX
 
@@ -168,8 +182,9 @@ theorem finrank_ratFunc_eq_of_isFractionRing_tensorProduct
     (hX : algebraMap F Q (algebraMap (RatFunc k) F RatFunc.X) =
       algebraMap (RatFunc K) Q RatFunc.X) :
     Module.finrank (RatFunc K) Q = Module.finrank (RatFunc k) F := by
-  let _ := fractionFieldBaseAlgebra (k := k) (F := F) (K := K) (Q := Q)
-  obtain ⟨_, _⟩ := fractionFieldBase_isScalarTowers (k := k) (F := F) (K := K) (Q := Q)
+  let _ := ConstantExtension.Internal.baseAlgebra (k := k) (F := F) (K := K) (Q := Q)
+  obtain ⟨_, _⟩ := ConstantExtension.Internal.baseAlgebra_isScalarTowers
+    (k := k) (F := F) (K := K) (Q := Q)
   exact finrank_ratFunc_eq_of_linearDisjoint
     (linearDisjoint_of_isFractionRing_tensorProduct (k := k))
     (constantCompositum_eq_top_of_isFractionRing_tensorProduct (k := k)) hX
