@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Topology.FiberBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Basic
+public import TauCeti.Topology.FiberBundle.Transport
 
 /-!
 # Trivializations over the whole base
@@ -48,7 +49,11 @@ bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear t
 and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`). A trivialization that is linear over two
 fields has the same continuous linear map at every point over either field
-(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`).
+(`Bundle.Trivialization.coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt`). Precomposing
+`R`-linear trivializations with `TauCeti.totalSpaceHomeomorphOfIsInducing` for fibrewise continuous
+linear equivalences preserves linearity and overlap coordinate changes
+(`Bundle.Trivialization.compHomeomorph_isLinear`,
+`Bundle.Trivialization.compHomeomorph_coordChangeL_eq`).
 -/
 
 public section
@@ -268,6 +273,53 @@ theorem coe_continuousLinearMapAt_eq_coe_continuousLinearMapAt (𝕜' 𝕜 : Typ
     ⇑(e.continuousLinearMapAt 𝕜' b) = e.continuousLinearMapAt 𝕜 b := by
   ext v
   simp only [continuousLinearMapAt_apply, coe_linearMapAt]
+
+section CompHomeomorph
+open Topology
+variable {F : Type*} {E : B → Type*} {E' : B → Type*} [TopologicalSpace F]
+  [TopologicalSpace (TotalSpace F E)] [TopologicalSpace (TotalSpace F E')]
+  {R : Type*} [Semiring R] [AddCommMonoid F] [Module R F]
+  [∀ b, AddCommMonoid (E b)] [∀ b, Module R (E b)] [∀ b, TopologicalSpace (E b)]
+  [∀ b, AddCommMonoid (E' b)] [∀ b, Module R (E' b)] [∀ b, TopologicalSpace (E' b)]
+
+/-- Precomposing an `R`-linear trivialization with a total-space homeomorphism given fibrewise by
+`R`-linear equivalences preserves `Trivialization.IsLinear`. -/
+theorem compHomeomorph_isLinear (e : Trivialization F (π F E)) [e.IsLinear R]
+    (φ : ∀ b, E' b ≃L[R] E b)
+    (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E))) :
+    ((e.compHomeomorph (TauCeti.totalSpaceHomeomorphOfIsInducing F
+      (fun b ↦ (φ b).toHomeomorph.toEquiv) ht) : Trivialization F (π F E'))).IsLinear R where
+  linear b hb :=
+    { map_add v w := by
+        -- Unfold `e.compHomeomorph` and `toHomeomorph.toEquiv` to `e` and `φ b`.
+        change (e ⟨b, φ b (v + w)⟩).2 = (e ⟨b, φ b v⟩).2 + (e ⟨b, φ b w⟩).2
+        rw [map_add]; exact (e.linear R hb).map_add (φ b v) (φ b w)
+      map_smul c v := by
+        -- Unfold `e.compHomeomorph` and `toHomeomorph.toEquiv` to `e` and `φ b`.
+        change (e ⟨b, φ b (c • v)⟩).2 = c • (e ⟨b, φ b v⟩).2
+        rw [map_smul]; exact (e.linear R hb).map_smul c (φ b v) }
+
+/-- Precomposing two `R`-linear trivializations with the same fibrewise continuous-linear
+total-space homeomorphism leaves their overlap coordinate-change operator unchanged. -/
+theorem compHomeomorph_coordChangeL_eq (e₁ e₂ : Trivialization F (π F E))
+    [e₁.IsLinear R] [e₂.IsLinear R] (φ : ∀ b, E' b ≃L[R] E b)
+    (ht : IsInducing (fun p : TotalSpace F E' ↦ (⟨p.proj, φ p.proj p.2⟩ : TotalSpace F E)))
+    {b : B} (hb : b ∈ e₁.baseSet ∩ e₂.baseSet) :
+    let h := TauCeti.totalSpaceHomeomorphOfIsInducing F (fun b ↦ (φ b).toHomeomorph.toEquiv) ht
+    let e₁' : Trivialization F (π F E') := e₁.compHomeomorph h
+    let e₂' : Trivialization F (π F E') := e₂.compHomeomorph h
+    have : e₁'.IsLinear R := e₁.compHomeomorph_isLinear φ ht
+    have : e₂'.IsLinear R := e₂.compHomeomorph_isLinear φ ht
+    e₁'.coordChangeL R e₂' b = e₁.coordChangeL R e₂ b := by
+  intro h e₁' e₂'
+  have : e₁'.IsLinear R := e₁.compHomeomorph_isLinear φ ht
+  have : e₂'.IsLinear R := e₂.compHomeomorph_isLinear φ ht
+  ext v; rw [e₁'.coordChangeL_apply' e₂' hb, e₁.coordChangeL_apply' e₂ hb]
+  -- Both `e₁'` and `e₂'` precompose with `h`, so `h` and `h.symm` cancel on the overlap.
+  change (e₂ (h (h.symm (e₁.toOpenPartialHomeomorph.symm (b, v))))).2 =
+    (e₂ (e₁.toOpenPartialHomeomorph.symm (b, v))).2
+  rw [h.apply_symm_apply]
+end CompHomeomorph
 
 end Bundle.Trivialization
 

@@ -30,12 +30,12 @@ universe u v w
 
 variable (𝕜 : Type v) [NontriviallyNormedField 𝕜] (X : Type u) [TopologicalSpace X]
 
-/-- A variable finite-rank bundle atlas, with charts indexed by the points of each clopen rank
-stratum. All stored coordinate data are independent of any external fibre universe. -/
+/-- A variable finite-rank bundle atlas, with charts indexed by the points of each
+clopen rank stratum. All stored coordinate data are independent of the fibre universe. -/
 structure FiniteRankAtlas where
   /-- The locally constant, not necessarily bounded, rank. -/
   rank : LocallyConstant X ℕ
-  /-- The coordinate bundle core on each rank stratum. -/
+  /-- The actual coordinate bundle core on each rank stratum. -/
   charts (n : ℕ) : VectorBundleCore 𝕜 {x : X // rank x = n} (Fin n → 𝕜)
     {x : X // rank x = n}
   /-- Each point labels its own preferred chart. -/
@@ -76,7 +76,6 @@ instance instVariableRankBundle :
 /-- Equip `TotalSpace Unit A.Fiber` with the glued topology of the native stratum bundle cores. -/
 instance : TopologicalSpace (TotalSpace Unit A.Fiber) :=
   VariableRankBundle.instTopologicalSpaceTotalSpace A
-
 @[simp high] theorem totalSpaceHomeomorph_rfl_apply (x : X)
     (v : (A.charts (A.rank x)).Fiber ⟨x, rfl⟩) :
     VariableRankBundle.totalSpaceHomeomorph A ⟨A.rank x, ⟨⟨x, rfl⟩, v⟩⟩ = ⟨x, v⟩ :=
@@ -98,51 +97,51 @@ variable (𝕜) (r : LocallyConstant X ℕ)
 /-- Encode actual bundles on the clopen rank strata by small point-indexed cores.
 The original fibre universe does not appear in the resulting atlas type. -/
 -- Expose the rank and chart projections so dependent coordinate fibres reduce at implicit level.
-@[expose, implicit_reducible]
-noncomputable def ofBundles : FiniteRankAtlas 𝕜 X where
+@[expose, implicit_reducible] noncomputable def ofBundles : FiniteRankAtlas 𝕜 X where
   rank := r
   charts n := pointIndexedCore 𝕜 (Fin n → 𝕜) (E n)
   indexAt_eq n := pointIndexedCore_indexAt 𝕜 (Fin n → 𝕜) (E n)
 
-@[simp] theorem rank_ofBundles : (ofBundles 𝕜 r E).rank = r := by rfl
-@[simp] theorem charts_ofBundles (n : ℕ) :
-    (ofBundles 𝕜 r E).charts n = pointIndexedCore 𝕜 (Fin n → 𝕜) (E n) := by rfl
+@[simp] theorem rank_ofBundles : (ofBundles 𝕜 r E).rank = r := (rfl)
 
-/-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union of the original
-stratum bundles via `pointIndexedCoreFiberEquiv` on each fibre. -/
+@[simp] theorem charts_ofBundles (n : ℕ) :
+    (ofBundles 𝕜 r E).charts n = pointIndexedCore 𝕜 (Fin n → 𝕜) (E n) := (rfl)
+
+/-- The reconstructed atlas is homeomorphic, over the base, to the disjoint union
+of the original bundles. The fibre maps are the preferred-chart continuous linear
+equivalences `pointIndexedCoreFiberEquiv`. -/
 noncomputable def reconstructionHomeomorph :
     TotalSpace Unit (ofBundles 𝕜 r E).Fiber ≃ₜ Σ n : ℕ, TotalSpace (Fin n → 𝕜) (E n) :=
   (VariableRankBundle.totalSpaceHomeomorph (ofBundles 𝕜 r E)).symm.trans
     (Homeomorph.sigmaCongrRight fun n ↦ pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n))
 
-/-- On a rank stratum reconstruction is the preferred-chart fibre equivalence. -/
+/-- On a rank stratum reconstruction is the original preferred-chart fibre equivalence. -/
 @[simp] theorem reconstructionHomeomorph_apply (p : TotalSpace Unit (ofBundles 𝕜 r E).Fiber) :
-    reconstructionHomeomorph 𝕜 r E p = ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
-      pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.2⟩⟩ :=
-  let h := (VariableRankBundle.totalSpaceHomeomorph (ofBundles 𝕜 r E)).symm
-  let e := Homeomorph.sigmaCongrRight fun n ↦ pointIndexedCoreHomeomorph 𝕜 (Fin n → 𝕜) (E n)
-  (Homeomorph.trans_apply h e p).trans
-    ((congrArg e (VariableRankBundle.totalSpaceHomeomorph_symm_apply (ofBundles 𝕜 r E) p)).trans
-      ((Homeomorph.sigmaCongrRight_apply _ _).trans (congrArg (Sigma.mk (r p.proj))
-        (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj))
-          ⟨⟨p.proj, rfl⟩, p.2⟩))))
+    reconstructionHomeomorph 𝕜 r E p =
+      ⟨r p.proj, ⟨⟨p.proj, rfl⟩,
+        pointIndexedCoreFiberEquiv 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨p.proj, rfl⟩ p.2⟩⟩ := by
+  simp only [reconstructionHomeomorph, Homeomorph.trans_apply, Homeomorph.sigmaCongrRight_apply,
+    VariableRankBundle.totalSpaceHomeomorph_symm_apply]
+  exact congrArg (Sigma.mk (r p.proj))
+    (pointIndexedCoreHomeomorph_apply 𝕜 (Fin (r p.proj) → 𝕜) (E (r p.proj)) ⟨⟨p.proj, rfl⟩, p.2⟩)
 
-/-- The inverse comparison applies the inverse preferred-chart fibre equivalence, followed by the
-canonical inclusion of that stratum into the reconstructed total space. -/
-@[simp] theorem reconstructionHomeomorph_symm_apply (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
+/-- The inverse comparison is the inverse preferred-chart fibre equivalence, followed
+by the canonical inclusion of that stratum into the reconstructed total space. -/
+@[simp] theorem reconstructionHomeomorph_symm_apply
+    (n : ℕ) (p : TotalSpace (Fin n → 𝕜) (E n)) :
     (reconstructionHomeomorph 𝕜 r E).symm ⟨n, p⟩ =
       VariableRankBundle.totalSpaceHomeomorph (ofBundles 𝕜 r E)
-        ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.2⟩⟩ :=
-  let h := VariableRankBundle.totalSpaceHomeomorph (ofBundles 𝕜 r E)
-  let f := fun m ↦ pointIndexedCoreHomeomorph 𝕜 (Fin m → 𝕜) (E m)
-  (Homeomorph.symm_trans_apply h.symm (Homeomorph.sigmaCongrRight f) ⟨n, p⟩).trans
-    ((congrFun (congrArg DFunLike.coe h.symm_symm) _).trans (congrArg h
-      ((Homeomorph.sigmaCongrRight_symm_apply f ⟨n, p⟩).trans
-        (congrArg (Sigma.mk n) (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) (E n) p)))))
+        ⟨n, ⟨p.proj, (pointIndexedCoreFiberEquiv 𝕜 (Fin n → 𝕜) (E n) p.proj).symm p.2⟩⟩ := by
+  simp only [reconstructionHomeomorph, Homeomorph.symm_trans_apply, Homeomorph.symm_symm,
+    Homeomorph.sigmaCongrRight_symm_apply]
+  exact congrArg (fun q ↦ VariableRankBundle.totalSpaceHomeomorph (ofBundles 𝕜 r E) ⟨n, q⟩)
+    (pointIndexedCoreHomeomorph_symm_apply 𝕜 (Fin n → 𝕜) (E n) p)
 
 /-- The reconstruction comparison covers the identity map on the original base. -/
-@[simp] theorem proj_reconstructionHomeomorph (p : TotalSpace Unit (ofBundles 𝕜 r E).Fiber) :
-    (reconstructionHomeomorph 𝕜 r E p).2.proj.1 = p.proj := by rw [reconstructionHomeomorph_apply]
+@[simp] theorem proj_reconstructionHomeomorph
+    (p : TotalSpace Unit (ofBundles 𝕜 r E).Fiber) :
+    (reconstructionHomeomorph 𝕜 r E p).2.proj.1 = p.proj := by
+  rw [reconstructionHomeomorph_apply]
 
 end Reconstruction
 end FiniteRankAtlas

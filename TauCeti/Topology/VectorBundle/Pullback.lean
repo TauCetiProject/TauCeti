@@ -74,40 +74,36 @@ instance instInnerProductSpace {𝕜 : Type*} [RCLike 𝕜]
     InnerProductSpace 𝕜 ((f *ᵖ E) x) :=
   inferInstanceAs (InnerProductSpace 𝕜 (E (f x)))
 
+section Subtype
+variable (F : Type*) (E : B → Type*) [TopologicalSpace B] {P : B → Prop} (hP : ∀ b, P b)
+  [TopologicalSpace (TotalSpace F E)] (hproj : Continuous (π F E))
+
 /-- Restricting a bundle to a universally satisfied subtype `{b : B // P b}` and pulling back along
 `b ↦ ⟨b, hP b⟩` produces a total space homeomorphic to the original total space over `B`. -/
-def subtypeHomeomorph (F : Type*) (E : B → Type*) [TopologicalSpace B] {P : B → Prop}
-    (hP : ∀ b, P b) [TopologicalSpace (TotalSpace F E)] (hproj : Continuous (π F E)) :
-    TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
-      ((Subtype.val : {b : B // P b} → B) *ᵖ E)) ≃ₜ TotalSpace F E where
+def subtypeHomeomorph : TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
+    ((Subtype.val : {b : B // P b} → B) *ᵖ E)) ≃ₜ TotalSpace F E where
   toFun q := ⟨q.proj, q.2⟩
   invFun p := ⟨p.proj, p.2⟩
   left_inv := fun ⟨_, _⟩ ↦ rfl
   right_inv := fun ⟨_, _⟩ ↦ rfl
-  continuous_toFun :=
-    (Pullback.continuous_lift F E (Subtype.val : {b : B // P b} → B)).comp
-      (Pullback.continuous_lift F ((Subtype.val : {b : B // P b} → B) *ᵖ E)
-        fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))
+  continuous_toFun := (Pullback.continuous_lift F E (Subtype.val : {b : B // P b} → B)).comp
+    (Pullback.continuous_lift F ((Subtype.val : {b : B // P b} → B) *ᵖ E)
+      fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))
   continuous_invFun := by
-    rw [(inducing_pullbackTotalSpaceEmbedding F ((Subtype.val : {b : B // P b} → B) *ᵖ E)
-      fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})).continuous_iff]
+    let val : {b : B // P b} → B := Subtype.val
+    rw [(inducing_pullbackTotalSpaceEmbedding F (val *ᵖ E)
+      (fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b}))).continuous_iff]
     refine hproj.prodMk ?_
-    rw [(inducing_pullbackTotalSpaceEmbedding F E
-      (Subtype.val : {b : B // P b} → B)).continuous_iff]
+    rw [(inducing_pullbackTotalSpaceEmbedding F E val).continuous_iff]
     exact (hproj.subtype_mk fun p ↦ hP p.proj).prodMk continuous_id
 
-@[simp]
-theorem subtypeHomeomorph_apply (F : Type*) (E : B → Type*) [TopologicalSpace B] {P : B → Prop}
-    (hP : ∀ b, P b) [TopologicalSpace (TotalSpace F E)] (hproj : Continuous (π F E))
+@[simp] theorem subtypeHomeomorph_apply
     (q : TotalSpace F ((fun b : B ↦ (⟨b, hP b⟩ : {b : B // P b})) *ᵖ
       ((Subtype.val : {b : B // P b} → B) *ᵖ E))) :
     subtypeHomeomorph F E hP hproj q = ⟨q.proj, q.2⟩ := by rfl
-
-@[simp]
-theorem subtypeHomeomorph_symm_apply (F : Type*) (E : B → Type*) [TopologicalSpace B]
-    {P : B → Prop} (hP : ∀ b, P b) [TopologicalSpace (TotalSpace F E)]
-    (hproj : Continuous (π F E)) (p : TotalSpace F E) :
+@[simp] theorem subtypeHomeomorph_symm_apply (p : TotalSpace F E) :
     (subtypeHomeomorph F E hP hproj).symm p = ⟨p.proj, p.2⟩ := by rfl
+end Subtype
 
 end Bundle.Pullback
 

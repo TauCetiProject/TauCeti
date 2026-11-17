@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.VectorBundle.FiniteRank.Glued
+public import TauCeti.Topology.VectorBundle.IsEmpty
 public import TauCeti.Topology.VectorBundle.Pullback
-public import TauCeti.Topology.VectorBundle.ULift
 public import Mathlib.Topology.Algebra.Module.TransferInstance
 
 /-!
@@ -29,11 +29,8 @@ embed via `ofFixedRank` (`exists_iso_ofFixedRank_iff`).
 -/
 
 public section
-
 open Bundle CategoryTheory Topology
-
 namespace TauCeti
-
 universe u v w
 
 /-- A variable-rank finite-rank topological `𝕜`-vector bundle over `X` with fibres in `Type w`.
@@ -49,20 +46,13 @@ structure FiniteRankVectorBundle (𝕜 : Type v) [NontriviallyNormedField 𝕜]
   [moduleFiber : ∀ x, Module 𝕜 (Fiber x)]
   [topologicalSpaceFiber : ∀ x, TopologicalSpace (Fiber x)]
   [topologicalSpaceStratumTotalSpace :
-    ∀ n : ℕ, TopologicalSpace (TotalSpace (Fin n → 𝕜) (fun x : {x : X // rank x = n} ↦ Fiber x.1))]
-  [fiberBundleStratum :
-    ∀ n : ℕ, FiberBundle (Fin n → 𝕜) (fun x : {x : X // rank x = n} ↦ Fiber x.1)]
-  [vectorBundleStratum :
-    ∀ n : ℕ, VectorBundle 𝕜 (Fin n → 𝕜) (fun x : {x : X // rank x = n} ↦ Fiber x.1)]
-
-attribute [instance]
-  FiniteRankVectorBundle.addCommGroupFiber FiniteRankVectorBundle.moduleFiber
-  FiniteRankVectorBundle.topologicalSpaceFiber
-  FiniteRankVectorBundle.topologicalSpaceStratumTotalSpace
-  FiniteRankVectorBundle.fiberBundleStratum FiniteRankVectorBundle.vectorBundleStratum
+    ∀ n : ℕ, TopologicalSpace (TotalSpace (Fin n → 𝕜) (fun x : {x // rank x = n} ↦ Fiber x.1))]
+  [fiberBundleStratum : ∀ n, FiberBundle (Fin n → 𝕜) (fun x : {x // rank x = n} ↦ Fiber x.1)]
+  [vectorBundleStratum : ∀ n, VectorBundle 𝕜 (Fin n → 𝕜) (fun x : {x // rank x = n} ↦ Fiber x.1)]
 
 namespace FiniteRankVectorBundle
-
+attribute [instance] addCommGroupFiber moduleFiber topologicalSpaceFiber
+  topologicalSpaceStratumTotalSpace fiberBundleStratum vectorBundleStratum
 variable {𝕜 : Type v} [NontriviallyNormedField 𝕜]
   {X : Type u} [TopologicalSpace X] (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X)
 
@@ -74,7 +64,6 @@ preferred stratum trivialization at `x`. -/
 noncomputable def preferredChartEquiv (x : X) : V.Fiber x ≃L[𝕜] (Fin (V.rank x) → 𝕜) :=
   (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
     ⟨x, rfl⟩).continuousLinearEquivAt 𝕜 ⟨x, rfl⟩ (mem_baseSet_trivializationAt _ _ _)
-
 @[simp] theorem preferredChartEquiv_apply (x : X) (v : V.Fiber x) : V.preferredChartEquiv x v =
     (trivializationAt (Fin (V.rank x) → 𝕜) (V.StratumFiber (V.rank x))
       ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩).2 := by rfl
@@ -97,7 +86,6 @@ instance instVariableRankBundle : VariableRankBundle (FiniteRankVectorBundle.{u,
   rank V := V.rank
   StratumFiber V n := V.StratumFiber n
   stratumFiberEquiv V {_} y := LinearEquiv.refl 𝕜 (V.Fiber y.1)
-
 @[simp] theorem variableRankBundle_rank : VariableRankBundle.rank V = V.rank := by rfl
 @[simp] theorem stratumFiberEquiv_apply {n : ℕ} (y : {x : X // VariableRankBundle.rank V x = n})
     (v : VariableRankBundle.StratumFiber V n y) :
@@ -109,7 +97,6 @@ instance instVariableRankBundle : VariableRankBundle (FiniteRankVectorBundle.{u,
 /-- Equip `TotalSpace Unit V.Fiber` with the glued topology of the native stratum bundles. -/
 instance : TopologicalSpace (TotalSpace Unit V.Fiber) :=
   VariableRankBundle.instTopologicalSpaceTotalSpace V
-
 @[simp high] theorem totalSpaceHomeomorph_apply (n : ℕ)
     (q : TotalSpace (Fin n → 𝕜) (V.StratumFiber n)) :
     VariableRankBundle.totalSpaceHomeomorph V ⟨n, q⟩ = ⟨q.proj.1, q.2⟩ :=
@@ -124,7 +111,6 @@ instance : Category (FiniteRankVectorBundle.{u, v, w} 𝕜 X) := VariableRankBun
 instance : Preadditive (FiniteRankVectorBundle.{u, v, w} 𝕜 X) := VariableRankBundle.preadditive
 
 section OfFixedRank
-
 variable (𝕜 : Type v) [NontriviallyNormedField 𝕜] (n : ℕ) (E : X → Type w)
   [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [∀ x, TopologicalSpace (E x)]
   [TopologicalSpace (TotalSpace (Fin n → 𝕜) E)] [FiberBundle (Fin n → 𝕜) E]
@@ -136,30 +122,26 @@ covering `n = 0` and empty or disconnected bases uniformly. -/
 @[expose, implicit_reducible]
 noncomputable def ofFixedRank : FiniteRankVectorBundle.{u, v, w} 𝕜 X :=
   let StratumPkg (k m : ℕ) :=
-    Σ' (ts : TopologicalSpace (TotalSpace (Fin k → 𝕜)
-        (fun y : {x : X // LocallyConstant.const X n x = m} ↦ E y.1))),
-      Σ' (fb : @FiberBundle {x : X // LocallyConstant.const X n x = m} (Fin k → 𝕜) _ _
-          (fun y ↦ E y.1) ts _),
-        @VectorBundle 𝕜 {x : X // LocallyConstant.const X n x = m} (Fin k → 𝕜)
-          (fun y ↦ E y.1) _ (fun _ ↦ inferInstance) (fun _ ↦ inferInstance)
-          inferInstance inferInstance _ ts _ fb
+    let S := {x : X // LocallyConstant.const X n x = m}
+    Σ' (ts : TopologicalSpace (TotalSpace (Fin k → 𝕜) (fun y : S ↦ E y.1))),
+      Σ' (fb : @FiberBundle S (Fin k → 𝕜) _ _ (fun y ↦ E y.1) ts _),
+        @VectorBundle 𝕜 S (Fin k → 𝕜) (fun y ↦ E y.1) _ (fun _ ↦ inferInstance)
+          (fun _ ↦ inferInstance) inferInstance inferInstance _ ts _ fb
   let data (m : ℕ) : StratumPkg m m :=
+    let S := {x : X // LocallyConstant.const X n x = m}
     if h : n = m then
       h.rec (motive := fun k _ ↦ StratumPkg k m)
-        (let inc : C({x : X // LocallyConstant.const X n x = m}, X) :=
-          ⟨Subtype.val, continuous_subtype_val⟩
+        (let inc : C(S, X) := ⟨Subtype.val, continuous_subtype_val⟩
         ⟨Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E ⇑inc,
          FiberBundle.pullback (F := Fin n → 𝕜) (E := E) inc,
          VectorBundle.pullback (𝕜 := 𝕜) (F := Fin n → 𝕜) (E := E) inc⟩)
     else
-      let S := {x : X // LocallyConstant.const X n x = m}
       have hEmpty : IsEmpty S := ⟨fun y ↦ h y.2⟩
       ⟨⊥, @fiberBundleOfIsEmpty S _ hEmpty (Fin m → 𝕜) (fun y : S ↦ E y.1) ⊥ _ _,
        @vectorBundleOfIsEmpty S _ hEmpty (Fin m → 𝕜) (fun y : S ↦ E y.1) ⊥ _ 𝕜 _ _ _ _ _⟩
   { rank := LocallyConstant.const X n, Fiber := E
     topologicalSpaceStratumTotalSpace m := (data m).1
     fiberBundleStratum m := (data m).2.1, vectorBundleStratum m := (data m).2.2 }
-
 @[simp] theorem rank_ofFixedRank : (ofFixedRank 𝕜 n E).rank = LocallyConstant.const X n := by rfl
 @[simp] theorem fiber_ofFixedRank : (ofFixedRank 𝕜 n E).Fiber = E := by rfl
 @[simp] theorem topologicalSpaceStratumTotalSpace_ofFixedRank_self :
@@ -172,26 +154,25 @@ private noncomputable def stratumTotalSpaceOfFixedRankSelfPkg :
     { e : TotalSpace (Fin n → 𝕜) ((ofFixedRank 𝕜 n E).StratumFiber n) ≃ₜ TotalSpace (Fin n → 𝕜) E //
       (∀ q, e q = ⟨q.proj.1, q.2⟩) ∧ (∀ r, e.symm r = ⟨⟨r.proj, rfl⟩, r.2⟩) } :=
   let S := {x : X // LocallyConstant.const X n x = n}
+  let val : S → X := Subtype.val
   let aux : ∀ (t : TopologicalSpace (TotalSpace (Fin n → 𝕜) (fun y : S ↦ E y.1))),
-      t = Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E (Subtype.val : S → X) →
+      t = Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E val →
       { e : @Homeomorph (TotalSpace (Fin n → 𝕜) (fun y : S ↦ E y.1))
           (TotalSpace (Fin n → 𝕜) E) t inferInstance //
         (∀ q, e q = ⟨q.proj.1, q.2⟩) ∧ (∀ r, e.symm r = ⟨⟨r.proj, rfl⟩, r.2⟩) } := by
     rintro _ rfl
     letI : TopologicalSpace (TotalSpace (Fin n → 𝕜) (fun y : S ↦ E y.1)) :=
-      Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E (Subtype.val : S → X)
-    refine ⟨{
-      toFun q := ⟨q.proj.1, q.2⟩, invFun r := ⟨⟨r.proj, rfl⟩, r.2⟩
-      left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl, right_inv := fun ⟨_, _⟩ ↦ rfl
-      continuous_toFun := Pullback.continuous_lift (Fin n → 𝕜) E (Subtype.val : S → X)
-      continuous_invFun := ?_ }, fun _ ↦ rfl, fun _ ↦ rfl⟩
-    exact ((Pullback.continuous_lift (Fin n → 𝕜) ((Subtype.val : S → X) *ᵖ E)
-      (fun b : X ↦ (⟨b, rfl⟩ : S))).comp (Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E
-        (P := fun x : X ↦ LocallyConstant.const X n x = n) (fun _ ↦ rfl)
-        (FiberBundle.continuous_proj (Fin n → 𝕜) E)).symm.continuous).congr fun r ↦
-      congrArg (Pullback.lift (fun b : X ↦ (⟨b, rfl⟩ : S)))
-        (Bundle.Pullback.subtypeHomeomorph_symm_apply (Fin n → 𝕜) E (fun _ ↦ rfl)
-          (FiberBundle.continuous_proj (Fin n → 𝕜) E) r)
+      Pullback.TotalSpace.topologicalSpace (Fin n → 𝕜) E val
+    let hproj := FiberBundle.continuous_proj (Fin n → 𝕜) E
+    refine ⟨{ toFun q := ⟨q.proj.1, q.2⟩, invFun r := ⟨⟨r.proj, rfl⟩, r.2⟩
+              left_inv := fun ⟨⟨_, _⟩, _⟩ ↦ rfl, right_inv := fun ⟨_, _⟩ ↦ rfl
+              continuous_toFun := Pullback.continuous_lift (Fin n → 𝕜) E val
+              continuous_invFun := ?_ }, fun _ ↦ rfl, fun _ ↦ rfl⟩
+    let inc : X → S := fun b ↦ ⟨b, rfl⟩
+    exact ((Pullback.continuous_lift (Fin n → 𝕜) (val *ᵖ E) inc).comp
+      (Bundle.Pullback.subtypeHomeomorph (Fin n → 𝕜) E (fun _ ↦ rfl) hproj).symm.continuous).congr
+        fun r ↦ congrArg (Pullback.lift inc)
+          (Bundle.Pullback.subtypeHomeomorph_symm_apply (Fin n → 𝕜) E (fun _ ↦ rfl) hproj r)
   aux ((ofFixedRank 𝕜 n E).topologicalSpaceStratumTotalSpace n)
     (topologicalSpaceStratumTotalSpace_ofFixedRank_self 𝕜 n E)
 
@@ -202,7 +183,6 @@ noncomputable def ofFixedRankTotalSpaceHomeomorph :
   let pkg := stratumTotalSpaceOfFixedRankSelfPkg 𝕜 n E
   VariableRankBundle.totalSpaceHomeomorphOfConstStratum (ofFixedRank 𝕜 n E) (fun _ ↦ rfl) pkg.1
     (fun _ ↦ Equiv.refl _) (fun x v ↦ pkg.2.1 ⟨⟨x, rfl⟩, v⟩) (fun x v ↦ pkg.2.2 ⟨x, v⟩)
-
 @[simp] theorem ofFixedRankTotalSpaceHomeomorph_apply
     (p : TotalSpace Unit (ofFixedRank 𝕜 n E).Fiber) :
     ofFixedRankTotalSpaceHomeomorph 𝕜 n E p = ⟨p.proj, p.2⟩ :=
@@ -210,7 +190,6 @@ noncomputable def ofFixedRankTotalSpaceHomeomorph :
 @[simp] theorem ofFixedRankTotalSpaceHomeomorph_symm_apply (p : TotalSpace (Fin n → 𝕜) E) :
     (ofFixedRankTotalSpaceHomeomorph 𝕜 n E).symm p = ⟨p.proj, p.2⟩ :=
   VariableRankBundle.totalSpaceHomeomorphOfConstStratum_symm_apply _ _ _ _ _ _ p
-
 end OfFixedRank
 
 /-- The trivial variable-rank vector bundle `X × (Fin n → 𝕜)` of constant rank `n`. -/
