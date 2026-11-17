@@ -64,16 +64,16 @@ namespace TauCeti
 
 /-- A Spin element `±e_s` of the negative-definite model, for an even support `s`, acts on the
 coordinate vector of index `k` by `-1` when `k ∈ s` and by `1` otherwise. -/
-private theorem spinVectorAction_single_of_isSignedBasis {g : realCliffordSpinGroup 0 7}
-    {s : Finset (Fin (0 + 7))} (hs : Even s.card)
-    (hg : IsSignedBasis g s) (k : Fin (0 + 7)) :
+private theorem spinVectorAction_single_of_isSignedBasisSpinZeroSeven
+    {g : realCliffordSpinGroup 0 7} {s : Finset (Fin (0 + 7))} (hs : Even s.card)
+    (hg : IsSignedBasisSpinZeroSeven g s) (k : Fin (0 + 7)) :
     spinVectorAction (realCliffordForm 0 7) g (Pi.single k 1) =
       (if k ∈ s then -1 else 1 : ℝ) • Pi.single k 1 := by
   refine spinVectorAction_eq_of_mul_ι_eq _ g ?_
   rw [map_smul, smul_mul_assoc]
   have hb := basis_mul_ι_of_even_card (isOrthoᵢ_associated_realCliffordForm 0 7) hs k
   rw [Pi.basisFun_apply] at hb
-  rcases hg with hg | hg <;> rw [hg]
+  rcases isSignedBasisSpinZeroSeven_iff.1 hg with hg | hg <;> rw [hg]
   · exact hb
   · rw [neg_mul, mul_neg, hb, smul_neg]
 
@@ -112,16 +112,17 @@ private theorem ActsBySign.repr_apply {x : realCliffordSpinGroup 7 0} {s : Finse
 sign character of `s`, for an even support `s`. -/
 private theorem actsBySign_realCliffordSpinGroupEquivNeg {g : realCliffordSpinGroup 0 7}
     {s : Finset (Fin (0 + 7))} (hs : Even s.card)
-    (hg : IsSignedBasis g s) :
+    (hg : IsSignedBasisSpinZeroSeven g s) :
     ActsBySign (realCliffordSpinGroupEquivNeg 0 7 g) s := fun k ↦ by
   rw [negBasis_apply, spinVectorAction_realCliffordSpinGroupEquivNeg,
-    spinVectorAction_single_of_isSignedBasis hs hg, map_smul]
+    spinVectorAction_single_of_isSignedBasisSpinZeroSeven hs hg, map_smul]
 
 /-- For every support `s`, the elementary abelian subgroup of `Spin(7)` contains an element acting
 by the sign character of `s`. -/
 private theorem exists_mem_actsBySign {s : Finset (Fin (0 + 7))} (hs : s ∈ spinSevenSupports) :
     ∃ x ∈ realSpinSevenElementaryAbelian, ActsBySign x s := by
-  obtain ⟨g, hg, hgs⟩ := exists_mem_isSignedBasis hs
+  obtain ⟨g, hg, hgs⟩ :=
+    exists_isSignedBasisSpinZeroSeven_mem_realSpinZeroSevenElementaryAbelian hs
   exact ⟨realCliffordSpinGroupEquivNeg 0 7 g,
     mem_realSpinSevenElementaryAbelian_iff.2 (by rwa [MulEquiv.symm_apply_apply]),
     actsBySign_realCliffordSpinGroupEquivNeg (even_card_of_mem_spinSevenSupports hs) hgs⟩
