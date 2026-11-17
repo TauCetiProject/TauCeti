@@ -13,6 +13,7 @@ public import Mathlib.FieldTheory.Minpoly.Basic
 import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 import Mathlib.RingTheory.Localization.Integral
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Valuation extensions from valuative relations
@@ -185,13 +186,10 @@ theorem mem_integer_of_isUnit_leadingCoeff_of_isRoot {φ : 𝒪ᵥ[K][X]}
     (hlc : IsUnit φ.leadingCoeff) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪ᵥ[K] K))).IsRoot α) :
     α ∈ 𝒪ᵥ[L] := by
-  let g : 𝒪ᵥ[K][X] := C (↑hlc.unit⁻¹ : 𝒪ᵥ[K]) * φ
-  have hg_monic : g.Monic := by
-    rw [Monic, leadingCoeff_mul, leadingCoeff_C, hlc.val_inv_mul]
   have hInt : IsIntegral 𝒪ᵥ[K] α :=
-    ⟨g, hg_monic, by
-      rw [eval₂_eq_eval_map, IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L,
-        Polynomial.map_mul, eval_mul, hroot.eq_zero, mul_zero]⟩
+    IsIntegral.of_isUnit_leadingCoeff hlc (by
+      simpa [aeval_def, eval₂_eq_eval_map, IsScalarTower.algebraMap_eq 𝒪ᵥ[K] K L]
+        using hroot.eq_zero)
   exact (Valuation.mem_integer_iff (valuation L) α).mpr
     ((Valuation.integer.integers (valuation L)).isIntegral_iff_v_le_one.mp hInt.tower_top)
 

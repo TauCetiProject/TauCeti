@@ -9,8 +9,8 @@ public import TauCeti.NumberTheory.LocalField.AddValuation
 public import TauCeti.NumberTheory.LocalField.Norm.Basic
 public import TauCeti.RingTheory.Valuation.Orthogonality
 public import TauCeti.RingTheory.Polynomial.Eisenstein.DiscreteValuationRing
+public import TauCeti.RingTheory.Polynomial.Eisenstein.ValuativeRel
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
-import Mathlib.RingTheory.Valuation.Integral
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
 
 /-!
@@ -23,18 +23,14 @@ a unit, shows that `ξ` is a uniformizer of `L` and that `L/K` has inertia degre
 valuation of a linear combination in the power basis `1, ξ, …, ξ^{deg f - 1}` is therefore the
 minimum of its term valuations.
 
-We also record the field-level properties of a root `α : L` of an Eisenstein polynomial
-`φ : 𝒪[K][X]` — nonvanishing, integrality over `K` and in `𝒪[L]`, the scaling relation
-`φ.map (algebraMap 𝒪[K] K) = C (φ.leadingCoeff : K) * minpoly K α`, and (when `K⟮α⟯ = ⊤`)
-irreducibility in `𝒪[L]` and unit normalized valuation `addValInt L α = 1`.
+General valued-field properties of roots of Eisenstein polynomials (nonvanishing, integrality,
+minimal polynomial scaling, and valuation-ring membership) live in
+`TauCeti.RingTheory.Polynomial.Eisenstein.ValuativeRel`. This file specializes to local fields,
+where a root `α : L` generating `L/K` is a uniformizer of `𝒪[L]` with unit normalized valuation
+`addValInt L α = 1`.
 
 ## Main results
 
-* `TauCeti.ne_zero_of_isEisensteinAt_of_isRoot`,
-  `TauCeti.isIntegral_of_isEisensteinAt_of_isRoot`,
-  `TauCeti.map_eisenstein_eq_C_mul_minpoly`, and
-  `TauCeti.mem_integer_of_isEisensteinAt_of_isRoot`: field-level properties of any root `α : L`
-  of an Eisenstein polynomial over `𝒪[K]`.
 * `TauCeti.irreducible_of_eisenstein_adjoin_eq_top`,
   `TauCeti.irreducible_integer_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top`, and
   `TauCeti.addValInt_eq_one_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top` show that a generator of
@@ -57,60 +53,6 @@ open ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 open scoped IntermediateField
 
 namespace TauCeti
-
-section FieldRoots
-
-variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [Algebra K L]
-
-/-- Any root `α : L` of an Eisenstein polynomial `φ : 𝒪[K][X]` is nonzero. -/
-theorem ne_zero_of_isEisensteinAt_of_isRoot {φ : Polynomial 𝒪[K]} (hφ : φ.IsEisensteinAt 𝓂[K])
-    {α : L} (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
-    α ≠ 0 := by
-  rintro rfl
-  have h0 := hroot.eq_zero
-  rw [← Polynomial.coeff_zero_eq_eval_zero, Polynomial.coeff_map, RingHom.comp_apply,
-    Algebra.algebraMap_ofSubsemiring_apply] at h0
-  have hc0 : φ.coeff 0 = 0 :=
-    Subtype.ext ((FaithfulSMul.algebraMap_eq_zero_iff K L).mp h0)
-  exact hφ.notMem (hc0 ▸ Ideal.zero_mem _)
-
-/-- Any root `α : L` of an Eisenstein polynomial `φ : 𝒪[K][X]` is integral over `K`. -/
-theorem isIntegral_of_isEisensteinAt_of_isRoot {φ : Polynomial 𝒪[K]}
-    (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
-    IsIntegral K α := by
-  rw [← IsScalarTower.algebraMap_eq 𝒪[K] K L] at hroot
-  exact (hφ.isIntegral hφ.isUnit_leadingCoeff hroot).tower_top
-
-/-- Over `K`, an Eisenstein polynomial `φ : 𝒪[K][X]` equals `C (φ.leadingCoeff : K) * minpoly K α`
-for any root `α : L` of `φ`. -/
-theorem map_eisenstein_eq_C_mul_minpoly {φ : Polynomial 𝒪[K]} (hφ : φ.IsEisensteinAt 𝓂[K])
-    {α : L} (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
-    φ.map (algebraMap 𝒪[K] K) = Polynomial.C (φ.leadingCoeff : K) * minpoly K α := by
-  rw [← IsScalarTower.algebraMap_eq 𝒪[K] K L] at hroot
-  have hInt : IsIntegral 𝒪[K] α := hφ.isIntegral hφ.isUnit_leadingCoeff hroot
-  have hscale := congrArg (Polynomial.map (algebraMap 𝒪[K] K))
-    (hφ.eq_C_leadingCoeff_mul_minpoly hφ.isUnit_leadingCoeff hroot)
-  rw [Polynomial.map_mul, Polynomial.map_C,
-    ← minpoly.isIntegrallyClosed_eq_field_fractions' K hInt,
-    Algebra.algebraMap_ofSubsemiring_apply] at hscale
-  exact hscale
-
-end FieldRoots
-
-section ValuativeExtensionRoots
-
-variable {K L : Type*} [Field K] [ValuativeRel K] [Field L] [ValuativeRel L]
-  [Algebra K L] [ValuativeExtension K L]
-
-/-- Any root `α : L` of an Eisenstein polynomial `φ : 𝒪[K][X]` lies in `𝒪[L]`. -/
-theorem mem_integer_of_isEisensteinAt_of_isRoot {φ : Polynomial 𝒪[K]}
-    (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
-    α ∈ 𝒪[L] :=
-  mem_integer_of_isUnit_leadingCoeff_of_isRoot hφ.isUnit_leadingCoeff hroot
-
-end ValuativeExtensionRoots
 
 section LocalField
 
@@ -180,9 +122,9 @@ theorem irreducible_integer_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top
     {φ : Polynomial 𝒪[K]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α)
     (hgen : K⟮α⟯ = ⊤) :
-    Irreducible (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) :=
+    Irreducible (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) :=
   irreducible_of_eisenstein_adjoin_eq_top φ hφ
-    ⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩
+    ⟨α, hφ.mem_integer_of_isRoot hroot⟩
     (isRoot_map_integerRing_iff.mpr hroot)
     hgen
 

@@ -16,6 +16,7 @@ public import TauCeti.NumberTheory.LocalField.Discriminant.Height
 import TauCeti.Algebra.Polynomial.Taylor
 import TauCeti.Data.ENat.Map
 import TauCeti.RingTheory.Polynomial.Eisenstein.Minpoly
+import TauCeti.RingTheory.Polynomial.Eisenstein.ValuativeRel
 import TauCeti.RingTheory.Polynomial.Roots
 import TauCeti.RingTheory.PowerBasis
 
@@ -36,10 +37,12 @@ satisfies `ρ(0) = 0`. Expanding `φ(α X + α)` via Taylor shifts and Hasse der
 binomial coefficient formula `ρ_i = α⁻ⁿ ∑_{i ≤ h ≤ n} C(h, i) φ_h α^h`.
 
 When `K` and `L` are nonarchimedean local fields, `φ` is Eisenstein, and `L = K(α)`, `α` is a
-uniformizer of `L` with `e(L/K) = n`. Because the powers `1, α, …, α^{n - 1}` have distinct
-valuation residues modulo `n` while the `h = n` summand has valuation divisible by `n`, no
-cancellation can occur between the `h < n` block and the `h = n` term. Every coefficient `ρ_i`
-lies in `𝒪[L]`, and for `1 ≤ i ≤ n` its normalized valuation is
+uniformizer of `L` with `e(L/K) = n`. For `1 ≤ i ≤ n`, the powers `α^i, …, α^{n - 1}` have
+distinct nonzero valuation residues modulo `n` while the `h = n` summand has valuation divisible
+by `n`, so no cancellation can occur between the `h < n` block and the `h = n` term (at `i = 0`,
+by contrast, the `h = 0` term also has residue `0` modulo `n`, and the sum cancels identically
+since `φ(α) = 0`). Every coefficient `ρ_i` lies in `𝒪[L]`, and for `1 ≤ i ≤ n` its normalized
+valuation is
 
 `v_L(ρ_i) = min_{i ≤ h ≤ n} (n · v_K(C(h, i) φ_h) + h) - n`.
 
@@ -50,33 +53,36 @@ the roots of `ρ` are the simple elements `(σ α - α) / α` as `σ` ranges ove
 
 ## Main definitions
 
-* `TauCeti.ramificationPolynomial φ α`: the ramification polynomial `α⁻ⁿ φ(α X + α) ∈ L[X]`.
+* `Polynomial.ramificationPolynomial φ α`: the ramification polynomial
+  `α⁻ⁿ φ(α X + α) ∈ L[X]`.
 
 ## Main results
 
-* `TauCeti.coeff_ramificationPolynomial` and
-  `TauCeti.coeff_ramificationPolynomial_eq_eval_hasseDeriv`: the binomial and Hasse-derivative
+* `Polynomial.coeff_ramificationPolynomial` and
+  `Polynomial.coeff_ramificationPolynomial_eq_eval_hasseDeriv`: the binomial and Hasse-derivative
   formulas for the coefficients of `ramificationPolynomial φ α`.
-* `TauCeti.natDegree_ramificationPolynomial`, `TauCeti.monic_ramificationPolynomial`,
-  `TauCeti.eval_zero_ramificationPolynomial_of_isRoot`, `TauCeti.roots_ramificationPolynomial`,
-  `TauCeti.splits_ramificationPolynomial_iff`, and `TauCeti.map_ramificationPolynomial`:
-  degree `n`, monicity, vanishing at `0`, roots, splitting, and compatibility with field extensions.
-* `TauCeti.separable_ramificationPolynomial_iff`, `TauCeti.separable_ramificationPolynomial`,
-  `TauCeti.coeff_ramificationPolynomial_one_ne_zero`, and
-  `TauCeti.natTrailingDegree_ramificationPolynomial`: separability, nonvanishing linear term, and
-  `natTrailingDegree ρ = 1` when `L/K` is separable.
-* `TauCeti.coeff_ramificationPolynomial_mem_integer`: integrality `ρ_i ∈ 𝒪[L]` for all `i`.
-* `TauCeti.addVal_coeff_ramificationPolynomial`,
-  `TauCeti.normalizedAddValuation_coeff_ramificationPolynomial`, and
-  `TauCeti.addValuation_coeff_ramificationPolynomial`: exact valuation of `ρ_i` for `1 ≤ i ≤ n`.
-* `TauCeti.addVal_coeff_ramificationPolynomial_one`,
-  `TauCeti.addValInt_coeff_ramificationPolynomial_one`, and
-  `TauCeti.normalizedAddValuation_coeff_ramificationPolynomial_one`: `v_L(ρ_1) = height K L` when
-  `L/K` is separable.
-* `TauCeti.addValInt_coeff_ramificationPolynomial_natDegree` and
-  `TauCeti.normalizedAddValuation_coeff_ramificationPolynomial_natDegree`: `v_L(ρ_n) = 0`.
-* `TauCeti.roots_map_ramificationPolynomial_eq_map_algHom` and
-  `TauCeti.roots_map_ramificationPolynomial_filter_ne_zero_eq_map_algHom`: the
+* `Polynomial.natDegree_ramificationPolynomial`, `Polynomial.monic_ramificationPolynomial`,
+  `Polynomial.eval_zero_ramificationPolynomial_of_isRoot`,
+  `Polynomial.roots_ramificationPolynomial`, `Polynomial.splits_ramificationPolynomial_iff`, and
+  `Polynomial.map_ramificationPolynomial`: degree `n`, monicity, vanishing at `0`, roots,
+  splitting, and compatibility with field extensions.
+* `Polynomial.separable_ramificationPolynomial_iff`,
+  `Polynomial.separable_ramificationPolynomial`,
+  `Polynomial.coeff_ramificationPolynomial_one_ne_zero`, and
+  `Polynomial.natTrailingDegree_ramificationPolynomial`: separability, nonvanishing linear term,
+  and `natTrailingDegree ρ = 1` when `L/K` is separable.
+* `Polynomial.coeff_ramificationPolynomial_mem_integer`: integrality `ρ_i ∈ 𝒪[L]` for all `i`.
+* `Polynomial.addVal_coeff_ramificationPolynomial` and
+  `Polynomial.normalizedAddValuation_coeff_ramificationPolynomial`: exact valuation of `ρ_i` for
+  `1 ≤ i ≤ n`.
+* `Polynomial.addVal_coeff_ramificationPolynomial_one`,
+  `Polynomial.addValInt_coeff_ramificationPolynomial_one`, and
+  `Polynomial.normalizedAddValuation_coeff_ramificationPolynomial_one`: `v_L(ρ_1) = height K L`
+  when `L/K` is separable.
+* `Polynomial.addValInt_coeff_ramificationPolynomial_natDegree` and
+  `Polynomial.normalizedAddValuation_coeff_ramificationPolynomial_natDegree`: `v_L(ρ_n) = 0`.
+* `Polynomial.roots_map_ramificationPolynomial_eq_map_algHom` and
+  `Polynomial.roots_map_ramificationPolynomial_filter_ne_zero_eq_map_algHom`: the
   conjugate-difference description of the roots `(σ α - α) / α`.
 
 ## References
@@ -96,10 +102,10 @@ the roots of `ρ` are the simple elements `(σ α - α) / α` as `σ` ranges ove
 public section
 noncomputable section
 
-open Polynomial ValuativeRel IsLocalRing IsNonarchimedeanLocalField
+open TauCeti ValuativeRel IsLocalRing IsNonarchimedeanLocalField
 open scoped IntermediateField
 
-namespace TauCeti
+namespace Polynomial
 
 section Algebraic
 
@@ -235,7 +241,7 @@ theorem natDegree_ramificationPolynomial (φ : 𝒪[K][X]) {α : L} (hα : α �
       coeff_ramificationPolynomial_of_natDegree_lt φ α hi)
     (le_natDegree_of_ne_zero ?_)
   rw [coeff_ramificationPolynomial_natDegree φ hα]
-  exact (map_ne_zero (algebraMap K L)).mpr fun h ↦
+  exact (_root_.map_ne_zero (algebraMap K L)).mpr fun h ↦
     leadingCoeff_ne_zero.mpr hφ (Subtype.ext h)
 
 /-- When `α ≠ 0`, the leading coefficient of `ramificationPolynomial φ α` is the image of
@@ -310,7 +316,7 @@ theorem natDegree_ramificationPolynomial_of_isEisensteinAt
     {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
     (ramificationPolynomial φ α).natDegree = φ.natDegree :=
-  natDegree_ramificationPolynomial φ (ne_zero_of_isEisensteinAt_of_isRoot hφ hroot)
+  natDegree_ramificationPolynomial φ (hφ.ne_zero_of_isRoot hroot)
 
 /-- For a monic Eisenstein polynomial `φ` and any root `α : L`, `ramificationPolynomial φ α` is
 monic. -/
@@ -318,7 +324,7 @@ theorem monic_ramificationPolynomial_of_isEisensteinAt
     {φ : 𝒪[K][X]} (hmonic : φ.Monic) (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
     (ramificationPolynomial φ α).Monic :=
-  monic_ramificationPolynomial hmonic (ne_zero_of_isEisensteinAt_of_isRoot hφ hroot)
+  monic_ramificationPolynomial hmonic (hφ.ne_zero_of_isRoot hroot)
 
 section SeparableAlgebraic
 
@@ -330,11 +336,11 @@ theorem separable_ramificationPolynomial
     {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
     (ramificationPolynomial φ α).Separable := by
-  have hα0 : α ≠ 0 := ne_zero_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα0 : α ≠ 0 := hφ.ne_zero_of_isRoot hroot
   have hlc : (φ.leadingCoeff : K) ≠ 0 := fun h ↦
     hφ.isUnit_leadingCoeff.ne_zero (Subtype.ext h)
   rw [separable_ramificationPolynomial_iff hα0, ← Polynomial.map_map,
-    map_eisenstein_eq_C_mul_minpoly hφ hroot]
+    hφ.map_eq_C_leadingCoeff_mul_minpoly hroot]
   exact (Separable.unit_mul (isUnit_C.mpr hlc.isUnit) (Algebra.IsSeparable.isSeparable K α)).map
 
 /-- When `L/K` is separable, every root of `ramificationPolynomial φ α` in `L` is simple
@@ -412,8 +418,8 @@ private theorem addVal_summand_ge_natDegree {φ : 𝒪[K][X]} (hφ : φ.IsEisens
     (φ.natDegree : ℕ∞) ≤
       IsDiscreteValuationRing.addVal 𝒪[L]
         (algebraMap 𝒪[K] 𝒪[L] ((h.choose i : 𝒪[K]) * φ.coeff h) *
-          (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ h) := by
-  set ξ : 𝒪[L] := ⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩
+          (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ h) := by
+  set ξ : 𝒪[L] := ⟨α, hφ.mem_integer_of_isRoot hroot⟩
   have hξ : Irreducible ξ :=
     irreducible_integer_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top hφ hroot hgen
   have he : ramificationIndex K L = φ.natDegree :=
@@ -439,7 +445,7 @@ private theorem addVal_coeff_intShiftedPoly_ge {φ : 𝒪[K][X]} (hφ : φ.IsEis
     (hgen : K⟮α⟯ = ⊤) (i : ℕ) :
     (φ.natDegree : ℕ∞) ≤
       IsDiscreteValuationRing.addVal 𝒪[L]
-        ((intShiftedPoly φ (mem_integer_of_isEisensteinAt_of_isRoot hφ hroot)).coeff i) := by
+        ((intShiftedPoly φ (hφ.mem_integer_of_isRoot hroot)).coeff i) := by
   rw [coeff_intShiftedPoly]
   exact (IsDiscreteValuationRing.addVal 𝒪[L]).map_le_sum fun _ hh ↦
     addVal_summand_ge_natDegree hφ hroot hgen hh
@@ -452,11 +458,11 @@ theorem coeff_ramificationPolynomial_mem_integer
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α)
     (hgen : K⟮α⟯ = ⊤) (i : ℕ) :
     (ramificationPolynomial φ α).coeff i ∈ 𝒪[L] := by
-  have hα : α ∈ 𝒪[L] := mem_integer_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα : α ∈ 𝒪[L] := hφ.mem_integer_of_isRoot hroot
   set ξ : 𝒪[L] := ⟨α, hα⟩
   have hξ : Irreducible ξ :=
     irreducible_integer_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top hφ hroot hgen
-  have hα0 : α ≠ 0 := ne_zero_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα0 : α ≠ 0 := hφ.ne_zero_of_isRoot hroot
   -- Every summand of `intShiftedPoly` has valuation at least `deg φ`, so `ξ ^ deg φ` divides it.
   have hdvd : ξ ^ φ.natDegree ∣ (intShiftedPoly φ hα).coeff i := by
     rw [← IsDiscreteValuationRing.addVal_le_iff_dvd, hξ.addVal_pow]
@@ -473,11 +479,11 @@ private theorem coeff_intShiftedPoly_eq_pow_mul
     {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α)
     (hgen : K⟮α⟯ = ⊤) (i : ℕ) :
-    (intShiftedPoly φ (mem_integer_of_isEisensteinAt_of_isRoot hφ hroot)).coeff i =
-      (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ φ.natDegree *
+    (intShiftedPoly φ (hφ.mem_integer_of_isRoot hroot)).coeff i =
+      (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ φ.natDegree *
         ⟨(ramificationPolynomial φ α).coeff i,
           coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ := by
-  have hα0 : α ≠ 0 := ne_zero_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα0 : α ≠ 0 := hφ.ne_zero_of_isRoot hroot
   apply Subtype.ext
   rw [Subring.coe_mul, Subring.coe_pow, coe_coeff_intShiftedPoly]
   dsimp only
@@ -493,11 +499,11 @@ private theorem addVal_sum_Ico_intShiftedPoly
     IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ h ∈ Finset.Ico i φ.natDegree,
           algebraMap 𝒪[K] 𝒪[L] ((h.choose i : 𝒪[K]) * φ.coeff h) *
-            (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ h) =
+            (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ h) =
       ⨅ h ∈ Finset.Ico i φ.natDegree,
         (φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K]
           ((h.choose i : 𝒪[K]) * φ.coeff h) + (h : ℕ∞)) := by
-  have hα : α ∈ 𝒪[L] := mem_integer_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα : α ∈ 𝒪[L] := hφ.mem_integer_of_isRoot hroot
   set ξ : 𝒪[L] := ⟨α, hα⟩
   set n := φ.natDegree
   have hroot_int : (φ.map (algebraMap 𝒪[K] 𝒪[L])).IsRoot ξ :=
@@ -528,14 +534,6 @@ private theorem addVal_sum_Ico_intShiftedPoly
     · have hcz : c j = 0 := by simp [c, Nat.choose_eq_zero_of_lt (lt_of_not_ge hji)]
       simp [hcz, ENat.mul_top hn0]
 
-private theorem exists_nat_of_nsmul_add_ne_top {n m : ℕ} (hn : 0 < n) {v : ℕ∞}
-    (hv : n • v + (m : ℕ∞) ≠ ⊤) :
-    ∃ k : ℕ, n • v + (m : ℕ∞) = ((n * k + m : ℕ) : ℕ∞) := by
-  have hn0 : (n : ℕ∞) ≠ 0 := Nat.cast_ne_zero.mpr hn.ne'
-  induction v using ENat.recTopCoe with
-  | top => exact absurd (by simp [ENat.mul_top hn0]) hv
-  | coe k => exact ⟨k, by simp [nsmul_eq_mul]⟩
-
 /-- When `1 ≤ i ≤ φ.natDegree`, a nonzero `h = n` term and a nonzero `h < n` sub-sum have distinct
 valuations in `𝒪[L]` because their residues modulo `n = φ.natDegree` are `0` and `j ∈ [i, n)`. -/
 private theorem addVal_top_ne_addVal_sum_Ico
@@ -544,19 +542,19 @@ private theorem addVal_top_ne_addVal_sum_Ico
     (hgen : K⟮α⟯ = ⊤) {i : ℕ} (hi1 : 1 ≤ i)
     (hA_fin : IsDiscreteValuationRing.addVal 𝒪[L]
       (algebraMap 𝒪[K] 𝒪[L] ((φ.natDegree.choose i : 𝒪[K]) * φ.coeff φ.natDegree) *
-        (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ φ.natDegree) ≠ ⊤)
+        (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ φ.natDegree) ≠ ⊤)
     (hB_fin : IsDiscreteValuationRing.addVal 𝒪[L]
       (∑ h ∈ Finset.Ico i φ.natDegree,
         algebraMap 𝒪[K] 𝒪[L] ((h.choose i : 𝒪[K]) * φ.coeff h) *
-          (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ h) ≠ ⊤) :
+          (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ h) ≠ ⊤) :
     IsDiscreteValuationRing.addVal 𝒪[L]
         (algebraMap 𝒪[K] 𝒪[L] ((φ.natDegree.choose i : 𝒪[K]) * φ.coeff φ.natDegree) *
-          (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ φ.natDegree) ≠
+          (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ φ.natDegree) ≠
       IsDiscreteValuationRing.addVal 𝒪[L]
         (∑ h ∈ Finset.Ico i φ.natDegree,
           algebraMap 𝒪[K] 𝒪[L] ((h.choose i : 𝒪[K]) * φ.coeff h) *
-            (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) ^ h) := by
-  have hα : α ∈ 𝒪[L] := mem_integer_of_isEisensteinAt_of_isRoot hφ hroot
+            (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) ^ h) := by
+  have hα : α ∈ 𝒪[L] := hφ.mem_integer_of_isRoot hroot
   set ξ : 𝒪[L] := ⟨α, hα⟩
   set n := φ.natDegree
   have hξ : Irreducible ξ :=
@@ -564,21 +562,26 @@ private theorem addVal_top_ne_addVal_sum_Ico
   have he : ramificationIndex K L = n :=
     ramificationIndex_eq_natDegree_of_eisenstein_adjoin_eq_top φ hφ ξ
       (isRoot_map_integerRing_iff.mpr hroot) hgen
-  have hn : 0 < n := he ▸ ramificationIndex_pos (K := K) (L := L)
+  have hn0 : (n : ℕ∞) ≠ 0 := Nat.cast_ne_zero.mpr (he ▸ ramificationIndex_pos (K := K) (L := L)).ne'
   -- The `h = n` summand has valuation congruent to `0` modulo `n`, whereas the minimum over
   -- `h ∈ Ico i n` is attained at some `j ∈ [i, n)` and has residue `j ≠ 0` modulo `n`.
   rw [IsDiscreteValuationRing.addVal_mul, addVal_algebraMap (K := K) (L := L), he,
     hξ.addVal_pow] at hA_fin ⊢
-  obtain ⟨kA, hkA⟩ := exists_nat_of_nsmul_add_ne_top hn hA_fin
+  have hvA : IsDiscreteValuationRing.addVal 𝒪[K] ((n.choose i : 𝒪[K]) * φ.coeff n) ≠ ⊤ :=
+    fun h ↦ hA_fin (by rw [h, nsmul_eq_mul, ENat.mul_top hn0, top_add])
+  obtain ⟨kA, hkA⟩ := ENat.ne_top_iff_exists.mp hvA
   have hne : (Finset.Ico i n).Nonempty :=
     Finset.nonempty_iff_ne_empty.mpr fun hempty ↦ hB_fin (by simp [hempty])
   rw [addVal_sum_Ico_intShiftedPoly hφ hroot hgen i, ← Finset.inf_eq_iInf] at hB_fin ⊢
   obtain ⟨j, hj_mem, hj_eq⟩ := Finset.exists_mem_eq_inf (Finset.Ico i n) hne fun h ↦
     n • IsDiscreteValuationRing.addVal 𝒪[K] ((h.choose i : 𝒪[K]) * φ.coeff h) + (h : ℕ∞)
   rw [hj_eq] at hB_fin ⊢
-  obtain ⟨kB, hkB⟩ := exists_nat_of_nsmul_add_ne_top hn hB_fin
+  have hvB : IsDiscreteValuationRing.addVal 𝒪[K] ((j.choose i : 𝒪[K]) * φ.coeff j) ≠ ⊤ :=
+    fun h ↦ hB_fin (by rw [h, nsmul_eq_mul, ENat.mul_top hn0, top_add])
+  obtain ⟨kB, hkB⟩ := ENat.ne_top_iff_exists.mp hvB
   rw [Finset.mem_Ico] at hj_mem
-  rw [hkA, hkB, ne_eq, ENat.natCast_inj]
+  rw [← hkA, ← hkB]
+  simp only [nsmul_eq_mul, ← ENat.natCast_mul, ← ENat.natCast_add, ne_eq, ENat.natCast_inj]
   intro heq
   have hmod := congrArg (· % n) heq
   have h1 : (n * kA + n) % n = 0 := by rw [← Nat.mul_succ, Nat.mul_mod_right]
@@ -593,11 +596,11 @@ private theorem addVal_coeff_intShiftedPoly
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α)
     (hgen : K⟮α⟯ = ⊤) {i : ℕ} (hi : i ∈ Finset.Icc 1 φ.natDegree) :
     IsDiscreteValuationRing.addVal 𝒪[L]
-        ((intShiftedPoly φ (mem_integer_of_isEisensteinAt_of_isRoot hφ hroot)).coeff i) =
+        ((intShiftedPoly φ (hφ.mem_integer_of_isRoot hroot)).coeff i) =
       ⨅ h ∈ Finset.Icc i φ.natDegree,
         (φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K]
           ((h.choose i : 𝒪[K]) * φ.coeff h) + (h : ℕ∞)) := by
-  have hα : α ∈ 𝒪[L] := mem_integer_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα : α ∈ 𝒪[L] := hφ.mem_integer_of_isRoot hroot
   set ξ : 𝒪[L] := ⟨α, hα⟩
   let n := φ.natDegree
   have hξ : Irreducible ξ :=
@@ -645,7 +648,7 @@ theorem addVal_coeff_ramificationPolynomial
       (⨅ h ∈ Finset.Icc i φ.natDegree,
         (φ.natDegree • IsDiscreteValuationRing.addVal 𝒪[K]
           ((h.choose i : 𝒪[K]) * φ.coeff h) + (h : ℕ∞))) - φ.natDegree := by
-  have hξ : Irreducible (⟨α, mem_integer_of_isEisensteinAt_of_isRoot hφ hroot⟩ : 𝒪[L]) :=
+  have hξ : Irreducible (⟨α, hφ.mem_integer_of_isRoot hroot⟩ : 𝒪[L]) :=
     irreducible_integer_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top hφ hroot hgen
   have hmul := congrArg (IsDiscreteValuationRing.addVal 𝒪[L])
     (coeff_intShiftedPoly_eq_pow_mul hφ hroot hgen i)
@@ -660,20 +663,6 @@ theorem addVal_coeff_ramificationPolynomial
   | coe k =>
     norm_cast
     omega
-
-omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
-    [Algebra K L] [ValuativeExtension K L] in
-private theorem map_natCast_real_nsmul_addVal_add {n : ℕ} (hn : n ≠ 0) (x : 𝒪[K]) (h : ℕ) :
-    ENat.map ((↑) : ℕ → ℝ) (n • IsDiscreteValuationRing.addVal 𝒪[K] x + (h : ℕ∞)) =
-      (normalizedAddValuation K (x : K)).map ((n : ℝ) * ·) + ((h : ℝ) : WithTop ℝ) := by
-  rw [normalizedAddValuation_coe_integer]
-  have hn0 : (n : ℕ∞) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  generalize IsDiscreteValuationRing.addVal 𝒪[K] x = vK
-  induction vK using ENat.recTopCoe with
-  | top => simp [ENat.mul_top hn0]
-  | coe k =>
-    rw [nsmul_eq_mul, ← ENat.natCast_mul, ← ENat.natCast_add, ENat.map_natCast, ENat.map_natCast,
-      WithTop.map_coe, ← WithTop.coe_add, Nat.cast_add, Nat.cast_mul]
 
 /-- **Exact `WithTop ℝ` valuation formula for the coefficients of `ramificationPolynomial`** with
 respect to `normalizedAddValuation`: for `1 ≤ i ≤ φ.natDegree`,
@@ -692,7 +681,8 @@ theorem normalizedAddValuation_coeff_ramificationPolynomial
     (⟨(ramificationPolynomial φ α).coeff i,
       coeff_ramificationPolynomial_mem_integer hφ hroot hgen i⟩ : 𝒪[L])
   dsimp only at hval
-  have hn0 : φ.natDegree ≠ 0 := by have := Finset.mem_Icc.mp hi; omega
+  have hn0 : (φ.natDegree : ℕ∞) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (by have := Finset.mem_Icc.mp hi; omega)
   let Hne : (Finset.Icc i φ.natDegree).Nonempty :=
     ⟨φ.natDegree, Finset.right_mem_Icc.mpr (Finset.mem_Icc.mp hi).2⟩
   let term : ℕ → ℕ∞ := fun h ↦
@@ -709,30 +699,19 @@ theorem normalizedAddValuation_coeff_ramificationPolynomial
         ((φ.natDegree : ℝ) * ·) + ((h : ℝ) : WithTop ℝ) := by
     have hKcoe : ((h.choose i : K) * (φ.coeff h : K)) =
         (((h.choose i : 𝒪[K]) * φ.coeff h : 𝒪[K]) : K) := by simp
-    rw [hKcoe]
-    exact map_natCast_real_nsmul_addVal_add hn0 _ h
+    rw [hKcoe, normalizedAddValuation_coe_integer]
+    dsimp only [term]
+    generalize IsDiscreteValuationRing.addVal 𝒪[K] ((h.choose i : 𝒪[K]) * φ.coeff h) = vK
+    induction vK using ENat.recTopCoe with
+    | top => simp [ENat.mul_top hn0]
+    | coe k =>
+      rw [nsmul_eq_mul, ← ENat.natCast_mul, ← ENat.natCast_add, ENat.map_natCast, ENat.map_natCast,
+        WithTop.map_coe, ← WithTop.coe_add, Nat.cast_add, Nat.cast_mul]
   rw [hval, addVal_coeff_ramificationPolynomial hφ hroot hgen hi, hiInf_eq,
     ENat.map_sub_natCast_of_le Nat.cast_add hge,
     Finset.apply_inf'_eq_inf'_comp Hne (ENat.map ((↑) : ℕ → ℝ)) fun _ _ ↦
       (ENat.monotone_map_iff.mpr Nat.mono_cast).map_min]
   simp_rw [Function.comp_def, hterm]
-
-/-- **Exact `WithTop ℝ` valuation formula** for any `v : AddValuation L (WithTop ℝ)` agreeing with
-`addValInt L` away from zero. -/
-theorem addValuation_coeff_ramificationPolynomial
-    {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α)
-    (hgen : K⟮α⟯ = ⊤) (v : AddValuation L (WithTop ℝ))
-    (hv : ∀ x : L, x ≠ 0 → v x = ((addValInt L x : ℝ) : WithTop ℝ))
-    {i : ℕ} (hi : i ∈ Finset.Icc 1 φ.natDegree) :
-    v ((ramificationPolynomial φ α).coeff i) =
-      ((Finset.Icc i φ.natDegree).inf'
-        ⟨φ.natDegree, Finset.right_mem_Icc.mpr (Finset.mem_Icc.mp hi).2⟩
-        fun h ↦ (normalizedAddValuation K ((h.choose i : K) * (φ.coeff h : K))).map
-          ((φ.natDegree : ℝ) * ·) + ((h : ℝ) : WithTop ℝ)) -
-        ((φ.natDegree : ℝ) : WithTop ℝ) := by
-  rw [eq_normalizedAddValuation hv,
-    normalizedAddValuation_coeff_ramificationPolynomial hφ hroot hgen hi]
 
 /-- At the right endpoint `i = φ.natDegree`, the coefficient of `ramificationPolynomial φ α` has
 normalized valuation `0` in `ℤ`. -/
@@ -740,7 +719,7 @@ theorem addValInt_coeff_ramificationPolynomial_natDegree
     {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
     addValInt L ((ramificationPolynomial φ α).coeff φ.natDegree) = 0 := by
-  have hα0 : α ≠ 0 := ne_zero_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα0 : α ≠ 0 := hφ.ne_zero_of_isRoot hroot
   rw [coeff_ramificationPolynomial_natDegree φ hα0, addValInt_algebraMap,
     addValInt_eq_zero_of_isUnit_integer hφ.isUnit_leadingCoeff, mul_zero]
 
@@ -750,10 +729,10 @@ theorem normalizedAddValuation_coeff_ramificationPolynomial_natDegree
     {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
     (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α) :
     normalizedAddValuation L ((ramificationPolynomial φ α).coeff φ.natDegree) = 0 := by
-  have hα0 : α ≠ 0 := ne_zero_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα0 : α ≠ 0 := hφ.ne_zero_of_isRoot hroot
   have hne : (ramificationPolynomial φ α).coeff φ.natDegree ≠ 0 := by
     rw [coeff_ramificationPolynomial_natDegree φ hα0]
-    exact (map_ne_zero (algebraMap K L)).mpr fun h ↦
+    exact (_root_.map_ne_zero (algebraMap K L)).mpr fun h ↦
       hφ.isUnit_leadingCoeff.ne_zero (Subtype.ext h)
   rw [normalizedAddValuation_of_ne_zero hne,
     addValInt_coeff_ramificationPolynomial_natDegree hφ hroot, Int.cast_zero, WithTop.coe_zero]
@@ -772,7 +751,7 @@ theorem addVal_coeff_ramificationPolynomial_one
         ⟨(ramificationPolynomial φ α).coeff 1,
           coeff_ramificationPolynomial_mem_integer hφ hroot hgen 1⟩ =
       (height K L : ℕ∞) := by
-  have hα : α ∈ 𝒪[L] := mem_integer_of_isEisensteinAt_of_isRoot hφ hroot
+  have hα : α ∈ 𝒪[L] := hφ.mem_integer_of_isRoot hroot
   set ξ : 𝒪[L] := ⟨α, hα⟩
   have hξ : Irreducible ξ :=
     irreducible_integer_of_isEisensteinAt_of_isRoot_of_adjoin_eq_top hφ hroot hgen
@@ -814,17 +793,6 @@ theorem normalizedAddValuation_coeff_ramificationPolynomial_one
   rw [normalizedAddValuation_of_ne_zero (coeff_ramificationPolynomial_one_ne_zero hφ hroot),
     addValInt_coeff_ramificationPolynomial_one hφ hroot hgen, Int.cast_natCast,
     WithTop.coe_natCast]
-
-/-- **The linear-term valuation** for any `v : AddValuation L (WithTop ℝ)` agreeing with
-`addValInt L` away from zero equals `height K L`. -/
-theorem addValuation_coeff_ramificationPolynomial_one
-    {φ : 𝒪[K][X]} (hφ : φ.IsEisensteinAt 𝓂[K]) {α : L}
-    (hroot : (φ.map ((algebraMap K L).comp (algebraMap 𝒪[K] K))).IsRoot α)
-    (hgen : K⟮α⟯ = ⊤) (v : AddValuation L (WithTop ℝ))
-    (hv : ∀ x : L, x ≠ 0 → v x = ((addValInt L x : ℝ) : WithTop ℝ)) :
-    v ((ramificationPolynomial φ α).coeff 1) = (height K L : WithTop ℝ) := by
-  rw [eq_normalizedAddValuation hv,
-    normalizedAddValuation_coeff_ramificationPolynomial_one hφ hroot hgen]
 
 end Separable
 
@@ -881,15 +849,15 @@ theorem roots_map_ramificationPolynomial_eq_map_algHom
       (Finset.univ : Finset (L →ₐ[K] M)).val.map
         fun σ ↦ (σ α - algebraMap L M α) / algebraMap L M α := by
   have hαM : algebraMap L M α ≠ 0 :=
-    (map_ne_zero (algebraMap L M)).mpr (ne_zero_of_isEisensteinAt_of_isRoot hφ hroot)
+    (_root_.map_ne_zero (algebraMap L M)).mpr (hφ.ne_zero_of_isRoot hroot)
   have hlcM : algebraMap K M (φ.leadingCoeff : K) ≠ 0 :=
-    (map_ne_zero (algebraMap K M)).mpr fun h ↦ hφ.isUnit_leadingCoeff.ne_zero (Subtype.ext h)
+    (_root_.map_ne_zero (algebraMap K M)).mpr fun h ↦ hφ.isUnit_leadingCoeff.ne_zero (Subtype.ext h)
   have hroots_φ : (φ.map ((algebraMap K M).comp (algebraMap 𝒪[K] K))).roots =
       (minpoly K α).aroots M := by
-    rw [← Polynomial.map_map, map_eisenstein_eq_C_mul_minpoly hφ hroot,
+    rw [← Polynomial.map_map, hφ.map_eq_C_leadingCoeff_mul_minpoly hroot,
       Polynomial.map_mul, map_C, roots_C_mul _ hlcM, aroots_def]
   let pb : PowerBasis K L :=
-    PowerBasis.ofAdjoinSimpleEqTop (isIntegral_of_isEisensteinAt_of_isRoot hφ hroot) hgen
+    PowerBasis.ofAdjoinSimpleEqTop (hφ.isIntegral_of_isRoot hroot) hgen
   have hpb_gen : pb.gen = α := PowerBasis.ofAdjoinSimpleEqTop_gen _ hgen
   have hnodup : ((minpoly K pb.gen).aroots M).Nodup := by
     rw [aroots_def]
@@ -909,10 +877,10 @@ theorem roots_map_ramificationPolynomial_filter_ne_zero_eq_map_algHom
     (((ramificationPolynomial φ α).map (algebraMap L M)).roots.filter (· ≠ 0)) =
       ((Finset.univ : Finset (L →ₐ[K] M)).erase (IsScalarTower.toAlgHom K L M)).val.map
         fun σ ↦ (σ α - algebraMap L M α) / algebraMap L M α := by
-  have hα0 : α ≠ 0 := ne_zero_of_isEisensteinAt_of_isRoot hφ hroot
-  have hαM : algebraMap L M α ≠ 0 := (map_ne_zero (algebraMap L M)).mpr hα0
+  have hα0 : α ≠ 0 := hφ.ne_zero_of_isRoot hroot
+  have hαM : algebraMap L M α ≠ 0 := (_root_.map_ne_zero (algebraMap L M)).mpr hα0
   let pb : PowerBasis K L :=
-    PowerBasis.ofAdjoinSimpleEqTop (isIntegral_of_isEisensteinAt_of_isRoot hφ hroot) hgen
+    PowerBasis.ofAdjoinSimpleEqTop (hφ.isIntegral_of_isRoot hroot) hgen
   have hpb_gen : pb.gen = α := PowerBasis.ofAdjoinSimpleEqTop_gen _ hgen
   have hsigma_eq (σ : L →ₐ[K] M) :
       (σ α - algebraMap L M α) / algebraMap L M α = 0 ↔ σ = IsScalarTower.toAlgHom K L M := by
@@ -931,6 +899,6 @@ end EisensteinRoots
 
 end Roots
 
-end TauCeti
+end Polynomial
 
 end

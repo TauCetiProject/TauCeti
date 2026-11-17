@@ -7,6 +7,7 @@ module
 
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Basic
 public import Mathlib.FieldTheory.Minpoly.IsIntegrallyClosed
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 
 /-!
 # Minimal polynomials of Eisenstein roots
@@ -19,8 +20,6 @@ local ring, every polynomial that is Eisenstein at the maximal ideal has unit le
 
 * `Polynomial.IsEisensteinAt.isUnit_leadingCoeff`: over a local ring, a polynomial that is
   Eisenstein at the maximal ideal has unit leading coefficient.
-* `Polynomial.IsEisensteinAt.isIntegral`: any root of an Eisenstein polynomial with unit leading
-  coefficient over an integrally closed domain is integral.
 * `Polynomial.IsEisensteinAt.associated_minpoly` and
   `Polynomial.IsEisensteinAt.eq_C_leadingCoeff_mul_minpoly` identify the minimal polynomial up to
   a unit and up to `C f.leadingCoeff`.
@@ -39,10 +38,11 @@ theorem isUnit_leadingCoeff {R : Type*} [CommSemiring R] [IsLocalRing R] {f : R[
 variable {R S : Type*} [CommRing R] [IsDomain R] [IsIntegrallyClosed R]
   [CommRing S] [IsDomain S] [Algebra R S] [Module.IsTorsionFree R S]
 
-private theorem irreducible_and_isIntegral {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} {ξ : S}
+/-- The minimal polynomial of a root of an Eisenstein polynomial `f` with unit leading coefficient
+over an integrally closed domain is associated to `f`. -/
+theorem associated_minpoly {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} {ξ : S}
     (hf : f.IsEisensteinAt 𝓟) (hlc : IsUnit f.leadingCoeff)
-    (hroot : (f.map (algebraMap R S)).IsRoot ξ) :
-    Irreducible f ∧ IsIntegral R ξ := by
+    (hroot : (f.map (algebraMap R S)).IsRoot ξ) : Associated (minpoly R ξ) f := by
   have haeval : aeval ξ f = 0 := by simpa [aeval_def] using hroot
   have hdeg : 0 < f.natDegree :=
     natDegree_pos_of_aeval_root (leadingCoeff_ne_zero.1 hlc.ne_zero) haeval
@@ -50,23 +50,7 @@ private theorem irreducible_and_isIntegral {𝓟 : Ideal R} [𝓟.IsPrime] {f : 
   have hfirr : Irreducible f := hf.irreducible inferInstance
     (isPrimitive_iff_isUnit_of_C_dvd.2 fun r hr ↦
       isUnit_of_dvd_unit (by simpa using (C_dvd_iff_dvd_coeff r f).1 hr f.natDegree) hlc) hdeg
-  exact ⟨hfirr,
-    (minpoly.IsIntegrallyClosed.isIntegral_iff_isUnit_leadingCoeff hfirr haeval).2 hlc⟩
-
-/-- Any root of an Eisenstein polynomial with unit leading coefficient over an integrally closed
-domain in a torsion-free domain algebra is integral. -/
-theorem isIntegral {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} {ξ : S}
-    (hf : f.IsEisensteinAt 𝓟) (hlc : IsUnit f.leadingCoeff)
-    (hroot : (f.map (algebraMap R S)).IsRoot ξ) : IsIntegral R ξ :=
-  (hf.irreducible_and_isIntegral hlc hroot).2
-
-/-- The minimal polynomial of a root of an Eisenstein polynomial `f` with unit leading coefficient
-over an integrally closed domain is associated to `f`. -/
-theorem associated_minpoly {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]} {ξ : S}
-    (hf : f.IsEisensteinAt 𝓟) (hlc : IsUnit f.leadingCoeff)
-    (hroot : (f.map (algebraMap R S)).IsRoot ξ) : Associated (minpoly R ξ) f := by
-  obtain ⟨hfirr, hξ⟩ := hf.irreducible_and_isIntegral hlc hroot
-  have haeval : aeval ξ f = 0 := by simpa [aeval_def] using hroot
+  have hξ : IsIntegral R ξ := IsIntegral.of_isUnit_leadingCoeff hlc haeval
   exact (minpoly.irreducible hξ).associated_of_dvd hfirr (minpoly.isIntegrallyClosed_dvd hξ haeval)
 
 /-- An Eisenstein polynomial `f` with unit leading coefficient over an integrally closed domain
@@ -76,8 +60,10 @@ theorem eq_C_leadingCoeff_mul_minpoly {𝓟 : Ideal R} [𝓟.IsPrime] {f : R[X]}
     (hroot : (f.map (algebraMap R S)).IsRoot ξ) :
     f = C f.leadingCoeff * minpoly R ξ := by
   have hassoc := hf.associated_minpoly hlc hroot
+  have hξ : IsIntegral R ξ :=
+    IsIntegral.of_isUnit_leadingCoeff hlc (by simpa [aeval_def] using hroot)
   exact eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le
-    (minpoly.monic (hf.isIntegral hlc hroot)) hassoc.dvd
+    (minpoly.monic hξ) hassoc.dvd
     (natDegree_le_natDegree (degree_eq_degree_of_associated hassoc).symm.le)
 
 end Polynomial.IsEisensteinAt
