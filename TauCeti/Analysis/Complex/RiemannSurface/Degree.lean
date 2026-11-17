@@ -62,7 +62,8 @@ identity theorem (`TauCeti.RiemannSurface.not_eventuallyConst_of_ne` in
   and `TauCeti.RiemannSurface.degree_comp_of_forall_not_eventuallyConst`, for maps carrying the
   pointwise nonconstancy hypothesis.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap`: the bundled finite holomorphic maps, with
-  `TauCeti.RiemannSurface.FiniteHolomorphicMap.ofMDifferentiable` and
+  `TauCeti.RiemannSurface.FiniteHolomorphicMap.ofMDifferentiable`,
+  `TauCeti.RiemannSurface.FiniteHolomorphicMap.compactSpace_codomain` and
   `TauCeti.RiemannSurface.FiniteHolomorphicMap.comp`, and the degree API on them with no side
   hypotheses: `TauCeti.RiemannSurface.localMultiplicity_pos`,
   `TauCeti.RiemannSurface.degree_eq_fiber_sum`, `TauCeti.RiemannSurface.degree_pos`,
@@ -467,6 +468,13 @@ surjective. -/
 theorem FiniteHolomorphicMap.surjective : Surjective f :=
   have : Nonempty X := f.nonconstant.nonempty
   surjective_of_forall_not_eventuallyConst f.holomorphic f.not_eventuallyConst
+
+omit [T2Space X] in
+/-- The preconnected codomain of a finite holomorphic map from a compact Riemann surface is
+compact, by surjectivity. -/
+theorem FiniteHolomorphicMap.compactSpace_codomain (f : FiniteHolomorphicMap X Y) :
+    CompactSpace Y :=
+  Function.Surjective.compactSpace f.holomorphic.continuous f.surjective
 
 /-- **Fibre independence of the degree**, for a finite holomorphic map from a compact Riemann
 surface to a connected Riemann surface: the degree is the sum of the local multiplicities
