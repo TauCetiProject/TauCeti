@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LSeries.MellinGrowth
 public import Mathlib.NumberTheory.LSeries.ZMod
-public import TauCeti.Analysis.Complex.VerticalStripGrowth
+public import TauCeti.Analysis.Complex.VerticalStrip.Growth
 
 /-!
 # Growth of the entire completed Hurwitz and periodic zeta functions
