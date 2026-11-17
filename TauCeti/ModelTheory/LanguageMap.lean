@@ -22,8 +22,9 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
   expansion along `h.comp g`.
 * `FirstOrder.Language.LHom.isExpansionOn_reduct_of_comp`: the reduct along `h` of an expansion
   along `h.comp g` is an expansion along `g`.
-* `FirstOrder.Language.LHom.id_isExpansionOn_reduct`: the reduct of an expansion along the map
-  it expands along is the original structure.
+* `FirstOrder.Language.LHom.reduct_eq_of_isExpansionOn` and
+  `FirstOrder.Language.LHom.id_isExpansionOn_reduct`: the reduct of an expansion along the map
+  it expands along equals the original structure.
 * `FirstOrder.Language.LHom.sumMap_isExpansionOn_of_reduct`: a structure on a sum language is
   expanded along `ϕ.sumMap ψ` by a sum structure expanding its two parts along `ϕ` and `ψ`.
 * `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
@@ -74,6 +75,13 @@ theorem isExpansionOn_reduct_of_comp (h : L' →ᴸ L'') (g : L →ᴸ L') (M : 
     @IsExpansionOn L L' g M _ (h.reduct M) :=
   @IsExpansionOn.mk L L' g M _ (h.reduct M) (fun f x => (h.comp g).map_onFunction f x)
     (fun R x => (h.comp g).map_onRelation R x)
+
+/-- If the `L'`-structure on `M` expands its `L`-structure along `g`, then its reduct along `g`
+equals the `L`-structure. -/
+theorem reduct_eq_of_isExpansionOn (g : L →ᴸ L') (M : Type w) [S : L.Structure M]
+    [L'.Structure M] [g.IsExpansionOn M] : g.reduct M = S :=
+  Structure.ext (funext fun _ => funext fun f => funext fun x => g.map_onFunction f x)
+    (funext fun _ => funext fun R => funext fun x => g.map_onRelation R x)
 
 /-- If the `L'`-structure on `M` expands its `L`-structure along `g`, then its reduct along `g` is
 the `L`-structure again, in the sense that the identity map expands the reduct to it. -/
