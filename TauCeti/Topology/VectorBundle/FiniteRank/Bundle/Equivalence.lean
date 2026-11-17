@@ -235,20 +235,55 @@ noncomputable def FiniteRankAtlas.toBundleTotalSpaceHomeomorph (A : FiniteRankAt
 
 namespace FiniteRankVectorBundle
 
-/-- Canonical isomorphism `(toAtlasFunctor 𝕜 X).obj A.toBundle ≅ A` in `FiniteRankAtlas 𝕜 X`. -/
+/-- On `A.toBundle`, the preferred stratum chart equivalence at `x` is
+`Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)`. -/
+@[simp] theorem preferredChartEquiv_toBundle (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}] (x : X) :
+    (A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).preferredChartEquiv x =
+      Shrink.continuousLinearEquiv 𝕜 (A.Fiber x) := by
+  refine DFunLike.ext _ _ fun v ↦ ?_
+  rw [preferredChartEquiv_apply]
+  have htriv := congrArg (fun (e : Trivialization (Fin (A.rank x) → 𝕜)
+      (π (Fin (A.rank x) → 𝕜) ((A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).StratumFiber
+        (A.rank x)))) ↦ (e ⟨⟨x, rfl⟩, v⟩).2)
+    (trivializationAt_fiberBundleOfHomeomorph (F := Fin (A.rank x) → 𝕜)
+      (E := (A.charts (A.rank x)).Fiber)
+      (E' := (A.toBundle : FiniteRankVectorBundle.{u, v, w} 𝕜 X).StratumFiber (A.rank x))
+      (fun y ↦ (A.toBundleStratumEquiv (A.rank x) y).toHomeomorph) ⟨rfl⟩ ⟨x, rfl⟩)
+  refine htriv.trans ?_
+  -- Evaluating `compHomeomorph` applies `localTriv (indexAt _)` to `A.toBundleStratumEquiv _ _ v`.
+  have hmem : (⟨x, rfl⟩ : {y : X // A.rank y = A.rank x}) ∈
+      (A.charts (A.rank x)).baseSet ((A.charts (A.rank x)).indexAt ⟨x, rfl⟩) :=
+    (A.charts (A.rank x)).mem_baseSet_at ⟨x, rfl⟩
+  have hcore := congrArg Prod.snd ((A.charts (A.rank x)).toFiberBundleCore.localTriv_apply
+    ((A.charts (A.rank x)).indexAt ⟨x, rfl⟩)
+    ⟨⟨x, rfl⟩, A.toBundleStratumEquiv (A.rank x) ⟨x, rfl⟩ v⟩)
+  exact hcore.trans (((A.charts (A.rank x)).toFiberBundleCore.coordChange_self _ _ hmem _).trans
+    (A.toBundleStratumEquiv_rfl_apply x v))
+
+/-- Canonical isomorphism `(toAtlasFunctor 𝕜 X).obj A.toBundle ≅ A` in `FiniteRankAtlas 𝕜 X`,
+given by the identity on every coordinate fibre. -/
 noncomputable def toAtlasToBundleIso (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}] :
     (toAtlasFunctor.{u, v, w} 𝕜 X).obj A.toBundle ≅ A :=
   let V : FiniteRankVectorBundle.{u, v, w} 𝕜 X := A.toBundle
-  isoMk (fun x ↦ (V.preferredChartEquiv x).symm.toLinearEquiv.trans
-      (Shrink.continuousLinearEquiv 𝕜 (A.Fiber x)).toLinearEquiv)
-    ((A.toBundleTotalSpaceHomeomorph.continuous.comp
-        V.toAtlasTotalSpaceHomeomorph.symm.continuous).congr fun _ ↦ by
-      simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply,
-        -Shrink.continuousLinearEquiv_apply])
-    ((V.toAtlasTotalSpaceHomeomorph.continuous.comp
-        A.toBundleTotalSpaceHomeomorph.symm.continuous).congr fun _ ↦ by
-      simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply,
-        -Shrink.continuousLinearEquiv_symm_apply])
+  isoOfTotalSpaceHomeomorph (fun x ↦ LinearEquiv.refl 𝕜 (A.Fiber x))
+    (V.toAtlasTotalSpaceHomeomorph.symm.trans A.toBundleTotalSpaceHomeomorph) fun x v ↦ by
+      simp only [V, Homeomorph.trans_apply, toAtlasTotalSpaceHomeomorph_symm_apply,
+        FiniteRankAtlas.toBundleTotalSpaceHomeomorph_apply, preferredChartEquiv_toBundle,
+        ContinuousLinearEquiv.apply_symm_apply]
+      exact congrArg (TotalSpace.mk x) (LinearEquiv.refl_apply (R := 𝕜) (v : A.Fiber x)).symm
+
+/-- The forward morphism of `toAtlasToBundleIso A` is the identity on every coordinate fibre. -/
+@[simp] theorem fiberMap_toAtlasToBundleIso_hom (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}]
+    (x : X) : (toAtlasToBundleIso.{u, v, w} A).hom.fiberMap x = LinearMap.id := by
+  rw [toAtlasToBundleIso, fiberMap_isoOfTotalSpaceHomeomorph_hom, LinearEquiv.refl_toLinearMap]
+
+/-- The inverse morphism of `toAtlasToBundleIso A` is the identity on every coordinate fibre. -/
+@[simp] theorem fiberMap_toAtlasToBundleIso_inv (A : FiniteRankAtlas 𝕜 X) [UnivLE.{v, w}]
+    (x : X) : (toAtlasToBundleIso.{u, v, w} A).inv.fiberMap x = LinearMap.id := by
+  have h := congrArg (fun k : A ⟶ A ↦ k.fiberMap x) (toAtlasToBundleIso.{u, v, w} A).inv_hom_id
+  simpa only [fiberMap_comp, fiberMap_toAtlasToBundleIso_hom, LinearMap.id_comp,
+    fiberMap_id] using h
+
 instance [UnivLE.{v, w}] : (toAtlasFunctor.{u, v, w} 𝕜 X).EssSurj where
   mem_essImage A := ⟨A.toBundle, ⟨toAtlasToBundleIso A⟩⟩
 instance [UnivLE.{v, w}] : (toAtlasFunctor.{u, v, w} 𝕜 X).IsEquivalence where
@@ -283,6 +318,17 @@ noncomputable def uliftFiberEquiv (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X) 
     uliftFiberEquiv.{u, v, w, w'} V x v = v.down := by rfl
 @[simp] theorem uliftFiberEquiv_symm_apply (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X) (x : X)
     (v : V.Fiber x) : (uliftFiberEquiv.{u, v, w, w'} V x).symm v = ULift.up.{w'} v := by rfl
+
+/-- On `V.ulift`, the preferred stratum chart equivalence at `x` factors through
+`uliftFiberEquiv`. -/
+@[simp] theorem preferredChartEquiv_ulift (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X) (x : X) :
+    (V.ulift : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X).preferredChartEquiv x =
+      (uliftFiberEquiv.{u, v, w, w'} V x).trans (V.preferredChartEquiv x) := by
+  refine DFunLike.ext _ _ fun v ↦ ?_
+  rw [preferredChartEquiv_apply, ContinuousLinearEquiv.trans_apply, uliftFiberEquiv_apply,
+    preferredChartEquiv_apply]
+  exact congrArg Prod.snd (trivializationAt_ulift_apply (Fin (V.rank x) → 𝕜)
+    (V.StratumFiber (V.rank x)) ⟨x, rfl⟩ ⟨⟨x, rfl⟩, v⟩)
 
 /-- The glued total space of `V.ulift` is homeomorphic over `X` to `TotalSpace Unit V.Fiber` via
 `ULift.down` on fibres. -/
@@ -367,25 +413,43 @@ instance : (uliftFunctor.{u, v, w, w'} 𝕜 X).Faithful :=
   (fullyFaithfulUliftFunctor.{u, v, w, w'} 𝕜 X).faithful
 
 variable (𝕜 X) in
-/-- `uliftFunctor` commutes with `toAtlasFunctor` up to canonical natural isomorphism. -/
+/-- `uliftFunctor` commutes with `toAtlasFunctor` up to canonical natural isomorphism,
+given by the identity on every coordinate fibre. -/
 noncomputable def uliftToAtlasNatIso :
     uliftFunctor.{u, v, w, w'} 𝕜 X ⋙ toAtlasFunctor.{u, v, max w w'} 𝕜 X ≅
       toAtlasFunctor.{u, v, w} 𝕜 X :=
   NatIso.ofComponents
     (fun V ↦
       let V' : FiniteRankVectorBundle.{u, v, max w w'} 𝕜 X := V.ulift
-      isoMk (fun x ↦ ((V'.preferredChartEquiv x).symm.trans
-          ((uliftFiberEquiv.{u, v, w, w'} V x).trans (V.preferredChartEquiv x))).toLinearEquiv)
-        ((V.toAtlasTotalSpaceHomeomorph.continuous.comp (V.uliftTotalSpaceHomeomorph.continuous.comp
-            V'.toAtlasTotalSpaceHomeomorph.symm.continuous)).congr fun _ ↦ by
-          simp +zetaDelta [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply])
-        ((V'.toAtlasTotalSpaceHomeomorph.continuous.comp
-            (V.uliftTotalSpaceHomeomorph.symm.continuous.comp
-              V.toAtlasTotalSpaceHomeomorph.symm.continuous)).congr fun _ ↦ by
-          simp +zetaDelta [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]))
+      isoOfTotalSpaceHomeomorph (fun x ↦ LinearEquiv.refl 𝕜 (V.toAtlas.Fiber x))
+        (V'.toAtlasTotalSpaceHomeomorph.symm.trans
+          (V.uliftTotalSpaceHomeomorph.trans V.toAtlasTotalSpaceHomeomorph)) fun x v ↦ by
+            simp only [V', Homeomorph.trans_apply, toAtlasTotalSpaceHomeomorph_symm_apply,
+              uliftTotalSpaceHomeomorph_apply, toAtlasTotalSpaceHomeomorph_apply,
+              preferredChartEquiv_ulift, ContinuousLinearEquiv.symm_trans_apply,
+              uliftFiberEquiv_symm_apply, ContinuousLinearEquiv.apply_symm_apply]
+            exact congrArg (TotalSpace.mk x)
+              (LinearEquiv.refl_apply (R := 𝕜) (v : V.toAtlas.Fiber x)).symm)
     fun {_ _} _ ↦ hom_ext fun _ ↦ LinearMap.ext fun _ ↦ by
       dsimp only [Functor.comp_obj, uliftFunctor]
       simp [-preferredChartEquiv_apply, -preferredChartEquiv_symm_apply]
+
+/-- On every coordinate fibre, the forward component of `uliftToAtlasNatIso` is the identity. -/
+@[simp] theorem fiberMap_uliftToAtlasNatIso_hom_app (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X)
+    (x : X) :
+    ((uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).hom.app V).fiberMap x = LinearMap.id := by
+  rw [uliftToAtlasNatIso, NatIso.ofComponents_hom_app (naturality := _),
+    fiberMap_isoOfTotalSpaceHomeomorph_hom, LinearEquiv.refl_toLinearMap]
+
+/-- On every coordinate fibre, the inverse component of `uliftToAtlasNatIso` is the identity. -/
+@[simp] theorem fiberMap_uliftToAtlasNatIso_inv_app (V : FiniteRankVectorBundle.{u, v, w} 𝕜 X)
+    (x : X) :
+    ((uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).inv.app V).fiberMap x = LinearMap.id := by
+  have h := congrArg (fun k : (toAtlasFunctor.{u, v, w} 𝕜 X).obj V ⟶ _ ↦ k.fiberMap x)
+    ((uliftToAtlasNatIso.{u, v, w, w'} 𝕜 X).inv_hom_id_app V)
+  simpa only [fiberMap_comp, fiberMap_uliftToAtlasNatIso_hom_app, LinearMap.id_comp,
+    fiberMap_id] using h
+
 instance [UnivLE.{v, w}] : (uliftFunctor.{u, v, w, w'} 𝕜 X).IsEquivalence := by
   have : UnivLE.{v, max w w'} := @UnivLE.trans.{v, w, max w w'} ‹_› inferInstance
   have : (uliftFunctor.{u, v, w, w'} 𝕜 X ⋙ toAtlasFunctor.{u, v, max w w'} 𝕜 X).IsEquivalence :=

@@ -263,6 +263,17 @@ noncomputable instance instFiberBundleULift
     FiberBundle F (fun b ↦ ULift.{w'} (E b)) :=
   fiberBundleOfHomeomorph F (fun _ ↦ Homeomorph.ulift) ⟨rfl⟩
 
+-- Not `@[simp]`: `instFiberBundleULift` unfolds locally to `fiberBundleOfHomeomorph`, so
+-- `trivializationAt_fiberBundleOfHomeomorph` triggers `simpNF` on the LHS.
+/-- Applying the chosen trivialization of the universe-lifted fibre bundle evaluates the underlying
+trivialization at `ULift.down` on the fibre. -/
+theorem trivializationAt_ulift_apply [TopologicalSpace B] [TopologicalSpace F]
+    [∀ b, TopologicalSpace (E b)] [FiberBundle F E]
+    (b : B) (p : TotalSpace F (fun x ↦ ULift.{w'} (E x))) :
+    trivializationAt F (fun x ↦ ULift.{w'} (E x)) b p =
+      trivializationAt F E b ⟨p.proj, p.2.down⟩ :=
+  (rfl)
+
 instance instVectorBundleULift {𝕜 : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
     [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle 𝕜 F E] :
@@ -292,6 +303,17 @@ noncomputable instance instFiberBundleShrink [TopologicalSpace B] [TopologicalSp
     [∀ b, TopologicalSpace (E b)] [∀ b, Small.{w'} (E b)] [FiberBundle F E] :
     FiberBundle F (fun b ↦ Shrink.{w'} (E b)) :=
   fiberBundleOfHomeomorph F (fun b ↦ (Shrink.homeomorph (E b)).symm) ⟨rfl⟩
+
+-- Not `@[simp]`: `instFiberBundleShrink` unfolds locally to `fiberBundleOfHomeomorph`, so
+-- `trivializationAt_fiberBundleOfHomeomorph` triggers `simpNF` on the LHS.
+/-- Applying the chosen trivialization of the shrunk fibre bundle evaluates the underlying
+trivialization at `(equivShrink _).symm` on the fibre. -/
+theorem trivializationAt_shrink_apply [TopologicalSpace B] [TopologicalSpace F]
+    [∀ b, TopologicalSpace (E b)] [∀ b, Small.{w'} (E b)] [FiberBundle F E]
+    (b : B) (p : TotalSpace F (fun x ↦ Shrink.{w'} (E x))) :
+    trivializationAt F (fun x ↦ Shrink.{w'} (E x)) b p =
+      trivializationAt F E b ⟨p.proj, (equivShrink (E p.proj)).symm p.2⟩ :=
+  (rfl)
 
 instance instVectorBundleShrink {𝕜 : Type*} [NontriviallyNormedField 𝕜] [TopologicalSpace B]
     [NormedAddCommGroup F] [NormedSpace 𝕜 F] [∀ b, AddCommMonoid (E b)] [∀ b, Module 𝕜 (E b)]
