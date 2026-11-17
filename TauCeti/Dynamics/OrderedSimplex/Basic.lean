@@ -97,6 +97,7 @@ theorem sum_simplexPoint (x : Fin d → ℝ) : ∑ i, simplexPoint x i = 1 := by
 
 /-- Each coordinate of the full point is an affine, hence smooth, function of the chart
 coordinates. -/
+@[fun_prop]
 theorem contDiff_simplexPoint_apply (k : Fin (d + 1)) {n : WithTop ℕ∞} :
     ContDiff ℝ n fun x : Fin d → ℝ => simplexPoint x k := by
   induction k using Fin.lastCases with
@@ -139,21 +140,6 @@ theorem simplexPoint_le_one {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (i
   have h0 := (mem_orderedSimplex_iff_simplexPoint.mp hx).1
   rw [← sum_simplexPoint x]
   exact Finset.single_le_sum (fun k _ => h0 k) (Finset.mem_univ i)
-
-/-- The chart coordinates of a point of the ordered simplex are nonnegative. -/
-theorem nonneg_of_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) (i : Fin d) :
-    0 ≤ x i :=
-  hx.1 i
-
-/-- The last coordinate `w_{d+1} = 1 - ∑ xᵢ` dominates every chart coordinate. -/
-theorem le_one_sub_sum_of_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d)
-    (i : Fin d) : x i ≤ 1 - ∑ k, x k :=
-  hx.2.2 i
-
-/-- The last coordinate `w_{d+1} = 1 - ∑ xᵢ` is at most `1`. -/
-theorem one_sub_sum_le_one_of_mem_orderedSimplex {x : Fin d → ℝ} (hx : x ∈ orderedSimplex d) :
-    1 - ∑ k, x k ≤ 1 := by
-  linarith [Finset.sum_nonneg fun k (_ : k ∈ Finset.univ) => hx.1 k]
 
 /-- Every chart coordinate of the ordered simplex is at most `1 / 2`: it is at most the last
 coordinate `w_{d+1}`, and the two have sum at most `1`. -/
@@ -210,19 +196,18 @@ theorem mem_interior_orderedSimplex {x : Fin d → ℝ} (h0 : ∀ i, 0 < x i) (h
   exact ⟨fun i => (hy0 i).le, StrictMono.monotone fun i j hij => hymono i j hij,
     fun i => (hylast i).le⟩
 
-private theorem sum_two_mul_succ (d : ℕ) : ∑ i : Fin d, (2 * ((i : ℝ) + 1)) = d * (d + 1) := by
-  rw [Fin.sum_univ_eq_sum_range (fun i => 2 * ((i : ℝ) + 1))]
-  induction d with
-  | zero => simp
-  | succ d ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
-
 /-- The ordered simplex has nonempty interior in `ℝ^d`: the point `wᵢ = 2 i / (n (n - 1))`,
 `n = d + 2`, is an interior point. -/
 theorem interior_orderedSimplex_nonempty (d : ℕ) : (interior (orderedSimplex d)).Nonempty := by
   have hpos : (0 : ℝ) < (d + 1) * (d + 2) := by positivity
   set x : Fin d → ℝ := fun i => 2 * ((i : ℝ) + 1) / ((d + 1) * (d + 2)) with hx
   have hsum : 1 - ∑ k, x k = 2 * ((d : ℝ) + 1) / ((d + 1) * (d + 2)) := by
-    rw [hx, ← Finset.sum_div, sum_two_mul_succ]
+    have h := Finset.sum_range_id_mul_two (d + 1)
+    rw [Finset.sum_range_succ', add_zero, Nat.add_sub_cancel] at h
+    have hgauss : ∑ i : Fin d, 2 * ((i : ℝ) + 1) = d * (d + 1) := by
+      rw [Fin.sum_univ_eq_sum_range (fun i => 2 * ((i : ℝ) + 1)), ← Finset.mul_sum]
+      exact_mod_cast (mul_comm _ _).trans (h.trans (mul_comm _ _))
+    rw [hx, ← Finset.sum_div, hgauss]
     field_simp
     ring
   refine ⟨x, mem_interior_orderedSimplex (fun i => by positivity) (fun i j hij => ?_)

@@ -86,6 +86,7 @@ a chart coordinate. -/
 noncomputable def branchMap (a : ℕ × Fin d) (x : Fin d → ℝ) : Fin d → ℝ :=
   fun i => simplexPoint x (a.2.castSucc.succAbove i) / branchDenom a x
 
+@[simp]
 theorem branchMap_apply (a : ℕ × Fin d) (x : Fin d → ℝ) (i : Fin d) :
     branchMap a x i = simplexPoint x (a.2.castSucc.succAbove i) / branchDenom a x :=
   (rfl)
@@ -122,6 +123,11 @@ theorem branchDenom_pos (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : x a.2 ≤ 1
     0 < branchDenom a x :=
   one_pos.trans_le (one_le_branchDenom a hx)
 
+/-- The denominator `q_a (w)` is positive on the ordered simplex. -/
+theorem branchDenom_pos_of_mem_orderedSimplex (a : ℕ × Fin d) {x : Fin d → ℝ}
+    (hx : x ∈ orderedSimplex d) : 0 < branchDenom a x :=
+  branchDenom_pos a ((le_one_half_of_mem_orderedSimplex hx a.2).trans (by norm_num))
+
 /-- The lower bound `(A + 3) / 2 ≤ q_a (w)`, valid on the simplex where `w_j ≤ 1 / 2`. -/
 theorem add_three_div_two_le_branchDenom (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : x a.2 ≤ 1 / 2) : ((a.1 : ℝ) + 3) / 2 ≤ branchDenom a x := by
@@ -146,15 +152,15 @@ ones ordered, and the appended coordinate `1 + A (1 - w_j)` is at least `1 ≥ w
 theorem branchMap_mem_orderedSimplex (a : ℕ × Fin d) {x : Fin d → ℝ}
     (hx : x ∈ orderedSimplex d) : branchMap a x ∈ orderedSimplex d := by
   obtain ⟨h0, hmono⟩ := mem_orderedSimplex_iff_simplexPoint.mp hx
-  have hj1 : x a.2 ≤ 1 := (le_one_half_of_mem_orderedSimplex hx a.2).trans (by norm_num)
-  have hq := branchDenom_pos a hj1
+  have hq := branchDenom_pos_of_mem_orderedSimplex a hx
   refine mem_orderedSimplex_iff.mpr ⟨fun i => div_nonneg (h0 _) hq.le, fun i j hij => ?_,
     fun i => ?_⟩
   · exact div_le_div_of_nonneg_right
       (hmono ((Fin.strictMono_succAbove _).monotone hij)) hq.le
   · rw [← simplexPoint_last, simplexPoint_branchMap_last a hq.ne', branchMap_apply]
     refine div_le_div_of_nonneg_right ((simplexPoint_le_one hx _).trans ?_) hq.le
-    have : 0 ≤ (a.1 : ℝ) * (1 - x a.2) := mul_nonneg a.1.cast_nonneg (by linarith)
+    have : 0 ≤ (a.1 : ℝ) * (1 - x a.2) :=
+      mul_nonneg a.1.cast_nonneg (by linarith [le_one_half_of_mem_orderedSimplex hx a.2])
     linarith
 
 /-- Each branch maps the ordered simplex into itself. -/
@@ -169,6 +175,7 @@ private theorem branchDenom_eq (a : ℕ × Fin d) :
   funext (branchDenom_def a)
 
 /-- The denominator `q_a` is an affine, hence smooth, function of the chart coordinates. -/
+@[fun_prop]
 theorem contDiff_branchDenom (a : ℕ × Fin d) {n : WithTop ℕ∞} :
     ContDiff ℝ n (branchDenom a) := by
   rw [branchDenom_eq]
@@ -190,8 +197,19 @@ theorem contDiffAt_branchMap (a : ℕ × Fin d) {x : Fin d → ℝ} (hx : branch
 /-- Each branch is smooth on the ordered simplex. -/
 theorem contDiffOn_branchMap (a : ℕ × Fin d) {n : WithTop ℕ∞} :
     ContDiffOn ℝ n (branchMap a) (orderedSimplex d) := fun _ hx =>
-  (contDiffAt_branchMap a (branchDenom_pos a
-    ((le_one_half_of_mem_orderedSimplex hx a.2).trans (by norm_num))).ne').contDiffWithinAt
+  (contDiffAt_branchMap a (branchDenom_pos_of_mem_orderedSimplex a hx).ne').contDiffWithinAt
+
+/-- The denominator `q_a` depends only on `w_j`, with partial derivative `-(A + 1)`. -/
+theorem hasFDerivAt_branchDenom (a : ℕ × Fin d) (x : Fin d → ℝ) :
+    HasFDerivAt (branchDenom a)
+      (-((a.1 : ℝ) + 1) • (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ)) x := by
+  rw [branchDenom_eq]
+  refine ((((ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ).hasFDerivAt
+    (x := x)).const_sub 1).const_mul ((a.1 : ℝ) + 1)).const_add 1 |>.congr_fderiv ?_
+  ext v
+  simp only [smul_neg, neg_apply, smul_apply, ContinuousLinearMap.proj_apply, smul_eq_mul,
+    neg_add_rev]
+  ring
 
 /-- The delay `log q_a` depends only on `w_j`, with partial derivative `-(A + 1) / q_a`. -/
 theorem hasFDerivAt_log_branchDenom (a : ℕ × Fin d) {x : Fin d → ℝ}
@@ -199,15 +217,7 @@ theorem hasFDerivAt_log_branchDenom (a : ℕ × Fin d) {x : Fin d → ℝ}
     HasFDerivAt (fun y => Real.log (branchDenom a y))
       (-(((a.1 : ℝ) + 1) / branchDenom a x) •
         (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ)) x := by
-  have h : HasFDerivAt (branchDenom a)
-      (-((a.1 : ℝ) + 1) • (ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ)) x := by
-    rw [branchDenom_eq]
-    refine ((((ContinuousLinearMap.proj a.2 : (Fin d → ℝ) →L[ℝ] ℝ).hasFDerivAt
-      (x := x)).const_sub 1).const_mul ((a.1 : ℝ) + 1)).const_add 1 |>.congr_fderiv ?_
-    ext v
-    simp
-    ring
-  refine (h.log hx).congr_fderiv ?_
+  refine ((hasFDerivAt_branchDenom a x).log hx).congr_fderiv ?_
   rw [smul_smul]
   congr 1
   field_simp
@@ -273,7 +283,9 @@ theorem linearMove_last_snoc_snoc (u : Fin d → ℝ) (p q : ℝ) :
       Fin.snoc (Fin.snoc u q : Fin (d + 1) → ℝ) (∑ i, u i + q) := by
   ext i
   induction i using Fin.lastCases with
-  | last => simp [Fin.sum_univ_castSucc]; ring
+  | last =>
+    simp only [linearMove_apply_last, Fin.sum_univ_castSucc, Fin.snoc_castSucc, Fin.snoc_last]
+    ring
   | cast i => induction i using Fin.lastCases with
     | last => simp
     | cast i => simp
@@ -328,14 +340,17 @@ theorem linearMove_last_pow_linearMove_simplexLift (a : ℕ × Fin d) {x : Fin d
   rw [linearMove_castSucc_simplexLift, h1, linearMove_last_pow_snoc_snoc, hsum]
   ext i
   induction i using Fin.lastCases with
-  | last => simp [branchDenom_def]; ring
+  | last =>
+    simp only [Fin.snoc_last, branchDenom_def, Pi.smul_apply, simplexLift_last, smul_eq_mul,
+      mul_one]
+    ring
   | cast i => induction i using Fin.lastCases with
     | last =>
       simp only [Fin.snoc_castSucc, Fin.snoc_last, Pi.smul_apply, simplexLift_castSucc,
         smul_eq_mul]
       rw [simplexPoint_branchMap_last a hx, mul_div_cancel₀ _ hx]
       ring
-    | cast i => simp [branchMap_apply, mul_div_cancel₀ _ hx]
+    | cast i => simp [mul_div_cancel₀ _ hx]
 
 /-- **The homogeneous identity** on the ordered cone: for `y ∈ H_n` over `w`,
 `γ_{n-1}^A γ_j y = y_n q_a (w) (F_a (w), 1)`. So `F_a` is the projective action of
@@ -345,8 +360,7 @@ theorem linearMove_last_pow_linearMove_of_mem_orderedCone (a : ℕ × Fin d)
     (linearMove (Fin.last d) ^ a.1) (linearMove a.2.castSucc y) =
       (y (Fin.last _) * branchDenom a (simplexChart y)) •
         simplexLift (branchMap a (simplexChart y)) := by
-  have hq := branchDenom_pos a ((le_one_half_of_mem_orderedSimplex
-    (simplexChart_mem_orderedSimplex hy) a.2).trans (by norm_num))
+  have hq := branchDenom_pos_of_mem_orderedSimplex a (simplexChart_mem_orderedSimplex hy)
   conv_lhs => rw [← last_smul_simplexLift_simplexChart hy]
   rw [map_smul, map_smul, linearMove_last_pow_linearMove_simplexLift a hq.ne', smul_smul]
 
@@ -355,7 +369,7 @@ theorem linearMove_last_pow_linearMove_mem_orderedCone (a : ℕ × Fin d) {y : F
     (hy : y ∈ orderedCone d) :
     (linearMove (Fin.last d) ^ a.1) (linearMove a.2.castSucc y) ∈ orderedCone d := by
   have hx := simplexChart_mem_orderedSimplex hy
-  have hq := branchDenom_pos a ((le_one_half_of_mem_orderedSimplex hx a.2).trans (by norm_num))
+  have hq := branchDenom_pos_of_mem_orderedSimplex a hx
   rw [linearMove_last_pow_linearMove_of_mem_orderedCone a hy]
   exact smul_mem_orderedCone (simplexLift_mem_orderedCone (branchMap_mem_orderedSimplex a hx))
     (mul_pos (pos_last_of_mem_orderedCone hy) hq)
