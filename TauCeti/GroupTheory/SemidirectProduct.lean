@@ -97,18 +97,6 @@ section MonoidHomSubgroup
 variable {D : Type*} [Group D]
 variable (hLE : K ≤ Subgroup.normalizer (H : Set G))
 
-/-- Restricting `SemidirectProduct.monoidHomSubgroup` along `inl` recovers `H.subtype`. -/
-@[simp]
-theorem monoidHomSubgroup_comp_inl : (monoidHomSubgroup hLE).comp inl = H.subtype := by
-  ext a
-  simp
-
-/-- Restricting `SemidirectProduct.monoidHomSubgroup` along `inr` recovers `K.subtype`. -/
-@[simp]
-theorem monoidHomSubgroup_comp_inr : (monoidHomSubgroup hLE).comp inr = K.subtype := by
-  ext b
-  simp
-
 /-- Multiplication from the semidirect product of a subgroup with a subgroup normalizing it is onto
 the join of the two subgroups. -/
 @[simp]
@@ -261,24 +249,6 @@ to `inr`. -/
 theorem mulEquivSubgroup_symm_coe_right (b : D) :
     (mulEquivSubgroup h).symm b = inr b := by
   rw [(mulEquivSubgroup h).symm_apply_eq]
-  simp
-
-/-- Restricting `SemidirectProduct.mulEquivSubgroup` along `inl` recovers `N.subtype`. -/
-@[simp]
-theorem mulEquivSubgroup_comp_inl :
-    (mulEquivSubgroup h :
-      N ⋊[(N.normalizerMonoidHom).comp (Subgroup.inclusion (N.normalizer_eq_top ▸ le_top))] D →*
-        G).comp inl = N.subtype := by
-  ext a
-  simp
-
-/-- Restricting `SemidirectProduct.mulEquivSubgroup` along `inr` recovers `D.subtype`. -/
-@[simp]
-theorem mulEquivSubgroup_comp_inr :
-    (mulEquivSubgroup h :
-      N ⋊[(N.normalizerMonoidHom).comp (Subgroup.inclusion (N.normalizer_eq_top ▸ le_top))] D →*
-        G).comp inr = D.subtype := by
-  ext b
   simp
 
 /-- Restricting `(SemidirectProduct.mulEquivSubgroup h).symm` to `N` recovers `inl`. -/
