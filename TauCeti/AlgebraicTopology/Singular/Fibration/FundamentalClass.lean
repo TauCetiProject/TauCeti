@@ -23,7 +23,9 @@ This file shows that when `p` is trivial over a chart ball about `b`, with fibre
 (`TauCeti.IsFundamentalClass.singularHomologyComplFiberIso_hom_fiberLocalization`), in the sense
 of `TauCeti.IsFundamentalClass`: classes whose image in the local homology at every point
 generates it. For a fibre bundle of closed manifolds this is the identity `j_![E] = [F]` of
-Barraud, Damian, Humilière and Oancea. It is one input to their criterion (Corollary 2.13) for
+Barraud, Damian, Humilière and Oancea up to a unit: a fundamental class is determined only up to
+the orientation conventions that `TauCeti.IsFundamentalClass` leaves free, and the oriented,
+sign-exact identity is not proved here. It is one input to their criterion (Corollary 2.13) for
 `σ_*[E]` to live over the fundamental class of the base when `σ_*[F]` is nonzero; the other input,
 the naturality of the shriek map under maps of fibrations, is not treated here.
 
