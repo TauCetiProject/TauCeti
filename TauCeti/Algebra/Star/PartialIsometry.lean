@@ -110,22 +110,10 @@ variable [NonUnitalRing R] [StarRing R] [IsProperStar R] {u : R}
 theorem isPartialIsometry_iff_isStarProjection_star_mul_self :
     IsPartialIsometry u ↔ IsStarProjection (star u * u) := by
   refine ⟨IsPartialIsometry.isStarProjection_star_mul_self, fun hp => ?_⟩
-  rw [isPartialIsometry_iff]
-  have hzero : star (u - u * (star u * u)) * (u - u * (star u * u)) = 0 := by
-    have hidem : (star u * u) * (star u * u) = star u * u := hp.isIdempotentElem.eq
-    calc star (u - u * (star u * u)) * (u - u * (star u * u))
-        = (star u - (star u * u) * star u) * (u - u * (star u * u)) := by
-          simp only [star_sub, star_mul, star_star, mul_assoc]
-      _ = star u * u - (star u * u) * (star u * u) - (star u * u) * (star u * u) +
-            (star u * u) * ((star u * u) * (star u * u)) := by
-          simp only [sub_mul, mul_sub, mul_assoc]
-          abel
-      _ = 0 := by
-          rw [hidem, hidem]
-          abel
-  have hsub : u - u * (star u * u) = 0 := star_mul_self_eq_zero.mp hzero
-  rw [mul_assoc]
-  exact (sub_eq_zero.mp hsub).symm
+  rw [isPartialIsometry_iff, mul_assoc, eq_comm, ← sub_eq_zero, ← star_mul_self_eq_zero]
+  have h : star u * (u * (star u * u)) = star u * u := by rw [← mul_assoc, hp.isIdempotentElem.eq]
+  simp only [star_sub, star_mul, star_star, sub_mul, mul_sub, mul_assoc, h]
+  abel
 
 /-- In a star ring with proper star (such as a C⋆-ring), an element `u` is a partial isometry iff
 `u * star u` is a star projection. -/
