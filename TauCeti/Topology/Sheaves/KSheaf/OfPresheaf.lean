@@ -43,7 +43,7 @@ preserves limits and filtered colimits, such as modules over a ring.
   `K₂ ∪ K₃`, by locality. Germs along `K₂` and `K₃` agreeing on an open `W ⊇ K₂ ∩ K₃` are
   represented on opens `U₂ ⊇ K₂` and `U₃ ⊇ K₃` with `U₂ ∩ U₃ ⊆ W`, because `K₂ \ W` and `K₃ \ W`
   are disjoint compact sets, which disjoint open sets separate in a Hausdorff space; the sheaf glues
-  these representatives (`TopCat.Presheaf.isPullback_toKPresheaf_map`).
+  these representatives (`TopCat.Presheaf.IsSheaf.isPullback_toKPresheaf_map_types`).
 * Every open neighbourhood of a compact set `K` in a locally compact Hausdorff space contains a
   compact neighbourhood of `K`, so germs along `K` are restrictions of germs along compact
   neighbourhoods of `K`, and so are the identifications between them
@@ -100,7 +100,7 @@ noncomputable def kGerm (P : Presheaf C X) (K : Compacts X) (U : Opens X) (h : (
 
 /-- Restricting a section to a smaller open neighbourhood does not change its germ. -/
 @[reassoc (attr := simp), elementwise (attr := simp)]
-theorem map_kGerm (P : Presheaf C X) (K : Compacts X) {U V : Opens X} (i : U ⟶ V)
+theorem kGerm_res (P : Presheaf C X) (K : Compacts X) {U V : Opens X} (i : U ⟶ V)
     (hU : (K : Set X) ⊆ U) :
     P.map i.op ≫ P.kGerm K U hU = P.kGerm K V (hU.trans i.le) :=
   colimit.w (P.openNhdsDiagram K) (homOfLE (show (⟨U, hU⟩ : ↥K.openNhds) ≤ ⟨V, hU.trans i.le⟩
@@ -123,7 +123,7 @@ noncomputable def kGermCocone (P : Presheaf C X) (K : Compacts X) :
   pt := P.toKPresheaf.obj (op K)
   ι :=
     { app U := P.kGerm K U.unop.1 U.unop.2
-      naturality _ V i := (P.map_kGerm K i.unop.le.hom V.unop.2).trans (Category.comp_id _).symm }
+      naturality _ V i := (P.kGerm_res K i.unop.le.hom V.unop.2).trans (Category.comp_id _).symm }
 
 /-- The value of `P.toKPresheaf` on a compact set `K` is the colimit of the values of `P` on the
 open neighbourhoods of `K`, with the germs as colimit insertions. -/
@@ -150,7 +150,7 @@ noncomputable def toKPresheafMap {P Q : Presheaf C X} (φ : P ⟶ Q) :
     (Compacts.baseChangeOpenNhds_mono f.unop).functor.op
 
 /-- `toKPresheafMap φ` sends the germ of a section to the germ of its image under `φ`. -/
-@[reassoc (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem kGerm_toKPresheafMap_app {P Q : Presheaf C X} (φ : P ⟶ Q) (K : Compacts X) (U : Opens X)
     (h : (K : Set X) ⊆ U) :
     P.kGerm K U h ≫ (toKPresheafMap φ).app (op K) = φ.app (op U) ≫ Q.kGerm K U h :=
@@ -210,27 +210,35 @@ noncomputable def isColimitToKPresheafCoconeOfCompacts [T2Space X] [LocallyCompa
   refine Types.FilteredColimit.isColimitOf' _ _ (fun x ↦ ?_) fun L x y hxy ↦ ?_
   · obtain ⟨U, hKU, s, rfl⟩ := P.exists_kGerm_apply_eq x
     obtain ⟨L, hL, hKL, hLU⟩ := exists_compact_between K.isCompact U.isOpen hKU
-    refine ⟨op ⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.2)⟩, P.kGerm ⟨L, hL⟩ U hLU s,
-      ?_⟩
+    refine ⟨op (Compacts.compactNhdsMkOfOpens ⟨L, hL⟩ ⟨interior L, isOpen_interior⟩ hKL
+      interior_subset), P.kGerm ⟨L, hL⟩ U hLU s, ?_⟩
     exact (P.kGerm_toKPresheaf_map_apply
       (opHomOfLE (show K ≤ ⟨L, hL⟩ from hKL.trans interior_subset)) U hLU s).symm
   · obtain ⟨U, hLU, s, rfl⟩ := P.exists_kGerm_apply_eq x
     obtain ⟨V, hLV, t, rfl⟩ := P.exists_kGerm_apply_eq y
     simp only [KPresheaf.coconeOfCompacts_ι_app, kGerm_toKPresheaf_map_apply] at hxy
     obtain ⟨W, hKW, iU, iV, hst⟩ := (P.kGerm_apply_eq_kGerm_apply_iff _ _ _ _).1 hxy
-    obtain ⟨L', hL', hKL', hL'W⟩ := exists_compact_between K.isCompact
-      ((W ⊓ ⟨interior L.unop.1, isOpen_interior⟩).isOpen)
-      (subset_inter hKW fun x hx ↦ mem_interior_iff_mem_nhds.2 (L.unop.2 ⟨x, hx⟩))
-    have hL'L : (L' : Set X) ⊆ L.unop.1 := fun x hx ↦ interior_subset (hL'W hx).2
-    refine ⟨op ⟨⟨L', hL'⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL' x.2)⟩,
-      (homOfLE (show _ ≤ L.unop from hL'L)).op, ?_⟩
+    obtain ⟨V', hKV', hV'L⟩ := Compacts.exists_open_set_nhds_of_compactsNhds L.unop
+    obtain ⟨L', hL', hKL', hL'W⟩ := exists_compact_between K.isCompact (W ⊓ V').isOpen
+      (subset_inter hKW hKV')
+    have hL'L : (L' : Set X) ⊆ L.unop.1 := fun x hx ↦ hV'L (hL'W hx).2
+    refine ⟨op (Compacts.compactNhdsMkOfOpens ⟨L', hL'⟩ ⟨interior L', isOpen_interior⟩ hKL'
+      interior_subset), (homOfLE (show _ ≤ L.unop from hL'L)).op, ?_⟩
     have hL'W' : (L' : Set X) ⊆ W := fun x hx ↦ (hL'W hx).1
     let f : op L.unop.1 ⟶ op ⟨L', hL'⟩ := (homOfLE (show _ ≤ L.unop.1 from hL'L)).op
     calc _ = P.kGerm ⟨L', hL'⟩ U (hL'L.trans hLU) s := P.kGerm_toKPresheaf_map_apply f U hLU s
-      _ = P.kGerm ⟨L', hL'⟩ W hL'W' (P.map iU.op s) := (P.map_kGerm_apply _ iU hL'W' s).symm
+      _ = P.kGerm ⟨L', hL'⟩ W hL'W' (P.map iU.op s) := (P.kGerm_res_apply _ iU hL'W' s).symm
       _ = P.kGerm ⟨L', hL'⟩ W hL'W' (P.map iV.op t) := by rw [hst]
-      _ = P.kGerm ⟨L', hL'⟩ V (hL'L.trans hLV) t := P.map_kGerm_apply _ iV hL'W' t
+      _ = P.kGerm ⟨L', hL'⟩ V (hL'L.trans hLV) t := P.kGerm_res_apply _ iV hL'W' t
       _ = _ := (P.kGerm_toKPresheaf_map_apply f V hLV t).symm
+
+omit [HasColimitsOfSize.{w, w} C] in
+/-- An open set containing `K₂` and an open set containing `K₃` together contain `K₂ ∪ K₃`. -/
+private theorem subset_sup_of_bicartSq [T2Space X] {K₁ K₂ K₃ K₄ : Compacts X}
+    (sq : Lattice.BicartSq K₁ K₂ K₃ K₄) {A B : Opens X} (h₂ : (K₂ : Set X) ⊆ A)
+    (h₃ : (K₃ : Set X) ⊆ B) : (K₄ : Set X) ⊆ A ⊔ B := by
+  rw [← sq.sup_eq, Compacts.coe_sup]
+  exact union_subset_union h₂ h₃
 
 /-- Locality for germs of a sheaf of types: two germs along `K₄ = K₂ ∪ K₃` agreeing along `K₂`
 and along `K₃` are equal. -/
@@ -247,22 +255,18 @@ private theorem eq_of_toKPresheaf_map_eq [T2Space X] {P : Presheaf (Type w) X} (
     kGerm_apply_eq_kGerm_apply_iff] at h₂ h₃
   obtain ⟨W₂, hW₂, iU₂, iV₂, e₂⟩ := h₂
   obtain ⟨W₃, hW₃, iU₃, iV₃, e₃⟩ := h₃
-  have hW : (K₄ : Set X) ⊆ W₂ ⊔ W₃ := by
-    rw [← sq.sup_eq, Compacts.coe_sup]
-    exact union_subset_union hW₂ hW₃
+  have hW : (K₄ : Set X) ⊆ W₂ ⊔ W₃ := subset_sup_of_bicartSq sq hW₂ hW₃
   let iU : W₂ ⊔ W₃ ⟶ U := homOfLE (sup_le iU₂.le iU₃.le)
   let iV : W₂ ⊔ W₃ ⟶ V := homOfLE (sup_le iV₂.le iV₃.le)
   -- By locality `s` and `t` agree on `W₂ ⊔ W₃`, an open neighbourhood of `K₄`.
   have e : P.map iU.op s = P.map iV.op t := by
     refine (Sheaf.eq_of_locally_eq₂ ⟨P, hP⟩ (homOfLE le_sup_left) (homOfLE le_sup_right) le_rfl
       _ _ ?_ ?_)
-    · rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← P.map_comp,
-        ← P.map_comp, ← op_comp, ← op_comp]
+    · simp only [← Functor.map_comp_apply, ← op_comp]
       exact e₂
-    · rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← P.map_comp,
-        ← P.map_comp, ← op_comp, ← op_comp]
+    · simp only [← Functor.map_comp_apply, ← op_comp]
       exact e₃
-  rw [← P.map_kGerm_apply K₄ iU hW, ← P.map_kGerm_apply K₄ iV hW, e]
+  rw [← P.kGerm_res_apply K₄ iU hW, ← P.kGerm_res_apply K₄ iV hW, e]
 
 /-- Gluing for germs of a sheaf of types on a Hausdorff space: germs along `K₂` and `K₃` agreeing
 along `K₁ = K₂ ∩ K₃` are the restrictions of a germ along `K₄ = K₂ ∪ K₃`. -/
@@ -296,31 +300,26 @@ private theorem exists_toKPresheaf_map_eq [T2Space X] {P : Presheaf (Type w) X}
     exacts [(Set.disjoint_left.1 hV hx₂ hx₃).elim, hx₃, hx₂, hx₃]
   -- The restrictions of `s₂` and `s₃` agree on `U₂' ⊓ U₃' ⊆ W`, so they glue to `s`.
   have key (j₂ : U₂' ⊓ U₃' ⟶ U₂) (j₃ : U₂' ⊓ U₃' ⟶ U₃) : P.map j₂.op s₂ = P.map j₃.op s₃ := by
-    rw [Subsingleton.elim j₂ (homOfLE hW' ≫ i₂), Subsingleton.elim j₃ (homOfLE hW' ≫ i₃),
-      op_comp, op_comp, P.map_comp, P.map_comp, ConcreteCategory.comp_apply,
-      ConcreteCategory.comp_apply, e]
+    rw [Subsingleton.elim j₂ (homOfLE hW' ≫ i₂), Subsingleton.elim j₃ (homOfLE hW' ≫ i₃)]
+    simp only [op_comp, Functor.map_comp_apply, e]
   obtain ⟨s, hs₂, hs₃⟩ : ∃ s : P.obj (op (U₂' ⊔ U₃')),
       P.map (homOfLE le_sup_left : U₂' ⟶ _).op s = P.map (homOfLE inf_le_left : U₂' ⟶ U₂).op s₂ ∧
         P.map (homOfLE le_sup_right : U₃' ⟶ _).op s =
           P.map (homOfLE inf_le_left : U₃' ⟶ U₃).op s₃ :=
     Types.exists_of_isPullback (IsPullback.of_isLimit
       (Sheaf.isLimitPullbackCone ⟨P, hP⟩ U₂' U₃')) _ _ <| by
-        rw [← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply, ← P.map_comp,
-          ← P.map_comp, ← op_comp, ← op_comp]
-        exact key _ _
-  have hK₄ : (K₄ : Set X) ⊆ U₂' ⊔ U₃' := by
-    rw [← sq.sup_eq, Compacts.coe_sup]
-    exact union_subset_union hK₂ hK₃
+        simpa only [← Functor.map_comp_apply, ← op_comp] using key _ _
+  have hK₄ : (K₄ : Set X) ⊆ U₂' ⊔ U₃' := subset_sup_of_bicartSq sq hK₂ hK₃
   refine ⟨P.kGerm K₄ _ hK₄ s, ?_, ?_⟩
-  · rw [kGerm_toKPresheaf_map_apply, ← P.map_kGerm_apply K₂ (homOfLE le_sup_left) hK₂, hs₂,
-      P.map_kGerm_apply]
-  · rw [kGerm_toKPresheaf_map_apply, ← P.map_kGerm_apply K₃ (homOfLE le_sup_right) hK₃, hs₃,
-      P.map_kGerm_apply]
+  · rw [kGerm_toKPresheaf_map_apply, ← P.kGerm_res_apply K₂ (homOfLE le_sup_left) hK₂, hs₂,
+      P.kGerm_res_apply]
+  · rw [kGerm_toKPresheaf_map_apply, ← P.kGerm_res_apply K₃ (homOfLE le_sup_right) hK₃, hs₃,
+      P.kGerm_res_apply]
 
 /-- On a Hausdorff space, the K-presheaf of a sheaf of types turns the union of two compact sets
 into the pullback of its values on them over their intersection. -/
-theorem isPullback_toKPresheaf_map [T2Space X] {P : Presheaf (Type w) X} (hP : P.IsSheaf)
-    {K₁ K₂ K₃ K₄ : Compacts X} (sq : Lattice.BicartSq K₁ K₂ K₃ K₄) :
+theorem IsSheaf.isPullback_toKPresheaf_map_types [T2Space X] {P : Presheaf (Type w) X}
+    (hP : P.IsSheaf) {K₁ K₂ K₃ K₄ : Compacts X} (sq : Lattice.BicartSq K₁ K₂ K₃ K₄) :
     IsPullback (P.toKPresheaf.map (opHomOfLE sq.le₂₄)) (P.toKPresheaf.map (opHomOfLE sq.le₃₄))
       (P.toKPresheaf.map (opHomOfLE sq.le₁₂)) (P.toKPresheaf.map (opHomOfLE sq.le₁₃)) := by
   rw [Types.isPullback_iff]
@@ -332,7 +331,7 @@ theorem isPullback_toKPresheaf_map [T2Space X] {P : Presheaf (Type w) X} (hP : P
 theorem IsSheaf.isKSheaf_toKPresheaf_types [T2Space X] [LocallyCompactSpace X]
     {P : Presheaf (Type w) X} (hP : P.IsSheaf) : P.toKPresheaf.IsKSheaf where
   nonempty_isTerminal := ⟨isTerminalToKPresheafObjBot hP⟩
-  isPullback := isPullback_toKPresheaf_map hP
+  isPullback := hP.isPullback_toKPresheaf_map_types
   nonempty_isColimit_coconeOfCompacts K := ⟨P.isColimitToKPresheafCoconeOfCompacts K⟩
 
 end Types
@@ -363,15 +362,26 @@ noncomputable def toKPresheafCompIso : P.toKPresheaf ⋙ G ≅ toKPresheaf (P �
         ((kGerm_toKPresheaf_map (P ⋙ G) (K := K.unop) (L := L.unop) f U hU).symm.trans
           (ι_preservesColimitIso_hom_assoc G (P.openNhdsDiagram K.unop) _ _).symm)
 
-@[simp]
 theorem toKPresheafCompIso_hom_app (K : Compacts X) :
     (P.toKPresheafCompIso G).hom.app (op K) = (preservesColimitIso G (P.openNhdsDiagram K)).hom :=
   (rfl)
 
-@[simp]
 theorem toKPresheafCompIso_inv_app (K : Compacts X) :
     (P.toKPresheafCompIso G).inv.app (op K) = (preservesColimitIso G (P.openNhdsDiagram K)).inv :=
   (rfl)
+
+/-- `P.toKPresheafCompIso G` sends the image under `G` of a germ of `P` to the germ of `P ⋙ G`. -/
+@[reassoc (attr := simp)]
+theorem kGerm_toKPresheafCompIso_hom_app (K : Compacts X) (U : Opens X) (h : (K : Set X) ⊆ U) :
+    G.map (P.kGerm K U h) ≫ (P.toKPresheafCompIso G).hom.app (op K) = kGerm (P ⋙ G) K U h :=
+  ι_preservesColimitIso_hom G (P.openNhdsDiagram K) _
+
+/-- `(P.toKPresheafCompIso G).inv` sends a germ of `P ⋙ G` to the image under `G` of the germ
+of `P`. -/
+@[reassoc (attr := simp)]
+theorem kGerm_toKPresheafCompIso_inv_app (K : Compacts X) (U : Opens X) (h : (K : Set X) ⊆ U) :
+    kGerm (P ⋙ G) K U h ≫ (P.toKPresheafCompIso G).inv.app (op K) = G.map (P.kGerm K U h) :=
+  ι_preservesColimitIso_inv G (P.openNhdsDiagram K) _
 
 end Functor
 
@@ -392,8 +402,9 @@ theorem IsSheaf.isKSheaf_toKPresheaf [T2Space X] [LocallyCompactSpace X]
     exact IsPullback.of_map (forget C) (by rw [← Functor.map_comp, ← Functor.map_comp]; congr 1)
       (h.isPullback sq)
   · have : Nonempty K.compactNhds := by
-      obtain ⟨L, hL, hKL, -⟩ := exists_compact_between K.isCompact isOpen_univ (subset_univ _)
-      exact ⟨⟨⟨L, hL⟩, fun x ↦ mem_interior_iff_mem_nhds.1 (hKL x.2)⟩⟩
+      obtain ⟨L, hL, hKL⟩ := exists_compact_superset K.isCompact
+      exact ⟨Compacts.compactNhdsMkOfOpens ⟨L, hL⟩ ⟨interior L, isOpen_interior⟩ hKL
+        interior_subset⟩
     have : ReflectsColimitsOfShape (↥K.compactNhds)ᵒᵖ (forget C) :=
       reflectsColimitsOfShape_of_reflectsIsomorphisms
     exact ⟨isColimitOfReflects (forget C) (h.nonempty_isColimit_coconeOfCompacts K).some⟩
