@@ -51,7 +51,7 @@ private theorem exists_measurable_renewalExcess (hindep : iIndepFun T P)
   have heq (n : ℕ) : T n =ᵐ[P] T' n := (hid n).aemeasurable_fst.ae_eq_mk
   refine ⟨T', fun n ↦ (hid n).aemeasurable_fst.measurable_mk, hindep.congr heq,
     fun n ↦ ?_, Measure.map_congr (heq 0).symm,
-    fun t ↦ (renewalExcess_congr_ae heq t).symm⟩
+    fun t ↦ (renewalExcess_congr_ae heq).mono fun ω hω ↦ (hω t).symm⟩
   exact ((hid n).aemeasurable_fst.identDistrib_mk.symm.trans (hid n)).trans
     (hid 0).aemeasurable_fst.identDistrib_mk
 
@@ -87,9 +87,10 @@ theorem tendsto_measureReal_renewalExcess_le_of_not_isLattice
     exact tendsto_measureReal_renewalExcess_le_of_tendsto_measureReal_Ioc
       hT hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) x
 
-/-- **The limiting excess-life law.** For nonlattice i.i.d. increments with finite
-extended mean, the real-valued excess converges in distribution to any realization
-of the equilibrium excess-life probability law as time tends to infinity. Precomposition
+/-- **The limiting excess-life law.** For nonlattice i.i.d. increments, the real-valued
+excess converges in distribution to any realization of the equilibrium excess-life
+probability law as time tends to infinity. Existence of this probability law forces
+the extended mean to be finite. Precomposition
 with `MeasureTheory.TendstoInDistribution.comp_tendsto` gives convergence along any
 filter of observation times tending to infinity. -/
 theorem tendstoInDistribution_renewalExcess_of_not_isLattice
@@ -97,7 +98,6 @@ theorem tendstoInDistribution_renewalExcess_of_not_isLattice
     (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
     (hNL : ¬ (P.map (T 0)).IsLattice)
-    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂P.map (T 0)) ≠ ∞)
     {Ω' : Type*} [MeasurableSpace Ω'] {Q : Measure Ω'} [IsProbabilityMeasure Q]
     {Z : Ω' → ℝ}
     (hZ : HasLaw Z (P.map (T 0)).equilibriumExcessLaw Q) :
@@ -105,11 +105,13 @@ theorem tendstoInDistribution_renewalExcess_of_not_isLattice
       Z (fun _ ↦ P) Q := by
   wlog hT : ∀ n, Measurable (T n) generalizing T
   · obtain ⟨T', hT', hindep', hid', hmap, heq⟩ := exists_measurable_renewalExcess hindep hid
-    have hlim := this hindep' hid' (by rwa [hmap]) (by rwa [hmap]) (by rwa [hmap]) hT'
+    have hlim := this hindep' hid' (by rwa [hmap]) (by rwa [hmap]) hT'
     exact hlim.congr (fun t ↦ (heq t).mono fun ω hω ↦ congrArg ((↑) : ℝ≥0 → ℝ) hω)
       EventuallyEq.rfl
   have hzero := Measure.measure_setOf_eq_zero_lt_one_of_not_isLattice
     (hT 0).aemeasurable hNL
+  have hmean := ((Measure.isProbabilityMeasure_equilibriumExcessLaw_iff _).1
+    (hZ.isProbabilityMeasure_iff.1 inferInstance)).2
   exact tendstoInDistribution_renewalExcess_of_tendsto_measureReal_Ioc
     hT hindep hid hzero hmean ((P.map (T 0)).tendsto_renewalMeasure_real_Ioc hNL) hZ tendsto_id
 

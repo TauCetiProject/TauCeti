@@ -85,12 +85,12 @@ def renewalExcess (t : ℝ≥0) (ω : Ω) : ℝ≥0 :=
 lemma renewalExcess_def (t : ℝ≥0) (ω : Ω) :
     renewalExcess T t ω = arrival T (renewalCountNat T t ω + 1) ω - t := (rfl)
 
-/-- Changing each increment on a null set leaves the excess unchanged almost everywhere,
-including on explosive paths. -/
+/-- Changing each increment on a null set leaves the excess unchanged almost everywhere
+simultaneously at all times, including on explosive paths. -/
 theorem renewalExcess_congr_ae [MeasurableSpace Ω] {P : Measure Ω}
-    {T T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) (t : ℝ≥0) :
-    renewalExcess T t =ᵐ[P] renewalExcess T' t := by
-  filter_upwards [arrival_congr_ae h] with ω harr
+    {T T' : ℕ → Ω → ℝ≥0} (h : ∀ n, T n =ᵐ[P] T' n) :
+    ∀ᵐ ω ∂P, ∀ t, renewalExcess T t ω = renewalExcess T' t ω := by
+  filter_upwards [arrival_congr_ae h] with ω harr t
   have hcount : renewalCount T t ω = renewalCount T' t ω := by
     simp only [renewalCount_def, harr]
   have hnat : renewalCountNat T t ω = renewalCountNat T' t ω := by
