@@ -183,6 +183,13 @@ private noncomputable def factorEquiv (q : ℤ) :
   shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q) ≪≫ₗ
     LinearEquiv.ofEq _ _ (by rw [sub_add_cancel])
 
+@[simp]
+private theorem coe_factorEquiv_apply (q : ℤ)
+    (z : (shiftedModuleComplex.{uR, uA, uM, uP} hM q).homology (k - q)) :
+    (factorEquiv.{uR, uA, uM, uP} hM k q z : hM.Cohomology) =
+      shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q) z := by
+  rw [factorEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply]
+
 /-- The degree-`q` term of the classical complex is the module of families indexed by the
 generators of index `q` with values in `H^k(ℳ)`, through the identifications
 `shiftedModuleComplexHomologyEquiv` of its factors with `H^k(ℳ)`. -/
@@ -203,8 +210,9 @@ theorem coe_indexClassicalComplexXIsoPi_hom_apply (q : ℤ)
             ((m.indexClassicalComplexXIso hM k q).hom c)) := by
   simp only [indexClassicalComplexXIsoPi, Iso.trans_hom, ModuleCat.hom_comp, LinearMap.comp_apply,
     LinearEquiv.toModuleIso_hom, ModuleCat.hom_ofHom, LinearEquiv.coe_coe,
-    LinearEquiv.piCongrRight_apply]
-  exact congrArg (fun z ↦ (factorEquiv.{uR, uA, uM, uP} hM k q z : hM.Cohomology))
+    LinearEquiv.piCongrRight_apply, coe_factorEquiv_apply]
+  exact congrArg
+    (fun z ↦ (shiftedModuleComplexHomologyEquiv.{uR, uA, uM, uP} hM q (k - q) z : hM.Cohomology))
     (LinearMap.congr_fun (congrArg ModuleCat.Hom.hom (ModuleCat.piIsoPi_hom_ker_subtype _ x)) _)
 
 /-- **The differential of the classical complex on families in `H^k(ℳ)`**: under the
@@ -251,8 +259,8 @@ entries `m x y` in `H⁰(A)`. It is isomorphic to the classical complex `indexCl
 noncomputable def indexCohomologyComplex : ChainComplex (ModuleCat.{max uM uP} R) ℤ :=
   ChainComplex.of (fun q ↦ ModuleCat.of R ({x : P // ind x = q} → hM.cohomologyGrading k))
     (fun q ↦ ModuleCat.ofHom (m.indexCohomologyD hM k q)) fun q ↦ by
-      rw [← ModuleCat.ofHom_comp, m.indexCohomologyD_comp_indexCohomologyD hM k q]
-      rfl
+      rw [← ModuleCat.ofHom_comp, m.indexCohomologyD_comp_indexCohomologyD hM k q,
+        ModuleCat.ofHom_zero]
 
 @[simp]
 theorem indexCohomologyComplex_X (q : ℤ) :
@@ -282,6 +290,11 @@ theorem indexClassicalComplexIso_hom_f (q : ℤ) :
     (m.indexClassicalComplexIso hM k).hom.f q = (m.indexClassicalComplexXIsoPi hM k q).hom :=
   (rfl)
 
+@[simp]
+theorem indexClassicalComplexIso_inv_f (q : ℤ) :
+    (m.indexClassicalComplexIso hM k).inv.f q = (m.indexClassicalComplexXIsoPi hM k q).inv :=
+  (rfl)
+
 section Page
 
 variable [DecidableEq P]
@@ -296,6 +309,16 @@ noncomputable def indexSpectralSequenceSecondPageXIsoCohomology (a b : ℤ) :
       (m.indexCohomologyComplex hM (a + 2 * b + 1)).homology (b + 1) :=
   m.indexSpectralSequenceSecondPageXIso hM a b ≪≫
     HomologicalComplex.homologyMapIso (m.indexClassicalComplexIso hM (a + 2 * b + 1)) (b + 1)
+
+/-- The second-page isomorphism with coefficients in `H(ℳ)` is the second-page isomorphism
+`indexSpectralSequenceSecondPageXIso` followed by the homology isomorphism of
+`indexClassicalComplexIso`. -/
+theorem indexSpectralSequenceSecondPageXIsoCohomology_eq (a b : ℤ) :
+    m.indexSpectralSequenceSecondPageXIsoCohomology hM a b =
+      m.indexSpectralSequenceSecondPageXIso hM a b ≪≫
+        HomologicalComplex.homologyMapIso (m.indexClassicalComplexIso hM (a + 2 * b + 1))
+          (b + 1) :=
+  (rfl)
 
 end Page
 
