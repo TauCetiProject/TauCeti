@@ -73,8 +73,6 @@ private theorem isElliptic_of_perfectField [PerfectField F] [W₂.IsElliptic]
         Place.degree_infinity hs)).trans IntermediateField.topEquiv)
   -- So `φ^*` embeds `F(W₂)` into a rational function field, and by Lüroth's theorem `F(W₂)` has
   -- genus zero, while the function field of an elliptic curve has genus one.
-  have : Algebra.Transcendental F W₂.FunctionField :=
-    ⟨_, (Place.isWeierstrassCoordinates_infinity (W₂ : WeierstrassCurve F)).transcendental_x⟩
   have hgenus := genus_eq_zero_of_algHom_ratFunc (e.symm.toAlgHom.comp φ.fieldPullback)
   rw [WeierstrassCurve.Affine.genus_functionField] at hgenus
   exact one_ne_zero hgenus
