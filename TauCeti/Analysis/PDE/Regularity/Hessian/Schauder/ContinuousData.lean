@@ -9,6 +9,8 @@ public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
+import Mathlib.Topology.MetricSpace.ProperSpace.Lemmas
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Projection
@@ -56,7 +58,7 @@ quadratic factor, `Δh = 0` and `⟪∇h, x⟫ = 2h` give
 
 and since `|h(x)| ≤ ‖x‖² ≤ s`, this is bounded uniformly in `t` on every smaller ball. Green's
 identity for `uₜ` and dominated convergence as `t → 0` give `∫ Δφ u = ∫ φ f` for every test
-function `φ` on an open set contained in a ball `B(0, r)`, `r < 1`.
+function `φ` on an open subset of the unit ball, whose support lies in a smaller ball.
 
 ## References
 
@@ -251,10 +253,21 @@ private theorem contDiffAt_approx {n : WithTop ℕ∞} (e : Fin 2 → E) {t : �
   have hG : ContDiffAt ℝ n (F ∘ fun y : E ↦ ‖y‖ ^ 2 + t) x := (contDiffAt_F hs0 hs1).comp x hq
   exact (contDiff_quad e).contDiffAt.mul hG
 
+omit [InnerProductSpace ℝ E] in
+/-- On the punctured unit ball, `-log ‖x‖` is positive. -/
+private theorem neg_log_norm_pos {x : E} (hx0 : x ≠ 0) (hx1 : ‖x‖ < 1) : 0 < -Real.log ‖x‖ :=
+  neg_pos.2 (Real.log_neg (norm_pos_iff.2 hx0) hx1)
+
+omit [InnerProductSpace ℝ E] in
+/-- On the punctured unit ball, the argument `‖x‖² + 0` of `F` for `u₀` lies in `(0, 1)`. -/
+private theorem norm_sq_add_zero_mem_Ioo {x : E} (hx0 : x ≠ 0) (hx1 : ‖x‖ < 1) :
+    0 < ‖x‖ ^ 2 + 0 ∧ ‖x‖ ^ 2 + 0 < 1 := by
+  have := norm_pos_iff.2 hx0
+  exact ⟨by positivity, by simpa using pow_lt_one₀ (norm_nonneg x) hx1 two_ne_zero⟩
+
 private theorem approxLaplacian_zero_eq {e : Fin 2 → E} {x : E} (hx0 : x ≠ 0) (hx1 : ‖x‖ < 1) :
     approxLaplacian e 0 x = laplacianQuadraticSqrtNegLog e x := by
-  have hr : 0 < ‖x‖ := norm_pos_iff.2 hx0
-  have hL : 0 < -Real.log ‖x‖ := neg_pos.2 (Real.log_neg hr hx1)
+  have hL := neg_log_norm_pos hx0 hx1
   have hMx : M (‖x‖ ^ 2 + 0) = -Real.log ‖x‖ := by
     simp only [add_zero, M, Real.log_pow]
     ring
@@ -266,10 +279,7 @@ private theorem approxLaplacian_zero_eq {e : Fin 2 → E} {x : E} (hx0 : x ≠ 0
 /-- `u` is smooth on the punctured unit ball. -/
 theorem contDiffAt_quadraticSqrtNegLog {n : WithTop ℕ∞} (e : Fin 2 → E) {x : E} (hx0 : x ≠ 0)
     (hx1 : ‖x‖ < 1) : ContDiffAt ℝ n (quadraticSqrtNegLog e) x := by
-  have hs0 : 0 < ‖x‖ ^ 2 + 0 := by
-    have := norm_pos_iff.2 hx0
-    positivity
-  have hs1 : ‖x‖ ^ 2 + 0 < 1 := by simpa using pow_lt_one₀ (norm_nonneg x) hx1 two_ne_zero
+  obtain ⟨hs0, hs1⟩ := norm_sq_add_zero_mem_Ioo hx0 hx1
   rw [← approx_zero]
   exact contDiffAt_approx e hs0 hs1
 
@@ -328,7 +338,7 @@ private theorem tendsto_laplacianQuadraticSqrtNegLog_zero {e : Fin 2 → E}
   filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (ball_mem_nhds (0 : E) one_pos)]
     with y hy0 hy1
   have hr : 0 < ‖y‖ := norm_pos_iff.2 hy0
-  have hL : 0 < -Real.log ‖y‖ := neg_pos.2 (Real.log_neg hr (mem_ball_zero_iff.1 hy1))
+  have hL := neg_log_norm_pos hy0 (mem_ball_zero_iff.1 hy1)
   have hq : |(⟪e 0, y⟫_ℝ ^ 2 - ⟪e 1, y⟫_ℝ ^ 2) / ‖y‖ ^ 2| ≤ 1 := by
     rw [abs_div, abs_of_pos (by positivity : (0 : ℝ) < ‖y‖ ^ 2)]
     exact div_le_one_of_le₀ (abs_quad_le he y) (by positivity)
@@ -351,7 +361,7 @@ theorem continuousOn_laplacianQuadraticSqrtNegLog {e : Fin 2 → E} (he : Orthon
   · rw [← continuousWithinAt_compl_self, ContinuousWithinAt, laplacianQuadraticSqrtNegLog_zero]
     exact tendsto_laplacianQuadraticSqrtNegLog_zero he
   · have hr : 0 < ‖x‖ := norm_pos_iff.2 hx0
-    have hL : 0 < -Real.log ‖x‖ := neg_pos.2 (Real.log_neg hr hx)
+    have hL := neg_log_norm_pos hx0 hx
     have hsq : 0 < √(-Real.log ‖x‖) := Real.sqrt_pos.2 hL
     have hlog : ContinuousAt (fun y : E ↦ -Real.log ‖y‖) x :=
       ((Real.continuousAt_log hr.ne').comp continuous_norm.continuousAt).neg
@@ -364,42 +374,6 @@ theorem continuousOn_laplacianQuadraticSqrtNegLog {e : Fin 2 → E} (he : Orthon
         (mul_pos (mul_pos four_pos hL) hsq).ne')
 
 /-! ### `u` is not `C²` at the origin -/
-
-/-- A real function that is `C²` at `0`, even and zero at `0` is `O(t²)` to the right of `0`:
-its derivative vanishes at `0` by evenness and is `O(t)` there, and the mean value theorem
-integrates this bound. -/
-private theorem exists_abs_le_mul_sq_of_contDiffAt {φ : ℝ → ℝ} (hφ : ContDiffAt ℝ 2 φ 0)
-    (heven : ∀ t, φ (-t) = φ t) (h0 : φ 0 = 0) :
-    ∃ K δ : ℝ, 0 < δ ∧ ∀ t ∈ Ioo 0 δ, |φ t| ≤ K * t ^ 2 := by
-  have hd0 : deriv φ 0 = 0 := by
-    have := deriv_comp_neg (f := φ) (x := 0)
-    simp only [heven, neg_zero] at this
-    linarith
-  -- `deriv φ` is differentiable at `0`, hence `O(t)` there.
-  have hφ' : ContDiffAt ℝ 1 (deriv φ) 0 := hφ.derivWithin (by norm_num)
-  obtain ⟨K, hK⟩ := ((hφ'.differentiableAt one_ne_zero).hasDerivAt.isBigO_sub).bound
-  have hdiff : ∀ᶠ s in 𝓝 0, DifferentiableAt ℝ φ s :=
-    (hφ.eventually (by simp)).mono fun s hs ↦ hs.differentiableAt (by simp)
-  obtain ⟨δ, hδ, hδK⟩ := Metric.eventually_nhds_iff_ball.1 (hK.and hdiff)
-  refine ⟨max K 0, δ, hδ, fun t ht ↦ ?_⟩
-  have hball : ∀ s ∈ Icc 0 t, s ∈ ball (0 : ℝ) δ := fun s hs ↦ by
-    rw [mem_ball_zero_iff, Real.norm_eq_abs, abs_of_nonneg hs.1]
-    exact hs.2.trans_lt ht.2
-  -- The mean value theorem on `[0, t]`, where `|φ'| ≤ max K 0 * t`.
-  have hmvt := norm_image_sub_le_of_norm_deriv_le_segment' (f := φ) (f' := deriv φ)
-    (C := max K 0 * t) (a := 0) (b := t)
-    (fun s hs ↦ (hδK s (hball s hs)).2.hasDerivAt.hasDerivWithinAt)
-    (fun s hs ↦ by
-      have h := (hδK s (hball s (Ico_subset_Icc_self hs))).1
-      rw [hd0, sub_zero, sub_zero] at h
-      calc ‖deriv φ s‖ ≤ K * ‖s‖ := h
-        _ ≤ max K 0 * ‖s‖ := mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg s)
-        _ ≤ max K 0 * t := mul_le_mul_of_nonneg_left
-            (by rw [Real.norm_eq_abs, abs_of_nonneg hs.1]; exact hs.2.le) (le_max_right _ _))
-    t (right_mem_Icc.2 ht.1.le)
-  rw [h0, sub_zero, Real.norm_eq_abs, sub_zero] at hmvt
-  calc |φ t| ≤ max K 0 * t * t := hmvt
-    _ = max K 0 * t ^ 2 := by ring
 
 /-- **`u` is not `C²` at the origin**: on the line through `e₁`, `u(t e₁) = -t² √(-log |t|)`,
 whereas a `C²` function vanishing at `0` together with its derivative is `O(t²)`. -/
@@ -415,15 +389,31 @@ theorem not_contDiffAt_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orthonormal �
       (contDiff_id.smul contDiff_const).contDiffAt
     have hu' : ContDiffAt ℝ 2 (quadraticSqrtNegLog e) ((0 : ℝ) • e 1) := by simpa using hu
     exact hu'.comp 0 hline
-  obtain ⟨K, δ, hδ, hK⟩ := exists_abs_le_mul_sq_of_contDiffAt hφ (fun t ↦ by simp [hφ_eq])
-    (by simp [hφ_eq])
-  -- On `(0, δ)` this says `√(-log t) ≤ K`, but `√(-log t) → ∞` as `t → 0⁺`.
+  -- `φ` is even, so `φ'(0) = 0`; as `φ'` is differentiable at `0`, `φ' = O(t)` there, and the mean
+  -- value inequality gives `φ = O(t²)`.
+  have hd0 : deriv φ 0 = 0 := by
+    have := deriv_comp_neg (f := φ) (x := 0)
+    simp only [show ∀ t, φ (-t) = φ t from fun t ↦ by simp [hφ_eq], neg_zero] at this
+    linarith
+  have hO : φ =O[𝓝 0] fun t ↦ ‖t - 0‖ ^ ((1 : ℝ) + 1) := by
+    refine isBigO_norm_rpow_add_one_of_fderiv_of_apply_eq_zero zero_le_one
+      ((hφ.eventually (by simp)).mono fun s hs ↦ hs.differentiableAt (by simp)) ?_
+      (by simp [hφ_eq])
+    have hf0 : fderiv ℝ φ 0 = 0 := by
+      rw [← toSpanSingleton_deriv, hd0]
+      simp
+    simpa [hf0] using ((hφ.fderiv_right (m := 1) (by norm_num)).differentiableAt
+      (by norm_num)).isBigO_sub.norm_right
+  obtain ⟨K, hK⟩ := hO.bound
+  -- Near `0⁺` this says `√(-log t) ≤ K`, but `√(-log t) → ∞` as `t → 0⁺`.
   have hlim : Tendsto (fun t : ℝ ↦ √(-Real.log t)) (𝓝[>] 0) atTop :=
     Real.tendsto_sqrt_atTop.comp (tendsto_neg_atBot_atTop.comp Real.tendsto_log_nhdsGT_zero)
-  obtain ⟨t, ht1, ht2⟩ := ((hlim.eventually_gt_atTop K).and (Ioo_mem_nhdsGT hδ)).exists
-  have ht := hK t ht2
-  rw [hφ_eq, abs_neg, abs_of_pos ht2.1, abs_of_nonneg (by positivity)] at ht
-  have : √(-Real.log t) ≤ K := le_of_mul_le_mul_left (by linarith) (pow_pos ht2.1 2)
+  obtain ⟨t, ht1, ht, ht0 : 0 < t⟩ :=
+    ((hlim.eventually_gt_atTop K).and ((hK.filter_mono nhdsWithin_le_nhds).and
+      self_mem_nhdsWithin)).exists
+  norm_num [hφ_eq, abs_of_pos ht0, abs_of_nonneg (Real.sqrt_nonneg _)] at ht
+  rw [mul_comm K] at ht
+  have : √(-Real.log t) ≤ K := le_of_mul_le_mul_left (by linarith) (pow_pos ht0 2)
   linarith
 
 /-! ### The distributional Laplacian across the origin -/
@@ -502,23 +492,14 @@ private theorem measurable_approxLaplacian (e : Fin 2 → E) (t : ℝ) [Measurab
 
 variable [FiniteDimensional ℝ E]
 
-/-- For a unit vector `e`, `⟪e, y⟫² = ‖P y‖²` with `P` the orthogonal projection onto `ℝ e`, so
-`Δ ⟪e, ·⟫² = 2`. -/
-private theorem laplacian_inner_sq {v : E} (hv : ‖v‖ = 1) (x : E) :
-    Δ (fun y : E ↦ ⟪v, y⟫_ℝ ^ 2) x = 2 := by
-  have h : (fun y : E ↦ ⟪v, y⟫_ℝ ^ 2) = fun y ↦ ‖(ℝ ∙ v).starProjection y‖ ^ 2 := by
-    funext y
-    rw [Submodule.starProjection_unit_singleton ℝ hv, norm_smul, hv, mul_one, Real.norm_eq_abs,
-      sq_abs]
-  rw [h, Submodule.laplacian_norm_starProjection_sq,
-    finrank_span_singleton (norm_ne_zero_iff.1 (by simp [hv])), Nat.cast_one, mul_one]
-
 private theorem laplacian_quad {e : Fin 2 → E} (he : Orthonormal ℝ e) (x : E) :
     Δ (quad e) x = 0 := by
   have := ((contDiff_inner_sq (e 0)).contDiffAt (x := x)).laplacian_sub
     ((contDiff_inner_sq (e 1)).contDiffAt (x := x))
+  -- `ContDiffAt.laplacian_sub` is stated for a `Pi` difference `f₁ - f₂`, which `quad e` unfolds
+  -- to by definition.
   rw [show quad e = (fun y : E ↦ ⟪e 0, y⟫_ℝ ^ 2) - (fun y : E ↦ ⟪e 1, y⟫_ℝ ^ 2) from rfl, this]
-  simp [laplacian_inner_sq (he.1 0), laplacian_inner_sq (he.1 1)]
+  simp [TauCeti.laplacian_inner_sq, he.1 0, he.1 1]
 
 /-- **The Laplacian of the approximant** `uₜ(x) = h(x) F(‖x‖² + t)`: since `h` is harmonic and
 homogeneous of degree `2`, `Δuₜ = h (4 ‖x‖² F''(s) + (2n + 8) F'(s))` with `s = ‖x‖² + t`. -/
@@ -534,6 +515,7 @@ private theorem laplacian_approx {e : Fin 2 → E} (he : Orthonormal ℝ e) {t :
     rwa [ofNat_smul_eq_nsmul ℝ 2]
   have hGd : HasFDerivAt (F ∘ q) (F' (q x) • (2 : ℝ) • innerSL ℝ x) x :=
     (hasDerivAt_F hs0 hs1).comp_hasFDerivAt x hqd
+  -- `ContDiffAt.laplacian_add` is stated for a `Pi` sum `f₁ + f₂`, which `q` unfolds to.
   have hΔq : Δ q x = 2 * Module.finrank ℝ E := by
     rw [hq_def, show (fun y : E ↦ ‖y‖ ^ 2 + t) = (fun y : E ↦ ‖y‖ ^ 2) + fun _ ↦ t from rfl,
       hnsq.contDiffAt.laplacian_add contDiff_const.contDiffAt]
@@ -561,10 +543,7 @@ private theorem laplacian_approx {e : Fin 2 → E} (he : Orthonormal ℝ e) {t :
 `TauCeti.PDE.laplacianQuadraticSqrtNegLog e`. -/
 theorem laplacian_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orthonormal ℝ e) {x : E} (hx0 : x ≠ 0)
     (hx1 : ‖x‖ < 1) : Δ (quadraticSqrtNegLog e) x = laplacianQuadraticSqrtNegLog e x := by
-  have hs0 : 0 < ‖x‖ ^ 2 + 0 := by
-    have := norm_pos_iff.2 hx0
-    positivity
-  have hs1 : ‖x‖ ^ 2 + 0 < 1 := by simpa using pow_lt_one₀ (norm_nonneg x) hx1 two_ne_zero
+  obtain ⟨hs0, hs1⟩ := norm_sq_add_zero_mem_Ioo hx0 hx1
   rw [← approx_zero, laplacian_approx he hs0 hs1, approxLaplacian_zero_eq hx0 hx1]
 
 section Distribution
@@ -631,11 +610,7 @@ private theorem tendsto_integral_smul_approxLaplacian {e : Fin 2 → E} (he : Or
     rcases eq_or_ne x 0 with rfl | hx0
     · simp [approxLaplacian]
     have hx1 : ‖x‖ < 1 := hΩ1 x (hφne x hx)
-    have hx2 : 0 < ‖x‖ ^ 2 + 0 := by
-      have := norm_pos_iff.2 hx0
-      positivity
-    have hx3 : ‖x‖ ^ 2 + 0 < 1 := by
-      simpa using pow_lt_one₀ (norm_nonneg x) hx1 two_ne_zero
+    obtain ⟨hx2, hx3⟩ := norm_sq_add_zero_mem_Ioo hx0 hx1
     have hshift : ContinuousAt (fun t : ℝ ↦ ‖x‖ ^ 2 + t) 0 :=
       continuousAt_const.add continuousAt_id
     have hcont : ContinuousAt (fun t ↦ approxLaplacian e t x) 0 :=
@@ -645,12 +620,10 @@ private theorem tendsto_integral_smul_approxLaplacian {e : Fin 2 → E} (he : Or
     rw [← approxLaplacian_zero_eq hx0 hx1]
     exact hcont.tendsto.mono_left nhdsWithin_le_nhds
 
-variable (μ) in
-/-- **`Δu = f` in the sense of distributions**, also across the origin: for every test function
-`φ` on an open set `Ω` contained in a ball `B(0, r)` with `r < 1`, `∫ Δφ u = ∫ φ f`, where `f`
-is `TauCeti.PDE.laplacianQuadraticSqrtNegLog e`. -/
-theorem integral_laplacian_smul_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orthonormal ℝ e)
-    {r : ℝ} (hr : r < 1) (hΩ : (Ω : Set E) ⊆ ball 0 r) (φ : 𝓓(Ω, ℝ)) :
+/-- `∫ Δφ u = ∫ φ f` for test functions on an open set `Ω` contained in a ball `B(0, r)` with
+`r < 1`, where the approximants `uₜ` are smooth for all small `t > 0`. -/
+private theorem integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball {e : Fin 2 → E}
+    (he : Orthonormal ℝ e) {r : ℝ} (hr : r < 1) (hΩ : (Ω : Set E) ⊆ ball 0 r) (φ : 𝓓(Ω, ℝ)) :
     ∫ x, Δ (φ : E → ℝ) x • quadraticSqrtNegLog e x ∂μ =
       ∫ x, (φ : E → ℝ) x • laplacianQuadraticSqrtNegLog e x ∂μ := by
   -- Reduce to `0 ≤ r`, and choose the range `0 < t < δ` of the approximation parameter, on
@@ -687,6 +660,19 @@ theorem integral_laplacian_smul_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orth
       (by filter_upwards [Ioo_mem_nhdsGT hδ] with t ht using hgreen t ht))
     (tendsto_integral_smul_approxLaplacian he hδ hs₀ hΩ1 hrange φ)
 
+variable (μ) in
+/-- **`Δu = f` in the sense of distributions**, also across the origin: for every test function
+`φ` on an open subset `Ω` of the unit ball, `∫ Δφ u = ∫ φ f`, where `f` is
+`TauCeti.PDE.laplacianQuadraticSqrtNegLog e`. -/
+theorem integral_laplacian_smul_quadraticSqrtNegLog {e : Fin 2 → E} (he : Orthonormal ℝ e)
+    (hΩ : (Ω : Set E) ⊆ ball 0 1) (φ : 𝓓(Ω, ℝ)) :
+    ∫ x, Δ (φ : E → ℝ) x • quadraticSqrtNegLog e x ∂μ =
+      ∫ x, (φ : E → ℝ) x • laplacianQuadraticSqrtNegLog e x ∂μ := by
+  -- The compact support of `φ` lies in a smaller ball `B(0, r)`, on which `φ` is a test function.
+  obtain ⟨r, hr, hφr⟩ := exists_lt_subset_ball (isClosed_tsupport _) (φ.tsupport_subset.trans hΩ)
+  exact integral_laplacian_smul_quadraticSqrtNegLog_of_subset_ball he hr
+    (Ω := ⟨ball 0 r, isOpen_ball⟩) subset_rfl ⟨φ, φ.contDiff, φ.hasCompactSupport, hφr⟩
+
 end Distribution
 
 /-! ### No `C²` solution -/
@@ -702,8 +688,8 @@ theorem not_exists_contDiffOn_laplacian_eq_laplacianQuadraticSqrtNegLog {e : Fin
   rintro ⟨v, hv, hΔv⟩
   borelize E
   obtain ⟨ρ, hρ, hρU⟩ := Metric.mem_nhds_iff.1 hU
-  set ρ' := min ρ 2⁻¹
-  have hρ' : 0 < ρ' := lt_min hρ (by norm_num)
+  set ρ' := min ρ 1
+  have hρ' : 0 < ρ' := lt_min hρ one_pos
   let Ω : Opens E := ⟨ball 0 ρ', isOpen_ball⟩
   have hΩU : (Ω : Set E) ⊆ U := (ball_subset_ball (min_le_left _ _)).trans hρU
   have h0Ω : (0 : E) ∈ (Ω : Set E) := mem_ball_self hρ'
@@ -716,8 +702,7 @@ theorem not_exists_contDiffOn_laplacian_eq_laplacianQuadraticSqrtNegLog {e : Fin
       (hvΩ.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)
       (hu.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) fun φ ↦ ?_
     rw [hvΩ.integral_laplacian_smul_eq_integral_smul_laplacian φ,
-      integral_laplacian_smul_quadraticSqrtNegLog _ he (r := ρ')
-        (lt_of_le_of_lt (min_le_right _ _) (by norm_num)) subset_rfl φ]
+      integral_laplacian_smul_quadraticSqrtNegLog _ he (ball_subset_ball (min_le_right _ _)) φ]
     refine integral_congr_ae (Eventually.of_forall fun x ↦ ?_)
     by_cases hx : (φ : E → ℝ) x = 0
     · simp [hx]
