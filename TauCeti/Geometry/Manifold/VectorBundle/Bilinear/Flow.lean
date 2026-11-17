@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Geometry.Manifold.Flow.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.LieDeriv
-public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
-public import TauCeti.Geometry.Manifold.Flow.Eulerian
-import TauCeti.Analysis.Calculus.ParametricFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -17,11 +15,20 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 
 For a time-dependent covariant two-tensor `b_t` on a boundaryless `C²` manifold `M` with parameter
 derivative `b'` at time `t`, pulling back along a smooth family `φ_t` satisfies
+
 `d/du|_{u = t} (φ_u^* b_u)_x = (φ_t^* (b' + L_{X_t} b_t))_x`,
-identifying `TauCeti.mlieDerivBilin` with `d/dt|₀ (φ_t^* b)` for stationary `b` and proving time
-constancy of `φ_t^* b_t` when `b'_t + L_{X_t} b_t = 0`, across general map families, smooth
-isotopies (`TauCeti.eulerianField`), autonomous maximal flows (`TauCeti.flowOf`), and time-dependent
-flows (`TauCeti.timeDependentFlowOf`).
+
+identifying `TauCeti.mlieDerivBilin` with `d/dt|₀ (φ_t^* b)` for stationary `b`.
+
+The tensor-independent flow reductions are obtained by instantiating `TauCeti.PullbackAction`
+(`TauCeti.PullbackAction.bilinear`). For general families of maps,
+`TauCeti.mpullbackBilin_family_eq_of_forall_eq_zero` deduces time constancy from a supplied
+zero-derivative hypothesis. Along smooth isotopies (`TauCeti.eulerianField`), time constancy of
+`φ_t^* b_t` holds whenever `b'_t + L_{X_t} b_t = 0`
+(`TauCeti.mpullbackBilin_family_eulerianField_eq_of_add_mlieDerivBilin_eq_zero`). Along autonomous
+maximal flows (`TauCeti.flowOf`) and complete time-dependent flows
+(`TauCeti.timeDependentFlowOf`), we prove the time-dependent variation formulas together with
+invariance of a stationary `b` whose Lie derivative vanishes.
 
 ## References
 
@@ -50,6 +57,22 @@ private local instance {𝕜 V G : Type*} [NontriviallyNormedField 𝕜] [Normed
 
 namespace TauCeti
 
+/-- The `PullbackAction` instance for covariant two-tensors, acting by `TauCeti.mpullbackBilin`
+with fibre operator `ContinuousLinearMap.pullbackBilinL`. -/
+@[expose] def PullbackAction.bilinear {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [TopologicalSpace H] (I : ModelWithCorners ℝ E H) (M G : Type*)
+    [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup G] [NormedSpace ℝ G] :
+    PullbackAction I M (E →L[ℝ] E →L[ℝ] G)
+      ((x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G) where
+  pull := mpullbackBilin I I
+  eval b x := b x
+  fibrePull := ContinuousLinearMap.pullbackBilinL (V := E) (W := E) (G := G)
+  eval_pull := mpullbackBilin_apply_eq_pullbackBilinL
+  fibrePull_id := by ext b v w; simp [ContinuousLinearMap.pullbackBilinL_apply]
+  fibrePull_comp A B := by ext b v w; simp [ContinuousLinearMap.pullbackBilinL_apply]
+  eval_zero _ := rfl
+  ext := funext
+
 section Family
 
 variable {E H M E' H' M' G : Type*}
@@ -59,6 +82,8 @@ variable {E H M E' H' M' G : Type*}
   [TopologicalSpace M'] [ChartedSpace H' M']
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
+/-- Near `t`, the pullback `(ψ_u^* b_u)_y` agrees with the flat `pullbackBilinL` of the chart
+representation of `b_u` along the spatial Fréchet derivative of `ψ_u` in charts. -/
 theorem eventuallyEq_mpullbackBilin_pullbackBilinL [IsManifold I 1 M] [I.Boundaryless]
     [IsManifold I' 1 M']
     (b : ℝ → (y : M') → TangentSpace I' y →L[ℝ] TangentSpace I' y →L[ℝ] G)
@@ -80,12 +105,17 @@ theorem eventuallyEq_mpullbackBilin_pullbackBilinL [IsManifold I 1 M] [I.Boundar
       ((isOpen_extChartAt_source c).mem_nhds hψt)
   filter_upwards [hsrc, hψ] with u hu hψu
   rw [extChartAt_to_inv, mpullbackBilin_eq_pullbackBilinL (b u) c hψu hu,
-    I.range_eq_univ, fderivWithin_univ]; rfl
+    I.range_eq_univ, fderivWithin_univ]
+  -- `extChartAt I' c ∘ ψ u ∘ (extChartAt I y).symm` agrees definitionally with the lambda.
+  rfl
 
 variable {b : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
   {b' : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
   {ψ χ : ℝ → M → M} {V : (x : M) → TangentSpace I x} {t : ℝ} {x y : M}
 
+/-- Joint differentiability of a time-dependent covariant two-tensor `b` at `(t, y)` implies joint
+Fréchet differentiability of its chart representation `(u, z) ↦ inChartAtBilin I y (b u) z` at
+`(t, extChartAt I y y)`. -/
 theorem differentiableAt_uncurry_inChartAtBilin [IsManifold I 1 M] [I.Boundaryless]
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -108,19 +138,8 @@ theorem differentiableAt_uncurry_inChartAtBilin [IsManifold I 1 M] [I.Boundaryle
   filter_upwards [continuousAt_snd.eventually (extChartAt_target_mem_nhds y)] with p hp
   exact inChartAtBilin_eq_trivializationAt y (b p.1) hp
 
-theorem differentiableAt_atPoint_of_mdifferentiableAt [IsManifold I 1 M] [I.Boundaryless]
-    (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
-      (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
-        (E := fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] G) q.2 (b q.1 q.2))
-      (t, y)) :
-    DifferentiableAt ℝ (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ b u y) t := by
-  have hpair : DifferentiableAt ℝ (fun u : ℝ ↦ (u, extChartAt I y y)) t :=
-    differentiableAt_id.prodMk (differentiableAt_const (extChartAt I y y))
-  have h := (differentiableAt_uncurry_inChartAtBilin hb).comp t hpair
-  exact h.congr_of_eventuallyEq
-    (Eventually.of_forall fun u ↦ (inChartAtBilin_extChartAt_self y (b u)).symm)
-
-/-- **Pullback variation at the identity:** `d/du|_{u = t} (ψ_u^* b_u)_y = (b' + L_V b_t)_y`. -/
+/-- **Pullback variation at the identity:** along a jointly `C²` family `ψ` with `ψ t = id` near
+`y` and velocity `V`, `d/du|_{u = t} (ψ_u^* b_u)_y = (b' + L_V b_t)_y`. -/
 theorem hasDerivAt_mpullbackBilin_family_of_eq_id [IsManifold I 2 M] [I.Boundaryless] (y : M)
     (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
     (hsmooth : ContMDiffAt (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ ψ p.1 p.2) (t, y))
@@ -135,9 +154,7 @@ theorem hasDerivAt_mpullbackBilin_family_of_eq_id [IsManifold I 2 M] [I.Boundary
       ((b' + mlieDerivBilin I V (b t)) y) t := by
   let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
   set Φ : ℝ × E → E := fun p ↦ extChartAt I y (ψ p.1 ((extChartAt I y).symm p.2))
-  set W := VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I) with hW
-  have hΦsmooth : ContDiffAt ℝ 2 Φ (t, extChartAt I y y) :=
-    Manifold.contDiffAt_extChartAt_family hid.self_of_nhds hsmooth
+  set W : E → E := VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V (range I)
   have hΦt_nhds : (fun z ↦ Φ (t, z)) =ᶠ[𝓝 (extChartAt I y y)] id :=
     Manifold.eventuallyEq_extChartAt_family_of_eq_id hid
   have hΦt : Φ (t, extChartAt I y y) = extChartAt I y y := hΦt_nhds.self_of_nhds
@@ -147,8 +164,7 @@ theorem hasDerivAt_mpullbackBilin_family_of_eq_id [IsManifold I 2 M] [I.Boundary
       (fderiv ℝ W (Φ (t, extChartAt I y y)) ∘L
         fderiv ℝ (fun z ↦ Φ (t, z)) (extChartAt I y y)) t := by
     rw [hΦt, hΦt_nhds.fderiv_eq, fderiv_id, ContinuousLinearMap.comp_id]
-    exact ContDiffAt.hasDerivAt_fderiv_slice_of_eventually_hasDerivAt
-      (by simpa only [minSmoothness_of_isRCLikeNormedField] using hΦsmooth) hvel'
+    exact hasDerivAt_fderiv_extChartAt_family_of_eq_id y hid hsmooth hvel
   have hflat := hasDerivAt_pullbackBilinL_fderiv (b := fun u ↦ inChartAtBilin I y (b u))
     (b' := b' y) (ψ := fun u z ↦ Φ (u, z)) (V := W) (x := extChartAt I y y) (t := t)
     (by rw [hΦt]; exact differentiableAt_uncurry_inChartAtBilin hb)
@@ -162,11 +178,16 @@ theorem hasDerivAt_mpullbackBilin_family_of_eq_id [IsManifold I 2 M] [I.Boundary
   rw [hΦt, hΦt_nhds.fderiv_eq, fderiv_id]
   have hlie : (mlieDerivBilin I V (b t) y : E →L[ℝ] E →L[ℝ] G) =
       lieDerivBilin (E := E) W (inChartAtBilin I y (b t)) (extChartAt I y y) := by
-    rw [mlieDerivBilin_def, ← hW, I.range_eq_univ]; erw [lieDerivBilinWithin_univ]
+    rw [mlieDerivBilin_def, ← lieDerivBilinWithin_univ, I.range_eq_univ]
+    exact congrArg (fun s ↦ lieDerivBilinWithin (E := E)
+      (VectorField.mpullbackWithin 𝓘(ℝ, E) I (extChartAt I y).symm V s)
+      (inChartAtBilin I y (b t)) univ (extChartAt I y y)) I.range_eq_univ.symm
   ext v w
   simp only [ContinuousLinearMap.pullbackBilinL_apply, ContinuousLinearMap.id_apply, Pi.add_apply]
   exact congrArg (b' y v w + ·) (DFunLike.congr_fun (DFunLike.congr_fun hlie.symm v) w)
 
+/-- **Stationary pullback variation at the identity:** along a jointly `C²` family `ψ` with
+`ψ t = id` near `y` and velocity `V`, `d/du|_{u = t} (ψ_u^* b)_y = (L_V b)_y`. -/
 theorem hasDerivAt_mpullbackBilin_of_eq_id [IsManifold I 2 M] [I.Boundaryless]
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G} (y : M)
     (hid : ∀ᶠ x in 𝓝 y, ψ t x = x)
@@ -189,27 +210,18 @@ theorem hasDerivAt_mpullbackBilin_of_eq_comp {g : M → M}
     (h : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ mpullbackBilin I I (χ u) (b u) (g x))
       (β (g x)) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ mpullbackBilin I I (ψ u) (b u) x)
-      (mpullbackBilin I I g β x) t := by
-  have hL := (ContinuousLinearMap.pullbackBilinL (V := E) (W := E) (G := G)
-    (mfderiv I I g x)).hasFDerivAt.comp_hasDerivAt t h
-  refine (hL.congr_of_eventuallyEq ?_).congr_deriv
-    (mpullbackBilin_apply_eq_pullbackBilinL g β x).symm
-  filter_upwards [hψ, hχ] with u hu hχu
-  rw [hu.mpullbackBilin_eq (b u), mpullbackBilin_comp_at hg hχu (b u)]
-  exact mpullbackBilin_apply_eq_pullbackBilinL g _ x
+      (mpullbackBilin I I g β x) t :=
+  (PullbackAction.bilinear I M G).hasDerivAt_of_eq_comp hψ hg hχ h
 
+/-- **Constancy from vanishing pullback velocity:** if `(ψ_u^* b_u)_x` has derivative
+`(ψ_u^* β_u)_x` everywhere and `β_u = 0` for all `u`, then `ψ_s^* b_s = ψ_t^* b_t`. -/
 theorem mpullbackBilin_family_eq_of_forall_eq_zero
     {β : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
     (hd : ∀ u x, HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ mpullbackBilin I I (ψ u) (b u) x)
       (mpullbackBilin I I (ψ u) (β u) x) u)
     (hβ : ∀ u, β u = 0) (s t : ℝ) :
-    mpullbackBilin I I (ψ s) (b s) = mpullbackBilin I I (ψ t) (b t) := by
-  funext x
-  have hderiv (u : ℝ) :
-      HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ mpullbackBilin I I (ψ u) (b u) x) 0 u := by
-    have h := hd u x; rwa [hβ u, mpullbackBilin_zero] at h
-  exact is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
-    (fun u ↦ (hderiv u).deriv) s t
+    mpullbackBilin I I (ψ s) (b s) = mpullbackBilin I I (ψ t) (b t) :=
+  (PullbackAction.bilinear I M G).pull_eq_of_forall_eq_zero hd hβ s t
 
 end Family
 
@@ -230,6 +242,8 @@ include hφ hφ'
 variable {b : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
   {b' : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
 
+/-- **Time-dependent pullback variation at the base time of a smooth isotopy:**
+`d/du|_{u = t} ((φ_u ∘ φ_t⁻¹)^* b_u)_y = (b' + L_{X_t} b_t)_y`. -/
 theorem hasDerivAt_mpullbackBilin_family_eulerianField_self (t : ℝ) (y : M)
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -238,17 +252,12 @@ theorem hasDerivAt_mpullbackBilin_family_eulerianField_self (t : ℝ) (y : M)
     (hb' : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ b u y) (b' y) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G)
       (fun u ↦ mpullbackBilin I I (fun x ↦ φ u ((φ t).symm x)) (b u) y)
-      ((b' + mlieDerivBilin I (eulerianField I φ t) (b t)) y) t := by
-  have hsmooth : ContMDiff (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ φ p.1 ((φ t).symm p.2)) :=
-    hφ.comp (contMDiff_fst.prodMk
-      ((hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).comp contMDiff_snd))
-  refine hasDerivAt_mpullbackBilin_family_of_eq_id (ψ := fun u x ↦ φ u ((φ t).symm x))
-    (V := eulerianField I φ t) y (Eventually.of_forall fun x ↦ (φ t).apply_symm_apply x)
-    hsmooth.contMDiffAt (Eventually.of_forall fun x ↦ ?_) hb hb'
-  exact hasMFDerivAt_eulerianField
-    ((hφ.curry_left (f := fun u x ↦ φ u x)).mdifferentiable two_ne_zero t)
+      ((b' + mlieDerivBilin I (eulerianField I φ t) (b t)) y) t :=
+  (PullbackAction.bilinear I M G).hasDerivAt_eulerianField_self hφ hφ' t y
+    (fun hid hsmooth hvel ↦ hasDerivAt_mpullbackBilin_family_of_eq_id y hid hsmooth hvel hb hb')
 
-/-- **Time-dependent pullback variation along a smooth isotopy.** -/
+/-- **Time-dependent pullback variation along a smooth isotopy:**
+`d/du|_{u = t} (φ_u^* b_u)_x = (φ_t^* (b' + L_{X_t} b_t))_x`. -/
 theorem hasDerivAt_mpullbackBilin_family_eulerianField (t : ℝ) (x : M)
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -256,16 +265,12 @@ theorem hasDerivAt_mpullbackBilin_family_eulerianField (t : ℝ) (x : M)
       (t, φ t x))
     (hb' : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ b u (φ t x)) (b' (φ t x)) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ mpullbackBilin I I (φ u) (b u) x)
-      (mpullbackBilin I I (φ t) (b' + mlieDerivBilin I (eulerianField I φ t) (b t)) x) t := by
-  have hφu (u : ℝ) : MDifferentiable I I (φ u) :=
-    (hφ.curry_right (f := fun u x ↦ φ u x) (x := u)).mdifferentiable two_ne_zero
-  have hφt : MDifferentiable I I (φ t).symm :=
-    (hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).mdifferentiable two_ne_zero
-  exact hasDerivAt_mpullbackBilin_of_eq_comp (χ := fun u z ↦ φ u ((φ t).symm z))
-    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦ by simp) (hφu t x)
-    (Eventually.of_forall fun u ↦ ((hφu u).comp hφt) _)
+      (mpullbackBilin I I (φ t) (b' + mlieDerivBilin I (eulerianField I φ t) (b t)) x) t :=
+  (PullbackAction.bilinear I M G).hasDerivAt_eulerianField hφ hφ' t x
     (hasDerivAt_mpullbackBilin_family_eulerianField_self hφ hφ' t (φ t x) hb hb')
 
+/-- **Stationary pullback variation along a smooth isotopy:**
+`d/du|_{u = t} (φ_u^* b)_x = (φ_t^* L_{X_t} b)_x` for a smooth isotopy `φ`. -/
 theorem hasDerivAt_mpullbackBilin_eulerianField
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G} (t : ℝ) (x : M)
     (hb : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
@@ -276,6 +281,9 @@ theorem hasDerivAt_mpullbackBilin_eulerianField
     (b' := 0) t x (hb.comp (t, φ t x) mdifferentiableAt_snd)
     (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b (φ t x)))
 
+/-- **Time constancy along a smooth isotopy:** if a jointly differentiable family `b_t` has time
+derivative `b'_t` satisfying `b'_t + L_{X_t} b_t = 0` for the Eulerian field `X_t` of `φ`, then
+`φ_s^* b_s = φ_t^* b_t` for all `s, t : ℝ`. -/
 theorem mpullbackBilin_family_eulerianField_eq_of_add_mlieDerivBilin_eq_zero
     {b b' : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
     (hb : MDifferentiable (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
@@ -288,32 +296,21 @@ theorem mpullbackBilin_family_eulerianField_eq_of_add_mlieDerivBilin_eq_zero
     (fun u x ↦ hasDerivAt_mpullbackBilin_family_eulerianField hφ hφ' u x (hb (u, φ u x))
       (hb' u (φ u x))) hL s t
 
-/-- **Invariance of covariant two-tensors under isotopies.** -/
+/-- **Invariance of covariant two-tensors under isotopies:** `φ_t^* b` is independent of `t` if and
+only if `L_{X_t} b = 0` for all `t`. -/
 theorem forall_mpullbackBilin_eq_iff_forall_mlieDerivBilin_eulerianField_eq_zero
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
     (hb : MDifferentiable I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun z ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G) z (b z))) :
     (∀ s t, mpullbackBilin I I (φ s) b = mpullbackBilin I I (φ t) b) ↔
-      ∀ t, mlieDerivBilin I (eulerianField I φ t) b = 0 := by
-  refine ⟨fun h t ↦ ?_, fun h s t ↦ mpullbackBilin_family_eq_of_forall_eq_zero (b := fun _ ↦ b)
-    (fun u x ↦ hasDerivAt_mpullbackBilin_eulerianField hφ hφ' u x (hb _)) h s t⟩
-  funext y
-  have hd := hasDerivAt_mpullbackBilin_family_eulerianField_self hφ hφ' (b := fun _ ↦ b)
-    (b' := 0) t y ((hb y).comp (t, y) mdifferentiableAt_snd)
-    (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b y))
-  rw [zero_add] at hd
-  have hconst : (fun u ↦ mpullbackBilin I I (fun x ↦ φ u ((φ t).symm x)) b y) =
-      fun _ ↦ mpullbackBilin I I (fun x ↦ φ t ((φ t).symm x)) b y := by
-    funext u
-    have hcomp (s : ℝ) : (fun x ↦ φ s ((φ t).symm x)) = φ s ∘ (φ t).symm := rfl
-    have hφt : MDifferentiableAt I I (φ t).symm y :=
-      (hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).mdifferentiableAt two_ne_zero
-    have hφu (s : ℝ) : MDifferentiable I I (φ s) :=
-      (hφ.curry_right (f := fun u x ↦ φ u x) (x := s)).mdifferentiable two_ne_zero
-    rw [hcomp, hcomp, mpullbackBilin_comp_at hφt (hφu u _) b,
-      mpullbackBilin_comp_at hφt (hφu t _) b, h u t]
-  rw [hconst] at hd
-  exact hd.unique (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t _)
+      ∀ t, mlieDerivBilin I (eulerianField I φ t) b = 0 :=
+  (PullbackAction.bilinear I M G).forall_pull_eulerianField_eq_iff hφ hφ'
+    (L := fun V ↦ mlieDerivBilin I V b) fun t y ↦ by
+      have hd := hasDerivAt_mpullbackBilin_family_eulerianField_self hφ hφ'
+        (b := fun _ ↦ b) (b' := 0) t y ((hb y).comp (t, y) mdifferentiableAt_snd)
+        (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b y))
+      rw [zero_add] at hd
+      exact hd
 
 end Isotopy
 
@@ -328,6 +325,8 @@ include hZ
 variable {b : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
   {b' : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
 
+/-- **Time-dependent pullback variation at time zero along a maximal flow:**
+`d/ds|_{s = 0} ((flowOf Z s)^* b_s)_y = (b' + L_Z b_0)_y`. -/
 theorem hasDerivAt_mpullbackBilin_family_flowOf_zero (y : M)
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -335,16 +334,9 @@ theorem hasDerivAt_mpullbackBilin_family_flowOf_zero (y : M)
       (0, y))
     (hb' : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun s ↦ b s y) (b' y) 0) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun s ↦ mpullbackBilin I I (flowOf Z s) (b s) y)
-      ((b' + mlieDerivBilin I Z (b 0)) y) 0 := by
-  have hZ1 := hZ.of_le one_le_two
-  refine hasDerivAt_mpullbackBilin_family_of_eq_id (ψ := flowOf Z) (V := Z) y
-    (Eventually.of_forall (flowOf_zero Z))
-    ((contMDiffOn_flowOf (n := 2) one_le_two hZ).contMDiffAt
-      ((isOpen_flowDomain hZ1).mem_nhds (mem_flowDomain_zero hZ1 y)))
-    (Eventually.of_forall fun x ↦ ?_) hb hb'
-  exact ((isMIntegralCurveOn_flowOf hZ1 x).isMIntegralCurveAt
-    (((isOpen_flowDomain hZ1).preimage (continuous_id.prodMk continuous_const)).mem_nhds
-      (mem_flowDomain_zero hZ1 x))).hasMFDerivAt
+      ((b' + mlieDerivBilin I Z (b 0)) y) 0 :=
+  (PullbackAction.bilinear I M G).hasDerivAt_flowOf_zero hZ y
+    (fun hid hsmooth hvel ↦ hasDerivAt_mpullbackBilin_family_of_eq_id y hid hsmooth hvel hb hb')
 
 /-- **Flow characterization of the Lie derivative at time zero:**
 `d/ds|_{s = 0} ((flowOf Z s)^* b)_y = (L_Z b)_y`. -/
@@ -358,7 +350,8 @@ theorem hasDerivAt_mpullbackBilin_flowOf_zero
     (b' := 0) y (hb.comp (0, y) mdifferentiableAt_snd)
     (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) 0 (b y))
 
-/-- **Time-dependent pullback variation along a maximal flow.** -/
+/-- **Time-dependent pullback variation along a maximal flow:** wherever `(t, x) ∈ flowDomain Z`,
+`d/ds|_{s = t} ((flowOf Z s)^* b_s)_x = ((flowOf Z t)^* (b' + L_Z b_t))_x`. -/
 theorem hasDerivAt_mpullbackBilin_family_flowOf {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain Z)
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -368,43 +361,19 @@ theorem hasDerivAt_mpullbackBilin_family_flowOf {t : ℝ} {x : M} (hx : (t, x) �
       (b' (flowOf Z t x)) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun s ↦ mpullbackBilin I I (flowOf Z s) (b s) x)
       (mpullbackBilin I I (flowOf Z t) (b' + mlieDerivBilin I Z (b t)) x) t := by
-  have hZ1 := hZ.of_le one_le_two
-  have hD := isOpen_flowDomain hZ1
   set y := flowOf Z t x
-  have hφ : ContMDiffAt I I 2 (flowOf Z t) x :=
-    contMDiffAt_flowOf_comp (n := 2) one_le_two hZ contMDiffAt_const contMDiffAt_id hx
-  have hev : ∀ᶠ p in 𝓝 ((0 : ℝ), x),
-      (t, p.2) ∈ flowDomain Z ∧ (p.1, flowOf Z t p.2) ∈ flowDomain Z :=
-    ((continuous_const.prodMk continuous_snd).continuousAt.eventually_mem (hD.mem_nhds hx)).and
-      ((continuousAt_fst.prodMk (hφ.continuousAt.comp continuousAt_snd)).eventually_mem
-        (hD.mem_nhds (mem_flowDomain_zero hZ1 _)))
-  rw [nhds_prod_eq] at hev
-  have hsub : Tendsto (fun s ↦ s - t) (𝓝 t) (𝓝 0) := by
-    simpa using (continuous_sub_right t).tendsto t
   have hshift : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I)
       (fun p : ℝ × M ↦ (p.1 + t, p.2)) (0, y) :=
-    ((mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.add_const t)).comp (0, y)
-      mdifferentiableAt_fst).prodMk mdifferentiableAt_snd
-  have h0 := hasDerivAt_mpullbackBilin_family_flowOf_zero hZ (b := fun r ↦ b (r + t)) (b' := b') y
-    (hb.comp_of_eq (0, y) hshift (Prod.ext (zero_add t) rfl))
+    ((mdifferentiableAt_iff_differentiableAt.2 (differentiableAt_id.add_const t)).comp
+      (0, y) mdifferentiableAt_fst).prodMk mdifferentiableAt_snd
+  have h0 := hasDerivAt_mpullbackBilin_family_flowOf_zero hZ (b := fun r ↦ b (r + t)) (b' := b')
+    y (hb.comp_of_eq (0, y) hshift (Prod.ext (zero_add t) rfl))
     ((zero_add t ▸ hb').comp_add_const 0 t)
   rw [zero_add] at h0
-  have h0_sub : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G)
-      (fun s ↦ mpullbackBilin I I (flowOf Z (s - t)) (b s) y)
-      ((b' + mlieDerivBilin I Z (b t)) y) t :=
-    (HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])).congr_of_eventuallyEq
-      (Eventually.of_forall fun s ↦ congrArg
-        (fun r ↦ (mpullbackBilin I I (flowOf Z (s - t)) (b r) y : E →L[ℝ] E →L[ℝ] G))
-        (sub_add_cancel s t).symm)
-  refine hasDerivAt_mpullbackBilin_of_eq_comp (ψ := flowOf Z) (χ := fun s ↦ flowOf Z (s - t))
-    ?_ (hφ.mdifferentiableAt two_ne_zero) ?_ h0_sub
-  · filter_upwards [hsub.eventually hev.curry] with s hs
-    refine hs.mono fun z hz ↦ ?_
-    have h := (flowOf_add hZ1 hz.1 hz.2).2; rw [add_sub_cancel] at h; exact h.symm
-  · filter_upwards [hsub.eventually hev.curry] with s hs
-    exact (contMDiffAt_flowOf_comp (n := 2) one_le_two hZ contMDiffAt_const contMDiffAt_id
-      hs.self_of_nhds.2).mdifferentiableAt two_ne_zero
+  exact (PullbackAction.bilinear I M G).hasDerivAt_flowOf hZ hx h0
 
+/-- **Stationary pullback variation along a maximal flow:** wherever `(t, x) ∈ flowDomain Z`,
+`d/ds|_{s = t} ((flowOf Z s)^* b)_x = ((flowOf Z t)^* L_Z b)_x`. -/
 theorem hasDerivAt_mpullbackBilin_flowOf
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
     {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain Z)
@@ -416,31 +385,16 @@ theorem hasDerivAt_mpullbackBilin_flowOf
     hx (hb.comp (t, flowOf Z t x) mdifferentiableAt_snd)
     (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b (flowOf Z t x)))
 
-/-- **Maximal flows preserve covariant two-tensors with vanishing Lie derivative.** -/
+/-- **Maximal flows preserve stationary covariant two-tensors with vanishing Lie derivative:** if
+`L_Z b = 0`, then `((flowOf Z t)^* b)_x = b_x` wherever `(t, x) ∈ flowDomain Z`. -/
 theorem mpullbackBilin_flowOf_apply_eq_of_mlieDerivBilin_eq_zero
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
     (hb : MDifferentiable I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun z ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G) z (b z)))
     (hL : mlieDerivBilin I Z b = 0) {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain Z) :
-    mpullbackBilin I I (flowOf Z t) b x = b x := by
-  have hZ1 := hZ.of_le one_le_two
-  set J : Set ℝ := {s | (s, x) ∈ flowDomain Z}
-  have hJopen : IsOpen J :=
-    (isOpen_flowDomain hZ1).preimage (continuous_id.prodMk continuous_const)
-  have hJc : J.OrdConnected := by
-    rw [show J = maximalIntegralCurveInterval Z x from Set.ext fun _ ↦ mem_flowDomain]
-    exact ordConnected_maximalIntegralCurveInterval
-  set P : ℝ → (E →L[ℝ] E →L[ℝ] G) := fun s ↦ mpullbackBilin I I (flowOf Z s) b x
-  have hP (s : ℝ) (hs : s ∈ J) : HasDerivAt P 0 s := by
-    have h := hasDerivAt_mpullbackBilin_flowOf hZ hs (hb _); rwa [hL, mpullbackBilin_zero] at h
-  have hP0 : P 0 = b x := by
-    change mpullbackBilin I I (flowOf Z 0) b x = b x
-    rw [show flowOf Z 0 = id from funext (flowOf_zero Z), mpullbackBilin_id]
-  refine (hJc.convex.is_const_of_fderivWithin_eq_zero
-    (fun s hs ↦ (hP s hs).differentiableAt.differentiableWithinAt) (fun s hs ↦ ?_) hx
-    (mem_flowDomain_zero hZ1 x)).trans hP0
-  rw [((hP s hs).hasFDerivAt.hasFDerivWithinAt (s := J)).fderivWithin
-    (hJopen.uniqueDiffWithinAt hs)]; ext; simp
+    mpullbackBilin I I (flowOf Z t) b x = b x :=
+  (PullbackAction.bilinear I M G).eval_pull_flowOf_eq_of_eq_zero hZ
+    (fun _ hr ↦ hasDerivAt_mpullbackBilin_flowOf hZ hr (hb _)) hL hx
 
 end MaximalFlow
 
@@ -456,6 +410,9 @@ variable {b : ℝ → (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x �
   {b' : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
 
 omit hc in
+/-- **Time-dependent pullback variation at the base time of a time-dependent flow:**
+`d/du|_{u = t} ((timeDependentFlowOf X t u)^* b_u)_y = (b' + L_{X_t} b_t)_y`. Completeness is not
+required. -/
 theorem hasDerivAt_mpullbackBilin_family_timeDependentFlowOf_self (t : ℝ) (y : M)
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -464,20 +421,13 @@ theorem hasDerivAt_mpullbackBilin_family_timeDependentFlowOf_self (t : ℝ) (y :
     (hb' : HasDerivAt (F := E →L[ℝ] E →L[ℝ] G) (fun u ↦ b u y) (b' y) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G)
       (fun u ↦ mpullbackBilin I I (timeDependentFlowOf X t u) (b u) y)
-      ((b' + mlieDerivBilin I (X t) (b t)) y) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  have hflow : ContMDiffAt ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I 2
-      (fun p : (ℝ × ℝ) × M ↦ timeDependentFlowOf X p.1.1 p.1.2 p.2) ((t, t), y) :=
-    (contMDiffOn_timeDependentFlowOf (n := 2) one_le_two hX).contMDiffAt
-      ((isOpen_timeDependentFlowDomain hX₁).mem_nhds (mem_timeDependentFlowDomain_self hX₁ t y))
-  exact hasDerivAt_mpullbackBilin_family_of_eq_id (ψ := timeDependentFlowOf X t) (V := X t) y
-    (Eventually.of_forall (timeDependentFlowOf_self X t))
-    (hflow.comp (t, y) (((contMDiff_const (c := t)).prodMk contMDiff_fst).prodMk
-      contMDiff_snd).contMDiffAt)
-    (Eventually.of_forall fun x ↦
-      hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t x)) hb hb'
+      ((b' + mlieDerivBilin I (X t) (b t)) y) t :=
+  (PullbackAction.bilinear I M G).hasDerivAt_timeDependentFlowOf_self hX t y
+    (fun hid hsmooth hvel ↦ hasDerivAt_mpullbackBilin_family_of_eq_id y hid hsmooth hvel hb hb')
 
-/-- **Time-dependent pullback variation along a complete time-dependent flow.** -/
+/-- **Time-dependent pullback variation along a complete time-dependent flow:**
+`d/du|_{u = t} (φ_{s,u}^* b_u)_x = (φ_{s,t}^* (b' + L_{X_t} b_t))_x`, where
+`φ = timeDependentFlowOf X`. -/
 theorem hasDerivAt_mpullbackBilin_family_timeDependentFlowOf (s t : ℝ) (x : M)
     (hb : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun q : ℝ × M ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G)
@@ -487,17 +437,12 @@ theorem hasDerivAt_mpullbackBilin_family_timeDependentFlowOf (s t : ℝ) (x : M)
       (b' (timeDependentFlowOf X s t x)) t) :
     HasDerivAt (F := E →L[ℝ] E →L[ℝ] G)
       (fun u ↦ mpullbackBilin I I (timeDependentFlowOf X s u) (b u) x)
-      (mpullbackBilin I I (timeDependentFlowOf X s t) (b' + mlieDerivBilin I (X t) (b t)) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  have hsmooth (a c : ℝ) : MDifferentiable I I (timeDependentFlowOf X a c) :=
-    ((contMDiff_timeDependentFlowOf hc (n := 2) one_le_two hX).comp
-      ((contMDiff_const (c := (a, c))).prodMk contMDiff_id)).mdifferentiable two_ne_zero
-  exact hasDerivAt_mpullbackBilin_of_eq_comp (χ := timeDependentFlowOf X t)
-    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦
-      (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
-    (hsmooth s t x) (Eventually.of_forall fun u ↦ hsmooth t u _)
+      (mpullbackBilin I I (timeDependentFlowOf X s t) (b' + mlieDerivBilin I (X t) (b t)) x) t :=
+  (PullbackAction.bilinear I M G).hasDerivAt_timeDependentFlowOf hc hX s t x
     (hasDerivAt_mpullbackBilin_family_timeDependentFlowOf_self hX t _ hb hb')
 
+/-- **Stationary pullback variation along a complete time-dependent flow:**
+`d/du|_{u = t} (φ_{s,u}^* b)_x = (φ_{s,t}^* L_{X_t} b)_x`, where `φ = timeDependentFlowOf X`. -/
 theorem hasDerivAt_mpullbackBilin_timeDependentFlowOf
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G} (s t : ℝ) (x : M)
     (hb : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
@@ -510,26 +455,21 @@ theorem hasDerivAt_mpullbackBilin_timeDependentFlowOf
     (hb.comp (t, timeDependentFlowOf X s t x) mdifferentiableAt_snd)
     (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b (timeDependentFlowOf X s t x)))
 
-/-- **Invariance of covariant two-tensors under time-dependent flows.** -/
-theorem mpullbackBilin_timeDependentFlowOf_eq_self_iff
+/-- **Invariance of stationary covariant two-tensors under complete time-dependent flows:**
+`(timeDependentFlowOf X s t)^* b = b` for all `s, t` if and only if `L_{X_t} b = 0` for all `t`. -/
+theorem forall_mpullbackBilin_timeDependentFlowOf_eq_self_iff_forall_mlieDerivBilin_eq_zero
     {b : (x : M) → TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] G}
     (hb : MDifferentiable I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] G))
       (fun z ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] G) z (b z))) :
     (∀ s t, mpullbackBilin I I (timeDependentFlowOf X s t) b = b) ↔
-      ∀ t, mlieDerivBilin I (X t) b = 0 := by
-  have hid (s : ℝ) : mpullbackBilin I I (timeDependentFlowOf X s s) b = b := by
-    rw [show timeDependentFlowOf X s s = id from funext (timeDependentFlowOf_self X s),
-      mpullbackBilin_id]
-  refine ⟨fun h t ↦ ?_, fun h s t ↦ ?_⟩
-  · funext y
-    have hd := hasDerivAt_mpullbackBilin_family_timeDependentFlowOf_self hX (b := fun _ ↦ b)
-      (b' := 0) t y ((hb y).comp (t, y) mdifferentiableAt_snd)
-      (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b y))
-    rw [zero_add, show (fun u ↦ mpullbackBilin I I (timeDependentFlowOf X t u) b y) = fun _ ↦ b y
-      from funext fun u ↦ congrFun (h t u) y] at hd
-    exact hd.unique (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b y))
-  · rw [mpullbackBilin_family_eq_of_forall_eq_zero (b := fun _ ↦ b)
-      (fun u x ↦ hasDerivAt_mpullbackBilin_timeDependentFlowOf hc hX s u x (hb _)) h t s, hid s]
+      ∀ t, mlieDerivBilin I (X t) b = 0 :=
+  (PullbackAction.bilinear I M G).forall_pull_timeDependentFlowOf_eq_self_iff hc hX
+    (L := fun V ↦ mlieDerivBilin I V b) fun t y ↦ by
+      have hd := hasDerivAt_mpullbackBilin_family_timeDependentFlowOf_self hX
+        (b := fun _ ↦ b) (b' := 0) t y ((hb y).comp (t, y) mdifferentiableAt_snd)
+        (hasDerivAt_const (F := E →L[ℝ] E →L[ℝ] G) t (b y))
+      rw [zero_add] at hd
+      exact hd
 
 end TimeDependentFlow
 

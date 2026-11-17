@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.LieDerivBilinear
 public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Pullback
+public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 public import Mathlib.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import TauCeti.Geometry.Manifold.VectorField.Regularity
@@ -17,8 +18,10 @@ import TauCeti.Geometry.Manifold.VectorField.Regularity
 Defines `TauCeti.mlieDerivBilinWithin` and `TauCeti.mlieDerivBilin` for covariant two-tensors
 `b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G` along `V` in the preferred chart
 via `TauCeti.lieDerivBilinWithin`, without flows or finite-dimensionality, allowing boundaries and
-corners. Proves the bracket formula (`mlieDerivBilinWithin_apply_vectorField`,
-`mlieDerivBilin_apply_vectorField`) and `C^m` section regularity (`contMDiffAt_mlieDerivBilin`,
+corners. The definition follows the preferred-chart construction of `VectorField.mlieBracketWithin`
+in `Mathlib.Geometry.Manifold.VectorField.LieBracket`. Proves congruence, linearity, the scalar
+Leibniz rule, the bracket formula (`mlieDerivBilinWithin_apply_vectorField`,
+`mlieDerivBilin_apply_vectorField`), and `C^m` section regularity (`contMDiffAt_mlieDerivBilin`,
 `contMDiff_mlieDerivBilin`, `Manifold.lieDerivBilinearSection`).
 
 ## References
@@ -93,13 +96,84 @@ theorem mlieDerivBilin_def (V : (x : M) → TangentSpace I x)
     mlieDerivBilinWithin 𝓘(𝕜, E) V b s x = lieDerivBilinWithin (E := E) V b s x := by
   simp only [mlieDerivBilinWithin_def, inChartAtBilin_modelSpace, extChartAt_model_space_eq_id,
     PartialEquiv.refl_symm, PartialEquiv.refl_coe, preimage_id, modelWithCornersSelf_coe,
-    range_id, inter_univ, id_eq, VectorField.mpullbackWithin_univ, VectorField.mpullback_id]; rfl
+    range_id, inter_univ, id_eq, VectorField.mpullbackWithin_univ, VectorField.mpullback_id]
+  -- `TangentSpace 𝓘(𝕜, E) x` is definitionally `E`, so the chart pullback coincides with `V`.
+  rfl
 
 @[simp] theorem mlieDerivBilin_modelSpace (V : (x : E) → TangentSpace 𝓘(𝕜, E) x)
     (b : (x : E) → TangentSpace 𝓘(𝕜, E) x →L[𝕜] TangentSpace 𝓘(𝕜, E) x →L[𝕜] G) (x : E) :
     mlieDerivBilin 𝓘(𝕜, E) V b x = lieDerivBilin (E := E) V b x := by
   rw [← mlieDerivBilinWithin_univ, mlieDerivBilinWithin_modelSpace]
   exact congrFun (lieDerivBilinWithin_univ (E := E) V b) x
+
+/-- Variant of `mlieDerivBilinWithin_congr_set` where the sets only coincide on the complement of a
+point. -/
+theorem mlieDerivBilinWithin_congr_set' {V : (x : M) → TangentSpace I x}
+    {b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G} {s t : Set M} {x : M}
+    (y : M) (h : s =ᶠ[𝓝[{y}ᶜ] x] t) :
+    mlieDerivBilinWithin I V b s x = mlieDerivBilinWithin I V b t x := by
+  rw [mlieDerivBilinWithin_def, mlieDerivBilinWithin_def]
+  exact lieDerivBilinWithin_congr_set' (extChartAt I x x)
+    (preimage_extChartAt_eventuallyEqSet_compl_singleton y h)
+
+/-- `mlieDerivBilinWithin` only depends on the germ of the set `s` at `x`. -/
+theorem mlieDerivBilinWithin_congr_set {V : (x : M) → TangentSpace I x}
+    {b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G} {s t : Set M} {x : M}
+    (h : s =ᶠ[𝓝 x] t) :
+    mlieDerivBilinWithin I V b s x = mlieDerivBilinWithin I V b t x :=
+  mlieDerivBilinWithin_congr_set' x <| h.filter_mono inf_le_left
+
+/-- Congruence of `mlieDerivBilinWithin` for vector fields and covariant two-tensors agreeing on
+`𝓝[s] x` and at `x`. -/
+theorem _root_.Filter.EventuallyEq.mlieDerivBilinWithin_eq
+    {V₁ V : (x : M) → TangentSpace I x}
+    {b₁ b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G} {s : Set M} {x : M}
+    (hV : V₁ =ᶠ[𝓝[s] x] V) (hxV : V₁ x = V x)
+    (hb : ∀ᶠ y in 𝓝[s] x, b₁ y = b y) (hxb : b₁ x = b x) :
+    mlieDerivBilinWithin I V₁ b₁ s x = mlieDerivBilinWithin I V b s x := by
+  rw [mlieDerivBilinWithin_def, mlieDerivBilinWithin_def]
+  have hpreV :=
+    (continuousAt_extChartAt_symm (I := I) x).continuousWithinAt.preimage_mem_nhdsWithin''
+      hV (by simp)
+  have hpreb :=
+    (continuousAt_extChartAt_symm (I := I) x).continuousWithinAt.preimage_mem_nhdsWithin''
+      hb (by simp)
+  refine Filter.EventuallyEq.lieDerivBilinWithin_eq (E := E) ?_ ?_ ?_ ?_
+  · refine nhdsWithin_mono _ inter_subset_left ?_
+    filter_upwards [hpreV] with z hz
+    simp only [VectorField.mpullbackWithin_apply]
+    exact congrArg _ hz
+  · simp only [VectorField.mpullbackWithin_apply]
+    have hxV' : V₁ ((extChartAt I x).symm (extChartAt I x x)) =
+        V ((extChartAt I x).symm (extChartAt I x x)) := by
+      rw [extChartAt_to_inv]
+      exact hxV
+    exact congrArg _ hxV'
+  · refine nhdsWithin_mono _ inter_subset_left ?_
+    filter_upwards [hpreb] with z hz
+    ext u w
+    simp only [inChartAtBilin_apply]
+    exact DFunLike.congr_fun (DFunLike.congr_fun hz _) _
+  · rw [inChartAtBilin_extChartAt_self, inChartAtBilin_extChartAt_self, hxb]
+
+/-- Congruence of `mlieDerivBilinWithin` for vector fields and covariant two-tensors agreeing on a
+neighbourhood of `x`. -/
+theorem _root_.Filter.EventuallyEq.mlieDerivBilinWithin_eq_nhds
+    {V₁ V : (x : M) → TangentSpace I x}
+    {b₁ b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G} {s : Set M} {x : M}
+    (hV : V₁ =ᶠ[𝓝 x] V) (hb : ∀ᶠ y in 𝓝 x, b₁ y = b y) :
+    mlieDerivBilinWithin I V₁ b₁ s x = mlieDerivBilinWithin I V b s x :=
+  (hV.filter_mono nhdsWithin_le_nhds).mlieDerivBilinWithin_eq hV.self_of_nhds
+    (hb.filter_mono nhdsWithin_le_nhds) hb.self_of_nhds
+
+/-- Congruence of `mlieDerivBilin` for vector fields and covariant two-tensors agreeing on a
+neighbourhood of `x`. -/
+theorem _root_.Filter.EventuallyEq.mlieDerivBilin_eq
+    {V₁ V : (x : M) → TangentSpace I x}
+    {b₁ b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G} {x : M}
+    (hV : V₁ =ᶠ[𝓝 x] V) (hb : ∀ᶠ y in 𝓝 x, b₁ y = b y) :
+    mlieDerivBilin I V₁ b₁ x = mlieDerivBilin I V b x :=
+  hV.mlieDerivBilinWithin_eq_nhds hb
 
 @[simp] theorem mlieDerivBilinWithin_zero (V : (x : M) → TangentSpace I x) (s : Set M) (x : M) :
     mlieDerivBilinWithin I V
@@ -110,14 +184,45 @@ theorem mlieDerivBilin_def (V : (x : M) → TangentSpace I x)
     mlieDerivBilin I V (0 : (y : M) → TangentSpace I y →L[𝕜] TangentSpace I y →L[𝕜] G) = 0 :=
   funext (mlieDerivBilinWithin_zero V univ)
 
+/-- The Lie derivative along the zero vector field within `s` vanishes. -/
+@[simp] theorem mlieDerivBilinWithin_zero_left
+    (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) (s : Set M) (x : M) :
+    mlieDerivBilinWithin I (0 : (x : M) → TangentSpace I x) b s x = 0 := by
+  rw [mlieDerivBilinWithin_def, VectorField.mpullbackWithin_zero]
+  exact lieDerivBilinWithin_zero_left (E := E) _ _ _
+
 @[simp] theorem mlieDerivBilin_zero_left
     (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) :
-    mlieDerivBilin I (0 : (x : M) → TangentSpace I x) b = 0 := by
-  funext x
-  have hz : (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm
-      (0 : (y : M) → TangentSpace I y) (range I) : E → E) = 0 := by
-    funext z; simp [VectorField.mpullbackWithin_apply]
-  rw [mlieDerivBilin_def]; erw [hz]; exact lieDerivBilinWithin_zero_left (E := E) _ _ _
+    mlieDerivBilin I (0 : (x : M) → TangentSpace I x) b = 0 :=
+  funext (mlieDerivBilinWithin_zero_left b univ)
+
+/-- Negating the vector field negates `mlieDerivBilinWithin`. -/
+theorem mlieDerivBilinWithin_neg_left (V : (x : M) → TangentSpace I x)
+    (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G)
+    {s : Set M} {x : M} (hs : UniqueMDiffWithinAt I s x) :
+    mlieDerivBilinWithin I (-V) b s x = -mlieDerivBilinWithin I V b s x := by
+  rw [mlieDerivBilinWithin_def, VectorField.mpullbackWithin_neg]
+  exact lieDerivBilinWithin_neg_left (E := E) _ _ hs
+
+/-- Negating the vector field negates `mlieDerivBilin`. -/
+@[simp] theorem mlieDerivBilin_neg_left (V : (x : M) → TangentSpace I x)
+    (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) :
+    mlieDerivBilin I (-V) b = -mlieDerivBilin I V b :=
+  funext fun _ ↦ mlieDerivBilinWithin_neg_left V b (uniqueMDiffWithinAt_univ I)
+
+/-- Constant scalar multiplication on the vector field commutes with `mlieDerivBilinWithin`. -/
+theorem mlieDerivBilinWithin_const_smul_left (c : 𝕜) (V : (x : M) → TangentSpace I x)
+    (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G)
+    {s : Set M} {x : M} (hs : UniqueMDiffWithinAt I s x) :
+    mlieDerivBilinWithin I (c • V) b s x = c • mlieDerivBilinWithin I V b s x := by
+  rw [mlieDerivBilinWithin_def, VectorField.mpullbackWithin_const_smul]
+  exact lieDerivBilinWithin_const_smul_left (E := E) c _ _ hs
+
+/-- Constant scalar multiplication on the vector field commutes with `mlieDerivBilin`. -/
+@[simp] theorem mlieDerivBilin_const_smul_left (c : 𝕜) (V : (x : M) → TangentSpace I x)
+    (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) :
+    mlieDerivBilin I (c • V) b = c • mlieDerivBilin I V b :=
+  funext fun _ ↦ mlieDerivBilinWithin_const_smul_left c V b (uniqueMDiffWithinAt_univ I)
 
 @[simp] theorem mlieDerivBilinWithin_neg (V : (x : M) → TangentSpace I x)
     (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G)
@@ -163,6 +268,10 @@ theorem mlieDerivBilin_symm (V : (x : M) → TangentSpace I x)
 variable [IsManifold I 1 M] {V V₁ V₂ X Y : (x : M) → TangentSpace I x}
   {b b₁ b₂ : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G} {s : Set M} {x : M}
 
+private local instance instIsNormableSpaceTangentSpace (y : M) :
+    IsNormableSpace 𝕜 (TangentSpace I y) :=
+  (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) y).isNormableSpace
+
 theorem mlieDerivBilinWithin_add (hs : UniqueMDiffWithinAt I s x)
     (hb₁ : MDifferentiableWithinAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] G))
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (b₁ y)) s x)
@@ -189,15 +298,8 @@ theorem mlieDerivBilin_sub
     (hb₂ : MDifferentiableAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] G))
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (b₂ y)) x) :
     mlieDerivBilin I V (b₁ - b₂) x = mlieDerivBilin I V b₁ x - mlieDerivBilin I V b₂ x := by
-  have hu := uniqueMDiffWithinAt_univ I (x := x)
-  have h : mlieDerivBilinWithin I V (b₁ + -b₂) univ x =
-      mlieDerivBilinWithin I V b₁ univ x + -mlieDerivBilinWithin I V b₂ univ x := by
-    rw [mlieDerivBilinWithin_def, inChartAtBilin_add, inChartAtBilin_neg]
-    exact (lieDerivBilinWithin_add (E := E) hu
-      (differentiableWithinAt_inChartAtBilin hb₁.mdifferentiableWithinAt)
-      (differentiableWithinAt_inChartAtBilin hb₂.mdifferentiableWithinAt).neg).trans
-      (congrArg _ (lieDerivBilinWithin_neg (E := E) _ _ hu))
-  simpa only [mlieDerivBilinWithin_univ, ← sub_eq_add_neg] using h
+  rw [sub_eq_add_neg, mlieDerivBilin_add hb₁ (mdifferentiableAt_neg_section hb₂),
+    mlieDerivBilin_neg, Pi.neg_apply, ← sub_eq_add_neg]
 
 /-- Leibniz rule for multiplying a covariant two-tensor by a scalar function within `s`. -/
 theorem mlieDerivBilinWithin_fun_smul {f : M → 𝕜} (hs : UniqueMDiffWithinAt I s x)
@@ -216,12 +318,18 @@ theorem mlieDerivBilinWithin_fun_smul {f : M → 𝕜} (hs : UniqueMDiffWithinAt
   have hdf : fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) ((extChartAt I x).symm ⁻¹' s ∩ range I)
       (extChartAt I x x) (V x) = mvfderivWithin I f s x (V x) := by
     rw [hf.mvfderivWithin]
+    -- `tangentSpaceCastModel` and `NormedSpace.fromTangentSpace` are definitionally the identity.
     simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-      Function.id_comp]; rfl
+      Function.id_comp]
+    rfl
+  have hVx : (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
+      (extChartAt I x x) : E) = (V x : E) :=
+    VectorField.mpullbackWithin_extChartAt_symm_self V x
   have hfx : (f ∘ (extChartAt I x).symm) (extChartAt I x x) = f x :=
     congrArg f (extChartAt_to_inv x)
-  erw [VectorField.mpullbackWithin_extChartAt_symm_self V x, inChartAtBilin_extChartAt_self x b,
-    hfx, hdf]; rfl
+  rw [hVx, inChartAtBilin_extChartAt_self, hfx, hdf, ← mlieDerivBilinWithin_def]
+  -- Identify `E →L[𝕜] E →L[𝕜] G` with `TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G`.
+  rfl
 
 theorem mlieDerivBilin_fun_smul {f : M → 𝕜} (hf : MDifferentiableAt I 𝓘(𝕜) f x)
     (hb : MDifferentiableAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] G))
@@ -294,19 +402,29 @@ theorem mlieDerivBilinWithin_apply_vectorField
     mlieDerivBilinWithin I V b s x (X x) (Y x) =
       mvfderivWithin I (fun y ↦ b y (X y) (Y y)) s x (V x) -
         b x (mlieBracketWithin I V X s x) (Y x) - b x (X x) (mlieBracketWithin I V Y s x) := by
+  let V' : E → E := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)
   let X' : E → E := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm X (range I)
   let Y' : E → E := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm Y (range I)
   have hb' := differentiableWithinAt_inChartAtBilin hb
-  have hX' := hX.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-  have hY' := hY.differentiableWithinAt_mpullbackWithin_extChartAt_symm
-  have hXx : X' (extChartAt I x x) = X x := VectorField.mpullbackWithin_extChartAt_symm_self X x
-  have hYx : Y' (extChartAt I x x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
-  rw [mlieDerivBilinWithin_def]
-  erw [← hXx, ← hYx, lieDerivBilinWithin_apply_vectorField (E := E)
-    (V := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I)) hs hb' hX' hY']
-  rw [fderivWithin_inChartAtBilin_apply_mpullbackWithin b X Y hb' hX' hY',
-    VectorField.mpullbackWithin_extChartAt_symm_self, inChartAtBilin_extChartAt_self]
-  simp only [X', Y', hXx, hYx, VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm]; rfl
+  have hX' : DifferentiableWithinAt 𝕜 X'
+      ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) :=
+    hX.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+  have hY' : DifferentiableWithinAt 𝕜 Y'
+      ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) :=
+    hY.differentiableWithinAt_mpullbackWithin_extChartAt_symm
+  have hVx : V' (extChartAt I x x) = (V x : E) :=
+    VectorField.mpullbackWithin_extChartAt_symm_self V x
+  have hXx : X' (extChartAt I x x) = (X x : E) :=
+    VectorField.mpullbackWithin_extChartAt_symm_self X x
+  have hYx : Y' (extChartAt I x x) = (Y x : E) :=
+    VectorField.mpullbackWithin_extChartAt_symm_self Y x
+  have hflat := lieDerivBilinWithin_apply_vectorField (E := E) (V := V') (X := X') (Y := Y')
+    hs hb' hX' hY'
+  rw [hVx, hXx, hYx, inChartAtBilin_extChartAt_self,
+    fderivWithin_inChartAtBilin_apply_mpullbackWithin b X Y hb' hX' hY',
+    VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm V X s x,
+    VectorField.lieBracketWithin_mpullbackWithin_extChartAt_symm V Y s x] at hflat
+  exact hflat
 
 /-- **The bracket formula:** `(L_V b)_x (X_x, Y_x) = V_x (b (X, Y)) - b_x ([V, X]_x, Y_x) -
 b_x (X_x, [V, Y]_x)`. -/
@@ -325,46 +443,6 @@ theorem mlieDerivBilin_apply_vectorField
 end LieDeriv
 
 section Regularity
-
-private theorem mdifferentiableAt_trivializationAt_symm [IsManifold I 2 M] (x₀ : M)
-    {y : M} (hy : y ∈ (chartAt H x₀).source) (u : E) :
-    MDifferentiableAt I I.tangent
-      (T% (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u)) y := by
-  let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
-  let _ : IsManifold I (1 + 1) M := by simpa only [one_add_one_eq_two] using ‹IsManifold I 2 M›
-  set t := trivializationAt E (TangentSpace I) x₀
-  have hyb : y ∈ t.baseSet := by simpa [t] using hy
-  refine (t.mdifferentiableAt_section_iff I (fun q ↦ t.symm q u) hyb).2 ?_
-  exact (mdifferentiableAt_const (c := u)).congr_of_eventuallyEq <| by
-    filter_upwards [t.open_baseSet.mem_nhds hyb] with q hq
-    exact congrArg Prod.snd (t.apply_mk_symm hq u)
-
-private theorem trivializationAt_symm_extChartAt_symm [IsManifold I 1 M] (x₀ : M)
-    {z : E} (hz : z ∈ (extChartAt I x₀).target) (u : E) :
-    (trivializationAt E (TangentSpace I) x₀).symm ((extChartAt I x₀).symm z) u =
-      mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z u := by
-  have hy : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
-    simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
-  have hyb : (extChartAt I x₀).symm z ∈
-      (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by simpa using hy
-  rw [← Trivialization.symmL_apply (R := 𝕜) _ hyb,
-    TangentBundle.symmL_trivializationAt hy, (extChartAt I x₀).right_inv hz]; rfl
-
-private theorem mpullbackWithin_trivializationAt_symm_eventuallyEq [IsManifold I 1 M]
-    (x₀ : M) {z : E} (u : E) :
-    VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm
-      (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u) (extChartAt I x₀).target
-      =ᶠ[𝓝[(extChartAt I x₀).target] z] fun ζ ↦ (u : TangentSpace 𝓘(𝕜, E) ζ) := by
-  filter_upwards [self_mem_nhdsWithin] with ζ hζt
-  simp only [VectorField.mpullbackWithin_apply,
-    mfderivWithin_congr_set (extChartAt_target_eventuallyEqSet_of_mem hζt)]
-  have h := VectorField.mpullbackWithin_extChartAt_symm_apply
-    (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u) ((extChartAt I x₀).map_target hζt)
-  rw [(extChartAt I x₀).right_inv hζt] at h
-  have hζb : (extChartAt I x₀).symm ζ ∈
-      (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by
-    simpa [extChartAt_source] using (extChartAt I x₀).map_target hζt
-  exact h.trans (congrArg Prod.snd (Trivialization.apply_mk_symm _ hζb u))
 
 variable {V : (x : M) → TangentSpace I x}
   {b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G}
@@ -385,7 +463,7 @@ private theorem mvfderiv_apply_trivializationAt_symm_eq [IsManifold I 2 M]
   have hpair_eq : (g ∘ (extChartAt I x₀).symm) =ᶠ[𝓝[range I] z]
       fun ζ ↦ inChartAtBilin I x₀ b ζ u w := by
     filter_upwards [extChartAt_target_mem_nhdsWithin_of_mem hz] with ζ hζ
-    simp only [g, Function.comp_apply, trivializationAt_symm_extChartAt_symm x₀ hζ,
+    simp only [g, Function.comp_apply, TangentBundle.trivializationAt_symm_extChartAt_symm x₀ hζ,
       inChartAtBilin_apply]
   rw [← fderivWithin_chart_apply_mpullbackWithin (I := I) (p := g) (U := V) hz,
     hpair_eq.fderivWithin_eq (hpair_eq.self_of_nhdsWithin (extChartAt_target_subset_range x₀ hz))]
@@ -395,56 +473,6 @@ private theorem mvfderiv_apply_trivializationAt_symm_eq [IsManifold I 2 M]
         (I.uniqueDiffOn _ (extChartAt_target_subset_range x₀ hz))) _
 
 variable [CompleteSpace E] [IsManifold I (minSmoothness 𝕜 2) M]
-
-private theorem mlieBracket_trivializationAt_symm_eq
-    (x₀ : M) {z : E} (hz : z ∈ (extChartAt I x₀).target)
-    (hV : MDifferentiableAt I I.tangent (T% V) ((extChartAt I x₀).symm z)) (u : E) :
-    mlieBracket I V (fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u)
-        ((extChartAt I x₀).symm z) =
-      -mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z
-        (fderivWithin 𝕜 (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I))
-          (range I) z u) := by
-  let _ : IsManifold I 1 M :=
-    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
-  let _ : IsManifold I 2 M := IsManifold.of_le (le_minSmoothness (𝕜 := 𝕜))
-  set σ : (q : M) → TangentSpace I q := fun q ↦ (trivializationAt E (TangentSpace I) x₀).symm q u
-  have hy_src : (extChartAt I x₀).symm z ∈ (extChartAt I x₀).source :=
-    (extChartAt I x₀).map_target hz
-  have hσ_diff : MDifferentiableAt I I.tangent (T% σ) ((extChartAt I x₀).symm z) :=
-    mdifferentiableAt_trivializationAt_symm x₀ (by simpa [extChartAt_source] using hy_src) u
-  have ht_eq : (extChartAt I x₀).target =ᶠ[𝓝 z] range I :=
-    extChartAt_target_eventuallyEqSet_of_mem hz
-  have hu_t : UniqueMDiffOn 𝓘(𝕜, E) (extChartAt I x₀).target := by
-    simpa using (uniqueMDiffOn_univ (I := I)).uniqueDiffOn_target_inter x₀ |>.uniqueMDiffOn
-  have hmem : z ∈ closure (interior (extChartAt I x₀).target) := by
-    have h := extChartAt_mem_closure_interior (I := I) (s := univ) (x₀ := x₀)
-      (x := (extChartAt I x₀).symm z) (by simp) hy_src
-    rwa [preimage_univ, univ_inter, (extChartAt I x₀).right_inv hz] at h
-  have hpull := VectorField.mpullbackWithin_mlieBracketWithin' (I := 𝓘(𝕜, E)) (I' := I)
-    (f := (extChartAt I x₀).symm) (V := V) (W := σ) (x₀ := z)
-    (s := (extChartAt I x₀).target) (u := (extChartAt I x₀).target) (t := univ)
-    (n := minSmoothness 𝕜 2) hV.mdifferentiableWithinAt hσ_diff.mdifferentiableWithinAt
-    hu_t hu_t (contMDiffWithinAt_extChartAt_symm_target x₀ hz) hz le_rfl (by simp) hmem Subset.rfl
-  let V₀ : E → E := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I)
-  have heqV : VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V
-      (extChartAt I x₀).target =ᶠ[𝓝[(extChartAt I x₀).target] z]
-      (fun ζ ↦ (V₀ ζ : TangentSpace 𝓘(𝕜, E) ζ)) := by
-    filter_upwards [self_mem_nhdsWithin] with ζ hζt
-    simp only [V₀, VectorField.mpullbackWithin_apply,
-      mfderivWithin_congr_set (extChartAt_target_eventuallyEqSet_of_mem hζt)]; rfl
-  have hpull' : (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm
-      (mlieBracket I V σ) (extChartAt I x₀).target z : E) = -(fderivWithin 𝕜 V₀ (range I) z u) := by
-    rw [← mlieBracketWithin_univ]
-    exact (hpull.trans (Filter.EventuallyEq.mlieBracketWithin_vectorField_eq_of_mem heqV
-      (mpullbackWithin_trivializationAt_symm_eventuallyEq x₀ u) hz |>.trans
-      (congrFun mlieBracketWithin_eq_lieBracketWithin z))).trans (by
-        rw [lieBracketWithin_congr_set ht_eq, lieBracketWithin, fderivWithin_const_apply,
-          zero_apply, zero_sub])
-  rw [VectorField.mpullbackWithin_apply, mfderivWithin_congr_set ht_eq] at hpull'
-  have key := congrArg (mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z) hpull'
-  rw [(isInvertible_mfderivWithin_extChartAt_symm hz).self_apply_inverse] at key
-  exact key.trans ((mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z).map_neg
-    (fderivWithin 𝕜 V₀ (range I) z u : TangentSpace 𝓘(𝕜, E) z))
 
 private theorem trivializationAt_mlieDerivBilin_eq
     (x₀ : M) {z : E} (hz : z ∈ (extChartAt I x₀).target)
@@ -460,29 +488,62 @@ private theorem trivializationAt_mlieDerivBilin_eq
   let _ : IsManifold I 1 M :=
     IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
   let _ : IsManifold I 2 M := IsManifold.of_le (le_minSmoothness (𝕜 := 𝕜))
-  set y := (extChartAt I x₀).symm z
-  have hy_chart : y ∈ (chartAt H x₀).source := by
-    simpa only [y, extChartAt_source] using (extChartAt I x₀).map_target hz
-  have hy_base : y ∈ (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by
-    simpa using hy_chart
-  ext u w; simp only [hom_trivializationAt_apply]
-  rw [inCoordinates_apply_eq₂ hy_base hy_base (by simp)]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_coe, id_eq]
-  rw [mlieDerivBilin_apply_vectorField hb
-      (mdifferentiableAt_trivializationAt_symm x₀ hy_chart u)
-      (mdifferentiableAt_trivializationAt_symm x₀ hy_chart w),
+  have hy_chart : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
+    simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
+  rw [← inChartAtBilin_eq_trivializationAt x₀ (mlieDerivBilin I V b) hz]
+  ext u w
+  rw [inChartAtBilin_apply,
+    ← TangentBundle.trivializationAt_symm_extChartAt_symm x₀ hz u,
+    ← TangentBundle.trivializationAt_symm_extChartAt_symm x₀ hz w,
+    mlieDerivBilin_apply_vectorField hb
+      (TangentBundle.mdifferentiableAt_trivializationAt_symm x₀ hy_chart u)
+      (TangentBundle.mdifferentiableAt_trivializationAt_symm x₀ hy_chart w),
     mvfderiv_apply_trivializationAt_symm_eq x₀ hz hb u w,
-    mlieBracket_trivializationAt_symm_eq x₀ hz hV u,
-    mlieBracket_trivializationAt_symm_eq x₀ hz hV w,
-    trivializationAt_symm_extChartAt_symm x₀ hz u, trivializationAt_symm_extChartAt_symm x₀ hz w,
+    VectorField.mlieBracket_trivializationAt_symm_eq x₀ hz hV u,
+    VectorField.mlieBracket_trivializationAt_symm_eq x₀ hz hV w,
+    TangentBundle.trivializationAt_symm_extChartAt_symm x₀ hz u,
+    TangentBundle.trivializationAt_symm_extChartAt_symm x₀ hz w,
     map_neg, neg_apply, map_neg, sub_neg_eq_add, sub_neg_eq_add]
-  simp only [y, ← inChartAtBilin_apply]
+  simp only [← inChartAtBilin_apply]
   exact (lieDerivBilinWithin_apply (E := E)
     (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I))
     (inChartAtBilin I x₀ b) (range I) z u w).symm
 
 variable {m n k : ℕ∞ω} [IsManifold I k M]
+
+omit [CompleteSpace E] in
+private theorem contDiffWithinAt_lieDerivBilinWithin_inChartAtBilin {x₀ : M}
+    (hk : m + 2 ≤ k) (hmn : m + 1 ≤ n) (hV : ContMDiffAt I I.tangent n (T% V) x₀)
+    (hb : ContMDiffAt I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] G)) n
+      (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (b y)) x₀) :
+    ContDiffWithinAt 𝕜 m
+      (lieDerivBilinWithin (E := E)
+        (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I))
+        (inChartAtBilin I x₀ b) (range I))
+      (range I) (extChartAt I x₀ x₀) := by
+  let _ : IsManifold I 1 M :=
+    IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
+  let _ : IsManifold I (m + 1 + 1) M :=
+    IsManifold.of_le (n := k) (by simpa only [add_assoc, one_add_one_eq_two] using hk)
+  let _ : IsManifold I (m + 1) M := IsManifold.of_le (n := m + 1 + 1) le_self_add
+  let V₀ : E → E := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I)
+  set B₀ := inChartAtBilin I x₀ b
+  have hV₀ : ContDiffWithinAt 𝕜 (m + 1) V₀ (extChartAt I x₀).target (extChartAt I x₀ x₀) := by
+    have h := ((hV.of_le hmn).contMDiffWithinAt (s := univ)
+      ).contDiffWithinAt_mpullbackWithin_extChartAt_symm
+    rw [preimage_univ, univ_inter] at h; exact h.mono (extChartAt_target_subset_range x₀)
+  have hB₀ : ContDiffWithinAt 𝕜 (m + 1) B₀ (extChartAt I x₀).target (extChartAt I x₀ x₀) := by
+    have h := contDiffWithinAt_inChartAtBilin (n := m + 1) (s := univ)
+      (hb.of_le hmn).contMDiffWithinAt
+    rw [preimage_univ, univ_inter] at h; exact h.mono (extChartAt_target_subset_range x₀)
+  have hu_t : UniqueDiffOn 𝕜 (extChartAt I x₀).target := by
+    simpa using (uniqueMDiffOn_univ (I := I)).uniqueDiffOn_target_inter x₀
+  rw [contDiffWithinAt_congr_set
+    (extChartAt_target_eventuallyEqSet_of_mem (mem_extChartAt_target x₀)).symm]
+  refine (contDiffWithinAt_lieDerivBilinWithin hV₀ hB₀ hu_t
+    (mem_extChartAt_target x₀) le_rfl).congr_of_eventuallyEq_of_mem ?_ (mem_extChartAt_target x₀)
+  filter_upwards [self_mem_nhdsWithin] with z hz
+  exact lieDerivBilinWithin_congr_set (extChartAt_target_eventuallyEqSet_of_mem hz).symm
 
 /-- **`C^m` section regularity of the Lie derivative of covariant two-tensors.** -/
 theorem contMDiffAt_mlieDerivBilin {x₀ : M}
@@ -493,35 +554,16 @@ theorem contMDiffAt_mlieDerivBilin {x₀ : M}
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (mlieDerivBilin I V b y)) x₀ := by
   let _ : IsManifold I 1 M :=
     IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
-  let _ : IsManifold I (m + 1 + 1) M :=
-    IsManifold.of_le (n := k) (by simpa only [add_assoc, one_add_one_eq_two] using hk)
-  let _ : IsManifold I (m + 1) M := IsManifold.of_le (n := m + 1 + 1) le_self_add
-  let _ : ∀ y : M, IsNormableSpace 𝕜 (TangentSpace I y) := fun y ↦
-    (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) y).isNormableSpace
-  have hV₁ := hV.of_le hmn; have hb₁ := hb.of_le hmn
-  let V₀ : E → E := VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm V (range I)
-  set B₀ := inChartAtBilin I x₀ b
-  have hV₀ : ContDiffWithinAt 𝕜 (m + 1) V₀ (extChartAt I x₀).target (extChartAt I x₀ x₀) := by
-    have h := (hV₁.contMDiffWithinAt (s := univ)).contDiffWithinAt_mpullbackWithin_extChartAt_symm
-    rw [preimage_univ, univ_inter] at h; exact h.mono (extChartAt_target_subset_range x₀)
-  have hB₀ : ContDiffWithinAt 𝕜 (m + 1) B₀ (extChartAt I x₀).target (extChartAt I x₀ x₀) := by
-    have h := contDiffWithinAt_inChartAtBilin (n := m + 1) (s := univ) hb₁.contMDiffWithinAt
-    rw [preimage_univ, univ_inter] at h; exact h.mono (extChartAt_target_subset_range x₀)
-  have hu_t : UniqueDiffOn 𝕜 (extChartAt I x₀).target := by
-    simpa using (uniqueMDiffOn_univ (I := I)).uniqueDiffOn_target_inter x₀
-  have hflat_r : ContDiffWithinAt 𝕜 m (lieDerivBilinWithin V₀ B₀ (range I))
-      (range I) (extChartAt I x₀ x₀) := by
-    rw [contDiffWithinAt_congr_set
-      (extChartAt_target_eventuallyEqSet_of_mem (mem_extChartAt_target x₀)).symm]
-    refine (contDiffWithinAt_lieDerivBilinWithin hV₀ hB₀ hu_t
-      (mem_extChartAt_target x₀) le_rfl).congr_of_eventuallyEq_of_mem ?_ (mem_extChartAt_target x₀)
-    filter_upwards [self_mem_nhdsWithin] with z hz
-    exact lieDerivBilinWithin_congr_set (extChartAt_target_eventuallyEqSet_of_mem hz).symm
+  -- Step 1: Flat `C^m` regularity of the chart Lie derivative within `range I`.
+  have hflat_r := contDiffWithinAt_lieDerivBilinWithin_inChartAtBilin hk hmn hV hb
+  -- Step 2: Obtain neighbourhood differentiability of `V` and `b` around `x₀`.
   have hle : (1 : ℕ∞ω) ≤ m + 1 := le_add_self
-  have hV_nhds := ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hV₁.of_le hle)).mono
-    fun _ hy ↦ hy.mdifferentiableAt one_ne_zero
-  have hb_nhds := ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1 (hb₁.of_le hle)).mono
-    fun _ hy ↦ hy.mdifferentiableAt one_ne_zero
+  have hV_nhds := ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1
+    ((hV.of_le hmn).of_le hle)).mono fun _ hy ↦ hy.mdifferentiableAt one_ne_zero
+  have hb_nhds := ((contMDiffAt_iff_contMDiffAt_nhds (by simp)).1
+    ((hb.of_le hmn).of_le hle)).mono fun _ hy ↦ hy.mdifferentiableAt one_ne_zero
+  -- Step 3: Identify the hom-bundle trivialization of `mlieDerivBilin I V b` with the flat chart
+  -- Lie derivative near `extChartAt I x₀ x₀` within `range I`.
   rw [contMDiffAt_section_iff, ← contMDiffWithinAt_univ, contMDiffWithinAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt]
   simp only [preimage_univ, univ_inter]
@@ -534,6 +576,8 @@ theorem contMDiffAt_mlieDerivBilin {x₀ : M}
     hsymm.eventually (hx₀ ▸ hV_nhds), hsymm.eventually (hx₀ ▸ hb_nhds)] with z hz hVz hbz
   exact trivializationAt_mlieDerivBilin_eq x₀ hz hVz hbz
 
+/-- Global `C^m` section regularity of `mlieDerivBilin` when `V` and `b` are `C^n` with
+`m + 1 ≤ n` and `m + 2 ≤ k`. -/
 theorem contMDiff_mlieDerivBilin
     (hk : m + 2 ≤ k) (hmn : m + 1 ≤ n) (hV : ContMDiff I I.tangent n (T% V))
     (hb : ContMDiff I (I.prod 𝓘(𝕜, E →L[𝕜] E →L[𝕜] G)) n
@@ -553,26 +597,24 @@ def lieDerivBilinearSection (hk : m + 2 ≤ k) (hmn : m + 1 ≤ n)
       BilinearSection I E (TangentSpace I : M → Type _) G m :=
   let _ : IsManifold I 1 M :=
     IsManifold.of_le ((show (1 : ℕ∞ω) ≤ 2 by norm_num).trans (le_minSmoothness (𝕜 := 𝕜)))
-  let _ : ∀ y : M, IsNormableSpace 𝕜 (TangentSpace I y) := fun y ↦
-    (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) y).isNormableSpace
   { toFun b := ⟨mlieDerivBilin I V b, contMDiff_mlieDerivBilin hk hmn hV b.contMDiff⟩
     map_add' b₁ b₂ := by
       ext x v w
       have hle : (1 : ℕ∞ω) ≤ n := (show (1 : ℕ∞ω) ≤ m + 1 from le_add_self).trans hmn
-      change mlieDerivBilin I V (⇑b₁ + ⇑b₂) x v w =
-        (mlieDerivBilin I V b₁ x + mlieDerivBilin I V b₂ x) v w
+      simp only [ContMDiffSection.coe_add, ContMDiffSection.coeFn_mk, Pi.add_apply, add_apply]
       rw [mlieDerivBilin_add ((b₁.contMDiff x).of_le hle |>.mdifferentiableAt one_ne_zero)
-        ((b₂.contMDiff x).of_le hle |>.mdifferentiableAt one_ne_zero)]
+        ((b₂.contMDiff x).of_le hle |>.mdifferentiableAt one_ne_zero), add_apply, add_apply]
     map_smul' c b := by
       ext x v w
-      change mlieDerivBilin I V (c • ⇑b) x v w = (c • mlieDerivBilin I V b) x v w
-      rw [mlieDerivBilin_smul] }
+      simp only [ContMDiffSection.coe_smul, ContMDiffSection.coeFn_mk, RingHom.id_apply,
+        Pi.smul_apply, mlieDerivBilin_smul] }
 
 @[simp] theorem lieDerivBilinearSection_apply (hk : m + 2 ≤ k) (hmn : m + 1 ≤ n)
     {V : (x : M) → TangentSpace I x} (hV : ContMDiff I I.tangent n (T% V))
     (b : BilinearSection I E (TangentSpace I : M → Type _) G n) (x : M) :
     lieDerivBilinearSection G hk hmn hV b x = mlieDerivBilin I V b x := by rfl
 
+/-- The Lie derivative linear map `lieDerivBilinearSection` preserves symmetric sections. -/
 theorem lieDerivBilinearSection_mem_symmetric (hk : m + 2 ≤ k) (hmn : m + 1 ≤ n)
     {V : (x : M) → TangentSpace I x} (hV : ContMDiff I I.tangent n (T% V))
     {b : BilinearSection I E (TangentSpace I : M → Type _) G n}

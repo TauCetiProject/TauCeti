@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Bilinear
-public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
+public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -14,11 +14,12 @@ import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 
 Defines `TauCeti.mpullbackBilinWithin`, `TauCeti.mpullbackBilin`, and the preferred-chart expression
 `TauCeti.inChartAtBilin` for covariant two-tensors
-`b : (y : M') → TangentSpace I' y →L[𝕜] TangentSpace I' y →L[𝕜] G`, proves agreement of
-`inChartAtBilin` with the hom-bundle trivialization (`inChartAtBilin_eq_trivializationAt`),
-transfers section regularity (`differentiableWithinAt_inChartAtBilin`,
-`contDiffWithinAt_inChartAtBilin`), and relates manifold pullback to `pullbackBilinL`
-(`mpullbackBilin_eq_pullbackBilinL`).
+`b : (y : M') → TangentSpace I' y →L[𝕜] TangentSpace I' y →L[𝕜] G`, generalizes the bundle-chart
+formula `Bundle.trivializationAt_bilinearForm_apply` to arbitrary normed fields and target spaces,
+proves agreement of `inChartAtBilin` with the hom-bundle trivialization
+(`inChartAtBilin_eq_trivializationAt`), transfers section regularity
+(`differentiableWithinAt_inChartAtBilin`, `contDiffWithinAt_inChartAtBilin`), and relates manifold
+pullback to `pullbackBilinL` (`mpullbackBilin_eq_pullbackBilinL`).
 
 ## References
 
@@ -42,6 +43,57 @@ private local instance {𝕜 V G : Type*} [NontriviallyNormedField 𝕜] [Normed
 private local instance {𝕜 V G : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V]
     [NormedSpace 𝕜 V] [NormedAddCommGroup G] [NormedSpace 𝕜 G] :
     NormedSpace 𝕜 (V →L[𝕜] G) := ContinuousLinearMap.toNormedSpace
+
+namespace Bundle
+
+variable {𝕜 E H M G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H]
+  {I : ModelWithCorners 𝕜 E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- A bilinear form on `T_x M`, read in the trivialization of the bundle of bilinear forms at
+`x₀`, is pulled back along the tangent coordinate change from the chart at `x₀` to the chart at
+`x`. -/
+theorem trivializationAt_bilinearForm_apply {x₀ x : M} (hx : x ∈ (chartAt H x₀).source)
+    (B : TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) (v w : E) :
+    (trivializationAt (E →L[𝕜] E →L[𝕜] G)
+        (fun y : M ↦ TangentSpace I y →L[𝕜] TangentSpace I y →L[𝕜] G) x₀ ⟨x, B⟩).2 v w =
+      B (tangentCoordChange I x₀ x x v) (tangentCoordChange I x₀ x x w) := by
+  have hx' : x ∈ (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by
+    simpa using hx
+  simp only [hom_trivializationAt_apply]
+  rw [inCoordinates_apply_eq₂ hx' hx' (by simp)]
+  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
+    LinearMap.id_coe, id_eq]
+  rw [← Trivialization.symmL_apply (R := 𝕜) _ hx', ← Trivialization.symmL_apply (R := 𝕜) _ hx',
+    TangentBundle.symmL_trivializationAt_eq_core hx]
+  -- `tangentCoordChange` is an abbreviation for this coordinate change of the tangent bundle.
+  rfl
+
+/-- Read in the trivialization at `x` itself, a bilinear form on `T_x M` is unchanged. -/
+@[simp]
+theorem trivializationAt_self_bilinearForm_apply (x : M)
+    (B : TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) (v w : E) :
+    (trivializationAt (E →L[𝕜] E →L[𝕜] G)
+        (fun y : M ↦ TangentSpace I y →L[𝕜] TangentSpace I y →L[𝕜] G) x ⟨x, B⟩).2 v w =
+      B v w := by
+  rw [trivializationAt_bilinearForm_apply (mem_chart_source H x),
+    tangentCoordChange_self (mem_extChartAt_source x),
+    tangentCoordChange_self (mem_extChartAt_source x)]
+
+/-- A bilinear form on `T_x M`, read in the trivialization at `x₀`, as a continuous linear
+function of the form. -/
+theorem trivializationAt_bilinearForm_eq_pullbackBilinL {x₀ x : M}
+    (hx : x ∈ (chartAt H x₀).source) (B : TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) :
+    (trivializationAt (E →L[𝕜] E →L[𝕜] G)
+        (fun y : M ↦ TangentSpace I y →L[𝕜] TangentSpace I y →L[𝕜] G) x₀ ⟨x, B⟩).2 =
+      ContinuousLinearMap.pullbackBilinL (V := E) (W := E) (G := G)
+        (tangentCoordChange I x₀ x x) B := by
+  ext v w
+  rw [trivializationAt_bilinearForm_apply hx]
+  exact (ContinuousLinearMap.pullbackBilinL_apply (V := E) (W := E) _ _ v w).symm
+
+end Bundle
 
 namespace TauCeti
 
@@ -228,6 +280,10 @@ theorem inChartAtBilin_fun_smul (x₀ : M) (f : M → 𝕜)
 
 variable [IsManifold I 1 M]
 
+private local instance instIsNormableSpaceTangentSpace (y : M) :
+    IsNormableSpace 𝕜 (TangentSpace I y) :=
+  (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) y).isNormableSpace
+
 /-- On `(extChartAt I x₀).target`, `inChartAtBilin I x₀ b` agrees with the hom-bundle
 trivialization of `TM →L[𝕜] TM →L[𝕜] G`. -/
 theorem inChartAtBilin_eq_trivializationAt (x₀ : M)
@@ -239,15 +295,21 @@ theorem inChartAtBilin_eq_trivializationAt (x₀ : M)
           ⟨(extChartAt I x₀).symm z, b ((extChartAt I x₀).symm z)⟩).2 := by
   have hy : (extChartAt I x₀).symm z ∈ (chartAt H x₀).source := by
     simpa only [extChartAt_source] using (extChartAt I x₀).map_target hz
-  have hy' : (extChartAt I x₀).symm z ∈
-      (trivializationAt E (TangentSpace I : M → Type _) x₀).baseSet := by simpa using hy
-  ext v w; simp only [hom_trivializationAt_apply]
-  rw [inCoordinates_apply_eq₂ hy' hy' (by simp)]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_coe, id_eq]
-  rw [← Trivialization.symmL_apply (R := 𝕜) _ hy', ← Trivialization.symmL_apply (R := 𝕜) _ hy',
-    TangentBundle.symmL_trivializationAt hy, (extChartAt I x₀).right_inv hz, inChartAtBilin_apply]
-  rfl
+  have hchg (v : E) :
+      (tangentCoordChange I x₀ ((extChartAt I x₀).symm z) ((extChartAt I x₀).symm z) v :
+        TangentSpace I ((extChartAt I x₀).symm z)) =
+        mfderivWithin 𝓘(𝕜, E) I (extChartAt I x₀).symm (range I) z v := by
+    have h1 := congrArg (fun L : E →L[𝕜] TangentSpace I ((extChartAt I x₀).symm z) ↦ L v)
+      (TangentBundle.symmL_trivializationAt_eq_core (I := I) hy)
+    have h2 := congrArg (fun L : E →L[𝕜] TangentSpace I ((extChartAt I x₀).symm z) ↦ L v)
+      (TangentBundle.symmL_trivializationAt (I := I) hy)
+    rw [(extChartAt I x₀).right_inv hz] at h2
+    exact h1.symm.trans h2
+  ext v w
+  rw [Bundle.trivializationAt_bilinearForm_apply hy, inChartAtBilin_apply]
+  exact congrArg₂
+    (fun u₁ u₂ : TangentSpace I ((extChartAt I x₀).symm z) ↦ b ((extChartAt I x₀).symm z) u₁ u₂)
+    (hchg v).symm (hchg w).symm
 
 theorem trivializationAt_snd_eventuallyEq_inChartAtBilin (x₀ : M)
     (b : (x : M) → TangentSpace I x →L[𝕜] TangentSpace I x →L[𝕜] G) :
@@ -266,8 +328,6 @@ theorem differentiableWithinAt_inChartAtBilin
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (b y)) s x) :
     DifferentiableWithinAt 𝕜 (inChartAtBilin I x b)
       ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
-  let _ : ∀ y : M, IsNormableSpace 𝕜 (TangentSpace I y) := fun y ↦
-    (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) y).isNormableSpace
   have heq := trivializationAt_snd_eventuallyEq_inChartAtBilin (I := I) x b
   have hflat := ((mdifferentiableWithinAt_section I b).mp hb
     ).differentiableWithinAt_writtenInExtChartAt
@@ -282,8 +342,6 @@ theorem differentiableWithinAt_inChartAtBilin_of_mem [IsManifold I 2 M] (x₀ : 
       (fun q ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) q (b q)) ((extChartAt I x₀).symm z)) :
     DifferentiableWithinAt 𝕜 (inChartAtBilin I x₀ b) (range I) z := by
   let _ : IsManifold I (1 + 1) M := by simpa only [one_add_one_eq_two] using ‹IsManifold I 2 M›
-  let _ : ∀ q : M, IsNormableSpace 𝕜 (TangentSpace I q) := fun q ↦
-    (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) q).isNormableSpace
   set t := trivializationAt (E →L[𝕜] E →L[𝕜] G)
     (fun q : M ↦ TangentSpace I q →L[𝕜] TangentSpace I q →L[𝕜] G) x₀
   have hy_hom : (extChartAt I x₀).symm z ∈ t.baseSet := by
@@ -303,8 +361,6 @@ theorem contDiffWithinAt_inChartAtBilin {n : ℕ∞ω}
       (fun y ↦ TotalSpace.mk' (E →L[𝕜] E →L[𝕜] G) y (b y)) s x) :
     ContDiffWithinAt 𝕜 n (inChartAtBilin I x b)
       ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
-  let _ : ∀ y : M, IsNormableSpace 𝕜 (TangentSpace I y) := fun y ↦
-    (VectorBundle.continuousLinearEquivAt 𝕜 E (TangentSpace I : M → Type _) y).isNormableSpace
   have heq := trivializationAt_snd_eventuallyEq_inChartAtBilin (I := I) x b
   rw [contMDiffWithinAt_section_iff, contMDiffWithinAt_iff_source,
     contMDiffWithinAt_iff_contDiffWithinAt] at hb
@@ -340,23 +396,26 @@ theorem mpullbackBilin_eq_pullbackBilinL [IsManifold I' 1 M']
           (mfderiv I 𝓘(𝕜, E') (e ∘ f) x : E →L[𝕜] E') := by
       rw [← mfderivWithin_univ, (hfe.filter_mono nhdsWithin_le_nhds).mfderivWithin_eq
         (e.left_inv hfc).symm]
-      exact (mfderivWithin_comp_of_preimage_mem_nhdsWithin x
+      refine (mfderivWithin_comp_of_preimage_mem_nhdsWithin x
         (mdifferentiableWithinAt_extChartAt_symm (e.map_source hfc)) hg.mdifferentiableWithinAt
-        hrange (uniqueMDiffWithinAt_univ I)).trans (by rw [mfderivWithin_univ]; rfl)
+        hrange (uniqueMDiffWithinAt_univ I)).trans ?_
+      simp only [mfderivWithin_univ, Function.comp_apply, e]
     have hgf : (mfderiv I 𝓘(𝕜, E') (e ∘ f) x : E →L[𝕜] E') =
         fderivWithin 𝕜 (e ∘ f ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) := by
       rw [hg.mfderiv]
+      -- `tangentSpaceCastModel` is definitionally the identity on `E` and `E'`.
+      ext v
       simp only [writtenInExtChartAt, extChartAt_model_space_eq_id, PartialEquiv.refl_coe,
-        Function.id_comp]; rfl
+        Function.id_comp, Function.comp_assoc, ContinuousLinearMap.comp_apply,
+        ContinuousLinearEquiv.coe_coe, tangentSpaceCastModel]
+      rfl
     exact h1.trans (congrArg _ hgf)
   ext v w
   have h := inChartAtBilin_apply c b (e (f x))
     (fderivWithin 𝕜 (e ∘ f ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) v)
     (fderivWithin 𝕜 (e ∘ f ∘ (extChartAt I x).symm) (range I) (extChartAt I x x) w)
   rw [e.left_inv hfc] at h
-  change (b (f x) : E' →L[𝕜] E' →L[𝕜] G) ((mfderiv I I' f x : E →L[𝕜] E') v)
-    ((mfderiv I I' f x : E →L[𝕜] E') w) = _
-  rw [hd]
+  rw [mpullbackBilin_apply, hd]
   exact h.symm.trans (ContinuousLinearMap.pullbackBilinL_apply (V := E') (W := E) (G := G) _
     (inChartAtBilin I' c b (e (f x))) v w).symm
 

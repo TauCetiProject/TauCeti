@@ -5,25 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Flow
+public import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.LieDeriv
 public import TauCeti.Geometry.Manifold.Riemannian.Pullback.Basic
-public import TauCeti.Geometry.Manifold.Riemannian.Killing.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
+import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Metric.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
 
 /-!
-# Lie derivatives of Riemannian metrics, Killing fields, and the gradient–Hessian identity
+# Lie derivatives of Riemannian metrics and the gradient–Hessian identity
 
 Connects `TauCeti.mpullbackBilin` and `TauCeti.mlieDerivBilin` with Riemannian metrics,
-metric-compatible torsion-free connections, Killing fields, and the scalar Hessian
+metric-compatible torsion-free connections, and the scalar Hessian
 (`pullback_inner_eq_mpullbackBilin`, `IsMetricCompatible.mlieDerivBilin_inner_apply`,
-`mlieDerivBilin_inner_eq_leviCivitaConnection`, `mlieDerivBilin_mgradient_inner_apply`,
-`isKillingField_iff_mlieDerivBilin_eq_zero`, `IsKillingField.mpullbackBilin_flowOf_inner_eq`).
+`mlieDerivBilin_inner_eq_leviCivitaConnection`, `mlieDerivBilin_mgradient_inner_apply`).
 
 ## References
 
-* P. Petersen, *Riemannian Geometry*, 3rd ed. (2016), Proposition 2.1.3 and Chapter 8.
+* P. Petersen, *Riemannian Geometry*, 3rd ed. (2016), Proposition 2.1.3.
 * B. Chow and D. Knopf, *The Ricci Flow: An Introduction*, AMS (2004), Lemma 1.10.
 -/
 
@@ -54,25 +53,7 @@ theorem pullback_inner_eq_mpullbackBilin
 
 end Bundle.ContMDiffRiemannianMetric
 
-variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
-
-private theorem mdifferentiable_riemannianBundle_inner [IsManifold I 1 M]
-    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)] :
-    MDifferentiable I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E →L[ℝ] ℝ)
-        (E := fun z : M ↦ TangentSpace I z →L[ℝ] TangentSpace I z →L[ℝ] ℝ)
-        y (RiemannianBundle.g.inner y)) := by
-  have h : (RiemannianBundle.g.inner : (y : M) → TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ) =
-      (Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-        (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)).inner := by
-    funext y; ext u v
-    exact (Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle_inner y u v).symm
-  rw [h]
-  exact (Bundle.ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
-    (IB := I) (n := 1) (F := E) (V := fun x : M ↦ TangentSpace I x)).contMDiff.mdifferentiable
-    one_ne_zero
-
-variable [FiniteDimensional ℝ E]
+variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [FiniteDimensional ℝ E]
 
 namespace CovariantDerivative
 
@@ -91,7 +72,8 @@ theorem IsMetricCompatible.mlieDerivBilin_inner_apply
   have hY : MDiffAt (T% (FiberBundle.extend E u)) x := FiberBundle.mdifferentiableAt_extend I E u
   have hZ : MDiffAt (T% (FiberBundle.extend E v)) x := FiberBundle.mdifferentiableAt_extend I E v
   have hLie := TauCeti.mlieDerivBilin_apply_vectorField (V := X)
-    (mdifferentiable_riemannianBundle_inner x) hY hZ
+    (Bundle.mdifferentiable_riemannianBundle_inner
+      (IB := I) (F := E) (V := fun y : M ↦ TangentSpace I y) x) hY hZ
   have hcovLie := hcov.mvfderiv_inner_sub_inner_mlieBracket ht hX hY hZ
   rw [FiberBundle.extend_apply_self, FiberBundle.extend_apply_self] at hLie hcovLie
   exact hLie.trans hcovLie
@@ -127,42 +109,5 @@ theorem mlieDerivBilin_mgradient_inner_apply
     ← hessian_def, ← hessian_def, hessian_symm x hf v u, two_mul]
 
 end LeviCivita
-
-section Killing
-
-variable [T2Space M] [IsManifold I ∞ M]
-  [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
-  {X : (x : M) → TangentSpace I x}
-
-/-- **Characterization of Killing fields via `mlieDerivBilin`.** -/
-theorem isKillingField_iff_mlieDerivBilin_eq_zero :
-    IsKillingField I X ↔ CMDiff ∞ (T% X) ∧ mlieDerivBilin I X RiemannianBundle.g.inner = 0 := by
-  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  rw [(CovariantDerivative.isMetricCompatible_leviCivitaConnection I).isKillingField_iff
-    (CovariantDerivative.torsion_leviCivitaConnection_eq_zero I)]
-  refine and_congr_right fun hX ↦ ⟨fun h ↦ ?_, fun h x u v ↦ ?_⟩
-  · funext x; ext u v
-    rw [Pi.zero_apply, zero_apply, zero_apply,
-      mlieDerivBilin_inner_eq_leviCivitaConnection (hX.mdifferentiable (by simp) x), h x u v,
-      neg_add_cancel]
-  · have h0 : mlieDerivBilin I X RiemannianBundle.g.inner x u v = 0 := by rw [h]; rfl
-    rw [mlieDerivBilin_inner_eq_leviCivitaConnection (hX.mdifferentiable (by simp) x)] at h0
-    exact eq_neg_of_add_eq_zero_left h0
-
-theorem IsKillingField.mlieDerivBilin_inner_eq_zero (h : IsKillingField I X) :
-    mlieDerivBilin I X RiemannianBundle.g.inner = 0 :=
-  (isKillingField_iff_mlieDerivBilin_eq_zero.1 h).2
-
-/-- **Local flows of Killing fields act by local isometries** wherever `(t, x) ∈ flowDomain X`. -/
-theorem IsKillingField.mpullbackBilin_flowOf_inner_eq [I.Boundaryless]
-    (h : IsKillingField I X) {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain X) :
-    mpullbackBilin I I (flowOf X t) RiemannianBundle.g.inner x = RiemannianBundle.g.inner x := by
-  let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
-  let _ : IsManifold I 1 M := IsManifold.of_le one_le_two
-  exact mpullbackBilin_flowOf_apply_eq_of_mlieDerivBilin_eq_zero
-    (h.contMDiff.of_le (by simp)) mdifferentiable_riemannianBundle_inner
-    h.mlieDerivBilin_inner_eq_zero hx
-
-end Killing
 
 end TauCeti.Manifold

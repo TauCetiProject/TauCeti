@@ -9,7 +9,6 @@ public import Mathlib.Analysis.Calculus.VectorField
 public import TauCeti.Analysis.Normed.Operator.Bilinear
 import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
-import Mathlib.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.Calculus.Bilinear
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
@@ -22,6 +21,9 @@ maps `b : E → E →L[𝕜] E →L[𝕜] F` along `V : E → E` by
 and proves linearity, the scalar Leibniz rule, symmetry preservation, `C^n` regularity, the bracket
 formula, and pullback differentiation (`HasDerivAt.pullbackBilinL`,
 `hasDerivAt_pullbackBilinL_fderiv`).
+
+The flat API layout (`Within`/global pairs, congruence lemmas, regularity, and the bracket formula)
+follows the model of `VectorField.lieBracketWithin` in `Mathlib.Analysis.Calculus.VectorField`.
 
 ## References
 
@@ -88,16 +90,30 @@ theorem lieDerivBilin_apply (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F
     lieDerivBilin V b x u w =
       fderiv 𝕜 b x (V x) u w + b x (fderiv 𝕜 V x u) w + b x u (fderiv 𝕜 V x w) := (rfl)
 
-theorem lieDerivBilinWithin_congr_set (hs : s =ᶠ[𝓝 x] t) :
+/-- Variant of `lieDerivBilinWithin_congr_set` where the sets only coincide on the complement of a
+point. -/
+theorem lieDerivBilinWithin_congr_set' (y : E) (hs : s =ᶠ[𝓝[{y}ᶜ] x] t) :
     lieDerivBilinWithin V b s x = lieDerivBilinWithin V b t x := by
-  simp only [lieDerivBilinWithin_def, fderivWithin_congr_set hs]
+  simp only [lieDerivBilinWithin_def, fderivWithin_congr_set' _ hs]
+
+theorem lieDerivBilinWithin_congr_set (hs : s =ᶠ[𝓝 x] t) :
+    lieDerivBilinWithin V b s x = lieDerivBilinWithin V b t x :=
+  lieDerivBilinWithin_congr_set' x <| hs.filter_mono inf_le_left
+
+/-- Congruence of `lieDerivBilinWithin` for vector fields and bilinear fields agreeing on `𝓝[s] x`
+and at `x`. -/
+theorem _root_.Filter.EventuallyEq.lieDerivBilinWithin_eq
+    (hV : V₁ =ᶠ[𝓝[s] x] V) (hxV : V₁ x = V x)
+    (hb : b₁ =ᶠ[𝓝[s] x] b) (hxb : b₁ x = b x) :
+    lieDerivBilinWithin V₁ b₁ s x = lieDerivBilinWithin V b s x := by
+  simp only [lieDerivBilinWithin_def, hxV, hxb, hV.fderivWithin_eq (𝕜 := 𝕜) hxV,
+    hb.fderivWithin_eq (𝕜 := 𝕜) hxb]
 
 theorem _root_.Filter.EventuallyEq.lieDerivBilinWithin_eq_nhds
     (hV : V₁ =ᶠ[𝓝 x] V) (hb : b₁ =ᶠ[𝓝 x] b) :
-    lieDerivBilinWithin V₁ b₁ s x = lieDerivBilinWithin V b s x := by
-  simp only [lieDerivBilinWithin_def, hV.self_of_nhds, hb.self_of_nhds,
-    (hV.filter_mono nhdsWithin_le_nhds).fderivWithin_eq (𝕜 := 𝕜) hV.self_of_nhds,
-    (hb.filter_mono nhdsWithin_le_nhds).fderivWithin_eq (𝕜 := 𝕜) hb.self_of_nhds]
+    lieDerivBilinWithin V₁ b₁ s x = lieDerivBilinWithin V b s x :=
+  (hV.filter_mono nhdsWithin_le_nhds).lieDerivBilinWithin_eq hV.self_of_nhds
+    (hb.filter_mono nhdsWithin_le_nhds) hb.self_of_nhds
 
 theorem _root_.Filter.EventuallyEq.lieDerivBilin_eq (hV : V₁ =ᶠ[𝓝 x] V) (hb : b₁ =ᶠ[𝓝 x] b) :
     lieDerivBilin V₁ b₁ x = lieDerivBilin V b x := by
@@ -165,10 +181,13 @@ theorem lieDerivBilinWithin_fun_smul {f : E → 𝕜} (hs : UniqueDiffWithinAt �
     (hf : DifferentiableWithinAt 𝕜 f s x) (hb : DifferentiableWithinAt 𝕜 b s x) :
     lieDerivBilinWithin V (fun y ↦ f y • b y) s x =
       fderivWithin 𝕜 f s x (V x) • b x + f x • lieDerivBilinWithin V b s x := by
-  change lieDerivBilinWithin V (f • b) s x = _
+  have hsmul : (fun y ↦ f y • b y) = f • b := funext fun y ↦ (Pi.smul_apply' y f b).symm
   have hdf := (hf.hasFDerivWithinAt.smul hb.hasFDerivWithinAt).fderivWithin hs
   ext u w
-  simp only [lieDerivBilinWithin_apply, hdf, add_apply, smul_apply, smulRight_apply, smul_add]; abel
+  rw [hsmul]
+  simp only [lieDerivBilinWithin_apply, hdf, Pi.smul_apply', add_apply, smul_apply,
+    smulRight_apply, smul_add]
+  abel
 
 /-- **Leibniz rule** for multiplying a bilinear-form field by a scalar function. -/
 theorem lieDerivBilin_fun_smul {f : E → 𝕜} (hf : DifferentiableAt 𝕜 f x)
@@ -192,27 +211,43 @@ theorem lieDerivBilin_add_left (b : E → E →L[𝕜] E →L[𝕜] F)
   simpa only [lieDerivBilinWithin_univ] using lieDerivBilinWithin_add_left b
     uniqueDiffWithinAt_univ hU.differentiableWithinAt hV.differentiableWithinAt
 
+/-- Negating the vector field negates the Lie derivative within `s`. -/
+theorem lieDerivBilinWithin_neg_left (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F)
+    (hs : UniqueDiffWithinAt 𝕜 s x) :
+    lieDerivBilinWithin (-V) b s x = -lieDerivBilinWithin V b s x := by
+  ext u w; rw [lieDerivBilinWithin_apply, fderivWithin_neg hs]
+  simp only [Pi.neg_apply, neg_apply, map_neg, lieDerivBilinWithin_apply]; abel
+
 theorem lieDerivBilin_neg_left (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F) (x : E) :
     lieDerivBilin (-V) b x = -lieDerivBilin V b x := by
-  ext u w; rw [lieDerivBilin_apply, fderiv_neg]
-  simp only [Pi.neg_apply, neg_apply, map_neg, lieDerivBilin_apply]; abel
+  simpa only [lieDerivBilinWithin_univ] using
+    lieDerivBilinWithin_neg_left V b (x := x) uniqueDiffWithinAt_univ
+
+/-- Constant scalar multiplication on the vector field commutes with `lieDerivBilinWithin`. -/
+theorem lieDerivBilinWithin_const_smul_left (a : 𝕜) (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F)
+    (hs : UniqueDiffWithinAt 𝕜 s x) :
+    lieDerivBilinWithin (a • V) b s x = a • lieDerivBilinWithin V b s x := by
+  ext u w; rw [lieDerivBilinWithin_apply, fderivWithin_const_smul_field (f := V) a hs]
+  simp [lieDerivBilinWithin_apply, smul_add]
 
 theorem lieDerivBilin_const_smul_left (a : 𝕜) (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F) (x : E) :
     lieDerivBilin (a • V) b x = a • lieDerivBilin V b x := by
-  ext u w; rw [lieDerivBilin_apply, fderiv_const_smul_field (f := V) a]
-  simp [lieDerivBilin_apply, smul_add]
+  simpa only [lieDerivBilinWithin_univ] using
+    lieDerivBilinWithin_const_smul_left a V b (x := x) uniqueDiffWithinAt_univ
 
 /-- The Lie derivative within `s` commutes with fibrewise transposition. -/
 theorem lieDerivBilinWithin_flip (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F)
     (hs : UniqueDiffWithinAt 𝕜 s x) :
     lieDerivBilinWithin V (fun y ↦ (b y).flip) s x = (lieDerivBilinWithin V b s x).flip := by
-  have hB : IsBoundedLinearMap 𝕜 (fun c : E →L[𝕜] E →L[𝕜] F ↦ c.flip) :=
-    ⟨⟨fun _ _ ↦ by ext; simp, fun _ _ ↦ by ext; simp⟩, 1, zero_lt_one, fun _ ↦ by simp⟩
-  let L := ContinuousLinearEquiv.equivOfInverse hB.toContinuousLinearMap hB.toContinuousLinearMap
-    (fun _ ↦ by ext; rfl) (fun _ ↦ by ext; rfl)
-  ext u w; change lieDerivBilinWithin V (L ∘ b) s x u w = (lieDerivBilinWithin V b s x).flip u w
-  simp only [lieDerivBilinWithin_apply, L.comp_fderivWithin hs, Function.comp_apply, comp_apply,
-    ContinuousLinearEquiv.coe_coe, (show ∀ c, L c = c.flip from fun _ ↦ rfl), flip_apply]; abel
+  let L := (ContinuousLinearMap.flipₗᵢ 𝕜 E E F).toContinuousLinearEquiv
+  have hcomp : (fun y ↦ (b y).flip) = L ∘ b := funext fun y ↦ by
+    simp only [L, Function.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv, coe_flipₗᵢ]
+  ext u w
+  rw [hcomp, lieDerivBilinWithin_apply, L.comp_fderivWithin hs]
+  simp only [L, Function.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, comp_apply, coe_flipₗᵢ, flip_apply,
+    lieDerivBilinWithin_apply]
+  abel
 
 theorem lieDerivBilin_flip (V : E → E) (b : E → E →L[𝕜] E →L[𝕜] F) (x : E) :
     lieDerivBilin V (fun y ↦ (b y).flip) x = (lieDerivBilin V b x).flip := by
