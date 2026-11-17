@@ -149,6 +149,7 @@ theorem mk_comp_symbolIntRep_of_mem {γ : GL (Fin 2) ℚ} (hγ : γ ∈ Γ₁.ma
 
 /-- The class in `𝕄_w(Γ₁; R)` of `γ · x` is the class of `x`, for `γ` in the image of `Γ₁`:
 `mk_comp_symbolIntRep_of_mem` applied to an element. -/
+@[simp]
 theorem mk_symbolIntRep_of_mem {γ : GL (Fin 2) ℚ} (hγ : γ ∈ Γ₁.map (mapGL ℚ))
     (x : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w) :
     (Coinvariants.mk _ : degreeZero R ⊗[R] homogeneousSubmodule (Fin 2) R w →ₗ[R]
