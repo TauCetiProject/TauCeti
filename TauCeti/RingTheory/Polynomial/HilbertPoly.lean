@@ -7,7 +7,6 @@ module
 
 public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Polynomial.HilbertPoly
-import Mathlib.Algebra.Polynomial.Degree.Operations
 
 /-!
 # Degree bounds, integrality, and shifts for Hilbert polynomials
@@ -16,24 +15,26 @@ This file extends Mathlib's `Polynomial.hilbertPoly` API with three ingredients 
 turning the rational Hilbert–Serre series of a `ℤ`-graded module into its eventual Hilbert
 polynomial:
 
-* **Degree bounds.** Over any field `F` (with no characteristic assumption), `preHilbertPoly F d k`
-  has degree at most `d`, and therefore `hilbertPoly p d` has degree strictly less than `d` in
-  `WithBot ℕ`. In particular, for `d = 0` it has degree `⊥ < 0`.
+* **Degree bounds.** Over any nontrivial ring without zero divisors,
+  `(ascPochhammer R d).comp (X - C c + 1)` has degree at most `d`. Over any field `F` (with no
+  characteristic assumption), `preHilbertPoly F d k` therefore has degree at most `d`, and
+  `hilbertPoly p d` has degree strictly less than `d` in `WithBot ℕ`. In particular, for `d = 0`
+  it has degree `⊥ < 0`.
 * **Integer values and integrality of `(e - 1)! • hilbertPoly`.** Whenever `d! ≠ 0` in `F`,
   evaluating `preHilbertPoly F d k` at an integer `z` yields the generalized multichoose number
   `Ring.multichoose (z - k + 1) d` cast to `F`. Consequently, for every integer polynomial
   `h : ℤ[X]` and every field `F`, `hilbertPoly (h.map (Int.castRingHom F)) d` takes integer values
   at every integer `z : ℤ`, and multiplying `hilbertPoly (h.map (Int.castRingHom ℚ)) e` by
   `(e - 1)!` produces a polynomial with integer coefficients.
-* **Shifted series and polynomial uniqueness.** Given a sequence `f : ℤ → F` whose shifted
-  generating series satisfies `(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F`
-  with `(e - 1)! ≠ 0`, the shifted Hilbert polynomial `(hilbertPoly h e).comp (X - C (d₀ : F))` has
-  degree `< e` and agrees with `f d` for all `d ≥ d₀ + h.natDegree + 1`. Over any ring `R` with
-  unique additive division (`HasUniqueDiv R`), two polynomials agreeing on all sufficiently large
-  integers are equal.
+* **Shifted series.** Given a sequence `f : ℤ → F` whose shifted generating series satisfies
+  `(∑ n, f (d₀ + n) Xⁿ) * (1 - X)^e = h` in `F⟦X⟧` over a field `F` with `(e - 1)! ≠ 0`, the
+  shifted Hilbert polynomial `(hilbertPoly h e).comp (X - C (d₀ : F))` has degree `< e` and agrees
+  with `f d` for all `d ≥ d₀ + h.natDegree + 1`.
 
 ## Main results
 
+* `Polynomial.degree_ascPochhammer_comp_X_sub_C_add_one_le`:
+  `((ascPochhammer R d).comp (X - C c + 1)).degree ≤ d`.
 * `Polynomial.degree_preHilbertPoly_le`: `(preHilbertPoly F d k).degree ≤ d`.
 * `Polynomial.degree_hilbertPoly_lt`: `(hilbertPoly p d).degree < (d : WithBot ℕ)`.
 * `Polynomial.preHilbertPoly_eval_intCast`: evaluating `preHilbertPoly F d k` at an integer gives
@@ -42,8 +43,6 @@ polynomial:
   of `h` takes integer values at every integer.
 * `Polynomial.exists_map_eq_factorial_nsmul_hilbertPoly`: for `h : ℤ[X]`,
   `(e - 1)! • hilbertPoly (h.map (Int.castRingHom ℚ)) e` has integer coefficients and degree `< e`.
-* `Polynomial.eq_of_forall_ge_intCast_eval_eq`: two polynomials over a ring with `HasUniqueDiv`
-  that agree on all integers from some point onward are equal.
 * `Polynomial.eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq`: eventual evaluation of the
   shifted Hilbert polynomial associated to a rational series `h / (1 - X)^e`.
 -/
@@ -56,20 +55,25 @@ namespace Polynomial
 
 section Degree
 
-variable (F : Type*) [Field F]
-
-/-- The basic Hilbert polynomial `preHilbertPoly F d k` has degree at most `d`, over any field
-(without assuming characteristic zero). -/
-theorem degree_preHilbertPoly_le (d k : ℕ) : (preHilbertPoly F d k).degree ≤ d := by
-  rw [preHilbertPoly]
-  refine (degree_smul_le _ _).trans ?_
-  have hlin : (X - C (k : F) + 1 : F[X]).degree = 1 := by
+/-- Composing `ascPochhammer R d` with `X - C c + 1` has degree at most `d` over any nontrivial
+ring without zero divisors. -/
+theorem degree_ascPochhammer_comp_X_sub_C_add_one_le {R : Type*} [Ring R] [NoZeroDivisors R]
+    [Nontrivial R] (d : ℕ) (c : R) :
+    ((ascPochhammer R d).comp (X - C c + 1)).degree ≤ d := by
+  have hlin : (X - C c + 1 : R[X]).degree = 1 := by
     rw [sub_add, ← C_1, ← map_sub]
     exact degree_X_sub_C _
   rw [degree_comp, hlin, mul_one]
   · exact degree_le_natDegree.trans (by rw [ascPochhammer_natDegree])
   · rw [hlin]
     exact zero_lt_one
+
+variable (F : Type*) [Field F]
+
+/-- The basic Hilbert polynomial `preHilbertPoly F d k` has degree at most `d`, over any field
+(without assuming characteristic zero). -/
+theorem degree_preHilbertPoly_le (d k : ℕ) : (preHilbertPoly F d k).degree ≤ d :=
+  (degree_smul_le _ _).trans (degree_ascPochhammer_comp_X_sub_C_add_one_le d (k : F))
 
 variable {F}
 
@@ -146,118 +150,25 @@ theorem exists_map_eq_factorial_nsmul_hilbertPoly (h : ℤ[X]) (e : ℕ) :
     refine ⟨Q, ?_, ?_⟩
     · refine (degree_sum_le h.support _).trans_lt ?_
       refine (Finset.sup_lt_iff (WithBot.bot_lt_coe (d + 1))).2 fun i _ ↦ ?_
-      have hlin : (X - C (i : ℤ) + 1 : ℤ[X]).degree = 1 := by
-        rw [sub_add, ← C_1, ← map_sub]
-        exact degree_X_sub_C _
-      have hcomp : ((ascPochhammer ℤ d).comp (X - C (i : ℤ) + 1)).degree ≤ d := by
-        rw [degree_comp, hlin, mul_one]
-        · exact degree_le_natDegree.trans (by rw [ascPochhammer_natDegree])
-        · rw [hlin]; exact zero_lt_one
       rw [← smul_eq_C_mul]
-      exact ((degree_smul_le _ _).trans hcomp).trans_lt
+      exact ((degree_smul_le _ _).trans
+        (degree_ascPochhammer_comp_X_sub_C_add_one_le d (i : ℤ))).trans_lt
         (WithBot.coe_lt_coe.mpr (Nat.lt_succ_self d))
     · have hsupp : (h.map (Int.castRingHom ℚ)).support = h.support :=
         support_map_of_injective h Int.cast_injective
       rw [Nat.add_sub_cancel, hilbertPoly_succ, hsupp, Finset.smul_sum, Polynomial.map_sum]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Polynomial.map_mul, map_C, eq_intCast, map_comp, ascPochhammer_map,
-        Polynomial.map_add, Polynomial.map_sub, map_X, map_C, Polynomial.map_one, eq_intCast,
-        Int.cast_natCast, coeff_map, eq_intCast, preHilbertPoly, smul_comm,
-        ← Nat.cast_smul_eq_nsmul ℚ, smul_smul, smul_smul, mul_assoc,
-        mul_inv_cancel₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero d)), mul_one,
-        smul_eq_C_mul]
+      have hpoch : ((ascPochhammer ℤ d).comp (X - C (i : ℤ) + 1)).map (Int.castRingHom ℚ) =
+          (ascPochhammer ℚ d).comp (X - C (i : ℚ) + 1) := by
+        simp [map_comp, ascPochhammer_map]
+      have hfac : (d.factorial : ℚ) * (d.factorial : ℚ)⁻¹ = 1 :=
+        mul_inv_cancel₀ (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero d))
+      rw [Polynomial.map_mul, map_C, hpoch, preHilbertPoly, smul_comm, ← Nat.cast_smul_eq_nsmul ℚ,
+        smul_smul, smul_smul, mul_assoc, hfac, mul_one, coeff_map, smul_eq_C_mul]
 
 end IntEval
 
 section Eventual
-
-/-- Evaluating `p.comp q` at an integer cast `(d : R)` equals `p.eval (q.eval (d : R))` over any
-ring `R` (not necessarily commutative), because integer casts are central. -/
-private theorem eval_comp_intCast {R : Type*} [Ring R] (p q : R[X]) (d : ℤ) :
-    (p.comp q).eval (d : R) = p.eval (q.eval (d : R)) := by
-  have hmul (u v : R[X]) : (u * v).eval (d : R) = u.eval (d : R) * v.eval (d : R) :=
-    eval₂_mul_noncomm (RingHom.id R) (d : R) fun _ ↦ (Int.cast_commute d _).symm
-  have hpow (m : ℕ) : (q ^ m).eval (d : R) = (q.eval (d : R)) ^ m := by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [pow_succ, hmul, ih, pow_succ]
-  induction p using Polynomial.induction_on' with
-  | add p₁ p₂ h₁ h₂ => simp [add_comp, h₁, h₂]
-  | monomial k r => rw [monomial_comp, eval_C_mul, hpow, eval_monomial]
-
-/-- Coefficient formula for `p.comp (X + 1)` over any ring `R`. -/
-private theorem coeff_comp_X_add_one {R : Type*} [Ring R] (p : R[X]) (m k : ℕ)
-    (hm : p.natDegree < m) :
-    (p.comp (X + 1)).coeff k = ∑ i ∈ Finset.range m, p.coeff i * (i.choose k : R) := by
-  have hpow (i : ℕ) : ((X + 1 : R[X]) ^ i).coeff k = (i.choose k : R) := by
-    rw [(Commute.one_right (X : R[X])).add_pow, finsetSum_coeff]
-    have hterm (j : ℕ) :
-        ((X : R[X]) ^ j * 1 ^ (i - j) * (i.choose j : R[X])).coeff k =
-          if k = j then (i.choose j : R) else 0 := by
-      rw [one_pow, mul_one, ← C_eq_natCast, coeff_mul_C, coeff_X_pow]
-      split_ifs <;> simp
-    simp_rw [hterm]
-    by_cases hki : k ≤ i
-    · rw [Finset.sum_ite_eq _ k (fun j ↦ (i.choose j : R)),
-        ite_eq_left (Finset.mem_range.mpr (Nat.lt_succ_of_le hki))]
-    · rw [Nat.choose_eq_zero_of_lt (Nat.lt_of_not_ge hki), Nat.cast_zero]
-      refine Finset.sum_eq_zero fun j hj ↦ ?_
-      have hne : k ≠ j := by have := Finset.mem_range.mp hj; omega
-      simp [hne]
-  conv_lhs => rw [as_sum_range' p m hm]
-  rw [sum_comp, finsetSum_coeff]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [monomial_comp, coeff_C_mul, hpow]
-
-/-- Two polynomials over a ring with unique additive division (`HasUniqueDiv`) that agree on every
-integer greater than or equal to some bound `N` are equal. -/
-theorem eq_of_forall_ge_intCast_eval_eq {R : Type*} [Ring R] [HasUniqueDiv R]
-    {P Q : R[X]} {N : ℤ} (h : ∀ d : ℤ, N ≤ d → P.eval (d : R) = Q.eval (d : R)) : P = Q := by
-  suffices hzero : ∀ (n : ℕ) (D : R[X]), D.natDegree ≤ n →
-      (∀ d : ℤ, N ≤ d → D.eval (d : R) = 0) → D = 0 from
-    sub_eq_zero.mp (hzero (P - Q).natDegree (P - Q) le_rfl fun d hd ↦ by
-      rw [eval_sub, h d hd, sub_self])
-  intro n
-  induction n with
-  | zero =>
-    intro D hdeg hD
-    rw [eq_C_of_natDegree_eq_zero (Nat.eq_zero_of_le_zero hdeg)] at hD ⊢
-    simpa using hD N le_rfl
-  | succ n ih =>
-    intro D hdeg hD
-    let Δ : R[X] := D.comp (X + 1) - D
-    have hΔ_eval (d : ℤ) (hd : N ≤ d) : Δ.eval (d : R) = 0 := by
-      rw [eval_sub, eval_comp_intCast, eval_add, eval_X, eval_one, ← Int.cast_one,
-        ← Int.cast_add, hD (d + 1) (by omega), hD d hd, sub_self]
-    have hΔ_deg : Δ.natDegree ≤ n := natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ by
-      rw [coeff_sub, coeff_comp_X_add_one D (n + 2) k (by omega)]
-      by_cases hkn : k = n + 1
-      · subst hkn
-        rw [Finset.sum_eq_single (n + 1)
-          (fun i hi hne ↦ by
-            rw [Nat.choose_eq_zero_of_lt (by have := Finset.mem_range.mp hi; omega),
-              Nat.cast_zero, mul_zero])
-          (fun hnot ↦ absurd (Finset.mem_range.mpr (Nat.lt_succ_self _)) hnot)]
-        simp
-      · rw [coeff_eq_zero_of_natDegree_lt (by omega), sub_zero]
-        exact Finset.sum_eq_zero fun i hi ↦ by
-          rw [Nat.choose_eq_zero_of_lt (by have := Finset.mem_range.mp hi; omega),
-            Nat.cast_zero, mul_zero]
-    have hΔ_zero : Δ = 0 := ih Δ hΔ_deg hΔ_eval
-    have hlead : D.coeff (n + 1) = 0 := by
-      have h0 : Δ.coeff n = (n + 1) • D.coeff (n + 1) := by
-        rw [coeff_sub, coeff_comp_X_add_one D (n + 2) n (by omega),
-          Finset.sum_range_succ, Finset.sum_range_succ,
-          Finset.sum_eq_zero fun i hi ↦ by
-            rw [Nat.choose_eq_zero_of_lt (Finset.mem_range.mp hi), Nat.cast_zero, mul_zero],
-          zero_add, Nat.choose_self, Nat.cast_one, mul_one, Nat.choose_succ_self_right,
-          add_sub_cancel_left, ← nsmul_eq_mul']
-      exact HasUniqueDiv.nsmul_right_injective (Nat.succ_ne_zero n)
-        (by dsimp only; rw [nsmul_zero, ← h0, hΔ_zero, coeff_zero])
-    exact ih D (natDegree_le_iff_coeff_eq_zero.mpr fun k hk ↦ by
-      rcases eq_or_lt_of_le (Nat.succ_le_of_lt hk) with rfl | hgt
-      · exact hlead
-      · exact coeff_eq_zero_of_natDegree_lt (by omega)) hD
 
 /-- Translating `hilbertPoly p d` by `X - C c` preserves the strict degree bound `< d`. -/
 theorem degree_hilbertPoly_comp_X_sub_C_lt {F : Type*} [Field F] (p : F[X]) (d : ℕ) (c : F) :
@@ -307,10 +218,8 @@ theorem eval_hilbertPoly_comp_sub_eq_of_mul_one_sub_pow_eq {F : Type*} [Field F]
     · have hik : i ≤ n := (le_natDegree_of_ne_zero (mem_support_iff.mp hi)).trans hn.le
       rw [← Int.cast_natCast n, preHilbertPoly_eval_intCast F hfac i (n : ℤ)]
       congr 1
-      have hsub : ((n : ℤ) - (i : ℤ) + 1) = ((n - i + 1 : ℕ) : ℤ) := by omega
-      rw [hsub]
-      change ((Nat.choose (n - i + 1 + k - 1) k : ℤ) : F) = _
-      rw [show n - i + 1 + k - 1 = k + (n - i) by omega, Int.cast_natCast]
+      have hsub : ((n : ℤ) - (i : ℤ) + 1) + (k : ℤ) - 1 = ((k + (n - i) : ℕ) : ℤ) := by omega
+      rw [Ring.multichoose_eq, hsub, Ring.choose_natCast, Int.cast_natCast]
 
 end Eventual
 

@@ -45,9 +45,10 @@ they agree on the homogeneous single-coordinate functions `Pi.single x α`,
 `LinearMap.pi_ext_of_decomposition`.
 
 `DirectSum.IsInternal.iSup_fiber` collects an internal decomposition along the fibers of any map,
-`DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types, and
+`DirectSum.IsInternal.comp_equiv` reindexes one along an equivalence of the index types,
 `DirectSum.IsInternal.nat_cons_bot` prepends the zero submodule to a natural-number-indexed
-internal decomposition.
+internal decomposition, and `DirectSum.IsInternal.of_algebraMap_surjective` lifts an internal
+decomposition along a surjective algebra map via `Submodule.orderIsoOfAlgebraMapSurjective`.
 
 `DirectSum.IsInternal.iSup_inf_eq_of_component_mem` restricts an internal decomposition to any
 submodule that contains the canonical components of each of its elements, and
@@ -548,6 +549,23 @@ theorem iSup_inf_eq_of_component_mem
   rw [hsum]
   exact Submodule.sum_mem _ fun i _ ↦
     Submodule.mem_iSup_of_mem i ⟨hp m hm i, (e.symm m i).2⟩
+
+/-- Lifting an internal direct sum of `R`-submodules along a surjective algebra map `R → S`
+(via `Submodule.orderIsoOfAlgebraMapSurjective`) yields an internal direct sum of
+`S`-submodules. -/
+theorem of_algebraMap_surjective {R S M ι : Type*} [CommRing R] [Ring S] [Algebra R S]
+    [AddCommGroup M] [Module R M] [Module S M] [IsScalarTower R S M] [DecidableEq ι]
+    (hsurj : Function.Surjective (algebraMap R S)) {ℳ : ι → Submodule R M}
+    (hℳ : IsInternal ℳ) :
+    IsInternal fun i ↦ (Submodule.orderIsoOfAlgebraMapSurjective hsurj).symm (ℳ i) := by
+  let e := (Submodule.orderIsoOfAlgebraMapSurjective (R := R) (S := S) (M := M) hsurj).symm
+  refine DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top ?_ ?_
+  · rw [iSupIndep_def]
+    intro i
+    have hind := iSupIndep_def.mp hℳ.submodule_iSupIndep i
+    rw [← map_iSup₂ e, disjoint_iff, ← map_inf e, ← map_bot e, e.injective.eq_iff, ← disjoint_iff]
+    exact hind
+  · rw [← map_iSup e, hℳ.submodule_iSup_eq_top, map_top]
 
 end DirectSum.IsInternal
 
