@@ -359,30 +359,6 @@ private theorem mpullback_frameCover_symplecticForm (ha : ContMDiff I 𝓘(ℝ, 
   refine congrArg Neg.neg (add_eq_left.2 ?_)
   exact (SmoothForm.isClosed_iff_mextDerivₗ_eq_zero _).1 (SmoothForm.isClosed_mextDerivₗ _)
 
-omit [Fact (0 < p)] in
-/-- **The period forms are closed**: a one-form whose values are `p` times the differential of a
-smooth function `a_i` is closed. -/
-theorem isClosed_of_degreeOneEquiv_eq_mul_mfderiv (ha : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ a)
-    (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i)
-    (i : ι) : (α i).IsClosed := by
-  let aᵢ : C^∞⟮I, B; 𝓘(ℝ, ℝ), ℝ⟯ :=
-    ⟨ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i ∘ a,
-      (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).contMDiff.comp ha⟩
-  -- `α i = p • d aᵢ`, compared as sections of the cotangent bundle.
-  have h : α i = p • mextDerivₗ I 0 (SmoothForm.ofFunction aᵢ) := by
-    refine SmoothForm.degreeOneEquiv.injective (ContMDiffSection.ext fun x ↦ ?_)
-    ext v
-    have hd := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasMFDerivAt.comp x
-      ((ha x).mdifferentiableAt (by simp)).hasMFDerivAt).mfderiv
-    rw [hαa, map_smul, ContMDiffSection.coe_smul, Pi.smul_apply, smul_apply,
-      SmoothForm.degreeOneEquiv_mextDerivₗ, SmoothForm.ofFunction_apply_zero,
-      mvfderiv_apply_eq_mfderiv_apply, ContMDiffMap.coeFn_mk, hd]
-    -- The value `(proj i ∘ da_x) v` is the coordinate `da_x v i`, and the scalar multiplication
-    -- on `TangentSpace 𝓘(ℝ, ℝ) _ = ℝ` is multiplication, so the two sides agree by definition.
-    rfl
-  rw [h]
-  exact (SmoothForm.isClosed_mextDerivₗ _).smul p
-
 /-- Every class in `T*B/Λ` is the class of `∑ j, c_j α_j x` for some `(c, x)`. -/
 private theorem surjective_mk_comp_frameCover : Surjective (mk hα ∘ frameCover α) := fun z ↦ by
   obtain ⟨z, rfl⟩ := mk_surjective hα z
@@ -542,20 +518,22 @@ theorem mpullback_actionAngleChart_symplecticForm (ha : ContMDiff I 𝓘(ℝ, ι
     (hαa : ∀ i x v, SmoothForm.degreeOneEquiv (α i) x v = p * mfderiv I 𝓘(ℝ, ι → ℝ) a x v i) :
     SmoothForm.mpullback (actionAngleChart hα p a) (contMDiff_actionAngleChart hα ha hαa)
         (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ)) (ι → AddCircle p)) =
-      symplecticForm hα (isClosed_of_degreeOneEquiv_eq_mul_mfderiv ha hαa) := by
+      symplecticForm hα
+        (fun i ↦ SmoothForm.isClosed_of_degreeOneEquiv_eq_mul_mfderiv_apply ha (hαa i)) := by
   have hΨ := isLocalDiffeomorph_mk_comp_frameCover hα ha hαa
+  have hclosed i := SmoothForm.isClosed_of_degreeOneEquiv_eq_mul_mfderiv_apply ha (hαa i)
   -- Both forms pull back along the cover `(c, x) ↦ [∑ j, c_j α_j x]` to `Ψ^* ω = G^* ω`.
   have key : SmoothForm.mpullback (mk hα ∘ frameCover α) hΨ.contMDiff
       (SmoothForm.mpullback (actionAngleChart hα p a) (contMDiff_actionAngleChart hα ha hαa)
         (CotangentBundle.symplecticForm (ModelWithCorners.pi fun _ : ι ↦ 𝓘(ℝ))
           (ι → AddCircle p))) =
       SmoothForm.mpullback (mk hα ∘ frameCover α) hΨ.contMDiff
-        (symplecticForm hα (isClosed_of_degreeOneEquiv_eq_mul_mfderiv ha hαa)) := by
+        (symplecticForm hα hclosed) := by
     rw [SmoothForm.mpullback_mpullback_of_comp_eq hΨ.contMDiff
       (contMDiff_actionAngleChart hα ha hαa) contMDiff_id (contMDiff_actionAngleCover_comp p ha)
       (actionAngleChart_comp_mk_comp_frameCover hα), SmoothForm.mpullback_id,
       LinearMap.id_apply, ← mpullback_frameCover_symplecticForm ha hαa,
-      ← mpullback_mk_symplecticForm hα (isClosed_of_degreeOneEquiv_eq_mul_mfderiv ha hαa),
+      ← mpullback_mk_symplecticForm hα hclosed,
       SmoothForm.mpullback_mpullback]
   refine Subtype.ext (hΨ.mpullback_injective (by simp) (surjective_mk_comp_frameCover hα) ?_)
   rw [← SmoothForm.coe_mpullback _ hΨ.contMDiff, ← SmoothForm.coe_mpullback _ hΨ.contMDiff, key]
