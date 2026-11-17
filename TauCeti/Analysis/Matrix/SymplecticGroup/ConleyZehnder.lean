@@ -157,7 +157,7 @@ theorem diagonalStraightening_mem_unitaryGroup :
 
 /-- The diagonal straightening of the graph frame of the identity, whose columns span the
 diagonal, is the real matrix `√2 • 1`. -/
-private theorem diagonalStraightening_mul_graphFrame_one :
+theorem diagonalStraightening_mul_graphFrame_one :
     diagonalStraightening n * graphFrame 1 =
       ((√2 : ℝ) • (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ)).map ((↑) : ℝ → ℂ) := by
   have h : graphFrame (1 : Matrix (n ⊕ n) (n ⊕ n) ℝ) =
@@ -219,6 +219,16 @@ theorem realImage_graphUnitaryFrame (A : GLSymplectic n ℝ) :
 theorem continuous_graphUnitaryFrame : Continuous (graphUnitaryFrame (n := n)) :=
   Continuous.subtype_mk (continuous_const.mul (Units.continuous_val.comp
     (continuous_realOrthonormalize continuous_graphFrameUnit))) _
+
+/-- The unitary graph frame of `A` is the straightened graph frame `T Γ(A)` times a positive
+definite real matrix, the real orthonormalization. -/
+theorem exists_posDef_coe_graphUnitaryFrame (A : GLSymplectic n ℝ) :
+    ∃ P : Matrix (n ⊕ n) (n ⊕ n) ℝ, P.PosDef ∧
+      (graphUnitaryFrame A : Matrix (n ⊕ n) (n ⊕ n) ℂ) =
+        diagonalStraightening n * graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ) *
+          P.map ((↑) : ℝ → ℂ) := by
+  obtain ⟨P, hP, h⟩ := exists_posDef_coe_realOrthonormalize (graphFrameUnit A)
+  exact ⟨P, hP, by rw [graphUnitaryFrame, Subtype.coe_mk, h, coe_graphFrameUnit, Matrix.mul_assoc]⟩
 
 /-- At the identity, the unitary graph frame frames the real points: the Souriau map of the
 straightened diagonal is the identity. -/
