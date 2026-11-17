@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Gauge.Fixed
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-public import TauCeti.Analysis.Complex.ZeroMultiplicity
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -37,9 +36,8 @@ normal tube.
 Pullback commutes with the charge-one action of circle-valued gauges, the gauge being pulled
 back as well (`dilateField_gaugeTransform`), and the coupled equation is gauge covariant at every
 coupling (`coupledEquation_gaugeTransform`). The section of the pulled-back field is the section
-composed with the dilation, so a nonzero dilation by `t` divides the zero divisor by `t`
-(`isZeroMultiplicity_sectionValue_dilateField`), and a positive dilation preserves the end framing
-`α(z) (z / |z|)⁻ᵐ → c` of degree `m` (`tendsto_sectionValue_dilateField`).
+composed with the dilation (`sectionValue_dilateField`), so a positive dilation preserves the end
+framing `α(z) (z / |z|)⁻ᵐ → c` of degree `m` (`tendsto_sectionValue_dilateField`).
 
 ## References
 
@@ -383,36 +381,7 @@ theorem coupledEquation_gaugeTransform_eq_zero_iff (c : ℝ) {u : ℂ → Circle
     (hu : ContDiffAt ℝ 2 (fun w ↦ (u w : ℂ)) z)
     (hx : ∀ i, DifferentiableAt ℝ (fun w ↦ x w i) z) :
     coupledEquation c (gaugeTransform u x) z = 0 ↔ coupledEquation c x z = 0 := by
-  rw [coupledEquation_gaugeTransform c hu hx]
-  refine ⟨fun h ↦ ?_, fun h ↦ by ext i; fin_cases i <;> simp [h]⟩
-  have h₀ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 0) h
-  have h₁ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 1) h
-  have h₂ := congrArg (fun v : EuclideanSpace ℝ (Fin 3) ↦ v 2) h
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_two,
-    Matrix.head_cons, Matrix.tail_cons, PiLp.zero_apply] at h₀ h₁ h₂
-  have hn := Circle.re_sq_add_im_sq (u z)
-  ext i
-  have hi : i = 0 ∨ i = 1 ∨ i = 2 := by omega
-  rcases hi with rfl | rfl | rfl
-  all_goals simp only [PiLp.zero_apply]
-  · exact h₀
-  · linear_combination (u z : ℂ).re * h₁ + (u z : ℂ).im * h₂ - coupledEquation c x z 1 * hn
-  · linear_combination -(u z : ℂ).im * h₁ + (u z : ℂ).re * h₂ - coupledEquation c x z 2 * hn
-
-/-- **Dilation law for the divisor.** Pulling a field back by `z ↦ t • z`, `t ≠ 0`, divides
-its zero divisor `D` by `t`. -/
-theorem isZeroMultiplicity_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {D : Multiset ℂ} (h : IsZeroMultiplicity (sectionValue x) fun z ↦ D.count z) {t : ℝ}
-    (ht : t ≠ 0) :
-    IsZeroMultiplicity (sectionValue (dilateField t x))
-      fun z ↦ (D.map ((t : ℂ)⁻¹ * ·)).count z := by
-  have ht' : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht
-  convert h.comp_mul_add ht' 0 using 1
-  · funext w
-    rw [sectionValue_dilateField, add_zero, Complex.real_smul]
-  · funext z
-    rw [add_zero, ← Multiset.count_map_eq_count' ((t : ℂ)⁻¹ * ·) D
-      (mul_right_injective₀ (inv_ne_zero ht')) (t * z), inv_mul_cancel_left₀ ht']
+  rw [coupledEquation_gaugeTransform c hu hx, circle_rotate_tail_eq_zero_iff]
 
 /-- A positive dilation preserves the limit `c` of the end framing `α(z) (z / |z|)^(-m)` of
 degree `m`. -/
@@ -424,13 +393,10 @@ theorem tendsto_sectionValue_dilateField {x : ℂ → EuclideanSpace ℝ (Fin 4)
   have hdil : Tendsto (fun z : ℂ ↦ t • z) (cocompact ℂ) (cocompact ℂ) :=
     (Homeomorph.smulOfNeZero t ht.ne').map_cocompact.le
   refine (hx.comp hdil).congr fun z ↦ ?_
-  rcases eq_or_ne z 0 with rfl | hz
-  · simp
-  have ht' : (t : ℂ) ≠ 0 := Complex.ofReal_ne_zero.2 ht.ne'
-  have hz' : (‖z‖ : ℂ) ≠ 0 := by simpa using hz
+  -- The winding phase is homogeneous of degree `0`.
+  have hphase : (t : ℂ) * z / ((t : ℂ) * (‖z‖ : ℂ)) = z / (‖z‖ : ℂ) :=
+    mul_div_mul_left z _ (Complex.ofReal_ne_zero.2 ht.ne')
   simp only [Function.comp_apply, sectionValue_dilateField, Complex.real_smul, norm_mul,
-    Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht, Complex.ofReal_mul]
-  congr 3
-  field_simp
+    Complex.norm_real, Real.norm_eq_abs, abs_of_pos ht, Complex.ofReal_mul, hphase]
 
 end TauCeti.Vortex

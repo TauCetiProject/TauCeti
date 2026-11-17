@@ -166,10 +166,8 @@ theorem exists_framedGaugeGroup_smul_amplitudeField_eq {x : ℂ → EuclideanSpa
       (by rwa [hPf, hPdeg])
     rwa [hPdeg] at this
   -- Taubes's uniqueness theorem supplies the framed gauge.
-  have hphase : Tendsto (fun z : ℂ ↦ ‖((z / (‖z‖ : ℂ)) ^ m)⁻¹‖) (cocompact ℂ) (𝓝 1) :=
-    tendsto_const_nhds.congr' ((eventually_norm_inv_phase_eq_one m).mono fun _ h ↦ h.symm)
   obtain ⟨g, hg, -⟩ := existsUnique_framedGaugeGroup_smul_eq hx (contDiff_amplitudeField hu hfs)
-    hsol hysol hphase hframe hyfr (isZeroMultiplicity_iff.1 hD)
+    hsol hysol (tendsto_norm_inv_phase m) hframe hyfr (isZeroMultiplicity_iff.1 hD)
     (isZeroMultiplicity_iff.1 (isZeroMultiplicity_sectionValue_amplitudeField_prod_sub
       hu.continuous D))
   exact ⟨u, hu, hΔ, hbc, g, hg⟩
