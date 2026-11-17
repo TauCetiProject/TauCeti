@@ -35,35 +35,33 @@ namespace TauCeti.Probability
 
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {T : ℕ → Ω → ℝ≥0}
 
-/-- If the renewal-function increment over a window of length `x` tends to zero,
-the probability of an excess at most `x` tends to zero. No finite-mean assumption
-is needed, and genuine zero-time arrivals are allowed. -/
+/-- For i.i.d. nonnegative increments with `(P.map (T 0)) {0} < 1`, if the renewal-function
+increment over a window of length `x` tends to zero, then the probability of an excess at most `x`
+tends to zero. No finite-mean or strict increment-measurability assumption is needed, and genuine
+zero-time arrivals are allowed. -/
 theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) (x : ℝ≥0)
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+    (hzero : (P.map (T 0)) {0} < 1) (x : ℝ≥0)
     (hlim : Tendsto (fun t ↦ ((P.map (T 0)).renewalFunction (t + x)).toReal -
       ((P.map (T 0)).renewalFunction t).toReal) atTop (𝓝 0)) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) :=
   squeeze_zero (fun _ ↦ measureReal_nonneg)
-    (fun t ↦ measureReal_renewalExcess_le_le_renewalFunction_sub hT hindep hid hzero t x) hlim
+    (fun t ↦ measureReal_renewalExcess_le_le_renewalFunction_sub hindep hid hzero t x) hlim
 
-/-- Vanishing successive renewal increments on one positive grid imply excess escape
-at all real observation times, for every bounded excess threshold. The increment
-hypothesis is exactly the zero-rate lattice Blackwell limit. -/
+/-- For i.i.d. nonnegative increments with `(P.map (T 0)) {0} < 1`, vanishing successive renewal
+increments on one positive grid imply excess escape at all real observation times, for every
+bounded excess threshold. The increment hypothesis is exactly the zero-rate lattice Blackwell
+limit. -/
 theorem tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub_lattice
-    (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
-    (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
-    (hzero : P {ω | T 0 ω = 0} < 1) {a : ℝ≥0} (ha : 0 < a)
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P)
+    (hzero : (P.map (T 0)) {0} < 1) {a : ℝ≥0} (ha : 0 < a)
     (hlim : Tendsto (fun n : ℕ ↦ ((P.map (T 0)).renewalFunction (a * (n + 1))).toReal -
       ((P.map (T 0)).renewalFunction (a * n)).toReal) atTop (𝓝 0)) (x : ℝ≥0) :
     Tendsto (fun t ↦ P.real {ω | renewalExcess T t ω ≤ x}) atTop (𝓝 0) := by
   have := hindep.isProbabilityMeasure
-  have hF : (P.map (T 0)) {0} < 1 := by
-    rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
   exact tendsto_measureReal_renewalExcess_le_of_tendsto_renewalFunction_sub
-    hT hindep hid hzero x
-    (((P.map (T 0)).monotone_toReal_renewalFunction hF).tendsto_sub_add_of_tendsto_sub_lattice
+    hindep hid hzero x
+    (((P.map (T 0)).monotone_toReal_renewalFunction hzero).tendsto_sub_add_of_tendsto_sub_lattice
       ha hlim x)
 
 end TauCeti.Probability
