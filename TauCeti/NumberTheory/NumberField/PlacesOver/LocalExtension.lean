@@ -16,13 +16,16 @@ public import TauCeti.NumberTheory.NumberField.PlacesOver.Relative
 Above a finite place `v` of a number field `K` (in an extension `F / K` of number fields), the
 finite places of `F` correspond bijectively to the absolute values restricting to `v` on the nose
 (`NumberField.FinitePlace.placesOverEquivAbsValues`), by taking the local-degree root of each
-finite place. Above an infinite place `v` (in any field extension `F / K`), the infinite places of
-`F` correspond bijectively to the absolute values restricting to `v` directly, without any root
-(`NumberField.InfinitePlace.placesOverEquivAbsValues`).
+finite place, and local-degree-weighted products over those absolute values agree with unweighted
+products over the finite places above `v` (`NumberField.FinitePlace.prod_apply_pow_localDegree`).
+Above an infinite place `v` (in any field extension `F / K`), the infinite places of `F` correspond
+bijectively to the absolute values restricting to `v` directly, without any root
+(`NumberField.InfinitePlace.placesOverEquivAbsValues`), and whenever the fibres are finite (in
+particular for any finite extension `F / K`), multiplicity-weighted products over those absolute
+values agree with products over the infinite places of `F` above `v`
+(`NumberField.InfinitePlace.prod_apply_pow_mult`).
 
-When `F` is a number field, products indexed by those absolute values carry local-degree weights at
-finite places and multiplicity weights `w.mult ∈ {1, 2}` at infinite places. At any element of `F`
-they agree with products over the places of `F` above `v`. At an element of `K` the product is the
+When `F` is a number field, evaluating these weighted products at an element of `K` gives the
 normalized base value raised to the degree `[F : K]`
 (`NumberField.FinitePlace.prod_algebraMap_pow_localDegree`,
 `NumberField.InfinitePlace.prod_algebraMap_pow_mult`). No Galois hypothesis is required.
@@ -186,22 +189,11 @@ theorem placesOverEquivAbsValues_symm_apply_val_apply (v : InfinitePlace K)
     ((placesOverEquivAbsValues F v).symm w).val y = w.val y :=
   congrArg (fun u : AbsoluteValue F ℝ ↦ u y) (placesOverEquivAbsValues_symm_apply_val v w)
 
-end Field
-
-section NumberField
-
-variable {K F : Type*} [Field K] [Field F] [NumberField F] [Algebra K F]
-
-/-- The fibre of absolute values of a number field above an infinite place is finite. -/
-instance (v : InfinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.1} :=
-  Finite.of_equiv _ (placesOverEquivAbsValues F v)
-
-open scoped Classical in
-/-- For a number field `F`, a multiplicity-weighted product over the absolute values of `F` above
-an infinite place `v` is the multiplicity-weighted product over the infinite places of `F` above
-`v`. -/
+/-- For a field extension `F / K` with finite fibres above an infinite place `v`, a
+multiplicity-weighted product over the absolute values of `F` above `v` is the
+multiplicity-weighted product over the infinite places of `F` above `v`. -/
 theorem prod_apply_pow_mult (v : InfinitePlace K)
-    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] (y : F) :
+    [Fintype {w : AbsoluteValue F ℝ // w.LiesOver v.1}] [Fintype (v.placesOver F)] (y : F) :
     (∏ w : {w : AbsoluteValue F ℝ // w.LiesOver v.1},
       w.val y ^ ((placesOverEquivAbsValues F v).symm w).val.mult) =
         ∏ w ∈ (v.placesOver F).toFinset, w y ^ w.mult := by
@@ -209,6 +201,22 @@ theorem prod_apply_pow_mult (v : InfinitePlace K)
   exact ((placesOverEquivAbsValues F v).symm.prod_comp
     (fun w : v.placesOver F ↦ w.val y ^ w.val.mult)).trans
       (Finset.prod_set_coe (f := fun w : InfinitePlace F ↦ w y ^ w.mult) (v.placesOver F))
+
+end Field
+
+section Finite
+
+variable {K F : Type*} [Field K] [Field F] [Algebra K F] [Module.Finite K F]
+
+/-- The fibre of absolute values of a finite field extension above an infinite place is finite. -/
+instance (v : InfinitePlace K) : Finite {w : AbsoluteValue F ℝ // w.LiesOver v.1} :=
+  (NumberField.finite_setOf_liesOver_infinitePlace F v).to_subtype
+
+end Finite
+
+section NumberField
+
+variable {K F : Type*} [Field K] [Field F] [NumberField F] [Algebra K F]
 
 open scoped Classical in
 /-- **The local extension formula at an infinite place.** For a number field `F` and a base-field
