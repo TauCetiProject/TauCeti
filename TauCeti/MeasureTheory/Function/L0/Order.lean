@@ -17,8 +17,9 @@ transfer along `TauCeti.L0.toAEEqFun` to `TauCeti.L0 E μ` for an arbitrary meas
 
 * `TauCeti.L0.instPreorder`, `TauCeti.L0.instPartialOrder`: almost-everywhere pointwise order on
   `L0 E μ`, characterized by `TauCeti.L0.coeFn_le` and `TauCeti.L0.ofFun_le_ofFun`.
-* `TauCeti.L0.instSup`, `TauCeti.L0.instInf`, `TauCeti.L0.instLattice`: pointwise supremum,
-  infimum, and lattice structure on `L0 E μ` when `E` has continuous lattice operations.
+* `TauCeti.L0.instSemilatticeSup`, `TauCeti.L0.instSemilatticeInf`, `TauCeti.L0.instLattice`:
+  pointwise join-semilattice, meet-semilattice, and lattice structures on `L0 E μ` when `E` has
+  continuous semilattice or lattice operations.
 -/
 
 public noncomputable section
@@ -53,9 +54,12 @@ theorem coeFn_le [Preorder E] {f g : L0 E μ} : (f : Ω → E) ≤ᵐ[μ] g ↔ 
 instance instPartialOrder [PartialOrder E] : PartialOrder (L0 E μ) :=
   PartialOrder.lift toAEEqFun toAEEqFun_injective
 
-/-- Pointwise supremum on `L0 E μ`, inherited from `Ω →ₘ[μ] E`. -/
-instance instSup [SemilatticeSup E] [ContinuousSup E] : Max (L0 E μ) :=
-  ⟨fun f g ↦ ⟨f.toAEEqFun ⊔ g.toAEEqFun⟩⟩
+/-- Pointwise join-semilattice structure on `L0 E μ`, inherited from `Ω →ₘ[μ] E`. -/
+instance instSemilatticeSup [SemilatticeSup E] [ContinuousSup E] : SemilatticeSup (L0 E μ) where
+  sup f g := ⟨f.toAEEqFun ⊔ g.toAEEqFun⟩
+  le_sup_left f g := AEEqFun.le_sup_left f.toAEEqFun g.toAEEqFun
+  le_sup_right f g := AEEqFun.le_sup_right f.toAEEqFun g.toAEEqFun
+  sup_le _ _ _ hf hg := AEEqFun.sup_le _ _ _ hf hg
 
 /-- Forgetting the wrapper preserves suprema. -/
 @[simp]
@@ -78,9 +82,12 @@ theorem ofFun_sup_ofFun [SemilatticeSup E] [ContinuousSup E] (f g : Ω → E)
     x hfx hgx hfgx
   rw [hfx, hgx, hfgx, Pi.sup_apply]
 
-/-- Pointwise infimum on `L0 E μ`, inherited from `Ω →ₘ[μ] E`. -/
-instance instInf [SemilatticeInf E] [ContinuousInf E] : Min (L0 E μ) :=
-  ⟨fun f g ↦ ⟨f.toAEEqFun ⊓ g.toAEEqFun⟩⟩
+/-- Pointwise meet-semilattice structure on `L0 E μ`, inherited from `Ω →ₘ[μ] E`. -/
+instance instSemilatticeInf [SemilatticeInf E] [ContinuousInf E] : SemilatticeInf (L0 E μ) where
+  inf f g := ⟨f.toAEEqFun ⊓ g.toAEEqFun⟩
+  inf_le_left f g := AEEqFun.inf_le_left f.toAEEqFun g.toAEEqFun
+  inf_le_right f g := AEEqFun.inf_le_right f.toAEEqFun g.toAEEqFun
+  le_inf _ _ _ hf hg := AEEqFun.le_inf _ _ _ hf hg
 
 /-- Forgetting the wrapper preserves infima. -/
 @[simp]
@@ -103,8 +110,8 @@ theorem ofFun_inf_ofFun [SemilatticeInf E] [ContinuousInf E] (f g : Ω → E)
     x hfx hgx hfgx
   rw [hfx, hgx, hfgx, Pi.inf_apply]
 
-/-- Lattice structure on `L0 E μ`, lifted from `Ω →ₘ[μ] E`. -/
-instance instLattice [Lattice E] [TopologicalLattice E] : Lattice (L0 E μ) :=
-  toAEEqFun_injective.lattice toAEEqFun .rfl .rfl toAEEqFun_sup toAEEqFun_inf
+/-- Lattice structure on `L0 E μ`, combining the pointwise join- and meet-semilattice
+structures. -/
+instance instLattice [Lattice E] [TopologicalLattice E] : Lattice (L0 E μ) where
 
 end TauCeti.L0

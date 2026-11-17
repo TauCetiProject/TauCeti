@@ -66,7 +66,8 @@ It also records that the normalized position `(c - a) / (b - a)` of a point `c �
 elements the sum `1 + ∑ i ∈ s, (x i)⁻¹` is positive and bounds each reciprocal `(x j)⁻¹`.
 Finally, a nonnegative quantity bounded by `A / t ^ k` with `0 < t` forces `0 ≤ A`, and for
 nonnegative elements in a linearly ordered semifield the bounded-metric gauge `t ↦ t / (1 + t)` is
-nonnegative, strictly below `1`, monotone, subadditive, and zero only at `0`.
+nonnegative, strictly below `1`, monotone, subadditive, subhomogeneous under factors `≥ 1`, and
+zero only at `0`.
 
 ## Main results
 
@@ -107,9 +108,9 @@ nonnegative, strictly below `1`, monotone, subadditive, and zero only at `0`.
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
 * `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
 * `TauCeti.div_one_add_nonneg`, `TauCeti.div_one_add_lt_one`, `TauCeti.div_one_add_le_one`,
-  `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.div_one_add_eq_zero_iff`:
-  nonnegativity, unit bound, monotonicity, subadditivity, and zero characterization of the gauge
-  `t / (1 + t)` for `0 ≤ t`.
+  `TauCeti.div_one_add_mono`, `TauCeti.div_one_add_add_le`, `TauCeti.mul_div_one_add_mul_le`,
+  `TauCeti.div_one_add_eq_zero_iff`: nonnegativity, unit bound, monotonicity, subadditivity,
+  scaling bound, and zero characterization of the gauge `t / (1 + t)` for `0 ≤ t`.
 -/
 
 public section
@@ -435,6 +436,16 @@ theorem div_one_add_add_le {α : Type*} [Semifield α] [LinearOrder α] [IsStric
         add_le_add
           (div_le_div_of_nonneg_left ha h1a (by rw [← add_assoc]; exact le_add_of_nonneg_right hb))
           (div_le_div_of_nonneg_left hb h1b (by rw [add_left_comm]; exact le_add_of_nonneg_left ha))
+
+/-- For `1 ≤ c` and `0 ≤ t`, scaling the argument of the bounded-metric gauge by `c` satisfies
+`c * t / (1 + c * t) ≤ c * (t / (1 + t))`. -/
+theorem mul_div_one_add_mul_le {α : Type*} [Semifield α] [LinearOrder α]
+    [IsStrictOrderedRing α] {c t : α} (hc : 1 ≤ c) (ht : 0 ≤ t) :
+    c * t / (1 + c * t) ≤ c * (t / (1 + t)) := by
+  rw [← mul_div_assoc]
+  exact div_le_div_of_nonneg_left (mul_nonneg (zero_le_one.trans hc) ht)
+    (add_pos_of_pos_of_nonneg zero_lt_one ht)
+    (add_le_add le_rfl (le_mul_of_one_le_left ht hc))
 
 /-- For `0 ≤ t`, `t / (1 + t) = 0` if and only if `t = 0`. -/
 theorem div_one_add_eq_zero_iff {α : Type*} [Semifield α] [LinearOrder α] [IsStrictOrderedRing α]

@@ -343,6 +343,41 @@ theorem tendsto_measure_dist_ge_atTop [PseudoMetricSpace E] [IsFiniteMeasure μ]
   filter_upwards [hg.ae_eq_mk] with x hx
   simp [g', hx]
 
+/-- Deterministic four-tail deviation estimate for a binary map uniformly continuous on a ball:
+outside the two cutoff tails for the limit pair `(g₁, g₂)` and the two proximity tails for
+`(f₁, g₁)` and `(f₂, g₂)`, both pairs lie in `Metric.ball (y₁, y₂) (M + r)` at distance `< δ₀`,
+so the output deviation is `< ε`. -/
+private theorem measure_dist_ge_le_of_ball_bound [PseudoMetricSpace E₁] [PseudoMetricSpace E₂]
+    [PseudoMetricSpace F] {Ψ : E₁ × E₂ → F} {y₁ : E₁} {y₂ : E₂} {M r ε δ₀ δ : ℝ}
+    (hδ₀ : δ ≤ δ₀) (hδr : δ ≤ r)
+    (huc : ∀ p ∈ Metric.ball (y₁, y₂) (M + r), ∀ q ∈ Metric.ball (y₁, y₂) (M + r),
+      dist p q < δ₀ → dist (Ψ p) (Ψ q) < ε)
+    (f₁ g₁ : α → E₁) (f₂ g₂ : α → E₂) :
+    μ {x | ε ≤ dist (Ψ (f₁ x, f₂ x)) (Ψ (g₁ x, g₂ x))} ≤
+      (μ {x | M ≤ dist (g₁ x) y₁} + μ {x | M ≤ dist (g₂ x) y₂}) +
+        (μ {x | δ ≤ dist (f₁ x) (g₁ x)} + μ {x | δ ≤ dist (f₂ x) (g₂ x)}) := by
+  have hsub : {x | ε ≤ dist (Ψ (f₁ x, f₂ x)) (Ψ (g₁ x, g₂ x))} ⊆
+      ({x | M ≤ dist (g₁ x) y₁} ∪ {x | M ≤ dist (g₂ x) y₂}) ∪
+      ({x | δ ≤ dist (f₁ x) (g₁ x)} ∪ {x | δ ≤ dist (f₂ x) (g₂ x)}) := by
+    intro x hx
+    rw [Set.mem_ofPred_eq] at hx
+    by_contra hnot
+    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
+    rcases hnot with ⟨⟨hg₁, hg₂⟩, ⟨hf₁, hf₂⟩⟩
+    have hr : 0 < r := (dist_nonneg.trans_lt hf₁).trans_le hδr
+    have hp₁ : (f₁ x, f₂ x) ∈ Metric.ball (y₁, y₂) (M + r) := by
+      simp only [Metric.mem_ball, Prod.dist_eq, max_lt_iff]
+      exact ⟨(dist_triangle (f₁ x) (g₁ x) y₁).trans_lt (by linarith),
+        (dist_triangle (f₂ x) (g₂ x) y₂).trans_lt (by linarith)⟩
+    have hp₀ : (g₁ x, g₂ x) ∈ Metric.ball (y₁, y₂) (M + r) := by
+      simp only [Metric.mem_ball, Prod.dist_eq, max_lt_iff]
+      exact ⟨by linarith, by linarith⟩
+    have hp_dist : dist (f₁ x, f₂ x) (g₁ x, g₂ x) < δ₀ :=
+      (max_lt hf₁ hf₂).trans_le hδ₀
+    exact hx.not_gt (huc (f₁ x, f₂ x) hp₁ (g₁ x, g₂ x) hp₀ hp_dist)
+  exact (measure_mono hsub).trans ((measure_union_le _ _).trans
+    (add_le_add (measure_union_le _ _) (measure_union_le _ _)))
+
 /-- On a finite measure space, bounded scalar multiplication preserves convergence in measure
 jointly in the scalar and vector families along any filter, provided both limit functions are
 almost-everywhere strongly measurable. -/
@@ -358,6 +393,7 @@ theorem TendstoInMeasure.smul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [Pse
   intro η hη
   have hη2 : 0 < η / 2 := ENNReal.div_pos hη.ne' ENNReal.ofNat_ne_top
   have hη4 : 0 < η / 2 / 2 := ENNReal.div_pos hη2.ne' ENNReal.ofNat_ne_top
+  -- Use tightness of the limit functions to confine `(c₀, g)` to a bounded ball up to `η / 2`.
   obtain ⟨N₁, hN₁⟩ := ENNReal.tendsto_atTop_zero.mp
     (tendsto_measure_dist_ge_atTop hc₀ 0) (η / 2 / 2) hη4
   obtain ⟨N₂, hN₂⟩ := ENNReal.tendsto_atTop_zero.mp
@@ -365,37 +401,19 @@ theorem TendstoInMeasure.smul [Zero 𝕜] [Zero E] [PseudoMetricSpace 𝕜] [Pse
   let M : ℝ := max N₁ N₂
   have hMc₀ : μ {x | M ≤ dist (c₀ x) 0} ≤ η / 2 / 2 := hN₁ M (le_max_left _ _)
   have hMg : μ {x | M ≤ dist (g x) 0} ≤ η / 2 / 2 := hN₂ M (le_max_right _ _)
+  -- Bounded scalar multiplication is uniformly continuous on the enlarged ball of radius `M + 1`.
   obtain ⟨δ₀, hδ₀, huc⟩ := Metric.uniformContinuousOn_iff.mp
     (Metric.isBounded_ball (x := (0 : 𝕜 × E)) (r := M + 1)).uniformContinuousOn_smul ε hε
   let δ : ℝ := min δ₀ 1
   have hδ : 0 < δ := lt_min hδ₀ zero_lt_one
+  -- Apply the four-tail measure bound once `c i` and `f i` are within `δ` of their limits.
   filter_upwards [(ENNReal.tendsto_nhds_zero.mp (hc δ hδ)) (η / 2 / 2) hη4,
     (ENNReal.tendsto_nhds_zero.mp (hf δ hδ)) (η / 2 / 2) hη4] with i hic hif
-  have hsub : {x | ε ≤ dist (c i x • f i x) (c₀ x • g x)} ⊆
-      ({x | M ≤ dist (c₀ x) 0} ∪ {x | M ≤ dist (g x) 0}) ∪
-      ({x | δ ≤ dist (c i x) (c₀ x)} ∪ {x | δ ≤ dist (f i x) (g x)}) := by
-    intro x hx
-    rw [Set.mem_ofPred_eq] at hx
-    by_contra hnot
-    simp only [Set.mem_union, Set.mem_ofPred_eq, not_or, not_le] at hnot
-    rcases hnot with ⟨⟨hc₀_lt, hg_lt⟩, ⟨hc_lt, hf_lt⟩⟩
-    have hp₁ : (c i x, f i x) ∈ Metric.ball (0 : 𝕜 × E) (M + 1) := by
-      simp only [Metric.mem_ball, Prod.dist_eq, Prod.fst_zero, Prod.snd_zero, max_lt_iff]
-      exact ⟨(dist_triangle (c i x) (c₀ x) 0).trans_lt
-        (by linarith [hc_lt.trans_le (min_le_right δ₀ 1)]),
-        (dist_triangle (f i x) (g x) 0).trans_lt
-        (by linarith [hf_lt.trans_le (min_le_right δ₀ 1)])⟩
-    have hp₀ : (c₀ x, g x) ∈ Metric.ball (0 : 𝕜 × E) (M + 1) := by
-      simp only [Metric.mem_ball, Prod.dist_eq, Prod.fst_zero, Prod.snd_zero, max_lt_iff]
-      exact ⟨by linarith, by linarith⟩
-    have hp_dist : dist (c i x, f i x) (c₀ x, g x) < δ₀ :=
-      (max_lt hc_lt hf_lt).trans_le (min_le_left δ₀ 1)
-    exact hx.not_gt (huc (c i x, f i x) hp₁ (c₀ x, g x) hp₀ hp_dist)
   calc μ {x | ε ≤ dist (c i x • f i x) (c₀ x • g x)}
       ≤ (μ {x | M ≤ dist (c₀ x) 0} + μ {x | M ≤ dist (g x) 0}) +
           (μ {x | δ ≤ dist (c i x) (c₀ x)} + μ {x | δ ≤ dist (f i x) (g x)}) :=
-        (measure_mono hsub).trans ((measure_union_le _ _).trans
-          (add_le_add (measure_union_le _ _) (measure_union_le _ _)))
+        measure_dist_ge_le_of_ball_bound (Ψ := fun p : 𝕜 × E ↦ p.1 • p.2)
+          (min_le_left δ₀ 1) (min_le_right δ₀ 1) huc (c i) c₀ (f i) g
     _ ≤ (η / 2 / 2 + η / 2 / 2) + (η / 2 / 2 + η / 2 / 2) :=
         add_le_add (add_le_add hMc₀ hMg) (add_le_add hic hif)
     _ = η := by simp only [ENNReal.add_halves]

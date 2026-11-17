@@ -818,18 +818,46 @@ instance instIsUniformAddGroup [AddGroup E] [IsUniformAddGroup E] :
       (f.1 - f.2) (g.1 - g.2) hη.le
     linarith
 
+/-- Pointwise bounded-gauge estimate for a binary `K`-Lipschitz map with `1 ≤ K`: the gauge
+distance of outputs is bounded by `K` times the sum of the component gauge distances. -/
+private theorem dist_div_one_add_le_of_lipschitzWith_prod {E₁ E₂ F : Type*}
+    [PseudoMetricSpace E₁] [PseudoMetricSpace E₂] [PseudoMetricSpace F]
+    {K : ℝ≥0} {f : E₁ × E₂ → F} (hf : LipschitzWith K f) (hK1 : 1 ≤ K)
+    (p q : E₁ × E₂) :
+    dist (f p) (f q) / (1 + dist (f p) (f q)) ≤
+      (K : ℝ) * (dist p.1 q.1 / (1 + dist p.1 q.1)) +
+        (K : ℝ) * (dist p.2 q.2 / (1 + dist p.2 q.2)) := by
+  have hK1' : (1 : ℝ) ≤ K := by exact_mod_cast hK1
+  have hlip : dist (f p) (f q) ≤ (K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2 := by
+    calc dist (f p) (f q)
+        ≤ (K : ℝ) * max (dist p.1 q.1) (dist p.2 q.2) := by
+            simpa only [Prod.dist_eq] using hf.dist_le_mul p q
+      _ ≤ (K : ℝ) * (dist p.1 q.1 + dist p.2 q.2) :=
+          mul_le_mul_of_nonneg_left
+            (max_le (le_add_of_nonneg_right dist_nonneg) (le_add_of_nonneg_left dist_nonneg))
+            K.coe_nonneg
+      _ = (K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2 := by ring
+  calc dist (f p) (f q) / (1 + dist (f p) (f q))
+      ≤ ((K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2) /
+          (1 + ((K : ℝ) * dist p.1 q.1 + (K : ℝ) * dist p.2 q.2)) :=
+        div_one_add_mono dist_nonneg hlip
+    _ ≤ (K : ℝ) * dist p.1 q.1 / (1 + (K : ℝ) * dist p.1 q.1) +
+          (K : ℝ) * dist p.2 q.2 / (1 + (K : ℝ) * dist p.2 q.2) :=
+        div_one_add_add_le (mul_nonneg K.coe_nonneg dist_nonneg)
+          (mul_nonneg K.coe_nonneg dist_nonneg)
+    _ ≤ (K : ℝ) * (dist p.1 q.1 / (1 + dist p.1 q.1)) +
+          (K : ℝ) * (dist p.2 q.2 / (1 + dist p.2 q.2)) :=
+        add_le_add (mul_div_one_add_mul_le hK1' dist_nonneg)
+          (mul_div_one_add_mul_le hK1' dist_nonneg)
+
 /-- On a finite measure space, addition on `L0 E μ` is Lipschitz whenever addition on `E` is
 Lipschitz. -/
 instance instLipschitzAdd [AddMonoid E] [LipschitzAdd E] : LipschitzAdd (L0 E μ) where
   lipschitz_add := by
-    let C : ℝ≥0 := LipschitzAdd.C E
-    let K : ℝ≥0 := max C 1
-    have hK1 : (1 : ℝ) ≤ K := by exact_mod_cast le_max_right C 1
-    have hCK : (C : ℝ) ≤ K := by exact_mod_cast le_max_left C 1
-    have hscale : ∀ t : ℝ, 0 ≤ t → (K : ℝ) * t / (1 + (K : ℝ) * t) ≤ K * (t / (1 + t)) :=
-      fun t ht ↦ by
-        rw [← mul_div_assoc]
-        exact div_le_div_of_nonneg_left (mul_nonneg K.coe_nonneg ht) (by positivity) (by nlinarith)
+    let K : ℝ≥0 := max (LipschitzAdd.C E) 1
+    have hK1 : 1 ≤ K := le_max_right _ _
+    have hlip : LipschitzWith K (fun p : E × E ↦ p.1 + p.2) :=
+      (lipschitzWith_lipschitz_const_add_edist (β := E)).weaken (le_max_left _ _)
     refine ⟨2 * K, LipschitzWith.of_dist_le_mul fun p q ↦ ?_⟩
     have hae : ∀ᵐ x ∂μ,
         dist ((p.1 + p.2) x) ((q.1 + q.2) x) / (1 + dist ((p.1 + p.2) x) ((q.1 + q.2) x)) ≤
@@ -837,30 +865,7 @@ instance instLipschitzAdd [AddMonoid E] [LipschitzAdd E] : LipschitzAdd (L0 E μ
             (K : ℝ) * (dist (p.2 x) (q.2 x) / (1 + dist (p.2 x) (q.2 x))) := by
       filter_upwards [coeFn_add p.1 p.2, coeFn_add q.1 q.2] with x hpx hqx
       rw [hpx, hqx, Pi.add_apply, Pi.add_apply]
-      have hlip : dist (p.1 x + p.2 x) (q.1 x + q.2 x) ≤
-          (K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x) := by
-        calc dist (p.1 x + p.2 x) (q.1 x + q.2 x)
-            ≤ (C : ℝ) * dist (p.1 x, p.2 x) (q.1 x, q.2 x) :=
-              lipschitz_with_lipschitz_const_add (p.1 x, p.2 x) (q.1 x, q.2 x)
-          _ ≤ (K : ℝ) * max (dist (p.1 x) (q.1 x)) (dist (p.2 x) (q.2 x)) := by
-              rw [Prod.dist_eq]
-              exact mul_le_mul_of_nonneg_right hCK (le_max_of_le_left dist_nonneg)
-          _ ≤ (K : ℝ) * (dist (p.1 x) (q.1 x) + dist (p.2 x) (q.2 x)) :=
-              mul_le_mul_of_nonneg_left
-                (max_le (le_add_of_nonneg_right dist_nonneg) (le_add_of_nonneg_left dist_nonneg))
-                K.coe_nonneg
-          _ = (K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x) := by ring
-      calc dist (p.1 x + p.2 x) (q.1 x + q.2 x) / (1 + dist (p.1 x + p.2 x) (q.1 x + q.2 x))
-          ≤ ((K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x)) /
-              (1 + ((K : ℝ) * dist (p.1 x) (q.1 x) + (K : ℝ) * dist (p.2 x) (q.2 x))) :=
-            div_one_add_mono dist_nonneg hlip
-        _ ≤ (K : ℝ) * dist (p.1 x) (q.1 x) / (1 + (K : ℝ) * dist (p.1 x) (q.1 x)) +
-              (K : ℝ) * dist (p.2 x) (q.2 x) / (1 + (K : ℝ) * dist (p.2 x) (q.2 x)) :=
-            div_one_add_add_le (mul_nonneg K.coe_nonneg dist_nonneg)
-              (mul_nonneg K.coe_nonneg dist_nonneg)
-        _ ≤ (K : ℝ) * (dist (p.1 x) (q.1 x) / (1 + dist (p.1 x) (q.1 x))) +
-              (K : ℝ) * (dist (p.2 x) (q.2 x) / (1 + dist (p.2 x) (q.2 x))) :=
-            add_le_add (hscale _ dist_nonneg) (hscale _ dist_nonneg)
+      exact dist_div_one_add_le_of_lipschitzWith_prod hlip hK1 (p.1 x, p.2 x) (q.1 x, q.2 x)
     have hint₁ := (integrable_dist_div_one_add_dist p.1 q.1).const_mul (K : ℝ)
     have hint₂ := (integrable_dist_div_one_add_dist p.2 q.2).const_mul (K : ℝ)
     calc dist (p.1 + p.2) (q.1 + q.2)
