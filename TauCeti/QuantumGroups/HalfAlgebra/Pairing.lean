@@ -41,7 +41,8 @@ modulo `J`, the basic tool for showing that an element of `f` vanishes.
 
 * `TauCeti.freePairing_ι_mul_left`, `TauCeti.freePairing_mul_ι_left`: `B(θᵢ y, z) = B(y, Lᵢ z)` and
   `B(y θᵢ, z) = B(y, Rᵢ z)`.
-* `TauCeti.eq_freePairing_iff`: `B` is the unique bilinear form with these two properties.
+* `TauCeti.eq_freePairing_iff`: `B` is the unique bilinear form with `B(1, z) = ε(z)` and
+  `B(θᵢ y, z) = B(y, Lᵢ z)`.
 * `TauCeti.freePairing_ι_ι`: the generators are orthonormal.
 * `TauCeti.freePairing_freeRemove_left`: `B(Lᵢ x, y) = B(x, θᵢ y)`.
 * `TauCeti.isSymm_freePairing`: `B` is symmetric when `χ` is.
