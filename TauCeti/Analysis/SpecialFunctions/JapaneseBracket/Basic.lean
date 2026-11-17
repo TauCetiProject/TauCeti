@@ -64,6 +64,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   elsewhere is `O(T ^ (d - q))`.
 * `TauCeti.not_integrableOn_rpow_neg_one_add_norm_sq`: for `r ≤ d` the bracket
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is not integrable over any open cone containing a nonzero vector.
+* `TauCeti.integrable_rpow_neg_one_add_norm_sq_iff`: on a nontrivial space the bracket
+  `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable exactly when `d < r`.
 * `TauCeti.memLp_two_one_add_norm_rpow_neg`: the power `x ↦ (1 + ‖x‖) ^ (-r)` is square
   integrable for `d < 2 r`, for every additive Haar measure.
 * `TauCeti.integrable_one_add_norm_sq_rpow_neg_succ_div_two`: on `ℝⁿ` the weight
@@ -298,6 +300,18 @@ theorem not_integrableOn_rpow_neg_one_add_norm_sq (μ : Measure V) [μ.IsAddHaar
             _).symm
       _ ≤ ∫⁻ x in Γ, ‖(1 + ‖x‖ ^ 2) ^ (-r / 2)‖ₑ ∂μ := lintegral_mono_set (iUnion_subset hS)
   exact lt_irrefl _ (hint.hasFiniteIntegral.trans_le htop)
+
+/-- **Exact integrability of the Japanese bracket.** On a nontrivial finite-dimensional real
+normed space of dimension `d`, `x ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable for an additive Haar
+measure exactly when `d < r`. -/
+theorem integrable_rpow_neg_one_add_norm_sq_iff (μ : Measure V) [μ.IsAddHaarMeasure]
+    [Nontrivial V] {r : ℝ} :
+    Integrable (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)) μ ↔ (finrank ℝ V : ℝ) < r := by
+  refine ⟨fun hint ↦ ?_, integrable_rpow_neg_one_add_norm_sq⟩
+  by_contra! hr
+  obtain ⟨ξ, hξ⟩ := exists_ne (0 : V)
+  exact not_integrableOn_rpow_neg_one_add_norm_sq μ hr isOpen_univ (fun _ _ _ _ ↦ mem_univ _)
+    (mem_univ ξ) hξ hint.integrableOn
 
 end Cone
 
