@@ -193,7 +193,7 @@ theorem slice_re_inner_ae_eq_zero_of_hilbertBasis [FiniteDimensional ℂ F] {η 
       Λ χ = ∫ s, φ s * ∫ t in Icc (0 : ℝ) 1, (inner ℂ (χ t) (η (s, t))).re :=
     integral_re_inner_smul_eq_integral_mul_slice (ψ := fun t : ℝ ↦ χ t) hη hφ.continuous hφc
       (χ.continuous.comp (AddCircle.continuous_mk' 1))
-  have h0 := CircleSobolev.eq_zero_of_abs_le_of_hilbertBasis 1 Λ (by positivity)
+  have h0 := CircleSobolev.eq_zero_of_abs_le_of_hilbertBasis 1 Λ
     (abs_integral_re_inner_smul_le hη hφ.continuous hφc) b e hb
     (fun i ↦ by rw [hΛ]; exact integral_eq_zero_of_ae ((he i).mono fun s hs ↦ by simp [hs])) ψ
   rw [hΛ] at h0
@@ -219,8 +219,9 @@ theorem ae_eq_zero_of_forall_slice_re_inner_ae_eq_zero [FiniteDimensional ℂ F]
   obtain ⟨D, hDc, hD⟩ := TopologicalSpace.exists_countable_dense C(AddCircle (1 : ℝ), F)
   have hfin : ∀ᵐ s, ∀ᵐ t ∂ν, η (s, t) = 0 := by
     filter_upwards [hslice, (ae_ball_iff hDc).2 fun ψ _ ↦ h ψ] with s hs hsD
-    exact ae_eq_zero_of_forall_integral_re_inner_eq_zero hs
-      (integral_re_inner_eq_zero_of_dense hs hD hsD)
+    have hs' : IntegrableOn (fun t ↦ η (s, t)) (Icc (0 : ℝ) 1) := hs
+    exact hs'.ae_eq_zero_of_forall_integral_re_inner_continuousMap_eq_zero
+      (hs'.integral_re_inner_continuousMap_eq_zero_of_dense hD hsD)
   -- Pass to a strongly measurable representative to apply Fubini's theorem to the zero set.
   have hηη' : η =ᵐ[(volume : Measure ℝ).prod ν] hηp.aestronglyMeasurable.mk η :=
     hηp.aestronglyMeasurable.ae_eq_mk

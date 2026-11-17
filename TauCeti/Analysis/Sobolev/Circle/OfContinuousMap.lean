@@ -328,10 +328,14 @@ theorem integral_norm_sq_eq_mul_norm_ofContinuousMap_sq (f : C(AddCircle T, F)) 
 /-- **Density in `H⁰`.** A real-linear functional on continuous loops bounded by a multiple of the
 `H⁰` norm and vanishing on loops forming a Hilbert basis of `H⁰` vanishes. -/
 theorem eq_zero_of_abs_le_of_hilbertBasis (Λ : C(AddCircle T, F) →ₗ[ℝ] ℝ) {K : ℝ}
-    (hK : 0 ≤ K) (hΛ : ∀ χ, |Λ χ| ≤ K * ‖ofContinuousMap T χ‖) {ι : Type*}
+    (hΛ : ∀ χ, |Λ χ| ≤ K * ‖ofContinuousMap T χ‖) {ι : Type*}
     (b : HilbertBasis ι ℝ (CircleSobolev 0 F)) (e : ι → C(AddCircle T, F))
     (hb : ∀ i, b i = ofContinuousMap T (e i)) (he : ∀ i, Λ (e i) = 0)
     (ψ : C(AddCircle T, F)) : Λ ψ = 0 := by
+  -- The bound also holds with the nonnegative constant `|K|`.
+  replace hΛ (χ : C(AddCircle T, F)) : |Λ χ| ≤ |K| * ‖ofContinuousMap T χ‖ :=
+    (hΛ χ).trans (mul_le_mul_of_nonneg_right (le_abs_self K) (norm_nonneg _))
+  have hK : 0 ≤ |K| := abs_nonneg K
   -- The loops on which `Λ` vanishes have a dense image in `H⁰`, since it contains the basis.
   set P : Submodule ℝ (CircleSobolev 0 F) := (LinearMap.ker Λ).map
     ((ofContinuousMap T : C(AddCircle T, F) →L[ℂ] CircleSobolev 0 F)
@@ -345,13 +349,13 @@ theorem eq_zero_of_abs_le_of_hilbertBasis (Λ : C(AddCircle T, F) →ₗ[ℝ] �
     trivial
   by_contra hne
   have hpos : 0 < |Λ ψ| := abs_pos.2 hne
-  obtain ⟨y, ⟨χ, hχ, rfl⟩, hy⟩ := Metric.mem_closure_iff.1 hmem (|Λ ψ| / (K + 1))
+  obtain ⟨y, ⟨χ, hχ, rfl⟩, hy⟩ := Metric.mem_closure_iff.1 hmem (|Λ ψ| / (|K| + 1))
     (by positivity)
-  have h1 : |Λ ψ| ≤ K * dist (ofContinuousMap T ψ) (ofContinuousMap T χ) := by
+  have h1 : |Λ ψ| ≤ |K| * dist (ofContinuousMap T ψ) (ofContinuousMap T χ) := by
     have := hΛ (ψ - χ)
     rwa [map_sub, LinearMap.mem_ker.1 hχ, sub_zero, map_sub, ← dist_eq_norm] at this
   have h2 := mul_le_mul_of_nonneg_left hy.le hK
-  have h3 : K * (|Λ ψ| / (K + 1)) < |Λ ψ| := by
+  have h3 : |K| * (|Λ ψ| / (|K| + 1)) < |Λ ψ| := by
     rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
     nlinarith
   exact (h1.trans h2).not_gt h3

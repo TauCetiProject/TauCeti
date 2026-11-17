@@ -49,10 +49,11 @@ adjoint is injective.
   Fourier coefficients agree almost everywhere;
 * `MeasureTheory.IntegrableOn.ae_eq_zero_of_forall_fourierCoeffOn_eq_zero`: a function integrable
   on `(a, b]` with vanishing Fourier coefficients on `[a, b]` is zero almost everywhere there;
-* `TauCeti.integral_re_inner_eq_zero_of_dense`: a function on `[0, T]` orthogonal to a dense set
-  of continuous loops of period `T` is orthogonal to all of them;
-* `TauCeti.ae_eq_zero_of_forall_integral_re_inner_eq_zero`: a function on `[0, T]` whose pairing
-  with every continuous loop of period `T` vanishes is zero almost everywhere;
+* `MeasureTheory.IntegrableOn.integral_re_inner_continuousMap_eq_zero_of_dense`: a function on
+  `[0, T]` orthogonal to a dense set of continuous loops of period `T` is orthogonal to all of them;
+* `MeasureTheory.IntegrableOn.ae_eq_zero_of_forall_integral_re_inner_continuousMap_eq_zero`: a
+  function on `[0, T]` whose pairing with every continuous loop of period `T` vanishes is zero
+  almost everywhere;
 * `MeasureTheory.MemLp.hasSum_fourierCoeff_mul`: for square-integrable `f` and `g`,
   `(f g)^(n) = ∑ₘ f̂(m) ĝ(n - m)`;
 * `MeasureTheory.MemLp.fourierCoeff_mul_eq_zero_of_lt_add` and
@@ -235,11 +236,11 @@ end Product
 
 end MeasureTheory
 
-namespace TauCeti
+namespace MeasureTheory
 
 section Orthogonal
 
-open MeasureTheory Set Complex
+open Set Complex
 
 variable {T : ℝ} [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]
 
@@ -247,7 +248,8 @@ variable {T : ℝ} [hT : Fact (0 < T)] {F : Type*} [NormedAddCommGroup F] [Inner
 pairing `∫_{[0, T]} Re ⟪ψ, f⟫` vanishes for every loop `ψ` in a dense set of continuous loops of
 period `T`, has vanishing pairing with every continuous loop, since the pairing is continuous in
 the loop for the sup norm. -/
-theorem integral_re_inner_eq_zero_of_dense {f : ℝ → F} (hf : IntegrableOn f (Icc 0 T))
+theorem IntegrableOn.integral_re_inner_continuousMap_eq_zero_of_dense {f : ℝ → F}
+    (hf : IntegrableOn f (Icc 0 T))
     {D : Set C(AddCircle T, F)} (hD : Dense D)
     (h : ∀ ψ ∈ D, ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0) (ψ : C(AddCircle T, F)) :
     ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0 := by
@@ -273,7 +275,8 @@ theorem integral_re_inner_eq_zero_of_dense {f : ℝ → F} (hf : IntegrableOn f 
 there, whose pairing `∫_{[0, T]} Re ⟪ψ, f⟫` with every continuous loop `ψ` of period `T` vanishes,
 is zero almost everywhere on `[0, T]`: testing against the loops `g(t) v` with `g` supported in
 `(0, T)` shows that `Re ⟪v, f⟫` vanishes almost everywhere for every vector `v`. -/
-theorem ae_eq_zero_of_forall_integral_re_inner_eq_zero [SecondCountableTopology F] {f : ℝ → F}
+theorem IntegrableOn.ae_eq_zero_of_forall_integral_re_inner_continuousMap_eq_zero
+    [SecondCountableTopology F] {f : ℝ → F}
     (hf : IntegrableOn f (Icc 0 T))
     (h : ∀ ψ : C(AddCircle T, F), ∫ t in Icc 0 T, (inner ℂ (ψ t) (f t)).re = 0) :
     ∀ᵐ t ∂volume.restrict (Icc 0 T), f t = 0 := by
@@ -291,10 +294,11 @@ theorem ae_eq_zero_of_forall_integral_re_inner_eq_zero [SecondCountableTopology 
         (hg.continuous.smul continuous_const).continuousOn⟩
     have hψ (t : ℝ) (ht : t ∈ Icc 0 T) : ψ t = g t • v := by
       simp only [ψ, ContinuousMap.coe_mk]
-      rcases eq_or_lt_of_le ht.2 with rfl | ht1
-      · rw [show ((t : ℝ) : AddCircle t) = ((0 : ℝ) : AddCircle t) by
+      rcases eq_or_lt_of_le ht.2 with htT | ht1
+      · -- At the endpoint `t = T` the loop takes its value at `0`, where `g` vanishes.
+        rw [htT, show ((T : ℝ) : AddCircle T) = ((0 : ℝ) : AddCircle T) by
           rw [AddCircle.coe_period, QuotientAddGroup.mk_zero], AddCircle.liftIco_coe_apply
-          (by simp [hT.out]), hg0 0 (by simp), hg0 t (by simp)]
+          (by simp [hT.out]), hg0 0 (by simp), hg0 T (by simp)]
       · exact AddCircle.liftIco_coe_apply ⟨ht.1, by simpa using ht1⟩
     have h0 := h ψ
     rw [setIntegral_congr_fun measurableSet_Icc fun t ht ↦ by rw [hψ t ht]] at h0
@@ -311,4 +315,4 @@ theorem ae_eq_zero_of_forall_integral_re_inner_eq_zero [SecondCountableTopology 
 
 end Orthogonal
 
-end TauCeti
+end MeasureTheory

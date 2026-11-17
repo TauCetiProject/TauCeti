@@ -483,7 +483,13 @@ theorem stationaryCylinderOperator_smul_of_hasDerivAt {e : ℝ → V} {lam : ℝ
   have h : HasFDerivAt (fun w : ℝ × ℝ ↦ φ w.1 • e w.2) _ z := h1.smul h2
   have hJ : J z.2 (J z.2 (e z.2)) = -e z.2 := AlmostComplexStructure.apply_apply _ _
   rw [stationaryCylinderOperator_def, h.fderiv]
-  simp [stdComplexLineReal, stdComplexLineImag, hJ]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.coe_snd', ContinuousLinearMap.toSpanSingleton_apply,
+    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.coe_fst', stdComplexLineReal_fst,
+    stdComplexLineReal_snd, stdComplexLineImag_fst, stdComplexLineImag_snd, smul_eq_mul,
+    mul_one, mul_zero, zero_smul, one_smul, smul_zero, zero_add, add_zero, map_smul,
+    AlmostComplexStructure.apply_sub]
+  rw [hJ]
   module
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
