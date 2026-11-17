@@ -39,7 +39,7 @@ parent density `c ↦ H.relativeDensity c (Q.coarsen hV f)`:
    `(Equiv.Perm (Fin 3))ᵐᵒᵖ`-orbits of their fine polyads (`Polyad3.perm`), on which `#Q.support`
    and fine/coarse relative densities are invariant. Applying
    `TauCeti.exists_forall_abs_card_filter_sub_mul_card_lt` across all six ordered-fiber
-   multiplicities (`TauCeti.card_filter_ofFinEmb_eq_sum_factorial`) and role permutations yields a
+   multiplicities (`Finset.card_filter_ofFinEmb_eq_sum_factorial`) and role permutations yields a
    single coloring `H'` tracking `H.relativeDensity c P` on every good fine child while keeping
    global edit discrepancy controlled by `g`.
 3. **Coarse regularity and rank amplification:** summing over fine children yields coarse rank-one
@@ -419,8 +419,8 @@ private theorem exists_coupled_recoloring [Fintype κ]
           hxs ▸ canonTriple_ofFinEmb_eq (S'.support_subset hxS)
         by_cases hc₀ : H.color s = c₀ <;> simp [H', hcan, hQ₀, hc₀, hm]
       · simp [hm]
-    rw [card_filter_ofFinEmb_eq_sum_factorial S'.support fun s ↦ H.color s = c₀,
-      card_filter_ofFinEmb_eq_sum_factorial S'.support fun s ↦ H.color s = c₀ ∧ H'.color s = c]
+    rw [S'.support.card_filter_ofFinEmb_eq_sum_factorial fun s ↦ H.color s = c₀,
+      S'.support.card_filter_ofFinEmb_eq_sum_factorial fun s ↦ H.color s = c₀ ∧ H'.color s = c]
     simp_rw [hH'_on_L]
     have h1' (k : Fin (Nat.factorial 3)) :
         #{s : Set.powersetCard V 3 | H.color s = c₀ ∧

@@ -24,9 +24,11 @@ equivalence. It lets computations with fixed-cardinality subsets use the usual s
 When the source is `Fin r`, the embeddings `Fin r ↪ β` whose unordered image
 `Set.powersetCard.ofFinEmb r β` equals a prescribed `r`-element subset `t` correspond to the
 embeddings `Fin r ↪ t.val` (`Set.powersetCard.ofFinEmbFiberEquiv`), so there are `r!` of them
-without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq`), and two
-embeddings `Fin r ↪ β` have the same unordered image precisely when they differ by a permutation
-of `Fin r` (`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`).
+without any finiteness assumption on `β` (`Set.powersetCard.natCard_ofFinEmb_eq`). Precomposing an
+embedding or injective `r`-tuple by a permutation of `Fin r` leaves its unordered image unchanged
+(`Set.powersetCard.ofFinEmb_trans_perm`, `Set.powersetCard.ofFinEmb_comp_perm`), and two embeddings
+`Fin r ↪ β` have the same unordered image precisely when they differ by a permutation of `Fin r`
+(`Set.powersetCard.ofFinEmb_eq_iff_exists_perm`).
 -/
 
 public section
@@ -114,6 +116,16 @@ theorem ofFinEmb_trans_perm (σ : Equiv.Perm (Fin r)) (f : Fin r ↪ β) :
   SetLike.coe_injective <| by
     simp only [coe_ofFinEmb, Function.Embedding.coe_trans, Equiv.coe_toEmbedding]
     exact σ.surjective.range_comp f
+
+/-- Precomposing an injective `r`-tuple with a permutation of `Fin r` leaves its unordered
+image unchanged. -/
+@[simp]
+theorem ofFinEmb_comp_perm (σ : Equiv.Perm (Fin r)) (x : Fin r → β)
+    (h : Function.Injective (x ∘ σ)) :
+    ofFinEmb r β ⟨x ∘ σ, h⟩ = ofFinEmb r β ⟨x, (σ.injective_comp x).1 h⟩ := by
+  have htr : (⟨x ∘ σ, h⟩ : Fin r ↪ β) = σ.toEmbedding.trans ⟨x, (σ.injective_comp x).1 h⟩ :=
+    Function.Embedding.ext fun _ ↦ rfl
+  rw [htr, ofFinEmb_trans_perm]
 
 /-- Two embeddings `Fin r ↪ β` have the same unordered image if and only if they differ by a
 permutation of `Fin r`. -/

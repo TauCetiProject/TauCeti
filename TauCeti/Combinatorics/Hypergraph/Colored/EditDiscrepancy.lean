@@ -252,7 +252,8 @@ theorem card_editedOn_univ (H H' : Colored3Graph κ V) :
   have he : #edits = {t | H.color t ≠ H'.color t}.ncard := by
     simp [edits, ← Nat.card_coe_set_eq, Nat.card_eq_fintype_card, Fintype.card_subtype]
   rw [hfib]
-  simp [card_filter_ofFinEmb_eq, Nat.factorial_succ, Nat.factorial_zero, he, mul_comm]
+  simp [Set.powersetCard.card_filter_ofFinEmb_eq, Nat.factorial_succ, Nat.factorial_zero, he,
+    mul_comm]
 
 /-- On a finite vertex set, the edit discrepancy is the number of edited injective triples
 divided by `|V|³`. -/

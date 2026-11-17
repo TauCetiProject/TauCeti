@@ -12,6 +12,7 @@ public import TauCeti.Combinatorics.Hypergraph.Polyad.Density
 
 import Mathlib.Algebra.Group.Action.Basic
 import Mathlib.Tactic.FinCases
+import TauCeti.Logic.Embedding.Basic
 
 /-!
 # Permuting the roles of a triadic polyad
@@ -280,41 +281,13 @@ theorem mem_support_perm (P : Polyad3 S) (σ : Equiv.Perm (Fin 3))
     Subtype.ext (funext fun i ↦ by simp)
   simpa only [hx] using P.comp_mem_support_perm σ ⟨x.1 ∘ ⇑σ⁻¹, x.2.comp σ⁻¹.injective⟩
 
-end Polyad3
-
-private def permTripleEquiv {V : Type*} (σ : Equiv.Perm (Fin 3)) :
-    {x : Fin 3 → V // Function.Injective x} ≃ {x : Fin 3 → V // Function.Injective x} :=
-  (Equiv.subtypeInjectiveEquivEmbedding (Fin 3) V).trans
-    ((Equiv.embeddingCongr σ.symm (Equiv.refl V)).trans
-      (Equiv.subtypeInjectiveEquivEmbedding (Fin 3) V).symm)
-
-private theorem permTripleEquiv_apply {V : Type*} (σ : Equiv.Perm (Fin 3))
-    (x : {x : Fin 3 → V // Function.Injective x}) :
-    permTripleEquiv σ x = ⟨x.1 ∘ σ, x.2.comp σ.injective⟩ :=
-  Subtype.ext rfl
-
-private theorem permTripleEquiv_symm_apply {V : Type*} (σ : Equiv.Perm (Fin 3))
-    (x : {x : Fin 3 → V // Function.Injective x}) :
-    (permTripleEquiv σ).symm x = ⟨x.1 ∘ ⇑σ⁻¹, x.2.comp σ⁻¹.injective⟩ :=
-  Subtype.ext rfl
-
-private theorem ofFinEmb_permTripleEquiv {V : Type*} (σ : Equiv.Perm (Fin 3))
-    (x : {x : Fin 3 → V // Function.Injective x}) :
-    Set.powersetCard.ofFinEmb 3 V ⟨(permTripleEquiv σ x).1, (permTripleEquiv σ x).2⟩ =
-      Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩ := by
-  have htr : (⟨(permTripleEquiv σ x).1, (permTripleEquiv σ x).2⟩ : Fin 3 ↪ V) =
-      σ.toEmbedding.trans ⟨x.1, x.2⟩ :=
-    Function.Embedding.ext fun i ↦ congrFun (congrArg Subtype.val (permTripleEquiv_apply σ x)) i
-  rw [htr, Set.powersetCard.ofFinEmb_trans_perm]
-
-namespace Polyad3
-
-variable {κ V : Type*} [Fintype V] [DecidableEq V] {S : PairSkeleton3 κ V}
-
 private theorem support_perm_eq_map (P : Polyad3 S) (σ : Equiv.Perm (Fin 3)) :
-    (P.perm σ).support = P.support.map (permTripleEquiv σ).toEmbedding := by
+    (P.perm σ).support =
+      P.support.map (Equiv.subtypeInjectiveCongr σ.symm (Equiv.refl V)).toEmbedding := by
   ext y
-  rw [mem_map_equiv, permTripleEquiv_symm_apply, mem_support_perm]
+  rw [mem_map_equiv, Equiv.subtypeInjectiveCongr_symm, Equiv.subtypeInjectiveCongr_apply,
+    Equiv.symm_symm]
+  simpa [Equiv.Perm.inv_def] using P.mem_support_perm σ y
 
 /-- Role permutation preserves the support size of a polyad. -/
 @[simp]
@@ -395,7 +368,8 @@ theorem relativeDensity_perm {κ κ₂ V : Type*} [DecidableEq κ] [Fintype V] [
     H.relativeDensity c (P.perm σ) = H.relativeDensity c P := by
   rw [H.relativeDensity_def, H.relativeDensity_def, relDensityOn_def, relDensityOn_def,
     P.card_support_perm σ, Polyad3.support_perm_eq_map, filter_map, card_map]
-  simp only [Function.comp_def, Equiv.coe_toEmbedding, ofFinEmb_permTripleEquiv]
+  simp only [Function.comp_apply, Equiv.coe_toEmbedding, Equiv.subtypeInjectiveCongr_apply,
+    Equiv.coe_refl, Function.id_comp, Equiv.symm_symm, Set.powersetCard.ofFinEmb_comp_perm]
 
 end Colored3Graph
 
