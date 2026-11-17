@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Data.ZMod.QuotientRing
-public import TauCeti.AlgebraicTopology.ClassifyingSpace.Circle
+public import TauCeti.AlgebraicTopology.ClassifyingSpace.Circle.Basic
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.LocalCoefficients
 import TauCeti.AlgebraicTopology.ClassifyingSpace.Monodromy
 public import TauCeti.AlgebraicTopology.Singular.Twisted.HomotopyInvariance.Basic
 import TauCeti.GroupTheory.SpecificGroups.Cyclic.Basic
+public import TauCeti.RepresentationTheory.Cyclic.IntSign
 public import TauCeti.RepresentationTheory.Homological.GroupHomology.InfiniteCyclic
 import TauCeti.RepresentationTheory.Homological.GroupHomology.LowDegree
 
@@ -43,8 +44,8 @@ with the coefficient at its start; that cellular comparison is motivation only a
 formalised here.
 
 For the rank-one integral system of monodromy `-1`, coming from the sign representation
-`TauCeti.intSignRep`, the differential is `-2`. Its homology is `H₀ = ℤ / 2`
-(`TauCeti.circleTwistedHomologyIntSignRepIso₀ZMod`), `H₁ = 0`
+`TauCeti.intSignRep` (`TauCeti.RepresentationTheory.Cyclic.IntSign`), the differential is `-2`.
+Its homology is `H₀ = ℤ / 2` (`TauCeti.circleTwistedHomologyIntSignRepIso₀ZMod`), `H₁ = 0`
 (`TauCeti.isZero_circleTwistedHomology_one_intSignRep`) and zero above, although the circle with
 constant integral coefficients has `H₀ = H₁ = ℤ`: a cycle running twice around the circle has
 coefficient `a + (-1) a = 0`. This local system is the orientation system of the Möbius line
@@ -59,7 +60,6 @@ line.
 * `TauCeti.circleTwistedHomologyIsoGroupHomology`: `Hₙ(S¹; A) ≅ Hₙ(ℤ, A)`.
 * `TauCeti.circleTwistedHomologyIso₀`, `TauCeti.circleTwistedHomologyIso₁`: the homology in
   degrees `0` and `1`.
-* `TauCeti.intSignRep`: the integral sign representation of `ℤ`.
 * `TauCeti.circleTwistedHomologyIntSignRepIso₀ZMod`: `H₀(S¹; ℤ⁻) ≅ ℤ / 2`.
 
 ## Main results
@@ -156,36 +156,6 @@ theorem isZero_circleTwistedHomology_add_two (n : ℕ) :
   (Rep.InfiniteCyclicGroup.isZero_groupHomology_add_two A Int.mem_zpowers_ofAdd_one
     Int.not_isOfFinOrder_ofAdd_one n).of_iso
     (circleTwistedHomologyIsoGroupHomology A (n + 2))
-
-/-- The integral sign representation of `ℤ`, in which `n` acts on `ℤ` by `(-1) ^ n`. Its local
-system on the circle is the rank-one integral system of monodromy `-1`. -/
-abbrev intSignRep : Rep ℤ (Multiplicative ℤ) :=
-  Rep.of ((Units.coeHom (Module.End ℤ ℤ)).comp (zpowersHom (Module.End ℤ ℤ)ˣ (-1)))
-
-/-- In the sign representation, `n` acts by `(-1) ^ n`. -/
-theorem intSignRep_ρ_apply (n : Multiplicative ℤ) :
-    intSignRep.ρ n = ↑((-1 : (Module.End ℤ ℤ)ˣ) ^ n.toAdd) :=
-  rfl
-
-/-- The generator of `ℤ` acts by `-1` in the sign representation. -/
-theorem intSignRep_ρ_ofAdd_one : intSignRep.ρ (Multiplicative.ofAdd 1) = -1 := by
-  simp [intSignRep]
-
-/-- In the sign representation, `T - 𝟙` acts as multiplication by `-2`. -/
-theorem intSignRep_ρ_ofAdd_one_sub_id_apply (x : ℤ) :
-    (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id : Module.End ℤ ℤ) x = -2 * x := by
-  rw [intSignRep_ρ_ofAdd_one]
-  simp
-  ring
-
-/-- In the sign representation, `T - 𝟙 = -2` has range `2ℤ`. -/
-theorem range_intSignRep_ρ_ofAdd_one_sub_id :
-    LinearMap.range (intSignRep.ρ (Multiplicative.ofAdd 1) - LinearMap.id) =
-      Ideal.span {2} := by
-  ext x
-  rw [LinearMap.mem_range, Ideal.mem_span_singleton]
-  constructor <;> rintro ⟨y, rfl⟩ <;>
-    exact ⟨-y, by rw [intSignRep_ρ_ofAdd_one_sub_id_apply]; ring⟩
 
 /-- **The circle with integral coefficients of monodromy `-1` has `H₀ = ℤ / 2`.** -/
 def circleTwistedHomologyIntSignRepIso₀ZMod :

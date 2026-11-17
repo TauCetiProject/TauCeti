@@ -62,7 +62,7 @@ noncomputable def H0IsoOfForallMemZpowers {g : G} (hg : ∀ x, x ∈ Subgroup.zp
 open CategoryTheory in
 /-- The identification `H0IsoOfForallMemZpowers` sends the class of `a` to the class of `a`
 modulo `(ρ(g) - 𝟙) A`. -/
-@[reassoc]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem H0π_comp_H0IsoOfForallMemZpowers_hom {g : G} (hg : ∀ x, x ∈ Subgroup.zpowers g) :
     H0π A ≫ (H0IsoOfForallMemZpowers A hg).hom =
       ModuleCat.ofHom (LinearMap.range (A.ρ g - LinearMap.id)).mkQ := by
