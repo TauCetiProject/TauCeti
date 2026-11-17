@@ -110,9 +110,9 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.mvfderiv_subtype_val_apply` and
   `TauCeti.Manifold.injective_mvfderiv_subtype_val`: for an open subset of a normed space, the
   derivative of the inclusion, read in the normed space, fixes each tangent vector.
-* `TauCeti.Manifold.tangentSpaceOpenEquiv_mfderiv_apply`: under this equivalence, the differential
-  of a map between open submanifolds is that of any ambient map it restricts; in particular one is
-  the identity exactly when the other is (`TauCeti.Manifold.mfderiv_eq_id_iff_of_comp_subtype_val`).
+* `TauCeti.Manifold.mfderiv_apply_of_subtype_val_comp_eq`: the differential of a map between open
+  submanifolds is that of any ambient map it restricts; in particular one is the identity exactly
+  when the other is (`TauCeti.Manifold.mfderiv_eq_id_iff_of_comp_subtype_val`).
 * `TauCeti.Manifold.instT2SpaceTangentBundleModelSpace`: a model space has a Hausdorff tangent
   bundle. It is an instance in the `TauCeti` scope, for model spaces `H` whose Hausdorffness is
   not already an instance; over a Hausdorff manifold the tangent bundle is Hausdorff by the general
@@ -946,21 +946,16 @@ theorem mfderiv_subtype_val_comp_apply {U : Opens M} {f : N → U} {x : N}
 end RestrictOpen
 
 /-- If a map `f` between open submanifolds is the restriction of a map `A` of the ambient
-manifolds, then under the canonical tangent-space identifications the differential of `f` at `x`
-is the differential of `A` at `x` (both are `0` when `f` is not differentiable at `x`). -/
-theorem tangentSpaceOpenEquiv_mfderiv_apply
+manifolds, then the differential of `f` at `x` is the differential of `A` at `x`, on the common
+model space of the tangent spaces (both are `0` when `f` is not differentiable at `x`). -/
+theorem mfderiv_apply_of_subtype_val_comp_eq
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
     {M' : Type*} [TopologicalSpace M'] [ChartedSpace H' M']
     {U : Opens M} {V : Opens M'} {f : U → V} {A : M → M'} {x : U}
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) (v : TangentSpace I x) :
-    tangentSpaceOpenEquiv (I := I') (f x) (mfderiv I I' f x v) =
-      mfderiv I I' A x (tangentSpaceOpenEquiv (I := I) x v) := by
-  have h : mfderiv I I' (Subtype.val ∘ f) x v = mfderiv I I' f x v :=
-    mfderiv_subtype_val_comp_apply v
-  rw [hcomp, mfderiv_comp_subtype_val_apply] at h
-  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply]
-  exact h.symm
+    mfderiv I I' f x v = mfderiv I I' A x v := by
+  rw [← mfderiv_subtype_val_comp_apply, hcomp, mfderiv_comp_subtype_val_apply]
 
 /-- If a map `f` between open submanifolds is the restriction of a self-map `A` of the ambient
 manifold, then `f` has identity differential at `x` exactly when `A` does. -/
@@ -968,11 +963,8 @@ theorem mfderiv_eq_id_iff_of_comp_subtype_val {U V : Opens M} {f : U → V} {A :
     (hcomp : Subtype.val ∘ f = A ∘ Subtype.val) :
     mfderiv I I f x = ContinuousLinearMap.id 𝕜 (TangentSpace I x) ↔
       mfderiv I I A x = ContinuousLinearMap.id 𝕜 (TangentSpace I (x : M)) := by
-  have h (v : TangentSpace I x) : mfderiv I I f x v = mfderiv I I A x v := by
-    have h := tangentSpaceOpenEquiv_mfderiv_apply (I := I) (I' := I) hcomp v
-    rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply] at h
-    -- The two sides live in `TangentSpace I (f x)` and `TangentSpace I ↑(f x)`, both `E`.
-    exact h
+  have h (v : TangentSpace I x) : mfderiv I I f x v = mfderiv I I A x v :=
+    mfderiv_apply_of_subtype_val_comp_eq (I := I) (I' := I) hcomp v
   constructor <;> intro hd <;> ext v
   · -- Both identities act on the model space `E`.
     exact (h v).symm.trans (congrArg (· v) hd)
@@ -983,8 +975,8 @@ model vector space. -/
 @[simp]
 theorem mfderiv_inclusion_apply {U V : Opens M} (h : U ≤ V) (x : U)
     (v : TangentSpace I x) : mfderiv I I (Opens.inclusion h) x v = v := by
-  have h' := tangentSpaceOpenEquiv_mfderiv_apply (I' := I) (f := Opens.inclusion h) (A := id) rfl v
-  rw [tangentSpaceOpenEquiv_apply, tangentSpaceOpenEquiv_apply, mfderiv_id] at h'
+  have h' := mfderiv_apply_of_subtype_val_comp_eq (I' := I) (f := Opens.inclusion h) (A := id) rfl v
+  rw [mfderiv_id] at h'
   exact h'
 
 /-- The derivative of the inclusion of an open subset of a normed space, read in the normed space,
