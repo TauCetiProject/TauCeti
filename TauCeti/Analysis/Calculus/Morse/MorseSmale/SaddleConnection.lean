@@ -296,8 +296,7 @@ theorem fderiv_tiltedTorusHeight_eq_zero_iff {z : EuclideanSpace ℝ (Fin 2)} :
       PiLp.zero_apply, neg_eq_zero] at h0' h1'
     exact ⟨(mul_eq_zero.1 h0').resolve_left (two_add_cos_pos (z 1)).ne', by linarith⟩
   · rintro ⟨h0, h1⟩
-    ext i
-    fin_cases i <;> simp [h0, h1]
+    exact ext_two (by simp [h0]) (by simp [h1])
 
 variable {z : EuclideanSpace ℝ (Fin 2)}
 
@@ -378,10 +377,7 @@ theorem isNondegenerateCriticalPoint_tiltedTorusHeight
   have h0 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 0) hD
   have h1 := congrArg (fun v : EuclideanSpace ℝ (Fin 2) ↦ v 1) hD
   simp only [hessField_apply, (hess_of_fderiv_eq_zero hz).2.1] at h0 h1
-  ext i
-  fin_cases i
-  · simpa [hessA_ne_zero hz] using h0
-  · simpa [hessD_ne_zero hz] using h1
+  exact ext_two (by simpa [hessA_ne_zero hz] using h0) (by simpa [hessD_ne_zero hz] using h1)
 
 /-- **The tilted torus height is a Morse function**: every critical point is nondegenerate. -/
 theorem hasNondegenerateCriticalPointsOn_tiltedTorusHeight :
@@ -393,11 +389,7 @@ private theorem ne_zero_iff_coord {u : EuclideanSpace ℝ (Fin 2)} (hu : u ≠ 0
     u 0 ≠ 0 ∨ u 1 ≠ 0 := by
   by_contra h
   rw [not_or, not_not, not_not] at h
-  apply hu
-  ext i
-  fin_cases i
-  · simpa using h.1
-  · simpa using h.2
+  exact hu (ext_two (by simpa using h.1) (by simpa using h.2))
 
 /-- A diagonal quadratic form `a u₀² + d u₁²` on the plane is positive definite exactly when `a`
 and `d` are positive. -/
@@ -526,8 +518,7 @@ theorem mem_unstableSet_inter_stableSet_tiltedTorusHeight_zero :
       rwa [Real.arctan_zero] at h
     rw [saddleConnection_eq_comp]
     convert (hc.tendsto 0).comp harc using 2
-    ext i
-    fin_cases i <;> simp
+    exact ext_two (by simp) (by simp)
   · have harc : Tendsto (Real.arctan ∘ Real.exp) atTop (𝓝 (Real.pi / 2)) :=
       (Real.tendsto_arctan_atTop.mono_right nhdsWithin_le_nhds).comp Real.tendsto_exp_atTop
     rw [saddleConnection_eq_comp]
