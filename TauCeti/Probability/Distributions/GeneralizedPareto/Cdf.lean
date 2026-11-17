@@ -43,7 +43,7 @@ theorem cdf_generalizedParetoMeasure_generalizedParetoMap (hs : 0 < s) (ξ e : �
   let _ := isProbabilityMeasure_expMeasure one_pos
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
   rw [generalizedParetoMeasure_of_pos hs,
-    Measure.cdf_map _ _ (measurable_generalizedParetoMap_right s ξ).aemeasurable, cdf_eq_real]
+    Measure.cdf_map _ _ (measurable_generalizedParetoMap s ξ).aemeasurable, cdf_eq_real]
   congr 1
   ext y
   exact (strictMono_generalizedParetoMap hs ξ).le_iff_le
@@ -81,7 +81,7 @@ theorem cdf_generalizedParetoMeasure_eq_one_of_neg_div_le (hs : 0 < s) (hξ : ξ
     rw [generalizedParetoMap_of_shape_ne_zero hξ.ne, div_le_div_right_of_neg hξ]
     nlinarith [mul_pos hs (Real.exp_pos (ξ * e))]
   rw [generalizedParetoMeasure_of_pos hs,
-    Measure.cdf_map _ _ (measurable_generalizedParetoMap_right s ξ).aemeasurable, hpre]
+    Measure.cdf_map _ _ (measurable_generalizedParetoMap s ξ).aemeasurable, hpre]
   simp
 
 /-- The full generalized Pareto cdf, with its lower, zero-shape, and finite-upper-endpoint
