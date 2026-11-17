@@ -653,9 +653,7 @@ theorem exists_sublevel_union_iUnion_negativeDiscBundle_deformation [T2Space M]
     rw [Real.dist_eq, abs_lt]
     have := hε.2.trans_le (min_le_right _ _)
     constructor <;> linarith [hxb.1, hxb.2]
-  obtain ⟨a, s, rfl⟩ := mem_iUnion.1 (h.criticalPoints_subset_iUnion_range hx)
-  exact mem_iUnion.2 ⟨⟨a, fun s' ↦ (h.subsingleton_image_range hn a (mem_image_of_mem f
-    (mem_range_self s')) (mem_image_of_mem f (mem_range_self s))).trans hfx⟩, s, rfl⟩
+  exact h.mem_iUnion_range_of_apply_eq hn hx hfx
 
 end IsMorseBottFamily
 
