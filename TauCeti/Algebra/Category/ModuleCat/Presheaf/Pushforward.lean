@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Pushforward
 import Mathlib.Algebra.Category.ModuleCat.Presheaf.Abelian
 import Mathlib.CategoryTheory.Functor.ReflectsIso.Balanced
+import Mathlib.CategoryTheory.Limits.Preserves.FunctorCategory
 
 /-!
 # Pushforwards of presheaves of modules
@@ -60,24 +61,18 @@ variable {F} {S : Cᵒᵖ ⥤ RingCat.{u}} (φ : S ⟶ F.op ⋙ R)
 
 /-- The pushforward of presheaves of modules preserves finite limits: forgetting the module
 structure creates them, and on underlying presheaves of abelian groups the pushforward is
-precomposition with `F`. -/
+precomposition with `F`. The module universe is independent of the site and ring universes,
+so this also applies when the universe requirements of Mathlib's right adjoint instance do not
+hold. -/
 instance preservesFiniteLimits_pushforward : PreservesFiniteLimits (pushforward.{v} φ) := by
-  -- Componentwise, the composite with `toPresheaf S` is evaluation of `toPresheaf R` at the image.
-  have : PreservesFiniteLimits (pushforward.{v} φ ⋙ toPresheaf S) := ⟨fun J _ _ ↦
-    preservesLimitsOfShape_of_evaluation _ J fun X ↦
-      inferInstanceAs (PreservesLimitsOfShape J
-        (toPresheaf R ⋙ (CategoryTheory.evaluation _ _).obj (op (F.obj X.unop))))⟩
+  have := preservesFiniteLimits_of_natIso (pushforwardCompToPresheaf.{v} φ).symm
   exact preservesFiniteLimits_of_reflects_of_preserves _ (toPresheaf S)
 
 /-- The pushforward of presheaves of modules preserves finite colimits: forgetting the module
 structure creates them, and on underlying presheaves of abelian groups the pushforward is
 precomposition with `F`. -/
 instance preservesFiniteColimits_pushforward : PreservesFiniteColimits (pushforward.{v} φ) := by
-  -- Componentwise, the composite with `toPresheaf S` is evaluation of `toPresheaf R` at the image.
-  have : PreservesFiniteColimits (pushforward.{v} φ ⋙ toPresheaf S) := ⟨fun J _ _ ↦
-    preservesColimitsOfShape_of_evaluation _ J fun X ↦
-      inferInstanceAs (PreservesColimitsOfShape J
-        (toPresheaf R ⋙ (CategoryTheory.evaluation _ _).obj (op (F.obj X.unop))))⟩
+  have := preservesFiniteColimits_of_natIso (pushforwardCompToPresheaf.{v} φ).symm
   exact preservesFiniteColimits_of_reflects_of_preserves _ (toPresheaf S)
 
 /-- The pushforward of presheaves of modules is additive. -/

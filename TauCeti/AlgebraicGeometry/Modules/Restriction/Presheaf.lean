@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Abelian
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 public import TauCeti.Algebra.Category.ModuleCat.Presheaf.Pushforward
 public import TauCeti.AlgebraicGeometry.Modules.Restriction.Basic
@@ -32,12 +31,11 @@ localization at `s` can therefore be checked on its restriction to `W`, where th
 global function `s` is involved
 (`Scheme.PresheafOfModules.isLocalizedModule_map_basicOpen_of_restrictFunctor_obj_iso`).
 
-Restriction of presheaves is exact: as a pushforward of presheaves of modules it preserves finite
-limits and finite colimits
-(`AlgebraicGeometry.Scheme.PresheafOfModules.preservesFiniteLimits_restrictFunctor` and
-`AlgebraicGeometry.Scheme.PresheafOfModules.preservesFiniteColimits_restrictFunctor`, from
-`TauCeti.PresheafOfModules.preservesFiniteLimits_pushforward` and
-`TauCeti.PresheafOfModules.preservesFiniteColimits_pushforward`), so it preserves homology by
+Restriction of presheaves is exact: it is a right adjoint
+(`AlgebraicGeometry.Scheme.PresheafOfModules.isRightAdjoint_restrictFunctor`), so it preserves
+limits, and as a pushforward it preserves finite colimits
+(`AlgebraicGeometry.Scheme.PresheafOfModules.preservesFiniteColimits_restrictFunctor`, from
+`TauCeti.PresheafOfModules.preservesFiniteColimits_pushforward`). Thus it preserves homology by
 Mathlib's `CategoryTheory.Functor.preservesHomologyOfExact`. Exactness is what lets restriction
 commute with right derived functors with values in presheaves of modules, such as the presheaf
 `V ↦ Hⁿ(f⁻¹ V, M)` of higher direct images.
@@ -136,9 +134,6 @@ instance isRightAdjoint_restrictFunctor : (restrictFunctor f).IsRightAdjoint :=
 -- coefficient morphism hides it from instance search.
 instance additive_restrictFunctor : (restrictFunctor f).Additive :=
   TauCeti.PresheafOfModules.additive_pushforward (F := f.opensFunctor) _
-
-instance preservesFiniteLimits_restrictFunctor : PreservesFiniteLimits (restrictFunctor f) :=
-  TauCeti.PresheafOfModules.preservesFiniteLimits_pushforward (F := f.opensFunctor) _
 
 instance preservesFiniteColimits_restrictFunctor :
     PreservesFiniteColimits (restrictFunctor f) :=
