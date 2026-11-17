@@ -171,12 +171,14 @@ theorem finite_homotopyGroup_twoFrame {N : ℕ} (hN : Odd N) (h5 : 5 ≤ N) {M :
   have hbd : TopCat.fibrationBoundary hp e a ≠ 1 := fun h ↦ ha <| by
     obtain ⟨β, rfl⟩ := (TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).2
       (h.trans HomotopyGroup.one_def)
+    -- `p.hom` is `⟨forgetLast, _⟩` by definition (`TopCat.hom_ofHom`), and `1 + 1` reduces to `2`.
     exact homotopyGroupMap_forgetLast_eq_const (by simpa using hN) (by simp; omega) f β
   -- The fibre inclusion `j` kills `∂ a`, and it is onto since `π_(k+3)(V₁)` is trivial.
   let j := HomotopyGroup.mapHom (N := M) (p.fiberι (forgetLast f)).hom
     (TopCat.Hom.fiberι_apply p _ e)
   have hjbd : j (TopCat.fibrationBoundary hp e a) = 1 :=
-    ((TopCat.mem_range_fibrationBoundary_iff hp).1 ⟨a, rfl⟩).trans HomotopyGroup.one_def.symm
+    (HomotopyGroup.mapHom_apply _ _ _).trans
+      (((TopCat.mem_range_fibrationBoundary_iff hp).1 ⟨a, rfl⟩).trans HomotopyGroup.one_def.symm)
   have hj : Function.Surjective j := fun y ↦
     have : Subsingleton (HomotopyGroup M (finiteOrthonormalFrame ℝ 1 (k + 5)) (forgetLast f)) :=
       subsingleton_homotopyGroup (by omega) _
