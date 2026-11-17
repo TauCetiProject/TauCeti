@@ -215,14 +215,18 @@ private lemma zetaValue_neg (b : Fin 2 → ℤ) (z : ℍ) : zetaValue N (-b) z =
   rw [weierstrassZeta_neg]
   ring
 
+omit [NeZero N] in
 /-- **The corrected division values depend only on the residue**: the value of `b` is that of
 the least nonnegative representatives of `b mod N`. Replacing `b` by `b + N y` moves the division
 point by the lattice vector `y₀ z + y₁`, which changes `ζ` by its quasi-period `y₀ η₁ + y₁ η₂`,
 and the correction by the same amount. -/
 private lemma zetaValue_eq_lift (b : Fin 2 → ℤ) (z : ℍ) :
     zetaValue N b z = zetaValue N (lift (((↑) : ℤ → ZMod N) ∘ b)) z := by
+  rcases eq_or_ne N 0 with rfl | hN₀
+  · simp [zetaValue]
+  have : NeZero N := ⟨hN₀⟩
   set c := lift (((↑) : ℤ → ZMod N) ∘ b)
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hN₀
   have hdvd (i : Fin 2) : (N : ℤ) ∣ b i - c i := by
     rw [← ZMod.intCast_zmod_eq_zero_iff_dvd]
     simp [c, lift]
@@ -264,15 +268,23 @@ private lemma zetaValue_smul (γ : SL(2, ℤ)) (b : Fin 2 → ℤ) (z : ℍ) :
   rw [← hη, hb, div_right_comm, weierstrassZeta_periodPair_smul]
   ring
 
+omit [NeZero N] in
 /-- The slash action on the corrected division value of a residue pair. -/
 private lemma zetaValue_lift_smul (γ : SL(2, ℤ)) (a : Fin 2 → ZMod N) (z : ℍ) :
     zetaValue N (lift a) (γ • z) = denom γ z *
       zetaValue N (lift (a ᵥ* ((γ : SL(2, ZMod N)) : Matrix (Fin 2) (Fin 2) (ZMod N)))) z := by
+  rcases eq_or_ne N 0 with rfl | hN₀
+  · simp [zetaValue]
+  have : NeZero N := ⟨hN₀⟩
   rw [zetaValue_smul, zetaValue_eq_lift (lift a ᵥ* _), intCast_comp_vecMul, intCast_comp_lift]
 
+omit [NeZero N] in
 /-- The corrected division value of `-a` is minus that of `a`. -/
 private lemma zetaValue_lift_neg (a : Fin 2 → ZMod N) (z : ℍ) :
     zetaValue N (lift (-a)) z = -zetaValue N (lift a) z := by
+  rcases eq_or_ne N 0 with rfl | hN₀
+  · simp [zetaValue]
+  have : NeZero N := ⟨hN₀⟩
   have hcast : ((↑) : ℤ → ZMod N) ∘ (-lift a) = -a := by
     ext i
     simp [lift]
@@ -381,13 +393,25 @@ private def zetaRow (a : Fin 2 → ZMod N) (m : ℤ) (z : ℍ) : ℂ :=
   cotRow (((a 0).val * (z : ℂ) + (a 1).val) / N) m z -
     2 * (a 0).val / N * cotRow (z / 2) m z - 2 * (a 1).val / N * cotRow (1 / 2) m z
 
+omit [NeZero N] in
 /-- **The corrected division values as series of cotangent rows.** With `η₁ = 2 ζ(z / 2)` and
 `η₂ = 2 ζ(1 / 2)`, the value at a nonzero residue `a` is
 `ζ(x) - 2 (a₀ / N) ζ(z / 2) - 2 (a₁ / N) ζ(1 / 2)` with `x = (a₀ z + a₁) / N`. Summing the three
-lattice series along rows, the parts `x ∑_n (m z + n)⁻²` of the rows cancel, leaving cotangents. -/
-private lemma hasSum_zetaValue_lift {a : Fin 2 → ZMod N} (ha : a ≠ 0) (z : ℍ) :
+lattice series along rows, the parts `x ∑_n (m z + n)⁻²` of the rows cancel, leaving cotangents.
+At the zero residue and at level `0` both sides vanish. -/
+private lemma hasSum_zetaValue_lift (a : Fin 2 → ZMod N) (z : ℍ) :
     HasSum (fun m ↦ zetaRow a m z) (zetaValue N (lift a) z) := by
-  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hzero : ∀ m : ℤ, zetaRow (0 : Fin 2 → ZMod N) m z = 0 := fun m ↦ by
+    simp [zetaRow, cotRow, Complex.cot_eq_cos_div_sin, Complex.cos_neg, Complex.sin_neg, div_neg]
+  rcases eq_or_ne N 0 with rfl | hN₀
+  · simp [zetaValue, zetaRow, cotRow, Complex.cot_eq_cos_div_sin, Complex.cos_neg,
+      Complex.sin_neg, div_neg]
+  have : NeZero N := ⟨hN₀⟩
+  by_cases ha : a = 0
+  · subst ha
+    rw [lift_zero, zetaValue_zero]
+    simpa only [hzero] using hasSum_zero
+  have hN : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr hN₀
   have hx : ((a 0).val * (z : ℂ) + (a 1).val) / N ∉ z.periodPair.lattice := fun h ↦ ha <| by
     rw [← intCast_comp_lift a]
     exact intCast_comp_eq_zero_of_div_mem_lattice_periodPair (by simpa [lift] using h)
@@ -436,9 +460,12 @@ private lemma summable_rowBound (M b₁ : ℕ) : Summable (rowBound M b₁) :=
     (summable_of_ne_finset_zero (s := {0}) fun m hm ↦ by simp_all)
 
 /-- The cotangent row `m = 0` at a division point is bounded: it is `π cot (π x)`, which is
-bounded by `cotConst M + π` if `b₀ ≠ 0` and is the constant `π cot (π b₁ / M)` if `b₀ = 0`. -/
-private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hM : 0 < M) {z : ℍ} (hz : 1 ≤ z.im) :
+bounded by `cotConst M + π` if `b₀ ≠ 0` and is the constant `π cot (π b₁ / M)` if `b₀ = 0`.
+At `M = 0` the division point is `0` and the row vanishes. -/
+private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} {z : ℍ} (hz : 1 ≤ z.im) :
     ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) 0 z‖ ≤ rowBound M b₁ 0 := by
+  rcases Nat.eq_zero_or_pos M with rfl | hM
+  · simpa [cotRow] using rowBound_nonneg 0 b₁ 0
   have hM' : (0 : ℝ) < M := by exact_mod_cast hM
   simp only [cotRow, Int.cast_zero, zero_mul, sub_zero, mul_zero, cot_zero, add_zero, rowBound,
     ↓reduceIte]
@@ -516,7 +543,7 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
 private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
     ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) m z‖ ≤ rowBound M b₁ m := by
   rcases eq_or_ne m 0 with rfl | hm
-  · exact norm_cotRow_zero_le (by omega) hz
+  · exact norm_cotRow_zero_le hz
   · exact norm_cotRow_le_of_ne_zero hb hm hz
 
 /-- The summable majorant of the rows of the corrected division values on `1 ≤ Im z`. -/
@@ -534,9 +561,18 @@ private lemma div_two_eq (z : ℍ) :
       (1 : ℂ) / 2 = (((0 : ℕ) : ℂ) * z + ((1 : ℕ) : ℂ)) / ((2 : ℕ) : ℂ) := by
   simp
 
+omit [NeZero N] in
 /-- Each row of a corrected division value is bounded by `zetaBound` on `1 ≤ Im z`. -/
 private lemma norm_zetaRow_le (a : Fin 2 → ZMod N) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
     ‖zetaRow a m z‖ ≤ zetaBound N (a 1).val m := by
+  rcases eq_or_ne N 0 with rfl | hN₀
+  · have h₁ := rowBound_nonneg 0 (a 1).val m
+    have h₂ := rowBound_nonneg 2 0 m
+    have h₃ := rowBound_nonneg 2 1 m
+    simp only [zetaRow, cotRow, zetaBound]
+    simpa [Complex.cot_eq_cos_div_sin, Complex.cos_neg, Complex.sin_neg, div_neg] using
+      by positivity
+  have : NeZero N := ⟨hN₀⟩
   -- the coefficients `2 r / N` of the rows at `z / 2` and `1 / 2` are at most `2`
   have hcoeff (r : ZMod N) : ‖(2 * r.val / N : ℂ)‖ ≤ 2 := by
     have hN : (0 : ℝ) < N := Nat.cast_pos.mpr (NeZero.pos N)
@@ -558,18 +594,11 @@ private lemma norm_zetaRow_le (a : Fin 2 → ZMod N) (m : ℤ) {z : ℍ} (hz : 1
         gcongr
         all_goals exact hcoeff _
 
+omit [NeZero N] in
 /-- Each corrected division value is bounded on `1 ≤ Im z`, by summing along rows. -/
 private lemma norm_zetaValue_lift_le (a : Fin 2 → ZMod N) {z : ℍ} (hz : 1 ≤ z.im) :
-    ‖zetaValue N (lift a) z‖ ≤ ∑' m, zetaBound N (a 1).val m := by
-  by_cases ha : a = 0
-  · rw [ha, lift_zero, zetaValue_zero, norm_zero]
-    exact tsum_nonneg fun m ↦ by
-      have := rowBound_nonneg N 0 m
-      have := rowBound_nonneg 2 0 m
-      have := rowBound_nonneg 2 1 m
-      simp only [zetaBound, ZMod.val_zero, Pi.zero_apply]
-      positivity
-  exact (hasSum_zetaValue_lift ha z).norm_le_of_bounded (summable_zetaBound _).hasSum
+    ‖zetaValue N (lift a) z‖ ≤ ∑' m, zetaBound N (a 1).val m :=
+  (hasSum_zetaValue_lift a z).norm_le_of_bounded (summable_zetaBound _).hasSum
     fun m ↦ norm_zetaRow_le a m hz
 
 /-- **The weighted weight-one series is bounded at `i∞`.** -/
@@ -659,14 +688,8 @@ private def zetaValueLimit (a : Fin 2 → ZMod N) : ℂ :=
 /-- The limit at `i∞` of a corrected division value, by dominated convergence along the rows. -/
 private lemma tendsto_zetaValue_lift_atImInfty (a : Fin 2 → ZMod N) :
     Tendsto (zetaValue N (lift a)) atImInfty (𝓝 (zetaValueLimit a)) := by
-  by_cases ha : a = 0
-  · subst ha
-    have h0 : zetaValue N (lift (0 : Fin 2 → ZMod N)) = fun _ ↦ 0 :=
-      funext fun z ↦ by rw [lift_zero, zetaValue_zero]
-    rw [h0]
-    simp [zetaValueLimit]
   have hfun : zetaValue N (lift a) = fun z ↦ ∑' m, zetaRow a m z :=
-    funext fun z ↦ (hasSum_zetaValue_lift ha z).tsum_eq.symm
+    funext fun z ↦ (hasSum_zetaValue_lift a z).tsum_eq.symm
   have hrow (m : ℤ) : Tendsto (fun z ↦ zetaRow a m z) atImInfty
       (𝓝 (if m = 0 then zetaValueLimit a else 0)) := by
     have t₁ := tendsto_cotRow_atImInfty (b₁ := (a 1).val) (ZMod.val_lt (a 0)) m
@@ -772,9 +795,6 @@ private lemma hasSum_zetaValue_lift_sub (a : Fin 2 → ZMod N) (z : ℍ) :
       gcongr
       exact norm_divCoeff_le ..
   convert hs.hasSum using 1
-  by_cases ha : a = 0
-  · subst ha
-    simp [lift_zero, zetaValue_zero, zetaValueLimit, divCoeff]
   have hcot : cot (π * (1 / 2)) = 0 := by
     rw [Complex.cot_eq_cos_div_sin, ← div_eq_mul_one_div, Complex.cos_pi_div_two, zero_div]
   have hcot' : cot (π * 2⁻¹) = 0 := by
@@ -798,7 +818,7 @@ private lemma hasSum_zetaValue_lift_sub (a : Fin 2 → ZMod N) (z : ℍ) :
     simpa [divCoeff_two_zero_one, hcot'] using h₃
   have hrow : HasSum (fun m ↦ zetaRow a m z) _ :=
     (h₁.sub (h₂'.mul_left (2 * (a 0).val / N : ℂ))).sub (h₃'.mul_left (2 * (a 1).val / N : ℂ))
-  rw [(hasSum_zetaValue_lift ha z).unique hrow, zetaValueLimit]
+  rw [(hasSum_zetaValue_lift a z).unique hrow, zetaValueLimit]
   split_ifs with h0
   · simp only [h0, Nat.cast_zero]
     ring
