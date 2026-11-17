@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 
+import Mathlib.RingTheory.MvPowerSeries.Derivative
 import TauCeti.Algebra.MvPolynomial.Eval
 
 /-!
@@ -31,6 +32,12 @@ divisible by `d * e`. This is the several-variable form of
 `Polynomial.mul_dvd_eval_sub_eval_sub_mul` and the estimate behind Newton's method with an
 approximately invertible Jacobian.
 
+Over a commutative ring with `HasUniqueDiv`, a polynomial is uniquely determined by its formal
+partial derivatives and its constant coefficient (`MvPolynomial.pderiv.ext`, inherited from
+`MvPowerSeries.pderiv.ext`); in particular, all partial derivatives vanish if and only if the
+polynomial is constant, and two polynomials with equal partial derivatives differ by the constant
+difference of their constant coefficients.
+
 ## Main results
 
 * `MvPolynomial.pderiv_aeval`: the chain rule, summed over all variables of a finite type.
@@ -48,6 +55,13 @@ approximately invertible Jacobian.
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
 * `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's estimate
   `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
+* `MvPolynomial.pderiv.ext`: over a commutative ring with `HasUniqueDiv`, a polynomial is
+  determined by its formal partial derivatives and its constant coefficient.
+* `MvPolynomial.eq_C_constantCoeff_of_forall_pderiv_eq_zero`,
+  `MvPolynomial.forall_pderiv_eq_zero_iff`: a polynomial has vanishing formal gradient if and only
+  if it is constant.
+* `MvPolynomial.sub_eq_C_of_forall_pderiv_eq`: two polynomials with equal formal partial
+  derivatives differ by the difference of their constant coefficients.
 -/
 
 public section
@@ -222,5 +236,44 @@ theorem mul_dvd_eval_sub_eval_sub_sum_pderiv [Fintype σ] (p : MvPolynomial σ R
     ring
 
 end CommRing
+
+section UniqueDiv
+
+variable {R σ : Type*} [CommRing R] [HasUniqueDiv R]
+
+/-- Over a commutative ring with `HasUniqueDiv`, a multivariate polynomial is uniquely determined
+by its formal partial derivatives and its constant coefficient. -/
+theorem pderiv.ext {φ ψ : MvPolynomial σ R}
+    (hD : ∀ i, pderiv i φ = pderiv i ψ) (hc : constantCoeff φ = constantCoeff ψ) :
+    φ = ψ := by
+  apply coe_injective σ R
+  apply MvPowerSeries.pderiv.ext
+  · intro i
+    rw [MvPowerSeries.pderiv_coe, MvPowerSeries.pderiv_coe, hD i]
+  · simpa only [← MvPowerSeries.coeff_zero_eq_constantCoeff, coeff_coe,
+      ← constantCoeff_eq] using hc
+
+/-- If all formal partial derivatives of `φ` vanish, then `φ` equals its constant term. -/
+theorem eq_C_constantCoeff_of_forall_pderiv_eq_zero {φ : MvPolynomial σ R}
+    (hφ : ∀ i, pderiv i φ = 0) :
+    φ = C (constantCoeff φ) :=
+  pderiv.ext (fun i ↦ by rw [hφ i, pderiv_C]) (by simp)
+
+/-- Over a commutative ring with `HasUniqueDiv`, all formal partial derivatives of `φ` vanish if
+and only if `φ` is constant. -/
+theorem forall_pderiv_eq_zero_iff {φ : MvPolynomial σ R} :
+    (∀ i, pderiv i φ = 0) ↔ ∃ c : R, φ = C c :=
+  ⟨fun h ↦ ⟨constantCoeff φ, eq_C_constantCoeff_of_forall_pderiv_eq_zero h⟩,
+    fun ⟨_, hc⟩ _ ↦ hc ▸ pderiv_C⟩
+
+/-- Two polynomials with the same formal partial derivatives differ by the constant given by the
+difference of their constant coefficients. -/
+theorem sub_eq_C_of_forall_pderiv_eq {φ ψ : MvPolynomial σ R}
+    (hD : ∀ i, pderiv i φ = pderiv i ψ) :
+    φ - ψ = C (constantCoeff φ - constantCoeff ψ) := by
+  simpa only [map_sub] using
+    eq_C_constantCoeff_of_forall_pderiv_eq_zero (φ := φ - ψ) fun i ↦ by simp [hD i]
+
+end UniqueDiv
 
 end MvPolynomial
