@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.Probability.Moments.Chebyshev
 
-/-! # Convergence in measure: bounds and continuous transformations
+/-! # Convergence in measure: bounds, continuous transformations, and uniform operations
 
 A standard way to consume concentration inequalities: if for each index `i` the
 deviation `edist (f i x) (g x)` exceeds some deterministic `rate i` only on a
@@ -22,12 +22,16 @@ uses monotonicity of the (outer) measure; the index runs along an arbitrary
 filter, matching the generality of `MeasureTheory.TendstoInMeasure`.
 
 Convergence in mean square also implies convergence in measure, with integrability of the
-squared deviations required only eventually along the filter.
+squared deviations required only eventually along the filter. Likewise, convergence in measure
+can be localized off a family of exceptional sets whose measures have infimum zero, and any
+convergent deterministic family converges in measure as constant functions, again without
+measurability or finiteness hypotheses.
 
-Pairing preserves convergence in measure along arbitrary filters and for arbitrary measures.
-On finite measure spaces, continuous transformations preserve convergence along arbitrary
-filters whenever the transformed functions are eventually almost everywhere strongly
-measurable.
+Pairing, post-composition with uniformly continuous maps, uniform group operations, and
+uniformly continuous constant scalar multiplication preserve convergence in measure along
+arbitrary filters and for arbitrary measures, without measurability assumptions. On finite
+measure spaces, continuous transformations also preserve convergence along arbitrary filters
+whenever the transformed functions are eventually almost everywhere strongly measurable.
 
 ## Main results
 
@@ -42,8 +46,22 @@ measurable.
   `μ {x | dist (f i x) (g x) ≤ rate i} → 1`; here null-measurability of the
   good events (eventually along the filter) is genuinely needed, since an outer
   measure can assign full measure to both a set and its complement.
+* `TauCeti.tendstoInMeasure_of_iInf_measure_eq_zero`: localize convergence in measure off a family
+  of exceptional sets whose infimum measure vanishes (`⨅ m, μ (F m) = 0`), without measurability
+  or finiteness assumptions.
+* `TauCeti.tendstoInMeasure_const`: a family constant along a filter converges in measure to its
+  value, without finiteness or measurability assumptions.
+* `Filter.Tendsto.tendstoInMeasure_const`: a convergent deterministic family converges in measure
+  as constant functions, without finiteness or measurability assumptions.
+* `UniformContinuous.comp_tendstoInMeasure`: post-composing with a uniformly continuous map
+  preserves convergence in measure without finiteness or measurability assumptions.
 * `MeasureTheory.TendstoInMeasure.prodMk`: convergence in measure of paired functions,
   for arbitrary measures and filters, without measurability assumptions.
+* `MeasureTheory.TendstoInMeasure.mul`, `MeasureTheory.TendstoInMeasure.add`: convergence in
+  measure is closed under multiplication and addition in a uniform group.
+* `MeasureTheory.TendstoInMeasure.const_smul`, `MeasureTheory.TendstoInMeasure.const_add`,
+  `MeasureTheory.TendstoInMeasure.const_mul`: convergence in measure is closed under uniformly
+  continuous constant scalar multiplication, vector addition, and left multiplication.
 * `MeasureTheory.TendstoInMeasure.continuous_comp`: continuous unary transformations on
   finite measure spaces along arbitrary filters.
 * `MeasureTheory.TendstoInMeasure.continuous_comp₂`: the corresponding binary transformation
@@ -124,7 +142,71 @@ theorem tendstoInMeasure_of_tendsto_measure_dist_le_rate [PseudoMetricSpace E]
   rw [← prob_compl_eq_one_sub₀ hi, Set.compl_ofPred]
   simp_rw [not_le]
 
+/-- **Localization of convergence in measure.** If a family of exceptional sets `F m` satisfies
+`⨅ m, μ (F m) = 0`, and for each `m` a localized family `f_loc m` converges in measure to `g_loc m`
+along `l` while dominating `edist (f k x) (g x)` almost everywhere off `F m` eventually along `l`,
+then `f` converges in measure to `g` along `l`. No measurability of `F m` or finiteness of `μ` is
+needed. -/
+theorem tendstoInMeasure_of_iInf_measure_eq_zero {E' : Type*} {κ : Sort*} [EDist E] [EDist E']
+    {f : ι → α → E} {g : α → E} {F : κ → Set α}
+    {f_loc : κ → ι → α → E'} {g_loc : κ → α → E'}
+    (hF : ⨅ m, μ (F m) = 0)
+    (hlim : ∀ m, TendstoInMeasure μ (f_loc m) l (g_loc m))
+    (hle : ∀ m, ∀ᶠ k in l, ∀ᵐ x ∂μ, x ∉ F m →
+      edist (f k x) (g x) ≤ edist (f_loc m k x) (g_loc m x)) :
+    TendstoInMeasure μ f l g := by
+  intro ε hε
+  refine ENNReal.tendsto_nhds_zero.2 fun η hη ↦ ?_
+  have hη2 : 0 < η / 2 := ENNReal.half_pos hη.ne'
+  obtain ⟨m, hm⟩ : ∃ m, μ (F m) < η / 2 := iInf_lt_iff.1 (hF.symm ▸ hη2)
+  filter_upwards [ENNReal.tendsto_nhds_zero.1 (hlim m ε hε) (η / 2) hη2, hle m] with k hkm hlek
+  have hsub :
+      ({x | ε ≤ edist (f k x) (g x)} : Set α) ≤ᵐ[μ]
+        ({x | ε ≤ edist (f_loc m k x) (g_loc m x)} ∪ F m : Set α) := by
+    filter_upwards [hlek] with x hx hmem
+    by_cases hxF : x ∈ F m
+    · exact Or.inr hxF
+    · exact Or.inl (hmem.trans (hx hxF))
+  calc
+    μ {x | ε ≤ edist (f k x) (g x)}
+        ≤ μ ({x | ε ≤ edist (f_loc m k x) (g_loc m x)} ∪ F m) := measure_mono_ae hsub
+    _ ≤ μ {x | ε ≤ edist (f_loc m k x) (g_loc m x)} + μ (F m) := measure_union_le _ _
+    _ ≤ η / 2 + η / 2 := add_le_add hkm hm.le
+    _ = η := ENNReal.add_halves η
+
+/-- A constant family along any filter converges in measure to its value, with no finiteness or
+measurability assumptions. -/
+theorem tendstoInMeasure_const [PseudoEMetricSpace E] (g : α → E) :
+    TendstoInMeasure μ (fun _ ↦ g) l g := fun ε hε ↦ by
+  simpa [edist_self, hε.not_ge] using tendsto_const_nhds
+
 end TauCeti
+
+/-- A convergent deterministic family converges in measure as constant functions, with no finiteness
+assumption on the measure and no measurability assumption. -/
+theorem Filter.Tendsto.tendstoInMeasure_const {α ι E : Type*} {_ : MeasurableSpace α}
+    {μ : MeasureTheory.Measure α} [PseudoEMetricSpace E] {l : Filter ι} {c : ι → E} {b : E}
+    (hc : Filter.Tendsto c l (nhds b)) :
+    MeasureTheory.TendstoInMeasure μ (fun k _ ↦ c k) l (fun _ ↦ b) := by
+  intro ε hε
+  refine tendsto_const_nhds.congr' ?_
+  filter_upwards [EMetric.tendsto_nhds.1 hc ε hε] with k hk
+  simp [hk.not_ge]
+
+/-- Post-composing with a uniformly continuous map preserves convergence in measure, with no
+finiteness assumption on the measure and no measurability assumption on the functions. -/
+theorem UniformContinuous.comp_tendstoInMeasure {Ω E F ι : Type*}
+    {_ : MeasurableSpace Ω} {μ : MeasureTheory.Measure Ω}
+    [PseudoEMetricSpace E] [PseudoEMetricSpace F]
+    {l : Filter ι} {f : ι → Ω → E} {g : Ω → E} {ψ : E → F}
+    (hψ : UniformContinuous ψ) (hf : MeasureTheory.TendstoInMeasure μ f l g) :
+    MeasureTheory.TendstoInMeasure μ (fun k ω ↦ ψ (f k ω)) l (fun ω ↦ ψ (g ω)) := by
+  intro ε hε
+  obtain ⟨δ, hδ, hosc⟩ := EMetric.uniformContinuous_iff.1 hψ ε hε
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds (hf δ hδ)
+    (fun _ ↦ zero_le) fun k ↦ MeasureTheory.measure_mono fun ω hω ↦ ?_
+  by_contra hlt
+  exact (hosc (not_le.1 hlt)).not_ge hω
 
 namespace MeasureTheory.TendstoInMeasure
 
@@ -133,7 +215,7 @@ open scoped Topology ENNReal
 
 /-- Pairing functions preserves convergence in measure, without measurability or finiteness
 assumptions on the measure, and along an arbitrary filter. -/
-theorem prodMk {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
+theorem prodMk {α ι E₁ E₂ : Type*} {_ : MeasurableSpace α} {μ : Measure α}
     [PseudoEMetricSpace E₁] [PseudoEMetricSpace E₂] {l : Filter ι}
     {f₁ : ι → α → E₁} {f₂ : ι → α → E₂} {g₁ : α → E₁} {g₂ : α → E₂}
     (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
@@ -145,6 +227,35 @@ theorem prodMk {α ι E₁ E₂ : Type*} [MeasurableSpace α] {μ : Measure α}
     (fun _ ↦ zero_le) fun i ↦ ?_
   simpa only [Prod.edist_eq, le_max_iff, Set.ofPred_or] using
     measure_union_le {x | ε ≤ edist (f₁ i x) (g₁ x)} {x | ε ≤ edist (f₂ i x) (g₂ x)}
+
+/-- Pointwise multiplication of two families converging in measure in a uniform group converges in
+measure to the pointwise product of their limits. -/
+@[to_additive
+  /-- Pointwise addition of two families converging in measure in an additive uniform group
+  converges in measure to the pointwise sum of their limits. -/]
+theorem mul {Ω E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    [PseudoEMetricSpace E] [Group E] [IsUniformGroup E] {l : Filter ι}
+    {f₁ f₂ : ι → Ω → E} {g₁ g₂ : Ω → E}
+    (h₁ : TendstoInMeasure μ f₁ l g₁) (h₂ : TendstoInMeasure μ f₂ l g₂) :
+    TendstoInMeasure μ (fun k ω ↦ f₁ k ω * f₂ k ω) l (fun ω ↦ g₁ ω * g₂ ω) :=
+  uniformContinuous_mul.comp_tendstoInMeasure (h₁.prodMk h₂)
+
+/-- Uniformly continuous constant scalar multiplication preserves convergence in measure. -/
+@[to_additive
+  /-- Uniformly continuous constant vector addition preserves convergence in measure. -/]
+theorem const_smul {Ω M E ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    [PseudoEMetricSpace E] [SMul M E] [UniformContinuousConstSMul M E] {l : Filter ι}
+    {f : ι → Ω → E} {g : Ω → E} (hf : TendstoInMeasure μ f l g) (c : M) :
+    TendstoInMeasure μ (fun k ω ↦ c • f k ω) l (fun ω ↦ c • g ω) :=
+  (uniformContinuous_const_smul c).comp_tendstoInMeasure hf
+
+/-- Left multiplication by a constant preserves convergence in measure whenever left multiplication
+is uniformly continuous via `UniformContinuousConstSMul R R`. -/
+theorem const_mul {Ω R ι : Type*} {_ : MeasurableSpace Ω} {μ : Measure Ω}
+    [Mul R] [PseudoEMetricSpace R] [UniformContinuousConstSMul R R] {l : Filter ι}
+    {f : ι → Ω → R} {g : Ω → R} (hf : TendstoInMeasure μ f l g) (c : R) :
+    TendstoInMeasure μ (fun k ω ↦ c * f k ω) l (fun ω ↦ c * g ω) :=
+  hf.const_smul c
 
 /-- A continuous transformation preserves convergence in measure on a finite measure space
 along an arbitrary filter, provided the transformed functions are eventually almost everywhere
