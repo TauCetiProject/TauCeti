@@ -56,13 +56,6 @@ namespace TauCeti.Contour
 
 variable {α E : Type*}
 
-/-- The excised parameter set is the preimage under the curve of the union of the closed
-`ε`-balls about the centres. -/
-private theorem setOf_exists_norm_sub_le_eq_preimage [SeminormedAddCommGroup E] (γ : α → E)
-    (S : Finset E) (ε : ℝ) :
-    {t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε} = γ ⁻¹' ⋃ s ∈ S, Metric.closedBall s ε := by
-  ext; simp [dist_eq_norm]
-
 /-- **The excised parameter set is null-measurable** whenever the curve is a.e. measurable. Stated
 for an arbitrary measure so that it serves both the ambient statement and the restricted-measure
 one that interval integrability needs. -/
@@ -70,16 +63,16 @@ theorem nullMeasurableSet_excision [MeasurableSpace α] [SeminormedAddCommGroup 
     [MeasurableSpace E] [OpensMeasurableSpace E] {γ : α → E} {μ : Measure α}
     (hγ : AEMeasurable γ μ) (S : Finset E) (ε : ℝ) :
     NullMeasurableSet {t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε} μ :=
-  setOf_exists_norm_sub_le_eq_preimage γ S ε ▸ hγ.nullMeasurableSet_preimage
-    (S.measurableSet_biUnion fun _ _ => measurableSet_closedBall)
+  setOf_exists_norm_sub_le_eq_preimage γ (S : Set E) ε ▸ hγ.nullMeasurableSet_preimage
+    (S.finite_toSet.measurableSet_biUnion fun _ _ => measurableSet_closedBall)
 
 /-- **The excised parameter set is measurable** whenever the curve is. -/
 theorem measurableSet_excision [MeasurableSpace α] [SeminormedAddCommGroup E]
     [MeasurableSpace E] [OpensMeasurableSpace E] {γ : α → E} (hγm : Measurable γ) (S : Finset E)
     (ε : ℝ) :
     MeasurableSet {t | ∃ s ∈ S, ‖γ t - s‖ ≤ ε} :=
-  setOf_exists_norm_sub_le_eq_preimage γ S ε ▸
-    hγm (S.measurableSet_biUnion fun _ _ => measurableSet_closedBall)
+  setOf_exists_norm_sub_le_eq_preimage γ (S : Set E) ε ▸
+    hγm (S.finite_toSet.measurableSet_biUnion fun _ _ => measurableSet_closedBall)
 
 /-- **Excising a curve's `ε`-neighbourhood of finitely many points keeps a.e.-strong
 measurability, if the integrand vanishes almost everywhere off the continuity points of the
