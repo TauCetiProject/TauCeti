@@ -34,6 +34,11 @@ evaluated on the directions.
   which is `C^m` whenever `m + k ≤ n`.
 * `ContDiffOn.iteratedFDerivAlong`, `TauCeti.iteratedFDerivAlong_add_apply_of_isOpen`: the
   same smoothness, and additivity, for maps which are only `C^n` on an open set.
+* `TauCeti.tsupport_iteratedFDerivAlong_subset` and `HasCompactSupport.iteratedFDerivAlong`:
+  differentiating along a list of directions does not enlarge `tsupport` and preserves compact
+  support.
+* `TauCeti.iteratedFDerivAlong_const_mul`: commutation with constant left multiplication in a
+  normed ring.
 * `TauCeti.iteratedFDerivAlong_sum` and `TauCeti.iteratedFDerivAlong_fun_sum`: linearity over
   finite sums.
 * `TauCeti.iteratedFDerivAlong_prod_clm_eq_zero`: differentiating a product of fewer than
@@ -118,6 +123,21 @@ theorem _root_.Filter.EventuallyEq.iteratedFDerivAlong {f g : E → F} {x : E} (
 theorem iteratedFDerivAlong_eq_zero_of_eventuallyEq_zero {f : E → F} {x : E}
     (h : f =ᶠ[𝓝 x] 0) (vs : List E) : iteratedFDerivAlong 𝕜 vs f x = 0 := by
   simpa using (h.iteratedFDerivAlong (𝕜 := 𝕜) vs).eq_of_nhds
+
+variable (𝕜) in
+/-- Differentiating along a list of directions does not enlarge the topological support. -/
+theorem tsupport_iteratedFDerivAlong_subset (vs : List E) (f : E → F) :
+    tsupport (iteratedFDerivAlong 𝕜 vs f) ⊆ tsupport f := by
+  induction vs with
+  | nil => exact Set.Subset.rfl
+  | cons v vs ih => exact (tsupport_fderiv_apply_subset 𝕜 v).trans ih
+
+variable (𝕜) in
+/-- Differentiating a compactly supported map along a list of directions preserves compact
+support. -/
+theorem _root_.HasCompactSupport.iteratedFDerivAlong {f : E → F} (hf : HasCompactSupport f)
+    (vs : List E) : HasCompactSupport (iteratedFDerivAlong 𝕜 vs f) :=
+  hf.of_isClosed_subset (isClosed_tsupport _) (tsupport_iteratedFDerivAlong_subset 𝕜 vs f)
 
 variable {n : ℕ∞ω}
 
@@ -211,6 +231,14 @@ theorem iteratedFDerivAlong_const_smul {R : Type*} [Semiring R] [Module R F] [SM
     rw [iteratedFDerivAlong_cons_apply, ih hlt.le,
       fderiv_const_smul (hf.differentiable_iteratedFDerivAlong vs hlt x)]
     rfl
+
+/-- Iterated directional derivatives commute with constant left multiplication in a normed ring. -/
+theorem iteratedFDerivAlong_const_mul {A : Type*} [NormedRing A] [NormedSpace 𝕜 A]
+    [SMulCommClass 𝕜 A A] {f : E → A} (hf : ContDiff 𝕜 n f) (c : A) (vs : List E)
+    (hvs : vs.length ≤ n) :
+    iteratedFDerivAlong 𝕜 vs (fun z => c * f z) = fun z => c * iteratedFDerivAlong 𝕜 vs f z := by
+  simpa only [Pi.smul_def, smul_eq_mul] using
+    iteratedFDerivAlong_const_smul (R := A) hf c vs hvs
 
 /-- `iteratedFDerivAlong` distributes over finite sums of `C^n` maps when `vs.length ≤ n`. -/
 theorem iteratedFDerivAlong_sum {ι : Type*} (s : Finset ι) {f : ι → E → F}

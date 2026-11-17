@@ -10,6 +10,7 @@ import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Analysis.Distribution.TestFunction.Approximation
+import TauCeti.Analysis.InnerProductSpace.Orthonormal.Coordinates
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
@@ -255,18 +256,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [OpensMeasurableSpace E]
   {μ : Measure E} {Ω : Opens E} {v : E}
 
-private theorem integrable_clm_apply_of_hasCompactSupport [FiniteDimensional ℝ E]
-    {F H : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    [NormedAddCommGroup H] [NormedSpace ℝ H]
-    {w : E → F} (hw : LocallyIntegrableOn w Ω μ) {Ψ : E → F →L[ℝ] H}
-    (hΨ : Continuous Ψ) (hΨc : HasCompactSupport Ψ) (hΨs : tsupport Ψ ⊆ Ω) :
-    Integrable (fun x => Ψ x (w x)) μ := by
-  have hsupp : Function.support (fun x => Ψ x (w x)) ⊆ tsupport Ψ :=
-    fun x hx => by_contra fun hx' => hx (by simp [image_eq_zero_of_notMem_tsupport hx'])
-  rw [← integrableOn_iff_integrable_of_support_subset hsupp]
-  exact (hw.continuousOn_clm_apply Ω.isOpen.isLocallyClosed hΨ.continuousOn
-    ).integrableOn_compact_subset hΨs hΨc.isCompact
-
 /-- Scalar-multiplication form of weak integration by parts against `C¹` compactly supported
 functions. -/
 theorem HasWeakLineDerivOn.integral_fderiv_mul_eq_neg {u u' : E → ℝ}
@@ -296,16 +285,13 @@ theorem HasWeakLineDerivOn.integral_fderiv_apply_eq_neg
   by_cases _hH : CompleteSpace H
   swap
   · simp [integral_of_not_completeSpace _hH]
-  by_cases hfd : FiniteDimensional ℝ E
-  swap
-  · obtain rfl := (hΦc.eq_zero_or_finiteDimensional ℝ hΦ.continuous).resolve_right hfd; simp
   have hint₁ : Integrable (fun x => fderiv ℝ Φ x v (u x)) μ :=
-    integrable_clm_apply_of_hasCompactSupport h.locallyIntegrableOn
-      ((hΦ.continuous_fderiv one_ne_zero).clm_apply continuous_const)
+    h.locallyIntegrableOn.integrable_clm_apply_of_hasCompactSupport
+      ((hΦ.continuous_fderiv one_ne_zero).clm_apply continuous_const).continuousOn
       (hΦc.fderiv_apply ℝ v) ((tsupport_fderiv_apply_subset ℝ v).trans hΦs)
   have hint₂ : Integrable (fun x => Φ x (u' x)) μ :=
-    integrable_clm_apply_of_hasCompactSupport h.locallyIntegrableOn_deriv
-      hΦ.continuous hΦc hΦs
+    h.locallyIntegrableOn_deriv.integrable_clm_apply_of_hasCompactSupport
+      hΦ.continuous.continuousOn hΦc hΦs
   refine (SeparatingDual.eq_iff_forall_dual_eq (R := ℝ)).2 fun l => ?_
   let L : (F →L[ℝ] H) →L[ℝ] F →L[ℝ] ℝ := ContinuousLinearMap.compL ℝ F H ℝ l
   let ψ : E → F →L[ℝ] ℝ := L ∘ Φ
@@ -380,8 +366,8 @@ theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv
     rw [map_sum]
     simp [Ψ, R]
   have hint : ∀ i : ι, Integrable (fun x => Ψ i x (U x (b i))) μ := fun i =>
-    integrable_clm_apply_of_hasCompactSupport (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
-      (hΨ i).continuous (hΨc i) (hΨs i)
+    (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv.integrable_clm_apply_of_hasCompactSupport
+      (hΨ i).continuous.continuousOn (hΨc i) (hΨs i)
   calc ∫ x, Φ x (U x) ∂μ
       = ∑ i : ι, ∫ x, Ψ i x (U x (b i)) ∂μ := by
         simp_rw [hexp]
@@ -415,14 +401,6 @@ theorem HasWeakFDerivOn.setIntegral_clm_apply_eq_neg_sum_fderiv
   exact Finset.sum_congr rfl fun i _ =>
     (setIntegral_eq_integral_of_forall_compl_eq_zero (hd i)).symm
 
-private theorem toContinuousLinearMap_toBasis_coord
-    {E ι : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-    [Fintype ι] (b : OrthonormalBasis ι ℝ E) (i : ι) :
-    LinearMap.toContinuousLinearMap (b.toBasis.coord i) = innerSL ℝ (b i) := by
-  ext w
-  simp [Module.Basis.coord_apply, OrthonormalBasis.coe_toBasis_repr_apply,
-    OrthonormalBasis.repr_apply_apply]
-
 /-- **Adjoint integration by parts for weak Fréchet derivatives along an orthonormal basis.**
 Finite dimensionality of `E` is inferred from the finite orthonormal basis `b`. -/
 theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv_orthonormalBasis
@@ -436,7 +414,7 @@ theorem HasWeakFDerivOn.integral_clm_apply_eq_neg_sum_fderiv_orthonormalBasis
     ∫ x, Φ x (U x) ∂μ =
       -∑ i : ι, ∫ x, fderiv ℝ Φ x (b i) ((innerSL ℝ (b i)).smulRight (u x)) ∂μ := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b.toBasis
-  simpa only [OrthonormalBasis.coe_toBasis, toContinuousLinearMap_toBasis_coord b] using
+  simpa only [OrthonormalBasis.coe_toBasis, b.toContinuousLinearMap_toBasis_coord] using
     h.integral_clm_apply_eq_neg_sum_fderiv b.toBasis hΦ hΦc hΦs
 
 /-- Set-integral form of
@@ -452,7 +430,7 @@ theorem HasWeakFDerivOn.setIntegral_clm_apply_eq_neg_sum_fderiv_orthonormalBasis
     ∫ x in Ω, Φ x (U x) ∂μ =
       -∑ i : ι, ∫ x in Ω, fderiv ℝ Φ x (b i) ((innerSL ℝ (b i)).smulRight (u x)) ∂μ := by
   have : FiniteDimensional ℝ E := Module.Finite.of_basis b.toBasis
-  simpa only [OrthonormalBasis.coe_toBasis, toContinuousLinearMap_toBasis_coord b] using
+  simpa only [OrthonormalBasis.coe_toBasis, b.toContinuousLinearMap_toBasis_coord] using
     h.setIntegral_clm_apply_eq_neg_sum_fderiv b.toBasis hΦ hΦc hΦs
 
 end AdjointFDeriv

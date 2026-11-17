@@ -39,6 +39,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.toContinuousLinearMap_toBasis_coord`: as a continuous linear map on a
+  finite-dimensional space, `b.toBasis.coord i` is `innerSL 𝕜 (b i)`.
 * `OrthonormalBasis.subsingleton_of_isEmpty`: a space with an orthonormal basis indexed by an
   empty type is trivial.
 * `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
@@ -95,6 +97,14 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
     b.toBasis.coord i = innerₗ F (b i) := by
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+/-- As a continuous linear map on a finite-dimensional inner product space, the `i`-th coordinate
+functional of an orthonormal basis `b` is `innerSL 𝕜 (b i)`. -/
+theorem toContinuousLinearMap_toBasis_coord [FiniteDimensional 𝕜 E]
+    (b : OrthonormalBasis ι 𝕜 E) (i : ι) :
+    LinearMap.toContinuousLinearMap (b.toBasis.coord i) = innerSL 𝕜 (b i) := by
+  ext v
+  simp
 
 /-- The space carrying an orthonormal basis indexed by an empty type is trivial. -/
 theorem subsingleton_of_isEmpty [IsEmpty ι] (b : OrthonormalBasis ι 𝕜 E) : Subsingleton E :=

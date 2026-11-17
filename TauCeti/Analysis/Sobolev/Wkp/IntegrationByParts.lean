@@ -9,7 +9,8 @@ public import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 public import TauCeti.Analysis.Calculus.IteratedGradient.RankOne
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Comp
-import Mathlib.Analysis.Calculus.FDeriv.Mul
+import TauCeti.Analysis.Calculus.IteratedGradient.Integral
+import TauCeti.Analysis.Calculus.Taylor.Pairing.Basic
 import TauCeti.Analysis.Sobolev.WeakDeriv.IntegrationByParts
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -28,8 +29,11 @@ functionals `Φ : E → IteratedGradient E k →L[ℝ] ℝ` along a finite ortho
 (`TauCeti.Wkp.setIntegral_clm_iteratedGradient_eq_sum_iteratedFDeriv`,
 `TauCeti.Wkp.setIntegral_fullContractL_sub_mul_eq_sum_iteratedFDeriv`).
 
-Averaged Taylor-monomial smoothness, weak-derivative commutation, polynomiality in
-`TauCeti.polynomialsDegLE`, and diameter/chunkiness bounds are developed in
+General Taylor-monomial pairings, contracted-field integrals, polynomiality, and weak-derivative
+commutation live in `TauCeti.Analysis.Calculus.Taylor.Pairing.Basic`,
+`TauCeti.Analysis.Calculus.IteratedGradient.Integral`,
+`TauCeti.Analysis.Calculus.Taylor.Pairing.Polynomial`, and
+`TauCeti.Analysis.Sobolev.WeakDeriv.TaylorPairing`; their `W^{k,p}` specializations live in
 `TauCeti.Analysis.Sobolev.Wkp.AveragedTaylor`.
 
 ## Main declarations
@@ -127,14 +131,12 @@ theorem Wkp.setIntegral_evalTupleL_mul_eq_iteratedFDerivAlong :
       simp
   | k + 1, v, u, φ, hφ, hφc, hφs => by
       let w := v (Fin.last (k + 1))
-      have hφ'_eq : iteratedFDerivAlong ℝ [w] φ = fun y => fderiv ℝ φ y w :=
-        funext fun y => by simp
       have hφ' : ContDiff ℝ (k + 1) (iteratedFDerivAlong ℝ [w] φ) :=
         hφ.iteratedFDerivAlong [w] (by simp [add_comm])
       have hφ'c : HasCompactSupport (iteratedFDerivAlong ℝ [w] φ) :=
-        hφ'_eq ▸ hφc.fderiv_apply ℝ w
+        hφc.iteratedFDerivAlong ℝ [w]
       have hφ's : tsupport (iteratedFDerivAlong ℝ [w] φ) ⊆ Omega :=
-        hφ'_eq ▸ (tsupport_fderiv_apply_subset ℝ w).trans hφs
+        (tsupport_iteratedFDerivAlong_subset ℝ [w] φ).trans hφs
       rw [setIntegral_evalTupleL_succ_eq_neg k v u hφ hφc hφs,
         Wkp.setIntegral_evalTupleL_mul_eq_iteratedFDerivAlong k (Fin.init v)
           (Wkp.lowerOrder (k + 1) u) hφ' hφ'c hφ's, ← Wkp.value_succ]
@@ -192,29 +194,13 @@ theorem Wkp.setIntegral_clm_iteratedGradient_eq_sum_iteratedFDerivAlong
         ∫ y in Omega, iteratedFDerivAlong ℝ (List.ofFn (b ∘ I))
           (fun z => Φ z (IteratedGradient.rankOne k (b ∘ I))) y * Wkp.value (k + 1) u y ∂mu := by
   let φ : (Fin (k + 1) → ι) → E → ℝ := fun I z => Φ z (IteratedGradient.rankOne k (b ∘ I))
-  have hφ : ∀ I, ContDiff ℝ (k + 1) (φ I) := fun _ => hΦ.clm_apply contDiff_const
   have hφ_sub : ∀ I, Function.support (φ I) ⊆ Function.support Φ := fun I =>
     Function.support_subset_iff'.2 fun y hy => by simp [φ, Function.notMem_support.1 hy]
-  have hφc : ∀ I, HasCompactSupport (φ I) := fun I => hΦc.mono (hφ_sub I)
-  have hφs : ∀ I, tsupport (φ I) ⊆ Omega := fun I => (closure_mono (hφ_sub I)).trans hΦs
-  have hint : ∀ I : Fin (k + 1) → ι, IntegrableOn
-      (fun y => IteratedGradient.evalTupleL k (b ∘ I) (Wkp.iteratedGradient k u y) * φ I y)
-      Omega mu := fun I => by
-    have hloc := (IteratedGradient.evalTupleL k (b ∘ I)).locallyIntegrableOn_comp
-      (Lp.locallyIntegrableOn (Wkp.iteratedGradient k u) Fact.out)
-    simpa only [Function.comp_apply, smul_eq_mul, mul_comm] using
-      (hloc.integrable_smul_left_of_hasCompactSupport (hφ I).continuous (hφc I) (hφs I)
-        ).integrableOn
-  have hexp : ∀ y, Φ y (Wkp.iteratedGradient k u y) =
-      ∑ I : Fin (k + 1) → ι,
-        IteratedGradient.evalTupleL k (b ∘ I) (Wkp.iteratedGradient k u y) * φ I y := fun y => by
-    conv_lhs =>
-      rw [IteratedGradient.eq_sum_evalTupleL_rankOne b k (Wkp.iteratedGradient k u y), map_sum]
-    exact Finset.sum_congr rfl fun I _ => by rw [map_smul, smul_eq_mul]
-  rw [setIntegral_congr_fun Omega.isOpen.measurableSet fun y _ => hexp y,
-    integral_finsetSum _ fun I _ => hint I, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun I _ =>
-    Wkp.setIntegral_evalTupleL_mul_eq_iteratedFDerivAlong k (b ∘ I) u (hφ I) (hφc I) (hφs I)
+  rw [setIntegral_clm_apply_eq_sum_evalTupleL_rankOne b k
+      (Lp.locallyIntegrableOn _ Fact.out) hΦ.continuous.continuousOn hΦc hΦs, Finset.mul_sum]
+  refine Finset.sum_congr rfl fun I _ => ?_
+  simpa only [smul_eq_mul] using Wkp.setIntegral_evalTupleL_mul_eq_iteratedFDerivAlong k (b ∘ I) u
+    (hΦ.clm_apply contDiff_const) (hΦc.mono (hφ_sub I)) ((closure_mono (hφ_sub I)).trans hΦs)
 
 /-- **Higher-order weak integration by parts against operator functionals (`iteratedFDeriv`
 form).** -/
@@ -280,12 +266,9 @@ theorem Wkp.setIntegral_fullContractL_sub_mul_eq_sum_iteratedFDerivAlong
           Wkp.value (k + 1) u y ∂mu := by
   rw [Wkp.setIntegral_fullContractL_sub_mul_eq_sum_iteratedFDeriv b k u hφ hφc hφs x]
   congr 1
-  refine Finset.sum_congr rfl fun I _ =>
-    setIntegral_congr_fun Omega.isOpen.measurableSet fun y _ => ?_
-  have hcont : ContDiff ℝ (k + 1) (fun z => (∏ l : Fin (k + 1), ⟪b (I l), x - z⟫_ℝ) * φ z) :=
-    ((contDiff_prod fun l _ => (innerSL ℝ (b (I l))).contDiff.comp
-      (contDiff_const.sub contDiff_id)).of_le le_top).mul hφ
-  rw [← iteratedFDerivAlong_ofFn_eq_iteratedFDeriv hcont]
+  exact Finset.sum_congr rfl fun I _ =>
+    setIntegral_iteratedFDeriv_prod_inner_sub_mul_eq_iteratedFDerivAlong (b ∘ I) hφ
+      (Wkp.value (k + 1) u) x
 
 end WkpIBP
 
