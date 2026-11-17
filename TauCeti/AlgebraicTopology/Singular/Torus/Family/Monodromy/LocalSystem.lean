@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Trivialization
 public import TauCeti.AlgebraicTopology.Singular.Torus.Family.Monodromy.Basic
+public import TauCeti.Topology.Covering.Quotient
 
 /-!
 # Fiber homology local system of a descended family of tori

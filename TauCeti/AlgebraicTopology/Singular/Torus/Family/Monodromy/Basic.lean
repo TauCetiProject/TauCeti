@@ -200,11 +200,6 @@ theorem torusFamilyAffineQuotientHomologyMarking_smul (hy : β y = z) (g : Γ) (
     (torusFamilyAffineQuotientFiberHomeomorph_smul_symm_apply P R ρ hequiv b hb hone hmul hbmul
       hcont hR hbc β hβ y hy g hgy) ((hR g).comp (continuous_const.prodMk continuous_id)) n _
 
-private theorem oneEquiv_exteriorPower_apply {Γ Λ : Type*} [Monoid Γ] [AddCommGroup Λ]
-    (ρ : Representation ℤ Γ Λ) (g : Γ) (x : ⋀[ℤ]^1 Λ) :
-    exteriorPower.oneEquiv ℤ Λ (ρ.exteriorPower 1 g x) = ρ g (exteriorPower.oneEquiv ℤ Λ x) := by
-  simpa using LinearMap.congr_fun (exteriorPower.oneEquiv_naturality (ρ g)) x
-
 /-- **Sheet-change law in degree one:** `y ↦ g • y` acts by `ρ g`. -/
 theorem torusFamilyAffineQuotientMarking_smul (hy : β y = z) (g : Γ) (hgy : β (g • y) = z)
     (c : torusFamilyAffineQuotientFiberHomology P R ρ hequiv b hb hone hmul hbmul β hβ z 1) :
@@ -212,7 +207,7 @@ theorem torusFamilyAffineQuotientMarking_smul (hy : β y = z) (g : Γ) (hgy : β
         (g • y) hgy c = ρ g (torusFamilyAffineQuotientMarking P hcont hinj R ρ hequiv b hb hone
       hmul hbmul hR hbc β hβ y hy c) :=
   (congrArg _ (torusFamilyAffineQuotientHomologyMarking_smul P hcont hinj R ρ hequiv b hb hone
-    hmul hbmul hR hbc β hβ y hy g hgy 1 c)).trans (oneEquiv_exteriorPower_apply ρ g _)
+    hmul hbmul hR hbc β hβ y hy g hgy 1 c)).trans (ρ.oneEquiv_exteriorPower_apply g _)
 
 end SheetMarking
 
@@ -333,7 +328,7 @@ theorem torusFamilyAffineQuotientMarking_transport_of_lift_smul (γ : Path z z) 
         β hβ y hy c) :=
   (congrArg _ (torusFamilyAffineQuotientHomologyMarking_transport_of_lift_smul P hcont hinj R ρ
     hequiv b hb hone hmul hbmul hR hbc β hβ L hy γ γ' hγ' 1 c)).trans
-    (oneEquiv_exteriorPower_apply ρ g⁻¹ _)
+    (ρ.oneEquiv_exteriorPower_apply g⁻¹ _)
 
 /-- **Monodromy in degree `n` for a loop lifted `y ↝ g⁻¹ • y`**, acting by `ρ.exteriorPower n g`. -/
 theorem torusFamilyAffineQuotientHomologyMarking_transport_of_lift_inv_smul (γ : Path z z)
@@ -382,7 +377,7 @@ theorem torusFamilyAffineQuotientMarking_transport_symm_of_lift_smul (γ : Path 
         β hβ y hy c) :=
   (congrArg _ (torusFamilyAffineQuotientHomologyMarking_transport_symm_of_lift_smul P hcont hinj
     R ρ hequiv b hb hone hmul hbmul hR hbc β hβ L hy γ γ' hγ' 1 c)).trans
-    (oneEquiv_exteriorPower_apply ρ g _)
+    (ρ.oneEquiv_exteriorPower_apply g _)
 
 /-- **Conjugation of the marking in degree `n`** in an arbitrary linear marking `ν`. -/
 theorem
@@ -435,7 +430,7 @@ theorem torusFamilyAffineQuotientMarking_smul_transport_of_lift_smul (h : Γ) (h
         hbmul hR hbc β hβ (h • y) hhy c) :=
   (congrArg _ (torusFamilyAffineQuotientHomologyMarking_smul_transport_of_lift_smul P hcont hinj
     R ρ hequiv b hb hone hmul hbmul hR hbc β hβ L hy h hhy γ γ' hγ' 1 c)).trans
-    (oneEquiv_exteriorPower_apply ρ (h * g⁻¹ * h⁻¹) _)
+    (ρ.oneEquiv_exteriorPower_apply (h * g⁻¹ * h⁻¹) _)
 
 end LoopLift
 

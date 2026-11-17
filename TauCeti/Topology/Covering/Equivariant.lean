@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.Covering.Quotient
 public import Mathlib.Topology.FiberBundle.Trivialization
 public import TauCeti.Topology.IsLocalHomeomorph
+import TauCeti.Topology.FiberBundle.Trivialization
 
 /-!
 # Recovering an equivariant space by pulling back its orbit space
@@ -334,8 +335,7 @@ covering by `G`, then `f : X/G → Z` is locally trivial with model fibre `F`. -
 theorem exists_orbitRelQuotientTrivialization
     (htriv : ∀ y, ∃ e : Bundle.Trivialization F p, y ∈ e.baseSet) (z : Z) :
     ∃ e' : Bundle.Trivialization F f, z ∈ e'.baseSet := by
-  have hp : Continuous p := continuous_iff_continuousAt.2 fun x ↦
-    let ⟨e, he⟩ := htriv (p x); e.continuousAt_proj (e.mem_source.2 he)
+  have hp : Continuous p := TauCeti.continuous_of_forall_exists_trivialization htriv
   obtain ⟨y, rfl⟩ := hβ.surjective z; obtain ⟨e, hy⟩ := htriv y
   exact ⟨p.orbitRelQuotientTrivialization β f hf hp hβ e y,
     p.apply_mem_orbitRelQuotientTrivialization_baseSet β f hf hp hβ hy⟩

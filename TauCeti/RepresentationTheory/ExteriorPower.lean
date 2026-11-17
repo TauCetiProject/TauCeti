@@ -14,7 +14,9 @@ public import Mathlib.RepresentationTheory.Intertwining
 
 This file equips each exterior power of a representation with the induced diagonal action.
 Intertwining maps and equivalences pass functorially to exterior powers, and the zeroth and first
-exterior powers recover the trivial and original representations.
+exterior powers recover the trivial and original representations
+(`Representation.exteriorPowerZeroEquiv`, `Representation.exteriorPowerOneEquiv`, and the
+pointwise equivariance law `Representation.oneEquiv_exteriorPower_apply`).
 
 ## Main definitions
 
@@ -105,6 +107,16 @@ theorem exteriorPowerOneEquiv_toLinearEquiv (ρ : Representation R G M) :
 /-- `Representation.exteriorPowerOneEquiv.toLinearMap` is `(exteriorPower.oneEquiv).toLinearMap`. -/
 @[simp] theorem exteriorPowerOneEquiv_toLinearMap (ρ : Representation R G M) :
     ρ.exteriorPowerOneEquiv.toLinearMap = (_root_.exteriorPower.oneEquiv R M).toLinearMap := (rfl)
+
+/-- `exteriorPower.oneEquiv` intertwines the first exterior-power action `ρ.exteriorPower 1` with
+`ρ` pointwise.
+
+This is intentionally not a simp lemma: `exteriorPower_apply` simplifies `ρ.exteriorPower 1 g` on
+the left-hand side. -/
+theorem oneEquiv_exteriorPower_apply (ρ : Representation R G M) (g : G) (x : ⋀[R]^1 M) :
+    _root_.exteriorPower.oneEquiv R M (ρ.exteriorPower 1 g x) =
+      ρ g (_root_.exteriorPower.oneEquiv R M x) :=
+  LinearMap.congr_fun (_root_.exteriorPower.oneEquiv_naturality (ρ g)) x
 
 /-- Restricting a representation along a monoid homomorphism commutes with exterior powers. -/
 @[simp] theorem exteriorPower_comp {H : Type*} [Monoid H] (ρ : Representation R G M) (f : H →* G)

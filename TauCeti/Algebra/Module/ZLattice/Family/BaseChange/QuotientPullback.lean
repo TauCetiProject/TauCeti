@@ -80,6 +80,24 @@ noncomputable abbrev torusFamilyBaseChangeQuotientFiberHomeomorph (f : C(Y', Y))
     (fun g' ↦ continuous_torusFamilyBaseChangeTranslation P hcont f.continuous σ hf b hb
       (continuous_const_smul g') (hbc (σ g'))) β' hβ' y' hy'
 
+/-- `torusFamilyBaseChangeQuotientFiberHomeomorph` sends a point in the `y'`-fiber to its
+`Γ'`-orbit.
+
+This is intentionally not a simp lemma: `torusFamilyBaseChangeQuotientFiberHomeomorph` is an
+`abbrev`, so `simp` already simplifies it via `torusFamilyAffineQuotientFiberHomeomorph_coe`. -/
+theorem torusFamilyBaseChangeQuotientFiberHomeomorph_coe (f : C(Y', Y))
+    (hf : ∀ g' y', f (g' • y') = σ g' • f y') {z' : Z'} (y' : Y') (hy' : β' y' = z')
+    (u : letI := periodAddAction (P ∘ f); torusFamilyProjection (P ∘ f) ⁻¹' {y'}) :
+    letI := periodAddAction (P ∘ f)
+    letI := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
+    (torusFamilyBaseChangeQuotientFiberHomeomorph P hcont R ρ hequiv b hb hone hmul hbmul hR hbc
+        β' hβ' σ f hf y' hy' u :
+      MulAction.orbitRel.Quotient Γ' (AddAction.orbitRel.Quotient Λ (Y' × E))) =
+      Quotient.mk _ u.1 := by
+  let _ := periodAddAction (P ∘ f)
+  let _ := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
+  simp only [torusFamilyAffineQuotientFiberHomeomorph_coe]
+
 end Topology
 
 section CommSq
@@ -153,17 +171,13 @@ theorem torusFamilyAffineQuotientBaseChangeCommSq_fiberMap_comp_fiberHomeomorph 
   let _ := periodAddAction P; let _ := periodAddAction (P ∘ f)
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hequiv b hb hbmul
   let _ := torusFamilyBaseChangeAffineMulAction P b hb R ρ hequiv hone hmul hbmul σ f hf
-  have := hβ'.toContinuousConstSMul; ext u
-  let φ := torusFamilyAffineBaseChangeHom P b hb R ρ hequiv hone hmul hbmul σ f hf
-  exact ((torusFamilyAffineQuotientBaseChangeCommSq P R ρ hequiv b hb hone hmul hbmul β hβ β' hβ'
-      σ f hf fZ hfZ).fiberMap_apply_coe z' _).trans <|
-    (congrArg φ.orbitRelQuotientMap (torusFamilyAffineQuotientFiberHomeomorph_coe (P ∘ f)
-      (fun g' y' ↦ R (σ g') (f y')) (ρ.comp σ) _ _ _ _ _ _ _ _ _ β' hβ' y' hy' u)).trans <|
-    (MulActionHom.orbitRelQuotientMap_mk φ u.1).trans <| (congrArg (Quotient.mk _)
-      ((torusFamilyAffineBaseChangeHom_apply P b hb R ρ hequiv hone hmul hbmul σ f hf u.1).trans
-        ((torusFamilyBaseChangeCommSq P f).fiberMap_apply_coe y' u).symm)).trans
-    (torusFamilyAffineQuotientFiberHomeomorph_coe P R ρ hequiv b hb hone hmul hbmul hcont hR hbc
-      β hβ (f y') hy ((torusFamilyBaseChangeCommSq P f).fiberMap y' u)).symm
+  refine TopCat.ext fun u ↦ Subtype.ext ?_
+  rw [TopCat.comp_app, TopCat.comp_app, CommSq.fiberMap_apply_coe]
+  simp only [TopCat.isoOfHomeo_hom, ConcreteCategory.hom_ofHom, ContinuousMap.coe_mk]
+  rw [torusFamilyBaseChangeQuotientFiberHomeomorph_coe,
+    torusFamilyAffineQuotientFiberHomeomorph_coe, MulActionHom.orbitRelQuotientMap_mk,
+    torusFamilyAffineBaseChangeHom_apply, CommSq.fiberMap_apply_coe]
+  rfl
 
 include hcont hR hbc in
 /-- Equivariant base change of descended torus families induces an isomorphism on every fiber. -/

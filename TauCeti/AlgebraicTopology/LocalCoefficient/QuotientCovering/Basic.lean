@@ -47,8 +47,6 @@ map to the tensor factor and the covering map to the sheet.
   induced by a morphism of representations.
 * `IsQuotientCoveringMap.associatedLocalSystemMapOver`: the map of associated local systems over
   a map of bases, induced by an equivariant cover map and a compatible coefficient map.
-* `IsQuotientCoveringMap.topCat_ofHom`: packaging a quotient covering map via `TopCat.ofHom`
-  preserves `IsQuotientCoveringMap`.
 
 ## References
 
@@ -65,14 +63,6 @@ open CategoryTheory TauCeti
 universe u
 
 namespace IsQuotientCoveringMap
-
-/-- Packaging a quotient covering map `β : Y → Z` via `TopCat.ofHom` preserves
-`IsQuotientCoveringMap`, since `(TopCat.ofHom ⟨β, hβ.continuous⟩ : TopCat.of Y → TopCat.of Z)` is
-definitionally `β`. -/
-theorem topCat_ofHom {Y Z : Type u} {G : Type*} [TopologicalSpace Y] [TopologicalSpace Z]
-    [Group G] [MulAction G Y] {β : Y → Z} (hβ : IsQuotientCoveringMap β G) :
-    IsQuotientCoveringMap (TopCat.ofHom ⟨β, hβ.continuous⟩) G :=
-  hβ
 
 variable {E B : TopCat.{u}} {p : E ⟶ B} {G : Type u} [Group G] [MulAction G E]
   (hG : IsQuotientCoveringMap p G)
