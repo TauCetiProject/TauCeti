@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Schrodinger.Dispersive
 public import TauCeti.Analysis.PDE.Strichartz.TTStar
+import TauCeti.Analysis.PDE.Strichartz.Retarded
 
 /-!
 # Strichartz estimates for the Schrödinger equation
@@ -37,6 +38,13 @@ For every such pair with `2 < q < ∞`, that is every admissible pair other than
 `⟪S(t - s) F(s), G(t)⟫`, whose restriction to `s < t` is the retarded (inhomogeneous) estimate
 `‖∫_{s < t} S(t - s) F(s) ds‖_{L^q_t L^r_x} ≤ C ‖F‖_{L^{q'}_t L^{r'}_x}` in weak form.
 
+The retarded estimate also holds with two different non-endpoint admissible pairs `(q₁, r₁)` and
+`(q₂, r₂)`, `‖∫_{s < t} S(t - s) F(s) ds‖_{L^{q₁}_t L^{r₁}_x} ≤ C ‖F‖_{L^{q₂'}_t L^{r₂'}_x}`, again
+in weak form. The Duhamel pairing `⟪S(t - s) F(s), G(t)⟫` is `⟪S(-s) F(s), S(-t) G(t)⟫`, so over a
+rectangle of times it is bounded by the dual estimates of the two pairs, and the Christ–Kiselev
+lemma passes to the region `s < t` (`TauCeti.enorm_integral_setIntegral_Iio_inner_le`), since
+`1 / q₁' + 1 / q₂' > 1`.
+
 ## Main declarations
 
 * `TauCeti.exists_enorm_integral_schrodingerPropagator_neg_le_of_finrank_eq_one`: the dual
@@ -51,12 +59,16 @@ For every such pair with `2 < q < ∞`, that is every admissible pair other than
   estimate for the Duhamel pairings in every dimension.
 * `TauCeti.exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le`: the retarded
   estimate in every dimension, in weak form.
+* `TauCeti.exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_integrable`:
+  the retarded estimate for two admissible pairs in every dimension, in weak form.
 
 ## References
 
 * T. Tao, *Nonlinear Dispersive Equations: Local and Global Analysis*, CBMS Regional Conference
   Series in Mathematics 106, AMS, 2006, Section 2.3.
 * M. Keel and T. Tao, *Endpoint Strichartz estimates*, Amer. J. Math. 120 (1998), 955–980.
+* M. Christ and A. Kiselev, *Maximal functions associated to filtrations*, J. Funct. Anal. 179
+  (2001), 409–425.
 -/
 
 public section
@@ -295,5 +307,73 @@ theorem exists_enorm_integral_inner_schrodingerPropagator_le (hq : 2 < q)
     (by simpa only [adjoint_phasePropagator] using hSG)
 
 end Admissible
+
+/-! ### Two admissible pairs -/
+
+/-- The time exponents of the dual estimates at two pairs with `2 < q₁` and `2 < q₂` satisfy the
+Christ–Kiselev condition `1 / q₁' + 1 / q₂' > 1`. -/
+private theorem one_lt_inv_add_inv_of_holderConjugate {p₁ q₁ p₂ q₂ : ℝ≥0} (hq₁ : 2 < q₁)
+    (hpq₁ : p₁.HolderConjugate q₁) (hq₂ : 2 < q₂) (hpq₂ : p₂.HolderConjugate q₂) :
+    1 < (p₁ : ℝ≥0∞)⁻¹ + (p₂ : ℝ≥0∞)⁻¹ := by
+  rw [← ENNReal.coe_inv hpq₁.pos.ne', ← ENNReal.coe_inv hpq₂.pos.ne', ← ENNReal.coe_add,
+    ← ENNReal.coe_one, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe]
+  have h₁ := hpq₁.coe.inv_add_inv_eq_one
+  have h₂ := hpq₂.coe.inv_add_inv_eq_one
+  have hq₁' : (q₁ : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq₁)
+  have hq₂' : (q₂ : ℝ)⁻¹ < 2⁻¹ := inv_strictAnti₀ two_pos (by exact_mod_cast hq₂)
+  push_cast
+  linarith
+
+/-- **The retarded Strichartz estimate for two admissible pairs** in every dimension `n`, in weak
+form. Let `(q₁, r₁)` and `(q₂, r₂)` be non-endpoint admissible pairs: `2 < qᵢ < ∞` and
+`2 / qᵢ + n / rᵢ = n / 2`, with `pᵢ` and `rᵢ'` the Hölder conjugates of `qᵢ` and `rᵢ`. There is
+`C` such that for all almost everywhere strongly measurable `F, G : ℝ → L²(E)` for which
+`s ↦ S(-s) F(s)` and `t ↦ S(-t) G(t)` are integrable,
+
+`|∫ ∫_{s < t} ⟪S(t - s) F(s), G(t)⟫ ds dt| ≤ C ‖F‖_{L^{p₂}_t L^{r₂'}_x} ‖G‖_{L^{p₁}_t L^{r₁'}_x}`.
+
+This is the inhomogeneous Strichartz estimate
+`‖∫_{s < t} S(t - s) F(s) ds‖_{L^{q₁}_t L^{r₁}_x} ≤ C ‖F‖_{L^{q₂'}_t L^{r₂'}_x}` tested against `G`;
+for `F` vanishing on negative times the inner integral runs over `(0, t)`. The integrability
+hypotheses make the Bochner integrals meaningful and do not enter the constant. -/
+theorem exists_enorm_integral_setIntegral_Iio_inner_schrodingerPropagator_sub_le_of_integrable
+    {p₁ q₁ p₂ q₂ : ℝ≥0} {r₁ r₁' r₂ r₂' : ℝ≥0∞} [r₁'.HolderConjugate r₁] [r₂'.HolderConjugate r₂]
+    (hq₁ : 2 < q₁) (hpq₁ : p₁.HolderConjugate q₁)
+    (hqr₁ : 2 / (q₁ : ℝ) + Module.finrank ℝ E * (r₁⁻¹).toReal = Module.finrank ℝ E / 2)
+    (hq₂ : 2 < q₂) (hpq₂ : p₂.HolderConjugate q₂)
+    (hqr₂ : 2 / (q₂ : ℝ) + Module.finrank ℝ E * (r₂⁻¹).toReal = Module.finrank ℝ E / 2) :
+    ∃ C : ℝ≥0, ∀ F G : ℝ → Lp ℂ 2 (volume : Measure E), AEStronglyMeasurable F →
+      AEStronglyMeasurable G → Integrable (fun s ↦ schrodingerPropagator ℂ (-s) (F s)) →
+      Integrable (fun t ↦ schrodingerPropagator ℂ (-t) (G t)) →
+      ‖∫ t, ∫ s in Set.Iio t, ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ‖ₑ ≤
+        C * eLpNorm (fun s ↦ eLpNorm (F s) r₂' volume) p₂ volume *
+          eLpNorm (fun t ↦ eLpNorm (G t) r₁' volume) p₁ volume := by
+  obtain ⟨C₁, hC₁⟩ :=
+    exists_enorm_integral_schrodingerPropagator_neg_le (r := r₁) (r' := r₁') hq₁ hpq₁ hqr₁
+  obtain ⟨C₂, hC₂⟩ :=
+    exists_enorm_integral_schrodingerPropagator_neg_le (r := r₂) (r' := r₂') hq₂ hpq₂ hqr₂
+  have hp := one_lt_inv_add_inv_of_holderConjugate hq₂ hpq₂ hq₁ hpq₁
+  -- The Christ–Kiselev constant `(1 - 2^{-δ})⁻¹` is finite, since `δ > 0`.
+  set c : ℝ≥0∞ := (1 - 2 ^ (-((p₂ : ℝ≥0∞)⁻¹ + (p₁ : ℝ≥0∞)⁻¹ - 1).toReal))⁻¹
+  have hδ : 0 < ((p₂ : ℝ≥0∞)⁻¹ + (p₁ : ℝ≥0∞)⁻¹ - 1).toReal :=
+    ENNReal.toReal_pos (tsub_pos_of_lt hp).ne' (ENNReal.sub_ne_top (ENNReal.add_ne_top.2
+      ⟨ENNReal.inv_ne_top.2 (by exact_mod_cast hpq₂.pos.ne'),
+        ENNReal.inv_ne_top.2 (by exact_mod_cast hpq₁.pos.ne')⟩))
+  have hc : c ≠ ∞ := ENNReal.inv_ne_top.2
+    (tsub_pos_of_lt
+      (ENNReal.rpow_lt_one_of_one_lt_of_neg ENNReal.one_lt_two (neg_neg_of_pos hδ))).ne'
+  refine ⟨c.toNNReal * C₂ * C₁, fun F G hF hG hSF hSG ↦ ?_⟩
+  -- The Duhamel pairing `⟪S(t - s) F(s), G(t)⟫` is the pairing of `S(-s) F(s)` with `S(-t) G(t)`.
+  have hpair (s t : ℝ) : ⟪schrodingerPropagator ℂ (t - s) (F s), G t⟫_ℂ =
+      ⟪schrodingerPropagator ℂ (-s) (F s), schrodingerPropagator ℂ (-t) (G t)⟫_ℂ := by
+    simp only [schrodingerPropagator_def]
+    rw [← inner_phasePropagator_apply laplacianSymbol t
+        (phasePropagator ℂ laplacianSymbol (-s) (F s)),
+      phasePropagator_apply_phasePropagator_neg_apply, ← phasePropagator_add_apply,
+      ← sub_eq_add_neg]
+  simp_rw [hpair]
+  rw [ENNReal.coe_mul, ENNReal.coe_mul, ENNReal.coe_toNNReal hc]
+  exact enorm_integral_setIntegral_Iio_inner_le (V := fun s ↦ schrodingerPropagator ℂ (-s))
+    (ENNReal.one_le_coe_iff.2 hpq₁.lt.le) hp hC₂ hC₁ hF hG hSF hSG
 
 end TauCeti
