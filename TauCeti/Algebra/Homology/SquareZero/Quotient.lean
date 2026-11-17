@@ -457,9 +457,10 @@ include he hf₁ hinj₁ hhom hexact₂ hπ₂e in
 /-- If `f₁ a + e b = 0` and `e ∘ h + h ∘ d = f₁ - f₂`, then `π₂ (h a + b)` is a cycle of `q₂`. -/
 theorem map_add_mem_ker_of_homotopy {a : M} {b : N} (hab : f₁ a + e b = 0) :
     π₂ (h a + b) ∈ ker q₂ := by
-  simpa only [comp_apply, snd_apply, LinearEquiv.coe_coe, mappingConeHomotopyEquiv_apply] using
+  simpa only [comp_apply, snd_apply, LinearEquiv.coe_coe, LinearEquiv.skewProd_apply,
+    LinearEquiv.refl_apply, add_comm b] using
     map_mem_ker_of_comp_eq _ (comp_snd_comp_mappingCone hexact₂ hπ₂e)
-      (map_mem_ker_of_comp_eq _ (mappingConeHomotopyEquiv_comp_mappingCone hhom)
+      (map_mem_ker_of_comp_eq _ (refl_skewProd_refl_comp_mappingCone hhom)
         (mem_ker_mappingCone_of_add_eq_zero he hf₁ hinj₁ hab))
 
 /-- If `f₁ a + e b = 0`, then `homologyEquivOfHomotopicInjective` sends the homology class of `π₁ b`

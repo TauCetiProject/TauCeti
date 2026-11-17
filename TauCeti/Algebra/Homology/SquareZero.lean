@@ -41,8 +41,8 @@ elements of `M`, on which such structure is defined. The image is represented in
 * `LinearMap.homologyRestrictScalarsEquiv`: restricting scalars of a square-zero endomorphism does
   not change its concrete homology.
 * `LinearMap.mappingCone`: the mapping cone `(m, n) ↦ (-d m, f m + e n)` of such a chain map.
-* `LinearMap.mappingConeHomotopyEquiv` and `LinearMap.mappingConeHomologyEquivOfHomotopy`: the
-  shearing automorphism and induced mapping-cone homology equivalence of a chain homotopy.
+* `LinearMap.mappingConeHomologyEquivOfHomotopy`: the mapping-cone homology equivalence induced by
+  a chain homotopy via `LinearEquiv.skewProd`.
 * `LinearMap.sumMappingCone`: the mapping cone of a map between free modules `ι →₀ S` and
   `κ →₀ S`, as an endomorphism of the free module `(ι ⊕ κ) →₀ S`.
 
@@ -56,6 +56,8 @@ elements of `M`, on which such structure is defined. The image is represented in
   descriptions of surjectivity and injectivity of the map induced on homology.
 * `LinearMap.ker_le_range_mappingCone_iff`: a chain map induces a bijection on homology exactly when
   its mapping cone is exact.
+* `LinearMap.refl_skewProd_refl_comp_mappingCone`: a chain homotopy makes
+  `(LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h` intertwine mapping cones.
 * `LinearMap.ker_le_range_sumMappingCone_iff`: the kernel of the mapping cone on `(ι ⊕ κ) →₀ S` lies
   in its range exactly when the same holds for the mapping cone on `(ι →₀ S) × (κ →₀ S)`.
 * `HomologicalComplex.quasiIso_iff_bijective_homologyMap`: a morphism of complexes of modules of
@@ -556,50 +558,39 @@ end RestrictScalars
 
 section MappingConeHomotopy
 
-variable {S M N : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
-  {d : M →ₗ[S] M} {e : N →ₗ[S] N} {f g : M →ₗ[S] N}
-
-/-- The shearing automorphism `(a, b) ↦ (a, h a + b)` of `M × N` associated to a linear map
-`h : M →ₗ[S] N`. When `e ∘ h + h ∘ d = f - g`, it intertwines `mappingCone d e f` and
-`mappingCone d e g`. -/
-def mappingConeHomotopyEquiv (h : M →ₗ[S] N) : (M × N) ≃ₗ[S] M × N :=
-  LinearEquiv.ofLinearMap ((fst S M N).prod (h.coprod id)) ((fst S M N).prod ((-h).coprod id))
-    (LinearMap.ext fun ⟨a, b⟩ => Prod.ext rfl (add_neg_cancel_left (h a) b))
-    (LinearMap.ext fun ⟨a, b⟩ => Prod.ext rfl (neg_add_cancel_left (h a) b))
-
-/-- Evaluating `mappingConeHomotopyEquiv h` on a pair `(a, b)`. -/
-@[simp]
-theorem mappingConeHomotopyEquiv_apply (h : M →ₗ[S] N) (x : M × N) :
-    mappingConeHomotopyEquiv h x = (x.1, h x.1 + x.2) := (rfl)
-
-/-- Evaluating the inverse of `mappingConeHomotopyEquiv h` on a pair `(a, b)`. -/
-@[simp]
-theorem mappingConeHomotopyEquiv_symm_apply (h : M →ₗ[S] N) (x : M × N) :
-    (mappingConeHomotopyEquiv h).symm x = (x.1, -h x.1 + x.2) := (rfl)
-
-/-- A chain homotopy `e ∘ h + h ∘ d = f - g` makes `mappingConeHomotopyEquiv h` intertwine the
-mapping cones of `f` and `g`. -/
-theorem mappingConeHomotopyEquiv_comp_mappingCone {h : M →ₗ[S] N}
-    (hhom : e ∘ₗ h + h ∘ₗ d = f - g) :
-    (mappingConeHomotopyEquiv h).toLinearMap ∘ₗ mappingCone d e f =
-      mappingCone d e g ∘ₗ (mappingConeHomotopyEquiv h).toLinearMap := by
-  refine LinearMap.ext fun ⟨a, b⟩ => Prod.ext (by simp) ?_
-  have ha : e (h a) + h (d a) = f a - g a := congr($hhom a)
-  simp only [comp_apply, LinearEquiv.coe_coe, mappingCone_apply,
-    mappingConeHomotopyEquiv_apply, map_neg, map_add, eq_sub_of_add_eq ha]
-  abel
+/-- A chain homotopy `e ∘ h + h ∘ d = f - g` makes
+`(LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h` intertwine the mapping cones of `f` and
+`g`. -/
+theorem refl_skewProd_refl_comp_mappingCone {S M N : Type*} [Semiring S]
+    [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+    {d : M →ₗ[S] M} {e : N →ₗ[S] N} {f g h : M →ₗ[S] N} (hhom : e ∘ₗ h + h ∘ₗ d = f - g) :
+    ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).toLinearMap ∘ₗ
+        mappingCone d e f =
+      mappingCone d e g ∘ₗ
+        ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).toLinearMap := by
+  refine LinearMap.ext fun ⟨a, b⟩ => Prod.ext ?_ ?_
+  · simp only [comp_apply, LinearEquiv.coe_coe, mappingCone_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply]
+  · have ha : e (h a) + h (d a) = f a - g a := congr($hhom a)
+    simp only [comp_apply, LinearEquiv.coe_coe, mappingCone_apply,
+      LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, map_neg, map_add,
+      eq_sub_of_add_eq ha]
+    abel
 
 section Homology
 
-variable (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g)
+variable {S M N : Type*} [Ring S] [AddCommGroup M] [Module S M] [AddCommGroup N] [Module S N]
+  {d : M →ₗ[S] M} {e : N →ₗ[S] N} {f g : M →ₗ[S] N}
+  (hd : d ∘ₗ d = 0) (he : e ∘ₗ e = 0) (hf : f ∘ₗ d = e ∘ₗ f) (hg : g ∘ₗ d = e ∘ₗ g)
   {h : M →ₗ[S] N} (hhom : e ∘ₗ h + h ∘ₗ d = f - g)
 
 /-- Chain-homotopic maps induce isomorphic mapping-cone homologies. -/
 noncomputable def mappingConeHomologyEquivOfHomotopy :
     (mappingCone d e f).homology (mappingCone_comp_self f hd he hf) ≃ₗ[S]
       (mappingCone d e g).homology (mappingCone_comp_self g hd he hg) :=
-  (mappingConeHomotopyEquiv h).homologyEquiv (mappingCone_comp_self f hd he hf)
-    (mappingCone_comp_self g hd he hg) (mappingConeHomotopyEquiv_comp_mappingCone hhom)
+  ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h).homologyEquiv
+    (mappingCone_comp_self f hd he hf) (mappingCone_comp_self g hd he hg)
+    (refl_skewProd_refl_comp_mappingCone hhom)
 
 /-- `mappingConeHomologyEquivOfHomotopy` sends the class of `(a, b)` to the class of
 `(a, h a + b)`. -/
@@ -607,10 +598,12 @@ noncomputable def mappingConeHomologyEquivOfHomotopy :
 theorem mappingConeHomologyEquivOfHomotopy_mk (z : ker (mappingCone d e f)) :
     mappingConeHomologyEquivOfHomotopy hd he hf hg hhom (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨(z.1.1, h z.1.1 + z.1.2), by
-        simpa only [LinearEquiv.coe_coe, mappingConeHomotopyEquiv_apply] using
-          map_mem_ker_of_comp_eq _ (mappingConeHomotopyEquiv_comp_mappingCone hhom) z.2⟩ :=
-  (LinearEquiv.homologyEquiv_mk (mappingConeHomotopyEquiv h) _ _ _ z).trans <|
-    congrArg Submodule.Quotient.mk (Subtype.ext (mappingConeHomotopyEquiv_apply h z.1))
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
+          add_comm z.1.2] using
+          map_mem_ker_of_comp_eq _ (refl_skewProd_refl_comp_mappingCone hhom) z.2⟩ :=
+  (LinearEquiv.homologyEquiv_mk ((LinearEquiv.refl S M).skewProd (LinearEquiv.refl S N) h)
+    _ _ _ z).trans <| congrArg Submodule.Quotient.mk <| Subtype.ext <| by
+      simp only [LinearEquiv.skewProd_apply, LinearEquiv.refl_apply, add_comm z.1.2]
 
 /-- The inverse of `mappingConeHomologyEquivOfHomotopy` sends the class of `(a, b)` to the class
 of `(a, -h a + b)`. -/
@@ -618,9 +611,9 @@ of `(a, -h a + b)`. -/
 theorem mappingConeHomologyEquivOfHomotopy_symm_mk (z : ker (mappingCone d e g)) :
     (mappingConeHomologyEquivOfHomotopy hd he hf hg hhom).symm (Submodule.Quotient.mk z) =
       Submodule.Quotient.mk ⟨(z.1.1, -h z.1.1 + z.1.2), by
-        simpa only [LinearEquiv.coe_coe, mappingConeHomotopyEquiv_apply,
-          LinearMap.neg_apply] using
-          map_mem_ker_of_comp_eq _ (mappingConeHomotopyEquiv_comp_mappingCone
+        simpa only [LinearEquiv.coe_coe, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
+          LinearMap.neg_apply, add_comm z.1.2] using
+          map_mem_ker_of_comp_eq _ (refl_skewProd_refl_comp_mappingCone
             (h := -h) (by rw [comp_neg, neg_comp, ← neg_add, hhom, neg_sub])) z.2⟩ := by
   rw [LinearEquiv.symm_apply_eq, mappingConeHomologyEquivOfHomotopy_mk]
   exact congrArg _ (Subtype.ext (Prod.ext rfl (add_neg_cancel_left (h z.1.1) z.1.2).symm))
