@@ -41,6 +41,7 @@ The sheaf of modules has exactly the same underlying presheaf of functions.
 Evaluation of germs gives a surjective ring homomorphism from each stalk to `ℂ`.
 Holomorphic maps induce morphisms to the pushed-forward structure sheaf by precomposition,
 and pull back holomorphic germs (`stalkPrecomp`), functorially and preserving their values.
+At an isolated point, evaluation identifies the stalk with `ℂ` (`evalEquiv`).
 
 The sheaf construction follows `smoothSheafCommRing` in
 `Mathlib/Geometry/Manifold/Sheaf/Smooth.lean` by Heather Macbeth and Adam Topaz, using
@@ -316,6 +317,33 @@ theorem eval_surjective (x : X) : Function.Surjective (eval I X x) := by
 
 instance (x : X) : Nontrivial ((holomorphicStructureSheaf I X).presheaf.stalk x) :=
   (eval_surjective I X x).nontrivial
+
+/-- At an isolated point, evaluation at the base point is bijective on the holomorphic stalk. -/
+theorem eval_bijective_of_isOpen_singleton {x : X} (hx : IsOpen ({x} : Set X)) :
+    Function.Bijective (eval I X x) := by
+  refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, eval_surjective I X x⟩
+  obtain ⟨U, hxU, f, rfl⟩ := (holomorphicStructureSheaf I X).presheaf.exists_germ_eq s
+  have hf0 : toFun I X (op U) f ⟨x, hxU⟩ = 0 := (eval_germ I X U x hxU f).symm.trans hs
+  let W : Opens X := ⟨{x}, hx⟩
+  have hWU : W ≤ U := Set.singleton_subset_iff.2 hxU
+  rw [← map_zero (ConcreteCategory.hom ((holomorphicStructureSheaf I X).presheaf.germ U x hxU))]
+  refine TopCat.Presheaf.germ_ext _ W rfl (homOfLE hWU) (homOfLE hWU) (ext fun y ↦ ?_)
+  rw [map_apply, map_apply, zero_apply]
+  exact (congrArg f (Subtype.ext (Set.mem_singleton_iff.1 y.2))).trans hf0
+
+/-- At an isolated point, evaluation at the base point identifies the holomorphic stalk with
+`ℂ`. -/
+def evalEquiv {x : X} (hx : IsOpen ({x} : Set X)) :
+    (holomorphicStructureSheaf I X).presheaf.stalk x ≃+* ℂ :=
+  RingEquiv.ofBijective (eval I X x) (eval_bijective_of_isOpen_singleton I X hx)
+
+variable {I X} in
+/-- `evalEquiv` evaluates a holomorphic germ at the base point. -/
+@[simp]
+theorem evalEquiv_apply {x : X} (hx : IsOpen ({x} : Set X))
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    evalEquiv I X hx s = eval I X x s := by
+  rw [evalEquiv, RingEquiv.ofBijective_apply]
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}

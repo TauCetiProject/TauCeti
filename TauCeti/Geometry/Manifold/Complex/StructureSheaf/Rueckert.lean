@@ -1,0 +1,191 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rechart
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
+public import TauCeti.RingTheory.Polynomial.Rueckert
+
+import TauCeti.Analysis.Analytic.Uniqueness
+import TauCeti.Geometry.Manifold.Algebra.SMul
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
+import TauCeti.Geometry.Manifold.Complex.StructureSheaf.StalkPullback
+import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+import TauCeti.RingTheory.Polynomial.Distinguished
+
+/-!
+# Holomorphic stalks satisfy the Rückert hypotheses
+
+For a finite-dimensional complex normed space `E` and `(x₀, w₀) : E × ℂ`, vertical evaluation of
+polynomials `evalVertical x₀ w₀ : (𝒪_{E, x₀})[X] →+* 𝒪_{E × ℂ, (x₀, w₀)}` satisfies the abstract
+Rückert hypotheses (`RingHom.IsRueckert`) with respect to the set of Weierstrass polynomials,
+namely the polynomials over `𝒪_{E, x₀}` distinguished at the maximal ideal `𝔪_{x₀}`:
+
+* `evalVertical x₀ w₀` is injective (`evalVertical_injective`), and monic factors of Weierstrass
+  polynomials remain Weierstrass polynomials (`Polynomial.IsDistinguishedAt.of_dvd`) since the
+  maximal ideal `𝔪_{x₀}` is prime and therefore radical;
+* Weierstrass division detects divisibility by a Weierstrass polynomial
+  (`evalVertical_dvd_iff_of_isDistinguishedAt`) and represents every germ modulo a Weierstrass
+  polynomial by a polynomial over the base stalk
+  (`existsUnique_weierstrassDivision_of_isDistinguishedAt`);
+* for every nonzero germ `f` at `(x₀, w₀)`, a centered linear coordinate change gives a
+  biholomorphism of `E × ℂ` fixing `(x₀, w₀)` whose pullback makes `f` regular in the last variable
+  (`exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero`), and Weierstrass
+  preparation (`existsUnique_weierstrassPreparation`) then writes that pullback as a unit multiple
+  of a Weierstrass polynomial.
+
+As an immediate consequence before inducting on dimension, a Weierstrass polynomial generates a
+prime ideal (or is a prime element) in `𝒪_{E × ℂ, (x₀, w₀)}` if and only if it does so in
+`(𝒪_{E, x₀})[X]`. Combining `evalEquiv` in dimension `0`, `isRueckert_evalVertical` on
+`(Fin n → ℂ) × ℂ`, and `exists_ringEquiv_stalk_modelSpace` yields `stalk_induction`, which
+transfers any ring-theoretic property of `ℂ` stable under ring equivalences and Rückert extensions
+to the holomorphic stalk at any point of a finite-dimensional complex manifold without boundary.
+
+## Main results
+
+* `exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero`: every nonzero holomorphic
+  germ on `E × ℂ` becomes regular in the last variable after a biholomorphism of `E × ℂ` fixing the
+  base point (without assuming `E` is finite-dimensional).
+* `isRueckert_evalVertical`: `evalVertical x₀ w₀` satisfies `RingHom.IsRueckert` for the
+  polynomials distinguished at `𝔪_{x₀}`.
+* `isPrime_span_evalVertical_iff_of_isDistinguishedAt`,
+  `prime_evalVertical_iff_of_isDistinguishedAt`: primality comparison for Weierstrass polynomials.
+* `stalk_induction`: dimension-induction and chart-descent principle for ring-theoretic properties
+  of holomorphic stalks on finite-dimensional complex manifolds without boundary.
+
+## References
+
+* J.-P. Demailly, *Complex Analytic and Differential Geometry*, Ch. II, §2.
+* R. C. Gunning, H. Rossi, *Analytic Functions of Several Complex Variables*, Ch. II, §B.
+* H. Grauert, R. Remmert, *Coherent Analytic Sheaves*, Ch. 2, §2.2.
+* S. Bosch, U. Güntzer, R. Remmert, *Non-Archimedean Analysis*, §5.2.5.
+-/
+
+public noncomputable section
+
+open Filter Polynomial Topology
+open scoped ContDiff Manifold
+
+namespace TauCeti.holomorphicStructureSheaf
+
+section ModelSpace
+
+variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- Every nonzero holomorphic germ at `(x₀, w₀) : E × ℂ` becomes regular in the last variable
+after pulling back along a biholomorphism of `E × ℂ` fixing `(x₀, w₀)` (without assuming `E` is
+finite-dimensional). -/
+theorem exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero
+    {x₀ : E} {w₀ : ℂ}
+    {f : (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk (x₀, w₀)}
+    (hf : f ≠ 0) :
+    ∃ (e : (E × ℂ) ≃ₘ^ω⟮𝓘(ℂ, E × ℂ), 𝓘(ℂ, E × ℂ)⟯ (E × ℂ)) (he : e (x₀, w₀) = (x₀, w₀)),
+      (verticalPowerSeries x₀ w₀
+        (e.holomorphicStalkEquiv (x₀, w₀)
+          (RingEquiv.cast (R := fun z ↦
+            (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk z)
+            he.symm f))).map
+        (IsLocalRing.residue ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)) ≠ 0 := by
+  obtain ⟨F, hF, hfF⟩ := exists_analyticAt_toFilterGerm_eq (x₀, w₀) f
+  have hF0 : ¬F =ᶠ[𝓝 (x₀, w₀)] 0 := (eq_zero_iff_of_toFilterGerm_eq (hfF _ le_rfl)).not.1 hf
+  obtain ⟨L, hord⟩ := hF.exists_continuousLinearEquiv_analyticOrderAt_add_sub_ne_top hF0
+  let t : (E × ℂ) ≃ₘ^ω⟮𝓘(ℂ, E × ℂ), 𝓘(ℂ, E × ℂ)⟯ (E × ℂ) :=
+    Diffeomorph.constVAdd 𝓘(ℂ, E × ℂ) ω (x₀, w₀)
+  let e := t.symm.trans ((L.toContDiffDiffeomorph ω).trans t)
+  have he : e (x₀, w₀) = (x₀, w₀) := by simp [e, t]
+  refine ⟨e, he, (map_residue_verticalPowerSeries_ne_zero_iff
+    (e.toFilterGerm_holomorphicStalkEquiv_of_eq
+      (toFilterGerm_ringEquivCast he.symm (hfF _ le_rfl)))).2 ?_⟩
+  have he_apply (z : ℂ) : e (x₀, z) = (x₀, w₀) + L ((x₀, z) - (x₀, w₀)) := by
+    simp [e, t, sub_eq_neg_add]
+  rw [Function.comp_def]
+  simp only [he_apply]
+  exact hord
+
+section FiniteDimensional
+
+variable [FiniteDimensional ℂ E]
+
+/-- **Holomorphic stalks satisfy the Rückert hypotheses.** On `E × ℂ` with `E` finite-dimensional,
+vertical polynomial evaluation `evalVertical x₀ w₀ : (𝒪_{E, x₀})[X] →+* 𝒪_{E × ℂ, (x₀, w₀)}`
+satisfies `RingHom.IsRueckert` with respect to the polynomials distinguished at the maximal ideal
+of `𝒪_{E, x₀}`. -/
+theorem isRueckert_evalVertical (x₀ : E) (w₀ : ℂ) :
+    (evalVertical x₀ w₀).IsRueckert
+      {P | P.IsDistinguishedAt
+        (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))} where
+  injective := evalVertical_injective x₀ w₀
+  monic hw := hw.monic
+  mem_of_dvd hw hp hpw := hw.of_dvd (Ideal.IsPrime.isRadical inferInstance) hp hpw
+  dvd_iff hw p := (evalVertical_dvd_iff_of_isDistinguishedAt hw).symm
+  exists_dvd_sub hw b := by
+    obtain ⟨⟨q, r⟩, ⟨_, hb⟩, _⟩ := existsUnique_weierstrassDivision_of_isDistinguishedAt hw b
+    exact ⟨r, q, by linear_combination hb⟩
+  exists_mul_eq {b} hb := by
+    obtain ⟨e, he, hb'⟩ :=
+      exists_map_residue_verticalPowerSeries_holomorphicStalkEquiv_ne_zero hb
+    obtain ⟨⟨P, u⟩, ⟨hP, hu, hfac⟩, _⟩ := existsUnique_weierstrassPreparation hb'
+    refine ⟨(RingEquiv.cast (R := fun z ↦
+        (holomorphicStructureSheaf 𝓘(ℂ, E × ℂ) (E × ℂ)).presheaf.stalk z) he.symm).trans
+      (e.holomorphicStalkEquiv (x₀, w₀)), hu.unit⁻¹, P, hP, ?_⟩
+    rw [RingEquiv.trans_apply, hfac, mul_comm (evalVertical x₀ w₀ P) u, ← mul_assoc,
+      IsUnit.val_inv_mul, one_mul]
+
+/-- For a distinguished polynomial `P` over `𝒪_{E, x₀}`, the principal ideal
+`Ideal.span {evalVertical x₀ w₀ P}` in `𝒪_{E × ℂ, (x₀, w₀)}` is prime if and only if
+`Ideal.span {P}` in `(𝒪_{E, x₀})[X]` is prime. -/
+theorem isPrime_span_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    (Ideal.span {evalVertical x₀ w₀ P}).IsPrime ↔ (Ideal.span {P}).IsPrime :=
+  (isRueckert_evalVertical x₀ w₀).isPrime_span_apply_iff hP
+
+/-- A distinguished polynomial `P` over `𝒪_{E, x₀}` is prime in `(𝒪_{E, x₀})[X]` if and only if
+`evalVertical x₀ w₀ P` is prime in `𝒪_{E × ℂ, (x₀, w₀)}`. -/
+theorem prime_evalVertical_iff_of_isDistinguishedAt {x₀ : E} {w₀ : ℂ}
+    {P : ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀)[X]}
+    (hP : P.IsDistinguishedAt
+      (IsLocalRing.maximalIdeal ((holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk x₀))) :
+    Prime (evalVertical x₀ w₀ P) ↔ Prime P :=
+  (isRueckert_evalVertical x₀ w₀).prime_apply_iff hP
+
+end FiniteDimensional
+
+end ModelSpace
+
+/-- Induction principle for ring-theoretic properties of holomorphic stalks on finite-dimensional
+complex manifolds without boundary: a property `P` of commutative rings that holds for `ℂ`, is
+preserved under ring equivalences, and ascends along any Rückert homomorphism `A[X] →+* B` between
+local integral domains holds for `(holomorphicStructureSheaf I X).presheaf.stalk x`. -/
+@[elab_as_elim]
+theorem stalk_induction {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [FiniteDimensional ℂ E] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H}
+    [I.Boundaryless] {X : Type} [TopologicalSpace X] [ChartedSpace H X] [IsManifold I 1 X]
+    {P : ∀ (R : Type) [CommRing R], Prop} (hℂ : P ℂ)
+    (hequiv : ∀ {R S : Type} [CommRing R] [CommRing S], (R ≃+* S) → P R → P S)
+    (hrueckert : ∀ {A B : Type} [CommRing A] [IsDomain A] [IsLocalRing A]
+      [CommRing B] [IsDomain B] [IsLocalRing B] {φ : A[X] →+* B} {W : Set A[X]},
+      φ.IsRueckert W → P A → P B)
+    (x : X) :
+    P ((holomorphicStructureSheaf I X).presheaf.stalk x) := by
+  have hmodel (n : ℕ) : ∀ y : Fin n → ℂ,
+      P ((holomorphicStructureSheaf 𝓘(ℂ, Fin n → ℂ) (Fin n → ℂ)).presheaf.stalk y) := by
+    induction n with
+    | zero =>
+      exact fun y ↦ hequiv (evalEquiv 𝓘(ℂ, Fin 0 → ℂ) (Fin 0 → ℂ) (isOpen_discrete {y})).symm hℂ
+    | succ n ih =>
+      intro y
+      let e := (ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℂ)
+        (E := Fin (n + 1) → ℂ) (F := (Fin n → ℂ) × ℂ) (by simp)).toContDiffDiffeomorph ω
+      exact hequiv (e.holomorphicStalkEquiv y)
+        (hrueckert (isRueckert_evalVertical (e y).1 (e y).2) (ih (e y).1))
+  obtain ⟨V, _, _, _, v, hV, ⟨φ⟩⟩ := exists_ringEquiv_stalk_modelSpace (I := I) x
+  let e := (ContinuousLinearEquiv.ofFinrankEq (𝕜 := ℂ)
+    (E := V) (F := Fin (Module.finrank ℂ E) → ℂ) (by simp [hV])).toContDiffDiffeomorph ω
+  exact hequiv ((e.holomorphicStalkEquiv v).trans φ) (hmodel (Module.finrank ℂ E) (e v))
+
+end TauCeti.holomorphicStructureSheaf

@@ -9,8 +9,10 @@ public import Mathlib.Algebra.Polynomial.Coeff
 public import Mathlib.Data.Nat.Multiplicity
 public import Mathlib.RingTheory.Polynomial.Eisenstein.Distinguished
 
+import Mathlib.RingTheory.IntegralClosure.GoingDown
+
 /-!
-# The polynomial `(1 + X) ^ n - 1`
+# Distinguished polynomials and the polynomial `(1 + X) ^ n - 1`
 
 The polynomial `(1 + X) ^ n - 1` over a ring `R` is monic of degree `n` for `n ≠ 0`,
 with constant coefficient `0` and, for `0 < k`, `k`-th coefficient the binomial coefficient
@@ -28,7 +30,11 @@ completed group algebra `ℤ_p[[Γ]]` of a procyclic pro-`p` group `Γ`: at a le
 
 For a general polynomial `F` distinguished at an ideal `I` with `I ^ e ⊆ (p)`, every root `t` of
 `F` in an `O`-algebra satisfies `t ^ deg F ∈ I`, hence `p ∣ t ^ (deg F * e)`. Distinguished
-polynomials at `I` are closed under finite products, including the empty product `1`.
+polynomials at `I` are monotonic in `I` and closed under finite products, including the empty
+product `1`. Conversely, every monic factor of a polynomial distinguished at `I` is distinguished
+at `I.radical` (`Polynomial.IsDistinguishedAt.radical_of_dvd`, proved via
+`Polynomial.coeff_mem_radical_span_coeff_of_dvd`), and hence at `I` itself whenever `I` is
+radical, in particular prime or maximal (`Polynomial.IsDistinguishedAt.of_dvd`).
 
 ## Main results
 
@@ -42,6 +48,10 @@ polynomials at `I` are closed under finite products, including the empty product
 * `Polynomial.isDistinguishedAt_one`, `Polynomial.IsDistinguishedAt.pow`,
   `Polynomial.isDistinguishedAt_prod`: `1`, powers and finite products of distinguished
   polynomials are distinguished.
+* `Polynomial.IsDistinguishedAt.mono`: enlarging the ideal preserves being distinguished.
+* `Polynomial.IsDistinguishedAt.radical_of_dvd`, `Polynomial.IsDistinguishedAt.of_dvd`: monic
+  factors of a polynomial distinguished at `I` are distinguished at `I.radical`, and at `I` itself
+  when `I` is radical.
 -/
 
 public section
@@ -120,7 +130,26 @@ end Polynomial
 
 namespace Polynomial.IsDistinguishedAt
 
-variable {O : Type*} [CommRing O] {I : Ideal O} {F : O[X]} {p e : ℕ}
+variable {O : Type*} [CommRing O] {I J : Ideal O} {F G : O[X]} {p e : ℕ}
+
+/-- Enlarging the ideal preserves being distinguished. -/
+theorem mono (hF : F.IsDistinguishedAt I) (hIJ : I ≤ J) : F.IsDistinguishedAt J :=
+  ⟨⟨fun hn ↦ hIJ (hF.mem hn)⟩, hF.monic⟩
+
+/-- Every monic factor of a polynomial distinguished at `I` is distinguished at `I.radical`. -/
+theorem radical_of_dvd (hF : F.IsDistinguishedAt I) (hG : G.Monic) (hGF : G ∣ F) :
+    G.IsDistinguishedAt I.radical := by
+  refine ⟨⟨fun {k} hk ↦ Ideal.radical_mono ?_
+    (coeff_mem_radical_span_coeff_of_dvd F G hF.monic hG hGF k hk.ne)⟩, hG⟩
+  rw [Ideal.span_le]
+  rintro _ ⟨_, hi, rfl⟩
+  exact hF.mem hi
+
+/-- Over a radical ideal `I` (in particular any prime or maximal ideal), every monic factor of a
+polynomial distinguished at `I` is distinguished at `I`. -/
+theorem of_dvd (hF : F.IsDistinguishedAt I) (hI : I.IsRadical) (hG : G.Monic) (hGF : G ∣ F) :
+    G.IsDistinguishedAt I :=
+  hI.radical ▸ hF.radical_of_dvd hG hGF
 
 /-- If `F` is distinguished at `I` and `I ^ e ⊆ (p)`, then every root `t` of `F` in an `O`-algebra
 satisfies `p ∣ t ^ (deg F * e)`. -/

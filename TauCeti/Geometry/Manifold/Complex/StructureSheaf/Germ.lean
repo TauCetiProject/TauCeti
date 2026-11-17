@@ -33,7 +33,8 @@ homomorphism `TauCeti.holomorphicStructureSheaf.toFilterGerm I X x l hl` and pro
   complex normed space, `exists_analyticAt_toFilterGerm_eq`, `exists_toFilterGerm_eq_of_analyticAt`,
   and `exists_toFilterGerm_nhds_eq_iff_analyticAt` express this directly via `AnalyticAt`);
 * `eval_eq_of_toFilterGerm_eq`: the value of a holomorphic germ is the value of any function
-  with the same germ;
+  with the same germ (identifying the inverse of `evalEquiv` at an isolated point with constant
+  germs via `evalEquiv_symm_apply`);
 * `toFilterGerm_stalkPrecomp`: pulling a holomorphic germ back along a complex analytic map `f`
   is composition of germs with `f`;
 * `quotientMk_comp_stalkPrecomp_bijective`: if an ideal of germs at `p` on a normed space consists
@@ -253,6 +254,12 @@ theorem eval_eq_of_toFilterGerm_eq {x : X} {s : (holomorphicStructureSheaf I X).
 theorem eval_germOfContMDiff (f : X → ℂ) (hf : ContMDiff I 𝓘(ℂ) ω f) (x : X) :
     eval I X x (germOfContMDiff f hf x) = f x :=
   eval_eq_of_toFilterGerm_eq (toFilterGerm_germOfContMDiff f hf le_rfl)
+
+/-- The inverse of `evalEquiv` sends a complex number `c` to the constant holomorphic germ `c`. -/
+@[simp]
+theorem evalEquiv_symm_apply {x : X} (hx : IsOpen ({x} : Set X)) (c : ℂ) :
+    (evalEquiv I X hx).symm c = germOfContMDiff (fun _ ↦ c) contMDiff_const x := by
+  rw [RingEquiv.symm_apply_eq, evalEquiv_apply, eval_germOfContMDiff]
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℂ E' H'}

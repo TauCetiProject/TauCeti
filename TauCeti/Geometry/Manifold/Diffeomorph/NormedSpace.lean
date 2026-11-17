@@ -15,8 +15,8 @@ its own inverse (`Diffeomorph.subLeft`, the smooth counterpart of `Equiv.subLeft
 line, `Diffeomorph.subLeft 1` is the reflection `t ↦ 1 - t` exchanging `0` and `1`.
 
 A continuous linear equivalence of normed spaces is a diffeomorphism of every smoothness
-(`ContinuousLinearEquiv.toContDiffDiffeomorph`). Mathlib's `ContinuousLinearEquiv.toDiffeomorph`
-provides only the `C^∞` one.
+(`ContinuousLinearEquiv.toContDiffDiffeomorph`), respecting identity and composition. Mathlib's
+`ContinuousLinearEquiv.toDiffeomorph` provides only the `C^∞` one.
 
 For a nonzero scalar `a`, the affine map `x ↦ a • x + b` is a diffeomorphism of `E`, of any
 smoothness, with inverse `y ↦ a⁻¹ • (y - b)` (`Diffeomorph.smulAdd`). On the real line these are
@@ -127,5 +127,21 @@ theorem symm_toContDiffDiffeomorph (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
 theorem coe_toContDiffDiffeomorph_symm (L : E ≃L[𝕜] F) (n : ℕ∞ω) :
     ⇑(L.toContDiffDiffeomorph n).symm = L.symm :=
   (rfl)
+
+/-- The identity continuous linear equivalence induces the identity diffeomorphism. -/
+@[simp]
+theorem refl_toContDiffDiffeomorph (n : ℕ∞ω) :
+    (ContinuousLinearEquiv.refl 𝕜 E).toContDiffDiffeomorph n = Diffeomorph.refl 𝓘(𝕜, E) E n := by
+  ext x
+  simp
+
+/-- Composition of continuous linear equivalences induces composition of diffeomorphisms. -/
+@[simp]
+theorem trans_toContDiffDiffeomorph {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+    (L₁ : E ≃L[𝕜] F) (L₂ : F ≃L[𝕜] G) (n : ℕ∞ω) :
+    (L₁.trans L₂).toContDiffDiffeomorph n =
+      (L₁.toContDiffDiffeomorph n).trans (L₂.toContDiffDiffeomorph n) := by
+  ext x
+  simp
 
 end ContinuousLinearEquiv

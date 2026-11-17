@@ -44,6 +44,8 @@ lives.
   vanishes near `p` exactly when all its restrictions to lines through `p` vanish near `0`.
 * `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top`: after a linear change of
   coordinates, a function on `E × 𝕜` not vanishing near `p` has finite order in the last variable.
+* `AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_add_sub_ne_top`: centered form fixing
+  `p` via `y ↦ p + L (y - p)`, so that `t ↦ f (p + L ((p.1, t) - p))` has finite order at `p.2`.
 
 ## References
 
@@ -91,10 +93,7 @@ theorem AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul 
     {p : E} (hf : AnalyticAt 𝕜 f p) :
     f =ᶠ[𝓝 p] 0 ↔ ∀ v : E, (fun t : 𝕜 ↦ f (p + t • v)) =ᶠ[𝓝 0] 0 := by
   refine ⟨fun h v ↦ ?_, fun h ↦ ?_⟩
-  · have hline : Tendsto (fun t : 𝕜 ↦ p + t • v) (𝓝 0) (𝓝 p) := by
-      have : Continuous fun t : 𝕜 ↦ p + t • v := by fun_prop
-      simpa using this.tendsto (0 : 𝕜)
-    exact hline.eventually h
+  · exact ((by fun_prop : Continuous fun t : 𝕜 ↦ p + t • v).tendsto' 0 p (by simp)).eventually h
   -- Pass to the completion of `F`, as in Mathlib's identity principle.
   let e : F →L[𝕜] UniformSpace.Completion F := UniformSpace.Completion.toComplL
   have he : (e ∘ f) =ᶠ[𝓝 p] 0 :=
@@ -126,13 +125,39 @@ theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_ne_top {f : E ×
   -- The vertical slice is the restriction of `f` to the line through `p` along `v`.
   rw [Ne, analyticOrderAt_eq_top]
   refine fun h ↦ hv ?_
-  have ht : Tendsto (fun t : 𝕜 ↦ w₀ + t) (𝓝 0) (𝓝 w₀) := by
-    have : Continuous fun t : 𝕜 ↦ w₀ + t := by fun_prop
-    simpa using this.tendsto 0
+  have ht : Tendsto (fun t : 𝕜 ↦ w₀ + t) (𝓝 0) (𝓝 w₀) :=
+    (by fun_prop : Continuous fun t : 𝕜 ↦ w₀ + t).tendsto' 0 w₀ (by simp)
   filter_upwards [ht.eventually h] with t ht
   have hLt : L (x₀, w₀ + t) = L (x₀, w₀) + t • v := by
     rw [← hL, ← L.map_smul, ← L.map_add]
     simp
   simpa [hLt] using ht
+
+/-- **Centered general position in the last variable.** A function analytic at `p` on `E × 𝕜` that
+does not vanish near `p` becomes regular in the last variable at `p` itself after a linear change
+of coordinates centered at `p`: there is a continuous linear automorphism `L` of `E × 𝕜` such that
+`t ↦ f (p + L ((p.1, t) - p))` has finite analytic order at `p.2`. -/
+theorem AnalyticAt.exists_continuousLinearEquiv_analyticOrderAt_add_sub_ne_top {f : E × 𝕜 → F}
+    {p : E × 𝕜} (hf : AnalyticAt 𝕜 f p) (hf0 : ¬f =ᶠ[𝓝 p] 0) :
+    ∃ L : (E × 𝕜) ≃L[𝕜] E × 𝕜,
+      analyticOrderAt (fun t ↦ f (p + L ((p.1, t) - p))) p.2 ≠ ⊤ := by
+  have hadd : AnalyticAt 𝕜 (fun z : E × 𝕜 ↦ p + z) 0 := by fun_prop
+  have hg : AnalyticAt 𝕜 (fun z : E × 𝕜 ↦ f (p + z)) 0 :=
+    AnalyticAt.comp (by simpa using hf) hadd
+  have hg0 : ¬(fun z : E × 𝕜 ↦ f (p + z)) =ᶠ[𝓝 0] 0 := fun h ↦ hf0 <| by
+    have hsub : Tendsto (fun y : E × 𝕜 ↦ y - p) (𝓝 p) (𝓝 0) :=
+      (by fun_prop : Continuous fun y : E × 𝕜 ↦ y - p).tendsto' p 0 (by simp)
+    filter_upwards [hsub.eventually h] with y hy
+    simpa using hy
+  obtain ⟨L, q, hLq, hord⟩ := hg.exists_continuousLinearEquiv_analyticOrderAt_ne_top hg0
+  obtain rfl : q = 0 := L.injective (hLq.trans L.map_zero.symm)
+  refine ⟨L, ?_⟩
+  rw [Ne, analyticOrderAt_eq_top] at hord ⊢
+  refine fun h ↦ hord ?_
+  have ht : Tendsto (fun t : 𝕜 ↦ p.2 + t) (𝓝 0) (𝓝 p.2) :=
+    (by fun_prop : Continuous fun t : 𝕜 ↦ p.2 + t).tendsto' 0 p.2 (by simp)
+  filter_upwards [ht.eventually h] with t ht
+  have hpt : (p.1, p.2 + t) - p = ((0 : E), t) := by ext <;> simp
+  simpa [hpt] using ht
 
 end
