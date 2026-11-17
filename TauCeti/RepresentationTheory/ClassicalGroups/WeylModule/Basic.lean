@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Algebra.Rat
 public import Mathlib.Algebra.CharP.Algebra
 public import Mathlib.Basic.Complex.Basic
+public import TauCeti.Algebra.Algebra.Rat
 public import TauCeti.Combinatorics.Young.StandardTableau.Reading
 public import TauCeti.RepresentationTheory.ClassicalGroups.TensorPower.Basic
 public import TauCeti.RepresentationTheory.Symmetric.Relabel
@@ -108,13 +108,6 @@ open scoped TensorProduct
 universe u
 
 namespace TauCeti
-
-/-- `2` is invertible in a `ℚ`-algebra. The vanishing criterion below, and the harmonicity of the
-alternating Weyl modules, use it to cancel a factor of two. -/
-noncomputable abbrev invertibleTwoOfAlgebraRat (k : Type*) [Ring k] [Algebra ℚ k] :
-    Invertible (2 : k) :=
-  letI : Invertible (2 : ℚ) := invertibleOfNonzero two_ne_zero
-  (Invertible.map (algebraMap ℚ k) 2).copy 2 (map_ofNat _ 2).symm
 
 /-! ## The Weyl module of a Young tableau -/
 

@@ -235,8 +235,7 @@ theorem orthShapeRelabelRepEquiv_symm_apply_coe (σ : Equiv.Perm (Fin μ.card))
     (((orthShapeRelabelRepEquiv σ t).symm y : (orthShapeSpace k n t).toSubmodule) :
         ⨂[k]^μ.card (Fin n → k)) = permTensorAction k n μ.card σ⁻¹ y := by
   rw [orthShapeRelabelRepEquiv, tensorPowerReindexEquiv_symm_apply_coe, permTensorAction_apply,
-    LinearEquiv.coe_coe, PiTensorProduct.reindex_symm]
-  rfl
+    LinearEquiv.coe_coe, PiTensorProduct.reindex_symm, Equiv.Perm.inv_def]
 
 /-- The shape spaces of two tableaux of the same shape are isomorphic representations of the
 orthogonal group: up to isomorphism `E_t` depends only on the shape of `t`. -/
@@ -385,7 +384,7 @@ private theorem permTensorAction_realIsotropicPower (d : ℕ) (a b : Fin n)
   refine Fintype.sum_equiv (σ.arrowCongr (Equiv.refl Bool)) _ _ fun g => ?_
   rw [map_smul, permTensorAction_apply, LinearEquiv.coe_coe, PiTensorProduct.reindex_tprod,
     isotropicCoeff, isotropicCoeff, ← Equiv.prod_comp σ.symm fun j => bif g j then _ else _]
-  rfl
+  simp only [Equiv.arrowCongr_apply, Equiv.coe_refl, Function.comp_apply, id_eq]
 
 omit [Algebra ℚ k] in
 /-- The coefficient of `e_a^{⊗d}` in the real part of `(e_a + i e_b)^{⊗d}` is `1`. -/
