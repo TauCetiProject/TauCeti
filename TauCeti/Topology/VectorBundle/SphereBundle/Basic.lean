@@ -317,4 +317,12 @@ theorem coe_discBundleProjHomotopyEquiv_symm_apply (b : B) :
     ((discBundleProjHomotopyEquiv F E).symm b : TotalSpace F E) = zeroSection F E b :=
   (rfl)
 
+/-- The projection `D(E) → B` restricts on `S(E)` to the projection of the sphere bundle. -/
+@[reassoc]
+theorem discSpherePair_map_comp_discBundleProjHomotopyEquiv :
+    (discSpherePair F E).map ≫ TopCat.ofHom (discBundleProjHomotopyEquiv F E).toFun =
+      TopCat.ofHom (sphereBundleProj F E) := by
+  ext v
+  exact (discBundleProjHomotopyEquiv_apply F E _).trans (sphereBundleProj_apply F E v).symm
+
 end TauCeti

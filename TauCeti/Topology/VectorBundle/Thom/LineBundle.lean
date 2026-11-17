@@ -35,8 +35,10 @@ system of `E`. In degree `0` the Thom pair has no homology, as it has none below
 (`TauCeti.isZero_singularHomology_thomPair`).
 
 The isomorphism is the inverse of the comparison of the disc-sphere pair with the Thom pair,
-followed by the lift of the connecting map of `(D(E), S(E))`: composed with the map
-`Hₙ(B; L) ⟶ Hₙ(B; R[S(E)]) ≅ Hₙ(S(E))` induced by `L ⟶ R[S(E)]`, it is that connecting map
+followed by the isomorphism of the pair `(D(E), S(E))` over the double cover
+(`TauCeti.discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom`), which lifts
+the connecting map of the pair: composed with the map `Hₙ(B; L) ⟶ Hₙ(B; R[S(E)]) ≅ Hₙ(S(E))`
+induced by `L ⟶ R[S(E)]`, it is that connecting map
 (`TauCeti.discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_comp`).
 
 ## References
@@ -62,20 +64,6 @@ variable {B : Type u} [TopologicalSpace B] {F : Type*} [NormedAddCommGroup F] [N
   [TopologicalSpace (TotalSpace F E)] [FiberBundle F E] [VectorBundle ℝ F E]
   (hnorm : Continuous fun v : TotalSpace F E ↦ ‖v.2‖) (hF : Module.finrank ℝ F = 1)
 
-/-- The projection of the sphere bundle, as a morphism of spaces. -/
-private abbrev sphereProj : (discSpherePair F E).snd ⟶ TopCat.of B :=
-  TopCat.ofHom (sphereBundleProj F E)
-
-/-- The projection of the disc bundle, as a morphism of spaces. -/
-private abbrev discProj : (discSpherePair F E).fst ⟶ TopCat.of B :=
-  TopCat.ofHom (discBundleProjHomotopyEquiv F E).toFun
-
-/-- The projection of the disc bundle restricts to that of the sphere bundle. -/
-private theorem map_comp_discProj :
-    (discSpherePair F E).map ≫ discProj = sphereProj (F := F) (E := E) := by
-  ext v
-  exact (discBundleProjHomotopyEquiv_apply F E _).trans (sphereBundleProj_apply F E v).symm
-
 variable {R : Type u} [Ring R] {L : LocalCoefficientSystem.{u, u, u} R (TopCat.of B)}
   {ι : L ⟶ (isCoveringMap_sphereBundleProj F E hnorm hF).permutationLocalSystem
     (p := TopCat.ofHom (sphereBundleProj F E)) R}
@@ -92,17 +80,21 @@ def thomPairSingularHomologySuccIsoTwistedHomology (n : ℕ) :
   haveI := isIso_singularHomologyMap_discSpherePairMap F E hnorm (ModuleCat.of R R) (n + 1)
   (asIso (TopPair.singularHomologyMap (discSpherePairMap F E) (ModuleCat.of R R) (n + 1))).symm ≪≫
     (discSpherePair F E).singularHomologySuccIsoTwistedHomology
-      (isCoveringMap_sphereBundleProj F E hnorm hF) discProj map_comp_discProj
+      (isCoveringMap_sphereBundleProj F E hnorm hF)
+      (TopCat.ofHom (discBundleProjHomotopyEquiv F E).toFun)
+      (discSpherePair_map_comp_discBundleProjHomotopyEquiv F E)
       (discBundleProjHomotopyEquiv F E).isWeakHomotopyEquivalence hι n
 
-/-- On the disc-sphere pair, the Thom isomorphism of a line bundle is the isomorphism of the
-pair over the double cover `S(E) → B`. -/
+/-- On the disc-sphere pair, the Thom isomorphism of a line bundle is the isomorphism
+`Hₙ₊₁(D(E), S(E)) ≅ Hₙ(B; L)` of the pair over the double cover `S(E) → B`. -/
 @[reassoc]
-private theorem singularHomologyMap_discSpherePairMap_comp_hom (n : ℕ) :
+theorem discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom (n : ℕ) :
     TopPair.singularHomologyMap (discSpherePairMap F E) (ModuleCat.of R R) (n + 1) ≫
         (thomPairSingularHomologySuccIsoTwistedHomology hnorm hF hι n).hom =
       ((discSpherePair F E).singularHomologySuccIsoTwistedHomology
-        (isCoveringMap_sphereBundleProj F E hnorm hF) discProj map_comp_discProj
+        (isCoveringMap_sphereBundleProj F E hnorm hF)
+        (TopCat.ofHom (discBundleProjHomotopyEquiv F E).toFun)
+        (discSpherePair_map_comp_discBundleProjHomotopyEquiv F E)
         (discBundleProjHomotopyEquiv F E).isWeakHomotopyEquivalence hι n).hom := by
   have := isIso_singularHomologyMap_discSpherePairMap F E hnorm (ModuleCat.of R R) (n + 1)
   -- The Thom isomorphism is `(asIso M).symm ≪≫ J` for the comparison `M` of the disc-sphere pair
@@ -120,7 +112,7 @@ theorem discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_ho
             ((isCoveringMap_sphereBundleProj F E hnorm hF).singularHomologyPermutationIso
               (p := TopCat.ofHom (sphereBundleProj F E)) R n).inv =
       (discSpherePair F E).singularHomologyδ (ModuleCat.of R R) (n + 1) n := by
-  rw [singularHomologyMap_discSpherePairMap_comp_hom_assoc]
+  rw [discSpherePairMap_comp_thomPairSingularHomologySuccIsoTwistedHomology_hom_assoc]
   exact TopPair.singularHomologySuccIsoTwistedHomology_hom_comp _ _ _ _ _ _ n
 
 end TauCeti
