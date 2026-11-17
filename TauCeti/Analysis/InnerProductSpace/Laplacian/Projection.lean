@@ -77,18 +77,13 @@ theorem laplacian_inner_sq (v x : E) : Δ (fun y : E ↦ ⟪v, y⟫ ^ 2) x = 2 *
   rcases eq_or_ne v 0 with rfl | hv
   · simp
   set P := (ℝ ∙ v).starProjection
-  -- `‖v‖² P y = ⟪v, y⟫ v`, so `⟪v, y⟫² = ‖v‖² ‖P y‖²`.
+  -- `P y = (⟪v, y⟫ / ‖v‖²) v`, so `⟪v, y⟫² = ‖v‖² ‖P y‖²`.
   have h : (fun y : E ↦ ⟪v, y⟫ ^ 2) = (‖v‖ ^ 2) • fun y ↦ ‖P y‖ ^ 2 := by
     funext y
-    have hv' : 0 < ‖v‖ := norm_pos_iff.2 hv
-    have := congrArg norm (Submodule.smul_starProjection_singleton ℝ (v := v) y)
-    simp only [norm_smul, Real.norm_eq_abs, RCLike.ofReal_real_eq_id, id, abs_pow, abs_norm] at this
-    have habs : |⟪v, y⟫| = ‖v‖ * ‖P y‖ := by
-      apply mul_right_cancel₀ hv'.ne'
-      linarith
-    simp only [Pi.smul_apply, smul_eq_mul]
-    rw [← sq_abs ⟪v, y⟫, habs]
-    ring
+    have hv' : ‖v‖ ≠ 0 := norm_ne_zero_iff.2 hv
+    rw [Pi.smul_apply, smul_eq_mul, Submodule.starProjection_singleton ℝ y, norm_smul,
+      Real.norm_eq_abs, mul_pow, sq_abs, RCLike.ofReal_real_eq_id, id]
+    field_simp
   rw [h, laplacian_smul _ (P.contDiff.norm_sq ℝ).contDiffAt,
     Submodule.laplacian_norm_starProjection_sq, finrank_span_singleton hv, smul_eq_mul]
   push_cast
