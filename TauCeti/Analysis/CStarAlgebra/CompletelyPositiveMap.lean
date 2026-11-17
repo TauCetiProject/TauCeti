@@ -50,6 +50,9 @@ with unital domain is `‖φ 1‖`.
   `CompletelyPositiveMapClass.star_map_mul_map_le_of_map_one` and
   `CompletelyPositiveMapClass.opNorm_ofClass_eq_norm_map_one`: the Schwarz inequality for
   completely positive maps, and `‖φ‖ = ‖φ 1‖`.
+* `CompletelyPositiveMap.mapCStarMatrix`: the amplification `φₙ : M_n(A) → M_n(B)` of a completely
+  positive map is completely positive, since `M_k(M_n(A))` and `M_{k × n}(A)` are star isomorphic
+  (`CStarMatrix.compStarAlgEquiv`).
 
 ## References
 
@@ -384,3 +387,29 @@ theorem star_map_mul_map_le_of_map_one [CStarAlgebra B] [PartialOrder B] [StarOr
   (isNPositive φ 2).star_map_mul_map_le_of_map_one hφ a
 
 end CompletelyPositiveMapClass
+
+namespace CompletelyPositiveMap
+
+variable {A B : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+  [NonUnitalCStarAlgebra B] [PartialOrder B] [StarOrderedRing B]
+
+/-- The amplification `φₙ : M_n(A) → M_n(B)` of a completely positive map `φ : A → B`, applying
+`φ` entrywise, is completely positive. -/
+def mapCStarMatrix (φ : A →CP B) (n : Type*) [Fintype n] :
+    CStarMatrix n n A →CP CStarMatrix n n B where
+  toLinearMap := CStarMatrix.mapₗ φ.toLinearMap
+  map_cstarMatrix_nonneg' k M hM := by
+    let eA := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n A
+    let eB := CStarMatrix.compStarAlgEquiv ℂ (Fin k) n B
+    have hM' : 0 ≤ eA M := by simpa using (map_le_map_iff eA).mpr hM
+    have h : eB (M.map (CStarMatrix.mapₗ φ.toLinearMap)) = (eA M).map φ :=
+      CStarMatrix.compStarAlgEquiv_map M φ
+    rw [← map_le_map_iff eB, map_zero, h]
+    exact φ.map_cstarMatrix_nonneg _ hM'
+
+@[simp]
+theorem mapCStarMatrix_apply (φ : A →CP B) {n : Type*} [Fintype n] (x : CStarMatrix n n A) :
+    mapCStarMatrix φ n x = x.map φ :=
+  (rfl)
+
+end CompletelyPositiveMap
