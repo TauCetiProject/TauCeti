@@ -271,31 +271,6 @@ theorem energyFormH1_restrictL_eq_setIntegral {a : EuclideanSpace ℝ ι → Mat
   rw [energyFormH1_restrictL, hu, W1p0.value_extendByZeroL]
   exact setIntegral_extendByZeroLpₗᵢ ℝ _ _ (fun x y => f x * y) (fun _ => mul_zero _) _
 
-open scoped InnerProductSpace in
-/-- **The size of the forcing of the principal equation.** For `f ∈ L²(Ω)`, `u ∈ H¹(Ω)` and
-essentially bounded `b, c`, the forcing `f - ⟪b, ∇u⟫ - c u` of the principal equation satisfies
-
-`‖f - ⟪b, ∇u⟫ - c u‖_{L²(Ω)} ≤ ‖f‖_{L²(Ω)} + ‖b‖_{L∞(Ω)} ‖∇u‖_{L²(Ω)} + ‖c‖_{L∞(Ω)} ‖u‖_{L²(Ω)}`. -/
-theorem eLpNorm_sub_inner_gradient_sub_mul_value_le {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
-    {c : EuclideanSpace ℝ ι → ℝ} (hb : AEStronglyMeasurable b (mu.restrict Omega))
-    (hc : AEStronglyMeasurable c (mu.restrict Omega)) (f : EuclideanSpace ℝ ι → ℝ)
-    (u : W1p mu Omega 2) :
-    eLpNorm (fun x => f x - ⟪b x, W1p.gradient u x⟫_ℝ - c x * W1p.value u x) 2
-        (mu.restrict Omega) ≤ eLpNorm f 2 (mu.restrict Omega) +
-      eLpNorm b ⊤ (mu.restrict Omega) * eLpNorm (W1p.gradient u) 2 (mu.restrict Omega) +
-      eLpNorm c ⊤ (mu.restrict Omega) * eLpNorm (W1p.value u) 2 (mu.restrict Omega) := by
-  have h2 : eLpNorm (fun x => ⟪b x, W1p.gradient u x⟫_ℝ) 2 (mu.restrict Omega) ≤
-      ((1 : NNReal) : ENNReal) * eLpNorm b ⊤ (mu.restrict Omega) *
-        eLpNorm (W1p.gradient u) 2 (mu.restrict Omega) :=
-    eLpNorm_le_eLpNorm_top_mul_eLpNorm 2 (fun v w => ⟪v, w⟫_ℝ) 1 continuous_inner hb
-      (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient u x))
-  have h3 : eLpNorm (fun x => c x * W1p.value u x) 2 (mu.restrict Omega) ≤
-      eLpNorm c ⊤ (mu.restrict Omega) * eLpNorm (W1p.value u) 2 (mu.restrict Omega) :=
-    eLpNorm_smul_le_eLpNorm_top_mul_eLpNorm 2 hc
-  refine (eLpNorm_sub_le one_le_two).trans (add_le_add ((eLpNorm_sub_le one_le_two).trans
-    (add_le_add le_rfl (h2.trans_eq (by rw [ENNReal.coe_one, one_mul])))) h3)
-
-open scoped InnerProductSpace in
 /-- If `a'` agrees with `a` on an open `U ≤ Ω`, is essentially bounded on `U`, `b, c ∈ L∞(Ω)`, and
 `u ∈ H¹(Ω)` solves the equation with coefficients `a, b, c` and right-hand side `f`, then the
 restriction of `u` to `U` solves the equation with principal part `a'` and no lower-order terms,
@@ -334,26 +309,8 @@ theorem exists_forcing_restrictL_of_eqOn {a : EuclideanSpace ℝ ι → Matrix �
     refine integral_congr_ae ?_
     filter_upwards [hfU.coeFn_toLp] with x hx
     rw [hx]
-  -- The lower-order terms move to the right-hand side.
-  have hg : MemLp (fun x => hfU.toLp f x - ⟪b x, W1p.gradient uU x⟫_ℝ - c x * W1p.value uU x) 2
-      (mu.restrict U) :=
-    ((Lp.memLp _).sub (MemLp.of_bilin (inner ℝ) 1 hbU (Lp.memLp _) continuous_inner
-      (.of_forall fun x => by simpa using nnNorm_inner_le_nnNorm (b x) (W1p.gradient uU x)))).sub
-      (hcU.fun_mul (Lp.memLp _))
-  refine ⟨hg.toLp _, fun v => ?_, ?_⟩
-  · rw [energyFormH1_principal_eq_setIntegral_sub ha' hbU hcU hu₁ v]
-    refine integral_congr_ae ?_
-    filter_upwards [hg.coeFn_toLp] with x hx
-    rw [hx]
-  have hle₀ := eLpNorm_sub_inner_gradient_sub_mul_value_le hbU.aestronglyMeasurable
-    hcU.aestronglyMeasurable (hfU.toLp f) uU
-  rw [eLpNorm_congr_ae hfU.coeFn_toLp] at hle₀
-  have hbfin := hbU.eLpNorm_lt_top.ne
-  have hcfin := hcU.eLpNorm_lt_top.ne
-  rw [Lp.norm_toLp, Lp.norm_def, Lp.norm_def]
-  refine (ENNReal.toReal_mono (by finiteness) hle₀).trans_eq ?_
-  rw [ENNReal.toReal_add (by finiteness) (by finiteness), ENNReal.toReal_add (by finiteness)
-    (by finiteness), ENNReal.toReal_mul, ENNReal.toReal_mul]
+  obtain ⟨g, hg, hgle⟩ := exists_forcing_energyFormH1_principal_eq ha' hbU hcU hu₁
+  exact ⟨g, hg, hgle.trans_eq (by rw [Lp.norm_toLp])⟩
 
 open scoped InnerProductSpace in
 /-- **Weak solutions with a datum in divergence form restrict to weak solutions.** If

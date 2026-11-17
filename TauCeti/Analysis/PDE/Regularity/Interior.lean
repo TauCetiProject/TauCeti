@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Sobolev.W1p.IntegrationByParts
 public import TauCeti.Analysis.PDE.Ellipticity.Extension
 import TauCeti.Analysis.Normed.Module.Ball.Retraction
 import TauCeti.Analysis.Normed.Operator.Holder
+import TauCeti.MeasureTheory.Function.Lp.Restriction
 
 /-!
 # Interior `H²` regularity for Lipschitz principal coefficients
@@ -27,8 +28,8 @@ No boundary condition is imposed on `u` and nothing is assumed about `∂Ω`. Th
 `u ∈ H²_loc(Ω)`: on every open `V` whose closure is compact and contained in `Ω`, the restriction
 of `u` is the first-order part of an element of `W^{2,2}(V)`. A constant coefficient matrix is the
 case of a field with Lipschitz constant zero. It also proves the corresponding estimate on balls:
-if `a` is `K`-Lipschitz with constants `λ ≤ Λ` on `B(x₀, 2 r) ⊆ Ω`, and `‖b‖ ≤ β`, `|c| ≤ γ` there,
-then the second weak derivatives of `u` on `B(x₀, r)` satisfy
+if `a` is `K`-Lipschitz with constants `λ ≤ Λ` on `B(x₀, 2 r) ⊆ Ω`, and `‖b‖ ≤ β`, `|c| ≤ γ`
+almost everywhere there, then the second weak derivatives of `u` on `B(x₀, r)` satisfy
 
 `λ ‖D²u‖_{L²(B_r)} ≲ ‖f‖ + (β + K + Λ / r) ‖∇u‖ + (γ + K / r + Λ / r²) ‖u‖`,
 
@@ -534,7 +535,7 @@ satisfies
 
 `‖ψ f - ⟨∇u, a ∇ψ⟩ - ⟨∇ψ, a ∇u⟩ - u div(a ∇ψ)‖_{L²(Ω)} ≤ P ‖f‖ + 2 M N ‖∇u‖ + D ‖u‖`. -/
 theorem eLpNorm_localizedForcing_le {M N P D : ℝ} (hM : ∀ x, ‖matrixBilinearForm (a x)‖ ≤ M)
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) {ψ : EuclideanSpace ℝ ι → ℝ}
+    (ha : Continuous fun x => matrixBilinearForm (a x)) {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ : ContDiff ℝ ∞ ψ) (hP : ∀ x, |ψ x| ≤ P) (hN : ∀ x, ‖∇ ψ x‖ ≤ N)
     (hD : ∀ x, ‖divMatrixGradient a ψ x‖ ≤ D) (f : Lp ℝ 2 (mu.restrict Omega))
     (u : W1p mu Omega 2) :
@@ -546,32 +547,30 @@ theorem eLpNorm_localizedForcing_le {M N P D : ℝ} (hM : ∀ x, ‖matrixBiline
   have hD0 : 0 ≤ D := (norm_nonneg _).trans (hD 0)
   have hgψ := (ContDiff.continuous_gradient hψ (by simp)).aestronglyMeasurable
     (μ := mu.restrict Omega)
-  have hBm := hK.continuous.aestronglyMeasurable (μ := mu.restrict Omega)
+  have hBm := ha.aestronglyMeasurable (μ := mu.restrict Omega)
   have hmeas : AEStronglyMeasurable (localizedForcing a ψ f u) (mu.restrict Omega) :=
     (((hψ.continuous.aestronglyMeasurable.mul (Lp.aestronglyMeasurable f)).sub
       (aestronglyMeasurable_matrixBilinearForm_apply hBm (Lp.aestronglyMeasurable _) hgψ)).sub
       (aestronglyMeasurable_matrixBilinearForm_apply hBm hgψ (Lp.aestronglyMeasurable _))).sub
       ((Lp.aestronglyMeasurable _).mul
-        (measurable_divMatrixGradient hK.continuous hψ).aestronglyMeasurable)
+        (measurable_divMatrixGradient ha hψ).aestronglyMeasurable)
   set F₁ : EuclideanSpace ℝ ι → ℝ := fun x => P * ‖f x‖
   set F₂ : EuclideanSpace ℝ ι → ℝ := fun x => 2 * (M * N) * ‖W1p.gradient u x‖
   set F₃ : EuclideanSpace ℝ ι → ℝ := fun x => D * ‖W1p.value u x‖
   -- Each term of the pointwise bound is a nonnegative multiple of the norm of an `L²` function.
-  have h₁ : eLpNorm F₁ 2 (mu.restrict Omega) ≤ ENNReal.ofReal (P * ‖f‖) := by
-    rw [ENNReal.ofReal_mul hP0, ofReal_norm, Lp.eNorm_def]
-    exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul ((Lp.aestronglyMeasurable f).norm.const_mul P)
-      (.of_forall fun x => by simp only [norm_mul, norm_norm, Real.norm_of_nonneg hP0, le_refl]) _
+  have key : ∀ {C X : ℝ} {g : EuclideanSpace ℝ ι → ℝ}, 0 ≤ C →
+      eLpNorm g 2 (mu.restrict Omega) = ENNReal.ofReal X →
+      eLpNorm (fun x => C * g x) 2 (mu.restrict Omega) ≤ ENNReal.ofReal (C * X) :=
+    fun {C _ g} hC hg => by
+      rw [ENNReal.ofReal_mul hC, ← hg, ← Real.eNorm_of_nonneg hC]
+      exact (eLpNorm_const_smul C g 2 (mu.restrict Omega)).le
+  have h₁ : eLpNorm F₁ 2 (mu.restrict Omega) ≤ ENNReal.ofReal (P * ‖f‖) :=
+    key hP0 (by rw [eLpNorm_norm _ (Lp.aestronglyMeasurable _), ofReal_norm, Lp.eNorm_def])
   have h₂ : eLpNorm F₂ 2 (mu.restrict Omega) ≤
-      ENNReal.ofReal (2 * (M * N) * ‖W1p.gradient u‖) := by
-    rw [ENNReal.ofReal_mul hMN, ofReal_norm, Lp.eNorm_def]
-    exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-      ((Lp.aestronglyMeasurable (W1p.gradient u)).norm.const_mul _)
-      (.of_forall fun x => by simp only [norm_mul, norm_norm, Real.norm_of_nonneg hMN, le_refl]) _
-  have h₃ : eLpNorm F₃ 2 (mu.restrict Omega) ≤ ENNReal.ofReal (D * ‖W1p.value u‖) := by
-    rw [ENNReal.ofReal_mul hD0, ofReal_norm, Lp.eNorm_def]
-    exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul
-      ((Lp.aestronglyMeasurable (W1p.value u)).norm.const_mul D)
-      (.of_forall fun x => by simp only [norm_mul, norm_norm, Real.norm_of_nonneg hD0, le_refl]) _
+      ENNReal.ofReal (2 * (M * N) * ‖W1p.gradient u‖) :=
+    key hMN (by rw [eLpNorm_norm _ (Lp.aestronglyMeasurable _), ofReal_norm, Lp.eNorm_def])
+  have h₃ : eLpNorm F₃ 2 (mu.restrict Omega) ≤ ENNReal.ofReal (D * ‖W1p.value u‖) :=
+    key hD0 (by rw [eLpNorm_norm _ (Lp.aestronglyMeasurable _), ofReal_norm, Lp.eNorm_def])
   calc eLpNorm (localizedForcing a ψ f u) 2 (mu.restrict Omega)
       ≤ eLpNorm (F₁ + F₂ + F₃) 2 (mu.restrict Omega) :=
         eLpNorm_mono_ae_real hmeas (.of_forall fun x => by
@@ -1126,7 +1125,7 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_eqOn_o
     have hD0 := (norm_nonneg _).trans (hD 0)
     have hLN : 0 ≤ Lam * N := _root_.mul_nonneg ha.upper_nonneg hN0
     exact ENNReal.toReal_le_of_le_ofReal (by positivity)
-      (eLpNorm_localizedForcing_le hM hK hψ hP hN hD f u)
+      (eLpNorm_localizedForcing_le hM hK.continuous hψ hP hN hD f u)
   have hgradle : ‖W1p.gradient (uψ : W1p mu ⊤ 2)‖ ≤ ‖W1p.gradient u‖ + N * ‖W1p.value u‖ := by
     rw [Lp.norm_def, eLpNorm_congr_ae (ae_restrict_of_ae hgrad), Opens.coe_top,
       Measure.restrict_univ,
@@ -1156,16 +1155,6 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_of_eqOn_o
     filter_upwards [ae_restrict_of_ae hgrad, ae_restrict_mem V.isOpen.measurableSet] with x h1 hxV
     rw [h1, indicator_of_mem (hVΩ hxV), (hψV x hxV).1, (hψV x hxV).2, one_smul, smul_zero,
       add_zero]
-
-omit [Fintype ι] [mu.IsAddHaarMeasure] in
-/-- On nested sets `S ⊆ T ⊆ Ω`, the `L²` norm on `S` of a function in `L²(Ω)` is at most its norm
-on `T`. -/
-private theorem toReal_eLpNorm_restrict_le {F : Type*} [NormedAddCommGroup F]
-    {S T : Set (EuclideanSpace ℝ ι)} (hST : S ⊆ T) (hTΩ : T ⊆ Omega)
-    (g : Lp F 2 (mu.restrict Omega)) :
-    (eLpNorm g 2 (mu.restrict S)).toReal ≤ (eLpNorm g 2 (mu.restrict T)).toReal :=
-  ENNReal.toReal_mono ((eLpNorm_mono_measure _ (Measure.restrict_mono hTΩ le_rfl)).trans_lt
-    (Lp.eLpNorm_lt_top g)).ne (eLpNorm_mono_measure _ (Measure.restrict_mono hST le_rfl))
 
 /-- The arithmetic of the interior estimate on balls: with the cutoff from radius `r` to
 `3 r / 2`, whose gradient and Hessian are bounded by `N = c / (r / 2)` and `L = c / (r / 2)²`, the
@@ -1213,7 +1202,7 @@ private theorem exists_forcing_restrictL_of_subset_closedBall [DecidableEq ι]
     (hρS : Metric.closedBall x₀ ρ ⊆ S) (ha : UniformlyEllipticOn S a lam Lam)
     (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) S)
     (hb : MemLp b ⊤ (mu.restrict Omega)) (hc : MemLp c ⊤ (mu.restrict Omega)) (hβ0 : 0 ≤ β)
-    (hβ : ∀ x ∈ U, ‖b x‖ ≤ β) (hγ0 : 0 ≤ γ) (hγ : ∀ x ∈ U, |c x| ≤ γ)
+    (hβ : ∀ᵐ x ∂mu.restrict U, ‖b x‖ ≤ β) (hγ0 : 0 ≤ γ) (hγ : ∀ᵐ x ∂mu.restrict U, |c x| ≤ γ)
     {f : Lp ℝ 2 (mu.restrict Omega)} {u : W1p mu Omega 2}
     (hu : ∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
       ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) :
@@ -1239,18 +1228,17 @@ private theorem exists_forcing_restrictL_of_subset_closedBall [DecidableEq ι]
   gcongr
   · refine ENNReal.toReal_le_of_le_ofReal hβ0 ?_
     rw [eLpNorm_exponent_top (hb.mono_measure hle).aestronglyMeasurable]
-    exact eLpNormEssSup_le_of_ae_bound
-      ((ae_restrict_iff' U.isOpen.measurableSet).2 (.of_forall hβ))
+    exact eLpNormEssSup_le_of_ae_bound hβ
   · refine ENNReal.toReal_le_of_le_ofReal hγ0 ?_
     rw [eLpNorm_exponent_top (hc.mono_measure hle).aestronglyMeasurable]
-    exact eLpNormEssSup_le_of_ae_bound ((ae_restrict_iff' U.isOpen.measurableSet).2
-      (.of_forall fun x hx => (Real.norm_eq_abs _).trans_le (hγ x hx)))
+    exact eLpNormEssSup_le_of_ae_bound (hγ.mono fun x hx => (Real.norm_eq_abs _).trans_le hx)
 
 /-- **The interior `H²` estimate on balls** (Gilbarg–Trudinger, Theorem 8.8; Evans, §6.3.1,
 Theorem 1). There is a constant `C`, depending only on the dimension `n`, with the following
 property. Let `a` be uniformly elliptic on `B(x₀, 2 r) ⊆ Ω` with constants `λ ≤ Λ`, with
 `x ↦ a(x)` `K`-Lipschitz there in the operator norm of its bilinear forms, let `b, c ∈ L∞(Ω)` with
-`‖b‖ ≤ β` and `|c| ≤ γ` on `B(x₀, 2 r)`, and let `u ∈ H¹(Ω)` be a weak solution of
+`‖b‖ ≤ β` and `|c| ≤ γ` almost everywhere on `B(x₀, 2 r)`, and let `u ∈ H¹(Ω)` be a weak
+solution of
 
 `-∂ᵢ(aⁱʲ ∂ⱼu) + ⟨b, ∇u⟩ + c u = f` in `Ω`, with `f ∈ L²(Ω)`
 
@@ -1273,7 +1261,8 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball [Dec
       UniformlyEllipticOn (Metric.ball x₀ (2 * r)) a lam Lam →
       LipschitzOnWith K (fun x => matrixBilinearForm (a x)) (Metric.ball x₀ (2 * r)) →
       MemLp b ⊤ (mu.restrict Omega) → MemLp c ⊤ (mu.restrict Omega) →
-      (∀ x ∈ Metric.ball x₀ (2 * r), ‖b x‖ ≤ β) → (∀ x ∈ Metric.ball x₀ (2 * r), |c x| ≤ γ) →
+      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), ‖b x‖ ≤ β) →
+      (∀ᵐ x ∂mu.restrict (Metric.ball x₀ (2 * r)), |c x| ≤ γ) →
       (∀ v : W1p0 mu Omega 2, energyFormH1 a b c u (v : W1p mu Omega 2) =
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu) →
       ∀ y w : EuclideanSpace ℝ ι, ∃ G : Lp ℝ 2 (mu.restrict (Metric.ball x₀ r)),
@@ -1287,7 +1276,11 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball [Dec
   obtain ⟨c₀, hc₀, hcut⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨4 * c₀ * (Fintype.card ι + 1), by positivity, ?_⟩
   intro mu _ Omega a b c x₀ r lam Lam β γ K f u hr hΩ ha hK hb hc hβ hγ hu y w
-  have hx₀ : x₀ ∈ Metric.ball x₀ (2 * r) := Metric.mem_ball_self (by linarith)
+  -- The ball has positive measure, so the almost everywhere bounds force `0 ≤ β` and `0 ≤ γ`.
+  have : (ae (mu.restrict (Metric.ball x₀ (2 * r)))).NeBot :=
+    ae_restrict_neBot.2 (Metric.measure_ball_pos mu x₀ (by positivity)).ne'
+  have hβ0 : 0 ≤ β := let ⟨_, hx⟩ := hβ.exists; (norm_nonneg _).trans hx
+  have hγ0 : 0 ≤ γ := let ⟨_, hx⟩ := hγ.exists; (abs_nonneg _).trans hx
   -- Work on `U = B(x₀, 7 r / 4)`, with the field extended to the whole space.
   let U : Opens (EuclideanSpace ℝ ι) := ⟨Metric.ball x₀ (7 * r / 4), Metric.isOpen_ball⟩
   have hUB : (U : Set (EuclideanSpace ℝ ι)) ⊆ Metric.ball x₀ (2 * r) :=
@@ -1295,8 +1288,8 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball [Dec
   have hUΩ : U ≤ Omega := SetLike.coe_subset_coe.mp (hUB.trans hΩ)
   obtain ⟨a', ha', hK', g, hu₂, hg⟩ := exists_forcing_restrictL_of_subset_closedBall
     (by positivity) hUΩ Metric.ball_subset_closedBall (Metric.closedBall_subset_ball (by linarith))
-    ha hK hb hc ((norm_nonneg _).trans (hβ x₀ hx₀)) (fun x hx => hβ x (hUB hx))
-    ((abs_nonneg _).trans (hγ x₀ hx₀)) (fun x hx => hγ x (hUB hx)) hu
+    ha hK hb hc hβ0 (ae_restrict_of_ae_restrict_of_subset hUB hβ) hγ0
+    (ae_restrict_of_ae_restrict_of_subset hUB hγ) hu
   -- A cutoff equal to one on `closedBall x₀ r` and supported in `closedBall x₀ (3 r / 2) ⊆ U`.
   obtain ⟨ψ, hψ, hψI, hψ1, hψs, hψN, hψL⟩ := hcut x₀ hr.le (by linarith : r < 3 * r / 2)
   rw [show 3 * r / 2 - r = r / 2 by ring] at hψN hψL
@@ -1316,15 +1309,14 @@ theorem UniformlyEllipticOn.exists_norm_le_hasWeakLineDerivOn_gradient_ball [Dec
   have hGU : ‖W1p.gradient (W1p.restrictL hUΩ u)‖ ≤
       (eLpNorm (W1p.gradient u) 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal := by
     rw [Lp.norm_def, eLpNorm_congr_ae (W1p.gradient_restrictL_ae hUΩ u)]
-    exact toReal_eLpNorm_restrict_le hUB hΩ _
+    exact Lp.toReal_eLpNorm_restrict_mono _ hUB hΩ
   have hVU : ‖W1p.value (W1p.restrictL hUΩ u)‖ ≤
       (eLpNorm (W1p.value u) 2 (mu.restrict (Metric.ball x₀ (2 * r)))).toReal := by
     rw [Lp.norm_def, eLpNorm_congr_ae (W1p.value_restrictL_ae hUΩ u)]
-    exact toReal_eLpNorm_restrict_le hUB hΩ _
-  have hF := toReal_eLpNorm_restrict_le hUB hΩ f
+    exact Lp.toReal_eLpNorm_restrict_mono _ hUB hΩ
+  have hF := Lp.toReal_eLpNorm_restrict_mono f hUB hΩ
   exact le_of_le_ball_bound hGle (hg.trans (by linarith)) hGU hVU (norm_nonneg _) (norm_nonneg _)
-    ((norm_nonneg _).trans (hβ x₀ hx₀))
-    ((abs_nonneg _).trans (hγ x₀ hx₀)) hc₀ hr ha.pos ha.upper_nonneg (by positivity)
+    hβ0 hγ0 hc₀ hr ha.pos ha.upper_nonneg (by positivity)
 
 end PDE
 
