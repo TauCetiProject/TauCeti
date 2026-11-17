@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.MvPowerSeries.PiTopology
-public import Mathlib.RingTheory.Polynomial.Quotient
+public import TauCeti.RingTheory.MvPolynomial.Quotient
 public import TauCeti.Analysis.Normed.Ring.UnitBall
 public import TauCeti.Analysis.Normed.Ring.Ultra
 public import TauCeti.RingTheory.Dagger.GaussNorm
@@ -703,13 +703,7 @@ theorem quotientSpanEquivMvPolynomial_mk_ofMvPolynomial {ϖ : K°} (hϖ : ϖ ≠
     rw [AlgHom.comp_apply, Ideal.Quotient.mkₐ_eq_mk]
   rw [quotientSpanEquivMvPolynomial, AlgEquiv.trans_apply, AlgEquiv.trans_apply, h,
     Ideal.quotientKerAlgEquivOfSurjective_symm_apply, Ideal.quotientEquivAlgOfEq_mk,
-    AlgEquiv.symm_apply_eq]
-  clear h
-  -- It remains to evaluate Mathlib's `(K° ⧸ ϖ)[X] ≃ K°[X] ⧸ ϖ` on a reduced polynomial.
-  induction p using MvPolynomial.induction_on with
-  | C a => simp [MvPolynomial.quotientEquivQuotientMvPolynomial]
-  | add p q hp hq => simp only [map_add, hp, hq]
-  | mul_X p i hp => simp [hp, MvPolynomial.quotientEquivQuotientMvPolynomial]
+    MvPolynomial.quotientEquivQuotientMvPolynomial_symm_mk]
 
 end intWashnitzerAlgebra
 
