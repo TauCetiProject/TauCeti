@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Unitary.Connected
 public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.InnerProductSpace.BorelCalculus.Exponential
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import TauCeti.MeasureTheory.Function.BoundedBorel.Exponential
 
 /-!
 # Putnam–Wintner Borel logarithms and norm-path-connectedness of `unitary (H →L[ℂ] H)`
