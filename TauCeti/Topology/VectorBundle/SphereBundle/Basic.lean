@@ -659,15 +659,13 @@ theorem exact_sphereBundleδ_eulerClass (l m : ℕ) (hl : l + 1 = m) :
     fun ⟨x, hx⟩ ↦ ⟨TopCat.singularCohomologyMap (sphereBundleNormalization F E hnorm) l x, hx⟩⟩
   rwa [sphereBundleδ_singularCohomologyMap_sphereBundleInclusion]
 
-include hnorm in
 /-- The Euler class map followed by the pullback along `S(E) → B` is zero. -/
 @[reassoc (attr := simp)]
 theorem eulerClass_comp_singularCohomologyMap_sphereBundleProj (m : ℕ) :
     eulerClass R k M F E m ≫ TopCat.singularCohomologyMap (TopCat.ofHom (sphereBundleProj F E)) m =
       0 := by
-  ext y
-  exact (exact_eulerClass_singularCohomologyMap_sphereBundleProj F E hnorm R k M
-    m).apply_apply_eq_zero y
+  rw [← sphereBundleInclusion_comp_zeroSectionComplProj, TopCat.singularCohomologyMap_comp,
+    eulerClass_comp_singularCohomologyMap_zeroSectionComplProj_assoc, zero_comp]
 
 /-- The pullback along `S(E) → B` followed by the connecting morphism of the sphere bundle is
 zero. -/
