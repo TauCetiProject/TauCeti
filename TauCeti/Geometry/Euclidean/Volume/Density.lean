@@ -29,9 +29,7 @@ involves rectifiability:
   transported from Mathlib's `Besicovitch.ae_tendsto_measure_inter_div`;
 * combining the two, every subset of a bi-Lipschitz image of a subset of a `k`-plane has its
   densities between `(a b) ^ (-k)` and `(a b) ^ k` almost everywhere;
-* zero-density quotients are preserved under subsets and finite unions, hold automatically on
-  subsets of null sets, and discarding a part of density zero from a set does not lower its upper
-  density;
+* removing a part of density zero from a set does not lower its upper density;
 * at a Lebesgue density-one point of a parameter set, an inverse-Lipschitz differentiable
   parametrization has positive directional lower Hausdorff density in every direction of its
   derivative range, forcing the derivative range into every closed subspace outside whose cones
@@ -51,11 +49,8 @@ rectifiable sets.
   for subsets of an isometric copy of `k`-dimensional Euclidean space.
 * `Isometry.ae_limsup_le_and_le_liminf_euclideanHausdorffMeasure_inter_closedBall_div`: density
   bounds almost everywhere on a bi-Lipschitz image of a subset of a `k`-plane.
-* `TauCeti.limsup_measure_inter_div_le_of_tendsto_diff`, `TauCeti.tendsto_measure_div_of_subset`,
-  `TauCeti.tendsto_measure_div_of_subset_union`,
-  `TauCeti.tendsto_measure_inter_div_of_measure_eq_zero`,
-  `TauCeti.tendsto_measure_sdiff_inter_div_of_subset`: general comparison lemmas for vanishing
-  density quotients.
+* `TauCeti.limsup_measure_inter_div_le_of_tendsto_diff`: a part of a set with density zero does not
+  contribute to the upper density.
 * `HasFDerivWithinAt.liminf_euclideanHausdorffMeasure_directional_closedBall_pos`,
   `HasFDerivWithinAt.range_le_of_tendsto_euclideanHausdorffMeasure_outside_cone_div`: directional
   lower Hausdorff density and cone containment of the derivative range at parameter density-one
@@ -106,45 +101,6 @@ theorem limsup_measure_inter_div_le_of_tendsto_diff {α X : Type*} [MeasurableSp
         by_cases hzS : z ∈ S
         exacts [Or.inl ⟨⟨hz.1, hzS⟩, hz.2⟩, Or.inr ⟨⟨hz.1, hzS⟩, hz.2⟩]
     _ = _ := ENNReal.limsup_add_of_right_tendsto_zero h _
-
-/-- Monotonicity of vanishing density quotients: if `S r ⊆ T r` for all `r` and `μ (T r) / d r → 0`,
-then `μ (S r) / d r → 0`. -/
-theorem tendsto_measure_div_of_subset {α X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {S T : α → Set X} {d : α → ℝ≥0∞} {l : Filter α}
-    (h : Tendsto (fun r => μ (T r) / d r) l (𝓝 0)) (hsub : ∀ r, S r ⊆ T r) :
-    Tendsto (fun r => μ (S r) / d r) l (𝓝 0) :=
-  tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h
-    (Eventually.of_forall fun _ => zero_le)
-    (Eventually.of_forall fun r => ENNReal.div_le_div_right (measure_mono (hsub r)) _)
-
-/-- Subadditivity of vanishing density quotients: if `S r ⊆ T₁ r ∪ T₂ r` for all `r` and both
-`μ (T₁ r) / d r → 0` and `μ (T₂ r) / d r → 0`, then `μ (S r) / d r → 0`. -/
-theorem tendsto_measure_div_of_subset_union {α X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {S T₁ T₂ : α → Set X} {d : α → ℝ≥0∞} {l : Filter α}
-    (h₁ : Tendsto (fun r => μ (T₁ r) / d r) l (𝓝 0))
-    (h₂ : Tendsto (fun r => μ (T₂ r) / d r) l (𝓝 0)) (hsub : ∀ r, S r ⊆ T₁ r ∪ T₂ r) :
-    Tendsto (fun r => μ (S r) / d r) l (𝓝 0) := by
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds (by simpa using h₁.add h₂)
-    (Eventually.of_forall fun _ => zero_le) (Eventually.of_forall fun r => ?_)
-  rw [← ENNReal.add_div]
-  exact ENNReal.div_le_div_right ((measure_mono (hsub r)).trans (measure_union_le _ _)) _
-
-/-- Any subset `T` of a `μ`-null set `S` has vanishing density quotients against arbitrary test
-sets. -/
-theorem tendsto_measure_inter_div_of_measure_eq_zero {α X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {S T : Set X} (hTS : T ⊆ S) (hS : μ S = 0)
-    (t : α → Set X) (d : α → ℝ≥0∞) (l : Filter α) :
-    Tendsto (fun r => μ (T ∩ t r) / d r) l (𝓝 0) := by
-  refine tendsto_const_nhds.congr fun r => ?_
-  rw [measure_mono_null (inter_subset_left.trans hTS) hS, ENNReal.zero_div]
-
-/-- When `A ⊆ B`, the set difference `A \ B` is empty and therefore has vanishing density quotients.
-In particular (`A = B`), `(A \ A) ∩ t r` has zero density quotients. -/
-theorem tendsto_measure_sdiff_inter_div_of_subset {α X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {A B : Set X} (hAB : A ⊆ B)
-    (t : α → Set X) (d : α → ℝ≥0∞) (l : Filter α) :
-    Tendsto (fun r => μ ((A \ B) ∩ t r) / d r) l (𝓝 0) :=
-  tendsto_measure_inter_div_of_measure_eq_zero (sdiff_eq_empty.2 hAB).subset measure_empty t d l
 
 end TauCeti
 

@@ -7,8 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Calculus.FDeriv.ImageCone
-import Mathlib.Topology.Instances.ENNReal.Lemmas
-import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.MeasureTheory.Covering.EssentialBoundary
 
 /-!
 # Tangent cones and unique differentiability at Haar density-one points
@@ -21,10 +20,6 @@ transfers inverse-Lipschitz bounds of a parametrization on `s` to its relative d
 
 ## Main results
 
-* `MeasureTheory.Measure.tendsto_inter_closedBall_div_of_mem_nhds`: neighborhoods of `x` have
-  closed-ball density one for any locally finite measure positive on open sets.
-* `MeasureTheory.Measure.mem_closure_of_tendsto_inter_closedBall_div`: any closed-ball density-one
-  point of `s` belongs to `closure s`.
 * `MeasureTheory.Measure.posTangentConeAt_eq_univ_of_tendsto_inter_closedBall_div`,
   `MeasureTheory.Measure.tangentConeAt_eq_univ_of_tendsto_inter_closedBall_div`,
   `MeasureTheory.Measure.uniqueDiffWithinAt_of_tendsto_inter_closedBall_div`: Haar density-one
@@ -45,29 +40,6 @@ open Filter Function Metric MeasureTheory Set
 open scoped ENNReal NNReal Pointwise Topology
 
 namespace MeasureTheory.Measure
-
-/-- Every neighborhood `s ∈ 𝓝 x` has closed-ball density one at `x` for any locally finite measure
-that is positive on nonempty open sets. -/
-theorem tendsto_inter_closedBall_div_of_mem_nhds {X : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] (μ : Measure X) [IsLocallyFiniteMeasure μ] [μ.IsOpenPosMeasure]
-    {s : Set X} {x : X} (hs : s ∈ 𝓝 x) :
-    Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1) := by
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [Metric.eventually_measure_closedBall_ne_zero_ne_top μ x,
-    eventually_nhdsWithin_of_eventually_nhds (eventually_closedBall_subset hs)] with r hr hsub
-  rw [inter_eq_right.2 hsub, ENNReal.div_self hr.1 hr.2]
-
-/-- A point at which `s` has closed-ball density one with respect to `μ` belongs to `closure s`. -/
-theorem mem_closure_of_tendsto_inter_closedBall_div {X : Type*} [PseudoMetricSpace X]
-    [MeasurableSpace X] (μ : Measure X) {s : Set X} {x : X}
-    (hs : Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1)) :
-    x ∈ closure s := by
-  rw [Metric.mem_closure_iff]
-  intro ε hε
-  obtain ⟨r, hr, _, hrε⟩ := (((tendsto_order.1 hs).1 0 zero_lt_one).and (Ioo_mem_nhdsGT hε)).exists
-  obtain ⟨y, hys, hyr⟩ : (s ∩ closedBall x r).Nonempty :=
-    nonempty_of_measure_ne_zero (μ := μ) fun h0 => by simp [h0] at hr
-  exact ⟨y, hys, (dist_comm x y).trans_lt ((mem_closedBall.1 hyr).trans_lt hrε)⟩
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
@@ -112,7 +84,9 @@ theorem uniqueDiffWithinAt_of_tendsto_inter_closedBall_div (μ : Measure E) [μ.
     {s : Set E} {x : E}
     (hs : Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0) (𝓝 1)) :
     UniqueDiffWithinAt ℝ s x := by
-  refine ⟨?_, μ.mem_closure_of_tendsto_inter_closedBall_div hs⟩
+  refine ⟨?_,
+    TauCeti.essentialInterior_subset_closure (TauCeti.mem_essentialInterior.2
+      (TauCeti.hasDensityAt_iff.2 hs))⟩
   rw [μ.tangentConeAt_eq_univ_of_tendsto_inter_closedBall_div hs, Submodule.span_univ,
     Submodule.top_coe]
   exact dense_univ

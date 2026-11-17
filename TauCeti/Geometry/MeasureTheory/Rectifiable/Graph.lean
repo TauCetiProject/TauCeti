@@ -7,8 +7,8 @@ module
 
 public import TauCeti.Analysis.Calculus.TangentCone.Graph
 public import TauCeti.Geometry.MeasureTheory.Rectifiable.TangentialFDeriv
-import TauCeti.Analysis.Calculus.TangentCone.Haar
-import TauCeti.Geometry.Euclidean.Volume.Density
+import TauCeti.MeasureTheory.Covering.EssentialBoundary
+import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 
 /-!
 # Approximate tangency and tangential calculus on differentiable normal graphs
@@ -244,12 +244,17 @@ namespace HasFDerivAt
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {φ : E → ℝ} {A : E →L[ℝ] ℝ} {s : Set E} {x : E}
 
+private theorem hasDensity_of_mem_nhds (hs : s ∈ 𝓝 x) :
+    Tendsto (fun r => volume (s ∩ closedBall x r) / volume (closedBall x r)) (𝓝[>] 0) (𝓝 1) :=
+  TauCeti.hasDensityAt_iff.1 <| TauCeti.mem_essentialInterior.1 <|
+    TauCeti.interior_subset_essentialInterior (μ := volume) (mem_interior_iff_mem_nhds.2 hs)
+
 /-- Over `s ∈ 𝓝 x`, `range A.normalGraphL` is an approximate tangent plane to the normal graph. -/
 theorem isApproxTangentPlane_normalGraphEmbedding_image (hφ : HasFDerivAt φ A x) (hs : s ∈ 𝓝 x) :
     TauCeti.IsApproxTangentPlane (finrank ℝ E) (TauCeti.normalGraphEmbedding φ '' s)
       (LinearMap.range A.normalGraphL.toLinearMap) (TauCeti.normalGraphEmbedding φ x) :=
   hφ.hasFDerivWithinAt.isApproxTangentPlane_normalGraphEmbedding_image (mem_of_mem_nhds hs)
-    (volume.tendsto_inter_closedBall_div_of_mem_nhds hs)
+    (hasDensity_of_mem_nhds hs)
 
 /-- Over `s ∈ 𝓝 x`, the normal graph admits a **unique** approximate tangent plane. -/
 theorem existsUnique_isApproxTangentPlane_normalGraphEmbedding_image
@@ -258,14 +263,14 @@ theorem existsUnique_isApproxTangentPlane_normalGraphEmbedding_image
       TauCeti.IsApproxTangentPlane (finrank ℝ E) (TauCeti.normalGraphEmbedding φ '' s) P
         (TauCeti.normalGraphEmbedding φ x) :=
   hφ.hasFDerivWithinAt.existsUnique_isApproxTangentPlane_normalGraphEmbedding_image
-    (mem_of_mem_nhds hs) (volume.tendsto_inter_closedBall_div_of_mem_nhds hs)
+    (mem_of_mem_nhds hs) (hasDensity_of_mem_nhds hs)
 
 /-- Over `s ∈ 𝓝 x`, `approxTangentPlane` to the normal graph is `range A.normalGraphL`. -/
 theorem approxTangentPlane_normalGraphEmbedding_image (hφ : HasFDerivAt φ A x) (hs : s ∈ 𝓝 x) :
     TauCeti.approxTangentPlane (finrank ℝ E) (TauCeti.normalGraphEmbedding φ '' s)
       (TauCeti.normalGraphEmbedding φ x) = LinearMap.range A.normalGraphL.toLinearMap :=
   hφ.hasFDerivWithinAt.approxTangentPlane_normalGraphEmbedding_image (mem_of_mem_nhds hs)
-    (volume.tendsto_inter_closedBall_div_of_mem_nhds hs)
+    (hasDensity_of_mem_nhds hs)
 
 /-- **Agreement of `approxTangentPlane` with `tangentConeAt`** over `s ∈ 𝓝 x`. -/
 theorem coe_approxTangentPlane_normalGraphEmbedding_image_eq_tangentConeAt
@@ -300,7 +305,7 @@ theorem existsUnique_hasTangentialFDerivAt_normalGraphEmbedding_image
           (TauCeti.normalGraphEmbedding φ x))
         L (TauCeti.normalGraphEmbedding φ '' s) (TauCeti.normalGraphEmbedding φ x) :=
   hφ.hasFDerivWithinAt.existsUnique_hasTangentialFDerivAt_normalGraphEmbedding_image
-    (mem_of_mem_nhds hs) (volume.tendsto_inter_closedBall_div_of_mem_nhds hs) hg
+    (mem_of_mem_nhds hs) (hasDensity_of_mem_nhds hs) hg
 
 /-- **Agreement of `tangentialFDeriv` with `D.comp starProjection` on a normal graph** over
 `s ∈ 𝓝 x`. -/
@@ -315,7 +320,7 @@ theorem tangentialFDeriv_normalGraphEmbedding_image_comp_orthogonalProjectionOnt
         (TauCeti.normalGraphEmbedding φ x)).orthogonalProjectionOnto =
       D.comp (LinearMap.range A.normalGraphL.toLinearMap).starProjection :=
   hφ.hasFDerivWithinAt.tangentialFDeriv_normalGraphEmbedding_image_comp_orthogonalProjectionOnto
-    (mem_of_mem_nhds hs) (volume.tendsto_inter_closedBall_div_of_mem_nhds hs) hg
+    (mem_of_mem_nhds hs) (hasDensity_of_mem_nhds hs) hg
 
 /-- **Agreement of `normDet` of `tangentialFDeriv` with the surface factor `√(1 + ‖A‖²)`** over
 `s ∈ 𝓝 x`. -/
@@ -323,7 +328,7 @@ theorem normDet_tangentialFDeriv_normalGraphEmbedding (hφ : HasFDerivAt φ A x)
     (TauCeti.tangentialFDeriv (finrank ℝ E) (TauCeti.normalGraphEmbedding φ) s x).normDet =
       Real.sqrt (1 + ‖A‖ ^ 2) :=
   hφ.hasFDerivWithinAt.normDet_tangentialFDeriv_normalGraphEmbedding (mem_of_mem_nhds hs)
-    (volume.tendsto_inter_closedBall_div_of_mem_nhds hs)
+    (hasDensity_of_mem_nhds hs)
 
 /-- **Surface Jacobian factorization along a normal graph** over `s ∈ 𝓝 x`:
 `(tangentialFDeriv (finrank ℝ E) g Γ y).normDet * √(1 + ‖A‖²) = B.normDet`, where
@@ -336,7 +341,7 @@ theorem normDet_tangentialFDeriv_normalGraphEmbedding_image_mul
     (TauCeti.tangentialFDeriv (finrank ℝ E) g (TauCeti.normalGraphEmbedding φ '' s)
         (TauCeti.normalGraphEmbedding φ x)).normDet * Real.sqrt (1 + ‖A‖ ^ 2) = B.normDet :=
   hφ.hasFDerivWithinAt.normDet_tangentialFDeriv_normalGraphEmbedding_image_mul (mem_of_mem_nhds hs)
-    (volume.tendsto_inter_closedBall_div_of_mem_nhds hs) hg
+    (hasDensity_of_mem_nhds hs) hg
 
 /-- **Tangential Jacobian of the base projection `WithLp.sndL` on a normal graph** over `s ∈ 𝓝 x`.
 -/
@@ -346,6 +351,6 @@ theorem normDet_tangentialFDeriv_sndL_normalGraphEmbedding_image
         (TauCeti.normalGraphEmbedding φ '' s) (TauCeti.normalGraphEmbedding φ x)).normDet =
       (Real.sqrt (1 + ‖A‖ ^ 2))⁻¹ :=
   hφ.hasFDerivWithinAt.normDet_tangentialFDeriv_sndL_normalGraphEmbedding_image (mem_of_mem_nhds hs)
-    (volume.tendsto_inter_closedBall_div_of_mem_nhds hs)
+    (hasDensity_of_mem_nhds hs)
 
 end HasFDerivAt

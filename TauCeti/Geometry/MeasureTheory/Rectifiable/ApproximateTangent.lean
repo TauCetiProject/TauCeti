@@ -13,6 +13,7 @@ import Mathlib.Topology.Instances.ENNReal.Lemmas
 import TauCeti.Analysis.Calculus.TangentCone.Haar
 import TauCeti.Geometry.Euclidean.Volume.Density
 import TauCeti.Geometry.Euclidean.Volume.Measure
+import TauCeti.MeasureTheory.OuterMeasure.DensityQuotient
 
 /-!
 # Existence, uniqueness, and measurability of approximate tangent planes
@@ -20,12 +21,14 @@ import TauCeti.Geometry.Euclidean.Volume.Measure
 An **approximate tangent `k`-plane** to `E ⊆ V` at `x` is a finite-dimensional `k`-plane
 `P : Submodule ℝ V` such that `E` has positive upper `k`-dimensional Hausdorff density at `x` and
 `k`-dimensional density zero outside every cone around `P` (`TauCeti.IsApproxTangentPlane`,
-`TauCeti.approxTangentPlane`). Approximate tangent planes ignore `k`-density-zero subsets
-(`TauCeti.isApproxTangentPlane_congr_of_tendsto_symmDiff_div`) and `μHE[k]`-null modifications
-(`TauCeti.approxTangentPlane_congr_ae`), are forced to equal `range A` along antilipschitz
-differentiable charts (`HasFDerivWithinAt.eq_range_of_isApproxTangentPlane`), and exist uniquely
-`μHE[k]`-a.e. with `(μHE[k].restrict E)`-measurable `starProjection` on countably `k`-rectifiable
-sets (`TauCeti.CountablyRectifiable.ae_existsUnique_isApproxTangentPlane`,
+`TauCeti.approxTangentPlane`). Approximate tangent planes ignore `k`-density-zero symmetric
+differences (`TauCeti.isApproxTangentPlane_congr_of_tendsto_symmDiff_div`) and `μHE[k]`-null
+modifications (`TauCeti.approxTangentPlane_congr_ae`), are forced to equal `range A` at Lebesgue
+density-one parameter points `x₀ ∈ s` of antilipschitz differentiable charts `f '' s ⊆ E`
+(`HasFDerivWithinAt.eq_range_of_isApproxTangentPlane`), and exist uniquely `μHE[k]`-a.e. with
+`(μHE[k].restrict E)`-a.e. measurable `starProjection` on `μHE[k]`-null-measurable countably
+`k`-rectifiable sets with locally finite `μHE[k].restrict E` measure
+(`TauCeti.CountablyRectifiable.ae_existsUnique_isApproxTangentPlane`,
 `TauCeti.CountablyRectifiable.aemeasurable_starProjection_approxTangentPlane`).
 
 ## References
@@ -409,7 +412,7 @@ end HasFDerivWithinAt
 /-- Pushing volume-a.e. parameter conditions on `s` forward along a bi-Lipschitz patch `f '' s`. -/
 theorem LipschitzWith.ae_image_of_ae_volume
     {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
-    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [NormedSpace ℝ V]
     [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
     {f : U → V} {s : Set U} {E : Set V} {K L : ℝ≥0} {p : U → Prop}
     (hf : LipschitzWith K f) (hs : MeasurableSet s) (hi : AntilipschitzWith L (s.domRestrict f))
@@ -450,7 +453,7 @@ theorem LipschitzWith.ae_image_of_ae_volume
 /-- **Chart identification of approximate tangent planes** along a bi-Lipschitz Borel patch. -/
 theorem LipschitzWith.ae_existsUnique_isApproxTangentPlane_image
     {U V : Type*} [NormedAddCommGroup U] [InnerProductSpace ℝ U] [FiniteDimensional ℝ U]
-    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+    [MeasurableSpace U] [BorelSpace U] [NormedAddCommGroup V] [NormedSpace ℝ V]
     [FiniteDimensional ℝ V] [MeasurableSpace V] [BorelSpace V]
     {f : U → V} {s : Set U} {E : Set V} {K L : ℝ≥0}
     (hf : LipschitzWith K f) (hs : MeasurableSet s) (hi : AntilipschitzWith L (s.domRestrict f))
@@ -473,40 +476,20 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   [MeasurableSpace V] [BorelSpace V] {k : ℕ} {E : Set V}
 
-/-- **Existence of approximate tangent planes** (without uniqueness) on a null-measurable,
-countably `k`-rectifiable set with locally finite `μHE[k]` measure. -/
-theorem CountablyRectifiable.ae_exists_submodule_tendsto_measure_outside_cone_div
-    (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
-    [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
-    ∀ᵐ x ∂μHE[k], x ∈ E → ∃ P : Submodule ℝ V, Module.finrank ℝ P = k ∧
-      ∀ ε > (0 : ℝ), Tendsto (fun r =>
-        μHE[k] {z ∈ E ∩ closedBall x r | ε * dist z x < infDist (z - x) (P : Set V)} /
-          volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
-  obtain ⟨Q, _, hQ⟩ := hE.exists_measurable_approximate_tangent_projection hEm
-  filter_upwards [hQ] with x hx hxE
-  obtain ⟨P, hdim, _, hP⟩ := hx hxE
-  exact ⟨P, hdim, hP⟩
-
 /-- **Existence and uniqueness of approximate tangent `k`-planes** at `μHE[k]`-a.e. `x ∈ E`. -/
 theorem CountablyRectifiable.ae_existsUnique_isApproxTangentPlane
     (hE : CountablyRectifiable k E) (hEm : NullMeasurableSet E μHE[k])
     [IsLocallyFiniteMeasure (μHE[k].restrict E)] :
     ∀ᵐ x ∂μHE[k], x ∈ E → ∃! P : Submodule ℝ V, IsApproxTangentPlane k E P x := by
-  obtain ⟨A, f, hAm, hAsub, hbi, hcov⟩ := hE.exists_bilipschitz_subset_cover hEm
-  choose K L hLip hAnti using hbi
   have : IsLocallyFiniteMeasure (μHE[finrank ℝ (EuclideanSpace ℝ (Fin k))].restrict E) := by
     simpa only [finrank_euclideanSpace_fin] using ‹IsLocallyFiniteMeasure (μHE[k].restrict E)›
-  have hpatch (n : ℕ) : ∀ᵐ y ∂μHE[k], y ∈ f n '' A n →
-      ∃! P : Submodule ℝ V, IsApproxTangentPlane k E P y := by
-    have hae := (hLip n).ae_existsUnique_isApproxTangentPlane_image (hAm n) (hAnti n) (hAsub n)
-      (by simpa only [finrank_euclideanSpace_fin] using hEm)
-    rw [finrank_euclideanSpace_fin] at hae
-    refine hae.mono fun _ hy hyfs => ?_
-    obtain ⟨_, _, _, _, _, hex, -⟩ := hy hyfs
-    exact hex
-  filter_upwards [measure_eq_zero_iff_ae_notMem.1 hcov, ae_all_iff.2 hpatch] with x hcovx hpx hxE
-  obtain ⟨n, hxn⟩ := mem_iUnion.1 (not_not.1 fun h => hcovx ⟨hxE, h⟩)
-  exact hpx n hxn
+  refine hE.ae_of_forall_bilipschitz_patch hEm fun hAm hAsub hLip hAnti => ?_
+  have hae := hLip.ae_existsUnique_isApproxTangentPlane_image hAm hAnti hAsub
+    (by simpa only [finrank_euclideanSpace_fin] using hEm)
+  rw [finrank_euclideanSpace_fin] at hae
+  refine hae.mono fun _ hy hyfs => ?_
+  obtain ⟨_, _, _, _, _, hex, -⟩ := hy hyfs
+  exact hex
 
 /-- At `μHE[k]`-almost every `x ∈ E`, `approxTangentPlane k E x` is an approximate tangent plane. -/
 theorem CountablyRectifiable.ae_isApproxTangentPlane_approxTangentPlane
@@ -536,6 +519,6 @@ theorem CountablyRectifiable.aemeasurable_starProjection_approxTangentPlane
   obtain ⟨P, hdim, hQP, hcone⟩ := hxQ hxE
   have heq : P = approxTangentPlane k E x := (approxTangentPlane_eq_of_existsUnique (huniq hxE)
     (IsApproxTangentPlane.of_tendsto_inter_closedBall_div hdim (hdens hxE) hcone)).symm
-  subst heq; convert hQP
+  subst heq; exact hQP
 
 end TauCeti
