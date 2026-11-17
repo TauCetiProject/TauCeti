@@ -117,6 +117,7 @@ theorem framedVortexDilate_smul (ht : 0 < t) (h : t ^ 2 * c = c') (u : framedGau
 
 /-- **Dilation law for the divisor.** The dilation between couplings divides the divisor
 by `t`. -/
+@[simp]
 theorem framedVortexDivisor_framedVortexDilate (ht : 0 < t) (h : t ^ 2 * c = c')
     (x : framedVortexSubMulAction c m) :
     framedVortexDivisor (framedVortexDilate ht h m x) =
@@ -124,6 +125,16 @@ theorem framedVortexDivisor_framedVortexDilate (ht : 0 < t) (h : t ^ 2 * c = c')
   rw [framedVortexDivisor_eq_iff, Sym.coe_map, coe_framedVortexDilate]
   exact isZeroMultiplicity_sectionValue_dilateField
     (isZeroMultiplicity_sectionValue_framedVortexDivisor x) ht.ne'
+
+/-- The inverse of the dilation between couplings multiplies the divisor by `t`. -/
+@[simp]
+theorem framedVortexDivisor_framedVortexDilate_symm (ht : 0 < t) (h : t ^ 2 * c = c')
+    (y : framedVortexSubMulAction c' m) :
+    framedVortexDivisor ((framedVortexDilate ht h m).symm y) =
+      (framedVortexDivisor y).map ((t : ℂ) * ·) := by
+  rw [framedVortexDivisor_eq_iff, Sym.coe_map, coe_framedVortexDilate_symm]
+  simpa using isZeroMultiplicity_sectionValue_dilateField
+    (isZeroMultiplicity_sectionValue_framedVortexDivisor y) (inv_ne_zero ht.ne')
 
 /-! ### Normalization to coupling one -/
 
@@ -152,6 +163,7 @@ theorem framedVortexNormalize_smul (hc : 0 < c) (u : framedGaugeGroup)
   framedVortexDilate_smul _ _ u x
 
 /-- The normalization to coupling one multiplies the divisor by `c^(1/2)`. -/
+@[simp]
 theorem framedVortexDivisor_framedVortexNormalize (hc : 0 < c)
     (x : framedVortexSubMulAction c m) :
     framedVortexDivisor (framedVortexNormalize hc m x) =
@@ -159,13 +171,12 @@ theorem framedVortexDivisor_framedVortexNormalize (hc : 0 < c)
   rw [framedVortexNormalize, framedVortexDivisor_framedVortexDilate, Complex.ofReal_inv, inv_inv]
 
 /-- The inverse of the normalization to coupling one divides the divisor by `c^(1/2)`. -/
+@[simp]
 theorem framedVortexDivisor_framedVortexNormalize_symm (hc : 0 < c)
     (y : framedVortexSubMulAction 1 m) :
     framedVortexDivisor ((framedVortexNormalize hc m).symm y) =
       (framedVortexDivisor y).map ((√c : ℂ)⁻¹ * ·) := by
-  rw [framedVortexDivisor_eq_iff, Sym.coe_map, coe_framedVortexNormalize_symm]
-  exact isZeroMultiplicity_sectionValue_dilateField
-    (isZeroMultiplicity_sectionValue_framedVortexDivisor y) (Real.sqrt_pos.2 hc).ne'
+  rw [framedVortexNormalize, framedVortexDivisor_framedVortexDilate_symm, Complex.ofReal_inv]
 
 /-- Multiplication of divisors by `c^(1/2)`, `c > 0`, is injective. -/
 private theorem sym_map_sqrt_mul_injective (hc : 0 < c) :
