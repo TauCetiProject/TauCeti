@@ -40,11 +40,12 @@ terminal-data map `v ↦ (P_back,w v, v(·, T))` of the conjugated operator is b
 (`TauCeti.ParabolicC2HolderSpace.bijective_euclideanBackwardParabolicOperatorL_prod_spatialTraceL`),
 so the weighted terminal-value problem also has exactly one solution in the weighted class.
 
-The estimates transport in the same way. The weighted solution satisfies
+For the Cauchy problem the estimates transport in the same way. Its weighted solution satisfies
 `‖u / w‖_{2+α,par} ≤ C max (‖F / w‖_{α,par}) (‖G / w‖_{2,α})`, with `C` depending only on the
 dimension, `α`, the ellipticity constant, bounds on the Hölder norms of the coefficients and of
-the derivatives of `ℓ`, and a bound on the horizon; and the weighted solution operator depends
+the derivatives of `ℓ`, and a bound on the horizon; and its weighted solution operator depends
 Lipschitz continuously on the coefficients `a`, `b`, `c` in operator norm, for a fixed weight.
+This file gives no such estimates for the terminal-value problem.
 
 ## Main declarations
 
