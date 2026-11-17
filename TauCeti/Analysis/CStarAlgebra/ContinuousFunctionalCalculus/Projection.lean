@@ -40,6 +40,8 @@ wherever the spectrum of `a` avoids the frontier of `Ω`. For self-adjoint `a` i
   star projections when the values of `f` on the (quasi)spectrum of `a` are star projections;
 * `TauCeti.isStarProjection_cfc_indicator`, `TauCeti.isStarProjection_cfcₙ_indicator` — the
   spectral projectors `cfc (Ω.indicator 1) a` and `cfcₙ (Ω.indicator 1) a` are star projections;
+* `TauCeti.cfc_indicator_mul_cfc_indicator` — the product of the spectral projectors for two
+  sets is the spectral projector for their intersection;
 * `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
   whose frontier is contained in `{0}` is continuous on the spectrum;
 * `TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio` — for invertible self-adjoint `a`, the
@@ -104,6 +106,16 @@ theorem isStarProjection_cfc_indicator (a : A) (Ω : Set R) :
     IsStarProjection (cfc (Ω.indicator (1 : R → R)) a) :=
   isStarProjection_cfc fun t _ ↦ by
     by_cases ht : t ∈ Ω <;> simp [ht, IsStarProjection.zero, IsStarProjection.one]
+
+/-- The product of the spectral projectors for `Ω` and `Ω'` is the spectral projector for
+`Ω ∩ Ω'`, when both indicators are continuous on the spectrum. -/
+theorem cfc_indicator_mul_cfc_indicator (a : A) {Ω Ω' : Set R}
+    (hf : ContinuousOn (Ω.indicator (1 : R → R)) (spectrum R a))
+    (hf' : ContinuousOn (Ω'.indicator (1 : R → R)) (spectrum R a)) :
+    cfc (Ω.indicator (1 : R → R)) a * cfc (Ω'.indicator (1 : R → R)) a =
+      cfc ((Ω ∩ Ω').indicator (1 : R → R)) a := by
+  rw [← cfc_mul _ _ a hf hf', Set.inter_indicator_one]
+  rfl
 
 end Semiring
 
