@@ -433,6 +433,15 @@ theorem quantizeUniformCLM_const [CompleteSpace V] [CompleteSpace W] (T : V →L
   ext u x
   simpa [hT] using quantizeSchwartzValue_comp_fst (fun _ ↦ T) u x
 
+/-- The symbol of a smooth function `f` of the position quantizes to multiplication by `f`:
+`Op(f) u (x) = f(x) (u(x))`. -/
+theorem quantizeUniformCLM_ofSpatial_apply [CompleteSpace V] [CompleteSpace W]
+    {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (ha : (ofSpatial f hf).IsUniform)
+    (u : 𝓢(CoordinateSpace n, V)) (x : CoordinateSpace n) :
+    quantizeUniformCLM (ofSpatial f hf) ha u x = f x (u x) := by
+  rw [quantizeUniformCLM_apply, funext (coefficient_ofSpatial f hf)]
+  exact quantizeSchwartzValue_comp_fst f u x
+
 /-! ### The Fourier profile of the right quantization -/
 
 section Profile

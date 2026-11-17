@@ -52,6 +52,8 @@ and the outer factors are the isometries `H^s → L²` and `L² → H^{s - m}`.
   on tempered distributions.
 * `TauCeti.Symbol.exists_quantizeUniformSobolev`: the same mapping for finite-dimensional complex
   normed fibres.
+* `TauCeti.Symbol.norm_toBesselPotentialSpaceCLM_zero_quantizeUniformCLM_ofSpatial_le`: for the
+  symbol of multiplication by `f`, the `Lᵖ` bound has the explicit constant `sup_x ‖f(x)‖`.
 
 ## References
 
@@ -166,6 +168,37 @@ theorem exists_quantizeUniformSobolevHilbert (a : Symbol n V W m) (ha : a.IsUnif
   exists_toDistr_of_hasSobolevExtension (hasSobolevExtension_quantizeUniformCLM a ha s)
 
 end Extension
+
+/-! ### Multiplication operators -/
+
+section Multiplication
+
+variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W]
+
+/-- **Multiplication is bounded on `Lᵖ` by the supremum.** For a smooth `f` of the position with
+bounded derivatives, multiplication by `f`, the quantization `Op(f)`
+(`TauCeti.Symbol.quantizeUniformCLM_ofSpatial_apply`), satisfies
+`‖f u‖_{Lᵖ} ≤ (sup_x ‖f(x)‖) ‖u‖_{Lᵖ}` on Schwartz functions. -/
+theorem norm_toBesselPotentialSpaceCLM_zero_quantizeUniformCLM_ofSpatial_le
+    {f : CoordinateSpace n → V →L[ℂ] W} (hf : ContDiff ℝ ∞ f) (ha : (ofSpatial f hf).IsUniform)
+    (p : ENNReal) [Fact (1 ≤ p)] (u : 𝓢(CoordinateSpace n, V)) :
+    ‖SchwartzMap.toBesselPotentialSpaceCLM 0 p (quantizeUniformCLM (ofSpatial f hf) ha u)‖ ≤
+      (⨆ x, ‖f x‖) * ‖SchwartzMap.toBesselPotentialSpaceCLM 0 p u‖ := by
+  obtain ⟨C, hC⟩ := (isUniform_ofSpatial_iff hf).1 ha []
+  have hbdd : BddAbove (Set.range fun x ↦ ‖f x‖) := ⟨C, Set.forall_mem_range.2 fun x ↦ by
+    simpa only [coordinateDeriv_nil] using hC x⟩
+  rw [SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
+    SchwartzMap.norm_toBesselPotentialSpaceCLM_zero,
+    ← ENNReal.toReal_ofReal (Real.iSup_nonneg fun x ↦ norm_nonneg (f x)), ← ENNReal.toReal_mul]
+  refine ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+    (u.memLp p).eLpNorm_ne_top) (eLpNorm_le_mul_eLpNorm_of_ae_le_mul
+      (quantizeUniformCLM _ ha u).continuous.aestronglyMeasurable (.of_forall fun x ↦ ?_) p)
+  rw [quantizeUniformCLM_ofSpatial_apply]
+  exact ((f x).le_opNorm (u x)).trans
+    (mul_le_mul_of_nonneg_right (le_ciSup hbdd x) (norm_nonneg _))
+
+end Multiplication
 
 /-! ### Sobolev mapping -/
 
