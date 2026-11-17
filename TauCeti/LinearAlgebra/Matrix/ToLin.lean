@@ -48,6 +48,8 @@ computation every matrix model of a Lie algebra performs on its root vectors.
   term by the block-diagonal sum of the idempotent matrices of its outer terms.
 * `LinearMap.toMatrix_mulVec_eq_repr`: the coordinate vector of `φ (∑ j, x j • v j)` is the
   matrix of `φ` applied to `x`.
+* `LinearMap.bijective_iff_isUnit_det_toMatrix`: a linear map between modules with bases indexed
+  by the same finite type is bijective iff its matrix in these bases has unit determinant.
 * `Matrix.linearIndependent_row_one`: over any semiring, the rows of an identity matrix are
   linearly independent.
 * `Algebra.toLin_leftMulMatrix`: the linear map of the left multiplication matrix of `x` is left
@@ -210,6 +212,20 @@ theorem toMatrix_mulVec_eq_repr {R V M ι κ : Type*} [CommSemiring R] [AddCommM
     toMatrix v b φ *ᵥ x = b.repr (φ (∑ j, x j • v j)) := by
   rw [← v.equivFun_symm_apply, ← toMatrix_mulVec_repr v b, ← v.equivFun_apply,
     LinearEquiv.apply_symm_apply]
+
+/-- **A linear map is bijective iff its matrix has unit determinant.** For bases `b` of `M` and
+`c` of `N` indexed by the same finite type, `f : M →ₗ[R] N` is bijective iff the determinant of
+`LinearMap.toMatrix b c f` is a unit. -/
+theorem bijective_iff_isUnit_det_toMatrix {R M N ι : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] [AddCommGroup N] [Module R N] [Fintype ι] [DecidableEq ι]
+    (b : Module.Basis ι R M) (c : Module.Basis ι R N) (f : M →ₗ[R] N) :
+    Function.Bijective f ↔ IsUnit (toMatrix b c f).det := by
+  refine ⟨fun hf => ?_, fun h => ?_⟩
+  · have he : (LinearEquiv.ofBijective f hf : M →ₗ[R] N) = f :=
+      ext (LinearEquiv.ofBijective_apply f)
+    simpa only [he] using (LinearEquiv.ofBijective f hf).isUnit_det b c
+  · rw [← LinearEquiv.coe_ofIsUnitDet h, LinearEquiv.coe_coe]
+    exact (LinearEquiv.ofIsUnitDet h).bijective
 
 end LinearMap
 
