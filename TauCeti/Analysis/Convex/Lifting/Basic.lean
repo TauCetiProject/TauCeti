@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Convex.Quasiconvex
 public import Mathlib.Order.Filter.Extr
-import TauCeti.Analysis.Convex.Function.Basic
 import TauCeti.Order.Filter.Extr
 
 /-!
@@ -27,7 +26,7 @@ characterization (`TauCeti.ConvexLifting.mem_originalSet_iff_exists_mem_liftedSe
 budget `b` yields the epigraph lifting criterion via `mem_originalSet_iff` and `mem_liftedSet_iff`.
 When `g` is convex on `D` and `h` is quasiconvex on `E` (in particular, when `h` is convex on `E`),
 the lifted set is convex with no `MapsTo g D E` or monotonicity requirement
-(`TauCeti.ConvexLifting.convex_liftedSet`). When additionally `h` is convex and monotone on `E` and
+(`TauCeti.ConvexLifting.convex_liftedSet`). When additionally `h` is monotone on `E` and
 `MapsTo g D E` holds, the original feasible set is also convex without requiring `g '' D` to be
 convex (`TauCeti.ConvexLifting.convex_originalSet`).
 
@@ -50,7 +49,7 @@ attained minima transfer identically between the lifted and original sets
 * `TauCeti.ConvexLifting.convex_liftedSet` — convexity of `liftedSet` assuming only
   `ConvexOn 𝕜 D g` and `QuasiconvexOn 𝕜 E h` (no `MapsTo` or monotonicity needed).
 * `TauCeti.ConvexLifting.convex_originalSet` — convexity of `originalSet` under `ConvexOn 𝕜 D g`,
-  `ConvexOn 𝕜 E h`, `MapsTo g D E`, and `MonotoneOn h E`.
+  `QuasiconvexOn 𝕜 E h`, `MapsTo g D E`, and `MonotoneOn h E`.
 * `TauCeti.ConvexLifting.feasible_minimum_iff` and `TauCeti.ConvexLifting.attainment_iff` — exact
   transfer of feasible minima and attainment for any pullback objective `f ∘ Prod.fst`.
 
@@ -225,17 +224,16 @@ theorem convex_liftedSet [LE β] [IsOrderedAddMonoid Y] [Module 𝕜 Y] [PosSMul
   rw [hEq]
   exact hg.convex_epigraph.inter (convex_univ.prod (hh b))
 
-/-- When `g` is convex on `D`, `h` is convex and monotone on `E`, and `g` maps `D` into `E`, the
-original feasible set `originalSet D g h b` is convex (even when `g '' D` itself is not convex). -/
-theorem convex_originalSet [SMul 𝕜 Y] [AddCommMonoid β] [PartialOrder β] [IsOrderedAddMonoid β]
-    [Module 𝕜 β] [PosSMulMono 𝕜 β] {D : Set X} {E : Set Y} {g : X → Y} {h : Y → β} {b : β}
-    (hg : ConvexOn 𝕜 D g) (hh : ConvexOn 𝕜 E h) (hDE : MapsTo g D E) (hm : MonotoneOn h E) :
-    Convex 𝕜 (originalSet D g h b) := by
-  have hEq : originalSet D g h b = {x ∈ D | (h ∘ g) x ≤ b} := by
-    ext x
-    simp
-  rw [hEq]
-  exact (hh.comp_of_mapsTo hg hDE hm).convex_le b
+/-- When `g` is convex on `D`, `h` is quasiconvex and monotone on `E` (in particular, when `h` is
+convex and monotone on `E`, via `ConvexOn.quasiconvexOn`), and `g` maps `D` into `E`, the original
+feasible set `originalSet D g h b` is convex (even when `g '' D` itself is not convex). -/
+theorem convex_originalSet [SMul 𝕜 Y] [Preorder β] {D : Set X} {E : Set Y} {g : X → Y} {h : Y → β}
+    {b : β} (hg : ConvexOn 𝕜 D g) (hh : QuasiconvexOn 𝕜 E h) (hDE : MapsTo g D E)
+    (hm : MonotoneOn h E) : Convex 𝕜 (originalSet D g h b) := by
+  intro x hx x' hx' a c ha hc hac
+  have hcomb := hh b ⟨hDE hx.1, hx.2⟩ ⟨hDE hx'.1, hx'.2⟩ ha hc hac
+  exact ⟨hg.1 hx.1 hx'.1 ha hc hac,
+    (hm (hDE (hg.1 hx.1 hx'.1 ha hc hac)) hcomb.1 (hg.2 hx.1 hx'.1 ha hc hac)).trans hcomb.2⟩
 
 end Convex
 
