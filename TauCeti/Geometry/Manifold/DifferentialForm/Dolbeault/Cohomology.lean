@@ -20,10 +20,10 @@ cohomology of the Dolbeault complex `TauCeti.dolbeaultComplex E M F p`, with the
 A holomorphic map of complex manifolds is a smooth map of the underlying real manifolds which is
 pseudoholomorphic for their almost complex structures. Pullback along it preserves `∂bar`-closed
 and `∂bar`-exact forms of type `(p,q)`, so it induces complex-linear maps on Dolbeault cohomology,
-contravariantly functorial in the map. The same pullback is a cochain map of Dolbeault complexes
-inducing these maps on cohomology. Continuous complex-linear coefficient maps also induce
-maps on closed forms and cohomology, covariantly functorial in the coefficients and commuting
-with holomorphic pullback.
+contravariantly functorial in the map. They are the maps induced on cohomology by the cochain
+maps `TauCeti.dolbeaultComplex.map` of Dolbeault complexes. Continuous complex-linear coefficient
+maps also induce maps on closed forms and cohomology, covariantly functorial in the coefficients
+and commuting with holomorphic pullback.
 
 In degree `q = 0` there are no `∂bar`-exact forms, so `H^(p,0)_∂bar(M; F)` is the space of
 `∂bar`-closed forms of type `(p,0)`, the holomorphic `p`-forms. For `p = 0` these are the
@@ -35,9 +35,8 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
   a holomorphic map, with `mpullback_id`, `mpullback_comp` and `mpullback_mem_exactForms`.
 * `TauCeti.dolbeaultCohomology.map`: the map induced by a holomorphic map, with `map_mk`, `map_id`
   and `map_comp`.
-* `TauCeti.dolbeaultComplex.map`: the cochain map of Dolbeault complexes induced by a holomorphic
-  map, with `map_id`, `map_comp` and `homologyMap_map`, which identifies the induced map on
-  cohomology with `TauCeti.dolbeaultCohomology.map`.
+* `TauCeti.dolbeaultComplex.homologyMap_map`: the map induced on cohomology by the cochain map
+  `TauCeti.dolbeaultComplex.map` of a holomorphic map is `TauCeti.dolbeaultCohomology.map`.
 * `TauCeti.Dolbeault.closedForms.mapCoeff`: coefficient change on closed forms, with identity,
   composition, exactness preservation and compatibility with pullback.
 * `TauCeti.dolbeaultCohomology.mapCoeff`: induced coefficient change on cohomology, with
@@ -53,9 +52,8 @@ holomorphic functions `M → F` when the model `E` is finite-dimensional and `F`
 
 The map induced by a holomorphic map descends pullback of closed forms along the surjective class
 map with `LinearMap.liftOfSurjective`, as `TauCeti.deRhamCohomology.map` in
-`TauCeti.Geometry.Manifold.DeRham.Map`. The cochain map `TauCeti.dolbeaultComplex.map` and its
-comparison `TauCeti.dolbeaultComplex.homologyMap_map` likewise follow `TauCeti.deRhamComplex.map`
-and `TauCeti.deRhamComplex.homologyMap_map` in the same file.
+`TauCeti.Geometry.Manifold.DeRham.Map`. The comparison `TauCeti.dolbeaultComplex.homologyMap_map`
+likewise follows `TauCeti.deRhamComplex.homologyMap_map` in the same file.
 
 ## References
 
@@ -409,7 +407,7 @@ theorem dolbeaultCohomology.map_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
 
 end Coefficients
 
-/-! ### The cochain map of a holomorphic map -/
+/-! ### The cochain map of a holomorphic map on cohomology -/
 
 section Complex
 
@@ -427,73 +425,6 @@ variable {E₁ E₂ E₃ : Type u} [NormedAddCommGroup E₁] [NormedSpace ℂ E�
   [TopologicalSpace M₃] [ChartedSpace E₃ M₃] [IsManifold 𝓘(ℂ, E₃) ∞ M₃]
 
 namespace dolbeaultComplex
-
-/-- The cochain map of Dolbeault complexes induced by a holomorphic map `f`, given as a smooth
-map of the underlying real manifolds whose differential is complex-linear: in each degree it is
-pullback of type forms along `f`. -/
-def map {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
-    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f) (p : ℕ) :
-    dolbeaultComplex E₂ M₂ F p ⟶ dolbeaultComplex E₁ M₁ F p :=
-  CochainComplex.ofHom (fun q ↦ (dolbeaultComplexXIso p q).hom ≫
-      ModuleCat.ofHom (mpullbackType hf hJ p q) ≫ (dolbeaultComplexXIso p q).inv)
-    fun q ↦ by
-      have hcomm : ModuleCat.ofHom (mpullbackType (F := F) hf hJ p q) ≫
-          ModuleCat.ofHom ((ofComplexManifold E₁ M₁).delBarType p q) =
-            ModuleCat.ofHom ((ofComplexManifold E₂ M₂).delBarType p q) ≫
-              ModuleCat.ofHom (mpullbackType hf hJ p (q + 1)) := by
-        ext φ : 2
-        exact delBarType_mpullbackType _ hf hJ p q φ
-      rw [(Iso.eq_comp_inv _).mpr (dolbeaultComplex_d (M := M₁) p q),
-        (Iso.eq_comp_inv _).mpr (dolbeaultComplex_d (M := M₂) p q)]
-      simp only [Category.assoc, Iso.inv_hom_id_assoc, reassoc_of% hcomm]
-
-/-- Under the canonical identifications of the terms, the induced cochain map is pullback of
-type forms. -/
-@[reassoc]
-theorem map_f {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
-    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
-    (p q : ℕ) :
-    (map (F := F) hf hJ p).f q ≫ (dolbeaultComplexXIso p q).hom =
-      (dolbeaultComplexXIso p q).hom ≫ ModuleCat.ofHom (mpullbackType hf hJ p q) := by
-  simp [map]
-
-/-- The induced cochain map, on a type form read through the canonical identification of the
-degree-`q` term, is pullback of that form. -/
-theorem map_f_inv_apply {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
-    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
-    (p q : ℕ) (φ : (ofComplexManifold E₂ M₂).typeForms (F := F) p q) :
-    (map hf hJ p).f q ((dolbeaultComplexXIso p q).inv φ) =
-      (dolbeaultComplexXIso p q).inv (mpullbackType hf hJ p q φ) := by
-  rw [(Iso.eq_comp_inv _).mpr (map_f hf hJ p q)]
-  simp
-
-/-- The cochain map induced by a holomorphic map depends only on the map. -/
-theorem map_congr {f f' : M₁ → M₂} (h : f = f') (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
-    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
-    (hf' : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f')
-    (hJ' : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f') (p : ℕ) :
-    map (F := F) hf hJ p = map hf' hJ' p := by
-  subst h
-  rfl
-
-/-- The identity map induces the identity cochain map. -/
-@[simp]
-theorem map_id (p : ℕ) :
-    map (F := F) (f := (id : M₁ → M₁)) contMDiff_id
-      (isPseudoholomorphic_id (ofComplexManifold E₁ M₁)) p = 𝟙 _ := by
-  ext q : 2
-  simp [map, ModuleCat.ofHom_id]
-
-/-- The induced cochain maps reverse composition of holomorphic maps. -/
-theorem map_comp {f : M₁ → M₂} {g : M₂ → M₃} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
-    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
-    (hg : ContMDiff 𝓘(ℝ, E₂) 𝓘(ℝ, E₃) ∞ g)
-    (hJ' : IsPseudoholomorphic (ofComplexManifold E₂ M₂) (ofComplexManifold E₃ M₃) g)
-    (p : ℕ) :
-    map (F := F) (hg.comp hf) (hJ'.comp hJ) p = map hg hJ' p ≫ map hf hJ p := by
-  ext q : 2
-  simp only [map, HomologicalComplex.comp_f, Category.assoc, Iso.inv_hom_id_assoc,
-    mpullbackType_comp hf hJ hg hJ' p q, ModuleCat.ofHom_comp]
 
 /-- The map induced on cohomology by the cochain map of a holomorphic map is pullback on
 Dolbeault cohomology. -/

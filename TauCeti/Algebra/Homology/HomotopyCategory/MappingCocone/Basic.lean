@@ -12,6 +12,7 @@ public import Mathlib.Algebra.Homology.HomotopyCategory.MappingCocone
 public import Mathlib.CategoryTheory.Abelian.Refinements
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
 public import TauCeti.CategoryTheory.Shift.CommShift
+import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 
 /-!
 # Projections of the mapping cocone and short exact sequences
@@ -34,6 +35,8 @@ compares the mapping cone of the first map with the third term.
 * `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_comp_fst` and
   `CochainComplex.mappingCocone.shiftFunctor_map_mappingCone_map_f_snd_v`: the projections of
   the mapping cocone are natural in commutative squares.
+* `CochainComplex.mappingCocone.triangle_mor₃_f_shiftFunctorObjXIso_hom`: the connecting morphism
+  of `CochainComplex.mappingCocone.triangle` is, in components, `CochainComplex.mappingCocone.inr`.
 * `CochainComplex.mappingCocone.isStrictlyGE`: the mapping cocone of a morphism of complexes
   strictly concentrated in degrees at least `n` is strictly concentrated in degrees at least `n`.
 * `CochainComplex.mappingCocone.quasiIso_lift_of_shortExact`: for a short exact sequence `S` of
@@ -146,15 +149,31 @@ lemma ext_to {K L : CochainComplex C ℤ} (φ : K ⟶ L) (p q : ℤ) (hpq : p + 
   rw [← Category.comp_id f, ← Category.comp_id g, ← id_X φ p q hpq, Preadditive.comp_add,
     Preadditive.comp_add, reassoc_of% h₁, reassoc_of% h₂]
 
+/-- The connecting morphism `L ⟶ (mappingCocone φ)⟦1⟧` of the triangle `mappingCocone.triangle φ`
+is, in components, the inclusion `mappingCocone.inr φ` of `L` into the mapping cocone, without
+sign. -/
+@[reassoc]
+lemma triangle_mor₃_f_shiftFunctorObjXIso_hom {K L : CochainComplex C ℤ} (φ : K ⟶ L)
+    (p q : ℤ) (hpq : p + 1 = q) :
+    (triangle φ).mor₃.f p ≫ ((mappingCocone φ).shiftFunctorObjXIso 1 p q (by omega)).hom =
+      (inr φ).1.v p q hpq := by
+  subst hpq
+  -- `mappingCocone φ` is `(mappingCone φ)⟦-1⟧` only up to unfolding, so the components are
+  -- restated in matching types before `rightShift_v` applies.
+  change ((mappingCone.inr φ).f p ≫ ((shiftFunctorCompIsoId (CochainComplex C ℤ) (-1 : ℤ) 1
+      (by lia)).inv.app (mappingCone φ)).f p) ≫
+      (((mappingCone φ)⟦(-1 : ℤ)⟧).shiftFunctorObjXIso 1 p (p + 1) rfl).hom =
+    ((Cochain.ofHom (mappingCone.inr φ)).rightShift (-1) 1 (by lia)).v p (p + 1) rfl
+  rw [Cochain.rightShift_v _ _ _ _ p (p + 1) rfl p (add_zero p)]
+  simp [shiftFunctorCompIsoId, shiftFunctorAdd'_hom_app_f', shiftFunctorZero_inv_app_f,
+    shiftFunctorObjXIso]
+  rfl
+
 /-- The mapping cocone of a morphism of cochain complexes which are both strictly concentrated
 in degrees at least `n` is strictly concentrated in degrees at least `n`. -/
 instance isStrictlyGE {K L : CochainComplex C ℤ} (φ : K ⟶ L) (n : ℤ) [K.IsStrictlyGE n]
     [L.IsStrictlyGE n] : (mappingCocone φ).IsStrictlyGE n := by
-  have : (mappingCone φ).IsStrictlyGE (n - 1) := by
-    rw [isStrictlyGE_iff]
-    intro i hi
-    rw [mappingCone.isZero_X_iff]
-    exact ⟨K.isZero_of_isStrictlyGE n _, L.isZero_of_isStrictlyGE n _⟩
+  have := isStrictlyGE_mappingCone φ n n (n - 1)
   exact (mappingCone φ).isStrictlyGE_shift (n - 1) (-1) n (by lia)
 
 end

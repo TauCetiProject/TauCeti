@@ -8,6 +8,8 @@ module
 public import Mathlib.Algebra.Homology.Embedding.Extend
 public import Mathlib.Algebra.Homology.HomotopyCategory.Pretriangulated
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCocone.Relative
+public import TauCeti.Algebra.Homology.ModuleCat.Extend
+public import TauCeti.Algebra.Homology.ModuleCat.Shift.Sequence
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Cohomology
 
 /-!
@@ -19,11 +21,14 @@ of the restriction of smooth forms of type `(p,•)` from `M` to `U`
 (`TauCeti.relativeDolbeaultComplex`). The Dolbeault complexes are indexed by `ℕ`; they are
 extended by zero in negative degrees along `ComplexShape.embeddingUpNat`, so that Mathlib's
 `CochainComplex.mappingCocone` applies; the relative complex is then strictly concentrated in
-nonnegative degrees (`CochainComplex.mappingCocone.isStrictlyGE`). For a closed subset `S` of `M`
-and `U = M ∖ S` its
-cohomology is the relative Dolbeault cohomology of `(M, M ∖ S)`, which by the relative Dolbeault
-theorem computes the cohomology `H_S^q(M, Ω^p)` of holomorphic `p`-forms with supports in `S`; that
-comparison is not proved here.
+nonnegative degrees (`CochainComplex.mappingCocone.isStrictlyGE`).
+
+The construction allows any model space `E` and any complex normed coefficient space `F`. For a
+closed subset `S` of `M` and `U = M ∖ S` its cohomology is the relative Dolbeault cohomology of
+`(M, M ∖ S)` with coefficients in `F`. In the classical setting of scalar coefficients `F = ℂ` on a
+finite-dimensional (paracompact) complex manifold, the relative Dolbeault theorem identifies this
+cohomology with the cohomology `H_S^q(M, Ω^p)` of the sheaf of holomorphic `p`-forms with supports
+in `S`; that comparison is not proved here.
 
 The terms are, through the relative coordinates `CochainComplex.mappingCocone.relativeCoordinates`
 which negate the second component of Mathlib's shifted cone,
@@ -40,8 +45,9 @@ In positive degree the relative cocycles form the submodule
 `TauCeti.relativeDolbeaultComplex.mkSucc` onto the cohomology of the relative complex. In degree
 zero the relative cocycles `TauCeti.relativeDolbeaultComplex.cocyclesZero` are identified with the
 cohomology (`TauCeti.relativeDolbeaultComplex.mkZeroEquiv`). The connecting
-map `H^(p,q)(U) → H^(p,q+1)(M, U)` is `δ[b] = -[(0, b)]`; when `b` is the restriction of a form
-`b'` on `M`, it is also `[(∂bar b', 0)]`.
+map `H^(p,q)(U) → H^(p,q+1)(M, U)` is the map induced in cohomology by the connecting morphism of
+Mathlib's triangle `CochainComplex.mappingCocone.triangle` of the restriction. On classes it is
+`δ[b] = -[(0, b)]`; when `b` is the restriction of a form `b'` on `M`, it is also `[(∂bar b', 0)]`.
 
 A holomorphic map of pairs, a commutative square of holomorphic maps `f : M₁ → M₂` and
 `g : U₁ → U₂` over the inclusions, induces a cochain map of relative complexes acting by pullback
@@ -69,8 +75,8 @@ relative complexes.
   `mkSucc_eq_zero_iff`.
 * `TauCeti.relativeDolbeaultComplex.cocyclesZero`, `TauCeti.relativeDolbeaultComplex.mkZeroEquiv`:
   relative cocycles of degree `0`, identified with the cohomology in degree `0`.
-* `TauCeti.relativeDolbeaultComplex.δ`: the connecting map, with `δ_mk` and
-  `δ_mk_of_restrictType_eq`.
+* `TauCeti.relativeDolbeaultComplex.δ`: the connecting map, induced by the connecting morphism of
+  `CochainComplex.mappingCocone.triangle` (`δ_apply`), with `δ_mk` and `δ_mk_of_restrictType_eq`.
 * `TauCeti.relativeDolbeaultComplex.map`: the cochain map induced by a holomorphic map of pairs,
   with `map_f_XEquiv_symm`, `map_id`, `map_comp`, the action on classes `homologyMap_map_mkSucc`
   and `homologyMap_map_mkZeroEquiv`, and the naturality `homologyMap_map_δ` of the connecting map.
@@ -101,66 +107,6 @@ universe u v
 variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {M : Type v} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-namespace dolbeaultComplex
-
-/-! ### The Dolbeault complex extended by zero to `ℤ` -/
-
-variable (E M F) in
-/-- The degree-`n` term of the Dolbeault complex extended by zero, for `n = q`, is the module of
-type-`(p,q)` forms. -/
-def extendXEquiv (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n) :
-    ((dolbeaultComplex E M F p).extend ComplexShape.embeddingUpNat).X n ≃ₗ[ℂ]
-      (ofComplexManifold E M).typeForms (F := F) p q :=
-  ((extendXIso _ _ (i := q) (by simp [← hn])) ≪≫ dolbeaultComplexXIso p q).toLinearEquiv
-
-/-- `extendXEquiv` is the composite of the canonical identifications. -/
-theorem extendXEquiv_apply (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n)
-    (x : ((dolbeaultComplex E M F p).extend ComplexShape.embeddingUpNat).X n) :
-    extendXEquiv E M F p q n hn x =
-      (dolbeaultComplexXIso p q).hom
-        ((extendXIso (dolbeaultComplex E M F p) ComplexShape.embeddingUpNat (i := q)
-          (by simp [← hn])).hom x) :=
-  (rfl)
-
-/-- The inverse of `extendXEquiv` is the inverse of the canonical identifications. -/
-theorem extendXEquiv_symm_apply (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n)
-    (α : (ofComplexManifold E M).typeForms (F := F) p q) :
-    (extendXEquiv E M F p q n hn).symm α =
-      (extendXIso (dolbeaultComplex E M F p) ComplexShape.embeddingUpNat (i := q)
-        (by simp [← hn])).inv ((dolbeaultComplexXIso p q).inv α) :=
-  (rfl)
-
-/-- In the coordinates `extendXEquiv`, the differential of the extended Dolbeault complex is
-`∂bar`. -/
-theorem extend_d_extendXEquiv_symm (p q : ℕ) (n m : ℤ) (hn : (q : ℤ) = n) (hm : n + 1 = m)
-    (α : (ofComplexManifold E M).typeForms (F := F) p q) :
-    ((dolbeaultComplex E M F p).extend ComplexShape.embeddingUpNat).d n m
-        ((extendXEquiv E M F p q n hn).symm α) =
-      (extendXEquiv E M F p (q + 1) m (by push_cast; omega)).symm
-        ((ofComplexManifold E M).delBarType p q α) := by
-  subst hn hm
-  rw [extend_d_eq _ _ (i := q) (j := q + 1) (by simp) (by simp)]
-  simp [extendXEquiv_symm_apply, dolbeaultComplex_d_apply]
-
-/-- In the coordinates `extendXEquiv`, the extension of the cochain map of a holomorphic map is
-pullback of type forms. -/
-theorem extendMap_map_f_extendXEquiv_symm {E₁ E₂ : Type u} [NormedAddCommGroup E₁]
-    [NormedSpace ℂ E₁] [NormedAddCommGroup E₂] [NormedSpace ℂ E₂] {M₁ M₂ : Type v}
-    [TopologicalSpace M₁] [ChartedSpace E₁ M₁] [IsManifold 𝓘(ℂ, E₁) ∞ M₁]
-    [TopologicalSpace M₂] [ChartedSpace E₂ M₂] [IsManifold 𝓘(ℂ, E₂) ∞ M₂]
-    {f : M₁ → M₂} (hf : ContMDiff 𝓘(ℝ, E₁) 𝓘(ℝ, E₂) ∞ f)
-    (hJ : IsPseudoholomorphic (ofComplexManifold E₁ M₁) (ofComplexManifold E₂ M₂) f)
-    (p q : ℕ) (n : ℤ) (hn : (q : ℤ) = n) (α : (ofComplexManifold E₂ M₂).typeForms (F := F) p q) :
-    (extendMap (map (F := F) hf hJ p) ComplexShape.embeddingUpNat).f n
-        ((extendXEquiv E₂ M₂ F p q n hn).symm α) =
-      (extendXEquiv E₁ M₁ F p q n hn).symm (mpullbackType hf hJ p q α) := by
-  subst hn
-  rw [extendMap_f _ _ (i := q) (by simp)]
-  simp only [extendXEquiv_symm_apply, ModuleCat.comp_apply, Iso.inv_hom_id_apply]
-  rw [map_f_inv_apply]
-
-end dolbeaultComplex
 
 namespace relativeDolbeaultComplex
 
@@ -484,63 +430,78 @@ theorem mkZeroEquiv_apply (x : cocyclesZero (E := E) (F := F) U p) :
         x :=
   (rfl)
 
-/-- The pair `(0, b)` for a `∂bar`-closed form `b` on `U`, as a relative cocycle. -/
-private def inrClosed (q : ℕ) :
-    Dolbeault.closedForms E U F p q →ₗ[ℂ] cocyclesSucc (E := E) (F := F) U p q :=
-  ((LinearMap.inr ℂ ((ofComplexManifold E M).typeForms (F := F) p (q + 1))
-    ((ofComplexManifold E U).typeForms (F := F) p q)).comp
-      (Dolbeault.closedForms E U F p q).subtype).codRestrict _ fun b ↦ by
-    simp only [LinearMap.comp_apply, LinearMap.inr_apply, Submodule.subtype_apply]
-    exact zero_prodMk_mem_cocyclesSucc U p b
-
-private lemma mk_inrClosed_eq_zero (q : ℕ) (b : Dolbeault.closedForms E U F p q)
-    (hb : b.1 ∈ Dolbeault.exactForms E U F p q) :
-    relativeDolbeaultComplex.mkSucc (E := E) (F := F) (M := M) U p q (inrClosed U p q b) = 0 := by
-  cases q with
-  | zero =>
-    rw [Dolbeault.exactForms_zero, Submodule.mem_bot, Submodule.coe_eq_zero] at hb
-    rw [hb, map_zero, map_zero]
-  | succ q =>
-    obtain ⟨η, hη⟩ := (Dolbeault.mem_exactForms_succ p q b.1).mp hb
-    rw [mkSucc_eq_zero_iff]
-    refine ⟨(XEquiv U p _ q rfl).symm (0, -η),
-      (d_XEquiv_symm U p _ _ q rfl (by omega) _ _).trans ?_⟩
-    congr 1
-    refine Prod.ext (map_zero _) ?_
-    exact Subtype.ext (by simp [inrClosed, hη])
-
-/-- The negative of the class of `(0, b)`, for `∂bar`-closed forms `b` on `U`. -/
-private def δClosed (q : ℕ) :
-    Dolbeault.closedForms E U F p q →ₗ[ℂ]
-      (relativeDolbeaultComplex E M F U p).homology ((q + 1 : ℕ) : ℤ) :=
-  -(relativeDolbeaultComplex.mkSucc U p q ∘ₗ inrClosed U p q)
-
-private lemma ker_le_ker_δClosed (q : ℕ) :
-    LinearMap.ker (dolbeaultCohomology.mk (E := E) (M := U) (F := F) p q) ≤
-      LinearMap.ker (δClosed (M := M) U p q) := by
-  intro b hb
-  rw [LinearMap.mem_ker, dolbeaultCohomology.mk_eq_zero_iff] at hb
-  rw [LinearMap.mem_ker, δClosed, LinearMap.neg_apply, LinearMap.comp_apply,
-    mk_inrClosed_eq_zero U p q b hb, neg_zero]
-
-/-- The connecting map `H^(p,q)(U) → H^(p,q+1)(M, U)` of the relative Dolbeault complex, with the
-sign convention `δ[b] = -[(0, b)]` for a `∂bar`-closed form `b` on `U`
+/-- The connecting map `H^(p,q)(U) → H^(p,q+1)(M, U)` of the relative Dolbeault complex: the map
+induced in cohomology by the connecting morphism of the triangle `mappingCocone.triangle` of the
+restriction, after identifying the Dolbeault cohomology of `U` with that of the extended complex.
+On classes, `δ[b] = -[(0, b)]` for a `∂bar`-closed form `b` on `U`
 (`TauCeti.relativeDolbeaultComplex.δ_mk`). -/
 def δ (q : ℕ) :
     dolbeaultCohomology E U F p q →ₗ[ℂ]
       (relativeDolbeaultComplex E M F U p).homology ((q + 1 : ℕ) : ℤ) :=
-  LinearMap.liftOfSurjective (R := ℂ) (M := Dolbeault.closedForms E U F p q)
-    (M₂ := dolbeaultCohomology E U F p q)
-    (M₃ := (relativeDolbeaultComplex E M F U p).homology ((q + 1 : ℕ) : ℤ))
-    (f := dolbeaultCohomology.mk p q) (dolbeaultCohomology.mk_surjective p q)
-    ⟨δClosed U p q, ker_le_ker_δClosed U p q⟩
+  ((homologyFunctor _ _ 0).shiftMap (mappingCocone.triangle (restriction E M F U p)).mor₃
+      (q : ℤ) ((q + 1 : ℕ) : ℤ) (by omega)).hom ∘ₗ
+    ((dolbeaultComplex E U F p).extendHomologyIso ComplexShape.embeddingUpNat (j := q)
+      (j' := (q : ℤ)) (by simp)).inv.hom
+
+/-- The connecting map is the identification of the cohomology of `U` with that of the extended
+complex, followed by the map induced by the connecting morphism of `mappingCocone.triangle`. -/
+theorem δ_apply (q : ℕ) (c : dolbeaultCohomology E U F p q) :
+    δ (M := M) U p q c = ((homologyFunctor _ _ 0).shiftMap
+      (mappingCocone.triangle (restriction E M F U p)).mor₃ (q : ℤ) ((q + 1 : ℕ) : ℤ)
+        (by omega)).hom (((dolbeaultComplex E U F p).extendHomologyIso
+          ComplexShape.embeddingUpNat (j := q) (j' := (q : ℤ)) (by simp)).inv.hom c) :=
+  (rfl)
 
 /-- The connecting map sends the class of a `∂bar`-closed form `b` on `U` to `-[(0, b)]`. -/
 theorem δ_mk (q : ℕ) (b : Dolbeault.closedForms E U F p q) :
     δ (M := M) U p q (dolbeaultCohomology.mk p q b) =
       -relativeDolbeaultComplex.mkSucc U p q ⟨(0, b.1), zero_prodMk_mem_cocyclesSucc U p b⟩ := by
-  rw [δ, LinearMap.equivOfSurjective_apply]
-  rfl
+  rw [δ_apply, dolbeaultCohomology.mk_eq_moduleCatHomologyClass, moduleCatHomologyClass_apply]
+  simp only [LinearMap.comp_apply, Submodule.subtype_apply]
+  have hb := (Dolbeault.mem_closedForms_iff_delBarType_eq_zero p q b.1).mp b.2
+  have hx := dolbeaultComplex.extend_d_extendXEquiv_symm (M := U) (F := F) p q q (q + 1) rfl rfl b.1
+  rw [hb, LinearEquiv.map_zero, dolbeaultComplex.extendXEquiv_symm_apply] at hx
+  -- The class of `b` in the extended complex.
+  have h₁ := extendHomologyIso_inv_homologyπ_moduleCatCyclesMk (dolbeaultComplex E U F p)
+    ComplexShape.embeddingUpNat (j := q) (j' := (q : ℤ)) (by simp)
+    ((dolbeaultComplexXIso p q).inv b.1) (q + 1) (CochainComplex.next ℕ q) (by
+      rw [dolbeaultComplex_d_apply, Iso.inv_hom_id_apply, hb, map_zero]) ((q : ℤ) + 1) (by simp)
+    hx
+  -- The connecting morphism of the triangle sends `b` to `inr b = -(0, b)`.
+  have hy : -(XEquiv U p _ q rfl).symm (0, b.1) =
+      ((relativeDolbeaultComplex E M F U p).shiftFunctorObjXIso 1 q ((q + 1 : ℕ) : ℤ)
+        (by push_cast; ring)).hom.hom
+        (((mappingCocone.triangle (restriction E M F U p)).mor₃.f q).hom
+          ((extendXIso (dolbeaultComplex E U F p) ComplexShape.embeddingUpNat (i := q)
+            (by simp)).inv ((dolbeaultComplexXIso p q).inv b.1))) := by
+    rw [XEquiv_symm_apply, mappingCocone.relativeCoordinates_symm_apply, LinearEquiv.map_zero,
+      LinearMap.map_zero, zero_sub, _root_.neg_neg, dolbeaultComplex.extendXEquiv_symm_apply]
+    exact (congrArg (fun g ↦ ModuleCat.Hom.hom g
+      ((extendXIso (dolbeaultComplex E U F p) ComplexShape.embeddingUpNat (i := q)
+        (by simp)).inv ((dolbeaultComplexXIso p q).inv b.1)))
+      (mappingCocone.triangle_mor₃_f_shiftFunctorObjXIso_hom (restriction E M F U p) q
+        ((q + 1 : ℕ) : ℤ) (by push_cast; rfl))).symm
+  have hy' : ((relativeDolbeaultComplex E M F U p).d ((q + 1 : ℕ) : ℤ) ((q + 1 : ℕ) + 1)).hom
+      (-(XEquiv U p _ q rfl).symm (0, b.1)) = 0 := by
+    rw [LinearMap.map_neg, neg_eq_zero, d_XEquiv_symm_eq_zero_iff U p _ _ q rfl rfl]
+    exact (mem_cocyclesSucc U p (0, b.1)).mp (zero_prodMk_mem_cocyclesSucc U p b)
+  have h₂ := shiftMap_homologyπ_moduleCatCyclesMk
+    (mappingCocone.triangle (restriction E M F U p)).mor₃
+    (q : ℤ) ((q + 1 : ℕ) : ℤ) (by omega) _ hx _ hy hy'
+  -- The class of `-(0, b)` is `-[(0, b)]`.
+  have h₃ : (relativeDolbeaultComplex E M F U p).homologyπ ((q + 1 : ℕ) : ℤ)
+      ((relativeDolbeaultComplex E M F U p).moduleCatCyclesMk _ (((q + 1 : ℕ) : ℤ) + 1)
+        (by simp) hy') =
+      -relativeDolbeaultComplex.mkSucc U p q ⟨(0, b.1), zero_prodMk_mem_cocyclesSucc U p b⟩ := by
+    rw [mkSucc_eq_moduleCatHomologyClass, moduleCatHomologyClass_apply]
+    refine (congrArg ((relativeDolbeaultComplex E M F U p).homologyπ ((q + 1 : ℕ) : ℤ)).hom
+      (moduleCat_iCycles_injective _ _ ?_)).trans (LinearMap.map_neg _ _)
+    exact ((iCycles_moduleCatCyclesMk _ _ _ _ _ _).trans
+      (congrArg Neg.neg (iCycles_moduleCatCyclesMk _ _ _ _ _ _).symm)).trans
+        (LinearMap.map_neg _ _).symm
+  exact ((congrArg ((homologyFunctor _ _ 0).shiftMap
+    (mappingCocone.triangle (restriction E M F U p)).mor₃ (q : ℤ) ((q + 1 : ℕ) : ℤ)
+      (by omega)).hom h₁).trans h₂).trans h₃
 
 /-- If a `∂bar`-closed form `b` on `U` is the restriction of a form `b'` on `M`, the connecting map
 sends its class to the class of `(∂bar b', 0)`. -/
