@@ -130,7 +130,7 @@ theorem IsJordanSplitting.equivalent_restrict_iff (h : B.IsJordanSplitting 2 N)
     forall_dvd_iff_of_smul_eq (isRegular_iff_mem_nonZeroDivisors.mpr h2).left hC' 2,
     Subtype.forall, Subtype.forall,
     PadicInt.eight_dvd_sub_iff_toZModPow_three_eq]
-  rfl
+  simp only [restrict_apply, LinearMap.domRestrict_apply]
 
 /-- A constituent of type II has oddity `0`. -/
 theorem IsJordanSplitting.toZModPow_three_apply_self_eq_zero (h : B.IsJordanSplitting 2 N)
@@ -144,7 +144,8 @@ theorem IsJordanSplitting.toZModPow_three_apply_self_eq_zero (h : B.IsJordanSpli
   exact hw.eight_dvd_apply_self_of_forall_two_dvd ((forall_dvd_iff_of_smul_eq
     (isRegular_iff_mem_nonZeroDivisors.mpr
       (mem_nonZeroDivisors_of_ne_zero (pow_ne_zero i (two_ne_zero : (2 : ℤ_[2]) ≠ 0)))).left
-      hC 2).mpr (Subtype.forall.mpr heven))
+      hC 2).mpr fun x ↦ by
+        simpa only [restrict_apply, LinearMap.domRestrict_apply] using heven x.1 x.2)
 
 /-- **The constituent produced by a sign walk.** Let `N` and `N'` be Jordan splittings of `B` and
 `B'`, with constituents of index `k` of the same type and opposite signs, and let `N''` be a
