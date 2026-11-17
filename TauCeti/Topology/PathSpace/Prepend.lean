@@ -31,8 +31,9 @@ unital only up to reparametrization, so the homotopies here are reparametrizatio
 ## Main definitions
 
 * `Path.prepend α z`: the continuous map `γ ↦ α.trans γ`.
-* `Path.reparamHomotopy`: the straight-line homotopy from the identity of a path space to a
-  reparametrization.
+* `Path.reparamHomotopy`, `Path.reparamHomotopy_continuous_family`: the straight-line homotopy from
+  the identity of a path space to a reparametrization, and its continuity for path families with
+  varying endpoints.
 * `Path.Homotopic.cast_map_reparam`: reparametrizing every loop of a loop of loops does not change
   its homotopy class.
 * `Path.Homotopic.Quotient.cast_map_trans_prod_refl` and
@@ -90,6 +91,21 @@ def reparamHomotopy (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ :
 theorem reparamHomotopy_apply (f : I → I) (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1)
     (s : I) (γ : Path x y) :
     reparamHomotopy f hf hf₀ hf₁ (s, γ) = (Homotopy.reparam γ f hf hf₀ hf₁).eval s := (rfl)
+
+/-- Reparametrizing a continuously varying family of paths with varying endpoints by a fixed
+endpoint-preserving map `f : I → I` varies continuously with a continuous homotopy parameter
+`s : A → I`. -/
+theorem reparamHomotopy_continuous_family {A : Type*} [TopologicalSpace A]
+    {a b : A → X} (γ : ∀ q, Path (a q) (b q)) (hγ : Continuous ↿γ)
+    {s : A → I} (hs : Continuous s)
+    {f : I → I} (hf : Continuous f) (hf₀ : f 0 = 0) (hf₁ : f 1 = 1) :
+    Continuous ↿fun q : A ↦
+      (Homotopy.reparam (γ q) f hf hf₀ hf₁).eval (s q) :=
+  -- `Path.Homotopy.reparam (γ q)` factors through `γ q` applied to the reparametrization homotopy
+  -- of the identity path on `I`; this applies even when the endpoints vary with `q`.
+  hγ.comp (continuous_fst.prodMk <|
+    (Homotopy.reparam ⟨ContinuousMap.id I, rfl, rfl⟩ f hf hf₀ hf₁).continuous.comp
+      ((hs.comp continuous_fst).prodMk continuous_snd))
 
 /-- Reparametrizing every loop of a loop `L` at the constant loop in `Ω X x` by the same map `f`
 does not change the homotopy class of `L`: `reparamHomotopy` acts on all loops at once and fixes
