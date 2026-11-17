@@ -41,14 +41,18 @@ constant value `q` there, so away from `p`,
 further subsequence, `φ g_n • p` also converges to some `r`. Dominated convergence of
 `∫ f(φ g_n • y) dμ(y) = ∫ f(y) dμ(y)` identifies `μ` with the convex combination
 `μ {p} • δ_r + μ {p}ᶜ • δ_q`, so `μ` has an atom `x₀`. Thus the stabilizer of `x₀` in `G` has
-finite index (`MeasureTheory.finiteIndex_stabilizer_of_smulInvariant_of_measure_singleton_ne_zero`);
+finite index (`MeasureTheory.finiteIndex_stabilizer_of_measure_singleton_ne_zero`);
 since projective-line stabilizers in `GL(2, 𝕜)` are amenable
 (`MonoidHom.amenable_comap_projectivization_stabilizer`), so is `G`
-(`Subgroup.amenable_of_finiteIndex`).
+(`TauCeti.Amenable.of_finiteIndex`).
 
 Specializing to closed discrete subgroups of `SL(2, 𝕜)` (Fuchsian and Kleinian groups) and to
-injective homomorphisms into `GL(2, ℤ)` supplies the invariant-measure step in Burger's criterion
-for relative property (T) of `(ℤ² ⋊ G, ℤ²)`.
+injective homomorphisms into `GL(2, ℤ)` complements
+`TauCeti.Geometry.Manifold.Instances.OnePoint.InvariantMeasure`: whereas that module treats
+`PSL(2, 𝕜)` acting on `OnePoint 𝕜` over any proper nontrivially normed field (with
+`[DecidableEq 𝕜]`), this module treats unimodular `GL(2, 𝕜)` (including `det = -1` reflections in
+`GL(2, ℤ)` and complex unit-modulus determinants) and `SL(2, 𝕜)` directly on `ℙ 𝕜 (Fin 2 → 𝕜)`
+without `[DecidableEq 𝕜]`.
 
 ## Main results
 
@@ -231,14 +235,14 @@ theorem hasFoelnerSets_of_map_smul_projectivization_eq {G : Type*} [Group G]
       (Measure.map_apply (continuous_const_smul (φ g)).measurable hs).symm.trans
         (congrArg (· s) (hμ g))⟩
   have hfin_range : (stabilizer φ.range x₀).FiniteIndex :=
-    finiteIndex_stabilizer_of_smulInvariant_of_measure_singleton_ne_zero φ.range hx₀
+    finiteIndex_stabilizer_of_measure_singleton_ne_zero hx₀
   have : ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ).FiniteIndex := by
     rw [Subgroup.finiteIndex_iff, Subgroup.index_comap, Subgroup.relIndex, stabilizer_subgroupOf,
       ← Subgroup.finiteIndex_iff]
     exact hfin_range
   have : Amenable ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ) :=
     φ.amenable_comap_projectivization_stabilizer hφ x₀
-  exact ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ).amenable_of_finiteIndex
+  exact Amenable.of_finiteIndex ((stabilizer (GL (Fin 2) 𝕜) x₀).comap φ)
 
 /-- Topological-group version of `hasFoelnerSets_of_map_smul_projectivization_eq`: the group is
 amenable for every group topology. -/

@@ -15,13 +15,12 @@ public import Mathlib.Topology.MetricSpace.IsometricSMul
 
 General facts about `SMulInvariantMeasure`, Mathlib's class of measures invariant under a scalar
 multiplication, that do not concern ergodicity: the restriction of an invariant measure to an
-exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), and for a
+exactly invariant measurable set is again invariant (`SMulInvariantMeasure.restrict`), for a
 transitive isometric action all balls of one radius have the same invariant measure
-(`measure_ball_eq_measure_ball`). On a space with measurable singletons, every atom of a finite
-invariant measure has a finite orbit (`finite_orbit_of_smulInvariant_of_measure_singleton_ne_zero`),
-so under a group action its stabilizer has finite index
-(`finiteIndex_stabilizer_of_smulInvariant_of_measure_singleton_ne_zero`). Every linear action on a
-finite-dimensional real space has measurable translations
+(`measure_ball_eq_measure_ball`), and on a finite measure space with measurable singletons any
+atom has a finite orbit (`finite_orbit_of_measure_singleton_ne_zero`), so under a group action its
+stabilizer has finite index (`finiteIndex_stabilizer_of_measure_singleton_ne_zero`). Every linear
+action on a finite-dimensional real space has measurable translations
 (`measurableConstSMul_of_finiteDimensional`).
 -/
 
@@ -49,39 +48,6 @@ theorem SMulInvariantMeasure.restrict [SMulInvariantMeasure G X μ]
 
 end Restrict
 
-section Orbit
-
-/-- Under a measure-preserving monoid action on a space with measurable singletons, every atom of a
-finite invariant measure has a finite orbit. -/
-@[to_additive /-- Under a measure-preserving additive monoid action on a space with measurable
-singletons, every atom of a finite invariant measure has a finite orbit. -/]
-theorem finite_orbit_of_smulInvariant_of_measure_singleton_ne_zero (M : Type*) {X : Type*}
-    [Monoid M] [MulAction M X] [MeasurableSpace X] [MeasurableSingletonClass X] {μ : Measure X}
-    [SMulInvariantMeasure M X μ] [IsFiniteMeasure μ] {x : X} (hx : μ {x} ≠ 0) :
-    (MulAction.orbit M x).Finite := by
-  by_contra hinf
-  refine measure_ne_top μ (MulAction.orbit M x)
-    (Set.Infinite.meas_eq_top hinf ⟨μ {x}, hx, ?_⟩)
-  rintro _ ⟨m, rfl⟩
-  rw [← SMulInvariantMeasure.measure_preimage_smul m (measurableSet_singleton (m • x))]
-  exact measure_mono (Set.singleton_subset_iff.mpr rfl)
-
-/-- Under a measure-preserving group action on a space with measurable singletons, the stabilizer
-of every atom of a finite invariant measure has finite index. -/
-@[to_additive /-- Under a measure-preserving additive group action on a space with measurable
-singletons, the stabilizer of every atom of a finite invariant measure has finite index. -/]
-theorem finiteIndex_stabilizer_of_smulInvariant_of_measure_singleton_ne_zero (G : Type*)
-    {X : Type*} [Group G] [MulAction G X] [MeasurableSpace X] [MeasurableSingletonClass X]
-    {μ : Measure X} [SMulInvariantMeasure G X μ] [IsFiniteMeasure μ] {x : X} (hx : μ {x} ≠ 0) :
-    (MulAction.stabilizer G x).FiniteIndex := by
-  have : Finite (MulAction.orbit G x) :=
-    (finite_orbit_of_smulInvariant_of_measure_singleton_ne_zero G hx).to_subtype
-  have : Finite (G ⧸ MulAction.stabilizer G x) :=
-    Finite.of_equiv _ (MulAction.orbitEquivQuotientStabilizer G x)
-  exact Subgroup.finiteIndex_of_finite_quotient
-
-end Orbit
-
 section Ball
 
 variable {G X : Type*} [Group G] [PseudoMetricSpace X] [MeasurableSpace X] [MulAction G X]
@@ -96,6 +62,41 @@ theorem measure_ball_eq_measure_ball (μ : Measure X) [SMulInvariantMeasure G X 
   rw [← Metric.smul_ball, measure_smul]
 
 end Ball
+
+section Orbit
+
+/-- Under a measure-preserving monoid action on a finite measure space with measurable singletons,
+any point of nonzero singleton measure has a finite orbit. -/
+@[to_additive finite_addOrbit_of_measure_singleton_ne_zero /-- Under a measure-preserving additive
+monoid action on a finite measure space with measurable singletons, any point of nonzero singleton
+measure has a finite orbit. -/]
+theorem finite_orbit_of_measure_singleton_ne_zero {M α : Type*} [Monoid M] [MulAction M α]
+    {_ : MeasurableSpace α} [MeasurableSingletonClass α] {μ : Measure α} [IsFiniteMeasure μ]
+    [SMulInvariantMeasure M α μ] {x : α} (hx : μ {x} ≠ 0) :
+    Finite (MulAction.orbit M x) := by
+  rw [Set.finite_coe_iff]
+  by_contra hinf
+  refine measure_ne_top μ (MulAction.orbit M x)
+    ((Set.not_finite.mp hinf).meas_eq_top ⟨μ {x}, hx, ?_⟩)
+  rintro _ ⟨m, rfl⟩
+  rw [← SMulInvariantMeasure.measure_preimage_smul m (measurableSet_singleton (m • x))]
+  exact measure_mono (Set.singleton_subset_iff.mpr rfl)
+
+/-- Under a measure-preserving group action on a finite measure space with measurable singletons,
+the stabilizer of any point of nonzero singleton measure has finite index. -/
+@[to_additive finiteIndex_addStabilizer_of_measure_singleton_ne_zero /-- Under a measure-preserving
+additive group action on a finite measure space with measurable singletons, the stabilizer of any
+point of nonzero singleton measure has finite index. -/]
+theorem finiteIndex_stabilizer_of_measure_singleton_ne_zero {G α : Type*} [Group G] [MulAction G α]
+    {_ : MeasurableSpace α} [MeasurableSingletonClass α] {μ : Measure α} [IsFiniteMeasure μ]
+    [SMulInvariantMeasure G α μ] {x : α} (hx : μ {x} ≠ 0) :
+    (MulAction.stabilizer G x).FiniteIndex := by
+  have : Finite (MulAction.orbit G x) := finite_orbit_of_measure_singleton_ne_zero hx
+  have : Finite (G ⧸ MulAction.stabilizer G x) :=
+    Finite.of_equiv _ (MulAction.orbitEquivQuotientStabilizer G x)
+  exact Subgroup.finiteIndex_of_finite_quotient
+
+end Orbit
 
 section Linear
 
