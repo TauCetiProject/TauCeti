@@ -5,12 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Presentation.Serre
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.LinearMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Torus
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.WeightLattice
 public import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.Algebra.Lie.Presentation.Serre.Basis
 import TauCeti.Algebra.Lie.Sl2.Basic
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
@@ -285,6 +287,20 @@ section
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
+
+/-- The represented pinned generators form a Serre system for the transposed Cartan matrix. -/
+theorem isSerreSystem_representation :
+    IsSerreSystem ℚ t.cartanMatrix.transpose
+      (fun k => D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h k)))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl k))))
+      (fun k => D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr k)))) := by
+  rw [← t.lieBasis_A_eq ht]
+  simpa only [Function.comp_def, LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using
+    (_root_.TauCeti.isSerreSystem_lieBasis (t.lieBasis ht)).map
+      (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ))
 
 /-- The images of the Cartan element and the positive and negative simple root generators
 at a node form an `sl₂` triple in the representation of a Chevalley datum. -/

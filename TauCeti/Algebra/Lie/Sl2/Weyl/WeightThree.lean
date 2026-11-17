@@ -39,10 +39,10 @@ variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ
 /-- On a lowest-weight vector of weight minus three, the pinned Weyl automorphism is one sixth
 of the third raising bracket. -/
 theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0) {y : L}
     (hyh : ⁅h, y⁆ = (-3 : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
-    TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
-      (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ := by
+    TauCeti.weylAut t he hf y = (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ := by
   let y₁ := ⁅e, y⁆
   let y₂ := ⁅e, y₁⁆
   let y₃ := ⁅e, y₂⁆
@@ -57,10 +57,10 @@ theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
       norm_num [y₁, y₂, y₃, pow_succ', mul_apply_eq_comp]
   have hye : ⁅e, ⁅e, ⁅e, ⁅e, y⁆⁆⁆⁆ = 0 := by
     simpa [pow_succ', mul_apply_eq_comp] using
-      t.pow_ad_apply_eq_zero_of_weight_neg_nat he 3 hyh hyf
-  have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
-  have he' := he.exists_pow_apply_eq_zero
-  have hnf' := hnf.exists_pow_apply_eq_zero
+      t.pow_ad_apply_eq_zero_of_weight_neg_nat (he y) 3 hyh hyf
+  have hnf' : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
+    fun z => (hf z).imp fun _ => TauCeti.ad_neg_pow_apply_eq_zero
+  have he' := he
   have h₀ : TauCeti.expAd (-f) hnf' y = y :=
     TauCeti.expAd_apply_of_lie_eq_zero hnf' (by simp [hyf])
   have h₁ : TauCeti.expAd (-f) hnf' y₁ = y₁ - (3 : ℚ) • y := by
@@ -83,7 +83,7 @@ theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
   have he₀ : TauCeti.expAd e he' y =
       y + y₁ + (2⁻¹ : ℚ) • y₂ + (6⁻¹ : ℚ) • y₃ :=
     TauCeti.expAd_apply_of_lie_lie_lie_lie_eq_zero he' hye
-  rw [TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg he' hf.exists_pow_apply_eq_zero hnf' t,
+  rw [TauCeti.weylAut_apply_eq_expAd_neg_expAd_expAd_neg he' hf hnf' t,
     h₀, he₀]
   simp only [map_add, map_rat_smul, h₀, h₁, h₂, h₃]
   module
@@ -91,16 +91,51 @@ theorem weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
 /-- On a highest-weight vector of weight three, the pinned Weyl automorphism is minus
 one sixth of its third lowering bracket. The sign is opposite to the lowest-weight formula. -/
 theorem weylAut_apply_of_weight_three (t : IsSl2Triple h e f)
-    (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0) {y : L}
     (hyh : ⁅h, y⁆ = (3 : ℚ) • y) (hye : ⁅e, y⁆ = 0) :
-    TauCeti.weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y =
-      -(6⁻¹ : ℚ) • ⁅f, ⁅f, ⁅f, y⁆⁆⁆ := by
-  have hnf : IsNilpotent (ad K L (-f)) := by simpa using hf.neg
-  have hne : IsNilpotent (ad K L (-e)) := by simpa using he.neg
-  rw [← t.weylAut_neg_symm he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero
-    hnf.exists_pow_apply_eq_zero hne.exists_pow_apply_eq_zero]
+    TauCeti.weylAut t he hf y = -(6⁻¹ : ℚ) • ⁅f, ⁅f, ⁅f, y⁆⁆⁆ := by
+  have hnf : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
+    fun z => (hf z).imp fun _ => TauCeti.ad_neg_pow_apply_eq_zero
+  have hne : ∀ z, ∃ k, (ad K L (-e) ^ k) z = 0 :=
+    fun z => (he z).imp fun _ => TauCeti.ad_neg_pow_apply_eq_zero
+  rw [← t.weylAut_neg_symm he hf hnf hne]
   simpa only [neg_lie, lie_neg, neg_neg, smul_neg, neg_smul] using
     t.neg_symm.weylAut_apply_of_weight_neg_three hnf hne (by simp [hyh]) (by simp [hye])
+
+/-- The square of the pinned Weyl automorphism negates a lowest-weight vector
+of weight minus three. -/
+theorem weylAut_weylAut_apply_of_weight_neg_three (t : IsSl2Triple h e f)
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0) {y : L}
+    (hyh : ⁅h, y⁆ = (-3 : ℚ) • y) (hyf : ⁅f, y⁆ = 0) :
+    TauCeti.weylAut t he hf (TauCeti.weylAut t he hf y) = -y := by
+  let a := TauCeti.weylAut t he hf
+  have ha : a y = (6⁻¹ : ℚ) • ⁅e, ⁅e, ⁅e, y⁆⁆⁆ :=
+    t.weylAut_apply_of_weight_neg_three he hf hyh hyf
+  rw [ha, map_rat_smul, LieEquiv.map_lie, LieEquiv.map_lie, LieEquiv.map_lie,
+    TauCeti.weylAut_apply_e, ha]
+  have h1 := t.lie_f_pow_succ_toEnd_e hyh hyf 0
+  have h2 := t.lie_f_pow_succ_toEnd_e hyh hyf 1
+  have h3 := t.lie_f_pow_succ_toEnd_e hyh hyf 2
+  norm_num [pow_succ', mul_apply_eq_comp] at h1 h2 h3
+  simp only [neg_lie, lie_neg, lie_smul, h3, h2, h1]
+  module
+
+/-- The square of the pinned Weyl automorphism negates a highest-weight vector
+of weight three. -/
+theorem weylAut_weylAut_apply_of_weight_three (t : IsSl2Triple h e f)
+    (he : ∀ z, ∃ k, (ad K L e ^ k) z = 0)
+    (hf : ∀ z, ∃ k, (ad K L f ^ k) z = 0) {y : L}
+    (hyh : ⁅h, y⁆ = (3 : ℚ) • y) (hye : ⁅e, y⁆ = 0) :
+    TauCeti.weylAut t he hf (TauCeti.weylAut t he hf y) = -y := by
+  have hnf : ∀ z, ∃ k, (ad K L (-f) ^ k) z = 0 :=
+    fun z => (hf z).imp fun _ => TauCeti.ad_neg_pow_apply_eq_zero
+  have hne : ∀ z, ∃ k, (ad K L (-e) ^ k) z = 0 :=
+    fun z => (he z).imp fun _ => TauCeti.ad_neg_pow_apply_eq_zero
+  simp_rw [← t.weylAut_neg_symm he hf hnf hne]
+  exact t.neg_symm.weylAut_weylAut_apply_of_weight_neg_three hnf hne (y := y)
+    (by simp [hyh]) (by simp [hye])
 
 section Associative
 
@@ -117,8 +152,9 @@ theorem weylUnit_conj_of_weight_neg_three (t : IsSl2Triple H E F)
         (((TauCeti.weylUnit hE hF)⁻¹ : Aˣ) : A) =
       (6⁻¹ : ℚ) • ⁅E, ⁅E, ⁅E, y⁆⁆⁆ := by
   rw [← TauCeti.weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_weight_neg_three (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hyh hyf
+  exact t.weylAut_apply_of_weight_neg_three
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hyh hyf
 
 /-- Conjugation by the pinned Weyl unit sends a highest-weight three operator to minus
 one sixth of its third lowering bracket. Division takes place only in the rational algebra. -/
@@ -129,8 +165,9 @@ theorem weylUnit_conj_of_weight_three (t : IsSl2Triple H E F)
         (((TauCeti.weylUnit hE hF)⁻¹ : Aˣ) : A) =
       -(6⁻¹ : ℚ) • ⁅F, ⁅F, ⁅F, y⁆⁆⁆ := by
   rw [← TauCeti.weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF]
-  exact t.weylAut_apply_of_weight_three (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
-    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hyh hye
+  exact t.weylAut_apply_of_weight_three
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero hyh hye
 
 end Associative
 
