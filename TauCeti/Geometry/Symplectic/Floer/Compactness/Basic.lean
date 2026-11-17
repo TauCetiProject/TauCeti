@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 import Mathlib.Analysis.InnerProductSpace.EuclideanDist
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 import TauCeti.Analysis.Calculus.FDeriv.WithLp
+import TauCeti.Analysis.Complex.Basic
 import TauCeti.Geometry.Symplectic.Floer.Graph
 import TauCeti.MeasureTheory.Integral.EnergyConcentration
 import TauCeti.MeasureTheory.Integral.WithLp
@@ -82,7 +83,12 @@ Euclidean space along `toEuclidean` gives the same statement for a finite-dimens
 without an inner product (in the namespace `TauCeti.Floer`,
 `exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le_of_finiteDimensional`),
 which gives compactness for solutions in a chart of a manifold target
-(`TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`).
+(`TauCeti.Geometry.Symplectic.Floer.Compactness.Manifold`). The same move gives the mean-value
+inequality for such a target on a ball `B_r(z₀)` of `ℝ × ℝ`, a square for the sup norm containing
+the disc of `ℂ` of radius `r` read in the coordinate `Complex.equivRealProdCLM`:
+`r² ‖∂ₛu(z₀)‖² ≤ C (r² + ∫_{B_r(z₀)} ‖∂ₛu‖²)` once `r² + ∫_{B_r(z₀)} ‖∂ₛu‖²` is small (in the
+namespace `TauCeti.Floer`,
+`exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional`).
 
 The same holds uniformly over a compact parameter window
 (`TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset`): if `J_p`
@@ -518,6 +524,26 @@ open Function
 
 variable {P : Type*} [NormedAddCommGroup P] [InnerProductSpace ℝ P]
 
+/-- A solution at `equivRealProdCLM y` of the coordinate Floer equation for `J` and `X` on
+`ℝ × ℝ`, read through the complex coordinate `equivRealProdCLM`, solves it at `y` for `J` and
+`X ∘L equivRealProdCLM`, with `∂ₛ` and `∂ₜ` the derivatives in the directions `1` and `I`. -/
+private theorem fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub
+    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V} {u : ℝ × ℝ → V} {y : ℂ}
+    (hfl : fderiv ℝ u (equivRealProdCLM y) stdComplexLineImag -
+        X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineImag =
+      J (equivRealProdCLM y, u (equivRealProdCLM y))
+        (fderiv ℝ u (equivRealProdCLM y) stdComplexLineReal -
+          X (equivRealProdCLM y, u (equivRealProdCLM y)) stdComplexLineReal)) :
+    fderiv ℝ (u ∘ equivRealProdCLM) y I -
+        (X (equivRealProdCLM y, u (equivRealProdCLM y)) ∘L (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) I =
+      J (equivRealProdCLM y, u (equivRealProdCLM y))
+        (fderiv ℝ (u ∘ equivRealProdCLM) y 1 -
+          (X (equivRealProdCLM y, u (equivRealProdCLM y)) ∘L
+            (equivRealProdCLM : ℂ →L[ℝ] ℝ × ℝ)) 1) := by
+  simpa only [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
+    equivRealProdCLM_I] using hfl
+
 /-- `TauCeti.Floer.exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset` for
 solutions of the coordinate Floer equations on the domain `ℝ × ℝ`, read through the complex
 coordinate `equivRealProdCLM`; the energy is `∫ ‖∂ₛu‖²`. -/
@@ -577,10 +603,8 @@ private theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_f
     hconv (Ω := e ⁻¹' Ω) (p := p) (u := fun k ↦ u k ∘ e) (E := E)
       (hΩ.preimage e.continuous) (preimage_mono hΩD) hpC
       (fun k ↦ (hu k).comp e.contDiff.contDiffOn (mapsTo_preimage _ _))
-      (fun k y hy ↦ by
-        simpa only [he, fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I,
-          ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, equivRealProdCLM_one,
-          equivRealProdCLM_I, Function.comp_apply] using hfl k (e y) hy)
+      (fun k y hy ↦
+        fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub (hfl k (e y) hy))
       (fun k y hy ↦ huK k hy)
       (fun k ↦ (hint_iff (u k) Ω).2 (hint k)) (fun k ↦ (hint_eq (u k) Ω).trans_le (hE k))
   -- The bubbling set and the limit in the original coordinates.
@@ -744,6 +768,49 @@ theorem exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq
     hconv (p := fun _ ↦ 0) hΩ hΩD (fun _ ↦ rfl) hu hfl huK hf0 hgle hint hE
   exact ⟨φ, Z, v, hφ, h⟩
 
+/-- `TauCeti.Floer.exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy` for
+solutions on a square `B_r(z₀)` of `ℝ × ℝ`, read through the complex coordinate `equivRealProdCLM`
+on the disc of the same radius, which lies in the square. -/
+private theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_sq_le_of_small_energy_of_real
+    {J : (ℝ × ℝ) × V → V →L[ℝ] V} {X : (ℝ × ℝ) × V → ℝ × ℝ →L[ℝ] V}
+    {W : Set ((ℝ × ℝ) × V)} {D : Set (ℝ × ℝ)} {K : Set V}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    ∃ δ > 0, ∀ ⦃u : ℝ × ℝ → V⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, 0 ≤ r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y stdComplexLineReal) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y stdComplexLineImag - X (y, u y) stdComplexLineImag =
+        J (y, u y) (fderiv ℝ u y stdComplexLineReal - X (y, u y) stdComplexLineReal)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      π * r ^ 2 + ∫ y in ball (equivRealProdCLM.symm z₀) r,
+        ‖fderiv ℝ u (equivRealProdCLM y) stdComplexLineReal‖ ^ 2 < δ →
+      π * r ^ 2 * ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2 ≤
+        7 * π * r ^ 2 + 8 * ∫ y in ball (equivRealProdCLM.symm z₀) r,
+          ‖fderiv ℝ u (equivRealProdCLM y) stdComplexLineReal‖ ^ 2 := by
+  set e : ℂ ≃L[ℝ] ℝ × ℝ := equivRealProdCLM with he
+  set g : ℂ × V → (ℝ × ℝ) × V := fun q ↦ (e q.1, q.2)
+  have hg : ContDiff ℝ 2 g := (e.contDiff.comp contDiff_fst).prodMk contDiff_snd
+  obtain ⟨δ, hδ, hmean⟩ := exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy
+    (J := fun q ↦ J (g q)) (X := fun q ↦ X (g q) ∘L (e : ℂ →L[ℝ] ℝ × ℝ))
+    (hW.preimage hg.continuous) (hJ.comp hg.contDiffOn (mapsTo_preimage g W))
+    ((hX.comp hg.contDiffOn (mapsTo_preimage g W)).clm_comp contDiffOn_const)
+    (e.toHomeomorph.isCompact_preimage.2 hD) hK (fun q hq ↦ hDKW ⟨hq.1, hq.2⟩)
+    (fun y hy x hx v ↦ hJsq _ hy x hx v)
+  refine ⟨δ, hδ, fun u z₀ r hr hrD hu hu' hfl huK hE ↦ ?_⟩
+  have hball : MapsTo e (ball (e.symm z₀) r) (ball z₀ r) := fun y hy ↦
+    (dist_equivRealProdCLM_le y z₀).trans_lt hy
+  have hcball : MapsTo e (closedBall (e.symm z₀) r) (closedBall z₀ r) := fun y hy ↦
+    (dist_equivRealProdCLM_le y z₀).trans hy
+  have h := hmean (u := u ∘ e) (z₀ := e.symm z₀) hr (fun y hy ↦ hrD (hball hy))
+    (hu.comp e.contDiff.contDiffOn hball)
+    ((hu'.comp e.continuous.continuousOn hcball).congr fun y _ ↦
+      fderiv_comp_equivRealProdCLM_one u y)
+    (fun y hy ↦
+      fderiv_comp_equivRealProdCLM_I_sub_of_stdComplexLineImag_sub (hfl (e y) (hball hy)))
+    (fun y hy ↦ huK _ (hball hy)) (by simpa only [he, fderiv_comp_equivRealProdCLM_one] using hE)
+  simpa only [he, fderiv_comp_equivRealProdCLM_one, ContinuousLinearEquiv.apply_symm_apply] using h
+
 end RealCoordinates
 
 section FiniteDimensional
@@ -751,6 +818,62 @@ section FiniteDimensional
 open Function
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+
+/-- The point of `(ℝ × ℝ) × F` read off from Euclidean coordinates of the target, along
+`toEuclidean.symm`. -/
+private noncomputable def euclideanPoint
+    (p : (ℝ × ℝ) × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) : (ℝ × ℝ) × F :=
+  (p.1, toEuclidean.symm p.2)
+
+/-- The structure `J` moved to Euclidean coordinates of the target along `toEuclidean`. -/
+private noncomputable def euclideanJ (J : (ℝ × ℝ) × F → F →L[ℝ] F)
+    (p : (ℝ × ℝ) × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) :
+    EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) :=
+  (toEuclidean : F ≃L[ℝ] _).toContinuousLinearMap ∘L J (euclideanPoint p) ∘L
+    (toEuclidean : F ≃L[ℝ] _).symm.toContinuousLinearMap
+
+/-- The one-form `X` moved to Euclidean coordinates of the target along `toEuclidean`. -/
+private noncomputable def euclideanX (X : (ℝ × ℝ) × F → ℝ × ℝ →L[ℝ] F)
+    (p : (ℝ × ℝ) × EuclideanSpace ℝ (Fin (Module.finrank ℝ F))) :
+    ℝ × ℝ →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) :=
+  (toEuclidean : F ≃L[ℝ] _).toContinuousLinearMap ∘L X (euclideanPoint p)
+
+/-- The data moved to Euclidean coordinates satisfy the hypotheses of the theorems for an inner
+product space, on `D` and the compact image of `K` under `toEuclidean`. -/
+private theorem euclideanData {J : (ℝ × ℝ) × F → F →L[ℝ] F} {X : (ℝ × ℝ) × F → ℝ × ℝ →L[ℝ] F}
+    {W : Set ((ℝ × ℝ) × F)} {D : Set (ℝ × ℝ)} {K : Set F}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    IsOpen (euclideanPoint ⁻¹' W) ∧ ContDiffOn ℝ 2 (euclideanJ J) (euclideanPoint ⁻¹' W) ∧
+      ContDiffOn ℝ 2 (euclideanX X) (euclideanPoint ⁻¹' W) ∧
+      D ×ˢ (toEuclidean '' K) ⊆ euclideanPoint ⁻¹' W ∧
+      ∀ z ∈ D, ∀ x ∈ toEuclidean '' K, ∀ v,
+        euclideanJ J (z, x) (euclideanJ J (z, x) v) = -v := by
+  have hg : ContDiff ℝ 2 (euclideanPoint (F := F)) :=
+    contDiff_fst.prodMk (toEuclidean.symm.contDiff.comp contDiff_snd)
+  refine ⟨hW.preimage hg.continuous, contDiffOn_const.clm_comp
+      ((hJ.comp hg.contDiffOn (mapsTo_preimage _ W)).clm_comp contDiffOn_const),
+    contDiffOn_const.clm_comp (hX.comp hg.contDiffOn (mapsTo_preimage _ W)), ?_, ?_⟩
+  · rintro ⟨z, _⟩ ⟨hz, y, hy, rfl⟩
+    simpa [euclideanPoint] using hDKW ⟨hz, hy⟩
+  · rintro z hz _ ⟨y, hy, rfl⟩ v
+    simp [euclideanJ, euclideanPoint, hJsq z hz y hy]
+
+/-- A solution at `z` of the coordinate Floer equation for `J` and `X`, moved to Euclidean
+coordinates of the target along `toEuclidean`, solves it at `z` for `euclideanJ J` and
+`euclideanX X`. -/
+private theorem fderiv_toEuclidean_comp_stdComplexLineImag_sub {J : (ℝ × ℝ) × F → F →L[ℝ] F}
+    {X : (ℝ × ℝ) × F → ℝ × ℝ →L[ℝ] F} {u : ℝ × ℝ → F} {z : ℝ × ℝ}
+    (hfl : fderiv ℝ u z stdComplexLineImag - X (z, u z) stdComplexLineImag =
+      J (z, u z) (fderiv ℝ u z stdComplexLineReal - X (z, u z) stdComplexLineReal)) :
+    fderiv ℝ (toEuclidean ∘ u) z stdComplexLineImag -
+        euclideanX X (z, toEuclidean (u z)) stdComplexLineImag =
+      euclideanJ J (z, toEuclidean (u z)) (fderiv ℝ (toEuclidean ∘ u) z stdComplexLineReal -
+        euclideanX X (z, toEuclidean (u z)) stdComplexLineReal) := by
+  simp only [ContinuousLinearEquiv.comp_fderiv, euclideanJ, euclideanX, euclideanPoint,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.symm_apply_apply]
+  rw [← map_sub, ← map_sub, ContinuousLinearEquiv.symm_apply_apply, hfl]
 
 /-- **Solutions with energy-controlled derivatives in a finite-dimensional normed space converge
 off finitely many bubbling points.** This is
@@ -792,26 +915,11 @@ theorem
           ∃ M, ∀ n, ∀ y ∈ C, ‖fderiv ℝ (u (φ n)) y‖ ≤ M) ∧
         ContinuousOn v (Ω \ ↑Z) ∧ MapsTo v (Ω \ ↑Z) K ∧
         TendstoLocallyUniformlyOn (fun n ↦ u (φ n)) v atTop (Ω \ ↑Z) := by
-  -- Conjugate the data by `L = toEuclidean` and apply the theorem for an inner product space.
+  -- Move the data to Euclidean coordinates and apply the theorem for an inner product space.
   let L : F ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) := toEuclidean
-  let g : (ℝ × ℝ) × EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) → (ℝ × ℝ) × F :=
-    fun p ↦ (p.1, L.symm p.2)
-  have hgc : ContDiff ℝ 2 g := contDiff_fst.prodMk (L.symm.contDiff.comp contDiff_snd)
-  have hDKW' : D ×ˢ (L '' K) ⊆ g ⁻¹' W := by
-    rintro ⟨z, _⟩ ⟨hz, y, hy, rfl⟩
-    simpa [g] using hDKW ⟨hz, hy⟩
-  have hJsq' : ∀ z ∈ D, ∀ x ∈ L '' K, ∀ v,
-      (L.toContinuousLinearMap ∘L J (g (z, x)) ∘L L.symm.toContinuousLinearMap)
-        ((L.toContinuousLinearMap ∘L J (g (z, x)) ∘L L.symm.toContinuousLinearMap) v) = -v := by
-    rintro z hz _ ⟨y, hy, rfl⟩ v
-    simp [g, hJsq z hz y hy]
+  obtain ⟨hW', hJ', hX', hDKW', hJsq'⟩ := euclideanData hW hJ hX hDKW hJsq
   obtain ⟨δ, hδ, hconv⟩ :=
-    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le
-      (J := fun p ↦ L.toContinuousLinearMap ∘L J (g p) ∘L L.symm.toContinuousLinearMap)
-      (X := fun p ↦ L.toContinuousLinearMap ∘L X (g p)) (hW.preimage hgc.continuous)
-      (contDiffOn_const.clm_comp ((hJ.comp hgc.contDiffOn (mapsTo_preimage g W)).clm_comp
-        contDiffOn_const))
-      (contDiffOn_const.clm_comp (hX.comp hgc.contDiffOn (mapsTo_preimage g W))) hD
+    exists_pos_forall_tendstoLocallyUniformlyOn_subseq_off_finset_of_norm_sq_le hW' hJ' hX' hD
       (hK.image L.continuous) hDKW' hJsq' (mul_nonneg (sq_nonneg ‖L.toContinuousLinearMap‖) hA0)
       (mul_nonneg (sq_nonneg ‖L.toContinuousLinearMap‖) hB0)
   refine ⟨δ, hδ, fun Ω u f E hΩ hΩD hu hfl huK hf0 hgle hint hE ↦ ?_⟩
@@ -820,10 +928,7 @@ theorem
   have hback (k : ℕ) : L.symm ∘ (L ∘ u k) = u k := funext fun z ↦ by simp
   obtain ⟨φ, Z, v, hφ, hZΩ, hcard, hconc, hbd, hvc, hvK, hlim⟩ :=
     hconv (u := fun k ↦ L ∘ u k) hΩ hΩD (fun k ↦ L.contDiff.comp_contDiffOn (hu k))
-      (fun k z hz ↦ by
-        simp only [hderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, g,
-          Function.comp_apply, ContinuousLinearEquiv.symm_apply_apply]
-        rw [← map_sub, ← map_sub, L.symm_apply_apply, hfl k z hz])
+      (fun k z hz ↦ fderiv_toEuclidean_comp_stdComplexLineImag_sub (hfl k z hz))
       (fun k z hz ↦ ⟨u k z, huK k hz, rfl⟩) hf0
       (fun k z hz ↦ by
         have h := pow_le_pow_left₀ (norm_nonneg _)
@@ -842,6 +947,115 @@ theorem
     exact (opNorm_comp_le _ _).trans (mul_le_mul_of_nonneg_left (hM n y hy) (norm_nonneg _))
   · simpa only [ContinuousLinearEquiv.coe_coe, hback] using
       L.symm.toContinuousLinearMap.uniformContinuous.comp_tendstoLocallyUniformlyOn hlim
+
+/-- In Euclidean coordinates of the target along `toEuclidean` and in the complex coordinate
+`equivRealProdCLM`, the energy of `u` on the disc of `ℂ` of radius `r` is at most `‖toEuclidean‖²`
+times its energy on the square `B_r(z₀)` of `ℝ × ℝ`, which contains the disc. -/
+private theorem setIntegral_ball_norm_fderiv_toEuclidean_comp_sq_le {u : ℝ × ℝ → F}
+    {z₀ : ℝ × ℝ} {r : ℝ}
+    (hu' : ContinuousOn (fun y ↦ fderiv ℝ u y stdComplexLineReal) (closedBall z₀ r)) :
+    ∫ y in ball (equivRealProdCLM.symm z₀) r,
+        ‖fderiv ℝ (toEuclidean ∘ u) (equivRealProdCLM y) stdComplexLineReal‖ ^ 2 ≤
+      ‖((toEuclidean : F ≃L[ℝ] _) : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))‖ ^ 2 *
+        ∫ y in ball z₀ r, ‖fderiv ℝ u y stdComplexLineReal‖ ^ 2 := by
+  set f : ℝ × ℝ → ℝ := fun z ↦ ‖fderiv ℝ u z stdComplexLineReal‖ ^ 2
+  have hball : ∀ y ∈ ball (equivRealProdCLM.symm z₀) r, equivRealProdCLM y ∈ ball z₀ r :=
+    fun y hy ↦ (dist_equivRealProdCLM_le y z₀).trans_lt hy
+  -- `equivRealProdCLM` preserves volume.
+  have hint : IntegrableOn (f ∘ equivRealProdCLM) (equivRealProdCLM ⁻¹' ball z₀ r) :=
+    (Complex.volume_preserving_equiv_real_prod.integrableOn_comp_preimage
+      equivRealProdCLM.toHomeomorph.measurableEmbedding).2 <|
+      (hu'.norm.pow 2).integrableOn_compact (isCompact_closedBall z₀ r) |>.mono_set
+        ball_subset_closedBall
+  rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
+    equivRealProdCLM.toHomeomorph.measurableEmbedding f, ← integral_const_mul]
+  refine (integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ by positivity)
+    ((hint.mono_set fun y hy ↦ hball y hy).const_mul _)
+    ((ae_restrict_mem measurableSet_ball).mono fun y _ ↦ ?_)).trans <|
+    setIntegral_mono_set (hint.const_mul _)
+      (Eventually.of_forall fun _ ↦ mul_nonneg (sq_nonneg _) (sq_nonneg _))
+      (Eventually.of_forall fun y hy ↦ hball y hy)
+  simp only [ContinuousLinearEquiv.comp_fderiv, ContinuousLinearMap.comp_apply, Function.comp_apply,
+    f, ← mul_pow]
+  gcongr
+  exact ContinuousLinearMap.le_opNorm _ _
+
+/-- The arithmetic closing the mean-value inequality in real coordinates: the centre value `a` is
+at most `N'² b` for the value `b` in Euclidean coordinates, where the mean-value inequality bounds
+`π r² b` by the energy `I_w ≤ N² I`. -/
+private theorem sq_mul_le_of_pi_mul_sq_mul_le {a b r N N' I Iw : ℝ} (ha : a ≤ N' ^ 2 * b)
+    (hmv : π * r ^ 2 * b ≤ 7 * π * r ^ 2 + 8 * Iw) (hIw : Iw ≤ N ^ 2 * I) (hI : 0 ≤ I) :
+    r ^ 2 * a ≤ N' ^ 2 * (7 + 8 * N ^ 2 / π) * (r ^ 2 + I) := by
+  have hπ0 : 0 < π := pi_pos
+  refine le_of_mul_le_mul_left ?_ hπ0
+  have h7 : π * (7 + 8 * N ^ 2 / π) = 7 * π + 8 * N ^ 2 := by
+    rw [mul_add, mul_div_cancel₀ _ hπ0.ne']
+    ring
+  calc π * (r ^ 2 * a) ≤ N' ^ 2 * (π * r ^ 2 * b) := by
+        nlinarith [mul_le_mul_of_nonneg_left ha (by positivity : 0 ≤ π * r ^ 2)]
+    _ ≤ N' ^ 2 * (7 * π * r ^ 2 + 8 * (N ^ 2 * I)) := by
+        gcongr
+        exact hmv.trans (by gcongr)
+    _ ≤ N' ^ 2 * ((7 * π + 8 * N ^ 2) * (r ^ 2 + I)) := by
+        gcongr N' ^ 2 * ?_
+        nlinarith [mul_nonneg hπ0.le hI, mul_nonneg (sq_nonneg N) (sq_nonneg r)]
+    _ = π * (N' ^ 2 * (7 + 8 * N ^ 2 / π) * (r ^ 2 + I)) := by
+        rw [← h7]
+        ring
+
+/-- **The mean-value inequality for solutions in a finite-dimensional normed space, in real
+coordinates.** Let `J(z, x)` and `X(z, x)` be `C²` on an open set `W ⊆ (ℝ × ℝ) × F` containing
+`D × K` for compact `D ⊆ ℝ × ℝ` and `K ⊆ F`, with `J(z, x)² = -1` on `D × K`. There are a threshold
+`δ > 0` and a constant `C` such that every solution `u` of the coordinate Floer equation
+`∂ₜu - X(z, u)(0, 1) = J(z, u)(∂ₛu - X(z, u)(1, 0))` on a ball `B_r(z₀) ⊆ D` of `ℝ × ℝ`, with
+values in `K`, `C³` on the ball and with `∂ₛu` continuous on its closure, satisfies
+
+`r² ‖∂ₛu(z₀)‖² ≤ C (r² + ∫_{B_r(z₀)} ‖∂ₛu‖²)`
+
+as soon as `r² + ∫_{B_r(z₀)} ‖∂ₛu‖² < δ`. Balls of `ℝ × ℝ` are squares for its sup norm. -/
+theorem exists_pos_forall_sq_mul_norm_fderiv_sq_le_of_small_energy_of_finiteDimensional
+    {J : (ℝ × ℝ) × F → F →L[ℝ] F} {X : (ℝ × ℝ) × F → ℝ × ℝ →L[ℝ] F}
+    {W : Set ((ℝ × ℝ) × F)} {D : Set (ℝ × ℝ)} {K : Set F}
+    (hW : IsOpen W) (hJ : ContDiffOn ℝ 2 J W) (hX : ContDiffOn ℝ 2 X W)
+    (hD : IsCompact D) (hK : IsCompact K) (hDKW : D ×ˢ K ⊆ W)
+    (hJsq : ∀ z ∈ D, ∀ x ∈ K, ∀ v, J (z, x) (J (z, x) v) = -v) :
+    ∃ δ > 0, ∃ C ≥ 0, ∀ ⦃u : ℝ × ℝ → F⦄ ⦃z₀ : ℝ × ℝ⦄ ⦃r : ℝ⦄, 0 ≤ r → ball z₀ r ⊆ D →
+      ContDiffOn ℝ 3 u (ball z₀ r) →
+      ContinuousOn (fun y ↦ fderiv ℝ u y stdComplexLineReal) (closedBall z₀ r) →
+      (∀ y ∈ ball z₀ r, fderiv ℝ u y stdComplexLineImag - X (y, u y) stdComplexLineImag =
+        J (y, u y) (fderiv ℝ u y stdComplexLineReal - X (y, u y) stdComplexLineReal)) →
+      (∀ y ∈ ball z₀ r, u y ∈ K) →
+      r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y stdComplexLineReal‖ ^ 2 < δ →
+      r ^ 2 * ‖fderiv ℝ u z₀ stdComplexLineReal‖ ^ 2 ≤
+        C * (r ^ 2 + ∫ y in ball z₀ r, ‖fderiv ℝ u y stdComplexLineReal‖ ^ 2) := by
+  -- Move the data to Euclidean coordinates and apply the theorem for an inner product space.
+  let L : F ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) := toEuclidean
+  obtain ⟨hW', hJ', hX', hDKW', hJsq'⟩ := euclideanData hW hJ hX hDKW hJsq
+  obtain ⟨δ, hδ, hmean⟩ := exists_pos_forall_pi_mul_sq_mul_norm_fderiv_sq_le_of_small_energy_of_real
+    hW' hJ' hX' hD (hK.image L.continuous) hDKW' hJsq'
+  set N := ‖(L : F →L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ F)))‖
+  set N' := ‖(L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F)‖
+  have hπ : 0 < π + N ^ 2 := by positivity
+  refine ⟨δ / (π + N ^ 2), div_pos hδ hπ, N' ^ 2 * (7 + 8 * N ^ 2 / π), by positivity,
+    fun u z₀ r hr hrD hu hu' hfl huK hE ↦ ?_⟩
+  have hderiv (y w : ℝ × ℝ) : fderiv ℝ (L ∘ u) y w = L (fderiv ℝ u y w) := by
+    simp only [L.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe]
+  -- The energy in Euclidean coordinates is at most `N²` times that of `u`.
+  have hIw := setIntegral_ball_norm_fderiv_toEuclidean_comp_sq_le hu'
+  have hI0 : 0 ≤ ∫ y in ball z₀ r, ‖fderiv ℝ u y stdComplexLineReal‖ ^ 2 :=
+    setIntegral_nonneg measurableSet_ball fun _ _ ↦ sq_nonneg _
+  have hmv := hmean (u := L ∘ u) hr hrD (L.contDiff.comp_contDiffOn hu)
+    ((L.continuous.comp_continuousOn hu').congr fun y _ ↦ hderiv y _)
+    (fun y hy ↦ fderiv_toEuclidean_comp_stdComplexLineImag_sub (hfl y hy))
+    (fun y hy ↦ ⟨u y, huK y hy, rfl⟩) <| by
+      have h := (lt_div_iff₀ hπ).1 hE
+      nlinarith [mul_nonneg pi_pos.le hI0, mul_nonneg (sq_nonneg N) (sq_nonneg r)]
+  -- Return to `u` along `L.symm`.
+  refine sq_mul_le_of_pi_mul_sq_mul_le ?_ hmv hIw hI0
+  rw [hderiv, ← mul_pow]
+  gcongr
+  simpa using (L.symm : EuclideanSpace ℝ (Fin (Module.finrank ℝ F)) →L[ℝ] F).le_opNorm
+    (L (fderiv ℝ u z₀ stdComplexLineReal))
 
 end FiniteDimensional
 
