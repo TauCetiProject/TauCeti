@@ -287,7 +287,7 @@ theorem map_matrixUnitIntertwiner [Ring S] [Algebra 𝕜 S] {F : Type*} [FunLike
 namespace IsMatrixUnitSystem
 variable [StarRing R] {e f : ∀ r : κ, n r → n r → R}
 /-- In characteristic zero, the canonical intertwiner of `e` with itself is `1`. -/
-theorem matrixUnitIntertwiner_self [CharZero 𝕜] (he : IsMatrixUnitSystem e) :
+@[simp] theorem matrixUnitIntertwiner_self [CharZero 𝕜] (he : IsMatrixUnitSystem e) :
     matrixUnitIntertwiner 𝕜 e e = 1 := by
   rw [matrixUnitIntertwiner_def, (he.isStarProjection_support.one_sub).isIdempotentElem.eq]
   suffices (∑ r : κ, (Fintype.card (n r) : 𝕜)⁻¹ • ∑ a : n r, ∑ b : n r, e r a b * e r b a) =

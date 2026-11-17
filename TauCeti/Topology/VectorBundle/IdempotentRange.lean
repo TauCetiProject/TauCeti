@@ -152,18 +152,17 @@ noncomputable def rangeTrivialization :
   target_eq := rfl
   proj_toFun _ _ := rfl
 
-/-- The trivialization at `x₀` is defined over a neighbourhood of `x₀`. -/
-theorem mem_baseSet_rangeTrivialization :
-    x₀ ∈ (rangeTrivialization hp hidem x₀ φ).baseSet := by
-  change IsUnit (projectionIntertwiner (p x₀) (p x₀))
-  simp [(hidem x₀).projectionIntertwiner_self]
-
 /-- A point lies in the base set of the trivialization at `x₀` exactly when the intertwiner
 `TauCeti.projectionIntertwiner (p x₀) (p x)` is invertible. -/
 theorem mem_baseSet_rangeTrivialization_iff {x : B} :
     x ∈ (rangeTrivialization hp hidem x₀ φ).baseSet ↔
       IsUnit (projectionIntertwiner (p x₀) (p x)) :=
   Iff.rfl
+
+/-- The trivialization at `x₀` is defined over a neighbourhood of `x₀`. -/
+theorem mem_baseSet_rangeTrivialization :
+    x₀ ∈ (rangeTrivialization hp hidem x₀ φ).baseSet := by
+  rw [mem_baseSet_rangeTrivialization_iff]; simp [hidem x₀]
 
 /- The two evaluation lemmas below are not `simp` lemmas, so that the evaluations at the base point
 `x₀` stay in simp normal form. -/

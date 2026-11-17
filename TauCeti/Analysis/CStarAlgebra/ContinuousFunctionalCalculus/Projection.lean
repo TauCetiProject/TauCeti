@@ -188,7 +188,8 @@ theorem spectralProjectionIoiHalf_def (a : A) :
 @[simp] theorem isStarProjection_spectralProjectionIoiHalf (a : A) :
     IsStarProjection (spectralProjectionIoiHalf a) :=
   isStarProjection_cfcₙ_indicator a (Set.Ioi (1 / 2 : ℝ))
-/-- The `(1 / 2, ∞)` spectral projection of `0` is `0`. -/
+/-- The `(1 / 2, ∞)` spectral projection of `0` is `0` (not `@[simp]`: `simp` already closes this
+via `IsStarProjection.zero` and `IsStarProjection.spectralProjectionIoiHalf_eq`). -/
 theorem spectralProjectionIoiHalf_zero : spectralProjectionIoiHalf (0 : A) = 0 := by
   simp [spectralProjectionIoiHalf_def]
 /-- `spectralProjectionIoiHalf a` belongs to every closed non-unital `𝕜'`-`⋆`-subalgebra containing

@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Star.Projection.Intertwiner
 public import TauCeti.Analysis.CStarAlgebra.Unitary.Polar
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Commute
+import TauCeti.Analysis.Normed.Ring.Units
 
 /-!
 # Unitary conjugacy of nearby projections in a C⋆-algebra
@@ -20,7 +21,7 @@ polar-normalizes to `u = hp.projectionConjugacyUnitary hq h` for `‖p - q‖ < 
 
 ## Main results
 
-* `IsIdempotentElem.isUnit_projectionIntertwiner`, `IsStarProjection.projectionConjugacyUnitary`,
+* `IsStarProjection.projectionConjugacyUnitary`,
   `IsStarProjection.star_projectionConjugacyUnitary`,
   `IsStarProjection.exists_unitary_conjugate_mem_of_norm_sub_lt_one`,
   `IsStarProjection.exists_unitary_conjugate_of_norm_sub_lt_one`,
@@ -37,17 +38,6 @@ public section
 
 open TauCeti
 open scoped ContinuousFunctionalCalculus Real
-
-/-- In a normed ring with summable geometric series, `projectionIntertwiner p q` is invertible
-for idempotents `p, q` with `‖p - q‖ < 1`. -/
-theorem IsIdempotentElem.isUnit_projectionIntertwiner {R : Type*} [NormedRing R]
-    [HasSummableGeomSeries R] {p q : R} (hp : IsIdempotentElem p) (hq : IsIdempotentElem q)
-    (h : ‖p - q‖ < 1) : IsUnit (projectionIntertwiner p q) := by
-  have hcomm : Commute (projectionIntertwiner p q) (projectionIntertwiner q p) :=
-    (hp.projectionIntertwiner_mul_swap hq).trans (hp.projectionIntertwiner_swap_mul_self hq).symm
-  exact (hcomm.isUnit_mul_iff.mp <| hp.projectionIntertwiner_mul_swap hq ▸
-    isUnit_one_sub_of_norm_lt_one (show ‖(p - q) ^ 2‖ < 1 by
-      rw [sq]; exact (norm_mul_le _ _).trans_lt (by nlinarith [norm_nonneg (p - q)]))).1
 
 namespace IsStarProjection
 section

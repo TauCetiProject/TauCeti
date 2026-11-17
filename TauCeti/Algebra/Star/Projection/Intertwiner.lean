@@ -74,7 +74,8 @@ open TauCeti
 namespace IsIdempotentElem
 variable {R : Type*} [Ring R] {p q : R}
 /-- The intertwiner of an idempotent with itself is `1`. -/
-theorem projectionIntertwiner_self (hp : IsIdempotentElem p) : projectionIntertwiner p p = 1 := by
+@[simp] theorem projectionIntertwiner_self (hp : IsIdempotentElem p) :
+    projectionIntertwiner p p = 1 := by
   rw [projectionIntertwiner_def]; noncomm_ring [hp.eq]
 /-- Right-multiplying `projectionIntertwiner p q` by an idempotent `p` retains `q * p`. -/
 theorem projectionIntertwiner_mul (hp : IsIdempotentElem p) (q : R) :

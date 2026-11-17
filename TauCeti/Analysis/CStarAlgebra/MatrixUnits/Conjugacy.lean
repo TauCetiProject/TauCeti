@@ -130,7 +130,7 @@ theorem exists_unitization_unitary_conjugate {κ A : Type*} {n : κ → Type*} [
     simpa only [ι, Unitization.inrNonUnitalStarAlgHom_apply, ← Unitization.inr_sub,
       Unitization.norm_inr] using hdist r i j
   have ha_fst : (a : Unitization ℂ A).fst = 1 := by
-    change ((Unitization.fstHom ℂ A).restrictScalars ℝ) a = 1
-    rw [ha, map_matrixUnitIntertwiner]; simp [ι, matrixUnitIntertwiner_def, matrixUnitSupport_def]
+    rw [← Unitization.fstHom_apply ℂ A, ← AlgHom.restrictScalars_apply ℝ, ha,
+      map_matrixUnitIntertwiner]; simp [ι, matrixUnitIntertwiner_def, matrixUnitSupport_def]
   exact ⟨a.polarUnitary, Units.fst_polarUnitary_eq_one ha_fst, h⟩
 end TauCeti.IsMatrixUnitSystem

@@ -305,17 +305,12 @@ theorem map_polarUnitary {B F : Type*} [PartialOrder B] [Ring B] [StarRing B] [S
     [NonnegSpectrumClass ℝ B] [IsSemitopologicalRing B] [T2Space B] [FunLike F A B]
     [RingHomClass F A B] [StarHomClass F A B] (φ : F) :
     φ (a.polarUnitary : A) = ((Units.map (φ : A →* B) a).polarUnitary : B) := by
-  set q : A := CFC.sqrt (star (a : A) * a)
-  have hφq : 0 ≤ φ q := by
-    rw [show q = star (CFC.sqrt q) * CFC.sqrt q by
-      rw [(CFC.sqrt_nonneg q).isSelfAdjoint.star_eq, CFC.sqrt_mul_sqrt_self q (CFC.sqrt_nonneg _)],
-      map_mul, map_star]; exact star_mul_self_nonneg _
-  let v : unitary B := ⟨φ (a.polarUnitary : A), Unitary.mem_iff.mpr
-    ⟨by rw [← map_star, ← map_mul, Unitary.star_mul_self_of_mem a.polarUnitary.2, map_one],
-     by rw [← map_star, ← map_mul, Unitary.mul_star_self_of_mem a.polarUnitary.2, map_one]⟩⟩
-  exact (congrArg Subtype.val ((Units.map (φ : A →* B) a).polarUnitary_eq_of_mul_eq' (v := v) hφq <|
-    by simp only [v, q, Units.coe_map, MonoidHom.coe_ofClass, ← map_mul,
-      a.polarUnitary_mul_sqrt_star_mul])).symm
+  simpa only [Unitary.coe_map, StarMonoidHom.ofClass_coe] using
+    (congrArg Subtype.val <| (Units.map (φ : A →* B) a).polarUnitary_eq_of_mul_eq'
+      (v := Unitary.map (StarMonoidHom.ofClass φ) a.polarUnitary)
+      (map_nonneg φ (CFC.sqrt_nonneg (star (a : A) * a))) <| by
+      simp only [Unitary.coe_map, StarMonoidHom.ofClass_coe, Units.coe_map,
+        MonoidHom.coe_ofClass, ← map_mul, a.polarUnitary_mul_sqrt_star_mul]).symm
 /-- Adjoint-compatible intertwining passes from `a` to `a.polarUnitary`. -/
 theorem mul_polarUnitary_eq_polarUnitary_mul {x y : A}
     (h1 : y * (a : A) = (a : A) * x) (h2 : star (a : A) * y = x * star (a : A)) :
