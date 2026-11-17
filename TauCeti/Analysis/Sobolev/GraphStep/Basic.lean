@@ -52,9 +52,8 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
   with its exact and almost-everywhere characteristic equations.
 * `TauCeti.WeakDerivStep.toIdL`: pushforward along `base` to the weak-derivative graph over the
   identity on `Lp F p (mu.restrict Omega)`.
-* `TauCeti.HasWeakLineDerivOn.hasWeakFDerivOn_toSpanSingletonLIE_compLp`,
-  `TauCeti.WeakDerivStep.mkLine`: on the line, lifting a weak line derivative in direction `1` to
-  `HasWeakFDerivOn` and constructing an element of `WeakDerivStep`.
+* `TauCeti.WeakDerivStep.mkLine`: on the line, constructing an element of `WeakDerivStep` from a
+  weak line derivative in direction `1`.
 * `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
   `TauCeti.WeakDerivStep.norm_weakFDeriv_sq_eq_integral`: on the line, the squared norms of a
   `W^{1,2}` path and of its weak derivative are the integrals of `‖φ‖²` and `‖φ'‖²` for a `C¹`
@@ -400,24 +399,6 @@ theorem weakFDeriv_toIdL (base : X →L[ℝ] Lp F p (mu.restrict Omega))
 end WeakDerivStep
 
 end TopologicalModule
-
-/-- On `ℝ`, a weak line derivative `g : Lp F p (mu.restrict Omega)` in direction `1` lifts via
-`ContinuousLinearMap.toSpanSingletonLIE ℝ F` to a weak Fréchet derivative. -/
-theorem HasWeakLineDerivOn.hasWeakFDerivOn_toSpanSingletonLIE_compLp
-    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {mu : Measure ℝ} {Omega : Opens ℝ} {p : ENNReal}
-    {f : ℝ → F} {g : Lp F p (mu.restrict Omega)}
-    (h : HasWeakLineDerivOn mu Omega f g 1) :
-    HasWeakFDerivOn mu Omega f
-      ((ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap.compLp
-        g) := by
-  have := h.completeSpace
-  let lift := (ContinuousLinearMap.toSpanSingletonLIE ℝ F).toLinearIsometry.toContinuousLinearMap
-  rw [hasWeakFDerivOn_iff]
-  intro r
-  refine (by simpa using h.smul_direction r : HasWeakLineDerivOn _ _ _ _ r).congr_ae_deriv ?_
-  filter_upwards [lift.coeFn_compLp g] with s hs
-  simp [lift, hs]
 
 namespace WeakDerivStep
 
