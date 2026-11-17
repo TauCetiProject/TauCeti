@@ -45,8 +45,11 @@ terms lie within `N` of `M`, and since `α + β > 0` their `Lʳ` norms are `O(2^
 * `TauCeti.BesovSpace.smulCLMOfNegLeft`, `TauCeti.BesovSpace.smulCLMOfNegRight`: these products as
   bounded bilinear maps, characterised as the limits of the truncated products
   (`TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegLeft`,
-  `TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegRight`), with operator norms bounded
-  uniformly in the exponents (`TauCeti.BesovSpace.exists_norm_smulCLMOfNegLeft_le`,
+  `TauCeti.BesovSpace.tendsto_lowPass_smul_lowPass_smulCLMOfNegRight`; conversely
+  `TauCeti.BesovSpace.smulCLMOfNegLeft_eq_of_tendsto`,
+  `TauCeti.BesovSpace.smulCLMOfNegRight_eq_of_tendsto` identify them with any such limit), with
+  operator norms bounded uniformly in the exponents
+  (`TauCeti.BesovSpace.exists_norm_smulCLMOfNegLeft_le`,
   `TauCeti.BesovSpace.exists_norm_smulCLMOfNegRight_le`).
 
 ## References
@@ -296,13 +299,6 @@ private theorem tendsto_smulCLMOfTendsto (u : BesovSpace ℂ φ α p₁ q₁) (v
       atTop (𝓝 (smulCLMOfTendsto h u v).toDistr) :=
   (h.choose_spec u v).choose_spec.1
 
-private theorem smulCLMOfTendsto_eq
-    {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂} {w : BesovSpace F φ s r q}
-    (hw : Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) :
-      𝓢'(E, F))) atTop (𝓝 w.toDistr)) :
-    smulCLMOfTendsto h u v = w :=
-  ext <| tendsto_nhds_unique (h.choose_spec u v).choose_spec.1 hw
-
 variable (φ r) in
 /-- **The product of a distribution of negative regularity and a smoother one** as a bounded
 bilinear map `B^α_{p₁,q₁} × B^β_{p₂,q₂} → B^α_{r,q₁}`, for `α < 0 < α + β` and
@@ -325,6 +321,15 @@ theorem tendsto_lowPass_smul_lowPass_smulCLMOfNegLeft (hα : α < 0) (hαβ : 0 
       atTop (𝓝 (smulCLMOfNegLeft φ r hα hαβ u v).toDistr) :=
   tendsto_smulCLMOfTendsto _ u v
 
+/-- The product `smulCLMOfNegLeft` of `u` and `v` is any limit of the truncated products
+`S_M u · S_M v`. -/
+theorem smulCLMOfNegLeft_eq_of_tendsto (hα : α < 0) (hαβ : 0 < α + β)
+    {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂} {w : BesovSpace F φ α r q₁}
+    (hw : Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) :
+      𝓢'(E, F))) atTop (𝓝 w.toDistr)) :
+    smulCLMOfNegLeft φ r hα hαβ u v = w :=
+  ext <| tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_smulCLMOfNegLeft hα hαβ u v) hw
+
 variable (φ) in
 /-- **The norm of the product of a distribution of negative regularity and a smoother one.**
 Let `α < 0 < α + β`. The operator norm of `smulCLMOfNegLeft` is bounded by a constant depending
@@ -339,7 +344,7 @@ theorem exists_norm_smulCLMOfNegLeft_le (hα : α < 0) (hαβ : 0 < α + β) :
   refine ⟨C, hC, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ ↦
     ContinuousLinearMap.opNorm_le_bound₂ _ hC fun u v ↦ ?_⟩
   obtain ⟨w, hw, hwn⟩ := h (r := r) u v
-  rwa [smulCLMOfNegLeft, smulCLMOfTendsto_eq _ hw]
+  rwa [smulCLMOfNegLeft_eq_of_tendsto hα hαβ hw]
 
 variable (φ r) in
 /-- **The product of a smoother distribution and one of negative regularity** as a bounded
@@ -362,6 +367,15 @@ theorem tendsto_lowPass_smul_lowPass_smulCLMOfNegRight (hβ : β < 0) (hαβ : 0
       atTop (𝓝 (smulCLMOfNegRight φ r hβ hαβ u v).toDistr) :=
   tendsto_smulCLMOfTendsto _ u v
 
+/-- The product `smulCLMOfNegRight` of `u` and `v` is any limit of the truncated products
+`S_M u · S_M v`. -/
+theorem smulCLMOfNegRight_eq_of_tendsto (hβ : β < 0) (hαβ : 0 < α + β)
+    {u : BesovSpace ℂ φ α p₁ q₁} {v : BesovSpace F φ β p₂ q₂} {w : BesovSpace F φ β r q₂}
+    (hw : Tendsto (fun M ↦ ((u.lowPass M • v.lowPass M : Lp F r (volume : Measure E)) :
+      𝓢'(E, F))) atTop (𝓝 w.toDistr)) :
+    smulCLMOfNegRight φ r hβ hαβ u v = w :=
+  ext <| tendsto_nhds_unique (tendsto_lowPass_smul_lowPass_smulCLMOfNegRight hβ hαβ u v) hw
+
 variable (φ) in
 /-- **The norm of the product of a smoother distribution and one of negative regularity.**
 Let `β < 0 < α + β`. The operator norm of `smulCLMOfNegRight` is bounded by a constant depending
@@ -376,7 +390,7 @@ theorem exists_norm_smulCLMOfNegRight_le (hβ : β < 0) (hαβ : 0 < α + β) :
   refine ⟨C, hC, fun {p₁ p₂ r q₁ q₂} _ _ _ _ _ _ ↦
     ContinuousLinearMap.opNorm_le_bound₂ _ hC fun u v ↦ ?_⟩
   obtain ⟨w, hw, hwn⟩ := h (r := r) u v
-  rwa [smulCLMOfNegRight, smulCLMOfTendsto_eq _ hw]
+  rwa [smulCLMOfNegRight_eq_of_tendsto hβ hαβ hw]
 
 end BilinearMap
 
