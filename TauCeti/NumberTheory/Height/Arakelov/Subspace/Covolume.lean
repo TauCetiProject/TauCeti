@@ -12,7 +12,6 @@ public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.SubspaceLattic
 
 import Mathlib.RingTheory.Complex
 import TauCeti.Analysis.ExteriorPower.Nonarchimedean
-import TauCeti.InformationTheory.Coding.GeneratorParityCheck
 import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 import TauCeti.LinearAlgebra.Pi
 import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.PoissonSummation
@@ -44,7 +43,7 @@ norms `N(J k)` appear both in the archimedean change-of-basis determinant from t
 `W.relativeSubspaceArakelovHeight`.
 
 For the kernel of a `K`-matrix `A`, combining Schmidt's identity with Hodge duality of heights
-(`Submodule.subspaceHeight_euclideanDual`) expresses the covolume of the lattice of integral
+(`Matrix.subspaceHeight_ker_mulVecLin`) expresses the covolume of the lattice of integral
 solutions of `A x = 0` directly through the height of the row space of `A`, without any rank
 assumption on `A`. This is the arithmetic input to Siegel's lemma and its basis forms over number
 fields.
@@ -608,8 +607,7 @@ namespace Matrix
 
 open Set Submodule NumberField
 
-variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Finite m] [Fintype ι]
-  [LinearOrder ι]
+variable {K : Type*} [Field K] [NumberField K] {m ι : Type*} [Fintype ι] [LinearOrder ι]
 
 open scoped Classical in
 /-- **The covolume of the lattice of integral solutions of `A x = 0` over a number field.**
@@ -621,9 +619,7 @@ theorem covolume_integerLattice_ker_mulVecLin (A : Matrix m ι K) :
     ZLattice.covolume (LinearMap.ker A.mulVecLin).integerLattice =
       ((2⁻¹ : ℝ) ^ nrComplexPlaces K * √|discr K|) ^ finrank K (LinearMap.ker A.mulVecLin) *
         (span K (range A.row)).subspaceHeight ^ finrank ℚ K := by
-  cases nonempty_fintype m
-  rw [Submodule.covolume_integerLattice, ← checkedBy_def, checkedBy_eq_euclideanDual_generatedBy,
-    subspaceHeight_euclideanDual, generatedBy_eq_span_rows]
+  rw [Submodule.covolume_integerLattice, A.subspaceHeight_ker_mulVecLin]
 
 end Matrix
 
