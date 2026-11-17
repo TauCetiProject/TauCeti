@@ -10,6 +10,7 @@ import TauCeti.RingTheory.FormalGroup.Point.Order
 import TauCeti.RingTheory.MvPowerSeries.Equiv
 import TauCeti.RingTheory.PowerSeries.Expand
 import TauCeti.RingTheory.PowerSeries.Substitution
+import TauCeti.RingTheory.PowerSeries.Trunc
 
 /-!
 # Arithmetic of curves
@@ -186,14 +187,7 @@ theorem _root_.TauCeti.FormalGroupHom.coeff_mapCurve_congr {F G : FormalGroup R}
     ← PowerSeries.coeff_trunc_comp_trunc f.toPowerSeries γ₁.constantCoeff_toPowerSeries
       (Nat.lt_succ_self k) (Nat.lt_succ_self k),
     ← PowerSeries.coeff_trunc_comp_trunc f.toPowerSeries γ₂.constantCoeff_toPowerSeries
-      (Nat.lt_succ_self k) (Nat.lt_succ_self k)]
-  have htrunc : PowerSeries.trunc (k + 1) γ₁.toPowerSeries =
-      PowerSeries.trunc (k + 1) γ₂.toPowerSeries := by
-    ext i
-    rw [PowerSeries.coeff_trunc, PowerSeries.coeff_trunc]
-    split_ifs with hi
-    · exact h i (Nat.lt_succ_iff.mp hi)
-    · rfl
-  rw [htrunc]
+      (Nat.lt_succ_self k) (Nat.lt_succ_self k),
+    PowerSeries.trunc_eq_trunc_iff.mpr fun i hi ↦ h i (Nat.lt_succ_iff.mp hi)]
 
 end FormalGroup
