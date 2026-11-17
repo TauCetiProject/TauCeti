@@ -22,9 +22,9 @@ set `Ω ⊆ ℂ` solving the Cauchy–Riemann equation
 on `Ω`, in the coordinate `z = s + i t`, for a `C¹` field `A : ℂ → E →L[ℝ] E` of complex
 structures, `A(z)² = -1`. The main case is `A = J ∘ u` for an almost complex structure `J` on `E`
 of class `C¹`, which makes `u` a `J`-holomorphic curve in local coordinates; a structure that also
-depends on the domain point, as in Floer's equation, is covered as well. This file shows that the
-critical points of `u`, the points where its differential vanishes, behave like the zeros of the
-derivative of a holomorphic function (McDuff–Salamon, Lemma 2.4.1, the part about critical
+depends on the domain point, such as `A(z) = J(z, u(z))`, is covered as well. This file shows that
+the critical points of `u`, the points where its differential vanishes, behave like the zeros of
+the derivative of a holomorphic function (McDuff–Salamon, Lemma 2.4.1, the part about critical
 points):
 
 * **unique continuation**: if `Ω` is connected and the differential of `u` vanishes near one point
@@ -143,20 +143,25 @@ section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
 
-/-- The hypotheses of the variable-structure unique continuation theorems for `ξ = ∂ₛu`, besides
-the linearized equation: `ξ` is `C¹`, and the coefficient `-A ∘ ∂ₛA` is measurable and locally
-bounded, since it is continuous. -/
+/-- The hypotheses of the variable-structure unique continuation theorems for `ξ = ∂ₛu`: `ξ` is
+`C¹`, the coefficient `-A ∘ ∂ₛA` is measurable and locally bounded, since it is continuous, and `ξ`
+solves the linearized equation. -/
 private theorem linearizedCoeff_of_cauchyRiemann (hΩ : IsOpen Ω) (hA : ContDiffOn ℝ 1 A Ω)
-    (hu : ContDiffOn ℝ 2 u Ω) :
+    (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
+    (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) :
     ContDiffOn ℝ 1 (fun z ↦ fderiv ℝ u z 1) Ω ∧
       AEStronglyMeasurable (fun z ↦ -(A z ∘L fderiv ℝ A z 1)) (volume.restrict Ω) ∧
-      (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖-(A w ∘L fderiv ℝ A w 1)‖ ≤ M) := by
+      (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖-(A w ∘L fderiv ℝ A w 1)‖ ≤ M) ∧
+      ∀ z ∈ Ω, fderiv ℝ (fun y ↦ fderiv ℝ u y 1) z 1 +
+        A z (fderiv ℝ (fun y ↦ fderiv ℝ u y 1) z I) +
+        (-(A z ∘L fderiv ℝ A z 1)) (fderiv ℝ u z 1) = 0 := by
   have hC : ContinuousOn (fun z ↦ -(A z ∘L fderiv ℝ A z 1)) Ω :=
     (hA.continuousOn.clm_comp
       ((hA.continuousOn_fderiv_of_isOpen hΩ le_rfl).clm_apply continuousOn_const)).neg
   refine ⟨(hu.fderiv_of_isOpen hΩ (m := 1) (by norm_num)).clm_apply contDiffOn_const,
     hC.aestronglyMeasurable hΩ.measurableSet,
-    fun z hz ↦ ⟨‖-(A z ∘L fderiv ℝ A z 1)‖ + 1, ?_⟩⟩
+    fun z hz ↦ ⟨‖-(A z ∘L fderiv ℝ A z 1)‖ + 1, ?_⟩,
+    fun z hz ↦ cauchyRiemann_fderiv_one hΩ (hA.differentiableOn one_ne_zero) hu hCR hz (hAA z hz)⟩
   filter_upwards [(hC.continuousAt (hΩ.mem_nhds hz)).norm.eventually
     (gt_mem_nhds (lt_add_one _))] with w hw using hw.le
 
@@ -169,13 +174,11 @@ theorem eqOn_const_of_cauchyRiemann_of_eventually_fderiv_eq_zero (hΩ : IsOpen �
     (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) (hz₀ : z₀ ∈ Ω)
     (h₀ : ∀ᶠ z in 𝓝 z₀, fderiv ℝ u z = 0) : EqOn u (fun _ ↦ u z₀) Ω := by
-  obtain ⟨hξ, hCm, hCb⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hu
+  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
   obtain ⟨t, ht, hto, hz₀t⟩ := eventually_nhds_iff.1 h₀
   refine eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn two_ne_zero) hCR ?_
     hz₀
-  exact eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ hΩc hA hAA hξ hCm hCb
-    (fun z hz ↦ cauchyRiemann_fderiv_one hΩ (hA.differentiableOn one_ne_zero) hu hCR hz
-      (hAA z hz))
+  exact eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ hΩc hA hAA hξ hCm hCb hL
     (hto.inter hΩ) ⟨z₀, hz₀t, hz₀⟩ inter_subset_right fun z hz ↦ by simp [ht z hz.1]
 
 /-- **Unique continuation for critical points of infinite order.** Let `u` be of class `C²` on a
@@ -189,15 +192,10 @@ theorem eqOn_const_of_cauchyRiemann_of_forall_fderiv_isBigO (hΩ : IsOpen Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1)) (hz₀ : z₀ ∈ Ω)
     (h₀ : ∀ n : ℕ, (fun z ↦ fderiv ℝ u z) =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n) :
     EqOn u (fun _ ↦ u z₀) Ω := by
-  obtain ⟨hξ, hCm, hCb⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hu
-  have hO : (fun z ↦ fderiv ℝ u z 1) =O[𝓝 z₀] fun z ↦ fderiv ℝ u z :=
-    IsBigO.of_bound 1 (Eventually.of_forall fun z ↦ by
-      simpa using (fderiv ℝ u z).le_opNorm 1)
+  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
   exact eqOn_const_of_cauchyRiemann_of_eqOn_zero hΩ hΩc (hu.differentiableOn two_ne_zero) hCR
-    (eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ hΩc hA hAA hξ hCm hCb
-      (fun z hz ↦ cauchyRiemann_fderiv_one hΩ (hA.differentiableOn one_ne_zero) hu hCR hz
-      (hAA z hz))
-      hz₀ fun n ↦ hO.trans (h₀ n)) hz₀
+    (eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ hΩc hA hAA hξ hCm hCb hL hz₀
+      fun n ↦ ((ContinuousLinearMap.apply ℝ E (1 : ℂ)).isBigO_comp _ _).trans (h₀ n)) hz₀
 
 /-- **Isolated critical points.** Let `u` be of class `C²` on a connected open set `Ω` and solve
 the Cauchy–Riemann equation `∂ₜu = A ∂ₛu` there, for a `C¹` field `A` of complex structures,
@@ -208,13 +206,11 @@ theorem setOf_fderiv_ne_zero_mem_codiscreteWithin_of_cauchyRiemann (hΩ : IsOpen
     (hAA : ∀ z ∈ Ω, A z ∘L A z = -ContinuousLinearMap.id ℝ E) (hu : ContDiffOn ℝ 2 u Ω)
     (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) : {z | fderiv ℝ u z ≠ 0} ∈ codiscreteWithin Ω := by
-  obtain ⟨hξ, hCm, hCb⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hu
+  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
   refine Filter.mem_of_superset
     (setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ hΩc hA hAA hξ hCm
-      hCb (fun z hz ↦ cauchyRiemann_fderiv_one hΩ (hA.differentiableOn one_ne_zero) hu hCR hz
-      (hAA z hz))
-      (exists_fderiv_one_ne_zero_of_cauchyRiemann hΩ hΩc (hu.differentiableOn two_ne_zero) hCR
-        hne)) fun z hz h₀ ↦ ?_
+      hCb hL (exists_fderiv_one_ne_zero_of_cauchyRiemann hΩ hΩc (hu.differentiableOn two_ne_zero)
+        hCR hne)) fun z hz h₀ ↦ ?_
   exact hz (by simp [h₀])
 
 /-- **Finitely many critical points on compact sets.** Let `u` be of class `C²` on a connected
@@ -243,10 +239,9 @@ theorem exists_isTheta_pow_fderiv_of_cauchyRiemann (hΩ : IsOpen Ω) (hΩc : IsP
     (hu : ContDiffOn ℝ 2 u Ω) (hCR : ∀ z ∈ Ω, fderiv ℝ u z I = A z (fderiv ℝ u z 1))
     (hne : ∃ z ∈ Ω, ∃ w ∈ Ω, u z ≠ u w) (hz₀ : z₀ ∈ Ω) (hcrit : fderiv ℝ u z₀ = 0) :
     ∃ m : ℕ, 0 < m ∧ (fun z ↦ fderiv ℝ u z) =Θ[𝓝 z₀] fun z ↦ (z - z₀) ^ m := by
-  obtain ⟨hξ, hCm, hCb⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hu
+  obtain ⟨hξ, hCm, hCb, hL⟩ := linearizedCoeff_of_cauchyRiemann hΩ hA hAA hu hCR
   obtain ⟨m, hm, hθ⟩ := exists_isTheta_pow_of_contDiffOn_of_complexStructure hΩ hΩc hA hAA hξ
-    hCm hCb (fun z hz ↦ cauchyRiemann_fderiv_one hΩ (hA.differentiableOn one_ne_zero) hu hCR hz
-      (hAA z hz))
+    hCm hCb hL
     (exists_fderiv_one_ne_zero_of_cauchyRiemann hΩ hΩc (hu.differentiableOn two_ne_zero) hCR hne)
     hz₀ (by simp [hcrit])
   -- `∂ₛu` controls `du`, since `∂ₜu = A ∂ₛu` with `A` bounded near `z₀`
@@ -256,10 +251,7 @@ theorem exists_isTheta_pow_fderiv_of_cauchyRiemann (hΩ : IsOpen Ω) (hΩc : IsP
     filter_upwards [hΩ.mem_nhds hz₀, hAc.norm.eventually (gt_mem_nhds (lt_add_one _))] with z hz
       hAz
     exact ContinuousLinearMap.norm_le_of_apply_I_eq (K := ℂ) _ (hCR z hz) hAz.le le_rfl
-  have hO' : (fun z ↦ fderiv ℝ u z 1) =O[𝓝 z₀] fun z ↦ fderiv ℝ u z :=
-    IsBigO.of_bound 1 (Eventually.of_forall fun z ↦ by
-      simpa using (fderiv ℝ u z).le_opNorm 1)
-  exact ⟨m, hm, IsTheta.trans ⟨hO, hO'⟩ hθ⟩
+  exact ⟨m, hm, IsTheta.trans ⟨hO, (ContinuousLinearMap.apply ℝ E (1 : ℂ)).isBigO_comp _ _⟩ hθ⟩
 
 /-! ### J-holomorphic curves in local coordinates -/
 
