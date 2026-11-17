@@ -40,8 +40,10 @@ the program relative to every oracle extending those answers.
 * `TauCeti.Oracle.Single.Code.evaln_mono`: a successful run persists, with the same output and
   use, at larger fuel; `TauCeti.Oracle.Single.Code.evaln_unique`: its output and use do not
   depend on the fuel.
-* `TauCeti.Oracle.Single.Code.evaln_bound`, `TauCeti.Oracle.Single.Code.evaln_use_le`: the input
-  and the use of a run at fuel `k` are below `k`, respectively at most `k`.
+* `TauCeti.Oracle.Single.Code.evaln_bound`, `TauCeti.Oracle.Single.Code.evaln_use_le`,
+  `TauCeti.Oracle.Single.Code.evaln_use_le_of_forall_eq_none`: the input and the use of a run at
+  fuel `k` are below `k`, respectively at most `k`, and the use is at most `m` when no answers are
+  supplied from `m` onwards.
 * `TauCeti.Oracle.Single.Code.evaln_eq_some_of_eqOn`: the **use principle**, a run succeeds with
   the same output and use against answers agreeing below its use.
 * `TauCeti.Oracle.Single.Code.evaln_sound`: the output of a successful run is a value of the
@@ -313,6 +315,43 @@ theorem evaln_use_le : ∀ {k c n d}, evaln σ k c n = some d → d.use ≤ k
       obtain ⟨-, dx, hdx, ⟨-, rfl⟩ | ⟨-, d', hd', rfl⟩⟩ := evaln_succ_rfind'_eq_some.1 h
       · exact hf _ dx hdx
       · exact max_le (hf _ _ hdx) ((evaln_use_le hd').trans k.le_succ)
+
+/-- If the partial oracle answers `σ` supply `none` at every address `z ≥ m`, then every successful
+bounded run against `σ` has use at most `m`. -/
+theorem evaln_use_le_of_forall_eq_none {m : ℕ} (hσ : ∀ z, m ≤ z → σ z = none) :
+    ∀ {k : ℕ} {c : Code} {n : ℕ} {d : Halt}, evaln σ k c n = some d → d.use ≤ m
+  | 0, _, _, _, h => by simp at h
+  | k + 1, c, n, d, h => by
+    induction c generalizing n d with
+    | zero | succ | left | right =>
+      simp only [evaln_succ_zero_eq_some, evaln_succ_succ_eq_some, evaln_succ_left_eq_some,
+        evaln_succ_right_eq_some] at h
+      obtain ⟨-, rfl⟩ := h
+      exact Nat.zero_le m
+    | oracle =>
+      obtain ⟨-, y, hy, rfl⟩ := evaln_succ_oracle_eq_some.1 h
+      dsimp only
+      by_contra hlt
+      have hnone := hσ n (by omega)
+      simp [hnone] at hy
+    | pair cf cg hf hg =>
+      obtain ⟨-, df, dg, hdf, hdg, rfl⟩ := evaln_succ_pair_eq_some.1 h
+      exact max_le (hf _ _ hdf) (hg _ _ hdg)
+    | comp cf cg hf hg =>
+      obtain ⟨-, dg, df, hdg, hdf, rfl⟩ := evaln_succ_comp_eq_some.1 h
+      exact max_le (hg _ _ hdg) (hf _ _ hdf)
+    | prec cf cg hf hg =>
+      obtain ⟨a, y, rfl⟩ := exists_eq_pair n
+      cases y with
+      | zero => exact hf _ _ (evaln_succ_prec_zero_eq_some.1 h).2
+      | succ y =>
+        obtain ⟨-, di, d', hdi, hd', rfl⟩ := evaln_succ_prec_succ_eq_some.1 h
+        exact max_le (evaln_use_le_of_forall_eq_none hσ hdi) (hg _ _ hd')
+    | rfind' cf hf =>
+      obtain ⟨a, y, rfl⟩ := exists_eq_pair n
+      obtain ⟨-, dx, hdx, ⟨-, rfl⟩ | ⟨-, d', hd', rfl⟩⟩ := evaln_succ_rfind'_eq_some.1 h
+      · exact hf _ dx hdx
+      · exact max_le (hf _ _ hdx) (evaln_use_le_of_forall_eq_none hσ hd')
 
 /-- The **stage use** of the run of `c` on `n` with fuel `k` against the answers `σ`: the use of
 the run when it succeeds, and `0` when it fails. A successful run can also have use `0`, so the
