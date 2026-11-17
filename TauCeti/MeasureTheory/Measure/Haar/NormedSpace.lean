@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -116,6 +117,9 @@ gives a set of measure one.
   `‖g‖²_{L^q(t)} |B(0, 1)|^{1 - 2/q} r^{n (1 - 2/q)}` in dimension `n`, `2 ≤ q`.
 * `ContinuousAffineMap.measurePreserving_of_abs_det_eq_one`: a continuous affine self-map whose
   linear part has `|det| = 1` preserves an additive Haar measure.
+* `LinearIsometryEquiv.measurePreserving_addHaar`, `LinearIsometryEquiv.map_addHaar`: a linear
+  isometry self-equivalence of a finite-dimensional real normed space preserves every additive Haar
+  measure.
 * `ContinuousLinearMap.abs_det_le_opNorm_pow`: `|det f| ≤ ‖f‖ ^ n` in dimension `n`.
 * `ContinuousLinearMap.norm_det_le_opNorm_pow`: `‖det f‖ ≤ ‖f‖ ^ n` in dimension `n` over an
   `RCLike` field.
@@ -682,6 +686,40 @@ theorem measurePreserving_of_abs_det_eq_one
     map_add_right_eq_self]
 
 end ContinuousAffineMap
+
+namespace LinearIsometryEquiv
+
+/-- Every linear isometry self-equivalence of a finite-dimensional real normed space preserves
+every additive Haar measure on that space. -/
+theorem measurePreserving_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    MeasurePreserving f μ μ := by
+  have hle : ∀ g : E ≃ₗᵢ[ℝ] E, |g.toContinuousLinearMap.det| ≤ 1 := fun g ↦ by
+    have hnorm : ‖g.toContinuousLinearMap‖ ≤ 1 :=
+      g.toContinuousLinearMap.opNorm_le_bound zero_le_one fun x ↦ by simp
+    exact g.toContinuousLinearMap.abs_det_le_opNorm_pow.trans
+      (by simpa using pow_le_pow_left₀ (norm_nonneg _) hnorm _)
+  have hmul : |f.toContinuousLinearMap.det| * |f.symm.toContinuousLinearMap.det| = 1 := by
+    rw [← abs_mul, ContinuousLinearMap.det, ContinuousLinearMap.det, ← LinearMap.det_comp,
+      show (f.toContinuousLinearMap : E →ₗ[ℝ] E) ∘ₗ (f.symm.toContinuousLinearMap : E →ₗ[ℝ] E) =
+        LinearMap.id from LinearMap.ext fun x ↦ f.apply_symm_apply x,
+      LinearMap.det_id, abs_one]
+  have habs : |f.toContinuousLinearMap.det| = 1 := le_antisymm (hle f) (by
+    nlinarith [abs_nonneg f.toContinuousLinearMap.det,
+      abs_nonneg f.symm.toContinuousLinearMap.det, hle f.symm])
+  simpa using ContinuousAffineMap.measurePreserving_of_abs_det_eq_one μ
+    f.toContinuousLinearMap.toContinuousAffineMap (by simpa using habs)
+
+/-- Every linear isometry self-equivalence of a finite-dimensional real normed space pushes every
+additive Haar measure forward to itself. -/
+theorem map_addHaar
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [MeasurableSpace E] [BorelSpace E] (f : E ≃ₗᵢ[ℝ] E) (μ : Measure E) [μ.IsAddHaarMeasure] :
+    μ.map f = μ :=
+  (f.measurePreserving_addHaar μ).map_eq
+
+end LinearIsometryEquiv
 
 namespace MeasureTheory.Measure
 
