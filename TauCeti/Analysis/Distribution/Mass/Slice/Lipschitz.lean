@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.Mass.Slice
 public import TauCeti.Topology.EMetricSpace.Lipschitz
 import Mathlib.Topology.Algebra.MetricSpace.Lipschitz
 import TauCeti.Analysis.Calculus.BumpFunction.SmoothApprox
+import TauCeti.MeasureTheory.Integral.LayerCake
 
 /-!
 # Slicing of currents by Lipschitz and locally Lipschitz functions
@@ -47,7 +48,7 @@ public section
 noncomputable section
 
 open MeasureTheory TopologicalSpace Set Filter TestFunction ContinuousLinearMap
-open scoped BoundedContinuousFunction ENNReal NNReal Distributions Topology ContDiff
+open scoped BoundedContinuousFunction ENNReal NNReal Distributions Topology ContDiff symmDiff
 
 namespace Distribution
 
@@ -80,8 +81,9 @@ theorem exists_contDiff_lipschitzWith_slice_tendsto (hu : LipschitzOnWith K u Ω
     LipschitzWith.of_dist_le_mul fun x y => by
       simpa [g, add_sub_add_right_eq_sub] using (hw_lip j).dist_le_mul x y
   have hg_bounds (x : Ω) (j : ℕ) : u x < g j x ∧ g j x - u x < ((j : ℝ) + 1)⁻¹ := by
-    obtain ⟨hd1, hd2⟩ := abs_lt.1 (show |w j x - u x| < ((j : ℝ) + 1)⁻¹ / 4 by
-      simpa [Real.dist_eq, hu_eq x.2] using hw_dist j x)
+    have hdist : |w j x - u x| < ((j : ℝ) + 1)⁻¹ / 4 := by
+      simpa [Real.dist_eq, hu_eq x.2] using hw_dist j x
+    obtain ⟨hd1, hd2⟩ := abs_lt.1 hdist
     exact ⟨by dsimp [g]; linarith, by dsimp [g]; linarith⟩
   have hg_lim (x : Ω) : Tendsto (fun j => g j x) atTop (𝓝 (u x)) := by
     rw [tendsto_iff_dist_tendsto_zero]
@@ -206,11 +208,16 @@ theorem ae_isNormal_massRestrict_lt_of_lipschitzOnWith
       (measure_mono (subset_univ _)).trans_eq
         (massMeasure_univ (hasLocallyFiniteMass_of_mass_ne_top Q hQ))
   filter_upwards [ae_mass_slice_lt_top_of_lipschitzOnWith hT.isLocallyNormal hT1 hu] with t ht
-  let hA := measurableSet_lt hu_meas (measurable_const (a := t))
+  have hA : MeasurableSet {x : Ω | u x < t} :=
+    measurableSet_lt hu_meas (measurable_const (a := t))
+  have hbd : massRestrict T hA ∘L extDerivCLM =
+      slice T u t + massRestrict (T ∘L extDerivCLM) hA := by
+    ext φ; simp [slice_apply _ hu_meas]
+  rw [massRestrict_congr_set (T := T)
+    (measurableSet_lt hu.continuousOn.domRestrict.measurable (measurable_const (a := t)))
+    hA (by ext x; rfl)]
   refine isNormal_succ_iff.2 ⟨hres_fin hT1 hA, ?_⟩
-  change mass (⇑(massRestrict T hA ∘L extDerivCLM)) ≠ ⊤
-  rw [show massRestrict T hA ∘L extDerivCLM = slice T u t + massRestrict (T ∘L extDerivCLM) hA by
-      ext φ; simp [slice_apply _ hu_meas], FunLike.coe_add]
+  rw [hbd, FunLike.coe_add]
   exact ne_top_of_le_ne_top (ENNReal.add_ne_top.2 ⟨ht.ne, hres_fin hT2 hA⟩) mass_add_le
 
 /-- For a locally normal current `T` and `u` locally Lipschitz on `Ω`, the slice `⟨T, u, t⟩` has
@@ -267,47 +274,6 @@ theorem ae_isLocallyNormal_slice_of_locallyLipschitzOn
 
 /-! ### Normal flat continuity and flat-mass slicing bounds -/
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem measurable_and_lintegral_measure_sdiff_sublevel (μ : Measure Ω) [SigmaFinite μ]
-    (hu : Measurable fun x : Ω => u x) (hv : Measurable fun x : Ω => v x) :
-    Measurable (fun t : ℝ => μ ({x : Ω | v x < t} \ {x : Ω | u x < t})) ∧
-      ∫⁻ t : ℝ, μ ({x : Ω | v x < t} \ {x : Ω | u x < t}) =
-        ∫⁻ x : Ω, ENNReal.ofReal (u x - v x) ∂μ := by
-  let P : Set (ℝ × Ω) := {p | v p.2 < p.1 ∧ p.1 ≤ u p.2}
-  have hP : MeasurableSet P :=
-    (measurableSet_lt (hv.comp measurable_snd) measurable_fst).inter
-      (measurableSet_le measurable_fst (hu.comp measurable_snd))
-  have hsec (t : ℝ) : μ ({x : Ω | v x < t} \ {x : Ω | u x < t}) =
-      ∫⁻ x : Ω, P.indicator (1 : ℝ × Ω → ℝ≥0∞) (t, x) ∂μ := by
-    rw [show {x : Ω | v x < t} \ {x : Ω | u x < t} = Prod.mk t ⁻¹' P by ext x; simp [P, not_lt],
-      ← lintegral_indicator_one (hP.preimage (measurable_prodMk_left (x := t)))]
-    exact lintegral_congr fun x => by by_cases hx : (t, x) ∈ P <;> simp [hx]
-  refine ⟨by simp_rw [hsec]; exact (measurable_const.indicator hP).lintegral_prod_right', ?_⟩
-  simp_rw [hsec]
-  rw [lintegral_lintegral_swap (f := fun t x => P.indicator (1 : ℝ × Ω → ℝ≥0∞) (t, x))
-    (measurable_const.indicator hP).aemeasurable]
-  refine lintegral_congr fun x => ?_
-  rw [show (fun t : ℝ => P.indicator (1 : ℝ × Ω → ℝ≥0∞) (t, x)) = (Ioc (v x) (u x)).indicator 1 by
-      ext t; by_cases ht : v x < t ∧ t ≤ u x <;> simp [P, ht],
-    lintegral_indicator_one measurableSet_Ioc, Real.volume_Ioc]
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-private theorem lintegral_measure_symmDiff_sublevel_eq (μ : Measure Ω) [SigmaFinite μ]
-    (hu : Measurable fun x : Ω => u x) (hv : Measurable fun x : Ω => v x) :
-    ∫⁻ t : ℝ, (μ ({x : Ω | v x < t} \ {x : Ω | u x < t}) +
-        μ ({x : Ω | u x < t} \ {x : Ω | v x < t})) =
-      ∫⁻ x : Ω, edist (v x) (u x) ∂μ := by
-  have h1 := measurable_and_lintegral_measure_sdiff_sublevel μ hu hv
-  have h2 := measurable_and_lintegral_measure_sdiff_sublevel μ hv hu
-  have hm : Measurable fun x : Ω => ENNReal.ofReal (u x - v x) := (hu.sub hv).ennreal_ofReal
-  rw [lintegral_add_left h1.1, h1.2, h2.2, ← lintegral_add_left hm]
-  refine lintegral_congr fun x => ?_
-  rw [edist_dist, Real.dist_eq]
-  rcases le_total (v x) (u x) with hle | hle
-  · rw [ENNReal.ofReal_eq_zero.2 (sub_nonpos.2 hle), add_zero,
-      abs_sub_comm, abs_of_nonneg (sub_nonneg.2 hle)]
-  · rw [ENNReal.ofReal_eq_zero.2 (sub_nonpos.2 hle), zero_add, abs_of_nonneg (sub_nonneg.2 hle)]
-
 /-- **Normal flat continuity of slices with respect to the slicing function.**
 For a real normal `(k + 1)`-current `T` and Lipschitz functions `u, v` on `Ω`,
 `∫⁻ t, F(⟨T, v, t⟩ - ⟨T, u, t⟩) ≤ ∫⁻ x, edist (v x) (u x) ∂(‖T‖ + ‖∂T‖)`. -/
@@ -323,11 +289,12 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
   let Av (t : ℝ) : Set Ω := {x : Ω | v x < t}
   have hAu (t : ℝ) : MeasurableSet (Au t) := measurableSet_lt hu_meas (measurable_const (a := t))
   have hAv (t : ℝ) : MeasurableSet (Av t) := measurableSet_lt hv_meas (measurable_const (a := t))
+  -- Step 1: bound the mass of the difference of sublevel restrictions by the symmetric difference.
   have hmass_diff {m : ℕ} (Q : 𝓓(Ω, E [⋀^Fin m]→L[ℝ] ℝ) →L[ℝ] ℝ) (t : ℝ) :
       mass (massRestrict Q (hAv t) - massRestrict Q (hAu t)) ≤
-        massMeasure Q (Av t \ Au t) + massMeasure Q (Au t \ Av t) := by
-    rw [show massRestrict Q (hAv t) - massRestrict Q (hAu t) =
-        massRestrict Q ((hAv t).diff (hAu t)) - massRestrict Q ((hAu t).diff (hAv t)) by
+        massMeasure Q (Av t ∆ Au t) := by
+    have hsplit : massRestrict Q (hAv t) - massRestrict Q (hAu t) =
+        massRestrict Q ((hAv t).diff (hAu t)) - massRestrict Q ((hAu t).diff (hAv t)) := by
       rw [massRestrict_congr_set (T := Q) (hAv t) (((hAv t).inter (hAu t)).union
           ((hAv t).diff (hAu t))) (inter_union_sdiff _ _).symm,
         massRestrict_congr_set (T := Q) (hAu t) (((hAv t).inter (hAu t)).union
@@ -335,38 +302,46 @@ theorem lintegral_normalFlatMass_slice_sub_slice_le {K₁ K₂ : ℝ≥0}
         massRestrict_union ((hAv t).inter (hAu t)) ((hAv t).diff (hAu t)) disjoint_inf_sdiff,
         massRestrict_union ((hAv t).inter (hAu t)) ((hAu t).diff (hAv t))
           (disjoint_sdiff_self_right.mono_left inter_subset_left),
-        add_sub_add_left_eq_sub]]
+        add_sub_add_left_eq_sub]
+    rw [hsplit, Set.symmDiff_def,
+      measure_union disjoint_sdiff_sdiff ((hAu t).diff (hAv t))]
     exact mass_sub_le.trans <| add_le_add (mass_massRestrict_le _) (mass_massRestrict_le _)
-  have hae_bound : ∀ᵐ t : ℝ, (slice T v t - slice T u t).normalFlatMass ≤
-      (massMeasure (T ∘L extDerivCLM) (Av t \ Au t) +
-        massMeasure (T ∘L extDerivCLM) (Au t \ Av t)) +
-      (massMeasure T (Av t \ Au t) + massMeasure T (Au t \ Av t)) := by
+  -- Step 2: decompose `⟨T, v, t⟩ - ⟨T, u, t⟩ = Rt + ∂St` to bound its normal flat mass a.e.
+  let μ : Measure Ω := massMeasure T + massMeasure (T ∘L extDerivCLM)
+  have hae_bound : ∀ᵐ t : ℝ, (slice T v t - slice T u t).normalFlatMass ≤ μ (Av t ∆ Au t) := by
     filter_upwards [ae_isNormal_massRestrict_lt_of_lipschitzOnWith hT hu,
       ae_isNormal_massRestrict_lt_of_lipschitzOnWith hT hv,
       ae_isNormal_slice_of_lipschitzOnWith hT hu,
       ae_isNormal_slice_of_lipschitzOnWith hT hv] with t hNu_r hNv_r hNu_s hNv_s
     let St := massRestrict T (hAv t) - massRestrict T (hAu t)
-    let Rt := -(massRestrict (T ∘L extDerivCLM) (hAv t) - massRestrict (T ∘L extDerivCLM) (hAu t))
+    let Rt := -(massRestrict (T ∘L extDerivCLM) (hAv t) -
+      massRestrict (T ∘L extDerivCLM) (hAu t))
     have hdecomp : slice T v t - slice T u t = Rt + St ∘L extDerivCLM := by
       ext φ; simp [St, Rt, slice_apply _ hu_meas, slice_apply _ hv_meas]; ring
+    have hRt_normal : IsNormal Rt := by
+      have hRt_eq : Rt = (slice T v t - slice T u t) - St ∘L extDerivCLM := by
+        rw [hdecomp]; abel
+      rw [hRt_eq]
+      exact (hNv_s.sub hNu_s).sub (hNv_r.sub hNu_r).comp_extDerivCLM
     refine ((slice T v t - slice T u t).normalFlatMass_le_of_eq_add_comp_extDerivCLM
-      ((show Rt = (slice T v t - slice T u t) - St ∘L extDerivCLM by rw [hdecomp]; abel) ▸
-        (hNv_s.sub hNu_s).sub (hNv_r.sub hNu_r).comp_extDerivCLM)
-      (hNv_r.sub hNu_r) hdecomp).trans ?_
-    rw [FunLike.coe_neg, mass_neg]
-    exact add_le_add (hmass_diff (T ∘L extDerivCLM) t) (hmass_diff T t)
-  refine (lintegral_mono_ae hae_bound).trans ?_
-  have hmd : Measurable fun t =>
-      massMeasure (T ∘L extDerivCLM) (Av t \ Au t) +
-        massMeasure (T ∘L extDerivCLM) (Au t \ Av t) :=
-    (measurable_and_lintegral_measure_sdiff_sublevel (massMeasure (T ∘L extDerivCLM))
-        hu_meas hv_meas).1.add
-      (measurable_and_lintegral_measure_sdiff_sublevel (massMeasure (T ∘L extDerivCLM))
-        hv_meas hu_meas).1
-  rw [lintegral_add_left hmd,
-    lintegral_measure_symmDiff_sublevel_eq (massMeasure (T ∘L extDerivCLM)) hu_meas hv_meas,
-    lintegral_measure_symmDiff_sublevel_eq (massMeasure T) hu_meas hv_meas,
-    add_comm, ← lintegral_add_measure]
+      hRt_normal (hNv_r.sub hNu_r) hdecomp).trans ?_
+    rw [FunLike.coe_neg, mass_neg, _root_.add_apply, add_comm]
+    exact add_le_add (hmass_diff T t) (hmass_diff (T ∘L extDerivCLM) t)
+  -- Step 3: integrate the a.e. bound and apply the superlevel symmetric-difference identity via
+  -- negation (`v x < t ↔ -t < -v x`).
+  refine (lintegral_mono_ae hae_bound).trans_eq ?_
+  calc ∫⁻ t : ℝ, μ (Av t ∆ Au t)
+      = ∫⁻ t : ℝ, μ ({x : Ω | -t < -v x} ∆ {x : Ω | -t < -u x}) := by
+        refine lintegral_congr fun t => ?_
+        simp only [Av, Au, neg_lt_neg_iff]
+    _ = ∫⁻ s : ℝ, μ ({x : Ω | s < -v x} ∆ {x : Ω | s < -u x}) :=
+        lintegral_neg_eq_self (fun s => μ ({x : Ω | s < -v x} ∆ {x : Ω | s < -u x}))
+    _ = ∫⁻ x : Ω, ‖-v x - -u x‖ₑ ∂μ :=
+        (Measure.lintegral_enorm_sub_eq_lintegral_measure_symmDiff_setOf_lt μ
+          hv_meas.neg.aemeasurable hu_meas.neg.aemeasurable).symm
+    _ = ∫⁻ x : Ω, edist (v x) (u x) ∂μ := by
+        refine lintegral_congr fun x => ?_
+        rw [neg_sub_neg, ← eDist_eq_eNorm_sub, edist_comm]
 
 private theorem slice_eq_zero_of_lipschitzOnWith_zero
     {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] ℝ} (hT : IsLocallyNormal T)
@@ -380,8 +355,8 @@ private theorem slice_eq_zero_of_lipschitzOnWith_zero
   by_cases hne : ∃ x : Ω, u x < t
   · obtain ⟨x₀, hx₀⟩ := hne
     have h : {x : Ω | u x < t} = univ := eq_univ_of_forall fun x => by
-      change u x < t
-      rwa [show u x = u x₀ by simpa using hu.dist_le_mul x.1 x.2 x₀.1 x₀.2]
+      have hux : u x = u x₀ := by simpa using hu.dist_le_mul x.1 x.2 x₀.1 x₀.2
+      simpa only [mem_ofPred_eq, hux] using hx₀
     rw [massRestrict_congr_set (T := T) hA MeasurableSet.univ h,
       massRestrict_congr_set (T := T ∘L extDerivCLM) hA MeasurableSet.univ h,
       massRestrict_univ_apply hT1, massRestrict_univ_apply hT2, comp_apply, sub_self]

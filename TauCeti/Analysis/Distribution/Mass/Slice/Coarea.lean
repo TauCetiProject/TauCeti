@@ -65,42 +65,6 @@ private theorem abs_intervalIntegral_mul_smoothTransition_le {g : ℝ → ℝ} (
   rw [Real.norm_eq_abs, abs_mul]
   exact mul_le_of_le_one_right (abs_nonneg _) (Real.smoothTransition.abs_le_one _)
 
-omit [FiniteDimensional ℝ E] in
-/-- Dominated convergence in `L¹(μ; G)` for scalar-multiplied test forms `c i x • η x`. -/
-private theorem tendsto_toLp_smul_of_dominated {ι G : Type*} {l : Filter ι}
-    [l.IsCountablyGenerated] [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure Ω}
-    [IsFiniteMeasureOnCompacts μ] {η : 𝓓(Ω, G)} {c : ι → Ω → ℝ} {c₀ : Ω → ℝ}
-    (hc : ∀ i, MemLp (fun x : Ω => c i x • η x) 1 μ)
-    (hc₀ : MemLp (fun x : Ω => c₀ x • η x) 1 μ) (C : ℝ)
-    (hbound : ∀ᶠ i in l, ∀ x : Ω, (x : E) ∈ tsupport η → |c i x - c₀ x| ≤ C)
-    (hlim : ∀ x : Ω, (x : E) ∈ tsupport η → Tendsto (fun i => c i x) l (𝓝 (c₀ x))) :
-    Tendsto (fun i => (hc i).toLp _) l (𝓝 (hc₀.toLp _)) := by
-  rw [tendsto_iff_eNorm_sub_tendsto_zero]
-  have heq (i : ι) :
-      ‖(hc i).toLp _ - hc₀.toLp _‖ₑ = ∫⁻ x : Ω, ‖(c i x - c₀ x) • η x‖ₑ ∂μ := by
-    rw [← MemLp.toLp_sub, Lp.eNorm_toLp,
-      eLpNorm_one_eq_lintegral_eNorm ((hc i).sub hc₀).aestronglyMeasurable]
-    exact lintegral_congr fun x => by simp [sub_smul]
-  simp_rw [heq]
-  rw [← lintegral_zero (μ := μ)]
-  refine tendsto_lintegral_filter_of_dominated_convergence' (fun x => ENNReal.ofReal C * ‖η x‖ₑ)
-    (.of_forall fun i => (((hc i).sub hc₀).aestronglyMeasurable.eNorm).congr
-      (ae_of_all _ fun x => by simp [sub_smul]))
-    (hbound.mono fun i hi => ae_of_all _ fun x => ?_) ?_ (ae_of_all _ fun x => ?_)
-  · by_cases hx : (x : E) ∈ tsupport η
-    · rw [eNorm_smul]
-      gcongr
-      rw [← ofReal_norm, Real.norm_eq_abs]
-      exact ENNReal.ofReal_le_ofReal (hi x hx)
-    · simp [image_eq_zero_of_notMem_tsupport hx]
-  · rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, ← TestFunction.enorm_toLp_one]
-    exact ENNReal.mul_ne_top ENNReal.ofReal_ne_top eNorm_ne_top
-  · by_cases hx : (x : E) ∈ tsupport η
-    · simpa [sub_self, eNorm_smul] using
-        ENNReal.Tendsto.mul_const ((hlim x hx).sub_const (c₀ x)).eNorm
-          (Or.inr eNorm_ne_top) (b := ‖η x‖ₑ)
-    · simpa [image_eq_zero_of_notMem_tsupport hx] using tendsto_const_nhds
-
 private theorem memLp_intervalIntegral_mul_smoothTransition_smul {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] (μ : Measure Ω) [IsFiniteMeasureOnCompacts μ]
     (hu : ContDiff ℝ ∞ u) {g : ℝ → ℝ} (hg : Continuous g) (η : 𝓓(Ω, G)) (a b : ℝ) (m : ℕ) :
@@ -142,7 +106,7 @@ theorem continuous_apply_smulLeftCLM_smoothTransition {G : Type*}
     rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
     exact ae_of_all _ fun x => by simp [smulLeftCLM_apply]
   simp_rw [ContinuousAt, htoLp]
-  refine tendsto_toLp_smul_of_dominated hmem (hmem s₀) 2
+  refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top hmem (hmem s₀) 2
     (.of_forall fun s x _ => (abs_sub _ _).trans <| by
       linarith [Real.smoothTransition.abs_le_one (((m : ℝ) + 1) * (s - u x)),
         Real.smoothTransition.abs_le_one (((m : ℝ) + 1) * (s₀ - u x))])
@@ -190,6 +154,8 @@ private theorem intervalIntegral_mul_apply_smulLeftCLM_smoothTransition {G : Typ
     ∫ t in a..b, g t * S (smulLeftCLM (contDiff_smoothTransition_sub hu m t) η) =
       extendL1 S ((memLp_intervalIntegral_mul_smoothTransition_smul
         (massMeasure S) hu hg η a b m).toLp _) := by
+  -- Differentiate the `L¹(‖S‖)` curve `q s = (∫_{a}^{s} g(t) ψ((m + 1)(t - u ·)) dt) • η`
+  -- by dominated convergence on its difference quotients, then apply the FTC to `extendL1 S ∘ q`.
   let J (s : ℝ) (x : E) : ℝ :=
     ∫ t in a..s, g t * Real.smoothTransition (((m : ℝ) + 1) * (t - u x))
   have hcont_t (x : E) : Continuous fun t =>
@@ -223,7 +189,8 @@ private theorem intervalIntegral_mul_apply_smulLeftCLM_smoothTransition {G : Typ
     simp_rw [hq_sl, hq₀]
     obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn
       (s := Icc (s - 1) (s + 1)) hg.continuousOn
-    refine tendsto_toLp_smul_of_dominated hmem_sl hmem₀ (M + |g s|) ?_ fun x _ => ?_
+    refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top hmem_sl hmem₀
+      (M + |g s|) ?_ fun x _ => ?_
     · filter_upwards [mem_nhdsWithin_of_mem_nhds
           (Ioo_mem_nhds (a := (-1 : ℝ)) (b := 1) (by norm_num) (by norm_num)),
         self_mem_nhdsWithin] with h hh hh0 x _
@@ -254,11 +221,11 @@ private theorem intervalIntegral_mul_apply_smulLeftCLM_smoothTransition {G : Typ
   have hcont_prod : Continuous fun t : ℝ =>
       g t * S (smulLeftCLM (contDiff_smoothTransition_sub hu m t) η) :=
     hg.mul (continuous_apply_smulLeftCLM_smoothTransition hS hu η m)
+  have hqa : q a = 0 := by rw [← norm_eq_zero, Lp.norm_toLp]; simp
   rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (f := fun s => extendL1 S (q s))
     (fun s _ => ((extendL1 S).hasFDerivAt.comp_hasDerivAt s (hderiv_q s)).congr_deriv
       (by simp [map_smul, smul_eq_mul, extendL1_toLp hS]))
-    (hcont_prod.intervalIntegrable a b),
-    show q a = 0 by rw [← norm_eq_zero, Lp.norm_toLp]; simp, map_zero, sub_zero]
+    (hcont_prod.intervalIntegrable a b), hqa, map_zero, sub_zero]
 
 private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
@@ -269,6 +236,8 @@ private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition 
     Tendsto (fun m : ℕ =>
         ∫ t in (-M)..M, g t * S (smulLeftCLM (contDiff_smoothTransition_sub hu m t) η))
       atTop (𝓝 (S (smulLeftCLM (hH.comp hu) η))) := by
+  -- Pass `m → ∞` inside `extendL1 S`: for each `x ∈ tsupport η`, the scalar integral over `[-M, M]`
+  -- is dominated by `∫ |g|` and converges to `∫_{u x}^{M} g(t) dt = H (u x)`.
   simp_rw [intervalIntegral_mul_apply_smulLeftCLM_smoothTransition hS hu hg.continuous η (-M) M,
     ← extendL1_toLp hS (smulLeftCLM (hH.comp hu) η)]
   refine ((extendL1 S).continuous.tendsto _).comp ?_
@@ -277,10 +246,12 @@ private theorem tendsto_intervalIntegral_mul_apply_smulLeftCLM_smoothTransition 
   have hmemH : MemLp (fun x : Ω => H (u x) • η x) 1 (massMeasure S) := by
     simpa [smulLeftCLM_apply] using
       TestFunction.memLp_subtype (p := 1) (μ := massMeasure S) (smulLeftCLM (hH.comp hu) η)
-  rw [show TestFunction.toLp 1 (massMeasure S) (smulLeftCLM (hH.comp hu) η) = hmemH.toLp _ by
+  have htoLpH : TestFunction.toLp 1 (massMeasure S) (smulLeftCLM (hH.comp hu) η) =
+      hmemH.toLp _ := by
     rw [TestFunction.toLp_apply, MemLp.toLp_eq_toLp_iff]
-    exact ae_of_all _ fun x => by simp [smulLeftCLM_apply]]
-  refine tendsto_toLp_smul_of_dominated
+    exact ae_of_all _ fun x => by simp [smulLeftCLM_apply]
+  rw [htoLpH]
+  refine TestFunction.tendsto_toLp_smul_of_dominated ENNReal.one_ne_top
     (fun m => memLp_intervalIntegral_mul_smoothTransition_smul (massMeasure S) hu hg.continuous
       η (-M) M m)
     hmemH (I + I) (.of_forall fun m x hx => ?_) fun x hx => ?_
@@ -340,22 +311,25 @@ theorem integral_mul_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
     (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     ∫ t, g t * slice T u t φ =
       T (smulLeftCLM (hg.comp hu) (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ)) := by
+  -- Cut off to `(-M, M]` covering `u '' tsupport φ`, take the antiderivative `H s = ∫_s^M g`,
+  -- and compare the `m → ∞` limits of the smooth-transition integrals on both sides.
   obtain ⟨hT₁, hT₂⟩ := isLocallyNormal_succ_iff.1 hT
   obtain ⟨R, hR⟩ := Metric.isBounded_iff_subset_closedBall (c := (0 : ℝ)).1
     (φ.hasCompactSupport.image_of_continuousOn
       (hu.continuous.continuousOn.mono φ.tsupport_subset)).isBounded
   let M : ℝ := max R 0 + 1
   have hM : 0 < M := by positivity
-  have hφ_lt : ∀ x : Ω, (x : E) ∈ tsupport φ → |u x| < M := fun x hx =>
-    ((show |u x| ≤ R by simpa [Metric.mem_closedBall, Real.dist_eq] using hR ⟨x, hx, rfl⟩).trans
-      (le_max_left _ _)).trans_lt (lt_add_one _)
+  have hφ_lt : ∀ x : Ω, (x : E) ∈ tsupport φ → |u x| < M := fun x hx => by
+    have huxR : |u x| ≤ R := by simpa [Metric.mem_closedBall, Real.dist_eq] using hR ⟨x, hx, rfl⟩
+    exact (huxR.trans (le_max_left _ _)).trans_lt (lt_add_one _)
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (s := Ioc (-M) M) fun t ht => by
       rw [slice_apply_eq_zero_of_notMem_Ioc hT hφ_lt ht, mul_zero],
     ← intervalIntegral.integral_of_le (by linarith : -M ≤ M)]
   let H : ℝ → ℝ := fun s => ∫ t in s..M, g t
   have hdH (s : ℝ) : HasDerivAt H (-g s) s := by
-    rw [show H = fun s => -(∫ t in M..s, g t) from
-      funext fun s => by rw [intervalIntegral.integral_symm, neg_neg]]
+    have hH_neg : H = fun s => -(∫ t in M..s, g t) :=
+      funext fun s => by rw [intervalIntegral.integral_symm, neg_neg]
+    rw [hH_neg]
     exact (intervalIntegral.integral_hasDerivAt_right (hg.continuous.intervalIntegrable M s)
       (hg.continuous.stronglyMeasurableAtFilter volume (𝓝 s)) hg.continuous.continuousAt).neg
   have hH : ContDiff ℝ ∞ H := contDiff_infty_iff_deriv.2
@@ -402,22 +376,22 @@ theorem integral_mul_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) �
         (tendsto_neg_oneFormWedgeCLM_slice_apply hT hu t φ).congr fun m => by
           have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T (hf m t)) φ
           simp only [comp_apply, sub_apply] at hL; rw [comp_apply]; linarith)
-  rw [tendsto_nhds_unique hlim_L hlim_R,
-    show T (smulLeftCLM (hH.comp hu) (extDerivCLM φ)) -
-        (T ∘L extDerivCLM) (smulLeftCLM (hH.comp hu) φ) =
-      -T (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 (hH.comp hu)).2 φ) by
-        have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T (hH.comp hu)) φ
-        simp only [comp_apply, sub_apply] at hL; rw [comp_apply]; linarith,
-    show oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 (hH.comp hu)).2 φ =
-        -smulLeftCLM (hg.comp hu) (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ) by
-      ext x
-      have hfd : fderiv ℝ (H ∘ u) x = (-g (u x)) • fderiv ℝ u x :=
-        ((hdH (u x)).comp_hasFDerivAt x ((hu.differentiable (by simp)) x).hasFDerivAt).fderiv
-      rw [oneFormWedgeCLM_apply, hfd, show ((-g (u x)) • fderiv ℝ u x).smulRight (φ x) =
-          (-g (u x)) • (fderiv ℝ u x).smulRight (φ x) by ext y; simp [smul_smul],
-        ContinuousAlternatingMap.alternatizeUncurryFin_smul]
-      simp [neg_smul],
-    map_neg, neg_neg]
+  -- Apply the Leibniz rule to rewrite the limit in terms of `d(H ∘ u) = -(g ∘ u) du`.
+  have hleib : T (smulLeftCLM (hH.comp hu) (extDerivCLM φ)) -
+      (T ∘L extDerivCLM) (smulLeftCLM (hH.comp hu) φ) =
+      -T (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 (hH.comp hu)).2 φ) := by
+    have hL := DFunLike.congr_fun (comp_smulLeftCLM_comp_extDerivCLM T (hH.comp hu)) φ
+    simp only [comp_apply, sub_apply] at hL; rw [comp_apply]; linarith
+  have hwedge : oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 (hH.comp hu)).2 φ =
+      -smulLeftCLM (hg.comp hu) (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ) := by
+    ext x
+    have hfd : fderiv ℝ (H ∘ u) x = (-g (u x)) • fderiv ℝ u x :=
+      ((hdH (u x)).comp_hasFDerivAt x ((hu.differentiable (by simp)) x).hasFDerivAt).fderiv
+    have hsmul : ((-g (u x)) • fderiv ℝ u x).smulRight (φ x) =
+        (-g (u x)) • (fderiv ℝ u x).smulRight (φ x) := by ext y; simp [smul_smul]
+    rw [oneFormWedgeCLM_apply, hfd, hsmul, ContinuousAlternatingMap.alternatizeUncurryFin_smul]
+    simp [neg_smul]
+  rw [tendsto_nhds_unique hlim_L hlim_R, hleib, hwedge, map_neg, neg_neg]
 
 /-- **Integrating all slices recovers contraction with `du`.** For a locally normal
 `(k + 1)`-current `T` and smooth `u : E → ℝ`, `∫ ⟨T, u, t⟩(φ) dt = T(du ∧ φ)`. -/
@@ -425,8 +399,9 @@ theorem integral_slice_apply {T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[
     (hT : IsLocallyNormal T) (hu : ContDiff ℝ ∞ u) (φ : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     ∫ t, slice T u t φ = T (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ) := by
   have h := integral_mul_slice_apply hT hu (contDiff_const (c := (1 : ℝ))) φ
-  simpa [show smulLeftCLM ((contDiff_const (c := (1 : ℝ))).comp hu)
+  have hone : smulLeftCLM ((contDiff_const (c := (1 : ℝ))).comp hu)
       (oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ) =
-      oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ by ext x; simp] using h
+      oneFormWedgeCLM (contDiff_infty_iff_fderiv.1 hu).2 φ := by ext x; simp
+  simpa [hone] using h
 
 end Distribution

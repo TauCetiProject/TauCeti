@@ -323,8 +323,9 @@ theorem measurable_massRestrict_lt_apply {n : ℕ∞} {G : Type*} [NormedAddComm
       (by simpa using tendsto_const_nhds.sub ((tendsto_pow_atTop_nhds_zero_of_lt_one
         (by positivity : (0 : ℝ) ≤ 2⁻¹) (by norm_num)).const_mul 2))
       tendsto_const_nhds (fun m => ?_) (fun m => (hstep_lt m).le)
-    rw [show t - 2 * ((2 : ℝ) ^ m)⁻¹ = ((2 : ℝ) ^ m * t - 2) / (2 : ℝ) ^ m by field_simp,
-      div_le_div_iff_of_pos_right (by positivity : (0 : ℝ) < (2 : ℝ) ^ m)]
+    have hpow : (0 : ℝ) < (2 : ℝ) ^ m := by positivity
+    have hlhs : t - 2 * ((2 : ℝ) ^ m)⁻¹ = ((2 : ℝ) ^ m * t - 2) / (2 : ℝ) ^ m := by field_simp
+    rw [hlhs, div_le_div_iff_of_pos_right hpow]
     linarith [Int.sub_one_lt_floor ((2 : ℝ) ^ m * t)]
   refine tendsto_massRestrict_of_eventually_iff (fun m => hA (step m t)) (hA t) (fun x => ?_) φ
   by_cases hxt : u x < t
@@ -402,10 +403,12 @@ theorem massRestrict_comp_pullbackCLM {E' : Type*} [NormedAddCommGroup E'] [Norm
         ((Ω'.isOpen.measurableSet.subtype_image hB).preimage
           hΦ.continuousOn.domRestrict.measurable) ∘L
         pullbackCLM Φ hΦ hΦp := by
-  let P : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) := pullbackCLM Φ hΦ hΦp
+  set P : 𝓓(Ω', E' [⋀^Fin k]→L[ℝ] F) →L[ℝ] 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) := pullbackCLM Φ hΦ hΦp
   have hΦc : Continuous fun x : Ω => Φ x := hΦ.continuousOn.domRestrict
-  let A : Set Ω := {x : Ω | Φ x ∈ ((↑) '' B : Set E')}
-  have hA : MeasurableSet A := (Ω'.isOpen.measurableSet.subtype_image hB).preimage hΦc.measurable
+  set A : Set Ω := (Ω : Set E).domRestrict Φ ⁻¹' ((↑) '' B : Set E')
+  have hA : MeasurableSet A :=
+    (Ω'.isOpen.measurableSet.subtype_image hB).preimage hΦ.continuousOn.domRestrict.measurable
+  rw [massRestrict_congr_set (T := T) _ hA rfl]
   ext φ
   cases isEmpty_or_nonempty Ω' with
   | inl hE =>
@@ -434,14 +437,18 @@ theorem massRestrict_comp_pullbackCLM {E' : Type*} [NormedAddCommGroup E'] [Norm
   have hK' : IsCompact K' :=
     Ω'.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' φ.hasCompactSupport
       (by simpa using φ.tsupport_subset)
-  obtain ⟨χ, hχ⟩ := exists_testFunction_tendsto_lintegral_indicator μ' hB hK'
+  -- Approximate `1_{B ∩ supp φ}` in `L¹(μ')` (where `μ' = ‖T ∘L P‖ + g_*(‖T‖ ⌞ CΩ)`) by smooth
+  -- scalar test functions `χ m`, then compare the limits of `(T ∘L P)(χ m • φ)` via `extendL1 T`.
+  obtain ⟨χ, hχ⟩ := TestFunction.exists_tendsto_lintegral_indicator μ' hB hK'
+  have hχc (m : ℕ) : ContDiff ℝ (⊤ : ℕ∞) (χ m) :=
+    (χ m).contDiff.of_le (WithTop.coe_le_coe.2 le_top)
   refine tendsto_nhds_unique (tendsto_apply_smulLeftCLM_of_tendsto_lintegral_indicator hB φ hχ
     hT.comp_pullbackCLM (fun s => by simp [μ', P])) ?_
-  change Tendsto (fun m => (T ∘L P) (smulLeftCLM (contDiff_of_testFunction (χ m)) φ)) atTop
-    (𝓝 (massRestrict T hA (P φ)))
-  rw [massRestrict_apply]
-  refine (tendsto_congr fun m => (extendL1_toLp hT _).symm).2
+  rw [ContinuousLinearMap.comp_apply, massRestrict_apply]
+  refine (tendsto_congr fun m =>
+    (ContinuousLinearMap.comp_apply T P _).trans (extendL1_toLp hT _).symm).2
     (((extendL1 T).continuous.tendsto _).comp ?_)
+  -- Bound the `L¹(‖T‖)` error on `Ω` by the `L¹(ν)` error on `Ω'` via `CΩ = Ω ∩ Φ⁻¹(tsupport φ)`.
   rw [tendsto_iff_eNorm_sub_tendsto_zero]
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa only [zero_mul] using (ENNReal.Tendsto.mul_const hχ
@@ -451,32 +458,31 @@ theorem massRestrict_comp_pullbackCLM {E' : Type*} [NormedAddCommGroup E'] [Norm
     eLpNorm_one_eq_lintegral_eNorm (((TestFunction.memLp_subtype (p := 1) _).sub
       ((TestFunction.memLp_subtype (P φ)).indicator hA.nullMeasurableSet)).aestronglyMeasurable),
     ← lintegral_mul_const' _ _ eNorm_ne_top]
-  have hvanish : ∫⁻ x : Ω, ‖P (smulLeftCLM (contDiff_of_testFunction (χ m)) φ) x -
+  have hvanish : ∫⁻ x : Ω, ‖P (smulLeftCLM (hχc m) φ) x -
         A.indicator (fun z : Ω => P φ z) x‖ₑ ∂massMeasure T =
-      ∫⁻ x in CΩ, ‖P (smulLeftCLM (contDiff_of_testFunction (χ m)) φ) x -
+      ∫⁻ x in CΩ, ‖P (smulLeftCLM (hχc m) φ) x -
         A.indicator (fun z : Ω => P φ z) x‖ₑ ∂massMeasure T :=
     (setLIntegral_eq_of_support_subset fun x hx => by
       by_contra hxC
       have hφx : φ (Φ x) = 0 := image_eq_zero_of_notMem_tsupport fun h => hxC ⟨x.2, h⟩
-      have hP1 : P (smulLeftCLM (contDiff_of_testFunction (χ m)) φ) x = 0 := by
+      have hP1 : P (smulLeftCLM (hχc m) φ) x = 0 := by
         ext v; simp [P, pullbackCLM_apply_of_mem _ x.2, hφx]
       have hP2 : P φ x = 0 := by ext v; simp [P, pullbackCLM_apply_of_mem _ x.2, hφx]
       exact hx (by by_cases hxA : x ∈ A <;> simp [hxA, hP1, hP2, ← ofReal_norm])).symm
   have hpoint : ∀ x ∈ CΩ,
-      ‖P (smulLeftCLM (contDiff_of_testFunction (χ m)) φ) x -
+      ‖P (smulLeftCLM (hχc m) φ) x -
           A.indicator (fun z : Ω => P φ z) x‖ₑ ≤
         ‖χ m (g x) - (B ∩ K').indicator (1 : Ω' → ℝ) (g x)‖ₑ *
           ‖(P φ : E →ᵇ E [⋀^Fin k]→L[ℝ] F)‖ₑ := fun x hxC => by
     have hxΩ' : Φ x ∈ Ω' := φ.tsupport_subset hxC.2
     have hgx : g x = ⟨Φ x, hxΩ'⟩ := by simp [g, hxΩ']
     have hgK : g x ∈ K' := by simpa [K', hgx] using hxC.2
+    have hΦg : Φ x = (g x : E') := by simp [hgx]
     have hxAB : x ∈ A ↔ g x ∈ B := by
-      change Φ x ∈ ((↑) '' B : Set E') ↔ g x ∈ B
-      rw [Subtype.coe_image, hgx]
-      exact ⟨fun ⟨_, h2⟩ => by convert h2, fun hB' => ⟨hxΩ', hB'⟩⟩
-    have hP1 : P (smulLeftCLM (contDiff_of_testFunction (χ m)) φ) x = χ m (g x) • P φ x := by
+      simp only [A, mem_preimage, Set.domRestrict_apply, hΦg, Subtype.val_injective.mem_set_image]
+    have hP1 : P (smulLeftCLM (hχc m) φ) x = χ m (g x) • P φ x := by
       rw [pullbackCLM_apply_of_mem _ x.2, pullbackCLM_apply_of_mem _ x.2, hgx]; ext v; simp
-    have hsub : P (smulLeftCLM (contDiff_of_testFunction (χ m)) φ) x -
+    have hsub : P (smulLeftCLM (hχc m) φ) x -
         A.indicator (fun z : Ω => P φ z) x =
         (χ m (g x) - (B ∩ K').indicator (1 : Ω' → ℝ) (g x)) • P φ x := by
       rw [hP1]

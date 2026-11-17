@@ -117,7 +117,9 @@ theorem norm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [
       simp [alternatizeUncurryFin_apply, hv0]
     rw [hzero, norm_zero]
     positivity
-  · let u : W := (InnerProductSpace.toDual ℝ W).symm αW
+  · -- Extend the unit Riesz vector of `α|_W` to an orthonormal basis `b` of `W`; `α` vanishes on
+    -- `b j.succ`, so only the `0`-th term survives in the alternating sum.
+    let u : W := (InnerProductSpace.toDual ℝ W).symm αW
     have hu_norm : ‖(u : E)‖ ≠ 0 := by simpa [u] using hαW
     let u₀ : W := ‖u‖⁻¹ • u
     have hu₀_norm : ‖u₀‖ = 1 := by simp [u₀, norm_smul, inv_mul_cancel₀ hu_norm]
@@ -131,23 +133,30 @@ theorem norm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [
       have hinner : ⟪u, b j.succ⟫ = 0 := by
         simpa [u₀, real_inner_smul_left, inv_eq_zero, hu_norm] using h0
       simpa [u, αW] using (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (E := W)).symm.trans hinner
+    -- Restrict to `W` (dimension `k + 1`), where the operator norm equals `‖ψ b‖`.
     let ψ := (alternatizeUncurryFin (α.smulRight ω)).compContinuousLinearMap W.subtypeL
     have hle : ‖alternatizeUncurryFin (α.smulRight ω) v‖ ≤ ‖ψ‖ := by
       simpa [ψ, w, Function.comp_def, fun i ↦ hv.norm_eq_one i] using ψ.le_opNorm w
     refine hle.trans ?_
     rw [ψ.norm_eq_norm_apply_orthonormalBasis b]
     have hψb : ψ b = α (b 0 : E) • ω (fun j ↦ (b j.succ : E)) := by
-      change alternatizeUncurryFin (α.smulRight ω) (fun i ↦ (b i : E)) = _
-      rw [alternatizeUncurryFin_apply, Fin.sum_univ_succ]
-      simp [hb_succ, show Fin.removeNth 0 (fun i : Fin (k + 1) ↦ (b i : E)) =
-        fun j : Fin k ↦ (b j.succ : E) by ext j; simp [Fin.removeNth]]
+      have hrem : Fin.removeNth 0 (fun i : Fin (k + 1) ↦ (b i : E)) =
+          fun j : Fin k ↦ (b j.succ : E) := by
+        ext j
+        simp [Fin.removeNth_zero, Fin.tail]
+      rw [ContinuousAlternatingMap.compContinuousLinearMap_apply, alternatizeUncurryFin_apply,
+        Fin.sum_univ_succ]
+      simp [Function.comp_def, hb_succ, hrem]
     rw [hψb, norm_smul, Real.norm_eq_abs]
+    have hbnorm (i : Fin (k + 1)) : ‖(b i : E)‖ = 1 := by
+      rw [Submodule.norm_coe]
+      exact b.orthonormal.norm_eq_one i
     calc |α (b 0 : E)| * ‖ω (fun j ↦ (b j.succ : E))‖
         ≤ (‖α‖ * ‖(b 0 : E)‖) * (‖ω‖ * ∏ j : Fin k, ‖(b j.succ : E)‖) := by
           gcongr
           · exact α.le_opNorm (b 0 : E)
           · exact ω.le_opNorm _
-      _ = ‖α‖ * ‖ω‖ := by simp [show ∀ i, ‖(b i : E)‖ = 1 from b.orthonormal.norm_eq_one]
+      _ = ‖α‖ * ‖ω‖ := by simp [hbnorm]
 
 /-- Extended-norm form of `ContinuousAlternatingMap.norm_alternatizeUncurryFin_smulRight_le`. -/
 theorem enorm_alternatizeUncurryFin_smulRight_le (α : E →L[ℝ] ℝ) (ω : E [⋀^Fin k]→L[ℝ] F) :

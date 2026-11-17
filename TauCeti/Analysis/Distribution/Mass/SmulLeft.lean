@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.Mass.Measure
 public import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
-import TauCeti.Analysis.InnerProductSpace.Orthonormal.Alternating
 
 /-!
 # Mass of smooth multiples and contractions of currents
@@ -205,14 +204,6 @@ section InnerProductSpace
 variable {E F V : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedAddCommGroup V] [NormedSpace ℝ V]
   {Ω : Opens E} {n : ℕ∞} {k : ℕ} {U : Set E} {c c' : ℝ≥0∞} {f : E → ℝ} {α : E → E →L[ℝ] ℝ}
-
-/-- Pointwise extended-norm bound for `oneFormWedgeCLM` on a real inner product space, without the
-`(k + 1)` factor. -/
-private theorem enorm_oneFormWedgeCLM_apply_le_of_innerProductSpace (hα : ContDiff ℝ n α)
-    (ω : 𝓓^{n}(Ω, E [⋀^Fin k]→L[ℝ] F)) (x : E) :
-    ‖oneFormWedgeCLM hα ω x‖ₑ ≤ ‖α x‖ₑ * ‖ω x‖ₑ := by
-  rw [oneFormWedgeCLM_apply]
-  exact ContinuousAlternatingMap.enorm_alternatizeUncurryFin_smulRight_le (α x) (ω x)
 
 section OneFormWedge
 
