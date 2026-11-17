@@ -17,7 +17,7 @@ A strongly adapted process in nonnegative real time with everywhere right-contin
 strongly progressive, on its original filtration. No completeness or right continuity of the
 filtration is required. In particular, the result applies to adapted càdlàg processes and permits
 use of the progressive stopped-evaluation API. Restricting a strongly progressive process to
-an event known at the initial time also preserves strong progressivity.
+an event measurable at every time also preserves strong progressivity.
 
 On each fixed horizon, right-endpoint samples are capped at that horizon. These approximations
 are measurable for the horizon's product sigma algebra; they need not be adapted at earlier
@@ -34,16 +34,25 @@ public section
 open MeasureTheory Filter Set TopologicalSpace
 open scoped NNReal Topology
 
-/-- Restricting a strongly progressive process to an initial-measurable event preserves
+/-- Restricting a progressive process to an event measurable at every time preserves
+progressivity. No topology on the time or state space is needed. -/
+theorem MeasureTheory.IsProgressive.indicator
+    {ι Ω E : Type*} [Preorder ι] {m : MeasurableSpace Ω}
+    [MeasurableSpace ι] [MeasurableSpace E] [Zero E]
+    {ℱ : Filtration ι m} {X : ι → Ω → E} {A : Set Ω}
+    (hX : IsProgressive ℱ X) (hA : ∀ t, MeasurableSet[ℱ t] A) :
+    IsProgressive ℱ (fun t ↦ A.indicator (X t)) :=
+  fun T ↦ (hX T).indicator ((hA T).preimage measurable_snd)
+
+/-- Restricting a strongly progressive process to an event measurable at every time preserves
 strong progressivity. No topology on the time index is needed. -/
 theorem MeasureTheory.IsStronglyProgressive.indicator
-    {ι Ω E : Type*} [Preorder ι] [OrderBot ι] {m : MeasurableSpace Ω}
+    {ι Ω E : Type*} [Preorder ι] {m : MeasurableSpace Ω}
     [MeasurableSpace ι] [TopologicalSpace E] [Zero E]
     {ℱ : Filtration ι m} {X : ι → Ω → E} {A : Set Ω}
-    (hX : IsStronglyProgressive ℱ X) (hA : MeasurableSet[ℱ ⊥] A) :
-    IsStronglyProgressive ℱ (fun t ↦ A.indicator (X t)) := by
-  intro T
-  exact (hX T).indicator ((ℱ.mono bot_le _ hA).preimage measurable_snd)
+    (hX : IsStronglyProgressive ℱ X) (hA : ∀ t, MeasurableSet[ℱ t] A) :
+    IsStronglyProgressive ℱ (fun t ↦ A.indicator (X t)) :=
+  fun T ↦ (hX T).indicator ((hA T).preimage measurable_snd)
 
 private noncomputable def rightSample (n : ℕ) (t : ℝ≥0) : ℝ≥0 :=
   (⌈(t : ℝ) * (n + 1)⌉₊ : ℝ≥0) / (n + 1)
