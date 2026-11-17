@@ -41,13 +41,17 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, NormedAddCommGroup (V x)] [∀ x, InnerProductSpace 𝕜 (V x)]
   [FiberBundle F V]
-  {ι : Type*} {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
+  {ι : Type*}
+
+section
+
+variable [Finite ι] {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
+  (hs : IsLocalFrameOn I F n s u) {x : M}
 
 /-- The coefficients of an orthonormal local frame are its metric duals. Only orthonormality
 at the point is needed. -/
-theorem coeff_eq_inner [Finite ι] (hs : IsLocalFrameOn I F n s u) {x : M} (hx : x ∈ u)
-    (ho : Orthonormal 𝕜 (fun i ↦ s i x)) (i : ι) (v : V x) :
-    hs.coeff i x v = inner 𝕜 (s i x) v := by
+theorem coeff_eq_inner (hx : x ∈ u) (ho : Orthonormal 𝕜 (fun i ↦ s i x))
+    (i : ι) (v : V x) : hs.coeff i x v = inner 𝕜 (s i x) v := by
   classical
   let : Fintype ι := Fintype.ofFinite ι
   have hexp : v = ∑ j, hs.coeff j x v • s j x := by
@@ -56,6 +60,10 @@ theorem coeff_eq_inner [Finite ι] (hs : IsLocalFrameOn I F n s u) {x : M} (hx :
   have h := ho.inner_right_fintype (fun j ↦ hs.coeff j x v) i
   rw [← hexp] at h
   exact h.symm
+
+end
+
+variable {n : ℕ∞ω} {s : ι → Π x, V x} {u : Set M}
 
 /-- A `C^n` family of `finrank 𝕜 F` pointwise orthonormal sections on `u` forms a `C^n` local
 frame on `u`. -/

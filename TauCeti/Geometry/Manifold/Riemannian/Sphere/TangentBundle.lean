@@ -13,8 +13,6 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Prod
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Geometry.Manifold.Riemannian.Sphere.Gradient
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
 import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 /-!
@@ -22,13 +20,15 @@ import TauCeti.Geometry.Manifold.VectorBundle.Trivial
 
 For an `(n + 1)`-dimensional real inner product space `E`, `TauCeti.sphereTangentEquiv x`
 identifies the native tangent space `TangentSpace (𝓡 n) x` at `x : sphere (0 : E) 1` isometrically
-with the orthogonal complement `(ℝ ∙ (x : E))ᗮ`. This file promotes that pointwise identification
-to `C^k` manifold and vector-bundle equivalences at every regularity `k : ℕ∞ω`:
+with the orthogonal complement `(ℝ ∙ (x : E))ᗮ`. Building on
+`TauCeti.contMDiff_coe_sphereTangentEquiv` (in `Sphere/Basic.lean`) and
+`TauCeti.contMDiff_sphereTangentEquiv_symm` (in `Sphere/Gradient.lean`), this file promotes that
+pointwise identification to `C^k` manifold and vector-bundle equivalences at every regularity
+`k : ℕ∞ω`:
 
-* `TauCeti.contMDiff_coe_sphereTangentEquiv` and `TauCeti.contMDiff_sphereTangentProj`: reading a
-  tangent vector in `E` and projecting an ambient vector tangentially back to `TangentSpace (𝓡 n) x`
-  via `(ℝ ∙ (x : E))ᗮ.orthogonalProjectionOnto` are `C^k` maps for all `k : ℕ∞ω` (the latter
-  expanded along an orthonormal basis of height gradients).
+* `TauCeti.sphereTangentProj` and `TauCeti.contMDiff_sphereTangentProj`: projecting an ambient
+  vector tangentially back to `TangentSpace (𝓡 n) x` via `(ℝ ∙ (x : E))ᗮ.orthogonalProjectionOnto`
+  is `C^k` for all `k : ℕ∞ω`.
 * `TauCeti.contMDiff_sphereTangentEquiv_symm_along_iff`: lifting an ambient map `w : M → E`
   satisfying `w y ∈ (ℝ ∙ (base y : E))ᗮ` along `(sphereTangentEquiv (base y)).symm` produces a
   `C^k` map into `TangentBundle (𝓡 n) (sphere (0 : E) 1)` if and only if `base` and `w` are `C^k`.
@@ -60,21 +60,7 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {n : ℕ} [Fact (finrank ℝ E = n + 1)]
 
-/-! ### Smooth ambient evaluation and tangential projection -/
-
-/-- Reading a sphere tangent vector in the ambient space `E` through `TauCeti.sphereTangentEquiv`
-is `C^k` at every regularity `k : ℕ∞ω`. -/
-theorem contMDiff_coe_sphereTangentEquiv {k : ℕ∞ω} :
-    ContMDiff (𝓡 n).tangent 𝓘(ℝ, E) k
-      (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
-        (sphereTangentEquiv p.proj p.2 : E)) := by
-  have hω : ContMDiff (𝓡 n).tangent 𝓘(ℝ, E) ω
-      (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
-        (tangentMap (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) p).2) :=
-    (contMDiff_snd_tangentBundle_modelSpace E 𝓘(ℝ, E)).comp
-      ((contMDiff_coe_sphere (m := ω)).contMDiff_tangentMap (m := ω) (by simp))
-  refine (hω.of_le le_top).congr fun p ↦ ?_
-  rw [coe_sphereTangentEquiv_apply, tangentMap_snd]
+/-! ### Smooth tangential projection and tangent lifts -/
 
 /-- Tangential projection of an ambient vector `u : E` into the native tangent space
 `TangentSpace (𝓡 n) x` at `x : sphere (0 : E) 1`. -/
@@ -126,61 +112,25 @@ theorem sphereTangentProj_coe_self (x : sphere (0 : E) 1) :
       (Submodule.mem_span_singleton_self (x : E)),
     map_zero]
 
-/-- `TauCeti.sphereTangentProj` expands in any `(n + 1)`-element orthonormal basis `b` of `E` as
-`∑ j, ⟪b j, u⟫ • grad (q ↦ ⟪b j, q⟫) x`. -/
-private theorem sphereTangentProj_eq_sum_mgradient
-    (b : OrthonormalBasis (Fin (n + 1)) ℝ E) (x : sphere (0 : E) 1) (u : E) :
-    sphereTangentProj x u =
-      ∑ j, inner ℝ (b j) u •
-        Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ (b j) (q : E)) x := by
-  apply (sphereTangentEquiv x).injective
-  apply Subtype.ext
-  rw [coe_sphereTangentEquiv_sphereTangentProj, map_sum, Submodule.coe_sum]
-  have hterm (j : Fin (n + 1)) :
-      ((sphereTangentEquiv x (inner ℝ (b j) u •
-          Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ (b j) (q : E)) x) :
-          (ℝ ∙ (x : E))ᗮ) : E) =
-        inner ℝ (b j) u • b j - (inner ℝ (b j) u * inner ℝ (b j) (x : E)) • (x : E) := by
-    rw [map_smul, Submodule.coe_smul, ← mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv,
-      mvfderiv_coe_mgradient_inner_coe_sphere, smul_sub, smul_smul]
-  simp_rw [hterm, Finset.sum_sub_distrib, ← Finset.sum_smul, b.sum_repr' u]
-  congr 2
-  calc
-    inner ℝ (x : E) u
-      = ∑ j, inner ℝ (x : E) (b j) * inner ℝ (b j) u := by
-          simpa only [RCLike.conj_to_real] using (b.sum_inner_mul_inner (x : E) u).symm
-    _ = ∑ j, inner ℝ (b j) u * inner ℝ (b j) (x : E) := by
-          refine Finset.sum_congr rfl fun j _ ↦ ?_
-          rw [real_inner_comm (x : E) (b j), mul_comm]
-
 /-- Projecting an ambient vector `(x, u) : sphere (0 : E) 1 × E` tangentially into
 `TangentBundle (𝓡 n) (sphere (0 : E) 1)` is `C^k` at every regularity `k : ℕ∞ω`. -/
 theorem contMDiff_sphereTangentProj {k : ℕ∞ω} :
     ContMDiff ((𝓡 n).prod 𝓘(ℝ, E)) (𝓡 n).tangent k
       (fun p : sphere (0 : E) 1 × E ↦
         (⟨p.1, sphereTangentProj p.1 p.2⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) := by
-  have : FiniteDimensional ℝ E := .of_fact_finrank_eq_succ n
-  let b : OrthonormalBasis (Fin (n + 1)) ℝ E :=
-    (stdOrthonormalBasis ℝ E).reindex (finCongr Fact.out)
-  let g (j : Fin (n + 1)) (x : sphere (0 : E) 1) : TangentSpace (𝓡 n) x :=
-    Manifold.mgradient (𝓡 n) (fun q : sphere (0 : E) 1 ↦ inner ℝ (b j) (q : E)) x
-  have hg (j : Fin (n + 1)) :
-      ContMDiff (𝓡 n) (𝓡 n).tangent k
-        (fun x ↦ (⟨x, g j x⟩ : TangentBundle (𝓡 n) (sphere (0 : E) 1))) := by
-    have hh : ContMDiff (𝓡 n) 𝓘(ℝ) (ω + 1)
-        (fun q : sphere (0 : E) 1 ↦ inner ℝ (b j) (q : E)) :=
-      (innerSL ℝ (b j)).contDiff.contMDiff.comp contMDiff_coe_sphere
-    exact (Manifold.contMDiff_mgradient (n := ω) hh).of_le le_top
-  have hsum : ContMDiff ((𝓡 n).prod 𝓘(ℝ, E)) (𝓡 n).tangent k
-      (fun p : sphere (0 : E) 1 × E ↦
-        (⟨p.1, ∑ j, inner ℝ (b j) p.2 • g j p.1⟩ :
-          TangentBundle (𝓡 n) (sphere (0 : E) 1))) :=
-    ContMDiff.sum_sectionAlong Finset.univ
-      (fun j (p : sphere (0 : E) 1 × E) ↦ inner ℝ (b j) p.2 • g j p.1) contMDiff_fst
-      fun j _ ↦ ((innerSL ℝ (b j)).contDiff.contMDiff.comp contMDiff_snd).smul_totalSpace
-        ((hg j).comp contMDiff_fst)
-  exact hsum.congr fun p ↦
-    congrArg (TotalSpace.mk p.1) (sphereTangentProj_eq_sum_mgradient b p.1 p.2)
+  have hu : ContMDiff ((𝓡 n).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) k
+      (fun p : sphere (0 : E) 1 × E ↦ ((ℝ ∙ (p.1 : E))ᗮ.orthogonalProjectionOnto p.2 : E)) := by
+    have hsub : ContMDiff ((𝓡 n).prod 𝓘(ℝ, E)) 𝓘(ℝ, E) k
+        (fun p : sphere (0 : E) 1 × E ↦ p.2 - inner ℝ (p.1 : E) p.2 • (p.1 : E)) :=
+      contMDiff_snd.sub
+        ((contDiff_inner.contMDiff.comp
+          ((contMDiff_coe_sphere.comp contMDiff_fst).prodMk_space contMDiff_snd)).smul
+          (contMDiff_coe_sphere.comp contMDiff_fst))
+    exact hsub.congr fun p ↦ by
+      rw [Submodule.coe_orthogonalProjectionOnto_apply, Submodule.starProjection_orthogonal_val,
+        Submodule.starProjection_unit_singleton ℝ (norm_eq_of_mem_sphere p.1)]
+  exact contMDiff_sphereTangentEquiv_symm contMDiff_fst hu fun p ↦
+    ((ℝ ∙ (p.1 : E))ᗮ.orthogonalProjectionOnto p.2).2
 
 /-- **Smoothness of sphere tangent lifts.** A map
 `y ↦ ⟨base y, (sphereTangentEquiv (base y)).symm ⟨w y, hw y⟩⟩` into
@@ -195,11 +145,10 @@ theorem contMDiff_sphereTangentEquiv_symm_along_iff
         (fun y ↦ (⟨base y, (sphereTangentEquiv (base y)).symm ⟨w y, hw y⟩⟩ :
           TangentBundle (𝓡 n) (sphere (0 : E) 1))) ↔
       ContMDiff J (𝓡 n) k base ∧ ContMDiff J 𝓘(ℝ, E) k w := by
-  refine ⟨fun h ↦ ⟨(Bundle.contMDiff_proj _).comp h, ?_⟩, fun ⟨hb, hwm⟩ ↦ ?_⟩
-  · refine (contMDiff_coe_sphereTangentEquiv.comp h).congr fun y ↦ ?_
-    simp only [Function.comp_apply, LinearIsometryEquiv.apply_symm_apply]
-  · refine (contMDiff_sphereTangentProj.comp (hb.prodMk hwm)).congr fun y ↦ ?_
-    simp only [Function.comp_apply, sphereTangentProj_of_mem_orthogonal (hw y)]
+  refine ⟨fun h ↦ ⟨(Bundle.contMDiff_proj _).comp h, ?_⟩, fun ⟨hb, hwm⟩ ↦
+    contMDiff_sphereTangentEquiv_symm hb hwm hw⟩
+  refine (contMDiff_coe_sphereTangentEquiv.comp h).congr fun y ↦ ?_
+  simp only [Function.comp_apply, LinearIsometryEquiv.apply_symm_apply]
 
 /-! ### The smooth subbundle `(ℝ ∙ x)ᗮ` and bundle equivalence with `TSⁿ` -/
 
