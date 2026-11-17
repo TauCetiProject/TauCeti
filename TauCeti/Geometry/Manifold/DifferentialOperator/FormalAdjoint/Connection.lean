@@ -18,8 +18,9 @@ import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 Let `∇` be a smooth connection on a vector bundle `V` over a smooth manifold `M`, and let `X` be a
 smooth vector field. The covariant derivative along `X`, `∇_X σ = ∇σ(X)`
 (`CovariantDerivative.alongVectorField`), is a first-order differential operator on the smooth
-sections of `V`: by the Leibniz rule `∇_X (a σ) = a ∇_X σ + X(a) σ`, its commutator with
-multiplication by a smooth function `a` is multiplication by `X(a)`.
+sections of `V`: by the Leibniz rule `∇_X (a σ) = a ∇_X σ + X(a) σ`
+(`CovariantDerivative.alongVectorField_smul`), its commutator with multiplication by a smooth
+function `a` is multiplication by `X(a)`.
 
 If `M` is a Riemannian manifold without boundary, `V` carries a smooth fibre metric and `∇` is
 compatible with it, then with respect to the Riemannian volume `dV` the formal adjoint of `∇_X` is
@@ -35,7 +36,6 @@ vector field acting on functions. Merely negating `∇_X` is wrong unless `X` is
 
 ## Main results
 
-* `CovariantDerivative.alongVectorField_smul`: the Leibniz rule for `∇_X`.
 * `CovariantDerivative.alongVectorField_mem_differentialOperators_one`: `∇_X` is a differential
   operator of order at most one in Grothendieck's sense.
 * `CovariantDerivative.IsMetricCompatible.isFormalAdjoint_alongVectorField`,
@@ -74,15 +74,6 @@ variable {V : M → Type*} [TopologicalSpace (TotalSpace F V)]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   (cov : CovariantDerivative I F V) [ContMDiffCovariantDerivative cov ∞]
-
-/-- **The Leibniz rule for `∇_X`**: `∇_X (a σ) = a ∇_X σ + X(a) σ` for a smooth function `a`. -/
-theorem alongVectorField_smul (a : C^∞⟮I, M; ℝ⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
-    cov.alongVectorField X (a • σ) x =
-      a x • cov.alongVectorField X σ x + mvfderiv I a x (X x) • σ x := by
-  have hfun : ⇑(a • σ) = (⇑a : M → ℝ) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply a σ y
-  rw [alongVectorField_apply, hfun, cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
-    (a.contMDiff.mdifferentiableAt (by simp))]
-  simp
 
 /-- The covariant derivative along a smooth vector field is a differential operator of order at
 most one: its commutator with multiplication by `a` is multiplication by `X(a)`. -/
@@ -145,12 +136,9 @@ theorem IsMetricCompatible.isFormalAdjoint_alongVectorField (hcov : cov.IsMetric
   have hfc : HasCompactSupport f := ContMDiffSection.hasCompactSupport_inner hστ
   have hdiv := contMDiff_divergence_section X
   have h₁ : Integrable (fun x ↦ ⟪cov.alongVectorField X σ x, τ x⟫) μ :=
-    ContMDiffSection.integrable_inner (hστ.imp (·.of_isClosed_subset
-      (ContMDiffSection.isClosed_tsupport _) (cov.tsupport_alongVectorField_apply_subset X σ))
-      _root_.id)
+    LinearMap.integrable_inner_apply_left (cov.tsupport_alongVectorField_apply_subset X) hστ
   have h₂ : Integrable (fun x ↦ ⟪σ x, cov.alongVectorField X τ x⟫) μ :=
-    ContMDiffSection.integrable_inner (hστ.imp _root_.id (·.of_isClosed_subset
-      (ContMDiffSection.isClosed_tsupport _) (cov.tsupport_alongVectorField_apply_subset X τ)))
+    LinearMap.integrable_inner_apply_right (cov.tsupport_alongVectorField_apply_subset X) hστ
   have h₃ : Integrable (fun x ↦ f x * divergence I (fun y ↦ X y) x) μ :=
     ((ContMDiffSection.continuous_inner σ τ).mul hdiv.continuous).integrable_of_hasCompactSupport
       hfc.mul_right
@@ -189,7 +177,7 @@ theorem IsMetricCompatible.formalAdjoint_alongVectorField_apply (hcov : cov.IsMe
   have := IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := ∞) (F := F)
     (V := V)
   let d : C^∞⟮I, M; ℝ⟯ := ⟨divergence I fun y ↦ X y, contMDiff_divergence_section X⟩
-  have hd (x : M) : d x = divergence I (fun y ↦ X y) x := (rfl)
+  have hd : ⇑d = divergence I fun y ↦ X y := ContMDiffMap.coeFn_mk _ _
   have h := hcov.isFormalAdjoint_alongVectorField X
     (Q := -cov.alongVectorField X - Algebra.lsmul ℝ ℝ Cₛ^∞⟮I; F, V⟯ d) fun τ x ↦ by simp [hd]
   rw [h.formalAdjoint_eq]

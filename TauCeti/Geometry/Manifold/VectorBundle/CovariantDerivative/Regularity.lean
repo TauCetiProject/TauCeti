@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.CovariantDerivative.Basic
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Support
 import Mathlib.Geometry.Manifold.BumpFunction
 import Mathlib.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.IsManifold.Basic
@@ -30,6 +31,7 @@ local frame.
   to a `C^(n + 1)` section along a `C^n` vector field produces a `C^n` section.
 * `CovariantDerivative.alongVectorField`: hence a smooth covariant derivative along a smooth vector
   field `X` is a linear operator `∇_X` on smooth sections.
+* `CovariantDerivative.alongVectorField_smul`: the Leibniz rule for `∇_X`.
 * `ContMDiffCovariantDerivativeOn.mono_of_isOpen_of_eventuallyEq`: on a smooth real manifold, an
   operator from sections to one-forms which is `C^n` on a set and local at the points of an open
   subset is `C^n` on that subset.
@@ -96,6 +98,17 @@ theorem alongVectorField_apply (cov : CovariantDerivative I F V)
     [ContMDiffCovariantDerivative cov ∞] (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
     (σ : Cₛ^∞⟮I; F, V⟯) (x : M) : cov.alongVectorField X σ x = cov σ x (X x) :=
   (rfl)
+
+/-- **The Leibniz rule for `∇_X`**: `∇_X (a σ) = a ∇_X σ + X(a) σ` for a smooth function `a`. -/
+theorem alongVectorField_smul (cov : CovariantDerivative I F V)
+    [ContMDiffCovariantDerivative cov ∞] (X : Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯)
+    (a : C^∞⟮I, M; 𝕜⟯) (σ : Cₛ^∞⟮I; F, V⟯) (x : M) :
+    cov.alongVectorField X (a • σ) x =
+      a x • cov.alongVectorField X σ x + mvfderiv I a x (X x) • σ x := by
+  have hfun : ⇑(a • σ) = (⇑a : M → 𝕜) • ⇑σ := funext fun y ↦ ContMDiffSection.smul_apply a σ y
+  rw [alongVectorField_apply, hfun, cov.isCovariantDerivativeOnUniv.leibniz σ.mdifferentiableAt
+    (a.contMDiff.mdifferentiableAt (by simp))]
+  simp
 
 section Real
 
