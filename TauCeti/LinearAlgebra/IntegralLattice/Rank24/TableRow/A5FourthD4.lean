@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.Symmetry
+public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.TableRow.Symmetry.Basic
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeD.Triality
 
 import TauCeti.Data.Fin.Cast
