@@ -149,7 +149,7 @@ private theorem finite_homotopyGroup_of_odd_aux (hn : Even n)
   obtain ⟨a, ha⟩ := exists_ne (1 : HomotopyGroup (Option (Fin (n + 3)))
     (finiteOrthonormalFrame ℝ 1 (n + 5)) b)
   set c := δ a
-  have hc : c ≠ 1 := fun h ↦ ha (hδ (h.trans (map_one δ).symm))
+  have hc : c ≠ 1 := (map_ne_one_iff δ hδ).2 ha
   -- Its image in `πₙ₊₃(V₂)` is trivial.
   have hic : HomotopyGroup.mapHom i hi₀ c = 1 := by
     rw [HomotopyGroup.mapHom_apply, _root_.HomotopyGroup.one_def]
@@ -167,8 +167,7 @@ private theorem finite_homotopyGroup_of_odd_aux (hn : Even n)
   let F := (HomotopyGroup.mapHom i hi₀).toAdditive.comp ψ.symm.toAddMonoidHom
   have hF : Function.Surjective F :=
     (Additive.ofMul.surjective.comp hsurj).comp (Additive.toMul.surjective.comp ψ.symm.surjective)
-  have hK : ψ (Additive.ofMul c) ≠ 0 := fun h ↦
-    hc (Additive.ofMul.injective (ψ.injective (h.trans (map_zero ψ).symm)))
+  have hK : ψ (Additive.ofMul c) ≠ 0 := by simpa using hc
   have hFK : F (ψ (Additive.ofMul c)) = 0 := by
     simp only [F, AddMonoidHom.coe_comp, Function.comp_apply, AddEquiv.coe_toAddMonoidHom,
       AddEquiv.symm_apply_apply, MonoidHom.toAdditive_apply_apply, toMul_ofMul, hic, ofMul_one]

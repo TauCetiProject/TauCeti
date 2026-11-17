@@ -87,8 +87,8 @@ theorem singularHomologyFunctor_map_eq_neg_of_inner_eq_zero (hE : finrank ℝ E 
   change ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom f) =
     ((singularHomologyFunctor C (n + 1)).obj R).map (TopCat.ofHom (-f)) at hH
   conv_lhs => rw [hH, hneg, Functor.map_comp, singularHomologyFunctor_map_sphere_neg R hE,
-    (hn.add_even even_two).neg_one_pow, Preadditive.comp_zsmul, Category.comp_id, neg_smul,
-    one_smul]
+    (hn.add_even even_two).neg_one_pow]
+  simp
 
 end Homology
 
@@ -121,19 +121,22 @@ theorem mk_eq_one_of_inner_eq_zero (hE : finrank ℝ E = n + 3) (hn : Even n)
   -- So `a ^ 2` has the Hurewicz class of `1`, and the Hurewicz map is injective.
   have hX : ∀ k < n + 2, Subsingleton (HomotopyGroup (Fin k) (sphere (0 : E) 1) x) :=
     fun k hk ↦ subsingleton_homotopyGroup_sphere_of_lt (n := n + 2) hE (by simpa using hk) x
-  have h2 : a ^ 2 = 1 := (HomotopyGroup.bijective_hurewicz hX).1 <| by
-    beta_reduce
+  have h2' : (HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1) (a ^ 2)).hom 1 =
+      (HomotopyGroup.hurewicz (ModuleCat.of ℤ ℤ) (n + 1)
+        (1 : π_ (n + 2) (sphere (0 : E) 1) x)).hom 1 := by
     rw [HomotopyGroup.hurewicz_pow, HomotopyGroup.hurewicz_one, two_nsmul]
     nth_rw 2 [hneg]
     rw [add_neg_cancel]
+  have h2 : a ^ 2 = 1 := (HomotopyGroup.bijective_hurewicz hX).1 h2'
   -- `πₙ₊₂(S, x) ≅ ℤ` has no torsion.
   have : FiniteDimensional ℝ E := Module.finite_of_finrank_eq_succ hE
   let φ := homotopyGroupSphereAddEquiv ((stdOrthonormalBasis ℝ E).reindex (finCongr hE)) x
-  have h2' : (2 : ℤ) • Additive.ofMul a = 0 := by
+  have h2a : (2 : ℤ) • Additive.ofMul a = 0 := by
     rw [two_zsmul, ← ofMul_mul, ← sq, h2, ofMul_one]
   have hφ : 2 * φ (Additive.ofMul a) = 0 := by
-    rw [← smul_eq_mul, ← map_zsmul, h2', map_zero]
-  exact Additive.ofMul.injective (φ.injective ((mul_eq_zero.1 hφ).resolve_left two_ne_zero |>.trans
-    (map_zero φ).symm))
+    rw [← smul_eq_mul, ← map_zsmul, h2a, map_zero]
+  have ha : Additive.ofMul a = 0 :=
+    φ.map_eq_zero_iff.1 ((mul_eq_zero.1 hφ).resolve_left two_ne_zero)
+  exact Additive.ofMul.injective ha
 
 end GenLoop
