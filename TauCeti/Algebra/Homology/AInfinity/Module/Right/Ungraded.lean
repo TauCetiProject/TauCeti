@@ -13,6 +13,7 @@ import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
 import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
+import TauCeti.LinearAlgebra.Multilinear.CompSplit
 
 /-!
 # Ungraded `A∞` right modules over a differential algebra
@@ -83,7 +84,7 @@ Two constructions are developed, together with strict units.
   `TauCeti.UngradedAInfinityRightModule.IsStrictlyUnital.act_one_matrix_twistedDifferential_apply`.
 
 Twisting the matrix module by the coefficient matrix of a type `D` structure gives the box tensor
-product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA`.
+product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordered.TypeA.Basic`.
 
 ## Main definitions
 
@@ -591,23 +592,8 @@ theorem matrixAct_matrixAct_apply {i j n : ℕ} (h : i + j = n) (G : Fin j → M
           (Mm.act i (fun l => F l (w ⟨l, by have := l.isLt; omega⟩)
             (w ⟨l + 1, by have := l.isLt; omega⟩)) (φ (w 0)))
       else 0 := by
-  have hy (y : Fin (j + 1) → X) :
-      (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-        (Mm.matrixAct X i F φ (y 0)) else 0) =
-      ∑ x : Fin (i + 1) → X, if x (Fin.last i) = y 0 then
-        (if y (Fin.last j) = z then Mm.act j (fun l => G l (y l.castSucc) (y l.succ))
-          (Mm.act i (fun l => F l (x l.castSucc) (x l.succ)) (φ (x 0))) else 0) else 0 := by
-    split_ifs with hyz
-    · simp only [matrixAct_apply, map_sum]
-      exact sum_congr rfl fun x _ => by split_ifs <;> simp
-    · simp
-  rw [matrixAct_apply, sum_congr rfl fun y _ => hy y, sum_comm,
-    Fin.sum_sum_ite_apply_last_eq_apply_zero h]
-  refine sum_congr rfl fun w _ => ?_
-  have hlast : w ⟨i + (Fin.last j : ℕ), by simp; omega⟩ = w (Fin.last n) :=
-    congrArg w (Fin.ext (by simp [h]))
-  have hzero : w ⟨((0 : Fin (i + 1)) : ℕ), by simp⟩ = w 0 := congrArg w (Fin.ext (by simp))
-  simp only [hlast, hzero, Fin.val_castSucc, Fin.val_succ, Nat.add_assoc]
+  simp only [matrixAct_apply]
+  exact MultilinearMap.sum_ite_apply_sum_ite_eq_sum h (Mm.act j) (Mm.act i) G F φ z
 
 /-- The composite terms of the matrix module are sums over paths. -/
 private theorem stasheffComp_matrixAct (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z : X) :
