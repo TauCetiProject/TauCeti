@@ -33,7 +33,10 @@ Hilbert C⋆-module.
 * `CStarMatrix.instNonUnitalContinuousFunctionalCalculusReal`: the real continuous functional
   calculus of `CStarMatrix n n A`, which instance search does not find on its own.
 * `CStarMatrix.ofMatrix_symm_mul`, `CStarMatrix.ofMatrix_symm_star`: reading a C⋆-matrix as an
-  ordinary matrix respects multiplication and sends `star` to the conjugate transpose.
+  ordinary matrix respects multiplication and sends `star` to the conjugate transpose; the
+  companions `CStarMatrix.ofMatrix_symm_zero`, `ofMatrix_symm_one`, `ofMatrix_symm_add`,
+  `ofMatrix_symm_neg`, `ofMatrix_symm_sub` and `ofMatrix_symm_smul` do the same for the other
+  algebraic operations.
 * `CStarMatrix.isSelfAdjoint_of_forall_isSelfAdjoint_sum`: a matrix all of whose quadratic forms
   are self-adjoint is self-adjoint. This is purely algebraic, and holds over any complex
   star-algebra whose star is proper.
@@ -75,6 +78,35 @@ lemma ofMatrix_symm_mul [Fintype n] [Mul A] [AddCommMonoid A] (M N : CStarMatrix
 @[simp]
 lemma ofMatrix_symm_star [Star A] (M : CStarMatrix n n A) :
     ofMatrix.symm (star M) = (ofMatrix.symm M)ᴴ := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix sends `0` to `0`. -/
+@[simp]
+lemma ofMatrix_symm_zero [Zero A] : ofMatrix.symm (0 : CStarMatrix n n A) = 0 := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix sends `1` to `1`. -/
+@[simp]
+lemma ofMatrix_symm_one [DecidableEq n] [Zero A] [One A] :
+    ofMatrix.symm (1 : CStarMatrix n n A) = 1 := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects addition. -/
+@[simp]
+lemma ofMatrix_symm_add [Add A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M + N) = ofMatrix.symm M + ofMatrix.symm N := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects negation. -/
+@[simp]
+lemma ofMatrix_symm_neg [Neg A] (M : CStarMatrix n n A) :
+    ofMatrix.symm (-M) = -ofMatrix.symm M := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects subtraction. -/
+@[simp]
+lemma ofMatrix_symm_sub [Sub A] (M N : CStarMatrix n n A) :
+    ofMatrix.symm (M - N) = ofMatrix.symm M - ofMatrix.symm N := (rfl)
+
+/-- Reading a C⋆-matrix as an ordinary matrix respects scalar multiplication. -/
+@[simp]
+lemma ofMatrix_symm_smul [SMul R A] (r : R) (M : CStarMatrix n n A) :
+    ofMatrix.symm (r • M) = r • ofMatrix.symm M := (rfl)
 
 /-- A matrix over a complex star-algebra with proper star all of whose quadratic forms are
 self-adjoint is self-adjoint. -/
