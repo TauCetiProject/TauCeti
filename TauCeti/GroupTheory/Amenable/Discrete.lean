@@ -161,6 +161,8 @@ end Discrete
 
 /-- An abstract group which is amenable with the discrete topology is amenable with any
 group topology. -/
+@[to_additive /-- An abstract additive group which is amenable with the discrete topology is
+amenable with any additive group topology. -/]
 theorem Amenable.of_discrete [IsTopologicalGroup G]
     (h : letI : TopologicalSpace G := ⊥;
       letI := discreteTopology_bot G; Amenable G) :
