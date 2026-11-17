@@ -14,12 +14,16 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 # Cone operations, compression, and the completely positive order on `A₁ →CP A₂`
 
 Completely positive maps between C⋆-algebras are closed under addition, `ℝ≥0`-scaling, identity,
-composition, and operator compression `conjAdjoint V : T ↦ V† ∘L T ∘L V`. Equipping `A₁ →CP A₂`
-with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ` makes it a partially
-ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's Radon–Nikodym theorem.
+composition, and operator compression `ContinuousLinearMap.conjAdjoint` (`V.conjAdjoint :
+T ↦ V† ∘L T ∘L V`). Every positive linear functional is completely positive
+(`PositiveLinearMap.toCompletelyPositiveMap`, `PositiveLinearMap.toCompletelyPositiveMapCLM`).
+Equipping `A₁ →CP A₂` with the *completely positive order* `ψ ≤ φ ↔ ∃ θ : A₁ →CP A₂, φ = ψ + θ`
+makes it a partially ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's
+Radon–Nikodym theorem.
 
 ## References
 
+* W. F. Stinespring, *Positive functions on C⋆-algebras*, Proc. Amer. Math. Soc. 6 (1955), Thm. 3.
 * W. B. Arveson, *Subalgebras of C⋆-algebras*, Acta Math. 123 (1969), §1.4.
 * V. Paulsen, *Completely Bounded Maps and Operator Algebras*, Chapter 3.
 -/
@@ -27,6 +31,18 @@ ordered cancellative `ℝ≥0`-cone with bottom element `0`, used in Arveson's R
 public section
 
 open scoped CStarAlgebra NNReal InnerProductSpace ComplexOrder
+
+namespace CompletelyPositiveMapClass
+
+variable {F A₁ A₂ : Type*} [NonUnitalCStarAlgebra A₁]
+  [NonUnitalCStarAlgebra A₂] [PartialOrder A₁] [PartialOrder A₂] [StarOrderedRing A₁]
+  [StarOrderedRing A₂] [FunLike F A₁ A₂] [LinearMapClass F ℂ A₁ A₂]
+  [CompletelyPositiveMapClass F A₁ A₂]
+
+@[simp] theorem coe_toCompletelyPositiveLinearMap (f : F) :
+    ⇑(toCompletelyPositiveLinearMap (A₁ := A₁) (A₂ := A₂) f) = f := (rfl)
+
+end CompletelyPositiveMapClass
 
 namespace CompletelyPositiveMap
 
@@ -168,7 +184,9 @@ instance : IsOrderedAddMonoid (A₁ →CP A₂) where
 
 end General
 
-section Hilbert
+end CompletelyPositiveMap
+
+namespace ContinuousLinearMap
 
 variable {H K : Type*}
   [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
@@ -188,8 +206,52 @@ noncomputable def conjAdjoint (V : H →L[ℂ] K) : (K →L[ℂ] K) →CP (H →
       (CStarMatrix.nonneg_iff_forall_sum_inner_nonneg.mp hM) fun i => V (ξ i)
 
 @[simp] theorem conjAdjoint_apply (V : H →L[ℂ] K) (T : K →L[ℂ] K) :
-    conjAdjoint V T = V.adjoint.comp (T.comp V) := (rfl)
+    V.conjAdjoint T = V.adjoint.comp (T.comp V) := (rfl)
 
-end Hilbert
+end ContinuousLinearMap
 
-end CompletelyPositiveMap
+namespace PositiveLinearMap
+
+variable {A : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
+
+/-- Every positive linear functional `ω : A →ₚ[ℂ] ℂ` is completely positive
+(Stinespring 1955, Theorem 3). -/
+noncomputable def toCompletelyPositiveMap (ω : A →ₚ[ℂ] ℂ) : A →CP ℂ where
+  toLinearMap := ω.toLinearMap
+  map_cstarMatrix_nonneg' _ M hM := by
+    obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
+    refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
+    have hsum : (∑ i, ∑ j, star (z i) * (star R * R).map ω.toLinearMap i j * z j) =
+        ∑ l, ω (star (∑ i, z i • R l i) * ∑ j, z j • R l j) := by
+      have hLHS : (∑ i, ∑ j, star (z i) * (star R * R).map ω.toLinearMap i j * z j) =
+          ∑ l, ∑ i, ∑ j, (star (z i) * z j) * ω (star (R l i) * R l j) := by
+        refine (Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_).trans
+          ((Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans Finset.sum_comm)
+        simp only [CStarMatrix.map_apply, PositiveLinearMap.coe_toLinearMap, CStarMatrix.mul_apply,
+          CStarMatrix.star_apply, map_sum, Finset.mul_sum, Finset.sum_mul]
+        exact Finset.sum_congr rfl fun _ _ => by ring
+      rw [hLHS]
+      refine Finset.sum_congr rfl fun l _ => ?_
+      rw [star_sum, Finset.sum_mul, map_sum]
+      refine Finset.sum_congr rfl fun i _ => ?_
+      rw [Finset.mul_sum, map_sum]
+      refine Finset.sum_congr rfl fun j _ => ?_
+      simp only [star_smul, smul_mul_assoc, mul_smul_comm, map_smul, smul_eq_mul]; ring
+    exact hsum ▸ Finset.sum_nonneg fun _ _ => map_nonneg ω (star_mul_self_nonneg _)
+
+@[simp] theorem toCompletelyPositiveMap_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
+    ω.toCompletelyPositiveMap a = ω a := (rfl)
+
+/-- A positive linear functional `ω : A →ₚ[ℂ] ℂ` viewed as `A →CP (ℂ →L[ℂ] ℂ)` via `a ↦ ω a • 1`. -/
+noncomputable def toCompletelyPositiveMapCLM (ω : A →ₚ[ℂ] ℂ) : A →CP (ℂ →L[ℂ] ℂ) :=
+  CompletelyPositiveMap.comp
+    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (StarAlgHom.ofId ℂ (ℂ →L[ℂ] ℂ)))
+    ω.toCompletelyPositiveMap
+
+@[simp] theorem toCompletelyPositiveMapCLM_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
+    ω.toCompletelyPositiveMapCLM a = ω a • (1 : ℂ →L[ℂ] ℂ) := by
+  rw [toCompletelyPositiveMapCLM, CompletelyPositiveMap.comp_apply,
+    CompletelyPositiveMapClass.coe_toCompletelyPositiveLinearMap, toCompletelyPositiveMap_apply,
+    StarAlgHom.ofId_apply, Algebra.algebraMap_eq_smul_one]
+
+end PositiveLinearMap

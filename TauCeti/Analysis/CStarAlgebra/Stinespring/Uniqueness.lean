@@ -5,13 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.PositiveLinearFunctional
-public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.CStarAlgebra.GNS.Uniqueness
 public import TauCeti.Analysis.CStarAlgebra.Stinespring.Basic
+public import TauCeti.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.Normed.Operator.Extend
-import Mathlib.Analysis.Normed.Operator.Mul
-import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 
 /-!
 # Unitary uniqueness of minimal Stinespring dilations
@@ -19,11 +16,15 @@ import TauCeti.Analysis.CStarAlgebra.CStarMatrix
 Any minimal Stinespring dilation `(K, π, V)` of `φ : A →CP (H →L[ℂ] H)` is unitarily equivalent to
 the canonical dilation `(φ.Stinespring, φ.stinespringHom, φ.stinespringOp)` by a unique unitary
 `U : φ.Stinespring ≃ₗᵢ[ℂ] K` (`CompletelyPositiveMap.stinespringEquiv`) satisfying
-`U (φ.stinespringOp ξ) = V ξ` and `U (φ.stinespringHom a x) = π a (U x)`.
+`U (φ.stinespringOp ξ) = V ξ` and `U (φ.stinespringHom a x) = π a (U x)`. The dense-isometry
+unitary uniqueness construction (`stinespringEquiv` via `LinearEquiv.extendOfIsometry`) follows the
+formal pattern of TauCeti's `PositiveLinearMap.gnsEquiv`
+(`TauCeti.Analysis.CStarAlgebra.GNS.Uniqueness`).
 
 We also relate scalar positive functionals (`H = ℂ`) to their GNS representation
-(`PositiveLinearMap.toCompletelyPositiveMap`, `PositiveLinearMap.gnsStinespringEquiv`) and contrast
-the minimal dilation `(H, id, 1)` of `id_{B(H)}` with the non-minimal doubled dilation on `H ⊕ H`.
+(`PositiveLinearMap.gnsStinespringEquiv`, using `PositiveLinearMap.toCompletelyPositiveMapCLM`) and
+contrast the minimal dilation `(H, id, 1)` of `id_{B(H)}` with the non-minimal doubled dilation on
+`H ⊕ H`.
 
 ## References
 
@@ -40,9 +41,9 @@ universe u v w w'
 open Filter Topology TensorProduct
 open scoped CStarAlgebra ComplexOrder InnerProductSpace NNReal
 
-namespace CompletelyPositiveMap
+namespace NonUnitalStarAlgHom
 
-section Lift
+section StinespringLift
 
 variable {A : Type u} [NonUnitalCStarAlgebra A]
   {H : Type v} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
@@ -55,31 +56,34 @@ noncomputable def stinespringLiftLinear : (A ⊗[ℂ] H) →ₗ[ℂ] K :=
     (fun _ _ _ => by simp) (fun _ _ _ => by simp) (fun _ _ _ => by simp) (fun _ _ _ => by simp)
 
 @[simp] theorem stinespringLiftLinear_tmul (a : A) (ξ : H) :
-    stinespringLiftLinear π V (a ⊗ₜ[ℂ] ξ) = π a (V ξ) := (rfl)
+    π.stinespringLiftLinear V (a ⊗ₜ[ℂ] ξ) = π a (V ξ) := (rfl)
 
 theorem range_stinespringLiftLinear :
-    LinearMap.range (stinespringLiftLinear π V) =
+    LinearMap.range (π.stinespringLiftLinear V) =
       Submodule.span ℂ {x : K | ∃ (a : A) (ξ : H), x = π a (V ξ)} := by
   rw [← Submodule.map_top, ← TensorProduct.span_tmul_eq_top, Submodule.map_span]
   congr 1; ext; simp [stinespringLiftLinear_tmul, eq_comm]
 
 theorem denseRange_stinespringLiftLinear
     (hmin : (Submodule.span ℂ {x : K | ∃ (a : A) (ξ : H), x = π a (V ξ)}).topologicalClosure = ⊤) :
-    DenseRange (stinespringLiftLinear π V) := by
-  rwa [DenseRange, ← LinearMap.coe_range, range_stinespringLiftLinear π V,
+    DenseRange (π.stinespringLiftLinear V) := by
+  rwa [DenseRange, ← LinearMap.coe_range, π.range_stinespringLiftLinear V,
     Submodule.dense_iff_topologicalClosure_eq_top]
 
 /-- In any minimal dilation `(K, π, V)`, `π` is automatically nondegenerate. -/
 theorem isNondegenerate_of_minimal
     (hmin : (Submodule.span ℂ {x : K | ∃ (a : A) (ξ : H), x = π a (V ξ)}).topologicalClosure = ⊤) :
     π.IsNondegenerate := by
-  rw [NonUnitalStarAlgHom.isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top,
-    eq_top_iff, ← hmin]
+  rw [isNondegenerate_iff_dense, Submodule.dense_iff_topologicalClosure_eq_top, eq_top_iff, ← hmin]
   refine Submodule.topologicalClosure_mono (Submodule.span_mono ?_)
   rintro _ ⟨a, ξ, rfl⟩
   exact Set.mem_iUnion.mpr ⟨a, V ξ, rfl⟩
 
-end Lift
+end StinespringLift
+
+end NonUnitalStarAlgHom
+
+namespace CompletelyPositiveMap
 
 section NonUnital
 
@@ -92,7 +96,7 @@ variable {A : Type u} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRin
 `A ⊗[ℂ] H`. -/
 theorem inner_stinespringLiftLinear_eq (hφ : ∀ a, φ a = V.adjoint.comp ((π a).comp V))
     (s t : A ⊗[ℂ] H) :
-    ⟪stinespringLiftLinear π V s, stinespringLiftLinear π V t⟫_ℂ =
+    ⟪π.stinespringLiftLinear V s, π.stinespringLiftLinear V t⟫_ℂ =
       ⟪φ.toStinespringLinearMap s, φ.toStinespringLinearMap t⟫_ℂ := by
   induction s using TensorProduct.inductionOn with
   | tmul a ξ =>
@@ -113,7 +117,7 @@ theorem inner_stinespringLiftLinear_eq (hφ : ∀ a, φ a = V.adjoint.comp ((π 
 
 /-- Any dilation `(K, π, V)` of `φ` preserves the Stinespring norm on `A ⊗[ℂ] H`. -/
 theorem norm_stinespringLiftLinear_eq (hφ : ∀ a, φ a = V.adjoint.comp ((π a).comp V))
-    (t : A ⊗[ℂ] H) : ‖stinespringLiftLinear π V t‖ = ‖φ.toStinespringLinearMap t‖ := by
+    (t : A ⊗[ℂ] H) : ‖π.stinespringLiftLinear V t‖ = ‖φ.toStinespringLinearMap t‖ := by
   rw [← sq_eq_sq₀ (norm_nonneg _) (norm_nonneg _), ← RCLike.ofReal_inj (K := ℂ),
     RCLike.ofReal_pow, RCLike.ofReal_pow, ← inner_self_eq_norm_sq_to_K,
     ← inner_self_eq_norm_sq_to_K]
@@ -128,17 +132,17 @@ variable (hφ : ∀ a, φ a = V.adjoint.comp ((π a).comp V))
 `(K, π, V)` of `φ`, sending `[a ⊗ ξ]` to `π a (V ξ)`. -/
 noncomputable def stinespringEquiv : φ.Stinespring ≃ₗᵢ[ℂ] K :=
   (LinearEquiv.refl ℂ (A ⊗[ℂ] H)).extendOfIsometry
-    φ.toStinespringLinearMap (stinespringLiftLinear π V)
-    φ.denseRange_toStinespringLinearMap (denseRange_stinespringLiftLinear π V hmin)
+    φ.toStinespringLinearMap (π.stinespringLiftLinear V)
+    φ.denseRange_toStinespringLinearMap (π.denseRange_stinespringLiftLinear V hmin)
     (φ.norm_stinespringLiftLinear_eq π V hφ)
 
 theorem stinespringEquiv_toStinespringLinearMap (t : A ⊗[ℂ] H) :
-    φ.stinespringEquiv π V hφ hmin (φ.toStinespringLinearMap t) = stinespringLiftLinear π V t :=
+    φ.stinespringEquiv π V hφ hmin (φ.toStinespringLinearMap t) = π.stinespringLiftLinear V t :=
   LinearEquiv.extendOfIsometry_eq _ _ _ _ _ _ t
 
 @[simp] theorem stinespringEquiv_apply_coe (t : A ⊗[ℂ] H) :
     φ.stinespringEquiv π V hφ hmin (φ.toPreStinespring t : φ.Stinespring) =
-      stinespringLiftLinear π V t := by
+      π.stinespringLiftLinear V t := by
   rw [← toStinespringLinearMap_apply]
   exact φ.stinespringEquiv_toStinespringLinearMap π V hφ hmin t
 
@@ -170,7 +174,7 @@ theorem stinespringEquiv_toStinespring (a : A) (ξ : H) :
     (U.continuous.tendsto _).comp (φ.tendsto_toStinespring_approximateUnit ξ)
   have h₂ : Tendsto (fun e => π e (V ξ)) (CStarAlgebra.approximateUnit A) (𝓝 (V ξ)) :=
     (NonUnitalStarAlgHom.isNondegenerate_iff_tendsto hl.eventually_norm hl.tendsto_mul_right).mp
-      (isNondegenerate_of_minimal π V hmin) (V ξ)
+      (π.isNondegenerate_of_minimal V hmin) (V ξ)
   exact tendsto_nhds_unique h₁ (by simpa only [U, stinespringEquiv_toStinespring] using h₂)
 
 theorem stinespringEquiv_symm_apply (a : A) (ξ : H) :
@@ -287,51 +291,6 @@ end CompletelyPositiveMap
 
 namespace PositiveLinearMap
 
-section NonUnital
-
-variable {A : Type u} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrderedRing A]
-
-/-- Every positive linear functional `ω : A →ₚ[ℂ] ℂ` is completely positive
-(Stinespring 1955, Theorem 3). -/
-noncomputable def toCompletelyPositiveMap (ω : A →ₚ[ℂ] ℂ) : A →CP ℂ where
-  toLinearMap := ω.toLinearMap
-  map_cstarMatrix_nonneg' _ M hM := by
-    obtain ⟨R, rfl⟩ := CStarAlgebra.nonneg_iff_eq_star_mul_self.mp hM
-    refine CStarMatrix.nonneg_iff_forall_sum_nonneg.mpr fun z => ?_
-    have hsum : (∑ i, ∑ j, star (z i) * (star R * R).map ω.toLinearMap i j * z j) =
-        ∑ l, ω (star (∑ i, z i • R l i) * ∑ j, z j • R l j) := by
-      have hLHS : (∑ i, ∑ j, star (z i) * (star R * R).map ω.toLinearMap i j * z j) =
-          ∑ l, ∑ i, ∑ j, (star (z i) * z j) * ω (star (R l i) * R l j) := by
-        refine (Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_).trans
-          ((Finset.sum_congr rfl fun _ _ => Finset.sum_comm).trans Finset.sum_comm)
-        simp only [CStarMatrix.map_apply, PositiveLinearMap.coe_toLinearMap, CStarMatrix.mul_apply,
-          CStarMatrix.star_apply, map_sum, Finset.mul_sum, Finset.sum_mul]
-        exact Finset.sum_congr rfl fun _ _ => by ring
-      rw [hLHS]
-      refine Finset.sum_congr rfl fun l _ => ?_
-      rw [star_sum, Finset.sum_mul, map_sum]
-      refine Finset.sum_congr rfl fun i _ => ?_
-      rw [Finset.mul_sum, map_sum]
-      refine Finset.sum_congr rfl fun j _ => ?_
-      simp only [star_smul, smul_mul_assoc, mul_smul_comm, map_smul, smul_eq_mul]; ring
-    exact hsum ▸ Finset.sum_nonneg fun _ _ => map_nonneg ω (star_mul_self_nonneg _)
-
-@[simp] theorem toCompletelyPositiveMap_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMap a = ω a := (rfl)
-
-/-- A positive linear functional `ω : A →ₚ[ℂ] ℂ` viewed as `A →CP (ℂ →L[ℂ] ℂ)` via `a ↦ ω a • 1`. -/
-noncomputable def toCompletelyPositiveMapCLM (ω : A →ₚ[ℂ] ℂ) : A →CP (ℂ →L[ℂ] ℂ) :=
-  CompletelyPositiveMap.comp
-    (CompletelyPositiveMapClass.toCompletelyPositiveLinearMap (StarAlgHom.ofId ℂ (ℂ →L[ℂ] ℂ)))
-    ω.toCompletelyPositiveMap
-
-@[simp] theorem toCompletelyPositiveMapCLM_apply (ω : A →ₚ[ℂ] ℂ) (a : A) :
-    ω.toCompletelyPositiveMapCLM a = ω a • (1 : ℂ →L[ℂ] ℂ) := by
-  rw [toCompletelyPositiveMapCLM, CompletelyPositiveMap.comp_apply, toCompletelyPositiveMap_apply]
-  exact (StarAlgHom.ofId_apply ℂ (ℂ →L[ℂ] ℂ) (ω a)).trans (Algebra.algebraMap_eq_smul_one (ω a))
-
-end NonUnital
-
 section Unital
 
 variable {D : Type u} [CStarAlgebra D] [PartialOrder D] [StarOrderedRing D] (ω : D →ₚ[ℂ] ℂ)
@@ -379,54 +338,9 @@ noncomputable def gnsStinespringEquiv : ω.toCompletelyPositiveMapCLM.Stinesprin
     ω.gnsStarAlgHom.toNonUnitalStarAlgHom (ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector)
     ω.gns_dilation_eq ω.gns_dilation_minimal z
 
-/-- `‖ω.gnsVector‖ ^ 2` equals the operator norm of `ω`. -/
-theorem norm_gnsVector_sq_eq_opNorm :
-    ‖ω.gnsVector‖ ^ 2 = ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) ω : D →L[ℂ] ℂ)‖ := by
-  let f : D →P[ℂ] ℂ := PositiveContinuousLinearMap.ofClass (R := ℂ) ω
-  have hf1 : (‖(f : D →L[ℂ] ℂ)‖ : ℂ) = ω 1 := f.ofReal_opNorm_eq_map_one
-  have hsq : ((‖ω.gnsVector‖ ^ 2 : ℝ) : ℂ) = ω 1 := by simpa using ω.norm_gnsVector_sq
-  exact Complex.ofReal_inj.mp (hsq.trans hf1.symm)
-
-/-- The squared operator norm of `toSpanSingleton ℂ ω.gnsVector` equals the operator norm of `ω`. -/
-theorem norm_toSpanSingleton_gnsVector_sq :
-    ‖ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector‖ ^ 2 =
-      ‖(PositiveContinuousLinearMap.ofClass (R := ℂ) ω : D →L[ℂ] ℂ)‖ := by
-  have hV : ‖ContinuousLinearMap.toSpanSingleton ℂ ω.gnsVector‖ = ‖ω.gnsVector‖ :=
-    (ContinuousLinearMap.toSpanSingletonLIE ℂ ω.GNS).norm_map ω.gnsVector
-  rw [hV, ω.norm_gnsVector_sq_eq_opNorm]
-
 end Unital
 
 end PositiveLinearMap
-
-namespace WithLp
-
-variable (H : Type v) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
-
-/-- The isometric embedding `ξ ↦ (ξ, 0)` of `H` into `WithLp 2 (H × H)`. -/
-noncomputable def inlL2 : H →L[ℂ] WithLp 2 (H × H) := (WithLp.fstL 2 ℂ H H).adjoint
-
-@[simp] theorem inlL2_apply (ξ : H) : inlL2 H ξ = WithLp.toLp 2 (ξ, 0) :=
-  ext_inner_left ℂ fun y => by rw [inlL2, ContinuousLinearMap.adjoint_inner_right]; simp
-
-@[simp] theorem adjoint_inlL2 : (inlL2 H).adjoint = WithLp.fstL 2 ℂ H H :=
-  ContinuousLinearMap.adjoint_adjoint _
-
-/-- The isometric embedding `ξ ↦ (0, ξ)` of `H` into `WithLp 2 (H × H)`. -/
-noncomputable def inrL2 : H →L[ℂ] WithLp 2 (H × H) := (WithLp.sndL 2 ℂ H H).adjoint
-
-@[simp] theorem inrL2_apply (ξ : H) : inrL2 H ξ = WithLp.toLp 2 (0, ξ) :=
-  ext_inner_left ℂ fun y => by rw [inrL2, ContinuousLinearMap.adjoint_inner_right]; simp
-
-@[simp] theorem adjoint_inrL2 : (inrL2 H).adjoint = WithLp.sndL 2 ℂ H H :=
-  ContinuousLinearMap.adjoint_adjoint _
-
-theorem adjoint_inlL2_comp_self : (inlL2 H).adjoint.comp (inlL2 H) = 1 := by ext; simp
-
-theorem norm_inlL2_sq [Nontrivial H] : ‖inlL2 H‖ ^ 2 = 1 := by
-  rw [sq, ← ContinuousLinearMap.norm_adjoint_comp_self, adjoint_inlL2_comp_self, norm_one]
-
-end WithLp
 
 namespace CompletelyPositiveMap
 
@@ -452,8 +366,8 @@ theorem id_dilation_minimal :
 /-- The diagonal `⋆`-representation `a ↦ a ⊕ a` of `H →L[ℂ] H` on `WithLp 2 (H × H)`. -/
 noncomputable def prodDiagStarAlgHom :
     (H →L[ℂ] H) →⋆ₐ[ℂ] (WithLp 2 (H × H) →L[ℂ] WithLp 2 (H × H)) where
-  toFun a := (WithLp.inlL2 H).comp (a.comp (WithLp.fstL 2 ℂ H H)) +
-    (WithLp.inrL2 H).comp (a.comp (WithLp.sndL 2 ℂ H H))
+  toFun a := (WithLp.inlL2 ℂ H H).comp (a.comp (WithLp.fstL 2 ℂ H H)) +
+    (WithLp.inrL2 ℂ H H).comp (a.comp (WithLp.sndL 2 ℂ H H))
   map_one' := ContinuousLinearMap.ext fun _ => ext_inner_left ℂ fun _ => by simp
   map_mul' _ _ := ContinuousLinearMap.ext fun _ => ext_inner_left ℂ fun _ => by
     simp [ContinuousLinearMap.mul_def]
@@ -462,32 +376,30 @@ noncomputable def prodDiagStarAlgHom :
   commutes' _ := ContinuousLinearMap.ext fun _ => ext_inner_left ℂ fun _ => by
     simp [Algebra.algebraMap_eq_smul_one, mul_add]
   map_star' _ := by
-    simp [ContinuousLinearMap.star_eq_adjoint, WithLp.inlL2, WithLp.inrL2,
-      ContinuousLinearMap.comp_assoc]
+    simp [ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.comp_assoc]
 
 @[simp] theorem prodDiagStarAlgHom_apply (a : H →L[ℂ] H) (x : WithLp 2 (H × H)) :
-    prodDiagStarAlgHom H a x = WithLp.toLp 2 (a x.fst, a x.snd) := by
-  change ((WithLp.inlL2 H).comp (a.comp (WithLp.fstL 2 ℂ H H)) +
-    (WithLp.inrL2 H).comp (a.comp (WithLp.sndL 2 ℂ H H))) x = _
-  exact ext_inner_left ℂ fun _ => by simp
+    prodDiagStarAlgHom H a x = WithLp.toLp 2 (a x.fst, a x.snd) :=
+  ext_inner_left ℂ fun _ => by simp [prodDiagStarAlgHom]
 
 /-- `(WithLp 2 (H × H), id ⊕ id, ξ ↦ (ξ, 0))` dilates `CompletelyPositiveMap.id (H →L[ℂ] H)`. -/
 theorem prodDiag_dilation_eq (a : H →L[ℂ] H) :
     CompletelyPositiveMap.id (H →L[ℂ] H) a =
-      (WithLp.inlL2 H).adjoint.comp ((prodDiagStarAlgHom H a).comp (WithLp.inlL2 H)) := by
+      (WithLp.inlL2 ℂ H H).adjoint.comp
+        ((prodDiagStarAlgHom H a).comp (WithLp.inlL2 ℂ H H)) := by
   ext; simp
 
-/-- On any nontrivial `H`, the doubled dilation `(WithLp 2 (H × H), id ⊕ id, inlL2 H)` is not
+/-- On any nontrivial `H`, the doubled dilation `(WithLp 2 (H × H), id ⊕ id, inlL2 ℂ H H)` is not
 minimal. -/
 theorem topologicalClosure_span_prodDiag_ne_top [Nontrivial H] :
     (Submodule.span ℂ
       {x : WithLp 2 (H × H) | ∃ (a : H →L[ℂ] H) (ξ : H),
-        x = prodDiagStarAlgHom H a (WithLp.inlL2 H ξ)}).topologicalClosure ≠ ⊤ := by
+        x = prodDiagStarAlgHom H a (WithLp.inlL2 ℂ H H ξ)}).topologicalClosure ≠ ⊤ := by
   intro htop
   obtain ⟨η, hη⟩ := exists_ne (0 : H)
   have hle : (Submodule.span ℂ
       {x : WithLp 2 (H × H) | ∃ (a : H →L[ℂ] H) (ξ : H),
-        x = prodDiagStarAlgHom H a (WithLp.inlL2 H ξ)}).topologicalClosure ≤
+        x = prodDiagStarAlgHom H a (WithLp.inlL2 ℂ H H ξ)}).topologicalClosure ≤
       (WithLp.sndL 2 ℂ H H).ker :=
     Submodule.topologicalClosure_minimal _
       (Submodule.span_le.mpr fun _ ⟨a, ξ, h⟩ => by subst h; simp)

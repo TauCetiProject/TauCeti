@@ -26,6 +26,11 @@ principle for positive operators.
 An operator `D` between real or complex Hilbert spaces satisfies `D D† ≤ 1` in the Loewner
 order exactly when it is a contraction (`ContinuousLinearMap.self_comp_adjoint_le_one_iff`), so
 the defect operator `1 - D D†` of a contraction is positive.
+
+Scaling a nonzero positive bounded operator preserves positivity iff the scalar is nonnegative
+(`ContinuousLinearMap.IsPositive.isPositive_smul_iff`, `ContinuousLinearMap.smul_one_nonneg_iff`),
+and left multiplication `a ↦ T * a` preserves the positive cone iff `T` is a nonnegative scalar
+multiple of `1` (`ContinuousLinearMap.forall_nonneg_mul_nonneg_iff`).
 -/
 
 public section
@@ -70,10 +75,89 @@ end LinearMap
 
 namespace ContinuousLinearMap
 
-open scoped InnerProductSpace InnerProduct
+open scoped InnerProductSpace InnerProduct ComplexOrder
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [CompleteSpace E]
+
+/-- Scaling a nonzero positive bounded operator by `α : 𝕜` preserves positivity if and only if
+`0 ≤ α`. -/
+theorem IsPositive.isPositive_smul_iff {T : E →L[𝕜] E} (hT : T.IsPositive) (hT' : T ≠ 0)
+    {α : 𝕜} : (α • T).IsPositive ↔ 0 ≤ α :=
+  (isPositive_toLinearMap_iff _).symm.trans <|
+    hT.toLinearMap.isPositive_smul_iff (ContinuousLinearMap.coe_injective.ne hT')
+
+/-- On a nontrivial inner product space, `c • 1` is nonnegative in the Loewner order if and only if
+`0 ≤ c`. -/
+@[simp]
+theorem smul_one_nonneg_iff [Nontrivial E] {c : 𝕜} :
+    0 ≤ c • (1 : E →L[𝕜] E) ↔ 0 ≤ c := by
+  simpa only [nonneg_iff_isPositive] using
+    isPositive_one.isPositive_smul_iff (E := E) (𝕜 := 𝕜) one_ne_zero (α := c)
+
+/-- Left multiplication `a ↦ T * a` on `E →L[𝕜] E` preserves the Loewner positive cone if and only
+if `T = c • 1` for some nonnegative scalar `c : 𝕜`. -/
+theorem forall_nonneg_mul_nonneg_iff {T : E →L[𝕜] E} :
+    (∀ a : E →L[𝕜] E, 0 ≤ a → 0 ≤ T * a) ↔ ∃ c : 𝕜, 0 ≤ c ∧ T = c • 1 := by
+  refine ⟨fun h => ?_, ?_⟩
+  · rcases subsingleton_or_nontrivial E with hE | hE
+    · exact ⟨0, le_rfl, Subsingleton.elim _ _⟩
+    have hT0 : 0 ≤ T := by
+      simpa only [mul_one] using h 1 (nonneg_iff_isPositive.mpr isPositive_one)
+    have hT : T.IsPositive := nonneg_iff_isPositive.mp hT0
+    have hvec (x : E) : ∃ d : 𝕜, T x = d • x := by
+      rcases eq_or_ne x 0 with rfl | hx
+      · exact ⟨0, by simp⟩
+      let P : E →L[𝕜] E := (innerSL 𝕜 x).smulRight x
+      have hP : P.IsPositive :=
+        ⟨fun y z => by simp [P, inner_smul_left, inner_smul_right, mul_comm], fun y => by
+          rw [reApplyInnerSelf, smulRight_apply, innerSL_apply_apply, inner_smul_left,
+            RCLike.conj_mul, ← RCLike.ofReal_pow, RCLike.ofReal_re]
+          positivity⟩
+      have hTP : (T * P).IsPositive := nonneg_iff_isPositive.mp (h P (nonneg_iff_isPositive.mpr hP))
+      have hcomm : T (P x) = P (T x) := ext_inner_right 𝕜 fun z => by
+        calc ⟪T (P x), z⟫_𝕜 = ⟪(T * P) x, z⟫_𝕜 := rfl
+          _ = ⟪x, (T * P) z⟫_𝕜 := hTP.isSymmetric x z
+          _ = ⟪T x, P z⟫_𝕜 := (hT.isSymmetric x (P z)).symm
+          _ = ⟪P (T x), z⟫_𝕜 := (hP.isSymmetric (T x) z).symm
+      have hmul : ⟪x, x⟫_𝕜 • T x = ⟪x, T x⟫_𝕜 • x := by
+        simpa [P, map_smul] using hcomm
+      refine ⟨(⟪x, x⟫_𝕜)⁻¹ * ⟪x, T x⟫_𝕜, ?_⟩
+      rw [mul_smul, ← hmul, inv_smul_smul₀ ((inner_self_ne_zero (𝕜 := 𝕜)).mpr hx)]
+    obtain ⟨u, hu⟩ : ∃ u : E, ⟪u, u⟫_𝕜 = 1 := by
+      obtain ⟨x₀, hx₀⟩ := exists_ne (0 : E)
+      refine ⟨(‖x₀‖⁻¹ : 𝕜) • x₀, ?_⟩
+      have hnu : ‖(‖x₀‖⁻¹ : 𝕜) • x₀‖ = 1 := by
+        simp [norm_smul, inv_mul_cancel₀ (norm_ne_zero_iff.mpr hx₀)]
+      rw [inner_self_eq_norm_sq_to_K, hnu]; simp
+    obtain ⟨c, hTu⟩ := hvec u
+    have hT_eq : T = c • 1 := by
+      ext y
+      let w : E := y - ⟪u, y⟫_𝕜 • u
+      have huw : ⟪u, w⟫_𝕜 = 0 := by
+        rw [inner_sub_right, inner_smul_right, hu, mul_one, sub_self]
+      obtain ⟨d, hTw⟩ := hvec w
+      obtain ⟨e, hTuw⟩ := hvec (u + w)
+      have hcomb : e • (u + w) = c • u + d • w := by rw [← hTuw, map_add, hTu, hTw]
+      have hec : e = c := by
+        have hinner := congrArg (inner 𝕜 u) hcomb
+        simp only [inner_smul_right, inner_add_right, hu, huw, mul_one, mul_zero,
+          add_zero] at hinner
+        exact hinner
+      have hTwc : T w = c • w := by
+        rw [hTw]
+        have := hcomb
+        rw [hec, smul_add] at this
+        exact (add_left_cancel this).symm
+      have hy : y = w + ⟪u, y⟫_𝕜 • u := by simp [w]
+      conv_lhs => rw [hy]
+      rw [map_add, map_smul, hTwc, hTu, smul_comm, ← smul_add, ← hy]
+      simp
+    exact ⟨c, smul_one_nonneg_iff.mp (hT_eq ▸ hT0), hT_eq⟩
+  · rintro ⟨c, hc, rfl⟩ a ha
+    rw [smul_mul_assoc, one_mul]
+    exact smul_nonneg hc ha
+
+variable [CompleteSpace E]
 
 /-- On a complete space, `1 + T` is invertible for every positive operator `T`, since
 `re ⟪(1 + T) x, x⟫ = ‖x‖² + re ⟪T x, x⟫ ≥ ‖x‖²`. For instance `1 + X†X` is invertible, by

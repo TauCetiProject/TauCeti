@@ -26,8 +26,11 @@ subspace `closure (span {π a (V ξ)}) = ⊤`.
 
 Here `φ.PreStinespring` is `A ⊗[ℂ] H` with semi-inner product
 `⟪a ⊗ ξ, b ⊗ η⟫ = ⟪ξ, φ (star a * b) η⟫_ℂ`, completed to `φ.Stinespring`; `φ.stinespringOp` is the
-strong limit of `e ↦ [e ⊗ ·]` along `CStarAlgebra.approximateUnit A`. As a corollary, `φ` satisfies
-the Kadison–Schwarz inequality `star (φ a) * φ a ≤ ‖φ‖ • φ (star a * a)`.
+strong limit of `e ↦ [e ⊗ ·]` along `CStarAlgebra.approximateUnit A`. The separated-completion
+construction (`PreStinespring`, `Stinespring`, `toStinespring`) follows the formal pattern of
+Mathlib's `PositiveLinearMap.PreGNS` and `PositiveLinearMap.GNS`
+(`Mathlib.Analysis.CStarAlgebra.GelfandNaimarkSegal`). As a corollary, `φ` satisfies the
+Kadison–Schwarz inequality `star (φ a) * φ a ≤ ‖φ‖ • φ (star a * a)`.
 
 ## References
 
@@ -219,6 +222,31 @@ noncomputable def toStinespring (a : A) : H →L[ℂ] φ.Stinespring :=
 @[simp] theorem toStinespring_apply (a : A) (ξ : H) :
     φ.toStinespring a ξ = (φ.toPreStinespring (a ⊗ₜ[ℂ] ξ) : φ.Stinespring) := (rfl)
 
+@[simp] theorem toStinespring_zero : φ.toStinespring 0 = 0 := by
+  ext ξ
+  simp [toStinespring_apply, zero_tmul]
+
+@[simp] theorem toStinespring_add (a b : A) :
+    φ.toStinespring (a + b) = φ.toStinespring a + φ.toStinespring b := by
+  ext ξ
+  simp [toStinespring_apply, add_tmul, UniformSpace.Completion.coe_add]
+
+@[simp] theorem toStinespring_smul (c : ℂ) (a : A) :
+    φ.toStinespring (c • a) = c • φ.toStinespring a := by
+  ext ξ
+  rw [toStinespring_apply, smul_apply, toStinespring_apply, ← smul_tmul',
+    map_smul, UniformSpace.Completion.coe_smul]
+
+@[simp] theorem toStinespring_neg (a : A) :
+    φ.toStinespring (-a) = -φ.toStinespring a := by
+  ext ξ
+  simp [toStinespring_apply, neg_tmul, UniformSpace.Completion.coe_neg]
+
+@[simp] theorem toStinespring_sub (a b : A) :
+    φ.toStinespring (a - b) = φ.toStinespring a - φ.toStinespring b := by
+  ext ξ
+  simp [toStinespring_apply, sub_tmul, UniformSpace.Completion.coe_sub]
+
 theorem inner_toStinespring (a b : A) (ξ η : H) :
     ⟪φ.toStinespring a ξ, φ.toStinespring b η⟫_ℂ = ⟪ξ, φ (star a * b) η⟫_ℂ := by
   simp [toStinespring_apply]
@@ -231,10 +259,8 @@ theorem norm_toStinespring_le (a : A) :
 theorem continuous_toStinespring_left (ξ : H) : Continuous fun a : A => φ.toStinespring a ξ := by
   let L : A →ₗ[ℂ] φ.Stinespring :=
     { toFun a := φ.toStinespring a ξ
-      map_add' a b := by simp [toStinespring_apply, add_tmul, UniformSpace.Completion.coe_add]
-      map_smul' c a := by
-        rw [toStinespring_apply, toStinespring_apply, ← smul_tmul', map_smul,
-          UniformSpace.Completion.coe_smul, RingHom.id_apply] }
+      map_add' a b := by rw [toStinespring_add, add_apply]
+      map_smul' c a := by rw [toStinespring_smul, smul_apply, RingHom.id_apply] }
   exact (L.mkContinuous (Real.sqrt ‖φ.toContinuousLinearMap‖ * ‖ξ‖) fun a => by
     simpa [L, mul_right_comm] using φ.norm_toPreStinespring_tmul_le a ξ).continuous
 
@@ -365,9 +391,10 @@ private theorem norm_toStinespring_sub_sq_le (ξ : H) {e₀ e : A}
     rw [(IsSelfAdjoint.of_nonneg hd₀).star_eq]
     exact CStarAlgebra.mul_self_le_of_nonneg_of_norm_le_one hd₀ hd₁
   have hsub : φ.toStinespring e ξ - φ.toStinespring e₀ ξ = φ.toStinespring (e - e₀) ξ := by
-    simp [toStinespring_apply, sub_tmul, UniformSpace.Completion.coe_sub]
+    rw [toStinespring_sub, sub_apply]
   have hre : ‖φ.toStinespring (e - e₀) ξ‖ ^ 2 =
       (diagFunctional φ ξ (star (e - e₀) * (e - e₀))).re := by
+    rw [toStinespring_apply, UniformSpace.Completion.norm_coe]
     simpa [← Complex.ofReal_pow] using
       congrArg Complex.re (φ.norm_toPreStinespring_tmul_sq (e - e₀) ξ)
   rw [hsub, hre]
@@ -398,8 +425,9 @@ private theorem cauchy_map_toStinespring (ξ : H) :
       exact dist_triangle_right (diagFunctional φ ξ e) (diagFunctional φ ξ e₀) c
     have h₃ := Metric.mem_ball.mp (hball ⟨hle, he_ball⟩)
     have h₄ := Metric.mem_ball.mp (hball he₀_mem)
+    have hε_sq : ε ^ 2 / 8 + ε ^ 2 / 8 = (ε / 2) ^ 2 := by ring
     rw [dist_eq_norm]
-    linarith [show ε ^ 2 / 8 + ε ^ 2 / 8 = (ε / 2) ^ 2 by ring]
+    linarith [hε_sq]
   rintro _ ⟨e₁, he₁, rfl⟩ _ ⟨e₂, he₂, rfl⟩
   linarith [dist_triangle_right (φ.toStinespring e₁ ξ) (φ.toStinespring e₂ ξ)
     (φ.toStinespring e₀ ξ), hdist₀ e₁ he₁, hdist₀ e₂ he₂]
