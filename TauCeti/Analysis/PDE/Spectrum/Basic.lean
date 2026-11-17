@@ -141,14 +141,17 @@ def dirichletSolutionOperator
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     Lp ℝ 2 (mu.restrict Omega) →L[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
-  hcoercive.formSolutionOperator W1p0.valueL
+  InnerProductSpace.formSolutionOperator (energyFormH1L0 hcoeff)
+    hcoercive.isUnit_continuousLinearMapOfBilin W1p0.valueL
 
 /-- The solution operator of the Dirichlet problem is the solution operator of the energy form
 along the value inclusion `H¹₀(Ω) → L²(Ω)`. -/
 theorem dirichletSolutionOperator_def
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
-    dirichletSolutionOperator hcoeff hcoercive = hcoercive.formSolutionOperator W1p0.valueL :=
+    dirichletSolutionOperator hcoeff hcoercive =
+      InnerProductSpace.formSolutionOperator (energyFormH1L0 hcoeff)
+        hcoercive.isUnit_continuousLinearMapOfBilin W1p0.valueL :=
   (rfl)
 
 /-- The abstract solution map of the energy form along the value inclusion is the weak solution
@@ -156,8 +159,11 @@ of the Dirichlet problem. -/
 theorem formSolutionMap_valueL_eq_weakSolutionDirichlet
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
-    hcoercive.formSolutionMap W1p0.valueL f = weakSolutionDirichlet hcoeff hcoercive f := by
-  refine (IsCoercive.eq_formSolutionMap hcoercive W1p0.valueL fun v ↦ ?_).symm
+    InnerProductSpace.formSolutionMap (energyFormH1L0 hcoeff)
+        hcoercive.isUnit_continuousLinearMapOfBilin W1p0.valueL f =
+      weakSolutionDirichlet hcoeff hcoercive f := by
+  refine (InnerProductSpace.eq_formSolutionMap (energyFormH1L0 hcoeff)
+    hcoercive.isUnit_continuousLinearMapOfBilin W1p0.valueL fun v ↦ ?_).symm
   rw [energyFormH1L0_apply, W1p0.valueL_apply]
   exact (isWeakSolutionDirichlet_iff_inner f _).mp
     (isWeakSolutionDirichlet_weakSolutionDirichlet hcoeff hcoercive f) v
@@ -170,7 +176,7 @@ theorem dirichletSolutionOperator_apply
     dirichletSolutionOperator hcoeff hcoercive f =
       W1p.value (weakSolutionDirichlet hcoeff hcoercive f : W1p mu Omega 2) := by
   unfold dirichletSolutionOperator
-  rw [IsCoercive.formSolutionOperator_apply,
+  rw [InnerProductSpace.formSolutionOperator_apply,
     formSolutionMap_valueL_eq_weakSolutionDirichlet hcoeff hcoercive f, W1p0.valueL_apply]
 
 /-- **The solution operator is compact on a bounded domain**, by Rellich--Kondrachov. -/
@@ -179,7 +185,8 @@ theorem isCompactOperator_dirichletSolutionOperator
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
     (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι))) :
     IsCompactOperator (dirichletSolutionOperator hcoeff hcoercive) :=
-  hcoercive.isCompactOperator_formSolutionOperator
+  InnerProductSpace.isCompactOperator_formSolutionOperator (energyFormH1L0 hcoeff)
+    hcoercive.isUnit_continuousLinearMapOfBilin
     (W1p0.isCompactOperator_valueL (by simp) hOmega)
 
 /-- **The solution operator is self-adjoint for a symmetric energy form.**  With no drift and an
@@ -194,16 +201,22 @@ theorem isSymmetric_dirichletSolutionOperator
     LinearMap.IsSymmetric (dirichletSolutionOperator hcoeff hcoercive :
       Lp ℝ 2 (mu.restrict Omega) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega)) := by
   unfold dirichletSolutionOperator
-  exact hcoercive.isSymmetric_formSolutionOperator
-    (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2)) (energyFormH1L0_comm hcoeff hsymm)
+  exact InnerProductSpace.isSymmetric_formSolutionOperator (energyFormH1L0 hcoeff)
+    hcoercive.isUnit_continuousLinearMapOfBilin
+    (W1p0.valueL (mu := mu) (Omega := Omega) (p := 2))
+    fun u v => (energyFormH1L0_comm hcoeff hsymm u v).trans (star_trivial _).symm
 
 /-- **The solution operator is positive semidefinite**: its quadratic form is the energy of the
 solution it produces. -/
 theorem inner_dirichletSolutionOperator_self_nonneg
     (hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega))
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) (f : Lp ℝ 2 (mu.restrict Omega)) :
-    0 ≤ ⟪f, dirichletSolutionOperator hcoeff hcoercive f⟫_ℝ :=
-  hcoercive.inner_formSolutionOperator_self_nonneg W1p0.valueL f
+    0 ≤ ⟪f, dirichletSolutionOperator hcoeff hcoercive f⟫_ℝ := by
+  simpa only [dirichletSolutionOperator_def, RCLike.re_to_real] using
+    InnerProductSpace.re_inner_formSolutionOperator_self_nonneg (energyFormH1L0 hcoeff)
+      hcoercive.isUnit_continuousLinearMapOfBilin
+      (fun u => by simpa only [RCLike.re_to_real] using hcoercive.apply_self_nonneg u)
+      W1p0.valueL f
 
 /-- **The solution operator is injective**: a forcing whose weak solution vanishes is zero,
 because the value map `H¹₀(Ω) → L²(Ω)` has dense range. -/
@@ -212,7 +225,9 @@ theorem dirichletSolutionOperator_injective
     (hcoercive : IsCoercive (energyFormH1L0 hcoeff)) :
     Function.Injective (dirichletSolutionOperator hcoeff hcoercive) := by
   rw [dirichletSolutionOperator_def]
-  exact hcoercive.formSolutionOperator_injective W1p0.denseRange_valueL_two
+  exact InnerProductSpace.formSolutionOperator_injective (energyFormH1L0 hcoeff)
+    hcoercive.isUnit_continuousLinearMapOfBilin
+    (fun _ => hcoercive.eq_zero_of_apply_self_eq_zero) W1p0.denseRange_valueL_two
 
 /-! ### Dirichlet eigenvalues -/
 
@@ -571,7 +586,9 @@ theorem orthogonalComplement_iSup_eigenspaces_ne_zero_dirichletSolutionOperator_
   unfold dirichletSolutionOperator
   exact hcoercive.orthogonalComplement_iSup_eigenspaces_ne_zero_formSolutionOperator_eq_bot
     (W1p0.isCompactOperator_valueL (by simp) hOmega)
-    (hcoercive.eigenspace_formSolutionOperator_zero_eq_bot W1p0.denseRange_valueL_two)
+    (InnerProductSpace.eigenspace_formSolutionOperator_zero_eq_bot _
+      hcoercive.isUnit_continuousLinearMapOfBilin
+      (fun _ => hcoercive.eq_zero_of_apply_self_eq_zero) W1p0.denseRange_valueL_two)
     (energyFormH1L0_comm hcoeff hsymm)
 
 /-- **The Dirichlet eigenfunctions form an orthonormal basis of `L²(Ω)`.**  On a bounded domain

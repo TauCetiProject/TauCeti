@@ -24,8 +24,8 @@ whose graph consists of the pairs `(J u, h)` with
 
 For the energy form of a divergence-form operator `L` this is `L` with its Dirichlet boundary
 condition, acting on the weak solutions `u ∈ H¹₀(Ω)` of `L u = h` with `h ∈ L²(Ω)`. Its domain is
-the range of the solution operator `S = IsCoercive.formSolutionOperator`, and `𝒜` is the inverse
-of `S`; dense range of `J` makes `S` injective.
+the range of the solution operator `S = InnerProductSpace.formSolutionOperator B _ J`, and `𝒜` is
+the inverse of `S`; dense range of `J` makes `S` injective.
 
 This file shows that `-𝒜` generates a strongly continuous contraction semigroup on `H`
 (`IsCoercive.formSemigroup`, with generator `IsCoercive.formGenerator`), the semigroup
@@ -90,22 +90,29 @@ variable {V H : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Complet
 
 /-- The **generator of the semigroup of a coercive form** `B` along `J : V →L[ℝ] H`: the negative
 of the operator associated with the form, `-S⁻¹` for the solution operator
-`S = hB.formSolutionOperator J`. Its domain consists of the vectors `J u` for solutions `u` of a
-variational equation `B u v = ⟪h, J v⟫` (`IsCoercive.mem_formGenerator_domain_iff`), and when `J`
-has dense range it sends such a `J u` to `-h` (`IsCoercive.formGenerator_apply_eq_neg_iff`). -/
+`S = InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J`. Its domain
+consists of the vectors `J u` for solutions `u` of a variational equation `B u v = ⟪h, J v⟫`
+(`IsCoercive.mem_formGenerator_domain_iff`), and when `J` has dense range it sends such a `J u` to
+`-h` (`IsCoercive.formGenerator_apply_eq_neg_iff`). -/
 def formGenerator (hB : IsCoercive B) (J : V →L[ℝ] H) : H →ₗ.[ℝ] H :=
-  -((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse
+  -((InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J :
+      H →ₗ[ℝ] H).toPMap ⊤).inverse
 
 variable (hB : IsCoercive B) {J : V →L[ℝ] H}
 
 /-- The generator is minus the inverse of the solution operator. -/
 theorem formGenerator_def (J : V →L[ℝ] H) :
-    hB.formGenerator J = -((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse :=
+    hB.formGenerator J =
+      -((InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J :
+          H →ₗ[ℝ] H).toPMap ⊤).inverse :=
   (rfl)
 
 /-- The domain of the generator is the range of the solution operator. -/
 theorem formGenerator_domain (J : V →L[ℝ] H) :
-    (hB.formGenerator J).domain = LinearMap.range (hB.formSolutionOperator J : H →ₗ[ℝ] H) := by
+    (hB.formGenerator J).domain =
+      LinearMap.range
+        (InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J :
+          H →ₗ[ℝ] H) := by
   ext x
   rw [formGenerator_def, LinearPMap.neg_domain,
     ContinuousLinearMap.mem_domain_inverse_toPMap_top_iff, LinearMap.mem_range]
@@ -113,7 +120,8 @@ theorem formGenerator_domain (J : V →L[ℝ] H) :
 
 /-- The solution operator takes its values in the domain of the generator. -/
 theorem formSolutionOperator_mem_formGenerator_domain (h : H) :
-    hB.formSolutionOperator J h ∈ (hB.formGenerator J).domain := by
+    InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J h ∈
+      (hB.formGenerator J).domain := by
   rw [formGenerator_def, LinearPMap.neg_domain]
   exact ContinuousLinearMap.apply_mem_domain_inverse_toPMap_top _ h
 
@@ -121,7 +129,8 @@ theorem formSolutionOperator_mem_formGenerator_domain (h : H) :
 equation `B u v = ⟪h, J v⟫`. -/
 theorem apply_mem_formGenerator_domain {u : V} {h : H} (hu : ∀ v, B u v = ⟪h, J v⟫_ℝ) :
     J u ∈ (hB.formGenerator J).domain := by
-  rw [hB.eq_formSolutionMap J hu, ← formSolutionOperator_apply]
+  rw [InnerProductSpace.eq_formSolutionMap B hB.isUnit_continuousLinearMapOfBilin J hu,
+    ← InnerProductSpace.formSolutionOperator_apply]
   exact hB.formSolutionOperator_mem_formGenerator_domain h
 
 /-- **The domain of the generator.** A vector `x` lies in the domain of the generator exactly when
@@ -131,16 +140,23 @@ theorem mem_formGenerator_domain_iff {x : H} :
   refine ⟨fun hx => ?_, fun ⟨u, h, hJu, hu⟩ => hJu ▸ hB.apply_mem_formGenerator_domain hu⟩
   rw [formGenerator_domain] at hx
   obtain ⟨h, rfl⟩ := hx
-  exact ⟨hB.formSolutionMap J h, h, by simp, hB.apply_formSolutionMap J h⟩
+  exact ⟨InnerProductSpace.formSolutionMap B hB.isUnit_continuousLinearMapOfBilin J h, h,
+    by rw [ContinuousLinearMap.coe_coe, InnerProductSpace.formSolutionOperator_apply],
+    InnerProductSpace.apply_formSolutionMap B hB.isUnit_continuousLinearMapOfBilin J h⟩
 
 /-- **The generator inverts the solution operator**: it sends `S h` to `-h`. -/
 theorem formGenerator_apply_formSolutionOperator (hJ : DenseRange J) (h : H)
-    (hx : hB.formSolutionOperator J h ∈ (hB.formGenerator J).domain) :
-    hB.formGenerator J ⟨hB.formSolutionOperator J h, hx⟩ = -h := by
+    (hx : InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J h ∈
+      (hB.formGenerator J).domain) :
+    hB.formGenerator J
+        ⟨InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J h, hx⟩ =
+      -h := by
   rw [LinearPMap.congr_fun (hB.formGenerator_def J) hx
       (ContinuousLinearMap.apply_mem_domain_inverse_toPMap_top _ h),
     LinearPMap.neg_apply,
-    ContinuousLinearMap.inverse_toPMap_top_apply _ (hB.formSolutionOperator_injective hJ)]
+    ContinuousLinearMap.inverse_toPMap_top_apply _
+      (InnerProductSpace.formSolutionOperator_injective B hB.isUnit_continuousLinearMapOfBilin
+        (fun _ => hB.eq_zero_of_apply_self_eq_zero) hJ)]
 
 /-- **The action of the generator.** On its domain, the generator sends `x` to `-h` exactly when
 `x = J u` for a solution `u` of the variational equation `B u v = ⟪h, J v⟫`. Together with
@@ -150,17 +166,26 @@ theorem formGenerator_apply_eq_neg_iff (hJ : DenseRange J) (x : (hB.formGenerato
     hB.formGenerator J x = -h ↔ ∃ u : V, J u = x ∧ ∀ v, B u v = ⟪h, J v⟫_ℝ := by
   obtain ⟨x, hx⟩ := x
   obtain ⟨g, hg⟩ := (hB.formGenerator_domain J ▸ hx :
-    x ∈ LinearMap.range (hB.formSolutionOperator J : H →ₗ[ℝ] H))
+    x ∈ LinearMap.range
+      (InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J :
+        H →ₗ[ℝ] H))
   rw [ContinuousLinearMap.coe_coe] at hg
   subst hg
   rw [hB.formGenerator_apply_formSolutionOperator hJ g hx, neg_inj]
   constructor
   · rintro rfl
-    exact ⟨hB.formSolutionMap J g, by simp, hB.apply_formSolutionMap J g⟩
+    exact ⟨InnerProductSpace.formSolutionMap B hB.isUnit_continuousLinearMapOfBilin J g,
+      (InnerProductSpace.formSolutionOperator_apply _ _ _ _).symm,
+      InnerProductSpace.apply_formSolutionMap B hB.isUnit_continuousLinearMapOfBilin J g⟩
   · rintro ⟨u, hJu, hu⟩
-    have hJu' : hB.formSolutionOperator J h = hB.formSolutionOperator J g := by
-      simpa [← hB.eq_formSolutionMap J hu] using hJu
-    exact (hB.formSolutionOperator_injective hJ hJu').symm
+    have hJu' :
+        InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J h =
+          InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J g := by
+      simpa only [InnerProductSpace.formSolutionOperator_apply,
+        ← InnerProductSpace.eq_formSolutionMap B hB.isUnit_continuousLinearMapOfBilin J hu] using
+        hJu
+    exact (InnerProductSpace.formSolutionOperator_injective B hB.isUnit_continuousLinearMapOfBilin
+      (fun _ => hB.eq_zero_of_apply_self_eq_zero) hJ hJu').symm
 
 /-- On its domain, the generator sends `x` to `h` exactly when `x = J u` for a solution `u` of
 the variational equation `B u v = ⟪-h, J v⟫`. -/
@@ -199,19 +224,29 @@ theorem exists_apply_eq_forall_apply_eq_inner (hJ : DenseRange J)
 generator `𝒜'`. -/
 theorem formSolutionOperator_formGenerator (hJ : DenseRange J)
     (x : (hB.formGenerator J).domain) :
-    hB.formSolutionOperator J (hB.formGenerator J x) = -(x : H) := by
-  have hx : (x : H) ∈ ((hB.formSolutionOperator J : H →ₗ[ℝ] H).toPMap ⊤).inverse.domain := by
+    InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J
+        (hB.formGenerator J x) =
+      -(x : H) := by
+  have hx :
+      (x : H) ∈
+        ((InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J :
+          H →ₗ[ℝ] H).toPMap ⊤).inverse.domain := by
     rw [← LinearPMap.neg_domain, ← formGenerator_def]
     exact x.2
   rw [LinearPMap.congr_fun (hB.formGenerator_def J) x.2 hx, LinearPMap.neg_apply, map_neg,
-    ContinuousLinearMap.apply_inverse_toPMap_top _ (hB.formSolutionOperator_injective hJ) ⟨x, hx⟩]
+    ContinuousLinearMap.apply_inverse_toPMap_top _
+      (InnerProductSpace.formSolutionOperator_injective B hB.isUnit_continuousLinearMapOfBilin
+        (fun _ => hB.eq_zero_of_apply_self_eq_zero) hJ)
+      ⟨x, hx⟩]
 
 /-- **The solution operator is the resolvent of the generator at `0`**: it inverts
 `0 • I - 𝒜' = -𝒜'` when `J` has dense range. -/
 theorem isResolventAt_formGenerator_zero (hJ : DenseRange J) :
-    LinearPMap.IsResolventAt (hB.formGenerator J) 0 (hB.formSolutionOperator J) := by
+    LinearPMap.IsResolventAt (hB.formGenerator J) 0
+      (InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J) := by
   -- The resolvent of `S⁻¹` at `0` is `-S`; negate the operator and its resolvent.
-  have hS := hB.formSolutionOperator_injective hJ
+  have hS := InnerProductSpace.formSolutionOperator_injective B hB.isUnit_continuousLinearMapOfBilin
+    (fun _ => hB.eq_zero_of_apply_self_eq_zero) hJ
   have h := LinearPMap.isResolventAt_resolvent
     (ContinuousLinearMap.zero_mem_resolventSet_inverse_toPMap_top _ hS)
   rw [ContinuousLinearMap.resolvent_inverse_toPMap_top_zero _ hS] at h
@@ -226,7 +261,8 @@ theorem zero_mem_resolventSet_formGenerator (hJ : DenseRange J) :
 /-- The resolvent of the generator at `0` is the solution operator. -/
 @[simp]
 theorem resolvent_formGenerator_zero (hJ : DenseRange J) :
-    (hB.formGenerator J).resolvent 0 = hB.formSolutionOperator J :=
+    (hB.formGenerator J).resolvent 0 =
+      InnerProductSpace.formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin J :=
   LinearPMap.resolvent_eq_of_isResolventAt (hB.isResolventAt_formGenerator_zero hJ)
 
 /-! ### The hypotheses of the Lumer–Phillips theorem -/
@@ -249,8 +285,12 @@ theorem isMDissipative_formGenerator [CompleteSpace H] (hJ : DenseRange J) :
   have h1 : (1 : ℝ) ∈ (hB.formGenerator J).resolventSet := by
     rw [formGenerator_def, ← neg_neg (1 : ℝ), LinearPMap.mem_resolventSet_neg_iff,
       ContinuousLinearMap.mem_resolventSet_inverse_toPMap_top_iff _
-        (hB.formSolutionOperator_injective hJ), neg_smul, one_smul, sub_neg_eq_add]
-    exact hB.isUnit_one_add_formSolutionOperator J
+        (InnerProductSpace.formSolutionOperator_injective B hB.isUnit_continuousLinearMapOfBilin
+          (fun _ => hB.eq_zero_of_apply_self_eq_zero) hJ),
+      neg_smul, one_smul, sub_neg_eq_add]
+    exact InnerProductSpace.isUnit_one_add_formSolutionOperator B
+      hB.isUnit_continuousLinearMapOfBilin
+      (fun u => by simpa only [RCLike.re_to_real] using hB.apply_self_nonneg u) J
   exact (hB.isDissipative_formGenerator hJ).isMDissipative one_pos
     (LinearPMap.smul_sub_bijective h1).surjective
 
@@ -258,7 +298,8 @@ theorem isMDissipative_formGenerator [CompleteSpace H] (hJ : DenseRange J) :
 theorem dense_formGenerator_domain [CompleteSpace H] (hJ : DenseRange J) :
     Dense ((hB.formGenerator J).domain : Set H) := by
   rw [formGenerator_domain, LinearMap.coe_range, ContinuousLinearMap.coe_coe]
-  exact hB.denseRange_formSolutionOperator hJ
+  exact InnerProductSpace.denseRange_formSolutionOperator B hB.isUnit_continuousLinearMapOfBilin
+    (fun _ => hB.eq_zero_of_apply_self_eq_zero) hJ
 
 /-! ### The semigroup -/
 
