@@ -109,9 +109,8 @@ namespace QuadraticPresentation
 /-- If the determinant of the relation matrix of a quadratic presentation is a non-zero-divisor,
 then the relation map `R^m → R^m` is injective. -/
 theorem injective_toLin'_of_det_mem_nonZeroDivisors (P : QuadraticPresentation R N)
-    (hdet : P.rel.det ∈ nonZeroDivisors R) : Function.Injective (Matrix.toLin' P.rel) := by
-  intro v w hvw
-  exact Matrix.mulVec_injective_of_det_mem_nonZeroDivisors hdet hvw
+    (hdet : P.rel.det ∈ nonZeroDivisors R) : Function.Injective (Matrix.toLin' P.rel) :=
+  fun _ _ hvw ↦ Matrix.mulVec_injective_of_det_mem_nonZeroDivisors hdet hvw
 
 /-- If the determinant of the relation matrix of a quadratic presentation is a non-zero-divisor,
 then the presented module has projective dimension at most one. -/
@@ -121,11 +120,10 @@ theorem hasProjectiveDimensionLE_one_of_det_mem_nonZeroDivisors {R : Type u} [Co
     HasProjectiveDimensionLE (ModuleCat.of R N) 1 := by
   rw [P.gen.hasProjectiveDimensionLE_succ_iff_ker P.gen_surjective 0,
     ← projective_iff_hasProjectiveDimensionLE_zero, ← IsProjective.iff_projective]
-  have heq : (Fin P.size → R) ≃ₗ[R] LinearMap.ker P.gen :=
+  exact Module.Projective.of_equiv <|
     (LinearEquiv.ofInjective (Matrix.toLin' P.rel)
       (P.injective_toLin'_of_det_mem_nonZeroDivisors hdet)).trans
       (LinearEquiv.ofEq _ _ P.range_rel_eq_ker)
-  exact Module.Projective.of_equiv heq
 
 /-- If the zeroth Fitting ideal of a quadratically presented module contains a non-zero-divisor,
 then the relation determinant is itself a non-zero-divisor (since it divides every element of
@@ -135,15 +133,8 @@ theorem det_mem_nonZeroDivisors_of_mem_fittingIdeal [Module.Finite R N]
     (hreg : d ∈ nonZeroDivisors R) :
     P.rel.det ∈ nonZeroDivisors R := by
   rw [P.fittingIdeal_eq, Ideal.mem_span_singleton] at hd
-  obtain ⟨c, hc⟩ := hd
-  rw [mem_nonZeroDivisors_iff] at hreg ⊢
-  refine ⟨fun x hx ↦ hreg.1 x ?_, fun x hx ↦ hreg.2 x ?_⟩
-  · calc
-      d * x = c * (P.rel.det * x) := by rw [hc]; ring
-      _ = 0 := by rw [hx, mul_zero]
-  · calc
-      x * d = (x * P.rel.det) * c := by rw [hc]; ring
-      _ = 0 := by rw [hx, zero_mul]
+  obtain ⟨c, rfl⟩ := hd
+  exact (mul_mem_nonZeroDivisors.mp hreg).1
 
 /-- Pad a square presentation `Rʳ →A Rʳ →π N → 0` (including `r = 0`) by an identity block to a
 `QuadraticPresentation R N` of any positive size `m ≥ r`, preserving the determinant. -/
@@ -154,23 +145,17 @@ def ofPad {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (Fin r) R
     QuadraticPresentation R N :=
   let e : Fin r ⊕ Fin (m - r) ≃ Fin m :=
     finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm))
-  let b : Basis (Fin m) R ((Fin r → R) × (Fin (m - r) → R)) :=
-    ((Pi.basisFun R (Fin r)).prod (Pi.basisFun R (Fin (m - r)))).reindex e
-  ofExact hm b b
-    (f := (Matrix.toLin' A).prodMap (LinearMap.id : (Fin (m - r) → R) →ₗ[R] (Fin (m - r) → R)))
+  let b := ((Pi.basisFun R (Fin r)).prod (Pi.basisFun R (Fin (m - r)))).reindex e
+  ofExact hm b b (f := (Matrix.toLin' A).prodMap LinearMap.id)
     (π := π ∘ₗ LinearMap.fst R (Fin r → R) (Fin (m - r) → R))
     (LinearMap.exact_iff.2 <| by
       ext ⟨x, y⟩
       simp only [LinearMap.mem_ker, LinearMap.comp_apply, LinearMap.fst_apply,
         LinearMap.mem_range, LinearMap.prodMap_apply, LinearMap.id_apply, Prod.mk.injEq]
-      constructor
-      · intro hx
-        have hx' : x ∈ LinearMap.range (Matrix.toLin' A) := hrange.symm ▸ hx
-        obtain ⟨u, hu⟩ := hx'
-        exact ⟨(u, y), hu, rfl⟩
-      · rintro ⟨⟨u, _⟩, hu, _⟩
-        have : x ∈ LinearMap.ker π := hrange ▸ ⟨u, hu⟩
-        exact this)
+      exact ⟨fun hx ↦ by
+        obtain ⟨u, hu⟩ := hrange.symm ▸ (LinearMap.mem_ker.mpr hx)
+        exact ⟨(u, y), hu, rfl⟩,
+        fun ⟨⟨u, _⟩, hu, _⟩ ↦ LinearMap.mem_ker.mp (hrange ▸ ⟨u, hu⟩)⟩)
     (hπ.comp Prod.fst_surjective)
 
 @[simp]
@@ -189,9 +174,7 @@ theorem ofPad_rel {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin r) (
   let e : Fin r ⊕ Fin (m - r) ≃ Fin m :=
     finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrm))
   ext k l
-  obtain ⟨k, rfl⟩ := e.surjective k
-  obtain ⟨l, rfl⟩ := e.surjective l
-  rcases k with k | k <;> rcases l with l | l <;>
+  obtain ⟨k | k, rfl⟩ := e.surjective k <;> obtain ⟨l | l, rfl⟩ := e.surjective l <;>
     simp [ofPad, e, LinearMap.toMatrix_apply, Matrix.one_apply, Pi.single_apply]
 
 /-- Padding a square presentation by an identity block does not change its determinant. -/
@@ -200,9 +183,8 @@ theorem det_ofPad_rel {r m : ℕ} (hrm : r ≤ m) (hm : 0 < m) (A : Matrix (Fin 
     (π : (Fin r → R) →ₗ[R] N) (hπ : Function.Surjective π)
     (hrange : LinearMap.range (Matrix.toLin' A) = LinearMap.ker π) :
     (ofPad hrm hm A π hπ hrange).rel.det = A.det := by
-  have h := ofPad_rel hrm hm A π hπ hrange
-  exact (congrArg (Matrix.det (n := Fin m)) h).trans (by
-    rw [Matrix.det_reindex_self, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one])
+  change Matrix.det (n := Fin m) (ofPad hrm hm A π hπ hrange).rel = A.det
+  rw [ofPad_rel, Matrix.det_reindex_self, Matrix.det_fromBlocks_zero₂₁, Matrix.det_one, mul_one]
 
 /-- Pad a `QuadraticPresentation R N` to any size `m ≥ P.size` by an identity block, preserving the
 relation determinant. -/
@@ -244,63 +226,43 @@ private theorem exists_linearEquiv_fin_ker_of_comp_eq_id {r s : ℕ}
     (u : (Fin s → A) →ₗ[A] (Fin r → A)) (w : (Fin r → A) →ₗ[A] (Fin s → A))
     (huw : u ∘ₗ w = LinearMap.id) :
     r ≤ s ∧ Nonempty ((Fin (s - r) → A) ≃ₗ[A] LinearMap.ker u) := by
-  have huw_apply : ∀ x, u (w x) = x := fun x ↦ LinearMap.congr_fun huw x
-  -- Direct sum splitting `(Fin r → A) × ker u ≃ₗ[A] (Fin s → A)`.
+  have huw_apply : ∀ x, u (w x) = x := LinearMap.congr_fun huw
   let e : ((Fin r → A) × LinearMap.ker u) ≃ₗ[A] (Fin s → A) :=
     { toFun := fun p ↦ w p.1 + p.2.1
       map_add' := fun p q ↦ by simp [add_add_add_comm]
       map_smul' := fun c p ↦ by simp [smul_add]
-      invFun := fun z ↦ (u z, ⟨z - w (u z), by
-        rw [LinearMap.mem_ker, map_sub, huw_apply, sub_self]⟩)
-      left_inv := fun ⟨x, ⟨y, hy⟩⟩ ↦ by
-        ext
-        · simp [huw_apply, LinearMap.mem_ker.mp hy]
-        · simp [huw_apply, LinearMap.mem_ker.mp hy]
+      invFun := fun z ↦
+        (u z, ⟨z - w (u z), by rw [LinearMap.mem_ker, map_sub, huw_apply, sub_self]⟩)
+      left_inv := fun ⟨x, ⟨y, hy⟩⟩ ↦ by ext <;> simp [huw_apply, LinearMap.mem_ker.mp hy]
       right_inv := fun z ↦ by simp }
-  -- `ker u` is finitely generated as a direct summand of `Fin s → A`.
-  have hfinK : Module.Finite A (LinearMap.ker u) :=
+  have : Module.Finite A (LinearMap.ker u) :=
     Module.Finite.of_surjective (LinearMap.snd A (Fin r → A) (LinearMap.ker u) ∘ₗ
       e.symm.toLinearMap) (Prod.snd_surjective.comp e.symm.surjective)
-  -- Base change `e` to the residue field `κ` to read off `r ≤ s` and `dim_κ (κ ⊗ ker u) = s - r`.
   let κ := ResidueField A
   let eκ : ((κ ⊗[A] (Fin r → A)) × (κ ⊗[A] LinearMap.ker u)) ≃ₗ[κ] (κ ⊗[A] (Fin s → A)) :=
-    (TensorProduct.prodRight A κ κ (Fin r → A) (LinearMap.ker u)).symm.trans
-      (e.baseChange A κ _ _)
-  have hdim : finrank κ (κ ⊗[A] (Fin r → A)) + finrank κ (κ ⊗[A] LinearMap.ker u) =
-      finrank κ (κ ⊗[A] (Fin s → A)) := by
-    rw [← finrank_prod, eκ.finrank_eq]
-  have hdimr : finrank κ (κ ⊗[A] (Fin r → A)) = r := by
-    rw [Module.finrank_baseChange, finrank_fin_fun]
-  have hdims : finrank κ (κ ⊗[A] (Fin s → A)) = s := by
-    rw [Module.finrank_baseChange, finrank_fin_fun]
-  rw [hdimr, hdims] at hdim
+    (TensorProduct.prodRight A κ κ (Fin r → A) (LinearMap.ker u)).symm.trans (e.baseChange A κ _ _)
+  have hdim : r + finrank κ (κ ⊗[A] LinearMap.ker u) = s := by
+    simpa [finrank_prod, Module.finrank_baseChange, finrank_fin_fun] using eκ.finrank_eq
   have hrs : r ≤ s := by omega
-  have hdimK : finrank κ (κ ⊗[A] LinearMap.ker u) = s - r := by omega
-  -- Lift a `κ`-basis of `κ ⊗ ker u` to `s - r` generators of `ker u` via Nakayama's lemma.
-  let b := (Module.finBasis κ (κ ⊗[A] LinearMap.ker u)).reindex (finCongr hdimK)
-  have hmk : Function.Surjective (TensorProduct.mk A κ (LinearMap.ker u) 1) :=
-    TensorProduct.mk_surjective A (LinearMap.ker u) κ residue_surjective
-  choose v hv using fun i ↦ hmk (b i)
+  let b := (Module.finBasis κ (κ ⊗[A] LinearMap.ker u)).reindex
+    (finCongr (show finrank κ (κ ⊗[A] LinearMap.ker u) = s - r by omega))
+  choose v hv using fun i ↦
+    TensorProduct.mk_surjective A (LinearMap.ker u) κ residue_surjective (b i)
   let q : (Fin (s - r) → A) →ₗ[A] LinearMap.ker u := Fintype.linearCombination A v
   have hq_surj : Function.Surjective q := by
     rw [← LinearMap.range_eq_top, Fintype.range_linearCombination]
     exact IsLocalRing.span_eq_top_of_tmul_eq_basis v b hv
-  -- Assemble `id × q` into a surjective endomorphism of `Fin s → A`; Orzech gives injectivity.
-  let idx : Fin r ⊕ Fin (s - r) ≃ Fin s :=
-    finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrs))
   let fprod : (Fin s → A) ≃ₗ[A] (Fin r → A) × (Fin (s - r) → A) :=
-    (LinearEquiv.funCongrLeft A A idx).trans (LinearEquiv.sumArrowLequivProdArrow _ _ A A)
+    (LinearEquiv.funCongrLeft A A (finSumFinEquiv.trans (finCongr (Nat.add_sub_cancel' hrs)))).trans
+      (LinearEquiv.sumArrowLequivProdArrow _ _ A A)
   let Φ : (Fin s → A) →ₗ[A] (Fin s → A) :=
     e.toLinearMap ∘ₗ (LinearMap.id.prodMap q) ∘ₗ fprod.toLinearMap
-  have hΦ_surj : Function.Surjective Φ :=
-    e.surjective.comp ((Function.surjective_id.prodMap hq_surj).comp fprod.surjective)
   have hΦ_inj : Function.Injective Φ :=
-    OrzechProperty.injective_of_surjective_endomorphism Φ hΦ_surj
+    OrzechProperty.injective_of_surjective_endomorphism Φ <|
+      e.surjective.comp ((Function.surjective_id.prodMap hq_surj).comp fprod.surjective)
   have hq_inj : Function.Injective q := fun x y hxy ↦ by
-    have h1 : Φ (fprod.symm (0, x)) = Φ (fprod.symm (0, y)) := by
-      simp [Φ, hxy]
-    have h2 := congrArg (Prod.snd ∘ fprod) (hΦ_inj h1)
-    simpa using h2
+    have h : fprod.symm (0, x) = fprod.symm (0, y) := hΦ_inj (by simp [Φ, hxy])
+    simpa using congrArg (Prod.snd ∘ fprod) h
   exact ⟨hrs, ⟨LinearEquiv.ofBijective q ⟨hq_inj, hq_surj⟩⟩⟩
 
 /-- **Minimal-cover relation bound over a local ring.** Let `A` be a local ring and let
@@ -312,17 +274,13 @@ theorem exists_squareMatrix_of_minimalCover_of_squarePresentation {r s : ℕ}
     (f : (Fin s → A) →ₗ[A] (Fin s → A)) (g : (Fin s → A) →ₗ[A] N)
     (hg : Function.Surjective g) (hfg : LinearMap.range f = LinearMap.ker g) :
     ∃ B : Matrix (Fin r) (Fin r) A, LinearMap.range (Matrix.toLin' B) = LinearMap.ker π := by
-  -- Lift `g` through `π` and `π` through `g`.
   obtain ⟨u, hu⟩ := Module.projective_lifting_property π g hπ
   obtain ⟨w, hw⟩ := Module.projective_lifting_property g π hg
-  -- `T = u ∘ w` agrees with the identity modulo `ker π ≤ 𝔪_A Aʳ`, so it is an isomorphism
-  -- by Nakayama's lemma and Orzech's theorem.
   let T : (Fin r → A) →ₗ[A] (Fin r → A) := u ∘ₗ w
   have hT_surj : Function.Surjective T := by
     rw [← LinearMap.range_eq_top, eq_top_iff]
-    refine Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal A)
-      Module.Finite.fg_top (by rw [← Ideal.jacobson_bot]; exact maximalIdeal_le_jacobson ⊥) ?_
-    intro x _
+    refine Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal A) Module.Finite.fg_top
+      (by rw [← Ideal.jacobson_bot]; exact maximalIdeal_le_jacobson ⊥) fun x _ ↦ ?_
     have hdiff : x - T x ∈ LinearMap.ker π := by
       rw [LinearMap.mem_ker, map_sub]
       have h1 : π (T x) = π x := by
@@ -330,52 +288,35 @@ theorem exists_squareMatrix_of_minimalCover_of_squarePresentation {r s : ℕ}
         rw [hu]
         exact LinearMap.congr_fun hw x
       rw [h1, sub_self]
-    have hx : x = T x + (x - T x) := by abel
-    rw [hx]
+    rw [show x = T x + (x - T x) by abel]
     exact Submodule.add_mem_sup (LinearMap.mem_range_self T x) (hmin hdiff)
-  have hT_bij : Function.Bijective T :=
+  let eT := LinearEquiv.ofBijective T
     ⟨OrzechProperty.injective_of_surjective_endomorphism T hT_surj, hT_surj⟩
-  let eT : (Fin r → A) ≃ₗ[A] (Fin r → A) := LinearEquiv.ofBijective T hT_bij
-  -- Replace `w` by `w' = w ∘ T⁻¹` so that `u ∘ w' = id` and `g ∘ w' = π`.
   let w' : (Fin r → A) →ₗ[A] (Fin s → A) := w ∘ₗ eT.symm.toLinearMap
-  have huw' : u ∘ₗ w' = LinearMap.id := LinearMap.ext fun x ↦ by
-    change T (eT.symm x) = x
-    exact eT.apply_symm_apply x
-  have hgw' : g ∘ₗ w' = π := by
-    rw [← hu, LinearMap.comp_assoc, huw', LinearMap.comp_id]
-  -- Split off `ker u ≃ A^{s - r}`.
+  have huw' : u ∘ₗ w' = LinearMap.id := LinearMap.ext fun x ↦ eT.apply_symm_apply x
+  have hgw' : g ∘ₗ w' = π := by rw [← hu, LinearMap.comp_assoc, huw', LinearMap.comp_id]
   obtain ⟨hrs, ⟨eK⟩⟩ := exists_linearEquiv_fin_ker_of_comp_eq_id u w' huw'
-  -- The projection `p : Aˢ → ker u` along `Aˢ = range w' ⊕ ker u`.
   let p : (Fin s → A) →ₗ[A] LinearMap.ker u :=
     { toFun := fun z ↦ ⟨z - w' (u z), by
         rw [LinearMap.mem_ker, map_sub, ← LinearMap.comp_apply u w', huw', LinearMap.id_apply,
           sub_self]⟩
       map_add' := fun x y ↦ by ext; simp; abel
       map_smul' := fun c x ↦ by ext; simp [smul_sub] }
-  -- Since `ker u ≤ ker g = range f`, the composite `q = eK⁻¹ ∘ p ∘ f : Aˢ → A^{s - r}` is onto.
   let q : (Fin s → A) →ₗ[A] (Fin (s - r) → A) := eK.symm.toLinearMap ∘ₗ p ∘ₗ f
-  have hq_surj : Function.Surjective q := by
-    intro y
-    have hmem : (eK y : Fin s → A) ∈ LinearMap.range f := by
+  have hq_surj : Function.Surjective q := fun y ↦ by
+    obtain ⟨z, hz⟩ : (eK y : Fin s → A) ∈ LinearMap.range f := by
       rw [hfg, LinearMap.mem_ker, ← hu, LinearMap.comp_apply, LinearMap.mem_ker.mp (eK y).2,
         map_zero]
-    obtain ⟨z, hz⟩ := hmem
     refine ⟨z, ?_⟩
+    have hpz : p (f z) = eK y := Subtype.ext <| by
+      simp [p, hz, LinearMap.mem_ker.mp (eK y).2]
     change eK.symm (p (f z)) = y
-    have hpz : p (f z) = eK y := by
-      ext1
-      change f z - w' (u (f z)) = (eK y : Fin s → A)
-      rw [hz, LinearMap.mem_ker.mp (eK y).2, map_zero, sub_zero]
     rw [hpz, eK.symm_apply_apply]
-  -- Split `q` to get `ker q ≃ A^{s - (s - r)} = Aʳ`.
   obtain ⟨t, ht⟩ := Module.projective_lifting_property q LinearMap.id hq_surj
   obtain ⟨_, ⟨eL⟩⟩ := exists_linearEquiv_fin_ker_of_comp_eq_id q t ht
   let eL' : (Fin r → A) ≃ₗ[A] LinearMap.ker q :=
     (LinearEquiv.funCongrLeft A A (finCongr (by omega : s - (s - r) = r))).trans eL
-  -- Project `f(ker q)` onto `Aʳ` via `u`: its range is exactly `ker π`.
-  let h : (Fin r → A) →ₗ[A] (Fin r → A) :=
-    u ∘ₗ f ∘ₗ (LinearMap.ker q).subtype ∘ₗ eL'.toLinearMap
-  refine ⟨LinearMap.toMatrix' h, ?_⟩
+  refine ⟨LinearMap.toMatrix' (u ∘ₗ f ∘ₗ (LinearMap.ker q).subtype ∘ₗ eL'.toLinearMap), ?_⟩
   rw [Matrix.toLin'_toMatrix']
   ext y
   simp only [LinearMap.mem_range, LinearMap.mem_ker]
@@ -385,17 +326,12 @@ theorem exists_squareMatrix_of_minimalCover_of_squarePresentation {r s : ℕ}
     rw [hu]
     exact LinearMap.mem_ker.mp (hfg ▸ LinearMap.mem_range_self f (eL' x).1)
   · intro hy
-    have hw'y : w' y ∈ LinearMap.range f := by
-      rw [hfg, LinearMap.mem_ker, ← LinearMap.comp_apply g w', hgw']
-      exact hy
-    obtain ⟨z, hz⟩ := hw'y
+    obtain ⟨z, hz⟩ : w' y ∈ LinearMap.range f := by
+      rwa [hfg, LinearMap.mem_ker, ← LinearMap.comp_apply g w', hgw']
     have hzq : z ∈ LinearMap.ker q := by
-      rw [LinearMap.mem_ker]
+      have hpz : p (f z) = 0 := Subtype.ext <| by
+        simp [p, hz, ← LinearMap.comp_apply u w', huw']
       change eK.symm (p (f z)) = 0
-      have hpz : p (f z) = 0 := by
-        ext1
-        change f z - w' (u (f z)) = 0
-        rw [hz, ← LinearMap.comp_apply u w', huw', LinearMap.id_apply, sub_self]
       rw [hpz, map_zero]
     refine ⟨eL'.symm ⟨z, hzq⟩, ?_⟩
     change u (f (eL' (eL'.symm ⟨z, hzq⟩)).1) = y
@@ -438,24 +374,19 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
   obtain ⟨π, hπ, hmin⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
   set K := LinearMap.ker π
   have hKfg : K.FG := IsNoetherian.noetherian K
-  -- Artin–Rees: for `N = k + 1`, `𝔪 ^ N Rʳ ⊓ K ≤ 𝔪 K`.
   obtain ⟨k, hk⟩ := (maximalIdeal R).exists_pow_inf_eq_pow_smul K
   have hAR : (maximalIdeal R ^ (k + 1) • (⊤ : Submodule R (Fin r → R))) ⊓ K ≤
       maximalIdeal R • K := by
     have h := hk (k + 1) (Nat.le_succ k)
     rw [Nat.add_sub_cancel_left, pow_one] at h
-    rw [h]
-    exact Submodule.smul_mono le_rfl inf_le_right
-  -- Pick a quotient `R ⧸ Iᵢ` with `Iᵢ ≤ 𝔪 ^ (k + 1)` and `M ⧸ Iᵢ M` quadratically presented.
+    exact h ▸ Submodule.smul_mono le_rfl inf_le_right
   obtain ⟨i, hi_le, hQP⟩ := hcof (k + 1)
-  have hi_le_m : I i ≤ maximalIdeal R :=
-    hi_le.trans (Ideal.pow_le_self (Nat.succ_ne_zero k))
-  have hi_ne_top : I i ≠ ⊤ := ne_top_of_le_ne_top (maximalIdeal.isMaximal R).ne_top hi_le_m
+  have hi_le_m : I i ≤ maximalIdeal R := hi_le.trans (Ideal.pow_le_self (Nat.succ_ne_zero k))
   let A := R ⧸ I i
   let mkI : R →+* A := Ideal.Quotient.mk (I i)
-  have : Nontrivial A := Ideal.Quotient.nontrivial_iff.mpr hi_ne_top
+  have : Nontrivial A := Ideal.Quotient.nontrivial_iff.mpr
+    (ne_top_of_le_ne_top (maximalIdeal.isMaximal R).ne_top hi_le_m)
   have : IsLocalRing A := IsLocalRing.of_surjective' mkI Ideal.Quotient.mk_surjective
-  -- Coordinatewise reduction `Rʳ → Aʳ` and the induced minimal cover `π' : Aʳ → M ⧸ Iᵢ M`.
   let red : (Fin r → R) →ₗ[R] (Fin r → A) :=
     { toFun := fun x j ↦ mkI (x j)
       map_add' := fun x y ↦ funext fun j ↦ map_add mkI (x j) (y j)
@@ -469,11 +400,10 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
     simp only [LinearMap.mem_ker, funext_iff, Pi.zero_apply]
     constructor
     · intro hx
-      have hx' : ∀ j, x j ∈ I i := fun j ↦ Ideal.Quotient.eq_zero_iff_mem.mp (hx j)
-      have hsum : x = ∑ j : Fin r, x j • Pi.single j (1 : R) := by
-        ext l; simp [Finset.sum_apply, Pi.single_apply]
-      rw [hsum]
-      exact Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem_smul (hx' j) Submodule.mem_top
+      rw [show x = ∑ j : Fin r, x j • Pi.single j (1 : R) by
+        ext l; simp [Finset.sum_apply, Pi.single_apply]]
+      exact Submodule.sum_mem _ fun j _ ↦
+        Submodule.smul_mem_smul (Ideal.Quotient.eq_zero_iff_mem.mp (hx j)) Submodule.mem_top
     · intro hx j
       refine Submodule.smul_induction_on hx (fun c hc y _ ↦ ?_) (fun y z hy hz ↦ ?_)
       · change mkI (c * y j) = 0
@@ -483,101 +413,70 @@ theorem exists_minimalSquarePresentation_of_cofinal_quotientSMulTop {ι : Type*}
   let π' : (Fin r → A) →ₗ[A] (M ⧸ (I i • (⊤ : Submodule R M))) :=
     Fintype.linearCombination A fun j ↦ Submodule.Quotient.mk (π (Pi.single j 1))
   have hπ'_red (x : Fin r → R) : π' (red x) = Submodule.Quotient.mk (π x) := by
-    have hsum : x = ∑ j : Fin r, x j • Pi.single j (1 : R) := by
-      ext l; simp [Finset.sum_apply, Pi.single_apply]
     conv_rhs =>
-      rw [hsum, map_sum]
+      rw [show x = ∑ j : Fin r, x j • Pi.single j (1 : R) by
+        ext l; simp [Finset.sum_apply, Pi.single_apply], map_sum]
       change (I i • (⊤ : Submodule R M)).mkQ (∑ j : Fin r, π (x j • Pi.single j 1))
       rw [map_sum]
     simp only [π', Fintype.linearCombination_apply, red, LinearMap.coe_mk, AddHom.coe_mk,
       map_smul, mkI]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rfl
+    exact Finset.sum_congr rfl fun _ _ ↦ rfl
   have hπ'_surj : Function.Surjective π' := fun z ↦ by
     obtain ⟨m, rfl⟩ := Submodule.Quotient.mk_surjective _ z
     obtain ⟨x, rfl⟩ := hπ m
     exact ⟨red x, hπ'_red x⟩
-  -- Every element of `ker π'` lifts to `K = ker π`.
-  have hker_lift : ∀ y ∈ LinearMap.ker π', ∃ z ∈ K, red z = y := by
-    intro y hy
+  have hker_lift : ∀ y ∈ LinearMap.ker π', ∃ z ∈ K, red z = y := fun y hy ↦ by
     obtain ⟨x, rfl⟩ := hred_surj y
     rw [LinearMap.mem_ker, hπ'_red, Submodule.Quotient.mk_eq_zero] at hy
-    -- Since `π` is surjective, `Iᵢ • ⊤ = π '' (Iᵢ • ⊤)`.
-    have hmem : π x ∈ (I i • (⊤ : Submodule R (Fin r → R))).map π := by
+    obtain ⟨w, hw, hwx⟩ : π x ∈ (I i • (⊤ : Submodule R (Fin r → R))).map π := by
       rwa [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hπ]
-    obtain ⟨w, hw, hwx⟩ := hmem
-    refine ⟨x - w, ?_, ?_⟩
-    · rw [LinearMap.mem_ker, map_sub, hwx, sub_self]
-    · have hredw : red w = 0 := LinearMap.mem_ker.mp (hred_ker.symm ▸ hw)
-      rw [map_sub, hredw, sub_zero]
-  -- Minimality of `π'`: `ker π' ≤ maximalIdeal A • ⊤`.
+    have hw0 : red w = 0 := LinearMap.mem_ker.mp (by rwa [hred_ker])
+    exact ⟨x - w, by rw [LinearMap.mem_ker, map_sub, hwx, sub_self], by
+      rw [map_sub, hw0, sub_zero]⟩
   have hmin' : LinearMap.ker π' ≤ maximalIdeal A • (⊤ : Submodule A (Fin r → A)) := by
     intro y hy
     obtain ⟨z, hzK, rfl⟩ := hker_lift y hy
-    have hz := hmin hzK
-    refine Submodule.smul_induction_on hz (fun c hc x _ ↦ ?_) (fun x₁ x₂ h₁ h₂ ↦ ?_)
-    · have hcm : mkI c ∈ maximalIdeal A := by
-        rw [mem_maximalIdeal, mem_nonunits_iff]
-        intro hu
-        obtain ⟨u, hu'⟩ := hu
-        obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (↑u⁻¹ : A)
-        have h1 : 1 - c * b ∈ I i := by
-          rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, map_mul]
-          change 1 - mkI c * Ideal.Quotient.mk (I i) b = 0
-          rw [← hu', hb, Units.mul_inv, sub_self]
-        have := (maximalIdeal R).add_mem (hi_le_m h1) ((maximalIdeal R).mul_mem_right b hc)
-        simp at this
-      have hsmul : red (c • x) = mkI c • red x := by
-        ext j
-        simp [red, mkI, A, Algebra.smul_def]
-      rw [hsmul]
-      exact Submodule.smul_mem_smul hcm Submodule.mem_top
-    · rw [map_add]
-      exact add_mem h₁ h₂
-  -- Apply the local minimal-cover bound over `A = R ⧸ Iᵢ`.
+    refine Submodule.smul_induction_on (hmin hzK) (fun c hc x _ ↦ ?_) (fun _ _ h₁ h₂ ↦ by
+      rw [map_add]; exact add_mem h₁ h₂)
+    have hcm : mkI c ∈ maximalIdeal A := fun hu ↦ by
+      obtain ⟨b, hb⟩ := Ideal.Quotient.mk_surjective (↑hu.unit⁻¹ : A)
+      have h1 : 1 - c * b ∈ I i := by
+        rw [← Ideal.Quotient.eq_zero_iff_mem, map_sub, map_one, map_mul]
+        change 1 - mkI c * Ideal.Quotient.mk (I i) b = 0
+        rw [hb, hu.mul_val_inv, sub_self]
+      simpa using (maximalIdeal R).add_mem (hi_le_m h1) ((maximalIdeal R).mul_mem_right b hc)
+    rw [show red (c • x) = mkI c • red x by ext j; simp [red, mkI, A, Algebra.smul_def]]
+    exact Submodule.smul_mem_smul hcm Submodule.mem_top
   obtain ⟨B', hB'⟩ := exists_squareMatrix_of_minimalCover_of_isQuadraticallyPresented
     π' hπ'_surj hmin' hQP
-  -- Lift each column of `B'` from `ker π'` to `K`.
-  have hcol (j : Fin r) : ∃ z ∈ K, red z = B' *ᵥ Pi.single j 1 := by
-    refine hker_lift _ ?_
-    rw [← hB']
-    exact ⟨Pi.single j 1, rfl⟩
-  choose z hzK hzred using hcol
-  -- Show `K = span R (range z)` via Artin–Rees + Nakayama.
+  choose z hzK hzred using fun j : Fin r ↦
+    hker_lift (Matrix.toLin' B' (Pi.single j 1)) (hB' ▸ LinearMap.mem_range_self _ _)
   let L : Submodule R (Fin r → R) := Submodule.span R (Set.range z)
   have hLK : L ≤ K := Submodule.span_le.mpr (by rintro _ ⟨j, rfl⟩; exact hzK j)
-  have hKL : K ≤ L ⊔ maximalIdeal R • K := by
-    intro x hx
-    have hredx : red x ∈ LinearMap.range (Matrix.toLin' B') := by
+  have hKL : K ≤ L ⊔ maximalIdeal R • K := fun x hx ↦ by
+    obtain ⟨c', hc'⟩ : red x ∈ LinearMap.range (Matrix.toLin' B') := by
       rw [hB', LinearMap.mem_ker, hπ'_red, LinearMap.mem_ker.mp hx, Submodule.Quotient.mk_zero]
-    obtain ⟨c', hc'⟩ := hredx
     choose c hc using fun j ↦ Ideal.Quotient.mk_surjective (c' j)
     let w : Fin r → R := ∑ j : Fin r, c j • z j
     have hwL : w ∈ L :=
       Submodule.sum_mem _ fun j _ ↦ Submodule.smul_mem _ (c j) (Submodule.subset_span ⟨j, rfl⟩)
     have hredw : red w = red x := by
       rw [← hc']
-      have hsumc : c' = ∑ j : Fin r, c' j • Pi.single j (1 : A) := by
-        ext l; simp [Finset.sum_apply, Pi.single_apply]
-      conv_rhs => rw [hsumc, map_sum]
+      conv_rhs =>
+        rw [show c' = ∑ j : Fin r, c' j • Pi.single j (1 : A) by
+          ext l; simp [Finset.sum_apply, Pi.single_apply], map_sum]
       simp only [w, map_sum, map_smul, Matrix.toLin'_apply, hzred]
       refine Finset.sum_congr rfl fun j _ ↦ ?_
-      ext l
-      simp [A, ← hc j, Algebra.smul_def, Ideal.Quotient.algebraMap_eq]
+      ext l; simp [A, ← hc j, Algebra.smul_def, Ideal.Quotient.algebraMap_eq]
     have hdiff_ker : x - w ∈ I i • (⊤ : Submodule R (Fin r → R)) := by
       rw [← hred_ker, LinearMap.mem_ker, map_sub, hredw, sub_self]
-    have hdiff_mK : x - w ∈ maximalIdeal R • K :=
-      hAR ⟨Submodule.smul_mono_left hi_le hdiff_ker, sub_mem hx (hLK hwL)⟩
-    have hx_eq : x = w + (x - w) := by abel
-    rw [hx_eq]
-    exact Submodule.add_mem_sup hwL hdiff_mK
-  have hK_eq_L : K = L := by
-    refine le_antisymm ?_ hLK
-    exact Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal R) hKfg
-      (by rw [← Ideal.jacobson_bot]; exact maximalIdeal_le_jacobson ⊥) hKL
-  -- Assemble the `r × r` relation matrix `B` with columns `z j`.
-  let h : (Fin r → R) →ₗ[R] (Fin r → R) := Fintype.linearCombination R z
-  refine ⟨π, LinearMap.toMatrix' h, hπ, hmin, ?_⟩
+    rw [show x = w + (x - w) by abel]
+    exact Submodule.add_mem_sup hwL
+      (hAR ⟨Submodule.smul_mono_left hi_le hdiff_ker, sub_mem hx (hLK hwL)⟩)
+  have hK_eq_L : K = L := le_antisymm
+    (Submodule.le_of_le_smul_of_le_jacobson (I := maximalIdeal R) hKfg
+      (by rw [← Ideal.jacobson_bot]; exact maximalIdeal_le_jacobson ⊥) hKL) hLK
+  refine ⟨π, LinearMap.toMatrix' (Fintype.linearCombination R z), hπ, hmin, ?_⟩
   rw [Matrix.toLin'_toMatrix', Fintype.range_linearCombination]
   exact hK_eq_L.symm
 
@@ -594,10 +493,10 @@ theorem isQuadraticallyPresented_of_cofinal_quotientSMulTop {ι : Type*} {I : ι
 theorem isQuadraticallyPresented_of_cofinal_baseChange_quotient {ι : Type*} {I : ι → Ideal R}
     (hcof : ∀ N : ℕ, ∃ i : ι, I i ≤ maximalIdeal R ^ N ∧
       IsQuadraticallyPresented (R ⧸ I i) ((R ⧸ I i) ⊗[R] M)) :
-    IsQuadraticallyPresented R M := by
-  refine isQuadraticallyPresented_of_cofinal_quotientSMulTop (I := I) fun N ↦ ?_
-  obtain ⟨i, hi, hQP⟩ := hcof N
-  exact ⟨i, hi, hQP.of_equiv (quotTensorEquivQuotSMulQuot (R := R) (M := M) (I i))⟩
+    IsQuadraticallyPresented R M :=
+  isQuadraticallyPresented_of_cofinal_quotientSMulTop (I := I) fun N ↦ by
+    obtain ⟨i, hi, hQP⟩ := hcof N
+    exact ⟨i, hi, hQP.of_equiv (quotTensorEquivQuotSMulQuot (R := R) (M := M) (I i))⟩
 
 end NoetherianLocalLift
 
@@ -624,6 +523,20 @@ theorem moduleEquivPiOfCompleteOrthogonalIdempotents_apply {ι : Type*} [Fintype
     moduleEquivPiOfCompleteOrthogonalIdempotents he x i = 1 ⊗ₜ[R] x := by
   simp [moduleEquivPiOfCompleteOrthogonalIdempotents]
 
+/-- The `R`-linear equivalence `(Fin m → R) ≃ₗ[R] Π i, (Fin m → R ⧸ (1 - e i))` induced by a
+complete orthogonal family of idempotents `e`. -/
+private def freeEquivPiOfCompleteOrthogonalIdempotents {ι : Type*} [Fintype ι] {e : ι → R}
+    (he : CompleteOrthogonalIdempotents e) (m : ℕ) :
+    (Fin m → R) ≃ₗ[R] ∀ i, (Fin m → R ⧸ Ideal.span {1 - e i}) :=
+  let eRing := AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ R _) he.bijective_pi
+  { toFun := fun f i j ↦ Ideal.Quotient.mk (Ideal.span {1 - e i}) (f j)
+    map_add' := fun _ _ ↦ rfl
+    map_smul' := fun _ _ ↦ rfl
+    invFun := fun g j ↦ eRing.symm fun i ↦ g i j
+    left_inv := fun f ↦ funext fun j ↦ eRing.symm_apply_apply (f j)
+    right_inv := fun g ↦ funext fun i ↦ funext fun j ↦
+      congrFun (eRing.apply_symm_apply fun k ↦ g k j) i }
+
 /-- **Componentwise projective square presentation.** Given a complete orthogonal family of
 idempotents `eᵢ` of `R` and componentwise square presentations of possibly varying ranks `rᵢ` on
 each factor `(R ⧸ (1 - eᵢ)) ⊗[R] M`, assemble a square presentation `P →Φ P →g M → 0` by a
@@ -641,34 +554,24 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
   classical
   let Rᵢ : ι → Type _ := fun i ↦ R ⧸ Ideal.span {1 - e i}
   let P := ∀ i : ι, (Fin (r i) → Rᵢ i)
-  -- `P` is a direct summand of `Fin m → R` (where `m = sup rᵢ`), hence finite and projective.
   let m : ℕ := Finset.univ.sup r
-  let eRing : R ≃ₐ[R] ∀ i, Rᵢ i :=
-    AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ R _) he.bijective_pi
-  let eFree : (Fin m → R) ≃ₗ[R] ∀ i, (Fin m → Rᵢ i) :=
-    { toFun := fun f i j ↦ Ideal.Quotient.mk _ (f j)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl
-      invFun := fun g j ↦ eRing.symm fun i ↦ g i j
-      left_inv := fun f ↦ funext fun j ↦ eRing.symm_apply_apply (f j)
-      right_inv := fun g ↦ funext fun i ↦ funext fun j ↦
-        congrFun (eRing.apply_symm_apply fun k ↦ g k j) i }
+  let eFree := freeEquivPiOfCompleteOrthogonalIdempotents he m
   let proj : (∀ i, Fin m → Rᵢ i) →ₗ[R] P :=
     { toFun := fun f i j ↦ f i (Fin.castLE (Finset.le_sup (Finset.mem_univ i)) j)
       map_add' := fun _ _ ↦ rfl
       map_smul' := fun _ _ ↦ rfl }
   let incl : P →ₗ[R] (∀ i, Fin m → Rᵢ i) :=
     { toFun := fun f i k ↦ if h : k.1 < r i then f i ⟨k.1, h⟩ else 0
-      map_add' := fun f g ↦ funext fun i ↦ funext fun k ↦ by
+      map_add' := fun _ _ ↦ funext fun i ↦ funext fun k ↦ by
         by_cases h : k.1 < r i <;> simp [h]; rfl
-      map_smul' := fun c f ↦ funext fun i ↦ funext fun k ↦ by
+      map_smul' := fun _ _ ↦ funext fun i ↦ funext fun k ↦ by
         by_cases h : k.1 < r i <;> simp [h]; rfl }
   have hpi : proj ∘ₗ incl = LinearMap.id :=
-    LinearMap.ext fun f ↦ funext fun i ↦ funext fun j ↦ by simp [proj, incl]
-  have hproj_surj : Function.Surjective proj :=
-    Function.RightInverse.surjective (f := proj) (g := incl) (LinearMap.congr_fun hpi)
+    LinearMap.ext fun _ ↦ funext fun _ ↦ funext fun _ ↦ by simp [proj, incl]
   have hfin : Module.Finite R P :=
-    Module.Finite.of_surjective (proj ∘ₗ eFree.toLinearMap) (hproj_surj.comp eFree.surjective)
+    Module.Finite.of_surjective (proj ∘ₗ eFree.toLinearMap)
+      ((show Function.Surjective proj from fun y ↦ ⟨incl y, LinearMap.congr_fun hpi y⟩).comp
+        eFree.surjective)
   have hproj : Module.Projective R P :=
     Module.Projective.of_split (eFree.symm.toLinearMap ∘ₗ incl) (proj ∘ₗ eFree.toLinearMap) <|
       LinearMap.ext fun f ↦ by
@@ -685,8 +588,7 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
       map_add' := fun x y ↦ funext fun i ↦ map_add _ (x i) (y i)
       map_smul' := fun c x ↦ funext fun i ↦ ((π i).restrictScalars R).map_smul c (x i) }
   let g : P →ₗ[R] M := eM.symm.toLinearMap ∘ₗ g₀
-  have hg_surj : Function.Surjective g := by
-    refine eM.symm.surjective.comp fun y ↦ ?_
+  have hg_surj : Function.Surjective g := eM.symm.surjective.comp fun y ↦ by
     choose x hx using fun i ↦ hπ i (y i)
     exact ⟨x, funext hx⟩
   have hrange_eq : LinearMap.range Φ = LinearMap.ker g := by
@@ -695,15 +597,10 @@ theorem exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents {ι
       LinearEquiv.coe_coe, map_eq_zero_iff _ eM.symm.injective, funext_iff, Pi.zero_apply]
     constructor
     · rintro ⟨y, rfl⟩ i
-      have hmem : Matrix.toLin' (A i) (y i) ∈ LinearMap.ker (π i) :=
-        hrange i ▸ LinearMap.mem_range_self _ (y i)
-      exact hmem
+      exact LinearMap.mem_ker.mp (hrange i ▸ LinearMap.mem_range_self _ (y i))
     · intro hx
-      have hcoord (i : ι) : ∃ y, Matrix.toLin' (A i) y = x i := by
-        have hxi : x i ∈ LinearMap.ker (π i) := hx i
-        rw [← hrange i] at hxi
-        exact hxi
-      choose y hy using hcoord
+      choose y hy using fun i ↦ show x i ∈ LinearMap.range (Matrix.toLin' (A i)) by
+        rw [hrange i]; exact hx i
       exact ⟨y, funext hy⟩
   exact ⟨hfin, hproj, Φ, g, hg_surj, hrange_eq⟩
 
@@ -716,64 +613,26 @@ theorem IsQuadraticallyPresented.of_completeOrthogonalIdempotents {ι : Type*} [
       ((R ⧸ Ideal.span {1 - e i}) ⊗[R] M)) :
     IsQuadraticallyPresented R M := by
   classical
-  let Rᵢ : ι → Type _ := fun i ↦ R ⧸ Ideal.span {1 - e i}
   let m : ℕ := max 1 (Finset.univ.sup fun i ↦ (hcomp i).nonempty.some.size)
-  let Q : ∀ i, QuadraticPresentation (Rᵢ i) (Rᵢ i ⊗[R] M) :=
-    fun i ↦ (hcomp i).nonempty.some.pad (m := m)
-      (le_trans (Finset.le_sup (f := fun i ↦ (hcomp i).nonempty.some.size) (Finset.mem_univ i))
-        (le_max_right 1 _))
-  let eRing : R ≃ₐ[R] ∀ i, Rᵢ i :=
-    AlgEquiv.ofBijective (AlgHom.pi fun _ ↦ Ideal.Quotient.mkₐ R _) he.bijective_pi
-  let eFree : (Fin m → R) ≃ₗ[R] ∀ i, (Fin m → Rᵢ i) :=
-    { toFun := fun f i j ↦ Ideal.Quotient.mk _ (f j)
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl
-      invFun := fun g j ↦ eRing.symm fun i ↦ g i j
-      left_inv := fun f ↦ funext fun j ↦ eRing.symm_apply_apply (f j)
-      right_inv := fun g ↦ funext fun i ↦ funext fun j ↦
-        congrFun (eRing.apply_symm_apply fun k ↦ g k j) i }
-  let eM := moduleEquivPiOfCompleteOrthogonalIdempotents (M := M) he
-  let Φ₀ : (∀ i, Fin m → Rᵢ i) →ₗ[R] (∀ i, Fin m → Rᵢ i) :=
-    { toFun := fun x i ↦ Matrix.toLin' (Q i).rel (x i)
-      map_add' := fun x y ↦ funext fun i ↦ map_add _ (x i) (y i)
-      map_smul' := fun c x ↦ funext fun i ↦
-        ((Matrix.toLin' (Q i).rel).restrictScalars R).map_smul c (x i) }
-  let g₀ : (∀ i, Fin m → Rᵢ i) →ₗ[R] (∀ i, Rᵢ i ⊗[R] M) :=
-    { toFun := fun x i ↦ (Q i).gen (x i)
-      map_add' := fun x y ↦ funext fun i ↦ map_add _ (x i) (y i)
-      map_smul' := fun c x ↦ funext fun i ↦ ((Q i).gen.restrictScalars R).map_smul c (x i) }
-  have hg₀_surj : Function.Surjective g₀ := fun y ↦ by
-    choose x hx using fun i ↦ (Q i).gen_surjective (y i)
-    exact ⟨x, funext hx⟩
-  have hexact₀ : Function.Exact Φ₀ g₀ := by
-    rw [LinearMap.exact_iff]
-    ext x
-    simp only [LinearMap.mem_ker, LinearMap.mem_range]
-    constructor
-    · intro hx
-      have hcoord (i : ι) : ∃ y, Matrix.toLin' (Q i).rel y = x i := by
-        have hxi : x i ∈ LinearMap.ker (Q i).gen := congrFun hx i
-        rw [← (Q i).range_rel_eq_ker] at hxi
-        exact hxi
-      choose y hy using hcoord
-      exact ⟨y, funext hy⟩
-    · rintro ⟨y, rfl⟩
-      exact funext fun i ↦ (Q i).gen_mulVec (y i)
+  let Q (i : ι) := (hcomp i).nonempty.some.pad (m := m)
+    ((Finset.le_sup (f := fun i ↦ (hcomp i).nonempty.some.size) (Finset.mem_univ i)).trans
+      (le_max_right 1 _))
+  obtain ⟨_, _, Φ, g, hg_surj, hrange_eq⟩ :=
+    exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents (M := M) he (fun _ ↦ m)
+      fun i ↦ ⟨(Q i).rel, (Q i).gen, (Q i).gen_surjective, (Q i).range_rel_eq_ker⟩
+  let eFree := freeEquivPiOfCompleteOrthogonalIdempotents he m
   refine IsQuadraticallyPresented.of_exact (Pi.basisFun R (Fin m)) (Pi.basisFun R (Fin m))
-    (f := eFree.symm.toLinearMap ∘ₗ Φ₀ ∘ₗ eFree.toLinearMap)
-    (π := eM.symm.toLinearMap ∘ₗ g₀ ∘ₗ eFree.toLinearMap) ?_
-    (eM.symm.surjective.comp (hg₀_surj.comp eFree.surjective))
-  rw [LinearMap.exact_iff]
+    (f := eFree.symm.toLinearMap ∘ₗ Φ ∘ₗ eFree.toLinearMap) (π := g ∘ₗ eFree.toLinearMap)
+    (LinearMap.exact_iff.2 ?_) (hg_surj.comp eFree.surjective)
   ext x
-  simp only [LinearMap.mem_ker, LinearMap.mem_range, LinearMap.comp_apply, LinearEquiv.coe_coe,
-    map_eq_zero_iff _ eM.symm.injective]
+  simp only [LinearMap.mem_ker, LinearMap.mem_range, LinearMap.comp_apply, LinearEquiv.coe_coe]
   constructor
   · intro hx
-    obtain ⟨y, hy⟩ := (LinearMap.exact_iff.mp hexact₀).le hx
+    obtain ⟨y, hy⟩ := hrange_eq.symm ▸ (show eFree x ∈ LinearMap.ker g from hx)
     exact ⟨eFree.symm y, by simp [hy]⟩
   · rintro ⟨y, rfl⟩
     rw [eFree.apply_symm_apply]
-    exact (LinearMap.exact_iff.mp hexact₀).ge ⟨eFree y, rfl⟩
+    exact LinearMap.mem_ker.mp (hrange_eq ▸ LinearMap.mem_range_self Φ (eFree y))
 
 /-- Componentwise assembly of quadratic presentations over a finite product of rings. -/
 theorem IsQuadraticallyPresented.of_pi {ι : Type*} [Finite ι] {S : ι → Type*}
@@ -784,31 +643,26 @@ theorem IsQuadraticallyPresented.of_pi {ι : Type*} [Finite ι] {S : ι → Type
   classical
   let := Fintype.ofFinite ι
   let e : ι → ∀ j, S j := fun i ↦ Pi.single i 1
-  have he : CompleteOrthogonalIdempotents e := CompleteOrthogonalIdempotents.single S
-  refine IsQuadraticallyPresented.of_completeOrthogonalIdempotents he fun i ↦ ?_
+  refine IsQuadraticallyPresented.of_completeOrthogonalIdempotents
+    (CompleteOrthogonalIdempotents.single S) fun i ↦ ?_
   let : Algebra (∀ j, S j) (S i) := (Pi.evalRingHom S i).toAlgebra
   let Rᵢ := (∀ j, S j) ⧸ Ideal.span {1 - e i}
-  -- Identify `(∀ j, S j) ⧸ (1 - e i)` with `S i`.
   have hker : RingHom.ker (Pi.evalRingHom S i) = Ideal.span {1 - e i} := by
     ext x
     simp only [RingHom.mem_ker, Pi.evalRingHom_apply, Ideal.mem_span_singleton]
-    constructor
-    · intro hx
-      refine ⟨x, ?_⟩
-      ext k
-      by_cases hk : k = i
-      · subst hk; simp [e, hx]
-      · simp [e, hk]
-    · rintro ⟨y, rfl⟩
-      simp [e]
+    refine ⟨fun hx ↦ ⟨x, funext fun k ↦ ?_⟩, fun ⟨y, hy⟩ ↦ by rw [hy]; simp [e]⟩
+    rcases eq_or_ne k i with rfl | hki
+    · simp [e, hx]
+    · simp [e, hki]
   let eqRing : Rᵢ ≃+* S i :=
     (Ideal.quotEquivOfEq hker.symm).trans
       (RingHom.quotientKerEquivOfSurjective (Function.surjective_eval i))
-  have hcompat (x : ∀ j, S j) : eqRing (Ideal.Quotient.mk _ x) = x i := rfl
   let : Algebra (S i) Rᵢ := eqRing.symm.toRingHom.toAlgebra
   have : IsScalarTower (∀ j, S j) (S i) Rᵢ :=
     IsScalarTower.of_algebraMap_eq fun x ↦ eqRing.injective <| by
-      simpa [Rᵢ, RingHom.algebraMap_toAlgebra, Ideal.Quotient.algebraMap_eq] using hcompat x
+      change eqRing (Ideal.Quotient.mk _ x) = eqRing (eqRing.symm (x i))
+      rw [eqRing.apply_symm_apply]
+      rfl
   exact ((hcomp i).baseChange Rᵢ).of_equiv
     (AlgebraTensorModule.cancelBaseChange (∀ j, S j) (S i) Rᵢ Rᵢ N)
 

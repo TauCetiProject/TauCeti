@@ -195,10 +195,7 @@ theorem jointIdeal_le_comap_constantCoeff_pow {I : Ideal O} (hI : (p : O) ∈ I)
   rw [jointIdeal_eq_sup]
   refine sup_le ?_ ((towerIdeal_le_comap_constantCoeff_pow hI n).trans (Ideal.pow_le_pow_right hn))
   rw [Ideal.span_singleton_le_iff_mem]
-  have hCp : C (p : O) ∈ I.comap constantCoeff := by
-    rw [Ideal.mem_comap]
-    simpa using hI
-  exact Ideal.pow_le_pow_right ha (Ideal.pow_mem_pow hCp a)
+  exact Ideal.pow_le_pow_right ha (Ideal.pow_mem_pow (by simpa using hI) a)
 
 /-- Over a local ring with `p ∈ 𝔪_O`, `J_{a,n} ≤ 𝔪_{O⟦X⟧} ^ N` whenever `N ≤ a` and `N ≤ n + 1`. -/
 theorem jointIdeal_le_maximalIdeal_pow [IsLocalRing O] (hp : (p : O) ∈ maximalIdeal O)
@@ -210,57 +207,42 @@ theorem jointIdeal_le_maximalIdeal_pow [IsLocalRing O] (hp : (p : O) ∈ maximal
 /-- For a prime `p`, the binomial expansion gives `(1 + X) ^ pⁿ - 1 - X ^ pⁿ ∈ (C p)`. -/
 theorem one_add_X_pow_sub_one_sub_X_pow_mem_span_C (hp : p.Prime) (n : ℕ) :
     (1 + X : O⟦X⟧) ^ p ^ n - 1 - X ^ p ^ n ∈ Ideal.span {C (p : O)} := by
-  have hpos : 0 < p ^ n := pow_pos hp.pos n
-  -- Expand `(X + 1) ^ pⁿ` and split off the top (`k = pⁿ`) and bottom (`k = 0`) terms.
-  have hexp : (1 + X : O⟦X⟧) ^ p ^ n =
-      ∑ k ∈ Finset.range (p ^ n + 1), X ^ k * ((p ^ n).choose k : O⟦X⟧) := by
-    rw [add_comm, add_pow]
-    refine Finset.sum_congr rfl fun k _ ↦ by simp
   have hsplit : (1 + X : O⟦X⟧) ^ p ^ n - 1 - X ^ p ^ n =
       ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧) := by
-    rw [hexp, Finset.sum_range_succ, Nat.choose_self, Nat.cast_one, mul_one]
-    have hsum : ∑ k ∈ Finset.range (p ^ n), X ^ k * ((p ^ n).choose k : O⟦X⟧) =
-        1 + ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧) := by
-      conv_lhs => arg 1; rw [← Nat.sub_add_cancel hpos]
-      rw [Finset.sum_range_succ', add_comm]
-      simp
-    rw [hsum]
-    ring
+    have hsum : (1 + X : O⟦X⟧) ^ p ^ n =
+        (1 + ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧)) +
+          X ^ p ^ n := by
+      rw [add_comm, add_pow, Finset.sum_range_succ, Nat.choose_self]
+      have hbody : ∑ k ∈ Finset.range (p ^ n), X ^ k * 1 ^ (p ^ n - k) * ((p ^ n).choose k : O⟦X⟧) =
+          1 + ∑ k ∈ Finset.range (p ^ n - 1), X ^ (k + 1) * ((p ^ n).choose (k + 1) : O⟦X⟧) := by
+        conv_lhs => arg 1; rw [← Nat.sub_add_cancel (pow_pos hp.pos n)]
+        rw [Finset.sum_range_succ', add_comm]
+        simp
+      simpa using hbody
+    linear_combination hsum
   rw [hsplit]
   refine Ideal.sum_mem _ fun k hk ↦ ?_
-  rw [Finset.mem_range] at hk
-  have hdvd : p ∣ (p ^ n).choose (k + 1) :=
-    hp.dvd_choose_pow (Nat.succ_ne_zero k) (by omega)
-  obtain ⟨m, hm⟩ := hdvd
-  have hcast : ((p ^ n).choose (k + 1) : O⟦X⟧) = C (p : O) * (m : O⟦X⟧) := by
-    rw [hm, Nat.cast_mul, map_natCast]
-  rw [hcast, ← mul_assoc, mul_comm (X ^ (k + 1)), mul_assoc]
+  obtain ⟨m, hm⟩ := hp.dvd_choose_pow (n := n) (Nat.succ_ne_zero k)
+    (by have := Finset.mem_range.mp hk; omega)
+  rw [hm, Nat.cast_mul, ← map_natCast C p, ← mul_assoc, mul_comm (X ^ (k + 1)), mul_assoc]
   exact Ideal.mul_mem_right _ _ (Ideal.subset_span rfl)
 
 /-- For a prime `p`, the monomial `X ^ (a * pⁿ)` lies in `J_{a,n} = (p^a, (1 + X) ^ pⁿ - 1)`. -/
 theorem X_pow_mul_mem_jointIdeal (hp : p.Prime) (a n : ℕ) :
     (X : O⟦X⟧) ^ (a * p ^ n) ∈ jointIdeal p O a n := by
-  have hcong := one_add_X_pow_sub_one_sub_X_pow_mem_span_C (O := O) hp n
-  rw [Ideal.mem_span_singleton] at hcong
-  obtain ⟨g, hg⟩ := hcong
+  obtain ⟨g, hg⟩ := Ideal.mem_span_singleton.mp
+    (one_add_X_pow_sub_one_sub_X_pow_mem_span_C (O := O) hp n)
   set ω : O⟦X⟧ := (1 + X) ^ p ^ n - 1
-  have hX : (X : O⟦X⟧) ^ p ^ n = ω + -(C (p : O) * g) := by
-    have : ω - X ^ p ^ n = C (p : O) * g := hg
-    linear_combination -this
-  rw [mul_comm, pow_mul, hX, add_pow]
-  refine Ideal.sum_mem _ fun k hk ↦ ?_
-  rw [Finset.mem_range] at hk
+  rw [mul_comm, pow_mul, show (X : O⟦X⟧) ^ p ^ n = ω + -(C (p : O) * g) by linear_combination -hg,
+    add_pow]
+  refine Ideal.sum_mem _ fun k _ ↦ ?_
   rcases Nat.eq_zero_or_pos k with rfl | hkpos
-  · simp only [pow_zero, one_mul, Nat.sub_zero, Nat.choose_zero_right, Nat.cast_one, mul_one]
-    rw [← mul_neg, mul_pow]
-    have hmem : C (p : O) ^ a ∈ jointIdeal p O a n :=
-      span_C_pow_le_jointIdeal p O a n (Ideal.mem_span_singleton_self _)
-    exact Ideal.mul_mem_right _ _ hmem
-  · have hω : ω ∈ jointIdeal p O a n :=
-      towerIdeal_le_jointIdeal p O a n (Ideal.mem_span_singleton_self _)
-    have hpow : ω ^ k ∈ jointIdeal p O a n :=
-      Ideal.pow_mem_of_mem _ hω k hkpos
-    exact Ideal.mul_mem_right _ _ (Ideal.mul_mem_right _ _ hpow)
+  · simp only [pow_zero, one_mul, Nat.sub_zero, Nat.choose_zero_right, Nat.cast_one, mul_one,
+      ← mul_neg, mul_pow]
+    exact Ideal.mul_mem_right _ _
+      (span_C_pow_le_jointIdeal p O a n (Ideal.mem_span_singleton_self _))
+  · exact Ideal.mul_mem_right _ _ <| Ideal.mul_mem_right _ _ <| Ideal.pow_mem_of_mem _
+      (towerIdeal_le_jointIdeal p O a n (Ideal.mem_span_singleton_self _)) k hkpos
 
 /-- **Lower cofinality bound for `(p, X)`.** For a prime `p`,
 `((p).comap constantCoeff) ^ (a + a * pⁿ) ≤ J_{a,n}`. -/
@@ -270,39 +252,20 @@ theorem comap_constantCoeff_span_pow_le_jointIdeal (hp : p.Prime) (a n : ℕ) :
   rw [PowerSeries.mem_comap_constantCoeff_pow_iff] at hf
   set M := a * p ^ n
   let t : O⟦X⟧ := ∑ j ∈ Finset.range M, C (coeff j f) * X ^ j
-  -- The tail `f - t` is divisible by `X ^ M ∈ J_{a,n}`.
   have htail : f - t ∈ jointIdeal p O a n := by
-    have hdvd : (X : O⟦X⟧) ^ M ∣ f - t := by
-      rw [PowerSeries.X_pow_dvd_iff]
-      intro j hj
-      rw [map_sub, map_sum]
-      have hsum : ∑ k ∈ Finset.range M, coeff j (C (coeff k f) * X ^ k) = coeff j f := by
-        rw [Finset.sum_eq_single j]
-        · simp
-        · intro k _ hkj
-          simp [hkj.symm]
-        · intro h
-          exact absurd (Finset.mem_range.mpr hj) h
-      rw [hsum, sub_self]
-    obtain ⟨q, hq⟩ := hdvd
-    rw [hq]
-    exact Ideal.mul_mem_right q _ (X_pow_mul_mem_jointIdeal hp a n)
-  -- Each term of the truncation `t` has coefficient in `(p) ^ a`, so `t ∈ J_{a,n}`.
-  have htrunc : t ∈ jointIdeal p O a n := by
-    refine Ideal.sum_mem _ fun j hj ↦ ?_
-    rw [Finset.mem_range] at hj
-    have hcoeff : coeff j f ∈ Ideal.span {(p : O)} ^ a :=
-      Ideal.pow_le_pow_right (by omega : a ≤ a + M - j) (hf j)
-    rw [Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hcoeff
-    obtain ⟨c, hc⟩ := hcoeff
-    have hC : C (coeff j f) = C (p : O) ^ a * C c := by
-      rw [hc, map_mul, map_pow]
-    rw [hC, mul_assoc]
+    obtain ⟨q, hq⟩ : (X : O⟦X⟧) ^ M ∣ f - t := PowerSeries.X_pow_dvd_iff.mpr fun j hj ↦ by
+      rw [map_sub, map_sum, Finset.sum_eq_single j]
+      · simp
+      · intro b _ hbj; simp [Ne.symm hbj]
+      · simp [Finset.mem_range.mpr hj]
+    exact hq ▸ Ideal.mul_mem_right q _ (X_pow_mul_mem_jointIdeal hp a n)
+  have htrunc : t ∈ jointIdeal p O a n := Ideal.sum_mem _ fun j hj ↦ by
+    obtain ⟨c, hc⟩ := Ideal.mem_span_singleton.mp <| Ideal.span_singleton_pow (p : O) a ▸
+      Ideal.pow_le_pow_right (by have := Finset.mem_range.mp hj; omega : a ≤ a + M - j) (hf j)
+    rw [hc, map_mul, map_pow, mul_assoc]
     exact Ideal.mul_mem_right _ _
       (span_C_pow_le_jointIdeal p O a n (Ideal.mem_span_singleton_self _))
-  have hEq : f = (f - t) + t := by abel
-  rw [hEq]
-  exact add_mem htail htrunc
+  exact (show f = (f - t) + t by abel) ▸ add_mem htail htrunc
 
 /-- **Lower cofinality bound for any ideal `I` with `I ^ k ≤ (p)`.** If `p` is prime, `0 < k`,
 and `I ^ k ≤ (p)`, then `(I.comap constantCoeff) ^ (k * (a + a * pⁿ)) ≤ J_{a,n}`. -/
@@ -318,11 +281,8 @@ theorem comap_constantCoeff_pow_le_jointIdeal_of_pow_le (hp : p.Prime) {I : Idea
   · simp [Nat.sub_eq_zero_of_le hj]
   · have hle : k * (N - j) ≤ k * N - j := by
       have : j ≤ k * j := Nat.le_mul_of_pos_left j hk
-      rw [Nat.mul_sub]
-      omega
-    have h1 : coeff j f ∈ I ^ (k * (N - j)) := Ideal.pow_le_pow_right hle (hf j)
-    rw [pow_mul] at h1
-    exact pow_le_pow_left' hIk (N - j) h1
+      rw [Nat.mul_sub]; omega
+    exact pow_le_pow_left' hIk (N - j) (pow_mul I k (N - j) ▸ Ideal.pow_le_pow_right hle (hf j))
 
 /-- Over a local ring `O` with `𝔪_O ^ k ≤ (p)` (`k > 0`), powers of `𝔪_{O⟦X⟧}` are contained in
 every joint ideal `J_{a,n}`. -/
@@ -332,39 +292,33 @@ theorem maximalIdeal_pow_le_jointIdeal_of_pow_le [IsLocalRing O] (hp : p.Prime) 
   rw [TauCeti.PowerSeries.maximalIdeal_eq_comap_constantCoeff]
   exact comap_constantCoeff_pow_le_jointIdeal_of_pow_le hp hk hmk a n
 
+private theorem natCast_prime_mem_jacobson [Fact p.Prime] [Algebra ℤ_[p] O]
+    [Module.Finite ℤ_[p] O] : (p : O) ∈ Ring.jacobson O := by
+  have hpZ : (p : ℤ_[p]) ∈ Ring.jacobson ℤ_[p] := by
+    rw [ringJacobson_eq_maximalIdeal, PadicInt.maximalIdeal_eq_span_p]
+    exact Ideal.mem_span_singleton_self _
+  simpa using TauCeti.Ring.algebraMap_mem_jacobson (A := O) hpZ
+
 /-- Over a local module-finite `ℤ_[p]`-algebra `O`, the joint ideals `J_{a,n}` are cofinal in both
 directions with powers of `𝔪_{O⟦X⟧}`. -/
 theorem jointIdeal_cofinal_maximalIdeal_pow [Fact p.Prime] [IsLocalRing O]
     [Algebra ℤ_[p] O] [Module.Finite ℤ_[p] O] :
     (∀ N : ℕ, ∃ a n : ℕ, 0 < a ∧ jointIdeal p O a n ≤ maximalIdeal O⟦X⟧ ^ N) ∧
     (∀ a n : ℕ, ∃ M : ℕ, maximalIdeal O⟦X⟧ ^ M ≤ jointIdeal p O a n) := by
-  have hp_mem : (p : O) ∈ maximalIdeal O := by
-    have hpZ : (p : ℤ_[p]) ∈ Ring.jacobson ℤ_[p] := by
-      rw [ringJacobson_eq_maximalIdeal, PadicInt.maximalIdeal_eq_span_p]
-      exact Ideal.mem_span_singleton_self _
-    have hJ := TauCeti.Ring.algebraMap_mem_jacobson (A := O) hpZ
-    rwa [map_natCast, ringJacobson_eq_maximalIdeal] at hJ
-  constructor
-  · intro N
-    refine ⟨max 1 N, N, lt_of_lt_of_le one_pos (le_max_left _ _), ?_⟩
-    exact jointIdeal_le_maximalIdeal_pow hp_mem (le_max_right 1 N) (Nat.le_succ N)
-  · intro a n
-    obtain ⟨k, hk, hmk⟩ := TauCeti.Ring.exists_jacobson_pow_le_map_maximalIdeal ℤ_[p] O
-    rw [PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton, map_natCast,
-      ringJacobson_eq_maximalIdeal] at hmk
-    exact ⟨k * (a + a * p ^ n), maximalIdeal_pow_le_jointIdeal_of_pow_le Fact.out hk hmk a n⟩
+  have hp_mem : (p : O) ∈ maximalIdeal O :=
+    ringJacobson_eq_maximalIdeal O ▸ natCast_prime_mem_jacobson (p := p) (O := O)
+  refine ⟨fun N ↦ ⟨max 1 N, N, lt_of_lt_of_le one_pos (le_max_left _ _),
+    jointIdeal_le_maximalIdeal_pow hp_mem (le_max_right 1 N) (Nat.le_succ N)⟩, fun a n ↦ ?_⟩
+  obtain ⟨k, hk, hmk⟩ := TauCeti.Ring.exists_jacobson_pow_le_map_maximalIdeal ℤ_[p] O
+  rw [PadicInt.maximalIdeal_eq_span_p, Ideal.map_span, Set.image_singleton, map_natCast,
+    ringJacobson_eq_maximalIdeal] at hmk
+  exact ⟨k * (a + a * p ^ n), maximalIdeal_pow_le_jointIdeal_of_pow_le Fact.out hk hmk a n⟩
 
 end Cofinality
 
 section FittingContinuity
 
 variable {p : ℕ} [Fact p.Prime] {O : Type*} [CommRing O] [Algebra ℤ_[p] O] [Module.Finite ℤ_[p] O]
-
-private theorem natCast_prime_mem_jacobson : (p : O) ∈ Ring.jacobson O := by
-  have hpZ : (p : ℤ_[p]) ∈ Ring.jacobson ℤ_[p] := by
-    rw [ringJacobson_eq_maximalIdeal, PadicInt.maximalIdeal_eq_span_p]
-    exact Ideal.mem_span_singleton_self _
-  simpa using TauCeti.Ring.algebraMap_mem_jacobson (A := O) hpZ
 
 private theorem isNoetherianRing_powerSeries (R O : Type*) [CommRing R] [IsNoetherianRing R]
     [CommRing O] [Algebra R O] [Module.Finite R O] : IsNoetherianRing O⟦X⟧ := by
@@ -382,12 +336,10 @@ theorem ideal_eq_of_cofinal_map_jointIdeal {I L : Ideal O⟦X⟧}
     I = L := by
   have : IsNoetherianRing O⟦X⟧ := isNoetherianRing_powerSeries ℤ_[p] O
   choose a n _ ha hn heq using hcof
-  let J : Ideal O⟦X⟧ := (Ring.jacobson O).comap constantCoeff
-  have hJ : J ≤ Ring.jacobson O⟦X⟧ := (PowerSeries.jacobson_eq_comap_constantCoeff O).ge
-  exact Ideal.eq_of_forall_map_quotientMk_eq (K := fun N ↦ jointIdeal p O (a N) (n N)) hJ
+  exact Ideal.eq_of_forall_map_quotientMk_eq (K := fun N ↦ jointIdeal p O (a N) (n N))
+    (PowerSeries.jacobson_eq_comap_constantCoeff O).ge
     (fun N ↦ ⟨N, jointIdeal_le_comap_constantCoeff_pow natCast_prime_mem_jacobson (ha N)
-      ((hn N).trans (Nat.le_succ (n N)))⟩)
-    heq
+      ((hn N).trans (Nat.le_succ (n N)))⟩) heq
 
 /-- **Closed-ideal detection in `O⟦X⟧`.** Two ideals of `O⟦X⟧` having the same image modulo every
 joint ideal `J_{a,n}` with `a > 0` are equal. -/
@@ -529,35 +481,24 @@ theorem isQuadraticallyPresented_towerQuotient_baseChange {O S : Type*} [CommRin
   set I := towerIdeal p O n
   set I' := towerIdeal p S n
   let Φ : O⟦X⟧ →+* S⟦X⟧ := PowerSeries.map φ
-  -- Descend `mk I' ∘ Φ` to a ring homomorphism `O⟦X⟧ ⧸ I →+* S⟦X⟧ ⧸ I'`.
   have hle : I ≤ RingHom.ker ((Ideal.Quotient.mk I').comp Φ) := by
-    dsimp only [I]
-    rw [towerIdeal, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker, RingHom.comp_apply,
+    dsimp only [I, towerIdeal]
+    rw [Ideal.span_singleton_le_iff_mem, RingHom.mem_ker, RingHom.comp_apply,
       Ideal.Quotient.eq_zero_iff_mem]
-    have hmap : Φ ((1 + X : O⟦X⟧) ^ p ^ n - 1) = (1 + X : S⟦X⟧) ^ p ^ n - 1 := by simp [Φ]
-    rw [hmap]
-    exact Ideal.mem_span_singleton_self _
-  let ψ : (O⟦X⟧ ⧸ I) →+* (S⟦X⟧ ⧸ I') := Ideal.Quotient.lift I ((Ideal.Quotient.mk I').comp Φ) hle
-  let : Algebra (O⟦X⟧ ⧸ I) (S⟦X⟧ ⧸ I') := ψ.toAlgebra
-  have : IsScalarTower O⟦X⟧ (O⟦X⟧ ⧸ I) (S⟦X⟧ ⧸ I') :=
-    ⟨fun f x y ↦ by
-      obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective x
-      obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective y
-      change Ideal.Quotient.mk I' (Φ (f * g)) * Ideal.Quotient.mk I' h =
-        Ideal.Quotient.mk I' (Φ f * (Φ g * h))
-      rw [← map_mul (Ideal.Quotient.mk I'), map_mul Φ, mul_assoc]⟩
-  -- Base-change `hQP` along `ψ`, cancel both base changes, and identify with the module quotient.
-  have h1 : TauCeti.IsQuadraticallyPresented (O⟦X⟧ ⧸ I) ((O⟦X⟧ ⧸ I) ⊗[O⟦X⟧] M) :=
-    hQP.of_equiv (TauCeti.quotTensorEquivQuotSMulQuot I).symm
-  have h2 : TauCeti.IsQuadraticallyPresented (S⟦X⟧ ⧸ I')
-      ((S⟦X⟧ ⧸ I') ⊗[O⟦X⟧ ⧸ I] ((O⟦X⟧ ⧸ I) ⊗[O⟦X⟧] M)) :=
-    h1.baseChange (S⟦X⟧ ⧸ I')
-  have h3 : TauCeti.IsQuadraticallyPresented (S⟦X⟧ ⧸ I') ((S⟦X⟧ ⧸ I') ⊗[O⟦X⟧] M) :=
-    h2.of_equiv (AlgebraTensorModule.cancelBaseChange O⟦X⟧ (O⟦X⟧ ⧸ I) (S⟦X⟧ ⧸ I') (S⟦X⟧ ⧸ I') M)
-  have h4 : TauCeti.IsQuadraticallyPresented (S⟦X⟧ ⧸ I')
-      ((S⟦X⟧ ⧸ I') ⊗[S⟦X⟧] (S⟦X⟧ ⊗[O⟦X⟧] M)) :=
-    h3.of_equiv (AlgebraTensorModule.cancelBaseChange O⟦X⟧ S⟦X⟧ (S⟦X⟧ ⧸ I') (S⟦X⟧ ⧸ I') M).symm
-  exact h4.of_equiv (TauCeti.quotTensorEquivQuotSMulQuot I')
+    simp [Φ, I', towerIdeal]
+  let : Algebra (O⟦X⟧ ⧸ I) (S⟦X⟧ ⧸ I') :=
+    (Ideal.Quotient.lift I ((Ideal.Quotient.mk I').comp Φ) hle).toAlgebra
+  have : IsScalarTower O⟦X⟧ (O⟦X⟧ ⧸ I) (S⟦X⟧ ⧸ I') := ⟨fun f x y ↦ by
+    obtain ⟨g, rfl⟩ := Ideal.Quotient.mk_surjective x
+    obtain ⟨h, rfl⟩ := Ideal.Quotient.mk_surjective y
+    change Ideal.Quotient.mk I' (Φ (f * g)) * Ideal.Quotient.mk I' h =
+      Ideal.Quotient.mk I' (Φ f * (Φ g * h))
+    rw [← map_mul (Ideal.Quotient.mk I'), map_mul Φ, mul_assoc]⟩
+  exact (((((hQP.of_equiv (TauCeti.quotTensorEquivQuotSMulQuot I).symm).baseChange
+    (S⟦X⟧ ⧸ I')).of_equiv
+    (AlgebraTensorModule.cancelBaseChange O⟦X⟧ (O⟦X⟧ ⧸ I) (S⟦X⟧ ⧸ I') (S⟦X⟧ ⧸ I') M)).of_equiv
+    (AlgebraTensorModule.cancelBaseChange O⟦X⟧ S⟦X⟧ (S⟦X⟧ ⧸ I') (S⟦X⟧ ⧸ I') M).symm).of_equiv
+    (TauCeti.quotTensorEquivQuotSMulQuot I'))
 
 variable [Fact p.Prime] {O : Type*} [CommRing O] [Algebra ℤ_[p] O] [Module.Finite ℤ_[p] O]
 
@@ -578,9 +519,8 @@ theorem controlledSquarePresentation_local_minimal [IsLocalRing O] {M : Type*} [
       LinearMap.ker π ≤ maximalIdeal O⟦X⟧ • (⊤ : Submodule O⟦X⟧ _) ∧
       LinearMap.range (Matrix.toLin' B) = LinearMap.ker π := by
   have : IsNoetherianRing O⟦X⟧ := isNoetherianRing_powerSeries ℤ_[p] O
-  have hp_mem : (p : O) ∈ maximalIdeal O := by
-    have h := natCast_prime_mem_jacobson (p := p) (O := O)
-    rwa [ringJacobson_eq_maximalIdeal] at h
+  have hp_mem : (p : O) ∈ maximalIdeal O :=
+    ringJacobson_eq_maximalIdeal O ▸ natCast_prime_mem_jacobson (p := p) (O := O)
   refine TauCeti.exists_minimalSquarePresentation_of_cofinal_quotientSMulTop
     (I := towerIdeal p O) fun N ↦ ?_
   obtain ⟨n, hn, hQP⟩ := hcof N
@@ -598,6 +538,56 @@ theorem controlledSquarePresentation_of_isLocalRing [IsLocalRing O] {M : Type*} 
   exact TauCeti.IsQuadraticallyPresented.of_exact (Pi.basisFun O⟦X⟧ _) (Pi.basisFun O⟦X⟧ _)
     (LinearMap.exact_iff.2 hrange.symm) hπ
 
+/-- Transport a minimal lifted square presentation from `(O ⧸ (1 - e))⟦X⟧` to
+`O⟦X⟧ ⧸ (1 - C e)` for a local factor `O ⧸ (1 - e)`. -/
+private theorem controlledSquarePresentation_local_factor {M : Type*} [AddCommGroup M]
+    [Module O⟦X⟧ M] [Module.Finite O⟦X⟧ M]
+    (hcof : ∀ N : ℕ, ∃ n : ℕ, N ≤ n ∧
+      TauCeti.IsQuadraticallyPresented (O⟦X⟧ ⧸ towerIdeal p O n)
+        (M ⧸ (towerIdeal p O n • (⊤ : Submodule O⟦X⟧ M))))
+    (e : O) (hloc : IsLocalRing (O ⧸ Ideal.span {1 - e})) :
+    ∃ (r : ℕ) (A : Matrix (Fin r) (Fin r) (O⟦X⟧ ⧸ Ideal.span {1 - C e}))
+      (π : (Fin r → O⟦X⟧ ⧸ Ideal.span {1 - C e}) →ₗ[O⟦X⟧ ⧸ Ideal.span {1 - C e}]
+        ((O⟦X⟧ ⧸ Ideal.span {1 - C e}) ⊗[O⟦X⟧] M)),
+      Function.Surjective π ∧ LinearMap.range (Matrix.toLin' A) = LinearMap.ker π := by
+  let Oᵢ := O ⧸ Ideal.span {1 - e}
+  let qᵢ : O →+* Oᵢ := Ideal.Quotient.mk (Ideal.span {1 - e})
+  have : IsLocalRing Oᵢ := hloc
+  have : Module.Finite ℤ_[p] Oᵢ :=
+    Module.Finite.of_surjective (Ideal.Quotient.mkₐ ℤ_[p] _).toLinearMap
+      Ideal.Quotient.mk_surjective
+  let : Algebra O⟦X⟧ Oᵢ⟦X⟧ := (PowerSeries.map qᵢ).toAlgebra
+  obtain ⟨πᵢ, Bᵢ, hπᵢ, _, hrangeᵢ⟩ :=
+    controlledSquarePresentation_local_minimal (p := p) (O := Oᵢ) (M := Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)
+      fun N ↦ by
+        obtain ⟨n, hn, hQP⟩ := hcof N
+        exact ⟨n, hn, isQuadraticallyPresented_towerQuotient_baseChange qᵢ hQP⟩
+  let Rᵢ := O⟦X⟧ ⧸ Ideal.span {1 - C e}
+  have hspan : Ideal.span {1 - C e} = Ideal.span {C (1 - e)} := by simp [map_sub, map_one]
+  let eqR : Rᵢ ≃+* Oᵢ⟦X⟧ :=
+    (Ideal.quotEquivOfEq hspan).trans (PowerSeries.quotientSpanCRingEquiv (1 - e))
+  let : Algebra Oᵢ⟦X⟧ Rᵢ := eqR.symm.toRingHom.toAlgebra
+  have : IsScalarTower O⟦X⟧ Oᵢ⟦X⟧ Rᵢ :=
+    IsScalarTower.of_algebraMap_eq fun f ↦ eqR.injective <| by
+      change eqR (Ideal.Quotient.mk _ f) = eqR (eqR.symm (PowerSeries.map qᵢ f))
+      rw [eqR.apply_symm_apply]
+      dsimp only [eqR, RingEquiv.trans_apply]
+      rw [Ideal.quotEquivOfEq_mk, PowerSeries.quotientSpanCRingEquiv_mk]
+  let eMod := AlgebraTensorModule.cancelBaseChange O⟦X⟧ Oᵢ⟦X⟧ Rᵢ Rᵢ M
+  set r := Module.finrank (ResidueField Oᵢ⟦X⟧) (ResidueField Oᵢ⟦X⟧ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M))
+  rcases Nat.eq_zero_or_pos r with hr0 | hrpos
+  · have : Subsingleton (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) := subsingleton_of_forall_eq 0 fun x ↦ by
+      obtain ⟨v, rfl⟩ := hπᵢ x
+      rw [show v = 0 from funext fun j ↦ (Fin.cast hr0 j).elim0, map_zero]
+    have : Subsingleton (Rᵢ ⊗[O⟦X⟧] M) := eMod.symm.injective.subsingleton
+    refine ⟨0, 0, 0, fun _ ↦ ⟨0, Subsingleton.elim _ _⟩, ?_⟩
+    ext v
+    exact ⟨fun _ ↦ by simp [Subsingleton.elim v 0], fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
+  · let Qᵢ := (TauCeti.QuadraticPresentation.ofExact hrpos (Pi.basisFun Oᵢ⟦X⟧ (Fin r))
+      (Pi.basisFun Oᵢ⟦X⟧ (Fin r)) (LinearMap.exact_iff.2 hrangeᵢ.symm) hπᵢ).baseChange Rᵢ
+    exact ⟨Qᵢ.size, Qᵢ.rel, eMod.toLinearMap ∘ₗ Qᵢ.gen, eMod.surjective.comp Qᵢ.gen_surjective,
+      Qᵢ.range_rel_eq_ker.trans (LinearMap.ker_comp_of_ker_eq_bot _ eMod.ker).symm⟩
+
 /-- **Lifting a quadratic presentation over any commutative finite `ℤ_[p]`-algebra (cofinal form).**
 Let `O` be a commutative module-finite `ℤ_[p]`-algebra (not necessarily local, free, or reduced)
 and `M` a finite `O⟦X⟧`-module. If `M ⧸ I_n M` is quadratically presented over `O⟦X⟧ ⧸ I_n` for
@@ -609,41 +599,14 @@ theorem controlledSquarePresentation_cofinal {M : Type*} [AddCommGroup M] [Modul
       TauCeti.IsQuadraticallyPresented (O⟦X⟧ ⧸ towerIdeal p O n)
         (M ⧸ (towerIdeal p O n • (⊤ : Submodule O⟦X⟧ M)))) :
     TauCeti.IsQuadraticallyPresented O⟦X⟧ M := by
-  -- `O` is finite over the Henselian local ring `ℤ_[p]`, hence semiperfect.
   have : TauCeti.IsSemiperfectRing O := TauCeti.IsSemiperfectRing.of_henselianRing ℤ_[p] O
   obtain ⟨m, e, he, hloc⟩ :=
     TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_quotient O
-  have heC : CompleteOrthogonalIdempotents (C ∘ e) := he.map C
-  refine TauCeti.IsQuadraticallyPresented.of_completeOrthogonalIdempotents heC fun i ↦ ?_
-  -- Identify `O⟦X⟧ ⧸ (1 - C (e i))` with `(O ⧸ (1 - e i))⟦X⟧`, a power series ring over a local
-  -- finite `ℤ_[p]`-algebra.
-  let Oᵢ := O ⧸ Ideal.span {1 - e i}
-  let qᵢ : O →+* Oᵢ := Ideal.Quotient.mk (Ideal.span {1 - e i})
-  have : IsLocalRing Oᵢ := hloc i
-  have : Module.Finite ℤ_[p] Oᵢ :=
-    Module.Finite.of_surjective (Ideal.Quotient.mkₐ ℤ_[p] _).toLinearMap
-      Ideal.Quotient.mk_surjective
-  let : Algebra O⟦X⟧ Oᵢ⟦X⟧ := (PowerSeries.map qᵢ).toAlgebra
-  have hQP_local : TauCeti.IsQuadraticallyPresented Oᵢ⟦X⟧ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) := by
-    refine controlledSquarePresentation_of_isLocalRing (p := p) (O := Oᵢ) fun N ↦ ?_
-    obtain ⟨n, hn, hQP⟩ := hcof N
-    exact ⟨n, hn, isQuadraticallyPresented_towerQuotient_baseChange qᵢ hQP⟩
-  -- Transport along the ring isomorphism `Oᵢ⟦X⟧ ≃+* O⟦X⟧ ⧸ (1 - C (e i))`.
-  let Rᵢ := O⟦X⟧ ⧸ Ideal.span {1 - (C ∘ e) i}
-  have hspan : Ideal.span {1 - (C ∘ e) i} = Ideal.span {C (1 - e i)} := by
-    simp [Function.comp_apply, map_sub, map_one]
-  let eqR : Rᵢ ≃+* Oᵢ⟦X⟧ :=
-    (Ideal.quotEquivOfEq hspan).trans (PowerSeries.quotientSpanCRingEquiv (1 - e i))
-  let : Algebra Oᵢ⟦X⟧ Rᵢ := eqR.symm.toRingHom.toAlgebra
-  have : IsScalarTower O⟦X⟧ Oᵢ⟦X⟧ Rᵢ :=
-    IsScalarTower.of_algebraMap_eq fun f ↦ eqR.injective <| by
-      change eqR (Ideal.Quotient.mk _ f) = eqR (eqR.symm (PowerSeries.map qᵢ f))
-      rw [eqR.apply_symm_apply]
-      dsimp only [eqR, RingEquiv.trans_apply]
-      rw [Ideal.quotEquivOfEq_mk]
-      exact PowerSeries.quotientSpanCRingEquiv_mk (1 - e i) f
-  exact (hQP_local.baseChange Rᵢ).of_equiv
-    (AlgebraTensorModule.cancelBaseChange O⟦X⟧ Oᵢ⟦X⟧ Rᵢ Rᵢ M)
+  refine TauCeti.IsQuadraticallyPresented.of_completeOrthogonalIdempotents (he.map C) fun i ↦ ?_
+  obtain ⟨r, A, π, hπ, hrange⟩ :=
+    controlledSquarePresentation_local_factor (p := p) hcof (e i) (hloc i)
+  exact TauCeti.IsQuadraticallyPresented.of_exact (Pi.basisFun _ (Fin r)) (Pi.basisFun _ (Fin r))
+    (LinearMap.exact_iff.2 hrange.symm) hπ
 
 /-- **Lifting a quadratic presentation over any commutative finite `ℤ_[p]`-algebra.** If `M ⧸ I_n M`
 is quadratically presented over `O⟦X⟧ ⧸ I_n` for all sufficiently large `n`, then `M` is
@@ -675,66 +638,11 @@ theorem controlledSquarePresentation_projective_cofinal {M : Type*} [AddCommGrou
   have : TauCeti.IsSemiperfectRing O := TauCeti.IsSemiperfectRing.of_henselianRing ℤ_[p] O
   obtain ⟨m, e, he, hloc⟩ :=
     TauCeti.IsSemiperfectRing.exists_completeOrthogonalIdempotents_isLocalRing_quotient O
-  have heC : CompleteOrthogonalIdempotents (C ∘ e) := he.map C
-  have hcomp : ∀ i : Fin m,
-      ∃ (rᵢ : ℕ)
-        (A : Matrix (Fin rᵢ) (Fin rᵢ) (O⟦X⟧ ⧸ Ideal.span {1 - (C ∘ e) i}))
-        (π : (Fin rᵢ → O⟦X⟧ ⧸ Ideal.span {1 - (C ∘ e) i}) →ₗ[O⟦X⟧ ⧸ Ideal.span {1 - (C ∘ e) i}]
-          ((O⟦X⟧ ⧸ Ideal.span {1 - (C ∘ e) i}) ⊗[O⟦X⟧] M)),
-        Function.Surjective π ∧ LinearMap.range (Matrix.toLin' A) = LinearMap.ker π := by
-    intro i
-    let Oᵢ := O ⧸ Ideal.span {1 - e i}
-    let qᵢ : O →+* Oᵢ := Ideal.Quotient.mk (Ideal.span {1 - e i})
-    have : IsLocalRing Oᵢ := hloc i
-    have : Module.Finite ℤ_[p] Oᵢ :=
-      Module.Finite.of_surjective (Ideal.Quotient.mkₐ ℤ_[p] _).toLinearMap
-        Ideal.Quotient.mk_surjective
-    let : Algebra O⟦X⟧ Oᵢ⟦X⟧ := (PowerSeries.map qᵢ).toAlgebra
-    obtain ⟨πᵢ, Bᵢ, hπᵢ, _, hrangeᵢ⟩ :=
-      controlledSquarePresentation_local_minimal (p := p) (O := Oᵢ) (M := Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)
-        fun N ↦ by
-          obtain ⟨n, hn, hQP⟩ := hcof N
-          exact ⟨n, hn, isQuadraticallyPresented_towerQuotient_baseChange qᵢ hQP⟩
-    -- Transport the minimal local presentation along `eqR : Rᵢ ≃+* Oᵢ⟦X⟧`.
-    let Rᵢ := O⟦X⟧ ⧸ Ideal.span {1 - (C ∘ e) i}
-    have hspan : Ideal.span {1 - (C ∘ e) i} = Ideal.span {C (1 - e i)} := by
-      simp [Function.comp_apply, map_sub, map_one]
-    let eqR : Rᵢ ≃+* Oᵢ⟦X⟧ :=
-      (Ideal.quotEquivOfEq hspan).trans (PowerSeries.quotientSpanCRingEquiv (1 - e i))
-    let : Algebra Oᵢ⟦X⟧ Rᵢ := eqR.symm.toRingHom.toAlgebra
-    have : IsScalarTower O⟦X⟧ Oᵢ⟦X⟧ Rᵢ :=
-      IsScalarTower.of_algebraMap_eq fun f ↦ eqR.injective <| by
-        change eqR (Ideal.Quotient.mk _ f) = eqR (eqR.symm (PowerSeries.map qᵢ f))
-        rw [eqR.apply_symm_apply]
-        dsimp only [eqR, RingEquiv.trans_apply]
-        rw [Ideal.quotEquivOfEq_mk]
-        exact PowerSeries.quotientSpanCRingEquiv_mk (1 - e i) f
-    let eMod : (Rᵢ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)) ≃ₗ[Rᵢ] (Rᵢ ⊗[O⟦X⟧] M) :=
-      AlgebraTensorModule.cancelBaseChange O⟦X⟧ Oᵢ⟦X⟧ Rᵢ Rᵢ M
-    set rᵢ := Module.finrank (ResidueField Oᵢ⟦X⟧) (ResidueField Oᵢ⟦X⟧ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M))
-    rcases Nat.eq_zero_or_pos rᵢ with hr0 | hrpos
-    · have hsubM : Subsingleton (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) := by
-        refine subsingleton_of_forall_eq 0 fun x ↦ ?_
-        obtain ⟨v, rfl⟩ := hπᵢ x
-        have hv : v = 0 := funext fun j ↦ (Fin.cast hr0 j).elim0
-        rw [hv, map_zero]
-      have hsub : Subsingleton (Rᵢ ⊗[O⟦X⟧] M) := eMod.symm.injective.subsingleton
-      refine ⟨0, 0, 0, fun x ↦ ⟨0, Subsingleton.elim _ _⟩, ?_⟩
-      ext v
-      exact ⟨fun _ ↦ by simp [Subsingleton.elim v 0], fun _ ↦ ⟨0, Subsingleton.elim _ _⟩⟩
-    · let Pᵢ : TauCeti.QuadraticPresentation Oᵢ⟦X⟧ (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M) :=
-        TauCeti.QuadraticPresentation.ofExact hrpos (Pi.basisFun Oᵢ⟦X⟧ (Fin rᵢ))
-          (Pi.basisFun Oᵢ⟦X⟧ (Fin rᵢ)) (LinearMap.exact_iff.2 hrangeᵢ.symm) hπᵢ
-      let Qᵢ : TauCeti.QuadraticPresentation Rᵢ (Rᵢ ⊗[Oᵢ⟦X⟧] (Oᵢ⟦X⟧ ⊗[O⟦X⟧] M)) :=
-        Pᵢ.baseChange Rᵢ
-      have hker : LinearMap.ker (eMod.toLinearMap ∘ₗ Qᵢ.gen) = LinearMap.ker Qᵢ.gen :=
-        LinearMap.ker_comp_of_ker_eq_bot _ eMod.ker
-      exact ⟨Qᵢ.size, Qᵢ.rel, eMod.toLinearMap ∘ₗ Qᵢ.gen,
-        eMod.surjective.comp Qᵢ.gen_surjective, Qᵢ.range_rel_eq_ker.trans hker.symm⟩
-  choose r A π hπ hrange using hcomp
-  refine ⟨m, e, he, r, ?_⟩
-  exact TauCeti.exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents heC r
-    fun i ↦ ⟨A i, π i, hπ i, hrange i⟩
+  choose r A π hπ hrange using fun i ↦
+    controlledSquarePresentation_local_factor (p := p) hcof (e i) (hloc i)
+  exact ⟨m, e, he, r,
+    TauCeti.exists_projectiveSquarePresentation_of_completeOrthogonalIdempotents (he.map C) r
+      fun i ↦ ⟨A i, π i, hπ i, hrange i⟩⟩
 
 /-- **Determinant Fitting identity for lifted square presentations.** Under the cofinal
 tower-quotient hypothesis, `M` admits a quadratic presentation `P` over `O⟦X⟧` with
@@ -789,8 +697,7 @@ theorem controlledSquare_hasProjectiveDimensionLE_one {p : ℕ} [Fact p.Prime] {
       P.rel.det ∈ nonZeroDivisors O⟦X⟧ ∧
       Function.Injective (Matrix.toLin' P.rel) := by
   obtain ⟨P⟩ := (controlledSquarePresentation_cofinal (p := p) hcof).nonempty
-  have hdet : P.rel.det ∈ nonZeroDivisors O⟦X⟧ :=
-    P.det_mem_nonZeroDivisors_of_mem_fittingIdeal hd hreg
+  have hdet := P.det_mem_nonZeroDivisors_of_mem_fittingIdeal hd hreg
   exact ⟨P.hasProjectiveDimensionLE_one_of_det_mem_nonZeroDivisors hdet,
     P, P.fittingIdeal_eq, hdet, P.injective_toLin'_of_det_mem_nonZeroDivisors hdet⟩
 
@@ -800,92 +707,64 @@ section Examples
 
 /-! ### Edge-case sanity checks -/
 
--- Check 1: `J_{1,0} = (2, X) ≠ (X)` over `ℤ_[2]`, while `J_{0,n} = ⊤`.
+-- `p = 2`: `J_{1,0} = (2, X) ≠ (X)`, `J_{0,3} = ⊤`, `(2, X) ≠ ⊤`, and `ω₁ = 2X + X² ≠ X²`.
 example : C (2 : ℤ_[2]) ∈ jointIdeal 2 ℤ_[2] 1 0 ∧
     C (2 : ℤ_[2]) ∉ Ideal.span {(X : ℤ_[2]⟦X⟧)} ∧
     jointIdeal 2 ℤ_[2] 1 0 ≠ Ideal.span {(X : ℤ_[2]⟦X⟧)} ∧
     jointIdeal 2 ℤ_[2] 0 3 = ⊤ := by
-  have hmem : C (2 : ℤ_[2]) ∈ jointIdeal 2 ℤ_[2] 1 0 := by
-    rw [jointIdeal_one_zero]
-    exact Ideal.subset_span (by simp)
-  have hnotmem : C (2 : ℤ_[2]) ∉ Ideal.span {(X : ℤ_[2]⟦X⟧)} := by
-    rw [Ideal.mem_span_singleton]
-    rintro ⟨g, hg⟩
-    have hc := congrArg constantCoeff hg
-    simp only [constantCoeff_C, map_mul, constantCoeff_X, zero_mul] at hc
-    exact two_ne_zero hc
+  have hmem : C (2 : ℤ_[2]) ∈ jointIdeal 2 ℤ_[2] 1 0 :=
+    jointIdeal_one_zero 2 ℤ_[2] ▸ Ideal.subset_span (by simp)
+  have hnotmem : C (2 : ℤ_[2]) ∉ Ideal.span {(X : ℤ_[2]⟦X⟧)} := fun h ↦ by
+    obtain ⟨g, hg⟩ := Ideal.mem_span_singleton.mp h
+    exact two_ne_zero (by simpa using congrArg constantCoeff hg)
   exact ⟨hmem, hnotmem, fun h ↦ hnotmem (h ▸ hmem), jointIdeal_zero_left 2 ℤ_[2] 3⟩
 
--- Check 2: Over `ℤ_[2]`, `ω₁ = (1 + X)^2 - 1 = 2 * X + X ^ 2 ≠ X ^ 2`.
 example : (1 + X : ℤ_[2]⟦X⟧) ^ 2 ^ 1 - 1 = 2 * X + X ^ 2 ∧
     (1 + X : ℤ_[2]⟦X⟧) ^ 2 ^ 1 - 1 ≠ X ^ 2 := by
   have heq : (1 + X : ℤ_[2]⟦X⟧) ^ 2 ^ 1 - 1 = 2 * X + X ^ 2 := by ring
   refine ⟨heq, fun h ↦ ?_⟩
   have h1 := congrArg (coeff 1) (heq.symm.trans h)
-  have hC : (2 : ℤ_[2]⟦X⟧) = C (2 : ℤ_[2]) := (map_ofNat C 2).symm
-  rw [map_add, hC, coeff_C_mul, coeff_X_pow] at h1
+  rw [map_add, (map_ofNat C 2).symm, coeff_C_mul, coeff_X_pow] at h1
   norm_num at h1
 
--- Check 3: `(2, X) ≠ ⊤` in `ℤ_[2]⟦X⟧`, detected by `J_{1,0}`.
-example : Ideal.span {C (2 : ℤ_[2]), (X : ℤ_[2]⟦X⟧)} ≠ ⊤ := by
-  intro h
-  have h1 : (1 : ℤ_[2]⟦X⟧) ∈ Ideal.span {C (2 : ℤ_[2]), (X : ℤ_[2]⟦X⟧)} := h ▸ Submodule.mem_top
+example : Ideal.span {C (2 : ℤ_[2]), (X : ℤ_[2]⟦X⟧)} ≠ ⊤ := fun h ↦ by
   have hle : Ideal.span {C (2 : ℤ_[2]), (X : ℤ_[2]⟦X⟧)} ≤ maximalIdeal ℤ_[2]⟦X⟧ := by
-    have h2 : (2 : ℤ_[2]) = ((2 : ℕ) : ℤ_[2]) := by norm_num
-    rw [h2, ← jointIdeal_one_zero]
-    have hp : ((2 : ℕ) : ℤ_[2]) ∈ maximalIdeal ℤ_[2] := by
-      rw [PadicInt.maximalIdeal_eq_span_p]
-      exact Ideal.mem_span_singleton_self _
+    rw [show (2 : ℤ_[2]) = ((2 : ℕ) : ℤ_[2]) by norm_num, ← jointIdeal_one_zero]
+    have hp : ((2 : ℕ) : ℤ_[2]) ∈ maximalIdeal ℤ_[2] :=
+      PadicInt.maximalIdeal_eq_span_p (p := 2) ▸ Ideal.mem_span_singleton_self _
     simpa only [pow_one] using jointIdeal_le_maximalIdeal_pow hp (a := 1) (n := 0) le_rfl le_rfl
-  exact (maximalIdeal.isMaximal ℤ_[2]⟦X⟧).ne_top ((Ideal.eq_top_iff_one _).mpr (hle h1))
+  exact (maximalIdeal.isMaximal ℤ_[2]⟦X⟧).ne_top ((Ideal.eq_top_iff_one _).mpr (hle (h ▸ trivial)))
 
--- Check 4: `M = 0` (`Subsingleton`) has `Fitt₀ = ⊤` and determinant `1`; `M = R` has `Fitt₀ = ⊥`
--- and a `1 × 1` zero presentation.
+-- `M = 0` (`Subsingleton`) and `M = R` (`Fin 1` free) Fitting/determinant edge cases.
 example {O : Type*} [CommRing O] :
     fittingIdeal O⟦X⟧ Unit 0 = ⊤ ∧
     (TauCeti.QuadraticPresentation.ofSubsingleton (R := O⟦X⟧) (N := Unit)).rel.det = 1 ∧
     fittingIdeal O⟦X⟧ O⟦X⟧ 0 = ⊥ ∧
     (TauCeti.QuadraticPresentation.ofBasis (R := O⟦X⟧) one_pos
       (Pi.basisFun O⟦X⟧ (Fin 1))).rel.det = 0 := by
-  have h1 : (TauCeti.QuadraticPresentation.ofSubsingleton (R := O⟦X⟧) (N := Unit)).rel.det = 1 :=
-    Matrix.det_one (n := Fin 1)
-  have h0 : (TauCeti.QuadraticPresentation.ofBasis (R := O⟦X⟧) one_pos
-      (Pi.basisFun O⟦X⟧ (Fin 1))).rel.det = 0 :=
-    Matrix.det_zero (n := Fin 1)
-  refine ⟨?_, h1, ?_, h0⟩
-  · have hP :=
-      (TauCeti.QuadraticPresentation.ofSubsingleton (R := O⟦X⟧) (N := Unit)).fittingIdeal_eq
-    rw [hP, h1, Ideal.span_singleton_one]
-  · have hP := (TauCeti.QuadraticPresentation.ofBasis (R := O⟦X⟧) one_pos
-      (Module.Basis.singleton (Fin 1) O⟦X⟧)).fittingIdeal_eq
-    have h0' : (TauCeti.QuadraticPresentation.ofBasis (R := O⟦X⟧) one_pos
-        (Module.Basis.singleton (Fin 1) O⟦X⟧)).rel.det = 0 :=
-      Matrix.det_zero (n := Fin 1)
-    rw [hP, h0', Ideal.span_singleton_zero]
+  refine ⟨?_, Matrix.det_one, ?_, Matrix.det_zero (n := Fin 1)⟩
+  · rw [(TauCeti.QuadraticPresentation.ofSubsingleton (R := O⟦X⟧) (N := Unit)).fittingIdeal_eq,
+      show (TauCeti.QuadraticPresentation.ofSubsingleton (R := O⟦X⟧) (N := Unit)).rel.det = 1
+        from Matrix.det_one, Ideal.span_singleton_one]
+  · rw [(TauCeti.QuadraticPresentation.ofBasis (R := O⟦X⟧) one_pos
+      (Module.Basis.singleton (Fin 1) O⟦X⟧)).fittingIdeal_eq,
+      show (TauCeti.QuadraticPresentation.ofBasis (R := O⟦X⟧) one_pos
+        (Module.Basis.singleton (Fin 1) O⟦X⟧)).rel.det = 0 from Matrix.det_zero (n := Fin 1),
+      Ideal.span_singleton_zero]
 
--- Check 5: `ℤ₂[C₂]` is a commutative finite `ℤ_[2]`-algebra to which `controlledFitting_continuity`
--- and `controlledSquarePresentation` apply directly.
+-- Non-local / nonreduced finite `ℤ_[2]`-algebras: `ℤ₂[C₂]` and `DualNumber ℤ_[2]`.
 example : Module.Finite ℤ_[2] (MonoidAlgebra ℤ_[2] (Multiplicative (ZMod 2))) :=
   Module.Finite.of_basis (MonoidAlgebra.basis (Multiplicative (ZMod 2)) ℤ_[2])
 
--- Check 6: Over the nonreduced finite free `ℤ_[2]`-algebra `DualNumber ℤ_[2]`, `ε ≠ 0` yet
--- `C ε ∉ nonZeroDivisors (DualNumber ℤ_[2])⟦X⟧`.
 example : (C (DualNumber.eps : DualNumber ℤ_[2]) : (DualNumber ℤ_[2])⟦X⟧) ≠ 0 ∧
     (C (DualNumber.eps : DualNumber ℤ_[2]) : (DualNumber ℤ_[2])⟦X⟧) ∉
       nonZeroDivisors (DualNumber ℤ_[2])⟦X⟧ := by
-  have hne : (DualNumber.eps : DualNumber ℤ_[2]) ≠ 0 := by
-    intro h
-    have := congrArg TrivSqZeroExt.snd h
-    simp at this
-  refine ⟨fun h ↦ hne (C_injective (by simpa using h)), fun hreg ↦ ?_⟩
-  have hmul : C (DualNumber.eps : DualNumber ℤ_[2]) *
-      C (DualNumber.eps : DualNumber ℤ_[2]) = 0 := by
-    rw [← map_mul, DualNumber.eps_mul_eps, map_zero]
-  have h0 : (C (DualNumber.eps : DualNumber ℤ_[2]) : (DualNumber ℤ_[2])⟦X⟧) = 0 :=
-    (mem_nonZeroDivisors_iff.mp hreg).1 _ hmul
-  exact hne (C_injective (by simpa using h0))
+  have hne : (DualNumber.eps : DualNumber ℤ_[2]) ≠ 0 := fun h ↦ by
+    simpa using congrArg TrivSqZeroExt.snd h
+  refine ⟨fun h ↦ hne (C_injective (by simpa using h)), fun hreg ↦ hne <| C_injective <| by
+    simpa using (mem_nonZeroDivisors_iff.mp hreg).1 _ (by
+      rw [← map_mul, DualNumber.eps_mul_eps, map_zero])⟩
 
 end Examples
 
 end TauCeti.Iwasawa
-

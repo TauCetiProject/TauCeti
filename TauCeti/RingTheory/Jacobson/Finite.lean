@@ -78,40 +78,26 @@ theorem exists_jacobson_pow_le_map_maximalIdeal (R O : Type*) [CommRing R] [IsLo
       _root_.Ring.jacobson O ^ k ≤ (IsLocalRing.maximalIdeal R).map (algebraMap R O) := by
   set I : Ideal O := (IsLocalRing.maximalIdeal R).map (algebraMap R O)
   let q : O →+* O ⧸ I := Ideal.Quotient.mk I
-  -- `O ⧸ I` is a finite algebra over the residue field `R ⧸ 𝔪_R`, hence Artinian.
   let := Ideal.Quotient.field (IsLocalRing.maximalIdeal R)
-  let := Ideal.Quotient.algebraQuotientOfLEComap (R := R) (P := I) fun r hr ↦ by
-    rw [Ideal.mem_comap]
-    exact Ideal.mem_map_of_mem (algebraMap R O) hr
+  let := Ideal.Quotient.algebraQuotientOfLEComap (R := R) (P := I) fun r hr ↦
+    Ideal.mem_comap.mpr (Ideal.mem_map_of_mem (algebraMap R O) hr)
   have : IsScalarTower R (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I) := .of_algebraMap_eq' rfl
   have : Module.Finite R (O ⧸ I) :=
     .of_surjective (Ideal.Quotient.mkₐ R I).toLinearMap Ideal.Quotient.mk_surjective
   have : Module.Finite (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I) := .of_restrictScalars_finite R _ _
   have : IsArtinianRing (O ⧸ I) := .of_finite (R ⧸ IsLocalRing.maximalIdeal R) (O ⧸ I)
   obtain ⟨k, hk⟩ := IsArtinianRing.isNilpotent_jacobson (O ⧸ I)
-  -- The quotient map sends `Ring.jacobson O` into `Ring.jacobson (O ⧸ I)`.
-  have hmap : (_root_.Ring.jacobson O).map q ≤ _root_.Ring.jacobson (O ⧸ I) := by
-    rw [Ideal.map_le_iff_le_comap]
-    intro x hx
-    rw [Ideal.mem_comap, mem_jacobson_iff_isUnit_one_add_mul_left]
-    intro y
-    obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective y
-    have hu : IsUnit (1 + z * x) :=
-      mem_jacobson_iff_isUnit_one_add_mul_left.mp hx z
-    simpa [q] using hu.map q
+  have hmap : (_root_.Ring.jacobson O).map q ≤ _root_.Ring.jacobson (O ⧸ I) :=
+    Ideal.map_le_iff_le_comap.mpr fun x hx ↦ mem_jacobson_iff_isUnit_one_add_mul_left.mpr fun y ↦ by
+      obtain ⟨z, rfl⟩ := Ideal.Quotient.mk_surjective y
+      simpa [q] using (mem_jacobson_iff_isUnit_one_add_mul_left.mp hx z).map q
   have hpow : (_root_.Ring.jacobson O ^ k).map q = ⊥ := by
     rw [Ideal.map_pow, eq_bot_iff]
-    exact (pow_le_pow_left' hmap k).trans (by rw [hk]; exact le_rfl)
-  have hle : _root_.Ring.jacobson O ^ k ≤ I := by
-    intro x hx
-    rw [← Ideal.Quotient.eq_zero_iff_mem]
-    have hmem : q x ∈ (⊥ : Ideal (O ⧸ I)) := hpow ▸ Ideal.mem_map_of_mem q hx
-    exact Ideal.mem_bot.mp hmem
-  rcases Nat.eq_zero_or_pos k with rfl | hkpos
-  · refine ⟨1, one_pos, ?_⟩
-    rw [pow_zero, Ideal.one_eq_top] at hle
-    exact le_top.trans hle
-  · exact ⟨k, hkpos, hle⟩
+    exact (pow_le_pow_left' hmap k).trans (by rw [hk, Ideal.zero_eq_bot])
+  have hle : _root_.Ring.jacobson O ^ k ≤ I := fun x hx ↦
+    Ideal.Quotient.eq_zero_iff_mem.mp (Ideal.mem_bot.mp (hpow ▸ Ideal.mem_map_of_mem q hx))
+  exact ⟨max 1 k, lt_of_lt_of_le one_pos (le_max_left _ _),
+    (Ideal.pow_le_pow_right (le_max_right 1 k)).trans hle⟩
 
 end Ring
 

@@ -67,16 +67,11 @@ theorem map_quotientMk_le_map_quotientMk_iff {I L K : Ideal R} :
 
 /-- Two ideals have equal images in `R ⧸ K` if and only if `I ⊔ K = L ⊔ K`. -/
 theorem map_quotientMk_eq_map_quotientMk_iff {I L K : Ideal R} :
-    I.map (Ideal.Quotient.mk K) = L.map (Ideal.Quotient.mk K) ↔ I ⊔ K = L ⊔ K := by
-  constructor
-  · intro h
-    refine le_antisymm ?_ ?_
-    · exact sup_le (map_quotientMk_le_map_quotientMk_iff.mp h.le) le_sup_right
-    · exact sup_le (map_quotientMk_le_map_quotientMk_iff.mp h.ge) le_sup_right
-  · intro h
-    refine le_antisymm ?_ ?_
-    · exact map_quotientMk_le_map_quotientMk_iff.mpr (le_sup_left.trans h.le)
-    · exact map_quotientMk_le_map_quotientMk_iff.mpr (le_sup_left.trans h.ge)
+    I.map (Ideal.Quotient.mk K) = L.map (Ideal.Quotient.mk K) ↔ I ⊔ K = L ⊔ K :=
+  ⟨fun h ↦ le_antisymm (sup_le (map_quotientMk_le_map_quotientMk_iff.mp h.le) le_sup_right)
+      (sup_le (map_quotientMk_le_map_quotientMk_iff.mp h.ge) le_sup_right),
+   fun h ↦ le_antisymm (map_quotientMk_le_map_quotientMk_iff.mpr (le_sup_left.trans h.le))
+      (map_quotientMk_le_map_quotientMk_iff.mpr (le_sup_left.trans h.ge))⟩
 
 /-- **Closed-ideal inclusion detection.** In a Noetherian ring `R`, let `J ≤ Ring.jacobson R` and
 let `{Kᵢ}` be a family of ideals cofinal in the powers of `J`. If `I` maps into the image of `L`
@@ -115,36 +110,27 @@ theorem eq_iff_forall_map_quotientMk_one_sub_eq {ι : Type*} [Fintype ι] {e : �
       (∀ i, A.map (Ideal.Quotient.mk (Ideal.span {1 - e i})) ≤
         B.map (Ideal.Quotient.mk (Ideal.span {1 - e i}))) → A ≤ B := by
     intro A B hAB x hx
-    have hcoord (i : ι) : ∃ y ∈ B,
-        Ideal.Quotient.mk (Ideal.span {1 - e i}) y =
-          Ideal.Quotient.mk (Ideal.span {1 - e i}) x := by
-      have hxi : Ideal.Quotient.mk (Ideal.span {1 - e i}) x ∈
-          B.map (Ideal.Quotient.mk (Ideal.span {1 - e i})) :=
-        hAB i (Ideal.mem_map_of_mem _ hx)
-      exact (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp hxi
-    choose y hyB hyx using hcoord
-    have hsum : ∑ i, e i * y i ∈ B :=
-      B.sum_mem fun i _ ↦ B.mul_mem_left (e i) (hyB i)
+    choose y hyB hyx using fun i ↦
+      (Ideal.mem_map_iff_of_surjective _ Ideal.Quotient.mk_surjective).mp
+        (hAB i (Ideal.mem_map_of_mem _ hx))
     have hφ : φ (∑ i, e i * y i) = φ x := by
       ext j
-      change Ideal.Quotient.mk (Ideal.span {1 - e j}) (∑ i, e i * y i) =
-        Ideal.Quotient.mk (Ideal.span {1 - e j}) x
+      change Ideal.Quotient.mk _ (∑ i, e i * y i) = Ideal.Quotient.mk _ x
       rw [map_sum, Finset.sum_eq_single j]
-      · rw [map_mul, ← hyx j]
-        have h1 : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e j) = 1 := by
-          rw [← sub_eq_zero, ← map_one (Ideal.Quotient.mk _), ← map_sub,
-            Ideal.Quotient.eq_zero_iff_mem, ← neg_mem_iff, neg_sub]
-          exact Ideal.subset_span rfl
-        rw [h1, one_mul]
+      · have h1 : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e j) = 1 :=
+          sub_eq_zero.mp <| by
+            rw [← map_one (Ideal.Quotient.mk _), ← map_sub, Ideal.Quotient.eq_zero_iff_mem,
+              ← neg_mem_iff, neg_sub]
+            exact Ideal.subset_span rfl
+        rw [map_mul, h1, one_mul, hyx j]
       · intro i _ hij
-        rw [map_mul]
-        have h0 : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e i) = 0 := by
-          rw [Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton]
-          refine ⟨e i, ?_⟩
-          rw [sub_mul, one_mul, mul_comm (e j), he.ortho hij, sub_zero]
-        rw [h0, zero_mul]
+        have h0 : Ideal.Quotient.mk (Ideal.span {1 - e j}) (e i) = 0 :=
+          Ideal.Quotient.eq_zero_iff_mem.mpr <| Ideal.mem_span_singleton.mpr
+            ⟨e i, by rw [sub_mul, one_mul, mul_comm (e j), he.ortho hij, sub_zero]⟩
+        rw [map_mul, h0, zero_mul]
       · simp
-    rwa [← φ.injective hφ]
+    rw [← φ.injective hφ]
+    exact B.sum_mem fun i _ ↦ B.mul_mem_left (e i) (hyB i)
   exact le_antisymm (hle fun i ↦ (h i).le) (hle fun i ↦ (h i).ge)
 
 /-- Ideals of a finite product of rings are equal if and only if they have equal projections onto
@@ -158,17 +144,14 @@ theorem eq_iff_forall_map_evalRingHom_eq {ι : Type*} [Finite ι] {S : ι → Ty
   have hle : ∀ {A B : Ideal (∀ i, S i)},
       (∀ i, A.map (Pi.evalRingHom S i) ≤ B.map (Pi.evalRingHom S i)) → A ≤ B := by
     intro A B hAB x hx
-    have hcoord (i : ι) : ∃ y ∈ B, y i = x i := by
-      have hxi : x i ∈ B.map (Pi.evalRingHom S i) :=
-        hAB i (Ideal.mem_map_of_mem (Pi.evalRingHom S i) hx)
-      exact (Ideal.mem_map_iff_of_surjective _ (Function.surjective_eval i)).mp hxi
-    choose y hyB hyx using hcoord
+    choose y hyB hyx using fun i ↦
+      (Ideal.mem_map_iff_of_surjective _ (Function.surjective_eval i)).mp
+        (hAB i (Ideal.mem_map_of_mem _ hx))
     have hx_eq : x = ∑ i, Pi.single i (1 : S i) * y i := by
       ext j
       rw [Finset.sum_apply, Finset.sum_eq_single j]
-      · simp [hyx]
-      · intro i _ hij
-        simp [hij.symm]
+      · simpa using (hyx j).symm
+      · intro b _ hbj; simp [Pi.single_eq_of_ne (Ne.symm hbj)]
       · simp
     rw [hx_eq]
     exact B.sum_mem fun i _ ↦ B.mul_mem_left _ (hyB i)
