@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.TwoSidedIdeal.Operations
 public import TauCeti.Algebra.Module.Submodule.Essential
 public import TauCeti.Algebra.Module.Submodule.Unitization
 public import TauCeti.Algebra.Star.Basic
+public import TauCeti.RingTheory.TwoSidedIdeal.Basic
 
 /-!
 # Left and right annihilators of two-sided ideals, essential ideals, and unitization actions
@@ -44,8 +45,10 @@ closed under `star`, `I ⊓ I.leftAnnihilator = ⊥`, `I ≤ I.leftAnnihilator.l
 
 ## Main definitions and results
 
-* `TwoSidedIdeal.unitizationModuleOfSMulMem`: the left `Unitization R A`-module structure
-  `(r, a) • x = r • x + a * x` on an `R`-invariant two-sided ideal `I : TwoSidedIdeal A`.
+* `TwoSidedIdeal.unitizationModuleOfSMulMem` and
+  `TwoSidedIdeal.isScalarTower_unitizationModuleOfSMulMem`: the left `Unitization R A`-module
+  structure `(r, a) • x = r • x + a * x` on an `R`-invariant two-sided ideal `I : TwoSidedIdeal A`,
+  together with its scalar-tower compatibility.
 * `TwoSidedIdeal.IsEssential`: `I ⊓ J ≠ ⊥` for every nonzero `J : TwoSidedIdeal A`.
 * `TwoSidedIdeal.leftAnnihilator` and `TwoSidedIdeal.rightAnnihilator`: the two-sided left and
   right annihilators of `I : TwoSidedIdeal A`, with Galois connection
@@ -74,12 +77,6 @@ namespace TwoSidedIdeal
 section Essential
 
 variable {A : Type*} [NonUnitalNonAssocRing A]
-
-instance instSubsingleton [Subsingleton A] : Subsingleton (TwoSidedIdeal A) :=
-  orderIsoRingCon.toEquiv.subsingleton_congr.mpr (RingCon.subsingleton_iff.mpr ‹_›)
-
-theorem subsingleton_iff : Subsingleton (TwoSidedIdeal A) ↔ Subsingleton A :=
-  orderIsoRingCon.toEquiv.subsingleton_congr.trans RingCon.subsingleton_iff
 
 /-- A two-sided ideal `I` of `A` is *essential* if it has nonzero intersection with every nonzero
 two-sided ideal of `A`. -/
@@ -478,14 +475,6 @@ section CommSemiring
 variable {R A : Type*} [CommSemiring R] [NonUnitalRing A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A]
 
-/-- Bundle an `R`-invariant two-sided ideal as an `R`-submodule of `A`. -/
-private def toSubmoduleOfSMulMem (I : TwoSidedIdeal A)
-    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) : Submodule R A where
-  carrier := I
-  add_mem' := I.add_mem
-  zero_mem' := I.zero_mem
-  smul_mem' r _ hx := hsmul r hx
-
 /-- Left `Unitization R A`-module structure `(r, a) • x = r • x + a * x` on an `R`-invariant
 two-sided ideal `I : TwoSidedIdeal A`. Provided as an `@[instance_reducible]` definition taking the
 scalar-absorption hypothesis explicitly rather than a global instance. -/
@@ -508,6 +497,20 @@ theorem inr_coe_unitizationModuleOfSMulMem_smul (I : TwoSidedIdeal A)
     (letI := I.unitizationModuleOfSMulMem hsmul; (((u • x : I) : A) : Unitization R A)) =
       u * ((x : A) : Unitization R A) :=
   (I.toSubmoduleOfSMulMem hsmul).inr_coe_unitizationModule_smul I.mul_mem_left u x
+
+/-- The left `Unitization R A`-module structure on an `R`-invariant two-sided ideal `I` is
+compatible with any `R`-scalar action on `I` agreeing with scalar multiplication in `A`. -/
+theorem isScalarTower_unitizationModuleOfSMulMem (I : TwoSidedIdeal A)
+    (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) [SMul R I]
+    (hcoe : ∀ (r : R) (x : I), ((r • x : I) : A) = r • (x : A)) :
+    letI := I.unitizationModuleOfSMulMem hsmul
+    IsScalarTower R (Unitization R A) I := by
+  let _ := I.unitizationModuleOfSMulMem hsmul
+  have hL := (I.toSubmoduleOfSMulMem hsmul).isScalarTower_unitizationModule I.mul_mem_left
+  refine ⟨fun r u x => Subtype.ext ?_⟩
+  rw [hcoe]
+  exact (congrArg Subtype.val (hL.smul_assoc r u x)).trans
+    (Submodule.coe_smul (p := I.toSubmoduleOfSMulMem hsmul) r (u • x))
 
 theorem mem_annihilator_unitizationOfSMulMem_iff (I : TwoSidedIdeal A)
     (hsmul : ∀ (r : R) {x : A}, x ∈ I → r • x ∈ I) {u : Unitization R A} :

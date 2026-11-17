@@ -265,9 +265,8 @@ theorem inr_coe_unitizationModule_smul (I : TwoSidedIdeal A) [IsClosed (I : Set 
 its `ℂ`-module structure. -/
 theorem isScalarTower_unitizationModule (I : TwoSidedIdeal A) [IsClosed (I : Set A)] :
     letI := I.unitizationModule
-    IsScalarTower ℂ (Unitization ℂ A) I := by
-  let _ := I.unitizationModule
-  exact ⟨fun c u x => Subtype.ext <| by simp [smul_add, mul_smul, smul_mul_assoc]⟩
+    IsScalarTower ℂ (Unitization ℂ A) I :=
+  I.isScalarTower_unitizationModuleOfSMulMem _ I.coe_smul_complex
 
 theorem mem_annihilator_unitization_iff (I : TwoSidedIdeal A) [IsClosed (I : Set A)]
     {u : Unitization ℂ A} :
