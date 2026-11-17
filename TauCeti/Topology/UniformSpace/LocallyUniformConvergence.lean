@@ -29,6 +29,10 @@ subsequence of `F` converges locally uniformly on `s`
 continuous function by `m` gives a sequence tending to `0` locally uniformly
 (`TauCeti.tendstoLocallyUniformly_div_natCast`).
 
+Locally uniform convergence is preserved by reindexing along a map tending to the filter, for
+instance along a subsequence (`TendstoLocallyUniformly.comp_tendsto`,
+`TendstoLocallyUniformlyOn.comp_tendsto`).
+
 On an open set on which the limit is continuous, locally uniform convergence is the same as
 continuous convergence at every point of the set
 (`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
@@ -58,6 +62,24 @@ theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι 
     ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
   refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
   exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
+
+/-- **Reindexing locally uniform convergence.** If `F i → f` locally uniformly on `s` along `l`
+and `ν j → l` along `l'`, then `F (ν j) → f` locally uniformly on `s` along `l'`; for instance,
+along a subsequence. -/
+theorem TendstoLocallyUniformlyOn.comp_tendsto {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι} {l' : Filter ι'} {s : Set α}
+    (h : TendstoLocallyUniformlyOn F f l s) {ν : ι' → ι} (hν : Tendsto ν l' l) :
+    TendstoLocallyUniformlyOn (fun j ↦ F (ν j)) f l' s :=
+  fun u hu x hx ↦ (h u hu x hx).imp fun _ ht ↦ ⟨ht.1, hν.eventually ht.2⟩
+
+/-- **Reindexing locally uniform convergence.** If `F i → f` locally uniformly along `l` and
+`ν j → l` along `l'`, then `F (ν j) → f` locally uniformly along `l'`; for instance, along a
+subsequence. -/
+theorem TendstoLocallyUniformly.comp_tendsto {ι ι' α β : Type*} [TopologicalSpace α]
+    [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι} {l' : Filter ι'}
+    (h : TendstoLocallyUniformly F f l) {ν : ι' → ι} (hν : Tendsto ν l' l) :
+    TendstoLocallyUniformly (fun j ↦ F (ν j)) f l' :=
+  fun u hu x ↦ (h u hu x).imp fun _ ht ↦ ⟨ht.1, hν.eventually ht.2⟩
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
