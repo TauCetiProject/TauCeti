@@ -95,12 +95,12 @@ theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq {l₁ l₂ : List (Fin t
       LinearEquiv.automorphismGroup.toLinearMapMonoidHom
   have hbc (l : List (Fin t.rank)) :
       (((l.map nGL).prod : _) : Module.End A (A ⊗[ℤ] D.lattice)) = bc (l.map nR).prod := by
-    change Units.coeHom _ (l.map nGL).prod = bc (l.map nR).prod
-    rw [map_list_prod, map_list_prod, List.map_map, List.map_map]
+    rw [← Units.coeHom_apply, map_list_prod, map_list_prod, List.map_map, List.map_map]
     exact congrArg List.prod (List.map_congr_left fun k _ => by
       simp only [Function.comp_apply, Units.coeHom_apply, nGL, kostantWeylGL_val,
         kostantWeylPoints_toLinearMap, bc, MonoidHom.comp_apply,
-        LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, nR]
+        AlgHom.toRingHom_eq_coe, RingHom.toMonoidHom_eq_coe, AlgHom.toRingHom_toMonoidHom,
+        MonoidHom.coe_ofClass, LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, nR]
       rfl)
   have hnGL : (l₁.map nGL).prod = (l₂.map nGL).prod :=
     Units.ext ((hbc l₁).trans ((congrArg bc hnR).trans (hbc l₂).symm))
@@ -111,9 +111,7 @@ theorem prod_map_weylElement_eq_of_prod_map_weylUnit_eq {l₁ l₂ : List (Fin t
   have hcoe (l : List (Fin t.rank)) :
       (((l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod : D.points A) :
         Matrix.GeneralLinearGroup (Fin D.dim) A) = f (l.map nGL).prod := by
-    change (D.points A).subtype (l.map fun k => D.weylElement (t.simpleIndex ht k) A 1).prod =
-      f (l.map nGL).prod
-    rw [map_list_prod, map_list_prod, List.map_map, List.map_map]
+    rw [SubmonoidClass.coe_list_prod, map_list_prod, List.map_map, List.map_map]
     exact congrArg List.prod (List.map_congr_left fun k _ => hf k)
   exact Subtype.ext ((hcoe l₁).trans ((congrArg f hnGL).trans (hcoe l₂).symm))
 
