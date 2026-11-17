@@ -11,9 +11,10 @@ public import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Basic
 /-!
 # Products of Hilbert bases
 
-Given Hilbert bases `b` of `E` and `c` of `F`, their orthogonal direct sum `b.prod c` is a Hilbert
-basis of the `L²` product `WithLp 2 (E × F)` indexed by `ι ⊕ κ`. This is the Hilbert-basis
-counterpart of `OrthonormalBasis.prod`.
+Given Hilbert bases `b` of `E` and `c` of `F`, their orthogonal direct sum `b.prodLp c` is a
+Hilbert basis of the `L²` product `WithLp 2 (E × F)` indexed by `ι ⊕ κ`. This is the
+Hilbert-basis counterpart of `OrthonormalBasis.prod` (named `prodLp` to distinguish it from
+`HilbertBasis.prod` on `L²(μ ⊗ ν)`).
 -/
 
 public section
@@ -28,7 +29,7 @@ namespace HilbertBasis
 
 /-- The Hilbert basis of the `L²` product `WithLp 2 (E × F)` formed from Hilbert bases of `E` and
 `F`. -/
-protected noncomputable def prod (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) :
+protected noncomputable def prodLp (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) :
     HilbertBasis (ι ⊕ κ) 𝕜 (WithLp 2 (E × F)) :=
   haveI : CompleteSpace E := b.completeSpace
   haveI : CompleteSpace F := c.completeSpace
@@ -57,38 +58,38 @@ protected noncomputable def prod (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis 
         rw [Prod.snd_zero, c.repr_apply_apply, map_zero, lp.coeFn_zero, Pi.zero_apply]
         simpa [WithLp.prod_inner_apply] using hx _ (Submodule.subset_span ⟨Sum.inr j, rfl⟩))
 
-/-- The left basis vectors of `b.prod c` are `(b i, 0)`. -/
+/-- The left basis vectors of `b.prodLp c` are `(b i, 0)`. -/
 @[simp]
-theorem prod_apply_inl (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (i : ι) :
-    b.prod c (Sum.inl i) = WithLp.toLp 2 (b i, (0 : F)) := by
+theorem prodLp_apply_inl (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (i : ι) :
+    b.prodLp c (Sum.inl i) = WithLp.toLp 2 (b i, (0 : F)) := by
   have : CompleteSpace E := b.completeSpace
   have : CompleteSpace F := c.completeSpace
   exact congrFun (HilbertBasis.coe_mkOfOrthogonalEqBot _ _) (Sum.inl i)
 
-/-- The right basis vectors of `b.prod c` are `(0, c j)`. -/
+/-- The right basis vectors of `b.prodLp c` are `(0, c j)`. -/
 @[simp]
-theorem prod_apply_inr (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (j : κ) :
-    b.prod c (Sum.inr j) = WithLp.toLp 2 ((0 : E), c j) := by
+theorem prodLp_apply_inr (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F) (j : κ) :
+    b.prodLp c (Sum.inr j) = WithLp.toLp 2 ((0 : E), c j) := by
   have : CompleteSpace E := b.completeSpace
   have : CompleteSpace F := c.completeSpace
   exact congrFun (HilbertBasis.coe_mkOfOrthogonalEqBot _ _) (Sum.inr j)
 
-/-- Coordinates of `x` in `b.prod c` on the left summand agree with `b.repr` on the first
+/-- Coordinates of `x` in `b.prodLp c` on the left summand agree with `b.repr` on the first
 component. -/
 @[simp]
-theorem repr_prod_inl (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
+theorem repr_prodLp_inl (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
     (x : WithLp 2 (E × F)) (i : ι) :
-    (b.prod c).repr x (Sum.inl i) = b.repr (WithLp.ofLp x).1 i := by
-  rw [(b.prod c).repr_apply_apply, b.repr_apply_apply, prod_apply_inl, WithLp.prod_inner_apply]
+    (b.prodLp c).repr x (Sum.inl i) = b.repr (WithLp.ofLp x).1 i := by
+  rw [(b.prodLp c).repr_apply_apply, b.repr_apply_apply, prodLp_apply_inl, WithLp.prod_inner_apply]
   simp
 
-/-- Coordinates of `x` in `b.prod c` on the right summand agree with `c.repr` on the second
+/-- Coordinates of `x` in `b.prodLp c` on the right summand agree with `c.repr` on the second
 component. -/
 @[simp]
-theorem repr_prod_inr (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
+theorem repr_prodLp_inr (b : HilbertBasis ι 𝕜 E) (c : HilbertBasis κ 𝕜 F)
     (x : WithLp 2 (E × F)) (j : κ) :
-    (b.prod c).repr x (Sum.inr j) = c.repr (WithLp.ofLp x).2 j := by
-  rw [(b.prod c).repr_apply_apply, c.repr_apply_apply, prod_apply_inr, WithLp.prod_inner_apply]
+    (b.prodLp c).repr x (Sum.inr j) = c.repr (WithLp.ofLp x).2 j := by
+  rw [(b.prodLp c).repr_apply_apply, c.repr_apply_apply, prodLp_apply_inr, WithLp.prod_inner_apply]
   simp
 
 end HilbertBasis

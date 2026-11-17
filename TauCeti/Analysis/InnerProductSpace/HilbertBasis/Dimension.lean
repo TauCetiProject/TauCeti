@@ -493,7 +493,7 @@ theorem hilbertDim_prodLp :
       Cardinal.lift.{v} (hilbertDim 𝕜 E) + Cardinal.lift.{u} (hilbertDim 𝕜 F) := by
   obtain ⟨wE, bE, -⟩ := exists_hilbertBasis 𝕜 E
   obtain ⟨wF, bF, -⟩ := exists_hilbertBasis 𝕜 F
-  rw [← (bE.prod bF).mk_eq_hilbertDim, ← bE.mk_eq_hilbertDim, ← bF.mk_eq_hilbertDim,
+  rw [← (bE.prodLp bF).mk_eq_hilbertDim, ← bE.mk_eq_hilbertDim, ← bF.mk_eq_hilbertDim,
     Cardinal.mk_sum]
 
 /-- Same-universe specialization of `hilbertDim_prodLp`. -/
