@@ -14,6 +14,8 @@ import Mathlib.Analysis.Calculus.LocalExtr.Polynomial
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Data.Nat.Choose.Cast
 import Mathlib.RingTheory.Polynomial.Vieta
+import TauCeti.Algebra.Order.BigOperators.Ring.Multiset
+import TauCeti.Analysis.Convex.DiscreteConcave
 import TauCeti.Analysis.MvPolynomial.Deriv
 import TauCeti.Analysis.MvPolynomial.Jacobian
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
@@ -29,15 +31,13 @@ at `λ`, `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}` (written `eval (update λ i 0) (e
 
 ## Main results
 
-* `TauCeti.eval_esymm_succ`, `TauCeti.fderiv_eval_esymm_succ_apply_single`,
-  `TauCeti.sum_mul_eval_update_zero_esymm`, `TauCeti.sum_eval_update_zero_esymm` and
-  `TauCeti.eval_add_smul_one_esymm`: the identities `σ_{k+1} = λ_i σ_{k;i} + σ_{k+1;i}`,
-  `∂σ_{k+1}/∂λ_i = σ_{k;i}`, `∑_i λ_i σ_{k;i} = (k + 1) σ_{k+1}`, `∑_i σ_{k;i} = (n - k) σ_k` and
-  `σ_k(λ + t e) = ∑_{j ≤ k} binom(n - j, k - j) σ_j(λ) t^{k-j}`.
+* `TauCeti.fderiv_eval_esymm_succ_apply_single`: `∂σ_{k+1}/∂λ_i = σ_{k;i}`, from the expansion
+  `σ_{k+1} = λ_i σ_{k;i} + σ_{k+1;i}` (`TauCeti.eval_esymm_succ`, with the other algebraic
+  identities for `σ_{k;i}` in `TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary`).
 * `TauCeti.normalizedEsymm_mul_normalizedEsymm_le_sq`: **Newton's inequalities**
   `S_k S_{k+2} ≤ S_{k+1}²` for every `λ ∈ ℝⁿ`, and
   `TauCeti.eq_of_normalizedEsymm_mul_normalizedEsymm_eq_sq`: equality with `S_{k+2} ≠ 0` (for
-  instance on `Γ_n`) forces all `λ_i` to be equal.
+  instance on `Γ_n` when `k + 2 ≤ n`) forces all `λ_i` to be equal.
 * `TauCeti.normalizedEsymm_div_rpow_le`: the **generalized Newton–Maclaurin inequality**
   `(S_r / S_s)^{1/(r - s)} ≤ (S_k / S_l)^{1/(k - l)}` on `Γ_r` for `s < r`, `l < k ≤ r`, `l ≤ s`.
 * `TauCeti.normalizedEsymm_rpow_le`: **Maclaurin's inequalities** `S_l^{1/l} ≤ S_k^{1/k}` on `Γ_l`
@@ -67,88 +67,6 @@ public section
 open Finset MvPolynomial Function
 
 namespace TauCeti
-
-section Identities
-
-variable {R ι : Type*} [CommSemiring R] [Fintype ι]
-
-private theorem eval_esymm_eq_esymm_map (μ : ι → R) (k : ℕ) :
-    eval μ (esymm ι R k) = (univ.val.map μ).esymm k :=
-  aeval_esymm_eq_multiset_esymm ι R k μ
-
-variable [DecidableEq ι]
-
-private theorem univ_val_eq_cons_erase (i : ι) :
-    (univ : Finset ι).val = i ::ₘ (univ.erase i).val := by
-  rw [Finset.erase_val, Multiset.cons_erase (Finset.mem_univ_val i)]
-
-private theorem eval_update_zero_esymm (μ : ι → R) (i : ι) (k : ℕ) :
-    eval (update μ i 0) (esymm ι R k) = ((univ.erase i).val.map μ).esymm k := by
-  rw [eval_esymm_eq_esymm_map, univ_val_eq_cons_erase i, Multiset.map_cons, update_self,
-    Multiset.map_congr rfl fun j hj ↦
-      update_of_ne (Finset.ne_of_mem_erase (Finset.mem_val.mp hj)) _ _]
-  cases k with
-  | zero => simp
-  | succ k => exact Multiset.esymm_cons_zero _ _
-
-/-- The expansion of `σ_{k+1}(λ)` along the coordinate `λ_i`:
-`σ_{k+1}(λ) = λ_i σ_{k;i}(λ) + σ_{k+1;i}(λ)`, where `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}`. -/
-theorem eval_esymm_succ (μ : ι → R) (i : ι) (k : ℕ) :
-    eval μ (esymm ι R (k + 1)) =
-      μ i * eval (update μ i 0) (esymm ι R k) + eval (update μ i 0) (esymm ι R (k + 1)) := by
-  rw [eval_update_zero_esymm, eval_update_zero_esymm, eval_esymm_eq_esymm_map,
-    univ_val_eq_cons_erase i, Multiset.map_cons, Multiset.esymm_cons, add_comm]
-
-/-- `∑_i σ_{k;i}(λ) = (n - k) σ_k(λ)`, where `σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}` and `n` is the
-cardinality of `ι`. -/
-theorem sum_eval_update_zero_esymm (μ : ι → R) (k : ℕ) :
-    ∑ i, eval (update μ i 0) (esymm ι R k) =
-      ((Fintype.card ι - k : ℕ) : R) * eval μ (esymm ι R k) := by
-  simp_rw [eval_update_zero_esymm, eval_esymm_eq_esymm_map, Finset.esymm_map_val]
-  have h : ∀ i, powersetCard k (univ.erase i) = {A ∈ powersetCard k (univ : Finset ι) | i ∉ A} := by
-    intro i
-    ext A
-    simp [Finset.mem_powersetCard, Finset.subset_erase, and_comm]
-  simp_rw [h, Finset.sum_filter]
-  rw [Finset.sum_comm, Finset.mul_sum]
-  refine Finset.sum_congr rfl fun A hA ↦ ?_
-  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero, Finset.sum_const, nsmul_eq_mul]
-  congr 2
-  rw [Finset.filter_not, Finset.filter_mem_eq_inter, Finset.univ_inter, Finset.card_univ_sdiff,
-    (Finset.mem_powersetCard.mp hA).2]
-
-/-- The Euler identity `∑_i λ_i σ_{k;i}(λ) = (k + 1) σ_{k+1}(λ)`, where
-`σ_{k;i}(λ) = σ_k(λ)|_{λ_i = 0}`. -/
-theorem sum_mul_eval_update_zero_esymm (μ : ι → R) (k : ℕ) :
-    ∑ i, μ i * eval (update μ i 0) (esymm ι R k) = (k + 1) * eval μ (esymm ι R (k + 1)) := by
-  simp_rw [eval_update_zero_esymm, eval_esymm_eq_esymm_map, Finset.esymm_map_val, Finset.mul_sum]
-  have h : ∀ i, ∑ A ∈ powersetCard k (univ.erase i), μ i * ∏ j ∈ A, μ j =
-      ∑ B ∈ powersetCard (k + 1) univ, if i ∈ B then ∏ j ∈ B, μ j else 0 := by
-    intro i
-    rw [← Finset.sum_filter]
-    have hi : ∀ A ∈ powersetCard k (univ.erase i), i ∉ A := fun A hA h ↦ by
-      simpa using (Finset.subset_erase.mp (Finset.mem_powersetCard.mp hA).1).2 h
-    refine Finset.sum_nbij' (insert i) (fun B ↦ B.erase i) (fun A hA ↦ ?_) (fun B hB ↦ ?_)
-      (fun A hA ↦ Finset.erase_insert (hi A hA)) (fun B hB ↦ ?_)
-      (fun A hA ↦ (Finset.prod_insert (hi A hA)).symm)
-    · have := Finset.mem_powersetCard.mp hA
-      simp only [Finset.mem_filter, Finset.mem_powersetCard]
-      exact ⟨⟨Finset.subset_univ _, by rw [Finset.card_insert_of_notMem (hi A hA), this.2]⟩,
-        Finset.mem_insert_self _ _⟩
-    · simp only [Finset.mem_filter, Finset.mem_powersetCard] at hB ⊢
-      exact ⟨Finset.erase_subset_erase _ (Finset.subset_univ _), by
-        rw [Finset.card_erase_of_mem hB.2, hB.1.2]; rfl⟩
-    · simp only [Finset.mem_filter] at hB
-      exact Finset.insert_erase hB.2
-  simp_rw [h]
-  rw [Finset.sum_comm]
-  refine Finset.sum_congr rfl fun B hB ↦ ?_
-  rw [Finset.sum_ite_mem, Finset.univ_inter, Finset.sum_const, nsmul_eq_mul,
-    (Finset.mem_powersetCard.mp hB).2]
-  push_cast
-  ring
-
-end Identities
 
 section Derivative
 
@@ -180,62 +98,6 @@ theorem fderiv_eval_esymm_zero (μ : ι → 𝕜) :
   simp
 
 end Derivative
-
-section Shift
-
-variable {R ι : Type*} [CommSemiring R] [Fintype ι]
-
-open Polynomial in
-private theorem esymm_map_add_const (s : Multiset R) (t : R) (k : ℕ) :
-    (s.map (· + t)).esymm k =
-      ∑ j ∈ range (k + 1),
-        ((Multiset.card s - j).choose (k - j) : R) * s.esymm j * t ^ (k - j) := by
-  rcases le_or_gt k (Multiset.card s) with hkm | hkm
-  · have hcomp : ((s.map (· + t)).map fun r ↦ Polynomial.X + Polynomial.C r).prod =
-        (s.map fun r ↦ Polynomial.X + Polynomial.C r).prod.comp
-          (Polynomial.X + Polynomial.C t) := by
-      rw [Polynomial.multiset_prod_comp, Multiset.map_map, Multiset.map_map]
-      congr 1
-      refine Multiset.map_congr rfl fun r _ ↦ ?_
-      simp only [Function.comp_apply, add_comp, X_comp, C_comp, map_add]
-      ring
-    have h := congrArg (fun p ↦ p.coeff (Multiset.card s - k)) hcomp
-    rw [Multiset.prod_X_add_C_coeff _ (by simp), Multiset.card_map,
-      Nat.sub_sub_self hkm, Multiset.prod_X_add_C_eq_sum_esymm, Polynomial.sum_comp] at h
-    rw [h, Polynomial.finsetSum_coeff]
-    simp_rw [Polynomial.mul_comp, Polynomial.C_comp, Polynomial.pow_comp, Polynomial.X_comp,
-      Polynomial.coeff_C_mul, Polynomial.coeff_X_add_C_pow]
-    rw [← Finset.sum_subset (Finset.range_subset_range.mpr (show k + 1 ≤ Multiset.card s + 1 by
-      omega))]
-    · refine Finset.sum_congr rfl fun j hj ↦ ?_
-      have hjk : j ≤ k := Nat.lt_succ_iff.mp (Finset.mem_range.mp hj)
-      rw [show Multiset.card s - j - (Multiset.card s - k) = k - j by omega,
-        show Multiset.card s - k = (Multiset.card s - j) - (k - j) by omega,
-        Nat.choose_symm (by omega)]
-      ring
-    · intro j hj hjk
-      simp only [Finset.mem_range, not_lt] at hj hjk
-      rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, mul_zero, mul_zero]
-  · rw [Multiset.esymm_of_card_lt (by simpa using hkm)]
-    refine (Finset.sum_eq_zero fun j _ ↦ ?_).symm
-    rcases le_or_gt j (Multiset.card s) with hj | hj
-    · rw [Nat.choose_eq_zero_of_lt (by omega), Nat.cast_zero, zero_mul, zero_mul]
-    · rw [Multiset.esymm_of_card_lt hj, mul_zero, zero_mul]
-
-/-- The shift expansion
-`σ_k(λ + t e) = ∑_{j=0}^{k} binom(n - j, k - j) σ_j(λ) t^{k-j}`, where `e = (1, …, 1)` and `n` is
-the cardinality of `ι`. -/
-theorem eval_add_smul_one_esymm (μ : ι → R) (t : R) (k : ℕ) :
-    eval (μ + t • 1) (esymm ι R k) =
-      ∑ j ∈ range (k + 1),
-        ((Fintype.card ι - j).choose (k - j) : R) * eval μ (esymm ι R j) * t ^ (k - j) := by
-  simp_rw [eval_esymm_eq_esymm_map]
-  have h : (univ.val.map (μ + t • 1)) = (univ.val.map μ).map (· + t) := by
-    rw [Multiset.map_map]
-    exact Multiset.map_congr rfl fun i _ ↦ by simp
-  rw [h, esymm_map_add_const, Multiset.card_map, Finset.card_val, Finset.card_univ]
-
-end Shift
 
 section Newton
 
@@ -338,34 +200,6 @@ private theorem exists_mNorm_eq (s : Multiset ℝ) {m : ℕ} (hs : Multiset.card
   refine mul_right_cancel₀ (show (m + 1 : ℝ) ≠ 0 by positivity) ?_
   linear_combination s.esymm j * Ch - ((m + 1).choose j : ℝ) * E
 
-private theorem sum_map_mul_sub_sq (s : Multiset ℝ) (a b : ℝ) :
-    (s.map fun x ↦ (a * x - b) ^ 2).sum =
-      a ^ 2 * (s.map (· ^ 2)).sum - 2 * a * b * s.sum + Multiset.card s * b ^ 2 := by
-  induction s using Multiset.induction_on with
-  | empty => simp
-  | cons x s ih =>
-    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.card_cons, ih]
-    push_cast
-    ring
-
-private theorem eq_of_sum_sq_eq (s : Multiset ℝ)
-    (h : s.sum ^ 2 = Multiset.card s * (s.map (· ^ 2)).sum) :
-    ∀ x ∈ s, ∀ y ∈ s, x = y := by
-  have hsum := sum_map_mul_sub_sq s (Multiset.card s) s.sum
-  have hzero : (s.map fun x ↦ ((Multiset.card s : ℝ) * x - s.sum) ^ 2).sum = 0 := by
-    rw [hsum]
-    linear_combination (-(Multiset.card s : ℝ)) * h
-  have hx : ∀ x ∈ s, (Multiset.card s : ℝ) * x = s.sum := fun x hx ↦ by
-    have := Multiset.single_le_sum (fun y hy ↦ by
-      obtain ⟨x, -, rfl⟩ := Multiset.mem_map.mp hy
-      positivity) _ (Multiset.mem_map_of_mem (fun x ↦ ((Multiset.card s : ℝ) * x - s.sum) ^ 2) hx)
-    rw [hzero] at this
-    nlinarith [sq_nonneg ((Multiset.card s : ℝ) * x - s.sum)]
-  intro x hx' y hy'
-  have hn : (Multiset.card s : ℝ) ≠ 0 := by
-    exact_mod_cast (Multiset.card_pos_iff_exists_mem.mpr ⟨x, hx'⟩).ne'
-  exact mul_left_cancel₀ hn ((hx x hx').trans (hx y hy').symm)
-
 /-- The second normalized elementary symmetric function in terms of the first and the second
 power sum. -/
 private theorem mNorm_two_eq (s : Multiset ℝ) (hs : 2 ≤ Multiset.card s) :
@@ -397,7 +231,7 @@ private theorem eq_of_mNorm_two_eq (s : Multiset ℝ) (hs : 2 ≤ Multiset.card 
     (h : mNorm s 2 = mNorm s 1 ^ 2) : ∀ x ∈ s, ∀ y ∈ s, x = y := by
   have hn : (2 : ℝ) ≤ Multiset.card s := by exact_mod_cast hs
   rw [mNorm_two_eq s hs, mNorm_one_eq, div_pow, div_eq_div_iff (by nlinarith) (by positivity)] at h
-  refine eq_of_sum_sq_eq s ?_
+  refine Multiset.eq_of_sq_sum_eq_card_mul_sum_sq s ?_
   have : (Multiset.card s : ℝ) * (s.sum ^ 2 - Multiset.card s * (s.map (· ^ 2)).sum) = 0 := by
     linear_combination h
   rcases mul_eq_zero.mp this with h0 | h0
@@ -527,7 +361,8 @@ theorem normalizedEsymm_mul_normalizedEsymm_le_sq (μ : ι → ℝ) (k : ℕ) :
 
 /-- The equality case of Newton's inequality: if `S_{k+2}(λ) ≠ 0` and
 `S_k(λ) S_{k+2}(λ) = S_{k+1}(λ)²`, then all `λ_i` are equal. The hypothesis `S_{k+2} ≠ 0` holds on
-`Γ_{k+2}`, in particular on `Γ_n` (`TauCeti.normalizedEsymm_pos_of_mem_hessianCone`); without it
+`Γ_{k+2}`, in particular on `Γ_n` when `k + 2 ≤ n`
+(`TauCeti.normalizedEsymm_pos_of_mem_hessianCone`); without it
 `λ = (1, 0, 0)` and `k = 1` give equality with unequal entries. -/
 theorem eq_of_normalizedEsymm_mul_normalizedEsymm_eq_sq {μ : ι → ℝ} {k : ℕ}
     (hne : normalizedEsymm (k + 2) μ ≠ 0)
@@ -569,82 +404,6 @@ theorem normalizedEsymm_pos_of_mem_hessianCone {n k j : ℕ} {μ : Fin n → ℝ
     exact lt_irrefl _ hσ
   exact div_pos hσ (by exact_mod_cast Nat.choose_pos (by simpa using hjn))
 
-/-- Three chords of a concave sequence: if `a_j + a_{j+2} ≤ 2 a_{j+1}` for `j + 2 ≤ r`, then for
-`p < q < m ≤ r` the slope over `[q, m]` is at most the slope over `[p, q]`. -/
-private theorem concave_three_chord {a : ℕ → ℝ} {r : ℕ}
-    (ha : ∀ j, j + 2 ≤ r → a j + a (j + 2) ≤ 2 * a (j + 1)) {p q m : ℕ} (hpq : p < q)
-    (hqm : q < m) (hmr : m ≤ r) :
-    ((q : ℝ) - p) * (a m - a q) ≤ ((m : ℝ) - q) * (a q - a p) := by
-  -- the differences `a (j + 1) - a j` decrease on `[0, r)`
-  have hd : ∀ i j, i ≤ j → j + 1 ≤ r → a (j + 1) - a j ≤ a (i + 1) - a i := by
-    intro i j hij hjr
-    induction j, hij using Nat.le_induction with
-    | base => exact le_rfl
-    | succ j _ ih =>
-      have := ha j (by omega)
-      linarith [ih (by omega)]
-  -- the chord over `[p, q]` against the difference at `q`
-  have hB1 : ∀ t p : ℕ, p + t = q → (t : ℝ) * (a (q + 1) - a q) ≤ a q - a p := by
-    intro t
-    induction t with
-    | zero => intro p h; subst h; simp
-    | succ t ih =>
-      intro p h
-      have := ih (p + 1) (by omega)
-      have := hd p q (by omega) (by omega)
-      push_cast
-      linarith
-  -- the chord over `[q, q + t]` against the difference at `q`
-  have hB2 : ∀ t : ℕ, q + t ≤ r → a (q + t) - a q ≤ t * (a (q + 1) - a q) := by
-    intro t
-    induction t with
-    | zero => intro _; simp
-    | succ t ih =>
-      intro hq
-      have := ih (by omega)
-      have := hd q (q + t) (by omega) (by omega)
-      rw [← add_assoc]
-      push_cast
-      linarith
-  have h1 := hB1 (q - p) p (by omega)
-  have h2 := hB2 (m - q) (by omega)
-  rw [show q + (m - q) = m by omega] at h2
-  push_cast [Nat.cast_sub hpq.le, Nat.cast_sub hqm.le] at h1 h2
-  have hqp : (0 : ℝ) ≤ q - p := sub_nonneg.mpr (by exact_mod_cast hpq.le)
-  have hmq : (0 : ℝ) ≤ m - q := sub_nonneg.mpr (by exact_mod_cast hqm.le)
-  nlinarith [mul_le_mul_of_nonneg_left h1 hmq, mul_le_mul_of_nonneg_left h2 hqp]
-
-/-- A sequence `a` with `a_j + a_{j+2} ≤ 2 a_{j+1}` for `j + 2 ≤ r` is concave on `[0, r]`: the
-slope of the chord over `[s, r]` is at most the slope over `[l, k]` when `l ≤ s` and `k ≤ r`. -/
-private theorem slope_le_of_concave {a : ℕ → ℝ} {r : ℕ}
-    (ha : ∀ j, j + 2 ≤ r → a j + a (j + 2) ≤ 2 * a (j + 1)) {s k l : ℕ} (hsr : s < r)
-    (hlk : l < k) (hkr : k ≤ r) (hls : l ≤ s) :
-    (a r - a s) / ((r : ℝ) - s) ≤ (a k - a l) / ((k : ℝ) - l) := by
-  have hkl : (0 : ℝ) < k - l := by
-    have : (l : ℝ) < k := by exact_mod_cast hlk
-    linarith
-  have hrs : (0 : ℝ) < r - s := by
-    have : (s : ℝ) < r := by exact_mod_cast hsr
-    linarith
-  have hrl : (0 : ℝ) < r - l := by
-    have : (l : ℝ) < r := by exact_mod_cast (hlk.trans_le hkr)
-    linarith
-  -- the slope over `[s, r]` is at most the slope over `[l, r]`
-  have step1 : (a r - a s) / ((r : ℝ) - s) ≤ (a r - a l) / ((r : ℝ) - l) := by
-    rw [div_le_div_iff₀ hrs hrl]
-    rcases hls.lt_or_eq with hls | rfl
-    · have := concave_three_chord ha hls hsr le_rfl
-      nlinarith
-    · exact le_rfl
-  -- the slope over `[l, r]` is at most the slope over `[l, k]`
-  have step2 : (a r - a l) / ((r : ℝ) - l) ≤ (a k - a l) / ((k : ℝ) - l) := by
-    rw [div_le_div_iff₀ hrl hkl]
-    rcases hkr.lt_or_eq with hkr | rfl
-    · have := concave_three_chord ha hlk hkr le_rfl
-      nlinarith
-    · exact le_rfl
-  exact step1.trans step2
-
 /-- The **generalized Newton–Maclaurin inequality**: for `0 ≤ s < r`, `0 ≤ l < k ≤ r` with `l ≤ s`
 and `λ ∈ Γ_r`, `(S_r / S_s)^{1/(r - s)} ≤ (S_k / S_l)^{1/(k - l)}`. -/
 theorem normalizedEsymm_div_rpow_le {n r s k l : ℕ} {μ : Fin n → ℝ}
@@ -662,7 +421,8 @@ theorem normalizedEsymm_div_rpow_le {n r s k l : ℕ} {μ : Fin n → ℝ}
     rw [← Real.log_mul (hpos j (by omega)).ne' (hpos (j + 2) hj).ne', h2]
     exact Real.log_le_log (mul_pos (hpos j (by omega)) (hpos (j + 2) hj))
       (normalizedEsymm_mul_normalizedEsymm_le_sq μ j)
-  have key := slope_le_of_concave (a := fun j ↦ Real.log (normalizedEsymm j μ)) ha hsr hlk hkr hls
+  have key := div_sub_le_div_sub_of_add_le_two_mul (a := fun j ↦ Real.log (normalizedEsymm j μ))
+    ha hsr hlk hkr hls
   rw [Real.rpow_def_of_pos (div_pos (hpos r le_rfl) (hpos s hsr.le)),
     Real.rpow_def_of_pos (div_pos (hpos k hkr) (hpos l (by omega))), Real.exp_le_exp,
     Real.log_div (hpos r le_rfl).ne' (hpos s hsr.le).ne',
