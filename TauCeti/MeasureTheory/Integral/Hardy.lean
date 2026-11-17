@@ -98,22 +98,14 @@ private theorem lintegral_hardyKernel_left {θ s : ℝ} (hθ : 0 < θ) (hs : 0 <
     ← ENNReal.ofReal_mul (Real.rpow_nonneg hs.le _), ← mul_assoc, ← Real.rpow_add hs,
     add_neg_cancel, Real.rpow_zero, one_mul]
 
-/-- `A ^ (1 - 1 / q) * A ^ (1 / q) = A` for positive finite `A` and `1 ≤ q ≤ ∞`. -/
-private theorem rpow_one_sub_inv_mul_rpow_inv {A : ℝ≥0∞} (hA0 : A ≠ 0) (hA : A ≠ ∞) (q : ℝ≥0∞) :
-    A ^ (1 - q.toReal⁻¹) * A ^ q.toReal⁻¹ = A := by
-  rw [← ENNReal.rpow_add _ _ hA0 hA, sub_add_cancel, ENNReal.rpow_one]
-
 /-- Rewriting `t ^ (-θ) ∫₀ᵗ g(s) ds` as a kernel integral against `dt / t`. -/
 private theorem rpow_neg_mul_lintegral_Ioc_eq {θ t : ℝ} (ht : 0 < t) (g : ℝ → ℝ≥0∞) :
     ENNReal.ofReal (t ^ (-θ)) * ∫⁻ s in Ioc 0 t, g s =
       ∫⁻ s, (if s ≤ t then ENNReal.ofReal ((s / t) ^ θ) else 0) *
         (ENNReal.ofReal (s ^ (1 - θ)) * g s) ∂multHaar := by
-  rw [multHaar_def, lintegral_withDensity_eq_lintegral_mul_non_measurable _
-    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+  rw [lintegral_multHaar_eq_setLIntegral, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
     ← Ioi_inter_Iic, inter_comm, ← setLIntegral_indicator measurableSet_Iic]
   refine setLIntegral_congr_fun measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_
-  dsimp only [Pi.mul_apply]
   by_cases hst : s ≤ t
   · simp only [hst, ↓reduceIte, indicator_of_mem (mem_Iic.2 hst)]
     rw [← mul_assoc, ← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 hs.le),
@@ -154,8 +146,8 @@ theorem eLpNorm_rpow_neg_mul_lintegral_Ioc_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ
     hh.aemeasurable hq
     (ae_pos_multHaar.mono fun t ht ↦ (lintegral_hardyKernel_right hθ ht).le)
     (ae_pos_multHaar.mono fun s hs ↦ (lintegral_hardyKernel_left hθ hs).le)
-  rwa [rpow_one_sub_inv_mul_rpow_inv (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne'
-    ENNReal.ofReal_ne_top] at hschur
+  rwa [← ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne' ENNReal.ofReal_ne_top,
+    sub_add_cancel, ENNReal.rpow_one] at hschur
 
 /-- Rewriting `t ^ θ ∫_t^∞ g(s) ds` as a kernel integral against `dt / t`. -/
 private theorem rpow_mul_lintegral_Ioi_eq {θ t : ℝ} (ht : 0 < t) (g : ℝ → ℝ≥0∞) :
@@ -163,12 +155,9 @@ private theorem rpow_mul_lintegral_Ioi_eq {θ t : ℝ} (ht : 0 < t) (g : ℝ →
       ∫⁻ s, (if t < s then ENNReal.ofReal ((t / s) ^ θ) else 0) *
         (ENNReal.ofReal (s ^ (1 + θ)) * g s) ∂multHaar := by
   have hinter : Ioi t = Ioi t ∩ Ioi 0 := by rw [Ioi_inter_Ioi, max_eq_left ht.le]
-  rw [multHaar_def, lintegral_withDensity_eq_lintegral_mul_non_measurable _
-    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top),
-    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, hinter,
-    ← setLIntegral_indicator measurableSet_Ioi]
+  rw [lintegral_multHaar_eq_setLIntegral, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+    hinter, ← setLIntegral_indicator measurableSet_Ioi]
   refine setLIntegral_congr_fun measurableSet_Ioi fun s (hs : 0 < s) ↦ ?_
-  dsimp only [Pi.mul_apply]
   by_cases hts : t < s
   · simp only [hts, ↓reduceIte, indicator_of_mem (mem_Ioi.2 hts)]
     rw [← mul_assoc, ← mul_assoc, ← ENNReal.ofReal_mul (inv_nonneg.2 hs.le),
@@ -218,8 +207,8 @@ theorem eLpNorm_rpow_mul_lintegral_Ioi_le {θ : ℝ} (hθ : 0 < θ) {q : ℝ≥0
   have hschur := eLpNorm_lintegral_mul_le (μ := multHaar) (ν := multHaar) hk.aemeasurable
     hh.aemeasurable hq
     (ae_pos_multHaar.mono hrow) (ae_pos_multHaar.mono hcol)
-  rwa [rpow_one_sub_inv_mul_rpow_inv (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne'
-    ENNReal.ofReal_ne_top] at hschur
+  rwa [← ENNReal.rpow_add _ _ (ENNReal.ofReal_pos.2 (inv_pos.2 hθ)).ne' ENNReal.ofReal_ne_top,
+    sub_add_cancel, ENNReal.rpow_one] at hschur
 
 /-! ### Classical Hardy inequality on `(0, ∞)` -/
 
