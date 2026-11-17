@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Topology.Algebra.Module.Equiv.Prod
 
 /-!
 # The normalized determinant of a complex-linear automorphism
@@ -23,6 +24,8 @@ loop of determinants.
 * `ContinuousLinearEquiv.det_eq_norm_mul_normalizedDet`: `det A = ‖det A‖ * normalizedDet A`.
 * `ContinuousLinearEquiv.normalizedDet_trans`, `ContinuousLinearEquiv.normalizedDet_refl`,
   `ContinuousLinearEquiv.normalizedDet_symm`: the normalized determinant is multiplicative.
+* `ContinuousLinearEquiv.normalizedDet_prodCongr`: the normalized determinant of `A × B` is the
+  product of those of `A` and `B`.
 * `Continuous.normalizedDet`, `ContinuousOn.normalizedDet`: a continuous family of automorphisms
   has continuous normalized determinant.
 -/
@@ -79,6 +82,20 @@ theorem normalizedDet_refl : (ContinuousLinearEquiv.refl ℂ E).normalizedDet = 
 @[simp]
 theorem normalizedDet_symm (A : E ≃L[ℂ] E) : A.symm.normalizedDet = A.normalizedDet⁻¹ :=
   eq_inv_of_mul_eq_one_right (by rw [← normalizedDet_trans, self_trans_symm, normalizedDet_refl])
+
+/-- The normalized determinant of a product of automorphisms is the product of their normalized
+determinants. -/
+@[simp]
+theorem normalizedDet_prodCongr {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
+    [FiniteDimensional ℂ E] [FiniteDimensional ℂ E'] (A : E ≃L[ℂ] E) (B : E' ≃L[ℂ] E') :
+    (A.prodCongr B).normalizedDet = A.normalizedDet * B.normalizedDet := by
+  have hdet : LinearMap.det ((A.prodCongr B).toLinearEquiv : E × E' →ₗ[ℂ] E × E') =
+      LinearMap.det (A.toLinearEquiv : E →ₗ[ℂ] E) *
+        LinearMap.det (B.toLinearEquiv : E' →ₗ[ℂ] E') :=
+    LinearMap.det_prodMap _ _
+  ext1
+  simp only [coe_normalizedDet, Circle.coe_mul, hdet, norm_mul, Complex.ofReal_mul]
+  ring
 
 end ContinuousLinearEquiv
 
