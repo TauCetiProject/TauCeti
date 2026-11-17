@@ -34,10 +34,9 @@ needs no boundary circle, so this transfers its laws to boundary degrees:
   homological degree of a proper map (`TauCeti.HomologicalOrientation.degree`);
 * **additivity**: if finitely many pairwise disjoint open subdiscs of the closed disc contain all
   its zeros, and `h` has no zero on their boundary circles, the boundary degree of `h` is the sum
-  of its boundary degrees along those circles
-  (`TauCeti.HomologicalOrientation.degree_toBasedLoop_eq_sum`). For the empty family this is the
-  vanishing of the degree of a map without zeros, and for a single subdisc it is the invariance of
-  the boundary degree under passing to a subdisc containing all the zeros.
+  of its boundary degrees along those circles (`Circle.degree_toBasedLoop_eq_sum`). For the empty
+  family this is the vanishing of the degree of a map without zeros, and for a single subdisc it is
+  the invariance of the boundary degree under passing to a subdisc containing all the zeros.
 
 The proof extends `h` from the closed disc to the plane by the radial retraction onto the disc
 (`TauCeti.centeredRadialRetraction`). The extension has no zero outside the open disc, so its local
@@ -55,8 +54,8 @@ read on the open disc by naturality under open embeddings
   an open set containing the closed disc, with all its zeros in the open disc.
 * `TauCeti.HomologicalOrientation.degree_toBasedLoop_comp_eq_degree_mul`: boundary degrees multiply
   by the degree of a proper map into the open disc.
-* `TauCeti.HomologicalOrientation.degree_toBasedLoop_eq_sum`: boundary degrees are additive over
-  disjoint subdiscs containing all the zeros.
+* `Circle.degree_toBasedLoop_eq_sum`: boundary degrees are additive over disjoint subdiscs
+  containing all the zeros.
 
 ## References
 
@@ -242,37 +241,46 @@ theorem degree_toBasedLoop_comp_eq_degree_mul (hr : 0 < r) {B U' : TopologicalSp
       finrank_real_complex finrank_real_complex finrank_real_complex hgc hθ,
     o.localDegree_comap_ball_eq_degree_toBasedLoop hr hB hh hne hg hu]
 
+end HomologicalOrientation
+
+end TauCeti
+
+namespace Circle
+
+open TauCeti
+
 /-- **Boundary degrees are additive over disjoint subdiscs.** Let `h` be continuous on the closed
 disc of radius `r > 0` about `z₀`, with no zero on its boundary circle. Let finitely many closed
 subdiscs, of radii `ρ i > 0` about `c i`, have pairwise disjoint interiors, and suppose that `h`
 has no zero on their boundary circles and that every zero of `h` in the closed disc lies in one of
 their interiors. Then the boundary degree of `h` along the circle of radius `r` is the sum of its
 boundary degrees along the circles of radii `ρ i`. -/
-theorem degree_toBasedLoop_eq_sum {ι : Type*} [Fintype ι] (hr : 0 < r) {h : ℂ → ℂ}
-    (hh : ContinuousOn h (closedBall z₀ r)) (hne : ∀ z ∈ sphere z₀ r, h z ≠ 0) {c : ι → ℂ}
-    {ρ : ι → ℝ} (hρ : ∀ i, 0 < ρ i) (hsub : ∀ i, closedBall (c i) (ρ i) ⊆ closedBall z₀ r)
+theorem degree_toBasedLoop_eq_sum {ι : Type*} [Fintype ι] {z₀ : ℂ} {r : ℝ} (hr : 0 < r)
+    {h : ℂ → ℂ} (hh : ContinuousOn h (closedBall z₀ r)) (hne : ∀ z ∈ sphere z₀ r, h z ≠ 0)
+    {c : ι → ℂ} {ρ : ι → ℝ} (hρ : ∀ i, 0 < ρ i)
+    (hsub : ∀ i, closedBall (c i) (ρ i) ⊆ closedBall z₀ r)
     (hdisj : Pairwise fun i k ↦ Disjoint (ball (c i) (ρ i)) (ball (c k) (ρ k)))
     (hne' : ∀ i, ∀ z ∈ sphere (c i) (ρ i), h z ≠ 0)
     (hzero : ∀ z ∈ closedBall z₀ r, h z = 0 → ∃ i, z ∈ ball (c i) (ρ i))
     {u : C(Circle, Circle)} (hu : ∀ ζ : Circle, (u ζ : ℂ) = h (z₀ + r * ζ) / ‖h (z₀ + r * ζ)‖)
     {v : ι → C(Circle, Circle)}
     (hv : ∀ i (ζ : Circle), (v i ζ : ℂ) = h (c i + ρ i * ζ) / ‖h (c i + ρ i * ζ)‖) :
-    Circle.degree u.toBasedLoop = ∑ i, Circle.degree (v i).toBasedLoop := by
+    degree u.toBasedLoop = ∑ i, degree (v i).toBasedLoop := by
   have o : HomologicalOrientation ℂ ℂ 2 :=
-    (nonempty_of_simplyConnectedSpace finrank_real_complex).some
-  set G := radialExtension hr hh
+    (HomologicalOrientation.nonempty_of_simplyConnectedSpace finrank_real_complex).some
+  set G := HomologicalOrientation.radialExtension hr hh
   let D (i : ι) : TopologicalSpace.Opens ℂ := ⟨ball (c i) (ρ i), isOpen_ball⟩
-  have hGsub := radialExtension_preimage_zero_subset hr hh hne
+  have hGsub := HomologicalOrientation.radialExtension_preimage_zero_subset hr hh hne
   rw [← o.localDegree_radialExtension hr hh hne hu,
     o.localDegree_eq_sum o finrank_real_complex finrank_real_complex G
-      (isCompact_radialExtension_preimage_zero hr hh hne) (U := D) hdisj fun w hw ↦ ?_]
+      (HomologicalOrientation.isCompact_radialExtension_preimage_zero hr hh hne) (U := D) hdisj
+      fun w hw ↦ ?_]
   · refine Finset.sum_congr rfl fun i _ ↦
       o.localDegree_comap_ball_eq_degree_toBasedLoop (hρ i) rfl (hh.mono (hsub i)) (hne' i)
-        (fun z ↦ radialExtension_apply hr hh (hsub i (ball_subset_closedBall z.2))) (hv i)
+        (fun z ↦ HomologicalOrientation.radialExtension_apply hr hh
+          (hsub i (ball_subset_closedBall z.2))) (hv i)
   · have hw' := ball_subset_closedBall (hGsub hw)
-    have hw0 : h w = 0 := (radialExtension_apply hr hh hw').symm.trans hw
+    have hw0 : h w = 0 := (HomologicalOrientation.radialExtension_apply hr hh hw').symm.trans hw
     exact mem_iUnion.2 (hzero w hw' hw0)
 
-end HomologicalOrientation
-
-end TauCeti
+end Circle
