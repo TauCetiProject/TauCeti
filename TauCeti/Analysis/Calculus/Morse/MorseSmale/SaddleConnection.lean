@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.MorseSmale.Fredholm
+import Mathlib.Analysis.Calculus.FDeriv.WithLp
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arctan
 
 /-!
@@ -109,17 +110,14 @@ private theorem gradField_apply_one (z : EuclideanSpace ℝ (Fin 2)) :
     gradField ε z 1 = -(Real.sin (z 1) * Real.cos (z 0)) + ε * Real.cos (z 1) := by
   simp [gradField]
 
-private theorem hasFDerivAt_coord (i : Fin 2) (z : EuclideanSpace ℝ (Fin 2)) :
-    HasFDerivAt (fun w : EuclideanSpace ℝ (Fin 2) ↦ w i)
-      (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ) z :=
-  (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ).hasFDerivAt
-
 private theorem hasGradientAt_tiltedTorusHeight (z : EuclideanSpace ℝ (Fin 2)) :
     HasGradientAt (tiltedTorusHeight ε) (gradField ε z) z := by
   rw [hasGradientAt_iff_hasFDerivAt]
-  have hc0 := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z (hasFDerivAt_coord 0 z)
-  have hc1 := (Real.hasDerivAt_cos (z 1)).comp_hasFDerivAt z (hasFDerivAt_coord 1 z)
-  have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z (hasFDerivAt_coord 1 z)
+  have hp0 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 0
+  have hp1 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 1
+  have hc0 := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z hp0
+  have hc1 := (Real.hasDerivAt_cos (z 1)).comp_hasFDerivAt z hp1
+  have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z hp1
   refine ((((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hc0).add (hs1.const_mul ε)).congr_fderiv ?_
   ext u
   simp [gradField, PiLp.inner_apply]
@@ -169,10 +167,12 @@ private theorem hessField_apply (z u : EuclideanSpace ℝ (Fin 2)) :
 
 private theorem hasFDerivAt_gradField (z : EuclideanSpace ℝ (Fin 2)) :
     HasFDerivAt (gradField ε) (hessField ε z) z := by
-  have hc0 := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z (hasFDerivAt_coord 0 z)
-  have hs0 := (Real.hasDerivAt_sin (z 0)).comp_hasFDerivAt z (hasFDerivAt_coord 0 z)
-  have hc1 := (Real.hasDerivAt_cos (z 1)).comp_hasFDerivAt z (hasFDerivAt_coord 1 z)
-  have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z (hasFDerivAt_coord 1 z)
+  have hp0 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 0
+  have hp1 := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 z 1
+  have hc0 := (Real.hasDerivAt_cos (z 0)).comp_hasFDerivAt z hp0
+  have hs0 := (Real.hasDerivAt_sin (z 0)).comp_hasFDerivAt z hp0
+  have hc1 := (Real.hasDerivAt_cos (z 1)).comp_hasFDerivAt z hp1
+  have hs1 := (Real.hasDerivAt_sin (z 1)).comp_hasFDerivAt z hp1
   have g0 := (((hasFDerivAt_const (2 : ℝ) z).add hc1).mul hs0).neg.smul_const e₀
   have g1 := ((hs1.mul hc0).neg.add (hc1.const_mul ε)).smul_const e₁
   refine (g0.add g1).congr_fderiv ?_
@@ -604,7 +604,8 @@ private theorem antitone_cos_negativeGradientFlow (y : EuclideanSpace ℝ (Fin 2
   · have h := (isNegativeGradient_negativeGradientFlow (tiltedTorusHeight ε)
       (lipschitzWith_gradient_tiltedTorusHeight ε)).isIntegralCurve y s
     have hx : HasDerivAt (fun s ↦ Φ s y 0) ((2 + Real.cos (Φ s y 1)) * Real.sin (Φ s y 0)) s := by
-      refine ((hasFDerivAt_coord 0 (Φ s y)).comp_hasDerivAt s h).congr_deriv ?_
+      have hp := PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 (Φ s y) 0
+      refine (hp.comp_hasDerivAt s h).congr_deriv ?_
       simp [Φ]
     exact (Real.hasDerivAt_cos _).comp s hx
   · rw [Pi.zero_apply]
@@ -624,7 +625,7 @@ private theorem mul_sin_negativeGradientFlow_nonpos (hε : ε ≠ 0) (y : Euclid
       (Real.sin (Φ s y 1) * Real.cos (Φ s y 0) - ε * Real.cos (Φ s y 1)) s := by
     have h := (isNegativeGradient_negativeGradientFlow (tiltedTorusHeight ε)
       (lipschitzWith_gradient_tiltedTorusHeight ε)).isIntegralCurve y s
-    refine ((hasFDerivAt_coord 1 (Φ s y)).comp_hasDerivAt s h).congr_deriv ?_
+    refine ((PiLp.hasFDerivAt_apply (𝕜 := ℝ) 2 (Φ s y) 1).comp_hasDerivAt s h).congr_deriv ?_
     simp
     ring
   have hg (s : ℝ) : HasDerivAt (fun s ↦ ε * Real.sin (Φ s y 1))
