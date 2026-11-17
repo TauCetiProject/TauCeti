@@ -53,8 +53,8 @@ and its underlying forward strong transformation `normalizationUnitHom actions`.
 ## References
 
 * Niles Johnson and Donald Yau, *2-Dimensional Categories*, Oxford University Press (2021),
-  [arXiv:2002.06055](https://arxiv.org/abs/2002.06055), Chapter 4: strong transformations,
-  modifications, and pointwise equivalences in pseudofunctor bicategories.
+  [arXiv:2002.06055](https://arxiv.org/abs/2002.06055), Chapter 4 (strong transformations and
+  modifications) and Section 6.2 (pointwise equivalences in pseudofunctor bicategories).
 -/
 
 public section
@@ -583,7 +583,8 @@ noncomputable def normalizationInvCompIso :
       erw [Functor.leftUnitor_hom_app, Category.comp_id]
       exact φ.functor_map_inverseFiberIso_hom_app_comp_counit p x
 
-@[simp]
+-- Keep these dependent component equations named: their carriers involve semireducible
+-- lift composition and do not simplify cleanly before generic inverse laws.
 lemma normalizationInvCompIso_hom_joint_as_app_star (p : Γ) :
     (normalizationInvCompIso φ).hom.joint.as.app ⟨(p, SingleObj.star H)⟩ =
       (Cat.Hom.isoMk (φ.inverseFiberIso p) ≪≫
@@ -591,7 +592,6 @@ lemma normalizationInvCompIso_hom_joint_as_app_star (p : Γ) :
   simp only [normalizationInvCompIso, isoMk_hom_joint]
   rfl
 
-@[simp]
 lemma normalizationInvCompIso_inv_joint_as_app_star (p : Γ) :
     (normalizationInvCompIso φ).inv.joint.as.app ⟨(p, SingleObj.star H)⟩ =
       (Cat.Hom.isoMk (φ.inverseFiberIso p) ≪≫
@@ -609,7 +609,8 @@ variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
 /-- The strong transformation from normalization followed by reconstruction to the identity
 pseudofunctor on equivariant lifts, with components `L.normalizationInv` and naturality cells
 `(Hom.normalizationInvCompIso φ).symm`. -/
--- Expose the component projections so the unit and counit equations retain their lift endpoints.
+-- Expose the component projections so the naturality, unit, and counit equations retain their
+-- literal lift endpoints.
 @[expose] noncomputable def normalizationUnitInv :
     (normalizationPseudofunctor actions).comp (reconstructionPseudofunctor actions) ⟶
       Pseudofunctor.id (EquivariantGroupoidLift Γ actions) where
@@ -624,7 +625,7 @@ lemma normalizationUnitInv_app (L : EquivariantGroupoidLift Γ actions) :
     (normalizationUnitInv actions).app L = L.normalizationInv :=
   (rfl)
 
-@[simp]
+-- Keep this dependent naturality equation named so `simp` does not mismatch its endpoints.
 lemma normalizationUnitInv_naturality {L L' : EquivariantGroupoidLift Γ actions} (φ : L ⟶ L') :
     (normalizationUnitInv actions).naturality φ = (Hom.normalizationInvCompIso φ).symm :=
   (rfl)
@@ -644,7 +645,7 @@ reconstruction, by upgrading `normalizationUnitInv` via the pointwise equivalenc
 
 /-- The forward strong transformation from the identity pseudofunctor on equivariant lifts to
 normalization followed by reconstruction, with components `L.normalizationInv.equivalence.inv`. -/
--- Expose the underlying transformation so component equations of `normalizationUnitEquiv` hold.
+-- Expose the components so `normalizationUnitHom_naturality` retains its literal lift endpoints.
 @[expose] noncomputable def normalizationUnitHom :
     Pseudofunctor.id (EquivariantGroupoidLift Γ actions) ⟶
       (normalizationPseudofunctor actions).comp (reconstructionPseudofunctor actions) :=
@@ -655,7 +656,7 @@ lemma normalizationUnitHom_app (L : EquivariantGroupoidLift Γ actions) :
     (normalizationUnitHom actions).app L = L.normalizationInv.equivalence.inv :=
   (rfl)
 
-@[simp]
+-- Keep this dependent naturality equation named so `simp` does not mismatch its endpoints.
 lemma normalizationUnitHom_naturality {L L' : EquivariantGroupoidLift Γ actions} (φ : L ⟶ L') :
     (normalizationUnitHom actions).naturality φ =
       (L.normalizationInv.equivalence.mateIsoEquiv L'.normalizationInv.equivalence
@@ -672,25 +673,23 @@ lemma normalizationUnitEquiv_inv :
     (normalizationUnitEquiv actions).inv = normalizationUnitInv actions :=
   (rfl)
 
-@[simp]
+-- Keep the dependent unit/counit component equations named: rewriting them under `simp`
+-- leaves unreduced endpoints in enclosing compositions and equalities.
 lemma normalizationUnitEquiv_unit_hom_as_app (L : EquivariantGroupoidLift Γ actions) :
     (normalizationUnitEquiv actions).unit.hom.as.app L =
       L.normalizationInv.equivalence.counit.inv :=
   (rfl)
 
-@[simp]
 lemma normalizationUnitEquiv_unit_inv_as_app (L : EquivariantGroupoidLift Γ actions) :
     (normalizationUnitEquiv actions).unit.inv.as.app L =
       L.normalizationInv.equivalence.counit.hom :=
   (rfl)
 
-@[simp]
 lemma normalizationUnitEquiv_counit_hom_as_app (L : EquivariantGroupoidLift Γ actions) :
     (normalizationUnitEquiv actions).counit.hom.as.app L =
       L.normalizationInv.equivalence.unit.inv :=
   (rfl)
 
-@[simp]
 lemma normalizationUnitEquiv_counit_inv_as_app (L : EquivariantGroupoidLift Γ actions) :
     (normalizationUnitEquiv actions).counit.inv.as.app L =
       L.normalizationInv.equivalence.unit.hom :=

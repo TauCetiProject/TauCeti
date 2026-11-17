@@ -150,7 +150,8 @@ end Helpers
 /-- A strong transformation `η : F ⟶ G` between pseudofunctors `F, G : B ⥤ᵖ C` upgrades to an
 adjoint equivalence `F ≌ G` in `B ⥤ᵖ C` when each component `η.app a` is equipped with a
 quasi-inverse `inv a` and unit and counit `2`-isomorphisms satisfying the left triangle identity.
-The inverse naturality cells are the inverse mates of those of `η`. -/
+The inverse naturality cells are the inverses of the mates of those of `η` (via
+`Bicategory.Equivalence.mateIsoEquiv`). -/
 -- Expose the record projections so the dependent unit and counit component equations can be stated.
 @[expose] def equivalenceMk (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a)
     (unit : ∀ a : B, 𝟙 (F.obj a) ≅ η.app a ≫ inv a)
@@ -214,7 +215,8 @@ lemma equivalenceMk_inv_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a
     (η.equivalenceMk inv unit counit h).inv.app a = inv a :=
   (rfl)
 
-@[simp]
+-- Keep the dependent naturality and unit/counit component equations named: their carriers
+-- involve semireducible definitions and do not have a robust simp normal form downstream.
 lemma equivalenceMk_inv_naturality (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a)
     (unit : ∀ a : B, 𝟙 (F.obj a) ≅ η.app a ≫ inv a)
     (counit : ∀ a : B, inv a ≫ η.app a ≅ 𝟙 (G.obj a))
@@ -226,7 +228,6 @@ lemma equivalenceMk_inv_naturality (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ 
         (η.naturality f)).symm) :=
   (rfl)
 
-@[simp]
 lemma equivalenceMk_unit_hom_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a)
     (unit : ∀ a : B, 𝟙 (F.obj a) ≅ η.app a ≫ inv a)
     (counit : ∀ a : B, inv a ≫ η.app a ≅ 𝟙 (G.obj a))
@@ -235,7 +236,6 @@ lemma equivalenceMk_unit_hom_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶
     (η.equivalenceMk inv unit counit h).unit.hom.as.app a = (unit a).hom :=
   (rfl)
 
-@[simp]
 lemma equivalenceMk_unit_inv_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a)
     (unit : ∀ a : B, 𝟙 (F.obj a) ≅ η.app a ≫ inv a)
     (counit : ∀ a : B, inv a ≫ η.app a ≅ 𝟙 (G.obj a))
@@ -244,7 +244,6 @@ lemma equivalenceMk_unit_inv_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶
     (η.equivalenceMk inv unit counit h).unit.inv.as.app a = (unit a).inv :=
   (rfl)
 
-@[simp]
 lemma equivalenceMk_counit_hom_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a)
     (unit : ∀ a : B, 𝟙 (F.obj a) ≅ η.app a ≫ inv a)
     (counit : ∀ a : B, inv a ≫ η.app a ≅ 𝟙 (G.obj a))
@@ -253,7 +252,6 @@ lemma equivalenceMk_counit_hom_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a �
     (η.equivalenceMk inv unit counit h).counit.hom.as.app a = (counit a).hom :=
   (rfl)
 
-@[simp]
 lemma equivalenceMk_counit_inv_as_app (η : F ⟶ G) (inv : ∀ a : B, G.obj a ⟶ F.obj a)
     (unit : ∀ a : B, 𝟙 (F.obj a) ≅ η.app a ≫ inv a)
     (counit : ∀ a : B, inv a ≫ η.app a ≅ 𝟙 (G.obj a))

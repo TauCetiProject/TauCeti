@@ -55,8 +55,9 @@ variable {Γ : Type u₁} [Category.{v₁} Γ] {H : Type u₂} [Monoid H]
 
 /-- The biequivalence between the bicategory of equivariant groupoid lifts and the locally discrete
 bicategory of normalized transports on the prescribed fibers. -/
--- Expose the projections so the unit and counit equations can refer to `functor` and `inverse`.
-@[expose] noncomputable def normalizationBiequivalence :
+-- Expose the projections as `implicit_reducible` so the unit and counit equations retain their
+-- pseudofunctor endpoints and unify in implicit type positions under `simp`.
+@[implicit_reducible, expose] noncomputable def normalizationBiequivalence :
     TauCeti.Biequivalence (EquivariantGroupoidLift Γ actions)
       (LocallyDiscrete (NormalizedTransport Γ actions)) where
   functor := normalizationPseudofunctor actions
