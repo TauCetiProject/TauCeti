@@ -28,7 +28,11 @@ maximal descending runs before comparing endpoints of adjacent runs.
 
 * `Fin.descendingRun`: the descending step-one run `[i, i - 1, …, j]` in `Fin m`.
 * `Fin.mem_descendingRun`, `Fin.descendingRun_split`, `Fin.descendingRun_cons`,
-  `Fin.descendingRun_concat`: membership and endpoint-splitting lemmas for `Fin.descendingRun`.
+  `Fin.descendingRun_concat`, `Fin.head_descendingRun`, `Fin.getLast_descendingRun`,
+  `Fin.isChain_descendingRun`: membership, endpoint, splitting, and step-one chain lemmas for
+  `Fin.descendingRun`.
+* `List.getLast_le_head_and_eq_descendingRun_of_isChain`: converse characterization identifying any
+  nonempty step-one descending chain in `Fin m` with `Fin.descendingRun`.
 * `List.parseDescendingRuns`: decomposition of `l : List (Fin m)` into maximal descending-by-one
   runs.
 * `List.snd_le_fst_of_mem_parseDescendingRuns`, `List.flatMap_parseDescendingRuns`,
@@ -135,32 +139,40 @@ theorem map_castSucc_descendingRun (i j : Fin m) :
     (descendingRun i j).map Fin.castSucc = descendingRun i.castSucc j.castSucc := by
   simp [descendingRun, List.map_map, Function.comp_def]
 
+/-- The first entry of a nonempty descending run `Fin.descendingRun i j` is `i`. -/
+@[simp]
+theorem head_descendingRun {i j : Fin m} (hne : descendingRun i j ≠ []) :
+    (descendingRun i j).head hne = i := by
+  have h : j ≤ i := le_of_not_gt (descendingRun_eq_nil.not.mp hne)
+  obtain ⟨t, ht⟩ := exists_cons_descendingRun h
+  simp [ht]
+
+/-- The last entry of a nonempty descending run `Fin.descendingRun i j` is `j`. -/
+@[simp]
+theorem getLast_descendingRun {i j : Fin m} (hne : descendingRun i j ≠ []) :
+    (descendingRun i j).getLast hne = j := by
+  have h : j ≤ i := le_of_not_gt (descendingRun_eq_nil.not.mp hne)
+  obtain ⟨init, hinit⟩ := exists_concat_descendingRun h
+  simp [hinit]
+
+/-- Adjacent entries of `Fin.descendingRun i j` decrease by one at each step. -/
+theorem isChain_descendingRun (i j : Fin m) :
+    (descendingRun i j).IsChain fun x y : Fin m ↦ (y : ℕ) + 1 = x := by
+  rw [List.isChain_iff_getElem]
+  intro k hk
+  simp only [length_descendingRun, getElem_descendingRun] at hk ⊢
+  omega
+
 end Fin
 
 namespace List
 
 variable {m : ℕ}
 
-private theorem isChain_descendingRun (i j : Fin m) :
-    (Fin.descendingRun i j).IsChain fun x y : Fin m ↦ decide ((y : ℕ) + 1 = x) = true := by
-  rw [isChain_iff_getElem]
-  intro k hk
-  simp only [Fin.length_descendingRun, Fin.getElem_descendingRun, decide_eq_true_eq] at hk ⊢
-  omega
-
-private theorem head_descendingRun {i j : Fin m} (h : j ≤ i) (hne : Fin.descendingRun i j ≠ []) :
-    (Fin.descendingRun i j).head hne = i := by
-  obtain ⟨t, ht⟩ := Fin.exists_cons_descendingRun h
-  simp [ht]
-
-private theorem getLast_descendingRun {i j : Fin m} (h : j ≤ i)
-    (hne : Fin.descendingRun i j ≠ []) :
-    (Fin.descendingRun i j).getLast hne = j := by
-  obtain ⟨init, hinit⟩ := Fin.exists_concat_descendingRun h
-  simp [hinit]
-
-private theorem getLast_le_head_and_eq_descendingRun_of_isChain {g : List (Fin m)} (hg : g ≠ [])
-    (hc : g.IsChain fun x y : Fin m ↦ decide ((y : ℕ) + 1 = x) = true) :
+/-- A nonempty list in `Fin m` whose adjacent entries decrease by one at each step satisfies
+`g.getLast hg ≤ g.head hg` and equals `Fin.descendingRun (g.head hg) (g.getLast hg)`. -/
+theorem getLast_le_head_and_eq_descendingRun_of_isChain {g : List (Fin m)} (hg : g ≠ [])
+    (hc : g.IsChain fun x y : Fin m ↦ (y : ℕ) + 1 = x) :
     g.getLast hg ≤ g.head hg ∧ g = Fin.descendingRun (g.head hg) (g.getLast hg) := by
   induction g with
   | nil => exact absurd rfl hg
@@ -168,7 +180,7 @@ private theorem getLast_le_head_and_eq_descendingRun_of_isChain {g : List (Fin m
     cases t with
     | nil => simp
     | cons b rest =>
-      rw [isChain_cons_cons, decide_eq_true_eq] at hc
+      rw [isChain_cons_cons] at hc
       obtain ⟨hba, hct⟩ := hc
       obtain ⟨hle, heq⟩ := ih (cons_ne_nil b rest) hct
       dsimp only [head_cons] at hle heq ⊢
@@ -235,7 +247,7 @@ theorem snd_le_fst_of_mem_parseDescendingRuns {l : List (Fin m)} {r : Fin m × F
   simp only [parseDescendingRuns, mem_map, mem_attach, true_and, Subtype.exists] at hr
   obtain ⟨g, hg, rfl⟩ := hr
   exact (getLast_le_head_and_eq_descendingRun_of_isChain (ne_nil_of_mem_splitBy hg)
-    (isChain_of_mem_splitBy hg)).1
+    ((isChain_of_mem_splitBy hg).imp fun _ _ ↦ of_decide_eq_true)).1
 
 /-- Concatenating the descending runs produced by `List.parseDescendingRuns l` recovers `l`. -/
 @[simp]
@@ -249,8 +261,8 @@ theorem flatMap_parseDescendingRuns (l : List (Fin m)) :
       l.splitBy fun x y : Fin m ↦ decide ((y : ℕ) + 1 = x) := by
     conv_rhs => rw [← attach_map_subtype_val (l.splitBy _)]
     refine map_congr_left fun ⟨g, hg⟩ _ ↦ ?_
-    exact (getLast_le_head_and_eq_descendingRun_of_isChain
-      (ne_nil_of_mem_splitBy hg) (isChain_of_mem_splitBy hg)).2.symm
+    exact (getLast_le_head_and_eq_descendingRun_of_isChain (ne_nil_of_mem_splitBy hg)
+      ((isChain_of_mem_splitBy hg).imp fun _ _ ↦ of_decide_eq_true)).2.symm
   rw [hmap, flatten_splitBy]
 
 /-- Adjacent runs `(i₁, j₁), (i₂, j₂)` produced by `List.parseDescendingRuns` never satisfy
@@ -275,7 +287,8 @@ theorem parseDescendingRuns_descendingRun_append {i j : Fin m} (hji : j ≤ i)
   have hne : Fin.descendingRun i j ≠ [] := Fin.descendingRun_eq_nil.not.mpr (not_lt_of_ge hji)
   have hsplit : (Fin.descendingRun i j ++ rest).splitBy rel =
       Fin.descendingRun i j :: rest.splitBy rel := by
-    rw [splitBy_append, splitBy_of_isChain hne (isChain_descendingRun i j), singleton_append]
+    rw [splitBy_append, splitBy_of_isChain hne
+      ((Fin.isChain_descendingRun i j).imp fun _ _ ↦ decide_eq_true), singleton_append]
     intro x hx y hy
     obtain ⟨init, hinit⟩ := Fin.exists_concat_descendingRun hji
     have hxj : j = x := by simpa [hinit] using hx
@@ -285,8 +298,7 @@ theorem parseDescendingRuns_descendingRun_append {i j : Fin m} (hji : j ≤ i)
       have hyy' : y' = y := by simpa using hy
       simp [rel, ← hxj, ← hyy', hsep y' rest' rfl]
   rw [parseDescendingRuns_eq_of_splitBy hsplit, attach_cons, map_cons, map_map]
-  simp [parseDescendingRuns, rel, Function.comp_def, head_descendingRun hji hne,
-    getLast_descendingRun hji hne]
+  simp [parseDescendingRuns, rel, Function.comp_def]
 
 /-- Uniqueness characterization of `List.parseDescendingRuns`: `l.parseDescendingRuns = rs` holds if
 and only if every run in `rs` is valid (`r.2 ≤ r.1`), adjacent runs cannot merge
@@ -311,20 +323,17 @@ theorem parseDescendingRuns_eq_iff {l : List (Fin m)} {rs : List (Fin m × Fin m
       · simp only [gs, mem_map, not_exists, not_and]
         exact fun r hr hnil ↦ hne r hr hnil
       · simp only [gs, mem_map, forall_exists_index, and_imp, forall_apply_eq_imp_iff₂]
-        exact fun r _ ↦ isChain_descendingRun r.1 r.2
+        exact fun r _ ↦ (Fin.isChain_descendingRun r.1 r.2).imp fun _ _ ↦ decide_eq_true
       · rw [isChain_map]
         rw [isChain_iff_forall_rel_of_append_cons_cons] at hchain ⊢
         intro r₁ r₂ l₁ l₂ hrs
         have hr₁ : r₁ ∈ rs := by rw [hrs]; simp
         have hr₂ : r₂ ∈ rs := by rw [hrs]; simp
         refine ⟨hne r₁ hr₁, hne r₂ hr₂, ?_⟩
-        simp [rel, getLast_descendingRun (hle r₁ hr₁) (hne r₁ hr₁),
-          head_descendingRun (hle r₂ hr₂) (hne r₂ hr₂), hchain hrs]
+        simp [rel, hchain hrs]
     rw [parseDescendingRuns_eq_of_splitBy hsplit]
     refine ext_getElem (by simp [gs]) fun k hk₁ hk₂ ↦ ?_
-    have hmem : rs[k] ∈ rs := getElem_mem hk₂
-    simp [gs, head_descendingRun (hle rs[k] hmem) (hne rs[k] hmem),
-      getLast_descendingRun (hle rs[k] hmem) (hne rs[k] hmem)]
+    simp [gs]
 
 /-- Recursive step of `List.parseDescendingRuns` on a list of length at least two. -/
 theorem parseDescendingRuns_cons_cons (x y : Fin m) (rest : List (Fin m)) :
