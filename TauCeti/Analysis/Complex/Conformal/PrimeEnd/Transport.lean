@@ -96,7 +96,7 @@ theorem IsNullChain.image (hC : IsNullChain U C) (hUb : IsBounded U) (hUo : IsOp
     rw [nullChainDomain_image hUb hfc hfi (hC.subset_closure _) (hC.subset_closure _),
       nullChainDomain_image hUb hfc hfi (hC.subset_closure _) (hC.subset_closure _)]
     exact image_mono (hC.nullChainDomain_succ_subset n)
-  eventually_chordal_lt ε hε := by
+  eventually_chordalDist_lt ε hε := by
     -- Small chordal diameter in the bounded set `closure U` forces small Euclidean diameter, which
     -- uniform continuity of `f` on the compact set `closure U` carries to the image.
     obtain ⟨δ, hδ, hfδ⟩ := Metric.uniformContinuousOn_iff.mp
@@ -106,7 +106,7 @@ theorem IsNullChain.image (hC : IsNullChain U C) (hUb : IsBounded U) (hUo : IsOp
     have hzw : dist z w < δ := by simpa only [dist_eq_norm] using hn z hz w hw
     have hfzw := hfδ z (hC.subset_closure n hz) w (hC.subset_closure n hw) hzw
     rw [dist_eq_norm] at hfzw
-    exact (chordal_le_norm_sub _ _).trans_lt hfzw
+    exact (Complex.chordalDist_le_norm_sub _ _).trans_lt hfzw
 
 /-- **Equivalence of chains transports both ways.** If `f` is continuous and injective on the
 closure of a bounded set `U`, two sequences of cuts in that closure are equivalent exactly when

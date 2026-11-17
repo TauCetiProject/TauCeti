@@ -38,6 +38,8 @@ Thurston's eight model geometries.
 * `TauCeti.norm_tangentSpace_sphere`: the round norm of a tangent vector is the norm of its image
   in `E`.
 * `TauCeti.inner_coe_mvfderiv_subtypeVal_sphere`: tangent vectors are orthogonal to the radius.
+* `TauCeti.contMDiff_coe_sphereTangentEquiv`: reading a tangent vector in `E` via
+  `sphereTangentEquiv` is `C^m` on the tangent bundle.
 * `TauCeti.edist_le_riemannianEDist_sphere`: the chordal distance in `E` is at most the round
   distance.
 
@@ -137,6 +139,18 @@ theorem mvfderiv_subtypeVal_sphere_eq_sphereTangentEquiv (x : sphere (0 : E) 1)
     (v : TangentSpace (𝓡 n) x) :
     mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) x v = sphereTangentEquiv x v := by
   rw [coe_sphereTangentEquiv_apply, mvfderiv_apply_eq_mfderiv_apply]
+
+/-- Reading a tangent vector to the unit sphere in the ambient inner product space `E` via
+`sphereTangentEquiv` is `C^m` for every `m : ℕ∞ω` (including `m = ω`). -/
+theorem contMDiff_coe_sphereTangentEquiv {m : ℕ∞ω} :
+    ContMDiff (𝓡 n).tangent 𝓘(ℝ, E) m
+      (fun p : TangentBundle (𝓡 n) (sphere (0 : E) 1) ↦
+        (sphereTangentEquiv p.proj p.2 : E)) := by
+  have htan : ContMDiff (𝓡 n).tangent 𝓘(ℝ, E).tangent m
+      (tangentMap (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E)) :=
+    (contMDiff_coe_sphere (E := E) (n := n) (m := ω)).contMDiff_tangentMap le_top
+  exact ((contMDiff_snd_tangentBundle_modelSpace E 𝓘(ℝ, E)).comp htan).congr fun p ↦
+    coe_sphereTangentEquiv_apply p.proj p.2
 
 /-- The image of a tangent vector under the differential of the sphere inclusion is orthogonal
 to the radius vector. -/

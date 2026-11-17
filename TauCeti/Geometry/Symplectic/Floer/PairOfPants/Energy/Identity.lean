@@ -13,6 +13,7 @@ import TauCeti.Analysis.Calculus.PeriodicDeriv
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.LinearAlgebra.Determinant.Prod
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
@@ -720,7 +721,7 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul (ω : Symplectic
       (𝓝 (∑ q, q.endSign * A q)) :=
   tendsto_finsetSum _ fun q _ ↦ by
     have h := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hA q)
+      (by simpa only [Puncture.inv_endSign] using hA q)
       (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
         (integral_image_endChart_boundaryForm ω hK hKH hH hHc hu (le_of_max_le_left hT)
           (le_of_max_le_right hT) q).2)
@@ -1158,10 +1159,8 @@ private theorem integral_Ico_eq_intervalIntegral (hH : ∀ q, Periodic (H q) 1) 
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t))) := by
   have hper : Periodic (fun t ↦ H q t (u (endChart q (s, t)))) 1 := fun t ↦ by
     simp only [endChart_add_one, hH q t]
-  have h := hper.intervalIntegral_add_eq (-1 / 2) 0
-  rw [zero_add, show (-1 / 2 : ℝ) + 1 = 1 / 2 by norm_num,
-    intervalIntegral.integral_of_le (by norm_num)] at h
-  rw [integral_Ico_eq_integral_Ioc, h]
+  rw [integral_Ico_eq_integral_Ioc, ← intervalIntegral.integral_of_le (by norm_num),
+    hper.intervalIntegral_neg_div_two_eq]
 
 omit [IsManifold I ⊤ M] in
 /-- **The boundary term on one end, for a manifold target.** For `T ≥ 2` with `K = H_q dt` beyond
@@ -1286,7 +1285,7 @@ private theorem tendsto_sum_integral_deriv_smoothTransition_mul
       ∫ t in (0 : ℝ)..1, H q t (u (endChart q (s, t)))) atTop (𝓝 (∑ q, q.endSign * h q)) :=
   tendsto_finsetSum _ fun q _ ↦ by
     have hlim := smoothTransition.tendsto_integral_deriv_mul_sub_mul
-      q.endSign_ne_zero (by simpa only [Puncture.inv_endSign] using hh q)
+      (by simpa only [Puncture.inv_endSign] using hh q)
       (eventually_ge_atTop (max 2 T₀) |>.mono fun T hT ↦
         (integral_image_endChart_boundaryForm hK hKH hH hu (le_of_max_le_left hT)
           (le_of_max_le_right hT) q).2)
