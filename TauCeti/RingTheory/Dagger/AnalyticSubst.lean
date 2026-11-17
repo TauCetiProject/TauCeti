@@ -83,13 +83,24 @@ open TauCeti.MvPowerSeries (restrictedAnalyticSubst coeff_restrictedAnalyticSubs
 
 variable {k m : ℕ} {τ R : Type*} [NormedCommRing R] [IsUltrametricDist R] [CompleteSpace R]
 
-/-- **Analytic substitution preserves overconvergence.** Substituting overconvergent series
-`gᵢ` of unit Gauss norm at most `1` into an overconvergent series `f`, by the analytic
-substitution of the unit-radius Tate algebras, gives an overconvergent series. -/
-theorem coe_restrictedAnalyticSubst_mem_washnitzerAlgebra (g : Fin k → washnitzerAlgebra τ R)
+/-- Common-radius witness for analytic substitution: given `f ∈ R⟨X₁, …, X_k⟩†` and
+`g₁, …, g_k ∈ R⟨Y⟩†` with `‖gᵢ‖₁ ≤ 1`, there exist radii `ρf > 1` and `ρ > 1` such that `f` is
+restricted at `ρf`, every `gᵢ` is restricted at `ρ` with `ρ`-Gauss norm at most `ρf`, and the
+unit-radius Tate-algebra substitution agrees in `MvPowerSeries τ R` with the analytic substitution
+at `(ρf, ρ)`. -/
+private theorem exists_coe_restrictedAnalyticSubst_eq (g : Fin k → washnitzerAlgebra τ R)
     (hg : ∀ i, ‖washnitzerAlgebra.toTate τ R (g i)‖ ≤ 1) (f : washnitzerAlgebra (Fin k) R) :
-    (restrictedAnalyticSubst (fun i ↦ washnitzerAlgebra.toTate τ R (g i)) hg
-      (washnitzerAlgebra.toTate (Fin k) R f) : MvPowerSeries τ R) ∈ washnitzerAlgebra τ R := by
+    ∃ (ρf ρ : ℝ) (hρf : 1 < ρf) (hρ : 1 < ρ)
+      (hf : IsRestricted (fun _ : Fin k ↦ ρf) (f : MvPowerSeries (Fin k) R))
+      (hgρ : ∀ i, IsRestricted (fun _ : τ ↦ ρ) (g i : MvPowerSeries τ R)),
+      letI : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
+      ∃ hg' : ∀ i,
+          ‖(⟨(g i : MvPowerSeries τ R), hgρ i⟩ : IsRestricted.subring (R := R) (fun _ ↦ ρ))‖ ≤ ρf,
+        (restrictedAnalyticSubst (fun i ↦ washnitzerAlgebra.toTate τ R (g i)) hg
+          (washnitzerAlgebra.toTate (Fin k) R f) : MvPowerSeries τ R) =
+          restrictedAnalyticSubst (r := fun _ ↦ ρf)
+            (fun i ↦ ⟨(g i : MvPowerSeries τ R), hgρ i⟩) hg'
+            ⟨(f : MvPowerSeries (Fin k) R), hf⟩ := by
   obtain ⟨ρf, hρf, hf⟩ := mem_washnitzerAlgebra.mp f.2
   -- The coefficients of every `gᵢ` have norm at most `1 < ρf`, so at a common radius `ρ > 1`
   -- every `gᵢ` is restricted with all weighted coefficient norms below `ρf`.
@@ -100,17 +111,23 @@ theorem coe_restrictedAnalyticSubst_mem_washnitzerAlgebra (g : Fin k → washnit
     eventually_isRestricted_forall_norm_coeff_mul_pow_lt (g i).2 (hcoeff i)).and
       self_mem_nhdsWithin).exists
   have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
-  have : Fact (0 < ρf) := ⟨zero_lt_one.trans hρf⟩
-  let g' (i : Fin k) : IsRestricted.subring (R := R) (fun _ : τ ↦ ρ) := ⟨g i, (hρg i).1⟩
-  have hg' (i : Fin k) : ‖g' i‖ ≤ ρf :=
+  have hg' (i : Fin k) :
+      ‖(⟨(g i : MvPowerSeries τ R), (hρg i).1⟩ :
+          IsRestricted.subring (R := R) (fun _ ↦ ρ))‖ ≤ ρf :=
     norm_le_iff.2 fun t ↦ by
-      simpa [g', Finsupp.prod_pow_eq_pow_degree] using ((hρg i).2 t).le
-  -- The substitution at the radii `ρf` and `ρ` has the same coefficients as at unit radii.
-  have h : (restrictedAnalyticSubst (fun i ↦ washnitzerAlgebra.toTate τ R (g i)) hg
-      (washnitzerAlgebra.toTate (Fin k) R f) : MvPowerSeries τ R) =
-      restrictedAnalyticSubst (r := fun _ ↦ ρf) g' hg' ⟨f, hf⟩ := by
-    ext e
-    simp [coeff_restrictedAnalyticSubst, g']
+      simpa [Finsupp.prod_pow_eq_pow_degree] using ((hρg i).2 t).le
+  refine ⟨ρf, ρ, hρf, hρ, hf, fun i ↦ (hρg i).1, hg', ?_⟩
+  ext e
+  simp [coeff_restrictedAnalyticSubst]
+
+/-- **Analytic substitution preserves overconvergence.** Substituting overconvergent series
+`gᵢ` of unit Gauss norm at most `1` into an overconvergent series `f`, by the analytic
+substitution of the unit-radius Tate algebras, gives an overconvergent series. -/
+theorem coe_restrictedAnalyticSubst_mem_washnitzerAlgebra (g : Fin k → washnitzerAlgebra τ R)
+    (hg : ∀ i, ‖washnitzerAlgebra.toTate τ R (g i)‖ ≤ 1) (f : washnitzerAlgebra (Fin k) R) :
+    (restrictedAnalyticSubst (fun i ↦ washnitzerAlgebra.toTate τ R (g i)) hg
+      (washnitzerAlgebra.toTate (Fin k) R f) : MvPowerSeries τ R) ∈ washnitzerAlgebra τ R := by
+  obtain ⟨_, ρ, _, hρ, _, _, _, h⟩ := exists_coe_restrictedAnalyticSubst_eq g hg f
   exact mem_washnitzerAlgebra.mpr ⟨ρ, hρ, h ▸ IsRestricted.mem_subring.mp (Subtype.prop _)⟩
 
 namespace washnitzerAlgebra
@@ -244,21 +261,10 @@ theorem exists_ofRestricted_restrictedAnalyticSubst (f : washnitzerAlgebra (Fin 
           ofRestricted hρ (fun _ ↦ le_rfl)
             (restrictedAnalyticSubst (fun i ↦ ⟨(g i : MvPowerSeries τ R), hgρ i⟩) hg'
               ⟨(f : MvPowerSeries (Fin k) R), hf⟩) := by
-  obtain ⟨ρf, hρf, hf⟩ := mem_washnitzerAlgebra.mp f.2
-  have hcoeff (i : Fin k) (t : τ →₀ ℕ) : ‖coeff t (g i : MvPowerSeries τ R)‖ < ρf := by
-    simpa using ((norm_coeff_le_norm (toTate τ R (g i)) t).trans (hg i)).trans_lt hρf
-  obtain ⟨ρ, hρg, hρ⟩ := ((eventually_all.2 fun i ↦
-    eventually_isRestricted_forall_norm_coeff_mul_pow_lt (g i).2 (hcoeff i)).and
-      self_mem_nhdsWithin).exists
-  have : Fact (0 < ρ) := ⟨zero_lt_one.trans hρ⟩
-  have hg' (i : Fin k) :
-      ‖(⟨(g i : MvPowerSeries τ R), (hρg i).1⟩ :
-          IsRestricted.subring (R := R) (fun _ : τ ↦ ρ))‖ ≤ ρf :=
-    MvPowerSeries.norm_le_iff.2 fun t ↦ by
-      simpa [Finsupp.prod_pow_eq_pow_degree] using ((hρg i).2 t).le
-  refine ⟨ρf, ρ, hρf, hρ, hf, fun i ↦ (hρg i).1, hg', ?_⟩
-  refine Subtype.ext <| MvPowerSeries.ext fun e ↦ ?_
-  rw [coe_ofRestricted, coeff_analyticSubst, coeff_restrictedAnalyticSubst]
+  obtain ⟨ρf, ρ, hρf, hρ, hf, hgρ, hg', h⟩ := exists_coe_restrictedAnalyticSubst_eq g hg f
+  refine ⟨ρf, ρ, hρf, hρ, hf, hgρ, hg', Subtype.ext ?_⟩
+  rw [coe_ofRestricted, ← coe_toTate, toTate_analyticSubst]
+  exact h
 
 /-- **Bounded coefficient maps commute with analytic substitution on `W`.** -/
 theorem map_analyticSubst {S : Type*} [NormedCommRing S] [IsUltrametricDist S]
