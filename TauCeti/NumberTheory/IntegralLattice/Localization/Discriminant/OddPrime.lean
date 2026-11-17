@@ -18,7 +18,7 @@ import TauCeti.NumberTheory.IntegralLattice.Localization.Discriminant.Form
 import TauCeti.NumberTheory.IntegralLattice.Localization.Unimodular
 import TauCeti.NumberTheory.Padics.PadicIntegers
 import TauCeti.NumberTheory.Padics.RingHoms
-import TauCeti.NumberTheory.Padics.UnitSquares
+import TauCeti.NumberTheory.Padics.Unit.Squares
 import TauCeti.RingTheory.Henselian.Basic
 
 /-!
