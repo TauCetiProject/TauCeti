@@ -26,7 +26,7 @@ in `H¹₀` with their weak eigenfunction identity. No smoothness of the boundar
 Conversely, these separated modes exhaust the spectrum. They are complete: a function integrable
 on the box and orthogonal to all of them vanishes
 (`TauCeti.PDE.ae_eq_zero_of_forall_setIntegral_mul_boxSineMode_eq_zero`, from the completeness
-of the product sine system `TauCeti.ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero`). The
+of the product sine system `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`). The
 energy form of `-Δ` is symmetric, so an eigenfunction with eigenvalue `κ` is orthogonal to the
 modes with other eigenvalues; subtracting its projection onto the finitely many modes with
 eigenvalue `κ` leaves a function orthogonal to every mode. Hence every Dirichlet eigenfunction is
@@ -258,7 +258,7 @@ theorem ae_eq_zero_of_forall_setIntegral_mul_boxSineMode_eq_zero {a b : ι → �
       (volume.restrict (boxDomain a b : Set (EuclideanSpace ℝ ι))) := by
     rw [← hpre]
     exact hT.restrict_preimage (boxDomain a b).isOpen.measurableSet
-  have hzero := ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero (g := g ∘ T)
+  have hzero := ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero (g := g ∘ T)
     (hTΩ.integrable_comp_emb T.measurableEmbedding |>.2 hg) fun k hk => by
       have hk' := h k hk
       rw [hmu, Measure.restrict_smul, integral_smul_nnreal_measure, smul_eq_zero] at hk'
@@ -386,19 +386,12 @@ theorem exists_finset_value_ae_eq_sum_boxSineMode {a b : ι → ℝ} (hab : ∀ 
   obtain ⟨l, hl, hlu⟩ := (Finsupp.mem_span_image_iff_linearCombination ℝ).1
     (value_mem_span_of_energyFormH1_eq hab hφ hφeq hu)
   refine ⟨l.support, l, fun k hk ↦ (Finsupp.mem_supported ℝ l).1 hl hk, ?_⟩
-  rw [← hlu, Finsupp.linearCombination_apply, Finsupp.sum]
+  rw [← hlu]
   -- The value of a finite combination of the realizations is the combination of the modes.
-  induction l.support using Finset.induction_on with
-  | empty =>
-    simp only [Finset.sum_empty]
-    exact Lp.coeFn_zero ℝ 2 _
-  | insert k t hk ih =>
-    simp only [Finset.sum_insert hk]
-    filter_upwards [Lp.coeFn_add (l k • W1p.value (φ k : W1p mu (boxDomain a b) 2))
-      (∑ j ∈ t, l j • W1p.value (φ j : W1p mu (boxDomain a b) 2)),
-      Lp.coeFn_smul (l k) (W1p.value (φ k : W1p mu (boxDomain a b) 2)), hφ k, ih]
-      with x h1 h2 h3 h4
-    rw [h1, Pi.add_apply, h2, Pi.smul_apply, h3, h4, smul_eq_mul]
+  refine (Lp.coeFn_linearCombination l _).trans ?_
+  rw [Finsupp.linearCombination_apply, Finsupp.sum]
+  filter_upwards [eventuallyEq_sum fun k _ ↦ (hφ k).const_smul (l k)] with x hx
+  simpa using hx
 
 /-- **The Dirichlet spectrum of `-Δ` on a box.** The Dirichlet eigenvalues of `-Δ` on the box
 `∏ᵢ (aᵢ, bᵢ)` are exactly the sums `∑ᵢ (kᵢ π / (bᵢ - aᵢ))²` with positive integers `kᵢ`: the

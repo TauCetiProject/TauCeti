@@ -29,7 +29,7 @@ of them vanish, and uniqueness forces the extension, hence `g`, to vanish almost
 
 The same holds on a box `∏ᵢ (aᵢ, bᵢ) ⊆ ℝ^ι` for the products of sines
 `∏ᵢ sin (kᵢ π (xᵢ - aᵢ) / (bᵢ - aᵢ))`, `kᵢ ≥ 1`, the separated Dirichlet eigenfunctions of `-Δ`
-on the box (`TauCeti.ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero`). The proof is by
+on the box (`TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`). The proof is by
 induction on the dimension. Split off the first coordinate, `x = (t, y)`. For each `k`, the
 coefficient `y ↦ ∫ g (t, y) sin (k π (t - a₀) / (b₀ - a₀)) dt` is orthogonal to every sine product
 in `y`, so it vanishes for almost every `y` by induction; for those `y` the slice `g (·, y)` is
@@ -39,7 +39,7 @@ orthogonal to every sine, so it vanishes by the one-dimensional theorem, and Fub
 
 * `TauCeti.ae_eq_zero_of_forall_integral_mul_sin_eq_zero`: completeness of the sine system
   `sin (k π (x - a) / (b - a))`, `k ≥ 1`, among the integrable functions on `(a, b]`.
-* `TauCeti.ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero`: completeness of the products of
+* `TauCeti.ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero`: completeness of the products of
   sines among the integrable functions on a box.
 
 ## References
@@ -244,7 +244,7 @@ private theorem ae_eq_zero_prod_of_forall_integral_mul_sin_eq_zero {β : Type*}
 
 /-- The sine system on a box, in the coordinates `Fin n → ℝ` and with the product of the
 restricted measures, by induction on the dimension. -/
-private theorem ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero_fin :
+private theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin :
     ∀ (n : ℕ) (a b : Fin n → ℝ) (g : (Fin n → ℝ) → ℝ),
       Integrable g (Measure.pi fun i => volume.restrict (Ioo (a i) (b i))) →
       (∀ k : Fin n → ℕ, (∀ i, 0 < k i) →
@@ -280,7 +280,7 @@ private theorem ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero_fin :
     -- The coefficients of `G` in the first variable are orthogonal to every sine product in the
     -- remaining ones, so they vanish by induction.
     have hH (k : ℕ) (hk : 0 < k) : (fun y => ∫ t, G (t, y) * s k t ∂μ 0) =ᵐ[ν] 0 := by
-      refine ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero_fin n (fun j => a j.succ)
+      refine ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin n (fun j => a j.succ)
         (fun j => b j.succ) _ (hGs k).integral_prod_right fun k' hk' => ?_
       have hfull := h (Fin.cons k k') (Fin.cases hk hk')
       rw [← (hmp.symm e).integral_comp'] at hfull
@@ -314,7 +314,7 @@ Then `g` vanishes almost everywhere on the box. The products of the one-dimensio
 modes are the separated Dirichlet eigenfunctions of `-Δ` on the box, so this is the completeness
 half of their expansion. No relation between `aᵢ` and `bᵢ` is assumed: an empty factor makes the
 box empty. -/
-theorem ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero {ι : Type*} [Fintype ι]
+theorem ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero {ι : Type*} [Fintype ι]
     {a b : ι → ℝ} {g : (ι → ℝ) → ℝ} (hg : IntegrableOn g (univ.pi fun i => Ioo (a i) (b i)))
     (h : ∀ k : ι → ℕ, (∀ i, 0 < k i) →
       ∫ x in univ.pi fun i => Ioo (a i) (b i),
@@ -331,7 +331,7 @@ theorem ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero {ι : Type*} [Fintype
     measurePreserving_piCongrLeft (fun i => volume.restrict (Ioo (a i) (b i))) f
   have happ (x : Fin (Fintype.card ι) → ℝ) (i' : Fin (Fintype.card ι)) : e x (f i') = x i' :=
     MeasurableEquiv.piCongrLeft_apply_apply (β := fun _ => ℝ) f x i'
-  have hfin := ae_eq_zero_of_forall_integral_mul_prod_sin_eq_zero_fin _ (a ∘ f) (b ∘ f) (g ∘ e)
+  have hfin := ae_eq_zero_of_forall_setIntegral_mul_prod_sin_eq_zero_fin _ (a ∘ f) (b ∘ f) (g ∘ e)
     (hmp.integrable_comp_emb e.measurableEmbedding |>.2 hg) fun k hk => by
       have := h (k ∘ f.symm) fun i => hk _
       rw [← hmp.integral_comp'] at this
