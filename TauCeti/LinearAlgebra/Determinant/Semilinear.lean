@@ -12,7 +12,7 @@ public import Mathlib.Algebra.Star.Pi
 /-!
 # Determinants under conjugation by conjugate-linear automorphisms
 
-Conjugating a linear endomorphism `A` of a vector space `M` over a field with a star structure by
+Conjugating a linear endomorphism `A` of a module `M` over a commutative star ring by
 a linear automorphism leaves its determinant unchanged (`LinearMap.det_conj`). Conjugating it
 instead by a conjugate-linear automorphism `K`, the composite `K ∘ A ∘ K⁻¹` is again linear, and
 its determinant is the conjugate `star (det A)` (`LinearMap.det_conjₛₗ`). Over `ℂ`, a complex vector
@@ -29,7 +29,7 @@ public section
 
 namespace LinearMap
 
-variable {R M : Type*} [Field R] [StarRing R] [AddCommGroup M] [Module R M]
+variable {R M : Type*} [CommRing R] [StarRing R] [AddCommGroup M] [Module R M]
 
 /-- **Conjugation by a conjugate-linear automorphism.** For a conjugate-linear automorphism `K`
 of `M`, the determinant of the linear map `K ∘ A ∘ K⁻¹` is the conjugate of the determinant of
@@ -38,10 +38,10 @@ theorem det_conjₛₗ (A : M →ₗ[R] M) (K : M ≃ₗ⋆[R] M) :
     LinearMap.det ((K : M →ₗ⋆[R] M) ∘ₛₗ A ∘ₛₗ (K.symm : M →ₗ⋆[R] M)) =
       star (LinearMap.det A) := by
   classical
-  by_cases hM : Module.Finite R M
+  by_cases H : ∃ s : Finset M, Nonempty (Module.Basis s R M)
   swap
-  · simp [det_eq_one_of_not_module_finite hM]
-  let b := Module.finBasis R M
+  · simp [LinearMap.coe_det, H]
+  obtain ⟨s, ⟨b⟩⟩ := H
   -- Coordinatewise conjugation in the basis `b`, and the linear part `K₀⁻¹ ∘ K` of `K`.
   let K₀ : M ≃ₗ⋆[R] M := (b.equivFun.trans (starLinearEquiv R)).trans b.equivFun.symm
   let L : M ≃ₗ[R] M := K.trans K₀.symm
@@ -52,7 +52,7 @@ theorem det_conjₛₗ (A : M →ₗ[R] M) (K : M ≃ₗ⋆[R] M) :
     simp only [LinearEquiv.apply_symm_apply]
     refine b.ext_elem fun i ↦ ?_
     rw [hrepr]
-    simp [Finsupp.single_apply, apply_ite]
+    by_cases h : j = i <;> simp [h]
   have hsplit : (K : M →ₗ⋆[R] M) ∘ₛₗ A ∘ₛₗ (K.symm : M →ₗ⋆[R] M) =
       (K₀ : M →ₗ⋆[R] M) ∘ₛₗ ((L : M →ₗ[R] M) ∘ₗ A ∘ₗ (L.symm : M →ₗ[R] M)) ∘ₛₗ
         (K₀.symm : M →ₗ⋆[R] M) := by

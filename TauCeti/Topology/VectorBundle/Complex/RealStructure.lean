@@ -32,9 +32,9 @@ the inverse of that of `φ` on the boundary, and its degree is the negative one
 (`TauCeti.squareBoundaryDegree_inv`). Both frames compute the clutching number, which is therefore
 equal to its negative.
 
-This is the vanishing of Chern numbers by which the cotangent bundle `T*Q` of a manifold satisfies
-the Chern half of symplectic asphericity in the DG Floer roadmap: along the zero section the
-tangent bundle of `T*Q` is the complexification `TQ ⊗ ℂ` of `TQ`.
+For example, along the zero section the tangent bundle of a cotangent bundle `T*Q` is the
+complexification `TQ ⊗ ℂ` of `TQ`, so its first Chern number vanishes on spheres there; this is the
+Chern half of the symplectic asphericity of cotangent bundles used in Floer theory.
 
 ## Main results
 
@@ -128,27 +128,19 @@ variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [FiniteDimension
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, TopologicalSpace (ℂ ⊗[ℝ] V x)] [∀ x, IsComplexificationTopology (V x)]
 
-omit [FiniteDimensional ℝ G] [∀ x, ContinuousSMul ℝ (V x)] in
-/-- Fibrewise conjugation of the complexification, as a map of total spaces, is continuous. -/
-private theorem continuous_tmulConjCLE_totalSpace :
-    Continuous fun v : TotalSpace (Complexification G) (fun x ↦ ℂ ⊗[ℝ] V x) ↦
-      TotalSpace.mk' (Complexification G) (E := fun x ↦ ℂ ⊗[ℝ] V x) v.proj
-        (tmulConjCLE (V v.proj) v.2) :=
-  (tmulConjHomeomorph G V).continuous.congr fun v ↦ by simp
-
 /-- **The complexification of a real vector bundle has clutching number zero.** The fibrewise
 conjugation `z ⊗ v ↦ conj z ⊗ v` is a real structure on `ℂ ⊗[ℝ] V`. -/
 theorem clutchingNumber_complexification_eq_zero (p : Ω^ (Fin 2) X x) :
     clutchingNumber (Complexification G) (fun x ↦ ℂ ⊗[ℝ] V x) p = 0 :=
   clutchingNumber_eq_zero_of_conjugateLinear (fun x ↦ tmulConjCLE (V x))
-    continuous_tmulConjCLE_totalSpace p
+    ((tmulConjHomeomorph G V).continuous.congr fun v ↦ by simp) p
 
 /-- The clutching number homomorphism `π₂(X, x) → ℤ` of the complexification of a real vector bundle
 is zero. -/
 theorem clutchingNumberHom_complexification_eq_zero (x : X) :
     clutchingNumberHom (Complexification G) (fun x ↦ ℂ ⊗[ℝ] V x) x = 0 :=
   clutchingNumberHom_eq_zero_of_conjugateLinear (fun x ↦ tmulConjCLE (V x))
-    continuous_tmulConjCLE_totalSpace x
+    ((tmulConjHomeomorph G V).continuous.congr fun v ↦ by simp) x
 
 end Complexification
 
