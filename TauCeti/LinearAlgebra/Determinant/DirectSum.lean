@@ -369,13 +369,11 @@ theorem detLineFourTermEquiv_prodMap (x₁ : detLine K B₁ ⊗[K] Dual K (detLi
   -- Both sides are linear in `x₁` and `x₂`.
   induction x₁ using TensorProduct.inductionOn with
   | add x x' hx hx' =>
-    rw [TensorProduct.add_tmul, LinearEquiv.map_add, LinearEquiv.map_add, hx, hx',
-      LinearEquiv.map_add, TensorProduct.add_tmul, LinearEquiv.map_add, smul_add]
+    simp only [TensorProduct.add_tmul, map_add, hx, hx', smul_add]
   | tmul y₁ φ₁ =>
     induction x₂ using TensorProduct.inductionOn with
     | add x x' hx hx' =>
-      rw [TensorProduct.tmul_add, LinearEquiv.map_add, LinearEquiv.map_add, hx, hx',
-        LinearEquiv.map_add, TensorProduct.tmul_add, LinearEquiv.map_add, smul_add]
+      simp only [TensorProduct.tmul_add, map_add, hx, hx', smul_add]
     | tmul y₂ φ₂ =>
       obtain ⟨r₁, rfl⟩ := hspan₁ y₁
       obtain ⟨r₂, rfl⟩ := hspan₂ y₂
