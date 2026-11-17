@@ -180,19 +180,16 @@ theorem preglueEnd_positiveEndChart_of_add_one_le (hx : Periodic x 1)
   rw [preglueEnd_positiveEndChart hx hv (by linarith) t,
     preglue_of_one_le (by dsimp only; linarith), Prod.mk_sub_mk, sub_zero, sub_sub, ← two_mul]
 
-/-- **The pre-glued pair of pants is smooth.** If `u` is `Cⁿ` on `S`, the loop `x` and the map `v`
-are `Cⁿ` and of period one in `t`, and `R ≥ 1`, the pre-glued pair of pants is `Cⁿ` on `S`. -/
-theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Periodic x 1)
-    (hu : ContDiffOn ℝ n u thricePuncturedSphereReal) (hv : ContDiff ℝ n v)
-    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 1 ≤ R) :
-    ContDiffOn ℝ n (preglueEnd q x u v R) thricePuncturedSphereReal := by
-  intro z hz
-  refine ContDiffAt.contDiffWithinAt ?_
-  -- Near `z`, `preglueEnd = F ∘ φ'_q⁻¹` for the translated pre-glued map `F`, with a local inverse
-  -- of the positive end chart around the signed end coordinates `y` of `z`.
-  set y : ℝ × ℝ := (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re,
-    q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im)
-  have hy : positiveEndChart q y = z := positiveEndChart_endSign_mul_endCoord (ne_endCenter hz q)
+/-- **The pre-glued pair of pants is smooth at a point of the end chart.** If the loop `x` is `Cⁿ`,
+`x` and the map `v` have period one in `t`, and `R ≥ 1`, then the pre-glued pair of pants is `Cⁿ`
+at `φ'_q(y)` whenever `u` is `Cⁿ` there and `v` is `Cⁿ` at `y - (2R, 0)`. -/
+theorem contDiffAt_preglueEnd_positiveEndChart {n : ℕ∞} (hx : ContDiff ℝ n x)
+    (hxper : Periodic x 1) (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 1 ≤ R)
+    {y : ℝ × ℝ} (hu : ContDiffAt ℝ n u (positiveEndChart q y))
+    (hv : ContDiffAt ℝ n v (y - (2 * R, 0))) :
+    ContDiffAt ℝ n (preglueEnd q x u v R) (positiveEndChart q y) := by
+  -- Near `φ'_q(y)`, `preglueEnd = F ∘ φ'_q⁻¹` for the translated pre-glued map `F`, with a local
+  -- inverse of the positive end chart around `y`.
   -- The end chart is smooth, so its local inverse is smooth, whatever `n` is.
   have hn : ((⊤ : ℕ∞) : WithTop ℕ∞) ≠ 0 := by simp
   have hφ : ContDiffAt ℝ (⊤ : ℕ∞) (positiveEndChart q) y :=
@@ -202,11 +199,10 @@ theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Peri
     ((contDiff_positiveEndChart q 1).differentiable one_ne_zero y).hasFDerivAt
   have hF : ContDiffAt ℝ n
       (fun w ↦ preglue x (u ∘ positiveEndChart q) v R (w - (R, 0))) y := by
-    refine (contDiffAt_preglue hx.contDiffAt ?_ hv.contDiffAt).comp y
-      (contDiffAt_id.sub contDiffAt_const)
-    rw [sub_add_cancel]
-    exact (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds (hy ▸ hz))).comp y
-      (hφ.of_le (by exact_mod_cast le_top))
+    refine (contDiffAt_preglue hx.contDiffAt ?_ ?_).comp y (contDiffAt_id.sub contDiffAt_const)
+    · rw [sub_add_cancel]
+      exact hu.comp y (hφ.of_le (by exact_mod_cast le_top))
+    · rwa [sub_sub, Prod.mk_add_mk, add_zero, ← two_mul]
   have hEq : preglueEnd q x u v R =ᶠ[𝓝 (positiveEndChart q y)]
       (fun w ↦ preglue x (u ∘ positiveEndChart q) v R (w - (R, 0))) ∘
         hφ.localInverse hφ' hn := by
@@ -214,9 +210,24 @@ theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Peri
     conv_lhs => rw [← hw]
     exact congrFun (preglueEnd_comp_positiveEndChart hxper hvper hR) _
   rw [← hφ.localInverse_apply_image hφ' hn] at hF
-  rw [← hy]
   exact (hF.comp _ ((hφ.to_localInverse hφ' hn).of_le (by exact_mod_cast le_top))
     ).congr_of_eventuallyEq hEq
+
+/-- **The pre-glued pair of pants is smooth.** If `u` is `Cⁿ` on `S`, the loop `x` and the map `v`
+are `Cⁿ` and of period one in `t`, and `R ≥ 1`, the pre-glued pair of pants is `Cⁿ` on `S`. -/
+theorem contDiffOn_preglueEnd {n : ℕ∞} (hx : ContDiff ℝ n x) (hxper : Periodic x 1)
+    (hu : ContDiffOn ℝ n u thricePuncturedSphereReal) (hv : ContDiff ℝ n v)
+    (hvper : ∀ s, Periodic (fun t ↦ v (s, t)) 1) (hR : 1 ≤ R) :
+    ContDiffOn ℝ n (preglueEnd q x u v R) thricePuncturedSphereReal := by
+  intro z hz
+  have hy : positiveEndChart q
+      (q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re,
+        q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).im) = z :=
+    positiveEndChart_endSign_mul_endCoord (ne_endCenter hz q)
+  rw [← hy] at hz ⊢
+  exact (contDiffAt_preglueEnd_positiveEndChart hx hxper hvper hR
+    (hu.contDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hz)) hv.contDiffAt
+    ).contDiffWithinAt
 
 end Floer
 
