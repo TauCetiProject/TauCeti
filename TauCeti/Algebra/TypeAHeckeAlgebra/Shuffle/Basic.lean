@@ -371,6 +371,15 @@ theorem length_eq_zero_iff {S : ShuffleMask k l} : S.length = 0 ↔ S = initial 
   have := length_swap_add_one_of_notMem_of_mem hab ha hb
   omega
 
+/-- Every `(k, l)`-mask has length at most `k * l`: each of its `k` selected positions is preceded
+by at most `l` rest positions. -/
+theorem length_le_mul (S : ShuffleMask k l) : S.length ≤ k * l := by
+  rw [length_def]
+  refine (Finset.sum_le_card_nsmul S.1 _ l fun s _ ↦ ?_).trans_eq (by rw [S.2, smul_eq_mul])
+  rw [restIndex_def]
+  exact (Finset.card_filter_le _ _).trans_eq
+    (by rw [Finset.card_compl, Fintype.card_fin, S.2, Nat.add_sub_cancel_left])
+
 /-- **Induction on masks along a last shuffle step.** To prove a property of every mask, it is
 enough to prove it for the initial mask, and for each mask `S` with a rest position `strand γ`
 followed by a selected position, assuming it for every mask shorter than `S`. -/
