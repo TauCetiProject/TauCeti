@@ -27,6 +27,8 @@ unit of `K` and `a ↦ a • x` is bijective.
   generators.
 * `LinearEquiv.span_singleton_eq_top_iff_isUnit`: an element of a module isomorphic to the base
   ring generates it exactly when its image is a unit.
+* `LinearEquiv.exists_units_smul_eq_of_span_singleton_eq_top`: any two generators of a module
+  isomorphic to the base ring differ by a unit.
 * `LinearEquiv.eq_of_span_singleton_eq_top`: a module isomorphic to a commutative semiring whose
   only unit is `1` has a single generator.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
@@ -63,16 +65,25 @@ theorem span_singleton_eq_top_iff_isUnit {R M : Type*} [Semiring R] [IsDedekindF
     isUnit_iff_exists_inv']
   simp only [smul_eq_mul]
 
+/-- **Any two generators of a module isomorphic to the base ring differ by a unit**: for
+`e : M ≃ₗ[R] R`, if `x` and `y` both span `M`, then `(u : R) • x = y` for some unit `u : Rˣ`. -/
+theorem exists_units_smul_eq_of_span_singleton_eq_top {R M : Type*} [Semiring R]
+    [IsDedekindFiniteMonoid R] [AddCommMonoid M] [Module R M] (e : M ≃ₗ[R] R) {x y : M}
+    (hx : Submodule.span R {x} = ⊤) (hy : Submodule.span R {y} = ⊤) :
+    ∃ u : Rˣ, (u : R) • x = y := by
+  have hux : IsUnit (e x) := e.span_singleton_eq_top_iff_isUnit.1 hx
+  have huy : IsUnit (e y) := e.span_singleton_eq_top_iff_isUnit.1 hy
+  refine ⟨huy.unit * hux.unit⁻¹, e.injective ?_⟩
+  simp [smul_eq_mul, mul_assoc]
+
 /-- **A module isomorphic to `K` has a single generator when `1` is the only unit of `K`**: two
 elements `x` and `y` of a module `N ≃ₗ[K] K` with `span K {x} = ⊤` and `span K {y} = ⊤` are
 equal. -/
 theorem eq_of_span_singleton_eq_top {K N : Type*} [CommSemiring K] [Subsingleton Kˣ]
     [AddCommMonoid N] [Module K N] (φ : N ≃ₗ[K] K) {x y : N}
     (hx : Submodule.span K {x} = ⊤) (hy : Submodule.span K {y} = ⊤) : x = y := by
-  have hunit {z : N} (hz : Submodule.span K {z} = ⊤) : IsUnit (φ z) :=
-    φ.span_singleton_eq_top_iff_isUnit.1 hz
-  exact φ.injective (by
-    rw [← (hunit hx).unit_spec, ← (hunit hy).unit_spec, Subsingleton.elim (hunit hx).unit])
+  obtain ⟨u, rfl⟩ := φ.exists_units_smul_eq_of_span_singleton_eq_top hx hy
+  rw [Subsingleton.elim u 1, Units.val_one, one_smul]
 
 /-- If a linear functional `Ψ` on a module `N ≃ₗ[K] K` takes the value `1` on `x`, then `e x` is a
 unit of `K`, with inverse `Ψ (e⁻¹ 1)`. -/

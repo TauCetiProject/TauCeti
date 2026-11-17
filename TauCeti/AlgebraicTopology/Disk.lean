@@ -42,7 +42,12 @@ transporting homotopy equivalences via `ContinuousMap.HomotopyEquiv.topCatSphere
 results about unit spheres of inner product spaces in that universe be applied to it.  In
 particular the boundary of the `n`-disk is empty exactly
 when `n = 0` (`TauCeti.nonempty_diskBoundary_iff`), and a point of the boundary `S⁰` of the
-`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`).  The antipodal map of
+`1`-disk is determined by its coordinate (`TauCeti.diskBoundary_one_ext`), so `S⁰`
+(`TopCat.sphere 0`) is a finite discrete two-point space (`TauCeti.TopCat.finite_sphere_zero`,
+`TauCeti.TopCat.discreteTopology_sphere_zero`) consisting of the poles `e₀` and `-e₀`
+(`TauCeti.spherePlus`, `TauCeti.sphereMinus`, `TauCeti.eq_sphereMinus_or_eq_spherePlus` on
+`TopCat.diskBoundary 1`, and `TauCeti.sphereZeroPlus`, `TauCeti.sphereZeroMinus`,
+`TauCeti.eq_sphereZeroMinus_or_eq_sphereZeroPlus` typed on `TopCat.sphere 0`).  The antipodal map of
 the boundary sphere is `TauCeti.diskBoundaryNeg`.  More generally, a linear isometry `e` of
 `EuclideanSpace ℝ (Fin n)` induces homeomorphisms of the disk and of its boundary sphere,
 compatible with the boundary
@@ -374,6 +379,120 @@ theorem nonempty_diskBoundary_iff {n : ℕ} : Nonempty (TopCat.diskBoundary.{u} 
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   nonempty_diskBoundary_succ n
+
+/-- The standard basepoint `(1, 0, …, 0)` of `TopCat.sphere (d + 1)`. -/
+def sphereBasePoint (d : ℕ) : TopCat.sphere.{u} (d + 1) :=
+  ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩
+
+/-- The underlying vector of `TauCeti.sphereBasePoint d` is the first standard basis vector. -/
+@[simp]
+lemma coe_sphereBasePoint_down (d : ℕ) :
+    ((sphereBasePoint.{u} d).down : EuclideanSpace ℝ (Fin (d + 2))) = EuclideanSpace.single 0 1 :=
+  (rfl)
+
+/-- The standard orthonormal basis of `EuclideanSpace ℝ (ULift (Fin 1))`. -/
+abbrev sphereZeroBasis : OrthonormalBasis (Fin 1) ℝ (EuclideanSpace ℝ (ULift.{u} (Fin 1))) :=
+  (EuclideanSpace.basisFun (ULift.{u} (Fin 1)) ℝ).reindex Equiv.ulift
+
+/-- The positive pole `e₀` (`1`) of `TopCat.sphere 0` (`= TopCat.diskBoundary 1`). -/
+def spherePlus : TopCat.diskBoundary.{u} 1 :=
+  (diskBoundaryHomeomorph 1).symm ⟨sphereZeroBasis 0, by simp⟩
+
+/-- The negative pole `-e₀` (`-1`) of `TopCat.sphere 0` (`= TopCat.diskBoundary 1`). -/
+def sphereMinus : TopCat.diskBoundary.{u} 1 :=
+  (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩)
+
+/-- `TauCeti.spherePlus` is the image of `sphereZeroBasis 0` under `(diskBoundaryHomeomorph 1)⁻¹`.
+-/
+lemma spherePlus_def :
+    spherePlus.{u} = (diskBoundaryHomeomorph 1).symm ⟨sphereZeroBasis 0, by simp⟩ := (rfl)
+
+/-- `TauCeti.sphereMinus` is the image of `-sphereZeroBasis 0` under `(diskBoundaryHomeomorph 1)⁻¹`.
+-/
+lemma sphereMinus_def :
+    sphereMinus.{u} = (diskBoundaryHomeomorph 1).symm (-⟨sphereZeroBasis 0, by simp⟩) := (rfl)
+
+/-- The coordinate of `TauCeti.spherePlus` in `EuclideanSpace ℝ (Fin 1)` is `1`. -/
+@[simp]
+lemma spherePlus_down_apply_zero :
+    (((spherePlus.{u} : TopCat.diskBoundary.{u} 1) :
+      ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
+  simp [spherePlus, diskBoundaryHomeomorph_symm_apply_down_apply]
+
+/-- The coordinate of `TauCeti.sphereMinus` in `EuclideanSpace ℝ (Fin 1)` is `-1`. -/
+@[simp]
+lemma sphereMinus_down_apply_zero :
+    (((sphereMinus.{u} : TopCat.diskBoundary.{u} 1) :
+      ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
+  simp [sphereMinus, diskBoundaryHomeomorph_symm_apply_down_apply]
+
+/-- Under `TopCat.diskBoundaryInclusion 1`, `TauCeti.spherePlus` has coordinate `1`. -/
+@[simp]
+lemma spherePlus_coord :
+    (((TopCat.diskBoundaryInclusion.{u} 1 spherePlus) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = 1 := by
+  rw [TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down, spherePlus_down_apply_zero]
+
+/-- Under `TopCat.diskBoundaryInclusion 1`, `TauCeti.sphereMinus` has coordinate `-1`. -/
+@[simp]
+lemma sphereMinus_coord :
+    (((TopCat.diskBoundaryInclusion.{u} 1 sphereMinus) :
+      ULift.{u} (Metric.closedBall (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+        EuclideanSpace ℝ (Fin 1)) 0 = -1 := by
+  rw [TauCeti.TopCat.coe_diskBoundaryInclusion_apply_down, sphereMinus_down_apply_zero]
+
+/-- **`S⁰` consists of the two points `-e₀` and `e₀`.** -/
+lemma eq_sphereMinus_or_eq_spherePlus (p : TopCat.diskBoundary.{u} 1) :
+    p = sphereMinus ∨ p = spherePlus := by
+  rcases sq_eq_one_iff.1 (sq_diskBoundary_one_eq_one p) with h | h
+  · exact Or.inr (diskBoundary_one_ext (h.trans spherePlus_down_apply_zero.{u}.symm))
+  · exact Or.inl (diskBoundary_one_ext (h.trans sphereMinus_down_apply_zero.{u}.symm))
+
+/-- The two points `-e₀` and `e₀` of `S⁰` are distinct. -/
+lemma sphereMinus_ne_spherePlus : (sphereMinus : TopCat.diskBoundary.{u} 1) ≠ spherePlus := by
+  intro h
+  have h' := congrArg (fun p : TopCat.diskBoundary.{u} 1 ↦
+    ((p : ULift.{u} _).down : EuclideanSpace ℝ (Fin 1)) 0) h
+  norm_num [sphereMinus_down_apply_zero, spherePlus_down_apply_zero] at h'
+
+/-- The positive pole `e₀` (`1`) of `TopCat.sphere 0`, defined from `TauCeti.spherePlus` with
+syntactic type `TopCat.sphere 0`. -/
+def sphereZeroPlus : TopCat.sphere.{u} 0 := spherePlus
+
+/-- The negative pole `-e₀` (`-1`) of `TopCat.sphere 0`, defined from `TauCeti.sphereMinus` with
+syntactic type `TopCat.sphere 0`. -/
+def sphereZeroMinus : TopCat.sphere.{u} 0 := sphereMinus
+
+/-- **`TopCat.sphere 0` consists of the two poles `-e₀` and `e₀`.** -/
+lemma eq_sphereZeroMinus_or_eq_sphereZeroPlus (p : TopCat.sphere.{u} 0) :
+    p = sphereZeroMinus ∨ p = sphereZeroPlus :=
+  eq_sphereMinus_or_eq_spherePlus p
+
+/-- The two poles `-e₀` and `e₀` of `TopCat.sphere 0` are distinct. -/
+lemma sphereZeroMinus_ne_sphereZeroPlus :
+    (sphereZeroMinus : TopCat.sphere.{u} 0) ≠ sphereZeroPlus :=
+  sphereMinus_ne_spherePlus
+
+/-- The boundary `S⁰` of the `1`-disk is finite. -/
+instance TopCat.finite_diskBoundary_one : Finite (TopCat.diskBoundary.{u} 1) :=
+  Finite.of_surjective (fun b : Bool ↦ cond b spherePlus sphereMinus) fun p ↦
+    (eq_sphereMinus_or_eq_spherePlus p).elim (fun hp ↦ ⟨false, hp.symm⟩) fun hp ↦ ⟨true, hp.symm⟩
+
+/-- The zero-sphere `TopCat.sphere 0` is finite. -/
+instance TopCat.finite_sphere_zero : Finite (TopCat.sphere.{u} 0) :=
+  TopCat.finite_diskBoundary_one
+
+/-- The boundary `S⁰` of the `1`-disk has the discrete topology. -/
+instance TopCat.discreteTopology_diskBoundary_one :
+    DiscreteTopology (TopCat.diskBoundary.{u} 1) :=
+  inferInstance
+
+/-- The zero-sphere `TopCat.sphere 0` has the discrete topology. -/
+instance TopCat.discreteTopology_sphere_zero : DiscreteTopology (TopCat.sphere.{u} 0) :=
+  TopCat.discreteTopology_diskBoundary_one
 
 /-- The subspace of the pair consisting of the `0`-disk and its boundary is empty.  This lets
 instances about pairs with empty subspace apply to `diskBoundaryPair 0`. -/
