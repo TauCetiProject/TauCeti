@@ -278,7 +278,7 @@ theorem exteriorPowerStalkEquiv_apply
 
 /-- The inverse exterior stalk equivalence wedges representatives on a common neighbourhood. -/
 @[simp]
-theorem exteriorPowerStalkEquiv_symm_mk_germ (U : Opens X) (hx : x ∈ U)
+theorem exteriorPowerStalkEquiv_symm_ιMulti_germ (U : Opens X) (hx : x ∈ U)
     (s : Fin n → M.obj (op U)) :
     dsimp% only [presheaf_obj_coe, Functor.comp_obj, CommRingCat.forgetToRingCat_obj]
     ((exteriorPowerStalkEquiv M x n).symm (exteriorPower.ιMulti (R.stalk x) n
