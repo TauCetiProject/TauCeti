@@ -13,7 +13,7 @@ import Mathlib.Topology.Algebra.Module.Cardinality
 # Period pairs and removable singularities along a period lattice
 
 Every full lattice in `ℂ` is the lattice of a period pair
-(`PeriodPair.exists_lattice_eq_of_isZLattice`).
+(`Submodule.exists_periodPair_lattice_eq_of_isZLattice`).
 
 Elementary analytic facts about functions that are only controlled off the lattice `L.lattice` of
 a period pair `L`:
@@ -29,11 +29,11 @@ public section
 open Filter
 open scoped Topology
 
-namespace PeriodPair
+namespace Submodule
 
 /-- Every full lattice in `ℂ` is the lattice of a period pair: a `ℤ`-basis of the lattice is an
 `ℝ`-basis of `ℂ`. -/
-theorem exists_lattice_eq_of_isZLattice (Λ : Submodule ℤ ℂ) [DiscreteTopology Λ]
+theorem exists_periodPair_lattice_eq_of_isZLattice (Λ : Submodule ℤ ℂ) [DiscreteTopology Λ]
     [IsZLattice ℝ Λ] : ∃ L : PeriodPair, L.lattice = Λ := by
   let b := Module.finBasisOfFinrankEq ℤ Λ
     (by rw [ZLattice.rank ℝ Λ, Complex.finrank_real_complex] : Module.finrank ℤ Λ = 2)
@@ -46,6 +46,10 @@ theorem exists_lattice_eq_of_isZLattice (Λ : Submodule ℤ ℂ) [DiscreteTopolo
     congr 1
     ext z
     simp [b', Fin.exists_fin_two, eq_comm]
+
+end Submodule
+
+namespace PeriodPair
 
 variable (L : PeriodPair)
 
