@@ -147,10 +147,7 @@ private theorem equivalent_toQuadraticMap_singularCupPairing_sphere {d n p : ℕ
   obtain ⟨x₀⟩ : Nonempty (sphere.{w} (d + 1)) := inferInstance
   let e := singularCohomologySphereProdSlantEquiv (𝟙_ (ModuleCat.{w} k)) (TopCat.of M) x₀ p
   refine ⟨{ toLinearEquiv := e, map_app' := fun x ↦ ?_ }⟩
-  rw [smul_apply, QuadraticMap.comp_apply, LinearMap.prodMap_apply,
-    QuadraticForm.dualProd_apply, LinearMap.BilinMap.toQuadraticMap_apply,
-    singularCupPairing_apply_self_sphere x₀ hn hnp hp z x, LinearMap.id_apply, smul_eq_mul]
-  simp only [LinearEquiv.coe_toLinearMap, LinearMap.toFun_eq_coe, e]
+  simp [singularCupPairing_apply_self_sphere x₀ hn hnp hp z x, e]
 
 /-- **The positive index of inertia of the cup pairing on `Sᵈ⁺¹ × Y`**: if `Y` is a compact
 manifold of dimension below `2 (p + d + 1)`, `p + d + 1` is even and `Hᵖ⁺ᵈ⁺¹(Y)` and `Hᵖ(Y)` are

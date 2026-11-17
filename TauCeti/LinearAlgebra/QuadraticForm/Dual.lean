@@ -47,6 +47,8 @@ with the evaluation isomorphism of `V₂`, so its rank is that of `B`
 (`LinearMap.finrank_range_dualMap_eq_finrank_range`). -/
 theorem finrank_range_flip (B : V₁ →ₗ[K] V₂ →ₗ[K] K) :
     Module.finrank K (range B.flip) = Module.finrank K (range B) := by
+  -- `B.flip` is definitionally `B.dualMap ∘ₗ evalEquiv`, as in Mathlib's
+  -- `LinearMap.dualAnnihilator_ker_eq_range_flip`
   change Module.finrank K (range (B.dualMap ∘ₗ (Module.evalEquiv K V₂).toLinearMap)) = _
   rw [range_comp_of_range_eq_top _ (LinearEquiv.range _), finrank_range_dualMap_eq_finrank_range]
 
@@ -118,8 +120,9 @@ theorem sigPos_dualProd_comp_prodMap (ψ : A →ₗ[K] Module.Dual K C) :
   -- the radical of `Q` lies in `ker ψ × ker ψ.flip`
   have hrad : Q.radical ≤ (LinearMap.ker ψ).prod (LinearMap.ker ψ.flip) := by
     intro x hx
-    have hpolar : ∀ y, QuadraticMap.polar Q x y = 0 := fun y ↦
-      LinearMap.congr_fun hx.2 y
+    have hpolar : ∀ y, QuadraticMap.polar Q x y = 0 := fun y ↦ by
+      simpa using LinearMap.congr_fun
+        (LinearMap.mem_ker.mp (QuadraticMap.radical_le_ker_polarBilin hx)) y
     refine Submodule.mem_prod.mpr ⟨LinearMap.mem_ker.mpr ?_, LinearMap.mem_ker.mpr ?_⟩
     · ext c
       simpa [Q, QuadraticMap.polar] using hpolar (0, c)
