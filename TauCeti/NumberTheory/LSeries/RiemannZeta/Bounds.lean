@@ -101,7 +101,8 @@ theorem riemannZeta₀_eq_one_sub_mul_integral {s : ℂ} (hs : 0 < s.re) :
     rw [sub_mul, hpow]
   have hint_val : ∫ t in Set.Ioi (1 : ℝ), (t : ℂ) ^ (-z) = 1 / (z - 1) := by
     rw [integral_Ioi_cpow_of_lt (by simpa using hz) zero_lt_one, ofReal_one, one_cpow,
-      show -z + 1 = -(z - 1) by ring, neg_div_neg_eq]
+      ← neg_div_neg_eq (1 : ℂ)]
+    congr 1; ring
   rw [riemannZeta₀, ite_eq_right hz1, hsub_eq, hint_val, mul_sub, ← hζ]
   field_simp [sub_ne_zero.mpr hz1]
   ring

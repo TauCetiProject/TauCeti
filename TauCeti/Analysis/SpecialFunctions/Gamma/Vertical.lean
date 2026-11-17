@@ -149,14 +149,11 @@ theorem norm_Gamma_le_of_re_mem_Ioo {s : ℂ} (hs : s.re ∈ Ioo (-1) 0) (m : �
     (by push_cast; linarith [hs.1])
   have hΓ_le : Real.Gamma (s.re + (2 * m + 2 : ℕ)) ≤ (2 * m + 1).factorial := by
     have hconv := Real.convexOn_Gamma.le_max_of_mem_Icc (x := (1 : ℝ))
-      (y := ((2 * m + 2 : ℕ) : ℝ)) (z := s.re + (2 * m + 2 : ℕ))
+      (y := ((2 * m + 1 : ℕ) : ℝ) + 1) (z := s.re + (2 * m + 2 : ℕ))
       (Set.mem_Ioi.mpr one_pos) (Set.mem_Ioi.mpr (by positivity))
-      ⟨by push_cast; linarith [hs.1], by linarith [hs.2]⟩
-    have hmax : max (Real.Gamma 1) (Real.Gamma (2 * m + 2 : ℕ)) ≤ (2 * m + 1).factorial := by
-      rw [Real.Gamma_one, show ((2 * m + 2 : ℕ) : ℝ) = (2 * m + 1 : ℕ) + 1 by push_cast; ring,
-        Real.Gamma_nat_eq_factorial]
-      exact max_le (Nat.one_le_cast.mpr (Nat.factorial_pos _)) le_rfl
-    exact hconv.trans hmax
+      ⟨by push_cast; linarith [hs.1], by push_cast; linarith [hs.2]⟩
+    rw [Real.Gamma_one, Real.Gamma_nat_eq_factorial] at hconv
+    exact hconv.trans (max_le (Nat.one_le_cast.mpr (Nat.factorial_pos _)) le_rfl)
   have hsq (k : ℕ) : ‖s + k‖ ^ 2 = (s.re + k) ^ 2 + s.im ^ 2 := by
     rw [← normSq_eq_norm_sq, normSq_apply]; simp; ring
   have h0 : (-s.re) ^ 2 * (1 + s.im ^ 2) ≤ ‖s + (0 : ℕ)‖ ^ 2 := by

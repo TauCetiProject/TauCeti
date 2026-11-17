@@ -29,7 +29,7 @@ twisted by `n^{-β}` (`1 / 2 < β < 3 / 2`, `β ≠ 1`) and exponentially smooth
 this smoothed sum with the vertical integral `mellinInv σ (fun w ↦ Γ(w) F(w + β)) x`.
 
 Shifting the line of integration left from `σ₁ = 2 - β` to `σ₀ = 1 / 2 - β` (`Re(w + β) = 1 / 2`)
-crosses two distinct poles in the open strip `1 / 2 - β < Re w < 2 - β`:
+crosses two distinct possible poles in the open strip `1 / 2 - β < Re w < 2 - β`:
 
 * `w = 0`, where `Γ` has a simple pole of residue `1` while `w ↦ x^{-w} F(w + β)` is analytic
   (since `β ≠ 1`), contributing `F(β)`;
@@ -169,11 +169,10 @@ private theorem residue_cpow_mul_Gamma_mul_pair_one_sub (β x : ℝ) :
         (fun s ↦ pairLFunction χ ψ s * (Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s))) 1 := by
   have htr := TauCeti.Contour.residue_comp_add_const
     (fun s ↦ pairLFunction χ ψ s * (Gamma (s - β) * (x : ℂ) ^ ((β : ℂ) - s))) β (1 - β)
-  rw [show (1 - (β : ℂ)) + β = 1 by ring] at htr
+  rw [sub_add_cancel] at htr
   rw [← htr]
   refine congrArg (TauCeti.Contour.residue · _) (funext fun z ↦ ?_)
-  rw [show z + (β : ℂ) - β = z by ring, show (β : ℂ) - (z + β) = -z by ring]
-  ring
+  grind
 
 private theorem analyticAt_Gamma_mul_pair {β : ℝ} {z : ℂ}
     (hz_Γ : ∀ n : ℕ, z ≠ -n) (hz_1 : z + β ≠ 1) :
@@ -189,7 +188,7 @@ private theorem meromorphicAt_Gamma_mul_pair (β : ℝ) (s : ℂ) :
 
 /-- **Goldfeld's shifted contour formula (general residue form).** For `1 / 2 < β < 3 / 2` with
 `β ≠ 1` and `x > 0`, shifting the Mellin inversion contour of `w ↦ Γ(w) F(w + β)` from `2 - β` to
-`1 / 2 - β` crosses the distinct poles `w = 0` and `w = 1 - β`, yielding
+`1 / 2 - β` crosses the two distinct possible poles `w = 0` and `w = 1 - β`, yielding
 `∑ n, a(n) n^{-β} e^{-n x} = F(β) + Res_{s = 1} (F(s) Γ(s - β) x^{β - s}) +
   mellinInv (1 / 2 - β) (fun w ↦ Γ(w) F(w + β)) x`. -/
 theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 < β) (hβ₁ : β < 3 / 2)
@@ -221,8 +220,8 @@ theorem tsum_zetaMulPairCoeffs_div_cpow_mul_exp_eq {β x : ℝ} (hβ₀ : 1 / 2 
       continuous_iff_continuousAt.mpr fun t ↦ ContinuousAt.comp (g := pairLFunction χ ψ)
         (f := fun u : ℝ ↦ (σ : ℂ) + u * I + β)
         (analyticAt_pair χ ψ fun h ↦ by
-          have := congrArg re h; simp at this
-          linarith [abs_eq_zero.mpr (show σ + β - 1 = 0 by linarith)]).continuousAt (by fun_prop)
+          have hre : σ + β = 1 := by simpa using congrArg re h
+          rw [hre, sub_self, abs_zero] at h2; norm_num at h2).continuousAt (by fun_prop)
     simpa only [VerticalIntegrable, smul_eq_mul, f] using
       verticalIntegrable_Gamma_smul_of_norm_le (E := ℂ) (g := fun w ↦ pairLFunction χ ψ (w + β))
         (C := 625 * ((M : ℝ) * N) ^ 2) (m := 2) hσ hc.aestronglyMeasurable
@@ -389,9 +388,7 @@ theorem exp_neg_le_re_pair_add_of_mul_ne_one
         (sub_ne_zero.mpr (ofReal_ne_one.mpr hβ).symm)))] at hlo
   have hΓx : Gamma ((1 : ℂ) - β) * (x : ℂ) ^ ((β : ℂ) - 1) =
       ((Real.Gamma (1 - β) * x ^ (β - 1) : ℝ) : ℂ) := by
-    rw [show (1 : ℂ) - β = ((1 - β : ℝ) : ℂ) by push_cast; ring,
-      show (β : ℂ) - 1 = ((β - 1 : ℝ) : ℂ) by push_cast; ring,
-      Gamma_ofReal, ← ofReal_cpow hx.le, ofReal_mul]
+    simp [ofReal_cpow hx.le, ← Gamma_ofReal]
   rwa [hΓx, re_mul_ofReal, ← mul_assoc] at hlo
 
 /-- **Goldfeld's real-part lower bound (double-pole case).** For a nonprincipal quadratic character
