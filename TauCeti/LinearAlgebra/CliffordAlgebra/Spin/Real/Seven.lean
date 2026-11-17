@@ -598,8 +598,6 @@ theorem not_realSpinSevenElementaryAbelian_le_range_of_forall_exists_mul_self_eq
     [CommGroup A] (hA : ∀ a : A, ∃ c, c * c = a) (f : A →* realCliffordSpinGroup 7 0) :
     ¬realSpinSevenElementaryAbelian ≤ f.range := by
   intro hle
-  have : IsMulCommutative f.range :=
-    ⟨⟨fun ⟨_, a, ha⟩ ⟨_, b, hb⟩ ↦ Subtype.ext (by simp [← ha, ← hb, ← map_mul, mul_comm a b])⟩⟩
   have heq := eq_realSpinSevenElementaryAbelian_of_le hle
   have hne : realSpinSevenElementaryAbelian ≠ ⊥ := fun h ↦ by
     simpa [h] using natCard_realSpinSevenElementaryAbelian
