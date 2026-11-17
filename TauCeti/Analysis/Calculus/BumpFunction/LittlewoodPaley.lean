@@ -47,7 +47,7 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.sum_littlewoodPaley_Ioc`: the telescoping partial sums.
 * `ContDiffBump.hasSum_littlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for `ξ ≠ 0`.
 * `ContDiffBump.exists_littlewoodPaley_pos`: on a nontrivial space each cutoff `ψⱼ` takes a
-  positive value, and `ContDiffBump.abs_littlewoodPaley_le_one`: its values lie in `[-1, 1]`.
+  positive value.
 * `ContDiffBump.exists_norm_iteratedFDeriv_littlewoodPaley_le`: `‖D^k ψⱼ‖ ≤ B 2^{-jk}`.
 * `ContDiffBump.inhomogeneousLittlewoodPaley`: the inhomogeneous partition `ψ₀ = φ, ψ₁, ψ₂, …`.
 * `ContDiffBump.hasSum_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ = 1` for every `ξ`.
@@ -156,6 +156,14 @@ theorem littlewoodPaley_eq_zero_of_le_norm {j : ℤ} {ξ : E}
   rw [littlewoodPaley_apply, φ.zero_of_le_dist (by rwa [dist_zero_right]),
     φ.zero_of_le_dist (by rwa [dist_zero_right]), sub_self]
 
+/-- Every cutoff `ψⱼ` takes values in `[-1, 1]`, as a difference of two values of `φ`. -/
+theorem abs_littlewoodPaley_le_one (j : ℤ) (ξ : E) : |φ.littlewoodPaley j ξ| ≤ 1 := by
+  have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
+  have := φ.nonneg (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  have := φ.le_one (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
+  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
 /-- On a nontrivial space each cutoff `ψⱼ` takes a positive value: at a point `ξ` with
 `‖ξ‖ = 2^{j-1} φ.rOut`, `ψⱼ ξ = φ (2^{-j} ξ) - φ (2^{1-j} ξ) = φ (2^{-j} ξ) > 0`. -/
 theorem exists_littlewoodPaley_pos [Nontrivial E] (j : ℤ) : ∃ ξ, 0 < φ.littlewoodPaley j ξ := by
@@ -187,15 +195,6 @@ theorem zero_notMem_tsupport_littlewoodPaley (j : ℤ) : (0 : E) ∉ tsupport (�
     have := (φ.tsupport_littlewoodPaley_subset j h).1
     rw [norm_zero] at this
     exact not_le.2 (mul_pos (zpow_pos two_pos _) φ.rIn_pos) this
-
-/-- Every cutoff `ψⱼ` takes values in `[-1, 1]`. -/
-theorem abs_littlewoodPaley_le_one (j : ℤ) (ξ : E) : |φ.littlewoodPaley j ξ| ≤ 1 := by
-  rw [littlewoodPaley_apply]
-  have := φ.nonneg (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-  have := φ.le_one (x := ((2 : ℝ) ^ j)⁻¹ • ξ)
-  have := φ.nonneg (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
-  have := φ.le_one (x := ((2 : ℝ) ^ (j - 1))⁻¹ • ξ)
-  exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
 
 /-- **Scaling of the dyadic cutoffs.** Each `ψⱼ` is `ψ₀` rescaled to frequency `2^j`:
 `ψⱼ ξ = ψ₀ (2^{-j} ξ)`. -/
