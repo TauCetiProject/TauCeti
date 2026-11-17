@@ -39,7 +39,8 @@ instances of it.
 
 ## Main results
 
-* `TauCeti.derivationLieAlgebra.leibniz`: the Leibniz rule;
+* `TauCeti.derivationLieAlgebra.leibniz`: the Leibniz rule, and its operator form
+  `TauCeti.derivationLieAlgebra.lie_mulLeft`: `⁅D, L_a⁆ = L_{D a}`;
   `TauCeti.derivationLieAlgebra.apply_one_eq_zero`: a derivation of a unital algebra kills the
   unit; and `TauCeti.derivationLieAlgebra.apply_mul_eq_zero`: its constants are closed under
   multiplication.
@@ -144,6 +145,14 @@ theorem leibniz (D : derivationLieAlgebra R A) (x y : A) :
     (D : Module.End R A) (x * y)
       = (D : Module.End R A) x * y + x * (D : Module.End R A) y :=
   D.2 x y
+
+/-- The commutator of a derivation with left multiplication is left multiplication by its value. -/
+theorem lie_mulLeft (D : derivationLieAlgebra R A) (a : A) :
+    ⁅(D : Module.End R A), LinearMap.mulLeft R a⁆ =
+      LinearMap.mulLeft R ((D : Module.End R A) a) := by
+  ext b
+  simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
+    LinearMap.mulLeft_apply, leibniz, add_sub_cancel_right]
 
 /-- **The constants of a derivation are closed under multiplication**: if `D` kills `x` and `y`
 then it kills `x * y`.  Together with linearity this says that the kernel of a derivation is an

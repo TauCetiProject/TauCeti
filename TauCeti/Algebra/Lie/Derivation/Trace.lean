@@ -25,14 +25,6 @@ section Derivation
 variable {R A : Type*} [CommRing R] [NonUnitalNonAssocRing A] [Module R A]
   [SMulCommClass R A A] [IsScalarTower R A A]
 
-/-- The commutator of a derivation with left multiplication is left multiplication by its value. -/
-theorem derivationLieAlgebra.lie_mulLeft (D : derivationLieAlgebra R A) (a : A) :
-    ⁅(D : Module.End R A), LinearMap.mulLeft R a⁆ =
-      LinearMap.mulLeft R ((D : Module.End R A) a) := by
-  ext b
-  simp only [Ring.lie_def, LinearMap.sub_apply, _root_.mul_apply_eq_comp,
-    LinearMap.mulLeft_apply, derivationLieAlgebra.leibniz, add_sub_cancel_right]
-
 /-- The trace of left multiplication by the value of a derivation vanishes. -/
 theorem derivationLieAlgebra.trace_mulLeft_apply_eq_zero (D : derivationLieAlgebra R A)
     (a : A) : LinearMap.trace R A (LinearMap.mulLeft R ((D : Module.End R A) a)) = 0 := by
