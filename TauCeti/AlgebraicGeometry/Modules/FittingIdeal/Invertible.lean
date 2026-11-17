@@ -40,27 +40,27 @@ universe u
 
 noncomputable section
 
-/-- Tensoring a finite-type quasi-coherent `𝒪_X`-module `N` by an invertible sheaf `K` leaves all
-of its Fitting ideal sheaves unchanged. -/
+/-- Tensoring a finite-type quasi-coherent `𝒪_X`-module `N` by an invertible `𝒪_X`-module `K`
+leaves all of its Fitting ideal sheaves unchanged. -/
 theorem fittingIdeal_tensor_of_isInvertible {X : Scheme.{u}} (N : X.Modules) [N.IsQuasicoherent]
-    [N.IsFiniteType] (K : InvertibleSheaf X) (k : ℕ) :
-    (N ⊗ K.obj).fittingIdeal
+    [N.IsFiniteType] (K : X.Modules) [hK : SheafOfModules.isInvertible X K] (k : ℕ) :
+    (N ⊗ K).fittingIdeal
         (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k =
       N.fittingIdeal
         (fun U ↦ Scheme.Modules.finite_sections_of_isAffineOpen _ U.1 U.2) k := by
   obtain ⟨ι, W, hW, htriv⟩ :=
-    (SheafOfModules.isInvertible_iff_exists_isOpenCover (X := X) (M := K.obj)).mp K.property
+    (SheafOfModules.isInvertible_iff_exists_isOpenCover (X := X) (M := K)).mp hK
   refine Scheme.IdealSheafData.ext_of_comap_openCover (X.openCoverOfIsOpenCover W hW) fun i ↦ ?_
   -- `(X.openCoverOfIsOpenCover W hW).f i` is `(W i).ι`, whereas `rw` fails implicit checking on
   -- `U.2 : U ∈ X.affineOpens` inside the finiteness witness of `fittingIdeal`.
-  change ((N ⊗ K.obj).fittingIdeal _ k).comap (W i).ι = (N.fittingIdeal _ k).comap (W i).ι
-  rw [← Scheme.Modules.fittingIdeal_pullback (W i).ι (N ⊗ K.obj) k,
+  change ((N ⊗ K).fittingIdeal _ k).comap (W i).ι = (N.fittingIdeal _ k).comap (W i).ι
+  rw [← Scheme.Modules.fittingIdeal_pullback (W i).ι (N ⊗ K) k,
     ← Scheme.Modules.fittingIdeal_pullback (W i).ι N k]
-  let eK : (Scheme.Modules.pullback (W i).ι).obj K.obj ≅ 𝟙_ (W i : Scheme).Modules :=
-    ((Scheme.Modules.restrictFunctorIsoPullback (W i).ι).app K.obj).symm ≪≫ (htriv i).some.symm
-  let e : (Scheme.Modules.pullback (W i).ι).obj (N ⊗ K.obj) ≅
+  let eK : (Scheme.Modules.pullback (W i).ι).obj K ≅ 𝟙_ (W i : Scheme).Modules :=
+    ((Scheme.Modules.restrictFunctorIsoPullback (W i).ι).app K).symm ≪≫ (htriv i).some.symm
+  let e : (Scheme.Modules.pullback (W i).ι).obj (N ⊗ K) ≅
       (Scheme.Modules.pullback (W i).ι).obj N :=
-    asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback (W i).ι) N K.obj) ≪≫
+    asIso (Functor.OplaxMonoidal.δ (Scheme.Modules.pullback (W i).ι) N K) ≪≫
       whiskerLeftIso ((Scheme.Modules.pullback (W i).ι).obj N) eK ≪≫
       ρ_ ((Scheme.Modules.pullback (W i).ι).obj N)
   exact Scheme.Modules.fittingIdeal_congr _ e k

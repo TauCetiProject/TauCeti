@@ -180,6 +180,22 @@ def evaluationDualIso (L : InvertibleSheaf X) :
   eqToIso (congrArg (L.obj ⊗ ·) (dual_obj L)) ≪≫
     _root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (evaluationDualIsoSheaf L)
 
+/-- The forward map of `evaluationDualIso` is internal-Hom evaluation transported along
+`dual_obj`. -/
+lemma evaluationDualIso_hom (L : InvertibleSheaf X) :
+    (evaluationDualIso L).hom =
+      (eqToIso (congrArg (L.obj ⊗ ·) (dual_obj L))).hom ≫
+        (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (evaluationDualIsoSheaf L)).hom :=
+  (rfl)
+
+/-- The inverse map of `evaluationDualIso` is the inverse of internal-Hom evaluation transported
+along `dual_obj`. -/
+lemma evaluationDualIso_inv (L : InvertibleSheaf X) :
+    (evaluationDualIso L).inv =
+      (_root_.AlgebraicGeometry.Scheme.Modules.isoOfSheafIso X (evaluationDualIsoSheaf L)).inv ≫
+        (eqToIso (congrArg (L.obj ⊗ ·) (dual_obj L))).inv :=
+  (rfl)
+
 /-- Tensoring on the right by the dual of a line bundle is an autoequivalence of `X.Modules`,
 with inverse given by tensoring on the right by the line bundle itself. -/
 def tensorRightDualEquivalence (L : InvertibleSheaf X) : X.Modules ≌ X.Modules :=
@@ -207,8 +223,17 @@ def twistedToUnit (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
     whiskerRight φ (dual L₂).obj ≫
     (evaluationDualIso L₂).hom
 
+/-- Defining equation for `twistedToUnit`. -/
+lemma twistedToUnit_def (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    twistedToUnit L₁ L₂ φ =
+      (tensorProductObjIso L₁ (dual L₂)).hom ≫
+        whiskerRight φ (dual L₂).obj ≫
+        (evaluationDualIso L₂).hom :=
+  (rfl)
+
 /-- Twisting a morphism of line bundles by the dual of the target preserves and reflects
 vanishing. -/
+@[simp]
 theorem twistedToUnit_eq_zero_iff (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
     twistedToUnit L₁ L₂ φ = 0 ↔ φ = 0 := by
   let : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
@@ -221,6 +246,7 @@ theorem twistedToUnit_eq_zero_iff (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj
 
 /-- Twisting a morphism of line bundles by the dual of the target preserves and reflects
 monomorphisms. -/
+@[simp]
 theorem mono_twistedToUnit_iff (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
     Mono (twistedToUnit L₁ L₂ φ) ↔ Mono φ := by
   let E := tensorRightDualEquivalence L₂
@@ -256,6 +282,27 @@ def cokernelTwistedToUnitIso (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ 
         dsimp [twistedToUnit]
         simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id])) ≪≫
     (PreservesCokernel.iso (tensorRight (dual L₂).obj) φ).symm
+
+open Limits in
+/-- `cokernelTwistedToUnitIso` intertwines `cokernel.π (twistedToUnit L₁ L₂ φ)` with
+`(evaluationDualIso L₂).inv` followed by `cokernel.π φ ▷ (dual L₂).obj`. -/
+@[reassoc (attr := simp)]
+lemma π_comp_cokernelTwistedToUnitIso_hom (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    cokernel.π (twistedToUnit L₁ L₂ φ) ≫ (cokernelTwistedToUnitIso L₁ L₂ φ).hom =
+      (evaluationDualIso L₂).inv ≫ cokernel.π φ ▷ (dual L₂).obj := by
+  dsimp [cokernelTwistedToUnitIso]
+  rw [cokernel.mapIso_hom, cokernel.π_desc_assoc, Category.assoc, PreservesCokernel.iso_inv]
+  exact congrArg ((evaluationDualIso L₂).inv ≫ ·)
+    (π_comp_cokernelComparison φ (tensorRight (dual L₂).obj))
+
+open Limits in
+/-- The inverse of `cokernelTwistedToUnitIso` intertwines `cokernel.π φ ▷ (dual L₂).obj` with
+`(evaluationDualIso L₂).hom` followed by `cokernel.π (twistedToUnit L₁ L₂ φ)`. -/
+@[reassoc (attr := simp)]
+lemma π_comp_cokernelTwistedToUnitIso_inv (L₁ L₂ : InvertibleSheaf X) (φ : L₁.obj ⟶ L₂.obj) :
+    cokernel.π φ ▷ (dual L₂).obj ≫ (cokernelTwistedToUnitIso L₁ L₂ φ).inv =
+      (evaluationDualIso L₂).hom ≫ cokernel.π (twistedToUnit L₁ L₂ φ) := by
+  rw [Iso.comp_inv_eq, Category.assoc, π_comp_cokernelTwistedToUnitIso_hom, Iso.hom_inv_id_assoc]
 
 end InvertibleSheaf
 

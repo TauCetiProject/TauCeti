@@ -113,6 +113,14 @@ instance isInvertible_tensorUnit : isInvertible X (𝟙_ X.Modules) :=
   isInvertible_unit X
 
 variable {X} in
+/-- An invertible `𝒪_X`-module is quasicoherent. -/
+instance (priority := 100) isQuasicoherent_of_isInvertible
+    {M : X.Modules} [hM : isInvertible X M] : M.IsQuasicoherent :=
+  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) M := hM
+  let F : _root_.SheafOfModules X.ringCatSheaf := M
+  inferInstanceAs F.IsQuasicoherent
+
+variable {X} in
 /-- An invertible `𝒪_X`-module is finitely presented. -/
 instance (priority := 100) isFinitePresentation_of_isInvertible
     {M : X.Modules} [hM : isInvertible X M] : M.IsFinitePresentation :=
@@ -144,9 +152,7 @@ instance (L : InvertibleSheaf X) : SheafOfModules.isInvertible X L.obj :=
 
 /-- The underlying sheaf of a line bundle is quasicoherent. -/
 instance isQuasicoherent_obj (L : InvertibleSheaf X) : L.obj.IsQuasicoherent :=
-  have : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
-  let F : _root_.SheafOfModules X.ringCatSheaf := L.obj
-  inferInstanceAs F.IsQuasicoherent
+  SheafOfModules.isQuasicoherent_of_isInvertible
 
 /-- The underlying sheaf of a line bundle is finitely presented. -/
 instance isFinitePresentation_obj (L : InvertibleSheaf X) : L.obj.IsFinitePresentation :=

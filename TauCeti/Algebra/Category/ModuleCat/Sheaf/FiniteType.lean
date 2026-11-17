@@ -30,6 +30,8 @@ similarly pairs local generators on a common refinement, mirroring
   and cocontinuous functor.
 * `SheafOfModules.isFiniteType_pushforward_of_isLeftAdjoint`: pushforward along a left adjoint
   continuous functor preserves finite type.
+* `SheafOfModules.LocalGeneratorsData.tensor`: local generators for `M ⊗ N` built from local
+  generators for `M` and for `N` on a common refinement.
 * `SheafOfModules.isFiniteType_tensorObj`: the tensor product of two sheaves of modules of finite
   type is of finite type.
 -/
@@ -229,53 +231,86 @@ noncomputable section
 variable {C : Type u} [SmallCategory C] {J : GrothendieckTopology C}
   {R : Sheaf J CommRingCat.{u}} {M N : SheafOfModules.{u} (ringCatSheaf R)}
 
-/-- The tensor product of generating sections of `M` and `N` gives generating sections of `M ⊗ N`,
-indexed by pairs of generators. -/
-private def tensorGeneratingSections (σ : M.GeneratingSections) (τ : N.GeneratingSections) :
-    (M ⊗ N).GeneratingSections where
-  I := σ.I × τ.I
-  s := (M ⊗ N).freeHomEquiv ((freeTensorFreeIso (R := R) σ.I τ.I).inv ≫ (σ.π ⊗ₘ τ.π))
-  epi := by
-    rw [Equiv.symm_apply_apply, tensorHom_def]
-    have : Epi (σ.π ▷ free τ.I) := (tensorRight (free τ.I)).map_epi σ.π
-    have : Epi (M ◁ τ.π) := (tensorLeft M).map_epi τ.π
-    exact epi_comp _ _
+/-- Local generators data for `M ⊗ N` built from local generators data for `M` and for `N`. Its
+cover is the common refinement of the two covers, and over each of its members the generating
+sections are the tensor product of the restricted generating sections of `M` and `N`, transported
+along `overTensorIso`. -/
+def LocalGeneratorsData.tensor [HasPullbacks C]
+    (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData) :
+    (M ⊗ N).LocalGeneratorsData :=
+  let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
+  { I := r.I
+    X := r.X
+    coversTop := r.coversTop
+    generators i :=
+      -- The isomorphism lives over `R.over (r.X i)`, while the expected generating sections live
+      -- over the definitionally equal restriction of `ringCatSheaf R`; supply `Epi` explicitly.
+      @GeneratingSections.ofEpi _ _ _ _ _ _ _ _
+        (GeneratingSections.tensor (R := R.over (r.X i))
+          ((qM.ofRefinement r.X r.coversTop r.leftIndex r.left).generators i)
+          ((qN.ofRefinement r.X r.coversTop r.rightIndex r.right).generators i))
+        (overTensorIso M N (r.X i)).inv
+        (@IsIso.epi_of_iso _ _ _ _ (overTensorIso M N (r.X i)).inv (Iso.isIso_inv _)) }
 
-/-- The tensor product of two finite families of generating sections is finite. -/
-private instance isFiniteType_tensorGeneratingSections
-    (σ : M.GeneratingSections) (τ : N.GeneratingSections) [σ.IsFiniteType] [τ.IsFiniteType] :
-    (tensorGeneratingSections (R := R) σ τ).IsFiniteType where
-  finite := inferInstanceAs (Finite (σ.I × τ.I))
+/-- The cover index type of `qM.tensor qN` is that of the common refinement of the covers of `qM`
+and `qN`. -/
+@[simp]
+theorem LocalGeneratorsData.tensor_I [HasPullbacks C]
+    (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData) :
+    (qM.tensor qN).I =
+      (GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop).I :=
+  (rfl)
+
+/-- The covering objects of `qM.tensor qN` are those of the common refinement of the covers of
+`qM` and `qN`. -/
+@[simp]
+theorem LocalGeneratorsData.tensor_X [HasPullbacks C]
+    (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData) :
+    (qM.tensor qN).X = fun i ↦
+      (GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop).X
+        ((LocalGeneratorsData.tensor_I qM qN).mp i) :=
+  (rfl)
+
+/-- Over each member of the common refinement, the generating sections of `qM.tensor qN` are the
+tensor product of the restricted generating sections of `qM` and `qN`, transported along
+`overTensorIso`. -/
+@[simp]
+theorem LocalGeneratorsData.tensor_generators [HasPullbacks C]
+    (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData) (i : (qM.tensor qN).I) :
+    (qM.tensor qN).generators i =
+      let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
+      let j := (LocalGeneratorsData.tensor_I qM qN).mp i
+      cast (congrArg (fun X ↦ ((M ⊗ N).over X).GeneratingSections)
+        (congrFun (LocalGeneratorsData.tensor_X qM qN).symm i))
+        (@GeneratingSections.ofEpi _ _ _ ((ringCatSheaf R).over (r.X j)) _ _ _ _
+          (GeneratingSections.tensor (R := R.over (r.X j))
+            ((qM.ofRefinement r.X r.coversTop r.leftIndex r.left).generators j)
+            ((qN.ofRefinement r.X r.coversTop r.rightIndex r.right).generators j))
+          (overTensorIso M N (r.X j)).inv
+          (@IsIso.epi_of_iso _ _ _ _ (overTensorIso M N (r.X j)).inv (Iso.isIso_inv _)) :
+            ((M ⊗ N).over (r.X j)).GeneratingSections) :=
+  (rfl)
+
+/-- The tensor product of two finite-type local generators atlases is of finite type. -/
+instance LocalGeneratorsData.isFiniteType_tensor [HasPullbacks C]
+    (qM : M.LocalGeneratorsData) (qN : N.LocalGeneratorsData)
+    [qM.IsFiniteType] [qN.IsFiniteType] : (qM.tensor qN).IsFiniteType where
+  isFiniteType i := by
+    let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
+    have hM := LocalGeneratorsData.IsFiniteType.isFiniteType
+      (p := qM.ofRefinement r.X r.coversTop r.leftIndex r.left) i
+    have hN := LocalGeneratorsData.IsFiniteType.isFiniteType
+      (p := qN.ofRefinement r.X r.coversTop r.rightIndex r.right) i
+    exact @GeneratingSections.instIsFiniteTypeOfEpi _ _ _ _ _ _ _ _ _ _
+      (@IsIso.epi_of_iso _ _ _ _ (overTensorIso M N (r.X i)).inv (Iso.isIso_inv _))
+      (@GeneratingSections.isFiniteType_tensor _ _ _ (R.over (r.X i)) _ _ _ _ hM hN)
 
 /-- The tensor product of two sheaves of modules of finite type is of finite type. -/
 instance isFiniteType_tensorObj [HasPullbacks C] [M.IsFiniteType] [N.IsFiniteType] :
     (M ⊗ N).IsFiniteType := by
   obtain ⟨qM, _⟩ := IsFiniteType.exists_localGeneratorsData M
   obtain ⟨qN, _⟩ := IsFiniteType.exists_localGeneratorsData N
-  let r := GrothendieckTopology.CoversTop.commonRefinement qM.coversTop qN.coversTop
-  let q : (M ⊗ N).LocalGeneratorsData :=
-    { I := r.I
-      X := r.X
-      coversTop := r.coversTop
-      generators i :=
-        -- The isomorphism lives over `R.over (r.X i)`, while the expected generating sections live
-        -- over the definitionally equal restriction of `ringCatSheaf R`; supply `Epi` explicitly.
-        @GeneratingSections.ofEpi _ _ _ _ _ _ _ _
-          (tensorGeneratingSections (R := R.over (r.X i))
-            ((qM.ofRefinement r.X r.coversTop r.leftIndex r.left).generators i)
-            ((qN.ofRefinement r.X r.coversTop r.rightIndex r.right).generators i))
-          (overTensorIso M N (r.X i)).inv
-          (@IsIso.epi_of_iso _ _ _ _ (overTensorIso M N (r.X i)).inv (Iso.isIso_inv _)) }
-  have : q.IsFiniteType :=
-    { isFiniteType i := by
-        have hM := LocalGeneratorsData.IsFiniteType.isFiniteType
-          (p := qM.ofRefinement r.X r.coversTop r.leftIndex r.left) i
-        have hN := LocalGeneratorsData.IsFiniteType.isFiniteType
-          (p := qN.ofRefinement r.X r.coversTop r.rightIndex r.right) i
-        exact @GeneratingSections.instIsFiniteTypeOfEpi _ _ _ _ _ _ _ _ _ _
-          (@IsIso.epi_of_iso _ _ _ _ (overTensorIso M N (r.X i)).inv (Iso.isIso_inv _))
-          (@isFiniteType_tensorGeneratingSections _ _ _ (R.over (r.X i)) _ _ _ _ hM hN) }
-  exact q.isFiniteType
+  exact (qM.tensor qN).isFiniteType
 
 end
 
