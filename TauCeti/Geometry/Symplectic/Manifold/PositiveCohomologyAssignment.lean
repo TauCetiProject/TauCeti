@@ -56,9 +56,9 @@ the reconstruction attaches to the components of the curve.
 
 ## Main results
 
-* `TauCeti.PositiveCohomologyAssignment.localCharge_eq_charge_comp_subdisc`: at an isolated point
-  `z` of `σ⁻¹(Z)`, the local charge is the integer of `σ` on every round disc about `z` meeting
-  `σ⁻¹(Z)` only in `z`.
+* `TauCeti.PositiveCohomologyAssignment.localCharge_eq_charge_comp_subdisc`: if `σ⁻¹(Z)` is
+  compact and meets the disc `B(z, R)` only in `z`, the local charge of `σ` at `z` is the integer
+  of `σ` on every round disc `B(z, r) ⊆ 𝔻` with `0 < r < R`.
 * `TauCeti.PositiveCohomologyAssignment.charge_eq_sum_localCharge`: for finite `σ⁻¹(Z)`, `I(σ)` is
   the sum of the local charges.
 * `TauCeti.PositiveCohomologyAssignment.card_le_charge`,
@@ -212,6 +212,13 @@ theorem isCompact_preimage_comp_subdisc_of_isolated {σ : C(𝔻, Y)} (hσ : IsC
   rw [hwz, sub_self, norm_zero] at hwr
   exact hr.ne hwr
 
+/-- If `K ⊆ 𝔻` has closed image in `ℂ` and `z ∉ K`, some round disc `B(z, R)` misses `K`. -/
+private theorem exists_pos_forall_notMem_ball {K : Set 𝔻} (hK : IsClosed (((↑) : 𝔻 → ℂ) '' K))
+    {z : 𝔻} (hz : z ∉ K) : ∃ R > 0, ∀ w ∈ K, (w : ℂ) ∉ ball (z : ℂ) R := by
+  obtain ⟨R, hR, hRK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) fun ⟨w, hw, hwz⟩ ↦
+    hz (coe_injective hwz ▸ hw)
+  exact ⟨R, hR, fun w hw hwb ↦ hRK hwb ⟨w, hw, rfl⟩⟩
+
 /-! ### Local charges -/
 
 open Classical in
@@ -250,12 +257,7 @@ theorem localCharge_eq_charge_comp_subdisc {σ : C(𝔻, Y)} (hσ : IsCompact (�
 theorem localCharge_eq_zero {σ : C(𝔻, Y)} (hσ : IsCompact (σ ⁻¹' Z)) {z : 𝔻} (hz : σ z ∉ Z) :
     A.localCharge σ z = 0 := by
   -- The compact set `σ⁻¹(Z)` stays a positive distance `ε` away from `z`.
-  have hK : IsClosed (((↑) : 𝔻 → ℂ) '' (σ ⁻¹' Z)) := (hσ.image continuous_coe).isClosed
-  have hzK : (z : ℂ) ∉ ((↑) : 𝔻 → ℂ) '' (σ ⁻¹' Z) := by
-    rintro ⟨w, hw, hwz⟩
-    exact hz (coe_injective hwz ▸ hw)
-  obtain ⟨ε, hε, hεK⟩ := Metric.isOpen_iff.1 hK.isOpen_compl _ hzK
-  have hmiss : ∀ w, σ w ∈ Z → (w : ℂ) ∉ ball (z : ℂ) ε := fun w hw hwb ↦ hεK hwb ⟨w, hw, rfl⟩
+  obtain ⟨ε, hε, hmiss⟩ := exists_pos_forall_notMem_ball (hσ.image continuous_coe).isClosed hz
   obtain ⟨r, hr, hrε, hc⟩ := exists_pos_lt_and_norm_add_le_one z hε
   have hiso : ∀ w, σ w ∈ Z → (w : ℂ) ∈ ball (z : ℂ) ε → w = z :=
     fun w hw hwb ↦ (hmiss w hw hwb).elim
@@ -347,11 +349,11 @@ theorem card_le_charge {σ : C(𝔻, Y)} (h : IsCompact (σ ⁻¹' Z)) (u : ℂ 
   refine Finset.sum_le_sum fun z hz ↦ ?_
   -- The other points of the finite set `s` form a closed set missing `z`.
   classical
-  have hK : IsClosed (((↑) : 𝔻 → ℂ) '' ↑(s.erase z)) := ((s.erase z).finite_toSet.image _).isClosed
-  obtain ⟨R, hR, hRs⟩ := Metric.isOpen_iff.1 hK.isOpen_compl (z : ℂ) (by simp)
+  obtain ⟨R, hR, hRs⟩ := exists_pos_forall_notMem_ball
+    ((s.erase z).finite_toSet.image ((↑) : 𝔻 → ℂ)).isClosed (z := z) (by simp)
   refine A.localCharge_pos h u hu hhol ((hs z).2 hz) hR (fun w hw hwb ↦ ?_) (hnc z hz)
   by_contra hwz
-  exact hRs hwb ⟨w, Finset.mem_erase.2 ⟨hwz, (hs w).1 hw⟩, rfl⟩
+  exact hRs w (Finset.mem_erase.2 ⟨hwz, (hs w).1 hw⟩) hwb
 
 /-- Under the hypotheses of `TauCeti.PositiveCohomologyAssignment.card_le_charge`, the integer of
 `σ` vanishes exactly when `σ` misses `Z`. -/
