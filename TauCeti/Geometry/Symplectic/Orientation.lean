@@ -376,6 +376,8 @@ theorem Module.Basis.orientation_eq_finTwoProd_of_apply_one_eq (b : Basis (Fin 2
   have he : (b.reindex e.symm).reindex e = b := Basis.eq_of_apply_eq fun i ↦ by simp
   rw [← he, (TauCeti.stdSymplecticForm_tames_product (V := ℝ)).orientation_reindex (fun i ↦ ?_)
     (by simp) h, TauCeti.SymplecticForm.orientation_stdSymplecticForm_real]
+  -- The adapted pair is `(b 0, b 1)`.
+  have h₀ : finProdFinEquiv ((0 : Fin 1), (0 : Fin 2)) = 0 := rfl
+  have h₁ : finProdFinEquiv ((0 : Fin 1), (1 : Fin 2)) = 1 := rfl
   fin_cases i
-  simp only [Basis.reindex_apply, Equiv.symm_symm]
-  exact hb
+  simpa [e, TauCeti.AlmostComplexStructure.product_apply, h₀, h₁] using hb
