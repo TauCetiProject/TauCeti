@@ -41,7 +41,9 @@ on variations whose four coordinates lie in `H¹(ℂ) = W^{1,2}(ℂ)` (`TauCeti.
 gradients in the leading part. The coefficient enters through its `L∞` class `a`, so the
 operator depends only on the almost-everywhere class of the field, and for a bounded measurable
 field `x` one takes `a` with `a = x` almost everywhere. The domain carries the product norm, the
-largest of the `H¹` norms of the four coordinates. Its values are given almost everywhere by the
+largest of the `H¹` norms of the four coordinates; the inclusion
+`TauCeti.Vortex.sobolevFieldValues : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` is injective
+(`TauCeti.Vortex.sobolevFieldValues_injective`). Its values are given almost everywhere by the
 same formula with weak gradients (`TauCeti.Vortex.sobolevGaugeFixedOperator_apply_ae`), and on
 variations with a `C¹` representative it is the classical operator
 (`TauCeti.Vortex.sobolevGaugeFixedOperator_ae_eq_gaugeFixedOperator`). Changing the coefficient
@@ -69,8 +71,8 @@ finite-dimensional kernel and a closed range:
 * `TauCeti.Vortex.isClosed_range_sobolevGaugeFixedOperator`.
 
 So `L_x : H¹ → L²` is upper semi-Fredholm at such a vortex. The vanishing of its cokernel is
-proved in `TauCeti.Analysis.PDE.Vortex.Fredholm`, and the value `2m` of its index in
-`TauCeti.Analysis.PDE.Vortex.Index`.
+proved in `TauCeti.Analysis.PDE.Vortex.Fredholm`. The value `2m` of its index at a continuous
+plane vortex lying in `A_m^k` for every `k` is proved in `TauCeti.Analysis.PDE.Vortex.Index`.
 
 ## References
 
@@ -91,6 +93,43 @@ open scoped ENNReal Topology InnerProductSpace Gradient Distributions
 
 local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens ℂ) : Set ℂ)
 
+/-- The values of a variation `y ∈ H¹(ℂ)⁴`, as an element of `L²(ℂ; ℝ⁴)`: the inclusion
+`H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`. -/
+def sobolevFieldValues :
+    (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
+  ∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
+    (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
+      ((W1p.valueL).comp (ContinuousLinearMap.proj j))
+
+/-- Almost everywhere, the `L²` values of a variation have the values of its four coordinates as
+coordinates. -/
+theorem sobolevFieldValues_ae_eq (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevFieldValues y =ᵐ[μ⊤] fun z ↦ WithLp.toLp 2 fun j ↦ W1p.value (y j) z := by
+  simp only [sobolevFieldValues, FunLike.coe_sum, Finset.sum_apply,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, W1p.valueL_apply]
+  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
+      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
+        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
+          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
+    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
+      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
+  filter_upwards [Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
+      ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
+        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)), hv] with z h₁ h₂
+  rw [h₁]
+  simp only [Finset.sum_apply, h₂]
+  ext i
+  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
+
+/-- A variation is determined by its `L²` values. -/
+theorem sobolevFieldValues_injective : Function.Injective sobolevFieldValues := by
+  intro y y' h
+  funext j
+  refine W1p.ext_value (Lp.ext ?_)
+  filter_upwards [sobolevFieldValues_ae_eq y, sobolevFieldValues_ae_eq y'] with z h₁ h₂
+  rw [h] at h₁
+  simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v j) (h₁.symm.trans h₂)
+
 /-- The realization `H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` of the gauge-fixed vortex operator `L_x`, whose
 zeroth-order coefficients are given by the `L∞` class `a` of the field `x`. The leading part
 acts on the weak gradients of the four coordinates. -/
@@ -99,10 +138,7 @@ def sobolevGaugeFixedOperator (a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤) :
   ∑ j : Fin 4, ((gaugeFixedFirstOrder.comp
       (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).compLpL 2 μ⊤).comp
         ((W1p.gradientL).comp (ContinuousLinearMap.proj j)) +
-    (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 a).comp
-      (∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
-          ((W1p.valueL).comp (ContinuousLinearMap.proj j)))
+    (gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2 a).comp sobolevFieldValues
 
 /-- Almost everywhere, the realization is given by the formula of `L_x` with the weak gradients
 and the values of the coordinates. -/
@@ -114,38 +150,25 @@ theorem sobolevGaugeFixedOperator_apply_ae (a : Lp (EuclideanSpace ℝ (Fin 4)) 
   simp only [sobolevGaugeFixedOperator, add_apply,
     FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearMap.holderL_apply_apply, ContinuousLinearMap.proj_apply,
-    W1p.gradientL_apply, W1p.valueL_apply]
+    W1p.gradientL_apply]
   have hg : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
       (ContinuousLinearMap.compLpL 2 μ⊤
         (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
           (W1p.gradient (y j))) z = gaugeFixedFirstOrder (Pi.single j (W1p.gradient (y j) z)) :=
     ae_all_iff.2 fun j ↦ (gaugeFixedFirstOrder.comp
       (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j)).coeFn_compLpL (W1p.gradient (y j))
-  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
-          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
-    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
   set G := ∑ j : Fin 4, ContinuousLinearMap.compLpL 2 μ⊤
     (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
       (W1p.gradient (y j))
-  set V := ∑ j : Fin 4, ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-    (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))
-  filter_upwards [Lp.coeFn_add G (gaugeFixedZerothOrder.holder 2 a V),
+  filter_upwards [Lp.coeFn_add G (gaugeFixedZerothOrder.holder 2 a (sobolevFieldValues y)),
     Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
       ContinuousLinearMap.compLpL 2 μ⊤
         (gaugeFixedFirstOrder.comp (ContinuousLinearMap.single ℝ (fun _ : Fin 4 ↦ ℂ) j))
           (W1p.gradient (y j)),
-    Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
-      ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j)),
-    gaugeFixedZerothOrder.coeFn_holder (r := 2) a V, hg, hv] with z h₁ h₂ h₃ h₄ h₅ h₆
-  rw [h₁, Pi.add_apply, h₂, h₄, h₃]
-  simp only [Finset.sum_apply, h₅, h₆, ← map_sum, Finset.univ_sum_single]
-  congr 2
-  ext i
-  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
+    gaugeFixedZerothOrder.coeFn_holder (r := 2) a (sobolevFieldValues y), hg,
+    sobolevFieldValues_ae_eq y] with z h₁ h₂ h₃ h₄ h₅
+  rw [h₁, Pi.add_apply, h₂, h₃, h₅]
+  simp only [Finset.sum_apply, h₄, ← map_sum, Finset.univ_sum_single]
 
 /-- Changing the coefficient changes the realization only in its zeroth-order part: almost
 everywhere, the difference of the realizations at `a` and `b` is the zeroth-order term with
@@ -164,10 +187,7 @@ theorem sobolevGaugeFixedOperator_sub_apply_ae (a b : Lp (EuclideanSpace ℝ (Fi
 coefficient. -/
 theorem exists_lipschitzWith_sobolevGaugeFixedOperator :
     ∃ K, LipschitzWith K sobolevGaugeFixedOperator := by
-  set V : (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →L[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ⊤ :=
-    ∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
-        ((W1p.valueL).comp (ContinuousLinearMap.proj j))
+  set V := sobolevFieldValues
   set H := gaugeFixedZerothOrder.holderL μ⊤ ∞ 2 2
   have hsub : ∀ a b, sobolevGaugeFixedOperator a - sobolevGaugeFixedOperator b =
       (H (a - b)).comp V := fun a b ↦ by

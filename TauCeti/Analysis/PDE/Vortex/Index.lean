@@ -16,8 +16,9 @@ import TauCeti.MeasureTheory.Measure.Restrict
 At a field `x` with `L∞` class `a`, the gauge-fixed vortex operator `L_x = d₀* ⊕ d₁` is realized
 as a bounded operator `TauCeti.Vortex.sobolevGaugeFixedOperator a : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`. At a
 plane vortex it is onto (`TauCeti.Vortex.sobolevGaugeFixedOperator_surjective`), so its index is
-the real dimension of its kernel. This file computes that dimension: it is `2m` at a plane vortex
-of degree `m`, the real dimension of the divisor space `Sym^m ℂ`.
+the real dimension of its kernel. This file computes that dimension: it is `2m` at a continuous
+plane vortex of degree `m` lying in `A_m^k` for every `k`, the real dimension of the divisor space
+`Sym^m ℂ`.
 
 The kernel of the realization is identified with the weak `L²` kernel of `L_x`
 (`TauCeti.Vortex.weakGaugeFixedKernel`), the square-integrable weak solutions of `L_x u = 0`. At a
@@ -27,8 +28,8 @@ isomorphism between the two (`TauCeti.Vortex.kerSobolevGaugeFixedOperatorEquiv`)
 * It is well defined because an element of `H¹(ℂ)⁴` lies in the kernel of the realization exactly
   when its values solve `L_x y = 0` weakly
   (`TauCeti.Vortex.mem_ker_sobolevGaugeFixedOperator_iff`).
-* It is injective because an element of `H¹(ℂ)` is determined by its value
-  (`TauCeti.W1p.ext_value`).
+* It is injective because an element of `H¹(ℂ)⁴` is determined by its values
+  (`TauCeti.Vortex.sobolevFieldValues_injective`).
 * It is onto because, at a bounded continuous field, every weak `L²` solution of `L_x u = 0` is
   the value of an element of `H¹(ℂ)⁴`
   (`TauCeti.Vortex.exists_sobolevGaugeFixedOperator_eq_of_integral_inner_gaugeFixedAdjoint_eq`).
@@ -40,6 +41,8 @@ has real dimension `2m` (`TauCeti.Vortex.finrank_weakGaugeFixedKernel_eq_two_mul
 
 * `TauCeti.Vortex.finrank_ker_sobolevGaugeFixedOperator_eq_two_mul`: the kernel of the
   realization has real dimension `2m`;
+* `TauCeti.Vortex.sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace`: the
+  realization is onto;
 * `TauCeti.Vortex.isFredholm_sobolevGaugeFixedOperator_of_forall_mem_framedFieldSpace`: the
   realization is Fredholm;
 * `TauCeti.Vortex.index_sobolevGaugeFixedOperator_eq_two_mul`: its index is `2m`.
@@ -64,49 +67,32 @@ local notation "μ⊤" => Measure.restrict (volume : Measure ℂ) ((⊤ : Opens 
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)} {a : Lp (EuclideanSpace ℝ (Fin 4)) ∞ μ⊤}
 
-/-- The `L²` class of the values of the four coordinates of `y ∈ H¹(ℂ)⁴`, assembled from the
-value maps `W1p.valueL` and read on `volume` instead of its restriction to `⊤`. -/
+/-- The inclusion `sobolevFieldValues : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)`, read on `volume` instead of its
+restriction to `⊤`. -/
 private def valuesLp :
     (Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) →ₗ[ℝ]
       Lp (EuclideanSpace ℝ (Fin 4)) 2 (volume : Measure ℂ) :=
   Lp.compMeasurePreservingₗ ℝ id
       (by rw [Measure.restrict_coe_opens_top]; exact .id _) ∘ₗ
-    (∑ j : Fin 4, ((ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).compLpL 2 μ⊤).comp
-        ((W1p.valueL).comp (ContinuousLinearMap.proj j))).toLinearMap
+    sobolevFieldValues.toLinearMap
+
+private theorem valuesLp_ae_eq_sobolevFieldValues (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
+    valuesLp y =ᵐ[volume] sobolevFieldValues y := by
+  rw [valuesLp, LinearMap.comp_apply, Lp.compMeasurePreservingₗ_apply]
+  exact Lp.coeFn_compMeasurePreserving _ _
 
 private theorem coeFn_valuesLp (y : Fin 4 → W1p (volume : Measure ℂ) ⊤ 2) :
     valuesLp y =ᵐ[volume] fun z ↦
-      (WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)) := by
-  have hv : ∀ᵐ z ∂μ⊤, ∀ j : Fin 4,
-      (ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-        (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))) z =
-          W1p.value (y j) z • EuclideanSpace.single j (1 : ℝ) :=
-    ae_all_iff.2 fun j ↦ (ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))).coeFn_compLpL (W1p.value (y j))
-  have hs := Lp.coeFn_finsetSum (μ := μ⊤) (p := 2) Finset.univ fun j : Fin 4 ↦
-    ContinuousLinearMap.compLpL 2 μ⊤ (ContinuousLinearMap.toSpanSingleton ℝ
-      (EuclideanSpace.single j (1 : ℝ))) (W1p.value (y j))
-  rw [valuesLp, LinearMap.comp_apply, Lp.compMeasurePreservingₗ_apply]
-  refine (Lp.coeFn_compMeasurePreserving _ _).trans ?_
-  filter_upwards [(hs.and hv).filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge)]
-    with z h
-  simp only [Function.comp_apply, id, ContinuousLinearMap.coe_coe,
-    FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.proj_apply, W1p.valueL_apply]
-  rw [h.1, Finset.sum_apply]
-  simp only [h.2]
-  ext i
-  simp [WithLp.ofLp_sum, EuclideanSpace.single, Pi.single_apply]
+      (WithLp.toLp 2 fun j ↦ W1p.value (y j) z : EuclideanSpace ℝ (Fin 4)) :=
+  (valuesLp_ae_eq_sobolevFieldValues y).trans <|
+    (sobolevFieldValues_ae_eq y).filter_mono (ae_mono (Measure.restrict_coe_opens_top _).ge)
 
 private theorem valuesLp_injective : Function.Injective valuesLp := by
   intro y y' h
-  funext j
-  have hy := coeFn_valuesLp y
+  have hy := valuesLp_ae_eq_sobolevFieldValues y
   rw [h] at hy
-  refine W1p.ext_value (Lp.ext ?_)
-  filter_upwards [ae_restrict_of_ae hy, ae_restrict_of_ae (coeFn_valuesLp y')] with z h₁ h₂
-  simpa using congrArg (fun v : EuclideanSpace ℝ (Fin 4) ↦ v j) (h₁.symm.trans h₂)
+  exact sobolevFieldValues_injective
+    (Lp.ext (ae_restrict_of_ae (hy.symm.trans (valuesLp_ae_eq_sobolevFieldValues y'))))
 
 /-- The values of an element of the kernel of the realization lie in the weak kernel. -/
 private theorem valuesLp_mem_weakGaugeFixedKernel (hx : Continuous x) (hax : a =ᵐ[μ⊤] x)
@@ -150,7 +136,8 @@ theorem coeFn_kerSobolevGaugeFixedOperatorEquiv (hx : Continuous x) (hax : a =�
 
 /-- At a continuous field, the kernel of the `H¹` realization has the dimension of the weak `L²`
 kernel. -/
-theorem finrank_ker_sobolevGaugeFixedOperator (hx : Continuous x) (hax : a =ᵐ[μ⊤] x) :
+theorem finrank_ker_sobolevGaugeFixedOperator_eq_finrank_weakGaugeFixedKernel (hx : Continuous x)
+    (hax : a =ᵐ[μ⊤] x) :
     finrank ℝ (sobolevGaugeFixedOperator a).ker = finrank ℝ (weakGaugeFixedKernel x) :=
   (kerSobolevGaugeFixedOperatorEquiv hx hax).finrank_eq
 
@@ -178,12 +165,13 @@ theorem finrank_ker_sobolevGaugeFixedOperator_eq_two_mul (hx : Continuous x)
     (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k)
     (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) (hax : a =ᵐ[μ⊤] x) :
     finrank ℝ (sobolevGaugeFixedOperator a).ker = 2 * m := by
-  rw [finrank_ker_sobolevGaugeFixedOperator hx hax,
+  rw [finrank_ker_sobolevGaugeFixedOperator_eq_finrank_weakGaugeFixedKernel hx hax,
     finrank_weakGaugeFixedKernel_eq_two_mul hx hmem hhol]
 
-/-- The realization of `L_x` on `H¹` is onto at a continuous plane vortex lying in every
-`A_m^k`. -/
-private theorem sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace
+/-- **The realization of `L_x` on `H¹` is onto at a plane vortex** lying in every `A_m^k`: the
+cokernel of `L_x : H¹(ℂ)⁴ → L²(ℂ; ℝ⁴)` vanishes at a continuous plane vortex `x` lying in the
+affine field space `A_m^k` for every `k`, with `L∞` class `a`. -/
+theorem sobolevGaugeFixedOperator_surjective_of_forall_mem_framedFieldSpace
     (hx : Continuous x) (hmem : ∀ k : ℕ, x ∈ framedFieldSpace f m k)
     (hsol : ∀ z, equation x z = 0) (hax : a =ᵐ[μ⊤] x) :
     Function.Surjective (sobolevGaugeFixedOperator a) :=
