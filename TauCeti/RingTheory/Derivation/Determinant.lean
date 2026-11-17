@@ -16,7 +16,10 @@ public import TauCeti.RingTheory.Derivation.Matrix
 
 A derivation `D` differentiates a finite product termwise (`Derivation.leibniz_prod`), and hence
 a determinant by **Jacobi's formula** `D (det M) = tr (adj M * D M)`, where `D M` applies `D` to
-every entry of the square matrix `M` (`Derivation.leibniz_det`).
+every entry of the square matrix `M` (`Derivation.leibniz_det`). When `M` satisfies a linear
+Sylvester differential equation `M.map D = M * P - Q * M`, substituting into Jacobi's formula
+yields the **Abel–Jacobi–Liouville formula** `D (det M) = det M * (tr P - tr Q)`
+(`Derivation.leibniz_det_of_map_eq_mul_sub_mul`, `Derivation.leibniz_det_of_matrixGauge_eq`).
 
 Let `S` be an algebra over a commutative ring `A`, and let `D'` be a derivation of `S` extending a
 derivation `D` of `A`, in the sense that `D' (algebraMap A S a) = algebraMap A S (D a)`. Then `D`
