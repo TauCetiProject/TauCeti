@@ -19,9 +19,9 @@ the classical structural facts about c.e. degrees. Degrees are those of Mathlib'
 `TuringDegree`, represented by the oracles of sets.
 
 * For concrete computable stage enumerations `B` and `C`, each half `splitHalf B C b` reduces to
-  `stageLimit B`, `stageLimit B` is Turing equivalent to the parity join of the two halves, and
-  self-splitting `splitHalf B B` produces Turing incomparable halves with degrees strictly between
-  `0` and `deg (stageLimit B)`.
+  `stageLimit B` and `stageLimit B` is Turing equivalent to the parity join of the two halves; when
+  `B` is monotone with noncomputable `stageLimit B`, self-splitting `splitHalf B B` produces Turing
+  incomparable halves with degrees strictly between `0` and `deg (stageLimit B)`.
 * Splitting a noncomputable c.e. set `B` against itself gives two low c.e. degrees, strictly below
   the degree of `B` and incomparable with each other, whose supremum is the degree of `B`.
 * Splitting a c.e. set against the halting set `(∅ : Set ℕ).jump` shows that every c.e. degree is
