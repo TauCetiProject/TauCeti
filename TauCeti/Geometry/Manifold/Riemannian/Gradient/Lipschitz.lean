@@ -9,9 +9,8 @@ public import TauCeti.Geometry.Manifold.Riemannian.Distance
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.Basic
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
-import TauCeti.Geometry.Manifold.Riemannian.Basic
+import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import Mathlib.Analysis.Calculus.Deriv.Basic
-import Mathlib.Analysis.Convex.Topology
 
 /-!
 # Differential bounds for Lipschitz functions on Riemannian manifolds
@@ -45,7 +44,7 @@ namespace LipschitzWith
 open TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  {M : Type*} [MetricSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {M : Type*} [PseudoEMetricSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   [RiemannianBundle (fun x : M ↦ TangentSpace I x)] [IsRiemannianManifold I M]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -58,9 +57,7 @@ theorem norm_deriv_comp_le_mul_norm_curveVelocity (hf : LipschitzWith C f)
   let U := {q | ContMDiffAt 𝓘(ℝ) I 1 γ q}
   have hU : IsOpen U := isOpen_setOfPred_contMDiffAt (by simp)
   have hCU : ContMDiffOn 𝓘(ℝ) I 1 γ U := fun q hq ↦ hq.contMDiffWithinAt
-  have hnormU : ContinuousOn (fun q ↦ ‖TauCeti.Manifold.curveVelocity I γ q‖) U :=
-    (hCU.continuousOn_norm_mfderiv (le_refl _) hU (1 : ℝ)).congr
-      (fun q _ ↦ congrArg norm (TauCeti.Manifold.curveVelocity_apply (I := I) (γ := γ) (t := q)))
+  have hnormU := hCU.continuousOn_norm_curveVelocity hU
   have hUevent : ∀ᶠ q in 𝓝 t, q ∈ U := hU.mem_nhds hγ
   have hnorm : ContinuousAt (fun q ↦ ‖TauCeti.Manifold.curveVelocity I γ q‖) t :=
     hnormU.continuousAt (hU.mem_nhds hγ)
@@ -101,17 +98,12 @@ theorem norm_mvfderiv_le (hf : LipschitzWith C f) (x : M) : ‖mvfderiv I f x‖
     positivity
   obtain ⟨γ, hγ₀, hγ, hw⟩ :=
     TauCeti.Manifold.exists_contMDiffAt_curveVelocity_eq (I := I) (n := 1) le_rfl x w (0 : ℝ)
-  have hgγ : MDifferentiableAt I 𝓘(ℝ, F) f (γ 0) := by simpa only [hγ₀] using hg
-  have hd := TauCeti.Manifold.hasDerivAt_comp_curve hgγ
+  subst hγ₀
+  have hd := TauCeti.Manifold.hasDerivAt_comp_curve hg
     (TauCeti.Manifold.hasMFDerivAt_curveVelocity (hγ.mdifferentiableAt one_ne_zero))
-  have hd' : HasDerivAt (f ∘ γ) (mvfderiv I f x w) 0 := by
-    apply hd.congr_deriv
-    rw [hw]
-    exact congrArg (fun p : M ↦ mvfderiv I f p (show TangentSpace I p from w)) hγ₀
-  have hvelnorm : ‖TauCeti.Manifold.curveVelocity I γ 0‖ = ‖w‖ := by
-    have hb := congrArg (fun p : M ↦
-      ‖(show TangentSpace I p from TauCeti.Manifold.curveVelocity I γ 0)‖) hγ₀
-    exact hb.trans (congrArg (fun z : TangentSpace I x ↦ ‖z‖) hw)
+  have hd' : HasDerivAt (f ∘ γ) (mvfderiv I f (γ 0) w) 0 :=
+    hd.congr_deriv (by rw [hw])
+  have hvelnorm : ‖TauCeti.Manifold.curveVelocity I γ 0‖ = ‖w‖ := congrArg norm hw
   have hn := hf.norm_deriv_comp_le_mul_norm_curveVelocity hγ
   rwa [hd'.deriv, hvelnorm] at hn
 
