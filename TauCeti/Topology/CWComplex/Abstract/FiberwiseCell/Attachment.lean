@@ -308,6 +308,18 @@ theorem fiberwiseCellAttachment_induction {motive : fiberwiseCellAttachment α �
   · obtain ⟨i, x, rfl⟩ := mem_iUnion.1 hy
     exact h i x
 
+/-- The concatenation of two relative homotopies over `P` is over `P`: if both stay in the fiber
+over `π x` at every point `x`, so does `F.trans G`. -/
+theorem fiberwiseCellAttachmentProj_homotopyRel_trans {X : Type*} [TopologicalSpace X]
+    {f₀ f₁ f₂ : C(X, fiberwiseCellAttachment α)} {S : Set X} {π : X → P}
+    {F : f₀.HomotopyRel f₁ S} {G : f₁.HomotopyRel f₂ S}
+    (hF : ∀ t x, fiberwiseCellAttachmentProj α (F (t, x)) = π x)
+    (hG : ∀ t x, fiberwiseCellAttachmentProj α (G (t, x)) = π x) (t : I) (x : X) :
+    fiberwiseCellAttachmentProj α ((F.trans G) (t, x)) = π x := by
+  rw [ContinuousMap.HomotopyRel.trans_apply]
+  split_ifs
+  exacts [hF _ x, hG _ x]
+
 section Comparison
 
 variable (χ : ∀ i, C(P × TopCat.disk.{u} (k i), Y))
@@ -671,9 +683,8 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel :
       (g₀.comp (fiberwiseCellComparison α₀ χ₀ hχ₀).hom).comp E.hom =
         g₀.comp (E ≫ fiberwiseCellComparison α₀ χ₀ hχ₀).hom)
   let F₂ := (fiberwiseCellReattachmentHomotopy α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK).compContinuousMap g₀
-  refine ⟨F₁.trans F₂, fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
+  refine ⟨F₁.trans F₂, fiberwiseCellAttachmentProj_homotopyRel_trans α₀ (fun t y ↦ ?_)
+    fun t y ↦ ?_⟩
   · simp only [F₁, ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.symm_apply,
       ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply, hG₀]
     exact fiberwiseCellAttachmentProj_fiberwiseCellReattachment ..
@@ -693,11 +704,7 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_fiberwiseCellReattachment :
     α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h hh K hK g₀ hg₀P G₀ hG₀
   obtain ⟨G', hG'⟩ := exists_homotopyRel_fiberwiseCellReattachment_of_homotopyRel
     α₀ α₁ χ₀ χ₁ hχ₀ hχ₁ h' hh' K' hK' g₀ hg₀P G₀ hG₀
-  refine ⟨G.trans G'.symm, fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · exact hG _ y
-  · exact hG' _ y
+  exact ⟨G.trans G'.symm, fiberwiseCellAttachmentProj_homotopyRel_trans α₀ hG fun t y ↦ hG' _ y⟩
 
 end LeftInverse
 
@@ -755,13 +762,16 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachm
     (by rw [TopCat.hom_comp, ContinuousMap.comp_assoc] :
       g₀.comp (E₁₂ ≫ fiberwiseCellComparison α₁ χ₁ hχ₁).hom =
         (g₀.comp (fiberwiseCellComparison α₁ χ₁ hχ₁).hom).comp E₁₂.hom) rfl
-  refine ⟨(F₁.trans (F₂.trans G₃.symm)).cast (TopCat.hom_comp _ _).symm rfl, fun t y ↦ ?_⟩
-  simp only [ContinuousMap.HomotopyRel.cast_apply, ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  · rw [ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply, hG₁]
+  have hF₁ (t y) :
+      fiberwiseCellAttachmentProj α₀ (F₁ (t, y)) = fiberwiseCellAttachmentProj α₂ y := by
+    rw [ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply, hG₁]
     exact fiberwiseCellAttachmentProj_fiberwiseCellReattachment ..
-  · exact (hg₀P _).trans (fst_fiberwiseCellReattachmentHomotopy ..)
-  · exact hG₃ _ y
+  have hF₂ (t y) : fiberwiseCellAttachmentProj α₀ (F₂ (t, y)) = fiberwiseCellAttachmentProj α₂ y :=
+    (hg₀P _).trans (fst_fiberwiseCellReattachmentHomotopy ..)
+  refine ⟨(F₁.trans (F₂.trans G₃.symm)).cast (TopCat.hom_comp _ _).symm rfl, fun t y ↦ ?_⟩
+  rw [ContinuousMap.HomotopyRel.cast_apply]
+  exact fiberwiseCellAttachmentProj_homotopyRel_trans α₀ hF₁
+    (fiberwiseCellAttachmentProj_homotopyRel_trans α₀ hF₂ fun t y ↦ hG₃ _ y) t y
 
 end Composition
 
@@ -816,15 +826,8 @@ theorem exists_homotopyRel_comp_fiberwiseCellComparison_id :
       (((G₀.precomp Ψ).mono hmono).compContinuousMap_apply Ψ' (t, y))
     rw [ContinuousMap.HomotopyRel.mono_apply, ContinuousMap.HomotopyRel.precomp_apply] at h
     exact h.trans ((hΨ'P _).trans ((hG₀ _ _).trans (hΨP y)))
-  have h₂₃ (t y) :
-      fiberwiseCellAttachmentProj α₁ ((F₂.trans H') (t, y)) = fiberwiseCellAttachmentProj α₁ y := by
-    rw [ContinuousMap.HomotopyRel.trans_apply]
-    split_ifs
-    exacts [h₂ _ y, hH' _ y]
-  refine ⟨F₁.trans (F₂.trans H'), fun t y ↦ ?_⟩
-  rw [ContinuousMap.HomotopyRel.trans_apply]
-  split_ifs
-  exacts [h₁ _ y, h₂₃ _ y]
+  exact ⟨F₁.trans (F₂.trans H'), fiberwiseCellAttachmentProj_homotopyRel_trans α₁ h₁
+    (fiberwiseCellAttachmentProj_homotopyRel_trans α₁ h₂ hH')⟩
 
 end HomotopyLeftInverse
 
@@ -879,7 +882,9 @@ theorem fiberwiseCellAttachmentOfProd_apply_inl (p : P) (z : Z) :
     fiberwiseCellAttachmentOfProd α hX e he (p, j z) = fiberwiseCellAttachmentIncl α (p, e z) := by
   rw [fiberwiseCellAttachmentOfProd_apply, fiberwiseCellAttachmentOfProdCurry,
     ← ConcreteCategory.comp_apply, IsPushout.inl_desc]
-  rfl
+  simp only [ConcreteCategory.hom_ofHom, ContinuousMap.curry_apply, ContinuousMap.comp_apply,
+    ContinuousMap.prodSwap_apply, ContinuousMap.prodMap_apply, ContinuousMap.coe_id, Prod.map_apply,
+    id_eq]
 
 @[simp]
 theorem fiberwiseCellAttachmentOfProd_apply_inr (p : P) (i : ι) (w : TopCat.disk.{u} (k i)) :
@@ -892,7 +897,9 @@ theorem fiberwiseCellAttachmentOfProd_apply_inr (p : P) (i : ι) (w : TopCat.dis
   rw [ConcreteCategory.comp_apply] at hd
   rw [fiberwiseCellAttachmentOfProd_apply, fiberwiseCellAttachmentOfProdCurry,
     ← ConcreteCategory.comp_apply, IsPushout.inr_desc, hd]
-  rfl
+  -- The disc is not syntactically `TopCat.of _`, so `hom_ofHom` does not fire; unfold by `change`.
+  change ((fiberwiseCellAttachmentCell α i).hom.comp ContinuousMap.prodSwap).curry w p = _
+  simp only [ContinuousMap.curry_apply, ContinuousMap.comp_apply, ContinuousMap.prodSwap_apply]
 
 /-- The map `P × X → (P × A) ∪_α ⨆ᵢ (P × D^{k i})` lies over `P`. -/
 @[simp]

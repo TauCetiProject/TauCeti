@@ -33,15 +33,15 @@ prescribed neighbourhoods of their centres; the disjoint charts themselves come 
 `TauCeti.exists_pairwise_disjoint_normalized_morseCharts`.
 
 A critical point lying in the source of a normal-form chart is on the level `f⁻¹(c)`
-(`PartialDiffeomorph.apply_eq_of_mem_criticalPoints`), so a band whose critical points lie in such
-charts has no critical value other than `c`.
+(`PartialDiffeomorph.eq_of_mem_criticalPoints_of_mem_source`), so a band whose critical points lie
+in such charts has no critical value other than `c`.
 
 ## Main results
 
 * `TauCeti.IsMorse.exists_admissible_morseCharts`: the compatible choice of the width `ε` and of
   disjoint normalized Morse charts at all critical points on the level `f⁻¹(c)`.
-* `PartialDiffeomorph.apply_eq_of_mem_criticalPoints`: a critical point in a normal-form chart lies
-  on the critical level.
+* `PartialDiffeomorph.eq_of_mem_criticalPoints_of_mem_source`: a critical point in a normal-form
+  chart lies on the critical level.
 
 ## References
 
@@ -109,7 +109,7 @@ omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I ∞ M] in
 /-- **A critical point in a normal-form chart lies on the critical level.** If
 `f = c + Σ_{j < k} -yⱼ² + Σ_{j ≥ k} yⱼ²` on the source of a smooth chart `ψ`, then every critical
 point of `f` in that source has value `c`. -/
-theorem _root_.PartialDiffeomorph.apply_eq_of_mem_criticalPoints {c : ℝ} {n k : ℕ}
+theorem _root_.PartialDiffeomorph.eq_of_mem_criticalPoints_of_mem_source {c : ℝ} {n k : ℕ}
     (ψ : PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
     (hf : ∀ y ∈ ψ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ y j ^ 2)
     (hx : x ∈ ψ.source) (hcrit : x ∈ criticalPoints I f) : f x = c := by

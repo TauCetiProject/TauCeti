@@ -195,7 +195,7 @@ theorem exists_homotopyRel_comp_fiberwiseCellComparison_id_morseFamily [CompactS
   have hreg (x : M) (h₁ : c - ε ≤ f x) (h₂ : f x < c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by
     have hx := mem_criticalPoints_iff_mfderiv_eq_zero.2 h0
     obtain ⟨i, hi⟩ := mem_iUnion.1 (hcrit ⟨hx, h₁, by linarith⟩)
-    linarith [(φ i).apply_eq_of_mem_criticalPoints (hfφ i) hi hx]
+    linarith [(φ i).eq_of_mem_criticalPoints_of_mem_source (hfφ i) hi hx]
   have hcompact' : IsCompact (f ⁻¹' Icc (c - ε) c) :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hfs.continuous)
       (preimage_mono (Icc_subset_Icc le_rfl (by linarith)))
