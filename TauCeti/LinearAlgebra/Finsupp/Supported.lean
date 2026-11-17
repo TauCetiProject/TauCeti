@@ -41,6 +41,9 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
   over `s` into `supported N R t` maps `supported M R s` into it.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
+* `Finsupp.exists_support_map_subset_range`: a linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a
+  finitely generated module `M` sends sequences supported in `Finset.range n` into some
+  `Finset.range m`.
 -/
 
 public section
@@ -145,5 +148,22 @@ theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [A
     (hv : v ∈ supported M R s) : f v ∈ supported N R t := by
   rw [← sum_single v, map_finsuppSum]
   exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+
+end Finsupp
+
+namespace Finsupp
+
+/-- A linear map `(ℕ →₀ M) →ₗ[R] (ℕ →₀ N)` from a finitely generated module `M` sends sequences
+supported in `Finset.range n` into some `Finset.range m`. -/
+theorem exists_support_map_subset_range {R M N : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    [Module.Finite R M] [AddCommMonoid N] [Module R N] (φ : (ℕ →₀ M) →ₗ[R] (ℕ →₀ N)) (n : ℕ) :
+    ∃ m, ∀ u : ℕ →₀ M, u.support ⊆ Finset.range n → (φ u).support ⊆ Finset.range m := by
+  choose T hT using fun j : ℕ ↦ (φ.comp (lsingle j)).exists_finset_support_subset
+  refine ⟨((Finset.range n).biUnion T).sup id + 1, fun u hu ↦ Finset.coe_subset.1 <|
+    (mem_supported R (φ u)).1 <| map_mem_supported_of_forall_single_mem R φ
+      (fun j hj x ↦ (mem_supported R _).2 fun k hk ↦ ?_) ((mem_supported R u).2
+        (Finset.coe_subset.2 hu))⟩
+  exact Finset.mem_coe.2 <| Finset.mem_range.2 <| Nat.lt_succ_of_le <|
+    Finset.le_sup (f := id) (Finset.mem_biUnion.2 ⟨j, Finset.mem_coe.1 hj, hT j x hk⟩)
 
 end Finsupp
