@@ -40,6 +40,8 @@ If `Δ w > 0` on the interior of `K`, then `w` attains its maximum over `K` at a
 `Δ u ≥ 0` on the interior of `K`, then the same holds for `u + ε w` for every `ε > 0`, and letting
 `ε → 0` shows that `u` is bounded on `K` by its bounds on `K \ interior K`. In Euclidean space
 `w = |x|²` is such a strict subsolution; on a general manifold one has to be supplied.
+The dual minimum principles give boundary minima for negative Laplacian and lower bounds for
+superharmonic functions, using the same strictly subharmonic barrier.
 
 ## Main results
 
@@ -51,8 +53,13 @@ If `Δ w > 0` on the interior of `K`, then `w` attains its maximum over `K` at a
 * `TauCeti.Manifold.exists_mem_sdiff_interior_isMaxOn_of_laplaceBeltrami_pos`: a function with
   positive Laplacian on the interior of a nonempty compact set `K` attains its maximum over `K`
   on `K \ interior K`.
+* `TauCeti.Manifold.exists_mem_sdiff_interior_isMinOn_of_laplaceBeltrami_neg`: a function with
+  negative Laplacian on the interior of a nonempty compact set `K` attains its minimum over `K`
+  on `K \ interior K`.
 * `TauCeti.Manifold.le_of_laplaceBeltrami_nonneg_of_forall_mem_sdiff_interior_le`:
   the weak maximum principle for subharmonic functions, in the presence of a strict subsolution.
+* `TauCeti.Manifold.ge_of_laplaceBeltrami_nonpos_of_forall_mem_sdiff_interior_ge`:
+  the weak minimum principle for superharmonic functions, in the presence of a strict subsolution.
 
 ## References
 
@@ -156,6 +163,19 @@ theorem exists_mem_sdiff_interior_isMaxOn_of_laplaceBeltrami_pos (hK : IsCompact
   exact (hpos x hx).not_ge (laplaceBeltrami_nonpos_of_isLocalMax (hw x hx)
     (hmax.isLocalMax (mem_interior_iff_mem_nhds.1 hx)))
 
+/-- **Strict weak minimum principle.** A function that is continuous on a nonempty compact set
+`K`, and `C²` with negative Laplacian on the interior of `K`, attains its minimum over `K` at a
+point of `K \ interior K`. -/
+theorem exists_mem_sdiff_interior_isMinOn_of_laplaceBeltrami_neg (hK : IsCompact K)
+    (hne : K.Nonempty) {w : M → ℝ} (hcont : ContinuousOn w K)
+    (hw : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 w x)
+    (hneg : ∀ x ∈ interior K, laplaceBeltrami I w x < 0) :
+    ∃ x ∈ K \ interior K, IsMinOn w K x := by
+  obtain ⟨x, hxK, hmin⟩ := hK.exists_isMinOn hne hcont
+  refine ⟨x, ⟨hxK, fun hx ↦ ?_⟩, hmin⟩
+  exact (hneg x hx).not_ge (laplaceBeltrami_nonneg_of_isLocalMin (hw x hx)
+    (hmin.isLocalMin (mem_interior_iff_mem_nhds.1 hx)))
+
 /-- **Weak maximum principle.** Let `K` be compact and let `u` and `w` be continuous on
 `K` and `C²` on its interior. If `Δ u ≥ 0` and `Δ w > 0` on the interior of `K`, then every
 upper bound of `u` on `K \ interior K` is an upper bound of `u` on `K`. -/
@@ -177,5 +197,22 @@ theorem le_of_laplaceBeltrami_nonneg_of_forall_mem_sdiff_interior_le (hK : IsCom
         laplaceBeltrami_smul_of_contMDiffAt I ε (hw y hy)]
       exact add_pos_of_nonneg_of_pos (hΔu y hy) (mul_pos hε (hΔw y hy))
   exact ⟨z, hz.1, isMaxOn_iff.1 hmax x hx, hc z hz⟩
+
+/-- **Weak minimum principle.** Let `K` be compact and let `u` and `w` be continuous on
+`K` and `C²` on its interior. If `Δ u ≤ 0` and `Δ w > 0` on the interior of `K`, then every
+lower bound of `u` on `K \ interior K` is a lower bound of `u` on `K`. -/
+theorem ge_of_laplaceBeltrami_nonpos_of_forall_mem_sdiff_interior_ge (hK : IsCompact K)
+    {u w : M → ℝ} (hcu : ContinuousOn u K) (hcw : ContinuousOn w K)
+    (hu : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 u x)
+    (hw : ∀ x ∈ interior K, ContMDiffAt I 𝓘(ℝ) 2 w x)
+    (hΔu : ∀ x ∈ interior K, laplaceBeltrami I u x ≤ 0)
+    (hΔw : ∀ x ∈ interior K, 0 < laplaceBeltrami I w x) {c : ℝ}
+    (hc : ∀ x ∈ K \ interior K, c ≤ u x) {x : M} (hx : x ∈ K) : c ≤ u x := by
+  apply neg_le_neg_iff.mp
+  refine le_of_laplaceBeltrami_nonneg_of_forall_mem_sdiff_interior_le hK hcu.neg hcw
+    (fun y hy ↦ (hu y hy).neg) hw ?_ hΔw (fun y hy ↦ neg_le_neg (hc y hy)) hx
+  intro y hy
+  rw [← neg_one_smul ℝ u, laplaceBeltrami_smul_of_contMDiffAt I (-1) (hu y hy)]
+  simpa only [neg_one_mul, neg_nonneg] using hΔu y hy
 
 end TauCeti.Manifold
