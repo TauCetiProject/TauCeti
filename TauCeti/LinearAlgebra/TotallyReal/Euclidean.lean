@@ -118,6 +118,19 @@ theorem mem_realImage {M : Matrix n n ℂ} {v : EuclideanSpace ℂ n} :
     v ∈ M.realImage ↔ ∃ x ∈ realSubspace n, toEuclideanCLM (𝕜 := ℂ) M x = v := by
   simp [realImage]
 
+/-- The vectors of `M ℝⁿ` are the vectors `M x` for `x` with real coordinates. -/
+theorem mem_realImage_iff_exists_mulVec {M : Matrix n n ℂ} {v : EuclideanSpace ℂ n} :
+    v ∈ M.realImage ↔ ∃ x : n → ℝ, WithLp.toLp 2 (M *ᵥ fun k ↦ (x k : ℂ)) = v := by
+  rw [mem_realImage]
+  constructor
+  · rintro ⟨w, hw, rfl⟩
+    have hw' : (fun k ↦ ((w k).re : ℂ)) = WithLp.ofLp w :=
+      funext fun k ↦ Complex.ext (by simp) (by simp [(mem_realSubspace.1 hw) k])
+    exact ⟨fun k ↦ (w k).re, by simp [hw', toEuclideanCLM_apply, toLpLin_apply]⟩
+  · rintro ⟨x, rfl⟩
+    exact ⟨WithLp.toLp 2 fun k ↦ (x k : ℂ), mem_realSubspace.2 fun _ ↦ by simp,
+      by simp [toEuclideanCLM_apply, toLpLin_apply]⟩
+
 /-- The image of `ℝⁿ` under an invertible matrix is its image under the continuous linear
 equivalence of the matrix. -/
 theorem realImage_eq_map_toEuclideanCLE {M : Matrix n n ℂ} (hM : M.det ≠ 0) :

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Matrix.EuclideanLin
 public import TauCeti.Analysis.InnerProductSpace.NormalOperator
+public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 
 /-!
 # Unitary diagonalization of commuting normal matrices
@@ -31,6 +32,9 @@ the diagonal torus.
 
 * `Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal`: **the spectral theorem for normal
   matrices**, a normal complex matrix is diagonalized by a unitary matrix.
+
+* `Matrix.rootMultiplicity_charpoly_eq_finrank_eigenspace`: the algebraic multiplicity of an
+  eigenvalue of a normal complex matrix is its geometric multiplicity.
 
 ## References
 
@@ -90,5 +94,21 @@ theorem exists_mem_unitaryGroup_star_mul_mul_eq_diagonal (A : Matrix n n ℂ) [I
   obtain ⟨U, hU, d, hd⟩ := TauCeti.exists_mem_unitaryGroup_forall_star_mul_mul_eq_diagonal
     (fun _ : Unit => A) (fun _ => inferInstance) (fun _ _ _ => Commute.refl _)
   exact ⟨U, hU, d (), hd ()⟩
+
+open Module Module.End in
+/-- For a normal complex matrix the algebraic multiplicity of an eigenvalue, its multiplicity as a
+root of the characteristic polynomial, is its geometric multiplicity. -/
+theorem rootMultiplicity_charpoly_eq_finrank_eigenspace (A : Matrix n n ℂ) [IsStarNormal A]
+    (μ : ℂ) : A.charpoly.rootMultiplicity μ = finrank ℂ (eigenspace (toEuclideanLin A) μ) := by
+  obtain ⟨b, ν, hb⟩ := (toEuclideanLin A).exists_orthonormalBasis_apply_eq_smul_of_isStarNormal
+    (ι := n) (by simp)
+  have htop : ⨆ μ, eigenspace (toEuclideanLin A) μ = ⊤ := by
+    rw [eq_top_iff, ← b.toBasis.span_eq, Submodule.span_le]
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.mem_iSup_of_mem (ν i) (mem_eigenspace_iff.2 (by simpa using hb i))
+  have hss : IsFinitelySemisimple (toEuclideanLin A) :=
+    (TauCeti.isSemisimple_of_iSup_eigenspace_eq_top htop).isFinitelySemisimple
+  rw [← hss.rootMultiplicity_charpoly, toEuclideanLin_eq_toLin_orthonormal,
+    ← LinearMap.charpoly_toMatrix _ (EuclideanSpace.basisFun n ℂ).toBasis, LinearMap.toMatrix_toLin]
 
 end Matrix
