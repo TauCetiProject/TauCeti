@@ -303,13 +303,19 @@ open scoped DayFunctor
 spectrum coordinate. On objects this is the existing `levelSmash` construction. -/
 noncomputable abbrev levelSmashRight (K : PointedSSet.{0}) :
     SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  Mod.tensorRight ((SymmetricSequence.free 0).obj K)
+  levelSmashFunctor.flip.obj K
+
+/-- The point-set cotensor `(K, E) ↦ E^K` as a bifunctor, contravariant in `K` and covariant
+in `E`. -/
+noncomputable abbrev cotensorFunctor :
+    PointedSSet.{0}ᵒᵖ ⥤ SymmetricSpectrum ⥤ SymmetricSpectrum :=
+  (free 0).op ⋙ MonoidalClosed.internalHom
 
 /-- The point-set cotensor `E^K`: the internal function spectrum from the free spectrum `F₀ K`.
 Its levels are the pointed mapping objects `Map_*(K, E_n)` (`cotensorLevelIso`). -/
 noncomputable abbrev cotensor (K : PointedSSet.{0}) :
     SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  Mod.internalHom ((free 0).obj K)
+  cotensorFunctor.obj (Opposite.op K)
 
 /-- Levelwise smash with `K` is left adjoint to the cotensor by `K`. -/
 noncomputable def levelSmashCotensorAdjunction (K : PointedSSet.{0}) :
@@ -326,8 +332,10 @@ lemma levelSmashCotensorAdjunction_homEquiv_apply (K : PointedSSet.{0})
       Mod.tensorHomEquiv ((free 0).obj K) E F
         ((β_ ((free 0).obj K) E).hom ≫
           (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj K) ≫ f) := by
-  rw [levelSmashCotensorAdjunction, Adjunction.homEquiv_ofNatIsoLeft_apply,
-    Mod.internalHomAdjunction_homEquiv]
+  refine (Adjunction.homEquiv_ofNatIsoLeft_apply (Mod.internalHomAdjunction ((free 0).obj K))
+    (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
+      Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K)) f).trans ?_
+  rw [Mod.internalHomAdjunction_homEquiv]
   congr 1
   simp only [Iso.trans_hom, NatTrans.comp_app,
     BraidedCategory.tensorLeftIsoTensorRight_hom_app, Mod.tensorRightFreeIso_hom_app,
@@ -341,8 +349,10 @@ lemma levelSmashCotensorAdjunction_homEquiv_symm_apply (K : PointedSSet.{0})
       (Mod.tensorFreeIso E).inv.app ((SymmetricSequence.free 0).obj K) ≫
         (β_ ((free 0).obj K) E).inv ≫
         (Mod.tensorHomEquiv ((free 0).obj K) E F).symm f := by
-  rw [levelSmashCotensorAdjunction, Adjunction.homEquiv_ofNatIsoLeft_symm_apply,
-    Mod.internalHomAdjunction_homEquiv]
+  refine (Adjunction.homEquiv_ofNatIsoLeft_symm_apply (Mod.internalHomAdjunction ((free 0).obj K))
+    (BraidedCategory.tensorLeftIsoTensorRight ((free 0).obj K) ≪≫
+      Mod.tensorRightFreeIso ((SymmetricSequence.free 0).obj K)) f).trans ?_
+  rw [Mod.internalHomAdjunction_homEquiv]
   simp only [Iso.trans_inv, NatTrans.comp_app,
     BraidedCategory.tensorLeftIsoTensorRight_inv_app, Mod.tensorRightFreeIso_inv_app,
     Category.assoc]
@@ -409,12 +419,6 @@ lemma cotensorLevelIso_hom_naturality_left {K L : PointedSSet.{0}} (f : K ⟶ L)
   rw [cotensorLevelIso_hom, cotensorLevelIso_hom]
   exact h'.trans hday
 
-/-- The point-set cotensor `(K, E) ↦ E^K` as a bifunctor, contravariant in `K` and covariant
-in `E`. -/
-noncomputable abbrev cotensorFunctor :
-    PointedSSet.{0}ᵒᵖ ⥤ SymmetricSpectrum ⥤ SymmetricSpectrum :=
-  (free 0).op ⋙ MonoidalClosed.internalHom
-
 /-- The parametrized adjunction between `(K, E) ↦ E ∧ K` and `(K, F) ↦ F^K`. -/
 noncomputable def levelSmashCotensorAdjunction₂ :
     levelSmashFunctor.flip ⊣₂ cotensorFunctor :=
@@ -427,12 +431,13 @@ noncomputable def levelSmashCotensorAdjunction₂ :
         (levelSmash E).map i ≫ g =
         (free 0).map i ▷ E ≫ (β_ ((free 0).obj L) E).hom ≫
         (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj L) ≫ g := by
-      rw [← Category.assoc ((Mod.tensorFreeIso E).hom.app _),
-        ← (Mod.tensorFreeIso E).hom.naturality ((SymmetricSequence.free 0).map i)]
-      simp only [Functor.comp_map, curriedTensor_obj_map]
-      rw [← Category.assoc, ← Category.assoc, ← BraidedCategory.braiding_naturality_left,
-        Category.assoc, Category.assoc]
-      rfl
+      have hnat : (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj K) ≫
+          (levelSmash E).map i =
+          E ◁ (free 0).map i ≫ (Mod.tensorFreeIso E).hom.app ((SymmetricSequence.free 0).obj L) :=
+        ((Mod.tensorFreeIso E).hom.naturality ((SymmetricSequence.free 0).map i)).symm
+      rw [← Category.assoc ((Mod.tensorFreeIso E).hom.app _), hnat, ← Category.assoc,
+        ← Category.assoc, ← BraidedCategory.braiding_naturality_left, Category.assoc,
+        Category.assoc]
     exact h₁.trans ((congrArg MonoidalClosed.curry hn).trans
       ((MonoidalClosed.curry_pre_app ((free 0).map i) _).symm.trans
         (congrArg (· ≫ (MonoidalClosed.pre ((free 0).map i)).app F) h₂.symm)))
@@ -440,12 +445,6 @@ noncomputable def levelSmashCotensorAdjunction₂ :
 @[simp]
 lemma levelSmashCotensorAdjunction₂_adj (K : PointedSSet.{0}) :
     levelSmashCotensorAdjunction₂.adj K = levelSmashCotensorAdjunction K := (rfl)
-
-instance (K : PointedSSet.{0}) : (levelSmashRight K).IsLeftAdjoint :=
-  (levelSmashCotensorAdjunction K).isLeftAdjoint
-
-instance (K : PointedSSet.{0}) : (cotensor K).IsRightAdjoint :=
-  (levelSmashCotensorAdjunction K).isRightAdjoint
 
 instance (K : PointedSSet.{0}) : (levelSmashFunctor.flip.obj K).IsLeftAdjoint :=
   (levelSmashCotensorAdjunction K).isLeftAdjoint

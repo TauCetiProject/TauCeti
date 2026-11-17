@@ -170,15 +170,28 @@ end SymmetricSequence
 
 namespace SymmetricSpectrum
 
+/-- Smashing a symmetric spectrum with a pointed simplicial set, curried in both variables:
+`X ↦ K ↦ X ∧ K`. -/
+noncomputable abbrev levelSmashFunctor :
+    SymmetricSpectrum ⥤ PointedSSet.{0} ⥤ SymmetricSpectrum :=
+  Mod.curriedTensor ⋙ (Functor.whiskeringLeft _ _ _).obj (SymmetricSequence.free 0)
+
 /-- The symmetric spectrum `X ∧ K` of a symmetric spectrum `X` and a pointed simplicial set `K`,
 as a functor of `K`: the Day convolution `X ⊗ G₀ K` with the free symmetric sequence on `K` in
 level zero, with the sphere acting on `X`. Its levels are `X_n ∧ K`
 (`SymmetricSequence.tensorFreeZeroι`). -/
 -- An abbreviation, so that the levels of `X ∧ K` are those of the Day convolution `X ⊗ G₀ K`
 -- without transports.
-noncomputable abbrev levelSmash (X : SymmetricSpectrum) : PointedSSet.{0} ⥤ SymmetricSpectrum where
-  obj K := (Mod.tensorLeft X).obj ((SymmetricSequence.free 0).obj K)
-  map f := (Mod.tensorLeft X).map ((SymmetricSequence.free 0).map f)
+noncomputable abbrev levelSmash (X : SymmetricSpectrum) : PointedSSet.{0} ⥤ SymmetricSpectrum :=
+  levelSmashFunctor.obj X
+
+/-- The pointed mapping simplicial set `(X, Y) ↦ Map(X, Y)` of symmetric spectra, contravariant
+in `X` and covariant in `Y`. -/
+noncomputable abbrev mappingSpaceFunctor :
+    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} :=
+  Mod.ihomFunctor ⋙ (Functor.whiskeringRight _ _ _).obj
+    ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
+      (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0))
 
 /-- The pointed mapping simplicial set `Map(X, Y)` of symmetric spectra, as a functor of `Y`:
 level zero of the object `Hom_S(X, Y)` of `S`-linear maps. Its `m`-simplices are the spectrum maps
@@ -189,8 +202,7 @@ level zero of the object `Hom_S(X, Y)` of `S`-linear maps. Its `m`-simplices are
 -- for the equation lemma `levelSmashMappingSpaceAdjunction.eq_1` (which doc-gen4 asks for).
 noncomputable abbrev mappingSpace (X : SymmetricSpectrum) :
     SymmetricSpectrum ⥤ PointedSSet.{0} :=
-  Mod.ihom X ⋙ (DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
-    (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0)
+  mappingSpaceFunctor.obj (Opposite.op X)
 
 /-- Smashing a symmetric spectrum `X` with pointed simplicial sets is left adjoint to the mapping
 space `Map(X, -)`: spectrum maps `X ∧ K ⟶ Y` are based maps `K ⟶ Map(X, Y)`. -/
@@ -287,23 +299,6 @@ lemma unitHomMappingSpaceEquiv_symm_apply (X Y : SymmetricSpectrum) (f : X ⟶ Y
     (unitHomMappingSpaceEquiv X Y).symm f =
       (levelSmashMappingSpaceAdjunction X).homEquiv _ _ ((levelSmashUnitIso X).hom ≫ f) := by
   simp [unitHomMappingSpaceEquiv]
-
-/-- Smashing a symmetric spectrum with a pointed simplicial set, curried in both variables:
-`X ↦ K ↦ X ∧ K`. -/
-noncomputable abbrev levelSmashFunctor :
-    SymmetricSpectrum ⥤ PointedSSet.{0} ⥤ SymmetricSpectrum :=
-  Mod.curriedTensor ⋙ (Functor.whiskeringLeft _ _ _).obj (SymmetricSequence.free 0)
-
-/-- The pointed mapping simplicial set `(X, Y) ↦ Map(X, Y)` of symmetric spectra, contravariant
-in `X` and covariant in `Y`. -/
-noncomputable abbrev mappingSpaceFunctor :
-    SymmetricSpectrumᵒᵖ ⥤ SymmetricSpectrum ⥤ PointedSSet.{0} :=
-  Mod.ihomFunctor ⋙ (Functor.whiskeringRight _ _ _).obj
-    ((DayFunctor.equiv FiniteBijection PointedSSet.{0}).functor ⋙
-      (CategoryTheory.evaluation FiniteBijection PointedSSet.{0}).obj (FiniteBijection.mk 0))
-
-instance (X : SymmetricSpectrum) : (levelSmash X).IsLeftAdjoint :=
-  (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
 
 instance (X : SymmetricSpectrum) : (levelSmashFunctor.obj X).IsLeftAdjoint :=
   (levelSmashMappingSpaceAdjunction X).isLeftAdjoint
