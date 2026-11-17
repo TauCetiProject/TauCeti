@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.Chebyshev
 public import Mathlib.NumberTheory.LSeries.PrimesInAP
 public import TauCeti.NumberTheory.LFunctions.RayClass.CharacterExpansion
 public import TauCeti.NumberTheory.NumberField.Global.RayClass.Rat
@@ -20,10 +19,9 @@ Over `ℚ`, the general number-field ray-class prime-counting functions of `RayC
 and `RayClass/CharacterExpansion.lean` specialize directly to classical prime counting and
 arithmetic progressions:
 
-* For `S = Set.univ`, `primeVonMangoldtCoeff ℚ Set.univ` agrees termwise with Mathlib's
-  `ArithmeticFunction.vonMangoldt`, so `primePsi ℚ Set.univ = Chebyshev.psi`. Since
-  `RayClassGroup (Modulus.one ℚ)` is trivial, `rayClassPsi (Modulus.one ℚ) c = Chebyshev.psi` as
-  well.
+* Since `RayClassGroup (Modulus.one ℚ)` is trivial and `TauCeti.primePsi_rat_univ` identifies
+  `primePsi ℚ Set.univ` with Mathlib's `Chebyshev.psi`, we have
+  `rayClassPsi (Modulus.one ℚ) c = Chebyshev.psi`.
 * For the modulus `ratModulus q hq` (`(q)·∞` of `ℚ`) and a unit `u : (ZMod q)ˣ`,
   `rayClassVonMangoldtCoeff (ratModulus q hq) ((ratModulusEquivZMod q hq).symm u)` agrees at *every*
   natural number (including higher prime powers) with Mathlib's
@@ -36,8 +34,6 @@ arithmetic progressions:
 
 ## Main results
 
-* `TauCeti.LFunctions.primeVonMangoldtCoeff_rat_univ` and `TauCeti.LFunctions.primePsi_rat_univ`:
-  over `ℚ`, `primePsi ℚ Set.univ = Chebyshev.psi`.
 * `TauCeti.LFunctions.rayClassPsi_rat_one`: for `Modulus.one ℚ`, `rayClassPsi` is `Chebyshev.psi`.
 * `TauCeti.LFunctions.rayClassVonMangoldtCoeff_ratModulus` and
   `TauCeti.LFunctions.rayClassPsi_ratModulus`: exact agreement with
@@ -58,35 +54,7 @@ open Asymptotics Filter NumberField TauCeti.GlobalNumberFields
 open scoped nonZeroDivisors NumberField
 open IsDedekindDomain (HeightOneSpectrum)
 
-/-! ### All primes of `ℚ` and the trivial modulus -/
-
-/-- Over `ℚ`, `primeVonMangoldtCoeff ℚ Set.univ` agrees with `ArithmeticFunction.vonMangoldt` at
-every natural number. -/
-@[simp]
-theorem primeVonMangoldtCoeff_rat_univ (n : ℕ) :
-    primeVonMangoldtCoeff ℚ Set.univ n = ArithmeticFunction.vonMangoldt n := by
-  by_cases hn : IsPrimePow n
-  · obtain ⟨p, k, hp, hk, rfl⟩ := (isPrimePow_nat_iff n).mp hn
-    obtain ⟨v, hv⟩ := Rat.HeightOneSpectrum.exists_absNorm_eq hp
-    rw [Rat.HeightOneSpectrum.absNorm_asIdeal] at hv
-    rw [← hv, primeVonMangoldtCoeff_rat_natGenerator_pow Set.univ v hk,
-      ite_eq_left (Set.mem_univ v), hv, ArithmeticFunction.vonMangoldt_apply_pow hk.ne',
-      ArithmeticFunction.vonMangoldt_apply_prime hp]
-  · rw [primeVonMangoldtCoeff_eq_zero_of_not_isPrimePow _ hn,
-      ArithmeticFunction.vonMangoldt_eq_zero_iff.mpr hn]
-
-/-- Over `ℚ`, `primePsi ℚ Set.univ` is Mathlib's `Chebyshev.psi`. -/
-@[simp]
-theorem primePsi_rat_univ (x : ℝ) : primePsi ℚ Set.univ x = Chebyshev.psi x := by
-  rw [primePsi_eq_sum_range, Chebyshev.psi]
-  simp_rw [primeVonMangoldtCoeff_rat_univ]
-  refine (Finset.sum_subset (fun n hn ↦ Finset.mem_range.mpr (by
-    have := Finset.mem_Ioc.mp hn; omega)) fun n hn hnot ↦ ?_).symm
-  have hn0 : n = 0 := by
-    have := Finset.mem_range.mp hn
-    rw [Finset.mem_Ioc] at hnot
-    omega
-  rw [hn0, ArithmeticFunction.map_zero]
+/-! ### The trivial modulus -/
 
 /-- `RayClassGroup (Modulus.one ℚ)` is a subsingleton, as the surjective image under `classMap` of
 `RayClassGroup (ratModulus 1 one_ne_zero)` of order `φ(1) = 1`. -/
