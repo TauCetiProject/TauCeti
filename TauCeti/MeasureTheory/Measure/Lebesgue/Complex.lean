@@ -27,6 +27,8 @@ side times its one-dimensional integral (`Complex.setLIntegral_reProdIm_comp_re`
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
+The real coordinates `(x, y) ↦ x + y i` of the plane preserve area
+(`Complex.measurePreserving_equivRealProdCLM_symm`).
 -/
 
 public section
@@ -125,6 +127,17 @@ theorem measurePreserving_coordinateSwapCLE :
   rw [heq]
   exact Complex.volume_preserving_equiv_real_prod.symm.comp
     (Measure.measurePreserving_swap.comp Complex.volume_preserving_equiv_real_prod)
+
+/-- The real coordinates `(x, y) ↦ x + y i` of the plane preserve area: as a map, the inverse of
+the continuous linear equivalence `Complex.equivRealProdCLM` is the inverse of the measurable
+equivalence `Complex.measurableEquivRealProd`. -/
+theorem measurePreserving_equivRealProdCLM_symm :
+    MeasurePreserving equivRealProdCLM.symm (volume : Measure (ℝ × ℝ)) volume := by
+  have heq : (equivRealProdCLM.symm : ℝ × ℝ → ℂ) = measurableEquivRealProd.symm := by
+    funext p
+    rw [equivRealProdCLM_symm_apply, measurableEquivRealProd_symm_apply, mk_eq_add_mul_I]
+  rw [heq]
+  exact volume_preserving_equiv_real_prod.symm
 
 /-- On a rectangle `s ×ℂ t`, a function of the real part integrates as `volume t` times its
 integral over `s`. -/
