@@ -31,10 +31,10 @@ differentials with the inverses of `CliffordAlgebra.soEquivQuadratic` and
 differential is taken over `ℝ`, it commutes with complex scalar multiplication and is bijective, so
 it upgrades to `ℂ`-linear Lie algebra equivalences
 `complexSpinToSpecialOrthogonalPolarComplexLieEquiv` and
-`complexSpinToSpecialOrthogonalComplexLieEquiv`. For a spin polarization `P`, the real differential
-of `P.complexSpinSmoothMatrixHom b` likewise upgrades to a `ℂ`-linear Lie homomorphism
-`P.complexSpinSmoothMatrixComplexLieHom b` that intertwines the Spin and `SO(Q)` differentials on
-Clifford vector operators.
+`complexSpinToSpecialOrthogonalComplexLieEquiv`. For a spin polarization `P`, the `ℂ`-linear Fock
+differential `P.complexSpinSmoothMatrixComplexLieHom b` (constructed in
+`TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Complex.Representation`) intertwines with the `SO(Q)`
+differential on Clifford vector operators.
 
 ## Main definitions and results
 
@@ -50,10 +50,10 @@ Clifford vector operators.
   `TauCeti.CliffordAlgebra`): exact agreement with the algebraic quadratic realizations.
 * `TauCeti.CliffordAlgebra.complexSpinToSpecialOrthogonalRangeLieMap_bijective`: the abstract real
   Lie map of the complex `Spin(Q) → SO(Q)` carrier projection is bijective.
-* `TauCeti.SpinPolarizationData.complexSpinSmoothMatrixComplexLieHom` and
-  `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq`: the `ℂ`-linear
-  differential of the Fock representation and its intertwining identity with the `SO(Q)`
-  differential.
+* `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq` and
+  `TauCeti.SpinPolarizationData.lie_complexSpinSmoothMatrixComplexLieHom_ι_eq_mulVec`: the
+  intertwining identities between the `ℂ`-linear differential of the Fock representation and the
+  `SO(Q)` differential in endomorphism and matrix coordinates.
 
 ## References
 
@@ -418,66 +418,10 @@ namespace TauCeti.SpinPolarizationData
 open TauCeti.CliffordAlgebra _root_.CliffordAlgebra
 
 attribute [local instance 100] LieRing.ofAssociativeRing
-attribute [local instance] NormedAlgebra.toNormedSpace
-attribute [local instance] Matrix.linftyOpTopologicalSpace
 
 variable {n : ℕ} {Q : QuadraticForm ℂ (Fin n → ℂ)} (P : SpinPolarizationData Q)
   {κ : Type*} [Fintype κ] [DecidableEq κ]
   (b : Module.Basis κ ℂ (ExteriorAlgebra ℂ P.W)) [Fact Q.Nondegenerate]
-
-private theorem unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm
-    (x : quadraticLieSubalgebra Q) :
-    TauCeti.Lie.unitsLieAlgebraLieEquiv
-        (lieMap (P.complexSpinSmoothMatrixHom b)
-          ((complexSpinLieEquivQuadratic (Q := Q)).symm
-            ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))) =
-      ((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)) x := by
-  simp [LinearMap.toMatrixAlgEquiv_eq_toMatrix]
-
-/-- The real differential of the smooth Fock representation `P.complexSpinSmoothMatrixHom b`,
-upgraded to a `ℂ`-linear Lie algebra homomorphism on `quadraticLieSubalgebra Q`. -/
-def complexSpinSmoothMatrixComplexLieHom :
-    quadraticLieSubalgebra Q →ₗ⁅ℂ⁆ Matrix κ κ ℂ where
-  toFun x := TauCeti.Lie.unitsLieAlgebraLieEquiv
-    (lieMap (P.complexSpinSmoothMatrixHom b)
-      ((complexSpinLieEquivQuadratic (Q := Q)).symm
-        ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x)))
-  map_add' x y := by
-    simp only [unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm, map_add]
-  map_smul' c x := by
-    simp only [unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
-      SetLike.val_smul, map_smul, RingHom.id_apply]
-  map_lie' {x y} := by
-    simp only [unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
-      LieSubalgebra.coe_bracket]
-    exact (((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)).toLieHom).map_lie
-      (x : CliffordAlgebra Q) (y : CliffordAlgebra Q)
-
-private theorem complexSpinSmoothMatrixComplexLieHom_apply' (x : quadraticLieSubalgebra Q) :
-    P.complexSpinSmoothMatrixComplexLieHom b x =
-      TauCeti.Lie.unitsLieAlgebraLieEquiv
-        (lieMap (P.complexSpinSmoothMatrixHom b)
-          ((complexSpinLieEquivQuadratic (Q := Q)).symm
-            ((RestrictScalars.addEquiv ℝ ℂ (quadraticLieSubalgebra Q)).symm x))) :=
-  rfl
-
-/-- In the chosen spinor basis `b`, the `ℂ`-linear differentiated Fock representation acts by the
-matrix of `spinAction Q P x`. -/
-@[simp]
-theorem complexSpinSmoothMatrixComplexLieHom_apply (x : quadraticLieSubalgebra Q) :
-    P.complexSpinSmoothMatrixComplexLieHom b x = LinearMap.toMatrix b b (spinAction Q P x) := by
-  rw [complexSpinSmoothMatrixComplexLieHom_apply',
-    unitsLieAlgebraLieEquiv_lieMap_complexSpinSmoothMatrixHom_symm,
-    AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, LinearMap.toMatrixAlgEquiv_eq_toMatrix]
-
-/-- `P.complexSpinSmoothMatrixComplexLieHom b` equals the `ℂ`-linear matrix Fock algebra
-homomorphism restricted to `quadraticLieSubalgebra Q`. -/
-theorem complexSpinSmoothMatrixComplexLieHom_eq :
-    P.complexSpinSmoothMatrixComplexLieHom b =
-      (((LinearMap.toMatrixAlgEquiv b).toAlgHom.comp (spinAction Q P)).toLieHom).comp
-        (quadraticLieSubalgebra Q).incl := by
-  ext x
-  simp [LinearMap.toMatrixAlgEquiv_eq_toMatrix]
 
 /-- **Spin–SO differential intertwining on Clifford generators.** Bracketing the differentiated Fock
 representation `d(spinRep)(x)` with the Fock operator of a vector `v` produces the Fock operator of
