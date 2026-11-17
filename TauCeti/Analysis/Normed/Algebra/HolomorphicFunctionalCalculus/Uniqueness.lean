@@ -74,9 +74,8 @@ theorem HolomorphicFunctions.algHom_toGerm_cauchyRiemannSum {A : Type*} [Ring A]
         ∑ e ∈ E, ∑ k ∈ Finset.range n,
           (extend f (AffineMap.lineMap e.1 e.2 ((k : ℝ) / (n : ℝ))) * (e.2 - e.1)) •
             resolvent a (AffineMap.lineMap e.1 e.2 ((k : ℝ) / (n : ℝ))) :=
-  map_cauchyRiemannSum (Φ.comp (toGerm ha)) hEV f n fun w hw => by
-    rw [AlgHom.comp_apply, toGerm_cauchyKernel]
-    exact algHom_ofFun_sub_inv_left hΦ w _
+  map_cauchyRiemannSum (Φ.comp (toGerm ha)) hEV f n fun w _ => by
+    rw [AlgHom.comp_apply, toGerm_cauchyKernel]; exact algHom_ofFun_sub_inv_left hΦ w _
 
 /-! ### Uniqueness of the holomorphic functional calculus -/
 
@@ -94,22 +93,13 @@ theorem eq_holomorphicCalculusOn (a : A) {Φ : holomorphicGerms (spectrum ℂ a)
     Φ (toGerm ha f) = holomorphicCalculusOn a U ha f := by
   obtain ⟨V, hKV, hVU, E, hEV, hconv⟩ :=
     (spectrum.isCompact (𝕜 := ℂ) a).exists_opens_tendsto_cauchyRiemannSum ha
-  have h₁ :
-      Tendsto (fun n => Φ (toGerm hKV (cauchyRiemannSum hEV f n))) atTop
-        (𝓝 (Φ (toGerm hKV (restrict hVU f)))) :=
-    ((hΦ_cont V hKV).tendsto (restrict hVU f)).comp (hconv f)
-  have h₂ :
-      Tendsto (fun n => holomorphicCalculusOn a V hKV (cauchyRiemannSum hEV f n)) atTop
-        (𝓝 (holomorphicCalculusOn a V hKV (restrict hVU f))) :=
-    ((continuous_holomorphicCalculusOn a V hKV).tendsto (restrict hVU f)).comp (hconv f)
-  have heq :
-      (fun n => Φ (toGerm hKV (cauchyRiemannSum hEV f n))) =
-        fun n => holomorphicCalculusOn a V hKV (cauchyRiemannSum hEV f n) := by
-    ext n
-    rw [← holomorphicCalculus_toGerm, algHom_toGerm_cauchyRiemannSum hΦ_id,
-      algHom_toGerm_cauchyRiemannSum (holomorphicCalculus_id a)]
+  have h₁ := ((hΦ_cont V hKV).tendsto (restrict hVU f)).comp (hconv f)
+  have h₂ := ((continuous_holomorphicCalculusOn a V hKV).tendsto (restrict hVU f)).comp (hconv f)
   have hlim : Φ (toGerm hKV (restrict hVU f)) = holomorphicCalculusOn a V hKV (restrict hVU f) :=
-    tendsto_nhds_unique h₁ (heq ▸ h₂)
+    tendsto_nhds_unique (h₁.congr fun n => by
+      dsimp only [Function.comp_apply, AlgHom.comp_apply]
+      rw [← holomorphicCalculus_toGerm, algHom_toGerm_cauchyRiemannSum hΦ_id,
+        algHom_toGerm_cauchyRiemannSum (holomorphicCalculus_id a)]) h₂
   rwa [toGerm_restrict hKV hVU f, holomorphicCalculusOn_restrict a hKV hVU f] at hlim
 
 /-- **Uniqueness of the holomorphic functional calculus.** Any unital complex-algebra homomorphism
@@ -118,11 +108,9 @@ open neighbourhoods of `spectrum ℂ a` are continuous equals `holomorphicCalcul
 theorem eq_holomorphicCalculus (a : A) {Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A}
     (hΦ_id : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
     (hΦ_cont : ∀ (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U), Continuous (Φ.comp (toGerm ha))) :
-    Φ = holomorphicCalculus a := by
-  apply holomorphicGerms.algHom_ext
-  intro U ha f
-  rw [holomorphicCalculus_toGerm]
-  exact eq_holomorphicCalculusOn a hΦ_id hΦ_cont U ha f
+    Φ = holomorphicCalculus a :=
+  holomorphicGerms.algHom_ext fun U ha f => by
+    rw [holomorphicCalculus_toGerm]; exact eq_holomorphicCalculusOn a hΦ_id hΦ_cont U ha f
 
 /-- Existence and uniqueness characterization of `holomorphicCalculus a`. -/
 theorem existsUnique_holomorphicCalculus (a : A) :
@@ -131,11 +119,9 @@ theorem existsUnique_holomorphicCalculus (a : A) :
         ∀ (U : Opens ℂ) (ha : spectrum ℂ a ⊆ U), Continuous (Φ.comp (toGerm ha)) :=
   ⟨holomorphicCalculus a,
     ⟨holomorphicCalculus_id a, fun U ha => by
-      have h : (holomorphicCalculus a).comp (toGerm ha) = holomorphicCalculusOn a U ha := by
-        ext f
-        exact holomorphicCalculus_toGerm a U ha f
-      rw [h]
-      exact continuous_holomorphicCalculusOn a U ha⟩,
+      have h : (holomorphicCalculus a).comp (toGerm ha) = holomorphicCalculusOn a U ha :=
+        AlgHom.ext (holomorphicCalculus_toGerm a U ha)
+      rw [h]; exact continuous_holomorphicCalculusOn a U ha⟩,
     fun _ ⟨hΦ_id, hΦ_cont⟩ => eq_holomorphicCalculus a hΦ_id hΦ_cont⟩
 
 end Uniqueness
@@ -151,8 +137,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 theorem eval_mem_spectrum_holomorphicCalculus (a : A) (φ : holomorphicGerms (spectrum ℂ a))
     (z : ℂ) (hz : z ∈ spectrum ℂ a) :
     holomorphicGerms.eval z hz φ ∈ spectrum ℂ (holomorphicCalculus a φ) := by
-  rw [spectrum_holomorphicCalculus]
-  exact ⟨z, hz, rfl⟩
+  rw [spectrum_holomorphicCalculus]; exact ⟨z, hz, rfl⟩
 
 /-- **Composition theorem for holomorphic germs:** `ψ(φ(a)) = (ψ ∘ φ)(a)` for any
 `φ : holomorphicGerms (spectrum ℂ a)` and
@@ -166,25 +151,21 @@ theorem holomorphicCalculus_comp (a : A) (φ : holomorphicGerms (spectrum ℂ a)
   have hφ := eval_mem_spectrum_holomorphicCalculus a φ
   let Ψ : holomorphicGerms (spectrum ℂ b) →ₐ[ℂ] A :=
     (holomorphicCalculus a).comp (holomorphicGerms.compAlgHom φ hφ)
-  have hΨ_id : Ψ (holomorphicGerms.ofFun id analyticOnNhd_id) = b := by
-    simp [Ψ, b]
   have hΨ_cont : ∀ (V : Opens ℂ) (hb : spectrum ℂ b ⊆ V), Continuous (Ψ.comp (toGerm hb)) := by
     intro V hb
     obtain ⟨U, haU, f, hfφ⟩ := holomorphicGerms.exists_toGerm_eq φ
     obtain ⟨U', haU', hU'U, hfV⟩ := exists_opens_mapsTo haU f V fun z hz => by
-      rw [← eval_toGerm haU z hz f, hfφ]
-      exact hb (hφ z hz)
-    have hcomp :
-        Ψ.comp (toGerm hb) =
-          (holomorphicCalculusOn a U' haU').comp (compAlgHom (restrict hU'U f) hfV) := by
+      rw [← eval_toGerm haU z hz f, hfφ]; exact hb (hφ z hz)
+    have hcomp : Ψ.comp (toGerm hb) =
+        (holomorphicCalculusOn a U' haU').comp (compAlgHom (restrict hU'U f) hfV) := by
       ext g
       simp only [Ψ, AlgHom.comp_apply]
       rw [holomorphicGerms.compAlgHom_toGerm φ hφ haU f hfφ hb g haU' hU'U hfV,
         holomorphicCalculus_toGerm]
     rw [hcomp]
     exact (continuous_holomorphicCalculusOn a U' haU').comp (continuous_compAlgHom _ hfV)
-  have hΨ : Ψ = holomorphicCalculus b := eq_holomorphicCalculus b hΨ_id hΨ_cont
-  exact (congrArg (fun H : holomorphicGerms (spectrum ℂ b) →ₐ[ℂ] A => H ψ) hΨ).symm
+  exact (congrArg (fun H : holomorphicGerms (spectrum ℂ b) →ₐ[ℂ] A => H ψ)
+    (eq_holomorphicCalculus b (by simp [Ψ, b]) hΨ_cont)).symm
 
 /-- **Composition theorem for analytic representatives:** if `f` is analytic near `spectrum ℂ a`
 and maps `spectrum ℂ a` into `t`, and `g` is analytic near `t`, then `g(f(a)) = (g ∘ f)(a)`. -/
@@ -207,15 +188,11 @@ theorem holomorphicCalculusOn_comp (a : A) {U V U' : Opens ℂ} (haU : spectrum 
     (hfV : ∀ z : U', (restrict hU'U f).val z ∈ V) :
     holomorphicCalculusOn (holomorphicCalculusOn a U haU f) V hbV g =
       holomorphicCalculusOn a U' haU' (compAlgHom (restrict hU'U f) hfV g) := by
-  have key : ∀ (b : A) (hb : b = holomorphicCalculus a (toGerm haU f))
-      (hbV : spectrum ℂ b ⊆ V),
-      holomorphicCalculusOn b V hbV g =
-        holomorphicCalculus a
-          (holomorphicGerms.compAlgHom (toGerm haU f)
-            (eval_mem_spectrum_holomorphicCalculus a (toGerm haU f))
-            (toGerm (hb ▸ hbV) g)) := by
-    rintro _ rfl hbV
-    rw [← holomorphicCalculus_toGerm, holomorphicCalculus_comp]
+  have key : ∀ (b : A) (hb : b = holomorphicCalculus a (toGerm haU f)) (hbV : spectrum ℂ b ⊆ V),
+      holomorphicCalculusOn b V hbV g = holomorphicCalculus a (holomorphicGerms.compAlgHom
+        (toGerm haU f) (eval_mem_spectrum_holomorphicCalculus a (toGerm haU f))
+        (toGerm (hb ▸ hbV) g)) := by
+    rintro _ rfl hbV; rw [← holomorphicCalculus_toGerm, holomorphicCalculus_comp]
   rw [key _ (holomorphicCalculus_toGerm a U haU f).symm hbV,
     holomorphicGerms.compAlgHom_toGerm (toGerm haU f)
       (eval_mem_spectrum_holomorphicCalculus a (toGerm haU f)) haU f rfl _ g haU' hU'U hfV,

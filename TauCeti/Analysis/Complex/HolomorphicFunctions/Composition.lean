@@ -62,40 +62,30 @@ theorem mem_pullbackOpens {f : holomorphicFunctions U} {V : Opens ℂ} {z : ℂ}
   simp only [pullbackOpens, Opens.mem_mk, mem_image, mem_preimage, Subtype.exists]
   exact ⟨fun ⟨w, hwU, hwV, hzw⟩ => ⟨hzw ▸ hwU, hzw ▸ hwV⟩, fun ⟨hz, hzV⟩ => ⟨z, hz, hzV, rfl⟩⟩
 
-theorem pullbackOpens_le (f : holomorphicFunctions U) (V : Opens ℂ) :
-    pullbackOpens f V ≤ U := by
-  intro z hz
-  exact (mem_pullbackOpens.mp hz).1
+theorem pullbackOpens_le (f : holomorphicFunctions U) (V : Opens ℂ) : pullbackOpens f V ≤ U :=
+  fun _ hz => (mem_pullbackOpens.mp hz).1
 
 theorem pullbackOpens_mono {V₁ V₂ : Opens ℂ} (f : holomorphicFunctions U) (hV : V₁ ≤ V₂) :
-    pullbackOpens f V₁ ≤ pullbackOpens f V₂ := by
-  intro z hz
-  obtain ⟨hzU, hzV⟩ := mem_pullbackOpens.mp hz
-  exact mem_pullbackOpens.mpr ⟨hzU, hV hzV⟩
+    pullbackOpens f V₁ ≤ pullbackOpens f V₂ := fun _ hz =>
+  let ⟨hzU, hzV⟩ := mem_pullbackOpens.mp hz; mem_pullbackOpens.mpr ⟨hzU, hV hzV⟩
 
 theorem subset_pullbackOpens {s : Set ℂ} {f : holomorphicFunctions U} {V : Opens ℂ}
     (hsU : s ⊆ U) (hf : ∀ x (hx : x ∈ s), f.val ⟨x, hsU hx⟩ ∈ V) :
-    s ⊆ pullbackOpens f V := fun x hx =>
-  mem_pullbackOpens.mpr ⟨hsU hx, hf x hx⟩
+    s ⊆ pullbackOpens f V := fun x hx => mem_pullbackOpens.mpr ⟨hsU hx, hf x hx⟩
 
 theorem apply_mem_of_mem_pullbackOpens (f : holomorphicFunctions U) (V : Opens ℂ)
-    (z : pullbackOpens f V) :
-    (restrict (pullbackOpens_le f V) f).val z ∈ V := by
-  obtain ⟨_, hzV⟩ := mem_pullbackOpens.mp z.property
-  rwa [restrict_apply]
+    (z : pullbackOpens f V) : (restrict (pullbackOpens_le f V) f).val z ∈ V := by
+  obtain ⟨_, hzV⟩ := mem_pullbackOpens.mp z.property; rwa [restrict_apply]
 
 theorem mapsTo_extend_pullbackOpens (f : holomorphicFunctions U) (V : Opens ℂ) :
-    MapsTo (extend f) (pullbackOpens f V : Set ℂ) V := by
-  intro z hz
-  obtain ⟨hzU, hzV⟩ := mem_pullbackOpens.mp hz
-  rwa [extend_apply f ⟨z, hzU⟩]
+    MapsTo (extend f) (pullbackOpens f V : Set ℂ) V := fun z hz => by
+  obtain ⟨hzU, hzV⟩ := mem_pullbackOpens.mp hz; rwa [extend_apply f ⟨z, hzU⟩]
 
 /-- If `f : holomorphicFunctions U` maps a subset `s ⊆ U` into an open set `V`, there is a smaller
 open neighbourhood `U' ≤ U` of `s` on which `f` maps into `V`. -/
 theorem exists_opens_mapsTo {s : Set ℂ} (hsU : s ⊆ U) (f : holomorphicFunctions U) (V : Opens ℂ)
     (hf : ∀ x (hx : x ∈ s), f.val ⟨x, hsU hx⟩ ∈ V) :
-    ∃ (U' : Opens ℂ) (_ : s ⊆ U') (hU'U : U' ≤ U),
-      ∀ z : U', (restrict hU'U f).val z ∈ V :=
+    ∃ (U' : Opens ℂ) (_ : s ⊆ U') (hU'U : U' ≤ U), ∀ z : U', (restrict hU'U f).val z ∈ V :=
   ⟨pullbackOpens f V, subset_pullbackOpens hsU hf, pullbackOpens_le f V,
     apply_mem_of_mem_pullbackOpens f V⟩
 
@@ -110,13 +100,12 @@ def compAlgHom (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V) :
         simp only [Function.comp_apply, extend_apply f z]
         exact extend_apply g ⟨f.val z, hf z⟩).mpr <|
         (differentiableOn_extend g).comp (differentiableOn_extend f) fun z hz => by
-          rw [extend_apply f ⟨z, hz⟩]
-          exact hf ⟨z, hz⟩
+          rw [extend_apply f ⟨z, hz⟩]; exact hf ⟨z, hz⟩
 
 @[simp]
 theorem compAlgHom_apply (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V)
-    (g : holomorphicFunctions V) (z : U) :
-    (compAlgHom f hf g).val z = g.val ⟨f.val z, hf z⟩ := (rfl)
+    (g : holomorphicFunctions V) (z : U) : (compAlgHom f hf g).val z = g.val ⟨f.val z, hf z⟩ :=
+  (rfl)
 
 /-- `extend` on `U` intertwines `compAlgHom` with composition of extended functions. -/
 theorem extend_compAlgHom_apply (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V)
@@ -127,51 +116,39 @@ theorem extend_compAlgHom_apply (f : holomorphicFunctions U) (hf : ∀ z : U, f.
 /-- Precomposition on explicit holomorphic representatives agrees with ordinary composition. -/
 @[simp]
 theorem compAlgHom_of (f : ℂ → ℂ) (hfU : DifferentiableOn ℂ f U)
-    (hf : ∀ z : U, (of U f hfU).val z ∈ V)
-    (g : ℂ → ℂ) (hgV : DifferentiableOn ℂ g V) :
+    (hf : ∀ z : U, (of U f hfU).val z ∈ V) (g : ℂ → ℂ) (hgV : DifferentiableOn ℂ g V) :
     compAlgHom (of U f hfU) hf (of V g hgV) =
-      of U (g ∘ f) (hgV.comp hfU fun z hz => by simpa using hf ⟨z, hz⟩) := by
-  apply Subtype.ext
-  ext z
-  simp
+      of U (g ∘ f) (hgV.comp hfU fun z hz => by simpa using hf ⟨z, hz⟩) :=
+  Subtype.ext (by ext z; simp)
 
 @[simp]
 theorem compAlgHom_id (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V) :
-    compAlgHom f hf (of V id differentiableOn_id) = f := by
-  apply Subtype.ext
-  ext z
-  simp
+    compAlgHom f hf (of V id differentiableOn_id) = f :=
+  Subtype.ext (by ext z; simp)
 
 @[simp]
 theorem restrict_compAlgHom (hWU : W ≤ U) (f : holomorphicFunctions U)
     (hf : ∀ z : U, f.val z ∈ V) (g : holomorphicFunctions V) :
     restrict hWU (compAlgHom f hf g) =
       compAlgHom (restrict hWU f) (fun z => by rw [restrict_apply]; exact hf (Set.inclusion hWU z))
-        g := by
-  apply Subtype.ext
-  ext z
-  simp
+        g :=
+  Subtype.ext (by ext z; simp)
 
 @[simp]
 theorem compAlgHom_restrict {V' : Opens ℂ} (hVV' : V ≤ V') (f : holomorphicFunctions U)
     (hf : ∀ z : U, f.val z ∈ V) (g : holomorphicFunctions V') :
-    compAlgHom f hf (restrict hVV' g) = compAlgHom f (fun z => hVV' (hf z)) g := by
-  apply Subtype.ext
-  ext z
-  simp
+    compAlgHom f hf (restrict hVV' g) = compAlgHom f (fun z => hVV' (hf z)) g :=
+  Subtype.ext (by ext z; simp)
 
 /-- Precomposition along a holomorphic map is continuous for the compact-open topology. -/
 @[continuity]
 theorem continuous_compAlgHom (f : holomorphicFunctions U) (hf : ∀ z : U, f.val z ∈ V) :
     Continuous (compAlgHom f hf) := by
   rw [continuous_induced_rng]
-  have hval :
-      (Subtype.val ∘ compAlgHom f hf : holomorphicFunctions V → C(U, ℂ)) =
-        (ContinuousMap.compRightAlgHom ℂ ℂ
-          (⟨fun z => ⟨f.val z, hf z⟩, f.val.continuous.subtype_mk hf⟩ : C(U, V))) ∘
-          Subtype.val := by
-    ext g z
-    exact compAlgHom_apply f hf g z
+  have hval : (Subtype.val ∘ compAlgHom f hf : holomorphicFunctions V → C(U, ℂ)) =
+      (ContinuousMap.compRightAlgHom ℂ ℂ
+        (⟨fun z => ⟨f.val z, hf z⟩, f.val.continuous.subtype_mk hf⟩ : C(U, V))) ∘ Subtype.val := by
+    ext g z; exact compAlgHom_apply f hf g z
   rw [hval]
   exact (ContinuousMap.compRightAlgHom_continuous ℂ ℂ _).comp continuous_subtype_val
 
@@ -183,10 +160,7 @@ open HolomorphicFunctions
 
 variable {s t : Set ℂ}
 
-section Comp
-
-private def compRepOpen (φ : holomorphicGerms s) : Opens ℂ :=
-  (exists_toGerm_eq φ).choose
+private def compRepOpen (φ : holomorphicGerms s) : Opens ℂ := (exists_toGerm_eq φ).choose
 
 private theorem subset_compRepOpen (φ : holomorphicGerms s) : s ⊆ compRepOpen φ :=
   (exists_toGerm_eq φ).choose_spec.choose
@@ -202,28 +176,22 @@ private theorem subset_pullbackOpens_compRepFun {φ : holomorphicGerms s}
     (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx φ ∈ t) (V : Opens ℂ) (htV : t ⊆ V) :
     s ⊆ pullbackOpens (compRepFun φ) V :=
   subset_pullbackOpens (subset_compRepOpen φ) fun x hx => by
-    rw [← eval_toGerm (subset_compRepOpen φ) x hx, toGerm_compRepFun]
-    exact htV (hφ x hx)
+    rw [← eval_toGerm (subset_compRepOpen φ) x hx, toGerm_compRepFun]; exact htV (hφ x hx)
 
 /-- Precomposition of holomorphic germs near `t` with a holomorphic germ `φ` near `s` whose point
 values on `s` lie in `t`. -/
 def compAlgHom (φ : holomorphicGerms s) (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx φ ∈ t) :
     holomorphicGerms t →ₐ[ℂ] holomorphicGerms s :=
   lift
-    (fun V htV =>
-      (toGerm (subset_pullbackOpens_compRepFun hφ V htV)).comp
-        (HolomorphicFunctions.compAlgHom
-          (HolomorphicFunctions.restrict (pullbackOpens_le (compRepFun φ) V) (compRepFun φ))
-          (apply_mem_of_mem_pullbackOpens (compRepFun φ) V)))
+    (fun V htV => (toGerm (subset_pullbackOpens_compRepFun hφ V htV)).comp
+      (HolomorphicFunctions.compAlgHom
+        (HolomorphicFunctions.restrict (pullbackOpens_le (compRepFun φ) V) (compRepFun φ))
+        (apply_mem_of_mem_pullbackOpens (compRepFun φ) V)))
     fun U V htV hVU f => by
       simp only [AlgHom.comp_apply]
-      have hle : pullbackOpens (compRepFun φ) V ≤ pullbackOpens (compRepFun φ) U :=
-        pullbackOpens_mono (compRepFun φ) hVU
-      rw [← toGerm_restrict (subset_pullbackOpens_compRepFun hφ V htV) hle]
-      congr 1
-      apply Subtype.ext
-      ext z
-      simp
+      rw [← toGerm_restrict (subset_pullbackOpens_compRepFun hφ V htV)
+        (pullbackOpens_mono (compRepFun φ) hVU)]
+      exact congrArg _ (Subtype.ext (by ext z; simp))
 
 /-- Precomposition of a function germ with a represented germ agrees with composing on any smaller
 open neighbourhood `U'` of `s` mapped into `V`. -/
@@ -236,23 +204,17 @@ theorem compAlgHom_toGerm {U V U' : Opens ℂ} (φ : holomorphicGerms s)
       toGerm hsU'
         (HolomorphicFunctions.compAlgHom (HolomorphicFunctions.restrict hU'U f) hfV g) := by
   rw [compAlgHom, lift_toGerm, AlgHom.comp_apply]
-  obtain ⟨W, hsW, hW₀, hWU, heq⟩ :=
-    (toGerm_eq_iff (subset_compRepOpen φ) hsU (compRepFun φ) f).mp
-      ((toGerm_compRepFun φ).trans hfφ.symm)
+  obtain ⟨W, hsW, _, _, heq⟩ := (toGerm_eq_iff (subset_compRepOpen φ) hsU (compRepFun φ) f).mp
+    ((toGerm_compRepFun φ).trans hfφ.symm)
   set P := pullbackOpens (compRepFun φ) V
   have hsP : s ⊆ P := subset_pullbackOpens_compRepFun hφ V htV
-  let W' : Opens ℂ := W ⊓ P ⊓ U'
-  have hsW' : s ⊆ W' := fun x hx => ⟨⟨hsW hx, hsP hx⟩, hsU' hx⟩
-  have hW'P : W' ≤ P := fun _ hz => hz.1.2
-  have hW'U' : W' ≤ U' := fun _ hz => hz.2
-  refine (toGerm_eq_iff hsP hsU' _ _).mpr ⟨W', hsW', hW'P, hW'U', ?_⟩
-  apply Subtype.ext
-  ext z
+  refine (toGerm_eq_iff hsP hsU' _ _).mpr
+    ⟨W ⊓ P ⊓ U', fun x hx => ⟨⟨hsW hx, hsP hx⟩, hsU' hx⟩, fun _ hz => hz.1.2, fun _ hz => hz.2, ?_⟩
+  apply Subtype.ext; ext z
   simp only [HolomorphicFunctions.restrict_apply, HolomorphicFunctions.compAlgHom_apply]
-  congr 1
-  apply Subtype.ext
-  have hzW := congrArg (fun k : holomorphicFunctions W => k.val ⟨z, z.property.1.1⟩) heq
-  simpa only [HolomorphicFunctions.restrict_apply] using hzW
+  congr 1; apply Subtype.ext
+  simpa only [HolomorphicFunctions.restrict_apply] using
+    congrArg (fun k : holomorphicFunctions W => k.val ⟨z, z.property.1.1⟩) heq
 
 /-- Precomposition of holomorphic germs agrees with ordinary composition `g ∘ f` on analytic
 representatives. -/
@@ -267,22 +229,13 @@ theorem compAlgHom_ofFun (f : ℂ → ℂ) (hf : AnalyticOnNhd ℂ f s)
   let V : Opens ℂ := ⟨{z | AnalyticAt ℂ g z}, isOpen_analyticAt ℂ g⟩
   have hfU : DifferentiableOn ℂ f U := fun _ hz => hz.differentiableAt.differentiableWithinAt
   have hgV : DifferentiableOn ℂ g V := fun _ hz => hz.differentiableAt.differentiableWithinAt
-  have hsU : s ⊆ U := hf
-  have htV : t ⊆ V := hg
   let fH := of U f hfU
-  let U' := pullbackOpens fH V
-  have hsU' : s ⊆ U' := subset_pullbackOpens hsU fun x hx => by
-    rw [of_apply]
-    exact htV (hft hx)
-  have hU'U : U' ≤ U := pullbackOpens_le fH V
-  have hfV : ∀ z : U', (HolomorphicFunctions.restrict hU'U fH).val z ∈ V :=
-    apply_mem_of_mem_pullbackOpens fH V
-  have hfg := compAlgHom_toGerm (ofFun f hf) hφ hsU fH
-    (toGerm_of hsU f hfU) htV (of V g hgV) hsU' hU'U hfV
-  rw [toGerm_of htV g hgV] at hfg
-  refine hfg.trans ?_
-  exact toGerm_eq_ofFun hsU' _ (g ∘ f) (hg.comp hf hft) fun z => by
-    simp [fH]
+  have hsU' : s ⊆ pullbackOpens fH V :=
+    subset_pullbackOpens hf fun x hx => by rw [of_apply]; exact hg _ (hft hx)
+  have hfg := compAlgHom_toGerm (ofFun f hf) hφ hf fH (toGerm_of hf f hfU) hg (of V g hgV)
+    hsU' (pullbackOpens_le fH V) (apply_mem_of_mem_pullbackOpens fH V)
+  rw [toGerm_of hg g hgV] at hfg
+  exact hfg.trans (toGerm_eq_ofFun hsU' _ (g ∘ f) (hg.comp hf hft) fun z => by simp [fH])
 
 /-- Precomposing the coordinate germ on `t` with `φ` recovers `φ`. -/
 @[simp]
@@ -300,9 +253,7 @@ theorem eval_compAlgHom (φ : holomorphicGerms s)
     (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx φ ∈ t) (ψ : holomorphicGerms t)
     (x : ℂ) (hx : x ∈ s) :
     eval x hx (compAlgHom φ hφ ψ) = eval (eval x hx φ) (hφ x hx) ψ := by
-  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ
-  obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ
-  simp
+  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ; obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ; simp
 
 /-- Restricting the source base set commutes with germ precomposition. -/
 @[simp]
@@ -311,9 +262,7 @@ theorem restrict_compAlgHom {s' : Set ℂ} (hs's : s' ⊆ s) (φ : holomorphicGe
     restrict hs's (compAlgHom φ hφ ψ) =
       compAlgHom (restrict hs's φ)
         (fun x hx => by rw [eval_restrict]; exact hφ x (hs's hx)) ψ := by
-  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ
-  obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ
-  simp
+  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ; obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ; simp
 
 /-- Restricting the target base set before precomposition agrees with weakening the image
 hypothesis. -/
@@ -321,11 +270,7 @@ hypothesis. -/
 theorem compAlgHom_restrict {t' : Set ℂ} (htt' : t ⊆ t') (φ : holomorphicGerms s)
     (hφ : ∀ (x : ℂ) (hx : x ∈ s), eval x hx φ ∈ t) (ψ : holomorphicGerms t') :
     compAlgHom φ hφ (restrict htt' ψ) = compAlgHom φ (fun x hx => htt' (hφ x hx)) ψ := by
-  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ
-  obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ
-  simp
-
-end Comp
+  obtain ⟨f, hf, rfl⟩ := exists_ofFun_eq φ; obtain ⟨g, hg, rfl⟩ := exists_ofFun_eq ψ; simp
 
 end holomorphicGerms
 

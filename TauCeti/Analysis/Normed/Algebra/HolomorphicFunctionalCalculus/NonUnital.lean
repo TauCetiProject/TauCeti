@@ -50,18 +50,15 @@ theorem unitizationFstA_holomorphicCalculusOn_toLp_inr (a : A) (U : Opens ℂ)
     WithLp.unitizationFstA ℂ A
         (holomorphicCalculusOn (WithLp.toLp 1 (a : Unitization ℂ A)) U ha f) =
       f.val ⟨0, ha (WithLp.unitization_zero_mem_spectrum_toLp_inr a)⟩ := by
-  rw [map_holomorphicCalculusOn_continuousMapClass]
-  simp
+  rw [map_holomorphicCalculusOn_continuousMapClass]; simp
 
 /-- Applying the scalar augmentation `WithLp.unitizationFstA` to `holomorphicCalculus` of an
 element of `A` embedded in its `ℓ¹` unitization evaluates the germ at `0`. -/
 theorem unitizationFstA_holomorphicCalculus_toLp_inr (a : A)
     (g : holomorphicGerms (spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)))) :
-    WithLp.unitizationFstA ℂ A
-        (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g) =
+    WithLp.unitizationFstA ℂ A (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g) =
       holomorphicGerms.eval 0 (WithLp.unitization_zero_mem_spectrum_toLp_inr a) g := by
-  rw [map_holomorphicCalculus_continuousMapClass]
-  simp
+  rw [map_holomorphicCalculus_continuousMapClass]; simp
 
 /-- In the `ℓ¹` unitization of `A`, `holomorphicCalculusOn` of an embedded element `a : A` lies in
 `Set.range (WithLp.unitizationInrL ℂ A)` if and only if `f 0 = 0`. -/
@@ -86,49 +83,38 @@ re-embedding recovers the unitized calculus value. -/
 theorem unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero (a : A)
     {g : holomorphicGerms (spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)))}
     (hg : holomorphicGerms.eval 0 (WithLp.unitization_zero_mem_spectrum_toLp_inr a) g = 0) :
-    WithLp.unitizationInrL ℂ A
-        (WithLp.unitizationSndL ℂ A
-          (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g)) =
-      holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g := by
-  apply WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero
-  simpa only [WithLp.unitizationFstA_apply] using
-    (unitizationFstA_holomorphicCalculus_toLp_inr a g).trans hg
-
-private theorem unitizationInrL_unitizationSndL_holomorphicCalculus_vanishingAt (a : A)
-    (g : holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 (quasispectrum.zero_mem ℂ a)) :
-    WithLp.unitizationInrL ℂ A
-        (WithLp.unitizationSndL ℂ A
-          (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
-            (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val))) =
-      holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
-        (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val) :=
-  unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero a (by simp)
+    WithLp.unitizationInrL ℂ A (WithLp.unitizationSndL ℂ A
+        (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g)) =
+      holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A)) g :=
+  WithLp.unitizationInrL_unitizationSndL_of_fst_eq_zero <| by
+    simpa only [WithLp.unitizationFstA_apply] using
+      (unitizationFstA_holomorphicCalculus_toLp_inr a g).trans hg
 
 /-- **Nonunital holomorphic functional calculus.** For an element `a` of a nonunital complex Banach
 algebra `A`, evaluating holomorphic germs near `quasispectrum ℂ a` that vanish at `0` in the `ℓ¹`
 unitization and projecting onto `A` defines a nonunital complex-algebra homomorphism into `A`. -/
 def nonUnitalHolomorphicCalculus (a : A) :
     holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 (quasispectrum.zero_mem ℂ a) →ₙₐ[ℂ] A where
-  toFun g :=
-    WithLp.unitizationSndL ℂ A
-      (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
-        (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val))
+  toFun g := WithLp.unitizationSndL ℂ A (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
+    (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val))
   map_smul' c g := by simp
   map_zero' := by simp
   map_add' g₁ g₂ := by simp
   map_mul' g₁ g₂ := by
     apply (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).injective
-    simp only [← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul,
-      unitizationInrL_unitizationSndL_holomorphicCalculus_vanishingAt]
-    simp only [MulMemClass.coe_mul, map_mul]
+    have hvan (g : holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0
+        (quasispectrum.zero_mem ℂ a)) :=
+      unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero a
+        (g := holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val) (by simp)
+    simp only [← WithLp.unitizationInrL_apply, WithLp.unitizationInrL_mul]
+    rw [hvan (g₁ * g₂), hvan g₁, hvan g₂, MulMemClass.coe_mul, map_mul, map_mul]
 
 /-- Formula for `nonUnitalHolomorphicCalculus a g` via the `ℓ¹` unitization. -/
 theorem nonUnitalHolomorphicCalculus_apply (a : A)
     (g : holomorphicGerms.vanishingAt (quasispectrum ℂ a) 0 (quasispectrum.zero_mem ℂ a)) :
-    nonUnitalHolomorphicCalculus a g =
-      WithLp.unitizationSndL ℂ A
-        (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
-          (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val)) := (rfl)
+    nonUnitalHolomorphicCalculus a g = WithLp.unitizationSndL ℂ A
+      (holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
+        (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val)) := (rfl)
 
 /-- Embedding `nonUnitalHolomorphicCalculus a g` into the `ℓ¹` unitization agrees with the unital
 `holomorphicCalculus` of the embedded element. -/
@@ -137,7 +123,7 @@ theorem unitizationInrL_nonUnitalHolomorphicCalculus (a : A)
     WithLp.unitizationInrL ℂ A (nonUnitalHolomorphicCalculus a g) =
       holomorphicCalculus (WithLp.toLp 1 (a : Unitization ℂ A))
         (holomorphicGerms.restrict (WithLp.unitization_spectrum_toLp_inr a).le g.val) :=
-  unitizationInrL_unitizationSndL_holomorphicCalculus_vanishingAt a g
+  unitizationInrL_unitizationSndL_holomorphicCalculus_of_eval_zero a (by simp)
 
 /-- `WithLp.toLp 1` embedding form of `unitizationInrL_nonUnitalHolomorphicCalculus`. -/
 @[simp]
@@ -153,9 +139,8 @@ theorem toLp_inr_nonUnitalHolomorphicCalculus (a : A)
 theorem nonUnitalHolomorphicCalculus_id (a : A) :
     nonUnitalHolomorphicCalculus a
       (holomorphicGerms.ofFunVanishingAt (quasispectrum.zero_mem ℂ a) id analyticOnNhd_id rfl) =
-      a := by
-  apply (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).injective
-  simp
+      a :=
+  (WithLp.unitization_isometry_inr (𝕜 := ℂ) (A := A)).injective (by simp)
 
 /-- **Nonunital spectral mapping theorem** for holomorphic germs vanishing at `0`. -/
 @[simp]
@@ -165,28 +150,23 @@ theorem quasispectrum_nonUnitalHolomorphicCalculus (a : A)
       {c | ∃ (z : ℂ) (hz : z ∈ quasispectrum ℂ a), holomorphicGerms.eval z hz g.val = c} := by
   rw [← WithLp.unitization_spectrum_toLp_inr, toLp_inr_nonUnitalHolomorphicCalculus,
     spectrum_holomorphicCalculus]
-  ext c
-  constructor
+  ext c; constructor
   · rintro ⟨z, hz, rfl⟩
     exact ⟨z, (WithLp.unitization_spectrum_toLp_inr a).le hz,
-      (holomorphicGerms.eval_restrict (WithLp.unitization_spectrum_toLp_inr a).le z hz g.val).symm⟩
+      (holomorphicGerms.eval_restrict _ z hz g.val).symm⟩
   · rintro ⟨z, hz, rfl⟩
-    have hz' : z ∈ spectrum ℂ (WithLp.toLp 1 (a : Unitization ℂ A)) :=
-      (WithLp.unitization_spectrum_toLp_inr a).ge hz
-    exact ⟨z, hz',
-      holomorphicGerms.eval_restrict (WithLp.unitization_spectrum_toLp_inr a).le z hz' g.val⟩
+    exact ⟨z, (WithLp.unitization_spectrum_toLp_inr a).ge hz,
+      holomorphicGerms.eval_restrict _ z _ g.val⟩
 
 /-- **Nonunital spectral mapping theorem** for an analytic representative `f` with `f 0 = 0`:
 `quasispectrum ℂ (f(a)) = f '' quasispectrum ℂ a`. -/
 @[simp high] -- Fire before `quasispectrum_nonUnitalHolomorphicCalculus` yields a set-builder.
 theorem quasispectrum_nonUnitalHolomorphicCalculus_ofFun (a : A) (f : ℂ → ℂ)
     (hf : AnalyticOnNhd ℂ f (quasispectrum ℂ a)) (hf0 : f 0 = 0) :
-    quasispectrum ℂ
-        (nonUnitalHolomorphicCalculus a
-          (holomorphicGerms.ofFunVanishingAt (quasispectrum.zero_mem ℂ a) f hf hf0)) =
+    quasispectrum ℂ (nonUnitalHolomorphicCalculus a
+        (holomorphicGerms.ofFunVanishingAt (quasispectrum.zero_mem ℂ a) f hf hf0)) =
       f '' quasispectrum ℂ a := by
-  ext c
-  simp [Set.mem_image]
+  ext c; simp [Set.mem_image]
 
 end NonUnital
 

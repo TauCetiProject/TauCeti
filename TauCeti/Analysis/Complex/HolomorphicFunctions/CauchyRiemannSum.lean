@@ -65,10 +65,8 @@ theorem cauchyKernel_apply (V : Opens ℂ) (w : ℂ) (hw : w ∉ (V : Set ℂ)) 
 domain. -/
 @[simp]
 theorem restrict_cauchyKernel {U V : Opens ℂ} (hVU : V ≤ U) (w : ℂ) (hw : w ∉ (U : Set ℂ)) :
-    restrict hVU (cauchyKernel U w hw) = cauchyKernel V w (fun h => hw (hVU h)) := by
-  apply Subtype.ext
-  ext z
-  simp
+    restrict hVU (cauchyKernel U w hw) = cauchyKernel V w (fun h => hw (hVU h)) :=
+  Subtype.ext (by ext z; simp)
 
 /-- The germ of a Cauchy kernel is represented by `z ↦ (w - z)⁻¹`. -/
 @[simp]
@@ -82,11 +80,9 @@ theorem toGerm_cauchyKernel {s : Set ℂ} {V : Opens ℂ} (hs : s ⊆ V) (w : �
 
 /-! ### Cauchy Riemann sums -/
 
-private theorem lineMap_div_mem_biUnion_segment {E : Finset (ℂ × ℂ)} (e : E) {n : ℕ}
-    (k : Fin n) :
+private theorem lineMap_div_mem_biUnion_segment {E : Finset (ℂ × ℂ)} (e : E) {n : ℕ} (k : Fin n) :
     AffineMap.lineMap e.1.1 e.1.2 ((k : ℝ) / (n : ℝ)) ∈ ⋃ pq ∈ E, segment ℝ pq.1 pq.2 := by
-  refine mem_biUnion e.2 ?_
-  rw [segment_eq_image_lineMap]
+  refine mem_biUnion e.2 ?_; rw [segment_eq_image_lineMap]
   exact mem_image_of_mem _ ⟨div_nonneg (Nat.cast_nonneg k) (Nat.cast_nonneg n),
     div_le_one_of_le₀ (Nat.cast_le.mpr k.isLt.le) (Nat.cast_nonneg n)⟩
 
@@ -117,12 +113,10 @@ theorem map_cauchyRiemannSum {A F : Type*} [Semiring A] [Algebra ℂ A]
           (extend f (AffineMap.lineMap e.1 e.2 ((k : ℝ) / (n : ℝ))) * (e.2 - e.1)) •
             g (AffineMap.lineMap e.1 e.2 ((k : ℝ) / (n : ℝ))) := by
   simp only [cauchyRiemannSum, map_mul, AlgHomClass.commutes, map_sum, Algebra.smul_def]
-  congr 1
-  rw [← Finset.sum_attach E]
+  congr 1; rw [← Finset.sum_attach E]
   refine Finset.sum_congr rfl fun e _ => ?_
   rw [← Fin.sum_univ_eq_sum_range]
-  refine Finset.sum_congr rfl fun k _ => ?_
-  rw [hΨ]
+  exact Finset.sum_congr rfl fun k _ => by rw [hΨ]
 
 /-- Pointwise formula for `cauchyRiemannSum` at `z : V`. -/
 @[simp]
@@ -151,21 +145,18 @@ private theorem continuousOn_cauchySegmentIntegrand {U : Opens ℂ} {E : Finset 
     ContinuousOn (Function.uncurry (cauchySegmentIntegrand f e)) (L ×ˢ Icc (0 : ℝ) 1) := by
   let φ : ℂ × ℝ → ℂ := fun p => AffineMap.lineMap e.1 e.2 p.2
   have hφ_cont : Continuous φ := AffineMap.lineMap_continuous.comp continuous_snd
-  have hφ_mem : ∀ p ∈ L ×ˢ Icc (0 : ℝ) 1, φ p ∈ ⋃ pq ∈ E, segment ℝ pq.1 pq.2 := fun p hp => by
-    refine mem_biUnion he ?_
-    rw [segment_eq_image_lineMap]
-    exact mem_image_of_mem _ hp.2
+  have hφ_mem : ∀ p ∈ L ×ˢ Icc (0 : ℝ) 1, φ p ∈ ⋃ pq ∈ E, segment ℝ pq.1 pq.2 := fun p hp =>
+    mem_biUnion he (by rw [segment_eq_image_lineMap]; exact mem_image_of_mem _ hp.2)
   refine continuousOn_const.mul (continuousOn_const.mul ?_)
-  refine (((differentiableOn_extend f).continuousOn.mono hEU).comp hφ_cont.continuousOn
-    fun p hp => hφ_mem p hp).div ((hφ_cont.sub continuous_fst).continuousOn) fun p hp => ?_
-  exact sub_ne_zero.mpr fun h => Set.disjoint_right.mp hEL hp.1 (h ▸ hφ_mem p hp)
+  exact (((differentiableOn_extend f).continuousOn.mono hEU).comp hφ_cont.continuousOn
+    hφ_mem).div (hφ_cont.sub continuous_fst).continuousOn fun p hp =>
+      sub_ne_zero.mpr fun h => Set.disjoint_right.mp hEL hp.1 (h ▸ hφ_mem p hp)
 
 private theorem extend_eq_integral_sum_ofBalancedSegments {U : Opens ℂ} {E : Finset (ℂ × ℂ)}
     (hbal : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
     (hEU : (⋃ pq ∈ E, segment ℝ pq.1 pq.2) ⊆ U)
     (hnull : (Cycle.ofBalancedSegments hbal).IsNullHomologous U)
-    (f : holomorphicFunctions U) {z : ℂ}
-    (hzS : z ∉ ⋃ pq ∈ E, segment ℝ pq.1 pq.2)
+    (f : holomorphicFunctions U) {z : ℂ} (hzS : z ∉ ⋃ pq ∈ E, segment ℝ pq.1 pq.2)
     (hwz : Cycle.windingNumber z (Cycle.ofBalancedSegments hbal) = 1) :
     extend f z = ∫ t in (0 : ℝ)..1, ∑ e ∈ E, cauchySegmentIntegrand f e z t := by
   have hΓU : (Cycle.ofBalancedSegments hbal).IsIn U :=
@@ -179,14 +170,12 @@ private theorem extend_eq_integral_sum_ofBalancedSegments {U : Opens ℂ} {E : F
     ((differentiableOn_extend f).continuousOn.mono hEU).div
       (continuousOn_id.sub continuousOn_const) fun w hw => sub_ne_zero.mpr fun h => hzS (h ▸ hw)
   have hint : ∀ e ∈ E, IntervalIntegrable (cauchySegmentIntegrand f e z) MeasureTheory.volume 0 1 :=
-    fun e he => by
-      have hpair : Continuous fun t : ℝ => (z, t) := continuous_const.prodMk continuous_id
-      have hcz : ContinuousOn (cauchySegmentIntegrand f e z) (uIcc 0 1) := by
-        rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
-        exact ((continuousOn_cauchySegmentIntegrand hEU f he
-          (Set.disjoint_singleton_right.mpr hzS)).comp hpair.continuousOn
-            fun t ht => ⟨rfl, ht⟩).congr fun _ _ => rfl
-      exact hcz.intervalIntegrable
+    fun e he => ContinuousOn.intervalIntegrable <| by
+      rw [uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)]
+      exact ((continuousOn_cauchySegmentIntegrand hEU f he
+        (Set.disjoint_singleton_right.mpr hzS)).comp
+          (continuous_const.prodMk continuous_id).continuousOn
+          fun t ht => ⟨rfl, ht⟩).congr fun _ _ => rfl
   rw [_root_.intervalIntegral.integral_finsetSum hint,
     ← inv_mul_cancel_left₀ two_pi_I_ne_zero (extend f z), ← hcif, hseg, Finset.mul_sum]
   refine Finset.sum_congr rfl fun e _ => ?_
@@ -208,31 +197,25 @@ theorem tendsto_cauchyRiemannSum {U V : Opens ℂ} (hVU : V ≤ U) {E : Finset (
   rw [tendsto_iff_tendstoLocallyUniformlyOn,
     tendstoLocallyUniformlyOn_iff_forall_isCompact V.isOpen]
   intro L hLV hL
-  have hcont :
-      ContinuousOn (Function.uncurry fun z t => ∑ e ∈ E, cauchySegmentIntegrand f e z t)
-        (L ×ˢ Icc (0 : ℝ) 1) := by
+  have hcont : ContinuousOn (Function.uncurry fun z t => ∑ e ∈ E, cauchySegmentIntegrand f e z t)
+      (L ×ˢ Icc (0 : ℝ) 1) := by
     rw [Function.uncurry_def]
     exact continuousOn_finsetSum E fun e he =>
       continuousOn_cauchySegmentIntegrand hEU f he (hEV.mono_right hLV)
-  have hriem := TauCeti.intervalIntegral.tendstoUniformlyOn_riemannSum_unitInterval hL hcont
-  refine (hriem.congr ?_).congr_right ?_
+  refine ((TauCeti.intervalIntegral.tendstoUniformlyOn_riemannSum_unitInterval hL hcont).congr
+    ?_).congr_right fun z hzL => ?_
   · refine Eventually.of_forall fun n z hzL => ?_
-    have hzV : z ∈ V := hLV hzL
     dsimp only
     rw [Finset.sum_comm, Complex.real_smul, Complex.ofReal_inv, Complex.ofReal_natCast,
-      Finset.mul_sum, extend_apply _ ⟨z, hzV⟩, cauchyRiemannSum_apply, Finset.mul_sum]
+      Finset.mul_sum, extend_apply _ ⟨z, hLV hzL⟩, cauchyRiemannSum_apply, Finset.mul_sum]
     refine Finset.sum_congr rfl fun e _ => ?_
     rw [Finset.mul_sum, Finset.mul_sum]
-    refine Finset.sum_congr rfl fun k _ => ?_
-    dsimp [cauchySegmentIntegrand]
-    rw [div_eq_mul_inv]
-    ring
-  · intro z hzL
-    have hzV : z ∈ V := hLV hzL
-    dsimp only
+    exact Finset.sum_congr rfl fun k _ => by
+      dsimp [cauchySegmentIntegrand]; rw [div_eq_mul_inv]; ring
+  · dsimp only
     rw [← extend_eq_integral_sum_ofBalancedSegments hbal hEU hnull f
-        (Set.disjoint_right.mp hEV hzV) (hwV z hzV),
-      extend_apply _ ⟨z, hzV⟩, restrict_apply, ← extend_apply f ⟨z, hVU hzV⟩]
+        (Set.disjoint_right.mp hEV (hLV hzL)) (hwV z (hLV hzL)),
+      extend_apply _ ⟨z, hLV hzL⟩, restrict_apply, ← extend_apply f ⟨z, hVU (hLV hzL)⟩]
 
 end HolomorphicFunctions
 
@@ -255,27 +238,21 @@ theorem IsCompact.exists_opens_tendsto_cauchyRiemannSum {K : Set ℂ} (hK : IsCo
   obtain ⟨E, hbal, hsub, hnull, hwK⟩ := hK.exists_balancedSegments_windingNumber_eq_one U.isOpen hKU
   set S : Set ℂ := ⋃ pq ∈ E, segment ℝ pq.1 pq.2
   set Γ : Cycle := Cycle.ofBalancedSegments hbal
-  have hS_compact : IsCompact S :=
-    E.finite_toSet.isCompact_biUnion fun pq _ => by
-      rw [segment_eq_image_lineMap]
-      exact isCompact_Icc.image AffineMap.lineMap_continuous
+  have hS_compact : IsCompact S := E.finite_toSet.isCompact_biUnion fun pq _ => by
+    rw [segment_eq_image_lineMap]; exact isCompact_Icc.image AffineMap.lineMap_continuous
   let W : Set ℂ :=
     Subtype.val '' {z : {z : ℂ // z ∉ Cycle.trace Γ} | Cycle.windingNumber z Γ = 1}
-  have hW_open : IsOpen W :=
-    (Cycle.isCompact_trace Γ).isClosed.isOpen_compl.isOpenMap_subtype_val _
-      ((Cycle.isLocallyConstant_windingNumber Γ).isOpen_fiber 1)
+  have hW_open : IsOpen W := (Cycle.isCompact_trace Γ).isClosed.isOpen_compl.isOpenMap_subtype_val _
+    ((Cycle.isLocallyConstant_windingNumber Γ).isOpen_fiber 1)
   let V : Opens ℂ := ⟨((U : Set ℂ) \ S) ∩ W, (U.isOpen.sdiff hS_compact.isClosed).inter hW_open⟩
-  have hKV : K ⊆ V := by
-    intro z hzK
+  have hKV : K ⊆ V := fun z hzK =>
     have hzS : z ∉ S := fun hzS => (hsub hzS).2 hzK
-    have hzΓ : z ∉ Cycle.trace Γ := fun ht => hzS (Cycle.trace_ofBalancedSegments_subset hbal ht)
-    exact ⟨⟨hKU hzK, hzS⟩, ⟨⟨z, hzΓ⟩, hwK z hzK, rfl⟩⟩
+    ⟨⟨hKU hzK, hzS⟩, ⟨⟨z, fun ht => hzS (Cycle.trace_ofBalancedSegments_subset hbal ht)⟩,
+      hwK z hzK, rfl⟩⟩
   have hVU : V ≤ U := fun _ hz => hz.1.1
   have hEV : Disjoint S (V : Set ℂ) := Set.disjoint_left.mpr fun _ hzS hzV => hzV.1.2 hzS
-  have hwV : ∀ z ∈ (V : Set ℂ), Cycle.windingNumber z Γ = 1 := by
-    rintro z ⟨-, ⟨w, hw, rfl⟩⟩
-    exact hw
   exact ⟨V, hKV, hVU, E, hEV,
-    tendsto_cauchyRiemannSum hVU hbal (hsub.trans sdiff_subset) hEV hnull hwV⟩
+    tendsto_cauchyRiemannSum hVU hbal (hsub.trans sdiff_subset) hEV hnull
+      (by rintro z ⟨-, ⟨w, hw, rfl⟩⟩; exact hw)⟩
 
 end CauchyRiemannSum

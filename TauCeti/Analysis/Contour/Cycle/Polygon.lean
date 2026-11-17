@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Contour.Cycle.Basic
 public import TauCeti.Geometry.Polygon.Simple
 public import TauCeti.Analysis.Calculus.ContDiff.PiecewiseC1On.Polygonal
 import TauCeti.Analysis.Green.Polygonal.Fan
+import TauCeti.Data.Fintype.Fiber
 import TauCeti.GroupTheory.Perm.Cycle.Enumeration
 
 /-!
@@ -221,50 +222,44 @@ section BalancedSegments
 
 variable {E : Finset (ℂ × ℂ)}
 
-private theorem exists_perm_of_balanced (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) :
-    ∃ σ : Equiv.Perm E, ∀ e, (σ e : ℂ × ℂ).1 = (e : ℂ × ℂ).2 := by
-  classical
-  have hcard (p : ℂ × ℂ → Prop) [DecidablePred p] :
-      Fintype.card {e : E // p e} = #{e ∈ E | p e} := by
-    simp [Fintype.card_subtype, Finset.filter_attach]
-  have hfib (x : ℂ) : {e : E // (e : ℂ × ℂ).2 = x} ≃ {e : E // (e : ℂ × ℂ).1 = x} :=
-    Fintype.equivOfCardEq (by rw [hcard (fun e ↦ e.2 = x), hcard (fun e ↦ e.1 = x), hE x])
-  exact ⟨Equiv.ofFiberEquiv hfib, fun e ↦ Equiv.ofFiberEquiv_map hfib e⟩
-
-private def balancedPerm (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) : Equiv.Perm E :=
-  (exists_perm_of_balanced hE).choose
-
-private theorem balancedPerm_fst (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
-    (balancedPerm hE e : ℂ × ℂ).1 = (e : ℂ × ℂ).2 :=
-  (exists_perm_of_balanced hE).choose_spec e
+/-- A permutation matching each segment in `E` to one starting at its endpoint, obtained from
+`Function.exists_perm_of_occCount_eq`. -/
+private def balancedPerm (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) :
+    {σ : Equiv.Perm E // (fun e : E ↦ (e : ℂ × ℂ).1) ∘ σ = fun e : E ↦ (e : ℂ × ℂ).2} :=
+  Classical.indefiniteDescription _ <| Function.exists_perm_of_occCount_eq fun x ↦ by
+    classical
+    rw [Function.occCount_eq_sum, Function.occCount_eq_sum,
+      Finset.sum_coe_sort E (fun e ↦ if e.2 = x then 1 else 0),
+      Finset.sum_coe_sort E (fun e ↦ if e.1 = x then 1 else 0),
+      ← Finset.card_filter, ← Finset.card_filter, hE x]
 
 private instance instNeZeroMinimalPeriodBalancedPerm
     (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
-    NeZero (minimalPeriod (balancedPerm hE) e) :=
-  ⟨(minimalPeriod_pos_of_mem_periodicPts ((balancedPerm hE).injective.mem_periodicPts e)).ne'⟩
+    NeZero (minimalPeriod (balancedPerm hE).1 e) :=
+  ⟨(minimalPeriod_pos_of_mem_periodicPts ((balancedPerm hE).1.injective.mem_periodicPts e)).ne'⟩
 
 private def balancedOrbitPolygon (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) (e : E) :
-    Polygon ℂ (minimalPeriod (balancedPerm hE) e) :=
-  ⟨fun i ↦ (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).1⟩
+    Polygon ℂ (minimalPeriod (balancedPerm hE).1 e) :=
+  ⟨fun i ↦ (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).1⟩
 
 private theorem balancedOrbitPolygon_apply (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    (e : E) (i : Fin (minimalPeriod (balancedPerm hE) e)) :
-    balancedOrbitPolygon hE e i = (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).1 := rfl
+    (e : E) (i : Fin (minimalPeriod (balancedPerm hE).1 e)) :
+    balancedOrbitPolygon hE e i = (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).1 := rfl
 
 private theorem balancedOrbitPolygon_succ (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    (e : E) (i : Fin (minimalPeriod (balancedPerm hE) e)) :
-    balancedOrbitPolygon hE e (finRotate _ i) = (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).2 := by
-  have hval : ((i + 1 : Fin (minimalPeriod (balancedPerm hE) e)) : ℕ) =
-      ((i : ℕ) + 1) % minimalPeriod (balancedPerm hE) e := by
-    simp [Fin.val_add]
+    (e : E) (i : Fin (minimalPeriod (balancedPerm hE).1 e)) :
+    balancedOrbitPolygon hE e (finRotate _ i) = (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).2 := by
+  have hval : ((i + 1 : Fin (minimalPeriod (balancedPerm hE).1 e)) : ℕ) =
+      ((i : ℕ) + 1) % minimalPeriod (balancedPerm hE).1 e := by simp [Fin.val_add]
   rw [balancedOrbitPolygon_apply, finRotate_apply, hval, iterate_mod_minimalPeriod_eq,
-    iterate_succ_apply', balancedPerm_fst]
+    iterate_succ_apply']
+  exact congrFun (balancedPerm hE).2 _
 
 private theorem balancedOrbitPolygon_edgePath (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x})
-    (e : E) (i : Fin (minimalPeriod (balancedPerm hE) e)) :
+    (e : E) (i : Fin (minimalPeriod (balancedPerm hE).1 e)) :
     (balancedOrbitPolygon hE e).edgePath ℝ i =
-      AffineMap.lineMap (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).1
-        (((balancedPerm hE)^[i] e : E) : ℂ × ℂ).2 := by
+      AffineMap.lineMap (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).1
+        (((balancedPerm hE).1^[i] e : E) : ℂ × ℂ).2 := by
   rw [Polygon.edgePath, balancedOrbitPolygon_succ, balancedOrbitPolygon_apply]
 
 private theorem balancedOrbitPolygon_boundary_subset
@@ -274,7 +269,7 @@ private theorem balancedOrbitPolygon_boundary_subset
   obtain ⟨i, hi⟩ := mem_iUnion.1 hz
   rw [Polygon.edgeSet_eq_image_edgePath, balancedOrbitPolygon_edgePath,
     ← segment_eq_image_lineMap] at hi
-  exact mem_biUnion ((balancedPerm hE)^[i] e).2 hi
+  exact mem_biUnion ((balancedPerm hE).1^[i] e).2 hi
 
 /-- **The contour cycle of a balanced family of segments.** Given a finite set `E` of oriented
 segments in which every point ends as many segments as it starts, matching incoming and outgoing
@@ -282,7 +277,7 @@ segments decomposes `E` into closed polygonal orbits; `ofBalancedSegments hE` is
 corresponding polygon cycles. -/
 def ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ E | e.1 = x}) : Cycle := by
   classical
-  exact ∑ q : Quotient (Equiv.Perm.SameCycle.setoid (balancedPerm hE)),
+  exact ∑ q : Quotient (Equiv.Perm.SameCycle.setoid (balancedPerm hE).1),
     (balancedOrbitPolygon hE q.out).contourCycle
 
 /-- The trace of `ofBalancedSegments` lies in the union of the segments of `E`. -/
@@ -301,12 +296,11 @@ theorem windingNumber_ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e
       ∑ e ∈ E, Contour.windingNumber (AffineMap.lineMap (k := ℝ) e.1 e.2) 0 1 z := by
   classical
   rw [ofBalancedSegments, map_sum, ← Finset.sum_coe_sort E,
-    ← Equiv.Perm.sum_quotient_sameCycle_sum_range (balancedPerm hE)]
+    ← Equiv.Perm.sum_quotient_sameCycle_sum_range (balancedPerm hE).1]
   simp only [Equiv.Perm.coe_pow]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   rw [Polygon.windingNumber_contourCycle _ fun h ↦
-      hz (balancedOrbitPolygon_boundary_subset hE q.out h),
-    ← Fin.sum_univ_eq_sum_range]
+      hz (balancedOrbitPolygon_boundary_subset hE q.out h), ← Fin.sum_univ_eq_sum_range]
   exact Finset.sum_congr rfl fun i _ ↦ by rw [balancedOrbitPolygon_edgePath]
 
 /-- The integral over `ofBalancedSegments` of any continuous vector-valued function on the union of
@@ -318,7 +312,7 @@ theorem integral_ofBalancedSegments (hE : ∀ x, #{e ∈ E | e.2 = x} = #{e ∈ 
       ∑ e ∈ E, (e.2 - e.1) • ∫ t in (0 : ℝ)..1, f (AffineMap.lineMap e.1 e.2 t) := by
   classical
   rw [ofBalancedSegments, map_sum, ← Finset.sum_coe_sort E,
-    ← Equiv.Perm.sum_quotient_sameCycle_sum_range (balancedPerm hE)]
+    ← Equiv.Perm.sum_quotient_sameCycle_sum_range (balancedPerm hE).1]
   simp only [Equiv.Perm.coe_pow]
   refine Finset.sum_congr rfl fun q _ ↦ ?_
   rw [Polygon.integral_contourCycle _ (hf.mono (balancedOrbitPolygon_boundary_subset hE q.out)),

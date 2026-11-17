@@ -51,32 +51,23 @@ variable {α E : Type*} [TopologicalSpace α] [NormedAddCommGroup E] [NormedSpac
 private noncomputable def uniformPartition (a b : ℝ) (n k : ℕ) : ℝ :=
   a + (k : ℝ) * (b - a) / (n : ℝ)
 
-private theorem uniformPartition_eq (a b : ℝ) (n k : ℕ) :
-    uniformPartition a b n k = a + (k : ℝ) * (b - a) / (n : ℝ) := rfl
-
 private theorem uniformPartition_sub (a b : ℝ) (n k : ℕ) :
     uniformPartition a b n (k + 1) - uniformPartition a b n k = (b - a) / (n : ℝ) := by
   dsimp [uniformPartition]; push_cast; ring
 
 private theorem uniformPartition_le_succ {a b : ℝ} (hab : a ≤ b) (n k : ℕ) :
     uniformPartition a b n k ≤ uniformPartition a b n (k + 1) := by
-  have hstep : 0 ≤ (b - a) / (n : ℝ) := div_nonneg (sub_nonneg.mpr hab) (Nat.cast_nonneg n)
-  linarith [uniformPartition_sub a b n k]
+  linarith [uniformPartition_sub a b n k, div_nonneg (sub_nonneg.mpr hab) (Nat.cast_nonneg n)]
 
 private theorem uniformPartition_mem_Icc {a b : ℝ} (hab : a ≤ b) {n k : ℕ} (hn : 1 ≤ n)
     (hk : k ≤ n) : uniformPartition a b n k ∈ Icc a b := by
   have hba : 0 ≤ b - a := sub_nonneg.mpr hab
   have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
-  refine ⟨?_, ?_⟩
-  · dsimp [uniformPartition]
-    have : 0 ≤ (k : ℝ) * (b - a) / (n : ℝ) :=
-      div_nonneg (mul_nonneg (Nat.cast_nonneg k) hba) hn_pos.le
-    linarith
-  · dsimp [uniformPartition]
-    have hk_le : (k : ℝ) * (b - a) / (n : ℝ) ≤ b - a := by
-      rw [div_le_iff₀ hn_pos]
-      nlinarith [(Nat.cast_le.mpr hk : (k : ℝ) ≤ n)]
-    linarith
+  have h0 : 0 ≤ (k : ℝ) * (b - a) / (n : ℝ) :=
+    div_nonneg (mul_nonneg (Nat.cast_nonneg k) hba) hn_pos.le
+  have h1 : (k : ℝ) * (b - a) / (n : ℝ) ≤ b - a :=
+    (div_le_iff₀ hn_pos).mpr (by nlinarith [(Nat.cast_le.mpr hk : (k : ℝ) ≤ n)])
+  exact ⟨by dsimp [uniformPartition]; linarith, by dsimp [uniformPartition]; linarith⟩
 
 omit [CompleteSpace E] in
 private theorem norm_uniformPartition_subinterval_le {a b C : ℝ} (hab : a ≤ b) {n k : ℕ}
@@ -85,17 +76,15 @@ private theorem norm_uniformPartition_subinterval_le {a b C : ℝ} (hab : a ≤ 
     (hosc : ∀ ⦃s⦄, s ∈ Icc a b → ∀ ⦃t⦄, t ∈ Icc a b → |s - t| ≤ (b - a) / (n : ℝ) →
       ‖f s - f t‖ ≤ C) :
     ‖(∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
-          f (uniformPartition a b n k)) -
+        f (uniformPartition a b n k)) -
         ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t‖ ≤
       C * ((b - a) / (n : ℝ)) := by
-  have hle := uniformPartition_le_succ hab n k
   have hsub := uniformPartition_sub a b n k
-  have hstep_nonneg : 0 ≤ (b - a) / (n : ℝ) :=
-    div_nonneg (sub_nonneg.mpr hab) (Nat.cast_nonneg n)
+  have hstep : 0 ≤ (b - a) / (n : ℝ) := div_nonneg (sub_nonneg.mpr hab) (Nat.cast_nonneg n)
   rw [← _root_.intervalIntegral.integral_sub intervalIntegrable_const hf,
-    ← abs_of_nonneg hstep_nonneg, ← hsub]
+    ← abs_of_nonneg hstep, ← hsub]
   refine _root_.intervalIntegral.norm_integral_le_of_norm_le_const fun t ht => ?_
-  rw [uIoc_of_le hle] at ht
+  rw [uIoc_of_le (uniformPartition_le_succ hab n k)] at ht
   refine hosc (uniformPartition_mem_Icc hab hn hk.le)
     ⟨(uniformPartition_mem_Icc hab hn hk.le).1.trans ht.1.le,
       ht.2.trans (uniformPartition_mem_Icc hab hn (Nat.succ_le_of_lt hk)).2⟩ ?_
@@ -115,49 +104,36 @@ theorem norm_riemannSum_Icc_sub_integral_le {a b C : ℝ} (hab : a ≤ b) {n : �
   rcases hab.eq_or_lt with rfl | hab_lt
   · simp
   have hn_pos : (0 : ℝ) < n := Nat.cast_pos.mpr hn
+  let τ := uniformPartition a b n
   -- Split the interval integral across the `n` uniform subintervals.
-  have hint (k : ℕ) (hk : k < n) :
-      IntervalIntegrable f volume (uniformPartition a b n k) (uniformPartition a b n (k + 1)) := by
-    refine hf.mono_set ?_
-    rw [uIcc_of_le (uniformPartition_le_succ hab n k), uIcc_of_le hab]
-    exact Icc_subset_Icc (uniformPartition_mem_Icc hab hn hk.le).1
-      (uniformPartition_mem_Icc hab hn (Nat.succ_le_of_lt hk)).2
-  have hsum_int :
-      (∫ t in a..b, f t) =
-        ∑ k ∈ Finset.range n,
-          ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t := by
-    have h0 : uniformPartition a b n 0 = a := by simp [uniformPartition]
-    have hn' : uniformPartition a b n n = b := by
-      dsimp [uniformPartition]; rw [mul_div_cancel_left₀ _ hn_pos.ne', add_sub_cancel]
-    simpa only [h0, hn'] using
-      (_root_.intervalIntegral.sum_integral_adjacent_intervals hint).symm
+  have hint (k : ℕ) (hk : k < n) : IntervalIntegrable f volume (τ k) (τ (k + 1)) :=
+    hf.mono_set <| by
+      rw [uIcc_of_le (uniformPartition_le_succ hab n k), uIcc_of_le hab]
+      exact Icc_subset_Icc (uniformPartition_mem_Icc hab hn hk.le).1
+        (uniformPartition_mem_Icc hab hn (Nat.succ_le_of_lt hk)).2
+  have hsum_int : (∫ t in a..b, f t) = ∑ k ∈ Finset.range n, ∫ t in τ k..τ (k + 1), f t := by
+    have h0 : τ 0 = a := by simp [τ, uniformPartition]
+    have hn' : τ n = b := by
+      dsimp [τ, uniformPartition]; rw [mul_div_cancel_left₀ _ hn_pos.ne', add_sub_cancel]
+    simpa only [h0, hn'] using (_root_.intervalIntegral.sum_integral_adjacent_intervals hint).symm
   -- Rewrite the Riemann sum as the sum of constant integrals on the same subintervals.
   have hsum_riem :
       (((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, f (a + (k : ℝ) * (b - a) / (n : ℝ))) =
-        ∑ k ∈ Finset.range n,
-          ∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
-            f (uniformPartition a b n k) := by
+        ∑ k ∈ Finset.range n, ∫ _ in τ k..τ (k + 1), f (τ k) := by
     rw [Finset.smul_sum]
     refine Finset.sum_congr rfl fun k _ => ?_
-    rw [← uniformPartition_eq, _root_.intervalIntegral.integral_const, uniformPartition_sub]
+    rw [_root_.intervalIntegral.integral_const, uniformPartition_sub]
+    dsimp only [τ, uniformPartition]
   -- Bound each subinterval error via `hosc` and sum using the triangle inequality.
   rw [hsum_riem, hsum_int, ← Finset.sum_sub_distrib]
-  calc ‖∑ k ∈ Finset.range n,
-          ((∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
-              f (uniformPartition a b n k)) -
-            ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t)‖
-      ≤ ∑ k ∈ Finset.range n,
-          ‖(∫ _ in uniformPartition a b n k..uniformPartition a b n (k + 1),
-              f (uniformPartition a b n k)) -
-            ∫ t in uniformPartition a b n k..uniformPartition a b n (k + 1), f t‖ :=
+  calc ‖∑ k ∈ Finset.range n, ((∫ _ in τ k..τ (k + 1), f (τ k)) - ∫ t in τ k..τ (k + 1), f t)‖
+      ≤ ∑ k ∈ Finset.range n, ‖(∫ _ in τ k..τ (k + 1), f (τ k)) - ∫ t in τ k..τ (k + 1), f t‖ :=
         norm_sum_le _ _
     _ ≤ ∑ _k ∈ Finset.range n, C * ((b - a) / (n : ℝ)) :=
-        Finset.sum_le_sum fun k hk =>
-          norm_uniformPartition_subinterval_le hab hn (Finset.mem_range.mp hk)
-            (hint k (Finset.mem_range.mp hk)) hosc
+        Finset.sum_le_sum fun k hk => norm_uniformPartition_subinterval_le hab hn
+          (Finset.mem_range.mp hk) (hint k (Finset.mem_range.mp hk)) hosc
     _ = C * (b - a) := by
-        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]
-        field_simp [hn_pos.ne']
+        rw [Finset.sum_const, Finset.card_range, nsmul_eq_mul]; field_simp [hn_pos.ne']
 
 /-- Left-endpoint uniform-partition Riemann sums of a jointly continuous integrand on
 `K ×ˢ Icc a b` (`K` compact, `a ≤ b`) converge uniformly on `K` to the interval integral. -/
@@ -168,27 +144,24 @@ theorem tendstoUniformlyOn_riemannSum_Icc {K : Set α} (hK : IsCompact K) {a b :
         ((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, g x (a + (k : ℝ) * (b - a) / (n : ℝ)))
       (fun x => ∫ t in a..b, g x t) atTop K := by
   rcases hab.eq_or_lt with rfl | hab_lt
-  · rw [Metric.tendstoUniformlyOn_iff]
-    exact fun ε hε => Eventually.of_forall fun _ _ _ => by simp [hε]
+  · exact Metric.tendstoUniformlyOn_iff.mpr fun ε hε =>
+      Eventually.of_forall fun _ _ _ => by simp [hε]
   have hba : 0 < b - a := sub_pos.mpr hab_lt
   have hswap : ContinuousOn (Function.uncurry fun t x => g x t) (Icc a b ×ˢ K) :=
     hg.comp continuous_swap.continuousOn fun _ hp => ⟨hp.2, hp.1⟩
-  have heq : Equicontinuous (fun (x : K) (t : Icc a b) => g x t) := by
-    intro t₀
+  have heq : Equicontinuous (fun (x : K) (t : Icc a b) => g x t) := fun t₀ => by
     rw [Metric.equicontinuousAt_iff_right]
     intro ε hε
     obtain ⟨v, hv, hvt⟩ := hK.mem_uniformity_of_prod hswap t₀.property
       (Metric.dist_mem_uniformity hε)
     have hv' : (Subtype.val : Icc a b → ℝ) ⁻¹' {y | y ∈ Icc a b → y ∈ v} ∈ 𝓝 t₀ := by
-      rw [nhds_subtype_eq_comap]
-      exact Filter.preimage_mem_comap (mem_inf_principal.mp hv)
+      rw [nhds_subtype_eq_comap]; exact Filter.preimage_mem_comap (mem_inf_principal.mp hv)
     filter_upwards [hv'] with t ht x
-    rw [dist_comm]
-    exact hvt t (ht t.property) x x.property
-  have hueq := CompactSpace.uniformEquicontinuous_of_equicontinuous heq
+    rw [dist_comm]; exact hvt t (ht t.property) x x.property
   rw [Metric.tendstoUniformlyOn_iff]
   intro ε hε
-  obtain ⟨δ, hδ, hFδ⟩ := Metric.uniformEquicontinuous_iff.mp hueq (ε / (2 * (b - a)))
+  obtain ⟨δ, hδ, hFδ⟩ := Metric.uniformEquicontinuous_iff.mp
+    (CompactSpace.uniformEquicontinuous_of_equicontinuous heq) (ε / (2 * (b - a)))
     (div_pos hε (mul_pos zero_lt_two hba))
   obtain ⟨N, hN⟩ := exists_nat_gt ((b - a) / δ)
   filter_upwards [eventually_ge_atTop (max N 1)] with n hn x hx
@@ -224,10 +197,10 @@ theorem tendstoUniformlyOn_riemannSum_unitInterval {K : Set α} (hK : IsCompact 
 theorem tendsto_riemannSum_Icc {a b : ℝ} (hab : a ≤ b) {f : ℝ → E} (hf : ContinuousOn f (Icc a b)) :
     Tendsto
       (fun n : ℕ => ((b - a) / (n : ℝ)) • ∑ k ∈ Finset.range n, f (a + (k : ℝ) * (b - a) / (n : ℝ)))
-      atTop (𝓝 (∫ t in a..b, f t)) := by
-  have h := tendstoUniformlyOn_riemannSum_Icc (K := ({()} : Set Unit)) isCompact_singleton hab
-    (g := fun _ t => f t) (hf.comp continuous_snd.continuousOn fun _ hp => hp.2)
-  exact h.tendsto_at (mem_singleton ())
+      atTop (𝓝 (∫ t in a..b, f t)) :=
+  (tendstoUniformlyOn_riemannSum_Icc (K := ({()} : Set Unit)) isCompact_singleton hab
+    (g := fun _ t => f t) (hf.comp continuous_snd.continuousOn fun _ hp => hp.2)).tendsto_at
+    (mem_singleton ())
 
 /-- Left-endpoint uniform-partition Riemann sums of a continuous function `f : ℝ → E` on `Icc 0 1`
 converge to `∫ t in (0 : ℝ)..1, f t`. -/

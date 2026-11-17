@@ -59,23 +59,20 @@ variable {A : Type*} [Ring A] [Algebra ℂ A] {a : A}
 /-- `z ↦ (w - z)⁻¹` is analytic near `spectrum ℂ a` if and only if `w ∈ resolventSet ℂ a`. -/
 theorem analyticOnNhd_sub_inv_left_iff {a : A} {w : ℂ} :
     AnalyticOnNhd ℂ (fun z => (w - z)⁻¹) (spectrum ℂ a) ↔ w ∈ resolventSet ℂ a := by
-  refine ⟨fun hf => spectrum.notMem_iff.mp fun hw => ?_, fun hw _ hz => ?_⟩
-  · have hc : ContinuousAt (fun z : ℂ => (w - z)⁻¹) (w - 0) := by
-      simpa using (hf w hw).continuousAt
-    have h0 : ContinuousAt (fun z : ℂ => w - z) 0 :=
-      (continuous_const.sub continuous_id).continuousAt
-    have hinv : ContinuousAt (Inv.inv : ℂ → ℂ) 0 :=
-      (hc.comp h0).congr (Eventually.of_forall fun z => by simp)
-    exact NormedField.continuousAt_inv.mp hinv rfl
-  · exact (analyticAt_const.sub analyticAt_id).inv
-      (sub_ne_zero.mpr fun h => by dsimp at h; exact spectrum.notMem_iff.mpr hw (h ▸ hz))
+  refine ⟨fun hf => spectrum.notMem_iff.mp fun hw => ?_, fun hw _ hz =>
+    (analyticAt_const.sub analyticAt_id).inv
+      (sub_ne_zero.mpr fun h => by dsimp at h; exact spectrum.notMem_iff.mpr hw (h ▸ hz))⟩
+  have hc : ContinuousAt (fun z : ℂ => (w - z)⁻¹) (w - 0) := by simpa using (hf w hw).continuousAt
+  have hinv : ContinuousAt (Inv.inv : ℂ → ℂ) 0 :=
+    (hc.comp (continuous_const.sub continuous_id).continuousAt).congr
+      (Eventually.of_forall fun z => by simp)
+  exact NormedField.continuousAt_inv.mp hinv rfl
 
 /-- `z ↦ (z - w)⁻¹` is analytic near `spectrum ℂ a` if and only if `w ∈ resolventSet ℂ a`. -/
 theorem analyticOnNhd_sub_inv_right_iff {a : A} {w : ℂ} :
     AnalyticOnNhd ℂ (fun z => (z - w)⁻¹) (spectrum ℂ a) ↔ w ∈ resolventSet ℂ a := by
   have hneg : (fun z : ℂ => (z - w)⁻¹) = -(fun z : ℂ => (w - z)⁻¹) := by
-    ext z
-    rw [Pi.neg_apply, ← neg_sub w z, inv_neg]
+    ext z; rw [Pi.neg_apply, ← neg_sub w z, inv_neg]
   rw [hneg, ← analyticOnNhd_sub_inv_left_iff]
   exact ⟨fun h => by simpa using h.neg, fun h => h.neg⟩
 
@@ -95,27 +92,20 @@ coordinate germ to `a` sends `z ↦ (w - z)⁻¹` (when analytic near `spectrum 
 theorem algHom_ofFun_sub_inv_left (hΦ : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
     (w : ℂ) (hf : AnalyticOnNhd ℂ (fun z => (w - z)⁻¹) (spectrum ℂ a)) :
     Φ (holomorphicGerms.ofFun (fun z => (w - z)⁻¹) hf) = resolvent a w := by
-  have hw : w ∈ resolventSet ℂ a := analyticOnNhd_sub_inv_left_iff.mp hf
-  have hne : ∀ z ∈ spectrum ℂ a, w - z ≠ 0 :=
-    fun z hz => sub_ne_zero.mpr fun h => spectrum.notMem_iff.mpr hw (h ▸ hz)
+  have hne : ∀ z ∈ spectrum ℂ a, w - z ≠ 0 := fun z hz => sub_ne_zero.mpr fun h =>
+    spectrum.notMem_iff.mpr (analyticOnNhd_sub_inv_left_iff.mp hf) (h ▸ hz)
   have h1 : AnalyticOnNhd ℂ (1 : ℂ → ℂ) (spectrum ℂ a) := analyticOnNhd_const
   have hden : AnalyticOnNhd ℂ (fun z => w - z) (spectrum ℂ a) :=
     analyticOnNhd_const.sub analyticOnNhd_id
-  have hdiv :
-      holomorphicGerms.ofFun (fun z => (w - z)⁻¹) hf =
-        holomorphicGerms.ofFun (fun z => (1 : ℂ → ℂ) z / (w - z)) (h1.div hden hne) := by
-    rw [holomorphicGerms.ofFun_eq_iff]
-    exact Eventually.of_forall fun z => (one_div _).symm
-  have hΦden : Φ (holomorphicGerms.ofFun (fun z => w - z) hden) = algebraMap ℂ A w - a := by
-    have hden_eq :
-        holomorphicGerms.ofFun (fun z => w - z) hden =
-          algebraMap ℂ (holomorphicGerms (spectrum ℂ a)) w -
-            holomorphicGerms.ofFun id analyticOnNhd_id := by
-      rw [← holomorphicGerms.ofFun_const, ← holomorphicGerms.ofFun_sub,
-        holomorphicGerms.ofFun_eq_iff]
-      exact Eventually.of_forall fun _ => rfl
-    rw [hden_eq, map_sub, AlgHom.commutes, hΦ]
-  rw [hdiv, holomorphicGerms.algHom_ofFun_div Φ h1 hden hne, hΦden]
+  have hdiv : holomorphicGerms.ofFun (fun z => (w - z)⁻¹) hf =
+      holomorphicGerms.ofFun (fun z => (1 : ℂ → ℂ) z / (w - z)) (h1.div hden hne) := by
+    rw [holomorphicGerms.ofFun_eq_iff]; exact Eventually.of_forall fun z => (one_div _).symm
+  have hden_eq : holomorphicGerms.ofFun (fun z => w - z) hden =
+      algebraMap ℂ (holomorphicGerms (spectrum ℂ a)) w -
+        holomorphicGerms.ofFun id analyticOnNhd_id := by
+    rw [← holomorphicGerms.ofFun_const, ← holomorphicGerms.ofFun_sub, holomorphicGerms.ofFun_eq_iff]
+    exact Eventually.of_forall fun _ => rfl
+  rw [hdiv, holomorphicGerms.algHom_ofFun_div Φ h1 hden hne, hden_eq, map_sub, AlgHom.commutes, hΦ]
   simp [resolvent]
 
 /-- Any unital complex-algebra homomorphism on `holomorphicGerms (spectrum ℂ a)` sending the
@@ -124,10 +114,9 @@ coordinate germ to `a` sends `z ↦ (z - w)⁻¹` (when analytic near `spectrum 
 theorem algHom_ofFun_sub_inv_right (hΦ : Φ (holomorphicGerms.ofFun id analyticOnNhd_id) = a)
     (w : ℂ) (hf : AnalyticOnNhd ℂ (fun z => (z - w)⁻¹) (spectrum ℂ a)) :
     Φ (holomorphicGerms.ofFun (fun z => (z - w)⁻¹) hf) = -resolvent a w := by
-  have hw : w ∈ resolventSet ℂ a := analyticOnNhd_sub_inv_right_iff.mp hf
-  have hneg :
-      holomorphicGerms.ofFun (fun z => (z - w)⁻¹) hf =
-        -holomorphicGerms.ofFun (fun z => (w - z)⁻¹) (analyticOnNhd_sub_inv_left hw) := by
+  have hneg : holomorphicGerms.ofFun (fun z => (z - w)⁻¹) hf =
+      -holomorphicGerms.ofFun (fun z => (w - z)⁻¹)
+        (analyticOnNhd_sub_inv_left (analyticOnNhd_sub_inv_right_iff.mp hf)) := by
     rw [← holomorphicGerms.ofFun_neg, holomorphicGerms.ofFun_eq_iff]
     exact Eventually.of_forall fun z => by dsimp; rw [← neg_sub w z, inv_neg]
   rw [hneg, map_neg, algHom_ofFun_sub_inv_left hΦ w _]
@@ -138,8 +127,7 @@ theorem algHom_toGerm_sub_inv_left (hΦ : Φ (holomorphicGerms.ofFun id analytic
     {V : Opens ℂ} (ha : spectrum ℂ a ⊆ V) (w : ℂ)
     (hf : DifferentiableOn ℂ (fun z => (w - z)⁻¹) V) :
     Φ (toGerm ha (of V (fun z => (w - z)⁻¹) hf)) = resolvent a w := by
-  rw [toGerm_of]
-  exact algHom_ofFun_sub_inv_left hΦ w _
+  rw [toGerm_of]; exact algHom_ofFun_sub_inv_left hΦ w _
 
 /-- On an open neighbourhood `V` of `spectrum ℂ a` on which `z ↦ (z - w)⁻¹` is holomorphic, any
 unital homomorphism sending the coordinate germ to `a` sends it to `-resolvent a w`. -/
@@ -147,8 +135,7 @@ theorem algHom_toGerm_sub_inv_right (hΦ : Φ (holomorphicGerms.ofFun id analyti
     {V : Opens ℂ} (ha : spectrum ℂ a ⊆ V) (w : ℂ)
     (hf : DifferentiableOn ℂ (fun z => (z - w)⁻¹) V) :
     Φ (toGerm ha (of V (fun z => (z - w)⁻¹) hf)) = -resolvent a w := by
-  rw [toGerm_of]
-  exact algHom_ofFun_sub_inv_right hΦ w _
+  rw [toGerm_of]; exact algHom_ofFun_sub_inv_right hΦ w _
 
 /-- **Algebraic spectral mapping theorem.** For any unital complex-algebra homomorphism
 `Φ : holomorphicGerms (spectrum ℂ a) →ₐ[ℂ] A` sending the coordinate germ to `a`, every germ
@@ -157,34 +144,29 @@ theorem spectrum_algHom_eq (hΦ : Φ (holomorphicGerms.ofFun id analyticOnNhd_id
     (g : holomorphicGerms (spectrum ℂ a)) :
     spectrum ℂ (Φ g) = spectrum ℂ g := by
   refine Subset.antisymm (AlgHom.spectrum_apply_subset Φ g) fun c hc => ?_
-  rw [holomorphicGerms.spectrum_eq] at hc
-  obtain ⟨w, hw, hwc⟩ := hc
+  obtain ⟨w, hw, hwc⟩ := (holomorphicGerms.spectrum_eq g).subset hc
   obtain ⟨U, f, hU, haU, hfU, hfg⟩ := mem_holomorphicGerms_iff_exists_open.mp g.property
   have hg_eq : g = holomorphicGerms.ofFun f ((hfU.analyticOnNhd hU).mono haU) :=
     Subtype.ext (by rw [holomorphicGerms.coe_ofFun, hfg])
-  have hfw : f w = c := by
-    rw [← hwc, hg_eq, holomorphicGerms.eval_ofFun]
+  have hfw : f w = c := by rw [← hwc, hg_eq, holomorphicGerms.eval_ofFun]
   have hdU : DifferentiableOn ℂ (dslope f w) U :=
     (Complex.differentiableOn_dslope (hU.mem_nhds (haU hw))).mpr hfU
-  let q : holomorphicGerms (spectrum ℂ a) :=
-    holomorphicGerms.ofFun (dslope f w) ((hdU.analyticOnNhd hU).mono haU)
+  let q := holomorphicGerms.ofFun (dslope f w) ((hdU.analyticOnNhd hU).mono haU)
   let zid : holomorphicGerms (spectrum ℂ a) := holomorphicGerms.ofFun id analyticOnNhd_id
-  have hfac_left : algebraMap ℂ _ c - g = (algebraMap ℂ _ w - zid) * q := by
+  have hfac : algebraMap ℂ _ c - g = (algebraMap ℂ _ w - zid) * q := by
     rw [hg_eq, ← holomorphicGerms.ofFun_const, ← holomorphicGerms.ofFun_const,
       ← holomorphicGerms.ofFun_sub, ← holomorphicGerms.ofFun_sub, ← holomorphicGerms.ofFun_mul,
       holomorphicGerms.ofFun_eq_iff]
     refine Eventually.of_forall fun z => ?_
     have hds := sub_smul_dslope f w z
-    simp only [smul_eq_mul, hfw] at hds
-    dsimp
-    linear_combination hds
-  have hΦ_left := congrArg Φ hfac_left
+    simp only [smul_eq_mul, hfw] at hds; dsimp; linear_combination hds
+  have hΦ_left := congrArg Φ hfac
   rw [map_sub, AlgHom.commutes, map_mul, map_sub, AlgHom.commutes, hΦ] at hΦ_left
   have hcomm : Commute (algebraMap ℂ A w - a) (Φ q) := by
     simpa only [map_sub, AlgHom.commutes, zid, hΦ] using
       (Commute.all (algebraMap ℂ (holomorphicGerms (spectrum ℂ a)) w - zid) q).map Φ
-  rw [spectrum.mem_iff]
-  exact fun hu => spectrum.mem_iff.mp hw ((hcomm.isUnit_mul_iff.mp (hΦ_left ▸ hu)).1)
+  exact spectrum.mem_iff.mpr fun hu =>
+    spectrum.mem_iff.mp hw ((hcomm.isUnit_mul_iff.mp (hΦ_left ▸ hu)).1)
 
 end Algebraic
 
@@ -212,11 +194,9 @@ theorem Commute.holomorphicCalculusOn_right {a b : A} (hb : Commute b a) (U : Op
 /-- Every element commuting with `a` commutes with `holomorphicCalculus a g`; in particular, every
 value of the holomorphic functional calculus lies in the bicommutant of `a`. -/
 theorem Commute.holomorphicCalculus_right {a b : A} (hb : Commute b a)
-    (g : holomorphicGerms (spectrum ℂ a)) :
-    Commute b (holomorphicCalculus a g) := by
+    (g : holomorphicGerms (spectrum ℂ a)) : Commute b (holomorphicCalculus a g) := by
   obtain ⟨U, ha, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
-  rw [holomorphicCalculus_toGerm]
-  exact hb.holomorphicCalculusOn_right U ha f
+  rw [holomorphicCalculus_toGerm]; exact hb.holomorphicCalculusOn_right U ha f
 
 end Commute
 
@@ -235,8 +215,7 @@ variable {A : Type*} [NormedRing A] [NormedAlgebra ℂ A] [CompleteSpace A]
 @[simp]
 theorem holomorphicCalculus_sub_inv_left (a : A) (w : ℂ)
     (hf : AnalyticOnNhd ℂ (fun z => (w - z)⁻¹) (spectrum ℂ a)) :
-    holomorphicCalculus a (holomorphicGerms.ofFun (fun z => (w - z)⁻¹) hf) =
-      resolvent a w :=
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z => (w - z)⁻¹) hf) = resolvent a w :=
   algHom_ofFun_sub_inv_left (holomorphicCalculus_id a) w hf
 
 /-- The holomorphic germ calculus sends `z ↦ (z - w)⁻¹` (when analytic near `spectrum ℂ a`) to
@@ -244,8 +223,7 @@ theorem holomorphicCalculus_sub_inv_left (a : A) (w : ℂ)
 @[simp]
 theorem holomorphicCalculus_sub_inv_right (a : A) (w : ℂ)
     (hf : AnalyticOnNhd ℂ (fun z => (z - w)⁻¹) (spectrum ℂ a)) :
-    holomorphicCalculus a (holomorphicGerms.ofFun (fun z => (z - w)⁻¹) hf) =
-      -resolvent a w :=
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z => (z - w)⁻¹) hf) = -resolvent a w :=
   algHom_ofFun_sub_inv_right (holomorphicCalculus_id a) w hf
 
 /-- On an open neighbourhood `U` of `spectrum ℂ a` on which `z ↦ (w - z)⁻¹` is holomorphic,
@@ -289,8 +267,7 @@ theorem holomorphicCalculus_ofFun_div (a : A) {f g : ℂ → ℂ}
 `Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q)`. -/
 theorem holomorphicCalculus_div_polynomial (a : A) (p : Polynomial ℂ) {q : Polynomial ℂ}
     (hq : ∀ z ∈ spectrum ℂ a, q.eval z ≠ 0) :
-    holomorphicCalculus a
-      (holomorphicGerms.ofFun (fun z => p.eval z / q.eval z)
+    holomorphicCalculus a (holomorphicGerms.ofFun (fun z => p.eval z / q.eval z)
         (((AnalyticOnNhd.eval_polynomial p).mono (subset_univ _)).div
           ((AnalyticOnNhd.eval_polynomial q).mono (subset_univ _)) hq)) =
       Polynomial.aeval a p * Ring.inverse (Polynomial.aeval a q) := by
@@ -302,8 +279,7 @@ theorem holomorphicCalculus_div_polynomial (a : A) (p : Polynomial ℂ) {q : Pol
 
 /-- The holomorphic functional calculus preserves spectra: the spectrum in `A` of
 `holomorphicCalculus a g` coincides with the spectrum of the germ `g`. -/
-theorem spectrum_holomorphicCalculus_eq_spectrum (a : A)
-    (g : holomorphicGerms (spectrum ℂ a)) :
+theorem spectrum_holomorphicCalculus_eq_spectrum (a : A) (g : holomorphicGerms (spectrum ℂ a)) :
     spectrum ℂ (holomorphicCalculus a g) = spectrum ℂ g :=
   spectrum_algHom_eq (holomorphicCalculus_id a) g
 
@@ -357,14 +333,12 @@ theorem _root_.HasFPowerSeriesOnBall.summable_norm_coeff_smul_sub_pow
     rw [Set.mem_singleton_iff.mp hw', ← hnndist, ← edist_nndist] at hws
     exact hws ▸ Metric.mem_eball.mp (ha hz)
   obtain ⟨ρ, hρ₁, hρ₂⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hspec_lt
-  have hgρ : gelfandRadius x < ρ := by
-    rw [spectrum.spectralRadius_eq_gelfandRadius] at hρ₁
-    exact (ENNReal.ofReal_lt_coe_iff (gelfandRadius_nonneg x)).mp hρ₁
-  obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt x hgρ
+  rw [spectrum.spectralRadius_eq_gelfandRadius] at hρ₁
+  obtain ⟨C, _, hC⟩ := norm_pow_le_mul_pow_of_gelfandRadius_lt x
+    ((ENNReal.ofReal_lt_coe_iff (gelfandRadius_nonneg x)).mp hρ₁)
   refine Summable.of_nonneg_of_le (fun _ => norm_nonneg _) (fun n => ?_)
     ((p.summable_norm_mul_pow (hρ₂.trans_le hf.r_le)).mul_left C)
-  calc ‖p.coeff n • x ^ n‖
-      = ‖p n‖ * ‖x ^ n‖ := by rw [norm_smul, p.norm_apply_eq_norm_coef]
+  calc ‖p.coeff n • x ^ n‖ = ‖p n‖ * ‖x ^ n‖ := by rw [norm_smul, p.norm_apply_eq_norm_coef]
     _ ≤ ‖p n‖ * (C * (ρ : ℝ) ^ n) := mul_le_mul_of_nonneg_left (hC n) (norm_nonneg _)
     _ = C * (‖p n‖ * (ρ : ℝ) ^ n) := by ring
 
@@ -383,41 +357,32 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_holomorphicCalculusOn
   let w : holomorphicFunctions U := of U (fun z => q.eval z) q.differentiable.differentiableOn
   let F : ℕ → holomorphicFunctions U := fun n => ∑ k ∈ Finset.range n, p.coeff k • w ^ k
   have hF_apply (n : ℕ) (z : U) : extend (F n) z = p.partialSum n ((z : ℂ) - z₀) := by
-    rw [extend_apply]
     have hsum : (F n).val z = ∑ k ∈ Finset.range n, (p.coeff k • w ^ k).val z :=
       map_sum ((ContinuousMap.evalAlgHom ℂ ℂ z).comp (holomorphicFunctions U).val) _ _
-    rw [hsum, FormalMultilinearSeries.partialSum]
+    rw [extend_apply, hsum, FormalMultilinearSeries.partialSum]
     refine Finset.sum_congr rfl fun k _ => ?_
-    rw [p.apply_eq_pow_smul_coeff]
-    simp [w, q, smul_eq_mul, mul_comm]
+    rw [p.apply_eq_pow_smul_coeff]; simp [w, q, smul_eq_mul, mul_comm]
   have hF_tendsto : Tendsto F atTop (𝓝 (of U f hf.differentiableOn)) := by
     rw [tendsto_iff_tendstoLocallyUniformlyOn]
-    refine (hf.tendstoLocallyUniformlyOn'.congr_right fun z hz => ?_).congr fun n z hz => ?_
-    · rw [extend_apply (of U f hf.differentiableOn) ⟨z, hz⟩, of_apply]
-    · exact (hF_apply n ⟨z, hz⟩).symm
+    exact (hf.tendstoLocallyUniformlyOn'.congr_right fun z hz => by
+      rw [extend_apply (of U f hf.differentiableOn) ⟨z, hz⟩, of_apply]).congr
+      fun n z hz => (hF_apply n ⟨z, hz⟩).symm
   have hw_calc : holomorphicCalculusOn a U ha w = a - algebraMap ℂ A z₀ := by
-    rw [holomorphicCalculusOn_polynomial a U ha q]
-    simp [q]
-  have hcalc_F (n : ℕ) :
-      holomorphicCalculusOn a U ha (F n) =
-        ∑ k ∈ Finset.range n, p.coeff k • (a - algebraMap ℂ A z₀) ^ k := by
+    rw [holomorphicCalculusOn_polynomial a U ha q]; simp [q]
+  have hcalc_F (n : ℕ) : holomorphicCalculusOn a U ha (F n) =
+      ∑ k ∈ Finset.range n, p.coeff k • (a - algebraMap ℂ A z₀) ^ k := by
     simp only [F, map_sum, map_smul, map_pow, hw_calc]
-  have htendsto_nat :
-      Tendsto (fun n => ∑ k ∈ Finset.range n, p.coeff k • (a - algebraMap ℂ A z₀) ^ k) atTop
-        (𝓝 (holomorphicCalculusOn a U ha (of U f hf.differentiableOn))) := by
+  exact (hasSum_iff_tendsto_nat_of_summable_norm (hf.summable_norm_coeff_smul_sub_pow ha)).mpr <| by
     simpa only [Function.comp_def, hcalc_F] using
       ((continuous_holomorphicCalculusOn a U ha).tendsto _).comp hF_tendsto
-  exact (hasSum_iff_tendsto_nat_of_summable_norm
-    (hf.summable_norm_coeff_smul_sub_pow ha)).mpr htendsto_nat
 
 /-- **Power series agreement** for the holomorphic germ calculus. -/
 theorem _root_.HasFPowerSeriesOnBall.hasSum_holomorphicCalculus
     {f : ℂ → ℂ} {p : FormalMultilinearSeries ℂ ℂ ℂ} {z₀ : ℂ} {r : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f p z₀ r) {a : A} (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) :
     HasSum (fun n => p.coeff n • (a - algebraMap ℂ A z₀) ^ n)
-      (holomorphicCalculus a
-        (holomorphicGerms.ofFun f
-          ((hf.differentiableOn.analyticOnNhd Metric.isOpen_eball).mono ha))) := by
+      (holomorphicCalculus a (holomorphicGerms.ofFun f
+        ((hf.differentiableOn.analyticOnNhd Metric.isOpen_eball).mono ha))) := by
   simpa only [← toGerm_of (U := ⟨Metric.eball z₀ r, Metric.isOpen_eball⟩) ha f hf.differentiableOn,
     holomorphicCalculus_toGerm] using hf.hasSum_holomorphicCalculusOn ha
 
@@ -425,8 +390,7 @@ theorem _root_.HasFPowerSeriesOnBall.hasSum_holomorphicCalculus
 theorem _root_.HasFPowerSeriesOnBall.holomorphicCalculus_eq_tsum
     {f : ℂ → ℂ} {p : FormalMultilinearSeries ℂ ℂ ℂ} {z₀ : ℂ} {r : ℝ≥0∞}
     (hf : HasFPowerSeriesOnBall f p z₀ r) {a : A} (ha : spectrum ℂ a ⊆ Metric.eball z₀ r) :
-    holomorphicCalculus a
-      (holomorphicGerms.ofFun f
+    holomorphicCalculus a (holomorphicGerms.ofFun f
         ((hf.differentiableOn.analyticOnNhd Metric.isOpen_eball).mono ha)) =
       ∑' n, p.coeff n • (a - algebraMap ℂ A z₀) ^ n :=
   (hf.hasSum_holomorphicCalculus ha).tsum_eq.symm
@@ -435,8 +399,8 @@ theorem _root_.HasFPowerSeriesOnBall.holomorphicCalculus_eq_tsum
 `spectrum ℂ a`, the holomorphic germ calculus agrees with `FormalMultilinearSeries.ofScalarsSum`. -/
 theorem holomorphicCalculus_ofScalarsSum (c : ℕ → ℂ) (z₀ : ℂ) {a : A}
     (ha : spectrum ℂ a ⊆ Metric.eball z₀ (FormalMultilinearSeries.ofScalars ℂ c).radius) :
-    holomorphicCalculus a
-      (holomorphicGerms.ofFun (fun z => FormalMultilinearSeries.ofScalarsSum c (z - z₀))
+    holomorphicCalculus a (holomorphicGerms.ofFun
+        (fun z => FormalMultilinearSeries.ofScalarsSum c (z - z₀))
         ((analyticOnNhd_ofScalarsSum_sub c z₀).mono ha)) =
       FormalMultilinearSeries.ofScalarsSum c (a - algebraMap ℂ A z₀) := by
   nontriviality A
@@ -454,19 +418,15 @@ theorem holomorphicCalculus_ofScalarsSum (c : ℕ → ℂ) (z₀ : ℂ) {a : A}
 @[simp]
 theorem holomorphicCalculusOn_complex (z : ℂ) (U : Opens ℂ) (hz : spectrum ℂ z ⊆ U)
     (f : holomorphicFunctions U) :
-    holomorphicCalculusOn z U hz f =
-      f.val ⟨z, hz (spectrum.mem_iff.mpr (by simp))⟩ := by
+    holomorphicCalculusOn z U hz f = f.val ⟨z, hz (spectrum.mem_iff.mpr (by simp))⟩ := by
   obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact z).exists_cycle_windingNumber_eq_one U.isOpen hz
   have hz_mem : z ∈ spectrum ℂ z := spectrum.mem_iff.mpr (by simp)
   have hzΓ : z ∉ Cycle.trace Γ := fun h => (Cycle.isIn_iff.mp hΓ h).2 hz_mem
   have hΓU : Γ.IsIn U := Cycle.isIn_iff.mpr fun _ h => (Cycle.isIn_iff.mp hΓ h).1
-  have hint :
-      Cycle.integral (fun w => extend f w • resolvent z w) Γ =
-        Cycle.integral (fun w => extend f w / (w - z)) Γ := by
-    refine Cycle.integral_congr fun w _ => ?_
-    simp [resolvent, Ring.inverse_eq_inv', div_eq_mul_inv]
-  have hcif :
-      Cycle.integral (fun w => extend f w / (w - z)) Γ = 2 * π * I * extend f z := by
+  have hint : Cycle.integral (fun w => extend f w • resolvent z w) Γ =
+      Cycle.integral (fun w => extend f w / (w - z)) Γ :=
+    Cycle.integral_congr fun w _ => by simp [resolvent, Ring.inverse_eq_inv', div_eq_mul_inv]
+  have hcif : Cycle.integral (fun w => extend f w / (w - z)) Γ = 2 * π * I * extend f z := by
     simpa [hw z hz_mem] using
       Cycle.cauchyIntegralFormula_nullHomologous U.isOpen (differentiableOn_extend f) hΓU hn hzΓ
   rw [holomorphicCalculusOn_eq_integral z U hz f Γ hΓ hn hw, hint, hcif,
@@ -476,8 +436,7 @@ theorem holomorphicCalculusOn_complex (z : ℂ) (U : Opens ℂ) (hz : spectrum �
 /-- In the complex field `ℂ` itself, `holomorphicCalculus z` is point evaluation of germs at `z`. -/
 @[simp]
 theorem holomorphicCalculus_complex (z : ℂ) (g : holomorphicGerms (spectrum ℂ z)) :
-    holomorphicCalculus z g =
-      holomorphicGerms.eval z (spectrum.mem_iff.mpr (by simp)) g := by
+    holomorphicCalculus z g = holomorphicGerms.eval z (spectrum.mem_iff.mpr (by simp)) g := by
   obtain ⟨U, hz, f, rfl⟩ := holomorphicGerms.exists_toGerm_eq g
   rw [holomorphicCalculus_toGerm, holomorphicCalculusOn_complex, eval_toGerm]
 
@@ -501,10 +460,8 @@ theorem map_holomorphicCalculusOn (φ : F) (hφ : Continuous φ) (a : A) (U : Op
   have hφL (x : A) : φL x = φ x := rfl
   obtain ⟨Γ, hΓ, hn, hw⟩ := (spectrum.isCompact a).exists_cycle_windingNumber_eq_one U.isOpen ha
   have hsub : spectrum ℂ (φ a) ⊆ spectrum ℂ a := AlgHom.spectrum_apply_subset φ a
-  have hΓ' : Γ.IsIn (U \ spectrum ℂ (φ a)) :=
-    Cycle.isIn_iff.mpr fun z hz =>
-      ⟨(Cycle.isIn_iff.mp hΓ hz).1, fun h => (Cycle.isIn_iff.mp hΓ hz).2 (hsub h)⟩
-  have hw' : ∀ z ∈ spectrum ℂ (φ a), Cycle.windingNumber z Γ = 1 := fun z hz => hw z (hsub hz)
+  have hΓ' : Γ.IsIn (U \ spectrum ℂ (φ a)) := Cycle.isIn_iff.mpr fun z hz =>
+    ⟨(Cycle.isIn_iff.mp hΓ hz).1, fun h => (Cycle.isIn_iff.mp hΓ hz).2 (hsub h)⟩
   have hR : Γ.IsIn (resolventSet ℂ a) :=
     Cycle.isIn_iff.mpr fun _ hz => spectrum.notMem_iff.mp (Cycle.isIn_iff.mp hΓ hz).2
   have hcont : ContinuousOn (fun z => extend f z • resolvent a z) (Cycle.trace Γ) :=
@@ -513,10 +470,10 @@ theorem map_holomorphicCalculusOn (φ : F) (hφ : Continuous φ) (a : A) (U : Op
   have hint := Cycle.integral_comp_comm (f := fun z => extend f z • resolvent a z)
     (fun _ => Cycle.intervalIntegrable_of_mem_support hcont) φL
   rw [← hφL, holomorphicCalculusOn_eq_integral a U ha f Γ hΓ hn hw, map_smul, ← hint,
-    holomorphicCalculusOn_eq_integral (φ a) U (hsub.trans ha) f Γ hΓ' hn hw']
-  congr 1
-  refine Cycle.integral_congr fun z hz => ?_
-  rw [map_smul, hφL, AlgHom.map_resolvent φ (Cycle.isIn_iff.mp hR hz)]
+    holomorphicCalculusOn_eq_integral (φ a) U (hsub.trans ha) f Γ hΓ' hn
+      (fun z hz => hw z (hsub hz))]
+  exact congrArg _ <| Cycle.integral_congr fun z hz => by
+    rw [map_smul, hφL, AlgHom.map_resolvent φ (Cycle.isIn_iff.mp hR hz)]
 
 /-- `simp` form of `map_holomorphicCalculusOn` for bundled continuous algebra homomorphisms
 (`ContinuousMapClass`). -/
@@ -545,8 +502,7 @@ theorem map_holomorphicCalculus (φ : F) (hφ : Continuous φ) (a : A)
 theorem map_holomorphicCalculus_continuousMapClass [ContinuousMapClass F A B] (φ : F) (a : A)
     (g : holomorphicGerms (spectrum ℂ a)) :
     φ (holomorphicCalculus a g) =
-      holomorphicCalculus (φ a)
-        (holomorphicGerms.restrict (AlgHom.spectrum_apply_subset φ a) g) :=
+      holomorphicCalculus (φ a) (holomorphicGerms.restrict (AlgHom.spectrum_apply_subset φ a) g) :=
   map_holomorphicCalculus φ (map_continuous φ) a g
 
 end Naturality
