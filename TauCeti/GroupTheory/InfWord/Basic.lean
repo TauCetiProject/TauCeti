@@ -79,6 +79,8 @@ there is one. The instance `One Λ` is not used, because it need not be that ele
   letters.
 * `TauCeti.InfWord.take_eq_take_iff_forall_letter_eq`,
   `TauCeti.InfWord.take_succ_eq_take_succ_iff`: when two words have the same initial segment.
+* `TauCeti.InfWord.min_le_of_isGreatest_common_prefix`: ultrametric inequality for longest common
+  initial segments of three words.
 * `TauCeti.InfWord.append_eq_append_iff`: two factorisations of one word differ by a common
   middle piece.
 * `TauCeti.InfWord.inv_take`, `TauCeti.InfWord.inv_drop`: inversion exchanges initial and final
@@ -335,6 +337,22 @@ theorem take_eq_take_iff_forall_letter_eq {u v : InfWord Λ X} {β : Λ} :
   split_ifs with hγ
   · exact h γ hγ
   · rfl
+
+/-- Longest common initial segments satisfy the ultrametric inequality: if `δ₁`, `δ₂`, `δ₃` are the
+lengths of the longest common initial segments of `(u, v)`, `(v, w)`, `(u, w)`, then
+`min δ₁ δ₂ ≤ δ₃`. -/
+theorem min_le_of_isGreatest_common_prefix {u v w : InfWord Λ X} {δ₁ δ₂ δ₃ : Λ}
+    (h₁ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ v.length ∧ u.take β = v.take β} δ₁)
+    (h₂ : IsGreatest {β | 0 ≤ β ∧ β ≤ v.length ∧ β ≤ w.length ∧ v.take β = w.take β} δ₂)
+    (h₃ : IsGreatest {β | 0 ≤ β ∧ β ≤ u.length ∧ β ≤ w.length ∧ u.take β = w.take β} δ₃) :
+    min δ₁ δ₂ ≤ δ₃ := by
+  refine h₃.2 ⟨le_min h₁.1.1 h₂.1.1, (min_le_left _ _).trans h₁.1.2.1,
+    (min_le_right _ _).trans h₂.1.2.2.1, ?_⟩
+  have hu : u.take (min δ₁ δ₂) = v.take (min δ₁ δ₂) := by
+    rw [← min_eq_left (min_le_left δ₁ δ₂), ← take_take, h₁.1.2.2.2, take_take]
+  have hv : v.take (min δ₁ δ₂) = w.take (min δ₁ δ₂) := by
+    rw [← min_eq_left (min_le_right δ₁ δ₂), ← take_take, h₂.1.2.2.2, take_take]
+  exact hu.trans hv
 
 end LinearOrder
 
