@@ -17,8 +17,9 @@ import Mathlib.Topology.Order.ProjIcc
 
 An unordered closed interval is a neighbourhood of each of its points other than its endpoints.
 The frontier of a closed or half-open interval avoids every set that misses both endpoints.
-In `ℝ`, the interval from a point of an order-connected set to a nearby point of that set stays in
-the ball about the first point.
+In `ℝ`, an interval with endpoints near a point lies in the ball about that point, and the
+interval from a point of an order-connected set to a nearby point of that set stays in the ball
+about the first point.
 Each point of the open interval between two endpoints that avoids a closed set is interior to a
 closed subinterval whose interior avoids that set.
 A nonempty compact subset of an open interval lies in the interior of a smaller closed interval.
@@ -41,6 +42,8 @@ A path that starts in an open set and leaves it has a first exit time.
   `a` and `b`.
 * `TauCeti.disjoint_frontier_Icc`, `TauCeti.disjoint_frontier_Ioc` — the frontier of `[a, b]` or
   `(a, b]` avoids a set containing neither `a` nor `b`.
+* `Real.Icc_subset_ball` — in `ℝ`, an interval whose endpoints lie within `ε` of `x` is
+  contained in `ball x ε`.
 * `Set.OrdConnected.uIcc_subset_ball_inter` — in `ℝ`, the interval between a point `x` of an
   order-connected set `s` and a point of `ball x ε ∩ s` lies in `ball x ε ∩ s`.
 * `TauCeti.exists_Icc_subset_uIcc_disjoint` — a point of the open interval between `a` and `b`
@@ -98,6 +101,13 @@ theorem disjoint_frontier_Ioc {α : Type*} [TopologicalSpace α] [LinearOrder α
     (hb : b ∉ s) : Disjoint (frontier (Ioc a b)) s := by
   rw [frontier_Ioc hab]
   exact disjoint_insert_left.2 ⟨ha, disjoint_singleton_left.2 hb⟩
+
+/-- In `ℝ`, an interval whose endpoints lie within `ε` of `x` is contained in the ball of radius
+`ε` about `x`. -/
+theorem _root_.Real.Icc_subset_ball {x ε s t : ℝ} (hs : x - ε < s) (ht : t < x + ε) :
+    Icc s t ⊆ Metric.ball x ε := by
+  rw [Real.ball_eq_Ioo]
+  exact Icc_subset_Ioo hs ht
 
 /-- In `ℝ`, the interval between a point `x` of an order-connected set `s` and a point `y` of
 `ball x ε ∩ s` lies in `ball x ε ∩ s`. -/

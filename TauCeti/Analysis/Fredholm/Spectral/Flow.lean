@@ -316,12 +316,9 @@ theorem IsSpectralCutOn.spectralCount_sub_spectralCount_eq {s t c c' : ℝ} (hst
         Module.finrank 𝕜 (cfc ((Ioc c' c).indicator (1 : ℝ → ℝ)) (A u)).range := fun u hu ↦
       spectralCount_eq_add (hsa u hu) (hc.2 u hu).1 (hc.2 u hu).2.1 (hc.2 u hu).2.2 hc'.pos hcc
         (hc'.2 u hu).1 (hc'.2 u hu).2.1 (hc'.2 u hu).2.2
-    have hr := congr_arg Cardinal.toNat (isPreconnected_Icc.rank_range_cfc_indicator_eq hA hsa
+    have hr := isPreconnected_Icc.finrank_range_cfc_indicator_eq hA hsa
       (Ω := Ioc c' c) (fun u hu ↦ disjoint_frontier_Ioc hcc (hc'.notMem_spectrum hu)
-        (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩)
-    have hr' : (Module.finrank 𝕜 (cfc ((Ioc c' c).indicator (1 : ℝ → ℝ)) (A t)).range : ℤ) =
-        Module.finrank 𝕜 (cfc ((Ioc c' c).indicator (1 : ℝ → ℝ)) (A s)).range := by
-      exact_mod_cast hr
+        (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩
     rw [hdec t ⟨hst, le_rfl⟩, hdec s ⟨le_rfl, hst⟩]
     push_cast
     linarith
@@ -357,13 +354,6 @@ private theorem exists_pos_forall_exists_isSpectralCutOn_ball_inter {X : Type*}
   obtain ⟨i, hi⟩ := hleb z hz
   exact ⟨c i, (hcut i i.2).mono fun w hw ↦ ⟨hi hw.1, hw.2⟩⟩
 
-/-- An interval whose endpoints lie within `ε` of `x` is contained in the ball of radius `ε`
-about `x`. -/
-private theorem Icc_subset_ball {x ε s t : ℝ} (hs : x - ε < s) (ht : t < x + ε) :
-    Icc s t ⊆ ball x ε := by
-  rw [Real.ball_eq_Ioo]
-  exact Icc_subset_Ioo hs ht
-
 omit [IsScalarTower ℝ 𝕜 (H →L[𝕜] H)] in
 /-- By the Lebesgue number lemma, if every time has a neighbourhood with a spectral cut, then all
 short enough subintervals of `[a, b]` have spectral cuts. -/
@@ -374,7 +364,7 @@ private theorem exists_pos_forall_exists_isSpectralCutOn {a b : ℝ}
   refine ⟨δ, hδ, fun s t has hst htb hlt ↦ ?_⟩
   obtain ⟨c, hc⟩ := hcut s ⟨has, hst.trans htb⟩
   exact ⟨c, hc.mono fun u hu ↦
-    ⟨Icc_subset_ball (by linarith) (by linarith) hu, has.trans hu.1, hu.2.trans htb⟩⟩
+    ⟨Real.Icc_subset_ball (by linarith) (by linarith) hu, has.trans hu.1, hu.2.trans htb⟩⟩
 
 open scoped Classical in
 /-- The change of the count over `[s, t]` for some spectral cut, or `0` if there is none. -/
@@ -695,9 +685,9 @@ theorem spectralFlow_eq_zero_of_forall_zero_notMem_spectrum {a b : ℝ} (hab : a
     have hsub : Icc s t ⊆ Icc a b := Icc_subset_Icc has htb
     have hr : spectralCount c (A t) = spectralCount c (A s) := by
       rw [spectralCount_def, spectralCount_def]
-      exact congr_arg Cardinal.toNat (isPreconnected_Icc.rank_range_cfc_indicator_eq (hA.mono hsub)
+      exact isPreconnected_Icc.finrank_range_cfc_indicator_eq (hA.mono hsub)
         (fun u hu ↦ hsa u (hsub hu)) (Ω := Icc 0 c) (fun u hu ↦ disjoint_frontier_Icc hc.pos.le
-          (h0 u (hsub hu)) (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩)
+          (h0 u (hsub hu)) (hc.notMem_spectrum hu)) ⟨hst, le_rfl⟩ ⟨le_rfl, hst⟩
     simp [hr]
   rw [spectralFlow_eq_sub hab hA hsa hF hp]
   simp
