@@ -13,17 +13,13 @@ import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 /-!
 # Separability between `IsLocalRing.ResidueField` and maximal-ideal quotients
 
-For a local algebra homomorphism `A → B` of local rings, `Algebra.IsSeparable` between
-`IsLocalRing.ResidueField`s agrees with that between maximal-ideal quotients, mirroring
-`Algebra.isSeparable_residueField_iff`.
+For a local algebra map `A → B`, `Algebra.IsSeparable` between `ResidueField`s agrees with that
+between maximal-ideal quotients, mirroring `Algebra.isSeparable_residueField_iff`.
 -/
 
 public section
-
 open IsLocalRing
-
 namespace TauCeti.IsLocalRing
-
 attribute [local instance] Ideal.Quotient.field
 
 /-- For a local algebra map `A → B`, `ResidueField B / ResidueField A` is separable iff
@@ -33,16 +29,14 @@ theorem isSeparable_residueField_iff {A B : Type*} [CommRing A] [IsLocalRing A] 
     Algebra.IsSeparable (ResidueField A) (ResidueField B) ↔
       Algebra.IsSeparable (A ⧸ maximalIdeal A) (B ⧸ maximalIdeal B) := by
   refine Algebra.IsSeparable.iff_of_equiv_equiv
-    (TauCeti.residueFieldAlgEquivOfSurjective
-      (ψ := Algebra.ofId A (A ⧸ maximalIdeal A)) Ideal.Quotient.mk_surjective).toRingEquiv
-    (TauCeti.residueFieldAlgEquivOfSurjective
-      (ψ := Algebra.ofId B (B ⧸ maximalIdeal B)) Ideal.Quotient.mk_surjective).toRingEquiv
-    (RingHom.ext fun x ↦ ?_)
+    (TauCeti.residueFieldAlgEquivOfSurjective (ψ := Algebra.ofId A (A ⧸ maximalIdeal A))
+      Ideal.Quotient.mk_surjective).toRingEquiv
+    (TauCeti.residueFieldAlgEquivOfSurjective (ψ := Algebra.ofId B (B ⧸ maximalIdeal B))
+      Ideal.Quotient.mk_surjective).toRingEquiv (RingHom.ext fun x ↦ ?_)
   obtain ⟨a, rfl⟩ := residue_surjective x
   have hA := TauCeti.residueFieldAlgEquivOfSurjective_residue
     (ψ := Algebra.ofId A (A ⧸ maximalIdeal A)) Ideal.Quotient.mk_surjective a
   have hB := TauCeti.residueFieldAlgEquivOfSurjective_residue
     (ψ := Algebra.ofId B (B ⧸ maximalIdeal B)) Ideal.Quotient.mk_surjective (algebraMap A B a)
   simp [hA, hB, Ideal.Quotient.algebraMap_eq, Ideal.Quotient.algebraMap_mk_of_liesOver]
-
 end TauCeti.IsLocalRing

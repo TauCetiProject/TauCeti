@@ -352,49 +352,18 @@ theorem lowerJump_iff_isLocalRingLowerJump (u : RamificationIndexDomain) :
 /-- Every lower break occurs at an integer index. -/
 theorem lowerJump_eq_intCast {u : RamificationIndexDomain} (h : LowerJump K L u) :
     ∃ i : ℤ, ∃ hi : (-1 : ℝ) ≤ (i : ℝ), u = ⟨i, hi⟩ := by
-  let i := ⌈(u : ℝ)⌉
-  have hu : (u : ℝ) ≤ (i : ℝ) := Int.le_ceil _
-  have hi : (-1 : ℝ) ≤ (i : ℝ) := u.property.trans hu
-  refine ⟨i, hi, ?_⟩
-  rcases eq_or_lt_of_le hu with heq | hlt
-  · exact Subtype.ext heq
-  · have hstrict := (lowerJump_iff K L u).mp h ⟨(i : ℝ), hi⟩
-      (Subtype.mk_lt_mk.mpr hlt)
-    have hsame : lowerRamificationGroupReal K L (i : ℝ) =
-        lowerRamificationGroupReal K L (u : ℝ) := by
-      simp only [lowerRamificationGroupReal_def, Int.ceil_intCast]
-      rfl
-    rw [hsame] at hstrict
-    exact False.elim ((lt_irrefl _) hstrict)
+  obtain ⟨i, hi, hu⟩ :=
+    TauCeti.IsLocalRing.lowerJump_eq_intCast ((lowerJump_iff_isLocalRingLowerJump K L u).1 h)
+  exact ⟨i, by exact_mod_cast hi, Subtype.ext hu⟩
 
 /-- At an integer `i ≥ -1`, a lower break is exactly a strict decrease from `G_i` to
 `G_{i+1}`. -/
 @[simp]
 theorem lowerJump_intCast_iff {i : ℤ} (hi : (-1 : ℝ) ≤ (i : ℝ)) :
     LowerJump K L ⟨i, hi⟩ ↔
-      lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i := by
-  constructor
-  · intro h
-    have hi' : (-1 : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by
-      have h : (i : ℝ) ≤ ((i + 1 : ℤ) : ℝ) := by push_cast; linarith
-      exact hi.trans h
-    have hsucc : (⟨(i : ℝ), hi⟩ : RamificationIndexDomain) < ⟨(i + 1 : ℤ), hi'⟩ := by
-      apply Subtype.mk_lt_mk.mpr
-      exact_mod_cast (by omega : i < i + 1)
-    simpa only [lowerRamificationGroupReal_intCast] using
-      (lowerJump_iff K L _).mp h ⟨(i + 1 : ℤ), hi'⟩ hsucc
-  · intro h
-    apply (lowerJump_iff K L _).mpr
-    intro v hiv
-    have hreal : (i : ℝ) < (v : ℝ) := hiv
-    have hceil : i + 1 ≤ ⌈(v : ℝ)⌉ := by
-      have hlt : i < ⌈(v : ℝ)⌉ := (Int.lt_ceil).2 hreal
-      omega
-    have hle : lowerRamificationGroupReal K L v ≤
-        lowerRamificationGroup K L (i + 1) := by
-      rw [lowerRamificationGroupReal_def]
-      exact lowerRamificationGroup_antitone K L hceil
-    simpa only [Subtype.coe_mk, lowerRamificationGroupReal_intCast] using lt_of_le_of_lt hle h
+      lowerRamificationGroup K L (i + 1) < lowerRamificationGroup K L i :=
+  (lowerJump_iff_isLocalRingLowerJump K L ⟨i, hi⟩).trans
+    (TauCeti.IsLocalRing.lowerJump_intCast_iff (L ≃ₐ[K] L) 𝒪[L] i)
 
 variable {K L} in
 /-- For a nontrivial automorphism group, `G_u` is trivial exactly for real `u` past the largest

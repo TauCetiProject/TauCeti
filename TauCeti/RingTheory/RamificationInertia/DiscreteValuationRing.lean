@@ -96,16 +96,16 @@ theorem addVal_algebraMap {S T : Type*} [CommRing S] [CommRing T] [IsDomain S] [
     [IsLocalHom (algebraMap S T)] [FaithfulSMul S T] (x : S) :
     addVal T (algebraMap S T x) = (maximalIdeal T).ramificationIdx S • addVal S x := by
   obtain ⟨π, hπ⟩ := exists_irreducible S; obtain ⟨ϖ, hϖ⟩ := exists_irreducible T
-  have hπT : algebraMap S T π ≠ 0 := fun h ↦
-    hπ.ne_zero (FaithfulSMul.algebraMap_injective S T (h.trans (map_zero _).symm))
+  have hπT : algebraMap S T π ≠ 0 :=
+    (map_ne_zero_iff _ (FaithfulSMul.algebraMap_injective S T)).2 hπ.ne_zero
   obtain ⟨e, v, hπe⟩ := eq_unit_mul_pow_irreducible hπT hϖ
   have he : (maximalIdeal T).ramificationIdx S = e :=
     ramificationIdx_eq_of_map_maximalIdeal_eq_pow <| by
       rw [hπ.maximalIdeal_eq, Ideal.map_span, Set.image_singleton, hπe,
         Ideal.span_singleton_mul_left_unit v.isUnit, ← Ideal.span_singleton_pow,
         ← hϖ.maximalIdeal_eq]
-  have he0 : e ≠ 0 := fun h ↦
-    hπ.not_isUnit (isUnit_of_map_unit (algebraMap S T) π (by simp [hπe, h]))
+  have he0 : e ≠ 0 := fun h ↦ hπ.not_isUnit <|
+    isUnit_of_map_unit (algebraMap S T) π (by simp [hπe, h])
   by_cases hx : x = 0; · simp [hx, he, nsmul_eq_mul, ENat.mul_top (Nat.cast_ne_zero.2 he0)]
   obtain ⟨n, u, rfl⟩ := eq_unit_mul_pow_irreducible hx hπ
   rw [addVal_def' u hπ n, he]

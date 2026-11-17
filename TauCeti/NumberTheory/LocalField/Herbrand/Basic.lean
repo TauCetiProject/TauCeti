@@ -281,7 +281,7 @@ theorem coe_herbrand_of_coe_eq_natCast (m : ℕ) {u : RamificationIndexDomain} (
     (herbrand K L u : ℝ) =
       (∑ i ∈ Finset.Icc 1 m, (Nat.card (lowerRamificationGroup K L i) : ℝ)) /
         Nat.card (lowerRamificationGroup K L 0) := by
-  simp_rw [coe_herbrand_eq_herbrandFun, lowerRamificationGroup_def, hu]
+  simp_rw [coe_herbrand_eq_herbrandFun, hu, lowerRamificationGroup_def]
   exact TauCeti.IsLocalRing.herbrandFun_natCast (L ≃ₐ[K] L) 𝒪[L] m
 
 /-! ### The upper numbering -/
@@ -371,8 +371,8 @@ theorem psiNat_eq_iff {n m : ℕ} :
 
 /-- `ψℕ_{L/K}(0) = 0`. -/
 @[simp]
-theorem psiNat_zero : psiNat K L 0 = 0 := by
-  rw [psiNat_eq_isLocalRingPsiNat]; exact TauCeti.IsLocalRing.psiNat_zero (L ≃ₐ[K] L) 𝒪[L]
+theorem psiNat_zero : psiNat K L 0 = 0 :=
+  (psiNat_eq_iff K L).2 (by simp)
 
 /-- The integral inverse Herbrand function is strictly increasing. -/
 theorem psiNat_strictMono : StrictMono (psiNat K L) := fun _ _ h ↦ by
@@ -381,7 +381,7 @@ theorem psiNat_strictMono : StrictMono (psiNat K L) := fun _ _ h ↦ by
 
 /-- `n ≤ ψℕ_{L/K}(n)`: the inverse Herbrand function never lowers a unit depth. -/
 theorem self_le_psiNat (n : ℕ) : n ≤ psiNat K L n := by
-  rw [psiNat_eq_isLocalRingPsiNat]; exact TauCeti.IsLocalRing.self_le_psiNat (L ≃ₐ[K] L) 𝒪[L] n
+  exact (psiNat_strictMono K L).id_le n
 
 /-- `ψℕ_{L/K}(n) ≤ i` exactly when `n ≤ ⌊φ_{L/K}(i)⌋`: on natural numbers the integral inverse
 Herbrand function is the lower adjoint of `i ↦ ⌊φ_{L/K}(i)⌋`. In particular

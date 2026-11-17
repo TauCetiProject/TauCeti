@@ -164,22 +164,24 @@ end IsGaloisGroup
 
 namespace TauCeti
 
+section FaithfulSMul
+variable {G A L : Type*} [CommRing A] [Field L] [Algebra A L] [Group G] [MulSemiringAction G L]
+  [SMulCommClass G A L] [FaithfulSMul G L]
 /-- A faithful group action on a field `L` restricts faithfully to `integralClosure A L` whenever
 `L` is a fraction field of `integralClosure A L`. -/
-instance instFaithfulSMulIntegralClosureOfIsFractionRing {G A L : Type*} [CommRing A] [Field L]
-    [Algebra A L] [Group G] [MulSemiringAction G L] [SMulCommClass G A L] [FaithfulSMul G L]
-    [IsFractionRing (integralClosure A L) L] : FaithfulSMul G (integralClosure A L) :=
+instance instFaithfulSMulIntegralClosureOfIsFractionRing [IsFractionRing (integralClosure A L) L] :
+    FaithfulSMul G (integralClosure A L) :=
   ⟨fun h ↦ eq_of_smul_eq_smul fun y : L ↦ by
     obtain ⟨a, b, _, rfl⟩ := IsFractionRing.div_surjective (integralClosure A L) y
     simp only [smul_div₀', ← algebraMap.coe_smul', h]⟩
 /-- A faithful group action on an algebraic field extension `L` over an embedded base ring `A`
 restricts faithfully to `integralClosure A L`. -/
-instance instFaithfulSMulIntegralClosureOfIsAlgebraic {G A L : Type*} [CommRing A] [Field L]
-    [Algebra A L] [FaithfulSMul A L] [Algebra.IsAlgebraic A L] [Group G] [MulSemiringAction G L]
-    [SMulCommClass G A L] [FaithfulSMul G L] : FaithfulSMul G (integralClosure A L) :=
+instance instFaithfulSMulIntegralClosureOfIsAlgebraic [FaithfulSMul A L] [Algebra.IsAlgebraic A L] :
+    FaithfulSMul G (integralClosure A L) :=
   letI := IsIntegralClosure.isFractionRing_of_algebraic A (integralClosure A L)
     fun _ ↦ (FaithfulSMul.algebraMap_eq_zero_iff A L).mp
   inferInstance
+end FaithfulSMul
 /-- For an algebraic extension `L / K` over a fraction field `K` of `A`, `L ≃ₐ[K] L` acts
 faithfully on `integralClosure A L`. -/
 instance instFaithfulSMulAlgEquivIntegralClosure {A K L : Type*} [CommRing A] [Field K] [Field L]
@@ -190,39 +192,37 @@ instance instFaithfulSMulAlgEquivIntegralClosure {A K L : Type*} [CommRing A] [F
   have : Algebra.IsAlgebraic A L := IsFractionRing.comap_isAlgebraic_iff.mpr ‹_›
   inferInstance
 
+section FixedFieldEquiv
 open IntermediateField
-
-variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L]
-  [Algebra A K] [Algebra K L] [Algebra A L] [IsScalarTower A K L]
-
+variable (A : Type*) {K L : Type*} [CommRing A] [Field K] [Field L] [Algebra A K] [Algebra K L]
+  [Algebra A L] [IsScalarTower A K L] (H : Subgroup (L ≃ₐ[K] L))
 /-- The `A`-subalgebra of `H`-fixed elements of `integralClosure A L` is isomorphic as an
 `A`-algebra to `integralClosure A (IntermediateField.fixedField H)`. -/
-def fixedPointsSubalgebraIntegralClosureEquiv (H : Subgroup (L ≃ₐ[K] L)) :
-    FixedPoints.subalgebra A (integralClosure A L) H ≃ₐ[A] integralClosure A (fixedField H) where
-  toFun x := ⟨⟨(x.1 : L), fun h ↦ congrArg Subtype.val (x.2 h)⟩, by
-    have := IsScalarTower.to₁₃₄ A K (fixedField H) L
-    exact (isIntegral_algHom_iff (IsScalarTower.toAlgHom A (fixedField H) L)
-      (fixedField H).val.injective).mp x.1.2⟩
-  invFun y := ⟨⟨(y.1 : L), by
-    have := IsScalarTower.to₁₃₄ A K (fixedField H) L
-    exact y.2.map (IsScalarTower.toAlgHom A (fixedField H) L)⟩, fun h ↦ Subtype.ext (y.1.2 h)⟩
-  left_inv _ := rfl; right_inv _ := rfl; map_mul' _ _ := rfl; map_add' _ _ := rfl
-  commutes' r := Subtype.ext <| Subtype.ext <| by
-    simp [IsScalarTower.algebraMap_apply A K L r,
-      IsScalarTower.algebraMap_apply A K (fixedField H) r]
-@[simp] theorem coe_fixedPointsSubalgebraIntegralClosureEquiv_apply (H : Subgroup (L ≃ₐ[K] L))
+def fixedPointsSubalgebraIntegralClosureEquiv :
+    FixedPoints.subalgebra A (integralClosure A L) H ≃ₐ[A] integralClosure A (fixedField H) :=
+  haveI := IsScalarTower.to₁₃₄ A K (fixedField H) L
+  { toFun x := ⟨⟨(x.1 : L), fun h ↦ congrArg Subtype.val (x.2 h)⟩,
+      (isIntegral_algHom_iff (IsScalarTower.toAlgHom A (fixedField H) L)
+        (fixedField H).val.injective).mp x.1.2⟩
+    invFun y := ⟨⟨(y.1 : L), y.2.map (IsScalarTower.toAlgHom A (fixedField H) L)⟩,
+      fun h ↦ Subtype.ext (y.1.2 h)⟩
+    left_inv _ := rfl, right_inv _ := rfl, map_mul' _ _ := rfl, map_add' _ _ := rfl
+    commutes' r := Subtype.ext <| Subtype.ext <| by
+      simp [IsScalarTower.algebraMap_apply A K L r,
+        IsScalarTower.algebraMap_apply A K (fixedField H) r] }
+@[simp] theorem coe_fixedPointsSubalgebraIntegralClosureEquiv_apply
     (x : FixedPoints.subalgebra A (integralClosure A L) H) :
-    (((fixedPointsSubalgebraIntegralClosureEquiv A H x :
-      integralClosure A (fixedField H)) : fixedField H) : L) = ((x : integralClosure A L) : L) :=
-  (rfl)
-@[simp] theorem coe_fixedPointsSubalgebraIntegralClosureEquiv_symm_apply (H : Subgroup (L ≃ₐ[K] L))
+    (((fixedPointsSubalgebraIntegralClosureEquiv A H x : integralClosure A (fixedField H)) :
+      fixedField H) : L) = ((x : integralClosure A L) : L) := (rfl)
+@[simp] theorem coe_fixedPointsSubalgebraIntegralClosureEquiv_symm_apply
     (y : integralClosure A (fixedField H)) :
-    (((fixedPointsSubalgebraIntegralClosureEquiv A H).symm y :
-      integralClosure A L) : L) = ((y : fixedField H) : L) := (rfl)
+    (((fixedPointsSubalgebraIntegralClosureEquiv A H).symm y : integralClosure A L) : L) =
+      ((y : fixedField H) : L) := (rfl)
+section Galois
+variable [FiniteDimensional K L] [IsGalois K L] [H.Normal]
 /-- `fixedPointsSubalgebraIntegralClosureEquiv` intertwines the quotient action of `Gal(L/K) ⧸ H`
 with the Galois action of `Gal(fixedField H / K)` via `IsGalois.normalAutEquivQuotient H`. -/
-theorem fixedPointsSubalgebraIntegralClosureEquiv_smul [FiniteDimensional K L] [IsGalois K L]
-    (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (q : (L ≃ₐ[K] L) ⧸ H)
+theorem fixedPointsSubalgebraIntegralClosureEquiv_smul (q : (L ≃ₐ[K] L) ⧸ H)
     (x : FixedPoints.subalgebra A (integralClosure A L) H) :
     fixedPointsSubalgebraIntegralClosureEquiv A H (q • x) =
       IsGalois.normalAutEquivQuotient H q • fixedPointsSubalgebraIntegralClosureEquiv A H x := by
@@ -232,19 +232,19 @@ theorem fixedPointsSubalgebraIntegralClosureEquiv_smul [FiniteDimensional K L] [
         AlgEquiv.smul_def, coe_quotient_smul_fixedPoints_subalgebra]
 /-- `(fixedPointsSubalgebraIntegralClosureEquiv A H).symm` intertwines the Galois action of
 `Gal(fixedField H / K)` with `(IsGalois.normalAutEquivQuotient H).symm`. -/
-theorem fixedPointsSubalgebraIntegralClosureEquiv_symm_smul [FiniteDimensional K L] [IsGalois K L]
-    (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (τ : fixedField H ≃ₐ[K] fixedField H)
+theorem fixedPointsSubalgebraIntegralClosureEquiv_symm_smul (τ : fixedField H ≃ₐ[K] fixedField H)
     (y : integralClosure A (fixedField H)) :
     (fixedPointsSubalgebraIntegralClosureEquiv A H).symm (τ • y) =
       (IsGalois.normalAutEquivQuotient H).symm τ •
         (fixedPointsSubalgebraIntegralClosureEquiv A H).symm y :=
   (fixedPointsSubalgebraIntegralClosureEquiv A H).injective <| by
     simp [fixedPointsSubalgebraIntegralClosureEquiv_smul]
-
-variable {A} in
+end Galois
+variable {A H} in
 /-- If `integralClosure A L` is local, so is `integralClosure A (fixedField H)`. -/
-instance instIsLocalRingIntegralClosureFixedField [IsLocalRing (integralClosure A L)]
-    {H : Subgroup (L ≃ₐ[K] L)} : IsLocalRing (integralClosure A (fixedField H)) :=
+instance instIsLocalRingIntegralClosureFixedField [IsLocalRing (integralClosure A L)] :
+    IsLocalRing (integralClosure A (fixedField H)) :=
   (fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv.isLocalRing
+end FixedFieldEquiv
 
 end TauCeti

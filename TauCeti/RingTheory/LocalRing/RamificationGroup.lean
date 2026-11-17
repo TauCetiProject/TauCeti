@@ -431,27 +431,19 @@ theorem min_le_lowerIndex_mul (σ τ : G) :
       (le_trans hn (min_le_right ..)))
 
 /-- The lower index of an element of a subgroup `H ≤ G` agrees with its lower index in `G`. -/
-@[simp]
-theorem lowerIndex_coe_subgroup {H : Subgroup G} (h : H) :
-    lowerIndex S (h : G) = lowerIndex S h := by
-  simp only [lowerIndex_def, Subgroup.smul_def]
-
+@[simp] theorem lowerIndex_coe_subgroup {H : Subgroup G} (h : H) :
+    lowerIndex S (h : G) = lowerIndex S h := by simp only [lowerIndex_def, Subgroup.smul_def]
 /-- If `i_G(g h) ≤ i_G(g)`, then `i_G(g h) = min (i_G(h), i_G(g))`. -/
 theorem lowerIndex_mul_eq_min_of_le {g h : G} (hgh : lowerIndex S (g * h) ≤ lowerIndex S g) :
     lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) := by
-  have h₁ := min_le_lowerIndex_mul (S := S) g h
   have h₂ := min_le_lowerIndex_mul (S := S) g⁻¹ (g * h)
   rw [inv_mul_cancel_left, lowerIndex_inv, min_eq_right hgh] at h₂
-  exact le_antisymm (le_min h₂ hgh) (min_comm (lowerIndex S g) _ ▸ h₁)
-
-/-- If `g` has maximal lower index in its coset `g H`, then `i_G(g h) = min (i_H(h), i_G(g))` for
-every `h ∈ H`. -/
+  exact le_antisymm (le_min h₂ hgh) (min_comm (lowerIndex S g) _ ▸ min_le_lowerIndex_mul g h)
+/-- If `g` has maximal lower index in `g H`, then `i_G(g h) = min (i_H(h), i_G(g))`. -/
 theorem lowerIndex_mul_of_forall_le {H : Subgroup G} (g : G)
     (hg : ∀ h : H, lowerIndex S (g * h) ≤ lowerIndex S g) (h : H) :
-    lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) := by
-  rw [← lowerIndex_coe_subgroup h]
-  exact lowerIndex_mul_eq_min_of_le (hg h)
-
+    lowerIndex S (g * h) = min (lowerIndex S h) (lowerIndex S g) :=
+  lowerIndex_coe_subgroup (S := S) h ▸ lowerIndex_mul_eq_min_of_le (hg h)
 variable (S) in
 /-- Every coset `g H` of a finite subgroup `H ≤ G` contains an element of largest lower index. -/
 theorem exists_forall_lowerIndex_mul_le (H : Subgroup G) [Finite H] (g : G) :
@@ -774,6 +766,7 @@ theorem _root_.AlgEquiv.ramificationGroup_integralClosure_eq_comap_autCongr {A K
   ramificationGroup_eq_comap_of_ringEquiv
     (e := (e.restrictScalars A).mapIntegralClosure.toRingEquiv)
     (fun _ _ ↦ Subtype.ext <| by simp [AlgEquiv.smul_def, AlgEquiv.autCongr_apply]) i
+open IntermediateField in
 /-- `IsGalois.normalAutEquivQuotient H` pulls back lower ramification groups from
 `integralClosure A (fixedField H)` to `FixedPoints.subalgebra A (integralClosure A L) H`. -/
 theorem ramificationGroup_fixedPoints_integralClosure_eq_comap (A : Type*) {K L : Type*}
@@ -781,9 +774,8 @@ theorem ramificationGroup_fixedPoints_integralClosure_eq_comap (A : Type*) {K L 
     [IsScalarTower A K L] [FiniteDimensional K L] [IsGalois K L]
     [IsLocalRing (integralClosure A L)] (H : Subgroup (L ≃ₐ[K] L)) [H.Normal] (i : ℤ) :
     ramificationGroup ((L ≃ₐ[K] L) ⧸ H) (FixedPoints.subalgebra A (integralClosure A L) H) i =
-      (ramificationGroup (IntermediateField.fixedField H ≃ₐ[K] IntermediateField.fixedField H)
-        (integralClosure A (IntermediateField.fixedField H)) i).comap
-          (IsGalois.normalAutEquivQuotient H : _ →* _) :=
+      (ramificationGroup (fixedField H ≃ₐ[K] fixedField H) (integralClosure A (fixedField H))
+        i).comap (IsGalois.normalAutEquivQuotient H : _ →* _) :=
   ramificationGroup_eq_comap_of_ringEquiv
     (e := (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv A H).toRingEquiv)
     (TauCeti.fixedPointsSubalgebraIntegralClosureEquiv_smul A H) i
@@ -881,13 +873,22 @@ theorem lowerJump_eq_intCast {u : ℝ} (hu : LowerJump G S u) : ∃ i : ℤ, -1 
 
 end Real
 
+section RealDiscreteValuationRing
+
+variable {G : Type*} [Group G] {S : Type*} [CommRing S] [IsDomain S] [IsDiscreteValuationRing S]
+variable [MulSemiringAction G S]
+
 /-- When the lower index of `σ` is the natural number `n`, `σ ∈ G_u` for a real `u` exactly when
 `u ≤ n - 1`. -/
-theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {G S : Type*} [Group G] [CommRing S]
-    [IsDomain S] [IsDiscreteValuationRing S] [MulSemiringAction G S] {u : ℝ} {σ : G} {n : ℕ}
-    (hn : lowerIndex S σ = n) : σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
+theorem mem_ramificationGroupReal_iff_of_lowerIndex_eq {u : ℝ} {σ : G} {n : ℕ}
+    (hn : lowerIndex S σ = n) :
+    σ ∈ ramificationGroupReal G S u ↔ u ≤ (n : ℝ) - 1 := by
   rw [ramificationGroupReal_def, mem_ramificationGroup_iff_of_lowerIndex_eq hn, Int.add_one_le_iff,
-    ← Int.le_sub_one_iff, Int.ceil_le]; push_cast; exact Iff.rfl
+    ← Int.le_sub_one_iff, Int.ceil_le]
+  push_cast
+  exact Iff.rfl
+
+end RealDiscreteValuationRing
 
 end IsLocalRing
 
