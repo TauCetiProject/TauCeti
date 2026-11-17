@@ -79,9 +79,8 @@ theorem linearIndependent_of_apply_eq_J {l : Type*} [Finite l] [DecidableEq l]
     (B : BilinForm R M) {d : l ⊕ l → M} (h : ∀ x y, B (d x) (d y) = J l R x y) :
     LinearIndependent R d := by
   have := Fintype.ofFinite l
-  refine B.linearIndependent_of_nonsingular <| nonsingular_iff_det_mem_nonZeroDivisors.mpr ?_
-  rw [show (Matrix.of fun x y => B (d x) (d y)) = J l R from Matrix.ext h]
-  exact (isUnit_det_J l R).mem_nonZeroDivisors
+  exact linearIndependent_of_isUnit_det (nonZeroDivisors R).one_mem
+    (fun x y => by rw [one_mul, h]) (isUnit_det_J l R)
 
 end CommRing
 
