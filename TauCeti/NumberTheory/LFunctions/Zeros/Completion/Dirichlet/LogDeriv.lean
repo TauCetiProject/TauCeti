@@ -87,41 +87,34 @@ theorem logDeriv_dirichletData_entireCompletion_eq_digamma (hne : χ ≠ 1) {s :
 
 /-- The functional equation reflects the logarithmic derivative of the entire completion to
 that of the inverse character. -/
-theorem logDeriv_dirichletData_entireCompletion_one_sub (hne : χ ≠ 1) (s : ℂ) :
+theorem logDeriv_dirichletData_entireCompletion_one_sub (s : ℂ) :
     logDeriv (dirichletData χ hχ).entireCompletion (1 - s) =
       -logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
-  have h : logDeriv (fun z ↦ (dirichletData χ hχ).entireCompletion (1 - z)) s =
-      -logDeriv (dirichletData χ hχ).entireCompletion (1 - s) := by
-    rw [logDeriv_apply, logDeriv_apply, deriv_comp_const_sub, neg_div]
-  rw [← neg_neg (logDeriv _ (1 - s)), ← h,
-    funext (dirichletData_entireCompletion_one_sub χ hχ hne),
-    logDeriv_const_mul s _ (DirichletCharacter.rootNumber_ne_zero hχ)]
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasFunctionalEquation χ hχ).logDeriv_entireCompletion_one_sub
+      (dirichletData_hasMeromorphicContinuation χ hχ) s
 
 /-- Conjugation exchanges the logarithmic derivatives of the entire completions of a character
 and its inverse. -/
-theorem logDeriv_dirichletData_entireCompletion_inv_conj (hne : χ ≠ 1) (s : ℂ) :
+theorem logDeriv_dirichletData_entireCompletion_inv_conj (s : ℂ) :
     logDeriv (dirichletData χ⁻¹ hχ.inv).entireCompletion (conj s) =
       conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
-  have h : (dirichletData χ⁻¹ hχ.inv).entireCompletion =
-      conj ∘ (dirichletData χ hχ).entireCompletion ∘ conj :=
-    funext (dirichletData_entireCompletion_inv_conj χ hχ hne)
-  rw [h, logDeriv_apply, logDeriv_apply, deriv_conj_conj]
-  simp
+  simpa only [dirichletData_dual] using
+    (dirichletData_hasMeromorphicContinuation χ hχ).logDeriv_dual_entireCompletion_conj s
 
 /-- For a quadratic character, conjugation commutes with the logarithmic derivative of the
 entire completion. -/
-theorem logDeriv_dirichletData_entireCompletion_conj (hq : χ.IsQuadratic) (hne : χ ≠ 1)
-    (s : ℂ) :
+theorem logDeriv_dirichletData_entireCompletion_conj (hq : χ.IsQuadratic) (s : ℂ) :
     logDeriv (dirichletData χ hχ).entireCompletion (conj s) =
       conj (logDeriv (dirichletData χ hχ).entireCompletion s) := by
-  have h := logDeriv_dirichletData_entireCompletion_inv_conj χ hχ hne s
+  have h := logDeriv_dirichletData_entireCompletion_inv_conj χ hχ s
   rwa [dirichletData_inv_of_inv_eq χ hχ hq.inv] at h
 
 /-- For a quadratic character, the logarithmic derivative of the entire completion is real on
 the real axis. -/
-theorem im_logDeriv_dirichletData_entireCompletion_ofReal (hq : χ.IsQuadratic) (hne : χ ≠ 1)
-    (σ : ℝ) : (logDeriv (dirichletData χ hχ).entireCompletion σ).im = 0 := by
-  have h := logDeriv_dirichletData_entireCompletion_conj χ hχ hq hne σ
+theorem im_logDeriv_dirichletData_entireCompletion_ofReal (hq : χ.IsQuadratic) (σ : ℝ) :
+    (logDeriv (dirichletData χ hχ).entireCompletion σ).im = 0 := by
+  have h := logDeriv_dirichletData_entireCompletion_conj χ hχ hq σ
   rw [conj_ofReal] at h
   exact conj_eq_iff_im.mp h.symm
 
