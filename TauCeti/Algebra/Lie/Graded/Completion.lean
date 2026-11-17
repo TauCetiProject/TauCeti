@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Codex
+Authors: The Tau Ceti contributors, Codex
 -/
 module
 
@@ -237,5 +237,33 @@ theorem completionComponent_lie (x y : d.completedLie ℒ) (n : N) :
     d.completionEquivPi_apply ℒ Js hs _ _ z m
   simpa only [piLieBracket_apply, hc] using
     congrArg (fun z : ∀ n, ℒ n => (z n : L)) (productEquiv_lie d ℒ x y)
+
+/-- At cutoff `k`, the inverse product comparison projects to the class of the finite sum of
+coefficients up to degree `k`. -/
+theorem completionProjection_completionLieEquivPi_symm (x : ∀ n, ℒ n) (k : ℕ) :
+    letI := d.lieRingPi ℒ
+    letI := d.lieAlgebraPi ℒ
+    LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k
+      ((d.completionLieEquivPi ℒ).symm x) =
+      (d.degreeIdeal ℒ k).mkQ (∑ n ∈ (d.finite_cutoff k).toFinset, (x n : L)) := by
+  classical
+  let _ := d.lieRingPi ℒ
+  let _ := d.lieAlgebraPi ℒ
+  exact LieIdeal.completionProjection_of_representative (d.degreeIdeal ℒ)
+    (d.degreeIdeal_antitone ℒ) k _ _
+    (d.projection_completionEquivPi_symm ℒ Js hs (fun k => d.degreeIdeal_toSubmodule ℒ k)
+      (fun n hn => IsPositiveGrading.eq_bot n (Or.inl hn)) x k).symm
+
+/-- Every finite Lie truncation projection of a completed element is the class of the finite sum of
+its homogeneous coefficients up to that cutoff. -/
+theorem completionProjection_eq_sum_completionComponent (k : ℕ) (x : d.completedLie ℒ) :
+    LieIdeal.completionProjection (d.degreeIdeal ℒ) (d.degreeIdeal_antitone ℒ) k x =
+      (d.degreeIdeal ℒ k).mkQ (∑ n ∈ (d.finite_cutoff k).toFinset,
+        (d.completionComponent ℒ Js hs (fun k => d.degreeIdeal_toSubmodule ℒ k) n x : L)) := by
+  classical
+  let _ := d.lieRingPi ℒ
+  let _ := d.lieAlgebraPi ℒ
+  simpa only [LieEquiv.symm_apply_apply, completionLieEquivPi_apply] using
+    d.completionProjection_completionLieEquivPi_symm ℒ (d.completionLieEquivPi ℒ x) k
 
 end TauCeti.PositiveDegrees

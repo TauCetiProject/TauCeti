@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.GradedAlgebra.Basic
+public import TauCeti.Algebra.DirectSum.Component
 
 /-!
 # Basic results on graded algebras
@@ -25,6 +26,8 @@ that divides it produces a homogeneous polynomial of one degree less.
 
 * `TauCeti.GradedAlgebra.mul_le_grade_add`: the product of two homogeneous components is
   contained in the component indexed by the sum of their degrees.
+* `TauCeti.GradedAlgebra.proj_eq_homogeneousComponent`: Mathlib's `GradedAlgebra.proj` agrees with
+  `TauCeti.homogeneousComponent`.
 * `TauCeti.GradedAlgebra.coe_decompose_mul_zero_of_nonneg`: in nonnegative degrees, the degree-zero
   component is multiplicative.
 * `TauCeti.GradedAlgebra.eq_zero_of_isIdempotentElem_of_decompose_zero`: in nonnegative degrees,
@@ -51,6 +54,19 @@ theorem mul_le_grade_add (i j : ι) : 𝒜 i * 𝒜 j ≤ 𝒜 (i + j) :=
   Submodule.mul_le.mpr fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
 
 end Mul
+
+section Proj
+
+variable {R A ι : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
+  [AddMonoid ι] [DecidableEq ι] (𝒜 : ι → Submodule R A) [_root_.GradedAlgebra 𝒜]
+
+/-- Mathlib's `GradedAlgebra.proj` agrees with the module-level `TauCeti.homogeneousComponent`. -/
+theorem proj_eq_homogeneousComponent (i : ι) :
+    _root_.GradedAlgebra.proj 𝒜 i = TauCeti.homogeneousComponent 𝒜 i :=
+  LinearMap.ext fun a ↦ by
+    rw [_root_.GradedAlgebra.proj_apply, TauCeti.homogeneousComponent_apply]
+
+end Proj
 
 section Nonneg
 
