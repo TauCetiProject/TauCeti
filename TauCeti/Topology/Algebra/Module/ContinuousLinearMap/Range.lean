@@ -20,19 +20,21 @@ namespace ContinuousLinearMap
 
 /-- Two operators agree on the range of `T` exactly when their composites with `T` agree. -/
 theorem comp_subtypeL_range_eq_iff
-    {R E G F : Type*} [Semiring R]
-    [TopologicalSpace E] [AddCommMonoid E] [Module R E]
-    [TopologicalSpace G] [AddCommMonoid G] [Module R G]
-    [TopologicalSpace F] [AddCommMonoid F] [Module R F]
-    (T : E →L[R] G) (M₁ M₂ : G →L[R] F) :
+    {R₁ R₂ R₃ E G F : Type*} [Semiring R₁] [Semiring R₂] [Semiring R₃]
+    {σ₁₂ : R₁ →+* R₂} {σ₂₃ : R₂ →+* R₃} {σ₁₃ : R₁ →+* R₃}
+    [RingHomSurjective σ₁₂] [RingHomCompTriple σ₁₂ σ₂₃ σ₁₃]
+    [TopologicalSpace E] [AddCommMonoid E] [Module R₁ E]
+    [TopologicalSpace G] [AddCommMonoid G] [Module R₂ G]
+    [TopologicalSpace F] [AddCommMonoid F] [Module R₃ F]
+    (T : E →SL[σ₁₂] G) (M₁ M₂ : G →SL[σ₂₃] F) :
     M₁.comp T.range.subtypeL = M₂.comp T.range.subtypeL ↔ M₁.comp T = M₂.comp T := by
   constructor
   · intro h
-    ext x
-    exact congrArg (fun D => D ⟨T x, LinearMap.mem_range_self _ x⟩) h
+    simpa only [comp_assoc, subtypeL_comp_codRestrict] using congrArg (·.comp T.rangeRestrict) h
   · intro h
-    ext ⟨v, hv⟩
-    obtain ⟨x, rfl⟩ := LinearMap.mem_range.mp hv
-    exact congrArg (fun D => D x) h
+    ext v
+    obtain ⟨x, hx⟩ := LinearMap.mem_range.mp v.property
+    rw [coe_coe] at hx
+    simpa only [comp_apply, Submodule.subtypeL_apply, ← hx] using congrArg (· x) h
 
 end ContinuousLinearMap

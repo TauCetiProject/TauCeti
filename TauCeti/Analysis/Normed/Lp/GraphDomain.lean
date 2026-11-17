@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.Topology.ContinuousMap.Algebra
-public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Range
 
 /-!
 # Half-spaces, epigraphs, and graphs in an ℓ² product
@@ -133,11 +132,10 @@ theorem antilipschitzWith_normalGraphEmbedding [PseudoEMetricSpace E] (φ : E �
   simpa only [ENNReal.coe_one, one_mul, normalGraphEmbedding_snd] using
     WithLp.edist_snd_le (normalGraphEmbedding φ x) (normalGraphEmbedding φ y)
 
-/-- A graphing function Lipschitz on a parameter set has a Lipschitz parametrization
-on that set, with no regularity required outside it. -/
-theorem _root_.LipschitzOnWith.normalGraphEmbedding [PseudoEMetricSpace E]
-    {K : ℝ≥0} {φ : E → ℝ} {s : Set E} (hφ : LipschitzOnWith K φ s) :
-    LipschitzOnWith (K + 1) (TauCeti.normalGraphEmbedding φ) s := fun x hx y hy ↦ by
+/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
+theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E] {K : ℝ≥0}
+    {φ : E → ℝ} (hφ : LipschitzWith K φ) :
+    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) := fun x y ↦ by
   set a := edist (φ x) (φ y)
   set b := edist x y
   calc
@@ -152,14 +150,8 @@ theorem _root_.LipschitzOnWith.normalGraphEmbedding [PseudoEMetricSpace E]
     _ = a + b := by
       rw [← ENNReal.rpow_natCast, ← ENNReal.rpow_mul]
       norm_num
-    _ ≤ K * b + b := add_le_add (hφ hx hy) le_rfl
+    _ ≤ K * b + b := add_le_add (hφ x y) le_rfl
     _ = (K + 1) * b := by rw [add_mul, one_mul]
-
-/-- A `K`-Lipschitz function has a `(K + 1)`-Lipschitz normal graph parametrization. -/
-theorem _root_.LipschitzWith.normalGraphEmbedding [PseudoEMetricSpace E]
-    {K : ℝ≥0} {φ : E → ℝ} (hφ : LipschitzWith K φ) :
-    LipschitzWith (K + 1) (TauCeti.normalGraphEmbedding φ) :=
-  lipschitzOnWith_univ.mp hφ.lipschitzOnWith.normalGraphEmbedding
 
 section
 
@@ -224,36 +216,6 @@ theorem _root_.ContinuousLinearMap.range_normalGraphL (A : E →L[ℝ] ℝ) :
       {z | z.fst = A z.snd} := by
   rw [LinearMap.coe_range, ContinuousLinearMap.coe_coe, A.coe_normalGraphL,
     range_normalGraphEmbedding]
-
-/-- The second projection is a left inverse of the continuous linear graph map. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.sndL_comp_normalGraphL (A : E →L[ℝ] ℝ) :
-    (WithLp.sndL 2 ℝ ℝ E).comp A.normalGraphL = .id ℝ E := by
-  ext x
-  simp [ContinuousLinearMap.normalGraphL_apply]
-
-/-- The linear graph map retracts the second projection of its range back to that range. -/
-@[simp]
-theorem _root_.ContinuousLinearMap.normalGraphL_comp_sndL_comp_subtypeL (A : E →L[ℝ] ℝ) :
-    A.normalGraphL.comp ((WithLp.sndL 2 ℝ ℝ E).comp A.normalGraphL.range.subtypeL) =
-      A.normalGraphL.range.subtypeL := by
-  ext v
-  obtain ⟨w, hw⟩ := LinearMap.mem_range.mp v.property
-  rw [ContinuousLinearMap.coe_coe] at hw
-  simp only [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ← hw]
-  simp [ContinuousLinearMap.normalGraphL_apply]
-
-/-- An operator has a prescribed pullback along the linear graph map to the parameter space
-exactly when its restriction to the linear graph is the prescribed operator composed with
-the second projection. -/
-theorem _root_.ContinuousLinearMap.comp_subtypeL_range_normalGraphL_eq_iff
-    {F : Type*} [TopologicalSpace F] [AddCommGroup F] [Module ℝ F]
-    (M : WithLp 2 (ℝ × E) →L[ℝ] F) (A : E →L[ℝ] ℝ) (B : E →L[ℝ] F) :
-    M.comp A.normalGraphL.range.subtypeL =
-      (B.comp (WithLp.sndL 2 ℝ ℝ E)).comp A.normalGraphL.range.subtypeL ↔
-        M.comp A.normalGraphL = B := by
-  rw [ContinuousLinearMap.comp_subtypeL_range_eq_iff, ContinuousLinearMap.comp_assoc,
-    A.sndL_comp_normalGraphL, ContinuousLinearMap.comp_id]
 
 end Linear
 
