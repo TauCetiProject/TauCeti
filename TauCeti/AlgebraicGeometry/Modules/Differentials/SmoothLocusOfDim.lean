@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Differentials.Rank
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.Locus
-public import TauCeti.AlgebraicGeometry.Morphisms.Smooth.PureRelativeDimension
 public import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
 
 /-!
@@ -25,9 +23,6 @@ subscheme. Over a field `k`, the rank of `Ω_{X/k}` at a smooth point `x` is the
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq`:
-  a smooth scheme over `Spec R` on which `Ω` has constant rank `d` is smooth of relative
-  dimension `d`.
 * `TauCeti.AlgebraicGeometry.smoothLocusOfDim`: the smooth locus of dimension `d`.
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_smoothLocusOfDim` and
   `TauCeti.AlgebraicGeometry.rank_relativeDifferentials_smoothLocusOfDim`: `X_sm^{(d)}` is smooth
@@ -56,57 +51,6 @@ universe u
 noncomputable section
 
 variable (R : Type u) [CommRing R]
-
-/-- The rank of the sheaf of relative differentials of a smooth scheme over `Spec R` is
-unchanged by restriction along an open immersion over `Spec R`. -/
-theorem FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion
-    {U X : Scheme.{u}} [U.Over (Spec (.of R))] [X.Over (Spec (.of R))] (f : U ⟶ X)
-    [IsOpenImmersion f] [f.IsOver (Spec (.of R))] [Smooth (U ↘ Spec (.of R))]
-    [Smooth (X ↘ Spec (.of R))] (u : U) :
-    (FiniteLocallyFreeSheaf.relativeDifferentials R U).rank u =
-      (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank (f u) := by
-  rw [← FiniteLocallyFreeSheaf.rank_pullback_apply,
-    FiniteLocallyFreeSheaf.rank_eq_of_iso (F := FiniteLocallyFreeSheaf.relativeDifferentials R U)
-      (eqToIso ((FiniteLocallyFreeSheaf.pullback_obj_obj _ _).trans
-          (congrArg _ (FiniteLocallyFreeSheaf.relativeDifferentials_obj R X))) ≪≫
-        ((Scheme.Modules.restrictFunctorIsoPullback f).app (X.relativeDifferentials R)).symm ≪≫
-        relativeDifferentialsRestrictIso R f ≪≫
-        eqToIso (FiniteLocallyFreeSheaf.relativeDifferentials_obj R U).symm)]
-
-/-- A scheme smooth over `Spec R` whose sheaf of relative differentials has rank `d` at every
-point is smooth of relative dimension `d` over `Spec R`. -/
-theorem smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq {X : Scheme.{u}}
-    [X.Over (Spec (.of R))] [Smooth (X ↘ Spec (.of R))] {d : ℕ}
-    (h : ∀ x, (FiniteLocallyFreeSheaf.relativeDifferentials R X).rank x = d) :
-    SmoothOfRelativeDimension d (X ↘ Spec (.of R)) := by
-  refine ⟨fun x ↦ ?_⟩
-  -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ :=
-    exists_isStandardSmoothOfRelativeDimension_of_smooth (X ↘ Spec (.of R)) x
-  refine ⟨U, hU, V, hV, hx, e, ?_⟩
-  have : SmoothOfRelativeDimension m (Spec.map ((X ↘ Spec (.of R)).appLE U V e)) := by
-    rw [HasRingHomProperty.Spec_iff (P := @SmoothOfRelativeDimension m)]
-    exact RingHom.locally_of RingHom.isStandardSmoothOfRelativeDimension_respectsIso _ hm
-  -- Regard the chart `Spec Γ(X, V)` as a scheme over `Spec R`; it is smooth of relative
-  -- dimension `m`, so `Ω` has rank `m` on it, and rank `d` because the chart is open in `X`.
-  let : (Spec Γ(X, V)).Over (Spec (.of R)) := ⟨hV.fromSpec ≫ X ↘ Spec (.of R)⟩
-  have : hV.fromSpec.IsOver (Spec (.of R)) := ⟨rfl⟩
-  have : SmoothOfRelativeDimension m (Spec Γ(X, V) ↘ Spec (.of R)) := by
-    change SmoothOfRelativeDimension m (hV.fromSpec ≫ X ↘ Spec (.of R))
-    rw [← IsAffineOpen.SpecMap_appLE_fromSpec _ hU hV e]
-    exact inferInstanceAs (SmoothOfRelativeDimension (m + 0) _)
-  have := SmoothOfRelativeDimension.smooth m (Spec Γ(X, V) ↘ Spec (.of R))
-  obtain ⟨y, rfl⟩ : x ∈ Set.range hV.fromSpec := by rwa [IsAffineOpen.range_fromSpec]
-  have hy := FiniteLocallyFreeSheaf.rank_relativeDifferentials_apply R m y
-  rw [FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R hV.fromSpec,
-    h] at hy
-  exact hy ▸ hm
-
-/-- A morphism locally of finite presentation over `S` is smooth over `S` on its smooth locus,
-with the smooth locus regarded as a scheme over `S`. -/
-instance smooth_smoothLocus_over {X S : Scheme.{u}} [X.Over S]
-    [LocallyOfFinitePresentation (X ↘ S)] : Smooth ((X ↘ S).smoothLocus.toScheme ↘ S) :=
-  (X ↘ S).smooth_smoothLocus_ι_comp
 
 variable (X : Scheme.{u}) [X.Over (Spec (.of R))] [LocallyOfFinitePresentation (X ↘ Spec (.of R))]
 
@@ -146,10 +90,10 @@ theorem iSup_smoothLocusOfDim :
 /-- The smooth loci of different dimensions are disjoint. -/
 theorem disjoint_smoothLocusOfDim {d e : ℕ} (h : d ≠ e) :
     Disjoint (smoothLocusOfDim R X d) (smoothLocusOfDim R X e) := by
-  rw [disjoint_iff_inf_le]
-  intro x hx
-  obtain ⟨_, hd⟩ := mem_smoothLocusOfDim_iff.mp (show x ∈ smoothLocusOfDim R X d from hx.1)
-  obtain ⟨_, he⟩ := mem_smoothLocusOfDim_iff.mp (show x ∈ smoothLocusOfDim R X e from hx.2)
+  refine disjoint_iff_inf_le.mpr fun x hx ↦ ?_
+  obtain ⟨hxd, hxe⟩ := Opens.mem_inf.mp hx
+  obtain ⟨_, hd⟩ := mem_smoothLocusOfDim_iff.mp hxd
+  obtain ⟨_, he⟩ := mem_smoothLocusOfDim_iff.mp hxe
   exact absurd (hd.symm.trans he) h
 
 /-- The smooth locus of dimension `d` is smooth of relative dimension `d` over `Spec R`. -/
@@ -166,10 +110,14 @@ instance smoothOfRelativeDimension_smoothLocusOfDim (d : ℕ) :
   refine smoothOfRelativeDimension_of_forall_rank_relativeDifferentials_eq R fun v ↦ ?_
   rw [FiniteLocallyFreeSheaf.rank_relativeDifferentials_of_isOpenImmersion R (X.homOfLE hVW)]
   obtain ⟨hv, hd⟩ := mem_smoothLocusOfDim_iff.mp v.2
+  -- `homOfLE_apply'` describes the image of `v.1` as a point of `W` built from `v.1` and its
+  -- membership proof; the type ascription states this for `v` itself, which is that point up to
+  -- eta, so that `rw` finds it.
   rwa [show X.homOfLE hVW v = ⟨v.1, hv⟩ from X.homOfLE_apply' hVW v.1 v.2]
 
 /-- The sheaf of relative differentials of the smooth locus of dimension `d` has rank `d` at every
 point. -/
+@[simp]
 theorem rank_relativeDifferentials_smoothLocusOfDim (d : ℕ) (x : smoothLocusOfDim R X d) :
     haveI := SmoothOfRelativeDimension.smooth d ((smoothLocusOfDim R X d).toScheme ↘ Spec (.of R))
     (FiniteLocallyFreeSheaf.relativeDifferentials R (smoothLocusOfDim R X d)).rank x = d :=
@@ -177,6 +125,7 @@ theorem rank_relativeDifferentials_smoothLocusOfDim (d : ℕ) (x : smoothLocusOf
 
 /-- For an open immersion `f : U ⟶ X` over `Spec R`, the smooth locus of dimension `d` of `U` is
 the preimage of that of `X`. -/
+@[simp]
 theorem preimage_smoothLocusOfDim_eq {U : Scheme.{u}} [U.Over (Spec (.of R))]
     [LocallyOfFinitePresentation (U ↘ Spec (.of R))] (f : U ⟶ X) [IsOpenImmersion f]
     [f.IsOver (Spec (.of R))] (d : ℕ) :
@@ -220,20 +169,8 @@ theorem preimage_smoothLocusOfDim_eq {U : Scheme.{u}} [U.Over (Spec (.of R))]
 
 section Field
 
-variable (k : Type u) [Field k]
-
-/-- On a scheme locally of finite type over a field and pure of dimension `d`, the local
-dimension at every point is `d`. -/
-theorem topologicalKrullDimAt_eq_of_isPureDimensional {X : Scheme.{u}} [X.Over (Spec (.of k))]
-    [LocallyOfFiniteType (X ↘ Spec (.of k))] {d : ℕ} (h : IsPureDimensional d X) (x : X) :
-    topologicalKrullDimAt X x = d := by
-  rw [topologicalKrullDimAt_eq_iSup_topologicalKrullDim_irreducibleComponents k]
-  refine le_antisymm (iSup₂_le fun Z hZ ↦ iSup_le fun _ ↦ (isPureDimensional_iff.mp h Z hZ).le) ?_
-  exact le_iSup₂_of_le (irreducibleComponent x) (irreducibleComponent_mem_irreducibleComponents x)
-    (le_iSup_of_le mem_irreducibleComponent (isPureDimensional_iff.mp h _
-      (irreducibleComponent_mem_irreducibleComponents x)).ge)
-
-variable {k} {X : Scheme.{u}} [X.Over (Spec (.of k))] [LocallyOfFiniteType (X ↘ Spec (.of k))]
+variable {k : Type u} [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))]
+  [LocallyOfFiniteType (X ↘ Spec (.of k))]
 
 /-- Over a field `k`, the rank of `Ω_{X/k}` at a smooth point `x` is the local dimension
 `dim_x X`. -/

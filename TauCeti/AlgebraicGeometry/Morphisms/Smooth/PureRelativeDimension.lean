@@ -24,7 +24,7 @@ Cartier divisor.
 
 ## Main results
 
-* `TauCeti.AlgebraicGeometry.exists_isStandardSmoothOfRelativeDimension_of_smooth`: a smooth
+* `AlgebraicGeometry.Scheme.Hom.exists_isStandardSmoothOfRelativeDimension_of_smooth`: a smooth
   morphism has standard smooth charts of some relative dimension around every point.
 * `TauCeti.AlgebraicGeometry.smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension`:
   smooth of relative dimension `n` means smooth and of pure relative dimension `n`.
@@ -36,7 +36,7 @@ public section
 
 open CategoryTheory AlgebraicGeometry
 
-namespace TauCeti.AlgebraicGeometry
+namespace AlgebraicGeometry.Scheme.Hom
 
 universe u
 
@@ -51,6 +51,12 @@ theorem exists_isStandardSmoothOfRelativeDimension_of_smooth {X Y : Scheme.{u}} 
   obtain ⟨ι, σ, _, _, ⟨P⟩⟩ := h
   exact ⟨P.dimension, U, hU, V, hV, hx, e, _, _, _, ‹_›, P, rfl⟩
 
+end AlgebraicGeometry.Scheme.Hom
+
+namespace TauCeti.AlgebraicGeometry
+
+universe u
+
 /-- A morphism is smooth of relative dimension `n` if and only if it is smooth and has pure
 relative dimension `n`. -/
 theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
@@ -59,7 +65,7 @@ theorem smoothOfRelativeDimension_iff_smooth_and_pureRelativeDimension {n : ℕ}
   refine ⟨fun _ ↦ ⟨SmoothOfRelativeDimension.smooth n f, inferInstance⟩, fun ⟨_, _⟩ ↦ ⟨?_⟩⟩
   intro x
   -- The standard smooth chart around `x` has some relative dimension `m`.
-  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ := exists_isStandardSmoothOfRelativeDimension_of_smooth f x
+  obtain ⟨m, U, hU, V, hV, hx, e, hm⟩ := f.exists_isStandardSmoothOfRelativeDimension_of_smooth x
   refine ⟨U, hU, V, hV, hx, e, ?_⟩
   -- The chart, viewed as a morphism `Spec Γ(X, V) ⟶ Y`, has pure relative dimensions `m` and `n`.
   have : SmoothOfRelativeDimension m (Spec.map (f.appLE U V e)) := by
