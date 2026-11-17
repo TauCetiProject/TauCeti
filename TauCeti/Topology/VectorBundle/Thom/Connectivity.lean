@@ -25,10 +25,10 @@ restricts to a chart of the projection `E₀ → B` (`TauCeti.zeroSectionComplPr
 nonzero vectors `F ∖ {0}` of the model fibre (`Bundle.Trivialization.zeroSectionCompl`). So
 `E₀ → B` is locally trivial, hence a Serre fibration
 (`TauCeti.TopCat.mem_serreFibrations_zeroSectionComplProj`), whose fibres `F ∖ {0}` are
-`(r - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_compl_zero_of_lt`). Therefore `E₀ → B` is
-an `(r - 1)`-connected map (`TauCeti.isNConnected_zeroSectionComplProj`). The projection `E → B`
-is a weak homotopy equivalence, its fibres being vector spaces, so the inclusion `E₀ → E` is
-`(r - 1)`-connected as well (`TauCeti.isNConnected_subtypeVal_zeroSectionCompl`).
+`(r - 2)`-connected (`TauCeti.subsingleton_homotopyGroup_compl_singleton_of_lt`). Therefore
+`E₀ → B` is an `(r - 1)`-connected map (`TauCeti.isNConnected_zeroSectionComplProj`). The
+projection `E → B` is a weak homotopy equivalence, its fibres being vector spaces, so the inclusion
+`E₀ → E` is `(r - 1)`-connected as well (`TauCeti.isNConnected_subtypeVal_zeroSectionCompl`).
 
 Consequently the relative homology of the Thom pair vanishes below the rank with **any local
 coefficient system** `L` on the total space: `Hₘ(E, E₀; L) = 0` for `m < r`
@@ -260,7 +260,8 @@ theorem isNConnected_zeroSectionComplProj {n : ℕ} (hF : finrank ℝ F = n + 1)
   have : Nontrivial F := Module.nontrivial_of_finrank_eq_succ hF
   obtain ⟨w, hw⟩ := exists_ne (0 : F)
   refine ⟨⟨h.symm ⟨w, hw⟩⟩, fun x k hk ↦ ?_⟩
-  have := subsingleton_homotopyGroup_compl_zero_of_lt hF (N := Fin k) (by simpa using hk) (h x)
+  have := subsingleton_homotopyGroup_compl_singleton_of_lt hF 0 (N := Fin k) (by simpa using hk)
+    (h x)
   exact (HomotopyGroup.homeomorphEquiv h x).subsingleton
 
 variable (E) in
