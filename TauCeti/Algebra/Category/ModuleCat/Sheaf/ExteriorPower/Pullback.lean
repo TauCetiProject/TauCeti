@@ -60,8 +60,7 @@ public section
 
 open CategoryTheory
 open TauCeti.SheafOfModules (commRingCatHom presheafPushforward ringCatSheaf
-  sheafifyPushforwardComparison sheafifyPushforwardComparison_app_comp_pushforward_map
-  sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
+  sheafifyPushforwardComparison sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
   unit_comp_forget_map_sheafifyPushforwardComparison_app)
 
 namespace SheafOfModules
@@ -152,14 +151,14 @@ theorem pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
     (pushforwardExteriorPowerComparison φ 1).app M ≫
         (pushforward φ).map ((exteriorPowerOneIso R).hom.app M) =
       (exteriorPowerOneIso S).hom.app ((pushforward φ).obj M) :=
-  sheafifyPushforwardComparison_app_comp_pushforward_map φ _ _ _ _ _ M
+  (sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp φ _ _ _ _ _ M (g := 𝟙 _)
     (oS := (PresheafOfModulesOfCommRing.exteriorPowerOneIso S.obj).hom.app
       ((pushforward φ).obj M).val)
     (oR := (PresheafOfModulesOfCommRing.exteriorPowerOneIso R.obj).hom.app M.val)
     (by rw [exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc])
     (by rw [exteriorPowerOneIso_hom_app, Iso.inv_hom_id_assoc]) <|
-  TauCeti.PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
-    (commRingCatHom φ) M.val
+    (TauCeti.PresheafOfModules.pushforwardExteriorPowerComparison_app_comp_map_exteriorPowerOneIso
+      (commRingCatHom φ) M.val).trans (Category.comp_id _).symm).trans (Category.comp_id _)
 
 /-- In degree zero, the exterior-power comparison of pushforward is the unit map `S ⟶ φ_* R`,
 read through the identifications `⋀⁰ M ≅ R`. -/

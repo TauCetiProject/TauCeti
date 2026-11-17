@@ -50,8 +50,7 @@ public section
 
 open CategoryTheory
 open TauCeti.SheafOfModules (commRingCatHom presheafPushforward ringCatSheaf
-  sheafifyPushforwardComparison sheafifyPushforwardComparison_app_comp_pushforward_map
-  sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
+  sheafifyPushforwardComparison sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
   unit_comp_forget_map_sheafifyPushforwardComparison_app)
 
 namespace SheafOfModules
@@ -142,14 +141,14 @@ theorem pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
     (pushforwardSymmetricPowerComparison φ 1).app M ≫
         (pushforward φ).map ((symmetricPowerOneIso R).hom.app M) =
       (symmetricPowerOneIso S).hom.app ((pushforward φ).obj M) :=
-  sheafifyPushforwardComparison_app_comp_pushforward_map φ _ _ _ _ _ M
+  (sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp φ _ _ _ _ _ M (g := 𝟙 _)
     (oS := (PresheafOfModulesOfCommRing.symmetricPowerOneIso S.obj).hom.app
       ((pushforward φ).obj M).val)
     (oR := (PresheafOfModulesOfCommRing.symmetricPowerOneIso R.obj).hom.app M.val)
     (by rw [symmetricPowerOneIso_hom_app, Iso.inv_hom_id_assoc])
     (by rw [symmetricPowerOneIso_hom_app, Iso.inv_hom_id_assoc]) <|
-  TauCeti.PresheafOfModules.pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
-    (commRingCatHom φ) M.val
+    (TauCeti.PresheafOfModules.pushforwardSymmetricPowerComparison_app_comp_map_symmetricPowerOneIso
+      (commRingCatHom φ) M.val).trans (Category.comp_id _).symm).trans (Category.comp_id _)
 
 /-- In degree zero, the symmetric-power comparison of pushforward is the unit map `S ⟶ φ_* R`,
 read through the identifications `Sym⁰ M ≅ R`. -/

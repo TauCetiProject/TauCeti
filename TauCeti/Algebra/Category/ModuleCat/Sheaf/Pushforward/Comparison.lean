@@ -158,9 +158,11 @@ theorem unit_comp_forget_map_sheafifyPushforwardComparison_app
 
 /-- The sheafified comparison is compatible with maps `fS : T_S (φ_* M) ⟶ A` and
 `fR : T_R M ⟶ B` that are sheafifications of sectionwise maps `oS` and `oR`, and with a map
-`g : A ⟶ φ_* B` such that `c` followed by `φ_* oR` is `oS` followed by `g`. For instance, this
-identifies the comparison in degree zero with the unit map `𝒪 ⟶ φ_* 𝒪`, through the
-identifications of zeroth exterior or symmetric powers with the structure sheaves. -/
+`g : A ⟶ φ_* B` such that `c` followed by `φ_* oR` is `oS` followed by `g`. For instance, with
+`g = 𝟙` this identifies the comparison in degree one with the identity, through the
+identifications of first exterior or symmetric powers with the module, and it identifies the
+comparison in degree zero with the unit map `𝒪 ⟶ φ_* 𝒪`, through the identifications of zeroth
+exterior or symmetric powers with the structure sheaves. -/
 theorem sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
     (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
     {A : _root_.SheafOfModules.{u} (ringCatSheaf S)}
@@ -215,26 +217,6 @@ theorem sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp
   exact (Adjunction.homEquiv_unit
     (PresheafOfModules.sheafificationAdjunction (𝟙 (ringCatSheaf S).obj)) _ _
     ((eS ((_root_.SheafOfModules.pushforward φ).obj M)).inv ≫ fS ≫ g)).symm
-
-/-- The sheafified comparison is compatible with maps `fS : T_S (φ_* M) ⟶ φ_* M` and
-`fR : T_R M ⟶ M` that are sheafifications of sectionwise maps `oS` and `oR` compatible with the
-sectionwise comparison `c`. For instance, this identifies the comparison in degree one with the
-identity, through the identifications of first exterior or symmetric powers with the module. -/
-theorem sheafifyPushforwardComparison_app_comp_pushforward_map
-    (M : _root_.SheafOfModules.{u} (ringCatSheaf R))
-    {fS : TS.obj ((_root_.SheafOfModules.pushforward φ).obj M) ⟶
-      (_root_.SheafOfModules.pushforward φ).obj M} {fR : TR.obj M ⟶ M}
-    {oS : PS.obj ((_root_.SheafOfModules.pushforward φ).obj M).val ⟶
-      ((_root_.SheafOfModules.pushforward φ).obj M).val} {oR : PR.obj M.val ⟶ M.val}
-    (hfS : (eS _).inv ≫ fS = (PresheafOfModules.sheafification (𝟙 (ringCatSheaf S).obj)).map oS ≫
-      (sheafificationIso _ _).hom)
-    (hfR : (eR M).inv ≫ fR = (PresheafOfModules.sheafification (𝟙 (ringCatSheaf R).obj)).map oR ≫
-      (sheafificationIso _ _).hom)
-    (h : c.app M.val ≫ (PresheafOfModulesOfCommRing.pushforward (commRingCatHom φ)).map oR = oS) :
-    (sheafifyPushforwardComparison φ eS hS eR hR c).app M ≫
-      (_root_.SheafOfModules.pushforward φ).map fR = fS :=
-  (sheafifyPushforwardComparison_app_comp_pushforward_map_eq_comp φ eS hS eR hR c M (g := 𝟙 _)
-    hfS hfR (h.trans (Category.comp_id oS).symm)).trans (Category.comp_id fS)
 
 /-- Along a continuous and cocontinuous functor, sheafification carries an invertible
 sectionwise pushforward comparison to an invertible comparison of sheaves of modules. -/
