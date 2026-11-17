@@ -179,12 +179,6 @@ private theorem neg_intCast_two_sub_two_mul {K : Type*} [DivisionRing K] (g : �
   push_cast
   abel
 
-private theorem ratCast_neg_intCast_add_sum_one_sub_one_div {K : Type*} [DivisionRing K]
-    [CharZero K] (χ : ℤ) (e : Multiset ℕ) :
-    ((-(χ : ℚ) + (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum : ℚ) : K) =
-      -(χ : K) + (e.map fun n : ℕ ↦ 1 - 1 / (n : K)).sum := by
-  simp
-
 private theorem finsum_mem_one_sub_inv_eq_sum_map {K α : Type*} [DivisionRing K] {s : Set α}
     (hs : s.Finite) (f : α → ℕ) :
     ∑ᶠ x ∈ s, (1 - (f x : K)⁻¹) =
@@ -515,10 +509,11 @@ characteristic-zero division ring if and only if `χ = 1` and `e = {2, 3}`. -/
 theorem neg_intCast_add_sum_one_sub_one_div_eq_one_div_six_iff_of_le_one
     {χ : ℤ} {e : Multiset ℕ} (hχ : χ ≤ 1) (he : 1 ∉ e) :
     -(χ : K) + (e.map fun n : ℕ ↦ 1 - 1 / (n : K)).sum = 1 / 6 ↔ χ = 1 ∧ e = {2, 3} := by
-  rw [← ratCast_neg_intCast_add_sum_one_sub_one_div,
-    show (1 : K) / 6 = ((1 / 6 : ℚ) : K) by norm_num, Rat.cast_inj]
   refine ⟨fun heq ↦ ?_, ?_⟩
-  · by_contra hne
+  · have heqQ : -(χ : ℚ) + (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum = 1 / 6 := by
+      rw [← Rat.cast_inj (α := K)]
+      simpa using heq
+    by_contra hne
     linarith [one_div_four_le_neg_intCast_add_sum_one_sub_one_div_of_le_one_of_ne
       (K := ℚ) hχ he (by linarith) hne]
   · rintro ⟨rfl, rfl⟩
@@ -529,10 +524,11 @@ characteristic-zero division ring if and only if `χ = 2` and `e = {2, 3, 7}`. -
 theorem neg_intCast_add_sum_one_sub_one_div_eq_one_div_forty_two_iff
     {χ : ℤ} {e : Multiset ℕ} (hχ : χ ≤ 2) (he : 1 ∉ e) :
     -(χ : K) + (e.map fun n : ℕ ↦ 1 - 1 / (n : K)).sum = 1 / 42 ↔ χ = 2 ∧ e = {2, 3, 7} := by
-  rw [← ratCast_neg_intCast_add_sum_one_sub_one_div,
-    show (1 : K) / 42 = ((1 / 42 : ℚ) : K) by norm_num, Rat.cast_inj]
   refine ⟨fun heq ↦ ?_, ?_⟩
-  · by_contra hne
+  · have heqQ : -(χ : ℚ) + (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum = 1 / 42 := by
+      rw [← Rat.cast_inj (α := K)]
+      simpa using heq
+    by_contra hne
     linarith [one_div_twenty_four_le_neg_intCast_add_sum_one_sub_one_div_of_ne
       (K := ℚ) hχ he (by linarith) hne]
   · rintro ⟨rfl, rfl⟩

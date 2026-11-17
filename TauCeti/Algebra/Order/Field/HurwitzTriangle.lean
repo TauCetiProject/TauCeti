@@ -120,10 +120,11 @@ theorem one_div_six_le_hyperbolic_pair_deficit
 division ring if and only if `{a, b} = {2, 3}`. -/
 theorem hyperbolic_pair_deficit_eq_one_div_six_iff [DivisionRing K] [CharZero K] {a b : ℕ} :
     (1 : K) - 1 / a - 1 / b = 1 / 6 ↔ ({a, b} : Multiset ℕ) = {2, 3} := by
-  have hcast : (((1 : ℚ) - 1 / a - 1 / b : ℚ) : K) = (1 : K) - 1 / a - 1 / b := by
-    push_cast; rfl
-  rw [← hcast, show (1 : K) / 6 = ((1 / 6 : ℚ) : K) by norm_num, Rat.cast_inj]
   refine ⟨fun heq ↦ ?_, pair_deficit_eq_of_multiset_eq⟩
+  have heqQ : (1 : ℚ) - 1 / a - 1 / b = 1 / 6 := by
+    rw [← Rat.cast_inj (α := K)]
+    push_cast
+    exact heq
   by_contra hne
   linarith [one_div_four_le_hyperbolic_pair_deficit_of_ne (K := ℚ) (by linarith) hne]
 
@@ -222,10 +223,11 @@ characteristic-zero division ring if and only if `{a, b, c} = {2, 3, 7}`. -/
 theorem hyperbolic_triangle_deficit_eq_one_div_forty_two_iff
     [DivisionRing K] [CharZero K] {a b c : ℕ} :
     (1 : K) - 1 / a - 1 / b - 1 / c = 1 / 42 ↔ ({a, b, c} : Multiset ℕ) = {2, 3, 7} := by
-  have hcast : (((1 : ℚ) - 1 / a - 1 / b - 1 / c : ℚ) : K) = (1 : K) - 1 / a - 1 / b - 1 / c := by
-    push_cast; rfl
-  rw [← hcast, show (1 : K) / 42 = ((1 / 42 : ℚ) : K) by norm_num, Rat.cast_inj]
   refine ⟨fun heq ↦ ?_, triangle_deficit_eq_of_multiset_eq⟩
+  have heqQ : (1 : ℚ) - 1 / a - 1 / b - 1 / c = 1 / 42 := by
+    rw [← Rat.cast_inj (α := K)]
+    push_cast
+    exact heq
   by_contra hne
   linarith [one_div_twenty_four_le_hyperbolic_triangle_deficit_of_ne (K := ℚ) (by linarith) hne]
 
