@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Process.HittingTime
 public import TauCeti.Topology.Order.Cadlag
+import TauCeti.Probability.Process.LevelLocalizer
 import TauCeti.Topology.Order.Monotone
 
 /-!
@@ -99,8 +100,9 @@ if `c ≤ M t ω`. -/
 theorem hittingAfter_Ici_le_iff {Ω : Type*} {M : ℝ≥0 → Ω → ℕ} {ω : Ω}
     (hf : IsSimpleCountingPath (M · ω)) (c : ℕ) (t : ℝ≥0) :
     hittingAfter M (Ici c) 0 ω ≤ t ↔ c ≤ M t ω := by
-  simpa using hf.isRightContinuous.hittingAfter_Ici_le_iff_of_monotone hf.monotone
-    (a := 0) (t := t) (c := c)
+  simpa using hf.monotone.hittingAfter_Ici_le_iff
+    (isRightContinuous_iff_continuousWithinAt_Ici.mp hf.isRightContinuous)
+    (n := 0) (t := t) (c := c)
 
 /-- Along a simple counting path, `(t : WithTop ℝ≥0)` is strictly before the first hitting time of
 `Set.Ici c` if and only if `M t ω < c`. -/

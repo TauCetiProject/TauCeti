@@ -16,14 +16,11 @@ import Mathlib.Topology.Order.IntermediateValue
 
 For right-continuous paths (and in particular continuous paths), the first entrance into a closed
 set is attained whenever it is finite, and is strictly after the starting time whenever the initial
-value lies outside the target. For monotone right-continuous paths, hitting a closed upper ray
-`Set.Ici c` by time `t` reduces to `c ≤ X t` at the single endpoint `t`, making the closed-ray hit
-a stopping time on any raw filtration without second-countability, local compactness, right
-continuity, or completion assumptions. Likewise, hitting a clopen set along an everywhere
-right-continuous adapted process on a densely ordered separable time axis is a stopping time on any
-raw filtration. When a natural-valued right-continuous path starts at or
-below `c` and jumps by at most one from earlier times, each finite closed-ray hit is attained with
-exact value `c` and strictly precedes the next level hit.
+value lies outside the target. Hitting a clopen set along an everywhere right-continuous adapted
+process on a densely ordered separable time axis is a stopping time on any raw filtration, without
+compact intervals, right continuity, or completion assumptions. When a natural-valued
+right-continuous path starts at or below `c` and jumps by at most one from earlier times, each
+finite closed-ray hit is attained with exact value `c` and strictly precedes the next level hit.
 
 For general closed targets of continuous paths on a compact time interval, entrance is equivalent
 to the minimum distance to the target being zero. Measuring that minimum on a second-countable
@@ -111,16 +108,6 @@ end IsClosed
 
 namespace IsRightContinuous
 
-/-- For a monotone right-continuous path into a space with closed upper rays, hitting `Set.Ici c`
-after `a` by time `t` is equivalent to `a ≤ t` and `c ≤ X t ω`. -/
-theorem hittingAfter_Ici_le_iff_of_monotone {β : Type*} [Preorder β] [TopologicalSpace β]
-    [ClosedIciTopology β] {X : ι → Ω → β} {a t : ι} {ω : Ω} {c : β}
-    (hrc : IsRightContinuous (X · ω)) (hmono : Monotone (X · ω)) :
-    hittingAfter X (Ici c) a ω ≤ t ↔ a ≤ t ∧ c ≤ X t ω := by
-  rw [isClosed_Ici.hittingAfter_le_iff_of_isRightContinuous hrc]
-  exact ⟨fun ⟨u, hu, hcu⟩ ↦ ⟨hu.1.trans hu.2, hcu.trans (hmono hu.2)⟩,
-    fun ⟨hat, hct⟩ ↦ ⟨t, ⟨hat, le_rfl⟩, hct⟩⟩
-
 /-- If a natural-valued right-continuous path starts at most at `c` and jumps by at most one from
 strictly earlier times in `[a, t)`, then at any finite hit of `Set.Ici c` its value equals `c`. -/
 theorem apply_untopA_hittingAfter_Ici_of_le_add_one {X : ι → Ω → ℕ} {a : ι} {ω : Ω} {c : ℕ}
@@ -182,25 +169,6 @@ theorem Continuous.le_of_le_hittingAfter_Ici [DenselyOrdered ι]
   exact (WithTop.coe_lt_coe.mpr hut).not_ge (ht.trans hhit)
 
 namespace MeasureTheory
-
-/-- First entrance into a closed upper ray `Set.Ici c` by an adapted process with everywhere
-monotone right-continuous paths is a stopping time on any raw filtration. Neither second
-countability, compact intervals, right continuity, nor completeness is required. -/
-theorem Adapted.isStoppingTime_hittingAfter_Ici_of_monotone_of_isRightContinuous
-    {β : Type*} [Preorder β] [TopologicalSpace β] [ClosedIciTopology β]
-    [MeasurableSpace β] [OpensMeasurableSpace β]
-    {mΩ : MeasurableSpace Ω} {ℱ : Filtration ι mΩ} {X : ι → Ω → β}
-    (hX : Adapted ℱ X) (hmono : ∀ ω, Monotone (X · ω))
-    (hrc : ∀ ω, IsRightContinuous (X · ω)) (c : β) (a : ι) :
-    IsStoppingTime ℱ (hittingAfter X (Ici c) a) := by
-  intro t
-  by_cases hat : a ≤ t
-  · convert hX t (isClosed_Ici (a := c)).measurableSet using 1
-    ext ω
-    simp [(hrc ω).hittingAfter_Ici_le_iff_of_monotone (hmono ω), hat]
-  · convert @MeasurableSet.empty Ω (ℱ t) using 1
-    ext ω
-    simp [(hrc ω).hittingAfter_Ici_le_iff_of_monotone (hmono ω), hat]
 
 /-- First entrance into a clopen set `s` by an adapted process with everywhere right-continuous
 paths on a densely ordered separable time axis is a stopping time on any raw filtration. Neither

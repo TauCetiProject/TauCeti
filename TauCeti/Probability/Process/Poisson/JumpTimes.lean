@@ -11,6 +11,7 @@ public import TauCeti.Probability.Process.Poisson.Regularization
 import Mathlib.MeasureTheory.Constructions.BorelSpace.WithTop
 import TauCeti.Probability.Distributions.Poisson.Tail
 import TauCeti.Probability.Process.HittingTime.Countable
+import TauCeti.Probability.Process.LevelLocalizer
 
 /-!
 # Arrival times and gamma laws for filtered Poisson processes
@@ -82,7 +83,8 @@ theorem measureReal_hittingAfter_Ici_le
   rw [Nat.succ_eq_add_one]
   have hae : ({ω | hittingAfter M (Ici (k + 1)) 0 ω ≤ t} : Set Ω) =ᵐ[P] {ω | k < M t ω} := by
     filter_upwards [h.ae_monotone_of_isRightContinuous hrc, hrc] with ω hmonoω hrcω
-    simp only [hrcω.hittingAfter_Ici_le_iff_of_monotone hmonoω, zero_le, true_and]
+    simp only [hmonoω.hittingAfter_Ici_le_iff
+      (isRightContinuous_iff_continuousWithinAt_Ici.mp hrcω), zero_le, true_and]
     omega
   rw [measureReal_congr hae]
   simpa only [Nat.cast_add, Nat.cast_one, NNReal.coe_mul] using
