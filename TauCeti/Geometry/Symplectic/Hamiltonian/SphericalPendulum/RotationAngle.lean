@@ -461,44 +461,58 @@ private theorem sphericalPendulumRotationAngle_eq_add {h j a c : ℝ}
     ← intervalIntegral.integral_add_adjacent_intervals (h₁.trans h₂) h₃,
     ← intervalIntegral.integral_add_adjacent_intervals h₁ h₂]
 
+/-- **The south pole.** For `h₀ > -1` and any `a₀ > -1` there is a cut `a ∈ (-1, a₀]` such that
+the integral of `2 j / ((1 - z²) √(2 (h - z) (1 - z²) - j²))` over `[-1, a]` is eventually defined
+and tends to `π` as `(h, j) → (h₀, 0)` with `j > 0`. -/
+private theorem exists_tendsto_integral_southPole {h₀ a₀ : ℝ} (h₁ : -1 < h₀) (ha₀ : -1 < a₀) :
+    ∃ a ∈ Ioc (-1) a₀,
+      (∀ᶠ c in 𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0), IntervalIntegrable (fun z ↦
+        2 * (c.2 / ((1 - z ^ 2) * √(2 * (c.1 - z) * (1 - z ^ 2) - c.2 ^ 2)))) volume (-1) a) ∧
+      Tendsto (fun c : ℝ × ℝ ↦ ∫ z in (-1)..a,
+          2 * (c.2 / ((1 - z ^ 2) * √(2 * (c.1 - z) * (1 - z ^ 2) - c.2 ^ 2))))
+        (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0)) (𝓝 π) := by
+  -- A box around `(h₀, -1)` where the derivative of `2 (h - z) (1 - z²)` is positive.
+  obtain ⟨δ, hδ, hb⟩ := exists_forall_Icc_pos (h₀ := h₀) (z₀ := -1)
+    (by fun_prop : Continuous fun p : ℝ × ℝ ↦ 6 * 1 * p.2 ^ 2 - 4 * p.1 * p.2 - 2 * 1)
+    (show (0 : ℝ) < 6 * 1 * (-1) ^ 2 - 4 * h₀ * -1 - 2 * 1 by linarith)
+  have hmin : 0 < min δ (a₀ + 1) := lt_min hδ (by linarith)
+  have hmin₁ := min_le_left δ (a₀ + 1)
+  have hmin₂ := min_le_right δ (a₀ + 1)
+  obtain ⟨hint, hlim⟩ := tendsto_integral_pole (σ := 1) (q := -1 + min δ (a₀ + 1))
+    (by linarith) hδ fun h hh z hz ↦ hb h hh z ⟨by linarith [hz.1], by linarith [hz.2]⟩
+  simp only [one_mul] at hint hlim
+  exact ⟨_, ⟨by linarith, by linarith⟩, hint, hlim⟩
+
 /-- **Planar rotations.** For `h₀ > 1`, the rotation angle `Θ(h, j)` tends to `2π` as
 `(h, j) → (h₀, 0)` with `j > 0`. Each of the two poles of the sphere contributes `π`. -/
 theorem tendsto_uncurry_sphericalPendulumRotationAngle_nhdsWithin_snd_pos_of_one_lt {h₀ : ℝ}
     (h₁ : 1 < h₀) :
     Tendsto (Function.uncurry sphericalPendulumRotationAngle)
       (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0)) (𝓝 (2 * π)) := by
-  -- Boxes around `(h₀, -1)` and `(h₀, 1)`, in the reflected coordinate `w = -z` for the second,
-  -- on which the derivatives of `2 (h - z) (1 - z²)` and of `2 (h + w) (1 - w²)` are positive.
-  obtain ⟨δ₁, hδ₁, hb₁⟩ := exists_forall_Icc_pos (h₀ := h₀) (z₀ := -1)
-    (by fun_prop : Continuous fun p : ℝ × ℝ ↦ 6 * 1 * p.2 ^ 2 - 4 * p.1 * p.2 - 2 * 1)
-    (show (0 : ℝ) < 6 * 1 * (-1) ^ 2 - 4 * h₀ * -1 - 2 * 1 by linarith)
+  -- The pole `z = -1`, cut at some `a ≤ -1 / 2`.
+  obtain ⟨a, ⟨ha, ha'⟩, hint₁, hlim₁⟩ :=
+    exists_tendsto_integral_southPole (a₀ := -1 / 2) (by linarith) (by norm_num)
+  -- A box around `(h₀, 1)`, in the reflected coordinate `w = -z`, on which the derivative of
+  -- `2 (h + w) (1 - w²)` is positive.
   obtain ⟨δ₂, hδ₂, hb₂⟩ := exists_forall_Icc_pos (h₀ := h₀) (z₀ := -1)
     (by fun_prop : Continuous fun p : ℝ × ℝ ↦ 6 * -1 * p.2 ^ 2 - 4 * p.1 * p.2 - 2 * -1)
     (show (0 : ℝ) < 6 * -1 * (-1) ^ 2 - 4 * h₀ * -1 - 2 * -1 by linarith)
-  set δ := min δ₁ (min δ₂ ((h₀ - 1) / 2))
-  have hδ : 0 < δ := lt_min hδ₁ (lt_min hδ₂ (by linarith))
-  have hδ₁' : δ ≤ δ₁ := min_le_left _ _
-  have hδ₂' : δ ≤ δ₂ := (min_le_right _ _).trans (min_le_left _ _)
-  have hδ₃' : δ ≤ (h₀ - 1) / 2 := (min_le_right _ _).trans (min_le_right _ _)
-  set a := -1 + min δ₁ (1 / 2)
+  set δ := min δ₂ ((h₀ - 1) / 2)
+  have hδ : 0 < δ := lt_min hδ₂ (by linarith)
+  have hδ₂' : δ ≤ δ₂ := min_le_left _ _
+  have hδ₃' : δ ≤ (h₀ - 1) / 2 := min_le_right _ _
   set q := -1 + min δ₂ (1 / 2)
-  have ha : -1 < a := by have := lt_min hδ₁ (one_half_pos (α := ℝ)); linarith
-  have ha' : a ≤ -1 / 2 := by have := min_le_right δ₁ (1 / 2); linarith
   have hq : -1 < q := by have := lt_min hδ₂ (one_half_pos (α := ℝ)); linarith
   have hq' : q ≤ -1 / 2 := by have := min_le_right δ₂ (1 / 2); linarith
-  have hbox : ∀ {δ' : ℝ}, δ ≤ δ' → ∀ h ∈ Icc (h₀ - δ) (h₀ + δ),
-      h ∈ Icc (h₀ - δ') (h₀ + δ') := fun hδ' h hh ↦ ⟨by linarith [hh.1], by linarith [hh.2]⟩
-  -- The pole `z = -1`, the regular part `[a, -q]` and the pole `z = 1`.
-  obtain ⟨hint₁, hlim₁⟩ := tendsto_integral_pole (σ := 1) ha hδ fun h hh z hz ↦
-    hb₁ h (hbox hδ₁' h hh) z ⟨by linarith [hz.1], by
-      linarith [hz.2, min_le_left δ₁ (1 / 2)]⟩
+  have hbox : ∀ h ∈ Icc (h₀ - δ) (h₀ + δ), h ∈ Icc (h₀ - δ₂) (h₀ + δ₂) :=
+    fun h hh ↦ ⟨by linarith [hh.1], by linarith [hh.2]⟩
+  -- The regular part `[a, -q]` and the pole `z = 1`.
   obtain ⟨hint₂, hlim₂⟩ := tendsto_integral_regular (h₀ := h₀) (p := a) (q := -q)
     (by linarith) hδ fun h hh z hz ↦
       ⟨by nlinarith [hz.1, hz.2], by linarith [hh.1, hz.2]⟩
   obtain ⟨hint₃, hlim₃⟩ := tendsto_integral_pole (σ := -1) hq hδ fun h hh z hz ↦
-    hb₂ h (hbox hδ₂' h hh) z ⟨by linarith [hz.1], by
+    hb₂ h (hbox h hh) z ⟨by linarith [hz.1], by
       linarith [hz.2, min_le_left δ₂ (1 / 2)]⟩
-  simp only [one_mul] at hint₁ hlim₁
   -- Reflect the third integral back to `[-q, 1]`.
   have hint₃' : ∀ᶠ c in 𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0), IntervalIntegrable (fun z ↦
       2 * (c.2 / ((1 - z ^ 2) * √(2 * (c.1 - z) * (1 - z ^ 2) - c.2 ^ 2)))) volume (-q) 1 := by
@@ -524,24 +538,16 @@ theorem tendsto_uncurry_sphericalPendulumRotationAngle_nhdsWithin_snd_pos_of_lt_
     (h₁ : -1 < h₀) (h₂ : h₀ < 1) :
     Tendsto (Function.uncurry sphericalPendulumRotationAngle)
       (𝓝[{c : ℝ × ℝ | 0 < c.2}] (h₀, 0)) (𝓝 π) := by
-  -- A box around `(h₀, -1)` where the derivative of `2 (h - z) (1 - z²)` is positive, and one
-  -- around `(h₀, h₀)` where it is at most `-(1 - h₀²)`.
-  obtain ⟨δ₁, hδ₁, hb₁⟩ := exists_forall_Icc_pos (h₀ := h₀) (z₀ := -1)
-    (by fun_prop : Continuous fun p : ℝ × ℝ ↦ 6 * 1 * p.2 ^ 2 - 4 * p.1 * p.2 - 2 * 1)
-    (show (0 : ℝ) < 6 * 1 * (-1) ^ 2 - 4 * h₀ * -1 - 2 * 1 by linarith)
-  set m := 1 - h₀ ^ 2
+  -- The pole `z = -1`, cut at some `a < h₀`.
+  obtain ⟨a, ⟨ha, hah⟩, hint₁, hlim₁⟩ :=
+    exists_tendsto_integral_southPole (a₀ := (h₀ - 1) / 2) h₁ (by linarith)
+  replace hah : a < h₀ := by linarith
+  -- A box around `(h₀, h₀)` where the derivative of `2 (h - z) (1 - z²)` is at most `-(1 - h₀²)`.
+  set m := 1 - h₀ ^ 2 with hm_def
   have hm : 0 < m := by nlinarith
   obtain ⟨ρ, hρ, hb₂⟩ := exists_forall_Icc_pos (h₀ := h₀) (z₀ := h₀)
     (by fun_prop : Continuous fun p : ℝ × ℝ ↦ -(6 * p.2 ^ 2 - 4 * p.1 * p.2 - 2) - m)
-    (show (0 : ℝ) < -(6 * h₀ ^ 2 - 4 * h₀ * h₀ - 2) - m by
-      linarith [show m = 1 - h₀ ^ 2 from rfl])
-  set a := -1 + min δ₁ ((h₀ + 1) / 2)
-  have ha : -1 < a := by have := lt_min hδ₁ (by linarith : (0 : ℝ) < (h₀ + 1) / 2); linarith
-  obtain ⟨ha', hah⟩ : a ≤ -1 + δ₁ ∧ a < h₀ :=
-    ⟨by linarith [min_le_left δ₁ ((h₀ + 1) / 2)], by linarith [min_le_right δ₁ ((h₀ + 1) / 2)]⟩
-  obtain ⟨hint₁, hlim₁⟩ := tendsto_integral_pole (σ := 1) ha hδ₁ fun h hh z hz ↦
-    hb₁ h hh z ⟨by linarith [hz.1], by linarith [hz.2]⟩
-  simp only [one_mul] at hint₁ hlim₁
+    (show (0 : ℝ) < -(6 * h₀ ^ 2 - 4 * h₀ * h₀ - 2) - m by linarith [hm_def])
   rw [Metric.tendsto_nhds]
   intro ε hε
   -- Cut at `c = h₀ - t` for a small `t`, and take `h` within `t / 2` of `h₀`.
