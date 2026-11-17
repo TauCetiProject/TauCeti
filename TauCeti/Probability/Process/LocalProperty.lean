@@ -188,7 +188,7 @@ theorem ae_tendsto_stoppedProcess_localSeq (hX : Locally p ℱ X P) (t : ι) :
   exact lt_of_le_of_lt (WithTop.coe_le_coe.mpr bot_le) hn
 
 /-- If a process locally has a property implying strong adaptation, its value at each fixed time
-is a.e. strongly measurable, as the a.e. pointwise limit of its native stopped stages. -/
+is a.e. strongly measurable. -/
 theorem aestronglyMeasurable_eval [PseudoMetrizableSpace E]
     (hX : Locally p ℱ X P) (hp : ∀ Y, p Y → StronglyAdapted ℱ Y) (t : ι) :
     AEStronglyMeasurable (X t) P :=

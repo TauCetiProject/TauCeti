@@ -12,8 +12,8 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 
 Complements Mathlib's `Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic` with scaling of
 `MeasureTheory.charFun` by an `ℝ≥0∞` measure factor, pushforward integral evaluation for an
-a.e.-measurable random variable, and integrability of the characteristic integrand against any
-finite measure.
+a.e.-measurable random variable, integrability of the characteristic integrand against any finite
+measure, and the real-line characteristic integrand identity `TauCeti.exp_inner_mul_I_real`.
 -/
 
 public section
@@ -24,6 +24,7 @@ open scoped ENNReal RealInnerProductSpace
 namespace MeasureTheory
 
 /-- Scaling a measure by `c : ℝ≥0∞` multiplies its characteristic function by `c.toReal`. -/
+@[simp]
 theorem charFun_smul_measure {E : Type*} [Inner ℝ E] [MeasurableSpace E]
     {μ : Measure E} (c : ℝ≥0∞) (t : E) :
     charFun (c • μ) t = (c.toReal : ℂ) * charFun μ t := by
@@ -38,6 +39,11 @@ theorem charFun_map_eq_integral {Ω E : Type*} {mΩ : MeasurableSpace Ω} {μ : 
   rw [charFun_apply, integral_map hX (by fun_prop)]
 
 end MeasureTheory
+
+/-- On `ℝ`, the characteristic integrand `exp (⟪x, t⟫ * I)` equals `exp (I * t * x)`. -/
+theorem TauCeti.exp_inner_mul_I_real (x t : ℝ) :
+    exp ((⟪x, t⟫ : ℂ) * I) = exp (I * (t : ℂ) * (x : ℂ)) := by
+  simp only [RCLike.inner_apply, conj_trivial]; congr 1; push_cast; ring
 
 /-- The characteristic integrand `ω ↦ exp (⟪X ω, t⟫ * I)` of an a.e.-measurable random variable
 is integrable with respect to any finite measure. -/
