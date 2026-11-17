@@ -62,7 +62,11 @@ function near that point only up to constant factors (`TauCeti.isTheta_clm_apply
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
-(`ContinuousLinearMap.norm_sum_apply_apply_le`).
+(`ContinuousLinearMap.norm_sum_apply_apply_le`). For a sequence `A` of continuous semilinear maps
+and a sequence `v` of vectors, the weighted norm of the finite Cauchy product
+`∑ k ∈ Finset.range (n + 1), A (n - k) (v k)` is bounded termwise by the Cauchy product of the
+weighted norms `‖A m‖ * r ^ m` and `‖v k‖ * r ^ k` for `0 ≤ r`
+(`TauCeti.norm_sum_range_clm_apply_mul_pow_le`).
 
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
@@ -638,6 +642,36 @@ theorem isTheta_clm_apply_of_isUnit (hΦ : ContinuousAt Φ a) (hΦa : IsUnit (Φ
   exact ContinuousLinearMap.ringInverse_apply_apply hx (σ x)
 
 end
+
+/-- Weighted norm bound for the Cauchy product `∑_{k=0}^n A_{n-k}(v_k)` of a sequence of continuous
+semilinear maps and a sequence of vectors. -/
+theorem norm_sum_range_clm_apply_mul_pow_le
+    {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [NontriviallyNormedField 𝕜₂]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
+    {σ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ]
+    (A : ℕ → E →SL[σ] F) (v : ℕ → E) {r : ℝ} (hr : 0 ≤ r) (n : ℕ) :
+    ‖∑ k ∈ Finset.range (n + 1), A (n - k) (v k)‖ * r ^ n ≤
+      ∑ k ∈ Finset.range (n + 1), (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
+  calc
+    ‖∑ k ∈ Finset.range (n + 1), A (n - k) (v k)‖ * r ^ n
+        ≤ (∑ k ∈ Finset.range (n + 1), ‖A (n - k) (v k)‖) * r ^ n := by
+          gcongr
+          exact norm_sum_le _ _
+    _ = ∑ k ∈ Finset.range (n + 1), ‖A (n - k) (v k)‖ * r ^ n := Finset.sum_mul ..
+    _ ≤ ∑ k ∈ Finset.range (n + 1), (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
+          refine Finset.sum_le_sum fun k hk ↦ ?_
+          have hkn : n - k + k = n :=
+            Nat.sub_add_cancel (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
+          calc
+            ‖A (n - k) (v k)‖ * r ^ n
+                ≤ (‖A (n - k)‖ * ‖v k‖) * r ^ (n - k + k) := by
+                  rw [hkn]
+                  gcongr
+                  exact (A (n - k)).le_opNorm (v k)
+            _ = (‖A (n - k)‖ * r ^ (n - k)) * (‖v k‖ * r ^ k) := by
+                  rw [pow_add]
+                  ring
 
 section
 

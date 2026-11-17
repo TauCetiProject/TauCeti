@@ -13,6 +13,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Operator.Banach
 public import Mathlib.Topology.Instances.Int
+import Mathlib.Analysis.Calculus.FDeriv.Pi
+import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 
 /-!
 # Derivatives of matrix-vector products
@@ -24,6 +26,14 @@ of `A` with the directional Jacobian of `v`, plus the column-divergence term of 
 
 The field and the directions may be defined on any normed vector space over a nontrivially
 normed field. Neither completeness nor independence of the directions is required.
+
+Over a complete nontrivially normed field, a family of finite matrices `y ↦ M y` induces a
+differentiable family of continuous linear maps `y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap`
+within a set, at a point, or on a domain if and only if every matrix entry `y ↦ M y i j` is
+differentiable (`TauCeti.differentiableWithinAt_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiableAt_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiableOn_toContinuousLinearMap_toLin'`,
+`TauCeti.differentiable_toContinuousLinearMap_toLin'`).
 
 For a constant matrix `M`, a map that agrees near `x` with `M *ᵥ f + b` has derivative `M f'(x)`
 at `x` (`HasFDerivAt.of_eventuallyEq_mulVec_add`). Conversely, if the derivatives of two `C¹`
@@ -96,6 +106,56 @@ theorem HasFDerivAt.of_eventuallyEq_mulVec_add {ι κ E 𝕜 : Type*} [Fintype �
 namespace TauCeti
 
 open Set Function Matrix
+
+section DifferentiableToLin
+
+variable {ι κ E 𝕜 : Type*} [Fintype ι] [DecidableEq ι] [Finite κ]
+  [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A family of finite matrices induces a continuous-linear-map family differentiable within `s` at
+`x` if and only if each matrix entry is differentiable within `s` at `x`. -/
+theorem differentiableWithinAt_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} {s : Set E} {x : E} :
+    DifferentiableWithinAt 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) s x ↔
+      ∀ i j, DifferentiableWithinAt 𝕜 (fun y ↦ M y i j) s x := by
+  have := Fintype.ofFinite κ
+  refine ⟨fun h i j ↦ ?_, fun h ↦ ?_⟩
+  · have hv := (differentiableWithinAt_clm_apply.mp h) (Pi.single j 1)
+    simpa [Matrix.mulVec_single] using differentiableWithinAt_pi.mp hv i
+  · refine differentiableWithinAt_clm_apply.mpr fun v ↦
+      differentiableWithinAt_pi.mpr fun i ↦ ?_
+    simp only [LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, Matrix.mulVec, dotProduct]
+    exact DifferentiableWithinAt.fun_sum fun j _ ↦ (h i j).mul_const (v j)
+
+/-- A family of finite matrices induces a continuous-linear-map family differentiable at `x` if and
+only if each matrix entry is differentiable at `x`. -/
+theorem differentiableAt_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} {x : E} :
+    DifferentiableAt 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) x ↔
+      ∀ i j, DifferentiableAt 𝕜 (fun y ↦ M y i j) x := by
+  simp_rw [← differentiableWithinAt_univ]
+  exact differentiableWithinAt_toContinuousLinearMap_toLin'
+
+/-- A family of finite matrices induces a continuous-linear-map family differentiable on `s` if and
+only if each matrix entry is differentiable on `s`. -/
+theorem differentiableOn_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} {s : Set E} :
+    DifferentiableOn 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) s ↔
+      ∀ i j, DifferentiableOn 𝕜 (fun y ↦ M y i j) s := by
+  refine ⟨fun h i j x hx ↦ ?_, fun h x hx ↦ ?_⟩
+  · exact (differentiableWithinAt_toContinuousLinearMap_toLin'.mp (h x hx)) i j
+  · exact differentiableWithinAt_toContinuousLinearMap_toLin'.mpr fun i j ↦ h i j x hx
+
+/-- A family of finite matrices induces a differentiable continuous-linear-map family if and only
+if each matrix entry is differentiable. -/
+theorem differentiable_toContinuousLinearMap_toLin'
+    {M : E → Matrix κ ι 𝕜} :
+    Differentiable 𝕜 (fun y ↦ (Matrix.toLin' (M y)).toContinuousLinearMap) ↔
+      ∀ i j, Differentiable 𝕜 (fun y ↦ M y i j) := by
+  simp_rw [← differentiableOn_univ]
+  exact differentiableOn_toContinuousLinearMap_toLin'
+
+end DifferentiableToLin
 
 variable {ι : Type*} [Fintype ι] {D : Set (ι → ℝ)} {A A' : (ι → ℝ) → ι → ℝ}
 
