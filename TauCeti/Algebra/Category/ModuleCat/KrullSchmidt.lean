@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.ModuleCat.Biproducts
-public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
+public import TauCeti.Algebra.Category.ModuleCat.FiniteLength.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Indecomposable
 public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.FullSubcategory
 public import TauCeti.RingTheory.KrullSchmidt.DirectSum

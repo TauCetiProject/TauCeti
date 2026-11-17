@@ -65,6 +65,7 @@ private noncomputable def arInversePresentation
   have := arDual_finite.{u, v, w, t} k Q M hM
   have : Module.Finite kQᵐᵒᵖ (D ((eRep).functor.obj M)) :=
     Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ _
+  have := Module.finitePresentation_of_finite kQᵐᵒᵖ (D ((eRep).functor.obj M))
   exact FiniteProjectivePresentation.minimal
 
 private theorem arInversePresentation_isMinimal
@@ -74,6 +75,7 @@ private theorem arInversePresentation_isMinimal
   have := arDual_finite.{u, v, w, t} k Q M hM
   have : Module.Finite kQᵐᵒᵖ (D ((eRep).functor.obj M)) :=
     Module.Finite.of_restrictScalars_finite k kQᵐᵒᵖ _
+  have := Module.finitePresentation_of_finite kQᵐᵒᵖ (D ((eRep).functor.obj M))
   exact FiniteProjectivePresentation.isMinimal_minimal
 
 /-- The inverse Auslander–Reiten translate `Tr D M`, using a finite minimal presentation
