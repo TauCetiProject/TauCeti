@@ -40,7 +40,7 @@ universe u
 
 namespace TauCeti
 
-variable {k : Type u} [CommRing k] {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {k : Type u} [Ring k] {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- **Top-dimensional cubical classes of a compact manifold are determined along a dense union.**
 On a compact manifold `Y` of dimension `m`, let `(Uᵢ)` be a family of sets whose union is dense.
