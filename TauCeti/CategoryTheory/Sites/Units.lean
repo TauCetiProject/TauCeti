@@ -55,14 +55,12 @@ noncomputable abbrev additiveUnitsFunctor :
   sheafCompose J CommRingCat.additiveUnits
 
 /-- The sections of the additive units sheaf are the units of the original ring of sections. -/
-@[simp]
 lemma additiveUnitsFunctor_obj_obj (F : Sheaf J CommRingCat.{w}) (U : Cᵒᵖ) :
     ((additiveUnitsFunctor J).obj F).obj.obj U =
       AddCommGrpCat.of (Additive ((F.obj.obj U : CommRingCat.{w})ˣ)) :=
   rfl
 
 /-- A morphism of additive units sheaves acts by applying the original ring morphism to a unit. -/
-@[simp]
 lemma additiveUnitsFunctor_map_app_apply {F G : Sheaf J CommRingCat.{w}} (f : F ⟶ G)
     (U : Cᵒᵖ) (x : Additive ((F.obj.obj U : CommRingCat.{w})ˣ)) :
     (@AddCommGrpCat.Hom.hom
@@ -74,7 +72,6 @@ lemma additiveUnitsFunctor_map_app_apply {F G : Sheaf J CommRingCat.{w}} (f : F 
 
 /-- Restricting a section of the additive units sheaf applies the restriction map of the
 underlying sheaf of rings to the underlying unit. -/
-@[simp]
 lemma additiveUnitsFunctor_obj_map_apply (F : Sheaf J CommRingCat.{w}) {U V : Cᵒᵖ} (i : U ⟶ V)
     (x : Additive ((F.obj.obj U : CommRingCat.{w})ˣ)) :
     (@AddCommGrpCat.Hom.hom

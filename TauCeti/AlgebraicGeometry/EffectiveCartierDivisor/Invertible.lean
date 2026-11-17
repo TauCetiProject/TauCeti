@@ -277,7 +277,6 @@ def unitIsoOfForallIdealEqSpan {a : Γ(X, ⊤)}
 
 /-- The trivialization `unitIsoOfForallIdealEqSpan` is multiplication by `a`: composed with the
 inclusion `I ⟶ 𝒪_X`, it sends a function `r` over `V` to `a|_V * r`. -/
-@[simp]
 lemma sheafι_app_unitIsoOfForallIdealEqSpan_hom {a : Γ(X, ⊤)}
     (ha : ∀ U : X.affineOpens,
       IsSMulRegular Γ(X, U) (X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op a))

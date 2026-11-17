@@ -83,7 +83,6 @@ theorem symmetricPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
 
 /-- On sections over `X`, the symmetric power of a morphism `φ` sends the sheafification of a
 sectionwise symmetric tensor `x` to the sheafification of its image under `Symⁿ (φ_X)`. -/
-@[simp]
 theorem symmetricPower_map_val_app_unit (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
     (φ : M ⟶ N) (X : Cᵒᵖ)
     (x : (PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X).symmetricPower n) :

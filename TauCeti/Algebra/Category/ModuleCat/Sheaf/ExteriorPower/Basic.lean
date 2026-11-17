@@ -89,7 +89,6 @@ theorem exteriorPower_map (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)} 
 
 /-- On sections over `X`, the exterior power of a morphism `φ` sends the sheafified wedge
 `m₁ ∧ ⋯ ∧ mₙ` to the sheafified wedge `φ m₁ ∧ ⋯ ∧ φ mₙ`. -/
-@[simp]
 theorem exteriorPower_map_val_app_mk (n : ℕ) {M N : SheafOfModules.{u} (ringCatSheaf R)}
     (φ : M ⟶ N) (X : Cᵒᵖ) (m : Fin n → PresheafOfModulesOfCommRing.obj (R := R.obj) M.val X) :
     ((exteriorPower R n).map φ).val.app X ((exteriorPowerIso n M).inv.val.app X

@@ -73,14 +73,12 @@ def supportedSubmoduleSheafRestrictScalarsIso :
     (fun _ ↦ rfl)
 
 /-- Scalar restriction leaves the ambient section unchanged under the support comparison. -/
-@[simp]
 lemma coe_supportedSubmoduleSheafRestrictScalarsIso_hom_app_apply (W : (Opens X)ᵒᵖ)
     (s : (ModuleCat.restrictScalars f).obj (ModuleCat.of R (F.supportedSubmodule S W.unop))) :
     ((F.supportedSubmoduleSheafRestrictScalarsIso S f).hom.hom.app W s).val = s.val :=
   (rfl)
 
 /-- The inverse scalar-change comparison also leaves the ambient section unchanged. -/
-@[simp]
 lemma coe_supportedSubmoduleSheafRestrictScalarsIso_inv_app_apply (W : (Opens X)ᵒᵖ)
     (s : ((sheafCompose (Opens.grothendieckTopology X)
       (ModuleCat.restrictScalars.{u} f)).obj F).supportedSubmodule S W.unop) :

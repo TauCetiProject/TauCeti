@@ -284,7 +284,6 @@ def relativeDifferentialsSpecIso :
 
 /-- The isomorphism `Ω_{Spec A/R} ≅ Ω[A⁄R]~` sends the differential `d a` of `a ∈ A` to the
 section `D a` of `Ω[A⁄R]~`. -/
-@[simp]
 lemma relativeDifferentialsSpecIso_hom_app_d (U : (Spec A).Opens) (a : A) :
     (relativeDifferentialsSpecIso R A).hom.val.app (op U)
         (((Spec A).universalDerivation R).d
@@ -297,7 +296,6 @@ lemma relativeDifferentialsSpecIso_hom_app_d (U : (Spec A).Opens) (a : A) :
 
 /-- The inverse of `Ω_{Spec A/R} ≅ Ω[A⁄R]~` sends the section `D a` of `Ω[A⁄R]~` to the
 differential `d a`. -/
-@[simp]
 lemma relativeDifferentialsSpecIso_inv_app_toOpen (U : (Spec A).Opens) (a : A) :
     (relativeDifferentialsSpecIso R A).inv.val.app (op U)
         (tilde.toOpen (ModuleCat.of A Ω[A⁄R]) U (KaehlerDifferential.D R A a)) =

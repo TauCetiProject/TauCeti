@@ -80,14 +80,12 @@ noncomputable section
 
 /-- A mapped associated-sheaf morphism sends the section of an element to the
 section of its image. -/
-@[simp]
 theorem tilde_map_val_app_toOpen {R : CommRingCat.{u}} {M N : ModuleCat.{u} R}
     (f : M ⟶ N) (U : (Spec R).Opens) (m : M) :
     (tilde.map f).val.app (.op U) (tilde.toOpen M U m) = tilde.toOpen N U (f m) :=
   ConcreteCategory.congr_hom (tilde.toOpen_map_app f U) m
 
 /-- The associated-sheaf counit recovers a global section from its associated section. -/
-@[simp]
 theorem _root_.AlgebraicGeometry.Scheme.Modules.fromTildeΓ_val_app_toOpen_top
     {R : CommRingCat.{u}} (N : (Spec R).Modules)
     (m : (moduleSpecΓFunctor (R := R)).obj N) :
@@ -249,7 +247,6 @@ theorem unit_tildeFunctorCompPullbackIso_hom_app (M : ModuleCat.{u} R) :
 
 /-- On associated global sections, the affine pullback comparison sends the image of `m`
 under the pullback adjunction unit to the associated section of `1 ⊗ m`. -/
-@[simp]
 theorem tildeFunctorCompPullbackIso_hom_app_unit_toOpen (M : ModuleCat.{u} R) (m : M) :
     dsimp% only [CategoryTheory.Functor.comp_obj, CategoryTheory.Functor.id_obj]
     (((tildeFunctorCompPullbackIso φ).hom.app M).val.app (.op ⊤)

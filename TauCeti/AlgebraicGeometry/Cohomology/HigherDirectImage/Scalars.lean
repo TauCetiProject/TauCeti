@@ -46,7 +46,6 @@ variable {X Y : Scheme.{u}} (f : X ⟶ Y)
 the pullback of a global function to multiplication by its restriction. -/
 -- The explicit scalar type identifies the structure presheaf with the ring presheaf
 -- of the module category; typeclass search does not unfold this identification.
-@[simp]
 lemma higherDirectImagePresheaf_map_globalSectionsSmul_app (M : X.Modules) (n : ℕ)
     (r : Γ(Y, ⊤)) (U : Y.Opens)
     (x : ((f.higherDirectImagePresheaf n).obj M).obj (.op U)) :

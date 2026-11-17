@@ -66,7 +66,6 @@ def branchSheafSequenceMiddleIso :
 
 /-- The middle-term comparison sends a pair of branch functions to its associated
 section on the two branches. -/
-@[simp]
 theorem branchSheafSequenceMiddleIso_hom_toOpen (p : R[X] × R[X]) :
     dsimp% only [ShortComplex.map_X₂, AlgHom.toRingHom_eq_coe]
     (branchSheafSequenceMiddleIso R).hom.val.app (.op ⊤)
@@ -91,7 +90,6 @@ def branchSheafSequenceRightIso :
 
 /-- The last-term comparison sends a value at the node to its associated section
 on the singular section. -/
-@[simp]
 theorem branchSheafSequenceRightIso_hom_toOpen (r : R) :
     dsimp% only [ShortComplex.map_X₃, AlgHom.toRingHom_eq_coe]
     (branchSheafSequenceRightIso R).hom.val.app (.op ⊤)
