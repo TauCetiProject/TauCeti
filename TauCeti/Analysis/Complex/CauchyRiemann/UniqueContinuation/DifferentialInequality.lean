@@ -58,45 +58,35 @@ namespace TauCeti
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {Ω : Set ℂ} {J : ℂ → V →L[ℝ] V} {ξ : ℂ → V}
 
-/-- In the Euclidean coordinates `toEuclidean`, a `C¹` map obeying the differential inequality
-solves a linear Cauchy–Riemann equation for the conjugated structure, with a measurable, locally
-bounded coefficient: the regularity the variable-structure theorems ask for. -/
-private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContDiffOn ℝ 1 J Ω)
-    (hJJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hξ : ContDiffOn ℝ 1 ξ Ω)
+/-- A `C¹` map obeying the differential inequality solves a linear Cauchy–Riemann equation with a
+measurable, locally bounded coefficient: the regularity the variable-structure theorems ask for. -/
+private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContinuousOn J Ω)
+    (hξ : ContDiffOn ℝ 1 ξ Ω)
     (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖) :
-    let T := (toEuclidean : V ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ V)))
-    let c := (T.arrowCongr T : (V →L[ℝ] V) ≃L[ℝ] _)
-    ContDiffOn ℝ 1 (fun z ↦ c (J z)) Ω ∧
-      (∀ z ∈ Ω, c (J z) ∘L c (J z) = -ContinuousLinearMap.id ℝ _) ∧
-      ContDiffOn ℝ 1 (T ∘ ξ) Ω ∧
-      ∃ C : ℂ → _ →L[ℝ] _, AEStronglyMeasurable C (volume.restrict Ω) ∧
-        (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) ∧
-        ∀ z ∈ Ω, fderiv ℝ (T ∘ ξ) z 1 + c (J z) (fderiv ℝ (T ∘ ξ) z I) + C z ((T ∘ ξ) z) = 0 := by
-  intro T c
-  have hc (A : V →L[ℝ] V) (v : V) : c A (T v) = T (A v) := by simp [c]
+    ∃ C : ℂ → V →L[ℝ] V, AEStronglyMeasurable C (volume.restrict Ω) ∧
+      (∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖C w‖ ≤ M) ∧
+      ∀ z ∈ Ω, fderiv ℝ ξ z 1 + J z (fderiv ℝ ξ z I) + C z (ξ z) = 0 := by
+  -- The rank-one coefficient is built in the Euclidean coordinates `T` and conjugated back.
+  let T := (toEuclidean : V ≃L[ℝ] EuclideanSpace ℝ (Fin (Module.finrank ℝ V)))
+  let c := (T.arrowCongr T : (V →L[ℝ] V) ≃L[ℝ] _)
+  have hc (A : _) (v : V) : c.symm A v = T.symm (A (T v)) := by simp [c]
   -- The Cauchy–Riemann operator of `ξ`, continuous on `Ω`.
-  set D : ℂ → V := fun w ↦ fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I) with hD
+  set D : ℂ → V := fun w ↦ fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)
   have hDc : ContinuousOn D Ω := by
     have hdξ := hξ.continuousOn_fderiv_of_isOpen hΩ le_rfl
-    exact (hdξ.clm_apply continuousOn_const).add
-      (hJ.continuousOn.clm_apply (hdξ.clm_apply continuousOn_const))
-  -- The derivative of `T ∘ ξ` is `T` applied to that of `ξ`.
-  have hTD (w : ℂ) : fderiv ℝ (T ∘ ξ) w 1 + c (J w) (fderiv ℝ (T ∘ ξ) w I) = T (D w) := by
-    simp only [T.comp_fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, hc,
-      hD, map_add]
-  refine ⟨c.contDiff.comp_contDiffOn hJ, fun z hz ↦ ?_, T.contDiff.comp_contDiffOn hξ,
-    fun w ↦ rankOneDivNormSq ℝ (-T (D w)) (T (ξ w)), ?_, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-  · have hJJ' (v : V) : J z (J z v) = -v := congr($(hJJ z hz) v)
-    ext v
-    obtain ⟨v, rfl⟩ := T.surjective v
-    simp [hc, hJJ']
-  · exact (T.continuous.comp_continuousOn hDc).neg.aestronglyMeasurable hΩ.measurableSet
+    exact (hdξ.clm_apply continuousOn_const).add (hJ.clm_apply (hdξ.clm_apply continuousOn_const))
+  refine ⟨fun w ↦ c.symm (rankOneDivNormSq ℝ (-T (D w)) (T (ξ w))), ?_, fun z hz ↦ ?_,
+    fun z hz ↦ ?_⟩
+  · exact c.symm.continuous.comp_aestronglyMeasurable <|
+      (T.continuous.comp_continuousOn hDc).neg.aestronglyMeasurable hΩ.measurableSet
       |>.rankOneDivNormSq
       ((T.continuous.comp_continuousOn hξ.continuousOn).aestronglyMeasurable hΩ.measurableSet)
-  · -- `‖C w‖ = ‖T (D w)‖ / ‖T (ξ w)‖`, and `‖D w‖ ≤ M ‖ξ w‖ ≤ M ‖T⁻¹‖ ‖T (ξ w)‖`.
+  · -- `‖C w‖ ≤ ‖c⁻¹‖ ‖T (D w)‖ / ‖T (ξ w)‖`, and `‖D w‖ ≤ M ‖ξ w‖ ≤ M ‖T⁻¹‖ ‖T (ξ w)‖`.
     obtain ⟨M, hM⟩ := hb z hz
-    refine ⟨‖T.toContinuousLinearMap‖ * |M| * ‖T.symm.toContinuousLinearMap‖,
-      hM.mono fun w hw ↦ ?_⟩
+    refine ⟨‖c.symm.toContinuousLinearMap‖ *
+      (‖T.toContinuousLinearMap‖ * |M| * ‖T.symm.toContinuousLinearMap‖),
+      hM.mono fun w hw ↦ (c.symm.toContinuousLinearMap.le_opNorm _).trans ?_⟩
+    gcongr
     rw [norm_rankOneDivNormSq, norm_neg]
     rcases eq_or_ne ‖T (ξ w)‖ 0 with h0 | h0
     · rw [h0, div_zero]
@@ -111,13 +101,15 @@ private theorem exists_coeff_of_norm_le (hΩ : IsOpen Ω) (hJ : ContDiffOn ℝ 1
       _ ≤ ‖T.toContinuousLinearMap‖ * (|M| * (‖T.symm.toContinuousLinearMap‖ * ‖T (ξ w)‖)) := by
           gcongr
       _ = _ := by ring
-  · rw [hTD, comp_apply]
+  · change D z + c.symm _ (ξ z) = 0
+    rw [hc]
     rcases eq_or_ne (ξ z) 0 with h0 | h0
     · -- At a zero of `ξ` the inequality forces `D z = 0`.
       obtain ⟨M, hM⟩ := hb z hz
       have hDz : D z = 0 := norm_le_zero_iff.1 (by simpa [h0] using hM.self_of_nhds)
       simp [hDz, h0]
-    · rw [rankOneDivNormSq_apply_self _ (by simpa using h0), add_neg_cancel]
+    · rw [rankOneDivNormSq_apply_self _ (by simpa using h0), map_neg, T.symm_apply_apply,
+        add_neg_cancel]
 
 /-- **Unique continuation for a Cauchy–Riemann differential inequality.** On a connected open set
 `Ω`, a `C¹` map `ξ` into a finite-dimensional real normed space with
@@ -129,10 +121,9 @@ theorem eqOn_zero_of_contDiffOn_of_eqOn_zero_of_norm_le (hΩ : IsOpen Ω)
     (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
     {U : Set ℂ} (hU : IsOpen U) (hUne : U.Nonempty) (hUΩ : U ⊆ Ω) (h₀ : EqOn ξ 0 U) :
     EqOn ξ 0 Ω := by
-  obtain ⟨hJ', hJJ', hξ', C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ hJJ hξ hb
-  have h := eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ hΩc hJ' hJJ' hξ' hCm
-    hCb heq hU hUne hUΩ fun z hz ↦ by simp [h₀ hz]
-  exact fun z hz ↦ by simpa using h hz
+  obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ.continuousOn hξ hb
+  exact eqOn_zero_of_contDiffOn_of_eqOn_zero_of_complexStructure hΩ hΩc hJ hJJ hξ hCm hCb heq hU
+    hUne hUΩ h₀
 
 /-- **Unique continuation from a zero of infinite order for a Cauchy–Riemann differential
 inequality.** On a connected open set `Ω`, a `C¹` map `ξ` into a finite-dimensional real normed
@@ -144,10 +135,9 @@ theorem eqOn_zero_of_contDiffOn_of_forall_isBigO_of_norm_le (hΩ : IsOpen Ω)
     (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
     {z₀ : ℂ} (hz₀ : z₀ ∈ Ω) (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ (z - z₀) ^ n) :
     EqOn ξ 0 Ω := by
-  obtain ⟨hJ', hJJ', hξ', C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ hJJ hξ hb
-  have h := eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ hΩc hJ' hJJ' hξ' hCm
-    hCb heq hz₀ fun n ↦ ((toEuclidean : V ≃L[ℝ] _).isBigO_comp ξ _).trans (h₀ n)
-  exact fun z hz ↦ by simpa using h hz
+  obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ.continuousOn hξ hb
+  exact eqOn_zero_of_contDiffOn_of_forall_isBigO_of_complexStructure hΩ hΩc hJ hJJ hξ hCm hCb heq
+    hz₀ h₀
 
 /-- **Isolated zeros for a Cauchy–Riemann differential inequality.** On a connected open set `Ω`,
 the zeros of a `C¹` map `ξ` into a finite-dimensional real normed space with
@@ -158,9 +148,8 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_norm_le (hΩ : IsOpe
     (hJJ : ∀ z ∈ Ω, J z ∘L J z = -ContinuousLinearMap.id ℝ V) (hξ : ContDiffOn ℝ 1 ξ Ω)
     (hb : ∀ z ∈ Ω, ∃ M, ∀ᶠ w in 𝓝 z, ‖fderiv ℝ ξ w 1 + J w (fderiv ℝ ξ w I)‖ ≤ M * ‖ξ w‖)
     (hne : ∃ z ∈ Ω, ξ z ≠ 0) : {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
-  obtain ⟨hJ', hJJ', hξ', C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ hJJ hξ hb
-  obtain ⟨z₁, hz₁, hξz₁⟩ := hne
-  simpa using setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ hΩc hJ'
-    hJJ' hξ' hCm hCb heq ⟨z₁, hz₁, by simpa using hξz₁⟩
+  obtain ⟨C, hCm, hCb, heq⟩ := exists_coeff_of_norm_le hΩ hJ.continuousOn hξ hb
+  exact setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ hΩc hJ hJJ hξ
+    hCm hCb heq hne
 
 end TauCeti

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.CauchyRiemann.UniqueContinuation.DifferentialInequality
+public import TauCeti.Analysis.Complex.EquivRealProd
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 
 /-!
@@ -68,7 +69,8 @@ graph of the first solution.
 
 The proofs read `ℝ × ℝ` as `ℂ` through `Complex.equivRealProdCLM`, under which `∂ₛ` and `∂ₜ` are
 the derivatives in the directions `1` and `i`
-(`TauCeti.fderiv_comp_equivRealProdCLM_one`, `TauCeti.fderiv_comp_equivRealProdCLM_I`).
+(`TauCeti.fderiv_comp_equivRealProdCLM_one`, `TauCeti.fderiv_comp_equivRealProdCLM_I`), and
+carry the conclusions back with the transfer lemmas of `TauCeti.Analysis.Complex.EquivRealProd`.
 
 ## References
 
@@ -87,19 +89,6 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ × ℝ → V → V →L[ℝ] V} {Ks Kt : ℝ × ℝ → V → ℝ}
   {u ξ : ℝ × ℝ → V} {Ω : Set (ℝ × ℝ)}
-
-omit [FiniteDimensional ℝ V] in
-/-- In the complex coordinate `z = Complex.equivRealProdCLM w`, the structure `J(z, u z)` along a
-`C¹` map `u` is `C¹` on `e ⁻¹' Ω` when `J` is `C¹` near the graph of `u` over `Ω`. -/
-private theorem contDiffOn_comp_equivRealProdCLM (hΩ : IsOpen Ω)
-    (hJ : ∀ z ∈ Ω, ContDiffAt ℝ 1 (fun p : (ℝ × ℝ) × V ↦ J p.1 p.2) (z, u z))
-    (hu : ContDiffOn ℝ 1 u Ω) :
-    ContDiffOn ℝ 1 (fun w ↦ J (Complex.equivRealProdCLM w) (u (Complex.equivRealProdCLM w)))
-      (Complex.equivRealProdCLM ⁻¹' Ω) := fun w hw ↦ by
-  set e := Complex.equivRealProdCLM
-  have hgraph : ContDiffAt ℝ 1 (fun w ↦ (e w, u (e w))) w :=
-    e.contDiff.contDiffAt.prodMk ((hu.contDiffAt (hΩ.mem_nhds hw)).comp w e.contDiff.contDiffAt)
-  exact ((hJ (e w) hw).comp w hgraph).contDiffWithinAt
 
 /-- In the complex coordinate `z = Complex.equivRealProdCLM w`, a solution of `D_u ξ = 0` on a
 connected open set `Ω` solves the linear Cauchy–Riemann equation for the structure `J(z, u z)` and
@@ -137,44 +126,6 @@ private theorem floerLinearization_eq_zero_complexCoordinate (hΩ : IsOpen Ω)
   · rw [fderiv_comp_equivRealProdCLM_one, fderiv_comp_equivRealProdCLM_I, comp_apply,
       ← floerLinearization_eq_add]
     exact hD (e w) hw
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- A map vanishing on `Ω` in the complex coordinate `Complex.equivRealProdCLM` vanishes on `Ω`. -/
-private theorem eqOn_zero_of_eqOn_zero_comp_equivRealProdCLM
-    (h : EqOn (ξ ∘ Complex.equivRealProdCLM) 0 (Complex.equivRealProdCLM ⁻¹' Ω)) :
-    EqOn ξ 0 Ω := fun z hz ↦ by
-  simpa using h (show Complex.equivRealProdCLM.symm z ∈ _ by simpa using hz)
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Vanishing to infinite order at `z₀` is vanishing to infinite order in the complex coordinate
-`Complex.equivRealProdCLM`. -/
-private theorem isBigO_comp_equivRealProdCLM {z₀ : ℝ × ℝ}
-    (h₀ : ∀ n : ℕ, ξ =O[𝓝 z₀] fun z ↦ ‖z - z₀‖ ^ n) (n : ℕ) :
-    (ξ ∘ Complex.equivRealProdCLM) =O[𝓝 (Complex.equivRealProdCLM.symm z₀)]
-      fun w ↦ (w - Complex.equivRealProdCLM.symm z₀) ^ n := by
-  set e := Complex.equivRealProdCLM
-  -- In the complex coordinate the vanishing order is measured by `‖e w - e w₀‖ ≤ ‖e‖ ‖w - w₀‖`.
-  have h := (h₀ n).comp_tendsto
-    ((e.continuous.tendsto (e.symm z₀)).trans_eq (by rw [e.apply_symm_apply]))
-  refine h.trans (IsBigO.of_bound (‖(e : ℂ →L[ℝ] ℝ × ℝ)‖ ^ n) (Eventually.of_forall fun w ↦ ?_))
-  have hw : e w - z₀ = e (w - e.symm z₀) := by simp
-  simp only [comp_apply, hw, norm_pow, norm_norm, ← mul_pow]
-  gcongr
-  exact (e : ℂ →L[ℝ] ℝ × ℝ).le_opNorm _
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- A set of nonzeros codiscrete in `Ω` in the complex coordinate `Complex.equivRealProdCLM` is
-codiscrete in `Ω`. -/
-private theorem setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM
-    (h : {w | (ξ ∘ Complex.equivRealProdCLM) w ≠ 0} ∈
-      codiscreteWithin (Complex.equivRealProdCLM ⁻¹' Ω)) :
-    {z | ξ z ≠ 0} ∈ codiscreteWithin Ω := by
-  set e := Complex.equivRealProdCLM
-  -- Transport the codiscrete set back along the homeomorphism `e`.
-  have := (e.toHomeomorph.isEmbedding.image_mem_codiscreteWithin
-    (s := e ⁻¹' {z | ξ z ≠ 0}) (t := e ⁻¹' Ω)).2 h
-  simpa only [ContinuousLinearEquiv.coe_toHomeomorph,
-    image_preimage_eq _ e.surjective] using this
 
 /-- **Unique continuation for the linearized Floer operator.** Let `J` be `C¹` and the
 Hamiltonians `K_s`, `K_t` be `C²` near the graph of a `C¹` map `u` over a connected open set
@@ -238,7 +189,7 @@ theorem setOf_ne_zero_mem_codiscreteWithin_of_floerLinearization_eq_zero (hΩ : 
   obtain ⟨z₁, hz₁, hξz₁⟩ := hne
   have h := setOf_ne_zero_mem_codiscreteWithin_of_contDiffOn_of_complexStructure hΩ' hΩc' hJ'
     hJJ' hξ' hCm hCb heq ⟨e.symm z₁, by simpa using hz₁, by simpa using hξz₁⟩
-  exact setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM h
+  exact mem_codiscreteWithin_of_preimage_equivRealProdCLM h
 
 /-! ### Unique continuation for Floer solutions -/
 
@@ -435,7 +386,7 @@ theorem setOf_ne_mem_codiscreteWithin_of_floerOperator_eq_zero (hΩ : IsOpen Ω)
     (fun w hw ↦ hJJ (e w) hw) hξ' hb
     ⟨e.symm z₁, by simpa using hz₁, by simpa [sub_eq_zero] using hne₁⟩
   simpa only [Pi.sub_apply, ne_eq, sub_eq_zero] using
-    setOf_ne_zero_mem_codiscreteWithin_of_comp_equivRealProdCLM h
+    mem_codiscreteWithin_of_preimage_equivRealProdCLM (s := {z | (u - v) z ≠ 0}) h
 
 end Solutions
 
