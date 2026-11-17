@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.AffineTransitionLimit
 public import TauCeti.AlgebraicGeometry.ResidueField
 public import TauCeti.CategoryTheory.Comma.Over.Pullback
+public import TauCeti.CategoryTheory.Limits.Shapes.Pullback.Diagram
 
 /-!
 # Separation, affineness and points of limits with affine transition maps
@@ -30,9 +31,8 @@ because the preimages of affine opens of the members form a basis of the limit
 (`isBasis_preimage_isAffineOpen`).
 
 `opensDiagramObjIso` and `opensConePtIso` identify `opensDiagram` and `opensCone` with preimage
-open subschemes; `pullbackDiagram` and `pullbackDiagramCone` base-change `D` and `c` along
-`p : Y ⟶ D.obj i₀` (`isLimitPullbackDiagramCone`), giving `Over.pullback` cofiltered-limit descent
-in `Scheme` (Stacks, Lemma 32.10.1 (01ZM)).
+open subschemes; the scheme instances for `TauCeti.pullbackDiagram` yield `Over.pullback`
+cofiltered-limit descent in `Scheme` (Stacks, Lemma 32.10.1 (01ZM)).
 
 ## Main declarations
 
@@ -94,8 +94,8 @@ noncomputable def opensConePtIso : (opensCone D c i U).pt ≅ (c.π.app i ⁻¹�
       (opensDiagramObjIso D i U j).hom ≫ (D.map f.left).resLE (D.map k.hom ⁻¹ᵁ U)
         (D.map j.hom ⁻¹ᵁ U) (by rw [← Scheme.Hom.comp_preimage, ← D.map_comp, Over.w f]) := by
   rw [← cancel_mono (D.map k.hom ⁻¹ᵁ U).ι, Category.assoc, opensDiagramObjIso_hom_ι,
-    (opensDiagramι D i U).naturality f, Functor.comp_map, Over.forget_map,
-    Category.assoc, Scheme.Hom.resLE_comp_ι, opensDiagramObjIso_hom_ι_assoc]
+    (opensDiagramι D i U).naturality f, Functor.comp_map, Over.forget_map, Category.assoc,
+    Scheme.Hom.resLE_comp_ι, opensDiagramObjIso_hom_ι_assoc]
 
 /-- Projections of `opensCone D c i U` correspond to `Scheme.Hom.resLE` along `c.π.app j.left`. -/
 @[reassoc] theorem opensCone_π_app_comp_objIso_hom (j : Over i) :
@@ -108,69 +108,11 @@ noncomputable def opensConePtIso : (opensCone D c i U).pt ≅ (c.π.app i ⁻¹�
 @[reassoc] theorem opensCone_π_app_comp_opensDiagramι_app (j : Over i) :
     (opensCone D c i U).π.app j ≫ (opensDiagramι D i U).app j =
       (opensConePtIso D c i U).hom ≫ (c.π.app i ⁻¹ᵁ U).ι ≫ c.π.app j.left := by
-  rw [← opensDiagramObjIso_hom_ι, ← Category.assoc, opensCone_π_app_comp_objIso_hom,
-    Category.assoc, Scheme.Hom.resLE_comp_ι]
+  rw [← opensDiagramObjIso_hom_ι, opensCone_π_app_comp_objIso_hom_assoc, Scheme.Hom.resLE_comp_ι]
 
 end OpensDiagram
 
 section PullbackDiagram
-
-section General
-
-variable {I C : Type*} [Category* I] [Category* C] [HasPullbacks C] (D : I ⥤ C) (c : Cone D)
-
-/-- Base-changing `D : I ⥤ C` along `p : Y ⟶ D.obj i₀` gives an `Over i₀`-indexed diagram. -/
-@[expose, simps, implicit_reducible]
-noncomputable def pullbackDiagram (i₀ : I) {Y : C} (p : Y ⟶ D.obj i₀) : Over i₀ ⥤ C where
-  obj j := pullback p (D.map j.hom)
-  map f := pullback.map p _ p _ (𝟙 _) (D.map f.left) (𝟙 _) (by simp) (by simp [← D.map_comp])
-  map_id _ := by apply pullback.hom_ext <;> simp
-  map_comp _ _ := by apply pullback.hom_ext <;> simp
-
-/-- Second projection from `pullbackDiagram D i₀ p` to `Over.forget i₀ ⋙ D`. -/
-@[expose, simps] noncomputable def pullbackDiagramSnd (i₀ : I) {Y : C} (p : Y ⟶ D.obj i₀) :
-    pullbackDiagram D i₀ p ⟶ Over.forget i₀ ⋙ D where
-  app j := pullback.snd p (D.map j.hom)
-
-/-- Structural natural transformation from `pullbackDiagram D i₀ p` to the constant diagram on
-`D.obj i₀`. -/
-@[expose, simps] noncomputable def pullbackDiagramToBase (i₀ : I) {Y : C} (p : Y ⟶ D.obj i₀) :
-    pullbackDiagram D i₀ p ⟶ (Functor.const (Over i₀)).obj (D.obj i₀) where
-  app j := pullback.snd p (D.map j.hom) ≫ D.map j.hom
-  naturality _ _ _ := by simp [← D.map_comp]
-
-/-- Cone over `pullbackDiagram D i₀ p` with vertex `pullback p (c.π.app i₀)` induced by `c`. -/
-@[expose, simps, implicit_reducible]
-noncomputable def pullbackDiagramCone (i₀ : I) {Y : C} (p : Y ⟶ D.obj i₀) :
-    Cone (pullbackDiagram D i₀ p) where
-  pt := pullback p (c.π.app i₀)
-  π := { app j := pullback.map p _ p _ (𝟙 _) (c.π.app j.left) (𝟙 _) (by simp) (by simp [c.w])
-         naturality _ _ _ := by apply pullback.hom_ext <;> simp [c.w] }
-
-/-- Transition morphisms of `pullbackDiagram D i₀ p` form pullback squares with `D.map f.left`. -/
-theorem isPullback_pullbackDiagram_map {i₀ : I} {Y : C} (p : Y ⟶ D.obj i₀)
-    {j k : Over i₀} (f : j ⟶ k) :
-    IsPullback ((pullbackDiagram D i₀ p).map f) (pullback.snd p (D.map j.hom))
-      (pullback.snd p (D.map k.hom)) (D.map f.left) :=
-  .of_right (by simpa [← D.map_comp, Over.w f] using IsPullback.of_hasPullback p (D.map j.hom))
-    (by simp) (IsPullback.of_hasPullback p (D.map k.hom))
-
-/-- When `(Over.forget i₀).Initial` and `c` is a limit cone over `D`, `pullbackDiagramCone D c i₀ p`
-exhibits `pullback p (c.π.app i₀)` as the limit of `pullbackDiagram D i₀ p`. -/
-noncomputable def isLimitPullbackDiagramCone (hc : IsLimit c)
-    (i₀ : I) [(Over.forget i₀).Initial] {Y : C} (p : Y ⟶ D.obj i₀) :
-    IsLimit (pullbackDiagramCone D c i₀ p) :=
-  letI : IsConnected (Over i₀) := isConnected_of_hasTerminal (Over i₀)
-  isLimitOfIsPullbackOfIsConnected (pullbackDiagramSnd D i₀ p)
-    (pullbackDiagramCone D c i₀ p) (c.whisker (Over.forget i₀))
-    { hom := pullback.snd p (c.π.app i₀), w := fun _ ↦ by simp }
-    (fun j ↦ .of_right (by simpa [c.w j.hom] using IsPullback.of_hasPullback p (c.π.app i₀))
-      (by simp) (IsPullback.of_hasPullback p (D.map j.hom)))
-    ((Functor.Initial.isLimitWhiskerEquiv (Over.forget i₀) c).symm hc)
-
-end General
-
-section SchemeInstances
 
 variable {I : Type*} [Category* I] (D : I ⥤ Scheme.{u}) {i₀ : I} {Y : Scheme.{u}} (p : Y ⟶ D.obj i₀)
 
@@ -188,8 +130,6 @@ instance compactSpace_pullbackDiagram_obj [QuasiCompact p] (j : Over i₀)
 instance quasiSeparatedSpace_pullbackDiagram_obj [QuasiSeparated p] (j : Over i₀)
     [QuasiSeparatedSpace (D.obj j.left)] : QuasiSeparatedSpace ((pullbackDiagram D i₀ p).obj j) :=
   quasiSeparatedSpace_of_quasiSeparated (pullback.snd p (D.map j.hom))
-
-end SchemeInstances
 
 end PullbackDiagram
 
@@ -347,80 +287,74 @@ instance preservesLimit_forgetToTop : PreservesLimit D Scheme.forgetToTop where
 
 section OverPullbackDescent
 
+private abbrev PullbackHom {Z S : Scheme.{u}} (g : Z ⟶ S) (Y₁ Y₂ : Over S) :=
+  (Over.pullback g).obj Y₁ ⟶ (Over.pullback g).obj Y₂
+
 section FstProj
 variable {Z S : Scheme.{u}} {g : Z ⟶ S} {Y₁ Y₂ Y₃ : Over S}
-@[reassoc] private theorem overLeft_snd (β : (Over.pullback g).obj Y₁ ⟶ (Over.pullback g).obj Y₂) :
+@[reassoc] private theorem overLeft_snd (β : PullbackHom g Y₁ Y₂) :
     β.left ≫ pullback.snd Y₂.hom g = pullback.snd Y₁.hom g := Over.w β
-private noncomputable def overFstProj (β : (Over.pullback g).obj Y₁ ⟶ (Over.pullback g).obj Y₂) :
-    pullback Y₁.hom g ⟶ Y₂.left := β.left ≫ pullback.fst Y₂.hom g
-private theorem overFstProj_comp_hom (β : (Over.pullback g).obj Y₁ ⟶ (Over.pullback g).obj Y₂) :
+private noncomputable def overFstProj (β : PullbackHom g Y₁ Y₂) : pullback Y₁.hom g ⟶ Y₂.left :=
+  β.left ≫ pullback.fst Y₂.hom g
+private theorem overFstProj_comp (β₁ : PullbackHom g Y₁ Y₂) (β₂ : PullbackHom g Y₂ Y₃) :
+    overFstProj (β₁ ≫ β₂) = β₁.left ≫ overFstProj β₂ := by
+  rw [overFstProj, Over.comp_left, Category.assoc, overFstProj]
+private theorem overFstProj_comp_hom (β : PullbackHom g Y₁ Y₂) :
     overFstProj β ≫ Y₂.hom = pullback.snd Y₁.hom g ≫ g := by
   rw [overFstProj, Category.assoc, pullback.condition, overLeft_snd_assoc]
 private noncomputable def overMkOfFstProj (a : pullback Y₁.hom g ⟶ Y₂.left)
-    (ha : a ≫ Y₂.hom = pullback.snd Y₁.hom g ≫ g) :
-    (Over.pullback g).obj Y₁ ⟶ (Over.pullback g).obj Y₂ :=
+    (ha : a ≫ Y₂.hom = pullback.snd Y₁.hom g ≫ g) : PullbackHom g Y₁ Y₂ :=
   Over.homMk (pullback.lift a (pullback.snd Y₁.hom g) ha) (pullback.lift_snd _ _ _)
 private theorem overFstProj_mkOfFstProj (a : pullback Y₁.hom g ⟶ Y₂.left)
     (ha : a ≫ Y₂.hom = pullback.snd Y₁.hom g ≫ g) :
     overFstProj (Y₁ := Y₁) (Y₂ := Y₂) (overMkOfFstProj a ha) = a := pullback.lift_fst _ _ _
-private theorem over_hom_ext_of_fstProj
-    {β₁ β₂ : (Over.pullback g).obj Y₁ ⟶ (Over.pullback g).obj Y₂}
+private theorem over_hom_ext_of_fstProj {β₁ β₂ : PullbackHom g Y₁ Y₂}
     (h : overFstProj β₁ = overFstProj β₂) : β₁ = β₂ :=
   Over.OverMorphism.ext <| pullback.hom_ext h ((overLeft_snd β₁).trans (overLeft_snd β₂).symm)
 end FstProj
 
 variable {I : Type u} [Category.{u} I] (D : I ⥤ Scheme.{u}) (c : Cone D)
 
+private noncomputable abbrev diagπ (i₀ : I) (Y : Over (D.obj i₀)) (j : Over i₀) :=
+  (pullbackDiagramCone D c i₀ Y.hom).π.app j
+
 section StageHelpers
 variable {i₀ : I} {Y Y₁ Y₂ Y₃ : Over (D.obj i₀)} {k j : Over i₀}
-private noncomputable def overResStageHom (u : k ⟶ j)
-    (β : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂) :
-    (Over.pullback (D.map k.hom)).obj Y₁ ⟶ (Over.pullback (D.map k.hom)).obj Y₂ :=
-  overMkOfFstProj ((pullbackDiagram D i₀ Y₁.hom).map u ≫ overFstProj β) (by
-    rw [Category.assoc, overFstProj_comp_hom]; simp [← D.map_comp])
-private theorem overFstProj_resStageHom (u : k ⟶ j)
-    (β : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂) :
+private noncomputable def overResStageHom (u : k ⟶ j) (β : PullbackHom (D.map j.hom) Y₁ Y₂) :
+    PullbackHom (D.map k.hom) Y₁ Y₂ :=
+  overMkOfFstProj ((pullbackDiagram D i₀ Y₁.hom).map u ≫ overFstProj β)
+    (by rw [Category.assoc, overFstProj_comp_hom]; simp [← D.map_comp])
+private theorem overFstProj_resStageHom (u : k ⟶ j) (β : PullbackHom (D.map j.hom) Y₁ Y₂) :
     overFstProj (overResStageHom D u β) = (pullbackDiagram D i₀ Y₁.hom).map u ≫ overFstProj β :=
   overFstProj_mkOfFstProj _ _
 private theorem overResStageHom_id (u : k ⟶ j) :
-    overResStageHom D u (𝟙 ((Over.pullback (D.map j.hom)).obj Y)) =
-      𝟙 ((Over.pullback (D.map k.hom)).obj Y) :=
+    overResStageHom D u (𝟙 ((Over.pullback (D.map j.hom)).obj Y)) = 𝟙 _ :=
   over_hom_ext_of_fstProj (by rw [overFstProj_resStageHom]; simp [overFstProj])
-private theorem overResStageHom_comp (u : k ⟶ j)
-    (β₁ : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂)
-    (β₂ : (Over.pullback (D.map j.hom)).obj Y₂ ⟶ (Over.pullback (D.map j.hom)).obj Y₃) :
+private theorem overResStageHom_comp (u : k ⟶ j) (β₁ : PullbackHom (D.map j.hom) Y₁ Y₂)
+    (β₂ : PullbackHom (D.map j.hom) Y₂ Y₃) :
     overResStageHom D u (β₁ ≫ β₂) = overResStageHom D u β₁ ≫ overResStageHom D u β₂ := by
   apply over_hom_ext_of_fstProj
   have hcomm : (overResStageHom D u β₁).left ≫ (pullbackDiagram D i₀ Y₂.hom).map u =
       (pullbackDiagram D i₀ Y₁.hom).map u ≫ β₁.left :=
     pullback.hom_ext (by simp [overResStageHom, overMkOfFstProj, overFstProj])
       (by simp [overResStageHom, overMkOfFstProj, overLeft_snd])
-  change _ = (overResStageHom D u β₁).left ≫ overFstProj (overResStageHom D u β₂)
-  rw [overFstProj_resStageHom, overFstProj_resStageHom, ← Category.assoc, hcomm]; rfl
-private theorem overCone_π_resStageHom (u : k ⟶ j)
-    {β : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂}
-    {α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂}
-    (hβ : (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj β = overFstProj α) :
-    (pullbackDiagramCone D c i₀ Y₁.hom).π.app k ≫ overFstProj (overResStageHom D u β) =
-      overFstProj α := by
+  rw [overFstProj_resStageHom, overFstProj_comp, overFstProj_comp, overFstProj_resStageHom,
+    reassoc_of% hcomm]
+private theorem overCone_π_resStageHom (u : k ⟶ j) {β : PullbackHom (D.map j.hom) Y₁ Y₂}
+    {α : PullbackHom (c.π.app i₀) Y₁ Y₂} (hβ : diagπ D c i₀ Y₁ j ≫ overFstProj β = overFstProj α) :
+    diagπ D c i₀ Y₁ k ≫ overFstProj (overResStageHom D u β) = overFstProj α := by
   rw [overFstProj_resStageHom, ← Category.assoc, (pullbackDiagramCone D c i₀ Y₁.hom).w, hβ]
-private theorem overCone_π_fstProj_comp
-    (α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂)
-    (γ : (Over.pullback (c.π.app i₀)).obj Y₂ ⟶ (Over.pullback (c.π.app i₀)).obj Y₃)
-    (βα : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂)
-    (βγ : (Over.pullback (D.map j.hom)).obj Y₂ ⟶ (Over.pullback (D.map j.hom)).obj Y₃)
-    (hβα : (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj βα = overFstProj α)
-    (hβγ : (pullbackDiagramCone D c i₀ Y₂.hom).π.app j ≫ overFstProj βγ = overFstProj γ) :
-    (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj (βα ≫ βγ) = overFstProj (α ≫ γ) := by
-  have hcomm : (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ βα.left =
-      α.left ≫ (pullbackDiagramCone D c i₀ Y₂.hom).π.app j :=
+private theorem overCone_π_fstProj_comp {α : PullbackHom (c.π.app i₀) Y₁ Y₂}
+    {γ : PullbackHom (c.π.app i₀) Y₂ Y₃} {βα : PullbackHom (D.map j.hom) Y₁ Y₂}
+    {βγ : PullbackHom (D.map j.hom) Y₂ Y₃}
+    (hβα : diagπ D c i₀ Y₁ j ≫ overFstProj βα = overFstProj α)
+    (hβγ : diagπ D c i₀ Y₂ j ≫ overFstProj βγ = overFstProj γ) :
+    diagπ D c i₀ Y₁ j ≫ overFstProj (βα ≫ βγ) = overFstProj (α ≫ γ) := by
+  have hcomm : diagπ D c i₀ Y₁ j ≫ βα.left = α.left ≫ diagπ D c i₀ Y₂ j :=
     pullback.hom_ext (by simpa [overFstProj] using hβα) (by simp [overLeft_snd, overLeft_snd_assoc])
-  rw [overFstProj, Over.comp_left, Category.assoc, reassoc_of% hcomm]
-  simpa [overFstProj] using α.left ≫= hβγ
-private theorem overLift_eq_of_cone_π_fstProj
-    (β : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂)
-    (α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂)
-    (hβ : (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj β = overFstProj α) :
+  rw [overFstProj_comp, overFstProj_comp, reassoc_of% hcomm, hβγ]
+private theorem overLift_eq_of_cone_π_fstProj (β : PullbackHom (D.map j.hom) Y₁ Y₂)
+    (α : PullbackHom (c.π.app i₀) Y₁ Y₂) (hβ : diagπ D c i₀ Y₁ j ≫ overFstProj β = overFstProj α) :
     (Over.pullbackCompIsoOfEq (c.π.app j.left) (D.map j.hom) (c.π.app i₀) (c.w j.hom)).inv.app Y₁ ≫
       (Over.pullback (c.π.app j.left)).map β ≫
       (Over.pullbackCompIsoOfEq (c.π.app j.left) (D.map j.hom) (c.π.app i₀)
@@ -432,47 +366,41 @@ private theorem overLift_eq_of_cone_π_fstProj
   simp only [overFstProj, Over.comp_left] at hβ ⊢
   rw [Category.assoc, Category.assoc, Over.pullbackCompIsoOfEq_hom_app_left_fst,
     reassoc_of% hB, Over.pullbackCompIsoOfEq_inv_app_left_fst_assoc]; simpa using hβ
-private theorem exists_overStageHom_of_isLimit [IsCofiltered I]
-    [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
-    [∀ i, CompactSpace (D.obj i)] [∀ i, QuasiSeparatedSpace (D.obj i)] (hc : IsLimit c)
+variable [IsCofiltered I] [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
+  [∀ i, CompactSpace (D.obj i)]
+private theorem exists_overStageHom_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)] (hc : IsLimit c)
     [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom] [LocallyOfFinitePresentation Y₂.hom]
-    (α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂) :
-    ∃ (j : Over i₀) (β : (Over.pullback (D.map j.hom)).obj Y₁ ⟶
-      (Over.pullback (D.map j.hom)).obj Y₂),
-      (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj β = overFstProj α := by
-  obtain ⟨j, g, hg₁, hg₂⟩ :=
-    AlgebraicGeometry.Scheme.exists_π_app_comp_eq_of_locallyOfFinitePresentation
-      (pullbackDiagram D i₀ Y₁.hom) (pullbackDiagramToBase D i₀ Y₁.hom) Y₂.hom
-      (pullbackDiagramCone D c i₀ Y₁.hom) (isLimitPullbackDiagramCone D c hc i₀ Y₁.hom)
+    (α : PullbackHom (c.π.app i₀) Y₁ Y₂) :
+    ∃ (j : Over i₀) (β : PullbackHom (D.map j.hom) Y₁ Y₂),
+      diagπ D c i₀ Y₁ j ≫ overFstProj β = overFstProj α :=
+  let ⟨j, g, hg₁, hg₂⟩ :=
+    AlgebraicGeometry.Scheme.exists_π_app_comp_eq_of_locallyOfFinitePresentation _
+      (pullbackDiagramToBase D i₀ Y₁.hom) Y₂.hom _ (isLimitPullbackDiagramCone D c hc i₀ Y₁.hom)
       (overFstProj α) (by ext j; simp [overFstProj_comp_hom, c.w j.hom])
-  exact ⟨j, overMkOfFstProj g (hg₂.trans (pullbackDiagramToBase_app D i₀ Y₁.hom j)),
+  ⟨j, overMkOfFstProj g (hg₂.trans (pullbackDiagramToBase_app D i₀ Y₁.hom j)),
     by rw [overFstProj_mkOfFstProj, hg₁]⟩
-private theorem exists_overResStageHom_eq_of_isLimit [IsCofiltered I]
-    [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
-    (hc : IsLimit c) [QuasiCompact Y₁.hom] [LocallyOfFiniteType Y₂.hom] (j : Over i₀)
-    (β₁ β₂ : (Over.pullback (D.map j.hom)).obj Y₁ ⟶ (Over.pullback (D.map j.hom)).obj Y₂)
-    (hπ : (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj β₁ =
-      (pullbackDiagramCone D c i₀ Y₁.hom).π.app j ≫ overFstProj β₂) :
-    ∃ (k : Over i₀) (u : k ⟶ j), overResStageHom D u β₁ = overResStageHom D u β₂ := by
-  obtain ⟨k, u, hu⟩ := AlgebraicGeometry.Scheme.exists_hom_comp_eq_comp_of_locallyOfFiniteType
-    (pullbackDiagram D i₀ Y₁.hom) (pullbackDiagramToBase D i₀ Y₁.hom) Y₂.hom
-    (pullbackDiagramCone D c i₀ Y₁.hom) (isLimitPullbackDiagramCone D c hc i₀ Y₁.hom)
+private theorem exists_overResStageHom_eq_of_isLimit (hc : IsLimit c) [QuasiCompact Y₁.hom]
+    [LocallyOfFiniteType Y₂.hom] (j : Over i₀) (β₁ β₂ : PullbackHom (D.map j.hom) Y₁ Y₂)
+    (hπ : diagπ D c i₀ Y₁ j ≫ overFstProj β₁ = diagπ D c i₀ Y₁ j ≫ overFstProj β₂) :
+    ∃ (k : Over i₀) (u : k ⟶ j), overResStageHom D u β₁ = overResStageHom D u β₂ :=
+  let ⟨k, u, hu⟩ := AlgebraicGeometry.Scheme.exists_hom_comp_eq_comp_of_locallyOfFiniteType _
+    (pullbackDiagramToBase D i₀ Y₁.hom) Y₂.hom _ (isLimitPullbackDiagramCone D c hc i₀ Y₁.hom)
     (overFstProj β₁) (overFstProj β₂) (overFstProj_comp_hom β₁).symm
     (overFstProj_comp_hom β₂).symm hπ
-  exact ⟨k, u, over_hom_ext_of_fstProj
-    (by rw [overFstProj_resStageHom, overFstProj_resStageHom, hu])⟩
+  ⟨k, u, over_hom_ext_of_fstProj (by rw [overFstProj_resStageHom, overFstProj_resStageHom, hu])⟩
 end StageHelpers
+
+variable [IsCofiltered I] [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
+  [∀ i, CompactSpace (D.obj i)]
 
 /-- Along a cofiltered limit of quasi-compact quasi-separated schemes with affine transition
 morphisms, any morphism over `c.pt` from the pullback of a qcqs scheme `Y₁` over `D.obj i₀` to the
 pullback of a locally finitely presented scheme `Y₂` over `D.obj i₀` descends to a morphism over
 some stage `j` mapping to `i₀`. -/
 @[stacks 01ZM "morphism descent along cofiltered affine-transition limits"]
-theorem exists_hom_pullback_of_isLimit [IsCofiltered I]
-    [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
-    [∀ i, CompactSpace (D.obj i)] [∀ i, QuasiSeparatedSpace (D.obj i)]
-    (hc : IsLimit c) {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀))
-    [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom] [LocallyOfFinitePresentation Y₂.hom]
+theorem exists_hom_pullback_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)] (hc : IsLimit c)
+    {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀)) [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom]
+    [LocallyOfFinitePresentation Y₂.hom]
     (α : (Over.pullback (c.π.app i₀)).obj Y₁ ⟶ (Over.pullback (c.π.app i₀)).obj Y₂) :
     ∃ (j : I) (fj : j ⟶ i₀)
       (β : (Over.pullback (D.map fj)).obj Y₁ ⟶ (Over.pullback (D.map fj)).obj Y₂),
@@ -486,16 +414,13 @@ theorem exists_hom_pullback_of_isLimit [IsCofiltered I]
 morphisms over `D.obj i₀` from a quasi-compact scheme `Y₁` to a locally finite-type scheme `Y₂`
 whose pullbacks to `c.pt` agree already agree after pullback to some stage `k` mapping to `i₀`. -/
 @[stacks 01ZM "morphism uniqueness along cofiltered affine-transition limits"]
-theorem exists_pullback_map_eq_of_isLimit [IsCofiltered I]
-    [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)] [∀ i, CompactSpace (D.obj i)]
-    (hc : IsLimit c) {i₀ : I} {Y₁ Y₂ : Over (D.obj i₀)}
+theorem exists_pullback_map_eq_of_isLimit (hc : IsLimit c) {i₀ : I} {Y₁ Y₂ : Over (D.obj i₀)}
     [QuasiCompact Y₁.hom] [LocallyOfFiniteType Y₂.hom] (β₁ β₂ : Y₁ ⟶ Y₂)
     (h : (Over.pullback (c.π.app i₀)).map β₁ = (Over.pullback (c.π.app i₀)).map β₂) :
     ∃ (k : I) (fk : k ⟶ i₀),
       (Over.pullback (D.map fk)).map β₁ = (Over.pullback (D.map fk)).map β₂ := by
   let j₀ : Over i₀ := Over.mk (𝟙 i₀)
-  have hfst (β : Y₁ ⟶ Y₂) : (pullbackDiagramCone D c i₀ Y₁.hom).π.app j₀ ≫
-      overFstProj ((Over.pullback (D.map j₀.hom)).map β) =
+  have hfst (β : Y₁ ⟶ Y₂) : diagπ D c i₀ Y₁ j₀ ≫ overFstProj ((Over.pullback _).map β) =
       overFstProj ((Over.pullback (c.π.app i₀)).map β) := by dsimp [j₀, overFstProj]; simp
   obtain ⟨k, u, hu⟩ := exists_overResStageHom_eq_of_isLimit D c hc j₀ _ _
     ((hfst β₁).trans ((congrArg overFstProj h).trans (hfst β₂).symm))
@@ -509,12 +434,10 @@ morphisms, an isomorphism over `c.pt` between the pullbacks of two qcqs locally 
 schemes `Y₁, Y₂` over `D.obj i₀` descends to an isomorphism over some stage `k` mapping to `i₀`
 whose pullback to `c.pt` recovers `e.hom`. -/
 @[stacks 01ZM "isomorphism descent along cofiltered affine-transition limits"]
-theorem exists_iso_pullback_of_isLimit [IsCofiltered I]
-    [∀ {i j : I} (f : i ⟶ j), IsAffineHom (D.map f)]
-    [∀ i, CompactSpace (D.obj i)] [∀ i, QuasiSeparatedSpace (D.obj i)]
-    (hc : IsLimit c) {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀))
-    [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom] [LocallyOfFinitePresentation Y₁.hom]
-    [QuasiCompact Y₂.hom] [QuasiSeparated Y₂.hom] [LocallyOfFinitePresentation Y₂.hom]
+theorem exists_iso_pullback_of_isLimit [∀ i, QuasiSeparatedSpace (D.obj i)] (hc : IsLimit c)
+    {i₀ : I} (Y₁ Y₂ : Over (D.obj i₀)) [QuasiCompact Y₁.hom] [QuasiSeparated Y₁.hom]
+    [LocallyOfFinitePresentation Y₁.hom] [QuasiCompact Y₂.hom] [QuasiSeparated Y₂.hom]
+    [LocallyOfFinitePresentation Y₂.hom]
     (e : (Over.pullback (c.π.app i₀)).obj Y₁ ≅ (Over.pullback (c.π.app i₀)).obj Y₂) :
     ∃ (k : I) (fk : k ⟶ i₀)
       (ek : (Over.pullback (D.map fk)).obj Y₁ ≅ (Over.pullback (D.map fk)).obj Y₂),
@@ -523,18 +446,14 @@ theorem exists_iso_pullback_of_isLimit [IsCofiltered I]
         (Over.pullbackCompIsoOfEq (c.π.app k) (D.map fk) (c.π.app i₀) (c.w fk)).hom.app Y₂ =
       e.hom := by
   have step {Z₁ Z₂ : Over (D.obj i₀)} [QuasiCompact Z₁.hom] [LocallyOfFiniteType Z₁.hom]
-      {j : Over i₀} {φ : (Over.pullback (D.map j.hom)).obj Z₁ ⟶
-        (Over.pullback (D.map j.hom)).obj Z₂} {ψ : (Over.pullback (D.map j.hom)).obj Z₂ ⟶
-        (Over.pullback (D.map j.hom)).obj Z₁} {α : (Over.pullback (c.π.app i₀)).obj Z₁ ⟶
-        (Over.pullback (c.π.app i₀)).obj Z₂} {γ : (Over.pullback (c.π.app i₀)).obj Z₂ ⟶
-        (Over.pullback (c.π.app i₀)).obj Z₁}
-      (hφ : (pullbackDiagramCone D c i₀ Z₁.hom).π.app j ≫ overFstProj φ = overFstProj α)
-      (hψ : (pullbackDiagramCone D c i₀ Z₂.hom).π.app j ≫ overFstProj ψ = overFstProj γ)
-      (hαγ : α ≫ γ = 𝟙 _) :
-      ∃ (k : Over i₀) (u : k ⟶ j), overResStageHom D u φ ≫ overResStageHom D u ψ = 𝟙 _ := by
-    obtain ⟨k, u, hu⟩ := exists_overResStageHom_eq_of_isLimit D c hc j (φ ≫ ψ) (𝟙 _) (by
-      rw [overCone_π_fstProj_comp D c α γ φ ψ hφ hψ, hαγ]; simp [overFstProj])
-    exact ⟨k, u, by rw [← overResStageHom_comp, hu, overResStageHom_id]⟩
+      {j : Over i₀} {φ : PullbackHom (D.map j.hom) Z₁ Z₂} {ψ : PullbackHom (D.map j.hom) Z₂ Z₁}
+      {α : PullbackHom (c.π.app i₀) Z₁ Z₂} {γ : PullbackHom (c.π.app i₀) Z₂ Z₁}
+      (hφ : diagπ D c i₀ Z₁ j ≫ overFstProj φ = overFstProj α)
+      (hψ : diagπ D c i₀ Z₂ j ≫ overFstProj ψ = overFstProj γ) (hαγ : α ≫ γ = 𝟙 _) :
+      ∃ (k : Over i₀) (u : k ⟶ j), overResStageHom D u φ ≫ overResStageHom D u ψ = 𝟙 _ :=
+    let ⟨k, u, hu⟩ := exists_overResStageHom_eq_of_isLimit D c hc j (φ ≫ ψ) (𝟙 _)
+      (by rw [overCone_π_fstProj_comp D c hφ hψ, hαγ]; simp [overFstProj])
+    ⟨k, u, by rw [← overResStageHom_comp, hu, overResStageHom_id]⟩
   obtain ⟨j₁, φ₁, hφ₁⟩ := exists_overStageHom_of_isLimit D c hc e.hom
   obtain ⟨j₂, ψ₂, hψ₂⟩ := exists_overStageHom_of_isLimit D c hc e.inv
   have hφ₃ := overCone_π_resStageHom D c (IsCofiltered.minToLeft j₁ j₂) hφ₁
@@ -545,8 +464,7 @@ theorem exists_iso_pullback_of_isLimit [IsCofiltered I]
   exact ⟨j₅.left, j₅.hom,
     { hom := overResStageHom D u₄ (overResStageHom D u₃ _)
       inv := overResStageHom D u₄ (overResStageHom D u₃ _)
-      hom_inv_id := by rw [← overResStageHom_comp, hu₃, overResStageHom_id]
-      inv_hom_id := hu₄ },
+      hom_inv_id := by rw [← overResStageHom_comp, hu₃, overResStageHom_id], inv_hom_id := hu₄ },
     overLift_eq_of_cone_π_fstProj D c _ e.hom (overCone_π_resStageHom D c u₄ hφ₄)⟩
 
 end OverPullbackDescent

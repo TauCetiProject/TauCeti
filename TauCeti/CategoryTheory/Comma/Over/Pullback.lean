@@ -22,7 +22,9 @@ equalities `f ≫ 𝟙 Y = f` and `f ≫ g ≫ h = (f ≫ g) ≫ h`:
   change along `f ≫ g ≫ h` with the composite of the three base changes agree;
 * `CategoryTheory.Over.pullbackCongr` and `CategoryTheory.Over.pullbackCompIsoOfEq`: natural
   isomorphisms of `Over.pullback` along equal base morphisms and along factorizations `f ≫ g = fg`,
-  together with `Limits.pullback` projection lemmas.
+  together with `Limits.pullback` projection lemmas;
+* `CategoryTheory.Over.pullback_map_left_of_eq_mk`: transports `((Over.pullback g).map φ).left`
+  along identifications `Y₁ = Over.mk p₁` and `Y₂ = Over.mk p₂` to a `Limits.pullback.lift`.
 -/
 
 public section
@@ -147,15 +149,28 @@ variable {W X Y : C} {f : W ⟶ X} {g : X ⟶ Y} {fg : W ⟶ Y}
 /-- First projection of `(pullbackCompIsoOfEq f g fg h).inv.app A`. -/
 @[reassoc] theorem pullbackCompIsoOfEq_inv_app_left_fst (h : f ≫ g = fg) (A : Over Y) :
     ((pullbackCompIsoOfEq f g fg h).inv.app A).left ≫
-        Limits.pullback.fst (Limits.pullback.snd A.hom g) f =
+      Limits.pullback.fst (Limits.pullback.snd A.hom g) f =
       Limits.pullback.map A.hom fg A.hom g (𝟙 _) f (𝟙 _) (by simp) (by simp [h]) := by
   subst h; apply Limits.pullback.hom_ext <;> simp [pullbackComp]
 
 /-- Second projection of `(pullbackCompIsoOfEq f g fg h).inv.app A`. -/
 @[reassoc] theorem pullbackCompIsoOfEq_inv_app_left_snd (h : f ≫ g = fg) (A : Over Y) :
     ((pullbackCompIsoOfEq f g fg h).inv.app A).left ≫
-        Limits.pullback.snd (Limits.pullback.snd A.hom g) f =
-      Limits.pullback.snd A.hom fg := by subst h; simp [pullbackComp]
+      Limits.pullback.snd (Limits.pullback.snd A.hom g) f = Limits.pullback.snd A.hom fg := by
+  subst h; simp [pullbackComp]
+
+/-- Transporting `((Over.pullback g).map φ).left` along identifications `Y₁ = Over.mk p₁` and
+`Y₂ = Over.mk p₂` yields the canonical `Limits.pullback.lift` on the underlying pullbacks. -/
+theorem pullback_map_left_of_eq_mk {S T : C} (g : T ⟶ S) [HasPullbacksAlong g]
+    {Y₁ Y₂ : Over S} (φ : Y₁ ⟶ Y₂) {X₁ X₂ : C} {p₁ : X₁ ⟶ S} {p₂ : X₂ ⟶ S}
+    (h₁ : Y₁ = Over.mk p₁) (h₂ : Y₂ = Over.mk p₂) :
+    eqToHom (by subst h₁; rfl) ≫ ((pullback g).map φ).left ≫ eqToHom (by subst h₂; rfl) =
+      Limits.pullback.lift (f := p₂) (g := g) (Limits.pullback.fst p₁ g ≫
+        eqToHom (congrArg Over.left h₁.symm) ≫ φ.left ≫ eqToHom (congrArg Over.left h₂))
+        (Limits.pullback.snd p₁ g) (by
+          have hw := Over.w φ; subst h₁ h₂
+          simp only [Over.mk_left, Over.mk_hom] at hw; simp [hw, Limits.pullback.condition]) := by
+  subst h₁ h₂; simp
 
 end Over
 
