@@ -20,9 +20,12 @@ pullback along every arrow of some `J`-covering sieve.
 ## Main declarations
 
 * `CategoryTheory.Pseudofunctor.IsGerbe`: the property that `F` is a gerbe for `J`.
-* `CategoryTheory.Pseudofunctor.isGerbe_iff_of_isEquivalence`: for a strong transformation
-  `F ⟶ G` whose components are equivalences between stacks `F` and `G`, `F` is a gerbe if and
-  only if `G` is.
+* `CategoryTheory.Pseudofunctor.isGerbe_target_of_isEquivalence`,
+  `CategoryTheory.Pseudofunctor.isGerbe_source_of_isEquivalence`: for a strong transformation
+  `F ⟶ G` whose components are equivalences, if one of `F` and `G` is a gerbe and the other is a
+  stack, then the other is a gerbe.
+* `CategoryTheory.Pseudofunctor.isGerbe_iff_of_isEquivalence`: for such a transformation between
+  stacks `F` and `G`, `F` is a gerbe if and only if `G` is.
 
 ## References
 
@@ -100,33 +103,40 @@ private lemma exists_covering_iso_of_fullyFaithful [G.IsGerbe J] (η : StrongTra
   obtain ⟨i⟩ := h f hf
   exact ⟨(hη V).preimageIso (naturalityObjIso η f x ≪≫ i ≪≫ (naturalityObjIso η f x').symm)⟩
 
+/-- Let `η : F ⟶ G` be a strong transformation whose components are equivalences of fibre
+categories. If `F` is a gerbe and `G` is a stack, then `G` is a gerbe (Stacks, Section 06NY,
+Lemma 8.11.2, for the conditions beyond the stack condition). -/
+theorem isGerbe_target_of_isEquivalence [F.IsGerbe J] [G.IsStack J] (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) : G.IsGerbe J :=
+  { isGroupoid U := by
+      have := hη U
+      exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor.inv
+    exists_covering_nonempty U := by
+      obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_nonempty (F := F) (J := J) U
+      exact ⟨R, hR, fun V f hf ↦ (h f hf).map (η.app (.mk (op V))).toFunctor.obj⟩
+    exists_covering_iso x y :=
+      exists_covering_iso_of_essSurj η (fun U ↦ have := hη U; inferInstance) x y }
+
+/-- Let `η : F ⟶ G` be a strong transformation whose components are equivalences of fibre
+categories. If `G` is a gerbe and `F` is a stack, then `F` is a gerbe (Stacks, Section 06NY,
+Lemma 8.11.2, for the conditions beyond the stack condition). -/
+theorem isGerbe_source_of_isEquivalence [G.IsGerbe J] [F.IsStack J] (η : StrongTrans F G)
+    (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) : F.IsGerbe J :=
+  { isGroupoid U := by
+      have := hη U
+      exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor
+    exists_covering_nonempty U := by
+      obtain ⟨R, hR, h⟩ := IsGerbe.exists_covering_nonempty (F := G) (J := J) U
+      exact ⟨R, hR, fun V f hf ↦ (h f hf).map (η.app (.mk (op V))).toFunctor.inv.obj⟩
+    exists_covering_iso x y :=
+      exists_covering_iso_of_fullyFaithful η (fun U ↦ have := hη U; .ofFullyFaithful _) x y }
+
 /-- Let `η : F ⟶ G` be a strong transformation between stacks whose components are equivalences
 of fibre categories. Then `F` is a gerbe if and only if `G` is (Stacks, Section 06NY,
 Lemma 8.11.2, for the conditions beyond the stack condition). -/
 theorem isGerbe_iff_of_isEquivalence [F.IsStack J] [G.IsStack J] (η : StrongTrans F G)
     (hη : ∀ U : C, (η.app (.mk (op U))).toFunctor.IsEquivalence) :
-    F.IsGerbe J ↔ G.IsGerbe J := by
-  constructor
-  · intro hF
-    exact
-      { isGroupoid U := by
-          have := hη U
-          exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor.inv
-        exists_covering_nonempty U := by
-          obtain ⟨R, hR, h⟩ := hF.exists_covering_nonempty U
-          exact ⟨R, hR, fun V f hf ↦ (h f hf).map (η.app (.mk (op V))).toFunctor.obj⟩
-        exists_covering_iso x y :=
-          exists_covering_iso_of_essSurj η (fun U ↦ have := hη U; inferInstance) x y }
-  · intro hG
-    exact
-      { isGroupoid U := by
-          have := hη U
-          exact isGroupoid_of_reflects_iso (η.app (.mk (op U))).toFunctor
-        exists_covering_nonempty U := by
-          obtain ⟨R, hR, h⟩ := hG.exists_covering_nonempty U
-          exact ⟨R, hR, fun V f hf ↦ (h f hf).map (η.app (.mk (op V))).toFunctor.inv.obj⟩
-        exists_covering_iso x y :=
-          exists_covering_iso_of_fullyFaithful η
-            (fun U ↦ have := hη U; .ofFullyFaithful _) x y }
+    F.IsGerbe J ↔ G.IsGerbe J :=
+  ⟨fun _ ↦ isGerbe_target_of_isEquivalence η hη, fun _ ↦ isGerbe_source_of_isEquivalence η hη⟩
 
 end CategoryTheory.Pseudofunctor
