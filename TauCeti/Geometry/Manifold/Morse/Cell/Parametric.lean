@@ -161,7 +161,7 @@ theorem exists_fiberHomotopyEquiv_fiberwiseCellAttachment_morseFamilyAttachingMa
 
 section Composition
 
-open CategoryTheory Function
+open CategoryTheory Filter Function Topology
 
 variable (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
   (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε) (hball : ∀ i, closedBall 0 √ε ⊆ (φ i).target)
@@ -176,12 +176,6 @@ private theorem continuousOn_symm_const (i : ι) :
       (univ ×ˢ closedBall 0 √ε) :=
   (φ i).continuousOn_symm.comp continuous_snd.continuousOn fun _ hq ↦ hball i hq.2
 
-/-- The lower sublevel `M_{c-ε}`, viewed inside `M_{c+ε}`. -/
-private def lowerSublevelIncl (hε : 0 ≤ ε) :
-    C({x | f x ≤ c - ε}, {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
-  ⟨fun x ↦ ⟨⟨x, (mem_ofPred.1 x.2).trans ((sub_le_self c hε).trans (le_add_of_nonneg_right hε))⟩,
-      x.2⟩, (continuous_subtype_val.subtype_mk _).subtype_mk _⟩
-
 /-- The attaching maps over `P` of a family of charts constant in the parameter. -/
 private abbrev constAttachingMap :=
   morseFamilyAttachingMap (fun _ : P ↦ φ) k hk hε (fun _ ↦ hball) (fun _ ↦ hf)
@@ -191,7 +185,8 @@ private abbrev constAttachingMap :=
 private def constFamilyCurryIncl : C({x | f x ≤ c - ε},
     C(P, fiberwiseCellAttachment (constAttachingMap (P := P) φ k hk hε hball hf))) :=
   ((fiberwiseCellAttachmentIncl _).hom.comp
-    (ContinuousMap.prodSwap.comp ((lowerSublevelIncl hε).prodMap (ContinuousMap.id P)))).curry
+    (ContinuousMap.prodSwap.comp ((sublevelInclusionCodRestrict f (c - ε) (c + ε)
+      (by linarith)).prodMap (ContinuousMap.id P)))).curry
 
 /-- On the cell of `φ i`, the map `TauCeti.constFamilyCurry` sends `w` to `p ↦ (p, w)`. -/
 private def constFamilyCurryCell (i : ι) : C(TopCat.disk.{u} (k i),
@@ -206,8 +201,10 @@ private theorem constFamilyCurry_compat (i : ι) :
         TopCat.ofHom (constFamilyCurryCell (P := P) φ k hk hε hball hf i) := by
   ext s p
   have ha : constAttachingMap (P := P) φ k hk hε hball hf i (p, s) =
-      lowerSublevelIncl hε ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s) :=
-    Subtype.ext (Subtype.ext (coe_morseFamilyAttachingMap_apply _ _ _ _ _ _ _ i (p, s)))
+      sublevelInclusionCodRestrict f (c - ε) (c + ε) (by linarith)
+        ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s) :=
+    Subtype.ext (Subtype.ext ((coe_morseFamilyAttachingMap_apply _ _ _ _ _ _ _ i (p, s)).trans
+      (coe_coe_sublevelInclusionCodRestrict_apply f _ _).symm))
   have h := fiberwiseCellAttachmentCell_diskBoundaryInclusion
     (constAttachingMap (P := P) φ k hk hε hball hf) i p s
   rw [ha] at h
@@ -226,7 +223,8 @@ private def constFamilyCurry :
 omit [T2Space M] in
 private theorem constFamilyCurry_morseCellAttachmentIncl (x : {x | f x ≤ c - ε}) (p : P) :
     constFamilyCurry φ k hk hε hball hf (morseCellAttachmentIncl φ k hk hε hball hf x) p =
-      fiberwiseCellAttachmentIncl _ (p, lowerSublevelIncl hε x) := by
+      fiberwiseCellAttachmentIncl _ (p, sublevelInclusionCodRestrict f (c - ε) (c + ε)
+        (by linarith) x) := by
   have h := ConcreteCategory.congr_hom (morseCellAttachmentIncl_desc φ k hk hball hf hε
     (TopCat.ofHom (constFamilyCurryIncl (P := P) φ k hk hε hball hf))
     (fun i ↦ TopCat.ofHom (constFamilyCurryCell φ k hk hε hball hf i))
@@ -302,8 +300,10 @@ private theorem exists_leftInverse_fiberwiseCellComparison_const (hfs : ContMDif
         Subtype.ext (coe_morseCellComparison_morseCellAttachmentIncl
           (fun i ↦ (φ i).toOpenPartialHomeomorph) k hk hball' hf hε.le ⟨x.2.1, x.2.2⟩).symm
       rw [fiberwiseCellComparison_fiberwiseCellAttachmentIncl, hg', hx, hg]
-      exact constFamilyCurry_morseCellAttachmentIncl (fun i ↦ (φ i).toOpenPartialHomeomorph) k hk
-        hε.le hball' hf _ _
+      refine (constFamilyCurry_morseCellAttachmentIncl (P := P)
+        (fun i ↦ (φ i).toOpenPartialHomeomorph) k hk hε.le hball' hf _ _).trans
+          (congrArg _ (Prod.ext rfl (Subtype.ext (Subtype.ext ?_))))
+      exact coe_coe_sublevelInclusionCodRestrict_apply f _ _
     · -- A point of the cell over `p` is the image of the cell of the attachment.
       have hx : morseFamilyCharacteristicMap (fun _ : P ↦ fun i ↦ (φ i).toOpenPartialHomeomorph) k
           hk hε.le (fun _ ↦ hball') (fun _ ↦ hf)
@@ -320,6 +320,48 @@ private theorem exists_leftInverse_fiberwiseCellComparison_const (hfs : ContMDif
   · exact fiberwiseCellAttachmentProj_constFamilyCurry (fun i ↦ (φ i).toOpenPartialHomeomorph) k
       hk hε.le hball' hf _ _
 
+omit [FiniteDimensional ℝ E] [Iₘ.Boundaryless] [IsManifold Iₘ ∞ M] [T2Space M] in
+/-- A critical point of `f` in the source of a smooth chart `φ` in which
+`f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²` is the centre of the chart, where `f` takes the value
+`c`. -/
+private theorem eq_of_mem_criticalPoints_of_mem_source
+    (φ : PartialDiffeomorph Iₘ 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) M (EuclideanSpace ℝ (Fin n)) ∞)
+    {k : ℕ} (hf : ∀ y ∈ φ.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * φ y j ^ 2)
+    {x : M} (hx : x ∈ φ.source) (hcrit : x ∈ criticalPoints Iₘ f) : f x = c := by
+  have hy : φ x ∈ φ.target := φ.map_source hx
+  -- `φ x` is a critical point of `f ∘ φ⁻¹`, which near `φ x` is `z ↦ c + Σ ±zⱼ²`.
+  have h₁ : φ x ∈ criticalPoints 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) (f ∘ φ.symm) :=
+    ((PartialDiffeomorph.isLocalDiffeomorphAt _ _ _ φ.symm hy).mem_criticalPoints_comp_iff
+      (by simp)).2 (by rwa [show φ.symm (φ x) = x from φ.left_inv hx])
+  have heq : f ∘ φ.symm =ᶠ[𝓝 (φ x)]
+      fun z ↦ c + ∑ j, (if j.val < k then -1 else 1 : ℝ) * z j ^ 2 := by
+    filter_upwards [φ.open_target.mem_nhds hy] with z hz
+    have h := hf _ (φ.map_target hz)
+    rw [φ.right_inv hz] at h
+    exact h
+  have hd : HasFDerivAt
+      (fun z : EuclideanSpace ℝ (Fin n) ↦ c + ∑ j, (if j.val < k then -1 else 1 : ℝ) * z j ^ 2)
+      (∑ j, ((if j.val < k then -1 else 1 : ℝ) * (2 * φ x j)) • EuclideanSpace.proj (𝕜 := ℝ) j)
+      (φ x) := by
+    refine HasFDerivAt.const_add c (HasFDerivAt.fun_sum fun j _ ↦ ?_)
+    have h : HasFDerivAt (fun z : EuclideanSpace ℝ (Fin n) ↦ z j)
+        (EuclideanSpace.proj (𝕜 := ℝ) j) (φ x) :=
+      (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin n) j).hasFDerivAt
+    convert (h.pow 2).const_mul (if j.val < k then -1 else 1 : ℝ) using 1
+    ext v
+    simp
+  rw [mem_criticalPoints_iff_fderiv_eq_zero, heq.fderiv_eq, hd.fderiv] at h₁
+  -- The `j`-th partial derivative `±2 (φ x)ⱼ` vanishes, so `φ x = 0`.
+  have h0 (j : Fin n) : φ x j = 0 := by
+    have := congr($h₁ (EuclideanSpace.single j 1))
+    simp only [FunLike.coe_sum, Finset.sum_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul,
+      PiLp.proj_apply, EuclideanSpace.single, PiLp.ofLp_single, Pi.single_apply, mul_ite, mul_one,
+      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, zero_apply] at this
+    have hs : (if j.val < k then -1 else 1 : ℝ) ≠ 0 := by split_ifs <;> norm_num
+    simpa using (mul_eq_zero.1 this).resolve_left hs
+  rw [hf x hx]
+  simp [h0]
+
 /-- **The comparison map of a family of Morse cells has a left inverse up to homotopy over `P`.**
 Let `f` be smooth, `P` compact and locally compact, and `ψ p i`, for `p : P` and `i : ι`, charts
 in which `f = c - Σ_{j < k i} yⱼ² + Σ_{j ≥ k i} yⱼ²`, whose targets contain the closed ball of
@@ -327,9 +369,9 @@ radius `√ε`, with inverses jointly continuous in `p` and the point of that ba
 family is comparable with one family `φ i` of charts which does not depend on `p`: the `φ i` are
 smooth normal-form charts with the same centres and pairwise disjoint sources, whose targets
 contain the closed ball of radius `√(2ε)`, the band `f⁻¹[c - ε, c + ε]` is compact with its
-critical points in the sources of the `φ i` and none below the level `c`, and on a ball of radius
-`r i` the transitions `φ i ∘ (ψ p i)⁻¹` are defined and differentiable, with derivatives jointly
-continuous in `p` and the point.
+critical points in the sources of the `φ i`, and on a ball of radius `r i` the transitions
+`φ i ∘ (ψ p i)⁻¹` are defined and differentiable, with derivatives jointly continuous in `p` and the
+point.
 
 Let `X = (P × M_{c-ε}) ∪_α ⨆ᵢ (P × D^{k i})` be the fiberwise adjunction space of the cells of `ψ`
 and `Φ : X → P × M_{c+ε}` its comparison map. Then there is a map `g : P × M_{c+ε} → X` over `P`
@@ -364,8 +406,7 @@ theorem exists_homotopyRel_comp_fiberwiseCellComparison_morseFamily [CompactSpac
       HasFDerivAt (fun z ↦ φ i ((ψ p i).symm z)) (D i p y) y)
     (hD : ∀ i, ContinuousOn (Function.uncurry (D i)) (univ ×ˢ ball 0 (r i)))
     (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
-    (hcrit : criticalPoints Iₘ f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (φ i).source)
-    (hreg : ∀ x, c - ε ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0) :
+    (hcrit : criticalPoints Iₘ f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (φ i).source) :
     ∃ (g : C(P × {x | f x ≤ c + ε},
         fiberwiseCellAttachment (morseFamilyAttachingMap ψ k hk hε.le hball hf hs)))
       (G : (g.comp (fiberwiseCellComparison _
@@ -376,6 +417,11 @@ theorem exists_homotopyRel_comp_fiberwiseCellComparison_morseFamily [CompactSpac
       ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y := by
   have hball' (i : ι) : closedBall 0 √ε ⊆ (φ i).target :=
     (hballφ i).trans' (closedBall_subset_closedBall (Real.sqrt_le_sqrt_two_mul ε))
+  -- The critical points in the band are centres of the charts `φ i`, at the level `c`.
+  have hreg (x : M) (hx₁ : c - ε ≤ f x) (hx₂ : f x < c) : mfderiv Iₘ 𝓘(ℝ) f x ≠ 0 := fun h0 ↦ by
+    have hx := mem_criticalPoints_iff_mfderiv_eq_zero.2 h0
+    obtain ⟨i, hi⟩ := mem_iUnion.1 (hcrit ⟨hx, hx₁, by linarith⟩)
+    exact hx₂.ne (eq_of_mem_criticalPoints_of_mem_source (φ i) (hfφ i) hi hx)
   -- The left inverse `g₀` over `P` for the constant family `φ`.
   obtain ⟨g₀, hg₀, hg₀P⟩ := exists_leftInverse_fiberwiseCellComparison_const (P := P) hfs φ hφ k hk
     hε hballφ hfφ hcompact hcrit
@@ -413,9 +459,7 @@ comparable there with a family `φ` of charts which does not depend on `p`. Let
 (`TauCeti.fiberwiseCellReattachment`), built from any self-maps `h i` over `P` of the disc pairs
 and any homotopies over `P` between the characteristic maps of the cells, from `χ₁ i` to
 `χ₀ i ∘ (p, h₀₁ i)` and so on, keeping the boundary spheres in `M_{c-ε}`. Then `E₀₁ ∘ E₁₂` is
-homotopic to `E₀₂` relative to `P × M_{c-ε}`, through maps over `P`. In particular this holds
-for the reattachment maps of the polar factors of the transitions of
-`TauCeti.exists_fiberwiseCellReattachment_morseFamily`. -/
+homotopic to `E₀₂` relative to `P × M_{c-ε}`, through maps over `P`. -/
 theorem exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamily [CompactSpace P]
     (hfs : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
     (ψ₀ ψ₁ ψ₂ : P → ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n)))
@@ -471,8 +515,7 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamily [CompactSp
       HasFDerivAt (fun z ↦ φ i ((ψ₀ p i).symm z)) (D i p y) y)
     (hD : ∀ i, ContinuousOn (Function.uncurry (D i)) (univ ×ˢ ball 0 (r i)))
     (hcompact : IsCompact (f ⁻¹' Icc (c - ε) (c + ε)))
-    (hcrit : criticalPoints Iₘ f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (φ i).source)
-    (hreg : ∀ x, c - ε ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0) :
+    (hcrit : criticalPoints Iₘ f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (φ i).source) :
     ∃ G : (fiberwiseCellReattachment (morseFamilyAttachingMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)
           (morseFamilyAttachingMap ψ₂ k hk hε.le hball₂ hf₂ hs₂)
           (morseFamilyCharacteristicMap ψ₁ k hk hε.le hball₁ hf₁ hs₁)
@@ -497,7 +540,7 @@ theorem exists_homotopyRel_fiberwiseCellReattachment_comp_morseFamily [CompactSp
         (range (fiberwiseCellAttachmentIncl _)),
       ∀ t y, fiberwiseCellAttachmentProj _ (G (t, y)) = fiberwiseCellAttachmentProj _ y := by
   obtain ⟨g, G, hgP, hG⟩ := exists_homotopyRel_comp_fiberwiseCellComparison_morseFamily hfs ψ₀ φ
-    hφ k hk hε hball₀ hballφ hf₀ hfφ hs₀ hp hr htr hT hD hcompact hcrit hreg
+    hφ k hk hε hball₀ hballφ hf₀ hfφ hs₀ hp hr htr hT hD hcompact hcrit
   exact exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment (K₀₁ := K₀₁)
     (hK₀₁ := hK₀₁) (K₁₂ := K₁₂) (hK₁₂ := hK₁₂) (K₀₂ := K₀₂) (hK₀₂ := hK₀₂) (g₀ := g) (G₀ := G)
     (hG₀ := hG) (hg₀P := hgP) ..

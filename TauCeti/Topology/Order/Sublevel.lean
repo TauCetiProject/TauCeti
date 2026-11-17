@@ -63,7 +63,9 @@ sublevel `{f ≤ b}` is homeomorphic to the whole space (`TauCeti.sublevelHomeom
 (`TauCeti.coe_sublevelHomeomorphUniv_comp_sublevelInclusion`,
 `TauCeti.sublevelInclusion_comp_sublevelHomeomorphUniv`). This is the topological half
 of the deformation of sublevels across a band without critical points, where the motion is the
-flow of a vector field `X` with `df(X) = -1` on the band. The sublevels form the topological pair
+flow of a vector field `X` with `df(X) = -1` on the band. With its codomain restricted to the
+points of `{f ≤ b}` at which `f ≤ a`, `TauCeti.sublevelInclusion` is
+`TauCeti.sublevelInclusionCodRestrict`. The sublevels form the topological pair
 `TauCeti.sublevelPair f : ({f ≤ b}, {f ≤ a})`, whose relative homology measures the change in
 topology across the band. The band itself, relative to its lower level, is the pair
 `TauCeti.bandPair f : (f⁻¹[a, b], f⁻¹(a))`, which includes into the sublevel pair by
@@ -310,6 +312,19 @@ theorem range_sublevelInclusion {X β : Type*} [TopologicalSpace X] [Preorder β
     {a b : β} (hab : a ≤ b) :
     range (sublevelInclusion f a b hab) = ((↑) ⁻¹' {x | f x ≤ a} : Set {x | f x ≤ b}) :=
   range_inclusion (sublevel_mono f hab)
+
+/-- The inclusion of the sublevel `{f ≤ a}` onto the points of the sublevel `{f ≤ b}` at which
+`f ≤ a`, for `a ≤ b`: `TauCeti.sublevelInclusion f a b hab` with its codomain restricted to its
+range. -/
+def sublevelInclusionCodRestrict {X β : Type*} [TopologicalSpace X] [Preorder β] (f : X → β)
+    (a b : β) (hab : a ≤ b) : C({x | f x ≤ a}, {y : {x | f x ≤ b} | f y ≤ a}) :=
+  ⟨fun x ↦ ⟨sublevelInclusion f a b hab x, x.2⟩, (map_continuous _).subtype_mk _⟩
+
+@[simp]
+theorem coe_coe_sublevelInclusionCodRestrict_apply {X β : Type*} [TopologicalSpace X]
+    [Preorder β] (f : X → β) {a b : β} (hab : a ≤ b) (x : {x | f x ≤ a}) :
+    ((sublevelInclusionCodRestrict f a b hab x : {x | f x ≤ b}) : X) = x :=
+  (rfl)
 
 /-- When `f` is bounded above by `b` everywhere on `X`, the sublevel `{f ≤ b}` is homeomorphic to
 `X` via `Subtype.val`. -/

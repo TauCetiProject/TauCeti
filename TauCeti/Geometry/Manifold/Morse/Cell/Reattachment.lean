@@ -107,9 +107,8 @@ variable (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k :
 `M_{c-ε}` viewed inside `M_{c+ε}`. -/
 private def morseFiberwiseBase :
     C({x | f x ≤ c - ε}, PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
-  ⟨fun x ↦ (PUnit.unit, ⟨⟨x, (mem_ofPred.1 x.2).trans
-      ((sub_le_self c hε).trans (le_add_of_nonneg_right hε))⟩, x.2⟩),
-    continuous_const.prodMk ((continuous_subtype_val.subtype_mk _).subtype_mk _)⟩
+  (ContinuousMap.const _ PUnit.unit).prodMk
+    (sublevelInclusionCodRestrict f (c - ε) (c + ε) (by linarith))
 
 /-- The projection of `PUnit × M_{c-ε}`, with `M_{c-ε}` viewed inside `M_{c+ε}`, to the lower
 sublevel `M_{c-ε}`: the inverse of `TauCeti.morseFiberwiseBase`. -/
@@ -120,7 +119,7 @@ private def morseFiberwiseBaseInv :
 
 private theorem morseFiberwiseBaseInv_morseFiberwiseBase (p : PUnit.{u + 1})
     (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv (p, (morseFiberwiseBase hε x).2) = x :=
-  rfl
+  Subtype.ext (coe_coe_sublevelInclusionCodRestrict_apply f (a := c - ε) (b := c + ε) _ x)
 
 private theorem coe_morseFiberwiseBaseInv (p : PUnit.{u + 1})
     (y : {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :
@@ -148,13 +147,13 @@ private theorem coe_morseFiberwiseAttachingMap (i : ι) (p : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
     (morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)).1.1 =
       ((φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s).1 :=
-  rfl
+  coe_coe_sublevelInclusionCodRestrict_apply f _ _
 
 private theorem morseFiberwiseBaseInv_morseFiberwiseAttachingMap (i : ι) (p q : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
     morseFiberwiseBaseInv (q, morseFiberwiseAttachingMap φ k hk hε hball hf i (p, s)) =
       (φ i).morseAttachingMap (hk i) hε (hball i) (hf i) s :=
-  rfl
+  Subtype.ext (coe_coe_sublevelInclusionCodRestrict_apply f (a := c - ε) (b := c + ε) _ _)
 
 private theorem morseFiberwiseCharacteristicMap_diskBoundaryInclusion (i : ι) (p : PUnit.{u + 1})
     (s : TopCat.diskBoundary.{u} (k i)) :
