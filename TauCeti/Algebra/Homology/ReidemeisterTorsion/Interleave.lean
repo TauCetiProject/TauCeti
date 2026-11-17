@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Homology.ReidemeisterTorsion.Basic
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Algebra.FiniteSupport.Basic
 import Mathlib.Logic.Equiv.Fin.Basic
+import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
 # Reidemeister torsion of interleaved chain complexes
@@ -112,156 +113,57 @@ theorem reidemeisterTorsion_interleave_eq_mul_finprod_det {m₁ m₂ m₃ : ℤ 
   rw [h₀, h₁, h₂]
   ring
 
-private theorem interleave_bracket_eq_one_add_two {m₁ m₂ m₃ r₁ r₂ r₃ : ℤ → ℕ}
-    (hL : (interleave X₁ X₂ X₃ f g δ hfg hgδ hδf).Acyclic)
-    (b₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q))
-    (b₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-    (b₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q))
-    (u₁ : ∀ q, Basis (Fin (r₁ q)) F (LinearMap.range (δ q).hom))
-    (u₂ : ∀ q, Basis (Fin (r₂ q)) F (LinearMap.range (f q).hom))
-    (u₃ : ∀ q, Basis (Fin (r₃ q)) F (LinearMap.range (g q).hom))
+/-- In a degree `n + 1` where `ChainComplex.interleave` is exact and identified via `e` with a
+module `Y`, if a family `b'` is the casted concatenation of `u'` and `s'`, and the images under `e`
+of `interleave.basis`, `interleave.boundaryBasis`, and `interleave.boundaryLift` agree with `b'`,
+`u'`, and `s'` up to `Fin.cast`, then the torsion bracket in degree `n + 1` equals `1`. -/
+private theorem interleave_bracket_eq_one {m₁ m₂ m₃ r₁ r₂ r₃ : ℤ → ℕ} {n : ℤ}
+    {hL : (interleave X₁ X₂ X₃ f g δ hfg hgδ hδf).ExactAt (n + 1)}
+    {b₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q)}
+    {b₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q)}
+    {b₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q)}
+    {u₁ : ∀ q, Basis (Fin (r₁ q)) F (LinearMap.range (δ q).hom)}
+    {u₂ : ∀ q, Basis (Fin (r₂ q)) F (LinearMap.range (f q).hom)}
+    {u₃ : ∀ q, Basis (Fin (r₃ q)) F (LinearMap.range (g q).hom)}
     {s₁ : ∀ q, Fin (r₂ q) → X₁ q} {s₂ : ∀ q, Fin (r₃ q) → X₂ q}
     {s₃ : ∀ q, Fin (r₁ q) → X₃ (q + 1)}
-    (hs₁ : ∀ q k, (f q).hom (s₁ q k) = u₂ q k)
-    (hs₂ : ∀ q k, (g q).hom (s₂ q k) = u₃ q k)
-    (hs₃ : ∀ q k, (δ q).hom (s₃ q k) = u₁ q k)
-    (hm₃ : ∀ q, m₃ (q + 1) = r₃ (q + 1) + r₁ q)
-    (hb₃ : ∀ q, ⇑(b₃ (q + 1)) =
-      Fin.append (fun k ↦ (u₃ (q + 1) k : X₃ (q + 1))) (s₃ q) ∘ Fin.cast (hm₃ q))
-    {n q : ℤ} (hq : n = 3 * q + 2) :
+    (hspec : ∀ k, ((interleave X₁ X₂ X₃ f g δ hfg hgδ hδf).d (n + 1) n).hom
+      (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n k) =
+      interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ n k)
+    {Y : ModuleCat F} (e : (interleave X₁ X₂ X₃ f g δ hfg hgδ hδf).X (n + 1) ≅ Y)
+    {m' p' q' : ℕ} {b' : Fin m' → Y} {u' : Fin p' → Y} {s' : Fin q' → Y}
+    (hm : interleave.rank m₁ m₂ m₃ (n + 1) = m')
+    (hp : interleave.rank r₁ r₂ r₃ (n + 1) = p')
+    (hq : interleave.rank r₁ r₂ r₃ n = q')
+    (hm' : m' = p' + q')
+    (hb : ∀ k, e.hom (interleave.basis hfg hgδ hδf b₁ b₂ b₃ (n + 1) k) = b' (Fin.cast hm k))
+    (hu : ∀ k, e.hom (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1) k) =
+      u' (Fin.cast hp k))
+    (hs : ∀ k, e.hom (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n k) =
+      s' (Fin.cast hq k))
+    (hb' : b' = Fin.append u' s' ∘ Fin.cast hm') :
     HomologicalComplex.torsionBracket (interleave.basis hfg hgδ hδf b₁ b₂ b₃) (by simp) (by simp)
-      (hL (n + 1)) (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1))
+      hL (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1))
       (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ n)
-      (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n)
-      (interleave.boundaryLift_spec hfg hgδ hδf u₁ u₂ u₃ hs₁ hs₂ hs₃ n) = 1 := by
-  have hm_rk : interleave.rank m₁ m₂ m₃ (n + 1) = m₃ (q + 1) :=
-    interleave.rank_of_eq_three_mul (by omega)
-  have hr₁ : interleave.rank r₁ r₂ r₃ (n + 1) = r₃ (q + 1) :=
-    interleave.rank_of_eq_three_mul (by omega)
-  have hr₀ : interleave.rank r₁ r₂ r₃ n = r₁ q :=
-    interleave.rank_of_eq_three_mul_add_two hq
-  have hlen : interleave.rank m₁ m₂ m₃ (n + 1) =
-      interleave.rank r₁ r₂ r₃ (n + 1) + interleave.rank r₁ r₂ r₃ n := by
-    rw [hm_rk, hm₃, hr₁, hr₀]
-  rw [HomologicalComplex.torsionBracket_eq_det_append _ _ _ _ _ _ _ _ hlen]
+      (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n) hspec = 1 := by
+  subst hm hp hq
+  rw [HomologicalComplex.torsionBracket_eq_det_append _ _ _ _ _ _ _ _ hm']
   convert Basis.det_self (interleave.basis hfg hgδ hδf b₁ b₂ b₃ (n + 1))
-  ext k
-  apply (interleave.XIso₃ hfg hgδ hδf (n + 1) (q + 1) (by omega)).toLinearEquiv.injective
-  simp only [Iso.toLinearEquiv_apply, interleave.XIso₃_hom_basis, hb₃ q, Function.comp_apply]
-  obtain ⟨m, rfl⟩ := (finCongr hlen.symm).surjective k
-  have hm₀ : Fin.cast hlen (finCongr hlen.symm m) = m := Fin.ext rfl
-  rw [hm₀]
-  induction m using Fin.addCases with
-  | left m =>
-    have hm : Fin.cast (hm₃ q) (Fin.cast hm_rk (finCongr hlen.symm (Fin.castAdd _ m))) =
-        Fin.castAdd (r₁ q) (Fin.cast hr₁ m) := Fin.ext rfl
-    rw [hm]
-    simp
-  | right m =>
-    have hm : Fin.cast (hm₃ q) (Fin.cast hm_rk (finCongr hlen.symm (Fin.natAdd _ m))) =
-        Fin.natAdd (r₃ (q + 1)) (Fin.cast hr₀ m) := Fin.ext (by simp [hr₁])
-    rw [hm]
-    simp
-
-private theorem interleave_bracket_eq_one_add_one {m₁ m₂ m₃ r₁ r₂ r₃ : ℤ → ℕ}
-    (hL : (interleave X₁ X₂ X₃ f g δ hfg hgδ hδf).Acyclic)
-    (b₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q))
-    (b₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-    (b₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q))
-    (u₁ : ∀ q, Basis (Fin (r₁ q)) F (LinearMap.range (δ q).hom))
-    (u₂ : ∀ q, Basis (Fin (r₂ q)) F (LinearMap.range (f q).hom))
-    (u₃ : ∀ q, Basis (Fin (r₃ q)) F (LinearMap.range (g q).hom))
-    {s₁ : ∀ q, Fin (r₂ q) → X₁ q} {s₂ : ∀ q, Fin (r₃ q) → X₂ q}
-    {s₃ : ∀ q, Fin (r₁ q) → X₃ (q + 1)}
-    (hs₁ : ∀ q k, (f q).hom (s₁ q k) = u₂ q k)
-    (hs₂ : ∀ q k, (g q).hom (s₂ q k) = u₃ q k)
-    (hs₃ : ∀ q k, (δ q).hom (s₃ q k) = u₁ q k)
-    (hm₁ : ∀ q, m₁ q = r₁ q + r₂ q)
-    (hb₁ : ∀ q, ⇑(b₁ q) = Fin.append (fun k ↦ (u₁ q k : X₁ q)) (s₁ q) ∘ Fin.cast (hm₁ q))
-    {n q : ℤ} (hq : n = 3 * q + 1) :
-    HomologicalComplex.torsionBracket (interleave.basis hfg hgδ hδf b₁ b₂ b₃) (by simp) (by simp)
-      (hL (n + 1)) (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1))
-      (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ n)
-      (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n)
-      (interleave.boundaryLift_spec hfg hgδ hδf u₁ u₂ u₃ hs₁ hs₂ hs₃ n) = 1 := by
-  have hm_rk : interleave.rank m₁ m₂ m₃ (n + 1) = m₁ q :=
-    interleave.rank_of_eq_three_mul_add_two (by omega)
-  have hr₁ : interleave.rank r₁ r₂ r₃ (n + 1) = r₁ q :=
-    interleave.rank_of_eq_three_mul_add_two (by omega)
-  have hr₀ : interleave.rank r₁ r₂ r₃ n = r₂ q :=
-    interleave.rank_of_eq_three_mul_add_one hq
-  have hlen : interleave.rank m₁ m₂ m₃ (n + 1) =
-      interleave.rank r₁ r₂ r₃ (n + 1) + interleave.rank r₁ r₂ r₃ n := by
-    rw [hm_rk, hm₁, hr₁, hr₀]
-  rw [HomologicalComplex.torsionBracket_eq_det_append _ _ _ _ _ _ _ _ hlen]
-  convert Basis.det_self (interleave.basis hfg hgδ hδf b₁ b₂ b₃ (n + 1))
-  ext k
-  apply (interleave.XIso₁ hfg hgδ hδf (n + 1) q (by omega)).toLinearEquiv.injective
-  simp only [Iso.toLinearEquiv_apply, interleave.XIso₁_hom_basis, hb₁ q, Function.comp_apply]
-  obtain ⟨m, rfl⟩ := (finCongr hlen.symm).surjective k
-  have hm₀ : Fin.cast hlen (finCongr hlen.symm m) = m := Fin.ext rfl
-  rw [hm₀]
-  induction m using Fin.addCases with
-  | left m =>
-    have hm : Fin.cast (hm₁ q) (Fin.cast hm_rk (finCongr hlen.symm (Fin.castAdd _ m))) =
-        Fin.castAdd (r₂ q) (Fin.cast hr₁ m) := Fin.ext rfl
-    rw [hm]
-    simp
-  | right m =>
-    have hm : Fin.cast (hm₁ q) (Fin.cast hm_rk (finCongr hlen.symm (Fin.natAdd _ m))) =
-        Fin.natAdd (r₁ q) (Fin.cast hr₀ m) := Fin.ext (by simp [hr₁])
-    rw [hm]
-    simp
-
-private theorem interleave_bracket_eq_one_mul {m₁ m₂ m₃ r₁ r₂ r₃ : ℤ → ℕ}
-    (hL : (interleave X₁ X₂ X₃ f g δ hfg hgδ hδf).Acyclic)
-    (b₁ : ∀ q, Basis (Fin (m₁ q)) F (X₁ q))
-    (b₂ : ∀ q, Basis (Fin (m₂ q)) F (X₂ q))
-    (b₃ : ∀ q, Basis (Fin (m₃ q)) F (X₃ q))
-    (u₁ : ∀ q, Basis (Fin (r₁ q)) F (LinearMap.range (δ q).hom))
-    (u₂ : ∀ q, Basis (Fin (r₂ q)) F (LinearMap.range (f q).hom))
-    (u₃ : ∀ q, Basis (Fin (r₃ q)) F (LinearMap.range (g q).hom))
-    {s₁ : ∀ q, Fin (r₂ q) → X₁ q} {s₂ : ∀ q, Fin (r₃ q) → X₂ q}
-    {s₃ : ∀ q, Fin (r₁ q) → X₃ (q + 1)}
-    (hs₁ : ∀ q k, (f q).hom (s₁ q k) = u₂ q k)
-    (hs₂ : ∀ q k, (g q).hom (s₂ q k) = u₃ q k)
-    (hs₃ : ∀ q k, (δ q).hom (s₃ q k) = u₁ q k)
-    (hm₂ : ∀ q, m₂ q = r₂ q + r₃ q)
-    (hb₂ : ∀ q, ⇑(b₂ q) = Fin.append (fun k ↦ (u₂ q k : X₂ q)) (s₂ q) ∘ Fin.cast (hm₂ q))
-    {n q : ℤ} (hq : n = 3 * q) :
-    HomologicalComplex.torsionBracket (interleave.basis hfg hgδ hδf b₁ b₂ b₃) (by simp) (by simp)
-      (hL (n + 1)) (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1))
-      (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ n)
-      (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n)
-      (interleave.boundaryLift_spec hfg hgδ hδf u₁ u₂ u₃ hs₁ hs₂ hs₃ n) = 1 := by
-  have hm_rk : interleave.rank m₁ m₂ m₃ (n + 1) = m₂ q :=
-    interleave.rank_of_eq_three_mul_add_one (by omega)
-  have hr₁ : interleave.rank r₁ r₂ r₃ (n + 1) = r₂ q :=
-    interleave.rank_of_eq_three_mul_add_one (by omega)
-  have hr₀ : interleave.rank r₁ r₂ r₃ n = r₃ q :=
-    interleave.rank_of_eq_three_mul hq
-  have hlen : interleave.rank m₁ m₂ m₃ (n + 1) =
-      interleave.rank r₁ r₂ r₃ (n + 1) + interleave.rank r₁ r₂ r₃ n := by
-    rw [hm_rk, hm₂, hr₁, hr₀]
-  rw [HomologicalComplex.torsionBracket_eq_det_append _ _ _ _ _ _ _ _ hlen]
-  convert Basis.det_self (interleave.basis hfg hgδ hδf b₁ b₂ b₃ (n + 1))
-  ext k
-  apply (interleave.XIso₂ hfg hgδ hδf (n + 1) q (by omega)).toLinearEquiv.injective
-  simp only [Iso.toLinearEquiv_apply, interleave.XIso₂_hom_basis, hb₂ q, Function.comp_apply]
-  obtain ⟨m, rfl⟩ := (finCongr hlen.symm).surjective k
-  have hm₀ : Fin.cast hlen (finCongr hlen.symm m) = m := Fin.ext rfl
-  rw [hm₀]
-  induction m using Fin.addCases with
-  | left m =>
-    have hm : Fin.cast (hm₂ q) (Fin.cast hm_rk (finCongr hlen.symm (Fin.castAdd _ m))) =
-        Fin.castAdd (r₃ q) (Fin.cast hr₁ m) := Fin.ext rfl
-    rw [hm]
-    simp
-  | right m =>
-    have hm : Fin.cast (hm₂ q) (Fin.cast hm_rk (finCongr hlen.symm (Fin.natAdd _ m))) =
-        Fin.natAdd (r₂ q) (Fin.cast hr₀ m) := Fin.ext (by simp [hr₁])
-    rw [hm]
-    simp
+  apply e.toLinearEquiv.injective.comp_left
+  dsimp only
+  have hb_fn : ⇑e.toLinearEquiv ∘ ⇑(interleave.basis hfg hgδ hδf b₁ b₂ b₃ (n + 1)) = b' :=
+    funext fun k ↦ by simp only [Function.comp_apply, Iso.toLinearEquiv_apply, hb, Fin.cast_refl,
+      id_eq]
+  have hu_fn :
+      ⇑e.toLinearEquiv ∘ (fun k ↦ (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1) k : _)) =
+      u' :=
+    funext fun k ↦ by simp only [Function.comp_apply, Iso.toLinearEquiv_apply, hu, Fin.cast_refl,
+      id_eq]
+  have hs_fn :
+      ⇑e.toLinearEquiv ∘ interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n = s' :=
+    funext fun k ↦ by simp only [Function.comp_apply, Iso.toLinearEquiv_apply, hs, Fin.cast_refl,
+      id_eq]
+  rw [Fin.comp_append_comp_cast, hu_fn, hs_fn, ← hb', hb_fn]
 
 /-- An acyclic bounded interleaved chain complex whose bases `(b₁, b₂, b₃)` are formed in each
 degree from bases `(u₁, u₂, u₃)` of the images of `(δ, f, g)` followed by lifts `(s₁, s₂, s₃)` of
@@ -294,13 +196,37 @@ theorem reidemeisterTorsion_interleave_eq_one_of_exact {m₁ m₂ m₃ r₁ r₂
     (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃)
     (interleave.boundaryLift_spec hfg hgδ hδf u₁ u₂ u₃ hs₁ hs₂ hs₃)]
   refine finprod_eq_one_of_forall_eq_one fun n ↦ ?_
+  have hspec := interleave.boundaryLift_spec hfg hgδ hδf u₁ u₂ u₃ hs₁ hs₂ hs₃ n
+  suffices HomologicalComplex.torsionBracket (interleave.basis hfg hgδ hδf b₁ b₂ b₃) (by simp)
+      (by simp) (hL (n + 1)) (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (n + 1))
+      (interleave.boundaryBasis hfg hgδ hδf u₁ u₂ u₃ n)
+      (interleave.boundaryLift hfg hgδ hδf r₁ r₂ r₃ s₁ s₂ s₃ n) hspec = 1 by
+    rw [this, one_zpow]
   obtain ⟨q, hq | hq | hq⟩ : ∃ q, n = 3 * q + 2 ∨ n = 3 * q + 1 ∨ n = 3 * q := ⟨n / 3, by omega⟩
-  · rw [interleave_bracket_eq_one_add_two hfg hgδ hδf hL b₁ b₂ b₃ u₁ u₂ u₃ hs₁ hs₂ hs₃ hm₃ hb₃
-      hq, one_zpow]
-  · rw [interleave_bracket_eq_one_add_one hfg hgδ hδf hL b₁ b₂ b₃ u₁ u₂ u₃ hs₁ hs₂ hs₃ hm₁ hb₁
-      hq, one_zpow]
-  · rw [interleave_bracket_eq_one_mul hfg hgδ hδf hL b₁ b₂ b₃ u₁ u₂ u₃ hs₁ hs₂ hs₃ hm₂ hb₂ hq,
-      one_zpow]
+  · exact interleave_bracket_eq_one hfg hgδ hδf hspec
+      (interleave.XIso₃ hfg hgδ hδf (n + 1) (q + 1) (by omega))
+      (interleave.rank_of_eq_three_mul (by omega))
+      (interleave.rank_of_eq_three_mul (by omega))
+      (interleave.rank_of_eq_three_mul_add_two hq) (hm₃ q)
+      (interleave.XIso₃_hom_basis hfg hgδ hδf b₁ b₂ b₃ (by omega))
+      (interleave.XIso₃_hom_boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (by omega))
+      (interleave.XIso₃_hom_boundaryLift hfg hgδ hδf s₁ s₂ s₃ (by omega)) (hb₃ q)
+  · exact interleave_bracket_eq_one hfg hgδ hδf hspec
+      (interleave.XIso₁ hfg hgδ hδf (n + 1) q (by omega))
+      (interleave.rank_of_eq_three_mul_add_two (by omega))
+      (interleave.rank_of_eq_three_mul_add_two (by omega))
+      (interleave.rank_of_eq_three_mul_add_one hq) (hm₁ q)
+      (interleave.XIso₁_hom_basis hfg hgδ hδf b₁ b₂ b₃ (by omega))
+      (interleave.XIso₁_hom_boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (by omega))
+      (interleave.XIso₁_hom_boundaryLift hfg hgδ hδf s₁ s₂ s₃ (by omega)) (hb₁ q)
+  · exact interleave_bracket_eq_one hfg hgδ hδf hspec
+      (interleave.XIso₂ hfg hgδ hδf (n + 1) q (by omega))
+      (interleave.rank_of_eq_three_mul_add_one (by omega))
+      (interleave.rank_of_eq_three_mul_add_one (by omega))
+      (interleave.rank_of_eq_three_mul hq) (hm₂ q)
+      (interleave.XIso₂_hom_basis hfg hgδ hδf b₁ b₂ b₃ (by omega))
+      (interleave.XIso₂_hom_boundaryBasis hfg hgδ hδf u₁ u₂ u₃ (by omega))
+      (interleave.XIso₂_hom_boundaryLift hfg hgδ hδf s₁ s₂ s₃ (by omega)) (hb₂ q)
 
 end Interleave
 
