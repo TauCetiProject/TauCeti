@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Complex.Exponential
 public import Mathlib.LinearAlgebra.LinearIndependent.Defs
 
 import TauCeti.Analysis.SpecialFunctions.Exp.ExponentialPolynomial
-import TauCeti.RingTheory.MvPolynomial.LineRestriction
+import TauCeti.RingTheory.MvPolynomial.DirectionalOrder
 
 /-!
 # Linear independence of multivariate complex exponential polynomials
@@ -24,11 +24,11 @@ similarly for frequencies indexed by an injective map on a finite set
 
 The proof reduces to the one-variable theorem
 `TauCeti.eq_zero_of_sum_eval_mul_cexp_eq_zero_of_injOn` along a single complex line through the
-origin chosen via `MvPolynomial.exists_forall_aeval_C_mul_X_ne_zero` applied simultaneously to the
-coefficient polynomials `P k` and the pairwise differences of the linear forms
-`z ↦ ∑ v, w k v * z v`, so every nonzero `P k` stays nonzero as a univariate polynomial and the
-restricted complex frequencies remain pairwise distinct. Fibering a finite linear combination of
-exponential monomials by frequency and expanding in the monomial basis via
+origin chosen via `MvPolynomial.exists_forall_trailingDegree_aeval_C_add_C_mul_X_eq` applied
+simultaneously at the origin to the coefficient polynomials `P k` and the pairwise differences of
+the linear forms `z ↦ ∑ v, w k v * z v`, so every nonzero `P k` stays nonzero as a univariate
+polynomial and the restricted complex frequencies remain pairwise distinct. Fibering a finite
+linear combination of exponential monomials by frequency and expanding in the monomial basis via
 `Finsupp.equivFunOnFinite` also yields `ℂ`-linear independence of the family of exponential
 monomials `(∏ v, z v ^ p.1 v) * exp (∑ v, p.2 v * z v)`
 (`TauCeti.linearIndependent_prod_pow_mul_cexp`,
@@ -77,7 +77,14 @@ theorem eq_zero_of_sum_eval_mul_cexp_of_injOn {ι κ : Type*} [Fintype ι] {s : 
   classical
   let q : κ ⊕ (κ × κ) → MvPolynomial ι ℂ :=
     Sum.elim P fun m ↦ ∑ v, MvPolynomial.C (w m.1 v - w m.2 v) * MvPolynomial.X v
-  obtain ⟨u, hu⟩ := MvPolynomial.exists_forall_aeval_C_mul_X_ne_zero (s.disjSum (s ×ˢ s)) q
+  obtain ⟨u, hu_deg⟩ := MvPolynomial.exists_forall_trailingDegree_aeval_C_add_C_mul_X_eq
+    (s.disjSum (s ×ˢ s)) q 0
+  have hu (i : κ ⊕ (κ × κ)) (hi : i ∈ s.disjSum (s ×ˢ s)) (hqi : q i ≠ 0) :
+      MvPolynomial.aeval (fun v ↦ Polynomial.C (u v) * Polynomial.X) (q i) ≠ 0 := by
+    have hdeg := hu_deg i hi
+    simp only [Pi.zero_apply, map_zero, zero_add] at hdeg
+    exact Polynomial.trailingDegree_eq_top.not.1
+      (hdeg ▸ MvPolynomial.orderAt_eq_top_iff.not.2 hqi)
   have hu_inj : Set.InjOn (fun k ↦ ∑ v, w k v * u v) s := by
     intro k₁ hk₁ k₂ hk₂ hsum
     by_contra hne_k
