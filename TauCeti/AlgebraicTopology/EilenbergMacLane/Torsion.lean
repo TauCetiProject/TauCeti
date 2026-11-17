@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.Torsion.Localization
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Torsion
 public import TauCeti.AlgebraicTopology.EilenbergMacLane.PathFibration
 import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
@@ -13,19 +12,19 @@ import TauCeti.AlgebraicTopology.EilenbergMacLane.Homology
 /-!
 # Eilenberg--Mac Lane spaces of torsion groups
 
-Let `S` be a submonoid of `ℤ`, let `k` be a localization of `ℤ` at `S`, for instance `ℚ` when `S`
-consists of the nonzero integers or `ℤ[1/d]` when `S` consists of the powers of `d`, and let `A` be
-an abelian group which is `S`-torsion: every element of `A` is killed by an element of `S`. Then
-every Eilenberg--Mac Lane space of type `K(A, n)`, `n ≥ 1`, has the `k`-homology of a point
-(`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'`). For `k = ℚ`:
-every `K(A, n)` space of a torsion abelian group has the rational homology of a point. No
-hypothesis of CW type is made on the space.
+Let `k` be a commutative ring and let `A` be an abelian group the order of each of whose elements
+is a unit of `k`. Then every Eilenberg--Mac Lane space of type `K(A, n)`, `n ≥ 1`, has the
+`k`-homology of a point
+(`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf`).
+The main example: `A` is `S`-torsion for a submonoid `S` of `ℤ`, every element being killed by an
+element of `S`, and `k` is a ring in which the elements of `S` are units, for instance the
+localization `S⁻¹ℤ` (`Module.IsTorsion'.isUnit_addOrderOf`). For `k = ℚ`: every `K(A, n)` space of
+a torsion abelian group has the rational homology of a point. No hypothesis of CW type is made on
+the space.
 
-The case `n = 1` is group homology: the order of every element of `A` divides an element of `S`,
-so it is a unit of `k` (`Module.IsTorsion'.isUnit_addOrderOf`), and then the positive-degree group
-homology of `A` with coefficients in `k` vanishes
-(`TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`). The higher cases follow
-through the based path fibration
+The case `n = 1` is group homology: the positive-degree group homology of `A` with coefficients
+in `k` vanishes (`TauCeti.subsingleton_groupHomology_of_forall_isUnit_addOrderOf`). The higher
+cases follow through the based path fibration
 (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne`).
 
 These are the inputs on Eilenberg--Mac Lane spaces of Serre's theorem that a simply connected
@@ -33,10 +32,10 @@ space with `S`-torsion homology has `S`-torsion homotopy groups.
 
 ## Main results
 
-* `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isTorsion'`: a `K(A, 1)`
-  space of an `S`-torsion group is acyclic over the localization of `ℤ` at `S`.
-* `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'`: the same for
-  `K(A, n)` spaces, `n ≥ 1`.
+* `TauCeti.IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_forall_isUnit_addOrderOf`:
+  a `K(A, 1)` space is `k`-acyclic when the order of every element of `A` is a unit of `k`.
+* `TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf`:
+  the same for `K(A, n)` spaces, `n ≥ 1`.
 
 ## References
 
@@ -51,29 +50,28 @@ noncomputable section
 
 namespace TauCeti
 
-variable {S : Submonoid ℤ} (k : Type) [CommRing k] [Algebra ℤ k] [IsLocalization S k]
-  {A : Type} [AddCommGroup A]
+variable (k : Type) [CommRing k] {A : Type} [AddCommGroup A]
 
-/-- **`K(A, 1)` spaces of `S`-torsion groups are acyclic over `S⁻¹ℤ`.** If every element of the
-abelian group `A` is killed by an element of a submonoid `S` of `ℤ`, then every `K(A, 1)` space
-has no homology in positive degrees with coefficients in a localization `k` of `ℤ` at `S`. -/
-theorem IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isTorsion'
-    (hA : Module.IsTorsion' A S) {X : Type} [TopologicalSpace X] {x : X}
+/-- **`K(A, 1)` spaces of torsion groups are acyclic.** If the order of every element of the
+abelian group `A` is a unit of the commutative ring `k`, then every `K(A, 1)` space has no homology
+in positive degrees with coefficients in `k`. -/
+theorem IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_forall_isUnit_addOrderOf
+    (hA : ∀ a : A, IsUnit (addOrderOf a : k)) {X : Type} [TopologicalSpace X] {x : X}
     (hX : IsEilenbergMacLaneSpaceOne (Multiplicative A) X x) (n : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (n + 1)) :=
-  have := subsingleton_groupHomology_of_forall_isUnit_addOrderOf k (hA.isUnit_addOrderOf k) n
+  have := subsingleton_groupHomology_of_forall_isUnit_addOrderOf k hA n
   (hX.nonempty_singularHomologyIsoGroupHomology k (n + 1)).some.toLinearEquiv.toEquiv.subsingleton
 
-/-- **`K(A, n)` spaces of `S`-torsion groups are acyclic over `S⁻¹ℤ`.** If every element of the
-abelian group `A` is killed by an element of a submonoid `S` of `ℤ`, then every `K(A, n)` space,
-`n ≥ 1`, has no homology in positive degrees with coefficients in a localization `k` of `ℤ` at
-`S`. For `k = ℚ`: a `K(A, n)` space of a torsion abelian group has the rational homology of a
-point. -/
-theorem IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'
-    (hA : Module.IsTorsion' A S) {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X] {x : X}
-    (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
+/-- **`K(A, n)` spaces of torsion groups are acyclic.** If the order of every element of the
+abelian group `A` is a unit of the commutative ring `k`, then every `K(A, n)` space, `n ≥ 1`, has
+no homology in positive degrees with coefficients in `k`. For `k = ℚ`: a `K(A, n)` space of a
+torsion abelian group has the rational homology of a point. -/
+theorem IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf
+    (hA : ∀ a : A, IsUnit (addOrderOf a : k)) {n : ℕ} [NeZero n] {X : Type} [TopologicalSpace X]
+    {x : X} (hX : IsEilenbergMacLaneSpace (Multiplicative A) n X x) (i : ℕ) :
     Subsingleton (((singularChains k).obj (TopCat.of X)).homology (i + 1)) :=
   subsingleton_singularHomology_of_isEilenbergMacLaneSpaceOne k
-    (IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_isTorsion' k hA) hX i
+    (IsEilenbergMacLaneSpaceOne.subsingleton_singularHomology_of_forall_isUnit_addOrderOf k hA)
+    hX i
 
 end TauCeti

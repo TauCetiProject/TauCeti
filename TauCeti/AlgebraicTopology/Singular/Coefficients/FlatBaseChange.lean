@@ -22,7 +22,8 @@ from `R`-modules to `S`-modules which preserves coproducts, so it commutes with 
 
 (`TauCeti.singularHomologyTensorIso`). This is the universal coefficient theorem for flat
 coefficients, where the `Tor` term vanishes. It is the simplicial comparison
-`SSet.homologyExtendScalarsIso` applied to the singular simplicial set.
+`SSet.homologyExtendScalarsIso` applied to the singular simplicial set. The exactness of
+`S ⊗[R] -` is the scoped instance `TauCeti.preservesFiniteLimits_extendScalars_algebraMap`.
 
 The main example is a localization `S = M⁻¹R` of `R` at a submonoid `M`, for instance
 `ℚ = (ℤ ∖ 0)⁻¹ℤ` or `ℤ[1/d]`. Since `M⁻¹R ⊗[R] N` vanishes exactly when every element of `N` is
@@ -60,6 +61,12 @@ namespace TauCeti
 
 variable (R S : Type u) [CommRing R] [CommRing S] [Algebra R S]
 
+/-- Extension of scalars along a flat algebra is exact, so it preserves finite limits. -/
+scoped instance preservesFiniteLimits_extendScalars_algebraMap [Module.Flat R S] :
+    PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
+  ModuleCat.preservesFiniteLimits_extendScalars_of_flat
+    (RingHom.flat_algebraMap_iff.2 inferInstance)
+
 /-- **Flat base change in singular homology.** For a flat `R`-algebra `S`, singular homology with
 coefficients in `S` is the extension of scalars of singular homology with coefficients in `R`:
 `S ⊗[R] Hₙ(X; R) ≅ Hₙ(X; S)`, as `S`-modules. It is the simplicial comparison
@@ -67,9 +74,6 @@ coefficients in `S` is the extension of scalars of singular homology with coeffi
 def singularHomologyTensorIso [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
     ModuleCat.of S (S ⊗[R] ((singularChains R).obj X).homology n) ≅
       ((singularChains S).obj X).homology n :=
-  have : PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
-    ModuleCat.preservesFiniteLimits_extendScalars_of_flat
-      (RingHom.flat_algebraMap_iff.2 inferInstance)
   (ModuleCat.extendScalarsAlgebraMapIso _).symm ≪≫
     -- The simplicial comparison takes its `R`-coefficients in `ULift R`.
     (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).mapIso
@@ -81,9 +85,6 @@ def singularHomologyTensorIso [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
 extension of scalars of `Hₙ(X; R)`, changes the coefficients `R` into `ULift R`, and then applies
 the simplicial comparison `SSet.homologyExtendScalarsIso`. -/
 theorem singularHomologyTensorIso_hom [Module.Flat R S] (X : TopCat.{u}) (n : ℕ) :
-    haveI : PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
-      ModuleCat.preservesFiniteLimits_extendScalars_of_flat
-        (RingHom.flat_algebraMap_iff.2 inferInstance)
     (singularHomologyTensorIso R S X n).hom =
       (ModuleCat.extendScalarsAlgebraMapIso _).inv ≫
         (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)).map
@@ -100,34 +101,18 @@ theorem singularHomologyTensorIso_hom_naturality [Module.Flat R S] {X Y : TopCat
         S) ≫ (singularHomologyTensorIso R S Y n).hom =
       (singularHomologyTensorIso R S X n).hom ≫
         HomologicalComplex.homologyMap ((singularChains S).map f) n := by
-  have : PreservesFiniteLimits (ModuleCat.extendScalars.{u, u, u} (algebraMap R S)) :=
-    ModuleCat.preservesFiniteLimits_extendScalars_of_flat
-      (RingHom.flat_algebraMap_iff.2 inferInstance)
   let F := ModuleCat.extendScalars.{u, u, u} (algebraMap R S)
-  -- Extension of scalars `S ⊗[R] -` is natural in the module.
-  have h₁ {M N : ModuleCat.{u} R} (g : M ⟶ N) :
-      ModuleCat.ofHom (g.hom.baseChange S) ≫ (ModuleCat.extendScalarsAlgebraMapIso N).inv =
-        (ModuleCat.extendScalarsAlgebraMapIso M).inv ≫ F.map g := by
-    ext : 1
-    refine LinearMap.ext fun t ↦ ?_
-    induction t using TensorProduct.inductionOn with
-    | tmul s x =>
-      simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply,
-        LinearMap.baseChange_tmul]
-      rw [ModuleCat.extendScalarsAlgebraMapIso_inv_tmul,
-        ModuleCat.extendScalarsAlgebraMapIso_inv_tmul]
-      exact (ModuleCat.ExtendScalars.map_tmul (algebraMap R S) g s x).symm
-    | add _ _ h₁ h₂ => simp_all
   -- Changing the coefficients `R` into `ULift R` is natural in the space.
   let e : ModuleCat.of R (ULift.{u} R) ≅ ModuleCat.of R R := ULift.moduleEquiv.toModuleIso
-  have h₂ := congrArg (fun g ↦ F.map (HomologicalComplex.homologyMap g n))
+  have h := congrArg (fun g ↦ F.map (HomologicalComplex.homologyMap g n))
     (((SSet.chainComplexFunctor (ModuleCat.{u} R)).map e.inv).naturality (TopCat.toSSet.map f))
-  simp only [HomologicalComplex.homologyMap_comp, F.map_comp] at h₂
+  simp only [HomologicalComplex.homologyMap_comp, F.map_comp] at h
   rw [singularHomologyTensorIso_hom, singularHomologyTensorIso_hom]
   -- The three squares name the same objects in different unfolded forms, so `rw` cannot match
   -- them in the goal, and they are chained explicitly.
-  exact ((reassoc_of% (h₁ _)) _).trans <| congrArg (_ ≫ ·) <| ((reassoc_of% h₂) _).trans <|
-    congrArg (_ ≫ ·) (SSet.homologyExtendScalarsIso_hom_naturality _ (algebraMap R S) n)
+  exact (ModuleCat.extendScalarsAlgebraMapIso_inv_naturality_assoc _ _).trans <|
+    congrArg (_ ≫ ·) <| ((reassoc_of% h) _).trans <|
+      congrArg (_ ≫ ·) (SSet.homologyExtendScalarsIso_hom_naturality _ (algebraMap R S) n)
 
 /-- For a flat `R`-algebra `S`, the homology with coefficients in `S` vanishes exactly when the
 extension of scalars of the homology with coefficients in `R` does. -/

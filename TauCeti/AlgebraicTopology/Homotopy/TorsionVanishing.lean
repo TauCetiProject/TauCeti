@@ -42,7 +42,9 @@ mod-two vanishing theorem
   by flat base change.
 * **Eilenberg--Mac Lane spaces.** Every `K(A, n)` space of an `S`-torsion group `A` has the
   `S⁻¹ℤ`-homology of a point
-  (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion'`).
+  (`TauCeti.IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf`),
+  since the order of every element of `A` is a unit of `S⁻¹ℤ`
+  (`Module.IsTorsion'.isUnit_addOrderOf`).
 
 ## Main results
 
@@ -102,7 +104,8 @@ theorem isTorsion'_homotopyGroup_of_subsingleton_singularHomology (k : Type) [Co
     (fun e ↦ e.isTorsion'_iff.1)
     (isTorsion'_homotopyGroup_of_connected S k)
     (fun hA _ _ _ _ _ hX ↦
-      IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_isTorsion' k hA hX)
+      IsEilenbergMacLaneSpace.subsingleton_singularHomology_of_forall_isUnit_addOrderOf k
+        (hA.isUnit_addOrderOf fun s hs ↦ by simpa using IsLocalization.map_units k ⟨s, hs⟩) hX)
     hY y n
 
 /-- **Serre's theorem modulo `S`-torsion.** Let `S` be a submonoid of `ℤ`. If every class of the

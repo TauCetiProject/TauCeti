@@ -33,8 +33,9 @@ It also records three facts about Mathlib's extension of scalars `ModuleCat.exte
 
 Along the structure map `algebraMap R S` of an `R`-algebra, extension of scalars is the tensor
 product `S ⊗[R] M` taken with the algebra module structure of `S`
-(`ModuleCat.extendScalarsAlgebraMapIso`). An `R`-linear map `f : M → N` to an `S`-module
-exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
+(`ModuleCat.extendScalarsAlgebraMapIso`), naturally in `M`
+(`ModuleCat.extendScalarsAlgebraMapIso_inv_naturality`). An `R`-linear map `f : M → N` to an
+`S`-module exhibits `N` as the base change of `M` (`IsBaseChange S f`) exactly when its adjoint
 `S ⊗[R] M → N` is bijective; in that case the adjoint morphism of modules is an isomorphism
 (`ModuleCat.isIso_extendRestrictScalarsAdj_homEquiv_symm_of_isBaseChange`).
 
@@ -228,6 +229,21 @@ theorem extendScalarsAlgebraMapIso_inv_tmul (M : ModuleCat.{w} R) (s : S) (m : M
       s ⊗ₜ[R, algebraMap R S] m := by
   unfold extendScalarsAlgebraMapIso
   rfl
+
+/-- `extendScalarsAlgebraMapIso` is natural in the module: it identifies the base change
+`S ⊗[R] g` of an `R`-linear map `g` with the extension of scalars of `g`. -/
+@[reassoc]
+theorem extendScalarsAlgebraMapIso_inv_naturality {M N : ModuleCat.{w} R} (g : M ⟶ N) :
+    ofHom (g.hom.baseChange S) ≫ (extendScalarsAlgebraMapIso N).inv =
+      (extendScalarsAlgebraMapIso M).inv ≫ (extendScalars (algebraMap R S)).map g := by
+  refine hom_ext (LinearMap.ext fun t ↦ ?_)
+  induction t using TensorProduct.inductionOn with
+  | tmul s x =>
+    rw [hom_comp, hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, hom_ofHom,
+      LinearMap.baseChange_tmul, extendScalarsAlgebraMapIso_inv_tmul,
+      extendScalarsAlgebraMapIso_inv_tmul]
+    exact (ExtendScalars.map_tmul (algebraMap R S) g s x).symm
+  | add x y hx hy => rw [map_add, map_add, hx, hy]
 
 end AlgebraMap
 
