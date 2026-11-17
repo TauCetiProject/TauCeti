@@ -19,6 +19,9 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
 
 ## Main results
 
+* `NormedSpace.fromTangentSpace_apply`, `NormedSpace.fromTangentSpace_symm_apply`: the canonical
+  tangent-space identification of a normed space preserves the underlying vector, as an explicit
+  equation.
 * `TauCeti.mvfderiv_eq_fderiv_apply`: on normed spaces, `mvfderiv` applied to a tangent vector is
   `fderiv` applied to it.
 * `TauCeti.mvfderiv_comp_apply_of_differentiableAt`: the chain rule when the outer map is
@@ -28,6 +31,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   linear.
 * `MDifferentiableAt.mvfderiv_prod_eq_add_apply`: the vector-valued derivative on a product
   is the sum of its partial derivatives.
+* `MDifferentiableAt.mfderiv_prodMk_id_apply`: the derivative of the graph map `y ↦ (y, u y)`
+  sends a tangent vector `v` to `(v, d u v)`.
 * `TauCeti.fderiv_comp_graph_apply_of_mdifferentiableAt`: the chain rule along the graph of a
   manifold-valued map on a normed space.
 * `HasMFDerivAt.hasDerivAt_comp_graph`: the chain rule `d/du f(u, γ u) = ∂_t f + d(f u)(γ')` along
