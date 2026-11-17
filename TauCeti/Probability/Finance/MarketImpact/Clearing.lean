@@ -42,7 +42,10 @@ tends to zero as `x ↓ 0`. Then:
 * the clearing map is a bijection of `(0, ∞)` onto itself (`bijOn_clearingMap`): every positive
   value of `c(y)` has exactly one positive equilibrium price (`existsUnique_clearingMap_eq`).
 
-Only the last two items use the limit at zero; the others need only the margin.
+Only the last two items use the limit at zero; the others need only the margin. Strict
+monotonicity of the clearing map and of its inverse, and the derivative of the inverse, need only
+that the clearing derivative is positive at each positive price (`strictMonoOn_clearingMap`,
+`hasDerivAt_invFunOn_clearingMap`).
 
 Without the margin, strict monotonicity and the endpoint limits do not give a differentiable
 inverse: `x (1 - H(x)) = 1 + (x - 1)³` has a critical point at `x = 1`.
@@ -109,6 +112,44 @@ theorem continuousOn_clearingMap {s : Set ℝ} (hH : ContinuousOn H s) :
     ContinuousOn (clearingMap H) s :=
   continuousOn_id.mul (continuousOn_const.sub hH)
 
+section Pos
+
+variable (hH : DifferentiableOn ℝ H (Ioi 0)) (hpos : ∀ x, 0 < x → 0 < 1 - H x - x * deriv H x)
+include hH hpos
+
+/-- A positive clearing derivative `1 - H(x) - x H'(x)` makes the clearing map strictly
+increasing on the positive half-line. -/
+theorem strictMonoOn_clearingMap : StrictMonoOn (clearingMap H) (Ioi 0) := by
+  refine strictMonoOn_of_deriv_pos (convex_Ioi 0) (continuousOn_clearingMap hH.continuousOn)
+    fun x hx ↦ ?_
+  rw [interior_Ioi] at hx
+  rw [(hasDerivAt_clearingMap_of_differentiableOn hH hx).deriv]
+  exact hpos x hx
+
+/-- Under a positive clearing derivative, the equilibrium price recovers every positive price
+from its clearing value. -/
+theorem invFunOn_clearingMap (hx : 0 < x) :
+    invFunOn (clearingMap H) (Ioi 0) (clearingMap H x) = x :=
+  (strictMonoOn_clearingMap hH hpos).injOn.leftInvOn_invFunOn hx
+
+/-- Under a positive clearing derivative, the equilibrium price is strictly increasing on the
+range of the clearing map. -/
+theorem strictMonoOn_invFunOn_clearingMap :
+    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (clearingMap H '' Ioi 0) :=
+  (strictMonoOn_clearingMap hH hpos).invFunOn
+
+/-- Under a positive clearing derivative, the equilibrium price is differentiable: at the
+clearing value of a positive price `x`, its derivative is the reciprocal of the clearing
+derivative `1 - H(x) - x H'(x)`. -/
+theorem hasDerivAt_invFunOn_clearingMap (hx : 0 < x) :
+    HasDerivAt (invFunOn (clearingMap H) (Ioi 0)) (1 - H x - x * deriv H x)⁻¹
+      (clearingMap H x) :=
+  (strictMonoOn_clearingMap hH hpos).hasDerivAt_invFunOn
+    (continuousOn_clearingMap hH.continuousOn) (Ioi_mem_nhds hx)
+    (hasDerivAt_clearingMap_of_differentiableOn hH hx) (hpos x hx).ne'
+
+end Pos
+
 section Margin
 
 variable (hH : DifferentiableOn ℝ H (Ioi 0)) (hmargin : ∀ x, 0 < x → δ ≤ 1 - H x - x * deriv H x)
@@ -136,25 +177,6 @@ theorem mul_abs_sub_le_abs_clearingMap_sub {x₁ x₂ : ℝ} (hx₁ : 0 < x₁) 
   · rw [abs_sub_comm x₂, abs_of_nonneg (sub_nonneg.2 hx), abs_sub_comm]
     exact (mul_sub_le_clearingMap_sub hH hmargin hx₂ hx).trans (le_abs_self _)
 
-/-- A strictly positive lower bound on the clearing derivative makes the clearing map strictly
-increasing on the positive half-line. -/
-theorem strictMonoOn_clearingMap (hδ : 0 < δ) : StrictMonoOn (clearingMap H) (Ioi 0) :=
-  fun x₁ hx₁ x₂ _ hx ↦ by
-    have := mul_sub_le_clearingMap_sub hH hmargin hx₁ hx.le
-    nlinarith [mul_pos hδ (sub_pos.2 hx)]
-
-/-- Under a strictly positive clearing-derivative margin, the equilibrium price recovers every
-positive price from its clearing value. -/
-theorem invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
-    invFunOn (clearingMap H) (Ioi 0) (clearingMap H x) = x :=
-  (strictMonoOn_clearingMap hH hmargin hδ).injOn.leftInvOn_invFunOn hx
-
-/-- Under a strictly positive clearing-derivative margin, the equilibrium price is strictly
-increasing on the range of the clearing map. -/
-theorem strictMonoOn_invFunOn_clearingMap (hδ : 0 < δ) :
-    StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (clearingMap H '' Ioi 0) :=
-  (strictMonoOn_clearingMap hH hmargin hδ).invFunOn
-
 /-- A lower bound `δ > 0` on the clearing derivative makes the equilibrium price Lipschitz with
 constant `δ⁻¹` on the range of the clearing map. -/
 theorem lipschitzOnWith_invFunOn_clearingMap (hδ : 0 < δ) :
@@ -175,16 +197,6 @@ theorem tendsto_clearingMap_atTop (hδ : 0 < δ) : Tendsto (clearingMap H) atTop
   filter_upwards [eventually_ge_atTop 1] with x hx
   dsimp only [id]
   linarith [mul_sub_le_clearingMap_sub hH hmargin one_pos hx]
-
-/-- Under a strictly positive clearing-derivative margin, the equilibrium price is differentiable:
-at the clearing value of a positive price `x`, its derivative is the reciprocal of the clearing
-derivative `1 - H(x) - x H'(x)`. -/
-theorem hasDerivAt_invFunOn_clearingMap (hδ : 0 < δ) (hx : 0 < x) :
-    HasDerivAt (invFunOn (clearingMap H) (Ioi 0)) (1 - H x - x * deriv H x)⁻¹
-      (clearingMap H x) :=
-  (strictMonoOn_clearingMap hH hmargin hδ).hasDerivAt_invFunOn
-    (continuousOn_clearingMap hH.continuousOn) (Ioi_mem_nhds hx)
-    (hasDerivAt_clearingMap_of_differentiableOn hH hx) (hδ.trans_le (hmargin x hx)).ne'
 
 variable (hzero : Tendsto (clearingMap H) (𝓝[>] 0) (𝓝 0))
 include hzero
@@ -209,7 +221,8 @@ theorem le_one_sub_of_tendsto_clearingMap (hx : 0 < x) : δ ≤ 1 - H x := by
 /-- Under a strictly positive clearing-derivative margin and the zero limit at zero price, the
 clearing map is a bijection of the positive half-line onto itself. -/
 theorem bijOn_clearingMap (hδ : 0 < δ) : BijOn (clearingMap H) (Ioi 0) (Ioi 0) := by
-  refine ⟨fun x hx ↦ ?_, (strictMonoOn_clearingMap hH hmargin hδ).injOn, fun y hy ↦ ?_⟩
+  refine ⟨fun x hx ↦ ?_,
+    (strictMonoOn_clearingMap hH fun x hx ↦ hδ.trans_le (hmargin x hx)).injOn, fun y hy ↦ ?_⟩
   · exact (mul_pos hδ hx).trans_le (mul_le_clearingMap hH hmargin hzero hx)
   obtain ⟨a, hay, ha⟩ :=
     ((hzero.eventually (gt_mem_nhds hy)).and self_mem_nhdsWithin).exists
@@ -247,7 +260,7 @@ theorem clearingMap_invFunOn (hδ : 0 < δ) (hy : 0 < y) :
 clearing equation. -/
 theorem strictMonoOn_invFunOn_clearingMap_Ioi (hδ : 0 < δ) :
     StrictMonoOn (invFunOn (clearingMap H) (Ioi 0)) (Ioi 0) :=
-  (strictMonoOn_invFunOn_clearingMap hH hmargin hδ).mono
+  (strictMonoOn_invFunOn_clearingMap hH fun x hx ↦ hδ.trans_le (hmargin x hx)).mono
     (bijOn_clearingMap hH hmargin hzero hδ).surjOn
 
 /-- The equilibrium price is Lipschitz with constant `δ⁻¹` in the positive right-hand side of the
