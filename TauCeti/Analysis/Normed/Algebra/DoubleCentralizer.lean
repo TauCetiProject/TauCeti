@@ -45,6 +45,7 @@ either side vanishes.
 
 * `DoubleCentralizer.ofCentral`: the double centralizer built from a pair of functions satisfying
   the centrality condition, for a complete algebra with zero annihilators.
+* `DoubleCentralizer.coeStarAlgEquiv`: a unital normed star algebra is its own multiplier algebra.
 
 ## Main results
 
@@ -55,6 +56,8 @@ either side vanishes.
 * `DoubleCentralizer.coe_injective`, `DoubleCentralizer.ext_fst`: with zero annihilators, the
   canonical map `A → 𝓜(𝕜, A)` is injective and a multiplier is determined by its left
   centralizer.
+* `DoubleCentralizer.coe_fst_one`, `DoubleCentralizer.coe_surjective`: for a unital algebra every
+  multiplier is the image of its left centralizer at `1`.
 * `DoubleCentralizer.range_coeFn_fst_snd`: the pairs of underlying functions of double
   centralizers are exactly the pairs of functions satisfying the centrality condition.
 * `DoubleCentralizer.norm_fst_le_mul_norm_snd`, `DoubleCentralizer.norm_snd_le_mul_norm_fst`:
@@ -207,6 +210,39 @@ theorem ext_fst {m n : 𝓜(𝕜, A)} (h : ∀ a, m.fst a = n.fst a) : m = n :=
     rw [smul_eq_mul, smul_eq_mul, m.central, n.central, h]
 
 end Faithful
+
+/-! ### Unital algebras -/
+
+section UnitalEquiv
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- In a unital algebra, every multiplier is the image of its left centralizer at `1`. -/
+@[simp]
+theorem coe_fst_one (m : 𝓜(𝕜, A)) : ((m.fst 1 : A) : 𝓜(𝕜, A)) = m := by
+  rw [← mul_coe_eq_coe_fst, coe_one, mul_one]
+
+/-- The canonical map of a unital algebra into its multiplier algebra is surjective. -/
+theorem coe_surjective : Function.Surjective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
+  fun m => ⟨m.fst 1, coe_fst_one m⟩
+
+variable [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A]
+
+variable (𝕜 A) in
+/-- A unital normed star algebra is its own multiplier algebra: the canonical map
+`A → 𝓜(𝕜, A)` is a star algebra equivalence. -/
+def coeStarAlgEquiv : A ≃⋆ₐ[𝕜] 𝓜(𝕜, A) :=
+  StarAlgEquiv.ofBijective (coeHom (𝕜 := 𝕜) (A := A)) ⟨coe_injective, coe_surjective⟩
+
+@[simp]
+theorem coeStarAlgEquiv_apply (a : A) : coeStarAlgEquiv 𝕜 A a = (a : 𝓜(𝕜, A)) :=
+  (rfl)
+
+@[simp]
+theorem coeStarAlgEquiv_symm_apply (m : 𝓜(𝕜, A)) : (coeStarAlgEquiv 𝕜 A).symm m = m.fst 1 :=
+  (StarAlgEquiv.symm_apply_eq _).2 (coe_fst_one m).symm
+
+end UnitalEquiv
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
