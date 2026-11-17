@@ -8,17 +8,10 @@ module
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 public import TauCeti.LinearAlgebra.Orientation.Basis
-public import Mathlib.Analysis.Normed.Module.Alternating.Basic
-public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 /-!
-# Integrals of alternating maps
-
-Evaluation at a family of vectors passes under the Bochner integral of continuous alternating maps
-(`ContinuousAlternatingMap.integral_apply`), as Mathlib's `ContinuousMultilinearMap.integral_apply`
-does for multilinear maps.
-
-## Basis independence of alternating-form integrals
+# Basis independence of alternating-form integrals
 
 A basis determines a real top-degree coefficient and normalized Haar measure. Their integral
 changes by the orientation sign of the basis change. Relative orientation signs make it
@@ -30,20 +23,6 @@ public section
 noncomputable section
 
 open MeasureTheory Set
-
-namespace ContinuousAlternatingMap
-
-variable {X E F ι : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup E]
-  [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F] [Fintype ι]
-
-/-- Evaluation of continuous alternating maps with values in a complete space passes under the
-Bochner integral. -/
-theorem integral_apply {φ : X → E [⋀^ι]→L[ℝ] F} (hφ : Integrable φ μ) (v : ι → E) :
-    (∫ x, φ x ∂μ) v = ∫ x, φ x v ∂μ :=
-  (((ContinuousMultilinearMap.apply ℝ (fun _ : ι ↦ E) F v).comp
-    (toContinuousMultilinearMapCLM ℝ)).integral_comp_comm hφ).symm
-
-end ContinuousAlternatingMap
 
 namespace Module.Basis
 

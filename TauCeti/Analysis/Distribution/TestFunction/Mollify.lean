@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.Normed
+public import TauCeti.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Constructions.UnitInterval
 public import TauCeti.Analysis.Distribution.TestFunction.Convolution
 public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.TranslateAverage
 public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.MeasureTheory.Measure.Comap
 import TauCeti.Analysis.Calculus.ContDiff.Convolution
-import TauCeti.MeasureTheory.Integral.Bochner.Alternating
+import TauCeti.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
@@ -84,42 +84,6 @@ variable [FiniteDimensional ℝ E]
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   (ρ : ContDiffBump (0 : E))
-
-/-- Integrals against the normalized bump over its closed ball are integrals over `E`. -/
-private theorem integral_closedBall_eq {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    (g : E → G) :
-    ∫ y : closedBall (0 : E) ρ.rOut, ρ.normed μ y • g y ∂(μ.comap (↑)) =
-      ∫ y, ρ.normed μ y • g y ∂μ := by
-  rw [integral_subtype_comap measurableSet_closedBall (fun y ↦ ρ.normed μ y • g y)]
-  exact setIntegral_eq_integral_of_forall_compl_eq_zero fun y hy ↦ by
-    rw [image_eq_zero_of_notMem_tsupport (f := ρ.normed μ) (by rwa [ρ.tsupport_normed_eq]),
-      zero_smul]
-
-/-- The normalized bump has integral one over its closed ball. -/
-private theorem integral_closedBall_normed :
-    ∫ y : closedBall (0 : E) ρ.rOut, ρ.normed μ y ∂(μ.comap (↑)) = 1 := by
-  have h := integral_closedBall_eq μ ρ (fun _ ↦ (1 : ℝ))
-  simp only [smul_eq_mul, mul_one] at h
-  rw [h, ρ.integral_normed]
-
-/-- The normalized bump averages a constant to itself. -/
-private theorem integral_closedBall_normed_smul_const {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] [CompleteSpace V] (c : V) :
-    ∫ y : closedBall (0 : E) ρ.rOut, ρ.normed μ y • c ∂(μ.comap (↑)) = c := by
-  rw [integral_smul_const, integral_closedBall_normed, one_smul]
-
-/-- The bump-weighted constants are integrable over the closed ball. -/
-private theorem integrable_closedBall_normed_smul_const {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] (c : V) :
-    Integrable (fun y : closedBall (0 : E) ρ.rOut ↦ ρ.normed μ y • c) (μ.comap (↑)) :=
-  ((ρ.continuous_normed.comp continuous_subtype_val).smul continuous_const)
-    |>.integrable_of_hasCompactSupport (.of_compactSpace _)
-
-/-- Bump-weighted continuous functions are integrable. -/
-private theorem integrable_normed_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {g : E → G} (hg : Continuous g) : Integrable (fun t ↦ ρ.normed μ t • g t) μ :=
-  (ρ.continuous_normed.smul hg).integrable_of_hasCompactSupport
-    ρ.hasCompactSupport_normed.smul_right
 
 omit [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- The weights of the mollification. -/
@@ -263,7 +227,7 @@ theorem mollifyCLM_apply (φ : 𝓓((⊤ : Opens E), F)) (x : E) :
     mollifyCLM μ ρ φ x = (ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] φ) x := by
   rw [mollifyCLM, translateAverageCLM_apply]
   simp only [_root_.smul_apply, ContinuousLinearMap.id_apply]
-  rw [integral_closedBall_eq μ ρ (fun y ↦ φ (x + y)), convolution_def,
+  rw [ρ.integral_closedBall_normed_smul μ (fun y ↦ φ (x + y)), convolution_def,
     ← integral_neg_eq_self]
   simp [ρ.normed_neg, sub_eq_add_neg]
 
@@ -286,7 +250,7 @@ theorem norm_mollifyCLM_apply_le (φ : 𝓓((⊤ : Opens E), F)) {C : ℝ} (hC :
         dsimp only
         rw [norm_smul, Real.norm_of_nonneg (ρ.nonneg_normed _)]
         exact mul_le_of_le_one_right (ρ.nonneg_normed _) ContinuousLinearMap.norm_id_le
-    _ = C := by rw [integral_closedBall_normed, one_mul]
+    _ = C := by rw [ρ.integral_closedBall_normed, one_mul]
 
 /-- Mollification enlarges supports by at most `r = ρ.rOut`. -/
 theorem tsupport_mollifyCLM_subset (φ : 𝓓((⊤ : Opens E), F)) :
@@ -312,7 +276,7 @@ theorem extDerivCLM_comp_mollifyCLM [CompleteSpace F] {m : ℕ} :
   ext ω x : 2
   ext v
   -- Differentiate `ρ̂ ⋆ ω` in each direction under the integral, and evaluate under it.
-  have hint (w : E) := integrable_normed_smul μ ρ
+  have hint (w : E) := ρ.integrable_normed_smul μ
     ((ω.contDiff.continuous_fderiv_apply (by simp)).comp
       ((continuous_const (y := x)).sub continuous_id |>.prodMk (continuous_const (y := w))))
   have hM : ⇑(mollifyCLM μ ρ ω) = ρ.normed μ ⋆[ContinuousLinearMap.lsmul ℝ ℝ, μ] ⇑ω :=
@@ -325,7 +289,7 @@ theorem extDerivCLM_comp_mollifyCLM [CompleteSpace F] {m : ℕ} :
     rw [ContinuousAlternatingMap.integral_apply
       (φ := fun t ↦ ρ.normed μ t • fderiv ℝ ω (x - t) w) (hint w)]
     simp
-  have hR := integrable_normed_smul μ ρ
+  have hR := ρ.integrable_normed_smul μ
     ((extDerivCLM ω).continuous.comp ((continuous_const (y := x)).sub continuous_id))
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply, extDerivCLM_apply, extDeriv,
     alternatizeUncurryFin_apply, mollifyCLM_apply, convolution_def]
@@ -337,7 +301,7 @@ theorem extDerivCLM_comp_mollifyCLM [CompleteSpace F] {m : ℕ} :
   rw [integral_finsetSum _ fun i _ ↦ ?_]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_
     rcases neg_one_pow_eq_or ℤ (i : ℕ) with h | h <;> simp [h, integral_neg]
-  · have hi := integrable_normed_smul μ ρ ((continuous_eval_const (i.removeNth v)).comp
+  · have hi := ρ.integrable_normed_smul μ ((continuous_eval_const (i.removeNth v)).comp
       ((ω.contDiff.continuous_fderiv_apply (by simp)).comp
         ((continuous_const (y := x)).sub continuous_id |>.prodMk (continuous_const (y := v i)))))
     rcases neg_one_pow_eq_or ℤ (i : ℕ) with h | h <;> simpa [h] using hi
@@ -380,7 +344,7 @@ theorem norm_mollifyHomotopyCLM_apply_le (ω : 𝓓((⊤ : Opens E), E [⋀^Fin 
     _ = ρ.rOut := by
         rw [integral_const_mul, integral_prod _
           (hw.integrable_of_hasCompactSupport (.of_compactSpace _))]
-        simp [integral_closedBall_normed]
+        simp [ρ.integral_closedBall_normed]
 
 /-- The averaged homotopy operator enlarges supports by at most `r = ρ.rOut`. -/
 theorem tsupport_mollifyHomotopyCLM_subset (ω : 𝓓((⊤ : Opens E), E [⋀^Fin (k + 1)]→L[ℝ] F)) :
@@ -470,9 +434,9 @@ private theorem apply_mollifyHomotopyCLM_extDerivCLM
     exact h
   obtain ⟨hM, hMe⟩ := apply_mollifyCLM μ ρ S ω
   obtain ⟨hK, hKe⟩ := apply_mollifyHomotopyCLM μ ρ (S ∘L extDerivCLM) ω
-  have hc := integrable_closedBall_normed_smul_const μ ρ (S ω)
+  have hc := ρ.integrable_closedBall_normed_smul_const μ (S ω)
   rw [(apply_mollifyHomotopyCLM μ ρ S _).2, hMe, ← ContinuousLinearMap.comp_apply S extDerivCLM,
-    hKe, ← integral_closedBall_normed_smul_const μ ρ (S ω), ← integral_sub hM hc]
+    hKe, ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]
   rw [← integral_sub (f := fun y : closedBall (0 : E) ρ.rOut ↦
       ρ.normed μ y • S (translateCLM (y : E) ω) - ρ.normed μ y • S ω) (hM.sub hc) hK]
   refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
@@ -493,9 +457,9 @@ private theorem apply_mollifyHomotopyCLM_extDerivCLM_finZero
       pullbackCLM_lineHomotopy_zero] at h
     exact h
   obtain ⟨hM, hMe⟩ := apply_mollifyCLM μ ρ S ω
-  have hc := integrable_closedBall_normed_smul_const μ ρ (S ω)
+  have hc := ρ.integrable_closedBall_normed_smul_const μ (S ω)
   rw [(apply_mollifyHomotopyCLM μ ρ S _).2, hMe,
-    ← integral_closedBall_normed_smul_const μ ρ (S ω), ← integral_sub hM hc]
+    ← ρ.integral_closedBall_normed_smul_const μ (S ω), ← integral_sub hM hc]
   refine integral_congr_ae (ae_of_all _ fun y ↦ ?_)
   dsimp only
   rw [hy, smul_sub]
