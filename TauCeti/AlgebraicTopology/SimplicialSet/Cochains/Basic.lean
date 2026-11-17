@@ -103,6 +103,23 @@ lemma cochainValuesEquiv_d (n : ℕ)
     ModuleCat.hom_zsmul, LinearMap.sum_apply, LinearMap.smul_apply, ModuleCat.hom_comp,
     LinearMap.comp_apply, cochainValuesEquiv_apply]
 
+/-- The value of the coboundary of a `0`-cochain on a `1`-simplex. -/
+lemma cochainValuesEquiv_d_comp_zero (φ : (K.chainComplex (ModuleCat.of k k)).X 0 ⟶ M)
+    (σ : K _⦋1⦌) :
+    cochainValuesEquiv k M K 1 ((K.chainComplex (ModuleCat.of k k)).d 1 0 ≫ φ) σ =
+      cochainValuesEquiv k M K 0 φ (K.δ 0 σ) - cochainValuesEquiv k M K 0 φ (K.δ 1 σ) := by
+  refine (cochainValuesEquiv_d k M K 0 φ σ).trans ?_
+  simp [Fin.sum_univ_two, sub_eq_add_neg]
+
+/-- The value of the coboundary of a `1`-cochain on a `2`-simplex. -/
+lemma cochainValuesEquiv_d_comp_one (φ : (K.chainComplex (ModuleCat.of k k)).X 1 ⟶ M)
+    (σ : K _⦋2⦌) :
+    cochainValuesEquiv k M K 2 ((K.chainComplex (ModuleCat.of k k)).d 2 1 ≫ φ) σ =
+      cochainValuesEquiv k M K 1 φ (K.δ 0 σ) - cochainValuesEquiv k M K 1 φ (K.δ 1 σ) +
+        cochainValuesEquiv k M K 1 φ (K.δ 2 σ) := by
+  refine (cochainValuesEquiv_d k M K 1 φ σ).trans ?_
+  simp [Fin.sum_univ_three, sub_eq_add_neg]
+
 /-- Pullback of cochains is precomposition of their value functions with the simplicial map. -/
 lemma cochainValuesEquiv_chainComplexMap {L : SSet.{u}} (f : K ⟶ L) (n : ℕ)
     (φ : (L.chainComplex (ModuleCat.of k k)).X n ⟶ M) (σ : K _⦋n⦌) :
