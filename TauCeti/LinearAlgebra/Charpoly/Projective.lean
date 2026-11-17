@@ -44,9 +44,10 @@ If `π : R ^ n → M` and `σ : M → R ^ n` split `M` off a free module, then
   (`LinearMap.natDegree_projectiveCharpolyRev_eq_finrank_iff`);
 * it is transported along semilinear isomorphisms
   (`LinearMap.projectiveCharpolyRev_eq_map_of_comp_eq`);
-* **Cayley–Hamilton**: for some `n` bounding its degree, the reflection `X ^ n · Q(1/X)` of
-  `Q = projectiveCharpolyRev f` is a monic polynomial killing `f`
-  (`LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero`,
+* **Cayley–Hamilton**: for every `n` bounding the ranks of `M` at the points of `Spec R`, the
+  reflection `X ^ n · Q(1/X)` of `Q = projectiveCharpolyRev f` is a monic polynomial killing `f`
+  (`LinearMap.aeval_reflect_projectiveCharpolyRev_eq_zero`,
+  `LinearMap.exists_aeval_reflect_projectiveCharpolyRev_eq_zero`,
   `LinearMap.monic_reflect_projectiveCharpolyRev`).
 
 The last statement turns a norm into an integral equation: an element of a finite projective
@@ -272,6 +273,46 @@ theorem projectiveCharpolyRev_eq_map_of_comp_eq {R' M' : Type*} [CommRing R'] [A
     · subst hk; simp
     · simp [hk]
   simp [toMatrix_eq_toMatrix', toMatrix'_apply, π', σ', hsingle, hfg]
+
+open scoped TensorProduct in
+/-- **Sharp Cayley–Hamilton on a finite projective module.** For every `n` bounding the ranks of
+`M` at the points of `Spec R`, the reflection `X ^ n · Q(1/X)` of `Q = projectiveCharpolyRev f`
+kills `f`. On a free module of rank `r` with `n = r`, this is the usual Cayley–Hamilton theorem. -/
+theorem aeval_reflect_projectiveCharpolyRev_eq_zero {n : ℕ}
+    (hn : ∀ p, rankAtStalk (R := R) M p ≤ n) (f : Module.End R M) :
+    aeval f ((projectiveCharpolyRev f).reflect n) = 0 := by
+  ext x
+  refine Module.eq_zero_of_localization_maximal (fun J _ ↦ Localization.AtPrime J ⊗[R] M)
+    (fun J _ ↦ TensorProduct.mk R (Localization.AtPrime J) M 1) _ fun J hJ ↦ ?_
+  let A := Localization.AtPrime J
+  have : Module.Free A (A ⊗[R] M) := free_of_flat_of_isLocalRing
+  have hr : finrank A (A ⊗[R] M) ≤ n := by
+    have := hn ⟨J, hJ.isPrime⟩
+    rwa [rankAtStalk_eq_finrank_tensorProduct] at this
+  set g : Module.End A (A ⊗[R] M) := f.baseChange A
+  let φ : M →ₛₗ[algebraMap R A] A ⊗[R] M :=
+    { toFun y := (1 : A) ⊗ₜ[R] y
+      map_add' y z := TensorProduct.tmul_add (1 : A) y z
+      map_smul' r y := by
+        rw [algebraMap_smul, ← TensorProduct.smul_tmul, TensorProduct.smul_tmul'] }
+  have hφ : g.comp φ = φ.comp f := by
+    ext y
+    simp [g, φ]
+  have hmap := congr($(Module.End.aeval_map_comp_of_comp_eq hφ
+    ((projectiveCharpolyRev f).reflect n)) x)
+  have hdeg : g.charpoly.natDegree = finrank A (A ⊗[R] M) := charpoly_natDegree g
+  have hpoly : ((projectiveCharpolyRev f).reflect n).map (algebraMap R A) =
+      g.charpoly * X ^ (n - finrank A (A ⊗[R] M)) := by
+    rw [← reflect_map, ← projectiveCharpolyRev_baseChange A f,
+      projectiveCharpolyRev_eq_reverse_charpoly]
+    have hsplit : n = finrank A (A ⊗[R] M) + (n - finrank A (A ⊗[R] M)) :=
+      (Nat.add_sub_of_le hr).symm
+    conv_lhs => rw [hsplit, ← mul_one g.charpoly.reverse]
+    rw [reflect_mul g.charpoly.reverse 1 ((reverse_natDegree_le _).trans hdeg.le) (by simp),
+      reverse, hdeg, reflect_reflect, reflect_one]
+  rw [TensorProduct.mk_apply]
+  simpa only [LinearMap.comp_apply, LinearMap.coe_mk, AddHom.coe_mk, φ, hpoly, map_mul,
+    aeval_self_charpoly, zero_mul, LinearMap.zero_apply] using hmap.symm
 
 /-- **Cayley–Hamilton on a finite projective module.** For some `n` bounding the degree of the
 reversed characteristic polynomial `Q` of `f`, the reflection `X ^ n · Q(1/X)` of `Q` kills `f`;
