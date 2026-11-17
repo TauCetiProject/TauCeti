@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Iterated
 import Mathlib.Analysis.Calculus.Deriv.Comp
+import TauCeti.Analysis.Normed.Module.Multilinear.Basic
 
 /-!
 # Spatial and time derivatives on parabolic Hölder spaces of every order
@@ -226,11 +227,6 @@ private theorem curryRightCLM_apply (m : ℕ) (f : E [×(m + 1)]→L[ℝ] F) :
     curryRightCLM m f = f.curryRight :=
   (rfl)
 
-/-- Separating the last argument preserves distances. -/
-private theorem edist_curryRight {m : ℕ} (f g : E [×(m + 1)]→L[ℝ] F) :
-    edist f.curryRight g.curryRight = edist f g :=
-  (continuousMultilinearCurryRightEquiv' ℝ m E F).edist_map f g
-
 /-- The field `D_t^r D_x^(m+1) u` with its last argument separated. -/
 private def curryRightField (u : ParabolicCkHolderSpace (k + 1) α E F hab) (r m : ℕ) :
     slab (E := E) a b →ᵇ (E [×m]→L[ℝ] E →L[ℝ] F) :=
@@ -280,12 +276,12 @@ private def spatialFDeriv (u : ParabolicCkHolderSpace (k + 1) α E F hab) :
     -- Separating the last argument preserves distances, so it preserves Hölder bounds.
     (fun r m h ↦ ⟨‖timeSliceL r (m + 1) u‖₊, fun x t s ↦ by
       dsimp only
-      rw [curryRightField_apply, curryRightField_apply, edist_curryRight]
+      rw [curryRightField_apply, curryRightField_apply, ContinuousMultilinearMap.edist_curryRight]
       exact holderWith_mixedDerivL_slabMk u (r := r) (m := m + 1) (by omega) x t s⟩)
     (fun r m h ↦ by
       obtain ⟨C, hC⟩ := memHolder_mixedDerivL u (r := r) (m := m + 1) (by omega)
       exact ⟨C, fun p q ↦ by
-        rw [curryRightField_apply, curryRightField_apply, edist_curryRight]
+        rw [curryRightField_apply, curryRightField_apply, ContinuousMultilinearMap.edist_curryRight]
         exact hC p q⟩)
 
 private theorem mixedDerivL_spatialFDeriv_apply (u : ParabolicCkHolderSpace (k + 1) α E F hab)
@@ -332,11 +328,6 @@ private theorem mixedDerivHolderL_spatialFDeriv_apply
     simp only [zero_apply, HolderSpace.zero_apply]
     exact (map_zero (curryRightCLM m)).symm
 
-/-- Separating the last argument is `1`-Lipschitz. -/
-private theorem lipschitzWith_curryRight (m : ℕ) :
-    LipschitzWith 1 fun f : E [×(m + 1)]→L[ℝ] F ↦ f.curryRight :=
-  LipschitzWith.of_edist_le fun f g ↦ (edist_curryRight f g).le
-
 private theorem norm_spatialFDeriv_le (u : ParabolicCkHolderSpace (k + 1) α E F hab) :
     ‖spatialFDeriv u‖ ≤ ‖u‖ := by
   refine norm_le_norm_of_injective (F' := E →L[ℝ] F) (spatialFDeriv u) u (fun p ↦ (p.1, p.2 + 1))
@@ -348,11 +339,15 @@ private theorem norm_spatialFDeriv_le (u : ParabolicCkHolderSpace (k + 1) α E F
     rw [mixedDerivL_spatialFDeriv_apply, ContinuousMultilinearMap.curryRight_norm]
     exact (mixedDerivL p.1 (p.2 + 1) u).norm_coe_le_norm q
   · refine lp.norm_le_of_forall_le (norm_nonneg _) fun x ↦ ?_
-    exact (HolderSpace.norm_le_norm_of_apply_eq_comp (lipschitzWith_curryRight p.2)
-      (fun g ↦ (g.curryRight_norm).le) (timeSliceL_spatialFDeriv_apply u p.1 p.2 x)).trans
+    exact (HolderSpace.norm_le_norm_of_apply_eq_comp
+      (ContinuousMultilinearMap.lipschitzWith_curryRight (Ei := fun _ ↦ E))
+      (fun g ↦ (g.curryRight_norm).le)
+      (timeSliceL_spatialFDeriv_apply u p.1 p.2 x)).trans
       (lp.norm_apply_le_norm ENNReal.top_ne_zero _ x)
-  · exact HolderSpace.norm_le_norm_of_apply_eq_comp (lipschitzWith_curryRight p.2)
-      (fun g ↦ (g.curryRight_norm).le) (mixedDerivHolderL_spatialFDeriv_apply u p.1 p.2)
+  · exact HolderSpace.norm_le_norm_of_apply_eq_comp
+      (ContinuousMultilinearMap.lipschitzWith_curryRight (Ei := fun _ ↦ E))
+      (fun g ↦ (g.curryRight_norm).le)
+      (mixedDerivHolderL_spatialFDeriv_apply u p.1 p.2)
 
 variable (k α E F hab) in
 /-- **The spatial derivative** `u ↦ D_x u` from `C_{par,b}^{(k+1)+α}` to `C_{par,b}^{k+α}` with
