@@ -224,6 +224,17 @@ private theorem toChart_comp_flow_pullback (t : ℝ) :
   ext y
   simp [flow_apply_diffeomorph hX hX' hσX]
 
+include hf in
+/-- In the pullback of a chart, the differential at `y` of the chart composed with the time-`t` map
+of the flow of `X` is the differential at `σ y` of the chart composed with the time-`t` map of the
+flow of `X'`, read through `dσ`. -/
+private theorem mfderiv_toChart_comp_flow_pullback_apply (t : ℝ) (y : M)
+    (w : TangentSpace 𝓘(ℝ, E) y) :
+    mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ((φ.pullback hf).toChart ∘ hX.flow t) y w =
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX'.flow t) (σ y) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y w) := by
+  rw [toChart_comp_flow_pullback hf hX hX' hσX, σ.mfderiv_comp_diffeomorph (by simp),
+    ContinuousLinearMap.comp_apply]
+
 variable (hφ : ∀ y ∈ φ.toChart.source,
   φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X' y)) =
     fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
@@ -241,12 +252,8 @@ theorem stableNormal_pullback_apply {y : M} (hy : y ∈ hX.flow.stableSet x)
   obtain ⟨T, hT⟩ := (hX'.eventually_mem_linearForwardTimes hφ hy').exists
   have hT' : T ∈ hX.linearForwardTimes (φ.pullback hf) y := by
     rwa [linearForwardTimes_pullback hf hX hX' hσX]
-  have hD : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) ((φ.pullback hf).toChart ∘ hX.flow T) y w =
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (φ.toChart ∘ hX'.flow T) (σ y)
-        (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y w) := by
-    rw [toChart_comp_flow_pullback hf hX hX' hσX, σ.mfderiv_comp_diffeomorph (by simp),
-      ContinuousLinearMap.comp_apply]
-  rw [stableNormal_apply (MorseChart.coord_mfderiv_pullback hf hσX hφ) hT', hD,
+  rw [stableNormal_apply (MorseChart.coord_mfderiv_pullback hf hσX hφ) hT',
+    mfderiv_toChart_comp_flow_pullback_apply hf hX hX' hσX,
     MorseChart.pullback_negativeCoord, stableNormal_apply hφ hT]
 
 /-- **The unstable frame pulls back.** At a point `y` of `W^u(x)`, `dσ` carries the unstable frame
@@ -264,8 +271,8 @@ theorem mfderiv_unstableFrame_pullback (hf' : IsMorse 𝓘(ℝ, E) f') {y : M}
   refine (isInvertible_mfderiv_toChart_comp_flow ((mem_linearBackwardTimes hX' φ).1 hT).1).injective
     ?_
   have h := mfderiv_unstableFrame (MorseChart.coord_mfderiv_pullback hf hσX hφ) hT' c
-  rw [toChart_comp_flow_pullback hf hX hX' hσX, σ.mfderiv_comp_diffeomorph (by simp),
-    MorseChart.pullback_negativeExtend, ContinuousLinearMap.comp_apply] at h
+  rw [mfderiv_toChart_comp_flow_pullback_apply hf hX hX' hσX,
+    MorseChart.pullback_negativeExtend] at h
   exact h.trans (mfderiv_unstableFrame hφ hT c).symm
 
 omit hφ
@@ -287,9 +294,7 @@ theorem trajectoryComparison_pullback (hf' : IsMorse 𝓘(ℝ, E) f') {p q : M}
   refine ContinuousLinearMap.ext fun v ↦ ?_
   have hd (w : TangentSpace 𝓘(ℝ, E) y) :
       mvfderiv 𝓘(ℝ, E) f y w = mvfderiv 𝓘(ℝ, E) f' (σ y) (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) σ y w) := by
-    rw [← hf]
-    simp only [mvfderiv, σ.mfderiv_comp_diffeomorph (by simp), ContinuousLinearMap.comp_apply,
-      comp_apply]
+    rw [← hf, σ.mvfderiv_comp_diffeomorph (by simp), ContinuousLinearMap.comp_apply]
   rw [trajectoryComparison_apply, trajectoryComparison_apply, hd,
     stableNormal_pullback_apply hf hX hX' hσX hφq hy.2,
     mfderiv_unstableFrame_pullback hf hX hX' hσX hφp hf' hy.1]

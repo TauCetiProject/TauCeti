@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Diffeomorph
 public import TauCeti.Geometry.Manifold.Morse.PseudoGradient.Local.Basic
-import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 import TauCeti.Geometry.Manifold.IntegralCurve.Basic
 
 /-!
