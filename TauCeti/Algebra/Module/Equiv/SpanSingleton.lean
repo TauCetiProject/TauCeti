@@ -32,6 +32,14 @@ unit of `K` and `a ↦ a • x` is bijective.
 * `LinearEquiv.isUnit_apply_of_apply_eq_one`, `LinearEquiv.bijective_smul_of_apply_eq_one`: an
   element on which a linear functional takes the value `1` is carried to a unit, and generates
   freely.
+* `LinearMap.span_singleton_apply_eq_top_of_leftInverse`: a linear map between modules isomorphic
+  to the base ring which has a left inverse carries generators to generators.
+* `LinearMap.eq_id_of_apply_eq_self`: over a domain, an endomorphism of a module isomorphic to the
+  base ring which fixes a nonzero element is the identity.
+
+An endomorphism of a module isomorphic to the base ring is right multiplication by an element in
+coordinates, which is how the last result is proved. The last two results are used to compare top
+and local homology of manifolds, where local homology is a copy of the coefficient ring.
 -/
 
 public section
@@ -86,3 +94,40 @@ theorem bijective_smul_of_apply_eq_one {K N : Type*} [CommSemiring K] [AddCommMo
   simp [← smul_eq_mul]
 
 end LinearEquiv
+
+namespace LinearMap
+
+/-- **Split monomorphisms between modules isomorphic to the base ring carry generators to
+generators.** If `f : M →ₗ[R] N` has a left inverse `g` and `M` and `N` are both isomorphic to the
+commutative semiring `R`, then `f x` spans `N` whenever `x` spans `M`: the coordinate `eM x` is a
+unit `u`, and the functional `u⁻¹ • (eM ∘ g)` takes the value `1` on `f x`
+(`LinearEquiv.isUnit_apply_of_apply_eq_one`). -/
+theorem span_singleton_apply_eq_top_of_leftInverse {R M N : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] (f : M →ₗ[R] N)
+    (eM : M ≃ₗ[R] R) (eN : N ≃ₗ[R] R) {g : N →ₗ[R] M} (hgf : Function.LeftInverse g f) {x : M}
+    (hx : Submodule.span R {x} = ⊤) : Submodule.span R {f x} = ⊤ := by
+  obtain ⟨u, hu⟩ := eM.span_singleton_eq_top_iff_isUnit.1 hx
+  refine eN.span_singleton_eq_top_iff_isUnit.2
+    (eN.isUnit_apply_of_apply_eq_one ((↑u⁻¹ : R) • (eM.toLinearMap ∘ₗ g)) ?_)
+  simp [hgf x, ← hu]
+
+/-- **An endomorphism of a module isomorphic to the base ring fixing a nonzero element is the
+identity**, over a domain: in coordinates it is right multiplication by an element `a`, and
+`t * a = t` with `t ≠ 0` forces `a = 1`. -/
+theorem eq_id_of_apply_eq_self {R M : Type*} [Semiring R] [IsDomain R] [AddCommMonoid M]
+    [Module R M] (T : M →ₗ[R] M) (e : M ≃ₗ[R] R) {x : M} (hx : x ≠ 0) (hTx : T x = x) :
+    T = LinearMap.id := by
+  set T' : R →ₗ[R] R := e.toLinearMap ∘ₗ T ∘ₗ e.symm.toLinearMap
+  have hT' (t : R) : T' t = t * T' 1 := by
+    rw [← smul_eq_mul, ← map_smul, smul_eq_mul, mul_one]
+  have hT'e (y : M) : T' (e y) = e (T y) := by simp [T']
+  -- `T' 1 = 1`, by cancelling the nonzero coordinate of `x`.
+  have h1 : T' 1 = 1 := by
+    have h := hT'e x
+    rw [hTx, hT'] at h
+    exact mul_left_cancel₀ ((LinearEquiv.map_ne_zero_iff e).2 hx) (h.trans (mul_one (e x)).symm)
+  ext y
+  apply e.injective
+  rw [← hT'e, hT', h1, mul_one, LinearMap.id_apply]
+
+end LinearMap
