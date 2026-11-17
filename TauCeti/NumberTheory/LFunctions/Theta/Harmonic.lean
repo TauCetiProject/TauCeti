@@ -589,17 +589,6 @@ theorem mixedFourier_harmonicFactor_mul_archGaussian (t : ContinuousInfinityType
 /-! ### Twisted Poisson summation on a full lattice -/
 
 open scoped Classical in
-private theorem abs_sub_normAtPlace_le_norm (w : InfinitePlace K) (x z : mixedSpace K) :
-    |normAtPlace w x - normAtPlace w z| ≤ ‖x - z‖ := by
-  rcases w.isReal_or_isComplex with hw | hw
-  · rw [normAtPlace_apply_of_isReal hw, normAtPlace_apply_of_isReal hw]
-    exact (abs_norm_sub_norm_le (x.1 ⟨w, hw⟩) (z.1 ⟨w, hw⟩)).trans
-      (normAtPlace_apply_of_isReal hw (x - z) ▸ normAtPlace_le_norm w (x - z))
-  · rw [normAtPlace_apply_of_isComplex hw, normAtPlace_apply_of_isComplex hw]
-    exact (abs_norm_sub_norm_le (x.2 ⟨w, hw⟩) (z.2 ⟨w, hw⟩)).trans
-      (normAtPlace_apply_of_isComplex hw (x - z) ▸ normAtPlace_le_norm w (x - z))
-
-open scoped Classical in
 private theorem exists_injective_forall_normAtPlace_bounds
     (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] [IsZLattice ℝ L]
     (v : mixedSpace K) (w₀ : InfinitePlace K) :
@@ -621,7 +610,7 @@ private theorem exists_injective_forall_normAtPlace_bounds
     have hz : normAtPlace w (z n) = r n w := normAtPlace_mixedSpaceOfRealSpace (hr n w)
     have hsub : z n - (v + (q n : mixedSpace K)) = ZSpan.fract b (z n - v) := by
       rw [ZSpan.fract_apply]; abel
-    exact hz ▸ (abs_sub_normAtPlace_le_norm w (z n) (v + (q n : mixedSpace K))).trans
+    exact hz ▸ (abs_normAtPlace_sub_normAtPlace_le_norm w (z n) (v + (q n : mixedSpace K))).trans
       (hsub ▸ ZSpan.norm_fract_le b (z n - v))
   refine ⟨2 * M + 1, q, fun m n hmn ↦ ?_, fun n w ↦ ?_, fun n w hw ↦ ?_⟩
   · by_contra hne

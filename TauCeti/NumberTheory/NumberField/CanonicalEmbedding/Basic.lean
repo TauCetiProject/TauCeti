@@ -42,7 +42,11 @@ equivalence `TauCeti.NumberField.mixedEmbedding.integerLatticeEquiv K`.
   `w`-coordinate of `x`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_mixedDiag`:
   `normAtPlace w (mixedDiag K g) = w (g w)`.
+* `TauCeti.NumberField.mixedEmbedding.abs_normAtPlace_sub_normAtPlace_le`:
+  `|normAtPlace w x - normAtPlace w y| ≤ normAtPlace w (x - y)`.
 * `TauCeti.NumberField.mixedEmbedding.normAtPlace_le_norm`: `normAtPlace w x ≤ ‖x‖`.
+* `TauCeti.NumberField.mixedEmbedding.abs_normAtPlace_sub_normAtPlace_le_norm`:
+  `|normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖`.
 * `TauCeti.NumberField.norm_mixedEmbedding`: `‖mixedEmbedding K x‖ = house x`.
 * `TauCeti.NumberField.mixedEmbedding.coe_integerLatticeEquiv` and
   `TauCeti.NumberField.mixedEmbedding.mixedEmbedding_integerLatticeEquiv_symm`: coercing
@@ -103,6 +107,16 @@ theorem normAtPlace_mixedDiag (w : InfinitePlace K) (g : InfinitePlace K → K) 
   rw [← normAtPlace_apply]
   exact normAtPlace_congr w (fun hw ↦ by simp) (fun hwc ↦ by simp)
 
+/-- Reverse triangle inequality for `normAtPlace w`: the absolute difference of local norms at `w`
+is at most the local norm of the difference. -/
+theorem abs_normAtPlace_sub_normAtPlace_le (w : InfinitePlace K) (x y : mixedSpace K) :
+    |normAtPlace w x - normAtPlace w y| ≤ normAtPlace w (x - y) := by
+  rcases w.isReal_or_isComplex with hw | hw
+  · simpa only [normAtPlace_apply_of_isReal hw, Prod.fst_sub, Pi.sub_apply] using
+      abs_norm_sub_norm_le (x.1 ⟨w, hw⟩) (y.1 ⟨w, hw⟩)
+  · simpa only [normAtPlace_apply_of_isComplex hw, Prod.snd_sub, Pi.sub_apply] using
+      abs_norm_sub_norm_le (x.2 ⟨w, hw⟩) (y.2 ⟨w, hw⟩)
+
 open scoped Classical in
 /-- At every infinite place `w`, the local norm `normAtPlace w x` is at most the sup norm `‖x‖` on
 `mixedSpace K`. -/
@@ -110,6 +124,14 @@ theorem normAtPlace_le_norm [NumberField K] (w : InfinitePlace K) (x : mixedSpac
     normAtPlace w x ≤ ‖x‖ := by
   rw [norm_eq_sup'_normAtPlace]
   exact Finset.le_sup' (fun u ↦ normAtPlace u x) (Finset.mem_univ w)
+
+open scoped Classical in
+/-- At every infinite place `w`, `normAtPlace w` is 1-Lipschitz with respect to the sup norm on
+`mixedSpace K`: `|normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖`. -/
+theorem abs_normAtPlace_sub_normAtPlace_le_norm [NumberField K]
+    (w : InfinitePlace K) (x y : mixedSpace K) :
+    |normAtPlace w x - normAtPlace w y| ≤ ‖x - y‖ :=
+  (abs_normAtPlace_sub_normAtPlace_le w x y).trans (normAtPlace_le_norm w (x - y))
 
 /-- The `ℤ`-linear equivalence `𝓞 K ≃ₗ[ℤ] mixedEmbedding.integerLattice K` induced by
 `mixedEmbedding K`. -/
