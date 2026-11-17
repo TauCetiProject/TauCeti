@@ -20,8 +20,8 @@ complex atlas. A **prestable map** from the nodal curve to `X` is a map `u : (Σ
 the normalization whose restriction to every component is smooth and pseudoholomorphic, for the
 almost complex structure `SmoothAlmostComplexStructure.ofComplexManifold ℂ (C i)` of the
 component, and which takes the same value at the two points of every flag pair
-(`TauCeti.IsPrestableMap`). Smoothness is a separate condition, since the pinned
-pseudoholomorphicity predicate is a derivative-level condition carrying no elliptic regularity.
+(`TauCeti.IsPrestableMap`). Smoothness is a separate condition, since the pseudoholomorphicity
+predicate `IsPseudoholomorphic` is a derivative-level condition carrying no elliptic regularity.
 No stability, taming form, compactness of `X` or genericity of `J` is part of the definition:
 unmarked spheres and tori, constant or not, are allowed as components.
 
@@ -119,9 +119,10 @@ theorem isPrestableMap_ofComplexManifold_iff {F : Type*} [NormedAddCommGroup F] 
     IsPrestableMap (SmoothAlmostComplexStructure.ofComplexManifold F Z) d v ↔
       (∀ i, MDifferentiable 𝓘(ℂ) 𝓘(ℂ, F) fun z : C i ↦ v ⟨i, z⟩) ∧
         ∀ f, v (fstPoint d f) = v (sndPoint d f) := by
-  simp only [← isPseudoholomorphic_ofComplexManifold_iff]
-  refine ⟨fun hv ↦ ⟨hv.isPseudoholomorphic, hv.apply_fstPoint⟩, fun ⟨hv, hf⟩ ↦ ⟨fun i ↦ ?_, hv, hf⟩⟩
+  refine ⟨fun hv ↦ ⟨fun i ↦ isPseudoholomorphic_ofComplexManifold_iff.mp (hv.isPseudoholomorphic i),
+    hv.apply_fstPoint⟩, fun ⟨hv, hf⟩ ↦ ⟨fun i ↦ ?_,
+      fun i ↦ isPseudoholomorphic_ofComplexManifold_iff.mpr (hv i), hf⟩⟩
   simpa only [modelWithCornersSelf_restrictScalars] using
-    ((isPseudoholomorphic_ofComplexManifold_iff.mp (hv i)).contMDiff (n := ∞)).restrictScalars ℝ
+    ((hv i).contMDiff (n := ∞)).restrictScalars ℝ
 
 end TauCeti

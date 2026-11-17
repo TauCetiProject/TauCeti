@@ -33,20 +33,23 @@ finitely many such diffeomorphisms of every constant component
 (`AuxiliaryAut.finite_fixingSubgroup_of_finite_isotropy`), and a constant rational component with
 at most two special points, or a constant elliptic component with none, has infinitely many
 (`AuxiliaryAut.infinite_isotropy_of_encard_specialPoints_le_two`,
-`AuxiliaryAut.infinite_isotropy_of_specialPoints_eq_empty`). When `u` is constant on every
-component, both halves hold: the isotropy group is finite exactly when every component has
+`AuxiliaryAut.infinite_isotropy_of_specialPoints_eq_empty`). Conversely, for every map, if
+every component has finitely many diffeomorphisms fixing its special points then the whole
+automorphism group of the marked curve is finite, and so is the isotropy group
+(`AuxiliaryAut.finite_isotropy_of_forall_finite_fixingSubgroup`). When `u` is constant on every
+component, the two halves combine: the isotropy group is finite exactly when every component has
 finitely many diffeomorphisms fixing its special points
-(`AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`). For a nonconstant pseudoholomorphic
-component the remaining half needs auxiliary marks through injective points and is not treated
-here.
+(`AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`). The sharper converse, which asks nothing
+of the nonconstant pseudoholomorphic components, needs auxiliary marks through injective points
+and is not treated here.
 
 The maps out of curves with `N` ordered and `R` auxiliary marks form the **map groupoid**
-`AuxiliaryMarkedCurve.Map I n N R Y`. It is the category of elements of the functor
+`(AuxiliaryMarkedCurve.mapFunctor I n N R Y).Elements`: the category of elements of the functor
 `AuxiliaryMarkedCurve.mapFunctor`, which sends a curve to the maps out of its normalization and an
 arrow `e` to `g ↦ g ∘ e⁻¹`, on the groupoid `unorderedAuxiliaryIsomorphismGroupoid` of marked
 curves. Its composition and inverses are those of the groupoid of curves, its forgetful functor
 to curves is faithful (Mathlib's `CategoryTheory.Functor.Elements.π`), and its automorphism groups
-are the isotropy groups (`AuxiliaryMarkedCurve.Map.autMulEquiv`).
+are the isotropy groups (`AuxiliaryMarkedCurve.autMulEquivIsotropy`).
 
 ## Main definitions
 
@@ -54,15 +57,18 @@ are the isotropy groups (`AuxiliaryMarkedCurve.Map.autMulEquiv`).
   map out of its normalization.
 * `NodalGluing.AuxiliaryMarkedCurve.mapFunctor`: maps out of normalizations, transported along
   arrows of marked curves.
-* `NodalGluing.AuxiliaryMarkedCurve.Map`: the groupoid of maps out of marked nodal curves.
-* `NodalGluing.AuxiliaryMarkedCurve.Map.autMulEquiv`: its automorphism groups are the isotropy
-  groups.
+* `NodalGluing.AuxiliaryMarkedCurve.mapHomMk`: arrows of the map groupoid
+  `(mapFunctor I n N R Y).Elements` from arrows of marked curves intertwining the maps.
+* `NodalGluing.AuxiliaryMarkedCurve.autMulEquivIsotropy`: the automorphism groups of the map
+  groupoid are the isotropy groups.
 
 ## Main results
 
 * `NodalGluing.AuxiliaryAut.finite_fixingSubgroup_of_finite_isotropy`: a map with finite isotropy
   group has, on each component where it is constant, finitely many diffeomorphisms fixing the
   special points.
+* `NodalGluing.AuxiliaryAut.finite_isotropy_of_forall_finite_fixingSubgroup`: if every component
+  has finitely many diffeomorphisms fixing the special points, every isotropy group is finite.
 * `NodalGluing.AuxiliaryAut.finite_isotropy_iff_of_forall_apply_eq`: for a map constant on every
   component, the isotropy group is finite exactly when every component is pointed stable in this
   sense.
@@ -193,17 +199,28 @@ theorem infinite_isotropy_of_specialPoints_eq_empty {E' : Type*} [NormedAddCommG
     h ▸ e.infinite_fixingSubgroup_empty
   exact infinite_isotropy_of_infinite_fixingSubgroup hu
 
+/-- **Pointed stable components give finite isotropy.** For finitely many connected components,
+flag pairs and auxiliary labels, if every component has finitely many diffeomorphisms fixing its
+special points, the isotropy group of every map `u` is finite: it is a subgroup of the
+automorphism group of the marked curve, which is then finite. -/
+theorem finite_isotropy_of_forall_finite_fixingSubgroup [Finite ι] [Finite Flag] [Finite R]
+    [∀ i, ConnectedSpace (X i)]
+    (h : ∀ i, Finite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i))) :
+    Finite (isotropy I n m u) :=
+  have := finite_iff.mpr h
+  inferInstance
+
 /-- **Stability of maps constant on every component.** For finitely many connected components,
 flag pairs and auxiliary labels, if `u` is constant on every component, its isotropy group is
 finite exactly when every component has finitely many diffeomorphisms fixing its special points.
-For a constant map this says that its isotropy group is that of its pointed domain. -/
+Only the forward direction uses that `u` is constant on every component
+(`finite_isotropy_of_forall_finite_fixingSubgroup`). -/
 theorem finite_isotropy_iff_of_forall_apply_eq [Finite ι] [Finite Flag] [Finite R]
     [∀ i, ConnectedSpace (X i)] (hu : ∀ i (x y : X i), u ⟨i, x⟩ = u ⟨i, y⟩) :
     Finite (isotropy I n m u) ↔
-      ∀ i, Finite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) := by
-  refine ⟨fun _ i ↦ finite_fixingSubgroup_of_finite_isotropy (hu i), fun h ↦ ?_⟩
-  have := finite_iff.mpr h
-  infer_instance
+      ∀ i, Finite (Diffeomorph.fixingSubgroup (I := I) (n := n) (m.specialPoints i)) :=
+  ⟨fun _ i ↦ finite_fixingSubgroup_of_finite_isotropy (hu i),
+    finite_isotropy_of_forall_finite_fixingSubgroup⟩
 
 end AuxiliaryAut
 
@@ -285,7 +302,9 @@ def autMulEquivIsotropy :
   invFun e := .of <| (Groupoid.isoEquivHom p p).symm (mapHomMk e.1 e.2)
   left_inv _ := Aut.ext <| CategoryTheory.Iso.ext <| Functor.Elements.hom_ext rfl
   right_inv _ := rfl
-  map_mul' _ _ := rfl
+  map_mul' g g' := Subtype.ext <| by
+    simp only [Aut.mul_asIso, Iso.trans_hom, Functor.Elements.comp_hom, comp_def,
+      Subgroup.coe_mul, AuxiliaryAut.mul_def]
 
 /-- The isotropy element of an automorphism of a map is its underlying automorphism of the
 marked curve. -/
